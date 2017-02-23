@@ -35,9 +35,12 @@ void dataTypeTest(const char *arg) {
   }
   size_t maxSize = 0;
   std::vector<uint8_t> buf, buf1;
-  for (unsigned n = 0; n < count; n++) {
+  for (unsigned c = 0; c < count; c++) {
     OU::Protocol genp;
     OU::Protocol &p = ppp ? *ppp : genp;
+    printf("=== Test %u of %u ===\n", c+1, count);
+    if (0 == (c+1)%10000)
+      fprintf(stderr, "=== Test %u of %u ===\n", c+1, count);
     if (!ppp)
       p.generate("test");
     p.printXML(stdout);
@@ -88,3 +91,4 @@ void dataTypeTest(const char *arg) {
   fprintf(stderr, "Data type test succeeded with %u randomly generated types and values."
 	  " Max buffer was %zu\n", count, maxSize);
 }
+

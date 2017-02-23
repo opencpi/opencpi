@@ -12,7 +12,7 @@ HdlTopTargets:=xilinx altera modelsim # icarus altera # verilator # altera
 
 # The first part in a family is the one used for core building
 # Usually it should be the largest
-HdlTargets_xilinx:=isim virtex5 virtex6 spartan3adsp spartan6 zynq
+HdlTargets_xilinx:=isim virtex5 virtex6 spartan3adsp spartan6 zynq xsim
 HdlTargets_virtex5:=xc5vtx240t xc5vlx50t xc5vsx95t xc5vlx330t xc5vlx110t
 HdlTargets_virtex6:=xc6vlx240t
 HdlTargets_spartan6:=xc6slx45
@@ -73,7 +73,7 @@ HdlAddPlatform=\
 HdlDoPlatform=\
   $(foreach p,$(notdir $1),\
     $(foreach d,$(if $(wildcard $1/lib/$p.mk),$1/lib,$1),\
-      $(if $(wildcard $d/hdl/$p.xml)$(wildcard $d/$p.xml),,$(error no $p.xml file found for platform under: $1))\
+      $(if $(filter clean%,$(MAKECMDGOALS))$(call OcpiExists,$d/hdl/$p.xml)$(call OcpiExists,$d/$p.xml),,$(error no $p.xml file found for platform under: $1))\
       $(if $(wildcard $d/$p.mk),,$(error no $p.mk file found under $1. $p not built?))\
       $(call HdlAddPlatform,$d,$p,$d)))
 

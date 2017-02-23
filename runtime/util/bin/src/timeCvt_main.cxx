@@ -113,12 +113,12 @@ OcpiTimeCvtConfigurator::g_options[] = {
 
 static
 void
-printUsage (OcpiTimeCvtConfigurator & config,
+printUsage (OcpiTimeCvtConfigurator & a_config,
             const char * argv0)
 {
   std::cout << "usage: " << argv0 << " [options]" << std::endl
             << "  options: " << std::endl;
-  config.printOptions (std::cout);
+  a_config.printOptions (std::cout);
 }
 
 using namespace OCPI::Time;
@@ -144,7 +144,7 @@ int main( int argc, char** argv )
     return 1;
   }
 
-  std::ostream * out;
+  std::ostream * out = NULL;
   if ( ! config.outfilename.empty() ) {
     try {
       std::ofstream * fout = new std::ofstream;

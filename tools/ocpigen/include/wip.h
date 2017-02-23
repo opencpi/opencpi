@@ -193,17 +193,20 @@ class DataPort : public OcpPort {
   void emitRccArgTypes(FILE *f, bool &first);
   void emitRecordInterface(FILE *f, const char *implName);
   void emitRecordInterfaceConstants(FILE *f);
-  void emitVerilogPortParameters(FILE *f);
+  void emitInterfaceConstants(FILE *f, Language lang);
+  //  void emitVerilogPortParameters(FILE *f);
   static const char *adjustConnection(const char *masterName,
-				      Port &prodPort, OcpAdapt *prodAdapt,
-				      Port &consPort, OcpAdapt *consAdapt,
-				      Language lang);
+				      Port &prodPort, OcpAdapt *prodAdapt, bool &prodHasExpr,
+				      Port &consPort, OcpAdapt *consAdapt, bool &consHasExpr,
+				      Language lang, size_t &unused);
   virtual const char *adjustConnection(Port &consumer, const char *masterName, Language lang,
-				       OcpAdapt *prodAdapt, OcpAdapt *consAdapt);
+				       OcpAdapt *prodAdapt, OcpAdapt *consAdapt, size_t &unused);
   virtual unsigned extraDataInfo() const;
   const char *finalizeHdlDataPort();
   const char *finalizeRccDataPort();
   const char *finalizeOclDataPort();
+  const char *finalizeExternal(Worker &aw, Worker &iw, InstancePort &ip,
+			       bool &cantDataResetWhileSuspended);
 };
 class WciPort : public OcpPort {
   size_t m_timeout;
@@ -226,14 +229,22 @@ class WciPort : public OcpPort {
   void emitRecordInputs(FILE *f);
   void emitRecordOutputs(FILE *f);
   void emitRecordInterface(FILE *f, const char *implName);
+  //  void emitRecordInterfaceConstants(FILE *f);
+  //  void emitVerilogPortParameters(FILE *f);
   //  void emitWorkerEntitySignals(FILE *f, std::string &last, unsigned maxPropName);
-  void emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inWorker,
-			const char *defaultIn, const char *defaultOut);
+  void emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inRecord,
+			bool inPackage, bool inWorker, const char *defaultIn,
+			const char *defaultOut);
   void emitRecordArray(FILE *f);
   void emitVHDLShellPortMap(FILE *f, std::string &last);
   void emitPortSignals(FILE *f, Attachments &atts, Language lang,
 		       const char *indent, bool &any, std::string &comment,
-		       std::string &last, const char *myComment, OcpAdapt *adapt);
+		       std::string &last, const char *myComment, OcpAdapt *adapt,
+		       std::string *signalIn, std::string &exprs);
+  // void emitInterfaceConstants(FILE *f, Language lang);
+  const char *finalizeExternal(Worker &aw, Worker &iw, InstancePort &ip,
+			       bool &cantDataResetWhileSuspended);
+  void emitSkelSignals(FILE *f);
 };
 
 class RccPort : public DataPort {
@@ -263,12 +274,12 @@ class WsiPort : public DataPort {
   const char *deriveOCP();
   void emitVhdlShell(FILE *f, Port *wci);
   const char *adjustConnection(Port &consumer, const char *masterName, Language lang,
-			       OcpAdapt *prodAdapt, OcpAdapt *consAdapt);
+			       OcpAdapt *prodAdapt, OcpAdapt *consAdapt, size_t &unused);
   void emitImplAliases(FILE *f, unsigned n, Language lang);
   void emitSkelSignals(FILE *f);
   void emitRecordInputs(FILE *f);
   void emitRecordOutputs(FILE *f);
-  unsigned extraDataInfo() const;
+  //  unsigned extraDataInfo() const;
 };
 class WmiPort : public DataPort {
   bool m_talkBack;
@@ -284,7 +295,7 @@ class WmiPort : public DataPort {
   const char *deriveOCP();
   void emitPortDescription(FILE *f, Language lang) const;
   const char *adjustConnection(Port &consumer, const char *masterName, Language lang,
-			       OcpAdapt *prodAdapt, OcpAdapt *consAdapt);
+			       OcpAdapt *prodAdapt, OcpAdapt *consAdapt, size_t &unused);
   void emitImplAliases(FILE *f, unsigned n, Language lang);
   void emitRecordInputs(FILE *f);
   void emitRecordOutputs(FILE *f);
@@ -302,6 +313,8 @@ class WmemiPort : public OcpPort {
   inline const char *typeName() const { return "WMemI"; }
   const char *deriveOCP();
   void emitPortDescription(FILE *f, Language lang) const;
+  const char *finalizeExternal(Worker &aw, Worker &iw, InstancePort &ip,
+			       bool &cantDataResetWhileSuspended);
 };
 class WtiPort : public OcpPort {
   size_t m_secondsWidth, m_fractionWidth;
@@ -320,8 +333,9 @@ class WtiPort : public OcpPort {
   void emitVHDLShellPortMap(FILE *f, std::string &last);
   void emitRecordInputs(FILE *f);
   void emitRecordOutputs(FILE *f);
-  //  void emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inWorker);
   void emitPortDescription(FILE *f, Language lang) const;
+  const char *finalizeExternal(Worker &aw, Worker &iw, InstancePort &ip,
+			       bool &cantDataResetWhileSuspended);
 };
 class CpPort : public Port {
   CpPort(const CpPort &other, Worker &w , std::string &name, size_t count, const char *&err);
@@ -349,6 +363,28 @@ class NocPort : public Port {
   void emitRecordInterface(FILE *f, const char *implName);
   void emitConnectionSignal(FILE *f, bool output, Language lang, std::string &signal);
 };
+class SdpPort : public Port {
+  SdpPort(const SdpPort &other, Worker &w , std::string &name, size_t count,
+	  const char *&err);
+ public:
+  SdpPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err);
+  Port &clone(Worker &w, std::string &name, size_t count, OCPI::Util::Assembly::Role *role,
+	      const char *&err) const;
+  inline const char *prefix() const { return "sdp"; }
+  inline const char *typeName() const { return "SDP"; }
+  void emitRecordTypes(FILE *f);
+  void emitRecordInterface(FILE *f, const char *implName);
+  void emitRecordInterfaceConstants(FILE *f);
+  void emitInterfaceConstants(FILE *f, Language lang);
+  void emitConnectionSignal(FILE *f, bool output, Language lang, std::string &signal);
+  void emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inRecord,
+			bool inPackage, bool inWorker, const char *defaultIn,
+			const char *defaultOut);
+  void emitVHDLShellPortMap(FILE *f, std::string &last);
+  void emitPortSignal(FILE *f, bool any, const char *indent, const std::string &fName,
+		      const std::string &aname, const std::string &index, bool output,
+		      const Port *signalPort, bool external);
+};
 class MetaDataPort : public Port {
   MetaDataPort(const MetaDataPort &other, Worker &w , std::string &name, size_t count,
 		  const char *&err);
@@ -372,14 +408,16 @@ class TimeServicePort : public Port {
   inline const char *prefix() const { return "time"; }
   inline const char *typeName() const { return "TimeService"; }
   void emitRecordTypes(FILE *f);
-  void emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inWorker,
+  void emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inRecord,
+			bool inPackage, bool inWorker,
 			const char *defaultIn, const char *defaultOut);
   void emitRecordInterface(FILE *f, const char *implName);
   void emitVHDLShellPortMap(FILE *f, std::string &last);
   void emitVHDLSignalWrapperPortMap(FILE *f, std::string &last);
   void emitPortSignals(FILE *f, Attachments &atts, Language lang,
 		       const char *indent, bool &any, std::string &comment,
-		       std::string &last, const char *myComment, OcpAdapt *adapt);
+		       std::string &last, const char *myComment, OcpAdapt *adapt,
+		       std::string *signalIn, std::string &exprs);
   void emitConnectionSignal(FILE *f, bool output, Language lang, std::string &signal);
 };
 class TimeBasePort : public Port {
@@ -400,7 +438,8 @@ class TimeBasePort : public Port {
 #if 0 
   void emitPortSignals(FILE *f, Attachments &atts, Language lang,
 		       const char *indent, bool &any, std::string &comment,
-		       std::string &last, const char *myComment, OcpAdapt *adapt);
+		       std::string &last, const char *myComment, OcpAdapt *adapt,
+		       std::string *signalIn, std::string &exprs);
 #endif
   void emitConnectionSignal(FILE *f, bool output, Language lang, std::string &signal);
 };
@@ -445,7 +484,8 @@ class DevSignalsPort : public Port {
 			  std::string &comment, std::string &last, Attachment *other);
   void emitPortSignals(FILE *f, Attachments &atts, Language lang,
 		       const char *indent, bool &any, std::string &comment,
-		       std::string &last, const char *myComment, OcpAdapt *adapt);
+		       std::string &last, const char *myComment, OcpAdapt *adapt,
+		       std::string *signalIn, std::string &exprs);
   void emitExtAssignment(FILE *f, bool int2ext, const std::string &extName,
 			 const std::string &intName, const Attachment &extAt,
 			 const Attachment &intAt, size_t count) const;
@@ -507,6 +547,7 @@ struct Parsed {
 	 const std::string &parent, // The file referencing this file
 	 const char *tag,
 	 const char *&err);
+  inline const char *cname() const { return m_name.c_str(); }
 };
 
 enum Model {
@@ -521,7 +562,7 @@ enum Model {
 typedef std::vector<Clock*> Clocks;
 typedef Clocks::const_iterator ClocksIter;
 typedef std::list<Worker *> Workers;
-typedef Workers::const_iterator WorkersIter;
+typedef Workers::iterator WorkersIter;
 class Assembly;
 class HdlDevice;
 struct Instance;
@@ -637,15 +678,18 @@ class Worker : public Parsed, public OU::IdentResolver {
     *writeParamFiles(FILE *mkFile, FILE *xmlFile),
     *emitToolParameters(),
     *emitMakefile(),
+    *emitHDLConstants(size_t config, bool other),
     *setParamConfig(OU::Assembly::Properties *instancePVs, size_t paramConfig),
     *finalizeProperties(),
     *finalizeHDL(),
     *deriveOCP(),
     *hdlValue(const std::string &name, const OU::Value &v, std::string &value,
 	      bool param = false, Language = NoLanguage),
-    *findParamProperty(const char *name, OU::Property *&prop, size_t &nParam),
+    *findParamProperty(const char *name, OU::Property *&prop, size_t &nParam,
+		       bool includeInitial = false),
     *addConfig(ParamConfig &info, size_t &nConfig),
     *doParam(ParamConfig &info, PropertiesIter pi, unsigned nParam, size_t &nConfig),
+    *addParamConfigSuffix(std::string &s),
     //    *getParamConfig(const char *id, const ParamConfig *&config),
     *emitImplRCC(),
     *rccMethodName(const char *method, const char *&mName),
@@ -659,7 +703,7 @@ class Worker : public Parsed, public OU::IdentResolver {
     *emitSkelOCL(),
     *emitAssyHDL();
   virtual const char
-    *resolveExpressions(OU::IdentResolver &ir),
+    *resolveExpressions(),
     *parseInstance(Worker &parent, Instance &inst, ezxml_t x), // FIXME: should be HdlInstance...
     *emitArtXML(const char *wksFile),
     *emitWorkersHDL(const char *file),
@@ -705,6 +749,7 @@ class Worker : public Parsed, public OU::IdentResolver {
 	    const char *parent, bool isFixed, bool &isLast, bool topSeq, unsigned predef, bool cnst = false),
     rccBaseType(std::string &type, OU::Member &m, unsigned level, size_t &offset, unsigned &pad,
 		const char *parent, bool isFixed, bool &isLast, unsigned predefine, bool cnst = false),
+    emitPropertyAttributeConstants(FILE *f, Language lang),
     emitDeviceSignals(FILE *f, Language lang, std::string &last);
 };
 #define SKEL "-skel"
@@ -718,11 +763,14 @@ class Worker : public Parsed, public OU::IdentResolver {
 
 #define IMPL_ATTRS \
   "name", "spec", "paramconfig", "reentrant", "scaling", "scalable", "controlOperations"
-#define IMPL_ELEMS "componentspec", "properties", "property", "specproperty", "propertysummary", "xi:include", "controlinterface",  "timeservice", "unoc", "timebase"
+#define IMPL_ELEMS "componentspec", "properties", "property", "specproperty", "propertysummary", "xi:include", "controlinterface",  "timeservice", "unoc", "timebase", "sdp"
 #define GENERIC_IMPL_CONTROL_ATTRS \
   "name", "SizeOfConfigSpace", "ControlOperations", "Sub32BitConfigProperties"
 #define ASSY_ELEMS "instance", "connection", "external"
 extern const char
+  *createTests(const char *file, const char *package, const char *outDir, bool verbose),
+  *createCases(const char **args, const char *package, const char *outDir, bool verbose),
+  *addLibrary(const char *lib),
   *extractExprValue(const OU::Property &p, const OU::Value &v, OU::ExprValue &val),
   *parseList(const char *list, const char * (*doit)(const char *tok, void *arg), void *arg),
   *parseControlOp(const char *op, void *arg),
@@ -730,8 +778,8 @@ extern const char
 	     bool param = false),
   *verilogValue(const OU::Value &v, std::string &value),
   *rccValue(OU::Value &v, std::string &value),
-  *platform, *device, *load, *os, *os_version, **libraries, **mappedLibraries, *assembly,
-  *attribute, *platformDir,
+  *g_platform, *g_device, *load, *g_os, *g_os_version, *g_arch, **libraries, **mappedLibraries,
+  *assembly, *attribute, *platformDir,
   *addLibMap(const char *),
   *findLibMap(const char *file), // returns mapped lib name from dir name of file or NULL
   *propertyTypes[],
@@ -742,12 +790,11 @@ extern const char
 
 extern void
   doPrev(FILE *f, std::string &last, std::string &comment, const char *myComment),
-  vhdlType(const OU::ValueType &dt, std::string &typeDecl, std::string &type,
+  vhdlType(const OU::Property &dt, std::string &typeDecl, std::string &type,
 	   bool convert = false),
+  emitConstant(FILE *f, const std::string &prefix, const char *name, size_t val, Language lang),
   emitVhdlLibraries(FILE *f),
-  addLibrary(const char *lib),
   emitLastSignal(FILE *f, std::string &last, Language lang, bool end);
 
-extern size_t ceilLog2(uint64_t n), floorLog2(uint64_t n), rawBitWidth(const OU::ValueType &dt);
-inline size_t bitsForMax(uint64_t n) { return ceilLog2(n + 1); }
+extern size_t rawBitWidth(const OU::ValueType &dt);
 #endif

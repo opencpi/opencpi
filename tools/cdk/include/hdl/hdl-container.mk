@@ -30,7 +30,7 @@ ifneq ($(MAKECMDGOALS),clean)
   endif
   $(and $(call DoShell,$(OcpiGen) -X $(Worker_xml),HdlContPfConfig),\
      $(error Processing container XML $(Worker_xml): $(HdlContPfConfig)))
-  HdlContPf:=$(word 1,$(HdlContPfConfig))
+  HdlContPf:=$(patsubst %_pf,%,$(word 1,$(HdlContPfConfig)))
   ifdef HdlPlatforms
    ifeq ($(filter $(HdlContPf),$(HdlPlatforms)),)
      $(info Nothing built since container platform is $(HdlContPf), which is not in HdlPlatforms: $(HdlPlatforms))
@@ -51,7 +51,7 @@ ifneq ($(MAKECMDGOALS),clean)
   PlatformDir:=$(HdlPlatformDir)
 endif
 OcpiLanguage:=vhdl
-override HdlLibraries+=platform
+override HdlLibraries+=sdp axi platform
 # ComponentLibraries and XmlIncludeDirs are already passed to us on the command line.
 # Note that the platform directory should be first XML dir since the config file name should be
 # scoped to the platform.
@@ -113,6 +113,8 @@ ifneq ($(MAKECMDGOALS),clean)
 
         $(call HdlContBitZ,$1): | $(call HdlContBitZName,$1)
 	    $(AT)ln -s $(notdir $(call HdlContBitZName,$1)) $$@
+	    $(AT)$(OCPI_CDK_DIR)/scripts/maybeExport.sh - $$@
+
         all: $(call HdlContBitZName,$1) $(call HdlContBitZ,$1)
 
         # Invoke tool build: <target-dir>,<assy-name>,<core-file-name>,<config>,<platform>

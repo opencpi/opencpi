@@ -12,7 +12,7 @@ namespace OE = OCPI::Util::EzXml;
 DevInstance::
 DevInstance(const Device &d, const Card *c, const Slot *s, bool control,
 	    const DevInstance *parent)
-  : device(d), card(c), slot(s), control(control), parent(parent) {
+  : device(d), card(c), slot(s), m_control(control), m_parent(parent) {
   m_connected.resize(d.m_deviceType.m_ports.size(), 0);
   if (slot) {
     m_name = slot->cname();
@@ -50,7 +50,7 @@ addDevInstance(const Device &dev, const Card *card, const Slot *slot,
 	       ezxml_t xml, const DevInstance *&devInstance) {
   const char *err;
   m_devInstances.push_back(DevInstance(dev, card, slot, control, parent));
-  assert(card && slot || !card && !slot);
+  assert((card && slot) || (!card && !slot));
   assert(!slot || !m_plugged[slot->m_ordinal] || card == m_plugged[slot->m_ordinal]);
   if (slot && !m_plugged[slot->m_ordinal])
     m_plugged[slot->m_ordinal] = card;
@@ -115,12 +115,13 @@ parseDevInstance(const char *device, ezxml_t x, const char *parentFile, Worker *
       break;
     default:
       for (SlotsIter si = m_platform.slots().begin(); si != m_platform.slots().end(); si++)
-	if ((*si).second->type() == card->type())
+	if ((*si).second->type() == card->type()) {
 	  if (slot)
 	    return OU::esprintf("Multiple slots are possible for card \"%s\"",
 				card->cname());
 	  else
 	    slot = (*si).second;
+	}
     }
   }
   const Device *dev;
@@ -133,7 +134,7 @@ parseDevInstance(const char *device, ezxml_t x, const char *parentFile, Worker *
 			device);
       
   const DevInstance *di;
-  assert(card && slot || !card && !slot);
+  assert((card && slot) || (!card && !slot));
   if (control && !dev->m_deviceType.m_canControl)
     return OU::esprintf("Device '%s' cannot have control since its type (%s) cannot",
 			dev->cname(), dev->deviceType().cname());
@@ -284,10 +285,10 @@ emitSubdeviceConnections(std::string &assy,  DevInstances *baseInstances) {
 		      "  <connection>\n"
 		      "    <port instance='%s' name='%s'/>\n"
 		      "    <port instance='%s' name='%s%s%s'",
-		      (*dii).cname(), (*sci).m_port->name(),
+		      (*dii).cname(), (*sci).m_port->cname(),
 		      inConfig ? "pfconfig" : sdi->cname(),
 		      inConfig ? sdi->cname() : "", inConfig ? "_" : "",
-		      (*sci).m_sup_port->name());
+		      (*sci).m_sup_port->cname());
 	if ((*sci).m_indexed) {
 	  size_t
 	    supOrdinal = (*sci).m_sup_port->m_ordinal,
@@ -298,7 +299,7 @@ emitSubdeviceConnections(std::string &assy,  DevInstances *baseInstances) {
 	  // we may need to index relative to what is NOT connected in the config,
 	  // and thus externalized.
 	  if (inConfig) {
-	    for (size_t i = 0; i < (*sci).m_sup_port->count; i++)
+	    for (size_t i = 0; i < (*sci).m_sup_port->m_count; i++)
 	      if (sdi->m_connected[supOrdinal] & (1 << i)) {
 		assert(i != supIndex);
 		if (i < supIndex)
@@ -328,16 +329,16 @@ create(ezxml_t xml, const char *knownPlatform, const char *xfile, Worker *parent
   // in the hdl/platforms directory since:
   // 1. The platform config might be remote from the platform.
   // 2. The platform config is parsed during container processing elsewhere.
-  if (myPlatform.empty())
+  if (myPlatform.empty()) {
     if (knownPlatform)
       myPlatform = knownPlatform;
-    else if (::platform)
-      myPlatform = ::platform;
+    else if (::g_platform)
+      myPlatform = ::g_platform;
     else {
 	err = "No platform specified in HdlConfig nor on command line";
 	return NULL;
     }
-      
+  }
 #if 0
     else {
       const char *slash = xfile ? strrchr(xfile, '/') : NULL;
@@ -378,18 +379,25 @@ HdlConfig::
 HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const char *&err)
   : Worker(xml, xfile, "", Worker::Configuration, parent, NULL, err),
     HdlHasDevInstances(pf, m_plugged),
-    m_platform(pf) {
+    m_platform(pf), m_sdpWidth(1) {
   if (err ||
       (err = OE::checkAttrs(xml, IMPL_ATTRS, HDL_TOP_ATTRS,
 			    HDL_CONFIG_ATTRS, (void*)0)) ||
-      (err = OE::checkElements(xml, HDL_CONFIG_ELEMS, (void*)0)))
+      (err = OE::checkElements(xml, HDL_CONFIG_ELEMS, (void*)0)) ||
+      (err = OE::getNumber(xml, "sdp_width", &m_sdpWidth, NULL, 0, false)))
     return;
+#if 0
+  if (m_sdpWidth & (32-1)) {
+    err = "SDP Width must be a multiple of 32";
+    return;
+  }
+#endif
   pf.setParent(this);
   // Determine whether this platform worker has a control plane master port
   bool control = false;
   for (PortsIter ii = pf.m_ports.begin(); ii != pf.m_ports.end(); ii++) {
     Port &i = **ii;
-    if (i.master && i.type == CPPort) {
+    if (i.m_master && i.m_type == CPPort) {
       control = true;
       break;
     }
@@ -425,7 +433,7 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
     // Add a time client instance as needed by device instances
     for (PortsIter pi = dt.ports().begin();
 	 pi != dt.ports().end(); pi++)
-      if ((*pi)->type == WTIPort)
+      if ((*pi)->m_type == WTIPort)
 	OU::formatAdd(assy, "  <instance worker='time_client' name='%s_time_client'/>\n",
 		      (*dii).cname());
   }
@@ -451,7 +459,7 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
     const ::Device &d = (*dii).device;
     for (PortsIter pi = d.deviceType().ports().begin();
 	 pi != d.deviceType().ports().end(); pi++)
-      if ((*pi)->type == WTIPort) {
+      if ((*pi)->m_type == WTIPort) {
 	// connection from platform worker's time service to the client
 	OU::formatAdd(assy,
 		      "  <connection>\n"
@@ -465,7 +473,7 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
 		      "    <port instance='time_client%u' name='wti'/>\n"
 		      "    <port instance='%s' name='%s'/>\n"
 		      "  </connection>\n",
-		      tIndex++, (*dii).cname(), (*pi)->name());
+		      tIndex++, (*dii).cname(), (*pi)->cname());
       }
   }
   // 4. To and from subdevices
@@ -485,10 +493,10 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
     const ::Device &d = (*dii).device;
     for (PortsIter pi = d.deviceType().ports().begin(); pi != d.deviceType().ports().end(); pi++) {
       Port &p = **pi;
-      if (p.isData() || p.type == NOCPort ||
-	  (!p.master && (p.type == PropPort || p.type == DevSigPort))) {
+      if (p.isData() || p.m_type == NOCPort || p.m_type == SDPPort ||
+	  (!p.m_master && (p.m_type == PropPort || p.m_type == DevSigPort))) {
 	size_t unconnected = 0, first = 0;
-	for (size_t i = 0; i < p.count; i++)
+	for (size_t i = 0; i < p.m_count; i++)
 	  if (!((*dii).m_connected[p.m_ordinal] & (1 << i))) {
 	    if (!unconnected++)
 	      first = i;
@@ -499,9 +507,9 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
 	  OU::formatAdd(assy,
 			"  <external name='%s%s%s' instance='%s' port='%s' "
 			"index='%zu' count='%zu'/>\n",
-			p.type != NOCPort ? (*dii).cname() : "",
-			p.type != NOCPort ? "_" : "", p.name(),
-			(*dii).cname(), p.name(),
+			p.m_type != NOCPort && p.m_type != SDPPort ? (*dii).cname() : "",
+			p.m_type != NOCPort && p.m_type != SDPPort ? "_" : "", p.cname(),
+			(*dii).cname(), p.cname(),
 			first, unconnected);
       }
     }
@@ -514,7 +522,7 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
 	     "%s"
 	     "=======End generated platform configuration assembly=======\n",
 	     assy.c_str());
-  // Now we hack the (inherited) worker to have the xml for the assembly we just generated.
+  // Now we update the (inherited) worker to have the xml for the assembly we just generated.
   char *copy = strdup(assy.c_str());
   ezxml_t x;
   if ((err = OE::ezxml_parse_str(copy, strlen(copy), x)))
@@ -527,14 +535,16 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
     return;
   // Externalize all the device signals.
   unsigned n = 0;
-  for (Instance *i = m_assembly->m_instances; n < m_assembly->m_nInstances; i++, n++) {
-    for (SignalsIter si = i->worker->m_signals.begin(); si != i->worker->m_signals.end(); si++) {
+  for (Instance *i = &m_assembly->m_instances[0]; n < m_assembly->m_instances.size(); i++, n++) {
+    for (SignalsIter si = i->m_worker->m_signals.begin(); si != i->m_worker->m_signals.end();
+	 si++) {
       Signal *s = new Signal(**si);
-      if (i->worker->m_type != Worker::Platform)
-	OU::format(s->m_name, "%s_%s", i->name, (**si).m_name.c_str());
+      if (i->m_worker->m_type != Worker::Platform)
+	OU::format(s->m_name, "%s_%s", i->cname(), (**si).m_name.c_str());
       m_signals.push_back(s);
       m_sigmap[s->cname()] = s;
-      ocpiDebug("Externalizing device signal '%s' for device '%s'", s->cname(), i->worker->m_implName);
+      ocpiDebug("Externalizing device signal '%s' for device '%s'", s->cname(),
+		i->m_worker->m_implName);
     }
   }
 }
@@ -558,7 +568,7 @@ addControlConnection(std::string &assy) {
   for (PortsIter pi = m_platform.m_ports.begin(); pi != m_platform.m_ports.end(); pi++)
     if ((*pi)->type == CPPort) {
       cpInstanceName = m_platform.cname();
-      cpPortName = (*pi)->name();
+      cpPortName = (*pi)->cname();
       if (m_platform.m_control)
 	nCpPorts++;
       break;
@@ -567,14 +577,14 @@ addControlConnection(std::string &assy) {
   for (DevInstancesIter dii = m_devInstances.begin(); dii != m_devInstances.end(); dii++) {
     const ::Device &d = (*dii).device;
     for (PortsIter pi = d.m_deviceType.ports().begin(); pi != d.m_deviceType.ports().end(); pi++)
-      if ((*pi)->type == CPPort) {
+      if ((*pi)->m_type == CPPort) {
 	if (cpInstanceName)
 	  multiple = true;
 	else {
 	  cpInstanceName = d.m_name.c_str();
-	  cpPortName = (*pi)->name();
+	  cpPortName = (*pi)->cname();
 	}
-	if ((*dii).control)
+	if ((*dii).m_control)
 	  nCpPorts++;
       }  
   }
@@ -584,7 +594,7 @@ addControlConnection(std::string &assy) {
     else
       return "No control-capable port designated among the multiple possibilities";
   else if (!cpInstanceName)
-    return "No feasible control port was found";
+    return NULL; // "No feasible control port was found";
   // Connect the control master port of the platform or device/interconnect worker to
   // the control plane worker
   OU::formatAdd(assy,
@@ -601,7 +611,7 @@ emitConfigImplHDL(FILE *f) {
 	  "%s Interface definition signal names are defined with pattern rule: \"%s\"\n\n",
 	  comment, m_implName, comment, m_pattern);
   fprintf(f,
-	  "Library IEEE; use IEEE.std_logic_1164.all;\n"
+	  "Library IEEE; use IEEE.std_logic_1164.all, IEEE.numeric_std.all;\n"
 	  "Library ocpi; use ocpi.all, ocpi.types.all;\n"
           "use work.%s_defs.all, work.%s_constants.all;\n",
 	  m_implName, m_implName);

@@ -8,8 +8,8 @@
     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
    class DatagramDevice : public DataTransfer::DeviceBase<DatagramXferFactory,DatagramDevice> {
-     DatagramDevice(const char* name)
-       : DataTransfer::DeviceBase<DatagramXferFactory,DatagramDevice>(name, *this) {}
+     DatagramDevice(const char* a_name)
+       : DataTransfer::DeviceBase<DatagramXferFactory,DatagramDevice>(a_name, *this) {}
     };
     class DatagramXferRequest;
     class DatagramXferServices :
@@ -19,9 +19,9 @@
 			    DataTransfer::DatagramXferServices> {
       friend class DatagramXferFactory;
     protected:
-      DatagramXferServices(DatagramSmemServices* source, DatagramSmemServices* target)
+      DatagramXferServices(DatagramSmemServices *a_source, DatagramSmemServices *a_target)
 	: ConnectionBase<DatagramXferFactory,DatagramXferServices,DatagramXferRequest,
-			 DataTransfer::DatagramXferServices>(*this, source, target){}
+			 DataTransfer::DatagramXferServices>(*this, a_source, a_target){}
       // Here because the driver template classes can't inherit nicely
       XferRequest* createXferRequest();
       uint16_t maxPayloadSize() { return DATAGRAM_PAYLOAD_SIZE; }
@@ -31,8 +31,8 @@
     {
       friend class DatagramXferServices;
     protected:
-      DatagramXferRequest(DatagramXferServices &parent)
-	: TransferBase<DatagramXferServices,DatagramXferRequest,DataTransfer::DatagramXferRequest>(parent, *this) {}
+      DatagramXferRequest(DatagramXferServices &a_parent)
+	: TransferBase<DatagramXferServices,DatagramXferRequest,DataTransfer::DatagramXferRequest>(a_parent, *this) {}
     };
     XferRequest* DatagramXferServices::
     createXferRequest() {

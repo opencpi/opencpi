@@ -1,4 +1,4 @@
-<ComponentSpec Name="framegate">
+<ComponentSpec>
   <Properties>
     <Property Name="frameGateStatus" Readable="true" Writable="false" Type="ULong"/>
     <Property Name="frameGateCtrl" Readable="true" Writable="true" Type="ULong"/>

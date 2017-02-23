@@ -41,14 +41,17 @@ override SHELL=/bin/bash
 export AT
 export OCPI_DEBUG_MAKE
 AT=@
-ifneq ($(wildcard $(OCPI_CDK_DIR)/include/autoconfig_import*),)
-# Import autotool/RPM-based settings
-ifneq ($(OCPI_CROSS_HOST),)
-include $(OCPI_CDK_DIR)/include/autoconfig_import-$(OCPI_CROSS_HOST).mk
-else
-include $(OCPI_CDK_DIR)/include/autoconfig_import.mk
+
+# RPM-based options:
+-include $(OCPI_CDK_DIR)/include/autoconfig_import-$(OCPI_TARGET_PLATFORM).mk
+ifneq (1,$(OCPI_AUTOCONFIG_IMPORTED))
+-include $(OCPI_CDK_DIR)/include/autoconfig_import.mk
 endif
+
+ifndef OCPI_PREREQUISITES_DIR
+  export OCPI_PREREQUISITES_DIR=/opt/opencpi/prerequisites
 endif
+
 OCPI_DEBUG_MAKE=
 ifneq (,)
 define OcpiDoInclude
@@ -181,7 +184,7 @@ FindRelativeTop=$(infoxx FRT:$1:$2:$3:$4)$(strip\
 FindRelative=$(strip $(infox FR:$1:$2)\
                $(foreach i,$(call FindRelativeTop,$(call OcpiAbsPath,$1),$(call OcpiAbsPath,$2),$(strip $1),$(strip $2)),$i))
 
-# Function: retrieve the contents of a symlink - is this ugly or what!
+# Function: retrieve the contents of a symlink
 # It would be easier using csh
 SymLinkContents= `X=(\`ls -l $(1)\`);echo $${X[$${\#X[*]}-1]}`
 
@@ -271,6 +274,7 @@ ReplaceIfDifferent=\
     else \
       cp -L -R -p $(1)/* $(2); \
     fi; \
+    touch $2; \
     break;\
   done
 ReplaceContentsIfDifferent=\
@@ -315,8 +319,8 @@ DYN_PREFIX=LD_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/$(OCPI_TOOL_DIR)
 endif
 #$(info OCDK $(OCPI_CDK_DIR))
 #DYN_PREFIX=
-OcpiGenTool=$(ToolsDir)/ocpigen $(patsubst %,-I"%",$(call Unique,$(XmlIncludeDirsInternal)))
-OcpiGenArg=$(DYN_PREFIX) $(OcpiGenTool) $1 -M $(GeneratedDir)/$(@F).deps
+OcpiGenTool=$(OCPI_VALGRIND) $(ToolsDir)/ocpigen $(patsubst %,-I"%",$(call Unique,$(XmlIncludeDirsInternal)))
+OcpiGenArg=$(DYN_PREFIX) $(OcpiGenTool) $1 -M $(dir $@)$(@F).deps
 OcpiGen=$(call OcpiGenArg,)
 # Return stderr and the exit status as variables
 # Return non-empty on failure, empty on success, and set var
@@ -433,7 +437,7 @@ OcpiComponentLibraries=$(strip\
          $(call OcpiSearchComponentPath,$c))))
 
 # Return the list of XML search directories for component libraries
-# This currently has a sort of HACK in that it searches the hdl subdir
+# it searches the hdl subdir
 # since hdl workers need to be referenced by rcc workers.
 OcpiXmlComponentLibraries=$(infox HXC)\
   $(eval OcpiTempDirs:= $(strip \
@@ -460,6 +464,7 @@ OcpiPrependEnvPath=\
 # This allows any path-related settings to be relative to the project dir
 define OcpiSetProject
   # This might already be set
+  $$(call OcpiDbg,Setting project to $1)
   OcpiTempProjDir:=$$(call OcpiAbsDir,$1)
   $$(infox OTPD:$1:$$(OcpiTempProjDir))
   ifdef OCPI_PROJECT_DIR
@@ -482,7 +487,7 @@ define OcpiSetProject
   # I.e. where the project path looks for other projects, and their exports,
   # the current project is searched internally, not in exports
   # when looking for (non-slash) primitives, look in this project, not exports
-  $$(call OcpiPrependEnvPath,OCPI_HDL_PRIMITIVE_PATH,$$(OcpiTempProjDir)/hdl/primitives)
+  $$(call OcpiPrependEnvPath,OCPI_HDL_PRIMITIVE_PATH,$$(OcpiTempProjDir)/hdl/primitives/lib)
   # when looking for platforms, look in this project
   $$(call OcpiPrependEnvPath,OCPI_HDL_PLATFORM_PATH,$$(OcpiTempProjDir)/hdl/platforms)
   # when looking for XML specs and protocols, look in this project
@@ -496,18 +501,21 @@ define OcpiSetProject
             $$(and $$(filter library,$$(call OcpiGetDirType,$$d)),$$d))),\
       $$(OcpiTempProjDir)/components),\
     $$(call OcpiPrependEnvPath,OCPI_COMPONENT_LIBRARY_PATH,$$(patsubst %/,%,$$(dir $$l))))
-  # when looking for HDL component libraries, look in this project
-  # This variable is becoming obsolete - only used in legacy ocpiassets
-  #  $$(call OcpiPrependEnvPath,OCPI_HDL_COMPONENT_LIBRARY_PATH,$$(OcpiTempProjDir)/hdl)
-  # when executing applications, look in this project
-  $$(call OcpiPrependEnvPath,OCPI_LIBRARY_PATH,\
-     $$(OcpiTempProjDir)/components/lib/rcc \
-     $$(OcpiTempProjDir)/components/*.test/assemblies/*/container*/target-* \
-     $$(OcpiTempProjDir)/components/*/lib/rcc \
-     $$(OcpiTempProjDir)/components/*/*.test/assemblies/*/container*/target-* \
-     $$(OcpiTempProjDir)/hdl/assemblies/*/container*/target-*)
 endef
-
+ifdef NEVER
+  # when executing applications, look in this project
+  ifndef OCPI_PROJECT_ADDED_TARGET_DIRS
+    $$(warning Adding all target directories in the project to OCPI_LIBRARY_PATH)
+    $$(call OcpiPrependEnvPath,OCPI_LIBRARY_PATH,\
+       $$(OcpiTempProjDir)/components/lib/rcc \
+       $$(OcpiTempProjDir)/components/*.test/assemblies/*/container*/target-* \
+       $$(OcpiTempProjDir)/components/*/lib/rcc \
+       $$(OcpiTempProjDir)/components/*/*.test/assemblies/*/container*/target-* \
+       $$(OcpiTempProjDir)/hdl/assemblies/*/container*/target-*)
+    $$(warning Adding all target directories in the project to OCPI_LIBRARY_PATH)
+    export OCPI_PROJECT_ADDED_TARGET_DIRS:=1
+  endif
+endif
 # Look into a directory in $1 and determine which type of directory it is by looking at the Makefile.
 # Return null if there is no type to be found
 OcpiGetDirType=$(strip\
@@ -549,4 +557,74 @@ OcpiFindSubdirs=$(strip \
   $(foreach a,$(wildcard */Makefile),\
     $(shell grep -q '^[ 	]*include[ 	]*.*/include/$1.mk' $a && echo $(patsubst %/,%,$(dir $a)))))
 
+OcpiHavePrereq=$(realpath $(OCPI_PREREQUISITES_INSTALL_DIR)/$1)
+OcpiPrereqDir=$(call OcpiHavePrereq,$1)
+OcpiCheckPrereq=$(strip\
+   $(if $(realpath $(OCPI_PREREQUISITES_DIR)/$1),,\
+      $(error The $1 prerequisite package is not installed)) \
+   $(and $2,$(foreach t,$2,$(if $(realpath $(OCPI_PREREQUISITES_DIR)/$1/$t,, \
+               $(error The $1 prerequisite package is not build for target $t)))\
+            $(and $3,$(if $(realpath $(OCPI_PREREQUISITES_DIR)/$1/$t/$3),,\
+                         $(error For the $1 prerequisite package, $t/$3 is missing))))))
+
+define OcpiEnsureToolPlatform
+  ifndef OCPI_TOOL_HOST
+    GETPLATFORM=$(OCPI_CDK_DIR)/platforms/getPlatform.sh
+    vars:=$$(shell $$(GETPLATFORM) || echo 1 2 3 4 5 6)
+    ifneq ($$(words $$(vars)),5)
+      $$(error $$(OcpiThisFile): Could not determine the platform after running $$(GETPLATFORM)).
+    endif
+    export OCPI_TOOL_OS:=$$(word 1,$$(vars))
+    export OCPI_TOOL_OS_VERSION:=$$(word 2,$$(vars))
+    export OCPI_TOOL_ARCH:=$$(word 3,$$(vars))
+    export OCPI_TOOL_HOST:=$$(word 4,$$(vars))
+    export OCPI_TOOL_PLATFORM:=$$(word 5,$$(vars))
+  endif
+endef
+# First arg is a list of exported variables/patterns that must be present.
+# Second arg is a list of exported variables/patterns that may be present.
+# This arg is the command to execute
+OcpiShellWithEnv=$(shell $(foreach e,$1,\
+                           $(if $(filter $e,$(.VARIABLES)),\
+                             $(foreach v,$(filter $e,$(.VARIABLES)),$v=$($v)),\
+                             $(error for OcpiShellWithEnv, variable $v not set))) \
+                          $(foreach e,$2,\
+                            $(foreach v,$(filter $e,$(.VARIABLES)),$v=$($v))) \
+                         $3)
+
+$(call OcpiDbg,End of util.mk)
+
+# Set up the standard set of places to look for xml files.
+define OcpiSetXmlIncludes
+# Here we add access to:
+# 0. The current directory
+# 1. The generated directory
+# 2. What is locally set in the worker's Makefile (perhaps to override specs/protocols)
+# 3. What was passed from the library Makefile above (perhaps to override specs/protocols)
+# 4. The library's export directory to find other (slave or emulated) workers
+# 5. The library's specs directory
+# 6. Any other component library's XML dirs
+# 6. The standard component library for specs
+# 7. The standard component library's exports for proxy slaves
+$(eval override XmlIncludeDirsInternal:=\
+  $(call Unique,\
+    . $(GeneratedDir) \
+    $(IncludeDirs) $(XmlIncludeDirs) \
+    $(XmlIncludeDirsInternal) \
+    ../lib/$(Model)\
+    ../specs \
+    $(OcpiXmlComponentLibraries) \
+    $(foreach d,$(subst :, ,$(OCPI_XML_INCLUDE_PATH)),$(wildcard $d)) \
+    $(foreach d,$(OcpiGetProjectPath),$(wildcard $d/specs)) \
+    $(OCPI_CDK_DIR)/lib/components/hdl\
+    $(OCPI_CDK_DIR)/lib/components/$(Model)\
+    $(OCPI_CDK_DIR)/lib/components \
+    $(OCPI_CDK_DIR)/specs \
+   ))
+endef
+
+# Used wherever test goals are processed.  runtests is for compatibility
+# These are goals that *only* apply to testing.
+# .test directories also support more generic targets, in particular "clean" and "cleanrun"
+OcpiTestGoals=test cleantest runtest verifytest cleansim runtests runonlytest cleanrun
 endif # ifndef __UTIL_MK__

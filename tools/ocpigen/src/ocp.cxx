@@ -28,6 +28,7 @@ OCP_SIGNALS
 #undef OCP_SIGNAL_SS
 #undef OCP_SIGNAL_SV
 
+#if 0
 static unsigned myfls(uint64_t n) {
   for (int i = sizeof(n)*8; i > 0; i--)
     if (n & ((uint64_t)1 << (i - 1)))
@@ -42,13 +43,14 @@ size_t floorLog2(uint64_t n) {
   //  ocpiInfo("Floor log2 of %u is %u", n, myfls(n)-1);
   return OCPI_UTRUNCATE(size_t, myfls(n) - 1);
 }
+#endif
 
 OcpPort::
 OcpPort(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *defName,
 	const char *&err) 
   : Port(w, x, sp, ordinal, type, defName, err),
     m_values(NULL), m_nAlloc(0), m_impreciseBurst(false), m_preciseBurst(false), m_dataWidth(8),
-    m_dataWidthFound(false), m_byteWidth(0), m_continuous(false) {
+    m_dataWidthFound(false), m_byteWidth(0), m_bwFound(false), m_continuous(false) {
   memset(&ocp, 0, sizeof(ocp));
   if (err)
     return;
@@ -66,7 +68,7 @@ OcpPort(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *d
     return;
   if (myClock && (clockName = ezxml_cattr(x, "clock")))
     err = OU::esprintf("port \"%s\" refers to clock \"%s\", and also has MyClock=true, "
-		       "which is invalid", name(), clockName);
+		       "which is invalid", cname(), clockName);
   // We can't create clocks at this point based on myclock, since
   // it might depend on what happens with other ports.
 }
@@ -98,7 +100,8 @@ emitPortDescription(FILE *f, Language lang) const {
 }
 
 void OcpPort::
-emitRecordSignal(FILE *f, std::string &last, const char */*prefix*/, bool inWorker,
+emitRecordSignal(FILE *f, std::string &last, const char */*prefix*/, bool /*useRecord*/,
+		 bool /*inPackage*/, bool inWorker,
 		 const char *defaultIn, const char *defaultOut) {
   if (last.size())
     fprintf(f, last.c_str(), ";");
@@ -106,7 +109,7 @@ emitRecordSignal(FILE *f, std::string &last, const char */*prefix*/, bool inWork
   OU::format(temp,
 	     "    -- Signals for %s %s port named \"%s\".  See record types above.\n"
 	     "    %-*s : in  %s%s_t%s%s",
-	     typeName(), masterIn() ? "input" : "output", name(),
+	     typeName(), masterIn() ? "input" : "output", cname(),
 	     (int)m_worker->m_maxPortTypeName, typeNameIn.c_str(), inWorker ? "worker_" : "",
 	     typeNameIn.c_str(), defaultIn ? " := " : "", defaultIn ? defaultIn : "");
   if (inWorker ? haveWorkerOutputs() : haveOutputs())
@@ -120,39 +123,51 @@ emitRecordSignal(FILE *f, std::string &last, const char */*prefix*/, bool inWork
     OU::format(last, "%s%%s", temp.c_str());
 }
 
-// Determine the expression for the width of an OCP vector signal in the data path
-// The output string should be suitable for a "natural" expression, that may be zero.
-// There are several contexts for this, including the initial declaration of the 
-// constants.
-// Note the "m_dataWidthExpr" is written assuming typical C expression syntax, which may not
-// be acceptable to the VHDL parser.  FIXME: translate the C expression into a
-// VHDL expression with a function call for the ?: operator, etc.
 void OcpPort::
-vectorWidth(const OcpSignalDesc *osd, std::string &out, Language lang, bool /*convert*/,
-	    bool value) {
-  if (m_dataWidthExpr.length()) {
-    if (osd->number == OCP_MData)
-      if (value && lang == VHDL)
-	OU::format(out, "wsi.MData_width(to_integer(%s), %zu)",
-		   m_dataWidthExpr.c_str(), m_byteWidth);
-      else
-	OU::format(out, "ocpi_port_%s_MData_width", name());
-    else if (osd->number == OCP_MByteEn)
-      if (value && lang == VHDL)
-	OU::format(out, "wsi.MByteEn_width(to_integer(%s), %zu)",
-		   m_dataWidthExpr.c_str(), m_byteWidth);
-      else
-	OU::format(out, "ocpi_port_%s_MByteEn_width", name());
-    else if (osd->number == OCP_MDataInfo)
-      if (value && lang == VHDL)
-	OU::format(out, "wsi.MDataInfo_width(to_integer(%s), %zu)",
-		   m_dataWidthExpr.c_str(), m_byteWidth);
-      else
-	OU::format(out, "ocpi_port_%s_MDataInfo_width", name());
-    else
-      OU::format(out, "%zu", ocp.signals[osd->number].width);
-  } else
+emitRecordInterfaceConstants(FILE *f) {
+  // Before emitting the record, define the constants for the data path width.
+  fprintf(f,
+	  "\n"
+	  "  -- Constant declarations for parameterized signal widths for port \"%s\"\n", 
+	  cname());
+  if (ocp.MAddr.value)
+    fprintf(f, "  constant ocpi_port_%s_MAddr_width : natural;\n", cname());
+  if (ocp.MData.value)
+    fprintf(f, "  constant ocpi_port_%s_MData_width : natural;\n", cname());
+  if (ocp.MByteEn.value)
+    fprintf(f, "  constant ocpi_port_%s_MByteEn_width : natural;\n", cname());
+  if (ocp.MDataInfo.value)
+    fprintf(f, "  constant ocpi_port_%s_MDataInfo_width : natural;\n", cname());
+}
+
+// Determine the expression for the width of an OCP vector signal in the data path
+void OcpPort::
+vectorWidth(const OcpSignalDesc *osd, std::string &out, Language /*lang*/, bool /*convert*/,
+	    bool /*value*/) {
+  switch (osd->number) {
+  case OCP_MAddr:
+    OU::format(out, "ocpi_port_%s_MAddr_width", cname()); break;
+  case OCP_MData:
+    OU::format(out, "ocpi_port_%s_MData_width", cname()); break;
+  case OCP_MByteEn:
+    OU::format(out, "ocpi_port_%s_MByteEn_width", cname()); break;
+  case OCP_MDataInfo:
+    OU::format(out, "ocpi_port_%s_MDataInfo_width", cname()); break;
+  default:
     OU::format(out, "%zu", ocp.signals[osd->number].width);
+  }
+}
+
+void OcpPort::
+emitInterfaceConstants(FILE *f, Language lang) {
+  if (ocp.MAddr.value)
+    emitConstant(f, "ocpi_port_%s_MAddr_width", lang, ocp.MAddr.width);
+  if (ocp.MData.value)
+    emitConstant(f, "ocpi_port_%s_MData_width", lang, ocp.MData.width);
+  if (ocp.MByteEn.value)
+    emitConstant(f, "ocpi_port_%s_MByteEn_width", lang, ocp.MByteEn.width);
+  if (ocp.MDataInfo.value)
+    emitConstant(f, "ocpi_port_%s_MDataInfo_width", lang, ocp.MDataInfo.width);
 }
 
 void OcpPort::
@@ -161,11 +176,11 @@ emitSignals(FILE *f, Language lang, std::string &last, bool /*inPackage*/, bool 
   const char *comment = hdlComment(lang);
   bool mIn = masterIn();
   OcpSignalDesc *osd;
-  for (unsigned n = 0; n < count; n++) {
+  for (unsigned n = 0; n < m_count; n++) {
     if (!myClock)
       fprintf(f,
 	      "  %s No Clk signal here. The \"%s\" interface uses \"%s\" as clock\n",
-	      comment, name(), clock->signal());
+	      comment, cname(), clock->signal());
     osd = ocpSignals;
     std::string ws;
     for (OcpSignal *os = ocp.signals; osd->name; os++, osd++)
@@ -198,7 +213,7 @@ void OcpPort::
 emitDirection(FILE *f,  const char *implName, bool mIn, std::string &dir) {
   fprintf(f,
 	  "\n  -- Record for the %s input (OCP %s) signals for port \"%s\" of worker \"%s\"\n",
-	  typeName(), mIn ? "master" : "slave", name(), implName);
+	  typeName(), mIn ? "master" : "slave", cname(), implName);
   fprintf(f, "  type %s_t is record\n", dir.c_str());
   OcpSignalDesc *osd = ocpSignals;
   for (OcpSignal *os = ocp.signals; osd->name; os++, osd++)
@@ -223,13 +238,13 @@ emitRecordInterface(FILE *f, const char *implName) {
   fprintf(f, "\n"
 	  "  -- These 2 records correspond to the input and output sides of the OCP bundle\n"
 	  "  -- for the \"%s\" worker's \"%s\" profile interface named \"%s\"\n",
-	  implName, typeName(), name());
+	  implName, typeName(), cname());
   std::string in, out;
   OU::format(in, typeNameIn.c_str(), "");
   OU::format(out, typeNameOut.c_str(), "");
   emitDirection(f, implName, mIn, in);
   emitDirection(f, implName, !mIn, out);
-  if (count > 1)
+  if (m_count > 1)
     emitRecordArray(f);
 }
 
@@ -283,25 +298,25 @@ doPatterns(unsigned nWip, size_t &maxPortTypeName) {
   if (clock && clock->port == this && clock->m_signal.empty()) {
     std::string sin;
     // ordinal == -2 means suppress ordinal
-    if ((err = doPattern(count > 1 ? 0 : -2, nWip, true, !masterIn(), sin)))
+    if ((err = doPattern(m_count > 1 ? 0 : -2, nWip, true, !masterIn(), sin)))
       return err;
-    asprintf(&ocp.Clk.signal, "%s%s", sin.c_str(), "Clk");
+    ocpiCheck(asprintf(&ocp.Clk.signal, "%s%s", sin.c_str(), "Clk") > 0);
     clock->m_signal = ocp.Clk.signal;
   }
   OcpSignalDesc *osd = ocpSignals;
   for (OcpSignal *os = ocp.signals; osd->name; os++, osd++)
     if (os->master == masterIn() && os->value)
-      asprintf(&os->signal, "%s%s", fullNameIn.c_str(), osd->name);
+      ocpiCheck(asprintf(&os->signal, "%s%s", fullNameIn.c_str(), osd->name) > 0);
   osd = ocpSignals;
   for (OcpSignal *os = ocp.signals; osd->name; os++, osd++)
     if (os->master != masterIn() && os->value)
-      asprintf(&os->signal, "%s%s", fullNameOut.c_str(), osd->name);
+      ocpiCheck(asprintf(&os->signal, "%s%s", fullNameOut.c_str(), osd->name) > 0);
   return NULL;
 }
 
 void OcpPort::
 emitVerilogSignals(FILE *f) {
-  for (unsigned n = 0; n < count; n++) {
+  for (unsigned n = 0; n < m_count; n++) {
     OcpSignalDesc *osd = ocpSignals;
     std::string num;
     OU::format(num, "%u", n);
@@ -352,7 +367,7 @@ emitVHDLSignalWrapperPortMap(FILE *f, std::string &last) {
 
 void OcpPort::
 emitVHDLRecordWrapperSignals(FILE *f) {
-  for (unsigned n = 0; n < count; n++) {
+  for (unsigned n = 0; n < m_count; n++) {
     std::string num;
     OU::format(num, "%u", n);
     std::string in, out;
@@ -377,7 +392,7 @@ emitVHDLRecordWrapperSignals(FILE *f) {
 }
 void OcpPort::
 emitVHDLRecordWrapperAssignments(FILE *f) {
-  for (unsigned n = 0; n < count; n++) {
+  for (unsigned n = 0; n < m_count; n++) {
     std::string num;
     OU::format(num, "%u", n);
     std::string in, out;
@@ -390,7 +405,7 @@ emitVHDLRecordWrapperAssignments(FILE *f) {
 	OU::format(name, os->signal, num.c_str());
 	if (os->value) {
 	  std::string rec;
-	  if (count > 1)
+	  if (m_count > 1)
 	    OU::format(rec, "%s(%u).%s", os->master == masterIn() ? in.c_str() : out.c_str(),
 		       n, osd->name);
 	  else
@@ -405,7 +420,7 @@ emitVHDLRecordWrapperAssignments(FILE *f) {
 }
 void OcpPort::
 emitVHDLRecordWrapperPortMap(FILE *f, std::string &last) {
-  for (unsigned n = 0; n < count; n++) {
+  for (unsigned n = 0; n < m_count; n++) {
     std::string num;
     OU::format(num, "%u", n);
     std::string in, out;
@@ -430,7 +445,7 @@ emitConnectionSignal(FILE *f, bool output, Language lang, std::string &signal) {
     // Generate signals when both sides has the signal configured.
     OcpSignalDesc *osd;
     OcpSignal *os;
-    bool wantMaster = master && output || !master && !output;
+    bool wantMaster = (m_master && output) || (!m_master && !output);
     for (osd = ocpSignals, os = ocp.signals; osd->name; os++, osd++)
       if (os->master == wantMaster && os->value) {
 	fprintf(f, "wire ");
@@ -446,26 +461,24 @@ emitConnectionSignal(FILE *f, bool output, Language lang, std::string &signal) {
     std::string stype;
     Worker &w = *m_worker;
     // WCI ports on assemblies are always generic generic
-    if (type == WCIPort && (master || w.m_assembly))
+    if (m_type == WCIPort && (m_master || w.m_assembly))
       OU::format(stype, "wci.wci_%s_%st", output ? "m2s" : "s2m",
-		 count > 1 ? "array_" : "");
+		 m_count > 1 ? "array_" : "");
     else {
       std::string lib(w.m_library);
-      if (w.m_paramConfig && w.m_paramConfig->nConfig)
-	OU::formatAdd(lib, "_c%zu", w.m_paramConfig->nConfig);
-      
+      w.addParamConfigSuffix(lib);
       OU::format(stype, "%s.%s_defs.%s%s_t", lib.c_str(), w.m_implName, tname.c_str(),
-		 count > 1 ? "_array" : "");
+		 m_count > 1 ? "_array" : "");
     }
-    if (count > 1)
-      OU::formatAdd(stype, "(0 to %zu)", count - 1);
+    if (m_count > 1)
+      OU::formatAdd(stype, "(0 to %zu)", m_count - 1);
     // Make master the canonical type?
     fprintf(f,
 	    "  signal %s : %s;\n", signal.c_str(), stype.c_str());
   }	       
 }
 
-// Emit for one direction
+// Emit for one direction, into a string
 void OcpPort::
 emitPortSignalsDir(FILE *f, bool output, Language lang, const char *indent,
 		   bool &any, std::string &comment, std::string &last,
@@ -481,15 +494,14 @@ emitPortSignalsDir(FILE *f, bool output, Language lang, const char *indent,
     if (any)
       fputs(indent, f);
     any = true;
-    comment = "";
     fprintf(f, "%s => open", name.c_str());
     return;
   }
   for (osd = ocpSignals, os = ocp.signals, oa = adapt; osd->name; os++, osd++, oa++) {
     ocpiDebug("Perhaps connecting OCP signal %s value %p master %u os->master %u atts %zu",
-	      osd->name, os->value, master, os->master, atts.size());
+	      osd->name, os->value, m_master, os->master, atts.size());
     // If the signal is in the interface
-    if (os->value && (output ? os->master == master : os->master != master)) {
+    if (os->value && (output ? os->master == m_master : os->master != m_master)) {
       std::string signal, thisComment;
       connectOcpSignal(*osd, *os, *oa, signal, thisComment, lang, atts);
       /* if (signal.length()) */ {
@@ -514,29 +526,45 @@ emitPortSignalsDir(FILE *f, bool output, Language lang, const char *indent,
 }
 
 void OcpPort::
+emitExprAssignments(std::string &out, std::string &signalIn, OcpAdapt *adapt, Attachments &atts) {
+  OU::formatAdd(out,
+		"\n"
+		"  -- Temporary input signal assignments for port \"%s\",\n"
+		"  -- since it has some signals with expression values that are not \"globally static\" in VHDL terms.\n",
+		cname());
+  OcpSignalDesc *osd;
+  OcpSignal *os;
+  OcpAdapt *oa;
+  for (osd = ocpSignals, os = ocp.signals, oa = adapt; osd->name; os++, osd++, oa++)
+    if (os->value && os->master != m_master) {
+      std::string signal, thisComment;
+      connectOcpSignal(*osd, *os, *oa, signal, thisComment, VHDL, atts);
+      const char *comment = oa->comment ? oa->comment : thisComment.c_str();
+      OU::formatAdd(out, "  %s.%s <= %s;%s%s\n", signalIn.c_str(), osd->name,
+		    signal.c_str(), comment[0] ? "-- " : "", comment);
+    }
+}
+void OcpPort::
 emitPortSignals(FILE *f, Attachments &atts, Language lang,
 		const char *indent, bool &any, std::string &comment, std::string &last,
-		const char */*myComment*/, OcpAdapt *adapt) {
-  emitPortSignalsDir(f, false, lang, indent, any, comment, last, adapt, atts);
+		const char */*myComment*/, OcpAdapt *adapt, std::string *signalIn,
+		std::string &exprs) {
+  if (signalIn) {
+    std::string signal;
+    // ocpSignalPrefix(signal, !master, lang, atts);
+    doPrev(f, last, comment, hdlComment(lang));
+    if (any)
+      fputs(indent, f);
+    any = true;
+    fprintf(f, "%s => %s", typeNameIn.c_str(), signalIn->c_str());
+    emitExprAssignments(exprs, *signalIn, adapt, atts);
+  } else
+    emitPortSignalsDir(f, false, lang, indent, any, comment, last, adapt, atts);
   emitPortSignalsDir(f, true, lang, indent, any, comment, last, adapt, atts);
 }
 
-void OcpPort::
-connectOcpSignal(OcpSignalDesc &osd, OcpSignal &os, OcpAdapt &oa,
-		 std::string &signal, std::string &thisComment, Language lang,
-		 Attachments &atts) {
-  if (atts.empty()) {
-    // A truly unconnected port.  All we want is a tieoff if it is an input
-    // We can always use zero since that will assert reset
-    if (os.master != master)
-      if (lang == VHDL)
-	signal = osd.vector ? "(others => '0')" : "'0'";
-      else
-	OU::format(signal, "%zu'b0", os.width);
-    else if (lang == VHDL)
-      signal = "open";
-    return;
-  }
+InstancePort  &OcpPort::
+ocpSignalPrefix(std::string &signal, bool master, Language lang, Attachments &atts) {
   // Find the other end of the connection
   assert(atts.size() == 1); // OCP connections are always point-to-point
   Connection &c = atts.front()->m_connection;
@@ -553,15 +581,14 @@ connectOcpSignal(OcpSignalDesc &osd, OcpSignal &os, OcpAdapt &oa,
   // Decide on our indexing.  We need an index if our attachment is a subset of
   // what we are connecting to, which is either another internal port or an external one.
   // In either case
-  std::string &cName = os.master ? c.m_masterName : c.m_slaveName;
+  std::string &cName = master ? c.m_masterName : c.m_slaveName;
   size_t index, top, count = 0; // count for indexing purpose
-  if (otherIp->m_port->count > c.m_count) {
+  if (otherIp->m_port->m_count > c.m_count) {
     // We're connecting to something bigger: indexing is needed in this port binding
     count = c.m_count;
     index = at->m_index;
     top = index + count - 1;
   }
-  std::string temp;
   if (count) {
     std::string num, temp1;
     if (lang == Verilog)
@@ -569,27 +596,59 @@ connectOcpSignal(OcpSignalDesc &osd, OcpSignal &os, OcpAdapt &oa,
     OU::format(temp1, cName.c_str(), num.c_str());
     if (count > 1) {
       assert(lang == VHDL);
-      OU::format(temp, "%s(%zu to %zu)", temp1.c_str(), index, top);
+      OU::format(signal, "%s(%zu to %zu)", temp1.c_str(), index, top);
     } else {
       if (lang == VHDL)
-	OU::format(temp, "%s(%zu)", temp1.c_str(), index);
+	OU::format(signal, "%s(%zu)", temp1.c_str(), index);
       else
-	temp = temp1;
+	signal = temp1;
     }
   } else
-    OU::format(temp, cName.c_str(), "");
+    OU::format(signal, cName.c_str(), "");
+  return *otherIp;
+}
+
+void OcpPort::
+connectOcpSignal(OcpSignalDesc &osd, OcpSignal &os, OcpAdapt &oa,
+		 std::string &signal, std::string &thisComment, Language lang,
+		 Attachments &atts) {
+  if (atts.empty()) {
+    // A truly unconnected port.  All we want is a tieoff if it is an input
+    // We can always use zero since that will assert reset
+    if (os.master != m_master)
+      if (lang == VHDL)
+	signal = osd.vector ? "(others => '0')" : "'0'";
+      else
+	OU::format(signal, "%zu'b0", os.width);
+    else if (lang == VHDL)
+      signal = "open";
+    return;
+  }
+  std::string temp;
+  InstancePort &otherIp = ocpSignalPrefix(temp, os.master, lang, atts);
   if (lang == VHDL)
     temp += '.';
   if (oa.expr) {
     std::string other;
     if (oa.other != N_OCP_SIGNALS)
       temp += ocpSignals[oa.other].name;
-    OU::formatAdd(signal, oa.expr, temp.c_str());
+    if (!strcmp(oa.expr, "open")) {
+      static size_t unused; // can this really be processed scoped?
+      if (os.width > 1)
+	OU::formatAdd(signal, "unused(%zu to %zu)", unused, unused + os.width - 1);
+      else
+	OU::formatAdd(signal, "unused(%zu)", unused);
+      unused += os.width;
+    } else
+      OU::formatAdd(signal, oa.expr, temp.c_str());
   } else {
     signal = temp + osd.name;
-    OcpPort &other = *static_cast<OcpPort*>(otherIp->m_port);
+    OcpPort &other = *static_cast<OcpPort*>(otherIp.m_port);
     if (osd.vector && os.width != other.ocp.signals[osd.number].width) {
-      OU::formatAdd(signal, lang == Verilog ? "[%zu-1:0]" : "(%zu-1 downto 0)", os.width);
+      ocpiDebug("Narrowing of assignment to port %s of worker %s from %zu to %zu",
+		cname(), m_worker->m_implName, other.ocp.signals[osd.number].width, os.width);
+      OU::formatAdd(signal, lang == Verilog ? "[%zu-1:0]" : "(%zu-1 downto 0)",
+		    os.width);
       thisComment = "worker is narrower than external, which is OK";
     }
   }

@@ -1,4 +1,4 @@
-<ComponentSpec Name="copy">
+<ComponentSpec>
   <Properties>
   <Property name="p1" type="float" sequenceLength="3" initial='true' readable='1'/>
      <Property name="a1" sequenceLength="5" type="struct" initial='true' readable='1'>

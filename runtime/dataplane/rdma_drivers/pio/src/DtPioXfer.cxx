@@ -54,8 +54,8 @@ namespace OCPI {
   namespace PIO {  
 
     Device::
-    Device(const char *name)
-      : DT::DeviceBase<XferFactory, Device>(name, *this) {
+    Device(const char *a_name)
+      : DT::DeviceBase<XferFactory, Device>(a_name, *this) {
     }
 
     const char *pio = "pio"; // name passed to inherited template class
@@ -84,8 +84,8 @@ namespace OCPI {
 
     // Constructor
     EndPoint::
-    EndPoint( std::string& ep, bool local)
-      : DT::EndPoint(ep, 0, local) {
+    EndPoint( std::string& ep, bool a_local)
+      : DT::EndPoint(ep, 0, a_local) {
       parse(ep);
     }
 
@@ -105,12 +105,6 @@ namespace OCPI {
       }
       m_smb_name = sname;
       return 0;
-    }
-
-    // Get the address from the endpoint
-    const char* EndPoint::
-    getAddress() {
-      return m_smb_name.c_str();
     }
 
     // This method is used to allocate a transfer compatible SMB
@@ -137,20 +131,20 @@ namespace OCPI {
      ***************************************/
     static int32_t smb_count = 0;
     std::string XferFactory::
-    allocateEndpoint(const OU::PValue*, uint16_t mailBox, uint16_t maxMailBoxes)
+    allocateEndpoint(const OU::PValue*, uint16_t mailBox, uint16_t maxMailBoxes, size_t size)
     {
       OU::SelfAutoMutex guard (this); 
       std::string ep;
 
       OU::formatString(ep, "ocpi-smb-pio:pioXfer%d%d;%zu.%" PRIu16 ".%" PRIu16,
-		       getpid(), smb_count++, m_SMBSize, mailBox, maxMailBoxes);
+		       getpid(), smb_count++, size ? size : m_SMBSize, mailBox, maxMailBoxes);
       return ep;
     }
 
 
     XferRequest::
-    XferRequest(XferServices & parent, XF_template temp)
-      : DT::TransferBase<XferServices, XferRequest>(parent, *this, temp) {
+    XferRequest(XferServices &a_parent, XF_template temp)
+      : DT::TransferBase<XferServices, XferRequest>(a_parent, *this, temp) {
     }
 
     // PIOXferRequest destructor implementation
@@ -160,9 +154,9 @@ namespace OCPI {
 
 
     XferServices::
-    XferServices(DT::SmemServices* source, DT::SmemServices* target)
-      : DT::ConnectionBase<XferFactory, XferServices, XferRequest>(*this, source, target) {
-      createTemplate( source, target);
+    XferServices(DT::SmemServices *a_source, DT::SmemServices *a_target)
+      : DT::ConnectionBase<XferFactory, XferServices, XferRequest>(*this, a_source, a_target) {
+      createTemplate(a_source, a_target);
     }
 
     // Create tranfer services template

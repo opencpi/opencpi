@@ -32,41 +32,53 @@
  */
 
 
-#include <OcpiOsTimer.h>
-#include <OcpiOsSizeCheck.h>
-#include <OcpiOsAssert.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <time.h>
 #include <unistd.h>
-#include <stdio.h>
 #include <cstring>
+#include <cstdio>
 #include <cstdlib>
 #include <string>
 
 #ifdef OCPI_OS_linux
-#include <sched.h>
+  #include <sched.h>
+  #ifdef OCPI_OS_VERSION_r5
+    #ifndef __x86_64__
+      #error No support for RHEL5 on non-64-bit machines
+    #endif
+    #include <asm/vsyscall.h>
+  #endif
 #else
-#include <sys/time.h> // for gettimeofday
-typedef uint64_t cpu_set_t;
+  #include <sys/time.h> // for gettimeofday
+  typedef uint64_t cpu_set_t;
 #endif
 
+#include "OcpiOsTimer.h"
+#include "OcpiOsSizeCheck.h"
+#include "OcpiOsAssert.h"
+
+#ifndef OCPI_CLOCK_TYPE
+  #ifdef CLOCK_MONOTONIC_RAW
+    #define OCPI_CLOCK_TYPE CLOCK_MONOTONIC_RAW
+  #else
+    #define OCPI_CLOCK_TYPE CLOCK_MONOTONIC
+  #endif
+#endif
 namespace OCPI {
   namespace OS {
 
 Time Time::now() {
-  Time t;
 #ifdef __APPLE__
   struct timeval tv;
   gettimeofday(&tv, NULL);
-  t.set((uint32_t)tv.tv_sec, tv.tv_usec * 1000);
+  return Time((uint32_t)tv.tv_sec, tv.tv_usec * 1000);
 #else
   struct timespec ts;
-  ocpiCheck(clock_gettime (CLOCK_MONOTONIC_RAW, &ts) == 0);
-  t.set((uint32_t)ts.tv_sec, (uint32_t)ts.tv_nsec);
+  ocpiCheck(clock_gettime (OCPI_CLOCK_TYPE, &ts) == 0);
+  return Time((uint32_t)ts.tv_sec, (uint32_t)ts.tv_nsec);
 #endif
-  return t;
 }
 /*
  * ----------------------------------------------------------------------
@@ -221,9 +233,20 @@ CounterFreq::CounterFreq ()
   int ax,bx,cx,dx;
   cpuid(0x80000007,ax,bx,cx,dx)
   //if tsc_invariant not present return - present in edx 0x80000007 bit 8
-  if (!dx&0x8) {
-      return;
+  if (!(dx&0x8)) {
+    //    ocpiBad("OCPI::OS::Time subsystem cannot establish clock frequency");
+    return;
   }
+  const char *cp = strcasestr(tmp, "cpu MHz");
+  if (cp) {
+    cp += 7;
+    while (isspace(*cp) || *cp == ':')
+      cp++;
+    m_useHighResTimer = true;
+    m_counterFreq = (uint64_t)(atof(cp)*1e6);
+    return;
+  }
+
   size_t pointer;
   // TODO: changed to find model name and TSC invariant clock speed extracted
   if ((pointer = valueread.find("model name",0))) {
@@ -357,26 +380,26 @@ namespace {
     uint32_t lower, upper;
     uint16_t accumulatedCounter;
   };
-
+/* Unused...?
   struct TimerData {
     bool running;
 
     TimerClockInfo tci;
     TimerTickInfo tti;
-  };
+  }; */
 }
 
 Timer::
-Timer (bool start)
+Timer (bool start_now)
   throw ()
 {
   ocpiAssert ((compileTimeSizeCheck<sizeof (m_opaque), sizeof (cpu_set_t)> ()));
   ocpiAssert (sizeof (m_opaque) >= sizeof (cpu_set_t));
-  init(start);
+  init(start_now);
 }
 Timer::
-Timer(uint32_t seconds, uint32_t nanoseconds)  throw()
-  : expiration(seconds, nanoseconds){
+Timer(uint32_t seconds_in, uint32_t nanoseconds_in)  throw()
+  : expiration(seconds_in, nanoseconds_in){
   init(true);
 }
 Timer::
@@ -384,10 +407,10 @@ Timer(Time time)  throw()
   : expiration(time) {
   init(time != 0);
 }
-void Timer::init(bool start) {
+void Timer::init(bool start_now) {
   tti.accumulatedCounter = tti.upper = tti.lower = 0;
   tci.accumulatedTime.set(0);
-  if ((running = start)) { // Intentionally setting "running"
+  if ((running = start_now)) { // Intentionally setting "running"
     if (useHighResTimer()) {
       register volatile unsigned int tb_lower, tb_upper = 0, tb_upper_tmp;
 
@@ -436,7 +459,14 @@ start ()
     }
 
     // Pin this process to the CPU we are currently on (AV-436)
-    const int cpu_id = sched_getcpu();
+    unsigned cpu_id;
+#ifdef OCPI_OS_VERSION_r5
+    typedef long (*vgetcpu_t)(unsigned int *cpu, unsigned int *node, unsigned long *tcache);
+    vgetcpu_t vgetcpu = (vgetcpu_t)VSYSCALL_ADDR(__NR_vgetcpu);
+    ocpiCheck(vgetcpu(&cpu_id, NULL, NULL) == 0);
+#else
+    cpu_id = sched_getcpu();
+#endif
     mask=org_mask;
     CPU_ZERO(&mask);                     // clears the cpuset
     CPU_SET(cpu_id, &mask);              // set only this CPU
@@ -466,13 +496,13 @@ stop ()
   throw ()
 {
   ElapsedTime et = getElapsed();
-  if (useHighResTimer()) {
 #ifdef OCPI_OS_linux
+  if (useHighResTimer()) {
     // Reset CPU affinity
     cpu_set_t &org_mask = *(cpu_set_t *)m_opaque;
     sched_setaffinity(getpid(), sizeof(org_mask), &org_mask);
-#endif
   }
+#endif
   running = false;
   return et;
 }
@@ -586,7 +616,14 @@ getPrecision (ElapsedTime & prec)
     prec.set(0, 10000000); // 10ms - hah!
 #else
     struct timespec res;
-    ocpiCheck(clock_getres (CLOCK_MONOTONIC, &res) == 0);
+    clockid_t x = OCPI_CLOCK_TYPE;
+// This is due to clock_getres returning bad values for this clock
+// FIXME: check whether this is specific to centos6
+#if defined(CLOCK_MONOTONIC_RAW) && defined(CLOCK_MONOTONIC)
+    if (OCPI_CLOCK_TYPE == CLOCK_MONOTONIC_RAW)
+      x = CLOCK_MONOTONIC;
+#endif
+    ocpiCheck(clock_getres (x, &res) == 0);
     prec.set((uint32_t)res.tv_sec, (uint32_t)res.tv_nsec);
 #endif
   }

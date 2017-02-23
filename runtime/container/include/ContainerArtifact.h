@@ -75,6 +75,7 @@ namespace OCPI {
       void removeWorker(Worker &);
       // Is this library artifact the one I loaded?
     public:
+      const OCPI::Library::Artifact &libArtifact() const { return m_libArtifact; }
       virtual const std::string &name() const = 0;
       bool hasArtifact(const void *art);
       Worker &createWorker(Application &a,  const char *instName,

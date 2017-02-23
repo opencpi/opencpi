@@ -3,6 +3,9 @@ package types is
 --
 -- Miscellaneous type declarations not related to OpenCPI data types
 --
+constant dword_size  : natural := 32;
+constant dword_bytes : natural := 4;
+constant dword_shift : natural := 2;
 subtype dword_t   is std_logic_vector(31 downto 0);
 type    dword_array_t is array (natural range <>) of dword_t;
 subtype word8_t  is std_logic_vector(7 downto 0);
@@ -12,7 +15,8 @@ subtype word64_t is std_logic_vector(63 downto 0);
 subtype byte_offset_t is unsigned(1 downto 0);
 subtype bit_offset_t is natural range 0 to 31; -- bit within word
 type    endian_t is (little_e, big_e, dynamic_e);
-
+-- A type for holding array property dimensions
+type dimensions_t is array (natural range <>) of positive;
 
 
 function bit2vec(b : std_logic; n : natural) return std_logic_vector;
@@ -105,7 +109,7 @@ constant float_max : float_t := x"7f7f_ffff"; -- 3.40282347e+38
 function to_float(r: real) return float_t;
 function from_float(f: float_t) return real;
 function from_float(f: float_t) return std_logic_vector;
-function from_float(f: float_t) return natural;
+function from_float(f: float_t) return integer;
 --function slv(a: float_t) return std_logic_vector;
 function slv(a: float_array_t) return std_logic_vector;
 function to_slv(a: float_array_t) return std_logic_vector;
@@ -223,7 +227,7 @@ function to_slv(a: string_array_t) return std_logic_vector;
 function to_string_array(a: std_logic_vector; length : natural) return string_array_t;
 
 function from_bool_array(ba : bool_array_t;
-                         index, nbytes_1, byte_offset : unsigned;
+                         offset, nbytes_1, byte_offset : unsigned;
                          is_big_endian : boolean) return dword_t;
 
 end package types;

@@ -57,6 +57,12 @@
 
 #include <OcpiThread.h>
 
+#if defined(OCPI_VALGRIND_AVAILABLE) && defined(OCPI_ARCH_x86_64)
+#include <valgrind/valgrind.h>
+#else
+#define RUNNING_ON_VALGRIND 0
+#endif
+
 using namespace OCPI::Container;
 using namespace OCPI;
 using namespace OCPI::CONTAINER_TEST;
@@ -64,7 +70,7 @@ using namespace OCPI::CONTAINER_TEST;
 static const char* g_ep1    = "ocpi-smb-pio:test1:9000000.1.20";
 static const char* g_ep2    = "ocpi-smb-pio:test2:9000000.2.20";
 static const char* g_ep3    = "ocpi-smb-pio:test3:9000000.3.20";
-static int   OCPI_RCC_DATA_BUFFER_SIZE   = 512;
+static size_t OCPI_RCC_DATA_BUFFER_SIZE   = 512;
 static int   OCPI_USE_POLLING            = 1;
 
 static CWorker PRODUCER(0,1),  LOOPBACK(1,1), CONSUMER(1,0);
@@ -86,9 +92,8 @@ static void createWorkers(std::vector<CApp>& ca )
 
     }
 
-static void createPorts( std::vector<CApp>& ca )
+static void createPorts( std::vector<CApp>& /*ca*/ )
 {
-  ( void ) ca;
   try { 
     PRODUCER.pdata[PRODUCER_OUTPUT_PORT].port = &
       PRODUCER.worker->createOutputPort( 
@@ -123,9 +128,8 @@ static void createPorts( std::vector<CApp>& ca )
     }
 
 
-static void connectWorkers(std::vector<CApp>& ca )
+static void connectWorkers(std::vector<CApp>& /*ca*/ )
 {
-  ( void ) ca;
   PRODUCER.pdata[PRODUCER_OUTPUT_PORT].port->connect( *LOOPBACK.pdata[LOOPBACK_INPUT_PORT].port,0,0 );
   LOOPBACK.pdata[LOOPBACK_OUTPUT_PORT].port->connect( *CONSUMER.pdata[CONSUMER_INPUT_PORT].port,0,0 );
 }
@@ -133,10 +137,10 @@ static void connectWorkers(std::vector<CApp>& ca )
 
 
 #define BUFFERS_2_PROCESS 200;
-static void initWorkerProperties(int mode, std::vector<CApp>& ca )
+static void initWorkerProperties(int mode, std::vector<CApp>& /*ca*/ )
 {
-  ( void ) ca;
-  int32_t  tprop[5], offset, nBytes;
+  int32_t  tprop[5];
+  size_t offset, nBytes;
 
   // Set the producer buffer run count property to 0
   offset = offsetof(ProducerWorkerProperties,run2BufferCount);
@@ -216,6 +220,9 @@ static bool run_zcopy_test(std::vector<CApp>& ca, std::vector<CWorker*>& workers
   ProducerWorkerProperties pprops;
 
   int count = 6;
+  if (RUNNING_ON_VALGRIND > 0)
+    count *= 2;
+
   while ( count > 0 ) {
 
     // Read the consumer properties to monitor progress
@@ -338,11 +345,9 @@ static int bcmap[][4] = {
 #ifdef NO_MAIN
 int unit_test_zcopy_main( int argc, char** argv)
 #else
-int  main( int argc, char** argv)
+int  main( int /*argc*/, char** /*argv*/)
 #endif
 {
-  ( void ) argc;
-  ( void ) argv;
   int test_rc = 1;
   DataTransfer::EventManager* event_manager;
   std::vector<const char*> endpoints;

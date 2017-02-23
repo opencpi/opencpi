@@ -34,5 +34,30 @@
 #
 ########################################################################### #
 
-Assemblies=testbias_file testbias tb_bias tb_bias_param patternbias biascapture tb_bias_vhdl testpsd testddc testbias2 testbias5 testbias_ver empty test_width time_test time_test_file
+Assemblies=\
+	testbias_file \
+	testbias \
+	tb_bias \
+	tb_bias_param \
+	biascapture \
+	tb_bias_vhdl \
+	testpsd \
+	testddc \
+	testbias2 \
+	testbias5 \
+	testbias_ver \
+	empty \
+	time_test \
+	time_test_file \
+
+ifndef OCPI_MINIMAL_BUILD
+Assemblies += \
+	patternbias \
+	test_width \
+	testbias_file_read \
+	testbias_file_write \
+	ptestonly \
+	adapt \
+
+endif
 include $(OCPI_CDK_DIR)/include/hdl/hdl-assemblies.mk

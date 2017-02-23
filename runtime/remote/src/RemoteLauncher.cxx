@@ -71,11 +71,11 @@ emitArtifact(const OCPI::Library::Artifact &art) {
 }
 // FIXME: someday allow for instance parameters?
 void Launcher::
-emitInstance(const char *name, unsigned contN, unsigned artN, const Launcher::Instance &i,
+emitInstance(const char *a_name, unsigned contN, unsigned artN, const Launcher::Instance &i,
 	     int slave) {
   OU::formatAdd(m_request,
 		"  <instance name='%s' container='%u' artifact='%u' worker='%s'",
-		name, contN, artN, i.m_impl->m_metadataImpl.specName().c_str());
+		a_name, contN, artN, i.m_impl->m_metadataImpl.specName().c_str());
   if (i.m_impl->m_staticInstance)
     OU::formatAdd(m_request, " static='%s'", ezxml_cattr(i.m_impl->m_staticInstance, "name"));
   if (slave >= 0)

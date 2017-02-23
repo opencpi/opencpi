@@ -48,35 +48,116 @@ override RccIncludeDirsInternal := \
   $(RccIncludeDirs) $(IncludeDirs) $(RccIncludeDirsInternal)
 $(call OcpiDbgVar,RccLibrariesInternal)
 $(call OcpiDbgVar,RccIncludeDirsInternal)
-ifndef RccTargets
-ifdef RccTarget
-RccTargets:=$(RccTarget)
-else
-RccTargets:=$(OCPI_TARGET_HOST)
-endif
-endif
-ifndef RccTarget
-RccTarget:=$(firstword $(RccTargets))
-endif
-
-$(call OcpiDbgVar,RccTargets)
 
 RccOs=$(word 1,$(subst -, ,$(or $1,$(RccTarget))))
 RccOsVersion=$(word 2,$(subst -, ,$1))
 RccArch=$(word 3,$(subst -, ,$1))
 
+$(call OcpiDbgVar,RccPlatforms)
+$(call OcpiDbgVar,RccTargets)
+
+# for a clean environment, ensure OCPI_TOOL_PLATFORM at least
+$(eval $(OcpiEnsureToolPlatform))
+
+# Allow the option of specifying an rcc platform by referencing the associated
+# HDL platform, but only incurring the overhead of this search when this variable
+# is specified.
+ifdef RccHdlPlatforms
+  include $(OCPI_CDK_DIR)/include/hdl/hdl-targets.mk
+  $(foreach p,$(RccHdlPlatforms),\
+     $(if $(filter $p,$(HdlAllPlatforms)),\
+       $(if $(HdlRccPlatform_$p),\
+         $(eval override RccPlatforms:=$(call Unique,$(RccPlatforms) $(HdlRccPlatform_$p))), \
+         $(error There is no RCC platform associated with the HDL platform: $p)),\
+       $(error There is no HDL platform named: $p, so no RCC platform for it)))
+endif
+
+ifdef RccPlatforms
+  # nothing here - we process later
+else ifdef RccPlatform
+  RccPlatforms:=$(RccPlatform)
+else ifdef RccTargets
+  # nothing to do here
+else ifdef RccTarget
+  RccTargets:=$(RccTarget)
+else ifeq ($(origin RccPlatforms),undefined)
+  ifdef OCPI_TARGET_PLATFORM
+    RccPlatforms:=$(OCPI_TARGET_PLATFORM)
+  else ifdef OCPI_TOOL_PLATFORM
+    RccPlatforms:=$(OCPI_TOOL_PLATFORM)
+  else
+    $(error Unexpected failure to figure out which RCC compiler to use.)
+  endif
+endif
+
+$(call OcpiDbgVar,RccPlatforms)
+$(call OcpiDbgVar,RccTargets)
+
+ifdef RccPlatforms
+  override RccPlatforms:=$(filter-out $(ExcludePlatforms) $(RccExcludePlatforms),$(RccPlatforms))
+  ifneq ($(OnlyPlatforms)$(RccOnlyPlatforms),)
+    override RccPlatforms:=$(filter $(OnlyPlatforms) $(RccOnlyPlatforms),$(RccPlatforms))
+  endif
+  # We cannot perform this check since we may be inheriting changes made in a higher
+  # level Makefile.  If the user tries this, it is simply ignored.
+  # ifdef RccTargets
+  #   $(error You cannot set both RccTarget(s) and RccPlatform(s))
+  # endif
+  RccTargets:=
+  $(foreach p,$(RccPlatforms),\
+    $(foreach f,$(OCPI_CDK_DIR)/platforms/$p/target,\
+       $(if $(wildcard $f),\
+         $(foreach t,$(shell echo $$(< $f)),\
+           $(eval RccTargets+=$t)\
+           $(eval RccTarget_$p:=$t)),\
+         $(error RccPlatform $p is unknown, $t does not exist))))
+else
+  # Derive a platform from each target (somewhat expensive, but we have shortcuts)
+  # This can be deprecated or accelerated as it makes sense
+  # An easy accelerator would be to make the target an actual file in the platform's dir
+  # (A single wildcard then does it)
+  # We could also cache this
+  RccPlatforms:=
+  RccFound:=
+  $(foreach f,$(wildcard $(OCPI_CDK_DIR)/platforms/*/target),\
+    $(foreach p,$(notdir $(patsubst %/,%,$(dir $f))),\
+      $(foreach t,$(shell echo $$(< $f)),\
+        $(if $(findstring $t,$(RccTargets)),\
+          $(eval RccTarget_$p:=$t)\
+          $(eval RccPlatforms+=$p)\
+          $(eval RccFound+=$t)))))
+  $(foreach t,$(RccTargets),\
+     $(if $(findstring $t,$(RccFound)),,\
+        $(error The RccTarget $t is not the target for any software platform (in $(OCPI_CDK_DIR)/platforms))))
+endif
+
+$(call OcpiDbgVar,RccPlatforms)
+$(call OcpiDbgVar,RccTargets)
+
+# This should avoid confusion since they should not be used after this point
+override RccTarget:=
+override RccPlatform:=
+
 # Read in all the tool sets indicated by the targets
-# 
+#
 ifeq ($(filter clean cleanrcc,$(MAKECMDGOALS)),)
-
-$(foreach t,$(RccTargets),\
-  $(foreach m,$(if $(findstring $(OCPI_TOOL_HOST),$t),$t,$(OCPI_TOOL_HOST)=$t),\
-    $(if $(or $(wildcard $(OCPI_CDK_DIR)/include/rcc/$m.mk),$(strip \
-              $(wildcard $(OCPI_CDK_DIR)/platforms/$(OCPI_TARGET_PLATFORM)/$m.mk))),\
-       $(eval include $(OCPI_CDK_DIR)/include/rcc/$m.mk),\
-       $(if $(findstring =,$m),\
-         $(error There is no cross compiler defined from $(OCPI_TOOL_HOST) to $t),\
-         $(eval include $(OCPI_CDK_DIR)/include/rcc/default.mk)))))
-
+# include all the rcc compilation files for all target platforms
+$(foreach p,$(RccPlatforms), \
+  $(foreach t,$(RccTarget_$p),\
+    $(eval files:=)\
+    $(eval cross:=)\
+    $(foreach m,$(if $(findstring $(OCPI_TOOL_PLATFORM),$p),rcc=$p,rcc=$(OCPI_TOOL_PLATFORM)=$p) \
+                $(if $(findstring $(OCPI_TOOL_HOST),$t),$t,$(OCPI_TOOL_HOST)=$t),\
+      $(eval files:=$(files) $(or $(wildcard $(OCPI_CDK_DIR)/include/rcc/$m.mk),\
+                                  $(wildcard $(OCPI_CDK_DIR)/platforms/$p/$m.mk)))\
+      $(and $(findstring =,$(subst rcc=,,$m)),$(eval cross:=1)))\
+    $(foreach n,$(words $(files)),\
+       $(if $(filter 0,$n),\
+	  $(if $(cross),\
+             $(error There is no cross compiler defined from $(OCPI_TOOL_PLATFORM) to $p),\
+             $(eval include $(OCPI_CDK_DIR)/include/rcc/default.mk)),\
+	  $(if $(filter 1,$n),,\
+             $(warning More than one file defined for compiling $(OCPI_TOOL_PLATFORM) to $p, using $(word 1,$(files)), others are $(wordlist 2,$(words $(files)),$(files)).))\
+          $(eval include $(word 1,$(files)))))))
 endif
 endif

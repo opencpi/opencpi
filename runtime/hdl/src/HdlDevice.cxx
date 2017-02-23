@@ -35,14 +35,17 @@ namespace OCPI {
     // The derived class will set up accessors after this constructor is done
     // So we can't perform accesses until that time, which is the "init" call.
     Device::
-    Device(std::string &name, const char *protocol)
-      : m_metadata(NULL), m_implXml(NULL), m_old(false), m_name(name), m_protocol(protocol), m_isAlive(true),
-	m_pfWorker(NULL) {
+    Device(const std::string &a_name, const char *a_protocol, const OU::PValue *params)
+      : m_metadata(NULL), m_implXml(NULL), m_old(false), m_name(a_name), m_protocol(a_protocol),
+	m_isAlive(true), m_pfWorker(NULL), m_tsWorker(NULL), m_isFailed(false), m_verbose(false),
+	m_timeCorrection(0), m_endPoint(NULL) {
+      OU::findBool(params, "verbose", m_verbose);
       memset((void*)&m_UUID, 0, sizeof(m_UUID));
     }
     Device::
     ~Device() {
       delete m_pfWorker;
+      delete m_tsWorker;
       if (m_implXml)
 	ezxml_free(m_implXml);
       if (m_metadata)
@@ -55,6 +58,7 @@ namespace OCPI {
     // Also called after bitstream loading.
     bool Device::
     init(std::string &err) {
+      m_isAlive = false;
       sig_t old = signal(SIGBUS, catchBusError); // FIXME: we could make this thread safe
       uint64_t magic = 0x0BAD1BADDEADBEEF;
       try {
@@ -64,6 +68,9 @@ namespace OCPI {
 	  ocpiBad("HDL Device '%s' gets a bus error on probe: ", m_name.c_str());
 	  err = "bus error on probe";
 	}
+      } catch (std::string &e) {
+	ocpiBad("HDL Device '%s' gets error '%s' on probe: ", e.c_str(), m_name.c_str());
+	err = "access exception on probe";
       } catch (...) {
 	ocpiBad("HDL Device '%s' gets access exception on probe: ", m_name.c_str());
 	err = "access exception on probe";
@@ -78,28 +85,32 @@ namespace OCPI {
 	err = "Magic numbers in admin space do not match";
 	return true;
       }
-      if (m_pfWorker) {
+      if (!m_pfWorker) {
+	ocpiDebug("HDL::Device::init: platform worker does not exist, first access in process");
+	m_pfWorker = new WciControl(*this, "platform", "pf_i", 0, true);
+	m_tsWorker = new WciControl(*this, "time_server", "ts_i", 1, true);
+      }
+      if (m_pfWorker->isReset()) {
+	ocpiDebug("Platform worker is in reset, initializing it (unreset, initialize, start)");
 	m_old = false;
 	m_pfWorker->init(true, true);
-      } else
-	m_pfWorker = new WciControl(*this, "platform", "pf_i", 0, true);
-      // Need to conditionalize this
-      if ((m_pfWorker->controlOperation(OU::Worker::OpInitialize, err)) ||
-	  (m_pfWorker->controlOperation(OU::Worker::OpStart, err))) {
-	// For Compatibility
-	m_old = true;
-	err.clear();
-	ocpiInfo("For HDL Device '%s' no platform worker responds.  Assuming old-style bitstream.",
-		 m_name.c_str());
-	return false;
+	m_tsWorker->init(true, true);
+	if ((m_pfWorker->controlOperation(OU::Worker::OpInitialize, err)) ||
+	    (m_tsWorker->controlOperation(OU::Worker::OpInitialize, err)) ||
+	    (m_pfWorker->controlOperation(OU::Worker::OpStart, err)) ||
+	    (m_tsWorker->controlOperation(OU::Worker::OpStart, err)))
+	  return true;
       }
+      m_isAlive = true;
+      if (configure(NULL, err))
+	return true;
       return false;
     }
     void Device::
     getUUID() {
       HdlUUID myUUIDtmp;
       if (m_old)
-	m_cAccess.getRegisterBytes(admin.uuid, &myUUIDtmp, OccpSpace, 8);
+	m_cAccess.getRegisterBytes(admin.uuid, &myUUIDtmp, OccpSpace, 8, false);
       else
 	m_pfWorker->m_properties.getBytesRegisterOffset(0, (uint8_t *)&myUUIDtmp,
 							sizeof(HdlUUID), 8);
@@ -216,6 +227,13 @@ namespace OCPI {
 	m_platform.assign(m_UUID.platform, n);
       else if (m_UUID.platform[0] == '\240' && m_UUID.platform[1] == 0)
 	m_platform = "ml605";
+      if (!isprint(m_platform[0])) {
+	ocpiInfo("HDL Device '%s' responds, but the platform type name is garbage: ",
+		m_name.c_str());
+	error = "Platform name in admin space is garbage";
+	return true;
+      }
+	
       for (n = 0; m_UUID.device[n] && n < sizeof(m_UUID.device); n++)
 	;
       if (n > 2)
@@ -233,12 +251,12 @@ namespace OCPI {
 	// part type to look for artifacts
 	// esn for checking/asserting that
 	OE::getOptionalString(config, m_esn, "esn");
-	std::string platform, device;
-	OE::getOptionalString(config, platform, "platform");
-	OE::getOptionalString(config, platform, "device");
-	if (!platform.empty() && platform != m_platform) {
+	std::string myPlatform, device;
+	OE::getOptionalString(config, myPlatform, "platform");
+	OE::getOptionalString(config, myPlatform, "device");
+	if (!myPlatform.empty() && myPlatform != m_platform) {
 	  OU::formatString(error, "Discovered platform (%s) doesn't match configured platform (%s)",
-		  m_platform.c_str(), platform.c_str());
+		  m_platform.c_str(), myPlatform.c_str());
 	  return true;
 	}
 	if (!device.empty() && device != m_part) {
@@ -278,17 +296,28 @@ namespace OCPI {
     void Device::
     getWorkerAccess(size_t index,
 		    Access &worker,
-		    Access &properties) {
+		    Access &a_properties) {
       if (index >= OCCP_MAX_WORKERS)
 	throw OU::Error("Invalid occpIndex property");
       // FIXME:  check runtime for connected worker
       m_cAccess.offsetRegisters(worker, (intptr_t)(&((OccpSpace*)0)->worker[index]));
-      m_cAccess.offsetRegisters(properties,(intptr_t)(&((OccpSpace*)0)->config[index]));
+      m_cAccess.offsetRegisters(a_properties,(intptr_t)(&((OccpSpace*)0)->config[index]));
     }
     void Device::
     releaseWorkerAccess(size_t /* index */,
 			Access & /* worker */,
 			Access & /* properties */) {
+    }
+    DataTransfer::EndPoint &Device::
+    getEndPoint() {
+      return m_endPoint ? *m_endPoint :
+	*(m_endPoint = &DataTransfer::getManager().
+	  allocateProxyEndPoint(m_endpointSpecific.c_str(),
+				OCPI_UTRUNCATE(size_t, m_endpointSize)));
+    }
+    void Device::
+    connect(DataTransfer::EndPoint &/*ep*/, OCPI::RDT::Descriptors &/*mine*/,
+	    const OCPI::RDT::Descriptors &/*other*/) {
     }
   }
 }

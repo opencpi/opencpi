@@ -1,0 +1,16 @@
+<HdlDevice language="vhdl" spec='rf_rx-spec' FirstRawProperty='spi_conf'>
+  <ControlInterface Timeout="1024"/>
+  <!-- Note this is not volatile since it is determined in the container -->
+  <property name='other_present' type='bool' readable='1'/>
+  <!-- Here are the raw properties that are in registers, seen the same from RX or TX -->
+  <xi:include href='ad9361-properties.xml'/>
+  <!-- the subdevice provides SPI multiplexing between RF RX and RF TX -->
+  <rawprop name='rawprops' master='true'/>
+  <!-- the subdevice provides for sharing other non-property functionality -->
+  <devsignal name='dev' signals='ad9361-subdevice-signals.xml' master='true'/>
+  <!-- the CTRL_IN signals are multifunction, are used for various gain-control-related modes -->
+  <signal output='CTRL_IN' width='4'/>
+  <signal output='EN_AGC'/>
+  <!-- CTRL_OUT may be used by rx or tx so it is sent to either one -->
+  <signal input='CTRL_OUT' width='8'/>
+</HdlDevice>

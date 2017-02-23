@@ -41,10 +41,6 @@ ifeq ($(wildcard exports),)
   $(info $(shell ./scripts/makeExportLinks.sh - $(ProjectPrefix)_ xxx))
 endif
 include exports/include/ocpisetup.mk
-export OCPI_OS=$(OCPI_TARGET_OS)
-ifneq ($(OCPI_OS),)
-SYSTEMOPTION="OCPI_OS=$(OCPI_OS)"
-endif
 
 # defaults
 ifndef OCPI_BASE_DIR
@@ -58,16 +54,10 @@ export CLIENT_IDL_ONLY
 export OCPI_BASE_DIR
 include MakeVars.ocpi
 
-ifndef OCPI_TOOL_HOST
-$(error This makefile expects the OCPI_TOOL_HOST environment variable to be set.)
-endif
-ifndef OCPI_TARGET_HOST
-$(error This makefile expects the OCPI_TARGET_HOST environment variable to be set.)
-endif
-ifneq ($(OCPI_TOOL_HOST),$(OCPI_TARGET_HOST))
-  ifneq ($(shell test -x ocpi/bin/$(OCPI_TOOL_HOST)/ocpigen; echo $$?),0)
-    $(info To build for $(OCPI_TARGET_HOST), you must first build for $(OCPI_TOOL_HOST))
-    $(error Cannot build for $(OCPI_TARGET_HOST), cannot find "ocpigen" for $(OCPI_TOOL_HOST))
+ifneq ($(OCPI_TOOL_PLATFORM),$(OCPI_TARGET_PLATFORM))
+  ifneq ($(shell test -x exports/bin/$(OCPI_TOOL_DIR)/ocpigen; echo $$?),0)
+    $(info To build for $(OCPI_TARGET_PLATFORM), you must first build for $(OCPI_TOOL_PLATFORM))
+    $(error Cannot build for $(OCPI_TARGET_PLATFORM), cannot find "ocpigen" for $(OCPI_TOOL_PLATFORM))
   endif
 endif
 #
@@ -81,7 +71,7 @@ endif
 # Basic packages.
 #
 
-RDMA_DRIVERS=datagram dma ofed pio sockets udp
+RDMA_DRIVERS=datagram dma ofed pio socket udp
 
 #	 runtime/dataplane/rdma_drivers \
 
@@ -111,19 +101,7 @@ PACKAGES += tools/cdkutils
 PACKAGES += tools/ocpigen
 PACKAGES += tools/cdk/ocpidds
 PACKAGES += tools/astyle
-# if we don't have opencl and we are building statically, don't bother with this
-#ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)
-#PACKAGES += tools/cdk/ocpiocl
-#else
-#ifeq ($(OCPI_HAVE_OPENCL),1)
-#PACKAGES += tools/cdk/ocpiocl
-#endif
-#endif
-
 PACKAGES += tests
-
-#PACKAGES += tests/test_logger
-#PACKAGES += tests/bin
 
 #
 # ----------------------------------------------------------------------
@@ -227,15 +205,15 @@ hdlprimitives: exports
 	$(MAKE) -C hdl primitives
 
 driver:
-	$(AT)set -e; if test -d os/$(OCPI_OS)/driver; then \
-	  $(MAKE) -C os/$(OCPI_OS)/driver; \
+	$(AT)set -e; if test -d os/$(OCPI_TARGET_OS)/driver; then \
+	  $(MAKE) -C os/$(OCPI_TARGET_OS)/driver; \
 	  $(MAKE) exports; \
 	else \
-	  echo No driver for the OS '"'$(OCPI_OS)'"', so none built. ; \
+	  echo No driver for the OS '"'$(OCPI_TARGET_OS)'"', so none built. ; \
 	fi
 
 cleandriver:
-	$(AT)$(and $(wildcard os/$(OCPI_OS)/driver),$(MAKE) -C os/$(OCPI_OS)/driver topclean)
+	$(AT)$(and $(wildcard os/$(OCPI_TARGET_OS)/driver),$(MAKE) -C os/$(OCPI_TARGET_OS)/driver topclean)
 
 cleandrivers:
 	for d in os/*/driver; do $(MAKE) -C $$d topclean; done
@@ -248,9 +226,9 @@ packages: $(PACKAGES)
 
 $(PACKAGES):
 	$(AT)if test -f $@/Makefile.ocpi ; then \
-		$(MAKE) $(call DescendMake,$@) $(SYSTEMOPTION) -f Makefile.ocpi ; \
+		$(MAKE) $(call DescendMake,$@) -f Makefile.ocpi ; \
 	else \
-		$(MAKE) $(call DescendMake,$@) $(SYSTEMOPTION) -f $(call AdjustRelative,$@,)/Makefile.ocpi.for-pkg ; \
+		$(MAKE) $(call DescendMake,$@) -f $(call AdjustRelative,$@,)/Makefile.ocpi.for-pkg ; \
 	fi
 
 clean: cleancomponents cleanexamples

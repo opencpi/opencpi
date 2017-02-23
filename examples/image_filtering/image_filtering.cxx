@@ -22,7 +22,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <iostream>
 #include "cv.h"
 #include "highgui.h"
-#include "OcpiContainerApi.h"
+#include "OcpiApi.h"
 
 namespace OA = OCPI::API;
 
@@ -60,6 +60,23 @@ int main ( int argc, char* argv [ ] )
 				       );
       cvNamedWindow( "Output", CV_WINDOW_AUTOSIZE );
 
+#if 1
+      char *appString;
+      asprintf(&appString,
+	       "<application>\n"
+	       "  <instance component='%s' externals='1'>\n"
+	       "    <property name='height' value='%u'/>\n"
+	       "    <property name='width' value='%u'/>\n"
+	       "  </instance>\n"
+	       "</application>\n",
+	       argv[2], img->height, img->width);
+      OA::Application app(appString);
+      app.initialize();
+      OA::ExternalPort
+	&myIn = app.getPort("out"),
+        &myOut = app.getPort("in");
+      app.start();
+#else
       /* ---- Create the shared RCC container and application -------------- */
       OA::Container *rcc_container = OA::ContainerManager::find("rcc");
       OA::ContainerApplication *rcc_application = rcc_container->createApplication( );
@@ -111,7 +128,7 @@ int main ( int argc, char* argv [ ] )
 
       /* ---- Start all of the workers ------------------------------------- */
       rcc_application->start();
-
+#endif
       // Output info
       uint8_t *odata;
       size_t olength;

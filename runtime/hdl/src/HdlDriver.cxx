@@ -39,11 +39,12 @@ namespace OCPI {
     const char *hdl = "hdl";
 
     OCPI::HDL::Device *Driver::
-    open(const char *which, bool discovery, bool forLoad, std::string &err) {
+    open(const char *which, bool discovery, bool forLoad, const OA::PValue *params,
+	 std::string &err) {
       parent().parent().configureOnce();
       lock();
       // FIXME: obviously this should be registered and dispatched nicely..
-      bool pci = false, ether = false, sim = false, bus = false;
+      bool pci = false, ether = false, sim = false, bus = false, lsim = false;
       if (!strncasecmp("PCI:", which, 4)) {
 	pci = true;
 	which += 4;
@@ -53,6 +54,9 @@ namespace OCPI {
       } else if (!strncasecmp("sim:", which, 4)) {
 	sim = true;
 	which += 4;
+      } else if (!strncasecmp("lsim:", which, 5)) {
+	lsim = true;
+	which += 5;
       } else if (!strncasecmp("Ether:", which, 6)) {
 	ether = true;
 	which += 6;
@@ -66,10 +70,11 @@ namespace OCPI {
 	  pci = true;
       }
       Device *dev =
-	pci ? PCI::Driver::open(which, err) : 
-	bus ? Zynq::Driver::open(which, forLoad, err) : 
-	ether ? Ether::Driver::open(which, discovery, err) :
-	sim ? Sim::Driver::open(which, discovery, err) : NULL;
+	pci ? PCI::Driver::open(which, params, err) : 
+	bus ? Zynq::Driver::open(which, forLoad, params, err) : 
+	ether ? Ether::Driver::open(which, discovery, params, err) :
+	sim ? Sim::Driver::open(which, discovery, params, err) : 
+	lsim ? LSim::Driver::open(which, params, err) : NULL;
       ezxml_t config;
       if (forLoad && bus)
 	return dev;
@@ -85,19 +90,36 @@ namespace OCPI {
       unlock();
     }
 
-    // Return true on error or when the device is no longer needed
-    // Caller is reponsible for deleting the device on error
+    // A device has been found (and created).  Its ownership has been passed in to us,
+    // so we will delete it here if there is any error.
+    // Return true if error or if we otherwise discarded the device
+    // Assuming we are called possibly multiple times from a give driver's search method,
+    // record the first error seen.
     bool Driver::
-    found(Device &dev,  std::string &error) {
+    found(Device &dev, const char **excludes, bool discoveryOnly, std::string &error) {
       ezxml_t config;
-      if (setup(dev, config, error))
-	return true;
-      bool printOnly;
-      if (OU::findBool(m_params, "printOnly", printOnly) && printOnly) {
-	dev.print();
-	return true;
+      error.clear();
+      if (excludes)
+	for (const char **ap = excludes; *ap; ap++)
+	  if (!strcasecmp(*ap, dev.name().c_str()))
+	    goto out;
+      if (!setup(dev, config, error)) {
+	bool printOnly = false;
+	if ((OU::findBool(m_params, "printOnly", printOnly) && printOnly))
+	  dev.print(); // fall through to delete
+	else {
+#if 0
+	  if (dev.m_verbose)
+	    dev.print();
+#endif
+	  if (!discoveryOnly)
+	    createContainer(dev, config, m_params); // no errors?
+	  return false;
+	}
       }
-      return createContainer(dev, config, m_params) == NULL;
+    out:
+      delete &dev;
+      return true;
     } 
 
     unsigned Driver::
@@ -108,7 +130,7 @@ namespace OCPI {
       std::string error;
       count += Zynq::Driver::search(params, exclude, discoveryOnly, error);
       if (error.size()) {
-	ocpiBad("In HDL Container driver, got PL search error: %s", error.c_str());
+	ocpiBad("In HDL Container driver, got Zynq search error: %s", error.c_str());
 	error.clear();
       }
       count += Ether::Driver::search(params, exclude, discoveryOnly, false, error);
@@ -118,12 +140,17 @@ namespace OCPI {
       }
       count += PCI::Driver::search(params, exclude, discoveryOnly, error);
       if (error.size()) {
-	ocpiBad("In HDL Container driver, got pci search error: %s", error.c_str());
+	ocpiBad("In HDL Container driver, got PCI search error: %s", error.c_str());
 	error.clear();
       }
       count += Sim::Driver::search(params, exclude, discoveryOnly, true, error);
       if (error.size()) {
-	ocpiBad("In HDL Container driver, got sim/udp search error: %s", error.c_str());
+	ocpiBad("In HDL Container driver, got SIM/UDP search error: %s", error.c_str());
+	error.clear();
+      }
+      count += LSim::Driver::search(params, exclude, discoveryOnly, error);
+      if (error.size()) {
+	ocpiBad("In HDL Container driver, got LSIM search error: %s", error.c_str());
 	error.clear();
       }
       return count;
@@ -133,7 +160,7 @@ namespace OCPI {
     probeContainer(const char *which, std::string &error, const OA::PValue *params) {
       Device *dev;
       ezxml_t config;
-      if ((dev = open(which, false, false, error))) {
+      if ((dev = open(which, false, false, params, error))) {
 	if (setup(*dev, config, error))
 	  delete dev;
 	else
@@ -148,10 +175,10 @@ namespace OCPI {
     bool Driver::
     setup(Device &dev, ezxml_t &config, std::string &err) {
       // Get any specific configuration information for this device
-      const char *name = dev.name().c_str();
-      config = getDeviceConfig(name);
-      if (!config && !strncmp("PCI:", name, 4)) // compatibility
-	config = getDeviceConfig(name+4);
+      const char *l_name = dev.name().c_str();
+      config = getDeviceConfig(l_name);
+      if (!config && !strncmp("PCI:", l_name, 4)) // compatibility
+	config = getDeviceConfig(l_name + 4);
       // Configure the device
       return dev.configure(config, err);
     }

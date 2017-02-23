@@ -61,19 +61,21 @@ namespace OCPI {
 	Sockets m_sockets;
 	bool trySocket(OCPI::OS::Ether::Interface &ifc, OCPI::OS::Ether::Socket &s,
 		       OCPI::OS::Ether::Address &addr, bool discovery, const char **exclude,
-		       Macs *macs, Device **dev, std::string &error);
+		       Macs *macs, Device **dev, const OCPI::Util::PValue *params,
+		       std::string &error);
 	// Try to find one or more devices on this interface
 	// mac is NULL for broadcast
 	// discovery is false only if mac is true
 	unsigned 
 	tryIface(OCPI::OS::Ether::Interface &ifc, OCPI::OS::Ether::Address &devAddr,
 		 const char **exclude, Device **dev, bool discovery, Macs *macs,
-		 std::string &error);
+		 const OCPI::Util::PValue *params, std::string &error);
       protected:
 	virtual ~Driver();
 	// device constructor
 	virtual Device *createDevice(OS::Ether::Interface &ifc, OS::Ether::Address &addr,
-				     bool discovery, std::string &error) = 0;
+				     bool discovery, const OCPI::Util::PValue *params,
+				     std::string &error) = 0;
       public:
 	// Find the discovery socket for this interface
 	OCPI::OS::Ether::Socket *
@@ -82,9 +84,11 @@ namespace OCPI {
 	search(const OCPI::Util::PValue *props, const char **exclude, bool discoveryOnly,
 	       bool udp, std::string &error);
 	OCPI::HDL::Device *
-	open(const char *etherName, bool discovery, std::string &err);
-	// callback when found
-	virtual bool found(OCPI::HDL::Device &dev, std::string &error) = 0;
+	open(const char *etherName, bool discovery, const OCPI::Util::PValue *params,
+	     std::string &err);
+	// Callback when found
+	virtual bool found(OCPI::HDL::Device &dev, const char **excludes, bool discoveryOnly,
+			   std::string &error) = 0;
       };
       class Device
 	: public OCPI::HDL::Device,
@@ -96,17 +100,18 @@ namespace OCPI {
 	std::string m_error;
 	bool m_discovery;
 	unsigned m_delayms;
-	bool m_failed;
       protected:
 	Device(Driver &driver, OCPI::OS::Ether::Interface &ifc, std::string &name,
-	       OCPI::OS::Ether::Address &devAddr, bool discovery,
-	       const char *data_proto, unsigned delayms, std::string &);
+	       OCPI::OS::Ether::Address &devAddr, bool discovery, const char *data_proto,
+	       unsigned delayms,  uint64_t ep_size, uint64_t controlOffset, uint64_t dataOffset,
+	       const OCPI::Util::PValue *params, std::string &);
       public:
 	virtual ~Device();
 	// Load a bitstream via jtag
 	//	virtual void load(const char *) = 0;
 	inline OS::Ether::Address &addr() { return m_devAddr; }
 	void setAddr(OS::Ether::Address &addr);
+	uint32_t dmaOptions(ezxml_t icImplXml, ezxml_t icInstXml, bool isProvider);
       protected:
 	// Tell me which socket to use (not to own)
 	//	inline void setSocket(OCPI::OS::Ether::Socket &socket) { m_socket = &socket; }
@@ -119,6 +124,7 @@ namespace OCPI {
 	void command(const char *cmd, size_t bytes, char *response, size_t rlen, unsigned delay);
       public:
 	uint64_t get64(RegisterOffset offset, uint32_t *status);
+#if 0
 	inline uint32_t get32(RegisterOffset offset, uint32_t *status) {
 	  return get(offset, sizeof(uint32_t), status);
 	}
@@ -128,9 +134,11 @@ namespace OCPI {
 	inline uint8_t get8(RegisterOffset offset, uint32_t *status) {
 	  return (uint8_t)(get(offset, sizeof(uint8_t), status) >> ((offset&3)*8));
 	}
+#endif
 	void getBytes(RegisterOffset offset, uint8_t *buf, size_t length, size_t elementBytes,
-		      uint32_t *status);
+		      uint32_t *status, bool string);
 	void set64(RegisterOffset offset, uint64_t val, uint32_t *status);
+#if 0
 	inline void set32(RegisterOffset offset, uint32_t val, uint32_t *status) {
 	  set(offset, sizeof(uint32_t), val, status);
 	}
@@ -140,6 +148,7 @@ namespace OCPI {
 	inline void set8(RegisterOffset offset, uint8_t val, uint32_t *status) {
 	  set(offset, sizeof(uint8_t), val << ((offset & 3) * 8), status);
 	}
+#endif
 	void setBytes(RegisterOffset offset, const uint8_t *buf, size_t length,
 		      size_t elementBytes, uint32_t *status);
       };

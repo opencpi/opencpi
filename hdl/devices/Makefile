@@ -43,35 +43,54 @@
 # one -- until we have a good naming convension.
 Package=ocpi.devices
 HdlLibraries=platform
+include $(OCPI_CDK_DIR)/include/util.mk
 # Remember that subdevices that support other devices must occur AFTER the devices they support
 # Similarly, emulators must occur after the devices they emulate
 Workers = \
+        $(and $(call OcpiHavePrereq,ad9361), \
+          ad9361_rx.hdl \
+          ad9361_tx.hdl \
+          ad9361_rx_proxy.rcc \
+          ad9361_tx_proxy.rcc \
+          ad9361_adc.hdl \
+          ad9361_dac.hdl \
+          ad9361_sub.hdl $(Comment this must be last since it supports the above)) \
+        ad7291.hdl \
+        stm_mc24c02.hdl \
+	sdp_node.hdl \
+	sdp_pipeline.hdl \
+	sdp_send.hdl \
+	sdp_receive.hdl \
+	sdp2cp.hdl \
+	sdp_term.hdl \
+        unoc2cp.hdl \
+        unoc_term.hdl \
 	ocdp.hdl \
 	flash.hdl \
 	lime_dac.hdl \
 	lime_adc.hdl \
-	lime_adc_em.hdl \
-	lime_dac_em.hdl \
 	si5351_proxy.rcc \
 	si5351.hdl \
 	si5351_em.hdl \
 	lime_rx.hdl \
-	lime_rx_em.hdl \
 	lime_tx.hdl \
+	lime_rx_em.hdl \
 	lime_tx_em.hdl \
 	lime_rx_proxy.rcc \
 	lime_tx_proxy.rcc \
 	lime_spi.hdl \
 	lime_spi_em.hdl \
+	cstest.hdl \
 	time_server.hdl
 
 ifeq (,$(OCPI_MINIMAL_BUILD))
 Workers += \
+	lime_adc_em.hdl \
+	lime_dac_em.hdl \
 	dac.hdl \
 	adcx.hdl \
 	adc.rcc \
 	dac.rcc \
-	cstest.hdl \
 	icap.hdl \
 	gbe.hdl
 endif # OCPI_MINIMAL_BUILD

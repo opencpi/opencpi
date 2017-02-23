@@ -41,22 +41,30 @@
  *    // wait until you are happy with the result...
  * }
  */
+#ifndef OCPIAPPLICATIONAPI_H
+#define OCPIAPPLICATIONAPI_H
 #include "OcpiContainerApi.h"
 
 namespace OCPI {
   namespace API {
     class ApplicationI;
+    class ApplicationX;
     class Application {
+      friend class ApplicationX;
+    protected:
       ApplicationI &m_application;
+      Application(ApplicationI &);
     public:
+
       // The constructor does the planning, deciding what impl will run where
       explicit Application(const char *file, const OCPI::API::PValue *params = NULL);
       explicit Application(const std::string &string, const OCPI::API::PValue *params = NULL);
-      
       // Creates a new Application instance from the app template
       explicit Application(Application & app, const OCPI::API::PValue *params = NULL);     
 
       virtual ~Application();
+      // INTERNAL ACCESSOR NOT SUPPORTED FOR API
+      const ApplicationI &applicationI() const { return m_application; }
       // This does the setup - creating/instantiating workers, 
       // setting initial properties, and making connections
       void initialize();
@@ -68,7 +76,10 @@ namespace OCPI {
       void finish();
       // Suspension, that can be resumed with "start".
       void stop();
+      const std::string &name() const;
       ExternalPort &getPort(const char *, const OCPI::API::PValue *params = NULL);
+      ExternalPort &getPort(unsigned index, std::string &name);
+      size_t getPortCount();
       bool getProperty(unsigned ordinal, std::string &name, std::string &value,
 		       bool hex = false, bool *parameterp = NULL, bool *cachedp = NULL,
 		       bool uncached = false);
@@ -79,6 +90,9 @@ namespace OCPI {
       void getProperty(const char* instance_name, const char* prop_name, std::string &value,
 		       bool hex = false);
       void setProperty(const char* instance_name, const char* prop_name, const char *value);
+      void dumpDeployment(const char *appFile, const std::string &file);
+      void dumpProperties(bool printParameters = true, bool printCached = true,
+			  const char *context = NULL) const;
     private:
       friend class Property;
       Worker &getPropertyWorker(const char *name, const char *&pname);
@@ -86,3 +100,4 @@ namespace OCPI {
   }
 }
 
+#endif

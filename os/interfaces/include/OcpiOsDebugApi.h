@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -52,6 +51,7 @@
  */
 
 #include <iostream>
+#include <cstdarg>
 
 #define OCPI_LOG_DEBUG_MIN 10
 #define OCPI_LOG_DEBUG 10
@@ -109,7 +109,10 @@ namespace OCPI {
       throw ();
 
     void logSetLevel(unsigned n);
+    unsigned logGetLevel();
+    bool logWillLog(unsigned n);
     void logPrint(unsigned n, const char *fmt, ...) throw() __attribute__((format(printf, 2, 3)));
+    void logPrintV(unsigned n, const char *fmt, va_list ap) throw();
   }
 }
 

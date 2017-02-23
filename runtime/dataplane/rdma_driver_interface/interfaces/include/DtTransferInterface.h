@@ -191,7 +191,7 @@ namespace DataTransfer {
   // inherits from XferRequest above).
   class XferServices
   {
-                
+    SmemServices &m_source;
   public:
                  
     /*
@@ -204,8 +204,8 @@ namespace DataTransfer {
      *        Errors:
      *                DataTransferEx for all exception conditions
      */
-    XferServices ( SmemServices * /* source */ , SmemServices * /* target */ ){};
-
+    XferServices ( SmemServices *a_source, SmemServices * /* target */ ) : m_source(*a_source) {}
+    SmemServices &source() { return m_source; }
     /*
      * If this service requires a cookie for the remote connection, this method will return it.
      */
@@ -222,8 +222,14 @@ namespace DataTransfer {
      * Create tranfer request object
      */
     virtual XferRequest* createXferRequest() = 0;
-
-                 
+    
+    // Send the given data to destination directly - like  write(2)
+    virtual void send(DtOsDataTypes::Offset offset, uint8_t *data, size_t nbytes);
+#if 0
+    // Send the data from the given offset in the source endpoint, to the destination
+    virtual void send(DtOsDataTypes::Offset src_offset, DtOsDataTypes::Offset dst_offset,
+		      size_t nbytes);
+#endif                 
     /*
      * Destructor - implementations are required to track all OcpiXferRequests that they
      * produce (via Copy, Copy2D, and Group) and dispose of them when destructed.
@@ -283,6 +289,8 @@ namespace DataTransfer {
      * cache locations and return the same location object for identical strings.
      ***************************************/
     virtual EndPoint* getEndPoint(const char *endpoint, bool local=false, bool cantExist = false );
+    // Find it or return NULL if you can't find it.  Remote or local.
+    EndPoint *findEndPoint(const char *endPoint);
     inline EndPoint* getEndPoint(const std::string &s, bool local=false) {
       return getEndPoint(s.c_str(), local);
     }
@@ -298,7 +306,8 @@ namespace DataTransfer {
      * it has been passed to finalizeEndpoint().
      ***************************************/
     virtual std::string allocateEndpoint(const OCPI::Util::PValue*,
-					 uint16_t mailBox, uint16_t maxMailBoxes) = 0;
+					 uint16_t mailBox, uint16_t maxMailBoxes,
+					 size_t size = 0) = 0;
     virtual std::string allocateCompatibleEndpoint(const OCPI::Util::PValue*params,
 						   const char *remote,
 						   uint16_t mailBox, uint16_t maxMailBoxes);

@@ -147,16 +147,17 @@ namespace OCPI {
 
     class ExternalPort : public OC::ExternalPortBase<Port,ExternalPort> {
     public:
-      ExternalPort(Port &port, const char *name, bool isProvider,
+      ExternalPort(Port &port, const char *a_name, bool a_isProvider,
 		   const OA::PValue *extParams, const OA::PValue *connParams) :
-        OC::ExternalPortBase<Port,ExternalPort>(port, *this, name, extParams, connParams, isProvider) {
+        OC::ExternalPortBase<Port,ExternalPort>(port, *this, a_name, extParams, connParams,
+						a_isProvider) {
       }      
       virtual ~ExternalPort() {}
     };
     OC::ExternalPort &Port::
-    createExternal(const char *extName, bool isProvider,
+    createExternal(const char *extName, bool a_isProvider,
 		   const OU::PValue *extParams, const OU::PValue *connParams) {
-      return *new ExternalPort(*this, extName, isProvider, extParams, connParams);
+      return *new ExternalPort(*this, extName, a_isProvider, extParams, connParams);
     }
 
     // For an output port, other == NULL signifies the collocated special case

@@ -1,4 +1,4 @@
-<HdlAssembly Name="testbias">
+<HdlAssembly>
   <Instance Worker="bias_vhdl" externals='true'/>
 </HdlAssembly>
 

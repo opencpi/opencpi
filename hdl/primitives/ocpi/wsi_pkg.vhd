@@ -5,6 +5,22 @@ library ieee; use ieee.std_logic_1164.all; use ieee.numeric_std.all;
 library ocpi; use ocpi.types.all; use ocpi.ocp;
 package wsi is
 
+  -- Generic slave to slave - no variability at all
+  type s2m_t is record
+    SReset_n            : std_logic;
+    SThreadBusy         : std_logic_vector(0 downto 0);
+ end record s2m_t;
+  -- Generic master, WITHOUT DATA.  Accepts imprecise and precise.
+  -- Maximum message burst size is enough for 16Kb with a data width of 8
+  --
+  type m2s_t is record
+    MBurstLength        : std_logic_vector(14 downto 0);
+    MCmd                : ocpi.ocp.MCmd_t;
+    MReqInfo            : std_logic_vector(7 downto 0);
+    MReqLast            : std_logic;
+    MReset_n            : std_logic;
+  end record m2s_t;
+
   function MData_width(dataWidth : natural; byteWidth : natural) return natural;
   function MDataInfo_width(dataWidth : natural; byteWidth : natural) return natural;
   function MByteEn_width(dataWidth : natural; byteWidth : natural) return natural;

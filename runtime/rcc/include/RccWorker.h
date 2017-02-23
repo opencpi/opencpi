@@ -137,13 +137,11 @@ namespace OCPI {
       void setProperty32(const OCPI::API::PropertyInfo &info, uint32_t data, unsigned idx) const;
       void setProperty64(const OCPI::API::PropertyInfo &info, uint64_t data, unsigned idx) const;
       void getPropertyBytes(const OCPI::API::PropertyInfo &info, size_t offset,
-				    uint8_t *data, size_t nBytes, unsigned idx) const;
+			    uint8_t *data, size_t nBytes, unsigned idx, bool string) const;
       uint8_t getProperty8(const OCPI::API::PropertyInfo &info, unsigned idx) const;
       uint16_t getProperty16(const OCPI::API::PropertyInfo &info, unsigned idx) const;
       uint32_t getProperty32(const OCPI::API::PropertyInfo &info, unsigned idx) const;
       uint64_t getProperty64(const OCPI::API::PropertyInfo &info, unsigned idx) const;
-
-
       void propertyWritten(unsigned ordinal) const;
       void propertyRead(unsigned ordinal) const;
       void prepareProperty(OCPI::Util::Property&,
@@ -189,11 +187,12 @@ namespace OCPI {
 	if (rc.m_timeout)
 	  m_runTimer.reset(rc.m_usecs / 1000000, (rc.m_usecs % 1000000) * 1000);
 	// fix up default run condition when there are no ports at all
-	if (m_nPorts == 0 && rc.m_portMasks && rc.m_portMasks[0] == RCC_ALL_PORTS)
+	if (m_nPorts == 0 && rc.m_portMasks && rc.m_portMasks[0] == RCC_ALL_PORTS) {
 	  if (rc.m_timeout)
 	    rc.m_portMasks[0] = RCC_NO_PORTS;
 	  else
 	    rc.m_portMasks = NULL;
+	}
       }
 
       // Our dispatch table

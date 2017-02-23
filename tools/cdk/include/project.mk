@@ -26,38 +26,48 @@ endif
 
 include $(OCPI_CDK_DIR)/include/ocpisetup.mk
 
-MaybeMake=$(AT)[ ! -d $1 ] || $(MAKE) -C $1 $2
+ifeq (@,$(AT))
+  .SILENT: clean exports components hdlprimitives hdlcomponents hdldevices hdladapters hdlcards hdlplatforms hdlassemblies cleanhdl rcc cleanrcc ocl cleanocl applications run cleancomponents cleanapplications cleanexports cleaneverything $(OcpiTestGoals)
+endif
 
+MaybeMake=if [ -d $1 ]; then $(MAKE) -C $1 $2; fi
 
-.PHONY: all applications test clean exports components
+# Three parameters - $1 is before platform, $2 is after platform, $3 is call to $(MAKE)
+MaybeMakePlatforms=\
+$(foreach p,$(HdlPlatform) $(HdlPlatforms),\
+   echo =============Building platform $p/$2 for $3 &&\
+   $(call MaybeMake,$1/$p/$2,$3) &&) true
+
+.PHONY: all applications clean exports components cleanhdl $(OcpiTestGoals)
 .PHONY: hdl hdlassemblies hdlprimitives hdlcomponents hdldevices hdladapters hdlplatforms hdlassemblies hdlportable
-all: hdlassemblies applications
+all: applications
 
 hdlassemblies applications: exports
 
-# Build tests where they might be found.
-test:
-	$(call MaybeMake,components,test)
-	$(call MaybeMake,hdl/devices,test)
-	$(call MaybeMake,hdl/platforms,test)
+# Perform test-related goals where they might be found.
+DoTests=$(foreach t,\
+          components hdl/devices hdl/adapters hdl/cards $(wildcard hdl/platforms/*/devices),\
+          $(call MaybeMake,$t,$1) &&) true
+$(OcpiTestGoals):
+	$(call DoTests,$@)
 
 clean: cleanhdl
 	$(call MaybeMake,components,clean)
 
 exports:
-	$(AT)$(OCPI_CDK_DIR)/scripts/makeExportLinks.sh $(OCPI_TARGET_DIR) $(ProjectPrefix)_
+	$(OCPI_CDK_DIR)/scripts/makeExportLinks.sh $(OCPI_TARGET_DIR) $(ProjectPrefix)_
 
 components: hdlprimitives
 	$(call MaybeMake,components,rcc hdl)
-	$(AT)$(MAKE) exports
+	$(MAKE) exports
 
 hdlprimitives:
 	$(call MaybeMake,hdl/primitives)
-	$(AT)$(MAKE) exports
+	$(MAKE) exports
 
 hdlcomponents: hdlprimitives
 	$(call MaybeMake,components,hdl)
-	$(AT)$(MAKE) exports
+	$(MAKE) exports
 
 hdldevices: hdlprimitives
 	$(call MaybeMake,hdl/devices)
@@ -68,11 +78,11 @@ hdladapters: hdlprimitives
 hdlcards: hdlprimitives
 	$(call MaybeMake,hdl/cards)
 
-hdlplatforms: hdldevices hdlcards
+hdlplatforms: hdldevices hdlcards hdladapters
 	$(call MaybeMake,hdl/platforms)
-	$(AT)$(MAKE) exports
+	$(MAKE) exports
 
-hdlassemblies: components hdlplatforms hdlcards hdladapters
+hdlassemblies: hdlcomponents hdlplatforms hdlcards hdladapters
 	$(call MaybeMake,hdl/assemblies)
 
 # Everything that does not need platforms
@@ -82,17 +92,21 @@ hdl: hdlassemblies
 
 cleanhdl:
 	$(call MaybeMake,components,cleanhdl)
-	$(AT) for d in primitives devices adapters cards platforms assemblies; do \
-		[ ! -d hdl/$$d ] || $(MAKE) -C hdl/$$d clean; \
-	      done
+	for d in primitives devices adapters cards platforms assemblies; do \
+	  [ ! -d hdl/$$d ] || $(MAKE) -C hdl/$$d clean; \
+	done
 
 rcc ocl hdl: exports
 
 rcc:
 	$(call MaybeMake,components,rcc)
+	$(call MaybeMake,hdl/devices,rcc)
+	$(call MaybeMakePlatforms,hdl/platforms,devices,rcc)
 
 cleanrcc:
 	$(call MaybeMake,components,cleanrcc)
+	$(call MaybeMake,hdl/devices,cleanrcc)
+	$(call MaybeMakePlatforms,hdl/platforms,devices,cleanrcc)
 
 ocl:
 	$(call MaybeMake,components,ocl)
@@ -100,7 +114,7 @@ ocl:
 cleanocl:
 	$(call MaybeMake,components,cleanocl)
 
-applications: components hdl
+applications: rcc hdl
 	$(call MaybeMake,applications)
 
 run: all test
@@ -113,10 +127,10 @@ cleancomponents:
 cleanapplications:
 	$(call MaybeMake,applications,clean)
 
-clean: cleancomponents cleanapplications cleanhdl cleanexports
+clean: cleancomponents cleanapplications cleanrcc cleanhdl cleanexports
 
 cleanexports:
-	$(AT)rm -r -f exports
+	rm -r -f exports
 
 cleaneverything: clean
 	find . -name '*~' -exec rm {} \;

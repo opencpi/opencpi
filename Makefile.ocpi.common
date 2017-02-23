@@ -43,23 +43,24 @@ MAIN_LDFLAGS=$(LDFLAGS)
 # source code about the compilation environment
 # We use "platform" rather than "arch" so that it can be more specific than
 # just the cpu of the compilation someday
-# The OCPI prefix on the OCPI_OS variable is to avoid the BRAINDEAD definition
+# The OCPI prefix on the OCPI_OS preprocessor variable is to avoid the namespace collision
 # of the symbol "linux", in g++ on linux.
 TARGET_CPPFLAGS=\
   -DOCPI_OS_$(OCPI_TARGET_OS) \
   -DOCPI_OS=OCPI$(OCPI_TARGET_OS) \
   -DOCPI_OS_VERSION_$(OCPI_TARGET_OS_VERSION) \
   -DOCPI_OS_VERSION=$(OCPI_TARGET_OS_VERSION) \
-  -DOCPI_PLATFORM_$(OCPI_TARGET_ARCH) \
-  -DOCPI_PLATFORM=$(OCPI_TARGET_ARCH) \
+  -DOCPI_PLATFORM_$(OCPI_TARGET_PLATFORM) \
+  -DOCPI_PLATFORM=$(OCPI_TARGET_PLATFORM) \
   -DOCPI_ARCH_$(OCPI_TARGET_ARCH) \
   -DOCPI_ARCH=$(OCPI_TARGET_ARCH) \
   -DOCPI_DEBUG=$(OCPI_DEBUG) \
   -DOCPI_DYNAMIC=$(OCPI_BUILD_SHARED_LIBRARIES)
 CFLAGS += $(TARGET_CPPFLAGS)
-CXXFLAGS += -D__STDC_LIMIT_MACROS -D__STDC_FORMAT_MACROS $(TARGET_CPPFLAGS)
+# these are in ocpisetup.mk
+CXXFLAGS += $(TARGET_CPPFLAGS)
 
-
+PREQLIBS=gmp lzma
 #
 # ----------------------------------------------------------------------
 # The rest should work.
@@ -80,7 +81,7 @@ MKDEPENDFLAGS += --pathtype mingw
 endif
 endif
 
-ifneq ($(filter linux macos,$(OCPI_OS)),)
+ifneq ($(filter linux macos,$(OCPI_TARGET_OS)),)
 #
 # Unix compile-time configuration
 #
@@ -89,7 +90,7 @@ xxMAIN_DRIVERS=\
   _ZN4OCPI3API12ExternalPortD0Ev \
   _ZN12DataTransfer22createHostSmemServicesERNS_8EndPointE
 
-OCPI_DRIVERS=hdl rcc pio dma sockets remote
+OCPI_DRIVERS=hdl rcc pio dma socket remote
 
 # When linking main programs, allow dynamic libraries to have undefined symbols since
 # we don't want to care about indirect depenedencies.
@@ -99,7 +100,7 @@ OCPI_DRIVERS=hdl rcc pio dma sockets remote
 ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)
   MAIN_LDFLAGS+= \
     $(foreach l,$(PREQLIBS), \
-      -Xlinker -rpath -Xlinker $(OCPI_PREREQUISITES_INSTALL_DIR)/$l/$(OCPI_TARGET_HOST)/lib)
+      -Xlinker -rpath -Xlinker $(OCPI_PREREQUISITES_INSTALL_DIR)/$l/$(OCPI_TARGET_DIR)/lib)
 endif
 
 # The library search for the executables have to deal with three different scenarios
@@ -112,15 +113,15 @@ endif
 
 MAIN_LDFLAGS+= \
   -Xlinker -rpath -Xlinker '$(RPATH_ORIGIN)' \
-  -Xlinker -rpath -Xlinker '$(RPATH_ORIGIN)/../../lib/$(OCPI_TARGET_HOST)' \
+  -Xlinker -rpath -Xlinker '$(RPATH_ORIGIN)/../../lib/$(OCPI_TARGET_DIR)' \
   -Xlinker -rpath -Xlinker '$(RPATH_ORIGIN)/lib' \
   -Xlinker -rpath \
-  -Xlinker '$(RPATH_ORIGIN)/$(call FindRelative,$(OBJDIR),$(OCPI_CDK_DIR))/lib/$(OCPI_TARGET_HOST)' \
+  -Xlinker '$(RPATH_ORIGIN)/$(call FindRelative,$(OBJDIR),$(OCPI_CDK_DIR))/lib/$(OCPI_TARGET_DIR)' \
   $(foreach o,$(MAIN_DRIVERS), $(call UNDEFINED_FLAG,$o))
 
 #$(LD_ALLOW_UNDEFINED)
 
-ifeq ($(OCPI_OS),macos)
+ifeq ($(OCPI_TARGET_OS),macos)
   SO=dylib
   LD_ALLOW_UNDEFINED=-Xlinker -undefined -Xlinker dynamic_lookup
   SHARED_ALLOW_UNDEFINED=-dynamiclib $(LD_ALLOW_UNDEFINED) -install_name @rpath/$(notdir $@)
@@ -131,7 +132,11 @@ ifeq ($(OCPI_OS),macos)
   BASICLIBS=
   CXXFLAGS += $(MACSTDLIB) -Wall -Wsequence-point  -Wparentheses -Wempty-body -Wformat-security \
               -Wformat -Wunused-variable -Wunused-parameter -Wsign-compare -Wno-dangling-else \
-              -Wno-logical-op-parentheses
+              -Wno-logical-op-parentheses \
+
+#	      -Wfloat-equal -Wextra -fno-strict-aliasing -Wuninitialized -Winit-self -Wshadow \
+#	      -Wno-conversion -Wsign-conversion -Wconversion
+
   # -Wuninitialized only usable with -O
   # not available on -Wunused-but-set-variable -Wignored-qualifiers -Wconversion-null -Wint-to-pointer-cast
   #CXXFLAGS += -Wall
@@ -178,7 +183,7 @@ ifeq ($(findstring timesys,$(OCPI_CROSS_BUILD_BIN_DIR)),timesys)
 MKDEPENDFLAGS += --xpattern "timesys"
 endif
 
-ifeq ($(OCPI_OS),macos)
+ifeq ($(OCPI_TARGET_OS),macos)
 CFLAGS+=-DMACOS
 CXXFLAGS+=-DMACOS -D_DARWIN_C_SOURCE
 endif
@@ -193,13 +198,13 @@ CFLAGS += -O2
 CXXFLAGS += -O2
 endif
 
-ifeq ($(OCPI_OS),linux)
+ifeq ($(OCPI_TARGET_OS),linux)
 # Linux libraries
 BASICLIBS = -lpthread -lrt -ldl
 #ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)
 #BASICLIBS += -ldl
 #endif
-else ifneq ($(OCPI_OS),macos)
+else ifneq ($(OCPI_TARGET_OS),macos)
 # Solaris libraries
 BASICLIBS = -lpthread -lsocket -lnsl -lrt
 endif
@@ -249,7 +254,7 @@ LIBDEP=$(foreach l,$(notdir $1),$(infox l is $l)\
                              $(OCPI_OUT_DIR)),$(infox x is $x)\
                  $(foreach z,$d$x/libocpi_$n.$s,$(infox ZZZ $l->$z:($(OCPI_OUT_DIR)))$z))))))
 
-PREQDEP=$(foreach d,$(OCPI_PREREQUISITES_INSTALL_DIR)/$1/$(OCPI_TARGET_HOST)/lib,$(infox d is $d)\
+PREQDEP=$(foreach d,$(OCPI_PREREQUISITES_INSTALL_DIR)/$1/$(OCPI_TARGET_DIR)/lib,$(infox d is $d)\
 	   $(foreach s,$(if $(filter 0,$(OCPI_BUILD_SHARED_LIBRARIES)),a,$(SO)),\
 	     $(foreach l,$d/lib$1.$s,$(infox PREQDEP: $1 -> $l)$l)))
  
@@ -293,7 +298,7 @@ ALLIDLINC = $(TAO_INC) $(TAO_INC)/tao
 
 IDLOPTS = -ss _s.cxx -cs _c.cxx -hc .h -hs _s.h -ci .inl -si _s.inl -H binary_search
 
-ifeq ($(OCPI_OS),linux)
+ifeq ($(OCPI_TARGET_OS),linux)
 LD_LIBRARY_PATH := $(LD_LIBRARY_PATH):$(ACE_LIB)
 export LD_LIBRARY_PATH
 endif

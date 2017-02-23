@@ -227,7 +227,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
 
  // printf("port max len = %d\n", port->current.maxLength);
  
- readl = (port->current.maxLength > s->header.length) ?  s->header.length : port->current.maxLength;
+ readl = (props->messageSize > s->header.length) ?  s->header.length : props->messageSize;
  if ((n = read(s->fd, port->current.data, readl )) < 0) {
    self->container.setError( "error reading file: %s", strerror(errno));
    return RCC_ERROR;

@@ -34,7 +34,7 @@
 #
 ########################################################################### #
 
-ifeq ($(OCPI_OS),vxworksdkm)
+ifeq ($(OCPI_TARGET_OS),vxworksdkm)
   EXCLUDE_SOURCES += OcpiUtilLoadableModule.cxx
 endif
 
@@ -50,9 +50,9 @@ else
   endif
 endif
 
-ALLINC += $(OCPIOS_EXPORTS) \
-	$(LOGGER_EXPORTS)
+ALLINC += $(OCPI_PREREQUISITES_DIR)/gmp/include \
+          $(OCPI_PREREQUISITES_DIR)/gmp/$(OCPI_TARGET_DIR)/include \
+          $(OCPIOS_EXPORTS) \
+          $(LOGGER_EXPORTS)
 ALLLIBS += $(LOGGER_LIBS) \
 	$(OCPIOS_LIBS)
-CXXFLAGS +=-D_VERSION='"2.3.9.1"' -DLINUX
-

@@ -67,8 +67,8 @@ namespace DataTransfer {
       friend class DatagramSocket;
       friend class DatagramXferFactory;
     protected:
-      DatagramEndPoint( std::string& endpoint, bool local, uint32_t size=0)
-	: EndPoint(endpoint, size, local) { 
+      DatagramEndPoint( std::string& endpoint, bool a_local, uint32_t a_size=0)
+	: EndPoint(endpoint, a_size, a_local) { 
 	const char *error = NULL;
 	size_t len = strlen(OCPI_ETHER_RDMA);
 	const char *ep = endpoint.c_str();
@@ -105,7 +105,6 @@ namespace DataTransfer {
       }
       const std::string &ifname() const { return m_ifname; }
       OE::Address &addr() { return m_addr; } // not const
-      const char* getAddress() { return m_addr.pretty(); }
     public:
       bool isCompatibleLocal(const char *remote) const {
 	std::string interface;
@@ -185,9 +184,9 @@ namespace DataTransfer {
 
       const char* getProtocol() { return OCPI_ETHER_RDMA; }
 
-
       std::string 
-      allocateEndpoint(const OCPI::Util::PValue*params, uint16_t mailBox, uint16_t maxMailBoxes)
+      allocateEndpoint(const OCPI::Util::PValue*params, uint16_t mailBox, uint16_t maxMailBoxes,
+		       size_t size = 0)
       {
 	const char *ifname;
 	if (!OU::findString(params, "interface", ifname))
@@ -198,8 +197,8 @@ namespace DataTransfer {
 	  throw OU::Error(OCPI_ETHER_RDMA ": bad ethernet interface: %s", error.c_str());
 	std::string ep;
 	OCPI::Util::formatString(ep, OCPI_ETHER_RDMA ":%s/%s;%zu.%" PRIu16".%" PRIu16,
-				 ifc.name.c_str(), ifc.addr.pretty(), parent().getSMBSize(),
-				 mailBox, maxMailBoxes);
+				 ifc.name.c_str(), ifc.addr.pretty(),
+				 size ? size : parent().getSMBSize(), mailBox, maxMailBoxes);
 	return ep;
       }
 

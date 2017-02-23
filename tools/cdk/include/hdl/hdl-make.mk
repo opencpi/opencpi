@@ -2,12 +2,38 @@
 # It is distinguishd from hdl-pre.mk in that it doesn't really mess with any variables
 # Thus HDL utility stuff goes here unless it is order sensitive, in which case it
 # is in hdl-pre.mk
+
 ifndef __HDL_MAKE_MK__
 __HDL_MAKE_MK__=x
 Model:=hdl
 # This file is included by the various levels of hdl makefiles (not the leaf makefiles)
 # i.e. a Makefile file that does other makefiles.
 # Note that targets are generally families except when a primitive core is actually part-specific.
+ifdef HdlTarget
+override HdlTarget:=$(patsubst %_pf,%,$(HdlTarget))
+endif
+ifdef HdlTargets
+override HdlTargets:=$(patsubst %_pf,%,$(HdlTargets))
+endif
+ifdef OnlyTargets
+override OnlyTargets:=$(patsubst %_pf,%,$(OnlyTargets))
+endif
+ifdef ExcludeTargets
+override ExcludeTargets:=$(patsubst %_pf,%,$(ExcludeTargets))
+endif
+ifdef HdlPlatform
+override HdlPlatform:=$(patsubst %_pf,%,$(HdlPlatform))
+endif
+ifdef HdlPlatforms
+override HdlPlatforms:=$(patsubst %_pf,%,$(HdlPlatforms))
+endif
+ifdef OnlyPlatforms
+override OnlyPlatforms:=$(patsubst %_pf,%,$(OnlyPlatforms))
+endif
+ifdef ExcludePlatforms
+override ExcludePlatforms:=$(patsubst %_pf,%,$(ExcludePlatforms))
+endif
+
 
 $(call OcpiDbgVar,HdlPlatforms)
 $(call OcpiDbgVar,HdlTargets)
@@ -40,7 +66,6 @@ $(call OcpiDbgVar,HdlAllPlatformParts)
 HdlAllFamilies:=$(call Unique,$(foreach t,$(HdlTopTargets),$(or $(HdlTargets_$(t)),$(t))))
 $(call OcpiDbgVar,HdlAllFamilies)
 
-
 # Read the workers file and set things accordingly
 # 1. Set the instance list, which is a list of <worker-name>:<instance-name>
 # 2. The workers list, which is a list of worker names
@@ -68,7 +93,7 @@ define HdlSetWorkers
             $$(foreach d,$$(call HdlTargetComponentLibraries,$$(HdlTarget),HSW),\
                $$(call HdlExists,$$d/$$w$$(HdlBin))))),\
           $$(call FindRelative,.,$$f)),\
-	),$$(if $$(filter-out ocscp ocscp_rv metadata metadata_rv time_client time_client_rv unoc_node unoc_node_rv,$$w),$$(warning Warning: Worker $$w was not found in any of the component libraries)))))
+	),$$(if $$(filter-out ocscp ocscp_rv metadata metadata_rv time_client time_client_rv unoc_node unoc_node_rv,$$w),$$(warning Warning: Worker $$w was not found in any of the component libraries built for $$(HdlTarget))))))
    $$(infox Cores SubCores_$$(HdlTarget) is $$(origin SubCores_$$(HdlTarget)) $$(flavor SubCores_$$(HdlTarget)):$$(SubCores_$$(HdlTarget)))
 
 endef
@@ -136,15 +161,6 @@ HdlGetFamily_core=$(call OcpiDbg,Entering HdlGetFamily_core($1,$2))$(strip \
 # $(call HdlGetFamilies,hdl-target)
 # Return all the families for this target
 # HdlGetFamilies=$(call OcpiDbg,Entering HdlGetFamilies($1))$(strip 
-ifdef NEVER
-HdlGetFamilies=$(eval m1=$(subst $(Space),___,$1))$(strip \
-  $(if $(HdlGetFamilies_cached<$(m1)>),,\
-    $(call OcpiDbg,HdlGetFamilies($1) cache miss)$(eval export HdlGetFamilies_cached<$(m1)>:=$(strip $(call HdlGetFamilies_core,$1))))\
-  $(infox HdlGetFamilies($1)->$(HdlGetFamilies_cached<$(m1)>))$(HdlGetFamilies_cached<$(m1)>))
-
-endif
-#HdlGetFamilies_core=$(strip \
-
 HdlGetFamilies=$(strip \
   $(foreach fs,$(call Unique,$(foreach t,$1,\
                          $(if $(findstring $(t),all),\
@@ -256,7 +272,6 @@ $(call OcpiDbgVar,HdlTargets)
 define HdlSearchComponentLibraries
 
   override XmlIncludeDirsInternal := $(call Unique,$(XmlIncludeDirsInternal) $(call HdlXmlComponentLibraries))
-
 endef
 HdlRmRv=$(if $(filter %_rv,$1),$(patsubst %_rv,%,$1),$1)
 
@@ -288,8 +303,8 @@ HdlPassTargets=$(and $(HdlTargets),HdlTargets="$(HdlTargets)") \
 
 # Do target-specific file shadowing
 HdlShadowFiles=\
-  $(foreach f,$(filter-out $(filter-out %.vhd,$(CoreBlackBoxFiles)),\
-                  $(CompiledSourceFiles)),\
+  $(foreach f,$(filter-out $(filter-out %.vhd,$(call CoreBlackBoxFiles,$1,$2)),\
+              $(CompiledSourceFiles)),\
      $(or $(wildcard $(HdlTarget)/$f),\
 	  $(wildcard $(call HdlGetTop,$(HdlTarget))/$f),\
           $f))
@@ -300,36 +315,29 @@ HdlShadowFiles=\
 # Return nothing if no parameters
 # FIXME: this has worker stuff in it - should it be elsewhere?
 # $(call HdlTargetSrcFiles,target-dir,paramconfig)
-HdlTargetSrcFiles=\
+HdlTargetSrcFiles=$(and $(filter-out library core,$(HdlMode)),\
   $(if $(and $2,$(filter-out 0,$2)),\
-    $(call HdlVHDLTargetDefs,$1,$2) $(call HdlVerilogTargetDefs,$1,$2), \
-    $(DefsFile) $(WDefsFile)) \
-  $(and $(WorkerParamNames),$(strip \
-     $(call WkrTargetDir,$1,$2)/generics$(HdlVHDLIncSuffix)\
-     $(and $(filter .v,$(HdlSourceSuffix)),\
-       $(call WkrTargetDir,$1,$2)/generics$(HdlVerilogIncSuffix))))\
-  $(if $(and $2,$(filter-out 0,$2)),$(call HdlVHDLTargetImpl,$1,$2),$(ImplHeaderFiles))
+    $(call HdlVHDLTargetDefs,$1,$2),\
+    $(VHDLDefsFile)) \
+  $(call HdlVerilogTargetDefs,$1,$2) \
+  $(call WkrTargetDir,$1,$2)/generics$(HdlVHDLIncSuffix)\
+  $(call WkrTargetDir,$1,$2)/generics$(HdlVerilogIncSuffix) \
+  $(if $(and $2,$(filter-out 0,$2)),$(call HdlVHDLTargetImpl,$1,$2),$(VHDLImplFile))\
+  $(ImplFile))
 
-#		$(and $(ParamVHDLtype_$(ParamConfig)_$n), \
-#		   echo '$(ParamVHDLtype_$(ParamConfig)_$n)' ;) \
-#
+$(OutDir)target-%/generics.vhd: $$(ImplXmlFile) | $(OutDir)target-%
+	$(AT)echo Generating the VHDL constants file for config $(ParamConfig): $@
+	$(AT)$(OcpiGen) -D $(@D) \
+	                $(and $(Assembly),-S $(Assembly)) $(and $(Platform),-P $(Platform)) \
+	                $(and $(PlatformDir),-F $(PlatformDir)) \
+	                -g$(ParamConfig) $(and $(filter verilog,$(HdlLanguage)),-w) $(ImplXmlFile)
 
-$(OutDir)target-%/generics.vhd: | $(OutDir)target-%
-	$(AT)(\
-	     echo -- This file sets values for top level generics ;\
-	     echo library ocpi\; use ocpi.all, ocpi.types.all\; ;\
-	     echo package body $(Worker)_constants is ;\
-	     $(foreach n,$(WorkerParamNames)$(infox WPN:$(WorkerParamNames):),\
-		echo '$(ParamVHDL_$(ParamConfig)_$n)'\; ;) \
-	     echo end $(Worker)_constants\; \
-	) > $@
-
-$(OutDir)target-%/generics.vh: | $(OutDir)target-%
-	$(AT)(\
-	     echo // This file sets values for top level parameters ;\
-	     $(foreach n,$(WorkerParamNames),\
-		echo "$(ParamVerilog_$(ParamConfig)_$n)"\; ;) \
-	) > $@
+$(OutDir)target-%/generics.vh: $$(ImplXmlFile) | $(OutDir)target-%
+	$(AT)echo Generating the Verilog constants file for config $(ParamConfig): $@
+	$(AT)$(OcpiGen) -D $(dir $@) \
+	                $(and $(Assembly),-S $(Assembly)) $(and $(Platform),-P $(Platform)) \
+	                $(and $(PlatformDir),-F $(PlatformDir)) \
+	                -g$(ParamConfig) $(and $(filter vhdl,$(HdlLanguage)),-w) $(ImplXmlFile)
 
 ifneq (,)
 # Establish where the platforms are

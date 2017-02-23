@@ -1,5 +1,5 @@
-<HdlImplementation Name="icap" Language="Verilog" Pattern="%w%M%0_">
-  <ComponentSpec Name="icap">
+<HdlImplementation Language="Verilog" Pattern="%w%M%0_">
+  <ComponentSpec>
     <Properties>
       <property name="dramStatus" readable="true"/>
       <property name="drmCtrl" readable="true" writable="true"/>

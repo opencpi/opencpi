@@ -1,6 +1,6 @@
 # This script is for example/application development.
 # It is ALSO called during native environment setup when building the core tree.
-# In this case the CDK is skeletal, but still usable
+# In this latter case the CDK is skeletal, but still usable
 # This script should be sourced to set the OpenCPI CDK environment variables
 # This script does not prepare for execution (except our own tools).
 # If the bash does not have extdebug/BASH_ARGV support, there is no
@@ -43,6 +43,7 @@ if test "$OCPI_ASSERT" = ""; then
 fi
 
 if test "$OCPI_DYNAMIC" = ""; then
+  # OCPI_DYNAMIC is the right variable. OCPI_BUILD_SHARED_LIBRARIES is legacy
   if test "$OCPI_BUILD_SHARED_LIBRARIES" != ""; then
     export OCPI_DYNAMIC=$OCPI_BUILD_SHARED_LIBRARIES
   else
@@ -51,75 +52,13 @@ if test "$OCPI_DYNAMIC" = ""; then
 fi
 export OCPI_BUILD_SHARED_LIBRARIES=$OCPI_DYNAMIC
 
-# The tool mode and dir are set now, and are needed to set PATH below.
-
-if test "$OCPI_TARGET_PLATFORM" = ""; then
-  if test "$OCPI_TARGET_HOST" != ""; then
-    # For compatibility if  OCPI_TARGET_PLATFORM not set.
-    for i in $OCPI_CDK_DIR/platforms/*; do
-     if test -f $i/target -a "$(< $i/target)" = "$OCPI_TARGET_HOST"; then
-       export OCPI_TARGET_PLATFORM=$(basename $i)
-       break
-     fi
-    done
-    if test "$OCPI_TARGET_PLATFORM" = ""; then
-      echo The value of $OCPI_TARGET_HOST does not match any known platform.
-      exit 1
-    fi
-  fi
-fi
-if test "$OCPI_TARGET_PLATFORM" != ""; then
-  if test "$OCPI_TARGET_HOST" = ""; then
-    f=$OCPI_CDK_DIR/platforms/$OCPI_TARGET_PLATFORM/target
-    if test ! -f $f; then
-      echo OCPI_TARGET_PLATFORM is $OCPI_TARGET_PLATFORM.  File $f is missing.
-      exit 1
-    fi
-    t=$(< $f)
-    export OCPI_TARGET_HOST=$t
-    vars=(${OCPI_TARGET_HOST//-/ })
-    export OCPI_TARGET_OS=${vars[0]}
-    export OCPI_TARGET_OS_VERSION=${vars[1]}
-    export OCPI_TARGET_ARCH=${vars[2]}
-  fi
-else
-  export OCPI_TARGET_OS=$OCPI_TOOL_OS
-  export OCPI_TARGET_OS_VERSION=$OCPI_TOOL_OS_VERSION
-  export OCPI_TARGET_ARCH=$OCPI_TOOL_ARCH
-  export OCPI_TARGET_HOST=$OCPI_TOOL_HOST
-  export OCPI_TARGET_PLATFORM=$OCPI_TOOL_PLATFORM
-fi
-if test "$OCPI_TARGET_DIR" = ""; then
-  if test "$OCPI_USE_TARGET_MODES" != ""; then
-    if test "${OCPI_TARGET_MODE+UNSET}" = ""; then
-      if test "$OCPI_DEBUG" = 1; then do=d; else do=o; fi
-      if test "$OCPI_DYNAMIC" = 1; then sd=d; else sd=s; fi
-      export OCPI_TARGET_MODE=$sd$do
-      export OCPI_TARGET_DIR=${OCPI_TARGET_HOST}/${OCPI_TARGET_MODE}
-    fi
-  else
-    export OCPI_TARGET_DIR=$OCPI_TARGET_HOST
-  fi
-fi
-
-f=$OCPI_CDK_DIR/platforms/$OCPI_TARGET_PLATFORM/$OCPI_TARGET_PLATFORM-target.sh
-if test ! -f $f; then
-  echo Error: there is no file: \"$f\" to setup the build environment for the \"$OCPI_TARGET_PLATFORM\" platform.
-  exit 1
-fi
-# initialize the baseline values for all targets before the specific target file is sourced
-# these flags should be common to all compilers in use.  As more compilers are added this
-# list may in fact be reduced.
-[ -z "$OCPI_TARGET_CFLAGS" ] &&
-  export OCPI_TARGET_CFLAGS="-Wall -Wfloat-equal -Wextra  -fno-strict-aliasing -Wconversion -std=c99"
-[ -z "$OCPI_TARGET_CXXFLAGS" ] &&
-  export OCPI_TARGET_CXXFLAGS="-Wextra -Wall -Wfloat-equal -fno-strict-aliasing -Wconversion"
-source $f
-#default the target host to the tool host
 export PATH=$OCPI_CDK_DIR/bin/$OCPI_TOOL_DIR:$PATH
 if test "$OCPI_LIBRARY_PATH" = ""; then
-  # Default library path for RCC workers only
-  export OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/lib/components:$OCPI_CDK_DIR/lib/platforms/$OCPI_TARGET_PLATFORM
+  # Default library path for core RCC workers and HDL assembliesa
+  export OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/lib/components:$OCPI_CDK_DIR/lib/hdl/assemblies
 fi
-echo OCPI_CDK_DIR is $OCPI_CDK_DIR and OCPI_TOOL_HOST is $OCPI_TOOL_HOST
 
+# Initialize target variables, using OCPI_TARGET_PLATFORM if it is set
+source $OCPI_CDK_DIR/scripts/ocpitarget.sh ""
+
+echo OCPI_CDK_DIR is $OCPI_CDK_DIR and OCPI_TOOL_PLATFORM is $OCPI_TOOL_PLATFORM

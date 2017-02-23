@@ -5,27 +5,24 @@
 # Be sure to write error messages to stderr since some funtions return
 # data on stdout
 ################################################################################
+source $OCPI_CDK_DIR/scripts/util.sh
 func=$1
 temp=$2
 dir=`dirname $0`
 #echo bitfile=$1 device=$2 part=$3 esn=$4 position=$5 temp=$6
-# Now we must find the USB port that has the right ESN.
-# If there is only one port, then "any" as serial number is ok.
-if test "$OCPI_XILINX_TOOLS_DIR" = ""; then
-  echo Error: environment variable OCPI_XILINX_TOOLS_DIR not set. 1>&2
+setVarsFromMake $OCPI_CDK_DIR/include/hdl/xilinx.mk ShellIseVars=1 $verbose
+[ -z "$OcpiXilinxLabToolsDir" ] && {
+  echo Error: Could not find the directory for XILINX LabTools or ISE.
   exit 1
-fi
-source $OCPI_XILINX_TOOLS_DIR/settings64.sh 1>&2
+}
+source $OcpiXilinxLabToolsDir/../settings64.sh 1>&2
 if test $? != 0; then
   echo Xilinx tools setup failed. 1>&2
   exit 1
 fi
-if test -x $OCPI_XILINX_TOOLS_DIR/ISE/bin/lin64/impact; then
-  imp="$OCPI_XILINX_TOOLS_DIR/ISE/bin/lin64/impact -batch"
-elif test -x $OCPI_XILINX_TOOLS_DIR/LabTools/bin/lin64/impact; then
-  imp="$OCPI_XILINX_TOOLS_DIR/LabTools/bin/lin64/impact -batch"
-else
-  echo Error: Xilinx impact tool not found in either $OCPI_XILINX_TOOLS_DIR/ISE/bin/lin64 nor $OCPI_XILINX_TOOLS_DIR/LabTools/bin/lin64 1>&2
+imp="$OcpiXilinxLabToolsDir/bin/lin64/impact"
+if test ! -x $imp; then
+  echo Error: Xilinx impact tool not found at $imp 1>&2
   exit 1
 fi
 # impact expects to overwrite/create this file.  In the off chance that it exists
@@ -55,7 +52,7 @@ function bad {
 ################################################################################
 case $func in
   (cables)
-    $imp  > $temp.log <<EOF
+    $imp -batch > $temp.log <<EOF
 listusbcables
 EOF
     # impact doesn't have reliable exit codes
@@ -74,7 +71,7 @@ EOF
     echo Finding cable position of part \"$part\" on cable at port \"$port\" 1>&2
     temps=$temp.part
     for pp in 1 2 3 4 5 6 7 8 9; do
-      $imp <<EOF 2> $temp.log 1>&2
+      $imp -batch <<EOF 2> $temp.log 1>&2
 setMode -bs
 setCable -p $port
 identify
@@ -113,7 +110,7 @@ EOF
        bitfile=$tempfile
        ;;
     esac
-    $imp <<EOF 2> $temp.log 1>&2
+    $imp -batch <<EOF 2> $temp.log 1>&2
 setMode -bs
 setCable -port $port
 Identify

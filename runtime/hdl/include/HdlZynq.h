@@ -10,7 +10,7 @@ namespace OCPI {
       const uint32_t FTM_ADDR = 0xF880B000;
       struct FTM {
 	uint32_t
-	glbctrl,
+	  glbctrl,
 	  status,
 	  control,
 	  p2fdbg0,

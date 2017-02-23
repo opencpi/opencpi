@@ -1,3 +1,4 @@
+#include "assembly.h"
 #include "hdl.h"
 
 WtiPort::
@@ -11,7 +12,7 @@ WtiPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
     return;
   for (unsigned i = 0; i < w.m_ports.size(); i++) {
     Port *p = w.m_ports[i];
-    if (p->type == WTIPort && p != this) {
+    if (p->m_type == WTIPort && p != this) {
       err = "More than one WTI specified, which is not permitted";
       return;
     }
@@ -123,9 +124,9 @@ emitVHDLShellPortMap(FILE *f, std::string &last) {
   OU::format(out, typeNameOut.c_str(), "");
   fprintf(f,
 	  "%s    %s_in => worker_%s",
-	  last.c_str(), name(), in.c_str());
+	  last.c_str(), cname(), in.c_str());
   if (m_allowUnavailable || clock != m_worker->m_wciClock)
-    fprintf(f, ",\n    %s_out => worker_%s", name(), out.c_str());
+    fprintf(f, ",\n    %s_out => worker_%s", cname(), out.c_str());
   last = ",\n";
 }
 
@@ -151,10 +152,11 @@ emitRecordOutputs(FILE *f) {
 
 #if 0
 void WtiPort::
-emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inWorker) {
-  ocpiAssert(!master);
+emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inRecord, bool inPackage,
+		 bool inWorker) {
+  ocpiAssert(!m_master);
   fprintf(f, "%s    -- Signals for %s %s port named \"%s\".  See record type(s) above.\n",
-	  last.c_str(), typeName(), masterIn() ? "slave" : "master", name());
+	  last.c_str(), typeName(), masterIn() ? "slave" : "master", cname());
 
   fprintf(f,
 	  "    %-*s : in  worker_%s_t",
@@ -166,3 +168,16 @@ emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inWorker) 
   last = ";\n";
 }
 #endif
+const char *WtiPort::
+finalizeExternal(Worker &aw, Worker &/*iw*/, InstancePort &ip,
+		 bool &/*cantDataResetWhileSuspended*/) {
+  // We don't share ports since the whole point of WTi is to get
+  // intra-chip accuracy via replication of the time clients.
+  // We could have an option to use wires instead to make things smaller
+  // and less accurate...
+  const char *err;
+  if (!m_master && ip.m_attachments.empty() &&
+      (err = aw.m_assembly->externalizePort(ip, "wti", &aw.m_assembly->m_nWti)))
+    return err;
+  return NULL;
+}

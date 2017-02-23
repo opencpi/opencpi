@@ -250,7 +250,7 @@ namespace OCPI {
       // We know that the only thing that can happen at launch time is to
       // get initial provider info from input ports
       c = &m_connections[0];
-      for (unsigned n = 0; n < m_connections.size(); n++, c++)
+      for (n = 0; n < m_connections.size(); n++, c++)
 	if (c->m_launchIn == m_local && c->m_launchOut != m_local) {
 	  OU::formatAdd(m_response, "  <connection id='%u' ipi='", n);
 	  OU::encodeDescriptor(c->m_ipi, m_response);
@@ -358,7 +358,7 @@ namespace OCPI {
 	  (err = OX::getNumber(m_rx, "wait", &n,    &wait,  0, false)) ||
 	  (err = OX::getBoolean(m_rx, "hex", &hex)) ||
 	  inst >= m_instances.size() || !m_instances[inst].m_worker ||
-	  (get || set) && n >= m_instances[inst].m_worker->m_nProperties)
+	  ((get || set) && n >= m_instances[inst].m_worker->m_nProperties))
 	return OU::eformat(error, "Control message error: %s", err);
       m_response = "<control>";
       OC::Worker &w = *m_instances[inst].m_worker;
@@ -409,16 +409,18 @@ namespace OCPI {
       *cp = '\0'; // in case there are NO containers
       for (unsigned n = 0; (ac = OA::ContainerManager::get(n)); n++) {
 	OC::Container &c = *static_cast<OC::Container *>(ac);
-	size_t inserted =
-	  snprintf(cp, length, "%s|%s|%s|%s|%s|%c\n", c.name().c_str(), c.model().c_str(),
-		   c.os().c_str(), c.osVersion().c_str(), c.platform().c_str(),
+	std::string info;
+	OU::format(info, "%s|%s|%s|%s|%s|%s|%c|", c.name().c_str(), c.model().c_str(), c.os().c_str(),
+		   c.osVersion().c_str(), c.arch().c_str(), c.platform().c_str(),
 		   c.dynamic() ? '1' : '0');
-	if (inserted >= length) {
+	info += '\n';
+	if (info.length() >= length) {
 	  OU::format(error, "Too many containers, discovery buffer would overflow");
 	  return true;
 	}
-	cp += inserted;
-	length -= inserted;
+	strcpy(cp, info.c_str());
+	cp += info.length();
+	length -= info.length();
       }
       length--; // account for the null char of the last line
       return false;

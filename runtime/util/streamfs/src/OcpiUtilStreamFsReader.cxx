@@ -749,7 +749,7 @@ readTOC ()
     char *epPos, *epSize, *epLm;
 
     unsigned long long pos =  std::strtoul (sPos.c_str(), &epPos, 10);
-    unsigned long long size = std::strtoul (sSize.c_str(), &epSize, 10);
+    unsigned long long mySize = std::strtoul (sSize.c_str(), &epSize, 10);
     unsigned long long lm =   std::strtoul (sLm.c_str(), &epLm, 10);
 
     if (!epPos || *epPos || !epSize || *epSize || !epLm || !epLm) {
@@ -758,7 +758,7 @@ readTOC ()
 
     Node & inode = m_toc[fileName];
     inode.pos = pos;
-    inode.size = size;
+    inode.size = mySize;
     inode.lastModified = static_cast<std::time_t> (lm);
   }
 }

@@ -44,16 +44,17 @@
  *    Revision Detail: Created
  */
 
+#include <cstddef>
+#include "OcpiOsAssert.h"
 #include "OcpiUtilMisc.h"
-#include <DtTransferInternal.h>
-#include <OcpiPortSet.h>
-#include <OcpiBuffer.h>
-#include <OcpiOutputBuffer.h>
-#include <OcpiInputBuffer.h>
-#include <OcpiTemplateGenerators.h>
-#include <OcpiTransferController.h>
-#include <OcpiIntDataDistribution.h>
-#include <OcpiOsAssert.h>
+#include "DtTransferInternal.h"
+#include "OcpiPortSet.h"
+#include "OcpiBuffer.h"
+#include "OcpiOutputBuffer.h"
+#include "OcpiInputBuffer.h"
+#include "OcpiTransferController.h"
+#include "OcpiIntDataDistribution.h"
+#include "OcpiTemplateGenerators.h"
 
 #define FORMAT_TRANSFER_EC_RETHROW( sep, tep )                                \
   char buf[512];                                                        \
@@ -276,11 +277,8 @@ createOutputBroadcastTemplates( Port* s_port, PortSet* input,
     // We need a transfer template to allow a transfer to each input buffer
     for ( int t_buffers=0; t_buffers<n_t_buffers; t_buffers++ ) {
 
-      // Get the input port
-      Port* t_port = input->getPort(0);
-
       // input buffer
-      InputBuffer* t_buf = static_cast<InputBuffer*>(t_port->getInputBuffer(t_buffers));
+      InputBuffer* t_buf = static_cast<InputBuffer*>(input->getPort(0)->getInputBuffer(t_buffers));
       t_tid = t_buf->getTid();
 
       // Create a template
@@ -578,11 +576,8 @@ void TransferTemplateGeneratorPattern1::createOutputTransfers( Port* s_port, Por
     // We need a transfer template to allow a transfer to each input buffer
     for ( int t_buffers=0; t_buffers<n_t_buffers; t_buffers++ ) {
 
-      // Get the input port
-      Port* t_port = input->getPort(0);
-
       // input buffer
-      InputBuffer* t_buf = t_port->getInputBuffer(t_buffers);
+      InputBuffer* t_buf = input->getPort(0)->getInputBuffer(t_buffers);
       int t_tid = t_buf->getTid();
 
       // Create a template
@@ -645,6 +640,15 @@ void TransferTemplateGeneratorPattern1::createOutputTransfers( Port* s_port, Por
 			   output_offsets->bufferSize,
 			   XferRequest::DataTransfer );
 
+	  if (t_port->getMetaData()->m_descriptor.options & (1 << FlagIsMeta)) {
+	    ptransfer->copy(output_offsets->metaDataOffset +
+			    s_port->getPortId() * OCPI_SIZEOF(DDT::Offset, BufferMetaData) +
+			    OCPI_OFFSETOF(DDT::Offset, RplMetaData, xferMetaData),
+			    input_offsets->metaDataOffset +
+			    s_port->getPortId() * OCPI_SIZEOF(DDT::Offset, uint32_t), 
+			    sizeof(OCPI::OS::uint32_t),
+			    XferRequest::FlagTransfer);
+	  } else {
           // Create the transfer that copys the output meta-data to the input meta-data
           ptransfer->copy (
 			   output_offsets->metaDataOffset + s_port->getPortId() * OCPI_SIZEOF(DDT::Offset, BufferMetaData),
@@ -661,6 +665,7 @@ void TransferTemplateGeneratorPattern1::createOutputTransfers( Port* s_port, Por
 			   sizeof(BufferState),
 			   XferRequest::FlagTransfer );
 
+	  }
         }
         catch( ... ) {
           FORMAT_TRANSFER_EC_RETHROW( s_port, t_port );
@@ -742,11 +747,8 @@ createOutputTransfers(OCPI::DataTransport::Port* s_port,
     // We need a transfer template to allow a transfer to each input buffer
     for ( int t_buffers=0; t_buffers<n_t_buffers; t_buffers++ ) {
 
-      // Get the input port
-      Port* t_port = input->getPort(0);
-
       // input buffer
-      InputBuffer* t_buf = t_port->getInputBuffer(t_buffers);
+      InputBuffer* t_buf = input->getPort(0)->getInputBuffer(t_buffers);
       int t_tid = t_buf->getTid();
 
       // Create a template
@@ -802,6 +804,15 @@ createOutputTransfers(OCPI::DataTransport::Port* s_port,
         // buffer is ready for the remote actor to pull data.
         try {
 
+	  if (t_port->getMetaData()->m_descriptor.options & (1 << FlagIsMeta)) {
+	    ptransfer->copy(output_offsets->metaDataOffset +
+			    s_port->getPortId() * OCPI_SIZEOF(DDT::Offset, BufferMetaData) +
+			    OCPI_OFFSETOF(DDT::Offset, RplMetaData, xferMetaData),
+			    input_offsets->metaDataOffset +
+			    s_port->getPortId() * OCPI_SIZEOF(DDT::Offset, uint32_t), 
+			    sizeof(OCPI::OS::uint32_t),
+			    XferRequest::FlagTransfer);
+	  } else {
           // Create the transfer that copys the output state to the remote input state
           ptransfer->copy (
 			   output_offsets->localStateOffset + s_port->getPortId() * OCPI_SIZEOF(DDT::Offset, BufferState),
@@ -809,6 +820,7 @@ createOutputTransfers(OCPI::DataTransport::Port* s_port,
 			   sizeof(BufferState),
 			   XferRequest::FlagTransfer );
 
+	  }
         }
         catch( ... ) {
           FORMAT_TRANSFER_EC_RETHROW( s_port, t_port );
@@ -929,11 +941,8 @@ void TransferTemplateGeneratorPattern1AFCShadow::createOutputTransfers( Port* s_
     // We need a transfer template to allow a transfer to each input buffer
     for ( int t_buffers=0; t_buffers<n_t_buffers; t_buffers++ ) {
 
-      // Get the input port
-      Port* t_port = input->getPort(0);
-
       // input buffer
-      InputBuffer* t_buf = t_port->getInputBuffer(t_buffers);
+      InputBuffer* t_buf = input->getPort(0)->getInputBuffer(t_buffers);
       int t_tid = t_buf->getTid();
 
       // Create a template
@@ -1434,8 +1443,8 @@ createOutputTransfers(Port* s_port,
             transfer_count++, sequence++ ) {
 
         // Get the input port
-        Port* t_port = input->getPort(0);
-        InputBuffer* t_buf = t_port->getInputBuffer(t_buffers);
+        Port* in_port = input->getPort(0);
+        InputBuffer* t_buf = in_port->getInputBuffer(t_buffers);
         int t_tid = t_buf->getTid();
 
         // We need to be capable of transfering the gated transfers to all input buffers
@@ -1552,7 +1561,7 @@ createOutputTransfers(Port* s_port,
 
           } // end for each input port
 
-          t_buf = t_port->getInputBuffer(t_gated_buffer%n_t_buffers);
+          t_buf = in_port->getInputBuffer(t_gated_buffer%n_t_buffers);
           t_tid = t_buf->getTid();
 
         } // for each gated buffer

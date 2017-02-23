@@ -67,6 +67,7 @@ MyCores=$(ImportCores) $(Cores)
 ifdef PrimitiveLibraries
 Libs:=$(PrimitiveLibraries)
 endif
+
 all: $(Libs) $(MyCores)
 hdl: all
 # enable cores to use libs

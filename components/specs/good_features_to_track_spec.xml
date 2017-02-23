@@ -1,4 +1,4 @@
-<ComponentSpec Name="good_features_to_track">
+<ComponentSpec>
   <Properties>
     <Property Name="height" readable="true" writable="true"/>
     <Property Name="width" readable="true" writable="true"/>

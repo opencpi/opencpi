@@ -268,7 +268,7 @@ type unoc_data_t is record
   be      : std_logic_vector(unoc_ndw_c*4-1 downto 0);
   payload : unoc_payload_t; -- on sof, headers are first 2 or 3 words
 end record unoc_data_t;
--- ugly - can't use 'left or any sort of sizeof() on records?
+-- can't use 'left or any sort of sizeof() on records?
 constant unoc_data_width : natural := 2 + unoc_hit_width_c + unoc_ndw_c*4 + unoc_ndw_c*32;
 function to_slv(d : unoc_data_t) return std_logic_vector;
 function to_unoc(v : std_logic_vector) return unoc_data_t;
@@ -277,6 +277,7 @@ type unoc_master_in_t is record
   data  : unoc_data_t; -- data from the uNoc to the interconnect
   valid : bool_t;      -- this data is valid, can be dequeued
   take  : bool_t;      -- take data in other direction's record: perform dequeue
+  dropCount : uchar_t;
 end record unoc_master_in_t;
 
 -- The master/source interface of the uNoc
@@ -293,13 +294,13 @@ type unoc_master_out_t is record
 end record unoc_master_out_t;
 
 
-component unoc_terminator is
-  port(
-    up_in      : in  unoc_master_out_t;
-    up_out     : out unoc_master_in_t;
-    drop_count : out unsigned(7 downto 0)
-    );
-end component unoc_terminator;
+-- component unoc_terminator is
+--   port(
+--     up_in      : in  unoc_master_out_t;
+--     up_out     : out unoc_master_in_t;
+--     drop_count : out unsigned(7 downto 0)
+--     );
+-- end component unoc_terminator;
 
 component unoc_cp_adapter is
   port(

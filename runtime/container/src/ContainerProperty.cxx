@@ -75,5 +75,7 @@ namespace OCPI {
       m_info(w.setupProperty(n, m_writeVaddr, m_readVaddr)), m_ordinal(m_info.m_ordinal),
       m_readSync(m_info.m_readSync), m_writeSync(m_info.m_writeSync) {
     }
+
+    BaseType Property::baseType() const {return m_info.m_baseType;}
   }
 }

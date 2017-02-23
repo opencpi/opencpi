@@ -1,0 +1,25 @@
+<!-- 
+ AD7291 8-Channel, I2C, 12-Bit SAR ADC with Temperature Sensor
+-->
+<HdlDevice language='vhdl' rawproperties='1'>
+  <ComponentSpec/>
+  <!-- I2C read/write transactions require additional time to complete -->
+  <ControlInterface Timeout='65536'/>
+  <!-- raw property interface to subdevice to share the I2C and controlthe chip select -->
+  <!-- delegating the SCL, SDA, AS0, and AS1 signals to the subdevice -->
+  <rawprop name='rawprops' master='true'/>
+  <!-- On-chip registers as raw properties -->
+  <property name='command' type='ushort' writable='1'/>                <!-- 0 note write-only-->
+  <property name='voltageConversionResult' type='ushort' volatile='1'/><!-- 1 note read-only -->
+  <property name='tSenseConversionResult' type='ushort' volatile='1'/> <!-- 2 note read-only -->
+  <property name='tSenseAverageResult' type='ushort' volatile='1'/>    <!-- 3 note read-only -->
+  <!-- high, low, and hysteresis registers for each channel. temp is channel 8
+       using addresses 4 through 0x1E -->
+  <property name='channelData' type='ushort' arraydimensions='9,3' writable='1' volatile='1'/>
+  <property name='alertStatusA' type='ushort' volatile='1'/>           <!-- 1F note read-only -->
+  <property name='alertStatusB' type='ushort' volatile='1'/>           <!-- 20 note read-only -->
+  <!-- signal from chip when certain analog inputs are out of range. -->
+  <signal input='ALERT'/>
+  <!-- quick pulse for reset, and long setting for power down -->
+  <signal output='PD_RST_N'/>
+</HdlDevice>

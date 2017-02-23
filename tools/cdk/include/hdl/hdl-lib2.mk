@@ -51,7 +51,7 @@ $(call OutLibFile,$1,$2): override ParamConfig:=$2
 $(call OutLibFile,$1,$2): override WorkLib:=$(WorkLib)$(and $(filter-out 0,$2),_c$2)
 $(call OutLibFile,$1,$2): $(call HdlTargetSrcFiles,$1,$2)
 $(call OutLibFile,$1,$2): \
-  HdlSources= $(call HdlTargetSrcFiles,$1,$2) $$(HdlShadowFiles)
+  HdlSources=$$(call Unique,$$(filter-out %.vh,$$(call HdlTargetSrcFiles,$1,$2) $$(call HdlShadowFiles,$1,$2)))
 $(call OutLibFile,$1,$2): \
 $$$$(foreach l,$$$$(HdlLibrariesInternal),$$$$(call HdlLibraryRefDir,$$$$l,$$$$(HdlTarget),,DLT))
 
@@ -60,6 +60,7 @@ $(call OutLibFile,$1,$2): $$$$(HdlPreCore) $$$$(HdlSources) | $$$$(TargetDir)
 	$(AT)$$(HdlCompile)
 
 endef
+
 $(foreach f,$(HdlActualTargets),\
   $(eval $(foreach c,$(ParamConfigurations),$(call DoLibTarget,$f,$c)$(call DoImplConfig,$f,$c))))
 
@@ -71,4 +72,3 @@ $(call OcpiDbgVar,OutLibFiles,Before all:)
 $(call OcpiDbgVar,LibName,Before all:)
 
 all: $(OutLibFiles)
-

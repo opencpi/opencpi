@@ -1,4 +1,4 @@
-<ComponentSpec Name="vadd">
+<ComponentSpec>
   <Properties>
      <Property Name="flag" Type="ULong" Readable="true" Writable="true"/>
   </Properties>

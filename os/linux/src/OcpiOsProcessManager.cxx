@@ -245,7 +245,7 @@ reaperThread (void *)
      * See if there is any process that wants to start.
      */
 
-    for (it = g_myChildren.begin(); it != g_myChildren.end(); it++) {
+    for (it = g_myChildren.begin(); it != g_myChildren.end(); ++it) {
       ProcessData & pd = **it;
 
       if (!pd.started) {
@@ -261,13 +261,13 @@ reaperThread (void *)
            * threaded, so use sigprocmask here.
            */
 
-          sigset_t clearSigSet;
-	  sigemptyset(&clearSigSet);
-          sigaddset (&clearSigSet, SIGCHLD);
-          sigaddset (&clearSigSet, SIGUSR1);
-          sigaddset (&clearSigSet, SIGINT);
-          sigaddset (&clearSigSet, SIGTERM);
-          sigprocmask (SIG_UNBLOCK, &clearSigSet, 0);
+          sigset_t clearSigSet_undo;
+          sigemptyset(&clearSigSet_undo);
+          sigaddset (&clearSigSet_undo, SIGCHLD);
+          sigaddset (&clearSigSet_undo, SIGUSR1);
+          sigaddset (&clearSigSet_undo, SIGINT);
+          sigaddset (&clearSigSet_undo, SIGTERM);
+          sigprocmask (SIG_UNBLOCK, &clearSigSet_undo, 0);
 
           /*
            * Child process, run the executable.
@@ -370,7 +370,7 @@ reaperThread (void *)
      */
 
     while (childPid != 0 && childPid != -1) {
-      for (it = g_myChildren.begin(); it != g_myChildren.end(); it++) {
+      for (it = g_myChildren.begin(); it != g_myChildren.end(); ++it) {
         if ((*it)->pid == childPid) {
           break;
         }

@@ -1,18 +1,20 @@
 <HdlPlatform Language="VHDL" spec='platform-spec'>
+  <specproperty name='platform' value='ml605'/>
+  <specproperty name="nSlots" value='2'/>
+  <specproperty name="slotNames" value='fmc_lpc,fmc_hpc'/>
   <!-- All platform workers must provide these two ports -->
   <metadata master='true'/> <!-- access to container metadata via the platform worker -->
   <timebase master='true'/> <!-- providing a timebase for the time service -->
-  <!-- This platform worker provides a control plane -->
-  <cpmaster master='true'/>
   <!-- Declare and parameterize the time_server device worker for this platform -->
   <device worker='time_server'>
     <property name='frequency' value='200e6'/>
   </device>
   <!-- This platform worker provides a data plane called "pcie" -->
   <unoc name="pcie" master='true'/>
-  <unoc name="pcie_slave"/>
   <property name="pciId" type='ushort' volatile='true'/>
   <property name="unocDropCount" type='uchar' volatile='true'/>
+
+
   <signal input="sys0_clk" differential='true'/>
   <signal input='sys1_clk' differential='true'/>
   <signal input='pci0_clk' differential='true'/>
@@ -22,6 +24,10 @@
   <signal output='led' width='13'/>
   <signal input='ppsExtIn'/>
   <signal output='ppsOut'/>
+  <!-- These "card-is-present-in-slot" signals are copies of those in the slots -->
+  <signal input='fmc_lpc_prsnt_m2c_l'/>
+  <signal input='fmc_hpc_prsnt_m2c_l'/>
+
   <!-- The FMC LPC slot.  We only mention signals that don't have the canonical signal name -->
   <slot name='FMC_LPC' type='fmc_lpc'>
    <signal slot='LA00_P_CC' platform='LA00_CC_P'/>
@@ -33,8 +39,14 @@
    <signal slot='LA17_P_CC' platform='LA17_CC_P'/>
    <signal slot='LA17_N_CC' platform='LA17_CC_N'/>
 
+   <signal slot='DP0_C2M_P' platform=''/>
+   <signal slot='DP0_C2M_N' platform=''/>
+   <signal slot='DP0_M2C_P' platform=''/>
+   <signal slot='DP0_M2C_N' platform=''/>
    <signal slot='LA18_P_CC' platform='LA18_CC_P'/>
    <signal slot='LA18_N_CC' platform='LA18_CC_N'/>
+   <signal slot='SCL' platform='IIC_SCL_LS'/>
+   <signal slot='SDA' platform='IIC_SDA_LS'/>
   </slot>
   <slot name='FMC_HPC' type='fmc_hpc'>
    <signal slot='LA00_P_CC' platform='LA00_CC_P'/>
@@ -46,8 +58,52 @@
    <signal slot='LA17_P_CC' platform='LA17_CC_P'/>
    <signal slot='LA17_N_CC' platform='LA17_CC_N'/>
 
+   <signal slot='DP0_C2M_P' platform=''/>
+   <signal slot='DP0_C2M_N' platform=''/>
+   <signal slot='DP0_M2C_P' platform=''/>
+   <signal slot='DP0_M2C_N' platform=''/>
+
    <signal slot='LA18_P_CC' platform='LA18_CC_P'/>
    <signal slot='LA18_N_CC' platform='LA18_CC_N'/>
+
+   <signal slot='DP9_M2C_P' platform=''/>
+   <signal slot='DP9_M2C_N' platform=''/>
+   <signal slot='DP8_M2C_P' platform=''/>
+   <signal slot='DP8_M2C_N' platform=''/>
+   <signal slot='DP7_M2C_P' platform=''/>
+   <signal slot='DP7_M2C_N' platform=''/>
+   <signal slot='DP6_M2C_P' platform=''/>
+   <signal slot='DP6_M2C_N' platform=''/>
+
+   <signal slot='DP9_C2M_P' platform=''/>
+   <signal slot='DP9_C2M_N' platform=''/>
+   <signal slot='DP8_C2M_P' platform=''/>
+   <signal slot='DP8_C2M_N' platform=''/>
+   <signal slot='DP7_C2M_P' platform=''/>
+   <signal slot='DP7_C2M_N' platform=''/>
+   <signal slot='DP6_C2M_P' platform=''/>
+   <signal slot='DP6_C2M_N' platform=''/>
+
+   <signal slot='DP1_M2C_P' platform=''/>
+   <signal slot='DP1_M2C_N' platform=''/>
+   <signal slot='DP2_M2C_P' platform=''/>
+   <signal slot='DP2_M2C_N' platform=''/>
+   <signal slot='DP3_M2C_P' platform=''/>
+   <signal slot='DP3_M2C_N' platform=''/>
+   <signal slot='DP4_M2C_P' platform=''/>
+   <signal slot='DP4_M2C_N' platform=''/>
+   <signal slot='DP5_M2C_P' platform=''/>
+   <signal slot='DP5_M2C_N' platform=''/>
+   <signal slot='DP1_C2M_P' platform=''/>
+   <signal slot='DP1_C2M_N' platform=''/>
+   <signal slot='DP2_C2M_P' platform=''/>
+   <signal slot='DP2_C2M_N' platform=''/>
+   <signal slot='DP3_C2M_P' platform=''/>
+   <signal slot='DP3_C2M_N' platform=''/>
+   <signal slot='DP4_C2M_P' platform=''/>
+   <signal slot='DP4_C2M_N' platform=''/>
+   <signal slot='DP5_C2M_P' platform=''/>
+   <signal slot='DP5_C2M_N' platform=''/>
 
    <signal slot='HA00_P_CC' platform='HA00_CC_P'/>
    <signal slot='HA00_N_CC' platform='HA00_CC_N'/>
@@ -68,6 +124,8 @@
    <signal slot='HB17_N_CC' platform='HB17_CC_N'/>
 
    <signal slot='PG_M2C' platform='PG_M2C_LS'/> <!-- hardware level shifters on carrier -->
+   <signal slot='SCL' platform='/IIC_SCL_MAIN_LS'/>
+   <signal slot='SDA' platform='/IIC_SDA_MAIN_LS'/>
 
   </slot>
   <device worker='flash'/>

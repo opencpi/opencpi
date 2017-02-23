@@ -23,7 +23,7 @@
 #
 ########################################################################### #
 
-ALLINC += $(LOGGER_EXPORTS) $(OCPIOS_EXPORTS) $(OCPI_GTEST_DIR)/include
+ALLINC += $(LOGGER_EXPORTS) $(OCPIOS_EXPORTS) $(OCPI_PREREQUISITES_DIR)/gtest/include
 MAINOBJS=$(PKGOBJECTS:%=../%)
 ALLLIBS += $(LOGGER_LIBS) $(UTIL_LIBS) $(OCPIOS_LIBS)
-SYSLIBS += $(OCPI_GTEST_DIR)/$(OCPI_TARGET_HOST)/lib/gtest 
+PREQLIBS+= gtest

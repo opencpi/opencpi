@@ -15,6 +15,8 @@ namespace OCPI {
       
       friend class Port;
       friend class Device;
+      friend class Container;
+      friend class Artifact;
       const char *m_implName, *m_instName;
       mutable size_t m_window; // perfect use-case for mutable..
       bool m_hasControl;
@@ -26,12 +28,15 @@ namespace OCPI {
       size_t m_occpIndex;
       OCPI::Util::Property *m_propInfo; // the array of property descriptors
       WciControl(Device &device, const char *impl, const char *inst, unsigned index, bool hasControl);
+    public:
       WciControl(Device &device, ezxml_t implXml, ezxml_t instXml, OCPI::Util::Property *props, bool doInit = true);
       virtual ~WciControl();
+    protected:
       // This is shadowed by real application workers, but is used when this is 
       // standalone.
       //      const std::string &name() const { return m_wName; }
       void init(bool redo, bool doInit);
+      bool isReset() const;
       inline size_t index() const { return m_occpIndex; }
       void propertyWritten(unsigned ordinal) const;
       void propertyRead(unsigned ordinal) const;
@@ -97,8 +102,11 @@ namespace OCPI {
 	      get32Register(status, OccpWorkerRegisters) &		          \
 	      OCCP_STATUS_READ_ERRORS;					          \
 	} else								          \
-	  val = m_properties.m_accessor->get##n(m_properties.m_base + offset,     \
-						&status);                         \
+	  val = (uint##n##_t)						\
+	    (n == 64 ?							\
+	     m_properties.m_accessor->get64(m_properties.m_base + offset, &status) : \
+	     m_properties.m_accessor->get(m_properties.m_base + offset,	sizeof(uint##n##_t), \
+					  &status));	\
 	if (status)							          \
 	  throwPropertyReadError(status, offset, n/8, val);			\
 	return val;							          \
@@ -112,7 +120,7 @@ namespace OCPI {
 			    const uint8_t *data, size_t nBytes, unsigned idx) const;
 
       void getPropertyBytes(const OCPI::API::PropertyInfo &info, size_t offset, uint8_t *buf,
-			    size_t nBytes, unsigned idx) const;
+			    size_t nBytes, unsigned idx, bool string) const;
       void setPropertySequence(const OCPI::API::PropertyInfo &p,
 			       const uint8_t *val,
 			       size_t nItems, size_t nBytes) const;

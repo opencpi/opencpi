@@ -21,6 +21,8 @@ NET "led(7)" LOC = U14 | IOSTANDARD = LVCMOS33;
 ############################################################################
 NET FMC_SCL       LOC = R7   | IOSTANDARD=LVCMOS33;  # "FMC-SCL"
 NET FMC_SDA       LOC = U7   | IOSTANDARD=LVCMOS33;  # "FMC-SDA"
+# Bank 33, Vcco = 3.3V
+NET FMC_PRSNT     LOC = AB14 | IOSTANDARD=LVCMOS33;  # "FMC-PRSNT"
 ############################################################################
 # FMC LPC SLOT signals: Bank 34, Vcco = Vadj, Vref = FMC_VREF
 ############################################################################

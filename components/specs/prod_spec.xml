@@ -1,4 +1,4 @@
-<ComponentSpec Name="prod">
+<ComponentSpec>
   <Properties>
      <Property Name="p1" Type="Long" Volatile="true" Writable="true"/>
      <Property Name="p2" Type="Long" Volatile="true" Writable="true"/>

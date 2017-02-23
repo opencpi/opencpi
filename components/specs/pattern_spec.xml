@@ -6,7 +6,7 @@ Properties:
  messageSize: indicates the size of messages
  granularity: incidates that the last message will be truncated to be a multiple of this.
 -->
-<ComponentSpec name='pattern'>
+<ComponentSpec>
 
   <DataInterfaceSpec Name="out" Producer="true">
       <!-- <xi:include href="stream32_protocol.xml"/> -->

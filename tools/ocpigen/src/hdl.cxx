@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <ctype.h>
 #include "hdl.h"
 #include "hdl-device.h"
 
@@ -47,9 +48,9 @@ finalizeHDL() {
   unsigned wipN[NWIPTypes][2] = {{0}};
   for (unsigned i = 0; i < m_ports.size(); i++) {
     Port *p = m_ports[i];
-    if ((err = p->doPatterns(wipN[p->type][p->masterIn()], m_maxPortTypeName)))
+    if ((err = p->doPatterns(wipN[p->m_type][p->masterIn()], m_maxPortTypeName)))
       return err;
-    wipN[p->type][p->masterIn()]++;
+    wipN[p->m_type][p->masterIn()]++;
   }
   return NULL;
 }
@@ -58,7 +59,7 @@ Clock *Worker::
 addWciClockReset() {
   // If there is no control port, then we synthesize the clock as wci_clk
   for (ClocksIter ci = m_clocks.begin(); ci != m_clocks.end(); ci++)
-    if (!strcasecmp("wci_Clk", (*ci)->name()))
+    if (!strcasecmp("wci_Clk", (*ci)->cname()))
       return *ci;
   Clock *clock = addClock();
   clock->m_name = "wci_Clk";
@@ -72,7 +73,7 @@ Clock *Worker::
 findClock(const char *name) const {
   for (ClocksIter ci = m_clocks.begin(); ci != m_clocks.end(); ci++) {
     Clock *c = *ci;
-    if (!strcasecmp(name, c->name()))
+    if (!strcasecmp(name, c->cname()))
       return c;
   }
   return NULL;
@@ -123,11 +124,10 @@ parseHdlImpl(const char *package) {
     bool raw = false;
     for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++) {
       OU::Property &p = **pi;
-      if (!p.m_isParameter) {
+      if (!p.m_isParameter || p.m_isReadable) {
 	// Determine when the raw properties start
-	if (m_ctl.rawProperties &&
-	    (!m_ctl.firstRaw ||
-	     !strcasecmp(m_ctl.firstRaw->m_name.c_str(), p.m_name.c_str())))
+	if (m_ctl.rawProperties && !p.m_isParameter &&
+	    (!m_ctl.firstRaw || !strcasecmp(m_ctl.firstRaw->m_name.c_str(), p.m_name.c_str())))
 	  raw = true;
 	if (raw) {
 	  if (p.m_isWritable)
@@ -142,7 +142,7 @@ parseHdlImpl(const char *package) {
 	    m_ctl.nonRawWritables = true;
 	  if (p.m_isVolatile)
 	    m_ctl.nonRawVolatiles = true;
-	  if (p.m_isVolatile || p.m_isReadable && !p.m_isWritable)
+	  if (p.m_isVolatile || (p.m_isReadable && !p.m_isWritable && !p.m_isParameter))
 	    m_ctl.nonRawReadbacks = true;
 	  m_ctl.nNonRawRunProperties++;
 	  if (p.m_isSub32)
@@ -150,8 +150,8 @@ parseHdlImpl(const char *package) {
 	}
       }
     }
-    if (!m_wci->count)
-      m_wci->count = 1;
+    if (!m_wci->m_count)
+      m_wci->m_count = 1;
     // clock processing depends on the name so it must be defaulted here
     if (m_ctl.sub32Bits)
       m_needsEndian = true;
@@ -180,8 +180,10 @@ parseHdlImpl(const char *package) {
       (err = initImplPorts(m_xml, "timebase", createPort<TimeBasePort>)) ||
       (err = initImplPorts(m_xml, "CPMaster", createPort<CpPort>)) ||
       (err = initImplPorts(m_xml, "uNOC", createPort<NocPort>)) ||
+      (err = initImplPorts(m_xml, "SDP", createPort<SdpPort>)) ||
       (err = initImplPorts(m_xml, "Metadata", createPort<MetaDataPort>)) ||
       (err = initImplPorts(m_xml, "Control", createPort<WciPort>)) ||
+      (err = initImplPorts(m_xml, "DevSignal", createPort<DevSignalsPort>)) ||
       (err = initImplPorts(m_xml, "DevSignals", createPort<DevSignalsPort>)) ||
       (err = initImplPorts(m_xml, "rawprop", createPort<RawPropPort>)))
     return err;
@@ -215,12 +217,12 @@ parseHdlImpl(const char *package) {
     Port *p = m_ports[i];
     if (p->clockPort)
       p->clock = p->clockPort->clock;
-    if (p->count == 0)
-      p->count = 1;
+    if (p->m_count == 0)
+      p->m_count = 1;
   }
   const char *emulate = ezxml_cattr(m_xml, "emulate");
   if (emulate) {
-    if (m_ports.size() > 1 || m_ports.size() == 1 && m_ports[0]->type != WCIPort)
+    if (m_ports.size() > 1 || (m_ports.size() == 1 && m_ports[0]->m_type != WCIPort))
       return OU::esprintf("Device emulation workers can't have any ports");
     //    addWciClockReset();
     if (ezxml_cchild(m_xml, "signal") || ezxml_cchild(m_xml, "signals"))
@@ -249,8 +251,7 @@ parseHdlImpl(const char *package) {
 
 Signal::
 Signal()
-  : m_direction(IN), m_width(0), m_differential(false), m_pos("%sp"), m_neg("%sn"),
-    m_in("%s_i"), m_out("%s_o"), m_oe("%s_oe"), m_type(NULL) {
+  : m_direction(IN), m_width(0), m_differential(false), m_type(NULL) {
 }
 
 Signal * Signal::
@@ -266,11 +267,18 @@ reverse() {
   return s;
 }
 
+static void ucase(std::string &s) {
+  for (unsigned n = 0; n < s.length(); ++n)
+    if (s[n] == '%')
+      ++n;
+    else if (islower(s[n]))
+      s[n] = (char)toupper(s[n]);
+}
 const char *Signal::
 parse(ezxml_t x) {
   const char *err;
-  if ((err = OE::checkAttrs(x, "input", "inout", "bidirectional", "output",
-			    "width", "differential", "type", (void*)0)))
+  if ((err = OE::checkAttrs(x, "input", "inout", "bidirectional", "output", "width",
+			    "differential", "type", "pos", "neg", "in", "out", "oe", (void*)0)))
     return err;
   const char *name;
   if ((name = ezxml_cattr(x, "Input")))
@@ -290,6 +298,23 @@ parse(ezxml_t x) {
     return OU::esprintf("Signals that are both \"inout\" and differential are not supported");
   m_type = ezxml_cattr(x, "type");
   m_name = name;
+  OE::getOptionalString(x, m_pos, "pos", "%sp");
+  OE::getOptionalString(x, m_neg, "neg", "%sn");
+  OE::getOptionalString(x, m_in, "in", "%s_i");
+  OE::getOptionalString(x, m_out, "out", "%s_o");
+  OE::getOptionalString(x, m_oe, "oe", "%s_oe");
+  bool anyLower = false;
+  for (const char *cp = name; *cp; ++cp)
+    if (islower(*cp))
+      anyLower = true;
+
+  if (!anyLower) {
+    ucase(m_pos);
+    ucase(m_neg);
+    ucase(m_in);
+    ucase(m_out);
+    ucase(m_oe);
+  }
   return NULL;
 }
 
@@ -307,7 +332,7 @@ parseSignals(ezxml_t xml, const std::string &parent, Signals &signals, SigMap &s
   // process ad hoc signals
   for (ezxml_t xs = ezxml_cchild(xml, "Signal"); !err && xs; xs = ezxml_next(xs)) {
     Signal *s = new Signal;
-    if (!(err = s->parse(xs)))
+    if (!(err = s->parse(xs))) {
       if (sigmap.find(s->m_name.c_str()) == sigmap.end()) {
 	signals.push_back(s);
 	sigmap[s->m_name.c_str()] = s;
@@ -315,6 +340,7 @@ parseSignals(ezxml_t xml, const std::string &parent, Signals &signals, SigMap &s
 	err = OU::esprintf("Duplicate signal: '%s'", s->m_name.c_str());
 	delete s;
       }
+    }
   }
   return err;
 }
@@ -330,6 +356,43 @@ deleteSignals(Signals &signals) {
   for (SignalsIter si = signals.begin(); si != signals.end(); si++)
     delete *si;
 }
+
+Signal *SigMap::
+findSignal(const char *name, std::string *suffixed) const {
+  SigMap_::const_iterator i = find(name);
+  if (suffixed)
+    suffixed->clear();
+  if (i != end())
+    return i->second;
+  // No match, perhaps a suffixed match, look the slow way
+  if (!suffixed)
+    return NULL;
+  for (i = begin(); i != end(); i++) {
+    Signal &s = *i->second;
+    if (s.m_differential) {
+      OU::format(*suffixed, s.m_pos.c_str(), s.m_name.c_str());
+      if (!strcasecmp(name, suffixed->c_str()))
+	return &s;
+      OU::format(*suffixed, s.m_neg.c_str(), s.m_name.c_str());
+      if (!strcasecmp(name, suffixed->c_str()))
+	return &s;
+    } else if (s.m_direction == Signal::INOUT || s.m_direction == Signal::OUTIN) {
+      OU::format(*suffixed, s.m_in.c_str(), s.m_name.c_str());
+      if (!strcasecmp(name, suffixed->c_str()))
+	return &s;
+      OU::format(*suffixed, s.m_out.c_str(), s.m_name.c_str());
+      if (!strcasecmp(name, suffixed->c_str()))
+	return &s;
+      OU::format(*suffixed, s.m_oe.c_str(), s.m_name.c_str());
+      if (!strcasecmp(name, suffixed->c_str()))
+	return &s;
+    } else
+      continue;
+  }
+  suffixed->clear();
+  return NULL;
+}
+
 const char *SigMap::
 findSignal(Signal *s) {
   for (SigMap_::const_iterator si = begin(); si != end(); si++)
@@ -337,6 +400,7 @@ findSignal(Signal *s) {
       return (*si).first;
   return NULL;
 }
+
 const char *SigMapIdx::
 findSignal(Signal *sig, size_t idx) const {
   for (SigMapIdxIter i = begin(); i != end(); i++)

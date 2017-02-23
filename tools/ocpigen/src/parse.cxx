@@ -30,7 +30,7 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <stdint.h>
+#include <inttypes.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -59,8 +59,8 @@ OCPI_PROPERTY_DATA_TYPES
 0};
 #undef OCPI_DATA_TYPE
 
-const char *platform = 0, *device = 0, *load = 0, *os = 0, *os_version = 0, *assembly = 0,
-  *attribute, *platformDir;
+const char *g_platform = 0, *g_device = 0, *load = 0, *g_os = 0, *g_os_version = 0, *g_arch = 0,
+  *assembly = 0, *attribute, *platformDir;
 
 Clock *Worker::
 addClock() {
@@ -85,7 +85,7 @@ checkDataPort(ezxml_t impl, Port *&sp) {
     if (!sp->isData())
       return OU::esprintf("Name attribute of Stream/MessageInterface \"%s\" "
 			  "matches a non-data spec port", name);
-    if (sp->type != WDIPort)
+    if (sp->m_type != WDIPort)
       return OU::esprintf("Name attribute of Stream/MessageInterface \"%s\" "
 			  "matches an implementation port, not a spec data port", name);
   } else if (!portImplName)
@@ -143,7 +143,7 @@ tryOneChildInclude(ezxml_t top, const std::string &parent, const char *element,
   const char *err = 0;
   for (ezxml_t x = OE::ezxml_firstChild(top); x; x = OE::ezxml_nextChild(x)) {
     const char *eName = ezxml_name(x);
-    if (eName)
+    if (eName) {
       if (!strcasecmp(eName, element))
 	if (*parsed)
 	  return OU::esprintf("found duplicate %s element where only one was expected",
@@ -168,6 +168,7 @@ tryOneChildInclude(ezxml_t top, const std::string &parent, const char *element,
 	  }
 	}
       }
+    }
   }
   if (!*parsed && !optional)
     return OU::esprintf("no %s element found under %s, whether included via xi:include or not",
@@ -187,7 +188,7 @@ addProperty(ezxml_t prop, bool includeImpl, bool anyIsBad)
   // Skip debug properties if the debug parameter is not present.
   if (!err) {
     if (!p->m_isParameter && anyIsBad)
-      return OU::esprintf("Property \"%s\" is not a parameter and so it invalid in this context",
+      return OU::esprintf("Property \"%s\" is not a parameter and is invalid in this context",
 			  p->m_name.c_str());
     // Now allow overrides of values.
     if (!strcasecmp(p->m_name.c_str(), "ocpi_debug"))
@@ -202,13 +203,13 @@ addProperty(ezxml_t prop, bool includeImpl, bool anyIsBad)
 }
 
 struct PropInfo {
-  Worker *worker;
-  bool isImpl; // Are we in an implementation context?
-  bool anyIsBad;
-  bool top;    // Are we in a top layer mixed with other elements?
-  const char *parent;
+  Worker *m_worker;
+  bool m_isImpl; // Are we in an implementation context?
+  bool m_anyIsBad;
+  bool m_top;    // Are we in a top layer mixed with other elements?
+  const char *m_parent;
   PropInfo(Worker *worker, bool isImpl, bool anyIsBad, const char *parent)
-    : worker(worker), isImpl(isImpl), anyIsBad(anyIsBad), top(true), parent(parent) {}
+    : m_worker(worker), m_isImpl(isImpl), m_anyIsBad(anyIsBad), m_top(true), m_parent(parent) {}
 };
 
 // process something that might be a property, either at spec time or at impl time
@@ -216,47 +217,48 @@ struct PropInfo {
 static const char *
 doMaybeProp(ezxml_t maybe, void *vpinfo) {
   PropInfo &pinfo = *(PropInfo*)vpinfo;
-  Worker *w = pinfo.worker;
+  Worker *w = pinfo.m_worker;
   ezxml_t props = 0;
   std::string childFile;
   const char *err;
-  if (pinfo.top) {
-    if ((err = tryChildInclude(maybe, pinfo.parent, "ControlInterface", &props, childFile, true)))
+  if (pinfo.m_top) {
+    if ((err = tryChildInclude(maybe, pinfo.m_parent, "ControlInterface", &props, childFile, true)))
       return err;
     if (props) {
-      const char *parent = pinfo.parent;
-      pinfo.parent = childFile.c_str();
+      const char *parent = pinfo.m_parent;
+      pinfo.m_parent = childFile.c_str();
       err = OE::ezxml_children(props, doMaybeProp, &pinfo);
-      pinfo.parent = parent;
+      pinfo.m_parent = parent;
       return err;
     }
   }
   if (!props &&
-      (err = tryChildInclude(maybe, pinfo.parent, "Properties", &props, childFile, pinfo.top)))
+      (err = tryChildInclude(maybe, pinfo.m_parent, "Properties", &props, childFile, pinfo.m_top)))
     return err;
   if (props) {
     //    if (pinfo.anyIsBad)
     // return "A Properties element is invalid in this context";
-    bool save = pinfo.top;
-    pinfo.top = false;
-    const char *parent = pinfo.parent;
-    pinfo.parent = childFile.c_str();
+    bool save = pinfo.m_top;
+    pinfo.m_top = false;
+    const char *parent = pinfo.m_parent;
+    pinfo.m_parent = childFile.c_str();
     err = OE::ezxml_children(props, doMaybeProp, &pinfo);
-    pinfo.parent = parent;
-    pinfo.top = save;
+    pinfo.m_parent = parent;
+    pinfo.m_top = save;
     return err;
   }
   const char *eName = ezxml_name(maybe);
   if (!eName)
     return 0;
   bool isSpec = !strcasecmp(eName, "SpecProperty");
-  if (isSpec && !pinfo.isImpl)
+  if (isSpec && !pinfo.m_isImpl)
     return "SpecProperty elements not allowed in component specification";
-  if (!isSpec && strcasecmp(eName, "Property"))
-    if (pinfo.top)
+  if (!isSpec && strcasecmp(eName, "Property")) {
+    if (pinfo.m_top)
       return 0;
     else
       return OU::esprintf("Invalid child element '%s' of a 'Properties' element", eName);
+  }
   //  if (pinfo.anyIsBad)
   //    return "A Property or SpecProperty element is invalid in this context";
   const char *name = ezxml_cattr(maybe, "Name");
@@ -276,12 +278,12 @@ doMaybeProp(ezxml_t maybe, void *vpinfo) {
       return OU::esprintf("SpecProperty name (%s) and Property name (%s) differ in case",
 			  name, p->m_name.c_str());
     // So simply add impl info to the existing property.
-    return p->parseImpl(maybe);
+    return p->parseImpl(maybe, w);
   } else if (p)
       return OU::esprintf("Property named \"%s\" conflicts with existing/previous property",
 			  name);
   // All the spec attributes plus the impl attributes
-  return w->addProperty(maybe, pinfo.isImpl, pinfo.anyIsBad);
+  return w->addProperty(maybe, pinfo.m_isImpl, pinfo.m_anyIsBad);
 }
 
 const char *Worker::
@@ -339,9 +341,9 @@ const char *Worker::
 addBuiltinProperties() {
   const char *err;
   if ((err = addProperty("<property name='ocpi_debug' type='bool' parameter='true' "
-			 "          default='false' readable='true'/>", true)) ||
+			 "          default='false'/>", true)) ||
       (err = addProperty("<property name='ocpi_endian' type='enum' parameter='true' "
-			 "          default='little' readable='true'"
+			 "          default='little'"
       			 "          enums='little,big,dynamic'/>", true)))
     return err;
   return NULL;
@@ -358,14 +360,14 @@ parseImplControl(ezxml_t &xctl, const char */*firstRaw*/) { // FIXME: nuke the s
   bool sub32;
   // either can set to true
   if ((err = OE::getBoolean(m_xml, "Sub32BitConfigProperties", &sub32)) ||
-      !sub32 && xctl && (err = OE::getBoolean(xctl, "Sub32BitConfigProperties", &sub32)))
+      (!sub32 && xctl && (err = OE::getBoolean(xctl, "Sub32BitConfigProperties", &sub32))))
     return err;
   if (sub32)
     m_ctl.sub32Bits = true;
   // We take ops from either place as true
   if ((err = OU::parseList(ezxml_cattr(m_xml, "ControlOperations"), parseControlOp, this)) ||
-      xctl &&
-      (err = OU::parseList(ezxml_cattr(xctl, "ControlOperations"), parseControlOp, this)))
+      (xctl &&
+       (err = OU::parseList(ezxml_cattr(xctl, "ControlOperations"), parseControlOp, this))))
     return err;
   // Add the built-in properties
   if ((err = addBuiltinProperties()) ||
@@ -602,7 +604,7 @@ parseSpec(const char *package) {
   if (strchr(m_specName, '.'))
     m_specName = strdup(m_specName);
   else
-    asprintf((char **)&m_specName, "%s.%s", m_package.c_str(), m_specName);
+    ocpiCheck(asprintf((char **)&m_specName, "%s.%s", m_package.c_str(), m_specName) > 0);
   if ((err = OE::checkAttrs(spec, "Name", "NoControl", "package", (void*)0)) ||
       (err = OE::getBoolean(spec, "NoControl", &m_noControl)))
     return err;
@@ -643,7 +645,7 @@ parseSpec(const char *package) {
 
 // Called for each non-data impl port type
 const char *Worker::
-initImplPorts(ezxml_t xml, const char *element, PortCreate &create) {
+initImplPorts(ezxml_t xml, const char *element, PortCreate &a_create) {
   const char *err;
   unsigned
     nTotal = OE::countChildren(xml, element),
@@ -659,7 +661,7 @@ initImplPorts(ezxml_t xml, const char *element, PortCreate &create) {
       ezxml_set_attr_d(xml, "name", name.c_str());
     }
 #endif
-    if (!create(*this, x, NULL, nTotal == 1 ? -1 : ordinal, err))
+    if (!a_create(*this, x, NULL, nTotal == 1 ? -1 : (int)ordinal, err))
       return err;
   }
   return NULL;
@@ -688,11 +690,13 @@ getBoolean(ezxml_t x, const char *name, bool *b, bool trueOnly) {
 
 const char*
 extractExprValue(const OU::Property &p, const OU::Value &v, OU::ExprValue &val) {
-  if (p.m_baseType != OA::OCPI_ULong)
-    return OU::esprintf("the '%s' parameter property is not ULong, so is invalid here",
+  const char *err = val.setFromTypedValue(v);
+  if (err)
+    return OU::esprintf("the '%s' parameter property expression is invalid: %s",
+			p.m_name.c_str(), err);
+  if (!val.isNumber())
+    return OU::esprintf("the '%s' parameter property is not numeric, so is invalid here",
 			p.m_name.c_str());
-  val.isNumber = true;
-  val.number = v.m_ULong;
   return NULL;
 }
 
@@ -703,35 +707,33 @@ extractExprValue(const OU::Property &p, const OU::Value &v, OU::ExprValue &val) 
 // and then look for parameter values directly
 const char *Worker::
 getValue(const char *sym, OU::ExprValue &val) const {
-  if (m_instancePVs.size()) {
-    // FIXME: obviously a map would be good here..
-    const OU::Assembly::Property *ap = &m_instancePVs[0];
-    for (size_t n = m_instancePVs.size(); n; n--, ap++)
-      if (ap->m_hasValue && !strcasecmp(sym, ap->m_name.c_str())) {
-	// The value of the numeric attribute matches the name of a provided property
-	// So we use that property value in place of this attribute's value
-	// FIXME: why isn't this string value already parsed?
-	// FIXME: the instance has parsed property values but it not accessible here
-	size_t nval;
-	if (OE::getUNum(ap->m_value.c_str(), &nval))
-	  return OU::esprintf("Bad '%s' property value: '%s'",
-			      ap->m_name.c_str(), ap->m_value.c_str());
-	val.isNumber = true;
-	val.number = nval;
-	return NULL;
-      }    
-  }
   for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
     if (!strcasecmp((*pi)->m_name.c_str(), sym)) {
       OU::Property &p = **pi;
+      if (m_instancePVs.size()) {
+	// FIXME: obviously a map would be nice here..
+	const OU::Assembly::Property *ap = &m_instancePVs[0];
+	for (size_t n = m_instancePVs.size(); n; n--, ap++)
+	  if (ap->m_hasValue && !strcasecmp(sym, ap->m_name.c_str())) {
+	    // The value of the expression identifier matches the name of a provided instance
+	    // property value so we use that value for this identifier's value
+	    // FIXME: why isn't this IPV value already parsed?
+	    // FIXME: the instance has parsed property values but it not accessible here
+	    OU::Value v(p);
+	    const char *err;
+	    if ((err = v.parse(ap->m_value.c_str())))
+	      return err;
+	    return val.setFromTypedValue(v);
+	  }
+      }
       if (!p.m_isParameter)
 	return OU::esprintf("the '%s' property is invalid here since it is not a parameter",
 			    sym);
       if (!p.m_default)
 	return OU::esprintf("the '%s' parameter property has no value", sym);
       return extractExprValue(p,
-			      *(m_paramConfig ? m_paramConfig->params[p.m_paramOrdinal].value :
-				p.m_default),
+			      (m_paramConfig ? m_paramConfig->params[p.m_paramOrdinal].m_value :
+				*p.m_default),
 			      val);
     }
   return OU::esprintf("There is no property named '%s'", sym);
@@ -811,6 +813,7 @@ create(const char *file, const std::string &parentFile, const char *package, con
   if (!err &&
       !(err = w->setParamConfig(instancePVs, paramConfig)) &&
       !(err = w->finalizeProperties()) &&
+      !(err = w->resolveExpressions()) &&
       w->m_model == HdlModel)
     err = w->finalizeHDL();
   if (err) {
@@ -820,25 +823,29 @@ create(const char *file, const std::string &parentFile, const char *package, con
     w->m_outDir = outDir;
     if (w->m_library) {
       std::string lib(w->m_library);
-      if (w->m_paramConfig && w->m_paramConfig->nConfig)
-	OU::formatAdd(lib, "_c%zu", w->m_paramConfig->nConfig);
+      w->addParamConfigSuffix(lib);
       addLibMap(lib.c_str());
     }
   }
   return w;
 }
 
+// TODO: Move to vector
 static unsigned nLibraries;
 const char **libraries;
-void
+const char *
 addLibrary(const char *lib) {
   for (const char **lp = libraries; lp && *lp; lp++) {
     if (!strcasecmp(lib, *lp))
-      return;
+      return NULL;
   }
+  // Verify sane name
+  if (lib[0] == '-')
+    return OU::esprintf("Invalid library name: %s", lib);
   libraries = (const char **)realloc(libraries, (nLibraries + 2) * sizeof(char *));
   libraries[nLibraries++] = lib;
   libraries[nLibraries] = 0;
+  return NULL;
 }
 
 // FIXME: use std::map
@@ -856,20 +863,22 @@ addLibMap(const char *map) {
   for (const char **mp = mappedLibraries; mp && *mp; mp++)
     if (!strcasecmp(newLib, *mp)) {
       const char **dir = &mappedDirs[mp - mappedLibraries];
-      if (cp) // if a new dir is associated with this library
+      if (cp) { // if a new dir is associated with this library
 	if ((*dir)[0]) { // if there is an existing dir for this library
 	  if (strcmp(cp, *dir))
 	    return OU::esprintf("Inconsistent library mapping for %s: %s vs. %s",
 				newLib, cp, *dir);
 	} else
 	  *dir = cp;
+      }
+      ocpiDebug("addLibMap: %s: already have '%s'", map, *dir);
       return NULL;
     }
   mappedLibraries = (const char **)realloc(mappedLibraries, (nMaps + 2) * sizeof(char *));
   mappedDirs = (const char **)realloc(mappedDirs, (nMaps + 2) * sizeof(char *));
   mappedLibraries[nMaps] = newLib;
   mappedDirs[nMaps] = cp ? cp : "";
-  ocpiDebug("addLibMap: lib is %s dir is %s", newLib, mappedDirs[nMaps]);
+  ocpiDebug("addLibMap: lib is '%s' dir is '%s'", newLib, mappedDirs[nMaps]);
   mappedLibraries[++nMaps] = 0;
   mappedDirs[nMaps] = 0;
   return NULL;
@@ -903,21 +912,22 @@ initAccess() {
 void Control::
 summarizeAccess(OU::Property &p) {
   // All the raw stuff is done in the HDL parser.
-  if (p.m_isParameter)
+  if (p.m_isParameter) {
     p.m_paramOrdinal = nParameters++;
-  else {
-    if (p.m_isReadable)
-      readables = true;
-    if (p.m_isWritable)
-      writables = true;
-    if (p.m_isSub32)
-      sub32Bits = true;
-    if (p.m_isVolatile)
-      volatiles = true;
-    if (p.m_isVolatile || p.m_isReadable && !p.m_isWritable)
-      readbacks = true;
-    nRunProperties++;
+    if (!p.m_isReadable)
+      return;
   }
+  if (p.m_isReadable)
+    readables = true;
+  if (p.m_isWritable)
+    writables = true;
+  if (p.m_isSub32)
+    sub32Bits = true;
+  if (p.m_isVolatile)
+    volatiles = true;
+  if (p.m_isVolatile || (p.m_isReadable && !p.m_isWritable && !p.m_isParameter))
+    readbacks = true;
+  nRunProperties++;
 }
 
 // A minimum of zero means NO PARTITIONING
@@ -995,10 +1005,10 @@ Worker(ezxml_t xml, const char *xfile, const std::string &parentFile,
 
 // Base class has no worker level expressions, but does all the ports
 const char *Worker::
-resolveExpressions(OU::IdentResolver &ir) {
+resolveExpressions() {
   const char *err;
   for (PortsIter pi = m_ports.begin(); pi != m_ports.end(); pi++)
-    if ((err = (**pi).resolveExpressions(ir)))
+    if ((err = (**pi).resolveExpressions(*this)))
       return err;
   return NULL;
 }
@@ -1018,7 +1028,7 @@ Port *Worker::
 findPort(const char *name, Port *except) const {
   for (unsigned i = 0; i < m_ports.size(); i++) {
     Port *dp = m_ports[i];
-    if (dp && dp->m_name.length() && !strcasecmp(dp->name(), name) && (!except || dp != except))
+    if (dp && dp->m_name.length() && !strcasecmp(dp->cname(), name) && (!except || dp != except))
       return dp;
   }
   return NULL;
@@ -1093,11 +1103,12 @@ emitArtXML(const char *wksFile) {
   OU::uuid2string(uuid, uuid_string);
   fprintf(f,
 	  "<artifact uuid=\"%s\"", uuid_string);
-  if (os)         fprintf(f, " os=\"%s\"",        os);
-  if (os_version) fprintf(f, " osVersion=\"%s\"", os_version);
-  if (platform)   fprintf(f, " platform=\"%s\"",  platform);
-  if (device)     fprintf(f, " device=\"%s\"", device);
-  if (m_dynamic)  fprintf(f, " dynamic='1'");
+  if (g_os)         fprintf(f, " os=\"%s\"",        g_os);
+  if (g_os_version) fprintf(f, " osVersion=\"%s\"", g_os_version);
+  if (g_platform)   fprintf(f, " platform=\"%s\"",  g_platform);
+  if (g_arch)       fprintf(f, " arch=\"%s\"",  g_arch);
+  if (g_device)     fprintf(f, " device=\"%s\"", g_device);
+  if (m_dynamic)    fprintf(f, " dynamic='1'");
   fprintf(f, ">\n");
   emitXmlWorkers(f);
   emitXmlInstances(f);
@@ -1112,7 +1123,6 @@ emitArtXML(const char *wksFile) {
 
 const char *Worker::
 deriveOCP() {
-  //  printf("4095 %d 4096 %d\n", floorLog2(4095), floorLog2(4096));
   const char *err;
   for (unsigned i = 0; i < m_ports.size(); i++) {
     Port *p = m_ports[i];

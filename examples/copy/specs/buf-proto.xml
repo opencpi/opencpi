@@ -1,3 +1,0 @@
-<Protocol name='buf'>
-  <Operation Name="send"> <Argument Name="mesg" Type="uchar" SequenceLength="100000"/> </Operation>
-</Protocol>

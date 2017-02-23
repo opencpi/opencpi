@@ -156,12 +156,12 @@ OcpiRccBinderConfigurator::g_options[] = {
 
 static
 void
-printUsage (OcpiRccBinderConfigurator & config,
+printUsage (OcpiRccBinderConfigurator & a_config,
             const char * argv0)
 {
   std::cout << "usage: " << argv0 << " [options]" << std::endl
             << "  options: " << std::endl;
-  config.printOptions (std::cout);
+  a_config.printOptions (std::cout);
 }
 
 
@@ -171,7 +171,7 @@ static int socket_fd;
  *
  ******************************************************************************/
 static 
-int client_connect(const char *servername,int port) {
+int client_connect(const char *servername,int a_port) {
     
   struct addrinfo *res, *t;
   struct addrinfo hints;
@@ -183,14 +183,14 @@ int client_connect(const char *servername,int port) {
   int n;
   int sockfd = -1;
 
-  if (asprintf(&service, "%d", port) < 0)
+  if (asprintf(&service, "%d", a_port) < 0)
     return -1;
 
   n = getaddrinfo(servername, service, &hints, &res);
   free(service);
 
   if (n < 0) {
-    fprintf(stderr, "%s for %s:%d\n", gai_strerror(n), servername, port);
+    fprintf(stderr, "%s for %s:%d\n", gai_strerror(n), servername, a_port);
     return n;
   }
 
@@ -202,7 +202,7 @@ int client_connect(const char *servername,int port) {
       char x[100];
       const char *host = inet_ntop(AF_INET, &((struct sockaddr_in *)t->ai_addr)->sin_addr, x, 100);
       ocpiBad("Client connect to %s (%s) port %d failed %s %d\n",
-	      servername, host ? host : "no-address", port, strerror(errno), errno);
+	      servername, host ? host : "no-address", a_port, strerror(errno), errno);
       close(sockfd);
       sockfd = -1;
     }
@@ -211,7 +211,7 @@ int client_connect(const char *servername,int port) {
   freeaddrinfo(res);
 
   if (sockfd < 0) {
-    fprintf(stderr, "Couldn't connect to %s:%d\n", servername, port);
+    fprintf(stderr, "Couldn't connect to %s:%d\n", servername, a_port);
     return sockfd;
   }
   return sockfd;
@@ -222,7 +222,7 @@ int client_connect(const char *servername,int port) {
  *
  ******************************************************************************/
 static 
-int server_connect(uint16_t port)
+int server_connect(uint16_t a_port)
 {
 #if 0
   struct addrinfo *res, *t;
@@ -236,13 +236,13 @@ int server_connect(uint16_t port)
   int sockfd = -1;
   int n;
 
-  if (asprintf(&service, "%d", port) < 0)
+  if (asprintf(&service, "%d", a_port) < 0)
     return -1;
 
   n = getaddrinfo(NULL, service, &hints, &res);
   free(service);
   if (n < 0) {
-    fprintf(stderr, "%s for port %d\n", gai_strerror(n), port);
+    fprintf(stderr, "%s for port %d\n", gai_strerror(n), a_port);
     return n;
   }
 
@@ -268,7 +268,7 @@ int server_connect(uint16_t port)
   sa.sin_len = sizeof(sa);
 #endif
   sa.sin_family = AF_INET;
-  sa.sin_port = htons(port);
+  sa.sin_port = htons(a_port);
   sa.sin_addr.s_addr = INADDR_ANY;
   int n = 1;
   if (sockfd >= 0 &&
@@ -280,7 +280,7 @@ int server_connect(uint16_t port)
   }
 #endif
   if (sockfd < 0) {
-    fprintf(stderr, "Couldn't listen to port %d\n", port);
+    fprintf(stderr, "Couldn't listen to port %d\n", a_port);
     return sockfd;
   }
 
@@ -599,14 +599,14 @@ int main( int argc, char** argv)
   }
   std::vector<std::string>::iterator epit;
   ocpiDebug("List of supported transfer driver id's:");
-  for ( epit=protolist.begin(); epit!=protolist.end(); epit++ ){
+  for ( epit=protolist.begin(); epit!=protolist.end(); ++epit ){
     ocpiDebug("  %s", (*epit).c_str() );
   }
 
   // Print out the available endpoints
   std::vector<std::string>  eplist  = fm.getListOfSupportedEndpoints();
   ocpiDebug("List of supported endpoints:");
-  for ( epit=eplist.begin(); epit!=eplist.end(); epit++ ){
+  for ( epit=eplist.begin(); epit!=eplist.end(); ++epit ){
     ocpiDebug("  %s", (*epit).c_str() );
   }
   if ( config.show_drivers ) {
@@ -621,7 +621,7 @@ int main( int argc, char** argv)
     config.protocol = p;
     std::vector<std::string>::iterator it;
     int n=0;
-    for ( it=eplist.begin(); it!=eplist.end(); it++ ) {      
+    for ( it=eplist.begin(); it!=eplist.end(); ++it ) {      
       if ( strncmp( p.c_str(), (*it).c_str(),p.size()) == 0 ) {
 	config.endpoint_index = n;
 	break;

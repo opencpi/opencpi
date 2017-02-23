@@ -1,5 +1,5 @@
-<HdlDevice Name="flash" Language="Verilog" Pattern="%w%M%0_">
-  <ComponentSpec Name="flash">
+<HdlDevice Language="Verilog" Pattern="%w%M%0_">
+  <ComponentSpec>
     <Properties>
       <property name="dramStatus" readable="true"/>
       <property name="drmCtrl" readable="true" writable="true"/>

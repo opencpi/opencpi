@@ -412,17 +412,12 @@ FileFs::cd (const std::string & name)
 {
   testFilenameForValidity (name);
   std::string absName = nativeFilename (name);
-  bool isDir, exists;
+  bool isDir;
 
-  exists = OS::FileSystem::exists (absName, &isDir);
-
-  if (!exists) {
-    throw std::string ("name does not exist");
-  }
-  else if (!isDir) {
-    throw std::string ("not a directory");
-  }
-
+  if (!OS::FileSystem::exists(absName, &isDir))
+    throw std::string("name does not exist");
+  if (!isDir)
+    throw std::string("not a directory");
   OCPI::Util::AutoMutex lock (m_lock);
   m_cwd = OCPI::Util::Vfs::joinNames (m_cwd, name);
 }

@@ -1,5 +1,5 @@
 #define _POSIX_C_SOURCE 199309L // For clock_gettime et al.
-#include <stdint.h>
+#include <inttypes.h>
 #include <time.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -59,7 +59,7 @@ static void
   *doStream(void *args),
   setupStream(Stream *s, volatile OcdpProperties *p, bool isToCpu,
 	      unsigned nCpuBufs, unsigned nFpgaBufs, unsigned bufSize,
-	      uint8_t *cpuBase, unsigned long long dmaBase, uint32_t *offset, unsigned ramp);
+	      uint8_t *cpuBase, uint64_t dmaBase, uint32_t *offset, unsigned ramp);
 
 typedef unsigned long long ull; 
 static inline ull ticks2ns(uint64_t ticks) {
@@ -77,7 +77,7 @@ static inline uint64_t now() {
 #else
   struct timespec ts;
   clock_gettime (CLOCK_REALTIME, &ts);
-  return ns2ticks(ts.tv_sec, ts.tv_nsec);
+  return ns2ticks((uint32_t)ts.tv_sec, (uint32_t)ts.tv_nsec);
 #endif
 }
 
@@ -92,7 +92,7 @@ void init_fpga_time(volatile OccpSpace *occp) {
   
   for (n = 0; n < 100; n++) {
     occp->admin.timeDelta = occp->admin.time;
-    delta[n] = occp->admin.timeDelta >> 32;
+    delta[n] = (uint32_t)(occp->admin.timeDelta >> 32);
   }
   qsort(delta, 100, sizeof(uint32_t), compu32);
   
@@ -147,7 +147,7 @@ uint64_t bytes;
  int
 main(int argc, char *argv[])
 {
-  unsigned long long dmaBase;
+  uint64_t dmaBase;
   int fd;
   volatile OccpSpace *occp;
   uint8_t /* *bar1, */ *cpuBase;
@@ -161,8 +161,6 @@ main(int argc, char *argv[])
   pthread_t readThread;
   struct timeval tv0, tv1, tv2;
   Bar bars[MAXBARS];
-  unsigned nbars;
-  const char *err;
   const char *name;
   char *cp = strrchr(argv[0], '/');
   name = cp ? cp + 1 : argv[0];
@@ -242,9 +240,15 @@ main(int argc, char *argv[])
 #ifdef OCPI_ARCH_arm
   bars[0].address = GP0_PADDR;
 #else
-  if ((err = getOpenCPI(argv[1], bars, &nbars, verbose)) || nbars != 2) {
-    fprintf(stderr, "Couldn't get PCI information about PCI device %s.  Try ocfrp_check.\n", argv[1]);
-    return 1;
+  {
+    unsigned nbars;
+    const char *err;
+    
+    if ((err = getOpenCPI(argv[1], bars, &nbars, verbose)) || nbars != 2) {
+      fprintf(stderr, "Couldn't get PCI information about PCI device %s.  Try ocfrp_check.\n",
+	      argv[1]);
+      return 1;
+    }
   }
 #endif
   fprintf(stderr, "BufSize=%d, CpuBufs %d FpgaBufs %d Ramp %d\n", bufSize, nCpuBufs, nFpgaBufs, ramp);
@@ -266,13 +270,13 @@ main(int argc, char *argv[])
       fprintf(stderr, "You must set the OCPI_DMA_MEMORY variable before running this program\n");
       return 1;
     }
-    if (sscanf(dmaEnv, "%uM$0x%llx", &dmaMeg, (unsigned long long *) &dmaBase) != 2) {
+    if (sscanf(dmaEnv, "%uM$0x%" PRIx64, &dmaMeg, &dmaBase) != 2) {
       fprintf(stderr, "The OCPI_DMA_MEMORY environment variable is not formatted correctly\n");
       return 1;
     }
 
-    assert(sscanf(dmaEnv, "%uM$0x%llx", &dmaMeg, (unsigned long long *) &dmaBase) == 2);
-    assert((cpuBase = (uint8_t*)mmap(NULL, (unsigned long long)dmaMeg * 1024 * 1024,
+    assert(sscanf(dmaEnv, "%uM$0x%" PRIx64, &dmaMeg, &dmaBase) == 2);
+    assert((cpuBase = (uint8_t*)mmap(NULL, (size_t)dmaMeg * 1024 * 1024,
 				     PROT_READ|PROT_WRITE, MAP_SHARED, fd, (off_t)dmaBase)) !=
 	   MAP_FAILED);
   }
@@ -402,7 +406,7 @@ reset(volatile OccpWorkerRegisters *w, unsigned timeout) {
    uint32_t logTimeout = 31, u;
    if (!timeout)
      timeout = 16;
-   for (u = 1 << logTimeout; !(u & timeout); u >>= 1, logTimeout--)
+   for (u = (uint32_t)(1 << logTimeout); !(u & timeout); u >>= 1, logTimeout--)
      ;
    // Assert Reset
    w->control =  logTimeout;
@@ -431,7 +435,7 @@ start(volatile OccpWorkerRegisters *w) {
 // Called when the ready flag for the next buffer to process has become non-zero.
 static unsigned
 checkStream(Stream *s, uint64_t *tp, Stream *other) {
-  ssize_t n;
+  size_t n;
   // mark the buffer not ready for CPU.  FPGA will set it to !=0 when it is ready
   s->flags[s->bufIdx] = 0;
   if (s->isToCpu) {
@@ -447,7 +451,7 @@ checkStream(Stream *s, uint64_t *tp, Stream *other) {
     else {
       if ((n = s->metadata[s->bufIdx].length)) {
 	memcpy(s->buf, (void*)&s->buffers[s->bufIdx * s->bufSize], n);
-	assert(write(1, s->buf, (size_t)n) == n);
+	assert(write(1, s->buf, n) == (ssize_t)n);
 	if (s->ramp) {
 	  for (unsigned nn = 0; nn < (s->bufSize / s->ramp); nn++) {
 	    uint64_t value = s->rampValue++;
@@ -460,7 +464,7 @@ checkStream(Stream *s, uint64_t *tp, Stream *other) {
 	      ;
 	    }
 	  }
-	  if (memcmp(s->buf, s->cbuf, (size_t)n))
+	  if (memcmp(s->buf, s->cbuf, n))
 	    fprintf(stderr, "Ramp mismatch: message %d, starts at %d offset in file. %zd\n",
 		    s->opCode, s->opCode * s->bufSize, n);
 	}
@@ -490,8 +494,9 @@ checkStream(Stream *s, uint64_t *tp, Stream *other) {
 	}
 	n = s->bufSize;
       } else {
-	n = read(0, s->buf, s->bufSize);
-	assert(n >= 0);
+        ssize_t nn = read(0, s->buf, s->bufSize);
+	assert(nn >= 0);
+	n = (size_t)nn;
       }
       if (n)
 	memcpy((void *)&s->buffers[s->bufIdx * s->bufSize], s->buf, n);
@@ -532,7 +537,7 @@ doStream(void *args) {
  static void
 setupStream(Stream *s, volatile OcdpProperties *p, bool isToCpu,
 	    unsigned nCpuBufs, unsigned nFpgaBufs, unsigned bufSize,
-	    uint8_t *cpuBase, unsigned long long dmaBase, uint32_t *offset,
+	    uint8_t *cpuBase, uint64_t dmaBase, uint32_t *offset,
 	    unsigned ramp)
 {
   uint64_t addr;
@@ -551,7 +556,7 @@ setupStream(Stream *s, volatile OcdpProperties *p, bool isToCpu,
   s->doorbell = &p->nRemoteDone;
   s->startTime = &p->startTime;
   s->doneTime = &p->doneTime;
-  *offset += (uint8_t *)(s->flags + nCpuBufs) - s->buffers;
+  *offset += (uint32_t)((uint8_t *)(s->flags + nCpuBufs) - s->buffers);
   memset((void *)s->flags, isToCpu ? 0 : 1, nCpuBufs * sizeof(uint32_t));
   p->nLocalBuffers = nFpgaBufs;
   p->nRemoteBuffers = nCpuBufs;

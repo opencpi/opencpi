@@ -19,10 +19,15 @@ namespace OCPI {
         m_nOptions(nMembers), m_error(""), m_help(help)
     {
       Member *m = members;
+      m_names.resize(nMembers);
       for (unsigned n = 0; n < m_nOptions; n++, m++) {
 	if (!m->m_default)
 	  m->m_default = new Value(*m);
 	m_seen[n] = false;
+	m_names[n] = m->m_name;
+	for (unsigned i = 0; i < m_names[n].length(); i++)
+	  if (m_names[n][i] == '_')
+	    m_names[n][i] = '-';
       }
     }
     BaseCommandOptions::
@@ -36,27 +41,29 @@ namespace OCPI {
       return err;
     }
     const char *BaseCommandOptions::
-    doValue(Member &m, const char *argValue, const char **&argv) {
+    doValue(Member &m, const char *argValue, const char **&a_argv) {
       Value &v = *m.m_default;
-      bool seen = m_seen[&m - m_options];
+      size_t ordinal = &m - m_options;
+      bool seen = m_seen[ordinal];
       if (!m.m_isSequence && seen)
-	return setError(esprintf("Multiple '%s' options are present, which is not allowed", m.m_name.c_str()));
-      m_seen[&m - m_options] = true;
+	return setError(esprintf("Multiple '%s' options are present, which is not allowed",
+				 m_names[ordinal].c_str()));
+      m_seen[ordinal] = true;
       if (!m.m_isSequence && m.m_baseType == OA::OCPI_Bool) {
 	if (argValue)
-	  return setError(esprintf("Extraneous value found in option: '%s'", *argv));
+	  return setError(esprintf("Extraneous value found in option: '%s'", *a_argv));
 	v.m_Bool = m.m_default ? !m.m_default->m_Bool : true;
       } else {
 	if (!argValue) {
-	  if (!argv[1])
-	    return setError(esprintf("Missing value for option: '%s'", *argv));
-	  argValue = argv[1];
-	  argv++;
+	  if (!a_argv[1])
+	    return setError(esprintf("Missing value for option: '%s'", *a_argv));
+	  argValue = a_argv[1];
+	  a_argv++;
 	}
 	const char *err;
-	if ((err = v.parse(argValue, NULL, seen)))
+	if ((err = v.parse(argValue, NULL, m.m_isSequence))) // seen)))
 	  return setError(esprintf("When parsing option '%s', value '%s' invalid: %s",
-				   *argv, argValue, err));
+				   *a_argv, argValue, err));
       }
       return NULL;
     }
@@ -71,6 +78,10 @@ namespace OCPI {
       bool help = false, debug = false;
       for (;ap[0] && ap[0][0] == '-'; ap++) {
 	if (ap[0][1] == '-') {
+	  if (ap[0][2] == '\0') {
+	    ap++;
+	    break;
+	  }
 	  // Long option
 	  const char *arg = &ap[0][2];
 	  if (!strcasecmp(arg, "help")) {
@@ -85,7 +96,7 @@ namespace OCPI {
 	  size_t len = eq ? eq - arg : strlen(arg);
 	  Member *m = m_options;
 	  for (unsigned n = 0; n < m_nOptions; n++, m++)
-	    if (len == m->m_name.size() && !strncasecmp(arg, m->m_name.c_str(), len)) {
+	    if (len == m_names[n].size() && !strncasecmp(arg, m_names[n].c_str(), len)) {
 	      if ((err = doValue(*m, eq ? eq + 1 : NULL, ap)))
 		return err;
 	      goto cont2;
@@ -110,7 +121,8 @@ namespace OCPI {
 	  if (m->m_default->m_parsed) {
 	    std::string val;
 	    m->m_default->unparse(val);
-	    fprintf(stderr, "%s: %s\n", m->m_name.c_str(), val.c_str());
+	    fprintf(stderr, "%s(%s): %s\n", m_names[n].c_str(), m->m_abbrev.c_str(),
+		    val.c_str());
 	  }
       }
       if (help) {
@@ -119,7 +131,7 @@ namespace OCPI {
       }
       return NULL;
     }
-    void BaseCommandOptions::
+    int BaseCommandOptions::
     usage() {
       const char *slash = strrchr(m_beforeArgv[0], '/');
       if (slash)
@@ -130,19 +142,29 @@ namespace OCPI {
       OCPI::OS::getExecFile(exec);
       fprintf(stderr,
 	      "Usage for %s (executed from %s):\n"
-	      "  Options are:\n", slash, exec.c_str());
+	      "Options are:\n", slash, exec.c_str());
       Member *m = m_options;
       size_t width = 10;
       for (unsigned n = 0; n < m_nOptions; n++, m++)
-	if (m->m_name.size() > width)
-	  width = m->m_name.size();
+	if (m_names[n].size() > width)
+	  width = m_names[n].size();
       m = m_options;
       fprintf(stderr, "  %-*s Letter  Datatype  Multiple? Description\n", (int)width, "Long name");
       for (unsigned n = 0; n < m_nOptions; n++, m++) {
-	fprintf(stderr, "  %-*s   %s      %-8s   %s     %s.", (int)width, m->m_name.c_str(),
+	size_t nlwidth = 1000;
+	const char *nl = strchr(m->m_description.c_str(), '\n');
+	if (nl)
+	  nlwidth = nl - m->m_description.c_str();
+	fprintf(stderr, "  %-*s   %-6s  %-8s   %s   %-.*s.", (int)width, m_names[n].c_str(),
 		m->m_abbrev.size() ? m->m_abbrev.c_str() : "<none>",
 		baseTypeNames[m->m_baseType],
-		m->m_isSequence ? "Yes" : "No ", m->m_description.c_str());
+		m->m_isSequence ? "Yes" : "No ", (int)nlwidth, m->m_description.c_str());
+	while (nl) {
+	  const char *start = ++nl;
+	  nl = strchr(start, '\n');
+	  nlwidth = nl ? nl - start : 1000;
+	  fprintf(stderr, "\n%*s%-.*s", (int)width + 30, "", (int)nlwidth, start);
+	}
 	if (m_defaults[n])
 	  fprintf(stderr, "  Default: %s", m_defaults[n]);
 	fprintf(stderr, "\n");
@@ -152,7 +174,7 @@ namespace OCPI {
 	      "Short options are of the form:  -<letter>[<value>] or -<letter>  <value>\n"
 	      "Boolean options have no value; their presence indicates 'true'.  Other types require values.\n"
 	      "\n%s", m_help);
-      
+      return 1;
     }
     int BaseCommandOptions::
     main(const char **initargv, int (*themain)(const char **a)) {
@@ -171,7 +193,7 @@ namespace OCPI {
     }
     void BaseCommandOptions::
     exitbad(const char *e) {
-      fprintf(stderr, "%s\n", e);
+      fprintf(stderr, "Exiting for exception: %s\n", e);
       exit(1);
     }
     void BaseCommandOptions::

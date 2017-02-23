@@ -9,8 +9,7 @@ runtime/dataplane/rdma_drivers/datagram
 runtime/dataplane/rdma_drivers/dma
 runtime/dataplane/rdma_drivers/ofed
 runtime/dataplane/rdma_drivers/pio
-runtime/dataplane/rdma_drivers/sockets
-runtime/dataplane/rdma_drivers/udp
+runtime/dataplane/rdma_drivers/socket
 runtime/dataplane/transport
 runtime/dataplane/msg_driver_interface
 runtime/dataplane/msg_drivers
@@ -26,15 +25,16 @@ runtime/ctests
 runtime/application
 tools/cdkutils
 tools/ocpigen
+#tools/ocpisca
 tools/cdk/ocpidds
-tools/astyle
+# tools/astyle
 tests
 ################################################################################
 # exclusions, sometimes only applying to categories
 -runtime/util main
 -runtime/dataplane main
 -runtime/ctests
--tools/astyle
+# -tools/astyle
 ################################################################################
 # inclusions that are not automatically derived from facilities
 +tools/cdk/default-system.xml
@@ -50,22 +50,30 @@ tests
 +tools/cdk/include/worker.mk include/
 +tools/cdk/include/xxx-worker.mk include/
 +tools/cdk/include/ocpisetup.mk include/
++tools/cdk/include/test.mk include/
 +tools/cdk/include/ocpisetup.mk
 +tools/cdk/include/libraries.mk include/
 +tools/cdk/include/project.mk include/
 +tools/cdk/include/applications.mk include/
 +tools/cdk/include/application.mk include/
 # CDK scripts we need
++scripts/clean-env.sh scripts/
 +tools/cdk/scripts/makeStaticWorker scripts/
 +tools/cdk/scripts/ocpidriver scripts/
 +tools/cdk/scripts/ocpixml scripts/
 +tools/cdk/scripts/sudo_ocpi scripts/
 +tools/cdk/scripts/ocpisetup.sh scripts/
 +tools/cdk/scripts/ocpibootstrap.sh scripts/
++tools/cdk/scripts/ocpitarget.sh scripts/
 +tools/cdk/scripts/ocpidev scripts/
 +tools/cdk/scripts/util.sh scripts/
++tools/cdk/scripts/testrunprep.sh scripts/
++tools/cdk/scripts/testrunremote.sh scripts/
++tools/cdk/scripts/testrun.sh scripts/
++tools/cdk/scripts/setsid.py scripts/
 #+tools/cdk/scripts/makeExportLinks.sh scripts/
 +scripts/makeExportLinks.sh scripts/
++tools/cdk/scripts/maybeExport.sh scripts/
 # user level scripts made available in the bin directory
 +tools/cdk/scripts/ocpixml bin/<target>/
 +tools/cdk/scripts/ocpidev bin/<target>/
@@ -85,7 +93,7 @@ tests
 +tools/cdk/include/rcc/rcc-worker.mk include/rcc/
 +tools/cdk/include/rcc/default.mk include/rcc/
 # We export everything in tools/cdk/include/hdl, although we could be more careful...
-+tools/cdk/include/hdl include/hdl
++tools/cdk/include/hdl/* include/hdl/
 # These should be in a common-to-zynq-platforms dir in "platforms"...
 +tools/cdk/include/rcc/linux-c6-x86_64=linux-zynq-arm.mk include/rcc/
 +tools/cdk/include/rcc/linux-c7-x86_64=linux-zynq-arm.mk include/rcc/
@@ -108,13 +116,11 @@ tests
 # HDL related exclusions and additions
 # test executables to suppress
 -runtime/hdl-support/target-/testRpl
--runtime/hdl-support/target-/ocpinft
+# -runtime/hdl-support/target-/ocpinft
 # test scripts to suppress that we want to keep in the repo
 -runtime/hdl-support/scripts/testDMA
 -runtime/hdl-support/scripts/donft
 -runtime/hdl-support/scripts/dmaTestBasic
-# All the HDL build scripts, no selectivity for now
-+tools/cdk/include/hdl include/
 # base vendor-specific scripts not in a platform and not in hdl-support
 +runtime/hdl-support/altera/loadFlash_altera scripts/
 +runtime/hdl-support/altera/probeJtag_altera scripts/
@@ -122,10 +128,28 @@ tests
 +runtime/hdl-support/xilinx/probeJtag_xilinx scripts/
 +runtime/hdl-support/xilinx/findJtagByESN_xilinx scripts/
 +runtime/hdl-support/xilinx/getESNfromUSB_xilinx scripts/
++runtime/hdl-support/xilinx/xilinx.mk include/hdl/
 +runtime/hdl-support/scripts/loadFlash bin/<target>/
 +runtime/hdl-support/scripts/probeJtag bin/<target>/
 +runtime/hdl-support/scripts/ocpiview bin/<target>/
+# Enable all local bitstreams to be seen in one place for convenience of OCPI_LIBRARY_PATH
 +hdl/assemblies/*/container-*/target-*/*.bitz lib/hdl/assemblies/
+# for backward compatibility of system.xml files
++runtime/dataplane/rdma_drivers/socket/target-<target>/libocpi_socket.* lib/<target>/libocpi_sockets<suffix>
++runtime/dataplane/rdma_drivers/socket/target-<target>/libocpi_socket_s.* lib/<target>/libocpi_sockets_s<suffix>
 ################################################################################
 # OCL related exclusions and additions
 +tools/cdk/include/ocl include/
+# Kernel module and main license files
++LICENSE.txt lib/<target>/
++LICENSE.txt
+################################################################################
+# automake related exclusions and additions
+# --- discuss with Aaron
+#+tools/cdk/include/autoconfig_import.mk include/
+# Until wildcards are supported, the cross-compiled platforms:
+#+tools/cdk/include/autoconfig_import-zed.mk include/
+#+tools/cdk/include/autoconfig_import-pico_t6a.mk include/
+# Macros and configuration wrapper:
+#+runtime/application/include/angryviper.h include/aci/
+#+runtime/application/include/angryviper.h include/rcc/

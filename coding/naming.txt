@@ -7,7 +7,7 @@ Source Code file names
 -- C++ 
    The intention is to move to "*.cc" and "*.hh", but for now it is "*.cxx" and "*.h".
    These will be shorter, like OmniOrb, and hh makes it clear that the editing mode for the file
-   should be C++, not c.
+   should be C++, not c.  User visible C++ files (workers) are already .cc etc.
 
    Generally camel-case to match classes, with the first word being the namespace
    of the directory of source files, which usually matches the directory name
@@ -16,19 +16,20 @@ Source Code file names
    and in the namespace OCPI::Container
 
    When file names do not match classes and namespaces they may just be categories of code,
-   and may be named more flexibly, and since they don't correspond to makes of things
+   and may be named more flexibly, and since they don't correspond to names of things
    in the source code, may use hyphens.
 
 -- C++ header files
    Similar to source code except for API headers.
    API headers, which will be used by external development are distinguished two ways:
-   1. There must be a Ocpi prefix to the name reflecting the global namespace.
+   1. There must be a Ocpi prefix to the file name reflecting the global namespace.
    2. The end of the name before the suffix should be Api to unambiguously designate the file
       as apropriate for export and for API use (and for documentation).
    Note that OcpiApi.hh is the "master API file" that should generally include all others.
 
 -- main programs
    <program_name>_main.cxx where program names are usually ocpi<program> in lower case.
+   These names (ocpi<program>) will be thus command names.
 
 XML file names
    The .xml suffix is used uniformly.
@@ -37,10 +38,10 @@ XML file names
    Hyphens are used to make it clear that this is a type suffix, and not part of the name.
 
 worker/platform/configuration/container names (before prefix) in xml
-   lower case with underscore worker separators.
+   lower case with underscore word separators.
 
 C++ Namespace names
-   All start in the OCPI namespace.
+   All start in the OCPI namespace. (There are exceptions that will go away).
    If it is an abbreviation (like HDL, etc.) it is all upper case. If not, camelcase.
 
 C++ type/class names
@@ -66,3 +67,9 @@ C++ names: the theory/puspose being you know by looking what it is.
    m_ prefix
 -- member functions
    initial-lower-camelcase
+-- arguments to functions and methods
+   Usually initial-lower-camelcase, but sometimes with an a_ prefix (analogous to m_ ),
+   to simply avoid shadowing.
+-- local variables
+   Usually initial-lower-camelcase, but sometimes with a l_ prefix (analogous to m_),
+   to simply avoid shadowing.

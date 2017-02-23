@@ -91,9 +91,10 @@ class OcpPort : public Port {
   bool m_impreciseBurst;
   bool m_preciseBurst;
   size_t m_dataWidth;
-  std::string m_dataWidthExpr;
+  std::string m_dataWidthExpr, m_addrWidthExpr;
   bool m_dataWidthFound; // it was specified in XML
   size_t m_byteWidth;
+  bool m_bwFound;
   bool m_continuous;
   OcpSignals ocp;
   OcpPort(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *defaultName,
@@ -104,7 +105,8 @@ class OcpPort : public Port {
   bool isOCP() const { return true; }
   bool needsControlClock() const;
   void emitPortDescription(FILE *f, Language lang) const;
-  void emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inWorker,
+  void emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inRecord,
+			bool inPackage, bool inWorker,
 			const char *defaultIn, const char *defaultOut);
   void vectorWidth(const OcpSignalDesc *osd, std::string &out, Language lang,
 		   bool convert = false, bool value = false);
@@ -113,6 +115,8 @@ class OcpPort : public Port {
 		   bool convert);
   void emitDirection(FILE *f, const char *implName, bool mIn, std::string &dir);
   void emitRecordInterface(FILE *f, const char *implName);
+  void emitRecordInterfaceConstants(FILE *f);
+  void emitInterfaceConstants(FILE *f, Language lang);
   void emitVerilogSignals(FILE *f);
   void emitVHDLSignalWrapperPortMap(FILE *f, std::string &last);
   void emitVHDLRecordWrapperSignals(FILE *f);
@@ -124,7 +128,12 @@ class OcpPort : public Port {
 			  OcpAdapt *adapt, Attachments &atts);
   void emitPortSignals(FILE *f, Attachments &atts, Language lang,
 		       const char *indent, bool &any, std::string &comment,
-		       std::string &last, const char *myComment, OcpAdapt *adapt);
+		       std::string &last, const char *myComment, OcpAdapt *adapt,
+		       std::string *signalIn, std::string &exprs);
+  InstancePort &ocpSignalPrefix(std::string &signal, bool master, Language lang,
+				Attachments &atts);
+  void emitExprAssignments(std::string &out, std::string &signalIn, OcpAdapt *adapt,
+			   Attachments &atts);
   void connectOcpSignal(OcpSignalDesc &osd, OcpSignal &os, OcpAdapt &oa,
 			std::string &signal, std::string &thisComment, Language lang,
 			Attachments &atts);
@@ -137,7 +146,9 @@ struct OcpAdapt {
   const char *expr;
   const char *comment;
   const char *signal;
+  bool  isExpr; // the "expr" member is a real expression (not "globally static" in VHDL)
   OcpSignalEnum other;
-  OcpAdapt() : expr(NULL), comment(NULL), signal(NULL), other(N_OCP_SIGNALS) {}
+  OcpAdapt() :
+    expr(NULL), comment(NULL), signal(NULL), isExpr(false), other(N_OCP_SIGNALS) {}
 };
 #endif

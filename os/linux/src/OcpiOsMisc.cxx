@@ -165,14 +165,22 @@ OCPI::OS::setCtrlCHandler (void (*handler) (void))
 }
 void OCPI::OS::setError(std::string &error, const char *fmt, ...)
   throw() {
+  int incoming_errno = errno;
   char *err0, *err1;
   va_list ap;
   va_start(ap, fmt);
-  vasprintf(&err0, fmt, ap);
-  asprintf(&err1, "%s (%s [%d])", err0, strerror(errno), errno);
-  free(err0);
-  error = err1;
-  free(err1);
+  int len = vasprintf(&err0, fmt, ap);
+  if (len > 0) {
+    len = asprintf(&err1, "%s (%s [%d])", err0, strerror(incoming_errno), incoming_errno);
+    free(err0);
+  }
+  if (len > 0) {
+    error = err1;
+    free(err1);
+  } else {
+    error = "OCPI::OS::setError unexpected allocation error calling [v]asprintf()";
+  }
+  va_end(ap);
 }
 
 void OCPI::OS::
@@ -194,8 +202,10 @@ getExecFile(std::string &file) {
     bufsize *= 2;
     buf = new char[bufsize];
   }
-  if (n <= 0)
+  if (n <= 0) {
+    delete[] buf;
     throw "Unexpected exec file failure on Linux";
+  }
   buf[n] = 0;
 #endif 
   file = buf;

@@ -28,13 +28,13 @@ if test ! -f $ZIPFile ; then
 fi
 # rm -f $ZIPFile
 OPENCV_DIR=opencv-$OPENCV_MAJOR
-OPENCV_INSTALL_DIR=$OCPI_PREREQUISITES_INSTALL_DIR/opencv/$OCPI_TARGET_HOST
+OPENCV_INSTALL_DIR=$OCPI_PREREQUISITES_INSTALL_DIR/opencv/$OCPI_TARGET_DIR
 rm -f -r $OPENCV_DIR
 rm -f -r $OPENCV_INSTALL_DIR
 unzip $ZIPFile
 #tar xf $TarFile
 cd opencv-$OPENCV_MAJOR
-mkdir build-$OCPI_TARGET_HOST
+mkdir build-$OCPI_TARGET_DIR
 if test `uname` == XXXDarwin; then
   # Force the rpath in the various targets to be @rpath
   for sd in modules/{gpu,highgui,stitching}/CMakeLists.txt OpenCVModule.cmake; do
@@ -45,7 +45,7 @@ w
 EOF
   done
 fi
-cd build-$OCPI_TARGET_HOST
+cd build-$OCPI_TARGET_DIR
 #if test ! -d release ; then
 #mkdir release
 #fi

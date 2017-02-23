@@ -46,13 +46,15 @@ namespace OL = OCPI::Library;
 namespace OCPI {
   namespace Container {
 
-    Container::Container(const char *name, const ezxml_t config, const OCPI::Util::PValue *params)
+    Container::Container(const char *a_name, const ezxml_t config,
+			 const OCPI::Util::PValue *params)
       throw ( OU::EmbeddedException )
       : //m_ourUID(mkUID()),
-      OCPI::Time::Emit("Container", name ),
-      m_enabled(false), m_ownThread(true), m_thread(NULL),
+      OCPI::Time::Emit("Container", a_name ),
+      m_enabled(false), m_ownThread(true), m_verbose(false), m_thread(NULL),
       m_transport(*new OCPI::DataTransport::Transport(&Manager::getTransportGlobal(params), false, this))
     {
+      OU::findBool(params, "verbose", m_verbose);
       OU::SelfAutoMutex guard (this);
       m_ordinal = Manager::s_nContainers++;
       if (m_ordinal >= Manager::s_maxContainer) {
@@ -75,22 +77,27 @@ namespace OCPI {
       m_os = OCPI_CPP_STRINGIFY(OCPI_OS) + strlen("OCPI");
       m_osVersion = OCPI_CPP_STRINGIFY(OCPI_OS_VERSION);
       m_platform = OCPI_CPP_STRINGIFY(OCPI_PLATFORM);
+      m_arch = OCPI_CPP_STRINGIFY(OCPI_ARCH);
     }
 
     bool Container::supportsImplementation(OU::Worker &i) {
-      ocpiInfo("Checking implementation %s model %s os %s version %s platform %s dynamic %u",
-		i.name().c_str(), i.model().c_str(), i.attributes().m_os.c_str(),
-		i.attributes().m_osVersion.c_str(), i.attributes().m_platform.c_str(),
-		i.attributes().m_dynamic);
-      ocpiInfo("against container %s (%u) has model %s os %s version %s platform %s dynamic %u",
-		name().c_str(), m_ordinal, m_model.c_str(), m_os.c_str(), m_osVersion.c_str(),
-		m_platform.c_str(), m_dynamic);
-      return
+      bool ok =
 	m_model == i.model() &&
 	m_os == i.attributes().m_os &&
 	m_osVersion == i.attributes().m_osVersion &&
-	m_platform == i.attributes().m_platform &&
+	// if all three are present and match, on rcc, platform does not need to match.
+	// this eases the transition to software platforms having proper names
+	((m_model == "rcc" && 
+	  m_os.length() && m_os == i.attributes().m_os &&
+	  m_osVersion.length() && m_osVersion == i.attributes().m_osVersion &&
+	  m_arch.length() && m_arch == i.attributes().m_arch) ||
+	 (i.attributes().m_platform.length() && m_platform == i.attributes().m_platform) ||
+	 (i.attributes().m_platform.empty() && m_arch == i.attributes().m_arch)) &&
 	m_dynamic == i.attributes().m_dynamic;
+      ocpiInfo("vs. container %s (%u) model %s os %s version %s arch %s platform %s dynamic %u ==> %s",
+		name().c_str(), m_ordinal, m_model.c_str(), m_os.c_str(), m_osVersion.c_str(),
+	       m_arch.c_str(), m_platform.c_str(), m_dynamic, ok ? "accepted" : "rejected");
+      return ok;
     }
 
     Artifact & Container::
@@ -160,16 +167,15 @@ namespace OCPI {
     {
       return Container::DispatchNoMore;
     }
-    bool Container::run(uint32_t usecs, bool verbose) {
-      (void)usecs; (void)verbose;
+    bool Container::run(uint32_t usecs) {
       if (m_ownThread)
 	throw OU::EmbeddedException( OU::CONTAINER_HAS_OWN_THREAD,
 				     "Can't use container->run when container has own thread",
 				     OU::ApplicationRecoverable);
-      return runInternal();
+      return runInternal(usecs);
     }
 
-    bool Container::runInternal(uint32_t usecs, bool verbose) {
+    bool Container::runInternal(uint32_t usecs) {
       if (!m_enabled)
 	return false;
       DataTransfer::EventManager *em = getEventManager();
@@ -195,8 +201,8 @@ namespace OCPI {
 	 * threads a chance to run.
 	 */
 	if (em &&
-	    em->waitForEvent(usecs) == DataTransfer::EventTimeout && verbose)
-	  printf("Timeout after %u usecs waiting for event\n", usecs);
+	    em->waitForEvent(usecs) == DataTransfer::EventTimeout && m_verbose)
+	  ocpiBad("Timeout after %u usecs waiting for event\n", usecs);
 	OCPI::OS::sleep (0);
       }
       return true;

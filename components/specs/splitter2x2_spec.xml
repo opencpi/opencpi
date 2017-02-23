@@ -1,4 +1,4 @@
-  <ComponentSpec Name="splitter2x2">
+  <ComponentSpec>
     <Properties >
       <Property Name="reserved0" Readable="true" Writable="false" Type="ULong"/>
       <Property Name="splitCtrl" Readable="true" Writable="true" Type="ULong"/>

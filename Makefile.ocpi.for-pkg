@@ -35,10 +35,6 @@
 
 all: bin
 
-ifneq ($(OCPI_OS),)
-SYSTEMOPTION="OCPI_OS=$(OCPI_OS)"
-endif
-
 include $(OCPI_BASE_DIR)/MakeVars.ocpi
 ifneq ($(OCPI_OUT_DIR),)
 OBJDIR = $(OCPI_OUT_DIR)
@@ -67,7 +63,7 @@ export UNIXSHLIB_S = $(OBJDIR)/libocpi_$(PACKAGE)_s.$(SO)
 #export EXPORTLIB=$(OCPI_BASE_DIR)/lib/$(OCPI_OUT_DIR)/$(notdir $(UNIXLIB))
 
 $(infox PACKAGE $(PACKAGE))
-ifneq ($(filter linux macos,$(OCPI_OS)),)
+ifneq ($(filter linux macos,$(OCPI_TARGET_OS)),)
   EXCLUDE_FACILITIES += winnt vxworksdkm
   ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)
     PACKAGELIB = \
@@ -127,7 +123,7 @@ lib: objects
 		$(MAKE) -f $(OCPI_BASE_DIR)/Makefile.ocpi.for-pkg $(SYSTEMOPTION) $(PACKAGELIB) ; \
 	fi
 
-ifneq ($(filter linux macos,$(OCPI_OS)),)
+ifneq ($(filter linux macos,$(OCPI_TARGET_OS)),)
 $(UNIXLIB): $(OBJECTS)
 	-rm -f $@
 	ar r $@ $(call FILTEROBJS,$(OBJECTS),$(EXCLUDE_OBJECTS))
@@ -161,7 +157,7 @@ DOSHLIB= \
 $(UNIXSHLIB): $(OBJECTS)
 	$(AT)$(DOSHLIB)
 
-PatchElf=$(OCPI_PREREQUISITES_INSTALL_DIR)/patchelf/$(OCPI_TOOL_HOST)/bin/patchelf
+PatchElf=$(OCPI_PREREQUISITES_INSTALL_DIR)/patchelf/$(OCPI_TOOL_DIR)/bin/patchelf
 $(UNIXSHLIB_S): $(UNIXSHLIB)
 	$(AT)echo Creating $@ for use with statically linked executables.
 	$(AT)$(DOSHLIB)
@@ -172,7 +168,7 @@ $(UNIXSHLIB_S): $(UNIXSHLIB)
        	         $(foreach l,$(ALLLIBS), --remove-needed libocpi_$(notdir $l).$(SO)) \
 	         $(foreach l,$(PREQLIBS), \
 	         $(foreach x,\
-	           $(wildcard $(OCPI_PREREQUISITES_INSTALL_DIR)/$l/$(OCPI_TOOL_HOST)/lib/lib$l.*), \
+	           $(wildcard $(OCPI_PREREQUISITES_INSTALL_DIR)/$l/$(OCPI_TOOL_DIR)/lib/lib$l.*), \
 	        --remove-needed $(notdir $x))) \
 	      $@; \
             fi

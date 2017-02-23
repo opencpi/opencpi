@@ -64,12 +64,14 @@ getEventManager()
 
 class Driver;
 Container::
-Container(const char *name, const OA::PValue* /* params */)
+Container(const char *a_name, const OA::PValue* /* params */)
   throw ( OU::EmbeddedException )
-  : OC::ContainerBase<Driver,Container,Application,Artifact>(*this, name)
+  : OC::ContainerBase<Driver,Container,Application,Artifact>(*this, a_name)
 {
   m_model = "rcc";
   m_dynamic = OC::Manager::dynamic();
+  if (parent().m_platform.size())
+    m_platform = parent().m_platform;
 }
 
 
@@ -155,7 +157,7 @@ dispatch(DataTransfer::EventManager* event_manager)
  * Creates an application 
  *********************************/
 OA::ContainerApplication * Container::
-createApplication(const char *name, const OCPI::Util::PValue *props)
+createApplication(const char *a_name, const OCPI::Util::PValue *props)
   throw ( OU::EmbeddedException )
 {
   TRACE( "OCPI::RCC::Container::createApplication()");
@@ -163,7 +165,7 @@ createApplication(const char *name, const OCPI::Util::PValue *props)
 
   Application* ca;
   try {
-    ca = new Application(*this, name, props);
+    ca = new Application(*this, a_name, props);
   }
   catch( std::bad_alloc ) {
     throw OU::EmbeddedException( OU::NO_MORE_MEMORY, "new", OU::ContainerFatal);

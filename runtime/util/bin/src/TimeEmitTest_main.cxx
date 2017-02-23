@@ -103,12 +103,12 @@ OcpiRccBinderConfigurator::g_options[] = {
 
 static
 void
-printUsage (OcpiRccBinderConfigurator & config,
+printUsage (OcpiRccBinderConfigurator & a_config,
             const char * argv0)
 {
   std::cout << "usage: " << argv0 << " [options]" << std::endl
             << "  options: " << std::endl;
-  config.printOptions (std::cout);
+  a_config.printOptions (std::cout);
 }
 
 
@@ -391,8 +391,8 @@ public:
   QLengthTestClass(const char* instance_name=0)
     : Emit( "QLengthTestClass", instance_name, &qc1 ){}
   void events( int n ) {
-    for ( int i=0; i<n; i++ ) {
-      OCPI_EMIT_UINT32_( "uint64", i );
+    for ( int nn=0; nn<n; nn++ ) {
+      OCPI_EMIT_UINT32_( "uint64", DT_i );
     }
   }
 };
@@ -421,8 +421,8 @@ public:
   QStopTestClass(const char* instance_name=0)
     : Emit( "QLengthTestClass", instance_name, &qc2 ){}
   void events( int n ) {
-    for ( int i=0; i<n; i++ ) {
-      OCPI_EMIT_UINT32_( "uint64", i );
+    for ( int nn=0; nn<n; nn++ ) {
+      OCPI_EMIT_UINT32_( "uint64", DT_i );
     }
   }
 };

@@ -1,3 +1,3 @@
 # #### Location of the Xilinx tools ####################################### #
 
-source $OCPI_CDK_DIR/platforms/zed/xilinx-target.sh
+# This file does nothing, now.  But it is here for backward compatibility

@@ -123,12 +123,12 @@ OcpiRccBinderConfigurator::g_options[] = {
 
 static
 void
-printUsage (OcpiRccBinderConfigurator & config,
+printUsage (OcpiRccBinderConfigurator & a_config,
             const char * argv0)
 {
   std::cout << "usage: " << argv0 << " [options]" << std::endl
             << "  options: " << std::endl;
-  config.printOptions (std::cout);
+  a_config.printOptions (std::cout);
 }
 
 
@@ -453,7 +453,7 @@ int  main( int argc, char** argv)
     test_rc = 0;
   }
   catch ( std::string& str ) {
-    printf(" failed with an exception %s\n",
+    printf(" failed with an exception: '%s'\n",
            str.c_str() );
     test_rc = 0;
   }

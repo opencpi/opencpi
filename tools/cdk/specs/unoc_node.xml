@@ -1,5 +1,5 @@
 <HdlWorker language='vhdl' library='platform'>
-  <ComponentSpec name='unoc_node' nocontrol='true'/>
+  <ComponentSpec nocontrol='true'/>
   <property name='control' type='bool' parameter='true'/>
   <property name='position' parameter='true'/>
   <unoc name="up"/>

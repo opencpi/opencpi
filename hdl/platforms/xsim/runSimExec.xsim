@@ -1,0 +1,42 @@
+#!/bin/sh
+source $OCPI_CDK_DIR/scripts/util.sh
+function bad {
+  [ -n "$verbose" ] && echo $* 1>&2 && echo Probe for Vivado xsim failed. 1>&2
+  exit 1
+}
+
+[ "$1" = -v ] && {
+  verbose=1
+  shift
+}
+[ "$1" = probe ] && {
+  setVarsFromMake $OCPI_CDK_DIR/include/hdl/xilinx.mk ShellIseVars=1 $verbose
+  [ -z "$OcpiXilinxVivadoDir" ] && bad Could not find the directory for XILINX Vivado.
+  [ -z "$OcpiXilinxLicenseFile" ] && bad Could not find the Xilinx license file.
+  [ -f $OcpiXilinxVivadoDir/.settings64-Vivado.sh ] ||
+    bad No Xilinx settings file in $OcpiXilinxVivadoDir.
+  [ -n "$verbose" ] && echo Attempting to run a tiny simulation to test isim.
+  probefile=$(cd $(dirname $0); pwd)/probe.exe.tgz
+  [ -f "$probefile" ] ||
+    bad Missing xsim probe support file \"$probefile\".
+  bad Probing unimplemented for xsim.
+}
+setVarsFromMake $OCPI_CDK_DIR/include/hdl/xilinx.mk ShellIseVars=1 $verbose
+[ -z "$OcpiXilinxVivadoDir" ] && bad Could not find the directory for XILINX Vivado.
+
+set -e
+# Pass arguments to the settings script to override current args
+. $OcpiXilinxVivadoDir/settings64.sh $OcpiXilinxVivadoDir
+export LM_LICENSE_FILE=$OcpiXilinxLicenseFile
+set -vx
+appname=$1
+shift
+for i in $*; do echo for $i; plusargs="$plusargs -testplusarg $i"; done
+echo plusargs are: $plusargs
+echo doing ./$appname-xsim_pf.exe $plusargs
+exec xsim  -tl $plusargs $appname <<EOF
+report_scopes
+report_objects
+log_wave -r /
+run 1 s
+EOF

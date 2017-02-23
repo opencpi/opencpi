@@ -49,4 +49,3 @@ run:
 	       echo ======== Running local XML application'(s)': $(filter %.xml,$(FILTER)) \
                $(foreach a,$(basename $(filter %.xml,$(FILTER))),\
                 && echo "========= $(call OcpiRunXML,$a,x)" && $(call OcpiRunXML,$a)))
-

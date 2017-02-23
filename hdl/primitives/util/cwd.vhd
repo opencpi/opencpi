@@ -6,6 +6,7 @@ entity cwd is
 end entity cwd;
 architecture rtl of cwd is
   signal cwd_internal : std_logic_vector(0 to length*8-1);
+  signal length_err   : std_logic;
   function slv2string(input : std_logic_vector) return string_t is
     variable result: string_t(0 to length); -- room for null
     variable n: natural := 0;
@@ -35,5 +36,14 @@ begin
   cwd      <= slv2string(cwd_internal); -- convert from right-justified plusarg format
   cwd_i: component work.util.cwd_internal -- instance the verilog that grabs the plusarg
     generic map(length => length)
-    port    map(cwd    => cwd_internal);
+    port    map(cwd    => cwd_internal,
+                len_err    => length_err);
+
+  -- if length_err goes high, the CWD_MAX_LENGTH param is too small - fail.
+  process (length_err) is begin
+    if length_err = '1' then
+     report "CWD buffer length too small in cwd_internal.v - increase CWD_MAX_LENGTH" severity failure;
+    end if;
+  end process;
+
 end rtl;

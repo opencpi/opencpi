@@ -50,16 +50,12 @@
 	 Driver    &m_driver;
 	 uint8_t  *m_vaddr;
 	 friend class Driver;
-	 Device(Driver &driver, std::string &a_name, bool forLoad, std::string &err)
-	   : OCPI::HDL::Device(a_name, "ocpi-dma-pio"),
+	 Device(Driver &driver, std::string &a_name, bool forLoad, const OU::PValue *params,
+		std::string &err)
+	   : OCPI::HDL::Device(a_name, "ocpi-dma-pio", params),
 	     m_driver(driver), m_vaddr(NULL) {
 	   m_isAlive = false;
 	   m_endpointSize = sizeof(OccpSpace);
-#if 0 // not here since it depends on which GP
-	   OU::format(m_endpointSpecific,
-		      "ocpi-dma-pio:0x%" PRIx32 ".0x%" PRIx32 ".0x%" PRIx32,
-		      GP0_PADDR, 0, 0);
-#endif
 	   if (isProgrammed(err)) {
 	     if (init(err)) {
 	       if (forLoad)
@@ -144,6 +140,17 @@
 		       "There is no bitstream loaded on this HDL device: %s", name().c_str());
 	  return true;
 	}
+	 // The zynq setup does not provide a slave interface to the DMA BRAM,
+	 // since the SDP is only attached as master to the S_AXI_HP ports.
+	 // Thus we only allow ActiveMessage since the SDP BRAMs are not memory mapped.
+	 // (M_AXI_GP0/1 is dedicated to the control plane).
+	 uint32_t dmaOptions(ezxml_t icImplXml, ezxml_t /*icInstXml*/, bool /*isProvider*/) {
+	   const char *icname = ezxml_cattr(icImplXml, "name");
+	   return
+	     (1 << OCPI::RDT::ActiveMessage) |
+	     ((icname && !strncasecmp(icname, "sdp", 3)) ? 1 << OCPI::RDT::FlagIsMeta : 0);
+	 }
+
 	// Scan the buffer and identify the start of the sync pattern
 	static uint8_t *findsync(uint8_t *buf, size_t len) {
 	  static uint8_t startup[] = {
@@ -173,8 +180,9 @@
 	}
 
 	// Load a bitstream
-	void
-	load(const char *fileName) {
+	bool
+	load(const char *fileName, std::string &error) {
+	  ocpiDebug("Loading file \"%s\" on zynq FPGA", fileName);
 	  struct Xld { // struct allocated on the stack for easy cleanup
 	    int xfd, bfd;
 	    gzFile gz;
@@ -187,46 +195,46 @@
 	      if (bfd >= 0) ::close(bfd);
 	      if (gz) gzclose(gz);
 	    }
-	    Xld(const char *file) : xfd(-1), bfd(-1), gz(NULL) {
-	      try {
-		// Open the device LAST since just opening it will do bad things
-		if ((bfd = ::open(file, O_RDONLY)) < 0)
-		  throw OU::Error("Can't open bitstream file '%s' for reading: %s(%d)",
-				  file, strerror(errno), errno);
-		if ((gz = ::gzdopen(bfd, "rb")) == NULL)
-		  throw OU::Error("Can't open compressed bitstream file '%s' for : %s(%u)",
-				  file, strerror(errno), errno);
-		bfd = -1; // gzclose closes the fd
-		// Read up to the sync pattern before byte swapping
-		if ((n = ::gzread(gz, buf, sizeof(buf))) <= 0)
-		  throw OU::Error("Error reading initial bitstream buffer: %s(%u/%d)",
-				  gzerror(gz, &zerror), errno, n);
-		uint8_t *p8 = findsync(buf, sizeof(buf));
-		if (!p8)
-		  throw OU::Error("Can't find sync pattern in compressed bit file");
+	    Xld(const char *file, std::string &a_error) : xfd(-1), bfd(-1), gz(NULL) {
+	      // Open the device LAST since just opening it will do bad things
+	      uint8_t *p8;
+	      if ((bfd = ::open(file, O_RDONLY)) < 0)
+		OU::format(a_error, "Can't open bitstream file '%s' for reading: %s(%d)",
+			   file, strerror(errno), errno);
+	      else if ((gz = ::gzdopen(bfd, "rb")) == NULL)
+		OU::format(a_error, "Can't open compressed bitstream file '%s' for : %s(%u)",
+			   file, strerror(errno), errno);
+	      // Read up to the sync pattern before byte swapping
+	      else if ((n = ::gzread(gz, buf, sizeof(buf))) <= 0)
+		OU::format(a_error, "Error reading initial bitstream buffer: %s(%u/%d)",
+			   gzerror(gz, &zerror), errno, n);
+	      else if (!(p8 = findsync(buf, sizeof(buf))))
+		OU::format(a_error, "Can't find sync pattern in compressed bit file");
+	      else {
 		len = buf + sizeof(buf) - p8;
 		if (p8 != buf)
 		  memcpy(buf, p8, len);
 		// We've done as much as we can before opening the device, which
-		// does bad things...
+		// does bad things to the Zynq PL
 		if ((xfd = ::open("/dev/xdevcfg", O_RDWR)) < 0)
-		  throw OU::Error("Can't open /dev/xdevcfg for bitstream loading: %s(%d)",
-				  strerror(errno), errno);
-	      } catch (...) {
-		cleanup();
-		throw;
+		  OU::format(a_error, "Can't open /dev/xdevcfg for bitstream loading: %s(%d)",
+			     strerror(errno), errno);
 	      }
 	    }
 	    ~Xld() {
-	      cleanup();
+	      if (xfd >= 0) ::close(xfd);
+	      if (bfd >= 0) ::close(bfd);
+	      if (gz) gzclose(gz);
 	    }
-	    int gzread(uint8_t *&argBuf) {
+	    int gzread(uint8_t *&argBuf, std::string &a_error) {
 	      if ((n = ::gzread(gz, buf + len, (unsigned)(sizeof(buf) - len))) < 0)
-		throw OU::Error("Error reading compressed bitstream: %s(%u/%d)",
-				gzerror(gz, &zerror), errno, n);
-	      n += OCPI_UTRUNCATE(int, len);
-	      len = 0;
-	      argBuf = buf; 
+		OU::format(a_error, "Error reading compressed bitstream: %s(%u/%d)",
+			   gzerror(gz, &zerror), errno, n);
+	      else {
+		n += OCPI_UTRUNCATE(int, len);
+		len = 0;
+		argBuf = buf; 
+	      }
 	      return n;
 	    }
 	    uint32_t readConfigReg(unsigned /*reg*/) {
@@ -235,28 +243,33 @@
 	      return 0;
 	    }
 	  };
-	  Xld xld(fileName);
+	  Xld xld(fileName, error);
+	  if (!error.empty())
+	    return true;
 	  do {
 	    uint8_t *buf;
-	    int n = xld.gzread(buf);
+	    int n = xld.gzread(buf, error);
+	    if (n < 0)
+	      return true;
 	    if (n & 3)
-	      throw OU::Error("Bitstream data in is '%s' not a multiple of 4 bytes",
-			      fileName);
+	      return OU::eformat(error, "Bitstream data in is '%s' not a multiple of 4 bytes",
+				 fileName);
 	    if (n == 0)
 	      break;
 	    uint32_t *p32 = (uint32_t*)buf;
 	    for (unsigned nn = n; nn; nn -= 4, p32++)
 	      *p32 = OU::swap32(*p32);
 	    if (write(xld.xfd, buf, n) <= 0)
-	      throw OU::Error("Error writing to /dev/xdevcfg for bitstream loading: %s(%u/%d)",
-			      strerror(errno), errno, n);
-	  } while(1);
+	      return OU::eformat(error,
+				 "Error writing to /dev/xdevcfg for bitstream loading: %s(%u/%d)",
+				 strerror(errno), errno, n);
+	  } while (1);
 	  if (::close(xld.xfd))
-	    throw OU::Error("Error closing /dev/xdevcfg: %s(%u)", strerror(errno), errno);
+	    return OU::eformat(error, "Error closing /dev/xdevcfg: %s(%u)",
+			       strerror(errno), errno);
 	  xld.xfd = -1;
-	  std::string err;
-	  if (!isProgrammed(err) && !err.empty())
-	    throw OU::Error("Error after loading bitstream: %s", err.c_str());
+	  ocpiDebug("Loading complete, testing for programming done and initialization");
+	  return isProgrammed(error) ? init(error) : true;
 #if 0
 	  // We have written all the data from the file to the device.
 	  // Now we can retrieve status registers
@@ -278,13 +291,14 @@
 			    axss, c_opencpi);
 #endif
 	}
-	void
-	unload() {
+	bool
+	unload(std::string &error) {
 	  int xfd;
 	  if ((xfd = ::open("/dev/xdevcfg", O_WRONLY)) < 0)
-	    throw OU::Error("Can't open /dev/xdevcfg for bitstream unloading: %s(%d)",
-			    strerror(errno), errno);
+	    return OU::eformat(error, "Can't open /dev/xdevcfg for bitstream unloading: %s(%d)",
+			       strerror(errno), errno);
 	  close(xfd);
+	  return false;
 	}
       };
 
@@ -299,36 +313,35 @@
       }
 
       unsigned Driver::
-      search(const OU::PValue */*params*/, const char **exclude, bool /*discoveryOnly*/,
+      search(const OU::PValue *params, const char **exclude, bool discoveryOnly,
 	     std::string &error) {
 	// Opening implies canonicalizing the name, which is needed for excludes
-	OCPI::HDL::Device *dev = open("0", true, error);
-	if (dev) {
-	  if (exclude)
-	    for (const char **ap = exclude; *ap; ap++)
-	      if (!strcmp(*ap, dev->name().c_str()))
-		goto skipit;
-	  if (!found(*dev, error))
-	    return 1;
-      skipit:
-	  delete dev;
-	}
-	return 0;
+	ocpiInfo("Searching for local Zynq/PL HDL device.");
+#if 0
+	bool verbose = false;
+	OU::findBool(params, "verbose", verbose);
+	if (verbose)
+	  printf("Searching for local Zynq/PL HDL device.\n");
+#endif
+	OCPI::HDL::Device *dev = open("0", true, params, error);
+	return dev && !found(*dev, exclude, discoveryOnly, error) ? 1 : 0;
       }
       
       OCPI::HDL::Device *Driver::
-      open(const char *busName, bool forLoad, std::string &error) {
+      open(const char *busName, bool forLoad, const OU::PValue *params, std::string &error) {
+	(void)params;
 	std::string name("PL:");
 	name += busName;
-
-#ifndef OCPI_PLATFORM_arm
-	return NULL;
-#endif
-	Device *dev = new Device(*this, name, forLoad, error);
+#if defined(OCPI_ARCH_arm) || defined(OCPI_ARCH_arm_cs)
+	Device *dev = new Device(*this, name, forLoad, params, error);
 	if (error.empty())
 	  return dev;
 	delete dev;
 	ocpiBad("When searching for PL device '%s': %s", busName, error.c_str());
+#else
+	(void)forLoad;
+	error.clear();
+#endif
 	return NULL;
       }
       uint8_t *Driver::
@@ -342,8 +355,10 @@
 	else if ((vaddr = mmap64(NULL, size, PROT_READ|PROT_WRITE, MAP_SHARED, m_memFd,
 				 off64)) == MAP_FAILED)
 	  error = "can't mmap /dev/mem for control space";
-	else
+	else {
+	  ocpiDebug("Zynq map returns %p", vaddr);
 	  return (uint8_t*)vaddr;
+	}
 	return NULL;
       }
        bool Driver::

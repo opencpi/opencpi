@@ -36,7 +36,7 @@
 # This file has the HDL tool details for isim
 
 include $(OCPI_CDK_DIR)/include/hdl/xilinx.mk
-
+toolsDir:=$(OcpiXilinxIseDir)
 ################################################################################
 # $(call HdlToolLibraryFile,target,libname)
 # Function required by toolset: return the file to use as the file that gets
@@ -97,26 +97,21 @@ MyIncs=\
 
 IsimArgs=-v 2 -work $(call ToLower,$(WorkLib))=$(WorkLib) $(IsimLibs)
 
-# For verilog, we need to supply parameters at compile time since they might
-# result in conditional compilation, but they also might apply as parameters
-# for elaboration, like VHDL?
-# For VHDL
-
-
 HdlToolCompile=\
-  $(call XilinxInit,);\
+  $(OcpiXilinxIseInit);\
   $(call OcpiDbgVar,IsimFiles,htc) $(call OcpiDbgVar,SourceFiles,htc) $(call OcpiDbgVar,CompiledSourceFiles,htc)\
   $(and $(filter %.v,$(IsimFiles))$(findstring $(HdlMode),platform),\
     vlogcomp $(MyIncs) $(IsimArgs) $(filter %.v,$(IsimFiles)) \
-       $(and $(findstring $(HdlMode),platform), $(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/glbl.v) ;) \
+       $(and $(findstring $(HdlMode),platform), $(toolsDir)/ISE/verilog/src/glbl.v) ;) \
   $(and $(filter %.vhd,$(IsimFiles)),\
     vhpcomp $(IsimArgs) $(filter %.vhd,$(IsimFiles)) ;)\
-  $(if $(filter worker platform config assembly,$(HdlMode)),\
+  $(if $(filter worker platform config assembly,$(HdlMode))$(HdlIsimProbe),\
     $(if $(HdlNoSimElaboration),, \
-      echo verilog work $(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/glbl.v \
+      echo verilog work $(toolsDir)/ISE/verilog/src/glbl.v \
 	> $(Worker).prj; \
-      fuse $(WorkLib).$(WorkLib)$(and $(filter config,$(HdlMode)),_rv) work.glbl -v 2 -prj $(Worker).prj -L unisims_ver \
-	-o $(Worker).exe -lib $(call ToLower,$(WorkLib))=$(WorkLib) $(IsimLibs)))
+      fuse $(WorkLib).$(WorkLib)$(and $(filter config,$(HdlMode)),_rv) work.glbl -v 2 \
+           -prj $(Worker).prj -L unisims_ver -o $(Worker).exe \
+           -lib $(call ToLower,$(WorkLib))=$(WorkLib) $(IsimLibs)))
 
 # the "touch" below is because isim creates a bunch of files for the precompiled library
 # and no specific file.  So we touch the dir so dependencies on the library work even when
@@ -136,8 +131,8 @@ define HdlToolDoPlatform_isim
 # Generate bitstream
 $1/$3.tar:
 	$(AT)echo Building isim simulation executable: "$$@" with details in $1/$3-fuse.out
-	$(AT)echo verilog work $(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/glbl.v > $1/$3.prj
-	$(AT)(set -e; cd $1; $(call XilinxInit,); \
+	$(AT)echo verilog work $(toolsDir)/ISE/verilog/src/glbl.v > $1/$3.prj
+	$(AT)(set -e; cd $1; $(call OcpiXilinxIseInit,); \
 	      fuse $3.$3 work.glbl -v 2  -prj $3.prj \
               -lib $3=$3 $$(IsimLibs) -L unisims_ver \
 	      -o $3.exe ; \

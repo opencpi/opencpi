@@ -74,6 +74,7 @@ begin
   EN_s_request_put   <= up_in.valid and RDY_s_request_put;
   up_out.take        <= EN_s_request_put;
   up_out.data        <= to_unoc(s_response_get);
+  up_out.dropCount   <= down_in.dropCount;
 
   EN_c0_response_put <= client_in.valid and RDY_c0_response_put;
   client_out.take    <= EN_c0_response_put;

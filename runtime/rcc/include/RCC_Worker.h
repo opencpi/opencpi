@@ -196,7 +196,7 @@ class RunCondition {
   ~RunCondition();
   // backward compatibility for undocumented method
   inline void initDefault(unsigned /*nPorts*/) {}
-  // Compatibility hack to support older C-langage run conditions
+  // Support older C-langage run conditions
   inline void setRunCondition(const RCCRunCondition &crc) {
     m_portMasks = crc.portMasks;
     m_timeout = crc.timeout;
@@ -209,7 +209,7 @@ class RunCondition {
   inline void disableTimeout() { m_timeout = false; }
   // Enable the timeout, setting its value
   inline void enableTimeout(uint32_t usecs) { m_timeout = true; m_usecs = usecs; }
-  // Enable the tinmeout, without changing its value
+  // Enable the timeout, without changing its value
   inline void enableTimeout() { m_timeout = true; }
   inline void setTimeout(uint32_t usecs) { m_usecs = usecs; }
   void setPortMasks(RCCPortMask first, ...);
@@ -286,8 +286,8 @@ struct RCCPort {
 typedef struct {
   void (*release)(RCCBuffer *);
   void (*send)(RCCPort *, RCCBuffer*, RCCOpCode op, size_t length);
-  RCCBoolean (*request)(RCCPort *port, size_t maxlength);
-  RCCBoolean (*advance)(RCCPort *port, size_t maxlength);
+  RCCBoolean (*request)(RCCPort *port, size_t minlength);
+  RCCBoolean (*advance)(RCCPort *port, size_t minlength);
   RCCBoolean (*wait)(RCCPort *, size_t max, unsigned usecs);
   void (*take)(RCCPort *,RCCBuffer *old_buffer, RCCBuffer *new_buffer);
   RCCResult (*setError)(const char *, ...);
@@ -371,12 +371,14 @@ typedef struct {
    inline size_t maxLength() const { return m_rccBuffer->maxLength; }
    // For input buffers
    inline size_t length() const { return m_rccBuffer->length_; }
-   RCCOpCode opCode() const { return m_rccBuffer->opCode_; }
+   inline size_t getLength() const { return m_rccBuffer->length_; } // same as STL-style length() but complements setLength
+   inline RCCOpCode opCode() const { return m_rccBuffer->opCode_; }
+   inline RCCOpCode getOpCode() const { return m_rccBuffer->opCode_; } // same as opCode() but complements setOpCode
    // For output buffers
-   void setLength(size_t length) {
+   void setLength(size_t a_length) {
      if (m_rccBuffer->isNew_)
        initBuffer();
-     m_rccBuffer->length_ = length;
+     m_rccBuffer->length_ = a_length;
      m_lengthSet = true;
    }
    void setOpCode(RCCOpCode op);
@@ -417,8 +419,8 @@ typedef struct {
      send(RCCUserBuffer&);
    RCCUserBuffer &take(RCCUserBuffer *oldBuffer = NULL);
    bool
-    request(size_t maxlength = 0),
-    advance(size_t maxlength = 0),
+    request(size_t minlength = 0),
+    advance(size_t minlength = 0),
     isConnected(),
     wait(size_t max, unsigned usecs);
    RCCOrdinal ordinal() const;
@@ -434,11 +436,11 @@ typedef struct {
    RCCPortOperation(RCCUserPort &p, unsigned op) : m_port(p), m_op(op), m_buffer(&p) {}
    inline void setRccBuffer(RCCBuffer *b) { m_buffer->setRccBuffer(b); };
    inline RCCBuffer *getRccBuffer() const { return m_buffer->getRccBuffer(); }
-   inline void *getArgAddress(unsigned arg, size_t *length, size_t *capacity) const {
-     return m_port.getArgAddress(*m_buffer, m_op, arg, length, capacity);
+   inline void *getArgAddress(unsigned arg, size_t *a_length, size_t *capacity) const {
+     return m_port.getArgAddress(*m_buffer, m_op, arg, a_length, capacity);
    }
-   inline void setArgSize(unsigned arg, size_t length) const {
-     m_port.setArgSize(*m_buffer, m_op, arg, length);
+   inline void setArgSize(unsigned arg, size_t a_length) const {
+     m_port.setArgSize(*m_buffer, m_op, arg, a_length);
    }
  public:
    inline void * data() const { return m_buffer->data(); }
@@ -447,9 +449,9 @@ typedef struct {
    inline size_t length() const { return m_buffer->length(); }
    inline RCCOpCode opCode() const  { return m_buffer->opCode(); };
    // For output buffers
-   inline void setLength(size_t length) {
-     m_port.checkLength(length);
-     m_buffer->setLength(length);
+   inline void setLength(size_t a_length) {
+     m_port.checkLength(a_length);
+     m_buffer->setLength(a_length);
    }
    inline void setOpCode(RCCOpCode op) { m_buffer->setOpCode(op); }
    inline void setInfo(RCCOpCode op, size_t len) { m_buffer->setInfo(op, len); }
@@ -503,6 +505,8 @@ typedef struct {
    void setRunCondition(RunCondition *rc);
    virtual uint8_t *rawProperties(size_t &size) const;
    RCCResult setError(const char *fmt, ...);
+   bool willLog(unsigned level) const;
+   void log(unsigned level, const char *fmt, ...) throw() __attribute__((format(printf, 3, 4)));
    OCPI::API::Application &getApplication();
    // These below are called by the container, and NOT by the worker.
 
@@ -540,6 +544,12 @@ typedef struct {
    inline bool getProperty(unsigned ordinal, std::string &name, std::string &value,
 			   bool *unreadablep = NULL, bool hex = false) {
      return m_worker.getProperty(ordinal, name, value, unreadablep, hex);
+   }
+   inline void getRawPropertyBytes(size_t offset, uint8_t *buf, size_t count) {
+     m_worker.getRawPropertyBytes(offset, buf, count);
+   }
+   inline void setRawPropertyBytes(size_t offset, const uint8_t *buf, size_t count) {
+     m_worker.setRawPropertyBytes(offset, buf, count);
    }
  };
 }} // end of namespace OCPI::RCC

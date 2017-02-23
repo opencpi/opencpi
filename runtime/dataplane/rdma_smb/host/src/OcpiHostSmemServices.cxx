@@ -58,7 +58,7 @@
 
 namespace DataTransfer {
 
-  std::map<std::string, BaseSmem*> BaseSmemServices::m_cache; 
+  std::map<std::string, BaseSmem*> BaseSmemServices::s_cache; 
 
   typedef void* SMB_handle;
   typedef void* SMB_mapping_handle;
@@ -113,7 +113,7 @@ namespace DataTransfer {
       // Begin exception handler
       OCPI::OS::int32_t rc = 0;
       SMB_handle handle = 0;
-      HostSmem* pSmem = 0;
+      //      HostSmem* pSmem = 0;
       OcpiFileMappingServices* pMapper = 0;
       m_location = loc;
 
@@ -133,10 +133,18 @@ namespace DataTransfer {
                                     "HostSmemServices::Create: CreateFileMappingServices returned NULL reference");
             }
                 
+
+#if 1
+	  m_pSmem = new HostSmem(loc, handle, pMapper);
+	  BaseSmemServices::add(m_pSmem);
+          ocpiDebug("Creating mapping of size %zu name %s", loc->size, m_pSmem->m_name.c_str());
+          if ((rc = pMapper->CreateMapping ("", m_pSmem->m_name.c_str(),
+					    OcpiFileMappingServices::ReadWriteAccess, loc->size)))
+	    throw OU::Error("CreatMapping failed: %u", rc);
+#else
           ocpiDebug("Creating mapping of size %zu", loc->size );
-
-          rc = pMapper->CreateMapping ("", loc->getAddress(), OcpiFileMappingServices::ReadWriteAccess, loc->size);
-
+          rc = pMapper->CreateMapping ("", m_name.c_str(),
+				       OcpiFileMappingServices::ReadWriteAccess, loc->size);
           if (rc == 0)
             {
               pSmem = new HostSmem ( loc, handle, pMapper);
@@ -148,10 +156,10 @@ namespace DataTransfer {
               this->BaseSmemServices::add (pSmem);
               m_pSmem = pSmem;
             }
+#endif
         }
       catch( ... ) 
         {
-          delete pMapper;
           delete m_pSmem;
 	  m_pSmem = 0;
           throw;
@@ -202,7 +210,7 @@ namespace DataTransfer {
             }
 
           // Lookup existing named shared memory object.
-          if ((pSmem = static_cast<HostSmem *>(this->BaseSmemServices::lookup (loc->getAddress()))) == 0)
+          if ((pSmem = static_cast<HostSmem *>(this->BaseSmemServices::lookup(*loc))) == 0)
             {
               // Attempt to attach to host OS shared memory.
               //                EndPoint loc = OcpiSmemServices::HostOnly;
@@ -213,7 +221,16 @@ namespace DataTransfer {
                   throw DataTransferEx (RESOURCE_EXCEPTION, 
                                         "HostSmemServices::Attach: CreateFileMappingServices returned NULL reference");
                 }
-              rc = pMapper->OpenMapping (loc->getAddress(), OcpiFileMappingServices::AllAccess);
+#if 1
+	      pSmem = new HostSmem(m_location, handle, pMapper);
+	      BaseSmemServices::add(pSmem);
+              if (pMapper->OpenMapping(pSmem->m_name.c_str(),
+				       OcpiFileMappingServices::AllAccess))
+                throw DataTransferEx(RESOURCE_EXCEPTION,
+				     "HostSmemServices::Attach: could not attach");
+	      
+#else
+              rc = pMapper->OpenMapping (m_name.c_str(), OcpiFileMappingServices::AllAccess);
               if (rc == 0)
                 {
                   // Add this instance with the name.
@@ -229,6 +246,7 @@ namespace DataTransfer {
                 throw DataTransferEx (RESOURCE_EXCEPTION, 
                                       "HostSmemServices::Attach: CreateFileMappingServices could not attach");
               }
+#endif
             }
         }
       catch( ... ) 

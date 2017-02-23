@@ -59,11 +59,11 @@ namespace OCPI {
     }
 
     Worker::
-    Worker(Artifact *art, ezxml_t impl, ezxml_t inst, Worker *slave, bool hasMaster,
+    Worker(Artifact *art, ezxml_t impl, ezxml_t inst, Worker *a_slave, bool a_hasMaster,
 	   const OA::PValue *) 
       : OU::Worker::Worker(),
 	m_artifact(art), m_xml(impl), m_instXml(inst), m_workerMutex(true),
-	m_controlOpPending(false), m_slave(slave), m_hasMaster(hasMaster) {
+	m_controlOpPending(false), m_slave(a_slave), m_hasMaster(a_hasMaster) {
       if (impl) {
 	const char *err = parse(impl);
 	if (err)
@@ -84,13 +84,18 @@ namespace OCPI {
     }
 
     OA::Port &Worker::
-    getPort(const char *name, const OA::PValue *params ) {
-      Port *p = findPort(name);
+    getPort(const char *a_name, const OA::PValue *params ) {
+      return getContainerPort(a_name, params);
+    }
+    
+    Port &Worker::
+    getContainerPort(const char *a_name, const OA::PValue *params ) {
+      Port *p = findPort(a_name);
       if (p)
         return *p;
-      OU::Port *metaPort = findMetaPort(name);
+      OU::Port *metaPort = findMetaPort(a_name);
       if (!metaPort)
-        throw OU::Error("no port found with name \"%s\"", name);
+        throw OU::Error("no port found with name \"%s\"", a_name);
       return createPort(*metaPort, params);
     }
     OA::PropertyInfo & Worker::setupProperty(const char *pname, 
@@ -273,7 +278,8 @@ namespace OCPI {
 	    memcpy(data, cache, nBytes);
 	  else
 	    getPropertyBytes(info, info.m_offset, data, nBytes); // include length field
-	  if (info.m_baseType == OA::OCPI_Struct) {
+	  //	  if (info.m_baseType == OA::OCPI_Struct)
+	  {
 	    const uint8_t *tmp = data;
 	    size_t length = nBytes;
 	    // The writer creates its own value objects...
@@ -286,8 +292,9 @@ namespace OCPI {
 	    vp->unparse(value, NULL, add, hex);
 	    delete vp;
 	    return; // FIXME - see above
-	  } else
-	    v.m_pUChar = data;
+	  }
+	  // else
+	  //v.m_pUChar = data + (info.m_isSequence ? info.m_dataAlign : 0);
 	}
       } else if (info.m_baseType == OA::OCPI_String) {
 	// FIXME: modularity violation
@@ -313,14 +320,14 @@ namespace OCPI {
 	}
       v.unparse(value, NULL, add, hex);
     }
-    bool Worker::getProperty(unsigned ordinal, std::string &name, std::string &value,
+    bool Worker::getProperty(unsigned ordinal, std::string &a_name, std::string &value,
 			     bool *unreadablep, bool hex, bool *cachedp, bool uncached) {
       unsigned nProps;
       OU::Property *props = properties(nProps);
       if (ordinal >= nProps)
 	return false;
       OU::Property &p = props[ordinal];
-      name = p.m_name;
+      a_name = p.m_name;
       if (p.m_isReadable || p.m_isParameter ||
 	  (p.m_isWritable && !p.m_isVolatile && m_cache.size() > p.m_ordinal &&
 	   m_cache[p.m_ordinal])) {

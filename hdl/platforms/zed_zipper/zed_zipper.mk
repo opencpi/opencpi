@@ -1,1 +1,2 @@
 HdlPart_zed_zipper=xc7z020-1-clg484
+HdlRccPlatform_zed_zipper=xilinx13_4

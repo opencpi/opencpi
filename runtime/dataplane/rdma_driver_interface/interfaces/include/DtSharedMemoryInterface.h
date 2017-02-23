@@ -83,7 +83,10 @@ namespace DataTransfer {
   // Protocol specific location class
   struct EndPoint
   {
-
+    struct Receiver {
+      virtual ~Receiver() {}
+      virtual void receive(DtOsDataTypes::Offset offset, uint8_t *data, size_t count) = 0;
+    };
     std::string          end_point;    // deep copy of the endpoint string
     std::string          protocol;     // protocol string
     uint16_t             mailbox;      // endpoint mailbox
@@ -112,23 +115,17 @@ namespace DataTransfer {
     // Sets smem location data based upon the specified endpoint
     OCPI::OS::int32_t setEndpoint( std::string& ep );
 
-    // Get the address from the endpoint
-    virtual const char* getAddress()=0;
-    virtual uint16_t & getId(){ static uint16_t n=0; return n;};
+    // See if a string matches this endpoint
+    bool matchEndPointString(const char *ep);
 
     // Parse the endpoint string
     static void getProtocolFromString( const char* ep, std::string & );
-
-    static void getResourceValuesFromString( 
-                            const char*  ep,      // Endpoint value
-                            char*  cs,            // User provided buffer (at least sizeof ep )
-                            uint16_t* mailBox,    // Mailbox value returned
-                            uint16_t* maxMb,      // Maximum mailbox value in circuit returned
-                            size_t* bufsize       // Buffer size returned
-                            );
+    static void parseEndPointString(const char* ep, uint16_t* mailBox, uint16_t* maxMb,
+				    size_t* size);
 
     virtual SmemServices &createSmemServices() = 0;
     SmemServices *getSmemServices(); // ptr for legacy
+    virtual void setReceiver(Receiver &receiver);
   };
 
   // Shared memory services.  
@@ -148,7 +145,7 @@ namespace DataTransfer {
      *                Returns 0 if success, platform dependent error otherwise
      *
      */
-    virtual OCPI::OS::int32_t attach(EndPoint* loc) = 0;
+    virtual OCPI::OS::int32_t attach(EndPoint* loc);
 
     /*
      * Detach from shared memory object
@@ -157,7 +154,7 @@ namespace DataTransfer {
      *                Returns 0 if success, platform dependent error otherwise
      *
      */
-    virtual OCPI::OS::int32_t detach() = 0;
+    virtual OCPI::OS::int32_t detach();
 
     /*
      * Map a view of the shared memory area at some offset/size and return the virtual address.
@@ -178,7 +175,7 @@ namespace DataTransfer {
      *                Returns 0 if success, platform dependent error otherwise
      *
      */
-    virtual int32_t unMap() = 0;
+    virtual int32_t unMap();
 
     /*
      *        GetEndPoint - Returns the endpoint of the shared memory area

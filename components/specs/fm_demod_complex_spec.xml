@@ -6,7 +6,7 @@ being handled at the input must be passed to the output.
 
 -->
 
-<ComponentSpec name="fm_demod_complex" >
+<ComponentSpec>
 
   <Properties>
     <!-- emitAngle : When true the output is the angle between this sample and the previous   Format: boolean  -->

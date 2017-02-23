@@ -1,4 +1,4 @@
-<ComponentSpec Name="copy">
+<ComponentSpec>
   <Properties>
      <Property Name="startIndex" Volatile="true" Writable="true"/>
      <Property Name="longProperty" Volatile="true" Writable="true"/>

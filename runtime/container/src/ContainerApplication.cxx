@@ -66,7 +66,7 @@ namespace OCPI {
 	return container().loadArtifact(url, aParams).createWorker(*this, instName,
 								   implName, preInstName,
 								   wProps, wParams);
-      // This is the special hack for passing in a dispatch table for RCC workers.
+      // This is for passing in a dispatch table for RCC workers.
       else {
 	Worker &w =
 	  createWorker(NULL, instName, (ezxml_t)NULL, (ezxml_t)NULL, NULL, false, aParams);
@@ -107,20 +107,23 @@ namespace OCPI {
     }
     // If not master, then we ignore slave, so there are three cases
     void Application::
-    startMasterSlave(bool isMaster, bool isSlave) {
+    startMasterSlave(bool isMaster, bool isSlave, bool isSource) {
       for (Worker *w = firstWorker(); w; w = w->nextWorker())
-	if (w->getState() != OU::Worker::EXISTS &&
-	    (isMaster && w->slave() &&
-	     (isSlave && w->hasMaster() || !isSlave && !w->hasMaster())) ||
-	    (!isMaster && !w->slave()))
+	if (isSource == w->isSource() &&
+	    isMaster == (w->slave() != NULL) &&
+	    isSlave == w->hasMaster()) {
+	  assert(w->getState() == OU::Worker::INITIALIZED);
+	  ocpiInfo("Starting worker: %s in container %s from %s/%s", w->name().c_str(),
+		   container().name().c_str(), w->implTag().c_str(), w->instTag().c_str());
 	  w->start();
+	}
     }
     // If not master, then we ignore slave, so there are three cases
     void Application::
     stop(bool isMaster, bool isSlave) {
       for (Worker *w = firstWorker(); w; w = w->nextWorker())
 	if ((isMaster && w->slave() &&
-	     (isSlave && w->hasMaster() || !isSlave && !w->hasMaster())) ||
+	     ((isSlave && w->hasMaster()) || (!isSlave && !w->hasMaster()))) ||
 	    (!isMaster && !w->slave()))
 	w->stop();
     }
@@ -129,7 +132,7 @@ namespace OCPI {
     release(bool isMaster, bool isSlave) {
       for (Worker *w = firstWorker(); w; w = w->nextWorker())
 	if ((isMaster && w->slave() &&
-	     (isSlave && w->hasMaster() || !isSlave && !w->hasMaster())) ||
+	     ((isSlave && w->hasMaster()) || (!isSlave && !w->hasMaster()))) ||
 	    (!isMaster && !w->slave()))
 	w->release();
     }
@@ -147,12 +150,14 @@ namespace OCPI {
 	  return true;
       return false;
     }
+#if 0 // let's see if anyone uses this
     void Application::
     start() {
       startMasterSlave(true, false); // start masters that are not slaves
       startMasterSlave(true, true);  // start masters that are slaves
       startMasterSlave(false, false); // start non-masters
     }
+#endif
   }
   namespace API {
     ContainerApplication::~ContainerApplication(){}

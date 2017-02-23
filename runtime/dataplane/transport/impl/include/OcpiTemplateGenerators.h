@@ -223,8 +223,10 @@ namespace OCPI {
       // has a ActiveFlowControl role.
       virtual void createInputTransfers(OCPI::DataTransport::PortSet* output, OCPI::DataTransport::Port* input,
                                          TransferController* cont );
-
-
+      // Make this do nothing for now since it can't work yet.
+      void createOutputBroadcastTemplates(OCPI::DataTransport::Port* /*output*/, 
+					  OCPI::DataTransport::PortSet* /*input*/,
+					  TransferController* /*cont*/){};
     };
 
 

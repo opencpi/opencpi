@@ -1,3 +1,4 @@
+#include "assembly.h"
 #include "hdl.h"
 WmemiPort::
 WmemiPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
@@ -28,7 +29,7 @@ WmemiPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
 // Virtual constructor
 Port &WmemiPort::
 clone(Worker &, std::string &, size_t, OCPI::Util::Assembly::Role *, const char *&) const {
-  throw OU::Error("Port type: %u cannot be cloned", type);
+  throw OU::Error("Port type: %u cannot be cloned", m_type);
 #if 0
   WmemiPort *p = new WmemiPort(*this);
   return *p;
@@ -55,10 +56,10 @@ deriveOCP() {
   OcpPort::deriveOCP();
   ocp.MCmd.width = 3;
   ocp.MAddr.width =
-    ceilLog2(m_memoryWords) + ceilLog2(m_dataWidth/m_byteWidth);
+    OU::ceilLog2(m_memoryWords) + OU::ceilLog2(m_dataWidth/m_byteWidth);
   ocp.MAddr.value = s;
   if (m_preciseBurst)
-    ocp.MBurstLength.width = floorLog2(std::max<size_t>(2, m_maxBurstLength)) + 1;
+    ocp.MBurstLength.width = OU::floorLog2(std::max<size_t>(2, m_maxBurstLength)) + 1;
   else if (m_impreciseBurst)
     ocp.MBurstLength.width = 2;
   if (m_preciseBurst && m_impreciseBurst) {
@@ -94,5 +95,14 @@ deriveOCP() {
     ocp.SDataInfo.width = m_dataWidth - (8 * m_dataWidth / m_byteWidth);
   ocp.SResp.value = s;
   fixOCP();
+  return NULL;
+}
+const char *WmemiPort::
+finalizeExternal(Worker &aw, Worker &/*iw*/, InstancePort &ip,
+		 bool &/*cantDataResetWhileSuspended*/) {
+  const char *err;
+  if (m_master && ip.m_attachments.empty() &&
+      (err = aw.m_assembly->externalizePort(ip, "wmemi", &aw.m_assembly->m_nWmemi)))
+    return err;
   return NULL;
 }

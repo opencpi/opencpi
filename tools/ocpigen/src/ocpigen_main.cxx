@@ -35,6 +35,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <memory>
+#include "OcpiDriverManager.h"
+#include "OcpiLibraryManager.h"
 #include "wip.h"
 /*
  * Notes:  For verilog, for consistency, we generate a module definition that is "included"
@@ -73,6 +75,7 @@ add to tree.
   "This argument can exclude the .xml suffix, which will be assumed.\n" \
   "XML file can be a worker, an assembly, a platform configuration, or a container.\n"
 #define OCPI_OPTIONS \
+  CMD_OPTION  (verbose,   v,    Bool,   NULL, "Be verbose") \
   CMD_OPTION  (defs,      d,    Bool,   NULL, "Generate the definition file (used for instantiation)") \
   CMD_OPTION  (impl,      i,    Bool,   NULL, "Generate the implementation header file (readonly)") \
   CMD_OPTION  (skel,      s,    Bool,   NULL, "Generate the implementation skeleton file (modified part)") \
@@ -81,6 +84,7 @@ add to tree.
   CMD_OPTION  (build,     b,    Bool,   NULL, "Generate gen/Makefile from <worker.build>") \
   CMD_OPTION  (xml,       A,    Bool,   NULL, "Generate the artifact XML file for embedding") \
   CMD_OPTION  (workers,   W,    Bool,   NULL, "Generate the makefile fragment for workers in the assembly") \
+  CMD_OPTION  (generics,  g,    Short,  "-1", "Generate the generics file a worker configuration") \
   CMD_OPTION  (attribute, x,    String, NULL, "Emit to standard output the value of an XML attribute") \
   CMD_OPTION  (alternate, w,    Bool,   NULL, "Use the alternate language (VHDL vs. Verilog) when generating defs and impl") \
   CMD_OPTION  (dependency,M,    String, NULL, "Specify the name of the dependency file when processing XML") \
@@ -93,9 +97,12 @@ add to tree.
   CMD_OPTION  (platform,  P,    String, NULL, "Specify the platform target for the artifact XML") \
   CMD_OPTION  (os,        O,    String, NULL, "Specify the operating system target for the artifact XML") \
   CMD_OPTION  (os_version,V,    String, NULL, "Specify the operating system version for the artifact XML") \
+  CMD_OPTION  (arch,      H,    String, NULL, "Specify the architecture for the artifact") \
   CMD_OPTION  (package,   p,    String, NULL, "Specify the HDL package for the worker") \
   CMD_OPTION  (pfconfig,  X,    String, NULL, "Parse top level platform/configuration attribute") \
   CMD_OPTION  (pfdir,     F,    String, NULL, "The directory where the current platform lives") \
+  CMD_OPTION  (gentest,   T,    Bool,   NULL, "Generate unit testing files, assemblies, apps")  \
+  CMD_OPTION  (gencases,  C,    Bool,   NULL, "Figure out which test cases to run on which platforms") \
 
 #include "CmdOption.h"
 
@@ -106,7 +113,8 @@ main(int argc, const char **argv) {
   const char *outDir = NULL, *wksFile = NULL, *package = NULL;
   bool
     doDefs = false, doImpl = false, doSkel = false, doAssy = false, doWrap = false,
-    doArt = false, doTop = false;
+    doArt = false, doTop = false, doTest = false, doCases = false, verbose = false;
+  int doGenerics = -1;
   if (argc <= 1) {
     fprintf(stderr,
 	    "Usage is: ocpigen [options] <owd>.xml\n"
@@ -133,13 +141,23 @@ main(int argc, const char **argv) {
 	    " -I <dir>      Specify an include search directory for XML processing\n"
 	    " -M <file>     Specify the file to write makefile dependencies to\n"
 	    " -S <assembly> Specify the name of the assembly for a container\n"
+	    " -T            Generate test artifacts\n"
 	    );
     return 1;
   }
+#if !defined(NDEBUG)
+  std::string params;
+  for (int i = 0; i < argc; ++i)
+    params.append(argv[i]).append(" ");
+  ocpiDebug("ocpigen command line: '%s'\n", params.c_str());
+#endif
   const char *err = 0;
-  for (const char **ap = argv+1; *ap; ap++)
+  for (const char **ap = argv+1; !err && *ap; ap++) {
     if (ap[0][0] == '-')
       switch (ap[0][1]) {
+      case 'v':
+	verbose = true;
+	break;
       case 'd':
 	doDefs = true;
 	break;
@@ -161,17 +179,23 @@ main(int argc, const char **argv) {
       case 'X':
 	doTop = true;
 	break;
+      case 'T':
+	doTest = true;
+	break;
+      case 'C':
+	doCases = true;
+	break;
+      case 'g':
+	doGenerics = atoi(&ap[0][2]);
+	break;
       case 'W':
 	wksFile =*++ap;
 	break;
       case 'M':
-	depFile = *++ap;
+	setDep(*++ap);
 	break;
       case 'l':
-	if (ap[0][2])
-	  addLibrary(&ap[0][2]);
-	else
-	  addLibrary(*++ap);
+	err = addLibrary(ap[0][2] ? &ap[0][2] : *++ap);
 	break;
       case 'I':
 	if (ap[0][2])
@@ -186,29 +210,23 @@ main(int argc, const char **argv) {
 	assembly = *++ap;
 	break;
       case 'L':
-#if 0
-	load = *++ap;
-#endif
-	if (ap[0][2])
-	  err = addLibMap(&ap[0][2]);
-	else
-	  err = addLibMap(*++ap);
-	if (err) {
-	  fprintf(stderr, "Error processing -L (library map) option: %s\n", err);
-	  return 1;
-	}
+	if ((err = addLibMap(ap[0][2] ? &ap[0][2] : *++ap)))
+	  err = OU::esprintf("Error processing -L (library map) option: %s", err);
 	break;
       case 'e':
-	device = *++ap;
+	g_device = *++ap;
 	break;
       case 'P':
-	platform = *++ap;
+	g_platform = *++ap;
 	break;
       case 'O':
-	os = *++ap;
+	g_os = *++ap;
 	break;
       case 'V':
-	os_version = *++ap;
+	g_os_version = *++ap;
+	break;
+      case 'H':
+	g_arch = *++ap;
 	break;
       case 'p':
 	package = *++ap;
@@ -224,14 +242,17 @@ main(int argc, const char **argv) {
 	platformDir = *++ap;
 	break;
       default:
-	fprintf(stderr, "Unknown flag: %s\n", *ap);
-	return 1;
+	err = OU::esprintf("Unknown flag: %s\n", *ap);
       }
     else
       try {
+	setenv("OCPI_SYSTEM_CONFIG", "", 1);
+	OCPI::Driver::ManagerManager::suppressDiscovery();
+	if (doCases)
+	  OCPI::Library::getManager().enableDiscovery();
 	std::string parent;
 	if (doTop) {
-	  // This little hack is to help the container build scripts extract the platform
+	  // This is to help the container build scripts extract the platform
 	  // and platform configuration from a container XML file without fully parsing it.
 	  // I.e. the only error checks done are the simple lexical check on this XML file,
 	  // and the correct top level element and attributes.  Any other errors in this file
@@ -257,7 +278,22 @@ main(int argc, const char **argv) {
 	  }
 	  return 0;
 	}
-	Worker *w = Worker::create(*ap, parent, package, outDir, NULL, NULL, 0, err);
+	if (doTest) {
+	  if ((err = createTests(*ap, package, outDir, verbose))) {
+	    fprintf(stderr, "%s\n", err);
+	    return 1;
+	  }
+	  return 0;
+	}
+	if (doCases) {
+	  if ((err = createCases(ap, package, outDir, verbose))) {
+	    fprintf(stderr, "%s\n", err);
+	    return 1;
+	  }
+	  return 0;
+	}
+	Worker *w = Worker::create(*ap, parent, package, outDir, NULL, NULL,
+				   doGenerics >= 0 ? doGenerics : 0, err);
 	if (err)
 	  fprintf(stderr, "For file %s: %s\n", *ap, err);
 	else if (attribute && (err = w->emitAttribute(attribute)))
@@ -276,6 +312,10 @@ main(int argc, const char **argv) {
 	  fprintf(stderr, "%s: Error generating assembly: %s\n", *ap, err);
 	else if (wksFile && (err = w->emitWorkersHDL(wksFile)))
 	  fprintf(stderr, "%s: Error generating assembly makefile: %s\n", *ap, err);
+	else if (doGenerics >= 0 && (err = w->emitHDLConstants((unsigned)doGenerics, doWrap)))
+	  fprintf(stderr,
+		  "%s: Error generating constants for parameter configuration %u: %s\n",
+		  *ap, doGenerics, err);
 	else if (options.parameters() && (err = w->emitToolParameters()))
 	  fprintf(stderr, "%s: Error generating parameter file for tools: %s\n", *ap, err);
 	else if (options.build() && (err = w->emitMakefile()))
@@ -283,7 +323,7 @@ main(int argc, const char **argv) {
 	else if (doArt)
 	  switch (w->m_model) {
 	  case HdlModel:
-	    if (!platform || !device) {
+	    if (!g_platform || !g_device) {
 	      fprintf(stderr,
 		      "%s: Missing container/platform/device options for HDL artifact descriptor", *ap);
 	      return 1;
@@ -293,9 +333,9 @@ main(int argc, const char **argv) {
 		      *ap, err);
 	    break;
 	  case RccModel:
-	    if (!os || !os_version || !platform) {
+	    if (!g_os || !g_os_version || !g_arch) {
 	      fprintf(stderr,
-		      "%s: Missing os/os_version/platform options for RCC artifact descriptor", *ap);
+		      "%s: Missing os/os_version/arch options for RCC artifact descriptor", *ap);
 	      return 1;
 	    }
 	    if ((err = w->emitArtXML(wksFile)))
@@ -318,5 +358,10 @@ main(int argc, const char **argv) {
 	fprintf(stderr, "Unexpected/unknown exception thrown\n");
 	return 1;
       }
-  return err ? 1 : 0;
+  }
+  if (!err)
+    err = closeDep();
+  if (err)
+    fprintf(stderr, "%s\n", err);
+ return err ? 1 : 0;
 }

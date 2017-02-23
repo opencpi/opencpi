@@ -29,9 +29,10 @@
 #define CONTAINER_LAUNCHER_H
 #include <string>
 
-#include "OcpiContainerApi.h"
+#include "OcpiUtilMisc.h" // Singleton
 #include "OcpiUtilValue.h"
 #include "OcpiLibraryManager.h"
+#include "OcpiContainerApi.h"
 
 namespace OCPI {
   namespace Container {
@@ -60,7 +61,7 @@ namespace OCPI {
       struct Connection {
 	Launcher *m_launchIn, *m_launchOut;
 	Instance *m_instIn, *m_instOut;
-	OCPI::API::Port *m_input, *m_output;
+	Port *m_input, *m_output;
 	const char *m_nameIn, *m_nameOut, *m_url;
 	OCPI::Util::PValueList m_paramsIn, m_paramsOut;
 	std::string m_ipi, m_fpi, m_iui, m_fui;
@@ -72,6 +73,7 @@ namespace OCPI {
       std::string m_name;
       bool m_more;
       Launcher() : m_more(true) {}
+      virtual ~Launcher() {}
     public:
       bool notDone() const { return m_more; }
       virtual bool
@@ -79,7 +81,7 @@ namespace OCPI {
 	work(Launcher::Instances &instances, Launcher::Connections &connections) = 0;
     };
     // Concrete class that will be a singleton
-    class LocalLauncher : public Launcher, public OCPI::Driver::Singleton<LocalLauncher> {
+    class LocalLauncher : public Launcher, public OCPI::Util::Singleton<LocalLauncher> {
       void createWorker(Launcher::Instance &i);
     public:
       virtual ~LocalLauncher();

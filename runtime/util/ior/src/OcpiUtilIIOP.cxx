@@ -109,16 +109,16 @@ decode (const std::string & data)
     cd.getOctetSeq (object_key);
 
     if (iiop_version.minor >= 1) {
-      OCPI::OS::uint32_t numComponents;
-      cd.getULong (numComponents);
+      OCPI::OS::uint32_t numComps;
+      cd.getULong (numComps);
 
-      if (numComponents*8 > cd.remainingData()) {
+      if (numComps*8 > cd.remainingData()) {
         throw OCPI::Util::CDR::Decoder::InvalidData();
       }
 
-      components.resize (numComponents);
+      components.resize (numComps);
       
-      for (OCPI::OS::uint32_t pi=0; pi<numComponents; pi++) {
+      for (OCPI::OS::uint32_t pi=0; pi<numComps; pi++) {
         cd.getULong (components[pi].tag);
         cd.getOctetSeq (components[pi].component_data);
       }
@@ -159,10 +159,10 @@ encode () const
   ce.putOctetSeq (object_key);
 
   if (iiop_version.minor >= 1) {
-    size_t numComponents = components.size ();
-    ce.putULong ((uint32_t)numComponents);
+    size_t numComps = components.size ();
+    ce.putULong ((uint32_t)numComps);
 
-    for (unsigned long pi=0; pi<numComponents; pi++) {
+    for (unsigned long pi=0; pi<numComps; pi++) {
       ce.putULong (components[pi].tag);
       ce.putOctetSeq (components[pi].component_data);
     }
@@ -176,10 +176,10 @@ OCPI::Util::IIOP::ProfileBody::
 addComponent (OCPI::Util::IOP::ComponentId tag, const void * data, unsigned long len)
   throw ()
 {
-  unsigned long numComponents = components.size ();
-  components.resize (numComponents+1);
-  components[numComponents].tag = tag;
-  components[numComponents].component_data.assign (reinterpret_cast<const char *> (data), len);
+  unsigned long numComps = components.size ();
+  components.resize (numComps+1);
+  components[numComps].tag = tag;
+  components[numComps].component_data.assign (reinterpret_cast<const char *> (data), len);
 }
 
 void
@@ -195,9 +195,9 @@ OCPI::Util::IIOP::ProfileBody::
 hasComponent (OCPI::Util::IOP::ComponentId tag)
   throw ()
 {
-  unsigned long numComponents = components.size ();
+  unsigned long numComps = components.size ();
 
-  for (unsigned long pi=0; pi<numComponents; pi++) {
+  for (unsigned long pi=0; pi<numComps; pi++) {
     if (components[pi].tag == tag) {
       return true;
     }
@@ -211,16 +211,16 @@ OCPI::Util::IIOP::ProfileBody::
 componentData (OCPI::Util::IOP::ComponentId tag)
   throw (std::string)
 {
-  unsigned long numComponents = components.size ();
+  unsigned long numComps = components.size ();
   unsigned long pi;
 
-  for (pi=0; pi<numComponents; pi++) {
+  for (pi=0; pi<numComps; pi++) {
     if (components[pi].tag == tag) {
       break;
     }
   }
 
-  if (pi >= numComponents) {
+  if (pi >= numComps) {
     throw std::string ("tag not found");
   }
 
@@ -232,16 +232,16 @@ OCPI::Util::IIOP::ProfileBody::
 componentData (OCPI::Util::IOP::ComponentId tag) const
   throw (std::string)
 {
-  unsigned long numComponents = components.size ();
+  unsigned long numComps = components.size ();
   unsigned long pi;
 
-  for (pi=0; pi<numComponents; pi++) {
+  for (pi=0; pi<numComps; pi++) {
     if (components[pi].tag == tag) {
       break;
     }
   }
 
-  if (pi >= numComponents) {
+  if (pi >= numComps) {
     throw std::string ("tag not found");
   }
 

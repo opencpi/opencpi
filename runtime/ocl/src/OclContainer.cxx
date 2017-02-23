@@ -185,12 +185,12 @@ namespace OCPI
         DeviceContext* d_device;
 
       protected:
-        Container ( const char* name,
-                    DeviceContext* device,
+        Container ( const char* a_name,
+                    DeviceContext* a_device,
                     const ezxml_t config = NULL,
                     const OU::PValue* props = NULL )
-          : OC::ContainerBase<Driver,Container,Application,Artifact>(*this, name, config, props),
-            d_device ( device )
+          : OC::ContainerBase<Driver,Container,Application,Artifact>(*this, a_name, config, props),
+            d_device ( a_device )
         {
 	  m_model = "ocl";
         }
@@ -287,9 +287,9 @@ namespace OCPI
 
       private:
         Application ( Container& con,
-                      const char* name,
+                      const char* a_name,
                       const OA::PValue* props )
-          : OC::ApplicationBase<Container, Application, Worker> ( con, *this, name, props )
+          : OC::ApplicationBase<Container, Application, Worker> ( con, *this, a_name, props )
         {
           // Empty
         }
@@ -318,11 +318,11 @@ namespace OCPI
 
     }; // End: class Application
 
-    OA::ContainerApplication* Container::createApplication ( const char* name,
+    OA::ContainerApplication* Container::createApplication ( const char* a_name,
                                                              const OCPI::Util::PValue* props )
     throw ( OCPI::Util::EmbeddedException )
     {
-      return new Application ( *this, name, props );
+      return new Application ( *this, a_name, props );
     }
 
     OC::Container::DispatchRetCode Container::dispatch ( DataTransfer::EventManager* event_manager )
@@ -404,14 +404,14 @@ namespace OCPI
 
         Worker(Application& app,
 	       OC::Artifact* art,
-	       const char* name,
+	       const char* a_name,
 	       ezxml_t implXml,
 	       ezxml_t instXml,
-	       OC::Worker *slave,
-	       bool hasMaster,
+	       OC::Worker *a_slave,
+	       bool a_hasMaster,
 	       const OA::PValue* execParams)
-	  : OC::WorkerBase<Application, Worker, Port>(app, *this, art, name, implXml, instXml,
-						      slave, hasMaster, execParams),
+	  : OC::WorkerBase<Application, Worker, Port>(app, *this, art, a_name, implXml, instXml,
+						      a_slave, a_hasMaster, execParams),
           isEnabled ( false ),
           myContainer ( app.parent() ),
           implName ( ezxml_attr ( implXml, "name" ) ),
@@ -963,7 +963,7 @@ namespace OCPI
       void setPropertyBytes(const OA::PropertyInfo &, size_t,
 			    const uint8_t *, size_t, unsigned ) const {}
       void getPropertyBytes(const OA::PropertyInfo &, size_t,
-			    uint8_t *, size_t, unsigned ) const {}
+			    uint8_t *, size_t, unsigned, bool ) const {}
 
     }; // End: class Worker
 
@@ -1246,8 +1246,8 @@ namespace OCPI
 
           for ( size_t n = 0; n < myDesc.nBuffers; n++ )
           {
-            OclDpMetadata* metadata = reinterpret_cast<OclDpMetadata*> ( myDesc.metaDataBaseAddr );
-            metadata [ n ].length = myDesc.dataBufferSize;
+            OclDpMetadata* meta = reinterpret_cast<OclDpMetadata*> ( myDesc.metaDataBaseAddr );
+            meta [ n ].length = myDesc.dataBufferSize;
           }
           parent().myPorts [ parent().nConnectedPorts++ ].isConnected = true;
 	  return NULL;
@@ -1544,11 +1544,11 @@ namespace OCPI
         uint32_t* shadow;
 
         ExternalPort( Port& port,
-		      const char* name,
-		      bool isProvider,
+		      const char* a_name,
+		      bool a_isProvider,
 		      const OA::PValue* extParams,
 		      const OA::PValue* connParams )
-	  : OC::ExternalPortBase<Port,ExternalPort> ( port, *this, name, extParams, connParams, isProvider )
+	  : OC::ExternalPortBase<Port,ExternalPort> ( port, *this, a_name, extParams, connParams, a_isProvider )
         {
           getData().data.options = ( 1 << OCPI::RDT::ActiveFlowControl ) |
                                         ( 1 << OCPI::RDT::ActiveMessage ) |
@@ -1750,9 +1750,9 @@ namespace OCPI
     }
 
 #if 1
-    OC::ExternalPort &Port::createExternal(const char *extName, bool isProvider,
+    OC::ExternalPort &Port::createExternal(const char *extName, bool a_isProvider,
 					   const OU::PValue *extParams, const OU::PValue *connParams) {
-      return *new ExternalPort(*this, extName, !isProvider, extParams, connParams);
+      return *new ExternalPort(*this, extName, !a_isProvider, extParams, connParams);
     }
 #else
     OA::ExternalPort& Port::connectExternal ( const char* extName,

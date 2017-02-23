@@ -114,7 +114,7 @@ OCPI::OS::ProcessManager::start (const std::string & executable,
   commandLine += '\"';
 
   for (ParameterList::const_iterator it = parameters.begin ();
-       it != parameters.end(); it++) {
+       it != parameters.end(); ++it) {
     const std::string & par = *it;
 
     /*
@@ -186,7 +186,7 @@ OCPI::OS::ProcessManager::start (const std::string & executable,
                               0, 0, &si,
                               &pi);
 
-  delete cl;
+  delete[] cl;
 
   if (!res) {
     throw OCPI::OS::Win32::getErrorMessage (GetLastError());

@@ -80,9 +80,10 @@ namespace OCPI {
 	  search(const OCPI::Util::PValue *props, const char **exclude, bool discoveryOnly,
 		 std::string &error);
 	OCPI::HDL::Device *
-	open(const char *pciName, std::string &err);
+        open(const char *pciName, const OCPI::Util::PValue *params, std::string &err);
 	// Callback when found
-	virtual bool found(OCPI::HDL::Device &dev, std::string &error) = 0;
+	virtual bool found(OCPI::HDL::Device &dev, const char **excludes, bool discoveryOnly,
+			   std::string &error) = 0;
       };
     }
   }

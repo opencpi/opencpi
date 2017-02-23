@@ -364,20 +364,29 @@ void XferFactoryManager::shutdown()
 
 // We need to create an endpoint for some other (hardware) container.
 // The string should not include the last two fields.
+// If only a protocol, then its actually local...
   EndPoint& XferFactoryManager::
   allocateProxyEndPoint(const char *loc, size_t size) {
     XferFactory* tfactory = find(loc);
     if (!tfactory)
       throw OU::Error("No driver/factory for endpoint string: '%s'", loc);
     std::string complete;
-    OU::formatString(complete, "%s;%zu.%u.%u",
-		     loc, size, tfactory->getNextMailBox(), tfactory->getMaxMailBox());
-    return *tfactory->getEndPoint(complete.c_str(), false, true);
+    bool local;
+    if (strchr(loc, ':')) {
+      OU::formatString(complete, "%s;%zu.%u.%u",
+		       loc, size, tfactory->getNextMailBox(), tfactory->getMaxMailBox());
+      local = false;
+    } else {
+      local = true;
+      complete = tfactory->allocateEndpoint(NULL, tfactory->getNextMailBox(),
+					    tfactory->getMaxMailBox(), size);
+    }
+    return *tfactory->getEndPoint(complete.c_str(), local, true);
   }
 
 XferFactory::
-XferFactory(const char *name)
-  : OD::DriverType<XferFactoryManager,XferFactory>(name, *this)
+XferFactory(const char *a_name)
+  : OD::DriverType<XferFactoryManager,XferFactory>(a_name, *this)
 {
 }
 
@@ -424,14 +433,23 @@ removeEndPoint(EndPoint &ep) {
   m_endPoints.erase(&ep);
 }
 
+EndPoint* XferFactory::
+findEndPoint(const char *end_point) {
+  OU::SelfAutoMutex guard (this); 
+  for (EndPoints::iterator i = m_endPoints.begin(); i != m_endPoints.end(); i++)
+    if (*i && (*i)->matchEndPointString(end_point))
+      return *i;
+  return NULL;
+}
 // Get the location via the endpoint.  This is only called if the endpoint already
-// matches the factory.
+// matches the factory.  The "local" argument is not involved in the lookup,
+// only in the creation.
 EndPoint* XferFactory::
 getEndPoint(const char *end_point, bool local, bool cantExist)
 { 
   OU::SelfAutoMutex guard (this); 
   for (EndPoints::iterator i = m_endPoints.begin(); i != m_endPoints.end(); i++)
-    if (*i && (*i)->end_point == end_point) {
+    if (*i && (*i)->matchEndPointString(end_point)) {
       if (cantExist)
 	throw OU::Error("Local explicit endpoint already exists: '%s'", end_point);
       else {
@@ -454,10 +472,19 @@ allocateCompatibleEndpoint(const OU::PValue*params,
   return allocateEndpoint(params, mailBox, maxMailBoxes);
 }
 
+// The caller (transport session) doesn't have one, and wants one of its own,
+// even though this means there will be multiple "local" endpoints in the same
+// process
 EndPoint* XferFactory::
 addCompatibleLocalEndPoint(const char *remote, DDT::MailBox mailBox, DDT::MailBox maxMb)
 { 
   OU::SelfAutoMutex guard (this); 
+#if 0 // we dont share local endpoints among containers (yet)
+  if (!remote && !maxMb)
+    for (EndPoints::iterator i = m_endPoints.begin(); i != m_endPoints.end(); i++)
+      if (*i && (*i)->local)
+	return *i;
+#endif
   // Find an unused slot that is different from the remote one
   // mailbox might be zero so this will find the first free slot in any case
   DDT::MailBox myMax = getMaxMailBox();
@@ -468,7 +495,7 @@ addCompatibleLocalEndPoint(const char *remote, DDT::MailBox mailBox, DDT::MailBo
     n = getNextMailBox();
   else {
     for (n = 1; n < m_locations.size(); n++)
-      if (n != mailBox && m_locations[n])
+      if (n != mailBox && !m_locations[n]) // if the index is different and unused..
 	break;
     if (n == DDT::MAX_SYSTEM_SMBS || n > myMax)
       throw OU::Error("Mailboxes for endpoints for protocol %s are exhausted (all %u are used)",
@@ -820,6 +847,18 @@ XferServices* XferFactoryManager::getService( std::string& source_sname, std::st
     parse(&driverBase(), x);
   }
 
+  void XferServices::
+  send(DtOsDataTypes::Offset /*offset*/, uint8_t */*data*/, size_t /*nbytes*/) {
+    throw OU::Error("Direct send on endpoint that doesn't support it");
+  }
+#if 0
+  void XferServices::
+  send(DtOsDataTypes::Offset /*src_offset*/, DtOsDataTypes::Offset /*dst_offset*/,
+       size_t /*nbytes*/) {
+    throw OU::Error("Direct send on endpoint that doesn't support it");
+  }
+#endif
+
 // Create a transfer request
 XferRequest* XferRequest::copy (DtOsDataTypes::Offset srcoffs, 
 				DtOsDataTypes::Offset dstoffs, 
@@ -881,8 +920,8 @@ void XferRequest::action_transfer(PIO_transfer pio_transfer) {
   xfer_pio_action_transfer(pio_transfer);
 }
 void XferRequest::start_pio(PIO_transfer pio_transfer) {
-  for (PIO_transfer transfer = pio_transfer; transfer; transfer = transfer->next)
-    action_transfer(transfer);
+  for (PIO_transfer t = pio_transfer; t; t = t->next)
+    action_transfer(t);
 }
 void XferRequest::post() {
   

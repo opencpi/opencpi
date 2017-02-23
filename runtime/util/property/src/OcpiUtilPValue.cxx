@@ -62,7 +62,8 @@ namespace OCPI {
     }
     unsigned PValue::length() const {
       unsigned n = 0;
-      if (this) // FIXME - this is really not kosher.
+      assert(this);
+      //      if (this) // FIXME - this is really not kosher.
 	for (const PValue *p = this; p->name; p++, n++)
 	  ;
       return n;
@@ -86,7 +87,7 @@ namespace OCPI {
     // This list provides names and types and defaults
     PValue allPVParams[] = {
       PVString("transport"),
-      PVString("xferrole"),
+      PVString("transferRole"),
       PVString("DLLEntryPoint"),
       PVString("monitorIPAddress"),
       PVString("protocol"),
@@ -154,20 +155,25 @@ namespace OCPI {
     }
     bool 
     findAssign(const PValue *p, const char *name, const char *var, const char *&val) {
-      if (p)
-	for (; p->name; p++)
-	  if (!strcasecmp(p->name, name)) {
-	    if (p->type == OA::OCPI_String) {
-	      size_t len = p->vString[0] == '=' ? 0 : strlen(var);
-	      if (len == 0 ||
-		  !strncasecmp(var, p->vString, len) && p->vString[len] == '=') {
-		val = p->vString + len + 1;
-		return true;
-	      }
-	    } else
-	      throw ApiError("Parameter \"", name, "\" is not a string", NULL);
-	  }
-      return false;
+      val = NULL; // caller convenience
+      bool specific = false;
+      for (; p && p->name; p++)
+	if (!strcasecmp(p->name, name)) {
+	  if (p->type != OA::OCPI_String)
+	    throw Error("Parameter \"%s\" value for \"%s\" is not a string", var, name);
+	  if (p->vString[0] != '=') {
+	    size_t len = strlen(var);
+	    if (!strncasecmp(var, p->vString, len) && p->vString[len] == '=') {
+	      if (specific)
+		throw Error("Parameter \"%s\" for instance \"%s\" is specified more than once",
+			    name,  var);
+	      specific = true;
+	      val = p->vString + len + 1;
+	    }
+	  } else if (!specific)
+	    val = p->vString + 1;
+	}
+      return val != NULL;
     }
 
     bool 
@@ -184,7 +190,7 @@ namespace OCPI {
 	      } else {
 		size_t len = p->vString[0] == '=' ? 0 : strlen(var);
 		if (len == 0 ||
-		    !strncasecmp(var, p->vString, len) && p->vString[len] == '=') {
+		    (!strncasecmp(var, p->vString, len) && p->vString[len] == '=')) {
 		  val = p->vString + len + 1;
 		  next = n + 1;
 		  return true;
@@ -279,8 +285,8 @@ namespace OCPI {
 	return NULL;
       }
       PValue *p = m_list = new PValue[n + 1];
-      for (unsigned n = 0; n < nPvl; n++)
-	*p++ = pvl[n];
+      for (unsigned nn = 0; nn < nPvl; nn++)
+	*p++ = pvl[nn];
       const char *name, *value;
       EZXML_FOR_ALL_ATTRIBUTES(x, name, value) {
 	const char *attr;

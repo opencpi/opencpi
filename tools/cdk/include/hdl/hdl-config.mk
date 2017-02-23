@@ -42,6 +42,7 @@ else
      $(join $(HdlPlatformDir_$(Platform)),$(ComponentLibraries_$(Platform))))\
    devices cards
 endif
+ComponentLibraries:=$(call Unique,$(ComponentLibraries))
 
 include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
 ifneq ($(MAKECMDGOALS),clean)

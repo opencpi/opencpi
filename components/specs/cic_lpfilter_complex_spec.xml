@@ -8,7 +8,7 @@ This is a simple CIC half band lowpass filter.
 
 -->
 
-<ComponentSpec name="cic_lpfilter_complex" >
+<ComponentSpec>
 
   <Properties>
     <!-- M - integer decimation factor   Format: UShort   -->

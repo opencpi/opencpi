@@ -73,6 +73,15 @@
 #include "HdlNetDefs.h"
 #include "KernelDriver.h"                    // includes shared with user mode
 
+//#define _SCIF_ 1
+#ifdef _SCIF_
+#include "scif.h"
+#include "mic/micscif.h"
+#include "mic/micscif_rma.h"
+#include "mic/micscif_map.h"
+#include "mic_common.h"
+#endif
+
 #define DRIVER_NAME "opencpi"
 #define DRIVER_ABBREV "ocpi"
 
@@ -104,6 +113,10 @@ static long	opencpi_size	    = -1;
 static char *	opencpi_memmap	    = NULL;
 static long     opencpi_max_devices = 4;
 
+#ifdef _SCIF_
+static scif_epd_t scif_fd=NULL; // handle to manage bus2memory access windows/apertures/resources
+#define WIND_OFF 0x8000000
+#endif
 
 // -----------------------------------------------------------------------------------------------
 // Data structures and definitions
@@ -121,6 +134,7 @@ typedef struct {
   struct list_head	list;           // linked list for all blocks in driver
   ocpi_address_t	start_phys;	// physical address of start of block
   ocpi_address_t	end_phys;	// physical address of end of block
+  ocpi_address_t	bus_addr;	// physical address as seen from the bus
   ocpi_size_t		size;		// block size
   ocpi_type_t           type;           // what does this block of addresses point to?
   atomic_t              refcnt;         // how many users of this block: mappings + minor devices
@@ -229,13 +243,14 @@ dump_memory_map(char * label) {
 
 // Make a new block, inserting it into the list, returing NULL on failure
 static ocpi_block_t *
-make_block(ocpi_address_t phys_addr, ocpi_size_t size, ocpi_type_t type,
+make_block(ocpi_address_t phys_addr, ocpi_address_t bus_addr, ocpi_size_t size, ocpi_type_t type,
 	   bool available, u64 kernel_alloc_id) {
   ocpi_block_t *block;
   if (!phys_addr || // Guard against allocating to 0x00
       !(block = kzalloc(sizeof(ocpi_block_t), GFP_KERNEL)) || IS_ERR(block))
     return NULL;
   block->start_phys = phys_addr;
+  block->bus_addr = bus_addr;
   block->end_phys = phys_addr + size;
   block->size = size;
   block->type = type;
@@ -363,6 +378,7 @@ get_memory(ocpi_request_t *request, struct file *file, ocpi_block_t **sparep) {
   list_for_each_entry(block, &block_list, list)
     if (block->available && block->size >= request->actual) {
       request->address = block->start_phys;
+      request->bus_addr = block->bus_addr;
       if (block->size > request->actual) {
 	ocpi_block_t *split = *sparep;
 	*sparep = 0;
@@ -384,6 +400,78 @@ get_memory(ocpi_request_t *request, struct file *file, ocpi_block_t **sparep) {
   return err;
 }
 
+// Convert a CPU physical address to the address used by other bus masters to access the
+// local memory at this CPU physical address
+static uint64_t
+phys2bus(uint64_t phys) {
+  // For this processor physical memory is accessible from the bus at the same addr
+  // This is the case on nearly all x64 PCI root complex processors.
+  // It is also the case on the zynq.
+#ifdef _SCIF_
+  // On the MIC, the bus address is based a resource of bus-accessible apertures/windows
+  // that we must allocate.
+  scif_pinned_pages_t    spages;
+  off_t nf;
+  if (scif_fd == NULL)
+    scif_fd =  scif_open();
+  int ret = scif_pin_pages(pfn_to_kaddr(page_to_pfn(kpages)), PAGE_SIZE*4,
+			   SCIF_PROT_WRITE | SCIF_PROT_READ, SCIF_MAP_KERNEL, &spages);
+  printk("Return from scif_pin_pages = %d\n", ret);
+  if (ret == 0) 
+    nf = scif_register_pinned_pages (scif_fd, spages, WIND_OFF, SCIF_MAP_FIXED);
+  printk("*** (JM) -> Window addr = 0x%llx\n", nf);
+  return 0x387c00000000ull + nf;
+#else
+  return phys;
+#endif
+}
+// Convert a bus address to the physical address used by the local processor to access the
+// memory at that bus address
+static uint64_t
+bus2phys(uint64_t bus) {
+#ifdef _SCIF_
+????
+#else
+  return bus;
+#endif
+}
+
+// Establish a remote bus address block so we can mmap to it
+static long
+establish_remote(struct file *file, ocpi_request_t *request) {
+  ocpi_address_t phys = bus2phys(request->bus_addr);
+  bool found = false, bad = false;
+  ocpi_address_t end_address = phys + request->actual;
+  ocpi_block_t *block = NULL;
+
+  log_debug("Establishing remote from bus 0x%llx to phys 0x%llx size %x\n",
+	    request->bus_addr, phys, request->actual);
+  if (!phys)
+    return -EIO;
+  // Since this is outer loop, a linear search is ok.  Maybe a hash table someday.
+  spin_lock(&block_lock);
+  list_for_each_entry(block, &block_list, list) {
+    if (phys >= block->start_phys && end_address <= block->end_phys) {
+      found = true;
+      request->address = block->start_phys + (phys - block->start_phys);
+    } else if ((phys >= block->start_phys && phys < block->end_phys) ||
+	       (end_address > block->start_phys && end_address <= block->end_phys))
+      bad = true;
+  }
+  spin_unlock(&block_lock);
+  if (found) {
+    log_debug("Establishing remote: bus address 0x%llx already registered. Phys is 0x%llx\n",
+	      request->bus_addr, phys);
+    return 0;
+  } else if (bad) {
+    log_err("Establishing remote: bus region 0x%llx collides with existing. Phys is 0x%llx\n",
+	    request->bus_addr, phys);
+    return -EEXIST;
+  }    
+  request->address = phys;
+  return make_block(phys, request->bus_addr, request->actual, ocpi_mmio, false, 0) ?
+    0 : -EINVAL;
+}
 // If file == NULL, this is a request for the initial driver memory, not a minor 0 ioctl request
 static long
 request_memory(struct file *file, ocpi_request_t *request) {
@@ -404,7 +492,7 @@ request_memory(struct file *file, ocpi_request_t *request) {
     log_debug("couldn't get allocation in first pass\n");
     // No memory in the list, try a kernel allocation
     if (request->actual > OPENCPI_MAXIMUM_MEMORY_ALLOCATION) {
-      log_err("memory request exceeded driver's specified limit of %ld",
+      log_err("memory request exceeded driver's specified limit of %ld\n",
 	      OPENCPI_MAXIMUM_MEMORY_ALLOCATION);
       break;
     }
@@ -415,10 +503,11 @@ request_memory(struct file *file, ocpi_request_t *request) {
       struct page *kpages = alloc_pages(GFP_KERNEL | __GFP_HIGHMEM, order);
       ocpi_address_t phys_addr = (ocpi_address_t)page_to_pfn(kpages) << PAGE_SHIFT;
       if (kpages == NULL) {
-	log_err("memory request of %ld could not be satified by the kernel", (unsigned long)request->actual);
+	log_err("memory request of %ld could not be satified by the kernel\n",
+		(unsigned long)request->actual);
 	break;
       }
-      if (make_block(phys_addr, PAGE_SIZE << order, ocpi_kernel, true, ++opencpi_kernel_alloc_id) == NULL) {
+      if (make_block(phys_addr, phys2bus(phys_addr), PAGE_SIZE << order, ocpi_kernel, true, ++opencpi_kernel_alloc_id) == NULL) {
 	__free_pages(kpages, order);
 	break;
       }
@@ -635,7 +724,7 @@ opencpi_io_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsig
 	log_err("unable to retrieve memory request\n");
 	return -EFAULT;
       }
-      err = request_memory(file, &request);
+      err = (request.needed ? request_memory : establish_remote)(file, &request);
       if (copy_to_user((void __user *)arg, &request, sizeof(request))) {
 	log_err("unable to return memory request - we will leak until exit\n");
 	err = -EFAULT;
@@ -984,9 +1073,14 @@ probe_pci(struct pci_dev *pcidev, const struct pci_device_id *id) {
       }
       mydev->fsdev = fsdev;
     }
-    if ((mydev->bar0 = make_block(pci_resource_start(pcidev, 0), sizes[0], ocpi_mmio, false, 0)) == NULL ||
-	(mydev->bar1 = make_block(pci_resource_start(pcidev, 1), sizes[1], ocpi_mmio, false, 0)) == NULL)
-      break;
+    {
+      ocpi_address_t
+	phys_b0 = pci_resource_start(pcidev, 0),
+	phys_b1 = pci_resource_start(pcidev, 1);
+      if ((mydev->bar0 = make_block(phys_b0, phys_b0, sizes[0], ocpi_mmio, false, 0)) == NULL ||
+	  (mydev->bar1 = make_block(phys_b1, phys_b1, sizes[1], ocpi_mmio, false, 0)) == NULL)
+	break;
+    }
     check(pcidev, "before drvdata");
     pci_set_drvdata(pcidev, mydev);
     opencpi_devices[new_device] = mydev;
@@ -1536,10 +1630,10 @@ opencpi_init(void) {
 #endif
 #ifdef CONFIG_ARCH_ZYNQ
     // Register the memory range of the control plane GP0 or GP1 on the PL
-    if (make_block(0x40000000, sizeof(OccpSpace), ocpi_mmio, false, 0) == NULL ||
-        make_block(0x80000000, sizeof(OccpSpace), ocpi_mmio, false, 0) == NULL)
+    if (make_block(0x40000000, 0x40000000, sizeof(OccpSpace), ocpi_mmio, false, 0) == NULL ||
+        make_block(0x80000000, 0x80000000, sizeof(OccpSpace), ocpi_mmio, false, 0) == NULL)
       break;
-    log_debug("Control Plane physical address space for Zynq/PL/AXI GP0 and GP1 slave reserved");
+    log_debug("Control Plane physical addr space for Zynq/PL/AXI GP0 and GP1 slave reserved\n");
    {
 #if 0
      int
@@ -1570,7 +1664,7 @@ opencpi_init(void) {
 	// FIXME: But there are probably better checks
 #endif
       }
-      if (make_block(physical, opencpi_size, ocpi_reserved, true, 0) == NULL)
+      if (make_block(physical, physical, opencpi_size, ocpi_reserved, true, 0) == NULL)
 	break;
       // log_debug("parameters after parsing (opencpi_memmap = %s => opencpi_size = %ld (0x%lx) @ physical = 0x%lx)\n", opencpi_memmap, opencpi_size, opencpi_size, physical);
       log_debug("Using reserved memory %lx @ %llx\n", opencpi_size, physical);

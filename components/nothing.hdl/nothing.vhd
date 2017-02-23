@@ -8,7 +8,7 @@ library ocpi; use ocpi.types.all; -- remove this to avoid all ocpi name collisio
 architecture rtl of nothing_worker is
 begin
   -- the minimum logic to force XST to actually include this module in the
-  -- worker synthesis. PITA
+  -- worker synthesis.
   props_out.dummy <= btrue when its(ctl_in.is_operating) else bfalse;
   ctl_out.finished <= btrue;
 end rtl;

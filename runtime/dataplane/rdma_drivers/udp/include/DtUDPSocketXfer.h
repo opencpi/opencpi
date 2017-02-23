@@ -85,15 +85,12 @@ namespace DataTransfer {
   public:
 
     virtual ~UDPEndPoint();
-    UDPEndPoint( std::string& ep, bool local, OCPI::OS::uint32_t size=0)
-      : EndPoint(ep, size, local) { parse(ep);}
+    UDPEndPoint( std::string& ep, bool a_local, OCPI::OS::uint32_t a_size=0)
+      : EndPoint(ep, a_size, a_local) { parse(ep);}
 
         // Sets smem location data based upon the specified endpoint
         OCPI::OS::int32_t parse( std::string& ep );
 
-        // Get the address from the endpoint
-        virtual const char* getAddress(){return ipAddress.c_str();}
-	
 	SmemServices &createSmemServices();
         std::string ipAddress;
         uint16_t  portNum;
@@ -110,8 +107,8 @@ namespace DataTransfer {
   //  class ClientUDPSocketT;
   class UDPSocketXferFactory;
   class UDPSocketDevice : public DataTransfer::DeviceBase<UDPSocketXferFactory,UDPSocketDevice> {
-      UDPSocketDevice(const char *name)
-	: DataTransfer::DeviceBase<UDPSocketXferFactory,UDPSocketDevice>(name, *this) {}
+      UDPSocketDevice(const char *a_name)
+	: DataTransfer::DeviceBase<UDPSocketXferFactory,UDPSocketDevice>(a_name, *this) {}
   };
   class UDPSocketXferServices;
   extern const char *udpsocket;
@@ -147,7 +144,7 @@ namespace DataTransfer {
      *  an endpoint for an application running on "this"
      *  node.
      ***************************************/
-    std::string allocateEndpoint(const OCPI::Util::PValue*, uint16_t mailBox, uint16_t maxMailBoxes);
+    std::string allocateEndpoint(const OCPI::Util::PValue*, uint16_t mailBox, uint16_t maxMailBoxes, size_t size);
 
   protected:
     EndPoint* createEndPoint(std::string& endpoint, bool local = false);
@@ -192,8 +189,9 @@ namespace DataTransfer {
       
     };
 
-    UDPSocketXferRequest( UDPSocketXferServices & parent )
-      : TransferBase<UDPSocketXferServices,UDPSocketXferRequest>(parent, *this), m_tested4Complete(0)
+    UDPSocketXferRequest( UDPSocketXferServices &a_parent )
+      : TransferBase<UDPSocketXferServices,UDPSocketXferRequest>(a_parent, *this),
+      m_tested4Complete(0)
       //      m_thandle(0) 
 	{
 	  m_TxPkt[0].m_id = 0;

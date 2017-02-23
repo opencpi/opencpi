@@ -1,5 +1,5 @@
 library ieee; use ieee.std_logic_1164.all; use ieee.numeric_std.all;
-library ocpi; use ocpi.all; use ocpi.types.all; use ocpi.wci.all;
+library ocpi; use ocpi.all, ocpi.types.all, ocpi.wci.all, ocpi.util.all;
 
 entity decoder is
   generic (
@@ -28,10 +28,11 @@ entity decoder is
       write_enables          : out bool_array_t(properties'range);
       read_enables           : out bool_array_t(properties'range);
       offsets                : out offset_a_t(properties'range);
-      indices                : out offset_a_t(properties'range);
+--      indices                : out offset_a_t(properties'range);
       hi32                   : out bool_t;
       nbytes_1               : out byte_offset_t;
-      data_outputs           : out data_a_t(properties'range));
+      data_outputs           : out data_a_t(properties'range);
+      read_index             : out unsigned(width_for_max(properties'right)-1 downto 0));
 end entity;
 
 architecture rtl of decoder is
@@ -68,6 +69,7 @@ architecture rtl of decoder is
   signal my_hi32_r       : bool_t;
   signal my_write_enables, my_read_enables : bool_array_t(properties'range);
   signal my_read_enables_r : bool_array_t(properties'range);
+  signal my_read_index_r : unsigned(width_for_max(properties'right)-1 downto 0);
   type my_offset_a_t is array(properties'range) of unsigned (worker.decode_width -1 downto 0);
   signal my_offsets      : my_offset_a_t;
   signal high_dw         : bool_t;
@@ -102,6 +104,18 @@ architecture rtl of decoder is
       when others =>                                return b"11";                               
     end case;
   end num_bytes_1;
+  -- return the index of the one read enable that is on
+  function get_index(re : bool_array_t) return unsigned is
+    variable x : unsigned(width_for_max(properties'right)-1 downto 0) := (others => '0');
+  begin
+    for i in 0 to properties'right loop
+      if (ocpi_debug or not properties(i).debug) and properties(i).readable and re(i) then
+        x := x or to_unsigned(i, x'length);
+        report "setting X to " & integer'image(i) & " and x is now " & integer'image(to_integer(x));
+      end if;
+    end loop;
+    return x;
+  end get_index;
   -- FIXME check that this synthesizes properly - may have to revert to logic...
   --  function any_true(bools : bool_array_t) return boolean is
   --    variable result: boolean := false;
@@ -179,6 +193,7 @@ begin
                      (others => '0');
   write_enables   <= my_write_enables;
   read_enables    <= my_read_enables_r;
+  read_index      <= my_read_index_r;
   nbytes_1        <= my_nbytes_1;
   hi32            <= my_hi32_r;
 
@@ -195,6 +210,7 @@ begin
         my_is_write_r   <= bfalse;
         reading_r       <= bfalse;
         my_read_enables_r <= (others => '0');
+        my_read_index_r <= (others =>'0');
         if worker.allowed_ops(control_op_t'pos(initialize_e)) = '1' then
           my_state_r <= exists_e;
         else
@@ -224,6 +240,7 @@ begin
       elsif its(reading_r) then -- pipeline the decoding for read enables
         reading_r <= bfalse;
         my_read_enables_r <= my_read_enables;
+        my_read_index_r   <= get_index(my_read_enables);
       elsif (its(my_done) or my_error) then
         -- the last cycle of the request when we're done or have an error
         my_read_enables_r <= (others => '0');
@@ -272,10 +289,11 @@ begin
                        -- outputs from the decoding process
                        write_enable  => my_write_enables(i),
                        read_enable   => my_read_enables(i),
-                       offset_out    => my_offsets(i),
-                       index_out     => indices(i)(worker.decode_width-1 downto 0),
+                       offset_out    => my_offsets(i)
+                                        (width_for_max(properties(i).bytes_1)-1 downto 0),
+--                       index_out     => indices(i)(worker.decode_width-1 downto 0),
                        data_out      => data_outputs(i));
-            indices(i)(indices(i)'left downto worker.decode_width) <= (others => '0');
+--            indices(i)(indices(i)'left downto worker.decode_width) <= (others => '0');
             offsets(i) <= resize(my_offsets(i),offsets(i)'length);
       end generate g2;
     end generate g1;

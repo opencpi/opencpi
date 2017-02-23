@@ -93,16 +93,16 @@ namespace OCPI {
 		e.svalue = buf;
 		
 		switch (type ) {
-		case OCPI::Time::Emit::u:
+		case OCPI::Time::Emit::DT_u:
 		  e.v.uvalue = strtoul( e.svalue.c_str(), NULL,0 );
 		  break;
-		case OCPI::Time::Emit::i:
+		case OCPI::Time::Emit::DT_i:
 		  e.v.ivalue = strtol( e.svalue.c_str(),NULL,0 );
 		  break;
-		case OCPI::Time::Emit::c:
+		case OCPI::Time::Emit::DT_c:
 		  e.v.cvalue = (char*)e.svalue.c_str();
 		  break;
-		case OCPI::Time::Emit::d:
+		case OCPI::Time::Emit::DT_d:
 		  e.v.dvalue = strtod( e.svalue.c_str(),NULL );
 		  break;
 		}
@@ -332,7 +332,7 @@ namespace OCPI {
 	    int count=0;
 	    uint64_t t,
 	      maxt=0,
-	      mint;
+	      mint = UINT64_MAX;
 
 	    for ( it=m_xml_reader.getEvents().begin(); it!=m_xml_reader.getEvents().end(); it++ ) {
 	      // If only a selected id has been chosen
@@ -384,7 +384,7 @@ namespace OCPI {
 	    int count=0;
 	    uint64_t t,
 	      maxt=0,
-	      mint;
+	      mint = UINT64_MAX;
 
 	    for ( it=m_xml_reader.getEvents().begin(); it!=m_xml_reader.getEvents().end(); it++ ) {
 	      // If only a selected id has been chosen
@@ -691,7 +691,7 @@ namespace OCPI {
 	    std::vector<TimeLineData> tldv;
 	    std::vector<XMLReader::Event>::iterator it;
 	    for ( it=m_xml_reader.getEvents().begin(); it!=m_xml_reader.getEvents().end(); it++) {
-	      XMLReader::Owner& owner = m_xml_reader.getOwner((*it).hdr.owner);
+	      XMLReader::Owner& xowner = m_xml_reader.getOwner((*it).hdr.owner);
 	      if ( start_time == 0 ) {
 		start_time = (*it).hdr.time_ticks;
 	      }
@@ -716,17 +716,17 @@ namespace OCPI {
 
 	      case OCPI::Time::Emit::Transient:
 		{
-		  tld.values += "1" + varsyms[(*it).hdr.eid] + owner.postfix.c_str() + "\n";
+		  tld.values += "1" + varsyms[(*it).hdr.eid] + xowner.postfix.c_str() + "\n";
 		  snprintf(tbuf,256,"#%lld\n",(long long)(ctime+1));
 		  tld.values += tbuf;
-		  tld.values += "0" + varsyms[(*it).hdr.eid] + owner.postfix.c_str() + "\n";
+		  tld.values += "0" + varsyms[(*it).hdr.eid] + xowner.postfix.c_str() + "\n";
 		}
 		break;
 	      case OCPI::Time::Emit::State:
 		{
 		  snprintf(tbuf,256,"%d",((*it).v.uvalue == 0) ? 0 : 1);
 		  tld.values += tbuf;
-		    tld.values += varsyms[(*it).hdr.eid] + owner.postfix.c_str() + "\n";
+		    tld.values += varsyms[(*it).hdr.eid] + xowner.postfix.c_str() + "\n";
 		}
 		break;
 	      case OCPI::Time::Emit::Value:
@@ -734,9 +734,9 @@ namespace OCPI {
 		  tld.values += "b";
 		  XMLReader::Description & emap = m_xml_reader.getDescription( (*it).hdr.eid ) ;
 		  switch ( emap.dtype ) {
-		  case OCPI::Time::Emit::u:
-		  case OCPI::Time::Emit::i:
-		  case OCPI::Time::Emit::d:
+		  case OCPI::Time::Emit::DT_u:
+		  case OCPI::Time::Emit::DT_i:
+		  case OCPI::Time::Emit::DT_d:
 		    {
 		      uint32_t* ui = reinterpret_cast<uint32_t*>(&(*it).v.uvalue);
 		      ui++;
@@ -748,9 +748,9 @@ namespace OCPI {
 			ui--;
 		      }
 		      tld.values += " ";
-		      tld.values +=  varsyms[(*it).hdr.eid] + owner.postfix.c_str() + "\n";
+		      tld.values +=  varsyms[(*it).hdr.eid] + xowner.postfix.c_str() + "\n";
 		    }
-		  case OCPI::Time::Emit::c:  // Not handled in GTKwave
+		  case OCPI::Time::Emit::DT_c:  // Not handled in GTKwave
 		    break;
 		  }
 		}

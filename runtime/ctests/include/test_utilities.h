@@ -109,30 +109,33 @@ struct CApp {
 };
 
 struct CWorker {
-  int                            cid;
+  size_t                          cid;
   OCPI::Container::Worker *       worker;
   struct ConData {
     CWorker*     worker;
     int          pid;
+    ConData() : worker(NULL), pid(0) {}
   };
   struct Pdata {
     OCPI::Util::PValue            *props;
     bool                          input;
-    int                           bufferCount;
+    size_t                        bufferCount;
     OCPI::Container::Port *        port;
     ConData                       down_stream_connection;
-    Pdata():props(0),bufferCount(2),port(0){};
+    Pdata():props(NULL),bufferCount(2),port(NULL) {}
   };
   int sPortCount;
   int tPortCount;
   Pdata                  pdata[32];
 CWorker(int tports, int sports):sPortCount(sports), tPortCount(tports){};
-  int operator=(int i)
+  size_t operator=(size_t i)
   {
     worker=0; cid=i; return i;
+#if 0
     for ( int n=0; n<32; n++ ) {
       pdata[n].down_stream_connection.worker = NULL;
     }
+#endif
   }
 };
 

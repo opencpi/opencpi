@@ -1,3 +1,3 @@
-<HdlWorker language="vhdl" spec="time_gen-spec.xml">
+<HdlWorker language="vhdl" spec="time_gen_spec.xml">
   <TimeInterface name='time' secondsWidth='32' fractionWidth="32"/> 
 </HdlWorker>

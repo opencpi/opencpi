@@ -6,7 +6,7 @@ being handled at the input must be passed to the output.
 
 -->
 
-<ComponentSpec name="sym_fir_complex" >
+<ComponentSpec>
 
   <Properties>
     <!-- Bypass filter - if true, no transform  Format: bool -->

@@ -141,7 +141,7 @@ int main ( int argc, char* argv [ ] )
   std::string compp;
 
   for (OCPI::Util::CommandLineConfiguration::MultiNameValue::const_iterator ipit = config.unit_test_props.begin();
-       ipit != config.unit_test_props.end(); ipit++) {
+       ipit != config.unit_test_props.end(); ++ipit) {
     const std::string & pname = (*ipit).first;
     const std::string & pval = (*ipit).second;
     printf("utp(%s) = %s\n", pname.c_str(), pval.c_str() );
@@ -152,7 +152,7 @@ int main ( int argc, char* argv [ ] )
   if ( ! utp.empty() )
     printf("Utp props = %s\n", utp.c_str() );
   for (OCPI::Util::CommandLineConfiguration::MultiNameValue::const_iterator ipit = config.comparator_props.begin();
-       ipit != config.comparator_props.end(); ipit++) {
+       ipit != config.comparator_props.end(); ++ipit) {
     const std::string & pname = (*ipit).first;
     const std::string & pval = (*ipit).second;
     printf("compp('%s') = %s\n", pname.c_str(), pval.c_str() );

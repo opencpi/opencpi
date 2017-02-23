@@ -40,7 +40,6 @@
 
 #include "lzma.h"
 #include "zlib.h"
-#include "OcpiNull.h"
 #include "OcpiOsMisc.h"
 #include "OcpiUuid.h"
 #include "OcpiUtilMisc.h"
@@ -95,9 +94,10 @@ static const char
 *interface = NULL, *device = NULL, *part = NULL;
 static bool simDump = true;
 static unsigned
+  timeout = 0,
   sleepUsecs = 200000,  // how much time between quota injections
   spinCount = 20,      // how much quote per timeout AND per control message
-  simTicks = 10000000;   // how much quote to run
+  simTicks = 10000000;   // how much quota to run
 static std::string name, error, endpoint;
 static OH::Driver *driver;
 static OH::Device *dev;
@@ -154,7 +154,7 @@ struct Command {
 };
 
 static int
-usage(const char *name) {
+usage(const char *cmd) {
   fprintf(stderr,
 	  "Usage is: %s <command> [<options>...] [<command args>...]\n"
           "  Major commands/modes:\n"
@@ -221,7 +221,7 @@ usage(const char *name) {
 	  "                      a0:00:b0:34:55:67            # ethernet MAC address on first up+connected interface\n"
 	  "                      eth0/a0:00:b0:34:55:67       # ethernet address on a specific interface\n"
 	  "                      Ether:eth1/a0:00:b0:34:55:67 # fully specified Ethernet-based device\n",
-	  name);
+	  cmd);
   return 1;
 }
 
@@ -247,7 +247,7 @@ static void setupDevice(bool discovery) {
   if (!device)
     bad("a device option is required with this command");
   driver = &OCPI::HDL::Driver::getSingleton();
-  if (!(dev = driver->open(device, discovery, false, error)))
+  if (!(dev = driver->open(device, discovery, false, NULL, error)))
     bad("error opening device %s", device);
   cAccess = &dev->cAccess();
   dAccess = &dev->dAccess();
@@ -301,6 +301,9 @@ doFlags(const char **&ap) {
       break;
     case 'T':
       simTicks = atoi(next(ap));
+      break;
+    case 'O':
+      timeout = atoi(next(ap));
       break;
     case 'D':
       simDump = false;
@@ -415,6 +418,7 @@ static void search(const char **) {
     OA::PVarray vals(5);
     unsigned n = 0;
     vals[n++] = OA::PVBool("printOnly", true);
+    vals[n++] = OA::PVBool("verbose", verbose);
     if (interface)
       vals[n++] = OA::PVString("interface", interface);
     vals[n++] = OA::PVEnd;
@@ -486,48 +490,49 @@ static void emulate(const char **) {
 		  ecrr.data = 0;
 		} else if (offset >= offsetof(OH::OccpSpace, config)) {
 		  size_t
-		    worker = (offset - offsetof(OH::OccpSpace, config)) / OCCP_WORKER_CONFIG_SIZE,
+		    wkr = (offset - offsetof(OH::OccpSpace, config)) / OCCP_WORKER_CONFIG_SIZE,
 		    woffset = (offset - offsetof(OH::OccpSpace, config)) % OCCP_WORKER_CONFIG_SIZE;
-		  printf("Worker %2zd config read 0x%zx\n", worker, woffset);
-		  if (worker == 13 && woffset == 0x4c)
+		  printf("Worker %2zd config read 0x%zx\n", wkr, woffset);
+		  if (wkr == 13 && woffset == 0x4c)
 		    ecrr.data = htonl(0x8000);
 		} else if (offset >= offsetof(OH::OccpSpace, worker)) {
 		  size_t
-		    worker = (offset - offsetof(OH::OccpSpace, worker)) / sizeof(OH::OccpWorker),
+		    wkr = (offset - offsetof(OH::OccpSpace, worker)) / sizeof(OH::OccpWorker),
 		    woffset = (offset - offsetof(OH::OccpSpace, worker)) % sizeof(OH::OccpWorker);
 		  if (woffset < offsetof(OH::OccpWorkerRegisters, control)) {
-		    printf("Worker %2zd control operation read: %s\n", worker, ops[woffset/sizeof(uint32_t)]);
+		    printf("Worker %2zd control operation read: %s\n", wkr,
+			   ops[woffset/sizeof(uint32_t)]);
 		    ecrr.data = htonl(OCCP_SUCCESS_RESULT);
 		  } else
-		    printf("Worker %2zd register read: %s\n", worker, 
+		    printf("Worker %2zd register read: %s\n", wkr, 
 			   woffset == offsetof(OH::OccpWorkerRegisters, control) ? "control" :
 			   woffset == offsetof(OH::OccpWorkerRegisters, window) ? "window" :
 			   woffset == offsetof(OH::OccpWorkerRegisters, clearError) ? "clearError" :
 			   woffset == offsetof(OH::OccpWorkerRegisters, lastConfig) ? "lastConfig" :
 			   "unknown");
 		}
-		echp->length = htons(sizeof(ecrr)-2);
+		echp->length = htons((short)(sizeof(ecrr)-2));
 	      } else {
-		HE::EtherControlWrite &ecw =  *(HE::EtherControlWrite *)(rFrame.payload);
-		ocpiAssert(ntohs(ech_in.length) == sizeof(ecw)-2);
-		uint32_t data = ntohl(ecw.data);
+		HE::EtherControlWrite &ew =  *(HE::EtherControlWrite *)(rFrame.payload);
+		ocpiAssert(ntohs(ech_in.length) == sizeof(ew)-2);
+		uint32_t data = ntohl(ew.data);
 		if (offset > sizeof(cadmin)) {
 		  ocpiDebug("Write offset out of range: 0x%" PRIx32 "\n", offset);
 		} else if (offset > offsetof(OH::OccpSpace, config)) {
 		  size_t
-		    worker = (offset - offsetof(OH::OccpSpace, config)) / OCCP_WORKER_CONFIG_SIZE,
+		    wkr = (offset - offsetof(OH::OccpSpace, config)) / OCCP_WORKER_CONFIG_SIZE,
 		    woffset = (offset - offsetof(OH::OccpSpace, config)) % OCCP_WORKER_CONFIG_SIZE;
-		  printf("Worker %2zd config write 0x%zx: 0x%" PRIx32 "\n", worker, woffset, data);
+		  printf("Worker %2zd config write 0x%zx: 0x%" PRIx32 "\n", wkr, woffset, data);
 		  *(uint32_t *)&cadmin[offset] = data;
 		} else if (offset > offsetof(OH::OccpSpace, worker)) {
 		  size_t
-		    worker = (offset - offsetof(OH::OccpSpace, worker)) / sizeof(OH::OccpWorker),
+		    wkr = (offset - offsetof(OH::OccpSpace, worker)) / sizeof(OH::OccpWorker),
 		    woffset = (offset - offsetof(OH::OccpSpace, worker)) % sizeof(OH::OccpWorker);
 		  if (woffset < offsetof(OH::OccpWorkerRegisters, control)) {
 		    printf("Worker %2zd control operation write???: %s\n",
-			   worker, ops[woffset/sizeof(uint32_t)]);
+			   wkr, ops[woffset/sizeof(uint32_t)]);
 		  } else {
-		    printf("Worker %2zd register write of 0x%" PRIx32 " to %s\n", worker, data,
+		    printf("Worker %2zd register write of 0x%" PRIx32 " to %s\n", wkr, data,
 			   woffset == offsetof(OH::OccpWorkerRegisters, control) ? "control" :
 			   woffset == offsetof(OH::OccpWorkerRegisters, window) ? "window" :
 			   woffset == offsetof(OH::OccpWorkerRegisters, clearError) ? "clearError" :
@@ -538,7 +543,7 @@ static void emulate(const char **) {
 		} else
 		  *(uint32_t *)&cadmin[offset] = data;
 		HE::EtherControlWriteResponse &ecwr =  *(HE::EtherControlWriteResponse *)(echp);
-		echp->length = htons(sizeof(ecwr)-2);
+		echp->length = htons((short)(sizeof(ecwr)-2));
 	      }
 	      // Modify the outgoing packet last since we might be doing it in the
 	      // received buffer (for uncached mode).
@@ -552,7 +557,7 @@ static void emulate(const char **) {
 	    if (OCCP_ETHER_RESERVED(ech_in.typeEtc)) {
 	      ocpiInfo("Received reserved command with lenth: %zu",
 		       ntohs(ech_in.length) - sizeof(HE::EtherControlHeader));
-	      ech_in.length = htons(sizeof(HE::EtherControlHeader)-2);
+	      ech_in.length = htons((short)(sizeof(HE::EtherControlHeader)-2));
 	      ech_in.typeEtc = OCCP_ETHER_TYPE_ETC(HE::OCCP_RESPONSE, HE::OK, 1, 0);
 	    } else {
 	      HE::EtherControlNop &ecn =  *(HE::EtherControlNop *)(rFrame.payload);
@@ -562,7 +567,7 @@ static void emulate(const char **) {
 	      ocpiAssert(ntohs(ech_in.length) == sizeof(ecn)-2);
 	      HE::EtherControlNopResponse &ecnr =  *(HE::EtherControlNopResponse *)(rFrame.payload);
 	      // Tag is the same
-	      ech_in.length = htons(sizeof(ecnr)-2);
+	      ech_in.length = htons((short)(sizeof(ecnr)-2));
 	      ech_in.typeEtc = OCCP_ETHER_TYPE_ETC(HE::OCCP_RESPONSE, HE::OK, uncache, 0);
 	      ecnr.mbx40 = 0x40;
 	      ecnr.mbz0 = 0;
@@ -723,14 +728,14 @@ admin(const char **) {
   i = cAccess->get32Register(numRegions, OH::OccpAdminRegisters);
   printf(" numDPMemReg:  0x%08x (%u)\n", i, i);
   uint32_t regions[OCCP_MAX_REGIONS];
-  cAccess->getRegisterBytes(regions, regions, OH::OccpAdminRegisters, 8);
+  cAccess->getRegisterBytes(regions, regions, OH::OccpAdminRegisters, 8, false);
   if (i < 16) 
     for (k=0; k<i; k++)
       printf("    DP%2d:      0x%08x\n", k, regions[k]);
 
   // Print out the 64B 16DW UUID in little-endian looking format...
   uint32_t uuid[16];
-  cAccess->getRegisterBytes(uuid, uuid, OH::OccpAdminRegisters, 8);
+  cAccess->getRegisterBytes(uuid, uuid, OH::OccpAdminRegisters, 8, false);
   for (k=0;k<16;k+=4)
     printf(" UUID[%2d:%2d]:  0x%08x 0x%08x 0x%08x 0x%08x\n",
 	   k+3, k, uuid[k+3], uuid[k+2], uuid[k+1], uuid[k]);
@@ -838,8 +843,8 @@ unbram(const char **ap) {
     olength = 16*OH::ROM_NBYTES, // worst case output size
     inWords = OH::ROM_NWORDS,
     inBytes = inWords * sizeof(OH::RomWord);
-  OH::RomWord *in = nullptr, *u32p = nullptr;
-  unsigned char *out = nullptr;
+  OH::RomWord *in = NULL, *u32p = NULL;
+  unsigned char *out = NULL;
   for (unsigned n = 0; n < inWords; n++) {
     char line[34];
     line[32] = 0;
@@ -1152,9 +1157,9 @@ wdump(const char **) {
     printf(" addrValid");
   if (i & OCCP_STATUS_CONFIG_BE_VALID)
     printf(" beValid:0x%x", (i & OCCP_STATUS_CONFIG_BE) >> 20);
-  static const char *ops[] = { "init", "start", "stop", "release", "test", "bQuery", "aConfig", "rsvd7"};
+  static const char *l_ops[] = { "init", "start", "stop", "release", "test", "bQuery", "aConfig", "rsvd7"};
   if (i & OCCP_STATUS_CONFIG_OP_VALID)
-    printf(" opValid:0x%x:%s", (i & OCCP_STATUS_CONFIG_OP) >> 24, ops[ (i & OCCP_STATUS_CONFIG_OP) >> 24]);
+    printf(" opValid:0x%x:%s", (i & OCCP_STATUS_CONFIG_OP) >> 24, l_ops[ (i & OCCP_STATUS_CONFIG_OP) >> 24]);
   if (i & OCCP_STATUS_CONFIG_WRITE_VALID)
     printf(" wrtValid:%d", (i & OCCP_STATUS_CONFIG_WRITE) ? 1 : 0);
   printf("\n");
@@ -1256,7 +1261,7 @@ wread(const char **ap) {
     printf("Worker %zu on device %s: read config offset 0x%x size %u count %u\n",
 	   worker, device, off, size, n);
 
-  for (unsigned n = *ap ? (unsigned)atoi_any(*ap, 0) : 1; n--; off += size) {
+  for (; n--; off += size) {
     uint64_t i = 0;
     switch (size) {
     case 1:
@@ -1301,7 +1306,7 @@ static OE::Socket *getSock() {
   OE::Socket *s = new OE::Socket(i, ocpi_data, NULL, 123, error);
   if (error.size()) {
     delete s;
-    s = nullptr;
+    s = NULL;
     bad("opening ethernet socket for data");
   }
   return s;
@@ -1675,12 +1680,19 @@ sendRDMA(const char **ap) {
 
 static void
 simulate(const char **ap) {
+#if 1
+  (void)ap;
+  ocpiBad("The ocpihdl simulate command is ignored, but we are sleeping for 10 hours");
+  OS::sleep(36000000);
+#else
   OH::Sim::Server server(*ap, platform, OCPI_UTRUNCATE(uint8_t,spinCount), sleepUsecs,
 			 simTicks, verbose, simDump, isPublic, error);
   if (error.length())
     bad("Simulator server creation error");
   if (server.run(simExec, error))
     bad("Simulator server execution error");
+  ocpiDebug("Simulation server finished: '%s'", error.c_str());
+#endif
 }
 
 static void
@@ -1719,20 +1731,20 @@ public:
     worker = atoi(idx);
     cAccess->offsetRegisters(wAccess, (intptr_t)(&((OH::OccpSpace*)0)->worker[worker]));
     uint32_t
-      control = wAccess.get32Register(control, OH::OccpWorkerRegisters),
-      status =  wAccess.get32Register(status, OH::OccpWorkerRegisters);
+      l_control = wAccess.get32Register(control, OH::OccpWorkerRegisters),
+      l_status =  wAccess.get32Register(status, OH::OccpWorkerRegisters);
     OU::Worker::ControlState cs;
     OU::Worker::ControlOperation lastOp =
-      (OU::Worker::ControlOperation)OCCP_STATUS_LAST_OP(status);
-    if (!(control & OCCP_WORKER_CONTROL_ENABLE))
+      (OU::Worker::ControlOperation)OCCP_STATUS_LAST_OP(l_status);
+    if (!(l_control & OCCP_WORKER_CONTROL_ENABLE))
       cs = OU::Worker::EXISTS; // there is no specific reset state since it isn't hetero
-    else if (!(status & OCCP_STATUS_CONFIG_OP_VALID) || lastOp == 4)
+    else if (!(l_status & OCCP_STATUS_CONFIG_OP_VALID) || lastOp == 4)
       cs = OU::Worker::EXISTS; // no control op since reset
-    else if (status & OCCP_STATUS_CONTROL_ERRORS)
+    else if (l_status & OCCP_STATUS_CONTROL_ERRORS)
       cs = OU::Worker::UNUSABLE;
     else if (lastOp == OU::Worker::OpRelease)
       cs = OU::Worker::UNUSABLE;
-    else if (status & OCCP_STATUS_FINISHED)
+    else if (l_status & OCCP_STATUS_FINISHED)
       cs = OU::Worker::FINISHED;
     else
       switch(lastOp) {
@@ -1757,9 +1769,17 @@ public:
       } else
 	ignored = true;
     } else if (!strcasecmp(op, "unreset")) {
-      if (OCCP_WORKER_CONTROL_ENABLE & c)
+      if (OCCP_WORKER_CONTROL_ENABLE & c && !timeout)
 	ignored = true;
       else {
+	if (timeout) {
+	  c &= ~0x1f;
+	  unsigned logTimeout = 31;
+	  for (size_t u = 1 << logTimeout; !(u & timeout);
+	       u >>= 1, logTimeout--)
+	    ;
+	  c |= logTimeout;
+	}
 	wAccess.set32Register(control, OH::OccpWorkerRegisters, c |= OCCP_WORKER_CONTROL_ENABLE);
 	wAccess.get32Register(test, OH::OccpWorkerRegisters);
 	wAccess.set32Register(control, OH::OccpWorkerRegisters,
@@ -1837,8 +1857,8 @@ struct Arg {
   bool control, status;
   const char **args;
   unsigned count;
-  Arg(const char **args)
-    : index(999), letter(0), name(NULL), control(false), status(false), args(args), count(0) {
+  Arg(const char **a_args)
+    : index(999), letter(0), name(NULL), control(false), status(false), args(a_args), count(0) {
     top = getmeta();
     prop = args[0] ? args[1] : NULL;
     value = args[0] && args[1] ? args[2] : NULL;
@@ -1855,16 +1875,16 @@ struct Arg {
   doWorker(ezxml_t inst) {
     count++;
     const char
-      *name = ezxml_attr(inst, "name"),
+      *iname = ezxml_attr(inst, "name"),
       *idx = ezxml_attr(inst, "occpIndex"),
       *wkr = ezxml_attr(inst, "worker");
     ezxml_t impl = OX::findChildWithAttr(top, "worker", "name", wkr);
     if (!impl)
-      bad("Can't find worker '%s' for instance '%s'", name, wkr);
+      bad("Can't find worker '%s' for instance '%s'", iname, wkr);
     Worker *w = NULL;
     if (!idx) {
       if (control || status || value || prop)
-	bad("Can't to control/status/get/put on workers with no control interface");
+	bad("Can't do control/status/get/put on workers with no control interface");
     } else {
       w = new Worker(impl, inst, idx);
       if (control)
@@ -1875,29 +1895,31 @@ struct Arg {
 	// Setting a property
 	w->setProperty(prop, value);
 	printf("Setting the %s property to '%s' on instance '%s'\n",
-	       prop, value, name);
+	       prop, value, iname);
 	fflush(stdout);
       }
+      if (control || status || value)
+	return;
     }
     printf("  Instance %s of %s worker %s (spec %s)",
-	   name, strcasecmp(inst->name, "instance") ? inst->name :
+	   iname, strcasecmp(inst->name, "instance") ? inst->name :
 	   idx && !strcmp(idx, "0") ? "platform" : "normal",
 	   wkr, wkr ? ezxml_cattr(impl, "specname") : "<none>");
     if (idx)
       printf(" with index %s", idx);
     printf("\n");
     fflush(stdout);
-    std::string pname, value;
+    std::string pname, val;
     bool unreadable;
     if (prop) {
       unsigned i = w->whichProperty(prop);
-      w->getProperty(i, pname, value, &unreadable, hex);
+      w->getProperty(i, pname, val, &unreadable, hex);
       printf("%3u %20s: %s\n", i, pname.c_str(),
-	     unreadable ? "<unreadable>" : value.c_str());
+	     unreadable ? "<unreadable>" : val.c_str());
     } else if (verbose && w) {
-      for (unsigned i = 0; w->getProperty(i, pname, value, &unreadable, hex); i++)
+      for (unsigned i = 0; w->getProperty(i, pname, val, &unreadable, hex); i++)
 	printf("%3u %20s: %s\n", i, pname.c_str(),
-	       unreadable ? "<unreadable>" : value.c_str());
+	       unreadable ? "<unreadable>" : val.c_str());
     }
     fflush(stdout);
   }
@@ -2016,12 +2038,13 @@ load(const char **ap) {
     bad("No input filename specified for loading");
   
   driver = &OCPI::HDL::Driver::getSingleton();
-  std::string error;
-  if (!(dev = driver->open(device, false, true, error)))
+  if (!(dev = driver->open(device, false, true, NULL, error)))
     bad("error opening device %s", device);
-  dev->load(ap[0]);
+  if (dev->load(ap[0], error))
+    bad("error loading device %s", device);
 }
 static void
 unload(const char **) {
-  dev->unload();
+  if (dev->unload(error))
+    bad("error unloading device %s after load", device);
 }

@@ -48,11 +48,11 @@ namespace OCPI {
     namespace OA = OCPI::API;
     namespace OE = OCPI::Util::EzXml;
 
-    ValueType::ValueType(OA::BaseType bt, bool isSequence)
+    ValueType::ValueType(OA::BaseType bt, bool a_isSequence)
       : m_baseType(bt), m_arrayRank(0), m_nMembers(0), m_dataAlign(0), m_align(1), m_nBits(0),
-	m_elementBytes(0), m_isSequence(isSequence), m_nBytes(0), m_arrayDimensions(NULL),
+	m_elementBytes(0), m_isSequence(a_isSequence), m_nBytes(0), m_arrayDimensions(NULL),
 	m_stringLength(0), m_sequenceLength(0), m_members(NULL), m_type(NULL), m_enums(NULL),
-	m_nEnums(0), m_nItems(1), m_fixedLayout(true)
+	m_nEnums(0), m_nItems(1), m_fixedLayout(true), m_usesParameters(false)
     {}
     ValueType::~ValueType() {
       if (m_arrayDimensions)
@@ -83,6 +83,23 @@ namespace OCPI {
       }
       return true;
     }
+    // Return a type object that is a sequence of this type
+    // This is not a member function of ValueType because hierarchical types
+    // are based on members, which they should not be AFAICT
+    Member &Member::
+    sequenceType() const {
+      Member &newType = *new Member(*this);
+      if (m_isSequence) {
+	Member &seqType = *new Member();
+	seqType.m_baseType = OA::OCPI_Type;
+	seqType.m_type = &newType;
+	seqType.m_isSequence = true;
+	return seqType;
+      }
+      // easy case - just a copy adding the "sequence" attribute.
+      newType.m_isSequence = true;
+      return newType;
+    }
 
     Reader::Reader(){}
     Reader::~Reader(){}
@@ -112,11 +129,12 @@ namespace OCPI {
     {
     }
     // Constructor when you are not parsing, and doing static initialization
-    Member::Member(const char *name, const char *abbrev, const char *description, OA::BaseType type,
-		   bool isSequence, const char *defaultValue)
-		   : ValueType(type, isSequence), m_name(name), m_abbrev(abbrev ? abbrev : ""),
-		     m_description(description ? description : ""),
-		     m_offset(0), m_isIn(false), m_isOut(false), m_isKey(false), m_default(NULL) {
+    Member::
+    Member(const char *name, const char *abbrev, const char *description, OA::BaseType type,
+	   bool a_isSequence, const char *defaultValue)
+      : ValueType(type, a_isSequence), m_name(name), m_abbrev(abbrev ? abbrev : ""),
+	m_description(description ? description : ""),
+	m_offset(0), m_isIn(false), m_isOut(false), m_isKey(false), m_default(NULL) {
       if (defaultValue) {
 	  m_default = new Value(*this);
 	  ocpiCheck(m_default->parse(defaultValue) == 0);
@@ -126,22 +144,26 @@ namespace OCPI {
       if (m_default)
 	delete m_default;
     }
-    const char *
-    Member::parseDefault(ezxml_t xm, const char *hasDefault) {
-      const char *defValue = ezxml_cattr(xm, hasDefault);
+    // THis is called during normal parsing of a member, but also used after initial parsing
+    // of the member XML when a value is being overriden later.
+    const char * Member::
+    parseDefault(const char *defValue, const char *tag, const IdentResolver *resolv) {
       if (defValue) {
 	delete m_default;
 	m_default = new Value(*this);
-	const char *err = m_default->parse(defValue);
+	bool isVariable;
+	const char *err = m_default->parse(defValue, NULL, false, resolv, &isVariable);
 	if (err)
-	  return esprintf("for member %s: %s", m_name.c_str(), err);
+	  return esprintf("for %s %s: %s", tag, m_name.c_str(), err);
+	if (isVariable)
+	  m_defaultExpr = defValue;
       }
+      // FIXME: if any children (struct or type) have defaults, build a sparse default here
       return NULL;
     }
-
     const char *
-    Member::parse(ezxml_t xm, bool isFixed, bool hasName, const char *hasDefault,
-		  unsigned ordinal, const IdentResolver *resolver) {
+    Member::parse(ezxml_t xm, bool a_isFixed, bool hasName, const char *hasDefault,
+		  const char *tag, unsigned ordinal, const IdentResolver *resolver) {
       bool found;
       const char *err;
       const char *name = ezxml_cattr(xm, "Name");
@@ -161,7 +183,7 @@ namespace OCPI {
       if (!strcasecmp(typeName, "struct")) {
 	m_baseType = OA::OCPI_Struct;
 	if ((err = OE::checkElements(xm, "member", (void*)0)) ||
-	    (err = parseMembers(xm, m_nMembers, m_members, isFixed, "member", hasDefault,
+	    (err = parseMembers(xm, m_nMembers, m_members, a_isFixed, "member", hasDefault,
 				resolver)))
 	  return err;
 	if (m_nMembers == 0)
@@ -178,7 +200,7 @@ namespace OCPI {
 	  return "missing \"type\" child element under data type with type=\"type\"";
 	if ((err = OE::checkAttrs(xt, OCPI_UTIL_MEMBER_ATTRS, NULL)) ||
 	    (err = OE::checkElements(xm, "type", (void*)0)) ||
-	    (err = m_type->parse(xt, isFixed, false, NULL, 0)))
+	    (err = m_type->parse(xt, a_isFixed, false, NULL, NULL, 0)))
 	  return err;
 	if (!m_type->m_isSequence)
 	  return "recursive \"type\" element must be a sequence";
@@ -222,13 +244,15 @@ namespace OCPI {
 	       (err = getExprNumber(xm, "size", m_stringLength, &found, &m_stringLengthExpr,
 				    resolver))))
 	    return err;
-	  if (isFixed) {
+	  if (a_isFixed) {
 	    if (!found)
 	      return "Missing StringLength attribute for string type that must be bounded";
 	    if (m_stringLength == 0)
 	      return "StringLength cannot be zero";
 	  } else
 	    m_fixedLayout = false;
+	  if (!m_stringLengthExpr.empty())
+	    m_usesParameters = true;
 	}
       }
       if (ezxml_cattr(xm, "StringLength") && m_baseType != OA::OCPI_String)
@@ -273,8 +297,8 @@ namespace OCPI {
 	  m_nItems *= m_arrayDimensions[n];
 	}
       }
-
-      // Deal with sequences after arrays (because arrays belong to declarators)
+      if (m_arrayRank && !m_arrayDimensionsExprs[0].empty())
+	m_usesParameters = true;
       if ((err = getExprNumber(xm, "SequenceLength", m_sequenceLength, &m_isSequence,
 			       &m_sequenceLengthExpr, resolver)) ||
 	  (!m_isSequence &&
@@ -282,15 +306,17 @@ namespace OCPI {
 				 &m_sequenceLengthExpr, resolver)))))
 	return err;
       if (m_isSequence) {
-	if (isFixed) {
+	if (a_isFixed) {
 	  if (m_sequenceLength == 0)
 	    return "Sequence must have a bounded size";
 	} else {
 	  m_fixedLayout = false;
 	}
+	if (!m_sequenceLengthExpr.empty())
+	  m_usesParameters = true;
       }
       // Process default values
-      if (hasDefault && (err = parseDefault(xm, hasDefault)))
+      if (hasDefault && (err = parseDefault(ezxml_cattr(xm, hasDefault), tag, resolver)))
 	return err;
       if (m_format.size() && !strchr(m_format.c_str(), '%'))
 	return esprintf("invalid format string '%s' for '%s'", m_format.c_str(), m_name.c_str());
@@ -300,12 +326,12 @@ namespace OCPI {
     // Finalize the data types by recomputing all the attributes that might be
     // based on parameters whose values were set later.
     const char *Member::
-    finalize(const IdentResolver &resolver, bool isFixed) {
+    finalize(const IdentResolver &resolver, const char *tag, bool a_isFixed) {
       const char *err;
       // First we finalize any members, recursively
       if (m_baseType == OA::OCPI_Struct)
 	for (unsigned n = 0; n < m_nMembers; n++)
-	  m_members[n].finalize(resolver, isFixed);
+	  m_members[n].finalize(resolver, "member", a_isFixed);
       if (m_arrayRank) {
 	m_nItems = 1;
 	for (unsigned i = 0; i < m_arrayRank; i++) {
@@ -324,17 +350,17 @@ namespace OCPI {
 	    (err = parseExprNumber(m_sequenceLengthExpr.c_str(), m_sequenceLength, NULL,
 				   &resolver)))
 	  return err;
-	if (isFixed && m_sequenceLength == 0)
+	if (a_isFixed && m_sequenceLength == 0)
 	  return "Sequence must have a bounded size";
       }
       if (m_baseType == OA::OCPI_String) {
 	if (m_stringLengthExpr.length() &&
 	    (err = parseExprNumber(m_stringLengthExpr.c_str(), m_stringLength, NULL, &resolver)))
 	  return err;
-	if (isFixed && m_stringLength == 0)
+	if (a_isFixed && m_stringLength == 0)
 	  return "StringLength cannot be zero";
       }
-      return NULL;
+      return m_defaultExpr.length() ? parseDefault(m_defaultExpr.c_str(), tag, &resolver) : NULL;
     }
 
     void Member::
@@ -417,8 +443,8 @@ namespace OCPI {
     // Push the data in the linear buffer into a writer object
     void Member::write(Writer &writer, const uint8_t *&data, size_t &length, bool topSeq) {
       size_t nElements = 1;
-      const uint8_t *startData;
-      size_t startLength;
+      const uint8_t *startData = NULL; // quiet warning
+      size_t startLength = 0; // quiet warning
       if (m_isSequence) {
 	if (topSeq && !m_fixedLayout) {
 	  ocpiAssert(((intptr_t)data & ~(m_align - 1)) == 0);
@@ -498,8 +524,8 @@ namespace OCPI {
     // Fill the linear buffer from a reader object
     void Member::read(Reader &reader, uint8_t *&data, size_t &length, bool fake, bool top) const {
       size_t nElements = 1;
-      uint8_t *startData;
-      size_t startLength;
+      uint8_t *startData = NULL; // quiet warning
+      size_t startLength = 0; // quiet warning
       if (m_isSequence) {
 	ralign(data, m_align, length);
 	startData = data;
@@ -613,7 +639,7 @@ namespace OCPI {
 	m_enums = new const char *[m_nEnums];
 	for (unsigned n = 0; n < m_nEnums; n++) {
 	  char *e;
-	  asprintf(&e, "enum%u", n);
+	  ocpiCheck(asprintf(&e, "enum%u", n) > 0);
 	  m_enums[n] = new char[strlen(e) + 1];
 	  strcpy((char *)m_enums[n], e);
 	  free(e);
@@ -635,7 +661,7 @@ namespace OCPI {
 	m_members = new Member[m_nMembers];
 	for (unsigned n = 0; n < m_nMembers; n++) {
 	  char *e;
-	  asprintf(&e, "member%u", n);
+	  ocpiCheck(asprintf(&e, "member%u", n) > 0);
 	  m_members[n].generate(e, n, depth);
 	  free(e);
 	  if (!m_members[n].m_fixedLayout)
@@ -649,7 +675,7 @@ namespace OCPI {
     // This static method is shared between parsing members of a structure and parsing arguments
     // to an operation.
     const char *
-    Member::parseMembers(ezxml_t mems, size_t &nMembers, Member *&members, bool isFixed,
+    Member::parseMembers(ezxml_t mems, size_t &nMembers, Member *&members, bool a_isFixed,
 			 const char *tag, const char *hasDefault,
 			 const IdentResolver *resolver) {
       for (ezxml_t m = ezxml_cchild(mems, tag); m ; m = ezxml_next(m))
@@ -662,7 +688,8 @@ namespace OCPI {
 	for (ezxml_t mx = ezxml_cchild(mems, tag); mx ; mx = ezxml_next(mx), m++) {
 	  if ((err = OE::checkAttrs(mx, OCPI_UTIL_MEMBER_ATTRS,
 				    hasDefault ? hasDefault : NULL, NULL)) ||
-	      (err = m->parse(mx, isFixed, true, hasDefault, (unsigned)(m - members), resolver)))
+	      (err = m->parse(mx, a_isFixed, true, hasDefault, "member", (unsigned)(m - members),
+			      resolver)))
 	    return err;
 	  if (!names.insert(m->m_name.c_str()).second)
 	    return esprintf("Duplicate member name: %s", m->m_name.c_str());

@@ -373,7 +373,7 @@ namespace OCPI {
       /**********************************
        * Get/Set the SMB name
        *********************************/
-      const char* getSMBAddress();
+      //      const char* getSMBAddress();
       DataTransfer::EndPoint* getEndpoint();
       std::string& getShadowEndpoint();
       void setEndpoint( std::string& ep );
@@ -450,7 +450,6 @@ namespace OCPI {
     inline uint32_t& Port::getBufferSequence(){return m_sequence;}
     inline bool Port::isShadow(){return m_shadow;}
     inline BufferOrdinal &Port::getLastBufferTidProcessed(){return m_lastBufferTidProcessed;}
-    inline const char* Port::getSMBAddress(){return m_data->m_real_location->getAddress();}
     inline DataTransfer::EndPoint* Port::getEndpoint(){return m_data->m_real_location;}
     inline std::string& Port::getShadowEndpoint(){return m_data->m_shadow_location->end_point;}
     inline volatile DataTransfer::OutputPortSetControl* Port::getOutputControlBlock(){return m_hsPortControl;}

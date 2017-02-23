@@ -6,7 +6,7 @@ being handled at the input must be passed to the output.
 
 -->
 
-<ComponentSpec name="noise_gen_complex" >
+<ComponentSpec>
 
   <Properties>
     <!-- mask - noise mask value Format: unsigned long   -->

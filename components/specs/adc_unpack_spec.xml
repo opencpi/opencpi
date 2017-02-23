@@ -1,4 +1,4 @@
-<ComponentSpec Name="adc_unpack">
+<ComponentSpec>
   <Properties>
      <Property Name="sample_swap" Type="ULong" Volatile="true" Writable="true"/>
      <Property Name="n_buffers" Type="ULong" Volatile="true" Writable="false"/>

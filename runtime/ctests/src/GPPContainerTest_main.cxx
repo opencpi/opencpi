@@ -273,7 +273,6 @@ std::string readDesc( const char* file_name )
   }
 
   ssize_t br;
-  const int MAX_DESC_LEN = 1024;
   char buf[MAX_DESC_LEN];
   
   retries = 10;

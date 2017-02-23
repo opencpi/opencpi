@@ -54,7 +54,8 @@ namespace OCPI {
       // The impl is not a reference since std::vector must copy it :-(
       const Implementation *impl;
       unsigned score;
-      inline Candidate(const Implementation &impl, unsigned score) : impl(&impl), score(score) {}
+      inline Candidate(const Implementation &a_impl, unsigned a_score)
+	: impl(&a_impl), score(a_score) {}
     };
     typedef std::vector<Candidate> Candidates;   // a set of candidates for an instance
 
@@ -98,6 +99,7 @@ namespace OCPI {
     public:
       explicit Assembly(const char *file, const OCPI::Util::PValue *params);
       explicit Assembly(const std::string &string, const OCPI::Util::PValue *params);
+      explicit Assembly(ezxml_t xml, const char *name, const OCPI::Util::PValue *params);
       ~Assembly();
       Instance &instance(size_t n) { return *m_instances[n]; }
       size_t nInstances() { return m_instances.size(); }

@@ -1,4 +1,4 @@
-  <ComponentSpec Name="sma">
+  <ComponentSpec>
     <Properties >
       <Property Name="smaCtrl" Readable="true" Writable="true"/>
     </Properties>

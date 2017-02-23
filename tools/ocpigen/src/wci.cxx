@@ -9,7 +9,8 @@ WciPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
   : OcpPort(w, x, sp, ordinal, WCIPort, "ctl", err), m_timeout(0), m_resetWhileSuspended(false) {
   if (err)
     return;
-  assert(master || !m_worker->m_wci);
+  OU::format(m_addrWidthExpr, "ocpi_port_%s_MAddr_width", cname());
+  assert(m_master || !m_worker->m_wci);
   // WCI ports implicitly a clock to the worker in all cases, master or slave
   if (x && ezxml_cattr(x, "clock")) {
     err = "A control interface can not specify a separate clock";
@@ -17,7 +18,7 @@ WciPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
   }
   myClock = true;
   addMyClock();
-  if (!master) {
+  if (!m_master) {
     m_worker->m_wci = this;
     m_worker->m_wciClock = clock;
   }
@@ -38,7 +39,7 @@ WciPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
 
 bool WciPort::
 needsControlClock() const {
-  return !master;
+  return !m_master;
 }
 
 void WciPort::
@@ -79,7 +80,7 @@ deriveOCP() {
   ocp.SResp.value = s;
   ocp.SThreadBusy.value = s;
   // From here down things are dependent on properties
-  if (master) {
+  if (m_master) {
     ocp.MAddr.width = 32;
     ocp.MAddrSpace.value = s;
     ocp.MData.width = m_dataWidth;
@@ -92,7 +93,7 @@ deriveOCP() {
     if (m_worker->m_ctl.sizeOfConfigSpace <= 32)
       ocp.MAddr.width = 5;
     else
-      ocp.MAddr.width = ceilLog2(m_worker->m_ctl.sizeOfConfigSpace);
+      ocp.MAddr.width = OU::ceilLog2(m_worker->m_ctl.sizeOfConfigSpace);
     if (m_worker->m_ctl.sizeOfConfigSpace != 0)
       ocp.MAddrSpace.value = s;
     if (m_worker->m_ctl.sub32Bits)
@@ -113,7 +114,7 @@ emitImplAliases(FILE *f, unsigned n, Language lang) {
   const char *comment = hdlComment(lang);
   fprintf(f,
 	  "  %s Aliases for %s interface \"%s\"\n",
-	  comment, typeName(), name());
+	  comment, typeName(), cname());
   if (lang != VHDL) {
     fprintf(f,
 	    "  wire %sTerminate = %sMFlag[0];\n"
@@ -153,7 +154,7 @@ emitImplAliases(FILE *f, unsigned n, Language lang) {
 	      "  localparam %sPropertyWidth = %zu;\n", pin, ocp.MAddr.width);
     for (PropertiesIter pi = m_worker->m_ctl.properties.begin();
 	 pi != m_worker->m_ctl.properties.end(); pi++)
-      if (!(*pi)->m_isParameter) {
+      if (!(*pi)->m_isParameter && !(*pi)->m_isReadable) {
 	OU::Property *pr = *pi;
 	if (lang != VHDL)
 	  fprintf(f, "  localparam [%zu:0] %sAddr = %zu'h%0*zx;\n",
@@ -164,6 +165,14 @@ emitImplAliases(FILE *f, unsigned n, Language lang) {
   }
 }
 
+#if 0
+void WciPort::
+emitVerilogPortParameters(FILE *f) {
+  // FIXME: This will not work with Verilog workers with multiple configurations with differing
+  // property space sizes.
+  fprintf(f, "  localparam ocpi_port_%s_addr_width = %zu;\n", cname(), ocp.MAddr.width);
+}
+#endif
 void WciPort::
 emitImplSignals(FILE *f) {
   Control &ctl = m_worker->m_ctl;
@@ -227,7 +236,7 @@ emitRecordOutputs(FILE *f) {
 #if 0
 void WciPort::
 emitWorkerEntitySignals(FILE *f, std::string &last, unsigned maxPropName) {
-  if (master)
+  if (m_master)
     return;
   Worker &w = *m_worker;
   fprintf(f,
@@ -256,37 +265,94 @@ emitWorkerEntitySignals(FILE *f, std::string &last, unsigned maxPropName) {
 
 void WciPort::
 emitRecordInterface(FILE *f, const char *implName) {
-  if (!master && !m_worker->m_assembly)
+  if (!m_master && !m_worker->m_assembly)
     OcpPort::emitRecordInterface(f, implName);
 }
+#if 0
+void WciPort::
+emitRecordInterfaceConstants(FILE *f) {
+  fprintf(f, "  constant ocpi_port_%s_addr_width : positive;\n", cname());
+}
+#endif
+void
+emitConstant(FILE *f, const std::string &prefix, const char *name, size_t val, Language lang) {
+  if (lang == VHDL)
+    fprintf(f, "  constant %s_%s : natural := %zu;\n", prefix.c_str(), name, val);
+  else
+    fprintf(f, "  localparam %s_%s = %zu;\n", prefix.c_str(), name, val);
+}
+#if 0
+
+void WciPort::
+emitInterfaceConstants(FILE *f, Language lang) {
+  Port::emitInterfaceConstants(f, lang);
+  std::string pref("ocpi_port_" + m_name);
+  emitConstant(f, pref, "addr_width", ocp.MAddr.width, lang);
+}
+#endif
+// This cannot be a port method since it is needed when there are parameters
+// with NO CONTROL INTERFACE
+void Worker::
+emitPropertyAttributeConstants(FILE *f, Language lang) {
+  bool first = true;
+  for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++) {
+    OU::Property &pr = **pi;
+    if (first &&
+	(pr.m_stringLengthExpr.length() ||
+	 pr.m_sequenceLengthExpr.length() ||
+	 (pr.m_arrayRank && pr.m_arrayDimensionsExprs[0].length()))) {
+      fprintf(f, "  %s Attributes of properties determined by parameter expressions\n",
+	      hdlComment(lang));
+      first = false;
+    }
+    if (pr.m_baseType == OA::OCPI_String && pr.m_stringLengthExpr.length())
+      emitConstant(f, pr.m_name, "string_length", pr.m_stringLength, lang);
+    if (pr.m_isSequence && pr.m_sequenceLengthExpr.length())
+      emitConstant(f, pr.m_name, "sequence_length", pr.m_sequenceLength, lang);
+    if (pr.m_arrayRank && pr.m_arrayDimensionsExprs[0].length()) {
+      if (lang == VHDL) {
+	fprintf(f, "  constant %s_array_dimensions : dimensions_t(0 to %zu) := (",
+	      pr.m_name.c_str(), pr.m_arrayRank - 1);
+	for (unsigned n = 0; n < pr.m_arrayRank; n++)
+	  fprintf(f, "%s%u => %zu", n ? ", " : "", n, pr.m_arrayDimensions[n]);
+	fprintf(f, ");\n");
+      } else
+	for (unsigned n = 0; n < pr.m_arrayRank; n++)
+	  fprintf(f, "  localparam %s_array_dimension_%u = %zu;\n", pr.m_name.c_str(), n,
+		  pr.m_arrayDimensions[n]);
+    }
+  }
+}
+
 void WciPort::
 emitRecordArray(FILE *f) {
-  if (!master && !m_worker->m_assembly)
+  if (!m_master && !m_worker->m_assembly)
     OcpPort::emitRecordArray(f);
 }
 
 void WciPort::
-emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inWorker,
+emitRecordSignal(FILE *f, std::string &last, const char *aprefix, bool inRecord,
+		 bool inPackage, bool inWorker,
 		 const char */*defaultIn*/, const char */*defaultOut*/) {
   Worker &w = *m_worker;
-  if (master || m_worker->m_assembly) {
+  if (m_master || m_worker->m_assembly) {
     if (last.size())
       fprintf(f, last.c_str(), ";");
     std::string in, out;
     OU::format(in, typeNameIn.c_str(), "");
     OU::format(out, typeNameOut.c_str(), "");
     std::string index;
-    if (count > 1)
-      OU::format(index, "(0 to %zu)", count-1);
+    if (m_count > 1)
+      OU::format(index, "(0 to %zu)", m_count-1);
     OU::format(last,
 	       "  %-*s : in  wci.wci_%s%s_t%s;\n"
 	       "  %-*s : out wci.wci_%s%s_t%s%%s",
-	       (int)w.m_maxPortTypeName, in.c_str(), master ? "s2m" : "m2s",
-	       count > 1 ? "_array" : "", index.c_str(),
-	       (int)w.m_maxPortTypeName, out.c_str(), master ? "m2s" : "s2m",
-	       count > 1 ? "_array" : "", index.c_str());
+	       (int)w.m_maxPortTypeName, in.c_str(), m_master ? "s2m" : "m2s",
+	       m_count > 1 ? "_array" : "", index.c_str(),
+	       (int)w.m_maxPortTypeName, out.c_str(), m_master ? "m2s" : "s2m",
+	       m_count > 1 ? "_array" : "", index.c_str());
   } else {
-    OcpPort::emitRecordSignal(f, last, prefix, inWorker, NULL,
+    OcpPort::emitRecordSignal(f, last, aprefix, inRecord, inPackage, inWorker, NULL,
 			      inWorker ? "(done=>btrue, others=>bfalse)" : NULL);
     if (inWorker) {
       if (w.m_ctl.writables || w.m_ctl.readbacks || w.m_ctl.rawProperties) {
@@ -320,33 +386,100 @@ emitVHDLShellPortMap(FILE *f, std::string &last) {
 	  "    %s_in.state => wci_state,\n"
 	  "    %s_in.is_operating => wci_is_operating,\n"
 	  "    %s_in.abort_control_op => wci_abort_control_op,\n",
-	  last.c_str(), name(), in.c_str(), name(), name(),
-	  name(), name(), name());
+	  last.c_str(), cname(), in.c_str(), cname(), cname(),
+	  cname(), cname(), cname());
   if (m_worker->m_scalable)
     fprintf(f,
 	    "    %s_in.barrier => wci_barrier,\n"
 	    "    %s_in.crew => wci_crew,\n"
-	    "    %s_in.rank => wci_rank,\n", name(), name(), name());
+	    "    %s_in.rank => wci_rank,\n", cname(), cname(), cname());
   fprintf(f,
 	  "    %s_in.is_big_endian => wci_is_big_endian,\n"
 	  "    %s_out.done => wci_done,\n"
 	  "    %s_out.error => wci_error,\n"
 	  "    %s_out.finished => wci_finished,\n"
 	  "    %s_out.attention => wci_attention",
-	  name(), name(), name(), name(), name());
+	  cname(), cname(), cname(), cname(), cname());
   if (m_worker->m_scalable)
     fprintf(f,
 	    ",\n"
-	    "    %s_out.waiting => wci_waiting", name());
+	    "    %s_out.waiting => wci_waiting", cname());
   last = ",\n";
 }
 
 void WciPort::
 emitPortSignals(FILE *f, Attachments &atts, Language lang, const char *indent,
 		bool &any, std::string &comment, std::string &last, const char *myComment,
-		OcpAdapt *adapt) {
-  if (master || m_worker->m_assembly)
-    Port::emitPortSignals(f, atts, lang, indent, any, comment, last, myComment, adapt);
+		OcpAdapt *adapt, std::string *signalIn, std::string &exprs) {
+  if (m_master || m_worker->m_assembly)
+    Port::emitPortSignals(f, atts, lang, indent, any, comment, last, myComment, adapt, signalIn,
+			  exprs);
   else
-    OcpPort::emitPortSignals(f, atts, lang, indent, any, comment, last, myComment, adapt);
+    OcpPort::emitPortSignals(f, atts, lang, indent, any, comment, last, myComment, adapt,
+			     signalIn, exprs);
+}
+
+void WciPort::
+emitSkelSignals(FILE *f) {
+  // A skeleton should set every volatile property
+  if (m_worker->m_ctl.nonRawVolatiles) {
+    fprintf(f,
+	    "  %s Skeleton assignments for %s's volatile properties\n",
+	    hdlComment(m_worker->m_language), m_worker->m_implName);
+    if (m_worker->m_language != VHDL)
+      return;
+    for (PropertiesIter pi = m_worker->m_ctl.properties.begin();
+	 pi != m_worker->m_ctl.properties.end(); pi++)
+      if ((*pi)->m_isVolatile) {
+	const OU::Property &pr = **pi;
+	if (pr.m_isSequence)
+	  fprintf(f,
+		  "  -- zero length sequence output, data values are not driven here yet\n"
+		  "  props_out.%s_length <= (others => '0');\n", pr.m_name.c_str());
+	else {
+	  std::string value;
+	  OU::Value v(pr); // This constructor creates a zero value
+	  vhdlValue(NULL, pr.m_name.c_str(), v, value, false);
+	  fprintf(f, "  props_out.%s <= %s;\n", pr.m_name.c_str(), value.c_str());
+	}
+      }
+  }
+}
+
+const char *WciPort::
+finalizeExternal(Worker &aw, Worker &iw, InstancePort &/*ip*/,
+		 bool &cantDataResetWhileSuspended) {
+  // slave ports that are connected are ok as is.
+  assert(m_master || this == m_worker->m_wci);
+  if (!m_master && !aw.m_noControl) {
+    // Make assembly WCI the union of all inside, with a replication count
+    // We make it easier for CTOP, hoping that wires dissolve appropriately
+    // FIXME: when we generate containers, these might be customized, but not now
+    //if (iw->m_ctl.sizeOfConfigSpace > aw->m_ctl.sizeOfConfigSpace)
+    //            aw->m_ctl.sizeOfConfigSpace = iw->m_ctl.sizeOfConfigSpace;
+    aw.m_ctl.sizeOfConfigSpace = (1ll<<32) - 1;
+    if (iw.m_ctl.writables)
+      aw.m_ctl.writables = true;
+#if 0
+    // FIXME: until container automation we must force this
+    if (iw.m_ctl.readables)
+#endif
+      aw.m_ctl.readables = true;
+#if 0
+    // FIXME: Until we have container automation, we force the assembly level
+    // WCIs to have byte enables.  FIXME
+    if (iw.m_ctl.sub32Bits)
+#endif
+      aw.m_ctl.sub32Bits = true;
+    aw.m_ctl.controlOps |= iw.m_ctl.controlOps; // needed?  useful?
+    // Reset while suspended: This is really only interesting if all
+    // external data ports are only connected to ports of workers where this
+    // is true.  And the use-case is just that you can reset the
+    // infrastructure while maintaining worker state.  BUT resetting the
+    // CP could clearly reset anything anyway, so this is only relevant to
+    // just reset the dataplane infrastructure.
+    if (!m_worker->m_wci->resetWhileSuspended())
+      cantDataResetWhileSuspended = true;
+  }
+  return NULL;
 }

@@ -131,7 +131,7 @@ namespace DataTransfer {
   DatagramSocket( DatagramSmemServices*  lsmem)
     :m_lsmem(lsmem),m_error(false),m_run(true),m_joined(false) {}
 
-      bool error(){return m_error;}
+    //      bool error(){return m_error;}
       virtual ~DatagramSocket();
       virtual void send(Frame &frame) = 0;
       // return bytes read and offset in buffer to use.  Returning zero is timeout
@@ -165,7 +165,7 @@ namespace DataTransfer {
       throw ();
     virtual ~DatagramXferFactory();//      throw ();
     virtual EndPoint*  createEndPoint(std::string& endpoint, bool local) =0;
-    virtual  std::string allocateEndpoint(const OCPI::Util::PValue*, uint16_t mailBox, uint16_t maxMailBoxes)=0;
+    virtual  std::string allocateEndpoint(const OCPI::Util::PValue*, uint16_t mailBox, uint16_t maxMailBoxes, size_t size)=0;
     virtual const char* getProtocol()=0;
     virtual DatagramXferServices *createXferServices(DatagramSmemServices*source,
 						     DatagramSmemServices*target) = 0;

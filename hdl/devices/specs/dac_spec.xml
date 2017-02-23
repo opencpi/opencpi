@@ -1,4 +1,4 @@
-<ComponentSpec Name="dac">
+<ComponentSpec>
   <Properties>
     <Property Name="dacStatusMS" Readable="true" Writable="false" Type="ULong"/>
     <Property Name="dacStatusLS" Readable="true" Writable="false" Type="ULong"/>

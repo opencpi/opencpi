@@ -30,7 +30,6 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
-#define __STDC_LIMIT_MACROS 1
 #include <stdint.h>
 #include <errno.h>
 #include <strings.h>
@@ -459,7 +458,7 @@ namespace OCPI {
 
       // Return true on error. "end" can be NULL
       bool
-      getUNum64(const char *s, const char *end, uint64_t &val) {
+      getUNum64(const char *s, const char *end, uint64_t &val, const char **endp) {
 	char *endptr;
 	errno = 0;
 	val = strtoull(s, &endptr, 0);
@@ -492,6 +491,8 @@ namespace OCPI {
 	    if ((end && endptr < end) || (!end && *endptr))
 	      break;
 	  }
+	  if (endp)
+	    *endp = endptr;
 	  return false;
 	} while(0);
 	return true;
@@ -564,9 +565,9 @@ namespace OCPI {
       parseBool(const char *a, const char *end, bool *b)
       {
 	size_t n = end ? end - a : strlen(a);
-	if (n == 4 && !strncasecmp(a, "true", 4) || n == 1 && !strncmp(a, "1", 1))
+	if ((n == 4 && !strncasecmp(a, "true", 4)) || (n == 1 && !strncmp(a, "1", 1)))
 	  *b = true;
-	else if (n == 5 && !strncasecmp(a, "false", 5)  || n == 1 && !strncmp(a, "0", 1))
+	else if ((n == 5 && !strncasecmp(a, "false", 5))  || (n == 1 && !strncmp(a, "0", 1)))
 	  *b =  false;
 	else
 	  return true;
@@ -627,9 +628,9 @@ namespace OCPI {
       }
       // Note that this sets the output string to empty if it is not found
       bool
-      getOptionalString(ezxml_t x, std::string &s, const char *attr) {
+      getOptionalString(ezxml_t x, std::string &s, const char *attr, const char *def) {
 	const char *cp = ezxml_cattr(x, attr);
-	s = cp ? cp : "";
+	s = cp ? cp : def;
 	return cp != NULL;
       }
       bool
@@ -664,6 +665,15 @@ namespace OCPI {
 	  if ((err = (*func)(xml, arg)))
 	    return err;
 	return 0;
+      }
+      const char *
+      ezxml_children(ezxml_t xml, const char *tag, const char* (*func)(ezxml_t child, void *arg),
+		     void *arg) {
+	const char *err;
+	for (ezxml_t cx = ezxml_cchild(xml, tag); cx; cx = ezxml_cnext(cx))
+	  if ((err = func(cx, arg)))
+	    return err;
+	return NULL;
       }
       const char *
       ezxml_attrs(ezxml_t xml, const char* (*func)(const char *name, const char *value, void *arg), void *arg) {
@@ -721,8 +731,12 @@ namespace OCPI {
       ezxml_parse_str(char *string, size_t len, ezxml_t &xml) {
 	if (!(xml = ::ezxml_parse_str(string, len)))
 	  return "Could not parse xml string";
-	else if (ezxml_error(xml)[0])
-	  return OU::esprintf("error parsing xml string': %s", ezxml_error(xml));
+	else if (ezxml_error(xml)[0]) {
+	  const char *err = OU::esprintf("error parsing xml string': %s", ezxml_error(xml));
+	  ::ezxml_free(xml);
+	  xml = NULL;
+	  return err;
+	}
 	return NULL;
       }
       bool

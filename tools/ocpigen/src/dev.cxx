@@ -11,13 +11,13 @@ DevSignalsPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
     Signal &s = **si;
     switch (s.m_direction) {
     case Signal::IN:
-      if (master)
+      if (m_master)
 	m_hasInputs = true;
       else
 	m_hasOutputs = true;
       break;
     case Signal::OUT:
-      if (master)
+      if (m_master)
 	m_hasOutputs = true;
       else
 	m_hasInputs = true;
@@ -55,14 +55,14 @@ emitRecordTypes(FILE *f) {
     fprintf(f,
 	    "  -- Record for DevSignals input signals for port \"%s\" of worker \"%s\"\n"
 	    "  alias worker_%s_in_t is work.%s_defs.%s_in_t;\n",
-	    name(), m_worker->m_implName, name(),
-	    m_worker->m_implName, name());
+	    cname(), m_worker->m_implName, cname(),
+	    m_worker->m_implName, cname());
   if (m_hasOutputs)
     fprintf(f,
 	    "  -- Record for DevSignals output signals for port \"%s\" of worker \"%s\"\n"
 	    "  alias worker_%s_out_t is work.%s_defs.%s_out_t;\n",
-	    name(), m_worker->m_implName, name(),
-	    m_worker->m_implName, name());
+	    cname(), m_worker->m_implName, cname(),
+	    m_worker->m_implName, cname());
 }
 
 void DevSignalsPort::
@@ -76,11 +76,11 @@ emitRecordInterface(FILE *f, const char *implName) {
 	    "\n"
 	    "  -- Record for the %s input signals for port \"%s\" of worker \"%s\"\n"
 	    "  type %s_t is record\n",
-	    master ? "master" : "slave", name(), implName, in.c_str());
+	    m_master ? "master" : "slave", cname(), implName, in.c_str());
     std::string last;
     for (SignalsIter si = m_signals.begin(); si != m_signals.end(); si++) {
       Signal &s = **si;
-      if (s.m_direction == (master ? Signal::IN : Signal::OUT))
+      if (s.m_direction == (m_master ? Signal::IN : Signal::OUT))
 	emitSignal(s.m_name.c_str(), f, VHDL, Signal::NONE, last,
 		   s.m_width ? (int)s.m_width : -1, 0, "", s.m_type);
     }
@@ -93,11 +93,11 @@ emitRecordInterface(FILE *f, const char *implName) {
 	    "\n"
 	    "  -- Record for the %s output signals for port \"%s\" of worker \"%s\"\n"
 	    "  type %s_t is record\n",
-	    master ? "master" : "slave", name(), implName, out.c_str());
+	    m_master ? "master" : "slave", cname(), implName, out.c_str());
     std::string last;
     for (SignalsIter si = m_signals.begin(); si != m_signals.end(); si++) {
       Signal &s = **si;
-      if (s.m_direction == (master ? Signal::OUT : Signal::IN))
+      if (s.m_direction == (m_master ? Signal::OUT : Signal::IN))
 	emitSignal(s.m_name.c_str(), f, VHDL, Signal::NONE, last,
 		   s.m_width ? (int)s.m_width : -1, 0, "", s.m_type);
     }
@@ -110,17 +110,13 @@ emitRecordInterface(FILE *f, const char *implName) {
 
 void DevSignalsPort::
 emitConnectionSignal(FILE *f, bool output, Language /*lang*/, std::string &signal) {
-  if (output && !haveOutputs() ||
-      !output && !haveInputs())
+  if ((output && !haveOutputs()) || (!output && !haveInputs()))
     return;
-  std::string tname;
+  std::string tname, suff, stype;
+  m_worker->addParamConfigSuffix(suff);
   OU::format(tname, output ? typeNameOut.c_str() : typeNameIn.c_str(), "");
-  std::string stype;
-  OU::format(stype, "%s.%s_defs.%s%s_t", m_worker->m_library, m_worker->m_implName,
-	     tname.c_str(),
-	     count > 1 ? "_array" : "");
-  //  if (count > 1)
-  //    OU::formatAdd(stype, "(0 to %zu)", count - 1);
+  OU::format(stype, "%s%s.%s_defs.%s%s_t", m_worker->m_library, suff.c_str(),
+	     m_worker->m_implName, tname.c_str(), m_count > 1 ? "_array" : "");
   fprintf(f,
 	  "  signal %s : %s;\n", signal.c_str(), stype.c_str());
 }
@@ -133,26 +129,26 @@ emitPortSignalsDir(FILE *f, bool output, const char *indent, bool &any, std::str
   OU::format(port, output ? typeNameOut.c_str() : typeNameIn.c_str(), "");
   std::string conn;
   if (other)
-    conn = master != output ?
+    conn = m_master != output ?
       other->m_connection.m_slaveName.c_str() : other->m_connection.m_masterName.c_str();
 
-  if (!master)
+  if (!m_master)
     output = !output; // signals that are included are not relevant
   for (SignalsIter si = m_signals.begin(); si != m_signals.end(); si++)
-    if ((*si)->m_direction == Signal::IN && !output ||
-	(*si)->m_direction == Signal::OUT && output)
-      for (size_t n = 0; n < count; n++) {
+    if (((*si)->m_direction == Signal::IN && !output) ||
+	((*si)->m_direction == Signal::OUT && output))
+      for (size_t n = 0; n < m_count; n++) {
 	std::string myindex;
-	if (count > 1)
+	if (m_count > 1)
 	  OU::format(myindex, "(%zu)", n);
 	std::string otherName = conn;
 	if (other) {
-	  if (other && other->m_instPort.m_port->count > count || count > 1)
+	  if ((other && other->m_instPort.m_port->m_count > m_count) || m_count > 1)
 	    OU::formatAdd(otherName, "(%zu)", n + other->m_index);
 	  OU::formatAdd(otherName, ".%s", (*si)->m_name.c_str());
 	} else
 	  otherName =
-	    master == ((*si)->m_direction == Signal::IN) ?
+	    m_master == ((*si)->m_direction == Signal::IN) ?
 	    ((*si)->m_width ? "(others => '0')" : "'0'") : "open";
 	doPrev(f, last, comment, hdlComment(VHDL));
 	fprintf(f, "%s%s%s.%s => %s",
@@ -166,7 +162,7 @@ emitPortSignalsDir(FILE *f, bool output, const char *indent, bool &any, std::str
 void DevSignalsPort::
 emitPortSignals(FILE *f, Attachments &atts, Language /*lang*/, const char *indent,
 		bool &any, std::string &comment, std::string &last, const char */*myComment*/,
-		OcpAdapt */*adapt*/) {
+		OcpAdapt */*adapt*/, std::string */*hasExprs*/, std::string &/*exprs*/) {
   Attachment *at = atts.front();
   Attachment *otherAt = NULL;
   if (at) {
@@ -191,7 +187,7 @@ emitExtAssignment(FILE *f, bool int2ext, const std::string &extName, const std::
   // We can't assume record type compatibility so we must assign individual signals.
   for (size_t n = 0; n < connCount; n++) {
     std::string ours = extName;
-    if (count > 1)
+    if (m_count > 1)
       OU::formatAdd(ours, "(%zu)", extAt.m_index + n);
     std::string theirs = intName;
     OU::formatAdd(theirs, "(%zu)", intAt.m_index + n);

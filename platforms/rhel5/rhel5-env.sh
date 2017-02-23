@@ -1,2 +1,4 @@
-export OCPI_SHARED_LIBRARIES_FLAGS="-m64 -m elf_x86_64"
+# This file is still here only for backward compatibility
+echo "Warning:  environment setup files should not include platforms/<platform>/<platform>-env.h"
+
 

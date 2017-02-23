@@ -1,7 +1,9 @@
 // Support for data ports
 
 #include <assert.h>
+#include "OcpiUtilMisc.h"
 #include "wip.h"
+#include "assembly.h"
 #include "hdl.h"
 
 const char *DataPort::
@@ -24,7 +26,7 @@ parseDistribution(ezxml_t x, Distribution &d, std::string &hash) {
       return OU::esprintf("The \"hashfield\" attribute cannot be used with there is no protocol");
     OU::Operation *o = m_protocol->m_operations;
     bool found = false;
-    for (unsigned n = 0; n < m_protocol->m_nOperations; n++)
+    for (unsigned nn = 0; nn < m_protocol->m_nOperations; nn++)
       if (o->findArg(hash.c_str()))
 	found = true;
     if (!found)
@@ -38,21 +40,38 @@ parseDistribution(ezxml_t x, Distribution &d, std::string &hash) {
 // Based on an existing spec port (sp).
 DataPort::
 DataPort(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *&err)
-  : OcpPort(w, x, sp, ordinal, type, NULL, err) {
-  assert(sp != NULL);
+  : OcpPort(w, x, sp, ordinal, type, NULL, err),
+    m_protocol(NULL), m_isProducer(false), m_isOptional(false), m_isBidirectional(false),
+    m_nOpcodes(0), m_minBufferCount(0), m_bufferSize(0), m_bufferSizePort(NULL),
+    m_isScalable(false), m_defaultDistribution(All), m_isPartitioned(false) {
   if (err)
     return;
-  DataPort *dp = static_cast<DataPort*>(sp);
-  m_protocol = dp->m_protocol;
-  dp->m_protocol = NULL;
-  m_isProducer      = dp->m_isProducer;
-  m_isOptional      = dp->m_isOptional;
-  m_nOpcodes        = dp->m_nOpcodes;
-  // The rest are really impl-only
-  m_isBidirectional = dp->m_isBidirectional;
-  m_minBufferCount  = dp->m_minBufferCount; 
-  m_bufferSize      = dp->m_bufferSize;
-  m_bufferSizePort  = dp->m_bufferSizePort;
+  if (sp) {
+    DataPort *dp = static_cast<DataPort*>(sp);
+    m_protocol = dp->m_protocol;
+    dp->m_protocol = NULL;
+    m_isProducer      = dp->m_isProducer;
+    m_isOptional      = dp->m_isOptional;
+    m_nOpcodes        = dp->m_nOpcodes;
+    // The rest are really impl-only
+    m_isBidirectional = dp->m_isBidirectional;
+    m_minBufferCount  = dp->m_minBufferCount; 
+    m_bufferSize      = dp->m_bufferSize;
+    m_bufferSizePort  = dp->m_bufferSizePort;
+  } else {
+    // FIXME: not really, this stuff is just better in spcm2 branch so don't merge this
+    assert(!ezxml_cattr(x, "protocol") && !ezxml_child(x, "protocol") &&
+	   !ezxml_child(x, "protocolsummary"));
+    if ((err = OE::getBoolean(m_xml, "Producer", &m_isProducer)))
+      return;
+    m_protocol = new Protocol(*this);
+    m_protocol->m_diverseDataSizes = true;
+    m_protocol->m_variableMessageLength = true;
+    m_protocol->m_maxMessageValues = 64*1024;
+    m_protocol->m_zeroLengthMessages = true;
+    m_protocol->m_isUnbounded = true;
+    m_nOpcodes = 256;
+  }
   // Scalability all defaults since it is not a spec issue.  Initialize from protocol
   m_opScaling.resize(m_protocol->m_nOperations, NULL);
   // Now we do implementation-specific initialization that will precede the
@@ -72,7 +91,8 @@ DataPort(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *
       (err = OE::getNumber(m_xml, "MinBuffers", &m_minBufferCount, 0, 0)) || // backward compat
       (err = OE::getNumber(m_xml, "MinBufferCount", &m_minBufferCount, 0, m_minBufferCount)) ||
       (err = OE::getNumber(m_xml, "Buffersize", &m_bufferSize, 0,
-			   m_protocol ? m_protocol->m_defaultBufferSize : 0)))
+			   m_bufferSize ? m_bufferSize :
+			   (m_protocol ? m_protocol->m_defaultBufferSize : 0))))
     return;
   // Data width can be unspecified, specified explicitly, or specified with an expression
   if (!m_dataWidthFound) {
@@ -80,6 +100,20 @@ DataPort(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *
       m_dataWidth = (unsigned)w.m_defaultDataWidth;
     else
       m_dataWidth = m_protocol->m_dataValueWidth;  // or granularity?
+    if (!m_bwFound)
+      m_byteWidth = m_dataWidth;
+  } else if (!m_protocol->m_dataValueWidth && !m_protocol->nOperations())
+    m_protocol->m_dataValueWidth = m_dataWidth;
+  if (m_dataWidth >= m_protocol->m_dataValueWidth) {
+    if (m_dataWidth % m_protocol->m_dataValueWidth) {
+      err = OU::esprintf("DataWidth (%zu) on port '%s' not a multiple of DataValueWidth (%zu)",
+			 m_dataWidth, cname(), m_protocol->m_dataValueWidth);
+      return;
+    }
+  } else if (m_protocol->m_dataValueWidth % m_dataWidth) {
+    err =  OU::esprintf("DataValueWidth (%zu) on port '%s' not a multiple of DataWidth (%zu)",
+			m_protocol->m_dataValueWidth, cname(), m_dataWidth);
+    return;
   }
   if (!m_impreciseBurst && !m_preciseBurst)
     m_impreciseBurst = true;
@@ -161,10 +195,10 @@ DataPort(Worker &w, ezxml_t x, int ordinal, const char *&err)
   if (err)
     return;
   // Spec initialization
-  if (type == WDIPort &&
-      (err = OE::checkAttrs(m_xml, SPEC_DATA_PORT_ATTRS, (void*)0)) ||
-      (err = OE::getBoolean(m_xml, "Producer", &m_isProducer)) ||
-      (err = OE::getBoolean(m_xml, "Optional", &m_isOptional)))
+  if (m_type == WDIPort &&
+      ((err = OE::checkAttrs(m_xml, SPEC_DATA_PORT_ATTRS, (void*)0)) ||
+       (err = OE::getBoolean(m_xml, "Producer", &m_isProducer)) ||
+       (err = OE::getBoolean(m_xml, "Optional", &m_isOptional))))
     return;
   const char *protocolAttr = ezxml_cattr(m_xml, "protocol");
   ezxml_t pSum;
@@ -178,7 +212,7 @@ DataPort(Worker &w, ezxml_t x, int ordinal, const char *&err)
       err = "cannot have both Protocol and ProtocolSummary";
       return;
     }
-    if ((err = OE::checkAttrs(pSum, OCPI_PROTOCOL_SUMMARY_ATTRS, "NumberOfOpcodes",
+    if ((err = OE::checkAttrs(pSum, OCPI_PROTOCOL_SUMMARY_ATTRS, "NumberOfOpcodes", "buffersize",
 			      (void*)0)) ||
 	(err = OE::getNumber(pSum, "NumberOfOpcodes", &m_nOpcodes, 0, 1)) ||
 	(err = m_protocol->parseSummary(pSum)))
@@ -239,7 +273,7 @@ DataPort(const DataPort &other, Worker &w , std::string &name, size_t count,
     if (!role->m_provider) {
       if (!other.m_isProducer && !other.m_isBidirectional) {
 	err = OU::esprintf("external producer role incompatible " "with port %s of worker %s",
-			   other.name(), other.m_worker->m_implName);
+			   other.cname(), other.m_worker->m_implName);
 	return;
       }
       m_isProducer = true;
@@ -248,13 +282,13 @@ DataPort(const DataPort &other, Worker &w , std::string &name, size_t count,
       if (!other.m_isBidirectional) {
 	  err = OU::esprintf("external bidirectional role incompatible "
 			     "with port %s of worker %s",
-			     other.name(), other.m_worker->m_implName);
+			     other.cname(), other.m_worker->m_implName);
       }
     } else if (role->m_provider) {
       if (other.m_isProducer) {
 	  err = OU::esprintf("external consumer role incompatible "
 			     "with port %s of worker %s",
-			     other.name(), other.m_worker->m_implName);
+			     other.cname(), other.m_worker->m_implName);
       }
       m_isBidirectional = false;
     }
@@ -294,10 +328,10 @@ finalize() {
   if (m_dataWidth >= m_protocol->m_dataValueWidth) {
     if (m_dataWidth % m_protocol->m_dataValueWidth)
       return OU::esprintf("DataWidth (%zu) on port '%s' not a multiple of DataValueWidth (%zu)",
-			  m_dataWidth, name(), m_protocol->m_dataValueWidth);
+			  m_dataWidth, cname(), m_protocol->m_dataValueWidth);
   } else if (m_protocol->m_dataValueWidth % m_dataWidth)
     return OU::esprintf("DataValueWidth (%zu) on port '%s' not a multiple of DataWidth (%zu)",
-			m_protocol->m_dataValueWidth, name(), m_dataWidth);
+			m_protocol->m_dataValueWidth, cname(), m_dataWidth);
   // If messages are always a multiple of datawidth and we don't have zlms, bytes are datawidth
   size_t granuleWidth =
     m_protocol->m_dataValueWidth * m_protocol->m_dataValueGranularity;
@@ -311,9 +345,15 @@ finalize() {
     return "Specified ByteWidth does not divide evenly into specified DataWidth";
   // Check if this port requires endianness
   // Either the granule is smaller than or not a multiple of data path width
-  if (granuleWidth < m_dataWidth || m_dataWidth && granuleWidth % m_dataWidth)
+  if (granuleWidth < m_dataWidth || (m_dataWidth && granuleWidth % m_dataWidth))
     m_worker->m_needsEndian = true;
   return NULL;
+}
+
+const char *DataPort::
+finalizeExternal(Worker &aw, Worker &/*iw*/, InstancePort &ip,
+		 bool &/*cantDataResetWhileSuspended*/) {
+  return ip.m_externalize ? aw.m_assembly->externalizePort(ip, cname(), NULL) : NULL;
 }
 
 void DataPort::
@@ -322,7 +362,7 @@ emitPortDescription(FILE *f, Language lang) const {
   const char *comment = hdlComment(lang);
   fprintf(f, " %s  This interface is a data interface acting as %s\n",
 	  comment, m_isProducer ? "producer" : "consumer");
-  fprintf(f, "  %s   Protocol: \"%s\"\n", comment, m_protocol->name().c_str());
+  fprintf(f, "  %s   Protocol: \"%s\"\n", comment, m_protocol->cname());
   fprintf(f, "  %s   DataValueWidth: %zu\n", comment, m_protocol->m_dataValueWidth);
   fprintf(f, "  %s   DataValueGranularity: %zu\n", comment, m_protocol->m_dataValueGranularity);
   fprintf(f, "  %s   DiverseDataSizes: %s\n", comment, BOOL(m_protocol->m_diverseDataSizes));
@@ -339,34 +379,33 @@ emitPortDescription(FILE *f, Language lang) const {
 }
 
 void DataPort::
-emitRecordInterfaceConstants(FILE */*f*/) {
-  // Before emitting the record, define the constants for the data path width.
-#if 0
-  fprintf(f,
-	  "\n"
-	  "  -- Constant declarations related to data width for port \"%s\"\n"
-	  "  constant ocpi_port_%s_data_width : natural;\n"
-	  "  constant ocpi_port_%s_MData_width : natural;\n"
-	  "  constant ocpi_port_%s_MByteEn_width : natural;\n"
-	  "  constant ocpi_port_%s_MDataInfo_width : natural;\n",
-	  name(), name(), name(), name(), name());
-#endif
+emitRecordInterfaceConstants(FILE *f) {
+  OcpPort::emitRecordInterfaceConstants(f);
+  // This signal is available to worker code.
+  fprintf(f, "  constant ocpi_port_%s_data_width : natural;\n", cname());
 }
-
+#if 1
+void DataPort::
+emitInterfaceConstants(FILE *f, Language lang) {
+  OcpPort::emitInterfaceConstants(f, lang);
+  emitConstant(f, "ocpi_port_%s_data_width", lang, m_dataWidth);
+}
+#endif
 #if 1
 void DataPort::
 emitRecordInterface(FILE *f, const char *implName) {
+#if 0
 
   std::string width = m_dataWidthExpr;
   if (m_dataWidthExpr.empty())
     OU::format(width, "%zu", m_dataWidth);
   else
     OU::format(width, "to_integer(%s)", m_dataWidthExpr.c_str());
-  fprintf(f, "  constant ocpi_port_%s_data_width : natural := %s;\n", name(), width.c_str());
+  fprintf(f, "  constant ocpi_port_%s_data_width : natural := %s;\n", cname(), width.c_str());
   vectorWidth(&ocpSignals[OCP_MData], width, VHDL, false, true);
-  fprintf(f, "  constant ocpi_port_%s_MData_width : natural := %s;\n", name(), width.c_str());
+  fprintf(f, "  constant ocpi_port_%s_MData_width : natural := %s;\n", cname(), width.c_str());
   vectorWidth(&ocpSignals[OCP_MByteEn], width, VHDL, false, true);
-  fprintf(f, "  constant ocpi_port_%s_MByteEn_width : natural := %s;\n", name(), width.c_str());
+  fprintf(f, "  constant ocpi_port_%s_MByteEn_width : natural := %s;\n", cname(), width.c_str());
   vectorWidth(&ocpSignals[OCP_MDataInfo], width, VHDL, false, true);
   std::string extra;
   size_t n = extraDataInfo();
@@ -375,7 +414,8 @@ emitRecordInterface(FILE *f, const char *implName) {
   else
     extra = width;
   fprintf(f, "  constant ocpi_port_%s_MDataInfo_width : natural := %s;\n",
-	  name(), extra.c_str());
+	  cname(), extra.c_str());
+#endif
   OcpPort::emitRecordInterface(f, implName);
 }
 #endif
@@ -408,7 +448,7 @@ emitRecordDataTypes(FILE *f) {
 	unsigned nn;
 	for (nn = 0; nn < prot->nOperations(); nn++, op++)
 	  fprintf(f, "%s    %s_%s_op_e", nn ? ",\n" : "",
-		  prot->m_name.c_str(), op->name().c_str());
+		  prot->m_name.c_str(), op->cname());
 	// If the protocol opcodes do not fill the space, fill it
 	if (nn < maxOpcodes)
 	  for (unsigned o = 0; nn < m_nOpcodes; nn++, o++)
@@ -417,7 +457,7 @@ emitRecordDataTypes(FILE *f) {
       }
     } else {
       fprintf(f, "  subtype %s_OpCode_t is std_logic_vector(%zu downto 0); -- for %zu opcodes\n",
-	      name(), ceilLog2(m_nOpcodes) - 1, m_nOpcodes);
+	      cname(), OU::ceilLog2(m_nOpcodes) - 1, m_nOpcodes);
     }
   }
 }
@@ -439,63 +479,63 @@ emitVHDLShellPortMap(FILE *f, std::string &last) {
   fprintf(f,
 	  "%s    %s_in.reset => %s_reset,\n"
 	  "    %s_in.ready => %s_ready,\n",
-	  last.c_str(), name(), name(), name(), name());
+	  last.c_str(), cname(), cname(), cname(), cname());
   if (masterIn()) {
     if (m_dataWidth)
       fprintf(f,
 	      "    %s_in.data => %s_data,\n",
-	      name(), name());
+	      cname(), cname());
     if (ocp.MByteEn.value)
-      fprintf(f, "    %s_in.byte_enable => %s_byte_enable,\n", name(), name());
+      fprintf(f, "    %s_in.byte_enable => %s_byte_enable,\n", cname(), cname());
     if (m_nOpcodes > 1)
-      fprintf(f, "    %s_in.opcode => %s_opcode,\n", name(), name());
+      fprintf(f, "    %s_in.opcode => %s_opcode,\n", cname(), cname());
     fprintf(f,
 	    "    %s_in.som => %s_som,\n"
 	    "    %s_in.eom => %s_eom,\n",
-	    name(), name(), name(), name());
+	    cname(), cname(), cname(), cname());
     if (m_dataWidth)
       fprintf(f,
 	      "    %s_in.valid => %s_valid,\n",
-	      name(), name());
+	      cname(), cname());
     if (m_isPartitioned)
       fprintf(f,
 	      "    %s_in.part_size   => %s_part_size,\n"
 	      "    %s_in.part_offset => %s_part_offset,\n"
 	      "    %s_in.part_start  => %s_part_start,\n"
 	      "    %s_in.part_ready  => %s_part_ready,\n",
-	      name(), name(), name(), name(), name(),
-	      name(), name(), name());
+	      cname(), cname(), cname(), cname(), cname(),
+	      cname(), cname(), cname());
     fprintf(f,
 	    "    %s_out.take => %s_take",
-	    name(), name());
+	    cname(), cname());
     if (m_isPartitioned)
       fprintf(f,
 	      ",\n"
 	      "    %s_out.part_take  => %s_part_take",
-	      name(), name());
+	      cname(), cname());
     last = ",\n";
   } else {
     if (m_isPartitioned)
       fprintf(f,
-	      "    %s_in.part_ready   => %s_part_ready,\n", name(), name());
+	      "    %s_in.part_ready   => %s_part_ready,\n", cname(), cname());
     fprintf(f,
 	    "    %s_out.give => %s_give,\n",
-	    name(), name());
+	    cname(), cname());
     if (m_dataWidth)
       fprintf(f,
-	      "    %s_out.data => %s_data,\n", name(), name());
+	      "    %s_out.data => %s_data,\n", cname(), cname());
     if (ocp.MByteEn.value)
-      fprintf(f, "    %s_out.byte_enable => %s_byte_enable,\n", name(), name());
+      fprintf(f, "    %s_out.byte_enable => %s_byte_enable,\n", cname(), cname());
     if (ocp.MReqInfo.value)
-      fprintf(f, "    %s_out.opcode => %s_opcode,\n", name(), name());
+      fprintf(f, "    %s_out.opcode => %s_opcode,\n", cname(), cname());
     fprintf(f,
 	    "    %s_out.som => %s_som,\n"
 	    "    %s_out.eom => %s_eom,\n",
-	    name(), name(), name(), name());
+	    cname(), cname(), cname(), cname());
     if (m_dataWidth)
       fprintf(f,
 	      "    %s_out.valid => %s_valid",
-	      name(), name());
+	      cname(), cname());
     if (m_isPartitioned)
       fprintf(f,
 	      ",\n"
@@ -503,8 +543,8 @@ emitVHDLShellPortMap(FILE *f, std::string &last) {
 	      "    %s_out.part_offset => %s_part_offset,\n"
 	      "    %s_out.part_start  => %s_part_start,\n"
 	      "    %s_out.part_give   => %s_part_give",
-	      name(), name(), name(),
-	      name(), name(), name(), name(), name());
+	      cname(), cname(), cname(),
+	      cname(), cname(), cname(), cname(), cname());
     last = ",\n";
   }
 }
@@ -516,17 +556,17 @@ emitImplSignals(FILE *f) {
 	  "  signal %s_%s  : Bool_t;\n"
 	  "  signal %s_ready : Bool_t;\n"
 	  "  signal %s_reset : Bool_t; -- this port is being reset from the outside\n",
-	  name(), masterIn() ? "take" : "give", name(), name());
+	  cname(), masterIn() ? "take" : "give", cname(), cname());
   if (m_dataWidth)
     fprintf(f,
 	    "  signal %s_data  : std_logic_vector(ocpi_port_%s_data_width-1 downto 0);\n",
-	    name(), name());
+	    cname(), cname());
   if (ocp.MByteEn.value)
     fprintf(f, "  signal %s_byte_enable: std_logic_vector(ocpi_port_%s_MByteEn_width-1 downto 0);\n",
-	    name(), name());
+	    cname(), cname());
   if (m_preciseBurst)
     fprintf(f, "  signal %s_burst_length: std_logic_vector(%zu downto 0);\n",
-	    name(), ocp.MBurstLength.width - 1);
+	    cname(), ocp.MBurstLength.width - 1);
   if (m_nOpcodes > 1) {
     fprintf(f,
 	    "  -- The strongly typed enumeration signal for the port\n"
@@ -534,16 +574,16 @@ emitImplSignals(FILE *f) {
 	    "  -- The weakly typed temporary signals\n"
 	    "  signal %s_opcode_temp : std_logic_vector(%zu downto 0);\n"
 	    "  signal %s_opcode_pos  : integer;\n",
-	    name(), m_protocol && m_protocol->operations() ?
-	    m_protocol->m_name.c_str() : name(), name(), ocp.MReqInfo.width - 1, name());
+	    cname(), m_protocol && m_protocol->operations() ?
+	    m_protocol->m_name.c_str() : cname(), cname(), ocp.MReqInfo.width - 1, cname());
   }
   fprintf(f,
 	  "  signal %s_som   : Bool_t;    -- valid eom\n"
 	  "  signal %s_eom   : Bool_t;    -- valid som\n",
-	  name(), name());
+	  cname(), cname());
   if (m_dataWidth)
     fprintf(f,
-	    "  signal %s_valid : Bool_t;   -- valid data\n", name());
+	    "  signal %s_valid : Bool_t;   -- valid data\n", cname());
   if (m_isPartitioned)
     fprintf(f,
 	    "  signal %s_part_size        : UShort_t;\n"
@@ -551,12 +591,12 @@ emitImplSignals(FILE *f) {
 	    "  signal %s_part_start       : Bool_t;\n"
 	    "  signal %s_part_ready       : Bool_t;\n"
 	    "  signal %s_part_%s        : Bool_t;\n",
-	    name(), name(), name(), name(), name(), masterIn() ? "take" : "give");
+	    cname(), cname(), cname(), cname(), cname(), masterIn() ? "take" : "give");
 }
 
 void DataPort::
 emitXML(FILE *f) {
-  fprintf(f, "  <port name=\"%s\" numberOfOpcodes=\"%zu\"", name(), m_nOpcodes);
+  fprintf(f, "  <port name=\"%s\" numberOfOpcodes=\"%zu\"", cname(), m_nOpcodes);
   if (m_isBidirectional)
     fprintf(f, " bidirectional='1'");
   else if (!m_isProducer)
@@ -564,7 +604,7 @@ emitXML(FILE *f) {
   if (m_minBufferCount)
     fprintf(f, " minBufferCount=\"%zu\"", m_minBufferCount);
   if (m_bufferSizePort)
-    fprintf(f, " buffersize='%s'", m_bufferSizePort->name());
+    fprintf(f, " buffersize='%s'", m_bufferSizePort->cname());
   else if (m_bufferSize)
     fprintf(f, " bufferSize='%zu'", m_bufferSize);
   if (m_isOptional)
@@ -577,9 +617,9 @@ emitXML(FILE *f) {
 // static method
 const char *DataPort::
 adjustConnection(const char *masterName,
-		 Port &prodPort, OcpAdapt *prodAdapt,
-		 Port &consPort, OcpAdapt *consAdapt,
-		 Language lang) {
+		 Port &prodPort, OcpAdapt *prodAdapt, bool &prodHasExpr,
+		 Port &consPort, OcpAdapt *consAdapt, bool &consHasExpr,
+		 Language lang, size_t &unused) {
   assert(prodPort.isData() && consPort.isData());
   DataPort &prod = *static_cast<DataPort*>(&prodPort);
   DataPort &cons = *static_cast<DataPort*>(&consPort);
@@ -593,10 +633,10 @@ adjustConnection(const char *masterName,
       return "dataValueGranularity incompatibility for connection";
     if (prod.m_protocol->m_maxMessageValues > cons.m_protocol->m_maxMessageValues)
       return "maxMessageValues incompatibility for connection";
-    if (prod.m_protocol->name().size() && cons.m_protocol->name().size() &&
-	prod.m_protocol->name() != cons.m_protocol->name())
+    if (prod.m_protocol->cname()[0] && cons.m_protocol->cname()[0] &&
+	strcasecmp(prod.m_protocol->cname(), cons.m_protocol->cname()))
       return OU::esprintf("protocol incompatibility: producer: %s vs. consumer: %s",
-			  prod.m_protocol->name().c_str(), cons.m_protocol->name().c_str());
+			  prod.m_protocol->cname(), cons.m_protocol->cname());
     if (prod.m_protocol->nOperations() && cons.m_protocol->nOperations() && 
 	prod.m_protocol->nOperations() != cons.m_protocol->nOperations())
       return "numberOfOpcodes incompatibility for connection";
@@ -607,7 +647,7 @@ adjustConnection(const char *masterName,
     if (prod.m_protocol->m_zeroLengthMessages && !cons.m_protocol->m_zeroLengthMessages)
       return "zero length message incompatibility";
   }
-  if (prod.type != cons.type)
+  if (prod.m_type != cons.m_type)
     return "profile incompatibility";
   if (prod.m_dataWidth != cons.m_dataWidth)
     return OU::esprintf("dataWidth incompatibility. producer %zu consumer %zu",
@@ -615,18 +655,31 @@ adjustConnection(const char *masterName,
   if (cons.m_continuous && !prod.m_continuous)
     return "producer is not continuous, but consumer requires it";
   // Profile-specific error checks and adaptations
-  return prod.adjustConnection(cons, masterName, lang, prodAdapt, consAdapt);
+  const char *err = prod.adjustConnection(cons, masterName, lang, prodAdapt, consAdapt, unused);
+  if (err)
+    return err;
+  // Figure out if this instance port has signal adaptations that will require a temp
+  // signal bundle for the port.
+  if (lang == VHDL)
+    for (unsigned n = 0; n < N_OCP_SIGNALS; n++) {
+      if (prodAdapt[n].isExpr)
+	prodHasExpr = true;
+      if (consAdapt[n].isExpr)
+	consHasExpr = true;
+    }
+  return NULL;
 }
 const char *DataPort::
 finalizeHdlDataPort() {
   const char *err = NULL;
-  if (type == WDIPort) {
+  if (m_type == WDIPort) {
     // Do it via XML so we aren't duplicating other code
     char *wsi;
-    asprintf(&wsi, "<streaminterface name='%s' dataWidth='%zu' impreciseburst='true'/>",
-	     name(), 
-	     m_worker->m_defaultDataWidth >= 0 ?
-	     m_worker->m_defaultDataWidth : m_protocol->m_dataValueWidth);
+    ocpiCheck(asprintf(&wsi,
+		       "<streaminterface name='%s' dataWidth='%zu' impreciseburst='true'/>",
+		       cname(), 
+		       m_worker->m_defaultDataWidth >= 0 ?
+		       m_worker->m_defaultDataWidth : m_protocol->m_dataValueWidth) > 0);
     ezxml_t wsix = ezxml_parse_str(wsi, strlen(wsi));
     Port *p = createPort<WsiPort>(*m_worker, wsix, this, -1, err);
     if (!err)
@@ -636,7 +689,7 @@ finalizeHdlDataPort() {
 }
 
 const char *DataPort::
-adjustConnection(Port &, const char *, Language, OcpAdapt *, OcpAdapt *) {
+adjustConnection(Port &, const char *, Language, OcpAdapt *, OcpAdapt *, size_t &) {
   assert("Cannot adjust a generic data connection" == 0);
 }
 
@@ -647,11 +700,11 @@ emitOpcodes(FILE *f, const char *pName, Language lang) {
     OU::Operation *op = prot->operations();
     fprintf(f,
 	    "  %s Opcode/operation value declarations for protocol \"%s\" on interface \"%s\"\n",
-	    hdlComment(lang), prot->m_name.c_str(), name());
+	    hdlComment(lang), prot->m_name.c_str(), cname());
     for (unsigned n = 0; n < prot->nOperations(); n++, op++)
       if (lang != VHDL)
 	fprintf(f, "  localparam [%sOpCodeWidth - 1 : 0] %s%s_Op = %u;\n",
-		pName, pName, op->name().c_str(), n);
+		pName, pName, op->cname(), n);
   }
 }
 
@@ -661,7 +714,7 @@ fixDataConnectionRole(OU::Assembly::Role &role) {
     if (!m_isBidirectional &&
 	(role.m_bidirectional || m_isProducer == role.m_provider))
       return OU::esprintf("Role of port %s of worker %s in connection incompatible with port",
-			name(), m_worker->m_implName);
+			cname(), m_worker->m_implName);
   } else {
     role.m_provider = !m_isProducer;
     role.m_bidirectional = m_isBidirectional;
@@ -690,6 +743,7 @@ resolveExpressions(OCPI::Util::IdentResolver &ir) {
   return (err = OcpPort::resolveExpressions(ir)) ? err : finalize();
 }
 
+#if 0
 void DataPort::
 emitVerilogPortParameters(FILE *f) {
   std::string width = m_dataWidthExpr;
@@ -707,21 +761,21 @@ emitVerilogPortParameters(FILE *f) {
 	  "    ocpi_port_%s_data_width != %zu && %zu != 8 ?\n"
 	  "    (8 * ocpi_port_%s_data_width) / %zu :\n"
 	  "    ocpi_port_%s_data_width;\n",
-	  name(), width.c_str(), name(), name(), name(), m_byteWidth, m_byteWidth, name(),
-	  m_byteWidth, name());
+	  cname(), width.c_str(), cname(), cname(), cname(), m_byteWidth, m_byteWidth, cname(),
+	  m_byteWidth, cname());
   if (ocp.MByteEn.value)
     fprintf(f,
 	    "  localparam ocpi_port_%s_MByteEn_width = ocpi_port_%s_data_width / %zu;\n",
-	    name(), name(), m_byteWidth);
+	    cname(), cname(), m_byteWidth);
   if (ocp.MDataInfo.value)
     fprintf(f,
 	    "  localparam ocpi_port_%s_MDataInfo_width = \n"
 	    "    ocpi_port_%s_data_width != %zu && %zu != 8 ?\n"
 	    "    ocpi_port_%s_data_width - ((8 * ocpi_port_%s_data_width) / %zu) :\n"
 	    "    ocpi_port_%s_data_width;\n",
-	    name(), name(), m_byteWidth, m_byteWidth, name(), name(), m_byteWidth, name());
+	    cname(), cname(), m_byteWidth, m_byteWidth, cname(), cname(), m_byteWidth, cname());
 }
-
+#endif
 Overlap::
 Overlap()
   : m_left(0), m_right(0), m_padding(None) {

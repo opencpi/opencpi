@@ -153,8 +153,7 @@ namespace OCPI {
        *
        * \pre The socket shall be connected.
        */
-
-      size_t recv (char * buffer, size_t amount, unsigned timeoutms = 0)
+      size_t recv(char * buffer, size_t amount, unsigned timeoutms = 0, bool all = false)
         throw (std::string);
       size_t recvfrom(char  *buf, size_t amount, int flags,
 		      char *  src_addr, size_t *addrlen, unsigned timeoutms = 0)
@@ -163,26 +162,23 @@ namespace OCPI {
       /**
        * Sends data to the peer.
        *
-       * Blocks until at least one octet can be written to the socket. Then
-       * writes as much data as is possible without blocking, up to at most
-       * \a amount octets.
+       * Keeps trying until all bytes are sent, and loops if interrupted with EINTR errors
        *
        * \param[in] data    The data to send.
        * \param[in] amount  The maximum number of octets to send to the peer.
-       * \return       The number of octets actually written, which may be
-       *               less than \a amount.
+       * \return            None
        *
        * \throw std::string In case of error, such as a broken connection.
        *
        * \pre The socket shall be connected.
        */
 
-      size_t send (const char * data, size_t amount)
+      size_t send(const char *data, size_t amount)
         throw (std::string);
-      size_t sendmsg (const void * iovect, unsigned int flags )
+      size_t sendmsg(const void * iovect, unsigned int flags )
         throw (std::string);
-      size_t sendto (const char * data, size_t amount,
-		     int flags,  char * src_addr, size_t addrlen)			  
+      size_t sendto(const char * data, size_t amount, int flags,  char * src_addr,
+		    size_t addrlen)			  
 	throw (std::string);
 
       /**

@@ -6,7 +6,6 @@
 #include <cassert>
 #include "OcpiUtilEzxml.h"
 #include "OcpiUtilAssembly.h"
-#include "OcpiExprEvaluator.h"
 #include "ocpigen.h"
 
 // FIXME: this will not be needed when we fully migrate to classes...
@@ -26,6 +25,7 @@ enum WIPType {
   PropPort,     // raw property port for shared SPI/I2C
   RCCPort,      // An RCC port
   DevSigPort,   // a port between devices
+  SDPPort,
   NWIPTypes
 };
 
@@ -40,6 +40,7 @@ struct Attachment;
 typedef std::list<Attachment*> Attachments;
 typedef Attachments::const_iterator AttachmentsIter;
 
+struct InstancePort;
 // FIXME: have "implPort" class??
 class Port {
  protected:
@@ -49,11 +50,11 @@ public:
   Worker *m_worker;    // spec: FIXME: name this a reference 
   std::string m_name;  // spec:
   size_t m_ordinal;    // spec:
-  size_t count;        // spec: FIXME: can this change in impl???
+  size_t m_count;      // spec: FIXME: can this change in impl???
   std::string m_countExpr;
-  bool master;         // spec
+  bool m_master;       // spec
   ezxml_t m_xml;       // spec or impl
-  WIPType type;        // spec with WDI, with limited types, then impl ports
+  WIPType m_type;      // spec with WDI, with limited types, then impl ports
   // These members are for impl ports
   std::string fullNameIn, fullNameOut; // used during HDL generation
   std::string typeNameIn, typeNameOut; // impl: used during HDL generation
@@ -75,11 +76,13 @@ public:
   virtual bool masterIn() const;  // Are master signals inputs at this port?
   void addMyClock();
   virtual const char *checkClock();
-  inline const char *name() const { return m_name.c_str(); }
+  inline const char *cname() const { return m_name.c_str(); }
   const char *doPattern(int n, unsigned wn, bool in, bool master, std::string &suff,
 			bool port = false);
-  virtual void emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inWorker,
-				const char *defaultIn = NULL, const char *defaultOut = NULL);
+  void emitConstant(FILE *f, const char *nameFormat, Language lang, size_t n) const;
+  virtual void emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inRecord,
+				bool inPackage, bool inWorker, const char *defaultIn = NULL,
+				const char *defaultOut = NULL);
   virtual bool haveInputs() const { return true; }
   virtual bool haveWorkerInputs() const { return true; }
   virtual bool haveOutputs() const { return true; }
@@ -108,12 +111,13 @@ public:
   virtual void emitRecordOutputs(FILE *f);
   virtual void emitRecordInterface(FILE *f, const char *implName);
   virtual void emitRecordInterfaceConstants(FILE *f);
+  virtual void emitInterfaceConstants(FILE *f, Language lang);
   virtual void emitRecordArray(FILE *f);
   //  virtual void emitWorkerEntitySignals(FILE *f, std::string &last, unsigned maxPropName);
   virtual void emitSignals(FILE *f, Language lang, std::string &last, bool inPackage,
 			   bool inWorker, bool convert = false);
   virtual void emitVerilogSignals(FILE *f);
-  virtual void emitVerilogPortParameters(FILE *f);
+  //  virtual void emitVerilogPortParameters(FILE *f);
   virtual void emitVHDLShellPortMap(FILE *f, std::string &last);
   virtual void emitVHDLSignalWrapperPortMap(FILE *f, std::string &last);
   virtual void emitVHDLRecordWrapperSignals(FILE *f);
@@ -122,7 +126,11 @@ public:
   virtual void emitConnectionSignal(FILE *f, bool output, Language lang, std::string &signal);
   virtual void emitPortSignals(FILE *f, Attachments &atts, Language lang,
 			       const char *indent, bool &any, std::string &comment,
-			       std::string &last, const char *myComment, OcpAdapt *adapt);
+			       std::string &last, const char *myComment, OcpAdapt *adapt,
+			       std::string *signalIn, std::string &exprs);
+  virtual void emitPortSignal(FILE *f, bool any, const char *indent, const std::string &fName,
+			      const std::string &aName, const std::string &index, bool output,
+			      const Port *signalPort, bool external);
   virtual const char *fixDataConnectionRole(OCPI::Util::Assembly::Role &role);
   virtual const char *doPatterns(unsigned nWip, size_t &maxPortTypeName);
   virtual void emitXML(FILE *f);
@@ -138,6 +146,8 @@ public:
 				 const Attachment &intAt, size_t count) const;
   virtual const char *masterMissing() const { return "(others => '0')"; }
   virtual const char *slaveMissing() const { return "(others => '0')"; }
+  virtual const char *finalizeExternal(Worker &aw, Worker &iw, InstancePort &ip,
+				       bool &cantDataResetWhileSuspended);
 };
 
 // Factory function template for port types

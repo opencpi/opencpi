@@ -1,0 +1,29 @@
+#!/bin/sh
+case $0 in /*) ME=$0 ;; *) ME=$BASH_SOURCE ; [ "$ME" = "" ] && ME=`which $0`;; esac
+DIR=$(dirname $ME)
+OS=$OCPI_TOOL_OS
+if test "$OS" = ""; then
+  OS=`uname -s|tr A-Z a-z`
+fi
+usage () {
+  echo Usage is: `basename $0` \[ load \| unload \| reload \| status \]
+  exit 1
+}
+if [ $# = 0 -o $# != 1 ] ; then
+  usage
+fi
+SCR=ocpi_${OS}_driver
+SDIR=$DIR
+[ ! -r $SDIR/$SCR ] && SDIR=$DIR/../scripts
+[ ! -r $SDIR/$SCR ] && SDIR=$DIR/../../scripts
+[ ! -r $SDIR/$SCR ] && {
+  echo There is no driver loading/unloading support for this system \(${OS}\).
+  exit 1
+}
+OCPI_BOOTSTRAP=$SDIR/ocpibootstrap.sh; . $OCPI_BOOTSTRAP
+
+if [ $1 = load -o $1 = unload -o $1 = reload -o $1 = status ] ; then
+  exec sh $SDIR/ocpi_${OS}_driver $1
+fi
+
+usage

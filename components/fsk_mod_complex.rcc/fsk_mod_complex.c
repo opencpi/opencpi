@@ -41,7 +41,7 @@ doFsk( State *myState,  Fsk_mod_complexInData *inData,  Fsk_mod_complexOutIq  *o
       const double
 	pi_2 = 0x3fff,
 	one  = 0x3fff;
-      int16_t rdiv, idiv, angle;
+      int16_t rdiv = 0, idiv = 0, angle;
       if (myState->accum > pi_2) {
 	rval = 0;
 	ival = one;

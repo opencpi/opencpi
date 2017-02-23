@@ -56,6 +56,7 @@
 #include "OcpiParentChild.h"
 #include "OcpiPValue.h"
 #include "OcpiOsAssert.h"
+#include "OcpiUtilMisc.h" // Singleton
 #include "ezxml.h"
 
 namespace OCPI {
@@ -65,26 +66,6 @@ namespace OCPI {
     using OCPI::Util::Sibling;
     using OCPI::Util::Parent;
     using OCPI::Util::PValue;
-    // A convenience template for singletons possibly created at static construction
-    // time.
-    // FIXME: put this in some nice utility place since it is not just for drivers
-    extern void debug_hook();
-    template <class S> class Singleton {
-    public:
-      static S &getSingleton() {
-	debug_hook();
-	static S *theSingleton;
-	// FIXME: put this static mutex into OCPI:OS somehow
-	static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-	// This is hyper-conservative since static constructors are run in a single thread.
-	// But C++ doesn't actually say that...
-	ocpiCheck(pthread_mutex_lock(&mutex) == 0);
-	if (!theSingleton)
-	  theSingleton = new S;
-	ocpiCheck(pthread_mutex_unlock(&mutex) == 0);
-	return *theSingleton;
-      }
-    };
     class Manager;
     // The concrete owner of all driver managers, not inherited.
     // Created on demand when the first manager is created
@@ -94,16 +75,15 @@ namespace OCPI {
       OCPI::OS::Mutex m_mutex;  // for thread-safe configuration
       std::string m_configFile; // system configuration file
       bool m_configured;        // to do lazy (and avoid redundant) configuration
-      bool m_doNotDiscover;
       ezxml_t m_xml;
       static bool s_exiting;
     public:
       ManagerManager();
       ~ManagerManager();
       static bool exiting() { return s_exiting; }
-      void configureOnce(const char *cf = NULL);
+      void configureOnce(const char *cf = NULL, const OCPI::Util::PValue *params = NULL);
       // This is public only for debugging, etc.
-      static ManagerManager *getManagerManager();
+      static ManagerManager &getManagerManager();
       // Use this method to do early what will be done anyway at static destruction
       static void cleanup();
       // Use this method to ensure first-time configuration AFTER static construction
@@ -111,7 +91,7 @@ namespace OCPI {
       // Report configuration errors
       static void configError(ezxml_t x, const char *fmt,...);
       // Global suppression of discovery
-      static inline void suppressDiscovery() { getManagerManager()->m_doNotDiscover = true; }
+      static void suppressDiscovery();
     };
     // The base class for all (singleton) driver managers which are children of
     // ManagerManager. This is NOT directly inherited by derived managers. They
@@ -119,23 +99,24 @@ namespace OCPI {
     class Driver;
     class Manager : public Child<ManagerManager,Manager> {
       friend class ManagerManager;
-      bool m_doNotDiscover;
     protected:
+      bool m_doNotDiscover;
       Manager(const char *mname)
 	: Child<ManagerManager,Manager>
-	  (Singleton<ManagerManager>::getSingleton(), *this, mname),
+	  (OCPI::Util::Singleton<ManagerManager>::getSingleton(), *this, mname),
 	  m_doNotDiscover(false)
       {}
       // Configure the manager. X is the node whose name is the name of the manager
       // The default implementation just configures any drivers
       virtual void configure(ezxml_t x);
       // Discover all devices on all drivers, return device count.
-      virtual unsigned discover() = 0;
       virtual Driver *firstDriverBase() = 0;
       virtual unsigned cleanupPosition();
       bool shouldDiscover() const { return !m_doNotDiscover; }
     public:
+      virtual unsigned discover(const OCPI::Util::PValue *params = NULL) = 0;
       inline void suppressDiscovery() { m_doNotDiscover = true; }
+      inline void enableDiscovery() { m_doNotDiscover = false; }
       virtual ~Manager();
     };
     class Device;
@@ -162,7 +143,7 @@ namespace OCPI {
     template <class Mgr, class DerivedDriver, const char *&mname>
       class ManagerBase
       : public Parent<DerivedDriver>,  // This manager manages these drivers, generically
-        public Singleton<Mgr>,
+        public OCPI::Util::Singleton<Mgr>,
         public Manager
     {
     protected:
@@ -176,10 +157,14 @@ namespace OCPI {
       Driver *firstDriverBase() {
 	return firstDriver();
       }
-      unsigned discover() {
+    public:
+      unsigned discover(const OCPI::Util::PValue *params) {
+	parent().configureOnce();
 	unsigned found  = 0;
-	for (DerivedDriver *dd = firstDriver(); dd; dd = dd->nextDriver())
-	  dd->search();
+	ocpiInfo("Performing discovery for all %s drivers", name().c_str());
+	if (!m_doNotDiscover)
+	  for (DerivedDriver *dd = firstDriver(); dd; dd = dd->nextDriver())
+	    dd->search(params, NULL, false);
 	return found;
       }
     };
@@ -203,9 +188,12 @@ namespace OCPI {
     template <class DriMgr, class DriBase>
     class DriverType : public Child<DriMgr,DriBase>, public Driver {
     protected:
-      DriverType(const char *name, DriBase &d)
-	: Child<DriMgr,DriBase>(DriMgr::getSingleton(), d, name)
-      {}
+      DriverType(const char *a_name, DriBase &d)
+	: Child<DriMgr,DriBase>(DriMgr::getSingleton(), d, a_name)
+      {
+	ocpiInfo("Registering/constructing %s driver: %s", 
+		 Child<DriMgr,DriBase>::parent().name().c_str(), a_name);
+      }
     public:
       // Configure from system configuration XML
       //      virtual void configure(ezxml_t );//{}
@@ -213,7 +201,8 @@ namespace OCPI {
       // excluding the ones named in the "exclude" list.
       virtual unsigned search(const PValue* props = NULL, const char **exclude = NULL,
 			      bool discoveryOnly = false) {
-	(void) props; (void) exclude; (void) discoveryOnly; return 0;
+	(void) props; (void) exclude; (void) discoveryOnly;
+	return 0;
       }
       // Probe for a particular device and return it if found, and creating it
       // if not yet created. Return NULL if it is not found.
@@ -246,12 +235,12 @@ namespace OCPI {
     template <class Man, class DriBase, class ConcDri, class Dev, const char *&name>
     class DriverBase
       : public Parent<Dev>,
-        public Singleton<ConcDri>,
+        public OCPI::Util::Singleton<ConcDri>,
 	public DriBase { // destroy this class BEFORE children 
     public:
       // to access a specific driver
       inline static ConcDri &getDriver() {
-	return Singleton<ConcDri>::getSingleton();
+	return OCPI::Util::Singleton<ConcDri>::getSingleton();
       }
       // The language does not allow this to be protected with "friend class Man".
       // inline DriBase *nextDriver() { return *Sibling<DriBase>::nextChildP();}
@@ -265,7 +254,8 @@ namespace OCPI {
     protected:
       // This is the constructor that is called at static construction time.
       DriverBase<Man, DriBase, ConcDri, Dev, name>()
-      : DriBase(name) {}
+      : DriBase(name) {
+      }
     };
     // The template that concrete drivers should use to register themselves at
     // static construction time.  The template parameter is the concrete driver class.
@@ -273,13 +263,14 @@ namespace OCPI {
     // static OCPI::Util::Driver::Registration<concrete-driver> x;
 
     // FIXME: this is actually generic and could be elsewhere in some utility
+    extern void Registration_debug_hook();
     template <class D> class Registration {
     public:
       // This constructor will run at static construction time,
       // the driver object itself will be dynamically constructed at that time
       // and implicitly registered with its parent, so there is nothing to do
       // at static destruction time.
-      Registration<D>() { debug_hook(); Singleton<D>::getSingleton();}
+      Registration<D>() { Registration_debug_hook(); OCPI::Util::Singleton<D>::getSingleton();}
     };
     // This device template takes the concrete driver and concrete device class
     // as template arguments, and also obtains its parent from the known driver
@@ -297,7 +288,7 @@ namespace OCPI {
       }
     protected:
       DeviceBase<Dri, Dev>(const char *childName, Dev &dev)
-      : Child<Dri, Dev, device>(Singleton<Dri>::getSingleton(), dev, childName)
+      : Child<Dri, Dev, device>(OCPI::Util::Singleton<Dri>::getSingleton(), dev, childName)
       {}
     };
   }

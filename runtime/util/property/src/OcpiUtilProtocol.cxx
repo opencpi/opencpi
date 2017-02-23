@@ -106,8 +106,8 @@ namespace OCPI {
 	p.m_isTwoWay = true;
       if (!(err = Member::parseMembers(op, m_nArgs, m_args, false, "argument", NULL))) {
 	if (m_nArgs == 1 &&
-	    (m_args[0].isSequence() && m_args[0].isFixed() ||
-	     !m_args[0].isSequence() && m_args[0].m_baseType == OA::OCPI_String))
+	    ((m_args[0].isSequence() && m_args[0].isFixed()) ||
+	     (!m_args[0].isSequence() && m_args[0].m_baseType == OA::OCPI_String)))
 	  m_topFixedSequence = true;
 	err = Member::alignMembers(m_args, m_nArgs, maxAlignDummy, m_myOffset,
 				   p.m_dataValueWidth, p.m_diverseDataSizes,
@@ -179,10 +179,10 @@ namespace OCPI {
       m_nArgs = random() % 10;
       Member *m = m_args = m_nArgs ? new Member[m_nArgs] : NULL;
       for (unsigned n = 0; n < m_nArgs; n++, m++) {
-	char *name;
-	asprintf(&name, "arg%d", n);
-	m->generate(name);
-	free(name);
+	char *aname;
+	ocpiCheck(asprintf(&aname, "arg%d", n) > 0);
+	m->generate(aname);
+	free(aname);
       }
       const char *err;
       bool sub32dummy = false;
@@ -219,15 +219,17 @@ namespace OCPI {
 	  fprintf(f, "error: %s (%s)\n", err, s.c_str());
 	  exit(1);
 	} else {
-	  fprintf(f, "ok\n");
+	  fprintf(f, "parse ok\n");
 	  std::string s1;
 	  tv.unparse(s1, NULL, false, hex);
-	  if (s != s1)
+	  if (s != s1) {
 	    fprintf(f,
 		    "\n"
 		    "error: mismatch0: ***%s***\n"
 		    "error: mismatch1: ***%s***\n",
 		    s.c_str(), s1.c_str());
+	    exit(1);
+	  }
 	}
       }
       fprintf(f, "\n");
@@ -291,7 +293,7 @@ namespace OCPI {
     void Protocol::
     finishOperation(const Operation &op) {
       if (m_isUnbounded ||
-	  m_maxMessageValues && m_maxMessageValues != op.m_myOffset)
+	  (m_maxMessageValues && m_maxMessageValues != op.m_myOffset))
 	m_variableMessageLength = true;
       if (op.m_myOffset > m_maxMessageValues)
 	m_maxMessageValues = op.m_myOffset; // still in bytes until later
@@ -329,7 +331,7 @@ namespace OCPI {
       const char *name = ezxml_name(op);
       // FIXME:  support xi:included protocols
       if (!name || strcasecmp(name, "Operation"))
-	return "Element under Protocol is neither Operation, Protocol or or xi:include";
+	return "Element under Protocol is neither Operation, Protocol or xi:include";
       // If this is NULL we're just counting properties.
       if (!m_operations) {
 	m_nOperations++;
@@ -385,10 +387,10 @@ namespace OCPI {
       m_nOperations = random() % 10 + 1;
       Operation *o = m_operations = new Operation[m_nOperations];
       for (unsigned n = 0; n < m_nOperations; n++, o++) {
-	char *name;
-	asprintf(&name, "op%d", n);
-	o->generate(name, *this);
-	free(name);
+	char *opName;
+	ocpiCheck(asprintf(&opName, "op%d", n) > 0);
+	o->generate(opName, *this);
+	free(opName);
 	finishOperation(*o);
       }
       finishParse();
@@ -525,7 +527,7 @@ namespace OCPI {
     size_t Protocol::read(Reader &reader, uint8_t *data, size_t maxLength, uint8_t opcode) {
       assert(!((intptr_t)data & (maxDataTypeAlignment - 1)));
       if (!m_operations)
-	throw Error("No operations in protocol for writing");
+	throw Error("No operations in protocol for reading");
       if (opcode >= m_nOperations)
 	throw Error("Invalid Opcode for protocol");
       size_t size = m_operations[opcode].read(reader, data, maxLength);

@@ -136,7 +136,6 @@ namespace OCPI {
 #define OCCP_STATUS_CONFIG_BE_VALID (1 << 17)
 #define OCCP_STATUS_CONFIG_OP_VALID (1 << 18)
 #define OCCP_STATUS_CONFIG_WRITE_VALID (1 << 19)
-#define OCCP_STATUS_CONFIG_ADDR_VALID (1 << 16)
 #define OCCP_STATUS_ACCESS_ERROR      (1 << 12) // this is simulated on the CPU, not in OCCP
 #define OCCP_STATUS_FINISHED        (1 << 11)
 #define OCCP_STATUS_ATTENTION_DYN   (1 << 10)

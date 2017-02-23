@@ -184,16 +184,19 @@ parse(ezxml_t xml, Board &b, SlotType *stype) {
     if ((err = OE::getRequiredString(xs, name, "name")) ||
 	(err = decodeSignal(name, base, index, hasIndex)))
       return err;
-    Signal *devSig = m_deviceType.m_sigmap.findSignal(base);
+    std::string suffixed;
+    // suffixed will be non-empty if we matched a suffixed signal, from diff or inout
+    Signal *devSig = m_deviceType.m_sigmap.findSignal(base, &suffixed);
     if (!devSig)
       return OU::esprintf("Signal \"%s\" is not defined for device type \"%s\"",
 			  base.c_str(), m_deviceType.cname());
-    if (hasIndex)
+    if (hasIndex) {
       if (devSig->m_width == 0)
 	return OU::esprintf("Device signal \"%s\" cannot be indexed", base.c_str());
       else if (index >= devSig->m_width)
 	return OU::esprintf("Device signal \"%s\" has index higher than signal width (%zu)",
 			    name.c_str(), devSig->m_width);
+    }
     const char *plat = ezxml_cattr(xs, "platform");
     const char *card = ezxml_cattr(xs, "card"); // the slot 
     if (!card)
@@ -289,7 +292,7 @@ parse(ezxml_t xml, Board &b, SlotType *stype) {
       }
     }
     // boardSig might be NULL here.
-    std::string devSigIndexed = devSig->cname();
+    std::string devSigIndexed = suffixed.empty() ? devSig->cname() : suffixed.c_str();
     if (hasIndex) // devSig->m_width)
       OU::formatAdd(devSigIndexed, "(%zu)", index);
     m_strings.push_front(devSigIndexed);
@@ -398,18 +401,18 @@ parse(ezxml_t cx, Worker &w, Support &r) {
       (err = r.m_type.getPort(port.c_str(), m_port)) ||
       (err = w.getPort(to.c_str(), m_sup_port)))
     return err;
-  if (m_sup_port->type != m_port->type)
+  if (m_sup_port->m_type != m_port->m_type)
     return OU::esprintf("Supported worker port \"%s\" is not the same type", to.c_str());
-  if (m_sup_port->master == m_port->master)
+  if (m_sup_port->m_master == m_port->m_master)
     return OU::esprintf("Supported worker port \"%s\" has same role (master) as port \"%s\"",
 			to.c_str(), port.c_str());
-  if (m_sup_port->count > 1) {
+  if (m_sup_port->m_count > 1) {
     if (!m_indexed)
       return OU::esprintf("Supported worker port \"%s\" has count > 1, index must be specified",
 			  to.c_str());
-    if (m_index >= m_sup_port->count)
+    if (m_index >= m_sup_port->m_count)
       return OU::esprintf("Supported worker port \"%s\" has count %zu, index (%zu) too high",
-			  to.c_str(), m_sup_port->count, m_index);
+			  to.c_str(), m_sup_port->m_count, m_index);
   }      
   // FIXME: check signal compatibility...
   return NULL;
@@ -452,27 +455,29 @@ parseInstance(Worker &parent, Instance &i, ezxml_t x) {
     Signal *s = m_sigmap.findSignal(base);
     if (!s)
       return OU::esprintf("Worker \"%s\" of instance \"%s\" has no signal \"%s\"",
-			  m_implName, i.name, name.c_str());
+			  m_implName, i.cname(), name.c_str());
     assert(!hasIndex || s->m_width);
     if (external.length()) {
       bool single;
       if (i.m_extmap.findSignal(*s, index, single))
 	return OU::esprintf("Duplicate signal \"%s\" for worker \"%s\" instance \"%s\"",
-			    name.c_str(), m_implName, i.name);
+			    name.c_str(), m_implName, i.cname());
       size_t dummy;
       if (i.m_extmap.findSignal(external, dummy) && s->m_direction == Signal::OUT)
 	return OU::esprintf("Multiple outputs drive external \"%s\" for worker \"%s\" "
-			    "instance \"%s\"", external.c_str(), m_implName, i.name);
+			    "instance \"%s\"", external.c_str(), m_implName, i.cname());
       Signal *ps = parent.m_sigmap.findSignal(external.c_str());
       if (!ps)
 	return OU::esprintf("External signal \"%s\" specified for signal \"%s\" of "
 			    "instance \"%s\" of worker \"%s\" is not an external signal of the "
-			    "assembly", external.c_str(), name.c_str(), i.name, m_implName);
+			    "assembly", external.c_str(), name.c_str(), i.cname(), m_implName);
       // If the board signal is bidirectional (can be anything), it should inherit
       // the direction of the device's signal
       if (ps->m_direction == Signal::BIDIRECTIONAL)
 	ps->m_direction = s->m_direction;
     }
+    ocpiDebug("Instance '%s' signal '%s' index '%zu' mapped to '%s'",
+	      i.cname(), s->cname(), index, external.c_str());
     i.m_extmap.push_back(s, index, external, hasIndex);
   }
   return NULL;

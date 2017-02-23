@@ -27,7 +27,7 @@ struct Clock {
   bool assembly; // This clock is at the assembly level
   size_t ordinal; // within the worker
   Clock();
-  const char *name() const { return m_name.c_str(); }
+  const char *cname() const { return m_name.c_str(); }
   const char *signal() const { return m_signal.c_str(); }
   const char *reset() const { return m_reset.c_str(); }
 };
@@ -37,16 +37,15 @@ struct Signal;
 typedef std::map<const char *, Signal *, OCPI::Util::ConstCharCaseComp> SigMap_;
 class SigMap : public SigMap_ {
  public:
-  Signal *findSignal(const std::string &name) const { return findSignal(name.c_str()); }
-  Signal *findSignal(const char *name) const {
-    SigMap_::const_iterator i = find(name);
-    return i == end() ? NULL : i->second;
+  Signal *findSignal(const std::string &name, std::string *suffixed = NULL) const {
+    return findSignal(name.c_str(), suffixed);
   }
+  Signal *findSignal(const char *name, std::string *suffixed = NULL) const;
   bool findSignal(const char *name, Signal *&sig) const {
     SigMap_::const_iterator i = find(name);
     return i == end() ? false : (sig = i->second, true);
   }
-  const char*findSignal(Signal *);
+  const char *findSignal(Signal *);
 };
 
 // This container provides processing in the original order (user friendly)

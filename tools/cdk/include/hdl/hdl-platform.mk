@@ -50,7 +50,7 @@ include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
 $(call OcpiDbgVar,HdlPlatforms)
 # Theses next lines are similar to what worker.mk does
 ifneq ($(MAKECMDGOALS),clean)
-$(if $(wildcard $(CwdName).xml),,\
+$(if $(call OcpiExists,$(CwdName).xml),,\
   $(error The OWD for the platform and its worker, $(CwdName).xml, is missing))
 endif
 $(call OcpiDbgVar,HdlPlatforms)
@@ -164,7 +164,7 @@ ifndef HdlSkip
 	$(AT)$(MAKE) -C $$@ -f $(OCPI_CDK_DIR)/include/hdl/hdl-config.mk --no-print-directory \
                HdlPlatforms=$(Worker) \
                HdlPlatformWorker=../../$(Worker) \
-               HdlLibrariesInternal="$(call OcpiAdjustLibraries,$(HdlLibraries))" \
+               HdlLibrariesInternal="$(call OcpiAdjustLibraries,$(HdlLibraries) $(Libraries))" \
                ComponentLibrariesInternal="$(call OcpiAdjustLibraries,$(ComponentLibraries))" \
                XmlIncludeDirsInternal="$(call AdjustRelative,$(XmlIncludeDirsInternal))" \
 	       $(MAKECMDGOALS)
@@ -180,7 +180,8 @@ ifndef HdlSkip
     ExportLinks:=$(ExportFiles:%=lib/%)
     exports: $(ExportLinks)
 
-    $(ExportLinks): | $(@:lib/%=%)
+    # order-only prereq should be something like $$(@:lib/%=%) but that doesn't work...
+    $(ExportLinks): | $(ExportFiles)
 	$(AT)mkdir -p lib
 	$(AT)ln -s ../$(@:lib/%=%) lib
 

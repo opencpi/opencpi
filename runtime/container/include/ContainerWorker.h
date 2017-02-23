@@ -102,7 +102,8 @@ namespace OCPI {
       virtual void setProperty64(const OCPI::API::PropertyInfo &info, uint64_t data,
 				 unsigned idx = 0) const = 0;
       virtual void getPropertyBytes(const OCPI::API::PropertyInfo &info, size_t offset,
-				    uint8_t *data, size_t nBytes, unsigned idx = 0) const = 0;
+				    uint8_t *data, size_t nBytes, unsigned idx = 0,
+				    bool string = false) const = 0;
       virtual uint8_t getProperty8(const OCPI::API::PropertyInfo &info, unsigned idx = 0)
 	const = 0;
       virtual uint16_t getProperty16(const OCPI::API::PropertyInfo &info, unsigned idx = 0)
@@ -127,7 +128,7 @@ namespace OCPI {
       std::string m_implTag, m_instTag;
       // Our thread safe mutex for the worker itself
       OCPI::OS::Mutex m_workerMutex;
-      OCPI::OS::Mutex m_controlMutex; // HACK since sched_yield is busted with SCHED_OTHER
+      OCPI::OS::Mutex m_controlMutex; // since sched_yield is incompatible with SCHED_OTHER
       bool m_controlOpPending;
       Worker *m_slave;
       bool m_hasMaster;
@@ -183,6 +184,7 @@ namespace OCPI {
 
       virtual ~Worker();
       OCPI::API::Port &getPort(const char *name, const OCPI::API::PValue *props = NULL);
+      Port &getContainerPort(const char *name, const OCPI::API::PValue *props = NULL);
 
       virtual Port & createOutputPort(OCPI::Util::PortOrdinal portId,
 				      size_t bufferCount,
@@ -213,6 +215,13 @@ namespace OCPI {
 #undef OCPI_DATA_TYPE
 #undef OCPI_DATA_TYPE_S
 #define OCPI_DATA_TYPE_S OCPI_DATA_TYPE
+      inline void getRawPropertyBytes(size_t offset, uint8_t *buf, size_t count) {
+	getPropertyBytes(*m_firstRaw, m_firstRaw->m_offset + offset, buf, count, 0, false);
+      }
+      inline void setRawPropertyBytes(size_t offset, const uint8_t *buf, size_t count) {
+	setPropertyBytes(*m_firstRaw, m_firstRaw->m_offset + offset, buf,count, 0);
+      }
+
     };
   }
 }

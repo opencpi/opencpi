@@ -177,7 +177,7 @@ emitImplOCL() {
     last = "";
     for (unsigned n = 0; n < m_ports.size(); n++) {
       Port *port = m_ports[n];
-      fprintf(f, "%s  %s_%s", last, upper, upperdup(port->name()));
+      fprintf(f, "%s  %s_%s", last, upper, upperdup(port->cname()));
       // FIXME TWO WAY
       last = ",\n";
     }
@@ -214,7 +214,7 @@ emitImplOCL() {
     size_t offset = 0;
     bool isLastDummy = false;
     for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
-      if (!(*pi)->m_isParameter) {
+      if (!(*pi)->m_isParameter && !(*pi)->m_isReadable) {
 	std::string type;
 	rccMember(type, **pi, 2, offset, pad, m_implName, true, isLastDummy, false, false);
 	fputs(type.c_str(), f);
@@ -241,7 +241,7 @@ emitImplOCL() {
     }
   }
   for (unsigned n = 0; n < m_ports.size(); n++)
-    fprintf(f, "  OCLPort %s;\n", m_ports[n]->name() );
+    fprintf(f, "  OCLPort %s;\n", m_ports[n]->cname() );
   if (m_ctl.properties.size())
     fprintf(f,"  __global %c%sProperties* properties;\n",
             toupper(m_implName[0]), m_implName + 1);
@@ -359,17 +359,16 @@ emitEntryPointOCL() {
   unsigned op = 0;
   const char* mName;
   for (const char** cp = OU::Worker::s_controlOpNames; *cp; cp++, op++)
-    if (m_ctl.controlOps & (1 << op ))
+    if (m_ctl.controlOps & (1 << op )) {
       if ((err = rccMethodName (*cp, mName)))
         return err;
-      else {
-	const char* mUname = upperdup(mName);
-	fprintf(f,
-		"    case OCPI_OCL_%s:\n"
-		"      self.rc = %s_%s(&self);\n"
-		"      break;\n",
-		mUname, m_implName, mName);
-      }
+      const char* mUname = upperdup(mName);
+      fprintf(f,
+	      "    case OCPI_OCL_%s:\n"
+	      "      self.rc = %s_%s(&self);\n"
+	      "      break;\n",
+	      mUname, m_implName, mName);
+    }
   fprintf(f,
 	  "   default:;\n  }\n\n"
 	  "  barrier ( CLK_LOCAL_MEM_FENCE );\n"
@@ -389,7 +388,7 @@ emitEntryPointOCL() {
 const char * Worker::
 parseOcl() {
   const char *err;
-  if ((err = OE::checkAttrs(m_xml,  IMPL_ATTRS, (void*)0)) ||
+  if ((err = OE::checkAttrs(m_xml,  IMPL_ATTRS, "language", (void*)0)) ||
       (err = OE::checkElements(m_xml, IMPL_ELEMS, "port", (void*)0)))
     return err;
   ezxml_t xctl;
@@ -425,7 +424,7 @@ parseOclAssy() {
     *topAttrs[] = {IMPL_ATTRS, NULL},
     *instAttrs[] = {INST_ATTRS, NULL};
   // Do the generic assembly parsing, then to more specific to OCL
-  if ((err = a->parseAssy(m_xml, topAttrs, instAttrs, true, m_outDir)))
+  if ((err = a->parseAssy(m_xml, topAttrs, instAttrs, true)))
     return err;
   return NULL;
 }
@@ -438,7 +437,7 @@ OclPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
 const char *DataPort::
 finalizeOclDataPort() {
   const char *err = NULL;
-  if (type == WDIPort)
+  if (m_type == WDIPort)
     createPort<OclPort>(*m_worker, NULL, this, -1, err);
   return err;
 }

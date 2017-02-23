@@ -245,10 +245,36 @@ namespace DataTransfer {
    *********************************/
   const unsigned int ZeroCopyReady = 0x10000000;
 
+  const unsigned
+    lengthBits = 22, // 8Mbytes - 1
+    opCodeBits = 8;
+
+  // This packing is simply to make it easier to read the values in hex dumps
+  const uint32_t maxXferLength = (1 << 21) - 1;
+  inline uint32_t packXferMetaData(size_t length, uint8_t opcode, bool eof) {
+    assert(length <= maxXferLength);
+    return (uint32_t)
+      ((opcode << (32 - opCodeBits)) | // high byte
+                                       // 800000 is truncation
+       (1 << (lengthBits+1)) |         // 400000 always set to ensure it is non-zero
+       ((eof ? 1 : 0) << lengthBits) | // 200000 EOF independent of length
+       length);                        // length in bytes up to 2^21-1
+  }
+  inline void unpackXferMetaData(uint32_t md, size_t &length, uint8_t &opcode, bool &eof,
+				 bool &truncate) {
+    assert(md & (1 << (lengthBits+1)));
+    length = md & ~(UINT32_MAX << lengthBits);
+    opcode = (uint8_t)((md >> (32 - opCodeBits)) & ((1 << opCodeBits) - 1));
+    eof = md & (1 << lengthBits) ? true : false;
+    truncate = md & (1 << (lengthBits+2)) ? true : false;
+  }
   struct RplMetaData {
     uint32_t length;
     uint8_t opCode;
-    uint64_t timestamp;
+    uint8_t end;
+    uint8_t truncate;
+    uint32_t xferMetaData; // the compressed version when required.
+    uint32_t timestamp;
   };
 
 

@@ -5,9 +5,9 @@
 #include <sys/stat.h>
 #include <climits>
 #include <set>
-#include "OcpiOsFileIterator.h"
 #include "OcpiUtilException.h"
 #include "OcpiLibraryManager.h"
+#include "LibrarySimple.h"
 #include "OcpiComponentLibrary.h"
 #include "OcpiOsAssert.h"
 
@@ -21,9 +21,8 @@ namespace OE = OCPI::Util::EzXml;
 namespace OCPI {
   namespace Library {
     const char *library = "library";
-
-    static OCPI::Driver::Registration<Manager> lm;
     const char **complib = &CompLib::component;
+    static OCPI::Driver::Registration<Manager> lm;
     // The Library Driver Manager class
     Manager::Manager() {
     }
@@ -57,8 +56,8 @@ namespace OCPI {
       for (Driver *d = firstDriver(); d; d = d->nextDriver())
 	if ((a = d->findArtifact(caps, specName, params, selectCriteria, conns, artInst)))
 	  return *a;
-      throw OU::Error("No usable artifact found in any library in OCPI_LIBRARY_PATH, "
-		      "for worker implementing \"%s\"", specName);
+      throw OU::Error("No usable artifact found in any library in OCPI_LIBRARY_PATH (%s), "
+		      "for worker implementing \"%s\"", getenv("OCPI_LIBRARY_PATH"), specName);
     }
 
     Artifact &Manager::getArtifact(const char *url, const OA::PValue *params) {
@@ -73,6 +72,7 @@ namespace OCPI {
       for (d = firstDriver(); d; d = d->nextDriver())
 	if ((a = d->findArtifact(url)))
 	  return *a;
+#if 0
       // The artifact was not found in any driver's libraries
       // Now we need to find a library driver that can deal with this
       // artifact. In this case a driver returning NULL means the driver is
@@ -81,6 +81,12 @@ namespace OCPI {
       for (Driver *d = firstChild(); d; d = d->nextChild())
 	if ((a = d->addArtifact(url, params)))
 	  return *a;
+#else
+      // If the artifact is not found, we will put it in the "simple" library that
+      // is not associated with any directory.
+      if ((a = Simple::getDriver().addArtifact(url, params)))
+	return *a;
+#endif
       throw OU::EmbeddedException(OU::ARTIFACT_UNSUPPORTED,
 				  "No library driver supports this file",
 				  OU::ApplicationRecoverable);
@@ -96,12 +102,12 @@ namespace OCPI {
       const char *err = OU::evalExpression(selection, val, &impl);
       if (err)
 	throw OU::Error("Error parsing selection expression: %s", err);
-      if (!val.isNumber)
+      if (!val.isNumber())
 	throw OU::Error("selection expression has string value");
       if (score)
 	// FIXME test if overflow
-	*score = (unsigned)(val.number < 0 ? 0: val.number); // force non-negative
-      return val.number > 0;
+	*score = (unsigned)(val.getNumber() < 0 ? 0: val.getNumber()); // force non-negative
+      return val.getNumber() > 0;
     }
 
     // Find (and callback with) implementations for specName and selectCriteria
@@ -136,8 +142,8 @@ namespace OCPI {
       struct mine : public ImplementationCallback {
 	const Implementation *&m_impl;
 	const char *m_selection;
-	mine(const Implementation *&impl, const char *selection)
-	  : m_impl(impl), m_selection(selection) {}
+	mine(const Implementation *&a_impl, const char *selection)
+	  : m_impl(a_impl), m_selection(selection) {}
 	bool foundImplementation(const Implementation &i, bool &accepted) {
 	  if (m_selection && !satisfiesSelection(m_selection, NULL, i.m_metadataImpl))
 	    return false;
@@ -167,12 +173,23 @@ namespace OCPI {
     Implementation::
     Implementation(Artifact &art, OU::Worker &i, ezxml_t instance, unsigned ordinal)
 	: m_artifact(art), m_metadataImpl(i), m_staticInstance(instance),
-	  m_externals(0), m_internals(0), m_connections(NULL), m_ordinal(ordinal)
-    {}
+	  m_externals(0), m_internals(0), m_connections(NULL), m_ordinal(ordinal),
+	  m_inserted(false)
+    {
+      OE::getBoolean(instance, "inserted", &m_inserted);
+    }
+    Implementation::
+    ~Implementation() {
+      delete [] m_connections;
+    }
 
     void Implementation::
     setConnection(OU::Port &myPort, Implementation *otherImpl,
 		  OU::Port *otherPort) {
+      ocpiDebug("Setting connection in %s on %s port %s with other %s port %s",
+	       m_artifact.name().c_str(), m_metadataImpl.name().c_str(), myPort.m_name.c_str(),
+	       otherImpl ? otherImpl->m_metadataImpl.name().c_str() : "none",
+	       otherPort ? otherPort->m_name.c_str() : "none");
       if (otherImpl) {
 	m_internals |= 1 << myPort.m_ordinal;
 	if (!m_connections)
@@ -184,8 +201,8 @@ namespace OCPI {
       }
     }
     Driver::
-    Driver(const char *name)
-      : OD::DriverType<Manager,Driver>(name, *this) {
+    Driver(const char *a_name)
+      : OD::DriverType<Manager,Driver>(a_name, *this) {
     }
     Artifact *Driver::
     findArtifact(const Capabilities &caps,
@@ -238,12 +255,18 @@ namespace OCPI {
     }
 
     // The artifact base class
-    Artifact::Artifact() : m_xml(NULL), m_nImplementations(0), m_metaImplementations(NULL), m_nWorkers(0) {}
+    Artifact::
+    Artifact()
+      : m_metadata(NULL), m_mtime(0), m_length(0), m_xml(NULL), m_nImplementations(0),
+	m_metaImplementations(NULL), m_nWorkers(0) {}
     Artifact::~Artifact() {
       for (WorkerIter wi = m_workers.begin(); wi != m_workers.end(); wi++)
 	delete (*wi).second;
       delete [] m_metaImplementations;
+      ezxml_free(m_xml);
+      delete [] m_metadata;
     }
+    // static utility function
     // Get the metadata from the end of the file.
     // The length of the appended file is appended on a line starting with X
     // i.e. (cat meta; sh -c 'echo X$4' `ls -l meta`) >> artifact
@@ -256,27 +279,30 @@ namespace OCPI {
 	  if (fd < 0)
 	    throw OU::Error("Cannot open file: \"%s\"", name);
 	  struct stat info;
-	  if (fstat(fd, &info))
+	  if (fstat(fd, &info)) {
+	    close(fd);
 	    throw OU::Error("Cannot get modification time: \"%s\" (%d)", name, errno);
+	  }
 	  mtime = info.st_mtime;
 	  length = info.st_size;
 	  char buf[64/3+4]; // octal + \r + \n + null
+	  const size_t bufsize = sizeof(buf)-1; // Ensure trailing null character
+	  buf[bufsize] = '\0';
 	  off_t fileLength, second, third;
-	  if (fd >= 0 &&
-	      (fileLength = lseek(fd, 0, SEEK_END)) != -1 &&
+	  if ((fileLength = lseek(fd, 0, SEEK_END)) != -1 &&
 	      // I have no idea why the off_t caste below is required,
 	      // but without it, the small negative number is not sign extended...
 	      // on MACOS gcc v4.0.1 with 64 bit off_t
-	      (second = lseek(fd, -(off_t)sizeof(buf), SEEK_CUR)) != -1 &&
-	      (third = read(fd, buf, sizeof(buf))) == sizeof(buf)) {
-	    for (char *cp = &buf[sizeof(buf)-2]; cp >= buf; cp--)
+	      (second = lseek(fd, -(off_t)bufsize, SEEK_CUR)) != -1 &&
+	      (third = read(fd, buf, bufsize)) == (ssize_t)bufsize) {
+	    for (char *cp = &buf[bufsize-1]; cp >= buf; cp--)
 	      if (*cp == 'X' && isdigit(cp[1])) {
 		char *end;
 		long l = strtol(cp + 1, &end, 10);
 		off_t n = (off_t)l;
 		// strtoll error reporting is truly bizarre
 		if (l != LONG_MAX && l > 0 && cp[1] && isspace(*end)) {
-		  off_t metaStart = fileLength - sizeof(buf) + (cp - buf) - n;
+		  off_t metaStart = fileLength - bufsize + (cp - buf) - n;
 		  if (lseek(fd, metaStart, SEEK_SET) != -1) {
 		    data = new char[n + 1];
 		    if (read(fd, data, n) == n)
@@ -290,11 +316,51 @@ namespace OCPI {
 		break;
 	      }
 	  }
-	  if (fd >= 0)
-	    (void)close(fd);
+	  (void) close(fd);
 	  return data;
 	}
 
+    // Given metadata in string form, parse it up, shortly after construction
+    // The ownership of metadat is passed in here.
+    const char *Artifact::
+    setFileMetadata(const char *a_name, char *metadata, std::time_t a_mtime, uint64_t a_length) {
+      m_metadata = metadata; // take ownership in all cases
+      const char *err = OE::ezxml_parse_str(metadata, strlen(metadata), m_xml);
+      if (err)
+	return OU::esprintf("error parsing artifact metadata from \"%s\": %s", a_name, err);
+      char *xname = ezxml_name(m_xml);
+      if (!xname || strcasecmp("artifact", xname))
+	return OU::esprintf("invalid metadata in binary/artifact file \"%s\": no <artifact>",
+			    a_name);
+      const char *l_uuid = ezxml_cattr(m_xml, "uuid");
+      if (!l_uuid)
+	return OU::esprintf("no uuid in binary/artifact file \"%s\"", a_name);
+      m_mtime = a_mtime;
+      m_length = a_length;
+      library().registerUuid(l_uuid, this);
+      ocpiDebug("Artifact file %s has artifact metadata", a_name);
+      return NULL;
+    }
+    void Artifact::
+    getFileMetadata(const char *a_name) {
+      std::time_t l_mtime;
+      uint64_t l_length;
+      char *metadata = getMetadata(a_name, l_mtime, l_length);
+      if (!metadata)
+	throw OU::Error(20, "Cannot open or retrieve metadata from file \"%s\"", a_name);
+      const char *err = setFileMetadata(a_name, metadata, l_mtime, l_length);
+      if (err)
+	throw OU::Error("Error processing metadata from artifact file: %s: %s", a_name, err);
+    }
+
+    Implementation *Artifact::
+    getImplementation(unsigned n) {
+      unsigned nn = 0;
+      for (WorkerIter wi = m_workers.begin(); wi != m_workers.end(); ++wi, ++n)
+	if (nn == n)
+	  return wi->second;
+      return NULL;
+    }
     Implementation *Artifact::
     findImplementation(const char *specName, const char *staticInstance) {
       WorkerRange range = m_workers.equal_range(specName);
@@ -302,8 +368,8 @@ namespace OCPI {
 	Implementation &impl = *wi->second;
 	if (impl.m_staticInstance) {
 	  if (staticInstance) {
-	    const char *name = ezxml_cattr(impl.m_staticInstance, "name");
-	    if (name && !strcasecmp(name, staticInstance))
+	    const char *l_name = ezxml_cattr(impl.m_staticInstance, "name");
+	    if (l_name && !strcasecmp(l_name, staticInstance))
 	      return &impl;
 	  }
 	} else if (!staticInstance)
@@ -311,19 +377,27 @@ namespace OCPI {
       }
       return NULL;
     }
+    // Is this artifact for a container with these capabilities?
+    // I.e. caps is what I am looking for
     bool Artifact::
     meetsCapabilities(const Capabilities &caps) {
-      return
-	m_os == caps.m_os && m_osVersion == caps.m_osVersion && m_platform == caps.m_platform;
+      if (caps.m_dynamic != m_dynamic)
+	return false;
+      if (caps.m_platform.size())
+	return m_platform == caps.m_platform;
+      assert(caps.m_arch.size());
+      return m_arch == caps.m_arch &&
+	(caps.m_os.empty() || m_os == caps.m_os) &&
+	(caps.m_osVersion.empty() || m_osVersion == caps.m_osVersion);
     }
     bool Artifact::
-    meetsRequirements (const Capabilities &caps,
-		       const char *specName,
-		       const OCPI::API::PValue * /*props*/,
-		       const char *selectCriteria,
-		       const OCPI::API::Connection * /*conns*/,
-		       const char *& /* artInst */,
-		       unsigned & score ) {
+    meetsRequirements(const Capabilities &caps,
+		      const char *specName,
+		      const OCPI::API::PValue * /*props*/,
+		      const char *selectCriteria,
+		      const OCPI::API::Connection * /*conns*/,
+		      const char *& /* artInst */,
+		      unsigned & score) {
       if (meetsCapabilities(caps)) {
 	WorkerRange range = m_workers.equal_range(specName);
 
@@ -397,15 +471,15 @@ namespace OCPI {
           *in = ezxml_attr(conn, "in");    // provider port name
         if (!fromX || !toX || !out || !in)
 	  throw OU::Error("Invalid artifact XML: connection has bad attributes");
-	OU::Port *fromP, *toP;
+	OU::Port *fromP = NULL, *toP = NULL; // quiet warnings
 	InstanceIter
 	  fromI = instances.find(fromX),
 	  toI = instances.find(toX);
 	Implementation
 	  *fromImpl = fromI == instances.end() ? NULL : fromI->second,
 	  *toImpl = toI == instances.end() ? NULL : toI->second;
-	if (fromImpl && !(fromP = fromImpl->m_metadataImpl.findMetaPort(out)) ||
-	    toImpl && !(toP = toImpl->m_metadataImpl.findMetaPort(in)))
+	if ((fromImpl && !(fromP = fromImpl->m_metadataImpl.findMetaPort(out))) ||
+	    (toImpl && !(toP = toImpl->m_metadataImpl.findMetaPort(in))))
 	  throw OU::Error("Invalid artifact XML: \"to\" or \"from\" port not found for connection");
 	if (fromImpl) {
 	  fromImpl->setConnection(*fromP, toImpl, toP);
@@ -414,6 +488,30 @@ namespace OCPI {
 	} else if (toImpl)
 	  toImpl->setConnection(*toP);
       }
+      // Now that all the local instances are connected in the artifact, make a pass that
+      // removes any inserted adapters.
+      for (InstanceIter ii = instances.begin(); ii != instances.end(); ++ii) {
+	Implementation &i = *ii->second;
+	if (i.m_staticInstance)
+	  for (unsigned n = 0; n < i.m_metadataImpl.nPorts(); ++n)
+	    if (i.m_internals & (1<<n)) {
+	      Implementation &otherImpl = *i.m_connections[n].impl;
+	      if (otherImpl.m_inserted) {
+		// Big assumption that adapters only have two ports
+		unsigned other = i.m_connections[n].port->m_ordinal ? 0 : 1;
+		if (otherImpl.m_internals & (1 << other)) {
+		  i.m_connections[n] = otherImpl.m_connections[other];
+		  otherImpl.m_connections[other].impl = &i;
+		  otherImpl.m_connections[other].port = &i.m_metadataImpl.getPorts()[n];
+		} else {
+		  // other side of the adapter is external so this is external
+		  i.m_internals &= ~(1 << n);
+		  i.m_externals |= 1 << n;
+		}
+	      }
+	    }
+      }
+      
     }
     void Artifact::
     printSpecs(std::set<const char *, OCPI::Util::ConstCharComp> &specs) const {

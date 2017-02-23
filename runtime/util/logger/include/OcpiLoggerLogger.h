@@ -434,7 +434,7 @@ OCPI::Logger::Logger::setLogLevel (unsigned short logLevel)
    * standard says: "If rdbuf() is not a null pointer, calls rdbuf()->
    * pubsync()."
    *
-   * The buggy implementation, however, does:
+   * The implementation, however, does:
    *
    *   if (!ios_base::fail() && _Myios::rdbuf()->pubsync() == -1)
    *     _State |= ios_base::badbit;     // sync failed

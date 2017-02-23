@@ -19,7 +19,29 @@ struct ContConnect {
 typedef std::list<ContConnect> ContConnects;
 typedef ContConnects::const_iterator ContConnectsIter;
 
-typedef std::map<const char *, unsigned, OU::ConstCharComp> UNocs;
+struct UNocChannel {
+  unsigned m_currentNode;
+  bool m_control; // control attribute of deferred previous node
+  std::string m_client, m_port; // remember the previous client for deferred connection
+  UNocChannel() : m_currentNode(0) {}
+};
+// The bookkeepping class for a unoc
+struct UNoc {
+  const char *m_name;
+  WIPType m_type;
+  size_t  m_width;
+  unsigned m_currentChannel;
+  std::vector<UNocChannel> m_channels;
+  UNoc(const char *name, WIPType type, size_t width, size_t size)
+    : m_name(name), m_type(type), m_width(width), m_currentChannel(0), m_channels(size) {}
+  void addClient(std::string &assy, bool control, const char *client, const char *port);
+  void terminate(std::string &assy);
+};
+// A UNoc is actually an array of interconnect "channels" all of the same type.
+// The value of the map is a pair of:
+//    the current channel
+//    the vector of number of nodes on a given channel
+typedef std::map<const char *, UNoc, OU::ConstCharComp> UNocs;
 typedef UNocs::iterator UNocsIter;
 
 // A container builds on a platform configuration and an assembly
@@ -43,6 +65,8 @@ class HdlContainer : public Worker, public HdlHasDevInstances {
   parseConnection(ezxml_t cx, ContConnect &c);
   const char *
   emitUNocConnection(std::string &assy, UNocs &uNocs, size_t &index, const ContConnect &c);
+  //  const char *
+  //  emitSDPConnection(std::string &assy, UNoc &unoc, size_t &index, const ContConnect &c);
   const char *
   emitConnection(std::string &assy, UNocs &uNocs, size_t &index, const ContConnect &c);
 public:  

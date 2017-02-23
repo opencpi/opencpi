@@ -4,6 +4,7 @@
 library ieee;
 use IEEE.std_logic_1164.all;
 use ieee.numeric_std.all;
+use std.TextIO.all;
 library fixed_float; use fixed_float.all;
 
 package body types is
@@ -16,11 +17,17 @@ begin
 end bit2vec;                                                                          
 -- THESE ARE DEFINITIONS WHEN Bool_t is std_logic
 function its(b : bool_t) return boolean is begin return b = '1'; end;
+--this is not here - use bool_t(..), since it can be ambiguous in many places.
 function To_bool(b : std_logic) return Bool_t is begin return b; end to_bool;
 function To_bool(b : std_logic_vector) return Bool_t is begin return b(0); end to_bool;
 function To_bool(b : boolean) return Bool_t is begin if b then return '1'; else return '0'; end if; end;
 function from_bool(b : bool_t) return std_logic_vector is begin
-if b = '1' then return std_logic_vector'(b"1"); else return std_logic_vector'(b"0"); end if;
+if b = '1' then
+  return std_logic_vector'(b"1");
+else
+  return std_logic_vector'(b"0");
+end if;
+return std_logic_vector'("U");
 end from_bool;                                                            
 function slv(a: bool_array_t) return std_logic_vector is
   variable v: std_logic_vector(a'length  - 1 downto 0);
@@ -84,36 +91,50 @@ function btrue return bool_t is begin return to_bool(true); end;
 function bfalse return bool_t is begin return to_bool(false); end;
 function To_boolean(b : bool_t) return boolean is begin return its(b); end to_boolean;
 function from_bool_array(ba : bool_array_t;
-                         index, nbytes_1, byte_offset : unsigned;
+                         offset, nbytes_1, byte_offset : unsigned;
                          is_big_endian : boolean) return dword_t is
-  variable result: dword_t := (others => '0');
-  variable i : natural := to_integer(index);
-  variable o : natural := to_integer(byte_offset) * 8;
+  variable my_offset : unsigned(offset'range) := offset;
+  variable my_byte_offset : unsigned(byte_offset'range) := byte_offset;
+  variable my_nbytes_1 : unsigned(nbytes_1'range) := nbytes_1;
+  variable last_index  : unsigned(offset'range);
+  variable last_offset : unsigned(byte_offset'range);
+  variable v : std_logic_vector(0 to 3) := (others => '0');
 begin
-  if is_big_endian then
-    result(o + 24) := from_bool(ba(i))(0);
-    if nbytes_1 > 0 then
-      result(o + 16) := from_bool(ba(i+1))(0);
-      if nbytes_1 > 1 then
-        result(o + 8) := from_bool(ba(i+2))(0);
-        if nbytes_1 = 3 then
-          result(o + 0) := from_bool(ba(i+3))(0);
-        end if; 
-      end if;
-    end if;
-  else
-    result(o + 0) := from_bool(ba(i))(0);
-    if nbytes_1 > 0 then
-      result(o + 8) := from_bool(ba(i+1))(0);
-      if nbytes_1 > 1 then
-        result(o + 16) := from_bool(ba(i+2))(0);
-        if nbytes_1 = 3 then
-          result(o + 24) := from_bool(ba(i+3))(0);
-        end if; 
-      end if;
-    end if;
+  if my_offset >= ba'right then
+    my_offset := (others => '0');
   end if;
-  return result;
+  if my_nbytes_1 >= ba'right then
+    my_nbytes_1 := (others => '0');
+  end if;
+  if my_nbytes_1 > (3 - byte_offset)  then
+    my_nbytes_1 := (others => '0');
+  end if;
+--  report "from_bool1" &
+--    " offset " & integer'image(to_integer(offset)) &
+--    " nbytes_1 " & integer'image(to_integer(nbytes_1)) &
+--    " byte_offset " & integer'image(to_integer(byte_offset));
+  last_index  := resize(my_offset + my_nbytes_1, offset'length);
+--  report "from_bool2" &
+--    " last_index " & integer'image(to_integer(last_index));
+  if last_index > ba'right then
+    last_index := (others => '0');
+  end if;
+  last_offset := resize(my_byte_offset + (last_index - my_offset), last_offset'length);
+--  report "from_bool3" &
+--    " last_index " & integer'image(to_integer(last_index)) &
+--    " last_offset " & integer'image(to_integer(last_offset));
+  for i in 0 to 3 loop
+--    report "from_bool4 " & integer'image(i);
+    if i >= my_byte_offset and i <= last_offset then
+      v(i) := ba(to_integer(my_offset + (i - my_byte_offset)));
+    end if;
+  end loop;
+  return (0 => v(0),
+          8 => v(1),
+          16 => v(2),
+          24 => v(3),
+          others => '0');
+--  return result;
 end from_bool_array;
 
 -- char
@@ -473,8 +494,10 @@ end from_string;
 function from_string(s : string_t) return string is
   variable v: string(1 to s'length-1);
 begin
+--  report "from_string " & integer'image(s'length);
   for i in 0 to s'right-1 loop
-    v(i+1) := character'val(to_integer(s(i)));
+--    report "from_string1 " & integer'image(i) & " " & integer'image(to_integer(s(i)));
+    v(i+1) := character'val(to_integer(unsigned(from_char(s(i)))));
   end loop;
   return v;
 end from_string;

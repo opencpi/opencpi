@@ -14,15 +14,9 @@ typedef struct {
   unsigned inPos, outPos, repCount;
 } MyState;
 
-static size_t memories[ ] =
-{
-  sizeof (MyState),
-  0
-};
-
 RCCDispatch replicate = {
  /* insert any custom initializations here */
-  .memSizes = memories,
+  .memSize = sizeof(MyState),
  REPLICATE_DISPATCH
 };
 
@@ -37,7 +31,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
   char
     *inData = in->current.data,
     *outData = out->current.data;
-  MyState *s = self->memories[0];
+  MyState *s = self->memory;
   ReplicateProperties *p = self->properties;
   (void)timedOut;(void)newRunCondition;
 
@@ -45,7 +39,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
   // We know that inPos, outPos, and repCount all start out zero
   while (s->inPos < in->input.length && s->outPos < out->current.maxLength) {
     outData[s->outPos++] = inData[s->inPos];
-    if (!++s->repCount >= p->factor) {
+    if (++s->repCount >= p->factor) {
       s->inPos++;
       s->repCount = 0;
     }

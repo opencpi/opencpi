@@ -38,23 +38,32 @@
 #ifndef OCPI_BASE_SMEM_SERVICES_H_
 #define OCPI_BASE_SMEM_SERVICES_H_
 
-#include <DtSharedMemoryInterface.h>
 #include <map>
 #include <string>
-#include <DtExceptions.h>
+#include "OcpiUtilMisc.h"
+#include "DtSharedMemoryInterface.h"
+#include "DtExceptions.h"
 
 namespace DataTransfer {
-
+  namespace OU = OCPI::Util;
   class BaseSmem
   {
   public:
     // Constructor stores arguments and inits other properties.
     BaseSmem (EndPoint* loc) 
-      : m_name(loc->getAddress()),m_location(loc), m_size(loc->size),
-      m_refcnt (0), m_mapcnt (0), m_mappedva (0), 
-      m_mappedoffset (0), m_reqoffset (0), m_mappedsize (0){}
-
-      virtual ~BaseSmem(){}
+      : m_location(loc), m_size(loc->size), m_refcnt (0), m_mapcnt (0), m_mappedva (0), 
+	m_mappedoffset (0), m_reqoffset (0), m_mappedsize (0) {
+      mapEndPoint(*loc, m_name);
+    }
+    virtual ~BaseSmem() {}
+    static void mapEndPoint(EndPoint &ep, std::string &out) {
+      const char *semi = strrchr(ep.end_point.c_str(), ';');
+      assert(semi);
+      OU::format(out, "/%.*s", (int)(semi - ep.end_point.c_str()), ep.end_point.c_str());
+      for (unsigned n = 1; n < out.length(); n++)
+	if (out[n] == '/')
+	  out[n] = '~';
+    }
 
       // Properties of an BaseSmem instance
   public:
@@ -135,7 +144,7 @@ namespace DataTransfer {
       // Add a new name->BaseSmem dictionary entry
       static void add (BaseSmem* pSmem)
         {
-          m_cache[pSmem->m_name] = pSmem;
+          s_cache[pSmem->m_name] = pSmem;
           pSmem->m_refcnt++;
         }
 
@@ -146,20 +155,20 @@ namespace DataTransfer {
           {
             OCPI_THROWVOID( DataTransferEx (RESOURCE_EXCEPTION, "BaseSmemServices::Remove: Active references exist"));
           }
-        std::map<std::string, BaseSmem*>::iterator pos = m_cache.find (pSmem->m_name);
-        if (pos != m_cache.end ())
+        std::map<std::string, BaseSmem*>::iterator pos = s_cache.find(pSmem->m_name);
+        if (pos != s_cache.end ())
           {
-            m_cache.erase (pos);
+            s_cache.erase (pos);
           }
       }
 
       // Lookup an existing named shared memory object.
-      BaseSmem* lookup (std::string name)
-        {
-
+    BaseSmem* lookup(EndPoint &ep) {
+	  std::string name;
+	  BaseSmem::mapEndPoint(ep, name);
           BaseSmem* pSmem = 0;
-          std::map<std::string, BaseSmem*>::iterator pos = m_cache.find (name);
-          if (pos != m_cache.end ())
+          std::map<std::string, BaseSmem*>::iterator pos = s_cache.find (name);
+          if (pos != s_cache.end ())
             {
               // Successful Lookup bumps the reference count
               pSmem = pos->second;
@@ -178,7 +187,7 @@ namespace DataTransfer {
 
   private:
         
-      static std::map<std::string, BaseSmem*>        m_cache;
+      static std::map<std::string, BaseSmem*>        s_cache;
         
   };
 

@@ -10,13 +10,13 @@ Cards Card::s_cards;        // registry of card types
 // A slot may have a default mapping to the external platform's signals,
 // ie. <slot-name>_signal.
 Card::
-Card(ezxml_t xml, const char *name, SlotType &type, const char *parentFile, Worker *parent,
+Card(ezxml_t xml, const char *name, SlotType &a_type, const char *parentFile, Worker *parent,
      const char *&err)
-  : Board(type.m_sigmap, type.m_signals), m_name(name), m_type(type)
+  : Board(a_type.m_sigmap, a_type.m_signals), m_name(name), m_type(a_type)
 {
   // Initialize a card's signals from the slot type, overriding those that are 
   // mapped, and removing those that are not present on the card
-  for (SignalsIter si = type.m_signals.begin(); si != type.m_signals.end(); si++) {
+  for (SignalsIter si = m_type.m_signals.begin(); si != m_type.m_signals.end(); si++) {
     std::string slot, card;
     for (ezxml_t xs = ezxml_cchild(xml, "Signal"); xs; xs = ezxml_next(xs)) {
       if ((err = OE::getRequiredString(xs, slot, "slot")) ||
@@ -51,7 +51,7 @@ Card(ezxml_t xml, const char *name, SlotType &type, const char *parentFile, Work
   }
 #endif
   if (!err)
-    err = parseDevices(xml, &type, parentFile, parent);
+    err = parseDevices(xml, &m_type, parentFile, parent);
   if (err)
     err = OU::esprintf("Error for card '%s': %s", m_name.c_str(), err);
 }

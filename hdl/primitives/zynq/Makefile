@@ -24,23 +24,24 @@
 ############################################################################
 
 # This primitive library contains VHDL primitive modules for zynq platforms.
+include $(OCPI_CDK_DIR)/include/util.mk
 include $(OCPI_CDK_DIR)/include/hdl/xilinx.mk
+
 OnlyTargets=zynq isim modelsim
-HdlLibraries=fixed_float ocpi platform
+HdlLibraries=fixed_float ocpi platform axi
 
 XilinxZynqCore=processing_system7_v4_03_a
-ifndef OCPI_XILINX_EDK_DIR
-OCPI_XILINX_EDK_DIR=$(OCPI_XILINX_TOOLS_DIR)/EDK
-endif
-XilinxZynq=$(OCPI_XILINX_EDK_DIR)/hw/XilinxProcessorIPLib/pcores/$(XilinxZynqCore)/hdl/verilog
+XilinxZynq=$(call OcpiXilinxEdkDir,warning)/hw/XilinxProcessorIPLib/pcores/$(XilinxZynqCore)/hdl/verilog
 # Since the wrapper file is verilog. we'll provide the verilog PS7
-#XilinxPS7=$(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/unisims/PS7.v
+#XilinxPS7=$(OcpiXilinxToolsDir)/ISE/verilog/src/unisims/PS7.v
 XilinxZynqPSFiles=atc aw_atc b_atc processing_system7 trace_buffer w_atc
 
-SourceFiles=zynq_pkg.vhd unoc2axi_wd.vhd unoc2axi_rd.vhd unoc2axi.vhd axinull.vhd axi2cp.vhd
+SourceFiles=zynq_pkg.vhd
+
+#   sdp2axi.vhd sdp2axi_wd.vhd sdp2axi_rd.vhd
 
 ifeq ($(wildcard $(XilinxZynq)),)
-  $(warning Xilinx Zynq IP files are unavailable.  Assemblies will not succeed.)
+  $(warning Xilinx Zynq IP files are unavailable.  Assemblies for Zynq platforms will not build.)
 else
   SourceFiles+=$(XilinxZynqPSFiles:%=$(XilinxZynq)/%.v) zynq_ps.vhd
 endif

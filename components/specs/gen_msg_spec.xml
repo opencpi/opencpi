@@ -6,7 +6,7 @@ Properties:
  messageSize: indicates the size of messages
  granularity: incidates that the last message will be truncated to be a multiple of this.
 -->
-<ComponentSpec name='gen_msg'>
+<ComponentSpec>
 
   <DataInterfaceSpec Name="out" Producer="true"/>
 

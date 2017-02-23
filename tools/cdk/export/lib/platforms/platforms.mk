@@ -1,1 +1,0 @@
-../../../../../hdl/platforms/platforms.mk

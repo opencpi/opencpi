@@ -1,4 +1,4 @@
-#/bin/sh --noprofile
+#!/bin/sh --noprofile
 
 ################################################################################
 # jtag support functions for alst4: 

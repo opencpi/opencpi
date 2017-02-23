@@ -84,7 +84,9 @@ $(ArtifactXmlFile): $(OclAssemblyFile)
 	$(AT)$(DYN_PREFIX) $(ToolsDir)/ocpigen -M $(TargetDir)/$(@F).deps \
 	     -O $(call OclOs,$(OclTarget)) \
              -V $(call OclOsVersion,$(OclTarget)) \
-             -P $(call OclArch,$(OclTarget)) \
-	     -D $(TargetDir) $(XmlIncludeDirsInternal:%=-I%) -A $(OclAssemblyFile)
+             -H $(call OclArch,$(OclTarget)) \
+	     -D $(TargetDir) \
+	     $(XmlIncludeDirsInternal:%=-I%) \
+	     -A $(OclAssemblyFile)
 
 endif

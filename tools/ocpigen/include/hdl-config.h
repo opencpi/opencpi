@@ -11,8 +11,8 @@ struct DevInstance {
   const Device &device;
   const Card *card;
   const Slot *slot;
-  bool control;
-  const DevInstance *parent;
+  bool m_control;
+  const DevInstance *m_parent;
   std::string m_name;
   mutable std::vector<uint64_t> m_connected;
   OCPI::Util::Assembly::Properties m_instancePVs; // parameters beyond those spec'd in platform
@@ -24,7 +24,7 @@ struct DevInstance {
 typedef std::list<DevInstance> DevInstances;
 typedef DevInstances::const_iterator DevInstancesIter;
 
-#define HDL_CONFIG_ATTRS "platform"
+#define HDL_CONFIG_ATTRS "platform", "sdpWidth"
 #define HDL_CONFIG_ELEMS "cpmaster", "nocmaster", "device", "property"
 
 typedef std::vector<const Card*> Plugged;
@@ -63,6 +63,7 @@ class HdlConfig : public Worker, public HdlHasDevInstances {
   friend class HdlContainer;
   const HdlPlatform &m_platform;
   Plugged      m_plugged;      // what card is in each slot in this configuration
+  size_t       m_sdpWidth;
 public:  
   static HdlConfig *
   create(ezxml_t xml, const char *knownPlatform, const char *xfile, Worker *parent,
@@ -70,6 +71,7 @@ public:
   HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const char *&err);
   virtual ~HdlConfig();
 
+  size_t sdpWidth() { return m_sdpWidth; }
   const HdlPlatform &platform() { return m_platform; }
   const char
     *addControlConnection(std::string &assy),

@@ -49,7 +49,7 @@ begin
         bytesWritten_r    <= (others => '0');
       elsif ctl_in.control_op = STOP_e or ctl_in.control_op = RELEASE_e then
         finished_r <= true;
-        file_close(data_file);
+        close_file(data_file, props_in.fileName);
       elsif its(ctl_in.is_operating) and not finished_r then
         if not init_r then  
           open_file(data_file, cwd, props_in.fileName, write_mode);
@@ -64,9 +64,11 @@ begin
                 if its(props_in.messagesInFile) then 
                   if new_msg_length >= msg_buffer'length then
                     report "The messagesInFile property is true so messages are being buffered";
-                    report "A message is too large for the message buffer" severity failure;
+                    report "A message is too large for the message buffer";
+                    report "new_msg_length is " & integer'image(new_msg_length) severity failure;
+                  else
+                    msg_buffer(new_msg_length+1) := c;
                   end if;
-                  msg_buffer(new_msg_length) := c;
                 else
                   write(data_file, c);
                 end if;
@@ -80,15 +82,15 @@ begin
                 write(data_file, char(to_ulong(new_msg_length),i));
               end loop;
               for i in 0 to 3 loop
-                write(data_file, char(to_ulong(in_in.opcode), i));
+                write(data_file, char(ulong_t(resize(unsigned(std_logic_vector(in_in.opcode)), ulong_t'length)), i));
               end loop;
               for i in 0 to new_msg_length-1 loop
-                write(data_file, msg_buffer(i));   
+                write(data_file, msg_buffer(i+1));   
               end loop;            
             end if;
             if new_msg_length = 0 and its(props_in.stopOnEOF) then
               finished_r <= true;
-              file_close(data_file);
+              close_file(data_file, props_in.fileName);
             end if;
             bytesWritten_r <= bytesWritten_r + new_msg_length;
             messageLength_r <= (others => '0');

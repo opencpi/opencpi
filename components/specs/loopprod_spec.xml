@@ -1,4 +1,4 @@
-<ComponentSpec Name="loopprod">
+<ComponentSpec>
   <Properties>
     <Property Name="run2BufferCount" Readable="true" Writable="true"/>
     <Property Name="buffersProcessed" Readable="true" Writable="true"/>

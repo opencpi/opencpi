@@ -37,17 +37,7 @@
 
 #ifndef OCPIOSASSERT_H__
 #define OCPIOSASSERT_H__
-/**
- * \file
- * \brief The ocpiAssert() macro.
- *
- * Revision History:
- *
- *     06/30/2005 - Frank Pilhofer
- *                  Moved over from OcpiOsDebug.h
- */
 
-#include <iostream>
 #include "OcpiOsDebug.h"
 
 namespace OCPI {

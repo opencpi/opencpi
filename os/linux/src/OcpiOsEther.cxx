@@ -57,13 +57,17 @@
 #include <net/ndrv.h>
 #endif
 #ifdef OCPI_OS_linux
+#include <sys/socket.h>
 #include <dirent.h>
 #include <arpa/inet.h>
+#include <sys/socket.h>
 #include <net/if.h>
 #include <net/if_arp.h>
 #include <netpacket/packet.h>
 #endif
-
+//#include <sys/socket.h>
+//#include <netinet/in.h>
+//#include <arpa/inet.h>
 #include "OcpiOsAssert.h"
 #include "OcpiOsSizeCheck.h"
 #include "OcpiOsMisc.h"
@@ -99,14 +103,14 @@ namespace OCPI {
 	  }
       }
       void Address::
-      set(uint16_t port, uint32_t addr) {
+      set(uint16_t port, uint32_t addr_in) {
 	m_isEther = false;
 	m_error = false;
 	m_addr64 = 0;
 	m_pretty[0] = 0;
-	m_broadcast = addr == INADDR_BROADCAST;
+	m_broadcast = addr_in == INADDR_BROADCAST;
 	m_udp.port = port;
-	m_udp.addr = addr;
+	m_udp.addr = addr_in;
       }
 
       bool Address::setString(const char *m) {
@@ -116,14 +120,14 @@ namespace OCPI {
 	if (strchr(m, '.')) {
 	  m_isEther = false;
 	  struct in_addr x;
-	  char addr[3+1+3+1+3+1+3+1+5+1];
-	  if (strlen(m) >= sizeof(addr))
+	  char addr_tmp[3+1+3+1+3+1+3+1+5+1];
+	  if (strlen(m) >= sizeof(addr_tmp))
 	    return m_error = true;
-	  strcpy(addr, m);
-	  char *cp = strrchr(addr, ':');
+	  strcpy(addr_tmp, m);
+	  char *cp = strrchr(addr_tmp, ':');
 	  if (cp)
 	    *cp = 0;
-	  if (!inet_aton(addr, &x))
+	  if (!inet_aton(addr_tmp, &x))
 	    return m_error = true;
 	  if (cp)
 	    m_udp.port = (uint16_t)atoi(cp+1);
@@ -462,7 +466,7 @@ namespace OCPI {
 	mh.msg_iovlen = 1;
 	mh.msg_iov = &iov;
 	mh.msg_control = &cmsg;
-	mh.msg_controllen = sizeof(cmsg);
+	mh.msg_controllen = (socklen_t)sizeof(cmsg);
 	ssize_t rlen;
 	do { // loop to filter out packets that arent used
 	  if ((rlen = recvmsg(m_fd, &mh, flags)) < 0 && errno == EINTR)
@@ -481,7 +485,7 @@ namespace OCPI {
 
 	if (rlen < 0 && errno == EWOULDBLOCK)
 	  return false; // timeout
-	if (rlen <= 0 || mh.msg_flags & MSG_TRUNC) {
+	if ((rlen <= 0) || (mh.msg_flags & MSG_TRUNC)) {
 	  setError(error, "receiving %zd packet bytes failed%s", rlen,
 		   mh.msg_flags & MSG_TRUNC ? ": truncated" : "");
 	  return false;
@@ -496,7 +500,7 @@ namespace OCPI {
 	if (m_ifAddr.isEther()) {
 	  Type type = ntohs(((Header *)&packet)->type);
 	  if (m_type != type) {
-	    setError(error, "Ethertype mismatch: ours is 0x%x, packet's is0x%x",
+	    setError(error, "Ethertype mismatch: ours is 0x%x, packet's is 0x%x",
 		     m_type, type);
 	    return false;
 	  }
@@ -524,9 +528,9 @@ namespace OCPI {
 	  ocpiDebug("udp: fam %u port %u addr %s",
 		    sa.in.sin_family, ntohs(sa.in.sin_port), inet_ntoa(sa.in.sin_addr));
 	  // iterate through all the control headers
-	  for (struct cmsghdr *cmsg = CMSG_FIRSTHDR(&mh); cmsg != NULL; cmsg = CMSG_NXTHDR(&mh, cmsg))
-	    if (cmsg->cmsg_level == IPPROTO_IP && cmsg->cmsg_type == IP_PKTINFO) {
-	      ifindex = ((struct in_pktinfo *)CMSG_DATA(cmsg))->ipi_ifindex;
+	  for (struct cmsghdr *cmsg_tmp = CMSG_FIRSTHDR(&mh); cmsg_tmp != NULL; cmsg_tmp = CMSG_NXTHDR(&mh, cmsg_tmp))
+	    if ((cmsg_tmp->cmsg_level == IPPROTO_IP) && (cmsg_tmp->cmsg_type == IP_PKTINFO)) {
+	      ifindex = ((struct in_pktinfo *)CMSG_DATA(cmsg_tmp))->ipi_ifindex;
 	      break;
 	    }
 	}
@@ -587,7 +591,7 @@ namespace OCPI {
 	    sa.ocpi.ocpi_role = m_role;
 	    sa.ocpi.ocpi_ifindex = (uint8_t)m_ifIndex;
 	    memcpy(sa.ocpi.ocpi_remote, addr.addr(), Address::s_size);
-	    msg.msg_namelen = sizeof(sa.ocpi);
+	    msg.msg_namelen = (socklen_t)sizeof(sa.ocpi);
 	  } else {
 #ifdef OCPI_OS_macos
 	    sa.dl.sdl_len = sizeof(sa);
@@ -598,13 +602,13 @@ namespace OCPI {
 	    sa.dl.sdl_alen = 6;
 	    sa.dl.sdl_slen = 0;
 	    memcpy(sa.dl.sdl_data, addr.addr(), Address::s_size);
-	    msg.msg_namelen = sizeof(sa.dl);
+	    msg.msg_namelen = (socklen_t)sizeof(sa.dl);
 #else
 	    sa.ll.sll_family = PF_PACKET;
 	    memcpy(sa.ll.sll_addr, addr.addr(), Address::s_size);
 	    sa.ll.sll_halen = Address::s_size;
 	    sa.ll.sll_ifindex = m_ifIndex;
-	    msg.msg_namelen = sizeof(sa.ll);
+	    msg.msg_namelen = (socklen_t)sizeof(sa.ll);
 #endif
 	    Header header;
 	    myiov[0].iov_base = &header;
@@ -628,7 +632,7 @@ namespace OCPI {
 #ifdef OCPI_OS_macos
 	  sa.in.sin_len = sizeof(sa.in);
 #endif
-	  msg.msg_namelen = sizeof(sa.in);
+	  msg.msg_namelen = (socklen_t)sizeof(sa.in);
 	  sa.in.sin_family = AF_INET;
 	  if (addr.isBroadcast()) {
 	    if (!ifc) {
@@ -645,7 +649,7 @@ namespace OCPI {
 	    // For broadcast, we specify the interface, otherwise IP routing does the right thing.
 	    memset(cbuf, 0, sizeof(cbuf));
 	    msg.msg_control = cbuf;
-	    msg.msg_controllen = sizeof cbuf;
+	    msg.msg_controllen = (socklen_t)sizeof(cbuf);
 	    struct cmsghdr *cmsg = CMSG_FIRSTHDR(&msg);
 	    //msg.msg_control = NULL;
 	    //	    msg.msg_controllen = 0;
@@ -665,9 +669,9 @@ namespace OCPI {
         msg.msg_iov = (iovec*)iov;
 	msg.msg_iovlen = iovlen;
 	ssize_t rlen = sendmsg(m_fd, &msg, 0);
-	ocpiDebug("Send packet length %zd, to %s/%s via %u, port %u returned %zd errno %u fd %u",
+	ocpiDebug("Send packet length %zd, to %s/%s via %u, port %u returned %zd errno %u (%s) fd %u",
 		  len, inet_ntoa(sa.in.sin_addr), addr.pretty(), ifc ? ifc->index : 0,
-		  ntohs(sa.in.sin_port), rlen, errno, m_fd);
+		  ntohs(sa.in.sin_port), rlen, errno, strerror(errno), m_fd);
 	if (rlen != (ssize_t)len) {
 	  setError(error, "sendto of %u bytes failed, returning %d", len, rlen);
 	  return false;
@@ -699,7 +703,7 @@ namespace OCPI {
       }
       IfScanner::
       ~IfScanner() {
-	Opaque *o = (Opaque *)m_opaque;
+        Opaque *o = (Opaque *)m_opaque;
 #ifdef OCPI_OS_macos
 	delete [] o->buffer;
 #else
@@ -710,13 +714,12 @@ namespace OCPI {
       void IfScanner::
       reset() {
 	m_index = 0;
-	Opaque &o = *(Opaque *)m_opaque;
 #ifdef OCPI_OS_macos
+        Opaque &o = *(Opaque *)m_opaque;
 	o.ifm = (struct if_msghdr *)o.buffer;
-#else
-        o.ifnames->clear();
 #endif
       }
+
       // Delayed initialization - done when we get to the real interfaces
       // (after the udp one).
       // return true if error set
@@ -1043,9 +1046,9 @@ namespace OCPI {
 	brdAddr.set(0);
 	up = connected = loopback = false;
       }
-      Interface::Interface(const char *name, std::string &error) {
+      Interface::Interface(const char *name_in, std::string &error) {
 	IfScanner ifs(error);
-	while (error.empty() && ifs.getNext(*this, error, name))
+	while (error.empty() && ifs.getNext(*this, error, name_in))
 	  if (up && connected)
 	    return;
 	error = "No interfaces found that are up and connected";

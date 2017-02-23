@@ -44,8 +44,8 @@ namespace OCPI {
     namespace OE = OCPI::Util::EzXml;
     Worker::Worker()
       : m_attributes(NULL), m_ports(NULL), m_memories(NULL), m_nPorts(0), m_nMemories(0),
-        m_totalPropertySize(0), m_nProperties(0), m_properties(NULL), m_firstRaw(NULL),
-	m_xml(NULL), m_ordinal(0) {
+        m_totalPropertySize(0), m_isSource(false), m_nProperties(0), m_properties(NULL),
+	m_firstRaw(NULL), m_xml(NULL), m_ordinal(0) {
     }
 
     Worker::~Worker() {
@@ -136,9 +136,16 @@ namespace OCPI {
         if ((err = p->parse(x)))
           return esprintf("Invalid xml port description: %s", err);
       p = m_ports;
-      for (unsigned n = 0; n < m_nPorts; n++, p++)
+      bool hasInput = false, hasOutput = false;
+      for (unsigned nn = 0; nn < m_nPorts; nn++, p++)
 	if ((err = p->postParse()))
           return esprintf("Invalid xml port description: %s", err);
+        else if (p->m_provider) {
+	  if (!p->m_optional)
+	    hasInput = true;
+        } else
+	  hasOutput = true;
+      m_isSource = hasOutput && !hasInput;
       Memory* m = m_memories;
       for (x = ezxml_cchild(xml, "memory"); x; x = ezxml_next(x), m++ )
         if ((err = m->parse(x)))
@@ -153,16 +160,13 @@ namespace OCPI {
     const char *Worker::getValue(const char *sym, ExprValue &val) const {
       // Our builtin symbols take precendence, but can be overridden with $
       if (!strcasecmp(sym, "model")) {
-	val.isNumber = false;
-	val.string = m_model;
+	val.setString(m_model);
 	return NULL;
       } else if (!strcasecmp(sym, "platform") && m_attributes) {
-	val.isNumber = false;
-	val.string = m_attributes->m_platform;
+	val.setString(m_attributes->m_platform);
 	return NULL;
       } else if (!strcasecmp(sym, "os") && m_attributes) {
-	val.isNumber = false;
-	val.string = m_attributes->m_os;
+	val.setString(m_attributes->m_os);
 	return NULL;
       }
       Property *p = m_properties;
@@ -181,7 +185,8 @@ namespace OCPI {
 #endif
     void parse3(char *s, std::string &s1, std::string &s2,
 		std::string &s3) {
-      char *temp = strdup(s);
+      char *orig = strdup(s), *temp = orig;
+
       if ((s = strsep(&temp, "-"))) {
 	s1 = s;
 	if ((s = strsep(&temp, "-"))) {
@@ -190,13 +195,14 @@ namespace OCPI {
 	    s3 = s;
 	}
       }
-      free(temp);
+      free(orig);
     }
 
     void Attributes::parse(ezxml_t x) {
       const char *cp;
       if ((cp = ezxml_cattr(x, "os"))) m_os = cp;
       if ((cp = ezxml_cattr(x, "osVersion"))) m_osVersion = cp;
+      if ((cp = ezxml_cattr(x, "arch"))) m_arch = cp;
       if ((cp = ezxml_cattr(x, "platform"))) m_platform = cp;
       if ((cp = ezxml_cattr(x, "runtime"))) m_runtime = cp;
       if ((cp = ezxml_cattr(x, "runtimeVersion"))) m_runtimeVersion = cp;
@@ -208,17 +214,17 @@ namespace OCPI {
     }
 
     void Attributes::parse(const char *pString) {
-      std::string junk;
+      std::string unused;
       char *p = strdup(pString), *temp = p, *val;
       
       if ((val = strsep(&temp, "="))) {
-	parse3(val, m_os, m_osVersion, junk);
+	parse3(val, m_os, m_osVersion, unused);
 	if ((val = strsep(&temp, "="))) {
-	  parse3(val, m_platform, junk, junk);
+	  parse3(val, m_platform, unused, unused);
 	  if ((val = strsep(&temp, "="))) {
-	    parse3(val, m_tool, m_toolVersion, junk);
+	    parse3(val, m_tool, m_toolVersion, unused);
 	    if ((val = strsep(&temp, "=")))
-	      parse3(val, m_runtime, m_runtimeVersion, junk);
+	      parse3(val, m_runtime, m_runtimeVersion, unused);
 	  }
 	}
       }

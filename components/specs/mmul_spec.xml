@@ -1,4 +1,4 @@
-<ComponentSpec Name="mmul">
+<ComponentSpec>
   <Properties>
     <Property Name="widthA" Type="Long" Readable="true" Writable="true"/>
     <Property Name="widthB" Type="Long" Readable="true" Writable="true"/>

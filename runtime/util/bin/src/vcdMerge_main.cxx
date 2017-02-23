@@ -96,12 +96,12 @@ OcpiRccBinderConfigurator::g_options[] = {
 
 static
 void
-printUsage (OcpiRccBinderConfigurator & config,
+printUsage (OcpiRccBinderConfigurator & a_config,
             const char * argv0)
 {
   std::cout << "usage: " << argv0 << " [options]" << std::endl
             << "  options: " << std::endl;
-  config.printOptions (std::cout);
+  a_config.printOptions (std::cout);
 }
 
 
@@ -182,18 +182,18 @@ struct VCDValue :  public VCDBase {
         type = VariableT;
         // Format 01010token
         std::string t;
-        long n;
-        for (n=m_value.length()-1; n>=0; n--) {
-          if ( (m_value[n]>=48) && (m_value[n]<=57) ) {
+        long nn;
+        for (nn=m_value.length()-1; nn>=0; nn--) {
+          if ( (m_value[nn]>=48) && (m_value[nn]<=57) ) {
             memcpy(token,t.c_str(),t.length());
             token[t.length()]=0;
             break;
           }
-          if ( ! isspace( m_value[n] )) {
-            t += m_value[n];
+          if ( ! isspace( m_value[nn] )) {
+            t += m_value[nn];
           }
         }
-        memcpy(value, m_value.c_str(), n+1);
+        memcpy(value, m_value.c_str(), nn+1);
 
         // can fail on $end, ok
         //        sscanf( m_value.c_str(),"%s %s",value, token);

@@ -69,11 +69,11 @@ xfer_pio_action_transfer(PIO_transfer transfer)
 
 
     if (src == 0) {
-      for (uint32_t i=0; i < nbytes; i++)
+      for (i=0; i < nbytes; i++)
         *dst++ = 0;
     }
     else {
-      for (uint32_t i=0; i < nbytes; i++)
+      for (i=0; i < nbytes; i++)
         *dst++ = *src++;
     }
   }

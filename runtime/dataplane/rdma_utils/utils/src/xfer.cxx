@@ -41,8 +41,6 @@
 #include "DtOsDataTypes.h"
 #include "xfer_internal.h"
 
-#define LocEQ(loc,place) strcmp(loc->getAddress(),place)==0
-
 long
 xfer_create(DataTransfer::SmemServices* src_ep,
             DataTransfer::SmemServices* dst_ep,

@@ -75,6 +75,7 @@ namespace OCPI {
       size_t m_nEnums;
       size_t m_nItems;                // total number of fixed items
       bool   m_fixedLayout;           // is this type fixed length in its parent?
+      bool   m_usesParameters;        // is this type dependent on parameters?
       std::string m_typeDef;          // If we were created from a typedef
       std::string m_format;
       // string references for array dimensions and lengths
@@ -88,6 +89,21 @@ namespace OCPI {
       // Return whether this value is fixed in size
       // If top == true, its ok for it to be a sequence
       bool isFixed(bool top = true) const;
+      bool needsComma() const {
+	return m_isSequence || m_arrayRank != 0 || m_baseType == OCPI::API::OCPI_Struct;
+      }
+      bool needsCommaDimension() const {
+	return m_baseType == OCPI::API::OCPI_Struct;
+      }
+      // This value is an element of a sequence.  Does it need to be wrapped in braces?
+      bool needsCommaElement() const {
+	return m_arrayRank != 0 || m_baseType == OCPI::API::OCPI_Struct;
+      }
+      bool needsNewLineBraces() const {
+	return (m_isSequence && m_arrayRank) || 
+	  (!m_isSequence && m_arrayRank > 1) ||
+	  (m_baseType == OCPI::API::OCPI_Struct && (m_isSequence || m_arrayRank));
+      }
     };
     const unsigned testMaxStringLength = 10;
     const unsigned maxDataTypeAlignment = sizeof(double); // max of all types we support
@@ -153,7 +169,7 @@ namespace OCPI {
     };
     // There are the data type attributes allowed for members
 #define OCPI_UTIL_MEMBER_ATTRS						\
-    "Name", "Type", "StringLength", "SequenceLength", "ArrayLength", "ArrayDimensions", "Key", "Enums"
+    "Name", "Type", "StringLength", "SequenceLength", "ArrayLength", "ArrayDimensions", "Key", "Enums", "Description"
 
     // A "member" is used for structure members, operation arguments, exception members, 
     // and properties.  Members have names, and offsets in their group, and possibly a
@@ -166,11 +182,13 @@ namespace OCPI {
       size_t m_offset;              // in group
       bool m_isIn, m_isOut, m_isKey;  // for arguments (could use another class, but not worth it)
       Value *m_default;               // A default value, if one is appropriate and there is one
+      std::string m_defaultExpr;
       unsigned m_ordinal;             // ordinal within group
       Member();
-      Member(const char *name, const char *abbrev, const char *description, OCPI::API::BaseType type,
-	     bool isSequence, const char *defaultValue);
+      Member(const char *name, const char *abbrev, const char *description,
+	     OCPI::API::BaseType type, bool isSequence, const char *defaultValue);
       virtual ~Member();
+      Member &sequenceType() const;
       void printAttrs(FILE *f, const char *tag, unsigned indent = 0, bool suppressDefault = false);
       void printChildren(FILE *f, const char *tag, unsigned indent = 0);
       void printXML(FILE *f, const char *tag, unsigned indent);
@@ -179,11 +197,12 @@ namespace OCPI {
       void read(Reader &reader, uint8_t *&data, size_t &length, bool fake = false,
 		bool top = false) const;
       void generate(const char *name, unsigned ordinal = 0, unsigned depth = 0);
-      const std::string &name() const { return m_name; }
+      //      const std::string &name() const { return m_name; }
+      const char *cname() const { return m_name.c_str(); }
       const char
-        *finalize(const IdentResolver &resolv, bool isFixed),
-	*parseDefault(ezxml_t x, const char *hasDefault),
-	*parse(ezxml_t x, bool isFixed, bool hasName, const char *hasDefault,
+        *finalize(const IdentResolver &resolv, const char *tag, bool isFixed),
+	*parseDefault(const char *value, const char *tag, const IdentResolver *resolv = NULL),
+	*parse(ezxml_t x, bool isFixed, bool hasName, const char *hasDefault, const char *tag,
 	       unsigned ordinal, const IdentResolver *resolv = NULL),
 	*offset(size_t &maxAlign, size_t &argOffset, size_t &minSize, bool &diverseSizes,
 		bool &sub32, bool &unBounded, bool isTop = false);

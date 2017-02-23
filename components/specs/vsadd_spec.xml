@@ -1,4 +1,4 @@
-<ComponentSpec Name="vsadd">
+<ComponentSpec>
   <Properties>
      <Property Name="scalar" Type="Float" Readable="true" Writable="true"/>
   </Properties>

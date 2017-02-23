@@ -1,5 +1,11 @@
 # Top level settings for the final processing after the container core is made
 # This file is "sourced" (included) from that generated qsf file
+#
+# Good reference for available pin functions: https://www.altera.com/content/dam/altera-www/global/en_US/pdfs/literature/dp/stratix4/ep4sgx230.pdf
+#
+# HSMC bank 1 transceiver pin constraints are not included here.
+#
+# Tips for editing: view with vim, run :set cursorline and :set cursorcolumn
 
 #set_global_assignment -name PHYSICAL_SYNTHESIS_COMBO_LOGIC ON
 #set_global_assignment -name PHYSICAL_SYNTHESIS_REGISTER_DUPLICATION ON
@@ -96,108 +102,6 @@ set_instance_assignment -name IO_STANDARD "2.5 V" -to led
 
 set_instance_assignment -name CURRENT_STRENGTH_NEW 4MA -to led
 set_instance_assignment -name SLEW_RATE 0 -to led
-
-# HSMC-A populated with "HSMC Debug Header Breakout Board"
-
-# In seqeunce from table 2-37 from board reference manual HMSC Port A...
-set_location_assignment PIN_AW10 -to hsmc_in[0]
-set_location_assignment PIN_AV10 -to hsmc_in[1]
-set_location_assignment PIN_AW7  -to hsmc_in[2]
-set_location_assignment PIN_AV7  -to hsmc_in[3]
-set_location_assignment PIN_AN9  -to hsmc_in[4]
-set_location_assignment PIN_AT9  -to hsmc_in[5]
-set_location_assignment PIN_AP9  -to hsmc_in[6]
-set_location_assignment PIN_AU9  -to hsmc_in[7]
-set_location_assignment PIN_AN7  -to hsmc_in[8]
-set_location_assignment PIN_AT8  -to hsmc_in[9]
-set_location_assignment PIN_AP7  -to hsmc_in[10]
-set_location_assignment PIN_AU8  -to hsmc_in[11]
-set_location_assignment PIN_AE13 -to hsmc_in[12]
-set_location_assignment PIN_AP8  -to hsmc_in[13]
-set_location_assignment PIN_AE12 -to hsmc_in[14]
-set_location_assignment PIN_AR8  -to hsmc_in[15]
-
-set_location_assignment PIN_AL8  -to hsmc_out[0]
-set_location_assignment PIN_AW6  -to hsmc_out[1]
-set_location_assignment PIN_AM8  -to hsmc_out[2]
-set_location_assignment PIN_AW5  -to hsmc_out[3]
-set_location_assignment PIN_AK9  -to hsmc_out[4]
-set_location_assignment PIN_AV5  -to hsmc_out[5]
-set_location_assignment PIN_AL9  -to hsmc_out[6]
-set_location_assignment PIN_AW4  -to hsmc_out[7]
-set_location_assignment PIN_AK8  -to hsmc_out[8]
-set_location_assignment PIN_AT7  -to hsmc_out[9]
-set_location_assignment PIN_AK7  -to hsmc_out[10]
-set_location_assignment PIN_AU7  -to hsmc_out[11]
-set_location_assignment PIN_AH10 -to hsmc_out[12]
-set_location_assignment PIN_AT6  -to hsmc_out[13]
-set_location_assignment PIN_AJ10 -to hsmc_out[14]
-set_location_assignment PIN_AU6  -to hsmc_out[15]
-
-set_instance_assignment -name IO_STANDARD "2.5 V"      -to hsmc_in
-set_instance_assignment -name IO_STANDARD "2.5 V"      -to hsmc_out
-set_instance_assignment -name CURRENT_STRENGTH_NEW 4MA -to hsmc_out
-set_instance_assignment -name SLEW_RATE 0              -to hsmc_out
-
-# PPS_IO
-# PIN_AH9 is HSMC Bit32 J1-35
-# PIN_AR5 is HSMC Bit33 J1-36
-set_location_assignment PIN_AH9 -to ppsExtIn
-set_location_assignment PIN_AR5 -to ppsOut
-set_instance_assignment -name IO_STANDARD "2.5 V"      -to ppsExtIn
-set_instance_assignment -name IO_STANDARD "2.5 V"      -to ppsOut
-set_instance_assignment -name CURRENT_STRENGTH_NEW 4MA -to ppsOut
-set_instance_assignment -name SLEW_RATE 0              -to ppsOut
-
-
-# LED assignemnt from HSMA_D40 to D79... 
-set_location_assignment PIN_AG8  -to led_cathode[0]
-set_location_assignment PIN_AP6  -to led_anode[0]
-set_location_assignment PIN_AG7  -to led_cathode[1]
-set_location_assignment PIN_AP5  -to led_anode[1]
-set_location_assignment PIN_AG10 -to led_cathode[2]
-set_location_assignment PIN_AN6  -to led_anode[2]
-set_location_assignment PIN_AG9  -to led_cathode[3]
-set_location_assignment PIN_AN5  -to led_anode[3]
-set_location_assignment PIN_AF11 -to led_cathode[4]
-set_location_assignment PIN_AM6  -to led_anode[4]
-set_location_assignment PIN_AF10 -to led_cathode[5]
-set_location_assignment PIN_AM5  -to led_anode[5]
-set_location_assignment PIN_AD10 -to led_cathode[6]
-set_location_assignment PIN_AL6  -to led_anode[6]
-set_location_assignment PIN_AD9  -to led_cathode[7]
-set_location_assignment PIN_AL5  -to led_anode[7]
-set_location_assignment PIN_AE11 -to led_cathode[8]
-set_location_assignment PIN_AK6  -to led_anode[8]
-set_location_assignment PIN_AE10 -to led_cathode[9]
-set_location_assignment PIN_AK5  -to led_anode[9]
-set_location_assignment PIN_AD13 -to led_cathode[10]
-set_location_assignment PIN_AJ6  -to led_anode[10]
-set_location_assignment PIN_AD12 -to led_cathode[11]
-set_location_assignment PIN_AJ5  -to led_anode[11]
-set_location_assignment PIN_AB13 -to led_cathode[12]
-set_location_assignment PIN_AH6  -to led_anode[12]
-set_location_assignment PIN_AB12 -to led_cathode[13]
-set_location_assignment PIN_AH5  -to led_anode[13]
-set_location_assignment PIN_AB11 -to led_cathode[14]
-set_location_assignment PIN_AG6  -to led_anode[14]
-set_location_assignment PIN_AB10 -to led_cathode[15]
-set_location_assignment PIN_AG5  -to led_anode[15]
-set_location_assignment PIN_AC11 -to led_cathode[16]
-set_location_assignment PIN_AB9  -to led_anode[16]
-set_location_assignment PIN_AC10 -to led_cathode[17]
-set_location_assignment PIN_AC8  -to led_anode[17]
-set_location_assignment PIN_AF13 -to led_cathode[18]
-set_location_assignment PIN_AF6  -to led_anode[18]
-set_location_assignment PIN_AG13 -to led_cathode[19]
-set_location_assignment PIN_AE5  -to led_anode[19]
-
-set_instance_assignment -name IO_STANDARD "2.5 V"      -to led_cathode
-set_instance_assignment -name IO_STANDARD "2.5 V"      -to led_anode
-set_instance_assignment -name CURRENT_STRENGTH_NEW 4MA -to led_cathode
-set_instance_assignment -name CURRENT_STRENGTH_NEW 4MA -to led_anode
-set_instance_assignment -name SLEW_RATE 0              -to led_cathode
-set_instance_assignment -name SLEW_RATE 0              -to led_anode
 
 # LCD...
 # Note, we only use the 4b databus on the MSBs here...
@@ -394,4 +298,913 @@ set_location_assignment PIN_B11 -to ddr3top_dm[0]
 set_location_assignment PIN_G23 -to ddr3top_dm[1]
 set_location_assignment PIN_N26 -to oct_rdn
 set_location_assignment PIN_P26 -to oct_rup
+
+                                                                                                # Below from https://www.altera.com/content/dam/altera-www/global/en_US/pdfs/literature/manual/rm_sivgx_fpga_dev_board.pdf
+                                                                                                #######################################################################################################################################
+                                                                                                # HSMC Port A Pin Assignments, Schematic Signal Names, and Functions                                                                  #
+                                                                                                #######################################################################################################################################
+                                                                                                # Board Ref    Description                                        Schematic Signal Name   I/O Standard   Stratix IV GX Device Pin Num #
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.1         Transceiver TX bit 7                               HSMA_TX_P7              1.4-V PCML     P4
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.2         Transceiver RX bit 7                               HSMA_RX_P7              1.4-V PCML     R2
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.3         Transceiver TX bit 7n                              HSMA_TX_N7              1.4-V PCML     P3
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.4         Transceiver RX bit 7n                              HSMA_RX_N7              1.4-V PCML     R1
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.5         Transceiver TX bit 6                               HSMA_TX_P6              1.4-V PCML     T4
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.6         Transceiver RX bit 6                               HSMA_RX_P6              1.4-V PCML     U2
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.7         Transceiver TX bit 6n                              HSMA_TX_N6              1.4-V PCML     T3
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.8         Transceiver RX bit 6n                              HSMA_RX_N6              1.4-V PCML     U1
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.9         Transceiver TX bit 5                               HSMA_TX_P5              1.4-V PCML     AB4
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.10        Transceiver RX bit 5                               HSMA_RX_P5              1.4-V PCML     AC2
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.11        Transceiver TX bit 5n                              HSMA_TX_N5              1.4-V PCML     AB3
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.12        Transceiver RX bit 5n                              HSMA_RX_N5              1.4-V PCML     AC1
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.13        Transceiver TX bit 4                               HSMA_TX_P4              1.4-V PCML     AD4
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.14        Transceiver RX bit 4                               HSMA_RX_P4              1.4-V PCML     AE2
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.15        Transceiver TX bit 4n                              HSMA_TX_N4              1.4-V PCML     AD3
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.16        Transceiver RX bit 4n                              HSMA_RX_N4              1.4-V PCML     AE1
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.17        Transceiver TX bit 3                               HSMA_TX_P3              1.4-V PCML     AF4
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.18        Transceiver RX bit 3                               HSMA_RX_P3              1.4-V PCML     AG2
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.19        Transceiver TX bit 3n                              HSMA_TX_N3              1.4-V PCML     AF3
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.20        Transceiver RX bit 3n                              HSMA_RX_N3              1.4-V PCML     AG1
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.21        Transceiver TX bit 2                               HSMA_TX_P2              1.4-V PCML     AH4
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.22        Transceiver RX bit 2                               HSMA_RX_P2              1.4-V PCML     AJ2
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.23        Transceiver TX bit 2n                              HSMA_TX_N2              1.4-V PCML     AH3
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.24        Transceiver RX bit 2n                              HSMA_RX_N2              1.4-V PCML     AJ1
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.25        Transceiver TX bit 1                               HSMA_TX_P1              1.4-V PCML     AP4
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.26        Transceiver RX bit 1                               HSMA_RX_P1              1.4-V PCML     AR2
+#######################################################################################################################################################################################################################################
+                                                                                                
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.28        Transceiver RX bit 1n                              HSMA_RX_N1              1.4-V PCML     AR1
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.29        Transceiver TX bit 0                               HSMA_TX_P0              1.4-V PCML     AT4
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.30        Transceiver RX bit 0                               HSMA_RX_P0              1.4-V PCML     AU2
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.31        Transceiver TX bit 0n                              HSMA_TX_N0              1.4-V PCML     AT3
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.32        Transceiver RX bit 0n                              HSMA_RX_N0              1.4-V PCML     AU1
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.33        Management serial data                             HSMA_SDA                2.5-V          AJ11
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_SDA
+set_location_assignment PIN_AJ11 -to HSMC_ALST4_A_SDA
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.34        Management serial clock                            HSMA_SCL                2.5-V          L11
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_SCL
+set_location_assignment PIN_L11  -to HSMC_ALST4_A_SCL
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.35        JTAG clock signal                                  FPGA_JTAG_TCK           2.5-V          -
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.36        JTAG mode select signal                            FPGA_JTAG_TMS           2.5-V          -
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.37        JTAG data output                                   HSMA_JTAG_TDO           2.5-V          -
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.38        JTAG data input                                    HSMA_JTAG_TDI           2.5-V          -
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.39        Dedicated CMOS clock out                           HSMA_CLK_OUT0           2.5-V          AM29
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_CLKOUT0
+set_location_assignment PIN_AM29 -to HSMC_ALST4_A_CLKOUT0
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.40        Dedicated CMOS clock in                            HSMA_CLK_IN0            2.5-V          AB34
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_CLKIN0
+# below line included since this is a dedicated clock pin
+set_instance_assignment -name GLOBAL_SIGNAL "GLOBAL CLOCK" -to "HSMC_ALST4_A_CLKIN0"
+set_location_assignment PIN_AB34 -to HSMC_ALST4_A_CLKIN0
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.41        Dedicated CMOS I/O bit 0                           HSMA_D0                 2.5-V          AW10
+#set_instance_assignment -name OUTPUT_TERMINATION "SERIES 50 OHM WITH CALIBRATION" -to HSMC_ALST4_A_D0
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D0
+set_location_assignment PIN_AW10 -to HSMC_ALST4_A_D0
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.42        Dedicated CMOS I/O bit 1                           HSMA_D1                 2.5-V          AV10
+#set_instance_assignment -name OUTPUT_TERMINATION "SERIES 50 OHM WITH CALIBRATION" -to HSMC_ALST4_A_D1
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D1
+set_location_assignment PIN_AV10 -to HSMC_ALST4_A_D1
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.43        Dedicated CMOS I/O bit 2                           HSMA_D2                 2.5-V          AW7
+#set_instance_assignment -name OUTPUT_TERMINATION "SERIES 50 OHM WITH CALIBRATION" -to HSMC_ALST4_A_D2
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D2
+set_location_assignment PIN_AW7  -to HSMC_ALST4_A_D2
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.44        Dedicated CMOS I/O bit 3                           HSMA_D3                 2.5-V          AV7
+#set_instance_assignment -name OUTPUT_TERMINATION "SERIES 50 OHM WITH CALIBRATION" -to HSMC_ALST4_A_D3
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D3
+set_location_assignment PIN_AV7  -to HSMC_ALST4_A_D3
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.47        LVDS TX bit 0 or CMOS bit 4                        HSMA_TX_D_P0            LVDS or 2.5-V  AN9
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D4_OR_LVDS_TXp0
+set_location_assignment PIN_AN9 -to HSMC_ALST4_A_D4_OR_LVDS_TXp0
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.48        LVDS RX bit 0 or CMOS bit 5                        HSMA_RX_D_P0            LVDS or 2.5-V  AT9
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D5_OR_LVDS_RXp0
+set_location_assignment PIN_AT9 -to HSMC_ALST4_A_D5_OR_LVDS_RXp0
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.49        LVDS TX bit 0n or CMOS bit 6                       HSMA_TX_D_N0            LVDS or 2.5-V  AP9
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D6_OR_LVDS_TXn0
+set_location_assignment PIN_AP9  -to HSMC_ALST4_A_D6_OR_LVDS_TXn0
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.50        LVDS RX bit 0n or CMOS bit 7                       HSMA_RX_D_N0            LVDS or 2.5-V  AU9
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D7_OR_LVDS_RXn0
+set_location_assignment PIN_AU9  -to HSMC_ALST4_A_D7_OR_LVDS_RXn0
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.53        LVDS TX bit 1 or CMOS bit 8                        HSMA_TX_D_P1            LVDS or 2.5-V  AN7
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D8_OR_LVDS_TXp1
+set_location_assignment PIN_AN7  -to HSMC_ALST4_A_D8_OR_LVDS_TXp1
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.54        LVDS RX bit 1 or CMOS bit 9                        HSMA_RX_D_P1            LVDS or 2.5-V  AT8
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D9_OR_LVDS_RXp1
+set_location_assignment PIN_AT8  -to HSMC_ALST4_A_D9_OR_LVDS_RXp1
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.55        LVDS TX bit 1n or CMOS bit 10                      HSMA_TX_D_N1            LVDS or 2.5-V  AP7
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D10_OR_LVDS_TXn1
+set_location_assignment PIN_AP7  -to HSMC_ALST4_A_D10_OR_LVDS_TXn1
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.56        LVDS RX bit 1n or CMOS bit 11                      HSMA_RX_D_N1            LVDS or 2.5-V  AU8
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D11_OR_LVDS_RXn1
+set_location_assignment PIN_AU8  -to HSMC_ALST4_A_D11_OR_LVDS_RXn1
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.59        LVDS TX bit 2 or CMOS bit 12                       HSMA_TX_D_P2            LVDS or 2.5-V  AE13
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D12_OR_LVDS_TXp2
+set_location_assignment PIN_AE13 -to HSMC_ALST4_A_D12_OR_LVDS_TXp2
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.60        LVDS RX bit 2 or CMOS bit 13                       HSMA_RX_D_P2            LVDS or 2.5-V  AP8
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D13_OR_LVDS_RXp2
+set_location_assignment PIN_AP8  -to HSMC_ALST4_A_D13_OR_LVDS_RXp2
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.61        LVDS TX bit 2n or CMOS bit 14                      HSMA_TX_D_N2            LVDS or 2.5-V  AE12
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D14_OR_LVDS_TXn2
+set_location_assignment PIN_AE12 -to HSMC_ALST4_A_D14_OR_LVDS_TXn2
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.62        LVDS RX bit 2n or CMOS bit 15                      HSMA_RX_D_N2            LVDS or 2.5-V  AR8
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D15_OR_LVDS_RXn2
+set_location_assignment PIN_AR8  -to HSMC_ALST4_A_D15_OR_LVDS_RXn2
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.65        LVDS TX bit 3 or CMOS bit 16                       HSMA_TX_D_P3            LVDS or 2.5-V  AL8
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D16_OR_LVDS_TXp3
+set_location_assignment PIN_AL8  -to HSMC_ALST4_A_D16_OR_LVDS_TXp3
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.66        LVDS RX bit 3 or CMOS bit 17                       HSMA_RX_D_P3            LVDS or 2.5-V  AW6
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D17_OR_LVDS_RXp3
+set_location_assignment PIN_AW6  -to HSMC_ALST4_A_D17_OR_LVDS_RXp3
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.67        LVDS TX bit 3n or CMOS bit 18                      HSMA_TX_D_N3            LVDS or 2.5-V  AM8
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D18_OR_LVDS_TXn3
+set_location_assignment PIN_AM8  -to HSMC_ALST4_A_D18_OR_LVDS_TXn3
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.68        LVDS RX bit 3n or CMOS bit 19                      HSMA_RX_D_N3            LVDS or 2.5-V  AW5
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D19_OR_LVDS_RXn3
+set_location_assignment PIN_AW5  -to HSMC_ALST4_A_D19_OR_LVDS_RXn3
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.71        LVDS TX bit 4 or CMOS bit 20                       HSMA_TX_D_P4            LVDS or 2.5-V  AK9
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D20_OR_LVDS_TXp4
+set_location_assignment PIN_AK9  -to HSMC_ALST4_A_D20_OR_LVDS_TXp4
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.72        LVDS RX bit 4 or CMOS bit 21                       HSMA_RX_D_P4            LVDS or 2.5-V  AV5
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D21_OR_LVDS_RXp4
+set_location_assignment PIN_AV5  -to HSMC_ALST4_A_D21_OR_LVDS_RXp4
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.73        LVDS TX bit 4n or CMOS bit 22                      HSMA_TX_D_N4            LVDS or 2.5-V  AL9
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D22_OR_LVDS_TXn4
+set_location_assignment PIN_AL9  -to HSMC_ALST4_A_D22_OR_LVDS_TXn4
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.74        LVDS RX bit 4n or CMOS bit 23                      HSMA_RX_D_N4            LVDS or 2.5-V  AW4
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D23_OR_LVDS_RXn4
+set_location_assignment PIN_AW4  -to HSMC_ALST4_A_D23_OR_LVDS_RXn4
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.77        LVDS TX bit 5 or CMOS bit 24                       HSMA_TX_D_P5            LVDS or 2.5-V  AK8
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D24_OR_LVDS_TXp5
+set_location_assignment PIN_AK8  -to HSMC_ALST4_A_D24_OR_LVDS_TXp5
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.78        LVDS RX bit 5 or CMOS bit 25                       HSMA_RX_D_P5            LVDS or 2.5-V  AT7
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D25_OR_LVDS_RXp5
+set_location_assignment PIN_AT7  -to HSMC_ALST4_A_D25_OR_LVDS_RXp5
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.79        LVDS TX bit 5n or CMOS bit 26                      HSMA_TX_D_N5            LVDS or 2.5-V  AK7
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D26_OR_LVDS_TXn5
+set_location_assignment PIN_AK7  -to HSMC_ALST4_A_D26_OR_LVDS_TXn5
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.80        LVDS RX bit 5n or CMOS bit 27                      HSMA_RX_D_N5            LVDS or 2.5-V  AU7
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D27_OR_LVDS_RXn5
+set_location_assignment PIN_AU7  -to HSMC_ALST4_A_D27_OR_LVDS_RXn5
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.83        LVDS TX bit 6 or CMOS bit 28                       HSMA_TX_D_P6            LVDS or 2.5-V  AH10
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D28_OR_LVDS_TXp6
+set_location_assignment PIN_AH10 -to HSMC_ALST4_A_D28_OR_LVDS_TXp6
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.84        LVDS RX bit 6 or CMOS bit 29                       HSMA_RX_D_P6            LVDS or 2.5-V  AT6
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D29_OR_LVDS_RXp6
+set_location_assignment PIN_AT6  -to HSMC_ALST4_A_D29_OR_LVDS_RXp6
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.85        LVDS TX bit 6n or CMOS bit 30                      HSMA_TX_D_N6            LVDS or 2.5-V  AJ10
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D30_OR_LVDS_TXn6
+set_location_assignment PIN_AJ10 -to HSMC_ALST4_A_D30_OR_LVDS_TXn6
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.86        LVDS RX bit 6n or CMOS bit 31                      HSMA_RX_D_N6            LVDS or 2.5-V  AU6
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D31_OR_LVDS_RXn6
+set_location_assignment PIN_AU6  -to HSMC_ALST4_A_D31_OR_LVDS_RXn6
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.89        LVDS TX bit 7 or CMOS bit 32                       HSMA_TX_D_P7            LVDS or 2.5-V  AH9
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D32_OR_LVDS_TXp7
+set_location_assignment PIN_AH9  -to HSMC_ALST4_A_D32_OR_LVDS_TXp7
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.90        LVDS RX bit 7 or CMOS bit 33                       HSMA_RX_D_P7            LVDS or 2.5-V  AR5
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D33_OR_LVDS_RXp7
+set_location_assignment PIN_AR5  -to HSMC_ALST4_A_D33_OR_LVDS_RXp7
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.91        LVDS TX bit 7n or CMOS bit 34                      HSMA_TX_D_N7            LVDS or 2.5-V  AH8
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D34_OR_LVDS_TXn7
+set_location_assignment PIN_AH8  -to HSMC_ALST4_A_D34_OR_LVDS_TXn7
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.92        LVDS RX bit 7n or CMOS bit 35                      HSMA_RX_D_N7            LVDS or 2.5-V  AT5
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D35_OR_LVDS_RXn7
+set_location_assignment PIN_AT5  -to HSMC_ALST4_A_D35_OR_LVDS_RXn7
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.95        LVDS or CMOS clock out 1 or CMOS bit 36            HSMA_CLK_OUT_P1         LVDS or 2.5-V  AL10
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D36_OR_LVDS_CLKOUT1p
+set_location_assignment PIN_AL10 -to HSMC_ALST4_A_D36_OR_LVDS_CLKOUT1p
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.96        LVDS or CMOS clock in 1 or CMOS bit 37             HSMA_CLK_IN_P1          LVDS or 2.5-V  AC6
+# note that the table on the right is inconsistent with the doc "Pin Information for the 
+# Stratix IV GX EP4SGX230 Device Version 1.4" for F1517 package, which states AC6's function
+# is CLK8p, i.e. a dedicated clock input"
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_CLKIN1p
+# below line included since this is a dedicated clock pin
+set_instance_assignment -name GLOBAL_SIGNAL "GLOBAL CLOCK" -to "HSMC_ALST4_A_CLKIN1p"
+set_location_assignment PIN_AC6  -to HSMC_ALST4_A_CLKIN1p
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.97        LVDS or CMOS clock out 1 or CMOS bit 38            HSMA_CLK_OUT_N1         LVDS or 2.5-V  AM10
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D38_OR_LVDS_CLKOUT1n
+set_location_assignment PIN_AM10 -to HSMC_ALST4_A_D38_OR_LVDS_CLKOUT1n
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.98        LVDS or CMOS clock in 1 or CMOS bit 39             HSMA_CLK_IN_N1          LVDS or 2.5-V  AC5
+# note that the table on the right is inconsistent with the doc "Pin Information for the 
+# Stratix IV GX EP4SGX230 Device Version 1.4" for F1517 package, which states AC5's function
+# is CLK8n, i.e. a dedicated clock input"
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_CLKIN1n
+# below line included since this is a dedicated clock pin
+set_instance_assignment -name GLOBAL_SIGNAL "GLOBAL CLOCK" -to "HSMC_ALST4_A_CLKIN1n"
+set_location_assignment PIN_AC5 -to "HSMC_ALST4_A_CLKIN1n"
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.101       LVDS TX bit 8 or CMOS bit 40                       HSMA_TX_D_P8            LVDS or 2.5-V  AG8
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D40_OR_LVDS_TXp8
+set_location_assignment PIN_AG8  -to HSMC_ALST4_A_D40_OR_LVDS_TXp8
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.102       LVDS RX bit 8 or CMOS bit 41                       HSMA_RX_D_P8            LVDS or 2.5-V  AP6
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D41_OR_LVDS_RXp8
+set_location_assignment PIN_AP6 -to HSMC_ALST4_A_D41_OR_LVDS_RXp8
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.103       LVDS TX bit 8n or CMOS bit 42                      HSMA_TX_D_N8            LVDS or 2.5-V  AG7
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D42_OR_LVDS_TXn8
+set_location_assignment PIN_AG7 -to HSMC_ALST4_A_D42_OR_LVDS_TXn8
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.104       LVDS RX bit 8n or CMOS bit 43                      HSMA_RX_D_N8            LVDS or 2.5-V  AP5
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D43_OR_LVDS_RXn8
+set_location_assignment PIN_AP5 -to HSMC_ALST4_A_D43_OR_LVDS_RXn8
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.107       LVDS TX bit 9 or CMOS bit 44                       HSMA_TX_D_P9            LVDS or 2.5-V  AG10
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D44_OR_LVDS_TXp9
+set_location_assignment PIN_AG10 -to HSMC_ALST4_A_D44_OR_LVDS_TXp9
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.108       LVDS RX bit 9 or CMOS bit 45                       HSMA_RX_D_P9            LVDS or 2.5-V  AN6
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D45_OR_LVDS_RXp9
+set_location_assignment PIN_AN6 -to HSMC_ALST4_A_D45_OR_LVDS_RXp9
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.109       LVDS TX bit 9n or CMOS bit 46                      HSMA_TX_D_N9            LVDS or 2.5-V  AG9
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D46_OR_LVDS_TXn9
+set_location_assignment PIN_AG9 -to HSMC_ALST4_A_D46_OR_LVDS_TXn9
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.110       LVDS RX bit 9n or CMOS bit 47                      HSMA_RX_D_N9            LVDS or 2.5-V  AN5
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D47_OR_LVDS_RXn9
+set_location_assignment PIN_AN5 -to HSMC_ALST4_A_D47_OR_LVDS_RXn9
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.113       LVDS TX bit 10 or CMOS bit 48                      HSMA_TX_D_P10           LVDS or 2.5-V  AF11
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D48_OR_LVDS_TXp10
+set_location_assignment PIN_AF11 -to HSMC_ALST4_A_D48_OR_LVDS_TXp10
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.114       LVDS RX bit 10 or CMOS bit 49                      HSMA_RX_D_P10           LVDS or 2.5-V  AM6
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D49_OR_LVDS_RXp10
+set_location_assignment PIN_AM6 -to HSMC_ALST4_A_D49_OR_LVDS_RXp10
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.115       LVDS TX bit 10n or CMOS bit 50                     HSMA_TX_D_N10           LVDS or 2.5-V  AF10
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D50_OR_LVDS_TXn10
+set_location_assignment PIN_AF10 -to HSMC_ALST4_A_D50_OR_LVDS_TXn10
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.116       LVDS RX bit 10n or CMOS bit 51                     HSMA_RX_D_N10           LVDS or 2.5-V  AM5
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D51_OR_LVDS_RXn10
+set_location_assignment PIN_AM5 -to HSMC_ALST4_A_D51_OR_LVDS_RXn10
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.119       LVDS TX bit 11 or CMOS bit 52                      HSMA_TX_D_P11           LVDS or 2.5-V  AD10
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D52_OR_LVDS_TXp11
+set_location_assignment PIN_AD10 -to HSMC_ALST4_A_D52_OR_LVDS_TXp11
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.120       LVDS RX bit 11 or CMOS bit 53                      HSMA_RX_D_P11           LVDS or 2.5-V  AL6
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D53_OR_LVDS_RXp11
+set_location_assignment PIN_AL6 -to HSMC_ALST4_A_D53_OR_LVDS_RXp11
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.121       LVDS TX bit 11n or CMOS bit 54                     HSMA_TX_D_N11           LVDS or 2.5-V  AD9
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D54_OR_LVDS_TXn11
+set_location_assignment PIN_AD9 -to HSMC_ALST4_A_D54_OR_LVDS_TXn11
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.122       LVDS RX bit 11n or CMOS bit 55                     HSMA_RX_D_N11           LVDS or 2.5-V  AL5
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D55_OR_LVDS_RXn11
+set_location_assignment PIN_AL5 -to HSMC_ALST4_A_D55_OR_LVDS_RXn11
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.125       LVDS TX bit 12 or CMOS bit 56                      HSMA_TX_D_P12           LVDS or 2.5-V  AE11
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D56_OR_LVDS_TXp12
+set_location_assignment PIN_AE11 -to HSMC_ALST4_A_D56_OR_LVDS_TXp12
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.126       LVDS RX bit 12 or CMOS bit 57                      HSMA_RX_D_P12           LVDS or 2.5-V  AK6
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D57_OR_LVDS_RXp12
+set_location_assignment PIN_AK6 -to HSMC_ALST4_A_D57_OR_LVDS_RXp12
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.127       LVDS TX bit 12n or CMOS bit 58                     HSMA_TX_D_N12           LVDS or 2.5-V  AE10
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D58_OR_LVDS_TXn12
+set_location_assignment PIN_AE10 -to HSMC_ALST4_A_D58_OR_LVDS_TXn12
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.128       LVDS RX bit 12n or CMOS bit 59                     HSMA_RX_D_N12           LVDS or 2.5-V  AK5
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D59_OR_LVDS_RXn12
+set_location_assignment PIN_AK5 -to HSMC_ALST4_A_D59_OR_LVDS_RXn12
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.131       LVDS TX bit 13 or CMOS bit 60                      HSMA_TX_D_P13           LVDS or 2.5-V  AD13
+set_instance_assignment -name IO_STANDARD "2.5 V" -to  HSMC_ALST4_A_D60_OR_LVDS_TXp13
+set_location_assignment PIN_AD13 -to HSMC_ALST4_A_D60_OR_LVDS_TXp13
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.132       LVDS RX bit 13 or CMOS bit 61                      HSMA_RX_D_P13           LVDS or 2.5-V  AJ6
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D61_OR_LVDS_RXp13
+set_location_assignment PIN_AJ6 -to HSMC_ALST4_A_D61_OR_LVDS_RXp13
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.133       LVDS TX bit 13n or CMOS bit 62                     HSMA_TX_D_N13           LVDS or 2.5-V  AD12
+set_instance_assignment -name IO_STANDARD "2.5 V" -to  HSMC_ALST4_A_D62_OR_LVDS_TXn13
+set_location_assignment PIN_AD12 -to HSMC_ALST4_A_D62_OR_LVDS_TXn13
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.134       LVDS RX bit 13n or CMOS bit 63                     HSMA_RX_D_N13           LVDS or 2.5-V  AJ5
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D63_OR_LVDS_RXn13
+set_location_assignment PIN_AJ5 -to HSMC_ALST4_A_D63_OR_LVDS_RXn13
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.137       LVDS TX bit 14 or CMOS bit 64                      HSMA_TX_D_P14           LVDS or 2.5-V  AB13
+set_instance_assignment -name IO_STANDARD "2.5 V" -to  HSMC_ALST4_A_D64_OR_LVDS_TXp14
+set_location_assignment PIN_AB13 -to HSMC_ALST4_A_D64_OR_LVDS_TXp14
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.138       LVDS RX bit 14 or CMOS bit 65                      HSMA_RX_D_P14           LVDS or 2.5-V  AH6
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D65_OR_LVDS_RXp14
+set_location_assignment PIN_AH6 -to HSMC_ALST4_A_D65_OR_LVDS_RXp14
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.139       LVDS TX bit 14n or CMOS bit 66                     HSMA_TX_D_N14           LVDS or 2.5-V  AB12
+set_instance_assignment -name IO_STANDARD "2.5 V" -to  HSMC_ALST4_A_D66_OR_LVDS_TXn14
+set_location_assignment PIN_AB12 -to HSMC_ALST4_A_D66_OR_LVDS_TXn14
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.140       LVDS RX bit 14n or CMOS bit 67                     HSMA_RX_D_N14           LVDS or 2.5-V  AH5
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D67_OR_LVDS_RXn14
+set_location_assignment PIN_AH5 -to HSMC_ALST4_A_D67_OR_LVDS_RXn14
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.143       LVDS TX bit 15 or CMOS bit 68                      HSMA_TX_D_P15           LVDS or 2.5-V  AB11
+set_instance_assignment -name IO_STANDARD "2.5 V" -to  HSMC_ALST4_A_D68_OR_LVDS_TXp15
+set_location_assignment PIN_AB11 -to HSMC_ALST4_A_D68_OR_LVDS_TXp15
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.144       LVDS RX bit 15 or CMOS bit 69                      HSMA_RX_D_P15           LVDS or 2.5-V  AG6
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D69_OR_LVDS_RXp15
+set_location_assignment PIN_AG6 -to HSMC_ALST4_A_D69_OR_LVDS_RXp15
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.145       LVDS TX bit 15n or CMOS bit 70                     HSMA_TX_D_N15           LVDS or 2.5-V  AB10
+set_instance_assignment -name IO_STANDARD "2.5 V" -to  HSMC_ALST4_A_D70_OR_LVDS_TXn15
+set_location_assignment PIN_AB10 -to HSMC_ALST4_A_D70_OR_LVDS_TXn15
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.146       LVDS RX bit 15n or CMOS bit 71                     HSMA_RX_D_N15           LVDS or 2.5-V  AG5
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D71_OR_LVDS_RXn15
+set_location_assignment PIN_AG5 -to HSMC_ALST4_A_D71_OR_LVDS_RXn15
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.149       LVDS TX bit 16 or CMOS bit 72                      HSMA_TX_D_P16           LVDS or 2.5-V  AC11
+set_instance_assignment -name IO_STANDARD "2.5 V" -to  HSMC_ALST4_A_D72_OR_LVDS_TXp16
+set_location_assignment PIN_AC11 -to HSMC_ALST4_A_D72_OR_LVDS_TXp16
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.150       LVDS RX bit 16 or CMOS bit 73                      HSMA_RX_D_P16           LVDS or 2.5-V  AB9
+set_instance_assignment -name IO_STANDARD "2.5 V" -to  HSMC_ALST4_A_D73_OR_LVDS_RXp16
+set_location_assignment PIN_AB9 -to HSMC_ALST4_A_D73_OR_LVDS_RXp16
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.151       LVDS TX bit 16n or CMOS bit 74                     HSMA_TX_D_N16           LVDS or 2.5-V  AC10
+set_instance_assignment -name IO_STANDARD "2.5 V" -to  HSMC_ALST4_A_D74_OR_LVDS_TXn16
+set_location_assignment PIN_AC10 -to HSMC_ALST4_A_D74_OR_LVDS_TXn16
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.152       LVDS RX bit 16n or CMOS bit 75                     HSMA_RX_D_N16           LVDS or 2.5-V  AC8
+set_instance_assignment -name IO_STANDARD "2.5 V" -to  HSMC_ALST4_A_D75_OR_LVDS_RXn16
+set_location_assignment PIN_AC8 -to HSMC_ALST4_A_D75_OR_LVDS_RXn16
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.155       LVDS or CMOS clock out 2 or CMOS bit 76            HSMA_CLK_OUT_P2         LVDS or 2.5-V  AF13
+set_instance_assignment -name IO_STANDARD "2.5 V" -to  HSMC_ALST4_A_D76_OR_CLKOUT2p
+set_location_assignment PIN_AF13 -to HSMC_ALST4_A_D76_OR_CLKOUT2p
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.156       LVDS or CMOS clock in 2 or CMOS bit 77             HSMA_CLK_IN_P2          LVDS or 2.5-V  AF6
+set_instance_assignment -name IO_STANDARD "2.5 V" -to  HSMC_ALST4_A_D77_OR_CLKIN2p
+set_location_assignment PIN_AF6 -to HSMC_ALST4_A_D77_OR_CLKIN2p
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.157       LVDS or CMOS clock out 2 or CMOS bit 78            HSMA_CLK_OUT_N2         LVDS or 2.5-V  AG13
+set_instance_assignment -name IO_STANDARD "2.5 V" -to  HSMC_ALST4_A_D78_OR_CLOUT2n
+set_location_assignment PIN_AG13 -to HSMC_ALST4_A_D78_OR_CLOUT2n
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.158       LVDS or CMOS clock in 2 or CMOS bit 79             HSMA_CLK_IN_N2          LVDS or 2.5-V  AE5
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_A_D79_OR_CLKIN2n
+set_location_assignment PIN_AE5 -to HSMC_ALST4_A_D79_OR_CLKIN2n
+#######################################################################################################################################################################################################################################
+                                                                                                # J1.160       HSMC Port A presence detect                        HSMA_PRSNTn             2.5-V          AG12
+set_instance_assignment -name IO_STANDARD "2.5 V" -to hsmc_a_psntn
+set_instance_assignment -name IO_MAXIMUM_TOGGLE_RATE "0 MHz" -to hsmc_a_psntn
+set_location_assignment PIN_AG12 -to hsmc_a_psntn
+#######################################################################################################################################################################################################################################
+                                                                                                # D4           User LED to show RX data activity on HSMC Port A   HSMA_RX_LED             2.5-V          D5
+
+
+#######################################################################################################################################################################################################################################
+                                                                                                # D3           User LED to show TX data activity on HSMC Port A   HSMA_TX_LED             2.5-V          C6
+#######################################################################################################################################################################################################################################
+
+
+
+                                                                                                # Below from https://www.altera.com/content/dam/altera-www/global/en_US/pdfs/literature/manual/rm_sivgx_fpga_dev_board.pdf
+                                                                                                #######################################################################################################################################
+                                                                                                # HSMC Port B Pin Assignments, Schematic Signal Names, and Functions                                                                  #
+                                                                                                #######################################################################################################################################
+                                                                                                # Board Ref    Description                                        Schematic Signal Name   I/O Standard   Stratix IV GX Device Pin Num #
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.1         Transceiver TX bit 7                               HSMB_TX_P7              1.4-V PCML     -
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.2         Transceiver RX bit 7                               HSMB_RX_P7              1.4-V PCML     -
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.3         Transceiver TX bit 7n                              HSMB_TX_N7              1.4-V PCML     -
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.4         Transceiver RX bit 7n                              HSMB_RX_N7              1.4-V PCML     -
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.5         Transceiver TX bit 6                               HSMB_TX_P6              1.4-V PCML     -
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.6         Transceiver RX bit 6                               HSMB_RX_P6              1.4-V PCML     -
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.7         Transceiver TX bit 6n                              HSMB_TX_N6              1.4-V PCML     -
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.8         Transceiver RX bit 6n                              HSMB_RX_N6              1.4-V PCML     -
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.9         Transceiver TX bit 5                               HSMB_TX_P5              1.4-V PCML     D4
+#set_instance_assignment -name IO_STANDARD "1.4-V PCML" -to HSMC_ALST4_B_XCVR_TXp5
+#set_location_assignment PIN_D4 -to HSMC_ALST4_B_XCVR_TXp5
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.10        Transceiver RX bit 5                               HSMB_RX_P5              1.4-V PCML     E2
+#set_instance_assignment -name IO_STANDARD "1.4-V PCML" -to HSMC_ALST4_B_XCVR_RXp5
+#set_location_assignment PIN_E2   -to HSMC_ALST4_B_XCVR_RXp5
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.11        Transceiver TX bit 5n                              HSMB_TX_N5              1.4-V PCML     D3
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.12        Transceiver RX bit 5n                              HSMB_RX_N5              1.4-V PCML     E1
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.13        Transceiver TX bit 4                               HSMB_TX_P4              1.4-V PCML     B4
+#set_instance_assignment -name IO_STANDARD "1.4-V PCML" -to HSMC_ALST4_B_XCVR_TXp4
+#set_location_assignment PIN_B4   -to HSMC_ALST4_B_XCVR_TXp4
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.14        Transceiver RX bit 4                               HSMB_RX_P4              1.4-V PCML     C2
+#set_instance_assignment -name IO_STANDARD "1.4-V PCML" -to HSMC_ALST4_B_XCVR_RXp4
+#set_location_assignment PIN_C2   -to HSMC_ALST4_B_XCVR_RXp4
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.15        Transceiver TX bit 4n                              HSMB_TX_N4              1.4-V PCML     B3
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.16        Transceiver RX bit 4n                              HSMB_RX_N4              1.4-V PCML     C1
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.17        Transceiver TX bit 3                               HSMB_TX_P3              1.4-V PCML     B36
+#set_instance_assignment -name IO_STANDARD "1.4-V PCML" -to HSMC_ALST4_B_XCVR_TXp3
+#set_location_assignment PIN_B36  -to HSMC_ALST4_B_XCVR_TXp3
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.18        Transceiver RX bit 3                               HSMB_RX_P3              1.4-V PCML     C38
+#set_instance_assignment -name IO_STANDARD "1.4-V PCML" -to HSMC_ALST4_B_XCVR_RXp3
+#set_location_assignment PIN_C38  -to HSMC_ALST4_B_XCVR_RXp3
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.19        Transceiver TX bit 3n                              HSMB_TX_N3              1.4-V PCML     B37
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.20        Transceiver RX bit 3n                              HSMB_RX_N3              1.4-V PCML     C39
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.21        Transceiver TX bit 2                               HSMB_TX_P2              1.4-V PCML     D36
+#set_instance_assignment -name IO_STANDARD "1.4-V PCML" -to HSMC_ALST4_B_XCVR_TXp2
+#set_location_assignment PIN_D36  -to HSMC_ALST4_B_XCVR_TXp2
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.22        Transceiver RX bit 2                               HSMB_RX_P2              1.4-V PCML     E38
+#set_instance_assignment -name IO_STANDARD "1.4-V PCML" -to HSMC_ALST4_B_XCVR_RXp2
+#set_location_assignment PIN_E38  -to HSMC_ALST4_B_XCVR_RXp2
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.23        Transceiver TX bit 2n                              HSMB_TX_N2              1.4-V PCML     D37
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.24        Transceiver RX bit 2n                              HSMB_RX_N2              1.4-V PCML     E39
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.25        Transceiver TX bit 1                               HSMB_TX_P1              1.4-V PCML     K36
+#set_instance_assignment -name IO_STANDARD "1.4-V PCML" -to HSMC_ALST4_B_XCVR_TXp1
+#set_location_assignment PIN_K36  -to HSMC_ALST4_B_XCVR_TXp1
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.26        Transceiver RX bit 1                               HSMB_RX_P1              1.4-V PCML     L38
+#set_instance_assignment -name IO_STANDARD "1.4-V PCML" -to HSMC_ALST4_B_XCVR_RXp1
+#set_location_assignment PIN_L38  -to HSMC_ALST4_B_XCVR_RXp1
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.27        Transceiver TX bit 1n                              HSMB_TX_N1              1.4-V PCML     K37
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.28        Transceiver RX bit 1n                              HSMB_RX_N1              1.4-V PCML     L39
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.29        Transceiver TX bit 0                               HSMB_TX_P0              1.4-V PCML     M36
+#set_instance_assignment -name IO_STANDARD "1.4-V PCML" -to HSMC_ALST4_B_XCVR_TXp0
+#set_location_assignment PIN_M36  -to HSMC_ALST4_B_XCVR_TXp0
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.30        Transceiver RX bit 0                               HSMB_RX_P0              1.4-V PCML     N38
+#set_instance_assignment -name IO_STANDARD "1.4-V PCML" -to HSMC_ALST4_B_XCVR_RXp0
+#set_location_assignment PIN_N38  -to HSMC_ALST4_B_XCVR_RXp0
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.31        Transceiver TX bit 0n                              HSMB_TX_N0              1.4-V PCML     M37
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.32        Transceiver RX bit 0n                              HSMB_RX_N0              1.4-V PCML     N39
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.33        Management serial data                             HSMB_SDA                2.5-V          AF29
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_SDA
+set_location_assignment PIN_AF29 -to HSMC_ALST4_B_SDA
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.34        Management serial clock                            HSMB_SCL                2.5-V          AB27
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_SCL
+set_location_assignment PIN_AB27 -to HSMC_ALST4_B_SCL
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.35        JTAG clock signal                                  FPGA_JTAG_TCK           2.5-V          -
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.36        JTAG mode select signal                            FPGA_JTAG_TMS           2.5-V          -
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.37        JTAG data output                                   HSMB_JTAG_TDO           2.5-V          -
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.38        JTAG data input                                    HSMB_JTAG_TDI           2.5-V          -
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.39        Dedicated CMOS clock out                           HSMB_CLK_OUT0           2.5-V          AK29
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_CLKOUT0
+set_location_assignment PIN_AK29 -to HSMC_ALST4_B_CLKOUT0
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.40        Dedicated CMOS clock in                            HSMB_CLK_IN0            2.5-V          AA35
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_CLKIN0
+# below line included since this is a dedicated clock pin
+set_instance_assignment -name GLOBAL_SIGNAL "GLOBAL CLOCK" -to "HSMC_ALST4_B_CLKIN0"
+set_location_assignment PIN_AA35 -to HSMC_ALST4_B_CLKIN0
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.41        Dedicated CMOS I/O bit 0                           HSMB_D0                 2.5-V          AP10
+#set_instance_assignment -name OUTPUT_TERMINATION "SERIES 50 OHM WITH CALIBRATION" -to HSMC_ALST4_B_D0
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D0
+set_location_assignment PIN_AP10 -to HSMC_ALST4_B_D0
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.42        Dedicated CMOS I/O bit 1                           HSMB_D1                 2.5-V          AN10
+#set_instance_assignment -name OUTPUT_TERMINATION "SERIES 50 OHM WITH CALIBRATION" -to HSMC_ALST4_B_D1
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D1
+set_location_assignment PIN_AN10 -to HSMC_ALST4_B_D1
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.43        Dedicated CMOS I/O bit 2                           HSMB_D2                 2.5-V          AW8
+#set_instance_assignment -name OUTPUT_TERMINATION "SERIES 50 OHM WITH CALIBRATION" -to HSMC_ALST4_B_D2
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D2
+set_location_assignment PIN_AW8  -to HSMC_ALST4_B_D2
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.44        Dedicated CMOS I/O bit 3                           HSMB_D3                 2.5-V          AV8
+#set_instance_assignment -name OUTPUT_TERMINATION "SERIES 50 OHM WITH CALIBRATION" -to HSMC_ALST4_B_D3
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D3
+set_location_assignment PIN_AV8  -to HSMC_ALST4_B_D3
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.47        LVDS TX bit 0 or CMOS bit 4                        HSMB_TX_D_P0            LVDS or 2.5-V  W12
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D4_OR_LVDS_TXp0
+set_location_assignment PIN_W12  -to HSMC_ALST4_B_D4_OR_LVDS_TXp0
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.48        LVDS RX bit 0 or CMOS bit 5                        HSMB_RX_D_P0            LVDS or 2.5-V  W8
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D5_OR_LVDS_RXp0
+set_location_assignment PIN_W8   -to HSMC_ALST4_B_D5_OR_LVDS_RXp0
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.49        LVDS TX bit 0n or CMOS bit 6                       HSMB_TX_D_N0            LVDS or 2.5-V  W11
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D6_OR_LVDS_TXn0
+set_location_assignment PIN_W11  -to HSMC_ALST4_B_D6_OR_LVDS_TXn0
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.50        LVDS RX bit 0n or CMOS bit 7                       HSMB_RX_D_N0            LVDS or 2.5-V  W7
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D7_OR_LVDS_RXn0
+set_location_assignment PIN_W7   -to HSMC_ALST4_B_D7_OR_LVDS_RXn0
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.53        LVDS TX bit 1 or CMOS bit 8                        HSMB_TX_D_P1            LVDS or 2.5-V  V12
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D8_OR_LVDS_TXp1
+set_location_assignment PIN_V12  -to HSMC_ALST4_B_D8_OR_LVDS_TXp1
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.54        LVDS RX bit 1 or CMOS bit 9                        HSMB_RX_D_P1            LVDS or 2.5-V  V6
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D9_OR_LVDS_RXp1
+set_location_assignment PIN_V6   -to HSMC_ALST4_B_D9_OR_LVDS_RXp1
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.55        LVDS TX bit 1n or CMOS bit 10                      HSMB_TX_D_N1            LVDS or 2.5-V  V11
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D10_OR_LVDS_TXn1
+set_location_assignment PIN_V11  -to HSMC_ALST4_B_D10_OR_LVDS_TXn1
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.56        LVDS RX bit 1n or CMOS bit 11                      HSMB_RX_D_N1            LVDS or 2.5-V  U5
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D11_OR_LVDS_RXn1
+set_location_assignment PIN_U5   -to HSMC_ALST4_B_D11_OR_LVDS_RXn1
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.59        LVDS TX bit 2 or CMOS bit 12                       HSMB_TX_D_P2            LVDS or 2.5-V  V10
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D12_OR_LVDS_TXp2
+set_location_assignment PIN_V10  -to HSMC_ALST4_B_D12_OR_LVDS_TXp2
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.60        LVDS RX bit 2 or CMOS bit 13                       HSMB_RX_D_P2            LVDS or 2.5-V  R7
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D13_OR_LVDS_RXp2
+set_location_assignment PIN_R7   -to HSMC_ALST4_B_D13_OR_LVDS_RXp2
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.61        LVDS TX bit 2n or CMOS bit 14                      HSMB_TX_D_N2            LVDS or 2.5-V  V9
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D14_OR_LVDS_TXn2
+set_location_assignment PIN_V9   -to HSMC_ALST4_B_D14_OR_LVDS_TXn2
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.62        LVDS RX bit 2n or CMOS bit 15                      HSMB_RX_D_N2            LVDS or 2.5-V  P6
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D15_OR_LVDS_RXn2
+set_location_assignment PIN_P6   -to HSMC_ALST4_B_D15_OR_LVDS_RXn2
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.65        LVDS TX bit 3 or CMOS bit 16                       HSMB_TX_D_P3            LVDS or 2.5-V  U10
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D16_OR_LVDS_TXp3
+set_location_assignment PIN_U10  -to HSMC_ALST4_B_D16_OR_LVDS_TXp3
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.66        LVDS RX bit 3 or CMOS bit 17                       HSMB_RX_D_P3            LVDS or 2.5-V  R6
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D17_OR_LVDS_RXp3
+set_location_assignment PIN_R6   -to HSMC_ALST4_B_D17_OR_LVDS_RXp3
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.67        LVDS TX bit 3n or CMOS bit 18                      HSMB_TX_D_N3            LVDS or 2.5-V  T9
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D18_OR_LVDS_TXn3
+set_location_assignment PIN_T9   -to HSMC_ALST4_B_D18_OR_LVDS_TXn3
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.68        LVDS RX bit 3n or CMOS bit 19                      HSMB_RX_D_N3            LVDS or 2.5-V  R5
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D19_OR_LVDS_RXn3
+set_location_assignment PIN_R5   -to HSMC_ALST4_B_D19_OR_LVDS_RXn3
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.71        LVDS TX bit 4 or CMOS bit 20                       HSMB_TX_D_P4            LVDS or 2.5-V  T10
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D20_OR_LVDS_TXp4
+set_location_assignment PIN_T10  -to HSMC_ALST4_B_D20_OR_LVDS_TXp4
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.72        LVDS RX bit 4 or CMOS bit 21                       HSMB_RX_D_P4            LVDS or 2.5-V  N6
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D21_OR_LVDS_RXp4
+set_location_assignment PIN_N6   -to HSMC_ALST4_B_D21_OR_LVDS_RXp4
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.73        LVDS TX bit 4n or CMOS bit 22                      HSMB_TX_D_N4            LVDS or 2.5-V  R10
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D22_OR_LVDS_TXn4
+set_location_assignment PIN_R10  -to HSMC_ALST4_B_D22_OR_LVDS_TXn4
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.74        LVDS RX bit 4n or CMOS bit 23                      HSMB_RX_D_N4            LVDS or 2.5-V  N5
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D23_OR_LVDS_RXn4
+set_location_assignment PIN_N5   -to HSMC_ALST4_B_D23_OR_LVDS_RXn4
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.77        LVDS TX bit 5 or CMOS bit 24                       HSMB_TX_D_P5            LVDS or 2.5-V  R9
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D24_OR_LVDS_TXp5
+set_location_assignment PIN_R9   -to HSMC_ALST4_B_D24_OR_LVDS_TXp5
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.78        LVDS RX bit 5 or CMOS bit 25                       HSMB_RX_D_P5            LVDS or 2.5-V  N8
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D25_OR_LVDS_RXp5
+set_location_assignment PIN_N8   -to HSMC_ALST4_B_D25_OR_LVDS_RXp5
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.79        LVDS TX bit 5n or CMOS bit 26                      HSMB_TX_D_N5            LVDS or 2.5-V  R8
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D26_OR_LVDS_TXn5
+set_location_assignment PIN_R8   -to HSMC_ALST4_B_D26_OR_LVDS_TXn5
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.80        LVDS RX bit 5n or CMOS bit 27                      HSMB_RX_D_N5            LVDS or 2.5-V  N7
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D27_OR_LVDS_RXn5
+set_location_assignment PIN_N7   -to HSMC_ALST4_B_D27_OR_LVDS_RXn5
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.83        LVDS TX bit 6 or CMOS bit 28                       HSMB_TX_D_P6            LVDS or 2.5-V  N9
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D28_OR_LVDS_TXp6
+set_location_assignment PIN_N9   -to HSMC_ALST4_B_D28_OR_LVDS_TXp6
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.84        LVDS RX bit 6 or CMOS bit 29                       HSMB_RX_D_P6            LVDS or 2.5-V  M6
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D29_OR_LVDS_RXp6
+set_location_assignment PIN_M6   -to HSMC_ALST4_B_D29_OR_LVDS_RXp6
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.85        LVDS TX bit 6n or CMOS bit 30                      HSMB_TX_D_N6            LVDS or 2.5-V  P8
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D30_OR_LVDS_TXn6
+set_location_assignment PIN_P8   -to HSMC_ALST4_B_D30_OR_LVDS_TXn6
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.86        LVDS RX bit 6n or CMOS bit 31                      HSMB_RX_D_N6            LVDS or 2.5-V  L5
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D31_OR_LVDS_RXn6
+set_location_assignment PIN_L5   -to HSMC_ALST4_B_D31_OR_LVDS_RXn6
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.89        LVDS TX bit 7 or CMOS bit 32                       HSMB_TX_D_P7            LVDS or 2.5-V  N11
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D32_OR_LVDS_TXp7
+set_location_assignment PIN_N11  -to HSMC_ALST4_B_D32_OR_LVDS_TXp7
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.90        LVDS RX bit 7 or CMOS bit 33                       HSMB_RX_D_P7            LVDS or 2.5-V  K6
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D33_OR_LVDS_RXp7
+set_location_assignment PIN_K6   -to HSMC_ALST4_B_D33_OR_LVDS_RXp7
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.91        LVDS TX bit 7n or CMOS bit 34                      HSMB_TX_D_N7            LVDS or 2.5-V  N10
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D34_OR_LVDS_TXn7
+set_location_assignment PIN_N10  -to HSMC_ALST4_B_D34_OR_LVDS_TXn7
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.92        LVDS RX bit 7n or CMOS bit 35                      HSMB_RX_D_N7            LVDS or 2.5-V  K5
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D35_OR_LVDS_RXn7
+set_location_assignment PIN_K5   -to HSMC_ALST4_B_D35_OR_LVDS_RXn7
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.95        LVDS or CMOS clock out 1 or CMOS bit 36            HSMB_CLK_OUT_P1         LVDS or 2.5-V  K8
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D36_OR_LVDS_CLKOUT1p
+set_location_assignment PIN_K8   -to HSMC_ALST4_B_D36_OR_LVDS_CLKOUT1p
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.96        LVDS or CMOS clock in 1 or CMOS bit 37             HSMB_CLK_IN_P1          LVDS or 2.5-V  AB6
+# note that the table on the right is inconsistent with the doc "Pin Information for the 
+# Stratix IV GX EP4SGX230 Device Version 1.4" for F1517 package, which states AB6's function
+# is CLK10p, i.e. a dedicated clock input"
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_CLKIN1p
+# below line included since this is a dedicated clock pin
+set_instance_assignment -name GLOBAL_SIGNAL "GLOBAL CLOCK" -to "HSMC_ALST4_B_CLKIN1p"
+set_location_assignment PIN_AB6  -to HSMC_ALST4_B_CLKIN1p
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.97        LVDS or CMOS clock out 1 or CMOS bit 38            HSMB_CLK_OUT_N1         LVDS or 2.5-V  J8
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D38_OR_LVDS_CLKOUT1n
+set_location_assignment PIN_J8   -to HSMC_ALST4_B_D38_OR_LVDS_CLKOUT1n
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.98        LVDS or CMOS clock in 1 or CMOS bit 39             HSMB_CLK_IN_N1          LVDS or 2.5-V  AA5
+# note that the table on the right is inconsistent with the doc "Pin Information for the 
+# Stratix IV GX EP4SGX230 Device Version 1.4" for F1517 package, which states AA5's function
+# is CLK10n, i.e. a dedicated clock input"
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_CLKIN1n
+# below line included since this is a dedicated clock pin
+set_instance_assignment -name GLOBAL_SIGNAL "GLOBAL CLOCK" -to "HSMC_ALST4_B_CLKIN1n"
+set_location_assignment PIN_AA5 -to "HSMC_ALST4_B_CLKIN1n"
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.101       LVDS TX bit 8 or CMOS bit 40                       HSMB_TX_D_P8            LVDS or 2.5-V  M8
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D40_OR_LVDS_TXp8
+set_location_assignment PIN_M8   -to HSMC_ALST4_B_D40_OR_LVDS_TXp8
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.102       LVDS RX bit 8 or CMOS bit 41                       HSMB_RX_D_P8            LVDS or 2.5-V  J6
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D41_OR_LVDS_RXp8
+set_location_assignment PIN_J6   -to HSMC_ALST4_B_D41_OR_LVDS_RXp8
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.103       LVDS TX bit 8n or CMOS bit 42                      HSMB_TX_D_N8            LVDS or 2.5-V  M7
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D42_OR_LVDS_TXn8
+set_location_assignment PIN_M7   -to HSMC_ALST4_B_D42_OR_LVDS_TXn8
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.104       LVDS RX bit 8n or CMOS bit 43                      HSMB_RX_D_N8            LVDS or 2.5-V  J5
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D43_OR_LVDS_RXn8
+set_location_assignment PIN_J5   -to HSMC_ALST4_B_D43_OR_LVDS_RXn8
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.107       LVDS TX bit 9 or CMOS bit 44                       HSMB_TX_D_P9            LVDS or 2.5-V  L8
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D44_OR_LVDS_TXp9
+set_location_assignment PIN_L8   -to HSMC_ALST4_B_D44_OR_LVDS_TXp9
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.108       LVDS RX bit 9 or CMOS bit 45                       HSMB_RX_D_P9            LVDS or 2.5-V  G8
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D45_OR_LVDS_RXp9
+set_location_assignment PIN_G8   -to HSMC_ALST4_B_D45_OR_LVDS_RXp9
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.109       LVDS TX bit 9n or CMOS bit 46                      HSMB_TX_D_N9            LVDS or 2.5-V  L7
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D46_OR_LVDS_TXn9
+set_location_assignment PIN_L7   -to HSMC_ALST4_B_D46_OR_LVDS_TXn9
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.110       LVDS RX bit 9n or CMOS bit 47                      HSMB_RX_D_N9            LVDS or 2.5-V  F8
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D47_OR_LVDS_RXn9
+set_location_assignment PIN_F8   -to HSMC_ALST4_B_D47_OR_LVDS_RXn9
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.113       LVDS TX bit 10 or CMOS bit 48                      HSMB_TX_D_P10           LVDS or 2.5-V  K7
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D48_OR_LVDS_TXp10
+set_location_assignment PIN_K7   -to HSMC_ALST4_B_D48_OR_LVDS_TXp10
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.114       LVDS RX bit 10 or CMOS bit 49                      HSMB_RX_D_P10           LVDS or 2.5-V  G6
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D49_OR_LVDS_RXp10
+set_location_assignment PIN_G6   -to HSMC_ALST4_B_D49_OR_LVDS_RXp10
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.115       LVDS TX bit 10n or CMOS bit 50                     HSMB_TX_D_N10           LVDS or 2.5-V  J7
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D50_OR_LVDS_TXn10
+set_location_assignment PIN_J7   -to HSMC_ALST4_B_D50_OR_LVDS_TXn10
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.116       LVDS RX bit 10n or CMOS bit 51                     HSMB_RX_D_N10           LVDS or 2.5-V  F6
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D51_OR_LVDS_RXn10
+set_location_assignment PIN_F6   -to HSMC_ALST4_B_D51_OR_LVDS_RXn10
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.119       LVDS TX bit 11 or CMOS bit 52                      HSMB_TX_D_P11           LVDS or 2.5-V  K9
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D52_OR_LVDS_TXp11
+set_location_assignment PIN_K9   -to HSMC_ALST4_B_D52_OR_LVDS_TXp11
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.120       LVDS RX bit 11 or CMOS bit 53                      HSMB_RX_D_P11           LVDS or 2.5-V  G5
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D53_OR_LVDS_RXp11
+set_location_assignment PIN_G5   -to HSMC_ALST4_B_D53_OR_LVDS_RXp11
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.121       LVDS TX bit 11n or CMOS bit 54                     HSMB_TX_D_N11           LVDS or 2.5-V  J9
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D54_OR_LVDS_TXn11
+set_location_assignment PIN_J9   -to HSMC_ALST4_B_D54_OR_LVDS_TXn11
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.122       LVDS RX bit 11n or CMOS bit 55                     HSMB_RX_D_N11           LVDS or 2.5-V  F5
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D55_OR_LVDS_RXn11
+set_location_assignment PIN_F5   -to HSMC_ALST4_B_D55_OR_LVDS_RXn11
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.125       LVDS TX bit 12 or CMOS bit 56                      HSMB_TX_D_P12           LVDS or 2.5-V  H7
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D56_OR_LVDS_TXp12
+set_location_assignment PIN_H7   -to HSMC_ALST4_B_D56_OR_LVDS_TXp12
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.126       LVDS RX bit 12 or CMOS bit 57                      HSMB_RX_D_P12           LVDS or 2.5-V  F7
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D57_OR_LVDS_RXp12
+set_location_assignment PIN_F7   -to HSMC_ALST4_B_D57_OR_LVDS_RXp12
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.127       LVDS TX bit 12n or CMOS bit 58                     HSMB_TX_D_N12           LVDS or 2.5-V  G7
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D58_OR_LVDS_TXn12
+set_location_assignment PIN_G7   -to HSMC_ALST4_B_D58_OR_LVDS_TXn12
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.128       LVDS RX bit 12n or CMOS bit 59                     HSMB_RX_D_N12           LVDS or 2.5-V  E7
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D59_OR_LVDS_RXn12
+set_location_assignment PIN_E7   -to HSMC_ALST4_B_D59_OR_LVDS_RXn12
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.131       LVDS TX bit 13 or CMOS bit 60                      HSMB_TX_D_P13           LVDS or 2.5-V  M10
+set_instance_assignment -name IO_STANDARD "2.5 V" -to  HSMC_ALST4_B_D60_OR_LVDS_TXp13
+set_location_assignment PIN_M10  -to HSMC_ALST4_B_D60_OR_LVDS_TXp13
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.132       LVDS RX bit 13 or CMOS bit 61                      HSMB_RX_D_P13           LVDS or 2.5-V  G9
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D61_OR_LVDS_RXp13
+set_location_assignment PIN_G9   -to HSMC_ALST4_B_D61_OR_LVDS_RXp13
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.133       LVDS TX bit 13n or CMOS bit 62                     HSMB_TX_D_N13           LVDS or 2.5-V  L10
+set_instance_assignment -name IO_STANDARD "2.5 V" -to  HSMC_ALST4_B_D62_OR_LVDS_TXn13
+set_location_assignment PIN_L10  -to HSMC_ALST4_B_D62_OR_LVDS_TXn13
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.134       LVDS RX bit 13n or CMOS bit 63                     HSMB_RX_D_N13           LVDS or 2.5-V  F9
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D63_OR_LVDS_RXn13
+set_location_assignment PIN_F9   -to HSMC_ALST4_B_D63_OR_LVDS_RXn13
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.137       LVDS TX bit 14 or CMOS bit 64                      HSMB_TX_D_P14           LVDS or 2.5-V  R12
+set_instance_assignment -name IO_STANDARD "2.5 V" -to  HSMC_ALST4_B_D64_OR_LVDS_TXp14
+set_location_assignment PIN_R12  -to HSMC_ALST4_B_D64_OR_LVDS_TXp14
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.138       LVDS RX bit 14 or CMOS bit 65                      HSMB_RX_D_P14           LVDS or 2.5-V  D7
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D65_OR_LVDS_RXp14
+set_location_assignment PIN_D7   -to HSMC_ALST4_B_D65_OR_LVDS_RXp14
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.139       LVDS TX bit 14n or CMOS bit 66                     HSMB_TX_D_N14           LVDS or 2.5-V  R11
+set_instance_assignment -name IO_STANDARD "2.5 V" -to  HSMC_ALST4_B_D66_OR_LVDS_TXn14
+set_location_assignment PIN_R11  -to HSMC_ALST4_B_D66_OR_LVDS_TXn14
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.140       LVDS RX bit 14n or CMOS bit 67                     HSMB_RX_D_N14           LVDS or 2.5-V  C7
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D67_OR_LVDS_RXn14
+set_location_assignment PIN_C7   -to HSMC_ALST4_B_D67_OR_LVDS_RXn14
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.143       LVDS TX bit 15 or CMOS bit 68                      HSMB_TX_D_P15           LVDS or 2.5-V  T13
+set_instance_assignment -name IO_STANDARD "2.5 V" -to  HSMC_ALST4_B_D68_OR_LVDS_TXp15
+set_location_assignment PIN_T13  -to HSMC_ALST4_B_D68_OR_LVDS_TXp15
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.144       LVDS RX bit 15 or CMOS bit 69                      HSMB_RX_D_P15           LVDS or 2.5-V  D8
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D69_OR_LVDS_RXp15
+set_location_assignment PIN_D8   -to HSMC_ALST4_B_D69_OR_LVDS_RXp15
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.145       LVDS TX bit 15n or CMOS bit 70                     HSMB_TX_D_N15           LVDS or 2.5-V  T12
+set_instance_assignment -name IO_STANDARD "2.5 V" -to  HSMC_ALST4_B_D70_OR_LVDS_TXn15
+set_location_assignment PIN_T12  -to HSMC_ALST4_B_D70_OR_LVDS_TXn15
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.146       LVDS RX bit 15n or CMOS bit 71                     HSMB_RX_D_N15           LVDS or 2.5-V  C8
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D71_OR_LVDS_RXn15
+set_location_assignment PIN_C8   -to HSMC_ALST4_B_D71_OR_LVDS_RXn15
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.149       LVDS TX bit 16 or CMOS bit 72                      HSMB_TX_D_P16           LVDS or 2.5-V  R13
+set_instance_assignment -name IO_STANDARD "2.5 V" -to  HSMC_ALST4_B_D72_OR_LVDS_TXp16
+set_location_assignment PIN_R13  -to HSMC_ALST4_B_D72_OR_LVDS_TXp16
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.150       LVDS RX bit 16 or CMOS bit 73                      HSMB_RX_D_P16           LVDS or 2.5-V  F10
+set_instance_assignment -name IO_STANDARD "2.5 V" -to  HSMC_ALST4_B_D73_OR_LVDS_RXp16
+set_location_assignment PIN_F10  -to HSMC_ALST4_B_D73_OR_LVDS_RXp16
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.151       LVDS TX bit 16n or CMOS bit 74                     HSMB_TX_D_N16           LVDS or 2.5-V  P13
+set_instance_assignment -name IO_STANDARD "2.5 V" -to  HSMC_ALST4_B_D74_OR_LVDS_TXn16
+set_location_assignment PIN_P13  -to HSMC_ALST4_B_D74_OR_LVDS_TXn16
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.152       LVDS RX bit 16n or CMOS bit 75                     HSMB_RX_D_N16           LVDS or 2.5-V  E10
+set_instance_assignment -name IO_STANDARD "2.5 V" -to  HSMC_ALST4_B_D75_OR_LVDS_RXn16
+set_location_assignment PIN_E10  -to HSMC_ALST4_B_D75_OR_LVDS_RXn16
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.155       LVDS or CMOS clock out 2 or CMOS bit 76            HSMB_CLK_OUT_P2         LVDS or 2.5-V  K10
+set_instance_assignment -name IO_STANDARD "2.5 V" -to  HSMC_ALST4_B_D76_OR_CLKOUT2p
+set_location_assignment PIN_K10  -to HSMC_ALST4_B_D76_OR_CLKOUT2p
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.156       LVDS or CMOS clock in 2 or CMOS bit 77             HSMB_CLK_IN_P2          LVDS or 2.5-V  W6
+set_instance_assignment -name IO_STANDARD "2.5 V" -to  HSMC_ALST4_B_D77_OR_CLKIN2p
+set_location_assignment PIN_W6   -to HSMC_ALST4_B_D77_OR_CLKIN2p
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.157       LVDS or CMOS clock out 2 or CMOS bit 78            HSMB_CLK_OUT_N2         LVDS or 2.5-V  J10
+set_instance_assignment -name IO_STANDARD "2.5 V" -to  HSMC_ALST4_B_D78_OR_CLOUT2n
+set_location_assignment PIN_J10  -to HSMC_ALST4_B_D78_OR_CLOUT2n
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.158       LVDS or CMOS clock in 2 or CMOS bit 79             HSMB_CLK_IN_N2          LVDS or 2.5-V  W5
+set_instance_assignment -name IO_STANDARD "2.5 V" -to HSMC_ALST4_B_D79_OR_CLKIN2n
+set_location_assignment PIN_W5   -to HSMC_ALST4_B_D79_OR_CLKIN2n
+#######################################################################################################################################################################################################################################
+                                                                                                # J2.160       HSMC Port B presence detect                        HSMB_PRSNTn             2.5-V          D9
+set_instance_assignment -name IO_STANDARD "2.5 V" -to hsmc_b_psntn
+set_instance_assignment -name IO_MAXIMUM_TOGGLE_RATE "0 MHz" -to hsmc_b_psntn
+set_location_assignment PIN_D9   -to hsmc_b_psntn
+#######################################################################################################################################################################################################################################
+                                                                                                # D4           User LED to show RX data activity on HSMC Port B   HSMB_RX_LED             2.5-V          AT10
+#######################################################################################################################################################################################################################################
+                                                                                                # D3           User LED to show TX data activity on HSMC Port B   HSMB_TX_LED             2.5-V          AH33
+#######################################################################################################################################################################################################################################
+
 

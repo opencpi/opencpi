@@ -73,13 +73,13 @@ namespace OCPI {
 	public Container
     {
     protected:
-      ContainerBase<Dri, Con, App, Art>(Con &con, const char *name,
+      ContainerBase<Dri, Con, App, Art>(Con &con, const char *a_name,
 					const ezxml_t config = NULL,
 					const OCPI::Util::PValue *props = NULL)
-	: OCPI::Driver::DeviceBase<Dri,Con>(name, con), Container(name, config, props) {}
+	: OCPI::Driver::DeviceBase<Dri,Con>(a_name, con), Container(a_name, config, props) {}
       inline Driver &driver() { return OCPI::Driver::DeviceBase<Dri,Con>::parent(); }
-      Artifact *findLoadedArtifact(const char *name) {
-	return Parent<Art>::findChildByName(name);
+      Artifact *findLoadedArtifact(const char *a_name) {
+	return Parent<Art>::findChildByName(a_name);
       }
       Artifact *findLoadedArtifact(const OCPI::Library::Artifact &art) {
 	return Parent<Art>::findChild(&Art::hasArtifact, (void *)&art);
@@ -101,8 +101,9 @@ namespace OCPI {
         public Application
     {
     protected:
-      ApplicationBase<Con, App, Wrk>(Con &con, App &app, const char *name, const OCPI::Util::PValue *props)
-      : Child<Con, App, application>(con, app, name), Application(props) {}
+      ApplicationBase<Con, App, Wrk>(Con &con, App &app, const char *a_name,
+				     const OCPI::Util::PValue *props)
+      : Child<Con, App, application>(con, app, a_name), Application(props) {}
     public:
       Container &container() { return Child<Con,App,application>::parent(); }
       Worker *firstWorker() const {
@@ -132,14 +133,15 @@ namespace OCPI {
         public Worker
     {
     protected:
-      WorkerBase<App,Wrk,Prt>(App &app, Wrk &wrk, Artifact *art, const char *name,
-			      ezxml_t impl, ezxml_t inst, Worker *slave, bool hasMaster,
+      WorkerBase<App,Wrk,Prt>(App &app, Wrk &wrk, Artifact *art, const char *a_name,
+			      ezxml_t impl, ezxml_t inst, Worker *a_slave, bool a_hasMaster,
 			      const OCPI::Util::PValue *params)
-      : Child<App,Wrk,worker>(app, wrk, name), Worker(art, impl, inst, slave, hasMaster, params)
+      : Child<App,Wrk,worker>(app, wrk, a_name),
+	Worker(art, impl, inst, a_slave, a_hasMaster, params)
       {
       }
       Application *application() { return &Child<App,Wrk,worker>::parent(); }
-      Port *findPort(const char *name) { return Parent<Prt>::findChildByName(name); }
+      Port *findPort(const char *a_name) { return Parent<Prt>::findChildByName(a_name); }
       Worker *nextWorker() { return Child<App,Wrk,worker>::nextChild(); }
       const std::string &name() const { return Child<App,Wrk,worker>::name(); }
     };

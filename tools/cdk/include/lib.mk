@@ -67,6 +67,9 @@ include $(OCPI_CDK_DIR)/include/package.mk
 ifeq ($(origin Implementations),undefined)
 Implementations=$(foreach m,$(Models),$(wildcard *.$m))
 endif
+ifeq ($(filter clean%,$(MAKECMDGOALS)),)
+$(shell mkdir -p lib; (for i in $(filter-out %.test, $(Implementations)); do echo $$i; done) > lib/workers);
+endif
 # we need to factor the model-specifics our of here...
 XmImplementations=$(filter %.xm,$(Implementations))
 RccImplementations=$(filter %.rcc,$(Implementations))
@@ -79,7 +82,7 @@ AssyImplementations=$(filter %.assy,$(Implementations))
 # must eval here hence ifeq
 ifeq ($(TestImplementations),)
   ifeq ($(origin Tests),undefined)
-    TestImplementations:=$(wildcard *.test)
+    TestImplementations:=$(subst %/,%,$(dir $(wildcard *.test/Makefile)))
   else
     TestImplementations:=$(Tests)
   endif
@@ -89,6 +92,32 @@ override GenDir=$(OutDir)gen
 # In case this library is a subdirectory that might receive XmlIncludeDirs from the
 # parent (e.g. when a platform directory has a "devices" library as a subdirectory
 override XmlIncludeDirs+=$(XmlIncludeDirsInternal)
+
+# Utility to show what WOULD be built (e.g. for packaging)
+.PHONY:  showxm showrcc showhdl showocl showtest showassy showall
+.SILENT: showxm showrcc showhdl showocl showtest showassy showall
+showxm:
+	echo $(XmImplementations)
+
+showrcc:
+	echo $(RccImplementations)
+
+showhdl:
+	echo $(HdlImplementations)
+
+showocl:
+	echo $(OclImplementations)
+
+showtest:
+	echo $(TestImplementations)
+
+showassy:
+	echo $(AssyImplementations)
+
+# Do NOT sort these or proxies may be out-of-order:
+showall:
+	echo $(XmImplementations) $(RccImplementations) $(HdlImplementations) $(OclImplementations) $(TestImplementations) $(AssyImplementations)
+
 # default is what we are running on
 
 build_targets := speclinks
@@ -148,7 +177,7 @@ BuildImplementation=$(infoxx BI:$1:$2:$(call HdlLibrariesCommand))\
 	       ComponentLibrariesInternal="$(call OcpiAdjustLibraries,$(ComponentLibraries))" \
 	       $(call Capitalize,$1)LibrariesInternal="$(call OcpiAdjustLibraries,$($(call Capitalize,$1)Libraries))" \
 	       $(call Capitalize,$1)IncludeDirsInternal="$(call AdjustRelative,$($(call Capitalize,$1)IncludeDirs))" \
-               XmlIncludeDirsInternal="$(call AdjustRelative,$(XmlIncludeDirs))";\
+               XmlIncludeDirsInternal="$(call AdjustRelative,$(XmlIncludeDirs))" $3;\
 
 BuildModel=\
 $(AT)set -e;if test "$($(call Capitalize,$(1))Implementations)"; then \
@@ -157,7 +186,7 @@ $(AT)set -e;if test "$($(call Capitalize,$(1))Implementations)"; then \
       echo Implementation \"$$i\" has no directory here.; \
       exit 1; \
     else \
-      $(call BuildImplementation,$(1),$$i) \
+      $(call BuildImplementation,$(1),$$i,$2) \
     fi;\
   done; \
 fi

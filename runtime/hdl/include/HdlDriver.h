@@ -3,6 +3,7 @@
 
 #include <string>
 #include "HdlSimDriver.h"
+#include "HdlLSimDriver.h"
 #include "HdlBusDriver.h"
 #include "HdlEtherDriver.h"
 #include "HdlPciDriver.h"
@@ -18,6 +19,7 @@ namespace OCPI {
 	OCPI::HDL::PCI::Driver,
 	OCPI::HDL::Ether::Driver,
 	OCPI::HDL::Sim::Driver,
+	OCPI::HDL::LSim::Driver,
 	OCPI::HDL::Zynq::Driver,
 	Access, // for temporary probing
 	virtual protected OCPI::Util::SelfMutex
@@ -31,17 +33,18 @@ namespace OCPI {
       // It uses a generic PCI scanner to find candidates, and when found, calls the
       // "found" method.
       unsigned search(const OCPI::API::PValue*, const char **exclude, bool discoveryOnly);
-      bool found(Device &dev, std::string &error);
+      bool found(Device &dev, const char **excludes, bool discoveryOnly, std::string &error);
       // Probe a specific container
       OCPI::Container::Container *probeContainer(const char *which, std::string &error,
 						 const OCPI::API::PValue *props);
-      OCPI::HDL::Device *
-	open(const char *which, bool discovery, bool forLoad, std::string &err);
+      OCPI::HDL::Device * open(const char *which, bool discovery, bool forLoad,
+			       const OCPI::API::PValue *params, std::string &err);
       void close();
 
       // Create an actual container.
       static OCPI::Container::Container *
-      createContainer(Device &dev, ezxml_t config = NULL, const OCPI::Util::PValue *params = NULL);
+      createContainer(Device &dev, ezxml_t config = NULL,
+		      const OCPI::Util::PValue *params = NULL);
     };
   }
 }

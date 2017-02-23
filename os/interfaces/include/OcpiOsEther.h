@@ -88,10 +88,10 @@ namespace OCPI {
 	inline explicit Address(const char *m) {
 	  setString(m);
 	}
-	Address(const Address &addr) {
-	  m_isEther = addr.m_isEther;
-	  set64(addr.addr64());
-	  m_broadcast = addr.m_broadcast;
+	Address(const Address &addr_in) {
+	  m_isEther = addr_in.m_isEther;
+	  set64(addr_in.addr64());
+	  m_broadcast = addr_in.m_broadcast;
 	  m_pretty[0] = 0;
 	}
 	inline const uint8_t *addr() const { return m_addr; }

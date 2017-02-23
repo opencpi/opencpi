@@ -41,8 +41,9 @@ namespace OCPI {
       unsigned m_sleepUsecs;
       std::string m_directory;
     public:
-      Server(bool verbose, bool discoverable, OCPI::Library::Library &lib, uint16_t port,
-	     bool remove, std::string &error);
+      Server(bool verbose, bool discoverable, bool loopback, bool onlyloopback,
+	     OCPI::Library::Library &lib, uint16_t port, bool remove, const char *addrFile,
+	     std::string &error);
       ~Server();
       bool run(std::string &error);
     protected:

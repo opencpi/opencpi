@@ -174,6 +174,8 @@ namespace OCPI {
 #undef OCPI_DATA_TYPE
 #undef OCPI_DATA_TYPE_S
 #define OCPI_DATA_TYPE_S OCPI_DATA_TYPE
+      virtual void getRawPropertyBytes(size_t offset, uint8_t *buf, size_t count) = 0;
+      virtual void setRawPropertyBytes(size_t offset, const uint8_t *buf, size_t count) = 0;
     };
 
     // This class is used when the application is being constructed using
@@ -213,7 +215,7 @@ namespace OCPI {
 				   const PValue *wParams = NULL,
 				   const char *selectCriteria = NULL,
 				   const Connection *connections = NULL) = 0;
-      virtual void start() = 0;
+      //      virtual void start() = 0;
     };
     class Container {
     public:
@@ -223,7 +225,7 @@ namespace OCPI {
       // Do some work for this container
       // Return true if there is more to do.
       // Argument is yield time for blocking
-      virtual bool run(uint32_t usecs = 0, bool verbose = false) = 0;
+      virtual bool run(uint32_t usecs = 0) = 0;
       // Perform the work of a separate thread, returning only when there is
       // nothing else to do.
       virtual void thread() = 0;
@@ -233,6 +235,8 @@ namespace OCPI {
       virtual const std::string &osVersion() const = 0;
       virtual const std::string &platform() const = 0;
       virtual const std::string &model() const = 0;
+      virtual const std::string &arch() const = 0;
+      virtual bool dynamic() const = 0;
     };
     class ContainerManager {
     public:
@@ -272,6 +276,7 @@ namespace OCPI {
     public:
       inline bool readSync() const { return m_readSync; }
       inline bool writeSync() const { return m_writeSync; }
+      BaseType baseType() const;
       // If it is a string property, how big a buffer should I allocate to retrieve the value?
       size_t stringBufferLength() const;
       // We don't use scalar-type-based templates (sigh) so we can control which

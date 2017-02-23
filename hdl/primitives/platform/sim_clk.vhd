@@ -6,8 +6,8 @@ library work; use work.platform_pkg.all;
 
 entity sim_clk is
   port(
-    clk   : out std_logic;
-    reset : out std_logic);
+    clk   : out std_logic := '0';
+    reset : out std_logic := '1');
 end sim_clk;
 architecture rtl of sim_clk is
   constant clk_half_period  : time := 5 ns;       -- 100 mhz

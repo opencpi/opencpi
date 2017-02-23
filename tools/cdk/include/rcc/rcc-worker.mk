@@ -47,27 +47,32 @@ RccSourceSuffix:=.$(Suffix_rcc_$(OcpiLanguage))
 RccImplSuffix=$(if $(filter c++,$(OcpiLanguage)),-worker.hh,_Worker.h)
 RccSkelSuffix=-skel$(RccSourceSuffix)
 OBJ:=.o
-override RccIncludeDirsInternal+=../include gen $(OCPI_CDK_DIR)/include/rcc
-BF=$(BF_$(call RccOs,))
+RccPrereqLibs=$(RccStaticPrereqLibs) $(RccDynamicPrereqLibs)
+# This is evaluated late, when RccTarget and RccPlatform are defined.
+RccIncludeDirsActual=$(RccIncludeDirsInternal)\
+ ../include gen \
+ $(OCPI_CDK_DIR)/include/rcc \
+ $(wildcard $(OCPI_CDK_DIR)/platforms/$(RccPlatform)/include) \
+ $(foreach l,$(RccPrereqLibs),\
+   $(OCPI_PREREQUISITES_DIR)/$l/$(RccTarget)/include\
+   $(OCPI_PREREQUISITES_DIR)/$l/include)
+BF=$(BF_$(call RccOs,$1))
+# This is for backward compatibility
+RccDynamicLinkOptions=$(SharedLibLinkOptions)
 ifneq ($(OCPI_DEBUG),0)
-SharedLibLinkOptions=-g
+RccDynamicLinkOptions+= -g
 endif
-SharedLibLinkOptions+=\
-  $(or $(SharedLibLinkOptions_$(HdlTarget)),$(SharedLibLinkOptions_$(call RccOs,)))
-SharedLibCompileOptions=\
-  $(or $(SharedLibCompileOptions_$(HdlTarget)),$(SharedLibCompileOptions_$(call RccOs,)))
 # Linux values
 BF_linux=.so
 SOEXT_linux=.so
 AREXT_linux=.a
-SharedLibLinkOptions_linux=-shared
-SharedLibCompileOptions_linux=-fPIC
+RccDynamicLinkOptions_linux=$(RccDynamicLinkOptions) -shared
+RccDynamicCompilerOptions_linux=-fPIC
 # macos values
 BF_macos=.dylib
 SOEXT_macos=.dylib
 AREXT_macos=.a
-SharedLibLinkOptions_macos=-dynamiclib -Xlinker -undefined -Xlinker dynamic_lookup
-SharedLibCompileOptions_macos=
+RccDynamicLinkOptions_macos=$(RccDynamicLinkOptions) -dynamiclib -Xlinker -undefined -Xlinker dynamic_lookup
 DispatchSourceFile=$(call WkrTargetDir,$1,$2)/$(CwdName)_dispatch.c
 ArtifactFile=$(BinaryFile)
 # Artifacts are target-specific since they contain things about the binary
@@ -78,10 +83,11 @@ OcpiLibDir=$(OCPI_CDK_DIR)/lib/$$(RccTarget)$(and $(OCPI_TARGET_MODE),/$(OCPI_TA
 override RccLibrariesInternal+=rcc application os
 
 ifeq ($(OCPI_USE_TARGET_MODES),1)
-  export OCPI_TARGET_MODE:=$(if $(filter 1,$(OCPI_BUILD_SHARED_LIBRARIES)),d,s)$(if $(filter 1,$(OCPI_DEBUG)),d,o)
+  export OCPI_TARGET_MODE:=$(if $(filter 1,$(OCPI_DYNAMIC)),d,s)$(if $(filter 1,$(OCPI_DEBUG)),d,o)
 endif
-PatchElf=$(or $(OCPI_PREREQUISITES_INSTALL_DIR),/opt/opencpi/prerequisites)/patchelf/$(OCPI_TOOL_HOST)/bin/patchelf
-LinkBinary=$$(G$(OcpiLanguage)_LINK_$$(RccTarget)) $$(SharedLibLinkOptions) -o $$@ $1 \
+Comma=,
+PatchElf=$(or $(OCPI_PREREQUISITES_DIR),/opt/opencpi/prerequisites)/patchelf/$(OCPI_TOOL_HOST)/bin/patchelf
+LinkBinary=$(G$(OcpiLanguage)_LINK_$(RccTarget)) $(call RccPrioritize,DynamicLinkOptions,$(OcpiLanguage),$(RccTarget)) -o $@ $1 \
 $(AEPLibraries) \
 $(foreach l,$(RccLibrariesInternal) $(Libraries),\
   $(if $(findstring /,$l),\
@@ -89,30 +95,37 @@ $(foreach l,$(RccLibrariesInternal) $(Libraries),\
        $(or $(wildcard $p$(AREXT_$(call RccOs,))),\
             $(and $(wildcard $p$(SOEXT_$(call RccOs,))),-L $(dir $l)$(RccTarget) -l $(notdir $l)),\
             $(error No RCC library found for $l, tried $p$(AREXT_$(call RccOs,)) and $p$(SOEXT_$(call RccOs,))))), \
-    $(and $(filter 1,$(OCPI_BUILD_SHARED_LIBRARIES)),-l ocpi_$l))) \
-  -L $(OCPI_CDK_DIR)/lib/$$(RccTarget)$(and $(OCPI_TARGET_MODE),/d$(if $(filter 1,$(OCPI_DEBUG)),d,o))
+    $(and $(filter 1,$(OCPI_DYNAMIC)),-l ocpi_$l))) \
+  -L $(OCPI_CDK_DIR)/lib/$(RccTarget)$(and $(OCPI_TARGET_MODE),/d$(if $(filter 1,$(OCPI_DEBUG)),d,o)) \
+  $(foreach l,$(RccStaticPrereqLibs),\
+    $(OCPI_PREREQUISITES_DIR)/$l/$(RccTarget)/lib/lib$l.a) \
+  $(and $(RccDynamicPrereqLibs),-Wl$(Comma)-rpath='$$ORIGIN') \
+  $(foreach l,$(RccDynamicPrereqLibs),\
+    $(OCPI_PREREQUISITES_DIR)/$l/$(RccTarget)/lib/lib$l$(SOEXT_$(call RccOs,))) \
+  $(foreach l,$(RccDynamicPrereqLibs),\
+    && cp $(OCPI_PREREQUISITES_DIR)/$l/$(RccTarget)/lib/lib$l$(SOEXT_$(call RccOs,)) $(@D))
 
 # $1 is target, $2 is configuration
 RccStaticName=$(WkrBinaryName)_s$(BF)
 RccStaticPath=$(call WkrTargetDir,$1,$2)/$(RccStaticName)
 define RccWkrBinary
   $$(infox RccWkrBinary:$1:$2:$$(call RccOs,))
-  ifeq ($$(call RccOs,),linux)
-    $(call RccStaticPath,$1,$2): $(call WkrBinary,$1,$2)
+  ifeq ($$(call RccOs,$1),linux)
+    $$(call RccStaticPath,$1,$2): $$(call WkrBinary,$1,$2)
 	$(AT)$(OCPI_CDK_DIR)/scripts/makeStaticWorker $$< \
-	  $$(foreach l,$$(RccLibrariesInternal),libocpi_$$l$$(BF))
+	  $$(foreach l,$$(RccLibrariesInternal),libocpi_$$l$$(call BF,$1))
 
-    all: $(call RccStaticPath,$1,$2)
+    all: $$(call RccStaticPath,$1,$2)
   endif
 endef
 
 define RccWkrBinaryLink
-  $$(infox RccWkrBinaryLink:$1:$2:$3:$4:$5 name:$$(call RccStaticName,$1,$4):$(LibDir)/$1/$5_s$(BF))
-  ifeq ($$(call RccOs,),linux)
-    $(LibDir)/$1/$5_s$(BF): $(call RccStaticPath,$1,$4) | $(LibDir)/$1
+  $$(infox RccWkrBinaryLink:$1:$2:$3:$4:$5 name:$$(call RccStaticName,$1,$4):$(LibDir)/$1/$5_s$$(call BF,$1))
+  ifeq ($$(call RccOs,$1),linux)
+    $(LibDir)/$1/$5_s$$(call BF,$1): $$(call RccStaticPath,$1,$4) | $(LibDir)/$1
 	$(AT)echo Exporting worker binary for static executables: $$@ '->' $$<
 	$(AT)$$(call MakeSymLink2,$$<,$$(dir $$@),$$(notdir $$@))
-    LibLinks+=$(LibDir)/$1/$5_s$(BF)
+    BinLibLinks+=$(LibDir)/$1/$5_s$$(call BF,$1)
   endif
 endef
 
@@ -121,25 +134,52 @@ CompilerWarnings= -Wall -Wextra
 CompilerDebugFlags=-g
 CompilerOptimizeFlags=-O
 ifeq ($(OCPI_DEBUG),1)
-CompilerOptions=$(CompilerDebugFlags)
+RccCompilerOptions=$(CompilerDebugFlags)
 else
-CompilerOptions=$(CompilerOptimizeFlags)
+RccCompilerOptions=$(CompilerOptimizeFlags)
 endif
+$(foreach v,$(filter ExtraCompilerOptions%,$(.VARIABLES)),$(eval Rcc$v=$($v)))
 # Prepare the parameters for compile-command-line injection into the worker compilation
 RccParams=\
   $(foreach n,$(WorkerParamNames),\
 	     '-DPARAM_$n()=$(Param_$(ParamConfig)_$n)')
+
+# Given flag name, target and language and flag name, prioritize the flags, as defined:
+# target and language
+# target
+# generic
+# E.g. $(call RccPrioritize,CompilerOptions,C,target)
+OcpiDefined=$(filter-out undefined,$(origin $1))
+RccPrioritize=\
+  $(if $(call OcpiDefined,Rcc$1$2_$3),\
+    $(Rcc$1$2_$3),\
+    $(if $(call OcpiDefined,Rcc$1_$3),\
+      $(Rcc$1_$3),\
+      $(if $(call OcpiDefined,Rcc$1$2_$(call RccOs,$3)),\
+        $(Rcc$1$2_$(call RccOs,$3)),\
+        $(if $(call OcpiDefined,Rcc$1_$(call RccOs,$3)),\
+          $(Rcc$1_$(call RccOs,$3)),\
+          $(if $(call OcpiDefined,Rcc$1$2),\
+            $(Rcc$1$2),\
+            $(Rcc$1))))))
+
+# RccCompilerOptions(language,target)
+RccFinalCompilerOptions=\
+  $(call RccPrioritize,CompilerWarnings,$1,$2) \
+  $(call RccPrioritize,CompilerOptions,$1,$2) \
+  $(call RccPrioritize,DynamicCompilerOptions,$1,$2) \
+  $(call RccPrioritize,ExtraCompilerOptions,$1,$2) \
+  $(call RccPrioritize,DynamicCompilerExtraCompilerOptions,$1,$2) \
+
 Compile_c=\
   $$(Gc_$$(RccTarget)) -MMD -MP -MF $$@.deps -c \
-  $$(CompilerWarnings) $$(CompilerOptions) \
-  $$(SharedLibCompileOptions) $$(ExtraCompilerOptionsC_$$(RccTarget)) \
-  $(RccIncludeDirsInternal:%=-I%) -o $$@ $$(RccParams) $$<
+  $$(call RccFinalCompilerOptions,C,$$(RccTarget)) \
+  $$(RccIncludeDirsActual:%=-I%) -o $$@ $$(RccParams) $$<
 Compile_cc=\
   $$(Gc++_$$(RccTarget)) -MMD -MP -MF $$@.deps -c \
-  $$(CompilerWarnings) $$(CompilerOptions) \
-  $$(SharedLibCompileOptions) \
-  $$(ExtraCompilerOptions_$$(RccTarget)) $$(ExtraCompilerOptionsCC_$$(RccTarget)) \
-  $(RccIncludeDirsInternal:%=-I%) -o $$@ $$(RccParams) $$<
+  $$(call RccFinalCompilerOptions,CC,$$(RccTarget)) \
+  $$(ExtraCompilerOptionsCC_$$(RccTarget)) $(ignore for legacy)\
+  $$(RccIncludeDirsActual:%=-I%) -o $$@ $$(RccParams) $$<
 Compile_cpp=$(Compile_cc)
 Compile_cxx=$(Compile_cc)
 
@@ -154,7 +194,8 @@ $(call WkrMakeObject,$(call DispatchSourceFile,$1,$2),$1,$2)
 
 $(call DispatchSourceFile,$1,$2): $$(ImplHeaderFiles) | $$(call WkrTargetDir,$1,$2)
 	$(AT)echo Generating dispatch file: $$@
-	$(AT)(echo "#include <RCC_Worker.h>";\
+	$(AT)(echo "/* Auto generated OpenCPI framework file - DO NOT EDIT - created by rcc-worker.mk $(OcpiDateStamp) */";\
+	  echo "#include <RCC_Worker.h>";\
 	  echo "#define STR(foo) _STR(foo)";\
 	  echo "#define _STR(foo) #foo";\
 	  for w in $(Workers); do \
@@ -188,12 +229,15 @@ $(call ArtifactXmlFile,$1,$2): $(call RccAssemblyFile,$1,$2) $$(ObjectFiles_$1_$
 	$(AT)$(DYN_PREFIX) $(ToolsDir)/ocpigen -M $(call WkrTargetDir,$1,$2)/$$(@F).deps \
 	     -O $(call RccOs,$1) \
              -V $(call RccOsVersion,$1) \
-             -P $(call RccArch,$1) \
+             -H $(call RccArch,$1) \
+	     -P $3 \
 	     -D $(call WkrTargetDir,$1,$2) $(XmlIncludeDirsInternal:%=-I%) -A $(RccAssemblyFile)
 
 endef
 
-$(foreach t,$(RccTargets),$(foreach c,$(ParamConfigurations),$(eval $(call DoRccArtifactFile,$t,$c))))
+$(foreach p,\
+  $(RccPlatforms),$(foreach c,$(ParamConfigurations),\
+     $(eval $(call DoRccArtifactFile,$(RccTarget_$p),$c,$p))))
 
 #$(OcpiGen) -A $(RccAssemblyFile)
 
@@ -202,7 +246,5 @@ $(foreach t,$(RccTargets),$(foreach c,$(ParamConfigurations),$(eval $(call DoRcc
 %.o : %.cc
 %.o : %.cpp
 %.o : %.cxx
-
-
 
 endif

@@ -1,2 +1,2 @@
-<RccWorker name='noise_gen_complex' language='c' spec='noise_gen_complex_spec.xml'
+<RccWorker language='c' spec='noise_gen_complex_spec.xml'
 	   controlOperations='start'/>

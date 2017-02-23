@@ -18,7 +18,7 @@ WsiPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
       (err = OE::getBoolean(x, "RegRequest", &m_regRequest)) ||
       (err = OE::getBoolean(x, "EarlyRequest", &m_earlyRequest)))
     return;
-  master = m_isProducer;
+  m_master = m_isProducer;
   finalize();
 }
 
@@ -68,7 +68,7 @@ deriveOCP() {
   ocp.MCmd.width = 3;
   if (m_preciseBurst) {
     ocp.MBurstLength.width =
-      floorLog2((m_protocol->m_maxMessageValues * m_protocol->m_dataValueWidth +
+      OU::floorLog2((m_protocol->m_maxMessageValues * m_protocol->m_dataValueWidth +
 		 m_dataWidth - 1)/
 		m_dataWidth) + 1;
     //	ocpiInfo("Burst %u from mmv %u dvw %u dw %u",
@@ -98,7 +98,7 @@ deriveOCP() {
   if (m_abortable)
     ocp.MDataInfo.width++;
   if (m_nOpcodes > 1)
-    ocp.MReqInfo.width = ceilLog2(m_nOpcodes);
+    ocp.MReqInfo.width = OU::ceilLog2(m_nOpcodes);
   ocp.MReqLast.value = s;
   ocp.MReset_n.value = s;
   ocp.SReset_n.value = s;
@@ -121,31 +121,31 @@ emitVhdlShell(FILE *f, Port *wci) {
   fprintf(f,
 	  "  --\n"
 	  "  -- The WSI interface helper component instance for port \"%s\"\n",
-	  name());
-  if (ocp.MReqInfo.value)
-    if (m_protocol && m_protocol->nOperations())
+	  cname());
+  if (ocp.MReqInfo.value) {
+    if (m_protocol && m_protocol->nOperations()) {
       if (slave) {
 #if 0
 	fprintf(f,
 		"  %s_opcode <= %s_opcode_t'val(to_integer(unsigned(%s_opcode_temp)));\n",
 		name(), m_protocol && m_protocol->operations() ?
-		m_protocol->m_name.c_str() : name(), name());
+		m_protocol->m_name.c_str() : cname(), cname());
 #else
 	fprintf(f,
 		"  -- Xilinx/ISE 14.6 synthesis doesn't do the t'val(x) function properly\n"
 		"  -- Hence this workaround\n");
 	fprintf(f,
-		"  %s_opcode <=\n", name());
+		"  %s_opcode <=\n", cname());
 	OU::Operation *op = m_protocol->operations();
 	unsigned nn;
 	for (nn = 0; nn < m_protocol->nOperations(); nn++, op++)
 	  fprintf(f, "%s    %s_%s_op_e when to_integer(unsigned(%s_opcode_temp)) = %u",
-		  nn ? " else\n" : "", m_protocol->m_name.c_str(), op->name().c_str(), name(), nn);
+		  nn ? " else\n" : "", m_protocol->m_name.c_str(), op->cname(), cname(), nn);
 	// If the protocol opcodes do not fill the space, fill it
 	if (nn < m_nOpcodes)
 	  for (unsigned o = 0; nn < m_nOpcodes; nn++, o++)
 	    fprintf(f, " else\n    op%u_e when to_integer(unsigned(%s_opcode_temp)) = %u",
-		    nn, name(), nn);
+		    nn, cname(), nn);
 	fprintf(f, ";\n");
 #endif
       } else {
@@ -153,28 +153,28 @@ emitVhdlShell(FILE *f, Port *wci) {
 		"  -- Xilinx/ISE 14.6 synthesis doesn't do the t'pos(x) function properly\n"
 		"  -- Hence this workaround\n");
 	fprintf(f,
-		"  %s_opcode_pos <=\n", name());
+		"  %s_opcode_pos <=\n", cname());
 	OU::Operation *op = m_protocol->operations();
 	unsigned nn;
 	for (nn = 0; nn < m_protocol->nOperations(); nn++, op++)
 	  fprintf(f, "    %u when %s_opcode = %s_%s_op_e else\n",
-		  nn, name(), m_protocol->m_name.c_str(), op->name().c_str());
+		  nn, cname(), m_protocol->m_name.c_str(), op->cname());
 	// If the protocol opcodes do not fill the space, fill it
 	if (nn < m_nOpcodes)
 	  for (unsigned o = 0; nn < m_nOpcodes; nn++, o++)
 	    fprintf(f, "    %u when %s_opcode = %s_opcode_t'val(%u) else\n",
-		    nn, name(), m_protocol->m_name.c_str(), nn);
+		    nn, cname(), m_protocol->m_name.c_str(), nn);
 	fprintf(f, "    0;\n");
 	fprintf(f,
 		"  %s_opcode_temp <= std_logic_vector(to_unsigned(%s_opcode_pos, %s_opcode_temp'length));\n",
-		name(), name(), name());
+		cname(), cname(), cname());
       }
-    else 
+    } else 
       fprintf(f, "  %s_opcode%s <= %s_opcode%s;\n",
-	      name(), slave ? "" : "_temp", name(), slave ? "_temp" : "");
-	
+	      cname(), slave ? "" : "_temp", cname(), slave ? "_temp" : "");
+  }
   std::string width;
-  OU::format(width, "ocpi_port_%s_", name());
+  OU::format(width, "ocpi_port_%s_", cname());
   fprintf(f,
 	  "  %s_port : component ocpi.wsi.%s%s\n"
 	  "    generic map(precise          => %s,\n"
@@ -186,7 +186,7 @@ emitVhdlShell(FILE *f, Port *wci) {
 	  "                opcode_width     => %zu,\n"
 	  "                own_clock        => %s,\n"
 	  "                early_request    => %s)\n",
-	  name(),
+	  cname(),
 	  m_isPartitioned ? "part_" : "",
 	  slave ? "slave" : "master",
 	  BOOL(m_preciseBurst),
@@ -234,43 +234,43 @@ emitVhdlShell(FILE *f, Port *wci) {
 	  wci || clock->port ? ".Clk" : "");
   fprintf(f, "                wci_reset        => %s,\n", "wci_reset");
   fprintf(f, "                wci_is_operating => %s,\n",	"wci_is_operating");
-  fprintf(f, "                reset            => %s_reset,\n", name());
-  fprintf(f, "                ready            => %s_ready,\n", name());
-  fprintf(f, "                som              => %s_som,\n", name());
-  fprintf(f, "                eom              => %s_eom,\n", name());
+  fprintf(f, "                reset            => %s_reset,\n", cname());
+  fprintf(f, "                ready            => %s_ready,\n", cname());
+  fprintf(f, "                som              => %s_som,\n", cname());
+  fprintf(f, "                eom              => %s_eom,\n", cname());
   if (ocp.MData.value) {
-    fprintf(f, "                valid            => %s_valid,\n", name());
-    fprintf(f, "                data             => %s_data,\n", name());
+    fprintf(f, "                valid            => %s_valid,\n", cname());
+    fprintf(f, "                data             => %s_data,\n", cname());
   } else {
     fprintf(f, "                valid            => open,\n");
     fprintf(f, "                data             => open,\n");
   }
   if (m_abortable)
-    fprintf(f, "                abort            => %s_abort,\n", name());
+    fprintf(f, "                abort            => %s_abort,\n", cname());
   else
     fprintf(f, "                abort            => %s,\n", slave ? "open" : "'0'");
   if (ocp.MByteEn.value)
-    fprintf(f, "                byte_enable      => %s_byte_enable,\n", name());
+    fprintf(f, "                byte_enable      => %s_byte_enable,\n", cname());
   else
     fprintf(f, "                byte_enable      => open,\n");
   if (m_preciseBurst)
-    fprintf(f, "                burst_length     => %s_burst_length,\n", name());
+    fprintf(f, "                burst_length     => %s_burst_length,\n", cname());
   else if (slave)
     fprintf(f, "                burst_length     => open,\n");
   else
     fprintf(f, "                burst_length     => (%zu downto 0 => '0'),\n",
 	    ocp.MBurstLength.width-1);
   if (ocp.MReqInfo.value)
-    fprintf(f, "                opcode           => %s_opcode_temp,\n", name());
+    fprintf(f, "                opcode           => %s_opcode_temp,\n", cname());
   else if (slave)
     fprintf(f, "                opcode           => open,\n");
   else
     fprintf(f, "                opcode           => (%zu downto 0 => '0'),\n",
 	    opcode_width-1);
   if (slave)
-    fprintf(f, "                take             => %s_take", name());
+    fprintf(f, "                take             => %s_take", cname());
   else
-    fprintf(f, "                give             => %s_give", name());
+    fprintf(f, "                give             => %s_give", cname());
   if (m_isPartitioned)
     fprintf(f,
 	    ",\n"
@@ -279,14 +279,14 @@ emitVhdlShell(FILE *f, Port *wci) {
 	    "                part_start       => %s_part_start,\n"
 	    "                part_ready       => %s_part_ready,\n"
 	    "                part_%s        => %s_part_%s",
-	    name(), name(), name(), name(),
-	    slave ? "take" : "give", name(), slave ? "take" : "give");
+	    cname(), cname(), cname(), cname(),
+	    slave ? "take" : "give", cname(), slave ? "take" : "give");
   fprintf(f, ");\n");
 }
 
 const char *WsiPort::
 adjustConnection(Port &consPort, const char *masterName, Language lang,
-		 OcpAdapt *prodAdapt, OcpAdapt *consAdapt) {
+		 OcpAdapt *prodAdapt, OcpAdapt *consAdapt, size_t &unused) {
   WsiPort &cons = *static_cast<WsiPort *>(&consPort);
   OcpAdapt *oa;
   // Bursting compatibility and adaptation
@@ -304,13 +304,16 @@ adjustConnection(Port &consPort, const char *masterName, Language lang,
 	  "std_logic_vector(to_unsigned(2,2) - unsigned(ocpi.types.bit2vec(%s,2)))";
 	oa->other = OCP_MReqLast;
 	oa->comment = "Convert precise to imprecise";
+	oa->isExpr = true; // subtraction
 	oa = &prodAdapt[OCP_MBurstLength];
 	oa->expr = lang == Verilog ? "" : "open";
+	unused += ocp.MBurstLength.width;
 	oa->comment = "MBurstLength ignored for imprecise consumer";
 	if (m_impreciseBurst) {
 	  oa = &prodAdapt[OCP_MBurstPrecise];
 	  oa->expr = lang == Verilog ? "" : "open";
 	  oa->comment = "MBurstPrecise ignored for imprecise-only consumer";
+	  unused++;
 	}
       }
     } else { // consumer does both
@@ -325,19 +328,21 @@ adjustConnection(Port &consPort, const char *masterName, Language lang,
 	oa->comment = "Tell consumer all bursts are imprecise";
 	oa = &consAdapt[OCP_MBurstLength];
 	oa->other = OCP_MBurstLength;
-	asprintf((char **)&oa->expr,
-		 lang == Verilog ? "{%zu'b0,%%s}" : "std_logic_vector(to_unsigned(0,%zu)) & %%s",
-		 cons.ocp.MBurstLength.width - 2);
+	ocpiCheck(asprintf((char **)&oa->expr,
+			   lang == Verilog ?
+			   "{%zu'b0,%%s}" : "std_logic_vector(to_unsigned(0,%zu)) & %%s",
+			   cons.ocp.MBurstLength.width - 2) > 0);
 	oa->comment = "Consumer only needs imprecise burstlength (2 bits)";
+	oa->isExpr = true; // concatenation
       }
     }
   }
   if (m_preciseBurst && cons.m_preciseBurst &&
       ocp.MBurstLength.width < cons.ocp.MBurstLength.width) {
     oa = &consAdapt[OCP_MBurstLength];
-    asprintf((char **)&oa->expr,
-	     lang == Verilog ? "{%zu'b0,%%s}" : "to_unsigned(0,%zu) & %%s",
-	     cons.ocp.MBurstLength.width - ocp.MBurstLength.width);
+    ocpiCheck(asprintf((char **)&oa->expr,
+		       lang == Verilog ? "{%zu'b0,%%s}" : "to_unsigned(0,%zu) & %%s",
+		       cons.ocp.MBurstLength.width - ocp.MBurstLength.width) > 0);
     oa->comment = "Consumer takes bigger bursts than producer creates";
     oa->other = OCP_MBurstLength;
   }
@@ -361,19 +366,21 @@ adjustConnection(Port &consPort, const char *masterName, Language lang,
       oa->other = OCP_MCmd;
       oa->expr = "%s == OCPI_OCP_MCMD_WRITE ? 1b'1 : 1b'0";
       oa->comment = "Tell consumer data is valid when its(request) is MCMD_WRITE";
+      oa->isExpr = true;
     }
   } else if (m_earlyRequest)
     return "producer emits early requests, but consumer doesn't support them";
   // Opcode compatibility
-  if (cons.m_nOpcodes != m_nOpcodes)
+  if (cons.m_nOpcodes != m_nOpcodes) {
     if (cons.ocp.MReqInfo.value) {
       if (ocp.MReqInfo.value) {
 	if (cons.ocp.MReqInfo.width > ocp.MReqInfo.width) {
 	  oa = &consAdapt[OCP_MReqInfo];
-	  asprintf((char **)&oa->expr,
-		   lang == Verilog ?
-		   "{%zu'b0,%%s}" : "std_logic_vector(to_unsigned(0,%zu)) & %%s",
-		   cons.ocp.MReqInfo.width - ocp.MReqInfo.width);
+	  ocpiCheck(asprintf((char **)&oa->expr,
+			     lang == Verilog ?
+			     "{%zu'b0,%%s}" : "std_logic_vector(to_unsigned(0,%zu)) & %%s",
+			     cons.ocp.MReqInfo.width - ocp.MReqInfo.width) > 0);
+	  oa->isExpr = true;
 	  oa->other = OCP_MReqInfo;
 	} else {
 	  // producer has more, we just connect the LSBs
@@ -381,16 +388,18 @@ adjustConnection(Port &consPort, const char *masterName, Language lang,
       } else {
 	// producer has none, consumer has some
 	oa = &consAdapt[OCP_MReqInfo];
-	asprintf((char **)&oa->expr,
-		 lang == Verilog ? "%zu'b0" : "std_logic_vector(to_unsigned(0,%zu))",
-		 cons.ocp.MReqInfo.width);
+	ocpiCheck(asprintf((char **)&oa->expr,
+			   lang == Verilog ? "%zu'b0" : "std_logic_vector(to_unsigned(0,%zu))",
+			   cons.ocp.MReqInfo.width) > 0);
       }
     } else {
       // consumer has none
       oa = &prodAdapt[OCP_MReqInfo];
       oa->expr = lang == Verilog ? "" : "open";
       oa->comment = "Consumer doesn't have opcodes (or has exactly one)";
+      unused += ocp.MReqInfo.width;
     }
+  }
   // Byte enable compatibility
   oa = &consAdapt[OCP_MByteEn];
   if (cons.ocp.MByteEn.value && ocp.MByteEn.value) {
@@ -417,6 +426,7 @@ adjustConnection(Port &consPort, const char *masterName, Language lang,
 			  masterName, --pw);
 	  expr += ")";
 	}
+	oa->isExpr = true;
       }
       oa->expr = strdup(expr.c_str());
       oa->comment = "inclusive-or more numerous producer byte enables for consumer";
@@ -434,6 +444,7 @@ adjustConnection(Port &consPort, const char *masterName, Language lang,
 			  masterName, ocp.MByteEn.width - n - 1);
 	expr += "}";
       } else {
+	oa->isExpr = true;
 	for (size_t n = 0; n < ocp.MByteEn.width; n++)
 	  for (size_t nn = 0; nn < nper; nn++)
 	    OU::formatAdd(expr, "%s%s.MByteEn(%zu)", n || nn ? "&" : "",
@@ -447,12 +458,13 @@ adjustConnection(Port &consPort, const char *masterName, Language lang,
     if (lang == VHDL)
       oa->expr = strdup("(others => '1')");
     else
-      asprintf((char **)&oa->expr, "{%zu{1'b1}}", cons.ocp.MByteEn.width);
+      ocpiCheck(asprintf((char **)&oa->expr, "{%zu{1'b1}}", cons.ocp.MByteEn.width) > 0);
   } else if (ocp.MByteEn.value) {
     // only producer has byte enables
     oa = &prodAdapt[OCP_MByteEn];
     oa->expr = lang == Verilog ? "" : "open";
     oa->comment = "consumer does not have byte enables";
+    unused += ocp.MByteEn.width;
   }
   size_t
     cmdi = cons.ocp.MDataInfo.width - (cons.m_abortable ? 1 : 0),
@@ -481,6 +493,7 @@ adjustConnection(Port &consPort, const char *masterName, Language lang,
 			masterName, n*8-1, (n-1)*8);
 	expr += "}";
       } else {
+	oa->isExpr = true;
 	for (size_t n = pbytes; n > 0; n--)
 	  OU::formatAdd(expr, "%s%s.MDataInfo(%zu downto %zu) & %s.MData(%zu downto %zu)",
 			n == pbytes ? "" : "&",
@@ -512,6 +525,7 @@ adjustConnection(Port &consPort, const char *masterName, Language lang,
 	dexpr += "}";
 	iexpr += "}";
       } else {
+	oa->isExpr = true;
 	for (size_t n = cbytes; n > 0; n--) {
 	  OU::formatAdd(dexpr, "%s%s.MData(%zu downto %zu)",
 			n == cbytes ? "" : "&",
@@ -542,7 +556,7 @@ emitImplAliases(FILE *f, unsigned n, Language lang) {
   if (m_regRequest) {
     fprintf(f,
 	    "  %s Register declarations for request phase signals for interface \"%s\"\n",
-	    comment, name());
+	    comment, cname());
     OcpSignalDesc *osd = ocpSignals;
     for (OcpSignal *os = ocp.signals; osd->name; os++, osd++)
       if (osd->request && m_isProducer && m_regRequest && os->value &&
@@ -554,7 +568,7 @@ emitImplAliases(FILE *f, unsigned n, Language lang) {
       }
   }
   fprintf(f,
-	  "  %s Aliases for interface \"%s\"\n", comment, name());
+	  "  %s Aliases for interface \"%s\"\n", comment, cname());
   if (ocp.MReqInfo.width) {
     if (n == 0) {
       if (lang != VHDL)
@@ -597,7 +611,7 @@ emitSkelSignals(FILE *f) {
   if (m_worker->m_language != VHDL && m_regRequest)
     fprintf(f,
 	    "// GENERATED: OCP request phase signals for interface \"%s\" are registered\n",
-	    name());
+	    cname());
 }
 
 void WsiPort::
@@ -610,19 +624,19 @@ emitRecordInputs(FILE *f) {
     if (m_dataWidth) {
       fprintf(f,
 	      "    data             : std_logic_vector(ocpi_port_%s_data_width-1 downto 0);\n",
-	      name());	      
+	      cname());	      
       // This shouldn't be here when the width is 1, but some workers have been written this way
       // so we'll leave it, but it is redundant with valid when the width is 1
       if (ocp.MByteEn.value)
 	fprintf(f,
 		"    byte_enable      : std_logic_vector(ocpi_port_%s_MByteEn_width-1 downto 0);\n",
-		name());
+		cname());
     }
     if (m_nOpcodes > 1)
       fprintf(f,
 	      "    opcode           : %s_OpCode_t;\n",
 	      m_protocol && m_protocol->operations() ?
-	      m_protocol->m_name.c_str() : name());
+	      m_protocol->m_name.c_str() : cname());
     fprintf(f,
 	    m_dataWidth ?
 	    "    som, eom, valid  : Bool_t;           -- valid means data and byte_enable are present\n" :
@@ -654,20 +668,20 @@ emitRecordOutputs(FILE *f) {
     if (m_dataWidth) {
       fprintf(f,
 	      "    data             : std_logic_vector(ocpi_port_%s_data_width-1 downto 0);\n",
-	      name());
+	      cname());
       // This should not really be generated when the width is one, but some workers set this
       // signal so we don't want to break them.  But it is ignored since "valid" is what is
       // documented and specified.
       if (ocp.MByteEn.value)
 	fprintf(f,
 		"    byte_enable      : std_logic_vector(ocpi_port_%s_MByteEn_width-1 downto 0);\n",
-		name());
+		cname());
     }
     if (m_nOpcodes > 1)
       fprintf(f,
 	      "    opcode           : %s_OpCode_t;\n",
 	      m_protocol && m_protocol->operations() ?
-	      m_protocol->m_name.c_str() : name());
+	      m_protocol->m_name.c_str() : cname());
     fprintf(f,
 	    "    som, eom, valid  : Bool_t;            -- one or more must be true when 'give' is asserted\n");
     if (m_isPartitioned)
@@ -678,7 +692,9 @@ emitRecordOutputs(FILE *f) {
 	      "    part_give        : Bool_t;\n");
   }
 }
+#if 0
 unsigned WsiPort::
 extraDataInfo() const {
   return m_abortable ? 1 : 0;
 }
+#endif

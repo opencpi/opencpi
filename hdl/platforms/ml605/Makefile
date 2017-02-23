@@ -7,6 +7,11 @@ ExportFiles=jtagSupport_ml605 loadFlash_ml605 \
 # We specify these to get the order we want
 SourceFiles= ml605_pkg.vhd ml605.vhd pci_ml605.v 
 #SourceFiles=chipscope_pkg.vhd ml605_pkg.vhd ml605.vhd pci_ml605.v 
-Configurations=base ml605_flash ml605_lime_tx
+Configurations=base ml605_flash ml605_lime_tx \
+               ml605_zipper_fmc_lpc_rx_tx \
+               ml605_zipper_fmc_lpc_rx \
+               ml605_zipper_fmc_lpc_tx \
+               ml605_zipper_fmc_hpc_rx_tx \
+               ml605_zipper_fmc_hpc_rx \
+               ml605_zipper_fmc_hpc_tx
 include $(OCPI_CDK_DIR)/include/hdl/hdl-platform.mk
-

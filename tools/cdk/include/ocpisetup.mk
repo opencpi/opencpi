@@ -1,5 +1,5 @@
 # This make file fragment establishes environment variables for user Makefiles,
-# all based on OCPI_CDK_DIR, which might be set already, but may not.
+# all based on OCPI_CDK_DIR, which might be set already, but may not be.
 # If not set, it is assumed that this file is being included from its proper location
 # in a CDK and the CDK location is inferred from that.
 # This means that a user makefile could simply include this file however it wants and
@@ -11,7 +11,7 @@ export OCPISETUP_MK:=1
 OcpiThisFile=$(lastword $(MAKEFILE_LIST))
 
 ################################################################################
-# Set and verify OCPI_CDK_DIR
+# Set and verify OCPI_CDK_DIR (unless RPM building where all bets are off)
 ifndef OCPI_CDK_DIR
   # Remember to use abs path here, not real path, to preserve links for UI
   export OCPI_CDK_DIR:= $(abspath $(dir $(abspath $(OcpiThisFile)))/..)
@@ -19,17 +19,18 @@ else
   # Just to be sure it is exported
   export OCPI_CDK_DIR
 endif
-
-# We run the OCPI_CDK_DIR through the shell to handle ~ (at least).
-OCPI_CDK_DIR:=$(shell echo $(OCPI_CDK_DIR))
-ifeq ($(realpath $(OCPI_CDK_DIR)),)
-  $(error The OCPI_CDK_DIR variable, "$(OCPI_CDK_DIR)", points to a nonexistent directory)
+ifndef RPM_BUILD_ROOT
+  # We run the OCPI_CDK_DIR through the shell to handle ~ (at least).
+  OCPI_CDK_DIR:=$(shell echo $(OCPI_CDK_DIR))
+  ifeq ($(realpath $(OCPI_CDK_DIR)),)
+    $(error The OCPI_CDK_DIR variable, "$(OCPI_CDK_DIR)", points to a nonexistent directory)
+  endif
+  ifneq ($(realpath $(OCPI_CDK_DIR)/include/ocpisetup.mk),$(realpath $(OcpiThisFile)))
+    $(error Inconsistent usage of this file ($(OcpiThisFile)->$(realpath $(OcpiThisFile))) vs. OCPI_CDK_DIR ($(realpath $(OCPI_CDK_DIR)/include/ocpisetup.mk)))
+  endif
+  $(info OCPI_CDK_DIR has been set to $(OCPI_CDK_DIR) and verified to be sane.)
 endif
-ifneq ($(realpath $(OCPI_CDK_DIR)/include/ocpisetup.mk),$(realpath $(OcpiThisFile)))
-  $(error Inconsistent usage of this file ($(OcpiThisFile)->$(realpath $(OcpiThisFile))) vs. OCPI_CDK_DIR ($(realpath $(OCPI_CDK_DIR)/include/ocpisetup.mk)))
-endif
-$(info OCPI_CDK_DIR has been set to $(OCPI_CDK_DIR) and verified to be sane.)
-
+include $(OCPI_CDK_DIR)/include/util.mk
 endif # The end of processing this file once - ifndef OCPISETUP_MK
 ################################################################################
 # OCPI_CDK_DIR has been established and verified.
@@ -39,7 +40,15 @@ endif # The end of processing this file once - ifndef OCPISETUP_MK
 CC = gcc
 CXX = c++
 LD = c++
-CXXFLAGS=-g -Wall -D__STDC_LIMIT_MACROS -D__STDC_FORMAT_MACROS
+export OcpiDynamicSuffix=so
+export OcpiDynamicFlags=-shared
+ifndef OCPI_TARGET_CXXFLAGS
+  export OCPI_TARGET_CXXFLAGS=-g -pipe -Wall -Wextra -D__STDC_LIMIT_MACROS -D__STDC_FORMAT_MACROS -Wfloat-equal -fno-strict-aliasing -Wconversion -Wno-sign-conversion
+endif
+ifndef OCPI_TARGET_CFLAGS
+  export OCPI_TARGET_CFLAGS=-g -pipe -Wall -Wextra -D__STDC_LIMIT_MACROS -D__STDC_FORMAT_MACROS -Wfloat-equal -fno-strict-aliasing -Wconversion -Wno-sign-conversion -std=c99
+endif
+CXXFLAGS=$(OCPI_TARGET_CXXFLAGS)
 ARSUFFIX=a
 
 ifeq ($(wildcard $(OCPI_CDK_DIR)/include/autoconfig_import*),)
@@ -47,18 +56,7 @@ ifeq ($(wildcard $(OCPI_CDK_DIR)/include/autoconfig_import*),)
   # Determine unset variables dynamically here, again with the goal of sane default
   # behavior with no environment requirements at all.
   # Setting just OCPI_TARGET_PLATFORM will do cross builds
-  ifndef OCPI_TOOL_HOST
-    GETPLATFORM=$(OCPI_CDK_DIR)/platforms/getPlatform.sh
-    vars:=$(shell $(GETPLATFORM) || echo 1 2 3 4 5 6)
-    ifneq ($(words $(vars)),5)
-      $(error $(OcpiThisFile): Could not determine the platform after running $(GETPLATFORM)).
-    endif  
-    export OCPI_TOOL_OS:=$(word 1,$(vars))
-    export OCPI_TOOL_OS_VERSION:=$(word 2,$(vars))
-    export OCPI_TOOL_ARCH:=$(word 3,$(vars))
-    export OCPI_TOOL_HOST:=$(word 4,$(vars))
-    export OCPI_TOOL_PLATFORM:=$(word 5,$(vars))
-  endif
+  $(eval $(OcpiEnsureToolPlatform))
   ifdef OCPI_USE_TOOL_MODES
     # Determine OCPI_TOOL_MODE if it is not set already
     ifndef OCPI_TOOL_MODE
@@ -110,23 +108,28 @@ ifeq ($(wildcard $(OCPI_CDK_DIR)/include/autoconfig_import*),)
     $(infox OCPI_TARGET_ARCH:$(OCPI_TARGET_ARCH))
   endif
 else
-  # Import and/or default RPM-based settings
-  ifneq ($(OCPI_CROSS_HOST),)
-    include $(OCPI_CDK_DIR)/include/autoconfig_import-$(OCPI_CROSS_HOST).mk
-  else
-    include $(OCPI_CDK_DIR)/include/autoconfig_import.mk
+  # RPM-based options:
+  -include $(OCPI_CDK_DIR)/include/autoconfig_import-$(OCPI_TARGET_PLATFORM).mk
+  ifneq (1,$(OCPI_AUTOCONFIG_IMPORTED))
+  -include $(OCPI_CDK_DIR)/include/autoconfig_import.mk
   endif
+
 endif
 
 ################################################################################
 # Run the target-specific make setup script
-p:=$(OCPI_CDK_DIR)/platforms/$(OCPI_TARGET_PLATFORM)
+ifndef RPM_BUILD_ROOT
+  p:=$(OCPI_CDK_DIR)/platforms/$(OCPI_TARGET_PLATFORM)
+else
+  p:=exports/platforms/$(OCPI_TARGET_PLATFORM)
+endif
 # Note that this script has access to OCPI_TOOL_xxx if the settings vary by tool host
 f:=$p/$(OCPI_TARGET_PLATFORM)-target.mk
 ifeq ($(wildcard $f),)
   $(error There is no target setup file ($f) for platform $(OCPI_TARGET_PLATFORM).)
 else
  include $f
+# $(warning File $f included for the target platform.)
 endif
 
 ################################################################################
@@ -160,18 +163,12 @@ endif
 
 #FIXME  this registration should be somewhere else.
 ifndef OCPI_PREREQUISITES_LIBS
-  export OCPI_PREREQUISITES_LIBS:=lzma
+  export OCPI_PREREQUISITES_LIBS:=lzma gmp
 endif
 
 # FIXME is this necessary?
 ifndef OCPI_PREREQUISITES_INSTALL_DIR
   export OCPI_PREREQUISITES_INSTALL_DIR:=/opt/opencpi/prerequisites
-endif
-ifndef OCPI_LZMA_DIR
-  export OCPI_LZMA_DIR=$(OCPI_PREREQUISITES_DIR)/lzma
-endif
-ifndef OCPI_GTEST_DIR
-  export OCPI_GTEST_DIR=$(OCPI_PREREQUISITES_DIR)/gtest
 endif
 ifndef OCPI_PATCHELF_DIR
   export OCPI_PATCHELF_DIR=$(OCPI_PREREQUISITES_DIR)/patchelf
@@ -216,7 +213,7 @@ endif
 export OCPI_LD_FLAGS=\
   -L"$(OCPI_LIB_DIR)" $(OCPI_API_LIBS:%=-locpi_%) $(OCPI_EXTRA_LIBS:%=-l%) \
   $(foreach l,$(OCPI_PREREQUISITES_LIBS),\
-    $(OCPI_TARGET_PREREQUISITES_DIR)/$l/$(OCPI_TARGET_DIR)/lib/lib$l.$(OcpiDynamicSuffix) -l$l) \
+    $(OCPI_TARGET_PREREQUISITES_DIR)/$l/$(OCPI_TARGET_DIR)/lib/lib$l.$(OcpiDynamicSuffix)) \
   -Xlinker -rpath -Xlinker $(OCPI_TARGET_CDK_DIR)/lib/$(OCPI_TARGET_DIR) \
   -Xlinker -rpath -Xlinker $(OCPI_TARGET_PREREQUISITES_DIR)/lib/$(OCPI_TARGET_DIR) \
 
@@ -230,3 +227,17 @@ $(OCPI_TARGET_DIR):
 target-$(OCPI_TARGET_DIR):
 	mkdir -p $@
 
+ifdef ShellTargetVars
+
+$(info OCPI_TARGET_OS=$(OCPI_TARGET_OS);export OCPI_TARGET_OS;)
+$(info OCPI_TARGET_OS_VERSION=$(OCPI_TARGET_OS_VERSION);export OCPI_TARGET_OS_VERSION;)
+$(info OCPI_TARGET_ARCH=$(OCPI_TARGET_ARCH);export OCPI_TARGET_ARCH;)
+$(info OCPI_TARGET_HOST=$(OCPI_TARGET_HOST);export OCPI_TARGET_HOST;)
+$(info OCPI_TARGET_DIR=$(OCPI_TARGET_DIR);export OCPI_TARGET_DIR;)
+$(info OCPI_TARGET_MODE=$(OCPI_TARGET_MODE);export OCPI_TARGET_MODE;)
+$(info OCPI_CROSS_BUILD_BIN_DIR=$(OCPI_CROSS_BUILD_BIN_DIR);export OCPI_CROSS_BUILD_BIN_DIR;)
+$(info OCPI_CROSS_HOST=$(OCPI_CROSS_HOST);export OCPI_CROSS_HOST;)
+$(info OCPI_TARGET_DYNAMIC_SUFFIX=$(OcpiDynamicSuffix);export OCPI_TARGET_DYNAMIOC_SUFFIX;)
+$(info OCPI_TARGET_DYNAMIC_FLAGS="$(OcpiDynamicFlags)";export OCPI_TARGET_DYNAMIC_FLAGS;)
+
+endif

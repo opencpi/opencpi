@@ -90,6 +90,7 @@ namespace OCPI {
       // Start/Stop flag for this container
       bool m_enabled;
       bool m_ownThread;
+      bool m_verbose;
       OCPI::OS::ThreadManager *m_thread;
       // This is not an embedded member to potentially control lifecycle better...
       OCPI::DataTransport::Transport &m_transport;
@@ -99,19 +100,21 @@ namespace OCPI {
     public:
       virtual ~Container();
     private:
-      bool runInternal(uint32_t usecs = 0, bool verbose = false);
+      bool runInternal(uint32_t usecs = 0);
     public:
       virtual Driver &driver() = 0;
       const std::string &platform() const { return m_platform; }
       const std::string &model() const { return m_model; }
       const std::string &os() const { return m_os; }
       const std::string &osVersion() const { return m_osVersion; }
+      const std::string &arch() const { return m_arch; }
       bool dynamic() const { return m_dynamic; }
       virtual Container *nextContainer() = 0;
       virtual bool supportsImplementation(OCPI::Util::Worker &);
       virtual OCPI::API::ContainerApplication *
 	createApplication(const char *name = NULL, const OCPI::Util::PValue *props = NULL)
         throw ( OCPI::Util::EmbeddedException ) = 0;
+      virtual void dump(bool /*before*/, bool /*hex*/) {}
       OCPI::Util::PValue *getProperties();
       OCPI::Util::PValue *getProperty(const char *);
 
@@ -125,7 +128,7 @@ namespace OCPI {
 	NULL if the container is being used in polled mode.
       */
       virtual DispatchRetCode dispatch(DataTransfer::EventManager*);
-      bool run(uint32_t usecs = 0, bool verbose = false);
+      bool run(uint32_t usecs = 0);
       void thread();
       virtual bool needThread() = 0;
       // Load from url
@@ -144,7 +147,7 @@ namespace OCPI {
       // FIXME: default start behavior is for software containers.
       virtual void start();
       //! get the event manager for this container
-      virtual DataTransfer::EventManager*  getEventManager(){return NULL;}
+      virtual DataTransfer::EventManager* getEventManager() { return NULL; }
       bool hasName(const char *name);
       inline unsigned ordinal() const { return m_ordinal; }
       static Container &nthContainer(unsigned n);

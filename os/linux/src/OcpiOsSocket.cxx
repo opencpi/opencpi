@@ -32,6 +32,8 @@
  */
 
 
+#include <stdint.h>
+#include <assert.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -165,25 +167,40 @@ connect(const std::string & remoteHost, uint16_t remotePort, bool udp) throw (st
 }
 
 size_t Socket::
-recv (char * buffer, size_t amount, unsigned timeoutms) throw (std::string) {
+recv(char *buffer, size_t amount, unsigned timeoutms, bool all) throw (std::string) {
   if (timeoutms != m_timeoutms) {
     struct timeval tv;
     tv.tv_sec = timeoutms/1000;
     tv.tv_usec = (timeoutms % 1000) * 1000;
     ocpiDebug("[Socket::recv] Setting socket timeout to %u ms", timeoutms);
     if (setsockopt(o2fd (m_osOpaque), SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) != 0)
-      throw Posix::getErrorMessage (errno);
+      throw "Error setting timeout option for sending: " + Posix::getErrorMessage (errno);
     m_timeoutms = timeoutms;
   }
-  ssize_t ret;
-  while ((ret = ::recv (o2fd (m_osOpaque), buffer, amount, 0)) == -1 && errno == EINTR)
-    ;
-  if (ret == -1) {
-    if (errno == EAGAIN || errno == EWOULDBLOCK) // timeout errors
-      return ~(size_t)0;
-    throw Posix::getErrorMessage (errno);
-  }
-  return static_cast<size_t> (ret);
+  size_t nread = 0;
+  do {
+    ssize_t n = ::recv(o2fd(m_osOpaque), buffer, amount, 0);
+    if (n < 0) {
+      if (errno == EINTR)
+	continue;
+      else if (errno == EAGAIN || errno == EWOULDBLOCK) { // timeout errors
+	assert(timeoutms);
+	if (nread)
+	  break; // return what we read if we timed out trying to get it all...
+	return SIZE_MAX;
+      } else
+	throw "Error receiving from network: " + Posix::getErrorMessage (errno);
+    } else {
+      nread += n;
+      if (n == 0 || !all)
+	break;
+      buffer += n, amount -= n;
+    }
+  } while (amount);
+  if (all && amount != 0)
+    ocpiDebug("OS::Socket::recv got partial data before EOF: %zu looking for %zu",
+	      nread, nread + amount);
+  return nread;
 }
 
 size_t Socket::
@@ -219,19 +236,31 @@ sendto (const char * data, size_t amount, int flags,  char * src_addr, size_t ad
   return static_cast<size_t>(ret);
 }
 
-
-size_t Socket::
-send (const char * data, size_t amount) throw (std::string) {
-  ssize_t ret = ::send (o2fd (m_osOpaque), data, amount, 
+// send the bytes to the socket, dealing properly with EINTR and error checking
 #ifdef OCPI_OS_macos
-		       0 // darwin uses setsockopt for this
+#define SEND_OPTS 0 // darwin uses setsockopt for this
 #else
-		       MSG_NOSIGNAL
+#define SEND_OPTS MSG_NOSIGNAL
 #endif		       
-		       );
-  if (ret == -1)
-    throw Posix::getErrorMessage (errno);
-  return static_cast<size_t>(ret);
+
+// The return value here is for compatibility only
+// The sending persists until until all is sent.
+// Thus the only return value will be the same as the amount requested.
+size_t Socket::
+send(const char * data, size_t amount) throw (std::string) {
+  size_t n2send = amount;
+  for (ssize_t nsent;
+       (nsent = ::send(o2fd(m_osOpaque), data, n2send, SEND_OPTS)) != (ssize_t)n2send;
+       data += nsent, n2send -= nsent)
+    if (nsent == 0)
+      throw std::string("Error sending to network: got EOF");
+    else if (nsent < 0) {
+      if (errno == EINTR)
+	nsent = 0;
+      else
+	throw "Error sending to network: " + Posix::getErrorMessage(errno);
+    }
+  return amount;
 }
 
 // NOTE THIS CODE IS REPLICATED IN THE SERVER FOR DATAGRAMS

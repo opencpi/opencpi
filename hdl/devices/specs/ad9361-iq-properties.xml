@@ -1,0 +1,7 @@
+<!--
+    Non-Raw Properties Common to both sides of the Digital IQ interface (ADC/DAC)
+ -->
+<properties>
+  <!-- Is the other side present? -->
+  <property name='other_present' type='bool' readable='true'/>
+</properties>

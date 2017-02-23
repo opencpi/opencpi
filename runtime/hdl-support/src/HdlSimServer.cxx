@@ -21,7 +21,6 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <inttypes.h>
-#include <string>
 #include <unistd.h>
 #include <stdlib.h>
 #include <signal.h>     // for kill
@@ -29,6 +28,7 @@
 #include <sys/stat.h>   // for mkfifo
 #include <sys/wait.h>   // for waitpid
 #include <netinet/in.h> // for ntohs etc.
+#include <string>
 #include <list>
 #include <queue>
 #include <climits>
@@ -39,10 +39,11 @@
 #include "OcpiOsMisc.h"
 #include "OcpiUuid.h"
 #include "OcpiUtilEzxml.h"
-#include "OcpiLibraryManager.h"
+#include "LibrarySimple.h"
 #include "HdlSimDriver.h"
 #include "HdlNetDriver.h"
 #include "HdlSimServer.h"
+#include "HdlSdp.h"
 
 namespace OCPI {
   namespace HDL {
@@ -55,26 +56,6 @@ namespace OCPI {
       namespace OX = OCPI::Util::EzXml;
       namespace OE = OCPI::OS::Ether;
 
-
-#if 0
-      // return true on error, otherwise read the amount requested
-      static bool
-      myread(int fd, char *buf, unsigned nRequested, std::string &error) {
-	ocpiDebug("SIM reading %u from  fd %d", nRequested, fd);
-	do {
-	  ssize_t nread = read(fd, buf, nRequested);
-	  if (nread == 0)
-	    // shouldn't happen because we have it open for writing too
-	    error = "eof on FIFO";
-	  else if (nread > 0) {
-	    nRequested -= nread;
-	    buf += nread;
-	  } else if (errno != EINTR)
-	    error = "error reading FIFO";
-	} while (error.empty() && nRequested);
-	return !error.empty();
-      }
-#endif
 
       // Our named pipes.
       struct Fifo {
@@ -116,12 +97,10 @@ namespace OCPI {
 	  ssize_t r;
 	  int n; // FIONREAD dictates int
 	  char buf[256];
-	  ocpiDebug("Starting to flush any state from previous simulation run");
+	  ocpiDebug("Starting to flush any state from previous simulation run for %s",
+		    m_name.c_str());
 	  while (ioctl(m_rfd, FIONREAD, &n) >= 0 && n > 0 &&
-		 (
-                   (r = read(m_rfd, buf, sizeof(buf))) > 0 || (r < 0 && errno == EINTR)
-                 )
-                )
+		 ((r = read(m_rfd, buf, sizeof(buf))) > 0 || (r < 0 && errno == EINTR)))
 	    ;
 	  ocpiDebug("Ending flush of any state from previous simulation run");
 	}
@@ -130,12 +109,19 @@ namespace OCPI {
       struct Sim {
 	enum Action {
 	  SPIN_CREDIT = 0,
-	  DCP_CREDIT = 1,
+	  DCP_CREDIT = 1, // with a two byte DWORD count
 	  DUMP_OFF = 253,
 	  DUMP_ON = 254,
 	  TERMINATE = 255
 	};
-
+	enum State {
+	  EMULATING,    // emulating a device, but nothing is loaded or running
+	  LOADING,      // starting up a simulation with loading without a client
+          SERVING,      // serving a client, not yet fully connected, perhaps loading
+	  RUNNING,      // serving a client, simulator running
+          CONNECTED,    // connected to a client and running
+          DISCONNECTED, // running, but not connected to a client.
+	} m_state;
 	OE::Interface m_udp;
 	// This endpoint is where we get "discovered" and we only only receive, never transmit
 	OE::Socket m_disc;
@@ -171,19 +157,29 @@ namespace OCPI {
 	static const unsigned RESP_LEN = 3; // index in layload buffer where length hides
 	static const unsigned RESP_TAG = 7; // index in layload buffer where length hides
 	OE::Packet m_response, m_serverResponse;
-	OE::Address m_lastClient;
+	OE::Address m_lastClient, m_runClient;
 	bool m_haveTag;
 	size_t m_respLeft;
 	uint8_t *m_respPtr;
-	// This structure is what we remember about a request: which socket and from which address
+	// This structure is what we remember about a request: which socket and from which 
+	// address.  This is to allow multiple clients to discover the same device, when
+	// it is not attached to an SDP client.  Since SDP writes are posted, this really
+	// only applies to read requests
 	struct Request {
 	  OE::Socket &sock;
 	  OE::Address from;
 	  unsigned index;
-	  Request(OE::Socket &sock, OE::Address addr, unsigned index)
-	    : sock(sock), from(addr), index(index) {}
+	  size_t length;
+	  OH::SDP::Header &header;    // storage owned here
+	  HN::EtherControlPacket packet;  // not initialized - we copy on top of this.
+	  Request(OE::Socket &a_sock, OE::Address addr, unsigned a_index, size_t a_length,
+		  OH::SDP::Header &a_header, OE::Packet &pkt)
+	    : sock(a_sock), from(addr), index(a_index), length(a_length), header(a_header) {
+	    packet = *(HN::EtherControlPacket*)pkt.payload;
+	  }
+	  ~Request() { delete &header; }
 	};
-	std::queue<Request> m_respQueue;
+	std::queue<Request, std::list<Request> > m_respQueue;
 	std::string m_platform;
 	std::string m_exec; // simulation executable local relative path name
 	std::string m_cwd;  // current working dir (where ocpirun is being launched)
@@ -195,22 +191,26 @@ namespace OCPI {
 	std::string m_name;
 	OU::UuidString m_textUUID;
 	// Start local state for executable file transfer
-	OS::ServerSocket *m_xferSrvr; // not NULL after establishment and before acceptace
+	OS::ServerSocket *m_xferSrvr; // not NULL after establishment and before acceptance
 	OS::Socket *m_xferSckt;       // not NULL after acceptance, before EOF
 	char m_xferBuf[64 * 1024];
 	uint64_t m_xferSize;        // how many bytes need to be transferred?
 	uint64_t m_xferCount;       // how many bytes transferred so far?
 	bool m_xferDone;
-	std::string m_xferError;    // eror occurred during background file transfer
+	std::string m_xferError;    // error occurred during background file transfer
 	int m_xfd;                  // fd for writing local copy of executable
-	char *m_metadata;
-	ezxml_t m_xml;
+	OS::ServerSocket *m_sdpSrvr;   // Socket to accept connection to simulator's SDP
+	OS::Socket *m_sdpSckt;         // Socket to simulator's SDP
+	char m_toSdpBuf[16 * 1024];
+	char m_fromSdpBuf[16 * 1024];
+	//	char *m_metadata;
+	//	ezxml_t m_xml;
 	bool m_public;
 	// End local state for executable file transfer
 	Sim(std::string &simDir, std::string &script, const std::string &platform,
 	    uint8_t spinCount, unsigned sleepUsecs, unsigned simTicks, bool verbose, bool dump,
 	    bool isPublic, std::string &error)
-	  : m_udp(isPublic ? "udp" : "udplocal", error),                       // the generic interface for udp broadcast receives
+	  : m_state(EMULATING), m_udp(isPublic ? "udp" : "udplocal", error),
 	    m_disc(m_udp, ocpi_slave, NULL, 0, error), // the broadcast receiver
 	    //      m_ext(m_udp, ocpi_device, NULL, 0, error),
 	    m_req(simDir + "/request", false, NULL, error),
@@ -223,8 +223,9 @@ namespace OCPI {
 	    m_respLeft(0), m_respPtr(NULL), m_platform(platform), m_verbose(verbose),
 	    m_dump(dump), m_spinning(false), m_sleepUsecs(sleepUsecs), m_simTicks(simTicks),
 	    m_spinCount(spinCount), m_cumTicks(0), m_spinTimer(true), m_xferSrvr(NULL), m_xferSckt(NULL),
-	    m_xferSize(0), m_xferCount(0), m_xferDone(false), m_xfd(-1), m_metadata(NULL),
-	    m_xml(NULL), m_public(isPublic) {
+	    m_xferSize(0), m_xferCount(0), m_xferDone(false), m_xfd(-1), m_sdpSrvr(NULL),
+	  m_sdpSckt(NULL), /*m_metadata(NULL), m_xml(NULL),*/ m_public(isPublic) {
+
 	  if (error.length())
 	    return;
 	  FD_ZERO(&m_alwaysSet);
@@ -271,16 +272,19 @@ namespace OCPI {
 	  }
 	}
 	~Sim() {
+	  ocpiDebug("Simulator destruction");
 	  flush();
 	  while (!m_clients.empty()) {
 	    OE::Socket *s = m_clients.front();
 	    m_clients.pop_front();
 	    delete s;
 	  }
+#if 0
 	  if (m_metadata)
 	    delete [] m_metadata;
 	  if (m_xml)
 	    ezxml_free(m_xml);
+#endif
 	}
 	const char *uuid() const {
 	  return m_textUUID;
@@ -293,6 +297,11 @@ namespace OCPI {
 	}
 	const std::string &name() {
 	  return m_name;
+	}
+	void
+	setState(State state) {
+	  ocpiDebug("Server state set to %u", state);
+	  m_state = state;
 	}
 	// Our added-value wait-for-process call.
 	// If "hang", we wait for the process to end, and if it stops, we term+kill it.
@@ -373,22 +382,22 @@ namespace OCPI {
 	ack(std::string &error) {
 	  char c;
 	  ssize_t r = read(m_ack.m_rfd, &c, 1);
-	  if (r != 1 || c != 1) {
+	  if (r != 1 || c != '1') {
 	    OU::format(error, "ack read from sim failed. r %zd c %u", r, c);
 	    return true;
 	  }
 	  m_spinning = false;
 	  return false;
 	}
-	// Do the work of loading the file and starting the sim
-	// when we have the bit file ready to process
+	// Start the executable, which means start up the simulator.
 	// This is called:
-	//  from loadRun when we are not transfering the file
+	//  from load when we are not transfering the file
 	//  from doServer when we are done transferring the file (the 'R' command)
 	bool
-	finishLoadRun(char *response, std::string &err) {
-	  *response = 'E';
+	start(std::string &response, std::string &err) {
+	  response = "E";
 	  assert(!m_xferSrvr);
+#if 0
 	  try {
 	    std::time_t mtime;
 	    uint64_t length;
@@ -414,8 +423,12 @@ namespace OCPI {
 		       m_exec.c_str());
 	    return true;
 	  }
+#else
+	  OL::Artifact &art = *OL::Simple::getDriver().addArtifact(m_exec.c_str());
+#endif
 	  std::string platform;
-	  if ((e = OX::getRequiredString(m_xml, platform, "platform", "artifact"))) {
+	  const char *e;
+	  if ((e = OX::getRequiredString(art.xml(), platform, "platform", "artifact"))) {
 	    OU::format(err, "invalid metadata in binary/artifact file \"%s\": %s",
 		       m_exec.c_str(), e);
 	    return true;
@@ -427,14 +440,14 @@ namespace OCPI {
 		       m_exec.c_str(), platform.c_str(), m_platform.c_str());
 	    return true;
 	  }
-	  std::string uuid;
-	  e = OX::getRequiredString(m_xml, uuid, "uuid", "artifact");
+	  std::string l_uuid;
+	  e = OX::getRequiredString(art.xml(), l_uuid, "uuid", "artifact");
 	  if (e) {
 	    OU::format(err, "invalid metadata in binary/artifact file \"%s\": %s",
 		       m_exec.c_str(), e);
 	    return true;
 	  }
-	  ocpiInfo("Bitstream %s has uuid %s", m_exec.c_str(), uuid.c_str());
+	  ocpiInfo("Bitstream %s has uuid %s", m_exec.c_str(), l_uuid.c_str());
 	  std::string untar;
 	  OU::format(untar,
 		     "set -e; file=%s; "
@@ -469,7 +482,7 @@ namespace OCPI {
 	    err = " The OCPI_CDK_DIR environment variable is not set";
 	    return true;
 	  }
-	  OU::format(cmd, "exec %s %s req=%s resp=%s ctl=%s ack=%s cwd=%s", m_script.c_str(), m_file.c_str(),
+	  OU::format(cmd, "exec %s %s sw2sim=%s sim2sw=%s ctl=%s ack=%s cwd=%s", m_script.c_str(), m_file.c_str(),
 		     m_req.m_name.c_str(), m_resp.m_name.c_str(), m_ctl.m_name.c_str(),
 		     m_ack.m_name.c_str(), m_cwd.c_str());
 
@@ -478,33 +491,32 @@ namespace OCPI {
 
 	  if (m_verbose)
 	    fprintf(stderr, "Starting execution of simulator for HDL assembly: %s "
-		    "(executable \"%s\", dir \"%s\").\n", m_app.c_str(), m_exec.c_str(),
-		    m_dir.c_str());
+		    "(executable \"%s\", dir \"%s\" pwd \"%s\").\n", m_app.c_str(), m_exec.c_str(),
+		    m_dir.c_str(), getenv("PWD"));
 	  switch ((s_pid = fork())) {
 	  case 0:
 	    if (chdir(m_dir.c_str()) != 0) {
 	      std::string x("Cannot change to simulation subdirectory: ");
-	      int e = errno;
+	      int en = errno;
 	      x += m_dir;
 	      x += "\n";
-	      ssize_t wlen = write(2, x.c_str(), x.length());
-              ocpiAssert(wlen == static_cast<ssize_t>(x.length()));
-	      _exit(10 + e);
+	      ocpiCheck(write(2, x.c_str(), x.length()) == (ssize_t)x.length());
+	      _exit(10 + en);
 	    }
 	    {
 	      int fd = creat("sim.out", 0666);
 	      if (fd < 0) {
 		std::string x("Error: Cannot create sim.out file for simulation output.\n");
-		int e = errno;
-		ssize_t wlen = write(2, x.c_str(), x.length());
-                ocpiAssert(wlen == static_cast<ssize_t>(x.length()));
-		_exit(10 + e);
+		int en = errno;
+		ocpiCheck(write(2, x.c_str(), x.length()) == (ssize_t)x.length());
+		_exit(10 + en);
 	      }
 	      if (dup2(fd, 1) < 0 ||
 		  dup2(fd, 2) < 0)
 		_exit(10 + errno);
 	      assert(fd > 2);
-	      if (execl("/bin/sh", "/bin/sh", "-c", cmd.c_str(), NULL))
+	      // FIXME this conditional is nonsense, right?
+	      if (execl("/bin/sh", "/bin/sh", "--noprofile", "-c", cmd.c_str(), NULL))
 		_exit(10 + errno);
 	    }
 	    break; // not used.
@@ -517,10 +529,12 @@ namespace OCPI {
 	  if (m_verbose)
 	    fprintf(stderr, "Simulator process (process id %u) started, with its output in %s/sim.out\n",
 		    s_pid, m_dir.c_str());
+#if 0
 	  uint8_t msg[2];
 	  msg[0] = m_dump ? DUMP_ON : DUMP_OFF;
 	  msg[1] = 0;
 	  ocpiCheck(write(m_ctl.m_wfd, msg, 2) == 2);
+#endif
 	  // Improve the odds of an immediate error giving a good error message by letting the sim run
 	  ocpiInfo("Waiting for simulator to start before issuing any more credits.");
 	  OS::sleep(100);
@@ -529,23 +543,25 @@ namespace OCPI {
 	      return true;
 	  if (m_verbose)
 	    fprintf(stderr, "Simulator process is running.\n");
+	  m_sdpSrvr = new OS::ServerSocket(0);
+	  addFd(m_sdpSrvr->fd(), false);
+	  OU::format(response, "O%u", m_sdpSrvr->getPortNo());
 	  err.clear();
-	  *response = 'O';
 	  return false;
 	}
-	// Establish a new simulator from a new executable.
-	// Set the response code back to the client:
+	// Load the simulation executable and prepare the response back to the client:
 	// E for error, O for OK, X for transfer
-	// Put the string for the response in "err"
-	// Return true if not ok
+	// Return true if not ok and set error
+	// Called either at server startup (when given an executable) OR on demand,
+	// possible from a connected client
+	// Return true with no error if transfer is in progress
 	bool
-	loadRun(const char *file, uint64_t size, const char *cwd, char *response,
-		std::string &err) {
-	  *response = 'E';
+	load(const char *file, uint64_t size, const char *cwd, std::string &response,
+	     std::string &err) {
 	  if (m_verbose)
 	    fprintf(stderr, "Initializing %s simulator from executable/bitstream: %s\n",
 		    m_platform.c_str(), file);
-	  ocpiDebug("Starting the %s simulator loading bitstream file: %s", m_platform.c_str(), file);
+	  ocpiDebug("Starting to load bitstream file for %s: %s", m_platform.c_str(), file);
 	  // First establish a directory for the simulation based on the name of the file
 	  const char *slash = strrchr(file, '/');
 	  slash = slash ? slash + 1 : file;
@@ -586,7 +602,7 @@ namespace OCPI {
 	  m_cwd = cwd ? cwd : "";
 	  if (size == 0) {
 	    m_exec = file;
-	    return finishLoadRun(response, err);
+	    return start(response, err);
 	  }
 	  // This name is the local name for when a copy is made
 	  m_exec = m_dir;
@@ -599,26 +615,29 @@ namespace OCPI {
 	  m_xferSrvr = new OS::ServerSocket(0); // m_xferSrvr specifies the state of being loaded
 	  unsigned port = m_xferSrvr->getPortNo();
 	  ocpiDebug("Socket for loading bit file established at port %u", port);
-	  OU::format(err, "%u", port);
-	  *response = 'X';
+	  OU::format(response, "X%u", port);
 	  addFd(m_xferSrvr->fd(), false);
-	  return true; // not OK/done
+	  err.clear();
+	  return true; // we're working on it.  FIXME: time out for dead client?
 	}
 	// Flush all comms to the sim process since we have a new client.
 	// Called from destructor too
 	void
 	flush() {
+	  ocpiDebug("Flushing all session state");
 	  m_req.flush();  // FIXME: could this steal partial requests and get things out of sync?
 	  m_resp.flush(); // FIXME: should we wait for the request fifo to clear?
 	  m_exec.clear();
-	  if (m_xferSrvr) {
-	    delete m_xferSrvr;
-	    m_xferSrvr = NULL;
-	  }
-	  if (m_xferSckt) {
-	    delete m_xferSckt;
-	    m_xferSckt = NULL;
-	  }
+	  delete m_xferSrvr;
+	  m_xferSrvr = NULL;
+	  delete m_xferSckt;
+	  m_xferSckt = NULL;
+	  delete m_sdpSrvr;
+	  m_sdpSrvr = NULL;
+	  delete m_sdpSckt;
+	  m_sdpSckt = NULL;
+	  while (!m_respQueue.empty())
+	    m_respQueue.pop();
 	}
 	void
 	shutdown() {
@@ -632,15 +651,72 @@ namespace OCPI {
 	    ocpiInfo("Waiting for simulator process to exit");
 	    mywait(s_pid, true, error);
 	    m_ctl.flush();
-	    flush();
 	    if (error.size())
 	      ocpiBad("Error when shutting down simulator: %s", error.c_str());
 	    m_dcp = 0;
 	    s_pid = 0;
 	  }
+	  flush();
 	}
 	bool
 	doResponse(std::string &error) {
+	  ocpiDebug("doResponse: sim is producing SDP output");
+	  if (!m_respQueue.empty()) {
+	    Request &request = m_respQueue.front();
+	    
+	    // A discovery request was routed to the running simulator via SDP
+	    HN::EtherControlPacket &pkt = *(HN::EtherControlPacket *)m_response.payload;
+	    uint32_t data;
+	    bool ret = request.header.endRequest(m_resp.m_rfd, (uint8_t*)&data, error);
+	    if (!ret) {
+	      *(HN::EtherControlPacket *)m_response.payload = request.packet;
+	      pkt.readResponse.data = htonl(data);
+	      ocpiBad("writing response %p to client: len %zu tag %d to %s via index %u",
+			&m_response, request.length, m_response.payload[RESP_TAG],
+			request.from.pretty(), request.index);
+	      ret = sendToIfc(request.sock, request.index, request.length, request.from, error);
+	    }
+	    m_respQueue.pop();
+	    return ret;
+	  }
+	  ssize_t nread = 0, room = sizeof(m_fromSdpBuf);
+	  assert(!(room&3));
+	  char *cp = m_fromSdpBuf;
+	  do {
+	    ssize_t n = read(m_resp.m_rfd, cp, room);
+	    if (n == 0) {
+	      OU::format(error, "SDP channel from simulator got EOF");
+	      return true;
+	    }
+	    if (n < 0) {
+	      if (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK)
+		n = 0;
+	      else {
+		OU::format(error, "SDP channel from simulator broken: %s (%zd %d)",
+			   strerror(errno), n, errno);
+		return true;
+	      }
+	    }
+	    nread += n;
+	    cp += n;
+	    room -= n;
+	  } while (nread == 0 || nread & 3);
+	  std::string resp;
+	  OU::format(resp, "Response from SDP: %zu bytes in %zu byte buffer: ",
+		     nread, sizeof(m_fromSdpBuf));
+	  for (ssize_t nw = 0; nw < nread; nw += 4)
+	    OU::formatAdd(resp, " %08x", ((uint32_t*)m_fromSdpBuf)[nw/4]);
+	  ocpiDebug("%s", resp.c_str()); // overloaded version for std::string?
+	  try {
+	    m_sdpSckt->send(m_fromSdpBuf, nread);
+	  } catch (std::string &s) {
+	    error = s;
+	    return true;
+	  }
+	  return false;
+	}
+#if 0
+	{
 	  bool first = false;
 	  if (!m_respLeft) {
 	    m_respLeft = RESP_MIN;
@@ -669,9 +745,10 @@ namespace OCPI {
 	      }
 	      Request &request = m_respQueue.back();
 	      printTime("after response full read");
-	      ocpiDebug("writing response to client: len %zu tag %d to %s via index %u", len,
-			m_response.payload[RESP_TAG], request.from.pretty(), request.index);
-	      bool bad = sendToIfc(request.sock, request.index, m_response, len + 2, request.from, error);
+	      ocpiBad("writing response %p to client: len %zu tag %d to %s via index %u", len,
+			&m_response, m_response.payload[RESP_TAG], request.from.pretty(),
+			request.index);
+	      bool bad = sendToIfc(request.sock, request.index, len + 2, request.from, error);
 	      m_respQueue.pop();
 	      if (m_respQueue.empty() && spin(error))
 		return true;
@@ -680,7 +757,7 @@ namespace OCPI {
 	  }
 	  return false;
 	}
-
+#endif
 	bool
 	isServerCommand(uint8_t *payload) {
 	  return OCCP_ETHER_RESERVED(((HN::EtherControlHeader *)payload)->typeEtc) != 0;
@@ -693,9 +770,10 @@ namespace OCPI {
 	}
 
 	// This is essentially a separate channel with its own tags
+	// Perform a command initiated by a client via UDP.
 	bool
 	doServer(OE::Socket &ext, OE::Packet &rFrame, size_t &length, OE::Address &from,
-		 bool local, unsigned maxPayLoad, std::string &error) {
+		 unsigned maxPayLoad, std::string &error) {
 	  uint8_t *payload = rFrame.payload;
 	  HN::EtherControlHeader &hdr_in = *(HN::EtherControlHeader *)payload;
 	  HN::EtherControlMessageType action = OCCP_ETHER_MESSAGE_TYPE(hdr_in.typeEtc);
@@ -709,15 +787,24 @@ namespace OCPI {
 	  HN::EtherControlHeader &hdr_out =  *(HN::EtherControlHeader *)(m_serverResponse.payload);
 	  ocpiDebug("server command from %s: action %u length %zu tag %u actual '%s'",
 		    from.pretty(), action, clen, hdr_in.tag, command);
+	  std::string response;
 	  if (!m_haveTag || hdr_in.tag != hdr_out.tag || from != m_lastClient) {
+	    if (m_state == CONNECTED && from != m_runClient) {
+	      ocpiInfo("Server command refused when there is a connected client");
+	      return false;
+	    }
 	    m_lastClient = from;
 	    m_haveTag = true;
 	    hdr_out.tag = hdr_in.tag;
-	    char *response = (char *)(&hdr_out + 1);
 	    ocpiDebug("Server received command '%s'", command);
 	    switch (*command) {
-	    case 'L': // load and execute the simulation executable
+	    case 'L': // load  the simulation executable
 	      {
+		assert(m_state != LOADING || m_state != SERVING);
+		if (m_state != EMULATING) {
+		  ocpiInfo("Shutting down previous simulation before (re)loading");
+		  shutdown();
+		}
 		char *bitfile;
 		char *cwd;
 		m_xferError.clear();
@@ -736,51 +823,86 @@ namespace OCPI {
 		  *cwd++ = '\0';
 		  while (*cwd && isspace(*cwd))
 		    cwd++;
-		  ocpiInfo("Shutting down previous simulation before (re)loading");
-		  shutdown();
-		  loadRun(bitfile, local ? 0 : size, cwd, response, error);
+		  if (load(bitfile, size, cwd, response, error) && error.length())
+		    setState(EMULATING); // something bad happened, we're back to square one.
+		  else {
+		    m_runClient = from;
+		    setState(SERVING);   // Were loaded or loading
+		  }
 		}
 	      }
 	      break;
 	    case 'F': // flush all file and sim executable state
-	      *response = 'O';
+	      response = "O";
+	      ocpiDebug("Received flush request");
+	      // shutdown();
 	      flush();
 	      break;
-	    case 'R':
-	      // Run the executable after it has been transferred to the server
-	      // This is only seen when the Load command returned X (transfer).
-	      if (m_xferError.length()) {
-		*response++ = 'E';
-		error = m_xferError;
-	      } else if (!m_xferSize || m_xferSrvr)
-		// Nothing in progress or Work in progress, don't return anything
-		return false;
-	      else if (m_xferSize != m_xferCount) {
-		*response++ = 'E';
-		OU::format(error, "Received %" PRIu64 " bytes, expected %" PRIu64 " bytes when receiving file",
-			   m_xferCount, m_xferSize);
-	      } else
-		// So everything is ok.  Let's try running the sim
-		finishLoadRun(response, error);
+	    case 'S':
+	      // Start the executable after it has been transferred to the server
+	      if (from != m_runClient || m_state != SERVING) {
+		OU::format(response,
+			   "EStart command from wrong client or in wrong state");
+		ocpiBad("EStart command from wrong client '%s' vs '%s' or in wrong state: %i",
+			from.pretty(), m_runClient.pretty(), m_state);
+	      } else if (m_xferError.length()) {
+		assert(!m_xferDone && !m_xferSckt);
+		OU::format(response, "E%s", m_xferError.c_str());
+		setState(EMULATING);
+		m_xferError.clear();
+	      } else if (m_xferDone)
+		if (start(response, error))
+		  setState(EMULATING);
+		else
+		  setState(RUNNING);
+	      else {
+		OU::format(response,
+			   "ETransfer not done: received %" PRIu64 " bytes, expected %" PRIu64
+			   " bytes when receiving file", m_xferCount, m_xferSize);
+		setState(EMULATING);
+	      }
 	      delete m_xferSckt;
 	      m_xferSckt = NULL;
+	      delete m_xferSrvr;
+	      m_xferSrvr = NULL;
+	      if (m_state != RUNNING)
+		break;
+	      /******* FALL INTO *******/
+	    case 'C':
+	      // Connect to the running system
+	      if (m_state == RUNNING || m_state == DISCONNECTED) {
+		if (!m_sdpSrvr) {
+		  m_sdpSrvr = new OS::ServerSocket(0);
+		  addFd(m_sdpSrvr->fd(), false);
+		}
+		OU::format(response, "O%u", m_sdpSrvr->getPortNo());
+		m_runClient = from;
+	      } else
+		response = "ESimulation Server does not have a running simulator";
 	      break;
 	    default:
 	      OU::format(error, "received invalid command: '%s'", command);
 	      return true;
 	    }
+	    // command processed, and a response or error prepared.
 	    if (error.length() >= maxPayLoad - 1) {
 	      OU::format(error, "command response to '%s' too long (%zu) for %u",
 			 command, error.length(), maxPayLoad);
 	      return true;
 	    }
-	    strcpy(response + 1, error.c_str());
-	    length = sizeof(hdr_out) + strlen(response) + 1;
+	    if (error.size())
+	      OU::format(response, "E%s", error.c_str());
+	    length = sizeof(hdr_out) + response.length() + 1;
 	    hdr_out.length = htons(OCPI_UTRUNCATE(uint16_t, length - 2));
 	    hdr_out.typeEtc = OCCP_ETHER_TYPE_ETC(HN::OCCP_RESPONSE, HN::OK, 0, 1);
-	    ocpiDebug("command result is: '%s'", response);
-	  } else
+	    ocpiDebug("command result is: '%s', length %zu", response.c_str(), length);
+	    strcpy((char *)(&hdr_out + 1), response.c_str());
+	  } else {
+	    ocpiDebug("Redundant response being sent");
+	    // A redundant request, just return the last response
 	    length = ntohs(hdr_out.length) + 2;
+	  }
+	  // Send the response back to the client.
 	  error.clear();
 	  memcpy(payload, m_serverResponse.payload, length);
 	  return !ext.send(rFrame, length, from, 0, NULL, error);
@@ -790,28 +912,50 @@ namespace OCPI {
 	// Set the length arg to the length of the response to send back
 	// The response is created in the payload that was passed in
 	bool
-	doEmulate(uint8_t *payload, size_t &length, std::string &error) {
-	  HN::EtherControlPacket &pkt = *(HN::EtherControlPacket *)payload;
-	  //    ocpiDebug("Got header.  Need %u header %u", n, sizeof(HN::EtherControlHeader));
+	doEmulate(size_t &length, OH::SDP::Header **sdp, std::string &error) {
+	  HN::EtherControlPacket &pkt = *(HN::EtherControlPacket *)m_response.payload;
+	  ocpiDebug("doEmulate: Got header.  Need %zu header %zu", length,
+		    sizeof(HN::EtherControlHeader));
 	  if (length - 2 != ntohs(pkt.header.length)) {
 	    OU::format(error, "bad client message length: %zu vs %u", length, ntohs(pkt.header.length));
 	    return true;
 	  }
 	  unsigned uncache = OCCP_ETHER_UNCACHED(pkt.header.typeEtc) ? 1 : 0;
 	  HN::EtherControlMessageType action = OCCP_ETHER_MESSAGE_TYPE(pkt.header.typeEtc);
-	  pkt.header.typeEtc = OCCP_ETHER_TYPE_ETC(HN::OCCP_RESPONSE, HN::OK, uncache, 0);
 	  //ocpiDebug("Got message");
-	  size_t offset;
+	  size_t offset = ntohl(pkt.write.address);
+	  unsigned be = OCCP_ETHER_BYTE_ENABLES(pkt.header.typeEtc);
+	  unsigned blen;
+	  // convert the byte enables back to a byte offset
+	  switch (be) {
+	  case 0x1: blen = 1;break;
+	  case 0x2: offset += 1; blen = 1; break;
+	  case 0x4: offset += 2; blen = 1; break;
+	  case 0x8: offset += 3; blen = 1; break;
+	  case 0x3: blen = 2; break;
+	  case 0xc: offset += 2; blen = 2; break;
+	  case 0xf: blen = 4; break;
+	  default: 
+	    ocpiBad("Byte enable unexpected: 0x%x", be);
+	  }
 	  ssize_t len;
+	  // Clobber the header now that we have read everything.
+	  pkt.header.typeEtc = OCCP_ETHER_TYPE_ETC(HN::OCCP_RESPONSE, HN::OK, uncache, 0);
 	  switch (action) {
 	  default:
 	    OU::format(error, "Invalid control message received when no sim executable %x",
 		       pkt.header.typeEtc);
 	    return true;
 	  case HN::OCCP_WRITE:
-	    offset = ntohl(pkt.write.address); // for read or write
 	    len = sizeof(HN::EtherControlWriteResponse);
-	    if (offset <= sizeof(m_admin))
+	    if (sdp) {
+	      OH::SDP::Header h(false, offset, blen);
+	      uint32_t data = ntohl(pkt.write.data);
+	      size_t l;
+	      if (h.startRequest(m_req.m_wfd, (uint8_t*)&data, l, error) ||
+		  sendCredit(l, error))
+		return true;
+	    } else if (offset <= sizeof(m_admin))
 	      *(uint32_t *)(&((char *)&m_admin) [offset]) = ntohl(pkt.write.data);
 	    else if (offset >= offsetof(OccpSpace, config))
 	      if ((offset - offsetof(OccpSpace, config)) >= sizeof(m_uuid))
@@ -837,10 +981,19 @@ namespace OCPI {
 	      ocpiBad("Write offset out of range: 0x%zx", offset);
 	    break;
 	  case HN::OCCP_READ:
-	    offset = ntohl(pkt.read.address); // for read or write
+	    ocpiDebug("Read command, offset 0x%zx sdp %p", offset, sdp);
 	    len = sizeof(HN::EtherControlReadResponse);
-	    ocpiDebug("Read command, offset 0x%zx", offset);
-	    if (offset <= sizeof(m_admin))
+	    if (sdp) {
+	      *sdp = new OH::SDP::Header(true, offset, blen);
+	      size_t l;
+	      if ((*sdp)->startRequest(m_req.m_wfd, NULL, l, error) ||
+		  sendCredit(l, error)) {
+		delete *sdp;
+		*sdp = NULL;
+		return true;
+	      }
+	      ocpiDebug("Started SDP Request from client");
+	    } else if (offset <= sizeof(m_admin))
 	      pkt.readResponse.data = htonl(*(uint32_t *)(&((char *)&m_admin)[offset]));
 	    else if (offset >= offsetof(OccpSpace, config))
 	      if ((offset - offsetof(OccpSpace, config)) >= sizeof(m_uuid) + sizeof(uint64_t))
@@ -858,19 +1011,22 @@ namespace OCPI {
 		case offsetof(OccpWorkerRegisters, initialize):
 		case offsetof(OccpWorkerRegisters, start):
 		  pkt.readResponse.data = htonl(OCCP_SUCCESS_RESULT);
-		  break;
+		break;
 		case offsetof(OccpWorkerRegisters, status):
 		default:
 		  pkt.readResponse.data = 0; // no errors
 		}
 	      }
-	    } else  {
+	    } else {
 	      ocpiBad("Read offset out of range3: 0x%zx", offset);
 	      pkt.readResponse.data = 0xa5a5a5a5;
 	    }
-	    ocpiDebug("Read command response: 0x%" PRIx32, ntohl(pkt.readResponse.data));
+	    ocpiDebug("Read command response: 0x%" PRIx32 " %p", ntohl(pkt.readResponse.data),
+		      &pkt.readResponse.data);
 	    break;
 	  case HN::OCCP_NOP:
+	    // We emulate this whether SDP is alive or not since the normal control plane
+	    // doesn't handle it anyway.
 	    len = sizeof(HN::EtherControlNopResponse);
 	    ocpiAssert(ntohs(pkt.header.length) == sizeof(HN::EtherControlNop) - 2);
 	    // Tag is the same
@@ -885,6 +1041,26 @@ namespace OCPI {
 	  return false;
 	}
 
+#if 1
+	// Ugh - we have a running simulator, but need to process an old style command
+	// that arrived in a discovery packet...
+	bool
+	sendToSim(OE::Socket &ext, size_t length, OE::Address &from,
+		  unsigned index, std::string &error) {
+	  OH::SDP::Header *sdp = NULL;
+	  ocpiDebug("Processing UDP command");
+	  if (doEmulate(length, &sdp, error))
+	     return true;
+	  ocpiDebug("Processing UDP command: sdp %p", sdp);
+	  if (sdp) {
+	    Request r(ext, from, index, length, *sdp, m_response);
+	    // This request has created a pending read request.
+	    m_respQueue.push(r);
+	  } else
+	    sendToIfc(ext, index, length, from, error);
+	  return false;
+	}
+#else
 	bool
 	sendToSim(OE::Socket &s, uint8_t *payload, size_t length, OE::Address &from, unsigned index,
 		  std::string &error) {
@@ -920,6 +1096,7 @@ namespace OCPI {
 	  m_respQueue.push(Request(s, from, index));
 	  return false;
 	}
+#endif
 
 	void
 	printTime(const char *msg) {
@@ -930,8 +1107,8 @@ namespace OCPI {
 	// Send to the client over the given interface
 	// If the interface is zero, use the socket
 	bool
-	sendToIfc(OE::Socket &sock, unsigned index, OE::Packet &rFrame, size_t length,
-		  OE::Address &to, std::string &error) {
+	sendToIfc(OE::Socket &sock, unsigned index, size_t length, OE::Address &to,
+		  std::string &error) {
 	  OE::Socket *s = &sock;
 	  if (index) {
 	    for (ClientsIter ci = m_clients.begin(); ci != m_clients.end(); ci++)
@@ -944,17 +1121,17 @@ namespace OCPI {
 	      return true;
 	    }
 	  }
-	  return !s->send(rFrame, length, to, 0, NULL, error);
+	  ocpiBad("writing response %p: len %zu", &m_response, length);
+	  return !s->send(m_response, length, to, 0, NULL, error);
 	}
 	// A select call has indicated a socket ready to read.
 	// It might be the discovery socket
 	bool
 	receiveExt(OE::Socket &ext, bool discovery, std::string &error) {
-	  OE::Packet rFrame;
 	  size_t length;
 	  OE::Address from;
 	  unsigned index = 0;
-	  if (ext.receive(rFrame, length, 0, from, error, discovery ? &index : NULL)) {
+	  if (ext.receive(m_response, length, 0, from, error, discovery ? &index : NULL)) {
 	    assert(from != m_udp.addr);
 	    ocpiDebug("Received request packet from %s, length %zu", from.pretty(), length);
 	    if (!m_public && from.addrInAddr() != m_udp.addr.addrInAddr()) {
@@ -962,17 +1139,107 @@ namespace OCPI {
 			from.pretty(), m_udp.addr.pretty(), m_udp.ipAddr.pretty());
 	      return false;
 	    }
-	    if (isServerCommand(rFrame.payload)) {
+	    if (isServerCommand(m_response.payload)) {
 	      assert(!discovery);
-	      if (doServer(ext, rFrame, length, from, false, sizeof(rFrame.payload), error))
+	      if (doServer(ext, m_response, length, from, sizeof(m_response.payload), error))
 		return true;
-	    } else if (s_pid && !isNopCommand(rFrame.payload)) {
-	      if (sendToSim(ext, rFrame.payload, length, from, index, error))
+	    } else if (m_sdpSckt) {
+	      // We do nothing since if we have an SDP socket active to a client, we
+	      // are not discoverable.
+	    } else if (s_pid) {
+	      // We are running a simulator without a current client.
+	      if (sendToSim(ext, length, from, index, error))
 		return true;
-	    } else if (doEmulate(rFrame.payload, length, error) ||
-		       sendToIfc(ext, index, rFrame, length, from, error))
+	    } else if (doEmulate(length, NULL, error) ||
+		       sendToIfc(ext, index, length, from, error))
 	      return true;
 	  }
+	  return false;
+	}
+	bool
+	sendCredit(size_t credit, std::string &error) {
+	  assert(!(credit & 3));
+	  credit >>= 2;
+	  m_dcp += credit;
+	  uint8_t msg[3];
+	  msg[0] = DCP_CREDIT;
+	  msg[1] = OCPI_UTRUNCATE(uint8_t, credit & 0xff);
+	  msg[2] = OCPI_UTRUNCATE(uint8_t, credit >> 8);
+	  if (write(m_ctl.m_wfd, msg, 3) != 3) {
+	    error = "write error to control fifo";
+	    return true;
+	  }
+	  return false;
+	}
+	// read from sdp socket and write into simulator sdp/req channel
+	bool
+	doSdp(std::string &error) {
+	  assert(m_state == CONNECTED);
+	  assert(m_sdpSckt->fd() >= 0);
+	  size_t nrcvd;
+	  try {
+	    nrcvd = m_sdpSckt->recv(m_toSdpBuf, sizeof(m_toSdpBuf), 0);
+	  } catch (...) {
+	    nrcvd = 0;
+	  }
+	  if (!nrcvd) {
+	    ocpiDebug("SDP socket from client EOF or failure");
+	    delete m_sdpSckt;
+	    m_sdpSckt = NULL;
+	    flush();
+	    setState(DISCONNECTED);
+	    return false;
+	  }
+	  ssize_t nn;
+	  char *bp = m_toSdpBuf;
+	  uint8_t residue = 0;
+	  for (size_t nw = 0; nw < nrcvd; nw += nn, bp += nn) {
+	    if ((nn = write(m_req.m_wfd, bp, nrcvd - nw)) < 0) {
+	      if (errno != EINTR) {
+		error = "write error to request fifo";
+		return true;
+	      }
+	    } else if (nn == 0) {
+	      error = "wrote zero bytes to request fifo";
+	      return true;
+	    } else {
+	      assert(!(nn &3));
+#if 0
+	      uint32_t *p32 = (uint32_t*)bp;
+	      fprintf(stderr, "To sdp (res %u, nn %zu):", residue, nn);
+	      for (unsigned n = 0; n < nn; n += 4)
+		fprintf(stderr, " %2d: %8x", n/4, *p32++);
+	      fprintf(stderr, "\n");
+#endif
+	      size_t credit = nn + residue;
+	      residue = credit & 3;
+	      assert(!residue);
+	      if (sendCredit(credit & ~3, error))
+		return true;
+#if 0
+	      credit >>= 2;
+	      m_dcp += credit;
+	      uint8_t msg[3];
+	      msg[0] = DCP_CREDIT;
+	      msg[1] = OCPI_UTRUNCATE(uint8_t, credit & 0xff);
+	      msg[2] = OCPI_UTRUNCATE(uint8_t, credit >> 8);
+#if 0
+	      fprintf(stderr, "Writing a credit to the simulator for reading\n");
+	      char c[100];
+	      read(0, c, 100); 
+#endif
+	      if (write(m_ctl.m_wfd, msg, 3) != 3) {
+		error = "write error to control fifo";
+		return true;
+	      }
+#endif
+	      if (spin(error))
+		return true;
+	    }
+	  }
+	  ocpiDebug("written sdp data to sim: len %zu", nrcvd);
+	  printTime("request written to sim");
+	  //m_respQueue.push(Request(s, from, index));
 	  return false;
 	}
 	// Do some reading from the file transfer socket
@@ -982,13 +1249,18 @@ namespace OCPI {
 	  // Reader has stuff to read: FIXME: make this fd non-blocking for cleanliness
 	  assert(m_xfd >= 0);
 	  size_t n = m_xferSckt->recv(m_xferBuf, sizeof(m_xferBuf), 0);
+	  ocpiDebug("Transfer socket received %zu", n);
 	  switch (n) {
 	  default:
-	    if (write(m_xfd, m_xferBuf, n) == (ssize_t)n) {
+	    if (m_xferCount + n > m_xferSize)
+	      OU::format(m_xferError,
+			 "Executable transfer got %" PRIu64 " bytes, expected %" PRIu64,
+			 m_xferCount + n, m_xferSize);
+	    else if (write(m_xfd, m_xferBuf, n) == (ssize_t)n) {
 	      m_xferCount += n;
 	      return false;
-	    }
-	    OU::format(m_xferError, "Error writing executable file: %s", strerror(errno));
+	    } else
+	      OU::format(m_xferError, "Error writing executable file: %s", strerror(errno));
 	    break;
 	  case 0:
 	    if (m_xferCount != m_xferSize)
@@ -997,15 +1269,16 @@ namespace OCPI {
 	    // Force EOF on the other end
 	    m_xferSckt->shutdown(true);
 	    m_xferDone = true;
+	    // don't delete the socket in case "shutdown" takes some time?
 	    return false;
-	  case ~(size_t)0:
+	  case SIZE_MAX:
 	    OU::format(m_xferError, "Unexpected timeout on reading transfer socket");
 	    break;
 	  }
 	  close(m_xfd);
 	  delete m_xferSckt;
-	  m_xferSckt = 0;
-	  return false;
+	  m_xferSckt = NULL;
+	  return false;  // FIXME: start a timeout if client never calls back?
 	}
 
 	// Perform one action, waiting for any of:
@@ -1017,7 +1290,7 @@ namespace OCPI {
 	// return any execution spin credits provided.
 	bool
 	doit(std::string &error) {
-#ifndef NDEBUG
+#if 0
 	  // Just interesting debug info
 	  {
 	    int n = 0;
@@ -1054,6 +1327,10 @@ namespace OCPI {
 	    FD_SET(m_xferSrvr->fd(), fds);
 	  if (m_xferSckt && !m_xferDone)
 	    FD_SET(m_xferSckt->fd(), fds);
+	  if (m_sdpSrvr)
+	    FD_SET(m_sdpSrvr->fd(), fds);
+	  if (m_sdpSckt)
+	    FD_SET(m_sdpSckt->fd(), fds);
 	  struct timeval timeout[1];
 	  timeout[0].tv_sec = m_sleepUsecs / 1000000;
 	  timeout[0].tv_usec = m_sleepUsecs % 1000000;
@@ -1088,7 +1365,7 @@ namespace OCPI {
 	      return true;
 	  }
 	  if (m_xferSrvr && FD_ISSET(m_xferSrvr->fd(), fds)) {
-	    // Client has connected to our bit file transfer socket
+	    ocpiDebug("Client has connected to our bit file transfer socket.");
 	    if ((m_xfd = creat(m_exec.c_str(), 0666)) < 0) {
 	      OU::format(m_xferError, "Couldn't create local copy of executable: '%s' (%s)",
 			 m_exec.c_str(), strerror(errno));
@@ -1103,6 +1380,18 @@ namespace OCPI {
 	    m_xferSrvr = NULL;
 	  }
 	  if (m_xferSckt && FD_ISSET(m_xferSckt->fd(), fds) && doXfer(error))
+	    return true;
+	  // FIXME we should have single-connection server sockets...
+	  if (m_sdpSrvr && FD_ISSET(m_sdpSrvr->fd(), fds)) {
+	    assert(m_state == RUNNING || m_state == DISCONNECTED);
+	    m_sdpSckt = new OS::Socket();
+	    m_sdpSrvr->accept(*m_sdpSckt);
+	    addFd(m_sdpSckt->fd(), false);
+	    delete m_sdpSrvr;
+	    m_sdpSrvr = NULL;
+	    setState(CONNECTED);
+	  }
+	  if (m_sdpSckt && FD_ISSET(m_sdpSckt->fd(), fds) && doSdp(error))
 	    return true;
 	  return false;
 	}
@@ -1120,13 +1409,19 @@ namespace OCPI {
 	    _exit(1);
 	}
 
+	// The (single threaded) operation of the server
 	bool
 	run(const std::string &exec, std::string &error) {
 	  ocpiCheck(signal(SIGINT, sigint) != SIG_ERR);
 	  // If we were given an executable, start sim with it.
-	  char response[1];
-	  if (exec.length() && loadRun(exec.c_str(), 0, NULL, response, error))
-	    return true;
+	  assert(m_state == EMULATING);
+	  if (exec.length()) {
+	    std::string response; // dummy
+	    if (load(exec.c_str(), 0, NULL, response, error) || start(response, error))
+	      return true;
+	    // We're loaded, and running a simulator, with no client.
+	    setState(DISCONNECTED);
+	  }
 	  uint64_t last = 0;
 	  while (!s_exited && !s_stopped && error.empty() && m_cumTicks < m_simTicks) {
 	    if (m_cumTicks - last > 1000) {
@@ -1136,6 +1431,8 @@ namespace OCPI {
 	    if (doit(error))
 	      break;
 	  }
+	  ocpiDebug("exit server loop x %d s %d ct %" PRIu64 " st %u e '%s'",
+		    s_exited, s_stopped, m_cumTicks, m_simTicks, error.c_str());
 	  if (s_exited) {
 	    if (m_verbose)
 	      fprintf(stderr, "Simulator exited normally\n");
@@ -1230,6 +1527,7 @@ namespace OCPI {
       }
       Server::
       ~Server() {
+	ocpiDebug("Simulation server destruction");
 	delete m_sim;
 	if (m_simDir.length()) {
 	  ocpiDebug("Removing sim directory: %s", m_simDir.c_str());

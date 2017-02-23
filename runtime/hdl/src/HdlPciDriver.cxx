@@ -47,6 +47,7 @@
 #include "fasttime.h"
 
 #include "KernelDriver.h"
+#include "OcpiOsFileSystem.h"
 #include "HdlPciDriver.h"
 
 // This should be in OCPIOS.
@@ -63,9 +64,9 @@ namespace OCPI {
 	uint32_t m_bar0size, m_bar1size;
 	int m_fd;
 	friend class Driver;
-	Device(std::string &name, int fd, ocpi_pci_t &pci, void *bar0, void *bar1,
-	       std::string &err)
-	  : OCPI::HDL::Device(name, "ocpi-dma-pio"), m_bar0(bar0), m_bar1(bar1),
+	Device(std::string &a_name, int fd, ocpi_pci_t &pci, void *bar0, void *bar1,
+	       const OU::PValue *params, std::string &err)
+	  : OCPI::HDL::Device(a_name, "ocpi-dma-pio", params), m_bar0(bar0), m_bar1(bar1),
 	    m_bar0size(pci.size0), m_bar1size(pci.size1), m_fd(fd) {
 	  uint64_t endpointPaddr, controlOffset, bufferOffset, holeStartOffset, holeEndOffset;
 	  if (pci.bar0 < pci.bar1) {
@@ -97,6 +98,17 @@ namespace OCPI {
 	    munmap(m_bar1, m_bar1size);
 	  if (m_fd >= 0)
 	    ::close(m_fd);
+	}
+	uint32_t
+	dmaOptions(ezxml_t icImplXml, ezxml_t /*icInstXml*/, bool isProvider) {
+	  const char *icname = ezxml_cattr(icImplXml, "name");
+	  if (icname && !strncasecmp(icname, "sdp", 3))
+	    return isProvider ?
+	      (1 << OCPI::RDT::ActiveFlowControl) | (1 << OCPI::RDT::ActiveMessage) |
+	      (1 << OCPI::RDT::FlagIsMeta) :
+	      1 << OCPI::RDT::ActiveMessage; // fix this for peer-to-peer
+	  return 1 << OCPI::RDT::ActiveMessage;
+	  // return (1 << OCPI::RDT::ActiveFlowControl) | (1 << OCPI::RDT::ActiveMessage);
 	}
 	static int compu32(const void *a, const void *b) { return *(int32_t*)a - *(int32_t*)b; }
     // Set up the FPGAs clock, assuming it has no GPS.
@@ -140,15 +152,17 @@ namespace OCPI {
 	  unsigned n;
 	  uint32_t delta[100];
 	  uint32_t sum = 0;
+	  Access *ts = timeServer();
   
+	  if (!ts)
+	    return;
 	  // Take a hundred samples of round trip time, and sort
 	  for (n = 0; n < 100; n++) {
 	    // Read the FPGA's time, and set its delta register
-	    m_cAccess.set64Register(admin.timeDelta, OccpSpace,
-				    m_cAccess.get64Register(admin.time, OccpSpace));
+	    ts->set64RegisterOffset(sizeof(uint64_t), ts->get64RegisterOffset(0));
 	    // occp->admin.timeDelta = occp->admin.time;
 	    // Read the (incorrect endian) delta register
-	    delta[n] = (int32_t)swap32(m_cAccess.get64Register(admin.timeDelta, OccpSpace));
+	    delta[n] = (int32_t)swap32(ts->get64RegisterOffset(sizeof(uint64_t)));
 	  }
 	  qsort(delta, 100, sizeof(uint32_t), compu32);
   
@@ -165,17 +179,17 @@ namespace OCPI {
 	  uint64_t nw1 = now();
 	  uint64_t nw1a = nw1 + sum;
 	  uint64_t nw1as = swap32(nw1a);
-	  m_cAccess.set64Register(admin.time, OccpSpace, nw1as);
+	  ts->set64RegisterOffset(0, nw1as);
 	  // set32Register(admin.scratch20, OccpSpace, nw1as>>32);
 	  // set32Register(admin.scratch24, OccpSpace, (nw1as&0xffffffff));
 	  //uint64_t nw1b = 0; // get64Register(admin.time, OccpSpace);
 	  //      uint64_t nw1bs = swap32(nw1b);
 	  uint64_t nw2 = 0; // now();
 	  uint64_t nw2s = swap32(nw2);
-	  m_cAccess.set64Register(admin.timeDelta, OccpSpace, nw1as);
-	  uint64_t nw1b = m_cAccess.get64Register(admin.time, OccpSpace);
+	  ts->set64RegisterOffset(sizeof(uint64_t), nw1as);
+	  uint64_t nw1b = ts->get64RegisterOffset(0);
 	  uint64_t nw1bs = swap32(nw1b);
-	  int64_t dt = m_cAccess.get64Register(admin.timeDelta, OccpSpace);
+	  int64_t dt = ts->get64RegisterOffset(sizeof(uint64_t));
 	  ocpiDebug("Now delta is: %" PRIi64 "ns "
 		    "(dt 0x%" PRIx64 " dtsw 0x%" PRIx64 " nw1 0x%" PRIx64 " nw1a 0x%" PRIx64 " nw1as 0x%" PRIx64
 		    " nw1b 0x%" PRIx64 " nw1bs 0x%" PRIx64 " nw2 0x%" PRIx64 " nw2s 0x%" PRIx64 " t 0x%lx)",
@@ -183,18 +197,19 @@ namespace OCPI {
 		    nw1b, nw1bs, nw2, nw2s, time(0));
 #ifndef __APPLE__
 	  {
-	    struct timespec ts;
-	    clock_getres(CLOCK_REALTIME, &ts);
-	    ocpiInfo("res: %ld", ts.tv_nsec);
+	    struct timespec tspec;
+	    clock_getres(CLOCK_REALTIME, &tspec);
+	    ocpiInfo("res: %ld", tspec.tv_nsec);
 	  }
 #endif
 	}
 	// Load a bitstream via jtag
-	void load(const char *fileName) {
+	bool load(const char *fileName, std::string &error) {
+	  error.clear();
 	  // FIXME: there should be a utility to run a script in this way
 	  char *command, *base = getenv("OCPI_CDK_DIR");
 	  if (!base)
-	    throw OU::Error("OCPI_CDK_DIR environment variable not set");
+	    return OU::eformat(error, "OCPI_CDK_DIR environment variable not set");
 	  int aslen = asprintf(&command,
 		   "%s/scripts/loadBitStream \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\"",
 		   base, fileName, name().c_str(), m_platform.c_str(), m_part.c_str(),
@@ -203,40 +218,38 @@ namespace OCPI {
 	  ocpiInfo("Executing command to load bit stream for device %s: \"%s\"\n",
 		   fileName, command);
 	  int rc = system(command);
-	  const char *err = 0;
 	  switch (rc) {
 	  case 127:
-	    err = "Couldn't execute bitstream loading command.  Bad OCPI_CDK_DIR environment variable?";
+	    error = "Couldn't execute bitstream loading command.  Bad OCPI_CDK_DIR environment variable?";
 	    break;
 	  case -1:
-	    err = OU::esprintf("Unknown system error (errno %d) while executing bitstream loading command: %s",
-			       errno, command);
+	    OU::format(error,
+		       "Unknown system error (errno %d) while executing bitstream loading command: %s",
+		       errno, command);
 	    break;
 	  case 0:
 	    ocpiInfo("Successfully loaded bitstream file: \"%s\" on HDL device \"%s\"\n",
 		     fileName, name().c_str());
 	    break;
 	  default:
-	    err = OU::esprintf("Bitstream loading error (%s%s: %d) loading \"%s\" on HDL device"
-			       " \"%s\" with command: %s",
-			       WIFEXITED(rc) ? "exit code" : "signal ",
-			       WIFEXITED(rc) ? "" : strsignal(WTERMSIG(rc)),
-			       WIFEXITED(rc) ? WEXITSTATUS(rc) : WTERMSIG(rc),
-			       fileName, name().c_str(), command);
+	    OU::format(error, "Bitstream loading error (%s%s: %d) loading \"%s\" on HDL device"
+		       " \"%s\" with command: %s",
+		       WIFEXITED(rc) ? "exit code" : "signal ",
+		       WIFEXITED(rc) ? "" : strsignal(WTERMSIG(rc)),
+		       WIFEXITED(rc) ? WEXITSTATUS(rc) : WTERMSIG(rc),
+		       fileName, name().c_str(), command);
 	  }
-	  if (err)
-	    throw OU::Error("%s", err);
+	  return error.empty() ? init(error) : true;
 	}
-	void
-	unload() {
-	  throw "Can't unload bitstreams for PCI/JTAG devices yet";
+	bool
+	unload(std::string &error) {
+	  return OU::eformat(error, "Can't unload bitstreams for PCI/JTAG devices yet");
 	}
       };
 
       Driver::
       Driver()
-	: m_pciMemFd(::open(OCPI_DRIVER_MEM, O_RDWR | O_SYNC)),
-	  m_useDriver(m_pciMemFd >= 0) {
+	: m_pciMemFd(-1), m_useDriver(OS::FileSystem::exists(OCPI_DRIVER_PCI)) {
       }
       Driver::
       ~Driver() {
@@ -353,50 +366,35 @@ namespace OCPI {
 	return false;
       }
       unsigned Driver::
-      search(const OU::PValue */*params*/, const char **exclude, bool /*discoveryOnly*/,
+      search(const OU::PValue *params, const char **excludes, bool discoveryOnly,
 	     std::string &error) {
+	ocpiInfo("Searching for local PCI-based HDL devices.");
+	error.clear();
 	unsigned count = 0;
 	const char *dir = m_useDriver ? OCPI_DRIVER_PCI : OCPI_HDL_SYS_PCI_DIR;
 	DIR *pcid = opendir(dir);
-	if (!pcid) {
-#ifdef OCPI_OS_macos
-	    return 0;
-#else
-	  if (m_useDriver)
-	    return 0;
-	  OU::formatString(error, "can't open the %s directory for PCI search", dir);
-#endif
-	} else {
-	  std::string firstError;
-	  for (struct dirent *ent; (ent = readdir(pcid)) != NULL;)
+	if (pcid) {
+	  for (struct dirent *ent; (ent = readdir(pcid)) != NULL; )
 	    if (ent->d_name[0] != '.') {
-	      // Opening implies canonicalizing the name, which is needed for excludes
-	      OCPI::HDL::Device *dev;
-	      if ((dev = open(ent->d_name, error))) {
-		if (exclude)
-		  for (const char **ap = exclude; *ap; ap++)
-		    if (!strcmp(*ap, dev->name().c_str()))
-		      goto skipit; // continue(2);
-		if (!found(*dev, error))
-		  count++;
-	      }
-	      if (error.size()) {
-		if (firstError.empty())
-		  firstError = error;
-		error.clear();
-	      }
-	    skipit:
-	      ;
+	      std::string err;
+	      OCPI::HDL::Device *dev = open(ent->d_name, params, err);
+	      if (dev && !found(*dev, excludes, discoveryOnly, err))
+		count++;
+	      if (error.empty())
+		error = err;
 	    }
-	  closedir(pcid); // FIXME: try/catch?
-	  if (!count)
-	    error = firstError; // report the first error if we found nothing
-	}
+	  closedir(pcid);
+	} else if (!m_useDriver)
+#ifndef OCPI_OS_macos
+	  OU::format(error, "can't open the %s directory for PCI search", dir);
+#else
+	;
+#endif
 	return count;
       }
       
       OCPI::HDL::Device *Driver::
-      open(const char *pciName, std::string &error) {
+      open(const char *pciName, const OU::PValue *params, std::string &error) {
 	const char *cp;
 	for (cp = pciName; *cp && isdigit(*cp); cp++)
 	  ;
@@ -451,7 +449,7 @@ namespace OCPI {
 	    return NULL; // not really an error
 	}
 	if (error.empty()) {
-	  Device *dev = new Device(name, fd, pci, bar0, bar1, error);
+	  Device *dev = new Device(name, fd, pci, bar0, bar1, params, error);
 	  if (error.empty())
 	    return dev; // we have passed the fd into the device.
 	  delete dev;

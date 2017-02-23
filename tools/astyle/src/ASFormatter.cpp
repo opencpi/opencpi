@@ -4665,10 +4665,10 @@ bool ASFormatter::isCurrentBracketBroken() const
 		return false;
 	}
 	else if (shouldAttachInline
-#if 1  // JEK don't attach cases ANYWHERE
+#if 1  // OCPI don't attach cases ANYWHERE
 		 && (preBracketHeaderStack->size() <= 0 ||
 		     preBracketHeaderStack->back() != &AS_CASE)
-#endif // JEK
+#endif // OCPI
 	         && isCStyle()			// for C++ only
 	         && bracketFormatMode != RUN_IN_MODE
 	         && isBracketType((*bracketTypeStack)[stackEnd], COMMAND_TYPE))
@@ -4728,7 +4728,7 @@ bool ASFormatter::isCurrentBracketBroken() const
 			}
 		}
 	}
-#if 1	// JEK: suppress attaching brackets to case labels.
+#if 1	// OCPI: suppress attaching brackets to case labels.
 	// probably overkill in checking all this
 	else if (isBracketType((*bracketTypeStack)[stackEnd], COMMAND_TYPE) &&
 		 preBracketHeaderStack->size() > 0 &&

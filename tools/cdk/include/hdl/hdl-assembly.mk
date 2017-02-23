@@ -28,8 +28,9 @@ include $(OCPI_CDK_DIR)/include/util.mk
 $(OcpiIncludeProject)
 include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
 
-# Theses next lines are similar to what worker.mk does
+# These next lines are similar to what worker.mk does
 ifneq ($(MAKECMDGOALS),clean)
+hdl: all # for convenience
 $(if $(wildcard $(CwdName).xml),,\
   $(error The XML for the assembly, $(CwdName).xml, is missing))
 endif
@@ -40,7 +41,13 @@ Worker_xml:=$(Worker).xml
 OcpiLanguage:=verilog
 override LibDir=lib/hdl
 override HdlLibraries+=platform
-#$(info -1.Only:$(OnlyPlatforms),All:$(HdlAllPlatforms),Ex:$(ExcludePlatforms),HP:$(HdlPlatforms))
+# If HdlPlatforms is explicitly defined to nothing, then don't build containers.
+ifeq ($(HdlPlatform)$(HdlPlatforms),)
+  ifneq ($(origin HdlPlatforms),undefined)
+    override Containers=
+    override DefaultContainers=
+  endif
+endif
 include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
 ifndef HdlSkip
 # Add to the component libraries specified in the assembly Makefile,
@@ -73,7 +80,7 @@ ifneq ($(MAKECMDGOALS),clean)
     define doGetPlatform
       $$(and $$(call DoShell,$(OcpiGen) -X $1,HdlContPfConfig),\
           $$(error Processing container XML $1: $$(HdlContPfConfig)))
-      HdlContPlatform:=$$(word 1,$$(HdlContPfConfig))
+      HdlContPlatform:=$$(patsubst %_pf,%,$$(word 1,$$(HdlContPfConfig)))
       HdlContConfig:=$$(word 2,$$(HdlContPfConfig))
       $$(if $$(HdlContPlatform),,$$(error Could not get platform attribute for container $1))
       $$(if $$(HdlContConfig),,$$(error Could not get config attribute for container $1))

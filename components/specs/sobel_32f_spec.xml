@@ -1,4 +1,4 @@
-<ComponentSpec Name="sobel_32f">
+<ComponentSpec>
   <Properties>
     <Property Name="height" readable="true" writable="true"/>
     <Property Name="width" readable="true" writable="true"/>

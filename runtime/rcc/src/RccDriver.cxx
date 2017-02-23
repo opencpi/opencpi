@@ -6,6 +6,7 @@
 
 namespace OC = OCPI::Container;
 namespace OU = OCPI::Util;
+namespace OX = OCPI::Util::EzXml;
 namespace OA = OCPI::API;
 namespace OCPI {
   namespace RCC {
@@ -27,9 +28,9 @@ namespace OCPI {
     }
     // Per driver discovery routine to create devices
     unsigned Driver::
-    search(const OA::PValue* /* params */, const char **/* exclude */, bool /* discoveryOnly */)
-      throw ( OU::EmbeddedException ) {
+    search(const OA::PValue* /* params */, const char **/* exclude */, bool /* discoveryOnly */) {
       std::string error;
+      ocpiInfo("Searching for RCC containers, and implicitly finding one.");
       return probeContainer("rcc0", error, NULL) ? 1 : 0;
     }
     Driver::
@@ -41,6 +42,12 @@ namespace OCPI {
       //      if ( m_tpg_no_events ) delete m_tpg_no_events;
       //      if ( m_tpg_events ) delete m_tpg_events;
       ocpiCheck(pthread_key_delete(s_threadKey) == 0);
+    }
+    void Driver::
+    configure(ezxml_t x) {
+      OX::getOptionalString(x, m_platform, "platform");
+      if (m_platform.size())
+	ocpiDebug("RCC Driver platform set to %s", m_platform.c_str());
     }
     // Register this driver
     OC::RegisterContainerDriver<Driver> driver;

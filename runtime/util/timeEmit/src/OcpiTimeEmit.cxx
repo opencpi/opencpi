@@ -106,7 +106,7 @@ namespace OCPI {
 	}
       }
       else {
-	getHeader().dumpOnExit = 1;
+	getHeader().dumpOnExit = 0;
       }
       getHeader().dumpFormat =  EmitFormatter::OCPIRAW;
       if ( ( tmp = getenv("OCPI_TIME_EMIT_DUMP_FILENAME") ) != NULL ) {
@@ -469,13 +469,13 @@ namespace OCPI {
       AUTO_MUTEX(Emit::getGMutex());
       m_eid = getHeader().nextEventId++;
       int width = OU::baseTypeSizes[p.type];
-      DataType dtype=Emit::i;
+      DataType dtype=Emit::DT_i;
       switch( p.type ){
       case OA::OCPI_Short:
       case OA::OCPI_Long:
       case OA::OCPI_Char:
       case OA::OCPI_LongLong:
-	dtype = Emit::i;
+	dtype = Emit::DT_i;
 	break;
 
       case OA::OCPI_Bool:
@@ -483,16 +483,16 @@ namespace OCPI {
       case OA::OCPI_UShort:
       case OA::OCPI_ULongLong:
       case OA::OCPI_UChar:
-	dtype = Emit::u;
+	dtype = Emit::DT_u;
 	break;
 
       case OA::OCPI_Double:
       case OA::OCPI_Float:
-	dtype = Emit::d;
+	dtype = Emit::DT_d;
 	break;
 
       case OA::OCPI_String:
-	dtype = Emit::c;
+	dtype = Emit::DT_c;
 	break;
 
       case OA::OCPI_none:
@@ -571,9 +571,8 @@ namespace OCPI {
       AUTO_MUTEX(Emit::getGMutex());
 
       // Now do the timed events
-      std::vector<Emit::EventQ*>::iterator it;
-      for( it=Emit::getHeader().eventQ.begin();
-	   it!=Emit::getHeader().eventQ.end(); it++ ) {
+      for (std::vector<Emit::EventQ*>::iterator it = Emit::getHeader().eventQ.begin();
+	   it != Emit::getHeader().eventQ.end(); it++ ) {
 	Emit::EventQEntry* qe = (*it)->full ? (*it)->current : (*it)->start;
 	Emit::EventQEntry* begin = qe;
 	do {
@@ -590,16 +589,16 @@ namespace OCPI {
 	    if ( Emit::getHeader().eventMap[qe->eid].type != Emit::Transient ) {
 	      SValue* d = (SValue*)(qe + 1);
 	      switch ( emap->dtype ) {
-	      case Emit::u:
+	      case Emit::DT_u:
 		out << "," << d->uvalue << std::endl;
 		break;
-	      case Emit::i:
+	      case Emit::DT_i:
 		out << "," << d->ivalue << std::endl;
 		break;
-	      case Emit::c:
+	      case Emit::DT_c:
 		out << "," << d->cvalue << std::endl;	  
 		break;
-	      case Emit::d:
+	      case Emit::DT_d:
 		out << "," << d->dvalue << std::endl;	  
 		break;
 	      }      
@@ -617,8 +616,8 @@ namespace OCPI {
       out << "<EventData>" << std::endl;
       {
 	out << "  <Descriptors>" << std::endl;
-	std::vector<Emit::EventMap>::iterator it;
-	for ( it=Emit::getHeader().eventMap.begin(); it!=Emit::getHeader().eventMap.end();  it++ ) {
+	for (std::vector<Emit::EventMap>::iterator it = Emit::getHeader().eventMap.begin();
+	     it != Emit::getHeader().eventMap.end(); it++) {
 	  std::string tn((*it).eventName);
 	  std::replace(tn.begin(),tn.end(),' ','_');
 	  std::string owner;

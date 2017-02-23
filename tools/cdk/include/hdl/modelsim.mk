@@ -68,6 +68,7 @@ $(call OcpiDbgVar,ModelsimFiles)
 
 ModelsimVlogLibs=
 
+# FIXME: make . in the include path for primitives as well as workers
 ModelSimVlogIncs=\
   $(foreach d,$(VerilogDefines),+define+$d) +incdir+.. \
   $(foreach d,$(VerilogIncludeDirs),+incdir+$(call FindRelative,$(TargetDir),$d))
@@ -92,7 +93,7 @@ HdlToolCompile=\
    $(and $(filter %.v,$(ModelsimFiles)),\
     $(OCPI_MODELSIM_DIR)/bin/vlog $(ModelSimVlogIncs) $(VlogLibs) $(ModelsimArgs) $(filter %.v, $(ModelsimFiles)) ;) \
    $(and $(filter %.vhd,$(ModelsimFiles)),\
-    $(OCPI_MODELSIM_DIR)/bin/vcom -preserve $(if $(HdlNoElaboration),,-bindAtCompile) -error 1253 $(ModelsimArgs) $(filter %.vhd,$(ModelsimFiles)))
+    $(OCPI_MODELSIM_DIR)/bin/vcom -preserve $(if $(HdlNoSimElaboration),,$(ignore -bindAtCompile)) -error 1253 $(ModelsimArgs) $(filter %.vhd,$(ModelsimFiles)))
 
 # Since there is not a singular output, make's builtin deletion will not work
 HdlToolPost=\

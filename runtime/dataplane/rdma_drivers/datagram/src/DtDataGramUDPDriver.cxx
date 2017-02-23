@@ -71,8 +71,8 @@ namespace DataTransfer {
       friend class DatagramSocket;
       friend class DatagramXferFactory;
     public:
-      DatagramEndPoint( std::string& ep, bool local, uint32_t size=0)
-	: EndPoint(ep, size, local) { 
+      DatagramEndPoint( std::string& ep, bool a_local, uint32_t a_size=0)
+	: EndPoint(ep, a_size, a_local) { 
 	char ipaddr[80];
 	int rv = sscanf(ep.c_str(), "ocpi-udp-rdma:%[^;];%" SCNu16 ";", ipaddr, &m_portNum);
 	if (rv != 2) {
@@ -109,7 +109,6 @@ namespace DataTransfer {
 	return *ss;
       }
     public:
-      virtual const char* getAddress(){return m_ipAddress.c_str();}
       uint16_t & getId() { return m_portNum;}
     private:
       std::string m_ipAddress;
@@ -202,7 +201,8 @@ namespace DataTransfer {
       const char* getProtocol(){return "ocpi-udp-rdma";}
 
       std::string 
-      allocateEndpoint( const OCPI::Util::PValue*, uint16_t mailBox, uint16_t maxMailBoxes)
+      allocateEndpoint( const OCPI::Util::PValue*, uint16_t mailBox, uint16_t maxMailBoxes,
+			size_t size)
       {
 	std::string ep;
 	char ip_addr[128];
@@ -231,7 +231,8 @@ namespace DataTransfer {
 	if ( mb ) {
 	  mailBox = (uint16_t)atoi(mb);
 	}
-	setEndpointString(ep, ip_addr, port, parent().getSMBSize(), mailBox, maxMailBoxes);
+	setEndpointString(ep, ip_addr, port, size ? size : parent().getSMBSize(), mailBox,
+			  maxMailBoxes);
 	return ep;
       }
       

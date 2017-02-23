@@ -1,0 +1,4 @@
+<HdlDevice language='vhdl' outer='1'>
+  <ComponentSpec nocontrol='1'/>
+  <unoc name="up"/>
+</HdlDevice>

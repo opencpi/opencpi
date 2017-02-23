@@ -1,0 +1,29 @@
+<!-- AD9361 DAC worker -->
+<HdlDevice language="vhdl" spec='qdac-spec'>
+  <!-- Other included XML -->
+  <xi:include href='ad9361-iq-properties.xml'/>
+  <!-- when dac clk uses control clock - default is rx clk-->
+  <property name='use_ctl_clk' type='bool' initial='1' default='false'/>
+  <!-- when dac clk uses control clock -->
+  <property name='divisor' initial='1' default='1'/>
+  <!-- Ports -->
+  <StreamInterface Name="IN" DataWidth="32" optional='1' zerolengthmessages='1'/>
+  <!-- Timeout -->
+  <ControlInterface Timeout="16"/> <!-- Set to default. No raw properties -->
+
+  <!-- the subdevice provides for sharing other non-property functionality -->
+  <devsignal name='dev' signals='ad9361-subdevice-signals.xml' master='true'/>
+
+  <!-- Signals -->
+  <!-- Signal names from the data sheet, all basically in "external" mode -->
+  <Signal Output="FB_CLK_P"/> <!-- source sync transmit data clk -->
+  <Signal Output="FB_CLK_N"/> <!-- source sync transmit data clk -->
+  <Signal Output="TX_FRAME_P"/>
+  <Signal Output="TX_FRAME_N"/>
+  <Signal Output="TX_D_P" width="6"/>
+  <Signal Output="TX_D_N" width="6"/>
+  <!-- when differential signals have better support -->
+  <!-- <Signal Output="FB_CLK" differential='true' pos='%s_P' neg='%s_N'/> -->
+  <!-- <Signal Output="TX_FRAME" differential='true' pos='%s_P' neg='%s_N'/> -->
+  <!-- <Signal Output="TX_D" differential='true' pos='%s_P' neg='%s_N' width="6"/> -->
+</HdlDevice>

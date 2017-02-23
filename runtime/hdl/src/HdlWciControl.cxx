@@ -35,11 +35,12 @@ namespace OCPI {
     static const unsigned DEFAULT_TIMEOUT = 16;
 
     WciControl::
-    WciControl(Device &device, const char *impl, const char *inst, unsigned index, bool hasControl)
+    WciControl(Device &device, const char *impl, const char *inst, unsigned a_index,
+	       bool hasControl)
       : m_implName(impl), m_instName(inst), m_hasControl(hasControl), m_timeout(DEFAULT_TIMEOUT),
-	m_device(device), m_occpIndex(index)
+	m_device(device), m_occpIndex(a_index)
     {
-      init(false, true);
+      init(false, false);
     }
 
     WciControl::
@@ -110,6 +111,11 @@ namespace OCPI {
     WciControl::
     ~WciControl() {
       m_device.releaseWorkerAccess(m_occpIndex, *this, m_properties);
+    }
+
+    bool WciControl::
+    isReset() const {
+      return (get32Register(control, OccpWorkerRegisters) & OCCP_WORKER_CONTROL_ENABLE) == 0;
     }
 
     // Add the hardware considerations to the property object that supports
@@ -217,9 +223,11 @@ namespace OCPI {
 	    status =							     \
 	      get32Register(status, OccpWorkerRegisters) &		     \
 	      OCCP_STATUS_WRITE_ERRORS;					     \
-	} else								     \
-	  m_properties.m_accessor->set##n(m_properties.m_base + offset, val, \
-					  &status);			     \
+	} else if (n == 64)						\
+	  m_properties.m_accessor->set64(m_properties.m_base + offset, val, &status); \
+	else								\
+	  m_properties.m_accessor->set(m_properties.m_base + offset, sizeof(uint##n##_t), \
+                                       (uint32_t)(val << ((offset &3) * 8)), &status);    \
 	if (status)							     \
 	  throwPropertyWriteError(status);				     \
       }
@@ -250,7 +258,7 @@ namespace OCPI {
 
     void WciControl::
     getPropertyBytes(const OA::PropertyInfo &info, size_t offset, uint8_t *buf,
-		     size_t nBytes, unsigned idx) const {
+		     size_t nBytes, unsigned idx, bool string) const {
       offset = checkWindow(offset + idx * info.m_elementBytes, nBytes);
       uint32_t status = 0;
 
@@ -258,13 +266,13 @@ namespace OCPI {
 	if (!info.m_readError ||
 	    !(status = (get32Register(status, OccpWorkerRegisters) &
 			OCCP_STATUS_READ_ERRORS))) {
-	  m_properties.getBytesRegisterOffset(offset, buf, nBytes, info.m_elementBytes);
+	  m_properties.getBytesRegisterOffset(offset, buf, nBytes, info.m_elementBytes, string);
 	  if (info.m_readError)
 	    status = get32Register(status, OccpWorkerRegisters) & OCCP_STATUS_READ_ERRORS;
 	}
       } else
 	m_properties.m_accessor->getBytes(m_properties.m_base + offset, buf, nBytes,
-					  info.m_elementBytes, &status);
+					  info.m_elementBytes, &status, string);
       if (status)
 	throwPropertyReadError(status, (uint32_t)offset, nBytes, 0);
     }
@@ -290,7 +298,8 @@ namespace OCPI {
 	m_properties.m_accessor->setBytes(m_properties.m_base + offset + p.m_align,
 					  val, nBytes, p.m_elementBytes, &status);
 	if (!status)
-	  m_properties.m_accessor->set32(m_properties.m_base + offset, (uint32_t)nItems, &status);
+	  m_properties.m_accessor->set(m_properties.m_base + offset, sizeof(uint32_t),
+				       (uint32_t)nItems, &status);
       } else
 	m_properties.m_accessor->setBytes(m_properties.m_base + offset, val, nBytes,
 					  p.m_elementBytes, &status);
@@ -325,7 +334,8 @@ namespace OCPI {
 	      OCCP_STATUS_READ_ERRORS;
 	}
       } else {
-	nItems = m_properties.m_accessor->get32(m_properties.m_base + offset, &status);
+	nItems = m_properties.m_accessor->get(m_properties.m_base + offset, sizeof(uint32_t),
+					      &status);
 	nBytes = nItems * p.m_elementBytes;
 	if (!status) {
 	  if (nBytes > n)
@@ -354,7 +364,7 @@ namespace OCPI {
     getStringProperty(unsigned ordinal, char *val, size_t length, unsigned idx) const {
       // ignore return value
       const OA::PropertyInfo &info = m_propInfo[ordinal];
-      getPropertyBytes(info, info.m_offset, (uint8_t*)val, length, idx);
+      getPropertyBytes(info, info.m_offset, (uint8_t*)val, length, idx, true);
     }
     unsigned WciControl::
     getStringSequenceProperty(const OA::Property &, char * *,

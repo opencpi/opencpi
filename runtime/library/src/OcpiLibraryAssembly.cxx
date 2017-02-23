@@ -53,6 +53,10 @@ namespace OCPI {
       : OU::Assembly(string, assyAttrs, instAttrs, params), m_refCount(1) {
       findImplementations(params);
     }
+    Assembly::Assembly(ezxml_t a_xml, const char *name, const OCPI::Util::PValue *params)
+      : OU::Assembly(a_xml, name, false, assyAttrs, instAttrs, params), m_refCount(1) {
+      findImplementations(params);
+    }
     Assembly::~Assembly() {
       for (size_t n = 0; n < m_instances.size(); n++)
 	delete m_instances[n];
@@ -75,6 +79,7 @@ namespace OCPI {
 
     // The util::assembly only knows port names, not worker port ordinals
     // (because it has not been correlated with any implementations).
+    // It may not even know port names if connect shortcuts are used.
     // Here is where we process the matchup between the port names in the util::assembly
     // and the port names in implementations in the libraries
     bool Assembly::Instance::
@@ -109,8 +114,8 @@ namespace OCPI {
 	  // Resolve empty port names to be unambiguous if possible
 	  p = ports;
 	  for (unsigned n = 0; n < m_nPorts; n++, p++)
-	    if ((*pi)->m_role.m_provider && p->m_provider ||
-		!(*pi)->m_role.m_provider && !p->m_provider) {
+	    if (((*pi)->m_role.m_provider && p->m_provider) ||
+		(!(*pi)->m_role.m_provider && !p->m_provider)) {
 	      if (found) {
 		  ocpiInfo("Rejected: the '%s' connection at instance '%s' is ambiguous: "
 			   " port name must be specified.",
@@ -118,7 +123,15 @@ namespace OCPI {
 			   m_utilInstance.m_name.c_str());
 		  goto rejected;
 	      }
+	      if (ap[n]) {
+		ocpiInfo("Rejected: the '%s' connection at instance '%s' is redundant: "
+			 " implicit port '%s' already has a connection.",
+			 (*pi)->m_role.m_provider ? "input" : "output",
+			 m_utilInstance.m_name.c_str(), p->m_name.c_str());
+		goto rejected;
+	      }
 	      ap[n] = *pi;
+	      (*pi)->m_name = p->m_name;
 	      found = true;
 	    }
 	  if (!found) {
@@ -131,6 +144,13 @@ namespace OCPI {
 	  p = ports;
 	  for (unsigned n = 0; n < m_nPorts; n++, p++)
 	    if (!strcasecmp(ports[n].m_name.c_str(), (*pi)->m_name.c_str())) {
+	      if (ap[n]) {
+		ocpiInfo("Rejected: the '%s' connection at instance '%s' is redundant: "
+			 " port '%s' already has a connection.",
+			 (*pi)->m_role.m_provider ? "input" : "output",
+			 m_utilInstance.m_name.c_str(), p->m_name.c_str());
+		goto rejected;
+	      }
 	      ap[n] = *pi;
 	      (*pi)->m_role.m_knownRole = true;
 	      (*pi)->m_role.m_provider = p->m_provider;
@@ -160,7 +180,7 @@ namespace OCPI {
 	    }
 	  // FIXME: should this externalization only apply to spec ports?
 	  if (!found) // Not mentioned in the assembly. Add an external.
-	    utilAssy.addExternalConnection(inst.m_ordinal, p->m_name.c_str(),
+	    utilAssy.addExternalConnection(inst.m_ordinal, p->m_name.c_str(), NULL,
 					   p->m_provider, false, true);
 	}	  
       }
@@ -217,18 +237,21 @@ namespace OCPI {
 	score = 1;
       else {
 	OU::ExprValue val;
-	const char *err = OU::evalExpression(m_utilInstance.m_selection.c_str(), val, &i.m_metadataImpl);
-	if (!err && !val.isNumber)
+	const char *err =
+	  OU::evalExpression(m_utilInstance.m_selection.c_str(), val, &i.m_metadataImpl);
+	if (!err && !val.isNumber())
 	  err = "selection expression has string value";
 	if (err)
-	  throw OU::Error("Error for instance \"%s\" with selection expression \"%s\": %s",
-			  m_utilInstance.m_name.c_str(), m_utilInstance.m_selection.c_str(), err);
-	if (val.number <= 0) {
+	  throw
+	    OU::Error("Error for instance \"%s\" with selection expression \"%s\": %s",
+		      m_utilInstance.m_name.c_str(), m_utilInstance.m_selection.c_str(), err);
+	int64_t n = val.getNumber();
+	if (n <= 0) {
 	  ocpiInfo("Rejected: selection expression \"%s\" has value: %" PRIi64,
-		   m_utilInstance.m_selection.c_str(), val.number);
+		   m_utilInstance.m_selection.c_str(), n);
 	  return false;
 	}
-	score = (unsigned)(val.number < 0 ? 0 : val.number);
+	score = (unsigned)(n < 0 ? 0 : n);
       }
       // To this point all the checking has applied to the worker we are looking at.
       // From this point some of the checking may actually apply to the slave if there is one
@@ -263,10 +286,10 @@ namespace OCPI {
 	  return false;
 	}
 	OU::Value aValue; // FIXME - save this and use it later
-	const char *err = uProp.parseValue(apValue, aValue);
+	const char *err = uProp.parseValue(apValue, aValue, NULL, &i.m_metadataImpl);
 	if (err) {
-	  ocpiInfo("Rejected: the value \"%s\" for the \"%s\" property, \"%s\", was invalid",
-		   apValue, uProp.m_isImpl ? "implementation" : "spec", apName);
+	  ocpiInfo("Rejected: the value \"%s\" for the \"%s\" property, \"%s\", was invalid: %s",
+		   apValue, uProp.m_isImpl ? "implementation" : "spec", apName, err);
 	  return false;
 	}
 	// We know the supplied value is valid.
@@ -291,7 +314,7 @@ namespace OCPI {
 
       // Here is where we know about the assembly and thus can check for
       // some connectivity constraints.  If the implementation has hard-wired connections
-      // that are incompatible with the assembly, we ignore it.
+      // that are incompatible with the assembly, we reject it.
       if (i.m_externals) {
 	OU::Port::Mask m = 1;
 	for (unsigned n = 0; n < OU::Port::c_maxPorts; n++, m <<= 1)
@@ -363,14 +386,17 @@ namespace OCPI {
     // A common method used by constructors
     void Assembly::findImplementations(const OU::PValue *params) {
       const char *err;
-      if ((err = checkInstanceParams("model", params)) ||
-	  (err = checkInstanceParams("platform", params)))
+      if ((err = checkInstanceParams("model", params, false, true)) ||
+	  (err = checkInstanceParams("platform", params, false, true)))
 	throw OU::Error("%s", err);
       m_params = params; // for access by callback
       m_maxCandidates = 0;
       // Initialize our instances list from the Util assy, but we might add to it for slaves
       for (unsigned n = 0; n < nUtilInstances(); n++)
 	m_instances.push_back(new Instance(utilInstance(n)));
+      const char *deployment = NULL;
+      if (OU::findString(params, "deployment", deployment))
+	return;
       for (InstancesIter ii = m_instances.begin(); ii != m_instances.end(); ii++) {
 	m_tempInstance = *ii;
 	OU::Assembly::Instance &inst = m_tempInstance->m_utilInstance;
@@ -424,9 +450,9 @@ namespace OCPI {
 	}
       }
     }
-    // A port is connected in the assembly, and the port it is connected to is on an instance with
-    // an already chosen implementation. Now we can check whether this impl conflicts with that one
-    // or not
+    // A port is connected in the assembly, and the port it is connected to is on an instance
+    // with an already chosen implementation. Now we can check whether this impl conflicts with
+    // that one or not
     bool Assembly::
     badConnection(const Implementation &impl, const Implementation &otherImpl,
 		  const OU::Assembly::Port &ap, unsigned port) {
@@ -434,18 +460,25 @@ namespace OCPI {
 	&p = impl.m_metadataImpl.port(port),
 	&other = *otherImpl.m_metadataImpl.findMetaPort(ap.m_connectedPort->m_name);
       if (impl.m_internals & (1 << port)) {
-	// This port is preconnected and the other port is not preconnected to us: we're incompatible
 	if (!(otherImpl.m_internals & (1 << other.m_ordinal)) ||
 	    otherImpl.m_connections[other.m_ordinal].impl != &impl ||
 	    otherImpl.m_connections[other.m_ordinal].port != &p) {
-	ocpiDebug("other %p %u %s  m_internals %x, other internals %x", &other, other.m_ordinal, other.m_name.c_str(),
-		  impl.m_internals, otherImpl.m_internals);
-	ocpiDebug("me %p %u %s", &p, p.m_ordinal, p.m_name.c_str());
-	return true;
+	  ocpiInfo("This port is preconnected and the other port is not preconnected to us: "
+		   "we're incompatible");
+	  ocpiInfo("other %p %u %s  m_internals %x, other internals %x", &other,
+		   other.m_ordinal, other.m_name.c_str(), impl.m_internals,
+		   otherImpl.m_internals);
+	  ocpiInfo("me %p port ordinal %u port %s", &p, p.m_ordinal, p.m_name.c_str());
+	  return true;
 	}
-      } else if (otherImpl.m_internals & (1 << other.m_ordinal))
-	// This port is external.  If the other port is connected, we're incompatible
+      } else if (otherImpl.m_internals & (1 << other.m_ordinal)) {
+	ocpiInfo("Port %s of %s is external; the other port is connected: we're incompatible",
+		 p.m_name.c_str(), impl.m_metadataImpl.name().c_str());
+	ocpiInfo("other %p %u %s  m_internals %x, other internals %x", &other, other.m_ordinal,
+		 other.m_name.c_str(), impl.m_internals, otherImpl.m_internals);
+	ocpiInfo("me %p port ordinal %u port %s", &p, p.m_ordinal, p.m_name.c_str());
 	return true;
+      }
       return false;
     }
     Assembly::Instance::

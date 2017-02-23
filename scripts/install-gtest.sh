@@ -1,33 +1,21 @@
-#!/bin/sh
-set -e
+#!/bin/bash
 OCPI_GTEST_VERSION=1.7.0
-source scripts/setup-install.sh
-mkdir -p gtest
-cd gtest
-rm -r -f release-* googletest*
-#curl -O http://googletest.googlecode.com/files/gtest-$OCPI_GTEST_VERSION.zip
-curl -O -L https://github.com/google/googletest/archive/release-$OCPI_GTEST_VERSION.zip
-unzip release-$OCPI_GTEST_VERSION.zip
-# From here on is per target
-rm -r -f build-$OCPI_TARGET_HOST
-mkdir build-$OCPI_TARGET_HOST
-cd build-$OCPI_TARGET_HOST
-if test "$OCPI_CROSS_HOST" = ""; then
-CC=gcc
-#macos only CXX="c++ -stdlib=libstdc++"
-CXX=c++
-LD=c++
-AR=ar
-else
-CC=$OCPI_CROSS_BUILD_BIN_DIR/$OCPI_CROSS_HOST-gcc
-CXX=$OCPI_CROSS_BUILD_BIN_DIR/$OCPI_CROSS_HOST-c++
-LD=$OCPI_CROSS_BUILD_BIN_DIR/$OCPI_CROSS_HOST-c++
-AR=$OCPI_CROSS_BUILD_BIN_DIR/$OCPI_CROSS_HOST-ar
-fi
-dir=../googletest-release-$OCPI_GTEST_VERSION
-$CXX -fPIC -I$dir/include -I$dir -c $dir/src/gtest-all.cc
+source ./scripts/setup-install.sh \
+       "$1" \
+       gtest \
+       release-$OCPI_GTEST_VERSION.zip \
+       https://github.com/google/googletest/archive \
+       googletest-release-$OCPI_GTEST_VERSION \
+       1
+
+$CXX -fPIC -I../include -I.. -c ../src/gtest-all.cc
 $AR -rs libgtest.a gtest-all.o
-mkdir -p $OCPI_PREREQUISITES_INSTALL_DIR/gtest/$OCPI_TARGET_HOST
-ln -f -s `pwd` $OCPI_PREREQUISITES_INSTALL_DIR/gtest/$OCPI_TARGET_HOST/lib
-ln -f -s `cd $dir;pwd`/include $OCPI_PREREQUISITES_INSTALL_DIR/gtest/include
-echo ============= gtest for $OCPI_TARGET_HOST built and installed
+dname=libgtest.$OCPI_TARGET_DYNAMIC_SUFFIX
+iname=$OCPI_PREREQUISITES_INSTALL_DIR/gtest/$OCPI_TARGET_DIR/lib/$dname
+[ "$OCPI_TARGET_OS" = macos ] && install_name="-install_name $iname"
+$CXX $OCPI_TARGET_DYNAMIC_FLAGS $install_name -o $dname gtest-all.o
+mkdir -p $OCPI_PREREQUISITES_INSTALL_DIR/gtest/$OCPI_TARGET_DIR/lib
+ln -f -s `pwd`/libgtest.a $OCPI_PREREQUISITES_INSTALL_DIR/gtest/$OCPI_TARGET_DIR/lib
+ln -f -s `pwd`/$dname $iname
+ln -f -s `cd ..;pwd`/include $OCPI_PREREQUISITES_INSTALL_DIR/gtest/include
+echo ============= gtest for $OCPI_TARGET_PLATFORM built and installed

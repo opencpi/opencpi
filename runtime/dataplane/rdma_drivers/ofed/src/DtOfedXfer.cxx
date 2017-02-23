@@ -182,8 +182,8 @@ namespace DataTransfer {
     struct  EndPoint : public DataTransfer::EndPoint 
     {
       // Constructors
-      EndPoint( std::string & ep, bool local )
-	: DataTransfer::EndPoint( ep, 0, local ),m_port(1)
+      EndPoint( std::string & ep, bool a_local )
+	: DataTransfer::EndPoint( ep, 0, a_local ),m_port(1)
       {
 	parse(ep);
 	m_psn = mailbox;
@@ -194,9 +194,6 @@ namespace DataTransfer {
 
       // Sets smem location data based upon the specified endpoint
       OCPI::OS::int32_t parse( std::string& ep );
-
-      // Get the address from the endpoint
-      virtual const char* getAddress(){return m_addr.c_str();}
 
       // Finalize this endpoint
       void finalize();
@@ -349,12 +346,13 @@ namespace DataTransfer {
        *  an endpoint for an application running on "this"
        *  node.
        ***************************************/
-      std::string allocateEndpoint(const OCPI::Util::PValue*, uint16_t mailBox, uint16_t maxMailBoxes);
+      std::string allocateEndpoint(const OCPI::Util::PValue*, uint16_t mailBox,
+				   uint16_t maxMailBoxes, size_t size);
       void allocateEndpoints(std::vector<std::string> &l);
 
       // From driver base class
-      unsigned search(const OCPI::Util::PValue* props, const char **exclude, bool discoveryOnly)
-	throw (OCPI::Util::EmbeddedException);
+      unsigned
+      search(const OCPI::Util::PValue* props, const char **exclude, bool discoveryOnly);
 
     protected:
       //OCPI::OS::Mutex                  m_mutex;
@@ -372,19 +370,19 @@ namespace DataTransfer {
       ibv_device       * m_dev;     
       ibv_device_attr    m_device_attribute;
       
-      Device(const char* name)
-	: DataTransfer::DeviceBase<XferFactory,Device>(name, *this)
+      Device(const char *a_name)
+	: DataTransfer::DeviceBase<XferFactory,Device>(a_name, *this)
       {
-	m_dev = find( name );
+	m_dev = find( a_name );
 	if ( ! m_dev ) {
-	  fprintf(stderr, "OFED::Device ERROR: OFED device not found (%s)\n", name );
-	  throw DataTransfer::DataTransferEx( DEV_NOT_FOUND, name );
+	  fprintf(stderr, "OFED::Device ERROR: OFED device not found (%s)\n", a_name );
+	  throw DataTransfer::DataTransferEx( DEV_NOT_FOUND, a_name );
 	}
 	m_context = ibv_open_device(m_dev);
 	if (!m_context) {
 	  fprintf(stderr, "OFED::Device ERROR: Couldn't get context for %s\n",
 		  ibv_get_device_name(m_dev));
-	  throw DataTransfer::DataTransferEx( COULD_NOT_OPEN_DEVICE, name );
+	  throw DataTransfer::DataTransferEx( COULD_NOT_OPEN_DEVICE, a_name );
 	}
 	m_pd = ibv_alloc_pd(m_context);
 	if (! m_pd ) {
@@ -517,9 +515,8 @@ namespace DataTransfer {
 
     unsigned 
     XferFactory::
-    search(const OCPI::Util::PValue* /*props*/, const char ** /*exclude*/, bool /* discoveryOnly */)
-      throw (OCPI::Util::EmbeddedException) 
-    {
+    search(const OCPI::Util::PValue* /*props*/, const char ** /*exclude*/,
+	   bool /* discoveryOnly */) {
       int num_of_device;
       ibv_device **dev_list;
       ibv_device *ib_dev = NULL;
@@ -620,7 +617,8 @@ namespace DataTransfer {
 
     std::string 
     XferFactory::
-    allocateEndpoint(const OCPI::Util::PValue*props, uint16_t mailBox, uint16_t maxMailBoxes)
+    allocateEndpoint(const OCPI::Util::PValue*props, uint16_t mailBox, uint16_t maxMailBoxes,
+		     size_t size = 0)
     {
       OCPI::Util::SelfAutoMutex guard (this); 
       Device *d;
@@ -633,13 +631,12 @@ namespace DataTransfer {
 	throw DataTransfer::DataTransferEx( DEV_NOT_FOUND , "OFED" );
       // First get the entry point from the properties
       size_t port = d->m_port;
-      size_t size = d->m_SMBSize;
 
       // This will be the non-finalized version of the ep
       char buf[512];
       snprintf( buf, 512, "ocpi-ofed-rdma:%s:%zu:%lld.%lld:%d:%d:%d:%llu:%zu.%d.%d",
 		d->name().c_str(), port, (long long)0, (long long)0, 0, 0, 0,
-		(unsigned long long)0, size, mailBox, maxMailBoxes);
+		(unsigned long long)0, size ? size : d->m_SMBSize, mailBox, maxMailBoxes);
       std::string ep = buf;
       return ep;
     }
@@ -1085,11 +1082,12 @@ namespace DataTransfer {
     }
 
     XferServices::
-    XferServices(DataTransfer::SmemServices* source, DataTransfer::SmemServices* target)
-      : DataTransfer::ConnectionBase<XferFactory,XferServices,XferRequest>(*this, source,target),
+    XferServices(DataTransfer::SmemServices *a_source, DataTransfer::SmemServices *a_target)
+      : DataTransfer::ConnectionBase<XferFactory,XferServices,XferRequest>(*this, a_source,
+									   a_target),
 	m_finalized(false), m_post_count(0),m_cq_count(0)
     {
-      createTemplate( source, target);
+      createTemplate(a_source, a_target);
     }
 
     DataTransfer::XferRequest* 

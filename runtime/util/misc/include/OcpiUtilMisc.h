@@ -46,12 +46,15 @@
  *                  Initial version.
  */
 
+#include <strings.h>
+#include <assert.h>
 #include <inttypes.h>
 #include <cstring>
 #include <cstdio>
 #include <string>
 #include <istream>
 #include <functional>
+#include <vector>
 
 #include "OcpiOsAssert.h"
 #include "OcpiOsEther.h"
@@ -80,13 +83,16 @@
 #define OCPI_UTRUNCATE(type, val) ((type)(val))
 #define OCPI_STRUNCATE(type, val) ((type)(val))
 #define OCPI_SIZEOF(utype, stype) ((utype)sizeof(stype))
+#define OCPI_OFFSETOF(utype, member, stype) ((utype)offsetof(stype,member))
 #else
 #define OCPI_UTRUNCATE(type, val) \
-  ((type)OCPI::Util::utruncate((uint64_t)(val), sizeof(type)))
+  (static_cast<type>(OCPI::Util::utruncate((uint64_t)(val), sizeof(type))))
 #define OCPI_STRUNCATE(type, val) \
-  ((type)OCPI::Util::struncate((int64_t)(val), sizeof(type)))
+  (static_cast<type>(OCPI::Util::struncate((int64_t)(val), sizeof(type))))
 #define OCPI_SIZEOF(utype, stype) \
   ((utype)OCPI::Util::utruncate((uint64_t)sizeof(stype), sizeof(utype)))
+#define OCPI_OFFSETOF(utype, stype, member)				\
+  ((utype)OCPI::Util::utruncate((uint64_t)offsetof(stype,member), sizeof(utype)))
 #endif
 
 namespace OCPI {
@@ -95,12 +101,12 @@ namespace OCPI {
     /**
      * \brief Miscellaneous utilities.
      */
-    inline uint64_t utruncate(uint64_t val, unsigned bytes) {
+    inline uint64_t utruncate(uint64_t val, size_t bytes) {
       ocpiAssert(bytes == sizeof(val) ||
 		 val <= ~((uint64_t)-1 << (bytes*8)));
       return val;
     }
-    inline int64_t struncate(int64_t val, unsigned bytes) {
+    inline int64_t struncate(int64_t val, size_t bytes) {
       ocpiAssert(bytes == sizeof(val) ||
 		 (val < 0 ?
 		  val >= (int64_t)-1 << (bytes*8-1) :
@@ -332,10 +338,11 @@ namespace OCPI {
 	encodeXmlAttrSingle(const std::string &s, std::string &out, bool raw = false),
 	encodeDescriptor(const std::string &s, std::string &out),
 	decodeDescriptor(const char *info, std::string &s),
-	formatString(std::string &out, const char *fmt, ...) __attribute__((format(printf, 2, 3))),
-	format(std::string &out, const char *fmt, ...) __attribute__((format(printf, 2, 3))),
-	formatAdd(std::string &out, const char *fmt, ...) __attribute__((format(printf, 2, 3))),
-	formatAddV(std::string &out, const char *fmt, va_list ap);
+	formatString(std::string &out, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
+      const char
+	*format(std::string &out, const char *fmt, ...) __attribute__((format(printf, 2, 3))),
+	*formatAdd(std::string &out, const char *fmt, ...) __attribute__((format(printf, 2, 3))),
+	*formatAddV(std::string &out, const char *fmt, va_list ap);
       bool
 	// This one just returns true as a convenience for the error handling protocol
 	// that sets an error string and returns true if an error occurred.
@@ -344,12 +351,24 @@ namespace OCPI {
       const char
 	*parseList(const char *list, const char * (*doit)(const char *tok, void *arg),
 		   void *arg = NULL),
-	*file2String(std::string &out, const char *file, char replaceNewline = 0),
-	*string2File(const std::string &in, const char *file),
+	*file2String(std::string &out, const char *file, char replaceNewLine = 0),
+	*file2String(std::string &out, const char *file, const char *start, const char *middle, 
+		     const char *end),
+	*string2File(const std::string &in, const char *file, bool leaveExisting = false,
+		     bool onlyIfDifferent = false),
 	*evsprintf(const char *fmt, va_list ap),
 	*esprintf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
+      inline const char *file2String(std::string &out, const std::string &file,
+				     char replaceNewLine = 0) {
+	return file2String(out, file.c_str(), replaceNewLine);
+      }
+      inline const char *string2File(const std::string &in, const std::string &file,
+				     bool leaveExisting = false, bool onlyIfDifferent = false) {
+	return string2File(in, file.c_str(), leaveExisting, onlyIfDifferent);
+      }
 
-      // This is a comparison object for use in STL classes
+
+      // These are comparison object for use in STL classes
       struct ConstCharComp {
 	inline bool operator() (const char *lhs, const char *rhs) const {
 	  return strcmp(lhs, rhs) < 0;
@@ -360,6 +379,7 @@ namespace OCPI {
 	  return strcasecmp(lhs, rhs) < 0;
 	}
       };
+      // These Equal operators are for using std::unordered_set/map 
       struct ConstCharEqual {
 	inline bool operator() (const char *lhs, const char *rhs) const {
 	  return strcmp(lhs, rhs) == 0;
@@ -370,20 +390,33 @@ namespace OCPI {
 	  return strcasecmp(lhs, rhs) == 0;
 	}
       };
+      struct ConstStringComp {
+        inline bool operator() (const std::string &lhs, const std::string &rhs) const {
+          return strcmp(lhs.c_str(), rhs.c_str()) < 0;
+        }
+      };
+      struct ConstStringCaseComp {
+        inline bool operator() (const std::string &lhs, const std::string &rhs) const {
+          return strcasecmp(lhs.c_str(), rhs.c_str()) < 0;
+        }
+      };
+#if 0
+      // FIXME: replace because they are poorly implemented ("abc" == "cba"):
       struct ConstCharHash {
 	inline size_t operator() (const char *s) const {
 	  size_t h = 0;
-	  while (*s) h += *s++;
+	  while (*s) h += (unsigned char)*s++;
 	  return h;
 	}
       };
       struct ConstCharCaseHash {
 	inline size_t operator() (const char *s) const {
 	  size_t h = 0;
-	  while (*s) h += tolower(*s++);
+	  while (*s) h += (unsigned char)tolower(*s++);
 	  return h;
 	}
       };
+#endif
       inline size_t roundUp (size_t value, size_t align) {
 	return ((value + (align - 1)) / align) * align;
       }
@@ -391,6 +424,17 @@ namespace OCPI {
 	return
 	  (((value) & 0xff) << 24) | (((value) & 0xff00) << 8) |
 	  (((value) & 0xff0000) >> 8) | (((value) >> 24));
+      }
+      unsigned fls64(uint64_t n);
+      inline size_t ceilLog2(uint64_t n) {
+	return OCPI_UTRUNCATE(size_t, n ? fls64(n - 1) : 0);
+      }
+      inline size_t floorLog2(uint64_t n) {
+	//  ocpiInfo("Floor log2 of %u is %u", n, myfls(n)-1);
+	return OCPI_UTRUNCATE(size_t, fls64(n) - 1);
+      }
+      inline size_t bitsForMax(uint64_t n) {
+	return ceilLog2(n + 1);
       }
       OCPI::OS::Ether::Address &getSystemAddr();
       const std::string &getSystemId();
@@ -401,7 +445,30 @@ namespace OCPI {
       // find item in colon-separated path, returning complete path in "result"
       // return true on error
       bool searchPath(const char *path, const char *item, std::string &result,
-		      const char *preferredSuffix = NULL);
+		      const char *preferredSuffix = NULL, std::vector<std::string> *all = NULL);
+      // A convenience template for singletons possibly created at static construction
+      // time (moved from OcpiDriverManager)
+      template <class S> class Singleton {
+      public:
+        static S &getSingleton() {
+          static S *theSingleton;
+          // FIXME: put this static mutex into OCPI:OS somehow
+          static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+          // This is hyper-conservative since static constructors are run in a single thread.
+          // But C++ doesn't actually say that...
+          ocpiCheck(pthread_mutex_lock(&mutex) == 0);
+          if (!theSingleton)
+            theSingleton = new S;
+          ocpiCheck(pthread_mutex_unlock(&mutex) == 0);
+          return *theSingleton;
+        }
+      protected:
+        Singleton() {};                   // Empty constructor
+      private:
+        // [Virtual] destructor to clean up memory?
+        Singleton(Singleton const&);      // Don't implement
+        void operator=(Singleton const&); // Don't implement
+      };
   }
 }
 

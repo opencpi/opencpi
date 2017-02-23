@@ -1,0 +1,21 @@
+<!-- The output signals from an rx or tx to the subdevice for multiplexing
+     The subdevice reset is the control reset, so that signal doesn't need to be here
+     These are the signals that either rx or tx would generate, when either only one of them
+     is present, or they are both present.
+
+     Signals specific to rx or tx are directly connected from those device workers and not here.
+     The ENABLE and TXNRX signals are independent in FDD mode, but in TDD mode
+     The ENABLE is common, and TXNRX indicates whether TX or RX is enabled.
+     So in TDD mode, when both rx and tx are present, the subdevice handles the issue,
+     with enable coming from both rx and tx, but TXNRX driven by the subdevice.
+     This is all only relevant with the switching is *not* done using SPI registers in any case.
+
+     This file lives here in ad9361_rx.hdl because it needs to be shared with not only the tx,
+     but perhaps multiple subdevice implementations.
+-->
+<signals>
+  <signal Input="DATA_CLK_P"/>
+  <signal Input="DATA_CLK_N"/>
+  <signal output='SYNC_IN'/>
+  <signal output='ENABLE'/>
+</signals>

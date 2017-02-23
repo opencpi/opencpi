@@ -35,7 +35,8 @@
 #ifndef OCPIDDS_H
 #define OCPIDDS_H
 extern const char
-  *emitProtocol(const char *outDir, const char *file, const char *structName),
+  *emitProtocol(const char *const *argv, const char *outDir, const char *file,
+		const char *structName),
   *emitIDL(const char *outDir, const char *protoFile);
 extern void
  dataTypeTest(const char *arg);

@@ -7,7 +7,7 @@ Properties:
  granularity: incidates that the last message will be truncated to be a multiple of this.
 -->
 <RccImplementation controloperations="start">
-  <ComponentSpec name='file_read_msg'>
+  <ComponentSpec>
 
     <DataInterfaceSpec Name="out" Producer="true"/>
 

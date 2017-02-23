@@ -1,4 +1,8 @@
+<!-- ZedBoard Platform Worker -->
 <HdlPlatform Language="VHDL" spec='platform-spec'>
+  <specproperty name='platform' value='zed'/>
+  <specproperty name="nSlots" value='1'/>
+  <specproperty name="slotNames" value='fmc_lpc'/>
   <!-- All platform workers must provide these two ports -->
   <metadata master='true'/> <!-- access to container metadata via the platform worker -->
   <timebase master='true'/> <!-- providing a timebase for the time service -->
@@ -8,30 +12,10 @@
   <device worker='time_server'>
     <property name='frequency' value='100e6'/>
   </device>
-  <unoc name="zynq" master='true'/>
-  <unoc name="zynq_slave"/>
+  <sdp name="zynq" master='true' count='4'/>
   <property name='useGP1' type='bool' parameter='1' default='false'/>
-  <property name="axi_error" type="bool" volatile='true'/>
-  <property name="unocDropCount" type='uchar' volatile='true'/>
-  <property name="unoc_headers_in" type="Ulonglong" arraylength='16' volatile='true' debug='true'/>
-  <property name="unoc_headers_in1" type="Ulonglong" arraylength='16' volatile='true' debug='true'/>
-  <property name="unoc_headers_out" type="Ulonglong" arraylength='16' volatile='true' debug='true'/>
-  <property name="unoc_headers_out1" type="Ulonglong" arraylength='16' volatile='true' debug='true'/>
-  <property name="unoc_out_status" arraylength='16' volatile='true' debug='true'/>
-  <property name="unoc_count_in" volatile='true' debug='true'/>
-  <property name="unoc_count_out" volatile='true' debug='true'/>
-  <property name="axi_racount" volatile='true' debug='true'/>
-  <property name="axi_raddr" type="Ulonglong" arraylength='16' volatile='true' debug='true'/>
-  <property name="axi_rdcount" volatile='true' debug='true'/>
-  <property name="axi_rdata" type="Ulonglong" arraylength='16' volatile='true' debug='true'/>
-  <property name="axi_wacount" volatile='true' debug='true'/>
-  <property name="axi_waddr" type="Ulonglong" arraylength='16' volatile='true' debug='true'/>
-  <property name="axi_wdcount" volatile='true' debug='true'/>
-  <property name="axi_wdata" type="Ulonglong" arraylength='16' volatile='true' debug='true'/>
-  <property name="debug_state" type="Ulonglong" volatile='true' debug='true'/>
-  <property name="debug_state1" type="Ulonglong" volatile='true' debug='true'/>
-  <signal  output='led' width='8'/>
-
+  <property name="axi_error" type="bool" arraylength='4' volatile='true'/>
+  <property name="sdpDropCount" type='uchar' volatile='true'/>
   <!-- The Zed FMC LPC slot.
        Unconnected LPC signals are:
        - DP0-C2M_P/N
@@ -43,26 +27,54 @@
   -->
   <slot name='FMC' type='fmc_lpc'>
     <!-- We only mention signals that don't have the canonical signal name -->
-   <signal slot='LA00_P_CC' platform='LA00_CC_P'/>
-   <signal slot='LA00_N_CC' platform='LA00_CC_N'/>
+    <signal slot='PRSNT_M2C_L' platform='PRSNT'/>
+    <signal slot='LA00_P_CC' platform='LA00_CC_P'/>
+    <signal slot='LA00_N_CC' platform='LA00_CC_N'/>
 
-   <signal slot='LA01_P_CC' platform='LA01_CC_P'/>
-   <signal slot='LA01_N_CC' platform='LA01_CC_N'/>
+    <signal slot='LA01_P_CC' platform='LA01_CC_P'/>
+    <signal slot='LA01_N_CC' platform='LA01_CC_N'/>
 
-   <signal slot='LA17_P_CC' platform='LA17_CC_P'/>
-   <signal slot='LA17_N_CC' platform='LA17_CC_N'/>
+    <signal slot='LA17_P_CC' platform='LA17_CC_P'/>
+    <signal slot='LA17_N_CC' platform='LA17_CC_N'/>
 
-   <signal slot='LA18_P_CC' platform='LA18_CC_P'/>
-   <signal slot='LA18_N_CC' platform='LA18_CC_N'/>
+    <signal slot='LA18_P_CC' platform='LA18_CC_P'/>
+    <signal slot='LA18_N_CC' platform='LA18_CC_N'/>
 
-   <signal slot='CLK0_M2C_N' platform='CLK0_N'/>
-   <signal slot='CLK0_M2C_P' platform='CLK0_P'/>
+    <signal slot='CLK0_M2C_N' platform='CLK0_N'/>
+    <signal slot='CLK0_M2C_P' platform='CLK0_P'/>
 
-   <signal slot='CLK1_M2C_N' platform='CLK1_N'/>
-   <signal slot='CLK1_M2C_P' platform='CLK1_P'/>
+    <signal slot='CLK1_M2C_N' platform='CLK1_N'/>
+    <signal slot='CLK1_M2C_P' platform='CLK1_P'/>
 
-   <signal slot='DP0_C2M_P' platform=''/>
-   <signal slot='DP0_C2M_N' platform=''/>
-
+    <signal slot='DP0_C2M_P' platform=''/>
+    <signal slot='DP0_C2M_N' platform=''/>
   </slot>
+  <signal  output='led' width='8'/>
+  <signal  input='fmc_prsnt'/>
+  <!-- debug stuff -->
+  <property name="debug_state" type="Ulonglong" arraylength='4' volatile='true' debug='false'/>
+  <property name="debug_state1" type="Ulonglong" arraylength='4' volatile='true' debug='false'/>
+  <property name="debug_state2" type="Ulonglong" arraylength='4' volatile='true' debug='false'/>
+  <property name='maxtrace' type='uchar' parameter='1' default='40'/>
+  <property name="sdp_headers_in" type="Ulonglong" arraylength='maxtrace' volatile='true' debug='false'/>
+  <property name="sdp_data_in" type="Ulong" arraylength='maxtrace' volatile='true' debug='false'/>
+  <property name="sdp_headers_out" type="Ulonglong" arraylength='maxtrace' volatile='true' debug='false'/>
+  <property name="sdp_data_out" type="Ulonglong" arraylength='maxtrace' volatile='true' debug='false'/>
+  <property name="sdp_out_status" arraylength='maxtrace' volatile='true' debug='false'/>
+  <property name="sdp_header_count_in" volatile='true' debug='false'/>
+  <property name="sdp_header_count_out" volatile='true' debug='false'/>
+  <property name="sdp_count_in" volatile='true' writable='1' debug='false'/>
+  <property name="sdp_count_out" volatile='true' writable='1' debug='false'/>
+  <property name="axi_cacount" volatile='true' writable='1'  debug='false'/>
+  <property name="axi_cdcount" volatile='true' writable='1' debug='false'/>
+  <property name="axi_caddr" type="Ulonglong" arraylength='maxtrace' volatile='true' debug='false'/>
+  <property name="axi_cdata" type="Ulonglong" arraylength='maxtrace' volatile='true' debug='false'/>
+  <property name="axi_racount" volatile='true' writable='1' debug='false'/>
+  <property name="axi_raddr" type="Ulonglong" arraylength='maxtrace' volatile='true' debug='false'/>
+  <property name="axi_rdcount" volatile='true' writable='1' debug='false'/>
+  <property name="axi_rdata" type="Ulonglong" arraylength='maxtrace' volatile='true' debug='false'/>
+  <property name="axi_wacount" volatile='true' writable='1' debug='false'/>
+  <property name="axi_waddr" type="Ulonglong" arraylength='maxtrace' volatile='true' debug='false'/>
+  <property name="axi_wdcount" volatile='true' writable='1' debug='false'/>
+  <property name="axi_wdata" type="Ulonglong" arraylength='maxtrace' volatile='true' debug='false'/>
 </HdlPlatform>

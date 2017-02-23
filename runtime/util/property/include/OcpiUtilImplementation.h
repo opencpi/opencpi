@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2011
  *
@@ -46,7 +45,6 @@
  This file defines the binary (non-string) format of SCA component properties,
  as well as the functions to encode (binary to string) and decode 
  (string to binary).
-
  
 */
 
@@ -62,7 +60,6 @@
 #include "OcpiUtilProtocol.h"
 #include "OcpiUtilPort.h"
 #include "OcpiUtilMemory.h"
-#include "OcpiExprEvaluator.h"
 
 #define CONTROL_OP_I CONTROL_OP
 #define OCPI_CONTROL_OPS                                                        \
@@ -93,13 +90,14 @@ namespace OCPI {
     public:
       std::string
 	m_uuid,
-	m_os, m_osVersion,
+	m_os, m_osVersion, m_arch,
 	m_platform,
 	m_tool, m_toolVersion,
 	m_runtime, m_runtimeVersion;
       bool m_dynamic;
       inline const std::string &uuid() const { return m_uuid; }
       inline const std::string &platform() const { return m_platform; }
+      inline const std::string &arch() const { return m_arch; }
     protected:
       // Parse from target string
       void parse(const char *pString);
@@ -134,6 +132,7 @@ namespace OCPI {
       unsigned m_nPorts, m_nMemories; //, size , m_nTests
     private: // FIXME: make more of this stuff private
       size_t m_totalPropertySize;
+      bool   m_isSource;
       //      Test &findTest(unsigned int testId) const;
     public:
       unsigned m_nProperties;
@@ -148,6 +147,7 @@ namespace OCPI {
       inline const std::string &name() const { return m_name; }
       inline const std::string &slave() const { return m_slave; }
       inline const Attributes &attributes() const { return *m_attributes; }
+      inline bool isSource() const { return m_isSource; }
       const char *parse(ezxml_t xml, Attributes *attr = NULL);
       // These two use exceptions
       Property &findProperty(const char *id) const;

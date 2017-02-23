@@ -15,75 +15,71 @@ begin
   small2big: if win_c < wout_c generate
     constant last_c : natural := wout_c/win_c - 1;
     type buf_t is array (0 to last_c) of std_logic_vector(win_c-1 downto 0);
+    type be_t is array (0 to last_c) of std_logic_vector(in_bytes_c-1 downto 0);
     signal could_take   : bool_t;
     signal take_now     : bool_t;
     signal give_now     : bool_t;
-    signal last_in_now  : bool_t;
-    signal out_data     : buf_t;
+    signal last_in_now  : bool_t; -- input is last in output word, not qualified by in_in.ready
     -- State
     signal data_r       : buf_t;
-    signal be_r         : std_logic_vector(in_bytes_c-1 downto 0);
+    signal be_r         : be_t;
+    signal full_r       : bool_t; -- we are holding a complete output word
     signal index_r      : unsigned(width_for_max(last_c) downto 0);
-    signal som_r        : bool_t; -- are the buffered data at SOM?
-    signal eom_r        : bool_t; -- are the buffered data at SOM?
-    signal full_r       : bool_t; -- we are holding some data
+    signal som_r        : bool_t; -- is the buffered data at SOM? (must be first)
+    signal valid_r      : bool_t; -- does the buffered data have data? (first must be valid)
+    signal eom_r        : bool_t; -- is the buffered data at EOM? (must be last)
   begin
     assert (wout_c rem win_c) = 0 report "width_out must be a multiple of width_in";
-    could_take     <= out_in.ready when its(full_r) else btrue;
+    could_take     <= out_in.ready or not full_r;
     take_now       <= could_take and in_in.ready;
-    last_in_now    <= to_bool(in_in.byte_enable /= slv1(in_in.byte_enable'length) or
-                              in_in.eom or index_r = last_c);
+    -- is the current input word the last in an output word?
+    last_in_now    <= to_bool((in_in.valid and in_in.byte_enable /= slv1(in_in.byte_enable'length)) or
+                              not its(in_in.valid) or               -- standalone SOM?
+                              in_in.eom or                     -- eom with or without data
+                              index_r = last_c);               -- last data in output word
     give_now       <= to_bool(out_in.ready and (full_r or (its(in_in.ready) and last_in_now)));
     in_out.take    <= take_now;
     out_out.eom    <= eom_r when its(full_r) else in_in.eom;
-    out_out.som    <= som_r when index_r /= 0 else in_in.som;
-    out_out.valid  <= to_bool(full_r or (its(last_in_now) and in_in.valid));
+    out_out.som    <= som_r when full_r or index_r /= 0 else in_in.som;
+    out_out.valid  <= valid_r when its(full_r) else
+                      valid_r or in_in.valid when index_r /= 0 else
+                      in_in.valid;
     out_out.give   <= give_now;
     out_out.opcode <= in_in.opcode;
-    -- Reorganize output data as an array of output words
     g0: for i in 0 to last_c generate
-      out_out.data(win_c*i + win_c-1 downto win_c*i) <= out_data(i);
-      out_data(i) <= in_in.data when its(last_in_now) and index_r = i else data_r(i);
-      out_out.byte_enable(i*in_bytes_c + in_bytes_c - 1 downto i*in_bytes_c) <=
-        in_in.byte_enable when its(last_in_now) and index_r = i else
-        (others => '1') when its(last_in_now) and i < index_r else
-        (others => '0');
+      out_out.data(win_c * i + win_c - 1 downto win_c * i) <= 
+        in_in.data        when not its(full_r) and last_in_now and index_r = i else
+        data_r(i);
+      out_out.byte_enable(in_bytes_c * i + in_bytes_c - 1 downto in_bytes_c * i) <=
+        in_in.byte_enable when not its(full_r) and last_in_now and index_r = i else
+        be_r(i);
     end generate g0;
 
     p: process(wci_clk) is
     begin
       if rising_edge(wci_clk) then
-        if wci_reset = '1' then
-          index_r <= (others => '0');
-          som_r   <= btrue;
-          eom_r   <= bfalse;
+        if its(wci_reset) then
           full_r  <= bfalse;
-        else
-          if its(give_now) then
-            if its(full_r) then -- we are emptying the whole buffer with no pass-through
-              if its(in_in.ready) then -- something to take that we can't pass through
-                data_r(0) <= in_in.data;
-                be_r      <= in_in.byte_enable;
-                eom_r     <= in_in.eom;
-                index_r   <= to_unsigned(1, index_r'length);
-                full_r    <= last_in_now; -- we will be full if this inword is last in outword
-              else
-                full_r    <= bfalse;
-              end if;
-            else -- We are doing a pass through, which must be the last in outword.
-              index_r     <= (others => '0');
-            end if;
-          elsif its(take_now) then -- we are not giving now, but we might be taking
-            data_r(to_integer(index_r)) <= in_in.data;
-            be_r  <= in_in.byte_enable;
-            eom_r <= in_in.eom;
-            if to_integer(index_r) = 0 then
-               som_r <= in_in.som;
-            end if;
-            full_r  <= last_in_now;
-            index_r <= index_r + 1;
+          index_r <= (others => '0');
+        elsif its(take_now) then
+          -- capture into buffer
+          data_r(to_integer(index_r)) <= in_in.data;
+          be_r(to_integer(index_r))   <= in_in.byte_enable;
+          if index_r = 0 then
+            som_r                     <= in_in.som;
+            valid_r                   <= in_in.valid;
           end if;
-        end if; -- end of not reset
+          eom_r                       <= in_in.eom; -- will force last_in_now
+          if its(last_in_now) then
+            index_r                   <= (others => '0');
+            full_r                    <= full_r or not out_in.ready;
+          else
+            full_r                    <= bfalse;
+            index_r                   <= index_r + 1;
+          end if;
+        elsif its(give_now) then
+          full_r <= bfalse;
+        end if;
       end if; -- end of rising edge
     end process;
   end generate small2big;

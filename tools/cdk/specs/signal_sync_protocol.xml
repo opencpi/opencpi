@@ -1,6 +1,6 @@
 <!-- A general I/O sync protocol for a signal processing stream  -->
 
- <Protocol name="signal_sync" >
+ <Protocol>
 
   <!-- zero size frames  indicating a phase discontinuity - i.e. samples not continuous-->
   <Operation Name="Sync"/>

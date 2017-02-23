@@ -36,6 +36,7 @@ namespace OCPI {
       std::string m_model;
       std::string m_os;
       std::string m_osVersion;
+      std::string m_arch; // This is for binaries that can run on multiple platforms
       std::string m_platform;
       std::string m_runtime;
       std::string m_runtimeVersion;
@@ -61,24 +62,27 @@ namespace OCPI {
       OCPI::Util::Port::Mask m_externals, m_internals;
       Connection *m_connections;
       unsigned m_ordinal;                   // ordinal of worker within artifact
+      bool m_inserted;
       Implementation(Artifact &art, OCPI::Util::Worker &i, ezxml_t instance, unsigned ordinal);
       // Does this implementation satify the selection criteria?  and if so, what is the score?
       //      bool satisfiesSelection(const char *selection, unsigned &score);
-      bool getValue(const char *symbol, OCPI::Util::ExprValue &val) const;
+      ~Implementation();
+      //      bool getValue(const char *symbol, OCPI::Util::ExprValue &val) const;
       void setConnection(OCPI::Util::Port &myPort, Implementation *otherImpl = NULL,
 			 OCPI::Util::Port *otherPort = NULL);
     };
 
     // Note due to xml persistence we don't need strings in the map
-    // but this multimap stuff is pretty ugly
     typedef std::multimap<const char *, Implementation *, OCPI::Util::ConstCharComp > WorkerMap;
     typedef std::pair< const char*, Implementation *> WorkerMapPair;
     typedef WorkerMap::const_iterator WorkerIter;
     typedef std::pair<WorkerIter,WorkerIter> WorkerRange;
+    class Library;
     class Artifact : public OCPI::Util::Attributes {
     protected:
+      const char *m_metadata;
       std::time_t m_mtime; // modification time associated with when we read the metadata
-      uint64_t m_length;
+      uint64_t m_length;   // the length of the artifact file without the metadata
       ezxml_t m_xml;
       // A count and array of implementations found in the artifact, *not* static instances.
       unsigned m_nImplementations;
@@ -88,9 +92,15 @@ namespace OCPI {
       WorkerMap m_workers;      // Map from spec name to implementations
       // A count of static instances added to the worker map (m_workers)
       unsigned m_nWorkers;
+    public:
+      static char *getMetadata(const char *name, std::time_t &mtime, uint64_t &length);
+    protected:
       Artifact();
       virtual ~Artifact();
       Implementation *addImplementation(OCPI::Util::Worker &metaImpl, ezxml_t staticInstance);
+      void getFileMetadata(const char *name);
+      const char *setFileMetadata(const char *name, char *metadata, std::time_t mtime,
+				  uint64_t length);
     public:
       void configure(ezxml_t x = NULL);
       // Can this artifact run on something with these capabilities?
@@ -103,13 +113,14 @@ namespace OCPI {
 			      const char *&inst,
 			      unsigned & score);
       Implementation *findImplementation(const char *specName, const char *staticInstance);
+      Implementation *getImplementation(unsigned n);
       inline ezxml_t xml() const { return m_xml; }
       virtual const std::string &name() const = 0;
       std::time_t mtime() const { return m_mtime; }
       uint64_t length() const { return m_length; }
       virtual Artifact *nextArtifact() = 0;
+      virtual Library &library() const = 0;
       void printSpecs(std::set<const char *, OCPI::Util::ConstCharComp> &specs) const;
-      static char *getMetadata(const char *name, std::time_t &mtime, uint64_t &length);
     };
 
     // This class is what is used when looking for implementations.
@@ -178,7 +189,7 @@ namespace OCPI {
       // Find one good implementation, return true one is found that satisfies the criteria
       bool findImplementation(const char *specName, const char *selectCriteria, const Implementation *&impl);
     };
-    class Library;
+    static inline Manager &getManager() { return Manager::getSingleton(); }
     // This is the base class for all library drivers
     class Driver : public OCPI::Driver::DriverType<Manager,Driver> {
       //      virtual Library *findLibrary(const char *url) = 0;
@@ -189,7 +200,7 @@ namespace OCPI {
       virtual Artifact *findArtifact(const char *url) = 0;
       // Return NULL if the artifact is not supported by the driver
       virtual Artifact *addArtifact(const char *url,
-				    const OCPI::API::PValue *props) = 0;
+				    const OCPI::API::PValue *props = NULL) = 0;
       Artifact *findArtifact(const Capabilities &caps,
 			     const char *impl,
 			     const OCPI::API::PValue *props,
@@ -269,7 +280,7 @@ namespace OCPI {
     protected:
       LibraryBase<Dri, Lib, Art>(Lib &lib, const char *childName)
       : OCPI::Driver::DeviceBase<Dri, Lib>(childName, lib),
-      // ugh: the base class needs to know the name too...
+      // pass the name to the base class
 	Library(OCPI::Driver::DeviceBase<Dri, Lib>::name()) {}
     };
 
@@ -280,14 +291,18 @@ namespace OCPI {
       public Artifact
     {
     protected:
-      ArtifactBase<Lib, Art>(Lib &lib, Art &art, const char *name)
-	: OCPI::Util::Child<Lib,Art>(lib, art, name) {}
+      ArtifactBase<Lib, Art>(Lib &lib, Art &art, const char *a_name)
+      : OCPI::Util::Child<Lib,Art>(lib, art, a_name)
+      {}
     public:
       inline Artifact *nextArtifact() {
 	return OCPI::Util::Child<Lib,Art>::nextChild();
       }
       inline const std::string &name() const {
 	return OCPI::Util::Child<Lib,Art>::name();
+      }
+      inline Library &library() const {
+	return OCPI::Util::Child<Lib,Art>::parent();
       }
     };
     template <class Dri>

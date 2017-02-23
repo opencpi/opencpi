@@ -9,10 +9,12 @@ if test "$OCPI_CDK_DIR" != ""; then
    fi
   fi
 else
+  # This might be blank, which is ok
+  export OCPI_TARGET_PLATFORM=$1
   # Initialize access to the core tree's export directory
   source scripts/core-init.sh
   # Initialize access to CDK
-  source exports/scripts/ocpisetup.sh exports/scripts/ocpisetup.sh
+  OCPI_BOOTSTRAP=`pwd`/exports/scripts/ocpibootstrap.sh; source $OCPI_BOOTSTRAP
 fi
 echo ================================================================================
 echo We are running in `pwd` where the git clone of opencpi has been placed.

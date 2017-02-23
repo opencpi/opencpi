@@ -22,8 +22,8 @@ using namespace OCPI::HDL::Zynq;
 struct PLL {
   const char *name;
   uint32_t ctrl, cfg, fdiv;
-  PLL(const char *name, uint32_t ctrl, uint32_t cfg)
-    : name(name), ctrl(ctrl), cfg(cfg), fdiv((ctrl >> 12) & 0x7f) {
+  PLL(const char *a_name, uint32_t a_ctrl, uint32_t a_cfg)
+    : name(a_name), ctrl(a_ctrl), cfg(a_cfg), fdiv((ctrl >> 12) & 0x7f) {
     bool bpmode = ((ctrl >> 3) & 1) != 0;
     printf("%3s PLL: FDIV: %u, bypass mode: %s, bypass status: %s,"
 	   " power: %s, reset: %s\n",
@@ -54,7 +54,7 @@ static uint8_t*map(off_t addr, size_t arg_size) {
 
 int
 main(int, const char **argv) {
-#ifndef OCPI_ARCH_arm
+#if !defined(OCPI_ARCH_arm) && !defined(OCPI_ARCH_arm_cs)
   fprintf(stderr, "This program is only functional on Zynq/Arm platforms\n");
   return 1;
 #endif
@@ -129,7 +129,7 @@ main(int, const char **argv) {
       volatile FCLK f = *(FCLK*)fp;
       //    printf("%u %p %08x %08x %08x %08x\n", n, fp,
       //	   f.clk_ctrl, fp->thr_ctrl, fp->thr_count, fp->thr_sta); 
-      PLL &pll =
+      PLL &fpll =
 	((f.clk_ctrl & 0x30) >> 4) == 2 ? arm : 
 	((f.clk_ctrl & 0x30) >> 4) == 3 ? ddr : io;
       uint32_t
@@ -137,7 +137,7 @@ main(int, const char **argv) {
 	divisor1 = (f.clk_ctrl >> 20) & 0x3f;
 
       printf("FCLK %u: source: %s PLL, divisor0: %2u, divisor1: %2u",
-	     n, pll.name, divisor0, divisor1);
+	     n, fpll.name, divisor0, divisor1);
       printf(", throttling %sreset, throttling %sstarted",
 	     f.thr_ctrl & 2 ? "is " : "not ", f.thr_ctrl & 1 ? "is " : "not ");
       if (f.thr_count & 0xffff)
@@ -146,7 +146,7 @@ main(int, const char **argv) {
       if (f.thr_sta & 0xffff)
 	printf(", current count: %u", f.thr_sta & 0xffff);
       printf(", frequency: %4.2f MHz\n",
-	     ((((options.psclk() * pll.fdiv) / divisor0 ) / divisor1) + 5000) / 1000000.);
+	     ((((options.psclk() * fpll.fdiv) / divisor0 ) / divisor1) + 5000) / 1000000.);
     }
   } else if (cmd == "axi_hp") {
     struct AFI {

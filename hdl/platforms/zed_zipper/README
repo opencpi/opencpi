@@ -1,0 +1,5 @@
+This zed_zipper platform is only for test purposes - it tests a platform with permanently
+attached devices, using the hardware that in fact uses cards plugged into slots.
+It ignores the card/slot aspect of a zipper/myriad/lime card plugged into an FMC slot.
+Thus this platform should not be used other than for test purposes.
+

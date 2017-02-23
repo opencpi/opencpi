@@ -42,11 +42,11 @@ namespace DataTransfer {
       public Base
   {
   protected:
-    ConnectionBase<ConcDri, ConcConn, ConcXfer, Base>(ConcConn &cc, SmemServices* source,
-						      SmemServices* target)
-    : OCPI::Util::Child<ConcDri,ConcConn> (OCPI::Driver::Singleton<ConcDri>::
+    ConnectionBase<ConcDri, ConcConn, ConcXfer, Base>(ConcConn &cc, SmemServices *a_source,
+						      SmemServices *a_target)
+    : OCPI::Util::Child<ConcDri,ConcConn> (OCPI::Util::Singleton<ConcDri>::
 					   getSingleton(), cc),
-      Base(source, target)
+      Base(a_source, a_target)
     {}
   };
     template <class ConcConn, class ConcXfer, class Base = XferRequest>

@@ -86,8 +86,9 @@ namespace OCPI {
 	std::string m_value;
 	std::string m_dumpFile;
         Property() : m_hasValue(false) {}
-	const char *parse(ezxml_t x);
+	const char *parse(ezxml_t x, Property *first = NULL);
 	const char *setValue(ezxml_t px);
+	void setValue(const char *name, const char *value);
       };
       typedef std::vector<Property> Properties;
       struct Port;
@@ -147,9 +148,9 @@ namespace OCPI {
 	size_t m_index;
 	PValueList m_parameters;
 	Port *m_connectedPort; // the "other" port of the connection
-	const char *parse(ezxml_t x, Assembly &a, const PValue *pvl);
-	void init(Assembly &a, const char *name, unsigned instance, bool isInput, bool bidi, bool known,
-		  size_t index = 0); //, size_t count = 1);
+	const char *parse(ezxml_t x, Assembly &a, const PValue *pvl, const PValue *params);
+	const char *init(Assembly &a, const char *name, unsigned instance, bool isInput,
+			 bool bidi, bool known, size_t index, const PValue *params);
       };
       struct Connection {
 	std::string m_name;
@@ -159,9 +160,10 @@ namespace OCPI {
 	PValueList m_parameters;
 	size_t m_count; // all attachments have same count. zero if unknown
 	Connection();
-	const char *parse(ezxml_t x, Assembly &a, unsigned &ord);
-	Port &addPort(Assembly &a, unsigned instance, const char *port, bool isInput, bool bidi, bool known,
-		      size_t index = 0); //, size_t count = 1);
+	const char *parse(ezxml_t x, Assembly &a, unsigned &ord, const OCPI::Util::PValue *params);
+	const char *addPort(Assembly &a, unsigned instance, const char *port, bool isInput,
+			    bool bidi, bool known, size_t index,
+			    const OCPI::Util::PValue *params, Port *&);
 	External &addExternal();
       };
       // Potentially specified in the assembly, what policy should be used
@@ -182,6 +184,7 @@ namespace OCPI {
     public:
       Instance &utilInstance(size_t n) { return m_instances[n]; }
       size_t nUtilInstances() { return m_instances.size(); }
+      const std::string &name() const { return m_name; }
       static unsigned s_count;
       std::string m_name;
       std::string m_package;
@@ -197,19 +200,23 @@ namespace OCPI {
       // Provide a string containing the xml
       explicit Assembly(const std::string &string, const char **extraTopAttrs = NULL,
 			const char **extraInstAttrs = NULL, const OCPI::Util::PValue *params = NULL);
-      // Provide a string containing the xml
-      explicit Assembly(const ezxml_t top, const char *defaultName, const char **topAttrs = NULL,
-			const char **instAttrs = NULL, const OCPI::Util::PValue *params = NULL);
+      // Provide XML directly containing the xml
+      explicit Assembly(const ezxml_t top, const char *defaultName, bool isImpl,
+			const char **topAttrs = NULL, const char **instAttrs = NULL,
+			const OCPI::Util::PValue *params = NULL);
       ~Assembly();
       const char
-	*checkInstanceParams(const char *pName, const PValue *params, bool checkMapped = false),
+	*findInstanceForParam(const char *pName, const char *&assign, unsigned &instn),
+	*checkInstanceParams(const char *pName, const PValue *params, bool checkMapped = false,
+			     bool singleAssignment = false),
         *addConnection(const char *name, Connection *&c),
         *getInstance(const char *name, unsigned &),
         *addPortConnection(unsigned from, const char *name, unsigned to, const char *toPort,
-			   const char *transport),
-        *addExternalConnection(unsigned instance, const char *port, bool isInput = false,
+			   const char *transport, const OCPI::Util::PValue *params),
+        *addExternalConnection(unsigned instance, const char *port,
+			       const OCPI::Util::PValue *params = NULL, bool isInput = false,
 			       bool bidi = false, bool known = false),
-        *addExternalConnection(ezxml_t x);
+        *addExternalConnection(ezxml_t x, const OCPI::Util::PValue *params);
       inline ezxml_t xml() { return m_xml; }
       inline bool isImpl() { return m_isImpl; }
     };

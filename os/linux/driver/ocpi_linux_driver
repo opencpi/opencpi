@@ -6,8 +6,8 @@
 # Retrieve the reserved DMA memory value from the kernel command line
 # Note there might be multiple reservations, and we currently only support one (the first).
 
-if test "$OCPI_CDK_DIR" = "" -o "$OCPI_TOOL_HOST" = ""; then
-  echo Error: this script "($0)" cannot be run without OCPI_CDK_DIR and OCPI_TOOL_HOST.
+if test "$OCPI_CDK_DIR" = "" -o "$OCPI_TOOL_DIR" = ""; then
+  echo Error: this script "($0)" cannot be run without OCPI_CDK_DIR and OCPI_TOOL_DIR.
   exit 1
 fi
 if [ $# = 0 ]; then
@@ -24,6 +24,7 @@ RELOAD="/sbin/udevcontrol reload_rules"
 elif [ -x /sbin/udevadm ] ; then
 RELOAD="/sbin/udevadm control --reload-rules"
 elif [ -x /sbin/mdev ] ; then
+# Note: blank RELOAD used to assume mdev below
 RELOAD=
 SUDO=
 RULESFILE=mdev-$MODNAME.rules
@@ -35,40 +36,44 @@ fi
 if [ $(id -u) = 0 ]; then
   SUDO=
 fi
-if [ $# = 2 ] ; then # this is for the makefile
-  DIR=.
+##########################################################################################
+# Determine where the driver lives, setting DIR and MODFILE
+if [ $# = 2 ] ; then # this is called from the makefile when we are loading what we are building
+  DIR=./target-$OCPI_TOOL_DIR
+  # RPM-based gets called from within the directory already named after this kernel version:
+  case $(pwd) in *$(uname -r)) DIR=.; esac
 else
-#  There is no difference anymore to require this distinction
-#  For lots of reasons the standalone system still has the target subdir
-# if we are in a bin directory, we are in a standalone/embedded mode
-#  DIR=`dirname $0`
-#  DNAME=`basename $DIR`
-#  if [ "$DNAME" = bin ] ; then
-#    DIR="$DIR/../lib"
-#  else
-    DIR=$OCPI_CDK_DIR/lib/$OCPI_TOOL_HOST
-#  fi
-  if test -f /etc/ocpi-release; then
-     LABEL=$(cat /etc/ocpi-release)
+  # Determine the kernel release tag when there could be multiple drivers around
+  # If the /etc/opencpi-release file exists, it tells us our own release tag and label for the driver
+  if test -f /etc/opencpi-release; then
+    read x y LABEL < /etc/opencpi-release
+  # The /etc/ocpi-release file is deprecated, and only held the kernel label
+  elif test -f /etc/ocpi-release; then
+    LABEL=$(cat /etc/ocpi-release)
   else
-     LABEL=$(uname -r)
+    LABEL=$(uname -r)
   fi
-  if test -e $DIR/$MODNAME-$LABEL.ko; then
-    MODFILE=$MODNAME-$LABEL.ko
-  fi
-  if test -d /opt/opencpi/driver/; then
-    # RPM-based install
-    DIR=/opt/opencpi/driver/$(uname -r)
-  fi
-  if test ! -e $DIR/$MODFILE; then
-    echo Error: cannot find driver/file "$MODNAME*.ko" in $DIR
-    exit 1
+  # Look for a driver most-specific to least specific
+  DIR=$OCPI_CDK_DIR/lib/$OCPI_TOOL_DIR
+  DIR2=/opt/opencpi/driver/$(uname -r)
+  MODFILE=$MODNAME-$LABEL.ko
+  MODFILE2=$MODNAME.ko
+  if test -e $DIR/$MODFILE; then
+    true # default
+  elif test -e $DIR2/$MODFILE; then
+    DIR=$DIR2
+  elif test -e $DIR/$MODFILE2; then
+    MODFILE=$MODFILE2
+  elif test -e $DIR2/$MODFILE2; then
+    DIR=$DIR2
+    MODFILE=$MODFILE2
   fi
 fi
-
-if test -r /opt/opencpi/driver/$(uname -r)/${MODFILE}; then
-  DIR=/opt/opencpi/driver/$(uname -r)
+if test "$1" = load -a ! -e $DIR/$MODFILE; then
+  echo Error: cannot find driver/file "$MODNAME*.ko".
+  exit 1
 fi
+######## DIR and MODFILE are set and the driver file is verified to exist
 
 MODPATH=$DIR/$MODFILE
 RULESPATH=$DIR/$RULESFILE
@@ -94,10 +99,9 @@ rmd () {
   rudev
 }
 
-
 if [ -d /sys/module/opencpi ] ; then
    case $1 in
-     (reload)
+     (reload|restart)
        echo The driver module is already loaded.  It will be unloaded.
        rmd
        ;;
@@ -105,7 +109,7 @@ if [ -d /sys/module/opencpi ] ; then
        echo The driver module is already loaded.  No action was taken.
        exit 0
        ;;
-     (unload)
+     (unload|stop)
        rmd
        echo The driver module was successfully unloaded.
        exit 0
@@ -115,10 +119,11 @@ if [ -d /sys/module/opencpi ] ; then
        exit 0
        ;;
   esac
-elif [ $1 = unload ] ; then
-    echo The driver module is not loaded.  No action was taken.
-    exit 0
+elif test $1 = unload -o $1 = stop ; then
+  echo The driver module is not loaded.  No action was taken.
+  exit 0
 fi
+
 # AV-1715 - look for opencpi_memmap explicitly first
 MEMMAP=`tr ' ' '\n' < /proc/cmdline | grep -m 1 '^opencpi_memmap='`
 if [ "$MEMMAP" != "" ] ; then
@@ -176,7 +181,12 @@ else
   $SUDO cp $RULESPATH /etc/udev/rules.d &&
   $SUDO $RELOAD
   if test $? != 0; then
-    exit 1
+    echo "Reload of udev rules failed. ($RELOAD)"
+    if [ "$($SUDO stat -c %d:%i /)" == "$($SUDO stat -c %d:%i /proc/1/root/.)" ]; then
+      exit 1
+    else
+      echo "Detected chroot environment. Continuing anyway."
+    fi
   fi
 fi
 $SUDO /sbin/insmod $MODPATH $INSARG

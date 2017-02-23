@@ -1,19 +1,8 @@
-<!-- 
- SI5351 Clock Generator I2C Device Worker OWD
 
- File: si5351.xml
- Company: Geon Technologies, LLC
- Engineer: Brandon Luquette
-
- Revision Log:
-
- 05/22/15: BEL
- File Created
--->
 <HdlDevice language='vhdl' FirstRawProperty='dev_status'>
   <ComponentSpec/>
   <!-- I2C read/write transactions require additional time to complete -->
-  <ControlInterface Timeout='65536'/>
+  <ControlInterface Timeout='131072'/>
   <!-- ==============================================================
        Annotations of this device worker, settable by the platform, available to proxy
        ============================================================== -->

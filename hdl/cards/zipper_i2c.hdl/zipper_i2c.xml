@@ -1,8 +1,12 @@
 <HdlDevice language="vhdl">
   <componentspec nocontrol='true'>
-    <property name='nusers' parameter='1' readable='1' default='2'/>
+    <property name='NUSERS_p' parameter='1' readable='1' default='2'/>
+    <property name="SLAVE_ADDRESS_p" type="uchar" arraylength="NUSERS_p" parameter="1" readable="1"/>
+    <!-- CLK_FREQ_p is divided by the desired I2C clock rate, in this case 250kHz, 
+	 to produce a clock cycle count value, which is an input to the I2C module -->
+    <property name="CLK_FREQ_p" type="float" parameter="1" readable="1" default="100e6"/>
   </componentspec>
-  <rawprop name='rprops' count='nusers' optional='true'/>
+  <rawprop name='rprops' count='NUSERS_p' optional='true'/>
   <supports worker='si5351'>
     <connect port="rawprops" to="rprops" index='0'/>
   </supports>

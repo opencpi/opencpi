@@ -1,4 +1,4 @@
-<ComponentSpec Name="zcloop">
+<ComponentSpec>
   <Properties>
     <Property Name="transferMode" Type="Long" Volatile="true" Writable="true"/>
   </Properties>

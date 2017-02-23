@@ -1,7 +1,7 @@
 -- Lime ADC worker
 library IEEE, ocpi;
 use IEEE.std_logic_1164.all, ieee.numeric_std.all, ocpi.types.all;
-library unisim; use unisim.vcomponents.all;
+library util; use util.util.all;
 architecture rtl of lime_adc_worker is
   -- FIFO parameters
   constant fifo_width : natural := 24; -- the fifo is just wide enough to feed lime DAC
@@ -11,7 +11,8 @@ architecture rtl of lime_adc_worker is
   signal div_ctl_clk  : std_logic;     -- the divided control clock
   -- ADC clock domain
   signal adc_clk      : std_logic;
-  signal adc_clk_bufg : std_logic;
+  signal not_adc_clk  : std_logic;
+  signal adc_clk_buf  : std_logic;
   signal adc_data     : std_logic_vector(23 downto 0);
   signal adc_give     : bool_t;
   signal rxd_r        : std_logic_vector(11 downto 0);
@@ -35,19 +36,20 @@ begin
              rx_clk_in when its(USE_CLK_IN_p) else
              ctl_in.clk when its(USE_CTL_CLK_p) else
              sample_clk;
+  not_adc_clk <= not adc_clk;
   rx_clk <= adc_clk when its(DRIVE_CLK_p) else '0';
 
   --Place ADC clock on global buffer for use in processing
-  bufg_adc : BUFG
+  buf_adc : buffer_clock_global
     port map(
-      I => not adc_clk,
-      O => adc_clk_bufg
+      clk => not_adc_clk,
+      clk_buffered => adc_clk_buf
       );
 
   --Register data and IQ select
-  adc_regs : process(adc_clk_bufg)
+  adc_regs : process(adc_clk_buf)
   begin
-    if rising_edge(adc_clk_bufg) then
+    if rising_edge(adc_clk_buf) then
       if ctl_in.reset = '1' then
         rxd_r <= (others => '0');
         rx_iq_sel_r <= '1';
@@ -60,9 +62,9 @@ begin
   
   -- ADC Clocked process: we just need to hold the I value until the corresponding Q value
   -- is available to clock them together into the FIFO.
-  input : process(adc_clk_bufg)
+  input : process(adc_clk_buf)
   begin
-    if rising_edge(adc_clk_bufg) then
+    if rising_edge(adc_clk_buf) then
       if rx_iq_sel_r = '1' then
         hold_i_r <= rxd_r;
       else
@@ -90,7 +92,7 @@ begin
                 overrun     => props_out.overrun,
                 messageSize => props_in.messageSize,
                 -- In ADC clock domain
-                adc_clk     => adc_clk_bufg,
+                adc_clk     => adc_clk_buf,
                 adc_give    => adc_give,
                 adc_data    => adc_data);
 end rtl;

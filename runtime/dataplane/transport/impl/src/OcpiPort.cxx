@@ -347,14 +347,14 @@ getPortDescriptor(OCPI::RDT::Descriptors& desc, const OCPI::RDT::Descriptors *ot
   }
 
 
-  desc.desc.metaDataPitch = sizeof(BufferMetaData) * MAX_PCONTRIBS;
+  desc.desc.metaDataPitch = OCPI_UTRUNCATE(uint32_t, sizeof(BufferMetaData) * MAX_PCONTRIBS);
   desc.desc.dataBufferSize = desc.desc.dataBufferPitch = this->getPortSet()->getBufferLength();
   ocpiDebug("getPortDescriptor %p: setting %s buffer size to %zu",
 	    this, isOutput() ? "output" : "input", (size_t)desc.desc.dataBufferSize);
   desc.desc.fullFlagSize = sizeof(BufferState);
-  desc.desc.fullFlagPitch = sizeof(BufferState) * MAX_PCONTRIBS * 2;
+  desc.desc.fullFlagPitch = OCPI_UTRUNCATE(uint32_t, sizeof(BufferState) * MAX_PCONTRIBS * 2);
   desc.desc.emptyFlagSize = sizeof(BufferState);
-  desc.desc.emptyFlagPitch = sizeof(BufferState) * MAX_PCONTRIBS * 2;
+  desc.desc.emptyFlagPitch = OCPI_UTRUNCATE(uint32_t, sizeof(BufferState) * MAX_PCONTRIBS * 2);
 
   desc.desc.oob.port_id = getPortId();
   strcpy(desc.desc.oob.oep, m_realSMemResources->sMemServices->endpoint()->end_point.c_str());
@@ -697,9 +697,9 @@ bool OCPI::DataTransport::Port::ready()
           if ( getCircuit()->m_transport->isLocalEndpoint( 
                                      output_port->getMetaData()->m_real_location->end_point.c_str() ) ) {
 
-            for ( OCPI::OS::uint32_t n=0; n<getPortSet()->getBufferCount(); n++ )  {
-              m_portDependencyData.offsets[n].inputOffsets.myShadowsRemoteStateOffsets[getMailbox()] =
-                m_portDependencyData.offsets[n].inputOffsets.localStateOffset;
+            for ( OCPI::OS::uint32_t nn=0; nn<getPortSet()->getBufferCount(); nn++ )  {
+              m_portDependencyData.offsets[nn].inputOffsets.myShadowsRemoteStateOffsets[getMailbox()] =
+                m_portDependencyData.offsets[nn].inputOffsets.localStateOffset;
             }
             continue;
           }
@@ -1470,11 +1470,13 @@ getNextFullInputBuffer(void *&data, size_t &length, uint8_t &opcode)
       c->m_status = Circuit::Disconnecting;
 
     data = (void*)buf->getBuffer(); // cast off the volatile
-    opcode = (uint8_t)buf->getMetaData()->ocpiMetaDataWord.opCode;
+    opcode = buf->getMetaData()->ocpiMetaDataWord.opCode;
     length = buf->getDataLength();
+    if (buf->getMetaData()->ocpiMetaDataWord.truncate)
+      ocpiBad("Message was truncated to %zu bytes", length);
     OCPI_EMIT_CAT__("Data Buffer Received" , OCPI_EMIT_CAT_WORKER_DEV,OCPI_EMIT_CAT_WORKER_DEV_BUFFER_FLOW, buf);
 
-    OCPI_EMIT_REGISTER_FULL_VAR( "Data Buffer Opcode and length", OCPI::Time::Emit::u, 64, OCPI::Time::Emit::Value, dbre ); 
+    OCPI_EMIT_REGISTER_FULL_VAR( "Data Buffer Opcode and length", OCPI::Time::Emit::DT_u, 64, OCPI::Time::Emit::Value, dbre ); 
     OCPI_EMIT_VALUE_CAT_NR__(dbre, (uint64_t)(opcode | (uint64_t)length<<16) , OCPI_EMIT_CAT_WORKER_DEV,OCPI_EMIT_CAT_WORKER_DEV_BUFFER_VALUES, buf);
     ocpiDebug("Getting buffer %p on port %p on circuit %p on transport %p data %p op %u len %zu",
 	      buf, this, c, &c->parent(), data, opcode, length);
@@ -1615,7 +1617,8 @@ sendZcopyInputBuffer( Buffer* src_buf, size_t len, uint8_t op)
 {
   src_buf->getMetaData()->ocpiMetaDataWord.length = (uint32_t)len;
   src_buf->getMetaData()->ocpiMetaDataWord.opCode = op;
-  src_buf->getMetaData()->ocpiMetaDataWord.timestamp = 0x0123456789abcdefull;
+  src_buf->getMetaData()->ocpiMetaDataWord.timestamp = 0x01234567;
+  src_buf->getMetaData()->ocpiMetaDataWord.xferMetaData = packXferMetaData(len, op, false);
   Circuit *c = getCircuit();
   OU::SelfAutoMutex guard(c); // FIXME: refactor to make this a circuit method
   c->sendZcopyInputBuffer( this, src_buf, len );
@@ -1638,10 +1641,9 @@ sendOutputBuffer( BufferUserFacet* buf, size_t length, uint8_t opcode )
   // Put the actual opcode and data length in the meta-data
   b->getMetaData()->ocpiMetaDataWord.opCode = opcode;
   b->getMetaData()->ocpiMetaDataWord.length = OCPI_UTRUNCATE(uint32_t,length);
-  b->getMetaData()->ocpiMetaDataWord.timestamp = 0x0123456789abcdefull;
-
+  b->getMetaData()->ocpiMetaDataWord.timestamp = 0x01234567;
+  b->getMetaData()->ocpiMetaDataWord.xferMetaData = packXferMetaData(length, opcode, false);
   
-
   // If there were no available output buffers when the worker was last run on this port, then the
   // buffer can be NULL.  The user should not be advancing all in this case, but we need to protect against it.
   Circuit * c = getCircuit();

@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -134,7 +133,8 @@ namespace OCPI {
        */
 
       void
-      bind (uint16_t portNo = 0, bool reuse = false, bool udp = false)
+      bind (uint16_t portNo = 0, bool reuse = false, bool udp = false,
+	    bool loopback = false)
         throw (std::string);
 
       /**

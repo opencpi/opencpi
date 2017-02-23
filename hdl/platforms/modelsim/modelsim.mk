@@ -1,0 +1,1 @@
+HdlPart_modelsim:=modelsim

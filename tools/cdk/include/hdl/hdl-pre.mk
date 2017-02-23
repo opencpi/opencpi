@@ -86,13 +86,13 @@ HdlSourceSuffix:=$(HdlVerilogSuffix)
 HdlIncSuffix:=$(HdlVerilogIncSuffix)
 HdlOtherSourceSuffix:=$(HdlVHDLSuffix)
 HdlOtherIncSuffix:=$(HdlVHDLIncSuffix)
-HdlOtherLanguage:=VHDL
+HdlOtherLanguage:=vhdl
 else
 HdlSourceSuffix:=$(HdlVHDLSuffix)
 HdlIncSuffix:=$(HdlVHDLIncSuffix)
 HdlOtherSourceSuffix:=$(HdlVerilogSuffix)
 HdlOtherIncSuffix:=$(HdlVerilogIncSuffix)
-HdlOtherLanguage:=Verilog
+HdlOtherLanguage:=verilog
 endif
 $(call OcpiDbgVar,HdlSourceSuffix)
 
@@ -264,9 +264,6 @@ endif
 # Now we decide whether to recurse, and run a sub-make per toolset, or, if we
 # have only one toolset for all our targets, we just build for those targets in
 # this make process.
-######### This hack was to oversome some side effect, but I have reverted it
-######### So we find the root cause: which was bugs in getfamilies caching
-#ifneq ($(word 2,$(sort $(HdlToolSets) $(HdlToolSets))),)
 ifneq ($(word 2,$(HdlToolSets)),)
 ################################################################################
 # So here we recurse.  Note we are recursing for targets and NOT platforms.

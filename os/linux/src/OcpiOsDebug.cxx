@@ -73,10 +73,10 @@ namespace OCPI {
       int bts = backtrace (bt, 40);
       char ** btsyms = backtrace_symbols (bt, bts);
 
-      for (int i=0; i<bts; i++) {
-	write(2, btsyms[i], strlen(btsyms[i]));
-	write(2,"\n", 1);
-      }
+      for (int i=0; i<bts; i++)
+	if (write(2, btsyms[i], strlen(btsyms[i])) < 0 ||
+	    write(2,"\n", 1) < 0)
+	  break;
 
       free (btsyms);
     }
@@ -96,28 +96,41 @@ namespace OCPI {
     logSetLevel(unsigned level) {
       logLevel = level;
     }
+    unsigned
+    logGetLevel() {
+      return logLevel;
+    }
     void
     logPrint(unsigned n, const char *fmt, ...) throw() {
+	va_list ap;
+	va_start(ap, fmt);
+	logPrintV(n, fmt, ap);
+	va_end(ap);
+    }
+    bool
+    logWillLog(unsigned n) {
       if (logLevel != UINT_MAX && n > logLevel)
-	return;
+	return false;
       pthread_mutex_lock (&mine);
       if (logLevel == UINT_MAX) {
 	const char *e = getenv("OCPI_LOG_LEVEL");
 	logLevel = e ? atoi(e) : OCPI_LOG_WIERD;
       }
-      if (n <= (unsigned)logLevel)  {
-	va_list ap;
-	va_start(ap, fmt);
+      pthread_mutex_unlock (&mine);
+      return n <= logLevel;
+    }
+    void
+    logPrintV(unsigned n, const char *fmt, va_list ap) throw() {
+      if (logWillLog(n)) {
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
-	fprintf(stderr, "OCPI(%2d:%u.%04u): ", n, (unsigned)(tv.tv_sec%1000), (unsigned)((tv.tv_usec+500)/1000));
+	fprintf(stderr, "OCPI(%2d:%3u.%04u): ", n, (unsigned)(tv.tv_sec%1000),
+		(unsigned)((tv.tv_usec+500)/1000));
 	vfprintf(stderr, fmt, ap);
-	va_end(ap);
 	if (fmt[strlen(fmt)-1] != '\n')
 	  fprintf(stderr, "\n");
 	fflush(stderr);
       }
-      pthread_mutex_unlock (&mine);
     }
   }
 }

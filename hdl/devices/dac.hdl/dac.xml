@@ -1,5 +1,5 @@
-<HdlDevice Name="dac" Language="Verilog" Pattern="%w%M%0_">
-  <ComponentSpec Name="dac">
+<HdlDevice Language="Verilog" Pattern="%w%M%0_">
+  <ComponentSpec>
     <Properties >
       <Property Name="Control" Type="ULong" Readable="true" Writable="true"/>
       <Property Name="Controlbyte" Type="UChar" Readable="true" Writable="true"/>

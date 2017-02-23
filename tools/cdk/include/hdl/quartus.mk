@@ -70,8 +70,8 @@ HdlToolCoreRef_quartus=$1
 #
 HdlToolLibRef=$(or $3,$(call HdlGetFamily,$2))
 
-# This kludgery is because it seems that Quartus cannot support entities and architectures in 
-# separate files, so we have to combine them - UGH UGH UGH - I hope I'm wrong...
+# This is because it seems that Quartus cannot support entities and architectures in 
+# separate files, so we have to combine them
 QuartusVHDLWorker=$(and $(findstring worker,$(HdlMode)),$(findstring VHDL,$(HdlLanguage)))
 ifdef QuartusVHDLWorkerx
 QuartusCombine=$(OutDir)target-$(HdlTarget)/$(Worker)-combine.vhd
@@ -116,7 +116,7 @@ $(if $(HdlExactPart),$(call ToUpper,$(call QuartusMakePart,$(HdlExactPart))),AUT
 # Make the settings file
 # Note that the local source files use notdir names and search paths while the
 # remote libraries use pathnames so that you can have files with the same names.
-# FIXME: use of "sed" below is gross and slow - perhaps use .cN rather than _cN? ugh.
+# FIXME: use of "sed" below is slow - perhaps use .cN rather than _cN?
 QuartusMakeQsf=\
  if test -f $(Core).qsf; then cp $(Core).qsf $(Core).qsf.bak; fi; \
  $(and $(findstring $(HdlMode),library),\

@@ -1,5 +1,4 @@
-#Param_useGP1=true
-Libraries=zynq
+Libraries=axi zynq sdp
 ParamValues_useGP1=0/1
 Configurations=\
   base \

@@ -113,7 +113,7 @@ namespace OCPI {
 
 	  // Now must encode the procotol info in a string, with the key being the first line
 	  // Until the protocol printing stuff uses strings or string streams, we need to use a temp
-	  // file. Ugh.
+	  // file.
 	  char *temp = strdup("/tmp/tmpXXXXXXX");
 	  int tempfd = mkstemp(temp);
 	  free(temp);
@@ -128,13 +128,16 @@ namespace OCPI {
 	  off_t size = ftello(f);
 	  char *info = new char[size];
 	  fseeko(f, 0, SEEK_SET);
-	  fread(info, size, 1, f);
+	  if (fread(info, size, 1, f) != static_cast<size_t>(size)) {
+            delete[] info;
+            throw OU::Error("Error reading back from temp file for protocol processing");
+          }
 	  fclose(f);
 	  // End of kludge that can be fixed when XML printing is to a stream...
 
 	  // Here we try all endpoints in turn.
 	  for (RdmaEndpoints::const_iterator i = m_rdmaEndpoints.begin();
-	       i != m_rdmaEndpoints.end(); i++)
+	       i != m_rdmaEndpoints.end(); ++i)
 	    try {
 	      m_circuit = &OT::MessageEndpoint::connect(i->c_str(), 4096, info, NULL);
 	    } catch (...) {
@@ -185,11 +188,11 @@ namespace OCPI {
 	XferServices ( const OCPI::Util::Protocol & protocol , const char  * other_url, 
 		       const OCPI::Util::PValue *our_props=0,
 		       const OCPI::Util::PValue *other_props=0 );
-	MsgChannel* getMsgChannel( const char  * url,
+	MsgChannel* getMsgChannel( const char  * a_url,
 				   const OCPI::Util::PValue *ourParams,
 				   const OCPI::Util::PValue *otherParams)
 	{
-	  return new MsgChannel( *this, m_protocol, url, ourParams, otherParams);
+	  return new MsgChannel( *this, m_protocol, a_url, ourParams, otherParams);
 	}
 	virtual ~XferServices ()
 	{
@@ -200,8 +203,8 @@ namespace OCPI {
 	: public DataTransfer::Msg::DeviceBase<XferFactory,Device>
       {
       public:
-	Device(const char* name)
-	  : DataTransfer::Msg::DeviceBase<XferFactory,Device>(name, *this)
+	Device(const char *a_name)
+	  : DataTransfer::Msg::DeviceBase<XferFactory,Device>(a_name, *this)
 	{
 
 	}
@@ -249,12 +252,12 @@ namespace OCPI {
 
 	
       XferServices::
-      XferServices ( const OCPI::Util::Protocol & protocol , const char  * other_url,
+      XferServices ( const OCPI::Util::Protocol &a_protocol , const char  * other_url,
 		     const OCPI::Util::PValue *ourParams,
 		     const OCPI::Util::PValue *otherParams)
 	: DataTransfer::Msg::ConnectionBase<XferFactory,XferServices,MsgChannel>
-	  (*this, protocol, other_url, ourParams, otherParams),
-	  m_protocol(protocol)
+	  (*this, a_protocol, other_url, ourParams, otherParams),
+	  m_protocol(a_protocol)
       {
       }
 

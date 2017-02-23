@@ -1,5 +1,5 @@
-<HdlDevice Name="gbe" Language="Verilog" Pattern="%w%M%0_" datawidth='32'>
-  <ComponentSpec Name="gbe">
+<HdlDevice Language="Verilog" Pattern="%w%M%0_" datawidth='32'>
+  <ComponentSpec>
     <Properties>
       <property name="dramStatus" readable="true"/>
       <property name="drmCtrl" readable="true" writable="true"/>

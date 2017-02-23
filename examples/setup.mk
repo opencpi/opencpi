@@ -5,7 +5,7 @@ endif
 ifeq ($(filter clean%,$(MAKECMDGOALS)),)
   include $(OCPI_CDK_DIR)/include/ocpisetup.mk
   export PATH:=$(OCPI_CDK_DIR)/bin/$(OCPI_TOOL_DIR):$(PATH)
-  export OCPI_LIBRARY_PATH=.:$(OCPI_CDK_DIR)/lib/components/rcc
+  export OCPI_LIBRARY_PATH=.:$(OCPI_CDK_DIR)/lib/components/rcc:$(OCPI_CDK_DIR)/lib/hdl/assemblies
 endif
 
 DIR=target-$(OCPI_TARGET_DIR)

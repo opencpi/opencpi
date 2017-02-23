@@ -30,6 +30,7 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <unistd.h>
 #include "OcpiOsFileSystem.h"
 #include "OcpiOsLoadableModule.h"
 #include "OcpiUtilCppMacros.h"
@@ -43,7 +44,7 @@ namespace OCPI {
   namespace Driver {
     namespace OU = OCPI::Util;
     namespace OX = OCPI::Util::EzXml;
-    void debug_hook() {} // easier static constructor debug
+    void Registration_debug_hook() {} // easier static constructor debug
     Manager::~Manager(){}
     // If a manager has no configuration method, this is the default implementation.
     // The argument is the element for this manager.
@@ -64,18 +65,25 @@ namespace OCPI {
     }
     unsigned Manager::cleanupPosition() { return 1; }
     // Get the singleton ManagerManager, possibly constructing it.
-    ManagerManager *ManagerManager::getManagerManager() {
-      return &Singleton<ManagerManager>::getSingleton();
+    ManagerManager &ManagerManager::getManagerManager() {
+      return OU::Singleton<ManagerManager>::getSingleton();
     }
     ManagerManager::ManagerManager()
-      : m_configured(false), m_doNotDiscover(false), m_xml(NULL)
+      : m_configured(false), m_xml(NULL)
     {}
     ManagerManager::~ManagerManager() {
       ezxml_free(m_xml);
     }
+    // We suppress all Managers rather than setting a global so we can easily re-enable
+    // individual managers after doing this.
+    // This is a static method
+    void ManagerManager::suppressDiscovery() {
+      for (Manager *m = getManagerManager().firstChild(); m; m = m->nextChild())
+	m->suppressDiscovery();
+    }
     // This is the static API method
     void ManagerManager::configure(const char *file) {
-      getManagerManager()->configureOnce(file);
+      getManagerManager().configureOnce(file);
     }
     static bool
     checkLibPath(std::string &path, std::string &dir, const char *name, bool mode, bool debug) {
@@ -86,7 +94,7 @@ namespace OCPI {
     }
 
     // This is NOT a static method
-    void ManagerManager::configureOnce(const char *file) {
+    void ManagerManager::configureOnce(const char *file, const OCPI::Util::PValue *params) {
       if (m_configured)
 	return;
       OCPI::Util::AutoMutex guard(m_mutex); 
@@ -105,13 +113,17 @@ namespace OCPI {
       } else
 	configFile = file;
       std::string err;
-      ocpiInfo("Processing XML system configuration file: \"%s\"", configFile.c_str());
-      if (OS::FileSystem::exists(configFile)) {
-	const char *e = OX::ezxml_parse_file(configFile.c_str(), m_xml);
-	if (e)
-	  err = e;
-      } else
-	err = "file does not exist";
+      if (configFile.empty())
+	ocpiInfo("Skipping XML system configuration due to explicitly empty config file name");
+      else {	
+	ocpiInfo("Processing XML system configuration file: \"%s\"", configFile.c_str());
+	if (OS::FileSystem::exists(configFile)) {
+	  const char *e = OX::ezxml_parse_file(configFile.c_str(), m_xml);
+	  if (e)
+	    err = e;
+	} else
+	  err = "file does not exist";
+      }
       if (err.empty() && m_xml) {
 	for (Manager *m = firstChild(); m; m = m->nextChild())
 	  ocpiDebug("Found a \"%s\" manager", m->name().c_str());
@@ -119,12 +131,12 @@ namespace OCPI {
 	     err.empty() && x; x = OX::ezxml_nextChild(x)) {
 	  ocpiDebug("Processing \"%s\" element in system config file", ezxml_name(x));
 	  if (!strcasecmp(ezxml_name(x), "load")) {
-	    const char *file = ezxml_cattr(x, "file");
-	    if (!file)
+	    const char *file_attr = ezxml_cattr(x, "file");
+	    if (!file_attr)
 	      err = "missing \"file\" attribute in \"load\" element";
 	    else {
-	      ocpiInfo("Loading module requested in system config file: \"%s\"", file);
-	      OS::LoadableModule::load(file, true, err);
+	      ocpiInfo("Loading module requested in system config file: \"%s\"", file_attr);
+	      OS::LoadableModule::load(file_attr, true, err);
 	    }
 	    continue;
 	  }
@@ -150,7 +162,7 @@ namespace OCPI {
 	    assert(getenv("OCPI_CDK_DIR"));
 	    OU::format(libDir, "%s/lib/%s-%s-%s", getenv("OCPI_CDK_DIR"),
 		       OCPI_CPP_STRINGIFY(OCPI_OS) + strlen("OCPI"),
-		       OCPI_CPP_STRINGIFY(OCPI_OS_VERSION), OCPI_CPP_STRINGIFY(OCPI_PLATFORM));
+		       OCPI_CPP_STRINGIFY(OCPI_OS_VERSION), OCPI_CPP_STRINGIFY(OCPI_ARCH));
 	    if (!OS::FileSystem::exists(libDir)) {
 	      OU::format(err, "when loading the \"%s\" \"%s\" driver, directory \"%s\" does not exist",
 			 d->name, m->name().c_str(), libDir.c_str());
@@ -193,18 +205,17 @@ namespace OCPI {
       // The discovery happens in a second pass to make sure everything is configured before
       // anything is discovered so that one driver's discovery can depend on another type of
       // driver's configuration.
-      if (!m_doNotDiscover)
-	for (Manager *m = firstChild(); m; m = m->nextChild())
-	  if (m->shouldDiscover()) {
-	    ocpiDebug("Performing discovery for the %s manager", m->name().c_str());
-	    m->discover();
-	  }
+      for (Manager *m = firstChild(); m; m = m->nextChild())
+	if (m->shouldDiscover()) {
+	  ocpiDebug("Performing discovery for the %s manager", m->name().c_str());
+	  m->discover(params);
+	}
     }
     // Cleanup all managers
     bool ManagerManager::s_exiting = false;
     void ManagerManager::cleanup() {
       s_exiting = true;
-      ManagerManager *mm = &Singleton<ManagerManager>::getSingleton();
+      ManagerManager *mm = &OU::Singleton<ManagerManager>::getSingleton();
       // Before simply deleting the managermanager, we delete the
       // managers in order of their "cleanupPosition()"
       for (unsigned i = 0; i < 10; i++)
@@ -217,20 +228,34 @@ namespace OCPI {
       OCPI::Time::Emit::shutdown();
       delete mm;
     }
+    static void exitbad(const char *e) {
+      static const char msg[] = "\n*********During shutdown********\n";
+      write(2, e, strlen(e));
+      write(2, msg, sizeof(msg));
+      _exit(1);
+    }
     // A static-destructor hook to perform manager cleanup.
     static class cleanup {
     public:
       ~cleanup() {
-	ManagerManager::cleanup();
+	try {
+	  ManagerManager::cleanup();
+	} catch (std::string &e) {
+	  exitbad(e.c_str());
+	} catch (const char *e) {
+	  exitbad(e);
+	} catch (...) {
+	  exitbad("Unexpected exception");
+	}
       }
-    } x;
+    } staticCleanup;
     Driver::Driver() : m_config(NULL) {}
     // Default implementation for a driver is to configure devices that exist
     // at configuration time.
-    void Driver::configure(ezxml_t x) {
-      if (x) {
-	m_config = x;
-	for (ezxml_t dx = ezxml_cchild(x, "device"); dx; dx = ezxml_next(dx))
+    void Driver::configure(ezxml_t xml) {
+      if (xml) {
+	m_config = xml;
+	for (ezxml_t dx = ezxml_cchild(xml, "device"); dx; dx = ezxml_next(dx))
 	  for (Device *d = firstDeviceBase(); d; d = d->nextDeviceBase())
 	    if (d->name() == ezxml_name(dx))
 	      d->configure(dx);
@@ -247,7 +272,7 @@ namespace OCPI {
     }
     Driver::~Driver(){}
     const char *device = "device"; // template argument
-    void Device::configure(ezxml_t x) { (void)x;}
+    void Device::configure(ezxml_t xml) { (void)xml;}
     Device::~Device(){}
   }
   namespace API {

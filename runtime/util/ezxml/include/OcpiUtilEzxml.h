@@ -51,11 +51,12 @@
 #include <cstring>
 #include <vector>
 #include "OcpiUtilVfs.h"
+#include "OcpiExprEvaluator.h"
 #include "ezxml.h"
 
 namespace OCPI {
   namespace Util {
-
+    struct IdentResolver;
     /**
      * \brief Defines the OCPI::Util::EzXml::Doc class.
      */
@@ -237,9 +238,14 @@ namespace OCPI {
 	*ezxml_tag(ezxml_t xml),
 	*checkTag(ezxml_t xml, const char *tag, const char *fmt, ...)
 	__attribute__((format(printf, 3, 4))),
-	*getRequiredString(ezxml_t x, std::string &s, const char *attr, const char *element = NULL),
-	*ezxml_children(ezxml_t xml, const char* (*func)(ezxml_t child, void *arg), void *arg),
-	*ezxml_attrs(ezxml_t xml, const char* (*func)(const char *name, const char *value, void *arg), void *arg),
+	*getRequiredString(ezxml_t x, std::string &s, const char *attr, const char *elem = NULL),
+	*ezxml_children(ezxml_t xml, const char* (*func)(ezxml_t child, void *arg), 
+			void *arg = NULL),
+	*ezxml_children(ezxml_t xml, const char *tag, 
+			const char *(*func)(ezxml_t child, void *arg), void *arg = NULL),
+	*ezxml_attrs(ezxml_t xml,
+		     const char *(*func)(const char *name, const char *value, void *arg),
+		     void *arg),
 	// true only means its an error to do anything but true, for cases
 	// when you are only allowed to "add truth", not set false
         *getBoolean(ezxml_t x, const char *name, bool *b, bool trueOnly = false),
@@ -258,7 +264,11 @@ namespace OCPI {
 		    bool setDefault = true),
         *getNumber64(ezxml_t x, const char *attr, uint64_t *np,
 		     bool *found = NULL, uint64_t defaultValue = 0,
-		     bool setDefault = true, bool required = false);
+		     bool setDefault = true, bool required = false),
+	*getExprNumber(ezxml_t x, const char *attr, size_t &np, bool &found, std::string *expr,
+		       const IdentResolver *resolver),
+	*parseExprNumber(const char *a, size_t &np, std::string *expr,
+			 const IdentResolver *resolver);
       extern unsigned
 	countChildren(ezxml_t x, const char*cName),
 	countAttributes(ezxml_t x);
@@ -269,10 +279,11 @@ namespace OCPI {
 	hasAttrEq(ezxml_t x, const char *attrName, const char *val),
 	// FIXME: move to util:misc if they are not about xml
         getUNum(const char *s, size_t *valp),
-        getUNum64(const char *s, const char *end, uint64_t &valp),
+        getUNum64(const char *s, const char *end, uint64_t &valp, const char **endp = NULL),
         getNum64(const char *s, const char *end, int64_t &valp, unsigned bits = 0),
         parseBool(const char *a, const char *end, bool *b),
-	getOptionalString(ezxml_t x, std::string &s, const char *attr);
+	getOptionalString(ezxml_t x, std::string &s, const char *attr,
+			  const char *def = "");
       extern void
 	getNameWithDefault(ezxml_t x, std::string &s, const char *fmt, unsigned &ord);
     }

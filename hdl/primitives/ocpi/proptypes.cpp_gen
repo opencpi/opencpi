@@ -7,7 +7,7 @@ $--\
 $-- comment \
 $--\
 $library ieee; use ieee.std_logic_1164.all; use ieee.numeric_std.all;\
-$library ocpi; use ocpi.all; use ocpi.types.all; use ocpi.wci.all; use ocpi.ocp.all;\
+$library ocpi; use ocpi.all, ocpi.types.all, ocpi.wci.all, ocpi.ocp.all, ocpi.util.all;\
 $entity pretty##_property is\
 
 #define ENTITY(pretty,which,def,rng) \
@@ -124,7 +124,7 @@ $@@@@@@@@write_enable : in bool_t;\
 $@@@@@@@@data         : in std_logic_vector(rng);\
 $@@@@@@@@value        : out pretty##_t(0 to property.string_length);\
 $@@@@@@@@written      : out bool_t;\
-$@@@@@@@@offset       : in unsigned(worker.decode_width-1 downto 0));\
+$@@@@@@@@offset       : in unsigned(width_for_max(property.bytes_1)-1 downto 0));\
 $end entity;
 
 #define WPROP_STRING(pretty,which,def,rng,lhs,rhs) \
@@ -155,7 +155,7 @@ $@@generic (worker : worker_t; property : property_t);\
 $@@port (value       : in pretty##_t;\
 $@@@@@@@@is_big_endian: in bool_t;\
 $@@@@@@@@data_out    : out std_logic_vector(31 downto 0);\
-$@@@@@@@@offset      : in unsigned(worker.decode_width-1 downto 0);\
+$@@@@@@@@offset      : in unsigned(width_for_max(property.bytes_1)-1 downto 0);\
 $@@@@@@@@read_enable : in bool_t);\
 $end entity;\
 $architecture rtl of pretty##_read_property is begin\
@@ -165,7 +165,7 @@ $end rtl;
 
 #define ENTITY_ARRAY(pretty,which,def,rng) \
 ENTITY_HEADER(pretty##_array,implementation of registered pretty property value - with write pulse)\
-$@@generic(worker : worker_t; property : property_t; default : pretty##_t := def); \
+$@@generic(worker : worker_t; property : property_t; default : pretty##_array_t); \
 $@@port (clk          : in std_logic;\
 $@@@@@@@@reset        : in bool_t;\
 $@@@@@@@@is_big_endian: in bool_t;\
@@ -173,14 +173,14 @@ $@@@@@@@@write_enable : in bool_t;\
 $@@@@@@@@data         : in std_logic_vector(31 downto 0);\
 $@@@@@@@@value        : out pretty##_array_t(0 to property.nitems-1);\
 $@@@@@@@@written      : out bool_t;\
-$@@@@@@@@index        : in unsigned(worker.decode_width-1 downto 0);\
+$@@@@@@@@offset       : in unsigned(width_for_max(property.bytes_1)-1 downto 0);\
 $@@@@@@@@any_written  : out bool_t;\
 $@@@@@@@@nbytes_1     : in byte_offset_t);\
 $end entity;
 
 #define ENTITY_ARRAY_64(pretty,which,def,rng) \
 ENTITY_HEADER(pretty##_array,implementation of registered pretty property value - with write pulse)\
-$@@generic(worker : worker_t; property : property_t; default : pretty##_t := def); \
+$@@generic(worker : worker_t; property : property_t; default : pretty##_array_t); \
 $@@port (clk          : in std_logic;\
 $@@@@@@@@reset        : in bool_t;\
 $@@@@@@@@is_big_endian: in bool_t;\
@@ -188,7 +188,7 @@ $@@@@@@@@write_enable : in bool_t;\
 $@@@@@@@@data         : in std_logic_vector(31 downto 0);\
 $@@@@@@@@value        : out pretty##_array_t(0 to property.nitems-1);\
 $@@@@@@@@written      : out bool_t;\
-$@@@@@@@@index        : in unsigned(worker.decode_width-1 downto 0);\
+$@@@@@@@@offset       : in unsigned(width_for_max(property.bytes_1)-1 downto 0);\
 $@@@@@@@@any_written  : out bool_t;\
 $@@@@@@@@hi32         : in bool_t);\
 $end entity;
@@ -198,13 +198,13 @@ $end entity;
 ENTITY_ARRAY(pretty,which,def,rng) \
 $architecture rtl of pretty##_array_property is \
 $@@signal base : natural;\
-begin\
-$@@base <= to_integer(index);\
+$begin\
+$@@base <= to_integer(offset);\
 $@@reg: process(Clk) is\
 $@@begin\
 $@@@@if rising_edge(clk) then\
 $@@@@@@if its(reset) then\
-$@@@@@@@@value <= (others => default);\
+$@@@@@@@@value <= default;\
 $@@@@@@@@written <= bfalse;\
 $@@@@@@@@any_written <= bfalse;\
 $@@@@@@elsif its(write_enable) then\
@@ -244,11 +244,11 @@ $end rtl;
 #define ENTITY_RPROP_ARRAY(pretty,comment) \
 ENTITY_HEADER(pretty##_read_array,comment)\
 $@@generic (worker : worker_t; property : property_t); \
-$@@port (value       : in pretty##_array_t(0 to property.nitems-1); \
-$@@@@@@@@is_big_endian: in bool_t;\
-$@@@@@@@@data_out    : out std_logic_vector(31 downto 0);\
-$@@@@@@@@index       : in unsigned(worker.decode_width-1 downto 0);\
-$@@@@@@@@nbytes_1    : in byte_offset_t);\
+$@@port (value         : in pretty##_array_t(0 to property.nitems-1); \
+$@@@@@@@@is_big_endian : in bool_t;\
+$@@@@@@@@data_out      : out std_logic_vector(31 downto 0);\
+$@@@@@@@@offset        : in unsigned(width_for_max(property.bytes_1)-1 downto 0);\
+$@@@@@@@@nbytes_1      : in byte_offset_t);\
 $end entity;
 
 #define RPROP_ARRAY_1(pretty,which,def,rng,lhs,rhs) \
@@ -256,8 +256,8 @@ ENTITY_RPROP_ARRAY(pretty,readback 1 bit property array)\
 $architecture rtl of pretty##_read_array_property is \
 $@@signal byte_offset : byte_offset_t; \
 $begin\
-$@@byte_offset <= resize(property.offset + index, byte_offset_t~length);\
-$@@data_out <= from_bool_array(value,index,nbytes_1,byte_offset,its(is_big_endian));\
+$@@byte_offset <= resize(property.offset + offset, byte_offset_t~length);\
+$@@data_out <= from_bool_array(value,offset,nbytes_1,byte_offset,its(is_big_endian));\
 $end rtl;
 
 #define RPROP_ARRAY_8(pretty,which,def,rng,lhs,rhs) \
@@ -273,7 +273,7 @@ $@@@@end if;\
 $@@@@return (others => '0');\
 $@@end;\
 $begin\
-$@@i <= to_integer(index);\
+$@@i <= to_integer(offset) when offset < property.nitems else 0;\
 $@@word <=\
 $@@@@x"000000" & std_logic_vector(val(i)) when nbytes_1 = 0 and not its(is_big_endian) else\
 $@@@@std_logic_vector(val(i)) & x"000000" when nbytes_1 = 0 and its(is_big_endian) else\
@@ -293,40 +293,43 @@ $@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@when nbytes_1 = 3 and not its(is_big
 $@@@@std_logic_vector(val(i)) & std_logic_vector(val(i+1)) &\
 $@@@@std_logic_vector(val(i+2)) & std_logic_vector(val(i+3));\
 $@@data_out <= dword_t(shift_left(unsigned(word),\
-$@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@to_integer((property.offset+to_integer(index)) rem 4) *8))\
+$@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@to_integer((property.offset+to_integer(offset)) rem 4) *8))\
 $@@@@@@@@@@@@@@@@when not is_big_endian else\
 $@@@@@@@@@@@@@@dword_t(shift_right(unsigned(word),\
-$@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@to_integer((property.offset+to_integer(index)) rem 4) *8));\
+$@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@to_integer((property.offset+to_integer(offset)) rem 4) *8));\
 $end rtl;
 
 #define RPROP_ARRAY_16(pretty,which,def,rng,lhs,rhs) \
 ENTITY_RPROP_ARRAY(pretty,readback scalar 16 bit property)\
 $architecture rtl of pretty##_read_array_property is\
-$@@signal i : natural;\
-$@@signal i_plus_1 : natural;\
+$@@signal index, i, i_plus_1 : unsigned(offset'left-1 downto 0);\
 $@@signal odd : boolean;\
 $@@signal bits : std_logic_vector(3 downto 0);\
 $begin\
-$@@i <= to_integer(index);\
+$@@index@@@ <= offset(offset'left downto 1);\
+$@@i@@@@@@@ <= index when index < property.nitems else (others => '0');\
 $@@i_plus_1 <= i + 1 when nbytes_1(1) and i < (property.nitems - 1) else i;\
 $@@odd <= (i + property.offset/2) rem 2 = 1;\
-$@@bits <= util.slv(nbytes_1(1)) & util.slv(index(0)) &\
+$@@bits <= util.slv(nbytes_1(1)) & util.slv(offset(1)) &\
 $@@@@@@@@@ util.slv(property.offset(1)) & util.slv(is_big_endian);\
 $@@with bits select\
 $@@@@data_out(31 downto 16) <=\
-$@@@@@@std_logic_vector(value(i))@@ when x"1"|x"2"|x"4"|x"7"|x"9"|x"f",\
-$@@@@@@std_logic_vector(value(i_plus_1)) when others;\
+$@@@@@@std_logic_vector(value(to_integer(i)))@@ when x"1"|x"2"|x"4"|x"7"|x"9"|x"f",\
+$@@@@@@std_logic_vector(value(to_integer(i_plus_1))) when others;\
 $@@with bits select\
 $@@@@data_out(15 downto 0) <=\
-$@@@@@@std_logic_vector(value(i))@@ when x"0"|x"3"|x"5"|x"6"|x"8"|x"e",\
-$@@@@@@std_logic_vector(value(i_plus_1)) when others;\
+$@@@@@@std_logic_vector(value(to_integer(i)))@@ when x"0"|x"3"|x"5"|x"6"|x"8"|x"e",\
+$@@@@@@std_logic_vector(value(to_integer(i_plus_1))) when others;\
 $end rtl;
 
 #define RPROP_ARRAY_32(pretty,which,def,rng,lhs,rhs) \
-ENTITY_RPROP_ARRAY(pretty,readback scalar 16 bit property)\
+ENTITY_RPROP_ARRAY(pretty,readback scalar 32 bit property)\
 $architecture rtl of pretty##_read_array_property is\
+$@@signal index, i : unsigned(offset~left-2 downto 0);\
 $begin\
-$@@data_out <= std_logic_vector(value(to_integer(index)));\
+$@@index@@@ <= offset(offset~left downto 2);\
+$@@i@@@@@@@ <= index when index < property.nitems else (others => '0');\
+$@@data_out <= std_logic_vector(value(to_integer(i)));\
 $end rtl;
 
 #define RPROP_ARRAY_64(pretty,which,def,rng,lhs,rhs) \
@@ -335,15 +338,16 @@ $@@generic (worker : worker_t; property : property_t);\
 $@@port (value       : in pretty##_array_t(0 to property.nitems-1);\
 $@@@@@@@@is_big_endian: in bool_t;\
 $@@@@@@@@data_out    : out std_logic_vector(31 downto 0);\
-$@@@@@@@@index       : in unsigned(worker.decode_width-1 downto 0);\
+$@@@@@@@@offset      : in unsigned(width_for_max(property.bytes_1)-1 downto 0);\
 $@@@@@@@@hi32        : in bool_t);\
 $end entity;\
 $architecture rtl of pretty##_read_array_property is\
-$@@signal i : natural;\
+$@@signal index, i : unsigned(offset~left-3 downto 0);\
 $begin\
-$@@i <= to_integer(index);\
-$@@data_out <= std_logic_vector(value(i)(63 downto 32)) when hi32 /= is_big_endian else\
-$@@@@@@@@@@@@@@std_logic_vector(value(i)(31 downto 0));\
+$@@index@@@ <= offset(offset~left downto 3);\
+$@@i@@@@@@@ <= index when index < property.nitems else (others => '0');\
+$@@data_out <= std_logic_vector(value(to_integer(i))(63 downto 32)) when hi32 /= is_big_endian else\
+$@@@@@@@@@@@@@@std_logic_vector(value(to_integer(i))(31 downto 0));\
 $end rtl;
 
 #define RPROP_ARRAY_STRING(pretty,which,def,rng,lhs,rhs) \
@@ -353,7 +357,7 @@ $@@port@@@ (value@@@@@@ : in@ pretty##_array_t(0 to property.nitems-1,\
 $@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@0 to (property.string_length+4)/4*4-1);\
 $@@@@@@@@@@@is_big_endian: in bool_t;\
 $@@@@@@@@@@@data_out@@@ : out std_logic_vector(31 downto 0);\
-$@@@@@@@@@@@offset@@@@@ : in@ unsigned(worker.decode_width-1 downto 0);\
+$@@@@@@@@@@@offset@@@@@ : in@ unsigned(width_for_max(property.bytes_1)-1 downto 0);\
 $@@@@@@@@@@@read_enable : in@ bool_t);\
 $end entity;
 
@@ -361,19 +365,19 @@ $end entity;
 #define WPROP_ARRAY_8(pretty,which,def,rng,lhs,rhs) \
 ENTITY_ARRAY(pretty,which,def,rng) \
 $architecture rtl of pretty##_array_property is\
-$@@signal base : natural range 0 to 2**index~length-1;\
+$@@signal base : natural range 0 to 2**offset~length-1;\
 $@@signal byte : unsigned(1 downto 0);\
 $@@signal lowbit : natural range 0 to 31;\
 $begin\
-$@@base <= to_integer(index);\
-$@@byte <= index(1 downto 0) + property.offset(1 downto 0);\
+$@@base <= to_integer(offset);\
+$@@byte <= to_unsigned(base, 2) + property.offset(1 downto 0);\
 $@@lowbit <= to_integer(byte(1 downto 0)) * 8 when not is_big_endian else\
 $@@@@@@@@@@@@(3 - to_integer(byte(1 downto 0))) * 8;\
 $@@reg: process(Clk) is\
 $@@begin\
 $@@@@if rising_edge(clk) then\
 $@@@@@@if its(reset) then\
-$@@@@@@@@value <= (others => default);\
+$@@@@@@@@value <= default;\
 $@@@@@@@@written <= bfalse;\
 $@@@@@@@@any_written <= bfalse;\
 $@@@@@@elsif its(write_enable) then\
@@ -411,16 +415,16 @@ ENTITY_ARRAY(pretty,which,def,rng) \
 $architecture rtl of pretty##_array_property is \
 $@@signal base : natural;\
 $begin\
-$@@base <= to_integer(index);\
+$@@base <= to_integer(offset(offset~left downto 1));\
 $@@reg: process(Clk) is\
 $@@begin\
 $@@@@if rising_edge(clk) then\
 $@@@@@@if its(reset) then\
-$@@@@@@@@value <= (others => default);\
+$@@@@@@@@value <= default;\
 $@@@@@@@@written <= bfalse;\
 $@@@@@@@@any_written <= bfalse;\
 $@@@@@@elsif its(write_enable) then\
-$@@@@@@@@if index(0) = property.offset(1) then -- aligned\
+$@@@@@@@@if offset(1) = property.offset(1) then -- aligned\
 $@@@@@@@@@@if its(is_big_endian) then\
 $@@@@@@@@@@@@value(base) <= rhs(data(31 downto 16));\
 $@@@@@@@@@@else\
@@ -455,12 +459,12 @@ ENTITY_ARRAY(pretty,which,def,rng) \
 $architecture rtl of pretty##_array_property is\
 $@@signal base : natural;\
 $begin\
-$@@base <= to_integer(index);\
+$@@base <= to_integer(offset(offset~left downto 2));\
 $@@reg: process(Clk) is\
 $@@begin\
 $@@@@if rising_edge(clk) then\
 $@@@@@@if its(reset) then\
-$@@@@@@@@value <= (others => default);\
+$@@@@@@@@value <= default;\
 $@@@@@@@@written <= bfalse;\
 $@@@@@@@@any_written <= bfalse;\
 $@@@@@@elsif its(write_enable) then\
@@ -480,12 +484,12 @@ ENTITY_ARRAY_64(pretty,which,def,rng) \
 $architecture rtl of pretty##_array_property is\
 $@@signal base : natural;\
 begin\
-$@@base <= to_integer(index);\
+$@@base <= to_integer(offset(offset~left downto 3));\
 $@@reg: process(Clk) is\
 $@@begin\
 $@@@@if rising_edge(clk) then\
 $@@@@@@if its(reset) then\
-$@@@@@@@@value <= (others => default);\
+$@@@@@@@@value <= default;\
 $@@@@@@@@written <= bfalse;\
 $@@@@@@@@any_written <= bfalse;\
 $@@@@@@elsif its(write_enable) then\
@@ -515,7 +519,7 @@ $end rtl;
 
 #define ENTITY_ARRAY_STRING(pretty,which,def,rng) \
 ENTITY_HEADER(pretty##_array,implementation of registered pretty property value - with write pulse)\
-$@@generic(worker : worker_t; property : property_t; default : pretty##_array_t := (def,def)); \
+$@@generic(worker : worker_t; property : property_t; default : pretty##_array_t); \
 $@@port (clk          : in std_logic;\
 $@@@@@@@@reset        : in bool_t;\
 $@@@@@@@@is_big_endian: in bool_t;\
@@ -524,9 +528,8 @@ $@@@@@@@@data         : in std_logic_vector(31 downto 0);\
 $@@@@@@@@value        : out pretty##_array_t(0 to property.nitems-1,\
 $@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 0 to (property.string_length+4)/4*4-1);\
 $@@@@@@@@written      : out bool_t;\
-$@@@@@@@@index        : in unsigned(worker.decode_width-1 downto 0);\
-$@@@@@@@@any_written  : out bool_t;\
-$@@@@@@@@offset       : in unsigned(worker.decode_width-1 downto 0));\
+$@@@@@@@@offset       : in unsigned(width_for_max(property.bytes_1)-1 downto 0);\
+$@@@@@@@@any_written  : out bool_t);\
 $end entity;
 
 #define WPROP_ARRAY_STRING(pretty,which,def,rng,lhs,rhs) \
@@ -535,6 +538,7 @@ $architecture rtl of string_array_property is\
 $@@constant nwords : natural := (property.string_length+4)/4;\
 $@@subtype string_words_t is data_a_t(0 to nwords * property.nitems-1);\
 $@@signal string_words : string_words_t;\
+$@@signal default_words : string_words_t;\
 $begin\
 $@@gen: for i in 0 to property.nitems-1 generate -- properties~left to 0 generate\
 $@@@@gen1:@@for j in 0 to nwords-1 generate\
@@ -543,14 +547,18 @@ $@@@@@@@value(i,j*4+k) <=\
 $@@@@@@@@@signed(string_words(i*nwords + j)((3-k)*8+7 downto (3-k)*8))\
 $@@@@@@@@@when its(is_big_endian) else\
 $@@@@@@@@@signed(string_words(i*nwords + j)(k*8+7 downto k*8));\
+$@@@@@@@default_words(i*nwords + j)(k*8+7 downto k*8) <=\
+$@@@@@@@@@slv(default(i,j*4+3-k))\
+$@@@@@@@@@when its(is_big_endian) else\
+$@@@@@@@@@slv(default(i,j*4+k));\
 $@@@@@@end generate gen2;\
 $@@@@end generate gen1;\
-$end generate gen;\
+$@@end generate gen;\
 $@@reg: process(Clk) is\
 $@@begin\
 $@@@@if rising_edge(clk) then\
 $@@@@@@if its(reset) then\
-$@@@@@@@@string_words(0) <= (others => '0');\
+$@@@@@@@@string_words <= default_words; --(0) <= (others => '0');\
 $@@@@@@@@written <= bfalse;\
 $@@@@@@@@any_written <= bfalse;\
 $@@@@@@elsif its(write_enable) then\

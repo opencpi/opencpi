@@ -12,7 +12,6 @@ namespace OCPI {
       : public OCPI::Container::ContainerBase<Driver, Container, Application, Artifact>,
 	private Access, public OCPI::Time::Emit::TimeSource {
       HDL::Device &m_device;        // the underlying device that we own
-      //      DataTransfer::EndPoint &m_endpoint; // the data plane endpoint of the device
       std::string m_part, m_esn, m_position, m_loadParams;
       OCPI::Time::Emit m_hwEvents;
       uint64_t m_lastTick;
@@ -27,8 +26,10 @@ namespace OCPI {
       virtual ~Container();
       inline uint64_t getMyTicks() {
 	return
-	  m_device.isAlive() ? 
-	  (m_lastTick = swap32(m_device.properties().get64RegisterOffset(sizeof(HdlUUID))) + hdlDevice().m_timeCorrection) :
+	  m_device.isAlive() && !m_device.isFailed() && m_device.timeServer() ? 
+	  (m_lastTick =
+	   swap32(m_device.timeServer()->get64RegisterOffset(0)) +
+	   hdlDevice().m_timeCorrection) :
 	  m_lastTick;
       }
     protected:
@@ -42,6 +43,8 @@ namespace OCPI {
 	createApplication(const char *name, const OCPI::Util::PValue *props)
 	throw ( OCPI::Util::EmbeddedException );
       bool needThread();
+      Container::DispatchRetCode dispatch(DataTransfer::EventManager*);
+      void dump(bool before, bool hex);
     };
   }
 }

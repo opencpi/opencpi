@@ -37,6 +37,7 @@
 #include "OcpiUuid.h"               // just for linkage hooks
 #include "DtMsgDriver.h"            // just for linkage hooks
 #include "OcpiOsSocket.h"           // just for linkage hooks
+#include "OcpiOsServerSocket.h"     // just for linkage hooks
 #include "OcpiOsSemaphore.h"        // just for linkage hooks
 #include "lzma.h"                   // just for linkage hooks
 #include "zlib.h"                   // just for linkage hooks
@@ -123,13 +124,13 @@ namespace OCPI {
     void Manager::shutdown() {
       deleteChildren();
     }
-    bool Manager::findContainersX(Callback &cb, OU::Worker &i, const char *name) {
+    bool Manager::findContainersX(Callback &cb, OU::Worker &i, const char *a_name) {
       parent().configureOnce();
       for (Driver *d = firstChild(); d; d = d->nextChild())
 	for (Container *c = d->firstContainer(); c; c = c->nextContainer())
-	  if ((!name ||
-	       isdigit(*name) && (unsigned)atoi(name) == c->ordinal() ||
-	       !isdigit(*name) && name == c->name()) &&
+	  if ((!a_name ||
+	       (isdigit(*a_name) && (unsigned)atoi(a_name) == c->ordinal()) ||
+	       (!isdigit(*a_name) && a_name == c->name())) &&
 	      c->supportsImplementation(i))
 	    cb.foundContainer(*c);
       return false;
@@ -138,8 +139,8 @@ namespace OCPI {
     dynamic() {
       return OCPI_DYNAMIC;
     }
-    Driver::Driver(const char *name) 
-      : OD::DriverType<Manager,Driver>(name, *this) {
+    Driver::Driver(const char *a_name) 
+      : OD::DriverType<Manager,Driver>(a_name, *this) {
     }
     const char
       *application = "application",
@@ -184,9 +185,12 @@ namespace DataTransfer {
     OCPI::Util::Uuid uuid;
     OCPI::Util::UuidString us;
     OCPI::Util::uuid2string(uuid, us);
+    std::string str;
+    OCPI::Util::searchPath(NULL, NULL, str, NULL, NULL);
     createHostSmemServices(loc);
     Msg::XferFactoryManager::getFactoryManager();
     OCPI::OS::Socket s;
+    OCPI::OS::ServerSocket ss;
     OCPI::OS::Semaphore sem;
     gzerror(NULL, (int*)0);
     return (intptr_t)&lzma_stream_buffer_decode;

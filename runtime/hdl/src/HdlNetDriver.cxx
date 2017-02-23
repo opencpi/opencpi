@@ -43,11 +43,12 @@ namespace OCPI {
 	sizeof(EtherControlRead), sizeof(EtherControlResponse)
       };
       Device::
-      Device(Driver &driver, OE::Interface &ifc, std::string &name, OS::Ether::Address &devAddr,
-	     bool discovery, const char *data_proto, unsigned delayms, std::string &error)
-	: OCPI::HDL::Device(name, data_proto),
-	  m_socket(NULL), m_devAddr(devAddr), m_discovery(discovery), m_delayms(delayms),
-	  m_failed(false) {
+      Device(Driver &driver, OE::Interface &ifc, std::string &a_name,
+	     OS::Ether::Address &devAddr, bool discovery, const char *data_proto,
+	     unsigned delayms, uint64_t ep_size, uint64_t controlOffset, uint64_t dataOffset,
+	     const OU::PValue *params, std::string &error)
+	: OCPI::HDL::Device(a_name, data_proto, params),
+	  m_socket(NULL), m_devAddr(devAddr), m_discovery(discovery), m_delayms(delayms) {
 	// We need to get a socket to talk to this device.
 	// If we are at the ethernet level AND we don't a driver,
 	// we must share the socket for all devices on the same interface
@@ -59,10 +60,10 @@ namespace OCPI {
 	  return;
 	EtherControlPacket *ecp =  (EtherControlPacket *)(m_request.payload);
 	ecp->header.tag = 0;
-	OU::formatString(m_endpointSpecific, "%s:%s", data_proto, name.c_str());
-	m_endpointSize = ((uint64_t)1) << 32;
-	cAccess().setAccess(NULL, this, OCPI_UTRUNCATE(RegisterOffset, m_endpointSize - sizeof(OccpSpace)));
-	dAccess().setAccess(NULL, this, 0);
+	OU::formatString(m_endpointSpecific, "%s:%s", data_proto, a_name.c_str());
+	m_endpointSize = ep_size;
+	cAccess().setAccess(NULL, this, OCPI_UTRUNCATE(RegisterOffset, controlOffset));
+	dAccess().setAccess(NULL, this, OCPI_UTRUNCATE(RegisterOffset, dataOffset));
 	init(error);
       }
       Device::
@@ -70,11 +71,16 @@ namespace OCPI {
 	if (!m_devAddr.isEther() || OE::haveDriver())
 	  delete m_socket;
       }
+      // Networks only push.
+      uint32_t Device::
+      dmaOptions(ezxml_t /*icImplXml*/, ezxml_t /*icInstXml*/, bool isProvider) {
+	return 1 << (isProvider ? OCPI::RDT::ActiveFlowControl : OCPI::RDT::ActiveMessage);
+      }
       void Device::
       request(EtherControlMessageType type, RegisterOffset offset,
 	      size_t bytes, OS::Ether::Packet &recvFrame, uint32_t *status,
 	      size_t extra, unsigned delayms) {
-	if (m_failed)
+	if (m_isFailed)
 	  throw OU::Error("HDL::Net::Device::request after previous failure");
 	EtherControlHeader &ech_out =  *(EtherControlHeader *)(m_request.payload);
 	ocpiDebug("Net::Driver request: delay %u m_delay %u tag %u",
@@ -96,32 +102,32 @@ namespace OCPI {
 	     n < RETRIES &&
 	       m_socket->send(m_request, ntohs(ech_out.length)+2, m_devAddr, 0, NULL, m_error); n++) {
 	  size_t length;
-	  OS::Ether::Address addr;
+	  OS::Ether::Address l_addr;
 	  uint64_t ns = delayms * (uint64_t)1000000;
 	  OS::Timer timer((uint32_t)(ns / 1000000), (uint32_t)(ns % 1000000));
 	  // FIXME: use shared receive socket
 	  ocpiDebug("Sent request type %u tag %u offset %u delay %u",
 		    OCCP_ETHER_MESSAGE_TYPE(ech_out.typeEtc), ech_out.tag,
 		    ntohl(((EtherControlRead *)m_request.payload)->address), delayms);
-	  while (m_socket->receive(recvFrame, length, delayms, addr, m_error)) {
+	  while (m_socket->receive(recvFrame, length, delayms, l_addr, m_error)) {
 	    EtherControlHeader &ech_in =  *(EtherControlHeader *)(recvFrame.payload);
 	    if (length < (unsigned)(ntohs(ech_in.length)) + 2)
 	      ocpiBad("Ethernet control packet too short: got %zu, while expecting at least %u",
 		      length, ntohs(ech_in.length) + 2);
 	    ocpiDebug("response received from %s %x %x tag %u",
-		      addr.pretty(), ech_in.length, ech_in.typeEtc, ech_in.tag);
+		      l_addr.pretty(), ech_in.length, ech_in.typeEtc, ech_in.tag);
 	    if (OCCP_ETHER_MESSAGE_TYPE(ech_in.typeEtc) != OCCP_RESPONSE)
 	      ocpiBad("Ethernet control packet from %s not a response, ignored: typeEtc 0x%x",
-		      addr.pretty(), ech_in.typeEtc);
+		      l_addr.pretty(), ech_in.typeEtc);
 	    else if (ech_in.tag != ech_out.tag)
 	      ocpiInfo("Ethernet control packet from %s has extraneous tag %u, expecting %u, ignored",
-		       addr.pretty(),
+		       l_addr.pretty(),
 		       ech_in.tag, ech_out.tag);
 	    else if ((response = OCCP_ETHER_RESPONSE(ech_in.typeEtc)) == OK)
 	      return;
 	    else {
 	      ocpiInfo("Ethernet control packet from %s got non-OK response: %u",
-		       addr.pretty(), response);
+		       l_addr.pretty(), response);
 	      break;
 	    }
 	    if (!timer.expired())
@@ -144,7 +150,7 @@ namespace OCPI {
 	      response == ERROR ? OCCP_STATUS_READ_ERROR :
 	      OCCP_STATUS_ACCESS_ERROR;
 	  else {
-	    m_failed = true;
+	    m_isFailed = true;
 	    throw OU::Error("HDL network %s error: %s",
 			    extra ? "command" : (type == OCCP_READ ? "read" :
 						 (type == OCCP_WRITE ? "write" : "nop")),
@@ -156,32 +162,35 @@ namespace OCPI {
 	}
       }
 
-	// Shared "get" that returns value, and *status if status != NULL
+      // Shared "get" that returns value, and *status if status != NULL
       uint32_t Device::
       get(RegisterOffset offset, size_t bytes, uint32_t *status) {
 	ocpiDebug("Accessor read for offset 0x%zx of %zu bytes", offset, bytes);
 	EtherControlRead &ecr =  *(EtherControlRead *)(m_request.payload);
 	ecr.address = htonl((offset & 0xffffff) & ~3);
-	ecr.header.length = htons(sizeof(ecr)-2);
+	ecr.header.length = htons((short)(sizeof(ecr)-2));
 	OS::Ether::Packet recvFrame;
 	request(OCCP_READ, offset, bytes, recvFrame, status);
 	uint32_t data = ntohl(((EtherControlReadResponse *)(recvFrame.payload))->data);
-	ocpiDebug("Accessor read received 0x%x from offset %zx tag %u", data, offset, ecr.header.tag);
-	return data;
+	uint32_t r = bytes == 4 ? data : (data >> ((offset&3) * 8)) & ~(UINT32_MAX << (bytes*8));
+	ocpiDebug("Accessor read received 0x%x from offset %zx tag %u return %x",
+		  data, offset, ecr.header.tag, r);
+	return r;
       }
       void Device::
       set(RegisterOffset offset, size_t bytes, uint32_t data, uint32_t *status) {
-	  EtherControlWrite &ecw =  *(EtherControlWrite *)(m_request.payload);
-	  ecw.address = htonl((offset & 0xffffff) & ~3);
-	  ecw.data = htonl(data);
-	  ecw.header.length = htons(sizeof(ecw)-2);
-	  OS::Ether::Packet recvFrame;
-	  request(OCCP_WRITE, offset, bytes, recvFrame, status);
-	}
+	ocpiDebug("Accessor write for offset 0x%zx of %zu bytes", offset, bytes);
+	EtherControlWrite &ecw =  *(EtherControlWrite *)(m_request.payload);
+	ecw.address = htonl((offset & 0xffffff) & ~3);
+	ecw.data = htonl(data << ((offset & 3) * 8));
+	ecw.header.length = htons((short)(sizeof(ecw)-2));
+	OS::Ether::Packet recvFrame;
+	request(OCCP_WRITE, offset, bytes, recvFrame, status);
+      }
       void Device::
       command(const char *cmd, size_t bytes, char *response, size_t rlen, unsigned delayms) {
 	EtherControlHeader &eh_out =  *(EtherControlHeader *)(m_request.payload);
-	eh_out.length = htons(OCPI_UTRUNCATE(uint16_t, sizeof(eh_out)-2 + bytes));
+	eh_out.length = htons((short)(sizeof(eh_out)-2 + bytes));
 	if (cmd && bytes)
 	  memcpy((void*)(&eh_out+1), cmd, bytes);
 	OS::Ether::Packet recvFrame;
@@ -205,7 +214,7 @@ namespace OCPI {
       }
       void Device::
       getBytes(RegisterOffset offset, uint8_t *buf, size_t length, size_t elementBytes,
-	       uint32_t *status) {
+	       uint32_t *status, bool string) {
 	while (length) {
 	  size_t bytes = sizeof(uint32_t) - (offset & 3); // bytes in word
 	  if (bytes > length)
@@ -215,7 +224,10 @@ namespace OCPI {
 	  uint32_t val = get(offset, bytes, status);
 	  if (status && *status)
 	    return;
-	  memcpy(buf, (uint8_t*)&val + (offset & 3), bytes);
+	  uint8_t *data = (uint8_t*)&val + (offset & 3);
+	  memcpy(buf, data, bytes);
+	  if (string && strnlen((char *)data, bytes) < bytes)
+	    break;
 	  length -= bytes;
 	  buf += bytes;
 	  offset += bytes;
@@ -251,15 +263,17 @@ namespace OCPI {
 	memset(&nop, 0, sizeof(nop));
 	nop.header.etherTypeOverlay = 0; // for valgrind
         nop.header.tag = 0;
-	nop.header.length = htons(sizeof(nop)-2);
+	nop.header.length = htons((short)(sizeof(nop)-2));
 	nop.header.pad = 0;
 	nop.header.typeEtc = OCCP_ETHER_TYPE_ETC(OCCP_NOP, 0xf, 1, 0);
 	nop.mbx80 = 0x80;
 	nop.mbz0 = 0;
+        nop.mbz1 = 1;
+	nop.maxCoalesced = 0;
       }
       static bool
       checkNopResponse(EtherControlNopResponse &response, std::string &error) {
-	if (response.header.length == htons(sizeof(response)-2) &&
+	if (response.header.length == htons((short)(sizeof(response)-2)) &&
 	    response.header.typeEtc == OCCP_ETHER_TYPE_ETC(OCCP_RESPONSE, OK, 1, 0) &&
 	    response.mbx40 == 0x40 &&
 	    response.mbz0 == 0)
@@ -295,7 +309,8 @@ namespace OCPI {
       // Try a discovery (send and receive) on a socket.
       bool Driver::
       trySocket(OE::Interface &ifc, OE::Socket &s, OE::Address &addr, bool discovery,
-		const char **exclude, Macs *argMacs, Device **dev, std::string &error) {
+		const char **exclude, Macs *argMacs, Device **dev, 
+		const OU::PValue *params, std::string &error) {
 	// keep track of different discovery source addresses discovered when we broadcast.
 	ocpiDebug("Trying socket on interface %s to address %s",
 		  ifc.name.c_str(), addr.pretty());
@@ -362,7 +377,7 @@ namespace OCPI {
 	      } else {
 		// We were probing a single address
 		Device *d;
-		if ((d = createDevice(ifc, devAddr, discovery, error))) {
+		if ((d = createDevice(ifc, devAddr, discovery, params, error))) {
 		  assert(dev); // should be set if not broadcasting
 		  *dev = d;
 		  return 1;
@@ -390,14 +405,13 @@ namespace OCPI {
       tryIface(OE::Interface &ifc, OE::Address &devAddr, const char **exclude,
 	       Device **dev,   // optional output arg to return the found device when mac != NULL
 	       bool discovery, // is this about discovery? (broadcast *OR* specific probing)
-	       Macs *macs,
-	       std::string &error) {
+	       Macs *macs, const OU::PValue *params, std::string &error) {
 	error.clear();
 	unsigned count = 0;
-	OE::Socket *s;
 	if (devAddr.isEther()) {
+	  OE::Socket *s;
 	  if ((s = findSocket(ifc, discovery, error)))
-	    return trySocket(ifc, *s, devAddr, discovery, exclude, macs, dev, error); 
+	    return trySocket(ifc, *s, devAddr, discovery, exclude, macs, dev, params, error); 
 	  // not "ocpiBad" due to needing sudo for bare sockets without a driver
 	  ocpiDebug("Could not open socket on interface '%s' to reach device at '%s: %s",
 		    ifc.name.c_str(), devAddr.pretty(), error.c_str());
@@ -408,7 +422,7 @@ namespace OCPI {
 	  //	    ocpiInfo("Could not open udp interface for discovery: %s", error.c_str());
 	  //	  else 
 	  if (error.empty()) {
-	    count = trySocket(ifc, s, devAddr, discovery, exclude, macs, dev, error);
+	    count = trySocket(ifc, s, devAddr, discovery, exclude, macs, dev, params, error);
 	    if (error.length())
 	      ocpiInfo("Error in discovery for udp interface: %s", error.c_str());
 	  } else
@@ -418,7 +432,7 @@ namespace OCPI {
       }
 
       OCPI::HDL::Device *Driver::
-      open(const char *name, bool discovery, std::string &error) {
+      open(const char *name, bool discovery, const OU::PValue *params, std::string &error) {
 	const char *slash = strchr(name, '/');
 	std::string iName;
 	if (slash) {
@@ -440,7 +454,7 @@ namespace OCPI {
 	    while (ifs.getNext(eif, error, iName.size() ? iName.c_str() : NULL))
 	      if (eif.up && eif.connected) {
 		Device *dev;
-		if (tryIface(eif, addr, NULL, &dev, discovery, NULL, error) == 1)
+		if (tryIface(eif, addr, NULL, &dev, discovery, NULL, params, error) == 1)
 		  return dev;
 		else
 		  break;
@@ -453,16 +467,18 @@ namespace OCPI {
       }
 
       unsigned Driver::
-      search(const OU::PValue *props, const char **exclude, bool discoveryOnly, bool udp,
+      search(const OU::PValue *params, const char **excludes, bool discoveryOnly, bool udp,
 	     std::string &error) {
-	if (getenv("OCPI_SUPPRESS_HDL_NETWORK_DISCOVERY"))
+	if (!getenv("OCPI_ENABLE_HDL_NETWORK_DISCOVERY"))
 	  return 0;
+	ocpiInfo("Searching for network-based HDL devices%s.",
+		 udp ? " using UDP" : " using L2 Ethernet");
 	unsigned count = 0;
 	OE::IfScanner ifs(error);
 	if (error.size())
 	  return 0;
 	const char *ifName = NULL;
-	OU::findString(props, "interface", ifName);
+	OU::findString(params, "interface", ifName);
 	OE::Interface eif;
 	Macs macs;
 	while (ifs.getNext(eif, error, ifName)) {
@@ -473,7 +489,7 @@ namespace OCPI {
 	  if (eif.up && eif.connected && (!udp || eif.ipAddr.addrInAddr())) {
 	    OE::Address bcast(udp);
 	    ocpiDebug("Sending to broadcast/multicast: %s udp %u", bcast.pretty(), udp);
-	    count += tryIface(eif, bcast, exclude, NULL, discoveryOnly, &macs, error);
+	    count += tryIface(eif, bcast, excludes, NULL, discoveryOnly, &macs, params, error);
 	    if (error.size()) {
 	      ocpiDebug("Error during network discovery on '%s': %s",
 		       eif.name.c_str(), error.c_str());
@@ -492,15 +508,16 @@ namespace OCPI {
 	for (MacsIter mi = macs.begin(); mi != macs.end(); mi++) {
 	  ocpiInfo("Processing discovery for %s from network address %s",
 		   mi->first.c_str(), mi->second.first.pretty());
-	  Device *d;
-	  if ((d = createDevice(*mi->second.second, mi->second.first, discoveryOnly, error)))
-	    if (found(*d, error))
-	      delete d;
-	    else
-	      count++;
-	  else
+	  std::string err;
+	  Device *dev = createDevice(*mi->second.second, mi->second.first, discoveryOnly, params,
+				     err);
+	  if (dev && !found(*dev, excludes, discoveryOnly, err)) {
 	    ocpiInfo("error creating device for %s (MAC %s): %s", mi->second.first.pretty(),
 		     mi->first.c_str(), error.c_str());
+	    count++;
+	  }
+	  if (error.empty())
+	    error = err;
 	}
 	return count;
       }

@@ -1,4 +1,4 @@
-<HdlAssembly Name="testpsd">
+<HdlAssembly>
   <Instance Worker="splitter2x2.xml" Name="split0" external="in0"/>
   <Instance Worker="bias.xml" connect='split1' to='in0'/>
   <Instance Worker="psd.xml" connect='split1' to='in1'/>

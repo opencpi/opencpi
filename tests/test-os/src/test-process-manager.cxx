@@ -252,7 +252,7 @@ namespace
 
   void TestOcpiOsProcessManager::SetUp ( )
   {
-    std::string d_argv0 ( "testProcessManagerInt" );
+    d_argv0 = "testProcessManagerInt";
     d_perform_test = false;
   }
 
@@ -347,7 +347,7 @@ namespace
     {
       return;
     }
-    unsigned int numTests = sizeof ( test5CommandLines ) / sizeof ( char** );
+    size_t numTests = sizeof ( test5CommandLines ) / sizeof ( char** );
 
     for ( unsigned int testIdx = 0; testIdx < numTests; testIdx++ )
     {

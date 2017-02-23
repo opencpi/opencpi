@@ -194,7 +194,7 @@ DataTransfer::EventManager::waitForEvent( int timeout_us, int& id, uint64_t &val
   // Multi-threading is needed for more than 1
 #ifdef USE_CACHE
   std::list<Events>::iterator it;
-  for ( it = m_events.begin(); it != m_events.end(); it++ ) {
+  for ( it = m_events.begin(); it != m_events.end(); ++it ) {
     if ( one_of_ours( (*it).id ) ) {
       id = (*it).id;
       value = (*it).value;

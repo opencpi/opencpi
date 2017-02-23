@@ -1,4 +1,4 @@
-<ComponentSpec Name="power_spectrum_1d">
+<ComponentSpec>
   <Properties>
     <Property Name="log2n" Readable="true" Writable="true" Type="ULong"/>
     <Property Name="direction" Readable="true" Writable="true" Type="ULong"/>

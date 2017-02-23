@@ -22,5 +22,4 @@
 #  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
 #
 ########################################################################### #
-
 include $(OCPI_CDK_DIR)/include/hdl/hdl-platforms.mk

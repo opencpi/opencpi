@@ -144,15 +144,12 @@ getLocalCompatibleEndpoint(const char *remote, bool /* exclusive */) {
 		      remote, rem.c_str());
     //      throw UnsupportedEndpointEx(remote);
   }
-#if 1
   uint16_t mailBox = 0, maxMb = 0;
   const char *after = strchr(remote, ':');
   if (after) {
     after++; // for isCompatible below
-    char *cs = strdup(remote);
     size_t size;
-    DT::EndPoint::getResourceValuesFromString(remote, cs, &mailBox, &maxMb, &size);
-    free(cs);
+    DT::EndPoint::parseEndPointString(remote, &mailBox, &maxMb, &size);
   }
   DT::EndPoint *lep = NULL;
   for (DT::EndPointsIter i = m_localEndpoints.begin(); i != m_localEndpoints.end(); i++) {
@@ -168,30 +165,6 @@ getLocalCompatibleEndpoint(const char *remote, bool /* exclusive */) {
     lep = tfactory->addCompatibleLocalEndPoint(after, mailBox, maxMb);
     m_localEndpoints.insert(lep);
   }
-#else
-  DT::EndPoint *lep = NULL;
-  if (strchr(remote, ':')) {
-    // remote has details (not just a protool) we need to match up in the details
-    // we first parse the generic back end (if there is one).
-    char *cs = strdup(remote);
-    uint16_t mailBox, maxMb;
-    uint32_t size;
-    DT::EndPoint::getResourceValuesFromString(remote, cs, &mailBox, &maxMb, &size);
-    free(cs);
-    // Now we ask the driver to do the real work.
-    lep = tfactory->getCompatibleEndPoint(remote, m_localEndpoints, mailBox, maxMb);
-  } else {
-    // Remote is just a protocol
-    for (DT::EndPointsIter i = m_localEndpoints.begin(); lep == NULL && i != m_localEndpoints.end(); i++)
-      if ((*i)->protocol == protocol)
-	lep = *i;
-    if (!lep) {
-      // We have no local endpoint for this protocol yet.
-      lep = tfactory->addCompatibleEndPoint(0, 0);
-      m_localEndpoints.insert(lep);
-    }
-  }
-#endif
   lep->finalize();
   return *lep;
 }
@@ -952,19 +925,27 @@ void Transport::checkMailBoxes()
   nc--;
 }
 
+// This is slightly mis-named.  The named endpoint might be local.
+// So the function is really:
+// get-local-if-exists, othersize get or create remote endpoint
 DT::EndPoint& Transport::
 addRemoteEndPoint( const char* loc )
 {
   std::string sloc(loc);
   ocpiDebug("In Transport::addRemoteEndPoint, loc = %s", loc );
   
-  DT::EndPoint *ep = getEndpoint(loc, false);
+  DT::EndPoint *ep = getEndpoint(loc, true);
+  if (ep)
+    return *ep;
+  ep = getEndpoint(loc, false);
   if (ep)
     return *ep;
   DT::XferFactory* tfactory = 
     DT::XferFactoryManager::getFactoryManager().find(loc);
   if (!tfactory)
     throw UnsupportedEndpointEx(loc);
+  // At this point this transport session (owned by a container),
+  // Doesn't know about this endpoint yet.
   ep = tfactory->getEndPoint(loc, false);
   ep->finalize();
   m_remoteEndpoints.insert(ep);
@@ -988,11 +969,11 @@ getEndpoint(const char* ep, bool local)
 {
   if (local) {
     for (DT::EndPointsIter i = m_localEndpoints.begin(); i != m_localEndpoints.end(); i++)
-      if ((*i)->end_point == ep)
+      if ((*i)->matchEndPointString(ep))
 	return *i;
   } else {
     for (DT::EndPointsIter i = m_remoteEndpoints.begin(); i != m_remoteEndpoints.end(); i++)
-      if ((*i)->end_point == ep)
+      if ((*i)->matchEndPointString(ep))
 	return *i;
   }
   return NULL;

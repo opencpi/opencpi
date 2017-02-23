@@ -65,21 +65,21 @@ ALLINC += . $(wildcard ../../*/include) $(wildcard ../../*/idl) $(EXTRA_INCLUDES
 #
 
 ifeq ($(MAINOBJS),)
-  ifeq ($(OCPI_OS),winnt)
+  ifeq ($(OCPI_TARGET_OS),winnt)
     ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)
       ALLLIBS := $(patsubst $(LIBDIR)/%.dll,../../%,$(wildcard $(LIBDIR)/*.dll)) $(ALLLIBS)
     else
       ALLLIBS := $(patsubst $(LIBDIR)/%.lib,../../%,$(wildcard $(LIBDIR)/*.lib)) $(ALLLIBS)
     endif
   else
-    ifneq ($(filter linux macos,$(OCPI_OS)),)
+    ifneq ($(filter linux macos,$(OCPI_TARGET_OS)),)
       ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)
         ALLLIBS := $(patsubst $(LIBDIR)/libocpi_%.$(SO),../../%,$(wildcard $(LIBDIR)/lib*.$(SO))) $(ALLLIBS)
       else
         ALLLIBS := $(patsubst $(LIBDIR)/libocpi_%.a,../../%,$(wildcard $(LIBDIR)/lib*.a)) $(ALLLIBS)
       endif
     else
-      ifeq ($(OCPI_OS),vxworksdkm)
+      ifeq ($(OCPI_TARGET_OS),vxworksdkm)
         ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),0)
           ALLLIBS := $(patsubst $(LIBDIR)/libocpi_%.a,../../%,$(wildcard $(LIBDIR)/lib*.a)) $(ALLLIBS)
         endif
@@ -87,7 +87,7 @@ ifeq ($(MAINOBJS),)
     endif
   endif
 endif
-ifeq ($(OCPI_OS),vxworksdkm)
+ifeq ($(OCPI_TARGET_OS),vxworksdkm)
 EXCLUDE_SOURCES += %-vxdkm-ctdc.c
 endif
 
@@ -120,13 +120,13 @@ VXWORKSDKMEXECUTABLES = $(patsubst %_main.c,$(OBJDIR)/%.out,$(CMAINS)) \
 ALLEXECUTABLES = $(ORIGEXECUTABLES) $(WINNTEXECUTABLES) \
 	$(LINUXEXECUTABLES) $(VXWORKSDKMEXECUTABLES)
 
-ifeq ($(OCPI_OS),winnt)
+ifeq ($(OCPI_TARGET_OS),winnt)
 EXECUTABLES = $(WINNTEXECUTABLES)
 else
-ifneq ($(filter linux macos,$(OCPI_OS)),)
+ifneq ($(filter linux macos,$(OCPI_TARGET_OS)),)
 EXECUTABLES = $(LINUXEXECUTABLES)
 else
-ifeq ($(OCPI_OS),vxworksdkm)
+ifeq ($(OCPI_TARGET_OS),vxworksdkm)
 EXECUTABLES = $(VXWORKSDKMEXECUTABLES)
 endif
 endif
@@ -152,24 +152,24 @@ clean: cleanup
 distclean: distcleanup
 	rm -f $(OBJECTS) $(ALLEXECUTABLES) $(ALLGENERATED)
 
-ifeq ($(OCPI_OS),winnt)
+ifeq ($(OCPI_TARGET_OS),winnt)
 $(OBJDIR)/%.exe: $(OBJDIR)/%_main.exe
 	cp $< $@
 else
-ifneq ($(filter linux macos,$(OCPI_OS)),)
+ifneq ($(filter linux macos,$(OCPI_TARGET_OS)),)
 $(OBJDIR)/%: $(OBJDIR)/%_main.exe
 	rm -f $@; cp -p $< $@; touch $@
 else
-ifeq ($(OCPI_OS),vxworksdkm)
+ifeq ($(OCPI_TARGET_OS),vxworksdkm)
 $(OBJDIR)/%.out: $(OBJDIR)/%_main.exe
 	cp $< $@
 endif
 endif
 endif
 
-ifeq ($(OCPI_OS),winnt)
+ifeq ($(OCPI_TARGET_OS),winnt)
 else
-ifneq ($(filter linux macos,$(OCPI_OS)),)
+ifneq ($(filter linux macos,$(OCPI_TARGET_OS)),)
 
 # $(OTHEROBJS) \
 
@@ -179,7 +179,7 @@ $(ORIGEXECUTABLES): $(OBJDIR)/%.exe: $(OBJDIR)/%.obj \
                     $(foreach l,$(ALLLIBS),$(call LIBDEP,$l)) \
                     $(DYNOBJS)
 else
-ifeq ($(OCPI_OS),vxworksdkm)
+ifeq ($(OCPI_TARGET_OS),vxworksdkm)
 
 ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)
 $(EXECUTABLES): $(OBJDIR)/%.out: $(OBJDIR)/%_main.exe

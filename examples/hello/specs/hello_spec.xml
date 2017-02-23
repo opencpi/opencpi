@@ -1,4 +1,4 @@
-<ComponentSpec Name="hello">
+<ComponentSpec>
   <DataInterfaceSpec Name="out" Producer="true">
     <Protocol>
       <Operation Name="send"><Argument Name="mesg" Type="string" StringLength="100"/></Operation>

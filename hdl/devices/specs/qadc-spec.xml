@@ -1,5 +1,5 @@
 <!-- The spec for quadrature ADCs, that all such things should be based on -->
-<ComponentSpec Name="qadc">
+<ComponentSpec>
   <xi:include href='adc-properties'/>
   <DataInterfaceSpec Name="OUT" Producer="true" protocol='iqstream_protocol' optional='1'/>
 </ComponentSpec>

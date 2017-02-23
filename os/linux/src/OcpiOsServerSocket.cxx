@@ -67,15 +67,15 @@ int ServerSocket::fd() throw() {
 }
 
 void ServerSocket::getAddr(Ether::Address &addr) {
-  int fd = o2fd(m_osOpaque);
-  ocpiAssert (fd >= 0);
+  int fd_tmp = o2fd(m_osOpaque);
+  ocpiAssert (fd_tmp >= 0);
 
   struct sockaddr_in sin;
   socklen_t len = sizeof(sin);
-  if (getsockname(fd, (struct sockaddr *)&sin, &len))
+  if (getsockname(fd_tmp, (struct sockaddr *)&sin, &len))
     throw Posix::getErrorMessage (errno, "getsockname");
   ocpiAssert(sin.sin_family == AF_INET);
-  addr.set(ntohs(sin.sin_port), ntohl(sin.sin_addr.s_addr));
+  addr.set(ntohs(sin.sin_port), sin.sin_addr.s_addr);
 }
 
 
@@ -105,25 +105,28 @@ ServerSocket::~ServerSocket ()
 }
 
 void ServerSocket::
-bind(uint16_t portNo, bool reuse, bool udp ) throw (std::string) {
+bind(uint16_t portNo, bool reuse, bool udp, bool loopback) throw (std::string) {
   ocpiAssert (o2fd (m_osOpaque) == -1);
 
-  struct sockaddr_in sin;
-  memset (&sin, 0, sizeof (struct sockaddr_in));
+  union {
+    struct sockaddr_in in;
+    struct sockaddr sa;
+  } sin;
+  memset (&sin, 0, sizeof (sin));
 
-  sin.sin_family = AF_INET;
+  sin.in.sin_family = AF_INET;
 #ifdef OCPI_OS_macos
-  sin.sin_len = sizeof(sin);
+  sin.in.sin_len = sizeof(sin);
 #endif
-  sin.sin_port = htons (portNo);
-  sin.sin_addr.s_addr = INADDR_ANY;
+  sin.in.sin_port = htons(portNo);
+  sin.in.sin_addr.s_addr = htonl(loopback ? INADDR_LOOPBACK : INADDR_ANY); 
 
   int fileno = ::socket (PF_INET, udp ? SOCK_DGRAM : SOCK_STREAM, udp ? IPPROTO_UDP : 0);
   if (fileno < 0)
     throw Posix::getErrorMessage (errno, "bind/socket");
   int reuseopt = reuse ? 1 : 0;
   if (::setsockopt(fileno, SOL_SOCKET, SO_REUSEADDR, (void *)&reuseopt, sizeof (int)) != 0 ||
-      ::bind (fileno, (struct sockaddr *) &sin, sizeof (sin)) != 0 ||
+      ::bind (fileno, &sin.sa, sizeof (sin)) != 0 ||
       (!udp && ::listen (fileno, DEFAULT_LISTEN_BACKLOG) != 0)) {
     ::close (fileno);
     throw Posix::getErrorMessage(errno, "bind/setsockopt/listen");
@@ -168,7 +171,7 @@ ServerSocket::wait (unsigned long msecs)
   struct timeval timeout;
   fd_set readfds;
 
-  int fd = o2fd (m_osOpaque);
+  int pfd = o2fd (m_osOpaque);
 
   /*
    * We want to wake up if the socket is closed in another thread.
@@ -181,7 +184,7 @@ ServerSocket::wait (unsigned long msecs)
 
  again:
   FD_ZERO (&readfds);
-  FD_SET (fd, &readfds);
+  FD_SET (pfd, &readfds);
 
   if (msecs != static_cast<unsigned long> (-1)) {
     timeout.tv_sec = (msecs >= 1000) ? 1 : 0;
@@ -192,7 +195,7 @@ ServerSocket::wait (unsigned long msecs)
     timeout.tv_usec = 0;
   }
 
-  int res = ::select (fd+1, &readfds, 0, 0, &timeout);
+  int res = ::select (pfd+1, &readfds, 0, 0, &timeout);
 
   if (res < 0) {
     throw Posix::getErrorMessage (errno);
