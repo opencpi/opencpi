@@ -34,7 +34,9 @@ echo Patching the root file system from the Xilinx binary release to the OpenCPI
 FROM=`pwd`
 SOURCE=$rdir/uramdisk.image.gz
 DEST=$FROM/uramdisk.image.gz
-T=/tmp/ocpi-patch-rootfs-$$
+#T=/tmp/ocpi-patch-rootfs-$$
+# We need to preserve the uncompressed root file system for access by gdb
+T=$FROM/uramdisk
 set -e
 rm -r -f $T
 mkdir $T
@@ -72,8 +74,10 @@ $FROM/mkimage \
   -n "" \
   -d ../out.root.image.gz \
   $DEST
+# Clean up temp files while leaving root fs alone for debugging access by gdb
+# The root fs clone could be further pruned to *only* support debugging.
+rm ../out.root.image.gz ../in.root.image
 cd $FROM
-rm -r -f $T
 echo A new patched root file system has been created, and placed in $(basename $FROM)
 echo Copying some ancillary files from the binary release into the opencpi zynq release
 # This is where we unfortunately need per-platform knowledge for now, otherwise we need a

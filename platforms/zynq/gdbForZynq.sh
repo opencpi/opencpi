@@ -25,7 +25,7 @@ shift
 source $OCPI_CDK_DIR/scripts/ocpitarget.sh $plat
 exec $OCPI_CROSS_BUILD_BIN_DIR/$OCPI_CROSS_HOST-gdb \
   $main \
-  -iex "set sysroot $OCPI_CDK_DIR/platforms/$plat/release/uramdisk/root" \
-  -iex "set solib-search-path  $OCPI_CDK_DIR/platforms/$plat:$OCPI_CDK_DIR/lib/$OCPI_TARGET_DIR:$OCPI_CDK_DIR/lib/components/rcc/$OCPI_TARGET_DIR" \
-  -iex "target remote ${addr}:1234" \
+  -ex "set sysroot $OCPI_CDK_DIR/platforms/$plat/release/uramdisk/root" \
+  -ex "set solib-search-path $OCPI_CDK_DIR/lib/$OCPI_TARGET_DIR:$OCPI_CDK_DIR/lib/components/rcc/$OCPI_TARGET_DIR" \
+  -ex "target remote ${addr}:1234" \
   $*
