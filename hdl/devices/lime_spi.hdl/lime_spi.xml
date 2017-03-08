@@ -10,7 +10,7 @@
   </ComponentSpec>
   <!-- We have two raw property masters, the rx and tx workers for the xcvr chip -->
   <rawprop name='rprops' count='2' optional='true'/>
-  <supports worker='lime_tx'>
+  <supports worker='lime_tx.hdl'>
     <connect port="rawprops" to="rprops" index='1'/>
   </supports>
   <supports worker='lime_rx'>

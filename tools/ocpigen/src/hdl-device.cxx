@@ -74,12 +74,22 @@ HdlDevice(ezxml_t xml, const char *file, const char *parentFile, Worker *parent,
 // So now this method simply creates a new device-type-worker each time it is called.
 // The name argument can be a file name.
 HdlDevice *HdlDevice::
-get(const char *name, const char *parentFile, Worker *parent, const char *&err) {
+get(const char *a_name, const char *parentFile, Worker *parent, const char *&err) {
   // New device type, which must be a file.
   ezxml_t xml;
   std::string xfile;
   DeviceType *dt = NULL;
-  if (!(err = parseFile(name, parentFile, NULL, &xml, xfile))) {
+  std::string name;
+  const char *dot = strrchr(a_name, '.');
+  if (dot) {
+    if (strcmp(dot + 1, "hdl")) {
+      err = OU::esprintf("Worker model for %s cannot be anything other than hdl here.", a_name);
+      return NULL;
+    }
+    name.assign(a_name, dot - a_name);
+  } else
+    name = a_name;
+  if (!(err = parseFile(name.c_str(), parentFile, NULL, &xml, xfile))) {
     dt = new DeviceType(xml, xfile.c_str(), parentFile, parent, Worker::Device, NULL, err);
     if (err) {
       delete dt;
