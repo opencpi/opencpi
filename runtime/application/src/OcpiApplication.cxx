@@ -49,10 +49,12 @@ namespace OCPI {
   namespace API {
     // Deal with a deployment file referencing an app file
     static OL::Assembly &
-    createLibraryAssembly(const char *file, ezxml_t &deployment, const PValue *params) {
+    createLibraryAssembly(const char *file, ezxml_t &deployXml, ezxml_t &appXml, char *&copy, 
+			  const PValue *params) {
       std::string appFile(file);
-      deployment = NULL;
-      ezxml_t xml = NULL;
+      deployXml = NULL;
+      copy = NULL;
+      appXml = NULL;
       do {
 	const char *err;
 	const char *cp = appFile.c_str();
@@ -60,9 +62,9 @@ namespace OCPI {
 	  cp++;
 	if (*cp == '<') {
 	  size_t len = strlen(cp);
-	  char *copy = new char[len + 1]; // leak for now FIXME
+	  copy = new char[len + 1]; // leak for now FIXME
 	  strcpy(copy, cp);
-	  if ((err = OE::ezxml_parse_str(copy, len, xml)))
+	  if ((err = OE::ezxml_parse_str(copy, len, appXml)))
 	    throw OU::Error("Error: application XML string parse error: %s", err);
 	} else {
 	  if (!OS::FileSystem::exists(appFile)) {
@@ -71,37 +73,39 @@ namespace OCPI {
 	      throw OU::Error("Error: application file %s (or %s) does not exist\n", file,
 			      appFile.c_str());
 	  }
-	  if ((err = OE::ezxml_parse_file(appFile.c_str(), xml)))
+	  if ((err = OE::ezxml_parse_file(appFile.c_str(), appXml)))
 	    throw OU::Error("Can't parse application XML file \"%s\": %s", appFile.c_str(), err);
 	}
-	if (!strcasecmp(ezxml_name(xml), "deployment")) {
-	  if ((err = OE::getRequiredString(xml, appFile, "application")))
+	if (!strcasecmp(ezxml_name(appXml), "deployment")) {
+	  if ((err = OE::getRequiredString(appXml, appFile, "application")))
 	    throw OU::Error("For deployment XML file \"%s\": %s", file, err);
-	  deployment = xml;
+	  deployXml = appXml;
 	}
-      } while (deployment == xml);
+      } while (deployXml == appXml);
       std::string name;
       OU::baseName(appFile.c_str(), name);
-      return *new OL::Assembly(xml, name.c_str(), params);
+      return *new OL::Assembly(appXml, name.c_str(), params);
     }
 
     ApplicationI::ApplicationI(Application &app, const char *file, const PValue *params)
-      : m_assembly(createLibraryAssembly(file, m_deployment, params)), m_apiApplication(app) {
+      : m_assembly(createLibraryAssembly(file, m_deployXml, m_appXml, m_copy, params)), 
+	m_apiApplication(app) {
       init(params);
     }
-    ApplicationI::ApplicationI(Application &app, const std::string &string, const PValue *params)
-      : m_assembly(createLibraryAssembly(string.c_str(), m_deployment, params)), 
+    ApplicationI::ApplicationI(Application &app, const std::string &str, const PValue *params)
+      : m_assembly(createLibraryAssembly(str.c_str(), m_deployXml, m_appXml, m_copy, params)), 
 	m_apiApplication(app) {
       init(params);
     }
     ApplicationI::ApplicationI(Application &app, ezxml_t xml, const char *name,
 			       const PValue *params)
-      : m_deployment(NULL), m_assembly(*new OL::Assembly(xml, name, params)),
-	m_apiApplication(app)  {
+      : m_deployXml(NULL), m_appXml(NULL), m_copy(NULL),
+	m_assembly(*new OL::Assembly(xml, name, params)), m_apiApplication(app)  {
       init(params);
     }
     ApplicationI::ApplicationI(Application &app, OL::Assembly &assy, const PValue *params)
-      : m_deployment(NULL), m_assembly(assy), m_apiApplication(app) {
+      : m_deployXml(NULL), m_appXml(NULL), m_copy(NULL), m_assembly(assy),
+	m_apiApplication(app) {
       m_assembly++;
       init(params);
     }
@@ -110,6 +114,9 @@ namespace OCPI {
     }
     void ApplicationI::clear() {
       m_assembly--;
+      ezxml_free(m_deployXml);
+      ezxml_free(m_appXml);
+      delete [] m_copy;
       delete [] m_instances;
       delete [] m_bookings;
       delete [] m_deployments;
@@ -660,7 +667,7 @@ namespace OCPI {
     }
     // The explicit way to figure out a deployment from a file
     void ApplicationI::
-    importDeployment(const char *file, ezxml_t xml, const PValue *params) {
+    importDeployment(const char *file, ezxml_t &xml, const PValue *params) {
       if (!xml) {
 	const char *err = OE::ezxml_parse_file(file, xml);
 	if (err)
@@ -768,8 +775,8 @@ namespace OCPI {
 	  throw OU::Error("%s", err);
 	// We are at the point where we need to either plan or import the deployment.
 	const char *dfile = NULL;
-	if (m_deployment || OU::findString(params, "deployment", dfile))
-	  importDeployment(dfile, m_deployment, params);
+	if (m_deployXml || OU::findString(params, "deployment", dfile))
+	  importDeployment(dfile, m_deployXml, params);
 	else
 	  planDeployment(params);
 	// This array is sized and initialized here since it is needed for property finalization

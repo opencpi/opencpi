@@ -62,7 +62,9 @@ namespace OCPI {
 
     class ApplicationI : public OCPI::Container::Callback {
       typedef OCPI::Container::Container::CMap CMap;
-      ezxml_t m_deployment;
+      ezxml_t m_deployXml;
+      ezxml_t m_appXml;
+      char   *m_copy; // copy of input XML string
       OCPI::Library::Assembly &m_assembly;
 
       size_t m_nInstances;
@@ -166,7 +168,7 @@ namespace OCPI {
 				     const OCPI::Library::Implementation &impl,
 				     unsigned *&pn, OCPI::Util::Value *&pv);
       void planDeployment(const PValue *params);
-      void importDeployment(const char *file, ezxml_t xml, const PValue *params);
+      void importDeployment(const char *file, ezxml_t &xml, const PValue *params);
     public:
       explicit ApplicationI(OCPI::API::Application &app, const char *file,
 			    const OCPI::API::PValue *params = NULL);
