@@ -82,7 +82,10 @@ namespace OCPI {
 	return Parent<Art>::findChildByName(a_name);
       }
       Artifact *findLoadedArtifact(const OCPI::Library::Artifact &art) {
-	return Parent<Art>::findChild(&Art::hasArtifact, (void *)&art);
+	Artifact *a = Parent<Art>::findChild(&Art::hasArtifact, (void *)&art);
+	if (a)
+	  a->ensureLoaded();
+	return a;
       }
       App *firstApplication() const {
 	return Parent<App>::firstChild();

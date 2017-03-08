@@ -73,8 +73,9 @@ namespace OCPI {
     protected:
       Artifact(OCPI::Library::Artifact &lart, const OCPI::Util::PValue *props = NULL);
       void removeWorker(Worker &);
-      // Is this library artifact the one I loaded?
     public:
+      // Make sure this is loaded and ready to execute in case it was unloaded
+      virtual void ensureLoaded() {}
       const OCPI::Library::Artifact &libArtifact() const { return m_libArtifact; }
       virtual const std::string &name() const = 0;
       bool hasArtifact(const void *art);

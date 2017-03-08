@@ -129,6 +129,9 @@ namespace OCPI {
 
       Artifact(Container &c, OCPI::Library::Artifact &lart, const OA::PValue *artifactParams) :
 	OC::ArtifactBase<Container,Artifact>(c, *this, lart, artifactParams) {
+#if 1	
+	ensureLoaded();
+#else
 	if (!lart.uuid().empty() && c.hdlDevice().isLoadedUUID(lart.uuid())) {
 	  ocpiInfo("For HDL container %s, when loading bitstream %s, uuid matches what is "
 		   "already loaded\n", c.name().c_str(), name().c_str());
@@ -156,8 +159,40 @@ namespace OCPI {
 	      wci.controlOperation(OU::Worker::OpStart);
 	    }
 	}
+#endif
       }
       ~Artifact() {}
+      void ensureLoaded() {
+	Container &c = parent();
+	const OL::Artifact &lart = libArtifact();
+	if (!lart.uuid().empty() && c.hdlDevice().isLoadedUUID(lart.uuid())) {
+	  ocpiInfo("For HDL container %s, when loading bitstream %s, uuid matches what is "
+		   "already loaded\n", c.name().c_str(), name().c_str());
+	  c.hdlDevice().connect();
+	} else {
+	  ocpiInfo("Loading bitstream %s on HDL container %s\n",
+		   name().c_str(), c.name().c_str());
+	  // If the device needs a container background thread, make sure its started.
+	  c.start();
+	  std::string error;
+	  if (c.hdlDevice().load(name().c_str(), error))
+	    throw OU::Error("loading %s on HDL device %s: %s",
+			    name().c_str(), c.name().c_str(), error.c_str());
+	  if (!c.hdlDevice().isLoadedUUID(lart.uuid()))
+	    throw OU::Error("After loading %s on HDL device %s, uuid is wrong.  Wanted: %s",
+			    name().c_str(), c.name().c_str(),
+			    lart.uuid().c_str());
+	  // make sure inserted adapters are started.
+	  const OL::Implementation *i;
+	  for (unsigned n = 0; (i = lart.getImplementation(n)); n++)
+	    if (i->m_inserted) {
+	      WciControl wci(parent().hdlDevice(), i->m_metadataImpl.m_xml, i->m_staticInstance,
+			     NULL);
+	      wci.controlOperation(OU::Worker::OpInitialize);
+	      wci.controlOperation(OU::Worker::OpStart);
+	    }
+	}
+      }
     };
 
     static void doWorkers(Device &device, ezxml_t top, char letter, bool hex) {

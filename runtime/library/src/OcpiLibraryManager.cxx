@@ -353,8 +353,8 @@ namespace OCPI {
 	throw OU::Error("Error processing metadata from artifact file: %s: %s", a_name, err);
     }
 
-    Implementation *Artifact::
-    getImplementation(unsigned n) {
+    const Implementation *Artifact::
+    getImplementation(unsigned n) const {
       unsigned nn = 0;
       for (WorkerIter wi = m_workers.begin(); wi != m_workers.end(); ++wi, ++n)
 	if (nn == n)
