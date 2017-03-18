@@ -24,7 +24,7 @@ trap cleanup EXIT
   [ -f $OcpiXilinxIseDir/settings64.sh ] ||
     bad No Xilinx settings file in $OcpiXilinxIseDir.
   [ -n "$verbose" ] && echo Attempting to run a tiny simulation to test isim. 1>&2
-  tmpdir=`mktemp -d 2>/dev/null || mktemp -d -t 'mytmpdir'` # stackoverflow 30091
+  tmpdir=`mktemp -d 2>/dev/null || mktemp -d -t 'mytmpdirXXX'` # stackoverflow 30091
   cd $tmpdir
   tar xzf $probefile
   export LM_LICENSE_FILE=$OcpiXilinxLicenseFile
@@ -45,6 +45,7 @@ setVarsFromMake $OCPI_CDK_DIR/include/hdl/xilinx.mk ShellIseVars=1 $verbose
 }
 set -e
 # Pass arguments to the settings script to override current args
+echo . $OcpiXilinxIseDir/settings64.sh $OcpiXilinxIseDir 1>&2
 . $OcpiXilinxIseDir/settings64.sh $OcpiXilinxIseDir
 export LM_LICENSE_FILE=$OcpiXilinxLicenseFile
 appname=$1
@@ -53,7 +54,16 @@ for i in $*; do echo for $i; plusargs="$plusargs -testplusarg $i"; done
 echo plusargs are: $plusargs
 echo doing ./$appname.exe $plusargs
 # The quit is necessary below to dump out the simulation.  Without it, it doesn't happen.
-exec ./$appname.exe $plusargs <<EOF
+exename=(./*.exe)
+[ ${#exename[@]} != 1 ] && {
+    echo Ambiguous Isim executable in `pwd`, more than 1 .exe file found. 1>&2
+    exit 1
+}
+[ -x $exename ] || {
+    echo Failed to execute Isim simulation executable: `pwd`/$appname.exe 1>&2
+    exit 1
+}
+exec $exename $plusargs <<EOF
 scope
 show child -r
 wave log -r /
