@@ -111,7 +111,7 @@ architecture rtl of decoder is
     for i in 0 to properties'right loop
       if (ocpi_debug or not properties(i).debug) and properties(i).readable and re(i) then
         x := x or to_unsigned(i, x'length);
-        report "setting X to " & integer'image(i) & " and x is now " & integer'image(to_integer(x));
+        -- report "setting X to " & integer'image(i) & " and x is now " & integer'image(to_integer(x));
       end if;
     end loop;
     return x;
