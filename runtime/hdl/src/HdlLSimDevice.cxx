@@ -424,6 +424,7 @@ protected:
   }
   void
   shutdown() {
+    ocpiInfo("HDL Simulator Shutdown.  Current pid: %u", m_pid);
     OU::SelfAutoMutex guard (this);
     // Disable container thread
     if (m_state == EMULATING)
@@ -675,7 +676,7 @@ public:
       if (!doit(error) && m_cumTicks < m_simTicks)
 	return false;
     }
-    ocpiDebug("exit simulator container thread x %d s %d ct %" PRIu64 " st %u e '%s'",
+    ocpiInfo("exit simulator container thread x %d s %d ct %" PRIu64 " st %u e '%s'",
 	      m_exited, s_stopped, m_cumTicks, m_simTicks, error.c_str());
     if (m_exited) {
       if (m_verbose)
@@ -908,7 +909,7 @@ public:
       else if (offset >= offsetof(OccpSpace, config))
 	if ((offset - offsetof(OccpSpace, config)) >=
 	    OCCP_WORKER_CONFIG_SIZE + 2*sizeof(uint64_t))
-	  throwit("Read/write offset out of range1: 0x%" PRIx64, offset);
+	  throwit("Read/write offset out of range1 when emulating: 0x%" PRIx64, offset);
 	else {
 	  offset -= offsetof(OccpSpace, config);
 	  if (offset >= OCCP_WORKER_CONFIG_SIZE)
@@ -918,7 +919,7 @@ public:
 	}
       else if (offset >= offsetof(OccpSpace, worker)) {
 	if ((offset - offsetof(OccpSpace, worker)) >= sizeof(OccpWorker) * 2)
-	  throwit("Read/write offset out of range2: 0x%" PRIx64, offset);
+	  throwit("Read/write offset out of range2 when emulating: 0x%" PRIx64, offset);
 	else {
 	  //	  offset -= offsetof(OccpSpace, worker);
 	  if (offset >= offsetof(OccpSpace, worker))

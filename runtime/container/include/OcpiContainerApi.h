@@ -254,7 +254,9 @@ namespace OCPI {
     // on their stack so that access to members (in inline methods) has no indirection.
     class Property {
       friend class OCPI::Container::Worker;
+    protected:
       Worker &m_worker;               // which worker do I belong to
+    private:
       const volatile void *m_readVaddr;
       volatile void *m_writeVaddr;
     public:
@@ -263,7 +265,7 @@ namespace OCPI {
     private:
       bool m_readSync, m_writeSync;   // these exist to avoid exposing the innards of m_info.
     public:
-      Property(Application &, const char *, const char * = NULL);
+      Property(const Application &, const char *, const char * = NULL);
       Property(Worker &, const char *);
     private:
       Property(Worker &, unsigned);

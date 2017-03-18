@@ -1137,7 +1137,7 @@ namespace OCPI {
     }
 
     // The name might have a dot in it to separate instance from property name
-    Worker &ApplicationI::getPropertyWorker(const char *name, const char *&pname) {
+    Worker &ApplicationI::getPropertyWorker(const char *name, const char *&pname) const {
       const char *dot;
       if (pname || (dot = strchr(name, '.'))) {
 	size_t len = pname ? strlen(name) : dot - name;
@@ -1163,7 +1163,7 @@ namespace OCPI {
     }
     // FIXME:  consolidate the constructors (others are in OcpiProperty.cxx) (have in internal class for init)
     // FIXME:  avoid the double lookup since the first one gets us the ordinal
-    Property::Property(Application &app, const char *aname, const char *pname)
+    Property::Property(const Application &app, const char *aname, const char *pname)
       : m_worker(app.getPropertyWorker(aname, pname)),
 	m_readVaddr(0), m_writeVaddr(0),
 	m_info(m_worker.setupProperty(pname ? pname : maybePeriod(aname), m_writeVaddr,
@@ -1180,7 +1180,11 @@ namespace OCPI {
 	return NULL;
       Property &p = m_properties[ordinal];
       name = p.m_name;
+#if 1
+      return &m_instances[p.m_instance].m_impl->m_metadataImpl.property(p.m_property);
+#else
       return &m_launchInstances[p.m_instance].m_worker->property(p.m_property);
+#endif
     }
 
     bool ApplicationI::getProperty(unsigned ordinal, std::string &name, std::string &value,
@@ -1374,7 +1378,7 @@ namespace OCPI {
 
     }
     Worker &Application::
-    getPropertyWorker(const char *name, const char *&pname) {	\
+    getPropertyWorker(const char *name, const char *&pname) const {	\
       return m_application.getPropertyWorker(name, pname);
     }
 

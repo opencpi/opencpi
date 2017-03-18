@@ -677,6 +677,7 @@ setParamConfig(OU::Assembly::Properties *instancePVs, size_t paramConfig) {
   }
   if (!m_paramConfig)
     return
-      OU::esprintf("No built parameter configuration for worker matches requested parameter values");
+      OU::esprintf("No built parameter configuration for worker \"%s\" matches requested "
+		   "parameter values", cname());
   return NULL;
 }

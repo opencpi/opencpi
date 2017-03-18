@@ -32,33 +32,42 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "OcpiOsDebugApi.h"
 #include "OcpiUtilProperty.h"
+#include "OcpiUtilException.h"
 #include "OcpiContainerApi.h"
 
+namespace OU = OCPI::Util;
+namespace OS = OCPI::OS;
 namespace OCPI {
   namespace API {
     PropertyAccess::~PropertyAccess(){}
     void Property::checkTypeAlways(BaseType ctype, size_t n, bool write) const {
+      const char *err = NULL;
       if (write && !m_info.m_isWritable)
-	throw "trying to write a non-writable property";
-      if (write && !m_worker.beforeStart() && m_info.m_isInitial)
-	throw "trying to write a an initial property after worker is started";
-      if (!write && !m_info.m_isReadable)
-	throw "trying to read a non-readable property";
-      if (m_info.m_baseType == OCPI_Struct)
-	throw "struct type used as scalar type";
-      if (ctype != m_info.m_baseType)
-	throw "incorrect type for this property";
-      if (m_info.m_isSequence) {
+	err = "trying to write a non-writable property";
+      else if (write && !m_worker.beforeStart() && m_info.m_isInitial)
+	err = "trying to write a an initial property after worker is started";
+      else if (!write && !m_info.m_isReadable)
+	err = "trying to read a non-readable property";
+      else if (m_info.m_baseType == OCPI_Struct)
+	err = "struct type used as scalar type";
+      else if (ctype != m_info.m_baseType)
+	err = "incorrect type for this property";
+      else if (m_info.m_isSequence) {
 	if (n % m_info.m_nItems)
-	  throw "number of items not a multiple of array size";
-	n /= m_info.m_nItems;
-	if (write && n > m_info.m_sequenceLength)
-	  throw "sequence or array too long for this property";
-	if (!write && n < m_info.m_sequenceLength)
-	  throw "sequence or array not large enough for this property";
+	  err = "number of items not a multiple of array size";
+	else {
+	  n /= m_info.m_nItems;
+	  if (write && n > m_info.m_sequenceLength)
+	    err = "sequence or array too long for this property";
+	  else if (!write && n < m_info.m_sequenceLength)
+	    err = "sequence or array not large enough for this property";
+	}
       } else if (n != m_info.m_nItems)
-	throw "wrong number of values for non-sequence type";
+	  err = "wrong number of values for non-sequence type";
+      if (err)
+	throw OU::Error("Access error for property \"%s\": %s", m_info.cname(), err);
     }
     // This is user-visible, initialized from information in the metadata
     // It is intended to be constructed on the user's stack - a cache of

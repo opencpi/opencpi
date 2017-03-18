@@ -112,7 +112,8 @@ namespace OCPI {
 	if (isSource == w->isSource() &&
 	    isMaster == (w->slave() != NULL) &&
 	    isSlave == w->hasMaster()) {
-	  assert(w->getState() == OU::Worker::INITIALIZED);
+	  assert(w->getState() == OU::Worker::INITIALIZED || 
+		 w->getState() == OU::Worker::SUSPENDED);
 	  ocpiInfo("Starting worker: %s in container %s from %s/%s", w->name().c_str(),
 		   container().name().c_str(), w->implTag().c_str(), w->instTag().c_str());
 	  w->start();
