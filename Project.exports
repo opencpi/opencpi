@@ -25,7 +25,7 @@ runtime/ctests
 runtime/application
 tools/cdkutils
 tools/ocpigen
-#tools/ocpisca
+tools/ocpisca
 tools/cdk/ocpidds
 # tools/astyle
 tests
@@ -137,6 +137,10 @@ tests
 # for backward compatibility of system.xml files
 +runtime/dataplane/rdma_drivers/socket/target-<target>/libocpi_socket.* lib/<target>/libocpi_sockets<suffix>
 +runtime/dataplane/rdma_drivers/socket/target-<target>/libocpi_socket_s.* lib/<target>/libocpi_sockets_s<suffix>
+################################################################################
+# SCA/RH related additions. main program ocpirh_proxy automatically exported
++tools/ocpirh/ocpirh_export.sh bin/<target>/ocpirh_export
++tools/ocpirh/target-<target>/ocpirh_proxy bin/<target>/
 ################################################################################
 # OCL related exclusions and additions
 +tools/cdk/include/ocl include/
