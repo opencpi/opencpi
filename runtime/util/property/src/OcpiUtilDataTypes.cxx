@@ -744,7 +744,7 @@ namespace OCPI {
 	} else
 	  minSizeBits = scalarBits;
       }
-      m_elementBytes = m_nBits/CHAR_BIT;
+      m_elementBytes = nBytes; // was m_nBits/CHAR_BIT;
       if (m_arrayRank || m_isSequence)
 	m_elementBytes = roundUp((uint32_t)m_elementBytes, m_align);
       // Calculate the number of bytes in each element of an array/sequence
