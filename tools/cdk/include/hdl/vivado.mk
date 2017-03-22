@@ -306,7 +306,7 @@ HdlToolCompile=\
 #if grep -qE '[0-9]* Infos, [0-9]* Warnings, [0-9]* Critical Warnings, and 0 Errors encountered.' $(HdlLog); then \
 
 HdlToolPost=\
-  if grep -q ' 0 Errors encountered' $(HdlLog); then \
+  if grep -q ' 0 Errors encountered' $(HdlLog) || [ $(HdlMode) == library ] ; then \
     HdlExit=0; \
   else \
     HdlExit=1; \
