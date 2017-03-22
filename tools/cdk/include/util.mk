@@ -384,7 +384,7 @@ RmRv=$(if $(filter %_rv,$1),$(patsubst %_rv,%,$1),$1)
 OcpiAdjustLibraries=$(foreach l,$1,$(if $(findstring /,$l),$(call AdjustRelative,$l),$l))
 
 ifndef OCPI_PREREQUISITES_INSTALL_DIR
-  export OCPI_PREREQUISITES_INSTALL_DIR:=/opt/opencpi/prerequisites
+  export OCPI_PREREQUISITES_INSTALL_DIR:=$(OCPI_PREREQUISITES_DIR)
 endif
 
 ################################################################################

@@ -76,14 +76,6 @@ function get_dirtype {
   dirtype=$(sed -n 's=^[ 	]*include[ 	]*.*OCPI_CDK_DIR.*/include/\(.*\)\.mk.*=\1=p' $1/Makefile)
   dirtype=${dirtype##hdl\/}
   dirtype=${dirtype##rcc\/}
-  # We ideally should be leaving hdl- at the front of the makefile name.
-  # Stripping hdl-/rcc- made it easier for now, but may cause complications
-  # as we add some more of the rcc subtree equivalents
-#  dirtype=${dirtype##hdl-}
-#  dirtype=${dirtype##rcc-}
-  #if [[ $dirtype == *"library" ]] ; then
-  #  dirtype=library
-  #fi
 }
 
 # Look in a directory and determine the type of the Makefile, set dirtype
@@ -102,7 +94,7 @@ function check_dirtype {
 # being operated on.
 function get_subdir {
   case "$noun" in
-    (worker|device|subdevice|spec|protocol|properties|signals|test|card|slot) libasset=1;;
+    (worker|device|spec|protocol|properties|signals|test|card|slot) libasset=1;;
     (library|assembly|platform|primitive|application|project) libasset=;;
     (*) bad invalid noun \"$noun\";;
   esac
@@ -138,7 +130,7 @@ function get_subdir {
         ;;
       (library)
         if [ -n "$library" -o -n "$platform" -o -n "$card" -o -n "$project" ] ; then
-          bad cannot specify \"-l, -h, -P, -c, or -p\" \(library/platform/card/project\) from within a library.
+          bad cannot specify \"-l, -h, -P, or -p\" \(library/platform/project\) from within a library.
         else
           subdir=.
         fi
@@ -146,32 +138,16 @@ function get_subdir {
       (libraries)
         if [ -n "$library" ] ; then
           if [ -n "$platform" -o -n "$card" -o -n "$project" ] ; then
-            bad cannot specify  \"-P, -c, or -p\" \(platform/card/project\) within a libraries collection.
+            bad cannot specify  \"-P, or -p\" \(platform/project\) within a libraries collection.
           fi
           subdir=$(basename $library)
         else
           bad must specify a library when operating from a libraries collection.
         fi
         ;;
-      (hdl-make) # hdl subdir
-        if [ -n "$project" ] ; then
-            bad cannot specify  \"-p\" \(project\) within the hdl directory.
-        elif [ -n "$library" ] ; then
-          subdir=$(basename $library)
-        elif [ -n "$platform" ] ; then
-          [ -d "platforms/$platform" ] ||
-            bad the platform $platform does not exist \(in platforms/$platform\)
-          autocreate=1
-          subdir=platforms/$platform/devices
-        else
-          autocreate=1
-          subdir=devices
-          #bad must specify a library when operating from a libraries collection.
-        fi
-        ;;
       (hdl-platform)
         if [ -n "$library" -o -n "$platform" -o -n "$card" -o -n "$project" ] ; then
-          bad cannot specify  \"-l, -h, -P, -c, or -p\" \(library/platform/card/project\) within a platform.
+          bad cannot specify  \"-l, -h, -P, or -p\" \(library/platform/project\) within a platform.
         else
           autocreate=1
           subdir=devices
@@ -180,7 +156,7 @@ function get_subdir {
       (hdl-platforms)
         if [ -n "$platform" ] ; then
           if [ -n "$library" -o -n "$card" -o -n "$project" ] ; then
-            bad cannot specify  \"-l, -h, -c, or -p\" \(library/card/project\) within a platform.
+            bad cannot specify  \"-l, -h, or -p\" \(library/project\) within a platform.
           fi
           [ -d "$platform" ] ||
             bad the platform $platform does not exist \(in hdl/platforms/$platform\)
@@ -190,13 +166,13 @@ function get_subdir {
           bad must choose a platform \(-P\) when operating from the platforms directory.
         fi
         ;;
-      (*) bad cannot operate within directory of type \"$dirtype\".;;
+      (*) bad cannot operate within directory of type \"$dirtype\". If you are in the hdl/ directory, try returning to the top level of your project. ;;
     esac
     [ -d "$subdir" -o "$verb" != create ] || { if [ "$autocreate" == 1 ] ; then make_library $subdir $subdir ; fi }
     [ -d "$subdir" ] || bad the library for '"'$library'"' '('$subdir')' does not exist
     # Confirm that the subdirectory targeted is in fact a library
     get_dirtype $subdir
-    [ "$dirtype" = library -o -n "$project" ] ||
+    [ -n "$standalone" -o "$dirtype" = library -o -n "$project" ] ||
       bad the directory for '"'$library'"' '('$libdir')' is not a library - it is of type '"'$dirtype'"'
     # Restore the desired dirtype (current directory) for use after this function call.
     get_dirtype .
@@ -217,7 +193,7 @@ function get_deletecmd {
       deletecmd="delete hdl $noun "
     fi
     case "$dirtype" in
-      (project|hdl-make|libraries)
+      (project|libraries)
         if [ -n "$platform" ] ; then
           deletecmd="-P $platform $deletecmd"
         elif [ -n "$library" ] ; then
@@ -325,9 +301,10 @@ EOF
 # Some data files
 function do_application {
   set -e
-  case "$dirtype" in
+  subdir=./
+  [ -z "$standalone" ] && case "$dirtype" in
     (project) subdir=applications/;;
-    (applications) subdir=.;;
+    (applications) subdir=./;;
     (*) bad this command can only be issued in a project directory or an applications directory;;
   esac
   adir=$subdir$1
@@ -562,70 +539,12 @@ EOF
 function make_hdl_dir {
   if [ ! -d "hdl" ] ; then
     mkdir hdl
-    cat <<EOF > hdl/Makefile
-# Make the hdl assets
-include \$(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
-
-MyMake=echo ===================\$(or \$(3),Making) HDL \$(1); \\
-      if [ ! -d "\$(1)" ] ; then echo "====Directory \$(1) does not exist."; else \\
-      \$(MAKE) --no-print-directory -C \$(2)\$(1) \$(HdlPassTargets) \$(4); \\
-      fi;
-
-.PHONY: base portable primitives devices cards platforms components adapters assemblies clean
-
-all hdl:assemblies
-
-base: portable platforms
-
-portable: components adapters devices cards
-
-adapters: primitives
-	\$(AT)\$(call MyMake,adapters)
-
-cards: primitives
-	\$(AT)\$(call MyMake,cards)
-
-assemblies: base
-	\$(AT)\$(call MyMake,assemblies)
-
-components: primitives
-	\$(AT)\$(call MyMake,components,../,hdl)
-
-devices: primitives
-	\$(AT)\$(call MyMake,devices)
-
-platforms: primitives devices
-	\$(AT)\$(call MyMake,platforms)
-
-primitives:
-	\$(AT)\$(call MyMake,primitives)
-
-clean:
-	-\$(AT)for i in primitives platforms; do \\
-		\$(call MyMake,\$\$i,,Cleaning,clean); \\
-		done
-	-\$(AT)\$(call MyMake,components,../,Cleaning,clean)
-	-\$(AT)\$(call MyMake,devices,,Cleaning,clean)
-	-\$(AT)\$(call MyMake,adapters,,Cleaning,clean)
-	-\$(AT)\$(call MyMake,cards,,Cleaning,clean)
-	-\$(AT)\$(call MyMake,assemblies,,Cleaning,clean)
-EOF
   fi
 }
 
 # make a library named $1, in the directory $2
 function make_library {
   mkdir -p $2
-  # TODO: Package should NOT be hard coded to ocpi*.
-  # I am not sure if we want to expose the Package variable
-  # to the user when creating a library.
-  #case $1 in
-  #  (hdl/devices|hdl/cards) pkgline="Package=ocpi.devices" ;;
-  #  (*) pkgline="Package=ocpi" ;;
-  #esac
-#  unset pkgline
-#  [ -z $package ] || pkgline="Package=$package"
-  
   cat <<EOF > $2/Makefile
 # This is the $1 library
 
@@ -648,51 +567,60 @@ function do_library {
   set -e
   odirtype=$dirtype
   [ -z $library ] || bad The -l and -h options are invalid when deleting or adding a library
-  if [ -z "$libbase" ] ; then
+  subdir=$1 
+  if [ -n "$standalone" ] ; then
+    libbase=.
+    subdir=$1
+  elif [ -z "$libbase" ] ; then
     libbase=components
   fi
-  case "$dirtype" in 
+  [ -z "$standalone" ] && case "$dirtype" in 
     (project)
       [ "$libbase" != hdl -o -d "hdl" -o "$verb" != create ] || make_hdl_dir
       if [ $1 == $libbase ] ; then
         subdir=$libbase #is this ever valid? I dont think so
+      elif [ -n "$platform" ] ; then
+        [ "$1" == devices ] || bad can only create the devices library under a platform
+        subdir=hdl/platforms/$platform/devices
       else
         subdir=$libbase/$1
       fi
       ;;
-    (hdl-make) subdir=$1;;
-    (libraries) subdir=$1;;
+    (libraries) 
+      [ -z "$platform" ] || bad cannot specify a platform from within a libraries collection.
+      subdir=$1
+      ;; 
     (*) bad this command can only be issued in a project directory or a components directory
   esac
   if [ $verb == delete ]; then
-    [ $subdir == $libbase ] && check_components deleted $libbase
+    [ "$subdir" == "$libbase" ] && check_components deleted $libbase
     [ -e $subdir ] || bad the library \(directory\) \"$subdir\" does not exist
     get_dirtype $subdir
     [ "$dirtype" == library ] ||
       bad the directory \"$subdir\" does not appear to be a library
     ask delete the library directory \"$subdir\"
     rm -r -f $subdir
-    if [ $odirtype == project -a $subdir != $libbase -a "$(ls $libbase)" == Makefile ] ; then
+    if [ "$odirtype" == project -a "$subdir" != "$libbase" -a "$(ls $libbase)" == Makefile ] ; then
       rm -r -f $libbase
     fi
     [ -z $verbose ] || echo The library named \"$1\" \(directory \"$subdir/\"\) has been deleted.
     return 0
   fi
-  [ -e $subdir ] && bad the library \"$1\" \(directory $subdir/\) already exists
-  if [ -d $libbase ] ; then
+  [ -e "$subdir" ] && bad the library \"$1\" \(directory $subdir/\) already exists
+  if [ -d "$libbase" ] ; then
     get_dirtype $libbase
     case "$dirtype" in
       (library|lib)
         bad this project already has a \"$libbase\" library, you cannot create another library.
         ;;
-      (libraries|hdl-make) # make covers the hdl directory which includes hdl-make.mk
+      (libraries)
         ;;
-      (*)
-        bad unexpected contents of $libbase directory \($dirtype\);;
+      ("") ;; #standalone
+      (*) bad unexpected contents of $libbase directory \($dirtype\);;
     esac
   fi
   if [ "$subdir" != "$libbase" -a ! -d "$libbase"  -a "$libbase" != hdl ] ; then
-    mkdir $libbase
+    mkdir -p $libbase
     cat <<EOF > $libbase/Makefile
 $CheckCDK
 # This is the Makefile for the $libbase directory when there are multiple
@@ -721,10 +649,6 @@ function get_spec {
       elif [ -e $subdir/specs/${1}_spec.xml -o \
              "$odirtype" == project -a -e specs/${1}_spec.xml ]; then
 	s=${1}_spec
-  #    elif [ $noun = subdevice ]; then
-  #      # some of our subdevices do not have specs
-  #      # so we allow subdevices to omit specs
-  #      s=
       elif [ -n "$emulates" ] ; then
         s=emulator-spec
       elif [ "$odirtype" == project ]; then
@@ -747,7 +671,7 @@ function get_spec {
   else
     specattr=" spec='$s'"
   fi
-  if [ $noun = subdevice ] ; then
+  if [ -n "$supported" ] ; then
     specelem="$specelem 
 $specopt  <!-- If this subdevice is sharing raw properties, include the following line:
     The count is the number of device workers that may share this subdevice
@@ -814,7 +738,7 @@ function do_worker {
   if [ $noun = worker ] ; then
      elem=${elem}Worker
   else
-     # for devices and subdevices
+     # for devices
      elem=${elem}Device
   fi
   if [ -n "$workers" ] ; then
@@ -1030,7 +954,6 @@ function do_hdl_platform {
       [ -d "hdl" -o "$verb" != create ] || make_hdl_dir
       ;;
     (hdl-platforms)subdir=./;;
-    (hdl-make) subdir=platforms/;; # This handles being inside the hdl subdirectory
     (*) bad this command can only be issued in a project directory, hdl, or hdl/platforms directory;;
   esac
   pdir=$subdir$1
@@ -1069,9 +992,12 @@ ${cores:+Cores=${cores[@]}}
 ${complibs:+ComponentLibraries=${complibs[@]}}
 include \$(OCPI_CDK_DIR)/include/hdl/hdl-platform.mk
 EOF
+  if [ -z "$hdlpart" ] ; then
+    hdlpart="xc7z020-1-clg484"
+  fi
   cat<<EOF > $subdir/$1/$1.mk
 # SET THIS VARIABLE to the part (die-speed-package, e.g. xc7z020-1-clg484) for the platform!
-HdlPart_$1=zed
+HdlPart_$1=$hdlpart
 # Set this variable to the names of any other component libraries with devices defined in this
 # platform. Do not use slashes.  If there is an hdl/devices library in this project, it will be
 # searched automatically, as will "devices" in any projects this project depends on.
@@ -1080,12 +1006,26 @@ HdlPart_$1=zed
 # ComponentLibraries_$1=
 ${complibs:+ComponentLibraries_$1=${complibs[@]}}
 EOF
+  if [ -z "$timefreq" ] ; then
+    timefreq=100e6
+  fi
+  if [ -z "$nosdp" ] ; then
+    sdpxml="<sdp name='sdp' master='true'/>"
+  else
+    sdpxml=
+  fi
   cat<<EOF > $subdir/$1/$1.xml
 <!-- This file defines the $1 HDL platform -->
 <HdlPlatform Language="VHDL" spec="platform-spec">
+  <specproperty name='platform' value='$1'/>
   <!-- These next two lines must be present in all platforms -->
   <metadata master="true"/>
   <timebase master="true"/>
+  $sdpxml
+  <!-- Set your time server frequency -->
+  <device worker='time_server'>
+    <property name='frequency' value='$timefreq'/>
+  </device>
   <!-- Put any additional platform-specific properties here using <Property> -->
   <!-- Put any built-in (always present) devices here using <device> -->
   <!-- Put any card slots here using <slot> -->
@@ -1170,7 +1110,6 @@ function do_primitive {
       mydir="the hdl/primitives"
       [ -d "hdl" -o "$verb" != create ] || make_hdl_dir
       ;;
-    (hdl-make) dir=primitives/"$2"; mydir="the primitives";;
     (*) bad this command can only be executed in a project or hdl/primitives directory;;
   esac
   if [ $verb == delete ]; then
@@ -1297,7 +1236,6 @@ function do_assembly {
       subdir=hdl/assemblies/
       ;;
     (hdl-assemblies)subdir=./;;
-    (hdl-make) subdir=assemblies/;;
     (*) bad this command can only be issued in a project directory, hdl, or  hdl/assemblies directory;;
   esac
   adir=$subdir$1
@@ -1381,7 +1319,7 @@ The ocpidev command performs developer functions on/in projects for OpenCPI.
 Usage is: ocpidev [options] <verb> <noun> <name>
 Verbs are: create or delete
 Nouns are: project, application, spec, protocol, test, library, worker, hdl <noun>
-After hdl, nouns are: assembly, card, slot, device, subdevice, platform, primitive <noun>
+After hdl, nouns are: assembly, card, slot, device, platform, primitive <noun>
 After hdl primitive, nouns are: library or core
 All commands have a <name> argument.  Some have more required or optional arguments.
 Options are: lower case for general options, upper case for creation options
@@ -1390,6 +1328,7 @@ Options are: lower case for general options, upper case for creation options
                      The delete command may ask for confirmation without this.
   -d <directory>     A directory in which to perform the function, e.g. used rather than changing
                      into a project directory.
+  -s                 Operate ocpidev in standalone mode (ie. outside a project).
  -- when creating or deleting specs or protocols --
   -p                 Put specs or protocols at the project level, not in a library's \"specs\" directory
  -- when creating specs --
@@ -1401,9 +1340,8 @@ Options are: lower case for general options, upper case for creation options
                      This applies to specs, protocols, properties, workers, proxy workers, and devices.
                      Such libaries live in the components directory.
  -- when creating or deleting specs, protocols, workers or devices --
-  -h <hdl-library>   A library underneath hdl/ to add assets to.
-  -c                 For spec or device worker, indicates that it is card specific.
-                     Therefore, it should be in the hdl/cards library (shorthand for -h cards).
+  -h <hdl-library>   A library underneath hdl/ to add assets to. Default is 'devices'. 
+                     Options are devices, cards, and adapters.
  -- when creating projects --
   -F <prefix>        The project prefix when creating projects, defaults to <name>_
   -D <dependencies>  A colon-separated list of project directories
@@ -1417,8 +1355,18 @@ Options are: lower case for general options, upper case for creation options
   -V <slave>         Specify the slave worker when creating a proxy worker
   -E <emulates>      Specify the device worker when creating an emulator worker
   -W <worker>        A worker to include (adds to 'Workers' variable in worker Makefile)
-  -R <rcc-static>    Add an RCC static prerequisite library to an RCC worker (adds to 'RccStaticPrereqLibs in Makefile)
-  -r <rcc-dynamic>   Add an RCC dynamic prerequisite library to an RCC worker (adds to 'RccDynamicPrereqLibs in Makefile)
+                     Use <worker>:<spec> if spec name is different from worker name
+  -R <rcc-static>    Add an RCC static prerequisite library to an RCC worker
+                     (adds to 'RccStaticPrereqLibs in Makefile)
+  -r <rcc-dynamic>   Add an RCC dynamic prerequisite library to an RCC worker
+                     (adds to 'RccDynamicPrereqLibs in Makefile)
+ -- when creating platforms
+  -g <hdl-part>      Specify the part (die-speed-package, e.g. xc7z020-1-clg484) for the platform.
+                     This sets the HdlPart_<platform> variable in <platform>.mk
+  -q <time-freq>     Specify the time server frequency for this platform (i.e. '100e6'). 
+                     If not specified here, this may need to be modified later in the platform OWD.
+  -u                 Do not use SDP. This legacy option should be used 
+                     when creating platforms that do not use SDP.
  -- when creating workers, devices, or platforms
   -I <include>       A directory to include from (adds to 'IncludeDirs' in worker Makefile)
   -A <xml-include>   An xml directory to include from (adds to 'XmlIncludeDirs' in worker Makefile)
@@ -1427,13 +1375,13 @@ Options are: lower case for general options, upper case for creation options
   -C <core>          Core to be included by this asset (adds to 'Cores' in Makefile)
   -Y <libary>        Specify a library that this asset depends on (adds to 'Libraries' in Makefile)
  -- when creating workers, devices, platforms, or libraries
-  -y <comp-libary>   Specify a component library that contains workers/devices/specs that this asset will need to reference (adds to 'ComponentLibraries' in Makefile)
+  -y <comp-libary>   Specify a component library that contains workers/devices/specs that this asset 
+                     will need to reference (adds to 'ComponentLibraries' in Makefile)
  -- when creating workers, devices, primitives, platforms, or assemblies --
   -T <target>        Target to limit this asset to (adds to 'OnlyTargets' in Makefile)
   -Z <target>        Exclude a target from this asset (adds to 'ExcludeTargets' in Makefile)
   -G <platform>      Platform to limit this asset to (adds to 'OnlyPlatforms' in Makefile)
   -Q <platform>      Exclude a platform from this asset (adds to 'ExcludePlatforms' in Makefile)
- -- when creating subdevices --
   -U <supports>      A device supported by the subdevice being created
  -- when creating primitive cores --
   -M <top-module>    For HDL primitive cores, the top level module name for the core when it is
@@ -1445,9 +1393,8 @@ Options are: lower case for general options, upper case for creation options
   -J                 Do not elaborate this HDL library (sets 'HdlNoElaboration' in Makefile)
  -- when creating and deleting applications --
   -X                 Indicates that the application is simply an XML file, not a directory
- -- when creating applications --
-  -x                 For use only without -X. This application directory will have an application XML file.
-                     If this option is omitted, an ACI file (<app>.cc) will be generated.
+  -x                 For use only without -X. This application directory will have an application XML 
+                     file. If this option is omitted, an ACI file (<app>.cc) will be generated instead.
 All the "delete" functions prompt for confirmation without the -f option (like rm).
 EOF
   exit 1
@@ -1496,6 +1443,10 @@ while [[ "${argv[0]}" != "" ]] ; do
         libbase=hdl 
         takeval hdllibrary
         library=hdl/$hdllibrary
+        case "$hdllibrary" in
+          (devices|cards|adapters) ;;
+          (*) bad the only valid libraries underneath hdl/ are devices, cards and adapters. ;;
+        esac
         hdlliboptset=1
         ;;
       (-s) standalone=1;;
@@ -1506,7 +1457,6 @@ while [[ "${argv[0]}" != "" ]] ; do
       # worker options
       (-S) takeval spec ;; # default for worker is <worker-name>-spec.xml
       (-P) takeval platform ;;
-      (-c) card=1; library=hdl/cards ;;
       (-L) takeval language ;;
       (-V) takeval slave ;;
       (-E) takeval emulates ;;
@@ -1518,6 +1468,10 @@ while [[ "${argv[0]}" != "" ]] ; do
 
       (-R) takeval rccstatprereq; rccstatprereqs=(${rccstatprereqs[@]} $rccstatprereq) ;;
       (-r) takeval rccdynprereq; rccdynprereqs=(${rccdynprereqs[@]} $rccdynprereq) ;;
+      
+      (-g) takeval hdlpart ;;
+      (-q) takeval timefreq ;;
+      (-u) nosdp=1 ;;
 
       (-O) takeval other; others=(${others[@]} $other) ;;
       (-C) takeval core; cores=(${cores[@]} $core) ;;
@@ -1560,7 +1514,7 @@ while [[ "${argv[0]}" != "" ]] ; do
           echo "         You probably just want to create a components library using 'ocpidev create library ...'"
           noun=${argv[0]}
           ;;
-        (device|subdevice|platform|assembly|signals) noun=${argv[0]} ;;
+        (device|platform|assembly|signals) noun=${argv[0]} ;;
         (card|slot) 
           noun=${argv[0]} 
           card=1
@@ -1588,7 +1542,7 @@ while [[ "${argv[0]}" != "" ]] ; do
       esac
     else
       case ${argv[0]} in
-        (device|subdevice|platform|assembly|card|slot|primitive|signals) bad the noun '"'${argv[0]}'"' must follow '"'hdl'"' ;;
+        (device|platform|assembly|card|slot|primitive|signals) bad the noun '"'${argv[0]}'"' must follow '"'hdl'"' ;;
         (*) noun=${argv[0]} ;;
       esac
     fi
@@ -1629,31 +1583,31 @@ fi
 [ -n "$nocontrol" -a \( $noun != spec \) ] &&
   bad the -n '(nocontrol)' option is only valid when creating a component spec
 # card
-[ -n "$card" -a \( $noun != card -a $noun != slot -a $noun != worker -a $noun != spec -a $noun != protocol -a $noun != properties -a $noun != signals -a $noun != device -a $noun != subdevice -a $noun != test \) ] && # FIXME: this maybe should only allow PROXY workers?
-  bad the -c '(card)' option is only valid when creating an HDL device worker, test, proxy, spec, protocol, properties or signals
+[ -n "$card" -a \( $noun != card -a $noun != slot -a $noun != worker -a $noun != spec -a $noun != protocol -a $noun != properties -a $noun != signals -a $noun != device -a $noun != test \) ] &&
+  bad can only operate in hdl/cards when creating/deleting an HDL device worker, test, worker, spec, protocol, properties or signals
 # library
-[ \( -n "$liboptset" -o -n "$hdlliboptset" \) -a \( -n "$platform" -o \( $noun != worker -a $noun != spec -a $noun != protocol -a $noun != properties -a $noun != signals -a $noun != device -a $noun != subdevice -a $noun != test \) \) ] &&
-  bad the -l or -h '(library within project)' options are only valid when creating a spec, protocols, properties, signals, worker, device, subdevice or test
+[ \( -n "$liboptset" -o -n "$hdlliboptset" \) -a \( -n "$platform" -o \( $noun != worker -a $noun != spec -a $noun != protocol -a $noun != properties -a $noun != signals -a $noun != device -a $noun != test \) \) ] &&
+  bad the -l or -h '(library within project)' options are only valid when creating a spec, protocols, properties, signals, worker, device or test
 # standalone
-[ -n "$standalone" -a \( $noun != library -a $noun != worker \) ] &&
-  bad the -s '(standalone - outside a project)' option is only valid when creating a library or a worker
+[ -n "$standalone" -a \( $noun != library -a $noun != worker -a $noun != device \) ] &&
+  bad the -s '(standalone - outside a project)' option is only valid when creating a library, a worker or a device
 # prefix
 [ -n "$prefix" -a \( $verb != create -o $noun != project \) ] &&
   bad the -F '(prefix)' option is only valid when creating a project
 # package
 [ -n "$package" -a \( $verb != create -o \( $noun != project -a $noun != library \) \) ] &&
-  bad the -K '(package)' option is only valid when creating a project
+  bad the -K '(package)' option is only valid when creating a project or library
 # dependencies
 [ -n "$dependencies" -a \( $verb != create -o $noun != project \) ] &&
   bad the -D '(dependencies)' option is only valid when creating a project
 # spec
-[ -n "$spec" -a \( $verb != create -o \( $noun != worker -a $noun != device -a $noun != subdevice \) \) ] &&
+[ -n "$spec" -a \( $verb != create -o \( $noun != worker -a $noun != device \) \) ] &&
   bad the -S '(spec)' option is only valid when creating a worker or device
 # platform
-[ -n "$platform" -a \( $noun != spec -a $noun != device -a $noun != subdevice -a $noun != worker -a $noun != test \) ] && # FIXME: this maybe should only allow PROXY workers?
-  bad the -P '(platform)' option is only valid when creating an HDL device worker, subdevice, proxy worker or test
+[ -n "$platform" -a \( $noun != spec -a $noun != device -a $noun != worker -a $noun != test -a $noun != library \) ] &&
+  bad the -P '(platform)' option is only valid when creating an HDL device worker, worker, test, or a platform\'s devices library
 # language
-[ -n "$language" -a \( $verb != create -o \( $noun != device -a $noun != subdevice -a $noun != worker \) \) ] &&
+[ -n "$language" -a \( $verb != create -o \( $noun != device -a $noun != worker \) \) ] &&
   bad the -L '(language)' option is only valid when creating a worker
 # slave
 [ -n "$slave" -a \( $verb != create -o $noun != worker \) ] &&
@@ -1661,14 +1615,11 @@ fi
 # workers
 [ -n "$workers" -a \( $verb != create -o \( $noun != worker \) \) ] &&
   bad the -W '(one of multiple workers)' option is only valid when creating a worker
- # -a $noun != device -a $noun != subdevice \) \) ] &&
 # emulate
 [ -n "$emulates" -a \( $verb != create -o $noun != device \) ] &&
   bad the -E '(emulates)' option is only valid when creating an HDL device worker
-[ -n "$supported" -a $noun != subdevice ] &&
-  bad the -U '(supports)' option is only valid when creating an HDL subdevice
-#[ $noun == subdevice -a -z "$supported" ]
-#  bad hdl subdevices should support devices using -U '(supports)'
+[ -n "$supported" -a $noun != device ] &&
+  bad the -U '(supports)' option is only valid when creating an HDL device worker
 # module
 [ -n "$module" -a \( $verb != create -o $noun != primitive -a "${args[0]}" != core \) ] &&
   bad the -M '(module)' option is only valid when creating an HDL primitive core
@@ -1676,13 +1627,16 @@ fi
 [ -n "$prebuilt" -a \( $verb != create -o \( $noun != primitive -o "${args[0]}" != core \) \) ] &&
   bad the -B '(prebuilt)' option is only valid when creating an HDL primitive core
 # targets/platforms limiting
-[ \( -n "$targets" -o -n "$extargets" -o -n "$onlyplats" -o -n "$explats" \) -a \( $verb != create -o \( $noun != worker -a $noun != device -a $noun != subdevice -a $noun != primitive -a $noun != assembly \) \) ] &&
+[ \( -n "$targets" -o -n "$extargets" -o -n "$onlyplats" -o -n "$explats" \) -a \( $verb != create -o \( $noun != worker -a $noun != device -a $noun != primitive -a $noun != assembly \) \) ] &&
   bad the -T, -Z, -G or -Q, '(only/exclude targets/platforms)' options are only valid when creating a worker, device, primitive, or assembly
+# platform options
+[ \( -n "$hdlpart" -o -n "$timefreq" -o -n "$nosdp" \) -a \( $verb != create -o $noun != platform \) ] &&
+  bad the -g, -q, or -u '(hdl-part, time-freq, no-sdp)' are only valid when creating an hdl platform.
 # includes
-[ \( -n "$includes" \) -a \( $verb != create -o \( $noun != worker -a $noun != device -a $noun != subdevice -a $noun != platform \) \) ] &&
+[ \( -n "$includes" \) -a \( $verb != create -o \( $noun != worker -a $noun != device -a $noun != platform \) \) ] &&
   bad the -I '(includes)' option is only valid when creating a worker, device, or platform
 # xml includes
-[ \( -n "$xmlincludes" \) -a \( $verb != create -o \( $noun != worker -a $noun != device -a $noun != subdevice -a $noun != platform -a $noun != library \) \) ] &&
+[ \( -n "$xmlincludes" \) -a \( $verb != create -o \( $noun != worker -a $noun != device -a $noun != platform -a $noun != library \) \) ] &&
   bad the -A '(xmlincludes)' option is only valid when creating a worker, device, platform, or library
 # primitive library options
 [ \( -n "$hdlnoelab" -o -n "$hdlnolib" \) -a \( $verb != create -o \( $noun != primitive -o  "${args[0]}" != library \) \) ] &&
@@ -1691,11 +1645,11 @@ fi
 [ \( -n "$rccstatprereqs" -o -n "$rccdynprereqs" \) -a \( $verb != create -o \( $noun != worker \) \) ] &&
   bad the -R or -r '(rcc static/dynamic prereq)' option is only valid when creating a proxy worker
 # libaries include
-[ \( -n "$liblibs" \) -a \( $verb != create -o \( $noun != worker -a $noun != device -a $noun != subdevice -a $noun != platform -a $noun != primitive \) \) ] &&
+[ \( -n "$liblibs" \) -a \( $verb != create -o \( $noun != worker -a $noun != device -a $noun != platform -a $noun != primitive \) \) ] &&
   bad the -Y, '(libraries)' option is only valid when creating a worker, device, platform, or primitive
 # componentlibaries reference
-[ \( -n "$complibs" \) -a \( $verb != create -o \( \( $noun != worker -o -z "$slave" \) -a \( \( $noun != device -a $noun != subdevice \) -o \( -z "$emulates" -a -z "$supported" \) \) -a $noun != platform -a $noun != library \) \) ] &&
-  bad the -y, '(component-libraries)' option is only valid when creating a proxy worker, device emulator, or subdevice, platform, or library
+[ \( -n "$complibs" \) -a \( $verb != create -o \( \( $noun != worker -o -z "$slave" \) -a \( \( $noun != device \) -o \( -z "$emulates" -a -z "$supported" \) \) -a $noun != platform -a $noun != library \) \) ] &&
+  bad the -y, '(component-libraries)' option is only valid when creating a proxy worker, device emulator, subdevice, platform, or library
 # xml app
 [ \( -n "$xmlapp" -o -n "$xmldirapp" \) -a \( \( $verb != create -a $verb != delete \) -o $noun != application \) ] &&
   bad the -X '(xml/simple)' or -x '(application directory with xml)' option is only valid when creating an application
@@ -1732,7 +1686,6 @@ case $noun in
   (slot)        do_card_or_slot ${args[@]} ;;
   (device)      do_device ${args[@]} ;;
   (signals)     do_protocol_or_spec ${args[@]} ;;
-  (subdevice)   do_device ${args[@]} ;;
   (primitive)   do_primitive ${args[@]} ;;
   (*) bad the noun \"$noun\" is invalid after the verb \"$verb\";;
 esac

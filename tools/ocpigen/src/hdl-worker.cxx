@@ -1950,12 +1950,14 @@ emitImplHDL(bool wrap) {
 	  } else
 	    continue;
 	} else if (pr.m_isWritable) {
-	  if (isStringArray)
+	  if (isStringArray) {
+	    size_t len = OU::roundUp(pr.m_stringLength+4, 4);
+	    std::string out;
+	    OU::format(out, "%s%s%s", pr.m_isReadable ? "my_" : "props_to_worker.",
+		       name, pr.m_isReadable ? "_value" : "");
 	    fprintf(f,
-		    "  -- String arrays require wrapper to convert to the generic string_array_t\n"
+		    "  -- String arrays require wrapper to convert to the string_array_t\n"
 		    "  %s_property_write_wrapper : block\n"
-		    "    port(val : out %s_array_t);\n"
-                    "    port map(val => %s%s%s);\n"
 		    "    signal sa_temp : string_array_t(%s_array_t'range, 0 to %zu-1);\n"
 		    "    function defcnv return string_array_t is\n"
 		    "      variable sa_def : string_array_t(%s_array_t'range, 0 to %zu-1);\n"
@@ -1971,15 +1973,13 @@ emitImplHDL(bool wrap) {
 		    "  begin\n"
 		    "    -- convert stored string array value to the specific type\n"
 		    "    g0: for i in %s_array_t'range generate\n"
-		    "      g1: for j in val(0)'range generate\n"
-		    "        val(i)(j) <= sa_temp(i,j);\n"
+		    "      g1: for j in 0 to %zu-1 generate\n"
+		    "        %s(i)(j) <= sa_temp(i,j);\n"
 		    "      end generate g1;\n"
 		    "    end generate g0;\n",
-		    name, name, pr.m_isReadable ? "my_" : "props_to_worker.",
-		    name, pr.m_isReadable ? "_value" : "", name,
-		    OU::roundUp(pr.m_stringLength+4, 4), name, 
-		    OU::roundUp(pr.m_stringLength+4, 4), name,
-		    pr.m_stringLength+1, name, name);
+		    name, name, len, name, len, name, pr.m_stringLength+1, name, name,
+		    pr.m_stringLength+1, out.c_str());
+	  }
 	  fprintf(f, 
 		  "  %s_property : component ocpi.props.%s%s_property\n"
 		  "    generic map(worker       => work.%s_worker_defs.worker,\n"
@@ -2095,17 +2095,16 @@ emitImplHDL(bool wrap) {
 	    fprintf(f,
 		    "  -- String arrays require wrapper to convert to the generic string_array_t\n"
 		    "  %s_property_read_wrapper : block\n"
-		    "    port(val : in %s_array_t);\n"
-                    "    port map(val => %s);\n"
 		    "    signal sa_temp : string_array_t(%s_array_t'range, 0 to %zu-1);\n"
 		    "  begin\n"
 		    "    -- convert stored string array value to the specific type\n"
 		    "    g0: for i in %s_array_t'range generate\n"
-		    "      g1: for j in val(0)'range generate\n"
-		    "        sa_temp(i,j) <= val(i)(j);\n"
+		    "      g1: for j in 0 to %zu-1 generate\n"
+		    "        sa_temp(i,j) <= %s(i)(j);\n"
 		    "      end generate g1;\n"
 		    "    end generate g0;\n",
-		    name, name, var.c_str(), name, OU::roundUp(pr.m_stringLength+1, 4), name);
+		    name, name, OU::roundUp(pr.m_stringLength+1, 4), name, pr.m_stringLength+1,
+		    var.c_str());
 	  fprintf(f, 
 		  "  %s_readback : component ocpi.props.%s_read%s_property\n"
 		  "    generic map(worker       => work.%s_worker_defs.worker,\n"

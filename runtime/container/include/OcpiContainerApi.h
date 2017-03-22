@@ -285,11 +285,15 @@ namespace OCPI {
       // types are supported explicitly.  C++ doesn't quite do the right thing.
       // The "m_writeVaddr/m_readVaddr" members are only non-zero if the 
       // implementation does not produce errors and it is atomic at this data size
+
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)                  \
       inline void set##pretty##Value(run val) const {                           \
         checkType(OCPI_##pretty, 1, true);				        \
         if (m_writeVaddr) {						        \
-          *(store *)m_writeVaddr= *(store*)((void*)&(val));                     \
+	  /* avoid strict aliasing violation */                                 \
+          /* was: *(store *)m_writeVaddr= *(store*)((void*)&(val));*/           \
+	  union { run runval; store storeval; } u; u.runval = val;	        \
+          *reinterpret_cast<volatile store *>(m_writeVaddr)= u.storeval;        \
 	  if (m_writeSync)						        \
              m_worker.propertyWritten(m_ordinal);                               \
         } else								        \

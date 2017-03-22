@@ -160,7 +160,7 @@ endif
 # Due to our filtering, we might have no targets to build
 ifeq ($(filter $(or $(OnlyPlatforms),$(HdlAllPlatforms)),$(filter-out $(ExcludePlatforms),$(HdlPlatforms))),)
 #  $(info 2.Only:$(OnlyPlatforms),All:$(HdlAllPlatforms),Ex:$(ExcludePlatforms),HP:$(HdlPlatforms))
-  $(info Not building assembly $(Worker) for platform(s): $(HdlPlatforms) in "$(shell pwd)")
+  $(and $(HdlPlatforms),$(info Not building assembly $(Worker) for platform(s): $(HdlPlatforms) in "$(shell pwd)"))
 #  $(info No targets or platforms to build for this "$(Worker)" assembly in "$(shell pwd)")
 else
   include $(OCPI_CDK_DIR)/include/hdl/hdl-worker.mk

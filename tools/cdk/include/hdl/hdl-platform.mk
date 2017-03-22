@@ -133,7 +133,8 @@ ifndef HdlSkip
   exports:
   .PHONY: exports
   ifneq ($(MAKECMDGOALS),clean)
-    $(shell test -r $(GeneratedDir)/base.xml || echo '<HdlConfig/>' > $(GeneratedDir)/base.xml)
+    $(if $(wildcard base.xml)$(wildcard $(GeneratedDir)/base.xml),,\
+      $(shell echo '<HdlConfig/>' > $(GeneratedDir)/base.xml))
   endif
   ################################################################################
   # From here its about building the platform configuration cores

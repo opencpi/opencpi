@@ -34,6 +34,7 @@ tests
 -runtime/util main
 -runtime/dataplane main
 -runtime/ctests
++runtime/ctests/target-<target>/test_* bin/<target>/ctests/
 # -tools/astyle
 ################################################################################
 # inclusions that are not automatically derived from facilities

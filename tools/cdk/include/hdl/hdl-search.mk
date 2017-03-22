@@ -116,6 +116,8 @@ The primitive core/library "$1" was not found in any of these locations: $(call 
 OCPI_HDL_PRIMITIVE_PATH is: $(OCPI_HDL_PRIMITIVE_PATH)
 OCPI_PROJECT_PATH is: $(OCPI_PROJECT_PATH)
 OCPI_CDK_DIR is: $(OCPI_CDK_DIR)
+HdlLibraries is: $(HdlLibraries) $(Libraries)
+
 endef
 # Search for a primitive library/core by name, independent of target
 # This is not used for primitive libraries/cores specified by location (with slashes)

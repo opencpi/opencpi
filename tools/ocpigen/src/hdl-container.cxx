@@ -80,6 +80,7 @@ create(ezxml_t xml, const char *xfile, const char *&err) {
   HdlConfig *config;
   HdlAssembly *appAssembly;
   ezxml_t x;
+#if 0
   // base configurations are by definition empty.
   // This is done by hand here, and there is also a base.xml file in platforms/specs
   if (myConfig == "base") {
@@ -87,7 +88,9 @@ create(ezxml_t xml, const char *xfile, const char *&err) {
     // Base config has not been generated...
     ocpiCheck(OE::ezxml_parse_str(basexml, strlen(basexml), x) == NULL);
     configFile = "base.xml";
-  } else {
+  } else
+#endif
+  {
     OU::format(configName, "%s/hdl/%s", ::platformDir, myConfig.c_str());
     if ((err = parseFile(configName.c_str(), xfile, "HdlConfig", &x, configFile))) {
       configName = myPlatform + "/gen/" + myConfig;
