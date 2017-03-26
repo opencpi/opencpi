@@ -109,6 +109,7 @@ namespace OCPI {
 	std::list<Port*> m_ports; // attachments to connections
 	typedef std::list<Port*>::iterator PortsIter;
 	ezxml_t m_xml;
+	const char *cname() const { return m_name.c_str(); }
 	const char
 	  *parse(ezxml_t ix, Assembly &a, unsigned ordinal, const char **extraInstAttrs,
 		 const PValue *params),
@@ -148,6 +149,7 @@ namespace OCPI {
 	size_t m_index;
 	PValueList m_parameters;
 	Port *m_connectedPort; // the "other" port of the connection
+	const char *cname() const { return m_name.c_str(); }
 	const char *parse(ezxml_t x, Assembly &a, const PValue *pvl, const PValue *params);
 	const char *init(Assembly &a, const char *name, unsigned instance, bool isInput,
 			 bool bidi, bool known, size_t index, const PValue *params);
@@ -180,9 +182,9 @@ namespace OCPI {
       bool m_isImpl; // Is this assembly of worker (implementation) instances or component instances?
       const char *parse(const char *defaultName = NULL, const char **extraTopAttrs = NULL,
 			const char **extraInstAttrs = NULL, const OCPI::Util::PValue *params = NULL);
-      std::vector<Instance> m_instances;
+      std::vector<Instance*> m_instances;
     public:
-      Instance &utilInstance(size_t n) { return m_instances[n]; }
+      Instance &utilInstance(size_t n) { return *m_instances[n]; }
       size_t nUtilInstances() { return m_instances.size(); }
       const std::string &name() const { return m_name; }
       static unsigned s_count;
@@ -206,6 +208,7 @@ namespace OCPI {
 			const OCPI::Util::PValue *params = NULL);
       ~Assembly();
       const char
+	*addInstance(ezxml_t ix, const char **extraInstAttrs, const PValue *params),
 	*findInstanceForParam(const char *pName, const char *&assign, unsigned &instn),
 	*checkInstanceParams(const char *pName, const PValue *params, bool checkMapped = false,
 			     bool singleAssignment = false),

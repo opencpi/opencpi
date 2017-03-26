@@ -45,6 +45,7 @@ namespace OCPI {
     // The instance attributes relevant to app assemblies - we don't really deal with "container" here
     // FIXME: It should be in the upper level
     static const char *instAttrs[] = { "model", "platform", "container", NULL};
+#if 0
     Assembly::Assembly(const char *file, const OCPI::Util::PValue *params)
       : OU::Assembly(file, assyAttrs, instAttrs, params), m_refCount(1) {
       findImplementations(params);
@@ -53,6 +54,7 @@ namespace OCPI {
       : OU::Assembly(string, assyAttrs, instAttrs, params), m_refCount(1) {
       findImplementations(params);
     }
+#endif
     Assembly::Assembly(ezxml_t a_xml, const char *name, const OCPI::Util::PValue *params)
       : OU::Assembly(a_xml, name, false, assyAttrs, instAttrs, params), m_refCount(1) {
       findImplementations(params);
@@ -77,6 +79,106 @@ namespace OCPI {
 	delete this;
     }
 
+    // Process an assignment for a specific port or a specific instance, or just an external
+    // port of the assembly.
+    // assign arg now points to:  <instance>=<port>=<value> or <externalport>=<value>
+    const char *Assembly::
+    getPortAssignment(const char *pName, const char *assign, unsigned &instn, unsigned &portn,
+		      const OU::Port *&port, const char *&value) {
+      unsigned neqs = 0;
+      const char *eq = strchr(assign, '?'); // points past instance or external port
+      for (const char *cp = assign; *cp && (!eq || cp < eq); cp++)
+	if (*cp == '=')
+	  neqs++;
+      std::string pname;
+      eq = strchr(assign, '='); // points past instance or external port
+      if (neqs == 1) { // find an external port with this name
+	pname.assign(assign, eq - assign);
+	const OU::Assembly::Port *ap = NULL;
+	for (OU::Assembly::ConnectionsIter ci = m_connections.begin(); ci != m_connections.end();
+	     ci++) {
+	  const OU::Assembly::Connection &c = *ci;
+	  if (c.m_externals.size() &&
+	      !strcasecmp(pname.c_str(), c.m_externals.front().m_name.c_str())) {
+	    ap = &c.m_ports.front();
+	    instn = ap->m_instance;
+	    assert(ap->m_name.size());
+	    pname = ap->m_name; // pname is now internal name
+	    break;
+	  }
+	}
+	if (!ap)
+	  throw OU::Error("No external port found for %s assignment '%s'", pName, assign);
+      } else if (neqs == 2) {
+	const char *err, *iassign = assign;
+	if ((err = findInstanceForParam(pName, iassign, instn))) // iassign points to port name
+	  return err;
+	eq = strchr(assign, '=');
+	pname.assign(iassign, eq - iassign);
+      } else
+	return OU::esprintf("Parameter assignment for \"%s\", \"%s\" is invalid.  Format is:"
+			    "<instance>=<port>=<filename> of <external-port>=<filename>", 
+			    pName, assign);
+      unsigned nPorts;
+      const OU::Port *p = m_instances[instn]->m_candidates[0].impl->m_metadataImpl.ports(nPorts);
+      for (unsigned nn = 0; nn < nPorts; nn++, p++)
+	if (!strcasecmp(pname.c_str(), p->m_name.c_str())) {
+	  value = eq + 1;
+	  portn = nn;
+	  port = p;
+	  return NULL;
+	}
+      return OU::esprintf("Port \"%s\" not found for instance in \"%s\" parameter assignment: %s",
+			  pname.c_str(), pName, assign);
+    }
+    // After all the other implementations are established, so we know port directions etc.,
+    // insert file read/write components
+    const char *Assembly::
+    addFileIoInstances(const OCPI::Util::PValue *params) {
+      const char *assign;
+      for (unsigned n = 0; OU::findAssignNext(params, "file", NULL, assign, n); ) {
+	const char *value, *err;
+	unsigned instn, portn;
+	const OU::Port *port;
+	if ((err = getPortAssignment("file", assign, instn, portn, port, value)))
+	  return err;
+	bool reading = port->m_provider;
+	// create a file read/write instance connected to the specified instance and port
+	ezxml_t inst = ezxml_new("instance");
+	ezxml_set_attr_d(inst, "component", reading ? "ocpi.file_read" : "ocpi.file_write");
+	ezxml_set_attr_d(inst, reading ? "connect" : "connectInput", utilInstance(instn).cname());
+	ezxml_set_attr_d(inst, reading ? "to" : "from", port->cname());
+	ezxml_t fpx = ezxml_add_child(inst, "property", 0);
+	ezxml_set_attr_d(fpx, "name", "filename");
+	// Parse the file name like a URL, with ? for "query" and & or ; delimiting
+	// name=value pairs
+	const char *p = strchr(value, '?');
+	if (p) {
+	  std::string s(value, p - value);
+	  ezxml_set_attr_d(fpx, "value", s.c_str());
+	  do {
+	    const char *tp = strchr(++p, '=');
+	    if (!tp)
+	      return OU::esprintf("Invalid file option: %s", assign);
+	    s.assign(p, tp - p);
+	    ezxml_t x = ezxml_add_child(inst, "property", 0);
+	    ezxml_set_attr_d(x, "name", s.c_str());
+	    p = strchr(++tp, ';');
+	    if (!p) p = strchr(tp, '&');
+	    if (!p) p = tp + strlen(tp);
+	    s.assign(tp, p - tp);
+	    ezxml_set_attr_d(x, "value", s.c_str());
+	  } while (*p++);
+	} else
+	  ezxml_set_attr_d(fpx, "value", value);
+	ocpiInfo("adding file I/O component: %s", ezxml_toxml(inst));
+	if ((err = OU::Assembly::addInstance(inst, NULL, NULL)) ||
+	    (err = utilInstance(nUtilInstances() - 1).parseConnection(inst, *this, params)))
+	  return err;
+	addInstance(params);
+      }
+      return NULL;
+    }
     // The util::assembly only knows port names, not worker port ordinals
     // (because it has not been correlated with any implementations).
     // It may not even know port names if connect shortcuts are used.
@@ -110,57 +212,58 @@ namespace OCPI {
       for (std::list<OU::Assembly::Port*>::const_iterator pi = inst.m_ports.begin(); 
 	   pi != inst.m_ports.end(); pi++) {
 	bool found = false;
-	if ((*pi)->m_name.empty()) {
+	OU::Assembly::Port &asp = **pi;
+	if (asp.m_name.empty()) {
 	  // Resolve empty port names to be unambiguous if possible
 	  p = ports;
 	  for (unsigned n = 0; n < m_nPorts; n++, p++)
-	    if (((*pi)->m_role.m_provider && p->m_provider) ||
-		(!(*pi)->m_role.m_provider && !p->m_provider)) {
+	    if ((asp.m_role.m_provider && p->m_provider) ||
+		(!asp.m_role.m_provider && !p->m_provider)) {
 	      if (found) {
 		  ocpiInfo("Rejected: the '%s' connection at instance '%s' is ambiguous: "
 			   " port name must be specified.",
-			   (*pi)->m_role.m_provider ? "input" : "output",
+			   asp.m_role.m_provider ? "input" : "output",
 			   m_utilInstance.m_name.c_str());
 		  goto rejected;
 	      }
 	      if (ap[n]) {
 		ocpiInfo("Rejected: the '%s' connection at instance '%s' is redundant: "
 			 " implicit port '%s' already has a connection.",
-			 (*pi)->m_role.m_provider ? "input" : "output",
+			 asp.m_role.m_provider ? "input" : "output",
 			 m_utilInstance.m_name.c_str(), p->m_name.c_str());
 		goto rejected;
 	      }
-	      ap[n] = *pi;
-	      (*pi)->m_name = p->m_name;
+	      ap[n] = &asp;
+	      asp.m_name = p->m_name;
 	      found = true;
 	    }
 	  if (!found) {
 	    ocpiInfo("Rejected: there is no %s port for connection at instance '%s'.",
-		     (*pi)->m_role.m_provider ? "input" : "output",
+		     asp.m_role.m_provider ? "input" : "output",
 		     m_utilInstance.m_name.c_str());
 	    goto rejected;
 	  }
 	} else {
 	  p = ports;
 	  for (unsigned n = 0; n < m_nPorts; n++, p++)
-	    if (!strcasecmp(ports[n].m_name.c_str(), (*pi)->m_name.c_str())) {
+	    if (!strcasecmp(ports[n].m_name.c_str(), asp.m_name.c_str())) {
 	      if (ap[n]) {
 		ocpiInfo("Rejected: the '%s' connection at instance '%s' is redundant: "
 			 " port '%s' already has a connection.",
-			 (*pi)->m_role.m_provider ? "input" : "output",
+			 asp.m_role.m_provider ? "input" : "output",
 			 m_utilInstance.m_name.c_str(), p->m_name.c_str());
 		goto rejected;
 	      }
-	      ap[n] = *pi;
-	      (*pi)->m_role.m_knownRole = true;
-	      (*pi)->m_role.m_provider = p->m_provider;
+	      ap[n] = &asp;
+	      asp.m_role.m_knownRole = true;
+	      asp.m_role.m_provider = p->m_provider;
 	      found = true;
 	      break;
 	    }
 	  if (!found) {
 	    ocpiInfo("Rejected: assembly instance '%s' of worker '%s' has no port named '%s'",
 		     inst.m_name.c_str(), i.m_metadataImpl.specName().c_str(),
-		     (*pi)->m_name.c_str());
+		     asp.m_name.c_str());
 	    goto rejected;
 	  }
 	}
@@ -196,21 +299,90 @@ namespace OCPI {
       return false;
     }
 
+    // Perform connectivity checks for a candidate implementation for this instance
+    // Return true if the implementation is still acceptable
+    bool Assembly::Instance::
+    checkConnectivity(Candidate &cand, Assembly &assy) {
+      const Implementation &i = *cand.impl;
+      if (!resolveUtilPorts(i, assy))
+	return false; // we ignore the impl since it is inconsistent with the assy
 
+      // Here is where we know about the assembly and thus can check for
+      // some connectivity constraints.  If the implementation has hard-wired connections
+      // that are incompatible with the assembly, we reject it.
+      if (i.m_externals) {
+	OU::Port::Mask m = 1;
+	for (unsigned n = 0; n < OU::Port::c_maxPorts; n++, m <<= 1)
+	  if (m & i.m_externals) {
+	    // This port cannot be connected to another instance in the same container.
+	    // Thus it PRECLUDES other connected instances on the same container.
+	    // So the connected instance cannot have an INTERNAL requirement.
+	    // But we can't check is here because it is a constraint about
+	    // a pair of choices, not just one choice.
+	  }
+      }
+      if (i.m_internals) {
+	OCPI::Library::Connection *c = i.m_connections;
+	unsigned nPorts;
+	OU::Port *p = i.m_metadataImpl.ports(nPorts);
+	OU::Port::Mask m = 1;
+	unsigned bump = 0;
+	for (unsigned n = 0; n < nPorts; n++, m <<= 1, c++, p++)
+	  if (m & i.m_internals) {
+	    // Find the assembly connection port for this instance and this 
+	    // internally/statically connected port
+	    OU::Assembly::Port *ap = m_assyPorts[n];
+	    if (ap) {
+	      // We found the assembly connection port
+	      // Now check that the port connected in the assembly has the same
+	      // name as the port connected in the artifact
+	      if (!ap->m_connectedPort) {
+		ocpiInfo("Rejected because artifact has port '%s' connected while "
+			 "application doesn't.", p->m_name.c_str());
+		return false;
+	      }
+	      // This check can only be made for the port of the internal connection that is
+	      // for a later instance, since null-named ports are resolved as each
+	      // instance is processed
+	      if (ap->m_connectedPort->m_instance < m_utilInstance.m_ordinal &&
+		  (strcasecmp(ap->m_connectedPort->m_name.c_str(),
+			      c->port->m_name.c_str()) || // port name different
+		   assy.utilInstance(ap->m_connectedPort->m_instance).m_specName !=
+		   c->impl->m_metadataImpl.specName())) {             // or spec name different
+		ocpiInfo("Rejected due to incompatible connection on port \"%s\"",
+			 p->m_name.c_str());
+		ocpiInfo("Artifact connects it to port '%s' of spec '%s', "
+			 "but application wants port '%s' of spec '%s'",
+			 c->port->m_name.c_str(), c->impl->m_metadataImpl.specName().c_str(),
+			 ap->m_connectedPort->m_name.c_str(),
+			 assy.utilInstance(ap->m_connectedPort->m_instance).m_specName.c_str());
+		return false;
+	      }
+	      bump = 1;; // An implementation with hardwired connections gets a score bump
+	    } else {
+	      // There is no connection in the assembly for a statically connected impl port
+	      ocpiInfo("Rejected because artifact has port '%s' connected while "
+		       "application doesn't mention it.", p->m_name.c_str());
+	      return false;
+	    }
+	  }
+	cand.score += bump;
+      }
+      return true;
+    }
     // The callback for the findImplementations() method below.
     // Return true if we found THE ONE.
     // Set accepted = true, if we actually accepted one
     bool Assembly::
     foundImplementation(const Implementation &i, bool &accepted) {
-      if (m_tempInstance->foundImplementation(i, m_model, m_platform, *this))
+      if (m_tempInstance->foundImplementation(i, m_model, m_platform))
 	accepted = true;
       return false; // we never terminate the search among possibilities...
     }
     // The library assembly instance has a candidate implementation.
     // Check it out, and maybe accept it as a candidate
     bool Assembly::Instance::
-    foundImplementation(const Implementation &i, std::string &model, std::string &platform,
-			Assembly &assy) {
+    foundImplementation(const Implementation &i, std::string &model, std::string &platform) {
       ocpiInfo("Considering implementation for instance \"%s\" with spec \"%s\": \"%s%s%s\" "
 	       "from artifact \"%s\"",
 	       m_utilInstance.m_name.c_str(),
@@ -309,6 +481,11 @@ namespace OCPI {
 		    apName, apValue, pStr.c_str());
 	}
       }
+      if (m_utilInstance.m_hasSlave && i.m_metadataImpl.slave().empty()) {
+	ocpiInfo("Rejected because instance is a proxy, but implementation isn't");
+	return false;
+      }
+#if 0
       if (!resolveUtilPorts(i, assy))
 	return false; // we ignore the impl since it is inconsistent with the assy
 
@@ -373,16 +550,35 @@ namespace OCPI {
 	  }
 	score += bump;
       }
-      if (m_utilInstance.m_hasSlave && i.m_metadataImpl.slave().empty()) {
-	ocpiInfo("Rejected because instance is a proxy, but implementation isn't");
-	return false;
-      }
+#endif
       // FIXME:  Check consistency between implementation metadata here...
       m_candidates.push_back(Candidate(i, score));
-      ocpiInfo("Accepted implementation with score %u", score);
+      ocpiInfo("Accepted implementation before connectivity checks with score %u", score);
       return true;
     }
 
+    void Assembly::
+    addInstance(const OU::PValue *params) {
+      unsigned n = (unsigned)m_instances.size();
+      m_instances.push_back(new Instance(utilInstance(n)));
+      // if we have a deployment, don't do the work to figure out potential implementations
+      if (m_deployed)
+	return;
+      m_tempInstance = m_instances.back();
+      OU::Assembly::Instance &inst = m_tempInstance->m_utilInstance;
+      // need to deal with params that can filter impls: model and platform
+      ezxml_t x = inst.xml();
+      if (!OU::findAssign(params, "model", inst.m_name.c_str(), m_model))
+	OE::getOptionalString(x, m_model, "model");
+      if (!OU::findAssign(params, "platform", inst.m_name.c_str(), m_platform))
+	OE::getOptionalString(x, m_platform, "platform");
+      if (!Manager::findImplementations(*this, inst.m_specName.c_str()))
+	throw OU::Error("No acceptable implementations found in any libraries "
+			"for \"%s\".  Use log level 8 for more detail.",
+			inst.m_specName.c_str());
+      if (m_tempInstance->m_candidates.size() > m_maxCandidates)
+	m_maxCandidates = (unsigned)m_tempInstance->m_candidates.size();
+    }
     // A common method used by constructors
     void Assembly::findImplementations(const OU::PValue *params) {
       const char *err;
@@ -391,29 +587,38 @@ namespace OCPI {
 	throw OU::Error("%s", err);
       m_params = params; // for access by callback
       m_maxCandidates = 0;
-      // Initialize our instances list from the Util assy, but we might add to it for slaves
-      for (unsigned n = 0; n < nUtilInstances(); n++)
-	m_instances.push_back(new Instance(utilInstance(n)));
       const char *deployment = NULL;
-      if (OU::findString(params, "deployment", deployment))
-	return;
-      for (InstancesIter ii = m_instances.begin(); ii != m_instances.end(); ii++) {
-	m_tempInstance = *ii;
-	OU::Assembly::Instance &inst = m_tempInstance->m_utilInstance;
-	// need to deal with params that can filter impls: model and platform
-	ezxml_t x = inst.xml();
-	if (!OU::findAssign(params, "model", inst.m_name.c_str(), m_model))
-	  OE::getOptionalString(x, m_model, "model");
-	if (!OU::findAssign(params, "platform", inst.m_name.c_str(), m_platform))
-	  OE::getOptionalString(x, m_platform, "platform");
-	if (!Manager::findImplementations(*this, inst.m_specName.c_str()))
-	  throw OU::Error("No acceptable implementations found in any libraries "
-			  "for \"%s\".  Use log level 8 for more detail.",
-			  inst.m_specName.c_str());
-	if (m_tempInstance->m_candidates.size() > m_maxCandidates)
-	  m_maxCandidates = (unsigned)m_tempInstance->m_candidates.size();
+      m_deployed = OU::findString(params, "deployment", deployment);
+      // Pass 1:  Initialize our instances list from the Util assy, but we might add to it later
+      // for slaves or file I/O instances.  Find candidates implementations.
+      for (unsigned n = 0; n < nUtilInstances(); n++)
+	addInstance(params);
+      // Pass 2:  Deal with connectivity in the core assembly.
+      // final connectivity and prune candidates unacceptable due to connectivity issues
+      for (unsigned n = 0; n < nUtilInstances(); n++) {
+	Instance &i = *m_instances[n];
+	for (CandidatesIter ci = i.m_candidates.begin(); ci != i.m_candidates.end(); )
+	  if (i.checkConnectivity(*ci, *this))
+	    ++ci;
+	  else
+	    ci = i.m_candidates.erase(ci);
       }
-      // Check for interface and connection compatibility.
+      // Pass 3:  Add instances due to file I/O or implied slaves
+      // We now know all the implementation information about what is in the assembly, so now
+      // add file I/O instances if requested, which might add instances and connections
+      size_t nCore = nUtilInstances();
+      if ((err = addFileIoInstances(params)))
+	throw OU::Error("Error when adding file I/O components: %s", err);
+      // Pass 4:  Recheck final connectivity
+      for (size_t n = nCore; n < nUtilInstances(); n++) {
+	Instance &i = *m_instances[n];
+	for (CandidatesIter ci = i.m_candidates.begin(); ci != i.m_candidates.end(); )
+	  if (i.checkConnectivity(*ci, *this))
+	    ++ci;
+	  else
+	    ci = i.m_candidates.erase(ci);
+      }
+      // Pass 5:  Check for interface and connection compatibility.
       // We assume all implementations have the same protocol metadata
       //      unsigned nConns = m_connections.size();
       for (OU::Assembly::ConnectionsIter ci = m_connections.begin();

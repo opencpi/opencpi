@@ -58,6 +58,7 @@ namespace OCPI {
 	: impl(&a_impl), score(a_score) {}
     };
     typedef std::vector<Candidate> Candidates;   // a set of candidates for an instance
+    typedef Candidates::iterator CandidatesIter;
 
     // A library::assembly adds value to the underlying/inherited util::assembly
     // By finding candidate implementations in the available artifact libraries,
@@ -78,9 +79,9 @@ namespace OCPI {
 	~Instance();
 	
 	bool resolveUtilPorts(const Implementation &i, OCPI::Util::Assembly &a);
-	bool foundImplementation(const Implementation &i,
-				 std::string &model, std::string &platform,
-				 Assembly &assy);
+	bool checkConnectivity(Candidate &c, Assembly &assy);
+	bool foundImplementation(const Implementation &i, std::string &model,
+				 std::string &platform);
 	const std::string &name() const { return m_utilInstance.m_name; }
 	const std::string &specName() const { return m_utilInstance.m_specName; }
 	const OCPI::Util::Assembly::Properties &properties() const {
@@ -96,6 +97,7 @@ namespace OCPI {
       unsigned m_maxCandidates;                   // maximum number of candidates for any instance
       Instance *m_tempInstance;                   // our instance currently being processed
       Instances m_instances;                      // This layer's instances
+      bool      m_deployed;                       // deployment decisions are already made
     public:
       explicit Assembly(const char *file, const OCPI::Util::PValue *params);
       explicit Assembly(const std::string &string, const OCPI::Util::PValue *params);
@@ -105,12 +107,20 @@ namespace OCPI {
       size_t nInstances() { return m_instances.size(); }
       bool badConnection(const Implementation &impl, const Implementation &otherImpl,
 			 const OCPI::Util::Assembly::Port &ap, unsigned port);
-      Port *assyPort(unsigned inst, unsigned port) { return m_instances[inst]->m_assyPorts[port];}
+      Port *assyPort(unsigned inst, unsigned port) {
+	assert(m_instances[inst]->m_assyPorts);
+	return m_instances[inst]->m_assyPorts[port];
+    }
       // Reference counting
       void operator ++( int );
       void operator --( int );
       
+      const char *getPortAssignment(const char *pName, const char *assign, unsigned &instn,
+				    unsigned &portn, const OCPI::Util::Port *&port,
+				    const char *&value);
     private:
+      void addInstance(const OCPI::Util::PValue *params);
+      const char *addFileIoInstances(const OCPI::Util::PValue *params);
       void findImplementations(const OCPI::Util::PValue *params);
       bool foundImplementation(const Implementation &i, bool &accepted);
       int m_refCount;

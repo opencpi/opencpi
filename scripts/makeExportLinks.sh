@@ -118,8 +118,8 @@ if test "$*" = ""; then
 fi
 if [ "$1" = "-v" -o "$OCPI_EXPORTS_VERBOSE" = 1 ]; then
   verbose=yes
+  [ "$1" = "-v" ] && shift
   [ -n "$verbose" ] && echo Setting verbose mode.    
-  shift
 fi
 os=$(echo $1 | sed 's/^\([^-]*\).*$/\1/')
 dylib=$(if [ "$os" = macos ]; then echo dylib; else echo so; fi)
@@ -134,6 +134,7 @@ additions=$(test -f Project.exports && grep '^[ 	]*+' Project.exports | sed 's/^
 set +f
 [ -n "$verbose" ] && echo Collecting facilities
 facilities=$(test -f Project.exports &&  grep -v '^[ 	]*[-+#]' Project.exports) || true
+[ -n "$verbose" ] && echo Facilities are $1: $facilities
 for f in $facilities; do
   if [ "$1" == "-" ]; then
     continue; # silently ignore unset targets

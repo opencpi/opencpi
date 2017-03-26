@@ -490,6 +490,14 @@ namespace OCPI {
     finalizePortParam(const OU::PValue *params, const char *pName) {
       const char *assign;
       for (unsigned n = 0; OU::findAssignNext(params, pName, NULL, assign, n); ) {
+#if 1
+	const char *value, *err;
+	unsigned instn, portn;
+	const OU::Port *p;
+	if ((err = m_assembly.getPortAssignment(pName, assign, instn, portn, p, value)))
+	  return err;
+	m_assembly.assyPort(instn, portn)->m_parameters.add(pName, value);
+#else
 	unsigned instn;
 	// assign now points to:  <instance>=<port>=<value>
 	const char *err, *iassign = assign;
@@ -514,6 +522,7 @@ namespace OCPI {
 	if (eq)
 	  return OU::esprintf("Port \"%.*s\" not found for instance in \"%s\" parameter assignment: %s",
 			      (int)len, iassign, pName, assign);
+#endif
       }
       return NULL;
     }
@@ -926,7 +935,7 @@ namespace OCPI {
     void ApplicationI::
     initExternals( const PValue * params ) {
       // Check that params that reference externals are valid.
-      checkExternalParams("file", params);
+      //      checkExternalParams("file", params);
       checkExternalParams("device", params);
       checkExternalParams("url", params);
     }

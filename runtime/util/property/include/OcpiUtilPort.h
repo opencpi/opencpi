@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -60,6 +59,7 @@ namespace OCPI {
       Worker     *m_worker;
       Port       *m_bufferSizePort;  // The port we should copy our buffer size from
       Port(bool provider = true);
+      const char *cname() const { return m_name.c_str(); }
       const char *preParse(Worker &w, ezxml_t x, PortOrdinal ord);
       const char *parse(ezxml_t x);
       const char *postParse();
