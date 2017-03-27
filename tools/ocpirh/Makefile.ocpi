@@ -17,6 +17,9 @@ rhcg=/usr/local/redhawk/core/bin/redhawk-codegen
 ifeq ($(wildcard $(rhcg)),)
   $(warning RedHawk code generation is not installed.  RedHawk proxy not built.)
   all:
+else ifneq ($(OCPI_TARGET_PLATFORM),$(OCPI_TOOL_PLATFORM))
+  $(warning RedHawk export can not be built for cross-compiled environments.)
+  all:
 else
 AT:=@
 t:=target-$(OCPI_TARGET_DIR)
@@ -37,7 +40,7 @@ gen/$a-depl.xml: gen/$a.xml
 $t/$a.spd.xml: gen/$a-depl.xml
 	$(AT)echo ============== Generating the generic SCA XML files for $a.
 	$(AT)mkdir -p $t
-	$(AT)ocpisca -x -D $t $<
+	$(AT)$(OCPI_CDK_DIR)/bin/$(OCPI_TOOL_DIR)/ocpisca -x -D $t $<
 
 # Just use the last created file as the target
 $t/cpp/$a_base.h: $t/$a.spd.xml $a_base.h $a_base.cpp
