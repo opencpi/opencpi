@@ -309,7 +309,6 @@ parseBuildFile(bool optional) {
   std::string fname;
   if (m_paramConfigs.size())
     return NULL;
-#if 1
   // We are only looking next to the OWD or "gen" below it
   // And it may be optional in any case.
   std::string dir;
@@ -319,20 +318,20 @@ parseBuildFile(bool optional) {
   // First look for the build file next to the OWD
   OU::format(fname, "%s%s.build", dir.c_str(), m_implName);
   if (!OS::FileSystem::exists(fname)) {
-    // Next look for it in the gen/ below the OWD
-    OU::format(fname, "%sgen/%s.build", dir.c_str(), m_implName);
+    OU::format(fname, "%s%s-build.xml", dir.c_str(), m_implName);
     if (!OS::FileSystem::exists(fname)) {
-      // Finally look in the local gen subdir
-      OU::format(fname, "gen/%s.build", m_implName);
-      if (!OS::FileSystem::exists(fname))
-	return optional ? NULL :
-	  OU::esprintf("Cannot find %s.build in worker directory or \"gen\" subdirectory",
-		       m_implName);
+      // Next look for it in the gen/ below the OWD
+      OU::format(fname, "%sgen/%s-build.xml", dir.c_str(), m_implName);
+      if (!OS::FileSystem::exists(fname)) {
+	// Finally look in the local gen subdir
+	OU::format(fname, "gen/%s-build.xml", m_implName);
+	if (!OS::FileSystem::exists(fname))
+	  return optional ? NULL :
+	    OU::esprintf("Cannot find %s.build or %s-build.xml in worker directory or \"gen\" "
+			 "subdirectory", m_implName, m_implName);
+      }
     }
   }
-#else
-  OU::format(fname, "%s.build", m_implName);
-#endif
   ezxml_t x;
   std::string empty;
   if ((err = parseFile(fname.c_str(), empty, "build", &x, empty, false, true, optional)))
@@ -349,7 +348,7 @@ parseBuildFile(bool optional) {
 const char *Worker::
 startBuildXml(FILE *&f) {
   const char *err;
-  if ((err = openOutput(m_fileName.c_str(), m_outDir, "", "", ".build", NULL,
+  if ((err = openOutput(m_fileName.c_str(), m_outDir, "", "-build", ".xml", NULL,
 			f)))
     return err;
   fprintf(f, "<build>\n");
