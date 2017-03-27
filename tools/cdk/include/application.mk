@@ -6,7 +6,7 @@ OcpiApp:=$(CwdName)
 $(call OcpiIncludeProject)
 
 # If not cleaning, we don't need to be target-specific etc.
-ifneq ($(filter clean%,$(MAKECMDGOALS)),)
+ifeq ($(filter clean%,$(MAKECMDGOALS)),)
   include $(OCPI_CDK_DIR)/include/ocpisetup.mk
 endif
 OcpiAppCC:=$(wildcard $(OcpiApp).cxx)$(wildcard $(OcpiApp).cc)

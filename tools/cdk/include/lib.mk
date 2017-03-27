@@ -166,11 +166,13 @@ MyMake=$(MAKE) --no-print-directory
 HdlLibrariesCommand=$(call OcpiAdjustLibraries,$(HdlLibraries))
 RccLibrariesCommand=$(call OcpiAdjustLibraries,$(RccLibraries))
 TestTargets:=$(HdlPlatforms) $(HdlTargets) $(RccTargets)
-BuildImplementation=$(infoxx BI:$1:$2:$(call HdlLibrariesCommand))\
+# set the directory flag to make, and use the desired Makefile
+GoWorker=-C $1 -f $(or $(realpath $1/Makefile),$(OCPI_CDK_DIR)/include/worker.mk)
+BuildImplementation=$(infox BI:$1:$2:$(call HdlLibrariesCommand):$(call GoWorker,$2)::)\
     set -e; \
     t="$(or $($(call Capitalize,$1)Target),$($(call Capitalize,$(1))Targets))"; \
     $(ECHO) =============Building $(call ToUpper,$(1)) implementation $(2) for target'(s)': $$t; \
-    $(MyMake) -C $(2) OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) \
+    $(MyMake) $(call GoWorker,$2) OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) \
 	       LibDir=$(call AdjustRelative,$(LibDir)/$(1)) \
 	       GenDir=$(call AdjustRelative,$(GenDir)/$(1)) \
 	       $(PassOutDir) \

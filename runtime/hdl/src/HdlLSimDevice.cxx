@@ -115,7 +115,9 @@ struct Fifo {
 };
 
 class Device 
-  : public OH::Device, public OH::Accessor, DT::EndPoint::Receiver {
+  : public OH::Device, public OH::Accessor, DT::EndPoint::Receiver, 
+    virtual public OCPI::Util::SelfMutex
+ {
   friend class Driver;
   enum Action {
     SPIN_CREDIT = 0,
@@ -287,6 +289,7 @@ protected:
       m_pid = 0;
       return true;
     } else if (WIFEXITED(status)) {
+      assert(m_pid == wpid);
       killpg(m_pid, SIGKILL); // in case any orphaned children
       m_pid = 0;
       int exitStatus = WEXITSTATUS(status);
@@ -417,9 +420,17 @@ protected:
     m_exec.clear();
     while (!m_respQueue.empty())
       m_respQueue.pop();
+    m_spinning = false;
   }
   void
   shutdown() {
+    ocpiInfo("HDL Simulator Shutdown.  Current pid: %u", m_pid);
+    OU::SelfAutoMutex guard (this);
+    // Disable container thread
+    if (m_state == EMULATING)
+      return;
+    setState(EMULATING);
+    m_firstRun = true;
     if (m_pid) {
       uint8_t msg[2];
       std::string error;
@@ -439,6 +450,7 @@ protected:
       m_dcp = 0;
       m_pid = 0;
     }
+    m_exited = false;
     flush();
   }
   bool
@@ -617,6 +629,7 @@ protected:
   }
 public:
   ~Device() {
+    lock(); // unlocked by SeftMutex destructor
     shutdown();
     if (s_one == this)
       s_one = NULL;
@@ -645,6 +658,7 @@ public:
   }
   // The container background thread calls this.  Return true when done
   bool run() {
+    OU::SelfAutoMutex guard (this);
     if (m_firstRun) {
       if (m_state != RUNNING) {
 	OS::sleep(100);
@@ -662,7 +676,7 @@ public:
       if (!doit(error) && m_cumTicks < m_simTicks)
 	return false;
     }
-    ocpiDebug("exit simulator container thread x %d s %d ct %" PRIu64 " st %u e '%s'",
+    ocpiInfo("exit simulator container thread x %d s %d ct %" PRIu64 " st %u e '%s'",
 	      m_exited, s_stopped, m_cumTicks, m_simTicks, error.c_str());
     if (m_exited) {
       if (m_verbose)
@@ -751,26 +765,30 @@ public:
   // After loading or after deciding that the loaded bitstream is ok, this is called.
   void
   connect() {
+    // For the local simulator, the connection is implicit, so there is nothing to do.
+#if 0
     std::string err;
     if (start(err))
       throwit("Can't start \"%s\" simulator from \"%s\": %s",
 	      m_platform.c_str(), m_exec.c_str(), err.c_str());
+#endif
   }
 
   bool load(const char *file, std::string &error) {
-    static bool loaded = false;
-    if (loaded) {
+    static Device *loaded = NULL;
+    if (loaded && loaded != this) {
       error = "Multiple HDL simulator containers are not yet supported";
       return true;
     }
-    loaded = true;
+    loaded = this;
     if (myload(file, error)) {
       m_isAlive = false;
       return true;
     }
-    return false;
+    return init(error);
   }
   bool myload(const char *file, std::string &error) {
+    OU::SelfAutoMutex guard (this);
     assert(m_state != LOADING || m_state != SERVING);
     if (m_state == EMULATING) {
       if (initFifos(error))
@@ -859,7 +877,7 @@ public:
 			 m_platform.c_str(), m_exec.c_str(), tmp.c_str());
     }
     setState(RUNNING);   // Were loaded or loading
-    return init(error);
+    return false;
   }
   void
   send2sdp(SDP::Header &h, uint8_t *data, bool response, const char *type, std::string &error) {
@@ -891,7 +909,7 @@ public:
       else if (offset >= offsetof(OccpSpace, config))
 	if ((offset - offsetof(OccpSpace, config)) >=
 	    OCCP_WORKER_CONFIG_SIZE + 2*sizeof(uint64_t))
-	  throwit("Read/write offset out of range1: 0x%" PRIx64, offset);
+	  throwit("Read/write offset out of range1 when emulating: 0x%" PRIx64, offset);
 	else {
 	  offset -= offsetof(OccpSpace, config);
 	  if (offset >= OCCP_WORKER_CONFIG_SIZE)
@@ -901,7 +919,7 @@ public:
 	}
       else if (offset >= offsetof(OccpSpace, worker)) {
 	if ((offset - offsetof(OccpSpace, worker)) >= sizeof(OccpWorker) * 2)
-	  throwit("Read/write offset out of range2: 0x%" PRIx64, offset);
+	  throwit("Read/write offset out of range2 when emulating: 0x%" PRIx64, offset);
 	else {
 	  //	  offset -= offsetof(OccpSpace, worker);
 	  if (offset >= offsetof(OccpSpace, worker))

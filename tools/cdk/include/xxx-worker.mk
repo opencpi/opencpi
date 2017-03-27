@@ -96,10 +96,12 @@ $(call OcpiDbgVar,XmlIncludeDirsInternal)
 
 -include $(GeneratedDir)/*.deps
 
+
+OcpiBuildFile=$(or $(call OcpiExists,$(Worker).build),$(call OcpiExists,$(Worker)-build.xml))
 ParamShell=\
-  if test -r $(Worker).build; then \
+  if [ -n "$(OcpiBuildFile)" -a -r "$(OcpiBuildFile)" ] ; then \
     (mkdir -p $(GeneratedDir) &&\
-    $(call MakeSymLink,$(Worker).build,$(GeneratedDir)); \
+    $(call MakeSymLink2,$(OcpiBuildFile),$(GeneratedDir),$(Worker)-build.xml); \
     $(OcpiGenTool) -D $(GeneratedDir) $(and $(Package),-p $(Package))\
       $(and $(Platform),-P $(Platform)) \
       $(and $(PlatformDir), -F $(PlatformDir)) \
@@ -328,7 +330,7 @@ define DoLink
              fi
   endif
   $$(eval $$(call $(CapModel)WkrBinaryLink,$1,$2,$3,$4,$5))
-  $(LibDir)/$1/$3: $(call WkrTargetDir,$1,$4)/$2 $(and $(filter hdl,$(Model)),$(LibDir)/$1/$(basename $3)-generics.vhd) | $(LibDir)/$1
+  $(LibDir)/$1/$3: | $(call WkrTargetDir,$1,$4)/$2 $(and $(filter hdl,$(Model)),$(LibDir)/$1/$(basename $3)-generics.vhd) $(LibDir)/$1
 	$(AT)echo Creating link to export worker binary: $(LibDir)/$1/$3 '->' $(call WkrTargetDir,$1,$4)/$2
 	$(AT)$$(call MakeSymLink2,$(call WkrTargetDir,$1,$4)/$2,$(LibDir)/$1,$3)
 
@@ -379,13 +381,13 @@ endif
 # The generated build file is done as the makefile is read, so we can use
 # a wildcard here, knowing that if it is not here it had no non-default values
 ifneq ($(wildcard $(Worker).build),)
-  LibLinks+=$(LibDir)/$(Worker).build
-  $(LibDir)/$(Worker).build: $(Worker).build | $(LibDir)
-	$(AT)$(call MakeSymLink,$(Worker).build,$(LibDir))
+  LibLinks+=$(LibDir)/$(Worker)-build.xml
+  $(LibDir)/$(Worker)-build.xml: $(Worker).build | $(LibDir)
+	$(AT)$(call MakeSymLink2,$(Worker).build,$(LibDir),$(Worker)-build.xml)
 else
   LibLinks+=$(LibDir)/$(Worker).build
-  $(LibDir)/$(Worker).build: $(GeneratedDir)/$(Worker).build | $(LibDir)
-	$(AT)$(call MakeSymLink,$(GeneratedDir)/$(Worker).build,$(LibDir))
+  $(LibDir)/$(Worker).build: $(GeneratedDir)/$(Worker)-build.xml | $(LibDir)
+	$(AT)$(call MakeSymLink,$(GeneratedDir)/$(Worker)-build.xml,$(LibDir))
 endif
 
 $(call OcpiDbgVar,LibLinks,Before all:)

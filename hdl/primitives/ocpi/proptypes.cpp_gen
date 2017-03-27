@@ -140,7 +140,9 @@ $@@@@@@if its(reset) then\
 $@@@@@@@ temp <= (others => to_signed(0,char_t~length));\
 $@@@@@@@ written <= bfalse;\
 $@@@@@@elsif its(write_enable) then\
-$@@@@@@@@temp(to_integer(offset) to to_integer(offset + 3)) <= to_string_dw(data);\
+$@@@@@@@@for i in 0 to 3 loop\
+$@@@@@@@@@@temp(to_integer(offset)+i) <= to_string_dw(data)(i);\
+$@@@@@@@@end loop;\
 $@@@@@@@@written <= btrue;\
 $@@@@@@else\
 $@@@@@@@@written <= bfalse;\

@@ -26,34 +26,18 @@
 ########################################################################### #
 
 # quick way to run all tests
-OCPI_RPM=$(rpm -q angryviper-devel 2>/dev/null | grep -v "not installed")
-  export OCPI_SMB_SIZE=3000000
-if test -z "${OCPI_RPM}"; then
-  # run this in the binary executables directory by doing: ../src/run_tests.sh
-  export OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/lib/components
-else
-  #RPM-based install needs to copy to a directory that the user can read/write
-  targetDir=$(/opt/opencpi/cdk/platforms/getPlatform.sh | awk '{print $4}')
-  export OCPI_LIBRARY_PATH=/opt/opencpi/cdk/components/lib/rcc/
-  # export OCPI_LOG_LEVEL=11
-  if test -z "${VG}"; then
-    export DIR=$(mktemp -d --tmpdir ocpi_ctests.XXXXX)
-  else
-    export DIR=/tmp/ctests_run
-    rm -rf ${DIR} || :
-    mkdir ${DIR}
-  fi
-  cp --target-directory=${DIR} /opt/opencpi/cdk/bin/${targetDir}/ctests/*
-  echo Copied all tests to ${DIR}
-  cd ${DIR}
-fi
-
+# First ensure CDK and TOOL_xxx vars
+OCPI_BOOTSTRAP=$OCPI_CDK_DIR/scripts/ocpibootstrap.sh; . $OCPI_BOOTSTRAP
+export OCPI_SMB_SIZE=3000000
+export OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/lib/components/rcc
+export DIR=$(mktemp -d -t ocpi_ctests.XXXXX)
+echo =========Outputs from these tests will be in: $DIR
 failed=
 set -o pipefail
 out="2> /dev/null"
 if test "$OUT" != ""; then out="$OUT"; fi
 function doit {
-  tmp=$1_run.log
+  tmp=$DIR/$1_run.log
   $VG ./$1 $out | tee $tmp | (egrep 'FAILED|PASSED|Error:';exit 0)
   rc=$?
   if egrep -q 'FAILED|Error:' $tmp; then
@@ -77,12 +61,10 @@ done
 fi
 if test "$failed" = ""; then
   echo All container tests passed.
-  if test -n "${OCPI_RPM}"; then
-    if test -z "${VG}"; then
-      rm -rf ${DIR}
-    else
-      echo Left files in ${DIR} for examination because valgrind was detected.
-    fi
+  if test -z "${VG}"; then
+    rm -rf ${DIR}
+  else
+    echo Left files in ${DIR} for examination because valgrind was detected.
   fi
   exit 0
 else

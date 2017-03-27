@@ -113,7 +113,7 @@ namespace OCPI {
 			      const char *&inst,
 			      unsigned & score);
       Implementation *findImplementation(const char *specName, const char *staticInstance);
-      Implementation *getImplementation(unsigned n);
+      const Implementation *getImplementation(unsigned n) const;
       inline ezxml_t xml() const { return m_xml; }
       virtual const std::string &name() const = 0;
       std::time_t mtime() const { return m_mtime; }

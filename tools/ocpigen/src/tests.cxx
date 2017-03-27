@@ -60,6 +60,7 @@ namespace {
   }
   const char *
   remove(const std::string &name) {
+    ocpiInfo("Trying to remove %s", name.c_str());
     int rv = ::system(std::string("rm -r -f " + name).c_str());
     return rv ?
       OU::esprintf("Error removing \"%s\" directory: %d", name.c_str(), rv) :
@@ -1358,8 +1359,10 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
     return err;
   bool seenHDL = false;
   Strings assyDirs;
+  std::string assemblies("gen/assemblies");
   for (WorkersIter wi = workers.begin(); wi != workers.end(); ++wi) {
     Worker &w = **wi;
+    ocpiInfo("Generating assemblies for worker: %s", w.m_implName);
     if (w.m_model == HdlModel) {
       assert(w.m_paramConfigs.size());
       for (unsigned c = 0; c < w.m_paramConfigs.size(); ++c) {
@@ -1385,16 +1388,18 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
 	if (!allOk)
 	  continue; // skip this config - it is not in the test matrix
 	if (!seenHDL) {
-	  OS::FileSystem::mkdir("gen/assemblies", true);
+	  OS::FileSystem::mkdir(assemblies, true);
 	  OU::string2File("include $(OCPI_CDK_DIR)/include/hdl/hdl-assemblies.mk\n",
-			  "gen/assemblies/Makefile", true);
+			  (assemblies + "/Makefile").c_str(), true);
 	  seenHDL = true;
 	}
 	std::string name(w.m_implName);
 	//	if (c != 0)
 	OU::formatAdd(name, "_%u", c);
-	std::string dir("gen/assemblies/" + name);
+	std::string dir(assemblies + "/" + name);
+	ocpiInfo("Generating assembly: %s", dir.c_str());
 	OS::FileSystem::mkdir(dir, true);
+	assyDirs.insert(name);
 	OU::string2File(hdlFileIO ?
 			"override HdlPlatform:=$(filter-out %sim,$(HdlPlatform))\n"
 			"override HdlPlatforms:=$(filter-out %sim,$(HdlPlatforms))\n"
@@ -1412,6 +1417,7 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
 	  name += "_frw";
 	  dir += "_frw";
 	  OS::FileSystem::mkdir(dir, true);
+	  assyDirs.insert(name);
 	  OU::string2File("override HdlPlatform:=$(filter %sim,$(HdlPlatform))\n"
 			  "override HdlPlatforms:=$(filter %sim,$(HdlPlatforms))\n"
 			  "include $(OCPI_CDK_DIR)/include/hdl/hdl-assembly.mk\n",
@@ -1437,14 +1443,17 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
 	  assy += "</HdlAssembly>\n";
 	  
 	  OU::string2File(assy, dir + "/" + name + ".xml", true);
-	} else {
-	  dir += "_frw";
-	  if ((err = remove(dir)))
-	    return err;
 	}
       }
     }
-  }  
+  }
+  // Cleanup any assemblies that were not just generated
+  assyDirs.insert("Makefile");
+  for (OS::FileIterator iter(assemblies, "*"); !iter.end(); iter.next())
+    if (assyDirs.find(iter.relativeName()) == assyDirs.end() &&
+	(err = remove(assemblies + "/" + iter.relativeName())))
+      return err;
+
   // ================= 10. Generate subcases for each case, and generate outputs per subcase
   fprintf(out,
 	  "\n"

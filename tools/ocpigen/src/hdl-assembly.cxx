@@ -150,7 +150,8 @@ parseHdlAssy() {
   // Do the HDL-specific parsing and initializations for the instances in the assembly
   Instance *i = &a->m_instances[0];
   for (unsigned n = 0; n < a->m_instances.size(); n++, i++)
-    i->initHDL(*a);
+    if ((err = i->initHDL(*a)))
+      return err;
   // Look at connections for inserting adapters between data ports
   for (ConnectionsIter ci = a->m_connections.begin(); ci != a->m_connections.end(); ci++) {
     Connection &c = **ci;
@@ -168,8 +169,8 @@ parseHdlAssy() {
 	}
       }
     }
-    if (from && to)
-      a->insertAdapter(c, *from, *to);
+    if (from && to && (err = a->insertAdapter(c, *from, *to)))
+      return err;
   }
   Port *wci = NULL;
   unsigned n;

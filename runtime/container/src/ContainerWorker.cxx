@@ -102,7 +102,7 @@ namespace OCPI {
 					     volatile void *&m_writeVaddr,
 					     const volatile void *&m_readVaddr) {
       OU::Property &prop = findProperty(pname);
-      if (!prop.m_isReadable && !prop.m_isWritable)
+      if (!prop.m_isReadable && !prop.m_isWritable && !prop.m_isParameter)
 	throw OU::Error("Property '%s' of worker '%s' is neither readable nor writable",
 			pname, name().c_str());
       if (!prop.m_isParameter)

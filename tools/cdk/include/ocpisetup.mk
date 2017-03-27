@@ -168,7 +168,7 @@ endif
 
 # FIXME is this necessary?
 ifndef OCPI_PREREQUISITES_INSTALL_DIR
-  export OCPI_PREREQUISITES_INSTALL_DIR:=/opt/opencpi/prerequisites
+  export OCPI_PREREQUISITES_INSTALL_DIR:=$(OCPI_PREREQUISITES_DIR)
 endif
 ifndef OCPI_PATCHELF_DIR
   export OCPI_PATCHELF_DIR=$(OCPI_PREREQUISITES_DIR)/patchelf

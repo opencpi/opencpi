@@ -254,7 +254,9 @@ namespace OCPI {
     // on their stack so that access to members (in inline methods) has no indirection.
     class Property {
       friend class OCPI::Container::Worker;
+    protected:
       Worker &m_worker;               // which worker do I belong to
+    private:
       const volatile void *m_readVaddr;
       volatile void *m_writeVaddr;
     public:
@@ -263,7 +265,7 @@ namespace OCPI {
     private:
       bool m_readSync, m_writeSync;   // these exist to avoid exposing the innards of m_info.
     public:
-      Property(Application &, const char *, const char * = NULL);
+      Property(const Application &, const char *, const char * = NULL);
       Property(Worker &, const char *);
     private:
       Property(Worker &, unsigned);
@@ -283,11 +285,15 @@ namespace OCPI {
       // types are supported explicitly.  C++ doesn't quite do the right thing.
       // The "m_writeVaddr/m_readVaddr" members are only non-zero if the 
       // implementation does not produce errors and it is atomic at this data size
+
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)                  \
       inline void set##pretty##Value(run val) const {                           \
         checkType(OCPI_##pretty, 1, true);				        \
         if (m_writeVaddr) {						        \
-          *(store *)m_writeVaddr= *(store*)((void*)&(val));                     \
+	  /* avoid strict aliasing violation */                                 \
+          /* was: *(store *)m_writeVaddr= *(store*)((void*)&(val));*/           \
+	  union { run runval; store storeval; } u; u.runval = val;	        \
+          *reinterpret_cast<volatile store *>(m_writeVaddr)= u.storeval;        \
 	  if (m_writeSync)						        \
              m_worker.propertyWritten(m_ordinal);                               \
         } else								        \

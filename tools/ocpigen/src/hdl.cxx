@@ -230,9 +230,9 @@ parseHdlImpl(const char *package) {
     const char *dot = strrchr(emulate, '.');
     if (!dot)
       return OU::esprintf("'emulate' attribute: '%s' has no authoring model suffix", emulate);
-    std::string ew;
-    OU::format(ew, "../%s/%.*s.xml", emulate, (int)(dot - emulate), emulate);
-    if (!(m_emulate = HdlDevice::get(ew.c_str(), m_file.c_str(), this, err)))
+    //    std::string ew;
+    //    OU::format(ew, "../%s/%.*s.xml", emulate, (int)(dot - emulate), emulate);
+    if (!(m_emulate = HdlDevice::get(emulate, m_file.c_str(), this, err)))
       return OU::esprintf("for emulated device worker %s: %s", emulate, err);
     for (SignalsIter si = m_emulate->m_signals.begin();
 	 si != m_emulate->m_signals.end(); si++) {

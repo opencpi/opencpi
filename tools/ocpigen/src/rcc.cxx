@@ -741,32 +741,55 @@ emitImplRCC() {
 	    n--;
 	  }
 	}
-	if (p.m_isReadable) {
-	  fprintf(f, "    inline %s get_%s(", type.c_str(), p.m_name.c_str());
+	if (p.m_baseType == OA::OCPI_String)
+	  fprintf(f, "    inline size_t getLength_%s() { return %zu; }\n", p.m_name.c_str(),
+		  p.m_stringLength);
+	std::string dims, offset;
+	const char *comma = "";
+	for (unsigned n = 0; n < p.m_arrayRank; n++)
+	  OU::formatAdd(dims, "%sunsigned idx%u", n ? ", " : "", n);
+	if (p.m_arrayRank) {
 	  for (unsigned n = 0; n < p.m_arrayRank; n++)
-	    fprintf(f, "%sunsigned idx%u", n ? ", " : "", n);
-	  fprintf(f, ") { return %sm_worker.get%s%s(%u", cast.c_str(), pretty.c_str(),
-		  p.m_isParameter ? "Parameter" : "Property", p.m_ordinal);
-	  if (p.m_arrayRank)
-	    for (unsigned n = 0; n < p.m_arrayRank; n++)
-	      fprintf(f, "%sidx%u*%s", n ? " + " : ", ", n, offsets[n].c_str());
+	    OU::formatAdd(offset, "%sidx%u*%s", n ? " + " : "", n, offsets[n].c_str());
+	  comma = ", ";
+	} else
+	  offset = ", 0";
+	if (p.m_isReadable) {
+	  if (p.m_baseType == OA::OCPI_String)
+	    fprintf(f,
+		    "    inline void get_%s(%s%schar *buf, size_t length) {\n"
+		    "      m_worker.get%s%s(%u, buf, length%s%s);\n"
+		    "    }\n"
+		    "    void get_%s(%s%sstd::string &s) {\n"
+		    "      size_t len = getLength_%s() + 1;\n"
+		    "      char *buf = new char[len];\n"
+		    "      m_worker.get%s%s(%u, buf, len%s%s);\n"
+		    "      s = buf;\n"
+		    "      delete [] buf;\n"
+		    "   }\n",
+		    p.m_name.c_str(), dims.c_str(), comma, pretty.c_str(),
+		    p.m_isParameter ? "Parameter" : "Property", p.m_ordinal, comma,
+		    offset.c_str(), p.m_name.c_str(), dims.c_str(), comma, p.m_name.c_str(),
+		    pretty.c_str(), p.m_isParameter ? "Parameter" : "Property", p.m_ordinal,
+		    comma, offset.c_str());
 	  else
-	    fprintf(f, ", 0");
-	  fprintf(f,"); }\n");
+	    fprintf(f,
+		    "    inline %s get_%s(%s) {\n"
+		    "      return %sm_worker.get%s%s(%u%s%s);\n"
+		    "    }\n",
+		    type.c_str(), p.m_name.c_str(), dims.c_str(), cast.c_str(), pretty.c_str(),
+		    p.m_isParameter ? "Parameter" : "Property", p.m_ordinal, comma, 
+		    offset.c_str());
 	}
 	if (p.m_isWritable) {
-	  fprintf(f, "    inline void set_%s(", p.m_name.c_str());
-	  for (unsigned n = 0; n < p.m_arrayRank; n++)
-	    fprintf(f, "unsigned idx%u, ", n);
-	  fprintf(f, "%s val) {\n", type.c_str());
+	  fprintf(f, 
+		  "    inline void set_%s(%s%s%s val) {\n",
+		  p.m_name.c_str(), dims.c_str(), comma, type.c_str());
 	  if (p.m_arrayRank) {
-	    fprintf(f, "      unsigned idx = ");
-	    for (unsigned n = 0; n < p.m_arrayRank; n++)
-	      fprintf(f, "%sidx%u*%s", n ? " + " : "", n, offsets[n].c_str());
 	    fprintf(f,
-		    ";\n"
+		    "      unsigned idx = %s;\n"
 		    "      m_worker.set%sProperty(%u, %sval, idx);\n",
-		    pretty.c_str(), p.m_ordinal, cast.c_str());
+		    offset.c_str(), pretty.c_str(), p.m_ordinal, cast.c_str());
 	  } else
 	    fprintf(f,
 		    "      m_worker.set%sProperty(%u, %sval, 0);\n",
@@ -784,6 +807,12 @@ emitImplRCC() {
 	  fprintf(f,
 		  "#endif\n"
 		  "    }\n");
+	  if (p.m_baseType == OA::OCPI_String)
+	    fprintf(f, 
+		    "    inline void set_%s(%s%sconst std::string &val) {\n"
+		    "      m_worker.setStringProperty(%u, val.c_str()%s%s);\n"
+		    "    }\n",
+		    p.m_name.c_str(), dims.c_str(), comma, p.m_ordinal, comma, offset.c_str());
 	}
       }
       fprintf(f,

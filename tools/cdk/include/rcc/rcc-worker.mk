@@ -58,21 +58,22 @@ RccIncludeDirsActual=$(RccIncludeDirsInternal)\
    $(OCPI_PREREQUISITES_DIR)/$l/include)
 BF=$(BF_$(call RccOs,$1))
 # This is for backward compatibility
-RccDynamicLinkOptions=$(SharedLibLinkOptions)
+RccLinkOptions=$(SharedLibLinkOptions)
+RccCompileWarnings=-Wall
 ifneq ($(OCPI_DEBUG),0)
-RccDynamicLinkOptions+= -g
+RccLinkOptions+= -g
 endif
 # Linux values
 BF_linux=.so
 SOEXT_linux=.so
 AREXT_linux=.a
-RccDynamicLinkOptions_linux=$(RccDynamicLinkOptions) -shared
-RccDynamicCompilerOptions_linux=-fPIC
+RccLinkOptions_linux=$(RccLinkOptions) -shared
+RccCompileOptions_linux=-fPIC
 # macos values
 BF_macos=.dylib
 SOEXT_macos=.dylib
 AREXT_macos=.a
-RccDynamicLinkOptions_macos=$(RccDynamicLinkOptions) -dynamiclib -Xlinker -undefined -Xlinker dynamic_lookup
+RccLinkOptions_macos=$(RccLinkOptions) -dynamiclib -Xlinker -undefined -Xlinker dynamic_lookup
 DispatchSourceFile=$(call WkrTargetDir,$1,$2)/$(CwdName)_dispatch.c
 ArtifactFile=$(BinaryFile)
 # Artifacts are target-specific since they contain things about the binary
@@ -87,8 +88,14 @@ ifeq ($(OCPI_USE_TARGET_MODES),1)
 endif
 Comma=,
 PatchElf=$(or $(OCPI_PREREQUISITES_DIR),/opt/opencpi/prerequisites)/patchelf/$(OCPI_TOOL_HOST)/bin/patchelf
-LinkBinary=$(G$(OcpiLanguage)_LINK_$(RccTarget)) $(call RccPrioritize,DynamicLinkOptions,$(OcpiLanguage),$(RccTarget)) -o $@ $1 \
+LinkBinary=$(G$(OcpiLanguage)_LINK_$(RccTarget)) \
+$(call RccPrioritize,DynamicLinkOptions,$(OcpiLanguage),$(RccTarget),$(RccPlatform)) \
+$(call RccPrioritize,LinkOptions,$(OcpiLanguage),$(RccTarget),$(RccPlatform)) \
+$(call RccPrioritize,ExtraLinkOptions,$(OcpiLanguage),$(RccTarget),$(RccPlatform)) \
+-o $@ $1 \
 $(AEPLibraries) \
+$(call RccPrioritize,CustomLibs,$(OcpiLanguage),$(RccTarget),$(RccPlatform)) \
+$(call RccPrioritize,LocalLibs,$(OcpiLanguage),$(RccTarget),$(RccPlatform)) \
 $(foreach l,$(RccLibrariesInternal) $(Libraries),\
   $(if $(findstring /,$l),\
     $(foreach p,$(dir $l)$(RccTarget)/lib$(notdir $l),\
@@ -134,11 +141,15 @@ CompilerWarnings= -Wall -Wextra
 CompilerDebugFlags=-g
 CompilerOptimizeFlags=-O
 ifeq ($(OCPI_DEBUG),1)
-RccCompilerOptions=$(CompilerDebugFlags)
+RccCompileOptions=$(CompilerDebugFlags)
 else
-RccCompilerOptions=$(CompilerOptimizeFlags)
+RccCompileOptions=$(CompilerOptimizeFlags)
 endif
-$(foreach v,$(filter ExtraCompilerOptions%,$(.VARIABLES)),$(eval Rcc$v=$($v)))
+$(foreach v,$(filter ExtraCompilerOptionsCC_%,$(.VARIABLES)),\
+  $(foreach t,$(v:ExtraCompilerOptionsCC_%=%),\
+    $(foreach p,$(RccPlatforms),\
+      $(and $(filter $(RccTarget_$p),$t),\
+	 $(eval RccExtraCompileOptionsCC_$p=$($v))))))
 # Prepare the parameters for compile-command-line injection into the worker compilation
 RccParams=\
   $(foreach n,$(WorkerParamNames),\
@@ -148,37 +159,39 @@ RccParams=\
 # target and language
 # target
 # generic
-# E.g. $(call RccPrioritize,CompilerOptions,C,target)
+# E.g. $(call RccPrioritize,CompileOptions,C,target,platform)
 OcpiDefined=$(filter-out undefined,$(origin $1))
 RccPrioritize=\
   $(if $(call OcpiDefined,Rcc$1$2_$3),\
     $(Rcc$1$2_$3),\
     $(if $(call OcpiDefined,Rcc$1_$3),\
       $(Rcc$1_$3),\
-      $(if $(call OcpiDefined,Rcc$1$2_$(call RccOs,$3)),\
-        $(Rcc$1$2_$(call RccOs,$3)),\
-        $(if $(call OcpiDefined,Rcc$1_$(call RccOs,$3)),\
-          $(Rcc$1_$(call RccOs,$3)),\
-          $(if $(call OcpiDefined,Rcc$1$2),\
-            $(Rcc$1$2),\
-            $(Rcc$1))))))
+      $(if $(call OcpiDefined,Rcc$1$2_$4),\
+        $(Rcc$1$2_$4),\
+        $(if $(call OcpiDefined,Rcc$1_$4),\
+          $(Rcc$1_$4),\
+          $(if $(call OcpiDefined,Rcc$1$2_$(call RccOs,$3)),\
+            $(Rcc$1$2_$(call RccOs,$3)),\
+            $(if $(call OcpiDefined,Rcc$1_$(call RccOs,$3)),\
+              $(Rcc$1_$(call RccOs,$3)),\
+              $(if $(call OcpiDefined,Rcc$1$2),\
+                 $(Rcc$1$2),\
+                 $(Rcc$1))))))))
 
-# RccCompilerOptions(language,target)
-RccFinalCompilerOptions=\
-  $(call RccPrioritize,CompilerWarnings,$1,$2) \
-  $(call RccPrioritize,CompilerOptions,$1,$2) \
-  $(call RccPrioritize,DynamicCompilerOptions,$1,$2) \
-  $(call RccPrioritize,ExtraCompilerOptions,$1,$2) \
-  $(call RccPrioritize,DynamicCompilerExtraCompilerOptions,$1,$2) \
+# RccCompileOptions(language,target)
+RccFinalCompileOptions=\
+  $(call RccPrioritize,CompileWarnings,$1,$2,$3) \
+  $(call RccPrioritize,ExtraCompileWarnings,$1,$2,$3) \
+  $(call RccPrioritize,CompileOptions,$1,$2,$3) \
+  $(call RccPrioritize,ExtraCompileOptions,$1,$2,$3) \
 
 Compile_c=\
   $$(Gc_$$(RccTarget)) -MMD -MP -MF $$@.deps -c \
-  $$(call RccFinalCompilerOptions,C,$$(RccTarget)) \
+  $$(call RccFinalCompileOptions,C,$$(RccTarget),$$(RccPlatform)) \
   $$(RccIncludeDirsActual:%=-I%) -o $$@ $$(RccParams) $$<
 Compile_cc=\
   $$(Gc++_$$(RccTarget)) -MMD -MP -MF $$@.deps -c \
-  $$(call RccFinalCompilerOptions,CC,$$(RccTarget)) \
-  $$(ExtraCompilerOptionsCC_$$(RccTarget)) $(ignore for legacy)\
+  $$(call RccFinalCompileOptions,CC,$$(RccTarget),$$(RccPlatform)) \
   $$(RccIncludeDirsActual:%=-I%) -o $$@ $$(RccParams) $$<
 Compile_cpp=$(Compile_cc)
 Compile_cxx=$(Compile_cc)
@@ -239,7 +252,35 @@ $(foreach p,\
   $(RccPlatforms),$(foreach c,$(ParamConfigurations),\
      $(eval $(call DoRccArtifactFile,$(RccTarget_$p),$c,$p))))
 
-#$(OcpiGen) -A $(RccAssemblyFile)
+# ShowVar(varname)
+RccNeq=$(if $(subst x$1,,x$2)$(subst x$2,,x$1),x,)
+RccShowVar=\
+  echo '  'Rcc$1 = '$(value Rcc$1)' \
+  $(and $(value Rcc$1),$(call RccNeq,$(value Rcc$1),$(Rcc$1)),;echo "    expands to:" $(Rcc$1))
+
+RccLanguage=$(if $(filter $1,c),C,CC)
+RccShowGeneric=\
+  $(call RccShowVar,$1);\
+  $(call RccShowVar,$1$(RccLanguage));\
+# ShowVarSuffixes(varname, platform)
+RccShowVarSuffixes=\
+  $(call RccShowVar,$1_$(call RccOs,$(RccTarget_$2)));\
+  $(call RccShowVar,$1$(RccLanguage)_$(call RccOs,$(RccTarget_$2)));\
+  $(call RccShowVar,$1_$2);\
+  $(call RccShowVar,$1$(RccLanguage)_$2);\
+  echo '  Actual Rcc$1 = '$(call RccPrioritize,$1,$(RccTarget_$2),$2);
+
+RccAllVars:=\
+  CompileWarnings ExtraCompileWarnings \
+  CompileOptions ExtraCompileOptions \
+  LinkOptions ExtraLinkOptions \
+  CustomLibs
+
+# Show the variables relevant to documented/supported options
+showvars:
+	$(AT)echo Variables used for all platforms unless overridden '(for '$(OcpiLanguage) language')':; \
+	  $(foreach v,$(RccAllVars),$(call RccShowGeneric,$v)) \
+	  $(foreach p,$(RccPlatforms),echo Variables applicable to platform:'  '$p;$(foreach v,$(RccAllVars),$(call RccShowVarSuffixes,$v,$p)))
 
 #disable builtin suffix rules
 %.o : %.c

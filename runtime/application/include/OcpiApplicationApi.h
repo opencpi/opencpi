@@ -95,7 +95,7 @@ namespace OCPI {
 			  const char *context = NULL) const;
     private:
       friend class Property;
-      Worker &getPropertyWorker(const char *name, const char *&pname);
+      Worker &getPropertyWorker(const char *name, const char *&pname) const;
     };
   }
 }

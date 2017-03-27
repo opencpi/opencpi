@@ -26,7 +26,7 @@
                                                         pin  name -->
   <device worker='ad9361_adc'>
     <Signal name='RX_FRAME_P'  slot='LA01_P_CC'/> <!--  G8   -->
-    <Signal name='RX_FRAME_N'  slot='LA01_P_CC'/> <!--  G7   -->
+    <Signal name='RX_FRAME_N'  slot='LA01_N_CC'/> <!--  G7   -->
     <Signal name='RX_D_P(0)'   slot='LA02_P'/>    <!--  H7   RX_D0_N -->
     <Signal name='RX_D_N(0)'   slot='LA02_N'/>    <!--  H8   RX_D0_P -->
     <Signal name='RX_D_P(1)'   slot='LA03_P'/>    <!--  G9   RX_D1_N -->

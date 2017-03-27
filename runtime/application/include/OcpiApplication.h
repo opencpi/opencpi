@@ -62,7 +62,9 @@ namespace OCPI {
 
     class ApplicationI : public OCPI::Container::Callback {
       typedef OCPI::Container::Container::CMap CMap;
-      ezxml_t m_deployment;
+      ezxml_t m_deployXml;
+      ezxml_t m_appXml;
+      char   *m_copy; // copy of input XML string
       OCPI::Library::Assembly &m_assembly;
 
       size_t m_nInstances;
@@ -166,7 +168,7 @@ namespace OCPI {
 				     const OCPI::Library::Implementation &impl,
 				     unsigned *&pn, OCPI::Util::Value *&pv);
       void planDeployment(const PValue *params);
-      void importDeployment(const char *file, ezxml_t xml, const PValue *params);
+      void importDeployment(const char *file, ezxml_t &xml, const PValue *params);
     public:
       explicit ApplicationI(OCPI::API::Application &app, const char *file,
 			    const OCPI::API::PValue *params = NULL);
@@ -192,7 +194,7 @@ namespace OCPI {
       friend struct Property;
       size_t nProperties() const { return m_nProperties; }
       const OCPI::Util::Property *property(unsigned ordinal, std::string &name) const;
-      Worker &getPropertyWorker(const char *name, const char *&pname);
+      Worker &getPropertyWorker(const char *name, const char *&pname) const;
       bool getProperty(unsigned ordinal, std::string &name, std::string &value, bool hex,
 		       bool *parp, bool *cachedp, bool uncached) const;
       void getProperty(const char * wname, const char * pname, std::string &value, bool hex);
@@ -201,7 +203,7 @@ namespace OCPI {
       void dumpProperties(bool printParameters, bool printCached, const char *context) const;
       void genScaPrf(const char *outDir) const;
       void genScaScd(const char *outDir) const;
-      void genScaSpd(const char *outDir) const;
+      void genScaSpd(const char *outDir, const char *pkg) const;
     };
     // This is here to avoid exposing the ezxml_t stuff to the API
     class ApplicationX : public Application {
@@ -210,7 +212,9 @@ namespace OCPI {
       // Tool classes not for runtime
       inline void genScaPrf(const char *outDir) const { m_application.genScaPrf(outDir); }
       inline void genScaScd(const char *outDir) const { m_application.genScaScd(outDir); }
-      inline void genScaSpd(const char *outDir) const { m_application.genScaSpd(outDir); }
+      inline void genScaSpd(const char *outDir, const char *pkg) const {
+	m_application.genScaSpd(outDir, pkg);
+      }
     };
   }
 }

@@ -53,7 +53,6 @@ export LD_LIBRARY_PATH
 export CLIENT_IDL_ONLY
 export OCPI_BASE_DIR
 include MakeVars.ocpi
-
 ifneq ($(OCPI_TOOL_PLATFORM),$(OCPI_TARGET_PLATFORM))
   ifneq ($(shell test -x exports/bin/$(OCPI_TOOL_DIR)/ocpigen; echo $$?),0)
     $(info To build for $(OCPI_TARGET_PLATFORM), you must first build for $(OCPI_TOOL_PLATFORM))
@@ -96,9 +95,10 @@ PACKAGES += \
 	 runtime/ctests \
          runtime/application
 
-
 PACKAGES += tools/cdkutils
 PACKAGES += tools/ocpigen
+PACKAGES += tools/ocpisca
+PACKAGES += tools/ocpirh
 PACKAGES += tools/cdk/ocpidds
 PACKAGES += tools/astyle
 PACKAGES += tests
@@ -132,6 +132,8 @@ ALLPACKAGES = \
         runtime/application \
 	tools/cdkutils \
 	tools/ocpigen \
+	tools/ocpisca \
+	tools/ocpirh \
 	tools/cdk/ocpidds \
 	tools/astyle \
 	tests \

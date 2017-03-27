@@ -386,6 +386,9 @@ endef
 #OCPI_HDL_PLATFORM=zed
 #endif
 define HdlPreprocessTargets
+  ifdef HdlPlatform
+    override HdlPlatforms:=$$(call Unique,$$(HdlPlatform) $$(HdlPlatforms))
+  endif
   ifeq ($$(origin HdlPlatforms),undefined)
     ifdef HdlPlatform
       ifneq ($$(words $$(HdlPlatform)),1)
