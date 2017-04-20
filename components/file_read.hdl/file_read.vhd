@@ -144,11 +144,13 @@ begin
            som_r      <= som_next_r;
            som_next_r <= false;
            eom        := false;
-           if bytesLeft_r = 0 then -- we are staging an EOF/zlm.  There is no file I/O
+           if bytesLeft_r = 0 then -- we are staging an EOF/zlm.  There is no file I/O to do
              eom        := true;
              valid_r    <= false;
-             finished_r <= true;
-             close_file(data_file, props_in.fileName);
+             if endfile(data_file) then -- a ZLM at EOF means we're done
+               finished_r <= true;
+               close_file(data_file, props_in.fileName);
+             end if;
            elsif endfile(data_file) then -- EOF mid-message, w/ no data: shouldn't happen
              if its(props_in.messagesInFile) then
                report "Unexpected EOF mid-message" severity failure;
