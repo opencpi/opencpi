@@ -96,6 +96,10 @@ endif
 $(call OcpiDbgVar,RccPlatforms)
 $(call OcpiDbgVar,RccTargets)
 
+RccAllPlatforms=\
+  $(shell for i in $(OCPI_CDK_DIR)/platforms/*; \
+           do [ -f $$i/$$(basename $$i)-target.mk ] && echo $$(basename $$i); \
+          done)
 ifdef RccPlatforms
   override RccPlatforms:=$(filter-out $(ExcludePlatforms) $(RccExcludePlatforms),$(RccPlatforms))
   ifneq ($(OnlyPlatforms)$(RccOnlyPlatforms),)
