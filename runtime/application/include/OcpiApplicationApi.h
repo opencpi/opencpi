@@ -70,8 +70,8 @@ namespace OCPI {
       void initialize();
       // This makes the application operational, and resumes after "stop"
       void start();
-      // return true if timed out
-      bool wait( unsigned timeout_us = 0);
+      // return true if timed out, unless timeOutIsError, in which case throw exception
+      bool wait(unsigned timeout_us = 0, bool timeOutIsError = false);
       // do functional (not cleanup) things at the end of execution
       void finish();
       // Suspension, that can be resumed with "start".

@@ -113,6 +113,7 @@ namespace OCPI {
       // Globals dependant on polling
       OCPI::DataTransport::TransportGlobal *m_tpg_events, *m_tpg_no_events;
     };
+    static inline Manager &getManager() { return Manager::getSingleton(); }
 
     // A base class inherited by all container drivers for common behavior
     class Driver : public OCPI::Driver::DriverType<Manager,Driver> {

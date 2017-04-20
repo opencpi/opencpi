@@ -999,6 +999,10 @@ namespace OCPI {
       m_launched = true;
       if (m_assembly.m_doneInstance != -1)
 	m_doneWorker = m_launchInstances[m_assembly.m_doneInstance].m_worker;
+      if (m_verbose)
+	fprintf(stderr,
+		"Application established: containers, workers, connections all created\n"
+		"Communication with the application established\n");
     }
     void ApplicationI::
     dumpProperties(bool printParameters, bool printCached, const char *context) const
@@ -1038,6 +1042,8 @@ namespace OCPI {
       startMasterSlave(false, false, true);  // 1
       startMasterSlave(false, true, true);   // 3
       // Note: this does not start masters that are sources.
+      if (m_verbose)
+	fprintf(stderr, "Application started/running\n");
     };
     void ApplicationI::stop() {
       ocpiDebug("Stopping master workers that are not slaves.");
@@ -1320,13 +1326,35 @@ namespace OCPI {
     stop() { m_application.stop(); }
 
     bool Application::
-    wait( unsigned timeout_us ) {
-      OS::Timer *timer = NULL;
-      if (timeout_us) 
-	timer = new OS::Timer((uint32_t)(timeout_us/1000000ul),
-			      (uint32_t)((timeout_us%1000000) * 1000ull));
+    wait(unsigned timeout_us, bool timeOutIsError) {
+      OS::Timer *timer =
+	timeout_us ? new OS::Timer((uint32_t)(timeout_us/1000000),
+				   (uint32_t)((timeout_us%1000000) * 1000ull))
+	           : NULL;
+      if (m_application.verbose()) {
+	if (timeout_us)
+	  fprintf(stderr, "Waiting up to %g seconds for application to finish%s\n",
+		  (double)timeout_us/1.e6, timeOutIsError ? " before timeout" : "");
+        else
+	  fprintf(stderr, "Waiting for application to finish (no time limit)\n");
+      }
       bool r = m_application.wait(timer);
       delete timer;
+      if (r) {
+	if (timeOutIsError) {
+	  // in the other cases the caller is expected to stop the app and, under timeout
+	  // has the option of retrying the wait and not stopping
+	  // the timeout error is considered fatal
+	  stop();
+	  throw OU::Error("Application exceeded time limit of %g seconds", 
+			  (double)timeout_us/1.e6);
+	}
+	if (m_application.verbose())
+	  fprintf(stderr, "Application is now considered finished after waiting %g seconds\n",
+		  (double)timeout_us/1.e6);
+      } else if (m_application.verbose())
+	    fprintf(stderr, "Application finished\n");
+
       return r;
     }
 
