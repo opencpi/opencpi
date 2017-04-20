@@ -645,11 +645,14 @@ parseConnection(ezxml_t cx, ContConnect &c) {
   }
   if ((attr = ezxml_cattr(cx, "interconnect"))) {
     // An interconnect can be on any device worker, but for now it is on the config.
-    for (PortsIter pi = m_config.m_ports.begin(); pi != m_config.m_ports.end(); pi++)
-      if (!strcasecmp((*pi)->cname(), attr)) {
-	c.interconnect = *pi;
+    for (PortsIter pi = m_config.m_ports.begin(); pi != m_config.m_ports.end(); pi++) {
+      Port &p = **pi;
+      if (!strcasecmp(p.cname(), attr) ||
+	  (!strcmp(attr, "*") && p.m_master && (p.m_type == NOCPort || p.m_type == SDPPort))) {
+	c.interconnect = &p;
 	break;
       }
+    }
     if (!c.interconnect ||
 	(c.interconnect->m_type != NOCPort && c.interconnect->m_type != SDPPort) ||
 	!c.interconnect->m_master)
