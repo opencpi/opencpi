@@ -18,14 +18,14 @@ function bad {
   [ -x "$OCPI_MODELSIM_DIR/bin/vsim" ] ||
     bad No modelsim executable found at \"$OCPI_MODELSIM_DIR/bin/vsim\".
   [ -n "$verbose" ] &&
-    echo Attempting to run modelsim/vsim with license file \"$OCPI_MODELSIM_LICENSE_FILE\".
+    echo Attempting to run modelsim/vsim with license file \"$OCPI_MODELSIM_LICENSE_FILE\". 1>&2
   LM_LICENSE_FILE=$OCPI_MODELSIM_LICENSE_FILE \
     $OCPI_MODELSIM_DIR/bin/vsim -l /dev/null -c < /dev/null > /dev/null
   if [ $? = 0 ] ; then
-    [ -n "$verbose" ] && echo Modelsim is available and licensed.
+    [ -n "$verbose" ] && echo Modelsim is available and licensed. 1>&2
     exit 0
   fi
-  [ -n "$verbose" ] && echo Modelsim/vsim command failed.
+  [ -n "$verbose" ] && echo Modelsim/vsim command failed. 1>&2
   exit 1  
 }
 if [[ $OCPI_MODELSIM_DIR == "" ]]; then

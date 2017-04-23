@@ -16,7 +16,7 @@ export OnlyPlatforms
 export ExcludePlatforms
 export Cases
 export KeepSimulations
-
+export TestTimeout
 include $(OCPI_CDK_DIR)/include/util.mk
 
 ifneq ($(Model),test)
@@ -27,7 +27,7 @@ endif
 include $(OCPI_CDK_DIR)/include/hdl/hdl-targets.mk
 include $(OCPI_CDK_DIR)/include/rcc/rcc-make.mk
 export OCPI_ALL_PLATFORMS:=$(HdlAllPlatforms) $(RccAllPlatforms)
-$(info ALL PLATFORMS ARE: $(OCPI_ALL_PLATFORMS))
+$(infox ALL PLATFORMS ARE: $(OCPI_ALL_PLATFORMS))
 # We need the project dir because remote system mount dirs point to the project
 $(call OcpiIncludeProject,error)
 
@@ -59,7 +59,7 @@ CASEXML:=gen/cases.xml
 TESTXML:=$(CwdName)-test.xml
 
 $(CASEXML): $(TESTXML)
-	$(AT)echo ========= Generating test assemblies, inputs and applications.
+	$(AT)echo ========= Generating test assemblies, inputs and applications for $(CwdName):
 	$(AT)OCPI_ALL_PLATFORMS="$(OCPI_ALL_PLATFORMS)" \
 	     $(OcpiGen) -v -T $< && chmod a+x gen/applications/*.sh
 
@@ -78,11 +78,11 @@ build: generate
 # FIXME: there should be a function that simply returns the relative position within the project
 #        so we don't (here or elsewhere) have to recompute it
 prepare:
-	$(AT)echo ======== Preparing for execution on available platforms with available built workers and assemblies.
+	$(AT)echo ======== Preparing for execution on available platforms with available built workers and assemblies for $(CwdName):
 	$(AT)$(OCPI_CDK_DIR)/scripts/testrunprep.sh $(call FindRelative,$(realpath $(OCPI_PROJECT_DIR)),$(realpath $(CURDIR)))
 
 runnoprepare:
-	$(AT)echo ======== Executing tests on available or specified platforms:
+	$(AT)echo ======== Executing tests on available or specified platforms for $(CwdName):
 	$(AT)if [ ! -e run/runtests.sh ]; then \
 	       echo Execution has not been prepared.  Use make prepare. ;\
 	       exit 1; \
@@ -93,7 +93,7 @@ runonly: prepare runnoprepare
 # runtests is for compatibility
 # run is generic (not just for tests)
 run: prepare
-	$(AT)echo ======== Running and verifying test outputs on available platforms: 
+	$(AT)echo ======== Running and verifying test outputs on available platforms for $(CwdName):
 	$(AT)./run/runtests.sh run verify $(and $(View),view)
 
 # only for verify only so we can use wildcard
@@ -104,7 +104,7 @@ verify:
 	       echo No tests have been run so none can be verified.; \
 	       exit 0; \
 	     fi; \
-	     echo ======== Verifying test outputs on prepared platforms; \
+	     echo ======== Verifying test outputs on prepared platforms for $(CwdName): ; \
 	     for d in $(RunPlatforms); do \
 	       [ ! -x run/$$d/run.sh ] || \
                 (cd run/$$d; \

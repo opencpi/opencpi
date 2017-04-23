@@ -347,7 +347,7 @@ namespace OCPI {
 	      break;
 	  va_end(ap);
 	  if (!p)
-	    return esprintf("Invalid attribute name: \"%s\", in a %s element", *a, x->name);
+	    return esprintf("Invalid attribute \"%s\", for a \"%s\" element", *a, x->name);
 	}
 	return 0;
       }
@@ -575,7 +575,7 @@ namespace OCPI {
       }
 
       const char *
-      getBoolean(ezxml_t x, const char *name, bool *b, bool trueOnly) {
+      getBoolean(ezxml_t x, const char *name, bool *b, bool trueOnly, bool *found) {
 	const char *a = ezxml_cattr(x, name);
 	if (a) {
 	  bool val;
@@ -583,9 +583,15 @@ namespace OCPI {
 	    return esprintf("parsing value \"%s\" as type Bool", a);
 	  if (trueOnly && !val)
 	    return "can only set the value to true in this context";
+	  if (found)
+	    *found = true;
 	  *b = val;
-	} else if (!trueOnly)
-	  *b = false;
+	} else {
+	  if (!trueOnly)
+	    *b = false;
+	  if (found)
+	    *found = false;
+	}
 	return 0;
       }
 

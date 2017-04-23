@@ -1,6 +1,7 @@
 // Parameter processing
 #include <assert.h>
 #include <strings.h>
+#include <fnmatch.h>
 #include "OcpiOsFileSystem.h"
 #include "parameters.h"
 #include "wip.h"
@@ -33,6 +34,139 @@ findParamProperty(const char *name, OU::Property *&prop, size_t &nParam, bool in
 Param::Param() : m_valuesType(NULL), m_param(NULL), m_isDefault(false), m_worker(NULL), 
 		 m_isTest(false) {}
 
+// Exclude these values from the set
+// One use case, when not global, is to subtract from the default set
+// Other use case, add a line that can be deleted while leaving the normal set alone
+// If a platform is supplied, ensure that these values are not used for that platform
+const char *Param::
+excludeValue(std::string &uValue, Attributes *&attrs, const char *platform) {
+  if (platform && m_explicitPlatforms.find(platform) != m_explicitPlatforms.end())
+    return OU::esprintf("Can't exclude values for platforms using \"only\" attribute");
+  if (m_uValues.empty())
+    ocpiBad("excluding property value \"%s\" when there are no existing values?", uValue.c_str());
+  else if (attrs) {
+    if (platform)
+      attrs->m_excluded.insert(platform);
+    else if (attrs->m_excluded.empty()) {
+      size_t n = attrs - &m_attributes[0];
+      m_uValues.erase(m_uValues.begin() + n);
+      m_attributes.erase(m_attributes.begin() + n);
+    } else
+      attrs->m_onlyExcluded = true;
+    return NULL;
+  } else
+    ocpiBad("excluded value \"%s\" does not match any existing value", uValue.c_str());
+  m_uValues.push_back(uValue);
+  m_attributes.resize(m_attributes.size() + 1);
+  attrs = &m_attributes.back();
+  attrs->m_onlyExcluded = true;
+  if (platform)
+    attrs->m_excluded.insert(platform);
+  return NULL;
+}
+// Add to the set the values for this parameter
+// If a platform is supplied, this adds the values just for the platform
+const char *Param::
+addValue(std::string &uValue, Attributes *&attrs, const char *platform) {
+  if (platform && m_explicitPlatforms.find(platform) != m_explicitPlatforms.end())
+    return "if any value for a platform is specified with \"only\", all must be";
+  // Its already there, but under what conditions?
+  if (attrs && platform && attrs->m_excluded.find(platform) != attrs->m_excluded.end())
+    return "value is already excluded for platform";
+  if (attrs && !attrs->m_onlyExcluded) {
+    // Its already being used since attrs exists and not only for exclusion
+    if (platform) {
+      if (attrs->m_included.find(platform) != attrs->m_included.end())
+	return "value is already included for platform";
+      if (attrs->m_included.empty()) {
+	ocpiBad("value \"%s\" is already specified for general use, "
+		"ignoring it for platform \"%s\"", uValue.c_str(), platform);
+	return NULL;
+      }
+      // So it is only included for some other platforms
+    } else {
+      ocpiBad("value \"%s\" is already specified", uValue.c_str());
+      return NULL;
+    }
+  } else if (attrs && attrs->m_onlyExcluded)
+    attrs->m_onlyExcluded = false;
+  else {
+    m_uValues.push_back(uValue);
+    m_attributes.resize(m_attributes.size() + 1);
+    attrs = &m_attributes.back();
+  }
+  if (platform)
+    attrs->m_included.insert(platform);
+  return NULL;
+}
+// Set the values for this parameter - making the provided values the only values.
+// If a platform is supplied, this sets the exact set of values for that platform.
+const char *Param::
+onlyValue(std::string &uValue, Attributes *&attrs, const char *platform) {
+  if (!platform)
+    return OU::esprintf("The \"only\" attribute can only be true when a platform is specified");
+  if (attrs && !attrs->m_onlyExcluded) {
+    if (attrs->m_only.find(platform) != attrs->m_only.end()) {
+      ocpiBad("value \%s\" is already specified explicitly for platform \"%s\"",
+	      uValue.c_str(), platform);
+      return NULL;
+    }
+  } else if (attrs && attrs->m_onlyExcluded)
+    attrs->m_onlyExcluded = false;
+  else {
+    m_uValues.push_back(uValue);
+    m_attributes.resize(m_attributes.size() + 1);
+    attrs = &m_attributes.back();
+  }
+  m_explicitPlatforms.insert(platform);
+  attrs->m_only.insert(platform);
+  return NULL;
+}
+
+// Parse the attribute value, validating it, and expanding it if wildcard
+// A static method
+const char *Param::
+getPlatforms(const char *attr, Strings &platforms) {
+  static Strings allPlatforms;
+  if (!attr)
+    return NULL;
+  if (allPlatforms.empty()) {
+    const char *env = getenv("OCPI_ALL_PLATFORMS");
+    if (!env)
+      return "the environment variable OCPI_ALL_PLATFORMS is not set";
+    for (const char *ep; *env; env = ep) {
+      while (isspace(*env)) env++;
+      for (ep = env; *ep && !isspace(*ep); ep++)
+	;
+      std::string p;
+      p.assign(env, ep - env);
+      allPlatforms.insert(p);
+    }
+    if (allPlatforms.empty())
+      return "the environment variable OCPI_ALL_PLATFORMS has no platforms";
+  }
+  while (*attr) {
+    while (*attr && (isspace(*attr) || *attr == ','))
+      attr++;
+    if (!*attr)
+      break;
+    const char *cp;
+    for (cp = attr; *cp && !isspace(*cp) && *cp != ','; cp++)
+      ;
+    std::string plat(attr, cp - attr);
+    bool found;
+    for (StringsIter si = allPlatforms.begin(); si != allPlatforms.end(); ++si)
+      if (fnmatch(plat.c_str(), (*si).c_str(), FNM_CASEFOLD) == 0) {
+	found = true;
+	platforms.insert(*si);
+      }
+    if (!found)
+      return OU::esprintf("the string \"%s\" does not indicate or match any platforms",
+			  plat.c_str());
+    attr = cp;
+  }    
+  return NULL;
+}
 // the "global" argument is true when this parameter has a global setting across many other
 // configurations and so it cannot be given a value if it is dependent on other parameters for
 // its type (e.g. array dimensions)
@@ -71,9 +205,8 @@ parse(ezxml_t px, const OU::Property &p, bool global) {
       return err;
     values = fileValue.c_str();
   }
-  m_param = &p;
-  m_isDefault = false;
-  m_uValues.clear(); // forget previous values since we might be overriding them
+  m_param = &p; // possibly overwriting
+  m_value.setType(p); // not necessarily setting a value here, but we know the type
   if (values) {
     if (!m_valuesType) {
       m_valuesType = &p.sequenceType();
@@ -81,15 +214,12 @@ parse(ezxml_t px, const OU::Property &p, bool global) {
     }
     if ((err = m_valuesType->m_default->parse(values, NULL, false, NULL)))
       return err;
-    m_valuesType->m_default->unparse(m_uValue);
-    m_uValues.resize(m_valuesType->m_default->m_nElements);
-    for (unsigned n = 0; n < m_valuesType->m_default->m_nElements; n++)
-      m_valuesType->m_default->elementUnparse(*m_valuesType->m_default, m_uValues[n], n, false,
-					      '\0', false, *m_valuesType->m_default);
+    // The specified values are in: *m_valuesType->m_default, not unparsed
   } else {
     OU::Value newValue;
     if ((err = p.parseValue(value, newValue)))
       return err;
+    m_isDefault = false;
     newValue.unparse(m_uValue);
     if (p.m_default) {
       std::string defValue;
@@ -97,14 +227,59 @@ parse(ezxml_t px, const OU::Property &p, bool global) {
       if (defValue == m_uValue) {
 	m_isDefault = true;
 	m_value = *p.m_default;
-	return NULL;
-      }
-    }
-    m_uValues.resize(1);
-    m_uValues[0] = m_uValue;
-    m_value = newValue;
+      } else
+	m_value = newValue;
+    } else
+      m_value = newValue;
+    // The specified value is in: m_value, unparsed in m_uValue
   }
-  return NULL;
+  const char // all these can be glob-wildcarded
+    *add = ezxml_cattr(px, "add"),
+    *exclude = ezxml_cattr(px, "exclude"),
+    *only = ezxml_cattr(px, "only");
+  if (exclude && only)
+    return OU::esprintf("setting both \"only\" and \"exclude\" attributes is invalid");
+  Strings platforms;
+  if ((err = getPlatforms(exclude, platforms)) ||
+      (err = getPlatforms(only, platforms)) ||
+      (err = getPlatforms(add, platforms)))
+    return err;
+  // We have captured the incoming values - now we just have to decide what to do with them
+  // We are setting, adding, or excluding the values
+  // We are dealing with a global parameter (applied to all cases/configs) or for one case/config
+  // We can optionally specify a platform to which these values apply
+  std::string uValue;
+  if (!exclude && !only && !add) {
+    m_uValues.clear(); // forget previous values
+    m_attributes.clear();
+  }
+  for (unsigned n = 0; !err && n < (values ? m_valuesType->m_default->m_nElements : 1); n++) {
+    if (values) {
+      uValue.clear();
+      m_valuesType->m_default->elementUnparse(*m_valuesType->m_default, uValue, n, false,
+					      '\0', false, *m_valuesType->m_default);
+    } else
+      uValue = m_uValue;
+    Attributes *attrs = NULL;
+    for (unsigned nn = 0; nn < m_uValues.size(); nn++)
+      if (uValue == m_uValues[nn]) {
+	attrs = &m_attributes[nn];
+	break;
+      }
+    if (platforms.size())
+      for (StringsIter pi = platforms.begin(); pi != platforms.end(); ++pi) {
+	const char *platform = pi->c_str();
+	if (exclude)
+	  err = excludeValue(uValue, attrs, platform);
+	else if (only)
+	  err = onlyValue(uValue, attrs, platform);
+	else if (add)
+	  err = addValue(uValue, attrs, platform);
+      }
+    else
+      err = addValue(uValue, attrs, NULL);
+  }
+  return err;
 }
 
 ParamConfig::
@@ -336,8 +511,20 @@ parseBuildFile(bool optional) {
   std::string empty;
   if ((err = parseFile(fname.c_str(), empty, "build", &x, empty, false, true, optional)))
     return err;
-  for (ezxml_t cx = ezxml_cchild(x, "configuration"); cx; cx = ezxml_next(cx)) {
-    ParamConfig *pc = new ParamConfig(*this);
+  // Establish default values for parameters that apply to all configurations that
+  // do not mention them
+  ParamConfig defaults(*this);
+  for (ezxml_t px = ezxml_cchild(x, "property"); px; px = ezxml_cnext(px)) {
+    std::string name;
+    OU::Property *p;
+    size_t nParam;
+    if ((err = OE::getRequiredString(px, name, "name", "property")) ||
+	(err = findParamProperty(name.c_str(), p, nParam, false)) ||
+	(err = defaults.params[nParam].parse(px, *p, true)))
+      return err;
+  }
+  for (ezxml_t cx = ezxml_cchild(x, "configuration"); cx; cx = ezxml_cnext(cx)) {
+    ParamConfig *pc = new ParamConfig(defaults);
     if ((err = pc->parse(cx, m_paramConfigs)))
       return err;
     m_paramConfigs.push_back(pc); // FIXME...emplace_back for C++11
