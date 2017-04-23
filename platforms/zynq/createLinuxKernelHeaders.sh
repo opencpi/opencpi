@@ -113,7 +113,7 @@ echo Building the Xilinx linux kernel for zynq to create the kernel-headers tree
 # To build a kernel that we would use, we would do:
 PATH="$PATH:`pwd`/../u-boot-xlnx/tools" \
    make ARCH=arm CROSS_COMPILE=$CROSS_COMPILE \
-        UIMAGE_LOADADDR=0x8000 uImage dtbs
+        UIMAGE_LOADADDR=0x8000 uImage dtbs modules
 ocpi_kernel_release=$(< include/config/kernel.release)-$(echo $tag | sed 's/^xilinx-//')
 echo ============================================================================================
 cd $RELDIR

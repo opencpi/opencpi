@@ -77,22 +77,24 @@ architecture rtl of decoder is
   -- convert byte enables to low order address bytes
   function be2offset(byte_en: std_logic_vector(3 downto 0); my_big_endian: bool_t)
     return byte_offset_t is
+    variable r : std_logic_vector(1 downto 0) := b"00";
   begin
     if endian = little_e or (endian = dynamic_e and not its(my_big_endian)) then
       case byte_en is
-        when b"0010" =>           return b"01";
-        when b"0100" | b"1100" => return b"10";
-        when b"1000" =>           return b"11";
-        when others =>            return b"00";
+        when b"0010" =>           r := b"01";
+        when b"0100" | b"1100" => r := b"10";
+        when b"1000" =>           r := b"11";
+        when others =>            r := b"00";
       end case;
     else
       case byte_en is
-        when b"0100" =>           return b"01";
-        when b"0010" | b"0011" => return b"10";
-        when b"0001" =>           return b"11";
-        when others =>            return b"00";
+        when b"0100" =>           r := b"01";
+        when b"0010" | b"0011" => r := b"10";
+        when b"0001" =>           r := b"11";
+        when others =>            r := b"00";
       end case;
     end if;
+    return byte_offset_t(r);
   end be2offset;
   function num_bytes_1(input : in_t) return byte_offset_t is
     variable byte_en : std_logic_vector(input.MByteEn'range) := input.MByteEn; -- avoid pedantic error

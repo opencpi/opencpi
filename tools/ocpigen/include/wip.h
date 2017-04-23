@@ -276,6 +276,7 @@ class WsiPort : public DataPort {
   const char *adjustConnection(Port &consumer, const char *masterName, Language lang,
 			       OcpAdapt *prodAdapt, OcpAdapt *consAdapt, size_t &unused);
   void emitImplAliases(FILE *f, unsigned n, Language lang);
+  void emitImplSignals(FILE *f);
   void emitSkelSignals(FILE *f);
   void emitRecordInputs(FILE *f);
   void emitRecordOutputs(FILE *f);
@@ -599,7 +600,7 @@ class Worker : public Parsed, public OU::IdentResolver {
   int m_defaultDataWidth;           // initialized to -1 to allow zero
   Language m_language;
   ::Assembly *m_assembly;
-  Worker *m_slave;
+  Worker *m_slave;                  // from slave attribute - is RCC-only
   HdlDevice *m_emulate;
   Signals m_signals;
   SigMap  m_sigmap;                 // map signal names to signals

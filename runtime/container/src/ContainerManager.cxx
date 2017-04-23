@@ -165,6 +165,7 @@ namespace OCPI {
 	&OCPI::Container::Container::nthContainer(n);
     }
   }
+#if 1
   namespace Container {
     // Hooks to ensure that if we are linking statically, everything is pulled in
     // to support drivers and workers.
@@ -173,6 +174,7 @@ namespace OCPI {
       ((OCPI::Container::Application*)0)->createWorker(NULL, NULL, NULL, NULL, NULL, NULL);
     }
   }
+#endif
   // When the remote container driver is loaded it needs to see this.
   namespace Remote {
     bool g_suppressRemoteDiscovery = false;
@@ -180,6 +182,7 @@ namespace OCPI {
 			  std::string &error) = NULL;
   }
 }
+#if 1
 namespace DataTransfer {
   intptr_t dumb2(EndPoint &loc) {
     OCPI::Util::Uuid uuid;
@@ -196,4 +199,5 @@ namespace DataTransfer {
     return (intptr_t)&lzma_stream_buffer_decode;
   }
 }
+#endif
 

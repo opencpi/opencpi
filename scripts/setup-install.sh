@@ -34,9 +34,9 @@ if test -z "$OCPI_PREREQUISITES_INSTALL_DIR"; then
   else  
     export OCPI_PREREQUISITES_INSTALL_DIR=/opt/opencpi/prerequisites
   fi
-  dir="$(dirname $OCPI_PREREQUISITES_INSTALL_DIR)"
-  if test ! -d $dir; then
-    echo "Error: $dir does not exist and must be created first."
+  pdir="$(dirname $OCPI_PREREQUISITES_INSTALL_DIR)"
+  if test ! -d $pdir; then
+    echo "Error: $pdir does not exist and must be created first."
     echo "       With appropriate permissions, ideally not root-only."
     exit 1
   fi
