@@ -558,10 +558,10 @@ namespace {
     void
     doProp(unsigned n) {
       ParamConfig &c = *m_subCases.back();
+      while (n < c.params.size() && (!c.params[n].m_param || !c.params[n].m_generate.empty()))
+	n++;
       if (n >= c.params.size())
 	return;
-      while (!c.params[n].m_param || !c.params[n].m_generate.empty())
-	n++;
       Param &p = c.params[n];
       for (unsigned nn = 0; nn < p.m_uValues.size(); ++nn) {
 	if (nn)
