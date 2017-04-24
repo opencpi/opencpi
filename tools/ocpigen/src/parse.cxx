@@ -668,14 +668,25 @@ initImplPorts(ezxml_t xml, const char *element, PortCreate &a_create) {
 }
 
 // Parse a numeric value that might be overridden by assembly property values.
+// This is used when the value will not be an expression with deferred variables, otherwise,
+// use getExprNumber etc.
 const char *Worker::
-getNumber(ezxml_t x, const char *attr, size_t *np, bool *found,
-	  size_t defaultValue, bool setDefault) {
+getNumber(ezxml_t x, const char *attr, size_t *np, bool *found, size_t defaultValue,
+	  bool setDefault) {
   assert(np);
-  const char *v = ezxml_cattr(x, attr);
-  const char *err = getExprNumber(x, attr, *np, found, NULL, this);
-  if (!err && !v && setDefault)
-    *np = defaultValue;
+  const char 
+    *err = NULL,
+    *v = ezxml_cattr(x, attr);
+  if (v) {
+    if (found)
+      *found = true;
+    err = parseExprNumber(v, *np, NULL, this);
+  } else {
+    if (setDefault)
+      *np = defaultValue;
+    if (found)
+      *found = false;
+  }
   return err;
 }
 

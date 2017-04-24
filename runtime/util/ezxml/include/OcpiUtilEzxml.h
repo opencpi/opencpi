@@ -266,10 +266,8 @@ namespace OCPI {
         *getNumber64(ezxml_t x, const char *attr, uint64_t *np,
 		     bool *found = NULL, uint64_t defaultValue = 0,
 		     bool setDefault = true, bool required = false),
-	*getExprNumber(ezxml_t x, const char *attr, size_t &np, bool &found, std::string *expr,
-		       const IdentResolver *resolver),
-	*parseExprNumber(const char *a, size_t &np, std::string *expr,
-			 const IdentResolver *resolver);
+	*getExprNumber(ezxml_t x, const char *attr, size_t &np, bool *found, std::string &expr,
+		       const IdentResolver *resolver);
       extern unsigned
 	countChildren(ezxml_t x, const char*cName),
 	countAttributes(ezxml_t x);

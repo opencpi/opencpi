@@ -3,11 +3,19 @@
 
 WtiPort::
 WtiPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
-  : OcpPort(w, x, sp, ordinal, WTIPort, "wti", err) {
+  : OcpPort(w, x, sp, ordinal, WTIPort, "wti", err),
+    m_secondsWidth(32), m_fractionWidth(0) {
   if ((err = OE::checkAttrs(x, "Name", "Clock", "SecondsWidth", "FractionWidth",
 			    "AllowUnavailable", "Pattern", "master", "myclock", (void*)0)) ||
+#if 1
+      (err = OE::getExprNumber(x, "SecondsWidth", m_secondsWidth, NULL, m_secondsWidthExpr,
+			       &w)) ||
+      (err = OE::getExprNumber(x, "FractionWidth", m_fractionWidth, NULL, m_fractionWidthExpr,
+			       &w)) ||
+#else
       (err = OE::getNumber(x, "SecondsWidth", &m_secondsWidth, 0, 32)) ||
       (err = OE::getNumber(x, "FractionWidth", &m_fractionWidth, 0, 0)) ||
+#endif
       (err = OE::getBoolean(x, "AllowUnavailable", &m_allowUnavailable)))
     return;
   for (unsigned i = 0; i < w.m_ports.size(); i++) {
@@ -17,7 +25,9 @@ WtiPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
       return;
     }
   }
-  m_dataWidth = m_secondsWidth + m_fractionWidth;
+  // not yet, need to adjustConnection non-data connections....
+  // m_dataWidth = m_secondsWidth + m_fractionWidth;
+  m_dataWidth = 64;
 }
 
 // Our special copy constructor
@@ -110,11 +120,17 @@ emitVhdlShell(FILE *f, Port *wci) {
     fprintf(f,
 	    "  %s.SThreadBusy(0) <= wci_reset;\n", out.c_str());
   if (m_secondsWidth)
-    fprintf(f, "  worker_%s.seconds <= unsigned(%s.MData(%zu downto 32));\n",
-	    in.c_str(), in.c_str(), m_secondsWidth + 31);
+    fprintf(f,
+	    "  g%s_seconds: if ocpi_port_%s_seconds_width > 0 generate\n"
+	    "    worker_%s.seconds <= unsigned(%s.MData(ocpi_port_%s_seconds_width+31 downto 32));\n"
+	    "  end generate;\n",
+	    cname(), cname(), in.c_str(), in.c_str(), cname());
   if (m_fractionWidth)
-    fprintf(f, "  worker_%s.fraction <= unsigned(%s.MData(31 downto %zu));\n",
-	    in.c_str(), in.c_str(), 32 - m_fractionWidth);
+    fprintf(f,
+	    "  g%s_fraction: if ocpi_port_%s_fraction_width > 0 generate\n"
+	    "    worker_%s.fraction <= unsigned(%s.MData(31 downto 32 - ocpi_port_%s_fraction_width));\n"
+	    "  end generate;\n",
+	    cname(), cname(), in.c_str(), in.c_str(), cname());
 }
 
 void WtiPort::
@@ -135,9 +151,9 @@ emitRecordInputs(FILE *f) {
   if (m_allowUnavailable)
     fprintf(f, "    valid    : Bool_t;\n");
   if (m_secondsWidth)
-    fprintf(f, "    seconds  : unsigned(%zu downto 0);\n", m_secondsWidth-1);
+    fprintf(f, "    seconds  : unsigned(ocpi_port_%s_seconds_width-1 downto 0);\n", cname());
   if (m_fractionWidth)
-    fprintf(f, "    fraction : unsigned(%zu downto 0);\n", m_fractionWidth-1);
+    fprintf(f, "    fraction : unsigned(ocpi_port_%s_fraction_width-1 downto 0);\n", cname());
 }
 
 void WtiPort::
@@ -180,4 +196,33 @@ finalizeExternal(Worker &aw, Worker &/*iw*/, InstancePort &ip,
       (err = aw.m_assembly->externalizePort(ip, "wti", &aw.m_assembly->m_nWti)))
     return err;
   return NULL;
+}
+
+const char *WtiPort::
+resolveExpressions(OCPI::Util::IdentResolver &ir) {
+  const char *err;
+  if ((m_secondsWidthExpr.length() &&
+       (err = parseExprNumber(m_secondsWidthExpr.c_str(), m_secondsWidth, NULL, &ir))) ||
+      (m_fractionWidthExpr.length() &&
+       (err = parseExprNumber(m_fractionWidthExpr.c_str(), m_fractionWidth, NULL, &ir))))
+    return err;
+  // not yet, need to adjustConnection non-data connections....
+  // m_dataWidth = m_secondsWidth + m_fractionWidth;
+  return OcpPort::resolveExpressions(ir);
+}
+
+void WtiPort::
+emitRecordInterfaceConstants(FILE *f) {
+  OcpPort::emitRecordInterfaceConstants(f);
+  // This signal is available to worker code.
+  fprintf(f,
+	  "  constant ocpi_port_%s_seconds_width : natural;\n"
+	  "  constant ocpi_port_%s_fraction_width : natural;\n", cname(), cname());
+}
+
+void WtiPort::
+emitInterfaceConstants(FILE *f, Language lang) {
+  OcpPort::emitInterfaceConstants(f, lang);
+  emitConstant(f, "ocpi_port_%s_seconds_width", lang, m_secondsWidth);
+  emitConstant(f, "ocpi_port_%s_fraction_width", lang, m_fractionWidth);
 }

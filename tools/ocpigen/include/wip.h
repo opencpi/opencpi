@@ -320,6 +320,7 @@ class WmemiPort : public OcpPort {
 class WtiPort : public OcpPort {
   size_t m_secondsWidth, m_fractionWidth;
   bool m_allowUnavailable;
+  std::string m_secondsWidthExpr, m_fractionWidthExpr;
   WtiPort(const WtiPort &other, Worker &w, std::string &name, const char *&err);
  public:
   WtiPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err);
@@ -335,6 +336,9 @@ class WtiPort : public OcpPort {
   void emitRecordInputs(FILE *f);
   void emitRecordOutputs(FILE *f);
   void emitPortDescription(FILE *f, Language lang) const;
+  void emitRecordInterfaceConstants(FILE *f);
+  void emitInterfaceConstants(FILE *f, Language lang);
+  const char *resolveExpressions(OCPI::Util::IdentResolver &ir);
   const char *finalizeExternal(Worker &aw, Worker &iw, InstancePort &ip,
 			       bool &cantDataResetWhileSuspended);
 };

@@ -42,7 +42,7 @@ Port(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *defa
       return;
     }
     if ((err = OE::getBoolean(m_xml, "master", &m_master)) ||
-	(err = getExprNumber(m_xml, "count", m_count, NULL, &m_countExpr, &w)))
+	(err = OE::getExprNumber(m_xml, "count", m_count, NULL, m_countExpr, &w)))
       return;
     m_ordinal = w.m_ports.size();
   }
