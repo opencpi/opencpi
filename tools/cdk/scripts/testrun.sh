@@ -52,7 +52,7 @@ function docase {
     local output outputs timearg
     for o in ${ports[@]}; do
       output=" -pfile_write"
-      [ ${#ports[@]} != 1 ] && output+="_$o"
+      [ ${#ports[@]} != 1 ] && output+="_from_$o"
       outputs+="$output=fileName=$3.$4.$2.$1.$o.out"
     done
     echo '  'Executing $component test case: "$3.$4" on platform $platform using worker $2.$1... 1>&2

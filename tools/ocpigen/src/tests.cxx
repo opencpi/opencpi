@@ -790,16 +790,22 @@ namespace {
 	files.insert(name);
 	std::string file(dir + "/" + name);;
 	unsigned nOutputs = 0, nInputs = 0;
+	Port *first = NULL;
 	for (unsigned n = 0; n < m_ports.size(); n++)
-	  if (m_ports[n].m_port->isDataProducer())
+	  if (m_ports[n].m_port->isDataProducer()) {
+	    if (!first)
+	      first = m_ports[n].m_port;
 	    nOutputs++;
-	  else
+	  } else
 	    nInputs++;
 	std::string app("<application");
 	if (m_done.size())
 	  OU::formatAdd(app, " done='%s'", m_done.c_str());
-	else if (nOutputs)
+	else if (nOutputs == 1)
 	  OU::formatAdd(app, " done='file_write'");
+	else if (nOutputs > 1) {
+	  OU::formatAdd(app, " done='file_write_from_%s'", first->cname());
+	}
 	app += ">\n";
 	if (nInputs)
 	  for (unsigned n = 0; n < m_ports.size(); n++)
@@ -856,7 +862,7 @@ namespace {
 	    if (io.m_port->isDataProducer()) {
 	      OU::formatAdd(app, "  <instance component='ocpi.file_write'");
 	      if (nOutputs > 1)
-		OU::formatAdd(app, " name='from_%s'", io.m_port->cname());
+		OU::formatAdd(app, " name='file_write_from_%s'", io.m_port->cname());
 	      if (!io.m_messagesInFile && io.m_stopOnEOF)
 		app += "/>\n";
 	      else {
@@ -875,9 +881,9 @@ namespace {
 #endif
 	      if (nOutputs > 1)
 		OU::formatAdd(app,
-			      "  <connection>"
-			      "    <port instance='%s' port='%s'/>\n"
-			      "    <port instance='from_%s' port='in'/>\n"
+			      "  <connection>\n"
+			      "    <port instance='%s' name='%s'/>\n"
+			      "    <port instance='file_write_from_%s' name='in'/>\n"
 			      "  </connection>\n",
 			      dut, io.m_port->cname(),
 			      io.m_port->cname());
@@ -929,6 +935,7 @@ namespace {
 		 "  exit 1\n"
 		 "fi\n",
 		 m_name.c_str());
+      verify += "exitval=0\n";
       for (unsigned n = 0; n < m_ports.size(); n++) {
 	InputOutput &io = m_ports[n];
 	if (io.m_port->isDataProducer()) {
@@ -1004,7 +1011,7 @@ namespace {
 			    "    failed=1\n"
 			    "  fi\n"
 			    "  tput sgr0\n"
-			    "  exit $r\n"
+			    "  [ $r = 0 ] || exitval=1\n" 
 			    "}\n", io.m_port->cname(), io.m_port->cname());
 	    } else
 	      OU::formatAdd(verify,
@@ -1012,6 +1019,7 @@ namespace {
 	  }
 	}
       }
+      verify += "exit $exitval\n";
       return OU::string2File(verify.c_str(), file.c_str(), false, true);
     }
     const char *
