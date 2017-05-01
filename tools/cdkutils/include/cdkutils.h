@@ -36,7 +36,11 @@
 #include <cstdio>
 #include <string>
 #include <vector>
+#include <set>
 #include "ezxml.h"
+
+typedef std::set<std::string> StringSet;
+typedef StringSet::const_iterator StringSetIter;
 
 extern void
   setDep(const char *file),
@@ -45,7 +49,12 @@ extern void
   printgen(FILE *f, const char *comment, const char *file, bool orig = false,
 	   const char *endComment = "");  
 
+const StringSet &getAllPlatforms();
+
 extern const char
+  *getPlatforms(const char *attr, StringSet &platforms),
+  *getRccPlatforms(StringSet &platforms),
+  *getHdlPlatforms(StringSet &platforms),
   *closeDep(),
   // Optional allows the element type might not match
   // NonExistentOK allows the file to not exist at all.

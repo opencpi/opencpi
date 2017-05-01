@@ -136,6 +136,18 @@ namespace OCPI {
 		printf("%s\n", a->name().c_str());
 	    }
     }
+    // Call a function for all workers in all artifacts
+    void Manager::doWorkers(void (*func)(OU::Worker &)) {
+      parent().configureOnce();
+      std::set<const char *, OCPI::Util::ConstCharComp> specs;
+      for (Driver *d = firstDriver(); d; d = d->nextDriver())
+	for (Library *l = d->firstLibrary(); l; l = l->nextLibrary())
+	  for (Artifact *a = l->firstArtifact(); a; a = a->nextArtifact()) {
+	    const Implementation *i;
+	    for (unsigned n = 0; (i = a->getImplementation(n)); n++)
+	      func(i->m_metadataImpl);
+	  }
+    }
     // Find one good implementation, return true if one is found that satisfies the criteria
     bool Manager::findImplementation(const char *specName, const char *selectCriteria,
 				     const Implementation *&impl) {

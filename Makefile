@@ -104,6 +104,7 @@ PACKAGES += tools/cdkutils
 PACKAGES += tools/ocpigen
 PACKAGES += tools/ocpisca
 PACKAGES += tools/ocpirh
+PACKAGES += tools/ocpigr
 PACKAGES += tools/cdk/ocpidds
 PACKAGES += tools/astyle
 PACKAGES += tests
@@ -139,6 +140,7 @@ ALLPACKAGES = \
 	tools/ocpigen \
 	tools/ocpisca \
 	tools/ocpirh \
+	tools/ocpigr \
 	tools/cdk/ocpidds \
 	tools/astyle \
 	tests \

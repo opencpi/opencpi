@@ -151,6 +151,8 @@ namespace OCPI {
 
       std::string relativeName ()
         throw ();
+      const char *relativeName(std::string &)
+        throw ();
 
       /**
        * \return The absolute file name of the matching file.
@@ -158,6 +160,8 @@ namespace OCPI {
        */
 
       std::string absoluteName ()
+        throw ();
+      const char *absoluteName(std::string &)
         throw ();
 
       /**

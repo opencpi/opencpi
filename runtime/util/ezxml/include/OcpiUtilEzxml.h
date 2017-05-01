@@ -229,6 +229,9 @@ namespace OCPI {
       extern ezxml_t
 	ezxml_firstChild(ezxml_t xml),
 	ezxml_nextChild(ezxml_t xml),
+        addChild(ezxml_t x, const char *name, unsigned level, const char *txt = NULL,
+		 const char *attr1 = NULL, const char *value1 = NULL,
+		 const char *attr2 = NULL, const char *value2 = NULL),
 	findChildWithAttr(ezxml_t x, const char *cName, const char *aName,
 			  const char *value);
       inline char *ezxml_content(ezxml_t x) { return x->txt; }

@@ -6,6 +6,7 @@
 namespace OCPI {
   namespace API {
     namespace OU = OCPI::Util;
+    namespace OX = OCPI::Util::EzXml;
     namespace SCA = OCPI::SCA;
     static void
     emitProperty(ezxml_t root, unsigned level, const char *sname, const OU::Member &pr,
@@ -24,7 +25,7 @@ namespace OCPI {
       } else
 	id = name;
       std::string prf;
-      ezxml_t px = SCA::addChild(root, element, level, NULL, "id", id.c_str());
+      ezxml_t px = OX::addChild(root, element, level, NULL, "id", id.c_str());
       if (uuid)
 	ezxml_set_attr_d(px, "name", name);
       if (mode)
@@ -53,9 +54,9 @@ namespace OCPI {
       case OCPI_Enum:
 	type = "ulong";  // SCA says Long, but RH can do ULong like ocpi
 	{
-	  ezxml_t esx = SCA::addChild(px, "enumerations", level + 1);
+	  ezxml_t esx = OX::addChild(px, "enumerations", level + 1);
 	  for (size_t n = 0; n < pr.m_nEnums; n++) {
-	    ezxml_t ex = SCA::addChild(esx, "enumeration", level + 2);
+	    ezxml_t ex = OX::addChild(esx, "enumeration", level + 2);
 	    ezxml_set_attr(ex, "label", pr.m_enums[n]);
 	  }
 	}
@@ -89,15 +90,15 @@ namespace OCPI {
       if (type)
 	ezxml_set_attr(px, "type", type);
       if (allocation)
-	SCA::addChild(px, "kind", level + 1, NULL, "kindtype", "allocation");
+	OX::addChild(px, "kind", level + 1, NULL, "kindtype", "allocation");
       if (config && allocation)
-	SCA::addChild(px, "kind", level + 1, NULL, "kindtype", "configure");
+	OX::addChild(px, "kind", level + 1, NULL, "kindtype", "configure");
       if (pr.m_description.length())
-	SCA::addChild(px, "description", level + 1, pr.m_description.c_str());
+	OX::addChild(px, "description", level + 1, pr.m_description.c_str());
       if (value)
-	SCA::addChild(px, "value", level + 1, value);
+	OX::addChild(px, "value", level + 1, value);
       if (!external)
-	SCA::addChild(px, "action", level + 1, NULL, "type", "eq");
+	OX::addChild(px, "action", level + 1, NULL, "type", "eq");
     }
 
 

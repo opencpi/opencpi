@@ -173,6 +173,9 @@ namespace OCPI {
       else if (hasName)
 	return "Missing Name attribute in Property/Argument/Member element";
       OE::getOptionalString(xm, m_abbrev, "Abbrev");
+      OE::getOptionalString(xm, m_pretty, "Pretty");
+      if (m_pretty.empty())
+	m_pretty = m_name;
       OE::getOptionalString(xm, m_description, "Description");
       OE::getOptionalString(xm, m_format, "Format");
       const char *typeName = ezxml_cattr(xm, "Type");

@@ -266,6 +266,14 @@ OCPI::OS::FileIterator::relativeName ()
   return FileSystem::joinNames (data.prefix, data.dirInfo->d_name);
 }
 
+const char *
+OCPI::OS::FileIterator::relativeName(std::string &rel)
+  throw ()
+{
+  rel = relativeName();
+  return rel.c_str();
+}
+
 std::string
 OCPI::OS::FileIterator::absoluteName ()
   throw ()
@@ -273,6 +281,15 @@ OCPI::OS::FileIterator::absoluteName ()
   FileIteratorData & data = o2fid (m_osOpaque);
   ocpiAssert (data.active && !data.atend);
   return FileSystem::joinNames (data.dir, data.dirInfo->d_name);
+}
+
+const char *
+OCPI::OS::FileIterator::absoluteName(std::string &abs)
+  throw ()
+{
+  FileIteratorData & data = o2fid (m_osOpaque);
+  ocpiAssert (data.active && !data.atend);
+  return FileSystem::joinNames(data.dir, data.dirInfo->d_name, abs);
 }
 
 bool
