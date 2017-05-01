@@ -641,23 +641,6 @@ parseExprNumber(const char *a, size_t &np, std::string *expr, const IdentResolve
   return err;
 }
 
-// Parse an integer (size_t) attribute that might be an expression
-// Only consider if we have an identifier resolver
-// The string value of the expression is returned in expr.
-const char *
-getExprNumber(ezxml_t x, const char *attr, size_t &np, bool *found, std::string *expr,
-	      const IdentResolver *resolver) {
-  const char *a = ezxml_cattr(x, attr);
-  if (a) {
-    if (found)
-      *found = true;
-    return parseExprNumber(a, np, expr, resolver);
-  }
-  if (found)
-    *found = false;
-  return NULL;
-}
-
 const char *
 makeCexpression(const char *cp, const char *prefix, const char *suffix, bool toUpper, std::string &out) {
   ExprToken t;

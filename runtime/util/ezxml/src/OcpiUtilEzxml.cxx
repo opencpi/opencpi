@@ -347,7 +347,7 @@ namespace OCPI {
 	      break;
 	  va_end(ap);
 	  if (!p)
-	    return esprintf("Invalid attribute name: \"%s\", in a %s element", *a, x->name);
+	    return esprintf("Invalid attribute \"%s\", for a \"%s\" element", *a, x->name);
 	}
 	return 0;
       }
@@ -575,7 +575,7 @@ namespace OCPI {
       }
 
       const char *
-      getBoolean(ezxml_t x, const char *name, bool *b, bool trueOnly) {
+      getBoolean(ezxml_t x, const char *name, bool *b, bool trueOnly, bool *found) {
 	const char *a = ezxml_cattr(x, name);
 	if (a) {
 	  bool val;
@@ -583,9 +583,15 @@ namespace OCPI {
 	    return esprintf("parsing value \"%s\" as type Bool", a);
 	  if (trueOnly && !val)
 	    return "can only set the value to true in this context";
+	  if (found)
+	    *found = true;
 	  *b = val;
-	} else if (!trueOnly)
-	  *b = false;
+	} else {
+	  if (!trueOnly)
+	    *b = false;
+	  if (found)
+	    *found = false;
+	}
 	return 0;
       }
 
@@ -793,6 +799,42 @@ namespace OCPI {
 	ocpiDebug("Sending XML===========================\n%s\nEND XML==========", request.c_str());
 	do n = ::writev(fd, iov, 2); while (n > 0 && (total -= n));
 	return n > 0 ? false : OU::eformat(error, "Error writing to %s: %s", msg, strerror(errno));
+      }
+
+      // Parse an integer (size_t) attribute that might be an expression
+      // Only consider if we have an identifier resolver
+      // The string value of the expression is returned in expr.
+      const char *
+      getExprNumber(ezxml_t x, const char *attr, size_t &np, bool *found, std::string &expr,
+		    const IdentResolver *resolver) {
+	const char *a = ezxml_cattr(x, attr);
+	if (a) {
+	  if (found)
+	    *found = true;
+	  return parseExprNumber(a, np, &expr, resolver);
+	}
+	if (found)
+	  *found = false;
+	return NULL;
+      }
+      ezxml_t
+      addChild(ezxml_t x, const char *name, unsigned level, const char *txt, const char *attr1,
+	       const char *value1, const char *attr2, const char *value2) {
+	const char *otxt = ezxml_txt(x);
+	const char *nl = strrchr(otxt, '\n');
+	std::string text;
+	text.assign(otxt, nl ? nl - otxt : strlen(otxt));
+	OU::formatAdd(text, "\n%*s", level*2, "");
+	ezxml_t cx = ezxml_add_child(x, name, text.length());
+	if (txt)
+	  ezxml_set_txt_d(cx, txt);
+	if (attr1)
+	  ezxml_set_attr_d(cx, attr1, value1);
+	if (attr2)
+	  ezxml_set_attr_d(cx, attr2, value2);
+	OU::formatAdd(text, "\n%*s", (level-1)*2, "");
+	ezxml_set_txt_d(x, text.c_str());
+	return cx;
       }
     }
   }

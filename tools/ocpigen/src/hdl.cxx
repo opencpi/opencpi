@@ -222,8 +222,10 @@ parseHdlImpl(const char *package) {
   }
   const char *emulate = ezxml_cattr(m_xml, "emulate");
   if (emulate) {
+#if 0
     if (m_ports.size() > 1 || (m_ports.size() == 1 && m_ports[0]->m_type != WCIPort))
       return OU::esprintf("Device emulation workers can't have any ports");
+#endif
     //    addWciClockReset();
     if (ezxml_cchild(m_xml, "signal") || ezxml_cchild(m_xml, "signals"))
       return OU::esprintf("Can't have both \"emulate\" attributed and \"signal\" elements");
@@ -297,6 +299,7 @@ parse(ezxml_t x) {
   if (m_direction == INOUT && m_differential)
     return OU::esprintf("Signals that are both \"inout\" and differential are not supported");
   m_type = ezxml_cattr(x, "type");
+  assert(!m_type); // catch any usage since this is obsolete and never documented?
   m_name = name;
   OE::getOptionalString(x, m_pos, "pos", "%sp");
   OE::getOptionalString(x, m_neg, "neg", "%sn");

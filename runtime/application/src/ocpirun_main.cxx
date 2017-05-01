@@ -33,7 +33,6 @@
 #include "OcpiContainerApi.h"
 #include "OcpiApplication.h"
 #include "OcpiLibraryManager.h"
-#include "DtDriver.h"
 #include "ContainerManager.h"
 #include "OcpiOsDebug.h"
 #include "OcpiOsFileSystem.h"
@@ -70,9 +69,12 @@
 	                               "connect external port to a URL")\
   CMD_OPTION(log_level,  l, ULong,  0, "<log-level>\n" \
 	                               "set log level during execution, overriding OCPI_LOG_LEVEL")\
-  CMD_OPTION(seconds,    t, Long,   0, "<seconds>\n" \
-	                               "specify seconds to wait for application to finish\n" \
-                                       "if negative, wait up to that number of seconds\n")\
+  CMD_OPTION(duration,   t, Long,   0, "<seconds>\n" \
+	                               "time duration (seconds) to run the application if not\n" \
+                                       "done/finished first; exit status is zero in either case\n")\
+  CMD_OPTION(timeout,    O, ULong,  0, "<seconds>\n"			\
+	                               "time limit (seconds) to run the application; if not\n" \
+                                       "done/finished before that time; an error occurs\n")\
   CMD_OPTION(list,       C, Bool,   0, "show available containers, even with no application xml file") \
   CMD_OPTION_S(server,   S, String, 0, "a server to explicitly contact, without UDP discovery") \
   CMD_OPTION(remote,     R, Bool,   0, "discover/include/use remote containers") \
@@ -105,6 +107,7 @@
   CMD_OPTION(only_platforms,, Bool, 0, "modifies the list command to show only platforms")\
   CMD_OPTION(dump_file,   , String, 0, "dump properties in raw parsable format to this file") \
   CMD_OPTION(component,   , Bool,   0, "first non-option argument is a component name, not an application")\
+  CMD_OPTION(seconds,     , Long,   0, "<seconds> -- legacy, use \"duration\" now\n") \
   /**/
 
 //  CMD_OPTION_S(simulator, H,String, 0, "Create a container with this HDL simulator")
@@ -210,10 +213,10 @@ static bool setup(const char *arg, ezxml_t &xml, std::string &file, std::string 
     } else if (strcasecmp(ezxml_name(xml), "application"))
       return OU::eformat(error, "file \"%s\" is a \"%s\" XML file.", file.c_str(),
 			 ezxml_name(xml));
-  } else if (options.artifacts() || options.list_artifacts() || options.specs() || options.list_specs()) {
-    // FIXME: no way to suppress all discovery EXCEPT one manager...
-    OCPI::Container::Manager::getSingleton().suppressDiscovery();
-    DataTransfer::getManager().suppressDiscovery();
+  } else if (options.artifacts() || options.list_artifacts() || options.specs() || 
+	     options.list_specs()) {
+    OCPI::Driver::ManagerManager::suppressDiscovery();
+    OL::getManager().enableDiscovery();
     const char **targets;
     // ========= start backwards compatibility
     struct Here {
@@ -242,8 +245,8 @@ static bool setup(const char *arg, ezxml_t &xml, std::string &file, std::string 
       doTarget(*tp, options.specs() || options.list_specs());
     return false;
   } else if (options.list()) { // no xml here
-    OL::Manager::getSingleton().suppressDiscovery();
-    DataTransfer::getManager().suppressDiscovery();
+    OCPI::Driver::ManagerManager::suppressDiscovery();
+    OC::getManager().enableDiscovery();
   }
   if (options.deployment())
     OL::Manager::getSingleton().suppressDiscovery();
@@ -408,35 +411,17 @@ static int mymain(const char **ap) {
       }
       if (!options.no_execute()) {
 	app.initialize();
-	if (options.verbose())
-	  fprintf(stderr,
-		  "Application established: containers, workers, connections all created\n"
-		  "Communication with the application established\n");
 	app.start();
-	if (options.verbose())
-	  fprintf(stderr, "Application started/running\n");
-	if (options.seconds()) {
-	  int remaining = -options.seconds();
-	  if (options.verbose())
-	    fprintf(stderr, "Waiting %s%u seconds for application to complete\n",
-		    (options.seconds() < 0) ? "up to " : "", abs(options.seconds()));
-	  if (options.seconds() < 0) { // "Negative" time is "up to"
-	    bool cont = true;
-	    while (remaining-- && cont)
-	      cont = app.wait(1E6);
-	  } else // Given a positive time
-	    sleep(options.seconds());
-	  if (options.verbose() && remaining <= 0) // remaining would be negative if given positive seconds
-	    fprintf(stderr, "After %d seconds, stopping application...\n", abs(options.seconds()));
-	  app.stop();
-	} else {
-	  if (options.verbose())
-	    fprintf(stderr, "Waiting for application to be finished (no timeout)\n");
-	  app.wait();
-	  if (options.verbose())
-	    fprintf(stderr, "Application finished\n");
-	}
-	// In case the application specifically defines things to do that aren't in the destructor
+	
+	unsigned timeout = 
+	  options.timeout() ? options.timeout() :
+	  options.duration() < 0 ? -options.duration() : // legact negative
+	  options.duration() ? options.duration() : 
+	  options.seconds() < 0 ? -options.seconds() :
+	  options.seconds();
+	app.wait(timeout * 1000000, options.timeout() != 0);
+	app.stop(); // make sure all workers are stopped after time duration or done
+	// In case application specifically defines things to do that aren't in the destructor
 	app.finish();
       }
   } catch (...) {

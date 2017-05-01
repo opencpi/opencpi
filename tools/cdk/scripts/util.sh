@@ -76,7 +76,29 @@ function makeRelativeLink {
   ln -s $link $2
 }
 
+# Capture initial time for seconds elapsed time
+# one optional argument is variable to set in case things are nested
+function setStartTime {
+  local var=$1
+  [ -z "$var" ] && var=_start_time_
+  eval $var=$(date -u +%s)
+}
 
+# Print elapsed time on stdout in %T (HH:MM:SS) format
+# optional argument is variable name of start time set with setStartTime
+function getElapsedTime {
+  local var=$1
+  [ -z "$var" ] && var=_start_time_
+  local elapsed=$(( $(date -u +%s) - $var))
+  [ -z "$_end_time_" ] && {
+    if [ $(uname -s) = Darwin ]; then
+      _end_time_='-r '
+    else	
+      _end_time_='-d @'
+    fi
+  }
+  echo $(date $_end_time_$elapsed -u +%T) '('$elapsed seconds')'
+}
 
 if [ "$1" == __test__ ] ; then
   if eval findInProjectPath $2 $3 result ; then

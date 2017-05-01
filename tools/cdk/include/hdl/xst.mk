@@ -334,15 +334,8 @@ XstMakeScr=(echo set -xsthdpdir . $(and $(XstNeedIni),-xsthdpini $(XstIniFile));
 
 # -ifn $(XstPrjFile) -ofn $(Core).ngc -top $(Top)
 
-XstOptions +=\
- -ifn $(XstPrjFile) -ofn $(Core).ngc -work_lib $(WorkLib) -top $(Top) \
- -p $(or $(and $(HdlExactPart),$(foreach p,$(HdlExactPart),$(word 1,$(subst -, ,$p))-$(word 3,$(subst -, ,$p))-$(word 2,$(subst -, ,$p)))),$(HdlTarget))\
- $(and $(VerilogIncludeDirs),$(strip\
-   -vlgincdir { \
-     $(foreach d,$(VerilogIncludeDirs),$(call FindRelative,$(TargetDir),$(d))) \
-    })) \
-  $(and $(CDKComponentLibraries)$(CDKDeviceLibraries)$(ComponentLibraries)$(DeviceLibraries)$(XstCores)$(PlatformCores),-sd { \
-     $(call Unique, \
+XstCoreSearchList=\
+  $(call Unique, \
      $(foreach l,$(CDKComponentLibraries),$(strip \
        $(call FindRelative,$(TargetDir),\
          $(l)/hdl/$(call XstLibRef,$(LibName),$(HdlTarget)))))\
@@ -357,10 +350,20 @@ XstOptions +=\
          $(l)/lib/hdl/$(call XstLibRef,$(LibName),$(HdlTarget)))))\
      $(foreach c,$(XstCores),$(infox XST:$c)$(call FindRelative,$(TargetDir),$(dir $(call HdlCoreRef,$c,$(HdlTarget)))))\
      $(and $(findstring platform,$(HdlMode)),..) \
-      ) })
+  )
 
-XstNgdOptions=$(infox XNO with XstCores:$(XstCores))\
-     $(foreach c,$(XstCores),$(infox XNO:$c)-sd $(call FindRelative,$(TargetDir),$(dir $(call HdlCoreRef,$c,$(HdlTarget)))))
+XstOptions +=\
+ -ifn $(XstPrjFile) -ofn $(Core).ngc -work_lib $(WorkLib) -top $(Top) \
+ -p $(or $(and $(HdlExactPart),$(foreach p,$(HdlExactPart),$(word 1,$(subst -, ,$p))-$(word 3,$(subst -, ,$p))-$(word 2,$(subst -, ,$p)))),$(HdlTarget))\
+ $(and $(VerilogIncludeDirs),$(strip\
+   -vlgincdir { \
+     $(foreach d,$(VerilogIncludeDirs),$(call FindRelative,$(TargetDir),$(d))) \
+    })) \
+  $(and $(CDKComponentLibraries)$(CDKDeviceLibraries)$(ComponentLibraries)$(DeviceLibraries)$(XstCores)$(PlatformCores),-sd { $(XstCoreSearchList) })
+
+XstNgdOptions=$(foreach c,$(XstCoreSearchList),-sd $c )
+
+#     $(foreach c,$(XstCores),$(infox XNO:$c)-sd $(call FindRelative,$(TargetDir),$(dir $(call HdlCoreRef,$c,$(HdlTarget)))))
 
 ifneq (,)
   $(foreach l,$(CDKComponentLibraries), -sd \

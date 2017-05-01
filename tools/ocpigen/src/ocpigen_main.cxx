@@ -269,9 +269,16 @@ main(int argc, const char **argv) {
 	  else {
 	    if (cf)
 	      pf = cf;
+#if 1
+	    else if (!pf) { // allow no platform at all to reuse containers.
+	      printf("\n");
+	      return 0;
+	    }
+#else	    
 	    else if (!pf)
 	      throw OU::Error("For file %s (%s): no platform or config attribute is present",
 			      *ap, file.c_str());
+#endif
 	    const char *slash = strchr(pf, '/');
 	    printf("%.*s %s\n",
 		   (int)(slash ? slash - pf : strlen(pf)), pf, slash ? slash + 1 : "base");

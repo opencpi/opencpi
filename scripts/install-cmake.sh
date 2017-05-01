@@ -1,32 +1,17 @@
 #!/bin/bash --noprofile
-source scripts/setup-install.sh
-if test ! -d cmake ; then
-  mkdir -p cmake
-fi
-cd cmake
-CMAKE_MAJOR=2.8
-CMAKE_MINOR=8
-CMAKE_VERSION=$CMAKE_MAJOR.$CMAKE_MINOR
-CMAKE_DIR=cmake-$CMAKE_VERSION
-CMAKE_INSTALL_DIR=$OCPI_PREREQUISITES_INSTALL_DIR/cmake/$OCPI_TOOL_HOST
-TARFILE=cmake-$CMAKE_VERSION.tar.gz
-if test ! -f $TARFILE ; then
-  curl -O http://www.cmake.org/files/v$CMAKE_MAJOR/$TARFILE
-fi
-rm -f -r $CMAKE_INSTALL_DIR
-rm -f -r $CMAKE_DIR
-rm -f -r $OCPI_TOOL_HOST
-tar xzf $TARFILE
-cd $CMAKE_DIR
-./bootstrap --prefix=$CMAKE_INSTALL_DIR
+OCPI_CMAKE_MAJOR_VERSION=3.7
+OCPI_CMAKE_MINOR_VERSION=2
+OCPI_CMAKE_VERSION=$OCPI_CMAKE_MAJOR_VERSION.$OCPI_CMAKE_MINOR_VERSION
+dir=cmake-$OCPI_CMAKE_VERSION
+source ./scripts/setup-install.sh \
+       "$1" \
+       cmake \
+       $dir.tar.gz \
+       https://cmake.org/files/v$OCPI_CMAKE_MAJOR_VERSION \
+       $dir \
+       0
+tar xzf ../../$dir.tar.gz
+mv $dir/* $dir/.??* .
+./bootstrap --prefix=$OCPI_PREREQUISITES_INSTALL_DIR/cmake/$OCPI_TARGET_DIR
 make
 make install
-
-
-
-
-
-
-
-
-

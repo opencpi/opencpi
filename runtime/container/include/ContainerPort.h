@@ -159,7 +159,10 @@ namespace OCPI {
       // If isLocal(), then this method can be used.
       virtual void localConnect(OCPI::DataTransport::Port &/*input*/) {}
       // If islocal(), then this can be used.
-      virtual OCPI::DataTransport::Port &dtPort() { return *(OCPI::DataTransport::Port *)0;}
+      virtual OCPI::DataTransport::Port &dtPort() {
+	assert("Illegal call to dtPort"==0);
+	return *(OCPI::DataTransport::Port *)this;
+      }
       
       /**
          @brief

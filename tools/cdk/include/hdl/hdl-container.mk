@@ -5,7 +5,7 @@
 # The HdlAssembly variable must be set to point to the relative or absolute path
 # to the assembly's directory, ending in the name of the assembly.
 HdlMode:=container
-$(infox MYCL:$(ComponentLibraries):$(ComponentLibrariesInternal):$(XmlIncludeDirs):$(MdlAssembly))
+$(infox MYCL:$(ComponentLibraries):$(ComponentLibrariesInternal):$(XmlIncludeDirs))
 ifndef HdlPlatforms
 HdlPlatforms:=$(HdlPlatform)
 endif
@@ -28,25 +28,33 @@ ifneq ($(MAKECMDGOALS),clean)
   ifeq ($(wildcard $(Worker_xml)),)
     $(error Cannot find an XML file for container: $(Worker))
   endif
-  $(and $(call DoShell,$(OcpiGen) -X $(Worker_xml),HdlContPfConfig),\
-     $(error Processing container XML $(Worker_xml): $(HdlContPfConfig)))
-  HdlContPf:=$(patsubst %_pf,%,$(word 1,$(HdlContPfConfig)))
-  ifdef HdlPlatforms
-   ifeq ($(filter $(HdlContPf),$(HdlPlatforms)),)
-     $(info Nothing built since container platform is $(HdlContPf), which is not in HdlPlatforms: $(HdlPlatforms))
-     HdlSkip:= 1
-   endif
+  ifndef HdlConfig
+    # This is only for standalone container directories
+    $(and $(call DoShell,$(OcpiGen) -X $(Worker_xml),HdlContPfConfig),\
+       $(error Processing container XML $(Worker_xml): $(HdlContPfConfig)))
+    HdlContPf:=$(patsubst %_pf,%,$(word 1,$(HdlContPfConfig)))
+    ifdef HdlContPf
+      HdlConfig:=$(word 2,$(HdlContPfConfig))
+    else
+      HdlContPf:=$(or $(HdlPlatform) $(word 1,$(HdlPlatforms)))
+      HdlConfig:=base
+    endif
+    ifdef HdlPlatforms
+      ifeq ($(filter $(HdlContPf),$(HdlPlatforms)),)
+        $(info Nothing built: container platform is $(HdlContPf), which is not in HdlPlatforms: $(HdlPlatforms))
+        HdlSkip:= 1
+      endif
+    endif
+    ifeq ($(filter $(HdlContPf),$(HdlAllPlatforms)),)
+      $(error The platform $(HdlContPfConfig) in $(Worker_xml) is unknown.)
+    endif
+    override HdlPlatform:=$(HdlContPf)
+    override HdlPlatforms:=$(HdlPlatform)
   endif
-  ifeq ($(filter $(HdlContPf),$(HdlAllPlatforms)),)
-    $(error The platform $(HdlContPfConfig) in $(Worker_xml) is unknown.)
-  endif
-  override HdlPlatform:=$(HdlContPf)
-  override HdlPlatforms:=$(HdlPlatform)
   HdlPlatformDir:=$(HdlPlatformDir_$(HdlPlatform))
   HdlPart:=$(call HdlGetPart,$(HdlPlatform))
   override HdlTargets:=$(call HdlGetFamily,$(HdlPart))
   override HdlTarget:=$(HdlTargets)
-  HdlConfig:=$(word 2,$(HdlContPfConfig))
   Platform:=$(HdlPlatform)
   PlatformDir:=$(HdlPlatformDir)
 endif
@@ -105,6 +113,7 @@ ifneq ($(MAKECMDGOALS),clean)
         $(call UUIDFileName,$1):
         $(call WkrBinary,$(HdlTarget),$1): HdlPreCompile=$(call HdlContPreCompile,$1)
         $(call WkrBinary,$(HdlTarget),$1): TargetSourceFiles+=$(call UUIDFileName,$1)
+        $(call WkrBinary,$(HdlTarget),$1): HdlExactPart=$(HdlPart_$(Platform))
         $(call HdlContBitName,$1): $(call WkrBinary,$(HdlTarget),$1)
         $(call HdlContBitZName,$1): $(call HdlContBitName,$1)
 	   $(AT)echo Making compressed bit file: $$@ from $$< and $(call ArtifactXmlName,$1)

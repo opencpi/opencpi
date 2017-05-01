@@ -173,6 +173,9 @@ namespace OCPI {
       else if (hasName)
 	return "Missing Name attribute in Property/Argument/Member element";
       OE::getOptionalString(xm, m_abbrev, "Abbrev");
+      OE::getOptionalString(xm, m_pretty, "Pretty");
+      if (m_pretty.empty())
+	m_pretty = m_name;
       OE::getOptionalString(xm, m_description, "Description");
       OE::getOptionalString(xm, m_format, "Format");
       const char *typeName = ezxml_cattr(xm, "Type");
@@ -238,11 +241,11 @@ namespace OCPI {
 	  // enums have a baseTypeSize of 32 per IDL
 	}
 	if (m_baseType == OA::OCPI_String) {
-	  if ((err = getExprNumber(xm, "StringLength", m_stringLength, &found,
-				   &m_stringLengthExpr, resolver)) ||
+	  if ((err = OE::getExprNumber(xm, "StringLength", m_stringLength, &found,
+				       m_stringLengthExpr, resolver)) ||
 	      (!found &&
-	       (err = getExprNumber(xm, "size", m_stringLength, &found, &m_stringLengthExpr,
-				    resolver))))
+	       (err = OE::getExprNumber(xm, "size", m_stringLength, &found, m_stringLengthExpr,
+					resolver))))
 	    return err;
 	  if (a_isFixed) {
 	    if (!found)
@@ -264,7 +267,7 @@ namespace OCPI {
       size_t arrayLength;
       std::string expr;
       const char *arrayDimensions;
-      if ((err = getExprNumber(xm, "ArrayLength", arrayLength, &isArray, &expr, resolver)))
+      if ((err = OE::getExprNumber(xm, "ArrayLength", arrayLength, &isArray, expr, resolver)))
 	return err;
       if (isArray) {
 	if (arrayLength == 0)
@@ -299,11 +302,11 @@ namespace OCPI {
       }
       if (m_arrayRank && !m_arrayDimensionsExprs[0].empty())
 	m_usesParameters = true;
-      if ((err = getExprNumber(xm, "SequenceLength", m_sequenceLength, &m_isSequence,
-			       &m_sequenceLengthExpr, resolver)) ||
+      if ((err = OE::getExprNumber(xm, "SequenceLength", m_sequenceLength, &m_isSequence,
+			       m_sequenceLengthExpr, resolver)) ||
 	  (!m_isSequence &&
-	   ((err = getExprNumber(xm, "SequenceSize", m_sequenceLength, &m_isSequence,
-				 &m_sequenceLengthExpr, resolver)))))
+	   ((err = OE::getExprNumber(xm, "SequenceSize", m_sequenceLength, &m_isSequence,
+				 m_sequenceLengthExpr, resolver)))))
 	return err;
       if (m_isSequence) {
 	if (a_isFixed) {

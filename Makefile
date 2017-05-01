@@ -34,6 +34,11 @@
 ########################################################################### #
 
 ProjectPrefix=ocpi
+# Fake being a project until we can be a real one
+ifneq (,)
+include $(OCPI_CDK_DIR)/include/project.mk
+endif
+
 ifeq ($(wildcard exports),)
   ifeq ($(filter clean%,$(MAKECMDGOALS)),)
     $(info Exports have never been set up for this tree  Doing it now.)
@@ -70,7 +75,7 @@ endif
 # Basic packages.
 #
 
-RDMA_DRIVERS=datagram dma ofed pio socket udp
+RDMA_DRIVERS=datagram dma ofed pio socket
 
 #	 runtime/dataplane/rdma_drivers \
 
@@ -99,6 +104,7 @@ PACKAGES += tools/cdkutils
 PACKAGES += tools/ocpigen
 PACKAGES += tools/ocpisca
 PACKAGES += tools/ocpirh
+PACKAGES += tools/ocpigr
 PACKAGES += tools/cdk/ocpidds
 PACKAGES += tools/astyle
 PACKAGES += tests
@@ -134,6 +140,7 @@ ALLPACKAGES = \
 	tools/ocpigen \
 	tools/ocpisca \
 	tools/ocpirh \
+	tools/ocpigr \
 	tools/cdk/ocpidds \
 	tools/astyle \
 	tests \

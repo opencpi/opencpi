@@ -13,7 +13,9 @@
 ################################################################################
 # 1. Download/clone and setup directories in the prereq area
 ################################################################################
-OCPI_AD9361_VERSION=master
+#OCPI_AD9361_VERSION=master
+OCPI_AD9361_CURRENT_2016_R2_GIT_COMMIT_ID=e99393f2ba7f244c8328393e5d13d20e54a24419
+OCPI_AD9361_VERSION=$OCPI_AD9361_CURRENT_2016_R2_GIT_COMMIT_ID
 source ./scripts/setup-install.sh \
        "$1" \
        ad9361 \

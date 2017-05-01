@@ -91,14 +91,10 @@ static void dumpList( std::list<OCPI::Util::Block>& list )
 }
 #endif
 
-
-static OCPI::Util::ResAddrType ALIGN( OCPI::Util::ResAddrType addr, unsigned int alignment ) 
-{
-  if ( alignment == 0 ) {
-    return addr;
-  }
-  OCPI::Util::ResAddrType mask = alignment -1;
-  return (addr & ~mask);
+// Round the address UP to the next aligned boundary
+static OCPI::Util::ResAddrType 
+ALIGN(OCPI::Util::ResAddrType addr, unsigned int alignment) {
+  return alignment ? (addr + alignment - 1) & ~(alignment - 1) : addr;
 }
 
 
@@ -134,14 +130,15 @@ void OCPI::Util::ResPool::defrag()
 }
 
 
-int OCPI::Util::MemBlockMgr::alloc(size_t nbytes, unsigned int alignment, OCPI::Util::ResAddrType& req_addr)
-  throw( std::bad_alloc ) 
+int OCPI::Util::MemBlockMgr::
+alloc(size_t nbytes, unsigned int alignment, OCPI::Util::ResAddrType& req_addr)
+  throw(std::bad_alloc) 
 {
 
-  if ( nbytes > 2000000 ) {
+  if (nbytes > 2000000) {
     ocpiInfo("Allocating large mem %zuK in %p %zu of %zu used",
 	     nbytes/1024, this, m_pool->used, m_pool->total_size);
-    // OCPI::OS::dumpStack (std::cerr);
+    // OCPI::OS::dumpStack(std::cerr);
   }
 #ifdef DEBUG_LISTS
   ocpiDebug("Alloc list");
@@ -150,41 +147,36 @@ int OCPI::Util::MemBlockMgr::alloc(size_t nbytes, unsigned int alignment, OCPI::
   dumpList(m_pool->free_list);
 #endif
 
-  
   m_pool->free_list.sort();
-  std::list<Block>::iterator it;
-  int retry=2;
-  nbytes += alignment/8;
-
-  do {
-    for ( it=m_pool->free_list.begin(); it !=m_pool->free_list.end(); it++ ) {
-      if ( ((*it).size > nbytes) ) {
-        req_addr = ALIGN((*it).addr, alignment);
-        ResAddr taddr = (*it).addr;
-        (*it).addr += OCPI_UTRUNCATE(ResAddr, nbytes);
-        (*it).size -= nbytes;      
-        m_pool->alloc_list.push_back( Block(m_pool, nbytes, taddr, ALIGN(req_addr, alignment)) );
-        ocpiDebug("**** Alloc Returning address = %" OCPI_UTIL_RESADDR_PRIx ", %" OCPI_UTIL_RESADDR_PRIx "", 
-               taddr, req_addr );
-	m_pool->used += nbytes;
-        return 0;
-      }
-      else if ((*it).size == nbytes) {
-        req_addr = ALIGN((*it).addr, alignment);
+  for (unsigned retry = 2; retry; retry--) {
+    for (std::list<Block>::iterator it = m_pool->free_list.begin(); it !=m_pool->free_list.end();
+	 ++it) {
+      ResAddr taddr = (*it).addr;
+      req_addr = ALIGN(taddr, alignment);
+      size_t skip = req_addr - taddr;
+      if (skip >= (*it).size)
+	continue;
+      size_t size = (*it).size - skip; // size net of alignment
+      if (size < nbytes)
+	continue;
+      if (size > nbytes) {
+        (*it).addr = OCPI_UTRUNCATE(ResAddrType, req_addr + nbytes);
+	nbytes += skip; // number of bytes taken out of this block
+        (*it).size -= nbytes;
+        m_pool->alloc_list.push_back(Block(m_pool, nbytes, taddr, req_addr));
+      } else { // size matches
+	nbytes = (*it).size;
         (*it).aligned_addr = req_addr;
-        m_pool->alloc_list.push_back( *it );
-        ocpiDebug("**** Alloc Returning address = %" OCPI_UTIL_RESADDR_PRIx ", %" OCPI_UTIL_RESADDR_PRIx "", 
-               (*it).addr, req_addr );
-        m_pool->free_list.erase( it );      
-	m_pool->used += nbytes;
-        return 0;
+        m_pool->alloc_list.push_back(*it);
+        m_pool->free_list.erase(it);      
       }
+      ocpiDebug("**** Alloc Returning address = %" OCPI_UTIL_RESADDR_PRIx ", %" 
+		OCPI_UTIL_RESADDR_PRIx "", taddr, req_addr);
+      m_pool->used += nbytes;
+      return 0;
     }
-    retry--;
     m_pool->defrag();  
-  } while ( retry );
-
-
+  }
 
 #ifndef NDEBUG
   printf("Alloc list\n");

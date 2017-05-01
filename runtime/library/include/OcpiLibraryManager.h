@@ -173,6 +173,7 @@ namespace OCPI {
 				    const OCPI::API::Connection *conns,
 				    const char *&inst);
       void printArtifactsX(const Capabilities &caps, bool specs);
+      void doWorkers(void (*func)(OCPI::Util::Worker &));
       // Inform the manager about an implementation
       void addImplementation(Implementation &imp);
     private:

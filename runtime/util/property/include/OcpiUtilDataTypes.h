@@ -177,8 +177,7 @@ namespace OCPI {
     class Value;
     class Member : public ValueType {
     public:
-      std::string m_name, m_abbrev;
-      std::string m_description;
+      std::string m_name, m_abbrev, m_pretty, m_description;
       size_t m_offset;              // in group
       bool m_isIn, m_isOut, m_isKey;  // for arguments (could use another class, but not worth it)
       Value *m_default;               // A default value, if one is appropriate and there is one
@@ -199,6 +198,7 @@ namespace OCPI {
       void generate(const char *name, unsigned ordinal = 0, unsigned depth = 0);
       //      const std::string &name() const { return m_name; }
       const char *cname() const { return m_name.c_str(); }
+      const char *pretty() const { return m_pretty.c_str(); }
       const char
         *finalize(const IdentResolver &resolv, const char *tag, bool isFixed),
 	*parseDefault(const char *value, const char *tag, const IdentResolver *resolv = NULL),

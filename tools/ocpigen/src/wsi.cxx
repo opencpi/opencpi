@@ -110,10 +110,13 @@ deriveOCP() {
 void WsiPort::
 emitVhdlShell(FILE *f, Port *wci) {
   bool slave = masterIn();
+  std::string mNameTemp;
+  if (!slave)
+    mNameTemp = typeNameOut + "_temp";
   const char
     *mOption0 = slave ? "(others => '0')" : "open",
     *mOption1 = slave ? "(others => '1')" : "open",
-    *mName = slave ? typeNameIn.c_str() : typeNameOut.c_str(),
+    *mName = slave ? typeNameIn.c_str() : mNameTemp.c_str(),
     *sName = slave ? typeNameOut.c_str() : typeNameIn.c_str();
 
   size_t opcode_width = ocp.MReqInfo.value ? ocp.MReqInfo.width : 1;
@@ -173,6 +176,12 @@ emitVhdlShell(FILE *f, Port *wci) {
       fprintf(f, "  %s_opcode%s <= %s_opcode%s;\n",
 	      cname(), slave ? "" : "_temp", cname(), slave ? "_temp" : "");
   }
+
+  if (!slave)
+    // xsim segfaults if there is no intermediate signal here
+    fprintf(f, "  %s <= %s; -- temp needed to workaround Vivado/xsim bug v2016.4\n",
+	    typeNameOut.c_str(), mName);
+
   std::string width;
   OU::format(width, "ocpi_port_%s_", cname());
   fprintf(f,
@@ -604,6 +613,17 @@ emitImplAliases(FILE *f, unsigned n, Language lang) {
 	      "  wire %sAbort; assign %sMDataInfo[%zu] = %sAbort;\n",
 	      pout, pout, ocp.MDataInfo.width-1, pout);
   }
+}
+
+// This temp/intermediate record signal is needed by xsim because some recent versions segfault
+// when putting output port signals that are in records, in the port map of internal instances
+void WsiPort::
+emitImplSignals(FILE *f) {
+  DataPort::emitImplSignals(f);
+  if (!masterIn())
+    fprintf(f,
+            "  signal %s_temp : %s_t; -- temp needed to workaround Vivado/xsim bug v2016.4\n",
+            typeNameOut.c_str(), typeNameOut.c_str());
 }
 
 void WsiPort::

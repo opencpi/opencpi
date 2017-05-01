@@ -186,6 +186,7 @@ namespace OCPI {
       void startMasterSlave(bool isMaster, bool isSlave, bool isSource);
       void start();
       void stop();
+      bool verbose() const { return m_verbose; }
       bool wait(OCPI::OS::Timer *);
       void finish();
       ExternalPort &getPort(const char *, const OCPI::API::PValue *);

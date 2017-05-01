@@ -169,6 +169,10 @@ namespace OCPI {
       std::string joinNames (const std::string & dir,
                              const std::string & name)
         throw (std::string);
+      const char * joinNames(const std::string &dir,
+			     const std::string &name,
+			     std::string &joined)
+        throw (std::string);
 
       /**
        * Returns an absolute file name for a file name.
@@ -353,9 +357,13 @@ namespace OCPI {
        *              false if it does not exist.
        */
 
-      bool exists (const std::string & name, bool * isDir = 0,
+      bool exists (const char *name, bool * isDir = NULL, uint64_t *size = 0,
+		   std::time_t *mtime = 0, FileId *id = NULL) throw();
+      inline bool exists (const std::string & name, bool * isDir = 0,
                    uint64_t *size = 0, std::time_t *mtime = 0, FileId *id = NULL)
-        throw ();
+        throw () {
+	return exists(name.c_str(), isDir, size, mtime, id);
+      }
 
       /**
        * Returns the size of a file.

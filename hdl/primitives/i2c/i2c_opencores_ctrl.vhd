@@ -50,45 +50,17 @@ architecture rtl of i2c_opencores_ctrl is
 
   signal current_state : state_type;
   signal next_state    : state_type;
-  
-  --OpenCores I2C Verilog module being wrapped
-  component i2c_master_byte_ctrl
-    port (
-      CLK      : in  std_logic;
-      RST      : in  std_logic;
-      NRESET   : in  std_logic;
-      ENA      : in  std_logic;
-      CLK_CNT  : in  unsigned(15 downto 0);
-      START    : in  std_logic;
-      STOP     : in  std_logic;
-      READ     : in  std_logic;
-      WRITE    : in  std_logic;
-      ACK_IN   : in  std_logic;
-      DIN      : in  std_logic_vector(7 downto 0);
-      CMD_ACK  : out std_logic;
-      ACK_OUT  : out std_logic;
-      I2C_BUSY : out std_logic;
-      I2C_AL   : out std_logic;
-      DOUT     : out std_logic_vector(7 downto 0);
-      SCL_I    : in  std_logic;
-      SCL_O    : out std_logic;
-      SCL_OEN  : out std_logic;
-      SDA_I    : in  std_logic;
-      SDA_O    : out std_logic;
-      SDA_OEN  : out std_logic
-      );
-  end component;
 begin
   -- Invert reset for opencores i2c
   not_ctl_in_reset <= not WCI_RESET;
 
-  byte_controller : i2c_master_byte_ctrl
+  byte_controller : work.i2c.i2c_master_byte_ctrl
     port map(
       CLK      => WCI_CLK,
       RST      => '0',
       NRESET   => not_ctl_in_reset,
       ENA      => '1',
-      CLK_CNT  => CLK_CNT,
+      CLK_CNT  => std_logic_vector(CLK_CNT),
       START    => start,
       STOP     => stop,
       READ     => read_sig,

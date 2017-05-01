@@ -19,6 +19,7 @@ architecture rtl of file_read_worker is
   signal som_next_r        : boolean     := false;           -- is staged data a SOM?
   signal bytesLeft_r       : ulong_t     := (others => '0'); -- bytes left in current message
   signal ready_r           : boolean     := false;           -- have staged data for out_out
+  signal eof_r             : boolean     := false;           -- we have seen EOF on input
   -- registers driving ctl_out
   signal finished_r        : boolean     := false;           -- to drive ctl_out.finished
   -- registers driving props_out
@@ -85,6 +86,7 @@ begin
      procedure finish(msg : string) is begin
        report "EOF on input file: " & msg;
        close_file(data_file, props_in.fileName);
+       eof_r <= true;
        if its(props_in.suppressEOF) then
          finished_r <= true; -- nothing to do at this EOF except be finished
        else
@@ -101,6 +103,7 @@ begin
          som_next_r        <= false;
          bytesLeft_r       <= (others => '0');
          ready_r           <= false;
+         eof_r             <= false;
          finished_r        <= false;
          bad_r             <= false;
          messagesWritten_r <= (others => '0');
@@ -144,11 +147,12 @@ begin
            som_r      <= som_next_r;
            som_next_r <= false;
            eom        := false;
-           if bytesLeft_r = 0 then -- we are staging an EOF/zlm.  There is no file I/O
+           if bytesLeft_r = 0 then -- we are staging an EOF/zlm.  There is no file I/O to do
              eom        := true;
              valid_r    <= false;
-             finished_r <= true;
-             close_file(data_file, props_in.fileName);
+             if eof_r then -- a ZLM at EOF means we're done
+               finished_r <= true;
+             end if;
            elsif endfile(data_file) then -- EOF mid-message, w/ no data: shouldn't happen
              if its(props_in.messagesInFile) then
                report "Unexpected EOF mid-message" severity failure;

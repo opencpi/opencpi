@@ -263,6 +263,14 @@ joinNames (const std::string & dir,
 
   return absName;
 }
+const char *
+joinNames(const std::string &dir, const std::string &name, std::string &joined)
+ throw (std::string)
+{
+  // FIXME: fix this to avoid the copy
+  joined = joinNames(dir, name);
+  return joined.c_str();
+}
 
 std::string
 absoluteName (const std::string & name)
@@ -436,8 +444,7 @@ list (const std::string & dir,
  */
 
 bool
-exists(const std::string & name, bool * isDir, uint64_t *size, std::time_t *mtime,
-       FileId *id)
+exists(const char *name, bool * isDir, uint64_t *size, std::time_t *mtime, FileId *id)
   throw ()
 {
   std::string nativeName = toNativeName (name); // Error: Exception thrown in function declared not to throw exceptions.

@@ -1,0 +1,6 @@
+<HdlContainer>
+   <device worker='lime_dac' floating='1'/>
+   <device worker='lime_dac_em' floating='1'/>
+   <connection interconnect='*' device='lime_dac'/>
+   <connection interconnect='*' device='lime_dac_em'/>
+</HdlContainer>

@@ -19,7 +19,7 @@ namespace {
   // FIXME: share this with the one in parse.cxx
   const char *
   findPackage(ezxml_t spec, const char *package, const char *specName, 
-	      const std::string &parent, const std::string &specFile, std::string &package_out ) {
+	      const std::string &parent, const std::string &specFile, std::string &package_out) {
     if (!package)
       package = ezxml_cattr(spec, "package");
     if (package)
@@ -73,11 +73,10 @@ namespace {
 	return wi;
     return ws.end();
   }
+  size_t timeout, duration;
   const char *argPackage;
   std::string specName, specPackage;
   bool verbose;
-  typedef std::set<std::string> Strings;
-  typedef Strings::const_iterator StringsIter;
   Strings excludeWorkers, excludeWorkersTmp;
   // If the spec in/out arg may be set in advance if it is inline or xi:included
   // FIXME: share this with the one in parse.cxx
@@ -260,7 +259,10 @@ namespace {
     std::string m_name, m_file, m_script, m_view;
     DataPort *m_port;
     size_t m_messageSize;
-    InputOutput() : m_port(NULL), m_messageSize(0) {}
+    bool m_messagesInFile, m_suppressEOF, m_stopOnEOF;
+    InputOutput() 
+      : m_port(NULL), m_messageSize(0), m_messagesInFile(false), m_suppressEOF(false),
+	m_stopOnEOF(false) {}
     const char *parse(ezxml_t x, std::vector<InputOutput> *inouts) {
       const char 
 	*name = ezxml_cattr(x, "name"),
@@ -269,8 +271,17 @@ namespace {
 	*script = ezxml_cattr(x, "script"),
 	*view = ezxml_cattr(x, "view"),
 	*err;
-      if ((err = OE::getNumber(x, "messageSize", &m_messageSize, 0, true, false)))
+      if ((err = OE::checkAttrs(x, "name", "port", "file", "script", "view", "messageSize",
+				"messagesInFile", "suppressEOF", "stopOnEOF", (void*)0)))
 	return err;
+      bool suppress, stop;
+      if ((err = OE::getNumber(x, "messageSize", &m_messageSize, 0, true, false)) ||
+	  (err = OE::getBoolean(x, "messagesInFile", &m_messagesInFile)) ||
+	  (err = OE::getBoolean(x, "suppressEOF", &m_suppressEOF, false, &suppress)) ||
+	  (err = OE::getBoolean(x, "stopOnEOF", &m_stopOnEOF, false, &stop)))
+	return err;
+      if (!ezxml_cattr(x, "stopOnEOF"))
+	m_stopOnEOF = true; // legacy exception to the default-is-always-false rule
       bool isDir;
       if (file) {
 	if (script)
@@ -290,6 +301,17 @@ namespace {
 	if (!p->isData())
 	  return OU::esprintf("%s port \"%s\" exists, but is not a data port", 
 			      OE::ezxml_tag(x), port);
+	if (p->isDataProducer()) {
+	  if (suppress)
+	    return 
+	      OU::esprintf("the \"suppressEOF\" attribute is invalid for an output port:  \"%s\"",
+			   port);
+	  if (!stop)
+	    m_stopOnEOF = true;
+	} else if (stop)
+	    return 
+	      OU::esprintf("the \"stopOnEOF\" attribute is invalid for an input port:  \"%s\"", 
+			   port);
 	m_port = static_cast<DataPort *>(p);
       }
       if (name) {
@@ -322,9 +344,8 @@ namespace {
     return inouts.back().parse(x, &inouts);
   }
   Strings onlyPlatforms, excludePlatforms;
-  const char *doPlatform(const char *platform, void *arg) {
-    Strings &set = *(Strings *)arg;
-    return set.insert(platform).second ? NULL :
+  const char *doPlatform(const char *platform, Strings &platforms) {
+    return platforms.insert(platform).second ? NULL :
       OU::esprintf("platform \"%s\" is already in the list", platform);
   }
   const char *doWorker(Worker *w, void *arg) {
@@ -347,6 +368,7 @@ namespace {
   struct Case;
   typedef std::vector<Case *> Cases;
   Cases cases;
+  Strings allPlatforms;
   struct Case {
     std::string m_name, m_done;
     Strings m_onlyPlatforms, m_excludePlatforms; // can only apply these at runtime
@@ -356,28 +378,49 @@ namespace {
     ParamConfig m_results; // what the resulting properties should be
     ParamConfigs m_subCases;
     InputOutputs m_ports;  // the actual inputs and outputs to use
-    Case(ParamConfig &globals) : m_settings(globals), m_results(*wFirst)  {}
-    static const char *doExcludePlatform(const char *platform, void *arg) {
+    size_t m_timeout, m_duration;
+    
+    Case(ParamConfig &globals)
+      : m_settings(globals), m_results(*wFirst), m_timeout(timeout), m_duration(duration)
+    {}
+    static const char *doExcludePlatform(const char *a_platform, void *arg) {
       Case &c = *(Case *)arg;
-      if (excludePlatforms.find(platform) != excludePlatforms.end())
-	return
-	  OU::esprintf("For case \"%s\", excluded platform \"%s\" is already globally excluded",
-		       c.m_name.c_str(), platform);
-      if (onlyPlatforms.size() && onlyPlatforms.find(platform) == onlyPlatforms.end())
-	  OU::esprintf("For case \"%s\", excluded platform \"%s\" is not in the global only platforms",
-		       c.m_name.c_str(), platform);
-      return doPlatform(platform, &c.m_excludePlatforms);
+      Strings platforms;
+      const char *err;
+      if ((err = Param::getPlatforms(a_platform, platforms)))
+	return err;
+      for (StringsIter pi = platforms.begin(); pi != platforms.end(); ++pi) {
+	const char *platform = pi->c_str();
+	if (excludePlatforms.find(platform) != excludePlatforms.end())
+	  fprintf(stderr, "Warning:  for case \"%s\", excluded platform \"%s\" is already "
+		  "globally excluded", c.m_name.c_str(), platform);
+	if (onlyPlatforms.size() && onlyPlatforms.find(platform) == onlyPlatforms.end())
+	  fprintf(stderr, "Warning:  for case \"%s\", excluded platform \"%s\" is not in the "
+		  "global only platforms", c.m_name.c_str(), platform);
+	if ((err = doPlatform(platform, c.m_excludePlatforms)))
+	  return err;
+      }
+      return NULL;
     }
-    static const char *doOnlyPlatform(const char *platform, void *arg) {
+    static const char *doOnlyPlatform(const char *a_platform, void *arg) {
       Case &c = *(Case *)arg;
-      if (onlyPlatforms.size() && onlyPlatforms.find(platform) == onlyPlatforms.end())
-	OU::esprintf("For case \"%s\", only platform \"%s\" is not in the global only platforms",
-		     c.m_name.c_str(), platform);
-      if (excludePlatforms.find(platform) != excludePlatforms.end())
-	return
-	  OU::esprintf("For case \"%s\", only platform \"%s\" is globally excluded",
-		       c.m_name.c_str(), platform);
-      return doPlatform(platform, &c.m_onlyPlatforms);
+      Strings platforms;
+      const char *err;
+      if ((err = Param::getPlatforms(a_platform, platforms)))
+	return err;
+      for (StringsIter pi = platforms.begin(); pi != platforms.end(); ++pi) {
+	const char *platform = pi->c_str();
+	if (onlyPlatforms.size() && onlyPlatforms.find(platform) == onlyPlatforms.end())
+	  fprintf(stderr, "Warning:  for case \"%s\", only platform \"%s\" is already in the "
+		  "global only platforms list", c.m_name.c_str(), platform);
+	if (excludePlatforms.find(platform) != excludePlatforms.end())
+	  return
+	    OU::esprintf("For case \"%s\", only platform \"%s\" is globally excluded",
+			 c.m_name.c_str(), platform);
+	if ((err = doPlatform(platform, c.m_onlyPlatforms)))
+	  return err;
+      }
+      return NULL;
     }
     static const char *doOnlyWorker(const char *worker, void *arg) {
       Case &c = *(Case *)arg;
@@ -419,11 +462,15 @@ namespace {
 	m_name = a;
       else
 	OU::format(m_name, "case%02zu", ordinal);
-      if (((a = ezxml_cattr(x, "onlyplatforms")) && 
+      if ((err = OE::getNumber(x, "duration", &m_duration, NULL, duration)) ||
+	  (err = OE::getNumber(x, "timeout", &m_timeout, NULL, timeout)) ||
+	  ((a = ezxml_cattr(x, "onlyplatforms")) && 
 	   (err = OU::parseList(a, doOnlyPlatform, this))) ||
 	  ((a = ezxml_cattr(x, "excludeplatforms")) && 
 	   (err = OU::parseList(a, doExcludePlatform, this))))
 	return err;
+      if (m_duration && m_timeout)
+	return OU::esprintf("Specifying both duration and timeout is not supported");
       if ((a = ezxml_cattr(x, "onlyworkers"))) {
 	if ((err = OU::parseList(a, doOnlyWorker, this)))
 	  return err;
@@ -511,10 +558,10 @@ namespace {
     void
     doProp(unsigned n) {
       ParamConfig &c = *m_subCases.back();
+      while (n < c.params.size() && (!c.params[n].m_param || !c.params[n].m_generate.empty()))
+	n++;
       if (n >= c.params.size())
 	return;
-      while (!c.params[n].m_param || !c.params[n].m_generate.empty())
-	n++;
       Param &p = c.params[n];
       for (unsigned nn = 0; nn < p.m_uValues.size(); ++nn) {
 	if (nn)
@@ -743,16 +790,22 @@ namespace {
 	files.insert(name);
 	std::string file(dir + "/" + name);;
 	unsigned nOutputs = 0, nInputs = 0;
+	Port *first = NULL;
 	for (unsigned n = 0; n < m_ports.size(); n++)
-	  if (m_ports[n].m_port->isDataProducer())
+	  if (m_ports[n].m_port->isDataProducer()) {
+	    if (!first)
+	      first = m_ports[n].m_port;
 	    nOutputs++;
-	  else
+	  } else
 	    nInputs++;
 	std::string app("<application");
 	if (m_done.size())
 	  OU::formatAdd(app, " done='%s'", m_done.c_str());
-	else if (nOutputs)
+	else if (nOutputs == 1)
 	  OU::formatAdd(app, " done='file_write'");
+	else if (nOutputs > 1) {
+	  OU::formatAdd(app, " done='file_write_from_%s'", first->cname());
+	}
 	app += ">\n";
 	if (nInputs)
 	  for (unsigned n = 0; n < m_ports.size(); n++)
@@ -773,6 +826,10 @@ namespace {
 	      if (io.m_messageSize)
 		OU::formatAdd(app, "    <property name='messageSize' value='%zu'/>\n",
 			      io.m_messageSize);
+	      if (io.m_messagesInFile)
+		OU::formatAdd(app, "    <property name='messagesInFile' value='true'/>\n");
+	      if (io.m_suppressEOF)
+		OU::formatAdd(app, "    <property name='suppressEOF' value='true'/>\n");
 	      app += "  </instance>\n";
 	    }
 	OU::formatAdd(app, "  <instance component='%s'", wFirst->m_specName);
@@ -805,8 +862,17 @@ namespace {
 	    if (io.m_port->isDataProducer()) {
 	      OU::formatAdd(app, "  <instance component='ocpi.file_write'");
 	      if (nOutputs > 1)
-		OU::formatAdd(app, " name='from_%s'", io.m_port->cname());
-	      app += "/>\n";
+		OU::formatAdd(app, " name='file_write_from_%s'", io.m_port->cname());
+	      if (!io.m_messagesInFile && io.m_stopOnEOF)
+		app += "/>\n";
+	      else {
+		app += ">\n";
+		if (io.m_messagesInFile)
+		  OU::formatAdd(app, "    <property name='messagesInFile' value='true'/>\n");
+		if (!io.m_stopOnEOF)
+		  OU::formatAdd(app, "    <property name='stopOnEOF' value='false'/>\n");
+		app += "  </instance>\n";
+	      }
 #if 0
 	      std::string file;
 	      OU::formatAdd(file, "%s.%02u.%s.output", m_name.c_str(), s, m_ports[n].m_port->cname());
@@ -815,9 +881,9 @@ namespace {
 #endif
 	      if (nOutputs > 1)
 		OU::formatAdd(app,
-			      "  <connection>"
-			      "    <port instance='%s' port='%s'/>\n"
-			      "    <port instance='from_%s' port='in'/>\n"
+			      "  <connection>\n"
+			      "    <port instance='%s' name='%s'/>\n"
+			      "    <port instance='file_write_from_%s' name='in'/>\n"
 			      "  </connection>\n",
 			      dut, io.m_port->cname(),
 			      io.m_port->cname());
@@ -843,6 +909,8 @@ namespace {
 		 "#!/bin/sh --noprofile\n"
 		 "# Verification and/or viewing script for case: %s\n"
 		 "# Args are: <worker> <subcase> <verify> <view>\n"
+		 "# Act like a normal process if get this signal\n"
+		 "trap 'exit 130' SIGINT\n"
 		 "function isPresent {\n"
 		 "  local key=$1\n"
 		 "  shift\n"
@@ -867,6 +935,7 @@ namespace {
 		 "  exit 1\n"
 		 "fi\n",
 		 m_name.c_str());
+      verify += "exitval=0\n";
       for (unsigned n = 0; n < m_ports.size(); n++) {
 	InputOutput &io = m_ports[n];
 	if (io.m_port->isDataProducer()) {
@@ -942,7 +1011,7 @@ namespace {
 			    "    failed=1\n"
 			    "  fi\n"
 			    "  tput sgr0\n"
-			    "  exit $r\n"
+			    "  [ $r = 0 ] || exitval=1\n" 
 			    "}\n", io.m_port->cname(), io.m_port->cname());
 	    } else
 	      OU::formatAdd(verify,
@@ -950,6 +1019,7 @@ namespace {
 	  }
 	}
       }
+      verify += "exit $exitval\n";
       return OU::string2File(verify.c_str(), file.c_str(), false, true);
     }
     const char *
@@ -957,7 +1027,59 @@ namespace {
       fprintf(out, "  <case name='%s'>\n", m_name.c_str());
       for (unsigned s = 0; s < m_subCases.size(); s++) {
 	ParamConfig &pc = *m_subCases[s];
-	fprintf(out, "    <subcase id='%u'>\n", s);
+	// Figure out which platforms will not support this subcase
+	assert(pc.params.size() == m_settings.params.size());
+	Strings excludedPlatforms; // for the subcase
+	for (unsigned n = 0; n < pc.params.size(); n++) {
+	  Param
+	    &cp = m_settings.params[n], // case param
+	    &sp = pc.params[n];         // subcase param
+	  assert((cp.m_param && sp.m_param) || (!cp.m_param && !sp.m_param));
+	  assert(!cp.m_param || cp.m_uValues.size() || cp.m_generate.size());
+	  if (!cp.m_param || cp.m_uValues.empty()) // empty is generated - no exclusions
+	    continue;
+	  Param::Attributes *attrs = NULL;
+	  for (unsigned i = 0; !attrs && i < cp.m_uValues.size(); i++)
+	    if (sp.m_uValue == cp.m_uValues[i])
+	      attrs = &cp.m_attributes[i];
+	  assert(attrs);
+	  for (StringsIter si = allPlatforms.begin(); si != allPlatforms.end(); ++si) {
+	    const std::string &p = *si;
+	    // If all values for this platform are not explicit
+	    if (cp.m_explicitPlatforms.find(p) == cp.m_explicitPlatforms.end()) {
+	      if (attrs->m_excluded.find(p) != attrs->m_excluded.end() ||
+		  (attrs->m_included.size() &&
+		   attrs->m_included.find(p) == attrs->m_included.end()))
+		excludedPlatforms.insert(p);
+	    } else if (attrs->m_only.find(p) == attrs->m_only.end())
+	      // This value is not specifically set for this platform.  Exclude the platform.
+	      excludedPlatforms.insert(p);
+	  }
+	}
+	// Now we know which platforms should be excluded
+	fprintf(out, "    <subcase id='%u'", s);
+	if (excludedPlatforms.size()) {
+	  if (excludedPlatforms.size() < allPlatforms.size() - excludedPlatforms.size()) {
+	    fprintf(out, " exclude='");
+	    for (StringsIter si = excludedPlatforms.begin(); si != excludedPlatforms.end(); ++si)
+	      fprintf(out, "%s%s", si == excludedPlatforms.begin() ? "" : " ",
+		      si->c_str());
+	  } else {
+	    fprintf(out, " only='");
+	    bool first = true;
+	    for (StringsIter si = allPlatforms.begin(); si != allPlatforms.end(); ++si)
+	      if (excludedPlatforms.find(*si) == excludedPlatforms.end()) {
+		fprintf(out, "%s%s", first ? "" : " ", si->c_str());
+		first = false;
+	      }
+	  }
+	  fprintf(out, "'");
+	}	  
+	if (m_timeout)
+	  fprintf(out, " timeout='%zu'", m_timeout);
+	if (m_duration)
+	  fprintf(out, " duration='%zu'", m_duration);
+	fprintf(out, ">\n");
 	// For each worker configuration, decide whether it can support the subcase.
 	// Note worker configs only have *parameters*, while subcases can have runtime properties
 	for (WorkerConfigsIter wci = configs.begin(); wci != configs.end(); ++wci) {
@@ -1091,7 +1213,9 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
   } else if ((err = parseFile(file, parent, "tests", &xml, xfile, false, false, false)))
     return err;
   // ================= 1. Get the spec
-  if ((err = getSpec(xml, xfile, package, spec, specFile, specName)))
+  if ((err = getSpec(xml, xfile, package, spec, specFile, specName)) ||
+      (err = OE::getNumber(xml, "duration", &duration)) ||
+      (err = OE::getNumber(xml, "timeout", &timeout)))
     return err;
   // ================= 2. Get/find/include/exclude the global workers
   // Parse global workers
@@ -1188,6 +1312,7 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
       }
       gp.m_valuesType->m_default->parse(p.m_uValue.c_str(), NULL, gp.m_uValues.size() != 0);
       gp.m_uValues.push_back(p.m_uValue);
+      gp.m_attributes.push_back(Param::Attributes());
     next:;
     }
   }
@@ -1219,6 +1344,7 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
 	if (p.m_default) {
 	  p.m_default->unparse(param.m_uValue);
 	  param.m_uValues.resize(1);
+	  param.m_attributes.resize(1);
 	  param.m_uValues[0] = param.m_uValue;
 	}
       }
@@ -1269,15 +1395,19 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
   }
   // ================= 6. Parse and collect global platform values
   // Parse global platforms
-  const char 
+  const char
     *excludes = ezxml_cattr(xml, "excludePlatforms"),
     *onlys = ezxml_cattr(xml, "onlyPlatforms");
+  if (!excludes)
+    excludes = ezxml_cattr(xml, "exclude");
+  if (!onlys) 
+    onlys = ezxml_cattr(xml, "only");
   if (onlys) {
     if (excludes)
-      return OU::esprintf("the onlyPlatforms and excludePlatforms attributes cannot both occur");
-    if ((err = OU::parseList(onlys, doPlatform, &onlyPlatforms)))
+      return OU::esprintf("the only and exclude attributes cannot both occur");
+    if ((err = Param::getPlatforms(onlys, onlyPlatforms)))
       return err;
-  } else if (excludes && (err = OU::parseList(onlys, doPlatform, &excludePlatforms)))
+  } else if (excludes && (err = Param::getPlatforms(excludes, excludePlatforms)))
     return err;
   // ================= 6. Parse and collect global input/output specs
   // Parse global inputs and outputs
@@ -1314,7 +1444,7 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
     }
   }
 
-  // ================= 9. Generate report in gen/cases.txt on all combinations of propert values
+  // ================= 9. Generate report in gen/cases.txt on all combinations of property values
   OS::FileSystem::mkdir("gen", true);
   std::string summary;
   OU::format(summary, "gen/cases.txt");
@@ -1469,7 +1599,8 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
   }
   fclose(out);
   if (verbose)
-    fprintf(stderr, "Generating required input and property value files in gen/inputs/ and gen/properties/\n");
+    fprintf(stderr, "Generating required input and property value files in gen/inputs/ and "
+	    "gen/properties/\n");
   for (unsigned n = 0; n < cases.size(); n++)
     if ((err = cases[n]->generateInputs()))
       return err;
@@ -1496,6 +1627,8 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
   if (verbose)
     fprintf(stderr, "Generating summary gen/cases.xml file\n");
   fprintf(out, "<cases spec='%s'>\n", wFirst->m_specName);
+  if ((err = Param::getPlatforms("*", allPlatforms)))
+    return err;
   for (unsigned n = 0; n < cases.size(); n++)
     if ((err = cases[n]->generateCaseXml(out)))
       return err;
@@ -1516,6 +1649,10 @@ createCases(const char **platforms, const char */*package*/, const char */*outDi
     FILE *m_run, *m_verify;
     std::string m_outputArgs, m_verifyOutputs;
     const char *m_outputs;
+    typedef std::map<std::string, std::string> Runs;
+    typedef Runs::const_iterator RunsIter;
+    typedef std::pair<std::string, std::string> RunsPair;
+    Runs m_runs; // for this platform, what runs are done
     CallBack(const char *spec, const char *model, const char *platform, bool dynamic,
 	     ezxml_t xml)
       : m_spec(spec), m_model(model), m_platform(platform), m_dynamic(dynamic), m_xml(xml),
@@ -1525,12 +1662,15 @@ createCases(const char **platforms, const char */*package*/, const char */*outDi
     }
     ~CallBack() {
       if (m_run) {
+	for (RunsIter ri = m_runs.begin(); ri != m_runs.end(); ++ri)
+	  fprintf(m_run, "%s", ri->second.c_str());
 	fprintf(m_run, "exit $failed\n");
 	fclose(m_run);
       }
       if (m_verify)
 	fclose(m_verify);
     }
+#if 0
     void doOutput(const char *output) {
       bool multiple = strchr(m_outputs, ',') != NULL;
       OU::formatAdd(m_outputArgs, " -pfile_write%s%s=fileName=$5.$6.$4.$3.%s.out",
@@ -1541,43 +1681,67 @@ createCases(const char **platforms, const char */*package*/, const char */*outDi
       ((CallBack*)me)->doOutput(output);
       return NULL;
     }
+#endif
+    static bool found(const char *platform, const char *list) {
+      size_t len = strlen(platform);
+      const char *p = list ? strstr(list, platform) : NULL;
+      return p && (!p[len] || isspace(p[len])) && (p == list || isspace(p[-1]));
+    }
+    static bool included(const char *platform, ezxml_t x) {
+      const char
+	*exclude = ezxml_cattr(x, "exclude"),
+	*only = ezxml_cattr(x, "only");
+      return
+	(!exclude || !found(platform, exclude)) &&
+	(!only || found(platform, only));
+    }
     bool foundImplementation(const OL::Implementation &i, bool &accepted) {
       ocpiInfo("For platform %s, considering implementation %s from %s",
 	       m_platform.c_str(), i.m_metadataImpl.name().c_str(), i.m_artifact.name().c_str());
       if (i.m_artifact.platform() == m_platform && i.m_metadataImpl.model() == m_model &&
 	  i.m_artifact.m_dynamic == m_dynamic) {
+	unsigned sn = 0;
 	for (ezxml_t cx = ezxml_cchild(m_xml, "case"); cx; cx = ezxml_cnext(cx)) {
 	  unsigned n = 0;
 	  const char *name = ezxml_cattr(cx, "name");
-	  for (ezxml_t sx = ezxml_cchild(cx, "subcase"); sx; sx = ezxml_cnext(sx), n++)
-	    for (ezxml_t wx = ezxml_cchild(sx, "worker"); wx; wx = ezxml_cnext(wx))
-	      if (i.m_metadataImpl.name() == ezxml_cattr(wx, "name") &&
-		  i.m_metadataImpl.model() == ezxml_cattr(wx, "model")) {
-		ocpiInfo("Accepted for case %s subcase %u from file: %s", name, n, 
-			 i.m_artifact.name().c_str());
-		if (m_first) {
-		  m_first = false;
-		  std::string dir("run/" + m_platform);
-		  OS::FileSystem::mkdir(dir, true);
-		  std::string file(dir + "/run.sh");
-		  if (verbose)
-		    fprintf(stderr, "  Generating run script for platform: %s\n",
-			    m_platform.c_str());
-		  if (!(m_run = fopen(file.c_str(), "w"))) {
-		    OU::format(m_err, "Cannot open file \"%s\" for writing", file.c_str());
-		    return true;
+	  for (ezxml_t sx = ezxml_cchild(cx, "subcase"); sx; sx = ezxml_cnext(sx), n++, sn++)
+	    if (included(m_platform.c_str(), sx))
+	      for (ezxml_t wx = ezxml_cchild(sx, "worker"); wx; wx = ezxml_cnext(wx))
+		if (i.m_metadataImpl.name() == ezxml_cattr(wx, "name") &&
+		    i.m_metadataImpl.model() == ezxml_cattr(wx, "model")) {
+		  ocpiInfo("Accepted for case %s subcase %u from file: %s", name, n, 
+			   i.m_artifact.name().c_str());
+		  if (m_first) {
+		    m_first = false;
+		    std::string dir("run/" + m_platform);
+		    OS::FileSystem::mkdir(dir, true);
+		    std::string file(dir + "/run.sh");
+		    if (verbose)
+		      fprintf(stderr, "  Generating run script for platform: %s\n",
+			      m_platform.c_str());
+		    if (!(m_run = fopen(file.c_str(), "w"))) {
+		      OU::format(m_err, "Cannot open file \"%s\" for writing", file.c_str());
+		      return true;
+		    }
+		    fprintf(m_run,
+			    "#!/bin/sh --noprofile\n"
+			    "# Note that this file runs on remote/embedded systems and thus\n"
+			    "# may not have access to the full development host environment\n"
+			    "failed=0\n"
+			    "source $OCPI_CDK_DIR/scripts/testrun.sh %s %s $* - %s\n",
+			    m_spec.c_str(), m_platform.c_str(), ezxml_cattr(wx, "outputs"));
 		  }
-		  fprintf(m_run,
-			  "#!/bin/sh --noprofile\n"
-			  "# Note that this file runs on remote/embedded systems and thus\n"
-			  "# may not have access to the full development host environment\n"
-			  "failed=0\n"
-			  "source $OCPI_CDK_DIR/scripts/testrun.sh %s %s $* - %s\n",
-			  m_spec.c_str(), m_platform.c_str(), ezxml_cattr(wx, "outputs"));
+		  const char
+		    *to = ezxml_cattr(sx, "timeout"),
+		    *du = ezxml_cattr(sx, "duration"),
+		    *w = ezxml_cattr(wx, "name");
+		  std::string doit;
+		  OU::format(doit, "docase %s %s %s %02u %s %s\n", m_model.c_str(), w, name, n,
+			     to ? to : "0", du ? du : "0");
+		  std::string key;
+		  OU::format(key, "%08u %s", sn, w);
+		  m_runs.insert(RunsPair(key, doit));
 		}
-		fprintf(m_run, "docase %s %s %s %02u\n",
-			m_model.c_str(), ezxml_cattr(wx, "name"), name, n);
-	      }
 	}
 	accepted = true;
       }

@@ -9,6 +9,7 @@ namespace OCPI {
     namespace OU = OCPI::Util;
     namespace SCA = OCPI::SCA;
     namespace OC = OCPI::Container;
+    namespace OX = OCPI::Util::EzXml;
 
 static const char *repid(std::string &s, const char *name, const char *module = NULL) {
   return OU::format(s, "IDL:%s/%s:1.0", module ? module : "CF", name);
@@ -73,25 +74,25 @@ genScaScd(const char *outDir) const {
     throw OU::Error("Error opening SCD output file: %s", err);
   std::string s;
   ezxml_t root = ezxml_new("softwarecomponent");
-  SCA::addChild(root, "corbaversion", 1, "2.2");
-  SCA::addChild(root, "componentrepid", 1, NULL, "repid", repid(s, "Resource"));
-  SCA::addChild(root, "componenttype", 1, "resource");
+  OX::addChild(root, "corbaversion", 1, "2.2");
+  OX::addChild(root, "componentrepid", 1, NULL, "repid", repid(s, "Resource"));
+  OX::addChild(root, "componenttype", 1, "resource");
   const char *supports[] =
     { "Resource", "LifeCycle", "PortSupplier", "PropertySet", "TestableObject", NULL};
-  ezxml_t cfx = SCA::addChild(root, "componentfeatures", 1);
+  ezxml_t cfx = OX::addChild(root, "componentfeatures", 1);
   for (const char **p = supports; *p; p++)
-    SCA::addChild(cfx, "supportsinterface", 2, NULL, "repid", repid(s, *p), "supportsname", *p);
-  ezxml_t isx = SCA::addChild(root, "interfaces", 1); // ditto
+    OX::addChild(cfx, "supportsinterface", 2, NULL, "repid", repid(s, *p), "supportsname", *p);
+  ezxml_t isx = OX::addChild(root, "interfaces", 1); // ditto
   for (const char **p = supports; *p; p++) {
     ezxml_t ix =
-      SCA::addChild(isx, "interface", 2, NULL, "name", *p, "repid", repid(s, *p));
+      OX::addChild(isx, "interface", 2, NULL, "name", *p, "repid", repid(s, *p));
     if (!strcmp(*p, "Device"))
-      SCA::addChild(ix, "inheritsinterface", 3, NULL, "repid", repid(s, "Resource"));
+      OX::addChild(ix, "inheritsinterface", 3, NULL, "repid", repid(s, "Resource"));
     if (!strcmp(*p, "Resource"))
       for (const char **p1 = supports + 1; *p1; p1++)
-	SCA::addChild(ix, "inheritsinterface", 3, NULL, "repid", repid(s, *p1));
+	OX::addChild(ix, "inheritsinterface", 3, NULL, "repid", repid(s, *p1));
   }  
-  ezxml_t psx = SCA::addChild(cfx, "ports", 2); // this is required per the DTD even if empty
+  ezxml_t psx = OX::addChild(cfx, "ports", 2); // this is required per the DTD even if empty
   std::set<std::string> portInterfaces;
   for (OU::Assembly::ConnectionsIter ci = m_assembly.m_connections.begin();
        ci != m_assembly.m_connections.end(); ci++)
@@ -113,23 +114,23 @@ genScaScd(const char *outDir) const {
 	  type = mapType(op.args()[0].m_baseType);
 	  //	  printf("Type = %s\n",  type );
 	}
-	ezxml_t px = SCA::addChild(psx, r.m_provider ? "provides" : "uses", 3, NULL,
+	ezxml_t px = OX::addChild(psx, r.m_provider ? "provides" : "uses", 3, NULL,
 				   "repid", repid(s, type, "BULKIO"),
 				   r.m_provider ? "providesname" : "usesname",
 				   pi->m_name.c_str());
-	SCA::addChild(px, "porttype", 4, NULL, "type", "data");
+	OX::addChild(px, "porttype", 4, NULL, "type", "data");
 	if (portInterfaces.insert(type).second) {
 	  if (portInterfaces.insert("ProvidesPortStatisticsProvider").second)
-	    SCA::addChild(isx, "interface", 2, NULL, "name", "ProvidesPortStatisticsProvider",
+	    OX::addChild(isx, "interface", 2, NULL, "name", "ProvidesPortStatisticsProvider",
 			  "repid", repid(s, "ProvidesPortStatisticsProvider", "BULKIO"));
 	  if (portInterfaces.insert("updateSRI").second)
-	    SCA::addChild(isx, "interface", 2, NULL, "name", "updateSRI",
+	    OX::addChild(isx, "interface", 2, NULL, "name", "updateSRI",
 			  "repid", repid(s, "updateSRI", "BULKIO"));
-	  ezxml_t ix = SCA::addChild(isx, "interface", 2, NULL, "name", type,
+	  ezxml_t ix = OX::addChild(isx, "interface", 2, NULL, "name", type,
 				     "repid", repid(s, type, "BULKIO"));
-	  SCA::addChild(ix, "inheritsinterface", 3, NULL,
+	  OX::addChild(ix, "inheritsinterface", 3, NULL,
 			"repid", repid(s, "ProvidesPortStatisticsProvider", "BULKIO"));
-	  SCA::addChild(ix, "inheritsinterface", 3, NULL,
+	  OX::addChild(ix, "inheritsinterface", 3, NULL,
 			"repid", repid(s, "updateSRI", "BULKIO"));
 	}
    }

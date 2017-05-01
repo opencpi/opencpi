@@ -15,7 +15,7 @@ function bad {
   [ -z "$OcpiXilinxLicenseFile" ] && bad Could not find the Xilinx license file.
   [ -f $OcpiXilinxVivadoDir/.settings64-Vivado.sh ] ||
     bad No Xilinx settings file in $OcpiXilinxVivadoDir.
-  [ -n "$verbose" ] && echo Attempting to run a tiny simulation to test isim.
+  [ -n "$verbose" ] && echo Attempting to run a tiny simulation to test xsim. 1>&2
   probefile=$(cd $(dirname $0); pwd)/probe.exe.tgz
   [ -f "$probefile" ] ||
     bad Missing xsim probe support file \"$probefile\".

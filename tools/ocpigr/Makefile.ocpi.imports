@@ -1,3 +1,4 @@
+
 # #####
 #
 #  This file is part of OpenCPI (www.opencpi.org).
@@ -22,11 +23,16 @@
 #  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
 #
 ########################################################################### #
-# modelsim crashes on this one:
-     # Loading ptestonly_modelsim_pf_base.mkUUID
-     # ** Failure: (vsim-5) ****** Memory failure. *****
-     # Bad pointer/access type passed to memory subsystem.
-     # Pointer may have been previously deallocated.
-# xsim crashes when processing the ptest worker, so it is also excluded
-#ExcludePlatforms= xsim
-include $(OCPI_CDK_DIR)/include/hdl/hdl-assembly.mk
+
+ALLINC +=\
+  $(CDKUTILS_EXPORTS) \
+  $(OCPIOS_EXPORTS) \
+  $(UTIL_EXPORTS) \
+  $(LIBRARY_EXPORTS) \
+
+ALLLIBS += \
+  $(CDKUTILS_LIBS) \
+  $(LIBRARY_LIBS) \
+  $(UTIL_LIBS) \
+  $(OCPIOS_LIBS)
+

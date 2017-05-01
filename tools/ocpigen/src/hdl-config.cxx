@@ -190,14 +190,17 @@ parseDeviceProperties(ezxml_t x, OU::Assembly::Properties &iPVs) {
       OU::Property &p = **pi;
       for (ezxml_t px = ezxml_cchild(x, "Property"); px; px = ezxml_cnext(px))
 	if (!strcasecmp(p.m_name.c_str(), ezxml_cattr(px, "name"))) {
+	  if ((err = iPVs[nPVs].parse(px)))
+	    return err;
 	  for (unsigned i = 0; i < m_instancePVs.size(); i++)
-	    if (!strcasecmp(p.m_name.c_str(), m_instancePVs[i].m_name.c_str()))
+	    if (!strcasecmp(p.m_name.c_str(), m_instancePVs[i].m_name.c_str()) &&
+		iPVs[nPVs].m_value != m_instancePVs[i].m_value)
 	      return OU::esprintf("device instance of device type \"%s\" cannot "
 				  "override the parameter \"%s\" that is already specified "
 				  "for the platform or card",
 				  m_implName, p.m_name.c_str());
 	  // This parameter not specified for the board so we can use it
-	  iPVs[nPVs++].parse(px);
+	  nPVs++;
 	  goto nextParam;
 	}
       // For this parameter, nothing is specified in the instance.  If it is specified for

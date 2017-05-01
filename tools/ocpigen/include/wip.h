@@ -276,6 +276,7 @@ class WsiPort : public DataPort {
   const char *adjustConnection(Port &consumer, const char *masterName, Language lang,
 			       OcpAdapt *prodAdapt, OcpAdapt *consAdapt, size_t &unused);
   void emitImplAliases(FILE *f, unsigned n, Language lang);
+  void emitImplSignals(FILE *f);
   void emitSkelSignals(FILE *f);
   void emitRecordInputs(FILE *f);
   void emitRecordOutputs(FILE *f);
@@ -319,6 +320,7 @@ class WmemiPort : public OcpPort {
 class WtiPort : public OcpPort {
   size_t m_secondsWidth, m_fractionWidth;
   bool m_allowUnavailable;
+  std::string m_secondsWidthExpr, m_fractionWidthExpr;
   WtiPort(const WtiPort &other, Worker &w, std::string &name, const char *&err);
  public:
   WtiPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err);
@@ -334,6 +336,9 @@ class WtiPort : public OcpPort {
   void emitRecordInputs(FILE *f);
   void emitRecordOutputs(FILE *f);
   void emitPortDescription(FILE *f, Language lang) const;
+  void emitRecordInterfaceConstants(FILE *f);
+  void emitInterfaceConstants(FILE *f, Language lang);
+  const char *resolveExpressions(OCPI::Util::IdentResolver &ir);
   const char *finalizeExternal(Worker &aw, Worker &iw, InstancePort &ip,
 			       bool &cantDataResetWhileSuspended);
 };
@@ -599,7 +604,7 @@ class Worker : public Parsed, public OU::IdentResolver {
   int m_defaultDataWidth;           // initialized to -1 to allow zero
   Language m_language;
   ::Assembly *m_assembly;
-  Worker *m_slave;
+  Worker *m_slave;                  // from slave attribute - is RCC-only
   HdlDevice *m_emulate;
   Signals m_signals;
   SigMap  m_sigmap;                 // map signal names to signals

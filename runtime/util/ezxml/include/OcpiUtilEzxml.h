@@ -229,6 +229,9 @@ namespace OCPI {
       extern ezxml_t
 	ezxml_firstChild(ezxml_t xml),
 	ezxml_nextChild(ezxml_t xml),
+        addChild(ezxml_t x, const char *name, unsigned level, const char *txt = NULL,
+		 const char *attr1 = NULL, const char *value1 = NULL,
+		 const char *attr2 = NULL, const char *value2 = NULL),
 	findChildWithAttr(ezxml_t x, const char *cName, const char *aName,
 			  const char *value);
       inline char *ezxml_content(ezxml_t x) { return x->txt; }
@@ -248,7 +251,8 @@ namespace OCPI {
 		     void *arg),
 	// true only means its an error to do anything but true, for cases
 	// when you are only allowed to "add truth", not set false
-        *getBoolean(ezxml_t x, const char *name, bool *b, bool trueOnly = false),
+        *getBoolean(ezxml_t x, const char *name, bool *b, bool trueOnly = false, 
+		    bool *found = NULL),
         *checkAttrs(ezxml_t x, ...),
         *checkElements(ezxml_t x, ...),
 	*checkAttrsV(ezxml_t x, const char **attrs),
@@ -265,10 +269,8 @@ namespace OCPI {
         *getNumber64(ezxml_t x, const char *attr, uint64_t *np,
 		     bool *found = NULL, uint64_t defaultValue = 0,
 		     bool setDefault = true, bool required = false),
-	*getExprNumber(ezxml_t x, const char *attr, size_t &np, bool &found, std::string *expr,
-		       const IdentResolver *resolver),
-	*parseExprNumber(const char *a, size_t &np, std::string *expr,
-			 const IdentResolver *resolver);
+	*getExprNumber(ezxml_t x, const char *attr, size_t &np, bool *found, std::string &expr,
+		       const IdentResolver *resolver);
       extern unsigned
 	countChildren(ezxml_t x, const char*cName),
 	countAttributes(ezxml_t x);
