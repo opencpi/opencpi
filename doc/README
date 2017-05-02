@@ -1,25 +1,19 @@
-The documents at the top level of this directory are current and relevant for users.
-
 The pdf and html directories contain documents ready for viewing.
-The odt directory contains source documents in ODT format.
+The odt, xls, docs, and tex directories hold document sources in those formats.
 
-The "internal" directory contains specifications and documents about the internals of OpenCPI.
-The "old" directory contains documents that are no longer current, but are available for historical reasons.
+The "internal" directory contains specifications and documents about the internals of OpenCPI,
+which may not be kept current.
+The "old" directory contains documents that are specifically no longer current, but are available
+for historical reasons.
 
-Near term documentation plans (GFY15):
-
-The "Generic Authoring Model" content will be absorbed into the "Component Development" doc.
-The "RCC Reference" content will be absorbed into the "Component Development" doc.
-The C++ Language variant of the RCC model will be documented in the "Component Development" doc.
-A new Platform Development doc will be introduced.
-A "Introduction/Technical Summary" document will be added.
-
-Thus the key doc set will be:
-1. Introduction
-2. Installation/Getting Started
-3. Application Development
-4. Component Development
-5. Platform Development
+The primary document set is (in pdf and html):
+1. Overview -- currently a placeholder document - OpenCPI_Overview
+2. Installation/Getting Started - OpenCPI_Installation
+3. Application Development - OpenCPI_Application_Development
+4. Component Development - OpenCPI_Component_Development
+5. RCC (C, C++) Component Development - OpenCPI_RCC_Development
+6. HDL (VHDL, Verilog) Development - OpenCPI_HDL_Development
+7. Platform Development - OpenCPI_Platform_Development
 
 
 

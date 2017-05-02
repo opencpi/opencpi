@@ -11,16 +11,17 @@ if test "$OCPI_CDK_DIR" = ""; then
      echo You must supply the IP address of the OpenCPI server machine as an argument to this script.
      break
   fi
-  # CUSTOMIZE THIS LINE FOR YOUR ENVIRONENT
+  # CUSTOMIZE THIS LINE FOR YOUR ENVIRONMENT
   # Second arg is shared file system mount point on development system
   # Third argument is opencpi dir relative to mount point
   # Fourth argument is time server for the (old) time protocol used by the rdate command
   # Fifth arg is timezone spec - see "man timezone" for the format.
   export OCPI_TOOL_MODE=
   export OCPI_TARGET_MODE=
-  source /mnt/card/opencpi/zednetsetup.sh $1 /exports/user/opencpi ocpi/main/opencpi/exports time.nist.gov EST5EDT,M3.2.0,M11.1.0
+  source /mnt/card/opencpi/zynq_net_setup.sh $1 /opt/opencpi cdk time.nist.gov EST5EDT,M3.2.0,M11.1.0
   break # this script will be rerun recursively by setup.sh
 fi
+alias ll='ls -lt'
 # Tell the ocpihdl utility to always assume the FPGA device is the zynq PL.
 export OCPI_DEFAULT_HDL_DEVICE=pl:0
 # The system config file sets the default SMB size
@@ -28,6 +29,9 @@ export OCPI_SYSTEM_CONFIG=/mnt/card/opencpi/system.xml
 export OCPI_SUPPRESS_HDL_NETWORK_DISCOVERY=1
 # Get ready to run some test xml-based applications
 PS1='% '
+# add any commands to be run every time this script is run
+
+
 # Print the available containers as a sanity check
 echo Discovering available containers...
 ocpirun -C

@@ -6,12 +6,15 @@
 
 trap "trap - ERR; break" ERR; for i in 1; do
 if test "$OCPI_CDK_DIR" = ""; then
-  # CUSTOMIZE THIS LINE FOR YOUR ENVIRONENT
+  # CUSTOMIZE THIS LINE FOR YOUR ENVIRONMENT
   # First argument is time server for the (old) time protocol used by the rdate command
   # Second argument is timezone spec - see "man timezone" for the format.
-  source /mnt/card/opencpi/zedsetup.sh time.nist.gov EST5EDT,M3.2.0,M11.1.0
+  source /mnt/card/opencpi/zynq_setup.sh time.nist.gov EST5EDT,M3.2.0,M11.1.0
+  # add any commands to be run only the first time this script is run
+
   break # this script will be rerun recursively by setup.sh
 fi
+alias ll='ls -lt'
 # Tell the ocpihdl utility to always assume the FPGA device is the zynq PL.
 export OCPI_DEFAULT_HDL_DEVICE=pl:0
 # The system config file sets the default SMB size
@@ -21,6 +24,9 @@ export OCPI_SUPPRESS_HDL_NETWORK_DISCOVERY=1
 cd $OCPI_CDK_DIR/xml
 # Shorten the default shell prompt
 PS1='% '
+# add any commands to be run every time this script is run
+
+
 # Print the available containers as a sanity check
 echo Discovering available containers...
 ocpirun -C

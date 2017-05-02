@@ -50,7 +50,6 @@ if test -z $RPM_BUILD_ROOT; then
   OCPI_BOOTSTRAP=`pwd`/../../exports/scripts/ocpibootstrap.sh; source $OCPI_BOOTSTRAP
   source ../../exports/scripts/ocpitarget.sh ""
   EXAMPLES_ROOTDIR=$OCPI_CDK_DIR
-  OCPIRUN_PATH=$OCPI_CDK_DIR/bin/$OCPI_TOOL_DIR/
   if test "$OCPI_LIBRARY_PATH" = ""; then
     # Put all rcc components, and available bitstreams for the platform.
     export OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/lib/components:$OCPI_CDK_DIR/lib/hdl/assemblies:$OCPI_CDK_DIR/lib/platforms/$HDL_PLATFORM
@@ -60,7 +59,6 @@ else
   OCPI_CDK_DIR=${RPM_BUILD_ROOT}/opt/opencpi/cdk
   # Cannot just use CDK/lib and CDK/bin because the driver stuff isn't pushed there
   EXAMPLES_ROOTDIR=${RPM_BUILD_ROOT}/opt/opencpi/base_project_source
-  OCPIRUN_PATH=${RPM_BUILD_ROOT}/opt/opencpi/cdk/bin/$OCPI_TOOL_DIR/
   # This is using a "path" variable assuming it has no colons in it!
   export OCPI_LIBRARY_PATH=${OCPI_CDK_DIR}/components/:${OCPI_HDL_PLATFORM_PATH}/${HDL_PLATFORM}/
 fi
@@ -114,7 +112,7 @@ cp -L ${KERNEL_LIB_DIR}/mdev-opencpi.rules $sd/opencpi/lib/${OCPI_TARGET_HOST}
 for b in run hdl zynq serve; do
   cp -L $BIN_DIR/ocpi$b $sd/opencpi/bin
   # Ensure the deployed files are stripped - if we debug we'll be looking at dev-sys executables
-  $OCPI_CROSS_BUILD_BIN_DIR/$OCPI_CROSS_HOST-strip $sd/opencpi/bin/ocpi$b
+  test -z $RPM_BUILD_ROOT && $OCPI_CROSS_BUILD_BIN_DIR/$OCPI_CROSS_HOST-strip $sd/opencpi/bin/ocpi$b
 done
 # we use rdate for now... : cp ../ntpclient $sd/opencpi/bin
 # copy driver libraries to the subdirectory so that OCPI_CDK_DIR will
@@ -133,7 +131,7 @@ cp $sx $sd/opencpi/system.xml
 n=0
 echo Adding artifacts found in OCPI_LIBRARY_PATH for ${OCPI_TARGET_PLATFORM} and ${HDL_PLATFORM} HDL targets.
 export OCPI_SYSTEM_CONFIG=
-for i in $(${OCPIRUN_PATH}ocpirun -A ${OCPI_TARGET_PLATFORM},${HDL_PLATFORM} | xargs -n1 readlink -e | sort -u ); do
+for i in $(${OCPI_CDK_DIR}/bin/${OCPI_TOOL_DIR}/ocpirun -A ${OCPI_TARGET_PLATFORM},${HDL_PLATFORM} | xargs -rn1 readlink -e | sort -u ); do
   cp $i $sd/opencpi/artifacts/$(printf %03d-%s $n $(basename $i))
   n=$(expr $n + 1)
 done

@@ -3,7 +3,7 @@ include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
 
 MyMake=echo ===================$(or $(3),Making) HDL $(1); \
        $(MAKE) --no-print-directory -C $(2)$(1) $(HdlPassTargets)
-.PHONY: primitives devices platforms components adapters assemblies
+.PHONY: base portable primitives devices platforms components adapters assemblies clean
 ifndef OCPI_CDK_DIR
 export OCPI_CDK_DIR=$(shell pwd)/../ocpi
 $(info Setting OCPI_CDK_DIR to $(OCPI_CDK_DIR))

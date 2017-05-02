@@ -101,4 +101,4 @@ endif # OCPI_MINIMAL_BUILD
 #
 #        clkgen_ti_cdce72010.hdl \
 
-include $(OCPI_CDK_DIR)/include/lib.mk
+include $(OCPI_CDK_DIR)/include/library.mk

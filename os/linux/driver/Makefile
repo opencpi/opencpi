@@ -129,7 +129,7 @@ URULESFILE=99-$(MODNAME).rules
 MRULESFILE=mdev-$(MODNAME).rules
 TMP_FILES=Module.markers Module.symvers .opencpi* opencpi.mod.* opencpi.o .tmp* modules.order
 
-$(MODFILE): opencpi.c $(shell echo $$(cd $(KERNELDIR); pwd -P))  $(KERNELDIR)/include/config/auto.conf
+$(MODFILE): opencpi.c $(shell echo $$(cd $(KERNELDIR); pwd -P)) $(KERNELDIR)/include/config/auto.conf
 	$(AT)echo Building kernel module $(MODFILE)
 	$(and $(KERNELDIR),$(MAKE) -C $(KERNELDIR) M=$(PWD) V=2 modules)
 	$(AT)mkdir -p $(MyTargetDir)

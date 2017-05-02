@@ -30,8 +30,9 @@ else
     if test -f /etc/opencpi-release; then
       read OCPI_TOOL_PLATFORM OCPI_TOOL_HOST x < /etc/opencpi-release
     else
+      echo No /etc/opencpi-release - assuming ZedBoard hardware
       OCPI_TOOL_PLATFORM=zed
-      OCPI_TOOL_HOST=linux-zynq-arm
+      OCPI_TOOL_HOST=linux-x13_4-arm
     fi
     export OCPI_TOOL_PLATFORM
     export OCPI_TOOL_HOST
