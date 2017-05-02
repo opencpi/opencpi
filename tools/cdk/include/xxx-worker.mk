@@ -385,7 +385,7 @@ ifneq ($(wildcard $(Worker).build),)
   $(LibDir)/$(Worker)-build.xml: $(Worker).build | $(LibDir)
 	$(AT)$(call MakeSymLink2,$(Worker).build,$(LibDir),$(Worker)-build.xml)
 else
-  LibLinks+=$(LibDir)/$(Worker).build
+  LibLinks+=$(LibDir)/$(Worker)-build.xml
   $(LibDir)/$(Worker)-build.xml: $(GeneratedDir)/$(Worker)-build.xml | $(LibDir)
 	$(AT)$(call MakeSymLink,$(GeneratedDir)/$(Worker)-build.xml,$(LibDir))
 endif
