@@ -18,7 +18,7 @@ runtime/library
 runtime/container
 runtime/hdl
 runtime/hdl-support
-runtime/ocl
+# runtime/ocl COMING SOON
 runtime/rcc
 runtime/remote
 runtime/ctests
@@ -27,7 +27,6 @@ tools/cdkutils
 tools/ocpigen
 tools/ocpisca
 tools/cdk/ocpidds
-# tools/astyle
 tests
 ################################################################################
 # exclusions, sometimes only applying to categories
@@ -35,7 +34,6 @@ tests
 -runtime/dataplane main
 -runtime/ctests
 +runtime/ctests/target-<target>/test_* bin/<target>/ctests/
-# -tools/astyle
 ################################################################################
 # inclusions that are not automatically derived from facilities
 +tools/cdk/default-system.xml
@@ -62,9 +60,9 @@ tests
 +tools/cdk/scripts/makeStaticWorker scripts/
 +tools/cdk/scripts/ocpidriver scripts/
 +tools/cdk/scripts/ocpixml scripts/
-+tools/cdk/scripts/sudo_ocpi scripts/
 +tools/cdk/scripts/ocpisetup.sh scripts/
 +tools/cdk/scripts/ocpibootstrap.sh scripts/
++tools/cdk/scripts/ocpisudo scripts/
 +tools/cdk/scripts/ocpitarget.sh scripts/
 +tools/cdk/scripts/ocpidev scripts/
 +tools/cdk/scripts/util.sh scripts/
@@ -96,8 +94,8 @@ tests
 # We export everything in tools/cdk/include/hdl, although we could be more careful...
 +tools/cdk/include/hdl/* include/hdl/
 # These should be in a common-to-zynq-platforms dir in "platforms"...
-+tools/cdk/include/rcc/linux-c6-x86_64=linux-zynq-arm.mk include/rcc/
-+tools/cdk/include/rcc/linux-c7-x86_64=linux-zynq-arm.mk include/rcc/
+# +tools/cdk/include/rcc/linux-c6-x86_64=linux-zynq-arm.mk include/rcc/
+# +tools/cdk/include/rcc/linux-c7-x86_64=linux-zynq-arm.mk include/rcc/
 # These are to allow them carefully for RCC workers that access other workers in the app
 # They are currently redundant with the top level include, but they are here so we can
 # Ultimately control visibility for workers
@@ -147,7 +145,7 @@ tests
 +tools/ocpigr/target-<target>/ocpigr bin/<target>/
 ################################################################################
 # OCL related exclusions and additions
-+tools/cdk/include/ocl include/
+# +tools/cdk/include/ocl include/ COMING SOON
 # Kernel module and main license files
 +LICENSE.txt lib/<target>/
 +LICENSE.txt

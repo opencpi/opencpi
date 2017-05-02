@@ -1,4 +1,4 @@
-<Protocol> 
+<Protocol>
   <Operation name="samples" >
    <Argument name="iq" type="Struct" SequenceLength="4092">
      <Member name="I" type="Short"/>

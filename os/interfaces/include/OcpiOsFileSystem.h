@@ -411,6 +411,19 @@ namespace OCPI {
         throw (std::string);
 
       /**
+       * Copy a file.
+       *
+       * \param[in] srcName  The original file name.
+       * \param[in] destName The name for the new copy of the file.
+       *
+       * \throw std::string If the file can not be renamed.
+       */
+
+      void copy (const std::string & srcName,
+                   const std::string & destName)
+        throw (std::string);
+
+      /**
        * Remove a file.
        *
        * \param[in] name A file name.

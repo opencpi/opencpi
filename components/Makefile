@@ -85,7 +85,7 @@ Workers += \
 	time_gen.hdl
 
 # These components are old / untested and not typically shipped (AV-790,AV-877)
-ifndef RPM_BUILD_ROOT
+ifndef OCPI_MINIMAL_BUILD
 Workers += \
 	adc_unpack.rcc \
 	blur.rcc \
@@ -136,7 +136,7 @@ Tests += \
 	sym_fir_real.test \
 	sym_fir_complex.test \
 	noise_gen_complex.test
-endif # not RPM_BUILD_ROOT
+endif # not OCPI_MINIMAL_BUILD
 
 ifndef OCPI_MINIMAL_BUILD
 Workers += \

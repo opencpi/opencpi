@@ -734,6 +734,14 @@ OCPI::OS::FileSystem::rename (const std::string & srcName,
 }
 
 void
+OCPI::OS::FileSystem::copy (const std::string & srcName,
+                            const std::string & destName)
+  throw (std::string)
+{
+  throw std::string("Unimplemented OCPI::OS::FileSystem::copy - need to wrap CopyFile()");
+}
+
+void
 OCPI::OS::FileSystem::remove (const std::string & name)
   throw (std::string)
 {

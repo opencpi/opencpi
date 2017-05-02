@@ -1,9 +1,5 @@
-<HdlImplementation Language="vhdl">
+<HdlImplementation Language="vhdl" spec="wsi_16_to_32_spec">
 
-  <ComponentSpec name="wsi_16_to_32" nocontrol='true'>
-    <DataInterfaceSpec Name="in" Producer="false"/>
-    <DataInterfaceSpec Name="out" Producer="true" buffersize='in'/>
-  </ComponentSpec>
 
   <streaminterface name='in' datawidth='16'/>
   <!-- 32768 = 2 (# of buffers) * [round(buffersize,16) + 16 (metadata) + 16 (4 flags round up to 16)] -->

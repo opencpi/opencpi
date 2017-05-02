@@ -49,8 +49,8 @@ end component cwd;
 
 -- The basic verilog function for getting at the cwd= "plusarg".
 component cwd_internal is
-   generic(length  : natural := cwd_length);
-   port   (cwd     : out std_logic_vector(0 to length*8-1);
+   generic(length : natural := cwd_length);
+   port   (cwd    : out std_logic_vector(0 to length*8-1);
            len_err : out std_logic);
 end component cwd_internal;
 

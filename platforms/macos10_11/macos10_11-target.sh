@@ -1,9 +1,4 @@
-# Settings when targeting this platform
-export OcpiLibraryPathEnv=DYLD_LIBRARY_PATH
-export OCPI_OCL_LIBS="-locpi_ocl -framework OpenCL"
-export OcpiAsNeeded=
-export OCPI_EXPORT_DYNAMIC=
-export OCPI_TARGET_CXXFLAGS+=" -std=c++11"
-export OCPI_HAVE_OPENCL=1
-export OCPI_OPENCL_OBJS=/System/Library/Frameworks/OpenCL.framework/Versions/A/OpenCL
-export OCPI_DYNAMIC=1
+echo 'Error: this file (platforms/macos10_11/macos10_11-target.sh) should no longer be included for environment setup.'
+
+echo 'If you want the environment fixed for macos10_11, just export OCPI_TARGET_PLATFORM=macos10_11'
+exit 1

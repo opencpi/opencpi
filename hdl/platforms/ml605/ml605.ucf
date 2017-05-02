@@ -1163,4 +1163,3 @@ NET "FMC_LPC_LA32_P"                LOC = "N25";    ## H37 on J63
 NET "FMC_LPC_LA33_N"                LOC = "K31";    ## G37 on J63
 NET "FMC_LPC_LA33_P"                LOC = "K32";    ## G36 on J63
 NET "FMC_LPC_PRSNT_M2C_L"           LOC = "AD9";    ## H2  on J63
-

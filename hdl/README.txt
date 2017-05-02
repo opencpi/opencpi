@@ -41,7 +41,7 @@ and cores used to build application workers, device workers and other infrastruc
 
 The "assemblies" directory holds assembly configurations built into bitstreams, consisting of
 workers, which will build/synthesize for particular platforms.  The workers in such an assembly
-are essentially a pre-connected, pre-instanced subset of an applicatoin.
+are essentially a pre-connected, pre-instanced subset of an application.
 
 The "devices" directory holds device workers that may use primitives, and are optionally
 used in platforms (i.e. they are included when an app needs them, but not otherwise).
@@ -50,7 +50,7 @@ Examples are dram (with memory controller), gbe, adc, dac, flash memory, etc.
 The "cards" directory holds specs and device workers for "plug-in" cards that plug into
 slots in a platform.  E.g. FMC cards.
 
-The "platforms" directory holds platform ip and parameters used to build "platform cores" that
+The "platforms" directory holds platform IP and parameters used to build "platform cores" that
 then get combined with applications to make bitstreams.  A "platform" is a particular chip on
 a board with various devices attached.  Since most currently supported boards have one FPGA,
 normally a platform is a chip on a board, but when there are multiple supported FPGAs on a

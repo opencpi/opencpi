@@ -8,7 +8,6 @@
 # These are universally available so far so we do this once and pass then to all probes.
 HostSystem=`uname -s | tr A-Z a-z`
 HostProcessor=`uname -m | tr A-Z a-z`
-
 # Each recognizable platform has a script <platform>-check.sh
 # If there is a file platform-list, then we look for them in that order.
 # Otherwise, we just look in alphabetical order
@@ -22,7 +21,7 @@ else
     if test -d $i; then
       p=$(basename $i)
       if test -f $i/$p-check.sh; then
-        platforms+=" $(basename $i)"
+        platforms="$platforms $(basename $i)"
       fi
     fi
 done

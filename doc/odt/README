@@ -15,7 +15,7 @@ If any editing of these ODT documents is touched, the template should be importe
 first.
 
 Look at the "diagrams.txt" file if you are adding or editing diagrams in these
-documents. They are currently edited in powerpoint, and not yet included in the repo.
+documents. They are currently edited in PowerPoint, and not yet included in the repo.
 
 Some conventions used in editing these ODT documents:
 
@@ -25,7 +25,7 @@ selves should use the "code" paragraph style, with lines in that paragraph endin
 shift-return (line break), *not* separate paragraphs.  Code in table cells should be in the 
 "table code" paragraph style.
 
-When a term or document name is introduced for the first time, use the "first emphasis" character style.  If a term is used afterword, that still should not read as "just a regular word", continue to use this.
+When a term or document name is introduced for the first time, use the "first emphasis" character style.  If a term is used afterward, that still should not read as "just a regular word", continue to use this.
 
 If a word or phrase is a hyperlink, underline it.
 
@@ -53,4 +53,3 @@ Use italics for typical emphasis as in common usage, as in all writing.
 Use bold for extra strong emphasis very rarely.
 
 Use bold-italics/"first emphasis" char style for terms used specially in the document, until it truly seems routine and then drop it.
-

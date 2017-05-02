@@ -3,6 +3,8 @@
 #*.html
 # except foo.html which is maintained by hand.
 #!foo.html
+.tags*
+TAGS
 # Ignore objects and archives.
 *.obj
 *.so
@@ -17,8 +19,10 @@
 target-*/
 *.deps
 gen/
+**/driver/modules.order
 # temporary, until we rename targets
 *.old
+*.bak
 *.hold
 *.orig
 *.log
@@ -32,3 +36,8 @@ lib/
 run/
 !/platforms/xilinx*/opencpi-*-release*/**/lib
 !/platforms/xilinx*/opencpi-*-release*/**/*.so
+tools/cdk/export/*
+tools/cdk/include/ctests/*
+my-env.sh
+myzed.sh
+exports

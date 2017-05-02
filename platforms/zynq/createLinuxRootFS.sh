@@ -1,6 +1,12 @@
 #!/bin/bash
 # See the "usage" message below
 set -e
+
+if ! which fakeroot >/dev/null; then
+  echo "Could not find 'fakeroot'. Please install it. (For CentOS 7, you must use the EPEL Repository.)"
+  false
+fi
+
 if test "$1" = "" -o "$1" = "--help" -o "$1" = "-help" -o "$2" = ""; then
   cat <<EOF
 The purpose of this script is to put an appropriately patched root file system
@@ -20,6 +26,7 @@ Usage is: createLinuxRootFS.sh <release-name> <work-dir>
 EOF
   exit 1
 fi
+
 case $2 in (/*) gdir=$2 ;; (*) gdir=`pwd`/$2;; esac
 rel=$1
 rdir=$gdir/xilinx-zynq-binary-release-for-$rel
@@ -78,8 +85,8 @@ $FROM/mkimage \
 # The root fs clone could be further pruned to *only* support debugging.
 rm ../out.root.image.gz ../in.root.image
 cd $FROM
-echo A new patched root file system has been created, and placed in $(basename $FROM)
-echo Copying some ancillary files from the binary release into the opencpi zynq release
+echo "A new patched root file system has been created, and placed in $(basename $FROM)"
+echo "Copying some ancillary files from the binary release into the opencpi zynq release"
 # This is where we unfortunately need per-platform knowledge for now, otherwise we need a
 # whole copy of the binary release in our release dir.  We do for all platforms we know.
 for i in $rdir/*; do
@@ -92,6 +99,6 @@ for i in $rdir/*; do
      esac
  fi
 done
-echo ============================================================================================
-echo That directory is now complete: ready for creating a bootable SD card.
-echo ============================================================================================
+echo "============================================================================================"
+echo "That directory is now complete: ready for creating a bootable SD card."
+echo "============================================================================================"

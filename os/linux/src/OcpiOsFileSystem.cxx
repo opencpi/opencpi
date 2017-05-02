@@ -43,6 +43,7 @@
 #include <cctype>
 #include <ctime>
 #include <cstdio>
+#include <fstream>
 #include "OcpiOsAssert.h"
 #include "OcpiOsFileSystem.h"
 #include "OcpiOsFileIterator.h"
@@ -527,6 +528,35 @@ rename (const std::string & srcName,
   if (::rename (srcNativeName.c_str(), destNativeName.c_str())) {
     throw Posix::getErrorMessage (errno);
   }
+}
+
+void
+copy (const std::string & srcName,
+      const std::string & destName)
+  throw (std::string)
+{
+  std::string srcNativeName = toNativeName (srcName);
+  std::string destNativeName = toNativeName (destName);
+
+  { // anon block for file closing
+    std::ifstream src(srcNativeName.c_str(), std::ios::binary);
+    std::ofstream dst(destNativeName.c_str(), std::ios::binary);
+    // copy permissions (not super-secure)
+    struct stat mystats;
+    stat(srcNativeName.c_str(), &mystats);
+    chown(destNativeName.c_str(),mystats.st_uid,mystats.st_gid);
+    chmod(destNativeName.c_str(),mystats.st_mode);
+    dst << src.rdbuf();
+  }
+
+  // check size, permissions, etc.
+  struct stat ins, outs;
+  stat(srcNativeName.c_str(), &ins);
+  stat(destNativeName.c_str(), &outs);
+  if (ins.st_uid != outs.st_uid) throw std::string("File UID did not match!");
+  if (ins.st_gid != outs.st_gid) throw std::string("File GID did not match!");
+  if (ins.st_mode != outs.st_mode) throw std::string("File Mode did not match!");
+  if (ins.st_size != outs.st_size) throw std::string("File Size did not match!");
 }
 
 void

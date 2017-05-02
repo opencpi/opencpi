@@ -53,11 +53,15 @@ begin
   end if;
   file_name := cwd_join(cwd, name);
   file_open(status, thefile, file_name, mode);
-  if status = open_ok then
+
+  if status = open_ok then 
+    -- If we get here far, file was successfully opened
     report "File opened successfully for " & msg & ": " & file_name;
   else
+    -- Fail if the status indicates file read failure
     report "File could not be opened for " & msg & ": " & file_name severity failure;
-  end if; 
+  end if;
+
 end open_file;
 
 procedure close_file(file thefile : char_file_t; name : string_t) is

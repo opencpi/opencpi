@@ -8,7 +8,7 @@
 
   <!-- Properties -->
   <Property name='source' type='enum' enums='adc,count,loopback' default='adc' initial='1'/>
-  <Specproperty name='messageSize' default='2048'/>
+  <Specproperty name='messageSize' default='8192'/>
   <Specproperty name='overrun' default='0'/>
 
   <!-- Ports -->

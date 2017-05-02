@@ -1,7 +1,7 @@
-#/bin/sh --noprofile
+#!/bin/sh --noprofile
 
 ################################################################################
-# jtag support functions for ml605: 
+# jtag support functions for ml605:
 # Be sure to write error messages to stderr since some funtions return
 # data on stdout
 ################################################################################
@@ -65,19 +65,29 @@ EOF
     echo $CABLES
     good
    ;;
+  (unlock)
+    echo "Telling iMPACT to clear all locks. If you are using a cable in another application, things may fail!" 1>&2
+    $imp >> $temp.unlock.log <<EOF
+cleancablelock
+exit
+EOF
+    good
+   ;;
   (part)
     port=$3
     part=$4
     echo Finding cable position of part \"$part\" on cable at port \"$port\" 1>&2
     temps=$temp.part
     for pp in 1 2 3 4 5 6 7 8 9; do
+      [ -n "OCPI_DEBUG_JTAG" ] && echo "Checking part #${pp}..." 1>&2
       $imp -batch <<EOF 2> $temp.log 1>&2
 setMode -bs
 setCable -p $port
 identify
-readidcode -p $pp 
+readidcode -p $pp
 EOF
       if test $? = 0; then
+         [ -n "OCPI_DEBUG_JTAG" ] && echo "Device found: See $temp.log.${pp}" 1>&2 && cp $temp.log{,.${pp}}
          ed $temp.log <<EOF > /dev/null 2>&1
            $
            ?IDCODE?+
@@ -91,6 +101,7 @@ EOF
            good
          fi
        else
+         [ -n "OCPI_DEBUG_JTAG" ] && echo "Bad return. $temp.log.${pp} MIGHT exist." 1>&2 && cp $temp.log{,.${pp}} || :
          break
        fi
     done
@@ -130,5 +141,5 @@ EOF
     good
     ;;
 esac
-echo Unknown jtag function $func 1>&2
+echo Unknown JTAG function $func 1>&2
 exit 1

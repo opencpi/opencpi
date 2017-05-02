@@ -34,5 +34,5 @@ Workers = zipper_i2c.hdl \
           zipper_i2c_em.hdl \
           fmcomms3_i2c.hdl \
 
-include $(OCPI_CDK_DIR)/include/lib.mk
+include $(OCPI_CDK_DIR)/include/library.mk
 all: hdl

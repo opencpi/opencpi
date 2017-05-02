@@ -18,6 +18,9 @@ architecture rtl of alst4_worker is
   signal ctl_rst_n          : std_logic;        -- reset associated with control plane clock
   signal pci_id             : std_logic_vector(15 downto 0);
   signal unoc_out_data      : std_logic_vector (152 downto 0);
+  signal props_in_leds_n    : std_logic_vector(led'range);
+  signal led_n_7            : std_logic;
+  signal led_n_0            : std_logic;
   component pci_alst4 is
   port(
     sys0_clk                : in  std_logic;
@@ -58,8 +61,8 @@ begin
              pcie_rstn      => pcie_rstn,
              pcie_rx        => pcie_rx,
              pcie_tx        => pcie_tx,
-             pci_blink      => led(7),
-             pci_link_up    => led(0),
+             pci_blink      => led_n_7,
+             pci_link_up    => led_n_0,
              -- PCI signals facing into the rest of the platform
              p125clk        => ctl_clk,  -- we use this output for our control clock
              p125rstn       => ctl_rst_n,
@@ -88,9 +91,12 @@ begin
   props_out.UUID            <= metadata_in.UUID;
   props_out.romData         <= metadata_in.romData;
   props_out.pciId          <= ushort_t(unsigned(pci_id));
-  -- Settable properties - drive the leds that are not driven by hardware from the property
-  led(6 downto 1)           <= std_logic_vector(props_in.leds(6 downto 1));
-  led(led'left downto 8)    <= (others => '0');
+  -- Settable properties - drive the active-low led signals that are not driven by hardware from the property
+  props_in_leds_n <= not std_logic_vector(props_in.leds(led'range));
+  led(7)                    <= not led_n_7;
+  led(6 downto 1)           <= props_in_leds_n(6 downto 1);
+  led(0)                    <= not led_n_0;
+  led(15 downto 8)          <= props_in_leds_n(15 downto 8);
   -- Drive metadata interface
   metadata_out.clk          <= ctl_clk;
   metadata_out.romAddr      <= props_in.romAddr;

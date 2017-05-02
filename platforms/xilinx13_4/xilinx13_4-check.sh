@@ -1,5 +1,5 @@
 #!/bin/sh --noprofile
-if test $1 = linux -a $2 = armv7l -a -d /sys/class/xdevcfg; then
+if test "$1" = linux -a "$2" = armv7l -a -d /sys/class/xdevcfg; then
   # this "zynq" without further versioning is temporary until we add new os versions...
   dir=/mnt/card/opencpi/lib/*
   [ -d $dir ] && {

@@ -31,9 +31,9 @@ export LM_LICENSE_FILE=$OcpiXilinxLicenseFile
 set -vx
 appname=$1
 shift
-for i in $*; do echo for $i; plusargs="$plusargs -testplusarg $i"; done
-echo plusargs are: $plusargs
-echo doing ./$appname-xsim_pf.exe $plusargs
+for i in $*; do echo for $i; plusargs="$plusargs -testplusarg $i"; done 1>&2
+echo plusargs are: $plusargs 1>&2
+echo doing ./$appname-xsim_pf.exe $plusargs 1>&2
 exec xsim  -tl $plusargs $appname <<EOF
 report_scopes
 report_objects

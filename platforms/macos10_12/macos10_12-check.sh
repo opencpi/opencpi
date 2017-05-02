@@ -4,4 +4,3 @@ if test $1 = darwin && which -s sw_vers; then
   exit 0
 fi
 exit 1
-

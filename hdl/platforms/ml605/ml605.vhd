@@ -119,7 +119,7 @@ begin
                                   others => '0'); -- FIXME others not necessary when sequence
   -- Settable properties - drive the leds that are not driven by hardware from the property
   led(6 downto 1)           <= std_logic_vector(props_in.leds(6 downto 1));
-  led(led'left downto 8)    <= (others => '0');
+  led(12 downto 8)          <= std_logic_vector(props_in.leds(12 downto 8));
   -- Drive metadata interface
   metadata_out.clk          <= ctl_clk;
   metadata_out.romAddr      <= props_in.romAddr;

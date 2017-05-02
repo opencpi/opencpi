@@ -85,7 +85,7 @@ begin
                 write(data_file, char(ulong_t(resize(unsigned(std_logic_vector(in_in.opcode)), ulong_t'length)), i));
               end loop;
               for i in 0 to new_msg_length-1 loop
-                write(data_file, msg_buffer(i+1));   
+                write(data_file, msg_buffer(i+1));
               end loop;            
             end if;
             if new_msg_length = 0 and its(props_in.stopOnEOF) then

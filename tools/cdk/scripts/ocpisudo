@@ -1,7 +1,9 @@
 #!/bin/bash
-# "sudo -E" does not preserve $PATH (on Ubuntu at least).
+# "sudo -E" does not preserve $PATH (for security reasons)
 # So use this script instead to start commands in cdk scripts or bin dirs as root
+if test "0`/usr/bin/id -u 2>&1`" -eq 0; then
+  exec $*
+fi
 cmd=$1
 shift
 exec sudo -E LD_LIBRARY_PATH=$LD_LIBRARY_PATH PATH=$PATH `which $cmd` $*
-

@@ -99,7 +99,7 @@ begin
                       "01";
   rd_axi_lo        <= swap(axi_in.DATA(31 downto 0));
   rd_axi_hi        <= swap(axi_in.DATA(63 downto 32));
-  -- Read data routing to uxf DWs - pretty ugly..
+  -- Read data routing to uxf DWs
 --  rd_max_uxf       <= to_unsigned(4, rd_max_uxf'length)
 --                      when rd_ndw_for_uxf_r >= 4 else
 --                      rd_ndw_for_uxf_r;

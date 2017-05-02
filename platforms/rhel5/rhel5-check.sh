@@ -1,5 +1,5 @@
 #!/bin/sh --noprofile
-if test -f /etc/redhat-release; then
+if test -f /etc/redhat-release && test ! -L /etc/redhat-release; then
   read v0 v1 <<EOF
 `sed < /etc/redhat-release 's/^\(.\).*release \([0-9]\+\).*/\1 \2/' | tr A-Z a-z`
 EOF
@@ -10,5 +10,3 @@ EOF
   echo Cannot parse redhat release from /etc/redhat-release 1>&2
 fi
 exit 1
-
-

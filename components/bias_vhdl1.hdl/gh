@@ -1,5 +1,0 @@
-#!/bin/sh
-OC=/Users/jek/Business/ocpi/opencpi/hdl/primitives/ocpi
-ghdl -a -v \
---work=ocpi $OC/{gen/ocpi_types.vhd,ocpi.vhd,ocpi_impl.vhd,ocpi_types_body.vhd,gen/ocpi_types_impl.vhd}
-ghdl -a -v -P. --work=work gen/bias_vhdl1_{defs,impl}.vhd

@@ -4,7 +4,6 @@ else
   ALL:=$(wildcard *[^~])
 endif
 
-# Aaron: why the pipefail?
 DOALL=$(AT)\
   set -e;\
   set -o pipefail;\

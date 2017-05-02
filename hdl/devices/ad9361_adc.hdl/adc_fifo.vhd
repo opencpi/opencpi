@@ -41,13 +41,13 @@ begin
   fifo_d_deq <= wsi_ready and operating and fifo_d_not_empty;
   wsi_valid  <= fifo_d_not_empty;
   wsi_give   <= fifo_d_deq;
-  wsi_som    <= to_bool(samplesInMessage_r = 0);
-  wsi_eom    <= to_bool(samplesInMessage_r = messageSize - 1);
+  wsi_som    <= to_bool(samplesInMessage_r = 1);
+  wsi_eom    <= to_bool(samplesInMessage_r = (messageSize srl 2));
   count: process(clk)
   begin
     if rising_edge(clk) then
-      if reset or (samplesInMessage_r = messageSize-1 and fifo_d_deq) then
-        samplesInMessage_r <= (others => '0');
+      if reset or (samplesInMessage_r = (messageSize srl 2) and fifo_d_deq) then
+        samplesInMessage_r <= (0 => '1', others => '0');
       elsif fifo_d_deq = '1' then
         samplesInMessage_r <= samplesInMessage_r + 1;
       end if;

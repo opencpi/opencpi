@@ -1,7 +1,7 @@
 -- Lime ADC worker
 library IEEE, ocpi;
 use IEEE.std_logic_1164.all, ieee.numeric_std.all, ocpi.types.all;
-library unisim; use unisim.vcomponents.all;
+library util; use util.util.all;
 architecture rtl of ad9361_adc_worker is
   -- FIFO parameters
   constant fifo_width : natural := 24; -- the fifo is just wide enough to feed lime DAC
@@ -40,10 +40,10 @@ begin
   adc_clk_n <= not adc_clk;
 
   --Place ADC clock on global buffer for use in processing
-  bufg_adc : BUFG
+  buf_adc : buffer_clock_global
     port map(
-      I => adc_clk_n,
-      O => adc_clk_bufg
+      clk => adc_clk_n,
+      clk_buffered => adc_clk_bufg
       );
 
   --Register data and IQ select

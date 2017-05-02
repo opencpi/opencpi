@@ -9,5 +9,3 @@ EOF
   fi
 fi
 exit 1
-
-

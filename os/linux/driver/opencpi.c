@@ -417,7 +417,7 @@ phys2bus(uint64_t phys) {
   int ret = scif_pin_pages(pfn_to_kaddr(page_to_pfn(kpages)), PAGE_SIZE*4,
 			   SCIF_PROT_WRITE | SCIF_PROT_READ, SCIF_MAP_KERNEL, &spages);
   printk("Return from scif_pin_pages = %d\n", ret);
-  if (ret == 0) 
+  if (ret == 0)
     nf = scif_register_pinned_pages (scif_fd, spages, WIND_OFF, SCIF_MAP_FIXED);
   printk("*** (JM) -> Window addr = 0x%llx\n", nf);
   return 0x387c00000000ull + nf;

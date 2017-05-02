@@ -178,7 +178,7 @@ namespace OCPI {
       size_t sendmsg(const void * iovect, unsigned int flags )
         throw (std::string);
       size_t sendto(const char * data, size_t amount, int flags,  char * src_addr,
-		    size_t addrlen)			  
+		    size_t addrlen)
 	throw (std::string);
 
       /**

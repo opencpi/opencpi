@@ -1,9 +1,12 @@
 #!/bin/bash
 # See the "usage" message below
+# "make" will run in parallel unless you set MAKE_PARALLEL to blank or null string (but defined)
+export MAKE_PARALLEL=${MAKE_PARALLEL--j}
 set -e
+
 if test "$1" = "" -o "$1" = "--help" -o "$1" = "-help" -o "$2" = ""; then
   cat <<EOF
-The purpose of this script is to create a "kernel headers" package with the necessary artifacts 
+The purpose of this script is to create a "kernel headers" package with the necessary artifacts
 for an OpenCPI Zynq Linux "release" based on a specific Xilinx release.
 It assumes:
 - a git repo for Xilinx linux kernel and u-boot has been established using:
@@ -25,11 +28,11 @@ The name of the resulting release directory is: opencpi-zynq-release-<release-na
 The name of the resulting release directory is: opencpi-zynq-release-<release-name>
 After this step, the git repo directory can be removed to save space.
 
-Usage is: createOpenCPIZedRelease.sh <release-name> <repo-tag> <repo-dir>
+Usage is: createLinuxKernelHeaders.sh <release-name> <repo-tag> <repo-dir>
 
 The release name can be the same as the tag, but it is usually the associated
 Xilinx tool release associated with the tag unless it is between releases etc.
-E.g. if the Xilinx release is 2013.4, the repo tag is xilinx-v2013.4, and the 
+E.g. if the Xilinx release is 2013.4, the repo tag is xilinx-v2013.4, and the
 OpenCPI Zynq release name is 13_4.
 EOF
   exit 1
@@ -70,7 +73,7 @@ git checkout -f tags/$tag
 echo ==============================================================================
 echo Building u-boot to get the mkimage command.
 make zynq_zed_config CROSS_COMPILE=$CROSS_COMPILE
-make CROSS_COMPILE=$CROSS_COMPILE
+make CROSS_COMPILE=$CROSS_COMPILE ${MAKE_PARALLEL}
 cp tools/mkimage $RELDIR
 echo ==============================================================================
 echo The u-boot build is complete.  Starting linux build.
@@ -82,10 +85,11 @@ git clean -ffdx
 echo Checking out the Xilinx Linux kernel using the repository label '"'$tag'"'.
 git checkout -f tags/$tag
 if test $tag = xilinx-v14.7; then
+    git checkout xilinx-v2013.4 drivers/usb/phy/phy-zynq-usb.c
     echo Patching zed device tree for ethernet phy issue.
     ed arch/arm/boot/dts/zynq-zed.dts <<EOF
-    134
-    s/phy@7/phy@0/p
+   134
+   s/phy@7/phy@0/p
     137
     s/<7>/<0>/p
     305
@@ -107,13 +111,13 @@ w
 EOF
 echo ============================================================================================
 echo Configuring the Xilinx linux kernel using their default configuration for zynq....
-make ARCH=arm xilinx_zynq_defconfig
+make V=2 ARCH=arm xilinx_zynq_defconfig
 echo ============================================================================================
 echo Building the Xilinx linux kernel for zynq to create the kernel-headers tree.
 # To build a kernel that we would use, we would do:
 PATH="$PATH:`pwd`/../u-boot-xlnx/tools" \
-   make ARCH=arm CROSS_COMPILE=$CROSS_COMPILE \
-        UIMAGE_LOADADDR=0x8000 uImage dtbs modules
+   make V=2 ARCH=arm CROSS_COMPILE=$CROSS_COMPILE \
+        UIMAGE_LOADADDR=0x8000 ${MAKE_PARALLEL} uImage dtbs modules
 ocpi_kernel_release=$(< include/config/kernel.release)-$(echo $tag | sed 's/^xilinx-//')
 echo ============================================================================================
 cd $RELDIR
@@ -128,17 +132,21 @@ rm -r -f kernel-headers-$tag kernel-headers
 mkdir kernel-headers
 # copy that avoids errors when caseinsensitive file systems are used (MacOS...)
 #cp -R ../git/linux-xlnx/{Makefile,Module.symvers,include,scripts,arch} kernel-headers
-(cd $gdir/linux-xlnx; for f in Makefile Module.symvers include scripts arch; do
-  find $f -type d -exec mkdir -p $RELDIR/kernel-headers/{} \;
-  find $f -type f -exec sh -c \
+(cd $gdir/linux-xlnx;
+  for f in Makefile Module.symvers include scripts arch/arm .config; do
+    find $f -type d -exec mkdir -p $RELDIR/kernel-headers/{} \;
+    find $f -type f -exec sh -c \
      "if test -e $RELDIR/kernel-headers/{}; then
         echo File {} has a case sensitive duplicate which will be overwritten.
         rm -f $RELDIR/kernel-headers/{}
-      fi 
+      fi
       cp {} $RELDIR/kernel-headers/{}" \;
   done
+  for i in $(find -name 'Kconfig*'); do
+    mkdir -p $RELDIR/kernel-headers/$(dirname $i)
+    cp $i $RELDIR/kernel-headers/$(dirname $i)
+  done
 )
-(cd kernel-headers/arch; for i in *; do if test $i != arm; then rm -r -f $i; fi; done)
 rm -r -f kernel-headers/arch/arm/boot
 find kernel-headers -name "*.[csSo]" -exec rm {} \;
 rm kernel-headers/scripts/{basic,mod}/.gitignore
@@ -148,3 +156,20 @@ echo ===========================================================================
 echo The kernel-headers directory/package has been created in $(basename $RELDIR)
 echo It is now ready for building the OpenCPI linux kernel driver for zynq
 echo ============================================================================================
+echo Removing *.cmd
+find kernel-headers -name '*.cmd' -delete
+echo Removing x86_64 binaries
+find kernel-headers/scripts | xargs file | grep "ELF 64-bit" | cut -f1 -d: | xargs -tr -n1 rm
+echo Removing auto.conf
+rm kernel-headers/include/config/auto.conf
+echo Restoring source to removed binaries
+(cd $gdir/linux-xlnx;
+  for f in $(find scripts/ -name '*.c' -o -name 'zconf.tab'); do
+    mkdir -p $RELDIR/kernel-headers/$(dirname $f)
+    cp $f $RELDIR/kernel-headers/$(dirname $f)
+  done
+  mkdir -p $RELDIR/kernel-headers/tools/include
+  cp -R tools/include/tools $RELDIR/kernel-headers/tools/include
+)
+echo Removing unused large headers
+rm -rf kernel-headers/include/linux/{mfd,platform_data}

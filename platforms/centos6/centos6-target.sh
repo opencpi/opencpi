@@ -1,7 +1,4 @@
-# settings when targeting this platform.
-export OcpiLibraryPathEnv=LD_LIBRARY_PATH
-export OCPI_OCL_LIBS="-lOpenCL"
-export OCPI_EXTRA_LIBS="rt dl pthread"
-export OCPI_EXPORT_DYNAMIC="-Xlinker --export-dynamic"
-export OcpiAsNeeded="-Xlinker --no-as-needed"
-export OCPI_TARGET_CXXFLAGS="$OCPI_TARGET_CXXFLAGS -std=c++0x"
+echo 'Error: this file (platforms/centos6/centos6-target.sh) should no longer be included for environment setup.'
+
+echo 'If you want the environment fixed for centos6, just export OCPI_TARGET_PLATFORM=centos6'
+exit 1

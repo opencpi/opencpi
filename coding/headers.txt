@@ -19,7 +19,7 @@ A typical ordering is:
 
 The above headers should be in angle brackets since they are not in opencpi.
 
-One wierd case is the formatting macros like PRIu64, found in <inttypes.h>.
+One weird case is the formatting macros like PRIu64, found in <inttypes.h>.
 The ISO C99 spec says the are only included from inttypes.h if __STDC_FORMAT_MACROS
 is defined.  We define __STD_FORMAT_MACROS on the command line for all compilation.
 

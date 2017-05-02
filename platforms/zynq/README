@@ -4,9 +4,9 @@ This directory contains zynq software platform support for OpenCPI
 This support includes:
 
 1. Building a Xilinx Linux kernel to derive a "kernel headers" package which we then can
-   use to build the OpenCPI linux kernel driver.  This involves downloading the Xilinx Linux
+   use to build the OpenCPI Linux kernel driver.  This involves downloading the Xilinx Linux
    kernel sources from github, checking out a particular version, configuring and building it,
-   and extracting the kernel headers package from it.   After this, the OpenCPI linux kernel
+   and extracting the kernel headers package from it.   After this, the OpenCPI Linux kernel
    driver can be built.
 
 2. Create a bootable root file system, based on the one in the selected Xilinx binary release,
@@ -14,14 +14,14 @@ This support includes:
    the kernel headers package from Xilinx Linux kernel sources.
 
 3. Create a bootable Zynq SD card that contains aspects of the Xilinx binary release, the
-   Xilinx Linux kernel build process, the patched root file syste, the OpenCPI framework build,
+   Xilinx Linux kernel build process, the patched root file system, the OpenCPI framework build,
    and any user-supplied artifacts.
 
 The prerequisite for this is an existing Xilinx EDK installation which contains the cross
 compilation tools and runtime libraries for C and C++.
 
 We define something called an OpenCPI Zynq release, which is of course based on a Xilinx release
-of three things:  the EDK, the binary linux release, and the kernel sources.  Xilinx defines
+of three things:  the EDK, the binary Linux release, and the kernel sources.  Xilinx defines
 releases based on calendar year and quarter (e.g. 2013.4), and ideally all three items from
 Xilinx should be at the same release.
 
@@ -33,73 +33,72 @@ All the scripts below print a help/usage message if invoked with no arguments.
 The flow of these scripts is:
 
 1. getXilinxLinuxSources.sh <work-dir>
-  arguments:  diretory where the xilinx source git repo will be established
+  arguments:  directory where the xilinx source git repo will be established
   inputs:     the xilinx git repo at an internet URL
-  outputs:    two xilinx git repos in the directory specified: u-boot and linux
+  outputs:    two xilinx git repos in the directory specified: u-boot and Linux
   result:     a local/cached copy of the xilinx source repos enables step 2
 
 2. showXilinxLinuxTags.sh <work-dir>
-  arguments:  diretory where the xilinx source git repo was established by step 1
+  arguments:  directory where the xilinx source git repo was established by step 1
   inputs:     the xilinx git repo directory from step 1
   outputs:    console/stdout chronological list of events/commits/tags to the kernel repo
-  result:    allows user to determine appropriate tag and release name for step 3.
+  result:     allows user to determine appropriate tag and release name for step 3.
   
-2. createLinuxKernelHeaders.sh <rel-name> <repo-tag> <work-dir>
+3. createLinuxKernelHeaders.sh <rel-name> <repo-tag> <work-dir>
   arguments:  release name, usually <YY>_<Q> according to Xilinx release convention YYYY.Q
               repo tag in xilinx repo associated with their release, usually: xilinx-v<YYYY>.<Q>
-	      directory where the xilinx source git repo was established in step 1.
+              directory where the xilinx source git repo was established in step 1.
   inputs:     the xilinx git repo directory from step 1
               a Xilinx EDK installation (usually part of ISE or Vivado installation)
   outputs:    a "kernel headers release package" in: opencpi-zynq-linux-release-<rel-name>
               containing:
-	          1. a kernel header tree enabling the opencpi linux kernel driver to be built
-		  2. captured kernel image and device tree files from kernel build
-	          3. captured C++ runtime library from the xilinx tools release
-		  4. captured kernel release tag
-		  5. captured u-boot tool binaries from u-boot build
+                  1. a kernel header tree enabling the opencpi Linux kernel driver to be built
+                  2. captured kernel image and device tree files from kernel build
+                  3. captured C++ runtime library from the xilinx tools release
+                  4. captured kernel release tag
+                  5. captured u-boot tool binaries from u-boot build
   results:    The OpenCPI Linux kernel driver can now be built against these kernel headers.
               The Xilinx source git repository can be deleted to save space
 
-<< this enables the full opencpi build for zynq platforms using the results of step 2>>
+<<this enables the full opencpi build for zynq platforms using the results of step 3>>
 
-3. getXilinxLinuxBinaryRelease.sh <rel-name> <download-URL> <work-dir>
-  arguments:  release name, same as step 2 above
+4. getXilinxLinuxBinaryRelease.sh <rel-name> <download-URL> <work-dir>
+  arguments:  release name, same as step 3 above
               the download URL from http://www.wiki.xilinx.com/Zynq+Releases for the release
-	      (after 2015.2, the releases are per-hardware-platform and not yet usable here)
-	      directory where the xilinx source git repo was established in step 1.
-  inputs:     the downloadable release tarball (.zx) from http://www.wiki.xilinx.com
+              (after 2015.2, the releases are per-hardware-platform and not yet usable here)
+              directory where the xilinx source git repo was established in step 1.
+  inputs:     the downloadable release tarball (.xz) from http://www.wiki.xilinx.com
   outputs:    a populated directory named xilinx-zynq-binary-release-<release-name>
   results:    The Xilinx Binary release's root file system image can be patched adopted and
               patched for the OpenCPI Zynq release.
 
-4. createLinuxRootFS.sh <rel-name>
+5. createLinuxRootFS.sh <rel-name>
    arguments: release name, same as step above
-   inputs:    the output from step 3: the downloaded xilinx binary zynq release
-              the output from step 2: the kernel headers package with captured other files
+   inputs:    the output from step 4: the downloaded xilinx binary zynq release
+              the output from step 3: the kernel headers package with captured other files
    outputs:   an updated a "kernel headers release package" opencpi-zynq-linux-release-<rel-name>
               with the patched root file system from the xilinx binary release.
-   results:   the opencpi release directory is complete, and ready to deploy using step 5
+   results:   the opencpi release directory is complete, and ready to deploy using step 6
 
 <<up to this point there is no consideration of the zynq hardware board involved>>
 
-5. createOpenCPIZynqSD.sh <rel-name> <xilinx-board-name>
+6. createOpenCPIZynqSD.sh <rel-name> <xilinx-board-name>
    arguments: release name, same as step above
               board name (and opencpi HDL platform name) from xilinx (e.g. zed, zc702, etc.)
    inputs:    complete OpenCPI Zynq release directory from step 4.
-              a built OpenCPI framework based on the installed EDK and kernel headers (step 2)
+              a built OpenCPI framework based on the installed EDK and kernel headers (step 3)
               an OCPI_LIBRARY_PATH environment setting to find component artifacts.
    outputs:   a populated directory ready to copy on to an SD card.
    results:   SD cards can be created/populated using step 7.
 
-6. formatOpenCPIZynqSD.sh <sd-device>
+7. formatOpenCPIZynqSD.sh <sd-device>
    arguments: the name of an SD "drive", like /dev/sdb
    inputs:    none
    outputs:   a freshly formatted and wiped SD card, partitioned for booting zynq linux
-   results:   this formatted/partitioned SD card can be populated for OpenCPI Zynq Linux: step 7
+   results:   this formatted/partitioned SD card can be populated for OpenCPI Zynq Linux: step 8
 
-7. writeOpenCPIZynqSD.sh <rel-name> <sd-device>
+8. writeOpenCPIZynqSD.sh <rel-name> <sd-device>
    arguments: the release name as above
-              the same SD drive name as step 6
-   inputs:    the SD release diretory in ocpi-zynq-SD-<rel-name>
+              the same SD drive name as step 7
+   inputs:    the SD release directory in ocpi-zynq-SD-<rel-name>
               the (empty, formatted, partitioned) SD card
-   

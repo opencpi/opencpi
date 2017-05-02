@@ -59,7 +59,7 @@ begin
       end if;
     end if;
   end process;
-  
+
   -- ADC Clocked process: we just need to hold the I value until the corresponding Q value
   -- is available to clock them together into the FIFO.
   input : process(adc_clk_buf)
@@ -78,7 +78,7 @@ begin
   adc_data             <= hold_q_r & hold_i_r;
   fifo : entity work.adc_fifo
     generic map(width       => 24,
-                depth       => 8096)
+                depth       => 4096)
     port map   (clk         => ctl_in.clk,
                 reset       => ctl_in.reset,
                 operating   => ctl_in.is_operating,
