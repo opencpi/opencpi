@@ -1,0 +1,5 @@
+  <!-- for now the spec is specific to the adapter -->
+  <ComponentSpec nocontrol='true'>
+    <DataInterfaceSpec Name="in" Producer="false"/>
+    <DataInterfaceSpec Name="out" Producer="true" buffersize='in'/>
+  </ComponentSpec>
