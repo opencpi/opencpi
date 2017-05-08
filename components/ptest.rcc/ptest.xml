@@ -23,16 +23,16 @@
   <Property Name="sap9" Type="LongLong"  Volatile="true" Writable="true" arraylength="10" sequenceLength="2"/>
   <Property Name="sap10" Type="ULongLong" Readable="true" Writable="true" arraylength="11" sequenceLength="12"/>
   <Property Name="sap11" Type="String" StringLength="10" Volatile="true" Writable="true" arraylength="12" sequenceLength="3"/>
-  <property name="str" parameter='true' type='string' default='fred'/>
+  <property name="str" parameter='true' type='string' default='foo'/>
   <property name='error' type='bool' initial='true'/>
-  <property name='stest' type='struct' initial='1' readable='1'>
+  <property name='stest' type='struct' writable='1' readable='1'>
     <member name='flt' type='float'/>
     <member name='boola' type='bool' arraylength='3'/>
     <member name='str' type='string' stringlength='10'/>
     <member name='seq' sequencelength='4'/>
   </property>
   <property name='nchannels' parameter='1' default='3' readable='1'/>
-  <property name='stestp' type='struct' initial='1' readable='1' arraylength='nchannels'>
+  <property name='stestp' type='struct' writable='1' readable='1' arraylength='nchannels'>
     <member name='flt' type='float'/>
     <member name='boola' type='bool' arraylength='3'/>
     <member name='str' type='string' stringlength='10'/>
@@ -46,4 +46,11 @@
   <property name='x' type='struct' initial='1' sequenceLength='param*3-1'>
     <member name='sss' type='string' stringlength='param+1' sequencelength='param &lt; 2 ? 3 : 5' arraydimensions='1,param+2,param==3 ? 4 : 5'/>
   </property>
+  <!-- these do not work for HDL yet -->
+  <Property name="outFile" type="Struct" readable="true" writable="true">
+    <Member name='prefix' type='string' stringLength='1024'/>
+    <Member name='digits' type='uChar' default='1'/>
+    <Member name='suffix' type='string' stringLength='1024' default='.bin'/>
+  </Property>
+  <Property Name="sap12" Type="String" StringLength="10" Volatile="true" Writable="true" arraylength="12" sequenceLength="3" default='{a,c,\"&amp;apos;,dd}'/>
 </RccWorker>

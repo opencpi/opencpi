@@ -31,7 +31,7 @@ OCPI_BOOTSTRAP=$OCPI_CDK_DIR/scripts/ocpibootstrap.sh; . $OCPI_BOOTSTRAP
 export OCPI_SMB_SIZE=3000000
 export OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/lib/components/rcc
 export DIR=$(mktemp -d -t ocpi_ctests.XXXXX)
-echo =========Outputs from these tests will be in: $DIR
+echo "=========Outputs from these tests will be in: $DIR"
 failed=
 set -o pipefail
 out="2> /dev/null"
@@ -41,13 +41,13 @@ function doit {
   $VG ./$1 $out | tee $tmp | (egrep 'FAILED|PASSED|Error:';exit 0)
   rc=$?
   if egrep -q 'FAILED|Error:' $tmp; then
-     echo $1 test failed explicitly, with FAILED or Error message.
+     echo "$1 test failed explicitly, with FAILED or Error message."
      if test "$failed" = ""; then failed=$1; fi
   elif test $rc != 0; then
-     echo $1 test failed implicitly, no FAILED message, but non-zero exit.
+     echo "$1 test failed implicitly, no FAILED message, but non-zero exit."
      if test "$failed" = ""; then failed=$1; fi
   elif ! grep -q PASSED $tmp; then
-     echo $1 test failed implicitly, no PASSED message, but zero exit.
+     echo "$1 test failed implicitly, no PASSED message, but zero exit."
      if test "$failed" = ""; then failed=$1; fi
   fi
 }
@@ -55,22 +55,22 @@ if test $# = 1 ; then
   doit $1
 else
 for i in `ls -d test* | grep -v '_main' | grep -v '\.'` ; do
-  echo Running $i...
+  echo "Running $i..."
   doit $i
 done
 fi
 if test "$failed" = ""; then
-  echo All container tests passed.
+  echo "All container tests passed."
   if test -z "${VG}"; then
     rm -rf ${DIR}
   else
-    echo Left files in ${DIR} for examination because valgrind was detected.
+    echo "Left files in ${DIR} for examination because valgrind was detected."
   fi
   exit 0
 else
-  echo Some container tests failed.  The first to fail was: $failed.
+  echo "Some container tests failed.  The first to fail was: $failed."
   if test -n "${OCPI_RPM}"; then
-    echo Left files in ${DIR} for examination.
+    echo "Left files in ${DIR} for examination."
   fi
   exit 1
 fi

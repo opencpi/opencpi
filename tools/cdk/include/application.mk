@@ -21,7 +21,7 @@ ifdef OcpiAppCC
   all : $(OcpiProg)
   $(OcpiProg): $(OcpiAppCC) | $(OcpiDir)
 	$(AT)echo Building $@...
-	$(AT)$(CXX) -g -Wall $(OCPI_EXPORT_DYNAMIC) -o $@ $(OcpiIncs) $^ $(OCPI_LD_FLAGS)
+	$(AT)$(CXX) $(OCPI_TARGET_CXXFLAGS) $(OCPI_EXPORT_DYNAMIC) -o $@ $(OcpiIncs) $^ $(OCPI_LD_FLAGS)
 
   run: all
 	$(AT)$(OcpiRunCC)

@@ -183,6 +183,7 @@ static int mymain(const char **/*ap*/) {
   xml += ezxml_toxml(top.getXml());
   xml += "\n";
   OU::string2File(xml, file);
+  return 0;
 }
 
 int

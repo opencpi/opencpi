@@ -149,7 +149,7 @@ int main( int argc, char** argv )
     try {
       std::ofstream * fout = new std::ofstream;
       fout->open( config.outfilename.c_str() );
-      out =fout;
+      out = fout;
     }
     catch( std::string & oops ) {
       std::cerr << "Unable to create output file " << config.outfilename << " Error = " << oops << std::endl;

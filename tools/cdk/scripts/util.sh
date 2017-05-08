@@ -100,6 +100,68 @@ function getElapsedTime {
   echo $(date $_end_time_$elapsed -u +%T) '('$elapsed seconds')'
 }
 
+# echo the platform we are running on
+function ocpiGetToolPlatform {
+  ocpiGetToolDir -
+  echo $OCPI_TOOL_PLATFORM
+  return 0
+}
+
+# echo the tool dir, setting OCPI_TOOL_DIR as a side effect
+function ocpiGetToolDir {
+  [ -n "$OCPI_TOOL_DIR" ] || {
+    GETPLATFORM=$OCPI_CDK_DIR/platforms/getPlatform.sh
+    if test ! -f $OCPI_CDK_DIR/platforms/getPlatform.sh; then
+      echo Error:  cannot find $OCPI_CDK_DIR/platforms/getPlatforms.sh 1>&2
+      exit 1
+    fi
+    read v0 v1 v2 v3 v4 <<-EOF
+	`${GETPLATFORM}`
+	EOF
+    if test "$v0" == "" -o $? != 0; then
+      echo Error:  Failed to determine runtime platform. 1>&2
+      exit 1
+    fi
+    # We always set this as a side-effect
+    export OCPI_TOOL_PLATFORM=$v4
+    # Determine OCPI_TOOL_MODE if it is not set already
+    # It can be set to null to suppress these modes, and just use whatever has been
+    # built without modes.
+    if test "$OCPI_USE_TOOL_MODES" = "1"; then
+      if test "$OCPI_TOOL_MODE" = ""; then
+        # OCPI_TOOL_MODE not set at all, just look for one
+        for i in sd so dd do; do
+          if test -x "$OCPI_CDK_DIR/$v3/$i/ocpirun"; then
+            export OCPI_TOOL_MODE=$i
+            echo "Choosing tool mode "$i" since there are tool executables for it." 1>&2
+            break
+          fi
+        done
+      fi
+      if [ -z "$OCPI_TOOL_MODE"]; then
+        if test ! -x "$OCPI_CDK_DIR/bin/$v3/ocpirun"; then
+          echo "Could not find any OpenCPI executables in $OCPI_CDK_DIR/$v3/*"
+          if test "$OCPI_DEBUG" = 1; then do=d; else do=o; fi
+          if test "$OCPI_DYNAMIC" = 1; then sd=d; else sd=s; fi
+          export OCPI_TOOL_MODE=$sd$do
+          echo "Hopefully you are building OpenCPI from scratch.  Tool mode will be \"$OCPI_TOOL_MODE\"". 1>&1
+        fi
+      fi
+      export OCPI_TOOL_MODE=$v3/$OCPI_TOOL_MODE
+    else
+      export OCPI_TOOL_DIR=$v3
+    fi
+  }
+  [ "$1" = - ] || echo $OCPI_TOOL_DIR
+  return 0
+}
+
+function ocpiGetToolOS {
+  ocpiGetToolDir -
+  echo ${OCPI_TOOL_DIR/-*/}
+  return 0
+}
+
 if [ "$1" == __test__ ] ; then
   if eval findInProjectPath $2 $3 result ; then
     echo good result is $result

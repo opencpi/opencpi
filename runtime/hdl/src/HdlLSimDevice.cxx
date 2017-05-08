@@ -708,47 +708,6 @@ private:
     if (always)
       FD_SET(fd, &m_alwaysSet);
   }
-  void
-  initAdmin(OH::OccpAdminRegisters &admin, const char *a_platform, HdlUUID &hdlUuid,
-	    OU::UuidString *uuidString) {
-    memset(&admin, 0, sizeof(admin));
-#define unconst32(a) (*(uint32_t *)&(a))
-#define unconst64(a) (*(uint64_t *)&(a))
-    unconst64(admin.magic) = OCCP_MAGIC;
-    unconst32(admin.revision) = 0;
-    unconst32(admin.birthday) = OCPI_UTRUNCATE(uint32_t, time(0));
-    unconst32(admin.pciDevice) = 0;
-    unconst32(admin.attention) = 0;
-    unconst32(admin.status) = 0;
-    admin.scratch20 = 0xf00dface;
-    admin.scratch24 = 0xdeadbeef;
-    admin.control = 0;
-    unconst32(admin.reset) = 0;
-    unconst32(admin.timeStatus) = 0;
-    admin.timeControl = 0;
-    admin.time = 0;
-    admin.timeDelta = 0;
-    unconst32(admin.timeClksPerPps) = 0;
-    unconst64(admin.present) = 1;
-    unconst64(admin.attention) = 1;
-    unconst32(admin.numRegions) = 1;
-    unconst32(admin.regions[0]) = 0;
-    OU::Uuid l_uuid;
-    OU::generateUuid(l_uuid);
-    if (uuidString) {
-      OU::uuid2string(l_uuid, *uuidString);
-      ocpiDebug("Emulator UUID: %s", *uuidString);
-    }
-    OH::HdlUUID temp;
-    temp.birthday = OCPI_UTRUNCATE(uint32_t, time(0) + 1);
-    memcpy(temp.uuid, l_uuid, sizeof(l_uuid));
-    strcpy(temp.platform, a_platform);
-    strcpy(temp.device, "devemu");
-    strcpy(temp.load, "ld");
-    strcpy(temp.dna, "\001\002\003\004\005\006\007");
-    for (unsigned n = 0; n < sizeof(OH::HdlUUID); n++)
-      ((uint8_t *)&hdlUuid)[n] = ((uint8_t *)&temp)[(n & ~3) + (3 - (n & 3))];
-  }
   // Convenience for setting the m_isAlive and throwing OU::Error
   void throwit(const char *fmt, ...) __attribute__((format(printf, 2, 3))) {
     m_isAlive = false;
@@ -1129,14 +1088,14 @@ search(const OU::PValue *params, const char **excludes, bool discoveryOnly, std:
   ocpiInfo("Searching for local HDL simulators.");
   bool verbose = false;
   OU::findBool(params, "verbose", verbose);
-  const char *sims = getenv("OCPI_HDL_SIMULATORS");
-  if (!sims)
-    sims = getenv("OCPI_HDL_SIMULATOR");
+  const char *envsims = getenv("OCPI_HDL_SIMULATORS");
+  if (!envsims)
+    envsims = getenv("OCPI_HDL_SIMULATOR");
   std::set<std::string> onlySims;
-  if (sims) {
-    ocpiInfo("Restricting discovery of HDL simulators to: %s", sims);
+  if (envsims) {
+    ocpiInfo("Restricting discovery of HDL simulators to: %s", envsims);
     char
-      *mylist = strdup(sims),
+      *mylist = strdup(envsims),
       *base = mylist,
       *last = 0,
       *tok;
@@ -1167,30 +1126,30 @@ search(const OU::PValue *params, const char **excludes, bool discoveryOnly, std:
       ocpiInfo("Checking whether the %s simulator is available and licensed", name);
       //  FIXME: make this more of a utility
       int rc = system(cmd.c_str());
-      std::string err;
+      std::string serr;
       switch (rc) {
       case 127:
-	OU::format(err, "Couldn't start execution of command: %s", cmd.c_str()); break;
+	OU::format(serr, "Couldn't start execution of command: %s", cmd.c_str()); break;
 	break;
       case -1:
-	OU::format(err, "System error (%s, errno %d) while executing license validation command",
+	OU::format(serr, "System error (%s, errno %d) while executing license validation command",
 			   strerror(errno), errno);
 	break;
       default:
 	if (!WIFEXITED(rc))
-	  OU::format(err, "Error return %u/0x%x while executing license validation command", 
+	  OU::format(serr, "Error return %u/0x%x while executing license validation command", 
 		     rc, rc);
 	else if (WEXITSTATUS(rc) != 0)
 	  ocpiInfo("Check for simulator %s failed.", name);
 	else {
-	  OCPI::HDL::Device *dev = open(name, params, err);
-	  if (dev && !found(*dev, excludes, discoveryOnly, err))
+	  OCPI::HDL::Device *dev = open(name, params, serr);
+	  if (dev && !found(*dev, excludes, discoveryOnly, serr))
 	    count++;
 	}
 	break;
       }
       if (error.empty())
-	error = err;
+	error = serr;
     }
   }
   return 0;

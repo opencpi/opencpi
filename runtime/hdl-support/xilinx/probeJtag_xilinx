@@ -1,7 +1,7 @@
 #!/bin/sh --noprofile
 if [[ $# == 0 ]]; then
   echo Usage is: `basename $0` '[all|auto]'
-  echo '  'This script scans usb ports for Xilinx JTAG cables/pods and
+  echo '  'This script scans USB ports for Xilinx JTAG cables/pods and
   echo '  'prints which parts are at which positions on each one found.
   echo '  Use "all" to scan for up to 9 cables.  Use "auto" to find the first.'
   exit 1

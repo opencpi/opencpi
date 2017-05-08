@@ -43,7 +43,7 @@ LD = c++
 export OcpiDynamicSuffix=so
 export OcpiDynamicFlags=-shared
 ifndef OCPI_TARGET_CXXFLAGS
-  export OCPI_TARGET_CXXFLAGS=-g -pipe -Wall -Wextra -D__STDC_LIMIT_MACROS -D__STDC_FORMAT_MACROS -Wfloat-equal -fno-strict-aliasing -Wconversion -Wno-sign-conversion
+  export OCPI_TARGET_CXXFLAGS=-g -pipe -Wall -Wextra -D__STDC_LIMIT_MACROS -D__STDC_FORMAT_MACROS -Wfloat-equal -fno-strict-aliasing -Wconversion -Wno-sign-conversion -std=c++0x
 endif
 ifndef OCPI_TARGET_CFLAGS
   export OCPI_TARGET_CFLAGS=-g -pipe -Wall -Wextra -D__STDC_LIMIT_MACROS -D__STDC_FORMAT_MACROS -Wfloat-equal -fno-strict-aliasing -Wconversion -Wno-sign-conversion -std=c99
@@ -237,7 +237,7 @@ $(info OCPI_TARGET_DIR=$(OCPI_TARGET_DIR);export OCPI_TARGET_DIR;)
 $(info OCPI_TARGET_MODE=$(OCPI_TARGET_MODE);export OCPI_TARGET_MODE;)
 $(info OCPI_CROSS_BUILD_BIN_DIR=$(OCPI_CROSS_BUILD_BIN_DIR);export OCPI_CROSS_BUILD_BIN_DIR;)
 $(info OCPI_CROSS_HOST=$(OCPI_CROSS_HOST);export OCPI_CROSS_HOST;)
-$(info OCPI_TARGET_DYNAMIC_SUFFIX=$(OcpiDynamicSuffix);export OCPI_TARGET_DYNAMIOC_SUFFIX;)
+$(info OCPI_TARGET_DYNAMIC_SUFFIX=$(OcpiDynamicSuffix);export OCPI_TARGET_DYNAMIC_SUFFIX;)
 $(info OCPI_TARGET_DYNAMIC_FLAGS="$(OcpiDynamicFlags)";export OCPI_TARGET_DYNAMIC_FLAGS;)
 
 endif

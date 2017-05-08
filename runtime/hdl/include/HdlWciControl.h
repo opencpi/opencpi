@@ -44,8 +44,8 @@ namespace OCPI {
       // fast memory-mapped property access directly to users
       // the key members are "readVaddr" and "writeVaddr"
       virtual void prepareProperty(OCPI::Util::Property &md, 
-				   volatile void *&writeVaddr,
-				   const volatile void *&readVaddr);
+				   volatile uint8_t *&writeVaddr,
+				   const volatile uint8_t *&readVaddr);
       // Map the control op numbers to structure members
       static const unsigned controlOffsets[];
       void checkControlState();
@@ -68,11 +68,11 @@ namespace OCPI {
 
 #define PUT_GET_PROPERTY(n,wb)                                                    \
       void                                                                        \
-	setProperty##n(const OCPI::API::PropertyInfo &info, uint##n##_t val,      \
-                       unsigned idx) const;					  \
+      setProperty##n(const OCPI::API::PropertyInfo &info, size_t offset, uint##n##_t val, \
+		     unsigned idx) const;				          \
       inline uint##n##_t						          \
-      getProperty##n(const OCPI::API::PropertyInfo &info, unsigned idx) const {	  \
-        uint32_t offset = checkWindow(info.m_offset + idx * (n/8), n/8); \
+      getProperty##n(const OCPI::API::PropertyInfo &info, size_t off, unsigned idx) const { \
+        uint32_t offset = checkWindow(info.m_offset + off + idx * (n/8), n/8); \
 	uint32_t status = 0;                                                      \
         uint##wb##_t val##wb;							  \
 	uint##n##_t val;						          \
@@ -129,35 +129,39 @@ namespace OCPI {
 #undef OCPI_DATA_TYPE_S
       // Set a scalar property value
 
-#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)     	         \
-      inline void							 \
-	set##pretty##Property(unsigned ordinal, const run val, unsigned idx) const { \
-	setProperty##bits(m_propInfo[ordinal], *(uint##bits##_t *)&val, idx); \
-      }									 \
-      inline void        						\
+#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		\
+      void								\
+      set##pretty##Property(const OCPI::API::PropertyInfo &info, const Util::Member *, \
+			    size_t off, const run val, unsigned idx) const { \
+	setProperty##bits(info, off, *(uint##bits##_t *)&val, idx);	\
+      }									\
+      void								\
       set##pretty##SequenceProperty(const OCPI::API::Property &p,       \
 				    const run *vals,			\
 				    size_t length) const {		\
 	setPropertySequence(p.m_info, (const uint8_t *)vals,			\
 			    length, length * (bits/8));			\
       }									\
-      inline run							\
-	get##pretty##Property(unsigned ordinal, unsigned idx) const {	\
-	return (run)getProperty##bits(m_propInfo[ordinal], idx);        \
+      run								\
+      get##pretty##Property(const OCPI::API::PropertyInfo &info, const Util::Member *, \
+			    size_t offset, unsigned idx) const {	\
+	return (run)getProperty##bits(info, offset, idx);		\
       }									\
-      inline unsigned							\
+      unsigned								\
       get##pretty##SequenceProperty(const OCPI::API::Property &p, run *vals, \
-				    size_t length) const {		     \
+				    size_t length) const {		\
 	return								     \
 	  getPropertySequence(p.m_info, (uint8_t *)vals, length * (bits/8));	     \
       }
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)
 OCPI_DATA_TYPES
 #undef OCPI_DATA_TYPE
-      void setStringProperty(unsigned ordinal, const char* val, unsigned idx) const;
+      void setStringProperty(const OCPI::API::PropertyInfo &info, const Util::Member *,
+			     size_t offset, const char* val, unsigned idx) const;
       void setStringSequenceProperty(const OCPI::API::Property &, const char * const *,
 				     size_t ) const;
-      void getStringProperty(unsigned ordinal, char *val, size_t length, unsigned idx) const;
+      void getStringProperty(const OCPI::API::PropertyInfo &info, const Util::Member *,
+			     size_t offset, char *val, size_t length, unsigned idx) const;
       unsigned getStringSequenceProperty(const OCPI::API::Property &, char * *,
 					 size_t ,char*, size_t) const;
     };

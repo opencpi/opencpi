@@ -47,6 +47,8 @@ namespace OCPI {
     public:
       uint32_t m_timeCorrection;
       DataTransfer::EndPoint *m_endPoint;
+      static void initAdmin(OccpAdminRegisters &admin, const char *a_platform, HdlUUID &hdlUuid,
+			    OCPI::Util::UuidString *uuidString);
     protected:
       Device(const std::string &name, const char *protocol = "", 
 	     const OCPI::Util::PValue *params = NULL);

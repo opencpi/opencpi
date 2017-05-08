@@ -88,29 +88,29 @@ namespace OCPI {
     public:
       //      virtual const std::string &name() const = 0;
       virtual void prepareProperty(OCPI::Util::Property &p,
-				   volatile void *&m_writeVaddr,
-				   const volatile void *&m_readVaddr) = 0;
+				   volatile uint8_t *&m_writeVaddr,
+				   const volatile uint8_t *&m_readVaddr) = 0;
       virtual void setPropertyBytes(const OCPI::API::PropertyInfo &info, size_t offset,
 				    const uint8_t *data, size_t nBytes,
 				    unsigned idx = 0) const = 0;
-      virtual void setProperty8(const OCPI::API::PropertyInfo &info, uint8_t data,
+      virtual void setProperty8(const OCPI::API::PropertyInfo &info, size_t offset, uint8_t data,
 				unsigned idx = 0) const = 0;
-      virtual void setProperty16(const OCPI::API::PropertyInfo &info, uint16_t data,
+      virtual void setProperty16(const OCPI::API::PropertyInfo &info, size_t offset, uint16_t data,
 				 unsigned idx = 0) const = 0;
-      virtual void setProperty32(const OCPI::API::PropertyInfo &info, uint32_t data,
+      virtual void setProperty32(const OCPI::API::PropertyInfo &info, size_t offset, uint32_t data,
 				 unsigned idx = 0) const = 0;
-      virtual void setProperty64(const OCPI::API::PropertyInfo &info, uint64_t data,
+      virtual void setProperty64(const OCPI::API::PropertyInfo &info, size_t offset, uint64_t data,
 				 unsigned idx = 0) const = 0;
       virtual void getPropertyBytes(const OCPI::API::PropertyInfo &info, size_t offset,
 				    uint8_t *data, size_t nBytes, unsigned idx = 0,
 				    bool string = false) const = 0;
-      virtual uint8_t getProperty8(const OCPI::API::PropertyInfo &info, unsigned idx = 0)
+      virtual uint8_t getProperty8(const OCPI::API::PropertyInfo &info, size_t offset, unsigned idx = 0)
 	const = 0;
-      virtual uint16_t getProperty16(const OCPI::API::PropertyInfo &info, unsigned idx = 0)
+      virtual uint16_t getProperty16(const OCPI::API::PropertyInfo &info, size_t offset, unsigned idx = 0)
 	const = 0;
-      virtual uint32_t getProperty32(const OCPI::API::PropertyInfo &info, unsigned idx = 0)
+      virtual uint32_t getProperty32(const OCPI::API::PropertyInfo &info, size_t offset, unsigned idx = 0)
 	const = 0;
-      virtual uint64_t getProperty64(const OCPI::API::PropertyInfo &info, unsigned idx = 0)
+      virtual uint64_t getProperty64(const OCPI::API::PropertyInfo &info, size_t offset, unsigned idx = 0)
 	const = 0;
       virtual void controlOperation(OCPI::Util::Worker::ControlOperation) = 0;
     };
@@ -148,11 +148,11 @@ namespace OCPI {
       Worker(Artifact *art, ezxml_t impl, ezxml_t inst, Worker *slave, bool hasMaster,
 	     const OCPI::Util::PValue *props = NULL);
       OCPI::API::PropertyInfo &setupProperty(const char *name,
-					     volatile void *&m_writeVaddr,
-					     const volatile void *&m_readVaddr);
+					     volatile uint8_t *&m_writeVaddr,
+					     const volatile uint8_t *&m_readVaddr);
       OCPI::API::PropertyInfo &setupProperty(unsigned n,
-					     volatile void *&m_writeVaddr,
-					     const volatile void *&m_readVaddr);
+					     volatile uint8_t *&m_writeVaddr,
+					     const volatile uint8_t *&m_readVaddr);
       virtual Port &createPort(const OCPI::Util::Port &metaport,
 			       const OCPI::Util::PValue *props) = 0;
       virtual Worker *nextWorker() = 0;
@@ -205,16 +205,22 @@ namespace OCPI {
 #undef CONTROL_OP
       virtual bool wait(OCPI::OS::Timer *t = NULL);
       bool isDone();
+#if 1
 #undef OCPI_DATA_TYPE
 #undef OCPI_DATA_TYPE_S
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) \
+      void set##pretty##PropertyOrd(unsigned ordinal, run val, unsigned idx) const; \
+      run get##pretty##PropertyOrd(unsigned ordinal, unsigned idx) const; \
       run get##pretty##Parameter(unsigned ordinal, unsigned idx) const;
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store) \
+      void set##pretty##PropertyOrd(unsigned ordinal, run val, unsigned idx) const; \
+      void get##pretty##PropertyOrd(unsigned ordinal, char *, size_t length, unsigned idx) const; \
       void get##pretty##Parameter(unsigned ordinal, char *, size_t length, unsigned idx) const;
     OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE
 #undef OCPI_DATA_TYPE_S
 #define OCPI_DATA_TYPE_S OCPI_DATA_TYPE
+#endif
       inline void getRawPropertyBytes(size_t offset, uint8_t *buf, size_t count) {
 	getPropertyBytes(*m_firstRaw, m_firstRaw->m_offset + offset, buf, count, 0, false);
       }

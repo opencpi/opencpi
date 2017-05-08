@@ -123,8 +123,8 @@ namespace OCPI {
     // the key members are "readVaddr" and "writeVaddr"
     void WciControl::
     prepareProperty(OU::Property &md, 
-		    volatile void *&writeVaddr,
-		    const volatile void *&readVaddr) {
+		    volatile uint8_t *&writeVaddr,
+		    const volatile uint8_t *&readVaddr) {
       ocpiAssert(m_hasControl);
       (void)readVaddr;
       if (m_properties.registers() &&
@@ -210,8 +210,8 @@ namespace OCPI {
 
 #define PUT_GET_PROPERTY(n)						     \
     void WciControl::                                                        \
-    setProperty##n(const OA::PropertyInfo &info, uint##n##_t val, unsigned idx) const { \
-      uint32_t offset = checkWindow(info.m_offset + idx * (n/8), n/8);	\
+    setProperty##n(const OA::PropertyInfo &info, size_t off, uint##n##_t val, unsigned idx) const { \
+      uint32_t offset = checkWindow(info.m_offset + off + idx * (n/8), n/8);	\
 	uint32_t status = 0;						     \
 	if (m_properties.m_registers) {					     \
 	  if (!info.m_writeError ||					     \
@@ -350,10 +350,10 @@ namespace OCPI {
     }
 
     void WciControl::
-    setStringProperty(unsigned ordinal, const char* val, unsigned idx) const {
+    setStringProperty(const OCPI::API::PropertyInfo &info, const Util::Member *, size_t offset,
+		      const char* val, unsigned idx) const {
       size_t n = strlen(val) + 1;
-      const OA::PropertyInfo &info = m_propInfo[ordinal];
-      setPropertyBytes(info, info.m_offset, (const uint8_t*)val, n, idx);
+      setPropertyBytes(info, info.m_offset + offset, (const uint8_t*)val, n, idx);
     }
     void WciControl::
     setStringSequenceProperty(const OA::Property &, const char * const *,
@@ -361,10 +361,9 @@ namespace OCPI {
       throw OU::Error("No support for properties that are sequences of strings");
     }
     void WciControl::
-    getStringProperty(unsigned ordinal, char *val, size_t length, unsigned idx) const {
-      // ignore return value
-      const OA::PropertyInfo &info = m_propInfo[ordinal];
-      getPropertyBytes(info, info.m_offset, (uint8_t*)val, length, idx, true);
+    getStringProperty(const OCPI::API::PropertyInfo &info, const Util::Member *, size_t offset,
+		      char *val, size_t length, unsigned idx) const {
+      getPropertyBytes(info, info.m_offset + offset, (uint8_t*)val, length, idx, true);
     }
     unsigned WciControl::
     getStringSequenceProperty(const OA::Property &, char * *,

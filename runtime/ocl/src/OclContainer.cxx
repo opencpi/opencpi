@@ -773,8 +773,8 @@ namespace OCPI
       void propertyRead(unsigned /*ordinal*/) const {};
 
         void prepareProperty ( OU::Property& md,
-				   volatile void *&writeVaddr,
-				   const volatile void *&readVaddr)
+				   volatile uint8_t *&writeVaddr,
+				   const volatile uint8_t *&readVaddr)
         {
           if ( md.m_baseType != OA::OCPI_Struct &&
                !md.m_isSequence &&
@@ -787,8 +787,8 @@ namespace OCPI
             {
                throw OU::Error( "OCL property is out of bounds." );
             }
-            readVaddr = (uint8_t*) myProperties + md.m_offset;
-            writeVaddr = (uint8_t*) myProperties + md.m_offset;
+            readVaddr = myProperties + md.m_offset;
+            writeVaddr = myProperties + md.m_offset;
           }
         }
 
@@ -806,13 +806,13 @@ namespace OCPI
 #undef OCPI_DATA_TYPE_S
       // Set a scalar property value
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)                 \
-      void set##pretty##Property(unsigned ordinal, const run val,              \
-				 unsigned idx) const {			       \
-	OA::PropertyInfo &info = properties()[ordinal];		               \
+      void set##pretty##Property(const OCPI::API::PropertyInfo &info, const Util::Member *mp, \
+				 size_t offset, const run val, unsigned idx) const { \
+        const OU::Member &m = mp ? *mp : info; \
         if (info.m_writeError )                                                \
           throw; /*"worker has errors before write */                          \
         volatile store *pp = (volatile store *)(myProperties + info.m_offset + \
-						info.m_elementBytes * idx);    \
+						offset + m.m_elementBytes * idx);    \
         if (bits > 32) {						       \
           assert(bits == 64);						       \
           volatile uint32_t *p32 = (volatile uint32_t *)pp;		       \
@@ -836,16 +836,17 @@ namespace OCPI
       // are aligned on 4 byte boundaries.  The offset calculations
       // and structure padding are assumed to do this.
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)                    \
-      virtual void set##pretty##Property(unsigned ordinal, const run val,           \
-      unsigned idx) const {					                    \
-	OA::PropertyInfo &info = properties()[ordinal];		                    \
+      virtual void							            \
+      set##pretty##Property(const OCPI::API::PropertyInfo &info, const Util::Member *mp, \
+			    size_t offset, const run val, unsigned idx) const {     \
+        const OU::Member &m = mp ? *mp : info;				            \
         size_t ocpi_length;                                                         \
-        if (!val || (ocpi_length = strlen(val)) > info.m_stringLength)              \
+        if (!val || (ocpi_length = strlen(val)) > m.m_stringLength)	            \
           throw; /*"string property too long"*/;                                    \
         if (info.m_writeError)                                                      \
           throw; /*"worker has errors before write */                               \
-        uint32_t *p32 = (uint32_t *)(myProperties + info.m_offset +                 \
-				     info.m_elementBytes * idx);	            \
+        uint32_t *p32 = (uint32_t *)(myProperties + info.m_offset + offset +        \
+				     m.m_elementBytes * idx);	                    \
         /* if length to be written is more than 32 bits */                          \
         if (++ocpi_length > 32/CHAR_BIT)                                            \
           memcpy(p32 + 1, val + 32/CHAR_BIT, ocpi_length - 32/CHAR_BIT);            \
@@ -877,11 +878,14 @@ namespace OCPI
 #undef OCPI_DATA_TYPE
       // Get Scalar Property
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) \
-      virtual run get##pretty##Property(unsigned ordinal, unsigned idx) const {	               \
-	OA::PropertyInfo &info = properties()[ordinal];		                               \
+      virtual run \
+      get##pretty##Property(const OCPI::API::PropertyInfo &info, const Util::Member *mp, \
+			    size_t offset, unsigned idx) const { \
+        const OU::Member &m = mp ? *mp : info;				\
         if (info.m_readError)						                       \
           throw; /*"worker has errors before read "*/			                       \
-        uint32_t *pp = (uint32_t *)(myProperties + info.m_offset + info.m_elementBytes * idx); \
+        uint32_t *pp = (uint32_t *)(myProperties + info.m_offset + offset +                    \
+				    m.m_elementBytes * idx);		                       \
         union {								                       \
                 run r;                                                                         \
                 uint32_t u32[bits/32];                                                         \
@@ -910,16 +914,17 @@ namespace OCPI
       // are aligned on 4 byte boundaries.  The offset calculations
       // and structure padding are assumed to do this. FIXME redundant length check
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)           \
-      virtual void get##pretty##Property(unsigned ordinal, char *cp, size_t length, \
-					 unsigned idx) const {		   \
-	OA::PropertyInfo &info = properties()[ordinal];			   \
-        size_t stringLength = info.m_stringLength;                         \
+      virtual void \
+      get##pretty##Property(const OCPI::API::PropertyInfo &info, const Util::Member *mp, \
+			    size_t off, char *cp, size_t length, unsigned idx) const { \
+        const OU::Member &m = mp ? *mp : info;				   \
+        size_t stringLength = m.m_stringLength;                           \
         if (length < stringLength + 1)                                     \
           throw; /*"string buffer smaller than property"*/;                \
         if (info.m_readError)                                              \
           throw; /*"worker has errors before write */                      \
-        uint32_t i32, *p32 = (uint32_t *)(myProperties + info.m_offset +   \
-                                          info.m_elementBytes * idx);	   \
+        uint32_t i32, *p32 = (uint32_t *)(myProperties + info.m_offset + off + \
+                                          m.m_elementBytes * idx);	   \
         memcpy(cp + 32/CHAR_BIT, p32 + 1, stringLength + 1 - 32/CHAR_BIT); \
         i32 = *p32;                                                        \
         memcpy(cp, &i32, 32/CHAR_BIT);                                     \
@@ -954,8 +959,8 @@ namespace OCPI
 #undef OCPI_DATA_TYPE
 #define OCPI_DATA_TYPE_S OCPI_DATA_TYPE
 #define PUT_GET_PROPERTY(n)						\
-      void setProperty##n(const OA::PropertyInfo &, uint##n##_t, unsigned) const {} \
-      uint##n##_t getProperty##n(const OA::PropertyInfo &, unsigned) const { return 0; }
+      void setProperty##n(const OA::PropertyInfo &, size_t, uint##n##_t, unsigned) const {} \
+      uint##n##_t getProperty##n(const OA::PropertyInfo &, size_t, unsigned) const { return 0; }
       PUT_GET_PROPERTY(8)
       PUT_GET_PROPERTY(16)
       PUT_GET_PROPERTY(32)
@@ -1479,7 +1484,7 @@ namespace OCPI
       ( void ) bufferCount;
       ( void ) bufferSize;
       ( void ) props;
-      return *(Port *)0;
+      return *(Port *)this;
     }
 
     OC::Port& Worker::createInputPort ( OU::PortOrdinal portId,
@@ -1492,7 +1497,7 @@ namespace OCPI
       ( void ) bufferCount;
       ( void ) bufferSize;
       ( void ) props;
-      return *(Port *)0;
+      return *(Port *)this;
     }
 
     // Buffers directly used by the "user" (non-container/component) API

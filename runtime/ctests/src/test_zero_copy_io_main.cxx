@@ -57,12 +57,11 @@
 
 #include <OcpiThread.h>
 
-#if defined(OCPI_VALGRIND_AVAILABLE) && defined(OCPI_ARCH_x86_64)
+#ifdef OCPI_HAVE_VALGRIND_H
 #include <valgrind/valgrind.h>
 #else
 #define RUNNING_ON_VALGRIND 0
 #endif
-
 using namespace OCPI::Container;
 using namespace OCPI;
 using namespace OCPI::CONTAINER_TEST;
@@ -316,13 +315,13 @@ int config_and_run_zcopy_container_tests(std::vector<CApp>& ca, std::vector<CWor
   sprintf(tnamebuf, " ZCopy Test: container map %d,%d,%d buffer map %d,%d,%d,%d",
           cmap[0], cmap[1], cmap[2], bcmap[0], bcmap[1], bcmap[2], bcmap[3] );
 
-  PRODUCER = cmap[0];
-  PRODUCER.pdata[PRODUCER_OUTPUT_PORT].bufferCount = bcmap[0];
-  LOOPBACK = cmap[1];
-  LOOPBACK.pdata[LOOPBACK_INPUT_PORT].bufferCount  = bcmap[1];
-  LOOPBACK.pdata[LOOPBACK_OUTPUT_PORT].bufferCount = bcmap[2];
-  CONSUMER = cmap[2];
-  CONSUMER.pdata[CONSUMER_INPUT_PORT].bufferCount  = bcmap[3];
+  PRODUCER = static_cast<size_t>(cmap[0]);
+  PRODUCER.pdata[PRODUCER_OUTPUT_PORT].bufferCount = static_cast<size_t>(bcmap[0]);
+  LOOPBACK = static_cast<size_t>(cmap[1]);
+  LOOPBACK.pdata[LOOPBACK_INPUT_PORT].bufferCount  = static_cast<size_t>(bcmap[1]);
+  LOOPBACK.pdata[LOOPBACK_OUTPUT_PORT].bufferCount = static_cast<size_t>(bcmap[2]);
+  CONSUMER = static_cast<size_t>(cmap[2]);
+  CONSUMER.pdata[CONSUMER_INPUT_PORT].bufferCount  = static_cast<size_t>(bcmap[3]);
 
   return run_zc_test( tnamebuf, ca, workers );
 
@@ -343,7 +342,7 @@ static int bcmap[][4] = {
 
 
 #ifdef NO_MAIN
-int unit_test_zcopy_main( int argc, char** argv)
+int unit_test_zcopy_main( int /*argc*/, char** /*argv*/)
 #else
 int  main( int /*argc*/, char** /*argv*/)
 #endif

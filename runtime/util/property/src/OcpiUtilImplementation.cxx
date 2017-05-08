@@ -216,7 +216,7 @@ namespace OCPI {
     void Attributes::parse(const char *pString) {
       std::string unused;
       char *p = strdup(pString), *temp = p, *val;
-      
+
       if ((val = strsep(&temp, "="))) {
 	parse3(val, m_os, m_osVersion, unused);
 	if ((val = strsep(&temp, "="))) {
@@ -243,7 +243,7 @@ namespace OCPI {
       OCPI_CONTROL_STATES
 #undef CONTROL_STATE
       NULL
-    };      
+    };
   }
 }
 

@@ -1,17 +1,21 @@
 <ComponentSpec>
-     <Property Name="p0" Type="Bool" Readable="true" Writable="true"/>
+     <Property Name="pBool" Type="Bool" Readable="true" Writable="true" default='1'/>
      <Property Name="p1" Type="Char" Volatile="true" Writable="true"/>
-     <Property Name="p1a" Type="Char" Readable="true" Writable="true"/>
-     <Property Name="p2" Type="Double" Readable="true" Writable="true"/>
+     <Property Name="pChar" Type="Char" Readable="true" Writable="true" default='\d-2'/>
+     <Property Name="pDouble" Type="Double" Readable="true" Writable="true" default='3'/>
+     <Property Name="pFloat" Type="Float" Readable="true" Writable="true" default='4'/>
      <Property Name="p3" Type="Float" Volatile="true" Writable="true"/>
-     <Property Name="p4" Type="Short" Readable="true" Writable="true"/>
+     <Property Name="pShort" Type="Short" Readable="true" Writable="true" default='-5'/>
+     <Property Name="pLong" Type="Long" Readable="true" Writable="true" default='-6'/>
      <Property Name="p5" Type="Long" Volatile="true" Writable="true"/>
-     <Property Name="p6" Type="UChar" Readable="true" Writable="true"/>
+     <Property Name="pUChar" Type="UChar" Readable="true" Writable="true" default='7'/>
+     <Property Name="pULong" Type="ULong" Readable="true" Writable="true" default='8'/>
      <Property Name="p7" Type="ULong" Volatile="true" Writable="true"/>
-     <Property Name="p8" Type="UShort" Readable="true" Writable="true"/>
+     <Property Name="pUShort" Type="UShort" Readable="true" Writable="true" default='9'/>
+     <Property Name="pLongLong" Type="LongLong" Writable="true" default='-10'/>
      <Property Name="p9" Type="LongLong"  Volatile="true" Writable="true"/>
-     <Property Name="p10" Type="ULongLong" Readable="true" Writable="true"/>
-     <Property Name="p11" Type="String" StringLength="20" Volatile="true" Writable="true"/>
+     <Property Name="pULongLong" Type="ULongLong" Readable="true" Writable="true" default='11'/>
+     <Property Name="pString" Type="String" StringLength="20" Volatile="true" Writable="true" default='12'/>
      <Property Name="ap0" Type="Bool" Readable="true" Writable="true" arraylength="1"/>
      <Property Name="ap1" Type="Char" Volatile="true" Writable="true" arraylength="2"/>
      <Property Name="ap2" Type="Double" Readable="true" Writable="true" arraylength="3"/>

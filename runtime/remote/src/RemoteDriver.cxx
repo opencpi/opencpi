@@ -65,7 +65,7 @@ class Worker
   virtual ~Worker() {}
   OC::Port &createPort(const OU::Port&, const OU::PValue */*params*/) {
     ocpiAssert("This method is not expected to ever be called" == 0);
-    return *(OC::Port*)NULL;
+    return *(OC::Port*)this;
   }
   OC::Port &createInputPort(OU::PortOrdinal /*portId*/,      
 			    size_t /*bufferCount*/,
@@ -73,7 +73,7 @@ class Worker
 			    const OU::PValue */*params*/ = NULL)
     throw (OU::EmbeddedException) {
     ocpiAssert("This method is not expected to ever be called" == 0);
-    return *(OC::Port*)NULL;
+    return *(OC::Port*)this;
   }
   OC::Port &createOutputPort(OU::PortOrdinal /*portId*/,
 			     size_t /*bufferCount*/,
@@ -81,7 +81,7 @@ class Worker
 			     const OU::PValue */*props*/ = NULL)
     throw ( OU::EmbeddedException ) {
     ocpiAssert("This method is not expected to ever be called" == 0);
-    return *(OC::Port*)NULL;
+    return *(OC::Port*)this;
   }
   void controlOperation(OU::Worker::ControlOperation op) {
     if (getControlMask() & (1 << op))
@@ -108,34 +108,35 @@ class Worker
   void write(size_t /*offset*/, size_t /*nBytes*/, const void */*p_data*/ ) {}
   void setPropertyBytes(const OA::PropertyInfo &/*info*/, size_t /*offset*/,
 			const uint8_t */*data*/, size_t /*nBytes*/, unsigned /*idx*/) const {};
-  void setProperty8(const OA::PropertyInfo &/*info*/, uint8_t /*data*/,
+  void setProperty8(const OA::PropertyInfo &/*info*/, size_t /*offset*/, uint8_t /*data*/,
 		    unsigned /*idx*/) const {}
-  void setProperty16(const OA::PropertyInfo &/*info*/, uint16_t /*data*/,
+  void setProperty16(const OA::PropertyInfo &/*info*/, size_t /*offset*/, uint16_t /*data*/,
 		     unsigned /*idx*/) const {}
-  void setProperty32(const OA::PropertyInfo &/*info*/, uint32_t /*data*/,
+  void setProperty32(const OA::PropertyInfo &/*info*/, size_t /*offset*/, uint32_t /*data*/,
 		     unsigned /*idx*/) const {}
-  void setProperty64(const OA::PropertyInfo &/*info*/, uint64_t /*data*/,
+  void setProperty64(const OA::PropertyInfo &/*info*/, size_t /*offset*/, uint64_t /*data*/,
 		     unsigned /*idx*/) const {}
   void getPropertyBytes(const OA::PropertyInfo &/*info*/, size_t /*offset*/,
 			uint8_t */*data*/, size_t /*nBytes*/, unsigned /*idx*/, bool /*string*/)
     const {}
-  uint8_t getProperty8(const OA::PropertyInfo &/*info*/, unsigned /*idx*/) const { return 0; }
-  uint16_t getProperty16(const OA::PropertyInfo &/*info*/, unsigned /*idx*/) const { return 0; }
-  uint32_t getProperty32(const OA::PropertyInfo &/*info*/, unsigned /*idx*/) const  { return 0; }
-  uint64_t getProperty64(const OA::PropertyInfo &/*info*/, unsigned /*idx*/) const  { return 0; }
+  uint8_t getProperty8(const OA::PropertyInfo &/*info*/, size_t /*offset*/, unsigned /*idx*/) const { return 0; }
+  uint16_t getProperty16(const OA::PropertyInfo &/*info*/, size_t /*offset*/, unsigned /*idx*/) const { return 0; }
+  uint32_t getProperty32(const OA::PropertyInfo &/*info*/, size_t /*offset*/, unsigned /*idx*/) const  { return 0; }
+  uint64_t getProperty64(const OA::PropertyInfo &/*info*/, size_t /*offset*/, unsigned /*idx*/) const  { return 0; }
 
       
   void propertyWritten(unsigned /*ordinal*/) const {};
   void propertyRead(unsigned /*ordinal*/) const {};
   void prepareProperty(OU::Property&,
-		       volatile void *&/*writeVaddr*/,
-		       const volatile void *&/*readVaddr*/) {}
+		       volatile uint8_t *&/*writeVaddr*/,
+		       const volatile uint8_t *&/*readVaddr*/) {}
   // These property access methods are called when the fast path
   // is not enabled, either due to no MMIO or that the property can
   // return errors. 
 #undef OCPI_DATA_TYPE_S
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		\
-  void set##pretty##Property(unsigned /*ordinal*/, const run /*val*/, unsigned /*idx*/) const {} \
+  void set##pretty##Property(const OCPI::API::PropertyInfo &, const Util::Member *, \
+			     size_t /*offset*/, const run /*val*/, unsigned /*idx*/) const {} \
   void set##pretty##SequenceProperty(const OA::Property &/*p*/,const run */*vals*/, \
 				     size_t /*length*/) const {}
   // Set a string property value
@@ -143,8 +144,8 @@ class Worker
   // are aligned on 4 byte boundaries.  The offset calculations
   // and structure padding are assumed to do this.
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)      \
-  void set##pretty##Property(unsigned /*ordinal*/, const run /*val*/, \
-			     unsigned /*idx*/) const {}		      \
+  void set##pretty##Property(const OCPI::API::PropertyInfo &, const Util::Member *, \
+			     size_t /*offset*/, const run /*val*/, unsigned /*idx*/) const {} \
   void set##pretty##SequenceProperty(const OA::Property &/*p*/, const run */*vals*/, \
 				     size_t /*length*/) const {}
   OCPI_PROPERTY_DATA_TYPES
@@ -152,7 +153,8 @@ class Worker
 #undef OCPI_DATA_TYPE
   // Get Scalar Property
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		\
-  run get##pretty##Property(unsigned /*ordinal*/, unsigned /*idx*/) const { return 0; }	\
+  run get##pretty##Property(const OCPI::API::PropertyInfo &, const Util::Member *, \
+			    size_t /*offset*/, unsigned /*idx*/) const { return 0; } \
   unsigned get##pretty##SequenceProperty(const OA::Property &/*p*/,	\
 					 run */*vals*/,			\
 					 size_t /*length*/) const { return 0; }
@@ -160,7 +162,8 @@ class Worker
   // are aligned on 4 byte boundaries.  The offset calculations
   // and structure padding are assumed to do this.
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)	\
-  void get##pretty##Property(unsigned /*ordinal*/, char */*cp*/,	\
+  void get##pretty##Property(const OCPI::API::PropertyInfo &, const Util::Member *, \
+			     size_t /*offset*/, char */*cp*/,		\
 			     size_t /*length*/, unsigned /*idx*/) const {} \
   unsigned get##pretty##SequenceProperty				\
   (const OA::Property &/*p*/, char **/*vals*/, size_t /*length*/, char */*buf*/, \

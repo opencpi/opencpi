@@ -12,8 +12,9 @@ else
   OCPI_BOOTSTRAP=`pwd`/exports/scripts/ocpibootstrap.sh; . $OCPI_BOOTSTRAP
   test $? = 0 || exit 1; 
 fi
+source $OCPI_CDK_DIR/scripts/util.sh
 echo ======================= Loading the OpenCPI Linux Kernel driver. &&
-(test "$OCPI_TOOL_OS" = macos || $OCPI_CDK_DIR/scripts/ocpidriver load) &&
+(test "$(ocpiGetToolOS)" = macos || $OCPI_CDK_DIR/scripts/ocpidriver load) &&
 echo ======================= Running Unit Tests &&
 tests/target-$OCPI_TOOL_DIR/ocpitests &&
 echo ======================= Running Datatype/protocol Tests &&

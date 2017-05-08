@@ -450,8 +450,9 @@ static void emulate(const char **) {
       OE::Packet rFrame, sFrame;
       static char cadmin[sizeof(OH::OccpSpace)];
       memset(cadmin, 0, sizeof(cadmin));
-      OH::Sim::Server::initAdmin(*(OH::OccpAdminRegisters *)cadmin, "emulator",
-				 *(OH::HdlUUID *)(cadmin + offsetof(OH::OccpSpace, config)));
+      OU::UuidString uuid;
+      OH::Device::initAdmin(*(OH::OccpAdminRegisters *)cadmin, "emulator",
+			    *(OH::HdlUUID *)(cadmin + offsetof(OH::OccpSpace, config)), &uuid);
       HE::EtherControlHeader &ech_out =  *(HE::EtherControlHeader *)(sFrame.payload);
       bool haveTag = false;
       OE::Address to;
@@ -1813,23 +1814,23 @@ public:
   }
   OC::Port *findPort(const char *) { return NULL; }
   const std::string &name() const { return m_name; }
-  void prepareProperty(OU::Property &, volatile void *&, const volatile void *&) {}
+  void prepareProperty(OU::Property &, volatile uint8_t *&, const volatile uint8_t *&) {}
   OC::Port &createPort(const OU::Port &, const OU::PValue *) {
     ocpiAssert("This method is not expected to ever be called" == 0);
-    return *(OC::Port*)NULL;
+    return *(OC::Port*)this;
   }
   OC::Port &createOutputPort(OU::PortOrdinal, size_t, size_t, 
 			     const OU::PValue*)
     throw (OU::EmbeddedException)
   {
     ocpiAssert("This method is not expected to ever be called" == 0);
-    return *(OC::Port*)NULL;
+    return *(OC::Port*)this;
   }
   OC::Port & createInputPort(OU::PortOrdinal, size_t, size_t, const OU::PValue*)
     throw (OU::EmbeddedException)
   {
     ocpiAssert("This method is not expected to ever be called" == 0);
-    return *(OC::Port*)NULL;
+    return *(OC::Port*)this;
   }
   OC::Application *application() { return NULL;}
   OC::Worker *nextWorker() { return NULL; }

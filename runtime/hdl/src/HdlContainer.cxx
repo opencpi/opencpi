@@ -310,8 +310,8 @@ namespace OCPI {
       OC::Port & createPort(const OU::Port &metaport, const OA::PValue *props);
 
       virtual void prepareProperty(OU::Property &mp,
-				   volatile void *&writeVaddr,
-				   const volatile void *&readVaddr) {
+				   volatile uint8_t *&writeVaddr,
+				   const volatile uint8_t *&readVaddr) {
         return WciControl::prepareProperty(mp, writeVaddr, readVaddr);
       }
 
@@ -332,8 +332,9 @@ namespace OCPI {
 
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)     	    \
       void								    \
-      set##pretty##Property(unsigned ordinal, const run val, unsigned idx) const { \
-        WciControl::set##pretty##Property(ordinal, val, idx);		    \
+      set##pretty##Property(const OCPI::API::PropertyInfo &info, const Util::Member *m, \
+			    size_t off, const run val, unsigned idx) const { \
+        WciControl::set##pretty##Property(info, m, off, val, idx);	\
       }									    \
       void								    \
       set##pretty##SequenceProperty(const OA::Property &p, const run *vals, \
@@ -341,8 +342,9 @@ namespace OCPI {
 	WciControl::set##pretty##SequenceProperty(p, vals, length);	    \
       }									    \
       run								    \
-      get##pretty##Property(unsigned ordinal, unsigned idx) const {         \
-	return WciControl::get##pretty##Property(ordinal, idx);		    \
+      get##pretty##Property(const OCPI::API::PropertyInfo &info, const Util::Member *m, \
+			    size_t off, unsigned idx) const {		\
+	return WciControl::get##pretty##Property(info, m, off, idx); \
       }									    \
       unsigned								    \
       get##pretty##SequenceProperty(const OA::Property &p, run *vals,	    \
@@ -352,8 +354,9 @@ namespace OCPI {
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)
 OCPI_DATA_TYPES
       void
-setStringProperty(unsigned ordinal, const char* val, unsigned idx) const {
-  WciControl::setStringProperty(ordinal, val, idx);
+      setStringProperty(const OCPI::API::PropertyInfo &info, const Util::Member *m, size_t off,
+			const char* val, unsigned idx) const {
+        WciControl::setStringProperty(info, m, off, val, idx);
       }
       void
       setStringSequenceProperty(const OA::Property &p, const char * const *val,
@@ -361,8 +364,9 @@ setStringProperty(unsigned ordinal, const char* val, unsigned idx) const {
 	WciControl::setStringSequenceProperty(p, val, n);
       }
       void
-      getStringProperty(unsigned ordinal, char *val, size_t length, unsigned idx) const {
-	WciControl::getStringProperty(ordinal, val, length, idx);
+      getStringProperty(const OCPI::API::PropertyInfo &info, const Util::Member *m, size_t off,
+			char *val, size_t length, unsigned idx) const {
+	WciControl::getStringProperty(info, m, off, val, length, idx);
       }
       unsigned
       getStringSequenceProperty(const OA::Property &p, char * *cp,
@@ -370,11 +374,11 @@ setStringProperty(unsigned ordinal, const char* val, unsigned idx) const {
 	return WciControl::getStringSequenceProperty(p, cp, n, pp, nn);
       }
 #define PUT_GET_PROPERTY(n)						         \
-      void setProperty##n(const OA::PropertyInfo &info, uint##n##_t val, unsigned idx) const { \
-        WciControl::setProperty##n(info, val, idx);				\
+      void setProperty##n(const OA::PropertyInfo &info, size_t off, uint##n##_t val, unsigned idx) const { \
+        WciControl::setProperty##n(info, off, val, idx);			\
       }									         \
-      inline uint##n##_t getProperty##n(const OA::PropertyInfo &info, unsigned idx) const {    \
-	return WciControl::getProperty##n(info, idx);			\
+      inline uint##n##_t getProperty##n(const OA::PropertyInfo &info, size_t off, unsigned idx) const { \
+	return WciControl::getProperty##n(info, off, idx);		\
       }									         
       PUT_GET_PROPERTY(8)
       PUT_GET_PROPERTY(16)
@@ -919,7 +923,7 @@ setStringProperty(unsigned ordinal, const char* val, unsigned idx) const {
                      const OA::PValue* props) throw() {
       (void)portId; (void)bufferCount; (void)bufferSize;(void)props;
       ocpiAssert("This method is not expected to ever be called" == 0);
-      return *(Port *)0;//return *new Port(*this);
+      return *(Port *)this;
     }
     OC::Port &Worker::
     createInputPort(OU::PortOrdinal portId,
@@ -928,7 +932,7 @@ setStringProperty(unsigned ordinal, const char* val, unsigned idx) const {
                     const OA::PValue* props) throw() {
       (void)portId; (void)bufferCount; (void)bufferSize;(void)props;
       ocpiAssert("This method is not expected to ever be called" == 0);
-      return *(Port *)0;//      return *new Port(*this);
+      return *(Port *)this;//      return *new Port(*this);
     }
 
     // only here for proper parent/child

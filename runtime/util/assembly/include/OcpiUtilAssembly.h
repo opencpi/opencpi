@@ -202,7 +202,7 @@ namespace OCPI {
       // Provide a string containing the xml
       explicit Assembly(const std::string &string, const char **extraTopAttrs = NULL,
 			const char **extraInstAttrs = NULL, const OCPI::Util::PValue *params = NULL);
-      // Provide XML directly containing the xml
+      // Provide XML directly
       explicit Assembly(const ezxml_t top, const char *defaultName, bool isImpl,
 			const char **topAttrs = NULL, const char **instAttrs = NULL,
 			const OCPI::Util::PValue *params = NULL);

@@ -1158,8 +1158,11 @@ namespace OCPI {
 	size_t len = pname ? strlen(name) : dot - name;
 	for (unsigned n = 0; n < m_nInstances; n++) {
 	  const char *wname = m_assembly.instance(n).name().c_str();
-	  if (!strncasecmp(name, wname, len) && !wname[len])
-	    return *m_launchInstances[n].m_worker;
+	  if (!strncasecmp(name, wname, len) && !wname[len]) {
+	    if (m_launchInstances[n].m_worker)
+	      return *m_launchInstances[n].m_worker;
+	    throw OU::Error("application is not yet initialized for property access");
+	  }
 	}
 	throw OU::Error("Unknown instance name in: %s", name);
       }
@@ -1428,5 +1431,51 @@ namespace OCPI {
     dumpProperties(bool printParameters, bool printCached, const char *context) const {
       return m_application.dumpProperties(printParameters, printCached, context);
     }
+    // Type-specific scalar property value setters.
+    #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)	   \
+    template <> void Application::					   \
+    setPropertyValue<run>(const char *w, const char *p, const run value, AccessList &l) const { \
+      Property prop(*this, w, p);					   \
+      ocpiDebug("Application::setPropertyValue on %s %s->%s\n", prop.m_info.cname(),	\
+		OU::baseTypeNames[OCPI_##pretty], OU::baseTypeNames[prop.m_info.m_baseType]); \
+      prop.setValue<run>(value, l);					\
+    }
+    OCPI_PROPERTY_DATA_TYPES
+    #undef OCPI_DATA_TYPE
+    template <> void Application::					\
+    setPropertyValue<std::string>(const char *w, const char *p, const std::string value, \
+				  AccessList &l) const {			\
+      Property prop(*this, w, p);
+      prop.setValue<OA::String>(value.c_str(), l);
+    }
+    #undef OCPI_DATA_TYPE_S
+    #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)	\
+    template <> run Application::					\
+    getPropertyValue<run>(const char *w, const char *p, AccessList &l) const {	\
+      Property prop(*this, w, p);					\
+      return prop.getValue<run>(l);					\
+    }
+    #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)	\
+    template <> std::string Application::        			\
+    getPropertyValue<std::string>(const char *w, const char *p, AccessList &l) const { \
+      Property prop(*this, w, p);					\
+      return prop.getValue<std::string>(l);				\
+    }
+    OCPI_PROPERTY_DATA_TYPES
+
+#if 1
+#ifdef __APPLE__
+    template <> long Application::
+    getPropertyValue<long>(const char *w, const char *p, AccessList &l) const {
+      Property prop(*this, w, p);
+      return prop.getValue<long>(l);
+    }
+    template <> unsigned long Application::
+    getPropertyValue<unsigned long>(const char *w, const char *p, AccessList &l) const {
+      Property prop(*this, w, p);
+      return prop.getValue<unsigned long>(l);
+    }
+#endif
+#endif
   }
 }

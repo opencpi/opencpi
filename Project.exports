@@ -77,7 +77,9 @@ tests
 +tools/cdk/scripts/ocpixml bin/<target>/
 +tools/cdk/scripts/ocpidev bin/<target>/
 +tools/cdk/scripts/ocpidriver bin/<target>/
-+tools/cdk/specs
++tools/cdk/specs/* specs/
++hdl/devices/specs/lime-iq-properties.xml specs/
++hdl/devices/specs/dac-properties.xml specs/
 # linux driver
 +os/linux/driver/99-opencpi.rules lib/<target>/
 +os/linux/driver/mdev-opencpi.rules lib/<target>/

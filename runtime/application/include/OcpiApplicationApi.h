@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -60,12 +59,12 @@ namespace OCPI {
       explicit Application(const char *file, const OCPI::API::PValue *params = NULL);
       explicit Application(const std::string &string, const OCPI::API::PValue *params = NULL);
       // Creates a new Application instance from the app template
-      explicit Application(Application & app, const OCPI::API::PValue *params = NULL);     
+      explicit Application(Application & app, const OCPI::API::PValue *params = NULL);
 
       virtual ~Application();
       // INTERNAL ACCESSOR NOT SUPPORTED FOR API
       const ApplicationI &applicationI() const { return m_application; }
-      // This does the setup - creating/instantiating workers, 
+      // This does the setup - creating/instantiating workers,
       // setting initial properties, and making connections
       void initialize();
       // This makes the application operational, and resumes after "stop"
@@ -93,6 +92,45 @@ namespace OCPI {
       void dumpDeployment(const char *appFile, const std::string &file);
       void dumpProperties(bool printParameters = true, bool printCached = true,
 			  const char *context = NULL) const;
+      // setter template without implementation.  we only implement the ones for our types
+      template <typename T> void
+      setPropertyValue(const char *w, const char *p, const T value, AccessList &list= {}) const;
+      // Convenience for app-level property, or w.p syntax
+      template <typename T> inline void
+      setPropertyValue(const char *w, const T value, AccessList &list = {}) const {
+	setPropertyValue(w, NULL, value, list);
+      }
+      // Convenience for passing std::string names rather than const char*
+      template <typename T> inline void
+      setPropertyValue(const std::string &w, const std::string &p, const T value,
+		       AccessList &list = {}) const {
+        setPropertyValue(w.c_str(), p.c_str(), value, list);
+      }
+      template <typename T> inline void
+      setPropertyValue(const std::string &w, const T value, AccessList &list = {}) const {
+        setPropertyValue(w.c_str(), NULL, value, list);
+      }
+      // getter templates that require the type at the call site
+      // e.g. double d = getPropertyValue<double>("foo");
+      // as with string-based getters above, app-level properties do not need the second arg
+      // This one will not be implemented for the OA::String type, but will be for std::string
+      template <typename T>
+      T getPropertyValue(const char *w, const char *p, AccessList &list = {}) const;
+      template <typename T>
+      T getPropertyValue(const char *w, AccessList &list = {}) const {
+	return getPropertyValue<T>(w, NULL, list);
+      }
+      // extra convenience allowing std::string names
+      template <typename T>
+      T getPropertyValue(const std::string &w, const std::string &p, AccessList &list = {}) const {
+	return getPropertyValue<T>(w.c_str(), p.c_str(), list);
+      }
+      // compatibility, requires variable at call site, no access list.
+      template <typename T>
+      void getPropertyValue(const std::string &w, const std::string &p, T &value,
+			    AccessList &list = {}) const {
+	value = getPropertyValue<T>(w.c_str(), p.c_str(), list);
+      }
     private:
       friend class Property;
       Worker &getPropertyWorker(const char *name, const char *&pname) const;

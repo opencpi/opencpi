@@ -41,9 +41,11 @@ override OCPI_HDL_PLATFORM_PATH := $(call OcpiAbsDir,.)$(and $(OCPI_HDL_PLATFORM
 $(call OcpiDbgVar,OCPI_HDL_PLATFORM_PATH)
 # If no platforms were specified, we obviously want to build this platform.
 # And not default to some global "default" one.
-ifeq ($(HdlPlatform)$(HdlPlatforms),)
-  HdlPlatform:=$(CwdName)
-  HdlPlatforms:=$(CwdName)
+ifeq ($(origin HdlPlatform),undefined)
+  ifeq ($(origin HdlPlatforms),undefined)
+    HdlPlatform:=$(CwdName)
+    HdlPlatforms:=$(CwdName)
+  endif
 endif
 # We defer this because of side effects, which is wrong: FIXME hdl-make should not do hdl-target.mk?
 include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk

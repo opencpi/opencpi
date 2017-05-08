@@ -95,33 +95,36 @@ namespace OCPI {
       // is not enabled, either due to no MMIO or that the property can
       // return errors. 
 #undef OCPI_DATA_TYPE_S
-#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)                         \
-      void set##pretty##Property(unsigned ordinal, const run val, unsigned idx) const; \
-      void set##pretty##SequenceProperty(const OCPI::API::Property &p,const run *vals, \
+#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		\
+      void set##pretty##Property(const OCPI::API::PropertyInfo &info, const Util::Member *, \
+				 size_t off, const run val, unsigned idx) const; \
+      void set##pretty##SequenceProperty(const OCPI::API::Property &p, const run *vals, \
 					 size_t length) const;
       // Set a string property value
       // ASSUMPTION:  strings always occupy at least 4 bytes, and
       // are aligned on 4 byte boundaries.  The offset calculations
       // and structure padding are assumed to do this.
-#define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)                       \
-      void set##pretty##Property(unsigned ordinal, const run val, unsigned idx) const; \
-      void set##pretty##SequenceProperty(const OCPI::API::Property &p,const run *vals, \
+#define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)	\
+      void set##pretty##Property(const OCPI::API::PropertyInfo &info, const Util::Member *, \
+				 size_t offset, const run val, unsigned idx) const;     \
+      void set##pretty##SequenceProperty(const OCPI::API::Property &p, const run *vals, \
 					 size_t length) const;
       OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE_S
 #undef OCPI_DATA_TYPE
       // Get Scalar Property
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)	             \
-	run get##pretty##Property(unsigned ordinal, unsigned idx) const;		\
+	run get##pretty##Property(const OCPI::API::PropertyInfo &info,	\
+				  const OCPI::Util::Member *m, size_t offset, \
+				  unsigned idx) const;			\
         unsigned get##pretty##SequenceProperty(const OCPI::API::Property &p, \
-					     run *vals,			     \
-					       size_t length) const;
+					       run *vals, size_t length) const;
       // ASSUMPTION:  strings always occupy at least 4 bytes, and
       // are aligned on 4 byte boundaries.  The offset calculations
       // and structure padding are assumed to do this.
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)	      \
-	void get##pretty##Property(unsigned ordinal, char *cp, size_t length, \
-				   unsigned idx) const;			      \
+	void get##pretty##Property(const OCPI::API::PropertyInfo &info, const Util::Member *, \
+				   size_t off, char *cp, size_t length, unsigned idx) const; \
       unsigned get##pretty##SequenceProperty                                  \
 	(const OCPI::API::Property &p, char **vals, size_t length, char *buf, \
 	 size_t space) const;
@@ -132,21 +135,21 @@ namespace OCPI {
 #define OCPI_DATA_TYPE_S OCPI_DATA_TYPE
       void setPropertyBytes(const OCPI::API::PropertyInfo &info, size_t offset,
 			    const uint8_t *data, size_t nBytes, unsigned idx) const;
-      void setProperty8(const OCPI::API::PropertyInfo &info, uint8_t data, unsigned idx) const;
-      void setProperty16(const OCPI::API::PropertyInfo &info, uint16_t data, unsigned idx) const;
-      void setProperty32(const OCPI::API::PropertyInfo &info, uint32_t data, unsigned idx) const;
-      void setProperty64(const OCPI::API::PropertyInfo &info, uint64_t data, unsigned idx) const;
+      void setProperty8(const OCPI::API::PropertyInfo &info, size_t offset, uint8_t data, unsigned idx) const;
+      void setProperty16(const OCPI::API::PropertyInfo &info, size_t offset, uint16_t data, unsigned idx) const;
+      void setProperty32(const OCPI::API::PropertyInfo &info, size_t offset, uint32_t data, unsigned idx) const;
+      void setProperty64(const OCPI::API::PropertyInfo &info, size_t offset, uint64_t data, unsigned idx) const;
       void getPropertyBytes(const OCPI::API::PropertyInfo &info, size_t offset,
 			    uint8_t *data, size_t nBytes, unsigned idx, bool string) const;
-      uint8_t getProperty8(const OCPI::API::PropertyInfo &info, unsigned idx) const;
-      uint16_t getProperty16(const OCPI::API::PropertyInfo &info, unsigned idx) const;
-      uint32_t getProperty32(const OCPI::API::PropertyInfo &info, unsigned idx) const;
-      uint64_t getProperty64(const OCPI::API::PropertyInfo &info, unsigned idx) const;
+      uint8_t getProperty8(const OCPI::API::PropertyInfo &info, size_t offset, unsigned idx) const;
+      uint16_t getProperty16(const OCPI::API::PropertyInfo &info, size_t offset, unsigned idx) const;
+      uint32_t getProperty32(const OCPI::API::PropertyInfo &info, size_t offset, unsigned idx) const;
+      uint64_t getProperty64(const OCPI::API::PropertyInfo &info, size_t offset, unsigned idx) const;
       void propertyWritten(unsigned ordinal) const;
       void propertyRead(unsigned ordinal) const;
       void prepareProperty(OCPI::Util::Property&,
-			   volatile void *&writeVaddr,
-			   const volatile void *&readVaddr);
+			   volatile uint8_t *&writeVaddr,
+			   const volatile uint8_t *&readVaddr);
 
       OCPI::Container::Port &  createInputPort(
 					       OCPI::Util::PortOrdinal   portId,      

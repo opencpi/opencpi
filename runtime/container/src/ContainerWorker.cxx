@@ -87,7 +87,7 @@ namespace OCPI {
     getPort(const char *a_name, const OA::PValue *params ) {
       return getContainerPort(a_name, params);
     }
-    
+
     Port &Worker::
     getContainerPort(const char *a_name, const OA::PValue *params ) {
       Port *p = findPort(a_name);
@@ -99,8 +99,8 @@ namespace OCPI {
       return createPort(*metaPort, params);
     }
     OA::PropertyInfo & Worker::setupProperty(const char *pname, 
-					     volatile void *&m_writeVaddr,
-					     const volatile void *&m_readVaddr) {
+					     volatile uint8_t *&m_writeVaddr,
+					     const volatile uint8_t *&m_readVaddr) {
       OU::Property &prop = findProperty(pname);
       if (!prop.m_isReadable && !prop.m_isWritable && !prop.m_isParameter)
 	throw OU::Error("Property '%s' of worker '%s' is neither readable nor writable",
@@ -110,8 +110,8 @@ namespace OCPI {
       return prop;
     }
     OA::PropertyInfo & Worker::setupProperty(unsigned n, 
-					     volatile void *&m_writeVaddr,
-					     const volatile void *&m_readVaddr) {
+					     volatile uint8_t *&m_writeVaddr,
+					     const volatile uint8_t *&m_readVaddr) {
       OU::Property &prop = property(n);
       if (!prop.m_isParameter)
 	prepareProperty(prop, m_writeVaddr, m_readVaddr);
@@ -193,7 +193,7 @@ namespace OCPI {
 	  delete [] alloc; // may be null if not serialized (not struct)
 	}
         if (info.m_isSequence) {
-	  setProperty32(info, OCPI_UTRUNCATE(uint32_t, v.m_nElements));
+	  setProperty32(info, 0, OCPI_UTRUNCATE(uint32_t, v.m_nElements));
 	  if (cache)
 	    *(uint32_t*)(cache) = OCPI_UTRUNCATE(uint32_t, v.m_nElements);
 	}
@@ -202,19 +202,19 @@ namespace OCPI {
 	if (l > 4)
 	  setPropertyBytes(info, info.m_offset + 4,
 			   (uint8_t *)(v.m_String + 4), l - 4);
-	setProperty32(info, *(uint32_t *)v.m_String);
+	setProperty32(info, 0, *(uint32_t *)v.m_String);
 	if (cache)
 	  memcpy(cache, (uint8_t*)v.m_String, l);
       } else {
 	switch (info.m_nBits) {
 	case 8:
-	  setProperty8(info, v.m_UChar); break;
+	  setProperty8(info, 0, v.m_UChar); break;
 	case 16:
-	  setProperty16(info, v.m_UShort); break;
+	  setProperty16(info, 0, v.m_UShort); break;
 	case 32:
-	  setProperty32(info, v.m_ULong); break;
+	  setProperty32(info, 0, v.m_ULong); break;
 	case 64:
-	  setProperty64(info, v.m_ULongLong); break;
+	  setProperty64(info, 0, v.m_ULongLong); break;
 	default:;
 	}
 	if (cache)
@@ -247,7 +247,7 @@ namespace OCPI {
       if (info.m_baseType == OA::OCPI_Struct || info.m_isSequence || info.m_arrayRank > 0) {
 	v.m_nTotal = info.m_nItems;
 	if (info.m_isSequence) {
-	  v.m_nElements = cache ? *(uint32_t*)cache : getProperty32(info);
+	  v.m_nElements = cache ? *(uint32_t*)cache : getProperty32(info, 0);
 	  if (v.m_nElements > info.m_sequenceLength)
 	    throw OU::Error("Worker's %s property has invalid sequence length: %zu",
 			    info.m_name.c_str(), v.m_nElements);
@@ -309,13 +309,13 @@ namespace OCPI {
       else
 	switch (info.m_nBits) {
 	case 8:
-	  v.m_UChar = getProperty8(info); break;
+	  v.m_UChar = getProperty8(info, 0); break;
 	case 16:
-	  v.m_UShort = getProperty16(info); break;
+	  v.m_UShort = getProperty16(info, 0); break;
 	case 32:
-	  v.m_ULong = getProperty32(info); break;
+	  v.m_ULong = getProperty32(info, 0); break;
 	case 64:
-	  v.m_ULongLong = getProperty64(info); break;
+	  v.m_ULongLong = getProperty64(info, 0); break;
 	default:;
 	}
       v.unparse(value, NULL, add, hex);
@@ -360,7 +360,7 @@ namespace OCPI {
       if (props)
 	for (const OA::PValue *p = props; p->name; p++) {
 	  OA::Property prop(*this, p->name); // exception goes out
-	  prop.checkTypeAlways(p->type, 1, true);
+	  prop.checkTypeAlways(&prop.m_info, p->type, 1, true);
 	  switch (prop.m_info.m_baseType) {
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		\
 	    case OA::OCPI_##pretty:				\
@@ -465,9 +465,16 @@ namespace OCPI {
 
 #undef OCPI_DATA_TYPE
 #undef OCPI_DATA_TYPE_S
-#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) \
-    run Worker:: \
+#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		\
+    run Worker::							\
+    get##pretty##PropertyOrd(unsigned ordinal, unsigned idx) const { \
+    const OA::PropertyInfo &pi = m_properties[ordinal];		  \
+    const OU::Member *m = &m_properties[ordinal]; \
+    return get##pretty##Property(pi, m, (size_t)0, idx);		\
+    }									\
+    run Worker::							\
     get##pretty##Parameter(unsigned ordinal, unsigned idx) const { \
+      assert("partial read of parameters unsupported" == 0); \
       OU::Property &p = m_properties[ordinal]; \
       assert(p.m_default); \
       OU::Value &v = *p.m_default; \
@@ -480,7 +487,16 @@ namespace OCPI {
 #define OCPI_DATA_TYPE_S OCPI_DATA_TYPE
 
     void Worker::
+    setStringPropertyOrd(unsigned ordinal, const char *s, unsigned idx) const {
+      setStringProperty(m_properties[ordinal], &m_properties[ordinal], 0, s, idx);
+    }
+    void Worker::
+    getStringPropertyOrd(unsigned ord, char *str, size_t length, unsigned idx) const {
+      getStringProperty(m_properties[ord], &m_properties[ord], 0, str, length, idx);
+    }
+    void Worker::
     getStringParameter(unsigned ordinal, char *out, size_t length, unsigned idx) const {
+      assert("partial read of parameters unsupported" == 0); \
       OU::Property &p = m_properties[ordinal];
       assert(p.m_default);
       OU::Value &v = *p.m_default;

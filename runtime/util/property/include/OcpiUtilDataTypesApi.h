@@ -59,7 +59,7 @@
   5. the runtime C++ type we have chosen, consistent with CDR
   6. the uppercased typename used for OCPI user APIs specific to types
   7. the mapped, sized, C++ (including stdint.h) C++ typename
-  
+
   It is unfortunate that "string" falls into this "basic" category, but
   CORBA and SCA are both strange about it so we are too.
 

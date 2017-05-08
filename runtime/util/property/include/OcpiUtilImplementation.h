@@ -34,7 +34,7 @@
 /*
 
  Definitions for worker metadata encoding,decoding.
- Offline, in tools, this information is encoded into a string format 
+ Offline, in tools, this information is encoded into a string format
  suitable for program level arguments (argv).  All properties are encoded into
  a single string.  This relieves runtime of any parsing overhead (time or space)
  or dependencies on external parsing libraries.
@@ -43,9 +43,9 @@
  components.  Thus it is not (yet) intended to support SCA GPP components.
 
  This file defines the binary (non-string) format of SCA component properties,
- as well as the functions to encode (binary to string) and decode 
+ as well as the functions to encode (binary to string) and decode
  (string to binary).
- 
+
 */
 
 //  This file implements worker metadata

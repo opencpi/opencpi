@@ -14,20 +14,23 @@ namespace OCPI {
       const char *status();
       OCPI::Container::Port *findPort(const char *) { return NULL; }
       const std::string &name() const { return m_name; }
-      void prepareProperty(OCPI::Util::Property &, volatile void *&, const volatile void *&) {}
+      void prepareProperty(OCPI::Util::Property &, volatile uint8_t *&, const volatile uint8_t *&) {}
       OCPI::Container::Port &createPort(const OCPI::Util::Port &, const OCPI::Util::PValue *) {
-	return *(OCPI::Container::Port*)NULL;
+	assert("not called"==0);
+	return *(OCPI::Container::Port*)this;
       }
       OCPI::Container::Port &createOutputPort(OCPI::Util::PortOrdinal, size_t, size_t, 
 					      const OCPI::Util::PValue*)
 	throw (OCPI::Util::EmbeddedException)
       {
-	return *(OCPI::Container::Port*)NULL;
+	assert("not called"==0);
+	return *(OCPI::Container::Port*)this;
       }
       OCPI::Container::Port & createInputPort(OCPI::Util::PortOrdinal, size_t, size_t, const OCPI::Util::PValue*)
 	throw (OCPI::Util::EmbeddedException)
       {
-	return *(OCPI::Container::Port*)NULL;
+	assert("not called"==0);
+	return *(OCPI::Container::Port*)this;
       }
       OCPI::Container::Application *application() { return NULL;}
       OCPI::Container::Worker *nextWorker() { return NULL; }

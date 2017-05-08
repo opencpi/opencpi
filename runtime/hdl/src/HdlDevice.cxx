@@ -233,7 +233,7 @@ namespace OCPI {
 	error = "Platform name in admin space is garbage";
 	return true;
       }
-	
+
       for (n = 0; m_UUID.device[n] && n < sizeof(m_UUID.device); n++)
 	;
       if (n > 2)
@@ -318,6 +318,48 @@ namespace OCPI {
     void Device::
     connect(DataTransfer::EndPoint &/*ep*/, OCPI::RDT::Descriptors &/*mine*/,
 	    const OCPI::RDT::Descriptors &/*other*/) {
+    }
+    // Static
+    void Device::
+    initAdmin(OccpAdminRegisters &admin, const char *a_platform, HdlUUID &hdlUuid,
+	      OU::UuidString *uuidString) {
+      memset(&admin, 0, sizeof(admin));
+#define unconst32(a) (*(uint32_t *)&(a))
+#define unconst64(a) (*(uint64_t *)&(a))
+      unconst64(admin.magic) = OCCP_MAGIC;
+      unconst32(admin.revision) = 0;
+      unconst32(admin.birthday) = OCPI_UTRUNCATE(uint32_t, time(0));
+      unconst32(admin.pciDevice) = 0;
+      unconst32(admin.attention) = 0;
+      unconst32(admin.status) = 0;
+      admin.scratch20 = 0xf00dface;
+      admin.scratch24 = 0xdeadbeef;
+      admin.control = 0;
+      unconst32(admin.reset) = 0;
+      unconst32(admin.timeStatus) = 0;
+      admin.timeControl = 0;
+      admin.time = 0;
+      admin.timeDelta = 0;
+      unconst32(admin.timeClksPerPps) = 0;
+      unconst64(admin.present) = 1;
+      unconst64(admin.attention) = 1;
+      unconst32(admin.numRegions) = 1;
+      unconst32(admin.regions[0]) = 0;
+      OU::Uuid l_uuid;
+      OU::generateUuid(l_uuid);
+      if (uuidString) {
+	OU::uuid2string(l_uuid, *uuidString);
+	ocpiDebug("Emulator UUID: %s", *uuidString);
+      }
+      HdlUUID temp;
+      temp.birthday = OCPI_UTRUNCATE(uint32_t, time(0) + 1);
+      memcpy(temp.uuid, l_uuid, sizeof(l_uuid));
+      strcpy(temp.platform, a_platform);
+      strcpy(temp.device, "devemu");
+      strcpy(temp.load, "ld");
+      strcpy(temp.dna, "\001\002\003\004\005\006\007");
+      for (unsigned n = 0; n < sizeof(HdlUUID); n++)
+	((uint8_t *)&hdlUuid)[n] = ((uint8_t *)&temp)[(n & ~3) + (3 - (n & 3))];
     }
   }
 }

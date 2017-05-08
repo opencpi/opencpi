@@ -38,6 +38,7 @@
 #define OCPI_CONTAINER_API_H
 #include <stdarg.h>
 #include <string>
+#include <initializer_list>
 #include "OcpiPValueApi.h"
 #include "OcpiUtilPropertyApi.h"
 #include "OcpiUtilExceptionApi.h"
@@ -51,6 +52,9 @@ namespace OCPI {
   }
   namespace Remote {
     class RemoteLauncher;
+  }
+  namespace Util {
+    class Member;
   }
   namespace API {
     class ExternalBuffer {
@@ -106,30 +110,51 @@ namespace OCPI {
       virtual ~PropertyAccess();
       virtual void propertyWritten(unsigned ordinal) const = 0;
       virtual void propertyRead(unsigned ordinal) const = 0;
+      // FIXME:  These should be protected, but the proxy code generator uses them too
       // These methods are used by the Property methods below when the
       // fast path using memory-mapped access cannot be used.
-#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		  \
-      virtual void set##pretty##Property(unsigned ordinal, const run, unsigned idx) const = 0; \
-      virtual void set##pretty##SequenceProperty(const Property &,        \
-						 const run *,		  \
-						 size_t nElements) const = 0;
+#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		\
+      virtual void							\
+      set##pretty##Property(const PropertyInfo &, const Util::Member *m, size_t offset, \
+			    const run, unsigned idx) const = 0;			\
+      virtual void							\
+      set##pretty##SequenceProperty(const Property &, const run *, size_t nElements) const = 0;
+#if 0
+      virtual void						\
+      set##pretty##Property(unsigned ordinal, const run, unsigned idx) const = 0; \
 
+#endif
     OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE
 #undef OCPI_DATA_TYPE_S
-      // generate the simple-type-specific getting methods
-      // need a special item for strings
-#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		           \
-      virtual run get##pretty##Property(unsigned ordinal, unsigned idx) const = 0; \
-      virtual unsigned get##pretty##SequenceProperty(const Property&, run *,       \
-						     size_t length) const = 0;
+// The ordinal-based one is for proxies, with no navigation, but indexing
+// The prop/member one is for ACI, which has navigation
+#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		\
+    virtual run								\
+    get##pretty##Property(const PropertyInfo &, const Util::Member *, size_t off, \
+			  unsigned idx) const = 0;			\
+    virtual unsigned							\
+    get##pretty##SequenceProperty(const Property&, run *, size_t length) const = 0;
 
-#define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)                  \
-      virtual void get##pretty##Property(unsigned ordinal, char *,                \
-					 size_t length, unsigned idx) const = 0;  \
-      virtual unsigned get##pretty##SequenceProperty                              \
-        (const Property &, char **, size_t length, char *buf,                     \
-	 size_t space) const = 0;
+#if 0
+    virtual run						     \
+    get##pretty##Property(unsigned ordinal, unsigned idx) const = 0; \
+
+#endif
+// The ordinal-based one is for proxies, with no navigation, but indexing
+// The prop/member one is for ACI, which has navigation
+#define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)	\
+    virtual void							\
+    get##pretty##Property(const PropertyInfo &, const Util::Member *, size_t off, char *, \
+			  size_t length, unsigned idx) const = 0;	\
+    virtual unsigned							\
+    get##pretty##SequenceProperty(const Property &, char **, size_t length, char *buf, \
+				  size_t space) const = 0;
+#if 0
+    virtual void							\
+    get##pretty##Property(unsigned ord, char *, size_t length, unsigned idx) const = 0; \
+
+#endif
     OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE
 #undef OCPI_DATA_TYPE_S
@@ -138,11 +163,11 @@ namespace OCPI {
     class Worker : virtual public PropertyAccess {
       friend class Property;
       virtual PropertyInfo &setupProperty(const char *name,
-					  volatile void *&m_writeVaddr,
-					  const volatile void *&m_readVaddr) = 0;
+					  volatile uint8_t *&m_writeVaddr,
+					  const volatile uint8_t *&m_readVaddr) = 0;
       virtual PropertyInfo &setupProperty(unsigned n,
-					  volatile void *&m_writeVaddr,
-					  const volatile void *&m_readVaddr) = 0;
+					  volatile uint8_t *&m_writeVaddr,
+					  const volatile uint8_t *&m_readVaddr) = 0;
       virtual bool beforeStart() = 0;
     protected:
       virtual ~Worker();
@@ -165,11 +190,11 @@ namespace OCPI {
 			       bool *cachedp = NULL, bool uncached = false) = 0;
 #undef OCPI_DATA_TYPE
 #undef OCPI_DATA_TYPE_S
-#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		           \
+#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		\
       virtual run get##pretty##Parameter(unsigned ordinal, unsigned idx) const = 0;
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)                  \
-      virtual void get##pretty##Parameter(unsigned ordinal, char *,               \
-					  size_t length, unsigned idx) const = 0;
+      virtual void get##pretty##Parameter(unsigned ordinal, char *, size_t length, \
+					  unsigned idx) const = 0;
     OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE
 #undef OCPI_DATA_TYPE_S
@@ -247,6 +272,18 @@ namespace OCPI {
       static void shutdown();
     };
     class Application; // forward reference for applications that span containers.
+    // Structure to capture indexing arrays and sequences and navigating to struct members
+    // The only intended usage is in the initializer_list below
+    struct Access {
+      union {
+	size_t m_index;
+	const char *m_member;
+      };
+      bool m_number;
+      Access(size_t subscript)   : m_index(subscript), m_number(true) {} // get element
+      Access(const char *member) : m_member(member), m_number(false) {}; // get member
+    };
+    typedef const std::initializer_list<Access> AccessList;
     // User interface for runtime property support for a worker.
     // Optimized for low-latency scalar and/or memory mapped access.
     // Not virtual.
@@ -257,8 +294,8 @@ namespace OCPI {
     protected:
       Worker &m_worker;               // which worker do I belong to
     private:
-      const volatile void *m_readVaddr;
-      volatile void *m_writeVaddr;
+      const volatile uint8_t *m_readVaddr;
+      volatile uint8_t *m_writeVaddr;
     public:
       PropertyInfo &m_info;           // details about property, not defined in the API
       unsigned m_ordinal;
@@ -269,12 +306,20 @@ namespace OCPI {
       Property(Worker &, const char *);
     private:
       Property(Worker &, unsigned);
-      void checkTypeAlways(BaseType ctype, size_t n, bool write) const;
-      inline void checkType(BaseType ctype, size_t n, bool write) const {
+      void throwError(const char *err) const;
+      template <typename val_t> void setValueInternal(const OCPI::Util::Member &m, size_t off,
+						      const val_t val) const;
+      template <typename val_t> val_t getValueInternal(const OCPI::Util::Member &m, 
+						       size_t off) const;
+      void checkTypeAlways(const OCPI::Util::Member *m, BaseType ctype, size_t n,
+			   bool write) const;
+      inline void checkType(const OCPI::Util::Member *m, BaseType ctype, size_t n,
+			    bool write) const {
 #if !defined(NDEBUG) || defined(OCPI_API_CHECK_PROPERTIES)
-        checkTypeAlways(ctype, n, write);
+        checkTypeAlways(m, ctype, n, write);
 #endif
       }
+      const OCPI::Util::Member &descend(AccessList &list, size_t &offset) const;
     public:
       inline bool readSync() const { return m_readSync; }
       inline bool writeSync() const { return m_writeSync; }
@@ -287,57 +332,77 @@ namespace OCPI {
       // implementation does not produce errors and it is atomic at this data size
 
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)                  \
-      inline void set##pretty##Value(run val) const {                           \
-        checkType(OCPI_##pretty, 1, true);				        \
+      inline void							        \
+      set##pretty##Value(const OCPI::Util::Member *m, size_t offset, run val) const { \
+        checkType(m, OCPI_##pretty, 0, true);			                \
         if (m_writeVaddr) {						        \
 	  /* avoid strict aliasing violation */                                 \
-          /* was: *(store *)m_writeVaddr= *(store*)((void*)&(val));*/           \
+          /* was: *(store *)m_writeVaddr= *(store*)((void*)&(val));*/	        \
 	  union { run runval; store storeval; } u; u.runval = val;	        \
-          *reinterpret_cast<volatile store *>(m_writeVaddr)= u.storeval;        \
+          *reinterpret_cast<volatile store *>(m_writeVaddr+offset)= u.storeval; \
 	  if (m_writeSync)						        \
              m_worker.propertyWritten(m_ordinal);                               \
         } else								        \
-          m_worker.set##pretty##Property(m_ordinal, val, 0);     		\
+          m_worker.set##pretty##Property(m_info, m, offset, val, 0); \
       }                                                                         \
+      inline void set##pretty##Value(run val) const {                           \
+        set##pretty##Value(NULL, 0, val);        				\
+      }									        \
       inline void set##pretty##SequenceValue(const run *vals, size_t n) const { \
-        checkType(OCPI_##pretty, n, true);				        \
+        checkType(NULL, OCPI_##pretty, n, true);				\
         m_worker.set##pretty##SequenceProperty(*this, vals, n);                 \
       }                                                                         \
-      inline run get##pretty##Value() const {                                   \
-        checkType(OCPI_##pretty, 1, false);				        \
+      inline run							        \
+      get##pretty##Value(const OCPI::Util::Member *m, size_t offset) const {    \
+        checkType(m, OCPI_##pretty, 0, false);			                \
         if (m_readVaddr) {                                                      \
 	  if (m_readSync)			         			\
              m_worker.propertyRead(m_ordinal);                                  \
           union { store s; run r; }u;                                           \
-          u.s = *(store *)m_readVaddr;                                          \
+          u.s = *(store *)(m_readVaddr + offset);			        \
           return u.r;                                                           \
         } else                                                                  \
-          return m_worker.get##pretty##Property(m_ordinal, 0);		\
+          return m_worker.get##pretty##Property(m_info, m, offset, 0); \
       }                                                                         \
+      inline run get##pretty##Value() const {                                   \
+	return get##pretty##Value(NULL, 0);				        \
+      }									        \
       inline unsigned get##pretty##SequenceValue(run *vals, size_t n) const {   \
-        checkType(OCPI_##pretty, n, false);				        \
+        checkType(NULL, OCPI_##pretty, n, false);				\
         return m_worker.get##pretty##SequenceProperty(*this, vals, n);          \
       }
 #undef OCPI_DATA_TYPE_S
-      // for a string we will take a function call
-#define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)            \
-      inline void set##pretty##Value(const run val) const {                 \
-        checkType(OCPI_##pretty, 1, true);				    \
-        m_worker.set##pretty##Property(m_ordinal, val, 0);		    \
-      }                                                                     \
-      inline void set##pretty##SequenceValue(const run *vals, size_t n) const { \
-        checkType(OCPI_##pretty, n, true);				    \
-        m_worker.set##pretty##SequenceProperty(*this, vals, n);             \
-      }                                                                     \
-      inline void get##pretty##Value(char *val, size_t length) const {      \
-        checkType(OCPI_##pretty, 1, false);				    \
-        m_worker.get##pretty##Property(m_ordinal, val, length, 0);	    \
-      }                                                                     \
-      inline unsigned get##pretty##SequenceValue                            \
-        (char **vals, size_t n, char *buf, size_t space) const {            \
-        checkType(OCPI_##pretty, n, false);				    \
-        return m_worker.get##pretty##SequenceProperty                       \
-          (*this, vals, n, buf, space);                                     \
+      template <typename T> void setValue(T val, AccessList &l = {}) const;
+      void setValue(const std::string &val, AccessList &l = {}) const;
+      template <typename T> T getValue(AccessList &l = {}) const; // must call with explicit type
+      // for a string we will take a function call overhead
+#define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)                   \
+      inline void							           \
+      set##pretty##Value(const OCPI::Util::Member *m, size_t offset, const run val) const { \
+        checkType(m, OCPI_##pretty, 0, true);				           \
+        m_worker.set##pretty##Property(m_info, m, offset, val, 0); \
+      }                                                                            \
+      inline void set##pretty##Value(const run val) const {                        \
+	set##pretty##Value(NULL, 0, val);				           \
+      }                                                                            \
+      inline void set##pretty##SequenceValue(const run *vals, size_t n) const {    \
+        checkType(NULL, OCPI_##pretty, n, true);				   \
+        m_worker.set##pretty##SequenceProperty(*this, vals, n);                    \
+      }                                                                            \
+      inline void							           \
+      get##pretty##Value(const OCPI::Util::Member *m, size_t offset, char *val,    \
+			 size_t length) const {				           \
+        checkType(m, OCPI_##pretty, 0, false);				           \
+        m_worker.get##pretty##Property(m_info, m, offset, val, length, 0); \
+      }                                                                            \
+      inline void get##pretty##Value(char *val, size_t length) const {             \
+	get##pretty##Value(NULL, 0, val, length);			\
+      }                                                                            \
+      inline unsigned get##pretty##SequenceValue                                   \
+        (char **vals, size_t n, char *buf, size_t space) const {                   \
+        checkType(NULL, OCPI_##pretty, n, false);				   \
+        return m_worker.get##pretty##SequenceProperty                              \
+          (*this, vals, n, buf, space);                                            \
       }
       OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE_S
