@@ -43,8 +43,10 @@ $(call OcpiDbgVar,OCPI_HDL_PLATFORM_PATH)
 # And not default to some global "default" one.
 ifeq ($(origin HdlPlatform),undefined)
   ifeq ($(origin HdlPlatforms),undefined)
-    HdlPlatform:=$(CwdName)
-    HdlPlatforms:=$(CwdName)
+    ifeq ($(MAKELEVEL),0)
+      HdlPlatform:=$(CwdName)
+      HdlPlatforms:=$(CwdName)
+    endif
   endif
 endif
 # We defer this because of side effects, which is wrong: FIXME hdl-make should not do hdl-target.mk?

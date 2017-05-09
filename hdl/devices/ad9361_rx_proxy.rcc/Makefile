@@ -1,3 +1,4 @@
+XmlIncludeDirs=$(OCPI_PREREQUISITES_DIR)/ad9361/include
 # We use the ADI library and the auto-generated properties file
 RccStaticPrereqLibs=ad9361
 

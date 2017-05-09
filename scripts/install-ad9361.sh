@@ -27,8 +27,9 @@ source ./scripts/setup-install.sh \
 ################################################################################
 # 2. Generate the xml properties from their header file
 ################################################################################
-T=/tmp/$(basename $0).$$
-in=../ad9361/sw/ad9361.h
+cp -r ../ad9361/sw/* .
+T=ocpitemp.xml
+in=ad9361.h
 
 grep -s '`' $in && {
   echo unexpected backquote character in input: $in
@@ -65,15 +66,14 @@ awk < $T -F '`' -v nxt=0 "
   }
   END { printf \"</properties>\n\" }
   " > $OCPI_PREREQUISITES_INSTALL_DIR/ad9361/include/ad9361-properties.xml
-rm $T
 
 ################################################################################
 # 3. Patch their API headers so they actually act like API headers
 #    I.e. the patched version doesn't pollute the caller's namespace
 ################################################################################
 echo Patching API headers
-dir=../ad9361/sw
-patch -d .. -p0 < $here/ad9361.patch
+dir=.
+patch -p0 < $here/ad9361.patch
 
 #################################################################################
 # 4. Compile code into the library
