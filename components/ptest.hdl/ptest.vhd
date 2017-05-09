@@ -13,7 +13,7 @@ begin
   props_out.p5 <= to_long(0);
   props_out.p7 <= to_ulong(0);
   props_out.p9 <= to_longlong(0);
-  props_out.p11 <= to_string("", 20);
+  props_out.pString <= to_string("", 20);
   props_out.ap1 <= (to_char(character'val(0)),to_char(character'val(0)));
   props_out.ap3 <= (to_float(0.0),to_float(0.0),to_float(0.0),to_float(0.0));
   props_out.ap5 <= (to_long(0),to_long(0),to_long(0),to_long(0),to_long(0),to_long(0));
