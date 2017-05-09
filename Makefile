@@ -106,7 +106,7 @@ PACKAGES += tools/ocpisca
 PACKAGES += tools/ocpirh
 PACKAGES += tools/ocpigr
 PACKAGES += tools/cdk/ocpidds
-PACKAGES += tools/astyle
+#PACKAGES += tools/astyle
 PACKAGES += tests
 
 #
@@ -142,8 +142,9 @@ ALLPACKAGES = \
 	tools/ocpirh \
 	tools/ocpigr \
 	tools/cdk/ocpidds \
-	tools/astyle \
 	tests \
+
+#	tools/astyle \
 
 #
 # ----------------------------------------------------------------------

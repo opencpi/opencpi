@@ -7,5 +7,5 @@ file:=$(basename $(notdir $(OcpiThisFile)))
 zynq_host:=$(RccTarget_$(word 2,$(subst =, ,$(subst rcc=,,$(file)))))
 Gc_$(zynq_host):=$(zynq_bin_dir)/$(zynq_cross_host)-gcc -std=c99
 Gc_LINK_$(zynq_host):=$(Gc_$(zynq_host))
-Gc++_$(zynq_host):=$(zynq_bin_dir)/$(zynq_cross_host)-g++
+Gc++_$(zynq_host):=$(zynq_bin_dir)/$(zynq_cross_host)-g++ -std=c++0x
 Gc++_LINK_$(zynq_host):=$(Gc++_$(zynq_host))
