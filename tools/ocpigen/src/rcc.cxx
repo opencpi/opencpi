@@ -768,7 +768,7 @@ emitImplRCC() {
 		    "      delete [] buf;\n"
 		    "   }\n",
 		    p.m_name.c_str(), dims.c_str(), comma, pretty.c_str(),
-		    p.m_isParameter ? "Parameter" : "Property", p.m_ordinal, comma,
+		    p.m_isParameter ? "Parameter" : "PropertyOrd", p.m_ordinal, comma,
 		    offset.c_str(), p.m_name.c_str(), dims.c_str(), comma, p.m_name.c_str(),
 		    pretty.c_str(), p.m_isParameter ? "Parameter" : "Property", p.m_ordinal,
 		    comma, offset.c_str());
@@ -778,7 +778,7 @@ emitImplRCC() {
 		    "      return %sm_worker.get%s%s(%u%s%s);\n"
 		    "    }\n",
 		    type.c_str(), p.m_name.c_str(), dims.c_str(), cast.c_str(), pretty.c_str(),
-		    p.m_isParameter ? "Parameter" : "Property", p.m_ordinal, comma, 
+		    p.m_isParameter ? "Parameter" : "PropertyOrd", p.m_ordinal, comma, 
 		    offset.c_str());
 	}
 	if (p.m_isWritable) {
@@ -788,11 +788,11 @@ emitImplRCC() {
 	  if (p.m_arrayRank) {
 	    fprintf(f,
 		    "      unsigned idx = %s;\n"
-		    "      m_worker.set%sProperty(%u, %sval, idx);\n",
+		    "      m_worker.set%sPropertyOrd(%u, %sval, idx);\n",
 		    offset.c_str(), pretty.c_str(), p.m_ordinal, cast.c_str());
 	  } else
 	    fprintf(f,
-		    "      m_worker.set%sProperty(%u, %sval, 0);\n",
+		    "      m_worker.set%sPropertyOrd(%u, %sval, 0);\n",
 		    pretty.c_str(), p.m_ordinal, cast.c_str());
 	  fprintf(f,
 		  "#if !defined(NDEBUG)\n"
@@ -810,7 +810,7 @@ emitImplRCC() {
 	  if (p.m_baseType == OA::OCPI_String)
 	    fprintf(f, 
 		    "    inline void set_%s(%s%sconst std::string &val) {\n"
-		    "      m_worker.setStringProperty(%u, val.c_str()%s%s);\n"
+		    "      m_worker.setStringPropertyOrd(%u, val.c_str()%s%s);\n"
 		    "    }\n",
 		    p.m_name.c_str(), dims.c_str(), comma, p.m_ordinal, comma, offset.c_str());
 	}

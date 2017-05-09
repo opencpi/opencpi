@@ -472,6 +472,10 @@ namespace OCPI {
     const OU::Member *m = &m_properties[ordinal]; \
     return get##pretty##Property(pi, m, (size_t)0, idx);		\
     }									\
+    void Worker:: \
+    set##pretty##PropertyOrd(unsigned ordinal, run val, unsigned idx) const { \
+      set##pretty##Property(m_properties[ordinal], &m_properties[ordinal], 0, val, idx); \
+    }\
     run Worker::							\
     get##pretty##Parameter(unsigned ordinal, unsigned idx) const { \
       assert("partial read of parameters unsupported" == 0); \

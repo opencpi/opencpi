@@ -205,7 +205,7 @@ namespace OCPI {
 #undef CONTROL_OP
       virtual bool wait(OCPI::OS::Timer *t = NULL);
       bool isDone();
-#if 1
+
 #undef OCPI_DATA_TYPE
 #undef OCPI_DATA_TYPE_S
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) \
@@ -220,7 +220,7 @@ namespace OCPI {
 #undef OCPI_DATA_TYPE
 #undef OCPI_DATA_TYPE_S
 #define OCPI_DATA_TYPE_S OCPI_DATA_TYPE
-#endif
+
       inline void getRawPropertyBytes(size_t offset, uint8_t *buf, size_t count) {
 	getPropertyBytes(*m_firstRaw, m_firstRaw->m_offset + offset, buf, count, 0, false);
       }

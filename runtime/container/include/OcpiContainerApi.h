@@ -118,12 +118,8 @@ namespace OCPI {
       set##pretty##Property(const PropertyInfo &, const Util::Member *m, size_t offset, \
 			    const run, unsigned idx) const = 0;			\
       virtual void							\
-      set##pretty##SequenceProperty(const Property &, const run *, size_t nElements) const = 0;
-#if 0
-      virtual void						\
-      set##pretty##Property(unsigned ordinal, const run, unsigned idx) const = 0; \
+      set##pretty##SequenceProperty(const Property &, const run *, size_t nElements) const = 0; \
 
-#endif
     OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE
 #undef OCPI_DATA_TYPE_S
@@ -134,13 +130,8 @@ namespace OCPI {
     get##pretty##Property(const PropertyInfo &, const Util::Member *, size_t off, \
 			  unsigned idx) const = 0;			\
     virtual unsigned							\
-    get##pretty##SequenceProperty(const Property&, run *, size_t length) const = 0;
+    get##pretty##SequenceProperty(const Property&, run *, size_t length) const = 0; \
 
-#if 0
-    virtual run						     \
-    get##pretty##Property(unsigned ordinal, unsigned idx) const = 0; \
-
-#endif
 // The ordinal-based one is for proxies, with no navigation, but indexing
 // The prop/member one is for ACI, which has navigation
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)	\
@@ -149,12 +140,8 @@ namespace OCPI {
 			  size_t length, unsigned idx) const = 0;	\
     virtual unsigned							\
     get##pretty##SequenceProperty(const Property &, char **, size_t length, char *buf, \
-				  size_t space) const = 0;
-#if 0
-    virtual void							\
-    get##pretty##Property(unsigned ord, char *, size_t length, unsigned idx) const = 0; \
+				  size_t space) const = 0; \
 
-#endif
     OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE
 #undef OCPI_DATA_TYPE_S
@@ -191,10 +178,17 @@ namespace OCPI {
 #undef OCPI_DATA_TYPE
 #undef OCPI_DATA_TYPE_S
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		\
-      virtual run get##pretty##Parameter(unsigned ordinal, unsigned idx) const = 0;
+      virtual run get##pretty##Parameter(unsigned ordinal, unsigned idx) const = 0; \
+      virtual run get##pretty##PropertyOrd(unsigned ordinal, unsigned idx) const = 0; \
+      virtual void						\
+      set##pretty##PropertyOrd(unsigned ordinal, const run, unsigned idx) const = 0;
+
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)                  \
       virtual void get##pretty##Parameter(unsigned ordinal, char *, size_t length, \
-					  unsigned idx) const = 0;
+					  unsigned idx) const = 0; \
+      virtual void							\
+      get##pretty##PropertyOrd(unsigned ord, char *, size_t length, unsigned idx) const = 0;
+
     OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE
 #undef OCPI_DATA_TYPE_S
