@@ -104,6 +104,8 @@ add to tree.
   CMD_OPTION  (gentest,   T,    Bool,   NULL, "Generate unit testing files, assemblies, apps")  \
   CMD_OPTION  (gencases,  C,    Bool,   NULL, "Figure out which test cases to run on which platforms") \
 
+#define OCPI_OPTION
+#define OCPI_OPTIONS_NO_MAIN
 #include "CmdOption.h"
 
 int

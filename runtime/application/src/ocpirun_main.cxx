@@ -431,8 +431,3 @@ static int mymain(const char **ap) {
   ezxml_free(xml);
   return 0;
 }
-
-int
-main(int /*argc*/, const char **argv) {
-  return options.main(argv, mymain);
-}

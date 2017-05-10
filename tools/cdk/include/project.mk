@@ -11,7 +11,9 @@ $(OcpiIncludeProject)
 # As a default, build for everything supported in the CDK
 # FIXME: can we test for licensing?
 ifeq ($(HdlPlatform)$(HdlPlatforms),)
-  export HdlPlatforms=modelsim_pf isim_pf zed ml605 alst4
+  include $(OCPI_CDK_DIR)/include/hdl/hdl-targets.mk
+  $(info No HDL platforms specified.  No HDL assets will be built.)
+  $(info Possible HdlPlatforms are: $(sort $(HdlAllPlatforms)).)
 endif
 
 ifeq ($(wildcard exports),)

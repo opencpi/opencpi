@@ -154,10 +154,14 @@ unload:
 .PHONY: all clean topclean distclean
 # This clean is target specific
 clean:	
-	$(and $(KERNELDIR),$(MAKE) -C $(KERNELDIR) M=$(PWD) clean)
-	rm -rf $(TMP_FILES) $(MODFILE) $(MODFILE).unsigned
+ifneq ($(KERNELDIR),)
+	$(AT)find $(KERNELDIR)/scripts | xargs file | grep "ELF 64-bit" | cut -f1 -d: | xargs -r -n1 rm
+	$(AT)rm -f $(KERNELDIR)/include/config/auto.conf
+	$(MAKE) -C $(KERNELDIR) M=$(PWD) clean
+endif
+	$(AT)rm -rf $(TMP_FILES) $(MODFILE) $(MODFILE).unsigned
 ifneq ($(MyTargetDir),.)
-	rm -rf $(MyTargetDir)
+	$(AT)rm -rf $(MyTargetDir)
 endif
 
 # This clean is target specific

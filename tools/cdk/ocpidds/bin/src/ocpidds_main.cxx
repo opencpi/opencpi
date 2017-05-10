@@ -78,8 +78,3 @@ static int mymain(const char **argv) {
     dataTypeTest(options.test());
   return err ? 1 : 0;
 }
-
-int
-main(int /*argc*/, const char **argv) {
-  return options.main(argv, mymain);
-}

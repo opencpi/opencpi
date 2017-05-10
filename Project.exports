@@ -31,6 +31,7 @@ tests
 ################################################################################
 # exclusions, sometimes only applying to categories
 -runtime/util main
++runtime/util/target-<target>/ocpixml bin/<target>/
 -runtime/dataplane main
 -runtime/ctests
 +runtime/ctests/target-<target>/test_* bin/<target>/ctests/
@@ -59,7 +60,7 @@ tests
 +scripts/clean-env.sh scripts/
 +tools/cdk/scripts/makeStaticWorker scripts/
 +tools/cdk/scripts/ocpidriver scripts/
-+tools/cdk/scripts/ocpixml scripts/
+# +tools/cdk/scripts/ocpixml scripts/
 +tools/cdk/scripts/ocpisetup.sh scripts/
 +tools/cdk/scripts/ocpibootstrap.sh scripts/
 +tools/cdk/scripts/ocpisudo scripts/
@@ -74,7 +75,7 @@ tests
 +scripts/makeExportLinks.sh scripts/
 +tools/cdk/scripts/maybeExport.sh scripts/
 # user level scripts made available in the bin directory
-+tools/cdk/scripts/ocpixml bin/<target>/
+# +tools/cdk/scripts/ocpixml bin/<target>/
 +tools/cdk/scripts/ocpidev bin/<target>/
 +tools/cdk/scripts/ocpidriver bin/<target>/
 +tools/cdk/specs/* specs/

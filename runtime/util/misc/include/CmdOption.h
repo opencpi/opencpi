@@ -36,6 +36,7 @@ namespace OCPI {
     class BaseCommandOptions {
       const char **m_beforeArgv, **m_argv; // what is left after options
     protected:
+      size_t m_argvCount;
       Member *m_options;
       bool *m_seen;
       const char **m_defaults;
@@ -51,6 +52,7 @@ namespace OCPI {
       int usage(); // will return 1 so caller can return usage()
       const char *setArgv(const char **argv);
       const char **argv() const { return m_argv; }
+      size_t argvCount() const { return m_argvCount; }
       std::string &error() { return m_error; }
       int main(const char **argv, int (*main)(const char **argv));
       void exitbad(const char *e);
@@ -117,5 +119,18 @@ namespace {
 #undef CMD_OPTION_S
   OCPI_OPTIONS_CLASS_NAME OCPI_OPTIONS_NAME;
 }
+
+#ifndef OCPI_OPTIONS_NO_MAIN
+#ifndef OCPI_OPTIONS_MAIN
+#define OCPI_OPTIONS_MAIN mymain
+static int mymain(const char **);
 #endif
+int
+main(int /*argc*/, const char **argv) {
+  return options.main(argv, OCPI_OPTIONS_MAIN);
+}
+#endif
+
+#endif // ifdef CMD_OPTIONS
+
 #endif

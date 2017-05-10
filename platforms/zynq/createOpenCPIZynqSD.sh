@@ -109,7 +109,7 @@ fi
 mkdir $sd/opencpi/lib/${OCPI_TARGET_HOST}
 cp -L ${KERNEL_LIB_DIR}/opencpi*.ko $sd/opencpi/lib/${OCPI_TARGET_HOST}
 cp -L ${KERNEL_LIB_DIR}/mdev-opencpi.rules $sd/opencpi/lib/${OCPI_TARGET_HOST}
-for b in run hdl zynq serve; do
+for b in run hdl zynq serve xml; do
   cp -L $BIN_DIR/ocpi$b $sd/opencpi/bin
   # Ensure the deployed files are stripped - if we debug we'll be looking at dev-sys executables
   test -z $RPM_BUILD_ROOT && $OCPI_CROSS_BUILD_BIN_DIR/$OCPI_CROSS_HOST-strip $sd/opencpi/bin/ocpi$b
@@ -121,7 +121,7 @@ cp -L ${RUNTIME_LIB_DIR}/*_s.so $sd/opencpi/lib/${OCPI_TARGET_HOST}
 cp -L $OCPI_CDK_DIR/scripts/ocpibootstrap.sh $sd/opencpi/bin
 cp -L $OCPI_CDK_DIR/scripts/ocpidriver $sd/opencpi/bin
 cp -L $OCPI_CDK_DIR/scripts/ocpi_linux_driver $sd/opencpi/bin
-cp -L $OCPI_CDK_DIR/scripts/ocpixml $sd/opencpi/bin
+# cp -L $OCPI_CDK_DIR/scripts/ocpixml $sd/opencpi/bin
 cp -L ${EXAMPLES_ROOTDIR}/examples/xml/{*.xml,test.input} $sd/opencpi/xml
 
 # Add the default system.xml to the SD card.

@@ -101,8 +101,3 @@ static int mymain(const char **) {
     rmdir();
   return 0;
 }
-
-int
-main(int /*argc*/, const char **argv) {
-  return options.main(argv, mymain);
-}

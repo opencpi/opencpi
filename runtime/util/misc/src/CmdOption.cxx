@@ -15,7 +15,7 @@ namespace OCPI {
     namespace OA = OCPI::API;
     BaseCommandOptions::
     BaseCommandOptions(Member *members, unsigned nMembers, const char *help, const char **defaults)
-      : m_options(members), m_seen(new bool[nMembers]), m_defaults(defaults),
+      : m_argvCount(0), m_options(members), m_seen(new bool[nMembers]), m_defaults(defaults),
         m_nOptions(nMembers), m_error(""), m_help(help)
     {
       Member *m = members;
@@ -115,6 +115,8 @@ namespace OCPI {
       cont2:;
       }
       m_argv = ap;
+      while (*ap) ap++;
+      m_argvCount = ap - m_argv;
       if (debug) {
 	Member *m = m_options;
 	for (unsigned n = 0; n < m_nOptions; n++, m++)
@@ -186,6 +188,8 @@ namespace OCPI {
 	exitbad(e.c_str());
       } catch (const char *e) {
 	exitbad(e);
+      } catch (std::exception &e) {
+	exitbad(e.what());
       } catch (...) {
 	exitbad("Unexpected exception");
       }

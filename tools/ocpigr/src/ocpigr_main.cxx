@@ -185,8 +185,3 @@ static int mymain(const char **/*ap*/) {
   OU::string2File(xml, file);
   return 0;
 }
-
-int
-main(int /*argc*/, const char **argv) {
-  return options.main(argv, mymain);
-}
