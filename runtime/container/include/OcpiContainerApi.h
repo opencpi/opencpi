@@ -278,6 +278,7 @@ namespace OCPI {
       Access(const char *member) : m_member(member), m_number(false) {}; // get member
     };
     typedef const std::initializer_list<Access> AccessList;
+    const AccessList emptyList; // because GCC 4.4 doesn't completely support init lists
     // User interface for runtime property support for a worker.
     // Optimized for low-latency scalar and/or memory mapped access.
     // Not virtual.
@@ -337,7 +338,7 @@ namespace OCPI {
 	  if (m_writeSync)						        \
              m_worker.propertyWritten(m_ordinal);                               \
         } else								        \
-          m_worker.set##pretty##Property(m_info, m, offset, val, 0); \
+          m_worker.set##pretty##Property(m_info, m, offset, val, 0);    	\
       }                                                                         \
       inline void set##pretty##Value(run val) const {                           \
         set##pretty##Value(NULL, 0, val);        				\
@@ -366,9 +367,9 @@ namespace OCPI {
         return m_worker.get##pretty##SequenceProperty(*this, vals, n);          \
       }
 #undef OCPI_DATA_TYPE_S
-      template <typename T> void setValue(T val, AccessList &l = {}) const;
-      void setValue(const std::string &val, AccessList &l = {}) const;
-      template <typename T> T getValue(AccessList &l = {}) const; // must call with explicit type
+      template <typename T> void setValue(T val, AccessList &l = emptyList) const;
+      void setValue(const std::string &val, AccessList &l = emptyList) const;
+      template <typename T> T getValue(AccessList &l = emptyList) const; // must call with explicit type
       // for a string we will take a function call overhead
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)                   \
       inline void							           \

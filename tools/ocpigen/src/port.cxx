@@ -666,8 +666,12 @@ emitConnectionSignal(FILE *f, bool output, Language /*lang*/, std::string &signa
   fprintf(f, "  signal %s : wci.raw_prop_%s%s_t",
 	  signal.c_str(), m_master == output ? "out" : "in",
 	  m_count > 1 || m_countExpr.length() ? "_array" : "");
-  if (m_count > 1 || m_countExpr.length())
-    fprintf(f, "(0 to %s.%s_defs.ocpi_port_%s_count-1)", m_worker->m_implName, m_worker->m_implName, cname());
+  if (m_count > 1 || m_countExpr.length()) {
+    Worker &w = *m_worker;
+    std::string lib(w.m_library);
+    w.addParamConfigSuffix(lib);
+    fprintf(f, "(0 to %s.%s_defs.ocpi_port_%s_count-1)", lib.c_str(), w.m_implName, cname());
+  }
   fprintf(f, ";\n");
 }
 

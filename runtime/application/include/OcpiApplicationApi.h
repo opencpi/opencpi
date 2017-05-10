@@ -94,20 +94,21 @@ namespace OCPI {
 			  const char *context = NULL) const;
       // setter template without implementation.  we only implement the ones for our types
       template <typename T> void
-      setPropertyValue(const char *w, const char *p, const T value, AccessList &list= {}) const;
+      setPropertyValue(const char *w, const char *p, const T value,
+		       AccessList &list = emptyList) const;
       // Convenience for app-level property, or w.p syntax
       template <typename T> inline void
-      setPropertyValue(const char *w, const T value, AccessList &list = {}) const {
+      setPropertyValue(const char *w, const T value, AccessList &list = emptyList) const {
 	setPropertyValue(w, NULL, value, list);
       }
       // Convenience for passing std::string names rather than const char*
       template <typename T> inline void
       setPropertyValue(const std::string &w, const std::string &p, const T value,
-		       AccessList &list = {}) const {
+		       AccessList &list = emptyList) const {
         setPropertyValue(w.c_str(), p.c_str(), value, list);
       }
       template <typename T> inline void
-      setPropertyValue(const std::string &w, const T value, AccessList &list = {}) const {
+      setPropertyValue(const std::string &w, const T value, AccessList &list = emptyList) const {
         setPropertyValue(w.c_str(), NULL, value, list);
       }
       // getter templates that require the type at the call site
@@ -115,20 +116,20 @@ namespace OCPI {
       // as with string-based getters above, app-level properties do not need the second arg
       // This one will not be implemented for the OA::String type, but will be for std::string
       template <typename T>
-      T getPropertyValue(const char *w, const char *p, AccessList &list = {}) const;
+      T getPropertyValue(const char *w, const char *p, AccessList &list = emptyList) const;
       template <typename T>
-      T getPropertyValue(const char *w, AccessList &list = {}) const {
+      T getPropertyValue(const char *w, AccessList &list = emptyList) const {
 	return getPropertyValue<T>(w, NULL, list);
       }
       // extra convenience allowing std::string names
       template <typename T>
-      T getPropertyValue(const std::string &w, const std::string &p, AccessList &list = {}) const {
+      T getPropertyValue(const std::string &w, const std::string &p, AccessList &list = emptyList) const {
 	return getPropertyValue<T>(w.c_str(), p.c_str(), list);
       }
       // compatibility, requires variable at call site, no access list.
       template <typename T>
       void getPropertyValue(const std::string &w, const std::string &p, T &value,
-			    AccessList &list = {}) const {
+			    AccessList &list = emptyList) const {
 	value = getPropertyValue<T>(w.c_str(), p.c_str(), list);
       }
     private:

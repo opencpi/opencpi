@@ -39,6 +39,7 @@
 include $(OCPI_CDK_DIR)/include/util.mk
 Containers=use_gp1
 ifneq ($(call OcpiHavePrereq,ad9361),)
+XmlIncludeDirs=$(OCPI_PREREQUISITES_DIR)/ad9361/include
 Containers+= fmcomms3_zed
 endif
 include $(OCPI_CDK_DIR)/include/hdl/hdl-assembly.mk

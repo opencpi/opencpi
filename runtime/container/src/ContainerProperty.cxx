@@ -131,7 +131,7 @@ namespace OCPI {
 	} else if (m->m_type)
 	  m = mm = m->m_type;
       } while (mm);
-      if (a != end(list))
+      if (a != list.end())
 	throwError("extraneous access modifiers (indices or member names)");
       return *m;
     }
