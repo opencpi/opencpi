@@ -1,5 +1,5 @@
 #!/bin/bash
-OCPI_PATCHELF_VERSION=0.8
+OCPI_PATCHELF_VERSION=0.9
 dir=patchelf-$OCPI_PATCHELF_VERSION
 source ./scripts/setup-install.sh \
        "$1" \
