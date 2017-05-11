@@ -17,6 +17,7 @@
 OCPI_AD9361_CURRENT_2016_R2_GIT_COMMIT_ID=e99393f2ba7f244c8328393e5d13d20e54a24419
 OCPI_AD9361_VERSION=$OCPI_AD9361_CURRENT_2016_R2_GIT_COMMIT_ID
 here=$(pwd)/scripts
+if [ -z "${RPM_BUILD_ROOT}" ]; then
 source ./scripts/setup-install.sh \
        "$1" \
        ad9361 \
@@ -27,6 +28,12 @@ source ./scripts/setup-install.sh \
 ################################################################################
 # 2. Generate the xml properties from their header file
 ################################################################################
+else
+# RPM building
+set -e
+OCPI_PREREQUISITES_INSTALL_DIR=.
+fi
+# End of no-RPM
 cp -r ../ad9361/sw/* .
 T=ocpitemp.xml
 in=ad9361.h
@@ -83,6 +90,7 @@ DEFS=-DAXI_ADC_NOT_PRESENT
 SRCNAMES=(ad9361 ad9361_api ad9361_conv util)
 SRCS=(${SRCNAMES[@]/%/.c})
 INCS=(ad9361_api ad9361)
+if [ -z "${RPM_BUILD_ROOT}" ]; then
 echo $CC -std=c99 -fPIC -I. -I$dir/platform_generic -I$dir $DEFS -c ${SRCS[@]/#/$dir\/}
 $CC -std=c99 -fPIC -I. -I$dir/platform_generic -I$dir $DEFS -c ${SRCS[@]/#/$dir\/}
 $AR -rs libad9361.a ${SRCNAMES[@]/%/.o}
@@ -96,3 +104,11 @@ for i in ${INCS[@]}; do
   ln -f -s `pwd`/$dir/$i.h $OCPI_PREREQUISITES_INSTALL_DIR/ad9361/include/$i.h
 done
 echo ============= ad9361 library for $OCPI_TARGET_PLATFORM built and installed
+else
+# RPM Building
+echo RPM CC: -fPIC -I. -I$dir/platform_generic -I$dir $DEFS -c ${SRCS[@]/#/$dir\/}
+echo RPM AR: -rs libad9361.a ${SRCNAMES[@]/%/.o}
+for i in ${INCS[@]}; do
+  echo RPM INC: `pwd`/$dir/$i.h
+done
+fi

@@ -181,9 +181,7 @@ namespace OCPI {
     int BaseCommandOptions::
     main(const char **initargv, int (*themain)(const char **a)) {
       try {
-	if (setArgv(initargv))
-	  return 1;
-	themain(argv());
+	return setArgv(initargv) ? 1 : themain(argv());
       } catch (std::string &e) {
 	exitbad(e.c_str());
       } catch (const char *e) {
@@ -193,7 +191,7 @@ namespace OCPI {
       } catch (...) {
 	exitbad("Unexpected exception");
       }
-      return 0;
+      return 0; // not reached.
     }
     void BaseCommandOptions::
     exitbad(const char *e) {

@@ -1,1 +1,1 @@
-#define UTS_RELEASE "3.12.0-xilinx-dirty"
+#define UTS_RELEASE "3.12.0-xilinx"
