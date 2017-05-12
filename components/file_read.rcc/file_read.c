@@ -34,9 +34,9 @@ start(RCCWorker *self) {
   File_readProperties *p = self->properties;
   if (s->started)
     return RCC_OK;
-  s->started = 1;
   if ((s->fd = open(p->fileName, O_RDONLY)) < 0)
     return self->container.setError("error opening file \"%s\": %s", p->fileName, strerror(errno));
+  s->started = 1;
   self->ports[FILE_READ_OUT].output.u.operation = p->opcode;
   if (p->granularity)
     p->messageSize -= p->messageSize % p->granularity;

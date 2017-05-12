@@ -438,6 +438,7 @@ namespace OCPI {
 	  whichProperty(mp->m_instPropName.c_str());
 	p->m_name = mp->m_name;
 	p->m_instance = mp->m_instance;
+	p->m_dumpFile = NULL;
 	ocpiDebug("Instance %s (%u) property %s (%u) named %s in assembly", 
 		  m_assembly.instance(p->m_instance).name().c_str(), p->m_instance,
 		  mp->m_instPropName.c_str(), p->m_property, p->m_name.c_str());		    

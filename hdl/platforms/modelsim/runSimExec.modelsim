@@ -17,10 +17,13 @@ function bad {
     bad The OCPI_MODELSIM_DIR directory $OCPI_MODELSIM_DIR does not exist as a directory.
   [ -x "$OCPI_MODELSIM_DIR/bin/vsim" ] ||
     bad No modelsim executable found at \"$OCPI_MODELSIM_DIR/bin/vsim\".
-  [ -n "$verbose" ] &&
+  divert="2>&1"
+  [ -n "$verbose" ] && {
     echo Attempting to run modelsim/vsim with license file \"$OCPI_MODELSIM_LICENSE_FILE\". 1>&2
+    divert=
+  }
   LM_LICENSE_FILE=$OCPI_MODELSIM_LICENSE_FILE \
-    $OCPI_MODELSIM_DIR/bin/vsim -l /dev/null -c < /dev/null > /dev/null
+    eval $OCPI_MODELSIM_DIR/bin/vsim -l /dev/null -c < /dev/null > /dev/null $divert
   if [ $? = 0 ] ; then
     [ -n "$verbose" ] && echo Modelsim is available and licensed. 1>&2
     exit 0
