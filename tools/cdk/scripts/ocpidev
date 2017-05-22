@@ -95,7 +95,7 @@ function check_dirtype {
 function get_subdir {
   case "$noun" in
     (worker|device|spec|protocol|properties|signals|test|card|slot) libasset=1;;
-    (library|assembly|platform|primitive|application|project) libasset=;;
+    (library|assembly|assemblies|platform|platforms|primitive|primitives|application|applications|project) libasset=;;
     (*) bad invalid noun \"$noun\";;
   esac
   get_dirtype .
@@ -246,6 +246,26 @@ function do_project {
     rm -r -f $1
     [ -z $verbose ] || echo The project \"$1\" in the directory \"$directory\" has been deleted.
     return 0
+  elif [ $verb == build ]; then
+    if [ -z "$buildRcc" -a -z "$buildHdl" -a -n "$buildClean" ]; then 
+      cleanTarget="clean"
+    fi
+    if [ -n "$buildRcc" -a -n "$buildClean" ]; then
+      buildRcc=""
+      cleanTarget+=" cleanrcc"
+    fi
+    if [ -n "$buildHdl" -a -n "$buildClean" ]; then  
+      buildHdl=""
+      cleanTarget+=" cleanhdl"
+    fi
+    echo "here buildNoAssemblies: $buildNoAssemblies hdlplats: $hdlplats $1"
+    make -C $1 ${cleanTarget:+$cleanTarget} ${buildRcc:+rcc} ${buildHdl:+hdl} \
+            ${buildNoAssemblies:+Assemblies=} \
+            ${assys:+Assemblies=" ${assys[@]}"} \
+            ${hdlplats:+HdlPlatforms=" ${hdlplats[@]}"} \
+            ${swplats:+RccPlatforms=" ${swplats[@]}"} \
+            ${hwswplats:+RccHdlPlatforms="${hwswplats[@]}"} 
+    return 0 
   fi
   [ -n "$dirtype" ] &&
      bad the directory \"$directory\", where the project directory would be created, has an OpenCPI Makefile of type \"$dirtype\"\?\?   
@@ -292,6 +312,18 @@ EOF
   [ -z $verbose ] || echo A new project named \"$1\" has been created in `pwd`, with prefix \"$prefix\" and package \"$package\".
 }
 
+function do_applications {
+  case "$dirtype" in
+    (project) subdir=applications/;;
+    (applications) subdir=.;;
+    (*) bad this command can only be issued in a project directory or an applications directory;;
+  esac
+  if [ $verb == build ]; then
+    make -C $subdir ${buildClean:+clean} ${swplat:+OCPI_TARGET_PLATFORM="$swplat[@]"}
+    return 0
+  fi 
+}
+
 # Create an application
 # An application in a project might have:
 # An xml file 
@@ -308,6 +340,10 @@ function do_application {
     (*) bad this command can only be issued in a project directory or an applications directory;;
   esac
   adir=$subdir$1
+  if [ $verb == build ]; then
+    make -C $subdir$1 ${buildClean:+clean} ${swplat:+OCPI_TARGET_PLATFORM="$swplat[@]"}
+    return 0
+  fi 
   if [ $verb == delete ]; then
     if [ -n "$xmlapp" ] ; then
       if [ -f "$adir.xml" ] ; then
@@ -605,6 +641,24 @@ function do_library {
     fi
     [ -z $verbose ] || echo The library named \"$1\" \(directory \"$subdir/\"\) has been deleted.
     return 0
+  elif [ $verb == build ]; then
+    if [ -z "$buildRcc" -a -z "$buildHdl" -a -n "$buildClean" ]; then 
+      cleanTarget="clean"
+    fi
+    if [ -n "$buildRcc" -a -n "$buildClean" ]; then
+      buildRcc=""
+      cleanTarget+=" cleanrcc"
+    fi
+    if [ -n "$buildHdl" -a -n "$buildClean" ]; then  
+      buildHdl=""
+      cleanTarget+=" cleanhdl"
+    fi
+    echo "~~~~~~~ $cleanTarget"
+    make -C $subdir ${cleanTarget:+$cleanTarget}  ${buildRcc:+rcc} ${buildHdl:+hdl} \
+            ${hdlplats:+HdlPlatforms=" ${hdlplats[@]}"} \
+            ${swplats:+RccPlatforms=" ${swplats[@]}"} \
+            ${hwswplats:+RccHdlPlatforms=" ${hwswplats[@]}"}   
+    return 0
   fi
   [ -e "$subdir" ] && bad the library \"$1\" \(directory $subdir/\) already exists
   if [ -d "$libbase" ] ; then
@@ -705,6 +759,13 @@ function do_worker {
     ask delete the worker named \"$1\" \(directory \"$libdir/$1\"\)
     rm -r -f $libdir/$1
     [ -z $verbose ] || echo The worker \"$1\" in the directory \"$libdir/$1\" has been deleted.
+    return 0
+  fi
+  if [ $verb == build ]; then
+    make -C $subdir/$1 ${buildClean:+clean} \
+            ${hdlplats:+HdlPlatforms=" ${hdlplats[@]}"} \
+            ${swplats:+RccPlatforms=" ${swplats[@]}"} \
+            ${hwswplats:+RccHdlPlatforms=" ${hwswplats[@]}"} 
     return 0
   fi
   words=(${1//./ })
@@ -921,30 +982,48 @@ EOF
 #!/usr/bin/env python
 
 """
-Use this file to generate your input data. The 
-last argument passed to this script is the 
-name of the input file being generated.
+Use this file to generate your input data. 
+Args: <list-of-user-defined-args> <input-file>
 """
 EOF
+    chmod +x $testdir/generate.py
     #   create verify.py: #!/usr/bin/env python
     cat <<EOF > $testdir/verify.py
 #!/usr/bin/env python
 
 """
 Use this script to validate your output data against your input data. 
-Args: <list-of-user-defined-args> <input-file> <output-file>
+Args: <list-of-user-defined-args> <output-file> <input-files>
 """
 EOF
+    chmod +x $testdir/verify.py
     #   create view.sh: #!/bin/bash --noprofile
     cat <<EOF > $testdir/view.sh
 #!/bin/bash --noprofile
 
 # Use this script to view your input and output data. 
-# Args: <list-of-user-defined-args> <input-file> <output-file>
+# Args: <list-of-user-defined-args> <output-file> <input-files>
 EOF
+    chmod +x $testdir/view.sh
   fi
 }
 
+function do_hdl_platforms {
+  case "$dirtype" in
+    (project)
+      subdir=hdl/platforms/
+      [ -d "hdl" -o "$verb" != create ] || make_hdl_dir
+      ;;
+    (hdl-platforms)subdir=./;;
+    (hdl-make) subdir=platforms/;; # This handles being inside the hdl subdirectory
+    (*) bad this command can only be issued in a project directory, hdl, or hdl/platforms directory;;
+  esac
+  if [ $verb ==  build ]; then
+    make -C $subdir ${buildClean:+clean} ${hdlplats:+HdlPlatforms=" ${hdlplats[@]}"}
+    return 0; 
+  fi
+  bad The only verb available for primatives is build. Did you mean platform
+}
 
 function do_hdl_platform {
   set -e
@@ -957,6 +1036,10 @@ function do_hdl_platform {
     (*) bad this command can only be issued in a project directory, hdl, or hdl/platforms directory;;
   esac
   pdir=$subdir$1
+  if [ $verb ==  build ]; then
+    make -C $pdir ${buildClean:+clean}
+    return 0; 
+  fi
   if [ $verb == delete ]; then
     [ -e $pdir ] || bad the HDL platform at \"$pdir\" does not exist    
     get_dirtype $pdir
@@ -1099,6 +1182,23 @@ EOF
 EOF
 }
 
+function do_primitives {
+  echo $dirtype 
+  case "$dirtype" in
+    (project) dir="hdl/primitives/";; 
+    (hdl-primitives) dir=".";; 
+    (*) bad this command can only be executed in a project or hdl/primitives/ directory;;
+  esac
+  if [ $verb == build ]; then
+    echo $hdlplats
+    echo $hdltargets
+    make -C $dir ${buildClean:+clean} ${hdlplats:+HdlPlatforms=" ${hdlplats[@]}"} \
+                 ${hdltargets:+HdlTargets=" ${hdltargets[@]}"} 
+    return 0
+  fi 
+  bad The only verb available for primatives is build. Did you mean primative
+} 
+
 function do_primitive {
   [ "$2" = "" ] &&
     bad The argument after \"$verb hdl primitive $1\" must be the name of the primitive
@@ -1112,6 +1212,11 @@ function do_primitive {
       ;;
     (*) bad this command can only be executed in a project or hdl/primitives directory;;
   esac
+  if [ $verb == build ]; then
+    make -C $dir ${buildClean:+clean} ${hdlplats:+HdlPlatforms=" ${hdlplats[@]}"} \
+            ${hdltargets:+HdlTargets=" ${hdltargets[@]}"}
+    return 0
+  fi
   if [ $verb == delete ]; then
     [ -d $dir ] || bad no $1 named \"$2\" exists in $mydir directory
     get_dirtype $dir
@@ -1225,6 +1330,43 @@ EOF
   fi
 }
 
+function do_assemblies {
+  case "$dirtype" in
+    (project)
+      [ -d "hdl" -o "$verb" != create ] || make_hdl_dir
+      subdir=hdl/assemblies/
+      ;;
+    (hdl-assemblies)subdir=./;;
+    (hdl-make) subdir=assemblies/;;
+    (*) bad this command can only be issued in a project directory, hdl, or  hdl/assemblies directory;;
+  esac
+  if [ $verb == build ]; then
+    make -C $subdir ${buildClean:+clean} ${hdlplats:+HdlPlatforms=" ${hdlplats[@]}"}
+    return 0 
+  fi
+  bad The only verb available for primatives is build. Did you mean assembly
+}
+
+function do_build_here {
+    if [ -z "$buildRcc" -a -z "$buildHdl" -a -n "$buildClean" ]; then 
+      cleanTarget="clean"
+    fi
+    if [ -n "$buildRcc" -a -n "$buildClean" ]; then
+      buildRcc=""
+      cleanTarget+=" cleanrcc"
+    fi
+    if [ -n "$buildHdl" -a -n "$buildClean" ]; then  
+      buildHdl=""
+      cleanTarget+=" cleanhdl"
+    fi
+  make ${cleanTarget:+$cleanTarget} ${buildRcc:+rcc} ${buildHdl:+hdl} \
+       ${buildNoAssemblies:+Assemblies=} \
+       ${assys:+Assemblies=" ${assys[@]}"} \
+       ${hdlplats:+HdlPlatforms=" ${hdlplats[@]}"} \
+       ${swplats:+RccPlatforms=" ${swplats[@]}"} \
+       ${hwswplats:+RccHdlPlatforms=" ${hwswplats[@]}"} 
+}
+
 # Create an hdl assembly
 # An assembly has its own xml file of the same name as its directory
 # It may have container XML files or not.
@@ -1239,6 +1381,10 @@ function do_assembly {
     (*) bad this command can only be issued in a project directory, hdl, or  hdl/assemblies directory;;
   esac
   adir=$subdir$1
+  if [ $verb == build ]; then
+    make -C $subdir/$1 ${buildClean:+clean} ${hdlplats:+HdlPlatforms=" ${hdlplats[@]}"}
+    return 0
+  fi
   if [ $verb == delete ]; then
     [ -e $adir ] || bad the HDL assembly at \"$adir\" does not exist    
     get_dirtype $adir
@@ -1276,7 +1422,7 @@ ${targets:+OnlyTargets=${targets[@]}}
 ${extargets:+ExcludeTargets=${extargets[@]}}
 ${onlyplats:+OnlyPlatforms=${onlyplats[@]}}
 ${explats:+ExcludePlatforms=${explats[@]}}
-#
+#1752:
 # If you want to modify the default MAP options for Xilinx bitstream builds, export
 # the "OcpiXstMapOptions" variable here (the default options are shown below) e.g:
 # export OcpiXstMapOptions=-detail -w -logic_opt on -xe c -mt 4 -register_duplication on -global_opt off -ir off -pr off -lc off -power off
@@ -1396,6 +1542,28 @@ Options are: lower case for general options, upper case for creation options
   -x                 For use only without -X. This application directory will have an application XML 
                      file. If this option is omitted, an ACI file (<app>.cc) will be generated instead.
 All the "delete" functions prompt for confirmation without the -f option (like rm).
+ -- when building assets-- 
+  --clean            A flag set to clean the build 
+  --build-rcc        A flag set to build rcc workers
+  --build-hdl        A flag set to build hdl workers 
+  --build-no-assemblies      
+                     A flag to be set when building at the project level to not build asseblies.  
+  --build--assembly <assembly> 
+                     Add a assembly to specificially be built and dosent build any otheres.  Can add 
+                     multiple instances of this option         
+  --build-hdl-target <target>
+                     Add a hdl target to be built all assets for and dosent build for any other hdl 
+                     targets.  Can add multiple instances of this option.   
+  --build-hdl-platform <platform>
+                     Add a hdl platform to be built all assets for and dosent build for any other hdl 
+                     platforms.  Can add multiple instances of this option.
+  --build-rcc-platform <platform>
+                     Add a rcc platform to be built all assets for and dosent build for any other rcc 
+                     platforms.  Can add multiple instances of this option.
+  --build-hdl-rcc-platform <platform>
+                     Add a rcc platform to be built all assets based on the hdl platform that is 
+                     specified i.e. zed means xilinx13_3 platform. This dosent build for any other rcc 
+                     platforms.  Can add multiple instances of this option.
 EOF
   exit 1
 
@@ -1472,6 +1640,7 @@ while [[ "${argv[0]}" != "" ]] ; do
       (-g) takeval hdlpart ;;
       (-q) takeval timefreq ;;
       (-u) nosdp=1 ;;
+      (-ll) takeval loglevel; export OCPI_LOG_LEVEL=$loglevel;;
 
       (-O) takeval other; others=(${others[@]} $other) ;;
       (-C) takeval core; cores=(${cores[@]} $core) ;;
@@ -1494,6 +1663,16 @@ while [[ "${argv[0]}" != "" ]] ; do
       (-X) xmlapp=1;;
       (-x) xmldirapp=1;;
       (-help|--help)  help;;
+      # for building
+      (--clean)     buildClean=1;;
+      (--build-rcc) buildRcc=1;;
+      (--build-hdl) buildHdl=1;;
+      (--build-no-assemblies) buildNoAssemblies=1;;
+      (--build--assembly) takeval assy; assys="${assys[@]} $assy";;
+      (--build-hdl-target) takeval hdltarget; hdltargets="${hdltargets[@]} $hdltarget";;
+      (--build-hdl-platform) takeval hdlplat; hdlplats="${hdlplats[@]} $hdlplat";;
+      (--build-rcc-platform) takeval swplat;  swplats="${swplats[@]} $swplat";;
+      (--build-hdl-rcc-platform) takeval hwswplat;  hwswplats="${hwswplats[@]} $hwswplat";;
       (*)
         bad unknown option: ${argv[0]}
         ;;
@@ -1502,6 +1681,7 @@ while [[ "${argv[0]}" != "" ]] ; do
     case ${argv[0]} in
       (create) verb=create;;
       (delete|rm) verb=delete;;
+      (build) verb=build;;
       ("") bad missing command name;;
       (*) bad there is no command named \"${argv[0]}\";;
     esac
@@ -1514,7 +1694,8 @@ while [[ "${argv[0]}" != "" ]] ; do
           echo "         You probably just want to create a components library using 'ocpidev create library ...'"
           noun=${argv[0]}
           ;;
-        (device|platform|assembly|signals) noun=${argv[0]} ;;
+        (device|subdevice|platform|platforms|assembly|assemblies|signals) noun=${argv[0]} ;;
+
         (card|slot) 
           noun=${argv[0]} 
           card=1
@@ -1529,6 +1710,9 @@ while [[ "${argv[0]}" != "" ]] ; do
             (*) bad bad primitive type \"${argv[1]}\", must be \"library\" or \"core\";;
           esac
           ;;
+        (primitives)
+          noun=${argv[0]}
+          ;;
         (*) bad invalid noun after \"hdl\": ${argv[0]} ;;
       esac
     elif [ "${argv[0]}" == hdl -o "${argv[0]}" = HDL ]; then
@@ -1542,7 +1726,7 @@ while [[ "${argv[0]}" != "" ]] ; do
       esac
     else
       case ${argv[0]} in
-        (device|platform|assembly|card|slot|primitive|signals) bad the noun '"'${argv[0]}'"' must follow '"'hdl'"' ;;
+        (device|platform|platforms|assembly|assemblies|card|slot|primitive|signals) bad the noun '"'${argv[0]}'"' must follow '"'hdl'"' ;;
         (*) noun=${argv[0]} ;;
       esac
     fi
@@ -1551,7 +1735,6 @@ while [[ "${argv[0]}" != "" ]] ; do
   fi
   myshift
 done
-
 # option checking independent of noun and verb
 [ -n "$project" -a -n "$library" ] && bad the -l and -p options are mutually exclusive.
 [ -n "$standalone" -a -n "$library" ] && bad the -l and -s options are mutually exclusive.
@@ -1567,91 +1750,91 @@ else
   topdir=
 fi
 [ -z $verb ] && bad missing verb, nothing to do
-[ -z $noun ] && bad the \"$verb\" command must be followed by the type of asset
-[ -z $args ] && bad there must be a name argument after: $verb $hdl$noun
+[ -z "$noun" -a "$verb" != build ] && bad the \"$verb\" command must be followed by the type of asset
 # option testing dependent on noun and verb
+[ -z "$args" -a "$noun" != primitives -a "$noun" != assemblies  -a "$noun" != applications  -a "$noun" != platforms -a "$verb" != build ] && bad there must be a name argument after: $verb $hdl$noun
 # force
 [ -n "$force" -a $verb != delete ] &&
   bad the -f '(force)' option is only valid when deleting an asset
 # project
-[ -n "$project" -a \( $noun != spec -a $noun != protocol -a $noun != properties -a $noun != signals \) ] &&
+[ -n "$project" -a \( "$noun" != spec -a "$noun" != protocol -a "$noun" != properties -a "$noun" != signals \) ] &&
   bad the -p '(project level)' option is only valid when creating a spec or a protocol
 # create test
-[ -n "$createtest" -a \( $noun != spec \) ] &&
+[ -n "$createtest" -a \( "$noun" != spec \) ] &&
   bad the -t '(create test)' option is only valid when creating a component spec
 # nocontrol=true
-[ -n "$nocontrol" -a \( $noun != spec \) ] &&
+[ -n "$nocontrol" -a \( "$noun" != spec \) ] &&
   bad the -n '(nocontrol)' option is only valid when creating a component spec
 # card
-[ -n "$card" -a \( $noun != card -a $noun != slot -a $noun != worker -a $noun != spec -a $noun != protocol -a $noun != properties -a $noun != signals -a $noun != device -a $noun != test \) ] &&
+[ -n "$card" -a \( "$noun" != card -a "$noun" != slot -a "$noun" != worker -a "$noun" != spec -a "$noun" != protocol -a "$noun" != properties -a "$noun" != signals -a "$noun" != device -a "$noun" != test \) ] &&
   bad can only operate in hdl/cards when creating/deleting an HDL device worker, test, worker, spec, protocol, properties or signals
 # library
-[ \( -n "$liboptset" -o -n "$hdlliboptset" \) -a \( -n "$platform" -o \( $noun != worker -a $noun != spec -a $noun != protocol -a $noun != properties -a $noun != signals -a $noun != device -a $noun != test \) \) ] &&
+[ \( -n "$liboptset" -o -n "$hdlliboptset" \) -a \( -n "$platform" -o \( "$noun" != worker -a "$noun" != spec -a "$noun" != protocol -a "$noun" != properties -a "$noun" != signals -a "$noun" != device -a "$noun" != test \) \) ] &&
   bad the -l or -h '(library within project)' options are only valid when creating a spec, protocols, properties, signals, worker, device or test
 # standalone
-[ -n "$standalone" -a \( $noun != library -a $noun != worker -a $noun != device \) ] &&
+[ -n "$standalone" -a \( "$noun" != library -a "$noun" != worker -a "$noun" != device \) ] &&
   bad the -s '(standalone - outside a project)' option is only valid when creating a library, a worker or a device
 # prefix
-[ -n "$prefix" -a \( $verb != create -o $noun != project \) ] &&
+[ -n "$prefix" -a \( $verb != create -o "$noun" != project \) ] &&
   bad the -F '(prefix)' option is only valid when creating a project
 # package
-[ -n "$package" -a \( $verb != create -o \( $noun != project -a $noun != library \) \) ] &&
+[ -n "$package" -a \( $verb != create -o \( "$noun" != project -a "$noun" != library \) \) ] &&
   bad the -K '(package)' option is only valid when creating a project or library
 # dependencies
-[ -n "$dependencies" -a \( $verb != create -o $noun != project \) ] &&
+[ -n "$dependencies" -a \( $verb != create -o "$noun" != project \) ] &&
   bad the -D '(dependencies)' option is only valid when creating a project
 # spec
-[ -n "$spec" -a \( $verb != create -o \( $noun != worker -a $noun != device \) \) ] &&
+[ -n "$spec" -a \( $verb != create -o \( "$noun" != worker -a "$noun" != device \) \) ] &&
   bad the -S '(spec)' option is only valid when creating a worker or device
 # platform
-[ -n "$platform" -a \( $noun != spec -a $noun != device -a $noun != worker -a $noun != test -a $noun != library \) ] &&
+[ -n "$platform" -a \( "$noun" != spec -a "$noun" != device -a "$noun" != worker -a "$noun" != test -a "$noun" != library \) ] &&
   bad the -P '(platform)' option is only valid when creating an HDL device worker, worker, test, or a platform\'s devices library
 # language
-[ -n "$language" -a \( $verb != create -o \( $noun != device -a $noun != worker \) \) ] &&
+[ -n "$language" -a \( $verb != create -o \( "$noun" != device -a "$noun" != worker \) \) ] &&
   bad the -L '(language)' option is only valid when creating a worker
 # slave
-[ -n "$slave" -a \( $verb != create -o $noun != worker \) ] &&
+[ -n "$slave" -a \( $verb != create -o "$noun" != worker \) ] &&
   bad the -V '(slave worker)' option is only valid when creating a worker
 # workers
-[ -n "$workers" -a \( $verb != create -o \( $noun != worker \) \) ] &&
+[ -n "$workers" -a \( $verb != create -o \( "$noun" != worker \) \) ] &&
   bad the -W '(one of multiple workers)' option is only valid when creating a worker
 # emulate
-[ -n "$emulates" -a \( $verb != create -o $noun != device \) ] &&
+[ -n "$emulates" -a \( $verb != create -o "$noun" != device \) ] &&
   bad the -E '(emulates)' option is only valid when creating an HDL device worker
-[ -n "$supported" -a $noun != device ] &&
+[ -n "$supported" -a "$noun" != device ] &&
   bad the -U '(supports)' option is only valid when creating an HDL device worker
 # module
-[ -n "$module" -a \( $verb != create -o $noun != primitive -a "${args[0]}" != core \) ] &&
+[ -n "$module" -a \( $verb != create -o "$noun" != primitive -a "${args[0]}" != core \) ] &&
   bad the -M '(module)' option is only valid when creating an HDL primitive core
 # prebuilt
-[ -n "$prebuilt" -a \( $verb != create -o \( $noun != primitive -o "${args[0]}" != core \) \) ] &&
+[ -n "$prebuilt" -a \( $verb != create -o \( "$noun" != primitive -o "${args[0]}" != core \) \) ] &&
   bad the -B '(prebuilt)' option is only valid when creating an HDL primitive core
 # targets/platforms limiting
-[ \( -n "$targets" -o -n "$extargets" -o -n "$onlyplats" -o -n "$explats" \) -a \( $verb != create -o \( $noun != worker -a $noun != device -a $noun != primitive -a $noun != assembly \) \) ] &&
+[ \( -n "$targets" -o -n "$extargets" -o -n "$onlyplats" -o -n "$explats" \) -a \( $verb != create -o \( "$noun" != worker -a "$noun" != device -a "$noun" != primitive -a "$noun" != assembly \) \) ] &&
   bad the -T, -Z, -G or -Q, '(only/exclude targets/platforms)' options are only valid when creating a worker, device, primitive, or assembly
 # platform options
-[ \( -n "$hdlpart" -o -n "$timefreq" -o -n "$nosdp" \) -a \( $verb != create -o $noun != platform \) ] &&
+[ \( -n "$hdlpart" -o -n "$timefreq" -o -n "$nosdp" \) -a \( $verb != create -o "$noun" != "platform" \) ] &&
   bad the -g, -q, or -u '(hdl-part, time-freq, no-sdp)' are only valid when creating an hdl platform.
 # includes
-[ \( -n "$includes" \) -a \( $verb != create -o \( $noun != worker -a $noun != device -a $noun != platform \) \) ] &&
+[ \( -n "$includes" \) -a \( $verb != create -o \( "$noun" != "worker" -a "$noun" != "device" -a "$noun" != "platform" \) \) ] &&
   bad the -I '(includes)' option is only valid when creating a worker, device, or platform
 # xml includes
-[ \( -n "$xmlincludes" \) -a \( $verb != create -o \( $noun != worker -a $noun != device -a $noun != platform -a $noun != library \) \) ] &&
+[ \( -n "$xmlincludes" \) -a \( $verb != create -o \( "$noun" != "worker" -a "$noun" != "device" -a "$noun" != "platform" -a "$noun" != "library" \) \) ] &&
   bad the -A '(xmlincludes)' option is only valid when creating a worker, device, platform, or library
 # primitive library options
-[ \( -n "$hdlnoelab" -o -n "$hdlnolib" \) -a \( $verb != create -o \( $noun != primitive -o  "${args[0]}" != library \) \) ] &&
+[ \( -n "$hdlnoelab" -o -n "$hdlnolib" \) -a \( $verb != create -o \( "$noun" != "primitive" -o  "${args[0]}" != library \) \) ] &&
   bad the -H or -J '(hdlnolib, hdlnoelab)' options are only valid when creating an hdl primitive library.
 # rccprereqs FIXME: Should limit this makevariable to rcc workers only
-[ \( -n "$rccstatprereqs" -o -n "$rccdynprereqs" \) -a \( $verb != create -o \( $noun != worker \) \) ] &&
+[ \( -n "$rccstatprereqs" -o -n "$rccdynprereqs" \) -a \( $verb != create -o \( "$noun" != "worker" \) \) ] &&
   bad the -R or -r '(rcc static/dynamic prereq)' option is only valid when creating a proxy worker
 # libaries include
-[ \( -n "$liblibs" \) -a \( $verb != create -o \( $noun != worker -a $noun != device -a $noun != platform -a $noun != primitive \) \) ] &&
+[ \( -n "$liblibs" \) -a \( $verb != create -o \( "$noun" != "worker" -a "$noun" != "device" -a "$noun" != "platform" -a "$noun" != "primitive" \) \) ] &&
   bad the -Y, '(libraries)' option is only valid when creating a worker, device, platform, or primitive
 # componentlibaries reference
-[ \( -n "$complibs" \) -a \( $verb != create -o \( \( $noun != worker -o -z "$slave" \) -a \( \( $noun != device \) -o \( -z "$emulates" -a -z "$supported" \) \) -a $noun != platform -a $noun != library \) \) ] &&
+[ \( -n "$complibs" \) -a \( $verb != create -o \( \( "$noun" != "worker" -o -z "$slave" \) -a \( \( "$noun" != "device" \) -o \( -z "$emulates" -a -z "$supported" \) \) -a "$noun" != "platform" -a "$noun" != "library" \) \) ] &&
   bad the -y, '(component-libraries)' option is only valid when creating a proxy worker, device emulator, subdevice, platform, or library
 # xml app
-[ \( -n "$xmlapp" -o -n "$xmldirapp" \) -a \( \( $verb != create -a $verb != delete \) -o $noun != application \) ] &&
+[ \( -n "$xmlapp" -o -n "$xmldirapp" \) -a \( \( $verb != create -a $verb != delete \) -o "$noun" != "application" \) ] &&
   bad the -X '(xml/simple)' or -x '(application directory with xml)' option is only valid when creating an application
 
 # For future support of rcc platforms, primitives, and in general the rcc subtree
@@ -1663,30 +1846,41 @@ fi
 
 # Get dir type unless creating something standalone
 needname ${argv[0]} $verb $noun
-get_subdir
+if [ "$verb" != "build" -o -n $noun ] ; then 
+  get_subdir
+fi
 [ -z $verbose ] || echo Executing the \"$verb $hdl$noun\" command in a ${dirtype:-unknown type of} directory: $directory.
 case $noun in
-  (project)     do_project ${args[@]} ;;
-  (application) do_application ${args[@]} ;;
-  (protocol)    do_protocol_or_spec ${args[@]} ;;
-  (spec)        do_protocol_or_spec ${args[@]} ;;
-  (properties)  do_protocol_or_spec ${args[@]} ;;
-  (library)     do_library ${args[@]} ;;
-  (worker)      do_worker ${args[@]} ;;
-  (test)        do_test ${args[@]} ;;
-  (platform)    if [ -n "$hdl" ] ; then 
-                  do_hdl_platform ${args[@]}
-#                else
-#                  do_rcc_platform ${args[@]}
-                fi
-                ;;
+  (project)      do_project ${args[@]} ;;
+  (application)  do_application ${args[@]} ;;
+  (applications) do_applications ${args[@]} ;;
+  (protocol)     do_protocol_or_spec ${args[@]} ;;
+  (spec)         do_protocol_or_spec ${args[@]} ;;
+  (properties)   do_protocol_or_spec ${args[@]} ;;
+  (library)      do_library ${args[@]} ;;
+  (worker)       do_worker ${args[@]} ;;
+  (test)         do_test ${args[@]} ;;
+  (platforms)    do_hdl_platforms ${args[@]} ;;
+  (platform)     if [ -n "$hdl" ] ; then 
+                   do_hdl_platform ${args[@]}
+#                 else
+#                   do_rcc_platform ${args[@]}
+                 fi
+                 ;;
   # Below are hdl exclusive commands
-  (assembly)    do_assembly ${args[@]} ;;
-  (card)        do_card_or_slot ${args[@]} ;;
-  (slot)        do_card_or_slot ${args[@]} ;;
-  (device)      do_device ${args[@]} ;;
-  (signals)     do_protocol_or_spec ${args[@]} ;;
-  (primitive)   do_primitive ${args[@]} ;;
-  (*) bad the noun \"$noun\" is invalid after the verb \"$verb\";;
+  (assembly)     do_assembly ${args[@]} ;;
+  (assemblies)   do_assemblies ${args[@]} ;;
+  (card)         do_card_or_slot ${args[@]} ;;
+  (slot)         do_card_or_slot ${args[@]} ;;
+  (device)       do_device ${args[@]} ;;
+  (signals)      do_protocol_or_spec ${args[@]} ;;
+  (primitive)    do_primitive ${args[@]} ;;
+  (primitives)   do_primitives ${args[@]} ;;
+  (*) 
+    if [ "$verb" == "build" ] ; then
+      do_build_here ${args[@]} 
+    else 
+      bad the noun \"$noun\" is invalid after the verb \"$verb\"
+    fi ;;
 esac
 exit 0
