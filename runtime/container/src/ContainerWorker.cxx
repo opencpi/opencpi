@@ -478,7 +478,6 @@ namespace OCPI {
     }\
     run Worker::							\
     get##pretty##Parameter(unsigned ordinal, unsigned idx) const { \
-      assert("partial read of parameters unsupported" == 0); \
       OU::Property &p = m_properties[ordinal]; \
       assert(p.m_default); \
       OU::Value &v = *p.m_default; \
@@ -500,7 +499,6 @@ namespace OCPI {
     }
     void Worker::
     getStringParameter(unsigned ordinal, char *out, size_t length, unsigned idx) const {
-      assert("partial read of parameters unsupported" == 0); \
       OU::Property &p = m_properties[ordinal];
       assert(p.m_default);
       OU::Value &v = *p.m_default;

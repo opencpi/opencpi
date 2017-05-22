@@ -26,7 +26,7 @@ endif
 # We include this to know the universe of possible platforms
 include $(OCPI_CDK_DIR)/include/hdl/hdl-targets.mk
 include $(OCPI_CDK_DIR)/include/rcc/rcc-make.mk
-export OCPI_ALL_PLATFORMS:=$(HdlAllPlatforms) $(RccAllPlatforms)
+export OCPI_ALL_PLATFORMS:=$(HdlAllPlatforms:%=%.hdl) $(RccAllPlatforms:%=%.rcc)
 $(infox ALL PLATFORMS ARE: $(OCPI_ALL_PLATFORMS))
 # We need the project dir because remote system mount dirs point to the project
 $(call OcpiIncludeProject,error)

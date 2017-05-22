@@ -123,50 +123,6 @@ onlyValue(std::string &uValue, Attributes *&attrs, const char *platform) {
   return NULL;
 }
 
-// Parse the attribute value, validating it, and expanding it if wildcard
-// A static method
-const char *Param::
-getPlatforms(const char *attr, Strings &platforms) {
-  static Strings allPlatforms;
-  if (!attr)
-    return NULL;
-  if (allPlatforms.empty()) {
-    const char *env = getenv("OCPI_ALL_PLATFORMS");
-    if (!env)
-      return "the environment variable OCPI_ALL_PLATFORMS is not set";
-    for (const char *ep; *env; env = ep) {
-      while (isspace(*env)) env++;
-      for (ep = env; *ep && !isspace(*ep); ep++)
-	;
-      std::string p;
-      p.assign(env, ep - env);
-      allPlatforms.insert(p);
-    }
-    if (allPlatforms.empty())
-      return "the environment variable OCPI_ALL_PLATFORMS has no platforms";
-  }
-  while (*attr) {
-    while (*attr && (isspace(*attr) || *attr == ','))
-      attr++;
-    if (!*attr)
-      break;
-    const char *cp;
-    for (cp = attr; *cp && !isspace(*cp) && *cp != ','; cp++)
-      ;
-    std::string plat(attr, cp - attr);
-    bool found;
-    for (StringsIter si = allPlatforms.begin(); si != allPlatforms.end(); ++si)
-      if (fnmatch(plat.c_str(), (*si).c_str(), FNM_CASEFOLD) == 0) {
-	found = true;
-	platforms.insert(*si);
-      }
-    if (!found)
-      return OU::esprintf("the string \"%s\" does not indicate or match any platforms",
-			  plat.c_str());
-    attr = cp;
-  }    
-  return NULL;
-}
 // the "global" argument is true when this parameter has a global setting across many other
 // configurations and so it cannot be given a value if it is dependent on other parameters for
 // its type (e.g. array dimensions)
@@ -205,13 +161,17 @@ parse(ezxml_t px, const OU::Property &p, bool global) {
       return err;
     values = fileValue.c_str();
   }
+  // =============================================================================
+  // We might be overwriting a global parsed value here.
+  // The type might be finalized differently (based on different parameter values)
+  // =============================================================================
   m_param = &p; // possibly overwriting
   m_value.setType(p); // not necessarily setting a value here, but we know the type
   if (values) {
-    if (!m_valuesType) {
-      m_valuesType = &p.sequenceType();
-      m_valuesType->m_default = new OU::Value(*m_valuesType);
-    }
+    if (m_valuesType)
+      delete m_valuesType;
+    m_valuesType = &p.sequenceType();
+    m_valuesType->m_default = new OU::Value(*m_valuesType);
     if ((err = m_valuesType->m_default->parse(values, NULL, false, NULL)))
       return err;
     // The specified values are in: *m_valuesType->m_default, not unparsed
@@ -226,11 +186,11 @@ parse(ezxml_t px, const OU::Property &p, bool global) {
       p.m_default->unparse(defValue);
       if (defValue == m_uValue) {
 	m_isDefault = true;
-	m_value = *p.m_default;
+	m_value = *p.m_default; // copy
       } else
-	m_value = newValue;
+	m_value = newValue; // copy
     } else
-      m_value = newValue;
+      m_value = newValue; // copy
     // The specified value is in: m_value, unparsed in m_uValue
   }
   const char // all these can be glob-wildcarded
@@ -239,7 +199,7 @@ parse(ezxml_t px, const OU::Property &p, bool global) {
     *only = ezxml_cattr(px, "only");
   if (exclude && only)
     return OU::esprintf("setting both \"only\" and \"exclude\" attributes is invalid");
-  Strings platforms;
+  OrderedStringSet platforms;
   if ((err = getPlatforms(exclude, platforms)) ||
       (err = getPlatforms(only, platforms)) ||
       (err = getPlatforms(add, platforms)))
@@ -255,9 +215,11 @@ parse(ezxml_t px, const OU::Property &p, bool global) {
   }
   for (unsigned n = 0; !err && n < (values ? m_valuesType->m_default->m_nElements : 1); n++) {
     if (values) {
-      uValue.clear();
+      uValue.clear(); // needed?
       m_valuesType->m_default->elementUnparse(*m_valuesType->m_default, uValue, n, false,
 					      '\0', false, *m_valuesType->m_default);
+      //      if (n == 0)
+      //	m_value.parse(uValue.c_str()); // make sure m_value reflects the first value
     } else
       uValue = m_uValue;
     Attributes *attrs = NULL;
@@ -267,7 +229,7 @@ parse(ezxml_t px, const OU::Property &p, bool global) {
 	break;
       }
     if (platforms.size())
-      for (StringsIter pi = platforms.begin(); pi != platforms.end(); ++pi) {
+      for (auto pi = platforms.begin(); pi != platforms.end(); ++pi) {
 	const char *platform = pi->c_str();
 	if (exclude)
 	  err = excludeValue(uValue, attrs, platform);
@@ -293,19 +255,48 @@ ParamConfig(const ParamConfig &other)
     used(other.used) {
 }
 
+// Fill in unspecified parameters with their single default value
+void ParamConfig::
+doDefaults() { // bool includeInitial) {
+  size_t n = 0;
+  for (PropertiesIter pi = m_worker.m_ctl.properties.begin();
+       pi != m_worker.m_ctl.properties.end(); pi++) {
+    OU::Property &p = **pi;
+    if (p.m_isParameter) { // || (includeInitial && p.m_isWritable)) {
+      assert(n == p.m_paramOrdinal);
+      if (!params[n].m_param) { // If we didn't see it when parsing this config
+	assert(params[n].m_uValues.size() == 0);
+	params[n].m_param = &p;
+	if (p.m_default)
+	  params[n].m_value = *p.m_default; // assignment operator
+	else
+	  params[n].m_value.setType(p);    // blank default value
+	params[n].m_value.unparse(params[n].m_uValue);
+	params[n].m_uValues.push_back(params[n].m_uValue);
+	params[n].m_isDefault = true;
+      }
+      n++;
+    }
+  }
+}
 const char *ParamConfig::
-parse(ezxml_t cx, const ParamConfigs &configs, bool includeInitial) {
+parse(ezxml_t cx, const ParamConfigs &configs) { // , bool includeInitial) {
   const char *err;
-  if ((err = OE::getNumber(cx, "id", &nConfig, NULL, 0, false, true)))
+  bool haveId;
+  if ((err = OE::getNumber(cx, "id", &nConfig, &haveId)))
     return err;
-  for (unsigned n = 0; n < configs.size(); n++)
-    if (configs[n]->nConfig == nConfig)
-      return OU::esprintf("Duplicate configuration id %zu in build file", nConfig);
-  OU::format(id, "%zu", nConfig);
+  if (haveId) {
+    for (unsigned n = 0; n < configs.size(); n++)
+      if (configs[n]->nConfig == nConfig)
+	return OU::esprintf("Duplicate configuration id %zu in build file", nConfig);
+    OU::format(id, "%zu", nConfig);
+  }
   // Note that this resize when including initial props, will overallocate, e.g. volatiles.
-  params.resize(includeInitial ? m_worker.m_ctl.properties.size() : 
+  params.resize(//includeInitial ? m_worker.m_ctl.properties.size() : 
 		m_worker.m_ctl.nParameters);
   for (ezxml_t px = ezxml_cchild(cx, "parameter"); px; px = ezxml_next(px)) {
+    if ((err = OE::checkAttrs(px, PARAM_ATTRS, NULL)))
+      return err;
     std::string name;
     size_t nParam;
     OU::Property *p;
@@ -315,21 +306,6 @@ parse(ezxml_t cx, const ParamConfigs &configs, bool includeInitial) {
 	(err = params[nParam].parse(px, *p)))
       return err;
   }
-  // Fill in the default values that were not mentioned
-  size_t n = 0;
-  for (PropertiesIter pi = m_worker.m_ctl.properties.begin(); pi != m_worker.m_ctl.properties.end(); pi++)
-    if ((*pi)->m_isParameter || (includeInitial && (*pi)->m_isWritable)) {
-      if (!params[n].m_param) {
-	params[n].m_param = *pi;
-	if ((*pi)->m_default)
-	  params[n].m_value = *(*pi)->m_default; // assignment operator
-	else
-	  params[n].m_value.setType(**pi);        // blank default value
-	params[n].m_value.unparse(params[n].m_uValue);
-	params[n].m_isDefault = true;
-      }
-      n++;
-    }
   return NULL;
 }
 
@@ -338,10 +314,18 @@ getValue(const char *sym, OU::ExprValue &val) const {
   OU::Property *prop;
   size_t nParam; // FIXME not needed since properties have m_paramOrdinal?
   const char *err;
-  if ((err = m_worker.findParamProperty(sym, prop, nParam)) ||
-      (err = extractExprValue(*prop, params[nParam].m_value, val)))
+  if ((err = m_worker.findParamProperty(sym, prop, nParam)))
     return err;
-  return NULL;
+  const Param &param = params[nParam];
+  const OU::Value *v;
+  if (param.m_param) {
+    if (param.m_uValues.size() > 1)
+      return OU::esprintf("parameter property %s used in expression, but has multiple values",
+			  prop->cname());
+    v = &param.m_value;
+  } else if (!(v = prop->m_default))
+    return OU::esprintf("The parameter \"%s\" has no default or specified value", sym);
+  return extractExprValue(*prop, *v, val);
 }
 
 const char *Worker::
@@ -360,18 +344,18 @@ paramValue(const OU::Member &param, OU::Value &v, std::string &value) {
 }
 void ParamConfig::
 write(FILE *xf, FILE *mf) {
-  if (xf)
-    fprintf(xf, "  <configuration id='%s'>\n", id.c_str());
+  bool nonDefault = false;
   for (unsigned n = 0; n < params.size(); n++) {
     Param &p = params[n];
     if (p.m_param == NULL) {
-      // This is a new parameter that was not in this (existing) param config.
+      // This is a new parameter that was not in this (existing) param config or is default.
       continue;
     }
     if (used) {
       // Put out the Makefile value lines
       std::string val;
       if (m_worker.m_model == HdlModel) {
+#if 0 // we generate the generics files directly now, not via make, thank goodness
 	std::string typeDecl, type;
 	vhdlType(*p.m_param, typeDecl, type);
 	//	if (typeDecl.length())
@@ -401,7 +385,9 @@ write(FILE *xf, FILE *mf) {
 	  fputc(*cp, mf);
 	}
 	fputs("\n", mf);
+#endif
       } else {
+	// FIXME: this should be an RCC method
 	fprintf(mf, "Param_%zu_%s:=", nConfig, p.m_param->m_name.c_str());
 	for (const char *cp = m_worker.paramValue(*p.m_param, p.m_value, val); *cp; cp++) {
 	  if (*cp == '#' || (*cp == '\\' && !cp[1]))
@@ -418,7 +404,10 @@ write(FILE *xf, FILE *mf) {
       }
       fputs("\n", mf);
     }
-    if (xf) {
+    if (xf && !p.m_isDefault) {
+      if (!nonDefault)
+	fprintf(xf, "  <configuration id='%s'>\n", id.c_str());
+      nonDefault = true;
       fprintf(xf, "    <parameter name='%s' value='", p.m_param->m_name.c_str());
       std::string xml;
       OU::encodeXmlAttrSingle(p.m_uValue, xml);
@@ -426,7 +415,7 @@ write(FILE *xf, FILE *mf) {
       fputs("'/>\n", xf);
     }
   }
-  if (xf)
+  if (xf && nonDefault)
     fputs("  </configuration>\n", xf);
 }
 
@@ -511,25 +500,70 @@ parseBuildFile(bool optional) {
   std::string empty;
   if ((err = parseFile(fname.c_str(), empty, "build", &x, empty, false, true, optional)))
     return err;
-  // Establish default values for parameters that apply to all configurations that
-  // do not mention them
-  ParamConfig defaults(*this);
-  for (ezxml_t px = ezxml_cchild(x, "property"); px; px = ezxml_cnext(px)) {
+  // This cannot be done during construction since the OWD isn't parsed then
+  m_build.m_globalParams.params.resize(m_ctl.nParameters);
+  // Establish default values (or multiple values) for parameters that apply to all
+  // configurations that do not mention them
+  for (ezxml_t px = ezxml_cchild(x, "parameter"); px; px = ezxml_cnext(px)) {
+    if ((err = OE::checkAttrs(px, PARAM_ATTRS, NULL)))
+      return err;
     std::string name;
     OU::Property *p;
     size_t nParam;
     if ((err = OE::getRequiredString(px, name, "name", "property")) ||
 	(err = findParamProperty(name.c_str(), p, nParam, false)) ||
-	(err = defaults.params[nParam].parse(px, *p, true)))
+	(err = m_build.m_globalParams.params[nParam].parse(px, *p, true)))
       return err;
+    assert(nParam == p->m_paramOrdinal); // get rid of nParam someday
   }
+  m_build.m_globalParams.doDefaults(); // set unmentioned params to default values
+  // There are three cases for configurations here:
+  // 1. With IDs, which are defaulted against the property's default value when not specified.
+  //    This was the original meaning and supports backward compatibility.
+  //    If they are present, no configuration will be autogenerated
+  // 2. Configurations without IDs, which are applied against the cross-product of supplied
+  //    values in top-level "parameter" elements.
+  //    An empty one will do cross-product against defaults
+  //    An empty one may be required to generate defaults if configs with IDs are present.
+  //    E.g. <configuration/>
+  // 3. No configurations mean cross product of top level values.
+
+  // First pass: is to populate the config array with explicitly id'd configs.
   for (ezxml_t cx = ezxml_cchild(x, "configuration"); cx; cx = ezxml_cnext(cx)) {
-    ParamConfig *pc = new ParamConfig(defaults);
+    bool haveId;
+    size_t id;
+    if ((err = OE::getNumber(cx, "id", &id, &haveId)))
+      return err;
+    if (!haveId)
+      continue;
+    ParamConfig *pc = new ParamConfig(*this);
     if ((err = pc->parse(cx, m_paramConfigs)))
       return err;
-    m_paramConfigs.push_back(pc); // FIXME...emplace_back for C++11
+    pc->nConfig = id++;
+    pc->doDefaults(); // configs with id have defaults filled in
+    if (id > m_paramConfigs.size())
+      m_paramConfigs.resize(id);
+    m_paramConfigs[pc->nConfig] = pc; // this is a complete, defaulted configuration, as always
   }
-  return NULL;
+  // Second pass:  generate cross-product configs based on unlabeled (partial) configs.
+  for (ezxml_t cx = ezxml_cchild(x, "configuration"); cx; cx = ezxml_cnext(cx)) {
+    bool haveId;
+    size_t id;
+    if ((err = OE::getNumber(cx, "id", &id, &haveId)))
+      return err;
+    if (haveId)
+      continue; // handled it in previous pass
+    ParamConfig *pc = new ParamConfig(m_build.m_globalParams);
+    // Parse it sparsely (no defaulting), and then generate new ones recursively
+    if ((err = pc->parse(cx, m_paramConfigs)) ||
+	(err = doParam(*pc, m_ctl.properties.begin(), true, 0)))
+      return err;
+  }
+  // Third pass: if we encountered no configurations at all, we generate default ones.
+  if (!m_paramConfigs.size() && 
+      (err = doParam(m_build.m_globalParams, m_ctl.properties.begin(), true, 0)))
+    return err;
+  return m_build.parse(x);
 }
 
 const char *Worker::
@@ -542,79 +576,86 @@ startBuildXml(FILE *&f) {
   return NULL;
 }
 
-// We have created a configuration based on current conditions.
-// Add it if it is new
+// We have created an unnumbered configuration based on current conditions.
+// Add it if it is new, as config number nConfig
 const char *Worker::
-addConfig(ParamConfig &info, size_t &nConfig) {
+addConfig(ParamConfig &info, bool fromXml) {
   // Check that the configuration we have is not already in the existing file
-  ocpiDebug("Possibly adding parameter config. n=%zu size %zu", nConfig, m_paramConfigs.size());
+  ocpiDebug("Possibly adding parameter config. n=%zu", m_paramConfigs.size());
   for (unsigned n = 0; n < m_paramConfigs.size(); n++)
     if (m_paramConfigs[n]->equal(info)) {
       // Mark the old config as used so it will be written to the Makefile
       m_paramConfigs[n]->used = true;
+      ocpiInfo("Parameter config %zu is skipped since it is identical to config %u",
+	       m_paramConfigs.size(), n);
       return NULL;
     }
-  info.nConfig = nConfig++;
-  ocpiDebug("Actually adding parameter config %zu", nConfig);
+  info.nConfig = m_paramConfigs.size();
+  ocpiDebug("Actually adding parameter config %zu", info.nConfig);
   OU::format(info.id, "%zu", info.nConfig);
-  // We have a new one, so we know we will be writing out the XML file
+  const char *err;
+  // We have a new one, and if processing the raw XML from the Makefile,
+  // we know we will be writing out the XML file
   // The XML will contain old and unused, old and used, and new and used.
   // The Makefile will contain old-that-were-used and new
-  // By opening the xf file we are indicating there is something new
-  const char *err;
-  if (!m_xmlFile && (err = startBuildXml(m_xmlFile)))
-      return err;
-  ParamConfig *newpc = new ParamConfig(info);
+  // By opening the xf file we are indicating there is something new to write
+  // If were generating configs from the Makefile, prepare to write to XML
+  if (!fromXml && !m_xmlFile && (err = startBuildXml(m_xmlFile)))
+    return err;
+  ParamConfig *newpc = new ParamConfig(info); // copy to new one
   newpc->used = true;
-  m_paramConfigs.push_back(newpc);
+  assert(m_paramConfigs.size() <= info.nConfig);
+  m_paramConfigs.resize(info.nConfig + 1);
+  m_paramConfigs[info.nConfig] = newpc;
   return NULL;
 }
 
 const char *Worker::
-doParam(ParamConfig &info, PropertiesIter pi, unsigned nParam, size_t &nConfig) {
+doParam(ParamConfig &info, PropertiesIter pi, bool fromXml, unsigned nParam) {
   while (pi != m_ctl.properties.end() && !(*pi)->m_isParameter)
     pi++;
   if (pi == m_ctl.properties.end())
-    addConfig(info, nConfig);
+    addConfig(info, fromXml);
   else {
-    Param &p = info.params[nParam];
     OU::Property &prop = **pi;
+    assert(nParam == prop.m_paramOrdinal);
+    Param &p = info.params[nParam];
     pi++;
     nParam++;
-    for (unsigned n = 0; n < p.m_values.size(); n++) {
+    assert(p.m_uValues.size());
+    for (unsigned n = 0; n < p.m_uValues.size(); n++) {
       const char *err;
+      // This "finalize" might be changing the data type differently for each configuration
       if ((err = prop.finalize(info, "property", false)) ||
-	  (err = prop.parseValue(p.m_values[n].c_str(), p.m_value, NULL, &info)))
+	  (err = prop.parseValue(p.m_uValues[n].c_str(), p.m_value, NULL, &info)))
 	return err;
-      p.m_value.unparse(p.m_uValue); // make the canonical value
-      if ((err = doParam(info, pi, nParam, nConfig)))
+      p.m_value.unparse(p.m_uValue); // make the specific value for this configuration
+      if ((err = doParam(info, pi, fromXml, nParam))) // recurse for later parameters
 	return err;
     }
   }
   return NULL;
 }
 
-static void // const char *
-addValue(OU::Property &p, const char *start, const char *end, Values &values) {
-#if 0
-   OU::Value *v = new OU::Value();
-   const char *err = p.parseValue(start, *v, end);
-   if (err)
-     delete v;
-   else {
-#endif
-     std::string sval(start, end - start);
-     values.push_back(sval);
-     ocpiDebug("Adding a value for the %s parameter: \"%.*s\"",
-	       p.m_name.c_str(), (unsigned)(end - start), start);
-#if 0
-   }
-   return err;
-#endif
+static const char *
+addValue(Param &p, const char *start, const char *end, Values &values) {
+  std::string sval(start, end - start);
+  ocpiDebug("Adding a value for the %s parameter: \"%.*s\"",
+	    p.m_param->m_name.c_str(), (unsigned)(end - start), start);
+  OU::Value v;
+  const char *err;
+  if ((err = p.m_param->parseValue(sval.c_str(), v)))
+    return err;
+  v.unparse(sval);
+  if (values.size() == 0)
+    p.m_value = v; // set first value as THE value for now
+  values.push_back(sval);
+  return NULL;
  }
 
-static void
-addValues(OU::Property &p, Values &values, bool hasValues, const char *content) {
+static const char *
+addValues(Param &p, Values &values, bool hasValues, const char *content) {
+  const char *err;
   // The text content is now undone with XML-quoting, but if there are
   // multiple values, we have to look for slashes unprotected by backslash.
   while (*content == '\n')
@@ -629,12 +670,14 @@ addValues(OU::Property &p, Values &values, bool hasValues, const char *content) 
 	if (*ep == '\\')
 	  if (++ep == end)
 	    break;
-      addValue(p, cp, ep, values);
+      if ((err = addValue(p, cp, ep, values)))
+	return err;
       if (*ep && *ep != '\n')
 	ep++;
     }
-  } else
-    addValue(p, content, end, values);
+  } else if ((err = addValue(p, content, end, values)))
+    return err;
+  return NULL;
 }
 
 static const char *
@@ -651,6 +694,7 @@ parseRawParams(ezxml_t &x) {
 const char *Worker::
 writeParamFiles(FILE *mkFile, FILE *xmlFile) {
   // Write the makefile as well as the xml file if anything was added
+  m_build.writeMakeVars(mkFile);
   fprintf(mkFile, "ParamConfigurations:=");
   for (size_t n = 0; n < m_paramConfigs.size(); n++)
     if (m_paramConfigs[n]->used)
@@ -684,13 +728,10 @@ emitToolParameters() {
   FILE *mkFile;
   if ((m_paramConfigs.size() == 0 && (err = parseBuildFile(true))) ||
       (err = parseRawParams(x)) ||
-      (err = openOutput(m_fileName.c_str(), m_outDir, "", "-params", ".mk", NULL, mkFile)))
+      (err = openOutput(m_fileName.c_str(), m_outDir, "", "", ".mk", NULL, mkFile)))
     return err;
   ParamConfig info(*this);                          // Current config for generating them
-  size_t nConfig = m_paramConfigs.size();
   info.params.resize(m_ctl.nParameters);
-  // This loop has parameters as the outer loop, and possible values for each parameter
-  // as the inner loop.
   for (ezxml_t px = ezxml_cchild(x, "parameter"); px; px = ezxml_next(px)) {
     std::string name;
     bool hasValues;
@@ -700,11 +741,19 @@ emitToolParameters() {
     if ((err = OE::getRequiredString(px, name, "name")) ||
 	(err = OE::getBoolean(px, "values", &hasValues)))
       return err;
-    if ((err = findParamProperty(name.c_str(), p, nParam)))
+    if ((err = findParamProperty(name.c_str(), p, nParam))) {
       fprintf(stderr,
 	      "Warning: parameter '%s' ignored due to: %s\n", name.c_str(), err);
-    else
-      addValues(*p, info.params[nParam].m_values, hasValues, ezxml_txt(px));
+      continue;
+    }
+    if ((err = p->finalize(info, "property", false)))
+      return err;
+    Param &param = info.params[nParam];
+    param.m_param = p; // record that we have set a value
+    param.m_value.setType(*p);
+    if ((err = addValues(info.params[nParam], info.params[nParam].m_uValues, hasValues,
+			 ezxml_txt(px))))
+      return err;
   }
   // Fill in default values when there are no values specified for a given parameter.
   // i.e. for this parameter, make the single value for all configs the default value
@@ -712,20 +761,20 @@ emitToolParameters() {
   for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
     if ((*pi)->m_isParameter) {
       par->m_param = *pi;
-      if (par->m_values.empty()) {
+      if (par->m_uValues.empty()) {
 	if (!(*pi)->m_default)
 	  return OU::esprintf("The parameter property '%s' has no value and no default value",
 			      (*pi)->m_name.c_str());
-	//	assert((*pi)->m_default);
 	std::string sval;
 	(*pi)->m_default->unparse(sval);
-	par->m_values.push_back(sval);
+	par->m_uValues.push_back(sval);
+	par->m_isDefault = true;
       }
       par++;
     }
   // Generate all configurations, merging with existing, keeping existing ones
   // in the same position.
-  if ((err = doParam(info, m_ctl.properties.begin(), 0, nConfig)))
+  if ((err = doParam(info, m_ctl.properties.begin(), false, 0)))
     return err;
   // Force an empty build file
   //  if (!m_xmlFile && m_paramConfigs.size() == 0 && (err = startBuildXml(m_xmlFile)))
@@ -742,7 +791,7 @@ emitMakefile() {
   const char *err;
   FILE *mkFile;
   if ((err = parseBuildFile(false)) ||
-      (err = openOutput(m_fileName.c_str(), m_outDir, "", "-params", ".mk", NULL, mkFile)))
+      (err = openOutput(m_fileName.c_str(), m_outDir, "", "", ".mk", NULL, mkFile)))
     return err;
   for (size_t n = 0; n < m_paramConfigs.size(); n++)
     m_paramConfigs[n]->used = true;
@@ -866,4 +915,114 @@ setParamConfig(OU::Assembly::Properties *instancePVs, size_t paramConfig) {
       OU::esprintf("No built parameter configuration for worker \"%s\" matches requested "
 		   "parameter values", cname());
   return NULL;
+}
+
+Build::Build(Worker &w) : m_worker(w), m_globalParams(w) {
+}
+const char *Build::
+parse(ezxml_t x) {
+  Model m = m_worker.m_model;
+  // Expand and make sure they are valid platform names
+  const char 
+    *err,
+    *aonly = ezxml_cattr(x, "onlyplatforms"),
+    *aexclude = ezxml_cattr(x, "excludeplatforms");
+  if (!aonly)
+    aonly = ezxml_cattr(x, "only");
+  if (!aexclude)
+    aexclude = ezxml_cattr(x, "exclude");
+  if (aonly && aexclude)
+    return "only[Platforms] and exclude[Platforms] cannot both be used";
+  if ((aonly && (err = getPlatforms(aonly, m_onlyPlatforms, m))) ||
+      (aexclude && (err = getPlatforms(aexclude, m_excludePlatforms, m))))
+    return err;
+  aonly = ezxml_cattr(x, "onlytargets");
+  aexclude = ezxml_cattr(x, "excludetargets");
+  if ((m_onlyPlatforms.size() || m_excludePlatforms.size()) &&
+      (aonly || aexclude))
+    return "targets and platforms cannot both be specified";
+  if ((aonly && (err = getTargets(aonly, m_onlyTargets, m))) ||
+      (aexclude && (err = getTargets(aexclude, m_excludeTargets, m))))
+    return err;
+  for (OU::TokenIter ti(ezxml_cattr(x, "sourcefiles")); ti.token(); ti.next())
+    if (OS::FileSystem::exists(ti.token()))
+      m_sourceFiles.push_back(ti.token());
+    else
+      return OU::esprintf("The source file: \"%s\" does not exist", ti.token());
+  for (OU::TokenIter ti(ezxml_cattr(x, "libraries")); ti.token(); ti.next())
+    if (m != HdlModel)
+      return "Invalid \"libraries\" attribute:  worker model is not HDL";
+    else if ((err = getHdlPrimitive(ti.token(), "library", m_libraries)))
+      return err;
+  for (OU::TokenIter ti(ezxml_cattr(x, "cores")); ti.token(); ti.next())
+    if (m != HdlModel)
+      return "Invalid \"cores\" attribute:  worker model is not HDL";
+    else if ((err = getHdlPrimitive(ti.token(), "core", m_cores)))
+      return err;
+  bool isDir;
+  for (OU::TokenIter ti(ezxml_cattr(x, "xmlincludedirs")); ti.token(); ti.next()) {
+    if (OS::FileSystem::exists(ti.token(), &isDir) && isDir)
+      m_xmlIncludeDirs.push_back(ti.token());
+    else
+      return OU::esprintf("The XML include directory: \"%s\" is not a directory", ti.token());
+  }
+  for (OU::TokenIter ti(ezxml_cattr(x, "includedirs")); ti.token(); ti.next()) {
+    if (OS::FileSystem::exists(ti.token(), &isDir) && isDir)
+      m_includeDirs.push_back(ti.token());
+    else
+      return OU::esprintf("The include directory: \"%s\" is not a directory", ti.token());
+  }
+  for (OU::TokenIter ti(ezxml_cattr(x, "componentlibraries")); ti.token(); ti.next())
+    if (!m_worker.m_slave && !m_worker.m_emulate)
+      return OU::esprintf("componentlibraries only valid on workers with slaves or emulators");
+    else if ((err = getComponentLibrary(ti.token(), m_componentLibraries)))
+      return err;
+  std::string prereqs;
+  if ((err = getPrereqDir(prereqs)))
+    return err;
+  std::string path;
+  for (OU::TokenIter ti(ezxml_cattr(x, "staticprereqlibs")); ti.token(); ti.next()) {
+    if (m != RccModel)
+      return "Invalid \"StaticPrereqLibs\" attribute:  worker model is not RCC";
+    path = prereqs + "/" + ti.token();
+    if (OS::FileSystem::exists(path, &isDir) && isDir)
+      m_staticPrereqLibs.push_back(ti.token());
+    else
+      return
+	OU::esprintf("The prerequisite library \"%s\"  is not found/installed.", ti.token());
+  }
+  for (OU::TokenIter ti(ezxml_cattr(x, "dynamicprereqlibs")); ti.token(); ti.next()) {
+    if (m != RccModel)
+      return "Invalid \"DynamicPrereqLibs\" attribute:  worker model is not RCC";
+    path = prereqs + "/" + ti.token();
+    if (OS::FileSystem::exists(path, &isDir) && isDir)
+      m_dynamicPrereqLibs.push_back(ti.token());
+    else
+      return
+	OU::esprintf("The prerequisite library \"%s\"  is not found/installed.", ti.token());
+  }
+  return NULL;
+}
+static void writeVar(FILE *f, const char *var, OrderedStringSet &vals) {
+  if (vals.empty())
+    return;
+  fprintf(f,"$(call OcpiCheckVars,%s)\n%s:=", var, var);
+  for (auto i = vals.begin(); i != vals.end(); ++i)
+    fprintf(f, "%s%s", i == vals.begin() ? "" : " ", (*i).c_str());
+  fprintf(f, "\n");
+}
+void Build::
+writeMakeVars(FILE *mkf) {
+  writeVar(mkf, "OnlyPlatforms", m_onlyPlatforms);
+  writeVar(mkf, "ExcludePlatforms", m_excludePlatforms);
+  writeVar(mkf, "OnlyTargets", m_onlyTargets);
+  writeVar(mkf, "ExcludeTargets", m_excludeTargets);
+  writeVar(mkf, "SourceFiles", m_sourceFiles);
+  writeVar(mkf, "Libraries", m_libraries);
+  writeVar(mkf, "XmlIncludeDirs", m_xmlIncludeDirs);
+  writeVar(mkf, "IncludeDirs", m_includeDirs);
+  writeVar(mkf, "ComponentLibraries", m_componentLibraries);
+  writeVar(mkf, "Cores", m_cores);
+  writeVar(mkf, "RccStaticPrereqLibs", m_staticPrereqLibs);
+  writeVar(mkf, "RccDynamicPrereqLibs", m_dynamicPrereqLibs);
 }

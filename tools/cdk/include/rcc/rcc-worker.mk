@@ -106,7 +106,7 @@ $(foreach l,$(RccLibrariesInternal) $(Libraries),\
   -L $(OCPI_CDK_DIR)/lib/$(RccTarget)$(and $(OCPI_TARGET_MODE),/d$(if $(filter 1,$(OCPI_DEBUG)),d,o)) \
   $(foreach l,$(RccStaticPrereqLibs),\
     $(OCPI_PREREQUISITES_DIR)/$l/$(RccTarget)/lib/lib$l.a) \
-  $(and $(RccDynamicPrereqLibs),-Wl$(Comma)-rpath='$$ORIGIN') \
+  $(and $(RccDynamicPrereqLibs),-Wl$(Comma)-rpath -Wl$(Comma)'$$ORIGIN') \
   $(foreach l,$(RccDynamicPrereqLibs),\
     $(OCPI_PREREQUISITES_DIR)/$l/$(RccTarget)/lib/lib$l$(SOEXT_$(call RccOs,))) \
   $(foreach l,$(RccDynamicPrereqLibs),\

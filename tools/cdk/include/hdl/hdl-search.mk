@@ -36,14 +36,14 @@ __HDL_SEARCH_MK__=x
 #  2. paths (slashes).
 #  For type 1 (names, no slashes), the name means:
 #   Search for the named library in all places indicated in
-#   OCPI_HDL_COMPONENT_LIBRARY_PATH (colon separated) and then look
+#   OCPI_COMPONENT_LIBRARY_PATH (colon separated) and then look
 #   for the named library in all the frameworks indicated in
 #   OCPI_PROJECT_PATH (colon separated), then finally look in the framework at
 #   OCPI_CDK_DIR.  Essentially the OCPI_CDK_DIR is always the last framework in the path.
 #  This means that one name in the ComponentLibraries list
 #   expands to a list of same-named libraries where earlier ones can
 #   shadow later ones.
-#  Rationale for OCPI_HDL_COMPONENT_LIBRARY_PATH:
+#  Rationale for OCPI_COMPONENT_LIBRARY_PATH:
 #   allows for a place to contain a batch of libraries, without being a whole framework
 #   allows complete ignorance of the notion of frameworks
 #  Rational for OCPI_PROJECT_PATH

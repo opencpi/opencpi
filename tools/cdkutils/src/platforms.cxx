@@ -10,65 +10,50 @@ namespace OS = OCPI::OS;
 namespace OU = OCPI::Util;
 namespace OF = OCPI::OS::FileSystem;
 
-const char *
-getCdkDir(std::string &cdk) {
-  const char *env = getenv("OCPI_CDK_DIR");
-  bool isDir;
-  if (env && OF::exists(env, &isDir) && isDir) {
-    cdk = env;
-    return NULL;
-  }
-  return "OCPI_CDK_DIR not set, does not exist, or is not a directory";
-}
-
-const char *
-getRccPlatforms(StringSet &platforms) {
-  const char *err;
-  std::string dir;
-  if ((err = getCdkDir(dir)))
-    return err;
-  dir += "/platforms";
-  for (OS::FileIterator it(dir, "*"); !it.end(); it.next())
-    if (it.isDirectory()) {
-      std::string abs, rel, target;
-      OU::format(target, "%s/%s-target.mk", it.absoluteName(abs), it.relativeName(rel));
-      if (OF::exists(target))
-	platforms.insert(rel);
-    }
-  return NULL;
-}
-
 namespace {
 
 typedef std::vector<std::string> StringArray;
+StringArray hdlPrimitivePath;
+StringArray componentPath;
+  //StringSet oclPlatforms; bool oclPlatformsDone;
+StringSet rccPlatforms; bool rccPlatformsDone;
+StringSet hdlPlatforms; bool hdlPlatformsDone;
+StringSet allPlatforms; bool allPlatformsDone;
+StringSet oclTargets;
+StringSet rccTargets;
+StringSet hdlTargets;
+StringSet allTargets; bool allTargetsDone;
+
 const char *
-addPlaces(const char *env, const char *suffix, bool check, StringArray &list) {
-  std::string s;
-  for (const char *cp = getenv(env); cp && *cp; cp++) {
-    const char *ep = strchr(cp, ':');
-    if (!ep)
-      s = cp;
-    else
-      s.assign(cp, ep - cp);
+addPlaces(const char *envname, const char *suffix, bool check, StringArray &list) {
+  const char *env = getenv(envname);
+  ocpiInfo("Path %s is: %s", envname, env ? env : "<not set>");
+  for (OU::TokenIter ti(env, ":"); ti.token(); ti.next()) {
     bool isDir;
-    if (OF::exists(s, &isDir) && isDir)
-      list.push_back(s + suffix);
+    if (OF::exists(ti.token(), &isDir) && isDir)
+      list.push_back(std::string(ti.token()) + suffix);
     else if (check)
-      return OU::esprintf("in %s, \"%s\" is not a directory", env, s.c_str());
-    cp = ep;
+      return OU::esprintf("in %s, \"%s\" is not a directory", env, ti.token());
   }
   return NULL;
 }
 const char *
 addPlatform(const char *name, StringSet &platforms) {
   platforms.insert(name);
+  allPlatforms.insert(name);
   return NULL;
 }
 const char *
-doPlatform(std::string &place, StringSet &platforms) {
+addTarget(const char *name, StringSet &targets) {
+  targets.insert(name);
+  allTargets.insert(name);
+  return NULL;
+}
+const char *
+doHdlPlatform(std::string &place) {
   const char *name = strrchr(place.c_str(), '/');
   assert(name);
-  std::string p(++name + 1), dir;
+  std::string p(++name), dir;
   OU::format(dir, "%s/lib/%s.mk", place.c_str(), name);
   if (OF::exists(dir))
     dir = place + "/lib";
@@ -79,14 +64,129 @@ doPlatform(std::string &place, StringSet &platforms) {
   if (!OF::exists(dir + "/" + p + ".mk"))
     return OU::esprintf("no %s.mk file found under %s for HDL platform; not built?",
 			name, place.c_str());
-  return addPlatform(name, platforms);
+  return addPlatform(name, hdlPlatforms);
+}
 }
 
-} // anonymous
+const char *
+getCdkDir(std::string &cdk) {
+  const char *env = getenv("OCPI_CDK_DIR");
+  bool isDir;
+  if (env && OF::exists(env, &isDir) && isDir) {
+    cdk = env;
+    ocpiInfo("OCPI_CDK_DIR: %s", env);
+    return NULL;
+  }
+  return "OCPI_CDK_DIR not set, does not exist, or is not a directory";
+}
 
 const char *
-getHdlPlatforms(StringSet &platforms) {
+getPrereqDir(std::string &dir) {
+  const char *env = getenv("OCPI_PREREQUISITES_DIR");
+  dir = env ? env : "/opt/opencpi/prerequisites";
+  bool isDir;
+  if (OF::exists(dir, &isDir) && isDir) {
+    ocpiInfo("OCPI_PREREQUISITES_DIR: %s", env);
+    return NULL;
+  }
+  return
+    OU::esprintf("OpenCPI prerequisites directory \"%s\" does not exist or is not a directory",
+		 dir.c_str());
+}
+
+const char *
+getRccPlatforms(const StringSet *&platforms) {
+  platforms = &rccPlatforms;
+  if (rccPlatformsDone)
+    return NULL;
   const char *err;
+  std::string dir;
+  if ((err = getCdkDir(dir)))
+    return err;
+  dir += "/platforms";
+  for (OS::FileIterator it(dir, "*"); !it.end(); it.next())
+    if (it.isDirectory()) {
+      std::string abs, rel, target;
+      OU::format(target, "%s/%s-target.mk", it.absoluteName(abs), it.relativeName(rel));
+      if (OF::exists(target))
+	addPlatform(rel.c_str(), rccPlatforms);
+    }
+  rccPlatformsDone = true;
+  return NULL;
+}
+
+const char *
+getComponentLibrary(const char *lib, OrderedStringSet &libs) {
+  const char *err;
+  std::string path;
+  bool isDir;
+  if (strchr(lib, '/')) {
+    if (!OS::FileSystem::exists(lib, &isDir) || !isDir)
+      return OU::esprintf("The component library location: \"%s\" is not a directory", lib);
+    path = lib;
+    path += "/lib";
+    libs.push_back(OS::FileSystem::exists(path, &isDir) && isDir ? path : lib);
+    return NULL;
+  }
+  if (componentPath.empty()) {
+    if ((err = getCdkDir(path)) ||
+	(err = addPlaces("OCPI_COMPONENT_LIBRARY_PATH", "/lib", true, componentPath)) ||
+	(err = addPlaces("OCPI_PROJECT_PATH", "/lib", true, componentPath)))
+      return err;
+    componentPath.push_back(path + "/lib");
+  }
+  for (unsigned n = 0; n < componentPath.size(); n++) {
+    OU::format(path, "%s/%s", componentPath[n].c_str(), lib);
+    if (OS::FileSystem::exists(path, &isDir) && isDir) {
+      libs.push_back(path);
+      return NULL;
+    }
+  }
+  path.clear();
+  for (unsigned n = 0; n < componentPath.size(); n++)
+    OU::formatAdd(path, "%s\"%s\"", n ? "" : ", ", componentPath[n].c_str());
+  return OU::esprintf("Could not find component library \"%s\"; looked in:  %s",
+		      lib, path.c_str());
+}
+
+const char *
+getHdlPrimitive(const char *prim, const char *type, OrderedStringSet &prims) {
+  const char *err;
+  if (strchr(prim, '/')) {
+    if (!OS::FileSystem::exists(prim))
+      return OU::esprintf("The %s location: \"%s\" does not exist", type, prim);
+    prims.push_back(prim);
+    return NULL;
+  }
+  std::string cdk;
+  if (hdlPrimitivePath.empty()) {
+    if ((err = getCdkDir(cdk)) ||
+	(err = addPlaces("OCPI_HDL_PRIMITIVE_PATH", "", true, hdlPrimitivePath)) ||
+	(err = addPlaces("OCPI_PROJECT_PATH", "/lib/hdl", false, hdlPrimitivePath)))
+      return err;
+    hdlPrimitivePath.push_back(cdk + "/lib/hdl");
+  }
+  std::string path;
+  for (unsigned n = 0; n < hdlPrimitivePath.size(); n++) {
+    OU::format(path, "%s/%s", hdlPrimitivePath[n].c_str(), prim);
+    if (OS::FileSystem::exists(path)) {
+      prims.push_back(path);
+      return NULL;
+    }
+  }
+  path.clear();
+  for (unsigned n = 0; n < hdlPrimitivePath.size(); n++)
+    OU::formatAdd(path, "%s\"%s\"", n ? "" : ", ", hdlPrimitivePath[n].c_str());
+  return OU::esprintf("Could not find primitive %s \"%s\"; looked in:  %s", 
+		      type, prim, path.c_str());
+}
+
+const char *
+getHdlPlatforms(const StringSet *&platforms) {
+  const char *err;
+  platforms = &hdlPlatforms;
+  if (hdlPlatformsDone)
+    return NULL;
   std::string cdk;
   StringArray places;
   if ((err = getCdkDir(cdk)) ||
@@ -104,7 +204,7 @@ getHdlPlatforms(StringSet &platforms) {
 	for (OS::FileIterator it(dir, "*.mk"); !it.end(); it.next()) {
 	  std::string p(it.relativeName());
 	  p.resize(p.size() - 3);
-	  addPlatform(p.c_str(), platforms);
+	  addPlatform(p.c_str(), hdlPlatforms);
 	}
       else
 	for (OS::FileIterator it(places[n], "*"); !it.end(); it.next()) {
@@ -112,68 +212,137 @@ getHdlPlatforms(StringSet &platforms) {
 	  if (OF::exists(OU::format(s, "%s/%s.xml", it.absoluteName(abs), p.c_str())) ||
 	      OF::exists(OU::format(s, "%s/lib/hdl/%s.xml", abs.c_str(), p.c_str())) ||
 	      OF::exists(OU::format(s, "%s/hdl/%s.xml", abs.c_str(), p.c_str())))
-	    if ((err = doPlatform(abs, platforms)))
+	    if ((err = doHdlPlatform(abs)))
 		return err;
 	}
-    } else if ((err = doPlatform(places[n], platforms)))
+    } else if ((err = doHdlPlatform(places[n])))
       return err;
   }
+  hdlPlatformsDone = true;
   return NULL;
 }
 
-const StringSet &
-getAllPlatforms() {
-  static StringSet allPlatforms;
-  if (allPlatforms.empty()) {
-    const char *err;
-    if ((err = getRccPlatforms(allPlatforms)) ||
-	(err = getHdlPlatforms(allPlatforms)))
-      ocpiBad("error getting all platforms: %s", err);
+// Get it two ways.  If OCPI_ALL_PLATFORMS is provided we use it.  Otherwise we look around.
+const char *
+getAllPlatforms(const StringSet *&platforms, Model m) {
+  if (!allPlatformsDone) {
+    const char *env = getenv("OCPI_ALL_PLATFORMS");
+    if (env)
+      for (const char *ep; *env; env = ep) {
+	while (isspace(*env)) env++;
+	for (ep = env; *ep && !isspace(*ep); ep++)
+	  ;
+	if ((ep - env) < 5)
+	  return OU::esprintf("the environment variable OCPI_ALL_PLATFORMS (\"%s\") is invalid",
+			      env);
+	std::string p;
+	p.assign(env, (ep - 4) - env);
+	if (!strncmp(ep - 4, ".rcc", 4))
+	  addPlatform(p.c_str(), rccPlatforms);
+	else if (!strncmp(ep - 4, ".hdl", 4))
+	  addPlatform(p.c_str(), hdlPlatforms);
+	else
+	  return OU::esprintf("the environment variable OCPI_ALL_PLATFORMS (\"%s\") is invalid",
+			      env);
+      }
+    else {
+      const char *err;
+      const StringSet *dummy;
+      if ((err = getRccPlatforms(dummy)) ||
+	  (err = getHdlPlatforms(dummy)))
+	return err;
+    }
+    allPlatformsDone = true;
   }
-  return allPlatforms;
+  switch (m) {
+  case NoModel: platforms = &allPlatforms; break;
+  case RccModel: platforms = &rccPlatforms; break;
+  case HdlModel: platforms = &hdlPlatforms; break;
+  default:
+    return "unsupported model for platforms";
+  }
+  return NULL;
 }
 
 // Parse the attribute value, validating it, and expanding it if wildcard
-// A static method
 const char *
-getPlatforms(const char *attr, StringSet &platforms) {
-  static StringSet allPlatforms;
+getPlatforms(const char *attr, OrderedStringSet &platforms, Model m) {
   if (!attr)
     return NULL;
-  if (allPlatforms.empty()) {
-    const char *env = getenv("OCPI_ALL_PLATFORMS");
-    if (!env)
-      return "the environment variable OCPI_ALL_PLATFORMS is not set";
-    for (const char *ep; *env; env = ep) {
-      while (isspace(*env)) env++;
-      for (ep = env; *ep && !isspace(*ep); ep++)
-	;
-      std::string p;
-      p.assign(env, ep - env);
-      allPlatforms.insert(p);
-    }
-    if (allPlatforms.empty())
-      return "the environment variable OCPI_ALL_PLATFORMS has no platforms";
-  }
-  while (*attr) {
-    while (*attr && (isspace(*attr) || *attr == ','))
-      attr++;
-    if (!*attr)
-      break;
-    const char *cp;
-    for (cp = attr; *cp && !isspace(*cp) && *cp != ','; cp++)
-      ;
-    std::string plat(attr, cp - attr);
+  const char *err;
+  const StringSet *universe;
+  if ((err = getAllPlatforms(universe, m)))
+    return err;
+  for (OU::TokenIter ti(attr); ti.token(); ti.next()) {
     bool found;
-    for (StringSetIter si = allPlatforms.begin(); si != allPlatforms.end(); ++si)
-      if (fnmatch(plat.c_str(), (*si).c_str(), FNM_CASEFOLD) == 0) {
+    for (StringSetIter si = universe->begin(); si != universe->end(); ++si)
+      if (fnmatch(ti.token(), (*si).c_str(), FNM_CASEFOLD) == 0) {
 	found = true;
-	platforms.insert(*si);
+	platforms.push_back(*si);
       }
     if (!found)
       return OU::esprintf("the string \"%s\" does not indicate or match any platforms",
-			  plat.c_str());
-    attr = cp;
-  }    
+			  ti.token());
+  }
   return NULL;
+}
+
+// Get it two ways.  If OCPI_ALL_TARGETS is provided we use it.  Otherwise we look around.
+const char *
+getAllTargets(const StringSet *&targets, Model m) {
+  if (!allTargetsDone) {
+    const char *env;
+    if ((env = getenv("OCPI_ALL_HDL_TARGETS")))
+      for (OU::TokenIter ti(env); ti.token(); ti.next())
+	addTarget(ti.token(), hdlTargets);
+    else
+      ocpiInfo("the environment variable OCPI_ALL_HDL_TARGETS is not set");
+    if ((env = getenv("OCPI_ALL_RCC_TARGETS")))
+      for (OU::TokenIter ti(env); ti.token(); ti.next())
+	addTarget(ti.token(), rccTargets);
+    else
+      ocpiInfo("the environment variable OCPI_ALL_RCC_TARGETS is not set");
+    allTargetsDone = true;
+  }
+  switch (m) {
+  case NoModel: targets = &allTargets; break;
+  case RccModel: targets = &rccTargets; break;
+  case HdlModel: targets = &hdlTargets; break;
+  default:
+    return "unsupported model for targets";
+  }
+  return NULL;
+}
+
+// Parse the attribute value, validating it, and expanding it if wildcard
+const char *
+getTargets(const char *attr, OrderedStringSet &targets, Model m) {
+  if (!attr)
+    return NULL;
+  const char *err;
+  const StringSet *universe;
+  if ((err = getAllTargets(universe, m)))
+    return err;
+  for (OU::TokenIter ti(attr); ti.token(); ti.next()) {
+    bool found;
+    for (StringSetIter si = universe->begin(); si != universe->end(); ++si)
+      if (fnmatch(ti.token(), (*si).c_str(), FNM_CASEFOLD) == 0) {
+	found = true;
+	targets.push_back(*si);
+      }
+    if (!found)
+      return OU::esprintf("the string \"%s\" does not indicate or match any targets", ti.token());
+  }
+  return NULL;
+}
+std::list<std::string>::const_iterator OrderedStringSet::
+find(const std::string &s) {
+  for (auto si = begin(); si != end(); ++si)
+    if (s == *si)
+      return si;
+  return end();
+}
+void OrderedStringSet::push_back(const std::string &s) {
+  if (find(s) == end())
+    std::list<std::string>::push_back(s);
 }

@@ -366,7 +366,19 @@ namespace OCPI {
 				     bool leaveExisting = false, bool onlyIfDifferent = false) {
 	return string2File(in, file.c_str(), leaveExisting, onlyIfDifferent);
       }
-
+      // Simple wrapper for strsep, allowing empty tokens if desired.
+      // When empty tokens not allowed, consecutive delimiters are simply consumed
+      // Usage is: for (OU::TokenIter li(input); li.token(), li.next()) { use li.token(); }
+      class TokenIter {
+	char *m_copy, *m_ptr;
+	const char *m_token, *m_delims;
+	bool m_allowEmpty;
+      public:
+        TokenIter(const char *list, const char *delims = ", \t", bool allowEmpty = false);
+	~TokenIter();
+	inline const char *token() const { return m_token; }
+	void next();
+      };
 
       // These are comparison object for use in STL classes
       struct ConstCharComp {

@@ -96,10 +96,21 @@ endif
 $(call OcpiDbgVar,RccPlatforms)
 $(call OcpiDbgVar,RccTargets)
 
-RccAllPlatforms=\
-  $(shell for i in $(OCPI_CDK_DIR)/platforms/*; \
-           do [ -f $$i/$$(basename $$i)-target.mk ] && echo $$(basename $$i); \
-          done)
+ifdef OCPI_ALL_RCC_PLATFORMS
+  RccAllPlatforms:=$(OCPI_ALL_RCC_PLATFORMS)
+  RccAllTargets:=$(OCPI_ALL_RCC_TARGETS)
+else
+  $(foreach p,$(wildcard $(OCPI_CDK_DIR)/platforms/*),\
+    $(and $(wildcard $p/$(notdir $p)-target.mk),\
+      $(eval RccAllPlatforms:=$(RccAllPlatforms) $(notdir $p))) \
+    $(and $(wildcard $p/target),\
+      $(eval RccAllTargets:=$(RccAllTargets) $(shell cat $p/target))))
+  RccAllTargets:=$(call Unique,$(RccAllTargets))
+  export OCPI_ALL_RCC_PLATFORMS:=$(RccAllPlatforms)
+  export OCPI_ALL_RCC_TARGETS:=$(RccAllTargets)
+#  $(info OCPI_ALL_RCC_PLATFORMS is $(OCPI_ALL_RCC_PLATFORMS))
+#  $(info OCPI_ALL_RCC_TARGETS is $(OCPI_ALL_RCC_TARGETS))
+endif
 ifdef RccPlatforms
   override RccPlatforms:=$(filter-out $(ExcludePlatforms) $(RccExcludePlatforms),$(RccPlatforms))
   ifneq ($(OnlyPlatforms)$(RccOnlyPlatforms),)

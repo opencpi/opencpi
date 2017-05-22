@@ -44,7 +44,7 @@ ImplXmlFiles:=$(foreach w,$(Workers),$(or $(Worker_$w_xml),$(Worker).xml))
 $(call OcpiDbgVar,ImplXmlFiles)
 
 # During the makefile reading process we possibly update the
-# build parameter file, and always update and include the xxx-params.mk file.
+# build parameter file, and always update and include the gen/xxx.mk file.
 # We look at all variables of the form Param_<name>.
 RawParamVariables:=$(filter Param_%,$(.VARIABLES)) $(filter ParamValues_%,$(.VARIABLES))
 RawParamFile:=$(GeneratedDir)/rawparams.xml
@@ -125,7 +125,7 @@ ifeq ($(filter clean,$(MAKECMDGOALS)),)
   $(call OcpiDbgVar,ParamShell)
   X:=$(shell $(ParamShell))
   $(and $X,$(error Failed to process initial parameters for this worker: $X))
-  include $(GeneratedDir)/$(Worker)-params.mk
+  include $(GeneratedDir)/$(Worker).mk
   WorkerParamNames:=\
     $(foreach p, \
       $(filter ParamMsg_$(firstword $(ParamConfigurations))_%,$(.VARIABLES)),\

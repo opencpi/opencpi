@@ -967,7 +967,7 @@ Worker(ezxml_t xml, const char *xfile, const std::string &parentFile,
     m_endian(NoEndian), m_needsEndian(false), m_pattern(NULL), m_portPattern(NULL),
     m_staticPattern(NULL), m_defaultDataWidth(-1), m_language(NoLanguage), m_assembly(NULL),
     m_slave(NULL), m_emulate(NULL), m_library(NULL), m_outer(false), m_debugProp(NULL), 
-    m_mkFile(NULL), m_xmlFile(NULL), m_outDir(NULL), m_paramConfig(NULL),
+    m_mkFile(NULL), m_xmlFile(NULL), m_outDir(NULL), m_build(*this), m_paramConfig(NULL),
     m_scalable(false), m_parent(parent), m_maxLevel(0), m_dynamic(false)
 {
   if (ipvs)

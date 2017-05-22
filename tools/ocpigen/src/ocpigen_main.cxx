@@ -328,7 +328,7 @@ main(int argc, const char **argv) {
 	else if (options.parameters() && (err = w->emitToolParameters()))
 	  fprintf(stderr, "%s: Error generating parameter file for tools: %s\n", *ap, err);
 	else if (options.build() && (err = w->emitMakefile()))
-	  fprintf(stderr, "%s: Error generating parameter file for tools: %s\n", *ap, err);
+	  fprintf(stderr, "%s: Error generating gen/*.mk file for tools: %s\n", *ap, err);
 	else if (doArt)
 	  switch (w->m_model) {
 	  case HdlModel:

@@ -400,7 +400,6 @@ OcpiCheckLinks=$(strip \
 
 define OcpiComponentSearchError
 The component library "$1" was not found in any of these locations: $(call OcpiCheckLinks,$2)
-OCPI_HDL_COMPONENT_LIBRARY_PATH is: $(OCPI_HDL_COMPONENT_LIBRARY_PATH)
 OCPI_COMPONENT_LIBRARY_PATH is: $(OCPI_COMPONENT_LIBRARY_PATH)
 OCPI_PROJECT_PATH is: $(OCPI_PROJECT_PATH)
 OCPI_CDK_DIR is: $(OCPI_CDK_DIR)
@@ -415,7 +414,6 @@ OcpiComponentLibraryExists=$(or $(call OcpiExists,$1/lib),$(call OcpiExists,$1))
 # $(call OcpiSearchComponentPath,lib)
 OcpiSearchComponentPath=\
   $(eval OcpiTempPlaces:=$(strip\
-       $(subst :, ,$(OCPI_HDL_COMPONENT_LIBRARY_PATH)) \
        $(subst :, ,$(OCPI_COMPONENT_LIBRARY_PATH)) \
        $(foreach d,$(OcpiGetProjectPath),$d/lib)))\
   $(eval OcpiTempDirs:= $(strip \
@@ -627,4 +625,7 @@ endef
 # These are goals that *only* apply to testing.
 # .test directories also support more generic targets, in particular "clean" and "cleanrun"
 OcpiTestGoals=test cleantest runtest verifytest cleansim runtests runonlytest cleanrun
+
+OcpiCheckVars=$(and $($1),$(error The "$1" variable is set in both the Makefile and the *-build.xml file.))
+
 endif # ifndef __UTIL_MK__

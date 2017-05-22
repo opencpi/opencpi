@@ -555,13 +555,6 @@ struct Parsed {
   inline const char *cname() const { return m_name.c_str(); }
 };
 
-enum Model {
-  NoModel,
-  HdlModel,
-  RccModel,
-  OclModel
-};
-
 // This class represents a connection to a required worker
 
 typedef std::vector<Clock*> Clocks;
@@ -615,6 +608,7 @@ class Worker : public Parsed, public OU::IdentResolver {
   FILE *m_mkFile, *m_xmlFile;       // state during parameter processing
   const char *m_outDir;             // state during parameter processing
   ParamConfigs m_paramConfigs;      // the parsed file of all configs
+  Build m_build;                    // build info not needed for code gen or artifact
   ParamConfig  *m_paramConfig;      // the config for this Worker.
   // Scalability
   bool m_scalable;            // Is this worker scalable at all?
@@ -692,8 +686,8 @@ class Worker : public Parsed, public OU::IdentResolver {
 	      bool param = false, Language = NoLanguage),
     *findParamProperty(const char *name, OU::Property *&prop, size_t &nParam,
 		       bool includeInitial = false),
-    *addConfig(ParamConfig &info, size_t &nConfig),
-    *doParam(ParamConfig &info, PropertiesIter pi, unsigned nParam, size_t &nConfig),
+    *addConfig(ParamConfig &info, bool fromXml),
+    *doParam(ParamConfig &info, PropertiesIter pi, bool fromXml, unsigned nParam),
     *addParamConfigSuffix(std::string &s),
     //    *getParamConfig(const char *id, const ParamConfig *&config),
     *emitImplRCC(),

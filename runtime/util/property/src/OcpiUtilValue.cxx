@@ -176,6 +176,8 @@ namespace OCPI {
       *this = v;
     }
     void Value::setType(const ValueType &vt) {
+      clear();
+      init();
       m_vt = &vt;
       m_parent = NULL;
     }

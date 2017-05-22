@@ -5,6 +5,7 @@
 #include <string>
 #include "OcpiUtilValue.h"
 #include "OcpiUtilProperty.h"
+#include "cdkutils.h"
 #include "ocpigen.h"
 
 // These structures capture what is in or will be put in
@@ -19,12 +20,12 @@ typedef std::set<std::string> Strings;
 typedef Strings::const_iterator StringsIter;
 
 class Worker;
+#define PARAM_ATTRS "name", "value", "values", "valueFile", "valueFiles"
 struct Param {
   OCPI::Util::Value           m_value;      // value for the current config, perhaps the default
   std::string                 m_uValue;     // unparsed value: the canonical value for comparison
-  Values                      m_values;     // the values for all configurations from rawparams
   OCPI::Util::Member         *m_valuesType; // the type (a sequence of these values).
-  Values                      m_uValues;
+  Values                      m_uValues;    // *Either* parsed from XML or captured from raw
   const OCPI::Util::Property *m_param;      // the property that is a parameter
   bool                        m_isDefault;  // is m_value from property default?
   Worker                     *m_worker;     // the worker of this param
@@ -44,7 +45,7 @@ struct Param {
     Attributes() : m_onlyExcluded(false) {}
   };
   std::vector<Attributes>     m_attributes;
-  static const char *getPlatforms(const char *platform, Strings &platforms);
+  //  static const char *getPlatforms(const char *platform, Strings &platforms);
   Param();
   const char 
     *parse(ezxml_t px, const OCPI::Util::Property &prop, bool global = false),
@@ -58,7 +59,6 @@ class ParamConfig;
 // This must be pointers since it has a reference member which can't be copied,
 // and we're not using c++11 yet, with "emplace".
 typedef std::vector<ParamConfig*> ParamConfigs;
-
 class ParamConfig : public OCPI::Util::IdentResolver {
   Worker &m_worker;
  public:
@@ -69,12 +69,36 @@ class ParamConfig : public OCPI::Util::IdentResolver {
   ParamConfig(Worker &w);
   ParamConfig(const ParamConfig &);
   ParamConfig &operator=(const ParamConfig * p);
-  const char * parse(ezxml_t cx, const ParamConfigs &configs, bool includeInitial = false);
+  const char * parse(ezxml_t cx, const ParamConfigs &configs); //, bool includeInitial = false);
+  void doDefaults(); //bool includeInitial = false);
   void write(FILE *xf, FILE *mf);
   void writeConstants(FILE *gf, Language lang);
   // Is the given configuration the same as this one?
   bool equal(ParamConfig &other);
   // The callback when evaluating expressions for data types (e.g. array length).
   const char *getValue(const char *sym, OCPI::Util::ExprValue &val) const;
+};
+
+// The build information that is not necessary for code generation.
+// (except the actual explicit configs, which are in ParamConfigs).
+// Many of the lists need to preserve the original XML ordering
+struct Build {
+  Worker             &m_worker;
+  ParamConfig         m_globalParams;  // parameters set for all non-id'd build configurations
+  OrderedStringSet    m_onlyPlatforms, m_excludePlatforms;
+  OrderedStringSet    m_onlyTargets, m_excludeTargets;
+  OrderedStringSet    m_sourceFiles;    // absolute or relative to the worker dir ORDERED
+  OrderedStringSet    m_libraries;      // primitive libraries, slashes imply no search
+  OrderedStringSet    m_xmlIncludeDirs; // include paths for XML files
+  OrderedStringSet    m_includeDirs;    // include paths for source files
+  OrderedStringSet    m_componentLibraries;
+  // HDL-specific
+  OrderedStringSet    m_cores;
+  // RCC-specific
+  OrderedStringSet    m_staticPrereqLibs;
+  OrderedStringSet    m_dynamicPrereqLibs;
+  Build(Worker &w);
+  const char *parse(ezxml_t x);
+  void writeMakeVars(FILE *mkFile);
 };
 #endif

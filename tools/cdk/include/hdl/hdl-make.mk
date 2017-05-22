@@ -62,10 +62,6 @@ $(call OcpiDbgVar,HdlAllParts)
 HdlAllPlatformParts:=$(call Unique,$(foreach pl,$(HdlAllPlatforms),$(firstword $(subst -, ,$(HdlPart_$(pl))))))
 $(call OcpiDbgVar,HdlAllPlatformParts)
 
-# Families are either top level targets with nothing underneath or one level down
-HdlAllFamilies:=$(call Unique,$(foreach t,$(HdlTopTargets),$(or $(HdlTargets_$(t)),$(t))))
-$(call OcpiDbgVar,HdlAllFamilies)
-
 # Read the workers file and set things accordingly
 # 1. Set the instance list, which is a list of <worker-name>:<instance-name>
 # 2. The workers list, which is a list of worker names

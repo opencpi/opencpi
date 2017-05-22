@@ -35,12 +35,25 @@
 #define CDKUTILS_H
 #include <cstdio>
 #include <string>
-#include <vector>
 #include <set>
+#include <list>
 #include "ezxml.h"
 
+// Note that some callers may depend on this being ORDERED
 typedef std::set<std::string> StringSet;
 typedef StringSet::const_iterator StringSetIter;
+// Ordered list with no duplicates, i.e. a set ordered by order of insertion
+struct OrderedStringSet : public std::list<std::string> {
+  void push_back(const std::string &);
+  std::list<std::string>::const_iterator find(const std::string &);
+};
+
+enum Model {
+  NoModel,
+  HdlModel,
+  RccModel,
+  OclModel
+};
 
 extern void
   setDep(const char *file),
@@ -49,12 +62,18 @@ extern void
   printgen(FILE *f, const char *comment, const char *file, bool orig = false,
 	   const char *endComment = "");  
 
-const StringSet &getAllPlatforms();
-
 extern const char
-  *getPlatforms(const char *attr, StringSet &platforms),
-  *getRccPlatforms(StringSet &platforms),
-  *getHdlPlatforms(StringSet &platforms),
+  *getCdkDir(std::string &cdk), // FIXME: put in runtime?
+  *getPrereqDir(std::string &dir),
+  *getPlatforms(const char *attr, OrderedStringSet &platforms, Model m = NoModel),
+  *getHdlPrimitive(const char *prim, const char *type, OrderedStringSet &prims),
+  *getComponentLibrary(const char *lib, OrderedStringSet &libs),
+  *getRccPlatforms(const StringSet *&platforms),
+  *getHdlPlatforms(const StringSet *&platforms),
+  *getAllPlatforms(const StringSet *&platforms, Model m = NoModel),
+  *getAllTargets(const StringSet *&targets, Model m = NoModel),
+  *getPlatforms(const char *attr, StringSet &targets, Model m),
+  *getTargets(const char *attr, OrderedStringSet &targets, Model m),
   *closeDep(),
   // Optional allows the element type might not match
   // NonExistentOK allows the file to not exist at all.

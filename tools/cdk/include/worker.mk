@@ -69,8 +69,10 @@ $(foreach w,$(Workers),\
   $(if $(wildcard $(Worker_$w_xml)),\
     $(and $(call OcpiDefaultSpec,$w),$(shell if echo "$(call OcpiDefaultOWD,$w,$(Model))" | cmp -s - $(Worker_$w_xml); \
                   then echo hi; fi),\
-	$(info Removing $(Worker_$w_xml) since it has default contents.) \
-        $(shell rm $(Worker_$w_xml)))))
+	$(info The file $(Worker_$w_xml) has default contents and could be removed.))))
+
+#        $(shell rm $(Worker_$w_xml)))))
+
 else
 # Create default OWD files when they don't exist
 $(foreach w,$(Workers),\

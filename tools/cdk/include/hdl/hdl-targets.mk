@@ -1,5 +1,8 @@
 ifndef _HDL_TARGETS_
 _HDL_TARGETS_=here
+# Include this here so that hdl-targets.mk (this file) can be included on its own when
+# things like HdlAllPlatforms is required.
+include $(OCPI_CDK_DIR)/include/util.mk
 # This file is the database of hdl targets and associated tools
 # It is a "leaf file" that is used in several places.
 
@@ -97,5 +100,13 @@ $(foreach d,$(subst :, ,$(OCPI_HDL_PLATFORM_PATH)),\
     $(call HdlDoPlatformsDir,$d),\
     $(call HdlDoPlatform,$d)))
 
+# Families are either top level targets with nothing underneath or one level down
+HdlAllFamilies:=$(call Unique,$(foreach t,$(HdlTopTargets),$(or $(HdlTargets_$(t)),$(t))))
+HdlAllTargets:=$(HdlAllFamilies)
+export OCPI_ALL_HDL_TARGETS:=$(HdlAllTargets)
+export OCPI_ALL_HDL_PLATFORMS:=$(strip $(HdlAllPlatforms))
+$(call OcpiDbgVar,HdlAllFamilies)
 $(call OcpiDbgVar,HdlAllPlatforms)
+#$(info OCPI_ALL_HDL_PLATFORMS is $(OCPI_ALL_HDL_PLATFORMS))
+#$(info OCPI_ALL_HDL_TARGETS is $(OCPI_ALL_HDL_TARGETS))
 endif

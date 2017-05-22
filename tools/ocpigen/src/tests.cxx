@@ -343,7 +343,7 @@ namespace {
     inouts.resize(inouts.size() + 1);
     return inouts.back().parse(x, &inouts);
   }
-  Strings onlyPlatforms, excludePlatforms;
+  OrderedStringSet onlyPlatforms, excludePlatforms;
   const char *doPlatform(const char *platform, Strings &platforms) {
     return platforms.insert(platform).second ? NULL :
       OU::esprintf("platform \"%s\" is already in the list", platform);
@@ -368,7 +368,7 @@ namespace {
   struct Case;
   typedef std::vector<Case *> Cases;
   Cases cases;
-  Strings allPlatforms;
+  OrderedStringSet allPlatforms;
   struct Case {
     std::string m_name, m_done;
     Strings m_onlyPlatforms, m_excludePlatforms; // can only apply these at runtime
@@ -385,11 +385,11 @@ namespace {
     {}
     static const char *doExcludePlatform(const char *a_platform, void *arg) {
       Case &c = *(Case *)arg;
-      Strings platforms;
+      OrderedStringSet platforms;
       const char *err;
-      if ((err = Param::getPlatforms(a_platform, platforms)))
+      if ((err = getPlatforms(a_platform, platforms)))
 	return err;
-      for (StringsIter pi = platforms.begin(); pi != platforms.end(); ++pi) {
+      for (auto pi = platforms.begin(); pi != platforms.end(); ++pi) {
 	const char *platform = pi->c_str();
 	if (excludePlatforms.find(platform) != excludePlatforms.end())
 	  fprintf(stderr, "Warning:  for case \"%s\", excluded platform \"%s\" is already "
@@ -404,11 +404,11 @@ namespace {
     }
     static const char *doOnlyPlatform(const char *a_platform, void *arg) {
       Case &c = *(Case *)arg;
-      Strings platforms;
+      OrderedStringSet platforms;
       const char *err;
-      if ((err = Param::getPlatforms(a_platform, platforms)))
+      if ((err = getPlatforms(a_platform, platforms)))
 	return err;
-      for (StringsIter pi = platforms.begin(); pi != platforms.end(); ++pi) {
+      for (auto pi = platforms.begin(); pi != platforms.end(); ++pi) {
 	const char *platform = pi->c_str();
 	if (onlyPlatforms.size() && onlyPlatforms.find(platform) == onlyPlatforms.end())
 	  fprintf(stderr, "Warning:  for case \"%s\", only platform \"%s\" is already in the "
@@ -520,6 +520,9 @@ namespace {
 	}
       // Parse explicit property values for this case, which will override
       for (ezxml_t px = ezxml_cchild(x, "property"); px; px = ezxml_cnext(px)) {
+	if ((err =
+	     OE::checkAttrs(px, PARAM_ATTRS, "generate", "add", "only", "exclude", NULL)))
+	  return err;
 	std::string name;
 	if ((err = OE::getRequiredString(px, name, "name")))
 	  return err;
@@ -1043,7 +1046,7 @@ namespace {
 	    if (sp.m_uValue == cp.m_uValues[i])
 	      attrs = &cp.m_attributes[i];
 	  assert(attrs);
-	  for (StringsIter si = allPlatforms.begin(); si != allPlatforms.end(); ++si) {
+	  for (auto si = allPlatforms.begin(); si != allPlatforms.end(); ++si) {
 	    const std::string &p = *si;
 	    // If all values for this platform are not explicit
 	    if (cp.m_explicitPlatforms.find(p) == cp.m_explicitPlatforms.end()) {
@@ -1061,13 +1064,13 @@ namespace {
 	if (excludedPlatforms.size()) {
 	  if (excludedPlatforms.size() < allPlatforms.size() - excludedPlatforms.size()) {
 	    fprintf(out, " exclude='");
-	    for (StringsIter si = excludedPlatforms.begin(); si != excludedPlatforms.end(); ++si)
+	    for (auto si = excludedPlatforms.begin(); si != excludedPlatforms.end(); ++si)
 	      fprintf(out, "%s%s", si == excludedPlatforms.begin() ? "" : " ",
 		      si->c_str());
 	  } else {
 	    fprintf(out, " only='");
 	    bool first = true;
-	    for (StringsIter si = allPlatforms.begin(); si != allPlatforms.end(); ++si)
+	    for (auto si = allPlatforms.begin(); si != allPlatforms.end(); ++si)
 	      if (excludedPlatforms.find(*si) == excludedPlatforms.end()) {
 		fprintf(out, "%s%s", first ? "" : " ", si->c_str());
 		first = false;
@@ -1353,6 +1356,9 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
   // ================= 5. Parse and collect global property values specified for all cases
   // Parse explicit/default property values to apply to all cases
   for (ezxml_t px = ezxml_cchild(xml, "property"); px; px = ezxml_cnext(px)) {
+    if ((err = 
+	 OE::checkAttrs(px, PARAM_ATTRS, "generate", "add", "only", "exclude", "test", NULL)))
+      return err;
     std::string name;
     bool isTest;
     if ((err = OE::getRequiredString(px, name, "name")) ||
@@ -1405,9 +1411,9 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
   if (onlys) {
     if (excludes)
       return OU::esprintf("the only and exclude attributes cannot both occur");
-    if ((err = Param::getPlatforms(onlys, onlyPlatforms)))
+    if ((err = getPlatforms(onlys, onlyPlatforms)))
       return err;
-  } else if (excludes && (err = Param::getPlatforms(excludes, excludePlatforms)))
+  } else if (excludes && (err = getPlatforms(excludes, excludePlatforms)))
     return err;
   // ================= 6. Parse and collect global input/output specs
   // Parse global inputs and outputs
@@ -1627,7 +1633,7 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
   if (verbose)
     fprintf(stderr, "Generating summary gen/cases.xml file\n");
   fprintf(out, "<cases spec='%s'>\n", wFirst->m_specName);
-  if ((err = Param::getPlatforms("*", allPlatforms)))
+  if ((err = getPlatforms("*", allPlatforms)))
     return err;
   for (unsigned n = 0; n < cases.size(); n++)
     if ((err = cases[n]->generateCaseXml(out)))

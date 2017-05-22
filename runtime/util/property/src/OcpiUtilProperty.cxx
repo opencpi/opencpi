@@ -88,7 +88,8 @@ namespace OCPI {
 			 const IdentResolver *resolv) const {
       if (!value.m_vt)
 	value.setType(*this);
-      return value.parse(unparsed, end, false, resolv);
+      const char *err = value.parse(unparsed, end, false, resolv);
+      return err ? esprintf("for property %s: %s", cname(), err) : NULL;
     }
     // FIXME find the caller and nuke this one
     const char *

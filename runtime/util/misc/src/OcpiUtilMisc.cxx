@@ -663,6 +663,24 @@ evsprintf(const char *fmt, va_list ap) {
   return buf;
 }
 
+TokenIter::
+TokenIter(const char *list, const char *delims, bool allowEmpty)
+  : m_copy(list ? strdup(list) : NULL), m_ptr(m_copy), m_token(NULL), m_delims(delims),
+    m_allowEmpty(allowEmpty) {
+  if (list)
+    next();
+}
+TokenIter::
+~TokenIter() {
+  delete m_copy;
+}
+void TokenIter::
+next() {
+  do
+    m_token = strsep(&m_ptr, m_delims);
+  while (m_token && !*m_token && !m_allowEmpty);
+}
+
 // parse an attribute value as a list separated by comma, space or tab
 // and call a function with the given arg for each token found
 const char *
