@@ -502,6 +502,12 @@ parseBuildFile(bool optional) {
     return err;
   // This cannot be done during construction since the OWD isn't parsed then
   m_build.m_globalParams.params.resize(m_ctl.nParameters);
+  if ((err = OE::checkAttrs(x, PLATFORM_ATTRS, "onlytargets", "excludetargets", "sourcefiles",
+			    "libraries", "cores", "xmlincludedirs", "includedirs",
+			    "componentlibraries", "staticprereqlibs", "dynamicprereqlibs",
+			    NULL)) ||
+      (err = OE::checkElements(x, "configuration", "parameter", NULL)))
+    return err;
   // Establish default values (or multiple values) for parameters that apply to all
   // configurations that do not mention them
   for (ezxml_t px = ezxml_cchild(x, "parameter"); px; px = ezxml_cnext(px)) {

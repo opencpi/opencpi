@@ -21,6 +21,7 @@ typedef Strings::const_iterator StringsIter;
 
 class Worker;
 #define PARAM_ATTRS "name", "value", "values", "valueFile", "valueFiles"
+#define PLATFORM_ATTRS "only", "exclude", "onlyplatforms", "excludeplatforms"
 struct Param {
   OCPI::Util::Value           m_value;      // value for the current config, perhaps the default
   std::string                 m_uValue;     // unparsed value: the canonical value for comparison

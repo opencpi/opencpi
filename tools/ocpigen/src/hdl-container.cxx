@@ -26,47 +26,33 @@ emitTimeClient(std::string &assy, const char *instance, const char *port) {
 
 HdlContainer *HdlContainer::
 create(ezxml_t xml, const char *xfile, const char *&err) {
-  err = NULL;
-  if ((err = OE::checkAttrs(xml, IMPL_ATTRS, HDL_TOP_ATTRS,
-			    HDL_CONTAINER_ATTRS, (void*)0)) ||
-      (err = OE::checkElements(xml, HDL_CONTAINER_ELEMS, (void*)0)))
-    return NULL;
   std::string myConfig, myPlatform, myAssy;
-  // Process the configuration name.
-  // It might have a slash between platform and config, or just be a platform.
-  // The configuration might be auto-generated (in the gen subdir) or not.
-  // So first we split things, and then check for hand-authored (in the platform dir),
-  // then try the "gen" subdir.
-  OE::getOptionalString(xml, myConfig, "config");
-  OE::getOptionalString(xml, myPlatform, "platform");
-  if (myConfig.length() && myPlatform.length()) {
-    if (strchr(myConfig.c_str(), '/') ||
-	strchr(myPlatform.c_str(), '/')) {
-      err = "Slashes not allowed when both platform and config attributes specified";
-      return NULL;
-    }
-  } else {
-    // one or the other
-    if (myConfig.length())
-      myPlatform = myConfig;
-    else if (myPlatform.empty()) {
-      if (g_platform)
-	myPlatform = g_platform;
-      else {
-	err = "No platform or platform configuration specified in HdlContainer";
-	return NULL;
-      }
-    }
-    // assume only platform is specified
-    const char *slash = strchr(myPlatform.c_str(), '/');
-    if (slash) {
-      myConfig = slash + 1;
-      myPlatform.resize(slash - myPlatform.c_str());
+  OrderedStringSet platforms;
+  if ((err = OE::checkAttrs(xml, IMPL_ATTRS, HDL_TOP_ATTRS, PLATFORM_ATTRS,
+			    HDL_CONTAINER_ATTRS, (void*)0)) ||
+      (err = OE::checkElements(xml, HDL_CONTAINER_ELEMS, (void*)0)) ||
+      (err = parsePlatform(xml, myConfig, platforms)))
+    return NULL;
+  if (platforms.empty()) {
+    if (!g_platform)
+      err = "No platform or platform configuration specified in HdlContainer";
+  } else if (platforms.size() == 1) {
+    if (g_platform) {
+      if (platforms.front() != g_platform)
+	err = OU::esprintf("platform specified as \"%s\" does not match container's \"%s\"",
+			   g_platform, platforms.front().c_str());
     } else
-      myConfig = "base";
-  }
-  if (!strcmp(myPlatform.c_str() + myPlatform.length() - 3, "_pf"))
-    myPlatform.resize(myPlatform.length() - 3);
+      myPlatform = platforms.front();
+  } else if (g_platform) {
+    if (platforms.find(g_platform) == platforms.end())
+      err = OU::esprintf("platform specified as \"%s\" is not one of container's platforms",
+			 g_platform);
+  } else
+    err = "multiple platforms are possible for this container, but none was specified";
+  if (err)
+    return NULL;
+  if (g_platform)
+    myPlatform = g_platform;
   OE::getOptionalString(xml, myAssy, "assembly");
   if (myAssy.empty()) {
     if (assembly)
@@ -80,23 +66,11 @@ create(ezxml_t xml, const char *xfile, const char *&err) {
   HdlConfig *config;
   HdlAssembly *appAssembly;
   ezxml_t x;
-#if 0
-  // base configurations are by definition empty.
-  // This is done by hand here, and there is also a base.xml file in platforms/specs
-  if (myConfig == "base") {
-    char *basexml = strdup("<HdlConfig/>");
-    // Base config has not been generated...
-    ocpiCheck(OE::ezxml_parse_str(basexml, strlen(basexml), x) == NULL);
-    configFile = "base.xml";
-  } else
-#endif
-  {
-    OU::format(configName, "%s/hdl/%s", ::platformDir, myConfig.c_str());
-    if ((err = parseFile(configName.c_str(), xfile, "HdlConfig", &x, configFile))) {
-      configName = myPlatform + "/gen/" + myConfig;
-      if (parseFile(configName.c_str(), xfile, "HdlConfig", &x, configFile))
-	return NULL;
-    }
+  OU::format(configName, "%s/hdl/%s", ::platformDir, myConfig.c_str());
+  if ((err = parseFile(configName.c_str(), xfile, "HdlConfig", &x, configFile))) {
+    configName = myPlatform + "/gen/" + myConfig;
+    if (parseFile(configName.c_str(), xfile, "HdlConfig", &x, configFile))
+      return NULL;
   }
   if (!(config = HdlConfig::create(x, myPlatform.c_str(), configFile.c_str(), NULL, err)) ||
       (err = parseFile(myAssy.c_str(), xfile, "HdlAssembly", &x, assyFile)) ||
@@ -1070,4 +1044,56 @@ emitTieoffSignals(FILE *f) {
 	      out.c_str(), s.cname(), in.c_str(), oe.c_str());
     }
   }
+}
+
+// This is to help the container build scripts extract the platform
+// and platform configuration from a container XML file without fully parsing the container.
+// I.e. the only error checks done are the simple lexical check on this XML file,
+// and the correct top level element and platform attributes.  Any other errors in this file
+// or files it references will be generated later, in a better place to report them.
+// A static method.
+const char *HdlContainer::
+parsePlatform(ezxml_t xml, std::string &config, OrderedStringSet &platforms) {
+  const char
+    *err,
+    *pf = ezxml_cattr(xml, "platform"),
+    *cf = ezxml_cattr(xml, "config"),
+    *only = ezxml_cattr(xml, "only"),
+    *exclude = ezxml_cattr(xml, "exclude");
+  if (!only)
+    only = ezxml_cattr(xml, "onlyplatforms");
+  if (!exclude)
+    exclude = ezxml_cattr(xml, "excludeplatforms");
+  if ((pf ? 1 : 0) + (only ? 1 : 0) + (exclude ? 1 : 0) > 1)
+    return "only one attribute of \"platform\", \"only\" or \"exclude\" is allowed";
+  std::string p;
+  if (pf) {
+    const char *slash = strchr(pf, '/');
+    if (slash) {
+      if (cf)
+	return "specifying both \"config\" attribute and config after slash in \"platform\" "
+	  "attribute is invalid";
+      p.assign(pf, slash - pf);
+      cf = slash + 1;
+    } else
+      p = pf;
+    if (p.length() > 3 && !strcmp(p.c_str() + p.length() - 3, "_pf"))
+      p.resize(p.length() - 3);
+    only = p.c_str();
+  }
+  if (only) {
+    if ((err = getPlatforms(only, platforms, HdlModel)))
+      return err;
+  } else if (exclude) {
+    OrderedStringSet excludedPlatforms, allPlatforms;
+    const StringSet *hdlPlatforms;
+    if ((err = getPlatforms(exclude, excludedPlatforms, HdlModel)) ||
+	(err = getAllPlatforms(hdlPlatforms, HdlModel)))
+      return err;
+    for (auto pi = hdlPlatforms->begin(); pi != hdlPlatforms->end(); ++pi)
+      if (excludedPlatforms.find(*pi) == excludedPlatforms.end())
+	platforms.push_back(*pi);
+  }
+  config = cf ? cf : "base";
+  return NULL;
 }

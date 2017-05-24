@@ -1,4 +1,4 @@
-<HdlContainer>
+<HdlContainer exclude="zed_zipper">
    <device worker='lime_dac' floating='1'/>
    <device worker='lime_dac_em' floating='1'/>
    <connection interconnect='*' device='lime_dac'/>

@@ -95,17 +95,14 @@ ifneq ($(MAKECMDGOALS),clean)
     # xml for each explicit container. This allows us to build the list of targets necessary for
     # all the platforms mentioned by all the containers.  This list then is the default targets
     # when targets are not specified.
+    # ocpigen -X returns the config as word 1 followed by "only platforms" as subsequent words
     define doGetPlatform
       $$(and $$(call DoShell,$(OcpiGen) -X $1,HdlContPfConfig),\
           $$(error Processing container XML $1: $$(HdlContPfConfig)))
-      HdlContPlatform:=$$(patsubst %_pf,%,$$(word 1,$$(HdlContPfConfig)))
-      ifdef HdlContPlatform
-        $$(eval $$(call addContainer,$1,$$(HdlContPlatform),$$(word 2,$$(HdlContPfConfig))))
-      else
-        $$(foreach p,$$(filter $$(or $$(OnlyPlatforms),$$(HdlAllPlatforms)),\
-                        $$(filter-out $$(ExcludePlatforms),$$(HdlPlatforms))),\
-                 $$(eval $$(call addContainer,$1,$$p,base)))
-      endif
+      HdlContPlatforms:=$$(wordlist 2,$$(words $$(HdlContPfConfig)),$$(HdlContPfConfig))
+      $$(foreach p,$$(filter $$(or $$(HdlContPlatforms),$$(OnlyPlatforms),$$(HdlAllPlatforms)),\
+                      $$(filter-out $$(ExcludePlatforms),$$(HdlPlatforms))),\
+	 $$(eval $$(call addContainer,$1,$$p,$$(word 1,$$(HdlContPfConfig)))))
     endef
     $(foreach c,$(Containers),$(eval $(call doGetPlatform,$(call HdlStripXml,$c))))
   endif

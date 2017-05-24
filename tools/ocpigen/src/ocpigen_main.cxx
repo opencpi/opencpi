@@ -38,6 +38,7 @@
 #include "OcpiDriverManager.h"
 #include "OcpiLibraryManager.h"
 #include "wip.h"
+#include "hdl-container.h"
 /*
  * Notes:  For verilog, for consistency, we generate a module definition that is "included"
  * in the skeleton file so it is readonly, and can be regenerated after there is code added
@@ -254,37 +255,20 @@ main(int argc, const char **argv) {
 	  OCPI::Library::getManager().enableDiscovery();
 	std::string parent;
 	if (doTop) {
-	  // This is to help the container build scripts extract the platform
-	  // and platform configuration from a container XML file without fully parsing it.
-	  // I.e. the only error checks done are the simple lexical check on this XML file,
-	  // and the correct top level element and attributes.  Any other errors in this file
-	  // or files it references will be generated later, in a better place to report them.
 	  ezxml_t xml;
 	  std::string file;
-	  if ((err = parseFile(*ap, parent, "HdlContainer", &xml, file, false, false)))
-	    throw OU::Error("For file %s (%s): %s\n", *ap, file.c_str(), err);
-	  const char
-	    *pf = ezxml_cattr(xml, "platform"),
-	    *cf = ezxml_cattr(xml, "config");
-	  if (pf && cf)
-	    printf("%s %s\n", pf, cf);
-	  else {
-	    if (cf)
-	      pf = cf;
-#if 1
-	    else if (!pf) { // allow no platform at all to reuse containers.
-	      printf("\n");
-	      return 0;
-	    }
-#else	    
-	    else if (!pf)
-	      throw OU::Error("For file %s (%s): no platform or config attribute is present",
-			      *ap, file.c_str());
-#endif
-	    const char *slash = strchr(pf, '/');
-	    printf("%.*s %s\n",
-		   (int)(slash ? slash - pf : strlen(pf)), pf, slash ? slash + 1 : "base");
+	  const char *err;
+	  std::string parent, config;
+	  OrderedStringSet platforms;
+	  if ((err = parseFile(*ap, parent, "HdlContainer", &xml, file, false, false)) ||
+	      (err = HdlContainer::parsePlatform(xml, config, platforms))) {
+	    fprintf(stderr, "for container file %s:  %s\n", *ap, err);
+	    return 1;
 	  }
+	  fputs(config.c_str(), stdout);
+	  for (auto pi = platforms.begin(); pi != platforms.end(); ++pi)
+	    printf(" %s", (*pi).c_str());
+	  fputs("\n", stdout); 
 	  return 0;
 	}
 	if (doTest) {

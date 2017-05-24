@@ -72,6 +72,7 @@ class HdlContainer : public Worker, public HdlHasDevInstances {
 public:  
   static HdlContainer *
   create(ezxml_t xml, const char *xfile, const char *&err);
+  static const char *parsePlatform(ezxml_t xml, std::string &config, OrderedStringSet &platforms);
   HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const char *xfile,
 	       const char *&err);
   virtual ~HdlContainer();
