@@ -262,8 +262,8 @@ main(int argc, const char **argv) {
 	  OrderedStringSet platforms;
 	  if ((err = parseFile(*ap, parent, "HdlContainer", &xml, file, false, false)) ||
 	      (err = HdlContainer::parsePlatform(xml, config, platforms))) {
-	    fprintf(stderr, "for container file %s:  %s\n", *ap, err);
-	    return 1;
+	    err = OU::esprintf("for container file %s:  %s\n", *ap, err);
+	    break;
 	  }
 	  fputs(config.c_str(), stdout);
 	  for (auto pi = platforms.begin(); pi != platforms.end(); ++pi)
@@ -272,72 +272,63 @@ main(int argc, const char **argv) {
 	  return 0;
 	}
 	if (doTest) {
-	  if ((err = createTests(*ap, package, outDir, verbose))) {
-	    fprintf(stderr, "%s\n", err);
-	    return 1;
-	  }
+	  if ((err = createTests(*ap, package, outDir, verbose)))
+	    break;
 	  return 0;
 	}
 	if (doCases) {
-	  if ((err = createCases(ap, package, outDir, verbose))) {
-	    fprintf(stderr, "%s\n", err);
-	    return 1;
-	  }
+	  if ((err = createCases(ap, package, outDir, verbose)))
+	    break;
 	  return 0;
 	}
 	Worker *w = Worker::create(*ap, parent, package, outDir, NULL, NULL,
 				   doGenerics >= 0 ? doGenerics : 0, err);
 	if (err)
-	  fprintf(stderr, "For file %s: %s\n", *ap, err);
+	  err = OU::esprintf("For file %s: %s", *ap, err);
 	else if (attribute && (err = w->emitAttribute(attribute)))
-	  fprintf(stderr, "%s: Error retrieving attribute %s from file: %s\n", attribute, *ap, err);
+	  err = OU::esprintf("%s: Error retrieving attribute %s from file: %s", attribute, *ap, err);
 	else if (doDefs && (err = w->emitDefsHDL(doWrap)))
-	  fprintf(stderr, "%s: Error generating definition/declaration file: %s\n", *ap, err);
+	  err = OU::esprintf("%s: Error generating definition/declaration file: %s", *ap, err);
 	else if (doImpl && (err =
 			    w->m_model == HdlModel ? w->emitImplHDL(doWrap) :
 			    (w->m_model == RccModel ? w->emitImplRCC() : w->emitImplOCL())))
-	  fprintf(stderr, "%s: Error generating implementation declaration file: %s\n", *ap, err);
+	  err = OU::esprintf("%s: Error generating implementation declaration file: %s", *ap, err);
 	else if (doSkel && (err =
 			    w->m_model == HdlModel ? w->emitSkelHDL() :
 			    w->m_model == RccModel ? w->emitSkelRCC() : w->emitSkelOCL()))
-	  fprintf(stderr, "%s: Error generating implementation skeleton file: %s\n", *ap, err);
+	  err = OU::esprintf("%s: Error generating implementation skeleton file: %s", *ap, err);
 	else if (doAssy && (err = w->emitAssyHDL()))
-	  fprintf(stderr, "%s: Error generating assembly: %s\n", *ap, err);
+	  err = OU::esprintf("%s: Error generating assembly: %s", *ap, err);
 	else if (wksFile && (err = w->emitWorkersHDL(wksFile)))
-	  fprintf(stderr, "%s: Error generating assembly makefile: %s\n", *ap, err);
+	  err = OU::esprintf("%s: Error generating assembly makefile: %s", *ap, err);
 	else if (doGenerics >= 0 && (err = w->emitHDLConstants((unsigned)doGenerics, doWrap)))
-	  fprintf(stderr,
-		  "%s: Error generating constants for parameter configuration %u: %s\n",
-		  *ap, doGenerics, err);
+	  err = OU::esprintf("%s: Error generating constants for parameter configuration %u: %s",
+			     *ap, doGenerics, err);
 	else if (options.parameters() && (err = w->emitToolParameters()))
-	  fprintf(stderr, "%s: Error generating parameter file for tools: %s\n", *ap, err);
+	  err = OU::esprintf("%s: Error generating parameter file for tools: %s", *ap, err);
 	else if (options.build() && (err = w->emitMakefile()))
-	  fprintf(stderr, "%s: Error generating gen/*.mk file for tools: %s\n", *ap, err);
+	  err = OU::esprintf("%s: Error generating gen/*.mk file for tools", err);
 	else if (doArt)
 	  switch (w->m_model) {
 	  case HdlModel:
-	    if (!g_platform || !g_device) {
-	      fprintf(stderr,
-		      "%s: Missing container/platform/device options for HDL artifact descriptor", *ap);
-	      return 1;
-	    }
-	    if ((err = w->emitArtXML(wksFile)))
-	      fprintf(stderr, "%s: Error generating bitstream artifact XML: %s\n",
-		      *ap, err);
+	    if (!g_platform || !g_device)
+	      err = OU::esprintf("%s: Missing container/platform/device options for HDL "
+				 "artifact descriptor", *ap);
+	    else if ((err = w->emitArtXML(wksFile)))
+	      err = OU::esprintf("%s: Error generating bitstream artifact XML: %s",
+				 *ap, err);
 	    break;
 	  case RccModel:
-	    if (!g_os || !g_os_version || !g_arch) {
-	      fprintf(stderr,
-		      "%s: Missing os/os_version/arch options for RCC artifact descriptor", *ap);
-	      return 1;
-	    }
-	    if ((err = w->emitArtXML(wksFile)))
-	      fprintf(stderr, "%s: Error generating shared library artifact XML: %s\n",
-		      *ap, err);
+	    if (!g_os || !g_os_version || !g_arch)
+	      err = OU::esprintf("%s: Missing os/os_version/arch options for RCC artifact "
+				 "descriptor", *ap);
+	    else if ((err = w->emitArtXML(wksFile)))
+	      err = OU::esprintf("%s: Error generating shared library artifact XML: %s",
+				 *ap, err);
 	    break;
 	  case OclModel:
 	    if ((err = w->emitArtXML(wksFile)))
-	      fprintf(stderr, "%s: Error generating shared library artifact XML: %s\n",
+	      err = OU::esprintf("%s: Error generating shared library artifact XML: %s",
 		      *ap, err);
 	    break;
 	  case NoModel:

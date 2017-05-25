@@ -102,7 +102,7 @@ $(foreach d,$(subst :, ,$(OCPI_HDL_PLATFORM_PATH)),\
 
 # Families are either top level targets with nothing underneath or one level down
 HdlAllFamilies:=$(call Unique,$(foreach t,$(HdlTopTargets),$(or $(HdlTargets_$(t)),$(t))))
-HdlAllTargets:=$(HdlAllFamilies)
+HdlAllTargets:=$(call Unique,$(HdlAllFamilies) $(HdlTopTargets))
 export OCPI_ALL_HDL_TARGETS:=$(HdlAllTargets)
 export OCPI_ALL_HDL_PLATFORMS:=$(strip $(HdlAllPlatforms))
 $(call OcpiDbgVar,HdlAllFamilies)

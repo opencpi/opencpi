@@ -1,4 +1,5 @@
-<HdlDevice language="vhdl" spec='rf_rx-spec' FirstRawProperty='spi_conf'>
+<HdlDevice language="vhdl" spec='rf_rx-spec' FirstRawProperty='spi_conf'
+	   xmlincludedirs='$OCPI_PREREQUISITES_DIR/ad9361/include'>
   <ControlInterface Timeout="1024"/>
   <!-- Note this is not volatile since it is determined in the container -->
   <property name='other_present' type='bool' readable='1'/>

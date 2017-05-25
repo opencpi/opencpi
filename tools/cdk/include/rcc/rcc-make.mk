@@ -38,17 +38,6 @@ ifndef RCC_MAKE_MK
 RCC_MAKE_MK:=xxx
 include $(OCPI_CDK_DIR)/include/util.mk
 
-# This allows component library level RCC libraries to be fed down to workers,
-# via RccLibrariesInternal, while allowing the worker itself to have more libraries
-# via setting Libraries or RccLibraries.
-# Library level RCC libraries also are specified via RccLibraries.
-override RccLibrariesInternal := $(RccLibraries) $(Libraries) $(RccLibrariesInternal)
-override RccIncludeDirsInternal := \
-  $(foreach l,$(RccLibrariesInternal),$(dir $l)include) \
-  $(RccIncludeDirs) $(IncludeDirs) $(RccIncludeDirsInternal)
-$(call OcpiDbgVar,RccLibrariesInternal)
-$(call OcpiDbgVar,RccIncludeDirsInternal)
-
 RccOs=$(word 1,$(subst -, ,$(or $1,$(RccTarget))))
 RccOsVersion=$(word 2,$(subst -, ,$1))
 RccArch=$(word 3,$(subst -, ,$1))

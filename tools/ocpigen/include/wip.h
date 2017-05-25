@@ -652,6 +652,7 @@ class Worker : public Parsed, public OU::IdentResolver {
     //    *parseSpecPort(Port *p),
     *parseHdlImpl(const char* package = NULL),
     *parseBuildFile(bool optional),
+    *parseBuildXml(ezxml_t x),
     *startBuildXml(FILE *&f),
     *doProperties(ezxml_t top, const char *parent, bool impl, bool anyIsBad),
     *doScaling(ezxml_t x),
@@ -761,7 +762,7 @@ class Worker : public Parsed, public OU::IdentResolver {
 #define BOOL(b) ((b) ? "true" : "false")
 
 #define IMPL_ATTRS \
-  "name", "spec", "paramconfig", "reentrant", "scaling", "scalable", "controlOperations"
+  "name", "spec", "paramconfig", "reentrant", "scaling", "scalable", "controlOperations", "xmlincludedirs", "componentlibraries"
 #define IMPL_ELEMS "componentspec", "properties", "property", "specproperty", "propertysummary", "xi:include", "controlinterface",  "timeservice", "unoc", "timebase", "sdp"
 #define GENERIC_IMPL_CONTROL_ATTRS \
   "name", "SizeOfConfigSpace", "ControlOperations", "Sub32BitConfigProperties"

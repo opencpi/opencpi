@@ -47,6 +47,7 @@ ComponentLibraries:=$(call Unique,$(ComponentLibraries))
 include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
 ifneq ($(MAKECMDGOALS),clean)
   ifndef HdlSkip
+    $(eval $(OcpiProcessBuildFiles))
     $(eval $(HdlPrepareAssembly))
     include $(OCPI_CDK_DIR)/include/hdl/hdl-worker.mk
   endif # skip from hdl-pre.mk

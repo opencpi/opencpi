@@ -58,16 +58,19 @@ enum Model {
 extern void
   setDep(const char *file),
   addInclude(const char *inc),
+  addInclude(const std::string &inc),
   addDep(const char *dep, bool child),
   printgen(FILE *f, const char *comment, const char *file, bool orig = false,
 	   const char *endComment = "");  
 
 extern const char
+  *expandEnv(const char *in, std::string &out),
   *getCdkDir(std::string &cdk), // FIXME: put in runtime?
   *getPrereqDir(std::string &dir),
   *getPlatforms(const char *attr, OrderedStringSet &platforms, Model m = NoModel),
   *getHdlPrimitive(const char *prim, const char *type, OrderedStringSet &prims),
   *getComponentLibrary(const char *lib, OrderedStringSet &libs),
+  *getComponentLibrary(const char *lib, std::string &path),
   *getRccPlatforms(const StringSet *&platforms),
   *getHdlPlatforms(const StringSet *&platforms),
   *getAllPlatforms(const StringSet *&platforms, Model m = NoModel),

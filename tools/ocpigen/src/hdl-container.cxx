@@ -1066,6 +1066,8 @@ parsePlatform(ezxml_t xml, std::string &config, OrderedStringSet &platforms) {
     exclude = ezxml_cattr(xml, "excludeplatforms");
   if ((pf ? 1 : 0) + (only ? 1 : 0) + (exclude ? 1 : 0) > 1)
     return "only one attribute of \"platform\", \"only\" or \"exclude\" is allowed";
+  if (cf && strchr(cf, '/'))
+    return OU::esprintf("invalid platform configuration name: \"%s\"", cf);
   std::string p;
   if (pf) {
     const char *slash = strchr(pf, '/');

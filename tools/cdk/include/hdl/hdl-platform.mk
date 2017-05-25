@@ -129,6 +129,7 @@ ifndef HdlSkip
   # which is the "app" without container or the platform
   # FIXME: we can't do this yet because the BB library name depends on there being both cores...
   #Tops:=$(Worker)_rv
+  $(eval $(OcpiProcessBuildFiles))
   $(eval $(HdlSearchComponentLibraries))
   include $(OCPI_CDK_DIR)/include/hdl/hdl-worker.mk
   ifdef HdlSkip

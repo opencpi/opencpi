@@ -32,9 +32,9 @@ ifneq ($(MAKECMDGOALS),clean)
     # This is only for standalone container directories
     $(and $(call DoShell,$(OcpiGen) -X $(Worker_xml),HdlContPfConfig),\
        $(error Processing container XML $(Worker_xml): $(HdlContPfConfig)))
-    HdlContPf:=$(patsubst %_pf,%,$(word 1,$(HdlContPfConfig)))
+    HdlContPf:=$(patsubst %_pf,%,$(word 2,$(HdlContPfConfig)))
     ifdef HdlContPf
-      HdlConfig:=$(word 2,$(HdlContPfConfig))
+      HdlConfig:=$(word 1,$(HdlContPfConfig))
     else
       HdlContPf:=$(or $(HdlPlatform) $(word 1,$(HdlPlatforms)))
       HdlConfig:=base
@@ -79,9 +79,9 @@ override ComponentLibraries:=$(call Unique,\
        $(foreach l,$(ComponentLibraries_$(Platform)),\
          $(if $(filter /%,$l),$l,$d$l))))\
    devices cards)
-$(infox CONT:$(ComponentLibraries))
 override LibDir=$(HdlAssembly)/lib/hdl
 ifneq ($(MAKECMDGOALS),clean)
+  $(eval $(OcpiProcessBuildFiles))
   override Platform:=$(if $(filter 1,$(words $(HdlPlatforms))),$(HdlPlatforms))
   $(eval $(HdlSearchComponentLibraries))
   $(infox XMLI3:$(XmlIncludeDirsInternal):$(ComponentLibraries):$(HdlPlatform):$(HdlPlatformDir_$(HdlPlatform)))

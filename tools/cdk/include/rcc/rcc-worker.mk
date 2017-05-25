@@ -48,6 +48,16 @@ RccImplSuffix=$(if $(filter c++,$(OcpiLanguage)),-worker.hh,_Worker.h)
 RccSkelSuffix=-skel$(RccSourceSuffix)
 OBJ:=.o
 RccPrereqLibs=$(RccStaticPrereqLibs) $(RccDynamicPrereqLibs)
+# This allows component library level RCC libraries to be fed down to workers,
+# via RccLibrariesInternal, while allowing the worker itself to have more libraries
+# via setting Libraries or RccLibraries.
+# Library level RCC libraries also are specified via RccLibraries.
+override RccLibrariesInternal := $(RccLibraries) $(Libraries) $(RccLibrariesInternal)
+override RccIncludeDirsInternal := \
+  $(foreach l,$(RccLibrariesInternal),$(dir $l)include) \
+  $(RccIncludeDirs) $(IncludeDirs) $(RccIncludeDirsInternal)
+$(call OcpiDbgVar,RccLibrariesInternal)
+$(call OcpiDbgVar,RccIncludeDirsInternal)
 # This is evaluated late, when RccTarget and RccPlatform are defined.
 RccIncludeDirsActual=$(RccIncludeDirsInternal)\
  ../include gen \

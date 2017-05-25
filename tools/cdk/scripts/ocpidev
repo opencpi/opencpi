@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash --noprofile
 
 # This script performs operations on projects.
 
@@ -73,7 +73,7 @@ function get_dirtype {
   [ ! -e $1 ] && bad $1 should exist and does not
   [ ! -d $1 ] && bad $1 should be a directory and is not
   [ ! -f $1/Makefile ] && dirtype= && return 0
-  dirtype=$(sed -n 's=^[ 	]*include[ 	]*.*OCPI_CDK_DIR.*/include/\(.*\)\.mk.*=\1=p' $1/Makefile)
+  dirtype=$(sed -n 's=^[ 	]*include[ 	]*.*OCPI_CDK_DIR.*/include/\(.*\)\.mk.*=\1=p' $1/Makefile | tail -1)
   dirtype=${dirtype##hdl\/}
   dirtype=${dirtype##rcc\/}
 }
@@ -226,14 +226,6 @@ function ask {
   fi
 }
 
-# Parse Makefile ($1), cat lines together that end in '\'
-# Fine Makefile variable ($2) and grab its values
-# Set the result to $3 as return value
-function get_make_option {
-  eval "$3=($(sed -e :a -e '/\\\s*$/N; s/\\\s*\n//; ta' $1 \
-            | sed -n "/^[         ]*$2/s/^[      ]*$2[  ]*:*=[    ]*\(.*\)$/\1/p" ))"
-}
-
 function do_project {
   set -e
   if [ $verb == delete ]; then
@@ -289,7 +281,7 @@ EOF
 ProjectName=$1
 ProjectPrefix=$prefix
 ProjectPackage=$package
-ProjectDependencies=${dependencies//:/ }
+ProjectDependencies=${dependencies[@]}
 EOF
   cat <<EOF > Makefile
 $CheckCDK
@@ -416,7 +408,7 @@ EOF
 #include <cstdio>
 #include <cassert>
 #include <string>
-#include "OcpiApi.h"
+#include "OcpiApi.hh"
 
 namespace OA = OCPI::API;
 
@@ -792,6 +784,10 @@ function do_worker {
   fi
   [ -n "$emulates" ] && emuattr=" emulate='$emulates'"
   [ -n "$slave" ] && slaveattr=" slave='$slave'"
+  if [ "$OCPI_CREATE_BUILD_FILES" = 1 ]; then
+    [ -n "${xmlincludes[*]}" ] && xmlincattr=" XmlIncludeDirs='${xmlincludes[@]}'"
+    [ -n "${complibs[*]}" ] && complibattr=" ComponentLibraries='${complibs[@]}'"
+  fi
   if [ \( -n "$rccstatprereqs" -o -n "$rccdynprereqs" \) -a "$model" != "rcc" ] ; then
     bad RccStatic/DynamicPrereqLibs is only valid for rcc workers
   fi
@@ -826,14 +822,48 @@ function do_worker {
     nameattrs=("$nameattr")
     specs=($spec)
   fi
-  if [ -n "$emulates" ] ; then
-    complibs=devices
-    complibscomment="#
+#  if [ -n "$emulates" ] ; then
+#    echo WE ARE EMULATOR
+#    complibs=devices
+#    complibscomment="#
 # This line triggers a search of the base project's 
 # devices library (for the emulator spec)
-"
-  fi 
+#"
+#  fi 
   mkdir $libdir/$1
+  if [ "$OCPI_CREATE_BUILD_FILES" = 1 ]; then
+    [ -n "${xmlincludes[*]}" ] &&
+      echo WARNING: $libdir/$1 needs XmlIncludeDirs attr in OWD for: ${xmlincludes[@]}
+    [ -n "${complibs[*]}" ] &&
+      echo WARNING: $libdir/$1 needs ComponentLibraries attr in OWD for: X${complibs[@]}X${#complibs[@]}
+    cat <<-EOF >  $libdir/$1/Makefile
+	# This is the Makefile for worker $1.
+	# Unless you are doing something custom or unusual, you should not edit it.
+	$CheckCDK
+	$wvar
+	include \$(OCPI_CDK_DIR)/include/worker.mk
+	EOF
+    if [ -n "${includes}${others}${cores}${rccstatprereqs}${rccdynprereqs}${targets}${extargets}${onlyplats}${explats}${liblibs}" ]; then
+      cat <<-EOF  | sed '/^ *$/d' > $libdir/$1/${name}-build.xml
+	<!-- The build file for worker $1, specifying how to build it -->
+	<build
+	${includes:+  IncludeDirs='${includes[@]}'}
+	${others:+  SourceFiles='${others[@]}'}
+	${cores:+  Cores='${cores[@]}'}
+	${rccstatprereqs:+  StaticPrereqLibs='${rccstatprereqs[@]}'}
+	${rccdynprereqs:+  DynamicPrereqLibs='${rccdynprereqs[@]}'}
+	${targets:+  OnlyTargets='${targets[@]}'}
+	${extargets:+  ExcludeTargets='${extargets[@]}'}
+	${onlyplats:+  OnlyPlatforms='${onlyplats[@]}'}
+	${explats:+  ExcludePlatforms='${explats[@]}'}
+	${liblibs:+  Libraries='${liblibs[@]}'}
+	  >
+	  <!-- Add any specific parameter settings using <parameter> elements -->
+	  <!-- Add any specific build configurations using <configuration> elements -->
+	</build>
+	EOF
+    fi
+  else
 # Make one Makefile, even if multi-worker
   cat <<EOF | sed '/^ *$/d' >  $libdir/$1/Makefile
 # This is the Makefile for worker $1
@@ -852,7 +882,7 @@ ${xmlincludes:+XmlIncludeDirs=${xmlincludes[@]}}
 $complibscomment${complibs:+ComponentLibraries=${complibs[@]}}
 include \$(OCPI_CDK_DIR)/include/worker.mk
 EOF
-
+fi
 for s in ${supported[@]} ; do
   s=${s/%.hdl/}
   supportselem=(${supportselem[@]} "
@@ -865,7 +895,7 @@ done
   for w in ${!wnames[@]}; do
     # Make one OWD file per worker
     cat <<EOF > $libdir/$1/${wnames[$w]}.xml
-<$elem${nameattrs[$w]}${langattr}${specattrs[$w]}${emuattr}${slaveattr}>
+<$elem${nameattrs[$w]}${langattr}${specattrs[$w]}${emuattr}${slaveattr}${xmlincattr}${complibattr}>
 ${specelems[$w]}
 ${supportselem[@]}
 </$elem>
@@ -897,7 +927,7 @@ EOF
       echo Removing the new worker directory \"$libdir/$1\" due to errors.
       rm -r -f $libdir/$1
     fi
-    return 1
+    bad "Failed to build worker skeleton"
   }
   echo "Successfully built skeleton"
 }
@@ -1238,7 +1268,7 @@ function do_primitive {
     return 0
   fi
   [ -e $dir ] &&
-    bad The primitive $2 already exists.
+    bad The primitive $2 already exists at $dir.
   if [ $dirtype == project -a ! -e hdl/primitives ]; then
     mkdir -p hdl/primitives
     cat <<EOF > hdl/primitives/Makefile
@@ -1460,110 +1490,111 @@ echo Test creation has not yet been implemented with ocpidev
 }
 
 function help {
-  cat <<EOF >&2
+  cat <<"EOF" >&2
 The ocpidev command performs developer functions on/in projects for OpenCPI.
-Usage is: ocpidev [options] <verb> <noun> <name>
-Verbs are: create or delete
-Nouns are: project, application, spec, protocol, test, library, worker, hdl <noun>
-After hdl, nouns are: assembly, card, slot, device, platform, primitive <noun>
+Usage is: ocpidev [options] <verb> [<noun> [<name> [<args>*]]]
+Verbs are: create, delete, build or clean
+Nouns are: project, application, spec, protocol, test, library, worker, or hdl <noun>
+After hdl, nouns are: assembly, card, slot, device, platform, or primitive <noun>
 After hdl primitive, nouns are: library or core
-All commands have a <name> argument.  Some have more required or optional arguments.
-Options are: lower case for general options, upper case for creation options
+Most commands may have a <name> argument.  Some have additional required or optional arguments.
+All the "delete" commands prompt for confirmation without the -f option (like rm).
+Options are single letters after a single hyphen, or hyphenated words after two hyphens.
+Single letter options are lower case for general options and upper case for creation options
+Options with * may occur multiple times
   -v                 Be verbose, describing what is happening in more detail
   -f                 Force without asking, analogious to the "-f" option in the "rm" command
-                     The delete command may ask for confirmation without this.
+                     The delete verb may ask for confirmation without this.
   -d <directory>     A directory in which to perform the function, e.g. used rather than changing
                      into a project directory.
-  -s                 Operate ocpidev in standalone mode (ie. outside a project).
- -- when creating or deleting specs or protocols --
-  -p                 Put specs or protocols at the project level, not in a library's \"specs\" directory
- -- when creating specs --
-  -t                 Create a test skeleton for this component as well: <component>.test
+  -s                 Operate ocpidev in standalone mode (i.e. outside a project).
+ == options when creating or deleting specs or protocols ==
+  -p                 Put specs/protocols at project level, not in a library's \"specs\" directory
+ == options when creating specs ==
+  -t                 Create a test skeleton also when creating a spec:  <component>.test
   -n                 This spec has no lifecycle/configuration interface (no properties). 
-                     It can still have parameters.
- -- when creating or deleting specs, protocols, or workers --
+                     It can still have parameter properties, but not runtime properties.
+ == when creating or deleting specs, protocols, or workers ==
   -l <library>       The component library to add the asset to, when there is more than one.
-                     This applies to specs, protocols, properties, workers, proxy workers, and devices.
-                     Such libaries live in the components directory.
- -- when creating or deleting specs, protocols, workers or devices --
-  -h <hdl-library>   A library underneath hdl/ to add assets to. Default is 'devices'. 
-                     Options are devices, cards, and adapters.
- -- when creating projects --
+                     This applies to specs, protocols, properties, workers.
+                     Such libaries live in the components/ directory of the project.
+ == when creating or deleting specs, protocols, workers or devices ==
+  -h <hdl-library>   A library underneath hdl/ to add assets to.  Default is "hdl/devices". 
+                     Valid <hdl-library> options are "devices", "cards" and "adapters".
+ == when creating projects ==
   -F <prefix>        The project prefix when creating projects, defaults to <name>_
-  -D <dependencies>  A colon-separated list of project directories
- -- when creating projects or libraries --
+  -D <project>       *Another project that this project depends on.
+ == when creating projects or libraries ==
   -K <package>       The package name when creating projects or libraries
- -- when creating workers or devices --
+ == when creating workers or devices (device workers) ==
   -S <spec>          The spec to use when it is not <worker>[-_]spec
-  -P <platform>      The HDL platform for creating device workers or proxies when it is specific
+  -P <platform>      The HDL platform for creating device workers or proxies that are specific
                      to that platform.
   -L <language>      Specify the language when creating a worker
   -V <slave>         Specify the slave worker when creating a proxy worker
-  -E <emulates>      Specify the device worker when creating an emulator worker
-  -W <worker>        A worker to include (adds to 'Workers' variable in worker Makefile)
+  -E <emulates>      Specify the device (worker) when creating an emulator worker
+  -W <worker>        *A worker to include (adds to "Workers" variable in worker Makefile)
                      Use <worker>:<spec> if spec name is different from worker name
-  -R <rcc-static>    Add an RCC static prerequisite library to an RCC worker
-                     (adds to 'RccStaticPrereqLibs in Makefile)
-  -r <rcc-dynamic>   Add an RCC dynamic prerequisite library to an RCC worker
-                     (adds to 'RccDynamicPrereqLibs in Makefile)
- -- when creating platforms
-  -g <hdl-part>      Specify the part (die-speed-package, e.g. xc7z020-1-clg484) for the platform.
+  -R <rcc-static>    *Add an RCC static prerequisite library dependency to an RCC worker
+                     (adds to "RccStaticPrereqLibs" in Makefile)
+  -r <rcc-dynamic>   *Add an RCC dynamic prerequisite library dependency to an RCC worker
+                     (adds to "RccDynamicPrereqLibs" in Makefile)
+ == when creating platforms ==
+  -g <hdl-part>      Specify the part (die-speed-package, e.g. xc7z020-1-clg484) for platform.
                      This sets the HdlPart_<platform> variable in <platform>.mk
-  -q <time-freq>     Specify the time server frequency for this platform (i.e. '100e6'). 
-                     If not specified here, this may need to be modified later in the platform OWD.
+  -q <time-freq>     Specify the time server frequency for this platform (i.e. "100e6"). 
+                     If specified, this may need to be modified later in the platform OWD.
   -u                 Do not use SDP. This legacy option should be used 
                      when creating platforms that do not use SDP.
- -- when creating workers, devices, or platforms
-  -I <include>       A directory to include from (adds to 'IncludeDirs' in worker Makefile)
-  -A <xml-include>   An xml directory to include from (adds to 'XmlIncludeDirs' in worker Makefile)
- -- when creating workers, devices, primitives, or platforms --
-  -O <other>         Other source files to include (adds to 'SourceFiles' in Makefile)
-  -C <core>          Core to be included by this asset (adds to 'Cores' in Makefile)
-  -Y <libary>        Specify a library that this asset depends on (adds to 'Libraries' in Makefile)
- -- when creating workers, devices, platforms, or libraries
-  -y <comp-libary>   Specify a component library that contains workers/devices/specs that this asset 
-                     will need to reference (adds to 'ComponentLibraries' in Makefile)
- -- when creating workers, devices, primitives, platforms, or assemblies --
-  -T <target>        Target to limit this asset to (adds to 'OnlyTargets' in Makefile)
-  -Z <target>        Exclude a target from this asset (adds to 'ExcludeTargets' in Makefile)
-  -G <platform>      Platform to limit this asset to (adds to 'OnlyPlatforms' in Makefile)
-  -Q <platform>      Exclude a platform from this asset (adds to 'ExcludePlatforms' in Makefile)
-  -U <supports>      A device supported by the subdevice being created
- -- when creating primitive cores --
+ == when creating workers, devices, or platforms ==
+  -I <include>       *A directory to search for language include files (e.g. C/C++ or Verilog)
+                     Adds to "IncludeDirs" in worker Makefile
+  -A <xml-include>   *A directory to search for XML files (adds to 'XmlIncludeDirs' in Makefile)
+ == when creating workers, devices, primitives, or platforms ==
+  -O <other>         *Other source files to include (adds to "SourceFiles" in Makefile)
+  -C <core>          *Core to be included by this asset (adds to "Cores" in Makefile)
+  -Y <libary>        *Specify a primitive library that this asset depends on
+                     (adds to "Libraries" in Makefile).
+ == when creating workers, devices, platforms, or libraries ==
+  -y <comp-libary>   *Specify a component library to search for workers/devices/specs that this
+                     asset references (adds to "ComponentLibraries" in Makefile)
+ == when creating workers, devices, primitives, platforms, or assemblies ==
+  -T <target>        *Specify one of the only allowed build-targets for this asset.
+                     (adds to "OnlyTargets" in Makefile)
+  -Z <target>        *Exclude a build-target for this asset (adds to "ExcludeTargets" in Makefile)
+  -G <platform>      *Specify one of the only allowed build-platforms for this asset.
+                     (adds to "OnlyPlatforms" in Makefile)
+  -Q <platform>      *Exclude a build-platform for this asset (adds to "ExcludePlatforms" in Makefile)
+  -U <supports>      *A device (worker) supported by the subdevice being created
+ == when creating primitive cores ==
   -M <top-module>    For HDL primitive cores, the top level module name for the core when it is
-                     different from the name of the core (sets 'Top' in Makefile)
+                     different from the name of the core (sets "Top" in Makefile)
   -B <core>          Specify a prebuilt (not source) core when creating an HDL primitive core
-                     (ie. *.ngc file) (sets 'PreBuiltCore' in Makefile)
- -- when creating primitive libraries --
-  -H                 This primitive does not depend on any libaries (sets 'HdlNoLibraries' in Makefile)
-  -J                 Do not elaborate this HDL library (sets 'HdlNoElaboration' in Makefile)
- -- when creating and deleting applications --
+                     (ie. *.ngc file) (sets "PreBuiltCore" in Makefile)
+ == when creating primitive libraries ==
+  -H                 This primitive doesn't depend on any libaries, even built-in ones.
+                     (sets "HdlNoLibraries" in Makefile)
+  -J                 Do not elaborate this HDL library (sets "HdlNoElaboration" in Makefile)
+ == when creating and deleting applications ==
   -X                 Indicates that the application is simply an XML file, not a directory
-  -x                 For use only without -X. This application directory will have an application XML 
-                     file. If this option is omitted, an ACI file (<app>.cc) will be generated instead.
-All the "delete" functions prompt for confirmation without the -f option (like rm).
- -- when building assets-- 
-  --clean            A flag set to clean the build 
-  --build-rcc        A flag set to build rcc workers
-  --build-hdl        A flag set to build hdl workers 
+  -x                 For use only without -X.  The application's directory have an
+                     application XML file rather then the default of an ACI file (<app>.cc).
+ == when building assets ==
+  --build-rcc        Build rcc workers, when building at the project or library level.
+  --build-hdl        Build hdl workers, when building at the project or library level.
   --build-no-assemblies      
-                     A flag to be set when building at the project level to not build asseblies.  
-  --build--assembly <assembly> 
-                     Add a assembly to specificially be built and dosent build any otheres.  Can add 
-                     multiple instances of this option         
+                     Do not build assemblies, when building at the project level.
+  --build-hdl-assembly <assembly> 
+                     *Add an assembly to be specificially built (and don't build any others).
   --build-hdl-target <target>
-                     Add a hdl target to be built all assets for and dosent build for any other hdl 
-                     targets.  Can add multiple instances of this option.   
+                     *Add an HDL target to be specifically built and don't build for any others.
   --build-hdl-platform <platform>
-                     Add a hdl platform to be built all assets for and dosent build for any other hdl 
-                     platforms.  Can add multiple instances of this option.
+                     *Add an HDL platform to be specifically built and don't build for any others.
   --build-rcc-platform <platform>
-                     Add a rcc platform to be built all assets for and dosent build for any other rcc 
-                     platforms.  Can add multiple instances of this option.
-  --build-hdl-rcc-platform <platform>
-                     Add a rcc platform to be built all assets based on the hdl platform that is 
-                     specified i.e. zed means xilinx13_3 platform. This dosent build for any other rcc 
-                     platforms.  Can add multiple instances of this option.
+                     *Add an RCC platform to be specifically built and don't build for any others.
+  --build-hdl-rcc-platform <hdl-platform>
+                     *Add an RCC platform to be built based on the HDL platform that is specified.
+                     E.g. "zed" (as an HDL platform) means "xilinx13_3", the associated RCC platform.
 EOF
   exit 1
 
@@ -1576,9 +1607,10 @@ function myshift {
   argv=(${argv[@]})
 }
 function takeval {
-  [ -z ${argv[1]} ] && bad missing value after ${argv[0]} option for $1
+  [ -z "${argv[1]}" ] && bad missing value after ${argv[0]} option for $1
   [[ "${argv[1]}" == -* ]] && bad value after ${argv[0]} option: ${argv[1]}
-  eval $1=${argv[1]}
+  eval $1=\'${argv[1]}\'
+  # eval echo ARGV:$1:\$\{$1\}
   myshift
 }
 
@@ -1622,6 +1654,7 @@ while [[ "${argv[0]}" != "" ]] ; do
       (-F) takeval prefix ;; #default is <project>
       (-K) takeval package ;; #default is local.<project>
       (-D) takeval dependencies ;;
+      (-D) takeval dependency; dependencies=(${dependencies[@]} ${dependency//:/ }) ;;
       # worker options
       (-S) takeval spec ;; # default for worker is <worker-name>-spec.xml
       (-P) takeval platform ;;
@@ -1668,11 +1701,12 @@ while [[ "${argv[0]}" != "" ]] ; do
       (--build-rcc) buildRcc=1;;
       (--build-hdl) buildHdl=1;;
       (--build-no-assemblies) buildNoAssemblies=1;;
-      (--build--assembly) takeval assy; assys="${assys[@]} $assy";;
+      (--build-hdl-assembly|--build--assembly) takeval assy; assys="${assys[@]} $assy";;
       (--build-hdl-target) takeval hdltarget; hdltargets="${hdltargets[@]} $hdltarget";;
       (--build-hdl-platform) takeval hdlplat; hdlplats="${hdlplats[@]} $hdlplat";;
       (--build-rcc-platform) takeval swplat;  swplats="${swplats[@]} $swplat";;
       (--build-hdl-rcc-platform) takeval hwswplat;  hwswplats="${hwswplats[@]} $hwswplat";;
+      (--create-build-files) OCPI_CREATE_BUILD_FILES=1;;
       (*)
         bad unknown option: ${argv[0]}
         ;;
@@ -1682,6 +1716,7 @@ while [[ "${argv[0]}" != "" ]] ; do
       (create) verb=create;;
       (delete|rm) verb=delete;;
       (build) verb=build;;
+      (clean) verb=build; buildClean=1;;
       ("") bad missing command name;;
       (*) bad there is no command named \"${argv[0]}\";;
     esac
@@ -1846,7 +1881,7 @@ fi
 
 # Get dir type unless creating something standalone
 needname ${argv[0]} $verb $noun
-if [ "$verb" != "build" -o -n $noun ] ; then 
+if [ "$verb" != "build" -o -n "$noun" ] ; then 
   get_subdir
 fi
 [ -z $verbose ] || echo Executing the \"$verb $hdl$noun\" command in a ${dirtype:-unknown type of} directory: $directory.

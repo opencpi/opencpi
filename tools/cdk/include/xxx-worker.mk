@@ -43,95 +43,12 @@ SourceSuffix:=$($(CapModel)SourceSuffix)
 ImplXmlFiles:=$(foreach w,$(Workers),$(or $(Worker_$w_xml),$(Worker).xml))
 $(call OcpiDbgVar,ImplXmlFiles)
 
-# During the makefile reading process we possibly update the
-# build parameter file, and always update and include the gen/xxx.mk file.
-# We look at all variables of the form Param_<name>.
-RawParamVariables:=$(filter Param_%,$(.VARIABLES)) $(filter ParamValues_%,$(.VARIABLES))
-RawParamFile:=$(GeneratedDir)/rawparams.xml
-RawParamName=$(if $(filter Param_%,$1),$(1:Param_%=%),$(1:ParamValues_%=%))
-RawParamNames:=$(foreach v,$(RawParamVariables),$(call RawParamName,$v))
-ifneq ($(words $(RawParamNames)),$(words $(sort $(RawParamNames))))
-  $(error Both Param_ and ParamValues_ used for same parameter.)
-endif
-ParamValue=$(Param_$1)
-# FIXME: what are the quoting conventions at work here?
-# 1. The core syntax is from our textual encoding of data types.
-# 2. Make pretty much allows anything but # and newline in an assignment - both can
-#    be escaped using backslash, so in fact there are three special characters
-#    #, \, and <newline>, but newlines will never be included.
-# 3. So when we output the file for XML, we need to deal with XML quoting conventions.
-#    But XML textual data has only two things to protect: < and &.
-#    But our format also has backslash encoding too.
-# 4. The Values string has commas. Is there anything better?
-#    Perhaps if we choose something else?:
-#     -- transparent to Make
-#     -- transparent to XML
-#     -- not a comma
-#     -- uncommon to avoid too much quoting, not in any numeric format
-#     -- looks reasonable: | is used in BNF
-# 5. We need a shell command to put the value into a file.
-#    Metacharacters for the shell are: | & ; ( ) < > space tab
-#    Backslash protects everything
-#    Single quotes can't protect single quotes
-#    Double quotes don't protect $ ` \ !
-# Since XML already has a mechanism to encode single quotes (&apos;),
-# using single quotes is best.
-MakeRawParams:= \
-  (echo "<parameters>"; \
-   $(foreach i,$(RawParamVariables),\
-     echo "<parameter name='$(call RawParamName,$i)'$(strip \
-                      )$(if $(filter ParamValues_%,$i), values='true')>";\
-     echo '$(subst <,&lt;,$(subst ',&apos;,$(subst &,&amp;,$($i))))';\
-     echo "</parameter>";) \
-   echo "</parameters>")
-
 # Get the (a) platform for this target if it is present.
 WkrGetPlatform=$(strip \
   $(foreach v,$(filter $(CapModel)Target_%,$(.VARIABLES)),\
     $(and $(filter $1,$(value $v)),$(v:$(CapModel)Target_%=%))))
 
-$(call OcpiDbgVar,XmlIncludeDirsInternal)
-$(call OcpiSetXmlIncludes)
-$(call OcpiDbgVar,XmlIncludeDirsInternal)
-
 -include $(GeneratedDir)/*.deps
-
-
-OcpiBuildFile=$(or $(call OcpiExists,$(Worker).build),$(call OcpiExists,$(Worker)-build.xml))
-ParamShell=\
-  if [ -n "$(OcpiBuildFile)" -a -r "$(OcpiBuildFile)" ] ; then \
-    (mkdir -p $(GeneratedDir) &&\
-    $(call MakeSymLink2,$(OcpiBuildFile),$(GeneratedDir),$(Worker)-build.xml); \
-    $(OcpiGenTool) -D $(GeneratedDir) $(and $(Package),-p $(Package))\
-      $(and $(Platform),-P $(Platform)) \
-      $(and $(PlatformDir), -F $(PlatformDir)) \
-      $(HdlVhdlLibraries) \
-      $(and $(Assembly),-S $(Assembly)) \
-      -b $(Worker_$(Worker)_xml)) || echo 1;\
-  else \
-    (mkdir -p $(GeneratedDir) &&\
-    $(MakeRawParams) |\
-    $(OcpiGenTool) -D $(GeneratedDir) $(and $(Package),-p $(Package))\
-      $(and $(Platform),-P $(Platform)) \
-      $(and $(PlatformDir), -F $(PlatformDir)) \
-      $(HdlVhdlLibraries) \
-      $(and $(Assembly),-S $(Assembly)) \
-      -r $(Worker_$(Worker)_xml)) || echo 1;\
-  fi
-
-ifeq ($(filter clean,$(MAKECMDGOALS)),)
-  # This is the parameter configuration startup that must be run as the
-  # makefile is being read, since it results in a file that the makefile must include.
-  $(call OcpiDbgVar,ParamShell)
-  X:=$(shell $(ParamShell))
-  $(and $X,$(error Failed to process initial parameters for this worker: $X))
-  include $(GeneratedDir)/$(Worker).mk
-  WorkerParamNames:=\
-    $(foreach p, \
-      $(filter ParamMsg_$(firstword $(ParamConfigurations))_%,$(.VARIABLES)),\
-      $(p:ParamMsg_$(firstword $(ParamConfigurations))_%=%))
-  $(call OcpiDbgVar,WorkerParamNames)
-endif
 
 # Only workers need the implementation "header" file and the skeleton
 # Allow this to be set to override this default
@@ -296,6 +213,7 @@ endef
 
 ################################################################################
 # Function to do stuff per target: $(eval $(call WkrDoTarget,target))
+$(call OcpiDbgVar,ParamConfigurations)
 define WkrDoTarget
   $(foreach c,$(ParamConfigurations),$(call WkrDoTargetConfig,$1,$c))
 endef

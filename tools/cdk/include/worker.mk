@@ -86,4 +86,7 @@ endif
 $(eval $(call OcpiSetLanguage,$(ImplXmlFiles)))
 $(call OcpiDbgVar,Workers)
 $(call OcpiDbgVar,Worker)
+
+$(eval $(OcpiProcessBuildFiles))
+
 include $(OCPI_CDK_DIR)/include/$(Model)/$(Model)-worker.mk

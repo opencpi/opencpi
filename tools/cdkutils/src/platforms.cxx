@@ -117,15 +117,24 @@ getRccPlatforms(const StringSet *&platforms) {
 
 const char *
 getComponentLibrary(const char *lib, OrderedStringSet &libs) {
-  const char *err;
   std::string path;
+  const char *err;
+  if ((err = getComponentLibrary(lib, path)))
+    return err;
+  libs.push_back(path);
+  return NULL;
+}
+const char *
+getComponentLibrary(const char *lib, std::string &path) {
+  const char *err;
   bool isDir;
   if (strchr(lib, '/')) {
     if (!OS::FileSystem::exists(lib, &isDir) || !isDir)
       return OU::esprintf("The component library location: \"%s\" is not a directory", lib);
     path = lib;
     path += "/lib";
-    libs.push_back(OS::FileSystem::exists(path, &isDir) && isDir ? path : lib);
+    if (!OS::FileSystem::exists(path, &isDir) || !isDir)
+      path = lib;
     return NULL;
   }
   if (componentPath.empty()) {
@@ -137,10 +146,8 @@ getComponentLibrary(const char *lib, OrderedStringSet &libs) {
   }
   for (unsigned n = 0; n < componentPath.size(); n++) {
     OU::format(path, "%s/%s", componentPath[n].c_str(), lib);
-    if (OS::FileSystem::exists(path, &isDir) && isDir) {
-      libs.push_back(path);
+    if (OS::FileSystem::exists(path, &isDir) && isDir)
       return NULL;
-    }
   }
   path.clear();
   for (unsigned n = 0; n < componentPath.size(); n++)

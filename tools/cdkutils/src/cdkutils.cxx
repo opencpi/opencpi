@@ -59,6 +59,10 @@ std::vector<const char *> compat_includes() {
 }
 
 void
+addInclude(const std::string &inc) {
+  includes.push_back(inc);
+}
+void
 addInclude(const char *inc) {
   includes.push_back(inc);
 }
@@ -299,3 +303,28 @@ printgen(FILE *f, const char *comment, const char *file, bool orig, const char *
 	  comment, orig ? "*ARE* EXPECTED TO" : "PROBABLY SHOULD NOT", endComment);
 }
 
+const char *
+expandEnv(const char *s, std::string &out) {
+  for (const char *in = s; *in;) {
+    if (*in == '$') {
+      bool paren = in[1] == '(';
+      if (paren)
+	in++;
+      if (!isalpha(*++in))
+	return OU::esprintf("invalid environment reference in: %s", in);
+      const char *name = in;
+      while (*++in && (isalnum(*in) || *in == '_'))
+	;
+      std::string ename(name, in - name);
+      if (paren && *in++ != ')')
+	return OU::esprintf("invalid environment reference in: %s", in);
+      const char *env = getenv(ename.c_str());
+      if (!env)
+	return OU::esprintf("in environment reference to \"%s\" in \"%s\": variable is not set",
+			    ename.c_str(), s);
+      out += env;
+    } else
+      out += *in++;
+  }
+  return NULL;
+}

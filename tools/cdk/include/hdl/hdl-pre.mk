@@ -50,8 +50,9 @@ __HDL_PRE_MK__=x
 include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
 
 # Default for everything
+ifndef ParamConfigurations
 ParamConfigurations=0
-
+endif
 ################################################################################
 # Determine the Worker Name very early, and the name of its XML file, and its 
 # language, in all the modes that are worker

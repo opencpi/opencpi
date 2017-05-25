@@ -39,6 +39,7 @@
 #include <assert.h>
 #include <strings.h>
 #include <ctype.h>
+#include "OcpiOsFileSystem.h"
 #include "OcpiUtilMisc.h"
 #include "OcpiUtilEzxml.h"
 #include "OcpiUtilAssembly.h"
@@ -114,7 +115,7 @@ tryInclude(ezxml_t x, const std::string &parent, const char *element, ezxml_t *p
 			parent.c_str());
   std::string ifile;
   if ((err = parseFile(incfile, parent, element, parsed, ifile, optional)))
-    return OU::esprintf("Error in %s: %s", ifile.c_str(), err);
+    return err;
   child = ifile;
   return NULL;
 }
@@ -806,7 +807,8 @@ create(const char *file, const std::string &parentFile, const char *package, con
     w = HdlDevice::create(xml, xfile, parent, instancePVs, err);
   } else if (!strcasecmp("RccAssembly", name))
     w = RccAssembly::create(xml, xfile, err);
-  else if ((w = new Worker(xml, xfile, parentFile, Worker::Application, parent, instancePVs, err))) {
+  else if ((w = new Worker(xml, xfile, parentFile, Worker::Application, parent, instancePVs, 
+			   err)) && !err) {
     if (!strcasecmp("RccImplementation", name) || !strcasecmp("RccWorker", name))
       err = w->parseRcc(package);
     else if (!strcasecmp("OclImplementation", name) || !strcasecmp("OclWorker", name))
@@ -970,11 +972,24 @@ Worker(ezxml_t xml, const char *xfile, const std::string &parentFile,
     m_mkFile(NULL), m_xmlFile(NULL), m_outDir(NULL), m_build(*this), m_paramConfig(NULL),
     m_scalable(false), m_parent(parent), m_maxLevel(0), m_dynamic(false)
 {
+  if (err)
+    return;
+  const char *name = ezxml_name(xml);
+  assert(name);
   if (ipvs)
     m_instancePVs = *ipvs;
-  const char *name = ezxml_name(xml);
+  if (!strncasecmp("hdl", name, 3)) {
+    m_model = HdlModel;
+    m_modelString = "hdl";
+  } else if (!strncasecmp("rcc", name, 3)) {
+    m_model = RccModel;
+    m_modelString = "rcc";
+  } else if (!strncasecmp("ocl", name, 3)) {
+    m_model = OclModel;
+    m_modelString = "ocl";
+  }
   // FIXME: make HdlWorker and RccWorker classes  etc.
-  if (!err && name && !strncasecmp("hdl", name, 3)) {
+  if (m_model == HdlModel) {
     // Parse things that the base class should parse.
     const char *lang = ezxml_cattr(m_xml, "Language");
     if (!lang)
@@ -982,17 +997,19 @@ Worker(ezxml_t xml, const char *xfile, const std::string &parentFile,
 	m_language = VHDL;
       else if (!strcasecmp("HdlAssembly", name))
 	m_language = Verilog;
-      else
+      else {
 	err = "Missing Language attribute for HDL worker element";
+	return;
+      }
     else if (!strcasecmp(lang, "Verilog"))
       m_language = Verilog;
     else if (!strcasecmp(lang, "VHDL"))
       m_language = VHDL;
-    else
+    else {
       err = OU::esprintf("Language attribute \"%s\" is not \"Verilog\" or \"VHDL\""
 			 " in HdlWorker xml file: '%s'", lang, xfile ? xfile : "");
-    m_model = HdlModel;
-    m_modelString = "hdl";
+      return;
+    }
     if ((m_library = ezxml_cattr(xml, "library")))
       ocpiDebug("m_library set from xml attr: %s", m_library);
     else if (xfile && (m_library = findLibMap(xfile)))
@@ -1011,6 +1028,31 @@ Worker(ezxml_t xml, const char *xfile, const std::string &parentFile,
 	  break;
 	}
     }
+  }
+  // These next two attributes are necessary to parse this worker since they exist
+  // to provide places to look for XML that this OWD refers to.
+  bool isDir;
+  for (OU::TokenIter ti(ezxml_cattr(xml, "xmlincludedirs")); ti.token(); ti.next()) {
+    std::string inc;
+    if ((err = expandEnv(ti.token(), inc))) {
+      err = OU::esprintf("in value of XmlIncludeDir attribute: %s", err);
+      return;
+    }
+    if (!OS::FileSystem::exists(inc, &isDir) || !isDir) {
+      err = OU::esprintf("the XML include directory: \"%s\" does not exist\n", inc.c_str());
+      return;
+    }
+    addInclude(inc.c_str());
+  }
+  // This is a convenient way to specify XML include dirs in component libraries
+  for (OU::TokenIter ti(ezxml_cattr(xml, "componentlibraries")); ti.token(); ti.next()) {
+    std::string inc;
+    if ((err = getComponentLibrary(ti.token(), inc)))
+      return;
+    if (m_model != HdlModel)
+      addInclude(inc + "/hdl"); // for proxies accessing hdl
+    addInclude(inc + "/" + m_modelString);
+    addInclude(inc);
   }
 }
 

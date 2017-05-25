@@ -497,15 +497,22 @@ parseBuildFile(bool optional) {
     }
   }
   ezxml_t x;
+  std::string xfile;
   std::string empty;
-  if ((err = parseFile(fname.c_str(), empty, "build", &x, empty, false, true, optional)))
+  if ((err = parseFile(fname.c_str(), empty, "build", &x, xfile, false, true, optional)))
     return err;
+  if ((err = parseBuildXml(x)))
+    return OU::esprintf("when processing build file \"%s\": %s", xfile.c_str(), err);
+  return NULL;
+}
+const char *Worker::
+parseBuildXml(ezxml_t x) {
+  const char *err;
   // This cannot be done during construction since the OWD isn't parsed then
   m_build.m_globalParams.params.resize(m_ctl.nParameters);
   if ((err = OE::checkAttrs(x, PLATFORM_ATTRS, "onlytargets", "excludetargets", "sourcefiles",
-			    "libraries", "cores", "xmlincludedirs", "includedirs",
-			    "componentlibraries", "staticprereqlibs", "dynamicprereqlibs",
-			    NULL)) ||
+			    "libraries", "cores", "includedirs", "staticprereqlibs", 
+			    "dynamicprereqlibs", NULL)) ||
       (err = OE::checkElements(x, "configuration", "parameter", NULL)))
     return err;
   // Establish default values (or multiple values) for parameters that apply to all
@@ -950,11 +957,11 @@ parse(ezxml_t x) {
   if ((aonly && (err = getTargets(aonly, m_onlyTargets, m))) ||
       (aexclude && (err = getTargets(aexclude, m_excludeTargets, m))))
     return err;
-  for (OU::TokenIter ti(ezxml_cattr(x, "sourcefiles")); ti.token(); ti.next())
-    if (OS::FileSystem::exists(ti.token()))
-      m_sourceFiles.push_back(ti.token());
-    else
-      return OU::esprintf("The source file: \"%s\" does not exist", ti.token());
+  for (OU::TokenIter ti(ezxml_cattr(x, "sourcefiles")); ti.token(); ti.next()) {
+    if (!OS::FileSystem::exists(ti.token()))
+      fprintf(stderr, "Warning:  the source file: \"%s\" does not exist\n", ti.token());
+    m_sourceFiles.push_back(ti.token());
+  }
   for (OU::TokenIter ti(ezxml_cattr(x, "libraries")); ti.token(); ti.next())
     if (m != HdlModel)
       return "Invalid \"libraries\" attribute:  worker model is not HDL";
@@ -966,23 +973,26 @@ parse(ezxml_t x) {
     else if ((err = getHdlPrimitive(ti.token(), "core", m_cores)))
       return err;
   bool isDir;
+#if 0
   for (OU::TokenIter ti(ezxml_cattr(x, "xmlincludedirs")); ti.token(); ti.next()) {
-    if (OS::FileSystem::exists(ti.token(), &isDir) && isDir)
-      m_xmlIncludeDirs.push_back(ti.token());
-    else
-      return OU::esprintf("The XML include directory: \"%s\" is not a directory", ti.token());
+    if ((!OS::FileSystem::exists(ti.token(), &isDir) || !isDir) && ti.token()[0] != '$')
+      fprintf(stderr, "Warning:  the XML include directory: \"%s\" does not exist\n", ti.token());
+    m_xmlIncludeDirs.push_back(ti.token());
   }
+#endif
   for (OU::TokenIter ti(ezxml_cattr(x, "includedirs")); ti.token(); ti.next()) {
     if (OS::FileSystem::exists(ti.token(), &isDir) && isDir)
       m_includeDirs.push_back(ti.token());
     else
       return OU::esprintf("The include directory: \"%s\" is not a directory", ti.token());
   }
+#if 0
   for (OU::TokenIter ti(ezxml_cattr(x, "componentlibraries")); ti.token(); ti.next())
     if (!m_worker.m_slave && !m_worker.m_emulate)
       return OU::esprintf("componentlibraries only valid on workers with slaves or emulators");
     else if ((err = getComponentLibrary(ti.token(), m_componentLibraries)))
       return err;
+#endif
   std::string prereqs;
   if ((err = getPrereqDir(prereqs)))
     return err;
