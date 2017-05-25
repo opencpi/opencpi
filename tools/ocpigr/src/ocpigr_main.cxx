@@ -1,6 +1,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include "OcpiOsFileSystem.h"
 #include "OcpiUtilMisc.h"
 #include "OcpiUtilException.h"
 #include "OcpiLibraryManager.h"
@@ -15,13 +16,12 @@ namespace OX = OCPI::Util::EzXml;
 // Generate blocks corresponding to available artifacts
 // After options args are platforms to engage or "all"
 #define OCPI_OPTIONS_HELP \
-  "Usage syntax is: ocpigr [options] <xml-worker-descriptor-file>\n" \
-  "After options, the single argument is the name of the XML file to parse as input.\n" \
-  "This argument can exclude the .xml suffix, which will be assumed.\n" \
-  "XML file can be a worker, an assembly, a platform configuration, or a container.\n"
+  "Usage syntax is: ocpigr [options]\n" \
+  "At least one option must be specified\n" \
+
 #define OCPI_OPTIONS \
   CMD_OPTION  (verbose,   v,    Bool,   NULL, "Be verbose") \
-  CMD_OPTION  (directory, D,    String, NULL, "Specify the directory in which to put output generated files") \
+  CMD_OPTION  (directory, D,    String, ".", "Specify the directory in which to put output generated files") \
   /**/
 #include "CmdOption.h"
 static const char *bad(OU::Worker &w, const char *tag, const char *val) {
@@ -59,10 +59,10 @@ struct Category {
     if (!x)
       x = ezxml_new("cat");
     OX::addChild(x, "name", level + 1, name.c_str());
-    for (StringSetIter it = blocks.begin(); it != blocks.end(); ++it)
-      OX::addChild(x, "block", level + 1, it->c_str());
     for (unsigned n = 0; n < categories.size(); n++)
       categories[n].getXml(OX::addChild(x, "cat", level + 1), level + 1);
+    for (StringSetIter it = blocks.begin(); it != blocks.end(); ++it)
+      OX::addChild(x, "block", level + 1, it->c_str());
     return x;
   }
 } top;
@@ -89,13 +89,31 @@ static void doWorker(OU::Worker &w) {
   OX::addChild(root, "key", 1, key.c_str());
   OX::addChild(root, "category", 1, cat.c_str());
   OX::addChild(root, "import", 1, import.c_str());
-  //  OX::addChild(root, "make", 1, "WTFIT");
+  OX::addChild(root, "make", 1, "");
+
+  // Add ocpi package as a partially hidden parameter
+  ezxml_t _px = OX::addChild(root, "param", 1);
+  OX::addChild(_px, "name", 2, "ocpi_spec");
+  OX::addChild(_px, "key", 2, "ocpi_spec");
+  OX::addChild(_px, "value", 2, w.specName().c_str());
+  OX::addChild(_px, "type", 2, "string");
+  OX::addChild(_px, "hide", 2, "part");
+
   unsigned np;
   OU::Property *p = w.properties(np);
   for (unsigned n = 0; n < np; n++, p++) {
+    // Only expose properties to the user that are writable, so skip ones that aren't
+    if (!p->m_isWritable)
+        continue;
+
     ezxml_t px = OX::addChild(root, "param", 1);
     OX::addChild(px, "name", 2, p->pretty());
     OX::addChild(px, "key", 2, p->cname());
+    if (p->m_default) { // or should there be an empty value when there is no default?
+      std::string strval;
+      p->m_default->unparse(strval);
+      OX::addChild(px, "value", 2, strval.c_str());
+    }
     const char *type;
     bool isVector = p->m_arrayRank || p->m_isSequence;
     switch (p->m_baseType) {
@@ -104,7 +122,7 @@ static void doWorker(OU::Worker &w) {
     case OA::OCPI_Float:  type = isVector ? "float_vector" : "float"; break;
     case OA::OCPI_Char:
     case OA::OCPI_Short:
-    case OA::OCPI_Long: 
+    case OA::OCPI_Long:
     case OA::OCPI_UChar:
     case OA::OCPI_ULong:
     case OA::OCPI_UShort:
@@ -133,6 +151,7 @@ static void doWorker(OU::Worker &w) {
     OX::addChild(px, "name", 2, p.cname());
     if (p.nOperations() != 1 || p.operations()[0].nArgs() != 1) {
       bad(w, "port", p.cname());
+      OX::addChild(px, "type", 2, "s16"); //TODO FIX this
       continue;
     }
     OU::Member &arg = p.operations()[0].args()[0];
@@ -140,28 +159,33 @@ static void doWorker(OU::Worker &w) {
 	arg.m_baseType != OA::OCPI_Type && arg.m_baseType != OA::OCPI_String) {
       const char *type;
       switch (arg.m_baseType) {
-      case OA::OCPI_Bool:  type = "bool"; break;
-      case OA::OCPI_Double:  type = "real"; break;
-      case OA::OCPI_Float:  type = "float"; break;
-      case OA::OCPI_Char:
-      case OA::OCPI_Short:
-      case OA::OCPI_Long: 
-      case OA::OCPI_UChar:
-      case OA::OCPI_ULong:
-      case OA::OCPI_UShort:
-      case OA::OCPI_LongLong:
-      case OA::OCPI_ULongLong:
-	type = "int"; break;
-      case OA::OCPI_String:  type = "string"; break;
-      case OA::OCPI_Enum:  type = "enum"; break;
+      case OA::OCPI_Float:     type = "f32"; break;
+      case OA::OCPI_Double:    type = "f64"; break;
+      case OA::OCPI_Char:      type = "s8";  break;
+      case OA::OCPI_UChar:     type = "s8";  break;
+      case OA::OCPI_Short:     type = "s16"; break;
+      case OA::OCPI_UShort:    type = "s16"; break;
+      case OA::OCPI_Long:      type = "s32"; break;
+      case OA::OCPI_ULong:     type = "s32"; break;
+      case OA::OCPI_LongLong:  type = "s64"; break;
+      case OA::OCPI_ULongLong: type = "s64"; break;
+      /*
+       * The following types don't have a direct mapping
+       * as a grc data stream/port type, so just have
+       * grc interpret them as bytes.
+       */
+      case OA::OCPI_String:
+      case OA::OCPI_Enum:
+      case OA::OCPI_Bool:
       case OA::OCPI_Struct:
       case OA::OCPI_Type:
-      default:
-	type = bad(w, "port", p.cname()); break;
+      default: type = "s8"; break;
       }
       OX::addChild(px, "type", 2, type);
-    } else
+    } else {
       bad(w, "port", p.cname());
+      OX::addChild(px, "type", 2, "s16"); //TODO FIX this
+    }
   }
   std::string
     xml = ezxml_toxml(root),
@@ -171,10 +195,13 @@ static void doWorker(OU::Worker &w) {
   if ((err = OU::string2File(xml, file)))
     throw OU::Error("error writing GRC XML file:  %s", err);
 }
-static int mymain(const char **/*ap*/) {
+
+static int
+mymain(const char **/*ap*/) {
   setenv("OCPI_SYSTEM_CONFIG", "", 1);
   OCPI::Driver::ManagerManager::suppressDiscovery();
   OL::getManager().enableDiscovery();
+  OS::FileSystem::mkdir(options.directory(), true);
   top.name = "[OpenCPI]";
   OL::getManager().doWorkers(doWorker);
   std::string file;
