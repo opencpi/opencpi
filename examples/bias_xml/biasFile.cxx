@@ -1,4 +1,4 @@
-#include <inttypes.h>
+#include <cinttypes>
 #include <iostream>
 #include <cstdio>
 #include <cassert>

@@ -5,7 +5,7 @@
 
 namespace OA = OCPI::API;
 
-int main(int argc, char **argv) {
+int main(int /* argc */, char **argv) {
   std::string hello("<application package='ocpi'>"
 		    // instance name defaults to file_read since there is only one
 		    "  <instance component='file_read'>"

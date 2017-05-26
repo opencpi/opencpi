@@ -6,7 +6,7 @@
 
 namespace OA = OCPI::API;
 
-int main(int argc, char **argv) {
+int main(int /* argc */, char **argv) {
   std::string hello =
     "<application done='file_write' package='ocpi'>"
     "  <instance component='file_read'>"

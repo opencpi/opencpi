@@ -6,7 +6,7 @@
 
 namespace OA = OCPI::API;
 
-int main(int argc, char **argv) {
+int main(int /* argc */, char ** /* argv */) {
   std::string hello("<application>"
 		    // instance name defaults to hello since there is only one
 		    "  <instance component='local.hello' selection='model==\"rcc\"'/>"

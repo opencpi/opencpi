@@ -9,3 +9,5 @@ Gc_$(zynq_host):=$(zynq_bin_dir)/$(zynq_cross_host)-gcc -std=c99
 Gc_LINK_$(zynq_host):=$(Gc_$(zynq_host))
 Gc++_$(zynq_host):=$(zynq_bin_dir)/$(zynq_cross_host)-g++ -std=c++0x
 Gc++_LINK_$(zynq_host):=$(Gc++_$(zynq_host))
+Gc++_MAIN_LIBS_$(zynq_host)=rt dl pthread
+Gc++_MAIN_FLAGS_$(zynq_host)=-Xlinker --export-dynamic

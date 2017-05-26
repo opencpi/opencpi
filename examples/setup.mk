@@ -2,23 +2,22 @@ ifndef OCPI_CDK_DIR
 OCPI_CDK_DIR=$(realpath ../../exports)
 endif
 
+all:
+
 ifeq ($(filter clean%,$(MAKECMDGOALS)),)
-  include $(OCPI_CDK_DIR)/include/ocpisetup.mk
   export PATH:=$(OCPI_CDK_DIR)/bin/$(OCPI_TOOL_DIR):$(PATH)
   export OCPI_LIBRARY_PATH=.:$(OCPI_CDK_DIR)/lib/components/rcc:$(OCPI_CDK_DIR)/lib/hdl/assemblies
 endif
 
-DIR=target-$(OCPI_TARGET_DIR)
-PROG=$(DIR)/$(APP)
 OUT= > /dev/null
-
-INCS = -I$(OCPI_INC_DIR)
-
+DIR=target-$(OCPI_TOOL_DIR)
 ifdef APP
-all: $(PROG)
-$(PROG): $(APP).cxx | $(DIR)
-	$(AT)echo Building $@...
-	$(AT)$(CXX) $(CXXFLAGS) $(OCPI_EXPORT_DYNAMIC) -o $@ $(INCS) $^ $(OCPI_LD_FLAGS)
+OCPI_DEBUG=1
+OcpiAppNoRun=1
+PROG=$(DIR)/$(APP)
+# override the name since these are not created by ocpidev (yet)
+OcpiApp=$(APP)
+include $(OCPI_CDK_DIR)/include/application.mk
 endif
 
 clean::

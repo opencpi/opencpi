@@ -633,6 +633,8 @@ endef
 # These are goals that *only* apply to testing.
 # .test directories also support more generic targets, in particular "clean" and "cleanrun"
 OcpiTestGoals=test cleantest runtest verifytest cleansim runtests runonlytest cleanrun
+# Used globally when building executables
+OcpiPrereqLibs=lzma gmp
 
 OcpiCheckVars=$(and $($1),$(error The "$1" variable is set in both the Makefile and the *-build.xml file.))
 

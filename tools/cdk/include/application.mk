@@ -1,43 +1,45 @@
 # This file is for an application directory whose name is the name of the app.
 #
-# The "app" is either the foo.cxx, foo.cc or foo.xml
+# The "app" is either the foo.{cc,cxx,cpp} or foo.xml
+
 include $(OCPI_CDK_DIR)/include/util.mk
+ifndef OcpiApp
 OcpiApp:=$(CwdName)
+endif
 $(call OcpiIncludeProject)
 
-# If not cleaning, we don't need to be target-specific etc.
-ifeq ($(filter clean%,$(MAKECMDGOALS)),)
-  include $(OCPI_CDK_DIR)/include/ocpisetup.mk
-endif
-OcpiAppCC:=$(wildcard $(OcpiApp).cxx)$(wildcard $(OcpiApp).cc)
+# The existence of a C++ app file determines if this is an ACI app
+OcpiAppCC:=$(strip $(foreach s,cc cxx cpp,$(wildcard $(OcpiApp).$s)))
 ifdef OcpiAppCC
-
+  OcpiApps:=$(OcpiApp)
+  include $(OCPI_CDK_DIR)/include/aci.mk
+  # If we are running in this Makefile, then we are running the TOOL_PLATFORM
   ifndef OcpiRunCC
-    OcpiRunCC=$(OcpiRunBefore) $(OcpiProg) $(OcpiRunArgs) $(OcpiRunAfter)
+    OcpiRunCC=$(OcpiRunBefore) $(call AciExe,$(OCPI_TOOL_PLATFORM),$(OcpiApp)) $(OcpiRunArgs) \
+              $(OcpiRunAfter)
   endif
-  OcpiIncs=-I$(OCPI_INC_DIR)
-  OcpiDir=target-$(OCPI_TARGET_DIR)
-  OcpiProg=$(OcpiDir)/$(OcpiApp)
-  all : $(OcpiProg)
-  $(OcpiProg): $(OcpiAppCC) | $(OcpiDir)
-	$(AT)echo Building $@...
-	$(AT)$(CXX) $(OCPI_TARGET_CXXFLAGS) $(OCPI_EXPORT_DYNAMIC) -o $@ $(OcpiIncs) $^ $(OCPI_LD_FLAGS)
-
-  run: all
+  all: aciapps
+  ifndef OcpiAppNoRun
+    run: all
+	$(AT)echo Executing the $(OcpiApp) application.
 	$(AT)$(OcpiRunCC)
-
-else ifneq ($(wildcard $(OcpiApp).xml),)
-  ifndef OcpiRunXML
-    OcpiRunXML=$(OcpiRunBefore) $(OCPI_BIN_DIR)/ocpirun $(OcpiRunArgs) $1 $(OcpiRunAfter)
   endif
-
-  run: all
+else ifneq ($(wildcard $(OcpiApp).xml),)
+  ifndef OcpiAppNoRun
+    ifndef OcpiRunXML
+      OcpiRunXML=$(OcpiRunBefore) $(call AciDir,$(OCPI_TOOL_PLATFORM)/ocpirun $(OcpiRunArgs) $1 \
+                 $(OcpiRunAfter)
+    endif
+    run: all
+	$(AT)echo Executing the $(OcpiApp).xml application.
 	$(AT)$(call OcpiRunXML,$(OcpiApp).xml)
-
+  endif
 else
-  $(info No application found when looking for: $(OcpiApp).xml, $(OcpiApp).cc, or $(OcpiApp).cxx)
-  run:
+  $(info No application found when looking for: $(OcpiApp).xml, $(OcpiApp).{cc,cxx,cpp})
+  ifndef OcpiAppNoRun
+    run:
+  endif
 endif
 
 clean::
-	$(AT)rm -r -f lib target-* *.*~ timeData.raw
+	$(AT)rm -r -f *~ timeData.raw

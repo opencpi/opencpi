@@ -1,4 +1,5 @@
 #include <unistd.h>
+#include <string.h>
 #include <stdio.h>
 #include <cstdlib>
 #include <iostream>
@@ -6,78 +7,22 @@
 #include "OcpiApi.h"
 #include "OcpiContainerApi.h"
 #include "OcpiPValueApi.h"
-#include "OcpiUtilCommandLineConfiguration.h"
 
 namespace OA = OCPI::API;
 
-// Command line Configuration
-class UnitTestConfigurator
-  : public OCPI::Util::CommandLineConfiguration
-{
-public:
-  UnitTestConfigurator ();
+#define OCPI_OPTIONS_HELP \
+  "Usage syntax is: fsk_model [options]\n" \
+  "This command evaluates the expression, with the provided variables and result type.\n"
 
-public:
-  bool help;
-  bool verbose;
-  bool cont;
-  bool step;
-  std::string policy;
-  int  nRCCCont;
-  int M;
-private:
-  static CommandLineConfiguration::Option g_options[];
-};
-static  UnitTestConfigurator config;
+#define OCPI_OPTIONS \
+  CMD_OPTION(verbose,   v, Bool,   0, "be verbose in describing what is happening")\
+  CMD_OPTION(cont,      c, Bool,   0, "Produce continuous data (duplicate last buffer)") \
+  CMD_OPTION(step,      s, Bool,   0, "Step thru data 1 buffer at a time (debug)") \
+  CMD_OPTION(policy,    p, String, 0, "Worker deployment policy {max,min}") \
+  CMD_OPTION(rcc_count, r, ULong,  0, "Number of RCC containers to create") \
+  CMD_OPTION(M,         m, ULong,  0, "Decimation/Interpolation factor for CIC filters") \
 
-UnitTestConfigurator::
-UnitTestConfigurator ()
-  : OCPI::Util::CommandLineConfiguration (g_options),
-    help (false),
-    verbose (false),
-    cont(false),
-    step(false),
-    policy("min"),
-    nRCCCont(1),
-    M(1)
-{
-}
-
-OCPI::Util::CommandLineConfiguration::Option
-UnitTestConfigurator::g_options[] = {
-  { OCPI::Util::CommandLineConfiguration::OptionType::BOOLEAN,
-    "verbose", "Be verbose",
-    OCPI_CLC_OPT(&UnitTestConfigurator::verbose), 0 },
-  { OCPI::Util::CommandLineConfiguration::OptionType::BOOLEAN,
-    "cont", "Produce continuous data (duplicate last buffer for debug)",
-    OCPI_CLC_OPT(&UnitTestConfigurator::cont), 0 },
-  { OCPI::Util::CommandLineConfiguration::OptionType::BOOLEAN,
-    "step", "Step thru data 1 buffer at a time (debug)",
-    OCPI_CLC_OPT(&UnitTestConfigurator::step), 0 },
-  { OCPI::Util::CommandLineConfiguration::OptionType::STRING,
-    "policy", "Worker deployment policy {max,min}",
-    OCPI_CLC_OPT(&UnitTestConfigurator::policy), 0 },
-  { OCPI::Util::CommandLineConfiguration::OptionType::LONG,
-    "nRCCCont", "Number of RCC containers to create",
-    OCPI_CLC_OPT(&UnitTestConfigurator::policy), 0 },
-  { OCPI::Util::CommandLineConfiguration::OptionType::LONG,
-    "M", "Decimation/Interpolation factor for CIC filters",
-    OCPI_CLC_OPT(&UnitTestConfigurator::M), 0 },
-  { OCPI::Util::CommandLineConfiguration::OptionType::NONE,
-    "help", "This message",
-    OCPI_CLC_OPT(&UnitTestConfigurator::help), 0 },
-  { OCPI::Util::CommandLineConfiguration::OptionType::END, 0, 0, 0, 0 }
-};
-
-static
-void
-printUsage (UnitTestConfigurator & config,
-            const char * argv0)
-{
-  std::cout << "usage: " << argv0 << " [options]" << std::endl
-            << "  options: " << std::endl;
-  config.printOptions (std::cout);
-}
+#include "CmdOption.h"
 
 static  OCPI::API::PValue minp_policy[] = {
   OCPI::API::PVBool("verbose",true),
@@ -94,8 +39,8 @@ static OCPI::API::PValue maxp_policy[] = {
 };
 
 
-int main ( int argc, char* argv [ ] )
-{
+static int
+mymain(const char **argv) {
   const char * axml("<application package='ocpi' done='file_write'>"
 
 		      "  <instance component='file_read' >"
@@ -251,22 +196,10 @@ int main ( int argc, char* argv [ ] )
 
 		      "</application>");
 
-  try {
-    config.configure (argc, argv);
-  }
-  catch (const std::string & oops) {
-    std::cerr << "Error: " << oops << std::endl;
-    return 0;
-  }
-  if (config.help) {
-    printUsage (config, argv[0]);
-    return 0;
-  }
-    
   try
     {      
       // Create several containers to distribute the workers on
-      for ( int n=0; n<config.nRCCCont; n++ ) {
+      for (unsigned n=0; n<options.rcc_count(); n++ ) {
 	char buf[1024];
 	sprintf(buf, "Rcc Container %d\n", n );
 	(void)OA::ContainerManager::find("rcc",buf);
@@ -276,18 +209,13 @@ int main ( int argc, char* argv [ ] )
       char *as_xml;
       asprintf(&as_xml,
 	       axml,// config.step  ? "true" : "false", config.step ? "true" : "false", config.cont ? "true" : "false",
-	       config.M, config.M
+	       options.M(), options.M()
 		);
       std::string app_xml(as_xml);
       free(as_xml);
 
-      OCPI::API::PValue * policy;
-      if ( config.policy == "max" ) {
-	policy = maxp_policy;
-      }
-      else {
-	policy = minp_policy;
-      }
+      OCPI::API::PValue *policy = options.policy() && !strcmp(options.policy(),"max") ?
+	maxp_policy : minp_policy;
       
       OA::Application app( app_xml, policy);	
       fprintf(stderr, "Application XML parsed and deployments (containers and implementations) chosen\n");
@@ -314,13 +242,13 @@ int main ( int argc, char* argv [ ] )
 
       unsigned count=0,
 	mcount = 4;
-      while ( (count++ < mcount) | config.cont ) {
+      while ( (count++ < mcount) | options.cont() ) {
 
 
 	/****
 	 *  DEBUG, step thru data
 	 ****/
-	if ( config.step ) {
+	if ( options.step() ) {
 	  app.getProperty( "file_read_msg", "stepNow", value);
 	  if ( value == "false" ) {
 	    // wait for user

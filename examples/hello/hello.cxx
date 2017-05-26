@@ -6,7 +6,7 @@
 
 namespace OA = OCPI::API;
 
-int main(int argc, char **argv) {
+int main(int /* argc */, char ** /* argv */) {
   try {
   // Find a container to run our worker
   // (it returns a pointer since it might return NULL)

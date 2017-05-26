@@ -394,14 +394,13 @@ EOF
     }    
   fi
 
-  if [ -n "$xmlapp" -o -n "$xmldirapp" ] ; then
-    cat <<EOF > $subdir$appdir/$app.xml
-<!-- The $1 application xml file -->
-<application>
-  <instance component='ocpi.nothing'/>
-</application>
-EOF
-  else
+  cat <<-EOF > $subdir$appdir/$app.xml
+	<!-- The $1 application xml file -->
+	<application>
+	  <instance component='ocpi.nothing'/>
+	</application>
+	EOF
+  if [ -z "$xmlapp" -a -z "$xmldirapp" ] ; then
     cat <<EOF > $subdir$appdir/$app.cc
 #include <iostream>
 #include <unistd.h>

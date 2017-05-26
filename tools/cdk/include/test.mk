@@ -23,6 +23,23 @@ ifneq ($(Model),test)
   $(error This file, in $(Cwd), must only be used in .test directories)
 endif
 
+
+# This is the representative result file that says things are properly generated.
+CASEXML:=gen/cases.xml
+
+# Support build C++ executables, which may use the OpenCPI ACI, along with subsidiary
+# source files.  The two variables are:
+# TestApplications for the names of the apps with top level eponymous C++ source files
+# SourceFiles for any subsidiary source files that can be C or C++
+# Then we need to arrange for scripts mentioned in the -test.xml file to call them,
+# even though they will of course be built in the target-* subdirectories.
+ifdef TestApplications
+  OcpiApps:=$(TestApplications)
+  include $(OCPI_CDK_DIR)/include/aci.mk
+  # allow the C++ executables to be found when running generate or verify scripts
+  export PATH:=$(CURDIR)/target-$(OCPI_TOOL_DIR):$(PATH)
+  $(CASEXML): aciapps
+endif
 # We include this to know the universe of possible platforms
 include $(OCPI_CDK_DIR)/include/hdl/hdl-targets.mk
 include $(OCPI_CDK_DIR)/include/rcc/rcc-make.mk
@@ -51,9 +68,6 @@ verifytest: verify
 all: build
 runonlytest: runonly
 runtest: run
-
-# This is the representative result file that says things are properly generated.
-CASEXML:=gen/cases.xml
 
 # This is the input file describing this test suite
 TESTXML:=$(CwdName)-test.xml
@@ -129,5 +143,5 @@ cleanrun:
 cleansim:
 	$(AT)rm -r -f run/*/*.simulation
 
-clean: cleanrun
+clean:: cleanrun
 	$(AT)rm -r -f gen *.pyc

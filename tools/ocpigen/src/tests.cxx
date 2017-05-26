@@ -711,9 +711,9 @@ namespace {
       file += dir;
       OS::FileSystem::mkdir(file, true);
       OU::formatAdd(file, "/%s.%02u.%s", m_name.c_str(), s, name.c_str());
-      std::string cmd;
-      OU::format(cmd, "%s %s%s %s", env.c_str(),
-		 strchr(generate.c_str(), '/') ? "" : "./", generate.c_str(), file.c_str());
+      // Allow executing from the target dir in case we created some C++ programs
+      std::string cmd("PATH=.:$OCPI_TOOL_DIR:$PATH ");
+      OU::formatAdd(cmd, "%s %s %s", env.c_str(), generate.c_str(), file.c_str());
       ocpiInfo("For case %s.%02u, executing generator \"%s\" for %s %s: %s", m_name.c_str(), s,
 	       generate.c_str(), type, name.c_str(), cmd.c_str());
       int r;

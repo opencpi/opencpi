@@ -60,8 +60,8 @@ $(call OcpiDbgVar,RccLibrariesInternal)
 $(call OcpiDbgVar,RccIncludeDirsInternal)
 # This is evaluated late, when RccTarget and RccPlatform are defined.
 RccIncludeDirsActual=$(RccIncludeDirsInternal)\
- ../include gen \
- $(OCPI_CDK_DIR)/include/rcc \
+ $(if $(OcpiBuildingACI),. include,../include gen) \
+ $(OCPI_CDK_DIR)/include/$(if $(OcpiBuildingACI),aci,rcc) \
  $(wildcard $(OCPI_CDK_DIR)/platforms/$(RccPlatform)/include) \
  $(foreach l,$(RccPrereqLibs),\
    $(OCPI_PREREQUISITES_DIR)/$l/$(RccTarget)/include\
@@ -78,11 +78,12 @@ BF_linux=.so
 SOEXT_linux=.so
 AREXT_linux=.a
 RccLinkOptions_linux=$(RccLinkOptions) -shared
-RccCompileOptions_linux=-fPIC
+RccCompileOptions_linux=$(RccCompileOptions) -fPIC
 # macos values
 BF_macos=.dylib
 SOEXT_macos=.dylib
 AREXT_macos=.a
+RccMainLinkOptions_macos=$(RccLinkOptions) -Xlinker -rpath -Xlinker $(OCPI_CDK_DIR)/lib/$(RccTarget)
 RccLinkOptions_macos=$(RccLinkOptions) -dynamiclib -Xlinker -undefined -Xlinker dynamic_lookup
 DispatchSourceFile=$(call WkrTargetDir,$1,$2)/$(CwdName)_dispatch.c
 ArtifactFile=$(BinaryFile)
@@ -91,16 +92,28 @@ ArtifactXmlFile=$(call WkrTargetDir,$1,$2)/$(word 1,$(Workers))_assy-art.xml
 ToolSeparateObjects:=yes
 OcpiLibDir=$(OCPI_CDK_DIR)/lib/$$(RccTarget)$(and $(OCPI_TARGET_MODE),/$(OCPI_TARGET_MODE))
 # Add the libraries we know a worker might reference.
-override RccLibrariesInternal+=rcc application os
+ifdef OcpiBuildingACI
+  RccSpecificLinkOptions=\
+    $(call RccPrioritize,MainLinkOptions,$(OcpiLanguage),$(RccTarget),$(RccPlatform))
+  override RccLibrariesInternal+=\
+    application container library transport rdma_driver_interface rdma_utils rdma_smb util \
+    msg_driver_interface os   
+else
+  RccSpecificLinkOptions=\
+    $(call RccPrioritize,DynamicLinkOptions,$(OcpiLanguage),$(RccTarget),$(RccPlatform)) \
+    $(call RccPrioritize,LinkOptions,$(OcpiLanguage),$(RccTarget),$(RccPlatform))
+  override RccLibrariesInternal+=rcc application os
+endif
 
 ifeq ($(OCPI_USE_TARGET_MODES),1)
   export OCPI_TARGET_MODE:=$(if $(filter 1,$(OCPI_DYNAMIC)),d,s)$(if $(filter 1,$(OCPI_DEBUG)),d,o)
 endif
 Comma=,
 PatchElf=$(or $(OCPI_PREREQUISITES_DIR),/opt/opencpi/prerequisites)/patchelf/$(OCPI_TOOL_HOST)/bin/patchelf
+RccLibDir=$(OCPI_CDK_DIR)/lib/$(RccTarget)$(and $(OCPI_TARGET_MODE),/d$(if $(filter 1,$(OCPI_DEBUG)),d,o))
 LinkBinary=$(G$(OcpiLanguage)_LINK_$(RccTarget)) \
-$(call RccPrioritize,DynamicLinkOptions,$(OcpiLanguage),$(RccTarget),$(RccPlatform)) \
-$(call RccPrioritize,LinkOptions,$(OcpiLanguage),$(RccTarget),$(RccPlatform)) \
+$(G$(OcpiLanguage)_MAIN_FLAGS_$(RccTarget)) \
+$(RccSpecificLinkOptions) \
 $(call RccPrioritize,ExtraLinkOptions,$(OcpiLanguage),$(RccTarget),$(RccPlatform)) \
 -o $@ $1 \
 $(AEPLibraries) \
@@ -112,13 +125,16 @@ $(foreach l,$(RccLibrariesInternal) $(Libraries),\
        $(or $(wildcard $p$(AREXT_$(call RccOs,))),\
             $(and $(wildcard $p$(SOEXT_$(call RccOs,))),-L $(dir $l)$(RccTarget) -l $(notdir $l)),\
             $(error No RCC library found for $l, tried $p$(AREXT_$(call RccOs,)) and $p$(SOEXT_$(call RccOs,))))), \
-    $(and $(filter 1,$(OCPI_DYNAMIC)),-l ocpi_$l))) \
-  -L $(OCPI_CDK_DIR)/lib/$(RccTarget)$(and $(OCPI_TARGET_MODE),/d$(if $(filter 1,$(OCPI_DEBUG)),d,o)) \
+    $(if $(filter 1,$(OCPI_DYNAMIC)),\
+       -l ocpi_$l,\
+       $(and $(OcpiBuildingACI),$(RccLibDir)/libocpi_$l$(AREXT_$(call RccOs,)))))) \
+  -L $(RccLibDir) \
   $(foreach l,$(RccStaticPrereqLibs),\
     $(OCPI_PREREQUISITES_DIR)/$l/$(RccTarget)/lib/lib$l.a) \
   $(and $(RccDynamicPrereqLibs),-Wl$(Comma)-rpath -Wl$(Comma)'$$ORIGIN') \
   $(foreach l,$(RccDynamicPrereqLibs),\
     $(OCPI_PREREQUISITES_DIR)/$l/$(RccTarget)/lib/lib$l$(SOEXT_$(call RccOs,))) \
+  $(and $(OcpiBuildingACI),$(G$(OcpiLanguage)_MAIN_LIBS_$(RccTarget):%=-l%)) \
   $(foreach l,$(RccDynamicPrereqLibs),\
     && cp $(OCPI_PREREQUISITES_DIR)/$l/$(RccTarget)/lib/lib$l$(SOEXT_$(call RccOs,)) $(@D))
 
@@ -206,7 +222,9 @@ Compile_cc=\
 Compile_cpp=$(Compile_cc)
 Compile_cxx=$(Compile_cc)
 
+ifndef OcpiBuildingACI
 include $(OCPI_CDK_DIR)/include/xxx-worker.mk
+endif
 
 RccAssemblyFile=$(call WkrTargetDir,$1,$2)/$(word 1,$(Workers))_assy.xml
 
@@ -258,9 +276,11 @@ $(call ArtifactXmlFile,$1,$2): $(call RccAssemblyFile,$1,$2) $$(ObjectFiles_$1_$
 
 endef
 
+ifndef OcpiBuildingACI
 $(foreach p,\
   $(RccPlatforms),$(foreach c,$(ParamConfigurations),\
      $(eval $(call DoRccArtifactFile,$(RccTarget_$p),$c,$p))))
+endif
 
 # ShowVar(varname)
 RccNeq=$(if $(subst x$1,,x$2)$(subst x$2,,x$1),x,)

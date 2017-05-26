@@ -168,6 +168,10 @@ ifeq ($(filter $(or $(OnlyPlatforms),$(HdlAllPlatforms)),$(filter-out $(ExcludeP
 #  $(info 2.Only:$(OnlyPlatforms),All:$(HdlAllPlatforms),Ex:$(ExcludePlatforms),HP:$(HdlPlatforms))
   $(and $(HdlPlatforms),$(info Not building assembly $(Worker) for platform(s): $(HdlPlatforms) in "$(shell pwd)"))
 #  $(info No targets or platforms to build for this "$(Worker)" assembly in "$(shell pwd)")
+else ifndef HdlContainers
+  ifneq ($(MAKECMDGOALS),clean)
+    $(info No containers will be built since none match the specified platforms.)
+  endif
 else
   $(eval $(OcpiProcessBuildFiles))
   include $(OCPI_CDK_DIR)/include/hdl/hdl-worker.mk
