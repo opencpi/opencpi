@@ -287,13 +287,19 @@ namespace OCPI {
     char *Artifact::
     getMetadata(const char *name, std::time_t &mtime, uint64_t &length) {
 	  char *data = 0;
-	  int fd = open(name, O_RDONLY);
+	  // nonblock so we don't hang on opening a FIFO
+	  // but we also don't want to waste time on a "stat" system call before "open"
+	  int fd = open(name, O_RDONLY|O_NONBLOCK);
 	  if (fd < 0)
 	    throw OU::Error("Cannot open file: \"%s\"", name);
 	  struct stat info;
 	  if (fstat(fd, &info)) {
 	    close(fd);
 	    throw OU::Error("Cannot get modification time: \"%s\" (%d)", name, errno);
+	  }
+	  if ((info.st_mode & S_IFMT) != S_IFREG) {
+	    close(fd);
+	    throw OU::Error("File: \"%s\" is not a normal file", name);
 	  }
 	  mtime = info.st_mtime;
 	  length = info.st_size;

@@ -316,6 +316,33 @@ namespace OCPI {
 	return m_rootNode;
       }
 
+      // common error return that collects valid possible values 3 ways.
+      static const char *
+      checkFailed(const char *type, const char *what, const char *parent, const char **argv,
+		  va_list *vap = NULL, bool vv = false) {
+        std::string opts;
+	if (argv)
+	  for (const char **p = argv; *p; p++ )
+	    formatAdd(opts, " %s", *p);
+	else if (vv)
+	  for (const char **ap; (ap = va_arg(*vap, const char **)); )
+	    for (const char **p = ap; *p; p++)
+	      formatAdd(opts, " %s", *p);
+	else
+	  for (const char *p; (p = va_arg(*vap, const char *));)
+	    formatAdd(opts, " %s", p);
+        return esprintf("Invalid %s \"%s\", in a \"%s\" element.  Valid %ss are: %s",
+			type, what, parent, type, opts.c_str());
+      }
+
+      // by-the-book usage of va_start/end - must be a macro
+#define RETURNFAILED(isVV, ...) do {		\
+	va_start(ap, x);						\
+	const char *err = checkFailed(__VA_ARGS__, NULL, &ap, isVV);	\
+	va_end(ap);							\
+	return err;							\
+      } while(0)
+
       const char *
       checkElements(ezxml_t x, ...) {
 	va_list ap;
@@ -323,13 +350,13 @@ namespace OCPI {
 	  return 0;
 	for (ezxml_t c = x->child; c; c = c->sibling) {
 	  va_start(ap, x);
-	  char *p;
-	  while ((p = va_arg(ap, char*)))
+	  const char *p;
+	  while ((p = va_arg(ap, const char *)))
 	    if (!strcasecmp(p, c->name))
 	      break;
 	  va_end(ap);
 	  if (!p)
-	    return esprintf("Invalid element \"%s\", in a \"%s\" element", c->name, x->name);
+	    RETURNFAILED(false, "element", c->name, x->name);
 	}
 	return 0;
       }
@@ -347,7 +374,7 @@ namespace OCPI {
 	      break;
 	  va_end(ap);
 	  if (!p)
-	    return esprintf("Invalid attribute \"%s\", for a \"%s\" element", *a, x->name);
+	    RETURNFAILED(false, "attribute1", *a, x->name);
 	}
 	return 0;
       }
@@ -366,7 +393,7 @@ namespace OCPI {
 		goto found;
 	      }
 	  va_end(ap);
-	  return esprintf("Invalid attribute name: \"%s\", in a %s element", *a, x->name);
+	  RETURNFAILED(true, "attribute2", *a, x->name);
 	found:;
 	}
 	return 0;
@@ -382,7 +409,7 @@ namespace OCPI {
 	    if (!strcasecmp(*a, *va))
 	      break;
 	  if (!*va)
-	    return esprintf("Invalid attribute name: \"%s\", in a %s element", *a, x->name);
+	    return checkFailed("attribute3", *a, x->name, attrs);
 	}
 	return 0;
       }

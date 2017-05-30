@@ -51,7 +51,6 @@
 
 #include <cstring>
 #include <inttypes.h>
-#include "OcpiNull.h"
 #include "DtTransferInternal.h"
 #include "DtHandshakeControl.h"
 #include "OcpiPortMetaData.h"
@@ -622,7 +621,7 @@ createPullDriver( const OCPI::RDT::Descriptors& pdesc)
       }
     }
 
-    if (sres == nullptr)
+    if (sres == NULL)
       throw OCPI::Util::EmbeddedException ("Invalid sres value in OCPI::DataTransport::Circuit::createPullDriver");
 
     //    tres = &m_transport->getEndpoint( pdesc.desc.oob.oep, false )->getSMBResources();
@@ -669,7 +668,7 @@ createPullDriver( const OCPI::RDT::Descriptors& pdesc)
                                             pdesc.desc.oob.oep );
       }
     }
-    if (tres == nullptr)
+    if (tres == NULL)
       throw OCPI::Util::EmbeddedException ("Invalid tres value in OCPI::DataTransport::Circuit::createPullDriver");
 
     PullDataInfo* pull_data_info = new PullDataInfo;

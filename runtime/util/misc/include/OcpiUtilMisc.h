@@ -391,17 +391,6 @@ namespace OCPI {
 	  return strcasecmp(lhs, rhs) < 0;
 	}
       };
-      // These Equal operators are for using std::unordered_set/map 
-      struct ConstCharEqual {
-	inline bool operator() (const char *lhs, const char *rhs) const {
-	  return strcmp(lhs, rhs) == 0;
-	}
-      };
-      struct ConstCharCaseEqual {
-	inline bool operator() (const char *lhs, const char *rhs) const {
-	  return strcasecmp(lhs, rhs) == 0;
-	}
-      };
       struct ConstStringComp {
         inline bool operator() (const std::string &lhs, const std::string &rhs) const {
           return strcmp(lhs.c_str(), rhs.c_str()) < 0;
@@ -412,8 +401,19 @@ namespace OCPI {
           return strcasecmp(lhs.c_str(), rhs.c_str()) < 0;
         }
       };
-#if 0
-      // FIXME: replace because they are poorly implemented ("abc" == "cba"):
+      /* These operators are for using std::unordered_set/unordered_map, when we use them.
+      struct ConstCharEqual {
+	inline bool operator() (const char *lhs, const char *rhs) const {
+	  return strcmp(lhs, rhs) == 0;
+	}
+      };
+      struct ConstCharCaseEqual {
+	inline bool operator() (const char *lhs, const char *rhs) const {
+	  return strcasecmp(lhs, rhs) == 0;
+	}
+      };
+      */
+      /* These need to be replaced if needed because they are poorly implemented ("abc" == "cba"):
       struct ConstCharHash {
 	inline size_t operator() (const char *s) const {
 	  size_t h = 0;
@@ -428,7 +428,7 @@ namespace OCPI {
 	  return h;
 	}
       };
-#endif
+      */
       inline size_t roundUp (size_t value, size_t align) {
 	return ((value + (align - 1)) / align) * align;
       }

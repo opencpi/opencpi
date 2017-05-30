@@ -141,6 +141,13 @@ namespace OCPI {
       throw OU::Error("Access error for property \"%s\":  %s", m_info.cname(), err);
     }
 
+// yes, we really do want to compare floats with zero here
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+#if __GNUC__ < 4 || (__GNUC__ == 4 && (__GNUC_MINOR__ <= 7 ) )
+#pragma GCC diagnostic ignored "-Wtype-limits"
+#pragma GCC diagnostic ignored "-Wsign-compare"
+#endif
     // This internal template method is called after all error checking is done and is not called
     // on strings, so the static_casts should not cause any unexpected results.
     template <typename val_t> void Property::
@@ -287,6 +294,8 @@ namespace OCPI {
 #undef OCPI_DATA_TYPE
 #undef OCPI_DATA_TYPE_S
 #define OCPI_DATA_TYPE_S OCPI_DATA_TYPE
+// re-allow the -Wfloat-equal warning
+#pragma GCC diagnostic pop
 
     template <> void Property::
     setValue<std::string>(std::string val, AccessList &list) const {
