@@ -50,6 +50,7 @@ namespace OCPI {
     const char *container = "container";
 
     unsigned Manager::s_nContainers = 0;
+    // TODO: Move this to a vector to manage its own memory...?
     Container **Manager::s_containers;
     unsigned Manager::s_maxContainer;
     LocalLauncher *Manager::s_localLauncher;
@@ -159,7 +160,9 @@ namespace OCPI {
     }
     Container *ContainerManager::
     get(unsigned n) {
+      ocpiDebug("ContainerManager::get(): Calling configureOnce");
       OCPI::Container::Manager::getSingleton().parent().configureOnce();
+      ocpiDebug("ContainerManager::get(): Back with %d containers", OCPI::Container::Manager::s_nContainers);
       return
 	n >= OCPI::Container::Manager::s_nContainers ? NULL : 
 	&OCPI::Container::Container::nthContainer(n);
@@ -185,7 +188,7 @@ namespace OCPI {
  * the functions are used by driver plugin(s) (which are dynamically loaded, but linked against
  * dynamic libraries that do not exist at runtime, e.g. uuid.so) but nowhere else in the
  * framework infrastructure, forcing them to be statically linked here:
- */
+*/
 namespace DataTransfer {
   intptr_t dumb2(EndPoint &loc) {
     OCPI::Util::Uuid uuid;
@@ -202,3 +205,4 @@ namespace DataTransfer {
     return (intptr_t)&lzma_stream_buffer_decode;
   }
 }
+

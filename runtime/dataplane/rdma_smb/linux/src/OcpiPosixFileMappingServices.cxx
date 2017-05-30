@@ -57,7 +57,7 @@
 #include "OcpiHostFileMappingServices.h"
 #include "OcpiUtilMisc.h"
 
-#ifndef OCPI_ARCH_arm
+#if !defined(OCPI_ARCH_arm) && !defined(OCPI_ARCH_arm_cs)
 // This fails on xilinx zynq linux since /dev is its own file system that is tiny (64k), and
 // shm instances are just mapped files in /dev/shm.
 // We conditionalize on !ARCH=arm because there is no other way that is not version-specific.

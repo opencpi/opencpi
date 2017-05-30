@@ -534,6 +534,5 @@ namespace OCPI {
       reader.end();
       return size;
     }
-
   }
 }

@@ -259,7 +259,7 @@ Buffer* TransferController::getNextFullInputBuffer(
 
   // Check for programming error
   if ( (full_count == input_port->getBufferCount()) && ! boi ) {
-    ocpiDebug("*** INTERNAL ERROR ***, got a full set of input buffers, but cant find expected sequence");
+    ocpiDebug("*** INTERNAL ERROR ***, got a full set of input buffers, but cannot find expected sequence");
     ocpiAssert(0)
       }
 

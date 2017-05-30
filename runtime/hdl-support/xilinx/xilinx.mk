@@ -100,6 +100,7 @@ OcpiXilinxVivadoInit=\
 
 # emit shell assignments - allowing errors etc.
 ifdef ShellIseVars
+
 XilinxCheck=ignore
 all:
 

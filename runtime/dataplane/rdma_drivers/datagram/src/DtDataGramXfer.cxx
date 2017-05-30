@@ -72,7 +72,7 @@ namespace DataTransfer {
     throw ()
     : XferFactory(a_name)
   {
-    ocpiDebug("In DatagramXferFactory::DatagramXferFactory()");
+    ocpiDebug("In DatagramXferFactory::DatagramXferFactory() [%s]", typeid(this).name());
   }
 
   // Destructor
@@ -593,7 +593,7 @@ ss    post( frame );
 	     );
 
       if (  ! m_frameSeqRecord[ header->frameSeq & MAX_FRAME_HISTORY ].acked  ) {
-	ocpiAssert("programming error, cant have dup without ACK "==0);
+	ocpiAssert("programming error, cannot have dup without ACK "==0);
       }	    
 
       ocpiDebug("********  Found a duplicate frame, Ignoring it !!");

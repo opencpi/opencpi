@@ -186,10 +186,13 @@ void
 ex_data( HSDesc & ep1, HSDesc & ep2  )
 {
   char buf[512];
-  write( socket_fd, &ep1.cookie, 8 );  
-  size_t us =  ep1.url.size()+1;
-  write( socket_fd, &us, sizeof(uint32_t));
-  write( socket_fd, ep1.url.c_str(), ep1.url.size()+1 );
+  ssize_t wlen = write( socket_fd, &ep1.cookie, 8 );
+  ocpiAssert(wlen == 8);
+  size_t us = ep1.url.size()+1;
+  wlen = write( socket_fd, &us, sizeof(uint32_t));
+  ocpiAssert(wlen == sizeof(uint32_t));
+  wlen = write( socket_fd, ep1.url.c_str(), ep1.url.size()+1 );
+  ocpiAssert(wlen == static_cast<ssize_t>(ep1.url.size()+1));
   ssize_t l = read( socket_fd, &ep2.cookie, 8); 
   printf("Read %zd bytes, expected %d\n", l , 8);
   l = read( socket_fd, &us, sizeof(uint32_t));    

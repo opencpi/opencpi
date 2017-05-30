@@ -646,7 +646,6 @@ run(bool &anyone_run) {
     anyone_run = true;
     //      OCPI_EMIT_STATE_CAT_NR_(were, 0, OCPI_EMIT_CAT_TUNING, OCPI_EMIT_CAT_TUNING_WC);
     RCCBoolean newRunCondition = false;
-
     pthread_setspecific(Driver::s_threadKey, this);
     if (m_runCondition->m_timeout)
       m_runTimer.restart();
@@ -1205,6 +1204,7 @@ OCPI_CONTROL_OPS
    }
    void RCCUserPort::
    setArgSize(RCCUserBuffer &buf, unsigned op, unsigned arg, size_t size) const {
+     assert(m_rccPort.containerPort);
      checkOpCode(buf, op);
      OU::Operation &o = m_rccPort.containerPort->metaPort().m_operations[op];
      const OU::Member &m = o.m_args[arg];
@@ -1374,9 +1374,6 @@ OCPI_CONTROL_OPS
    RCCUserSlave::
    ~RCCUserSlave() {
    }
-#endif
-#ifndef NBBY
-#define NBBY 8
 #endif
    RunCondition::
    RunCondition()

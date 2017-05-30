@@ -59,7 +59,7 @@ namespace OCPI {
     MessageEndpoint &MessageEndpoint::
     getMessageEndpoint(const char *endpoint) {
       // Find one we can use.  But bury the issue in the transport layer.
-      for (MessageEndpoints::iterator i = s_messageEndpoints.begin(); i != s_messageEndpoints.end(); i++)
+      for (MessageEndpoints::iterator i = s_messageEndpoints.begin(); i != s_messageEndpoints.end(); ++i)
 	if ((*i)->canSupport(endpoint))
 	  return *(*i);
       // This constructor implies that we know a new endpoint is required.
@@ -140,7 +140,7 @@ namespace OCPI {
       do {
 	dispatch();
       // Search oldest first, and look forward
-	for (HalfCircuits::iterator i = m_halfCircuits.begin(); i != m_halfCircuits.end(); i++) {
+	for (HalfCircuits::iterator i = m_halfCircuits.begin(); i != m_halfCircuits.end(); ++i) {
 	  if (!(*i)->ready())
 	    continue;
 	  //	  (*i)->initializeDataTransfers();
@@ -148,7 +148,7 @@ namespace OCPI {
 	  Port *iInput = (*i)->getInputPortSet(0)->getPortFromIndex(0);
 	  if (!iInput->isShadow()) {
 	    OD::EndPoint *remote = iInput->getMetaData()->m_shadow_location;
-	    for (HalfCircuits::iterator j = m_halfCircuits.begin(); j != m_halfCircuits.end(); j++) {
+	    for (HalfCircuits::iterator j = m_halfCircuits.begin(); j != m_halfCircuits.end(); ++j) {
 	      if (i == j || !(*j)->ready())
 		continue;
 	      // (*i)->initializeDataTransfers();

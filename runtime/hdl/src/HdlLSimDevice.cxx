@@ -364,7 +364,7 @@ protected:
 	int e = errno;
 	x += m_dir;
 	x += "\n";
-	write(2, x.c_str(), x.length());
+	(void)write(2, x.c_str(), x.length());
 	_exit(10 + e);
       }
       {
@@ -372,7 +372,7 @@ protected:
 	if (fd < 0) {
 	  std::string x("Error: Cannot create sim.out file for simulation output.\n");
 	  int e = errno;
-	  write(2, x.c_str(), x.length());
+	  (void)write(2, x.c_str(), x.length());
 	  _exit(10 + e);
 	}
 	if (dup2(fd, 1) < 0 ||
@@ -602,14 +602,14 @@ protected:
     va_start(ap, fmt);
     static char buf[1000];
     vsprintf(buf, fmt, ap);
-    write(2, buf, strlen(buf));
+    (void)write(2, buf, strlen(buf));
   }
   void terminate() {
     uint8_t msg[2];
     msg[0] = TERMINATE;
     msg[1] = 0;
     w2("Telling the simulator process (pid %u) to exit.\n", m_pid);
-    write(m_ctl.m_wfd, msg, 2);
+    (void)write(m_ctl.m_wfd, msg, 2);
   }
 
   // FIXME: for object scope
@@ -1119,7 +1119,6 @@ search(const OU::PValue *params, const char **excludes, bool discoveryOnly, std:
 	ocpiInfo("Skipping simulator \"%s\" due to OCPI_HDL_SIMULATOR(S)", name);
 	continue;
       }
-	
       std::string cmd;
       OU::format(cmd, "sh %s/runSimExec.%s %s probe", sims[n].c_str(), name,
 		 OS::logGetLevel() >= 8 ? "-v" : "");

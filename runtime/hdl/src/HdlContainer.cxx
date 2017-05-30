@@ -96,7 +96,7 @@ namespace OCPI {
 	OT::Emit::shutdown();
       } catch (...) {
 	static const char msg[] = "***Exception during container shutdown\n";
-	write(2, msg, strlen(msg));
+	write(2, msg, strlen(msg)) && 1;
       }
       this->lock();
       shutdown();

@@ -415,7 +415,7 @@ static int mymain(const char **ap) {
 	
 	unsigned timeout = 
 	  options.timeout() ? options.timeout() :
-	  options.duration() < 0 ? -options.duration() : // legact negative
+	  options.duration() < 0 ? -options.duration() : // legacy negative
 	  options.duration() ? options.duration() : 
 	  options.seconds() < 0 ? -options.seconds() :
 	  options.seconds();

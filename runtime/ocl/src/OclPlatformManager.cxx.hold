@@ -1091,7 +1091,7 @@ namespace OCPI
 
     PlatformManager& getPlatform ( )
     {
-      return OCPI::Driver::Singleton<PlatformManager>::getSingleton();
+      return OCPI::Util::Singleton<PlatformManager>::getSingleton();
     }
 
     class DeviceContext::Impl

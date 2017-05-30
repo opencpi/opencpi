@@ -178,7 +178,7 @@ public:
       size_t     n;
       uint8_t    buf[TCP_BUFSIZE];
       DataHeader header;
-      uint8_t   *current_ptr;
+      uint8_t   *current_ptr = NULL;
       size_t     bytes_left = 0;
       bool       in_header = true;;
       while(m_run && (n = m_socket.recv((char*)buf, TCP_BUFSIZE, 500))) {

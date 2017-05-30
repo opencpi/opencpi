@@ -65,6 +65,27 @@ DataPartition::BufferInfo::BufferInfo()
 }
 DataPartition::BufferInfo::~BufferInfo()
 {
+  // Use after free bug. (AV-300)
+  // Note: This bug is "fixed" because there is no way to call "add" below, showing it was never used...
+  // If there are three...
+  // A->B->C
+  // A.info = B
+  // A.del = B
+  // A.info = C
+  // delete(B)
+  // Goes into B's destructor
+  // B.info = C
+  // B.del = C
+  // B.info = (NULL)
+  // delete(C)
+  // Goes into C's destructor
+  // C.info = (NULL)
+  // C now done
+  // B now done
+  // A.del = C
+  // A.info = C.next (oops!)
+  // Should it just be "delete next" ?
+  // Not familiar enough with call structure etc to say...
   BufferInfo* info = next;
   while( info ) {
     BufferInfo* del = info;

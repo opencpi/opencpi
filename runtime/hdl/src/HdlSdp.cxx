@@ -57,7 +57,7 @@ namespace OCPI {
 	  } else if (errno != EINTR)
 	    error = "error reading FIFO";
 	  else {
-	    write(2, "\nSDP Read interrupted2\n", 23);
+	    (void)write(2, "\nSDP Read interrupted2\n", 23);
 	    //	    ocpiDebug("SDP Read interrupted");
 	  }
 	} while (error.empty() && nRequested);

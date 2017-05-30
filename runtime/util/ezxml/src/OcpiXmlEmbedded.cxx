@@ -78,7 +78,7 @@ void extract_XML(FILE *file, const size_t xml_start, const size_t xml_length, st
   if (xml_length != ress or not verify_XML_block(xml))
     xml.clear();
 }
-}
+} // anon namespace
 
 namespace OCPI {
 namespace Util {
@@ -127,6 +127,6 @@ bool artifact_stripXML(const std::string &fname) {
   if (res) throw std::runtime_error(strerror(errno));
   return true;
 };
-}
-}
-}
+} // EzXml
+} // Util
+} // OCPI

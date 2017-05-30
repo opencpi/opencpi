@@ -108,6 +108,6 @@ namespace OCPI {
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) typedef run pretty;
     OCPI_DATA_TYPES
 #undef OCPI_DATA_TYPE
-  }
-}
+  } // API
+} // OCPI
 #endif

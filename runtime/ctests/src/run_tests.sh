@@ -30,8 +30,11 @@
 OCPI_BOOTSTRAP=$OCPI_CDK_DIR/scripts/ocpibootstrap.sh; . $OCPI_BOOTSTRAP
 export OCPI_SMB_SIZE=3000000
 export OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/lib/components/rcc
+# export OCPI_LOG_LEVEL=11
 export DIR=$(mktemp -d -t ocpi_ctests.XXXXX)
-echo "=========Outputs from these tests will be in: $DIR"
+echo "========= Outputs from these tests will be in: $DIR"
+cd "$(dirname $0)"
+
 failed=
 set -o pipefail
 out="2> /dev/null"
@@ -63,14 +66,13 @@ if test "$failed" = ""; then
   echo "All container tests passed."
   if test -z "${VG}"; then
     rm -rf ${DIR}
+    echo "Deleted output directory."
   else
     echo "Left files in ${DIR} for examination because valgrind was detected."
   fi
   exit 0
 else
   echo "Some container tests failed.  The first to fail was: $failed."
-  if test -n "${OCPI_RPM}"; then
-    echo "Left files in ${DIR} for examination."
-  fi
+  echo "Left files in ${DIR} for examination."
   exit 1
 fi
