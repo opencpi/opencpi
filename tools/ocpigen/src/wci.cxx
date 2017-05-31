@@ -421,6 +421,11 @@ emitPortSignals(FILE *f, Attachments &atts, Language lang, const char *indent,
 
 void WciPort::
 emitSkelSignals(FILE *f) {
+  if (!m_worker->m_noControl)
+    fprintf(f,"  ctl_out.finished <= btrue; "
+	      "-- remove or change this line for worker to be finished when appropriate\n"
+	      "                             "
+	      "-- workers that are never \"finished\" need not drive this signal\n");
   // A skeleton should set every volatile property
   if (m_worker->m_ctl.nonRawVolatiles) {
     fprintf(f,

@@ -1096,7 +1096,10 @@ emitSkelRCC() {
 	    "\n"
 	    "%s RCCResult\n%s(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {\n"
 	    " (void)self;(void)timedOut;(void)newRunCondition;\n"
-	    " return RCC_ADVANCE;\n"
+	    " return RCC_DONE; // change this as needed for this worker to do something useful\n"
+	    " // return RCC_ADVANCE; when all inputs/outputs should be advanced each time \"run\" is called.\n"
+	    " // return RCC_ADVANCE_DONE; when all inputs/outputs should be advanced, and there is nothing more to do.\n"
+	    " // return RCC_DONE; when there is nothing more to do, and inputs/outputs do not need to be advanced.\n"
 	    "}\n",
 	    m_pattern ? "extern" : "static", mName);
   else {
@@ -1118,7 +1121,10 @@ emitSkelRCC() {
     }
     fprintf(f,
 	    "  RCCResult run(bool /*timedout*/) {\n"
-	    "    return RCC_ADVANCE;\n"
+	    "    return RCC_DONE; // change this as needed for this worker to do something useful\n"
+	    "    // return RCC_ADVANCE; when all inputs/outputs should be advanced each time \"run\" is called.\n"
+	    "    // return RCC_ADVANCE_DONE; when all inputs/outputs should be advanced, and there is nothing more to do.\n"
+	    "    // return RCC_DONE; when there is nothing more to do, and inputs/outputs do not need to be advanced.\n"
 	    "  }\n");
   }
   if (m_language == CC) {

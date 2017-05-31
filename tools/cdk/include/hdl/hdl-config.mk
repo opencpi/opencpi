@@ -4,6 +4,7 @@
 # The HdlPlatformWorker variable must be set to point to the relative or absolute path
 # to the platform's directory, ending in the name of the platform.
 HdlMode:=config
+Model:=hdl
 include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
 # These next lines are similar to what worker.mk does
 override Workers:=$(CwdName:config-%=%)

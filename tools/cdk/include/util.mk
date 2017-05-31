@@ -92,6 +92,14 @@ CwdDirName:=$(subst $(Invalid),$(Space),$(notdir $(subst $(Space),$(Invalid),$(C
 CwdName:=$(basename $(CwdDirName))
 $(call OcpiDbgVar,CwdName)
 
+# These need to be early since some immediate assignments use them below
+#Capitalize=$(shell csh -f -c 'echo $${1:u}' $(1))
+#UnCapitalize=$(shell csh -f -c 'echo $${1:l}' $(1))
+Capitalize=$(shell awk -v x=$(1) 'BEGIN {print toupper(substr(x,1,1)) substr(x,2,length(x)-1) }')
+UnCapitalize=$(shell awk -v x=$(1) 'BEGIN {print tolower(substr(x,1,1)) tolower(x,2,length(x)-1) }')
+ToUpper=$(shell echo $(1)|tr a-z A-Z)
+ToLower=$(shell echo $(1)|tr A-Z a-z)
+
 ifndef Model
 Model:=$(strip $(subst ., ,$(suffix $(CwdDirName))))
 endif
@@ -110,9 +118,10 @@ Languages_hdl:=vhdl verilog
 Language_ocl:=cl
 Suffix_ocl_cl:=cl
 Suffix_xm:=xm
-CapModels=$(foreach m,$(Models),$(call Capitalize,$m))
-UCModel=$(call ToUpper,$(Model))
-CapModel=$(call Capitalize,$(Model))
+# Assign here for caching
+CapModels:=$(foreach m,$(Models),$(call Capitalize,$m))
+UCModel:=$(call ToUpper,$(Model))
+CapModel:=$(call Capitalize,$(Model))
 HostSystem:=$(shell uname -s | tr A-Z a-z)
 AT=@
 RM=rm
@@ -129,12 +138,6 @@ Empty=
 #default assumes all generated files go before all authored files
 CompiledSourceFiles=$(TargetSourceFiles) $(GeneratedSourceFiles) $(AuthoredSourceFiles)
 # Just for history (thanks Andrew): this only works with tcsh, not traditional csh.  And csh isn't posix anywah
-#Capitalize=$(shell csh -f -c 'echo $${1:u}' $(1))
-#UnCapitalize=$(shell csh -f -c 'echo $${1:l}' $(1))
-Capitalize=$(shell awk -v x=$(1) 'BEGIN {print toupper(substr(x,1,1)) substr(x,2,length(x)-1) }')
-UnCapitalize=$(shell awk -v x=$(1) 'BEGIN {print tolower(substr(x,1,1)) tolower(x,2,length(x)-1) }')
-ToUpper=$(shell echo $(1)|tr a-z A-Z)
-ToLower=$(shell echo $(1)|tr A-Z a-z)
 # function to add a ../ to pathnames, avoiding changing absolute ones
 AdjustRelative2=$(foreach i,$(1),$(if $(filter /%,$(i)),$(i),../../$(patsubst ./%,%,$(filter-out .,$(i)))))
 AdjustRelative=$(foreach i,$(1),$(if $(filter /%,$(i)),$(i),..$(patsubst %,/%,$(patsubst ./%,%,$(filter-out .,$(i))))))
@@ -500,12 +503,15 @@ define OcpiSetProject
   $$(call OcpiPrependEnvPath,OCPI_XML_INCLUDE_PATH,$$(OcpiTempProjDir)/specs)
   # when looking for component libraries, look in this project, without depending on
   # exports, and also include the hdl/devices library
+  # 1. specifically add each library in the project to "componentlibraries"
+  # 2. add each place in the project where libraries live to the component library search path.
   $$(foreach l,$$(wildcard $$(OcpiTempProjDir)/hdl/devices) \
     $$(if $$(filter libraries,$$(call OcpiGetDirType,$$(OcpiTempProjDir)/components)),\
       $$(foreach m,$$(wildcard $$(OcpiTempProjDir)/components/*/Makefile),$$(infox MMM:$$m)\
          $$(foreach d,$$(m:%/Makefile=%),$$(infox DDD:$$d)\
             $$(and $$(filter library,$$(call OcpiGetDirType,$$d)),$$d))),\
       $$(OcpiTempProjDir)/components),\
+    $$(eval override ComponentLibrariesInternal:=$(ComponentLibrariesInternal) $$(notdir $$l)) \
     $$(call OcpiPrependEnvPath,OCPI_COMPONENT_LIBRARY_PATH,$$(patsubst %/,%,$$(dir $$l))))
 endef
 ifdef NEVER
@@ -617,7 +623,7 @@ $(eval override XmlIncludeDirsInternal:=\
     . $(GeneratedDir) \
     $(XmlIncludeDirs) \
     $(XmlIncludeDirsInternal) \
-    ../lib/$(Model)\
+    $(Models:%=../lib/%)\
     ../specs \
     $(OcpiXmlComponentLibraries) \
     $(foreach d,$(subst :, ,$(OCPI_XML_INCLUDE_PATH)),$(wildcard $d)) \

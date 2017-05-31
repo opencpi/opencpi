@@ -256,7 +256,7 @@ function do_project {
             ${assys:+Assemblies=" ${assys[@]}"} \
             ${hdlplats:+HdlPlatforms=" ${hdlplats[@]}"} \
             ${swplats:+RccPlatforms=" ${swplats[@]}"} \
-            ${hwswplats:+RccHdlPlatforms="${hwswplats[@]}"} 
+            ${hwswplats:+RccHdlPlatforms="${hwswplats[@]}"}
     return 0 
   fi
   [ -n "$dirtype" ] &&
@@ -959,6 +959,10 @@ function do_device {
 # named <compname>.test with skeleton contents.
 # Args: component to test
 function do_test {
+  if [ -z "$1" -a "$verb" == build ] ; then
+   do_build_here test
+   return $?
+  fi	
   if [ ${1/*./} = test ] ; then
     testdir=$subdir/$1  
   elif [[ ! "$testdir" == *.* ]] ; then
@@ -1000,8 +1004,11 @@ EOF
     cat <<EOF > $testdir/$testname-test.xml
 <!-- This is the test xml for testing component "$testname" -->
 <tests useHDLFileIo='true'>
+  <!-- Here are typical examples of generating for an input port and verifying results
+       at an output port
   <input port='in' script='generate.py'/>
   <output port='out' script='verify.py' view='view.sh'/>
+  -->
   <!-- Set properties here. 
        Use test='true' to create a test-exclusive property. -->
 </tests>
@@ -1388,7 +1395,7 @@ function do_build_here {
       buildHdl=""
       cleanTarget+=" cleanhdl"
     fi
-  make ${cleanTarget:+$cleanTarget} ${buildRcc:+rcc} ${buildHdl:+hdl} \
+  make ${cleanTarget:+$cleanTarget} ${buildRcc:+rcc} ${buildHdl:+hdl} $1 \
        ${buildNoAssemblies:+Assemblies=} \
        ${assys:+Assemblies=" ${assys[@]}"} \
        ${hdlplats:+HdlPlatforms=" ${hdlplats[@]}"} \
@@ -1880,7 +1887,7 @@ fi
 
 # Get dir type unless creating something standalone
 needname ${argv[0]} $verb $noun
-if [ "$verb" != "build" -o -n "$noun" ] ; then 
+if [ "$verb" != "build" -o -n "$noun" -a -n "$args" ] ; then 
   get_subdir
 fi
 [ -z $verbose ] || echo Executing the \"$verb $hdl$noun\" command in a ${dirtype:-unknown type of} directory: $directory.

@@ -939,6 +939,7 @@ namespace {
 		 "fi\n",
 		 m_name.c_str());
       verify += "exitval=0\n";
+      size_t len = verify.size();
       for (unsigned n = 0; n < m_ports.size(); n++) {
 	InputOutput &io = m_ports[n];
 	if (io.m_port->isDataProducer()) {
@@ -1022,6 +1023,8 @@ namespace {
 	  }
 	}
       }
+      if (len == verify.size())
+	verify += "echo '  Verification was not run since there are no output ports.'\n";
       verify += "exit $exitval\n";
       return OU::string2File(verify.c_str(), file.c_str(), false, true);
     }

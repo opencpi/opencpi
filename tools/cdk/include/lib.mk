@@ -165,7 +165,7 @@ MyMake=$(MAKE) --no-print-directory
 
 HdlLibrariesCommand=$(call OcpiAdjustLibraries,$(HdlLibraries))
 RccLibrariesCommand=$(call OcpiAdjustLibraries,$(RccLibraries))
-TestTargets:=$(HdlPlatforms) $(HdlTargets) $(RccTargets)
+TestTargets:=$(call Unique,$(HdlPlatforms) $(HdlTargets) $(RccTargets))
 # set the directory flag to make, and use the desired Makefile
 GoWorker=-C $1 -f $(or $(realpath $1/Makefile),$(OCPI_CDK_DIR)/include/worker.mk)
 BuildImplementation=$(infox BI:$1:$2:$(call HdlLibrariesCommand):$(call GoWorker,$2)::)\
