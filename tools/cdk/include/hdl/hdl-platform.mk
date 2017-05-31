@@ -25,8 +25,8 @@
 # A platform worker is built, and then some number of platform configurations
 # are built.  The platform configurations are used when bitstreams
 # get built elsewhere based on assemblies and configurations
-$(call OcpiDbgVar,HdlPlatforms)
 HdlMode:=platform
+Model:=hdl
 include $(OCPI_CDK_DIR)/include/util.mk
 $(OcpiIncludeProject)
 HdlLibraries+=platform
