@@ -120,8 +120,8 @@ Suffix_ocl_cl:=cl
 Suffix_xm:=xm
 # Assign here for caching
 CapModels:=$(foreach m,$(Models),$(call Capitalize,$m))
-UCModel:=$(call ToUpper,$(Model))
-CapModel:=$(call Capitalize,$(Model))
+UCModel=$(call ToUpper,$(Model))
+CapModel=$(call Capitalize,$(Model))
 HostSystem:=$(shell uname -s | tr A-Z a-z)
 AT=@
 RM=rm
