@@ -52,7 +52,7 @@ function check_components {
     ("")
       [ "$(ls $compdir)" == "" ] && bad the directory \"$compdir\" is empty
       bad there are component libraries under \"$compdir/\" in this project, so the \"$compdir\" library cannot be $1
-      ;; 
+      ;;
     (libraries)
       bad must specify a library \'\(not "$compdir"\)\' when there are libraries under the \"$compdir\" directory
       ;;
@@ -90,7 +90,7 @@ function check_dirtype {
 # when creating assets meant to reside inside libraries. This is NOT
 # for use when creating platforms, assemblies, primitives, libraries
 # apps, projects, or primitives. That being said, this script essentially
-# does nothing except call get_dirtype . when one of those nouns is 
+# does nothing except call get_dirtype . when one of those nouns is
 # being operated on.
 function get_subdir {
   case "$noun" in
@@ -110,7 +110,7 @@ function get_subdir {
           case "$library" in
             (components) subdir=$library;;
             (hdl/cards|hdl/devices|hdl/adapters) autocreate=1; subdir=$library;;
-            (hdl/*) subdir=$library;; 
+            (hdl/*) subdir=$library;;
             (*) subdir=components/$library;;
           esac
         elif [ -n "$platform" ] ; then
@@ -152,7 +152,7 @@ function get_subdir {
           autocreate=1
           subdir=devices
         fi
-        ;; 
+        ;;
       (hdl-platforms)
         if [ -n "$platform" ] ; then
           if [ -n "$library" -o -n "$card" -o -n "$project" ] ; then
@@ -184,7 +184,7 @@ function get_subdir {
 # remain in the new worker/device dir).
 function get_deletecmd {
   get_dirtype .
-  if [ "$libbase" != hdl ] ; then 
+  if [ "$libbase" != hdl ] ; then
     deletecmd="-l $library delete $noun"
   else
     if [ "$noun" == worker ] ; then
@@ -220,7 +220,7 @@ function ask {
   if [ -z $force ]; then
     until [[ -n "$force" || "$ans" == [yY] || "$ans" == [nN] ]]; do
       read -p "Are you sure you want to $* (y or n)?  " ans
-    done  
+    done
     [[ "$ans" == [Nn] ]] && exit 0
     return 0
   fi
@@ -239,14 +239,14 @@ function do_project {
     [ -z $verbose ] || echo The project \"$1\" in the directory \"$directory\" has been deleted.
     return 0
   elif [ $verb == build ]; then
-    if [ -z "$buildRcc" -a -z "$buildHdl" -a -n "$buildClean" ]; then 
+    if [ -z "$buildRcc" -a -z "$buildHdl" -a -n "$buildClean" ]; then
       cleanTarget="clean"
     fi
     if [ -n "$buildRcc" -a -n "$buildClean" ]; then
       buildRcc=""
       cleanTarget+=" cleanrcc"
     fi
-    if [ -n "$buildHdl" -a -n "$buildClean" ]; then  
+    if [ -n "$buildHdl" -a -n "$buildClean" ]; then
       buildHdl=""
       cleanTarget+=" cleanhdl"
     fi
@@ -257,10 +257,10 @@ function do_project {
             ${hdlplats:+HdlPlatforms=" ${hdlplats[@]}"} \
             ${swplats:+RccPlatforms=" ${swplats[@]}"} \
             ${hwswplats:+RccHdlPlatforms="${hwswplats[@]}"}
-    return 0 
+    return 0
   fi
   [ -n "$dirtype" ] &&
-     bad the directory \"$directory\", where the project directory would be created, has an OpenCPI Makefile of type \"$dirtype\"\?\?   
+     bad the directory \"$directory\", where the project directory would be created, has an OpenCPI Makefile of type \"$dirtype\"\?\?
   [ -n "$top" -o -n "$platform" -o -n "$prebuilt" -o -n "$library" ] &&
     bad illegal options present for creating project
   noslash $1
@@ -313,12 +313,12 @@ function do_applications {
   if [ $verb == build ]; then
     make -C $subdir ${buildClean:+clean} ${swplat:+OCPI_TARGET_PLATFORM="$swplat[@]"}
     return 0
-  fi 
+  fi
 }
 
 # Create an application
 # An application in a project might have:
-# An xml file 
+# An xml file
 # A c++ main program
 # Its own private components (and thus act like a library)
 # Its own private HDL assemblies
@@ -335,18 +335,18 @@ function do_application {
   if [ $verb == build ]; then
     make -C $subdir$1 ${buildClean:+clean} ${swplat:+OCPI_TARGET_PLATFORM="$swplat[@]"}
     return 0
-  fi 
+  fi
   if [ $verb == delete ]; then
     if [ -n "$xmlapp" ] ; then
       if [ -f "$adir.xml" ] ; then
         ask delete the application xml file \"$adir.xml\"
         rm -f $adir.xml
-      else 
-        bad the application at \"$adir.xml\" does not exist    
+      else
+        bad the application at \"$adir.xml\" does not exist
       fi
       return 0
     fi
-    [ -e "$adir" ] || bad the application at \"$adir\" does not exist    
+    [ -e "$adir" ] || bad the application at \"$adir\" does not exist
     get_dirtype $adir
     [ "$dirtype" == application ] || bad the directory at $adir does not appear to be an application
     ask delete the application project in the \"$adir\" directory
@@ -359,7 +359,7 @@ function do_application {
     if [ -e "$subdir/$app.xml" ] ; then
       bad the application \"$app\" already exists in ${topdir}$subdir/$app.xml
     fi
-  elif [ -d "$subdir$1" ] ; then 
+  elif [ -d "$subdir$1" ] ; then
       bad the application \"$app\" already exists in ${topdir}$subdir$1
   fi
 
@@ -375,7 +375,7 @@ include \$(OCPI_CDK_DIR)/include/applications.mk
 EOF
     [ -z $verbose ] || echo This is the first application in this project.  The \"applications\" directory has been created.
   fi
-  
+
   appdir=""
   if [ -z "$xmlapp" ] ; then
     appdir=$1
@@ -391,7 +391,7 @@ EOF
     [ -z $verbose ] || {
       echo Application \"$1\" created in the directory \"$topdir$subdir$1\"
       echo You must create either a $1.xml or $1.cc file in the $topdir$subdir$1 directory\"
-    }    
+    }
   fi
 
   cat <<-EOF > $subdir$appdir/$app.xml
@@ -433,7 +433,7 @@ int main(int argc, char **argv) {
 EOF
   fi
   [ -z $verbose ] || echo The XML application \"$app\" has been created in ${topdir}$subdir$appdir$app.xml
-  
+
 }
 
 # Major issue is in which library or top level.
@@ -486,6 +486,12 @@ function do_protocol_or_spec {
     fi
   fi
   mkdir -p $subdir
+  # Make sure we record the package's prefix in the specs directory so that spec files used
+  # by other projects (or this one) know what the package should be.
+  # This is done in the project.mk file too.
+  if [ $subdir == specs -a ! -e specs/package-name ] ; then
+    sed -n 's/ *ProjectPackage *= *//p' Project.mk > specs/package-name
+  fi
   case $noun in
     (protocol)
       cat <<EOF > $subdir/$file
@@ -548,7 +554,7 @@ EOF
 </card>
 EOF
       ;;
-  esac     
+  esac
   if [ -n "$verbose" ]; then
     if [ -z $library ]; then
       echo A new $2, \"$1\", has been created at the project level in $subdir/$file
@@ -584,7 +590,7 @@ ${complibs:+ComponentLibraries=${complibs[@]}}
 ${xmlincludes:+XmlIncludeDirs=${xmlincludes[@]}}
 include \$(OCPI_CDK_DIR)/include/library.mk
 EOF
-  make --no-print-directory -C $2 || 
+  make --no-print-directory -C $2 ||
     bad library creation failed, you may want to do: ocpidev delete library $1
   [ -z $verbose ] || echo A new library named \"$1\" \(in directory \"$2/\"\) has been created.
 
@@ -594,14 +600,14 @@ function do_library {
   set -e
   odirtype=$dirtype
   [ -z $library ] || bad The -l and -h options are invalid when deleting or adding a library
-  subdir=$1 
+  subdir=$1
   if [ -n "$standalone" ] ; then
     libbase=.
     subdir=$1
   elif [ -z "$libbase" ] ; then
     libbase=components
   fi
-  [ -z "$standalone" ] && case "$dirtype" in 
+  [ -z "$standalone" ] && case "$dirtype" in
     (project)
       [ "$libbase" != hdl -o -d "hdl" -o "$verb" != create ] || make_hdl_dir
       if [ $1 == $libbase ] ; then
@@ -613,10 +619,10 @@ function do_library {
         subdir=$libbase/$1
       fi
       ;;
-    (libraries) 
+    (libraries)
       [ -z "$platform" ] || bad cannot specify a platform from within a libraries collection.
       subdir=$1
-      ;; 
+      ;;
     (*) bad this command can only be issued in a project directory or a components directory
   esac
   if [ $verb == delete ]; then
@@ -633,14 +639,14 @@ function do_library {
     [ -z $verbose ] || echo The library named \"$1\" \(directory \"$subdir/\"\) has been deleted.
     return 0
   elif [ $verb == build ]; then
-    if [ -z "$buildRcc" -a -z "$buildHdl" -a -n "$buildClean" ]; then 
+    if [ -z "$buildRcc" -a -z "$buildHdl" -a -n "$buildClean" ]; then
       cleanTarget="clean"
     fi
     if [ -n "$buildRcc" -a -n "$buildClean" ]; then
       buildRcc=""
       cleanTarget+=" cleanrcc"
     fi
-    if [ -n "$buildHdl" -a -n "$buildClean" ]; then  
+    if [ -n "$buildHdl" -a -n "$buildClean" ]; then
       buildHdl=""
       cleanTarget+=" cleanhdl"
     fi
@@ -648,7 +654,7 @@ function do_library {
     make -C $subdir ${cleanTarget:+$cleanTarget}  ${buildRcc:+rcc} ${buildHdl:+hdl} \
             ${hdlplats:+HdlPlatforms=" ${hdlplats[@]}"} \
             ${swplats:+RccPlatforms=" ${swplats[@]}"} \
-            ${hwswplats:+RccHdlPlatforms=" ${hwswplats[@]}"}   
+            ${hwswplats:+RccHdlPlatforms=" ${hwswplats[@]}"}
     return 0
   fi
   [ -e "$subdir" ] && bad the library \"$1\" \(directory $subdir/\) already exists
@@ -672,7 +678,7 @@ $CheckCDK
 # libraries in their own directories underneath this $libbase directory
 include \$(OCPI_CDK_DIR)/include/libraries.mk
 EOF
-  fi  
+  fi
   make_library $1 $subdir
 }
 
@@ -710,14 +716,14 @@ function get_spec {
 
   # Here we set some default xml. Subdevices are a special case with some additional default
   # XML. They are permitted to omit OCS, but are not required to.
-  if [ -z $s ] ; then 
+  if [ -z $s ] ; then
     specelem="  <componentspec>
   </componentspec>"
   else
     specattr=" spec='$s'"
   fi
   if [ -n "$supported" ] ; then
-    specelem="$specelem 
+    specelem="$specelem
 $specopt  <!-- If this subdevice is sharing raw properties, include the following line:
     The count is the number of device workers that may share this subdevice
     The optional attribute is whether all the devices must be present
@@ -756,7 +762,7 @@ function do_worker {
     make -C $subdir/$1 ${buildClean:+clean} \
             ${hdlplats:+HdlPlatforms=" ${hdlplats[@]}"} \
             ${swplats:+RccPlatforms=" ${swplats[@]}"} \
-            ${hwswplats:+RccHdlPlatforms=" ${hwswplats[@]}"} 
+            ${hwswplats:+RccHdlPlatforms=" ${hwswplats[@]}"}
     return 0
   fi
   words=(${1//./ })
@@ -808,7 +814,7 @@ function do_worker {
       specelems[$w]="$specelem"
       nameattrs[$w]="$nameattr"
       specs[$w]=${x[1]}
-    done         
+    done
 #    for i in ${!wnames[@]}; do
 #     echo MULTI $i: name:${wnames[$i]} attr:${specattrs[$i]} elem:${specelems[$i]}
 #    done
@@ -821,14 +827,6 @@ function do_worker {
     nameattrs=("$nameattr")
     specs=($spec)
   fi
-#  if [ -n "$emulates" ] ; then
-#    echo WE ARE EMULATOR
-#    complibs=devices
-#    complibscomment="#
-# This line triggers a search of the base project's 
-# devices library (for the emulator spec)
-#"
-#  fi 
   mkdir $libdir/$1
   if [ "$OCPI_CREATE_BUILD_FILES" = 1 ]; then
     [ -n "${xmlincludes[*]}" ] &&
@@ -878,7 +876,7 @@ ${onlyplats:+OnlyPlatforms=${onlyplats[@]}}
 ${explats:+ExcludePlatforms=${explats[@]}}
 ${liblibs:+Libraries=${liblibs[@]}}
 ${xmlincludes:+XmlIncludeDirs=${xmlincludes[@]}}
-$complibscomment${complibs:+ComponentLibraries=${complibs[@]}}
+${complibs:+ComponentLibraries=${complibs[@]}}
 include \$(OCPI_CDK_DIR)/include/worker.mk
 EOF
 fi
@@ -959,14 +957,15 @@ function do_device {
 # named <compname>.test with skeleton contents.
 # Args: component to test
 function do_test {
+  odirtype=$dirtype
   if [ -z "$1" -a "$verb" == build ] ; then
    do_build_here test
    return $?
   fi	
   if [ ${1/*./} = test ] ; then
-    testdir=$subdir/$1  
+    testdir=$subdir/$1
   elif [[ ! "$testdir" == *.* ]] ; then
-    testdir="$subdir/$1".test 
+    testdir="$subdir/$1".test
   else
     bad test directories cannot end in \"${1/*./}\". You should use \".test\" or leave it blank and \".test\" will be appended.
   fi
@@ -1000,7 +999,7 @@ function do_test {
 # This is the Makefile for the test directory which tests component "$testname"
 include \$(OCPI_CDK_DIR)/include/test.mk
 EOF
-    #   create <comp>-test.xml: 
+    #   create <comp>-test.xml:
     cat <<EOF > $testdir/$testname-test.xml
 <!-- This is the test xml for testing component "$testname" -->
 <tests useHDLFileIo='true'>
@@ -1009,7 +1008,7 @@ EOF
   <input port='in' script='generate.py'/>
   <output port='out' script='verify.py' view='view.sh'/>
   -->
-  <!-- Set properties here. 
+  <!-- Set properties here.
        Use test='true' to create a test-exclusive property. -->
 </tests>
 EOF
@@ -1018,7 +1017,7 @@ EOF
 #!/usr/bin/env python
 
 """
-Use this file to generate your input data. 
+Use this file to generate your input data.
 Args: <list-of-user-defined-args> <input-file>
 """
 EOF
@@ -1028,7 +1027,7 @@ EOF
 #!/usr/bin/env python
 
 """
-Use this script to validate your output data against your input data. 
+Use this script to validate your output data against your input data.
 Args: <list-of-user-defined-args> <output-file> <input-files>
 """
 EOF
@@ -1037,7 +1036,7 @@ EOF
     cat <<EOF > $testdir/view.sh
 #!/bin/bash --noprofile
 
-# Use this script to view your input and output data. 
+# Use this script to view your input and output data.
 # Args: <list-of-user-defined-args> <output-file> <input-files>
 EOF
     chmod +x $testdir/view.sh
@@ -1056,7 +1055,7 @@ function do_hdl_platforms {
   esac
   if [ $verb ==  build ]; then
     make -C $subdir ${buildClean:+clean} ${hdlplats:+HdlPlatforms=" ${hdlplats[@]}"}
-    return 0; 
+    return 0;
   fi
   bad The only verb available for primatives is build. Did you mean platform
 }
@@ -1074,10 +1073,10 @@ function do_hdl_platform {
   pdir=$subdir$1
   if [ $verb ==  build ]; then
     make -C $pdir ${buildClean:+clean}
-    return 0; 
+    return 0;
   fi
   if [ $verb == delete ]; then
-    [ -e $pdir ] || bad the HDL platform at \"$pdir\" does not exist    
+    [ -e $pdir ] || bad the HDL platform at \"$pdir\" does not exist
     get_dirtype $pdir
     [ "$dirtype" == "hdl-platform" ] || bad the directory at $pdir does not appear to be an HDL platform
     ask delete the HDL platform in the \"$pdir\" directory
@@ -1162,7 +1161,7 @@ function do_rcc_platform {
   esac
   pdir=$subdir$1
   if [ $verb == delete ]; then
-    [ -e $pdir ] || bad the RCC platform at \"$pdir\" does not exist    
+    [ -e $pdir ] || bad the RCC platform at \"$pdir\" does not exist
     get_dirtype $pdir
     [ "$dirtype" == "rcc-platform" ] || bad the directory at $pdir does not appear to be an RCC platform
     ask delete the RCC platform in the \"$pdir\" directory
@@ -1219,21 +1218,21 @@ EOF
 }
 
 function do_primitives {
-  echo $dirtype 
+  echo $dirtype
   case "$dirtype" in
-    (project) dir="hdl/primitives/";; 
-    (hdl-primitives) dir=".";; 
+    (project) dir="hdl/primitives/";;
+    (hdl-primitives) dir=".";;
     (*) bad this command can only be executed in a project or hdl/primitives/ directory;;
   esac
   if [ $verb == build ]; then
     echo $hdlplats
     echo $hdltargets
     make -C $dir ${buildClean:+clean} ${hdlplats:+HdlPlatforms=" ${hdlplats[@]}"} \
-                 ${hdltargets:+HdlTargets=" ${hdltargets[@]}"} 
+                 ${hdltargets:+HdlTargets=" ${hdltargets[@]}"}
     return 0
-  fi 
+  fi
   bad The only verb available for primatives is build. Did you mean primative
-} 
+}
 
 function do_primitive {
   [ "$2" = "" ] &&
@@ -1241,7 +1240,7 @@ function do_primitive {
   odirtype=$dirtype
   case "$dirtype" in
     (hdl-primitives) dir="$2"; mydir="this";;
-    (project) 
+    (project)
       dir=hdl/primitives/"$2"
       mydir="the hdl/primitives"
       [ -d "hdl" -o "$verb" != create ] || make_hdl_dir
@@ -1289,7 +1288,7 @@ EOF
     [ -z $verbose ] || echo This is the first HDL primitive in this project.  The \"hdl/primitives\" directory has been created.
   fi
   mkdir -p $dir
-  if [ "$1" = "library" ] ; then 
+  if [ "$1" = "library" ] ; then
     cat <<EOF > $dir/Makefile
 # This Makefile is for the primitive library: $2
 
@@ -1353,7 +1352,7 @@ ${module:+Top=${module[@]}}
 ${prebuilt:+PreBuiltCore=${prebuilt[@]}}
 
 # Remember that verilog cores must have a black box empty module definition
-# in a file named <top>_bb.v (where <top> is the of the core or the value of the Top 
+# in a file named <top>_bb.v (where <top> is the of the core or the value of the Top
 # variable).
 ${others:+SourceFiles=${others[@]}}
 ${cores:+Cores=${cores[@]}}
@@ -1378,20 +1377,20 @@ function do_assemblies {
   esac
   if [ $verb == build ]; then
     make -C $subdir ${buildClean:+clean} ${hdlplats:+HdlPlatforms=" ${hdlplats[@]}"}
-    return 0 
+    return 0
   fi
   bad The only verb available for primatives is build. Did you mean assembly
 }
 
 function do_build_here {
-    if [ -z "$buildRcc" -a -z "$buildHdl" -a -n "$buildClean" ]; then 
+    if [ -z "$buildRcc" -a -z "$buildHdl" -a -n "$buildClean" ]; then
       cleanTarget="clean"
     fi
     if [ -n "$buildRcc" -a -n "$buildClean" ]; then
       buildRcc=""
       cleanTarget+=" cleanrcc"
     fi
-    if [ -n "$buildHdl" -a -n "$buildClean" ]; then  
+    if [ -n "$buildHdl" -a -n "$buildClean" ]; then
       buildHdl=""
       cleanTarget+=" cleanhdl"
     fi
@@ -1400,7 +1399,7 @@ function do_build_here {
        ${assys:+Assemblies=" ${assys[@]}"} \
        ${hdlplats:+HdlPlatforms=" ${hdlplats[@]}"} \
        ${swplats:+RccPlatforms=" ${swplats[@]}"} \
-       ${hwswplats:+RccHdlPlatforms=" ${hwswplats[@]}"} 
+       ${hwswplats:+RccHdlPlatforms=" ${hwswplats[@]}"}
 }
 
 # Create an hdl assembly
@@ -1422,7 +1421,7 @@ function do_assembly {
     return 0
   fi
   if [ $verb == delete ]; then
-    [ -e $adir ] || bad the HDL assembly at \"$adir\" does not exist    
+    [ -e $adir ] || bad the HDL assembly at \"$adir\" does not exist
     get_dirtype $adir
     [ "$dirtype" == "hdl-assembly" ] || bad the directory at $adir does not appear to be an HDL assembly
     ask delete the HDL assembly in the \"$adir\" directory
@@ -1478,7 +1477,7 @@ EOF
   [ -z $verbose ] || {
     echo HDL assembly \"$1\" created in the directory \"$topdir$subdir$1\"
     echo For non-default containers, an xml file is required and must be mentioned in the Makefile
-  }    
+  }
   assy=${1/%.xml/}
   cat <<EOF > $subdir$1/$assy.xml
 <!-- The $1 HDL assembly xml file -->
@@ -1518,14 +1517,14 @@ Options with * may occur multiple times
   -p                 Put specs/protocols at project level, not in a library's \"specs\" directory
  == options when creating specs ==
   -t                 Create a test skeleton also when creating a spec:  <component>.test
-  -n                 This spec has no lifecycle/configuration interface (no properties). 
+  -n                 This spec has no lifecycle/configuration interface (no properties).
                      It can still have parameter properties, but not runtime properties.
  == when creating or deleting specs, protocols, or workers ==
   -l <library>       The component library to add the asset to, when there is more than one.
                      This applies to specs, protocols, properties, workers.
                      Such libaries live in the components/ directory of the project.
  == when creating or deleting specs, protocols, workers or devices ==
-  -h <hdl-library>   A library underneath hdl/ to add assets to.  Default is "hdl/devices". 
+  -h <hdl-library>   A library underneath hdl/ to add assets to.  Default is "devices".
                      Valid <hdl-library> options are "devices", "cards" and "adapters".
  == when creating projects ==
   -F <prefix>        The project prefix when creating projects, defaults to <name>_
@@ -1548,14 +1547,14 @@ Options with * may occur multiple times
  == when creating platforms ==
   -g <hdl-part>      Specify the part (die-speed-package, e.g. xc7z020-1-clg484) for platform.
                      This sets the HdlPart_<platform> variable in <platform>.mk
-  -q <time-freq>     Specify the time server frequency for this platform (i.e. "100e6"). 
+  -q <time-freq>     Specify the time server frequency for this platform (i.e. "100e6").
                      If specified, this may need to be modified later in the platform OWD.
-  -u                 Do not use SDP. This legacy option should be used 
+  -u                 Do not use SDP. This legacy option should be used
                      when creating platforms that do not use SDP.
  == when creating workers, devices, or platforms ==
   -I <include>       *A directory to search for language include files (e.g. C/C++ or Verilog)
                      Adds to "IncludeDirs" in worker Makefile
-  -A <xml-include>   *A directory to search for XML files (adds to 'XmlIncludeDirs' in Makefile)
+  -A <xml-include>   *A directory to search for XML files (adds to "XmlIncludeDirs" in Makefile)
  == when creating workers, devices, primitives, or platforms ==
   -O <other>         *Other source files to include (adds to "SourceFiles" in Makefile)
   -C <core>          *Core to be included by this asset (adds to "Cores" in Makefile)
@@ -1567,10 +1566,11 @@ Options with * may occur multiple times
  == when creating workers, devices, primitives, platforms, or assemblies ==
   -T <target>        *Specify one of the only allowed build-targets for this asset.
                      (adds to "OnlyTargets" in Makefile)
-  -Z <target>        *Exclude a build-target for this asset (adds to "ExcludeTargets" in Makefile)
+  -Z <target>        *Exclude a build-target for this asset (add to "ExcludeTargets" in Makefile)
   -G <platform>      *Specify one of the only allowed build-platforms for this asset.
                      (adds to "OnlyPlatforms" in Makefile)
-  -Q <platform>      *Exclude a build-platform for this asset (adds to "ExcludePlatforms" in Makefile)
+  -Q <platform>      *Exclude a build-platform for this asset
+                     (adds to "ExcludePlatforms" in Makefile)
   -U <supports>      *A device (worker) supported by the subdevice being created
  == when creating primitive cores ==
   -M <top-module>    For HDL primitive cores, the top level module name for the core when it is
@@ -1588,19 +1588,19 @@ Options with * may occur multiple times
  == when building assets ==
   --build-rcc        Build rcc workers, when building at the project or library level.
   --build-hdl        Build hdl workers, when building at the project or library level.
-  --build-no-assemblies      
+  --build-no-assemblies
                      Do not build assemblies, when building at the project level.
-  --build-hdl-assembly <assembly> 
+  --build-hdl-assembly <assembly>
                      *Add an assembly to be specificially built (and don't build any others).
   --build-hdl-target <target>
                      *Add an HDL target to be specifically built and don't build for any others.
   --build-hdl-platform <platform>
-                     *Add an HDL platform to be specifically built and don't build for any others.
+                     *Add an HDL platform to be built and don't build for any others.
   --build-rcc-platform <platform>
-                     *Add an RCC platform to be specifically built and don't build for any others.
+                     *Add an RCC platform to be built and don't build for any others.
   --build-hdl-rcc-platform <hdl-platform>
-                     *Add an RCC platform to be built based on the HDL platform that is specified.
-                     E.g. "zed" (as an HDL platform) means "xilinx13_3", the associated RCC platform.
+                     *Add an RCC platform to be built based on the HDL platform specified.  E.g.
+                     "zed" (an HDL platform) means "xilinx13_3", the associated RCC platform.
 EOF
   exit 1
 
@@ -1635,7 +1635,7 @@ while [[ "${argv[0]}" != "" ]] ; do
       (-d)
         takeval directory
         [ ! -d $directory ] && bad the directory \"$directory\" is not a directory or does not exist
-        ;; 
+        ;;
       (-p) project=1;;
       (-t) createtest=1;;
       (-n) nocontrol=1;;
@@ -1646,7 +1646,7 @@ while [[ "${argv[0]}" != "" ]] ; do
                        # This variable lets us keep track of whether the -l option
         ;;             # was used
       (-h)
-        libbase=hdl 
+        libbase=hdl
         takeval hdllibrary
         library=hdl/$hdllibrary
         case "$hdllibrary" in
@@ -1659,7 +1659,6 @@ while [[ "${argv[0]}" != "" ]] ; do
       # project options
       (-F) takeval prefix ;; #default is <project>
       (-K) takeval package ;; #default is local.<project>
-      (-D) takeval dependencies ;;
       (-D) takeval dependency; dependencies=(${dependencies[@]} ${dependency//:/ }) ;;
       # worker options
       (-S) takeval spec ;; # default for worker is <worker-name>-spec.xml
@@ -1675,7 +1674,7 @@ while [[ "${argv[0]}" != "" ]] ; do
 
       (-R) takeval rccstatprereq; rccstatprereqs=(${rccstatprereqs[@]} $rccstatprereq) ;;
       (-r) takeval rccdynprereq; rccdynprereqs=(${rccdynprereqs[@]} $rccdynprereq) ;;
-      
+
       (-g) takeval hdlpart ;;
       (-q) takeval timefreq ;;
       (-u) nosdp=1 ;;
@@ -1730,15 +1729,15 @@ while [[ "${argv[0]}" != "" ]] ; do
     if [ -n "$hdl" ]; then
       libbase=hdl
       case ${argv[0]} in
-        (library) 
+        (library)
           echo "Warning: user creation of libraries underneath hdl/ is not fully supported."
           echo "         You probably just want to create a components library using 'ocpidev create library ...'"
           noun=${argv[0]}
           ;;
         (device|subdevice|platform|platforms|assembly|assemblies|signals) noun=${argv[0]} ;;
 
-        (card|slot) 
-          noun=${argv[0]} 
+        (card|slot)
+          noun=${argv[0]}
           card=1
           library=hdl/cards
           ;;
@@ -1887,7 +1886,7 @@ fi
 
 # Get dir type unless creating something standalone
 needname ${argv[0]} $verb $noun
-if [ "$verb" != "build" -o -n "$noun" -a -n "$args" ] ; then 
+if [ "$verb" != "build" -o -n "$noun" -a -n "$args" ] ; then
   get_subdir
 fi
 [ -z $verbose ] || echo Executing the \"$verb $hdl$noun\" command in a ${dirtype:-unknown type of} directory: $directory.
@@ -1902,7 +1901,7 @@ case $noun in
   (worker)       do_worker ${args[@]} ;;
   (test)         do_test ${args[@]} ;;
   (platforms)    do_hdl_platforms ${args[@]} ;;
-  (platform)     if [ -n "$hdl" ] ; then 
+  (platform)     if [ -n "$hdl" ] ; then
                    do_hdl_platform ${args[@]}
 #                 else
 #                   do_rcc_platform ${args[@]}
@@ -1917,10 +1916,10 @@ case $noun in
   (signals)      do_protocol_or_spec ${args[@]} ;;
   (primitive)    do_primitive ${args[@]} ;;
   (primitives)   do_primitives ${args[@]} ;;
-  (*) 
+  (*)
     if [ "$verb" == "build" ] ; then
-      do_build_here ${args[@]} 
-    else 
+      do_build_here ${args[@]}
+    else
       bad the noun \"$noun\" is invalid after the verb \"$verb\"
     fi ;;
 esac
