@@ -1,6 +1,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <cctype>
 #include "OcpiOsFileSystem.h"
 #include "OcpiUtilMisc.h"
 #include "OcpiUtilException.h"
@@ -28,6 +29,7 @@ static const char *bad(OU::Worker &w, const char *tag, const char *val) {
   fprintf(stderr, "Bad worker %s: can't map %s %s\n", w.cname(), tag, val);
   return "raw";
 }
+
 StringSet specs;
 struct Category {
   std::string name;
@@ -109,15 +111,17 @@ static void doWorker(OU::Worker &w) {
     ezxml_t px = OX::addChild(root, "param", 1);
     OX::addChild(px, "name", 2, p->pretty());
     OX::addChild(px, "key", 2, p->cname());
-    if (p->m_default) { // or should there be an empty value when there is no default?
-      std::string strval;
+    std::string strval;
+    if (p->m_default)
       p->m_default->unparse(strval);
-      OX::addChild(px, "value", 2, strval.c_str());
-    }
     const char *type;
     bool isVector = p->m_arrayRank || p->m_isSequence;
     switch (p->m_baseType) {
-    case OA::OCPI_Bool:  type = isVector ? bad(w, "property", p->cname()) : "bool"; break;
+    case OA::OCPI_Bool:
+      type = isVector ? bad(w, "property", p->cname()) : "bool";
+      if (strval.length() > 1)
+	strval[0] = (char)toupper(strval[0]);
+      break;
     case OA::OCPI_Double:  type = isVector ? "real_vector" : "real"; break;
     case OA::OCPI_Float:  type = isVector ? "float_vector" : "float"; break;
     case OA::OCPI_Char:
@@ -130,19 +134,22 @@ static void doWorker(OU::Worker &w) {
     case OA::OCPI_ULongLong:
       type = isVector ? "int_vector" : "int"; break;
     case OA::OCPI_String:  type = isVector ? bad(w, "property", p->cname()) : "string"; break;
-    case OA::OCPI_Enum:  type = "enum"; break;
+    case OA::OCPI_Enum:
+      type = "enum";
+      for (const char **ep = p->m_enums; *ep; ep++) {
+	ezxml_t ox = OX::addChild(px, "option", 3);
+	OX::addChild(ox, "name", 4, *ep);
+	OX::addChild(ox, "key", 4, *ep);
+      }
+      break;
     case OA::OCPI_Struct:
     case OA::OCPI_Type:
     default:
       type = bad(w, "property", p->cname()); break;
     }
     OX::addChild(px, "type", 2, type);
-    if (p->m_baseType == OA::OCPI_Enum)
-      for (const char **ep = p->m_enums; *ep; ep++) {
-	ezxml_t ox = OX::addChild(px, "option", 3);
-	OX::addChild(ox, "name", 4, *ep);
-	OX::addChild(ox, "key", 4, *ep);
-      }
+    if (strval.size())
+      OX::addChild(px, "value", 2, strval.c_str());
   }
   OU::Port *ports = w.ports(np);
   for (unsigned n = 0; n < np; n++, ports++) {
@@ -197,7 +204,7 @@ static void doWorker(OU::Worker &w) {
 }
 
 static int
-mymain(const char **/*ap*/) {
+mymain(const char ** /*ap*/) {
   setenv("OCPI_SYSTEM_CONFIG", "", 1);
   OCPI::Driver::ManagerManager::suppressDiscovery();
   OL::getManager().enableDiscovery();
@@ -205,7 +212,7 @@ mymain(const char **/*ap*/) {
   top.name = "[OpenCPI]";
   OL::getManager().doWorkers(doWorker);
   std::string file;
-  OU::format(file, "%s/block_tree.xml", options.directory());
+  OU::format(file, "%s/ocpi_block_tree.xml", options.directory());
   std::string xml = "<?xml version=\"1.0\"?>\n";
   xml += ezxml_toxml(top.getXml());
   xml += "\n";
