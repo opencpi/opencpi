@@ -605,7 +605,7 @@ namespace OCPI {
       const char *err;
       if ((err = OE::checkElements(cx, "port", "external", NULL)) ||
 	  //	  (err = OE::checkAttrs(cx, "name", "transport", "external", "count", NULL)) ||
-	  (err = OE::getNumber(cx, "count", &m_count, NULL, 1)))
+	  (err = OE::getNumber(cx, "count", &m_count, NULL, 0)))
 	return err;
       
       OE::getNameWithDefault(cx, m_name, "conn%u", n);

@@ -6,6 +6,7 @@
 #include "parameters.h"
 #include "wip.h"
 #include "hdl.h"
+#include "hdl-device.h"
 namespace OU=OCPI::Util;
 
 const char *Worker::
@@ -249,10 +250,18 @@ ParamConfig(Worker &w) : m_worker(w), nConfig(0), used(false) {
   params.resize(w.m_ctl.properties.size());
 }
 
+void ParamConfig::
+clone(const ParamConfig &other) {
+  params = other.params;
+  id = other.id;
+  nConfig = other.nConfig;
+  used = other.used;
+}
+
 ParamConfig::
 ParamConfig(const ParamConfig &other)
-  : m_worker(other.m_worker), params(other.params), id(other.id), nConfig(other.nConfig),
-    used(other.used) {
+  : m_worker(other.m_worker) {
+  clone(other);
 }
 
 // Fill in unspecified parameters with their single default value
@@ -739,6 +748,12 @@ emitToolParameters() {
   ezxml_t x;
   const char *err;
   FILE *mkFile;
+  // If we are an emulator, then we use the build configurations from the emulatee.
+  if (m_emulate) {
+    FILE *f;
+    startBuildXml(f);
+    return emitMakefile(f);
+  }
   if ((m_paramConfigs.size() == 0 && (err = parseBuildFile(true))) ||
       (err = parseRawParams(x)) ||
       (err = openOutput(m_fileName.c_str(), m_outDir, "", "", ".mk", NULL, mkFile)))
@@ -800,15 +815,15 @@ emitToolParameters() {
 // Based on worker xml, read the <worker>.build, and emit the
 // gen/<worker>-params.mk
 const char *Worker::
-emitMakefile() {
+emitMakefile(FILE *xmlFile) {
   const char *err;
   FILE *mkFile;
-  if ((err = parseBuildFile(false)) ||
+  if ((!m_emulate && (err = parseBuildFile(false))) ||
       (err = openOutput(m_fileName.c_str(), m_outDir, "", "", ".mk", NULL, mkFile)))
     return err;
   for (size_t n = 0; n < m_paramConfigs.size(); n++)
     m_paramConfigs[n]->used = true;
-  return writeParamFiles(mkFile, NULL);  
+  return writeParamFiles(mkFile, xmlFile);  
 }
 // Based on worker xml, read the <worker>.build, and emit the generics file
 const char *Worker::

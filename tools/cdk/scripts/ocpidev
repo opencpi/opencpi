@@ -991,7 +991,7 @@ function do_test {
     #   make sure dir does not exist
     [ -e "$testdir" ] && bad "cannot create \"$testdir\". Directory/file already exists"
     testname=$(basename $1 .test)
-    get_spec $testname
+    get_spec $testname $spec
     #   create dir
     mkdir -p $testdir
     #   create Makefile: include $(OCPI_CDK_DIR)/include/test.mk
@@ -1824,8 +1824,8 @@ fi
 [ -n "$dependencies" -a \( $verb != create -o "$noun" != project \) ] &&
   bad the -D '(dependencies)' option is only valid when creating a project
 # spec
-[ -n "$spec" -a \( $verb != create -o \( "$noun" != worker -a "$noun" != device \) \) ] &&
-  bad the -S '(spec)' option is only valid when creating a worker or device
+[ -n "$spec" -a \( $verb != create -o \( "$noun" != worker -a "$noun" != device -a "$noun" != test \) \) ] &&
+  bad the -S '(spec)' option is only valid when creating a worker or device or test
 # platform
 [ -n "$platform" -a \( "$noun" != spec -a "$noun" != device -a "$noun" != worker -a "$noun" != test -a "$noun" != library \) ] &&
   bad the -P '(platform)' option is only valid when creating an HDL device worker, worker, test, or a platform\'s devices library

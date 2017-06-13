@@ -89,6 +89,35 @@ parseHdlImpl(const char *package) {
   bool dwFound;
   if (!strcasecmp(OE::ezxml_tag(m_xml),"hdldevice"))
     m_isDevice = true;
+  // Since we will steal properties from the device (worker) being emulated,
+  // we actually need to know that worker before parsing this one.
+  const char *emulate = ezxml_cattr(m_xml, "emulate");
+  if (emulate) {
+    const char *dot = strrchr(emulate, '.');
+    if (!dot)
+      return OU::esprintf("'emulate' attribute: '%s' has no authoring model suffix", emulate);
+    if (!(m_emulate = HdlDevice::get(emulate, m_file.c_str(), this, err)))
+      return OU::esprintf("for emulated device worker %s: %s", emulate, err);
+    const char *firstRaw = ezxml_cattr(m_emulate->m_xml, "FirstRawProperty");
+    bool raw = false;
+    for (PropertiesIter pi = m_emulate->m_ctl.properties.begin();
+	 pi != m_emulate->m_ctl.properties.end(); ++pi) {
+      OU::Property &p = **pi;
+      if (firstRaw && !strcasecmp(firstRaw, p.m_name.c_str()))
+	raw = true;
+      if (!p.m_isParameter && (!p.m_isWritable || raw))
+	continue;
+      if (!strcasecmp(p.m_name.c_str(), "ocpi_debug"))
+	m_debugProp = &p;
+      m_ctl.properties.push_back(&p);
+    }
+    // roughly a copy-constructor that replaces the worker reference
+    m_paramConfigs.resize(m_emulate->m_paramConfigs.size());
+    for (unsigned n = 0; n < m_paramConfigs.size(); n++) {
+      m_paramConfigs[n] = new ParamConfig(*this);
+      m_paramConfigs[n]->clone(*m_emulate->m_paramConfigs[n]);
+    }    
+  }
   // This must be here so that when the properties are parsed,
   // the first raw one is properly aligned.
   const char *firstRaw = ezxml_cattr(m_xml, "FirstRawProperty");
@@ -212,7 +241,38 @@ parseHdlImpl(const char *package) {
     if (!c->port && c->m_signal.empty())
       c->m_signal = c->m_name;
   }
-  // now make sure clockPort references are sorted out
+  if (emulate) {
+    //    addWciClockReset();
+    if (ezxml_cchild(m_xml, "signal") || ezxml_cchild(m_xml, "signals"))
+      return OU::esprintf("Can't have both \"emulate\" attributed and \"signal\" elements");
+    //    std::string ew;
+    //    OU::format(ew, "../%s/%.*s.xml", emulate, (int)(dot - emulate), emulate);
+    for (SignalsIter si = m_emulate->m_signals.begin();
+	 si != m_emulate->m_signals.end(); si++) {
+      Signal *s = (*si)->reverse();
+      m_signals.push_back(s);
+      m_sigmap[s->m_name.c_str()] = s;
+    }
+    // For device-type ports, create the mirror image for the emulator
+    for (unsigned i = 0; i < m_emulate->m_ports.size(); i++) {
+      Port &p = *m_emulate->m_ports[i];
+      if (p.m_type == DevSigPort || p.m_type == PropPort) {
+	bool master = false;
+	ocpiCheck(!OE::getBoolean(p.m_xml, "master", &master));
+	char *copy = ezxml_toxml(p.m_xml);
+	ezxml_t nx = ezxml_parse_str(copy, strlen(copy));
+	ezxml_set_attr_d(nx, "master", master ? "0" : "1");
+	if (!ezxml_cattr(nx, "name"))
+	  ezxml_set_attr_d(nx, "name", p.cname());
+	if (p.m_type == DevSigPort)
+	  new DevSignalsPort(*this, nx, NULL, -1, err);
+	else
+	  new RawPropPort(*this, nx, NULL, -1, err);
+      }
+    }
+  } else if ((err = Signal::parseSignals(m_xml, m_file, m_signals, m_sigmap)))
+    return err;
+  // now make sure clockPort references are sorted out and counts are non-zero
   for (unsigned i = 0; i < m_ports.size(); i++) {
     Port *p = m_ports[i];
     if (p->clockPort)
@@ -220,30 +280,6 @@ parseHdlImpl(const char *package) {
     if (p->m_count == 0)
       p->m_count = 1;
   }
-  const char *emulate = ezxml_cattr(m_xml, "emulate");
-  if (emulate) {
-#if 0
-    if (m_ports.size() > 1 || (m_ports.size() == 1 && m_ports[0]->m_type != WCIPort))
-      return OU::esprintf("Device emulation workers can't have any ports");
-#endif
-    //    addWciClockReset();
-    if (ezxml_cchild(m_xml, "signal") || ezxml_cchild(m_xml, "signals"))
-      return OU::esprintf("Can't have both \"emulate\" attributed and \"signal\" elements");
-    const char *dot = strrchr(emulate, '.');
-    if (!dot)
-      return OU::esprintf("'emulate' attribute: '%s' has no authoring model suffix", emulate);
-    //    std::string ew;
-    //    OU::format(ew, "../%s/%.*s.xml", emulate, (int)(dot - emulate), emulate);
-    if (!(m_emulate = HdlDevice::get(emulate, m_file.c_str(), this, err)))
-      return OU::esprintf("for emulated device worker %s: %s", emulate, err);
-    for (SignalsIter si = m_emulate->m_signals.begin();
-	 si != m_emulate->m_signals.end(); si++) {
-      Signal *s = (*si)->reverse();
-      m_signals.push_back(s);
-      m_sigmap[s->m_name.c_str()] = s;
-    }
-  } else if ((err = Signal::parseSignals(m_xml, m_file, m_signals, m_sigmap)))
-    return err;
   // Finalize endian default
   if (m_endian == NoEndian)
     m_endian = m_needsEndian ? Little : Neutral;
@@ -414,13 +450,21 @@ findSignal(Signal *sig, size_t idx) const {
 
 // emit one side of differential, or only side..
 void Signal::
-emitConnectionSignal(FILE *f, const char *iname, const char *pattern, bool single) {
+emitConnectionSignal(FILE *f, const char *iname, const char *pattern, bool single,
+		     Language lang) {
   std::string name;
   OU::format(name, pattern, m_name.c_str());
-  fprintf(f, "  signal %s%s%s : std_logic", iname ? iname : "", iname ? "_" : "", name.c_str());
-  if (m_width && !single)
-    fprintf(f, "_vector(%zu downto 0)", m_width-1);
-  fprintf(f, ";\n");
+  if (lang == VHDL) {
+    fprintf(f, "  signal %s%s%s : std_logic", iname ? iname : "", iname ? "_" : "", name.c_str());
+    if (m_width && !single)
+      fprintf(f, "_vector(%zu downto 0)", m_width-1);
+    fprintf(f, ";\n");
+  } else {
+    fprintf(f, "wire ");
+    if (m_width && !single)
+      fprintf(f, "[%3zu:0] ", m_width-1);
+    fprintf(f, "%s%s%s;\n", iname ? iname : "", iname ? "_" : "", name.c_str());
+  }
 }
 
 

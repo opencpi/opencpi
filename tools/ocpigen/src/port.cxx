@@ -684,9 +684,6 @@ slaveMissing() const {
   return "wci.raw_prop_in_zero";
 }
 
-
-
-
 CpPort::
 CpPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
   : Port(w, x, sp, ordinal, CPPort, "cp", err) {

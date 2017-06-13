@@ -7,10 +7,10 @@
 
 //DeviceTypes DeviceType::s_types;
 
-Worker *HdlDevice::
-create(ezxml_t xml, const char *xfile, Worker *parent,
+HdlDevice *HdlDevice::
+create(ezxml_t xml, const char *xfile, const char *parentFile, Worker *parent,
        OU::Assembly::Properties *instancePVs, const char *&err) {
-  HdlDevice *hd = new HdlDevice(xml, xfile, "", parent, Worker::Device, instancePVs, err);
+  HdlDevice *hd = new HdlDevice(xml, xfile, parentFile, parent, Worker::Device, instancePVs, err);
   if (err ||
       (err = OE::checkTag(xml, "HdlDevice", "Expected 'HdlDevice' as tag in '%s'", xfile)) ||
       (err = OE::checkAttrs(xml, PARSED_ATTRS, IMPL_ATTRS, HDL_TOP_ATTRS, HDL_IMPL_ATTRS,
@@ -25,7 +25,7 @@ create(ezxml_t xml, const char *xfile, Worker *parent,
 HdlDevice::
 HdlDevice(ezxml_t xml, const char *file, const char *parentFile, Worker *parent,
 	  Worker::WType type, OU::Assembly::Properties *instancePVs, const char *&err)
-  : Worker(xml, file, parentFile, type, parent, instancePVs, err) {
+  : Worker(xml, file, parentFile ? parentFile : "", type, parent, instancePVs, err) {
   m_isDevice = true;
   if (err ||
       (err = OE::getBoolean(xml, "interconnect", &m_interconnect)) ||
@@ -90,11 +90,14 @@ get(const char *a_name, const char *parentFile, Worker *parent, const char *&err
   } else
     name = a_name;
   if (!(err = parseFile(name.c_str(), parentFile, NULL, &xml, xfile))) {
+    dt = HdlDevice::create(xml, xfile.c_str(), parentFile, parent, NULL, err);
+#if 0
     dt = new DeviceType(xml, xfile.c_str(), parentFile, parent, Worker::Device, NULL, err);
     if (err) {
       delete dt;
       dt = NULL;
     }
+#endif
   }
   return dt;
 }

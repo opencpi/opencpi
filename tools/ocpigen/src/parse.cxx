@@ -371,7 +371,7 @@ parseImplControl(ezxml_t &xctl, const char */*firstRaw*/) { // FIXME: nuke the s
        (err = OU::parseList(ezxml_cattr(xctl, "ControlOperations"), parseControlOp, this))))
     return err;
   // Add the built-in properties
-  if ((err = addBuiltinProperties()) ||
+  if ((!m_emulate && (err = addBuiltinProperties())) ||
       (err = doProperties(m_xml, m_file.c_str(), true, false)))
     return err;
   // Now that we have all information about properties and we can actually
@@ -804,7 +804,7 @@ create(const char *file, const std::string &parentFile, const char *package, con
     w = HdlAssembly::create(xml, xfile, parent, err);
   else if (!strcasecmp("HdlDevice", name)) {
     //w = HdlDevice::get(file, parentFile.c_str(), parent, err);
-    w = HdlDevice::create(xml, xfile, parent, instancePVs, err);
+    w = HdlDevice::create(xml, xfile, NULL, parent, instancePVs, err);
   } else if (!strcasecmp("RccAssembly", name))
     w = RccAssembly::create(xml, xfile, err);
   else if ((w = new Worker(xml, xfile, parentFile, Worker::Application, parent, instancePVs, 
@@ -968,9 +968,9 @@ Worker(ezxml_t xml, const char *xfile, const std::string &parentFile,
     m_specName(NULL), m_isThreaded(false), m_maxPortTypeName(0), m_wciClock(NULL),
     m_endian(NoEndian), m_needsEndian(false), m_pattern(NULL), m_portPattern(NULL),
     m_staticPattern(NULL), m_defaultDataWidth(-1), m_language(NoLanguage), m_assembly(NULL),
-    m_slave(NULL), m_emulate(NULL), m_library(NULL), m_outer(false), m_debugProp(NULL), 
-    m_mkFile(NULL), m_xmlFile(NULL), m_outDir(NULL), m_build(*this), m_paramConfig(NULL),
-    m_scalable(false), m_parent(parent), m_maxLevel(0), m_dynamic(false)
+    m_slave(NULL), m_emulate(NULL), m_emulator(NULL), m_library(NULL), m_outer(false),
+    m_debugProp(NULL), m_mkFile(NULL), m_xmlFile(NULL), m_outDir(NULL), m_build(*this),
+    m_paramConfig(NULL), m_scalable(false), m_parent(parent), m_maxLevel(0), m_dynamic(false)
 {
   if (err)
     return;

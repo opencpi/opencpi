@@ -71,7 +71,7 @@ struct Instance : public OU::IdentResolver {
 		   OU::Assembly::Properties &xmlProperties);
   const char *initHDL(::Assembly &assy);
   void emitHdl(FILE *f, const char *prefix, size_t &index);
-  void emitDeviceConnectionSignals(FILE *f, bool container);
+  void emitDeviceConnectionSignals(FILE *f, Worker &assy);
   const char *getValue(const char *sym, OU::ExprValue &val) const;
 };
 // To represent an attachment of a connection to an instance port.

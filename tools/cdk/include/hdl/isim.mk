@@ -109,7 +109,7 @@ HdlToolCompile=\
     $(if $(HdlNoSimElaboration),, \
       echo verilog work $(toolsDir)/ISE/verilog/src/glbl.v \
 	> $(Worker).prj; \
-      fuse $(WorkLib).$(WorkLib)$(and $(filter config,$(HdlMode)),_rv) work.glbl -v 2 \
+      fuse $(WorkLib).$(WorkLib)$(and $(filter assembly config,$(HdlMode)),_rv) work.glbl -v 2 \
            -prj $(Worker).prj -L unisims_ver -o $(Worker).exe \
            -lib $(call ToLower,$(WorkLib))=$(WorkLib) $(IsimLibs)))
 

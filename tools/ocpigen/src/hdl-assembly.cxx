@@ -152,6 +152,14 @@ parseHdlAssy() {
   for (unsigned n = 0; n < a->m_instances.size(); n++, i++)
     if ((err = i->initHDL(*a)))
       return err;
+  i = &a->m_instances[0];
+  for (unsigned n = 0; n < a->m_instances.size(); n++, i++)
+    if (i->m_worker->m_emulate) {
+      Instance *ii = &a->m_instances[0];
+      for (unsigned nn = 0; nn < a->m_instances.size(); nn++, ii++)
+	if (!strcasecmp(ii->m_worker->m_implName, i->m_worker->m_emulate->m_implName))
+	  ii->m_emulated = true;
+    }
   // Look at connections for inserting adapters between data ports
   for (ConnectionsIter ci = a->m_connections.begin(); ci != a->m_connections.end(); ci++) {
     Connection &c = **ci;
@@ -263,6 +271,7 @@ parseHdlAssy() {
 	     (ip.m_instance->m_worker->m_ports[0]->m_type == WCIPort &&
 	      !ip.m_instance->m_worker->m_ports[0]->m_master &&
 	      // If this (data) port on the worker uses the worker's wci clock
+	      ip.m_port->isData() && ip.m_port->clock &&
 	      ip.m_port->clock == ip.m_instance->m_worker->m_ports[0]->clock))) {
 	  at = *ai;
 	  break;
@@ -585,15 +594,16 @@ emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
   else
     fprintf(f, "    port map(   ");
   any = false;
-  const char *indent = "                ";
+  const char *indent = "              ";
   // For the instance, define the clock signals that are defined separate from
   // any interface/port.
   for (ClocksIter ci = i->m_worker->m_clocks.begin(); ci != i->m_worker->m_clocks.end(); ci++) {
     Clock *c = *ci;
     if (!c->port) {
       if (lang == Verilog) {
-	fprintf(f, "%s  .%s(%s)", any ? ",\n" : "", c->signal(),
-		i->m_clocks[c->ordinal]->signal());
+	if (i->m_clocks[c->ordinal])
+	  fprintf(f, "%s  .%s(%s)", any ? ",\n" : "", c->signal(),
+		  i->m_clocks[c->ordinal]->signal());
 	if (c->m_reset.size())
 	  fprintf(f, ",\n  .%s(%s)", c->reset(),
 		  i->m_clocks[c->ordinal]->reset());
@@ -718,6 +728,9 @@ emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
     } else if (lang == VHDL)
       fprintf(f, "%s%s => %s%s", any ? indent : "",
 	      s.cname(), prefix.c_str(), s.cname());
+    else
+      fprintf(f, "%s.%s(%s%s)", any ? indent : "",
+	      s.cname(), prefix.c_str(), s.cname());
     if (!i->m_emulated && !i->m_worker->m_emulate && !anyMapped) {
       Signal *es = m_assyWorker.m_sigmap[(prefix + s.cname()).c_str()];
       if (!es)
@@ -810,7 +823,7 @@ emitAssyHDL() {
 	return err;
     }
     // Generate internal signal for emulation implicit connections
-    i->emitDeviceConnectionSignals(f, m_type == Container);
+    i->emitDeviceConnectionSignals(f, *this);
   }
   if (unused && m_language == VHDL)
     fprintf(f, "  signal unused : std_logic_vector(0 to %zu);\n", unused - 1);
@@ -928,19 +941,21 @@ emitHdl(FILE *f, const char *prefix, size_t &index)
 // 1. Signals between device workers and their emulators.
 // 2. Signals to the tristate buffers generated in the container.
 void Instance::
-emitDeviceConnectionSignals(FILE *f, bool container) {
+emitDeviceConnectionSignals(FILE *f, Worker &assy) {
+  ocpiDebug("Emitting device connection signals.");
   for (SignalsIter si = m_worker->m_signals.begin(); si != m_worker->m_signals.end(); si++) {
     Signal &s = **si;
     if (s.m_differential && m_emulated) {
-      s.emitConnectionSignal(f, cname(), s.m_pos.c_str(), false);
-      s.emitConnectionSignal(f, cname(), s.m_neg.c_str(), false);
-    } else if (s.m_direction == Signal::INOUT && container) {
+      s.emitConnectionSignal(f, cname(), s.m_pos.c_str(), false, assy.m_language);
+      s.emitConnectionSignal(f, cname(), s.m_neg.c_str(), false, assy.m_language);
+    } else if (s.m_direction == Signal::INOUT && 
+	       (assy.m_type == Worker::Container || m_emulated)) {
       const char *prefix = m_worker->m_type == Worker::Configuration ? NULL : cname();
-      s.emitConnectionSignal(f, prefix, s.m_in.c_str(), false);
-      s.emitConnectionSignal(f, prefix, s.m_out.c_str(), false);
-      s.emitConnectionSignal(f, prefix, s.m_oe.c_str(), true);
+      s.emitConnectionSignal(f, prefix, s.m_in.c_str(), false, assy.m_language);
+      s.emitConnectionSignal(f, prefix, s.m_out.c_str(), false, assy.m_language);
+      s.emitConnectionSignal(f, prefix, s.m_oe.c_str(), true, assy.m_language);
     } else if (m_emulated)
-      s.emitConnectionSignal(f, cname(), "%s", false);
+      s.emitConnectionSignal(f, cname(), "%s", false, assy.m_language);
   }
 }
 
@@ -1071,11 +1086,32 @@ emitAssyImplHDL(FILE *f, bool wrap) {
       emitVhdlRecordWrapper(f);
   else
     if (m_language == VHDL)
-      // We need to enable instantiation from Verilog, so we produce the
-      // signal-to-record wrapper, which must be in VHDL.
-      // The defs file already defined the signal level interface (as a VHDL component).
-      // So all we need here is the entity and architecture
-      emitVhdlSignalWrapper(f);
+      if (m_type == Assembly) {
+	// This is an application assembly in VHDL.
+	// This file simply contains the entity
+	const char *comment = hdlComment(m_language);
+	fprintf(f,
+		"%s This file contains the entity declaration for the VHDL application "
+		"assembly: %s\n",
+		comment, m_implName);
+	fprintf(f,
+		"Library IEEE; use IEEE.std_logic_1164.all, IEEE.numeric_std.all;\n"
+		"Library ocpi; use ocpi.all, ocpi.types.all;\n"
+		"use work.%s_defs.all, work.%s_constants.all;\n",
+		m_implName, m_implName);
+	emitVhdlLibraries(f);
+	fprintf(f,
+		"\nentity %s_rv is\n", m_implName);
+	emitParameters(f, m_language);
+	emitSignals(f, VHDL, true, true, false);
+	fprintf(f, "end entity %s_rv;\n", m_implName);
+      } else {
+	// We need to enable instantiation from Verilog, so we produce the
+	// signal-to-record wrapper, which must be in VHDL.
+	// The defs file already defined the signal level interface (as a VHDL component).
+	// So all we need here is the entity and architecture
+	emitVhdlSignalWrapper(f);
+      }
     else
       // We need to enable instantiation from VHDL with record interfaces.
       // But that can't happen in Verilog, so the native IMPL file doesn't do anything.

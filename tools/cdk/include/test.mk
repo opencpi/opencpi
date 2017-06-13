@@ -85,7 +85,8 @@ $(TESTXML):
 
 # This is the target to build test-related artifacts using tools
 build: generate
-	$(AT)[ ! -d gen/assemblies ] || $(MAKE) -C gen/assemblies
+	$(AT)[ ! -d gen/assemblies ] || \
+           $(MAKE) -C gen/assemblies ComponentLibrariesInternal=../../..
 
 # Prepare to run by looking for available containers and generating run scripts for the
 # current platform environment - this is context/platform sensitiive

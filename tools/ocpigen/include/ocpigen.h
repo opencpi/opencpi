@@ -69,8 +69,9 @@ struct Signal {
   const char * parse(ezxml_t);
   const char *cname() const { return m_name.c_str(); }
   Signal *reverse();
-  void emitConnectionSignal(FILE *f, const char *iname, const char *pattern, bool single);
-  static void emitConnectionSignals(FILE *f, const char *iname, Signals &signals);
+  void emitConnectionSignal(FILE *f, const char *iname, const char *pattern, bool single,
+			    Language lang);
+  //  static void emitConnectionSignals(FILE *f, const char *iname, Signals &signals);
   static const char *parseSignals(ezxml_t x, const std::string &parent, Signals &signals,
 				  SigMap &sigmap);
   static void deleteSignals(Signals &signals);

@@ -599,6 +599,7 @@ class Worker : public Parsed, public OU::IdentResolver {
   ::Assembly *m_assembly;
   Worker *m_slave;                  // from slave attribute - is RCC-only
   HdlDevice *m_emulate;
+  Worker *m_emulator;               // for test only, the emulator of this worker
   Signals m_signals;
   SigMap  m_sigmap;                 // map signal names to signals
   const char *m_library;            // the component library name where the xml was found
@@ -677,7 +678,7 @@ class Worker : public Parsed, public OU::IdentResolver {
     *emitVhdlPackageConstants(FILE *f),
     *writeParamFiles(FILE *mkFile, FILE *xmlFile),
     *emitToolParameters(),
-    *emitMakefile(),
+    *emitMakefile(FILE *xmlFile = NULL),
     *emitHDLConstants(size_t config, bool other),
     *setParamConfig(OU::Assembly::Properties *instancePVs, size_t paramConfig),
     *finalizeProperties(),

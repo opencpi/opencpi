@@ -2221,8 +2221,6 @@ emitSkelHDL() {
 	      m_implName);
       for (unsigned i = 0; i < m_ports.size(); i++)
 	m_ports[i]->emitSkelSignals(f);
-      if (m_emulate)
-        fprintf(f, "  props_out.violation <= bfalse;\n");
       if (m_signals.size())
 	for (SignalsIter si = m_signals.begin(); si != m_signals.end(); si++) {
 	  Signal &s = **si;

@@ -70,6 +70,7 @@ class ParamConfig : public OCPI::Util::IdentResolver {
   ParamConfig(Worker &w);
   ParamConfig(const ParamConfig &);
   ParamConfig &operator=(const ParamConfig * p);
+  void clone(const ParamConfig &other);
   const char * parse(ezxml_t cx, const ParamConfigs &configs); //, bool includeInitial = false);
   void doDefaults(); //bool includeInitial = false);
   void write(FILE *xf, FILE *mf);

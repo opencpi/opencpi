@@ -39,7 +39,11 @@ override Workers:=$(CwdName)
 override Worker:=$(Workers)
 Worker_$(Worker)_xml:=$(Worker).xml
 Worker_xml:=$(Worker).xml
-OcpiLanguage:=verilog
+# Not good, but we default the language differently here for compatibility.
+OcpiLanguage:=$(call OcpiGetLanguage,$(Worker_xml))
+ifndef OcpiLanguage
+  OcpiLanguage:=verilog
+endif
 override LibDir=lib/hdl
 override HdlLibraries+=platform
 # If HdlPlatforms is explicitly defined to nothing, then don't build containers.
@@ -165,8 +169,7 @@ else # for "clean" goal
   HdlTargets:=all
 endif
 # Due to our filtering, we might have no targets to build
-ifeq ($(filter $(or $(OnlyPlatforms),$(HdlAllPlatforms)),$(filter-out $(ExcludePlatforms),$(HdlPlatforms))),)
-#  $(info 2.Only:$(OnlyPlatforms),All:$(HdlAllPlatforms),Ex:$(ExcludePlatforms),HP:$(HdlPlatforms))
+ifeq ($(filter $(or $(OnlyPlatforms),$(HdlAllPlatforms)),$(filter-out $(ExcludePlatforms),$(HdlPlatforms)))$(filter skeleton,$(MAKECMDGOALS)),)
   $(and $(HdlPlatforms),$(info Not building assembly $(Worker) for platform(s): $(HdlPlatforms) in "$(shell pwd)"))
 #  $(info No targets or platforms to build for this "$(Worker)" assembly in "$(shell pwd)")
 else ifndef HdlContainers
