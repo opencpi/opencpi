@@ -1,0 +1,3 @@
+This is a version of the 'zed' platform that uses ISE instead of Vivado.
+
+To load use zed_ise bitstreams on a ZedBoard, use the system.xml file located in zed_ise/sd_card.
