@@ -1,0 +1,38 @@
+APIs are documented and exposed to applications (via the ACI) and worker developers.
+
+APIs are all in the OCPI::API namespace, whose standard namespace prefix is OA.
+(user's should use OA::, which we use in examples, but user code established this abbreviation)
+
+API headers all have the "Ocpi" prefix at the start and "Api.hh" suffix at the end.
+
+C++ headers for APIs must have the .hh suffix.
+The actual header files in the source tree my be *.h, but they must be exported as *.hh.
+
+This file defines rules for interfaces exposed to users.
+
+APIs are normally only used by the ACI, but RCC C++ workers can use them in limited ways,
+by retrieving the current application object using the getApplication container method.
+
+API class definitions must strive to expose as little implementation as possible,
+while supporting key high-performance paths as necessary.  Great care must be taken
+to limit what is exposed in these headers to what is supportable for user code, and to avoid
+dependencies on any more underlying headers.
+
+This implies special attention to access categories (public vs. protected vs. private).
+Only make member functions public if they truly should be exposed, otherwise protect them.
+No member data should be public.
+No references from API header files to files outside of API headers, except via protected opaque
+class references or pointers that are declared in these API files, e.g.:
+  namespace OCPI { namespace SomeInternal { class xyz; }}
+This means that no interfaces or callers require actual definitions of such classes.
+On a spectrum of a small number of APIs with lots of options, vs many APIs with narrow functions,
+we skew toward the former, perhaps using new optional arguments to extend functionality.
+
+The coding conventions for arguments and return values etc., follow the conventions of the core 
+software.
+
+For little methods that retrieve readonly attributes, we use the name of the member/attribute,
+with no "get" or "set", but for settable attributes, we use symmetrical get/set prefixes.
+
+If a method is public but not documented or intended for users, a comment in upper case should
+shout that fact.

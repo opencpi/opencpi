@@ -1,0 +1,67 @@
+Scripts (not C++ main programs) fall into several categories, but are generally placed in
+tools/cdk/scripts (soon to become tools/scripts).
+
+Scripts that are exposed to users must follow these rules:
+==========================================================
+
+1. the tool name should start with "ocpi" to control path namespace pollution.
+   Try to fit it in so it is similar to other "ocpixxx" commands and appears to be part of the
+   same environment rather than an outlier.
+
+2. any language suffix should not be present so that the documented use of the tool does not
+   depend upon its implementation language - the file in "scripts" can have the suffix,
+   but it cannot be exported or documented with it.  I.e. if you write ocpifoo.py or ocpifoo.sh,
+   export it as ocpifoo.
+
+3. scripts should be exported to bin directories so they are available in the user's path
+   with only a single directory added by OpenCPI.  The "scripts" directory is not put into
+   user paths and may contain internal scripts not intended for users.
+
+4. command arguments should attempt to follow the same conventions used for C++ executables.
+e.g.:
+ single hyphen options are single letters
+ double hyphen options should be hyphen-separated words, not abbreviations
+    except things like "init", etc. (we should have a list of some common abbreviations).
+ when the command does multiple things, the first non-option arg should be a "verb" saying
+ what sub-command is being invoked.
+ arguments after the options and verb are verb-specific, but are usually "nouns".
+
+ option arguments should try to follow the pattern of other commands, like -v for verbose etc.
+ (some of these will become automatically included in the future).
+
+5. scripts should clean up after themselves on control-c unless there is an explicit "keep"
+   option.
+
+(todo: temp file common conventions)
+(todo: we don't yet have a standard bash equivalent to the command executable options capability).
+
+Scripts not documented for users and only used by other scripts:
+================================================================
+
+These should not be exported to bin, and should not be accessed without explicit reference to
+their exported location in OCPI_CDK_DIR, i.e. is $OCPI_CDK_DIR/scripts/foo.
+
+These can have any language suffix.
+
+Shell scripts are written for two distinct environments:
+========================================================
+
+When they are for use in a development environment, they may make full use of bash, but should
+generally use the --noprofile option to avoid being affected by user shell settings.
+
+When they are for a target/embedded/runtime environment, they should stick to the basic POSIX
+shell capabilities and NOT use BASH features not supported by many small embedded shell
+implementations.
+(todo: What was that script that tested for non-posix features?)
+(todo: add stuff that doesn't work on things like busybox/ash etc.)
+
+A comment at the top of embedded scripts should make it VERY CLEAR that the script is for
+limited/embedded environments so that maintainers don't trash it unwittingly by adding use
+of BASH features.
+
+Python:
+=======
+
+The availability of python 2.x can be assumed in development environments, but not (yet) in
+embedded environments.
+
