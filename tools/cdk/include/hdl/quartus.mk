@@ -71,7 +71,7 @@ HdlToolCoreRef_quartus=$1
 HdlToolLibRef=$(or $3,$(call HdlGetFamily,$2))
 
 # This is because it seems that Quartus cannot support entities and architectures in 
-# separate files, so we have to combine them
+# separate files, so we have to combine them 
 QuartusVHDLWorker=$(and $(findstring worker,$(HdlMode)),$(findstring VHDL,$(HdlLanguage)))
 ifdef QuartusVHDLWorkerx
 QuartusCombine=$(OutDir)target-$(HdlTarget)/$(Worker)-combine.vhd
@@ -116,7 +116,11 @@ $(if $(HdlExactPart),$(call ToUpper,$(call QuartusMakePart,$(HdlExactPart))),AUT
 # Make the settings file
 # Note that the local source files use notdir names and search paths while the
 # remote libraries use pathnames so that you can have files with the same names.
-# FIXME: use of "sed" below is slow - perhaps use .cN rather than _cN?
+# FIXME: use of "sed" below is slow - perhaps use .cN rather than _cN? 
+#
+# We check to see if a core is in 'Cores' before trying to add the
+# worker source files (e.g. those underneath gen). The cores listed
+# in 'Cores' are either primitive cores or worker-included cores.
 QuartusMakeQsf=\
  if test -f $(Core).qsf; then cp $(Core).qsf $(Core).qsf.bak; fi; \
  $(and $(findstring $(HdlMode),library),\
@@ -131,17 +135,18 @@ QuartusMakeQsf=\
   $(and $(SubCores_$(HdlTarget)),echo '\#' Import QXP file for each core;) \
   $(foreach c,$(SubCores_$(HdlTarget)),$(infox CCC$c)\
     echo set_global_assignment -name QXP_FILE \
-      '\"'$(call FindRelative,$(TargetDir),$(call HdlCoreRef,$c,$(HdlTarget)))'\"';\
-    $(foreach w,$(subst _rv,,$(basename $(notdir $c))),$(infox WWW:$w)\
-      $(foreach d,$(dir $c),$(infox DDD:$d)\
-        $(foreach l,$(if $(filter vhdl,$(HdlLanguage)),vhd,v),$(infox LLLLL:$l)\
-          $(foreach f,$(or $(xxcall HdlExists,$d../gen/$w-defs.$l),\
-                           $(call HdlExists,$d$w.$l)),$(infox FFFF:$f)\
-            echo set_global_assignment -name $(if $(filter vhdl,$(HdlLanguage)),VHDL,VERILOG)_FILE -library $w '\"'$(call FindRelative,$(TargetDir),$f)'\"';\
-            $(and $(filter vhdl,$(HdlLanguage)),\
-              $(foreach g,$(or $(call HdlExists,$d/generics.vhd),\
-                               $(call HdlExists,$d/$(basename $(notdir $c))-generics.vhd)),\
-                echo set_global_assignment -name VHDL_FILE -library $w '\"'$(call FindRelative,$(TargetDir),$g)'\"';)))))))\
+      '\"'$(call FindRelative,$(TargetDir),$(if $(findstring /,$c),$c,$(call HdlCoreRef,$c,$(HdlTarget))))'\"';\
+    $(if $(filter $c,$(Cores)),,\
+      $(foreach w,$(subst _rv,,$(basename $(notdir $c))),$(infox WWW:$w)\
+        $(foreach d,$(dir $c),$(infox DDD:$d)\
+          $(foreach l,$(if $(filter vhdl,$(HdlLanguage)),vhd,v),$(infox LLLLL:$l)\
+            $(foreach f,$(or $(xxcall HdlExists,$d../gen/$w-defs.$l),\
+                             $(call HdlExists,$d$w.$l)),$(infox FFFF:$f)\
+              echo set_global_assignment -name $(if $(filter vhdl,$(HdlLanguage)),VHDL,VERILOG)_FILE -library $w '\"'$(call FindRelative,$(TargetDir),$f)'\"';\
+              $(and $(filter vhdl,$(HdlLanguage)),\
+                $(foreach g,$(or $(call HdlExists,$d/generics.vhd),\
+                                 $(call HdlExists,$d/$(basename $(notdir $c))-generics.vhd)),\
+                  echo set_global_assignment -name VHDL_FILE -library $w '\"'$(call FindRelative,$(TargetDir),$g)'\"';))))))))\
   echo '\# Search path(s) for local files'; \
   $(foreach d,$(call Unique,$(patsubst %/,%,$(dir $(QuartusSources)) $(VerilogIncludeDirs))), \
     echo set_global_assignment -name SEARCH_PATH '\"'$(strip \
@@ -252,6 +257,7 @@ $1/$3.sof:
 	$(call DoAltera1,quartus_map,$4-top,$4-top,map) && \
 	$(call DoAltera1,quartus_fit,$4-top,$4-top,fit) && \
 	cp $4-top.qsf $4-top.qsf.post-fit && \
+	$(call DoAltera1,quartus_sta,$4-top -c $4-top,$4-top,sta) && \
 	$(call DoAltera1,quartus_asm,$4-top,$4-top,asm) && \
 	cp $4-top.sof $3.sof
 

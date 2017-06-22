@@ -30,13 +30,13 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <stdint.h>
-#include <errno.h>
-#include <strings.h>
+#include <set>
+#include <cstdint>
+#include <cerrno>
 #include <unistd.h>
 #include <sys/uio.h>
+#include <climits>
 #include <cassert>
-#include <iostream>
 
 #include "ezxml.h"
 #include "OcpiOsAssert.h"
@@ -317,20 +317,25 @@ namespace OCPI {
       }
 
       // common error return that collects valid possible values 3 ways.
+      // uses "heavier" "std::set" but only happens when already failing
       static const char *
       checkFailed(const char *type, const char *what, const char *parent, const char **argv,
 		  va_list *vap = NULL, bool vv = false) {
         std::string opts;
+        std::set<std::string> all_opts;
+        // These SHOULD use emplace() but the ARM GCC is too old...
 	if (argv)
 	  for (const char **p = argv; *p; p++ )
-	    formatAdd(opts, " %s", *p);
+	    all_opts.insert(*p);
 	else if (vv)
 	  for (const char **ap; (ap = va_arg(*vap, const char **)); )
 	    for (const char **p = ap; *p; p++)
-	      formatAdd(opts, " %s", *p);
+	      all_opts.insert(*p);
 	else
 	  for (const char *p; (p = va_arg(*vap, const char *));)
-	    formatAdd(opts, " %s", p);
+	    all_opts.insert(p);
+        for (auto it = all_opts.begin(); it != all_opts.end(); ++it)
+          opts.append(*it).append(" ");
         return esprintf("Invalid %s \"%s\", in a \"%s\" element.  Valid %ss are: %s",
 			type, what, parent, type, opts.c_str());
       }
@@ -342,7 +347,6 @@ namespace OCPI {
 	va_end(ap);							\
 	return err;							\
       } while(0)
-
       const char *
       checkElements(ezxml_t x, ...) {
 	va_list ap;
@@ -355,7 +359,7 @@ namespace OCPI {
 	    if (!strcasecmp(p, c->name))
 	      break;
 	  va_end(ap);
-	  if (!p)
+	  if (!p && strcasecmp(c->name, "extension"))
 	    RETURNFAILED(false, "element", c->name, x->name);
 	}
 	return 0;
@@ -374,7 +378,7 @@ namespace OCPI {
 	      break;
 	  va_end(ap);
 	  if (!p)
-	    RETURNFAILED(false, "attribute1", *a, x->name);
+	    RETURNFAILED(false, "attribute(1)", *a, x->name);
 	}
 	return 0;
       }
@@ -393,7 +397,7 @@ namespace OCPI {
 		goto found;
 	      }
 	  va_end(ap);
-	  RETURNFAILED(true, "attribute2", *a, x->name);
+	  RETURNFAILED(true, "attribute(2)", *a, x->name);
 	found:;
 	}
 	return 0;
@@ -409,7 +413,7 @@ namespace OCPI {
 	    if (!strcasecmp(*a, *va))
 	      break;
 	  if (!*va)
-	    return checkFailed("attribute3", *a, x->name, attrs);
+	    return checkFailed("attribute(3)", *a, x->name, attrs);
 	}
 	return 0;
       }
@@ -862,6 +866,50 @@ namespace OCPI {
 	OU::formatAdd(text, "\n%*s", (level-1)*2, "");
 	ezxml_set_txt_d(x, text.c_str());
 	return cx;
+      }
+      // Remove indentation common to all non-blank lines, to allow the text of an element to be
+      // nicely indented in an XML file.  Strip leading and trailing blank lines.
+      // Strip trailing newlines so a newline can be added uniformly.
+      void
+      unindent(std::string &in) {
+	bool sol = true;
+	unsigned indent = 0, minindent = UINT_MAX;
+	for (const char *cp = in.c_str(); *cp; cp++)
+	  switch (*cp) {
+	  case ' ': if (sol) indent++; break;
+	  case '\t': if (sol) do indent++; while (indent % 8); break;
+	  case '\n':
+	    if (!sol && indent < minindent)
+	      minindent = indent;
+	    sol = true;
+	    indent = 0;
+	    break;
+	  default: sol = false; break;
+	  }
+	if (!sol && in.back() != '\n' && indent < minindent)
+	  minindent = indent;
+	sol = true;
+	indent = 0;
+	std::string str;
+	bool first = true;
+	for (const char *cp = in.c_str(); *cp; cp++) {
+	  switch (*cp) {
+	  case ' ': if (sol) {indent++; continue;} break;
+	  case '\t': if (sol) {do indent++; while (indent % 8); continue;} break;
+	  case '\n': sol = true; indent = 0; if (first) { first = false; continue; } break;
+	  default:
+	    if (sol) {
+	      str.append(indent - minindent, ' ');
+	      sol = false;
+	    }
+	  }
+	  str.append(1, *cp);
+	}
+	const char *nl = strchr(str.c_str(), '\n');
+	// trim trailing NL if it is the only NL
+	if (nl && (unsigned)(nl - str.c_str()) < str.length() - 1)
+	  str.resize(str.size() - 1);
+	in = str;
       }
     }
   }

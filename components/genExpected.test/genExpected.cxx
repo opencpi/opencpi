@@ -2,7 +2,7 @@
 #include <cstdio>
 #include <typeinfo>
 #include <iostream>
-#include "OcpiApi.h"
+#include "OcpiApi.hh"
 #include "OcpiContainerApi.h"
 #include "OcpiPValueApi.h"
 #include "OcpiUtilCommandLineConfiguration.h"
@@ -74,8 +74,8 @@ int main ( int argc, char* argv [ ] )
 		   " <policy mapping='MaxProcessors' processors='0'/>"
 
 		   "  <instance worker='file_read_msg' >"
-		   "    <property name='fileName' value='testDataIn.dat'/> "		      
-		   "    <property name='genTestFile' value='true'/> "		      
+		   "    <property name='fileName' value='testDataIn.dat'/> "
+		   "    <property name='genTestFile' value='true'/> "
 		   "    <property name='stepThruMsg' value='false'/> "
 		   "    <property name='stepNow' value='true'/> "
 		   "    <property name='genReal' value='%s'/> "
@@ -122,7 +122,7 @@ int main ( int argc, char* argv [ ] )
 
   OA::Application * app = NULL;
   try
-    {      
+    {
       int nContainers = 1;
       // Create several containers to distribute the workers on
       for ( int n=0; n<nContainers; n++ ) {
@@ -138,13 +138,13 @@ int main ( int argc, char* argv [ ] )
 
       char app_xml[4096];
       snprintf( app_xml, 4095, xml, config.genRSin ? "true" : "false",
-		config.unit_test_name.c_str(), 
+		config.unit_test_name.c_str(),
 		config.unit_test_props.c_str() );
 
       printf("%s\n", app_xml );
-      
+
       std::string s = app_xml;
-      app = new OA::Application( s, minp_policy);	
+      app = new OA::Application( s, minp_policy);
       fprintf(stderr, "Application XML parsed and deployments (containers and implementations) chosen\n");
       app->initialize();
       fprintf(stderr, "Application established: containers, workers, connections all created\n");
@@ -190,5 +190,3 @@ int main ( int argc, char* argv [ ] )
   fflush( stdout );
   return passed;
 }
-
-

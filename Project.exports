@@ -61,7 +61,6 @@ tests
 +scripts/clean-env.sh scripts/
 +tools/cdk/scripts/makeStaticWorker scripts/
 +tools/cdk/scripts/ocpidriver scripts/
-# +tools/cdk/scripts/ocpixml scripts/
 +tools/cdk/scripts/ocpisetup.sh scripts/
 +tools/cdk/scripts/ocpibootstrap.sh scripts/
 +tools/cdk/scripts/ocpisudo scripts/
@@ -71,12 +70,12 @@ tests
 +tools/cdk/scripts/testrunprep.sh scripts/
 +tools/cdk/scripts/testrunremote.sh scripts/
 +tools/cdk/scripts/testrun.sh scripts/
++tools/cdk/scripts/testutil.sh scripts/
 +tools/cdk/scripts/setsid.py scripts/
 #+tools/cdk/scripts/makeExportLinks.sh scripts/
 +scripts/makeExportLinks.sh scripts/
 +tools/cdk/scripts/maybeExport.sh scripts/
 # user level scripts made available in the bin directory
-# +tools/cdk/scripts/ocpixml bin/<target>/
 +tools/cdk/scripts/ocpidev bin/<target>/
 +tools/cdk/scripts/ocpidriver bin/<target>/
 +tools/cdk/specs/* specs/
@@ -132,6 +131,7 @@ tests
 +runtime/hdl-support/xilinx/findJtagByESN_xilinx scripts/
 +runtime/hdl-support/xilinx/getESNfromUSB_xilinx scripts/
 +runtime/hdl-support/xilinx/xilinx.mk include/hdl/
++runtime/hdl-support/xilinx/vivado* include/hdl/
 +runtime/hdl-support/scripts/loadFlash bin/<target>/
 +runtime/hdl-support/scripts/probeJtag bin/<target>/
 +runtime/hdl-support/scripts/ocpiview bin/<target>/

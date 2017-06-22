@@ -33,7 +33,10 @@ export OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/lib/components/rcc
 # export OCPI_LOG_LEVEL=11
 export DIR=$(mktemp -d -t ocpi_ctests.XXXXX)
 echo "========= Outputs from these tests will be in: $DIR"
-cd "$(dirname $0)"
+# if the script lives in the source tree, we are running where the executables are
+# otherwise assume this script is in the same directory as the executables are,
+# and change to that directory
+[ $(basename $(dirname $0)) = src ] || cd "$(dirname $0)"
 
 failed=
 set -o pipefail

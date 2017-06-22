@@ -104,7 +104,7 @@
   CMD_OPTION(sim_ticks,  ,  ULong,  0, "simulator clock cycles to allow") \
   CMD_OPTION(artifacts,  A, String, 0, "deprecated: comma-separated targets to print artifacts in path on stdout") \
   CMD_OPTION(specs,      G, String, 0, "deprecated: comma-separated targets to print specs in path on stdout") \
-  CMD_OPTION(only_platforms,, Bool, 0, "modifies the list command to show only platforms")\
+  CMD_OPTION(only_platforms,, Bool, 0, "modifies the list command to show only platforms (preliminary")\
   CMD_OPTION(dump_file,   , String, 0, "dump properties in raw parsable format to this file") \
   CMD_OPTION(component,   , Bool,   0, "first non-option argument is a component name, not an application")\
   CMD_OPTION(seconds,     , Long,   0, "<seconds> -- legacy, use \"duration\" now\n") \
@@ -173,7 +173,7 @@ static void doTarget(const char *a_target, bool specs) {
 static bool setup(const char *arg, ezxml_t &xml, std::string &file, std::string &error) {
   const char *e = NULL;
   if (arg) {
-    if (options.artifacts() || options.list_artifacts() || options.specs() || 
+    if (options.artifacts() || options.list_artifacts() || options.specs() ||
 	options.list_specs())
       return
 	OU::eformat(error,
@@ -213,7 +213,7 @@ static bool setup(const char *arg, ezxml_t &xml, std::string &file, std::string 
     } else if (strcasecmp(ezxml_name(xml), "application"))
       return OU::eformat(error, "file \"%s\" is a \"%s\" XML file.", file.c_str(),
 			 ezxml_name(xml));
-  } else if (options.artifacts() || options.list_artifacts() || options.specs() || 
+  } else if (options.artifacts() || options.list_artifacts() || options.specs() ||
 	     options.list_specs()) {
     OCPI::Driver::ManagerManager::suppressDiscovery();
     OL::getManager().enableDiscovery();
@@ -230,9 +230,9 @@ static bool setup(const char *arg, ezxml_t &xml, std::string &file, std::string 
       }
     } here;
     if (options.artifacts() || options.specs()) {
-      if ((options.artifacts() && 
+      if ((options.artifacts() &&
 	   (e = OU::parseList(options.artifacts(), Here::addTarget, &here))) ||
-	  (options.specs() && 
+	  (options.specs() &&
 	   (e = OU::parseList(options.specs(), Here::addTarget, &here))))
 	return OU::eformat(error, "processing artifact target list (\"%s%s\"): %s",
 			   options.artifacts(), options.specs(), e);
@@ -303,7 +303,7 @@ static bool setup(const char *arg, ezxml_t &xml, std::string &file, std::string 
       OU::format(name, "lsim:%s0", *it);
       OA::ContainerManager::find("hdl", name.c_str(),
 				 simParams.size() ? &simParams[0] : NULL);
-    }	    
+    }
   } else {
     unsigned n = 0;
     for (const char **sims = options.simulator(); *sims; sims++, n++) {
@@ -385,7 +385,7 @@ static int mymain(const char **ap) {
     addParam("deployment", options.deployment(), params);
   if (params.size())
     params.push_back(OA::PVEnd);
-  
+
   std::string file;  // the file that the application XML came from
   ezxml_t xml = NULL;
   std::string error;
@@ -394,7 +394,7 @@ static int mymain(const char **ap) {
   if (xml) try {
       std::string name;
       OU::baseName(file.c_str(), name);
-  
+
       OA::ApplicationX app(xml, name.c_str(), params.size() ? &params[0] : NULL);
       if (options.verbose())
 	fprintf(stderr,
@@ -412,11 +412,11 @@ static int mymain(const char **ap) {
       if (!options.no_execute()) {
 	app.initialize();
 	app.start();
-	
-	unsigned timeout = 
+
+	unsigned timeout =
 	  options.timeout() ? options.timeout() :
 	  options.duration() < 0 ? -options.duration() : // legacy negative
-	  options.duration() ? options.duration() : 
+	  options.duration() ? options.duration() :
 	  options.seconds() < 0 ? -options.seconds() :
 	  options.seconds();
 	app.wait(timeout * 1000000, options.timeout() != 0);

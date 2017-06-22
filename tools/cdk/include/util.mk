@@ -529,18 +529,27 @@ ifdef NEVER
   endif
 endif
 # Look into a directory in $1 and determine which type of directory it is by looking at the Makefile.
+# Also checks Makefile.am for autotools version
 # Return null if there is no type to be found
 OcpiGetDirType=$(strip\
-  $(and $(wildcard $1/Makefile),\
-        $(foreach d,$(shell sed -n \
-                      's=^[ 	]*include[ 	]*.*OCPI_CDK_DIR.*/include/\(.*\).mk$$=\1=p' \
-                      $1/Makefile | tail -1),\
-          $(infox OGT: found type: $d)$(notdir $d))))
+  $(or \
+    $(and $(wildcard $1/Makefile),\
+      $(foreach d,$(shell sed -n \
+                  's=^[ 	]*include[ 	]*.*OCPI_CDK_DIR.*/include/\(.*\).mk$$=\1=p' \
+                  $1/Makefile | tail -1),\
+      $(infox OGT1: found type: $d ($1))$(notdir $d))) \
+    ,$(and $(wildcard $1/Makefile.am),\
+      $(foreach d,$(shell sed -n \
+                  's=^[ 	]*@AUTOGUARD@[ 	]*include[ 	]*.*OCPI_CDK_DIR.*/include/\(.*\).mk$$=\1=p' \
+                  $1/Makefile.am | tail -1),\
+      $(warning Found what I think is a $d in "$1", but it is not fully configured and may not work as expected.)$(notdir $d))) \
+  ) \
+)
 
 # Recursive
 OcpiIncludeProjectX=$(infox OIPX:$1:$2:$3)\
   $(if $(wildcard $1/Project.mk),\
-    $(if $(wildcard $1/Makefile),\
+    $(if $(wildcard $1/Makefile)$(wildcard $1/Makefile.am),\
       $(if $(filter project,$(call OcpiGetDirType,$1)),\
        $(infox found project in $1)$(eval $(call OcpiSetProject,$1)),\
        $(error no proper Makefile found in the directory where Project.mk was found ($1))),\

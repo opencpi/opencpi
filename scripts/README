@@ -17,5 +17,3 @@ To make installations for cross-built (usually embedded) platforms, you can prov
 the platform as an argument to the script (or set OCPI_TARGET_PLATFORM in your environment).
 
 Some installation scripts here are optional, and not invoked by install-prerequisites.sh.
-
-

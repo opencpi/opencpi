@@ -49,7 +49,7 @@ namespace OCPI {
   namespace API {
     // Deal with a deployment file referencing an app file
     static OL::Assembly &
-    createLibraryAssembly(const char *file, ezxml_t &deployXml, ezxml_t &appXml, char *&copy, 
+    createLibraryAssembly(const char *file, ezxml_t &deployXml, ezxml_t &appXml, char *&copy,
 			  const PValue *params) {
       std::string appFile(file);
       deployXml = NULL;
@@ -88,12 +88,12 @@ namespace OCPI {
     }
 
     ApplicationI::ApplicationI(Application &app, const char *file, const PValue *params)
-      : m_assembly(createLibraryAssembly(file, m_deployXml, m_appXml, m_copy, params)), 
+      : m_assembly(createLibraryAssembly(file, m_deployXml, m_appXml, m_copy, params)),
 	m_apiApplication(app) {
       init(params);
     }
     ApplicationI::ApplicationI(Application &app, const std::string &str, const PValue *params)
-      : m_assembly(createLibraryAssembly(str.c_str(), m_deployXml, m_appXml, m_copy, params)), 
+      : m_assembly(createLibraryAssembly(str.c_str(), m_deployXml, m_appXml, m_copy, params)),
 	m_apiApplication(app) {
       init(params);
     }
@@ -145,7 +145,7 @@ namespace OCPI {
 
     /*
       We made choices during the feasibility analysis, but here we want to add some policy.
-      the default allocation will bias toward collocation, so this is basically to 
+      the default allocation will bias toward collocation, so this is basically to
       spread things out.
       Since exclusive/bitstream allocations are not really adjustable, we just deal with the
       others.
@@ -167,7 +167,7 @@ namespace OCPI {
 	// If We have hit the limit, try to re-use.  If we can't, fall through to round robin
 	if (m_nContainers >= m_processors)
 	  for (unsigned n = 0; n < m_nContainers; n++) {
-	    if ( m_currConn >= m_nContainers ) 
+	    if ( m_currConn >= m_nContainers )
 	      m_currConn = 0;
 	    if (bestMap & (1 << m_usedContainers[m_currConn++])) {
 	      i->m_container = m_currConn - 1;
@@ -331,7 +331,7 @@ namespace OCPI {
 	throw OU::Error("Cannot set property '%s' for instance '%s'. It is not writable.",
 			pName, name);
       const char *err;
-      *pn = uProp.m_ordinal; // remember position in property list 
+      *pn = uProp.m_ordinal; // remember position in property list
       pv->setType(uProp);    // set the data type of the Value from the metadata property
 #if 1
       if ((err = uProp.parseValue(value, *pv, NULL, &impl.m_metadataImpl)))
@@ -439,9 +439,9 @@ namespace OCPI {
 	p->m_name = mp->m_name;
 	p->m_instance = mp->m_instance;
 	p->m_dumpFile = NULL;
-	ocpiDebug("Instance %s (%u) property %s (%u) named %s in assembly", 
+	ocpiDebug("Instance %s (%u) property %s (%u) named %s in assembly",
 		  m_assembly.instance(p->m_instance).name().c_str(), p->m_instance,
-		  mp->m_instPropName.c_str(), p->m_property, p->m_name.c_str());		    
+		  mp->m_instPropName.c_str(), p->m_property, p->m_name.c_str());
       }
       i = m_instances;
       for (unsigned n = 0; n < m_nInstances; n++, i++) {
@@ -451,9 +451,9 @@ namespace OCPI {
 	  p->m_name = m_assembly.instance(n).name() + "." + meta->m_name;
 	  p->m_instance = n;
 	  p->m_property = nn;
-	  ocpiDebug("Instance %s (%u) property %s (%u) named %s", 
+	  ocpiDebug("Instance %s (%u) property %s (%u) named %s",
 		    m_assembly.instance(n).name().c_str(), n,
-		    meta->m_name.c_str(), nn, p->m_name.c_str());		    
+		    meta->m_name.c_str(), nn, p->m_name.c_str());
 	  // Record dump file for this property if there is one.
 	  const OU::Assembly::Properties &aProps = m_assembly.instance(n).properties();
 	  p->m_dumpFile = NULL;
@@ -509,7 +509,7 @@ namespace OCPI {
 	if (!eq)
 	  return OU::esprintf("Parameter assignment for \"%s\", \"%s\" is invalid. "
 			      "Format is: <instance>=<parameter-value>", pName, assign);
-	
+
 	size_t len = eq - iassign;
 	unsigned nPorts;
 	OU::Port *p = m_instances[instn].m_impl->m_metadataImpl.ports(nPorts);
@@ -534,7 +534,7 @@ namespace OCPI {
       Instance *i = m_instances;
       Deployment *d = deployments;
       for (unsigned n = 0; n < m_nInstances; n++, d++, i++)
-	ocpiDebug(" Instance %2u: Candidate: %u, Container: %u Instance %s%s%s in %s", 
+	ocpiDebug(" Instance %2u: Candidate: %u, Container: %u Instance %s%s%s in %s",
 		  n, d->candidate, d->container,
 		  i->m_impl->m_metadataImpl.name().c_str(),
 		  i->m_impl->m_staticInstance ? "/" : "",
@@ -547,7 +547,7 @@ namespace OCPI {
       Deployment *d = m_deployments + instNum;
       Instance *i = m_instances + instNum;
       for (unsigned m = 0; m < i->m_nCandidates; m++) {
-	OL::Candidate &c = m_assembly.instance(instNum).m_candidates[m];	  
+	OL::Candidate &c = m_assembly.instance(instNum).m_candidates[m];
 	assert(c.impl);
 	i->m_impl = c.impl; // temporary, but needed by (at least) connectionsOk
 	ocpiDebug("doInstance %u %u %u", instNum, score, m);
@@ -810,7 +810,7 @@ namespace OCPI {
 	    char tbuf[30];
 	    ctime_r(&bd, tbuf);
 	    fprintf(stderr,
-		    " Instance %2u %s (spec %s) on %s container %s, using %s%s%s in %s dated %s", 
+		    " Instance %2u %s (spec %s) on %s container %s, using %s%s%s in %s dated %s",
 		    n, m_assembly.instance(n).name().c_str(),
 		    m_assembly.instance(n).specName().c_str(),
 		    c.m_model.c_str(), c.name().c_str(),
@@ -823,7 +823,7 @@ namespace OCPI {
 	  for (unsigned n = 0; (p = getMetaPort(n)); n++) {
 	    if (n == 0)
 	      fprintf(stderr, "External ports:\n");
-	    fprintf(stderr, " %u: application port \"%s\" is %s\n", n, 
+	    fprintf(stderr, " %u: application port \"%s\" is %s\n", n,
 		    p->OU::Port::m_name.c_str(), p->m_provider ? "input" : "output");
 	  }
 	}
@@ -1011,7 +1011,7 @@ namespace OCPI {
       std::string name, value;
       bool isParameter, isCached;
       if (m_verbose)
-	fprintf(stderr, "Dump of all %s%s property values:\n",
+	fprintf(stderr, "Dump of all %s%sproperty values:\n",
 		context ? context : "", context ? " " : "");
       for (unsigned n = 0;
 	   getProperty(n, name, value, m_hex, &isParameter, &isCached, m_uncached); n++)
@@ -1250,7 +1250,7 @@ namespace OCPI {
       Property &p = findProperty(worker_inst_name, prop_name);
       std::string dummy;
       m_launchInstances[p.m_instance].m_worker->
-	getProperty(p.m_property, dummy, value, NULL, hex);	 
+	getProperty(p.m_property, dummy, value, NULL, hex);
     }
 
     void ApplicationI::
@@ -1293,8 +1293,8 @@ namespace OCPI {
 
   }
   namespace API {
-    OCPI_EMIT_REGISTER_FULL_VAR( "Get Property", OCPI::Time::Emit::DT_u, 1, OCPI::Time::Emit::State, pegp ); 
-    OCPI_EMIT_REGISTER_FULL_VAR( "Set Property", OCPI::Time::Emit::DT_u, 1, OCPI::Time::Emit::State, pesp ); 
+    OCPI_EMIT_REGISTER_FULL_VAR( "Get Property", OCPI::Time::Emit::DT_u, 1, OCPI::Time::Emit::State, pegp );
+    OCPI_EMIT_REGISTER_FULL_VAR( "Set Property", OCPI::Time::Emit::DT_u, 1, OCPI::Time::Emit::State, pesp );
 
     Application::
     Application(const char *file, const PValue *params)
@@ -1336,7 +1336,7 @@ namespace OCPI {
 				   (uint32_t)((timeout_us%1000000) * 1000ull))
 	           : NULL;
       if (m_application.verbose()) {
-	if (timeout_us)
+        if (timeout_us)
 	  fprintf(stderr, "Waiting up to %g seconds for application to finish%s\n",
 		  (double)timeout_us/1.e6, timeOutIsError ? " before timeout" : "");
         else
@@ -1350,7 +1350,7 @@ namespace OCPI {
 	  // has the option of retrying the wait and not stopping
 	  // the timeout error is considered fatal
 	  stop();
-	  throw OU::Error("Application exceeded time limit of %g seconds", 
+	  throw OU::Error("Application exceeded time limit of %g seconds",
 			  (double)timeout_us/1.e6);
 	}
 	if (m_application.verbose())
@@ -1358,7 +1358,6 @@ namespace OCPI {
 		  (double)timeout_us/1.e6);
       } else if (m_application.verbose())
 	    fprintf(stderr, "Application finished\n");
-
       return r;
     }
 

@@ -2,7 +2,7 @@
 #include <cstdio>
 #include <iostream>
 #include <typeinfo>
-#include "OcpiApi.h"
+#include "OcpiApi.hh"
 #include "OcpiContainerApi.h"
 #include "OcpiPValueApi.h"
 #include <OcpiUtilCommandLineConfiguration.h>
@@ -91,8 +91,8 @@ int main ( int argc, char* argv [ ] )
 		   "  </instance> "
 
 		   "  <instance component='file_read_msg' name='fr_expected_data'>"
-		   "    <property name='fileName' value='expectedDataIn.dat'/> "		      
-		   "    <property name='genTestFile' value='false'/> "		      
+		   "    <property name='fileName' value='expectedDataIn.dat'/> "
+		   "    <property name='genTestFile' value='false'/> "
 		   "    <property name='stepThruMsg' value='false'/> "
 		   "    <property name='stepNow' value='true'/> "
 		   "  </instance> "
@@ -147,7 +147,7 @@ int main ( int argc, char* argv [ ] )
     printf("utp(%s) = %s\n", pname.c_str(), pval.c_str() );
     char buf[1024];
     snprintf(buf, sizeof(buf), "<property name='%s' value='%s'/> ", pname.c_str(), pval.c_str() );
-    utp += buf;    
+    utp += buf;
   }
   if ( ! utp.empty() )
     printf("Utp props = %s\n", utp.c_str() );
@@ -158,15 +158,15 @@ int main ( int argc, char* argv [ ] )
     printf("compp('%s') = %s\n", pname.c_str(), pval.c_str() );
     char buf[1024];
     snprintf(buf, sizeof(buf), "<property name='%s' value='%s'/> ", pname.c_str(), pval.c_str() );
-    compp += buf;    
+    compp += buf;
   }
-  if ( ! compp.empty() ) 
+  if ( ! compp.empty() )
     printf("Compp props = %s\n", compp.c_str() );
 
-  
+
   OA::Application * app = NULL;
   try
-    {      
+    {
       int nContainers = 1;
       // Create several containers to distribute the workers on
       for ( int n=0; n<nContainers; n++ ) {
@@ -184,9 +184,9 @@ int main ( int argc, char* argv [ ] )
       snprintf( app_xml, 4095, xml, config.model.c_str()  );
 
       printf("%s\n", app_xml );
-      
+
       std::string s = app_xml;
-      app = new OA::Application( s, minp_policy);	
+      app = new OA::Application( s, minp_policy);
       fprintf(stderr, "Application XML parsed and deployments (containers and implementations) chosen\n");
       app->initialize();
       fprintf(stderr, "Application established: containers, workers, connections all created\n");
@@ -238,5 +238,3 @@ int main ( int argc, char* argv [ ] )
   fflush( stdout );
   return passed;
 }
-
-

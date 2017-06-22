@@ -181,6 +181,8 @@ HdlCompile=\
   $(infox Compile0:$(HdlWorkers):$(Cores):$(ImplWorkersFile):$(ImplFile):to-$@) \
   $(infox Compile:$(HdlWorkers):$(Cores):$(ImplWorkersFile)) \
   $(and $(SubCores_$(HdlTarget)),$(call HdlRecordCores,$(basename $@))$(infox DONERECORD:$(HdlTarget))) \
+  $(and $(HdlLibrariesInternal),$(call HdlRecordLibraries,$(basename $@))$(infox DONERECORD:$(HdlTarget))) \
+  $(and $(HdlSources),$(call HdlRecordSources,$(basename $@))$(infox DONERECORD:$(HdlTarget))) \
   $(infox SUBCORES:$(SubCores_$(HdlTarget))) \
   cd $(TargetDir) && \
   $(infox PRECOMPILE:$(HdlPreCompile))$(and $(HdlPreCompile), $(HdlPreCompile) &&)\
@@ -191,7 +193,7 @@ HdlCompile=\
   HdlExit=$$?; \
   (cat $(HdlTime) | tr -d "\n"; $(ECHO) -n " at "; date +%T) >> $(HdlLog); \
   grep -i error $(HdlLog)| grep -v Command: |\
-    grep -v '^WARNING:'|grep -v " 0 errors," | grep -i -v -e '[_a-z]error' -e 'error[a-rt-z_]'; \
+    grep -v '^WARNING:'|grep -v " 0 errors," | grep -i -v -e '[_a-z]error' -e 'error[a-rt-z_]' $(HdlGrepExclude_$(HdlToolSet)); \
   if grep -q '^ERROR:' $(HdlLog); then HdlExit=1; fi; \
   $(HdlToolPost) \
   if test "$$OCPI_HDL_VERBOSE_OUTPUT" != ''; then \
@@ -271,6 +273,8 @@ define HdlSearchComponentLibraries
 endef
 HdlRmRv=$(if $(filter %_rv,$1),$(patsubst %_rv,%,$1),$1)
 
+#########################################################################################################
+
 # Stash all the cores we needed in a file so that tools that do not implement
 # proper hierarchies can include indirectly required cores later
 # Called from HdlCompile which is already tool-specific
@@ -280,17 +284,113 @@ HdlRecordCores=\
   (\
    echo '\#' This generated file records cores necessary to build this $(LibName) $(HdlMode); \
    echo $(foreach c,$(call HdlCollectCores,$(HdlTarget),HdlRecordCores),$(strip\
-           $(call OcpiAbsPath,$(call HdlCoreRef,$(call HdlToolCoreRef,$c),$(HdlTarget))))) \
+           $(call OcpiAbsPath,$(if $(findstring /,$c),$c,$(call HdlCoreRef,$(call HdlToolCoreRef,$c),$(HdlTarget)))))) \
   ) > $(call HdlRmRv,$1).cores;)
 
-#	             $(foreach r,$(call HdlRmRv,$(basename $(call HdlCoreRef,$c,$1))),\
-
+# Collect a list of cores that this asset depends on. If the path to the core
+# is correct as is, use that path. Otherwise, use HdlCoreRef to determine the 
+# path to the core.
 HdlCollectCores=$(infox CCCC:$(SubCores_$(HdlTarget)):$1:$2)$(call Unique,\
 		  $(foreach a,\
                    $(foreach c,$(SubCores_$(HdlTarget)),$(infox ZC:$c)$c \
-	             $(foreach r,$(basename $(call HdlCoreRef,$(call HdlToolCoreRef,$c),$1)),$(infox ZR:$r)\
+	             $(foreach r,$(basename $(if $(call HdlExists,$c),$c,$(call HdlCoreRef,$(call HdlToolCoreRef,$c),$1))),$(infox ZR:$r)\
                        $(foreach f,$(call HdlExists,$(call HdlRmRv,$r).cores),$(infox ZF:$f)\
                           $(foreach z,$(shell grep -v '\#' $f),$(infox found:$z)$z)))),$a))
+
+# Record the list of libraries required by this asset/library in the .libs file
+# If we see an absolute path, record it just by the asset's name. It will be 
+# searched for later (e.g. via HdlSearchPrimitivePath). If it is a relative
+# path, we assume it is in the local project and therefore record it as a
+# relative path.
+HdlRecordLibraries=\
+  $(infox Record:$1:$(HdlLibrariesInternal):$(HdlTarget))\
+  $(and $(call HdlExists,$(dir $1)),\
+  (\
+   echo '\#' This generated file records libraries necessary to build this $(LibName) $(HdlMode); \
+   $(foreach l,$(HdlLibrariesInternal),\
+     echo $(if $(findstring $(abspath $l),$l),$(notdir $l),$l);) \
+  ) > $(patsubst %/,%,$(call HdlRmRv,$1)).libs;)\
+
+# Extract the list of libraries required by an asset/library $2 for target $1 
+HdlExtractLibrariesFromFile=$(infox Extract:$2:$1)$(call Unique,\
+	$(foreach f,$(call HdlExists,$(call HdlRmRv,$2)/$(notdir $(call HdlRmRv,$2)).libs),$(infox ZF:$f)\
+	  $(foreach z,$(shell grep -v '\#' $f),$(infox found:$z)$z )))
+
+
+# If the libname consists of one word, search the primitive path.
+# If the libname is an absolute path, return it abspath of $2,
+# otherwise, return $1/$2 (path $2 starting from $1).
+HdlNotdirAbsOrRelPath=$(infox NORP:$1:$2)\
+  $(if $(findstring $2,$(notdir $2)),\
+    $(patsubst %/,%,$(call HdlSearchPrimitivePath,$2,,CollectLibs)),\
+    $(if $(findstring $(abspath $2),$2),\
+      $(abspath $2),\
+      $1/$2))
+
+# This function is a helper to HdlCollectLibraries and is used for
+# collecting libraries that $2 depends on. If $2 is a name (not a path),
+# we search the primitive path for it. Since we are recursing through
+# libraries, if we find that $2 is a relative path, we assume it is 
+# relative to $1 and use $1/$2 via "HdlNotdirAbsOrRelPath"
+HdlCollectLibsRecurse=$(infox RecursingOn:$2:$1)\
+	$(foreach l,$(call HdlExtractLibrariesFromFile,$1,$(if $(findstring $2,$(notdir $2)),$(call HdlSearchPrimitivePath,$2,,extract),$2)),$(infox COL:$2:$l)\
+	  $(if $(HdlRecurseLibraries),$(call HdlCollectLibsRecurse,$1,$l) )$(call HdlNotdirAbsOrRelPath,$2,$l) )
+
+
+# Take a list of paths, and return the list of
+# paths that have unique notdir values
+UniqueNotDir=\
+  $(eval NotDiredList= )\
+  $(foreach f,$1,\
+    $(if $(filter $(notdir $f),$(NotDiredList)),,\
+      $(eval NotDiredList+=$(notdir $f) )\
+      $f ))
+
+# Accumulate a list of the libraries required by the current asset
+# If the HdlRecurseLibraries flag is set, gather this list recursively
+HdlCollectLibraries=$(infox PPPP:$(HdlLibrariesInternal):$1)$(call UniqueNotDir,\
+	$(foreach a,\
+	  $(foreach p,$(HdlLibrariesInternal),$(infox ZP:$p)\
+	    $(call HdlCollectLibsRecurse,$1,$p)$p ),$(infox A:$a)$a ))
+
+
+# Record the list of sources required by this asset/library in the .sources file
+
+# Here we check the flag indicating that there are tool-specific source collections for this asset
+# in which case we create <asset>.<tool>.sources
+HdlRecordSourcesFile=$(patsubst %/,%,$(call HdlRmRv,$1))$(if $(HdlToolSpecificSources),.$(HdlToolSet)).sources
+
+HdlRecordSources=\
+  $(infox Record:$1:$(HdlSources):$(HdlTarget))\
+  $(and $(call HdlExists,$(dir $1)),\
+  (\
+   echo '\#' This generated file records sources necessary to build this $(LibName) $(HdlMode); \
+   $(foreach s,$(HdlSources),echo $(notdir $s);) \
+  ) > $(call HdlRecordSourcesFile,$1);)\
+
+# Here, we use HdlLibraryRefDir to determine the path to the library 
+# asset $2 in question. If we are working with an absolute path,
+# just return the result of HdlLibraryRefDir. Otherwise, we are 
+# working with a relative path. Return the path relative to $3.
+HdlRelativeOrAbsolutePathToLib=$(infox HRAPL:$1:$2:$3)\
+  $(if $(findstring $(abspath $2),$2),\
+    $(patsubst %/,%,$(dir $(call HdlLibraryRefDir,$2,$1,,X4))),\
+    $(call FindRelative,$3,$(strip \
+      $(call HdlLibraryRefDir,$2,$1,,X4))))
+
+# For a given library $2 and target $1, extract the library's source
+# files from either the <lib>.<toolset>.sources or just <lib>.sources
+#
+# Find the path relative to '.' (or the absolute path) for use with grep
+#   Return the file-names (not paths).
+HdlExtractSourcesForLib=$(infox Extract:$2:$1)\
+  $(foreach f,\
+    $(call HdlRelativeOrAbsolutePathToLib,$1,$2,.),$(infox ZF:$f)\
+      $(foreach z,$(shell grep -vs '\#' $(dir $f)$(notdir $2).$(HdlToolSet).sources || \
+                          grep -v  '\#' $(dir $f)$(notdir $2).sources),$(infox found:$z)\
+        $z ))
+
+#########################################################################################################
 
 HdlPassTargets=$(and $(HdlTargets),HdlTargets="$(HdlTargets)") \
                $(and $(HdlTarget),HdlTargets="$(HdlTarget)") \

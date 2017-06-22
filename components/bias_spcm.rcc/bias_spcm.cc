@@ -11,7 +11,7 @@
 
 using namespace OCPI::RCC; // for easy access to RCC data types and constants
 
-class Bias_spcmWorker : public Bias_spcmWorkerBase {
+class Bias_spcmWorker : public Bias_spcmWorkerTypes::Bias_spcmWorkerBase {
   RCCResult run(bool /*timedout*/) {
     const uint32_t *inData  = in.data().data().data();   // data arg of data message at "in" port
     uint32_t *outData = out.data().data().data();  // same at "out" port

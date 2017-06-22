@@ -2,7 +2,7 @@
 #include <cstdio>
 #include <typeinfo>
 #include <iostream>
-#include "OcpiApi.h"
+#include "OcpiApi.hh"
 #include "OcpiContainerApi.h"
 #include "OcpiPValueApi.h"
 #include <OcpiUtilCommandLineConfiguration.h>
@@ -67,8 +67,8 @@ int main ( int argc, char* argv [ ] )
 		   " <policy mapping='MaxProcessors' processors='0'/>"
 
 		   "  <instance worker='file_read_msg' name='fr_test_data' >"
-		   "    <property name='fileName' value='testDataIn.dat'/> "		      
-		   "    <property name='genTestFile' value='false'/> "		      
+		   "    <property name='fileName' value='testDataIn.dat'/> "
+		   "    <property name='genTestFile' value='false'/> "
 		   "    <property name='stepThruMsg' value='false'/> "
 		   "    <property name='stepNow' value='true'/> "
 		   "  </instance> "
@@ -81,8 +81,8 @@ int main ( int argc, char* argv [ ] )
 		   "  </instance> "
 
 		   "  <instance worker='file_read_msg' name='fr_expected_data'>"
-		   "    <property name='fileName' value='expectedDataIn.dat'/> "		      
-		   "    <property name='genTestFile' value='false'/> "		      
+		   "    <property name='fileName' value='expectedDataIn.dat'/> "
+		   "    <property name='genTestFile' value='false'/> "
 		   "    <property name='stepThruMsg' value='false'/> "
 		   "    <property name='stepNow' value='true'/> "
 		   "  </instance> "
@@ -155,7 +155,7 @@ int main ( int argc, char* argv [ ] )
 
   OA::Application * app = NULL;
   try
-    {      
+    {
       int nContainers = 1;
       // Create several containers to distribute the workers on
       for ( int n=0; n<nContainers; n++ ) {
@@ -173,9 +173,9 @@ int main ( int argc, char* argv [ ] )
       snprintf( app_xml, 4095, xml, config.model.c_str()  );
 
       printf("%s\n", app_xml );
-      
+
       std::string s = app_xml;
-      app = new OA::Application( s, minp_policy);	
+      app = new OA::Application( s, minp_policy);
       fprintf(stderr, "Application XML parsed and deployments (containers and implementations) chosen\n");
       app->initialize();
       fprintf(stderr, "Application established: containers, workers, connections all created\n");
@@ -235,5 +235,3 @@ int main ( int argc, char* argv [ ] )
   fflush( stdout );
   return passed;
 }
-
-

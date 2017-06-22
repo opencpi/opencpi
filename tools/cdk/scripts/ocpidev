@@ -357,7 +357,7 @@ function do_application {
   app=${1/%.xml/}
   if [ -n "$xmlapp" ] ; then
     if [ -e "$subdir/$app.xml" ] ; then
-      bad the application \"$app\" already exists in ${topdir}$subdir/$app.xml
+      bad the application \"$app\" already exists in ${topdir}$subdir$app.xml
     fi
   elif [ -d "$subdir$1" ] ; then
       bad the application \"$app\" already exists in ${topdir}$subdir$1
@@ -961,7 +961,7 @@ function do_test {
   if [ -z "$1" -a "$verb" == build ] ; then
    do_build_here test
    return $?
-  fi	
+  fi
   if [ ${1/*./} = test ] ; then
     testdir=$subdir/$1
   elif [[ ! "$testdir" == *.* ]] ; then
@@ -1383,8 +1383,13 @@ function do_assemblies {
 }
 
 function do_build_here {
-    if [ -z "$buildRcc" -a -z "$buildHdl" -a -n "$buildClean" ]; then
+    buildTest="$1"
+    if [ -z "$buildRcc" -a -z "$buildHdl" -a -n "$buildClean" -a "$1" != "test" ]; then
       cleanTarget="clean"
+    fi
+    if [ -n "$buildClean" -a "$1" == "test" ]; then
+      buildTest=""
+      cleanTarget="cleantest"
     fi
     if [ -n "$buildRcc" -a -n "$buildClean" ]; then
       buildRcc=""
@@ -1394,7 +1399,7 @@ function do_build_here {
       buildHdl=""
       cleanTarget+=" cleanhdl"
     fi
-  make ${cleanTarget:+$cleanTarget} ${buildRcc:+rcc} ${buildHdl:+hdl} $1 \
+  make ${cleanTarget:+$cleanTarget} ${buildRcc:+rcc} ${buildHdl:+hdl} ${buildTest} \
        ${buildNoAssemblies:+Assemblies=} \
        ${assys:+Assemblies=" ${assys[@]}"} \
        ${hdlplats:+HdlPlatforms=" ${hdlplats[@]}"} \
@@ -1522,7 +1527,7 @@ Options with * may occur multiple times
  == when creating or deleting specs, protocols, or workers ==
   -l <library>       The component library to add the asset to, when there is more than one.
                      This applies to specs, protocols, properties, workers.
-                     Such libaries live in the components/ directory of the project.
+                     Such libraries live in the components/ directory of the project.
  == when creating or deleting specs, protocols, workers or devices ==
   -h <hdl-library>   A library underneath hdl/ to add assets to.  Default is "devices".
                      Valid <hdl-library> options are "devices", "cards" and "adapters".
@@ -1558,10 +1563,10 @@ Options with * may occur multiple times
  == when creating workers, devices, primitives, or platforms ==
   -O <other>         *Other source files to include (adds to "SourceFiles" in Makefile)
   -C <core>          *Core to be included by this asset (adds to "Cores" in Makefile)
-  -Y <libary>        *Specify a primitive library that this asset depends on
+  -Y <library>       *Specify a primitive library that this asset depends on
                      (adds to "Libraries" in Makefile).
  == when creating workers, devices, platforms, or libraries ==
-  -y <comp-libary>   *Specify a component library to search for workers/devices/specs that this
+  -y <comp-library>  *Specify a component library to search for workers/devices/specs that this
                      asset references (adds to "ComponentLibraries" in Makefile)
  == when creating workers, devices, primitives, platforms, or assemblies ==
   -T <target>        *Specify one of the only allowed build-targets for this asset.
@@ -1578,8 +1583,7 @@ Options with * may occur multiple times
   -B <core>          Specify a prebuilt (not source) core when creating an HDL primitive core
                      (ie. *.ngc file) (sets "PreBuiltCore" in Makefile)
  == when creating primitive libraries ==
-  -H                 This primitive doesn't depend on any libaries, even built-in ones.
-                     (sets "HdlNoLibraries" in Makefile)
+  -H                 This primitive does not depend on any libraries (sets "HdlNoLibraries" in Makefile)
   -J                 Do not elaborate this HDL library (sets "HdlNoElaboration" in Makefile)
  == when creating and deleting applications ==
   -X                 Indicates that the application is simply an XML file, not a directory
@@ -1867,16 +1871,15 @@ fi
 # rccprereqs FIXME: Should limit this makevariable to rcc workers only
 [ \( -n "$rccstatprereqs" -o -n "$rccdynprereqs" \) -a \( $verb != create -o \( "$noun" != "worker" \) \) ] &&
   bad the -R or -r '(rcc static/dynamic prereq)' option is only valid when creating a proxy worker
-# libaries include
+# libraries include
 [ \( -n "$liblibs" \) -a \( $verb != create -o \( "$noun" != "worker" -a "$noun" != "device" -a "$noun" != "platform" -a "$noun" != "primitive" \) \) ] &&
   bad the -Y, '(libraries)' option is only valid when creating a worker, device, platform, or primitive
-# componentlibaries reference
+# componentlibraries reference
 [ \( -n "$complibs" \) -a \( $verb != create -o \( \( "$noun" != "worker" -o -z "$slave" \) -a \( \( "$noun" != "device" \) -o \( -z "$emulates" -a -z "$supported" \) \) -a "$noun" != "platform" -a "$noun" != "library" \) \) ] &&
   bad the -y, '(component-libraries)' option is only valid when creating a proxy worker, device emulator, subdevice, platform, or library
 # xml app
 [ \( -n "$xmlapp" -o -n "$xmldirapp" \) -a \( \( $verb != create -a $verb != delete \) -o "$noun" != "application" \) ] &&
   bad the -X '(xml/simple)' or -x '(application directory with xml)' option is only valid when creating an application
-
 # For future support of rcc platforms, primitives, and in general the rcc subtree
 if [ -n "$rcc" ] ; then
   hdlorrcc=rcc
@@ -1886,7 +1889,9 @@ fi
 
 # Get dir type unless creating something standalone
 needname ${argv[0]} $verb $noun
-if [ "$verb" != "build" -o -n "$noun" -a -n "$args" ] ; then
+
+# if verb is not build, if it is build and it has a noun, unless the noun is test with no argumnets
+if [ \( "$verb" != "build" \) -o \( -n "$noun" -a ! \( "$noun" == "test" -a -z "$args" \) \) ] ; then
   get_subdir
 fi
 [ -z $verbose ] || echo Executing the \"$verb $hdl$noun\" command in a ${dirtype:-unknown type of} directory: $directory.
@@ -1923,4 +1928,13 @@ case $noun in
       bad the noun \"$noun\" is invalid after the verb \"$verb\"
     fi ;;
 esac
+gpmd=$OCPI_CDK_DIR/scripts/genProjMetaData.py
+if [ -x $gpmd ] ; then
+  if [ "$verb" == create -a "$noun" == project ] ; then
+    $gpmd $(pwd) force
+  elif [ "$verb" == create -o \( "$verb" == delete -a "$noun" != project \) ] ; then 
+    $gpmd $(pwd)
+  fi
+fi
+
 exit 0

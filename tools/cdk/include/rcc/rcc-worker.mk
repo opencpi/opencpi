@@ -109,7 +109,6 @@ ifeq ($(OCPI_USE_TARGET_MODES),1)
   export OCPI_TARGET_MODE:=$(if $(filter 1,$(OCPI_DYNAMIC)),d,s)$(if $(filter 1,$(OCPI_DEBUG)),d,o)
 endif
 Comma=,
-PatchElf=$(or $(OCPI_PREREQUISITES_DIR),/opt/opencpi/prerequisites)/patchelf/$(OCPI_TOOL_HOST)/bin/patchelf
 RccLibDir=$(OCPI_CDK_DIR)/lib/$(RccTarget)$(and $(OCPI_TARGET_MODE),/d$(if $(filter 1,$(OCPI_DEBUG)),d,o))
 LinkBinary=$(G$(OcpiLanguage)_LINK_$(RccTarget)) \
 $(G$(OcpiLanguage)_MAIN_FLAGS_$(RccTarget)) \

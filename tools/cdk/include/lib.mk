@@ -74,7 +74,9 @@ endif
 XmImplementations=$(filter %.xm,$(Implementations))
 RccImplementations=$(filter %.rcc,$(Implementations))
 HdlImplementations=$(filter %.hdl,$(Implementations))
+ifeq ($(OCPI_HAVE_OPENCL),1)
 OclImplementations=$(filter %.ocl,$(Implementations))
+endif
 TestImplementations=$(filter %.test,$(Implementations))
 AssyImplementations=$(filter %.assy,$(Implementations))
 
@@ -135,6 +137,7 @@ ifneq ($(OclImplementations),)
 build_targets += ocl
 endif
 endif
+
 ifneq ($(HdlImplementations),)
 build_targets += hdl
 endif
@@ -253,7 +256,11 @@ cleantest:
 	$(call CleanModel,test)
 
 cleanocl:
+ifeq ($(OCPI_HAVE_OPENCL),1)
 	$(call CleanModel,ocl)
+else
+	@true
+endif
 
 cleanhdl:
 	$(call CleanModel,hdl)

@@ -4,7 +4,7 @@
 # in a CDK and the CDK location is inferred from that.
 # This means that a user makefile could simply include this file however it wants and
 # OCPI_CDK_DIR and friends will all be set properly.
-# The goal here to have *no* environment setup requirement for a user app on the 
+# The goal here to have *no* environment setup requirement for a user app on the
 # development system with default settings.
 ifndef OCPISETUP_MK
 export OCPISETUP_MK:=1
@@ -29,6 +29,10 @@ ifndef RPM_BUILD_ROOT
     $(error Inconsistent usage of this file ($(OcpiThisFile)->$(realpath $(OcpiThisFile))) vs. OCPI_CDK_DIR ($(realpath $(OCPI_CDK_DIR)/include/ocpisetup.mk)))
   endif
   $(info OCPI_CDK_DIR has been set to $(OCPI_CDK_DIR) and verified to be sane.)
+else
+  # RPM Building
+  export OCPI_CDK_DIR:= $(abspath $(dir $(abspath $(OcpiThisFile)))/..)
+  $(warning RPM Building - Forcing OCPI_CDK_DIR = $(OCPI_CDK_DIR))
 endif
 include $(OCPI_CDK_DIR)/include/util.mk
 endif # The end of processing this file once - ifndef OCPISETUP_MK
@@ -51,80 +55,71 @@ endif
 CXXFLAGS=$(OCPI_TARGET_CXXFLAGS)
 ARSUFFIX=a
 
-ifeq ($(wildcard $(OCPI_CDK_DIR)/include/autoconfig_import*),)
-  # Native non-autotools/RPM CDK
-  # Determine unset variables dynamically here, again with the goal of sane default
-  # behavior with no environment requirements at all.
-  # Setting just OCPI_TARGET_PLATFORM will do cross builds
-  $(eval $(OcpiEnsureToolPlatform))
-  ifdef OCPI_USE_TOOL_MODES
-    # Determine OCPI_TOOL_MODE if it is not set already
+# RPM-based options:
+-include $(OCPI_CDK_DIR)/include/autoconfig_import-$(OCPI_TARGET_PLATFORM).mk
+ifneq (1,$(OCPI_AUTOCONFIG_IMPORTED))
+-include $(OCPI_CDK_DIR)/include/autoconfig_import.mk
+endif
+# Native non-autotools/RPM CDK
+# Determine unset variables dynamically here, again with the goal of sane default
+# behavior with no environment requirements at all.
+# Setting just OCPI_TARGET_PLATFORM will do cross builds
+$(eval $(OcpiEnsureToolPlatform))
+ifdef OCPI_USE_TOOL_MODES
+  # Determine OCPI_TOOL_MODE if it is not set already
+  ifndef OCPI_TOOL_MODE
+    $(foreach o,$(if $(filter 1,$OCPI_DEBUG),d,o),\
+      $(foreach s,$(if $(filter 1,$(OCPI_DYNAMIC),d,s)),\
+        $(if $(wildcard $(OCPI_CDK_DIR)/bin/$(OCPI_TOOL_HOST)/$o$s/ocpirun),\
+           $(eval OCPI_TOOL_MODE:=$o$s)\
+           $(info Using tool mode $(OCPI_TOOL_MODE)))))
     ifndef OCPI_TOOL_MODE
-      $(foreach o,$(if $(filter 1,$OCPI_DEBUG),d,o),\
-        $(foreach s,$(if $(filter 1,$(OCPI_DYNAMIC),d,s)),\
-          $(if $(wildcard $(OCPI_CDK_DIR)/bin/$(OCPI_TOOL_HOST)/$o$s/ocpirun),\
-             $(eval OCPI_TOOL_MODE:=$o$s)\
-             $(info Using tool mode $(OCPI_TOOL_MODE)))))
+      $(foreach i,sd so dd do,\
+        $(if $(OCPI_TOOL_MODE),,\
+           $(if $(wildcard $(OCPI_CDK_DIR)/bin/$(OCPI_TOOL_HOST)/$i/ocpirun),\
+              $(eval OCPI_TOOL_MODE:=$i)\
+              $(info Choosing tool mode "$i" since there are tool executables for it.))))
       ifndef OCPI_TOOL_MODE
-        $(foreach i,sd so dd do,\
-          $(if $(OCPI_TOOL_MODE),,\
-             $(if $(wildcard $(OCPI_CDK_DIR)/bin/$(OCPI_TOOL_HOST)/$i/ocpirun),\
-                $(eval OCPI_TOOL_MODE:=$i)\
-                $(info Choosing tool mode "$i" since there are tool executables for it.))))
-        ifndef OCPI_TOOL_MODE
-          $(warning No tools found to determine or verify tool mode.)
-          override export OCPI_USE_TOOL_MODE=
-        endif
+        $(warning No tools found to determine or verify tool mode.)
+        override export OCPI_USE_TOOL_MODE=
       endif
     endif
-    export OCPI_TOOL_DIR:=$(OCPI_TOOL_HOST)/$(OCPI_TOOL_MODE)
-  else
-    export OCPI_TOOL_DIR:=$(OCPI_TOOL_HOST)
   endif
-  p:=$(OCPI_CDK_DIR)/platforms/$(OCPI_TOOL_PLATFORM)
-  f:=$p/$(OCPI_TOOL_PLATFORM)-tool.mk
-  ifeq ($(wildcard $f),)
-#    $(warning There is no tool setup file ($f) for platform $(OCPI_TOOL_PLATFORM).  This may be ok.)
-  else
-   include $f
-  endif
-  ifndef OCPI_TARGET_PLATFORM
-    export OCPI_TARGET_PLATFORM:=$(OCPI_TOOL_PLATFORM)
-  endif
-  ifndef OCPI_TARGET_HOST
-    f=$(OCPI_CDK_DIR)/platforms/$(OCPI_TARGET_PLATFORM)/target
-    ifeq ($(wildcard $f),)
-      $(error OCPI_TARGET_PLATFORM is $(OCPI_TARGET_PLATFORM).  File $f is missing.)
-    endif
-    t:=$(shell cat $f)
-    export OCPI_TARGET_HOST:=$t
-    t:=$(subst -, ,$t)
-    export OCPI_TARGET_OS:=$(word 1,$t)
-    export OCPI_TARGET_OS_VERSION:=$(word 2,$t)
-    export OCPI_TARGET_ARCH:=$(word 3,$t)
-    $(infox OCPI_TARGET_HOST:$(OCPI_TARGET_HOST))
-    $(infox OCPI_TARGET_OS:$(OCPI_TARGET_OS))
-    $(infox OCPI_TARGET_OS_VERSION:$(OCPI_TARGET_OS_VERSION))
-    $(infox OCPI_TARGET_ARCH:$(OCPI_TARGET_ARCH))
-  endif
+  export OCPI_TOOL_DIR:=$(OCPI_TOOL_HOST)/$(OCPI_TOOL_MODE)
 else
-  # RPM-based options:
-  -include $(OCPI_CDK_DIR)/include/autoconfig_import-$(OCPI_TARGET_PLATFORM).mk
-  ifneq (1,$(OCPI_AUTOCONFIG_IMPORTED))
-  -include $(OCPI_CDK_DIR)/include/autoconfig_import.mk
+  export OCPI_TOOL_DIR:=$(OCPI_TOOL_HOST)
+endif
+p:=$(OCPI_CDK_DIR)/platforms/$(OCPI_TOOL_PLATFORM)
+f:=$p/$(OCPI_TOOL_PLATFORM)-tool.mk
+ifeq ($(wildcard $f),)
+#   $(warning There is no tool setup file ($f) for platform $(OCPI_TOOL_PLATFORM).  This may be ok.)
+else
+ include $f
+endif
+ifndef OCPI_TARGET_PLATFORM
+  export OCPI_TARGET_PLATFORM:=$(OCPI_TOOL_PLATFORM)
+endif
+ifndef OCPI_TARGET_HOST
+  f=$(OCPI_CDK_DIR)/platforms/$(OCPI_TARGET_PLATFORM)/target
+  ifeq ($(wildcard $f),)
+    $(error OCPI_TARGET_PLATFORM is $(OCPI_TARGET_PLATFORM).  File $f is missing.)
   endif
-
+  t:=$(shell cat $f)
+  export OCPI_TARGET_HOST:=$t
+  t:=$(subst -, ,$t)
+  export OCPI_TARGET_OS:=$(word 1,$t)
+  export OCPI_TARGET_OS_VERSION:=$(word 2,$t)
+  export OCPI_TARGET_ARCH:=$(word 3,$t)
+  $(infox OCPI_TARGET_HOST:$(OCPI_TARGET_HOST))
+  $(infox OCPI_TARGET_OS:$(OCPI_TARGET_OS))
+  $(infox OCPI_TARGET_OS_VERSION:$(OCPI_TARGET_OS_VERSION))
+  $(infox OCPI_TARGET_ARCH:$(OCPI_TARGET_ARCH))
 endif
 
 ################################################################################
 # Run the target-specific make setup script
-ifndef RPM_BUILD_ROOT
-  p:=$(OCPI_CDK_DIR)/platforms/$(OCPI_TARGET_PLATFORM)
-else
-  p:=exports/platforms/$(OCPI_TARGET_PLATFORM)
-endif
 # Note that this script has access to OCPI_TOOL_xxx if the settings vary by tool host
-f:=$p/$(OCPI_TARGET_PLATFORM)-target.mk
+f:=$(OCPI_CDK_DIR)/platforms/$(OCPI_TARGET_PLATFORM)/$(OCPI_TARGET_PLATFORM)-target.mk
 ifeq ($(wildcard $f),)
   $(error There is no target setup file ($f) for platform $(OCPI_TARGET_PLATFORM).)
 else
@@ -221,12 +216,17 @@ endif
 
 
 all:
+# FIXME: this is just covering another bug
+$(OCPI_TARGET_DIR)/: $(OCPI_TARGET_DIR)
 $(OCPI_TARGET_DIR):
 	mkdir -p $@
+# FIXME: this is just covering another bug
+target-$(OCPI_TARGET_DIR)/: target-$(OCPI_TARGET_DIR)
 
 target-$(OCPI_TARGET_DIR):
 	mkdir -p $@
 
+# This will export shell variables to replace the original platform-target.sh scripts:
 ifdef ShellTargetVars
 
 $(info OCPI_TARGET_OS=$(OCPI_TARGET_OS);export OCPI_TARGET_OS;)

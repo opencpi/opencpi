@@ -287,6 +287,7 @@ namespace OCPI {
 	getOptionalString(ezxml_t x, std::string &s, const char *attr,
 			  const char *def = "");
       extern void
+	unindent(std::string &in), // strip common indent of lines in text element
 	getNameWithDefault(ezxml_t x, std::string &s, const char *fmt, unsigned &ord);
     }
 #define EZXML_FOR_ALL_ATTRIBUTES(x, n, v) \

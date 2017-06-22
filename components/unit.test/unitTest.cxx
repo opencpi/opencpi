@@ -2,7 +2,7 @@
 #include <cstdio>
 #include <iostream>
 #include <typeinfo>
-#include "OcpiApi.h"
+#include "OcpiApi.hh"
 #include "OcpiContainerApi.h"
 #include "OcpiPValueApi.h"
 #include "OcpiUtilCommandLineConfiguration.h"
@@ -23,7 +23,7 @@ public:
   std::string unit_test_name;
   std::string unit_test_props;
   std::string comparator_props;
-  std::string model;  
+  std::string model;
   bool cont;
 private:
   static CommandLineConfiguration::Option g_options[];
@@ -87,8 +87,8 @@ int main ( int argc, char* argv [ ] )
 		   " <policy mapping='MaxProcessors' processors='1'/>"
 
 		   "  <instance worker='file_read_msg' name='fr_test_data' >"
-		   "    <property name='fileName' value='testDataIn.dat'/> "		      
-		   "    <property name='genTestFile' value='false'/> "		      
+		   "    <property name='fileName' value='testDataIn.dat'/> "
+		   "    <property name='genTestFile' value='false'/> "
 		   "    <property name='stepThruMsg' value='false'/> "
 		   "    <property name='stepNow' value='true'/> "
 		   "    <property name='continuous' value='%s'/> "
@@ -103,8 +103,8 @@ int main ( int argc, char* argv [ ] )
 		   "  </instance> "
 
 		   "  <instance worker='file_read_msg' name='fr_expected_data'>"
-		   "    <property name='fileName' value='expectedDataIn.dat'/> "		      
-		   "    <property name='genTestFile' value='false'/> "		      
+		   "    <property name='fileName' value='expectedDataIn.dat'/> "
+		   "    <property name='genTestFile' value='false'/> "
 		   "    <property name='stepThruMsg' value='false'/> "
 		   "    <property name='stepNow' value='true'/> "
 		   "  </instance> "
@@ -161,10 +161,10 @@ int main ( int argc, char* argv [ ] )
     printUsage (config, argv[0]);
     return 0;
   }
-  
+
   OA::Application * app = NULL;
   try
-    {      
+    {
       int nContainers = 1;
       // Create several containers to distribute the workers on
       for ( int n=0; n<nContainers; n++ ) {
@@ -180,13 +180,13 @@ int main ( int argc, char* argv [ ] )
 
       char app_xml[4096];
       snprintf( app_xml, 4095, xml, config.cont ? "true" : "false",
-		config.unit_test_name.c_str(), config.model.c_str(), 
+		config.unit_test_name.c_str(), config.model.c_str(),
 		config.unit_test_props.c_str(),  config.real ? "real" : "complex", config.comparator_props.c_str() );
 
       printf("%s\n", app_xml );
-      
+
       std::string s = app_xml;
-      app = new OA::Application( s, minp_policy);	
+      app = new OA::Application( s, minp_policy);
       fprintf(stderr, "Application XML parsed and deployments (containers and implementations) chosen\n");
       app->initialize();
       fprintf(stderr, "Application established: containers, workers, connections all created\n");
@@ -249,5 +249,3 @@ int main ( int argc, char* argv [ ] )
   fflush( stdout );
   return passed;
 }
-
-
