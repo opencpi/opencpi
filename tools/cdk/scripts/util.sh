@@ -161,7 +161,6 @@ function ocpiGetToolOS {
   echo ${OCPI_TOOL_DIR/-*/}
   return 0
 }
-
 if [ "$1" == __test__ ] ; then
   if eval findInProjectPath $2 $3 result ; then
     echo good result is $result

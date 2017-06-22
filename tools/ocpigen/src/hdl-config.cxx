@@ -121,7 +121,7 @@ parseDevInstance(const char *device, ezxml_t x, const char *parentFile, Worker *
 				card->cname());
 	  else
 	    slot = (*si).second;
-	}
+        }
     }
   }
   const Device *dev;

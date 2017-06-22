@@ -22,7 +22,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <iostream>
 #include "cv.h"
 #include "highgui.h"
-#include "OcpiApi.h"
+#include "OcpiApi.hh"
 
 namespace OA = OCPI::API;
 
@@ -83,7 +83,7 @@ int main ( int argc, char* argv [ ] )
 
       /* ---- Create the worker --------------------------------- */
       // Set properties
-      
+
       OCPI::API::PValue worker_pvlist[] = {
 	OCPI::API::PVULong("height", img->height),
 	OCPI::API::PVULong("width", img->width),
@@ -98,21 +98,21 @@ int main ( int argc, char* argv [ ] )
 	  OCPI::API::PVDouble("sigmaX", 0.8), // Gaussian blur
 	  OCPI::API::PVDouble("sigmaY", 0.8), // Gaussian blur
 	  OCPI::API::PVEnd
-	};      
+	};
 	worker.setProperties(wpvlist);
       }
       else if ( worker_name == "blur" ) {
 	OCPI::API::PValue wpvlist[] = {
 	  OCPI::API::PVBool("normalize", 1), // Blur only
 	  OCPI::API::PVEnd
-	};      
+	};
 	worker.setProperties(wpvlist);
       }
       else if ( worker_name == "sobel" || worker_name == "scharr" ) {
 	OCPI::API::PValue wpvlist[] = {
 	  OCPI::API::PVBool("xderiv", 1), // Sobel/Scharr only
 	  OCPI::API::PVEnd
-	};      
+	};
 	worker.setProperties(wpvlist);
       }
 
@@ -164,7 +164,7 @@ int main ( int argc, char* argv [ ] )
 	// Get input data
 	OA::ExternalBuffer* myInput;
 	while ( (myInput = myIn.getBuffer( idata, ilength, opcode, isEndOfData)) == NULL );
-	
+
 
 	std::cout << "My input buffer is size " << ilength << std::endl;
 
@@ -211,5 +211,3 @@ int main ( int argc, char* argv [ ] )
 
   return 0;
 }
-
-

@@ -23,7 +23,7 @@
 #include <iostream>
 #include "cv.h"
 #include "highgui.h"
-#include "OcpiApi.h"
+#include "OcpiApi.hh"
 #include "OcpiContainerApi.h"
 #include "OcpiPValueApi.h"
 
@@ -274,7 +274,7 @@ int main ( int argc, char* argv [ ] )
 			 "  </connection>"
 
 			 "</application>");
-  
+
   if(argc != 3) {
     printf("Usage: ./motion <imgA> <imgB>\n");
     return 0;
@@ -282,7 +282,7 @@ int main ( int argc, char* argv [ ] )
 
   OA::Application * app = NULL;
   try
-    {      
+    {
       int nContainers = 4;
       // Create several containers to distribute the workers on
       for ( int n=0; n<nContainers; n++ ) {
@@ -321,19 +321,19 @@ int main ( int argc, char* argv [ ] )
 	  OCPI::API::PVULong("MaxProcessors",3),
 	  OCPI::API::PVEnd
 	};
-      
+
 	if ( app != NULL ) {
 	  OA::Application * tapp = app;
 	  if ( policy == 1 ) {
-	    app = new OA::Application(*tapp, maxp_policy);	
+	    app = new OA::Application(*tapp, maxp_policy);
 	    policy++;
 	  }
 	  else if ( policy == 2 ) {
-	    app = new OA::Application(*tapp, minp_policy);	
+	    app = new OA::Application(*tapp, minp_policy);
 	    policy++;
 	  }
 	  else if ( policy == 3 ) {
-	    app = new OA::Application(*tapp, fixedp_policy);	
+	    app = new OA::Application(*tapp, fixedp_policy);
 	    policy++;
 	  }
 	  try {
@@ -557,5 +557,3 @@ int main ( int argc, char* argv [ ] )
 
   return 0;
 }
-
-

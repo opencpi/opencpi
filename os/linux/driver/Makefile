@@ -54,10 +54,6 @@ endif
 #    else
 all: installed
 #    endif
-#    .PHONY: platform_not_supported
-#    .SILENT: platform_not_supported
-#    platform_not_supported:
-#	true
 
 # To build modules outside of the kernel tree, we run "make"
 # in the kernel source tree; the Makefile there then includes this
@@ -153,7 +149,7 @@ unload:
 
 .PHONY: all clean topclean distclean
 # This clean is target specific
-clean:	
+clean:
 ifneq ($(KERNELDIR),)
 	$(AT)find $(KERNELDIR)/scripts | xargs file | grep "ELF 64-bit" | cut -f1 -d: | xargs -r -n1 rm
 	$(AT)rm -f $(KERNELDIR)/include/config/auto.conf
@@ -172,6 +168,12 @@ topclean: clean
 distclean: clean
 	rm -r -f target-*
 
+.PHONY: platform_not_supported
+.SILENT: platform_not_supported
+
+platform_not_supported:
+	true
+
 # This file may be generated from an imported .config file.
 # In centos6/7 kernel headers it is already part of the yum-maintained kernel-headers package
 # and thus will not ever need to be built this way.
@@ -184,4 +186,3 @@ distclean: clean
 $(KERNELDIR)/include/config/auto.conf:
 	make -C $(KERNELDIR) modules_prepare V=2 ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE)
 endif # ifdef KERNELRELEASE else..
-

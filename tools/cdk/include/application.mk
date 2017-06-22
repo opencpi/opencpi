@@ -3,6 +3,10 @@
 # The "app" is either the foo.{cc,cxx,cpp} or foo.xml
 
 include $(OCPI_CDK_DIR)/include/util.mk
+# Allow old-style "APP" to rename
+ifdef APP
+OcpiApp:=$(APP)
+endif
 ifndef OcpiApp
 OcpiApp:=$(CwdName)
 endif

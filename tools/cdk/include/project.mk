@@ -12,8 +12,10 @@ $(OcpiIncludeProject)
 # FIXME: can we test for licensing?
 ifeq ($(HdlPlatform)$(HdlPlatforms),)
   include $(OCPI_CDK_DIR)/include/hdl/hdl-targets.mk
-  $(info No HDL platforms specified.  No HDL assets will be built.)
-  $(info Possible HdlPlatforms are: $(sort $(HdlAllPlatforms)).)
+  ifeq ($(findstring export,$(MAKECMDGOALS)),)
+    $(info No HDL platforms specified.  No HDL assets will be targeted.)
+    $(info Possible HdlPlatforms are: $(sort $(HdlAllPlatforms)).)
+  endif
 endif
 
 ifeq ($(wildcard exports),)

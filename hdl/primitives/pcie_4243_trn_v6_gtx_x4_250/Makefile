@@ -1,7 +1,7 @@
 Core=pcie_4243_trn_v6_gtx_x4_250
 Top=v6_pcie_v1_7
 ExcludeTargets=
-OnlyTargets=virtex6 isim
+OnlyTargets=virtex6 isim xsim
 SourceFiles=\
  pcie_upconfig_fix_3451_v6.v\
  pcie_reset_delay_v6.v\

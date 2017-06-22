@@ -37,6 +37,7 @@
 
 include $(OCPI_CDK_DIR)/include/hdl/xilinx.mk
 
+
 ################################################################################
 # $(call HdlToolLibraryFile,target,libname)
 # Function required by toolset: return the file to use as the file that gets
@@ -334,6 +335,14 @@ XstMakeScr=(echo set -xsthdpdir . $(and $(XstNeedIni),-xsthdpini $(XstIniFile));
 
 # -ifn $(XstPrjFile) -ofn $(Core).ngc -top $(Top)
 
+# Here we strip off '_i' from target names (e.g. zynq_i)
+# We also strip off '_ise_alias' from target parts (e.g. xc7z020_ise_alias).
+# These suffixes are used to redirect zynq/xc7z020 to the XST tool, but they
+# need to be stripped off now so that the 'Real' target/part can be passed 
+# to the tool.
+HdlTargetReal=$(firstword $(subst _ise,,$(HdlTarget)))
+HdlExactPartReal=$(subst _ise_alias_,,$(HdlExactPart))
+
 XstCoreSearchList=\
   $(call Unique, \
      $(foreach l,$(CDKComponentLibraries),$(strip \
@@ -354,7 +363,7 @@ XstCoreSearchList=\
 
 XstOptions +=\
  -ifn $(XstPrjFile) -ofn $(Core).ngc -work_lib $(WorkLib) -top $(Top) \
- -p $(or $(and $(HdlExactPart),$(foreach p,$(HdlExactPart),$(word 1,$(subst -, ,$p))-$(word 3,$(subst -, ,$p))-$(word 2,$(subst -, ,$p)))),$(HdlTarget))\
+ -p $(or $(and $(HdlExactPart),$(foreach p,$(HdlExactPartReal),$(word 1,$(subst -, ,$p))-$(word 3,$(subst -, ,$p))-$(word 2,$(subst -, ,$p)))),$(HdlTargetReal))\
  $(and $(VerilogIncludeDirs),$(strip\
    -vlgincdir { \
      $(foreach d,$(VerilogIncludeDirs),$(call FindRelative,$(TargetDir),$(d))) \
@@ -366,6 +375,7 @@ XstNgdOptions=$(foreach c,$(XstCoreSearchList),-sd $c )
 #     $(foreach c,$(XstCores),$(infox XNO:$c)-sd $(call FindRelative,$(TargetDir),$(dir $(call HdlCoreRef,$c,$(HdlTarget)))))
 
 ifneq (,)
+# ???
   $(foreach l,$(CDKComponentLibraries), -sd \
     $(call FindRelative,$(TargetDir),$(l)/hdl/$(or $(HdlPart),$(HdlTarget))))\
   $(foreach l,$(CDKDeviceLibraries), -sd \
@@ -452,7 +462,15 @@ ChipScopeName=$1/$2-csi.ngc
 PcfName=$1/$2.pcf
 #TopNgcName=$(HdlPlatformsDir)/$1/target-$(call HdlGetPart,$1)/$1.ngc
 
+# We strip off '_ise_alias' from target parts (e.g. xc7z020_ise_alias-1-clg484).
+# This suffix is used to redirect xc7z020 to the XST tool, but they
+# need to be stripped off now so that the 'Real' part can be passed 
+# to the tool.
+HdlPartReal=$(subst _ise_alias_,,$(HdlPart_$1))
+
 OcpiXstTrceOptions=-v 200 -fastpaths
+export OcpiXstMapOptionsDefault=-detail -w -logic_opt on -xe c -mt 4 -register_duplication on -global_opt off -ir off -pr off -lc off -power off
+export OcpiXstParOptionsDefault=-mt 4 -w -xe n
 # $(call HdlToolDoPlatform,1:<target-dir>,2:<app-name>,3:<app-core-name>,4:<pfconfig>,5:<platform-name>,6: paramconfig)
 define HdlToolDoPlatform_xst
 
@@ -470,20 +488,19 @@ $(call NgdName,$1,$3): $(call NgcName,$1,$3) $(wildcard $(HdlPlatformDir_$5)/*.u
 	$(AT)echo -n For $2 on $5 using config $4: creating NGD '(Xilinx Native Generic Database)' file using '"ngdbuild"'.
 	$(AT)rm -f $$@
 	$(AT)$(call DoXilinx,ngdbuild,$1,\
-	        -verbose $(foreach u,$(wildcard $(HdlPlatformDir_$5)/*.ucf),-uc $u) -p $(HdlPart_$5) \
+	        -verbose $(foreach u,$(wildcard $(HdlPlatformDir_$5)/*.ucf),-uc $u) -p $(call HdlPartReal,$5) \
 		$$(XstNgdOptions) $3-b.ngc $3.ngd)
 
 # Map to physical elements
 $(call MapName,$1,$3): $(call NgdName,$1,$3)
 	$(AT)echo -n For $2 on $5 using config $4: creating mapped NCD '(Native Circuit Description)' file using '"map"'.
-	$(AT)$(call DoXilinx,map,$1,-p $(HdlPart_$5) -detail -w -logic_opt on -xe c -mt 4 -t $(or $(OCPI_PAR_SEED),1) -register_duplication on \
-	                         -global_opt off -ir off -pr off -lc off -power off -o $(notdir $(call MapName,$1,$3)) \
+	$(AT)$(call DoXilinx,map,$1,-p $(call HdlPartReal,$5) $(if $(filter undefined,$(origin OcpiXstMapOptions)),$(OcpiXstMapOptionsDefault),$(OcpiXstMapOptions)) -t $(or $(OCPI_PAR_SEED),1) -o $(notdir $(call MapName,$1,$3)) \
 	                         $(notdir $(call NgdName,$1,$3)) $(notdir $(call PcfName,$1,$3)))
 
 # Place-and-route, and generate timing report
 $(call ParName,$1,$3): $(call MapName,$1,$3) $(call PcfName,$1,$3)
 	$(AT)echo -n For $2 on $5 using config $4: creating PAR\'d NCD file using '"par"'.
-	$(AT)$(call DoXilinx,par,$1,-mt 4 -w -xe n $(notdir $(call MapName,$1,$3)) \
+	$(AT)$(call DoXilinx,par,$1,$(if $(filter undefined,$(origin OcpiXstParOptions)),$(OcpiXstParOptionsDefault),$(OcpiXstParOptions)) $(notdir $(call MapName,$1,$3)) \
 		$(notdir $(call ParName,$1,$3)) $(notdir $(call PcfName,$1,$3)))
 
 $(call TrceName,$1,$3): $(call ParName,$1,$3)

@@ -4,7 +4,7 @@
 # $2 the name of the prerequisite
 # $3 the download file
 # $4 the download directory url
-# $5 the local diretory resulting from unpacking the file
+# $5 the local directory resulting from unpacking the file
 # $6 set to enable cross compilation
 
 set +o posix
@@ -31,7 +31,7 @@ set -e
 if test -z "$OCPI_PREREQUISITES_INSTALL_DIR"; then
   if test -n "$OCPI_PREREQUISITES_DIR"; then
     export OCPI_PREREQUISITES_INSTALL_DIR=$OCPI_PREREQUISITES_DIR
-  else  
+  else
     export OCPI_PREREQUISITES_INSTALL_DIR=/opt/opencpi/prerequisites
   fi
   pdir="$(dirname $OCPI_PREREQUISITES_INSTALL_DIR)"
@@ -75,7 +75,7 @@ if [ -n "$url" ]; then
       echo Downloading the distribution file: $file
       curl -O -L $url/$file
       echo Download complete.  Removing any existing build directories.
-      rm -r -f $diretory
+      rm -r -f $directory
     fi
     if test -d $directory; then
       echo The distribution directory $directory exists, using it for this target:'  '$platform.

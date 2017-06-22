@@ -1,4 +1,6 @@
 # settings when targeting this platform.
+OCPI_TARGET_PLATFORM?=centos6
+
 OcpiLibraryPathEnv=LD_LIBRARY_PATH
 OcpiRpathOrigin=$${ORIGIN}
 OcpiDynamicSuffix=so

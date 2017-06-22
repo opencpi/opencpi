@@ -2,7 +2,7 @@
 #include <cstdio>
 #include <cassert>
 #include <cstring>
-#include "OcpiApi.h"
+#include "OcpiApi.hh"
 
 namespace OA = OCPI::API;
 

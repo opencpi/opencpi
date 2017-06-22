@@ -18,7 +18,21 @@ if test "$OCPI_CDK_DIR" = ""; then
   # Fifth arg is timezone spec - see "man timezone" for the format.
   export OCPI_TOOL_MODE=
   export OCPI_TARGET_MODE=
+  
+  # Uncomment this section and change the MAC address for an environment with multiple
+  # ZedBoards on one network (only needed for xilinx13_3)
+  # ifconfig eth0 down
+  # ifconfig eth0 hw ether 00:0a:35:00:01:23
+  # ifconfig eth0 up
+  # udhcpc
+  
   source /mnt/card/opencpi/zynq_net_setup.sh $1 /opt/opencpi cdk time.nist.gov EST5EDT,M3.2.0,M11.1.0
+  # mkdir -p /mnt/ocpi_baseproject                                                  
+  # mount -t nfs -o udp,nolock,soft,intr $1:/home/user/baseProject /mnt/ocpi_baseproject
+  # mkdir -p /mnt/ocpiassets                                                        
+  # mount -t nfs -o udp,nolock,soft,intr $1:/home/user/ocpiassets /mnt/ocpiassets
+  # add any commands to be run only the first time this script is run
+
   break # this script will be rerun recursively by setup.sh
 fi
 alias ll='ls -lt'

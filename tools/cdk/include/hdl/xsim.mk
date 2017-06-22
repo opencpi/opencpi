@@ -113,38 +113,35 @@ ifndef XsimTop
 XsimTop=$(Worker).$(Worker)
 endif
 
-# XsimArgs=-initfile xsim.ini -v 2 -work $(call ToLower,$(WorkLib))=$(WorkLib)
 
-XsimArgs= -v 2 -work $(call ToLower,$(WorkLib))=$(WorkLib)
-XsimXelabArgs= # -noieeewarnings
-#  (echo '-- This file is generated for building this '$(LibName)' library.  Used for both VHDL and verilog';\
-   $(foreach l,$(HdlLibrariesInternal),\
-      echo $(lastword $(subst -, ,$(notdir $l)))=$(strip \
-        $(call FindRelative,$(TargetDir),$(strip \
-           $(call HdlLibraryRefDir,$l,$(HdlTarget),,xsim))));) \
-  ) > xsim.ini ; \
+XsimArgs= -v 2 -work $(call ToLower,$(WorkLib))=$(WorkLib) $(XsimExtraArgs) 
+# Set this option to pass additional arguments to xvhdl and xvlog.
+# For example, if you are simulating IP, you may need to point to
+# the XSIM IP init file:
+# XsimExtraArgs=-initfile $(call OcpiXilinxVivadoDir,infox)/data/xsim/ip/xsim_ip.ini
+#XsimExtraArgs=
+
+XsimXelabArgs= -O3 $(XsimXelabExtraArgs)
+# Set this option to pass additional arguments to xelab
+#XsimXelabExtraArgs=
+# -noieeewarnings
 
 HdlToolCompile=\
   $(OcpiXilinxVivadoInit); \
+  echo verilog work $(OcpiXilinxVivadoDir)/data/verilog/src/glbl.v \
+    >> $(Worker).prj; \
   $(and $(filter %.vhd,$(XsimFiles)),\
-    xvhdl $(XsimArgs) $(XsimLibs) $(filter %.vhd,$(XsimFiles)) ; ) \
+    xvhdl $(XsimArgs) $(XsimLibs) $(filter %.vhd,$(XsimFiles)) -prj $(Worker).prj ; ) \
   $(and $(filter %.v,$(XsimFiles))$(findstring $(HdlMode),platform),\
     xvlog $(XsimVerilogIncs) $(XsimArgs) $(XsimLibs) $(filter %.v,$(XsimFiles)) \
       $(and $(findstring $(HdlMode),platform),\
-        $(OcpiXilinxVivadoDir)/data/verilog/src/glbl.v) ;) \
+        $(OcpiXilinxVivadoDir)/data/verilog/src/glbl.v) -prj $(Worker).prj ;) \
   $(if $(filter worker platform config assembly,$(HdlMode)),\
     $(if $(HdlNoSimElaboration),, \
-      echo verilog work $(OcpiXilinxVivadoDir)/data/verilog/src/glbl.v \
-	> $(Worker).prj; \
       xelab $(WorkLib).$(WorkLib)$(and $(filter config,$(HdlMode)),_rv) work.glbl -v 2 \
-             -prj $(Worker).prj -L unisims_ver -s $(Worker).exe -timescale 1ns/1ps \
-	     $(XsimXelabArgs) -lib $(WorkLib)=$(WorkLib) $(XsimLibs)))
-
-
-#  $(if $(findstring $(HdlMode),platform),\
-    echo verilog work ../../../containers/mkOCApp_bb.v > $(Worker).prj ; \
-    xelab $(XsimTop) $(Worker).glbl -timescale 1ns/1ps -v 2 -prj $(Worker).prj -L unisims_ver \
-	-s $(Worker).exe -lib work=work -lib $(call ToLower,$(Worker))=$(Worker) $(XsimLibs) ;)
+             -prj $(Worker).prj -L unisims_ver -s $(Worker).exe --timescale 10ns/1ps \
+             --override_timeprecision --override_timeunit --timeprecision_vhdl 10ns \
+             $(XsimXelabArgs) $(XsimXelabExtraArgs) -lib $(WorkLib)=$(WorkLib) $(XsimLibs)))
 
 # Since there is not a singular output, make's builtin deletion will not work
 HdlToolPost=\
@@ -166,7 +163,7 @@ $1/$3.tar:
 	$(AT)echo verilog work $(OcpiXilinxVivadoDir)/data/verilog/src/glbl.v >$1/$3.prj
 	$(AT)(set -e; cd $1; $(OcpiXilinxVivadoInit); \
 	      xelab $3.$3 work.glbl -v 2 -debug typical -prj $3.prj \
-              $(XsimXelabArgs) -lib $3=$3 $$(XsimLibs) -L unisims_ver -s $3;\
+              $(XsimXelabArgs) $(XsimXelabExtraArgs) -lib $3=$3 $$(XsimLibs) -L unisims_ver -s $3;\
 	      tar cf $3.tar metadatarom.dat xsim.dir) > $1/$3-xelab.out 2>&1
 
 endef

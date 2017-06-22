@@ -73,6 +73,7 @@ awk < $T -F '`' -v nxt=0 "
   }
   END { printf \"</properties>\n\" }
   " > $OCPI_PREREQUISITES_INSTALL_DIR/ad9361/include/ad9361-properties.xml
+rm $T
 
 ################################################################################
 # 3. Patch their API headers so they actually act like API headers

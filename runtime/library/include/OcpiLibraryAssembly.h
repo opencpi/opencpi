@@ -82,6 +82,7 @@ namespace OCPI {
 	bool checkConnectivity(Candidate &c, Assembly &assy);
 	bool foundImplementation(const Implementation &i, std::string &model,
 				 std::string &platform);
+        void strip_pf(std::string&) const;
 	const std::string &name() const { return m_utilInstance.m_name; }
 	const std::string &specName() const { return m_utilInstance.m_specName; }
 	const OCPI::Util::Assembly::Properties &properties() const {

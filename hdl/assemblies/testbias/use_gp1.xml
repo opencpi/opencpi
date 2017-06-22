@@ -1,2 +1,2 @@
-<HdlContainer platform='zed/gp1' default='1'/>
+<HdlContainer only='zed,zed_ise' config='gp1' default='1'/>
 

@@ -1,6 +1,6 @@
 #include <iostream>
 #include <CORBA.h>
-#include "OcpiApi.h"
+#include "OcpiApi.hh"
 #include "hello.hh"
 
 using namespace std;

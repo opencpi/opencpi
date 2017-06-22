@@ -40,6 +40,6 @@ SimLibraries=\
 SimFiles=\
  $(OCPI_XILINX_TOOLS_DIR)/ISE/verilog/src/glbl.v
 # include for protocols etc.
-OnlyTargets=isim virtex5
+OnlyTargets=isim xsim virtex5
 XmlIncludeDirs+=../../../components/specs
 include $(OCPI_CDK_DIR)/include/worker.mk

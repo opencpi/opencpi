@@ -21,7 +21,7 @@ This script takes three arguments to run:
 3. the Zynq software platform to use (which defaults to the name of the CWD)
 
 Don't forget to copy zynq/user_zynq_setup.sh to mysetup.sh and customize mysetup.sh before
-doing this.  Also, copy zynq/user_zynq_net_setup.sh to mynetsetup.sh and customize 
+doing this.  Also, copy zynq/user_zynq_net_setup.sh to mynetsetup.sh and customize
 mynetsetup.sh before doing this.
 
 Also, artifacts for the SD card are found based on the OCPI_LIBRARY_PATH environment variable,
@@ -58,7 +58,7 @@ else
   echo RPM Build detected - faking directory structure
   OCPI_CDK_DIR=${RPM_BUILD_ROOT}/opt/opencpi/cdk
   # Cannot just use CDK/lib and CDK/bin because the driver stuff isn't pushed there
-  EXAMPLES_ROOTDIR=${RPM_BUILD_ROOT}/opt/opencpi/base_project_source
+  # EXAMPLES_ROOTDIR set externally
   # This is using a "path" variable assuming it has no colons in it!
   export OCPI_LIBRARY_PATH=${OCPI_CDK_DIR}/components/:${OCPI_HDL_PLATFORM_PATH}/${HDL_PLATFORM}/
 fi
@@ -121,7 +121,6 @@ cp -L ${RUNTIME_LIB_DIR}/*_s.so $sd/opencpi/lib/${OCPI_TARGET_HOST}
 cp -L $OCPI_CDK_DIR/scripts/ocpibootstrap.sh $sd/opencpi/bin
 cp -L $OCPI_CDK_DIR/scripts/ocpidriver $sd/opencpi/bin
 cp -L $OCPI_CDK_DIR/scripts/ocpi_linux_driver $sd/opencpi/bin
-# cp -L $OCPI_CDK_DIR/scripts/ocpixml $sd/opencpi/bin
 cp -L ${EXAMPLES_ROOTDIR}/examples/xml/{*.xml,test.input} $sd/opencpi/xml
 
 # Add the default system.xml to the SD card.

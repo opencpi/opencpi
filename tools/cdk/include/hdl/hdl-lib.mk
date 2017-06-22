@@ -66,7 +66,27 @@ $(HdlInstallLibDir):
 	$(AT)echo Creating directory $@ for library $(LibName)
 	$(AT)mkdir -p $@
 
-install: $(OutLibFiles) | $(HdlInstallLibDir)
+HdlInstallLibs=$(HdlInstallLibDir)/$(LibName).libs
+
+# 
+HdlSourcesFileSuffix=$(if $(HdlToolSpecificSources),$(HdlToolSet).)sources
+HdlInstallSources=$(HdlInstallLibDir)/$(LibName).$(HdlSourcesFileSuffix)
+
+$(HdlInstallLibs):
+	$(AT)for f in $(HdlActualTargets); do \
+          if test -f $(OutDir)target-$$f/$(call RmRv,$(LibName)).libs; then \
+            cp $(OutDir)target-$$f/$(call RmRv,$(LibName)).libs $(dir $(HdlInstallLibs));\
+          fi;\
+	done
+
+$(HdlInstallSources):
+	$(AT)for f in $(HdlActualTargets); do \
+          if test -f $(OutDir)target-$$f/$(call RmRv,$(LibName)).$(HdlSourcesFileSuffix); then \
+            cp $(OutDir)target-$$f/$(call RmRv,$(LibName)).$(HdlSourcesFileSuffix) $(dir $(HdlInstallSources));\
+          fi;\
+	done
+
+install: $(OutLibFiles) | $(HdlInstallLibDir) $(HdlInstallLibs) $(HdlInstallSources)
 	$(AT)for f in $(HdlActualTargets); do \
 	  $(call ReplaceIfDifferent,$(strip \
              $(OutDir)target-$$f/$(WorkLib)),$(strip \

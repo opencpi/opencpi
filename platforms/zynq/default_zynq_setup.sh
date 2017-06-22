@@ -6,6 +6,13 @@
 
 trap "trap - ERR; break" ERR; for i in 1; do
 if test "$OCPI_CDK_DIR" = ""; then
+  # Uncomment this section and change the MAC address for an environment with multiple
+  # ZedBoards on one network (only needed on xilinx13_3)
+  # ifconfig eth0 down
+  # ifconfig eth0 hw ether 00:0a:35:00:01:23
+  # ifconfig eth0 up
+  # udhcpc
+
   # CUSTOMIZE THIS LINE FOR YOUR ENVIRONMENT
   # First argument is time server for the (old) time protocol used by the rdate command
   # Second argument is timezone spec - see "man timezone" for the format.

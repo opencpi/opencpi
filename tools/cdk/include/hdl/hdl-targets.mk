@@ -15,11 +15,12 @@ HdlTopTargets:=xilinx altera modelsim # icarus altera # verilator # altera
 
 # The first part in a family is the one used for core building
 # Usually it should be the largest
-HdlTargets_xilinx:=isim virtex5 virtex6 spartan3adsp spartan6 zynq xsim
+HdlTargets_xilinx:=isim virtex5 virtex6 spartan3adsp spartan6 zynq_ise zynq xsim
 HdlTargets_virtex5:=xc5vtx240t xc5vlx50t xc5vsx95t xc5vlx330t xc5vlx110t
 HdlTargets_virtex6:=xc6vlx240t
 HdlTargets_spartan6:=xc6slx45
 HdlTargets_spartan3adsp:=xc3sd3400a
+HdlTargets_zynq_ise:=xc7z_ise_alias_020-1-clg484
 HdlTargets_zynq:=xc7z020
 
 HdlTargets_altera:=stratix4 stratix5 # altera-sim
@@ -40,7 +41,8 @@ HdlToolSet_spartan3adsp:=xst
 HdlToolSet_virtex5:=xst
 HdlToolSet_virtex6:=xst
 HdlToolSet_spartan6:=xst
-HdlToolSet_zynq:=xst
+HdlToolSet_zynq_ise:=xst
+HdlToolSet_zynq:=vivado
 HdlToolSet_verilator:=verilator
 HdlToolSet_icarus:=icarus
 HdlToolSet_stratix4:=quartus
@@ -76,7 +78,7 @@ HdlAddPlatform=\
 HdlDoPlatform=\
   $(foreach p,$(notdir $1),\
     $(foreach d,$(if $(wildcard $1/lib/$p.mk),$1/lib,$1),\
-      $(if $(filter clean%,$(MAKECMDGOALS))$(call OcpiExists,$d/hdl/$p.xml)$(call OcpiExists,$d/$p.xml),,$(error no $p.xml file found for platform under: $1))\
+      $(if $(filter clean%,$(MAKECMDGOALS))$(call OcpiExists,$d/hdl/$p.mk)$(call OcpiExists,$d/$p.mk),,$(error no $p.mk file found for platform under: $1))\
       $(if $(wildcard $d/$p.mk),,$(error no $p.mk file found under $1. $p not built?))\
       $(call HdlAddPlatform,$d,$p,$d)))
 
@@ -89,7 +91,7 @@ HdlDoPlatformsDir=\
     \
     $(foreach d,$(wildcard $1/*),\
       $(foreach p,$(notdir $d),\
-        $(if $(wildcard $d/$p.xml)$(wildcard $d/lib/hdl/$p.xml)$(wildcard $d/hdl/$p.xml),\
+        $(if $(wildcard $d/$p.mk)$(wildcard $d/lib/hdl/$p.mk)$(wildcard $d/hdl/$p.mk),\
           $(call HdlDoPlatform,$d)))))
   
 $(call OcpiDbgVar,HdlAllPlatforms)

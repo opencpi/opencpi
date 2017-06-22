@@ -37,5 +37,5 @@
 # Force the target.  Don't build for any others
 # override Target=xc5vsx95t-2-ff1136
 Cores=ddc_4243_4ch_v5
-OnlyTargets=virtex5 isim 
+OnlyTargets=virtex5 isim xsim 
 include $(OCPI_CDK_DIR)/include/worker.mk

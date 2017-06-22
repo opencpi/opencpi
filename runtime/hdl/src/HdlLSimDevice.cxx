@@ -50,7 +50,7 @@ namespace OCPI {
       namespace OA = OCPI::API;
       namespace OT = OCPI::DataTransport;
       namespace DT = DataTransfer;
-      
+
       // Our named pipes.
 struct Fifo {
   std::string m_name;
@@ -114,8 +114,8 @@ struct Fifo {
   }
 };
 
-class Device 
-  : public OH::Device, public OH::Accessor, DT::EndPoint::Receiver, 
+class Device
+  : public OH::Device, public OH::Accessor, DT::EndPoint::Receiver,
     virtual public OCPI::Util::SelfMutex
  {
   friend class Driver;
@@ -161,7 +161,7 @@ class Device
   static const unsigned RESP_MAX = 14;
   static const unsigned RESP_LEN = 3; // index in layload buffer where length hides
   static const unsigned RESP_TAG = 7; // index in layload buffer where length hides
-  // This structure is what we remember about a request: which socket and from which 
+  // This structure is what we remember about a request: which socket and from which
   // address.  This is to allow multiple clients to discover the same device, when
   // it is not attached to an SDP client.  Since SDP writes are posted, this really
   // only applies to read requests
@@ -932,7 +932,7 @@ public:
     ocpiDebug("SDP Accessor read received 0x%x (%d) from offset %zx", data, data, offset);
     return data;
   }
-  void 
+  void
   set(RegisterOffset offset, size_t bytes, uint32_t data, uint32_t *status) {
     ocpiDebug("SDP Accessor write 0x%x (%d) for offset 0x%zx of %zu bytes", data, data, offset, bytes);
     sdpRequest(false, offset, bytes, (uint8_t *)&data + (offset & 3), status);
@@ -1064,7 +1064,7 @@ getSims(std::vector<std::string> &sims) {
   sims.clear();
   std::string first;
   if (OU::searchPath(path.c_str(), "lib/platforms/*", first, "exports", &pdirs)) {
-    ocpiInfo("No HDL platforms found (no lib/platforms/*) in path %s", 
+    ocpiInfo("No HDL platforms found (no lib/platforms/*) in path %s",
 	     path.c_str());
     return NULL;
   }
@@ -1119,6 +1119,7 @@ search(const OU::PValue *params, const char **excludes, bool discoveryOnly, std:
 	ocpiInfo("Skipping simulator \"%s\" due to OCPI_HDL_SIMULATOR(S)", name);
 	continue;
       }
+
       std::string cmd;
       OU::format(cmd, "sh %s/runSimExec.%s %s probe", sims[n].c_str(), name,
 		 OS::logGetLevel() >= 8 ? "-v" : "");
@@ -1136,7 +1137,7 @@ search(const OU::PValue *params, const char **excludes, bool discoveryOnly, std:
 	break;
       default:
 	if (!WIFEXITED(rc))
-	  OU::format(serr, "Error return %u/0x%x while executing license validation command", 
+	  OU::format(serr, "Error return %u/0x%x while executing license validation command",
 		     rc, rc);
 	else if (WEXITSTATUS(rc) != 0)
 	  ocpiInfo("Check for simulator %s failed.", name);
@@ -1174,7 +1175,7 @@ open(const char *name, const OA::PValue *params, std::string &err) {
   uint32_t simTicks = 100000000, sleepUsecs = 200000;
   uint8_t spinCount = 20;
   OU::findULong(params, "simTicks", simTicks);
-  
+
   return createDevice(name, platform, spinCount, sleepUsecs, simTicks, params, false, dir, err);
 }
 
@@ -1196,7 +1197,7 @@ createDevice(const std::string &name, const std::string &platform, uint8_t spinC
 	     actualPlatform.c_str());
   if (OU::searchPath(path.c_str(), relScript.c_str(), script, "exports")) {
     OU::format(error, "No simulation platform found named %s (no %s)",
-	       platform.c_str(), relScript.c_str()); 
+	       platform.c_str(), relScript.c_str());
     return NULL;
   }
   std::string simDir;

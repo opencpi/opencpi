@@ -4,7 +4,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <typeinfo>
-#include "OcpiApi.h"
+#include "OcpiApi.hh"
 #include "OcpiContainerApi.h"
 #include "OcpiPValueApi.h"
 
@@ -44,8 +44,8 @@ mymain(const char **argv) {
   const char * axml("<application package='ocpi' done='file_write'>"
 
 		      "  <instance component='file_read' >"
-		      "    <property name='fileName' value='dataIn.dat'/> "		      
-		    //		      "    <property name='genTestFile' value='false'/> "		      
+		      "    <property name='fileName' value='dataIn.dat'/> "
+		    //		      "    <property name='genTestFile' value='false'/> "
 		    //		      "    <property name='stepThruMsg' value='%s'/> "
 		    //		      "    <property name='stepNow' value='%s'/> "
 		    //		      "    <property name='continuous' value='%s'/> "
@@ -70,12 +70,12 @@ mymain(const char **argv) {
 		      "  <instance component='cic_hpfilter_complex' name='tx_cic' >"
 		      "    <property name='M' value='%d'/> "
 		      "  </instance> "
-			 
+
 		      "  <instance component='loopback' >"
 		      "  </instance> "
 
 		      "  <instance component='noise_gen_complex' >"
-		      "    <property name='mask' value='0'/> "		      
+		      "    <property name='mask' value='0'/> "
 		      "  </instance> "
 
 #ifdef NEED_MIXER
@@ -107,7 +107,7 @@ mymain(const char **argv) {
 		      "  </instance> "
 
 		      "  <instance component='file_write' >"
-		      "    <property name='fileName' value='dataOut.dat'/> "		      
+		      "    <property name='fileName' value='dataOut.dat'/> "
 		      "  </instance> "
 
 		      "  <connection>"
@@ -138,7 +138,7 @@ mymain(const char **argv) {
 		      "  <connection>"
 		      "    <port instance='noise_gen_complex' name='out'/>"
 		      "    <port instance='loopback' name='in'/>"
-		      "  </connection>"			 
+		      "  </connection>"
 
 #ifdef NEED_MIXER
 		      "  <connection>"
@@ -192,12 +192,12 @@ mymain(const char **argv) {
 		      "  <connection>"
 		      "    <port instance='rx_fir_r' name='out'/>"
 		      "    <port instance='file_write' name='in'/>"
-		      "  </connection>"			 
+		      "  </connection>"
 
 		      "</application>");
 
   try
-    {      
+    {
       // Create several containers to distribute the workers on
       for (unsigned n=0; n<options.rcc_count(); n++ ) {
 	char buf[1024];
@@ -216,8 +216,8 @@ mymain(const char **argv) {
 
       OCPI::API::PValue *policy = options.policy() && !strcmp(options.policy(),"max") ?
 	maxp_policy : minp_policy;
-      
-      OA::Application app( app_xml, policy);	
+
+      OA::Application app( app_xml, policy);
       fprintf(stderr, "Application XML parsed and deployments (containers and implementations) chosen\n");
       app.initialize();
 
@@ -258,7 +258,7 @@ mymain(const char **argv) {
 	    app.setProperty("file_read_msg","stepNow","true");
 	  }
 	}
-      
+
 	sleep( 1 );
       }
 
@@ -286,5 +286,3 @@ catch ( const std::string& s )
 
   return 0;
 }
-
-

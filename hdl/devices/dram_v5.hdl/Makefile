@@ -36,5 +36,5 @@
 
 Libraries=bsv util
 Cores=dram_v5_mig34
-OnlyTargets=virtex5 isim
+OnlyTargets=virtex5 isim xsim
 include $(OCPI_CDK_DIR)/include/worker.mk

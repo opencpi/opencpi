@@ -195,7 +195,7 @@ namespace OCPI {
 	    rc.m_portMasks[0] = RCC_NO_PORTS;
 	  else
 	    rc.m_portMasks = NULL;
-	}
+        }
       }
 
       // Our dispatch table

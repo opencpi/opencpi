@@ -300,7 +300,7 @@ public:
       }
       op = OpLimit;
       for (unsigned n = 0; n < OpEnd; n++)
-	if (*cp == opNames[n][0]) {
+	if (*cp == opNames[n][0]){
 	  if (opNames[n][1]) {
 	    if (cp < last-1 && opNames[n][1] == cp[1]) {
 	      cp++;

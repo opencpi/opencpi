@@ -25,7 +25,7 @@ shift # get rid of the dash
 # now the args are all ports
 ports=($*)
 [ -z "$remote" -a -x runremote.sh -a -n "$run" -a -z "$verify" -a -z "$view" ] && {
-    # We are: only runnning, and running locally, and the platform is remote,
+    # We are: only running, and running locally, and the platform is remote,
     # run all the cases remotely
     ./runremote.sh TestVerbose=$TestVerbose TestTimeout=$TestTimeout Cases="\"$Cases\"" \
 		   ./run.sh run remote

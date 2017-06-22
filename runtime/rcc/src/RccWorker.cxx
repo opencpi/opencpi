@@ -617,10 +617,10 @@ run(bool &anyone_run) {
     // If no port masks, then we don't run except for timeouts, checked above
     if (m_runCondition->m_portMasks[0] == RCC_NO_PORTS) {
       if (m_runCondition->m_timeout && !hasRun) {
-	hasRun = true;
-	break; // run if we're in period execution and haven't run at all yet
+        hasRun = true;
+        break; // run if we're in period execution and haven't run at all yet
       } else
-	return;
+        return;
     }
     // Start out assuming optional unconnected ports are "ready"
     RCCPortMask readyMask = m_info.optionallyConnectedPorts & ~m_context->connectedPorts;
@@ -705,7 +705,7 @@ advanceAll() {
       if (m_dispatch)
 	cAdvance(rccPort, 0);
       else
-	rccPort->userPort->advance();
+        rccPort->userPort->advance();
     }
   OCPI_EMIT_STATE_CAT_NR_(aare, 0, OCPI_EMIT_CAT_TUNING, OCPI_EMIT_CAT_TUNING_WC);
 }
@@ -1359,7 +1359,7 @@ OCPI_CONTROL_OPS
        initBuffer();
      if (m_opCodeSet && op != m_rccBuffer->opCode_)
        throw OU::Error("opcodes cannot be changed after being set, explicitly or implicitly "
-		       "(was %d, requested %d)", m_rccBuffer->opCode_, op);
+                       "(was %d, requested %d)", m_rccBuffer->opCode_, op);
      m_rccBuffer->opCode_ = op;
      m_opCodeSet = true;
    }

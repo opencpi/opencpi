@@ -27,6 +27,4 @@
      # ** Failure: (vsim-5) ****** Memory failure. *****
      # Bad pointer/access type passed to memory subsystem.
      # Pointer may have been previously deallocated.
-# xsim crashes when processing the ptest worker, so it is also excluded
-#ExcludePlatforms= xsim
 include $(OCPI_CDK_DIR)/include/hdl/hdl-assembly.mk

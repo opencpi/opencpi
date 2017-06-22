@@ -32,6 +32,7 @@ AciExe=$(call AciDir,$1)/$(basename $2)
 # Build a source file
 # $(call DoAciSource,<platform>,<sourcefile>,<language>,<app>)
 define DoAciSource
+  $(call AciObj,$1,$2): RccPlatform=$1
   $(call AciObj,$1,$2): RccTarget=$(RccTarget_$1)
   $(call AciObj,$1,$2): $2 | $(call AciDir,$1)
 	$(AT)echo Compiling source file: $$< for platform $1
@@ -57,7 +58,7 @@ define DoBuildAci
   # Does this need to be variable or is "all" always right?
   aciapps: $(call AciExe,$1,$2)
 endef
-$(foreach p,$(RccPlatforms),$(foreach a,$(OcpiAppsCC),$(eval $(call DoBuildAci,$p,$a))))
+$(foreach p,$(RccPlatforms),$(foreach a,$(OcpiAppsCC),$(infox App=$a Platform=$p)$(eval $(call DoBuildAci,$p,$a))))
 
 aciapps:
 	touch aciapps

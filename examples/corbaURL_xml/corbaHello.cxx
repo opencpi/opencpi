@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <cassert>
 #include <string>
-#include "OcpiApi.h"
+#include "OcpiApi.hh"
 
 namespace OA = OCPI::API;
 

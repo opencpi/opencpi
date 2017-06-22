@@ -23,7 +23,7 @@
 #include <iostream>
 #include <string>
 #include "cv.h"
-#include "OcpiApi.h"
+#include "OcpiApi.hh"
 #include "OcpiPValueApi.h"
 #include "highgui.h"
 
@@ -83,7 +83,7 @@ int main ( int argc, char* argv [ ] )
       &myOut = app.getPort("in"),
       &myIn = app.getPort("out");
     app.start();
-#else      
+#else
       /* ---- Create the RCC container and application -------------- */
       OA::Container *rcc_container = OA::ContainerManager::find("rcc");
       OA::ContainerApplication *rcc_application = rcc_container->createApplication( );
@@ -164,7 +164,7 @@ int main ( int argc, char* argv [ ] )
 
       // Set output data
       OA::ExternalBuffer* myOutput = NULL;
-      while ( (myOutput = myOut.getBuffer(odata, olength)) == NULL );      
+      while ( (myOutput = myOut.getBuffer(odata, olength)) == NULL );
       memcpy(odata, img->imageData, img->height * img->width);
       myOutput->put(0, img->height * img->width, false);
 
@@ -226,5 +226,3 @@ int main ( int argc, char* argv [ ] )
 
   return 0;
 }
-
-

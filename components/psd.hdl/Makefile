@@ -39,5 +39,5 @@
 # override Target=xc5vsx95t-2-ff1136
 Cores=fft_v5_4k_strm_nat
 # Limit targets since core is only for this one
-OnlyTargets=virtex5 isim
+OnlyTargets=virtex5 isim xsim
 include $(OCPI_CDK_DIR)/include/worker.mk

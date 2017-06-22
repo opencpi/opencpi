@@ -7,11 +7,12 @@
 source $OCPI_CDK_DIR/scripts/util.sh
 function getRemote {
   set -o pipefail
+  # TODO: Must set timeout!
   $OCPI_CDK_DIR/scripts/testrunremote.sh \
-      $1 $2 $3 "echo ==START== && ocpirun -C --only-platforms" | sed '1,/==START==/d'
+      $1 $2 $3 "echo ==START== && ocpirun -C --only-platforms" $4 | sed '1,/==START==/d'
   R=$?
   set +o pipefail
-  [ $R != 0 ] && echo '    'Failed trying to reach remote system at $1 with user $2 >&2 
+  [ $R != 0 ] && echo '    'Failed trying to reach remote system at $1 with user $2 >&2
   return 0
 }
 
@@ -20,13 +21,14 @@ ToolsDir=$OCPI_CDK_DIR/bin/$OCPI_TOOL_DIR
 echo 'Probing for available local platforms:'
 localplatforms=(`$ToolsDir/ocpirun -C --only-platforms`)
 echo '  Local platforms are: '${localplatforms[@]}
+# TODO use testutil.sh to parse
 if [ -n "${OCPI_REMOTE_TEST_SYSTEMS}" ]; then
   remotesystems=(${OCPI_REMOTE_TEST_SYSTEMS//:/ })
   echo 'Probing for remote platforms with systems specified via OCPI_REMOTE_TEST_SYSTEMS:'
   for s in ${remotesystems[@]}; do
     echo '  Contacting '$s
     x=(${s//=/ })
-    plats=($(getRemote ${x[0]} ${x[1]} ${x[2]} 2>run/${x[0]}.log)) || exit 1
+    plats=($(getRemote ${x[0]} ${x[1]} ${x[2]} ${x[4]} 2>run/${x[0]}.log)) || exit 1
     if [ ${#plats[@]} = 0 ]; then
       echo '    No platforms received: probing log is in run/'${x[0]}.log
     else
@@ -34,7 +36,7 @@ if [ -n "${OCPI_REMOTE_TEST_SYSTEMS}" ]; then
     fi
     remoteplatforms+=(${plats[@]})
     for p in ${plats[@]##*-}; do
-      eval ${p}_host=${x[0]} ${p}_user=${x[1]} ${p}_passwd=${x[2]} ${p}_dir=${x[3]}
+      eval ${p}_host=${x[0]} ${p}_user=${x[1]} ${p}_passwd=${x[2]} ${p}_dir=${x[3]} ${p}_sshversion=${x[4]}
      done
   done
   if [ -z "$remoteplatforms" ]; then
@@ -65,11 +67,11 @@ for p in ${remoteplatforms[@]##*-}; do
     file=run/$p/$f.sh
     [ -f $file -a ! -x $file ] && chmod a+x $file
   done
-  phost=${p}_host puser=${p}_user ppasswd=${p}_passwd pdir=${p}_dir
+  phost=${p}_host puser=${p}_user ppasswd=${p}_passwd pdir=${p}_dir psshversion=${p}_sshversion
   [ -x run/$p/run.sh ] && {
      cat <<-EOF > run/$p/runremote.sh
 	\$OCPI_CDK_DIR/scripts/testrunremote.sh ${!phost} ${!puser} ${!ppasswd} \\
-	"cd ${!pdir}/$1/run/$p && \$*"
+	"cd ${!pdir}/$1/run/$p && \$*" ${!psshversion}
 	EOF
      chmod a+x run/$p/runremote.sh
   }

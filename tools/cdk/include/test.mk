@@ -12,8 +12,8 @@ endif
 ifdef ExcludePlatform
   override ExcludePlatforms+= $(ExcludePlatform)
 endif
-export OnlyPlatforms
-export ExcludePlatforms
+  export OnlyPlatforms
+  export ExcludePlatforms
 export Cases
 export KeepSimulations
 export TestTimeout

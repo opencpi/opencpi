@@ -231,7 +231,7 @@ namespace OCPI {
 	      return esprintf("%s assignment '%s' is a reassignment of that instance.",
 			      pName, assign);
 	    assign = NULL;
-	  }
+        }
 	if (assign && checkMapped) {
 	  MappedProperty *mp = &m_mappedProperties[0];
 	  for (size_t nn = m_mappedProperties.size(); assign && nn; nn--, mp++)
@@ -422,7 +422,7 @@ namespace OCPI {
       if ((e = ezxml_cattr(ix, "external")) &&
 	  (err = a.addExternalConnection(m_ordinal, e, params)))
 	return err;
-      if ((s = ezxml_cattr(ix, "slave"))) {
+      if ((s = ezxml_cattr(ix, "slave"))){
 	if ((err = a.getInstance(s, m_slave)))
 	  return err;
 	else {

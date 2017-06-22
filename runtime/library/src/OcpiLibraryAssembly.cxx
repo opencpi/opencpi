@@ -32,6 +32,7 @@
  */
 #include <inttypes.h>
 #include <strings.h>
+#include <iostream>
 #include "OcpiLibraryAssembly.h"
 #include "OcpiUtilValue.h"
 #include "OcpiUtilEzxml.h"
@@ -425,6 +426,7 @@ namespace OCPI {
 	}
 	score = (unsigned)(n < 0 ? 0 : n);
       }
+      strip_pf(platform);
       // To this point all the checking has applied to the worker we are looking at.
       // From this point some of the checking may actually apply to the slave if there is one
       // The aspects that could apply to the slave are:
@@ -555,6 +557,13 @@ namespace OCPI {
       m_candidates.push_back(Candidate(i, score));
       ocpiInfo("Accepted implementation before connectivity checks with score %u", score);
       return true;
+    }
+
+    void Assembly::Instance::strip_pf(std::string& platform) const {
+      // Remove trailing _pf from string
+      const size_t pos = platform.rfind("_pf");
+      if (pos == platform.length()-3)
+        platform.erase(pos);
     }
 
     void Assembly::

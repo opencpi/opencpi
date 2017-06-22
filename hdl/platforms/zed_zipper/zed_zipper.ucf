@@ -76,5 +76,5 @@ NET "lime_spi_sen"                LOC = "K19" | IOSTANDARD=LVCMOS25;    ## C18 o
 # The I2C pin assignments are reversed from the FMC slot pin names
 # because the Zipper reverses the pins between the FMC and the Si5351 I2C
 # drive=12, IOSTANDARD=LVCMOS25, SLEW=SLOW
-NET "zipper_i2c_scl"		  LOC = "U7" | IOSTANDARD=LVCMOS25 | SLEW=SLOW | DRIVE=12 | PULLUP;
-NET "zipper_i2c_sda"		  LOC = "R7" | IOSTANDARD=LVCMOS25 | SLEW=SLOW | DRIVE=12 | PULLUP;
+NET "zipper_i2c_scl"		  LOC = "U7" | IOSTANDARD=LVCMOS33 | SLEW=SLOW | DRIVE=12 | PULLUP;
+NET "zipper_i2c_sda"		  LOC = "R7" | IOSTANDARD=LVCMOS33 | SLEW=SLOW | DRIVE=12 | PULLUP;

@@ -1,7 +1,7 @@
 #include <cstdio>
 #include <cassert>
 #include <string>
-#include "OcpiApi.h"
+#include "OcpiApi.hh"
 #include <iostream>
 #include "cv.h"
 #include "highgui.h"
@@ -120,14 +120,14 @@ int main(int argc, char **argv) {
   cleanup:
     // Cleanup
     cvWaitKey(0);
-    cvReleaseImage( &img );  
+    cvReleaseImage( &img );
     cvDestroyWindow( "Input" );
 
     // Note that the ContainerApplication object MAY be deleted by the program,
     // hence it is a pointer.  But it doesn't HAVE to be deleted since it will
     // automatically be deleted on exit.
     return 0;
-  
+
   } catch (std::string &e) {
     fprintf(stderr, "Exception thrown: %s\n", e.c_str());
     return 1;

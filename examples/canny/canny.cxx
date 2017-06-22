@@ -22,7 +22,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include <iostream>
 #include "cv.h"
-#include "OcpiApi.h"
+#include "OcpiApi.hh"
 #include "highgui.h"
 
 namespace OA = OCPI::API;
@@ -246,5 +246,3 @@ int main ( int argc, char* argv [ ] )
 
   return 0;
 }
-
-

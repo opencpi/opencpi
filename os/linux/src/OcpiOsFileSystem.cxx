@@ -468,7 +468,7 @@ exists(const char *name, bool * isDir, uint64_t *size, std::time_t *mtime, FileI
   if (id) {
     struct PosixId {
       dev_t device;
-      ino_t inode;  
+      ino_t inode;
     } *posix_id;
     ocpiAssert ((compileTimeSizeCheck<sizeof (id->m_opaque), sizeof(*posix_id)> ()));
     posix_id = (PosixId*)id->m_opaque;
@@ -573,7 +573,7 @@ const char *slashes = "/";
 
 Dir::Dir(const std::string &dir) throw (std::string)
   : m_name(toNativeName(dir)) {
-  
+
   ocpiAssert ((compileTimeSizeCheck<sizeof (m_opaque), sizeof(DIR *)> ()));
   DIR *dfd = opendir(m_name.c_str());
   if (dfd == NULL)
@@ -591,7 +591,7 @@ bool Dir::next(std::string &s, bool &isDir) throw(std::string) {
   int errnum;
   do
     if ((errnum = readdir_r(dfd, &entry, &result)))
-      throw "Error reading diretory: " + OCPI::OS::Posix::getErrorMessage(errnum);
+      throw "Error reading directory: " + OCPI::OS::Posix::getErrorMessage(errnum);
   while (result && entry.d_name[0] == '.' &&
 	 (!entry.d_name[1] || (entry.d_name[1] == '.' && !entry.d_name[2])));
   if (result) {

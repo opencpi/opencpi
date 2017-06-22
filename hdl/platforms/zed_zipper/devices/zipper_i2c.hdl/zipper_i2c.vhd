@@ -38,7 +38,7 @@ architecture rtl of zipper_i2c_worker is
       rst      : in  std_logic;
       nReset   : in  std_logic;
       ena      : in  std_logic;
-      clk_cnt  : in  unsigned(15 downto 0);
+      clk_cnt  : in  std_logic_vector(15 downto 0);
       start    : in  std_logic;
       stop     : in  std_logic;
       read     : in  std_logic;
@@ -59,6 +59,7 @@ architecture rtl of zipper_i2c_worker is
       sda_oen  : out std_logic
       );
   end component;
+
   signal not_ctl_in_reset : std_logic;
   signal scl_padoen       : std_logic;
   signal sda_padoen       : std_logic;

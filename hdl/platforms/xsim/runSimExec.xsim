@@ -12,31 +12,65 @@ function bad {
 [ "$1" = probe ] && {
   setVarsFromMake $OCPI_CDK_DIR/include/hdl/xilinx.mk ShellIseVars=1 $verbose
   [ -z "$OcpiXilinxVivadoDir" ] && bad Could not find the directory for XILINX Vivado.
-  [ -z "$OcpiXilinxLicenseFile" ] && bad Could not find the Xilinx license file.
+  [ -z "$OcpiXilinxVivadoLicenseFile" ] && bad Could not find the Xilinx license file.
   [ -f $OcpiXilinxVivadoDir/.settings64-Vivado.sh ] ||
     bad No Xilinx settings file in $OcpiXilinxVivadoDir.
   [ -n "$verbose" ] && echo Attempting to run a tiny simulation to test xsim. 1>&2
   probefile=$(cd $(dirname $0); pwd)/probe.exe.tgz
   [ -f "$probefile" ] ||
     bad Missing xsim probe support file \"$probefile\".
-  bad Probing unimplemented for xsim.
+  tmpdir=`mktemp -d 2>/dev/null || mktemp -d -t 'mytmpdirXXX'` # stackoverflow 30091
+  cd $tmpdir
+  tar xzf $probefile
+  export LM_LICENSE_FILE=$OcpiXilinxVivadoLicenseFile
+  source $OcpiXilinxVivadoDir/.settings64-Vivado.sh $OcpiXilinxVivadoDir
+  xsimout=$(xsim probe.exe < /dev/null 2>&1)
+  version=$(echo $xsimout |  sed -n '/^.*Vivado Simulator \([0-9\.]\+\).*$/s//\1/p')
+  invalidlic=$(echo $xsimout |  grep -E "ERROR.*A valid license was not found for simulation")
+  [ -z "$invalidlic" -a -n "$version" ] && {
+    [ -n "$verbose" ] && echo Found a licensed Vivado Simulator with version: $version. 1>&2
+    exit 0
+  }
+  bad Found no Vivado installation or license after trying to run a tiny simulation.
 }
 setVarsFromMake $OCPI_CDK_DIR/include/hdl/xilinx.mk ShellIseVars=1 $verbose
 [ -z "$OcpiXilinxVivadoDir" ] && bad Could not find the directory for XILINX Vivado.
 
 set -e
 # Pass arguments to the settings script to override current args
-. $OcpiXilinxVivadoDir/settings64.sh $OcpiXilinxVivadoDir
-export LM_LICENSE_FILE=$OcpiXilinxLicenseFile
+. $OcpiXilinxVivadoDir/.settings64-Vivado.sh $OcpiXilinxVivadoDir
+export LM_LICENSE_FILE=$OcpiXilinxVivadoLicenseFile
 set -vx
 appname=$1
+echo Filename: $1 1>&2 
+read assyname contname<<EOF
+`echo $1 | sed 's/^\(.*\)_xsim.*$/\1 &/'`
+EOF
+echo Assembly: $assyname  Container: $contname 1>&2
 shift
 for i in $*; do echo for $i; plusargs="$plusargs -testplusarg $i"; done 1>&2
 echo plusargs are: $plusargs 1>&2
-echo doing ./$appname-xsim_pf.exe $plusargs 1>&2
-exec xsim  -tl $plusargs $appname <<EOF
-report_scopes
-report_objects
-log_wave -r /
-run 1 s
+echo doing xsim -tl $plusargs $appname 1>&2
+# Here we create run.tcl which is sourced as part of the tcl command 'xsim'
+# Only the 'xsim' tcl command's results are stored in the WDB, so these need
+# to be sourced as part of the 'xsim' tcl command for the run information 
+# to truly be saved.
+echo "report_scopes 
+report_objects 
+log_wave -r / 
+run 1s" > run.tcl
+
+# Here we create view.tcl which will be sourced by ocpiview to open
+# up the database file. This is necessary because the xsim executable
+# does not accept wdb file as input, and 2015.4's xsim tcl command
+# also does not.
+echo "open_wave_database xsim.wdb" > view.tcl
+# We want to pass the WDB output file and tcl source to the TCL xsim
+# command, not the xsim executable
+# -onerror quit -onfinish quit 
+exec xsim $contname <<EOF
+xsim -verbose $plusargs {$contname} -wdb xsim.wdb -tclbatch run.tcl
+puts [current_time]
+exit
 EOF
+

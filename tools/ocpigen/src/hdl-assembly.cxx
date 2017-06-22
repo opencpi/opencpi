@@ -663,7 +663,7 @@ emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
     std::string name;
     // Allow for signals in a vector to be mapped individually (e.g. to slot signal).
     for (unsigned n = 0; s.m_width ? n < s.m_width : n == 0; n++) {
-      bool isSingle;
+      bool isSingle = false;
       const char *mappedExt = i->m_extmap.findSignal(s, n, isSingle);
       ocpiDebug("Instance %s worker %s signal %s(%u) mapped to %s single %d", i->cname(),
 		i->m_worker->m_implName, s.cname(), n, mappedExt ? mappedExt : "<none>", isSingle);
