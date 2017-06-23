@@ -874,6 +874,7 @@ namespace OCPI {
       unindent(std::string &in) {
 	bool sol = true;
 	unsigned indent = 0, minindent = UINT_MAX;
+	// Pass one, figure out the minimum indentation of all non-blank lines
 	for (const char *cp = in.c_str(); *cp; cp++)
 	  switch (*cp) {
 	  case ' ': if (sol) indent++; break;
@@ -886,12 +887,15 @@ namespace OCPI {
 	    break;
 	  default: sol = false; break;
 	  }
-	if (!sol && in.back() != '\n' && indent < minindent)
+	// End condition may be in a line with no newline and entire value may have no
+	// new lines.  We still will remove indentation in this case.
+	if (!sol && in[in.length() - 1] != '\n' && indent < minindent) // back() method is c++11
 	  minindent = indent;
 	sol = true;
 	indent = 0;
 	std::string str;
 	bool first = true;
+	// Pass two, copy the string, reducing indentation by the discovered minimum
 	for (const char *cp = in.c_str(); *cp; cp++) {
 	  switch (*cp) {
 	  case ' ': if (sol) {indent++; continue;} break;
