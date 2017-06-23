@@ -1,14 +1,17 @@
 source $env(OCPI_CDK_DIR)/include/hdl/vivado-util.tcl
 
 set stage               ""
-set synth_name          ""
 set target_file         ""
 set checkpoint          ""
 set part                ""
+set edif_file           ""
 set constraints         ""
 set impl_opts           ""
 set incr_comp           ""
 set power_opt           ""
+set post_place_opt      ""
+set post_route_opt      ""
+set phys_opt_opts       ""
 
 parse_args $argv
 
@@ -39,6 +42,7 @@ if {[info exists constraints] && [string length $constraints] > 0} {
 # implementation step
 set stage_start_time [clock seconds]
 puts "Running Implementation stage $stage"
+set command ""
 switch $stage {
   opt {
     set command "opt_design $impl_opts ;"
@@ -60,15 +64,18 @@ switch $stage {
         read_checkpoint -incremental $incr_dcp
       }
     }
-    set command "place_design $impl_opts"
-  }
-  phys_opt {
-    set command "phys_opt_design $impl_opts"
+    set command "$command place_design $impl_opts ;"
+    if {[info exists post_place_opt] && [string equal $post_place_opt true]} { 
+      set command "$command phys_opt_design $phys_opt_opts ;"
+    }
   }
   route {
     set command "route_design $impl_opts ;"
     if {[info exists incr_comp] && [string equal $incr_comp true]} { 
       set command "$command report_incremental_reuse"
+    }
+    if {[info exists post_route_opt] && [string equal $post_route_opt true]} { 
+      set command "$command phys_opt_design $phys_opt_opts ;"
     }
   }
   timing {

@@ -309,6 +309,15 @@ Unique=$(infox Unique:$1)$(strip $(foreach x,$(call Unique2,$1,),$x))
 Unique2=$(infox Unique2:$1:$2:)$(if $1,$(call Unique2,$(wordlist 2,$(words $1),$1),$(strip\
                                $(foreach w,$(firstword $1),$(if $(filter $w,$2),$2,$2 $w)))),$2)
 
+# Take a list of paths, and return the list of
+# paths that have unique notdir values
+OcpiUniqueNotDir=\
+  $(eval NotDiredList= )\
+  $(foreach f,$1,\
+    $(if $(filter $(notdir $f),$(NotDiredList)),,\
+      $(eval NotDiredList+=$(notdir $f) )\
+      $f ))
+
 LibraryRefFile=$(call $(CapModel)LibraryRefFile,$1,$2)
 
 ################################################################################

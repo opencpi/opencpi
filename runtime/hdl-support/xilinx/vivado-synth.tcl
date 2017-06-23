@@ -4,9 +4,10 @@ source $env(OCPI_CDK_DIR)/include/hdl/vivado-util.tcl
 set tcl_imports              "" 
 set artifact                 "" 
 set hdl_mode                 ""  
-set top_mod                 ""  
+set top_mod                  ""  
 set synth_part               ""
 set synth_opts               ""
+set edif_opts                ""
 
 # parse_args parses input arguments of type variableName=value
 parse_args $argv
@@ -44,9 +45,9 @@ if {[info exists tcl_imports] && [string length $tcl_imports)] > 0} {
   source $tcl_imports
 }
 
-set done_load_files_time [clock seconds]
-
 report_compile_order -used_in synthesis
+
+set done_load_files_time [clock seconds]
 
 ###############################################################################
 # Synthesis
@@ -57,7 +58,7 @@ set synth_command ""
 switch -regex $hdl_mode {
   core|worker|platform|config|assembly|container {
     # Create a netlist EDIF file
-    set post_synth "$post_synth write_edif -force $artifact ;"
+    set post_synth "$post_synth write_edif -force $artifact $edif_opts;"
     set post_synth "$post_synth report_utilization ;"
     set post_synth "$post_synth report_timing ;"
     set post_synth "$post_synth report_design_analysis ;"

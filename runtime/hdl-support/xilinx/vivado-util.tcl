@@ -31,9 +31,14 @@ proc add_files_set_lib {library f} {
 # Since read_edif can also take in an ngc, this function 
 # can actually load dcps, edifs, OR ngcs
 proc read_edif_or_dcp {f} {
-  if {[string match *.dcp $f]} {
+  if {[string match *.edf $f]} {
+    read_edif $f
+  } elseif {[string match *.edn $f]} {
+    read_edif $f
+  } elseif {[string match *.dcp $f]} {
     read_checkpoint $f
   } else {
-    read_edif $f
+    puts "File $f is not an EDIF, DCP or XCI file. This may cause problems."
+    add_files $f
   }
 }

@@ -335,13 +335,13 @@ XstMakeScr=(echo set -xsthdpdir . $(and $(XstNeedIni),-xsthdpini $(XstIniFile));
 
 # -ifn $(XstPrjFile) -ofn $(Core).ngc -top $(Top)
 
-# Here we strip off '_i' from target names (e.g. zynq_i)
-# We also strip off '_ise_alias' from target parts (e.g. xc7z020_ise_alias).
+# Here we remove '_ise' from target names (e.g. zynq_ise)
+# We also remove '_ise_alias' from target parts (e.g. xc7z020_ise_alias).
 # These suffixes are used to redirect zynq/xc7z020 to the XST tool, but they
 # need to be stripped off now so that the 'Real' target/part can be passed 
 # to the tool.
 HdlTargetReal=$(firstword $(subst _ise,,$(HdlTarget)))
-HdlExactPartReal=$(subst _ise_alias_,,$(HdlExactPart))
+HdlExactPartReal=$(subst _ise_alias,,$(HdlExactPart))
 
 XstCoreSearchList=\
   $(call Unique, \
@@ -466,7 +466,7 @@ PcfName=$1/$2.pcf
 # This suffix is used to redirect xc7z020 to the XST tool, but they
 # need to be stripped off now so that the 'Real' part can be passed 
 # to the tool.
-HdlPartReal=$(subst _ise_alias_,,$(HdlPart_$1))
+HdlPartReal=$(subst _ise_alias,,$(HdlPart_$1))
 
 OcpiXstTrceOptions=-v 200 -fastpaths
 export OcpiXstMapOptionsDefault=-detail -w -logic_opt on -xe c -mt 4 -register_duplication on -global_opt off -ir off -pr off -lc off -power off

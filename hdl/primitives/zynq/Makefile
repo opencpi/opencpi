@@ -105,14 +105,14 @@ endif
 # In order to generate the processing_system7 top verilog file with Vivado,
 # we need to run a series of TCL commands located in vivado/tcl
 vivado_zynq/$(XilinxZynqCore)_processing_system7.v:
+	rm -rf vivado_zynq/tmp ; \
 	mkdir vivado_zynq/tmp ; \
 	cd vivado_zynq/tmp ; \
 	$(call OcpiXilinxVivadoInit); \
 	vivado -mode batch -source ../ps7.tcl -tclargs $(XilinxZynqPS7Version) > ../ps7.log ;\
-	cd ../ ; \
+	cd ..; \
 	cp tmp/managed_ip_project/managed_ip_project.srcs/sources_1/ip/processing_system7_0/hdl/verilog/$(XilinxZynqCore)_processing_system7.v .; \
-	rm -rf tmp/;\
-	cd ../;
+	rm -rf tmp;
 
 # Do not remove ps7 top level verilog on clean
 # This will save time

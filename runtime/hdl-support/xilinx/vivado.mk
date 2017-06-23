@@ -185,6 +185,11 @@ VivadoMyExtraOptions_synth=$(strip \
           $(VivadoDefaultExtraOptions_synth),\
           $(VivadoExtraOptions_synth)))
 
+# Use this to send options to the write_edif command.
+# For example, " -security_mode all " will enable encryption of the whole 
+# EDIF file if any component of the design requires encryption.
+#VivadoEdifOptions=
+
 ###############################################################################
 # Options for opt stage of implementation
 ###############################################################################
@@ -229,9 +234,9 @@ VivadoBadOptions_place=$(VivadoBadOptions_all)
 VivadoDefaultOptions_place=
 
 ###############################################################################
-# Options for phys_opt stage of implementation
+# Options for phys_opt stage of implementation run post-place
 ###############################################################################
-VivadoGoodOptions_phys_opt=\
+VivadoGoodOptions_post_place_phys_opt=\
 -fanout_opt \
 -placement_opt \
 -routing_opt \
@@ -251,9 +256,9 @@ VivadoGoodOptions_phys_opt=\
 -clock_opt \
 -path_groups
 
-VivadoBadOptions_phys_opt=$(VivadoBadOptions_all)
+VivadoBadOptions_post_place_phys_opt=$(VivadoBadOptions_all)
 
-VivadoDefaultOptions_phys_opt=\
+VivadoDefaultOptions_post_place_phys_opt=\
 -hold_fix
 
 ###############################################################################
@@ -284,6 +289,34 @@ $(VivadoBadOptions_all)
 
 VivadoDefaultOptions_route=\
 -directive NoTimingRelaxation
+
+###############################################################################
+# Options for phys_opt stage of implementation run post-route
+###############################################################################
+VivadoGoodOptions_post_route_phys_opt=\
+-fanout_opt \
+-placement_opt \
+-routing_opt \
+-onroute_replace \
+-rewire \
+-critical_cell_opt \
+-dsp_register_opt \
+-bram_register_opt \
+-uram_register_opt \
+-bram_enable_opt \
+-shift_register_opt \
+-hold_fix \
+-retime \
+-force_replication_on_nets \
+-directive \
+-critical_pin_opt \
+-clock_opt \
+-path_groups
+
+VivadoBadOptions_post_route_phys_opt=$(VivadoBadOptions_all)
+
+VivadoDefaultOptions_post_route_phys_opt=\
+-hold_fix
 
 ###############################################################################
 # Options for timing stage of implementation
@@ -471,7 +504,8 @@ HdlToolCompile=\
     hdl_mode='$(HdlMode)' \
     top_mod='$(Top)' \
     synth_part='$(VivadoSynthesisPart)' \
-    synth_opts='$(call VivadoOptions,synth)';)
+    synth_opts='$(call VivadoOptions,synth)' \
+    edif_opts='$(VivadoEdifOptions)';)
 
 VivadoToolExports=\
   $(foreach f,$(HdlSources),\
@@ -547,7 +581,6 @@ BitFile_vivado=$1.bit
 SynthName=$1/$2.edf
 OptName=$1/$2-opt.dcp
 PlaceName=$1/$2-place.dcp
-PhysOptName=$1/$2-phys_opt.dcp
 RouteName=$1/$2-route.dcp
 TimingName=$1/$2-timing.rpx
 
@@ -558,7 +591,17 @@ TimingName=$1/$2-timing.rpx
 
 # This variable enables the power_opt_design stage of implementation.
 # By default, power_opt_design is not run.
-#VivadoPowerOpt=
+#VivadoPowerOpt=true
+
+# This variable enables the phys_opt_design stage of implementation
+# to be run after place_design but before route_design
+# By default, phys_opt_design is not run.
+#VivadoPostPlaceOpt=true
+
+# This variable enables the phys_opt_design stage of implementation
+# to be run after route_design
+# By default, phys_opt_design is not run.
+#VivadoPostRouteOpt=true
 
 # Here we are creating the command that will run the vivado script ($1) and pass this command and its arguments to DoXilinx
 # This is essentially a wrapper function for DoXilinx where we create the long vivado command ($1)
@@ -576,57 +619,45 @@ define HdlToolDoPlatform_vivado
 $(call OptName,$1,$3): $(call SynthName,$1,$3) $(wildcard $(HdlPlatformDir_$5)/*.xdc)
 	$(AT)echo -n For $2 on $5 using config $4: creating optimized DCP file using '"opt_design"'.
 	$(AT)$(call DoVivado,vivado-impl.tcl,$1,-tclargs \
-        	stage=opt \
-        	synth_name=$(call SynthName,$1,$3) \
-        	target_file=$(call OptName,$1,$3) \
-        	part=$(call VivadoChoosePart,$(HdlPart_$5)) \
+		stage=opt \
+		target_file=$(call OptName,$1,$3) \
+		part=$(call VivadoChoosePart,$(HdlPart_$5)) \
 		edif_file=$(call SynthName,$1,$3) \
 		constraints='$(filter-out %_bit.xdc,$(wildcard $(HdlPlatformDir_$5)/*.xdc))' \
-                impl_opts='$(call VivadoOptions,opt)' \
-                power_opt=$(if $(VivadoPowerOpt),true,false) \
-        	,opt)
+		impl_opts='$(call VivadoOptions,opt)' \
+		power_opt=$(if $(VivadoPowerOpt),true,false) \
+		,opt)
 
 $(call PlaceName,$1,$3): $(call OptName,$1,$3) $(wildcard $(HdlPlatformDir_$5)/*.xdc)
 	$(AT)echo -n For $2 on $5 using config $4: creating placed DCP file using '"place_design"'.
 	$(AT)$(call DoVivado,vivado-impl.tcl,$1,-tclargs \
 		stage=place \
-        	synth_name=$(call SynthName,$1,$3) \
 		target_file=$(call PlaceName,$1,$3) \
 		checkpoint=$(call OptName,$1,$3) \
 		part=$(call VivadoChoosePart,$(HdlPart_$5)) \
-                impl_opts='$(call VivadoOptions,place)' \
-                incr_comp=$(if $(VivadoIncrementalCompilation),true,false) \
+		impl_opts='$(call VivadoOptions,place)' \
+		post_place_opt=$(if $(VivadoPostPlaceOpt),true,false) \
+		phys_opt_opts='$(call VivadoOptions,post_place_phys_opt)' \
+		incr_comp=$(if $(VivadoIncrementalCompilation),true,false) \
 		,place)
 
-
-$(call PhysOptName,$1,$3): $(call PlaceName,$1,$3) $(wildcard $(HdlPlatformDir_$5)/*.xdc)
-	$(AT)echo -n For $2 on $5 using config $4: creating physically optimized DCP file using '"phys_opt_design"'.
-	$(AT)$(call DoVivado,vivado-impl.tcl,$1,-tclargs \
-		stage=phys_opt \
-        	synth_name=$(call SynthName,$1,$3) \
-		target_file=$(call PhysOptName,$1,$3) \
-		checkpoint=$(call PlaceName,$1,$3) \
-		part=$(call VivadoChoosePart,$(HdlPart_$5)) \
-                impl_opts='$(call VivadoOptions,phys_opt)' \
-		,phys_opt)
-
-$(call RouteName,$1,$3): $(call PhysOptName,$1,$3) $(wildcard $(HdlPlatformDir_$5)/*.xdc)
+$(call RouteName,$1,$3): $(call PlaceName,$1,$3) $(wildcard $(HdlPlatformDir_$5)/*.xdc)
 	$(AT)echo -n For $2 on $5 using config $4: creating routed DCP file using '"route_design"'.
 	$(AT)$(call DoVivado,vivado-impl.tcl,$1,-tclargs \
 		stage=route \
-        	synth_name=$(call SynthName,$1,$3) \
 		target_file=$(call RouteName,$1,$3) \
-		checkpoint=$(call PhysOptName,$1,$3) \
+		checkpoint=$(call PlaceName,$1,$3) \
 		part=$(call VivadoChoosePart,$(HdlPart_$5)) \
-                impl_opts='$(call VivadoOptions,route)' \
-                incr_comp=$(if $(VivadoIncrementalCompilation),true,false) \
+		impl_opts='$(call VivadoOptions,route)' \
+		post_route_opt=$(if $(VivadoPostRouteOpt),true,false) \
+		phys_opt_opts='$(call VivadoOptions,post_route_phys_opt)' \
+		incr_comp=$(if $(VivadoIncrementalCompilation),true,false) \
 		,route)
 
 $(call TimingName,$1,$3): $(call RouteName,$1,$3) $(wildcard $(HdlPlatformDir_$5)/*.xdc)
 	$(AT)echo -n Generating timing report '(RPX)' for $2 on $5 using $4 using '"report_timing"'.
 	$(AT)$(call DoVivado,vivado-impl.tcl,$1,-tclargs \
 		stage=timing \
-        	synth_name=$(call SynthName,$1,$3) \
 		target_file=$(call TimingName,$1,$3) \
 		checkpoint=$(call RouteName,$1,$3) \
 		part=$(call VivadoChoosePart,$(HdlPart_$5)) \
@@ -637,7 +668,6 @@ $(call BitName,$1,$3,$6): $(call RouteName,$1,$3) $(call TimingName,$1,$3) $(wil
 	$(AT)echo -n For $2 on $5 using config $4: Generating Xilinx Vivado bitstream file $$@.
 	$(AT)$(call DoVivado,vivado-impl.tcl,$1,-tclargs \
 		stage=bit \
-        	synth_name=$(call SynthName,$1,$3) \
 		target_file=$(call BitName,$1,$3,$6) \
 		checkpoint=$(call RouteName,$1,$3) \
 		part=$(call VivadoChoosePart,$(HdlPart_$5)) \

@@ -143,8 +143,8 @@ HdlGetFamily_core=$(call OcpiDbg,Entering HdlGetFamily_core($1,$2))$(strip \
 	             HdlFamily is ambiguous for '$(1)'. Choices are '$(HdlTargets_$(1))')),\
 	           $(or $(HdlTargets_$(1)),$(1)))))),$(strip \
 	  $(foreach f,$(HdlAllFamilies),\
-	     $(and $(findstring $(call HdlGetTargetFromPart,$1),$(HdlTargets_$f)),$f))),$(strip \
-	  $(and $(findstring $1,$(HdlAllPlatforms)), \
+	     $(and $(filter $(call HdlGetTargetFromPart,$1),$(HdlTargets_$f)),$f))),$(strip \
+	  $(and $(filter $1,$(HdlAllPlatforms)), \
 	        $(call HdlGetFamily_core,$(call HdlGetTargetFromPart,$(HdlPart_$1))))),\
 	  $(call $(HdlError),$(strip \
 	     The build target '$1' is not a family or a part in any family))),\
@@ -337,18 +337,9 @@ HdlCollectLibsRecurse=$(infox RecursingOn:$2:$1)\
 	  $(if $(HdlRecurseLibraries),$(call HdlCollectLibsRecurse,$1,$l) )$(call HdlNotdirAbsOrRelPath,$2,$l) )
 
 
-# Take a list of paths, and return the list of
-# paths that have unique notdir values
-UniqueNotDir=\
-  $(eval NotDiredList= )\
-  $(foreach f,$1,\
-    $(if $(filter $(notdir $f),$(NotDiredList)),,\
-      $(eval NotDiredList+=$(notdir $f) )\
-      $f ))
-
 # Accumulate a list of the libraries required by the current asset
 # If the HdlRecurseLibraries flag is set, gather this list recursively
-HdlCollectLibraries=$(infox PPPP:$(HdlLibrariesInternal):$1)$(call UniqueNotDir,\
+HdlCollectLibraries=$(infox PPPP:$(HdlLibrariesInternal):$1)$(call OcpiUniqueNotDir,\
 	$(foreach a,\
 	  $(foreach p,$(HdlLibrariesInternal),$(infox ZP:$p)\
 	    $(call HdlCollectLibsRecurse,$1,$p)$p ),$(infox A:$a)$a ))
