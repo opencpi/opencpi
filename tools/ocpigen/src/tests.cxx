@@ -1,6 +1,7 @@
 // Process the tests.xml file.
 #include <strings.h>
 #include <set>
+#include <limits>
 #include <algorithm>
 #include "OcpiOsDebugApi.h"
 #include "OcpiOsFileSystem.h"

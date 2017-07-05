@@ -1071,13 +1071,14 @@ namespace OCPI {
 	if (m_verbose)
 	  fprintf(stderr, "Setting delayed property values while application is running.\n");
 	OU::Assembly::Delay now = 0;
-	for (auto it : m_delayedPropertyValues) {
-	  if (it.first > now) {
-	    usleep(it.first - now);
-	    now = it.first;
+	for (auto it = m_delayedPropertyValues.begin(); 
+	     it != m_delayedPropertyValues.end(); ++it) {
+	  if (it->first > now) {
+	    usleep(it->first - now);
+	    now = it->first;
 	  }
-	  m_launchInstances[it.second.m_instance].m_worker->
-	    setPropertyValue(*it.second.m_property, it.second.m_value);
+	  m_launchInstances[it->second.m_instance].m_worker->
+	    setPropertyValue(*it->second.m_property, it->second.m_value);
 	}
 	m_delayedPropertyValues.clear();
       }
