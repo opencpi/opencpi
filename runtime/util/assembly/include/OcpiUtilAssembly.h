@@ -80,12 +80,15 @@ namespace OCPI {
 	const char *parse(ezxml_t x, Assembly &a);
       };
       typedef std::vector<MappedProperty> MappedProperties;
+      typedef uint32_t Delay;
       struct Property {
 	std::string m_name;
 	bool m_hasValue; // since value might legitimately be an empty string
 	std::string m_value;
 	std::string m_dumpFile;
-        Property() : m_hasValue(false) {}
+	bool m_hasDelay;
+	Delay m_delay;
+	Property() : m_hasValue(false), m_hasDelay(false), m_delay(0) {}
 	const char *parse(ezxml_t x, Property *first = NULL);
 	const char *setValue(ezxml_t px);
 	void setValue(const char *name, const char *value);

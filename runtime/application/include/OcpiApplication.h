@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
@@ -100,6 +99,14 @@ namespace OCPI {
 	unsigned m_property;    // ordinal of property in implememtation of instance
 	const char *m_dumpFile; // pointer to dump file if one was specified
       } *m_properties;
+      // This is a queue entry for a delayed property value setting
+      struct DelayedPropertyValue {
+	unsigned m_instance;
+	const OCPI::Util::Property *m_property;
+	OCPI::Util::Value m_value;
+      };
+      typedef std::map<OCPI::Util::Assembly::Delay, DelayedPropertyValue> DelayedPropertyValues;
+      DelayedPropertyValues    m_delayedPropertyValues;
       size_t m_nProperties;
       CMap m_curMap;              // A temporary indicating possible containers for a candidate
       unsigned m_curContainers;   // A temporary that counts containers for a candidate
@@ -151,6 +158,9 @@ namespace OCPI {
       void finalizeLaunchConnections();
       void initInstances();
       void finalizeLaunchInstances();
+      void checkPropertyValue(unsigned nInstance, const OCPI::Util::Worker &w,
+			      const OCPI::Util::Assembly::Property &aProp, unsigned *&pn,
+			      OU::Value *&pv);
       OCPI::Util::Port *getMetaPort(unsigned n) const;
       // return our used-container ordinal
       unsigned addContainer(unsigned container, bool existOk = false);
@@ -187,6 +197,7 @@ namespace OCPI {
       void start();
       void stop();
       bool verbose() const { return m_verbose; }
+      void setDelayedProperties();
       bool wait(OCPI::OS::Timer *);
       void finish();
       ExternalPort &getPort(const char *, const OCPI::API::PValue *);

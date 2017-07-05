@@ -69,6 +69,8 @@ namespace OCPI {
       void initialize();
       // This makes the application operational, and resumes after "stop"
       void start();
+      // Set the delayed properties on schedule
+      void setDelayedProperties();
       // return true if timed out, unless timeOutIsError, in which case throw exception
       bool wait(unsigned timeout_us = 0, bool timeOutIsError = false);
       // do functional (not cleanup) things at the end of execution

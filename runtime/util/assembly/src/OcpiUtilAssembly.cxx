@@ -32,9 +32,12 @@
  */
 
 #include <set>
+#include <limits>
 #include "OcpiUtilExceptionApi.h"
 #include "OcpiUtilEzxml.h"
 #include "OcpiUtilMisc.h"
+#include "OcpiUtilDataTypes.h"
+#include "OcpiUtilValue.h"
 #include "OcpiUtilAssembly.h"
 
 namespace OCPI {
@@ -334,7 +337,14 @@ namespace OCPI {
     // instance property - we essentially merge the info from both, checking for inconsistencies
     const char *Assembly::Property::
     setValue(ezxml_t px) {
-      const char *cp, *err;
+      const char *cp;
+      if ((cp = ezxml_cattr(px, "dumpFile"))) {
+	if (cp && m_dumpFile.length())
+	  return esprintf("For instance property \"%s\", duplicate dumpFile attributes",
+			  m_name.c_str());
+	m_dumpFile = cp;
+      }
+      const char *err;
       if ((cp = ezxml_cattr(px, "value"))) {
 	if (ezxml_cattr(px, "valueFile"))
 	  return esprintf("For instance property \"%s\", having both \"value\" and \"valueFile\""
@@ -440,43 +450,97 @@ namespace OCPI {
       return NULL;
     }
 
-    const char *Assembly::Instance::
-    addProperty(const char *name, ezxml_t px) {
-      Property *p = &m_properties[0];
-      size_t n;
-      for (n = m_properties.size(); n ; n--, p++)
-	if (!strcasecmp(p->m_name.c_str(), name)) {
-	  // Top level property matches a worker-specific setting
-	  // It is an error IF the top level property supplies a value that is already supplied
-	  if (p->m_hasValue && (ezxml_cattr(px, "value") || ezxml_cattr(px, "valueFile")))
-	    return esprintf("duplicate property value \"%s\" for instance \"%s\"",
-			    name, m_name.c_str());
-	  break;
-	}
-      if (!n) {
-	m_properties.resize(m_properties.size() + 1);
-	p = &m_properties.back();
-	p->m_name = name;
-      }
-      return p->setValue(px);
+    // Parse the delays as expressions of doubles (seconds), and then convert to usecs
+    // FIXME: this code is redundant with the tests.cxx
+    static const char *
+    parseDelay(ezxml_t x, Assembly::Delay &usecs, bool &hasDelay) {
+      const char *delay = ezxml_cattr(x, "delay");
+      if (delay) {
+	ValueType vt(OA::OCPI_Double);
+	Value v(vt);
+	const char *err;
+	if ((err = v.parse(delay)))
+	  return err;
+	v.m_Double *= 1e6;
+	if (v.m_Double < 0 || v.m_Double >= std::numeric_limits<Assembly::Delay>::max())
+	  return esprintf("delay value \"%s\"(%g) out of range, 0 to %g", delay, v.m_Double/1e6,
+			  (double)std::numeric_limits<Assembly::Delay>::max()/1e6);
+	usecs = static_cast<Assembly::Delay>(v.m_Double);
+	hasDelay = true;
+      } else
+	hasDelay = false;
+      return NULL;
     }
 
-#if 0
-    static void
-    baseName(const char *path, std::string &out) {
-      const char
-	*dot = strrchr(path, '.'),
-	*slash = strrchr(path, '/');
-      if (slash)
-	slash++;
-      else
-	slash = path;
-      if (dot && dot > slash)
-	out.assign(slash, dot - slash);
-      else
-	out = slash;
+    // Called both from app-level property as well as instance-level property
+    const char *Assembly::Instance::
+    addProperty(const char *name, ezxml_t px) {
+      const char *err;
+      bool isProperty = !strcasecmp(ezxml_name(px), "property");
+      do { // break to add instance and property name to error
+	if ((err = OE::checkElements(px, isProperty ? "set" : NULL, NULL)))
+	  break;
+	Delay delay;
+	bool hasDelay;
+	if ((err = parseDelay(px, delay, hasDelay)))
+	  return err;
+	const char
+	  *value = ezxml_cattr(px, "value"),
+	  *valueFile = ezxml_cattr(px, "valueFile");
+	bool hasValue = value || valueFile;
+	if (hasDelay && !hasValue)
+	  return esprintf("property setting for \"%s\" has delay but no value", name);
+	// Scan existing properties.  Other than errors we either update the existing one
+	// or add one (for a new delay).  n will be non-zero if we are reusing a pvalue
+	size_t n = 0;
+	Property *p = &m_properties[0];
+	for (n = m_properties.size(); n; n--, p++)
+	  if (!strcasecmp(p->m_name.c_str(), name))
+	    if (p->m_hasValue) {             // existing has a value
+	      if (hasValue) {                // new has a value
+		if (p->m_hasDelay) {         // existing has delay
+		  if (hasDelay) {            // new has delay
+		    if (delay == p->m_delay) {
+		      err = esprintf("two property values have the same delay:  %g",
+				     (double)delay / 1000000);
+		      break;
+		    } // else: skip it since delays are different
+		  } // else: skip it since existing has delay but we don't
+		} else if (!hasDelay) {
+		  err = "duplicate initial property value";
+		  break;
+		} // else: skip it since existing has no delay but we do
+	      } else if (!p->m_hasDelay)
+		break;  // reuse since we have no value and existing has no delay
+	    } else
+	      break; // reuse since existing has no value
+	if (err)
+	  break;
+	// Avoid using this property element if it is just a container for <set> elements
+	if (ezxml_name(px) != "property" || hasValue || ezxml_cattr(px, "dumpFile")) {
+	  if (!n) {
+	    m_properties.resize(m_properties.size() + 1);
+	    p = &m_properties.back();
+	    p->m_name = name;
+	  }
+	  p->m_hasDelay = hasDelay;
+	  p->m_delay = delay;
+	  if ((err = p->setValue(px)))
+	    break;
+	}
+	// Recurse for <set> elements
+	if (isProperty)
+	  for (ezxml_t sx = ezxml_cchild(px, "set"); sx; sx = ezxml_next(sx))
+	    if ((err = addProperty(name, sx)))
+	      break;
+      } while (0);
+      return err ?
+	(isProperty ? 
+	esprintf("error for instance \"%s\" property \"%s\":  %s", m_name.c_str(), name, err) :
+	 err) :
+	NULL;
     }
-#endif
+
     const char *Assembly::Instance::
     setProperty(const char *propAssign) {
       const char *eq = strchr(propAssign, '=');
@@ -576,11 +640,21 @@ namespace OCPI {
       ocpiDebug("Component: %s name: %s impl: %s spec: %s selection: %s",
 		component.c_str(), m_name.c_str(), m_implName.c_str(), m_specName.c_str(),
 		m_selection.c_str());
+#if 0
       m_properties.resize(OE::countChildren(ix, "property"));
       Property *p = &m_properties[0];
       for (ezxml_t px = ezxml_cchild(ix, "property"); px; px = ezxml_next(px), p++)
 	if ((err = p->parse(px, &m_properties[0])))
 	  return err;
+#else
+      for (ezxml_t px = ezxml_cchild(ix, "property"); px; px = ezxml_next(px)) {
+	const char *name = ezxml_cattr(px, "name");
+	if (!name)
+	  return "missing name attribute in property element";
+	if ((err = addProperty(name, px)))
+	  return err;
+      }
+#endif
       const char *propAssign;
       // Now deal with instance-based property parameters that might override the XML ones
       // First, process the parameters for ALL instances, then the parameters for specific

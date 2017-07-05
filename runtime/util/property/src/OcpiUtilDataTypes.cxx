@@ -177,6 +177,10 @@ namespace OCPI {
       if (m_pretty.empty())
 	m_pretty = m_name;
       OE::getOptionalString(xm, m_description, "Description");
+      ezxml_t desc = ezxml_cchild(xm, "description");
+      if (desc)
+	m_description = ezxml_txt(desc);
+      OE::unindent(m_description);
       OE::getOptionalString(xm, m_format, "Format");
       const char *typeName = ezxml_cattr(xm, "Type");
       if (!typeName)
@@ -185,7 +189,7 @@ namespace OCPI {
 	return err;
       if (!strcasecmp(typeName, "struct")) {
 	m_baseType = OA::OCPI_Struct;
-	if ((err = OE::checkElements(xm, "member", (void*)0)) ||
+	if ((err = OE::checkElements(xm, OCPI_UTIL_MEMBER_ELEMENTS, "member", (void*)0)) ||
 	    (err = parseMembers(xm, m_nMembers, m_members, a_isFixed, "member", hasDefault,
 				resolver)))
 	  return err;
@@ -202,13 +206,13 @@ namespace OCPI {
 	if (!xt)
 	  return "missing \"type\" child element under data type with type=\"type\"";
 	if ((err = OE::checkAttrs(xt, OCPI_UTIL_MEMBER_ATTRS, NULL)) ||
-	    (err = OE::checkElements(xm, "type", (void*)0)) ||
+	    (err = OE::checkElements(xm, OCPI_UTIL_MEMBER_ELEMENTS, "type", (void*)0)) ||
 	    (err = m_type->parse(xt, a_isFixed, false, NULL, NULL, 0)))
 	  return err;
 	if (!m_type->m_isSequence)
 	  return "recursive \"type\" element must be a sequence";
       } else {
-	if ((err = OE::checkElements(xm, (void*)0)))
+	if ((err = OE::checkElements(xm, OCPI_UTIL_MEMBER_ELEMENTS, (void*)0)))
 	  return err;
 	// A primitive/scalar type
 	const char **tp;
@@ -429,6 +433,8 @@ namespace OCPI {
 	throw Error("Aligning data exceeds buffer when writing: length %zu advance %zu",
 		    length, nBytes);
       }
+      // Cannot enforce this because a "fake" mode is used to prepass and determine buffer size:
+      // ocpiAssert(p != nullptr);
       length -= nBytes;
       p += nBytes;
     }
@@ -600,7 +606,7 @@ namespace OCPI {
 	if (m_fixedLayout && !top) {
 	  // If fixed layout override the incremental data/length advance and 
 	  // advance over the whole thing, including the length prefix
-          ocpiDebug("radvance(<ptr>, %zu, %zu)", m_nBytes, startLength);
+          // ocpiDebug("radvance(<ptr>, %zu, %zu)", m_nBytes, startLength);
 	  radvance(startData, m_nBytes, startLength);
 	  assert(startData >= data && startLength <= length);
 	  data = startData;

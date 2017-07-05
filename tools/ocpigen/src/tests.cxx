@@ -430,6 +430,7 @@ namespace {
     ParamConfigs m_subCases;
     InputOutputs m_ports;  // the actual inputs and outputs to use
     size_t m_timeout, m_duration;
+    std::string m_delays;
     
     Case(ParamConfig &globals)
       : m_settings(globals), m_results(*wFirst), m_timeout(timeout), m_duration(duration)
@@ -548,6 +549,40 @@ namespace {
 	}
       return NULL;
     }
+    // FIXME: this code is redundant with the OcpiUtilAssembly.cxx
+    const char *parseDelay(ezxml_t sx, const OU::Property &p) {
+      const char *err;
+      if ((err = OE::checkAttrs(sx, "delay", "value", NULL)) ||
+	  (err = OE::checkElements(sx, NULL)))
+	return err;
+      if (p.m_isTest)
+	return "delayed property settings are not allowed for test properties";
+      // We are preparsing these delays to produce earlier errors, otherwise we could just
+      // save the XML and attach it to the generated apps
+      OU::ValueType vt(OA::OCPI_Double);
+      OU::Value v(vt);
+      const char 
+	*delay = ezxml_cattr(sx, "delay"),
+	*value = ezxml_cattr(sx, "value");
+	if (!delay || !value)
+	  return "<set> elements must contain both \"delay\" and \"value\" attributes";
+      if ((err = v.parse(delay)))
+	return err;
+      v.m_Double *= 1e6;
+      if (v.m_Double < 0 || v.m_Double >= std::numeric_limits<uint32_t>::max())
+	return OU::esprintf("delay value \"%s\"(%g) out of range, 0 to %g", delay, v.m_Double/1e6,
+			(double)std::numeric_limits<uint32_t>::max()/1e6);
+      v.setType(p);
+      if ((err = v.parse(value)))
+	return err;
+      ocpiDebug("Adding delay for:  <property name='%s' delay='%s' value='%s'/>",
+		p.cname(), delay, value);
+      OU::formatAdd(m_delays, "    <property name='%s' delay='%s' value='%s'/>\n",
+		    p.cname(), delay, value);
+      // add to some list
+      return NULL;
+    }
+
     const char *parse(ezxml_t x, size_t ordinal) {
       const char *err, *a;
       if ((a = ezxml_cattr(x, "name")))
@@ -579,22 +614,27 @@ namespace {
       // Parse explicit property values for this case, which will override
       for (ezxml_t px = ezxml_cchild(x, "property"); px; px = ezxml_cnext(px)) {
 	if ((err =
-	     OE::checkAttrs(px, PARAM_ATTRS, "generate", "add", "only", "exclude", NULL)))
+	     OE::checkAttrs(px, PARAM_ATTRS, "generate", "add", "only", "exclude", NULL)) ||
+	    (err = OE::checkElements(px, "set", NULL)))
 	  return err;
 	std::string name;
 	if ((err = OE::getRequiredString(px, name, "name")))
 	  return err;
-	bool found = false;
+	Param *found = NULL;
 	for (unsigned n = 0; n < m_settings.params.size(); n++) {
 	  Param &sp = m_settings.params[n];
 	  if (sp.m_param && !strcasecmp(sp.m_param->cname(), name.c_str())) {
-	    sp.parse(px, *sp.m_param);
-	    found = true;
+	    if (px->attr && px->attr[0]) // poor man's: any attributes?
+	      sp.parse(px, *sp.m_param);
+	    found = &sp;
 	    break;
 	  }
 	}
 	if (!found)
 	  return OU::esprintf("Property name \"%s\" not a worker or test property", name.c_str());
+	for (ezxml_t sx = ezxml_cchild(px, "set"); sx; sx = ezxml_next(sx))
+	  if ((err = parseDelay(sx, *found->m_param)))
+	    return err;
       }
 #if 0
       for (unsigned n = 0; n < m_settings.params.size(); n++) {
@@ -626,7 +666,8 @@ namespace {
     void
     doProp(unsigned n) {
       ParamConfig &c = *m_subCases.back();
-      while (n < c.params.size() && (!c.params[n].m_param || !c.params[n].m_generate.empty()))
+      while (n < c.params.size() && (!c.params[n].m_param || !c.params[n].m_generate.empty() ||
+				     c.params[n].m_uValues.empty()))
 	n++;
       if (n >= c.params.size())
 	return;
@@ -656,7 +697,7 @@ namespace {
 	    OU::Property *wprop = wci->second->findProperty(sp.m_param->cname());
 	    for (unsigned n = 0; n < wcfg.params.size(); n++) {
 	      Param &wparam = wcfg.params[n];
-	      if (wparam.m_param  && !strcasecmp(sp.m_param->cname(), wparam.m_param->cname())) {
+	      if (wparam.m_param && !strcasecmp(sp.m_param->cname(), wparam.m_param->cname())) {
 		if (sp.m_uValue == wparam.m_uValue)
 		  goto next;     // match - this subcase property is ok for this worker config
 		goto skip_worker_config; // mismatch - this worker config rejected from subcase
@@ -666,10 +707,13 @@ namespace {
 	    if (wprop) {
 	      // But it is a runtime property in the worker config so it is ok
 	      assert(!wprop->m_isParameter);
-	      continue;
+	      continue; // do next subcase parameter/property
 	    }
+	    // The subcase property is for the emulator, which is ok
+	    if (sp.m_worker && sp.m_worker->m_emulate)
+	      continue;
 	    // The subcase property was not in this worker at all, so it must be
-	    // implementation specific or a test property
+	    // implementation specific or a test property or an emulator property
 	    if (sp.m_param->m_isImpl) {
 	      if (sp.m_param->m_default) {
 		std::string uValue;
@@ -844,7 +888,7 @@ namespace {
     }
     void
     generateAppInstance(Worker &w, ParamConfig &pc, unsigned nOut, unsigned nOutputs,
-			unsigned s, const DataPort *first, std::string &app) {
+			unsigned s, const DataPort *first, bool emulator, std::string &app) {
       OU::formatAdd(app, "  <instance component='%s'", w.m_specName);
       if (nOut == 1) {
 	if (nOutputs == 1)
@@ -856,6 +900,8 @@ namespace {
       for (unsigned n = 0; n < pc.params.size(); n++) {
 	Param &p = pc.params[n];
 	if (p.m_param && !p.m_isTest && !p.m_uValues.empty()) {
+	  if (p.m_worker && p.m_worker->m_emulate && !w.m_emulate)
+	    continue;
 	  if (p.m_param->m_isImpl && p.m_param->m_default) {
 	    std::string uValue;
 	    p.m_param->m_default->unparse(uValue);
@@ -875,6 +921,8 @@ namespace {
 	  app += "/>\n";
 	}
       }
+      if (!emulator)
+	app += m_delays;
       app += any ? "  </instance>\n" : "/>\n";
     }
 
@@ -960,9 +1008,9 @@ namespace {
 		OU::formatAdd(app, "    <property name='suppressEOF' value='true'/>\n");
 	      app += "  </instance>\n";
 	    }
-	generateAppInstance(*wFirst, pc, nWOut, nOutputs, s, first, app);
+	generateAppInstance(*wFirst, pc, nWOut, nOutputs, s, first, false, app);
 	if (emulator)
-	  generateAppInstance(*emulator, pc, nEmOut, nOutputs, s, firstEm, app); 
+	  generateAppInstance(*emulator, pc, nEmOut, nOutputs, s, firstEm, true, app); 
 	if (nOutputs)
 	  for (unsigned n = 0; n < m_ports.size(); n++) {
 	    InputOutput &io = m_ports[n];
@@ -1228,6 +1276,9 @@ namespace {
 	      assert(!wprop->m_isParameter);
 	      continue;
 	    }
+	    // The subcase property is for the emulator, which is ok
+	    if (sp.m_worker && sp.m_worker->m_emulate)
+	      continue;
 	    // The subcase property was not in this worker at all, so it must be
 	    // implementation specific or a test property
 	    if (sp.m_param->m_isImpl) {
@@ -1363,7 +1414,7 @@ namespace {
 		    emulator->m_implName, c, hdlFileIO ? "" : " externals='true'");
       for (unsigned n = 0; n < w.m_ports.size(); n++) {
 	Port &p = *w.m_ports[n];
-	if (!p.isData() && p.m_type != WCIPort)
+	if (p.m_type == DevSigPort || p.m_type == PropPort)
 	  OU::formatAdd(assy,
 			"  <connection>\n"
 			"    <port instance='%s' name='%s'/>\n"
@@ -1382,6 +1433,45 @@ namespace {
   }
 } // end of anonymous namespace
 
+// Called for all workers and the emulator if present
+static void
+addNonParameterProperties(Worker &w, ParamConfig &globals) {
+  for (PropertiesIter pi = w.m_ctl.properties.begin(); pi != w.m_ctl.properties.end(); ++pi) {
+    OU::Property &p = **pi;
+    if (p.m_isParameter || !p.m_isWritable)
+      continue;
+    Param *found = NULL;
+    for (unsigned n = 0; n < globals.params.size(); n++) {
+      Param &param = globals.params[n];
+      if (param.m_param && !strcasecmp(param.m_param->cname(), p.cname())) {
+	found = &param;
+	break;
+      }
+    }
+    if (found) {
+      if (w.m_emulate) {
+	// This is expected.  The emulator has a superset of the device worker's properties
+      } else if (!found->m_param->m_isImpl) {
+	// This is expected since workers with the same spec have the same properties
+      } else
+	// This is unsupported: we don't know what to do with same-named impl-specific properties
+	// in different workers
+	assert("same property name for worker-specific properties in different workers"==0);
+    } else {
+      globals.params.resize(globals.params.size()+1);
+      Param &param = globals.params.back();
+      param.m_param = &p;
+      if (p.m_isImpl || w.m_emulate)
+	param.m_worker = &w;
+      if (p.m_default) {
+	p.m_default->unparse(param.m_uValue);
+	param.m_uValues.resize(1);
+	param.m_attributes.resize(1);
+	param.m_uValues[0] = param.m_uValue;
+      }
+    }
+  }
+}
 const char *
 createTests(const char *file, const char *package, const char */*outDir*/, bool a_verbose) {
   verbose = a_verbose;
@@ -1501,42 +1591,11 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
     }
   }
   // ================= 4a. Parse and collect global non-parameter property values from workers
-  for (WorkersIter wi = workers.begin(); wi != workers.end(); ++wi) {
-    Worker &w = **wi;
-    for (PropertiesIter pi = w.m_ctl.properties.begin(); pi != w.m_ctl.properties.end(); ++pi) {
-      OU::Property &p = **pi;
-      if (p.m_isParameter || !p.m_isWritable)
-	continue;
-      Param *found = NULL;
-      for (unsigned n = 0; n < globals.params.size(); n++) {
-	Param &param = globals.params[n];
-	if (param.m_param && !strcasecmp(param.m_param->cname(), p.cname())) {
-	  found = &param;
-	  break;
-	}
-      }
-      if (found)
-	// Found in more than one worker
-	assert((p.m_isParameter && found->m_param->m_isParameter) || !found->m_param->m_isImpl ||
-	       !strncasecmp("ocpi_", p.cname(), 5));
-      else {
-	globals.params.resize(globals.params.size()+1);
-	Param &param = globals.params.back();
-	param.m_param = &p;
-	if (p.m_isImpl)
-	  param.m_worker = &w;
-	if (p.m_default) {
-	  p.m_default->unparse(param.m_uValue);
-	  param.m_uValues.resize(1);
-	  param.m_attributes.resize(1);
-	  param.m_uValues[0] = param.m_uValue;
-	} else
-	  fprintf(stderr,
-		  "Warning:  no values for writable property with no default: \"%s\" %zu %zu\n",
-		  p.cname(), param.m_uValues.size(), param.m_uValue.size());
-      }
-    }
-  }
+  for (WorkersIter wi = workers.begin(); wi != workers.end(); ++wi)
+    addNonParameterProperties(**wi, globals);
+  if (emulator)
+    addNonParameterProperties(*emulator, globals);
+    
   // ================= 5. Parse and collect global property values specified for all cases
   // Parse explicit/default property values to apply to all cases
 #define TEST_ATTRS "generate", "add", "only", "exclude", "test"
@@ -1578,12 +1637,30 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
       ezxml_set_attr(propx, "initial", "1");
       if ((err = newp->Member::parse(propx, false, true, NULL, "property", 0)))
 	return err;
+      // We allow a test property to be specified with no values (values only in cases)
+      if (!ezxml_cattr(px, "value") &&
+	  !ezxml_cattr(px, "values") &&	  
+	  !ezxml_cattr(px, "valuefile") &&
+	  !ezxml_cattr(px, "valuesfile") &&
+	  !ezxml_cattr(px, "generate"))
+	continue;
     } else
       return OU::esprintf("There is no property named \"%s\" for any worker", name.c_str());
   next2:;
     if ((err = param->parse(px, *param->m_param, true)))
       return err;
   }
+  // Check if any properties have no values.
+  for (unsigned n = 0; n < globals.params.size(); n++) {
+    Param &param = globals.params[n];
+    if (!param.m_param)
+      continue;
+    const OU::Property &p = *param.m_param;
+    if (!p.m_isParameter && p.m_isWritable && param.m_uValues.empty())
+      fprintf(stderr,
+	      "Warning:  no values for writable property with no default: \"%s\" %zu %zu\n",
+	      p.cname(), param.m_uValues.size(), param.m_uValue.size());
+  }      
   // ================= 6. Parse and collect global platform values
   // Parse global platforms
   const char

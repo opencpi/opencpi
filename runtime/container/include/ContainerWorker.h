@@ -156,10 +156,9 @@ namespace OCPI {
       virtual Port &createPort(const OCPI::Util::Port &metaport,
 			       const OCPI::Util::PValue *props) = 0;
       virtual Worker *nextWorker() = 0;
-      virtual void setPropertyValue(const OCPI::Util::Property &p, const OCPI::Util::Value &v);
-
 
     public:
+      virtual void setPropertyValue(const OCPI::Util::Property &p, const OCPI::Util::Value &v);
       // Return true when ignored due to "ignored due to existing state"
       bool controlOp(OCPI::Util::Worker::ControlOperation);
       void setPropertyValue(const OCPI::Util::Property &p, const std::string &v);

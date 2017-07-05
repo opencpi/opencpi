@@ -30,6 +30,7 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <unistd.h>
 #include "OcpiOsFileSystem.h"
 #include "OcpiContainerApi.h"
 #include "OcpiOsMisc.h"
@@ -321,27 +322,35 @@ namespace OCPI {
       return true;
     }
 
-    static void
-    checkPropertyValue(const char *name, const OL::Implementation &impl, const char *pName,
-		       const char *value, unsigned *&pn, OU::Value *&pv) {
-      OU::Property &uProp = impl.m_metadataImpl.findProperty(pName);
+    void ApplicationI::
+    checkPropertyValue(unsigned nInstance, const OU::Worker &w,
+		       const OU::Assembly::Property &aProp, unsigned *&pn, OU::Value *&pv) {
+      const char
+	*pName = aProp.m_name.c_str(),
+	*name = m_assembly.instance(nInstance).name().c_str();
+      const OU::Property &uProp = w.findProperty(pName);
       if (uProp.m_isParameter)
 	return;
-      if (!uProp.m_isInitial && !uProp.m_isWritable)
+      if (!uProp.m_isWritable && (aProp.m_hasDelay || !uProp.m_isInitial))
 	throw OU::Error("Cannot set property '%s' for instance '%s'. It is not writable.",
 			pName, name);
+      OU::Value *v;
+      if (aProp.m_hasDelay) {
+	DelayedPropertyValue &dpv =
+	  m_delayedPropertyValues[aProp.m_delay] = DelayedPropertyValue();
+	dpv.m_instance = nInstance;
+	dpv.m_property = &uProp;
+	v = &dpv.m_value;
+      }	 else {
+	*pn++ = uProp.m_ordinal; // remember position in property list
+	v = pv++;
+      }
+      v->setType(uProp); // set the data type of the Value from the metadata property
       const char *err;
-      *pn = uProp.m_ordinal; // remember position in property list
-      pv->setType(uProp);    // set the data type of the Value from the metadata property
-#if 1
-      if ((err = uProp.parseValue(value, *pv, NULL, &impl.m_metadataImpl)))
-#else
-      if ((err = pv->parse(value)))
-#endif
+      if ((err = uProp.parseValue(aProp.m_value.c_str(), *v, NULL, &w)))
 	throw OU::Error("Value for property \"%s\" of instance \"%s\" of "
 			"component \"%s\" is invalid for its type: %s",
-			pName, name, impl.m_metadataImpl.specName().c_str(), err);
-      pv++, pn++;
+			pName, name, w.specName().c_str(), err);
     }
     void ApplicationI::
     checkExternalParams(const char *pName, const OU::PValue *params) {
@@ -370,9 +379,8 @@ namespace OCPI {
     }
     // Prepare all the property values for an instance
     void ApplicationI::
-    prepareInstanceProperties(unsigned nInstance, const OL::Implementation &impl,
-			      unsigned *&pn, OU::Value *&pv) {
-      const char *name = m_assembly.instance(nInstance).name().c_str();
+    prepareInstanceProperties(unsigned nInstance, const OL::Implementation &impl, unsigned *&pn,
+			      OU::Value *&pv) {
       const OU::Assembly::Properties &aProps = m_assembly.instance(nInstance).properties();
       // Prepare all the property values in the assembly, avoiding those in parameters.
       for (unsigned p = 0; p < aProps.size(); p++) {
@@ -382,11 +390,11 @@ namespace OCPI {
 	  OU::Property &uProp = impl.m_metadataImpl.findProperty(pName);
 	  if (!uProp.m_isReadable && !uProp.m_isParameter)
 	    throw OU::Error("Cannot dump property '%s' for instance '%s'. It is not readable.",
-			    pName, name);
+			    pName, m_assembly.instance(nInstance).name().c_str());
 	}
 	if (!aProps[p].m_hasValue)
 	  continue;
-	checkPropertyValue(name, impl, pName, aProps[p].m_value.c_str(), pn, pv);
+	checkPropertyValue(nInstance, impl.m_metadataImpl, aProps[p], pn, pv);
       }
     }
 
@@ -1057,6 +1065,23 @@ namespace OCPI {
       for (unsigned n = 0; n < m_nContainers; n++)
 	m_containerApps[n]->stop(false, false); // start non-masters
     }
+    void ApplicationI::
+    setDelayedProperties() {
+      if (m_delayedPropertyValues.size()) {
+	if (m_verbose)
+	  fprintf(stderr, "Setting delayed property values while application is running.\n");
+	OU::Assembly::Delay now = 0;
+	for (auto it : m_delayedPropertyValues) {
+	  if (it.first > now) {
+	    usleep(it.first - now);
+	    now = it.first;
+	  }
+	  m_launchInstances[it.second.m_instance].m_worker->
+	    setPropertyValue(*it.second.m_property, it.second.m_value);
+	}
+	m_delayedPropertyValues.clear();
+      }
+    }
     bool ApplicationI::wait(OS::Timer *timer) {
       if (m_doneWorker) {
 	ocpiInfo("Waiting for \"done\" worker, \"%s\", to finish",
@@ -1329,8 +1354,13 @@ namespace OCPI {
     void Application::
     stop() { m_application.stop(); }
 
+    void Application::
+    setDelayedProperties() {
+      m_application.setDelayedProperties();
+    }
     bool Application::
     wait(unsigned timeout_us, bool timeOutIsError) {
+      setDelayedProperties();
       OS::Timer *timer =
 	timeout_us ? new OS::Timer((uint32_t)(timeout_us/1000000),
 				   (uint32_t)((timeout_us%1000000) * 1000ull))

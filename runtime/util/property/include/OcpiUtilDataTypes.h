@@ -170,6 +170,7 @@ namespace OCPI {
     // There are the data type attributes allowed for members
 #define OCPI_UTIL_MEMBER_ATTRS						\
     "Name", "Type", "StringLength", "SequenceLength", "ArrayLength", "ArrayDimensions", "Key", "Enums", "Description"
+#define OCPI_UTIL_MEMBER_ELEMENTS "description"
 
     // A "member" is used for structure members, operation arguments, exception members, 
     // and properties.  Members have names, and offsets in their group, and possibly a
