@@ -337,14 +337,7 @@ namespace OCPI {
     // instance property - we essentially merge the info from both, checking for inconsistencies
     const char *Assembly::Property::
     setValue(ezxml_t px) {
-      const char *cp;
-      if ((cp = ezxml_cattr(px, "dumpFile"))) {
-	if (cp && m_dumpFile.length())
-	  return esprintf("For instance property \"%s\", duplicate dumpFile attributes",
-			  m_name.c_str());
-	m_dumpFile = cp;
-      }
-      const char *err;
+      const char *cp, *err;
       if ((cp = ezxml_cattr(px, "value"))) {
 	if (ezxml_cattr(px, "valueFile"))
 	  return esprintf("For instance property \"%s\", having both \"value\" and \"valueFile\""
@@ -495,7 +488,7 @@ namespace OCPI {
 	size_t n = 0;
 	Property *p = &m_properties[0];
 	for (n = m_properties.size(); n; n--, p++)
-	  if (!strcasecmp(p->m_name.c_str(), name))
+	  if (!strcasecmp(p->m_name.c_str(), name)) {
 	    if (p->m_hasValue) {             // existing has a value
 	      if (hasValue) {                // new has a value
 		if (p->m_hasDelay) {         // existing has delay
@@ -514,10 +507,11 @@ namespace OCPI {
 		break;  // reuse since we have no value and existing has no delay
 	    } else
 	      break; // reuse since existing has no value
+	  }
 	if (err)
 	  break;
 	// Avoid using this property element if it is just a container for <set> elements
-	if (ezxml_name(px) != "property" || hasValue || ezxml_cattr(px, "dumpFile")) {
+	if (strcasecmp(ezxml_name(px), "property") || hasValue || ezxml_cattr(px, "dumpFile")) {
 	  if (!n) {
 	    m_properties.resize(m_properties.size() + 1);
 	    p = &m_properties.back();

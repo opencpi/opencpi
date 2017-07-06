@@ -5,7 +5,7 @@ good.output test.input: mkTestFile.cxx
 	g++ -Wall -o $(DIR)/a.out mkTestFile.cxx
 	$(DIR)/a.out $(FILE_SIZE) > test.input 2> good.output
 
-run: all test.input 
+run: all test.input good.output
 	$(VG) $(PROG) $(ARGS) > /dev/null
 	cmp test.output good.output
 
