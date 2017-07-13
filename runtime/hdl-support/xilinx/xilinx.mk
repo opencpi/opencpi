@@ -66,7 +66,7 @@ OcpiXilinxIseEdkDir=$(strip\
 # This looks for the Vivado SDK dir OR the ISE EDK dir
 OcpiXilinxEdkDir=$(strip\
  $(foreach d,\
-   $(or $(OCPI_XILINX_EDK_DIR),$(call OcpiXilinxVivadoSdkDir,warning),$(infox Checking for ISE EDK since Vivado SDK was not found)$(call OcpiXilinxIseEdkDir,$1)),\
+   $(or $(OCPI_XILINX_EDK_DIR),$(call OcpiXilinxVivadoSdkDir,warning),$(info Checking for ISE EDK since Vivado SDK was not found)$(call OcpiXilinxIseEdkDir,$1)),\
    $(infox EDK:$d)$(if $(shell test -d $d && echo 1),$d,\
                      $(call $(or $1,error), Directory "$d", for OCPI_XILINX_EDK_DIR, not found))))
 

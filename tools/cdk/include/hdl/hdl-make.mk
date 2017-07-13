@@ -181,8 +181,7 @@ HdlCompile=\
   $(infox Compile0:$(HdlWorkers):$(Cores):$(ImplWorkersFile):$(ImplFile):to-$@) \
   $(infox Compile:$(HdlWorkers):$(Cores):$(ImplWorkersFile)) \
   $(and $(SubCores_$(HdlTarget)),$(call HdlRecordCores,$(basename $@))$(infox DONERECORD:$(HdlTarget))) \
-  $(and $(HdlLibrariesInternal),$(call HdlRecordLibraries,$(basename $@))$(infox DONERECORD:$(HdlTarget))) \
-  $(and $(HdlSources),$(call HdlRecordSources,$(basename $@))$(infox DONERECORD:$(HdlTarget))) \
+  $(HdlSourceListCompile)\
   $(infox SUBCORES:$(SubCores_$(HdlTarget))) \
   cd $(TargetDir) && \
   $(infox PRECOMPILE:$(HdlPreCompile))$(and $(HdlPreCompile), $(HdlPreCompile) &&)\
@@ -297,6 +296,15 @@ HdlCollectCores=$(infox CCCC:$(SubCores_$(HdlTarget)):$1:$2)$(call Unique,\
                        $(foreach f,$(call HdlExists,$(call HdlRmRv,$r).cores),$(infox ZF:$f)\
                           $(foreach z,$(shell grep -v '\#' $f),$(infox found:$z)$z)))),$a))
 
+
+#########################################################################################################
+# Record all of the libraries and sources required for this asset (onl when a tool requires this is done)
+# When recording sources for a core, we only record the stub files since those will be needed later.
+HdlSourceListCompile=\
+  $(if $(HdlToolNeedsSourceList_$(HdlToolSet)),\
+    $(and $(HdlLibrariesInternal),$(call HdlRecordLibraries,$(basename $@))) \
+    $(and $(or $(HdlSources),$(if $(filter $(HdlMode),core),$(CoreBlackBoxFiles))),$(call HdlRecordSources,$(basename $@))))
+
 # Record the list of libraries required by this asset/library in the .libs file
 # If we see an absolute path, record it just by the asset's name. It will be 
 # searched for later (e.g. via HdlSearchPrimitivePath). If it is a relative
@@ -313,9 +321,8 @@ HdlRecordLibraries=\
 
 # Extract the list of libraries required by an asset/library $2 for target $1 
 HdlExtractLibrariesFromFile=$(infox Extract:$2:$1)$(call Unique,\
-	$(foreach f,$(call HdlExists,$(call HdlRmRv,$2)/$(notdir $(call HdlRmRv,$2)).libs),$(infox ZF:$f)\
+	$(foreach f,$(call HdlExists,$(call HdlRmRv,$2)/$(HdlTarget)/$(notdir $(call HdlRmRv,$2)).libs),$(infox ZF:$f)\
 	  $(foreach z,$(shell grep -v '\#' $f),$(infox found:$z)$z )))
-
 
 # If the libname consists of one word, search the primitive path.
 # If the libname is an absolute path, return it abspath of $2,
@@ -346,18 +353,16 @@ HdlCollectLibraries=$(infox PPPP:$(HdlLibrariesInternal):$1)$(call OcpiUniqueNot
 
 
 # Record the list of sources required by this asset/library in the .sources file
-
 # Here we check the flag indicating that there are tool-specific source collections for this asset
 # in which case we create <asset>.<tool>.sources
-HdlRecordSourcesFile=$(patsubst %/,%,$(call HdlRmRv,$1))$(if $(HdlToolSpecificSources),.$(HdlToolSet)).sources
-
+# If this is a true core, we record the black box stub files
 HdlRecordSources=\
   $(infox Record:$1:$(HdlSources):$(HdlTarget))\
   $(and $(call HdlExists,$(dir $1)),\
   (\
    echo '\#' This generated file records sources necessary to build this $(LibName) $(HdlMode); \
-   $(foreach s,$(HdlSources),echo $(notdir $s);) \
-  ) > $(call HdlRecordSourcesFile,$1);)\
+   $(foreach s,$(if $(filter $(HdlMode),core),$(wildcard $(CoreBlackBoxFiles)),$(HdlSources)),echo $(notdir $s);) \
+  ) > $(patsubst %/,%,$(call HdlRmRv,$1)).sources ;)\
 
 # Here, we use HdlLibraryRefDir to determine the path to the library 
 # asset $2 in question. If we are working with an absolute path,
@@ -377,8 +382,7 @@ HdlRelativeOrAbsolutePathToLib=$(infox HRAPL:$1:$2:$3)\
 HdlExtractSourcesForLib=$(infox Extract:$2:$1)\
   $(foreach f,\
     $(call HdlRelativeOrAbsolutePathToLib,$1,$2,.),$(infox ZF:$f)\
-      $(foreach z,$(shell grep -vs '\#' $(dir $f)$(notdir $2).$(HdlToolSet).sources || \
-                          grep -v  '\#' $(dir $f)$(notdir $2).sources),$(infox found:$z)\
+      $(foreach z,$(shell grep -v  '\#' $(dir $f)/$(HdlTarget)/$(notdir $2).sources),$(infox found:$z)\
         $z ))
 
 #########################################################################################################

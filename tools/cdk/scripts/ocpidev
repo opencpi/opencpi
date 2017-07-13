@@ -610,7 +610,7 @@ function do_library {
   [ -z "$standalone" ] && case "$dirtype" in
     (project)
       [ "$libbase" != hdl -o -d "hdl" -o "$verb" != create ] || make_hdl_dir
-      if [ $1 == $libbase ] ; then
+      if [ "$1" == "$libbase" ] ; then
         subdir=$libbase #is this ever valid? I dont think so
       elif [ -n "$platform" ] ; then
         [ "$1" == devices ] || bad can only create the devices library under a platform
@@ -627,7 +627,7 @@ function do_library {
   esac
   if [ $verb == delete ]; then
     [ "$subdir" == "$libbase" ] && check_components deleted $libbase
-    [ -e $subdir ] || bad the library \(directory\) \"$subdir\" does not exist
+    [ -e "$subdir" ] || bad the library \(directory\) \"$subdir\" does not exist
     get_dirtype $subdir
     [ "$dirtype" == library ] ||
       bad the directory \"$subdir\" does not appear to be a library
@@ -639,6 +639,8 @@ function do_library {
     [ -z $verbose ] || echo The library named \"$1\" \(directory \"$subdir/\"\) has been deleted.
     return 0
   elif [ $verb == build ]; then
+    [ -n "$1" ] || bad the library was not specified
+    [ -e "$subdir" ] || bad the library \(directory\) \"$subdir\" does not exist
     if [ -z "$buildRcc" -a -z "$buildHdl" -a -n "$buildClean" ]; then
       cleanTarget="clean"
     fi
@@ -650,7 +652,6 @@ function do_library {
       buildHdl=""
       cleanTarget+=" cleanhdl"
     fi
-    echo "~~~~~~~ $cleanTarget"
     make -C $subdir ${cleanTarget:+$cleanTarget}  ${buildRcc:+rcc} ${buildHdl:+hdl} \
             ${hdlplats:+HdlPlatforms=" ${hdlplats[@]}"} \
             ${swplats:+RccPlatforms=" ${swplats[@]}"} \
@@ -959,8 +960,8 @@ function do_device {
 function do_test {
   odirtype=$dirtype
   if [ -z "$1" -a "$verb" == build ] ; then
-   do_build_here test
-   return $?
+    do_build_here test
+    return $?	
   fi
   if [ ${1/*./} = test ] ; then
     testdir=$subdir/$1
@@ -974,7 +975,13 @@ function do_test {
   #   make sure dir exists
   #   if it does, delete it and its contents
   #     warn first/ask for confirmation
-  if [ "$verb" == delete ] ; then
+  if [ "$verb" == build ] ; then
+    make -C $testdir \
+         ${hdlplats:+HdlPlatforms=" ${hdlplats[@]}"} \
+         ${swplats:+RccPlatforms=" ${swplats[@]}"} \
+         ${hwswplats:+RccHdlPlatforms=" ${hwswplats[@]}"}
+
+  elif [ "$verb" == delete ] ; then
     echo "Deleting test dir: $testdir"
     if [ -d "$testdir" ] ; then
       get_dirtype $testdir
@@ -1404,6 +1411,7 @@ function do_build_here {
        ${assys:+Assemblies=" ${assys[@]}"} \
        ${hdlplats:+HdlPlatforms=" ${hdlplats[@]}"} \
        ${swplats:+RccPlatforms=" ${swplats[@]}"} \
+       ${hdltargets:+HdlTargets=" ${hdltargets[@]}"} \
        ${hwswplats:+RccHdlPlatforms=" ${hwswplats[@]}"}
 }
 
@@ -1880,6 +1888,7 @@ fi
 # xml app
 [ \( -n "$xmlapp" -o -n "$xmldirapp" \) -a \( \( $verb != create -a $verb != delete \) -o "$noun" != "application" \) ] &&
   bad the -X '(xml/simple)' or -x '(application directory with xml)' option is only valid when creating an application
+
 # For future support of rcc platforms, primitives, and in general the rcc subtree
 if [ -n "$rcc" ] ; then
   hdlorrcc=rcc
@@ -1936,5 +1945,4 @@ if [ -x $gpmd ] ; then
     $gpmd $(pwd)
   fi
 fi
-
 exit 0

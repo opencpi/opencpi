@@ -111,9 +111,34 @@ CoreBlackBoxFiles=$(strip\
 # builds the real core or just a library for the core
 include $(OCPI_CDK_DIR)/include/hdl/hdl-core2.mk
 
+# Install the lib-name directory. This is used for non-real cores
+# or for real cores when a tool requires source listings (for stubs)
+install_lib_dir: | $(HdlInstallDir)
+	$(AT)for f in $(HdlActualTargets); do \
+	  $(call ReplaceIfDifferent,$(strip \
+	      $(OutDir)target-$$f/$(LibName)),$(strip \
+	      $(HdlInstallDir)/$(LibName)/$$f)); \
+	done
+
+ifdef HdlToolNeedsSourceList_$(HdlToolSet)
+# When we need source listings, we enable the creation of the exported
+# lib directory as well as the installation of this core's stub files
+# in that directory.
+HdlStubSources=install_stubs install_lib_dir
+
+install_stubs:
+	$(AT)for f in $(HdlActualTargets); do \
+          if test -f $(OutDir)target-$$f/$(call RmRv,$(LibName)).sources; then \
+            $(call ReplaceIfDifferent,$(strip \
+                $(OutDir)target-$$f/$(call RmRv,$(LibName)).sources),$(strip \
+                $(OutDir)target-$$f/$(WorkLib)));\
+          fi;\
+	done
+endif
+
 ifdef HdlToolRealCore
 # Install the core, however it was buit
-install_cores: | $(HdlCoreInstallDirs)
+install_cores: | $(HdlCoreInstallDirs) $(HdlStubSources)
 	$(AT)echo Installing core for targets: $(HdlActualTargets)
 	$(AT)for f in $(HdlActualTargets); do \
 	  $(foreach c,$(HdlCores),$(strip \
@@ -133,11 +158,13 @@ install: install_link
 endif # for links
 else
 # Installation is not recursive
-install: | $(HdlInstallDir)
-	$(AT)for f in $(HdlActualTargets); do \
+install: $(HdlStubSources) install_lib_dir
+
+#| $(HdlInstallDir)
+#	$(AT)for f in $(HdlActualTargets); do \
 	  $(call ReplaceIfDifferent,$(strip \
-             $(OutDir)target-$$f/$(LibName)),$(strip \
-             $(HdlInstallDir)/$(LibName)/$$f)); \
+	      $(OutDir)target-$$f/$(LibName)),$(strip \
+	      $(HdlInstallDir)/$(LibName)/$$f)); \
 	done
 endif # for building a real core
 

@@ -85,6 +85,7 @@ switch $stage {
   bit {
     set command "write_bitstream $target_file $impl_opts ;"
     set command "$command report_utilization ;"
+    set command "$command report_clock_networks ;"
     set command "$command report_design_analysis ;"
     set command "$command report_clocks ;"
   }

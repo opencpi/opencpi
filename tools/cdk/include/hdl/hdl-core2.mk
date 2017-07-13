@@ -89,6 +89,8 @@ ifdef HdlToolRealCore
 	$(AT)$$(call MakeSymLink2,$(strip \
                 $(PreBuiltCore)),$(strip \
                 $$(TargetDir)),$(2)$(HdlBin))
+	$(AT)$$(HdlSourceListCompile)
+	$(AT)$$(if $$(HdlToolNeedsSourceList_$(HdlToolSet)),(cd $$(TargetDir) ; $$(HdlToolPost)))
 
     else
       $(call OcpiDbgVar,CompiledSourceFiles)

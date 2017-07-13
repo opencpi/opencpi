@@ -57,10 +57,15 @@ set synth_command ""
 # Now add mode-specific options:
 switch -regex $hdl_mode {
   core|worker|platform|config|assembly|container {
-    # Create a netlist EDIF file
-    set post_synth "$post_synth write_edif -force $artifact $edif_opts;"
+    # Create a netlist EDIF file. -security_mode all tells Vivado to encrypt
+    # the entire design in a single netlist if any portions of the design
+    # require encrpytion. This prevents the need for splitting up netlists
+    # into encrypted and unencrypted segments. If none of the design requires
+    # encryption, it will remain plain text.
+    set post_synth "$post_synth write_edif -force $artifact $edif_opts -security_mode all ;"
     set post_synth "$post_synth report_utilization ;"
     set post_synth "$post_synth report_timing ;"
+    set post_synth "$post_synth report_clock_networks ;"
     set post_synth "$post_synth report_design_analysis ;"
   }
   library {

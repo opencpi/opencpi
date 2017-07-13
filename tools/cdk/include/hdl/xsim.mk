@@ -130,8 +130,8 @@ HdlToolCompile=\
   $(OcpiXilinxVivadoInit); \
   echo verilog work $(OcpiXilinxVivadoDir)/data/verilog/src/glbl.v \
     >> $(Worker).prj; \
-  $(and $(filter %.vhd,$(XsimFiles)),\
-    xvhdl $(XsimArgs) $(XsimLibs) $(filter %.vhd,$(XsimFiles)) -prj $(Worker).prj ; ) \
+  $(and $(filter %.vhd %.vhdl,$(XsimFiles)),\
+    xvhdl $(XsimArgs) $(XsimLibs) $(filter %.vhd %.vhdl,$(XsimFiles)) -prj $(Worker).prj ; ) \
   $(and $(filter %.v,$(XsimFiles))$(findstring $(HdlMode),platform),\
     xvlog $(XsimVerilogIncs) $(XsimArgs) $(XsimLibs) $(filter %.v,$(XsimFiles)) \
       $(and $(findstring $(HdlMode),platform),\

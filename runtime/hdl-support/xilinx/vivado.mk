@@ -42,7 +42,6 @@ include $(OCPI_CDK_DIR)/include/hdl/xilinx.mk
 # $(call HdlToolLibraryFile,target,libname)
 # Function required by toolset: return the file to use as the file that gets
 # built when the library is built.
-#HdlToolLibraryFile=$2/$2.sources
 HdlToolLibraryFile=$2
 
 HdlRecurseLibraries=yes
@@ -73,7 +72,11 @@ HdlToolCoreRef_vivado=$1
 
 CoreOrLibName=$(or $(Core),$(LibName))
 ################################################################################
+# Variable required by toolset: HdlToolNeedsSourceList_vivado=yes
+# Set if the tool requires a listing of source files and libraries 
+HdlToolNeedsSourceList_vivado=yes
 
+################################################################################
 # Here we rearrange the full hardware part number to vivado's expected
 # part-package-speed
 empty:=
@@ -425,6 +428,8 @@ VivadoOptions=$(strip \
 $(call VivadoCheckOptions,$(call VivadoMyExtraOptions,$1),$1)\
 $(call VivadoPruneOption,$(VivadoDefaultOptions_$1),$1) $(call VivadoMyExtraOptions,$1) $(VivadoInternalOptions_$1))
 
+VivadoPrimitiveCores=$(foreach c,$(Cores),$(if $(findstring /,$c),,$c))
+
 ###############################################################################
 # VivadoIncludeDependencies
 # Collect the libraries that this asset depends on
@@ -433,7 +438,7 @@ $(call VivadoPruneOption,$(VivadoDefaultOptions_$1),$1) $(call VivadoMyExtraOpti
 # Call the tool specific function for including this asset's sources 
 # Call the tool specific function for including 'include directories' (ie for verilog includes)
 VivadoIncludeDependencies=\
-  $(foreach l,$(call HdlCollectLibraries,$(HdlTarget)),$(infox IncLib:$l)\
+  $(foreach l,$(call HdlCollectLibraries,$(HdlTarget)) $(VivadoPrimitiveCores),$(infox IncLib:$l)\
     $(call VivadoIncludeSources,\
       $(foreach s,$(call HdlExtractSourcesForLib,$(HdlTarget),$l),\
         $(call HdlRelativeOrAbsolutePathToLib,$(HdlTarget),$l,$(TargetDir))/$s),\
@@ -506,17 +511,28 @@ HdlToolCompile=\
     synth_part='$(VivadoSynthesisPart)' \
     synth_opts='$(call VivadoOptions,synth)' \
     edif_opts='$(VivadoEdifOptions)';)
+#
+#$(filter %_pkg.vhd %_bb.v,$(HdlSources))),\
 
 VivadoToolExports=\
-  $(foreach f,$(HdlSources),\
+  $(foreach f,$(if $(filter $(HdlMode),core),$(wildcard $(CoreBlackBoxFiles)),$(HdlSources)),\
      $(call FindRelative,$(TargetDir)/$(CoreOrLibName),$(dir $f))/$(notdir $f))
 
 # To create the "library result", we create a directory full of source files
 # that have the vivado library directive inserted as the first line to
 # force them into the correct library when they are "discovered" via SEARCH_PATH.
-ifeq ($(HdlMode),library)
-HdlToolPost=\
-  if test $$HdlExit = 0; then \
+ifneq ($(filter $(HdlMode),library core),)
+HdlToolPost=$(infox HS:$(HdlSources):VTE:$(VivadoToolExports))\
+  if test "$$HdlExit" != 0 ; then \
+    if test -n "$(PreBuiltCore)" ; then\
+      makelinks=1;\
+    else\
+      makelinks=0;\
+    fi;\
+  else\
+    makelinks=1;\
+  fi;\
+  if test $$makelinks = 1 ; then\
     if ! test -d $(CoreOrLibName); then \
       mkdir $(CoreOrLibName); \
     else \

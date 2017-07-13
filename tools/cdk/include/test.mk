@@ -43,8 +43,7 @@ endif
 # We include this to know the universe of possible platforms
 include $(OCPI_CDK_DIR)/include/hdl/hdl-targets.mk
 include $(OCPI_CDK_DIR)/include/rcc/rcc-make.mk
-export OCPI_ALL_PLATFORMS:=$(HdlAllPlatforms:%=%.hdl) $(RccAllPlatforms:%=%.rcc)
-$(infox ALL PLATFORMS ARE: $(OCPI_ALL_PLATFORMS))
+
 # We need the project dir because remote system mount dirs point to the project
 $(call OcpiIncludeProject,error)
 
@@ -74,7 +73,7 @@ TESTXML:=$(CwdName)-test.xml
 
 $(CASEXML): $(TESTXML)
 	$(AT)echo ========= Generating test assemblies, inputs and applications for $(CwdName):
-	$(AT)OCPI_ALL_PLATFORMS="$(OCPI_ALL_PLATFORMS)" \
+	$(AT)OCPI_ALL_PLATFORMS="$(HdlAllPlatforms:%=%.hdl) $(RccAllPlatforms:%=%.rcc)" \
 	     $(OcpiGen) -v -T $< && chmod a+x gen/applications/*.sh
 
 -include gen/*.deps

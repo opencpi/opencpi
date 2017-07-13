@@ -55,10 +55,35 @@ else
 stublibrary:
 	$(AT)echo No stub library necessary for: $(HdlActualTargets)
 endif
+
 include $(OCPI_CDK_DIR)/include/hdl/hdl-lib2.mk
 
 # only install if there is an install dir
 ifneq ($(HdlInstallDir)$(HdlInstallLibDir),)
+
+ifdef HdlToolNeedsSourceList_$(HdlToolSet)
+HdlLibsList=install_libs
+
+$(HdlLibsList):
+	$(AT)for f in $(HdlActualTargets); do \
+          if test -f $(OutDir)target-$$f/$(call RmRv,$(LibName)).libs; then \
+	    $(call ReplaceIfDifferent,$(strip \
+	        $(OutDir)target-$$f/$(call RmRv,$(LibName)).libs),$(strip \
+	        $(OutDir)target-$$f/$(WorkLib)));\
+          fi;\
+	done
+
+HdlSourcesList=install_sources
+
+$(HdlSourcesList):
+	$(AT)for f in $(HdlActualTargets); do \
+          if test -f $(OutDir)target-$$f/$(call RmRv,$(LibName)).sources; then \
+            $(call ReplaceIfDifferent,$(strip \
+	        $(OutDir)target-$$f/$(call RmRv,$(LibName)).sources),$(strip \
+	        $(OutDir)target-$$f/$(WorkLib)));\
+          fi;\
+	done
+endif
 
 # This can be overriden
 HdlInstallLibDir=$(HdlInstallDir)/$(LibName)
@@ -66,27 +91,7 @@ $(HdlInstallLibDir):
 	$(AT)echo Creating directory $@ for library $(LibName)
 	$(AT)mkdir -p $@
 
-HdlInstallLibs=$(HdlInstallLibDir)/$(LibName).libs
-
-# 
-HdlSourcesFileSuffix=$(if $(HdlToolSpecificSources),$(HdlToolSet).)sources
-HdlInstallSources=$(HdlInstallLibDir)/$(LibName).$(HdlSourcesFileSuffix)
-
-$(HdlInstallLibs):
-	$(AT)for f in $(HdlActualTargets); do \
-          if test -f $(OutDir)target-$$f/$(call RmRv,$(LibName)).libs; then \
-            cp $(OutDir)target-$$f/$(call RmRv,$(LibName)).libs $(dir $(HdlInstallLibs));\
-          fi;\
-	done
-
-$(HdlInstallSources):
-	$(AT)for f in $(HdlActualTargets); do \
-          if test -f $(OutDir)target-$$f/$(call RmRv,$(LibName)).$(HdlSourcesFileSuffix); then \
-            cp $(OutDir)target-$$f/$(call RmRv,$(LibName)).$(HdlSourcesFileSuffix) $(dir $(HdlInstallSources));\
-          fi;\
-	done
-
-install: $(OutLibFiles) | $(HdlInstallLibDir) $(HdlInstallLibs) $(HdlInstallSources)
+install: $(OutLibFiles) $(HdlInstallLibDir) $(HdlLibsList) $(HdlSourcesList)
 	$(AT)for f in $(HdlActualTargets); do \
 	  $(call ReplaceIfDifferent,$(strip \
              $(OutDir)target-$$f/$(WorkLib)),$(strip \
