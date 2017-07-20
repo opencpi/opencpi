@@ -91,7 +91,7 @@ $(HdlInstallLibDir):
 	$(AT)echo Creating directory $@ for library $(LibName)
 	$(AT)mkdir -p $@
 
-install: $(OutLibFiles) $(HdlInstallLibDir) $(HdlLibsList) $(HdlSourcesList)
+install: $(OutLibFiles) $(HdlLibsList) $(HdlSourcesList) | $(HdlInstallLibDir) 
 	$(AT)for f in $(HdlActualTargets); do \
 	  $(call ReplaceIfDifferent,$(strip \
              $(OutDir)target-$$f/$(WorkLib)),$(strip \

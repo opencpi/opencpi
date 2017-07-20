@@ -316,7 +316,7 @@ HdlRecordLibraries=\
   (\
    echo '\#' This generated file records libraries necessary to build this $(LibName) $(HdlMode); \
    $(foreach l,$(HdlLibrariesInternal),\
-     echo $(if $(findstring $(abspath $l),$l),$(notdir $l),$l);) \
+     echo $(if $(filter /%,$l),$(notdir $l),$l);) \
   ) > $(patsubst %/,%,$(call HdlRmRv,$1)).libs;)\
 
 # Extract the list of libraries required by an asset/library $2 for target $1 
@@ -330,7 +330,7 @@ HdlExtractLibrariesFromFile=$(infox Extract:$2:$1)$(call Unique,\
 HdlNotdirAbsOrRelPath=$(infox NORP:$1:$2)\
   $(if $(findstring $2,$(notdir $2)),\
     $(patsubst %/,%,$(call HdlSearchPrimitivePath,$2,,CollectLibs)),\
-    $(if $(findstring $(abspath $2),$2),\
+    $(if $(filter /%,$2),\
       $(abspath $2),\
       $1/$2))
 
@@ -369,7 +369,7 @@ HdlRecordSources=\
 # just return the result of HdlLibraryRefDir. Otherwise, we are 
 # working with a relative path. Return the path relative to $3.
 HdlRelativeOrAbsolutePathToLib=$(infox HRAPL:$1:$2:$3)\
-  $(if $(findstring $(abspath $2),$2),\
+  $(if $(filter /%,$2),\
     $(patsubst %/,%,$(dir $(call HdlLibraryRefDir,$2,$1,,X4))),\
     $(call FindRelative,$3,$(strip \
       $(call HdlLibraryRefDir,$2,$1,,X4))))

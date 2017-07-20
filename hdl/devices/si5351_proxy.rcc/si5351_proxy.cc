@@ -110,13 +110,11 @@ class Si5351_proxyWorker : public Si5351_proxyWorkerBase {
   }
 
   // Check if clock frequency property is within bounds. If so, set up dividers. 
-  // This function sets up the clocks for both Clock 4 and Clock 5 on the Si5351.
-  // Clock 4 goes to the Lime, Clock 5 goes to the FPGA. They should be set to the same frequency
   RCCResult enable(unsigned i) {
     float clk_freq = m_properties.channels[i].output_hz;
-    if (clk_freq < 1000000 || clk_freq  > 80000000)
+    if (clk_freq < 2500 || clk_freq  > 200000000)
       return setError("Invalid frequency entered.\n"
-		      "Enter Frequency in (Hz) between 1000000 Hz and 80000000 Hz\n");
+		      "Enter Frequency in (Hz) between 2500 Hz and 200000000 Hz\n");
     if (FindVCO(i) != RCC_OK)
       return RCC_ERROR;
     slave.set_clk_ctl(i, slave.get_clk_ctl(i) & ~(1 << 7));   // power up

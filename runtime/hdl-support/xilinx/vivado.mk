@@ -481,7 +481,7 @@ VivadoIncludeIncludedirs=\
   echo puts '\"'Search paths for $2 local files'\"' >> $(CoreOrLibName)-imports.tcl; \
   echo set_property include_dirs '\"'[get_property include_dirs [current_fileset]] \
   $(foreach d,$1, \
-    $(strip $(if $(filter $(abspath $d),$d),$d,$(call FindRelative,$(TargetDir),$d))) )'\"' [current_fileset] >> $(CoreOrLibName)-imports.tcl; \
+    $(strip $(if $(filter /%,$d),$d,$(call FindRelative,$(TargetDir),$d))) )'\"' [current_fileset] >> $(CoreOrLibName)-imports.tcl; \
   echo puts '\"'[get_property include_dirs [current_fileset]]'\"' >> $(CoreOrLibName)-imports.tcl;
 
 ###############################################################################

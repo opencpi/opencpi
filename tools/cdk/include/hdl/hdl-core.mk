@@ -138,7 +138,7 @@ endif
 
 ifdef HdlToolRealCore
 # Install the core, however it was buit
-install_cores: | $(HdlCoreInstallDirs) $(HdlStubSources)
+install_cores: $(HdlStubSources) | $(HdlCoreInstallDirs)
 	$(AT)echo Installing core for targets: $(HdlActualTargets)
 	$(AT)for f in $(HdlActualTargets); do \
 	  $(foreach c,$(HdlCores),$(strip \
