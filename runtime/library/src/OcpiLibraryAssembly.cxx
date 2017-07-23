@@ -114,7 +114,7 @@ namespace OCPI {
 	const char *err, *iassign = assign;
 	if ((err = findInstanceForParam(pName, iassign, instn))) // iassign points to port name
 	  return err;
-	eq = strchr(assign, '=');
+	eq = strchr(iassign, '=');
 	pname.assign(iassign, eq - iassign);
       } else
 	return OU::esprintf("Parameter assignment for \"%s\", \"%s\" is invalid.  Format is:"

@@ -799,7 +799,6 @@ namespace OCPI {
 	  planDeployment(params);
 	// This array is sized and initialized here since it is needed for property finalization
 	initInstances();
-	initConnections();
 	// All the implementation selection is done, so now do the final check of ports
 	// and properties since they can be implementation specific
 	if ((err = finalizePortParam(params, "bufferCount")) ||
@@ -807,6 +806,7 @@ namespace OCPI {
 	    (err = finalizePortParam(params, "transport")) ||
 	    (err = finalizePortParam(params, "transferRole")))
 	  throw OU::Error("Port parameter error: %s", err);
+	initConnections();
 	finalizeProperties(params);
 	if (m_verbose) {
 	  fprintf(stderr, "Actual deployment is:\n");
