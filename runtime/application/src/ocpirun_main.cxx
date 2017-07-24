@@ -170,7 +170,8 @@ static void doTarget(const char *a_target, bool specs) {
 }
 
 // Return true on error
-static bool setup(const char *arg, ezxml_t &xml, std::string &file, std::string &error) {
+static bool setup(const char *arg, ezxml_t &xml, std::string &file,
+		  std::vector<OA::PValue> &params, std::string &error) {
   const char *e = NULL;
   if (arg) {
     if (options.artifacts() || options.list_artifacts() || options.specs() ||
@@ -195,6 +196,12 @@ static bool setup(const char *arg, ezxml_t &xml, std::string &file, std::string 
 	return OU::eformat(error, "parsing XML file %s: %s", file.c_str(), e);
     }
     if (!strcasecmp(ezxml_name(xml), "deployment")) {
+      // We were given a deployment file as the command arg for the app file, so act like there
+      // is a deployment file option if there isn't already
+      if (!options.deployment()) {
+	OL::Manager::getSingleton().suppressDiscovery();
+	addParam("deployment", strdup(file.c_str()), params);
+      }
       file.clear();
       OE::getOptionalString(xml, file, "application");
       if (file.empty())
@@ -383,15 +390,15 @@ static int mymain(const char **ap) {
   }
   if (options.deployment())
     addParam("deployment", options.deployment(), params);
-  if (params.size())
-    params.push_back(OA::PVEnd);
 
   std::string file;  // the file that the application XML came from
   ezxml_t xml = NULL;
   std::string error;
-  if (setup(*ap, xml, file, error))
+  if (setup(*ap, xml, file, params, error))
     throw OU::Error("Error: %s", error.c_str());
   if (xml) try {
+      if (params.size())
+	params.push_back(OA::PVEnd);
       std::string name;
       OU::baseName(file.c_str(), name);
 

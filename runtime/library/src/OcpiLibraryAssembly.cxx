@@ -627,6 +627,8 @@ namespace OCPI {
 	  else
 	    ci = i.m_candidates.erase(ci);
       }
+      if (m_deployed) // we don't have candidates here.  deployments are pre-checked.
+	return;
       // Pass 5:  Check for interface and connection compatibility.
       // We assume all implementations have the same protocol metadata
       //      unsigned nConns = m_connections.size();
