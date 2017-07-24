@@ -374,7 +374,7 @@ namespace OCPI {
     const Implementation *Artifact::
     getImplementation(unsigned n) const {
       unsigned nn = 0;
-      for (WorkerIter wi = m_workers.begin(); wi != m_workers.end(); ++wi, ++n)
+      for (WorkerIter wi = m_workers.begin(); wi != m_workers.end(); ++wi, ++nn)
 	if (nn == n)
 	  return wi->second;
       return NULL;
