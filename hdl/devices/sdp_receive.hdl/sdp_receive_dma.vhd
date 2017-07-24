@@ -45,6 +45,7 @@ entity sdp_receive_dma is
            -- inputs from CTL/WSI side
            length_not_empty : in  bool_t;
            length_out       : in  metalength_dws_t;
+           length_zlm_out   : in  bool_t;
            avail_not_full   : in  bool_t;
            buffer_consumed  : in  bool_t;
            -- outputs to CTL/WSI side
@@ -210,10 +211,10 @@ begin
   --------------------------------------------------------------------------------
   -- Note there will be one cycle between reads to allow the length-dequeue to happen
   -- Note also that the length will be non-zero.  ZLMs are optimized at the upper level
-  read_starting <= to_bool(role = activemessage_e and
-                           length_not_empty and lcl_buffers_empty_r /= 0 and
+  read_starting <= to_bool(role = activemessage_e and length_not_empty and
+                           not its(length_zlm_out) and lcl_buffers_empty_r /= 0 and
                            not its(reading_r) and not its(flagging_r));
-  read_accepted <= reading_r and sdp_in.sdp.ready;
+  read_accepted <= (length_not_empty and length_zlm_out) or (reading_r and sdp_in.sdp.ready);
   -- Flags are different than reads - they can happen in one cycle, and don't need idles
   -- Reads take precedence over flags
   flag_needed   <= to_bool(flags_to_send_r /= 0 or read_complete);
@@ -223,8 +224,10 @@ begin
   -- Slave (or read responses) handling
   --------------------------------------------------------------------------------
   -- The current xfer of the current read response is the last in the entire message
-  read_complete     <= to_bool(taking and role = activemessage_e and
-                               sdp_am_addr = sdp_am_last_r(to_integer(sdp_am_buffer_idx)));
+  read_complete     <= to_bool(role = activemessage_e and
+                               (its(length_not_empty and length_zlm_out) or
+                                (taking and 
+                                 sdp_am_addr = sdp_am_last_r(to_integer(sdp_am_buffer_idx)))));
   -- We are taking a xfer from the SDP
   taking            <= sdp_in.sdp.valid and can_take;
   can_take          <= btrue; -- to_bool(sdp_buffers_empty_r /= 0);

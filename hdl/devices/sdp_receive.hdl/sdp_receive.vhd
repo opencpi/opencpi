@@ -81,9 +81,11 @@ architecture rtl of sdp_receive_worker is
   signal length_not_full  : std_logic;
   signal length_deq       : bool_t;
   signal length_not_empty : std_logic;
-  signal length_out_slv   : std_logic_vector(metalength_dws_t'left downto 0);
+  signal length_out_slv   : std_logic_vector(1 + metalength_dws_t'left downto 0);
   signal length_out       : metalength_dws_t;
+  signal length_zlm_out   : bool_t;           -- is the length zero? precomputed
   signal length_in        : metalength_dws_t;
+  signal length_in_slv    : std_logic_vector(1 + metalength_dws_t'left downto 0);
 
   -- avail indication to WSI, via FIFO from SDP, enq'd when a pull is completed
   signal avail_enq       : bool_t;
@@ -189,14 +191,14 @@ g0: for i in 0 to sdp_width_c-1 generate
   -- Telling the SDP (when actively PULLING data) to read this much data
   -- CTL -> SDP
   lengthfifo : component bsv.bsv.SyncFIFO
-   generic map(dataWidth    => metalength_dws_t'length,
+   generic map(dataWidth    => length_in_slv'length,
                depth        => roundup_2_power_of_2(max_buffers_c), -- must be power of 2
                indxWidth    => width_for_max(roundup_2_power_of_2(max_buffers_c)-1))
    port map   (sCLK         => ctl_in.clk, -- maybe syncfifo later
                sRST         => ctl_reset_n,
                dCLK         => sdp_in.clk,
                sENQ         => std_logic(length_enq),
-               sD_IN        => std_logic_vector(length_in),
+               sD_IN        => length_in_slv,
                sFULL_N      => length_not_full,
                dDEQ         => length_deq,
                dD_OUT       => length_out_slv,
@@ -224,15 +226,17 @@ g0: for i in 0 to sdp_width_c-1 generate
 --                         (sdp_width_c*dword_bytes-1 downto
 --                          to_integer(md_out.length(addr_shift_c-1 downto 0)) => '0',
 --                          others => '1');
-  length_in <= -- the number of dws (whole or partial) indicated, for SDP/DMA
-    md_in_raw.length(md_in_raw.length'left downto dword_shift)
-    when md_in_raw.length(dword_shift-1 downto 0) = 0 else
-    md_in_raw.length(md_in_raw.length'left downto dword_shift) + 1;
+  length_in      <= -- the number of dws (whole or partial) indicated, for SDP/DMA
+                    md_in_raw.length(md_in_raw.length'left downto dword_shift)
+                    when md_in_raw.length(dword_shift-1 downto 0) = 0 else
+                    md_in_raw.length(md_in_raw.length'left downto dword_shift) + 1;
+  length_in_slv  <= md_in.zlm & std_logic_vector(length_in);
   --  FYI:  this expression crashes isim 14.67 with a SIGSEGV
   --  length_in  <= resize((slv2meta(slv(props_in.remote_doorbell(0))).length +
   --                       dword_bytes-1)/dword_bytes, length_in'length);
-  length_out <= unsigned(length_out_slv);
-  length_enq <= to_bool(props_in.remote_doorbell_any_written and length_in /= 0);
+  length_out     <= unsigned(length_out_slv(length_out'range));
+  length_zlm_out <= length_out_slv(length_out_slv'left);
+  length_enq     <= to_bool(props_in.remote_doorbell_any_written);
 
   -- A sync fifo to indicate message arrival events from SDP to WSI
   -- I.e. when the SDP side is done PULLING data, it indicates the buffer is full,
@@ -275,8 +279,7 @@ g0: for i in 0 to sdp_width_c-1 generate
                           brama_addr_r + 1 when its(will_give) else
                           brama_addr_r;
   will_give            <= to_bool(operating_r and faults = 0 and
-                                  (avail_not_empty or
-                                   its(md_not_empty and md_out.zlm)) and out_in.ready);
+                                  avail_not_empty and out_in.ready);
   last_give            <= to_bool(wsi_dws_left = 0);
   wsi_dws_left         <= md_out.ndws_left when its(wsi_starting_r) else wsi_dws_left_r;
   buffer_ndws          <= props_in.buffer_size(bram_addr_t'left + addr_shift_c
@@ -378,7 +381,8 @@ g0: for i in 0 to sdp_width_c-1 generate
                  -- inputs from CTL/WSI side
                  length_not_empty => length_not_empty, -- a length (of next message) is available
                  length_out       => length_out,       -- length of next packet
-                 avail_not_full   => avail_not_full,    -- the handshake to WSI is available
+                 length_zlm_out   => length_zlm_out,   -- is this zero?
+                 avail_not_full   => avail_not_full,   -- the handshake to WSI is available
                  buffer_consumed  => buffer_consumed,
                  -- outputs to CTL/WSI side
                  length_deq       => length_deq,

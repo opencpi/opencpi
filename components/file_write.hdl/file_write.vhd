@@ -77,26 +77,26 @@ begin
             end loop;    
           end if;
           if its(in_in.eom) then
-            if its(props_in.messagesInFile) then
-              for i in 0 to 3 loop
-                write(data_file, char(to_ulong(new_msg_length),i));
-              end loop;
-              for i in 0 to 3 loop
-                write(data_file, char(ulong_t(resize(unsigned(std_logic_vector(in_in.opcode)), ulong_t'length)), i));
-              end loop;
-              for i in 0 to new_msg_length-1 loop
-                write(data_file, msg_buffer(i+1));
-              end loop;            
-            end if;
-            if new_msg_length = 0 and its(props_in.stopOnEOF) then
+            if new_msg_length = 0 and unsigned(in_in.opcode) = 0 and props_in.stopOnEOF then
               finished_r <= true;
               close_file(data_file, props_in.fileName);
+            else
+              if its(props_in.messagesInFile) then
+                for i in 0 to 3 loop
+                  write(data_file, char(to_ulong(new_msg_length),i));
+                end loop;
+                for i in 0 to 3 loop
+                  write(data_file, char(ulong_t(resize(unsigned(std_logic_vector(in_in.opcode)),
+                                                       ulong_t'length)), i));
+                end loop;
+                for i in 0 to new_msg_length-1 loop
+                  write(data_file, msg_buffer(i+1));
+                end loop;            
+              end if;
+              messagesWritten_r <= messagesWritten_r + 1; -- we count non-EOF ZLMs
             end if;
             bytesWritten_r <= bytesWritten_r + new_msg_length;
             messageLength_r <= (others => '0');
-            if new_msg_length /= 0 or its(props_in.messagesInFile) then
-              messagesWritten_r <= messagesWritten_r + 1;
-            end if;
           else
             messageLength_r <= to_ulong(new_msg_length);
           end if; -- eom

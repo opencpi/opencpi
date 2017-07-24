@@ -40,5 +40,5 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
    *outData++ = *inData++ + props->biasValue;
  out->output.length = in->input.length;
  out->output.u.operation = in->input.u.operation;
- return in->input.length ? RCC_ADVANCE : RCC_ADVANCE_DONE;
+ return RCC_ADVANCE;
 }

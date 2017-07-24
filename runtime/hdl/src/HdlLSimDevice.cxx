@@ -263,8 +263,9 @@ protected:
   // We assume all sim platforms use SDP
   uint32_t
   dmaOptions(ezxml_t /*icImplXml*/, ezxml_t /*icInstXml*/, bool isProvider) {
+    const char *e = getenv("OCPI_HDL_FORCE_SIM_DMA_PULL");
     return isProvider ?
-      (1 << OCPI::RDT::ActiveFlowControl) | (1 << OCPI::RDT::ActiveMessage) |
+      (e && !strcmp(e, "1") ? 0 : 1 << OCPI::RDT::ActiveFlowControl) | (1 << OCPI::RDT::ActiveMessage) |
       (1 << OCPI::RDT::FlagIsMeta) : 1 << OCPI::RDT::ActiveMessage;
   }
   // Our added-value wait-for-process call.
@@ -752,6 +753,11 @@ public:
     if (m_state == EMULATING) {
       if (initFifos(error))
 	  return true;
+      if (Device::s_one) {
+	error = "multiple simulators cannot be used in the same process yet";
+	return true;
+      }
+      Device::s_one = this;
     } else {
       ocpiInfo("Shutting down previous simulation before (re)loading");
       shutdown();
@@ -1205,10 +1211,8 @@ createDevice(const std::string &name, const std::string &platform, uint8_t spinC
   OU::format(simDir, "%s/%s.%s.%u.%u", dir, actualPlatform.c_str(), name.c_str(), getpid(), n++);
   Device *d = new Device(name, simDir, actualPlatform, script, spinCount, sleepUsecs,
 			 simTicks, params, dump, error);
-  if (error.empty()) {
-    Device::s_one = d;
+  if (error.empty())
     return d;
-  }
   delete d;
   return NULL;
 }

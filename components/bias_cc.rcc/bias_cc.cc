@@ -14,19 +14,24 @@ using namespace Bias_ccWorkerTypes;
 class Bias_ccWorker : public Bias_ccWorkerBase {
   RCCResult testws_read() {return RCC_OK;} // notification that testws property will be read
   RCCResult testws_written() {
-    fprintf(stderr, "NOTIFIED: %s\n", isInitialized() ? "init" : "none");
+    fprintf(stderr, "NOTIFIED: %s: %u\n", isInitialized() ? "init" : "none", properties().testws);
     return RCC_OK;
   } // notification that testws property has been written
   RCCResult run(bool /*timedout*/) {
+    out.setOpCode(in.opCode());        // Set the metadata for the output message
+    // Allow ZLMs to pass through unmolested.
+    if (!in.length()) {
+      out.setLength(0);
+      return RCC_ADVANCE;
+    }
     size_t length = in.data().data().size();
     const uint32_t *inData  = in.data().data().data();
     uint32_t *outData = out.data().data().data();
 
-    out.setOpCode(in.opCode());        // Set the metadata for the output message
     out.data().data().resize(length);  // resize output array
     for (unsigned n = length; n; n--) // n is length in sequence elements of input
       *outData++ = *inData++ + properties().biasValue;
-    return in.length() ? RCC_ADVANCE : RCC_ADVANCE_DONE;
+    return RCC_ADVANCE;
   }
 };
 
