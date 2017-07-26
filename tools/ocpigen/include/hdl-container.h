@@ -51,7 +51,8 @@ typedef UNocs::iterator UNocsIter;
 // basically connecting external ports to device ports
 // <connection external="foo" device="dev" [port="bar"]/>
 // <device foo>
-#define HDL_CONTAINER_ATTRS "platform", "config", "configuration", "assembly", "default"
+#define HDL_CONTAINER_ATTRS \
+  "platform", "config", "configuration", "assembly", "default", "constraints"
 #define HDL_CONTAINER_ELEMS "connection", "device"
 class HdlAssembly;
 class HdlContainer : public Worker, public HdlHasDevInstances {
@@ -72,7 +73,8 @@ class HdlContainer : public Worker, public HdlHasDevInstances {
 public:  
   static HdlContainer *
   create(ezxml_t xml, const char *xfile, const char *&err);
-  static const char *parsePlatform(ezxml_t xml, std::string &config, OrderedStringSet &platforms);
+  static const char *parsePlatform(ezxml_t xml, std::string &config, std::string &constraints,
+				   OrderedStringSet &platforms);
   HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const char *xfile,
 	       const char *&err);
   virtual ~HdlContainer();

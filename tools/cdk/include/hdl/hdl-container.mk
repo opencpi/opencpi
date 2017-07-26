@@ -33,9 +33,10 @@ ifneq ($(MAKECMDGOALS),clean)
     # This is only for standalone container directories
     $(and $(call DoShell,$(OcpiGen) -X $(Worker_xml),HdlContPfConfig),\
        $(error Processing container XML $(Worker_xml): $(HdlContPfConfig)))
-    HdlContPf:=$(patsubst %_pf,%,$(word 2,$(HdlContPfConfig)))
+    HdlContPf:=$(patsubst %_pf,%,$(word 3,$(HdlContPfConfig)))
     ifdef HdlContPf
       HdlConfig:=$(word 1,$(HdlContPfConfig))
+      HdlConstraints:=$(filter-out -,$(word 2,$(HdlContPfConfig)))
     else
       HdlContPf:=$(or $(HdlPlatform) $(word 1,$(HdlPlatforms)))
       HdlConfig:=base

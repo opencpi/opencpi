@@ -258,14 +258,14 @@ main(int argc, const char **argv) {
 	  ezxml_t xml;
 	  std::string file;
 	  const char *err;
-	  std::string parent, config;
+	  std::string parent, constraints, config;
 	  OrderedStringSet platforms;
 	  if ((err = parseFile(*ap, parent, "HdlContainer", &xml, file, false, false)) ||
-	      (err = HdlContainer::parsePlatform(xml, config, platforms))) {
+	      (err = HdlContainer::parsePlatform(xml, config, constraints, platforms))) {
 	    err = OU::esprintf("for container file %s:  %s\n", *ap, err);
 	    break;
 	  }
-	  fputs(config.c_str(), stdout);
+	  printf("%s %s", config.c_str(), constraints.c_str());
 	  for (auto pi = platforms.begin(); pi != platforms.end(); ++pi)
 	    printf(" %s", (*pi).c_str());
 	  fputs("\n", stdout); 

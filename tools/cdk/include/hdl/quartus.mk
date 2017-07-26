@@ -113,6 +113,7 @@ $(if $(HdlExactPart),$(call ToUpper,$(call QuartusMakePart,$(HdlExactPart))),AUT
 #		  $(infox GOTZ:AUTO:$(HdlMode))AUTO));
 
 
+QuartusConstraints=$(or $(HdlConstraints),$(HdlPlatformDir_$1)/$1.qsf)
 # Make the settings file
 # Note that the local source files use notdir names and search paths while the
 # remote libraries use pathnames so that you can have files with the same names.
@@ -178,7 +179,7 @@ QuartusMakeQsf=\
     echo set_global_assignment -name SYNTHESIS_EFFORT fast;) \
   $(if $(findstring $(HdlMode),container),\
     echo '\#' Include the platform-related assignments. ;\
-    echo source $(HdlPlatformDir_$(HdlPlatform))/$(HdlPlatform).qsf;) \
+    echo source $(call AdjustRelative,$(call QuartusConstraints,$(HdlPlatform)));) \
  ) > $(Core).qsf; echo fit_stratixii_disallow_slm=On > quartus.ini;
 
 # Be safe for now - remove all previous stuff
@@ -241,7 +242,7 @@ QuartusMakeBits=\
 
 # $(call HdlToolDoPlatform,1:<target-dir>,2:<app-name>,3:<app-core-name>,4:<pfconfig>,5:<platform-name>,6: paramconfig)
 define HdlToolDoPlatform_quartus
-$1/$3.sof: 
+$1/$3.sof: $$(call QuartusConstraints,$5)
 	$(AT)echo Building Quartus Bit file: $$@.  Assembly $2 on platform $5 using $4 "($6)".
 	$(AT)cd $1 && \
 	rm -r -f db incremental_db *-top.* && \
@@ -251,7 +252,7 @@ $1/$3.sof:
 	 echo set_global_assignment -name TOP_LEVEL_ENTITY $3; \
 	 echo set_global_assignment -name QXP_FILE '"'$3.qxp'"'; \
 	 echo set_global_assignment -name SDC_FILE '"'$(HdlPlatformDir_$5)/$5.sdc'"'; \
-	 echo source $(HdlPlatformDir_$5)/$5.qsf \
+	 echo source $(call AdjustRelative,$(call QuartusConstraints,$5)) \
 	 ) > $4-top.qsf && \
 	cp $4-top.qsf $4-top.qsf.pre-fit && \
 	$(call DoAltera1,quartus_map,$4-top,$4-top,map) && \

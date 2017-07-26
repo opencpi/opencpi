@@ -472,13 +472,15 @@ OcpiXstTrceOptions=-v 200 -fastpaths
 export OcpiXstMapOptionsDefault=-detail -w -logic_opt on -xe c -mt 4 -register_duplication on -global_opt off -ir off -pr off -lc off -power off
 export OcpiXstParOptionsDefault=-mt 4 -w -xe n
 # $(call HdlToolDoPlatform,1:<target-dir>,2:<app-name>,3:<app-core-name>,4:<pfconfig>,5:<platform-name>,6: paramconfig)
+# The constraint file(s) to use, first/only arg is platform
+XstConstraints=$(or $(HdlConstraints),$(wildcard $(HdlPlatformDir_$1)/*.ucf))
 define HdlToolDoPlatform_xst
 
 # This dependency is required, since without it, ngdbuild can fail
 # I.e. the input container ngc depends on it in some obscure way.
-$(call NgcName,$1,$3): $(wildcard $(HdlPlatformDir_$5)/*.ucf)
+$(call NgcName,$1,$3): $(call XstConstraints,$5)
 # Convert ngc to ngd (we don't do merging here)
-$(call NgdName,$1,$3): $(call NgcName,$1,$3) $(wildcard $(HdlPlatformDir_$5)/*.ucf)
+$(call NgdName,$1,$3): $(call NgcName,$1,$3) $(call XstConstraints,$5)
 	$(AT)echo -n For $2 on $5 using config $4: creating merged NGC file using '"ngcbuild"'.
 	$(AT)$(call DoXilinx,ngcbuild,$1,\
 	        -verbose \
@@ -488,7 +490,8 @@ $(call NgdName,$1,$3): $(call NgcName,$1,$3) $(wildcard $(HdlPlatformDir_$5)/*.u
 	$(AT)echo -n For $2 on $5 using config $4: creating NGD '(Xilinx Native Generic Database)' file using '"ngdbuild"'.
 	$(AT)rm -f $$@
 	$(AT)$(call DoXilinx,ngdbuild,$1,\
-	        -verbose $(foreach u,$(wildcard $(HdlPlatformDir_$5)/*.ucf),-uc $u) -p $(call HdlPartReal,$5) \
+	        -verbose $(foreach u,$(call XstConstraints,$5),-uc $(call AdjustRelative,$u)) \
+                -p $(call HdlPartReal,$5) \
 		$$(XstNgdOptions) $3-b.ngc $3.ngd)
 
 # Map to physical elements

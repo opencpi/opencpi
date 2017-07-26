@@ -26,12 +26,12 @@ emitTimeClient(std::string &assy, const char *instance, const char *port) {
 
 HdlContainer *HdlContainer::
 create(ezxml_t xml, const char *xfile, const char *&err) {
-  std::string myConfig, myPlatform, myAssy;
+  std::string myConfig, myPlatform, myAssy, myConstraints;
   OrderedStringSet platforms;
   if ((err = OE::checkAttrs(xml, IMPL_ATTRS, HDL_TOP_ATTRS, PLATFORM_ATTRS,
 			    HDL_CONTAINER_ATTRS, (void*)0)) ||
       (err = OE::checkElements(xml, HDL_CONTAINER_ELEMS, (void*)0)) ||
-      (err = parsePlatform(xml, myConfig, platforms)))
+      (err = parsePlatform(xml, myConfig, myConstraints, platforms)))
     return NULL;
   if (platforms.empty()) {
     if (!g_platform)
@@ -1053,11 +1053,13 @@ emitTieoffSignals(FILE *f) {
 // or files it references will be generated later, in a better place to report them.
 // A static method.
 const char *HdlContainer::
-parsePlatform(ezxml_t xml, std::string &config, OrderedStringSet &platforms) {
+parsePlatform(ezxml_t xml, std::string &config, std::string &constraints,
+	      OrderedStringSet &platforms) {
   const char
     *err,
     *pf = ezxml_cattr(xml, "platform"),
     *cf = ezxml_cattr(xml, "config"),
+    *csf = ezxml_cattr(xml, "constraints"),
     *only = ezxml_cattr(xml, "only"),
     *exclude = ezxml_cattr(xml, "exclude");
   if (!only)
@@ -1097,5 +1099,6 @@ parsePlatform(ezxml_t xml, std::string &config, OrderedStringSet &platforms) {
 	platforms.push_back(*pi);
   }
   config = cf ? cf : "base";
+  constraints = csf ? csf : "-";
   return NULL;
 }

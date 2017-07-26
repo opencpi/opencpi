@@ -79,7 +79,7 @@ ifneq ($(MAKECMDGOALS),clean)
   ## Then we can filter the platforms and targets based on that
   ifdef Containers
     # Add a defined non-default container to the build
-    # $(call addContainer,<container>,<platform>,<config>)
+    # $(call addContainer,<container>,<platform>,<config>,<constraints>)
     define addContainer
       $$(if $$(HdlPart_$2),,\
         $$(error Platform for container $1, $2, is not defined))
@@ -89,6 +89,7 @@ ifneq ($(MAKECMDGOALS),clean)
       HdlPlatform_$$(ContName):=$2
       HdlTarget_$$(ContName):=$$(call HdlGetFamily,$$(HdlPart_$2))
       HdlConfig_$$(ContName):=$3
+      HdlConstraints_$$(ContName):=$(filter-out -,$4)
       HdlContXml_$$(ContName):=$$(call HdlContOutDir,$$(ContName))/gen/$$(ContName).xml
       $$(shell mkdir -p $$(call HdlContOutDir,$$(ContName))/gen; \
                if ! test -e  $$(HdlContXml_$$(ContName)); then \
@@ -104,10 +105,10 @@ ifneq ($(MAKECMDGOALS),clean)
     define doGetPlatform
       $$(and $$(call DoShell,$(OcpiGen) -X $1,HdlContPfConfig),\
           $$(error Processing container XML $1: $$(HdlContPfConfig)))
-      HdlContPlatforms:=$$(wordlist 2,$$(words $$(HdlContPfConfig)),$$(HdlContPfConfig))
+      HdlContPlatforms:=$$(wordlist 3,$$(words $$(HdlContPfConfig)),$$(HdlContPfConfig))
       $$(foreach p,$$(filter $$(or $$(HdlContPlatforms),$$(OnlyPlatforms),$$(HdlAllPlatforms)),\
                       $$(filter-out $$(ExcludePlatforms),$$(HdlPlatforms))),\
-	 $$(eval $$(call addContainer,$1,$$p,$$(word 1,$$(HdlContPfConfig)))))
+	 $$(eval $$(call addContainer,$1,$$p,$$(word 1,$$(HdlContPfConfig)),$$(word 2,$$(HdlContPfConfig)))))
     endef
     $(foreach c,$(Containers),$(eval $(call doGetPlatform,$(call HdlStripXml,$c))))
   endif
@@ -196,6 +197,7 @@ else
 	  $(AT)mkdir -p $(call HdlContOutDir,$1)
 	  $(AT)$(MAKE) -C $(call HdlContOutDir,$1) -f $(OCPI_CDK_DIR)/include/hdl/hdl-container.mk \
                HdlAssembly=../../$(CwdName)  HdlConfig=$(HdlConfig_$1) \
+               HdlConstraints=$(call AdjustRelative,$(HdlConstraints_$1)) \
                HdlPlatforms=$(HdlPlatform_$1) HdlPlatform=$(HdlPlatform_$1) \
 	       ComponentLibrariesInternal="$(call OcpiAdjustLibraries,$(ComponentLibraries))" \
 	       HdlLibrariesInternal="$(call OcpiAdjustLibraries,$(HdlMyLibraries))" \

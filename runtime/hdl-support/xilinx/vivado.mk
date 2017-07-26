@@ -629,22 +629,25 @@ TimingName=$1/$2-timing.rpx
 # results
 DoVivado=$(call DoXilinx,vivado -mode batch -source $(OCPI_CDK_DIR)/include/hdl/$1 -nolog -journal $(TargetDir)/vivado-$4.jou,$2,$3,$4)
 
+# The constraint file(s) to use, first/only arg is platform
+VivadoConstraints=\
+  $(or $(HdlConstraints),$(filter-out %_bit.xdc,$(wildcard $(HdlPlatformDir_$1)/*.xdc)))
 # For synth rule: load dcp files of platform and app workers. 
 define HdlToolDoPlatform_vivado
 
-$(call OptName,$1,$3): $(call SynthName,$1,$3) $(wildcard $(HdlPlatformDir_$5)/*.xdc)
+$(call OptName,$1,$3): $(call SynthName,$1,$3) $(call VivadoConstraints,$5)
 	$(AT)echo -n For $2 on $5 using config $4: creating optimized DCP file using '"opt_design"'.
 	$(AT)$(call DoVivado,vivado-impl.tcl,$1,-tclargs \
 		stage=opt \
 		target_file=$(call OptName,$1,$3) \
 		part=$(call VivadoChoosePart,$(HdlPart_$5)) \
 		edif_file=$(call SynthName,$1,$3) \
-		constraints='$(filter-out %_bit.xdc,$(wildcard $(HdlPlatformDir_$5)/*.xdc))' \
+		constraints='$(call VivadoConstraints,$5)' \
 		impl_opts='$(call VivadoOptions,opt)' \
 		power_opt=$(if $(VivadoPowerOpt),true,false) \
 		,opt)
 
-$(call PlaceName,$1,$3): $(call OptName,$1,$3) $(wildcard $(HdlPlatformDir_$5)/*.xdc)
+$(call PlaceName,$1,$3): $(call OptName,$1,$3) $(call VivadoConstraints,$5)
 	$(AT)echo -n For $2 on $5 using config $4: creating placed DCP file using '"place_design"'.
 	$(AT)$(call DoVivado,vivado-impl.tcl,$1,-tclargs \
 		stage=place \
@@ -657,7 +660,7 @@ $(call PlaceName,$1,$3): $(call OptName,$1,$3) $(wildcard $(HdlPlatformDir_$5)/*
 		incr_comp=$(if $(VivadoIncrementalCompilation),true,false) \
 		,place)
 
-$(call RouteName,$1,$3): $(call PlaceName,$1,$3) $(wildcard $(HdlPlatformDir_$5)/*.xdc)
+$(call RouteName,$1,$3): $(call PlaceName,$1,$3) $(call VivadoConstraints,$5)
 	$(AT)echo -n For $2 on $5 using config $4: creating routed DCP file using '"route_design"'.
 	$(AT)$(call DoVivado,vivado-impl.tcl,$1,-tclargs \
 		stage=route \
@@ -670,7 +673,7 @@ $(call RouteName,$1,$3): $(call PlaceName,$1,$3) $(wildcard $(HdlPlatformDir_$5)
 		incr_comp=$(if $(VivadoIncrementalCompilation),true,false) \
 		,route)
 
-$(call TimingName,$1,$3): $(call RouteName,$1,$3) $(wildcard $(HdlPlatformDir_$5)/*.xdc)
+$(call TimingName,$1,$3): $(call RouteName,$1,$3) $(call VivadoConstraints,$5)
 	$(AT)echo -n Generating timing report '(RPX)' for $2 on $5 using $4 using '"report_timing"'.
 	$(AT)$(call DoVivado,vivado-impl.tcl,$1,-tclargs \
 		stage=timing \
