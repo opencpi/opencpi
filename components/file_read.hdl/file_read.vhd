@@ -127,7 +127,9 @@ begin
          elsif bytesLeft_r = 0 and not som_next_r then
            -- between messages - see if we can start one
            if endfile(data_file) then
-             finish("between messages");
+             if not ready_r then -- don't finish until nothing is staged to send
+               finish("between messages");
+             end if;
            else
              -- Starting a message
              som_next_r <= true;
