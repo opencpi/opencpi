@@ -900,7 +900,7 @@ namespace {
       bool any = false;
       for (unsigned n = 0; n < pc.params.size(); n++) {
 	Param &p = pc.params[n];
-	if (p.m_param && !p.m_isTest && !p.m_uValues.empty()) {
+	if (p.m_param && !p.m_isTest && (!p.m_uValues.empty() or !p.m_generate.empty())) {
 	  if (p.m_worker && p.m_worker->m_emulate && !w.m_emulate)
 	    continue;
 	  if (p.m_param->m_isImpl && p.m_param->m_default) {
