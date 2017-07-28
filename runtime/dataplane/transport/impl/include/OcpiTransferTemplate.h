@@ -34,7 +34,7 @@
 
 
 /*
- * Abstact:
+ * Abstract:
  *   This file contains the Interface for the OCPI transfer template class.
  *
  * Revision History: 

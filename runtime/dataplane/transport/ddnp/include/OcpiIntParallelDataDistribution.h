@@ -34,7 +34,7 @@
 
 
 /*
- * Abstact:
+ * Abstract:
  *   This file contains the interface for parallel data distribution
  *
  * Revision History: 

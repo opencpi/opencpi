@@ -32,7 +32,7 @@
  */
 
 /*
- * Abstact:
+ * Abstract:
  *   This file contains the Implementation for the OCPI port.
  *
  * Revision History: 

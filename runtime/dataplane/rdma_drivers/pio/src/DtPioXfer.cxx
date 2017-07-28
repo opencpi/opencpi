@@ -32,7 +32,7 @@
  */
 
 /*
- * Abstact:
+ * Abstract:
  *   This file contains the implementation for the base class for PIO transfers.
  *
  *  John Miller - 6/15/09

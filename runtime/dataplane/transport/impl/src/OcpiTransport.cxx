@@ -33,7 +33,7 @@
 
 
 /*
- * Abstact:
+ * Abstract:
  *   This file contains the Implementation for the OCPI transport.
  *
  * Revision History: 

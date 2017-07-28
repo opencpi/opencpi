@@ -34,7 +34,7 @@
 
 
 /*
- * Abstact:
+ * Abstract:
  *   This file contains the constant definitions for the node manager.
  *
  * Revision History: 

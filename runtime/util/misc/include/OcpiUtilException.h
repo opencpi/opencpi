@@ -33,7 +33,7 @@
  */
 
 /*
- * Abstact:
+ * Abstract:
  *   This class contains an exception class that can be used as a base class for all exceptions
  *   thrown in the OCPIG2 system.
  *

@@ -32,7 +32,7 @@
  */
 
  /*
- * Abstact:
+ * Abstract:
  *	This file contain the "C" implementation for Posix file mapping functions
  *	required by the system services. It is normally included by targets
  *	that support Posix and thus shared across target OSs.

@@ -33,7 +33,7 @@
 
 
 /*
- * Abstact:
+ * Abstract:
  *   This file contains the Interface for the CORBA URLs
  */
 

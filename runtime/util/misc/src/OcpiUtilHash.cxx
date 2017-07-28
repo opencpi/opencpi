@@ -33,7 +33,7 @@
  */
 
 /*
- * Abstact:
+ * Abstract:
  *   This file contains the implementation for hashing functions.
  *
  * Author: John F. Miller

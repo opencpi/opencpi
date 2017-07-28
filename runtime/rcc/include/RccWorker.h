@@ -34,7 +34,7 @@
 
 
 /*
- * Abstact:
+ * Abstract:
  *   This file contains the interface and data structures for the JTRS DSP Worker.
  *
  * Revision History: 

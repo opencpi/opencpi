@@ -34,7 +34,7 @@
 
 
 /*
- * Abstact:
+ * Abstract:
  *   This file contains the implementation for the Ocpi port meta data class.
  *
  * Revision History: 

@@ -34,7 +34,7 @@
 
 
 /*
- * Abstact:
+ * Abstract:
  *   This file contains the implementation for sequential data distribution
  *
  * Revision History: 

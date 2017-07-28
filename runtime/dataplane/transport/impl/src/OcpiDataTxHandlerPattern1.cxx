@@ -34,7 +34,7 @@
 
 
 /*
- * Abstact:
+ * Abstract:
  *   This file contains the implementation for the OCPI data transfer handler class.
  *
  * Author: John F. Miller

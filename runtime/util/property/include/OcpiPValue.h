@@ -34,7 +34,7 @@
 
 
 /*
- * Abstact:
+ * Abstract:
  *   This file defines the PValue class for types property value lists
  *
  * Revision History: 

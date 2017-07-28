@@ -34,7 +34,7 @@
 
 
 /*
- * Abstact:
+ * Abstract:
  *   This file contains the implementation for the Ocpi port set.   A port set is 
  *   a group of ports that share a common set of attributes and are all part
  *   of the same circuit.

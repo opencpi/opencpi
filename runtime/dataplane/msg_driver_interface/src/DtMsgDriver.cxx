@@ -34,7 +34,7 @@
 
 
 /*
- * Abstact:
+ * Abstract:
  *   This file contains the implementation for the Message based transfer driver
  *   base classes.
  *

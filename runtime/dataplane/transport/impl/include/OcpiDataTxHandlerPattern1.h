@@ -34,7 +34,7 @@
 
 
 /*
- * Abstact:
+ * Abstract:
  *   This file contains the Interface for the OCPI data transfer handler class
  *   for transfers of type 1.  
  * 

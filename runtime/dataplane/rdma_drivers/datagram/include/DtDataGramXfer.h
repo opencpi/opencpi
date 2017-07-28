@@ -33,7 +33,7 @@
 
 
 /*
- * Abstact:
+ * Abstract:
  *   This file contains the implementation for the programed I/O transfer class
  *
  * Revision History: 

@@ -34,7 +34,7 @@
 
 
 /*
- * Abstact:
+ * Abstract:
  *   This file contains the common classes used in the SMB package
  *
  * Author: John F. Miller

@@ -35,7 +35,7 @@
 //#define DEBUG_WITH_EMULATOR
 
 /*
- * Abstact:
+ * Abstract:
  *   This file contains the OCPI circuit implementation.
  *
  * Revision History: 

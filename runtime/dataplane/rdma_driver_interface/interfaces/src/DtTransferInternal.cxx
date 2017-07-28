@@ -32,7 +32,7 @@
  */
 
 /*
- * Abstact:
+ * Abstract:
  *   This file contains the implementation for the base class for SMB transfers.
  *
  * Revision History:

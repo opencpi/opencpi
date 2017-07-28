@@ -32,7 +32,7 @@
  */
 
 /*
- * Abstact:
+ * Abstract:
  *   This file contains the declarations for the ports of RCC workers
  *
  * Revision History: 

@@ -34,7 +34,7 @@
 
 
 /*
- * Abstact:
+ * Abstract:
  *   This file contains the Ocpi implementation for parallel data distribution
  *
  * Revision History: 

@@ -34,7 +34,7 @@
 
 
 /*
- * Abstact:
+ * Abstract:
  *   This file contains the interface for the OCPI Node Manager Container.  
  *
  * Revision History: 

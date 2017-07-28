@@ -32,7 +32,7 @@
  */
 
 /*
- * Abstact:
+ * Abstract:
  *   This file contains the interface for the OCPI RCC Container.  
  *
  * Revision History: 

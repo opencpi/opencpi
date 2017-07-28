@@ -34,7 +34,7 @@
 
 
 /*
- * Abstact:
+ * Abstract:
  *   This file contain the "C" implementation for the NT specific functions
  *   to support file mapping.
  *

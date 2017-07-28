@@ -31,7 +31,7 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 /*
- * Abstact:
+ * Abstract:
  *   This file defines classes and templates for managers, drivers and devices
  *   The parent-child stack is:  ManagerManager->Manager->Driver->Device.
  *   ManagerManager, Manager, and Driver classes are dynamically constructed singletons.

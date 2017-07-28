@@ -34,7 +34,7 @@
 
 
 /*
- * Abstact:
+ * Abstract:
  *   This file contains the Interface for the connection meta data class
  *
  * Revision History: 

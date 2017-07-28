@@ -34,7 +34,7 @@
 
 
 /*
- * Abstact:
+ * Abstract:
  *   This file contains the OCPI transfer controller interface.
  *
  * Revision History: 

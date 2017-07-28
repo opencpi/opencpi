@@ -32,7 +32,7 @@
  */
 
 /*
- * Abstact:
+ * Abstract:
  *   This file contains the implementation for the OCPI output buffer class.
  *
  * Revision History: 

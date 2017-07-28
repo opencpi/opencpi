@@ -34,7 +34,7 @@
 
 
 /*
- * Abstact:
+ * Abstract:
  *   This file contains the exceptions that are generated in the transport code;
  *
  * Revision History: 

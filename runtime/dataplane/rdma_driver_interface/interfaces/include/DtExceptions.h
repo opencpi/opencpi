@@ -35,7 +35,7 @@
 
 
 /*
- * Abstact:
+ * Abstract:
  *   This file contains the Interface for all SMB transfer types.
  *
  * Revision History: 

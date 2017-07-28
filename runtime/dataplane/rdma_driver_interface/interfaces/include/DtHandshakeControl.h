@@ -35,7 +35,7 @@
 
 
 /*
- * Abstact:
+ * Abstract:
  *   This file contains the class that controls the setup for handshake within the OCPI transfer protocol.
  *
  * Revision History:

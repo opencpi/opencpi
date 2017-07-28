@@ -36,7 +36,7 @@
 
 
 /*
- * Abstact:
+ * Abstract:
  *   Data transfer data type definitions
  *
  * Revision History: 

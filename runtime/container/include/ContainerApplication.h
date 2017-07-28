@@ -33,7 +33,7 @@
  */
 
 /*
- * Abstact:
+ * Abstract:
  *   This file contains the interface for the OCPI Application class
  *
  * Revision History: 

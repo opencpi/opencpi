@@ -32,7 +32,7 @@
  *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 /*
- * Abstact:
+ * Abstract:
  *   This file defines classes and templates for the container manager and containers.
  *   It is based on the generic ManagerManager->Manager->Driver->Device stack defined in
  *   OcpiDriverManager.h

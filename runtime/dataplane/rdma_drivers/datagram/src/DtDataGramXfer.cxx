@@ -35,7 +35,7 @@
 
 
 /*
- * Abstact:
+ * Abstract:
  *   This file contains the interface for the Ocpi Datagram transfer driver.
  *
  *  John Miller -  5-24-12

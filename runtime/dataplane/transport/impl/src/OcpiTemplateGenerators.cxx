@@ -34,7 +34,7 @@
 
 
 /*
- * Abstact:
+ * Abstract:
  *   This file contains the OCPI template generator implementation.
  *
  * Revision History: 

@@ -32,7 +32,7 @@
  */
 
 /*
- * Abstact:
+ * Abstract:
  *   This file contains the declarations for the programmed I/O transfer class
  *   This header exists outside the PioXfer driver because some aspects of it
  *   are inherited by other drivers (e.g. PCI DMA).
