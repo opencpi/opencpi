@@ -20,7 +20,7 @@ namespace {
   // be used as the package of the impl.
   // FIXME: share this with the one in parse.cxx
   const char *
-  findPackage(ezxml_t spec, const char *package, const char *specName, 
+  findPackage(ezxml_t spec, const char *package, const char *specName,
 	      const std::string &parent, const std::string &specFile, std::string &package_out) {
     if (!package)
       package = ezxml_cattr(spec, "package");
@@ -143,7 +143,7 @@ namespace {
 	    const char *suffix = strrchr(iter.relativeName(wname), '.') + 1;
 	    if (strcmp(suffix, "test")) {
 	      OU::format(file, "../%s/%s.xml", wname.c_str(), name.c_str());
-	      if ((err1 = 
+	      if ((err1 =
 		   parseFile(file.c_str(), parent, NULL, &spec, specFile, false, false, false))) {
 		ocpiInfo("When trying to open and parse \"%s\":  %s", file.c_str(), err1);
 		continue;
@@ -186,7 +186,7 @@ namespace {
       a_specName = specPackage + "." + name;
     }
     if (verbose)
-      fprintf(stderr, "Spec is \"%s\" in file \"%s\"\n", 
+      fprintf(stderr, "Spec is \"%s\" in file \"%s\"\n",
 	      a_specName.c_str(), specFile.c_str());
       return NULL;
   }
@@ -221,7 +221,7 @@ namespace {
   tryWorker(const char *wname, const std::string &matchName, bool matchSpec, bool specific) {
     ocpiInfo("Considering worker \"%s\"", wname);
     const char *dot = strrchr(wname, '.');
-    std::string 
+    std::string
       name(wname, dot - wname),
       file,
       empty;
@@ -275,7 +275,7 @@ namespace {
   Worker *wFirst;
 #if 0
   //  ParamConfigs defaultCases;
-  
+
   static unsigned ncase;
   void
   doProp(ParamConfig &globals, FILE *out, unsigned n, size_t len, bool &first) {
@@ -312,11 +312,11 @@ namespace {
     const DataPort *m_port;
     size_t m_messageSize;
     bool m_messagesInFile, m_suppressEOF, m_stopOnEOF;
-    InputOutput() 
+    InputOutput()
       : m_port(NULL), m_messageSize(0), m_messagesInFile(false), m_suppressEOF(false),
 	m_stopOnEOF(false) {}
     const char *parse(ezxml_t x, std::vector<InputOutput> *inouts) {
-      const char 
+      const char
 	*name = ezxml_cattr(x, "name"),
 	*port = ezxml_cattr(x, "port"),
 	*file = ezxml_cattr(x, "file"),
@@ -351,18 +351,18 @@ namespace {
 	if (!(p = wFirst->findPort(port)) && (!emulator || !(p = emulator->findPort(port))))
 	  return OU::esprintf("%s port \"%s\" doesn't exist", OE::ezxml_tag(x), port);
 	if (!p->isData())
-	  return OU::esprintf("%s port \"%s\" exists, but is not a data port", 
+	  return OU::esprintf("%s port \"%s\" exists, but is not a data port",
 			      OE::ezxml_tag(x), port);
 	if (p->isDataProducer()) {
 	  if (suppress)
-	    return 
+	    return
 	      OU::esprintf("the \"suppressEOF\" attribute is invalid for an output port:  \"%s\"",
 			   port);
 	  if (!stop)
 	    m_stopOnEOF = true;
 	} else if (stop)
-	    return 
-	      OU::esprintf("the \"stopOnEOF\" attribute is invalid for an input port:  \"%s\"", 
+	    return
+	      OU::esprintf("the \"stopOnEOF\" attribute is invalid for an input port:  \"%s\"",
 			   port);
 	m_port = static_cast<DataPort *>(p);
       }
@@ -432,7 +432,7 @@ namespace {
     InputOutputs m_ports;  // the actual inputs and outputs to use
     size_t m_timeout, m_duration;
     std::string m_delays;
-    
+
     Case(ParamConfig &globals)
       : m_settings(globals), m_results(*wFirst), m_timeout(timeout), m_duration(duration)
     {}
@@ -483,8 +483,8 @@ namespace {
 		       c.m_name.c_str(), worker);
       WorkersIter wi;
       if ((wi = findWorker(worker, c.m_workers)) == c.m_workers.end())
-	OU::esprintf("For case \"%s\", only worker \"%s\" is not a known worker", 
-		     c.m_name.c_str(), worker);      
+	OU::esprintf("For case \"%s\", only worker \"%s\" is not a known worker",
+		     c.m_name.c_str(), worker);
       return doWorker(*wi, &c.m_workers);
     }
     static const char *doExcludeWorker(const char *worker, void *arg) {
@@ -494,8 +494,8 @@ namespace {
 	  OU::esprintf("excluded worker \"%s\" is already globally excluded", worker);
       WorkersIter wi;
       if ((wi = findWorker(worker, c.m_workers)) == c.m_workers.end())
-	OU::esprintf("For case \"%s\", excluded worker \"%s\" is not a potential worker", 
-		     c.m_name.c_str(), worker);      
+	OU::esprintf("For case \"%s\", excluded worker \"%s\" is not a potential worker",
+		     c.m_name.c_str(), worker);
       c.m_workers.erase(wi);
       return NULL;
     }
@@ -562,7 +562,7 @@ namespace {
       // save the XML and attach it to the generated apps
       OU::ValueType vt(OA::OCPI_Double);
       OU::Value v(vt);
-      const char 
+      const char
 	*delay = ezxml_cattr(sx, "delay"),
 	*value = ezxml_cattr(sx, "value");
 	if (!delay || !value)
@@ -595,9 +595,9 @@ namespace {
 	  (err = OE::checkElements(x, "property", "input", "output", NULL)) ||
 	  (err = OE::getNumber(x, "duration", &m_duration, NULL, duration)) ||
 	  (err = OE::getNumber(x, "timeout", &m_timeout, NULL, timeout)) ||
-	  ((a = ezxml_cattr(x, "onlyplatforms")) && 
+	  ((a = ezxml_cattr(x, "onlyplatforms")) &&
 	   (err = OU::parseList(a, doOnlyPlatform, this))) ||
-	  ((a = ezxml_cattr(x, "excludeplatforms")) && 
+	  ((a = ezxml_cattr(x, "excludeplatforms")) &&
 	   (err = OU::parseList(a, doExcludePlatform, this))))
 	return err;
       if (m_duration && m_timeout)
@@ -607,7 +607,7 @@ namespace {
 	  return err;
       } else
 	m_workers = workers;
-      if (((a = ezxml_cattr(x, "excludeworkers")) && 
+      if (((a = ezxml_cattr(x, "excludeworkers")) &&
 	   (err = OU::parseList(a, doExcludeWorker, this))) ||
 	  (err = doPorts(*wFirst, x)) ||
 	  (emulator && (err = doPorts(*emulator, x))))
@@ -739,7 +739,7 @@ namespace {
 	}
       }
       return m_subCases.size() == 0 ?
-	OU::esprintf("For case %s, there are no valid parameter combinations for any worker", 
+	OU::esprintf("For case %s, there are no valid parameter combinations for any worker",
 		     m_name.c_str()) :
 	NULL;
     }
@@ -809,7 +809,7 @@ namespace {
       fprintf(out, "\n");
     }
     const char *
-    generateFile(bool &first, const char *dir, const char *type, unsigned s, 
+    generateFile(bool &first, const char *dir, const char *type, unsigned s,
 		 const std::string &name, const std::string &generate, const std::string &env,
 		 std::string &file) {
       if (verbose && first) {
@@ -837,7 +837,7 @@ namespace {
 	return OU::esprintf("Error %d(0x%x) generating %s file \"%s\" from command:  %s",
 			    r, r, type, file.c_str(), cmd.c_str());
       if (!OS::FileSystem::exists(file))
-	return OU::esprintf("No output from generating %s file \"%s\" from command:  %s", 
+	return OU::esprintf("No output from generating %s file \"%s\" from command:  %s",
 			    type, file.c_str(), cmd.c_str());
       const char *space = strchr(generate.c_str(), ' ');
       std::string path;
@@ -873,7 +873,7 @@ namespace {
 	      return err;
 	    OU::formatAdd(env, "OCPI_TEST_%s='%s' ", p.m_param->cname(), p.m_uValue.c_str());
 	    OU::formatAdd(env, "OCPI_TESTFILE_%s='%s' ", p.m_param->cname(), file.c_str());
-	    
+
 	  }
 	}
 	for (unsigned n = 0; n < m_ports.size(); n++) {
@@ -900,6 +900,7 @@ namespace {
       bool any = false;
       for (unsigned n = 0; n < pc.params.size(); n++) {
 	Param &p = pc.params[n];
+	// FIXME: Should m_uValues hold the results of the generate? (AV-3114)
 	if (p.m_param && !p.m_isTest && (!p.m_uValues.empty() or !p.m_generate.empty())) {
 	  if (p.m_worker && p.m_worker->m_emulate && !w.m_emulate)
 	    continue;
@@ -997,7 +998,7 @@ namespace {
 		OU::formatAdd(l_file, "%s%s", io.m_file[0] == '/' ? "" : "../../",
 			      io.m_file.c_str());
 	      else
-		OU::formatAdd(l_file, "../../gen/inputs/%s.%02u.%s", m_name.c_str(), s, 
+		OU::formatAdd(l_file, "../../gen/inputs/%s.%02u.%s", m_name.c_str(), s,
 			      io.m_port->cname());
 	      OU::formatAdd(app, "    <property name='filename' value='%s'/>\n", l_file.c_str());
 	      if (io.m_messageSize)
@@ -1011,7 +1012,7 @@ namespace {
 	    }
 	generateAppInstance(*wFirst, pc, nWOut, nOutputs, s, first, false, app);
 	if (emulator)
-	  generateAppInstance(*emulator, pc, nEmOut, nOutputs, s, firstEm, true, app); 
+	  generateAppInstance(*emulator, pc, nEmOut, nOutputs, s, firstEm, true, app);
 	if (nOutputs)
 	  for (unsigned n = 0; n < m_ports.size(); n++) {
 	    InputOutput &io = m_ports[n];
@@ -1097,8 +1098,10 @@ namespace {
 		 "  msg=Viewing\n"
 		 "else\n"
 		 "  exit 1\n"
-		 "fi\n",
-		 m_name.c_str());
+		 "fi\n"
+		 "eval export OCPI_TESTCASE=%s\n"
+		 "eval export OCPI_TESTSUBCASE=$subcase\n",
+		 m_name.c_str(), m_name.c_str());
       verify += "exitval=0\n";
       size_t len = verify.size();
       for (unsigned n = 0; n < m_ports.size(); n++) {
@@ -1134,7 +1137,7 @@ namespace {
 		    OU::formatAdd(verify, "  (%02u)", s);
 		  } else
 		    verify += ";";
-		  OU::formatAdd(verify, " export OCPI_TEST_%s='%s'", 
+		  OU::formatAdd(verify, " export OCPI_TEST_%s='%s'",
 				sp.m_param->cname(), sp.m_uValue.c_str());
 		}
 	      }
@@ -1153,7 +1156,7 @@ namespace {
 	    if (io.m_view.size())
 	      OU::formatAdd(verify, "[ -z \"$view\" ] || %s%s %s.$subcase.$worker.%s.out %s\n",
 			    io.m_view[0] == '/' ? "" : "../../",
-			    io.m_view.c_str(), m_name.c_str(), io.m_port->cname(), 
+			    io.m_view.c_str(), m_name.c_str(), io.m_port->cname(),
 			    inArgs.c_str());
 	    if (io.m_script.size() || io.m_file.size()) {
 	      OU::formatAdd(verify, "[ -z \"$verify\" ] || {\n");
@@ -1166,7 +1169,7 @@ namespace {
 		OU::formatAdd(verify,
 			      "  echo Comparing output file \"$1\" to specified file: %s\n"
 			      "  cmp $1 %s%s\n",
-			      io.m_file.c_str(), io.m_file[0] == '/' ? "" : "../../", 
+			      io.m_file.c_str(), io.m_file[0] == '/' ? "" : "../../",
 			      io.m_file.c_str());
 	      OU::formatAdd(verify,
 			    "  r=$?\n"
@@ -1180,7 +1183,7 @@ namespace {
 			    "    failed=1\n"
 			    "  fi\n"
 			    "  tput sgr0\n"
-			    "  [ $r = 0 ] || exitval=1\n" 
+			    "  [ $r = 0 ] || exitval=1\n"
 			    "}\n", io.m_port->cname(), io.m_port->cname());
 	    } else
 	      OU::formatAdd(verify,
@@ -1246,7 +1249,7 @@ namespace {
 	      }
 	  }
 	  fprintf(out, "'");
-	}	  
+	}
 	if (m_timeout)
 	  fprintf(out, " timeout='%zu'", m_timeout);
 	if (m_duration)
@@ -1341,7 +1344,7 @@ namespace {
       wkrName(wname, dot - wname),
       wOWD = wdir + "/" + wkrName + ".xml";
     if (!OS::FileSystem::exists(wOWD, &isDir) || isDir)
-      return OU::esprintf("For worker \"%s\", \"%s\" doesn't exist or is a directory", 
+      return OU::esprintf("For worker \"%s\", \"%s\" doesn't exist or is a directory",
 			  name, wOWD.c_str());
     return tryWorker(name, specName, true, true);
   }
@@ -1392,7 +1395,7 @@ namespace {
       }
   }
 
-  const char *generateHdlAssembly(const Worker &w, unsigned c, const std::string &dir, const 
+  const char *generateHdlAssembly(const Worker &w, unsigned c, const std::string &dir, const
 				  std::string &name, bool hdlFileIO, Strings &assyDirs) {
     OS::FileSystem::mkdir(dir, true);
     assyDirs.insert(name);
@@ -1494,7 +1497,7 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
     return err;
   // ================= 2. Get/find/include/exclude the global workers
   // Parse global workers
-  const char 
+  const char
     *excludeWorkersAttr = ezxml_cattr(xml, "excludeWorkers"),
     *onlyWorkersAttr = ezxml_cattr(xml, "onlyWorkers");
   if (onlyWorkersAttr) {
@@ -1525,7 +1528,7 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
     // We now have an initial squeaky-clean, defaults-only, param config at id 0
     ocpiDebug("Inserting worker %s.%s/%p with new config %p/%zu",
 	      wFirst->m_implName, wFirst->m_modelString, wFirst, &pc, pc.nConfig);
-  }  
+  }
 #endif
   for (WorkersIter wi = workers.begin(); wi != workers.end(); ++wi) {
     Worker &w = **wi;
@@ -1534,7 +1537,7 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
 		w.m_modelString, &w, w.m_paramConfigs[c], w.m_paramConfigs[c]->nConfig);
       ocpiCheck(configs.insert(std::make_pair(w.m_paramConfigs[c], &w)).second);
     }
-  }      
+  }
   // ================= 4. Derive the union set of values from all configurations
   // Next, parse all global values into a special set for all tests that don't specify values.
   // This is different from the defaults and may have multiple values.
@@ -1596,7 +1599,7 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
     addNonParameterProperties(**wi, globals);
   if (emulator)
     addNonParameterProperties(*emulator, globals);
-    
+
   // ================= 5. Parse and collect global property values specified for all cases
   // Parse explicit/default property values to apply to all cases
 #define TEST_ATTRS "generate", "add", "only", "exclude", "test"
@@ -1640,7 +1643,7 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
 	return err;
       // We allow a test property to be specified with no values (values only in cases)
       if (!ezxml_cattr(px, "value") &&
-	  !ezxml_cattr(px, "values") &&	  
+	  !ezxml_cattr(px, "values") &&
 	  !ezxml_cattr(px, "valuefile") &&
 	  !ezxml_cattr(px, "valuesfile") &&
 	  !ezxml_cattr(px, "generate"))
@@ -1661,7 +1664,7 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
       fprintf(stderr,
 	      "Warning:  no values for writable property with no default: \"%s\" %zu %zu\n",
 	      p.cname(), param.m_uValues.size(), param.m_uValue.size());
-  }      
+  }
   // ================= 6. Parse and collect global platform values
   // Parse global platforms
   const char
@@ -1669,7 +1672,7 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
     *onlys = ezxml_cattr(xml, "onlyPlatforms");
   if (!excludes)
     excludes = ezxml_cattr(xml, "exclude");
-  if (!onlys) 
+  if (!onlys)
     onlys = ezxml_cattr(xml, "only");
   if (onlys) {
     if (excludes)
@@ -1701,13 +1704,13 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
     unsigned c = 0;
     for (WorkerConfigsIter wci = configs.begin(); wci != configs.end(); ++wci, ++c) {
       ParamConfig &pc = *wci->first;
-      fprintf(stderr, "  %2u: (from %s.%s)\n", 
+      fprintf(stderr, "  %2u: (from %s.%s)\n",
 	      c, wci->second->m_implName, wci->second->m_modelString);
       for (unsigned n = 0; n < pc.params.size(); n++) {
 	Param &p = pc.params[n];
 	if (p.m_param == NULL)
 	  continue;
-	fprintf(stderr, "      %s = %s%s\n", p.m_param->cname(), p.m_uValue.c_str(), 
+	fprintf(stderr, "      %s = %s%s\n", p.m_param->cname(), p.m_uValue.c_str(),
 		p.m_isDefault ? " (default)" : "");
       }
     }
@@ -1720,7 +1723,7 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
   if (verbose)
     fprintf(stderr, "Writing cases/subcases report in \"%s\"\n", summary.c_str());
   FILE *out = fopen(summary.c_str(), "w");
-  fprintf(out, 
+  fprintf(out,
 	  "Values common to all property combinations:\n"
 	  "===========================================\n");
   for (unsigned n = 0; n < globals.params.size(); n++) {
@@ -1731,7 +1734,7 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
     fprintf(out, "      %s = %s", p.m_param->cname(), p.m_uValues[0].c_str());
     if (p.m_param->m_isImpl && strncasecmp("ocpi_", p.m_param->cname(), 5)) {
       assert(p.m_worker);
-      fprintf(out, " (specific to worker %s.%s)", 
+      fprintf(out, " (specific to worker %s.%s)",
 	      p.m_worker->m_implName, p.m_worker->m_modelString);
     }
     fprintf(out, "\n");
@@ -1818,7 +1821,7 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
   fprintf(out,
 	  "\n"
 	  "Descriptions of the %zu case%s and %s subcases:\n"
-	  "==============================================\n", 
+	  "==============================================\n",
 	  cases.size(), cases.size() > 1 ? "s" : "", cases.size() > 1 ? "their" : "its");
   for (unsigned n = 0; n < cases.size(); n++) {
     cases[n]->m_subCases.push_back(new ParamConfig(cases[n]->m_settings));
@@ -1939,7 +1942,7 @@ createCases(const char **platforms, const char */*package*/, const char */*outDi
 	      for (ezxml_t wx = ezxml_cchild(sx, "worker"); wx; wx = ezxml_cnext(wx))
 		if (i.m_metadataImpl.name() == ezxml_cattr(wx, "name") &&
 		    i.m_metadataImpl.model() == ezxml_cattr(wx, "model")) {
-		  ocpiInfo("Accepted for case %s subcase %u from file: %s", name, n, 
+		  ocpiInfo("Accepted for case %s subcase %u from file: %s", name, n,
 			   i.m_artifact.name().c_str());
 		  if (m_first) {
 		    m_first = false;

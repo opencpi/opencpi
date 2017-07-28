@@ -1,9 +1,36 @@
 /*
+ * This file is protected by Copyright. Please refer to the COPYRIGHT file
+ * distributed with this source distribution.
+ *
+ * This file is part of OpenCPI <http://www.opencpi.org>
+ *
+ * OpenCPI is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option) any
+ * later version.
+ *
+ * OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+ * details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/*
  * THIS FILE WAS ORIGINALLY GENERATED ON Mon Sep 29 22:01:03 2014 EDT
  * BASED ON THE FILE: si5351_proxy.xml
  * YOU *ARE* EXPECTED TO EDIT IT
  *
  * This file contains the implementation skeleton for the si5351_proxy worker in C++
+ *
+ * DISCLAIMER: 
+ * The current implementation of this proxy is specific to supporting 
+ * the Zipper/MyriadRF (Lime transceiver) daughtercard. As a result, 
+ * it does not support the full capabilities of the Si5351 device, such as,
+ * clock spreading, configuration of the R dividers in the Output Stage, 
+ * or configuring outputs 6 & 7.
  */
 
 #include "si5351_proxy-worker.hh"
@@ -112,9 +139,11 @@ class Si5351_proxyWorker : public Si5351_proxyWorkerBase {
   // Check if clock frequency property is within bounds. If so, set up dividers. 
   RCCResult enable(unsigned i) {
     float clk_freq = m_properties.channels[i].output_hz;
-    if (clk_freq < 2500 || clk_freq  > 200000000)
+    //if (clk_freq < 2500 || clk_freq  > 200000000)
+    if (clk_freq < 500000 || clk_freq  > 200000000) // R dividers are not implemented
       return setError("Invalid frequency entered.\n"
-		      "Enter Frequency in (Hz) between 2500 Hz and 200000000 Hz\n");
+     //		      "Enter Frequency in (Hz) between 2500 Hz and 200000000 Hz\n");
+    		      "Enter Frequency in (Hz) between 500000 Hz and 200000000 Hz\n");
     if (FindVCO(i) != RCC_OK)
       return RCC_ERROR;
     slave.set_clk_ctl(i, slave.get_clk_ctl(i) & ~(1 << 7));   // power up
@@ -311,7 +340,7 @@ class Si5351_proxyWorker : public Si5351_proxyWorkerBase {
       slave.set_ms_0_5_params(k, 6, MSX_P2);
       slave.set_ms_0_5_params(k, 7, MSX_P2 >> 8);
     } else {
-      
+      // DOES NOT CURRENTLY SUPPORT CONFIGURATION OF OUTPUTS 6 & 7
     }
     slave.set_ms_div_params(pllN, 0, slave.get_ms_div_params(pllN, 0) | (MSNX_P3 >> 8));
     slave.set_ms_div_params(pllN, 1, MSNX_P3);

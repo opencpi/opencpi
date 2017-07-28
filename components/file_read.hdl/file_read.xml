@@ -2,7 +2,7 @@
   <xi:include href="file_read_spec.xml"/>
   
   <!-- Current working directory string -->
-  <property name="CWD_MAX_LENGTH" type="ULong" default="100" parameter="true"/>
+  <property name="CWD_MAX_LENGTH" type="ULong" default="256" parameter="true"/>
   <property name="cwd" type='string' stringlength='CWD_MAX_LENGTH' volatile='true'/>
 
   <specproperty name="fileName" readable='true'/>

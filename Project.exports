@@ -153,6 +153,7 @@ tests
 # Kernel module and main license files
 +LICENSE.txt lib/<target>/
 +LICENSE.txt
++COPYRIGHT
 ################################################################################
 # automake related exclusions and additions
 # --- discuss with Aaron
