@@ -1,35 +1,21 @@
-//#define DEBUG_TxRx_Datagram 1
 /*
- *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ * This file is protected by Copyright. Please refer to the COPYRIGHT file
+ * distributed with this source distribution.
  *
- *    Mercury Federal Systems, Incorporated
- *    1901 South Bell Street
- *    Suite 402
- *    Arlington, Virginia 22202
- *    United States of America
- *    Telephone 703-413-0781
- *    FAX 703-413-0784
+ * This file is part of OpenCPI <http://www.opencpi.org>
  *
- *  This file is part of OpenCPI (www.opencpi.org).
- *     ____                   __________   ____
- *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
- *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
- *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
- *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
- *      /_/                                             /____/
+ * OpenCPI is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option) any
+ * later version.
  *
- *  OpenCPI is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU Lesser General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ * OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+ * details.
  *
- *  OpenCPI is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU Lesser General Public License for more details.
- *
- *  You should have received a copy of the GNU Lesser General Public License
- *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
@@ -40,6 +26,8 @@
  *  Initial version
  *
  */
+//#define DEBUG_TxRx_Datagram 1
+
 #include <inttypes.h>
 #include <unistd.h>
 #include <sys/socket.h>
@@ -57,7 +45,7 @@ namespace DataTransfer {
 
   namespace UDP {
 
-    static void 
+    static void
     setEndpointString(std::string &ep, const char *ipAddr, unsigned port,
 		      size_t size, uint16_t mbox, uint16_t maxCount)
     {
@@ -66,20 +54,20 @@ namespace DataTransfer {
     }
 
     class DatagramSocket;
-    class DatagramEndPoint : public EndPoint 
+    class DatagramEndPoint : public EndPoint
     {
       friend class DatagramSocket;
       friend class DatagramXferFactory;
     public:
       DatagramEndPoint( std::string& ep, bool a_local, uint32_t a_size=0)
-	: EndPoint(ep, a_size, a_local) { 
+	: EndPoint(ep, a_size, a_local) {
 	char ipaddr[80];
 	int rv = sscanf(ep.c_str(), "ocpi-udp-rdma:%[^;];%" SCNu16 ";", ipaddr, &m_portNum);
 	if (rv != 2) {
 	  fprintf( stderr, "DatagramEndPoint  ERROR: Bad socket endpoint format (%s)\n", ep.c_str() );
-	  throw DataTransfer::DataTransferEx( UNSUPPORTED_ENDPOINT, ep.c_str() );	  
+	  throw DataTransfer::DataTransferEx( UNSUPPORTED_ENDPOINT, ep.c_str() );
 	}
-	m_ipAddress = ipaddr;  
+	m_ipAddress = ipaddr;
 	memset(&m_sockaddr, 0, sizeof(m_sockaddr));
 	m_sockaddr.sin_family = AF_INET;
 	m_sockaddr.sin_port = htons(m_portNum);
@@ -126,7 +114,7 @@ namespace DataTransfer {
 	m_msghdr.msg_iovlen = 0;
 	m_msghdr.msg_control = 0;
 	m_msghdr.msg_controllen = 0;
-	m_msghdr.msg_flags = 0;    
+	m_msghdr.msg_flags = 0;
       }
       uint16_t maxPayloadSize() { return DATAGRAM_PAYLOAD_SIZE; }
     public:
@@ -200,7 +188,7 @@ namespace DataTransfer {
 
       const char* getProtocol(){return "ocpi-udp-rdma";}
 
-      std::string 
+      std::string
       allocateEndpoint( const OCPI::Util::PValue*, uint16_t mailBox, uint16_t maxMailBoxes,
 			size_t size)
       {
@@ -227,7 +215,7 @@ namespace DataTransfer {
 	  }
 	  port = m_port++;
 	}
-	const char* mb = getenv("OCPI_MAILBOX");    
+	const char* mb = getenv("OCPI_MAILBOX");
 	if ( mb ) {
 	  mailBox = (uint16_t)atoi(mb);
 	}
@@ -235,7 +223,7 @@ namespace DataTransfer {
 			  maxMailBoxes);
 	return ep;
       }
-      
+
     };
 
 #include "DtDataGramBoilerplate.h"
@@ -246,4 +234,3 @@ namespace DataTransfer {
 #endif
   }
 }
-

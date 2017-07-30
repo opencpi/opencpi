@@ -1,38 +1,22 @@
-//#define DEBUG_TxRx_Datagram 1
-
 /*
- *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ * This file is protected by Copyright. Please refer to the COPYRIGHT file
+ * distributed with this source distribution.
  *
- *    Mercury Federal Systems, Incorporated
- *    1901 South Bell Street
- *    Suite 402
- *    Arlington, Virginia 22202
- *    United States of America
- *    Telephone 703-413-0781
- *    FAX 703-413-0784
+ * This file is part of OpenCPI <http://www.opencpi.org>
  *
- *  This file is part of OpenCPI (www.opencpi.org).
- *     ____                   __________   ____
- *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
- *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
- *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
- *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
- *      /_/                                             /____/
+ * OpenCPI is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option) any
+ * later version.
  *
- *  OpenCPI is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU Lesser General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ * OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+ * details.
  *
- *  OpenCPI is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU Lesser General Public License for more details.
- *
- *  You should have received a copy of the GNU Lesser General Public License
- *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-
 
 /*
  * Abstract:
@@ -42,6 +26,7 @@
  *  Initial version
  *
  */
+//#define DEBUG_TxRx_Datagram 1
 
 #include "fasttime.h"
 #include "OcpiOsMisc.h"
@@ -55,7 +40,7 @@ namespace DataTransfer {
 
   const char *datagramsocket = "datagram-socket"; // name passed to inherited template class
   static const unsigned MAX_TRANSACTION_HISTORY = 512;  // Max records per source
-  static const unsigned MAX_FRAME_HISTORY = 0xff; 
+  static const unsigned MAX_FRAME_HISTORY = 0xff;
 
   DatagramXferServices::
   DatagramXferServices(SmemServices *a_source, SmemServices *a_target)
@@ -132,9 +117,9 @@ namespace DataTransfer {
   }
 
   // Create a transfer request
-  XferRequest* DatagramXferRequest::copy (DtOsDataTypes::Offset srcoffs, 
-					  DtOsDataTypes::Offset dstoffs, 
-					  size_t nbytes, 
+  XferRequest* DatagramXferRequest::copy (DtOsDataTypes::Offset srcoffs,
+					  DtOsDataTypes::Offset dstoffs,
+					  size_t nbytes,
 					  XferRequest::Flags flags
 					  )
   {
@@ -151,7 +136,7 @@ namespace DataTransfer {
       fini(*(uint32_t*)parent().m_txTemplate.ssmem->map(srcoffs,0), dstoffs);
       return this;
     }
-    
+
     // For each transfer at this level we have a header and payload.  We may need to break it up into
     // multiple "messages".  Each message gets it own header so each one is self contained and can be
     // acted upon by the receiver without being dependent on previous messages (which could get lost).
@@ -166,7 +151,7 @@ namespace DataTransfer {
 	 nbytes -= length, src += length, dstoffs += OCPI_UTRUNCATE(DDT::Offset, length)) {
       length = nbytes > maxpl ? maxpl : nbytes;
       add(src, dstoffs, length);
-    }						
+    }
     return this;
   }
 
@@ -201,8 +186,8 @@ namespace DataTransfer {
       frame.release();
   }
 
-  Frame * 
-  DatagramXferServices::  
+  Frame *
+  DatagramXferServices::
   nextFreeFrame( )  {
     OCPI::Util::SelfAutoMutex guard ( this );
     uint16_t seq = m_frameSeq++;
@@ -220,7 +205,7 @@ namespace DataTransfer {
 
 
   // Here are frames that we sent that are being ACK'ed
-  void 
+  void
   DatagramXferServices::
   ack(  unsigned count, unsigned start ) {
     for ( unsigned n=start; n<(start+count); n++ ) {
@@ -231,7 +216,7 @@ namespace DataTransfer {
 
 
   // This is the list of ACK's that we have to send
-  void 
+  void
   DatagramXferServices::
   addFrameAck( DatagramFrameHeader * hdr ) {
     OCPI::Util::SelfAutoMutex guard ( this );
@@ -247,9 +232,9 @@ ss    post( frame );
 
   }
 
-  void 
+  void
   DatagramXferServices::
-  releaseFrame ( unsigned seq ) {	
+  releaseFrame ( unsigned seq ) {
     unsigned mseq = seq & FRAME_SEQ_MASK;
     Frame &f = m_freeFrames[mseq];
     if (!f.is_free && f.frameHdr.frameSeq == seq)
@@ -259,7 +244,7 @@ ss    post( frame );
 		seq, f.is_free ? "free" : "busy", f.frameHdr.frameSeq);
   }
 
-  void 
+  void
   DatagramXferServices::
   sendAcks( uint64_t time_now, uint64_t timeout )
   {
@@ -271,12 +256,12 @@ ss    post( frame );
   }
 
 
-  Frame & 
+  Frame &
   DatagramXferServices::
   getFrame(size_t & bytes_left  )
   {
     OCPI::Util::SelfAutoMutex guard ( this );
-    Frame & frame = *nextFreeFrame(); 
+    Frame & frame = *nextFreeFrame();
 
     bytes_left = (int) maxPayloadSize();
 
@@ -315,15 +300,15 @@ ss    post( frame );
     frame.iov[frame.iovlen].iov_len = 2;
     frame.iovlen++;
     frame.iov[frame.iovlen].iov_base = (void*) &frame.frameHdr;
-    frame.iov[frame.iovlen].iov_len = sizeof(frame.frameHdr);	
+    frame.iov[frame.iovlen].iov_len = sizeof(frame.frameHdr);
     bytes_left -= ((int)frame.iov[1].iov_len + 2);
     frame.iovlen++;
-		
+
     return frame;
   }
 
 
-  void 
+  void
   DatagramXferRequest::
   post()
   {
@@ -340,7 +325,7 @@ ss    post( frame );
 
       Frame & frame = parent().getFrame( bytes_left );
       frame.transaction = &t;
-      frame.msg_start = msg;	  
+      frame.msg_start = msg;
 
       // Stuff as many messages into the frame as we can
       while (bytes_left > 0 && msg < t.msgCount()) {
@@ -358,7 +343,7 @@ ss    post( frame );
 	frame.iov[frame.iovlen].iov_base = (void*) t.srcPtr(msg);
 	frame.iov[frame.iovlen].iov_len = t.hdrPtr(msg)->dataLen;
 	// Adjust the aligment so that the next header is on a 8 byte boundary
-	frame.iov[frame.iovlen].iov_len = (frame.iov[frame.iovlen].iov_len + 7) & ~7; 
+	frame.iov[frame.iovlen].iov_len = (frame.iov[frame.iovlen].iov_len + 7) & ~7;
 	frame.iovlen++;
 	bytes_left = bytes_left - (frame.iov[frame.iovlen-2].iov_len +
 				   frame.iov[frame.iovlen-1].iov_len);
@@ -368,8 +353,8 @@ ss    post( frame );
       }
       t.hdrPtr(msg-1)->nextMsg = false;
       parent().post( frame );
-      //      queFrame( frame );	  
-    }	
+      //      queFrame( frame );
+    }
   }
 
   volatile static uint32_t g_txId;
@@ -379,7 +364,7 @@ ss    post( frame );
     return g_txId;
   }
 
-  void 
+  void
   DatagramTransaction::
   init(size_t nMsgs) {
     ocpiAssert( ! m_init );
@@ -392,21 +377,21 @@ ss    post( frame );
   // Finalize the transaction since we now have the flag transfer information
   // and we know how many messages were actually sent for the transaction,
   // essentially filling in the constant fields
-  void 
+  void
   DatagramTransaction::
   fini( uint32_t flag, DtOsDataTypes::Offset dst) {
     Message *m = &m_messages[0];
     for (unsigned n = 0; n < m_nMessagesTx; n++, m++) {
-      m->hdr.transactionId = m_tid; 
+      m->hdr.transactionId = m_tid;
       m->hdr.numMsgsInTransaction = (uint16_t)(m_nMessagesTx == 1 ? 0 : m_nMessagesTx);
       m->hdr.flagAddr = (uint32_t)dst;
       m->hdr.flagValue = flag;
     }
   }
 
-  
+
   // src == NULL means the message only carries the flag and the transaction has no other messages
-  void 
+  void
   DatagramTransaction::
   add(uint8_t * src, DtOsDataTypes::Offset dst_offset, size_t length)
   {
@@ -433,11 +418,11 @@ ss    post( frame );
     struct in_addr  adrr  =  ((struct sockaddr_in *)&sad)->sin_addr;
 #endif
 
-  
-  DataTransfer::XferRequest::CompletionStatus 
+
+  DataTransfer::XferRequest::CompletionStatus
   DatagramXferRequest::getStatus()
-  { 
-    // We only need to check the completion status of the flag transfer since it is gated on the 
+  {
+    // We only need to check the completion status of the flag transfer since it is gated on the
     // completion status of the data and meta-data transfers
     if ( ! complete() ) {
       return DataTransfer::XferRequest::Pending;
@@ -461,7 +446,7 @@ ss    post( frame );
 	//#define DROP_FRAME
 #ifdef DROP_FRAME
 	const char* env = getenv("OCPI_Datagram_DROP_FRAMES");
-	if ( env != NULL ) 
+	if ( env != NULL )
 	  {
 	    static int dropit=1;
 	    static int dt = 300;
@@ -515,14 +500,14 @@ ss    post( frame );
   }
 
 
-    void 
+    void
     FrameMonitor::
     run() {
       const uint64_t timeout = 200 * 1000 * 1000;  // timeout in mSec
       uint64_t time_now;
 
       while ( m_loop ) {
-	
+
 	// If we have not received an ACK after (timeout) send the frame again.
 	lock();
 	std::vector< DatagramXferServices * > & xfer_services =  m_lsmem->getAllXferServices();
@@ -544,10 +529,10 @@ ss    post( frame );
 
 
 
-  void 
-  DatagramXferServices::    
+  void
+  DatagramXferServices::
   checkAcks( uint64_t time, uint64_t time_out )
-  {    
+  {
     OCPI::Util::SelfAutoMutex guard ( this );
     for ( unsigned n=0; n<m_freeFrames.size(); n++ ) {
       if ( ! m_freeFrames[n].is_free ) {
@@ -557,7 +542,7 @@ ss    post( frame );
 	  // method id called
 	  if ( time > m_freeFrames[n].send_time ) {
 
-	    m_freeFrames[n].resends++;	    
+	    m_freeFrames[n].resends++;
 
 #ifdef LIMIT_RETRIES
 	    if ( m_freeFrames[n].resends < 4 ) {
@@ -576,25 +561,25 @@ ss    post( frame );
     }
   }
 
-  void 
-  DatagramXferServices::  
+  void
+  DatagramXferServices::
   processFrame( DatagramFrameHeader * header )
   {
     OCPI::Util::SelfAutoMutex guard ( this );
     DatagramMsgHeader *   msg;
 
     // It is possible for the sender to duplicate frames by being too agressive with re-retries
-    // Dont process dups. 
+    // Dont process dups.
     if (  m_frameSeqRecord[ header->frameSeq & MAX_FRAME_HISTORY ].id == header->frameSeq ) {
-      
-      ocpiDebug("max history = %d, SID = %d, fqr size = %zd mask=%d, seq = %d this = %p", 
-	     MAX_FRAME_HISTORY, header->srcId,  m_frameSeqRecord.size(), 
+
+      ocpiDebug("max history = %d, SID = %d, fqr size = %zd mask=%d, seq = %d this = %p",
+	     MAX_FRAME_HISTORY, header->srcId,  m_frameSeqRecord.size(),
 	     header->frameSeq&MAX_FRAME_HISTORY, header->frameSeq, this
 	     );
 
       if (  ! m_frameSeqRecord[ header->frameSeq & MAX_FRAME_HISTORY ].acked  ) {
 	ocpiAssert("programming error, cannot have dup without ACK "==0);
-      }	    
+      }
 
       ocpiDebug("********  Found a duplicate frame, Ignoring it !!");
       // Need to ACK the dup anyway
@@ -607,7 +592,7 @@ ss    post( frame );
       m_frameSeqRecord[ header->frameSeq & MAX_FRAME_HISTORY ].id = header->frameSeq;
     }
 
-    // This frame contains ACK responses	       
+    // This frame contains ACK responses
     if ( header->ACKCount ) {
       //      printf("Acking from %d, count = %d\n", header->ACKStart, header->ACKCount );
       ack(  header->ACKCount, header->ACKStart );
@@ -620,7 +605,7 @@ ss    post( frame );
     addFrameAck( header );
 
 
-    msg = reinterpret_cast<DatagramMsgHeader*>( &header[1] );	    
+    msg = reinterpret_cast<DatagramMsgHeader*>( &header[1] );
     do {
 
       MsgTransactionRecord & fr =
@@ -632,19 +617,19 @@ ss    post( frame );
 	ocpiAssert( m_frames_in_play < MAX_TRANSACTION_HISTORY );
       }
       fr.transactionId = msg->transactionId;
-      fr.numMsgsInTransaction = msg->numMsgsInTransaction;	      
+      fr.numMsgsInTransaction = msg->numMsgsInTransaction;
 
       if (msg->numMsgsInTransaction != 0) {
 	ocpiDebug("Msg info -->  addr=%d len=%d tid=%d",
 		  msg->dataAddr, msg->dataLen, msg->transactionId );
-      
+
 	switch ( msg->type ) {
 
 	case DataTransfer::DatagramMsgHeader::DATA:
 	case DataTransfer::DatagramMsgHeader::METADATA:
 	  {
 
-	    char* dptr =(char*)m_sourceSmb->map(msg->dataAddr, msg->dataLen);	  
+	    char* dptr =(char*)m_sourceSmb->map(msg->dataAddr, msg->dataLen);
 	    if ( msg->dataLen == 4 ) {
 
 #ifdef DEBUG_TxRx_Datagram
@@ -663,7 +648,7 @@ ss    post( frame );
 
 	  // Not yet handled
 	case DataTransfer::DatagramMsgHeader::DISCONNECT:
-	  break;	    
+	  break;
 	  ocpiAssert("Unhandled Datagram message type"==0);
 	}
 
@@ -671,10 +656,10 @@ ss    post( frame );
       }
       // Close the transaction if needed
       if ( fr.msgsProcessed == fr.numMsgsInTransaction ) {
-	char* dptr =(char*)m_sourceSmb->map(msg->flagAddr, 4);	  
+	char* dptr =(char*)m_sourceSmb->map(msg->flagAddr, 4);
 
 #ifdef DEBUG_TxRx_Datagram
-	printf("**** Finalizing transaction %d, addr = %d, value = %d, old value=%d\n", 
+	printf("**** Finalizing transaction %d, addr = %d, value = %d, old value=%d\n",
 	       msg->transactionId, msg->flagAddr,msg->flagValue, *dptr);
 #endif
 
@@ -698,12 +683,12 @@ ss    post( frame );
 	msg = NULL;
       }
 
-    } while ( msg );	    
+    } while ( msg );
 
   }
 
 
-  void 
+  void
   DatagramSmemServices::
   addXfer( DatagramXferServices * s )
   {
@@ -713,8 +698,8 @@ ss    post( frame );
     m_xferServices[ s->m_targetSmb->endpoint()->mailbox ] = s;
     ocpiDebug("xfer service %p added with mbox %d", s, s->m_targetSmb->endpoint()->mailbox);
   }
-  
-  void 
+
+  void
   TxTemplate::
   config( SmemServices * src, SmemServices * dst )
   {
@@ -722,8 +707,8 @@ ss    post( frame );
     dsmem = dst;
   }
   void Frame::
-  release() {	  
-    // This can occur if we are too agressive with a retry and end up getting back Two ACK's 
+  release() {
+    // This can occur if we are too agressive with a retry and end up getting back Two ACK's
     // for the re-transmitted frame.
     if (is_free)
       return;

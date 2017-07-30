@@ -1,34 +1,21 @@
 /*
- *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ * This file is protected by Copyright. Please refer to the COPYRIGHT file
+ * distributed with this source distribution.
  *
- *    Mercury Federal Systems, Incorporated
- *    1901 South Bell Street
- *    Suite 402
- *    Arlington, Virginia 22202
- *    United States of America
- *    Telephone 703-413-0781
- *    FAX 703-413-0784
+ * This file is part of OpenCPI <http://www.opencpi.org>
  *
- *  This file is part of OpenCPI (www.opencpi.org).
- *     ____                   __________   ____
- *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
- *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
- *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
- *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
- *      /_/                                             /____/
+ * OpenCPI is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option) any
+ * later version.
  *
- *  OpenCPI is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU Lesser General Public License as published
- *  by the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ * OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+ * details.
  *
- *  OpenCPI is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU Lesser General Public License for more details.
- *
- *  You should have received a copy of the GNU Lesser General Public License
- *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
 // -*- c++ -*-
@@ -242,16 +229,16 @@ namespace OCPI {
 	*checkTag(ezxml_t xml, const char *tag, const char *fmt, ...)
 	__attribute__((format(printf, 3, 4))),
 	*getRequiredString(ezxml_t x, std::string &s, const char *attr, const char *elem = NULL),
-	*ezxml_children(ezxml_t xml, const char* (*func)(ezxml_t child, void *arg), 
+	*ezxml_children(ezxml_t xml, const char* (*func)(ezxml_t child, void *arg),
 			void *arg = NULL),
-	*ezxml_children(ezxml_t xml, const char *tag, 
+	*ezxml_children(ezxml_t xml, const char *tag,
 			const char *(*func)(ezxml_t child, void *arg), void *arg = NULL),
 	*ezxml_attrs(ezxml_t xml,
 		     const char *(*func)(const char *name, const char *value, void *arg),
 		     void *arg),
 	// true only means its an error to do anything but true, for cases
 	// when you are only allowed to "add truth", not set false
-        *getBoolean(ezxml_t x, const char *name, bool *b, bool trueOnly = false, 
+        *getBoolean(ezxml_t x, const char *name, bool *b, bool trueOnly = false,
 		    bool *found = NULL),
         *checkAttrs(ezxml_t x, ...),
         *checkElements(ezxml_t x, ...),

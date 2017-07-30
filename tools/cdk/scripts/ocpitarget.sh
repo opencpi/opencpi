@@ -1,7 +1,26 @@
-#!/bin/bash
+# This file is protected by Copyright. Please refer to the COPYRIGHT file
+# distributed with this source distribution.
+#
+# This file is part of OpenCPI <http://www.opencpi.org>
+#
+# OpenCPI is free software: you can redistribute it and/or modify it under the
+# terms of the GNU Lesser General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your option) any
+# later version.
+#
+# OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+# A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Lesser General Public License along
+# with this program. If not, see <http://www.gnu.org/licenses/>.
+
+# No /bin/bash here - this file should be sourced, not executed
+
 # Extract the target-related variables set in the make context for use in the shell context
 # This file must be sourced since its purpose is to change the environment
-# This is rarey needed since these variables are almost always used in the "make" context,
+# This is rarely needed since these variables are almost always used in the "make" context,
 # where the initialization is done using the ocpisetup.mk script.
 # A single argument is required which will become OCPI_TARGET_PLATFORM.
 # If the single argument is empty, and OCPI_TARGET_PLATFORM is already set, it is used.

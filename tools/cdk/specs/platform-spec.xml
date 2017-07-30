@@ -53,5 +53,4 @@
   <property name="slotNames" type="string" stringlength="32" parameter="true" default=""/> <!-- TODO / FIXME make this a sequencelength of nslots -->
   <!-- An array of booleans, where each index contains a indication whether a card is physically present in the given index's slot. For a description of a given index's slot, see the same index in the slotName property. Note that only a max of 64 slots are currently supported. -->
   <property name="slotCardIsPresent" type="bool" volatile="true" arraylength="64"/> <!-- TODO / FIXME change to sequence once sequence problems fixed -->
-
 </ComponentSpec>

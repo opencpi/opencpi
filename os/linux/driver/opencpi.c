@@ -1,20 +1,24 @@
 /*
- * Copyright (C) Mercury Federal Systems, Inc. 2010
+ * This file is protected by Copyright. Please refer to the COPYRIGHT file
+ * distributed with this source distribution.
  *
- * This device driver is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * This file is part of OpenCPI <http://www.opencpi.org>
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * OpenCPI is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option) any
+ * later version.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+ * details.
  *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/*
  * NOTE: This copyright and license does *not* cover user programs that use kernel
  * services in this driver via normal system calls - that is considered normal use
  * of the kernel, and does *not* fall under the heading of "derived work".
@@ -304,7 +308,7 @@ merge_free_memory(void) {
 	free_kernel_block(block);
 	list_del(&block->list);
 	kfree(block);
-      }	
+      }
     }
   spin_unlock(&block_lock);
 }
@@ -467,7 +471,7 @@ establish_remote(struct file *file, ocpi_request_t *request) {
     log_err("Establishing remote: bus region 0x%llx collides with existing. Phys is 0x%llx\n",
 	    request->bus_addr, phys);
     return -EEXIST;
-  }    
+  }
   request->address = phys;
   return make_block(phys, request->bus_addr, request->actual, ocpi_mmio, false, 0) ?
     0 : -EINVAL;
@@ -812,7 +816,7 @@ opencpi_io_mmap(struct file * file, struct vm_area_struct * vma) {
     log_err("invalid device mapping\n");
   if (block) {
     log_debug_block(block, "mmap");
-  
+
     // Set the VM operations for this map
     vma->vm_ops = &opencpi_vm_ops;
     vma->vm_private_data = block;
@@ -823,7 +827,7 @@ opencpi_io_mmap(struct file * file, struct vm_area_struct * vma) {
     if (block->type == ocpi_mmio) {
       vma->vm_flags |= VM_IO;
       err = io_remap_pfn_range(vma, vma->vm_start, pfn, size, vma->vm_page_prot);
-    } else 
+    } else
       err = remap_pfn_range(vma, vma->vm_start, pfn, size, vma->vm_page_prot);
   }
   if (err)
@@ -977,7 +981,7 @@ probe_pci(struct pci_dev *pcidev, const struct pci_device_id *id) {
   ocpi_device_t *mydev = NULL;
   unsigned i;
   long err;
-	
+
   log_debug("pci probe\n");
   for (i = 0; i < NBARS; i++) {
     sizes[i] = pci_resource_len(pcidev, i);
@@ -988,7 +992,7 @@ probe_pci(struct pci_dev *pcidev, const struct pci_device_id *id) {
     log_pci_err(pcidev, 0, "unexpected internal driver error sequence");
     return -ENODEV;
   }
-  if (nbars != 2 || 
+  if (nbars != 2 ||
       (pci_resource_flags(pcidev, 0) & PCI_BASE_ADDRESS_SPACE) ==
       PCI_BASE_ADDRESS_SPACE_IO ||
       (pci_resource_flags(pcidev, 1) & PCI_BASE_ADDRESS_SPACE) ==
@@ -1009,7 +1013,7 @@ probe_pci(struct pci_dev *pcidev, const struct pci_device_id *id) {
   // now we start to obtain resources
   if ((mydev = make_device(new_device)) == NULL)
     return -ENODEV;
-  
+
   do { // break to cleanup to undo resources
     check(pcidev, "before enable");
     pci_read_config_word(pcidev, PCI_COMMAND, &mydev->pci_command);
@@ -1107,9 +1111,9 @@ remove_pci(struct pci_dev *dev) {
     log_err("removing pci with no drvdata?\n");
 }
 
-// PCI Device IDs table 
+// PCI Device IDs table
 static struct pci_device_id pci_device_ids[] = {
-  { 
+  {
     .vendor = OCPI_HDL_PCI_VENDOR_ID,
     .device = OCPI_HDL_PCI_DEVICE_ID,
     .subvendor = PCI_ANY_ID,
@@ -1193,7 +1197,7 @@ net_create(struct socket *sock, int protocol) {
 // The user is giving us more information about a socket.
 // - All sockets are bound to an interface
 // - CP discovery in user mode means send to broadcast, but receive source address
-// - CP master means bind to other end's address 
+// - CP master means bind to other end's address
 // - CP emulation means accept
 // - DP means bind to local endpoint id, but pass
 static int
@@ -1202,7 +1206,7 @@ net_bind(struct socket *sock, struct sockaddr *uaddr, int addr_len) {
   ocpi_sockaddr_t *s = (ocpi_sockaddr_t *)uaddr;
   ocpi_sock_t *sk = get_ocpi_sk(sock->sk);
 
-  log_debug("bind alen %d family %u role %u ifi %u remote[0] %x ep %d\n", 
+  log_debug("bind alen %d family %u role %u ifi %u remote[0] %x ep %d\n",
 	    addr_len, s->ocpi_family, s->ocpi_role, s->ocpi_ifindex, s->ocpi_remote[0],
 	    s->ocpi_endpoint);
   if (s->ocpi_ifindex == 0) {
@@ -1233,12 +1237,12 @@ net_bind(struct socket *sock, struct sockaddr *uaddr, int addr_len) {
        (is_zero_ether_addr(s->ocpi_remote) ||
 	is_broadcast_ether_addr(s->ocpi_remote))))
     return -EINVAL;
-  // Note that discovery can have an address.  
+  // Note that discovery can have an address.
   sk->any =
     s->ocpi_role == ocpi_slave ||
     (s->ocpi_role == ocpi_discovery &&
      (is_zero_ether_addr(s->ocpi_remote) ||
-      is_broadcast_ether_addr(s->ocpi_remote)));      
+      is_broadcast_ether_addr(s->ocpi_remote)));
   sk->netdev = d;
   sk->sockaddr = *s;
   write_lock_bh(&opencpi_sklist_lock);
@@ -1258,7 +1262,7 @@ net_release(struct socket *sock) {
     write_lock_bh(&opencpi_sklist_lock);
     sk_del_node_init(sk);
     write_unlock_bh(&opencpi_sklist_lock);
-    skb_queue_purge(&sk->sk_receive_queue);  
+    skb_queue_purge(&sk->sk_receive_queue);
     release_sock(sk);
     log_debug("socket %p count %d\n", sock, atomic_read(&sk->sk_refcnt));
     sock_put(sk); // decrement ref count from sock_init_data
@@ -1427,7 +1431,7 @@ net_sendmsg(struct kiocb *iocb, struct socket *sock, struct msghdr *msg, size_t 
 #else
       dev->hard_header(skb, dev, etype,
 #endif
-		       mysa->ocpi_role == ocpi_master ? 
+		       mysa->ocpi_role == ocpi_master ?
 		       mysa->ocpi_remote : ((ocpi_sockaddr_t *)msg->msg_name)->ocpi_remote,
 		       NULL, actual_len);
       dev_queue_xmit(skb);
@@ -1444,7 +1448,7 @@ static const struct proto_ops opencpi_socket = {
   .connect =	sock_no_connect,
   .socketpair =	sock_no_socketpair,
   .accept =	sock_no_accept,
-  .getname =	sock_no_getname, // net_getname, 
+  .getname =	sock_no_getname, // net_getname,
   .poll =       datagram_poll,
   .ioctl =	sock_no_ioctl, // net_ioctl,
   .listen =	sock_no_listen,
@@ -1542,7 +1546,7 @@ free_driver(void) {
       kfree(block);
     }
     spin_unlock(&block_lock);
-    
+
     block_init = 0;
   }
   log_debug( "Cleanup done\n");
@@ -1554,9 +1558,9 @@ static void enable_counters(void*info) {
   /* enable user-mode access to the performance counter*/
   asm volatile("MCR p15, 0, %0, C9, C14, 0\n\t" :: "r"(1));
   /* disable counter overflow interrupts (just in case)*/
-  asm volatile("MCR p15, 0, %0, C9, C14, 2\n\t" :: "r"(0x8000000f));   
+  asm volatile("MCR p15, 0, %0, C9, C14, 2\n\t" :: "r"(0x8000000f));
   // program the performance-counter control-register:
-  asm volatile ("MCR p15, 0, %0, c9, c12, 0\t\n" :: "r"(0x11));  
+  asm volatile ("MCR p15, 0, %0, c9, c12, 0\t\n" :: "r"(0x11));
   /* enable all counters */
   asm volatile("mcr p15, 0, %0, c9, c12, 1\t\n" :: "r"(0x8000000f));
   // clear overflows:
