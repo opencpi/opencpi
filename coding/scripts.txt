@@ -32,6 +32,9 @@ e.g.:
 5. scripts should clean up after themselves on control-c unless there is an explicit "keep"
    option.
 
+6. scripts, like executables, should issue the help message and return an exit status of 1 when
+   invoked with no arguments.  I.e. issuing the command with no arguments is "safe".
+
 (todo: temp file common conventions)
 (todo: we don't yet have a standard bash equivalent to the command executable options capability).
 

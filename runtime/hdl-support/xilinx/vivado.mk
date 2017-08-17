@@ -27,7 +27,7 @@ include $(OCPI_CDK_DIR)/include/hdl/xilinx.mk
 # built when the library is built.
 HdlToolLibraryFile=$2
 
-HdlRecurseLibraries=yes
+HdlRecurseLibraries_vivado=yes
 
 ################################################################################
 # Variable required by toolset: HdlBin
@@ -47,6 +47,7 @@ HdlToolRealCore_vivado:=yes
 # Variable required by toolset: HdlToolNeedBB=yes
 # Set if the tool set requires a black-box library to access a core
 HdlToolNeedBB=
+HdlToolNeedBB_vivado=
 ################################################################################
 # Function required by toolset: $(call HdlToolCoreRef,coreref)
 # Modify a stated core reference to be appropriate for the tool set
@@ -56,7 +57,7 @@ HdlToolCoreRef_vivado=$1
 CoreOrLibName=$(or $(Core),$(LibName))
 ################################################################################
 # Variable required by toolset: HdlToolNeedsSourceList_vivado=yes
-# Set if the tool requires a listing of source files and libraries 
+# Set if the tool requires a listing of source files and libraries
 HdlToolNeedsSourceList_vivado=yes
 
 ################################################################################
@@ -172,8 +173,6 @@ VivadoMyExtraOptions_synth=$(strip \
           $(VivadoExtraOptions_synth)))
 
 # Use this to send options to the write_edif command.
-# For example, " -security_mode all " will enable encryption of the whole 
-# EDIF file if any component of the design requires encryption.
 #VivadoEdifOptions=
 
 ###############################################################################
@@ -266,7 +265,7 @@ VivadoGoodOptions_route=\
 -max_delay \
 -min_delay \
 -timing_summary \
--finalize 
+-finalize
 
 # TODO: was I correct to assume release_memory is not acceptable?
 # release_memory "Release Router memory. Not compatible with any other options." - Xilinx UG835
@@ -375,7 +374,7 @@ $(VivadoBadOptions_all)
 
 # target file is added later
 VivadoDefaultOptions_bit=\
--force 
+-force
 
 # This allows us to define 'VivadoExtraOptions_<stage>'
 VivadoMyExtraOptions_impl=$(strip \
@@ -417,14 +416,13 @@ VivadoPrimitiveCores=$(foreach c,$(Cores),$(if $(findstring /,$c),,$c))
 # VivadoIncludeDependencies
 # Collect the libraries that this asset depends on
 #   Extract the sources for each and include them using their paths relative to their library
-# Call the tool specific function for including this asset's cores 
-# Call the tool specific function for including this asset's sources 
+# Call the tool specific function for including this asset's cores
+# Call the tool specific function for including this asset's sources
 # Call the tool specific function for including 'include directories' (ie for verilog includes)
 VivadoIncludeDependencies=\
-  $(foreach l,$(call HdlCollectLibraries,$(HdlTarget)) $(VivadoPrimitiveCores),$(infox IncLib:$l)\
+  $(foreach l,$(call HdlCollectLibraries,$(HdlTarget)),$(infox IncLib:$l)\
     $(call VivadoIncludeSources,\
-      $(foreach s,$(call HdlExtractSourcesForLib,$(HdlTarget),$l),\
-        $(call HdlRelativeOrAbsolutePathToLib,$(HdlTarget),$l,$(TargetDir))/$s),\
+      $(call HdlExtractSourcesForLib,$(HdlTarget),$l,$(TargetDir)),\
       $(notdir $(call HdlRmRv,$l))))\
   $(call VivadoIncludeCores,$(SubCores_$(HdlTarget)),$(CoreOrLibName))\
   $(call VivadoIncludeSources,$(foreach s,$(HdlSources),$(call FindRelative,$(TargetDir),$s)),$(CoreOrLibName))\
@@ -435,13 +433,13 @@ VivadoIncludeDependencies=\
 # and includedirs
 
 # Vivado's function for including cores
-# This is mostly adapted from the Quartus method. 
+# This is mostly adapted from the Quartus method.
 # We check to see if the core is in 'Cores' before trying to add the
 # worker source files (e.g. those underneath gen). The cores listed
 # in 'Cores' are either primitive cores or worker-included cores.
 VivadoIncludeCores=\
   $(foreach c,$1,\
-    echo read_edif_or_dcp $(call FindRelative,$(TargetDir),$(if $(findstring /,$c),$c,$(call HdlCoreRef,$c,$(HdlTarget)))) >> $(CoreOrLibName)-imports.tcl;\
+    echo read_edif_or_dcp $(call FindRelative,$(TargetDir),$(call HdlCoreRefMaybeTargetSpecificFile,$c,$(HdlTarget))) >> $(CoreOrLibName)-imports.tcl;\
     $(if $(filter $c,$(Cores)),,\
       $(foreach w,$(subst _rv,,$(basename $(notdir $c))),\
         $(foreach d,$(dir $c),\
@@ -457,7 +455,7 @@ VivadoIncludeCores=\
 # Vivado's function for including sources
 VivadoIncludeSources=$(infox IncSrcs:$1:$2)\
       echo puts '\"'Assignments for $2 local source files'\"' >> $(CoreOrLibName)-imports.tcl; \
-      echo add_files_set_lib $2 '\"'$1'\"' >> $(CoreOrLibName)-imports.tcl; 
+      echo add_files_set_lib $2 '\"'$1'\"' >> $(CoreOrLibName)-imports.tcl;
 
 # Vivado's function for including include dirs
 VivadoIncludeIncludedirs=\
@@ -486,7 +484,7 @@ HdlToolCompile=\
   rm -f $(CoreOrLibName)-imports.tcl;\
   $(VivadoIncludeDependencies)\
   $(call OcpiXilinxVivadoInit); \
-  $(if $(HdlNoElaboration),,vivado -mode batch -source $(OCPI_CDK_DIR)/include/hdl/vivado-synth.tcl -nolog -journal vivado.jou -tclargs \
+  $(if $(and $(HdlNoElaboration),$(filter $(HdlMode),library)),,vivado -mode batch -source $(OCPI_CDK_DIR)/include/hdl/vivado-synth.tcl -nolog -journal vivado.jou -tclargs \
     tcl_imports=$(CoreOrLibName)-imports.tcl \
     artifact='$(notdir $@)' \
     hdl_mode='$(HdlMode)' \
@@ -494,8 +492,6 @@ HdlToolCompile=\
     synth_part='$(VivadoSynthesisPart)' \
     synth_opts='$(call VivadoOptions,synth)' \
     edif_opts='$(VivadoEdifOptions)';)
-#
-#$(filter %_pkg.vhd %_bb.v,$(HdlSources))),\
 
 VivadoToolExports=\
   $(foreach f,$(if $(filter $(HdlMode),core),$(wildcard $(CoreBlackBoxFiles)),$(HdlSources)),\
@@ -528,15 +524,15 @@ HdlToolPost=$(infox HS:$(HdlSources):VTE:$(VivadoToolExports))\
 endif
 
 #        rm -f $(CoreOrLibName)/$(notdir $$s);
-# HdlGrepExclude specifies a string that will be passed to grep when determining 
+# HdlGrepExclude specifies a string that will be passed to grep when determining
 # which strings containing 'error' and 'warning' do NOT indicate failure.
 HdlGrepExclude_vivado:=-e '^CRITICAL WARNING:' -e '|      |Item              |Errors |Warnings |Status |Description       |' -e '0 Errors encountered'
 
 ################################################################################
 # These functions choose output/log files, call the actual implementation
-# steps with arguments. Exit status/errors are grepped for, and the run is 
-# timed. 
-# Flow: 
+# steps with arguments. Exit status/errors are grepped for, and the run is
+# timed.
+# Flow:
 #   1. Make-rule calls DoXilinx
 #   2. DoXilinx runs implementation step
 #   3. DoXilinx calls XilinxAfter
@@ -545,12 +541,12 @@ HdlGrepExclude_vivado:=-e '^CRITICAL WARNING:' -e '|      |Item              |Er
 ################################################################################
 # Echo error or success based on the exit status
 # XilinxAfter: <target-dir> <stage> <exit-status>
-XilinxAfter=echo Time: `cat $1/$2.time` at `date +%T`; \
-        if test $3 != 0; then \
-          $(ECHO) Error: $(HdlToolSet) failed\($3\) on stage "$2". See $1/$2.out.'  '; \
+XilinxAfter=echo Time: `cat $1.time` at `date +%T`; \
+        if test $2 != 0; then \
+          $(ECHO) Error: $(HdlToolSet) failed\($2\) on stage "$1". See $1.out.'  '; \
 	  exit 1;\
         else \
-          $(ECHO) ' Tool "$(HdlToolSet)" for target "$(HdlTarget)" succeeded on stage "$2".  '; \
+          $(ECHO) ' Tool "$(HdlToolSet)" for target "$(HdlTarget)" succeeded on stage "$1".  '; \
 	  exit 0;\
         fi; \
 
@@ -563,12 +559,12 @@ DoXilinx=\
         if test -f $(TargetDir)/vivado-$4.jou ; then \
           mv -f $(TargetDir)/vivado-$4.jou $(TargetDir)/vivado-$4.jou.bak ; \
         fi; \
-	echo " "Details in $2/$4.out; $(call OcpiXilinxVivadoInit,$2/$4.out);\
-	echo Command: $1 $3 >> $2/$4.out; \
-	(/usr/bin/time -f %E -o $2/$4.time bash -c "$1 $3" >> $2/$4.out) 2>&1;\
+	echo " "Details in $4.out; cd $2 ; $(call OcpiXilinxVivadoInit,$4.out);\
+	echo Command: $1 $3 >> $4.out; \
+	(/usr/bin/time -f %E -o $4.time bash -c "$1 $3" >> $4.out) 2>&1;\
         HdlExit=$$$$?;\
-	(echo -n Elapsed time:; tr -d '\n' <$2/$4.time; echo -n ', completed at '; date +%T; echo -n Exit status: $$$$HdlExit) >> $2/$4.out; \
-	$(call XilinxAfter,$2,$4,$$$$HdlExit)
+	(echo -n Elapsed time:; tr -d '\n' <$4.time; echo -n ', completed at '; date +%T; echo -n Exit status: $$$$HdlExit) >> $4.out; \
+	$(call XilinxAfter,$4,$$$$HdlExit)
 
 ###############################################################################
 # The contents below this point are for final implementation steps
@@ -584,7 +580,7 @@ RouteName=$1/$2-route.dcp
 TimingName=$1/$2-timing.rpx
 
 # This variable enables the searching for previous place/route results
-# for incremental compilation. This can speed up rebuild times after 
+# for incremental compilation. This can speed up rebuild times after
 # small changes. Default is false.
 #VivadoIncrementalCompilation=true
 
@@ -610,32 +606,32 @@ TimingName=$1/$2-timing.rpx
 #   e.g. implementation stage, current target, previous checkpoint, part, constraints,
 # The implementation (last argument) is used when naming '.out' files and when priting
 # results
-DoVivado=$(call DoXilinx,vivado -mode batch -source $(OCPI_CDK_DIR)/include/hdl/$1 -nolog -journal $(TargetDir)/vivado-$4.jou,$2,$3,$4)
+DoVivado=$(call DoXilinx,vivado -mode batch -source $(OCPI_CDK_DIR)/include/hdl/$1 -nolog -journal vivado-$4.jou,$2,$3,$4)
 
 # The constraint file(s) to use, first/only arg is platform
 VivadoConstraints=\
   $(or $(HdlConstraints),$(filter-out %_bit.xdc,$(wildcard $(HdlPlatformDir_$1)/*.xdc)))
-# For synth rule: load dcp files of platform and app workers. 
+# For synth rule: load dcp files of platform and app workers.
 define HdlToolDoPlatform_vivado
 
 $(call OptName,$1,$3): $(call SynthName,$1,$3) $(call VivadoConstraints,$5)
 	$(AT)echo -n For $2 on $5 using config $4: creating optimized DCP file using '"opt_design"'.
 	$(AT)$(call DoVivado,vivado-impl.tcl,$1,-tclargs \
 		stage=opt \
-		target_file=$(call OptName,$1,$3) \
+		target_file=$(notdir $(call OptName,$1,$3)) \
 		part=$(call VivadoChoosePart,$(HdlPart_$5)) \
-		edif_file=$(call SynthName,$1,$3) \
+		edif_file=$(notdir $(call SynthName,$1,$3)) \
 		constraints='$(call VivadoConstraints,$5)' \
 		impl_opts='$(call VivadoOptions,opt)' \
 		power_opt=$(if $(VivadoPowerOpt),true,false) \
 		,opt)
 
-$(call PlaceName,$1,$3): $(call OptName,$1,$3) $(call VivadoConstraints,$5)
+$(call PlaceName,$1,$3): $(call OptName,$1,$3)
 	$(AT)echo -n For $2 on $5 using config $4: creating placed DCP file using '"place_design"'.
 	$(AT)$(call DoVivado,vivado-impl.tcl,$1,-tclargs \
 		stage=place \
-		target_file=$(call PlaceName,$1,$3) \
-		checkpoint=$(call OptName,$1,$3) \
+		target_file=$(notdir $(call PlaceName,$1,$3)) \
+		checkpoint=$(notdir $(call OptName,$1,$3)) \
 		part=$(call VivadoChoosePart,$(HdlPart_$5)) \
 		impl_opts='$(call VivadoOptions,place)' \
 		post_place_opt=$(if $(VivadoPostPlaceOpt),true,false) \
@@ -643,12 +639,12 @@ $(call PlaceName,$1,$3): $(call OptName,$1,$3) $(call VivadoConstraints,$5)
 		incr_comp=$(if $(VivadoIncrementalCompilation),true,false) \
 		,place)
 
-$(call RouteName,$1,$3): $(call PlaceName,$1,$3) $(call VivadoConstraints,$5)
+$(call RouteName,$1,$3): $(call PlaceName,$1,$3)
 	$(AT)echo -n For $2 on $5 using config $4: creating routed DCP file using '"route_design"'.
 	$(AT)$(call DoVivado,vivado-impl.tcl,$1,-tclargs \
 		stage=route \
-		target_file=$(call RouteName,$1,$3) \
-		checkpoint=$(call PlaceName,$1,$3) \
+		target_file=$(notdir $(call RouteName,$1,$3)) \
+		checkpoint=$(notdir $(call PlaceName,$1,$3)) \
 		part=$(call VivadoChoosePart,$(HdlPart_$5)) \
 		impl_opts='$(call VivadoOptions,route)' \
 		post_route_opt=$(if $(VivadoPostRouteOpt),true,false) \
@@ -656,12 +652,12 @@ $(call RouteName,$1,$3): $(call PlaceName,$1,$3) $(call VivadoConstraints,$5)
 		incr_comp=$(if $(VivadoIncrementalCompilation),true,false) \
 		,route)
 
-$(call TimingName,$1,$3): $(call RouteName,$1,$3) $(call VivadoConstraints,$5)
+$(call TimingName,$1,$3): $(call RouteName,$1,$3)
 	$(AT)echo -n Generating timing report '(RPX)' for $2 on $5 using $4 using '"report_timing"'.
 	$(AT)$(call DoVivado,vivado-impl.tcl,$1,-tclargs \
 		stage=timing \
-		target_file=$(call TimingName,$1,$3) \
-		checkpoint=$(call RouteName,$1,$3) \
+		target_file=$(notdir $(call TimingName,$1,$3)) \
+		checkpoint=$(notdir $(call RouteName,$1,$3)) \
 		part=$(call VivadoChoosePart,$(HdlPart_$5)) \
                 impl_opts='$(call VivadoOptions,timing)' \
 		,timing)
@@ -670,8 +666,8 @@ $(call BitName,$1,$3,$6): $(call RouteName,$1,$3) $(call TimingName,$1,$3) $(wil
 	$(AT)echo -n For $2 on $5 using config $4: Generating Xilinx Vivado bitstream file $$@.
 	$(AT)$(call DoVivado,vivado-impl.tcl,$1,-tclargs \
 		stage=bit \
-		target_file=$(call BitName,$1,$3,$6) \
-		checkpoint=$(call RouteName,$1,$3) \
+		target_file=$(notdir $(call BitName,$1,$3,$6)) \
+		checkpoint=$(notdir $(call RouteName,$1,$3)) \
 		part=$(call VivadoChoosePart,$(HdlPart_$5)) \
 		constraints='$(wildcard $(HdlPlatformDir_$5)/*_bit.xdc)' \
                 impl_opts='$(call VivadoOptions,bit)' \

@@ -129,7 +129,7 @@ QuartusMakeQsf=\
   $(and $(SubCores_$(HdlTarget)),echo '\#' Import QXP file for each core;) \
   $(foreach c,$(SubCores_$(HdlTarget)),$(infox CCC$c)\
     echo set_global_assignment -name QXP_FILE \
-      '\"'$(call FindRelative,$(TargetDir),$(if $(findstring /,$c),$c,$(call HdlCoreRef,$c,$(HdlTarget))))'\"';\
+      '\"'$(call FindRelative,$(TargetDir),$(call HdlCoreRefMaybeTargetSpecificFile,$c,$(HdlTarget)))'\"';\
     $(if $(filter $c,$(Cores)),,\
       $(foreach w,$(subst _rv,,$(basename $(notdir $c))),$(infox WWW:$w)\
         $(foreach d,$(dir $c),$(infox DDD:$d)\

@@ -56,7 +56,7 @@ namespace
       std::cout << "Exception(u) unknown" << std::endl;
       FAIL();
     }
- 
+
   }
 
   void test04Thread ( void* opaque )
@@ -202,7 +202,7 @@ namespace
     {
       std::cout << "Exception(s) " << s << std::endl;
       FAIL();
-    } 
+    }
     catch ( ... )
     {
       std::cout << "Exception(u) unknown" << std::endl;
@@ -233,7 +233,7 @@ namespace
     {
       std::cout << "Exception(s) " << s << std::endl;
       FAIL();
-    } 
+    }
     catch ( ... )
     {
       std::cout << "Exception(u) unknown" << std::endl;
@@ -287,7 +287,7 @@ namespace
     {
       std::cout << "Exception(s) " << s << std::endl;
       FAIL();
-    } 
+    }
     catch ( ... )
     {
       std::cout << "Exception(u) unknown" << std::endl;
@@ -309,7 +309,7 @@ namespace
     se.close ( );
     tm.join ( );
     EXPECT_NE( td.timeWaited, -1 );
-    EXPECT_LT( td.timeWaited, 5 );
+    EXPECT_LT( td.timeWaited, 9 ); // 10 seconds is self-destruct... was 5 but too slow on Jenkins testing
     EXPECT_EQ( td.gotException, true );
   }
 
@@ -332,4 +332,3 @@ namespace
   }
 
 } // End: namespace<unnamed>
-

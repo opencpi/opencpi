@@ -217,6 +217,18 @@ HdlCoreRef=$(infox HCR:$1:$2:$(HdlMode))$(strip \
      $(error No core found for "$1" on target "$2"))\
 )
 
+# $(call HdlCoreRefMaybeTargetSpecificFile,core-path-or-name,target)
+# Check whether arg 1 is actually a path to a core. This check is done
+#   by checking if the string contains '/', if the filename itself
+#   contains a '.', and if the path to the file actually exists.
+#   This is not foolproof, but gives us a good idea of whether arg 1
+#   is a path to a core that should be left as is. If so, return it.
+# If arg 1 is NOT a path that should be left alone, determine the
+#   tool-specific path to the core.
+HdlCoreRefMaybeTargetSpecificFile=$(infox HCRMTSF:$1:$2)$(strip \
+  $(if $(and $(findstring /,$1),$(findstring .,$(basename $1)),$(call HdlExists,$1)),\
+    $1,\
+    $(call HdlCoreRef,$(call HdlToolCoreRef,$1),$2)))
 
 ################################################################################
 # $(call HdlLibraryRefFile,location-dir,target)
