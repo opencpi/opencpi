@@ -60,7 +60,8 @@ endif
 CFLAGS += $(EXTRA_CFLAGS)
 CXXFLAGS += $(EXTRA_CXXFLAGS)
 ALLDEFS += $(EXTRA_DEFS)
-ALLINC += $(wildcard ../../*/include) $(wildcard ../../*/idl) $(EXTRA_INCLUDES)
+# Include the source dir in the search path for "private" headers
+ALLINC += . $(wildcard ../../*/include) $(wildcard ../../*/idl) $(EXTRA_INCLUDES)
 
 ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)
 ifneq ($(filter linux macos,$(OCPI_TARGET_OS)),)

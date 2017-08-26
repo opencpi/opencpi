@@ -33,7 +33,7 @@
 #include "OcpiUtilEzxml.h"
 #include "OcpiUtilUUID.h"
 #include "OcpiDriverManager.h"
-#include "OcpiUtilImplementation.h"
+#include "OcpiUtilWorker.h"
 #include "OcpiLibraryApi.h"
 
 namespace OCPI {
@@ -103,6 +103,7 @@ namespace OCPI {
       const char *m_metadata;
       std::time_t m_mtime; // modification time associated with when we read the metadata
       uint64_t m_length;   // the length of the artifact file without the metadata
+      size_t m_metaLength; // the length of the stuff appended to the file
       ezxml_t m_xml;
       // A count and array of implementations found in the artifact, *not* static instances.
       unsigned m_nImplementations;
@@ -113,14 +114,15 @@ namespace OCPI {
       // A count of static instances added to the worker map (m_workers)
       unsigned m_nWorkers;
     public:
-      static char *getMetadata(const char *name, std::time_t &mtime, uint64_t &length);
+      static char *getMetadata(const char *name, std::time_t &mtime, uint64_t &length,
+			       size_t &metaLength);
     protected:
       Artifact();
       virtual ~Artifact();
       Implementation *addImplementation(OCPI::Util::Worker &metaImpl, ezxml_t staticInstance);
       void getFileMetadata(const char *name);
       const char *setFileMetadata(const char *name, char *metadata, std::time_t mtime,
-				  uint64_t length);
+				  uint64_t length, size_t metaLength);
     public:
       void configure(ezxml_t x = NULL);
       // Can this artifact run on something with these capabilities?
@@ -138,6 +140,7 @@ namespace OCPI {
       virtual const std::string &name() const = 0;
       std::time_t mtime() const { return m_mtime; }
       uint64_t length() const { return m_length; }
+      size_t metadataLength() const { return m_metaLength; }
       virtual Artifact *nextArtifact() = 0;
       virtual Library &library() const = 0;
       void printSpecs(std::set<const char *, OCPI::Util::ConstCharComp> &specs) const;
@@ -221,7 +224,7 @@ namespace OCPI {
       virtual Artifact *findArtifact(const char *url) = 0;
       // Return NULL if the artifact is not supported by the driver
       virtual Artifact *addArtifact(const char *url,
-				    const OCPI::API::PValue *props = NULL) = 0;
+				    const OCPI::API::PValue *params = NULL) = 0;
       Artifact *findArtifact(const Capabilities &caps,
 			     const char *impl,
 			     const OCPI::API::PValue *props,

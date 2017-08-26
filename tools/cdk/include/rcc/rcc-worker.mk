@@ -79,7 +79,7 @@ ifdef OcpiBuildingACI
   RccSpecificLinkOptions=\
     $(call RccPrioritize,MainLinkOptions,$(OcpiLanguage),$(RccTarget),$(RccPlatform))
   override RccLibrariesInternal+=\
-    application container library transport rdma_driver_interface rdma_utils rdma_smb util \
+    application container library transport xfer util \
     msg_driver_interface os   
 else
   RccSpecificLinkOptions=\
@@ -147,7 +147,7 @@ endef
 
 CompilerWarnings= -Wall -Wextra
 CompilerDebugFlags=-g
-CompilerOptimizeFlags=-O
+CompilerOptimizeFlags=-O3 -g -DNDEBUG=1
 ifeq ($(OCPI_DEBUG),1)
 RccCompileOptions=$(CompilerDebugFlags)
 else

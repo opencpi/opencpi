@@ -364,7 +364,7 @@ namespace OCPI {
       return NULL;
     }
     const char *Value::
-    parseUChar(const char*cp, const char *end, uint8_t &vp) {
+    parseUChar(const char *cp, const char *end, uint8_t &vp) {
       while (isspace(*cp))
 	cp++;
       if (*cp == '\'') {
@@ -545,7 +545,8 @@ namespace OCPI {
 	delete [] m_types;
 	m_types = NULL;
       }
-      if (m_vt && (m_vt->m_isSequence || m_vt->m_arrayRank)) {
+      if (m_vt && (m_vt->m_isSequence || m_vt->m_arrayRank) &&
+	  (m_nTotal || m_vt->m_baseType == OA::OCPI_String)) {
 	switch(m_vt->m_baseType) {
 #define OCPI_DATA_TYPE(s,c,u,b,run,pretty,storage)	 \
 	case OA::OCPI_##pretty:			         \
@@ -575,7 +576,8 @@ namespace OCPI {
     const char *
     Value::allocate(bool add) {
       if (m_vt->m_isSequence) {
-	if (m_nElements == 0)
+	// For string sequences we always need a "null ptr after the last one"
+	if (m_nElements == 0 && m_vt->m_baseType != OA::OCPI_String)
 	  return NULL;
 	if (m_vt->m_sequenceLength && m_nElements > m_vt->m_sequenceLength)
 	  return esprintf("Too many elements (%zu) in bounded sequence (%zu)",
@@ -711,6 +713,11 @@ namespace OCPI {
 	    if ((err = parseElement(start, end, n)))
 	      return err;
 	  }
+	// Null terminate 
+	if (m_vt->m_baseType == OA::OCPI_String && !m_vt->m_arrayRank) {
+	  assert(m_pString);
+	  m_pString[m_nElements] = NULL;
+	}
       } else if ((err = parseElement(unparsed, stop, 0)))
 	return err;
       m_parsed = true;

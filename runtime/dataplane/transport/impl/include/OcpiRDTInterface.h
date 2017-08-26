@@ -1,28 +1,42 @@
+
 /*
- * This file is protected by Copyright. Please refer to the COPYRIGHT file
- * distributed with this source distribution.
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
- * This file is part of OpenCPI <http://www.opencpi.org>
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
  *
- * OpenCPI is free software: you can redistribute it and/or modify it under the
- * terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation, either version 3 of the License, or (at your option) any
- * later version.
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
  *
- * OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #ifndef OCPIRDT_INTERFACE_H_
 #define OCPIRDT_INTERFACE_H_
 
 #include <stdint.h>
-#include "DtOsDataTypes.h"
+#include "XferEndPoint.h"
 
 namespace OCPI {
   namespace RDT {
@@ -36,7 +50,7 @@ namespace OCPI {
     // These roles are not supported for all protocols, but those that need it
     // specify it.  Roughly, the order is the order of "goodness" when there is
     // no other basis for choosing a role
-    // !!!!****** Adjust the role name strings in OcpiContainerPort.cxx if you change this.
+    // !!!!****** Adjust the role name strings in ContainerPort.cxx if you change this.
     enum PortRole {
       ActiveMessage,     // Port will move data
                          // For a consumer, this means pulling data from the producer.
@@ -52,12 +66,19 @@ namespace OCPI {
       MaxRole,           // Number of valid roles
       NoRole             // Role is unspecified (during negotiation)
     };
+#define OCPI_RDT_ROLE_NAMES \
+  "ActiveMessage", "ActiveFlowControl", "ActiveOnly", "Passive", "MaxRole", "NoRole"    
+#define OCPI_RDT_OTHER_ROLES \
+    OCPI::RDT::ActiveFlowControl, OCPI::RDT::ActiveMessage, OCPI::RDT::Passive, \
+    OCPI::RDT::ActiveOnly
+
     // These options are smaller issues than port roles, and may apply across roles
     // The low order bits are used for what roles are possible for a port (during negotiation)
     enum ProtocolOptions {
       FeedbackIsCount = MaxRole, // The doorbell indicating feedback is a count of buffers rather than a constant
       MandatedRole,              // Role is not a preference, but a mandate
       FlagIsMeta,                // Flag is compressed metadata
+      FlagIsCounting,            // Flag is an incrementing counter
       MaxOption
     };
 
@@ -97,7 +118,7 @@ namespace OCPI {
       int32_t   role;    // signed to suppress compiler warnings vs. enums
       uint32_t  options; // bit fields based on role.
       Desc_t    desc;
-      Descriptors() : role(NoRole){}
+      Descriptors();
     };
     typedef Descriptors Descriptor;
     // Debug utils

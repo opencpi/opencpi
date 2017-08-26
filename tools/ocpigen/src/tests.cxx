@@ -29,6 +29,7 @@
 #include "OcpiUtilEzxml.h"
 #include "OcpiLibraryManager.h"
 #include "wip.h"
+#include "data.h"
 #include "hdl-device.h"
 
 #define TESTS "-tests.xml"
@@ -349,8 +350,8 @@ namespace {
       bool suppress, stop;
       if ((err = OE::getNumber(x, "messageSize", &m_messageSize, 0, true, false)) ||
 	  (err = OE::getBoolean(x, "messagesInFile", &m_messagesInFile)) ||
-	  (err = OE::getBoolean(x, "suppressEOF", &m_suppressEOF, false, &suppress)) ||
-	  (err = OE::getBoolean(x, "stopOnEOF", &m_stopOnEOF, false, &stop)))
+	  (err = OE::getBoolean(x, "suppressEOF", &m_suppressEOF, false, true, &suppress)) ||
+	  (err = OE::getBoolean(x, "stopOnEOF", &m_stopOnEOF, false, true, &stop)))
 	return err;
       if (!ezxml_cattr(x, "stopOnEOF"))
 	m_stopOnEOF = true; // legacy exception to the default-is-always-false rule
@@ -537,7 +538,7 @@ namespace {
 	  const char *a, *err, *tag = dp.isDataProducer() ? "output" : "input";
 	  InputOutput *myIo = NULL;
 	  for (ezxml_t iox = ezxml_cchild(x, tag); iox; iox = ezxml_cnext(iox))
-	    if ((a = ezxml_cattr(iox, "port")) && !strcasecmp(p.cname(), a)) {
+	    if ((a = ezxml_cattr(iox, "port")) && !strcasecmp(p.pname(), a)) {
 	      // explicit io for port - either ref to global or complete one here.
 	      if ((a = ezxml_cattr(iox, "name"))) {
 		InputOutput *ios = findIO(a, dp.isDataProducer() ? outputs : inputs);
@@ -561,9 +562,9 @@ namespace {
 		ios = new InputOutput;
 		ios->m_port = &dp;
 		fprintf(stderr, "Warning:  no output file or script defined for port \"%s\"\n",
-			dp.cname());
+			dp.pname());
 	      } else
-		return OU::esprintf("No global %s defined for port: \"%s\"", tag, p.cname());
+		return OU::esprintf("No global %s defined for port: \"%s\"", tag, p.pname());
 	    }
 	    m_ports.push_back(*ios);
 	  }
@@ -899,8 +900,8 @@ namespace {
 	for (unsigned n = 0; n < m_ports.size(); n++) {
 	  InputOutput &io = m_ports[n];
 	  if (!io.m_port->isDataProducer() && io.m_script.size()) {
-	    if ((err = generateFile(first, "inputs", "input port", s, io.m_port->m_name,
-				    io.m_script, env, file)))
+	    if ((err = generateFile(first, "inputs", "input port", s, 
+				    io.m_port->OU::Port::m_name, io.m_script, env, file)))
 	      return err;
 	  }
 	}
@@ -915,7 +916,7 @@ namespace {
 	if (nOutputs == 1)
 	  app += " connect='file_write'";
 	else
-	  OU::formatAdd(app, " connect='file_write_from_%s'", first->cname());
+	  OU::formatAdd(app, " connect='file_write_from_%s'", first->pname());
       }
       bool any = false;
       for (unsigned n = 0; n < pc.params.size(); n++) {
@@ -978,9 +979,9 @@ namespace {
 	    if (!first)
 	      first = &p;
 	    nOutputs++;
-	    if (p.m_worker == wFirst)
+	    if (&p.worker() == wFirst)
 	      nWOut++;
-	    else if (p.m_worker == emulator) {
+	    else if (&p.worker() == emulator) {
 	      if (!firstEm)
 		firstEm = &p;
 	      nEmOut++;
@@ -988,9 +989,9 @@ namespace {
 	      assert("port is neither worker or emulator?" == 0);
 	  } else {
 	    nInputs++;
-	    if (p.m_worker == wFirst)
+	    if (&p.worker() == wFirst)
 	      nWIn++;
-	    else if (p.m_worker == emulator)
+	    else if (&p.worker() == emulator)
 	      nEmIn++;
 	    else
 	      assert("port is neither worker or emulator?" == 0);
@@ -1002,7 +1003,7 @@ namespace {
 	else if (nOutputs == 1)
 	  OU::formatAdd(app, " done='file_write'");
 	else if (nOutputs > 1) {
-	  OU::formatAdd(app, " done='file_write_from_%s'", first->cname());
+	  OU::formatAdd(app, " done='file_write_from_%s'", first->pname());
 	}
 	app += ">\n";
 	if (nInputs)
@@ -1011,7 +1012,7 @@ namespace {
 	      OU::formatAdd(app, "  <instance component='ocpi.file_read' connect='%s'", dut);
 	      InputOutput &io = m_ports[n];
 	      if (nInputs > 1)
-		OU::formatAdd(app, " to='%s'",  io.m_port->cname());
+		OU::formatAdd(app, " to='%s'",  io.m_port->pname());
 	      app += ">\n";
 	      std::string l_file;
 	      if (io.m_file.size())
@@ -1019,7 +1020,7 @@ namespace {
 			      io.m_file.c_str());
 	      else
 		OU::formatAdd(l_file, "../../gen/inputs/%s.%02u.%s", m_name.c_str(), s,
-			      io.m_port->cname());
+			      io.m_port->pname());
 	      OU::formatAdd(app, "    <property name='filename' value='%s'/>\n", l_file.c_str());
 	      if (io.m_messageSize)
 		OU::formatAdd(app, "    <property name='messageSize' value='%zu'/>\n",
@@ -1039,7 +1040,7 @@ namespace {
 	    if (io.m_port->isDataProducer()) {
 	      OU::formatAdd(app, "  <instance component='ocpi.file_write'");
 	      if (nOutputs > 1)
-		OU::formatAdd(app, " name='file_write_from_%s'", io.m_port->cname());
+		OU::formatAdd(app, " name='file_write_from_%s'", io.m_port->pname());
 	      if (!io.m_messagesInFile && io.m_stopOnEOF)
 		app += "/>\n";
 	      else {
@@ -1052,26 +1053,26 @@ namespace {
 	      }
 #if 0
 	      std::string file;
-	      OU::formatAdd(file, "%s.%02u.%s.output", m_name.c_str(), s, m_ports[n].m_port->cname());
+	      OU::formatAdd(file, "%s.%02u.%s.output", m_name.c_str(), s, m_ports[n].m_port->pname());
 	      OU::formatAdd(app, "    <property name='filename' value='%s'/>\n", file.c_str());
 	      app += "  </instance>\n";
 #endif
-	      if (io.m_port->m_worker == wFirst && nWOut > 1)
+	      if (&io.m_port->worker() == wFirst && nWOut > 1)
 		OU::formatAdd(app,
 			      "  <connection>\n"
 			      "    <port instance='%s' name='%s'/>\n"
 			      "    <port instance='file_write_from_%s' name='in'/>\n"
 			      "  </connection>\n",
-			      dut, io.m_port->cname(),
-			      io.m_port->cname());
-	      if (io.m_port->m_worker == emulator && nEmOut > 1)
+			      dut, io.m_port->pname(),
+			      io.m_port->pname());
+	      if (&io.m_port->worker() == emulator && nEmOut > 1)
 		OU::formatAdd(app,
 			      "  <connection>\n"
 			      "    <port instance='%s' name='%s'/>\n"
 			      "    <port instance='file_write_from_%s' name='in'/>\n"
 			      "  </connection>\n",
-			      em, io.m_port->cname(),
-			      io.m_port->cname());
+			      em, io.m_port->pname(),
+			      io.m_port->pname());
 	    }
 	  }
 	app += "</application>\n";
@@ -1134,7 +1135,7 @@ namespace {
 			  "while read comp name value; do\n"
 			  "  [ $comp = \"%s\"%s%s%s ] && eval export OCPI_TEST_$name=\"$value\"\n"
 			  "done < %s.$subcase.$worker.props\n",
-			  m_name.c_str(), m_name.c_str(), io.m_port->cname(),
+			  m_name.c_str(), m_name.c_str(), io.m_port->pname(),
 			  strrchr(specName.c_str(), '.') + 1,
 			  emulator ? " -o $comp = \"" : "",
 			  emulator ? strrchr(emulator->m_specName, '.') + 1 : "",
@@ -1171,19 +1172,19 @@ namespace {
 	      InputOutput &in = m_ports[nn];
 	      if (!in.m_port->isDataProducer())
 		OU::formatAdd(inArgs, " ../../gen/inputs/%s.$subcase.%s",
-			      m_name.c_str(), in.m_port->cname());
+			      m_name.c_str(), in.m_port->pname());
 	    }
 	    if (io.m_view.size())
 	      OU::formatAdd(verify, "[ -z \"$view\" ] || %s%s %s.$subcase.$worker.%s.out %s\n",
 			    io.m_view[0] == '/' ? "" : "../../",
-			    io.m_view.c_str(), m_name.c_str(), io.m_port->cname(),
+			    io.m_view.c_str(), m_name.c_str(), io.m_port->pname(),
 			    inArgs.c_str());
 	    if (io.m_script.size() || io.m_file.size()) {
 	      OU::formatAdd(verify, "[ -z \"$verify\" ] || {\n");
 	      if (io.m_script.size())
 		OU::formatAdd(verify, "  %s%s %s.$subcase.$worker.%s.out %s\n",
 			      io.m_script[0] == '/' ? "" : "../../",
-			      io.m_script.c_str(), m_name.c_str(), io.m_port->cname(),
+			      io.m_script.c_str(), m_name.c_str(), io.m_port->pname(),
 			      inArgs.c_str());
 	      else
 		OU::formatAdd(verify,
@@ -1204,7 +1205,7 @@ namespace {
 			    "  fi\n"
 			    "  tput sgr0\n"
 			    "  [ $r = 0 ] || exitval=1\n"
-			    "}\n", io.m_port->cname(), io.m_port->cname());
+			    "}\n", io.m_port->pname(), io.m_port->pname());
 	    } else
 	      OU::formatAdd(verify,
 			    "echo  ***No actual verification is being done.  Output is: $*\n");
@@ -1328,7 +1329,7 @@ namespace {
 	    bool first = true;
 	    for (unsigned n = 0; n < m_ports.size(); n++)
 	      if (m_ports[n].m_port->isDataProducer()) {
-		OU::formatAdd(ports, "%s%s", first ? "" : " ", m_ports[n].m_port->cname());
+		OU::formatAdd(ports, "%s%s", first ? "" : " ", m_ports[n].m_port->pname());
 		first = false;
 	      }
 	    fprintf(out, "      <worker name='%s' model='%s' outputs='%s'/>\n",
@@ -1408,10 +1409,10 @@ namespace {
 		      "    <port instance='%s_%s' %s='%s'/>\n"
 		      "    <port instance='%s' %s='%s'/>\n"
 		      "  </Connection>\n",
-		      w.m_implName, p.cname(), p.isDataProducer() ? "write" : "read",
-		      w.m_implName, p.cname(), p.isDataProducer() ? "to" : "from",
+		      w.m_implName, p.pname(), p.isDataProducer() ? "write" : "read",
+		      w.m_implName, p.pname(), p.isDataProducer() ? "to" : "from",
 		      p.isDataProducer() ? "in" : "out",
-		      w.m_implName, p.isDataProducer() ? "from" : "to", p.cname());
+		      w.m_implName, p.isDataProducer() ? "from" : "to", p.pname());
       }
   }
 
@@ -1444,7 +1445,7 @@ namespace {
 			"    <port instance='%s' name='%s'/>\n"
 			"    <port instance='%s' name='%s'/>\n"
 			"  </connection>\n",
-			w.m_implName, p.cname(), emulator->m_implName, p.cname());
+			w.m_implName, p.pname(), emulator->m_implName, p.pname());
       }
     }
     if (hdlFileIO) {

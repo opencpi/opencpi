@@ -296,7 +296,7 @@ static int config_and_run_misc_cont_tests(const char *test_name, std::vector<CAp
 
   TRY_AND_SET(err_code, err_str, "", PRODUCER.worker->start());
   if ( !strstr(err_str.c_str(), "not connected")) { // code != OU::PORT_NOT_CONNECTED ) {
-    TUPRINTF("Bad error code returned\n");
+    TUPRINTF("Bad error code returned: %s\n", err_str.c_str());
     testPassed = false;
     goto done;
   }

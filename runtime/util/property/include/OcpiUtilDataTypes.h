@@ -176,9 +176,9 @@ namespace OCPI {
 	     OCPI::API::BaseType type, bool isSequence, const char *defaultValue);
       virtual ~Member();
       Member &sequenceType() const;
-      void printAttrs(FILE *f, const char *tag, unsigned indent = 0, bool suppressDefault = false);
-      void printChildren(FILE *f, const char *tag, unsigned indent = 0);
-      void printXML(FILE *f, const char *tag, unsigned indent);
+      void printAttrs(std::string &out, const char *tag, unsigned indent = 0, bool suppressDefault = false);
+      void printChildren(std::string &out, const char *tag, unsigned indent = 0);
+      void printXML(std::string &out, const char *tag, unsigned indent);
       void write(Writer &writer, const uint8_t *&data, size_t &length, bool topSeq = false);
       // Fake means don't actually touch the message.
       void read(Reader &reader, uint8_t *&data, size_t &length, bool fake = false,
@@ -193,14 +193,15 @@ namespace OCPI {
 	*parse(ezxml_t x, bool isFixed, bool hasName, const char *hasDefault, const char *tag,
 	       unsigned ordinal, const IdentResolver *resolv = NULL),
 	*offset(size_t &maxAlign, size_t &argOffset, size_t &minSize, bool &diverseSizes,
-		bool &sub32, bool &unBounded, bool isTop = false);
+		bool &sub32, bool &unBounded, bool &isVariable, bool isTop = false);
+      uint8_t *getField(uint8_t *data, size_t &length) const;
       static const char *
       parseMembers(ezxml_t prop, size_t &nMembers, Member *&members, bool isFixed,
 		   const char *tag, const char *vtag, const IdentResolver *resolv = NULL);
       static const char *
-      alignMembers(Member *m, size_t nMembers,
-		   size_t &maxAlign, size_t &myOffset,
-		   size_t &minSize, bool &diverseSizes, bool &sub32, bool &unBounded, bool isTop = false);
+      alignMembers(Member *m, size_t nMembers, size_t &maxAlign, size_t &myOffset,
+		   size_t &minSize, bool &diverseSizes, bool &sub32, bool &unBounded,
+		   bool &isVariable, bool isTop = false);
     };
     // These two are indexed by the BaseType
     extern const char *baseTypeNames[];

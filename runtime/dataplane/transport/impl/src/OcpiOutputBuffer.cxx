@@ -1,25 +1,38 @@
 /*
- * This file is protected by Copyright. Please refer to the COPYRIGHT file
- * distributed with this source distribution.
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
- * This file is part of OpenCPI <http://www.opencpi.org>
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
  *
- * OpenCPI is free software: you can redistribute it and/or modify it under the
- * terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation, either version 3 of the License, or (at your option) any
- * later version.
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
  *
- * OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
- * Abstract:
+ * Abstact:
  *   This file contains the implementation for the OCPI output buffer class.
  *
  * Revision History: 
@@ -94,13 +107,13 @@ void OutputBuffer::update(bool critical)
 	      getPort(), getPort()->getMetaData()->m_bufferData,
 	      this, tid, output_offsets->bufferOffset, output_offsets);
 
-    m_bVaddr = getPort()->getLocalShemServices()->map
+    m_bVaddr = getPort()->getLocalShemServices()->mapTx
       (output_offsets->bufferOffset, 
        output_offsets->bufferSize);
     m_startOffset = output_offsets->bufferOffset;
     m_length = output_offsets->bufferSize;
     memset(m_bVaddr, 0, output_offsets->bufferSize);
-    m_buffer = m_baseAddress = m_bVaddr;
+    m_buffer = /*m_baseAddress = */ m_bVaddr;
 
 #ifdef DEBUG_L2
     ocpiDebug("*** Output buffer addr = 0x%x, size = %d", m_buffer, output_offsets->bufferSize );
@@ -113,7 +126,7 @@ void OutputBuffer::update(bool critical)
 
     ocpiDebug("OutputBuffer:%p update: mapping states", this);
 
-    m_bsVaddr = getPort()->getLocalShemServices()->map
+    m_bsVaddr = getPort()->getLocalShemServices()->mapTx
       (output_offsets->localStateOffset, 
        sizeof(BufferState)*MAX_PCONTRIBS*2);
 
@@ -137,7 +150,7 @@ void OutputBuffer::update(bool critical)
 
     ocpiDebug("OutputBuffer:update: mapping metadata");
 
-    m_bmdVaddr = getPort()->getLocalShemServices()->map
+    m_bmdVaddr = getPort()->getLocalShemServices()->mapTx
       (output_offsets->metaDataOffset, 
        sizeof(BufferMetaData)*MAX_PCONTRIBS);
 
@@ -151,7 +164,7 @@ void OutputBuffer::update(bool critical)
 
     ocpiDebug("OutputBuffer: mapping control structure");
 
-    m_bcsVaddr = getPort()->getLocalShemServices()->map
+    m_bcsVaddr = getPort()->getLocalShemServices()->mapTx
       (output_offsets->portSetControlOffset, 
        sizeof(OutputPortSetControl));
 

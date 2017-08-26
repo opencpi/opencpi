@@ -43,14 +43,16 @@ namespace OCPI {
     class Member;
   }
   namespace API {
+    class ExternalPort;
     class ExternalBuffer {
     protected:
       virtual ~ExternalBuffer();
     public:
-      // For consumer buffers
-      virtual void release() = 0;
-      // For producer buffers
-      virtual void put( size_t length, uint8_t opCode = 0, bool endOfData = false) = 0;
+      virtual void
+	release() = 0,
+	take() = 0,
+	put() = 0,
+	put(size_t length, uint8_t opCode = 0, bool endOfData = false, size_t direct = 0) = 0;
     };
     class ExternalPort {
     protected:
@@ -66,12 +68,19 @@ namespace OCPI {
       virtual ExternalBuffer *getBuffer(uint8_t *&data, size_t &length) = 0;
       // Use this when end of data indication happens AFTER the last message.
       // Use the endOfData argument to put, when it is known at that time
-      virtual void endOfData() = 0;
+      // Return false when cannot do it due to flow control.
+      // i.e. both getBuffer and endOfData can return NULL/false when it can't be done
+      virtual bool endOfData() = 0;
       // Return whether there are still buffers to send that can't be flushed now.
       virtual bool tryFlush() = 0;
+      // put/send the most recently gotten output buffer
+      virtual void put(size_t length, uint8_t opCode, bool end, size_t direct = 0) = 0;
+      // put/send a particular buffer, PERHAPS FROM ANOTHER PORT
+      virtual void put(OCPI::API::ExternalBuffer &b) = 0;
     };
     class Port {
       friend class OCPI::Container::LocalLauncher;
+      friend class OCPI::Container::Port;
       friend class OCPI::Remote::RemoteLauncher;
     protected:
       virtual ~Port();
@@ -79,15 +88,6 @@ namespace OCPI {
     public:
       virtual void connect(Port &other, const PValue *myParams = NULL,
 			   const PValue *otherParams = NULL) = 0;
-      virtual void connectURL(const char* url, const PValue *myProps = NULL,
-			      const PValue *otherProps = NULL) = 0;
-
-      virtual void disconnect() = 0;
-      // Connect directly to this port, which creates a UserPort object.
-      virtual ExternalPort &connectExternal(const char *name = NULL,
-					    const PValue *myParams = NULL,
-					    const PValue *extParams = NULL) = 0;
-      virtual void loopback(Port &other) = 0;
     };
     class Property;
     class PropertyInfo;

@@ -42,12 +42,11 @@ namespace OCPI {
       ApplicationI &m_application;
       Application(ApplicationI &);
     public:
-
       // The constructor does the planning, deciding what impl will run where
       explicit Application(const char *file, const OCPI::API::PValue *params = NULL);
       explicit Application(const std::string &string, const OCPI::API::PValue *params = NULL);
       // Creates a new Application instance from the app template
-      explicit Application(Application & app, const OCPI::API::PValue *params = NULL);
+      explicit Application(Application &app, const OCPI::API::PValue *params = NULL);
 
       virtual ~Application();
       // INTERNAL ACCESSOR NOT SUPPORTED FOR API

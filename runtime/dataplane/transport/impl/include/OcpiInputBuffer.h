@@ -1,25 +1,40 @@
-/*
- * This file is protected by Copyright. Please refer to the COPYRIGHT file
- * distributed with this source distribution.
- *
- * This file is part of OpenCPI <http://www.opencpi.org>
- *
- * OpenCPI is free software: you can redistribute it and/or modify it under the
- * terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation, either version 3 of the License, or (at your option) any
- * later version.
- *
- * OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- */
 
 /*
- * Abstract:
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
+ *
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
+ *
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+
+/*
+ * Abstact:
  *   This file contains the Interface for the input buffer class.
  *
  * Revision History: 
@@ -33,7 +48,6 @@
 #ifndef OCPI_DataTransport_InputBuffer
 #define OCPI_DataTransport_InputBuffer
 
-#include <DtOsDataTypes.h>
 #include <OcpiBuffer.h>
 #include <OcpiRDTInterface.h>
 #include <OcpiOsMutex.h>
@@ -139,13 +153,13 @@ namespace OCPI {
        * real inputs state that can consist of N states in sequentail distribution, where N
        * is equal to the number of output ports.
        **********************************/
-      virtual volatile DataTransfer::BufferState* getState();
-      volatile DataTransfer::BufferState* getState(OCPI::OS::uint32_t rank);
+      virtual volatile BufferState* getState();
+      volatile BufferState* getState(OCPI::OS::uint32_t rank);
 
       /**********************************
        * Get the offset to this ports meta-data
        **********************************/
-      volatile DataTransfer::BufferMetaData* getMetaData();
+      volatile BufferMetaData* getMetaData();
 
                 
       /**********************************
@@ -162,7 +176,7 @@ namespace OCPI {
       /**********************************
        * Get the Output produced meta data by index
        *********************************/
-      volatile DataTransfer::BufferMetaData* getMetaDataByIndex( OCPI::OS::uint32_t idx );
+      volatile BufferMetaData* getMetaDataByIndex( OCPI::OS::uint32_t idx );
 
     protected:
 
@@ -170,10 +184,10 @@ namespace OCPI {
       OCPI::OS::uint32_t m_outputPortCount;
 
       // represents the "AND" of all input buffer states
-      DataTransfer::BufferState m_tState;
+      BufferState m_tState;
 
       // Mapped pointer to our state
-      volatile DataTransfer::BufferState*  m_myShadowsRemoteStates[MAX_PCONTRIBS];
+      volatile BufferState*  m_myShadowsRemoteStates[MAX_PCONTRIBS];
       void          *(m_rssVaddr[MAX_PCONTRIBS]);                // buffer state virtual address
 
       // Keeps track of when it produces

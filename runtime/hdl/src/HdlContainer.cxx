@@ -31,6 +31,7 @@
 #define wmb()        asm volatile("sfence" ::: "memory"); usleep(0)
 #define clflush(p) asm volatile("clflush %0" : "+m" (*(char *)(p))) //(*(volatile char __force *)p))
 
+namespace OH = OCPI::HDL;
 namespace OA = OCPI::API;
 namespace OC = OCPI::Container;
 namespace OS = OCPI::OS;
@@ -39,7 +40,7 @@ namespace OE = OCPI::Util::EzXml;
 namespace OD = OCPI::DataTransport;
 namespace OT = OCPI::Time;
 namespace OL = OCPI::Library;
-namespace DDT = DtOsDataTypes;
+namespace OR = OCPI::RDT;
 
 namespace OCPI {
   namespace Container {}
@@ -71,6 +72,17 @@ namespace OCPI {
       m_osVersion = "";
       m_platform = m_device.platform();
       m_arch = m_device.arch();
+      m_transports.resize(1);
+      m_transports[0].transport = m_device.protocol();
+      m_transports[0].id = OU::getSystemId().c_str();
+      m_transports[0].optionsIn = m_device.dmaOptions(NULL, NULL, true);
+      m_transports[0].optionsOut = m_device.dmaOptions(NULL, NULL, false);
+      m_transports[0].roleIn =
+	m_transports[0].optionsIn & (1 << OR::ActiveMessage) ?
+	OR::ActiveMessage : OR::ActiveFlowControl;
+      m_transports[0].roleOut =
+	m_transports[0].optionsOut & (1 << OR::ActiveMessage) ?
+	OR::ActiveMessage : OR::ActiveFlowControl;
       ocpiDebug("HDL Container for device %s constructed.  ESN: '%s' Platform/part is %s/%s.",
 		name().c_str(), m_device.esn().c_str(), m_device.platform().c_str(),
 		m_device.part().c_str());
@@ -257,7 +269,7 @@ namespace OCPI {
       {}
       OC::Worker & createWorker(OC::Artifact *art, const char *appInstName, ezxml_t impl,
 				ezxml_t inst, OC::Worker *slave, bool hasMaster,
-				const OU::PValue *wParams);
+			        size_t member, size_t crewSize, const OU::PValue *wParams);
     };
 
     OA::ContainerApplication *Container::
@@ -273,9 +285,9 @@ namespace OCPI {
       Container &m_container;
       Worker(Application &app, OC::Artifact *art, const char *a_name, ezxml_t implXml,
 	     ezxml_t instXml, OC::Worker *a_slave, bool a_hasMaster,
-	     const OA::PValue* execParams) :
-        OC::WorkerBase<Application, Worker, Port>(app, *this, art, a_name, implXml, instXml,
-						  a_slave, a_hasMaster, execParams),
+	     size_t member, size_t crewSize, const OA::PValue* execParams) :
+        OC::WorkerBase<Application, Worker, Port>(app, *this, art, a_name, implXml, instXml, a_slave,
+						  a_hasMaster, member, crewSize, execParams),
         WciControl(app.parent().hdlDevice(), implXml, instXml, properties()),
         m_container(app.parent())
       {
@@ -288,13 +300,6 @@ namespace OCPI {
 	WciControl::controlOperation(op);
       }
 
-      // FIXME: These (and sequence/string stuff above) need to be sensitive to
-      // addresing windows in OCCP.
-      void read(size_t, size_t, void*) {
-      }
-      void write(size_t, size_t, const void*) {
-      }
-
       OC::Port & createPort(const OU::Port &metaport, const OA::PValue *props);
 
       virtual void prepareProperty(OU::Property &mp,
@@ -302,19 +307,6 @@ namespace OCPI {
 				   const volatile uint8_t *&readVaddr) {
         return WciControl::prepareProperty(mp, writeVaddr, readVaddr);
       }
-
-      OC::Port &
-      createOutputPort(OU::PortOrdinal portId,
-                       size_t bufferCount,
-                       size_t bufferSize,
-                       const OA::PValue* props) throw();
-      OC::Port &
-      createInputPort(OU::PortOrdinal portId,
-                      size_t bufferCount,
-                      size_t bufferSize,
-                      const OA::PValue* props) throw();
-
-
 #undef OCPI_DATA_TYPE_S
       // Set a scalar property value
 
@@ -382,11 +374,13 @@ OCPI_DATA_TYPES
 	WciControl::getPropertyBytes(info, offset, buf, nBytes, idx, string);
       }
     };
-    OC::Worker & Application::createWorker(OC::Artifact *art, const char *appInstName,
-					   ezxml_t impl, ezxml_t inst, OC::Worker *slave,
-					   bool hasMaster, const OCPI::Util::PValue *wParams) {
+    OC::Worker & Application::
+    createWorker(OC::Artifact *art, const char *appInstName, ezxml_t impl, ezxml_t inst,
+		 OC::Worker *slave, bool hasMaster, size_t member, size_t crewSize,
+		 const OCPI::Util::PValue *wParams) {
       assert(!slave);
-      return *new Worker(*this, art, appInstName, impl, inst, slave, hasMaster, wParams);
+      return *new Worker(*this, art, appInstName, impl, inst, slave, hasMaster, member, crewSize,
+			 wParams);
     }
     // This port class really has two cases: externally connected ports and
     // internally connected ports.
@@ -395,7 +389,8 @@ OCPI_DATA_TYPES
     // minor as to not be worth (re)factoring (currently).
     // The inheritance of WciControl is for the external case
     class ExternalPort;
-    class Port : public OC::PortBase<OCPI::HDL::Worker,Port,ExternalPort>, WciControl {
+    class Port : public OC::PortBase<OH::Worker,OH::Port,OH::ExternalPort>, WciControl {
+      friend class Container;
       friend class Worker;
       friend class ExternalPort;
       ezxml_t m_connection;
@@ -416,11 +411,9 @@ OCPI_DATA_TYPES
            ezxml_t icwXml,  // the xml interconnect/infrastructure worker attached to this port if any
            ezxml_t icXml,   // the xml interconnect instance attached to this port if any
            ezxml_t adwXml,  // the xml adapter/infrastructure worker attached to this port if any
-           ezxml_t adXml,   // the xml adapter instance attached to this port if any
-	   bool argIsProvider) :
-        OC::PortBase<OCPI::HDL::Worker,Port,ExternalPort>
-	(w, *this, mPort, argIsProvider,
-	 w.m_container.hdlDevice().dmaOptions(icwXml, icXml, argIsProvider), params),
+           ezxml_t adXml) :   // the xml adapter instance attached to this port if any
+        OC::PortBase<OH::Worker,OH::Port,OH::ExternalPort>
+	(w, *this, mPort, params),
 	// The WCI will control the interconnect worker.
 	// If there is no such worker, usable will fail.
         WciControl(w.m_container.hdlDevice(), icwXml, icXml, NULL),
@@ -447,11 +440,6 @@ OCPI_DATA_TYPES
 	// But it is possible to have both PCI and Ether ports and this will require it.
 	// If the endpoint into is just a protocol, we just create one locally
 	m_endPoint = &device.getEndPoint();
-#if 0
-	m_endPoint = &DataTransfer::getManager().
-	  allocateProxyEndPoint(device.endpointSpecific().c_str(),
-				OCPI_UTRUNCATE(size_t, device.endpointSize()));
-#endif
 	OD::Transport::fillDescriptorFromEndPoint(*m_endPoint, getData().data);
         // These will be determined at connection time
         myDesc.dataBufferPitch   = 0;
@@ -561,7 +549,7 @@ OCPI_DATA_TYPES
 #endif
 	// Allow default connect params on port construction prior to connect
 	// FIXME: isnt this redundant with the generic code?
-	applyConnectParams(NULL, params);
+	//applyConnectParams(NULL, params);
       }
     public: // for parent/child...
       ~Port() {
@@ -572,7 +560,6 @@ OCPI_DATA_TYPES
       const char *getPreferredProtocol() {
 	return parent().m_container.hdlDevice().protocol();
       }
-      void setMode( ConnectionMode ){};
       void disconnect()
         throw ( OCPI::Util::EmbeddedException )
       {
@@ -580,16 +567,16 @@ OCPI_DATA_TYPES
       }
 
       bool isLocal() const { return false; }
+      bool isInProcess(OC::LocalPort */*other*/) const { return false; }
 
       // Called after connection PValues have been set, which is after our constructor
       // Also error-check for bad combinations or values of parameters
       // FIXME:  we are relying on dataBufferBaseAddr being set before we know
       // buffer sizes etc.  If we are sharing a memory pool, this will not be the case,
       // and we would probably allocate the whole thing here.
-      void startConnect(const OCPI::RDT::Descriptors */*other*/,
-			const OCPI::Util::PValue */*params*/) {
-        if (!m_canBeExternal)
-          return;
+      const OCPI::RDT::Descriptors *
+      startConnect(const OR::Descriptors *other, OR::Descriptors &feedback, bool &done) {
+	assert(m_canBeExternal);
 	uint32_t required;
 	if (m_sdp) {
 	  myDesc.dataBufferPitch =
@@ -607,17 +594,24 @@ OCPI_DATA_TYPES
 	  required = myDesc.nBuffers * (myDesc.dataBufferPitch + OCDP_METADATA_SIZE);
 	}
 	if (required > m_memorySize)
-          throw OU::Error("Requested buffer count/size (%u/%u) on port '%s' of worker '%s' "
+	  throw OU::Error("Requested buffer count/size (%u/%u) on port '%s' of worker '%s' "
 			  "won't fit in the %s's memory (%u)",
 			  myDesc.nBuffers, myDesc.dataBufferSize, name().c_str(),
-			  parent().name().c_str(), m_sdp ? "SDP-DMA" : "OCDP-DMA", m_memorySize);
+			  parent().name().c_str(), m_sdp ? "SDP-DMA" : "OCDP-DMA",
+			  m_memorySize);
+	if (other)
+	  return finishConnect(other, feedback, done);
+	done = false;
+	return &getData().data;
       }
-
+    private:
       // All the info is in.  Do final work to (locally) establish the connection
       // If we're output, we must return the flow control descriptor
       const OCPI::RDT::Descriptors *
-      finishConnect(const OCPI::RDT::Descriptors &other,
-		    OCPI::RDT::Descriptors &/*feedback*/) {
+      finishConnect(const OR::Descriptors *argOther,
+		    OR::Descriptors &/*feedback*/, bool &done) {
+	assert(argOther);
+	const OCPI::RDT::Descriptors &other = *argOther;
 	if (m_sdp) {
 	  m_properties.set8Register(buffer_count, SDP::Properties,
 				    OCPI_UTRUNCATE(uint8_t, myDesc.nBuffers));
@@ -756,35 +750,47 @@ OCPI_DATA_TYPES
 	// at least for the case of simulators
 	m_device.connect(*m_endPoint, getData().data, other);
 	controlOperation(OU::Worker::OpStart);
+	done = true;
+	portIsConnected();
 	return isProvider() ? NULL : &getData().data;
-      }
-      // Connection between two ports inside this container
-      // We know they must be in the same artifact, and have a metadata-defined connection
-      void connectInside(OC::Port &provider, const OA::PValue *, const OA::PValue *otherParams) {
-	provider.startConnect(NULL, otherParams);
-        // We're both in the same runtime artifact object, so we know the port class
-        Port &pport = static_cast<Port&>(provider);
-        if (m_connection != pport.m_connection)
-          throw OU::Error("Ports %s (instance %s) and %s (instance %s) are both local in "
-			  "bitstream/artifact %s, but are not connected (%p %p)",
-			  name().c_str(), parent().name().c_str(),
-			  pport.name().c_str(), pport.parent().name().c_str(),
-			  pport.parent().artifact() ?
-			  pport.parent().artifact()->name().c_str() : "<none>",
-			  m_connection, pport.m_connection);
       }
       OC::ExternalPort &createExternal(const char *extName, bool isProvider,
 				       const OU::PValue *extParams, const OU::PValue *connParams);
     };
+    // Connection between two ports inside this container
+    // We know they must be in the same artifact, and have a metadata-defined connection
+    bool Container::
+    connectInside(OC::BasicPort &in, OC::BasicPort &out) {
+      
+
+      Port 
+	&pport = static_cast<Port&>(in.isProvider() ? in : out),
+	&uport = static_cast<Port&>(out.isProvider() ? in : out);
+      assert(!pport.m_canBeExternal && !uport.m_canBeExternal);
+      return true;
+#if 0
+      bool done;
+      OCPI::RDT::Descriptors dummy;
+      pport.startConnect(NULL, dummy, done);
+      // We're both in the same runtime artifact object, so we know the port class
+      if (uport.m_connection != pport.m_connection)
+	throw OU::Error("Ports %s (instance %s) and %s (instance %s) are both local in "
+			"bitstream/artifact %s, but are not connected (%p %p)",
+			uport.name().c_str(), uport.parent().name().c_str(),
+			pport.name().c_str(), pport.parent().name().c_str(),
+			pport.parent().artifact() ?
+			pport.parent().artifact()->name().c_str() : "<none>",
+			uport.m_connection, pport.m_connection);
+      return true;
+#endif
+    }
     int Port::dumpFd = -1;
 
     // The port may be bidirectional.  If so we need to defer its direction.
     // FIXME: share all this parsing with the OU::Implementation code etc.
-    // FIXME: note that all this connectivity is in the artifact already
     OC::Port &Worker::
     createPort(const OU::Port &metaPort, const OA::PValue *props) {
       const char *myName = metaPort.m_name.c_str();
-      bool isProvider = metaPort.m_provider;
       // Find connections attached to this port
       ezxml_t conn, ic = 0, icw = 0, ad = 0, adw = 0;
       for (conn = ezxml_cchild(myXml()->parent, "connection"); conn; conn = ezxml_next(conn)) {
@@ -901,28 +907,9 @@ OCPI_DATA_TYPES
 	  break; // we found a connection
 	}
       } // loop over all connections
-      return *new Port(*this, props, metaPort, conn, icw, ic, adw, ad, isProvider);
+      return *new Port(*this, props, metaPort, conn, icw, ic, adw, ad);
     }
-    // Here because these depend on Port
-    OC::Port &Worker::
-    createOutputPort(OU::PortOrdinal portId,
-                     size_t bufferCount,
-                     size_t bufferSize,
-                     const OA::PValue* props) throw() {
-      (void)portId; (void)bufferCount; (void)bufferSize;(void)props;
-      ocpiAssert("This method is not expected to ever be called" == 0);
-      return *(Port *)this;
-    }
-    OC::Port &Worker::
-    createInputPort(OU::PortOrdinal portId,
-                    size_t bufferCount,
-                    size_t bufferSize,
-                    const OA::PValue* props) throw() {
-      (void)portId; (void)bufferCount; (void)bufferSize;(void)props;
-      ocpiAssert("This method is not expected to ever be called" == 0);
-      return *(Port *)this;//      return *new Port(*this);
-    }
-
+#if 0
     // only here for proper parent/child
     class ExternalPort : public OC::ExternalPortBase<Port,ExternalPort> {
       friend class Port;
@@ -939,6 +926,7 @@ OCPI_DATA_TYPES
 					       const OU::PValue *extParams, const OU::PValue *connParams) {
       return *new ExternalPort(*this, extName, a_isProvider, extParams, connParams);
     }
+#endif
   }
 }
 

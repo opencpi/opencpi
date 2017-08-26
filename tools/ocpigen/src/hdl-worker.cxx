@@ -851,7 +851,7 @@ emitVhdlPackageConstants(FILE *f) {
     fprintf(f,
 	    "  constant worker : ocpi.wci.worker_t := "
 	    "(work.%s_constants.ocpi_port_%s_MAddr_width, %zu, \"%s\");\n",
-	    m_implName, m_wci->cname(), rawBase, ops);
+	    m_implName, m_wci->pname(), rawBase, ops);
   return NULL;
 }
 

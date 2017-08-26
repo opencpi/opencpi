@@ -118,17 +118,17 @@ namespace OCPI {
 #endif
 
       }
-      Worker &w = createWorker(app, appInstName, impl, inst, NULL, wParams);
+      Worker &w = createWorker(app, appInstName, impl, inst, NULL, false, 0, 1, wParams);
       if (wProps)
 	w.setProperties(wProps);
       return w;
     }
 
-    Worker & Artifact::createWorker(Application &app,
-				    const char *appInstName,
-				    ezxml_t impl, ezxml_t inst, Worker *slave, bool hasMaster,
-				    const OCPI::Util::PValue *wParams) {
-      Worker &w = app.createWorker(this, appInstName, impl, inst, slave, hasMaster, wParams);
+    Worker & Artifact::createWorker(Application &app, const char *appInstName, ezxml_t impl,
+				    ezxml_t inst, Worker *slave, bool hasMaster, size_t member,
+				    size_t crewSize, const OCPI::Util::PValue *wParams) {
+      Worker &w = app.createWorker(this, appInstName, impl, inst, slave, hasMaster, member,
+				   crewSize, wParams);
       m_workers.push_back(&w);
       w.initialize();
       return w;

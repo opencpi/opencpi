@@ -1,22 +1,36 @@
 /*
- * This file is protected by Copyright. Please refer to the COPYRIGHT file
- * distributed with this source distribution.
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
- * This file is part of OpenCPI <http://www.opencpi.org>
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
  *
- * OpenCPI is free software: you can redistribute it and/or modify it under the
- * terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation, either version 3 of the License, or (at your option) any
- * later version.
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
  *
- * OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 
 /*
  *  John Miller -  12/2010
@@ -177,13 +191,13 @@ namespace DataTransfer {
        * Get a free output buffer if one is available
        */
       virtual  OCPI::DataTransport::BufferUserFacet*
-	getNextEmptyOutputBuffer(void *&data, size_t &length) = 0;    
+	getNextEmptyOutputBuffer(uint8_t *&data, size_t &length) = 0;    
 
       /*
        *  Get data on the channel, If no data is available this may block
        */
       virtual OCPI::DataTransport::BufferUserFacet*
-	getNextFullInputBuffer(void *&data, size_t & length, uint8_t &opcode ) = 0;
+	getNextFullInputBuffer(uint8_t *&data, size_t & length, uint8_t &opcode ) = 0;
 
       // Destructor - Note that invoking OcpiXferServices::Release is the preferred method.
       virtual ~MsgChannel () {};
@@ -211,10 +225,10 @@ namespace DataTransfer {
        *                DataTransferEx for all exception conditions
        */
       XferServices (  const OCPI::Util::Protocol & p, 
-		      const char  *a_url,
+		      const char  *url,
 		      const OCPI::Util::PValue *our_props=0,
 		      const OCPI::Util::PValue *other_props=0 )
-	: m_protocol(p),m_url(a_url)
+	: m_protocol(p),m_url(url)
 	{(void)our_props;(void)other_props;attach(); };
 
       /*
@@ -292,13 +306,13 @@ namespace DataTransfer {
       {
       protected:
 	ConnectionBase<ConcDri, ConcConn, ConcXfer>(ConcConn &conn,
-						    const OCPI::Util::Protocol &a_protocol,
+						    const OCPI::Util::Protocol &protocol,
 						    const char* other_url,
 						    const OCPI::Util::PValue *our_props=0,
 						    const OCPI::Util::PValue *other_props=0 )
 	  : OCPI::Util::Child<ConcDri,ConcConn> (OCPI::Util::Singleton<ConcDri>::
 						 getSingleton(), conn),
-	  XferServices(a_protocol,other_url,our_props,other_props)
+	  XferServices(protocol,other_url,our_props,other_props)
 	    {}
       };
     template <class ConcConn, class ConcXfer>

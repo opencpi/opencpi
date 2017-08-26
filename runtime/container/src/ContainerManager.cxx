@@ -21,14 +21,13 @@
 #include "ContainerManager.h"
 #include "ContainerLauncher.h"
 #include "ContainerPort.h"          // just for linkage hooks
-#include "DtSharedMemoryInternal.h" // just for linkage hooks
 #include "OcpiUuid.h"               // just for linkage hooks
-#include "DtMsgDriver.h"            // just for linkage hooks
 #include "OcpiOsSocket.h"           // just for linkage hooks
 #include "OcpiOsServerSocket.h"     // just for linkage hooks
 #include "OcpiOsSemaphore.h"        // just for linkage hooks
 #include "lzma.h"                   // just for linkage hooks
 #include "zlib.h"                   // just for linkage hooks
+#include "pthread_workqueue.h"      // just for linkage hooks
 namespace OCPI {
   namespace Container {
     namespace OA = OCPI::API;
@@ -41,14 +40,13 @@ namespace OCPI {
     // TODO: Move this to a vector to manage its own memory...?
     Container **Manager::s_containers;
     unsigned Manager::s_maxContainer;
-    LocalLauncher *Manager::s_localLauncher;
     static OCPI::Driver::Registration<Manager> cm;
     Manager::Manager() : m_tpg_events(NULL), m_tpg_no_events(NULL) {
     }
 
     Manager::~Manager() {
       // Delete my children before the transportGlobals they depend on.
-      delete s_localLauncher;
+      delete LocalLauncher::singleton();
       deleteChildren();
       if ( m_tpg_no_events ) delete m_tpg_no_events;
       if ( m_tpg_events ) delete m_tpg_events;
@@ -114,14 +112,20 @@ namespace OCPI {
       deleteChildren();
     }
     bool Manager::findContainersX(Callback &cb, OU::Worker &i, const char *a_name) {
+      ocpiDebug("Finding containers for worker %s container name %s",
+		i.name().c_str(), a_name);
       parent().configureOnce();
       for (Driver *d = firstChild(); d; d = d->nextChild())
-	for (Container *c = d->firstContainer(); c; c = c->nextContainer())
+	for (Container *c = d->firstContainer(); c; c = c->nextContainer()) {
+	  ocpiDebug("Trying container c->name: %s ord %u",
+		    c->name().c_str(), c->ordinal());
+	  bool decimal = a_name && a_name[strspn(a_name, "0123456789")] == '\0';
 	  if ((!a_name ||
-	       (isdigit(*a_name) && (unsigned)atoi(a_name) == c->ordinal()) ||
-	       (!isdigit(*a_name) && a_name == c->name())) &&
+	       (decimal && (unsigned)atoi(a_name) == c->ordinal()) ||
+	       (!decimal && a_name == c->name())) &&
 	      c->supportsImplementation(i))
 	    cb.foundContainer(*c);
+	}
       return false;
     }
     bool Manager::
@@ -159,8 +163,8 @@ namespace OCPI {
   namespace Container {
     // Hooks to ensure that if we are linking statically, everything is pulled in
     // to support drivers and workers.
-    void dumb1(BasicPort &p) {
-      p.applyConnectParams(NULL, NULL);
+    void dumb1(/*BasicPort &p*/) {
+      // p.applyConnectParams(NULL, NULL);
       ((OCPI::Container::Application*)0)->createWorker(NULL, NULL, NULL, NULL, NULL, NULL);
     }
   }
@@ -178,18 +182,19 @@ namespace OCPI {
  * framework infrastructure, forcing them to be statically linked here:
 */
 namespace DataTransfer {
-  intptr_t dumb2(EndPoint &loc) {
+  intptr_t dumb2(/*EndPoint &loc*/) {
+    ((XferServices*)dumb2)->XferServices::send(0, NULL, 0);
     OCPI::Util::Uuid uuid;
     OCPI::Util::UuidString us;
     OCPI::Util::uuid2string(uuid, us);
     std::string str;
     OCPI::Util::searchPath(NULL, NULL, str, NULL, NULL);
-    createHostSmemServices(loc);
-    Msg::XferFactoryManager::getFactoryManager();
+    // Msg::XferFactoryManager::getFactoryManager();
     OCPI::OS::Socket s;
     OCPI::OS::ServerSocket ss;
     OCPI::OS::Semaphore sem;
     gzerror(NULL, (int*)0);
+    pthread_workqueue_create_np(NULL, NULL);
     return (intptr_t)&lzma_stream_buffer_decode;
   }
 }

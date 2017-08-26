@@ -83,30 +83,6 @@ endif
 # behavior with no environment requirements at all.
 # Setting just OCPI_TARGET_PLATFORM will do cross builds
 $(eval $(OcpiEnsureToolPlatform))
-ifdef OCPI_USE_TOOL_MODES
-  # Determine OCPI_TOOL_MODE if it is not set already
-  ifndef OCPI_TOOL_MODE
-    $(foreach o,$(if $(filter 1,$OCPI_DEBUG),d,o),\
-      $(foreach s,$(if $(filter 1,$(OCPI_DYNAMIC),d,s)),\
-        $(if $(wildcard $(OCPI_CDK_DIR)/bin/$(OCPI_TOOL_HOST)/$o$s/ocpirun),\
-           $(eval OCPI_TOOL_MODE:=$o$s)\
-           $(info Using tool mode $(OCPI_TOOL_MODE)))))
-    ifndef OCPI_TOOL_MODE
-      $(foreach i,sd so dd do,\
-        $(if $(OCPI_TOOL_MODE),,\
-           $(if $(wildcard $(OCPI_CDK_DIR)/bin/$(OCPI_TOOL_HOST)/$i/ocpirun),\
-              $(eval OCPI_TOOL_MODE:=$i)\
-              $(info Choosing tool mode "$i" since there are tool executables for it.))))
-      ifndef OCPI_TOOL_MODE
-        $(warning No tools found to determine or verify tool mode.)
-        override export OCPI_USE_TOOL_MODE=
-      endif
-    endif
-  endif
-  export OCPI_TOOL_DIR:=$(OCPI_TOOL_HOST)/$(OCPI_TOOL_MODE)
-else
-  export OCPI_TOOL_DIR:=$(OCPI_TOOL_HOST)
-endif
 p:=$(OCPI_CDK_DIR)/platforms/$(OCPI_TOOL_PLATFORM)
 f:=$p/$(OCPI_TOOL_PLATFORM)-tool.mk
 ifeq ($(wildcard $f),)
@@ -202,7 +178,7 @@ export OCPI_BIN_DIR:=$(OCPI_CDK_DIR)/bin/$(OCPI_TARGET_DIR)
 export OCPI_INC_DIR:=$(OCPI_CDK_DIR)/include/aci
 
 # Which libraries should be made available to user executables?
-export OCPI_API_LIBS=application container library transport rdma_driver_interface rdma_utils rdma_smb util  msg_driver_interface os
+export OCPI_API_LIBS=application container library transport xfer util  msg_driver_interface os
 
 # This is appropriate for static linking.
 # It forces the use of the static prerequisites libraries even if there is a dynamic one also.

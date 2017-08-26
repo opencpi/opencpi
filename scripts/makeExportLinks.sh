@@ -150,10 +150,16 @@ exclusions=$(test -f Project.exports && grep '^[ 	]*-' Project.exports | sed 's/
 [ -n "$verbose" ] && echo Collecting additions
 additions=$(test -f Project.exports && grep '^[ 	]*+' Project.exports | sed 's/^[ 	]*+[ 	]*\([^ 	#]*\)[ 	]*\([^ 	#]*\).*$/\1:\2/') || true
 set +f
-[ -n "$verbose" ] && echo Collecting facilities
-facilities=$(test -f Project.exports &&  grep -v '^[ 	]*[-+#]' Project.exports) || true
-[ -n "$verbose" ] && echo Facilities are $1: $facilities
-for f in $facilities; do
+facilities=$(test -f Project.exports &&  grep -v '^[ 	]*[-+#]' Project.exports | grep -v '^[ 	]*$' | \
+  sed 's/^[ 	]*\([^ 	#]*\)[ 	]*\([^ 	#]*\).*$/\1:\2/') || true
+for ff in $facilities; do
+  declare -a fboth=($(echo $ff | tr : ' '))
+  f=${fboth[0]}
+  if [ -n "${fboth[1]}" ]; then
+    libname=${fboth[1]}
+  else
+    libname=$(basename $f)
+  fi
   if [ "$1" == "-" ]; then
     continue; # silently ignore unset targets
   fi
@@ -162,7 +168,7 @@ for f in $facilities; do
       continue; # silently ignore unbuilt facilities
     fi
   fi
-  [ -n "$verbose" ] && echo Processing the $f facility
+  [ -n "$verbose" ] && echo Processing the '"'$ff'"' facility
   # Make links to main programs
   mains=$(find $f -name '*_main.c' -o -name '*_main.cxx' | sed 's-^.*/\([^/]*\)_main\..*$-\1-')
   for m in $mains; do
@@ -187,7 +193,7 @@ for f in $facilities; do
     suffixes="_s.$dylib .a"
   fi
   for s in $suffixes; do
-    lib=lib$2$(basename $f)$s
+    lib=lib$2$libname$s
     libpath=$f/target-$1/$lib
     if [ ! -e $libpath ]; then
       libpath=target-cdk-staging/lib/$1/$lib
@@ -200,7 +206,7 @@ for f in $facilities; do
   done
   if [ "$foundlib" = "" ]; then
      if [ "$3" == "" ]; then
-       echo Library lib$2$(basename $f) not found in $f/target-$1/\* nor target-cdk-staging/lib/$1/\*
+       echo Library $libname not found in $f/target-$1/\* nor target-cdk-staging/lib/$1/\*
      fi
 #    exit 1
   fi

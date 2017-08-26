@@ -22,6 +22,7 @@
 #include <setjmp.h>
 #include <signal.h>
 #include <lzma.h>
+#include "XferManager.h"
 #include "HdlDevice.h"
 
 #define USE_LZMA 1
@@ -115,7 +116,7 @@ namespace OCPI {
       // Fix the endianness
       for (unsigned n = 0; n < sizeof(HdlUUID); n++)
 	((uint8_t*)&m_UUID)[n] = ((uint8_t *)&myUUIDtmp)[(n & ~3) + (3 - (n&3))];
-      memcpy(m_loadedUUID, m_UUID.uuid, sizeof(m_loadedUUID));
+      memcpy(&m_loadedUUID, m_UUID.uuid, sizeof(m_loadedUUID));
     }
     RomWord Device::
     getRomWord(uint16_t n) {
@@ -268,8 +269,10 @@ namespace OCPI {
     }
     void Device::
     print() {
+      OU::Uuid uuid;
       OU::UuidString textUUID;
-      OU::uuid2string(m_UUID.uuid, textUUID);
+      memcpy(uuid.uuid, m_UUID.uuid, sizeof(m_UUID.uuid));
+      OU::uuid2string(uuid, textUUID);
 
       time_t bsbd = m_UUID.birthday;
 
@@ -281,14 +284,14 @@ namespace OCPI {
 	     "platform \"%s\", part \"%s\", UUID %s\n",
 	     m_name.c_str(), bsbd ? "bitstream date " : "",
 	     bsbd ? tbuf : "No loaded bitstream",
-	     m_platform.c_str(), m_part.c_str(), textUUID);
+	     m_platform.c_str(), m_part.c_str(), textUUID.uuid);
     }
     bool Device::
     isLoadedUUID(const std::string &uuid) {
       OU::UuidString parsed;
       OU::uuid2string(m_loadedUUID, parsed);
-      ocpiDebug("UUID check: want %s have %s", uuid.c_str(), parsed);
-      return uuid == parsed;
+      ocpiDebug("UUID check: want %s have %s", uuid.c_str(), parsed.uuid);
+      return uuid == parsed.uuid;
     }
     // friends
     void Device::
@@ -310,7 +313,7 @@ namespace OCPI {
     getEndPoint() {
       return m_endPoint ? *m_endPoint :
 	*(m_endPoint = &DataTransfer::getManager().
-	  allocateProxyEndPoint(m_endpointSpecific.c_str(),
+	  allocateProxyEndPoint(m_endpointSpecific.c_str(), false,
 				OCPI_UTRUNCATE(size_t, m_endpointSize)));
     }
     void Device::
@@ -347,11 +350,11 @@ namespace OCPI {
       OU::generateUuid(l_uuid);
       if (uuidString) {
 	OU::uuid2string(l_uuid, *uuidString);
-	ocpiDebug("Emulator UUID: %s", *uuidString);
+	ocpiDebug("Emulator UUID: %s", uuidString->uuid);
       }
       HdlUUID temp;
       temp.birthday = OCPI_UTRUNCATE(uint32_t, time(0) + 1);
-      memcpy(temp.uuid, l_uuid, sizeof(l_uuid));
+      memcpy(temp.uuid, l_uuid.uuid, sizeof(l_uuid));
       strcpy(temp.platform, a_platform);
       strcpy(temp.device, "devemu");
       strcpy(temp.load, "ld");

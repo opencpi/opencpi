@@ -33,7 +33,7 @@
 #include "ContainerLauncher.h"
 namespace OCPI {
   namespace Remote {
-    class Launcher : public OCPI::Container::LocalLauncher {
+    class Launcher : public OCPI::Container::Launcher {
       int m_fd;              // socket fd
       bool m_sending;        // Is next phase to send something?
       std::string m_request; // xml text request being constructed
@@ -55,18 +55,19 @@ namespace OCPI {
       void receive();
       void emitContainer(const OCPI::Container::Container &cont);
       void emitArtifact(const OCPI::Library::Artifact &art);
-      void emitInstance(const char *name, unsigned contN, unsigned artN, const Launcher::Instance &i, int slave);
-      void emitPort(const Launcher::Instance &i, const char *port,
-		    const OCPI::API::PValue *params, const char *which);
-      void emitConnection(const Launcher::Instances &instances, const Launcher::Connection &c);
+      void emitCrew(const OCPI::Container::Launcher::Crew &crew);
+      void emitMember(const char *name, unsigned contN, unsigned artN, unsigned crewN,
+		      const Launcher::Member &i, int slave);
+      void emitSide(const Launcher::Members &members, Launcher::Port &p, bool input);
+      void emitConnection(const Launcher::Members &members, Launcher::Connection &c);
       void emitConnectionUpdate(unsigned nConn, const char *iname, std::string &sinfo);
       void loadArtifact(ezxml_t ax); // Just push the bytes down the pipe, getting a response for each.
       void updateConnection(ezxml_t cx);
     public:
       bool
 	wait(unsigned remoteInstance, OCPI::OS::ElapsedTime timeout),
-	launch(Launcher::Instances &instances, Launcher::Connections &connections),
-	work(Launcher::Instances &instances, Launcher::Connections &connections);
+	launch(Launcher::Members &members, Launcher::Connections &connections),
+	work(Launcher::Members &members, Launcher::Connections &connections);
       OCPI::Util::Worker::ControlState getState(unsigned remoteInstance);
       void
 	controlOp(unsigned remoteInstance, OU::Worker::ControlOperation),

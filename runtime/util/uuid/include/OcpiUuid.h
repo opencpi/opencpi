@@ -22,13 +22,21 @@
 #define _OCPI_UUID_H_
 
 #include <stdint.h>
+#include <string.h>
 
 namespace OCPI {
   namespace Util {
-    typedef uint8_t Uuid[16];
-    typedef char UuidString[37];
+    struct Uuid { uint8_t uuid[16]; };
+    struct UuidString { char uuid[37];};
     void uuid2string(Uuid &, UuidString &);
+    bool string2uuid(UuidString &, Uuid &); // true on bad format
     void generateUuid(Uuid &);
+    // This is a comparison object for use in STL classes
+    struct UuidComp {
+      inline bool operator() (const Uuid lhs, const Uuid rhs) const {
+	return memcmp(lhs.uuid, rhs.uuid, sizeof(Uuid)) < 0;
+      }
+    };
   }
 }
 

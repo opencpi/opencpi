@@ -47,10 +47,11 @@ namespace OCPI {
 
     Worker::
     Worker(Artifact *art, ezxml_t impl, ezxml_t inst, Worker *a_slave, bool a_hasMaster,
-	   const OA::PValue *) 
+	   size_t member, size_t crewSize, const OA::PValue *) 
       : OU::Worker::Worker(),
 	m_artifact(art), m_xml(impl), m_instXml(inst), m_workerMutex(true),
-	m_controlOpPending(false), m_slave(a_slave), m_hasMaster(a_hasMaster) {
+	m_controlOpPending(false), m_slave(a_slave), m_hasMaster(a_hasMaster), m_member(member),
+        m_crewSize(crewSize), m_connectedPorts(0), m_optionalPorts(0) {
       if (impl) {
 	const char *err = parse(impl);
 	if (err)
@@ -60,30 +61,47 @@ namespace OCPI {
       }
       if (inst)
 	m_instTag = ezxml_cattr(inst, "name");
+      for (unsigned n = 0; n < m_nPorts; n++)
+	if (port(n).m_isOptional)
+	  m_optionalPorts |= 1 << n;
     }
 
     Worker::~Worker()
     {
+      ocpiDebug("In  Container::Worker::~Worker()");
       if (m_artifact)
 	m_artifact->removeWorker(*this);
       for (unsigned i = 0; i < m_cache.size(); i++)
 	delete [] m_cache[i];
     }
 
-    OA::Port &Worker::
-    getPort(const char *a_name, const OA::PValue *params ) {
-      return getContainerPort(a_name, params);
+    void Worker::
+    connectPort(OU::PortOrdinal ordinal) {
+      m_connectedPorts |= 1 << ordinal;
+      portIsConnected(ordinal); // the virtual notification
     }
 
     Port &Worker::
-    getContainerPort(const char *a_name, const OA::PValue *params ) {
+    getPort(const char *a_name, size_t nOthers, const OA::PValue *params ) {
       Port *p = findPort(a_name);
-      if (p)
+      if (p) {
+	assert(p->nOthers() == nOthers);
         return *p;
+      }
       OU::Port *metaPort = findMetaPort(a_name);
       if (!metaPort)
         throw OU::Error("no port found with name \"%s\"", a_name);
-      return createPort(*metaPort, params);
+      Port &newP = createPort(*metaPort, params);
+      // This setting of the "other" is separate from construction so that the derived
+      // port classes in particular containers stay unaware of the scaling.  If that changes
+      // then this will become a constructor argument and an argument to worker::createPort.
+      if (nOthers > 1)
+	newP.prepareOthers(nOthers, m_crewSize);
+      return newP;
+    }
+    OA::Port &Worker::
+    getPort(const char *a_name, const OA::PValue *params ) {
+      return getPort(a_name, 1, params);
     }
     OA::PropertyInfo & Worker::setupProperty(const char *pname, 
 					     volatile uint8_t *&m_writeVaddr,
@@ -338,7 +356,7 @@ namespace OCPI {
       getPropertyValue(p, value, hex, false, uncached);
       return true;
     }
-    void Worker::setProperty(unsigned ordinal, OCPI::Util::Value &value) {
+    void Worker::setProperty(unsigned ordinal, OU::Value &value) {
       OU::Property &prop(property(ordinal));
       setPropertyValue(prop, value);
     }
@@ -420,6 +438,19 @@ namespace OCPI {
 	  (ct.valid[1] != NONE && cs == ct.valid[1]) ||
 	  (ct.valid[2] != NONE && cs == ct.valid[2]) ||
 	  (ct.valid[3] != NONE && cs == ct.valid[3])) {
+	if (op == OU::Worker::OpStart) {
+	  // If a worker gets started before all of its required ports are created: error
+	  PortMask mandatory = ~(-1 << m_nPorts) & ~optionalPorts();
+	  PortMask bad = mandatory & ~connectedPorts();
+	  for (unsigned n = 0; n < m_nPorts; n++)
+	    if (bad & (1 << n)) {
+	      const char *inst = instTag().c_str();
+	      throw OU::Error("Port \"%s\" of%s%s%s worker \"%s\" is not connected",
+			      m_ports ? port(n).m_name.c_str() : "unnamed",
+			      inst[0] ? " instance '" : "", inst, inst[0] ? "'" : "",
+			      implTag().c_str());
+	    }
+	}
 	controlOperation(op);
 	if (ct.next != NONE)
 	  setControlState(ct.next);
@@ -491,9 +522,33 @@ namespace OCPI {
       OU::Value &v = *p.m_default;
       strncpy(out, p.m_isSequence || p.m_arrayRank ? v.m_pString[idx] : v.m_String, length);
     }
-
+    Port &Worker::
+    createOutputPort(OU::PortOrdinal /*portId*/, size_t /*bufferCount*/, size_t /*bufferSize*/,
+		     const OU::PValue */*params*/) {
+      ocpiAssert("This method is not expected to ever be called" == 0);
+      return *(Port*)this;
+    }
+    Port &Worker::
+    createInputPort(OU::PortOrdinal /*portId*/, size_t /*bufferCount*/, size_t /*bufferSize*/, 
+		    const OU::PValue */*params*/) {
+      ocpiAssert("This method is not expected to ever be called" == 0);
+      return *(Port*)this;
+    }
+    Port &Worker::
+    createTestPort(OU::PortOrdinal /*portId*/, size_t /*bufferCount*/, size_t /*bufferSize*/,
+		   bool /*isProvider*/, const OU::PValue */*params*/) {
+      ocpiAssert("This method is not expected to ever be called" == 0);
+      return *(Port*)this;
+    }
+    void Worker::
+    read(size_t /*offset*/, size_t /*size*/, void */*data*/) {
+      ocpiAssert("This method is not expected to ever be called" == 0);
+    }
+    void Worker::
+    write(size_t /*offset*/, size_t /*size*/, const void */*data*/) {
+      ocpiAssert("This method is not expected to ever be called" == 0);
+    }
     WorkerControl::~WorkerControl(){}
-
   }
   namespace API {
     Worker::~Worker(){}

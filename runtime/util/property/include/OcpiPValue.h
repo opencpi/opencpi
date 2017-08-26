@@ -47,7 +47,7 @@ namespace OCPI {
     extern PValue allPVParams[];
 #define OCPI_DATA_TYPE(sca, corba, letter, bits, run, pretty, store) \
     void add##pretty(const PValue *&p, const char *name, run value); \
-    bool find##pretty(const PValue* p, const char* name, run &value);
+    bool find##pretty(const PValue *p, const char *name, run &value);
       OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE
     bool
@@ -68,8 +68,10 @@ namespace OCPI {
     public:
       PValueList(const PValue *params, const PValue *override = NULL);
       PValueList();
+      PValueList(const PValueList&);
+      PValueList(const PValueList*);
       ~PValueList();
-      PValueList &operator=(const PValueList & p );
+      PValueList &operator=(const PValueList & p);
       inline const PValue *list() const { return m_list; }
       inline operator const PValue*() const { return m_list; }
       const char 

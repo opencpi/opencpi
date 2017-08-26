@@ -23,10 +23,10 @@ endif
 all:
 
 ifeq ($(filter clean%,$(MAKECMDGOALS)),)
+ $(eval $(OcpiEnsureToolPlatform))
   export PATH:=$(OCPI_CDK_DIR)/bin/$(OCPI_TOOL_DIR):$(PATH)
   export OCPI_LIBRARY_PATH=.:$(OCPI_CDK_DIR)/lib/components/rcc:$(OCPI_CDK_DIR)/lib/hdl/assemblies
 endif
-
 OUT= > /dev/null
 DIR=target-$(OCPI_TOOL_DIR)
 ifdef APP

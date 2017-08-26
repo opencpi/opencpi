@@ -123,8 +123,8 @@ genScaScd(const char *outDir) const {
 	OU::Assembly::Role &r = (*pi).m_role;
 	assert(r.m_knownRole && !r.m_bidirectional);
 	const char *type;
-	OU::Port *p;
-	for (unsigned n=0; (p=getMetaPort(n)); n++) {
+	const OU::Port *p;
+	for (unsigned n=0; (p = getMetaPort(n)); n++) {
 	  size_t nOps = p->nOperations();
 	  // For now we only support 1 operation
 	  // For now we just use the first operation

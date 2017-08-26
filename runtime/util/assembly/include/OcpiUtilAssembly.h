@@ -80,6 +80,18 @@ namespace OCPI {
       };
       typedef std::vector<Property> Properties;
       struct Port;
+      // Capture the values that drive processor allocation policy.
+      #define COLLOCATION_POLICY_ATTRS \
+	"minCollocation", "maxCollocation", "minContainers", "maxContainers"
+      struct CollocationPolicy {
+	size_t m_minCollocation, m_maxCollocation, m_minContainers, m_maxContainers;
+	CollocationPolicy();
+	const char
+	  *parse(ezxml_t x),
+	  *apply(size_t scale, size_t nContainers,
+		 size_t &collocation, size_t &usedContainers, size_t &finalScale)
+	  const;
+      };
       struct Instance {
 	std::string
 	  m_name,                  // name of the instance within the assembly
@@ -96,6 +108,7 @@ namespace OCPI {
 	PValueList m_parameters;
 	std::list<Port*> m_ports; // attachments to connections
 	typedef std::list<Port*>::iterator PortsIter;
+	CollocationPolicy m_collocation;
 	ezxml_t m_xml;
 	const char *cname() const { return m_name.c_str(); }
 	const char
@@ -135,7 +148,9 @@ namespace OCPI {
 	mutable Role m_role;
 	unsigned m_instance;
 	size_t m_index;
-	PValueList m_parameters;
+	// This mutable is because some port parameter values are added later by name
+	// and the XML assembly might not use port names
+	mutable PValueList m_parameters;
 	Port *m_connectedPort; // the "other" port of the connection
 	const char *cname() const { return m_name.c_str(); }
 	const char *parse(ezxml_t x, Assembly &a, const PValue *pvl, const PValue *params);
@@ -184,6 +199,7 @@ namespace OCPI {
       CMapPolicy m_cMapPolicy;
       size_t   m_processors;
       MappedProperties m_mappedProperties; // top level mapped to instance properties.
+      CollocationPolicy m_collocation;
       // Provide a file name.
       explicit Assembly(const char *file, const char **extraTopAttrs = NULL,
 			const char **extraInstAttrs = NULL, const OCPI::Util::PValue *params = NULL);

@@ -75,14 +75,14 @@ emitRecordTypes(FILE *f) {
     fprintf(f,
 	    "  -- Record for DevSignals input signals for port \"%s\" of worker \"%s\"\n"
 	    "  alias worker_%s_in_t is work.%s_defs.%s_in_t;\n",
-	    cname(), m_worker->m_implName, cname(),
-	    m_worker->m_implName, cname());
+	    pname(), m_worker->m_implName, pname(),
+	    m_worker->m_implName, pname());
   if (m_hasOutputs)
     fprintf(f,
 	    "  -- Record for DevSignals output signals for port \"%s\" of worker \"%s\"\n"
 	    "  alias worker_%s_out_t is work.%s_defs.%s_out_t;\n",
-	    cname(), m_worker->m_implName, cname(),
-	    m_worker->m_implName, cname());
+	    pname(), m_worker->m_implName, pname(),
+	    m_worker->m_implName, pname());
 }
 
 void DevSignalsPort::
@@ -96,7 +96,7 @@ emitRecordInterface(FILE *f, const char *implName) {
 	    "\n"
 	    "  -- Record for the %s input signals for port \"%s\" of worker \"%s\"\n"
 	    "  type %s_t is record\n",
-	    m_master ? "master" : "slave", cname(), implName, in.c_str());
+	    m_master ? "master" : "slave", pname(), implName, in.c_str());
     std::string last;
     for (SignalsIter si = m_signals.begin(); si != m_signals.end(); si++) {
       Signal &s = **si;
@@ -113,7 +113,7 @@ emitRecordInterface(FILE *f, const char *implName) {
 	    "\n"
 	    "  -- Record for the %s output signals for port \"%s\" of worker \"%s\"\n"
 	    "  type %s_t is record\n",
-	    m_master ? "master" : "slave", cname(), implName, out.c_str());
+	    m_master ? "master" : "slave", pname(), implName, out.c_str());
     std::string last;
     for (SignalsIter si = m_signals.begin(); si != m_signals.end(); si++) {
       Signal &s = **si;

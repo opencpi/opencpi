@@ -21,6 +21,7 @@
 # The "app" is either the foo.{cc,cxx,cpp} or foo.xml
 
 include $(OCPI_CDK_DIR)/include/util.mk
+$(eval $(OcpiEnsureToolPlatform))
 # Allow old-style "APP" to rename
 ifdef APP
 OcpiApp:=$(APP)
@@ -49,7 +50,8 @@ ifdef OcpiAppCC
 else ifneq ($(wildcard $(OcpiApp).xml),)
   ifndef OcpiAppNoRun
     ifndef OcpiRunXML
-      OcpiRunXML=$(OcpiRunBefore) $(call AciDir,$(OCPI_TOOL_PLATFORM)/ocpirun $(OcpiRunArgs) $1 \
+      $(info OCPI_TOOL_PLATFORM:$(OCPI_TOOL_PLATFORM))
+      OcpiRunXML=$(OcpiRunBefore) $(OCPI_CDK_DIR)/bin/$(OCPI_TOOL_DIR)/ocpirun $(OcpiRunArgs) $1 \
                  $(OcpiRunAfter)
     endif
     run: all

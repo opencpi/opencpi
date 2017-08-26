@@ -32,16 +32,17 @@
 #include <OcpiOsMisc.h>
 #include <OcpiOsAssert.h>
 #include <DtIntEventHandler.h>
+#include "XferManager.h"
 #include <OcpiRDTInterface.h>
 #include <test_utilities.h>
 #include <OcpiUtilCommandLineConfiguration.h>
 #include "UtGenericLoopbackWorkers.h"
 #include <OcpiThread.h>
-#include <DtTransferInternal.h>
 
 using namespace OCPI::Container;
 using namespace OCPI;
 using namespace OCPI::CONTAINER_TEST;
+namespace XF = DataTransfer;
 namespace OU = OCPI::Util;
 
 static const char* g_ep1    = "ocpi-smb-pio:test1:900000.1.20";
@@ -350,7 +351,7 @@ int  main( int argc, char** argv)
   int cmap[3];
   const char* test_name;
 
-  DataTransfer::XferFactoryManager & fm = DataTransfer::XferFactoryManager::getFactoryManager();
+  XF::XferManager & fm = XF::getManager();
   fm.configure( NULL );
 
   try {

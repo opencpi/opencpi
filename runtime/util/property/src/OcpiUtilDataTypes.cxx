@@ -358,68 +358,67 @@ namespace OCPI {
     }
 
     void Member::
-    printAttrs(FILE *f, const char *tag, unsigned indent, bool suppressDefault) {
-      fprintf(f, "%*s<%s", indent * 2, "", tag);
+    printAttrs(std::string &out, const char *tag, unsigned indent, bool suppressDefault) {
+      formatAdd(out, "%*s<%s", indent * 2, "", tag);
       if (!m_name.empty())
-	fprintf(f, " name=\"%s\"", m_name.c_str());
+	formatAdd(out, " name=\"%s\"", m_name.c_str());
       if (m_baseType != OA::OCPI_ULong)
-	fprintf(f, " type=\"%s\"", baseTypeNames[m_baseType]);
+	formatAdd(out, " type=\"%s\"", baseTypeNames[m_baseType]);
       if (m_baseType == OA::OCPI_String)
-	fprintf(f, " stringLength=\"%zu\"", m_stringLength);
+	formatAdd(out, " stringLength=\"%zu\"", m_stringLength);
       if (m_isSequence)
-	fprintf(f, " sequenceLength=\"%zu\"", m_sequenceLength);
+	formatAdd(out, " sequenceLength=\"%zu\"", m_sequenceLength);
       if (m_arrayRank == 1)
-	fprintf(f, " arrayLength=\"%zu\"", m_arrayDimensions[0]);
+	formatAdd(out, " arrayLength=\"%zu\"", m_arrayDimensions[0]);
       else if (m_arrayRank > 1) {
-	fprintf(f, " arrayDimensions=\"");
+	formatAdd(out, " arrayDimensions=\"");
 	for (size_t n = 0; n < m_arrayRank; n++)
-	  fprintf(f, "%s%zu", n ? "," : "", m_arrayDimensions[n]);
-	fprintf(f, "\"");
+	  formatAdd(out, "%s%zu", n ? "," : "", m_arrayDimensions[n]);
+	formatAdd(out, "\"");
       }
       if (m_nEnums) {
-	fprintf(f, " enums=\"");
+	formatAdd(out, " enums=\"");
 	for (unsigned n = 0; n < m_nEnums; n++)
-	  fprintf(f, "%s%s", n ? "," : "", m_enums[n]);
-	fprintf(f, "\"");
+	  formatAdd(out, "%s%s", n ? "," : "", m_enums[n]);
+	formatAdd(out, "\"");
       }
       if (m_isKey)
-	fprintf(f, " key=\"true\"");
+	formatAdd(out, " key=\"true\"");
       if (m_default && !suppressDefault) {
 	std::string val;
 	m_default->unparse(val);
-	fprintf(f, " default='");
+	out += " default='";
 	std::string xml;
 	encodeXmlAttrSingle(val, xml);
-	fputs(xml.c_str(), f);
-	fputc('\'', f);
+	out += xml;
+	out += "'";
       }
     }
     void Member::
-    printChildren(FILE *f, const char *tag, unsigned indent) {
+    printChildren(std::string &out, const char *tag, unsigned indent) {
       if (m_baseType == OA::OCPI_Struct || m_baseType == OA::OCPI_Type) {
-	fprintf(f, ">\n");
+	formatAdd(out, ">\n");
 	if (m_baseType == OA::OCPI_Struct) {
 	  for (unsigned n = 0; n < m_nMembers; n++) {
-	    m_members[n].printAttrs(f, "member", indent + 1);
-	    m_members[n].printChildren(f, "member", indent + 1);
+	    m_members[n].printAttrs(out, "member", indent + 1);
+	    m_members[n].printChildren(out, "member", indent + 1);
 	  }
 	} else {
-	  m_type->printAttrs(f, "type", indent + 1);
-	  m_type->printChildren(f, "type", indent + 1);
+	  m_type->printAttrs(out, "type", indent + 1);
+	  m_type->printChildren(out, "type", indent + 1);
 	}
-	fprintf(f, "%*s</%s>\n", indent * 2, "", tag);
+	formatAdd(out, "%*s</%s>\n", indent * 2, "", tag);
       } else
-	fprintf(f, "/>\n");
+	formatAdd(out, "/>\n");
     }
-    void Member::printXML(FILE *f, const char *tag, unsigned indent) {
-      printAttrs(f, tag, indent);
-      printChildren(f, tag, indent);
+    void Member::printXML(std::string &out, const char *tag, unsigned indent) {
+      printAttrs(out, tag, indent);
+      printChildren(out, tag, indent);
     }
     inline void advance(const uint8_t *&p, size_t nBytes, size_t &length) {
-      if (nBytes > length) {
+      if (nBytes > length)
 	throw Error("Aligning data exceeds buffer when writing: length %zu advance %zu",
 		    length, nBytes);
-      }
       // Cannot enforce this because a "fake" mode is used to prepass and determine buffer size:
       // ocpiAssert(p != nullptr);
       length -= nBytes;
@@ -632,7 +631,7 @@ namespace OCPI {
 	break;
       case OA::OCPI_Enum:
 	m_nEnums = random() % 5 + 1;
-	m_enums = new const char *[m_nEnums];
+	m_enums = new const char *[m_nEnums + 1];
 	for (unsigned n = 0; n < m_nEnums; n++) {
 	  char *e;
 	  ocpiCheck(asprintf(&e, "enum%u", n) > 0);
@@ -640,6 +639,7 @@ namespace OCPI {
 	  strcpy((char *)m_enums[n], e);
 	  free(e);
 	}
+	m_enums[m_nEnums] = NULL;
 	break;
       case OA::OCPI_Type:
 	if (m_isSequence) {
@@ -696,21 +696,22 @@ namespace OCPI {
       return NULL;
     }
     const char *Member::
-    offset(size_t &maxAlign, size_t &argOffset,
-	   size_t &minSizeBits, bool &diverseSizes, bool &sub32, bool &unBounded, bool isTop) {
+    offset(size_t &maxAlign, size_t &argOffset, size_t &minSizeBits, bool &diverseSizes,
+	   bool &sub32, bool &unBounded, bool &isVariable, bool isTop) {
       const char *err;
       uint64_t nBytes;
       m_offset = 0;
       switch (m_baseType) {
       case OA::OCPI_Struct:
-	if ((err = alignMembers(m_members, m_nMembers, m_align, m_offset,
-				minSizeBits, diverseSizes, sub32, unBounded)))
+	if ((err = alignMembers(m_members, m_nMembers, m_align, m_offset, minSizeBits,
+				diverseSizes, sub32, unBounded, isVariable)))
 	  return err;
 	nBytes = m_offset;
 	m_nBits = m_offset * CHAR_BIT;
 	break;
       case OA::OCPI_Type:
-	if ((err = m_type->offset(m_align, m_offset, minSizeBits, diverseSizes, sub32, unBounded)))
+	if ((err = m_type->offset(m_align, m_offset, minSizeBits, diverseSizes, sub32,
+				  unBounded, isVariable)))
 	  return err;
 	nBytes = m_offset;
 	m_nBits = m_offset * CHAR_BIT;
@@ -728,6 +729,7 @@ namespace OCPI {
 	  scalarBits = CHAR_BIT;
 	  if (!m_stringLength)
 	    unBounded = true;
+	  isVariable = true;
 	} else {
 	  nBytes = m_align;
 	  scalarBits = m_align * CHAR_BIT;
@@ -758,6 +760,7 @@ namespace OCPI {
       }
       m_dataAlign = m_align; // capture this before adjusting it in the sequence case.
       if (m_isSequence) {
+	isVariable = true;
 	// Pad the size to be what is required for an array of same.
 	nBytes = roundUp((uint32_t)nBytes, m_align);
 	if (m_sequenceLength != 0)
@@ -783,39 +786,44 @@ namespace OCPI {
       argOffset += m_nBytes;
       return 0;
     }
-    const char *
-    Member::alignMembers(Member *m, size_t nMembers, 
-			 size_t &maxAlign, size_t &myOffset,
-			 size_t &minSizeBits, bool &diverseSizes, bool &sub32, bool &unBounded,
-			 bool isTop) {
+    const char * Member::
+    alignMembers(Member *m, size_t nMembers, size_t &maxAlign, size_t &myOffset,
+		 size_t &minSizeBits, bool &diverseSizes, bool &sub32, bool &unBounded,
+		 bool &isVariable, bool isTop) {
       const char *err;
       for (unsigned n = 0; n < nMembers; n++, m++)
-	if ((err = m->offset(maxAlign, myOffset, minSizeBits, diverseSizes, sub32, unBounded, isTop)))
+	if ((err = m->offset(maxAlign, myOffset, minSizeBits, diverseSizes, sub32, unBounded,
+			     isVariable, isTop)))
 	  return err;
       return 0;
     }
-      const char *baseTypeNames[] = {
-        "None",
+    uint8_t *Member::
+    getField(uint8_t */*data*/, size_t &/*length*/) const {
+      return NULL;
+    }
+
+    const char *baseTypeNames[] = {
+      "None",
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) #pretty,
-        OCPI_PROPERTY_DATA_TYPES
+      OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE
-	"Struct", "Enum", "Type",
-        0
-      };
-      const char *idlTypeNames[] = {
-        "None",
+      "Struct", "Enum", "Type",
+      0
+    };
+    const char *idlTypeNames[] = {
+      "None",
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) #corba,
-        OCPI_PROPERTY_DATA_TYPES
+      OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE
-	"Struct", "Enum", "Type",
-        0
-      };
-      unsigned baseTypeSizes[] = {
-	0,// for OCPI_NONE
+      "Struct", "Enum", "Type",
+      0
+    };
+    unsigned baseTypeSizes[] = {
+      0,// for OCPI_NONE
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) bits,
-	OCPI_PROPERTY_DATA_TYPES
+      OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE
-	0, 32, 0 // enum size is 32 bits
-      };
+      0, 32, 0 // enum size is 32 bits
+    };
   }
 }

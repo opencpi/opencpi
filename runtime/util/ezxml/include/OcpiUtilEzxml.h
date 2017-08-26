@@ -239,7 +239,7 @@ namespace OCPI {
 	// true only means its an error to do anything but true, for cases
 	// when you are only allowed to "add truth", not set false
         *getBoolean(ezxml_t x, const char *name, bool *b, bool trueOnly = false,
-		    bool *found = NULL),
+		    bool setDefault = true, bool *found = NULL),
         *checkAttrs(ezxml_t x, ...),
         *checkElements(ezxml_t x, ...),
 	*checkAttrsV(ezxml_t x, const char **attrs),

@@ -594,7 +594,8 @@ namespace OCPI {
       }
 
       const char *
-      getBoolean(ezxml_t x, const char *name, bool *b, bool trueOnly, bool *found) {
+      getBoolean(ezxml_t x, const char *name, bool *b, bool trueOnly, bool setDefault,
+		 bool *found) {
 	const char *a = ezxml_cattr(x, name);
 	if (a) {
 	  bool val;
@@ -606,7 +607,7 @@ namespace OCPI {
 	    *found = true;
 	  *b = val;
 	} else {
-	  if (!trueOnly)
+	  if (!trueOnly && setDefault)
 	    *b = false;
 	  if (found)
 	    *found = false;
@@ -771,23 +772,23 @@ namespace OCPI {
 	uint32_t len;
 	eof = false;
 	ssize_t n = ::read(fd, (char *)&len, sizeof(len));
-	if (n != sizeof(len) || len > 64*1024) {
+	if (n != sizeof(len) || len > 256*1024) {
 	  if (n == 0) {
 	    eof = true;
 	    error = "EOF on socket read";
 	  } else
-	    OU::format(error, "read error: %s (%zu, %zu)", strerror(errno), n, (size_t)len);
+	    OU::format(error, "read error or XML message too large: %s (%zu, %zu)", strerror(errno), n, (size_t)len);
 	  return true;
 	}
 	ssize_t total = len;
 	buf.resize(total);
-	for (char *cp = &buf[0]; total && (n = ::read(fd, cp, len)) > 0; total -= n, cp += n)
+	for (char *cp = &buf[0]; total && (n = ::read(fd, cp, total)) > 0; total -= n, cp += n)
 	  ;
 	if (n <= 0) {
 	  OU::format(error, "message read error: %s (%zu)", strerror(errno), n);
 	  return true;
 	}
-	ocpiDebug("Received XML===========================\n%s\nEND XML==========", &buf[0]);
+	ocpiLog(9, "Received XML===========================\n%s\nEND XML==========", &buf[0]);
 	const char *err;
 	if ((err = ezxml_parse_str(&buf[0], len, rx))) {
 	  OU::format(error, "xml parsing error: %s", err);
@@ -815,7 +816,7 @@ namespace OCPI {
 	iov[1].iov_base = (void*)request.c_str();
 	iov[1].iov_len = request.length()+1;
 	ssize_t n, total = iov[0].iov_len + iov[1].iov_len;
-	ocpiDebug("Sending XML===========================\n%s\nEND XML==========", request.c_str());
+	ocpiLog(9, "Sending XML===========================\n%s\nEND XML==========", request.c_str());
 	do n = ::writev(fd, iov, 2); while (n > 0 && (total -= n));
 	return n > 0 ? false : OU::eformat(error, "Error writing to %s: %s", msg, strerror(errno));
       }

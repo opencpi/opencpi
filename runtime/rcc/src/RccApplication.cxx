@@ -126,26 +126,23 @@ Application::
   // workers, so it is ok that the rest of the destruction of the application
   // object happens outside the mutex (assuming we don't support mutiple
   // user threads dealing with application objects).
-  deleteChildren();
+  OU::Parent<Worker>::deleteChildren();
   releaseFromParent();
 }
 
-OC::Worker &
-Application::
-createWorker(OC::Artifact *art, const char *appInstName,
-	     ezxml_t impl, ezxml_t inst, OC::Worker *slave, bool hasMaster,
-	     const OCPI::Util::PValue *wParams)
-{
-  OU::SelfAutoMutex guard (&container());
-  if ( appInstName ) 
-    return *new Worker(*this, art ? static_cast<Artifact*>(art) : NULL, appInstName, impl, inst, slave, hasMaster, wParams);
-  else 
-    return *new Worker(*this, art ? static_cast<Artifact*>(art) : NULL, "unnamed-worker", impl, inst, slave, hasMaster, wParams);
+OC::Worker & Application::
+createWorker(OC::Artifact *art, const char *appInstName, ezxml_t impl, ezxml_t inst,
+	     OC::Worker *slave, bool hasMaster, size_t member, size_t crewSize,
+	     const OCPI::Util::PValue *wParams) {
+  OU::SelfAutoMutex guard(&container());
+  return *new Worker(*this, art ? static_cast<Artifact*>(art) : NULL,
+		     appInstName ? appInstName : "unnamed-worker", impl, inst, slave, hasMaster,
+		     member, crewSize, wParams);
 }
 
 void Application::
 run(DataTransfer::EventManager* event_manager, bool &more_to_do) {
-  for (Worker *w = firstChild(); w; w = w->nextChild()) {
+  for (Worker *w = OU::Parent<Worker>::firstChild(); w; w = w->nextChild()) {
     // Give our transport some time
     parent().getTransport().dispatch( event_manager );
     w->run(more_to_do);

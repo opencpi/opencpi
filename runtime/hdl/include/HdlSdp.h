@@ -22,6 +22,7 @@
 #define HDL_SDP_H
 #include <stdint.h>
 #include <climits>
+#include <cassert>
 #include "OcpiOsSocket.h"
 // These definitions must match the VHDL
 // constant max_reads_outstanding  : natural := 8;

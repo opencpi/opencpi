@@ -21,6 +21,7 @@
 #include <signal.h>
 #include "OcpiOsMisc.h"
 #include "OcpiUtilCppMacros.h"
+#include "XferManager.h"
 #include "ContainerManager.h"
 #include "ContainerLauncher.h"
 #include "Container.h"
@@ -29,6 +30,8 @@ namespace OA = OCPI::API;
 namespace OU = OCPI::Util;
 namespace OS = OCPI::OS;
 namespace OL = OCPI::Library;
+namespace OR = OCPI::RDT;
+namespace XF = DataTransfer;
 
 namespace OCPI {
   namespace Container {
@@ -165,6 +168,12 @@ namespace OCPI {
     bool Container::runInternal(uint32_t usecs) {
       if (!m_enabled)
 	return false;
+      //OS::sleep(0);
+      {
+	OU::SelfAutoMutex guard(this);
+	for (BridgedPortsIter bpi = m_bridgedPorts.begin(); bpi != m_bridgedPorts.end(); bpi++)
+	  (*bpi)->runBridge();
+      }
       DataTransfer::EventManager *em = getEventManager();
       switch (dispatch(em)) {
       case DispatchNoMore:
@@ -189,7 +198,7 @@ namespace OCPI {
 	 */
 	if (em &&
 	    em->waitForEvent(usecs) == DataTransfer::EventTimeout && m_verbose)
-	  ocpiBad("Timeout after %u usecs waiting for event\n", usecs);
+	  ocpiBad("Timeout after %u usecs waiting for event", usecs);
 	OCPI::OS::sleep (0);
       }
       return true;
@@ -246,10 +255,40 @@ namespace OCPI {
 	throw OU::Error("Invalid container %u", n);
       return *Manager::s_containers[n];
     }
+    Container &Container::baseContainer() {
+      for (unsigned i = 0; i <= Manager::s_maxContainer; i++) {
+	Container &c = Container::nthContainer(i);
+	if (!strncmp("rcc", c.name().c_str(), 3))
+	  return c;
+      }
+      throw OU::Error("No RCC container found when looking for the base container");
+    }
+    void Container::registerBridgedPort(LocalPort &p) {
+      OU::SelfAutoMutex guard (this);
+      m_bridgedPorts.insert(&p);
+    }
+    void Container::unregisterBridgedPort(LocalPort &p) {
+      OU::SelfAutoMutex guard (this);
+      m_bridgedPorts.erase(&p);
+    }
     Launcher &Container::launcher() const {
-      if (!Manager::s_localLauncher)
-	Manager::s_localLauncher = new LocalLauncher();
-      return *Manager::s_localLauncher;
+      return LocalLauncher::getSingleton();
+    }
+    void Container::
+    addTransport(const char *name, const char *id, OR::PortRole roleIn,  OR::PortRole roleOut,
+		 uint32_t inOptions, uint32_t outOptions) {
+      if (XF::getManager().find(name)) {
+	Transport t;
+	t.transport = name;
+	t.id = id;
+	t.roleIn = roleIn;
+	t.roleOut = roleOut;
+	t.optionsIn = inOptions;
+	t.optionsOut = outOptions;
+	m_transports.push_back(t);
+      } else
+	ocpiInfo("Transport %s not supported in this process.  Not loaded/spec'd in system.xml?",
+		 name);
     }
   }
   namespace API {

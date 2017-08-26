@@ -31,6 +31,7 @@
 #include "OcpiContainerApi.h"
 #include "OcpiApplication.h"
 #include "OcpiLibraryManager.h"
+#include "XferManager.h"
 #include "ContainerManager.h"
 #include "OcpiOsDebug.h"
 #include "OcpiOsFileSystem.h"
@@ -56,6 +57,8 @@
 	                               "assign instance to a specific container (name or number from -C)") \
   CMD_OPTION_S(platform, P, String, 0, "[<instance-name>]=<platform-name>\n"\
 	                               "assign instance to any container of this platform type (see output from -C)") \
+  CMD_OPTION_S(scale,    N, String, 0, "<instance-name>=<crew-size>\n" \
+	                               "set scale factor for scalable worker") \
   CMD_OPTION_S(worker,   w, String, 0, "<instance-name>=<implementation-name>\n" \
 	                               "choose a particular worker name") \
   CMD_OPTION(processors, n, ULong,  0, "Number of RCC containers to create") \
@@ -385,6 +388,7 @@ static int mymain(const char **ap) {
   addParams("transferRole", options.transfer_role(n), params);
   addParams("bufferCount", options.buffer_count(n), params);
   addParams("bufferSize", options.buffer_size(n), params);
+  addParams("scale", options.scale(n), params);
   }
   if (options.deployment())
     addParam("deployment", options.deployment(), params);

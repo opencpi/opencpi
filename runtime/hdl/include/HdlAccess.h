@@ -27,7 +27,7 @@
 #include <inttypes.h>
 #include <cstddef>
 #include "OcpiUtilMisc.h"
-#include "DtOsDataTypes.h"
+#include "XferEndPoint.h"
 
 namespace OCPI {
   namespace HDL {
@@ -38,21 +38,6 @@ namespace OCPI {
     class Accessor {
     public:
       virtual ~Accessor() {}
-#if 0
-      // When the status pointer is zero, throw the exception if it is non-zero
-      virtual uint64_t get64(RegisterOffset, uint32_t *status = NULL) = 0;
-      virtual uint32_t get32(RegisterOffset, uint32_t *status = NULL) = 0;
-      virtual uint16_t get16(RegisterOffset, uint32_t *status = NULL) = 0;
-      virtual uint8_t  get8(RegisterOffset,  uint32_t *status = NULL) = 0;
-      // the rest return status
-      virtual void getBytes(RegisterOffset, uint8_t *, size_t, size_t,
-				uint32_t *status = NULL, bool string = false) = 0;
-      virtual void set64(RegisterOffset, uint64_t, uint32_t *status = NULL) = 0;
-      virtual void set32(RegisterOffset, uint32_t, uint32_t *status = NULL) = 0;
-      virtual void set16(RegisterOffset, uint16_t, uint32_t *status = NULL) = 0;
-      virtual void set8(RegisterOffset, uint8_t, uint32_t *status = NULL) = 0;
-      virtual void setBytes(RegisterOffset, const uint8_t *, size_t, uint32_t *status = NULL) = 0;
-#else
       virtual uint32_t get(RegisterOffset offset, size_t bytes, uint32_t *status = NULL) = 0;
       virtual uint64_t get64(RegisterOffset, uint32_t *status = NULL) = 0;
       virtual void
@@ -61,7 +46,6 @@ namespace OCPI {
 	set64(RegisterOffset, uint64_t, uint32_t *status = NULL) = 0,
 	setBytes(RegisterOffset, const uint8_t *, size_t, size_t, uint32_t *status = NULL) = 0,
 	set(RegisterOffset offset, size_t bytes, uint32_t data, uint32_t *status = NULL) = 0;
-#endif
     };
     class Access {
       friend class WciControl;
@@ -99,34 +83,24 @@ namespace OCPI {
 		    size_t elementTypes) const;
       inline uint8_t get8RegisterOffset(size_t offset) const {
 	ocpiDebug("get8RegisterOffset %p %zx", m_registers, offset);
-	uint8_t val = m_registers ? *(volatile uint8_t *)(m_registers + offset) :
-#if 0
-	  m_accessor->get8(m_base + offset);
-#else
-	(uint8_t)m_accessor->get(m_base + offset, sizeof(uint8_t));
-#endif
+	uint8_t val =
+	  m_registers ? *(volatile uint8_t *)(m_registers + offset) :
+	  (uint8_t)m_accessor->get(m_base + offset, sizeof(uint8_t));
 	ocpiDebug("get8RegisterOffset %p %zx -> %x", m_registers, offset, val);
 	return val;
       }
       inline uint16_t get16RegisterOffset(size_t offset) const {
 	ocpiDebug("get16RegisterOffset %p %zx", m_registers, offset);
-	uint16_t val = m_registers ? *(volatile uint16_t *)(m_registers + offset) :
-#if 0
-	  m_accessor->get16(m_base + offset);
-#else
-	(uint16_t)m_accessor->get(m_base + offset, sizeof(uint16_t));
-#endif
+	uint16_t val =
+	  m_registers ? *(volatile uint16_t *)(m_registers + offset) :
+	  (uint16_t)m_accessor->get(m_base + offset, sizeof(uint16_t));
 	ocpiDebug("get16RegisterOffset %p %zx -> %x", m_registers, offset, val);
 	return val;
       }
       inline uint32_t get32RegisterOffset(size_t offset) const {
 	ocpiDebug("get32RegisterOffset %p %zx", m_registers, offset);
 	uint32_t val = m_registers ? *(volatile uint32_t *)(m_registers + offset) :
-#if 0
-	  m_accessor->get32(m_base + offset);
-#else
 	  m_accessor->get(m_base + offset, sizeof(uint32_t));
-#endif
 	ocpiDebug("get32RegisterOffset %p %zx -> %x", m_registers, offset, val);
 	return val;
       }
@@ -142,33 +116,21 @@ namespace OCPI {
 	if (m_registers)
 	  *(volatile uint8_t *)(m_registers + offset) = val;
 	else
-#if 0
-	  m_accessor->set8(m_base + offset, val);
-#else
-	m_accessor->set(m_base + offset, sizeof(uint8_t), val);
-#endif
+	  m_accessor->set(m_base + offset, sizeof(uint8_t), val);
       }
       inline void set16RegisterOffset(size_t offset, uint16_t val) const {
 	ocpiDebug("set16RegisterOffset %p %zx %x", m_registers, offset, val);
 	if (m_registers)
 	  *(volatile uint16_t *)(m_registers + offset) = val;
 	else
-#if 0
-	  m_accessor->set16(m_base + offset, val);
-#else
-	m_accessor->set(m_base + offset, sizeof(uint16_t), val);
-#endif
+	  m_accessor->set(m_base + offset, sizeof(uint16_t), val);
       }
       inline void set32RegisterOffset(size_t offset, uint32_t val) const {
 	ocpiDebug("set32RegisterOffset %p %zx %x", m_registers, offset, val);
 	if (m_registers)
 	  *(volatile uint32_t *)(m_registers + offset) = val;
 	else
-#if 0
-	  m_accessor->set32(m_base + offset, val);
-#else
 	  m_accessor->set(m_base + offset, sizeof(uint32_t), val);
-#endif
       }
       inline void set64RegisterOffset(size_t offset, uint64_t val) const{
 	ocpiDebug("set64RegisterOffset %p %zx %" PRIx64, m_registers, offset, val);
@@ -178,7 +140,7 @@ namespace OCPI {
 	  m_accessor->set64(m_base + offset, val);
       }
       inline void getBytesRegisterOffset(size_t offset, uint8_t *bytes,  size_t size,
-	  size_t elementBytes, bool string = false) const {
+					 size_t elementBytes, bool string = false) const {
 	ocpiDebug("getBytesRegisterOffset %p %zx sz %zx", m_registers, offset, size);
 	if (m_registers)
 	  getBytes(offset, bytes, size, elementBytes, string);

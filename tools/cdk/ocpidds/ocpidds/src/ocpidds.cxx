@@ -62,9 +62,11 @@ emitIDL(const char *outDir, const char *protoFile) {
   ezxml_t x;
   std::string dummy;
   if ((err = parseFile(protoFile, NULL, "protocol", &x, dummy, false)) ||
-      (err = p.parse(x)))
+      (err = p.parse(x, NULL, NULL, NULL, NULL)))
     return err;
-  p.printXML(stdout, 0);
+  std::string out;
+  p.printXML(out, 0);
+  fputs(out.c_str(), stdout);
   return NULL;
 }
 
@@ -627,24 +629,21 @@ doInterface(OU::Protocol &p, const char *&cp) {
       op->m_nArgs++;
     if (op->m_nArgs)
       op->m_args = new OU::Member[op->m_nArgs];
-    int n;
+    OU::Member *m = op->m_args;
+    if (!op->m_isTwoWay) {
+      OU::Member dummy;
+      getType(dummy, cp, "@");
+    } else
+      getType(*m++, cp, "@");
     unsigned line, len;
+    int n = sscanf(cp, "%u %n", &line, &len);
+    assert(n == 1);
+    cp += len;
     std::string tmp;
-    {
-      OU::Member *m = op->m_args;
-      if (!op->m_isTwoWay) {
-	OU::Member dummy;
-	getType(dummy, cp, "@");
-      } else
-	getType(*m++, cp, "@");
-      n = sscanf(cp, "%u %n", &line, &len);
-      assert(n == 1);
-      cp += len;
-      getString(tmp, cp, "\n"); // skip redundant filename
-      // Loop over parameters
-      for (; *cp != '\n'; m++)
-	getArg(*m, cp, "\n");
-    }
+    getString(tmp, cp, "\n"); // skip redundant filename
+    // Loop over parameters
+    for (; *cp != '\n'; m++)
+      getArg(*m, cp, "\n");
     cp++;
     // Loop over exceptions - which we use "operations" for.
     if (op->m_nExceptions)
@@ -782,7 +781,9 @@ emitProtocol(const char *const *argv, const char *outDir, const char *file,
 	FILE *f;
 	if (!(err = openOutput(structName, outDir, "", "_protocol", ".xml", NULL, f))) {
 	  printgen(f, "<!--", file, false, " -->");
-	  p.printXML(f, 0);
+	  std::string out;
+	  p.printXML(out, 0);
+	  fputs(out.c_str(), f);
 	  fclose(f);
 	}
 	found = true;

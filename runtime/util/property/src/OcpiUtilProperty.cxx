@@ -131,10 +131,10 @@ namespace OCPI {
       size_t maxAlign = 1; // dummy and not really used since property sheet is zero based anyway
       size_t minSize = 0;
       bool diverseSizes = false;
-      bool unBoundedDummy;   // we are precluding unbounded in any case
+      bool unBoundedDummy, variableDummy;   // we are precluding unbounded in any case
       size_t myOffset = 0;
       if ((err = Member::offset(maxAlign, myOffset, minSize, diverseSizes, m_isSub32,
-				unBoundedDummy)))
+				unBoundedDummy, variableDummy)))
 	return err;
 #if 0 // moved to parse.cxx of ocpigen
       if (m_isSub32)
@@ -152,8 +152,9 @@ namespace OCPI {
 	return err;
       // Now we evaluate offsets since some sizes may have changed
       size_t maxAlign = 1, minSize = 0, myOffset = 0;
-      bool diverseSizes = false, unBounded, isSub32;
-      if ((err = Member::offset(maxAlign, myOffset, minSize, diverseSizes, isSub32, unBounded)))
+      bool diverseSizes = false, unBounded, variable, isSub32;
+      if ((err = Member::offset(maxAlign, myOffset, minSize, diverseSizes, isSub32, unBounded,
+				variable)))
 	return err;
       if (m_isIndirect) {
 	uint64_t top = m_indirectAddr;

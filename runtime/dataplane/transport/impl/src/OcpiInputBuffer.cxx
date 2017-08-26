@@ -1,25 +1,39 @@
+
 /*
- * This file is protected by Copyright. Please refer to the COPYRIGHT file
- * distributed with this source distribution.
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
- * This file is part of OpenCPI <http://www.opencpi.org>
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
  *
- * OpenCPI is free software: you can redistribute it and/or modify it under the
- * terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation, either version 3 of the License, or (at your option) any
- * later version.
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
  *
- * OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
- * Abstract:
+ * Abstact:
  *   This file contains the implementation for the OCPI input buffer class.
  *
  * Revision History: 
@@ -39,6 +53,7 @@
 #include <OcpiTransferController.h>
 #include <OcpiPullDataDriver.h>
 #include <OcpiTimeEmitCategories.h>
+#include "XferEndPoint.h"
 
 using namespace OCPI::DataTransport;
 using namespace DataTransfer;
@@ -95,14 +110,14 @@ void InputBuffer::update(bool critical)
 
     ocpiDebug("InputBuffer:update:mapping buffer offset");
 
-    m_bVaddr = getPort()->getLocalShemServices()->map
+    m_bVaddr = getPort()->getLocalShemServices()->mapRx
       (input_offsets->bufferOffset, 
        input_offsets->bufferSize );
     m_startOffset = input_offsets->bufferOffset;
                   
     m_length = input_offsets->bufferSize;
     memset(m_bVaddr, 0, input_offsets->bufferSize);
-    m_buffer = m_baseAddress = m_bVaddr;
+    m_buffer = /*m_baseAddress =*/ m_bVaddr;
 
 #ifdef DEBUG_L2
     ocpiDebug("Input buffer addr = 0x%x, size = %d", m_buffer, input_offsets->bufferSize );
@@ -115,7 +130,7 @@ void InputBuffer::update(bool critical)
 
     ocpiDebug("InputBuffer %p:update: mapping states", this);
 
-    m_bsVaddr = getPort()->getLocalShemServices()->map
+    m_bsVaddr = getPort()->getLocalShemServices()->mapRx
       (input_offsets->localStateOffset, 
        sizeof(BufferState)*MAX_PCONTRIBS*2);
 
@@ -140,7 +155,7 @@ void InputBuffer::update(bool critical)
 
     ocpiDebug("InputBuffer:update: mapping meta data");
 
-    m_bmdVaddr = getPort()->getLocalShemServices()->map
+    m_bmdVaddr = getPort()->getLocalShemServices()->mapRx
       (input_offsets->metaDataOffset, 
        sizeof(BufferMetaData)*MAX_PCONTRIBS);
 
@@ -160,7 +175,7 @@ void InputBuffer::update(bool critical)
       continue;
     }
 
-    int idx = shadow_port->getRealShemServices()->endpoint()->mailbox;
+    int idx = shadow_port->getRealShemServices()->endPoint().mailBox();
 
     // A shadow for a output may not exist if they are co-located
     if ( !m_rssVaddr[idx] && input_offsets->myShadowsRemoteStateOffsets[idx] ) {
@@ -172,7 +187,7 @@ void InputBuffer::update(bool critical)
 
       ocpiDebug("InputBuffer:update: mapping shadows");
 
-      m_rssVaddr[idx] = shadow_port->getRealShemServices()->map
+      m_rssVaddr[idx] = shadow_port->getRealShemServices()->mapRx
         (input_offsets->myShadowsRemoteStateOffsets[idx], 
          sizeof(BufferState));
 
@@ -343,6 +358,7 @@ void InputBuffer::markBufferFull()
   else {
     // This flag is being set locally with the expectation that the other side will write back to it
     // to tell us it has become empty
+    ocpiDebug("empty value: %x", m_myShadowsRemoteStates[getPort()->getMailbox()]->bufferIsEmpty);
     ocpiAssert(m_myShadowsRemoteStates[getPort()->getMailbox()]->bufferIsEmpty == EF_EMPTY_VALUE ||
 	       m_myShadowsRemoteStates[getPort()->getMailbox()]->bufferIsEmpty == EF_FULL_VALUE);
     m_myShadowsRemoteStates[getPort()->getMailbox()]->bufferIsEmpty = EF_FULL_VALUE;

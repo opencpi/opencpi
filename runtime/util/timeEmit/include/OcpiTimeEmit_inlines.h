@@ -369,7 +369,7 @@ inline void OCPI::Time::Emit::emitT( EventId id, OCPI::API::PValue& p, Time t, E
 
   case OCPI::API::OCPI_String:
     m_q->current->size = (unsigned)strlen(p.vString) + 1;
-    memcpy( &m_q->current[1], &p.vString, m_q->current->size );
+    memcpy( &m_q->current[1], p.vString, m_q->current->size );
     break;    
 
   case OCPI::API::OCPI_none:

@@ -28,6 +28,10 @@ namespace OA = OCPI::API;
 
 int main(int /* argc */, char ** /* argv */) {
   try {
+    OA::Application app("<application>"
+			"  <instance component='hello' externals='true'/>"
+			"</application>");
+#if 0 // don't use undocumented/unsupported interfaces
   // Find a container to run our worker
   // (it returns a pointer since it might return NULL)
   OA::Container *c = OA::ContainerManager::find("rcc");
@@ -43,6 +47,11 @@ int main(int /* argc */, char ** /* argv */) {
   // Get an external port (that this program can use) connected to the "out" port.
   OA::ExternalPort &ep = p.connectExternal();
   w.start(); // start the worker running
+#else
+  app.initialize();
+  OA::ExternalPort &ep = app.getPort("out");
+  app.start();
+#endif
   OA::ExternalBuffer *b;
   for (unsigned i = 0; i < 100; i++) {
     uint8_t *data;

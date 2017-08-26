@@ -30,7 +30,7 @@ namespace OCPI {
 
 DummyWorker::
 DummyWorker(Device &device, ezxml_t impl, ezxml_t inst, const char *idx) 
-  : OC::Worker(NULL, impl, inst, NULL, false),
+  : OC::Worker(NULL, impl, inst, NULL, false, 0, 1),
     WciControl(device, impl, inst, properties(), false),
     m_name(ezxml_cattr(inst, "name")),
     m_wName(ezxml_cattr(impl, "name"))

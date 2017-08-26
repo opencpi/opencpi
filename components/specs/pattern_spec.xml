@@ -8,9 +8,7 @@ Properties:
 -->
 <ComponentSpec>
 
-  <DataInterfaceSpec Name="out" Producer="true">
-      <!-- <xi:include href="stream32_protocol.xml"/> -->
-  </DataInterfaceSpec>
+  <port name='out' producer='true' buffersize='8k'/>
   <!-- The control register: initialized to zero
        bit 0 is to enable sending of messages - always set to 1 before start.
        bit 1 is to indicate that there are multpiple message payloads, not one.

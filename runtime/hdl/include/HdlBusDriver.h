@@ -32,8 +32,6 @@
 namespace OCPI {
   namespace HDL {
     namespace Zynq {
-#endif
-#ifdef __cplusplus
       class Device;
       class Driver {
 	int m_memFd;

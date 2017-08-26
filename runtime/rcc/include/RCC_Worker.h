@@ -34,8 +34,8 @@
 #include <stdio.h>
 #include <stddef.h>
 #ifdef __cplusplus
-// For proxy slaves
-#include "OcpiContainerApi.h"
+
+#include "OcpiContainerApi.h" // For proxy slaves
 #endif
 #if defined (WIN32)
     /**
@@ -106,6 +106,12 @@ namespace OCPI {
   namespace API {
     class Application;
   }
+  namespace OS {
+    class Timer;
+  }
+  namespace OCL {
+    class Worker;
+  }
   namespace RCC {
     class Worker;
 #endif
@@ -160,6 +166,7 @@ typedef struct {
 #ifdef __cplusplus
 class RunCondition {
   friend class OCPI::RCC::Worker;
+  friend class OCPI::OCL::Worker;
  public:
   RCCPortMask *m_portMasks;  // the masks used for checking
   RCCBoolean   m_timeout;    // is timeout enabled?
@@ -167,6 +174,7 @@ class RunCondition {
  private:
   RCCPortMask  m_myMasks[3]; // non-allocated masks used almost all the time
   RCCPortMask *m_allocated;  // NULL or allocated
+  bool         m_hasRun;     // Have we run since being activated?
  protected:
   RCCPortMask  m_allMasks;   // summary of all masks in the list
  public:
@@ -202,6 +210,13 @@ class RunCondition {
  private:
   void initMasks(va_list ap);
   void setMasks(RCCPortMask first, va_list ap);
+  void activate(OCPI::OS::Timer &tmr, unsigned nPorts);
+  // Return true if should run based on non-port info
+  // Set timedout if we are running due to timeout.
+  // Set hasRun
+  // Set bail if should NOT run based on non-port info
+ protected:
+  bool shouldRun(OCPI::OS::Timer &tmr, bool &timedout, bool &bail);
 };
 #endif
 typedef RCCResult RCCMethod(RCCWorker *_this);
@@ -226,11 +241,13 @@ typedef struct {
   /* private member for container use */
   size_t length_;
   RCCOpCode opCode_;
+  size_t direct_;
   RCCBoolean isNew_; // hook for upper level initializations
 #ifdef WORKER_INTERNAL
-  OCPI::DataTransport::BufferUserFacet *containerBuffer;
+  OCPI::RCC::Port *containerPort;
+  OCPI::API::ExternalBuffer *portBuffer;
 #else
-  void *id_; 
+  void *id_, *id1_; 
 #endif
 } RCCBuffer;
 
@@ -252,7 +269,7 @@ struct RCCPort {
     } u;
   } output;
   RCCPortMethod *callBack;
-
+  size_t connectedCrewSize;
   /* Used by the container */
   RCCBoolean useDefaultLength_; // for C++, use the length field as default
   size_t defaultLength_;
@@ -267,6 +284,12 @@ struct RCCPort {
   void *containerPort, *userPort, *sequence, *metaPort;
 #endif
 };
+
+typedef struct {
+  void *args[3];
+} RCCTaskArgs;
+
+typedef void (*RCCTask)(RCCTaskArgs *args);
 
 typedef struct {
   void (*release)(RCCBuffer *);
@@ -286,6 +309,8 @@ struct RCCWorker {
   RCCRunCondition        * runCondition;
   RCCPortMask              connectedPorts;
   char                   * errorString;
+  size_t                   member;
+  size_t                   crewSize;
   RCCBoolean               firstRun;
   RCCPort                  ports[1];
 };
@@ -320,7 +345,6 @@ typedef struct {
 typedef struct {
   size_t size, memSize, *memSizes, propertySize;
   RCCPortInfo *portInfo;
-  RCCPortMask optionallyConnectedPorts; // usually initialized from metadata
 } RCCWorkerInfo;
 
 typedef struct {
@@ -352,7 +376,7 @@ typedef struct {
      m_resized = true;
    }
  public:
-   inline void * data() const { return m_rccBuffer->data; }
+   inline uint8_t *data() const { return (uint8_t *)m_rccBuffer->data; }
    inline size_t maxLength() const { return m_rccBuffer->maxLength; }
    // For input buffers
    inline size_t length() const { return m_rccBuffer->length_; }
@@ -367,6 +391,7 @@ typedef struct {
      m_lengthSet = true;
    }
    void setOpCode(RCCOpCode op);
+   void setDirect(size_t direct) {m_rccBuffer->direct_ = direct; }
    void setInfo(RCCOpCode op, size_t len) {
      setOpCode(op);
      setLength(len);
@@ -395,6 +420,7 @@ typedef struct {
    inline bool hasBuffer() {
      return m_rccBuffer && (m_rccBuffer->data || (m_rccPort.containerPort && request()));
    }
+   size_t connectedCrewSize() { return m_rccPort.connectedCrewSize; }
    size_t
      topLength(size_t elementLength);
    void
@@ -464,11 +490,36 @@ typedef struct {
    }
  };
 
-
  class Worker;
+ class RCCUserWorker;
+ class RCCUserTask {
+   //   bool m_done;
+ public:
+   RCCUserTask();
+   virtual void run() = 0;
+   //   void done() const { return m_done; }
+   void spawn(); 
+ private:
+   Worker & m_worker;
+ };
+
  class RCCUserWorker {
    friend class Worker;
+   friend class RCCUserTask;
    Worker &m_worker;
+   RCCUserPort *m_ports; // array of C++ port objects
+ public:
+   size_t getMember() const { return m_rcc.member; }
+   size_t getCrewSize() const { return m_rcc.crewSize; };
+   void addTask(RCCTask task, RCCTaskArgs *args);
+   void addTask(RCCUserTask *task);
+   void waitTasks();
+   bool checkTasks();
+   // Simple distribution calculation of now many items a given member will be responsible
+   // for given a total, and a limit on message sizes.  Return is total for member,
+   // optional output arg is max per message for this member.
+   size_t memberItemTotal(uint64_t totalItems, size_t maxPerMessage = 0,
+			  size_t *perMessage = NULL);
  protected:
    bool m_first;
    RCCWorker &m_rcc;
@@ -478,6 +529,7 @@ typedef struct {
    // These are called by the worker.
    virtual void propertyWritten(unsigned /*ordinal*/) {}
    virtual void propertyRead(unsigned /*ordinal*/) {}
+   RCCUserPort &getPort(unsigned n) const { return m_ports[n]; }
    inline bool firstRun() const { return m_first; };
    bool isInitialized() const;
    bool isOperating() const;
@@ -502,8 +554,8 @@ typedef struct {
    // The worker author must implement this one.
    virtual RCCResult run(bool timedOut) = 0;
    virtual RCCTime getTime();
-   
  };
+
  // This class emulates the API worker, and is customized for the specific implementation
  // It forwards all the API methods
  class RCCUserSlave {

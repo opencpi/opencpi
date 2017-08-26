@@ -78,8 +78,8 @@ namespace OCPI {
       PVString("transferRole"),
       PVString("DLLEntryPoint"),
       PVString("monitorIPAddress"),
-      PVString("protocol"),
-      PVString("endpoint"),
+      PVString("protocol"), // deprecated in favor or transport
+      PVString("endpoint"), // a specific endpoint
       PVString("Device"),
       PVBool("ownthread"),
       PVBool("polled"),
@@ -194,6 +194,13 @@ namespace OCPI {
     PValueList::PValueList(const PValue *params, const PValue *override) : m_list(NULL) {
       add(params, override);
     }
+    
+    PValueList::
+    PValueList(const PValueList &other) 
+      : m_list(NULL) {
+      add(other.m_list);
+    }
+
     PValueList & PValueList::
     operator=(const PValueList & p ) {
       delete [] m_list;
@@ -245,7 +252,7 @@ namespace OCPI {
 	strcpy((char*)p.vString, val.m_String);
 	p.owned = true;
       } else
-	p.vULongLong = val.m_ULongLong;
+	p.vULongLong = val.m_ULongLong; // FIXME: little endian assumption
       return NULL;
     }
 

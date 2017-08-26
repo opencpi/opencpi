@@ -100,7 +100,8 @@ namespace OCPI {
 				   "external", NULL)) ||
 	  (err = OE::getNumber(ax, "maxprocessors", &m_processors, &maxProcs)) ||
 	  (err = OE::getNumber(ax, "minprocessors", &m_processors, &minProcs)) ||
-	  (err = OE::getBoolean(ax, "roundrobin", &roundRobin)))
+	  (err = OE::getBoolean(ax, "roundrobin", &roundRobin)) ||
+	  (err = m_collocation.parse(ax)))
 	return err;
       if (maxProcs)
 	m_cMapPolicy = MaxProcessors;
@@ -559,7 +560,8 @@ namespace OCPI {
 	{ "component", "Worker", "Name", "connect", "to", "from", "external", "selection",
 	  "index", "externals", "slave", "transport", "connectInput", NULL};
       if ((err = OE::checkAttrsVV(ix, instAttrs, extraInstAttrs, NULL)) ||
-	  (err = OE::getBoolean(ix, "externals", &m_externals)))
+	  (err = OE::getBoolean(ix, "externals", &m_externals)) ||
+	  (err = m_collocation.parse(ix)))
 	return err;
       m_xml = ix;
       std::string component, myBase;
@@ -715,40 +717,11 @@ namespace OCPI {
       return NULL;
     }
 
-#if 0
-    // Find the value of a parameter for this port.  Return error.
-    // "value" is out arg - NULL if not found.
-    // FIXME: should this be nuked in favor of the implementation in 
-    // OcpiLibraryAssembly that operates when all port names are known?
-    static const char *
-    findPortValue(const char *instName, const char *portName, const char *paramName,
-		  const PValue *params, PValueList &pvlist) {
-      const char *val;
-      if (findAssign(params, paramName, instName, val)) {
-	const char *eq = strchr(val, '=');
-	if (!eq)
-	  return esprintf("Port parameter assignment '%s' is invalid. "
-			  "Format is: <port>=<parameter-value>", val);
-	if (!strncasecmp(portName, val, eq - val))
-	  pvlist.add(paramName, eq + 1);
-      }
-      return NULL;
-    }
-#endif
     const char *Assembly::Port::
     init(Assembly &a, const char *name, unsigned instance, bool isInput, bool bidir,
 	 bool isKnown, size_t index, const PValue */*params*/) {
       if (name)
 	m_name = name;
-#if 0 // this is done at the application level since we don't know port names herea
-     {
-	const char *err, *iname = a.m_instances[instance]->m_name.c_str();
-	if ((err = findPortValue(iname, name, "transferRole", params, m_parameters)) ||
-	    (err = findPortValue(iname, name, "bufferCount", params, m_parameters)))
-	  return err;
-	m_name = name;
-      }	
-#endif
       m_role.m_provider = isInput;
       m_role.m_bidirectional = bidir;
       m_role.m_knownRole = isKnown;
@@ -852,6 +825,50 @@ namespace OCPI {
     }
     Assembly::Role::Role()
       : m_knownRole(false), m_bidirectional(false), m_provider(false) {
+    }
+    Assembly::CollocationPolicy::
+    CollocationPolicy()
+      : m_minCollocation(1), m_maxCollocation(0), m_minContainers(1), m_maxContainers(0)
+    {
+    }
+    const char *Assembly::CollocationPolicy::
+    parse(ezxml_t x) {
+      const char *err;
+      if ((err = OE::getNumber(x, "minCollocation", &m_minCollocation, NULL, 0, false)) ||
+	  (err = OE::getNumber(x, "maxCollocation", &m_maxCollocation, NULL, 0, false)) ||
+	  (err = OE::getNumber(x, "minContainers", &m_minContainers, NULL, 0, false)) ||
+	  (err = OE::getNumber(x, "maxContainers", &m_maxContainers, NULL, 0, false)))
+	return err;
+      return NULL;
+    }
+    const char *Assembly::CollocationPolicy::
+    apply(size_t scale, size_t nContainers, size_t &collocation, size_t &usedContainers,
+	  size_t &finalScale) const {
+      finalScale = scale;
+      usedContainers =
+	m_maxContainers ? (m_maxContainers > nContainers ? nContainers : m_maxContainers) :
+	nContainers;
+      collocation = (scale + usedContainers - 1) / usedContainers; // initial spread-wide amount
+      ocpiDebug("Applying collo policy of collo %zu/%zu, cont %zu/%zu to scale %zu cont %zu",
+		m_minCollocation, m_maxCollocation, m_minContainers, m_maxContainers,
+		scale, nContainers);
+      // Essentially we start out using the maximum number of containers allowed
+      if (collocation < m_minCollocation) {
+	// We are spread too thin.  Use fewer containers
+	usedContainers = (scale + m_minCollocation - 1)/m_minCollocation;
+	collocation = m_minCollocation;
+	if (usedContainers < m_minContainers) {
+	  // we are too concentrated, perhaps use more
+	  usedContainers = m_minContainers > nContainers ? nContainers : m_minContainers;
+	  collocation = (scale + usedContainers - 1)/usedContainers;
+	}
+      }
+      if (m_maxCollocation && collocation > m_maxCollocation)
+	return esprintf("scaled deployment needs collocation of %zu, but max allowed is %zu",
+			collocation, m_maxCollocation);
+      ocpiDebug("Collocation policy result is: collocation %zu on %zu containers",
+		collocation, usedContainers);
+      return NULL;
     }
   }
 }

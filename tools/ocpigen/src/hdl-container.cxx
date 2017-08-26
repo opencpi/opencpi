@@ -259,15 +259,15 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
 	for (PortsIter si = m_config.m_ports.begin(); si != m_config.m_ports.end(); si++) {
 	  Port &sp = **si;
 	  if (!sp.m_master && (sp.m_type == NOCPort || sp.m_type == SDPPort) &&
-	      !strncasecmp(p.cname(), sp.cname(), len) && !strcasecmp(sp.cname() + len, "_slave")) {
+	      !strncasecmp(p.pname(), sp.pname(), len) && !strcasecmp(sp.pname() + len, "_slave")) {
 	    assert(!slave);
 	    slave = &sp;
 	  }
 	}
 	ocpiAssert(p.m_type == SDPPort || slave);
 #endif
-	uNocs.insert(std::make_pair(p.cname(),
-				    UNoc(p.cname(), p.m_type, m_config.sdpWidth(), p.m_count)));
+	uNocs.insert(std::make_pair(p.pname(),
+				    UNoc(p.pname(), p.m_type, m_config.sdpWidth(), p.m_count)));
       }
     }
   }
@@ -323,7 +323,7 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
 		  "    <port instance='ocscp' name='wci'/>\n"
 		  "    <port instance='pfconfig' name='%s'/>\n"
 		  "  </connection>\n",
-		  p.m_count, p.cname());
+		  p.m_count, p.pname());
     nWCIs += p.m_count;
   }
   if (m_appAssembly.m_assembly && m_appAssembly.m_assembly->m_instances.size() != 0) {
@@ -338,15 +338,15 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
 		    "    <port instance='%s' name='%s'/>\n"
 		    "  </connection>\n",
 		    p.m_count, nWCIs,
-		    m_appAssembly.m_implName, p.cname());
+		    m_appAssembly.m_implName, p.pname());
       nWCIs += p.m_count;
     }
   }
   if (icp && !cp) {
-    UNoc &unoc = uNocs.at(icp->cname());
+    UNoc &unoc = uNocs.at(icp->pname());
     std::string client;
     const char *port;
-    OU::format(client, "%s_unoc2cp", icp->cname());
+    OU::format(client, "%s_unoc2cp", icp->pname());
     if (icp->m_type == SDPPort) {
       OU::formatAdd(assy,
 		    "  <instance name='%s' worker='sdp2cp'>\n"
@@ -376,7 +376,7 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
 		      "    <port instance='pfconfig' name='%s'/>\n"
 		      "    <port instance='ocscp' name='cp'/>\n"
 		      "  </connection>\n",
-		      i.cname());
+		      i.pname());
 	break;
       }
     }
@@ -394,7 +394,7 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
 	if (uNocs.empty() || uNocs.size() > 1) {
 	  if (!attribute)
 	    err = OU::esprintf("No single interconnect in platform configuration for assembly port %s",
-			       (*pi)->cname());
+			       (*pi)->pname());
 	  return;
 	}
 	for (PortsIter ii = m_config.m_ports.begin(); ii != m_config.m_ports.end(); ii++) {
@@ -442,14 +442,14 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
 		      "    <port instance='%s' name='%s'/>\n"
 		      "  </connection>\n",
 		      nWCIs, di.cname(),
-		      dt.ports()[0]->cname());
+		      dt.ports()[0]->pname());
 	nWCIs++;
       }
       // Instance time clients for the assembly
       const Ports &ports = dt.ports();
       for (PortsIter pi = ports.begin(); pi != ports.end(); pi++)
 	if ((*pi)->m_type == WTIPort)
-	  emitTimeClient(assy, di.cname(), (*pi)->cname());
+	  emitTimeClient(assy, di.cname(), (*pi)->pname());
     }
     for (ContConnectsIter ci = connections.begin(); ci != connections.end(); ci++)
       if ((err = emitConnection(assy, uNocs, nWCIs, *ci)))
@@ -469,7 +469,7 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
   // Instance time clients for the assembly
   for (PortsIter pi = m_appAssembly.m_ports.begin(); pi != m_appAssembly.m_ports.end(); pi++)
     if ((*pi)->m_type == WTIPort)
-      emitTimeClient(assy, m_appAssembly.m_implName, (*pi)->cname());
+      emitTimeClient(assy, m_appAssembly.m_implName, (*pi)->pname());
   OU::formatAdd(assy,
 		"  <instance worker='metadata'/>\n"
 		"    <connection>\n"
@@ -591,7 +591,7 @@ parseConnection(ezxml_t cx, ContConnect &c) {
   if ((attr = ezxml_cattr(cx, "external"))) {
     // Instance time clients for the assembly
     for (PortsIter pi = m_appAssembly.m_ports.begin(); pi != m_appAssembly.m_ports.end(); pi++)
-      if (!strcasecmp((*pi)->cname(), attr)) {
+      if (!strcasecmp((*pi)->pname(), attr)) {
 	c.external = *pi;
 	break;
       }
@@ -615,7 +615,7 @@ parseConnection(ezxml_t cx, ContConnect &c) {
     const ::Device &d = c.devInstance->device;
     for (PortsIter pi = d.deviceType().ports().begin();
 	 pi != d.deviceType().ports().end(); pi++)
-      if (!strcasecmp((*pi)->cname(), attr)) {
+      if (!strcasecmp((*pi)->pname(), attr)) {
 	c.port = *pi;
 	break;
       }
@@ -641,7 +641,7 @@ parseConnection(ezxml_t cx, ContConnect &c) {
     // An interconnect can be on any device worker, but for now it is on the config.
     for (PortsIter pi = m_config.m_ports.begin(); pi != m_config.m_ports.end(); pi++) {
       Port &p = **pi;
-      if (!strcasecmp(p.cname(), attr) ||
+      if (!strcasecmp(p.pname(), attr) ||
 	  (!strcmp(attr, "*") && p.m_master && (p.m_type == NOCPort || p.m_type == SDPPort))) {
 	c.interconnect = &p;
 	break;
@@ -660,7 +660,7 @@ parseConnection(ezxml_t cx, ContConnect &c) {
 const char *HdlContainer::
 emitUNocConnection(std::string &assy, UNocs &uNocs, size_t &index, const ContConnect &c) {
     // Find uNoc
-  const char *iname = c.interconnect->cname();
+  const char *iname = c.interconnect->pname();
   UNoc &unoc = uNocs.at(iname);
   UNocChannel &unc = unoc.m_channels[unoc.m_currentChannel];
   Port *port = c.external ? c.external : c.port;
@@ -669,7 +669,7 @@ emitUNocConnection(std::string &assy, UNocs &uNocs, size_t &index, const ContCon
       !c.interconnect->m_master)
     return OU::esprintf("unsupported container connection between "
 			"port %s of %s%s and interconnect %s",
-			port->cname(), iname,
+			port->pname(), iname,
 			c.external ? "assembly" : "device",
 			c.external ? "" : c.devInstance->device.cname());
   std::string dma, sma, ctl;
@@ -750,9 +750,9 @@ emitUNocConnection(std::string &assy, UNocs &uNocs, size_t &index, const ContCon
   // Connect to the port
   std::string other;
   if (c.devInConfig)
-    OU::format(other, "%s_%s", c.devInstance->cname(), port->cname());
+    OU::format(other, "%s_%s", c.devInstance->cname(), port->pname());
   else
-    other = port->cname();
+    other = port->pname();
   OU::formatAdd(assy,
 		"  <connection>\n"
 		"    <port instance='%s' %s='%s'/>\n"
@@ -788,15 +788,15 @@ emitConnection(std::string &assy, UNocs &uNocs, size_t &index, const ContConnect
     // We need to connect an external port to a port of a device instance.
     std::string devport;
     if (c.devInConfig)
-      OU::format(devport, "%s_%s", c.devInstance->cname(), c.port->cname());
+      OU::format(devport, "%s_%s", c.devInstance->cname(), c.port->pname());
     OU::formatAdd(assy,
 		  "  <connection>\n"
 		  "    <port instance='%s' name='%s'/>\n"
 		  "    <port instance='%s' name='%s'/>\n"
 		  "  </connection>\n",
-		  m_appAssembly.m_implName, c.external->cname(),
+		  m_appAssembly.m_implName, c.external->pname(),
 		  c.devInConfig ? "pfconfig" : c.devInstance->cname(),
-		  c.devInConfig ? devport.c_str() : c.port->cname());
+		  c.devInConfig ? devport.c_str() : c.port->pname());
   } else
     return "unsupported container connection";
   return NULL;
@@ -847,8 +847,8 @@ emitXmlConnections(FILE *f) {
       InstancePort *ap = NULL, *pp = NULL, *ip = NULL; // instance ports for the app, for pf, for internal
       for (AttachmentsIter ai = cc.m_attachments.begin(); ai != cc.m_attachments.end(); ai++) {
 	Attachment &a = **ai;
-	(!strcasecmp(a.m_instPort.m_port->m_worker->m_implName, m_appAssembly.m_implName) ? ap :
-	 !strcasecmp(a.m_instPort.m_port->m_worker->m_implName, m_config.m_implName) ? pp : ip)
+	(!strcasecmp(a.m_instPort.m_port->worker().m_implName, m_appAssembly.m_implName) ? ap :
+	 !strcasecmp(a.m_instPort.m_port->worker().m_implName, m_config.m_implName) ? pp : ip)
 	  = &a.m_instPort;
       }
       assert(ap || pp || ip);
@@ -856,8 +856,8 @@ emitXmlConnections(FILE *f) {
 	continue; // internal connection already dealt with
       // find the corresponding instport inside each side.
       InstancePort
-	*aap = ap ? m_appAssembly.m_assembly->findInstancePort(ap->m_port->cname()) : NULL,
-        *ppp = pp ? m_config.m_assembly->findInstancePort(pp->m_port->cname()) : NULL,
+	*aap = ap ? m_appAssembly.m_assembly->findInstancePort(ap->m_port->pname()) : NULL,
+        *ppp = pp ? m_config.m_assembly->findInstancePort(pp->m_port->pname()) : NULL,
 	*producer = (aap && aap->m_port->isDataProducer() ? aap :
 		     ppp && ppp->m_port->isDataProducer() ? ppp : ip),
 	*consumer = (aap && !aap->m_port->isDataProducer() ? aap :
@@ -865,9 +865,9 @@ emitXmlConnections(FILE *f) {
       // Application is producing to an external consumer
       fprintf(f, "<connection from=\"%s/%s\" out=\"%s\" to=\"%s/%s\" in=\"%s\"/>\n",
 	      producer == ip ? "c" : producer == aap ? "a" : "p",
-	      producer->m_instance->cname(), producer->m_port->cname(),
+	      producer->m_instance->cname(), producer->m_port->pname(),
 	      consumer == ip ? "c" : consumer == aap ? "a" : "p",
-	      consumer->m_instance->cname(), consumer->m_port->cname());
+	      consumer->m_instance->cname(), consumer->m_port->pname());
     }
   }
 }
@@ -932,7 +932,7 @@ emitUuid(const OU::Uuid &uuid) {
   const char *comment = hdlComment(Verilog);
   printgen(f, comment, m_file.c_str(), true);
   OCPI::HDL::HdlUUID uuidRegs;
-  memcpy(uuidRegs.uuid, uuid, sizeof(uuidRegs.uuid));
+  memcpy(uuidRegs.uuid, uuid.uuid, sizeof(uuidRegs.uuid));
   uuidRegs.birthday = (uint32_t)time(0);
   strncpy(uuidRegs.platform, g_platform, sizeof(uuidRegs.platform));
   strncpy(uuidRegs.device, g_device, sizeof(uuidRegs.device));

@@ -1,26 +1,42 @@
+
 /*
- * This file is protected by Copyright. Please refer to the COPYRIGHT file
- * distributed with this source distribution.
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
- * This file is part of OpenCPI <http://www.opencpi.org>
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
  *
- * OpenCPI is free software: you can redistribute it and/or modify it under the
- * terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation, either version 3 of the License, or (at your option) any
- * later version.
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
  *
- * OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <OcpiOsMisc.h>
-#include <OcpiOsAssert.h>
-#include <OcpiMessageCircuit.h>
+
+#include "OcpiOsMisc.h"
+#include "OcpiOsAssert.h"
+#include "OcpiMessageCircuit.h"
+#include "XferEndPoint.h"
 
 namespace OS = OCPI::OS;
 namespace OU = OCPI::Util;
@@ -44,8 +60,8 @@ namespace OCPI {
     MessageCircuit::
     MessageCircuit(Transport &transport,
 		   //		   OS::Mutex &mutex,
-		   const char *a_localEndpoint,
-		   const char *a_remoteEndpoint,
+		   const char *localEndpoint,
+		   const char *remoteEndpoint,
 		   uint32_t bufferSize,
 		   const char *protocol,
 		   OS::Timer *timer)
@@ -53,8 +69,8 @@ namespace OCPI {
 	m_rcv_port(NULL), m_send_port(NULL)
     {
       DataTransfer::EndPoint
-	&local = transport.getLocalEndpoint(a_localEndpoint),
-	&remote = transport.addRemoteEndPoint(a_remoteEndpoint);
+	&local = transport.getLocalEndpoint(localEndpoint),
+	&remote = transport.addRemoteEndPoint(remoteEndpoint);
 
       Circuit &send = makeCircuit(local, remote, true, protocol, timer);
       try {
@@ -90,8 +106,8 @@ namespace OCPI {
 	  delete &c;
 	  throw OCPI::Util::Error("Timeout (> %us %uns) on %s side of connection '%s'->'%s'",
 				  timer->getElapsed().seconds(), timer->getElapsed().nanoseconds(),
-				  send ? "send" : "receive", from.end_point.c_str(),
-				  to.end_point.c_str());
+				  send ? "send" : "receive", from.name().c_str(),
+				  to.name().c_str());
 	}
       }
       // c.initializeDataTransfers();
@@ -110,7 +126,7 @@ namespace OCPI {
     }
 
     BufferUserFacet* MessageCircuit::
-    getNextEmptyOutputBuffer(void *&data, size_t &length, OS::Timer *timer)
+    getNextEmptyOutputBuffer(uint8_t *&data, size_t &length, OS::Timer *timer)
     {
       m_transport.dispatch();
       if (timer) {
@@ -143,7 +159,7 @@ namespace OCPI {
     //    }
 
     BufferUserFacet* MessageCircuit::
-    getNextFullInputBuffer(void *&data, size_t &length, uint8_t &opcode, OS::Timer *timer)
+    getNextFullInputBuffer(uint8_t *&data, size_t &length, uint8_t &opcode, OS::Timer *timer)
     {
       BufferUserFacet *r_buf = NULL;
 

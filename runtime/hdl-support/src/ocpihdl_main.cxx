@@ -32,8 +32,8 @@
 #include "OcpiUuid.h"
 #include "OcpiUtilMisc.h"
 #include "OcpiUtilEzxml.h"
-#include "OcpiUtilImplementation.h"
-#include "DtTransferInternal.h"
+#include "OcpiUtilWorker.h"
+#include "XferManager.h"
 #include "HdlSimServer.h"
 #include "HdlDriver.h"
 #include "HdlContainer.h"
@@ -939,7 +939,7 @@ uuid(const char **ap) {
 	part, sizeof(uuidRegs.device) - 1);
   OU::Uuid uuid;
   OU::generateUuid(uuid);
-  memcpy(uuidRegs.uuid, uuid, sizeof(uuidRegs.uuid));
+  memcpy(uuidRegs.uuid, uuid.uuid, sizeof(uuidRegs.uuid));
   uuidRegs.birthday = (uint32_t)time(0);
   strncpy(uuidRegs.platform, platform.c_str(), sizeof(uuidRegs.platform));
   strncpy(uuidRegs.device, part, sizeof(uuidRegs.device));
@@ -951,7 +951,7 @@ uuid(const char **ap) {
 	  "// UUID generated for platform '%s', device '%s', uuid '%s'\n"
 	  "module mkUUID(uuid);\n"
 	  "output [511 : 0] uuid;\nwire [511 : 0] uuid = 512'h",
-	  platform.c_str(), part, textUUID);
+	  platform.c_str(), part, textUUID.uuid);
   for (unsigned n = 0; n < sizeof(uuidRegs); n++)
     fprintf(ofp, "%02x", ((char*)&uuidRegs)[n]&0xff);
   fprintf(ofp, ";\nendmodule // mkUUID\n");
@@ -1347,10 +1347,12 @@ receiveRDMA(const char **ap) {
   OD::Transport transport(&global, false);
   if (endpoint.empty())
     endpoint = "ocpi-ether-rdma";
+#if 0
   OU::PValue params[2] = { 
     OA::PVString("remote", endpoint.c_str()),
     OA::PVEnd
   };
+#endif
   OD::Descriptor myInputDesc;
   // Initialize out input descriptor before it is processed and
   // completed by the transport system.
@@ -1374,7 +1376,11 @@ receiveRDMA(const char **ap) {
   myInputDesc.desc.oob.port_id = 0;
   memset( myInputDesc.desc.oob.oep, 0, sizeof(myInputDesc.desc.oob.oep));
   myInputDesc.desc.oob.cookie = 0;
+#if 0
   OD::Port &port = *transport.createInputPort(myInputDesc, params);
+#else
+  OD::Port &port = *transport.createInputPort(myInputDesc);
+#endif
   ocpiDebug("Our input descriptor: %s", myInputDesc.desc.oob.oep);
   // Now the normal transport/transfer driver has initialized (not finalized) the input port.
   OD::Descriptor theOutputDesc;
@@ -1455,12 +1461,13 @@ receiveRDMA(const char **ap) {
     theOutputDesc.desc.oob.cookie = 0;
     uint32_t outputEndPointSize = edpConfAccess.get32Register(memoryBytes, OH::OcdpProperties);
     DT::EndPoint &outputEndPoint =
-      DT::getManager().allocateProxyEndPoint(endpoint.c_str(), outputEndPointSize);
+      DT::getManager().allocateProxyEndPoint(endpoint.c_str(), true, outputEndPointSize);
     OD::Transport::fillDescriptorFromEndPoint(outputEndPoint, theOutputDesc);
   }
   // Finalizing the input port takes: role, type flow, emptyflagbase, size, pitch, value
   // This makes the input port ready to data from the output port
-  port.finalize(theOutputDesc, myInputDesc);
+  bool done;
+  port.finalize(&theOutputDesc, myInputDesc, NULL, done);
   ocpiDebug("Our output descriptor is: %s", theOutputDesc.desc.oob.oep);
   if (!*ap) {
     // If the other side is software (sendRDMA below), it will start when told.
@@ -1545,7 +1552,7 @@ receiveRDMA(const char **ap) {
   for (unsigned n = 0; n < 10; n++) {
     uint8_t opCode;
     size_t length;
-    void *vdata;
+    uint8_t *vdata;
     OD::BufferUserFacet *buf;
     unsigned t;
     for (t = 0; t < 1000000 && !(buf = port.getNextFullInputBuffer(vdata, length, opCode)); t++)
@@ -1627,12 +1634,15 @@ sendRDMA(const char **ap) {
   }
   OD::Port &port = *transport.createOutputPort(myOutputDesc, theInputDesc);
   OD::Descriptor localShadowPort, feedback;
-  const OD::Descriptor &outDesc = *port.finalize(theInputDesc, myOutputDesc, &localShadowPort);
+  bool done;
+  const OD::Descriptor *outDesc =
+    port.finalize(&theInputDesc, myOutputDesc, &localShadowPort, done);
+  assert(outDesc);
   if (*ap) {
     file = *ap;
     file += ".out";
-    OD::Descriptor sendDesc = outDesc;
-    const char *sp = strchr(outDesc.desc.oob.oep, '/');
+    OD::Descriptor sendDesc = *outDesc;
+    const char *sp = strchr(outDesc->desc.oob.oep, '/');
     std::string clean("ocpi-ether-rdma:");
     clean.append(sp+1);
     strcpy(sendDesc.desc.oob.oep, clean.c_str());
@@ -1646,7 +1656,7 @@ sendRDMA(const char **ap) {
     getchar();
   }
   for (unsigned n = 0; n < 10; n++) {
-    void *vdata;
+    uint8_t *vdata;
     size_t length;
     OD::BufferUserFacet *buf;
     unsigned t;
@@ -1707,7 +1717,7 @@ class Worker : public OC::Worker, public OH::WciControl {
   std::string m_name, m_wName;
 public:
   Worker(ezxml_t impl, ezxml_t inst, const char *idx) 
-    : OC::Worker(NULL, impl, inst, NULL, false),
+    : OC::Worker(NULL, impl, inst, NULL, false, 0, 1, NULL),
       OH::WciControl(*dev, impl, inst, properties(), false),
       m_name(ezxml_cattr(inst, "name")),
       m_wName(ezxml_cattr(impl, "name"))

@@ -134,7 +134,9 @@ found(const char *name, OP::Bar *bars, unsigned nbars, bool verbose) {
       device[sizeof(myUUID.device)] = '\0';
       strncpy(load, myUUID.load, sizeof(myUUID.load));
       load[sizeof(myUUID.load)] = '\0';
-      OCPI::Util::uuid2string(myUUID.uuid, textUUID);
+      OCPI::Util::Uuid tuuid;
+      memcpy(tuuid.uuid, myUUID.uuid, sizeof(tuuid));
+      OCPI::Util::uuid2string(tuuid, textUUID);
       bsvbd = occp->admin.birthday;
       bsbd = myUUID.birthday;
       ctime_r(&bsvbd, tbuf);
@@ -146,7 +148,7 @@ found(const char *name, OP::Bar *bars, unsigned nbars, bool verbose) {
 	     //	     "platform \"%s\", device \"%s\", UUID %s, loadParam \"%s\"\n",
 	     // name, tbuf, tbuf1, platform, device, textUUID, load);
 	     "platform \"%s\", part \"%s\", UUID %s\n",
-	     name, tbuf1, platform, device, textUUID);
+	     name, tbuf1, platform, device, textUUID.uuid);
 #else
       printf("OpenCPI FPGA at PCI %s\n", name);
       for (unsigned n = 0; n < sizeof(myUUID); n++) {

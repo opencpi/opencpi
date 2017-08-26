@@ -1,28 +1,41 @@
 /*
- * This file is protected by Copyright. Please refer to the COPYRIGHT file
- * distributed with this source distribution.
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
- * This file is part of OpenCPI <http://www.opencpi.org>
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
  *
- * OpenCPI is free software: you can redistribute it and/or modify it under the
- * terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation, either version 3 of the License, or (at your option) any
- * later version.
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
  *
- * OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 //#define SLEEP_DEBUG
 //#define DEBUG_WITH_EMULATOR
 
 /*
- * Abstract:
+ * Abstact:
  *   This file contains the OCPI circuit implementation.
  *
  * Revision History: 
@@ -36,37 +49,37 @@
  *
  */
 
-#include <cstring>
 #include <inttypes.h>
-#include "DtTransferInternal.h"
-#include "DtHandshakeControl.h"
-#include "OcpiPortMetaData.h"
-#include "OcpiParallelDataDistribution.h"
-#include "OcpiTransportConstants.h"
-#include "OcpiDataDistribution.h"
-#include "OcpiPort.h"
-#include "OcpiTransport.h"
-#include "OcpiCircuit.h"
-#include "OcpiBuffer.h"
-#include "OcpiPortSet.h"
-#include "OcpiTransferTemplate.h"
-#include "OcpiOutputBuffer.h"
-#include "OcpiInputBuffer.h"
-#include "OcpiTransferController.h"
-#include "OcpiTemplateGenerators.h"
-#include "OcpiList.h"
-#include "OcpiOsMisc.h"
-#include "OcpiOsAssert.h"
-#include "OcpiRDTInterface.h"
-#include "OcpiTimeEmit.h"
-#include "OcpiPullDataDriver.h"
-#include "OcpiTimeEmitCategories.h"
+#include <string.h>
+#include <DtHandshakeControl.h>
+#include "XferManager.h"
+#include <OcpiPortMetaData.h>
+#include <OcpiParallelDataDistribution.h>
+#include <OcpiTransportConstants.h>
+#include <OcpiDataDistribution.h>
+#include <OcpiPort.h>
+#include <OcpiTransport.h>
+#include <OcpiCircuit.h>
+#include <OcpiBuffer.h>
+#include <OcpiPortSet.h>
+#include <OcpiTransferTemplate.h>
+#include <OcpiOutputBuffer.h>
+#include <OcpiInputBuffer.h>
+#include <OcpiTransferController.h>
+#include <OcpiTemplateGenerators.h>
+#include <OcpiList.h>
+#include <OcpiOsMisc.h>
+#include <OcpiOsAssert.h>
+#include <OcpiRDTInterface.h>
+#include <OcpiTimeEmit.h>
+#include <OcpiPullDataDriver.h>
+#include <OcpiTimeEmitCategories.h>
 
 using namespace OCPI::DataTransport;
-using namespace DataTransfer;
 using namespace OCPI::OS;
 using namespace ::DataTransport::Interface;
 namespace DtI = ::DataTransport::Interface;
+namespace XF = DataTransfer;
 
 // our static init
 //uint32_t OCPI::DataTransport::Circuit::m_init=0;
@@ -120,6 +133,7 @@ Circuit(
                     m_transport->m_transportGlobal->m_gen_temp_gen;
 
     m_transport->m_transportGlobal->m_gen_pat1 = new TransferTemplateGeneratorPattern1( );
+    //    m_transport->m_transportGlobal->m_gen_pat1passive = new TransferTemplateGeneratorPattern1Passive( );
     m_transport->m_transportGlobal->m_gen_pat1AFC = new TransferTemplateGeneratorPattern1AFC( );
     m_transport->m_transportGlobal->m_gen_pat1AFCShadow = new TransferTemplateGeneratorPattern1AFCShadow( );
     m_transport->m_transportGlobal->m_gen_pat2 = new TransferTemplateGeneratorPattern2( );
@@ -136,7 +150,6 @@ Circuit(
       [true] [OCPI::RDT::ActiveMessage] [OCPI::RDT::ActiveFlowControl] 
       = m_transport->m_transportGlobal->m_gen_pat1;
 
-
     // If the output port is AFC, the same transfer pattern generator is used for any input port role
     for( y=0; y<OCPI::RDT::MaxRole; y++) {
 
@@ -151,10 +164,19 @@ Circuit(
         = m_transport->m_transportGlobal->m_gen_pat1AFCShadow;
     }
 
-
-
-
+#if 0
+    // Passive is same whether input or output
     // Fixme.  All other DD&P patterns have not yet beed ported to the new port "roles" paradigm
+    m_transport->m_transportGlobal->m_templateGenerators[DataDistributionMetaData::parallel][DataDistributionMetaData::parallel]
+      [DataPartitionMetaData::INDIVISIBLE][DataPartitionMetaData::INDIVISIBLE] 
+      [false] [OCPI::RDT::Passive] [OCPI::RDT::ActiveOnly] 
+      = m_transport->m_transportGlobal->m_gen_pat1passive;
+    m_transport->m_transportGlobal->m_templateGenerators[DataDistributionMetaData::parallel][DataDistributionMetaData::parallel]
+      [DataPartitionMetaData::INDIVISIBLE][DataPartitionMetaData::INDIVISIBLE] 
+      [true] [OCPI::RDT::ActiveOnly] [OCPI::RDT::Passive] 
+      = m_transport->m_transportGlobal->m_gen_pat1passive;
+#endif
+
     m_transport->m_transportGlobal->m_templateGenerators[DataDistributionMetaData::parallel][DataDistributionMetaData::sequential]
       [DataPartitionMetaData::INDIVISIBLE][DataPartitionMetaData::INDIVISIBLE] 
       [false] [OCPI::RDT::ActiveMessage] [OCPI::RDT::ActiveFlowControl] 
@@ -169,7 +191,6 @@ Circuit(
       [DataPartitionMetaData::INDIVISIBLE][DataPartitionMetaData::BLOCK] 
       [false] [OCPI::RDT::ActiveMessage] [OCPI::RDT::ActiveFlowControl] 
       = m_transport->m_transportGlobal->m_gen_pat4;
-        
 
     // Same thing for the transfer controllers
     m_transport->m_transportGlobal->m_gen_control = new TransferControllerNotSupported();
@@ -185,6 +206,7 @@ Circuit(
 
     
     m_transport->m_transportGlobal->m_cont1 = new TransferController1();
+    //    m_transport->m_transportGlobal->m_cont1passive = new TransferController1Passive();
     m_transport->m_transportGlobal->m_cont1AFCShadow = new TransferController1AFCShadow();
     m_transport->m_transportGlobal->m_cont2 = new TransferController2();
     m_transport->m_transportGlobal->m_cont3 = new TransferController3();
@@ -213,11 +235,17 @@ Circuit(
         [false] [OCPI::RDT::ActiveFlowControl] [y] 
         = m_transport->m_transportGlobal->m_cont1AFCShadow;
     }
+#if 0
+    m_transport->m_transportGlobal->m_transferControllers[DataDistributionMetaData::parallel] [DataDistributionMetaData::parallel]
+      [DataPartitionMetaData::INDIVISIBLE][DataPartitionMetaData::INDIVISIBLE] 
+      [true] [OCPI::RDT::Passive] [OCPI::RDT::ActiveOnly] 
+      = m_transport->m_transportGlobal->m_cont1passive;
 
-
-
-
-
+    m_transport->m_transportGlobal->m_transferControllers[DataDistributionMetaData::parallel] [DataDistributionMetaData::parallel]
+      [DataPartitionMetaData::INDIVISIBLE][DataPartitionMetaData::INDIVISIBLE] 
+      [false] [OCPI::RDT::ActiveOnly] [OCPI::RDT::Passive] 
+        = m_transport->m_transportGlobal->m_cont1passive;
+#endif
     // Fixme.  All other DD&P patterns have not yet beed ported to the new port "roles" paradigm
     m_transport->m_transportGlobal->m_transferControllers[DataDistributionMetaData::parallel][DataDistributionMetaData::sequential]
       [DataPartitionMetaData::INDIVISIBLE][DataPartitionMetaData::INDIVISIBLE] 
@@ -322,7 +350,7 @@ OCPI::DataTransport::Circuit::
 
 
 void OCPI::DataTransport::Circuit::
-updateInputs( DataTransfer::ContainerComms::RequestUpdateCircuit *a_update)
+updateInputs( ContainerComms::RequestUpdateCircuit*update)
 {
   m_updated = true;
   // This is a request coming from the primary output port (ordinal 0).  It is telling us
@@ -330,10 +358,10 @@ updateInputs( DataTransfer::ContainerComms::RequestUpdateCircuit *a_update)
   // we can let it know when we have consumed a buffer that it sent to us.
 
   // Port set ordinal 0 is always the output set, we need to update ours 
-  static_cast<PortSetMetaData*>(m_metaData->m_portSetMd[0])->getPortInfo(0)->real_location_string = a_update->output_end_point;
+  static_cast<PortSetMetaData*>(m_metaData->m_portSetMd[0])->getPortInfo(0)->real_location_string = update->output_end_point;
 
   this->getOutputPortSet()->getPort(0)->m_data->m_bufferData->outputOffsets.portSetControlOffset=
-    OCPI_UTRUNCATE(OCPI::Util::ResAddr, a_update->senderOutputControlOffset);
+    OCPI_UTRUNCATE(OCPI::Util::ResAddr, update->senderOutputControlOffset);
   this->getOutputPortSet()->getPort(0)->initialize();
 
   // Now update the input port set with all of the real information associated with the circuit
@@ -341,10 +369,10 @@ updateInputs( DataTransfer::ContainerComms::RequestUpdateCircuit *a_update)
 
   // For DRI we need placeholders for all of the inputs
   unsigned int n;
-  for (n=input_ps->m_portMd.size(); n<a_update->tPortCount; n++ ) {
+  for (n=input_ps->m_portMd.size(); n<update->tPortCount; n++ ) {
 
     OCPI::RDT::Descriptors tdesc;
-    strcpy(tdesc.desc.oob.oep,a_update->output_end_point);
+    strcpy(tdesc.desc.oob.oep,update->output_end_point);
     PortMetaData* sp = new PortMetaData( n,false, NULL, tdesc,input_ps);
 
     input_ps->m_portMd.push_back( sp );
@@ -352,10 +380,10 @@ updateInputs( DataTransfer::ContainerComms::RequestUpdateCircuit *a_update)
 
   OCPI::DataTransport::Port* port = 
     static_cast<OCPI::DataTransport::Port*>
-    (this->getInputPortSet(0)->getPortFromOrdinal((PortOrdinal)a_update->receiverPortId));
+    (this->getInputPortSet(0)->getPortFromOrdinal((PortOrdinal)update->receiverPortId));
 
-  port->m_data->remoteCircuitId = a_update->senderCircuitId;
-  port->m_data->remotePortId    = a_update->senderPortId;
+  port->m_data->remoteCircuitId = update->senderCircuitId;
+  port->m_data->remotePortId    = update->senderPortId;
   port->m_externalState = DataTransport::Port::WaitingForShadowBuffer;
 
 
@@ -404,10 +432,10 @@ updateInputs()
   OCPI::DataTransport::Port* output_port = getOutputPortSet()->getPortFromIndex(0);
 
   // Make the request to get our offset
-  SMBResources* s_res = XferFactoryManager::getFactoryManager().getSMBResources( output_port->getEndpoint() );
+---  SMBResources* s_res = XferFactoryManager::getFactoryManager().getSMBResources( output_port->getEndpoint() );
 
   XferMailBox xmb( output_port->getMailbox() );
-  if ( ! xmb.mailBoxAvailable(s_res) ) {
+  if ( ! xmb.mailBoxAvailable(*s_res->m_comms) ) {
     return false;
   }
 
@@ -419,7 +447,7 @@ updateInputs()
     for ( uint32_t i=0; i<ps->getPortCount(); i++ ) {
       OCPI::DataTransport::Port* port = static_cast<OCPI::DataTransport::Port*>(ps->getPortFromIndex(i));
       // Ignore local ports
-      if ( m_transport->isLocalEndpoint( port->getRealShemServices()->endpoint()->end_point.c_str() ) ) {
+      if (m_transport->isLocalEndpoint(*port->getRealShemServices()->endpoint())) {
         if ( port->getCircuit()->getOutputPortSet()->getPortFromIndex(0) != output_port ) {
           ocpiBad("**** ERROR We have a local connection to a different circuit !!");
           throw OCPI::Util::EmbeddedException (
@@ -430,15 +458,15 @@ updateInputs()
       }
 
       // Wait for our mailbox to become free
-      while( ! xmb.mailBoxAvailable(s_res) ) {
+      while( ! xmb.mailBoxAvailable(*s_res->m_comms) ) {
         OCPI::OS::sleep(0);
         ocpiDebug("Waiting for our mailbox to be cleared !!");
       }
 
       SMBResources* t_res = 
-        XferFactoryManager::getFactoryManager().getSMBResources( static_cast<OCPI::DataTransport::Port*>(ps->getPortFromIndex(i))->getEndpoint() );
-      DataTransfer::ContainerComms::MailBox* mb = xmb.getMailBox( s_res );
-      mb->request.type = DataTransfer::ContainerComms::ReqUpdateCircuit;
+---     XferFactoryManager::getFactoryManager().getSMBResources( static_cast<OCPI::DataTransport::Port*>(ps->getPortFromIndex(i))->getEndpoint() );
+      XF::ContainerComms::MailBox* mb = xmb.getMailBox(*s_res->m_comms);
+      mb->request.type = XF::ContainerComms::ReqUpdateCircuit;
       mb->request.circuitId = port->m_data->remoteCircuitId;
       mb->request.reqUpdateCircuit.senderCircuitId = port->getCircuit()->getCircuitId();
       mb->request.reqUpdateCircuit.senderPortId = port->getPortId();
@@ -588,18 +616,12 @@ createPullDriver( const OCPI::RDT::Descriptors& pdesc)
 {
 
   PullDataDriver *pdd=NULL;
-  SMBResources* sres=NULL;
-  SMBResources* tres=NULL;
+  XF::EndPoint *sep = NULL, *tep = NULL;
   if ( pdesc.type == OCPI::RDT::ProducerDescT ) {
     if ( pdesc.desc.oob.oep[0] != 0 ) {
       try {
         std::string s(pdesc.desc.oob.oep);
-        sres =   XferFactoryManager::getFactoryManager().getSMBResources(s);
-        if ( ! sres ) {
-          throw OCPI::Util::EmbeddedException (
-                                              OCPI::DataTransport::UNSUPPORTED_ENDPOINT, 
-                                              pdesc.desc.oob.oep );
-        }
+        sep = &XF::getManager().getEndPoint(s);
       }
       catch(...) {
         throw OCPI::Util::EmbeddedException (
@@ -608,29 +630,25 @@ createPullDriver( const OCPI::RDT::Descriptors& pdesc)
       }
     }
 
-    if (sres == NULL)
-      throw OCPI::Util::EmbeddedException ("Invalid sres value in OCPI::DataTransport::Circuit::createPullDriver");
-
-    //    tres = &m_transport->getEndpoint( pdesc.desc.oob.oep, false )->getSMBResources();
     PullDataInfo* pull_data_info = new PullDataInfo;
     // Get the local and remote vaddrs
     pull_data_info->src_buffer = (volatile uint8_t*)
-      sres->sMemServices->map( pdesc.desc.dataBufferBaseAddr, 
+      sep->sMemServices().mapTx( pdesc.desc.dataBufferBaseAddr, 
                                pdesc.desc.dataBufferPitch == 0 ? 
                                pdesc.desc.dataBufferSize : pdesc.desc.dataBufferPitch * pdesc.desc.nBuffers );
 
     pull_data_info->src_metaData = (volatile uint64_t*)
-      sres->sMemServices->map( pdesc.desc.metaDataBaseAddr,
+      sep->sMemServices().mapTx( pdesc.desc.metaDataBaseAddr,
                                pdesc.desc.metaDataPitch == 0 ? 
                                sizeof(uint64_t) : pdesc.desc.metaDataPitch * pdesc.desc.nBuffers );
 
     pull_data_info->src_flag = (volatile uint32_t*)
-      sres->sMemServices->map( pdesc.desc.fullFlagBaseAddr,
+      sep->sMemServices().mapTx( pdesc.desc.fullFlagBaseAddr,
                                pdesc.desc.fullFlagPitch == 0 ? 
                                sizeof(uint32_t) : pdesc.desc.fullFlagPitch * pdesc.desc.nBuffers );
 
     pull_data_info->empty_flag = (uint32_t*)
-      sres->sMemServices->map( pdesc.desc.emptyFlagBaseAddr,
+      sep->sMemServices().mapTx( pdesc.desc.emptyFlagBaseAddr,
                                pdesc.desc.emptyFlagPitch == 0 ? 
                                sizeof(uint32_t) : pdesc.desc.emptyFlagPitch * pdesc.desc.nBuffers );
     memcpy(&pull_data_info->pdesc, &pdesc, sizeof(OCPI::RDT::Descriptors));
@@ -642,12 +660,7 @@ createPullDriver( const OCPI::RDT::Descriptors& pdesc)
     if ( pdesc.desc.oob.oep[0] != 0 ) {
       try {
         std::string s(pdesc.desc.oob.oep);
-        tres =   XferFactoryManager::getFactoryManager().getSMBResources(s);
-        if ( ! tres ) {
-          throw OCPI::Util::EmbeddedException (
-                                              OCPI::DataTransport::UNSUPPORTED_ENDPOINT, 
-                                              pdesc.desc.oob.oep );
-        }
+        tep = &XF::getManager().getEndPoint(s);
       }
       catch(...) {
         throw OCPI::Util::EmbeddedException (
@@ -655,25 +668,21 @@ createPullDriver( const OCPI::RDT::Descriptors& pdesc)
                                             pdesc.desc.oob.oep );
       }
     }
-    if (tres == NULL)
-      throw OCPI::Util::EmbeddedException ("Invalid tres value in OCPI::DataTransport::Circuit::createPullDriver");
 
     PullDataInfo* pull_data_info = new PullDataInfo;
     pull_data_info->empty_flag = (uint32_t*)
-      tres->sMemServices->map( pdesc.desc.emptyFlagBaseAddr,
-                               pdesc.desc.emptyFlagPitch == 0 ? 
-                               sizeof(uint32_t) : pdesc.desc.emptyFlagPitch * pdesc.desc.nBuffers );
+      tep->sMemServices().mapTx(pdesc.desc.emptyFlagBaseAddr,
+				pdesc.desc.emptyFlagPitch == 0 ? 
+				sizeof(uint32_t) : pdesc.desc.emptyFlagPitch * pdesc.desc.nBuffers);
 
     pull_data_info->src_flag = (volatile uint32_t*)
-      tres->sMemServices->map( pdesc.desc.fullFlagBaseAddr,
-                               pdesc.desc.fullFlagPitch == 0 ? 
-                               sizeof(uint32_t) : pdesc.desc.fullFlagPitch * pdesc.desc.nBuffers );
+      tep->sMemServices().mapTx(pdesc.desc.fullFlagBaseAddr,
+				pdesc.desc.fullFlagPitch == 0 ? 
+				sizeof(uint32_t) : pdesc.desc.fullFlagPitch * pdesc.desc.nBuffers);
     memcpy(&pull_data_info->pdesc, &pdesc, sizeof(OCPI::RDT::Descriptors));
     pdd = new OCPI::DataTransport::PullDataDriverIP( pull_data_info );
   }
-
   return pdd;
-
 }
 
 
@@ -719,7 +728,7 @@ setFlowControlDescriptor( OCPI::DataTransport::Port* p, const OCPI::RDT::Descrip
   if ( pdesc.desc.oob.oep[0] != 0 ) {
     try {
       std::string s(pdesc.desc.oob.oep);
-      SMBResources* res =   XferFactoryManager::getFactoryManager().getSMBResources(s);
+---      SMBResources* res =   XferFactoryManager::getFactoryManager().getSMBResources(s);
       if ( res ) {
         res->sMemServices->endpoint()->event_id = (int)((pdesc.desc.emptyFlagValue>>32) & 0xfff);
       }
@@ -728,7 +737,6 @@ setFlowControlDescriptor( OCPI::DataTransport::Port* p, const OCPI::RDT::Descrip
       ocpiBad("ERROR: Unable to set event id");
     }
   }
-#endif
   // At this point we are setup, however if the output port is passive, we need to
   // Create a driver for it.
   if ( pdesc.role == OCPI::RDT::Passive ) {
@@ -736,6 +744,7 @@ setFlowControlDescriptor( OCPI::DataTransport::Port* p, const OCPI::RDT::Descrip
     PullDataDriver *pd = createPullDriver( pdesc );
     static_cast<OCPI::DataTransport::Port*>(p)->attachPullDriver( pd );
   }
+#endif
 
   //  m_openCircuit = false;
 }
@@ -822,8 +831,8 @@ addPort( PortMetaData* pmd )
  *********************************/
 void
 OCPI::DataTransport::Circuit::
-addInputPort(DataTransfer::EndPoint &iep, const OCPI::RDT::Descriptors& inputDesc,
-	     DataTransfer::EndPoint &oep)
+addInputPort(XF::EndPoint &iep, const OCPI::RDT::Descriptors& inputDesc,
+	     XF::EndPoint &oep)
 {
 
   ocpiDebug("<< Input port Full buffer flag = 0x%" DTOSDATATYPES_FLAG_PRIx" >>",

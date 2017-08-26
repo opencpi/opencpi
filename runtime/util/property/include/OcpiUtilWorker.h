@@ -40,6 +40,7 @@
 #ifndef OCPI_UTIL_WORKER_H
 #define OCPI_UTIL_WORKER_H
 
+#include <map>
 #include "ezxml.h"
 #include "OcpiOsAssert.h"
 #include "OcpiUtilException.h"
@@ -106,11 +107,13 @@ namespace OCPI {
     // This class represents what we know, generically, about a component implementation
     // Currently there is no separate "spec" metadata - it is redundant in each implementation
     class Worker : public IdentResolver {
+      friend class Port;
     protected:
       std::string
 	m_specName,
 	m_name,
 	m_model,
+	m_package,
 	m_slave; // the model.impl name of a slave
       Attributes *m_attributes; // not a reference due to these being in arrays
       Port *m_ports;
@@ -127,9 +130,14 @@ namespace OCPI {
       Property *m_firstRaw;
       ezxml_t m_xml;
       unsigned m_ordinal; // ordinal within artifact
+      // Scalability
+      std::string m_validScaling; // Expression for error checking overall scaling
+      Port::Scaling m_scaling;
+      std::map<std::string, Port::Scaling> m_scalingParameters;
       Worker();
       ~Worker();
       inline const std::string &model() const { return m_model; }
+      inline const std::string &package() const { return m_package; }
       inline const std::string &specName() const { return m_specName; }
       inline const std::string &name() const { return m_name; }
       inline const char *cname() const { return m_name.c_str(); }
@@ -137,6 +145,9 @@ namespace OCPI {
       inline const Attributes &attributes() const { return *m_attributes; }
       inline bool isSource() const { return m_isSource; }
       const char *parse(ezxml_t xml, Attributes *attr = NULL);
+      virtual const char
+	*getNumber(ezxml_t x, const char *attr, size_t *np, bool *found = NULL,
+		   size_t defaultValue = 0, bool setDefault = true) const;
       // These two use exceptions
       Property &findProperty(const char *id) const;
       unsigned whichProperty(const char *id) const;
@@ -144,6 +155,7 @@ namespace OCPI {
       Property *getProperty(const char *id) const;
       const char *getValue(const char *sym, ExprValue &val) const;
       inline Property *properties() const { return m_properties; }
+      inline unsigned nProperties() const { return m_nProperties; }
       inline Property *properties(unsigned &np) const {
         np = m_nProperties;
         return m_properties;
@@ -154,10 +166,10 @@ namespace OCPI {
         return m_properties[which];
       }
       inline Port *findMetaPort(const std::string &id) const { return findMetaPort(id.c_str()); }
-      Port *findMetaPort(const char *) const;
-      inline Port &port(unsigned long which) const
+      virtual Port *findMetaPort(const char *name, const Port *except = NULL) const;
+      virtual Port &port(unsigned long which) const
       {
-        ocpiAssert(which < m_nPorts);
+        ocpiAssert(m_ports && which < m_nPorts);
         return m_ports[which];
       }
       inline Port* ports( unsigned int& n_ports ) const
@@ -173,9 +185,9 @@ namespace OCPI {
       {
         return m_nPorts;
       }
-      inline Memory* memories( unsigned int& n_memories ) const
+      inline Memory* memories(size_t &nMemories) const
       {
-        n_memories = m_nMemories;
+        nMemories = m_nMemories;
         return m_memories;
       }
       inline size_t totalPropertySize( ) const

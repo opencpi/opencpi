@@ -220,9 +220,7 @@
 	      }
 	    }
 	    ~Xld() {
-	      if (xfd >= 0) ::close(xfd);
-	      if (bfd >= 0) ::close(bfd);
-	      if (gz) gzclose(gz);
+	      cleanup();
 	    }
 	    int gzread(uint8_t *&argBuf, std::string &a_error) {
 	      if ((n = ::gzread(gz, buf + len, (unsigned)(sizeof(buf) - len))) < 0)

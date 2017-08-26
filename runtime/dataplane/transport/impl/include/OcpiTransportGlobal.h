@@ -1,25 +1,40 @@
-/*
- * This file is protected by Copyright. Please refer to the COPYRIGHT file
- * distributed with this source distribution.
- *
- * This file is part of OpenCPI <http://www.opencpi.org>
- *
- * OpenCPI is free software: you can redistribute it and/or modify it under the
- * terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation, either version 3 of the License, or (at your option) any
- * later version.
- *
- * OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- */
 
 /*
- * Abstract:
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
+ *
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
+ *
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+
+/*
+ * Abstact:
  *   This file contains the Interface for OCPI tranport globals.
  *
  * Revision History: 
@@ -38,10 +53,10 @@
 #include <OcpiList.h>
 #include <OcpiParentChild.h>
 #include <OcpiOsDataTypes.h>
+#include "XferEvent.h"
+#include "XferEndPoint.h"
 #include <OcpiTransportExceptions.h>
 #include <OcpiRDTInterface.h>
-#include <DtSharedMemoryInternal.h>
-#include <DtIntEventHandler.h>
 #include <OcpiTransportConstants.h>
 
 
@@ -49,7 +64,6 @@
 namespace DataTransfer {
   struct ContainerComms;
   class OcpiResourceServices;
-  struct SMBResources;
 }
 
 
@@ -75,6 +89,7 @@ namespace OCPI {
 
     class TransferTemplateGenerator;
     class TransferTemplateGeneratorPattern1;
+    class TransferTemplateGeneratorPattern1Passive;
     class TransferTemplateGeneratorPattern1AFC;
     class TransferTemplateGeneratorPattern1AFCShadow;
     class TransferTemplateGeneratorPattern2;
@@ -130,6 +145,7 @@ namespace OCPI {
         P_STATIC bool m_Circuitinit;
         P_STATIC TransferTemplateGenerator                  *m_gen_temp_gen;
         P_STATIC TransferTemplateGeneratorPattern1          *m_gen_pat1;
+        P_STATIC TransferTemplateGeneratorPattern1          *m_gen_pat1passive;
         P_STATIC TransferTemplateGeneratorPattern1AFC       *m_gen_pat1AFC;
         P_STATIC TransferTemplateGeneratorPattern1AFCShadow *m_gen_pat1AFCShadow;
         P_STATIC TransferTemplateGeneratorPattern2 *m_gen_pat2;
@@ -137,6 +153,7 @@ namespace OCPI {
         P_STATIC TransferTemplateGeneratorPattern4 *m_gen_pat4;
         P_STATIC TransferController                *m_gen_control;
         P_STATIC TransferController1               *m_cont1;
+        P_STATIC TransferController1               *m_cont1passive;
         P_STATIC TransferController1AFCShadow      *m_cont1AFCShadow;
         P_STATIC TransferController2               *m_cont2;
         P_STATIC TransferController3               *m_cont3;

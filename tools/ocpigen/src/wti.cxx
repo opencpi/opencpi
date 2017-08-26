@@ -144,13 +144,13 @@ emitVhdlShell(FILE *f, Port *wci) {
 	    "  g%s_seconds: if ocpi_port_%s_seconds_width > 0 generate\n"
 	    "    worker_%s.seconds <= unsigned(%s.MData(ocpi_port_%s_seconds_width+31 downto 32));\n"
 	    "  end generate;\n",
-	    cname(), cname(), in.c_str(), in.c_str(), cname());
+	    pname(), pname(), in.c_str(), in.c_str(), pname());
   if (m_fractionWidth)
     fprintf(f,
 	    "  g%s_fraction: if ocpi_port_%s_fraction_width > 0 generate\n"
 	    "    worker_%s.fraction <= unsigned(%s.MData(31 downto 32 - ocpi_port_%s_fraction_width));\n"
 	    "  end generate;\n",
-	    cname(), cname(), in.c_str(), in.c_str(), cname());
+	    pname(), pname(), in.c_str(), in.c_str(), pname());
 }
 
 void WtiPort::
@@ -160,9 +160,9 @@ emitVHDLShellPortMap(FILE *f, std::string &last) {
   OU::format(out, typeNameOut.c_str(), "");
   fprintf(f,
 	  "%s    %s_in => worker_%s",
-	  last.c_str(), cname(), in.c_str());
+	  last.c_str(), pname(), in.c_str());
   if (m_allowUnavailable || clock != m_worker->m_wciClock)
-    fprintf(f, ",\n    %s_out => worker_%s", cname(), out.c_str());
+    fprintf(f, ",\n    %s_out => worker_%s", pname(), out.c_str());
   last = ",\n";
 }
 
@@ -171,9 +171,9 @@ emitRecordInputs(FILE *f) {
   if (m_allowUnavailable)
     fprintf(f, "    valid    : Bool_t;\n");
   if (m_secondsWidth)
-    fprintf(f, "    seconds  : unsigned(ocpi_port_%s_seconds_width-1 downto 0);\n", cname());
+    fprintf(f, "    seconds  : unsigned(ocpi_port_%s_seconds_width-1 downto 0);\n", pname());
   if (m_fractionWidth)
-    fprintf(f, "    fraction : unsigned(ocpi_port_%s_fraction_width-1 downto 0);\n", cname());
+    fprintf(f, "    fraction : unsigned(ocpi_port_%s_fraction_width-1 downto 0);\n", pname());
 }
 
 void WtiPort::
@@ -192,7 +192,7 @@ emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inRecord, 
 		 bool inWorker) {
   ocpiAssert(!m_master);
   fprintf(f, "%s    -- Signals for %s %s port named \"%s\".  See record type(s) above.\n",
-	  last.c_str(), typeName(), masterIn() ? "slave" : "master", cname());
+	  last.c_str(), typeName(), masterIn() ? "slave" : "master", pname());
 
   fprintf(f,
 	  "    %-*s : in  worker_%s_t",
@@ -237,7 +237,7 @@ emitRecordInterfaceConstants(FILE *f) {
   // This signal is available to worker code.
   fprintf(f,
 	  "  constant ocpi_port_%s_seconds_width : natural;\n"
-	  "  constant ocpi_port_%s_fraction_width : natural;\n", cname(), cname());
+	  "  constant ocpi_port_%s_fraction_width : natural;\n", pname(), pname());
 }
 
 void WtiPort::

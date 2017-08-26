@@ -38,6 +38,7 @@
 #include "OcpiOsTimer.h"
 #include "OcpiPValue.h"
 #include "OcpiLibraryManager.h"
+#include "OcpiParentChild.h"
 
 namespace OCPI {
   namespace API {
@@ -49,7 +50,9 @@ namespace OCPI {
     class Artifact;
     class Container;
     class Worker;
+    class ExternalPort;
     class Application :
+      public OCPI::Util::Parent<ExternalPort>,
       public OCPI::API::ContainerApplication {
       friend class Container;
       friend class Artifact;
@@ -63,6 +66,7 @@ namespace OCPI {
       virtual Container &container() = 0;
       virtual Worker &createWorker(Artifact *, const char *appInstName,
 				   ezxml_t impl, ezxml_t inst, Worker *slave, bool hasMaster,
+				   size_t member, size_t crewSize,
 				   const OCPI::Util::PValue *wparams) = 0;
       virtual ~Application();
 
@@ -83,9 +87,8 @@ namespace OCPI {
 				      const OCPI::API::Connection *connections = NULL);
       Worker &createWorker(OCPI::Library::Artifact &art, const char *appInstName, 
 			   const ezxml_t impl, const ezxml_t inst, Worker *slave, bool hasMaster,
+			   size_t member, size_t crewSize,
 			   const OCPI::Util::PValue *wparams = NULL);
-
-
       virtual Worker *firstWorker() const = 0;
       //      void start();
       // If not master, then we ignore slave, so there are three cases

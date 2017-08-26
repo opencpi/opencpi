@@ -40,7 +40,7 @@ namespace OCPI {
       m_package += '.';
     }
     Application::~Application() {
-      ocpiDebug("In  Application::~Application()\n");
+      ocpiDebug("In  Container::Application::~Application()");
     }
 
     OA::Worker &Application::
@@ -55,7 +55,7 @@ namespace OCPI {
       // This is for passing in a dispatch table for RCC workers.
       else {
 	Worker &w =
-	  createWorker(NULL, instName, (ezxml_t)NULL, (ezxml_t)NULL, NULL, false, aParams);
+	  createWorker(NULL, instName, (ezxml_t)NULL, (ezxml_t)NULL, NULL, false, 0, 1, aParams);
 	w.initialize();
 	return w;
       }
@@ -85,11 +85,11 @@ namespace OCPI {
     Worker &Application::
     createWorker(OCPI::Library::Artifact &art, const char *appInstName, 
 		 ezxml_t impl, ezxml_t inst, Worker *slave, bool hasMaster,
-		 const OCPI::Util::PValue *wParams) {
+		 size_t member, size_t crewSize, const OCPI::Util::PValue *wParams) {
       // Load the artifact and create the worker
       return
 	container().loadArtifact(art).createWorker(*this, appInstName, impl, inst, slave,
-						   hasMaster, wParams);
+						   hasMaster, member, crewSize, wParams);
     }
     // If not master, then we ignore slave, so there are three cases
     void Application::

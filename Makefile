@@ -82,22 +82,21 @@ RDMA_DRIVERS=datagram dma ofed pio socket
 PACKAGES += os runtime/util
 
 PACKAGES += \
-	 runtime/dataplane/rdma_utils \
-	 runtime/dataplane/rdma_driver_interface \
-	 runtime/dataplane/rdma_smb \
-	 $(foreach d,$(RDMA_DRIVERS),runtime/dataplane/rdma_drivers/$d) \
+	 runtime/dataplane/xfer/base \
+	 runtime/dataplane/xfer/tests \
+	 $(foreach d,$(RDMA_DRIVERS),runtime/dataplane/xfer/drivers/$d) \
 	 runtime/dataplane/transport \
 	 runtime/dataplane/msg_driver_interface \
 	 runtime/dataplane/msg_drivers \
-	 runtime/dataplane/rdma_tests \
 	 runtime/library \
 	 runtime/container \
+	 runtime/remote \
+	 runtime/rcc \
+	 runtime/ocl \
+	 runtime/ocl-support \
+	 runtime/ctests \
 	 runtime/hdl \
 	 runtime/hdl-support \
-	 runtime/ocl \
-	 runtime/rcc \
-	 runtime/remote \
-	 runtime/ctests \
          runtime/application
 
 PACKAGES += tools/cdkutils
@@ -119,22 +118,21 @@ PACKAGES += tests
 ALLPACKAGES = \
 	os \
 	runtime/util \
-	runtime/dataplane/rdma_utils \
-	runtime/dataplane/rdma_driver_interface \
-	runtime/dataplane/rdma_smb \
-	runtime/dataplane/rdma_drivers \
+	runtime/dataplane/xfer/base \
+	runtime/dataplane/xfer/tests \
+	runtime/dataplane/xfer/drivers \
 	runtime/dataplane/transport \
 	runtime/dataplane/msg_driver_interface \
 	runtime/dataplane/msg_drivers \
-	runtime/dataplane/rdma_tests \
 	runtime/library \
 	runtime/container \
+	runtime/remote \
+	runtime/rcc \
+	runtime/ocl \
+	runtime/ocl-support \
+	runtime/ctests \
 	runtime/hdl \
 	runtime/hdl-support \
-	runtime/ocl \
-	runtime/rcc \
-	runtime/remote \
-	runtime/ctests \
         runtime/application \
 	tools/cdkutils \
 	tools/ocpigen \
@@ -196,7 +194,7 @@ cleanocl:
 
 .PHONY : examples
 examples: exports
-	make -C examples
+	$(MAKE) -C examples
 
 cleanexamples:
 	make -C examples clean
@@ -230,7 +228,7 @@ cleandrivers:
 
 .PHONY: packages tar diff diff.q test $(PACKAGES)
 
-everything: packages rcc hdl
+everything: packages rcc hdl ocl
 compile build: $(PACKAGES)
 packages: $(PACKAGES)
 
@@ -279,7 +277,7 @@ tar:
 
 runtime/dataplane/tests: \
 	runtime/rcc runtime/dataplane/transport \
-	runtime/dataplane/rdma_driver_interface
+	runtime/dataplane/xfer
 
 export_cdk:
 	mydate=`date +%G%m%d%H%M%S`; \

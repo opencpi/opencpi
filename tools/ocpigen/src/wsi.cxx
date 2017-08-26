@@ -1,28 +1,8 @@
-/*
- * This file is protected by Copyright. Please refer to the COPYRIGHT file
- * distributed with this source distribution.
- *
- * This file is part of OpenCPI <http://www.opencpi.org>
- *
- * OpenCPI is free software: you can redistribute it and/or modify it under the
- * terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation, either version 3 of the License, or (at your option) any
- * later version.
- *
- * OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- */
-
+#include "data.h"
 #include "hdl.h"
-#include "ocp.h"
 
 WsiPort::
-WsiPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
+WsiPort(Worker &w, ezxml_t x, DataPort *sp, int ordinal, const char *&err)
   : DataPort(w, x, sp, ordinal, WSIPort, err) {
   if (err)
     return;
@@ -60,6 +40,7 @@ WsiPort(const WsiPort &other, Worker &w , std::string &name, size_t count,
 Port &WsiPort::
 clone(Worker &w, std::string &name, size_t count, OCPI::Util::Assembly::Role *role,
       const char *&err) const {
+  err = NULL;
   return *new WsiPort(*this, w, name, count, role, err);
 }
 
@@ -88,12 +69,12 @@ deriveOCP() {
   ocp.MCmd.width = 3;
   if (m_preciseBurst) {
     ocp.MBurstLength.width =
-      OU::floorLog2((m_protocol->m_maxMessageValues * m_protocol->m_dataValueWidth +
+      OU::floorLog2((m_maxMessageValues * m_dataValueWidth +
 		 m_dataWidth - 1)/
 		m_dataWidth) + 1;
     //	ocpiInfo("Burst %u from mmv %u dvw %u dw %u",
-    //		  ocp->MBurstLength.width, p->m_protocol->m_maxMessageValues,
-    //		  p->m_protocol->m_dataValueWidth, p->dataWidth);
+    //		  ocp->MBurstLength.width, p->m_maxMessageValues,
+    //		  p->m_dataValueWidth, p->dataWidth);
     if (ocp.MBurstLength.width < 2)
       ocp.MBurstLength.width = 2;
     // FIXME: this is not really supported, but was for compatibility
@@ -101,7 +82,7 @@ deriveOCP() {
       ocp.MBurstPrecise.value = s;
   } else
     ocp.MBurstLength.width = 2;
-  if (m_byteWidth != m_dataWidth || m_protocol->m_zeroLengthMessages) {
+  if (m_byteWidth != m_dataWidth || m_zeroLengthMessages) {
     ocp.MByteEn.width = m_dataWidth / m_byteWidth;
     ocp.MByteEn.value = s;
   }
@@ -128,7 +109,7 @@ deriveOCP() {
 }
 
 void WsiPort::
-emitVhdlShell(FILE *f, Port *wci) {
+emitVhdlShell(FILE *f, ::Port *wci) {
   bool slave = masterIn();
   std::string mNameTemp;
   if (!slave)
@@ -146,24 +127,24 @@ emitVhdlShell(FILE *f, Port *wci) {
 	  "  -- The WSI interface helper component instance for port \"%s\"\n",
 	  cname());
   if (ocp.MReqInfo.value) {
-    if (m_protocol && m_protocol->nOperations()) {
+    if (nOperations()) {
       if (slave) {
 #if 0
 	fprintf(f,
 		"  %s_opcode <= %s_opcode_t'val(to_integer(unsigned(%s_opcode_temp)));\n",
-		name(), m_protocol && m_protocol->operations() ?
-		m_protocol->m_name.c_str() : cname(), cname());
+		name(), nOperations() ?
+		OU::Protocol::cname() : pname(), pname());
 #else
 	fprintf(f,
 		"  -- Xilinx/ISE 14.6 synthesis doesn't do the t'val(x) function properly\n"
 		"  -- Hence this workaround\n");
 	fprintf(f,
 		"  %s_opcode <=\n", cname());
-	OU::Operation *op = m_protocol->operations();
+	OU::Operation *op = operations();
 	unsigned nn;
-	for (nn = 0; nn < m_protocol->nOperations(); nn++, op++)
+	for (nn = 0; nn < nOperations(); nn++, op++)
 	  fprintf(f, "%s    %s_%s_op_e when to_integer(unsigned(%s_opcode_temp)) = %u",
-		  nn ? " else\n" : "", m_protocol->m_name.c_str(), op->cname(), cname(), nn);
+		  nn ? " else\n" : "", OU::Protocol::cname(), op->cname(), pname(), nn);
 	// If the protocol opcodes do not fill the space, fill it
 	if (nn < m_nOpcodes)
 	  for (unsigned o = 0; nn < m_nOpcodes; nn++, o++)
@@ -177,16 +158,16 @@ emitVhdlShell(FILE *f, Port *wci) {
 		"  -- Hence this workaround\n");
 	fprintf(f,
 		"  %s_opcode_pos <=\n", cname());
-	OU::Operation *op = m_protocol->operations();
+	OU::Operation *op = operations();
 	unsigned nn;
-	for (nn = 0; nn < m_protocol->nOperations(); nn++, op++)
+	for (nn = 0; nn < nOperations(); nn++, op++)
 	  fprintf(f, "    %u when %s_opcode = %s_%s_op_e else\n",
-		  nn, cname(), m_protocol->m_name.c_str(), op->cname());
+		  nn, cname(), OU::Protocol::cname(), op->cname());
 	// If the protocol opcodes do not fill the space, fill it
 	if (nn < m_nOpcodes)
 	  for (unsigned o = 0; nn < m_nOpcodes; nn++, o++)
 	    fprintf(f, "    %u when %s_opcode = %s_opcode_t'val(%u) else\n",
-		    nn, cname(), m_protocol->m_name.c_str(), nn);
+		    nn, cname(), OU::Protocol::cname(), nn);
 	fprintf(f, "    0;\n");
 	fprintf(f,
 		"  %s_opcode_temp <= std_logic_vector(to_unsigned(%s_opcode_pos, %s_opcode_temp'length));\n",
@@ -314,7 +295,7 @@ emitVhdlShell(FILE *f, Port *wci) {
 }
 
 const char *WsiPort::
-adjustConnection(Port &consPort, const char *masterName, Language lang,
+adjustConnection(::Port &consPort, const char *masterName, Language lang,
 		 OcpAdapt *prodAdapt, OcpAdapt *consAdapt, size_t &unused) {
   WsiPort &cons = *static_cast<WsiPort *>(&consPort);
   OcpAdapt *oa;
@@ -648,7 +629,7 @@ emitImplSignals(FILE *f) {
 
 void WsiPort::
 emitSkelSignals(FILE *f) {
-  if (m_worker->m_language != VHDL && m_regRequest)
+  if (worker().m_language != VHDL && m_regRequest)
     fprintf(f,
 	    "// GENERATED: OCP request phase signals for interface \"%s\" are registered\n",
 	    cname());
@@ -675,8 +656,7 @@ emitRecordInputs(FILE *f) {
     if (m_nOpcodes > 1)
       fprintf(f,
 	      "    opcode           : %s_OpCode_t;\n",
-	      m_protocol && m_protocol->operations() ?
-	      m_protocol->m_name.c_str() : cname());
+	      operations() ? OU::Protocol::cname() : pname());
     fprintf(f,
 	    m_dataWidth ?
 	    "    som, eom, valid  : Bool_t;           -- valid means data and byte_enable are present\n" :
@@ -720,8 +700,7 @@ emitRecordOutputs(FILE *f) {
     if (m_nOpcodes > 1)
       fprintf(f,
 	      "    opcode           : %s_OpCode_t;\n",
-	      m_protocol && m_protocol->operations() ?
-	      m_protocol->m_name.c_str() : cname());
+	      operations() ? OU::Protocol::cname() : pname());
     fprintf(f,
 	    "    som, eom, valid  : Bool_t;            -- one or more must be true when 'give' is asserted\n");
     if (m_isPartitioned)

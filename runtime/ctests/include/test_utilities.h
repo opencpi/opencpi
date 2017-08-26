@@ -44,7 +44,8 @@
 #include "RCC_Worker.h"
 
 extern bool g_testUtilVerbose;
-#define TUPRINTF if(g_testUtilVerbose) printf
+// #define TUPRINTF if(g_testUtilVerbose) printf
+#define TUPRINTF ocpiDebug
 
 typedef void SignalCb(int);
 
@@ -173,6 +174,7 @@ CWorker(int tports, int sports):sPortCount(sports), tPortCount(tports){};
 
 #define TRY_AND_SET(var, str, exp, code)		 \
   do {							 \
+    str = "";                                            \
     var = OU::NO_ERROR_;				 \
     try {						 \
       code;						 \

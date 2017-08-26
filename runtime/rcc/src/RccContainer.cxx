@@ -33,14 +33,19 @@
  ************************************************************************/
 
 #include "RccContainer.h"
+#include "OcpiOsMisc.h"
+#include "RCC_Worker.h"
 
 namespace OC = OCPI::Container;
 namespace OA = OCPI::API;
 namespace OU = OCPI::Util;
+namespace OR = OCPI::RDT;
 
 namespace OCPI {
   namespace RCC {
 
+    bool Container::m_wqInit = false;
+    pthread_workqueue_t Container::m_workqueues[2];
 
 DataTransfer::EventManager*  
 Container::
@@ -55,13 +60,63 @@ Container(const char *a_name, const OA::PValue* /* params */)
   throw ( OU::EmbeddedException )
   : OC::ContainerBase<Driver,Container,Application,Artifact>(*this, a_name)
 {
+  const char *system = OU::getSystemId().c_str();
   m_model = "rcc";
+  addTransport("ocpi-dma-pio", system, OR::ActiveMessage, OR::ActiveMessage,
+	       //	       (1 << OR::FlagIsCounting) | // ask for counting flags
+	       (1 << OR::ActiveFlowControl) | (1 << OR::ActiveMessage) | (1 << OR::Passive),
+	       //	       (1 << OR::FlagIsCounting) | // ask for counting flags
+	       (1 << OR::ActiveFlowControl) | (1 << OR::ActiveMessage) | (1 << OR::Passive));
+  addTransport("ocpi-smb-pio", system, OR::ActiveMessage, OR::ActiveMessage,
+	       (1 << OR::ActiveFlowControl) | (1 << OR::ActiveMessage) | (1 << OR::Passive),
+	       (1 << OR::ActiveFlowControl) | (1 << OR::ActiveMessage) | (1 << OR::Passive));
+  addTransport("ocpi-scif-dma", system, OR::ActiveMessage, OR::ActiveMessage,
+	       (1 << OR::ActiveFlowControl) | (1 << OR::ActiveMessage) | (1 << OR::Passive),
+	       (1 << OR::ActiveFlowControl) | (1 << OR::ActiveMessage) | (1 << OR::Passive));
+  addTransport("ocpi-socket-rdma", system, OR::ActiveMessage, OR::ActiveMessage,
+	       (1 << OR::ActiveFlowControl) | (1 << OR::ActiveMessage) | (1 << OR::Passive),
+	       (1 << OR::ActiveFlowControl) | (1 << OR::ActiveMessage) | (1 << OR::Passive));
+  addTransport("ocpi-udp-rdma", system, OR::ActiveMessage, OR::ActiveMessage,
+	       (1 << OR::ActiveFlowControl) | (1 << OR::ActiveMessage) | (1 << OR::Passive),
+	       (1 << OR::ActiveFlowControl) | (1 << OR::ActiveMessage) | (1 << OR::Passive));
   m_dynamic = OC::Manager::dynamic();
   if (parent().m_platform.size())
     m_platform = parent().m_platform;
+  initWorkQueues();
 }
 
+void Container::
+initWorkQueues() {
+#ifdef OCPI_OS_macos
+  return;
+#endif
+  OU::SelfAutoMutex guard(this);
+  if (m_wqInit == false ) {
+    m_wqInit = true;
+    pthread_workqueue_attr_t attr;
+    memset(&m_workqueues, 0, sizeof(m_workqueues));     
 
+    // Create the worker queues
+    if (pthread_workqueue_attr_init_np(&attr) != 0)
+      throw  OU::Error("Worker static initialization: Could not init workqueue attributes");
+    //     if (pthread_attr_setinheritsched( &attr, 0) != 0 ) 
+    //       throw  OU::Error("Worker static initialization: Could not set scheduler in  workqueue attributes");
+    if (pthread_workqueue_attr_setqueuepriority_np(&attr, WORKQ_HIGH_PRIOQUEUE) != 0) 
+      throw  OU::Error("Worker static initialization: Could not set workqueue priorities");        
+    if (pthread_workqueue_create_np(&m_workqueues[HIGH_PRI_Q], &attr) != 0)
+       throw  OU::Error("Worker static initialization: Could not create workqueue ");
+
+#ifdef NEEDED
+    if (pthread_workqueue_attr_init_np(&attr) != 0)
+      throw  OU::Error("Worker static initialization: Could not init workqueue attributes");
+    if (pthread_workqueue_attr_setqueuepriority_np(&attr, WORKQ_LOW_PRIOQUEUE) != 0) 
+      throw  OU::Error("Worker static initialization: Could not set workqueue priorities");        
+    if (pthread_workqueue_create_np(&m_workqueues[LOW_PRI_Q], &attr) != 0)
+      throw  OU::Error("Worker static initialization: Could not create workqueue ");
+#endif
+
+   }
+}
 
 OC::Artifact & Container::
 createArtifact(OCPI::Library::Artifact &lart, const OA::PValue *artifactParams) {
@@ -83,14 +138,88 @@ Container::
   // We need to shut down the apps and workers since they
   // depend on artifacts and transport.
   OU::Parent<Application>::deleteChildren();
-#if 0
-  try {
-    delete m_transport;
+}
+
+
+struct Wargs {
+  RCCUserTask *taskc;
+  void (*task)(void *);
+  void * args;
+};
+
+static volatile int task_count = 0;
+void wait_join(void *args) {
+  OCPI::OS::Semaphore *sem = (OCPI::OS::Semaphore *)args;
+  while (task_count > 0) {
+    OCPI::OS::sleep(0);
   }
-  catch( ... ) {
-    printf("ERROR: Got an exception in OCPI::RCC::Container::~Container)\n");
-  }
+  sem->post();  
+}
+
+bool Container::
+join( bool block, OCPI::OS::Semaphore & sem ) {
+  if (task_count == 0)
+    return true;
+  if (!block)
+    return false;
+    pthread_workqueue_additem_np(m_workqueues[LOW_PRI_Q], wait_join, (void*)&sem, NULL, NULL);    
+
+  ocpiDebug("IN Con join about to wait for sem");
+  sem.wait();
+  ocpiDebug("IN Con join, joined");
+  return true;
+}
+
+static OCPI::OS::Mutex mutex;
+static void 
+taskWrapper(void *args) {
+  Wargs *wargs = (Wargs*)args;
+
+  if (wargs->taskc == NULL)
+    wargs->task(wargs->args);
+  else
+    wargs->taskc->run();
+  mutex.lock();
+  task_count--;
+  mutex.unlock();
+  delete wargs;
+}
+
+void Container::
+addTask(void (*task)(void *), void *args) {
+#ifdef OCPI_OS_macos
+  assert("RCC task support not available"==0);
 #endif
+  if (!m_wqInit)
+    initWorkQueues();
+  mutex.lock();
+  task_count++;
+  mutex.unlock();
+
+  Wargs *wargs = new Wargs();
+  wargs->taskc = NULL;  
+  wargs->task = task;
+  wargs->args = args;
+  pthread_workqueue_additem_np(m_workqueues[HIGH_PRI_Q], taskWrapper, wargs, NULL, NULL);    
+}
+
+
+
+void Container::
+addTask(OCPI::RCC::RCCUserTask * task) {
+#ifdef OCPI_OS_macos
+  assert("RCC task support not available"==0);
+#endif
+  if (!m_wqInit)
+    initWorkQueues();
+  mutex.lock();
+  task_count++;
+  mutex.unlock();
+
+  Wargs *wargs = new Wargs();
+  wargs->taskc = task;
+  wargs->args = NULL;
+  pthread_workqueue_additem_np(m_workqueues[HIGH_PRI_Q], taskWrapper, wargs, NULL, NULL);    
 }
 
 volatile int ocpi_dbg_run=0;
@@ -98,8 +227,7 @@ volatile int ocpi_dbg_run=0;
 /**********************************
  * For single threaded containers, this is the dispatch hook
  *********************************/
-OC::Container::DispatchRetCode 
-Container::
+OC::Container::DispatchRetCode Container::
 dispatch(DataTransfer::EventManager* event_manager)
 {
   bool more_to_do = false;

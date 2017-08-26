@@ -18,10 +18,11 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "data.h"
 #include "hdl.h"
 
 WmiPort::
-WmiPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
+WmiPort(Worker &w, ezxml_t x, DataPort *sp, int ordinal, const char *&err)
   : DataPort(w, x, sp, ordinal, WMIPort, err) {
     if (err ||
 	(err = OE::checkAttrs(x, "Name", "Clock", "MyClock", "DataWidth", "master",
@@ -31,7 +32,7 @@ WmiPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
                               "NumberOfOpcodes", "MaxMessageValues",
 			      "datavaluewidth", "zerolengthmessages",
                               (void*)0)) ||
-	(err = OE::getBoolean(m_xml, "master", &m_master)) || // this is unique to WMI
+	(err = OE::getBoolean(x, "master", &m_master)) || // this is unique to WMI
         (err = OE::getBoolean(x, "TalkBack", &m_talkBack)) ||
         (err = OE::getBoolean(x, "Bidirectional", &m_isBidirectional)) ||
         (err = OE::getNumber(x, "MFlagWidth", &m_mflagWidth, 0, 0)))
@@ -70,7 +71,7 @@ deriveOCP() {
   OcpPort::deriveOCP();
   ocp.MCmd.width = 3;
   {
-    size_t n = (m_protocol->m_maxMessageValues * m_protocol->m_dataValueWidth +
+    size_t n = (m_maxMessageValues * m_dataValueWidth +
 		m_dataWidth - 1) / m_dataWidth;
     if (n > 1) {
       ocp.MAddr.width = OU::ceilLog2(n);
@@ -98,8 +99,8 @@ deriveOCP() {
     ocp.MDataValid.value = s;
   }
   if ((m_isProducer || m_isBidirectional) &&
-      (m_nOpcodes > 1 || m_protocol->m_variableMessageLength))
-    ocp.MFlag.width = 8 + OU::ceilLog2(m_protocol->m_maxMessageValues + 1);
+      (m_nOpcodes > 1 || m_variableMessageLength))
+    ocp.MFlag.width = 8 + OU::ceilLog2(m_maxMessageValues + 1);
   ocp.MReqInfo.width = 1;
   ocp.MReqLast.value = s;
   ocp.MReset_n.value = s;
@@ -108,8 +109,8 @@ deriveOCP() {
   if (m_isProducer || m_talkBack || m_isBidirectional)
     ocp.SDataThreadBusy.value = s;
   if ((!m_isProducer || m_isBidirectional) &&
-      (m_nOpcodes > 1 || m_protocol->m_variableMessageLength))
-    ocp.SFlag.width = 8 + OU::ceilLog2(m_protocol->m_maxMessageValues + 1);
+      (m_nOpcodes > 1 || m_variableMessageLength))
+    ocp.SFlag.width = 8 + OU::ceilLog2(m_maxMessageValues + 1);
   ocp.SReset_n.value = s;
   if (!m_isProducer || m_talkBack || m_isBidirectional)
     ocp.SResp.value = s;
@@ -125,7 +126,7 @@ deriveOCP() {
   return NULL;
 }
 const char *WmiPort::
-adjustConnection(Port &/*cons*/, const char */*masterName*/, Language /*lang*/,
+adjustConnection(::Port &/*cons*/, const char */*masterName*/, Language /*lang*/,
 		 OcpAdapt */*prodAdapt*/, OcpAdapt */*consAdapt*/, size_t &/*unused*/) {
   return NULL;
 }
@@ -137,7 +138,7 @@ emitImplAliases(FILE *f, unsigned /*n*/, Language lang) {
   const char *pout = fullNameOut.c_str();
   bool mIn = masterIn();
   fprintf(f,
-	  "  %s Aliases for interface \"%s\"\n", comment, cname());
+	  "  %s Aliases for interface \"%s\"\n", comment, pname());
   if (lang != VHDL) {
     if (m_master) // if we are app
       fprintf(f,
@@ -166,7 +167,7 @@ emitImplAliases(FILE *f, unsigned /*n*/, Language lang) {
     }
     emitOpcodes(f, mIn ? pin : pout, lang);
   }
-  if (m_protocol->m_variableMessageLength) {
+  if (m_variableMessageLength) {
     if (lang != VHDL) {
       if (m_isProducer) { // length is an output
 	size_t width =
@@ -205,8 +206,7 @@ emitRecordInputs(FILE *f) {
     if (m_nOpcodes > 1)
       fprintf(f,
 	      "    opcode           : %s_OpCode_t;\n",
-	      m_protocol && m_protocol->operations() ?
-	      m_protocol->m_name.c_str() : cname());
+	      nOperations() ? OU::Protocol::cname() : pname());
     fprintf(f,
 	    m_dataWidth ?
 	    "    som, eom, valid  : Bool_t;           -- valid means data and byte_enable are present\n" :
@@ -236,8 +236,7 @@ emitRecordOutputs(FILE *f) {
     if (m_nOpcodes > 1)
       fprintf(f,
 	      "    opcode           : %s_OpCode_t;\n",
-	      m_protocol && m_protocol->operations() ?
-	      m_protocol->m_name.c_str() : cname());
+	      nOperations() ? OU::Protocol::cname() : pname());
     fprintf(f,
 	    "    som, eom, valid  : Bool_t;            -- one or more must be true when 'give' is asserted\n");
       }

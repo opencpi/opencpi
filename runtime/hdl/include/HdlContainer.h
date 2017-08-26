@@ -44,6 +44,7 @@ namespace OCPI {
       Container(OCPI::HDL::Device &device, ezxml_t config = NULL, const OCPI::API::PValue *params = NULL);
     public:
       virtual ~Container();
+      bool portsInProcess() { return false; }
       inline uint64_t getMyTicks() {
 	return
 	  m_device.isAlive() && !m_device.isFailed() && m_device.timeServer() ? 
@@ -53,8 +54,9 @@ namespace OCPI {
 	  m_lastTick;
       }
     protected:
-      inline HDL::Device &hdlDevice() { return m_device; }
+      inline HDL::Device &hdlDevice() const { return m_device; }
     public:
+      bool connectInside(OCPI::Container::BasicPort &in, OCPI::Container::BasicPort &out);
       void start();
       void stop();
       OCPI::Container::Artifact &

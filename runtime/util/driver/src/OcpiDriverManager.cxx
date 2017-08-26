@@ -74,10 +74,13 @@ namespace OCPI {
       getManagerManager().configureOnce(file);
     }
     static bool
-    checkLibPath(std::string &path, std::string &dir, const char *name, bool mode, bool debug) {
-      OU::format(path, "%s%s%s/libocpi_%s%s.%s", dir.c_str(),
-		 mode ? "/d" : "", mode ? (debug ? "d" : "o") : "",
+    checkLibPath(std::string &path, std::string &dir, const char *name, bool mode,
+		 bool dynamic, bool debug) {
+      OU::format(path, "%s%s%s%s/libocpi_%s%s.%s", dir.c_str(),
+		 mode ? "/" : "", mode ? (dynamic ? "d" : "s") : "",
+		 mode ? (debug ? "d" : "o") : "",
 		 name, OCPI_DYNAMIC ? "" : "_s", OS::LoadableModule::suffix());
+      ocpiDebug("Trying driver path: %s", path.c_str());
       return OS::FileSystem::exists(path.c_str());
     }
 
@@ -161,9 +164,9 @@ namespace OCPI {
 	    // 2. The driver built with modes that is not the way we were built
 	    // 3. The driver built without modes
 	    std::string lib;
-	    if (!checkLibPath(lib, libDir, ezxml_name(d), true, OCPI_DEBUG) &&
-		!checkLibPath(lib, libDir, ezxml_name(d), true, !OCPI_DEBUG) &&
-		!checkLibPath(lib, libDir, ezxml_name(d), false, OCPI_DEBUG)) {
+	    if (!checkLibPath(lib, libDir, ezxml_name(d), true, OCPI_DYNAMIC, OCPI_DEBUG) &&
+		!checkLibPath(lib, libDir, ezxml_name(d), true, OCPI_DYNAMIC, !OCPI_DEBUG) &&
+		!checkLibPath(lib, libDir, ezxml_name(d), false, false, false)) {
 	      OU::format(err,
 			 "could not find the \"%s\" \"%s\" driver in directory \"%s\", e.g.: %s",
 			 d->name, m->name().c_str(), libDir.c_str(), lib.c_str());
@@ -202,6 +205,7 @@ namespace OCPI {
     // Cleanup all managers
     bool ManagerManager::s_exiting = false;
     void ManagerManager::cleanup() {
+      assert(!s_exiting);
       s_exiting = true;
       ManagerManager *mm = &OU::Singleton<ManagerManager>::getSingleton();
       // Before simply deleting the managermanager, we delete the

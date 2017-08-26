@@ -54,27 +54,56 @@ namespace OCPI {
 
       size_t m_nInstances;
       struct Deployment {
-	unsigned candidate;            // running counter of where we are in candidates list
-	unsigned container;            // running counters for containers for candidate
-      } *m_deployments, *m_bestDeployments;
+	size_t m_scale;                                // scale of this deployment
+	unsigned m_container;                          // when scale==1, the chosen one
+	const OCPI::Library::Implementation *m_impl;   // implementation on each container
+	unsigned *m_containers;                        // containers used by this deployment
+	const OCPI::Library::Implementation **m_impls; // implementation on each container
+	CMap m_feasible;
+	Deployment();
+	~Deployment();
+	Deployment &operator=(const Deployment &d);
+	void set(size_t scale, unsigned *containers,
+		 const OCPI::Library::Implementation **impls, CMap map);
+      };
       // This structure is used during deployment planning.
       struct Instance {
-	const OCPI::Library::Implementation *m_impl; // The chosen, best implementation
-	unsigned m_container;                        // LOCAL ordinal - among those we are using
-	CMap *m_feasibleContainers;                  // map per candidate, from findContainers
-	size_t m_nCandidates;                        // convenience
-	const char *m_containerName;                 // used to avoid touching the container
+	Deployment m_deployment;      // Current deployent when generating all of them
+	Deployment m_bestDeployment;
+	CMap *m_feasibleContainers;   // map per candidate, from findContainers
+	size_t m_nCandidates;         // convenience
+	const char *m_containerName;  // used to avoid touching the container
+	// The launcher info for this application instance;
+	OCPI::Container::Launcher::Crew m_crew;
+	// Support for collecting candidate together that have the same actual implementation
+	// code even though they may be compiled for different targets.
+	// map is from the qualified impl name to a list of candidate indices.
+	typedef std::list<unsigned> Candidates;
+	typedef Candidates::iterator CandidatesIter;
+	typedef std::map<std::string, Candidates> ScalableCandidates;
+	typedef ScalableCandidates::value_type ScalablePair;
+	typedef ScalableCandidates::iterator ScalableCandidatesIter;
+	ScalableCandidates m_scalableCandidates;
+	// This array is of indices in the usedcontainer array, not global indices
+	unsigned m_usedContainer;       // when scale==1 this is it
+	unsigned *m_usedContainers;     // container for each crew member
+	size_t m_firstMember;           // index of first member in launch members
+	void collectCandidate(OCPI::Library::Candidate &c, unsigned n);
+	void finalizePortParam(OU::Assembly::Instance &ui, const OCPI::Util::PValue *params,
+			       const char *param);
 	Instance();
 	~Instance();
-      } *m_instances;
+      };
       struct Booking {
 	OCPI::Library::Artifact *m_artifact;
 	CMap m_usedImpls;         // which fixed implementations in the artifact are in use
 	Booking() : m_artifact(NULL), m_usedImpls(0) {}
-      } *m_bookings;
+      };
+      Instance *m_instances;
       // The instance objects for the launcher
-      OCPI::Container::Launcher::Instances m_launchInstances;
+      OCPI::Container::Launcher::Members m_launchMembers;
       OCPI::Container::Launcher::Connections m_launchConnections;
+      Booking *m_bookings;
       // This class represents a mapping from an externally visible property of the assembly
       // to an individual property of an instance. It must be at this layer
       // (not util::assembly or library::assembly) because it potentially depends on the 
@@ -104,21 +133,22 @@ namespace OCPI {
       // Now the runtime state.
       OCPI::Container::Container **m_containers;      // the actual containers we are using
       OCPI::Container::Application **m_containerApps; // per used container, the container app
-      // External ports - recorded until we know whether it will be ExternalPort, or remote port
+
+      // This structure captures info to allow the connection to be made AFTER launch.
+      // It is basically a map from the name of the external assembly port to the
+      // launcher connection that includes that external assembly port.
       struct External {
-	OCPI::Util::Port &m_metaPort;  // The metaport of the worker port
-	OCPI::Container::Port *m_port; // The internal worker port
-	const PValue *m_params; //  Connection parameters from the OU::Assembly
-	ExternalPort *m_external; // The external port created from connectExternal.
-	inline External(OCPI::Util::Port &mp, const PValue *params)
-	  : m_metaPort(mp), m_port(NULL), m_params(params), m_external(NULL) {}
+	OCPI::Container::Launcher::Connection &m_connection;
+	OCPI::Container::LocalPort *m_external; // created (later) from connectExternal.
+	inline External(OCPI::Container::Launcher::Connection &conn)
+	  : m_connection(conn), m_external(NULL) {}
       };
       typedef std::map<const char*, External, OCPI::Util::ConstCharComp> Externals;
       typedef std::pair<const char*, External> ExternalPair;
       typedef Externals::iterator ExternalsIter;
       Externals m_externals;
       std::vector<External *> m_externalsOrdered; // to support ordinal-based navigation
-      OCPI::Container::Worker *m_doneWorker;
+      Instance *m_doneInstance;
       enum CMapPolicy {
 	RoundRobin,
 	MinProcessors,
@@ -140,24 +170,36 @@ namespace OCPI {
       void clear();
       void init(const OCPI::API::PValue *params);
       void initExternals(const OCPI::API::PValue *params);
-      void initConnections();
+      void setLaunchPort(OCPI::Container::Launcher::Port &p, const OCPI::Util::Port *mp,
+			 const OCPI::Util::PValue *connParams, const std::string &name,
+			 const OCPI::Util::PValue *portParams,
+			 const OCPI::Container::Launcher::Member *member,
+			 const OCPI::Util::Assembly::External *ep, size_t scale, size_t index);
+      void initLaunchConnections();
+      void initLaunchMembers();
+      void finalizeLaunchPort(OCPI::Container::Launcher::Port &p);
       void finalizeLaunchConnections();
-      void initInstances();
-      void finalizeLaunchInstances();
+      void finalizeLaunchMembers();
       void checkPropertyValue(unsigned nInstance, const OCPI::Util::Worker &w,
 			      const OCPI::Util::Assembly::Property &aProp, unsigned *&pn,
 			      OU::Value *&pv);
-      OCPI::Util::Port *getMetaPort(unsigned n) const;
+      const OCPI::Util::Port *getMetaPort(unsigned n) const;
       // return our used-container ordinal
       unsigned addContainer(unsigned container, bool existOk = false);
+      unsigned getUsedContainer(unsigned container);
       bool connectionsOk(OCPI::Library::Candidate &c, unsigned instNum);
       void finalizeProperties(const OCPI::Util::PValue *params);
       const char *finalizePortParam(const OCPI::Util::PValue *params, const char *pName);
+      void finalizeExternals();
       bool bookingOk(Booking &b, OCPI::Library::Candidate &c, unsigned n);
       void policyMap( Instance * i, CMap & bestMap);
       void setPolicy(const OCPI::API::PValue *params);
       Property &findProperty(const char * worker_inst_name, const char * prop_name);
-      void dumpDeployment(unsigned score, Deployment *dep);
+      void dumpDeployment(unsigned score);
+      void doScaledInstance(unsigned instNum, unsigned score);
+      void deployInstance(unsigned instNum, unsigned score, size_t scale,
+			  unsigned *containers, const OCPI::Library::Implementation **impls,
+			  CMap feasible);
       void doInstance(unsigned instNum, unsigned score);
       void checkExternalParams(const char *pName, const OCPI::Util::PValue *params);
       void prepareInstanceProperties(unsigned nInstance,
@@ -187,7 +229,7 @@ namespace OCPI {
       bool wait(OCPI::OS::Timer *);
       void finish();
       ExternalPort &getPort(const char *, const OCPI::API::PValue *);
-      ExternalPort &getPort(unsigned index, std::string & name );
+      ExternalPort &getPort(unsigned index, std::string &name );
       size_t getPortCount();
       friend struct Property;
       size_t nProperties() const { return m_nProperties; }

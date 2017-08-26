@@ -31,7 +31,7 @@
 #include "OcpiUtilValue.h"
 #include "OcpiUtilEzxml.h"
 #include "OcpiUtilMisc.h"
-#include "OcpiUtilImplementation.h"
+#include "OcpiUtilWorker.h"
 #include "OcpiUtilAssembly.h"
 #include "OcpiUuid.h"
 #include "ezxml.h"
@@ -47,6 +47,7 @@ namespace OS=OCPI::OS;
 
 class Port;
 
+#if 0 // this is handled differently now in data.cxx
 // We derive a class to implement xi:include parsing, file names, etc.
 class Protocol : public OU::Protocol {
 public:
@@ -55,146 +56,9 @@ public:
   const char *parse(const char *file, ezxml_t prot = NULL);
   const char *parseOperation(ezxml_t op);
 };
-
+#endif
 class Worker;
 
-struct Scaling {
-  size_t m_min, m_max, m_modulo, m_default;
-  Scaling();
-  const char *parse(Worker &w, ezxml_t x);
-};
-#define SCALING_ATTRS "min", "max", "modulo", "default"
-#define OCPI_PADDINGS \
-  OCPI_PADDING(None) \
-  OCPI_PADDING(Replicate) \
-  OCPI_PADDING(Zero) \
-  OCPI_PADDING(Wrap)
-
-#define OCPI_PADDING(x) x,
-  enum Padding { OCPI_PADDINGS };
-#undef OCPI_PADDING
-
-struct Overlap {
-  size_t m_left, m_right;
-  Padding m_padding;
-  Overlap();
-  const char *parse(ezxml_t x);
-};
-#define OVERLAP_ATTRS "left", "right", "padding"
-// This structure is per-dimension
-struct Partitioning {
-  Scaling  m_scaling;
-  Overlap  m_overlap;
-  size_t   m_sourceDimension;
-  Partitioning();
-  const char *parse(Worker &w, ezxml_t x);
-};
-#define PARTITION_ATTRS SCALING_ATTRS, OVERLAP_ATTRS, "source"
-#define OCPI_DISTRIBUTIONS \
-  OCPI_DISTRIBUTION(All) \
-  OCPI_DISTRIBUTION(Cyclic) \
-  OCPI_DISTRIBUTION(First) \
-  OCPI_DISTRIBUTION(Balanced) \
-  OCPI_DISTRIBUTION(Directed) \
-  OCPI_DISTRIBUTION(Random) \
-  OCPI_DISTRIBUTION(Hashed) \
-
-#define OCPI_DISTRIBUTION(x) x,
-  enum Distribution { OCPI_DISTRIBUTIONS DistributionLimit };
-
-#undef OCPI_DISTRIBUTION
-
-#define DISTRIBUTION_ATTRS "distribution", "hashfield"
-
-#define SPEC_DATA_PORT_ATTRS \
-  "Name", "Producer", "Count", "Optional", "Protocol", "buffersize", \
-    OCPI_PROTOCOL_SUMMARY_ATTRS, "numberofopcodes"
-
-class DataPort : public OcpPort {
- protected:
-  Protocol *m_protocol;
-  bool m_isProducer;
-  bool m_isOptional;
-  bool m_isBidirectional;
-  size_t m_nOpcodes;
-  size_t m_minBufferCount;
-  size_t m_bufferSize;
-  Port *m_bufferSizePort;
-  // Scalability
-  bool m_isScalable;
-  std::string m_scaleExpr;
-  Distribution m_defaultDistribution;
-  Partitioning m_defaultPartitioning;
-  std::string m_defaultHashField;
-  struct OpScaling {
-    Distribution                m_distribution;
-    OU::Member                 *m_hashField;
-    Partitioning                m_defaultPartitioning; // default for all args
-    bool                        m_multiple;
-    bool                        m_allSeeOne;
-    bool                        m_allSeeEnd;
-    std::vector<Partitioning *> m_partitioning; // tricky: these pointers are arrays for dims
-    bool                        m_isPartitioned;
-    OpScaling(size_t nArgs);
-    const char *parse(DataPort &dp, OU::Operation &op, ezxml_t x);
-  };
-  std::vector<OpScaling*> m_opScaling;
-  bool m_isPartitioned;
-  
-  // This constructor is used when data port is inherited
-  DataPort(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *&err);
-  DataPort(const DataPort &other, Worker &w , std::string &name, size_t count,
-	   OCPI::Util::Assembly::Role *role, const char *&err);
- public:
-  // Virtual constructor - every derived class must have one
-  Port &clone(Worker &w, std::string &name, size_t count, OCPI::Util::Assembly::Role *role,
-	      const char *&err)
-    const;
-  inline const char *typeName() const { return "WDI"; }
-  inline const char *prefix() const { return "data"; }
-  bool matchesDataProducer(bool isProducer) const { return m_isProducer == isProducer; }
-  // This constructor is used when data port *is* the derived class (WDIPort)
-  DataPort(Worker &w, ezxml_t x, int ordinal, const char *&err);
-  bool isData() const { return true; }
-  bool isDataProducer() const { return m_isProducer; } // call isData first
-  bool isDataOptional() const { return m_isOptional; } // call isData first
-  bool isDataBidirectional() const { return m_isBidirectional; } // call isData first
-  bool isOptional() const { return m_isOptional; }
-  const char *parse();
-  const char *parseDistribution(ezxml_t x, Distribution &d, std::string &hash);
-  const char *finalize();
-  const char *fixDataConnectionRole(OU::Assembly::Role &role);
-  const char *resolveExpressions(OCPI::Util::IdentResolver &ir);
-  void initRole(OCPI::Util::Assembly::Role &role);
-  void emitOpcodes(FILE *f, const char *pName, Language lang);
-  void emitPortDescription(FILE *f, Language lang) const;
-  void emitRecordDataTypes(FILE *f);
-  void emitRecordInputs(FILE *f);
-  void emitRecordOutputs(FILE *f);
-  void emitVHDLShellPortMap(FILE *f, std::string &last);
-  void emitImplSignals(FILE *f);
-  void emitXML(FILE *f);
-  const char *emitRccCppImpl(FILE *f);
-  void emitRccCImpl(FILE *f);
-  void emitRccCImpl1(FILE *f);
-  void emitRccArgTypes(FILE *f, bool &first);
-  void emitRecordInterface(FILE *f, const char *implName);
-  void emitRecordInterfaceConstants(FILE *f);
-  void emitInterfaceConstants(FILE *f, Language lang);
-  //  void emitVerilogPortParameters(FILE *f);
-  static const char *adjustConnection(const char *masterName,
-				      Port &prodPort, OcpAdapt *prodAdapt, bool &prodHasExpr,
-				      Port &consPort, OcpAdapt *consAdapt, bool &consHasExpr,
-				      Language lang, size_t &unused);
-  virtual const char *adjustConnection(Port &consumer, const char *masterName, Language lang,
-				       OcpAdapt *prodAdapt, OcpAdapt *consAdapt, size_t &unused);
-  virtual unsigned extraDataInfo() const;
-  const char *finalizeHdlDataPort();
-  const char *finalizeRccDataPort();
-  const char *finalizeOclDataPort();
-  const char *finalizeExternal(Worker &aw, Worker &iw, InstancePort &ip,
-			       bool &cantDataResetWhileSuspended);
-};
 class WciPort : public OcpPort {
   size_t m_timeout;
   bool m_resetWhileSuspended;
@@ -234,60 +98,6 @@ class WciPort : public OcpPort {
   void emitSkelSignals(FILE *f);
 };
 
-class RccPort : public DataPort {
-public:
-  RccPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err);
-};
-class OclPort : public RccPort {
-public:
-  OclPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err);
-};
-
-class WsiPort : public DataPort {
-  ~WsiPort();
-  bool m_abortable;
-  bool m_earlyRequest;
-  bool m_regRequest; // request is registered
-  WsiPort(const WsiPort &other, Worker &w , std::string &name, size_t count,
-	  OCPI::Util::Assembly::Role *role, const char *&err);
- public:
-  WsiPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err);
-  Port &clone(Worker &w, std::string &name, size_t count, OCPI::Util::Assembly::Role *role,
-	      const char *&err) const;
-  bool masterIn() const;
-  inline const char *prefix() const { return "wsi"; }
-  inline const char *typeName() const { return "WSI"; }
-  void emitPortDescription(FILE *f, Language lang) const;
-  const char *deriveOCP();
-  void emitVhdlShell(FILE *f, Port *wci);
-  const char *adjustConnection(Port &consumer, const char *masterName, Language lang,
-			       OcpAdapt *prodAdapt, OcpAdapt *consAdapt, size_t &unused);
-  void emitImplAliases(FILE *f, unsigned n, Language lang);
-  void emitImplSignals(FILE *f);
-  void emitSkelSignals(FILE *f);
-  void emitRecordInputs(FILE *f);
-  void emitRecordOutputs(FILE *f);
-  //  unsigned extraDataInfo() const;
-};
-class WmiPort : public DataPort {
-  bool m_talkBack;
-  size_t m_mflagWidth; // kludge for shep - FIXME
-  WmiPort(const WmiPort &other, Worker &w , std::string &name, size_t count,
-	  OCPI::Util::Assembly::Role *role, const char *&err);
- public:
-  WmiPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err);
-  Port &clone(Worker &w, std::string &name, size_t count, OCPI::Util::Assembly::Role *role,
-	      const char *&err) const;
-  inline const char *prefix() const { return "mem"; }
-  inline const char *typeName() const { return "WMI"; }
-  const char *deriveOCP();
-  void emitPortDescription(FILE *f, Language lang) const;
-  const char *adjustConnection(Port &consumer, const char *masterName, Language lang,
-			       OcpAdapt *prodAdapt, OcpAdapt *consAdapt, size_t &unused);
-  void emitImplAliases(FILE *f, unsigned n, Language lang);
-  void emitRecordInputs(FILE *f);
-  void emitRecordOutputs(FILE *f);
-};
 class WmemiPort : public OcpPort {
   bool m_writeDataFlowControl, m_readDataFlowControl;
   uint64_t m_memoryWords;
@@ -531,16 +341,6 @@ enum Endian {
 #define ENDIANS "none", "neutral", "big", "little", "static", "dynamic"
 
 #define PARSED_ATTRS "name"
-struct Parsed {
-  std::string m_name, m_file, m_parentFile, m_fileName;
-  ezxml_t m_xml;
-  Parsed(ezxml_t xml,        // if non-zero, the xml.  If not, then parse the file.
-	 const char *file,   // The file, either where this is embedded or its own file
-	 const std::string &parent, // The file referencing this file
-	 const char *tag,
-	 const char *&err);
-  inline const char *cname() const { return m_name.c_str(); }
-};
 
 // This class represents a connection to a required worker
 
@@ -550,9 +350,12 @@ typedef std::list<Worker *> Workers;
 typedef Workers::iterator WorkersIter;
 class Assembly;
 class HdlDevice;
+class DataPort;
 struct Instance;
-class Worker : public Parsed, public OU::IdentResolver {
+class Worker : public OU::Worker {
  public:
+  ezxml_t m_xml;
+  std::string m_file, m_parentFile, m_fileName;
   Model m_model;
   const char **m_baseTypes;
   const char *m_modelString;
@@ -598,12 +401,10 @@ class Worker : public Parsed, public OU::IdentResolver {
   ParamConfigs m_paramConfigs;      // the parsed file of all configs
   Build m_build;                    // build info not needed for code gen or artifact
   ParamConfig  *m_paramConfig;      // the config for this Worker.
-  // Scalability
-  bool m_scalable;            // Is this worker scalable at all?
-  std::string m_validScaling; // Expression for error checking overall scaling
-  Scaling m_scaling;
-  std::map<std::string, Scaling> m_scalingParameters;
   Worker *m_parent;           // If this worker is part of an upper level assembly
+  bool m_scalable;
+  size_t m_requiredWorkGroupSize;    // FIXME: belongs in OclWorker class!
+                                    // FIXME: derive from compiled code
   unsigned m_maxLevel;        // when data type processing
   bool m_dynamic;
   Worker(ezxml_t xml, const char *xfile, const std::string &parentFile, WType type,
@@ -617,12 +418,14 @@ class Worker : public Parsed, public OU::IdentResolver {
   Clock *addClock();
   Clock *addWciClockReset();
   OU::Property *findProperty(const char *name) const;
+  OU::Port *findMetaPort(const char *id, const OU::Port *except) const;
+  virtual OU::Port &port(unsigned long which) const;
   const char
     *addBuiltinProperties(),
     *getPort(const char *name, Port *&p, Port *except = NULL) const,
     *getValue(const char *sym, OU::ExprValue &val) const,
     *getNumber(ezxml_t x, const char *attr, size_t *np, bool *found = NULL,
-	       size_t defaultValue = 0, bool setDefault = true),
+	       size_t defaultValue = 0, bool setDefault = true) const,
     //    *getBoolean(ezxml_t x, const char *name, bool *b, bool trueOnly),
     *parse(const char *file, const char *parent, const char *package = NULL),
     *parseRcc(const char *package = NULL),
@@ -643,10 +446,9 @@ class Worker : public Parsed, public OU::IdentResolver {
     *parseBuildXml(ezxml_t x),
     *startBuildXml(FILE *&f),
     *doProperties(ezxml_t top, const char *parent, bool impl, bool anyIsBad),
-    *doScaling(ezxml_t x),
     *parseHdlAssy(),
     *initImplPorts(ezxml_t xml, const char *element, PortCreate &pc),
-    *checkDataPort(ezxml_t impl, Port *&sp),
+    *checkDataPort(ezxml_t impl, DataPort *&sp),
     *addProperty(ezxml_t prop, bool includeImpl, bool anyIsBad),
     // Add a property from an xml string description
     *addProperty(const char *xml, bool includeImpl),
@@ -697,7 +499,7 @@ class Worker : public Parsed, public OU::IdentResolver {
     *emitWorkersHDL(const char *file),
     *emitAttribute(const char *attr),
     *emitUuid(const OU::Uuid &uuid);
-  Port *findPort(const char *name, Port *except = NULL) const;
+  Port *findPort(const char *name, const Port *except = NULL) const;
   Clock *findClock(const char *name) const;
   virtual void
     emitDeviceSignalMapping(FILE *f, std::string &last, Signal &s),
@@ -756,10 +558,13 @@ class Worker : public Parsed, public OU::IdentResolver {
   "name", "SizeOfConfigSpace", "ControlOperations", "Sub32BitConfigProperties"
 #define ASSY_ELEMS "instance", "connection", "external"
 extern const char
+  *checkSuffix(const char *str, const char *suff, const char *last),
   *createTests(const char *file, const char *package, const char *outDir, bool verbose),
   *createCases(const char **args, const char *package, const char *outDir, bool verbose),
   *addLibrary(const char *lib),
   *extractExprValue(const OU::Property &p, const OU::Value &v, OU::ExprValue &val),
+  *tryInclude(ezxml_t x, const std::string &parent, const char *element, ezxml_t *parsed,
+	      std::string &child, bool optional),
   *parseList(const char *list, const char * (*doit)(const char *tok, void *arg), void *arg),
   *parseControlOp(const char *op, void *arg),
   *vhdlValue(const char *pkg, const std::string &name, const OU::Value &v, std::string &value,

@@ -18,12 +18,6 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#if 0
-#include <vector>
-
-#include "ContainerLauncher.h"
-#endif
-
 #include <string>
 #include <list>
 #include "OcpiOsMisc.h"

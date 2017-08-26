@@ -27,7 +27,7 @@
 #include <inttypes.h>
 #include <climits>
 #include "OcpiUuid.h"
-#include "DtTransferInternal.h"
+#include "XferEndPoint.h"
 #include "OcpiRDTInterface.h"
 #include "HdlWciControl.h"
 #include "HdlAccess.h"

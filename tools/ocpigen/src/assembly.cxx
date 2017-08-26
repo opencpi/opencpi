@@ -62,7 +62,7 @@ findPort(OU::Assembly::Port &ap, InstancePort *&found) {
 	else
 	  found = &i.m_ports[nn];
       }
-    } else if (!strcasecmp(p.cname(), ap.m_name.c_str()))
+    } else if (!strcasecmp(p.pname(), ap.m_name.c_str()))
       found = &i.m_ports[nn];;
   }
   if (!found)
@@ -93,7 +93,7 @@ parseConnection(OU::Assembly::Connection &aConn) {
 			  "instance %s has count %zu",
 			  ap.m_index, c.m_count ? c.m_count : 1, c.m_name.c_str(),
 			  ap.m_name.empty() ? "<unknown>" : ap.m_name.c_str(),
-			  m_instances[ap.m_instance].m_worker->m_name.c_str(),
+			  m_instances[ap.m_instance].m_worker->cname(),
 			  found->m_port->m_count);
     size_t count = found->m_port->m_count - ap.m_index;
     if (count < minCount)
@@ -135,8 +135,8 @@ parseConnection(OU::Assembly::Connection &aConn) {
     // Create the external port of this assembly
     // Start with a copy of the port, then patch it
     ocpiDebug("Clone of port %s of instance %s of worker %s for assembly worker %s: %s/%zu/%zu",
-	      intPort.m_port->cname(), intPort.m_instance->cname(),
-	      intPort.m_port->m_worker->m_implName, m_assyWorker.m_implName,
+	      intPort.m_port->pname(), intPort.m_instance->cname(),
+	      intPort.m_port->worker().m_implName, m_assyWorker.m_implName,
 	      intPort.m_port->m_countExpr.c_str(), intPort.m_port->m_count,
 	      ext.m_count ? ext.m_count : c.m_count);
     Port &p = intPort.m_port->clone(m_assyWorker, ext.m_name,
@@ -144,7 +144,7 @@ parseConnection(OU::Assembly::Connection &aConn) {
 				    &ext.m_role, err);
     if (err)
       return OU::esprintf("External connection %s for port %s of instance %s error: %s",
-			  c.m_name.c_str(), intPort.m_port->cname(), intPort.m_instance->cname(),
+			  c.m_name.c_str(), intPort.m_port->pname(), intPort.m_instance->cname(),
 			  err);
     InstancePort *ip = new InstancePort;
     ip->init(NULL, &p, &ext);
@@ -388,15 +388,15 @@ parseAssy(ezxml_t xml, const char **topAttrs, const char **instAttrs, bool noWor
 	      if (!findPort(**pi, found))
 		if (ip == found)
 		  p = ip->m_port;
-	    } else if (!strcasecmp((*pi)->m_name.c_str(), ip->m_port->cname())) {
+	    } else if (!strcasecmp((*pi)->m_name.c_str(), ip->m_port->pname())) {
 	      p = ip->m_port;
 	      break;
 	    } 
 	  if (!p)
 	    ip->m_externalize = true;
-	  //	  if (!p && (err = externalizePort(*ip, ip->m_port->cname(), NULL)))
+	  //	  if (!p && (err = externalizePort(*ip, ip->m_port->pname(), NULL)))
 	  //	    return err;
-	  //	assy.m_utilAssembly->addExternalConnection(ai->m_ordinal, ip->m_port->cname());
+	  //	assy.m_utilAssembly->addExternalConnection(ai->m_ordinal, ip->m_port->pname());
 	}
       }
     }
@@ -422,7 +422,7 @@ parseAssy(ezxml_t xml, const char **topAttrs, const char **instAttrs, bool noWor
 	if (ip->m_attachments.empty() && pp->isData() && !pp->isOptional() && !ip->m_externalize)
 	  return OU::esprintf("Port %s of instance %s of worker %s"
 			      " is not connected and not optional",
-			      pp->cname(), i->cname(), i->m_worker->m_implName);
+			      pp->pname(), i->cname(), i->m_worker->m_implName);
       }
     }
   return 0;
@@ -443,8 +443,8 @@ externalizePort(InstancePort &ip, const char *name, size_t *ordinal) {
   m_connections.push_back(&c);
   const char *err;
   ocpiDebug("Clone of port %s of instance %s of worker %s for assembly worker %s: %s/%zu",
-	    ip.m_port->cname(), ip.m_instance->cname(),
-	    ip.m_port->m_worker->m_implName, m_assyWorker.m_implName,
+	    ip.m_port->pname(), ip.m_instance->cname(),
+	    ip.m_port->worker().m_implName, m_assyWorker.m_implName,
 	    ip.m_port->m_countExpr.c_str(), ip.m_port->m_count);
   Port &extPort = p.clone(m_assyWorker, extName, p.m_count, NULL, err);
   if (err)
@@ -471,7 +471,7 @@ findInstancePort(const char *name) {
   // First, find the external
   for (ConnectionsIter cci = m_connections.begin(); cci != m_connections.end(); cci++) {
     Connection &cc = **cci;
-    if (cc.m_external && !strcasecmp(cc.m_external->m_instPort.m_port->cname(), name))
+    if (cc.m_external && !strcasecmp(cc.m_external->m_instPort.m_port->pname(), name))
       // We found the external port, now find the internal connected port
       for (AttachmentsIter ai = cc.m_attachments.begin(); ai != cc.m_attachments.end(); ai++)
 	if (cc.m_external != *ai)
@@ -518,33 +518,46 @@ emitXmlWorker(FILE *f) {
     fprintf(f, " Slave='%s.%s'", m_slave->m_implName, m_slave->m_modelString);
   if (m_ctl.firstRaw)
     fprintf(f, " FirstRaw='%u'", m_ctl.firstRaw->m_ordinal);
+  if (m_scalable)
+    fprintf(f, " Scalable='1'");
+  if (m_requiredWorkGroupSize)
+    fprintf(f, " requiredWorkGroupSize='%zu'", m_requiredWorkGroupSize);
   fprintf(f, ">\n");
+  if (m_scalable) {
+    OU::Port::Scaling s;
+    if (!(s == m_scaling)) {
+      std::string out;
+      m_scaling.emit(out, NULL);
+      fprintf(f, "  <scaling %s/>\n", out.c_str());
+    }
+  }
   unsigned nn;
+  std::string out;
   for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++) {
     OU::Property *prop = *pi;
-    prop->printAttrs(f, "property", 1, prop->m_isParameter); // suppress default values for parameters
+    prop->printAttrs(out, "property", 1, prop->m_isParameter); // suppress default values for parameters
     if (prop->m_isVolatile)
-      fprintf(f, " volatile='1'");
+      out += " volatile='1'";
     else if (prop->m_isReadable)
-      fprintf(f, " readable='1'");
+      out += " readable='1'";
     if (prop->m_isInitial)
-      fprintf(f, " initial='1'");
+      out += " initial='1'";
     else if (prop->m_isWritable)
-      fprintf(f, " writable='1'");
+      out += " writable='1'";
     if (prop->m_readSync)
-      fprintf(f, " readSync='1'");
+      out += " readSync='1'";
     if (prop->m_writeSync)
-      fprintf(f, " writeSync='1'");
+      out += " writeSync='1'";
     if (prop->m_readError)
-      fprintf(f, " readError='1'");
+      out += " readError='1'";
     if (prop->m_writeError)
-      fprintf(f, " writeError='1'");
+      out += " writeError='1'";
     if (!prop->m_isReadable && !prop->m_isWritable && !prop->m_isParameter)
-      fprintf(f, " padding='1'");
+      out += " padding='1'";
     if (prop->m_isIndirect)
-      fprintf(f, " indirect=\"%zu\"", prop->m_indirectAddr);
+      OU::formatAdd(out, " indirect=\"%zu\"", prop->m_indirectAddr);
     if (prop->m_isParameter) {
-      fprintf(f, " parameter='1'");
+      out += " parameter='1'";
       OU::Value *v = 
 	m_paramConfig && prop->m_paramOrdinal < m_paramConfig->params.size() &&
 	!m_paramConfig->params[prop->m_paramOrdinal].m_isDefault ?
@@ -553,22 +566,22 @@ emitXmlWorker(FILE *f) {
 	std::string value;
 	v->unparse(value);
 	// FIXME: this code is in three places..
-	fprintf(f, " default='");
+	out += " default='";
 	std::string xml;
 	OU::encodeXmlAttrSingle(value, xml);
-	fputs(xml.c_str(), f);
-	fputc('\'', f);
+	out += xml;
+	out += "'";
       }
     }
-    prop->printChildren(f, "property");
+    prop->printChildren(out, "property");
   }
   for (nn = 0; nn < m_ports.size(); nn++)
-    m_ports[nn]->emitXML(f);
+    m_ports[nn]->emitXML(out);
   for (nn = 0; nn < m_localMemories.size(); nn++) {
     LocalMemory* m = m_localMemories[nn];
-    fprintf(f, "  <localMemory name=\"%s\" size=\"%zu\"/>\n", m->name, m->sizeOfLocalMemory);
+    OU::formatAdd(out, "  <localMemory name=\"%s\" size=\"%zu\"/>\n", m->name, m->sizeOfLocalMemory);
   }
-  fprintf(f, "</worker>\n");
+  fprintf(f, "%s</worker>\n", out.c_str());
 }
 
 void Worker::

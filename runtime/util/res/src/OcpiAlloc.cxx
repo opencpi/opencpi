@@ -109,9 +109,9 @@ void OCPI::Util::ResPool::defrag()
   sort_by_size = true;  
 
 #ifdef DEBUG_LISTS
-  ocpiDebug("Alloc list");
+  ocpiDebug("defrag: Alloc list");
   dumpList(alloc_list);
-  ocpiDebug("Free list");
+  ocpiDebug("defrag: Free list");
   dumpList(free_list);
 #endif
 
@@ -129,9 +129,9 @@ alloc(size_t nbytes, unsigned int alignment, OCPI::Util::ResAddrType& req_addr)
     // OCPI::OS::dumpStack(std::cerr);
   }
 #ifdef DEBUG_LISTS
-  ocpiDebug("Alloc list");
+  ocpiDebug("alloc: Alloc list");
   dumpList(m_pool->alloc_list);
-  ocpiDebug("Free list");
+  ocpiDebug("alloc: Free list");
   dumpList(m_pool->free_list);
 #endif
 
@@ -167,9 +167,9 @@ alloc(size_t nbytes, unsigned int alignment, OCPI::Util::ResAddrType& req_addr)
   }
 
 #ifndef NDEBUG
-  printf("Alloc list\n");
+  ocpiDebug("alloc2: Alloc list");
   dumpList(m_pool->alloc_list);
-  printf("Free list\n");
+  ocpiDebug("alloc2: xoFree list");
   dumpList(m_pool->free_list);
 #endif
 
@@ -192,9 +192,9 @@ int OCPI::Util::MemBlockMgr::free( OCPI::Util::ResAddrType addr )
 	//        OCPI::OS::dumpStack (std::cerr);
       }
 #ifdef DEBUG_LISTS
-      printf("Alloc list\n");
+      ocpiDebug("free: Alloc list");
       dumpList(m_pool->alloc_list);
-      printf("Free list\n");
+      ocpiDebug("free: Free list");
       dumpList(m_pool->free_list);
 #endif
 #endif

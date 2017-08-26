@@ -49,14 +49,14 @@ namespace OCPI  {
       Operation & operator=(const Operation * p );
       Operation & operator=(const Operation & p );
       const char *parse(ezxml_t op, Protocol &);
-      Member *findArg(const char *name);
+      Member *findArg(const char *name) const;
       inline bool isTwoWay() const { return m_isTwoWay; }
       inline Member *args() const { return m_args; }
       inline size_t nArgs() const { return m_nArgs; }
-      inline const char *cname() const { return m_name.c_str(); }
+      virtual const char *cname() const { return m_name.c_str(); }
       inline bool isTopFixedSequence() const { return m_topFixedSequence; }
       size_t defaultLength() const;
-      void printXML(FILE *f, unsigned indent = 0) const;
+      void printXML(std::string &out, unsigned indent = 0) const;
       void write(Writer &writer, const uint8_t *data, size_t length);
       size_t read(Reader &reader, uint8_t *data, size_t maxLength);
       // for testing
@@ -72,6 +72,7 @@ namespace OCPI  {
       Operation *m_op;                 // used during parsing
       std::string
 	m_qualifiedName,               // IDL-style qualified name (double colon separators)
+	m_file,
 	m_name;
       // Summary attributes derived from protocols.  May be specified in the absense of protocol
       size_t m_defaultBufferSize;      // Allow the protocol to simply override the protocol size, if != 0
@@ -93,22 +94,26 @@ namespace OCPI  {
       bool m_isUnbounded;              // are there messages with no upper bound?
       Protocol();
       Protocol(const Protocol & p );
+      Protocol(Protocol *p); // clone
       virtual ~Protocol();
       Protocol & operator=( const Protocol & p );
       Protocol & operator=( const Protocol * p );
-      virtual const char *parseOperation(ezxml_t op);
+      void init();
+      const char *parseOperation(ezxml_t op);
       Operation *findOperation(const char *name);
       void finishOperation(const Operation &op);
       inline bool isTwoWay() { return m_isTwoWay; }
-      inline const size_t &nOperations() const { return m_nOperations; }
+      inline size_t nOperations() const { return m_nOperations; }
       inline Operation *operations() const { return m_operations; }
-      inline const char *cname() const { return m_name.c_str(); }
-      const char *parse(ezxml_t x, bool top = true);
+      virtual const char *cname() const { return m_name.c_str(); }
+      const char *parseChild(ezxml_t x);
+      const char *parse(ezxml_t x, const char *defName, const char *file,
+			const char *(*dochild)(ezxml_t op, void *arg), void *arg);
       // Note this is NOT const char array and must be modifiable in place
       const char *parse(char *proto);
       const char *parseSummary(ezxml_t x);
       const char *finishParse();
-      void printXML(FILE *f, unsigned indent = 0) const;
+      void printXML(std::string &out, unsigned indent = 0) const;
       void write(Writer &writer, const uint8_t *data, size_t length, uint8_t opcode);
       size_t read(Reader &reader, uint8_t *data, size_t maxLength, uint8_t opcode);
       void generate(const char *name);

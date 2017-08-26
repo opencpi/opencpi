@@ -53,7 +53,10 @@ ifndef IMPORTS_INCLUDED
   endif
 endif
 
+ifndef PACKAGE
 export PACKAGE = $(shell pwd|sed 's-.*/\([^/]*$$\)-\1-')
+endif
+export PACKAGE
 #$(info PACKAGE $(PACKAGE))
 export UNIXLIB = $(OBJDIR)/libocpi_$(PACKAGE).a
 export UNIXSHLIB = $(OBJDIR)/libocpi_$(PACKAGE).$(SO)

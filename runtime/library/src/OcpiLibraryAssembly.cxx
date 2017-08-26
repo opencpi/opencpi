@@ -30,10 +30,13 @@ namespace OCPI {
     namespace OU = OCPI::Util;
     namespace OE = OCPI::Util::EzXml;
     // Attributes specific to an application assembly
-    static const char *assyAttrs[] = { "maxprocessors", "minprocessors", "roundrobin", "done", NULL};
+    static const char *assyAttrs[] = { COLLOCATION_POLICY_ATTRS,
+				       "maxprocessors", "minprocessors", "roundrobin", "done",
+				       NULL};
     // The instance attributes relevant to app assemblies - we don't really deal with "container" here
     // FIXME: It should be in the upper level
-    static const char *instAttrs[] = { "model", "platform", "container", NULL};
+    static const char *instAttrs[] = { COLLOCATION_POLICY_ATTRS,
+				       "model", "platform", "container", NULL};
 #if 0
     Assembly::Assembly(const char *file, const OCPI::Util::PValue *params)
       : OU::Assembly(file, assyAttrs, instAttrs, params), m_refCount(1) {
@@ -206,8 +209,9 @@ namespace OCPI {
 	  // Resolve empty port names to be unambiguous if possible
 	  p = ports;
 	  for (unsigned n = 0; n < m_nPorts; n++, p++)
-	    if ((asp.m_role.m_provider && p->m_provider) ||
-		(!asp.m_role.m_provider && !p->m_provider)) {
+	    if (!p->m_isInternal &&
+                ((asp.m_role.m_provider && p->m_provider) ||
+		 (!asp.m_role.m_provider && !p->m_provider))) {
 	      if (found) {
 		  ocpiInfo("Rejected: the '%s' connection at instance '%s' is ambiguous: "
 			   " port name must be specified.",
@@ -236,6 +240,11 @@ namespace OCPI {
 	  p = ports;
 	  for (unsigned n = 0; n < m_nPorts; n++, p++)
 	    if (!strcasecmp(ports[n].m_name.c_str(), asp.m_name.c_str())) {
+	      if (p->m_isInternal) {
+		ocpiInfo("Rejected: the \"%s\" port of instance '%s' is internal.",
+			 asp.m_name.c_str(), m_utilInstance.m_name.c_str());
+		goto rejected;
+	      }
 	      if (ap[n]) {
 		ocpiInfo("Rejected: the '%s' connection at instance '%s' is redundant: "
 			 " port '%s' already has a connection.",
@@ -414,6 +423,12 @@ namespace OCPI {
 	}
 	score = (unsigned)(n < 0 ? 0 : n);
       }
+      // Check for scalability suitability.
+      std::string error;
+      if (i.m_metadataImpl.m_scaling.check(m_scale, error)) {
+	ocpiInfo("Rejected: %s", error.c_str());
+	return false;
+      }
       strip_pf(platform);
       // To this point all the checking has applied to the worker we are looking at.
       // From this point some of the checking may actually apply to the slave if there is one
@@ -444,7 +459,8 @@ namespace OCPI {
 	  continue; // used by dumpfile
 	OU::Property &uProp = *up;
 	if (!uProp.m_isWritable && !uProp.m_isParameter) {
-	  ocpiInfo("Rejected: initial property \"%s\" was neither writable nor a parameter", apName);
+	  ocpiInfo("Rejected: initial property \"%s\" was neither writable nor a parameter",
+		   apName);
 	  return false;
 	}
 	OU::Value aValue; // FIXME - save this and use it later
@@ -541,6 +557,10 @@ namespace OCPI {
 	score += bump;
       }
 #endif
+      if (m_utilInstance.m_hasSlave && i.m_metadataImpl.slave().empty()) {
+	ocpiInfo("Rejected because instance is a proxy, but implementation isn't");
+	return false;
+      }
       // FIXME:  Check consistency between implementation metadata here...
       m_candidates.push_back(Candidate(i, score));
       ocpiInfo("Accepted implementation before connectivity checks with score %u", score);
@@ -569,6 +589,12 @@ namespace OCPI {
 	OE::getOptionalString(x, m_model, "model");
       if (!OU::findAssign(params, "platform", inst.m_name.c_str(), m_platform))
 	OE::getOptionalString(x, m_platform, "platform");
+      const char *scale;
+      if (!OU::findAssign(params, "scale", inst.m_name.c_str(), scale))
+	scale = ezxml_cattr(inst.xml(), "scale");
+      m_tempInstance->m_scale = 1;
+      if (scale && OE::getUNum(scale, &m_tempInstance->m_scale))
+	throw OU::Error("Invalid scale factor: \"%s\"", scale);
       if (!Manager::findImplementations(*this, inst.m_specName.c_str()))
 	throw OU::Error("No acceptable implementations found in any libraries "
 			"for \"%s\".  Use log level 8 for more detail.",

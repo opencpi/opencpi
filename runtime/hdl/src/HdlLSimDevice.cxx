@@ -31,8 +31,9 @@
 #include "OcpiOsFileSystem.h"
 #include "OcpiOsSemaphore.h"
 #include "OcpiOsMisc.h"
-#include "OcpiTransport.h"
 #include "OcpiUtilAutoMutex.h"
+#include "XferManager.h"
+#include "OcpiTransport.h"
 #include "LibrarySimple.h"
 #include "HdlSdp.h"
 #include "HdlLSimDriver.h"
@@ -259,12 +260,15 @@ protected:
     return false;
   }
   // We assume all sim platforms use SDP
+  // The sdp sender (output) must push for now
+  // The sdp receiver can push or pull and uses flagismeta
   uint32_t
   dmaOptions(ezxml_t /*icImplXml*/, ezxml_t /*icInstXml*/, bool isProvider) {
     const char *e = getenv("OCPI_HDL_FORCE_SIM_DMA_PULL");
     return isProvider ?
-      (e && !strcmp(e, "1") ? 0 : 1 << OCPI::RDT::ActiveFlowControl) | (1 << OCPI::RDT::ActiveMessage) |
-      (1 << OCPI::RDT::FlagIsMeta) : 1 << OCPI::RDT::ActiveMessage;
+      (e && !strcmp(e, "1") ? 0 : 1 << OCPI::RDT::ActiveFlowControl) |
+      (1 << OCPI::RDT::ActiveMessage) | (1 << OCPI::RDT::FlagIsMeta) :
+      1 << OCPI::RDT::ActiveMessage;
   }
   // Our added-value wait-for-process call.
   // If "hang", we wait for the process to end, and if it stops, we term+kill it.
@@ -579,7 +583,7 @@ protected:
 	} else {
 	  // Active message read/pull DMA, which will only work with locally mapped endpoints
 	  uint8_t *data =
-	    (uint8_t *)xfs[mbox]->source().map(OCPI_UTRUNCATE(DtOsDataTypes::Offset, whole_addr),
+	    (uint8_t *)xfs[mbox]->from().sMemServices().map(OCPI_UTRUNCATE(DtOsDataTypes::Offset, whole_addr),
 					       h.getLength());
 	  send2sdp(h, data, true, "DMA read response", error);
 	}
@@ -657,7 +661,7 @@ public:
   }
   // The container background thread calls this.  Return true when done
   bool run() {
-    OU::SelfAutoMutex guard (this);
+    OU::SelfAutoMutex guard(this);
     if (m_firstRun) {
       if (m_state != RUNNING) {
 	OS::sleep(100);
@@ -699,7 +703,7 @@ public:
   }
 private:
   const char *uuid() const {
-    return m_textUUID;
+    return m_textUUID.uuid;
   }
   void addFd(int fd, bool always) {
     if (fd > m_maxFd)
@@ -1004,17 +1008,17 @@ public:
   DT::EndPoint &getEndPoint() {
     if (m_endPoint)
       return *m_endPoint;
-    // Create a local endpoint that is specialized to call back the container
+    // Create an endpoint that is specialized to call back the container
     // when data arrives for the endpount rather than allocating a large internal buffer.
     // Size comes from the properties of the SDP worker.
     DT::EndPoint &ep =
-      DT::getManager().allocateProxyEndPoint(m_endpointSpecific.c_str(),
+      DT::getManager().allocateProxyEndPoint(m_endpointSpecific.c_str(), true,
 					     OCPI_UTRUNCATE(size_t, m_endpointSize));
     // This is the hook that allows us to receive data/metadata/flags pushed to this
     // endpoint from elsewhere - from multiple other endpoints.
     ep.setReceiver(*this);
-    m_readServices.resize(ep.maxCount, 0);
-    m_writeServices.resize(ep.maxCount, 0);
+    m_readServices.resize(ep.maxCount(), 0);
+    m_writeServices.resize(ep.maxCount(), 0);
     m_endPoint = &ep;
     return ep;
   }
@@ -1023,18 +1027,18 @@ public:
 	       const OCPI::RDT::Descriptors &other) {
     assert(m_endPoint);
     assert(&ep == m_endPoint);
-    DT::EndPoint *otherEp = m_endPoint->factory->findEndPoint(other.desc.oob.oep);
+    DT::EndPoint *otherEp = m_endPoint->factory().findEndPoint(other.desc.oob.oep);
     assert(otherEp);
-    assert(otherEp->mailbox < m_writeServices.size());
-    DT::XferServices *s = DT::XferFactoryManager::getSingleton().getService(m_endPoint, otherEp);
-    assert(m_writeServices[otherEp->mailbox] == NULL || m_writeServices[otherEp->mailbox] == s);
-    if (m_writeServices[otherEp->mailbox] == NULL)
-      m_writeServices[otherEp->mailbox] = s;
-    assert(otherEp->mailbox < m_readServices.size());
-    s = DT::XferFactoryManager::getSingleton().getService(otherEp, m_endPoint);
-    assert(m_readServices[otherEp->mailbox] == NULL || m_readServices[otherEp->mailbox] == s);
-    if (m_readServices[otherEp->mailbox] == NULL)
-      m_readServices[otherEp->mailbox] = s;
+    assert(otherEp->mailBox() < m_writeServices.size());
+    DT::XferServices *s = &m_endPoint->factory().getTemplate(*m_endPoint, *otherEp);
+    assert(m_writeServices[otherEp->mailBox()] == NULL || m_writeServices[otherEp->mailBox()] == s);
+    if (m_writeServices[otherEp->mailBox()] == NULL)
+      m_writeServices[otherEp->mailBox()] = s;
+    assert(otherEp->mailBox() < m_readServices.size());
+    s = &m_endPoint->factory().getTemplate(*otherEp, *m_endPoint);
+    assert(m_readServices[otherEp->mailBox()] == NULL || m_readServices[otherEp->mailBox()] == s);
+    if (m_readServices[otherEp->mailBox()] == NULL)
+      m_readServices[otherEp->mailBox()] = s;
     OT::Transport::fillDescriptorFromEndPoint(ep, mine);
   }
 };

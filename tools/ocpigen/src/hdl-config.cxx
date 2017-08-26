@@ -308,10 +308,10 @@ emitSubdeviceConnections(std::string &assy,  DevInstances *baseInstances) {
 		      "  <connection>\n"
 		      "    <port instance='%s' name='%s'/>\n"
 		      "    <port instance='%s' name='%s%s%s'",
-		      (*dii).cname(), (*sci).m_port->cname(),
+		      (*dii).cname(), (*sci).m_port->pname(),
 		      inConfig ? "pfconfig" : sdi->cname(),
 		      inConfig ? sdi->cname() : "", inConfig ? "_" : "",
-		      (*sci).m_sup_port->cname());
+		      (*sci).m_sup_port->pname());
 	if ((*sci).m_indexed) {
 	  size_t
 	    supOrdinal = (*sci).m_sup_port->m_ordinal,
@@ -496,7 +496,7 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
 		      "    <port instance='time_client%u' name='wti'/>\n"
 		      "    <port instance='%s' name='%s'/>\n"
 		      "  </connection>\n",
-		      tIndex++, (*dii).cname(), (*pi)->cname());
+		      tIndex++, (*dii).cname(), (*pi)->pname());
       }
   }
   // 4. To and from subdevices
@@ -531,8 +531,8 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
 			"  <external name='%s%s%s' instance='%s' port='%s' "
 			"index='%zu' count='%zu'/>\n",
 			p.m_type != NOCPort && p.m_type != SDPPort ? (*dii).cname() : "",
-			p.m_type != NOCPort && p.m_type != SDPPort ? "_" : "", p.cname(),
-			(*dii).cname(), p.cname(),
+			p.m_type != NOCPort && p.m_type != SDPPort ? "_" : "", p.pname(),
+			(*dii).cname(), p.pname(),
 			first, unconnected);
       }
     }
@@ -591,7 +591,7 @@ addControlConnection(std::string &assy) {
   for (PortsIter pi = m_platform.m_ports.begin(); pi != m_platform.m_ports.end(); pi++)
     if ((*pi)->type == CPPort) {
       cpInstanceName = m_platform.cname();
-      cpPortName = (*pi)->cname();
+      cpPortName = (*pi)->pname();
       if (m_platform.m_control)
 	nCpPorts++;
       break;
@@ -605,7 +605,7 @@ addControlConnection(std::string &assy) {
 	  multiple = true;
 	else {
 	  cpInstanceName = d.m_name.c_str();
-	  cpPortName = (*pi)->cname();
+	  cpPortName = (*pi)->pname();
 	}
 	if ((*dii).m_control)
 	  nCpPorts++;

@@ -59,6 +59,7 @@ namespace OCPI {
                                                 	// we do the map based on the first impl
 	Candidates m_candidates;                        // The candidate impls for this instance
 	unsigned m_nPorts;
+	size_t m_scale;
 	Instance *m_master;                             // The master if this is a slave
 	Instance(OCPI::Util::Assembly::Instance &utilInstance, Instance *master = NULL);
 	~Instance();

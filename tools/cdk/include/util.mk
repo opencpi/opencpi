@@ -306,7 +306,7 @@ LibraryRefFile=$(call $(CapModel)LibraryRefFile,$1,$2)
 ################################################################################
 # Tools for metadata and generated files
 DateStamp := $(shell date +"%c")
-ToolsDir=$(OCPI_CDK_DIR)/bin/$(OCPI_TOOL_DIR)
+ToolsDir=$(eval $(OcpiEnsureToolPlatform))$(OCPI_CDK_DIR)/bin/$(OCPI_TOOL_DIR)
 ifeq ($(HostSystem),darwin)
 DYN_PREFIX=DYLD_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/$(OCPI_TOOL_DIR)
 else
@@ -594,6 +594,29 @@ define OcpiEnsureToolPlatform
     export OCPI_TOOL_HOST:=$$(word 4,$$(vars))
     export OCPI_TOOL_PLATFORM:=$$(word 5,$$(vars))
   endif
+  # Determine OCPI_TOOL_MODE if it is not set already
+  # It can be set to null to suppress these modes, and just use whatever has been
+  # built without modes.
+  ifeq ($$(OCPI_USE_TOOL_MODES),1)
+    ifndef OCPI_TOOL_MODE
+      # OCPI_TOOL_MODE not set at all, just look for one
+      $$(foreach i,sd so dd do,\
+        $$(if $$(OCPI_TOOL_MODE),,\
+          $$(and $$(wildcard $$(OCPI_CDK_DIR)/$$(OCPI_TOOL_HOST)/$$i/ocpigen),\
+            $$(eval export OCPI_TOOL_MODE=$$i)\
+            $$(info "Choosing tool mode "$$i" since there are tool executables for it."))))
+    endif
+    ifndef OCPI_TOOL_MODE
+      ifeq ($$(wildcard $$(OCPI_CDK_DIR)/bin/$$(OCPI_TOOL_HOST)/ocpigen),)
+        $$(info Could not find any OpenCPI executables in $$(OCPI_CDK_DIR)/$$(OCPI_TOOL_HOST)/*)
+	OCPI_TOOL_MODE:=$$(strip \
+          $$(if $$(filter 1,$$(OCPI_DYNAMIC)),d,s)$$(if $$(filter 1,$$(OCPI_DEBUG)),d,o))
+        $$(info Assuming you are building OpenCPI from scratch:  tool mode will be "$$(OCPI_TOOL_MODE)".)
+      endif
+      export OCPI_TOOL_MODE=
+    endif
+  endif
+  export OCPI_TOOL_DIR:=$$(OCPI_TOOL_HOST)$$(and $$(OCPI_TOOL_MODE),/$$(OCPI_TOOL_MODE))
 endef
 # First arg is a list of exported variables/patterns that must be present.
 # Second arg is a list of exported variables/patterns that may be present.

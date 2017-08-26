@@ -1,23 +1,3 @@
-/*
- * This file is protected by Copyright. Please refer to the COPYRIGHT file
- * distributed with this source distribution.
- *
- * This file is part of OpenCPI <http://www.opencpi.org>
- *
- * OpenCPI is free software: you can redistribute it and/or modify it under the
- * terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation, either version 3 of the License, or (at your option) any
- * later version.
- *
- * OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- */
-
 // A message circuit endpoint class, which works for both client and server.
 // There is a message endpoint for each supported protocol.
 // Static methods are provided that implicitly deal with multiple protocols.
@@ -27,7 +7,7 @@
 
 #include "OcpiOsMisc.h"
 #include "OcpiMessageEndpoint.h"
-#include "DtTransferInternal.h"
+#include "XferEndPoint.h"
 
 namespace OS = OCPI::OS;
 namespace OD = DataTransfer;
@@ -39,13 +19,13 @@ namespace OCPI {
     // We're creating two things and have to resource-manage them during construction.
     // Getting our endpoint might end up creating a new one, and if so we want to nuke it
     MessageEndpoint::
-    MessageEndpoint(const char *a_endpoint)
+    MessageEndpoint(const char *endpoint)
       : m_transportGlobal(*new TransportGlobal(0, (char**)0)),
 	m_transport(NULL), m_endpoint(NULL) {
       try {
 	m_transport = new Transport(&m_transportGlobal, true);
 	m_transport->setNewCircuitRequestListener(this);
-	m_endpoint = &m_transport->getLocalCompatibleEndpoint(a_endpoint, true);
+	m_endpoint = &m_transport->getLocalCompatibleEndpoint(endpoint, true);
       } catch (...) {
 	if (m_transport)
 	  delete m_transport;
@@ -79,7 +59,7 @@ namespace OCPI {
     MessageEndpoint &MessageEndpoint::
     getMessageEndpoint(const char *endpoint) {
       // Find one we can use.  But bury the issue in the transport layer.
-      for (MessageEndpoints::iterator i = s_messageEndpoints.begin(); i != s_messageEndpoints.end(); ++i)
+      for (MessageEndpoints::iterator i = s_messageEndpoints.begin(); i != s_messageEndpoints.end(); i++)
 	if ((*i)->canSupport(endpoint))
 	  return *(*i);
       // This constructor implies that we know a new endpoint is required.
@@ -134,14 +114,14 @@ namespace OCPI {
     MessageEndpoint::MessageEndpoints MessageEndpoint::
     s_messageEndpoints;
   
-    bool MessageEndpoint::canSupport(const char *a_endpoint) const {
-      return m_endpoint->canSupport(a_endpoint);
+    bool MessageEndpoint::canSupport(const char *endpoint) const {
+      return m_endpoint->canSupport(endpoint);
     }
 
     // the internal, non-static method, with same args as the static one, hence "To".
     MessageCircuit &MessageEndpoint::
     connectTo(const char *server_endpoint, unsigned bufferSize, const char *protocol, OCPI::OS::Timer *timer) {
-      return *new MessageCircuit(*m_transport, /* *this, */ m_endpoint->end_point.c_str(),
+      return *new MessageCircuit(*m_transport, /* *this, */ m_endpoint->name().c_str(),
 				 server_endpoint, bufferSize, protocol, timer);
     }
 
@@ -160,7 +140,7 @@ namespace OCPI {
       do {
 	dispatch();
       // Search oldest first, and look forward
-	for (HalfCircuits::iterator i = m_halfCircuits.begin(); i != m_halfCircuits.end(); ++i) {
+	for (HalfCircuits::iterator i = m_halfCircuits.begin(); i != m_halfCircuits.end(); i++) {
 	  if (!(*i)->ready())
 	    continue;
 	  //	  (*i)->initializeDataTransfers();
@@ -168,7 +148,7 @@ namespace OCPI {
 	  Port *iInput = (*i)->getInputPortSet(0)->getPortFromIndex(0);
 	  if (!iInput->isShadow()) {
 	    OD::EndPoint *remote = iInput->getMetaData()->m_shadow_location;
-	    for (HalfCircuits::iterator j = m_halfCircuits.begin(); j != m_halfCircuits.end(); ++j) {
+	    for (HalfCircuits::iterator j = m_halfCircuits.begin(); j != m_halfCircuits.end(); j++) {
 	      if (i == j || !(*j)->ready())
 		continue;
 	      // (*i)->initializeDataTransfers();

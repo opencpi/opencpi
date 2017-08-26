@@ -49,6 +49,7 @@ enum WIPType {
   NWIPTypes
 };
 
+class DataPort;
 class Port;
 struct OcpAdapt;
 struct Clock;
@@ -65,9 +66,9 @@ struct InstancePort;
 class Port {
  protected:
   bool m_clone;
+  Worker *m_worker;    // spec: FIXME: name this a reference 
 public:
   // These members are for spec ports
-  Worker *m_worker;    // spec: FIXME: name this a reference 
   std::string m_name;  // spec:
   size_t m_ordinal;    // spec:
   size_t m_count;      // spec: FIXME: can this change in impl???
@@ -91,12 +92,14 @@ public:
   virtual Port &clone(Worker &w, std::string &name, size_t count,
 		      OCPI::Util::Assembly::Role *role, const char *&err) const;
   virtual ~Port();
+  Worker &worker() const { return *m_worker; }
   virtual const char *parse();    // second pass parsing for ports referring to each other
   virtual const char *resolveExpressions(OCPI::Util::IdentResolver &ir);
   virtual bool masterIn() const;  // Are master signals inputs at this port?
   void addMyClock();
   virtual const char *checkClock();
-  inline const char *cname() const { return m_name.c_str(); }
+  // This is not cname to deal with a multiple-inheritance issue.  The runtime classes use cname
+  const char *pname() const { return m_name.c_str(); }
   const char *doPattern(int n, unsigned wn, bool in, bool master, std::string &suff,
 			bool port = false);
   void emitConstant(FILE *f, const char *nameFormat, Language lang, size_t n) const;
@@ -111,6 +114,7 @@ public:
   virtual const char *prefix() const = 0;
   virtual bool isOCP() const { return false; }
   virtual bool isData() const { return false; }
+  virtual DataPort *dataPort() { return NULL; }
   virtual bool isDataProducer() const { assert(isData()); return false; }
   virtual bool isDataOptional() const { assert(isData()); return false; }
   virtual bool isDataBidirectional() const { assert(isData()); return false; }
@@ -153,7 +157,7 @@ public:
 			      const Port *signalPort, bool external);
   virtual const char *fixDataConnectionRole(OCPI::Util::Assembly::Role &role);
   virtual const char *doPatterns(unsigned nWip, size_t &maxPortTypeName);
-  virtual void emitXML(FILE *f);
+  virtual void emitXML(std::string &out);
   virtual const char *finalizeRccDataPort();
   virtual const char *finalizeHdlDataPort();
   virtual const char *finalizeOclDataPort();

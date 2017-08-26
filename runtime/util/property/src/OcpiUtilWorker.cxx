@@ -24,7 +24,7 @@
 #include "OcpiOsAssert.h"
 #include "OcpiUtilMisc.h"
 #include "OcpiUtilEzxml.h"
-#include "OcpiUtilImplementation.h"
+#include "OcpiUtilWorker.h"
 
 namespace OCPI {
   namespace Util {
@@ -60,10 +60,10 @@ namespace OCPI {
     Property &Worker::findProperty(const char *id) const {
       return *(m_properties + whichProperty(id));
     }
-    Port *Worker::findMetaPort(const char *id) const {
+    Port *Worker::findMetaPort(const char *id, const Port *except) const {
       Port *p = m_ports;
       for (unsigned int n = m_nPorts; n; n--, p++)
-        if (!strcasecmp(p->m_name.c_str(), id))
+        if (p != except && !strcasecmp(p->m_name.c_str(), id))
           return p;
       return NULL;
     }
@@ -73,7 +73,9 @@ namespace OCPI {
        ocpiAssert(0); return *m_tests;
     }
 #endif
-    const char *Worker::parse(ezxml_t xml, Attributes *attr) {
+    const char *Worker::
+    parse(ezxml_t xml, Attributes *attr) {
+      m_xml = xml;
       m_attributes = attr;
       const char *err = OE::getRequiredString(xml, m_name, "name", "worker");
       if (err ||
@@ -114,22 +116,25 @@ namespace OCPI {
       ocpiAssert(totalSize < UINT32_MAX);
       m_totalPropertySize = OCPI_UTRUNCATE(size_t, totalSize);
       // Ports at this level are unidirectional? Or do we support the pairing at this point?
+      // First pass to establish names and xml and ordinals
       Port *p = m_ports;
       unsigned n = 0;
       for (x = ezxml_cchild(xml, "port"); x; x = ezxml_next(x), p++, n++)
         if ((err = p->preParse(*this, x, n)))
           return esprintf("Invalid xml port description: %s", err);
+      // Second pass to do most of the parsing
       p = m_ports;
-      for (x = ezxml_cchild(xml, "port"); x; x = ezxml_next(x), p++)
-        if ((err = p->parse(x)))
+      for (unsigned n = 0; n < m_nPorts; n++, p++)
+        if ((err = p->parse()))
           return esprintf("Invalid xml port description: %s", err);
+      // Third pass to propagate info from one port to another
       p = m_ports;
       bool hasInput = false, hasOutput = false;
       for (unsigned nn = 0; nn < m_nPorts; nn++, p++)
 	if ((err = p->postParse()))
           return esprintf("Invalid xml port description: %s", err);
         else if (p->m_provider) {
-	  if (!p->m_optional)
+	  if (!p->m_isOptional)
 	    hasInput = true;
         } else
 	  hasOutput = true;
@@ -138,10 +143,17 @@ namespace OCPI {
       for (x = ezxml_cchild(xml, "memory"); x; x = ezxml_next(x), m++ )
         if ((err = m->parse(x)))
           return esprintf("Invalid xml local memory description: %s", err);
-      for (x = ezxml_cchild(xml, "memory"); x; x = ezxml_next(x), m++ )
-        if ((err = m->parse(x)))
-          return esprintf("Invalid xml local memory description: %s", err);
-      m_xml = xml;
+      for (x = ezxml_cchild(xml, "scaling"); x; x = ezxml_next(x)) {
+	std::string name;
+	OE::getOptionalString(x, name, "name");
+	Port::Scaling s;
+	if ((err = s.parse(x, this)))
+	  return err;
+	if (name.empty())
+	  m_scaling = s;
+	else
+	  m_scalingParameters[name] = s;
+      }
       return NULL;
     }
     // Get a property value from the metadata
@@ -165,12 +177,11 @@ namespace OCPI {
 	  return p->getValue(val);
       return esprintf("no property found for identifier \"%s\"", sym);
     }
-#if 0
-    const char *Worker::isVariable(const char *sym) {
-      ExprValue dummy;
-      return getValue(sym, dummy);
+    const char *Worker::
+    getNumber(ezxml_t x, const char *attr, size_t *np, bool *found, size_t defaultValue,
+	      bool setDefault) const {
+      return OE::getNumber(x, attr, np, found, defaultValue, setDefault);
     }
-#endif
     void parse3(char *s, std::string &s1, std::string &s2,
 		std::string &s3) {
       char *orig = strdup(s), *temp = orig;

@@ -660,7 +660,7 @@ TokenIter(const char *list, const char *delims, bool allowEmpty)
 }
 TokenIter::
 ~TokenIter() {
-  delete m_copy;
+  free(m_copy);
 }
 void TokenIter::
 next() {
@@ -749,9 +749,10 @@ encodeXmlAttrSingle(const std::string &s, std::string &out, bool raw) {
 
 // This scheme is ours so that it is somewhat readable, xml friendly, and handles NULLs
 void
-encodeDescriptor(const std::string &s, std::string &out) {
-  formatAdd(out, "%zu.", s.length());
+encodeDescriptor(const char *iname, const std::string &s, std::string &out) {
+  formatAdd(out, " %s='%zu.", iname, s.length());
   encodeXmlAttrSingle(s, out, true);
+  out += '\'';
 }
 void
 decodeDescriptor(const char *info, std::string &s) {

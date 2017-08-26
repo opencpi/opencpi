@@ -121,31 +121,9 @@ namespace OCPI {
 	void command(const char *cmd, size_t bytes, char *response, size_t rlen, unsigned delay);
       public:
 	uint64_t get64(RegisterOffset offset, uint32_t *status);
-#if 0
-	inline uint32_t get32(RegisterOffset offset, uint32_t *status) {
-	  return get(offset, sizeof(uint32_t), status);
-	}
-	inline uint16_t get16(RegisterOffset offset, uint32_t *status) {
-	  return (uint16_t)(get(offset, sizeof(uint16_t), status) >> ((offset&3)*8));
-	}
-	inline uint8_t get8(RegisterOffset offset, uint32_t *status) {
-	  return (uint8_t)(get(offset, sizeof(uint8_t), status) >> ((offset&3)*8));
-	}
-#endif
 	void getBytes(RegisterOffset offset, uint8_t *buf, size_t length, size_t elementBytes,
 		      uint32_t *status, bool string);
 	void set64(RegisterOffset offset, uint64_t val, uint32_t *status);
-#if 0
-	inline void set32(RegisterOffset offset, uint32_t val, uint32_t *status) {
-	  set(offset, sizeof(uint32_t), val, status);
-	}
-	inline void set16(RegisterOffset offset, uint16_t val, uint32_t *status) {
-	  set(offset, sizeof(uint16_t), val << ((offset & 3) * 8), status);
-	}
-	inline void set8(RegisterOffset offset, uint8_t val, uint32_t *status) {
-	  set(offset, sizeof(uint8_t), val << ((offset & 3) * 8), status);
-	}
-#endif
 	void setBytes(RegisterOffset offset, const uint8_t *buf, size_t length,
 		      size_t elementBytes, uint32_t *status);
       };

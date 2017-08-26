@@ -36,6 +36,7 @@
 #define RCC_WORKER_H_
 
 #include <cstdarg>
+#include "OcpiOsSemaphore.h"
 
 #ifndef WORKER_INTERNAL
 #define WORKER_INTERNAL
@@ -70,8 +71,8 @@ namespace OCPI {
       RCCResult setError(const char *fmt, va_list ap);
       inline RCCWorker &context() const { return *m_context; }
 
-      Worker(Application & app, Artifact *art, const char *name,
-	     ezxml_t impl, ezxml_t inst, OCPI::Container::Worker *slave, bool hasMaster,
+      Worker(Application & app, Artifact *art, const char *name, ezxml_t impl, ezxml_t inst,
+	     OCPI::Container::Worker *slave, bool hasMaster, size_t member, size_t crewSize,
 	     const OCPI::Util::PValue *wParams);
       OCPI::Container::Port& createPort(const OCPI::Util::Port&, const OCPI::Util::PValue *props);
       void controlOperation(OCPI::Util::Worker::ControlOperation);
@@ -135,33 +136,20 @@ namespace OCPI {
       void prepareProperty(OCPI::Util::Property&,
 			   volatile uint8_t *&writeVaddr,
 			   const volatile uint8_t *&readVaddr);
-
-      OCPI::Container::Port &  createInputPort(
-					       OCPI::Util::PortOrdinal   portId,      
-                                              size_t   bufferCount,
-                                              size_t   bufferSize, 
-                                              const OCPI::Util::PValue*  props=NULL
-                                              )
-        throw ( OCPI::Util::EmbeddedException );
-
-
-      OCPI::Container::Port &  createOutputPort( 
-						OCPI::Util::PortOrdinal   portId,     
-                                               size_t             bufferCount,
-                                               size_t             bufferSize, 
-                                               const OCPI::Util::PValue*               props=NULL
-                                               )
-        throw ( OCPI::Util::EmbeddedException );
-
-        void read (size_t offset,
-                         size_t nBytes,
-                         void* p_data );
-        void write ( size_t offset,
-                          size_t nBytes,
-                          const void* p_data );
+      // backward compatibility for ctests
+      OCPI::Container::Port
+	&createInputPort(OCPI::Util::PortOrdinal portId, size_t bufferCount, size_t bufferSize,
+			 const OCPI::Util::PValue *params),
+	&createOutputPort(OCPI::Util::PortOrdinal portId, size_t bufferCount, size_t bufferSize, 
+			  const OCPI::Util::PValue *params),
+	&createTestPort(OCPI::Util::PortOrdinal portId, size_t bufferCount, size_t bufferSize,
+			bool isProvider, const OU::PValue *params);
+      void read(size_t offset, size_t nBytes, void* p_data);
+      void write(size_t offset, size_t nBytes, const void* p_data);
+      // end backward compatibility for ctests
      
       // Get our transport
-      inline OCPI::DataTransport::Transport & getTransport() { return m_transport; }
+      inline OCPI::DataTransport::Transport &getTransport() { return m_transport; }
 
       virtual ~Worker();
 
@@ -172,17 +160,8 @@ namespace OCPI {
       void checkError() const;
       inline void setRunCondition(RunCondition &rc) {
 	m_runCondition = &rc;
-	if (rc.m_timeout)
-	  m_runTimer.reset(rc.m_usecs / 1000000, (rc.m_usecs % 1000000) * 1000);
-	// fix up default run condition when there are no ports at all
-	if (m_nPorts == 0 && rc.m_portMasks && rc.m_portMasks[0] == RCC_ALL_PORTS) {
-	  if (rc.m_timeout)
-	    rc.m_portMasks[0] = RCC_NO_PORTS;
-	  else
-	    rc.m_portMasks = NULL;
-        }
+	m_runCondition->activate(m_runTimer, m_nPorts);
       }
-
       // Our dispatch table
       RCCEntryTable   *m_entry;    // our entry in the entry table of the artifact
       RCCUserWorker   *m_user;     // for C++, the user's worker object
@@ -194,7 +173,7 @@ namespace OCPI {
       OCPI::OS::Mutex &m_mutex;
       RunCondition     m_defaultRunCondition; // run condition we create
       RunCondition     m_cRunCondition;       // run condition we use when C-language RC changes
-      const RunCondition *m_runCondition;        // current active run condition used in dispatching
+      RunCondition    *m_runCondition;        // current active run condition used in dispatching
       
       // Mutable since this is a side effect of clearing the worker-set error when reported
       mutable char     *m_errorString;         // error string set via "setError"
@@ -220,11 +199,11 @@ namespace OCPI {
       // Pointer into actual RCC worker binary for its dispatch struct
       OCPI::DataTransport::Transport &m_transport;
 
-      // Override the port data based on hardcoded requirements from the worker
-      void overRidePortInfo( OCPI::Util::Port & portData );
+      // Task semaphore
+      OCPI::OS::Semaphore m_taskSem;
 
       // Update a ports information (as a result of a connection)
-      void portIsConnected( unsigned ordinal );
+      void portIsConnected(unsigned ordinal);
     };
 
 

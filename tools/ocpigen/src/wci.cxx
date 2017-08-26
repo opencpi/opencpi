@@ -29,7 +29,7 @@ WciPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
   : OcpPort(w, x, sp, ordinal, WCIPort, "ctl", err), m_timeout(0), m_resetWhileSuspended(false) {
   if (err)
     return;
-  OU::format(m_addrWidthExpr, "ocpi_port_%s_MAddr_width", cname());
+  OU::format(m_addrWidthExpr, "ocpi_port_%s_MAddr_width", pname());
   assert(m_master || !m_worker->m_wci);
   // WCI ports implicitly a clock to the worker in all cases, master or slave
   if (x && ezxml_cattr(x, "clock")) {
@@ -134,7 +134,7 @@ emitImplAliases(FILE *f, unsigned n, Language lang) {
   const char *comment = hdlComment(lang);
   fprintf(f,
 	  "  %s Aliases for %s interface \"%s\"\n",
-	  comment, typeName(), cname());
+	  comment, typeName(), pname());
   if (lang != VHDL) {
     fprintf(f,
 	    "  wire %sTerminate = %sMFlag[0];\n"
@@ -190,7 +190,7 @@ void WciPort::
 emitVerilogPortParameters(FILE *f) {
   // FIXME: This will not work with Verilog workers with multiple configurations with differing
   // property space sizes.
-  fprintf(f, "  localparam ocpi_port_%s_addr_width = %zu;\n", cname(), ocp.MAddr.width);
+  fprintf(f, "  localparam ocpi_port_%s_addr_width = %zu;\n", pname(), ocp.MAddr.width);
 }
 #endif
 void WciPort::
@@ -291,7 +291,7 @@ emitRecordInterface(FILE *f, const char *implName) {
 #if 0
 void WciPort::
 emitRecordInterfaceConstants(FILE *f) {
-  fprintf(f, "  constant ocpi_port_%s_addr_width : positive;\n", cname());
+  fprintf(f, "  constant ocpi_port_%s_addr_width : positive;\n", pname());
 }
 #endif
 void
@@ -406,24 +406,24 @@ emitVHDLShellPortMap(FILE *f, std::string &last) {
 	  "    %s_in.state => wci_state,\n"
 	  "    %s_in.is_operating => wci_is_operating,\n"
 	  "    %s_in.abort_control_op => wci_abort_control_op,\n",
-	  last.c_str(), cname(), in.c_str(), cname(), cname(),
-	  cname(), cname(), cname());
+	  last.c_str(), pname(), in.c_str(), pname(), pname(),
+	  pname(), pname(), pname());
   if (m_worker->m_scalable)
     fprintf(f,
 	    "    %s_in.barrier => wci_barrier,\n"
 	    "    %s_in.crew => wci_crew,\n"
-	    "    %s_in.rank => wci_rank,\n", cname(), cname(), cname());
+	    "    %s_in.rank => wci_rank,\n", pname(), pname(), pname());
   fprintf(f,
 	  "    %s_in.is_big_endian => wci_is_big_endian,\n"
 	  "    %s_out.done => wci_done,\n"
 	  "    %s_out.error => wci_error,\n"
 	  "    %s_out.finished => wci_finished,\n"
 	  "    %s_out.attention => wci_attention",
-	  cname(), cname(), cname(), cname(), cname());
+	  pname(), pname(), pname(), pname(), pname());
   if (m_worker->m_scalable)
     fprintf(f,
 	    ",\n"
-	    "    %s_out.waiting => wci_waiting", cname());
+	    "    %s_out.waiting => wci_waiting", pname());
   last = ",\n";
 }
 

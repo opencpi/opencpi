@@ -16,11 +16,7 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-include ../setup.mk
+OcpiRunArgs=-v -d
 
-all:
+include $(OCPI_CDK_DIR)/include/application.mk
 
-run: all 
-	OCPI_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/components/rcc $(VG) ocpirun -d -v $(ARGS) ptest.xml > /dev/null
-
-clean::

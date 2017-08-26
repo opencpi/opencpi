@@ -20,6 +20,7 @@
 
 #include <assert.h>
 #include <ctype.h>
+#include "data.h"
 #include "hdl.h"
 #include "hdl-device.h"
 
@@ -239,12 +240,12 @@ parseHdlImpl(const char *package) {
 
   // Prepare to process data plane port implementation info
   // Now lets look at the implementation-specific data interface info
-  Port *sp;
+  DataPort *sp;
   for (ezxml_t s = ezxml_cchild(m_xml, "StreamInterface"); s; s = ezxml_next(s))
-    if ((err = checkDataPort(s, sp)) || !createPort<WsiPort>(*this, s, sp, -1, err))
+    if ((err = checkDataPort(s, sp)) || !createDataPort<WsiPort>(*this, s, sp, -1, err))
     return err;
   for (ezxml_t m = ezxml_cchild(m_xml, "MessageInterface"); m; m = ezxml_next(m))
-    if ((err = checkDataPort(m, sp)) || !createPort<WmiPort>(*this, m, sp, -1, err))
+    if ((err = checkDataPort(m, sp)) || !createDataPort<WmiPort>(*this, m, sp, -1, err))
     return err;
   // Final passes over all data ports for defaulting and checking
   // 1. Convert any data ports to WSI if they were not mentioned and determine if a wci clk is
@@ -283,7 +284,7 @@ parseHdlImpl(const char *package) {
 	ezxml_t nx = ezxml_parse_str(copy, strlen(copy));
 	ezxml_set_attr_d(nx, "master", master ? "0" : "1");
 	if (!ezxml_cattr(nx, "name"))
-	  ezxml_set_attr_d(nx, "name", p.cname());
+	  ezxml_set_attr_d(nx, "name", p.pname());
 	if (p.m_type == DevSigPort)
 	  new DevSignalsPort(*this, nx, NULL, -1, err);
 	else

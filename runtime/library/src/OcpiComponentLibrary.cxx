@@ -50,9 +50,9 @@ namespace OCPI {
 	friend class Library;
       public:
 	Artifact(Library &lib, const char *a_name, char *metadata, std::time_t a_mtime,
-		 uint64_t a_length, const OA::PValue *)
+		 uint64_t a_length, size_t metaLength, const OA::PValue *)
 	  : ArtifactBase<Library,Artifact>(lib, *this, a_name) {
-	  const char *err = setFileMetadata(a_name, metadata, a_mtime, a_length);
+	  const char *err = setFileMetadata(a_name, metadata, a_mtime, a_length, metaLength);
 	  if (err)
 	    throw OU::Error("Error processing metadata from artifact file: %s: %s", a_name, err);
 	}
@@ -78,11 +78,12 @@ namespace OCPI {
 	addArtifact(const char *url, const OCPI::API::PValue *params) {
 	  std::time_t mtime;
 	  uint64_t length;
-	  char *metadata = OCPI::Library::Artifact::getMetadata(url, mtime, length);
+	  size_t metaLength;
+	  char *metadata = OCPI::Library::Artifact::getMetadata(url, mtime, length, metaLength);
 	  if (!metadata)
 	    throw OU::Error(OCPI_LOG_DEBUG,
 			    "Cannot open or retrieve metadata from file \"%s\"", url);
-	  Artifact *a = new Artifact(*this, url, metadata, mtime, length, params);
+	  Artifact *a = new Artifact(*this, url, metadata, mtime, length, metaLength, params);
 	  a->configure(); // FIXME: there could be config info in the platform.xml
 	  // FIXME: return NULL if this doesn't look like an artifact we can support?
 	  return a;

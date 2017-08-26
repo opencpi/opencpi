@@ -1,25 +1,40 @@
-/*
- * This file is protected by Copyright. Please refer to the COPYRIGHT file
- * distributed with this source distribution.
- *
- * This file is part of OpenCPI <http://www.opencpi.org>
- *
- * OpenCPI is free software: you can redistribute it and/or modify it under the
- * terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation, either version 3 of the License, or (at your option) any
- * later version.
- *
- * OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- */
 
 /*
- * Abstract:
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
+ *
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
+ *
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+
+/*
+ * Abstact:
  *   This file contains the OCPI transfer controller interface.
  *
  * Revision History: 
@@ -368,6 +383,65 @@ namespace OCPI {
                                 OCPI::DataTransport::Port* port,               
                                 InputBuffer**
                                 )const;
+  
+      /**********************************
+       * This method determines if we can produce from the indicated buffer
+       *********************************/
+      virtual bool canProduce( Buffer* buffer );
+
+      /**********************************
+       * This initiates a data transfer from the output buffer.  If the transfer can take place, 
+       * it will be initiated, if not it will be queued in the circuit.
+       *********************************/
+      virtual int produce( Buffer* buffer, bool bcast=false );
+
+      /**********************************
+       * Modify
+       *********************************/
+      virtual void modifyOutputOffsets( Buffer* me, Buffer* new_buffer, bool reverse );
+
+      /**********************************
+       * This marks the input buffer as "Empty" and informs all interested outputs that
+       * the input is now available.
+       *********************************/
+      virtual Buffer*  consume( Buffer* buffer );
+
+    };
+
+    // This controller is used for pattern1 when either the output or input port(s) are Passive
+
+    class TransferController1Passive : public TransferController1
+    {
+    public:
+      TransferController1Passive(){};
+      virtual ~TransferController1Passive(){};
+      TransferController1Passive( OCPI::DataTransport::PortSet* output, OCPI::DataTransport::PortSet* input, bool whole_ss );
+      virtual TransferController* createController( 
+                                                   OCPI::DataTransport::PortSet* output, 
+                                                   OCPI::DataTransport::PortSet* input,
+                                                   bool whole_output_set);
+
+#if 0
+      /**********************************
+       * This method gets the next available buffer from the specified output port
+       *********************************/
+      virtual Buffer* getNextEmptyOutputBuffer( OCPI::DataTransport::Port* src_port );
+
+      /**********************************
+       * This method gets the next available buffer from the specified input port
+       *********************************/
+      Buffer* getNextFullInputBuffer( OCPI::DataTransport::Port* input_port );
+
+
+      /**********************************
+       * This method determines if there is data available, but does not affect the
+       * state of the object.
+       *********************************/
+       bool hasFullInputBuffer(
+                                OCPI::DataTransport::Port* port,               
+                                InputBuffer**
+                                )const;
+#endif
   
       /**********************************
        * This method determines if we can produce from the indicated buffer

@@ -9,9 +9,9 @@ else
     echo It appears that this script is not being run at the top level of OpenCPI.
     exit 1
   fi
-  OCPI_BOOTSTRAP=`pwd`/exports/scripts/ocpibootstrap.sh; . $OCPI_BOOTSTRAP
-  test $? = 0 || exit 1; 
 fi
+OCPI_BOOTSTRAP=`pwd`/exports/scripts/ocpibootstrap.sh; . $OCPI_BOOTSTRAP
+test $? = 0 || exit 1; 
 source $OCPI_CDK_DIR/scripts/util.sh
 echo ======================= Loading the OpenCPI Linux Kernel driver. &&
 (test "$(ocpiGetToolOS)" = macos || $OCPI_CDK_DIR/scripts/ocpidriver load) &&

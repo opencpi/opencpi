@@ -80,7 +80,7 @@ begin
      -- impure function that also sets the above two process variables
      impure function read_ulong(max2read : natural; eof_bad : boolean) return ulong_t is
        variable data : character;
-       variable ulong : ulong_t;
+       variable ulong : ulong_t := (others => '0');
        variable n2read : natural := max2read;
      begin
        if n2read > 4 then

@@ -42,33 +42,50 @@ CompiledSourceFiles+=$(foreach w,$(Workers),\
                         $(GeneratedDir)/$(word 1,$(w))_entry_point$(OclSourceSuffix))
 ArtifactFile=$(BinaryFile)
 # Artifacts are target-specific since they contain things about the binary
-ArtifactXmlFile = $(TargetDir)/$(word 1,$(Workers))_assy-art.xml
+ArtifactXmlFile=$(call WkrTargetDir,$1,$2)/$(word 1,$(Workers))_assy-art.xml
 ToolSeparateObjects:=yes
 OcpiLibDir=$(OCPI_CDK_DIR)/lib/$(OclTarget)
 
 # OpenCL does not allow for individual objects to be assembled into one binary
 # So the link binary command becomes the "compile" command for OpenCL workers
-LinkBinary= $(ToolsDir)/ocpiocl $(ExtraCompilerOptions) $(foreach i,$(IncludeDirs),-I$(abspath $i)) -o $$@ -t $(OclTarget) compile 
-Compile_cl=echo '\#include "../'$$<'"'>$$@
+# The -I$(CURDIR)/gen below works when -Igen does not, in some cases.  I do not know why
+# The -I. below is needed by nvidia
+LinkBinary= $(ToolsDir)/ocpiocl $(ExtraCompilerOptions) \
+  -I. \
+  -I$(CURDIR)/gen \
+  -I$(OCPI_CDK_DIR)/include/ocl \
+  $(foreach i,$(IncludeDirs),-I$i) \
+  -o $$@ -t $$(OclTarget) compile $1
+Compile_cl=echo '\#include "'$$<'"'>$$@
+#Compile_cl=echo '\#include "../'$$<'"'>$$@
 
 include $(OCPI_CDK_DIR)/include/xxx-worker.mk
 # Even though the entry point files are generated, they must be compiled last,
 # so they are not added to generated source files.
-OclAssemblyFile=$(GeneratedDir)/$(word 1,$(Workers))_assy.xml
-$(OclAssemblyFile): | $(GeneratedDir)
+OclAssemblyFile=$(call WkrTargetDir,$1,$2)/$(word 1,$(Workers))_assy.xml
+
+define DoOclArtifactFile
+
+$(call OclAssemblyFile,$1,$2): | $(call WkrTargetDir,$1,$2)
 	$(AT)(echo "<OclAssembly>"; \
-	  for w in $(Workers); do echo "<instance Worker=\"$$w.xml\"/>"; done; \
-	  echo "</OclAssembly>") > $@
+	  for w in $$(Workers); do \
+            echo "<instance Worker=\"$$$$w.xml\" paramconfig=\"$2\"/>"; \
+          done; \
+	  echo "</OclAssembly>") > $$@
 
 # Different since it is in the targetdir
-$(ArtifactXmlFile): $(OclAssemblyFile)
-	@echo Generating artifact/runtime xml file \($(ArtifactXmlFile)\) for all workers in one binary
-	$(AT)$(DYN_PREFIX) $(ToolsDir)/ocpigen -M $(TargetDir)/$(@F).deps \
-	     -O $(call OclOs,$(OclTarget)) \
-             -V $(call OclOsVersion,$(OclTarget)) \
-             -H $(call OclArch,$(OclTarget)) \
-	     -D $(TargetDir) \
-	     $(XmlIncludeDirsInternal:%=-I%) \
-	     -A $(OclAssemblyFile)
+$(call ArtifactXmlFile,$1,$2): $(call OclAssemblyFile,$1,$2)
+	$(AT)echo Generating artifact/runtime xml file $$@ for all workers in one binary
+	$(AT)$(DYN_PREFIX) $(ToolsDir)/ocpigen -M $(call WkrTargetDir,$1,$2)/$$(@F).deps \
+	     -O $(call OclOs,$1) \
+             -V $(call OclOsVersion,$1) \
+             -H $(call OclArch,$1) \
+	     -D $(call WkrTargetDir,$1,$2) \
+             $(XmlIncludeDirsInternal:%=-I%) \
+             -A $(call OclAssemblyFile,$1,$2)
+
+endef
+
+$(foreach t,$(OclTargets),$(foreach c,$(ParamConfigurations),$(eval $(call DoOclArtifactFile,$t,$c))))
 
 endif

@@ -305,63 +305,65 @@ namespace OCPI {
     // This scheme allows for binary metadata, but we are doing XML now.
     // The returned value must be deleted with delete[];
     char *Artifact::
-    getMetadata(const char *name, std::time_t &mtime, uint64_t &length) {
-	  char *data = 0;
-	  // nonblock so we don't hang on opening a FIFO
-	  // but we also don't want to waste time on a "stat" system call before "open"
-	  int fd = open(name, O_RDONLY|O_NONBLOCK);
-	  if (fd < 0)
-	    throw OU::Error("Cannot open file: \"%s\"", name);
-	  struct stat info;
-	  if (fstat(fd, &info)) {
-	    close(fd);
-	    throw OU::Error("Cannot get modification time: \"%s\" (%d)", name, errno);
-	  }
-	  if ((info.st_mode & S_IFMT) != S_IFREG) {
-	    close(fd);
-	    throw OU::Error("File: \"%s\" is not a normal file", name);
-	  }
-	  mtime = info.st_mtime;
-	  length = info.st_size;
-	  char buf[64/3+4]; // octal + \r + \n + null
-	  const size_t bufsize = sizeof(buf)-1; // Ensure trailing null character
-	  buf[bufsize] = '\0';
-	  off_t fileLength, second, third;
-	  if ((fileLength = lseek(fd, 0, SEEK_END)) != -1 &&
-	      // I have no idea why the off_t caste below is required,
-	      // but without it, the small negative number is not sign extended...
-	      // on MACOS gcc v4.0.1 with 64 bit off_t
-	      (second = lseek(fd, -(off_t)bufsize, SEEK_CUR)) != -1 &&
-	      (third = read(fd, buf, bufsize)) == (ssize_t)bufsize) {
-	    for (char *cp = &buf[bufsize-1]; cp >= buf; cp--)
-	      if (*cp == 'X' && isdigit(cp[1])) {
-		char *end;
-		long l = strtol(cp + 1, &end, 10);
-		off_t n = (off_t)l;
-		// strtoll error reporting is truly bizarre
-		if (l != LONG_MAX && l > 0 && cp[1] && isspace(*end)) {
-		  off_t metaStart = fileLength - bufsize + (cp - buf) - n;
-		  if (lseek(fd, metaStart, SEEK_SET) != -1) {
-		    data = new char[n + 1];
-		    if (read(fd, data, n) == n)
-		      data[n] = '\0';
-		    else {
-		      delete [] data;
-		      data = 0;
-		    }
-		  }
+    getMetadata(const char *name, std::time_t &mtime, uint64_t &length, size_t &metaLength) {
+      char *data = 0;
+      // nonblock so we don't hang on opening a FIFO
+      // but we also don't want to waste time on a "stat" system call before "open"
+      int fd = open(name, O_RDONLY|O_NONBLOCK);
+      if (fd < 0)
+	throw OU::Error("Cannot open file: \"%s\"", name);
+      struct stat info;
+      if (fstat(fd, &info)) {
+	close(fd);
+	throw OU::Error("Cannot get modification time: \"%s\" (%d)", name, errno);
+      }
+      if ((info.st_mode & S_IFMT) != S_IFREG) {
+	close(fd);
+	throw OU::Error("File: \"%s\" is not a normal file", name);
+      }
+      mtime = info.st_mtime;
+      length = info.st_size;
+      char buf[64/3+4]; // octal + \r + \n + null
+      const size_t bufsize = sizeof(buf)-1; // Ensure trailing null character
+      buf[bufsize] = '\0';
+      off_t fileLength, second, third;
+      if ((fileLength = lseek(fd, 0, SEEK_END)) != -1 &&
+	  // I have no idea why the off_t caste below is required,
+	  // but without it, the small negative number is not sign extended...
+	  // on MACOS gcc v4.0.1 with 64 bit off_t
+	  (second = lseek(fd, -(off_t)bufsize, SEEK_CUR)) != -1 &&
+	  (third = read(fd, buf, bufsize)) == (ssize_t)bufsize) {
+	for (char *cp = &buf[bufsize-1]; cp >= buf; cp--)
+	  if (*cp == 'X' && isdigit(cp[1])) {
+	    char *end;
+	    long l = strtol(cp + 1, &end, 10);
+	    off_t n = (off_t)l;
+	    // strtoll error reporting is truly bizarre
+	    if (l != LONG_MAX && l > 0 && cp[1] && isspace(*end)) {
+	      metaLength = n + (&buf[bufsize] - cp);
+	      off_t metaStart = fileLength - metaLength;
+	      if (lseek(fd, metaStart, SEEK_SET) != -1) {
+		data = new char[n + 1];
+		if (read(fd, data, n) == n)
+		  data[n] = '\0';
+		else {
+		  delete [] data;
+		  data = 0;
 		}
-		break;
 	      }
+	    }
+	    break;
 	  }
-	  (void) close(fd);
-	  return data;
-	}
+      }
+      (void) close(fd);
+      return data;
+    }
 
     // Given metadata in string form, parse it up, shortly after construction
     // The ownership of metadat is passed in here.
     const char *Artifact::
-    setFileMetadata(const char *a_name, char *metadata, std::time_t a_mtime, uint64_t a_length) {
+    setFileMetadata(const char *a_name, char *metadata, std::time_t a_mtime, uint64_t a_length,
+		    size_t metaLength) {
       m_metadata = metadata; // take ownership in all cases
       const char *err = OE::ezxml_parse_str(metadata, strlen(metadata), m_xml);
       if (err)
@@ -375,6 +377,7 @@ namespace OCPI {
 	return OU::esprintf("no uuid in binary/artifact file \"%s\"", a_name);
       m_mtime = a_mtime;
       m_length = a_length;
+      m_metaLength = metaLength;
       library().registerUuid(l_uuid, this);
       ocpiDebug("Artifact file %s has artifact metadata", a_name);
       return NULL;
@@ -383,10 +386,11 @@ namespace OCPI {
     getFileMetadata(const char *a_name) {
       std::time_t l_mtime;
       uint64_t l_length;
-      char *metadata = getMetadata(a_name, l_mtime, l_length);
+      size_t metaLength;
+      char *metadata = getMetadata(a_name, l_mtime, l_length, metaLength);
       if (!metadata)
 	throw OU::Error(20, "Cannot open or retrieve metadata from file \"%s\"", a_name);
-      const char *err = setFileMetadata(a_name, metadata, l_mtime, l_length);
+      const char *err = setFileMetadata(a_name, metadata, l_mtime, l_length, metaLength);
       if (err)
 	throw OU::Error("Error processing metadata from artifact file: %s: %s", a_name, err);
     }

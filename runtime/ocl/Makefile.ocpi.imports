@@ -24,9 +24,11 @@ ALLINC += \
 	$(UTIL_EXPORTS) \
 	$(LOGGER_EXPORTS) \
 	$(OCPIOS_EXPORTS) \
-	$(or $(OCPI_OPENCL_INCLUDE_DIR),../include/CL)
+	$(or $(OPENCL_EXPORTS),../include/CL) \
+	$(RCC_EXPORTS)
 
 ALLLIBS += \
+	$(RCC_CONTAINER_LIBS) \
 	$(CONTAINER_LIBS) \
 	$(LIBRARY_LIBS) \
 	$(DATA_TRANSPORT_LIBS) \
@@ -40,6 +42,15 @@ EXTRALIBOBJS += $(OCPI_OPENCL_OBJS)
 EXTRA_LDFLAGS=$(LD_ALLOW_UNDEFINED)
 
 ifeq ($(OCPI_HAVE_OPENCL),1)
-SYSLIBS += dl # OpenCL
+  # This redundancy can be removed when we always build dynamic libraries
+  SHARED+=-Xlinker -rpath -Xlinker $(dir $(OCPI_OPENCL_OBJS))
+  SHARED_ALLOW_UNDEFINED+=-Xlinker -rpath -Xlinker $(dir $(OCPI_OPENCL_OBJS))
+  #ifeq ($(OCPI_TARGET_OS),linux)
+  #SYSLIBS += $(dir $(OCPI_OPENCL_OBJS))/OpenCL
+  #else
+  BASICLIBS+=$(OCPI_OPENCL_OBJS)
+else
+  EXTRA_LDFLAGS=$(LD_ALLOW_UNDEFINED)
 endif
-SHARED=$(SHARED_ALLOW_UNDEFINED)
+$(eval $(ForceDynamic))
+#SHARED=$(SHARED_ALLOW_UNDEFINED)

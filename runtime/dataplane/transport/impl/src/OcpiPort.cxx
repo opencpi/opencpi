@@ -1,25 +1,38 @@
 /*
- * This file is protected by Copyright. Please refer to the COPYRIGHT file
- * distributed with this source distribution.
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
- * This file is part of OpenCPI <http://www.opencpi.org>
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
  *
- * OpenCPI is free software: you can redistribute it and/or modify it under the
- * terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation, either version 3 of the License, or (at your option) any
- * later version.
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
  *
- * OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 /*
- * Abstract:
+ * Abstact:
  *   This file contains the Implementation for the OCPI port.
  *
  * Revision History: 
@@ -31,29 +44,32 @@
  */
 #include <inttypes.h>
 #include <ctype.h>
-#include <DtTransferInternal.h>
 #include <DtHandshakeControl.h>
+#include "XferManager.h"
 #include <OcpiPort.h>
 #include <OcpiOutputBuffer.h>
 #include <OcpiInputBuffer.h>
 #include <OcpiPortSet.h>
 #include <OcpiTransport.h>
 #include <OcpiOsAssert.h>
+#include "XferEndPoint.h"
 #include <OcpiCircuit.h>
 #include <OcpiRDTInterface.h>
 #include <OcpiTransferController.h>
 
+
 using namespace OCPI::DataTransport;
-using namespace DataTransfer;
 using namespace DtI;
 namespace OS = OCPI::OS;
 namespace OU = OCPI::Util;
 namespace DDT = DtOsDataTypes;
+namespace XF = DataTransfer;
 // Buffer allignment
-#define BUF_ALIGNMENT 16
+#define BUF_ALIGNMENT 8
 
 void OCPI::DataTransport::Port::reset()
 {
+  ocpiDebug("In OCPI::DataTransport::Port::reset() %p", this);
   if ( ! this->isShadow() ) {
     m_externalState = WaitingForUpdate;
   }
@@ -70,6 +86,8 @@ void OCPI::DataTransport::Port::reset()
   }
   m_sequence = 0;
   m_lastBufferOrd=MAXBUFORD;
+  m_nextBridgeOrd=0;
+
   getCircuit()->release();
 }
 
@@ -84,36 +102,30 @@ void OCPI::DataTransport::Port::initialize()
 
   m_sequence = 0;
   m_lastBufferOrd=MAXBUFORD;
+  m_nextBridgeOrd=0;
 
-  m_realSMemResources = XferFactoryManager::getFactoryManager().getSMBResources( m_data->real_location_string );
-  if ( !  m_realSMemResources ) {
-    throw OCPI::Util::EmbeddedException ( UNSUPPORTED_ENDPOINT, 
-                                        m_data->real_location_string.c_str() );
+  if (!m_data->m_real_location) {
+    assert(m_data->real_location_string.size());
+    m_data->m_real_location = &XF::getManager().getEndPoint(m_data->real_location_string);
   }
-
-  // If we are a shadow, map the local shared memory
-  if ( m_data->shadow_location_string.length() ) {
-    m_shadowSMemResources = XferFactoryManager::getFactoryManager().getSMBResources( m_data->shadow_location_string );
-  }
-  else {
-    m_shadowSMemResources = m_realSMemResources;
-  }
-        
-  // Set the SMB name
-  m_data->m_real_location = m_realSMemResources->sMemServices->endpoint();
+  if (!m_data->m_shadow_location)
+    m_data->m_shadow_location =
+      m_data->shadow_location_string.size() ?
+      &XF::getManager().getEndPoint(m_data->shadow_location_string) :
+      m_data->m_real_location;
 
   // Determine if we are a shadow port
   // Get our transport class
   Circuit *c = getCircuit();
   Transport* t = c->m_transport;
 
-  if ( !t->isLocalEndpoint( m_data->m_real_location->end_point.c_str()) ) {
+  if (!t->isLocalEndpoint(*m_data->m_real_location)) {
 
 #ifdef DEBUG_L2
     ocpiDebug( "We are a shadow port" );
 #endif
     m_shadow = true;
-    m_localSMemResources = m_shadowSMemResources;
+    //    m_localSMemResources = m_shadowSMemResources;
   }
   else {
 
@@ -121,27 +133,23 @@ void OCPI::DataTransport::Port::initialize()
     ocpiDebug("We are a real port" );
 #endif
     m_shadow = false;
-    m_localSMemResources = m_realSMemResources;
+    //    m_localSMemResources = m_realSMemResources;
   }
-
 
   // At this point we are going to map our offset stucture into
   // SMB memory so that we can make direct requests to our remote
   // dependencies to fill in the missing data.
         
-  if ( m_localSMemResources->sMemResourceMgr->alloc( 
-                                    sizeof(PortMetaData::BufferOffsets)*m_bufferCount, 0, &m_offsetsOffset ) ) {
-    throw OCPI::Util::EmbeddedException ( 
-                                      NO_MORE_SMB, 
-                                      m_localSMemResources->sMemServices->endpoint()->end_point.c_str() );
-  }
+  if (getLocalEndPoint().resourceMgr().
+      alloc(sizeof(PortMetaData::BufferOffsets)*m_bufferCount, 0, &m_offsetsOffset ))
+    throw OCPI::Util::EmbeddedException (XF::NO_MORE_SMB, getLocalEndPoint().name().c_str());
 
   // Now get our mailbox
-  m_mailbox = m_localSMemResources->sMemServices->endpoint()->mailbox;
+  m_mailbox = getLocalEndPoint().mailBox();
 
   // map our meta-data
   m_portDependencyData.offsets = static_cast<PortMetaData::BufferOffsets*>
-    (m_localSMemResources->sMemServices->map 
+    (getLocalEndPoint().sMemServices().mapRx 
      (m_offsetsOffset, 
       sizeof(PortMetaData::BufferOffsets)*m_bufferCount));
 
@@ -162,82 +170,110 @@ void OCPI::DataTransport::Port::initialize()
 /**********************************
  * Constructors
  *********************************/
-OCPI::DataTransport::Port::Port( PortMetaData* data, PortSet* ps )
+OCPI::DataTransport::Port::Port(PortMetaData* data, PortSet* ps)
   : CU::Child<PortSet,Port>(*ps, *this), OCPI::Time::Emit( ps, "Port", "",NULL ), 
-    m_initialized(false), 
-    m_data( data ),
-    m_realSMemResources(NULL),
-    m_shadowSMemResources(NULL),
-    m_localSMemResources(NULL),
+    m_initialized(false), // reset to false in reset(), set to true in initialize()
+    m_data(data),
+    //    m_realSMemResources(NULL),
+    //    m_shadowSMemResources(NULL),
+    //    m_localSMemResources(NULL),
     m_hsPortControl(NULL),
+    m_lastBufferTidProcessed(0),
+    m_sequence(0),   // will be reset in reset()
+    m_shadow(false), // will be set properly in initialize()
+    m_busyFactor(0),
+    m_eos(false),
+    m_mailbox(0),    // will be set property in initialize()
+    // portDependencyData
+    m_offsetsOffset(),
+    m_lastBufferOrd(MAXBUFORD),  // will be reset in reset()
+    m_nextBridgeOrd(0),          // will be reset in reset() 
     m_externalState(NotExternal),
     m_pdDriver(NULL),
     m_portSet(ps),
     m_bufferCount(ps->getBufferCount()),
-    m_buffers(new Buffer*[m_bufferCount])
+    m_buffers(new Buffer*[m_bufferCount]),
+    m_zCopyBufferQ(0)
 {
-  memset(m_buffers, 0, sizeof(Buffer*) * m_bufferCount);
-  m_zCopyBufferQ = 0;
-
+  ocpiCheck(m_bufferCount <= MAX_BUFFERS);
   ocpiDebug("In OCPI::DataTransport::Port::Port()");
-
-
-  // Init member data
-  m_lastBufferTidProcessed = 0;
-  m_eos = false;
+  memset(m_buffers, 0, sizeof(Buffer*) * m_bufferCount);
   m_data->rank = ps->getPortCount();
-
-  if ( m_data->real_location_string.length() ) {
+  if (m_data->real_location_string.length())
     initialize();
-  }
+}
 
+XF::XferServices &OCPI::DataTransport::Port::
+getTemplate(XF::EndPoint &source, XF::EndPoint &target) {
+  DataTransfer::TemplatePair pair(&source, &target);
+  OU::SelfAutoMutex guard(getCircuit());
+  DataTransfer::TemplateMapIter ti = m_templates.find(pair);
+  return *(ti == m_templates.end() ? 
+	   (m_templates[pair] = &source.factory().getTemplate(source, target)) :
+	   ti->second);
 }
 
 /**********************************
  * Get the shared memory object
  *********************************/
-SmemServices* OCPI::DataTransport::Port::getRealShemServices()
+XF::SmemServices* OCPI::DataTransport::Port::getRealShemServices()
 {
+#if 1
+  XF::EndPoint *ep = checkEndPoint();
+  return ep ? &ep->sMemServices() : NULL;
+#else
   if ( m_realSMemResources )
     return m_realSMemResources->sMemServices;
   else
     return NULL;
+#endif
 }
 
 /**********************************
  * Finalize the port - called when the roles are finally established and won't change any more
  * The return value is the resulting descriptor which is either "mine" or "flow"
+ * (flow is a buffer provided by the caller).
+ * If "other" is NULL, it means there is no "other", and we are passive
+ * If the return value is ! NULL, it means send it to the other side.
+ * If the done is set to true, it means we can go operational and need no more info.
+ * E.g. an input port might need to send some info back, but it is immediately done,
+ * and needs no more handshaking
  *********************************/
 const OCPI::RDT::Descriptors * Port::
-finalize( const OCPI::RDT::Descriptors& other, OCPI::RDT::Descriptors &mine, OCPI::RDT::Descriptors *flow )
+finalize(const OCPI::RDT::Descriptors *other, OCPI::RDT::Descriptors &mine,
+	 OCPI::RDT::Descriptors *flow, bool &done)
 {
   const OCPI::RDT::Descriptors *result = &mine;
   Circuit &c = *getCircuit();
   Port *otherPort;
+  done = true;
   if (m_data->output) {
+    ocpiAssert(mine.type == OCPI::RDT::ProducerDescT);
     switch (mine.role) {
     case OCPI::RDT::ActiveFlowControl:
+      // We are output w/ActiveFlowControl role, we do not need to tell the input about
+      // our local input-buffer-empty flags since they do not need to indicate when input
+      // buffers are consumed. We don't care because we are not managing the transfers from our
+      // output to their inputs. Instead, we will send them the output descriptor so that they
+      // can "pull" data from us, and indicate to us when the data transfer has completed.
+      // We need to hear back from them about the 
       ocpiAssert(flow);
-      // If we, as output, are in "ActiveFlowControl" mode, we do not need to tell the input about
-      // our input shadow buffers since they do not need to indicate when they have consumed data.
-      // We don't care because we are not managing the transfers from our output to their inputs.
-      // Instead, we will send them the output descriptor so that they can "pull" data from us,
-      // and indicate when the data transfer has completed.
-      *flow = mine;
-      ocpiAssert(flow->type == OCPI::RDT::ProducerDescT);
+      *flow = mine; // we are taking a snapshot of "mine" before modifications below
+      // result = flow; why not this?
+      // done = false;
       break;
     case OCPI::RDT::ActiveOnly:
       ocpiDebug("Found a Passive Consumer Port !!");
-      attachPullDriver(c.createPullDriver( other ));
+      assert(other);
+      attachPullDriver(c.createPullDriver(*other));
       break;
     case OCPI::RDT::ActiveMessage:
-      if (flow) {
-	PortMetaData *inputMeta = c.getInputPortSet(0)->getPort(0)->getMetaData();
-	if (inputMeta->m_shadow) {
-	  *flow = c.getInputPortSet(0)->getPort(0)->getMetaData()->m_shadowPortDescriptor;
-	  flow->type = OCPI::RDT::ConsumerFlowControlDescT;
-	  result = flow;
-	}
+      assert(flow);
+      PortMetaData *inputMeta = c.getInputPortSet(0)->getPort(0)->getMetaData();
+      if (inputMeta->m_shadow) {
+	*flow = c.getInputPortSet(0)->getPort(0)->getMetaData()->m_shadowPortDescriptor;
+	flow->type = OCPI::RDT::ConsumerFlowControlDescT;
+	result = flow;
       }
       break;
     }
@@ -246,18 +282,19 @@ finalize( const OCPI::RDT::Descriptors& other, OCPI::RDT::Descriptors &mine, OCP
     otherPort = c.getInputPortSet(0)->getPort(0);
   } else {
     // We are input, other is output.
-    EndPoint &otherEp = getCircuit()->m_transport->addRemoteEndPoint(other.desc.oob.oep);
-    c.setFlowControlDescriptor(this, other);
-    ocpiAssert(getRealShemServices());
-
-    XferServices * xfers =   
-      XferFactoryManager::getFactoryManager().getService( getEndpoint(), &otherEp);
-    xfers->finalize( other.desc.oob.cookie );
+    if (other) {
+      XF::EndPoint &otherEp = getCircuit()->m_transport->addRemoteEndPoint(other->desc.oob.oep);
+      c.setFlowControlDescriptor(this, *other);
+      ocpiAssert(getRealShemServices());
+      getTemplate(getEndPoint(), otherEp).finalize( other->desc.oob.cookie );
+      result = NULL;  // There is nothing to tell the other side at this point.
+    }
     otherPort = c.getOutputPortSet()->getPort(0);
   }
-  getPortDescriptor(mine, &other);
+  getPortDescriptor(mine, other);
   ocpiAssert(m_data->m_descriptor.role != 5);
-  otherPort->m_data->m_descriptor = other;
+  if (other)
+    otherPort->m_data->m_descriptor = *other;
   ocpiAssert(otherPort->m_data->m_descriptor.role != 5);
   ocpiDebug("Circuit %s %p is closed", m_data->output ? "output" : "in", &c);
   c.m_openCircuit = false;
@@ -288,7 +325,7 @@ setFlowControlDescriptorInternal( const OCPI::RDT::Descriptors & desc )
   PortSet* s_ps = static_cast<PortSet*>(getCircuit()->getOutputPortSet());
   OCPI::DataTransport::Port* output_port = 
     static_cast<OCPI::DataTransport::Port*>(s_ps->getPortFromIndex(0));
-  int idx = output_port->m_realSMemResources->sMemServices->endpoint()->mailbox;
+  int idx = output_port->getEndPoint().mailBox();
   for ( OCPI::OS::uint32_t n=0; n<getPortSet()->getBufferCount(); n++ )  {
     InputBuffer* tb = static_cast<InputBuffer*>(getBuffer(n));
     if ( desc.desc.emptyFlagPitch == 0 ) {
@@ -326,25 +363,22 @@ getPortDescriptor(OCPI::RDT::Descriptors& desc, const OCPI::RDT::Descriptors *ot
 
   if (other) {
     // Get the connection cookie
-    EndPoint &otherEp = getCircuit()->m_transport->addRemoteEndPoint(other->desc.oob.oep);
-    XferServices * xfers =
-      XferFactoryManager::getFactoryManager().getService( getEndpoint(), &otherEp);
-    ocpiAssert(xfers);
-    desc.desc.oob.cookie = xfers->getConnectionCookie();
+    XF::EndPoint &otherEp = getCircuit()->m_transport->addRemoteEndPoint(other->desc.oob.oep);
+    desc.desc.oob.cookie = getTemplate(getEndPoint(), otherEp).getConnectionCookie();
   }
 
 
-  desc.desc.metaDataPitch = OCPI_UTRUNCATE(uint32_t, sizeof(BufferMetaData) * MAX_PCONTRIBS);
+  desc.desc.metaDataPitch = sizeof(BufferMetaData) * MAX_PCONTRIBS;
   desc.desc.dataBufferSize = desc.desc.dataBufferPitch = this->getPortSet()->getBufferLength();
   ocpiDebug("getPortDescriptor %p: setting %s buffer size to %zu",
 	    this, isOutput() ? "output" : "input", (size_t)desc.desc.dataBufferSize);
   desc.desc.fullFlagSize = sizeof(BufferState);
-  desc.desc.fullFlagPitch = OCPI_UTRUNCATE(uint32_t, sizeof(BufferState) * MAX_PCONTRIBS * 2);
+  desc.desc.fullFlagPitch = sizeof(BufferState) * MAX_PCONTRIBS * 2;
   desc.desc.emptyFlagSize = sizeof(BufferState);
-  desc.desc.emptyFlagPitch = OCPI_UTRUNCATE(uint32_t, sizeof(BufferState) * MAX_PCONTRIBS * 2);
+  desc.desc.emptyFlagPitch = sizeof(BufferState) * MAX_PCONTRIBS * 2;
 
   desc.desc.oob.port_id = getPortId();
-  strcpy(desc.desc.oob.oep, m_realSMemResources->sMemServices->endpoint()->end_point.c_str());
+  strcpy(desc.desc.oob.oep, getEndPoint().name().c_str());
 
   if ( ! isOutput() ) { 
     ocpiAssert(desc.type == OCPI::RDT::ConsumerDescT);
@@ -405,18 +439,19 @@ getPortDescriptor(OCPI::RDT::Descriptors& desc, const OCPI::RDT::Descriptors *ot
 /**********************************
  * Get the shared memory object
  *********************************/
-SmemServices* OCPI::DataTransport::Port::getShadowShemServices()
+XF::SmemServices* OCPI::DataTransport::Port::getShadowShemServices()
 {
-  return m_shadowSMemResources->sMemServices;
+  
+  return &getShadowEndPoint().sMemServices();
 }
 
 
 /**********************************
  * Get the shared memory object
  *********************************/
-SmemServices* OCPI::DataTransport::Port::getLocalShemServices()
+XF::SmemServices* OCPI::DataTransport::Port::getLocalShemServices()
 {
-  return m_localSMemResources->sMemServices;
+  return &getLocalEndPoint().sMemServices();
 }
 
 
@@ -480,11 +515,11 @@ void OCPI::DataTransport::Port::advance( OCPI::OS::uint64_t value )
 bool OCPI::DataTransport::Port::supportsZeroCopy( OCPI::DataTransport::Port* port )
 {
 
-  if ( getCircuit()->m_transport->isLocalEndpoint( port->m_data->m_real_location->end_point.c_str() ) &&
-       getCircuit()->m_transport->isLocalEndpoint( m_data->m_real_location->end_point.c_str() )
+  if ( getCircuit()->m_transport->isLocalEndpoint(*port->m_data->m_real_location ) &&
+       getCircuit()->m_transport->isLocalEndpoint(*m_data->m_real_location)
        ) {
-    ocpiDebug(" NOTE: %s and %s are both local", m_data->m_real_location->end_point.c_str(),
-	      port->m_data->m_real_location->end_point.c_str() );
+    ocpiDebug(" NOTE: %s and %s are both local", m_data->m_real_location->name().c_str(),
+	      port->m_data->m_real_location->name().c_str() );
     return true;
   }
 
@@ -552,9 +587,10 @@ getBufferCount()
 OCPI::DataTransport::Port::
 ~Port()
 {
+  ocpiDebug("In OCPI::DataTransport::Port::~Port");
   int rc;
   int index=0;
-  ResourceServices* res_mgr;
+  XF::ResourceServices* res_mgr;
 
   if ( m_initialized ) {
 
@@ -562,8 +598,8 @@ OCPI::DataTransport::Port::
 
       if ( ! m_data->m_shadow  ) {
 
-	res_mgr = 
-	  XferFactoryManager::getFactoryManager().getSMBResources( m_data->m_real_location )->sMemResourceMgr;
+	res_mgr = &getEndPoint().resourceMgr();
+	//	  XferFactoryManager::getFactoryManager().getSMBResources( m_data->m_real_location )->sMemResourceMgr;
 	ocpiAssert( res_mgr );
 
 	rc = res_mgr->free( m_data->m_bufferData[index].outputOffsets.bufferOffset,
@@ -591,8 +627,8 @@ OCPI::DataTransport::Port::
 
       if ( ! m_shadow ) {
 
-	res_mgr = 
-	  XferFactoryManager::getFactoryManager().getSMBResources( m_data->m_real_location )->sMemResourceMgr;
+	res_mgr = &getEndPoint().resourceMgr();
+	//	  XferFactoryManager::getFactoryManager().getSMBResources( m_data->m_real_location )->sMemResourceMgr;
 	ocpiAssert( res_mgr );
 
 	rc = res_mgr->free( m_data->m_bufferData[index].inputOffsets.bufferOffset,
@@ -610,28 +646,27 @@ OCPI::DataTransport::Port::
       }
       else {  // We are a shadow port
 
-	res_mgr = XferFactoryManager::getFactoryManager().getSMBResources( m_data->m_shadow_location )->sMemResourceMgr;
+	res_mgr = &getShadowEndPoint().resourceMgr();
+	//	res_mgr = XferFactoryManager::getFactoryManager().getSMBResources( m_data->m_shadow_location )->sMemResourceMgr;
 	ocpiAssert( res_mgr );
 
 	rc = res_mgr->free(OCPI_UTRUNCATE(OU::ResAddr,
 					  m_data->m_bufferData[index].inputOffsets.
-					  myShadowsRemoteStateOffsets[m_data->m_shadow_location->mailbox]),
+					  myShadowsRemoteStateOffsets[m_data->m_shadow_location->mailBox()]),
 			   sizeof(BufferState));
 	ocpiAssert( rc == 0 );
       }
 
     }
-
-
-    if ( m_localSMemResources ) {
-      m_localSMemResources->sMemResourceMgr->free( m_offsetsOffset,
-						   sizeof(PortMetaData::BufferOffsets)*m_bufferCount);
-    }
+    getLocalEndPoint().resourceMgr().free(m_offsetsOffset, sizeof(PortMetaData::BufferOffsets)*m_bufferCount);
   }
   if (m_buffers)
     for (unsigned i=0; i<m_bufferCount; i++ )
       delete m_buffers[i];
   delete [] m_buffers;
+  // Release our references to the transfer templates.
+  for (DataTransfer::TemplateMapIter tmi = m_templates.begin(); tmi != m_templates.end(); tmi++)
+    tmi->second->release();
 }
 
 /**********************************
@@ -676,34 +711,32 @@ bool OCPI::DataTransport::Port::ready()
 
         PortSet* s_ps = static_cast<PortSet*>(getCircuit()->getOutputPortSet());
         OCPI::DataTransport::Port* output_port = static_cast<OCPI::DataTransport::Port*>(s_ps->getPortFromIndex(n));
-        int idx = output_port->m_realSMemResources->sMemServices->endpoint()->mailbox;
+        int idx = output_port->getEndPoint().mailBox();
         if ( ! m_portDependencyData.offsets[last_idx].inputOffsets.myShadowsRemoteStateOffsets[idx] ) {
                                         
           // Make sure this output port is not co-located
 
-          if ( getCircuit()->m_transport->isLocalEndpoint( 
-                                     output_port->getMetaData()->m_real_location->end_point.c_str() ) ) {
+          if ( getCircuit()->m_transport->isLocalEndpoint(*output_port->getMetaData()->m_real_location)) {
 
-            for ( OCPI::OS::uint32_t nn=0; nn<getPortSet()->getBufferCount(); nn++ )  {
-              m_portDependencyData.offsets[nn].inputOffsets.myShadowsRemoteStateOffsets[getMailbox()] =
-                m_portDependencyData.offsets[nn].inputOffsets.localStateOffset;
+            for ( OCPI::OS::uint32_t n=0; n<getPortSet()->getBufferCount(); n++ )  {
+              m_portDependencyData.offsets[n].inputOffsets.myShadowsRemoteStateOffsets[getMailbox()] =
+                m_portDependencyData.offsets[n].inputOffsets.localStateOffset;
             }
             continue;
           }
                                         
           // Make the request to get our offset
-          SMBResources* s_res = XferFactoryManager::getFactoryManager().getSMBResources( getEndpoint() );
-          SMBResources* t_res = XferFactoryManager::getFactoryManager().getSMBResources( output_port->getEndpoint() );
+	  XF::EndPoint &sep = getEndPoint();
           XferMailBox xmb( getMailbox() );
 
-          if ( ! xmb.mailBoxAvailable(s_res) ) {
+          if ( ! xmb.mailBoxAvailable(sep) ) {
             return false;
           }
           ocpiDebug("Real Input buffer is making a request to get shadow offsets. cid %x",
 		    getCircuit()->getCircuitId());
                                         
-          DataTransfer::ContainerComms::MailBox* mb = xmb.getMailBox( s_res );
-          mb->request.header.type = DataTransfer::ContainerComms::ReqShadowRstateOffset;
+          ContainerComms::MailBox* mb = xmb.getMailBox(sep);
+          mb->request.header.type = ContainerComms::ReqShadowRstateOffset;
                   
 
           if ( this->m_data->remoteCircuitId != 0 ) {
@@ -716,15 +749,15 @@ bool OCPI::DataTransport::Port::ready()
           }
 
           ocpiDebug("Making return address to %s", 
-                 m_localSMemResources->sMemServices->endpoint()->end_point.c_str() );
+		    getLocalEndPoint().name().c_str() );
 
           strncpy( mb->request.reqShadowOffsets.url, 
-                   m_localSMemResources->sMemServices->endpoint()->end_point.c_str(), 128 );
+                   getLocalEndPoint().name().c_str(), 128 );
           mb->return_offset = m_offsetsOffset;
           mb->return_size = sizeof( PortMetaData::BufferOffsets );
           mb->returnMailboxId = getMailbox();
                                         
-          xmb.makeRequest( s_res, t_res );
+          xmb.makeRequest(sep, output_port->getEndPoint());
 
           rtn = false;
                                         
@@ -758,21 +791,18 @@ bool OCPI::DataTransport::Port::ready()
       if ( ! m_portDependencyData.offsets[last_idx].inputOffsets.bufferOffset ||
            ! m_portDependencyData.offsets[last_idx].inputOffsets.localStateOffset ||
            ! m_portDependencyData.offsets[last_idx].inputOffsets.metaDataOffset ) {
-
-
-        SMBResources* s_res = 
-          XferFactoryManager::getFactoryManager().getSMBResources( m_localSMemResources->sMemServices->endpoint() );
-        SMBResources* t_res = XferFactoryManager::getFactoryManager().getSMBResources( getEndpoint() );
+	// The source of the request is us, the shadow
+	XF::EndPoint &sep = getShadowEndPoint();
         XferMailBox xmb( getMailbox() );
-        if ( ! xmb.mailBoxAvailable(s_res) ) {
+        if ( ! xmb.mailBoxAvailable(sep) ) {
           return false;
         }
                                 
         ocpiDebug("Input Shadow buffer is making a request to get buffer offsets, my offset = 0x%llx id %x",
 		  (long long unsigned)m_offsetsOffset, getCircuit()->getCircuitId());
 
-        DataTransfer::ContainerComms::MailBox* mb = xmb.getMailBox( s_res );
-        mb->request.header.type = DataTransfer::ContainerComms::ReqInputOffsets;
+        ContainerComms::MailBox* mb = xmb.getMailBox(sep);
+        mb->request.header.type = ContainerComms::ReqInputOffsets;
 
         if ( this->m_data->remoteCircuitId != 0 ) {
           mb->request.header.circuitId = this->m_data->remoteCircuitId;
@@ -784,16 +814,14 @@ bool OCPI::DataTransport::Port::ready()
         }
 
         ocpiDebug("Making return address to %s", 
-		  m_localSMemResources->sMemServices->endpoint()->end_point.c_str() );
+		  getLocalEndPoint().name().c_str() );
 
         strncpy( mb->request.reqInputOffsets.url, 
-                   m_localSMemResources->sMemServices->endpoint()->end_point.c_str(), 128 );
+		 getLocalEndPoint().name().c_str(), 128 );
         mb->return_offset = m_offsetsOffset;
         mb->return_size = sizeof( PortMetaData::BufferOffsets );
         mb->returnMailboxId = getMailbox();
-                
-        xmb.makeRequest( s_res, t_res );
-                                
+        xmb.makeRequest(sep, getEndPoint());
         rtn = false;
       }
 
@@ -809,23 +837,19 @@ bool OCPI::DataTransport::Port::ready()
                                         
           // Make sure this output port is not co-located
 
-          if ( getCircuit()->m_transport->isLocalEndpoint( shadow_port->getMetaData()->m_real_location->end_point.c_str() ) ) {
+          if (getCircuit()->m_transport->isLocalEndpoint(*shadow_port->getMetaData()->m_real_location))
             continue;
-          }
 
-          SMBResources* s_res = 
-            XferFactoryManager::getFactoryManager().getSMBResources( getEndpoint() );
-          SMBResources* t_res = XferFactoryManager::getFactoryManager().getSMBResources( shadow_port->getEndpoint() );
+	  XF::EndPoint &sep = getEndPoint();
           XferMailBox xmb( getMailbox() );
-          if ( ! xmb.mailBoxAvailable(s_res) ) {
+          if (!xmb.mailBoxAvailable(sep))
             return false;
-          }
 
           ocpiDebug("Shadow Input buffer is making a request to get other shadow offsets. id %x",
 		    getCircuit()->getCircuitId());
 
-          DataTransfer::ContainerComms::MailBox* mb = xmb.getMailBox(s_res);
-          mb->request.header.type = DataTransfer::ContainerComms::ReqShadowRstateOffset;
+          ContainerComms::MailBox* mb = xmb.getMailBox(sep);
+          mb->request.header.type = ContainerComms::ReqShadowRstateOffset;
                                 
 
           if ( this->m_data->remoteCircuitId != 0) {
@@ -838,16 +862,16 @@ bool OCPI::DataTransport::Port::ready()
           }
 
           ocpiDebug("Making return address to %s", 
-		    m_localSMemResources->sMemServices->endpoint()->end_point.c_str() );
+		    getLocalEndPoint().name().c_str() );
 
           strncpy( mb->request.reqShadowOffsets.url, 
-                   m_localSMemResources->sMemServices->endpoint()->end_point.c_str(), 128 );
+                   getLocalEndPoint().name().c_str(), 128 );
           mb->return_offset = m_offsetsOffset;
           mb->return_size = sizeof( PortMetaData::BufferOffsets );
           mb->returnMailboxId = getMailbox();
                                         
           // Now make the request
-          xmb.makeRequest( s_res, t_res );
+          xmb.makeRequest(sep, shadow_port->getEndPoint());
                                         
           rtn = false;
                                         
@@ -857,8 +881,9 @@ bool OCPI::DataTransport::Port::ready()
 
     } 
     else {  // Shadow output port
-        SMBResources* s_res = 
-          XferFactoryManager::getFactoryManager().getSMBResources( getShadowEndpoint() );
+      XF::EndPoint &sep = getShadowEndPoint();
+      //        SMBResources* s_res = 
+      //          XferFactoryManager::getFactoryManager().getSMBResources( &getShadowEndPoint() );
 
       if ( m_portDependencyData.offsets[0].outputOffsets.portSetControlOffset ) {
 	// We have received the output offsets.  Perform any required protocol info
@@ -872,26 +897,25 @@ bool OCPI::DataTransport::Port::ready()
 		    (unsigned long long)protocolOffset, (unsigned long)protocolSize);
 	  // protocolSize from the circuit is set by the incoming request from the client,
 	  // and cleared when the information is stashed into the circuit.
-	  void *myProtocolBuffer = s_res->sMemServices->map(protocolOffset, protocolSize);
+	  void *myProtocolBuffer = sep.sMemServices().mapRx(protocolOffset, protocolSize);
 	  // This string constructor essentially copies the info into the string
 	  char *copy = new char[protocolSize];
 	  memcpy(copy, myProtocolBuffer, protocolSize);
 	  ocpiDebug("Received protocol info: \"%s\"", isprint(*copy) ? copy : "unprintable");
 	  getCircuit()->setProtocol(copy); // clears procotol size
-	  s_res->sMemServices->unMap();	  
+	  sep.sMemServices().unMap();	  
 	}
       } else {
-        SMBResources* t_res = XferFactoryManager::getFactoryManager().getSMBResources( getEndpoint() );
+	//        SMBResources* t_res = XferFactoryManager::getFactoryManager().getSMBResources( getEndPoint() );
         XferMailBox xmb( getMailbox() );
-        if ( ! xmb.mailBoxAvailable(s_res) ) {
+        if (!xmb.mailBoxAvailable(sep))
           return false;
-        }
 
-        ocpiDebug("Output shadow port is making a request to get port control offsets. id %x",
+	ocpiDebug("Output shadow port is making a request to get port control offsets. id %x",
 		  getCircuit()->getCircuitId());
 
-        DataTransfer::ContainerComms::MailBox* mb = xmb.getMailBox(s_res);
-        mb->request.header.type = DataTransfer::ContainerComms::ReqOutputControlOffset;
+	ContainerComms::MailBox* mb = xmb.getMailBox(sep);
+        mb->request.header.type = ContainerComms::ReqOutputControlOffset;
 
             
         if ( this->m_data->remoteCircuitId != 0 ) {
@@ -905,7 +929,7 @@ bool OCPI::DataTransport::Port::ready()
 
         // Need to tell it how to get back with us
         strcpy(mb->request.reqOutputContOffset.shadow_end_point,
-               m_localSMemResources->sMemServices->endpoint()->end_point.c_str() );
+               getLocalEndPoint().name().c_str() );
 
 	size_t protocolSize;
 	OU::ResAddr poffset;
@@ -914,13 +938,13 @@ bool OCPI::DataTransport::Port::ready()
 	mb->request.reqOutputContOffset.protocol_offset = poffset;
 
         ocpiDebug("Making return address to %s", 
-		  m_localSMemResources->sMemServices->endpoint()->end_point.c_str());
+		  getLocalEndPoint().name().c_str());
         ocpiDebug("Setting port id = %lld", (long long)mb->request.reqShadowOffsets.portId );
 
         mb->return_offset = m_offsetsOffset;
         mb->return_size = sizeof( PortMetaData::BufferOffsets );
         mb->returnMailboxId = getMailbox();
-        xmb.makeRequest( s_res, t_res);
+        xmb.makeRequest(sep, getEndPoint());
         return false;
       }
     }
@@ -945,7 +969,7 @@ void OCPI::DataTransport::Port::writeOffsets( PortMetaData::BufferOffsets* offse
                         
       if ( m_shadow ) {
 
-        int idx = m_localSMemResources->sMemServices->endpoint()->mailbox;
+        int idx = getLocalEndPoint().mailBox();
 
         offset[n].inputOffsets.myShadowsRemoteStateOffsets[idx ] =
           m_data->m_bufferData[n].inputOffsets.myShadowsRemoteStateOffsets[idx];
@@ -1066,7 +1090,7 @@ getOffsets( DDT::Offset to_base_offset, OU::VList& offsets )
                         
       if ( m_shadow ) {
 
-        int idx = m_localSMemResources->sMemServices->endpoint()->mailbox;
+        int idx = getLocalEndPoint().mailBox();
 
         ToFrom* tf = new ToFrom;
         tf->from_offset = (OCPI::OS::uint64_t)&from_offset[n].inputOffsets.myShadowsRemoteStateOffsets[idx];
@@ -1140,6 +1164,7 @@ void OCPI::DataTransport::Port::resetEOS()
 }
 
 
+#if 0
 /**********************************
  * Get/Set the SMB name
  *********************************/
@@ -1147,8 +1172,7 @@ void OCPI::DataTransport::Port::setEndpoint( std::string& ep)
 {
   m_data->m_real_location->setEndpoint( ep );
 }
-
-
+#endif
 
 void OCPI::DataTransport::Port::debugDump()
 {
@@ -1180,15 +1204,15 @@ createOutputOffsets()
     return;
   }
 
-  if ( getCircuit()->m_transport->isLocalEndpoint( m_data->m_real_location->end_point.c_str() ) ) {
+  if ( getCircuit()->m_transport->isLocalEndpoint(*m_data->m_real_location)) {
     local = true;
     m_data->m_shadow = false;
   }
 
   if ( local ) {
 
-    ResourceServices* res_mgr = 
-      XferFactoryManager::getFactoryManager().getSMBResources( m_data->m_real_location )->sMemResourceMgr;
+    XF::ResourceServices* res_mgr = &getEndPoint().resourceMgr();
+    //      XferFactoryManager::getFactoryManager().getSMBResources( m_data->m_real_location )->sMemResourceMgr;
     ocpiAssert( res_mgr );
 
     // Allocate the buffers.  We will allocate a contiguous block of memory
@@ -1197,7 +1221,7 @@ createOutputOffsets()
                          BUF_ALIGNMENT, &boffset);
     if ( rc != 0 ) {
       throw OCPI::Util::EmbeddedException( 
-                                         NO_MORE_BUFFER_AVAILABLE, m_data->m_real_location->end_point.c_str() );
+                                         NO_MORE_BUFFER_AVAILABLE, m_data->m_real_location->name().c_str() );
     }
 
     ocpiDebug("Port::createOutputOffsets1: port %p bmd %p offset 0x%" OCPI_UTIL_RESADDR_PRIx,
@@ -1216,7 +1240,7 @@ createOutputOffsets()
     if ( rc != 0 ) {
       res_mgr->free( boffset,  m_data->m_portSetMd->bufferLength * bCount );
       throw OCPI::Util::EmbeddedException( 
-                                         NO_MORE_BUFFER_AVAILABLE, m_data->m_real_location->end_point.c_str() );
+                                         NO_MORE_BUFFER_AVAILABLE, m_data->m_real_location->name().c_str() );
     }
     for ( index=0; index<bCount; index++ ) {
       m_data->m_bufferData[index].outputOffsets.localStateOffset = 
@@ -1230,7 +1254,7 @@ createOutputOffsets()
       res_mgr->free( soffset,  sizeof(BufferState) * MAX_PCONTRIBS * bCount * 2 );
       res_mgr->free( boffset,  m_data->m_portSetMd->bufferLength * bCount );
       throw OCPI::Util::EmbeddedException( 
-                                         NO_MORE_BUFFER_AVAILABLE, m_data->m_real_location->end_point.c_str() );
+                                         NO_MORE_BUFFER_AVAILABLE, m_data->m_real_location->name().c_str() );
     }
     for ( index=0; index<bCount; index++ ) {
       m_data->m_bufferData[index].outputOffsets.metaDataOffset = 
@@ -1247,7 +1271,7 @@ createOutputOffsets()
         res_mgr->free( soffset,  sizeof(BufferState) * MAX_PCONTRIBS * bCount * 2);
         res_mgr->free( moffset,   sizeof(BufferMetaData) * MAX_PCONTRIBS * bCount );
         throw OCPI::Util::EmbeddedException( 
-                                           NO_MORE_BUFFER_AVAILABLE, m_data->m_real_location->end_point.c_str() );
+                                           NO_MORE_BUFFER_AVAILABLE, m_data->m_real_location->name().c_str() );
       }
       m_data->m_localPortSetControl = coffset;
       for ( index=0; index<bCount; index++ ) {
@@ -1267,7 +1291,7 @@ createInputOffsets()
   OCPI::Util::ResAddrType boffset, moffset, soffset;
     int rc;
     bool local=false;
-    ResourceServices* res_mgr;
+    XF::ResourceServices* res_mgr;
     unsigned int index;
     unsigned int bCount = m_data->m_portSetMd->bufferCount;
 
@@ -1277,7 +1301,7 @@ createInputOffsets()
       return;
     }
 
-    if ( getCircuit()->m_transport->isLocalEndpoint( m_data->m_real_location->end_point.c_str() ) ) {
+    if ( getCircuit()->m_transport->isLocalEndpoint(*m_data->m_real_location) ) {
       m_data->m_shadow = false;
       local = true;
     }
@@ -1285,13 +1309,14 @@ createInputOffsets()
     // Allocate the buffer
     if ( local ) {
 
-      res_mgr = XferFactoryManager::getFactoryManager().getSMBResources( m_data->m_real_location )->sMemResourceMgr;
+      res_mgr = &getEndPoint().resourceMgr();
+      //      res_mgr = XferFactoryManager::getFactoryManager().getSMBResources( m_data->m_real_location )->sMemResourceMgr;
       ocpiAssert( res_mgr );
       rc = res_mgr->alloc( m_data->m_portSetMd->bufferLength * bCount, 
                            BUF_ALIGNMENT, &boffset);
       if ( rc != 0 ) {
         throw OCPI::Util::EmbeddedException( 
-                                           NO_MORE_BUFFER_AVAILABLE, m_data->m_real_location->end_point.c_str() );
+                                           NO_MORE_BUFFER_AVAILABLE, m_data->m_real_location->name().c_str() );
       }
       for ( index=0; index<bCount; index++ ) {
         m_data->m_bufferData[index].inputOffsets.bufferOffset = boffset + 
@@ -1306,7 +1331,7 @@ createInputOffsets()
                            BUF_ALIGNMENT, &moffset);
       if ( rc != 0 ) {
         res_mgr->free( boffset,  m_data->m_portSetMd->bufferLength * bCount );
-        throw OCPI::Util::EmbeddedException(  NO_MORE_BUFFER_AVAILABLE, m_data->m_real_location->end_point.c_str() );
+        throw OCPI::Util::EmbeddedException(  NO_MORE_BUFFER_AVAILABLE, m_data->m_real_location->name().c_str() );
       }
       for ( index=0; index<bCount; index++ ) {
         m_data->m_bufferData[index].inputOffsets.metaDataOffset = 
@@ -1320,7 +1345,7 @@ createInputOffsets()
       if ( rc != 0 ) {
         res_mgr->free( moffset,  sizeof(BufferMetaData) * MAX_PCONTRIBS * bCount );
         res_mgr->free( boffset,  m_data->m_portSetMd->bufferLength * bCount );
-        throw OCPI::Util::EmbeddedException(  NO_MORE_BUFFER_AVAILABLE, m_data->m_real_location->end_point.c_str() );
+        throw OCPI::Util::EmbeddedException(  NO_MORE_BUFFER_AVAILABLE, m_data->m_real_location->name().c_str() );
       }
       for ( index=0; index<bCount; index++ ) {
         m_data->m_bufferData[index].inputOffsets.localStateOffset = 
@@ -1330,12 +1355,13 @@ createInputOffsets()
     }
     else {  // We are a shadow port
 
-      res_mgr = XferFactoryManager::getFactoryManager().getSMBResources( m_data->m_shadow_location )->sMemResourceMgr;
+      res_mgr = &getShadowEndPoint().resourceMgr();
+      //      res_mgr = XferFactoryManager::getFactoryManager().getSMBResources( m_data->m_shadow_location )->sMemResourceMgr;
       ocpiAssert( res_mgr );
       rc = res_mgr->alloc( sizeof(BufferState) * bCount , BUF_ALIGNMENT, &soffset);
       if ( rc != 0 ) {
         throw OCPI::Util::EmbeddedException(
-                                           NO_MORE_BUFFER_AVAILABLE, m_data->m_shadow_location->end_point.c_str());
+                                           NO_MORE_BUFFER_AVAILABLE, m_data->m_shadow_location->name().c_str());
       }
       m_data->m_shadowPortDescriptor.role = OCPI::RDT::ActiveMessage;
       m_data->m_shadowPortDescriptor.type = OCPI::RDT::ConsumerFlowControlDescT;
@@ -1369,7 +1395,7 @@ createInputOffsets()
 	m_data->m_externPortDependencyData.desc.oob.port_id;
       for ( index=0; index<bCount; index++ ) {
         m_data->m_bufferData[index].inputOffsets.
-	  myShadowsRemoteStateOffsets[m_data->m_shadow_location->mailbox] = 
+	  myShadowsRemoteStateOffsets[m_data->m_shadow_location->mailBox()] = 
           soffset + index * OCPI_UTRUNCATE(OU::ResAddr, sizeof(BufferState));
       }
 
@@ -1410,6 +1436,7 @@ hasFullInputBuffer()
   // We may need to do more work here if we are attached to a output buffer for ZCopy
   if ( ! available ) {
     if ( tb->m_zCopyPort && tb->m_attachedZBuffer ) {
+      assert("Unexpected zero copy to input port"==0);
       if ( tb->m_attachedZBuffer->isEmpty() && ! tb->m_attachedZBuffer->inUse() ) {
         OCPI::DataTransport::PortSet* aps = static_cast<OCPI::DataTransport::PortSet*>(tb->m_zCopyPort->getPortSet());
         aps->getTxController()->modifyOutputOffsets( tb->m_attachedZBuffer, tb, true );
@@ -1441,7 +1468,7 @@ hasEmptyOutputBuffer()
 
 OCPI::DataTransport::BufferUserFacet* 
 OCPI::DataTransport::Port::
-getNextFullInputBuffer(void *&data, size_t &length, uint8_t &opcode)
+getNextFullInputBuffer(uint8_t *&data, size_t &length, uint8_t &opcode)
 {
   Circuit *c = getCircuit();
   OU::SelfAutoMutex guard(c); // FIXME: refactor to make this a circuit method
@@ -1456,11 +1483,9 @@ getNextFullInputBuffer(void *&data, size_t &length, uint8_t &opcode)
     if (buf && buf->getMetaData()->endOfCircuit)
       c->m_status = Circuit::Disconnecting;
 
-    data = (void*)buf->getBuffer(); // cast off the volatile
-    opcode = buf->getMetaData()->ocpiMetaDataWord.opCode;
+    data = (uint8_t*)buf->getBuffer(); // cast off the volatile
+    opcode = (uint8_t)buf->getMetaData()->ocpiMetaDataWord.opCode;
     length = buf->getDataLength();
-    if (buf->getMetaData()->ocpiMetaDataWord.truncate)
-      ocpiBad("Message was truncated to %zu bytes", length);
     OCPI_EMIT_CAT__("Data Buffer Received" , OCPI_EMIT_CAT_WORKER_DEV,OCPI_EMIT_CAT_WORKER_DEV_BUFFER_FLOW, buf);
 
     OCPI_EMIT_REGISTER_FULL_VAR( "Data Buffer Opcode and length", OCPI::Time::Emit::DT_u, 64, OCPI::Time::Emit::Value, dbre ); 
@@ -1472,30 +1497,52 @@ getNextFullInputBuffer(void *&data, size_t &length, uint8_t &opcode)
   return buf;
 }
 
-#if 0
-OCPI::DataTransport::Buffer* 
-OCPI::DataTransport::Port::
-getNextFullInputBuffer()
-{
-  Circuit *c = getCircuit();
-  OU::SelfAutoMutex guard(c); // FIXME: refactor to make this a circuit method
-
-  if (!hasFullInputBuffer())
-    return NULL;
-  TransferController* txc = getPortSet()->getTxController();
-  InputBuffer* buf = 
-    static_cast<InputBuffer*>(txc->getNextFullInputBuffer(this));
-  ocpiDebug("Getting buffer %p on port %p on circuit %p on transport %p",
-	    buf, this, c, &c->parent());
-  if ( buf && buf->isEOS() ) {
-    setEOS();
+// For use by bridge ports, meaning this port is passive
+BufferUserFacet* OCPI::DataTransport::Port::
+getNextEmptyInputBuffer(uint8_t *&data, size_t &length) {
+  OU::SelfAutoMutex guard(getCircuit());
+  Buffer &b = *m_buffers[m_nextBridgeOrd];
+  if (b.isEmpty()) {
+    assert(!b.inUse());
+    if (++m_nextBridgeOrd >= m_portSet->getBufferCount())
+      m_nextBridgeOrd = 0;
+    data = (uint8_t*)b.getBuffer();
+    length = b.getLength();
+    return &b;
   }
-  if ( buf && buf->getMetaData()->endOfCircuit ) {
-    c->m_status = Circuit::Disconnecting;
-  }
-  return buf;
+  return NULL;
 }
-#endif
+void OCPI::DataTransport::Port::
+sendInputBuffer(BufferUserFacet &ib, size_t length, uint8_t opcode) {
+  OU::SelfAutoMutex guard(getCircuit());
+  Buffer &b = *static_cast<Buffer *>(&ib);
+  b.getMetaData()->ocpiMetaDataWord.opCode = opcode;
+  b.getMetaData()->ocpiMetaDataWord.length = OCPI_UTRUNCATE(uint32_t,length);
+  b.markBufferFull();
+}
+
+BufferUserFacet* OCPI::DataTransport::Port::
+getNextFullOutputBuffer(uint8_t *&data, size_t &length, uint8_t &opcode) {
+  OU::SelfAutoMutex guard(getCircuit());
+  Buffer &b = *m_buffers[m_nextBridgeOrd];
+  if (!b.isEmpty()) {
+    assert(!b.inUse());
+    if (++m_nextBridgeOrd >= m_portSet->getBufferCount())
+      m_nextBridgeOrd = 0;
+    data = (uint8_t*)b.getBuffer();
+    length = b.getDataLength();
+    opcode = (uint8_t)b.getMetaData()->ocpiMetaDataWord.opCode;
+    return &b;
+  }
+  return NULL;
+}
+
+void OCPI::DataTransport::Port::
+releaseOutputBuffer(BufferUserFacet &ob) {
+  OU::SelfAutoMutex guard(getCircuit());
+  Buffer &b = *static_cast<Buffer *>(&ob);
+  b.markBufferEmpty();
+}
 
 /**********************************
  * This method causes the specified input buffer to be marked
@@ -1530,11 +1577,11 @@ inputAvailable( Buffer* input_buf )
  *********************************/
 OCPI::DataTransport::BufferUserFacet* 
 OCPI::DataTransport::Port::
-getNextEmptyOutputBuffer(void *&data, size_t &length)
+getNextEmptyOutputBuffer(uint8_t *&data, size_t &length)
 {
   OCPI::DataTransport::Buffer *buf = getNextEmptyOutputBuffer();
   if (buf) {
-    data = (void*)buf->getBuffer(); // cast off the volatile
+    data = (uint8_t*)buf->getBuffer(); // cast off the volatile
     length = buf->getLength(); // not really data length, but buffer length
   }
   return buf;
@@ -1597,11 +1644,11 @@ getNextEmptyOutputBuffer()
   return static_cast<OCPI::DataTransport::Buffer*>(buffer);
 }
 
-
 void 
 Port::
-sendZcopyInputBuffer( Buffer* src_buf, size_t len, uint8_t op)
+sendZcopyInputBuffer(BufferUserFacet &buf, size_t len, uint8_t op, bool /*end*/)
 {
+  Buffer *src_buf = static_cast<Buffer*>(&buf);
   src_buf->getMetaData()->ocpiMetaDataWord.length = (uint32_t)len;
   src_buf->getMetaData()->ocpiMetaDataWord.opCode = op;
   src_buf->getMetaData()->ocpiMetaDataWord.timestamp = 0x01234567;
@@ -1619,7 +1666,8 @@ getBufferLength()
 
 void 
 Port::
-sendOutputBuffer( BufferUserFacet* buf, size_t length, uint8_t opcode )
+sendOutputBuffer( BufferUserFacet* buf, size_t length, uint8_t opcode, bool /*end*/,
+		  bool /*data*/)
 {
   if (length > getBufferLength())
     throw OU::Error("Buffer being sent with data length (%zu) exceeding buffer length (%zu)",
@@ -1628,11 +1676,12 @@ sendOutputBuffer( BufferUserFacet* buf, size_t length, uint8_t opcode )
   // Put the actual opcode and data length in the meta-data
   b->getMetaData()->ocpiMetaDataWord.opCode = opcode;
   b->getMetaData()->ocpiMetaDataWord.length = OCPI_UTRUNCATE(uint32_t,length);
-  b->getMetaData()->ocpiMetaDataWord.timestamp = 0x01234567;
+  if (!b->getMetaData()->ocpiMetaDataWord.timestamp)
+    b->getMetaData()->ocpiMetaDataWord.timestamp = b->getTid() << 1 | 1;
+  else
+    b->getMetaData()->ocpiMetaDataWord.timestamp += getBufferCount() << 1;
   b->getMetaData()->ocpiMetaDataWord.xferMetaData = packXferMetaData(length, opcode, false);
-  
-  // If there were no available output buffers when the worker was last run on this port, then the
-  // buffer can be NULL.  The user should not be advancing all in this case, but we need to protect against it.
+
   Circuit * c = getCircuit();
   OU::SelfAutoMutex guard(c); // FIXME: refactor to make this a circuit method
   ocpiDebug("Sending buffer %p on port %p on circuit %p length %zu op %u", b, this, c,
@@ -1644,4 +1693,10 @@ sendOutputBuffer( BufferUserFacet* buf, size_t length, uint8_t opcode )
     c->queTransfer( b );
   }
 
+}
+OCPI::RDT::Descriptors::Descriptors()
+  : type(0), // this is illegal
+    role(NoRole),
+    options(0) {
+  memset(&desc, 0, sizeof(desc));
 }

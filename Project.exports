@@ -20,23 +20,22 @@
 # First, the basic list of "facilities" that can have executables, libraries, and scripts
 os
 runtime/util
-runtime/dataplane/rdma_utils
-runtime/dataplane/rdma_driver_interface
-runtime/dataplane/rdma_smb
-runtime/dataplane/rdma_drivers/datagram
-runtime/dataplane/rdma_drivers/dma
-runtime/dataplane/rdma_drivers/ofed
-runtime/dataplane/rdma_drivers/pio
-runtime/dataplane/rdma_drivers/socket
+runtime/dataplane/xfer/base xfer
+runtime/dataplane/xfer/drivers/datagram
+runtime/dataplane/xfer/drivers/dma
+runtime/dataplane/xfer/drivers/ofed
+runtime/dataplane/xfer/drivers/pio
+runtime/dataplane/xfer/drivers/socket
+runtime/dataplane/xfer/tests
 runtime/dataplane/transport
 runtime/dataplane/msg_driver_interface
 runtime/dataplane/msg_drivers
-runtime/dataplane/rdma_tests
 runtime/library
 runtime/container
 runtime/hdl
 runtime/hdl-support
-# runtime/ocl COMING SOON
+runtime/ocl
+runtime/ocl-support
 runtime/rcc
 runtime/remote
 runtime/ctests
@@ -52,7 +51,8 @@ tests
 +runtime/util/target-<target>/ocpixml bin/<target>/
 -runtime/dataplane main
 -runtime/ctests
-+runtime/ctests/target-<target>/test_* bin/<target>/ctests/
+-tests library
+-runtime/dataplane/xfer/tests library
 ################################################################################
 # inclusions that are not automatically derived from facilities
 +tools/cdk/default-system.xml
@@ -109,6 +109,7 @@ tests
 # We don't want everything so we are selective here.  was: +tools/cdk/include/rcc include/rcc
 # After more cleanup we may be able to default to everything
 +runtime/rcc/include/RCC_Worker.h include/rcc/
++runtime/rcc/include/RCC_RunCondition.h include/rcc/
 +tools/cdk/include/rcc/rcc-make.mk include/rcc/
 +tools/cdk/include/rcc/rcc-worker.mk include/rcc/
 +tools/cdk/include/rcc/default.mk include/rcc/

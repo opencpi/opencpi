@@ -201,9 +201,10 @@ HdlCompile=\
   $(and $(SubCores_$(HdlTarget)),$(call HdlRecordCores,$(basename $@))$(infox DONERECORD:$(HdlTarget))) \
   $(HdlSourceListCompile)\
   $(infox SUBCORES:$(SubCores_$(HdlTarget))) \
-  cd $(TargetDir) && \
-  $(infox PRECOMPILE:$(HdlPreCompile))$(and $(HdlPreCompile), $(HdlPreCompile) &&)\
+  set -e; cd $(TargetDir) ; \
+  $(infox PRECOMPILE:$(HdlPreCompile))$(and $(HdlPreCompile), $(HdlPreCompile) ;)\
   export HdlCommand="set -e; $(HdlToolCompile)"; \
+  set +e; \
   $(TIME) bash -c \
    '(/bin/echo Commands to execute tool:@"$$HdlCommand" | sed "s/\([^\\]\); */\1;@/g" | tr "@" "\n"; /bin/echo Output from executing commands above:;eval "$$HdlCommand") > $(HdlLog) 2>&1' \
     > $(HdlTime) 2>&1; \

@@ -134,7 +134,8 @@ genScaPrf(const char *outDir) const {
   ezxml_t root = ezxml_new("properties");
   for (size_t n = m_nProperties; n; n--, p++) {
     const OU::Property &pr =
-      m_instances[p->m_instance].m_impl->m_metadataImpl.property(p->m_property);
+      m_instances[p->m_instance].
+      m_bestDeployment.m_impls[0]->m_metadataImpl.property(p->m_property);
     // We make things readable that OpenCPI can cache even if they are not declared readable.
     const char *mode = pr.m_isInitial || pr.m_isWritable ? "readwrite" : "readonly";
     emitProperty(root, 1, p->m_name.c_str(), pr, mode, NULL, true, false, true, false);

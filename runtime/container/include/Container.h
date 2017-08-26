@@ -45,6 +45,7 @@
 #include "OcpiUtilSelfMutex.h"
 #include "OcpiTransport.h"
 #include "OcpiLibraryManager.h"
+#include "ContainerPort.h"
 
 namespace OCPI {
   namespace Container {
@@ -70,6 +71,8 @@ namespace OCPI {
         DispatchNoMore,   // No more dispatching required
         Stopped           // Container is stopped
       };
+      typedef std::set<LocalPort *> BridgedPorts;
+      typedef BridgedPorts::iterator BridgedPortsIter;
       static const unsigned maxContainer = sizeof(CMap) * 8;
       unsigned m_ordinal;
       // Start/Stop flag for this container
@@ -79,6 +82,9 @@ namespace OCPI {
       OCPI::OS::ThreadManager *m_thread;
       // This is not an embedded member to potentially control lifecycle better...
       OCPI::DataTransport::Transport &m_transport;
+      // This vector will be filled in by derived classes
+      Transports m_transports;  // terminology clash is unfortunate....
+      BridgedPorts m_bridgedPorts;
       Container(const char *name, const ezxml_t config = NULL,
 		const OCPI::Util::PValue* params = NULL)
         throw (OCPI::Util::EmbeddedException);
@@ -93,6 +99,7 @@ namespace OCPI {
       const std::string &os() const { return m_os; }
       const std::string &osVersion() const { return m_osVersion; }
       const std::string &arch() const { return m_arch; }
+      virtual bool portsInProcess() = 0;
       bool dynamic() const { return m_dynamic; }
       virtual Container *nextContainer() = 0;
       virtual bool supportsImplementation(OCPI::Util::Worker &);
@@ -136,9 +143,18 @@ namespace OCPI {
       bool hasName(const char *name);
       inline unsigned ordinal() const { return m_ordinal; }
       static Container &nthContainer(unsigned n);
+      // This is the container that external ports will be attached to
+      static Container &baseContainer();
       // Launcher: default is to
       virtual Launcher &launcher() const;
       inline OCPI::DataTransport::Transport &getTransport() { return m_transport; }
+      void registerBridgedPort(LocalPort &p);
+      void unregisterBridgedPort(LocalPort &p);
+      void addTransport(const char *name, const char *id, OCPI::RDT::PortRole roleIn,
+			OCPI::RDT::PortRole roleOut, uint32_t inOptions, uint32_t outOptions);
+      const Transports &transports() const { return m_transports; }
+      // Return false if internal connection was not made
+      virtual bool connectInside(BasicPort &/*in*/, BasicPort &/*out*/) { return false; }
     protected:
       void shutdown();
     };

@@ -126,14 +126,15 @@ namespace OCPI {
     protected:
       WorkerBase<App,Wrk,Prt>(App &app, Wrk &wrk, Artifact *art, const char *a_name,
 			      ezxml_t impl, ezxml_t inst, Worker *a_slave, bool a_hasMaster,
-			      const OCPI::Util::PValue *params)
+			      size_t member, size_t crewSize, const OCPI::Util::PValue *params)
       : Child<App,Wrk,worker>(app, wrk, a_name),
-	Worker(art, impl, inst, a_slave, a_hasMaster, params)
+	Worker(art, impl, inst, a_slave, a_hasMaster, member, crewSize, params)
       {
       }
       Application *application() { return &Child<App,Wrk,worker>::parent(); }
       Port *findPort(const char *a_name) { return Parent<Prt>::findChildByName(a_name); }
       Worker *nextWorker() { return Child<App,Wrk,worker>::nextChild(); }
+    public:
       const std::string &name() const { return Child<App,Wrk,worker>::name(); }
     };
   }

@@ -63,7 +63,9 @@ void dataTypeTest(const char *arg) {
       fprintf(stderr, "=== Test %u of %u ===\n", c+1, count);
     if (!ppp)
       p.generate("test");
-    p.printXML(stdout);
+    std::string out;
+    p.printXML(out);
+    fputs(out.c_str(), stdout);
     OU::Value **v;
     uint8_t opcode = 0;
     p.generateOperation(opcode, v);

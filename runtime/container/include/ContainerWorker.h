@@ -28,7 +28,7 @@
 #include "OcpiOsMutex.h"
 #include "OcpiOsTimer.h"
 #include "OcpiUtilProperty.h"
-#include "OcpiUtilImplementation.h"
+#include "OcpiUtilWorker.h"
 #include "OcpiPValue.h"
 
 namespace OCPI {
@@ -102,6 +102,7 @@ namespace OCPI {
 	const = 0;
       virtual void controlOperation(OCPI::Util::Worker::ControlOperation) = 0;
     };
+    typedef uint32_t PortMask;
     class Worker
       : public OCPI::Util::Worker, public OCPI::API::Worker, virtual public Controllable,
 	virtual public WorkerControl
@@ -120,21 +121,31 @@ namespace OCPI {
       bool m_controlOpPending;
       Worker *m_slave;
       bool m_hasMaster;
+      size_t m_member, m_crewSize;
+      PortMask m_connectedPorts, m_optionalPorts; // spcm?
       std::vector<uint8_t *> m_cache; // cache for writable, non-volatile property values
       bool beforeStart();
     protected:
+      void connectPort(OCPI::Util::PortOrdinal ordinal);
+      PortMask &connectedPorts() { return m_connectedPorts; }
+      PortMask &optionalPorts() { return m_optionalPorts; }
+      virtual void portIsConnected(OCPI::Util::PortOrdinal /*ordinal*/) {};
       void checkControl();
       inline OCPI::OS::Mutex &mutex() { return m_workerMutex; }
       virtual Port *findPort(const char *name) = 0;
       inline const std::string &instTag() const { return m_instTag; }
       inline const std::string &implTag() const { return m_implTag; }
+    public:
       inline const Artifact *artifact() const { return m_artifact; }
+    protected:
       inline ezxml_t myXml() const { return m_xml; }
       inline ezxml_t myInstXml() const { return m_instXml; }
       inline bool hasMaster() const { return m_hasMaster; }
       inline Worker *slave() const { return m_slave; }
+      inline size_t member() const { return m_member; }
+      inline size_t crewSize() const { return m_crewSize; }
       Worker(Artifact *art, ezxml_t impl, ezxml_t inst, Worker *slave, bool hasMaster,
-	     const OCPI::Util::PValue *props = NULL);
+	     size_t member, size_t crewSize, const OCPI::Util::PValue *params = NULL);
       OCPI::API::PropertyInfo &setupProperty(const char *name,
 					     volatile uint8_t *&m_writeVaddr,
 					     const volatile uint8_t *&m_readVaddr);
@@ -170,22 +181,19 @@ namespace OCPI {
       // Generic setting method
 
       virtual ~Worker();
-      OCPI::API::Port &getPort(const char *name, const OCPI::API::PValue *props = NULL);
-      Port &getContainerPort(const char *name, const OCPI::API::PValue *props = NULL);
-
-      virtual Port & createOutputPort(OCPI::Util::PortOrdinal portId,
-				      size_t bufferCount,
-				      size_t bufferSize, 
-                                      const OCPI::Util::PValue* props) 
-        throw ( OCPI::Util::EmbeddedException ) = 0;
-
-      virtual Port & createInputPort(OCPI::Util::PortOrdinal portId,
-                                     size_t bufferCount,
-                                     size_t bufferSize, 
-                                     const OCPI::Util::PValue* props) 
-        throw ( OCPI::Util::EmbeddedException ) = 0;
-      virtual void read(size_t offset, size_t size, void *data) = 0;
-      virtual void write(size_t offset, size_t size, const void *data) = 0;
+      OCPI::API::Port &getPort(const char *name, const OCPI::API::PValue *params = NULL);
+      Port &getPort(const char *name, size_t nOthers, const OCPI::API::PValue *params = NULL);
+      // backward compatibility for ctests
+      virtual Port
+	&createOutputPort(OCPI::Util::PortOrdinal portId, size_t bufferCount, size_t bufferSize, 
+			  const OCPI::Util::PValue *params = NULL),
+	&createInputPort(OCPI::Util::PortOrdinal portId, size_t bufferCount, size_t bufferSize, 
+			 const OCPI::Util::PValue *params = NULL),
+	&createTestPort(OCPI::Util::PortOrdinal portId, size_t bufferCount, size_t bufferSize,
+			bool isProvider, const OCPI::Util::PValue *params = NULL);
+      virtual void read(size_t offset, size_t size, void *data);
+      virtual void write(size_t offset, size_t size, const void *data);
+      // end backward compatibility for ctests
 #define CONTROL_OP(x, c, t, s1, s2, s3, s4)	\
       void x();
     OCPI_CONTROL_OPS

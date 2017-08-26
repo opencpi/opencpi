@@ -66,11 +66,12 @@
 #define TRACE(s)
 #endif
 
+// OCPI_OFFSETOF is here because offsetof doesn't work on members that are structures
 #if defined(NDEBUG)
 #define OCPI_UTRUNCATE(type, val) ((type)(val))
 #define OCPI_STRUNCATE(type, val) ((type)(val))
 #define OCPI_SIZEOF(utype, stype) ((utype)sizeof(stype))
-#define OCPI_OFFSETOF(utype, member, stype) ((utype)offsetof(stype,member))
+#define OCPI_OFFSETOF(utype, member, stype) ((utype)&((stype *)0)->member)
 #else
 #define OCPI_UTRUNCATE(type, val) \
   (static_cast<type>(OCPI::Util::utruncate((uint64_t)(val), sizeof(type))))
@@ -79,7 +80,7 @@
 #define OCPI_SIZEOF(utype, stype) \
   ((utype)OCPI::Util::utruncate((uint64_t)sizeof(stype), sizeof(utype)))
 #define OCPI_OFFSETOF(utype, stype, member)				\
-  ((utype)OCPI::Util::utruncate((uint64_t)offsetof(stype,member), sizeof(utype)))
+  ((utype)OCPI::Util::utruncate((uint64_t)&((stype *)0)->member, sizeof(utype)))
 #endif
 
 namespace OCPI {
@@ -323,9 +324,10 @@ namespace OCPI {
 
       void
 	encodeXmlAttrSingle(const std::string &s, std::string &out, bool raw = false),
-	encodeDescriptor(const std::string &s, std::string &out),
+	encodeDescriptor(const char *iname, const std::string &s, std::string &out),
 	decodeDescriptor(const char *info, std::string &s),
 	formatString(std::string &out, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
+      // return value is simply a convenience of out.c_str()
       const char
 	*format(std::string &out, const char *fmt, ...) __attribute__((format(printf, 2, 3))),
 	*formatAdd(std::string &out, const char *fmt, ...) __attribute__((format(printf, 2, 3))),
@@ -448,18 +450,19 @@ namespace OCPI {
       // A convenience template for singletons possibly created at static construction
       // time (moved from OcpiDriverManager)
       template <class S> class Singleton {
-      public:
-        static S &getSingleton() {
+        static S *getSingletonPtr(bool test) {
           static S *theSingleton;
-          // FIXME: put this static mutex into OCPI:OS somehow
-          static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-          // This is hyper-conservative since static constructors are run in a single thread.
-          // But C++ doesn't actually say that...
-          ocpiCheck(pthread_mutex_lock(&mutex) == 0);
-          if (!theSingleton)
-            theSingleton = new S;
-          ocpiCheck(pthread_mutex_unlock(&mutex) == 0);
-          return *theSingleton;
+	  if (!test) {
+	    // FIXME: put this static mutex into OCPI:OS somehow
+	    static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+	    // This is hyper-conservative since static constructors are run in a single thread.
+	    // But C++ doesn't actually say that...
+	    ocpiCheck(pthread_mutex_lock(&mutex) == 0);
+	    if (!theSingleton)
+	      theSingleton = new S;
+	    ocpiCheck(pthread_mutex_unlock(&mutex) == 0);
+	  }
+          return theSingleton;
         }
       protected:
         Singleton() {};                   // Empty constructor
@@ -467,6 +470,13 @@ namespace OCPI {
         // [Virtual] destructor to clean up memory?
         Singleton(Singleton const&);      // Don't implement
         void operator=(Singleton const&); // Don't implement
+      public:
+	static S &getSingleton() {
+	  return *getSingletonPtr(false);
+	}
+	static S *singleton() {
+	  return getSingletonPtr(true);
+	}
       };
   }
 }

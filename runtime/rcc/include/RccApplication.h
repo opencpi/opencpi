@@ -86,11 +86,10 @@ namespace OCPI {
       protected:
 	void run(DataTransfer::EventManager* event_manager, bool &more_to_do);
       public:
-
 	OCPI::Container::Worker &
-	  createWorker(OCPI::Container::Artifact *art, const char *appInstName,
-		       ezxml_t impl, ezxml_t inst, OCPI::Container::Worker *slave,
-		       bool hasMaster, const OCPI::Util::PValue *wParams);
+	createWorker(OCPI::Container::Artifact *art, const char *appInstName, ezxml_t impl,
+		     ezxml_t inst, OCPI::Container::Worker *slave, bool hasMaster, size_t member,
+		     size_t crewSize, const OCPI::Util::PValue *wParams);
 
       /**********************************
        * Constructor
@@ -102,18 +101,8 @@ namespace OCPI {
        *********************************/  
         virtual ~Application();
 
-#if 0
-We are assuming that the circuits are lifecycle-managed based on ref counting from ports
-and thus this bookkeepping is not neededhere.
-It wasnt actually used anyway.
-      /**********************************
-       * Add a circuit to our managed list
-       *********************************/ 
-      inline void addCircuit( OCPI::DataTransport::Circuit* c ){m_circuits.push_back(c);}
-#endif      
       private:
-
-      RCCContainer *  m_rccContainer;
+	RCCContainer *m_rccContainer;
     };
 
     }

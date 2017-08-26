@@ -1,25 +1,39 @@
 /*
- * This file is protected by Copyright. Please refer to the COPYRIGHT file
- * distributed with this source distribution.
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
  *
- * This file is part of OpenCPI <http://www.opencpi.org>
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
  *
- * OpenCPI is free software: you can redistribute it and/or modify it under the
- * terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation, either version 3 of the License, or (at your option) any
- * later version.
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
  *
- * OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+
 /*
- * Abstract:
+ * Abstact:
  *   This file contains the Implementation for the OCPI transport.
  *
  * Revision History: 
@@ -39,15 +53,14 @@
 #include "OcpiUtilHash.h"
 #include "OcpiUtilAutoMutex.h"
 #include "OcpiUtilMisc.h"
-#include "DtOsDataTypes.h"
 #include "DtHandshakeControl.h"
-#include "DtTransferInternal.h"
-//#include "OcpiIntTransportExceptions.h"
+#include "XferEndPoint.h"
+#include "XferManager.h"
 #include "OcpiTransport.h"
 #include "OcpiTransportExceptions.h"
 #include "OcpiIntParallelDataDistribution.h"
 
-namespace DT = DataTransfer;
+namespace XF = DataTransfer;
 namespace OU = OCPI::Util;
 namespace OS = OCPI::OS;
 namespace DDT = DtOsDataTypes;
@@ -59,8 +72,8 @@ OU::VList   Transport::m_cached_transfers;
 OU::VList   Transport::active_transfers;
 
 struct TransferDesc_ {
-  DT::XferRequest*  xfer;
-  DT::EndPoint* loc;
+  XF::XferRequest*  xfer;
+  XF::EndPoint* loc;
   size_t offset;
 };
 typedef struct TransferDesc_ TransferDesc;
@@ -71,7 +84,7 @@ Transport::
 Transport( TransportGlobal* tpg, bool uses_mailboxes, OCPI::Time::Emit * parent  )
   : OCPI::Time::Emit(parent, "Transport"), m_defEndpoint(NULL),
     m_uses_mailboxes(uses_mailboxes), m_mutex(*new OS::Mutex(true)),
-    m_nextCircuitId(0), m_CSendpoint(NULL), m_transportGlobal(tpg)
+    m_nextCircuitId(0), m_CSendpoint(NULL), m_CScomms(NULL), m_transportGlobal(tpg)
 {
   OU::AutoMutex guard ( m_mutex, true ); 
   init();
@@ -81,7 +94,7 @@ Transport::
 Transport( TransportGlobal* tpg, bool uses_mailboxes )
   : OCPI::Time::Emit("Transport"), m_defEndpoint(NULL),
     m_uses_mailboxes(uses_mailboxes), m_mutex(*new OS::Mutex(true)),
-    m_nextCircuitId(0), m_CSendpoint(NULL), m_transportGlobal(tpg)
+    m_nextCircuitId(0), m_CSendpoint(NULL), m_CScomms(NULL), m_transportGlobal(tpg)
 {
   OU::AutoMutex guard ( m_mutex, true ); 
   init();
@@ -101,20 +114,21 @@ init() {
   // for all possible protocols
   //  XferFactoryManager::getFactoryManager().allocateSupportedEndpoints(m_localEndpoints);
 #ifndef NDEBUG
-  for (DT::EndPointsIter i = m_localEndpoints.begin(); i != m_localEndpoints.end(); i++)
-      ocpiDebug("Transport %p initially got endpoint %s", this, (*i)->end_point.c_str());
+  for (XF::EndPointsIter i = m_localEndpoints.begin(); i != m_localEndpoints.end(); i++)
+      ocpiDebug("Transport %p initially got endpoint %s", this, i->second->name().c_str());
 #endif
 }
 
 // This is called when we get a variably complete remote endpoint string
 // and need a local endpoint to talk to it.
-DT::EndPoint &Transport::
+XF::EndPoint &Transport::
 getLocalCompatibleEndpoint(const char *remote, bool /* exclusive */) {
   if (!remote || !remote[0])
     remote = getenv("OCPI_DEFAULT_TRANSPORT");
+  ocpiAssert(remote);
   if (!remote)
     remote = "ocpi-smb-pio";
-  DT::XferFactory* tfactory = DT::XferFactoryManager::getFactoryManager().find(remote);
+  XF::XferFactory* tfactory = XF::getManager().find(remote);
   if (!tfactory) {
     std::string rem("ocpi-");
     if (!strcasecmp(remote, "pio"))
@@ -125,31 +139,19 @@ getLocalCompatibleEndpoint(const char *remote, bool /* exclusive */) {
       rem += remote;
       rem += "-rdma";
     }
-    if (!(tfactory = DT::XferFactoryManager::getFactoryManager().find(rem)))
+    if (!(tfactory = XF::getManager().find(rem)))
       throw OU::Error("No driver found/loaded when looking for data transfer driver for %s/%s",
 		      remote, rem.c_str());
-    //      throw UnsupportedEndpointEx(remote);
   }
-  uint16_t mailBox = 0, maxMb = 0;
-  const char *after = strchr(remote, ':');
-  if (after) {
-    after++; // for isCompatible below
-    size_t size;
-    DT::EndPoint::parseEndPointString(remote, &mailBox, &maxMb, &size);
-  }
-  DT::EndPoint *lep = NULL;
-  for (DT::EndPointsIter i = m_localEndpoints.begin(); i != m_localEndpoints.end(); i++) {
-    DT::EndPoint *ep = *i;
-    if (ep->factory == tfactory &&
-	(mailBox == 0 || (ep->maxCount == maxMb && ep->mailbox != mailBox)) &&
-	ep->isCompatibleLocal(after)) {
-      lep = ep;
+  XF::EndPoint *lep = NULL;
+  for (XF::EndPointsIter i = m_localEndpoints.begin(); i != m_localEndpoints.end(); i++)
+    if (i->second->isCompatibleLocal(*tfactory, remote)) {
+      lep = i->second;
       break;
     }
-  }
   if (!lep) {
-    lep = tfactory->addCompatibleLocalEndPoint(after, mailBox, maxMb);
-    m_localEndpoints.insert(lep);
+    lep = &tfactory->addCompatibleLocalEndPoint(remote);
+    m_localEndpoints[lep->uuid()] = lep;
   }
   lep->finalize();
   return *lep;
@@ -158,19 +160,17 @@ getLocalCompatibleEndpoint(const char *remote, bool /* exclusive */) {
 // This is called when we have an explicit local endpoint that specifies something
 // not available in the default allocated one for the protocol.
 
-DT::EndPoint &Transport::
+XF::EndPoint &Transport::
 getLocalEndpoint(const char *endpoint) {
-  std::string protocol;
-  DT::EndPoint::getProtocolFromString(endpoint, protocol);
-  DT::XferFactory* tfactory = DT::XferFactoryManager::getFactoryManager().find(protocol);
+  XF::XferFactory* tfactory = XF::getManager().find(endpoint);
   if (!tfactory)
     throw UnsupportedEndpointEx(endpoint);
-  DT::EndPoint *ep = NULL;
-  for (DT::EndPointsIter i = m_localEndpoints.begin();  !ep && i != m_localEndpoints.end(); i++)
-    if ((*i)->end_point == endpoint)
-      ep = *i;
+  XF::EndPoint *ep = NULL;
+  for (XF::EndPointsIter i = m_localEndpoints.begin();  !ep && i != m_localEndpoints.end(); i++)
+    if (i->second->name() == endpoint)
+      ep = i->second;
   if (!ep)
-    ep = tfactory->getEndPoint(endpoint, true, true); // force creation
+    ep = &tfactory->getEndPoint(endpoint, true, true); // force creation
   ep->finalize();
   return *ep;
 }
@@ -204,7 +204,7 @@ Transport::~Transport()
   m_cached_transfers.destroyList();
 
   for ( m=0; m<active_transfers.size();  m++ ) {
-    DT::XferRequest* xr = static_cast<DT::XferRequest*>(active_transfers[m]);
+    XF::XferRequest* xr = static_cast<XF::XferRequest*>(active_transfers[m]);
     delete xr;
   }
   active_transfers.destroyList();
@@ -224,15 +224,15 @@ Transport::~Transport()
   }
 
   while (!m_localEndpoints.empty()) {
-    DT::EndPointsIter i = m_localEndpoints.begin();
-    ocpiDebug("Transport %p removing local ep %p %s", this, *i, (*i)->end_point.c_str());
-    (*i)->release();
+    XF::EndPointsIter i = m_localEndpoints.begin();
+    ocpiDebug("Transport %p removing local ep %p %s", this, i->second, i->second->name().c_str());
+    i->second->release();
     m_localEndpoints.erase(i);
   }
   while (!m_remoteEndpoints.empty()) {
-    DT::EndPointsIter i = m_remoteEndpoints.begin();
-    ocpiDebug("Transport %p removing remote ep %p %s", this, *i, (*i)->end_point.c_str());
-    (*i)->release();
+    XF::EndPointsIter i = m_remoteEndpoints.begin();
+    ocpiDebug("Transport %p removing remote ep %p %s", this, i->second, i->second->name().c_str());
+    i->second->release();
     m_remoteEndpoints.erase(i);
   }
   }
@@ -270,8 +270,6 @@ getMailBoxLock( const char* mbid )
   return mbl->mutex;
 }
 
-
-
 void 
 Transport::
 requestNewConnection( Circuit* circuit, bool send, const char *protocol, OS::Timer *timer)
@@ -292,30 +290,29 @@ requestNewConnection( Circuit* circuit, bool send, const char *protocol, OS::Tim
     server_loc = &input_loc;
   }
 
-  if ( ! isLocalEndpoint ( server_loc->c_str() ) ) {
+  XF::EndPoint &serverEp =
+    *(send ? circuit->getInputPortSet(0)->getPortFromIndex(0)->getMetaData()->m_real_location :
+      circuit->getOutputPortSet()->getPortFromIndex(0)->getMetaData()->m_real_location);
+  if (!isLocalEndpoint(serverEp))
     addRemoteEndPoint( server_loc->c_str() );
-  }
 
   ocpiDebug("requestNewConnection: c: %s s: %s", client_loc->c_str(), server_loc->c_str());
-  DT::XferFactory* tfactory = 
-    DT::XferFactoryManager::getFactoryManager().find( *client_loc, nuls );
+  XF::XferFactory* tfactory = 
+    XF::getManager().find( *client_loc, nuls );
   if ( ! tfactory ) {
     throw UnsupportedEndpointEx(client_loc->c_str());
   }
-  DT::EndPoint* client_location = tfactory->getEndPoint( *client_loc );
+  XF::EndPoint
+    &sep = tfactory->getEndPoint(*client_loc),
+    &tep = tfactory->getEndPoint(*server_loc);
 
   OS::Mutex* mutex = getMailBoxLock(server_loc->c_str());
   mutex->lock();
 
-  DT::SMBResources* s_res = 
-    DT::XferFactoryManager::getFactoryManager().getSMBResources( *client_loc );
-  DT::SMBResources* t_res = 
-    DT::XferFactoryManager::getFactoryManager().getSMBResources( *server_loc );
-
-  DT::XferMailBox xmb(client_location->mailbox );
+  XferMailBox xmb(sep.mailBox());
   bool openCircuit = circuit->m_openCircuit;
   circuit->m_openCircuit = true;
-  while ( ! xmb.mailBoxAvailable(s_res) ) {
+  while (!xmb.mailBoxAvailable(sep)) {
     dispatch();
     OS::sleep(0);
     if (timer && timer->expired()) {
@@ -327,12 +324,12 @@ requestNewConnection( Circuit* circuit, bool send, const char *protocol, OS::Tim
 
   ocpiDebug("Client is making a request to server to establish new connection.");
    
-  DT::ContainerComms::MailBox* mb = xmb.getMailBox( s_res );
-  mb->request.header.type = DT::ContainerComms::ReqNewConnection;
+  ContainerComms::MailBox* mb = xmb.getMailBox(sep);
+  mb->request.header.type = ContainerComms::ReqNewConnection;
   mb->request.header.circuitId = circuit->getCircuitId();
   mb->request.reqNewConnection.buffer_size = circuit->getOutputPortSet()->getBufferLength();
   mb->request.reqNewConnection.send = send ? 1 : 0;
-  strcpy(mb->request.reqNewConnection.output_end_point, m_CSendpoint->end_point.c_str() );
+  strcpy(mb->request.reqNewConnection.output_end_point, m_CSendpoint->name().c_str() );
   if (protocol) {
     // If we have protocol info, we will asking the server for a place to put it.
     // We first must allocate space on our side of the transfer, and copy the protocol data
@@ -342,11 +339,11 @@ requestNewConnection( Circuit* circuit, bool send, const char *protocol, OS::Tim
     OU::ResAddrType protocolOffset;
     size_t protocolSize = strlen(protocol) + 1;
     mb->request.reqNewConnection.protocol_size = (uint32_t)protocolSize;
-    if (s_res->sMemResourceMgr->alloc(protocolSize, 0, &protocolOffset))
+    if (sep.resourceMgr().alloc(protocolSize, 0, &protocolOffset))
       throw OU::EmbeddedException(NO_MORE_BUFFER_AVAILABLE, "for protocol info exchange");
-    void *myProtocolBuffer = s_res->sMemServices->map(protocolOffset, protocolSize);
+    void *myProtocolBuffer = sep.sMemServices().map(protocolOffset, protocolSize);
     memcpy(myProtocolBuffer, protocol, protocolSize);
-    s_res->sMemServices->unMap();    
+    sep.sMemServices().unMap();    
     circuit->setProtocolInfo(protocolSize, protocolOffset);
   } else
     mb->request.reqNewConnection.protocol_size = 0;
@@ -354,15 +351,15 @@ requestNewConnection( Circuit* circuit, bool send, const char *protocol, OS::Tim
   // For now, this request does not require a return
   mb->return_offset = 0; // unused when size is zero
   mb->return_size = 0;
-  mb->returnMailboxId = client_location->mailbox;
+  mb->returnMailboxId = sep.mailBox();
 
   ocpiDebug("reqNewConnection: mb %p 0x%x type %d", mb, circuit->getCircuitId(),
 	    mb->request.header.type);
  
-  xmb.makeRequest( s_res, t_res );
+  xmb.makeRequest(sep, tep);
 
   // We will lock here a prescibed amount of time to see if we are successful
-  while ( ! xmb.mailBoxAvailable(s_res) ) {
+  while ( ! xmb.mailBoxAvailable(sep)) {
     if (timer && timer->expired()) {
       mutex->unlock();
       throw OU::EmbeddedException("Server Not Responding");
@@ -378,8 +375,6 @@ requestNewConnection( Circuit* circuit, bool send, const char *protocol, OS::Tim
   mutex->unlock();
 }
 
-
-
 Circuit *
 Transport::
 createCircuit(CircuitId   cid,
@@ -388,20 +383,18 @@ createCircuit(CircuitId   cid,
               PortOrdinal dest_ports[],
               uint32_t flags,
 	      const char *protocol,
-	      OS::Timer *timer
-              )                        
+	      OS::Timer *timer)                        
 {
-
   Circuit *circuit;
   if (cid == 0)
     cid = m_nextCircuitId++; // FIXME: make better uniqueness - use endpoint somehow.
   else if ((circuit = getCircuit(cid)))
     deleteCircuit(circuit);
-  if ( supportsMailboxes() )
-    circuit = new Circuit( this, cid, connection, src_ports, dest_ports, m_mutex );
+  if (supportsMailboxes())
+    circuit = new Circuit( this, cid, connection, src_ports, dest_ports, m_mutex);
   else
     // NOTE:: This needs to be specialized for optimization. It is redundant now
-    circuit = new Circuit( this, cid, connection, src_ports, dest_ports, m_mutex );
+    circuit = new Circuit( this, cid, connection, src_ports, dest_ports, m_mutex);
 
   m_circuits.push_back( circuit );
   ocpiDebug("New circuit created and registered: id %x flags %x", cid, flags);
@@ -422,12 +415,12 @@ createCircuit(CircuitId   cid,
 // There could be a shared sub-structure here...
 void
 Transport::
-fillDescriptorFromEndPoint(DT::EndPoint &ep, OCPI::RDT::Descriptors &desc) {
-  strcpy(desc.desc.oob.oep, ep.end_point.c_str());
-  desc.desc.oob.address = ep.address;
-  desc.desc.oob.size = (uint32_t)ep.size;
-  desc.desc.oob.mailBox = ep.mailbox;
-  desc.desc.oob.maxCount = ep.maxCount;
+fillDescriptorFromEndPoint(XF::EndPoint &ep, OCPI::RDT::Descriptors &desc) {
+  strcpy(desc.desc.oob.oep, ep.name().c_str());
+  desc.desc.oob.address = ep.address();
+  desc.desc.oob.size = (uint32_t)ep.size();
+  desc.desc.oob.mailBox = ep.mailBox();
+  desc.desc.oob.maxCount = ep.maxCount();
 }
 
 
@@ -435,36 +428,25 @@ fillDescriptorFromEndPoint(DT::EndPoint &ep, OCPI::RDT::Descriptors &desc) {
 // Also returning a flowcontrol descriptor to give to that remote port
 Port * 
 Transport::
-createOutputPort(OCPI::RDT::Descriptors& outputDesc,
-		 const OCPI::RDT::Descriptors& inputDesc )
-{
-  // Before creating the output port, we need to 
-  // create a local endpoint that is compatible with the remote.
+createOutputPort(OCPI::RDT::Descriptors& outputDesc, const OCPI::RDT::Descriptors& inputDesc) {
+  // Ensure that the input port endpoint is registered, since it must take its mailbox
+  XF::EndPoint &iep = addRemoteEndPoint(inputDesc.desc.oob.oep);
+  // Before creating the output port, create a local endpoint compatible with the remote.
   // It will throw an exception if it isn't workable
-  DT::EndPoint &oep = getLocalCompatibleEndpoint(inputDesc.desc.oob.oep);
+  XF::EndPoint &oep = getLocalCompatibleEndpoint(inputDesc.desc.oob.oep);
   fillDescriptorFromEndPoint(oep, outputDesc);
-  // Ensure that the input port endpoint is registered
-  DT::EndPoint &iep = addRemoteEndPoint(inputDesc.desc.oob.oep);
-  if (outputDesc.desc.dataBufferSize > inputDesc.desc.dataBufferSize) {
-    ocpiDebug("createOutputPort: setting buffer size on output from %zu to %zu",
-	      (size_t)outputDesc.desc.dataBufferSize, (size_t)inputDesc.desc.dataBufferSize);
-    outputDesc.desc.dataBufferSize = inputDesc.desc.dataBufferSize;
-  }
-  Circuit *c = createCircuit(0, new ConnectionMetaData( oep, outputDesc ));
+  ocpiAssert(outputDesc.desc.dataBufferSize <= inputDesc.desc.dataBufferSize);
+  Circuit *c = createCircuit(0, new ConnectionMetaData(oep, outputDesc));
   c->addInputPort(iep, inputDesc, oep);
-
   Port *p = c->getOutputPort();
   p->getPortDescriptor(outputDesc, &inputDesc);
   return p;
 }
 // Create an output port given an existing input port.
-Port * 
-Transport::
-createOutputPort(OCPI::RDT::Descriptors& outputDesc,
-		 Port &inputPort )
-{
+Port *Transport::
+createOutputPort(OCPI::RDT::Descriptors& outputDesc, Port &inputPort) {
   // With an inside connection, the endpoints are the same
-  DT::EndPoint &iep = *inputPort.getEndpoint();
+  XF::EndPoint &iep = inputPort.getEndPoint();
   fillDescriptorFromEndPoint(iep, outputDesc);
   if (outputDesc.desc.dataBufferSize > inputPort.getMetaData()->m_descriptor.desc.dataBufferSize) {
     ocpiDebug("Forcing output buffer size to %zu from input size %zu on local connection",
@@ -480,75 +462,21 @@ createOutputPort(OCPI::RDT::Descriptors& outputDesc,
   return p;
 }
 
-Port * 
-Transport::
-createInputPort(OCPI::RDT::Descriptors& desc, const OU::PValue *params )
+Port *Transport::
+createInputPort(OCPI::RDT::Descriptors& desc, const OU::PValue */*params*/)
 {
-  Circuit *circuit = 0;
-  // First, process params to establish the right endpoint
-  DT::EndPoint *ep;
-  const char *endpoint = NULL, *transport = NULL;
-  if (OU::findString(params, "endpoint", endpoint))
-    ep = &getLocalEndpoint(endpoint); // caller is specific, potentially specifying QoS etc.
-  else {
-    if (!OU::findString(params, "protocol", transport) &&
-	!OU::findString(params, "transport", transport) &&
-	(transport = getenv("OCPI_DEFAULT_TRANSPORT")))
-      ocpiDebug("Forcing protocol = %s because OCPI_DEFAULT_TRANSPORT set in environment",
-		transport);
-    ep = &getLocalCompatibleEndpoint(transport);
-  }
+  const char *epString = desc.desc.oob.oep;
+  XF::EndPoint *ep = strchr(desc.desc.oob.oep, ':') ?
+    &getLocalEndpoint(epString) : // caller wants a specific endpoint
+    &getLocalCompatibleEndpoint(epString);
+  // overwriting endpoint string, which should be ok.
   fillDescriptorFromEndPoint(*ep, desc);
-  
-  int ord=-1;
-  Port * port=NULL;  
-  
-#if 0
-  // For sake of efficiency we make sure to re-use the circuits that relate 
-  // to the same connecton
-  if ( circuit  ) {
-    if ( circuit->getInputPortSetCount() ) {
-      ord = 1 + circuit->getInputPortSet(0)->getPortCount();
-    }
-    else {
-      ord = 1;
-    }      
-
-    // Create the port meta-data
-    PortSetMetaData* psmd;
-    if ( ! circuit->getInputPortSet(0) ) {
-      psmd = new PortSetMetaData(  false, 1,new ParallelDataDistribution(), 
-                                                       desc.desc.nBuffers,
-                                                       desc.desc.dataBufferSize,
-                                                       circuit->getConnectionMetaData() );
-    }
-    else {
-      psmd = circuit->getInputPortSet(0)->getPsMetaData();
-    }
-    port = circuit->addPort( new PortMetaData( ord, *ep, desc, psmd) );
-    circuit->updatePort( port );
-  }
-  else
-#endif
- {
-
-    // Create the port meta-data
-    ConnectionMetaData* cmd = new ConnectionMetaData(NULL,
-						     ep,
-						     desc.desc.nBuffers,
-						     desc.desc.dataBufferSize);
-    ord = 1;
-    circuit = createCircuit(0, cmd);
-
-    PortSet* ps = circuit->getInputPortSet(0);
-    port = ps->getPortFromOrdinal(ord);    
-  }
-
+  Circuit *circuit = createCircuit(0, new ConnectionMetaData(NULL, ep, desc.desc.nBuffers,
+							     desc.desc.dataBufferSize));
+  Port *port = circuit->getInputPortSet(0)->getPortFromOrdinal(1);    
   circuit->attach(); // FIXME: why wouldn't port creation do the attach?
   // Merge port descriptor info between what was passed in and what is determined here.
   port->getPortDescriptor(desc, NULL);
- // Make sure the port's descriptor is consistent
-  //port->getMetaData()->m_descriptor = desc;
   return port;
 }
 
@@ -607,7 +535,7 @@ deleteCircuit(Circuit *circuit)
 /**********************************
  * General house keeping 
  *********************************/
-void Transport::dispatch(DT::EventManager*)
+void Transport::dispatch(XF::EventManager*)
 {
   OU::AutoMutex guard ( m_mutex, true ); 
 
@@ -630,14 +558,14 @@ void Transport::dispatch(DT::EventManager*)
 
 
 void Transport::
-clearRemoteMailbox(size_t offset, DT::EndPoint* loc )
+clearRemoteMailbox(size_t offset, XF::EndPoint* loc )
 {
   assert(loc);
   OU::AutoMutex guard ( m_mutex, true ); 
   TransferDesc* td=NULL;
 
 #ifdef DEBUG_L2
-  ocpiDebug("Clearing remote mailbox address = %s, offset = 0x%x", loc->end_point, offset );
+  ocpiDebug("Clearing remote mailbox address = %s, offset = 0x%x", loc->name(), offset );
 #endif
 
   for ( uint32_t m=0; m<m_cached_transfers.getElementCount(); m++ ) {
@@ -655,28 +583,28 @@ clearRemoteMailbox(size_t offset, DT::EndPoint* loc )
   if (  ! td ) {
 
     /* Attempt to get or make a transfer template */
-    DT::XferServices* ptemplate = 
-      DT::XferFactoryManager::getFactoryManager().getService( m_CSendpoint, 
+    XF::XferServices* ptemplate = 
+      XF::getManager().getService( m_CSendpoint, 
                                       loc );
     if ( ! ptemplate ) {
       ocpiAssert(0);
     }
 
-    DT::XferRequest* ptransfer = ptemplate->createXferRequest();
+    XF::XferRequest* ptransfer = ptemplate->createXferRequest();
 
     // Create the copy in the template
 
     ptransfer->copy (
-		     OCPI_UTRUNCATE(DDT::Offset, offset + sizeof(DT::ContainerComms::RequestHeader)),
-		     OCPI_UTRUNCATE(DDT::Offset, offset + sizeof(DT::ContainerComms::RequestHeader)),
-		     sizeof(DT::ContainerComms::MailBox) - sizeof(DT::ContainerComms::RequestHeader),
-		     DT::XferRequest::DataTransfer );
+		     OCPI_UTRUNCATE(XF::Offset, offset + sizeof(ContainerComms::RequestHeader)),
+		     OCPI_UTRUNCATE(XF::Offset, offset + sizeof(ContainerComms::RequestHeader)),
+		     sizeof(ContainerComms::MailBox) - sizeof(ContainerComms::RequestHeader),
+		     XF::XferRequest::DataTransfer );
                 
     ptransfer->copy (
-		     OCPI_UTRUNCATE(DDT::Offset, offset),
-		     OCPI_UTRUNCATE(DDT::Offset, offset),
-		     sizeof(DT::ContainerComms::RequestHeader),
-		     DT::XferRequest::FlagTransfer );
+		     OCPI_UTRUNCATE(XF::Offset, offset),
+		     OCPI_UTRUNCATE(XF::Offset, offset),
+		     sizeof(ContainerComms::RequestHeader),
+		     XF::XferRequest::FlagTransfer );
 
     ptransfer->post();
 
@@ -695,7 +623,7 @@ clearRemoteMailbox(size_t offset, DT::EndPoint* loc )
 }
 
 void Transport::
-sendOffsets( OU::VList& offsets, DT::EndPoint &remote_ep, 
+sendOffsets( OU::VList& offsets, XF::EndPoint &remote_ep, 
 	     size_t extraSize, DtOsDataTypes::Offset extraFrom, DtOsDataTypes::Offset extraTo)
 {
   OU::AutoMutex guard ( m_mutex, true ); 
@@ -703,17 +631,17 @@ sendOffsets( OU::VList& offsets, DT::EndPoint &remote_ep,
  FORSTART:
 
   for ( uint32_t m=0; m<active_transfers.getElementCount();  m++ ) {
-    DT::XferRequest* xr = static_cast<DT::XferRequest*>(active_transfers[m]);
+    XF::XferRequest* xr = static_cast<XF::XferRequest*>(active_transfers[m]);
     if ( xr->getStatus() == 0 ) {
-      DT::XferRequest* for_delete = xr;
+      XF::XferRequest* for_delete = xr;
       active_transfers.remove( xr );
       delete for_delete;
       goto FORSTART;
     }
   }
   /* Attempt to get or make a transfer template */
-  DT::XferServices* ptemplate = 
-    DT::XferFactoryManager::getFactoryManager().getService( m_CSendpoint, 
+  XF::XferServices* ptemplate = 
+    XF::getManager().getService( m_CSendpoint, 
 							&remote_ep );
   if ( ! ptemplate ) {
     ocpiAssert(0);
@@ -723,12 +651,12 @@ sendOffsets( OU::VList& offsets, DT::EndPoint &remote_ep,
   ocpiDebug("In Transport::sendOffsets, sending %d OS::int32_ts", offsets.size() );
 #endif
 
-  DT::XferRequest* ptransfer = ptemplate->createXferRequest();
+  XF::XferRequest* ptransfer = ptemplate->createXferRequest();
 
   // We do the extra transfer first so that the other side will have the protocol when it
   // sees that the output offsets have been copied.
   if (extraSize)
-    ptransfer->copy (extraFrom, extraTo, extraSize, DT::XferRequest::None);
+    ptransfer->copy (extraFrom, extraTo, extraSize, XF::XferRequest::None);
 
   for ( uint32_t y=0; y<offsets.getElementCount(); y++) {
 
@@ -742,7 +670,7 @@ sendOffsets( OU::VList& offsets, DT::EndPoint &remote_ep,
 		     tf->from_offset,
 		     tf->to_offset,
 		     sizeof(uint32_t),
-		     DT::XferRequest::None );
+		     XF::XferRequest::None );
 
   }
   ptransfer->post();
@@ -758,18 +686,18 @@ void Transport::checkMailBoxes()
   nc++;
 
   // Ignore our request slot
-  DT::ContainerComms* comms =   m_CSendpoint->resources.m_comms;
+  ContainerComms* comms =   m_CScomms;
 
   // See if we have any comms requests
-  unsigned nMailBoxes = m_CSendpoint->maxCount;
-  for (DDT::MailBox n = 0; n < nMailBoxes; n++) {
-    DT::ContainerComms::Request &request = comms->mailBox[n].request;
-    DT::ContainerComms::ReqTypeIds type = request.header.type;
+  unsigned nMailBoxes = m_CSendpoint->maxCount();
+  for (XF::MailBox n = 0; n < nMailBoxes; n++) {
+    ContainerComms::Request &request = comms->mailBox[n].request;
+    ContainerComms::ReqTypeIds type = request.header.type;
 
-    if (n != m_CSendpoint->mailbox && type != 0) {
-      size_t offset = sizeof(DT::UpAndRunning) + sizeof(DT::ContainerComms::MailBox) * n;
+    if (n != m_CSendpoint->mailBox() && type != 0) {
+      size_t offset = sizeof(UpAndRunning) + sizeof(ContainerComms::MailBox) * n;
       Circuit *circuit;
-      if (type == DT::ContainerComms::ReqNewConnection)
+      if (type == ContainerComms::ReqNewConnection)
 	circuit = 0; // will be making new circuit using the provided ID
       else if (!(circuit = getCircuit(request.header.circuitId))) {
 	ocpiBad("Unknown circuit %x", request.header.circuitId);
@@ -779,23 +707,23 @@ void Transport::checkMailBoxes()
 		request.header.type, request.header.circuitId);
       // Clear our mailbox - it will be set if needed
       comms->mailBox[n].error_code = 0;
-      request.header.type = DT::ContainerComms::NoRequest;
+      request.header.type = ContainerComms::NoRequest;
       switch (type) {
 
-      case DT::ContainerComms::ReqUpdateCircuit:
-	ocpiDebug("Handling case DT::ContainerComms::ReqUpdateCircuit");
+      case ContainerComms::ReqUpdateCircuit:
+	ocpiDebug("Handling case ContainerComms::ReqUpdateCircuit");
 	circuit->updateInputs(&request.reqUpdateCircuit);
 	clearRemoteMailbox(offset, getEndpoint(request.reqUpdateCircuit.output_end_point, false));
         break;
 
-      case DT::ContainerComms::ReqNewConnection:
-	ocpiDebug("Handling case DT::ContainerComms::ReqNewConnection");
+      case ContainerComms::ReqNewConnection:
+	ocpiDebug("Handling case ContainerComms::ReqNewConnection");
 	// If we dont have a new circuit listener installed, ignore the request
 	if (!m_newCircuitListener)
 	  break;
 	{
 	  ConnectionMetaData* md = NULL;
-	  DT::EndPoint &sep = addRemoteEndPoint(request.reqNewConnection.output_end_point);
+	  XF::EndPoint &sep = addRemoteEndPoint(request.reqNewConnection.output_end_point);
 	  try {
 	    // send flag indicates that the client is requesting a circuit to send data to me
 	    md = request.reqNewConnection.send ?
@@ -809,7 +737,7 @@ void Transport::checkMailBoxes()
 	    size_t protocolSize = request.reqNewConnection.protocol_size;
 	    if (protocolSize) {
 	      // Allocate local space
-	      if (m_CSendpoint->resources.sMemResourceMgr->alloc(protocolSize, 0,  &protocolOffset))
+	      if (m_CSendpoint->resourceMgr().alloc(protocolSize, 0,  &protocolOffset))
 		throw OU::EmbeddedException(NO_MORE_BUFFER_AVAILABLE, "for protocol info exchange");
 	      // map in local space
 	    }
@@ -830,11 +758,11 @@ void Transport::checkMailBoxes()
 	}
         break;
 
-      case DT::ContainerComms::ReqOutputControlOffset:
+      case ContainerComms::ReqOutputControlOffset:
         {
-          ocpiDebug("Handling case DT::ContainerComms::ReqOutputControlOffset");
+          ocpiDebug("Handling case ContainerComms::ReqOutputControlOffset");
 
-          DT::EndPoint &ep = addRemoteEndPoint(request.reqOutputContOffset.shadow_end_point);
+          XF::EndPoint &ep = addRemoteEndPoint(request.reqOutputContOffset.shadow_end_point);
           Port* port = circuit->getOutputPortSet()->getPortFromOrdinal(request.reqOutputContOffset.portId);
           ocpiAssert(port);
 
@@ -855,15 +783,15 @@ void Transport::checkMailBoxes()
 	    port->releaseOffsets(offsetv);
 	  }
 	  if (protocolSize)
-	    m_CSendpoint->resources.sMemResourceMgr->free(protocolOffset, protocolSize);
+	    m_CSendpoint->resourceMgr().free(protocolOffset, protocolSize);
           clearRemoteMailbox( offset, &ep);
         }
         break;
 
-      case DT::ContainerComms::ReqShadowRstateOffset:
+      case ContainerComms::ReqShadowRstateOffset:
         {
-          ocpiDebug("Handling case DT::ContainerComms::ReqShadowRstateOffset");
-	  DT::EndPoint *ep = getEndpoint(request.reqShadowOffsets.url, true);
+          ocpiDebug("Handling case ContainerComms::ReqShadowRstateOffset");
+	  XF::EndPoint *ep = getEndpoint(request.reqShadowOffsets.url, true);
           ocpiDebug("Return address = %s", request.reqShadowOffsets.url );
 
           Port* port = NULL;
@@ -880,11 +808,11 @@ void Transport::checkMailBoxes()
         }
         break;
 
-      case DT::ContainerComms::ReqInputOffsets:
+      case ContainerComms::ReqInputOffsets:
         {
-          ocpiDebug("Handling case DT::ContainerComms::ReqInputOffsets");
+          ocpiDebug("Handling case ContainerComms::ReqInputOffsets");
 
-	  DT::EndPoint* ep = getEndpoint(request.reqInputOffsets.url, true);
+	  XF::EndPoint* ep = getEndpoint(request.reqInputOffsets.url, true);
 
           Port* port = NULL;
           for (PortOrdinal y = 0; y < circuit->getInputPortSetCount(); y++)
@@ -900,9 +828,9 @@ void Transport::checkMailBoxes()
 
         }
         break;
-      case DT::ContainerComms::NoRequest:
+      case ContainerComms::NoRequest:
       default:
-        ocpiAssert("Handling case DT::ContainerComms::Default:"==0);
+        ocpiAssert("Handling case ContainerComms::Default:"==0);
         break;
 
       }
@@ -914,55 +842,43 @@ void Transport::checkMailBoxes()
 // This is slightly mis-named.  The named endpoint might be local.
 // So the function is really:
 // get-local-if-exists, othersize get or create remote endpoint
-DT::EndPoint& Transport::
+// "Remote" here means "not in this session/container"
+XF::EndPoint& Transport::
 addRemoteEndPoint( const char* loc )
 {
-  std::string sloc(loc);
   ocpiDebug("In Transport::addRemoteEndPoint, loc = %s", loc );
   
-  DT::EndPoint *ep = getEndpoint(loc, true);
+  XF::EndPoint *ep = getEndpoint(loc, true);
+  assert(!ep); // we should not be communicating to an endpoint we own?
   if (ep)
     return *ep;
   ep = getEndpoint(loc, false);
   if (ep)
     return *ep;
-  DT::XferFactory* tfactory = 
-    DT::XferFactoryManager::getFactoryManager().find(loc);
+  XF::XferFactory* tfactory = XF::getManager().find(loc);
   if (!tfactory)
     throw UnsupportedEndpointEx(loc);
   // At this point this transport session (owned by a container),
   // Doesn't know about this endpoint yet.
-  ep = tfactory->getEndPoint(loc, false);
+  ep = &tfactory->getEndPoint(loc, false);
   ep->finalize();
-  m_remoteEndpoints.insert(ep);
+  m_remoteEndpoints[ep->uuid()] = ep;
   return *ep;
 }
 
-bool Transport::isLocalEndpoint( const char* loc )
-{
-  for (DT::EndPointsIter i = m_localEndpoints.begin(); i != m_localEndpoints.end(); i++) {
-    if ((*i)->end_point == loc) {
-      ocpiDebug("isLocalEndpoint:: '%s' is local", loc  );
-      return true;
-    }
-  }
-  return false;
+bool Transport::isLocalEndpoint(const XF::EndPoint &ep) const {
+  return m_localEndpoints.find(ep.uuid()) != m_localEndpoints.end();
 }
 
 
-DT::EndPoint * Transport::
+XF::EndPoint * Transport::
 getEndpoint(const char* ep, bool local)
 {
-  if (local) {
-    for (DT::EndPointsIter i = m_localEndpoints.begin(); i != m_localEndpoints.end(); i++)
-      if ((*i)->matchEndPointString(ep))
-	return *i;
-  } else {
-    for (DT::EndPointsIter i = m_remoteEndpoints.begin(); i != m_remoteEndpoints.end(); i++)
-      if ((*i)->matchEndPointString(ep))
-	return *i;
-  }
-  return NULL;
+  OU::Uuid uuid;
+  XF::EndPoint::getUuid(ep, uuid);
+  XF::EndPoints &eps = local ? m_localEndpoints : m_remoteEndpoints;
+  XF::EndPointsIter i = eps.find(uuid);
+  return i == eps.end() ? NULL : i->second;
 }
 
 }

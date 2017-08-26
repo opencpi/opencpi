@@ -1,25 +1,40 @@
-/*
- * This file is protected by Copyright. Please refer to the COPYRIGHT file
- * distributed with this source distribution.
- *
- * This file is part of OpenCPI <http://www.opencpi.org>
- *
- * OpenCPI is free software: you can redistribute it and/or modify it under the
- * terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation, either version 3 of the License, or (at your option) any
- * later version.
- *
- * OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- */
 
 /*
- * Abstract:
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
+ *
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
+ *
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+
+/*
+ * Abstact:
  *   This file contains the Interface for the OCPI buffer class.
  *
  * Revision History: 
@@ -75,7 +90,7 @@ namespace OCPI {
       virtual ~BufferUserFacet(){}
 
       // Generic user data pointer
-      void * m_ud;  
+      //      void * m_ud;  
 
 
       virtual volatile void * getBuffer()=0;      
@@ -144,14 +159,14 @@ namespace OCPI {
       /**********************************
        * Get this buffers local state structure
        **********************************/              
-      virtual volatile DataTransfer::BufferState* getState()=0; 
+      virtual volatile BufferState* getState()=0; 
 
       /**********************************
        * Get the offset to this ports meta-data
        **********************************/
-      virtual volatile DataTransfer::BufferMetaData* getMetaData()=0;
-      volatile DataTransfer::BufferMetaData* getMetaDataByIndex(OCPI::OS::uint32_t idx);
-      volatile DataTransfer::BufferMetaData* getMetaDataByPortId( OCPI::OS::uint32_t id );
+      virtual volatile BufferMetaData* getMetaData()=0;
+      volatile BufferMetaData* getMetaDataByIndex(OCPI::OS::uint32_t idx);
+      volatile BufferMetaData* getMetaDataByPortId( OCPI::OS::uint32_t id );
 
       /**********************************
        * Get the internal buffer 
@@ -229,10 +244,10 @@ namespace OCPI {
 
 
       // Buffer Address
-      volatile void* m_baseAddress;
+      //      volatile void* m_baseAddress;
 
       // offset from base address to start of this buffer
-      DtOsDataTypes::Offset m_startOffset;
+      DataTransfer::Offset m_startOffset;
 
       // Buffer length
       OCPI::OS::int32_t m_length;
@@ -260,11 +275,11 @@ namespace OCPI {
       PortOrdinal  m_pid;
 
       // Mapped pointer to our meta data
-      volatile DataTransfer::BufferMetaData  (*m_sbMd)[MAX_PCONTRIBS];
+      volatile BufferMetaData  (*m_sbMd)[MAX_PCONTRIBS];
       void*                     m_bmdVaddr;        // buffer meta data virtual address
 
       // Mapped pointer to our state
-      volatile DataTransfer::BufferState  (*m_state)[MAX_PCONTRIBS];
+      volatile BufferState  (*m_state)[MAX_PCONTRIBS];
       void*                  m_bsVaddr;                // buffer state virtual address
 
       // Mapped pointer to our buffer
@@ -276,7 +291,7 @@ namespace OCPI {
       PortOrdinal m_dependentZeroCopyCount;
 
       // Last mcos error
-      int32_t m_mcosReturnCode;
+      //      int32_t m_mcosReturnCode;
 
       // buffer in use
       bool m_InUse;
@@ -306,7 +321,7 @@ namespace OCPI {
     /**********************************
      * Get the meta-data by index
      **********************************/
-    inline volatile DataTransfer::BufferMetaData* Buffer::getMetaDataByIndex(OCPI::OS::uint32_t idx)
+    inline volatile BufferMetaData* Buffer::getMetaDataByIndex(OCPI::OS::uint32_t idx)
       {return &m_sbMd[0][idx];}
 
 

@@ -1,25 +1,40 @@
-/*
- * This file is protected by Copyright. Please refer to the COPYRIGHT file
- * distributed with this source distribution.
- *
- * This file is part of OpenCPI <http://www.opencpi.org>
- *
- * OpenCPI is free software: you can redistribute it and/or modify it under the
- * terms of the GNU Lesser General Public License as published by the Free
- * Software Foundation, either version 3 of the License, or (at your option) any
- * later version.
- *
- * OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
- * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
- * A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
- * details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program. If not, see <http://www.gnu.org/licenses/>.
- */
 
 /*
- * Abstract:
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
+ *
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
+ *
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+
+/*
+ * Abstact:
  *   This file contains the Interface for the OCPI port.
  *
  * Revision History: 
@@ -38,20 +53,22 @@
 #include <string.h>
 #include <limits>
 #include <OcpiList.h>
+#include <OcpiParentChild.h>
+#include <OcpiTimeEmit.h>
+#include "XferEndPoint.h"
+#include "XferFactory.h"
+#include "XferServices.h"
 #include <OcpiRDTInterface.h>
 #include <OcpiTransportConstants.h>
 #include <OcpiPortMetaData.h>
 #include <OcpiPortSet.h>
-#include <OcpiParentChild.h>
-#include <DtSharedMemoryInternal.h>
 #include "OcpiBuffer.h"
-#include <OcpiTimeEmit.h>
 
 
 namespace DataTransfer {
   struct OutputPortSetControl;
   struct SMBResources;
-  struct EndPoint;
+  class EndPoint;
 }
 
 namespace OCPI {
@@ -71,6 +88,8 @@ namespace OCPI {
     class Port :  public OCPI::Util::Child<PortSet,Port>, 	
       public OCPI::Time::Emit
     {
+      // The templates this port has a ref count on.
+      DataTransfer::TemplateMap m_templates;
 
     public:
 
@@ -86,6 +105,10 @@ namespace OCPI {
        *********************************/
       virtual ~Port();
 
+
+      // Get and cache and addref a template.
+      DataTransfer::XferServices &
+      getTemplate(DataTransfer::EndPoint &source, DataTransfer::EndPoint &target);
 
       /**********************************
        * Advance the ports buffer 
@@ -119,16 +142,20 @@ namespace OCPI {
       /**********************************
        * Reteives the next available input buffer.
        *********************************/
-      BufferUserFacet* getNextFullInputBuffer(void *&data, size_t &length, uint8_t &opcode);
-      //      Buffer* getNextFullInputBuffer();
+      BufferUserFacet* getNextFullInputBuffer(uint8_t *&data, size_t &length, uint8_t &opcode);
+      // For use by bridge ports
+      BufferUserFacet* getNextEmptyInputBuffer(uint8_t *&data, size_t &length);
+      void sendInputBuffer(BufferUserFacet &b, size_t length, uint8_t opcode);
 
       /**********************************
        * This method retreives the next available buffer from the local (our)
        * port set.  A NULL port indicates local context.
        *********************************/
-      BufferUserFacet* getNextEmptyOutputBuffer(void *&data, size_t &length);
       Buffer* getNextEmptyOutputBuffer();
-
+      BufferUserFacet* getNextEmptyOutputBuffer(uint8_t *&data, size_t &length);
+      // For use by bridge ports
+      BufferUserFacet* getNextFullOutputBuffer(uint8_t *&data, size_t &length, uint8_t &opcode);
+      void releaseOutputBuffer(BufferUserFacet &b);
       /**********************************
        * Get the port dependency data
        *********************************/
@@ -137,8 +164,9 @@ namespace OCPI {
       /**********************************
        * Finalize the port
        *********************************/
-      virtual const OCPI::RDT::Descriptors *finalize( const OCPI::RDT::Descriptors& other, OCPI::RDT::Descriptors &mine,
-						      OCPI::RDT::Descriptors *flow = NULL );
+      virtual const OCPI::RDT::Descriptors *
+      finalize(const OCPI::RDT::Descriptors *other, OCPI::RDT::Descriptors &mine,
+	       OCPI::RDT::Descriptors *flow, bool &done);
       bool isFinalized(); 
 
       /**************************************
@@ -189,7 +217,7 @@ namespace OCPI {
        * This method is used to send an input buffer thru an output port with Zero copy, 
        * if possible.
        *********************************/
-      void sendZcopyInputBuffer( Buffer* src_buf, size_t len, uint8_t op );
+      void sendZcopyInputBuffer(BufferUserFacet& src_buf, size_t len, uint8_t op, bool end);
 
       /**********************************
        * This method causes the specified input buffer to be marked
@@ -201,7 +229,8 @@ namespace OCPI {
       /**********************************
        * Send an output buffer
        *********************************/
-      void sendOutputBuffer( BufferUserFacet* b, size_t length, uint8_t opcode );
+      void sendOutputBuffer(BufferUserFacet* buf, size_t length, uint8_t opcode,
+			    bool end = false, bool data = true);
 
 
       // Advanced buffer management
@@ -241,12 +270,12 @@ namespace OCPI {
       PortMetaData* m_data;
 
       // Our shared memory object
-      DataTransfer::SMBResources* m_realSMemResources;
-      DataTransfer::SMBResources* m_shadowSMemResources;
-      DataTransfer::SMBResources* m_localSMemResources;
+      //      DataTransfer::SMBResources* m_realSMemResources;
+      //      DataTransfer::SMBResources* m_shadowSMemResources;
+      //      DataTransfer::SMBResources* m_localSMemResources;
 
       // Handshake port control
-      volatile DataTransfer::OutputPortSetControl* m_hsPortControl;
+      volatile OutputPortSetControl* m_hsPortControl;
 
       // This routine creates our buffers from the meta-data
       void createBuffers();
@@ -277,6 +306,8 @@ namespace OCPI {
 
       // used to cycle through buffers
       BufferOrdinal m_lastBufferOrd;
+      // The ordinal used on the bridge side
+      BufferOrdinal m_nextBridgeOrd;
 
       // This port is externally connected
       enum ExternalConnectState {
@@ -358,9 +389,10 @@ namespace OCPI {
       /**********************************
        * Get/Set the SMB name
        *********************************/
-      //      const char* getSMBAddress();
-      DataTransfer::EndPoint* getEndpoint();
-      std::string& getShadowEndpoint();
+      DataTransfer::EndPoint &getEndPoint();
+      DataTransfer::EndPoint *checkEndPoint();
+      DataTransfer::EndPoint &getShadowEndPoint();
+      DataTransfer::EndPoint &getLocalEndPoint();
       void setEndpoint( std::string& ep );
 
       /**********************************
@@ -401,8 +433,8 @@ namespace OCPI {
       /**********************************
        * Get this source port's control structure
        *********************************/
-      volatile DataTransfer::OutputPortSetControl* getOutputControlBlock();
-      void setOutputControlBlock( volatile DataTransfer::OutputPortSetControl* scb );
+      volatile OutputPortSetControl* getOutputControlBlock();
+      void setOutputControlBlock( volatile OutputPortSetControl* scb );
 
       /**********************************
        * Get the offsets to the other Output ports control structures within the circuit
@@ -435,10 +467,18 @@ namespace OCPI {
     inline uint32_t& Port::getBufferSequence(){return m_sequence;}
     inline bool Port::isShadow(){return m_shadow;}
     inline BufferOrdinal &Port::getLastBufferTidProcessed(){return m_lastBufferTidProcessed;}
-    inline DataTransfer::EndPoint* Port::getEndpoint(){return m_data->m_real_location;}
-    inline std::string& Port::getShadowEndpoint(){return m_data->m_shadow_location->end_point;}
-    inline volatile DataTransfer::OutputPortSetControl* Port::getOutputControlBlock(){return m_hsPortControl;}
-    inline void Port::setOutputControlBlock( volatile DataTransfer::OutputPortSetControl* scb ){m_hsPortControl=scb;}
+    inline DataTransfer::EndPoint &Port::getEndPoint(){
+      assert(m_data->m_real_location);
+      return *m_data->m_real_location;
+    }
+    inline DataTransfer::EndPoint *Port::checkEndPoint() { return m_data->m_real_location;}
+    inline DataTransfer::EndPoint &Port::getShadowEndPoint() {
+      assert(m_data->m_shadow_location);
+      return *m_data->m_shadow_location;
+    }
+    inline DataTransfer::EndPoint &Port::getLocalEndPoint() { return m_shadow ? getShadowEndPoint() : getEndPoint(); }
+    inline volatile OutputPortSetControl* Port::getOutputControlBlock(){return m_hsPortControl;}
+    inline void Port::setOutputControlBlock( volatile OutputPortSetControl* scb ){m_hsPortControl=scb;}
     inline OCPI::DataTransport::OutputBuffer* Port::getOutputBuffer(BufferOrdinal idx)
       {return reinterpret_cast<OCPI::DataTransport::OutputBuffer*>(Port::getBuffer(idx));}
     inline OCPI::DataTransport::InputBuffer* Port::getInputBuffer(BufferOrdinal idx)

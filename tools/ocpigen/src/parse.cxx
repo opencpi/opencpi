@@ -62,24 +62,34 @@ addClock() {
 // are able to override protocol-determined values.
 // Take care of the case of implementation-specific ports (via implname);
 const char *Worker::
-checkDataPort(ezxml_t impl, Port *&sp) {
+checkDataPort(ezxml_t impl, DataPort *&sp) {
   const char
     *err,
     *name = ezxml_cattr(impl, "Name"),
+    *internal = ezxml_cattr(impl, "internal"),
     *portImplName = ezxml_cattr(impl, "implName");
   sp = NULL;
+  Port *p;
   if (name) {
-    if ((err = getPort(name, sp)))
+    if ((err = getPort(name, p)))
       return err;
-    if (!sp->isData())
+    if (!p->isData())
       return OU::esprintf("Name attribute of Stream/MessageInterface \"%s\" "
 			  "matches a non-data spec port", name);
-    if (sp->m_type != WDIPort)
+    if (p->m_type != WDIPort)
       return OU::esprintf("Name attribute of Stream/MessageInterface \"%s\" "
 			  "matches an implementation port, not a spec data port", name);
-  } else if (!portImplName)
-    return OU::esprintf("Missing \"Name\" or \"ImplName\" attribute of %s element",
-			impl->name);
+    sp = p->dataPort();
+  } else if (portImplName) {
+    if (!getPort(portImplName, p))
+      return OU::esprintf("Port with ImplName=\"%s\" already exists", portImplName);
+  } else if (internal) {
+    if (!getPort(internal, p))
+      return OU::esprintf("Port with Internal=\"%s\" already exists", internal);
+  } else
+    return
+      OU::esprintf("Missing \"Name\", \"ImplName\" or \"Internal\" attribute of %s element",
+		   impl->name);
   return NULL;
 }
 
@@ -87,7 +97,7 @@ checkDataPort(ezxml_t impl, Port *&sp) {
 // If not, *parsed is set to zero.
 // If not optional then it MUST be the indicated element
 // Also return the file name of the included file.
-static const char *
+const char *
 tryInclude(ezxml_t x, const std::string &parent, const char *element, ezxml_t *parsed,
            std::string &child, bool optional) {
   *parsed = 0;
@@ -294,27 +304,6 @@ const char *parseControlOp(const char *op, void *arg) {
     *p ? NULL : "Invalid control operation name in ControlOperations attribute";
 }
 
-static const char *
-doScaling(ezxml_t x, void *worker) {
-  return !strcasecmp(OE::ezxml_tag(x), "scaling") ? ((Worker*)worker)->doScaling(x) : NULL;
-}
-const char *Worker::
-doScaling(ezxml_t x) {
-  std::string name;
-  const char *err = OE::getRequiredString(x, name, "name");
-  if (err)
-    return err;
-  if (findProperty(name.c_str()))
-    return OU::esprintf("Scaling parameter \"%s\" conflicts with property name", name.c_str());
-  Scaling s;
-  if ((err = s.parse(*this, x)))
-    return err;
-  if (m_scalingParameters.find(name) != m_scalingParameters.end())
-    return OU::esprintf("Duplicate scaling parameter name: \"%s\"", name.c_str());
-  m_scalingParameters[name] = s;
-  return NULL;
-}
-
 const char *Worker::
 addProperty(const char *xml, bool includeImpl) {
   // Add the built-in properties
@@ -378,7 +367,8 @@ parseImplControl(ezxml_t &xctl, const char */*firstRaw*/) { // FIXME: nuke the s
   // Allow overriding sizeof config space, giving priority to controlinterface
   uint64_t sizeOfConfigSpace;
   bool haveSize = false;
-  if (xctl && (err = OE::getNumber64(xctl, "SizeOfConfigSpace", &sizeOfConfigSpace, &haveSize, 0)))
+  if (xctl &&
+      (err = OE::getNumber64(xctl, "SizeOfConfigSpace", &sizeOfConfigSpace, &haveSize, 0)))
     return err;
   if (!haveSize &&
       (err = OE::getNumber64(m_xml, "SizeOfConfigSpace", &sizeOfConfigSpace, &haveSize, 0)))
@@ -388,15 +378,32 @@ parseImplControl(ezxml_t &xctl, const char */*firstRaw*/) { // FIXME: nuke the s
       return "SizeOfConfigSpace attribute of ControlInterface smaller than properties indicate";
     m_ctl.sizeOfConfigSpace = sizeOfConfigSpace;
   }
-  // Scalability
+  // Parse worker's scalability
   if ((err = OE::getBoolean(m_xml, "scalable", &m_scalable)) ||
       (err = OE::getBoolean(m_xml, "startBarrier", &m_ctl.startBarrier)))
     return err;
+  if (m_scalable)
+    m_scaling.m_max = 0;
   // FIXME: have an expression validator
   OE::getOptionalString(m_xml, m_validScaling, "validScaling");
-  if ((err = OE::ezxml_children(m_xml, ::doScaling, this)))
-    return err;
-  return 0;
+  for (ezxml_t x = ezxml_cchild(m_xml, "scaling"); x; x = ezxml_next(x)) {
+    std::string name;
+    OE::getOptionalString(x, name, "name");
+    if (findProperty(name.c_str()))
+      return OU::esprintf("Scaling parameter \"%s\" conflicts with property name",
+			  name.c_str());
+    OU::Port::Scaling s;
+    if ((err = s.parse(x, this)))
+      return err;
+    if (name.empty())
+      m_scaling = s;
+    else if (m_scalingParameters.find(name) != m_scalingParameters.end())
+      return OU::esprintf("Duplicate scaling parameter name: \"%s\"", name.c_str());
+    else
+      m_scalingParameters[name] = s;
+    m_scalable = true;
+  }
+  return NULL;
 }
 
 const char *Worker::
@@ -415,7 +422,6 @@ finalizeProperties() {
   }
   return NULL;
 }
-
 
 // Parse the generic implementation local memories (for rcc and ocl and other)
   const char *Worker::
@@ -451,11 +457,13 @@ parseSpecControl(ezxml_t ps) {
   return 0;
 }
 
-static const char *checkSuffix(const char *str, const char *suff, const char *last) {
+const char *checkSuffix(const char *str, const char *suff, const char *last) {
   size_t nstr = last - str, nsuff = strlen(suff);
   const char *start = str + nstr - nsuff;
   return nstr > nsuff && !strncmp(suff, start, nsuff) ? start : str + nstr;
 }
+
+#if 0
 
 Protocol::
 Protocol(Port &port)
@@ -506,7 +514,7 @@ parseOperation(ezxml_t op) {
   }
   return OU::Protocol::parseOperation(op);
 }
-
+#endif
 // The package serves two purposes: the spec and the impl.
 // If the spec already has a package prefix, then it will only
 // be used as the package of the impl.
@@ -661,7 +669,7 @@ initImplPorts(ezxml_t xml, const char *element, PortCreate &a_create) {
 // use getExprNumber etc.
 const char *Worker::
 getNumber(ezxml_t x, const char *attr, size_t *np, bool *found, size_t defaultValue,
-	  bool setDefault) {
+	  bool setDefault) const {
   assert(np);
   const char 
     *err = NULL,
@@ -931,37 +939,23 @@ summarizeAccess(OU::Property &p) {
   nRunProperties++;
 }
 
-// A minimum of zero means NO PARTITIONING
-Scaling::Scaling()
-  : m_min(0), m_max(1), m_modulo(1), m_default(1) {
-}
-
-const char *Scaling::
-parse(Worker &w, ezxml_t x) {
-  const char *err;
-  if ((err = w.getNumber(x, "min", &m_min, NULL, 0, false)) ||
-      (err = w.getNumber(x, "max", &m_max, NULL, 0, false)) ||
-      (err = w.getNumber(x, "modulo", &m_modulo, NULL, 0, false)) ||
-      (err = w.getNumber(x, "default", &m_default, NULL, 0, false)))
-    return err;
-  return NULL;
-}
-
 Worker::
 Worker(ezxml_t xml, const char *xfile, const std::string &parentFile,
        WType type, Worker *parent, OU::Assembly::Properties *ipvs, const char *&err)
-  : Parsed(xml, xfile, parentFile, NULL, err),
+  : m_xml(xml), m_file(xfile ? xfile : ""), m_parentFile(parentFile),
     m_model(NoModel), m_baseTypes(NULL), m_modelString(NULL), m_type(type), m_isDevice(false),
-    m_wci(NULL), m_noControl(false), m_reusable(false), m_implName(m_name.c_str()),
+    m_wci(NULL), m_noControl(false), m_reusable(false),
     m_specName(NULL), m_isThreaded(false), m_maxPortTypeName(0), m_wciClock(NULL),
     m_endian(NoEndian), m_needsEndian(false), m_pattern(NULL), m_portPattern(NULL),
     m_staticPattern(NULL), m_defaultDataWidth(-1), m_language(NoLanguage), m_assembly(NULL),
     m_slave(NULL), m_emulate(NULL), m_emulator(NULL), m_library(NULL), m_outer(false),
     m_debugProp(NULL), m_mkFile(NULL), m_xmlFile(NULL), m_outDir(NULL), m_build(*this),
-    m_paramConfig(NULL), m_scalable(false), m_parent(parent), m_maxLevel(0), m_dynamic(false)
+    m_paramConfig(NULL), m_parent(parent), m_scalable(false), m_requiredWorkGroupSize(0),
+    m_maxLevel(0), m_dynamic(false)
 {
-  if (err)
+  if ((err = getNames(xml, xfile, NULL, m_name, m_fileName)))
     return;
+  m_implName = m_name.c_str();
   const char *name = ezxml_name(xml);
   assert(name);
   if (ipvs)
@@ -1066,10 +1060,10 @@ setParent(Worker *parent) {
 
 // FIXME: look for all the places this can be used..
 Port *Worker::
-findPort(const char *name, Port *except) const {
+findPort(const char *name, const Port *except) const {
   for (unsigned i = 0; i < m_ports.size(); i++) {
     Port *dp = m_ports[i];
-    if (dp && dp->m_name.length() && !strcasecmp(dp->cname(), name) && (!except || dp != except))
+    if (dp && dp->m_name.length() && !strcasecmp(dp->pname(), name) && (!except || dp != except))
       return dp;
   }
   return NULL;
@@ -1079,6 +1073,21 @@ getPort(const char *name, Port *&p, Port *except) const {
   p = findPort(name, except);
   return p ? NULL :
     OU::esprintf("No port named \"%s\" was found in worker \"%s\"", name, m_implName);
+}
+
+// virtual Callback from OU::Port - indexed by data ports, not all ports
+// FIXME: have the util data ports injected into the OU::Worker as they are created...
+OU::Port &Worker::
+port(unsigned long which) const {
+  unsigned long ordinal = 0;
+  for (unsigned n = 0; n < m_ports.size(); ++n)
+    if (m_ports[n]->isData()) {
+      if (ordinal == which)
+	return *static_cast<DataPort*>(m_ports[n]);
+      ordinal++;
+    }
+  assert("Missing data port" == 0);
+  return *(OU::Port *)this;
 }
 
 Worker::~Worker() {
@@ -1100,7 +1109,7 @@ emitAttribute(const char *attr) {
   return OU::esprintf("Unknown worker attribute: %s", attr);
 }
 
-
+#if 0
 Parsed::
 Parsed(ezxml_t xml,        // The xml for this entity
        const char *file,   // The file with this as top level, possibly NULL
@@ -1111,6 +1120,7 @@ Parsed(ezxml_t xml,        // The xml for this entity
   ocpiAssert(xml);
   err = getNames(xml, file, tag, m_name, m_fileName);
 }
+#endif
 
 Clock::
 Clock() 
@@ -1143,7 +1153,7 @@ emitArtXML(const char *wksFile) {
   OU::UuidString uuid_string;
   OU::uuid2string(uuid, uuid_string);
   fprintf(f,
-	  "<artifact uuid=\"%s\"", uuid_string);
+	  "<artifact uuid=\"%s\"", uuid_string.uuid);
   if (g_os)         fprintf(f, " os=\"%s\"",        g_os);
   if (g_os_version) fprintf(f, " osVersion=\"%s\"", g_os_version);
   if (g_platform)   fprintf(f, " platform=\"%s\"",  g_platform);
@@ -1181,6 +1191,17 @@ findProperty(const char *name) const {
       return *pi;
   return NULL;
 }
+OU::Port *Worker::
+findMetaPort(const char *id, const OU::Port *except) const {
+  for (unsigned i = 0; i < m_ports.size(); i++) {
+    Port *p = m_ports[i];
+    if (p && p->m_name.length() && !strcasecmp(p->pname(), id) && p->isData() &&
+	(!except || p->dataPort() != except))
+      return p->dataPort();
+  }
+  return NULL;
+}
+
 void Worker::
 recordSignalConnection(Signal &/*s*/, const char */*from*/) {
 }

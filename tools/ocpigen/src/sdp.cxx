@@ -65,9 +65,9 @@ emitRecordInterface(FILE *f, const char *implName) {
 	  "  alias %s_t is sdp.sdp.%s_t;\n"
 	  "  -- Record for the %s output signals for port \"%s\" of worker \"%s\"\n"
 	  "  alias %s_t is sdp.sdp.%s_t;\n",
-	  typeName(), cname(), implName,
+	  typeName(), pname(), implName,
 	  in.c_str(), m_master ? "s2m" : "m2s",
-	  typeName(), cname(), implName,
+	  typeName(), pname(), implName,
 	  out.c_str(), m_master ? "m2s" : "s2m");
   emitRecordArray(f);
   fprintf(f,
@@ -79,14 +79,14 @@ emitRecordInterface(FILE *f, const char *implName) {
       fprintf(f,
 	      "  type %s_data_array_t is array(0 to ocpi_port_%s_count-1) of %s_data_t;\n"
 	      "  type %s_data_array_t is array(0 to ocpi_port_%s_count-1) of %s_data_t;\n",
-	      in.c_str(), cname(), in.c_str(), out.c_str(), cname(), out.c_str());
+	      in.c_str(), pname(), in.c_str(), out.c_str(), pname(), out.c_str());
 #if 0
       fprintf(f,
 	      "  type %s_data_array_t is array(0 to ocpi_port_%s_count-1) of "
 	      "dword_array_t(0 to to_integer(sdp_width)-1);\n"
 	      "  type %s_data_array_t is array(0 to ocpi_port_%s_count-1) of "
 	      "dword_array_t(0 to to_integer(sdp_width)-1);\n",
-	      in.c_str(), cname(), out.c_str(), cname());
+	      in.c_str(), pname(), out.c_str(), pname());
   std::string in, out;
   OU::format(in, typeNameIn.c_str(), "");
   OU::format(out, typeNameOut.c_str(), "");
@@ -96,21 +96,21 @@ emitRecordInterface(FILE *f, const char *implName) {
 	  "  alias %s_t is sdp.sdp.%s_t;\n"
 	  "  -- Record for the %s output signals for port \"%s\" of worker \"%s\"\n"
 	  "  alias %s_t is sdp.sdp.%s_t;\n",
-	  typeName(), cname(), implName, in.c_str(), m_master ? "s2m" : "m2s",
-	  typeName(), cname(), implName, out.c_str(), m_master ? "m2s" : "s2m");
+	  typeName(), pname(), implName, in.c_str(), m_master ? "s2m" : "m2s",
+	  typeName(), pname(), implName, out.c_str(), m_master ? "m2s" : "s2m");
   emitRecordArray(f);
-  fprintf(f, "  subtype %s_data_t is dword_array_t(0 to integer(sdp_width)-1);\n", cname());
+  fprintf(f, "  subtype %s_data_t is dword_array_t(0 to integer(sdp_width)-1);\n", pname());
   if (m_count > 1 || m_countExpr.length()) {
     std::string scount;
     if (m_countExpr.length())
-      OU::format(scount, "ocpi_port_%s_count", cname());
+      OU::format(scount, "ocpi_port_%s_count", pname());
     else
       OU::format(scount, "%zu", m_count);
     fprintf(f,
 	    "  type %s_data_array_t is array(0 to %s-1) of %s_data_t;\n"
 	    "  type %s_data_array_t is array(0 to %s-1) of %s_data_t;\n",
-	    in.c_str(), scount.c_str(), cname(),
-	    out.c_str(), scount.c_str(), cname());
+	    in.c_str(), scount.c_str(), pname(),
+	    out.c_str(), scount.c_str(), pname());
   }
 #endif
 }
@@ -132,7 +132,7 @@ emitConnectionSignal(FILE *f, bool output, Language /*lang*/, std::string &signa
 	  m_count > 1 || m_countExpr.length() ? "_array" : "");
   //  if (m_count > 1 || m_countExpr.length())
   //    fprintf(f, "(0 to %s.%s_constants.ocpi_port_%s_count-1)", m_worker->m_implName,
-  //	    m_worker->m_implName, cname());
+  //	    m_worker->m_implName, pname());
   //  fprintf(f, ";\n");
   fprintf(f, "  signal %s_data : %s%s.%s_defs.%s_data%s_t;\n", signal.c_str(),
 	  m_worker->m_implName, suff.c_str(), m_worker->m_implName,
@@ -143,13 +143,13 @@ emitConnectionSignal(FILE *f, bool output, Language /*lang*/, std::string &signa
       fprintf(f,
 	      "  signal %s : %s_%s_array_t;\n"
 	      "  signal %s_data : %s_%s_data_array_t;\n",
-	      signal.c_str(), cname(), output ? "out" : "in",
-	      signal.c_str(), cname(), output ? "out" : "in"); 
+	      signal.c_str(), pname(), output ? "out" : "in",
+	      signal.c_str(), pname(), output ? "out" : "in"); 
   else
     fprintf(f,
 	    "  signal %s : %s_%s_t;\n"
 	    "  signal %s_data : dword_array_t(0 to to_integer(sdp_width)-1);\n",
-	    signal.c_str(), cname(), output ? "_out" : "_in",
+	    signal.c_str(), pname(), output ? "_out" : "_in",
 	    signal.c_str());
 #endif
 }
@@ -160,12 +160,12 @@ emitRecordSignal(FILE *f, std::string &last, const char *aprefix, bool inRecord,
   Port::emitRecordSignal(f, last, aprefix, inRecord, inPackage, inWorker, defaultIn, defaultOut);
   fprintf(f, last.c_str(), ";\n");
   std::string in, out;
-  OU::format(in, "%s_in_data", cname());
-  OU::format(out, "%s_out_data", cname());
+  OU::format(in, "%s_in_data", pname());
+  OU::format(out, "%s_out_data", pname());
   if (m_count > 1 || m_countExpr.length()) {
     std::string scount;
     if (m_countExpr.length())
-      OU::format(scount, "ocpi_port_%s_count", cname());
+      OU::format(scount, "ocpi_port_%s_count", pname());
     else
       OU::format(scount, "%zu", m_count);
     OU::format(last,
@@ -192,7 +192,7 @@ emitVHDLShellPortMap(FILE *f, std::string &last) {
 	  "%s"
 	  "    %s_in_data => %s_in_data,\n"
 	  "    %s_out_data => %s_out_data\n",
-	  last.c_str(), cname(), cname(), cname(), cname());
+	  last.c_str(), pname(), pname(), pname(), pname());
 }
 
 void SdpPort::
@@ -212,9 +212,9 @@ emitPortSignal(FILE *f, bool any, const char *indent, const std::string &fName,
 	actual_data = "open";
       } else {
 	OU::format(formal, "%s%s.%s_defs.%s%s",
-		   external ? "work" : signalPort->m_worker->m_implName,
+		   external ? "work" : signalPort->worker().m_implName,
 		   external ? "" : suff.c_str(),
-		   signalPort->m_worker->m_implName, signalPort->cname(),
+		   signalPort->worker().m_implName, signalPort->pname(),
 		   external ? "_out" : "_in");
 	formal_data = formal + "_data";
 	if (index.empty() && (signalPort->m_count > 1 || signalPort->m_countExpr.length())) {

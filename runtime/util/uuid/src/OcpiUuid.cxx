@@ -27,16 +27,20 @@
 
 namespace OCPI {
   namespace Util {
-    void uuid2string(Uuid &uuid, UuidString &s) {
-      uuid_unparse_lower((unsigned char *)&uuid,  s);
+    void uuid2string(Uuid &u, UuidString &s) {
+      uuid_unparse_lower(u.uuid, s.uuid);
     }
-    void generateUuid(Uuid &uuid) {
-      uuid_generate((unsigned char *)&uuid);
+    bool string2uuid(UuidString &s, Uuid &u) {
+      return uuid_parse(s.uuid, u.uuid) != 0;
+    }
+    void generateUuid(Uuid &u) {
+      uuid_generate(u.uuid);
     }
   }
 }
 
 #else
+#include <string.h>
 // Use the OSSP one
 #include "../src/uuid.h"
 namespace OCPI {
@@ -45,18 +49,30 @@ namespace OCPI {
       assert(sizeof(Uuid) == UUID_LEN_BIN);
       uuid_t *uuid;
       uuid_create(&uuid);
-      uuid_import(uuid, UUID_FMT_BIN, u, sizeof(u));
-      char *cp = s;
+      uuid_import(uuid, UUID_FMT_BIN, u.uuid, sizeof(u));
+      char *cp = s.uuid;
       size_t size = sizeof(s);
       uuid_export(uuid, UUID_FMT_STR, &cp, &size);
       uuid_destroy(uuid);
+    }
+    bool string2uuid(UuidString &s, Uuid &u) {
+      uuid_t *uuid;
+      uuid_create(&uuid);
+      uuid_rc_t rc = uuid_import(uuid, UUID_FMT_STR, s.uuid, sizeof(s));
+      if (rc == UUID_RC_OK) {
+	char *cp = (char*)u.uuid;
+	size_t size = sizeof(u);
+	rc = uuid_export(uuid, UUID_FMT_BIN, &cp, &size);
+      }
+      uuid_destroy(uuid);
+      return rc != UUID_RC_OK;
     }
     void generateUuid(Uuid &u) {
       assert(sizeof(Uuid) == UUID_LEN_BIN);
       uuid_t *uuid;
       uuid_create(&uuid);
       uuid_make(uuid, UUID_MAKE_V1);
-      unsigned char *cp = u;
+      unsigned char *cp = u.uuid;
       size_t size = sizeof(u);
       uuid_export(uuid, UUID_FMT_BIN, &cp, &size);
       uuid_destroy(uuid);

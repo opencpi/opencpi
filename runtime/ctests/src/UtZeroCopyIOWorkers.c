@@ -88,12 +88,11 @@ static RCCResult ProducerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
 #endif
 
   len = this_->ports[ProducerWorker_Data_Out_Port].current.maxLength;
+  len = len - (props->buffersProcessed%22);
 
 #ifndef NDEBUG
   printf("Producing len = %zu\n", len );
 #endif
-
-  len = len - (props->buffersProcessed%22);
 
   b = (uint32_t*)out_buffer;
   *b = props->buffersProcessed;
@@ -219,7 +218,7 @@ static RCCResult ConsumerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
   Timespec        cTime;
 #endif
                 
-  char* in_buffer = (char*)this_->ports[ConsumerWorker_Data_In_Port].current.data;
+  char* in_buffer = this_->ports[ConsumerWorker_Data_In_Port].current.data;
 
 #ifdef TIME_IT
   OCPI_TIME_EMIT_C( "Consumer Start" );
@@ -268,8 +267,8 @@ static RCCResult ConsumerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
     if ( (in_buffer[n] != (char)(n+props->buffersProcessed)%23) && (ncount++ < 100) ) {
                                         
 #ifndef NDEBUG
-      printf("\nConsumer(b-> %d): Data integrity error(%zu) !!, expected %d, got %d\n", 
-             props->buffersProcessed, n, (char)(n+props->buffersProcessed)%23, in_buffer[n]);
+      printf("\nConsumer(b-> %u,%u): Data integrity error(%zu) !!, expected %d, got %d\n", 
+             props->buffersProcessed, len+4, n, (char)(n+props->buffersProcessed)%23, in_buffer[n]);
 #endif
       passed = 0;
     }
@@ -399,7 +398,7 @@ static RCCResult LoopbackWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
   oc  = this_->ports[LoopbackWorker_Data_In_Port].input.u.operation;
 
 #ifndef NDEBUG
-  printf("In LB run, len = %zu...\n", len);
+  printf("In LB run, len = %zu, op = %u..., runc = %d\n", len, oc, runc);
 #endif
 
   /*              
@@ -450,13 +449,14 @@ static RCCResult LoopbackWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
 	? len : this_->ports[LoopbackWorker_Data_Out_Port].current.maxLength;
       memcpy(out_buffer,in_buffer,cplen);
 
-      /*      printf("NOT SENDING LB DATA FOR DEBUG!!\n"); */
+      /* printf("NOT SENDING LB DATA FOR DEBUG!!\n"); */
 
+#if 1
       this_->container.send( &this_->ports[LoopbackWorker_Data_Out_Port], 
                               &this_->ports[LoopbackWorker_Data_Out_Port].current, oc, len );
-
-
-
+#else
+      this_->container.advance( &this_->ports[LoopbackWorker_Data_Out_Port], 0 );
+#endif
       this_->container.advance( &this_->ports[LoopbackWorker_Data_In_Port], 0 );
     }
     break;

@@ -44,11 +44,12 @@ namespace OA = OCPI::API;
 namespace OL = OCPI::Library;
 namespace OE = OCPI::OS::Ether;
 namespace OS = OCPI::OS;
+namespace OR = OCPI::RDT;
 namespace OCPI {
   namespace Remote {
 
 const uint16_t REMOTE_PORT = 17171;
-const uint16_t REMOTE_NARGS = 7; // fields in the discovery entries
+const uint16_t REMOTE_NARGS = 7; // fields in the discovery entries before transports
 extern const char *remote;
 const unsigned RETRIES = 3;
 const unsigned DELAYMS = 500;
@@ -63,11 +64,9 @@ class Artifact : public OC::ArtifactBase<Container,Artifact> {
 };
 class ExternalPort;
 class Worker;
-class Port : public OC::PortBase<Worker, Port, ExternalPort> {
+class Port : public OC::PortBase<Worker, Port, OCPI::API::ExternalPort> {
   Port( Worker& w, const OU::Port & pmd, const OU::PValue *params)
-    :  OC::PortBase< Worker, Port, ExternalPort>
-       (w, *this, pmd, pmd.m_provider,
-	(1 << OCPI::RDT::ActiveFlowControl) | (1 << OCPI::RDT::ActiveMessage), params) {
+    :  OC::PortBase<Worker, Port, OCPI::API::ExternalPort> (w, *this, pmd, params) {
   }
 
   ~Port() {
@@ -79,27 +78,11 @@ class Worker
   friend class Application;
   unsigned m_remoteInstance;
   Launcher &m_launcher;
-  Worker(Application & app, Artifact *art, const char *name,
-	 ezxml_t impl, ezxml_t inst, OC::Worker *slave, bool hasMaster,
+  Worker(Application & app, Artifact *art, const char *name, ezxml_t impl, ezxml_t inst,
+	 OC::Worker */*slave*/, bool hasMaster, size_t member, size_t crewSize,
 	 const OU::PValue *wParams, unsigned remoteInstance);
   virtual ~Worker() {}
   OC::Port &createPort(const OU::Port&, const OU::PValue */*params*/) {
-    ocpiAssert("This method is not expected to ever be called" == 0);
-    return *(OC::Port*)this;
-  }
-  OC::Port &createInputPort(OU::PortOrdinal /*portId*/,      
-			    size_t /*bufferCount*/,
-			    size_t /*bufferSize*/, 
-			    const OU::PValue */*params*/ = NULL)
-    throw (OU::EmbeddedException) {
-    ocpiAssert("This method is not expected to ever be called" == 0);
-    return *(OC::Port*)this;
-  }
-  OC::Port &createOutputPort(OU::PortOrdinal /*portId*/,
-			     size_t /*bufferCount*/,
-			     size_t /*bufferSize*/, 
-			     const OU::PValue */*props*/ = NULL)
-    throw ( OU::EmbeddedException ) {
     ocpiAssert("This method is not expected to ever be called" == 0);
     return *(OC::Port*)this;
   }
@@ -110,7 +93,7 @@ class Worker
   void setPropertyValue(const OU::Property &p, const OU::Value &v) {
     std::string val;
     v.unparse(val);
-    m_launcher.setPropertyValue(m_remoteInstance, &p - m_properties, val);
+    m_launcher.setPropertyValue(m_remoteInstance, &p - properties(), val);
   }
   bool wait(OS::Timer *t) {
     return m_launcher.wait(m_remoteInstance, t ? t->getRemaining() : 0);
@@ -121,7 +104,7 @@ class Worker
   // FIXME: this should be at the lower level for just reading the bytes remotely to enable caching propertly
   void getPropertyValue(const OU::Property &p, std::string &v, bool hex, bool add,
 			bool /*uncached*/) {
-    m_launcher.getPropertyValue(m_remoteInstance, &p - m_properties, v, hex, add);
+    m_launcher.getPropertyValue(m_remoteInstance, &p - properties(), v, hex, add);
   }
 
   void read(size_t /*offset*/, size_t /*nBytes*/, void */*p_data*/) {}
@@ -203,15 +186,15 @@ class Application
   virtual ~Application() {
   }
   OC::Worker &
-  createWorker(OC::Artifact *art, const char *appInstName,
-	       ezxml_t impl, ezxml_t inst, OC::Worker *slave, bool hasMaster,
+  createWorker(OC::Artifact *art, const char *appInstName, ezxml_t impl, ezxml_t inst,
+	       OC::Worker *slave, bool hasMaster, size_t member, size_t crewSize,
 	       const OU::PValue *wParams) {
     uint32_t remoteInstance;
     if (!OU::findULong(wParams, "remoteInstance", remoteInstance))
       throw OU::Error("Remote ContainerApplication expects remoteInstance parameter");
     return *new Worker(*this, art ? static_cast<Artifact*>(art) : NULL,
 		       appInstName ? appInstName : "unnamed-worker", impl, inst, slave,
-		       hasMaster, wParams, remoteInstance);
+		       hasMaster, member, crewSize, wParams, remoteInstance);
   }
 };
 
@@ -228,8 +211,8 @@ class Client
 protected:
   OS::Socket &m_socket;
   // Take ownership of the provided socket
-  Client(Driver &d, const char *a_name, OS::Socket &socket)
-    : OU::Child<Driver,Client,remote>(d, *this, a_name),
+  Client(Driver &d, const char *name, OS::Socket &socket)
+    : OU::Child<Driver,Client,remote>(d, *this, name),
       Launcher(socket),
       m_socket(socket)
   {
@@ -249,20 +232,44 @@ class Container
 public:
   Container(Client &client, const std::string &a_name,
 	    const char *a_model, const char *a_os, const char *a_osVersion, const char *a_arch,
-	    const char *a_platform, const char *a_dynamic, const OA::PValue* /*params*/)
+	    const char *a_platform, const char *a_dynamic, const char *transports,
+            const OA::PValue* /*params*/)
     throw ( OU::EmbeddedException )
     : OC::ContainerBase<Driver,Container,Application,Artifact>(*this, a_name.c_str()),
       m_client(client) {
+    ocpiDebug("Construct remote container %s with transports: %s", a_name.c_str(),
+	      transports ? transports : "<none>");
     m_model = a_model;
     m_os = a_os;
     m_osVersion = a_osVersion;
     m_arch = a_arch;
     m_platform = a_platform;
+    unsigned nTransports = 0;
+    for (const char *p = transports; *p; p++)
+      if (*p == '|')
+	nTransports++;
+    m_transports.resize(nTransports);
+    OC::Transport *t = &m_transports[0];
+    char transport[strlen(transports)+1];
+    char id[strlen(transports)+1];
+    for (unsigned n = nTransports; n; n--, t++) {
+      int nChars, rv;
+      unsigned roleIn, roleOut;
+      if ((rv = sscanf(transports, "%[^,],%[^,],%u,%u,0x%x,0x%x|%n", transport, id, &roleIn, &roleOut,
+		       &t->optionsIn, &t->optionsOut, &nChars)) != 6)
+	throw OU::Error("Bad transport string in container discovery: %s: %d", transports, rv);
+      t->roleIn = (OR::PortRole)roleIn;
+      t->roleOut = (OR::PortRole)roleOut;
+      t->transport = transport;
+      t->id = id;
+      transports += nChars;
+    }
     OX::parseBool(a_dynamic, NULL, &m_dynamic);
   }
   virtual ~Container()
   throw () {
   }
+  bool portsInProcess() { return false; }
   OC::Launcher &launcher() const {
     return m_client;
   }
@@ -280,15 +287,21 @@ public:
 
 Worker::
 Worker(Application & app, Artifact *art, const char *a_name, ezxml_t impl, ezxml_t inst,
-       OC::Worker *a_slave, bool a_hasMaster, const OU::PValue *wParams, unsigned remoteInstance)
+       OC::Worker *a_slave, bool a_hasMaster, size_t member, size_t crewSize,
+       const OU::PValue *wParams, unsigned remoteInstance)
   : OC::WorkerBase<Application,Worker,Port>(app, *this, art, a_name, impl, inst, a_slave,
-					    a_hasMaster, wParams),
+					    a_hasMaster, member, crewSize, wParams),
     m_remoteInstance(remoteInstance),
     m_launcher(*static_cast<Launcher *>(&app.parent().launcher())) {
   setControlMask(getControlMask() | (OU::Worker::OpInitialize|
 				     OU::Worker::OpStart|
 				     OU::Worker::OpStop|
 				     OU::Worker::OpRelease));
+  // Fake the connections.  The error checking is on the remote side, but this allows
+  // the local (client-side) error checks about connectivity to succeed.
+  // FIXME: possibly set this just based on what is actually in the launch info
+  for (unsigned n = 0; n < m_nPorts; n++)
+    connectPort(n);
 }
 
 // The driver class owns the containers (like all container driver classes)
@@ -350,10 +363,11 @@ public:
       *end++ = '\0';
       char *args[REMOTE_NARGS + 1];
       for (char **ap = args; (*ap++ = strsep(&cp, "|")); )
-	if ((ap - args) > REMOTE_NARGS)
-	  goto bad;
+	if ((ap - args) >= REMOTE_NARGS)
+	  break;
+      // cp now points to transports
       std::string cname;
-      OU::format(cname, "remote:%s:%s", host.c_str(), args[0]);
+      OU::format(cname, "%s/%s", server, args[0]);
       if (exclude) {
 	bool excluded = false;
 	for (const char **ap = exclude; *ap; ap++)
@@ -380,12 +394,13 @@ public:
       }
       ocpiDebug("Creating remote container: \"%s\", model %s, os %s, version %s, arch %s, platform %s dynamic %s",
 		cname.c_str(), args[1], args[2], args[3], args[4], args[5], args[6]);
+      ocpiDebug("Transports are: '%s'", cp);
       Container &c = *new Container(*client, cname.c_str(), args[1], args[2], args[3], args[4],
-				    args[5], args[6], NULL);
+				    args[5], args[6], cp, NULL);
       (void)&c;
     }
     sock = NULL;
-    return false;
+    goto out;
   bad:
     OU::format(error, "Bad server container response from \"%s\"", server);
   out:

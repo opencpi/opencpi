@@ -8,9 +8,7 @@ Properties:
 -->
 <ComponentSpec>
 
-  <DataInterfaceSpec Name="in" Producer="false">
-      <!-- <xi:include href="stream32_protocol.xml"/> -->
-  </DataInterfaceSpec>
+  <port name='in' buffersize='8k'/>
   <!-- The control register: initialized to zero
        bit 0 is to enable receiving of messages - always set to 1 before start.
        bit 1 is to indicate that capture should stop when memories are full (no wrap).

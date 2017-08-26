@@ -25,6 +25,7 @@
  *    Initial Version
  */
 
+#define old 1
 #include <vector>
 #include <string>
 #include <stdio.h>
@@ -44,6 +45,7 @@
 using namespace OCPI::Container;
 using namespace OCPI;
 using namespace OCPI::CONTAINER_TEST;
+namespace OA = OCPI::API;
 
 static int   OCPI_RCC_DATA_BUFFER_SIZE   = 128;
 static int   OCPI_USE_POLLING            = 1;
@@ -194,6 +196,8 @@ static void connectWorkers(std::vector<CApp>& ca )
 
 
 
+#define SETULONGPROP(n,v) \
+  do { OA::Property p(app, n); p.setULongValue(v);} while(0)
 #define BUFFERS_2_PROCESS 200;
 static void initWorkerProperties(int mode, std::vector<CApp>& ca )
 {
@@ -201,84 +205,127 @@ static void initWorkerProperties(int mode, std::vector<CApp>& ca )
   int32_t  tprop[5], offset, nBytes;
 
   // Set the producer buffer run count property to 0
+#ifdef old
   offset = offsetof(ProducerWorkerProperties,run2BufferCount);
   nBytes = sizeof( uint32_t );
   tprop[0] = BUFFERS_2_PROCESS;
   PRODUCER.worker->write( offset, nBytes, &tprop[0]);
   PRODUCER.worker->afterConfigure();
-
+#else
+  SETULONGPROP("producer.run2BufferCount", BUFFERS_2_PROCESS);
+#endif
   // Set the producer buffers processed count
+#ifdef old
   offset = offsetof(ProducerWorkerProperties,buffersProcessed);
   nBytes = sizeof( uint32_t );
   tprop[0] = 0;
   PRODUCER.worker->write( offset, nBytes, &tprop[0]);
   PRODUCER.worker->afterConfigure();
+#else
+  SETULONGPROP("producer.buffersProcessed", 0);
+#endif
 
   // Set the producer bytes processed count
+#ifdef old
   offset = offsetof(ProducerWorkerProperties,bytesProcessed);
   nBytes = sizeof( uint32_t );
   tprop[0] = 0;
   PRODUCER.worker->write( offset, nBytes, &tprop[0]);
   PRODUCER.worker->afterConfigure();
+#else
+  SETULONGPROP("producer.bytesProcessed", 0);
+#endif
 
   // Set the consumer passfail property to passed
+#ifdef old
   offset = offsetof(ConsumerWorkerProperties,passfail);
   nBytes = sizeof( uint32_t );
   tprop[0] = 1;
   CONSUMER.worker->write( offset, nBytes, &tprop[0]);
   CONSUMER.worker->afterConfigure();
+#else
+  SETULONGPROP("consumer.passFail", 1);
+#endif
 
   // Set the consumer dropped buffers count
+#ifdef old
   offset = offsetof(ConsumerWorkerProperties,droppedBuffers);
   nBytes = sizeof( uint32_t );
   tprop[0] = 0;
   CONSUMER.worker->write( offset, nBytes, &tprop[0]);
   CONSUMER.worker->afterConfigure();
+#else
+  SETULONGPROP("consumer.droppedBuffers", 0);
+#endif
 
   // Set the consumer buffer run count property to 0
+#ifdef old
   offset = offsetof(ConsumerWorkerProperties,run2BufferCount);
   nBytes = sizeof( uint32_t );
   tprop[0] = BUFFERS_2_PROCESS;
   CONSUMER.worker->write( offset, nBytes, &tprop[0]);
   CONSUMER.worker->afterConfigure();
+#else
+  SETULONGPROP("consumer.run2BufferCount", BUFFERS_2_PROCESS);
+#endif
 
   // Set the consumer buffers processed count
+#ifdef old
   offset = offsetof(ConsumerWorkerProperties,buffersProcessed);
   nBytes = sizeof( uint32_t );
   tprop[0] = 0;
   CONSUMER.worker->write( offset, nBytes, &tprop[0]);
   CONSUMER.worker->afterConfigure();
+#else
+  SETULONGPROP("consumer.buffersProcessed", 0);
+#endif
 
   // Set the consumer buffers processed count
+#ifdef old
   offset = offsetof(ConsumerWorkerProperties,bytesProcessed);
   nBytes = sizeof( uint32_t );
   tprop[0] = 0;
   CONSUMER.worker->write( offset, nBytes, &tprop[0]);
   CONSUMER.worker->afterConfigure();
+#else
+  SETULONGPROP("consumer.bytesProcessed", 0);
+#endif
 
 
   // Set the producer mode
+#ifdef old
   offset = offsetof(ProducerWorkerProperties, transferMode);
   nBytes = sizeof( uint32_t );
   tprop[0] = ProducerSend;
   PRODUCER.worker->write( offset, nBytes, &tprop[0]);
   PRODUCER.worker->afterConfigure();
+#else
+  SETULONGPROP("producer.transferMode", ProducerSend);
+#endif
 
 
   // Set the loopback mode
+#ifdef old
   offset = offsetof(LoopbackWorkerProperties,transferMode);
   nBytes = sizeof( uint32_t );
   tprop[0] = mode;
   LOOPBACK.worker->write( offset, nBytes, &tprop[0]);
   LOOPBACK.worker->afterConfigure();
+#else
+  SETULONGPROP("loopback.transferMode", mode);
+#endif
 
   // Set the consumer mode
+#ifdef old
   offset = offsetof(ConsumerWorkerProperties, transferMode);
   nBytes = sizeof( uint32_t );
   tprop[0] = ConsumerTake;
   //  tprop[0] = ConsumerConsume;
   CONSUMER.worker->write(  offset, nBytes, &tprop[0]);
   CONSUMER.worker->afterConfigure();
+#else
+  SETULONGPROP("consumer.transferMode", ConsumerTake);
+#endif
 
 
 }
@@ -379,19 +426,26 @@ int config_and_run_ap_container_test1(std::vector<CApp>& ca, std::vector<CWorker
   int32_t  tprop[5], offset, nBytes;
 
   // Set the consumer mode
+#if old
   offset = offsetof(ConsumerWorkerProperties, transferMode);
   nBytes = sizeof( uint32_t );
   tprop[0] = ConsumerConsume;
   CONSUMER.worker->write( offset, nBytes, &tprop[0]);
   CONSUMER.worker->afterConfigure();
-
+#else
+  SETULONGPROP("consumer.transferMode", ConsumerConsume);
+#endif
 
   // Set the producer mode
+#if old
   offset = offsetof(ProducerWorkerProperties, transferMode);
   nBytes = sizeof( uint32_t );
   tprop[0] = ProducerSend;
   PRODUCER.worker->write( offset, nBytes, &tprop[0]);
   PRODUCER.worker->afterConfigure();
+#else
+  SETULONGPROP("producer.transferMode", ProducerSend);
+#endif
 
 
   sprintf(tnamebuf, "Advanced port managment test (using send): container map %d,%d,%d buffer map %d,%d,%d,%d\n Test:  ",
@@ -425,19 +479,26 @@ int config_and_run_ap_container_test2(std::vector<CApp>& ca, std::vector<CWorker
   int32_t  tprop[5], offset, nBytes;
 
   // Set the consumer mode
+#if old
   offset = offsetof(ConsumerWorkerProperties, transferMode);
   nBytes = sizeof( uint32_t );
   tprop[0] = ConsumerConsume;
   CONSUMER.worker->write( offset, nBytes, &tprop[0]);
   CONSUMER.worker->afterConfigure();
-
+#else
+  SETULONGPROP("consumer.transferMode", ConsumerConsume);
+#endif
 
   // Set the producer mode
+#if old
   offset = offsetof(ProducerWorkerProperties, transferMode);
   nBytes = sizeof( uint32_t );
   tprop[0] = ProducerAdvance;
   PRODUCER.worker->write( offset, nBytes, &tprop[0]);
   PRODUCER.worker->afterConfigure();
+#else
+  SETULONGPROP("producer.transferMode", ProducerAdvance);
+#endif
 
   sprintf(tnamebuf, "Advanced port managment test (using advance): container map %d,%d,%d buffer map %d,%d,%d,%d\n Test:  ",
           cmap[0], cmap[1], cmap[2], bcmap[0], bcmap[1], bcmap[2], bcmap[3] );
@@ -470,19 +531,27 @@ int config_and_run_ap_container_test3(std::vector<CApp>& ca, std::vector<CWorker
 
 
   // Set the consumer mode
+#if old
   offset = offsetof(ConsumerWorkerProperties, transferMode);
   nBytes = sizeof( uint32_t );
   tprop[0] = ConsumerTake;
   CONSUMER.worker->write(  offset, nBytes, &tprop[0]);
   CONSUMER.worker->afterConfigure();
+#else
+  SETULONGPROP("consumer.transferMode", ConsumerTake);
+#endif
 
 
   // Set the producer mode
+#if old
   offset = offsetof(ProducerWorkerProperties, transferMode);
   nBytes = sizeof( uint32_t );
   tprop[0] = ProducerAdvance;
   PRODUCER.worker->write( offset, nBytes, &tprop[0]);
   PRODUCER.worker->afterConfigure();
+#else
+  SETULONGPROP("producer.transferMode", ProducerAdvance);
+#endif
 
 
   sprintf(tnamebuf, "Advanced port managment test (using take): container map %d,%d,%d buffer map %d,%d,%d,%d\n Test:  ",
