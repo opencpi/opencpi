@@ -1,0 +1,283 @@
+<!-- OCS for AD9361 device control (ad9361_config.hdl) via ADI's no-OS software
+     (see ad9361/sw/ad9361_api.h from 
+     https://github.com/analogdevicesinc/no-os.git). This OCS essentially provides
+     a one-to-one mapping between component properties and the no-OS API function
+     calls. Everything herein is specific to the no-os.git commit ID
+     e99393f2ba7f244c8328393e5d13d20e54a24419 (which was the latest commit from
+     the 2016_R2 branch at the time of writing this OWD) -->
+<componentspec>
+
+  <!--********  WORKER-SPECIFIC PARAMETERS (independent of libad9361)     ********-->
+
+  <property name='rx_nchannels'          parameter='1'   type='uchar'   default='2'/>
+  <property name='tx_nchannels'          parameter='1'   type='uchar'   default='2'/>
+
+  <!--******** PARAMETERS MATCHING MACROS/ENUMS IN LIBAD9361 HEADER FILES ********-->
+
+  <!-- macros in ad9361_api.h - applies to the ..._en_dis property values         -->
+  <property name='ENABLE'                parameter='1'   type='uchar'   default='1'/>
+  <property name='DISABLE'               parameter='1'   type='uchar'   default='0'/>
+
+  <!-- macros in ad9361_api.h - used for rf_port_input                            -->
+  <property name='A_BALANCED'            parameter='1'   type='ulong'   default='0'/>
+  <property name='B_BALANCED'            parameter='1'   type='ulong'   default='1'/>
+  <property name='C_BALANCED'            parameter='1'   type='ulong'   default='2'/>
+  <property name='A_N'                   parameter='1'   type='ulong'   default='3'/>
+  <property name='A_P'                   parameter='1'   type='ulong'   default='4'/>
+  <property name='B_N'                   parameter='1'   type='ulong'   default='5'/>
+  <property name='B_P'                   parameter='1'   type='ulong'   default='6'/>
+  <property name='C_N'                   parameter='1'   type='ulong'   default='7'/>
+  <property name='C_P'                   parameter='1'   type='ulong'   default='8'/>
+  <property name='TX_MON1'               parameter='1'   type='ulong'   default='9'/>
+  <property name='TX_MON2'               parameter='1'   type='ulong'   default='10'/>
+  <property name='TX_MON1_2'             parameter='1'   type='ulong'   default='11'/>
+
+  <!-- macros in ad9361_api.h - used for tx_rf_port_output                        -->
+  <property name='TXA'                   parameter='1'   type='ulong'   default='0'/>
+  <property name='TXB'                   parameter='1'   type='ulong'   default='1'/>
+
+  <!-- en_state_machine_mode                                                      -->
+  <property name='ENSM_MODE_TX'          parameter='1'   type='long'    default='0'/>
+  <property name='ENSM_MODE_RX'          parameter='1'   type='long'    default='1'/>
+  <property name='ENSM_MODE_ALERT'       parameter='1'   type='long'    default='2'/>
+  <property name='ENSM_MODE_FDD'         parameter='1'   type='long'    default='3'/>
+  <property name='ENSM_MODE_WAIT'        parameter='1'   type='long'    default='4'/>
+  <property name='ENSM_MODE_SLEEP'       parameter='1'   type='long'    default='5'/>
+  <property name='ENSM_MODE_PINCTRL'     parameter='1'   type='long'    default='6'/>
+  <property name='ENSM_MODE_PINCTRL_FDD_INDEP' parameter='1' type='long' default='7'/>
+
+  <!-- rx_lo_int_ext and tx_lo_int_ext                                            -->
+  <property name='INT_LO'                parameter='1'   type='uchar'   default='0'/>
+  <property name='EXT_LO'                parameter='1'   type='uchar'   default='1'/>
+
+  <!-- rx_gain_control_mode                                                       -->
+  <property name='RF_GAIN_MGC'           parameter='1'   type='uchar'   default='0'/>
+  <property name='RF_GAIN_FASTATTACK_AGC' parameter='1'  type='uchar'   default='1'/>
+  <property name='RF_GAIN_SLOWATTACK_AGC' parameter='1'  type='uchar'   default='2'/>
+  <property name='RF_GAIN_HYBRID_AGC'    parameter='1'   type='uchar'   default='3'/>
+
+  <!-- ad9361.h's fir_dest enum (applies to set rx_fir_config.rx and set tx_fir_config.tx -->
+  <property name='FIR_TX1'               parameter='1'   type='uchar'   default='0x01'/>
+  <property name='FIR_TX2'               parameter='1'   type='uchar'   default='0x02'/>
+  <property name='FIR_TX1_TX2'           parameter='1'   type='uchar'   default='0x03'/>
+  <property name='FIR_RX1'               parameter='1'   type='uchar'   default='0x81'/>
+  <property name='FIR_RX2'               parameter='1'   type='uchar'   default='0x82'/>
+  <property name='FIR_RX1_RX2'           parameter='1'   type='uchar'   default='0x83'/>
+  <property name='FIR_IS_RX'             parameter='1'   type='uchar'   default='0x80'/>
+
+  <!-- ad9361.h definitions (applies to one_rx_one_tx_mode_use_... values)        -->
+  <property name='RX_1'                  parameter='1'   type='uchar'   default='1'/>
+  <property name='RX_2'                  parameter='1'   type='uchar'   default='2'/>
+  <property name='TX_1'                  parameter='1'   type='uchar'   default='1'/>
+  <property name='TX_2'                  parameter='1'   type='uchar'   default='2'/>
+
+  <!-- ad9361.h's ad9361_pdata_rx_freq enum (applies to ...trx_path_clks property's array indices) -->
+  <property name='BPLL_FREQ'             parameter='1'   type='uchar'   default='0'/>
+  <property name='ADC_FREQ'              parameter='1'   type='uchar'   default='1'/>
+  <property name='R2_FREQ'               parameter='1'   type='uchar'   default='2'/>
+  <property name='R1_FREQ'               parameter='1'   type='uchar'   default='3'/>
+  <property name='CLKRF_FREQ'            parameter='1'   type='uchar'   default='4'/>
+  <property name='RX_SAMPL_FREQ'         parameter='1'   type='uchar'   default='5'/>
+  <property name='NUM_RX_CLOCKS'         parameter='1'   type='uchar'   default='6'/>
+
+  <!-- ad9361.h's ad9361_pdata_tx_freq enum (applies to ...trx_path_clks property's array indices) -->
+  <property name='IGNORE'                parameter='1'   type='uchar'   default='0'/>
+  <property name='DAC_FREQ'              parameter='1'   type='uchar'   default='1'/>
+  <property name='T2_FREQ'               parameter='1'   type='uchar'   default='2'/>
+  <property name='T1_FREQ'               parameter='1'   type='uchar'   default='3'/>
+  <property name='CLKTF_FREQ'            parameter='1'   type='uchar'   default='4'/>
+  <property name='TX_SAMPL_FREQ'         parameter='1'   type='uchar'   default='5'/>
+  <property name='NUM_TX_CLOCKS'         parameter='1'   type='uchar'   default='6'/>
+
+  <!-- enums in ad9361.h (applies to bist_tone mode value and bist_prbs value)                     -->
+  <property name='BIST_DISABLE'          parameter='1'   type='ulong'   default='0'/>
+  <property name='BIST_INJ_TX'           parameter='1'   type='ulong'   default='1'/> <!-- not recommended for use with bist_prbs -->
+  <property name='BIST_INJ_RX'           parameter='1'   type='ulong'   default='2'/>
+
+  <!-- macros in ad9361_api.h (applies to no_ch_mode property value)              -->
+  <property name='MODE_1x1'              parameter='1'   type='uchar'   default='1'/>
+  <property name='MODE_2x2'              parameter='1'   type='uchar'   default='2'/>
+
+  <!-- macros in ad9361_api.h (applies to trx_fir_rate_gov property value         -->
+  <property name='HIGHEST_OSR'           parameter='1'   type='ulong'   default='0'/>
+  <property name='NOMINAL_OSR'           parameter='1'   type='ulong'   default='1'/>
+
+  <!--**** PROPERTIES CORRESPONDING TO libad9361 "STANDARD" API (ad9361_api.h)****-->
+
+  <property name='ad9361_rf_phy' type='struct'    volatile='1' description=''>
+    <member name='clk_refin'                            type='struct'>
+      <member name='rate'                               type='ulong'/>
+    </member>
+    <member name='pdata'                                type='struct'>
+      <member name='rx2tx2'                             type='bool' description='When this value is false, the read values from the second index of following properties should be ignored: rx_gain_control_mode, rx_fir_config_read, tx_fir_config_read, and tx_rssi. When this value is false, the written values to the second index of the following properties will not be applied: rx_rf_gain, rx_gain_control_mode, and tx_attenuation.'/>
+      <member name='fdd'                                type='bool'/>
+      <member name='use_extclk'                         type='bool'/>
+      <member name='dcxo_coarse'                        type='ulong'/>
+      <member name='dcxo_fine'                          type='ulong'/>
+    </member>
+  </property>
+
+  <property name='ad9361_init' type='struct'                 initial='1'  default='reference_clk_rate 40e6,one_rx_one_tx_mode_use_rx_num 1,one_rx_one_tx_mode_use_tx_num 1,frequency_division_duplex_mode_enable 1,xo_disable_use_ext_refclk_enable 0,two_t_two_r_timing_enable 0,pp_tx_swap_enable 1,pp_rx_swap_enable 1,tx_channel_swap_enable 1,rx_channel_swap_enable 1,delay_rx_data 0,rx_data_clock_delay 0,rx_data_delay 4,tx_fb_clock_delay 7,tx_data_delay 0' description='Initialize the AD9361 part.'>
+    <member name='reference_clk_rate'                    type='ulong'/>
+    <member name='one_rx_one_tx_mode_use_rx_num'         type='uchar' description='Set to RX_1 or RX_2 to set desired channel in 1x1 mode. For example, When set to RX_2 mode, the R1 and R2 data paths in the timing diagrams will be swapped.'/>
+    <member name='one_rx_one_tx_mode_use_tx_num'         type='uchar' description='Set to TX_1 or TX_2 to set desired channel in 1x1 mode. For example, When set to TX_2 mode, the T1 and T2 data paths in the timing diagrams will be swapped.'/>
+    <member name='frequency_division_duplex_mode_enable' type='uchar' description='Acceptable values are 1 for true and 0 for false.'/>
+    <member name='xo_disable_use_ext_refclk_enable'      type='uchar'/>
+    <member name='two_t_two_r_timing_enable'             type='bool' description='Setting to true forces 2R2T timing regardless of number of enabled RX/TX channels. Recommended to set to false if only using at most one RX or one TX channel for the duration of an application (this will lower needed DATA_CLK_P rate). Setting to true has the advantage of ensuring that the timing diagram for each of the RX and TX data paths will not change when dynamically enabling/disabling any of the 4 possible channels (2 RX, 2 TX) at runtime - this comes at the cost of a higher required DATA_CLK_P rate).'/>
+    <member name='pp_tx_swap_enable'                     type='uchar' description='Setting to 1 swaps I and Q (performs spectral inversion). Setting to 0 does not swap.'/>
+    <member name='pp_rx_swap_enable'                     type='uchar' description='Setting to 1 swaps I and Q (performs spectral inversion). Setting to 0 does not swap.'/>
+    <member name='tx_channel_swap_enable'                type='uchar' description='Setting to 1 swaps RX channels 0 and 1. Setting to 0 does not swap.'/>
+    <member name='rx_channel_swap_enable'                type='uchar' description='Setting to 1 swaps RX channels 0 and 1. Setting to 0 does not swap.'/>
+    <member name='delay_rx_data'                         type='ulong' description="Sets the delay of the Rx data relative to Rx frame, measured in 1/2 DATA_CLK cycles for DDR and full DATA_CLK cycles for SDR. Valid values are 0, 1, 2, or 3."/>
+    <member name='rx_data_clock_delay'                   type='ulong'/>
+    <member name='rx_data_delay'                         type='ulong'/>
+    <member name='tx_fb_clock_delay'                     type='ulong' description="Delay in multiples of 0.3 ns to add to the FB_CLK_P pin inside the AD9361 in order to account for the setup/hold requirements of the FB_CLK_P and TX data bus pins. Valid range is [0 15]. This value should be calculated using the setup/hold requiremed values and the reported skews in the FPGA bitstream timing report for the FB_CLK_P, TX data bus, and TX_FRAME_P pins."/>
+    <member name='tx_data_delay'                         type='ulong' description="Delay in multiples of 0.3 ns to add to the TX data bus and TX_FRAME_P pins inside the AD9361 in order to account for their setup/hold requirements. Valid range is [0 15]. This value should be calculated using the setup/hold requiremed values and the reported skews in the FPGA bitstream timing report for the FB_CLK_P, TX data bus, and TX_FRAME_P pins."/>
+  </property>
+  <property name='en_state_machine_mode'                 type='ulong'     volatile='1' writable='1' default='ENSM_MODE_ALERT' description='Get/set the Enable State Machine (ENSM) mode. Value should be set using one of the ENSM_MODE_ parameters.'/>
+  <property name='rx_rf_gain'            arraylength='rx_nchannels' type='long'      volatile='1' writable='1' default='0,0'  description="Get/set the receive RF gain for the selected channel. The gain is in dB. Note that the written value to the second index of this property will not be applied when this worker's ad9361_rf_phy.pdata.rx2tx2 property member is false."/>
+  <property name='rx_rf_bandwidth'                       type='ulong'     volatile='1' writable='1' default='18e6'            description='Get/set the RX RF bandwidth. The bandwidth is in dB.'/>
+  <property name='rx_sampling_freq'                      type='ulong'     volatile='1'                                        description='Get the RX sampling frequency. The frequency is in Hz. This value should be equivalent to the tx_sampling_freq property value multiplied by the value of the rx_sampling_rate_multiplier property.'/>
+  <property name='rx_lo_freq'                            type='ulonglong' volatile='1' writable='1' default='2.4e9'           description='Get/set the RX LO frequency. The frequency is in Hz.'/>
+  <property name='rx_lo_int_ext'                         type='uchar'     readable='1' writable='1' default='INT_LO'          description='Switch between the internal and external LO. The RX LO is affected.'/>
+  <property name='rx_rssi'               arraylength='rx_nchannels' type='struct'    volatile='1'                             description='Get the RSSI for the selected channel.'>
+    <member name='ant'                                   type='ulong' description='Antenna number for which RSSI is reported.'/>
+    <member name='symbol'                                type='ulong' description='Runtime RSSI.'/>
+    <member name='preamble'                              type='ulong' description='Initial RSSI.'/>
+    <member name='multiplier'                            type='long'  description='Multiplier to convert reported RSSI.'/>
+    <member name='duration'                              type='uchar' description='Duration to be considered for measuring.'/>
+  </property>
+  <property name='rx_gain_control_mode'  arraylength='rx_nchannels' type='uchar'     volatile='1' writable='1' default='RF_GAIN_MGC,RF_GAIN_MGC' description="Get/set the gain control mode for the selected channel. Note that, when this worker's ad9361_rf_phy.pdata.rx2tx2 property member is false, the value read from the second index of this property should be ignored and the value written to the second index won't be applied."/>
+  <property name='rx_fir_config_write'                   type='struct' default='rx 0x83,rx_gain 0,rx_dec 1,rx_coef {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},rx_coef_size 128'              writable='1'            >
+    <member name='rx'                                    type='ulong' />
+    <member name='rx_gain'                               type='long'  />
+    <member name='rx_dec'                                type='ulong' />
+    <member name='rx_coef'             arraylength='128' type='short' />
+    <member name='rx_coef_size'                          type='uchar' />
+    <!-- member name='rx_path_clks'          arraylength='6' type='ulong' /--> <!-- rx_path_clks is a member of the struct but ad9361_set_rx_fir_config ignores this value, commented it out to avoid the scenario where end user thinks they are setting this value when they really aren't -->
+    <!-- member name='rx_bandwidth'                          type='ulong' /--> <!-- rx_bandwidth is a member of the struct but ad9361_set_rx_fir_config ignores this value, commented it out to avoid the scenario where end user thinks they are setting this value when they really aren't -->
+  </property>
+  <property name='rx_fir_config_read'    arraylength='rx_nchannels' type='struct' volatile='1'    description="Note that the readback value of the second index of this property should be ignored when this worker's ad9361_rf_phy.pdata.rx2tx2 property member is false."             >
+    <!-- member name='rx'                                    type='ulong' description=''/--> <!-- rx is a member of the struct but the information conveyed is redundant -->
+    <member name='rx_gain'                               type='long'  />
+    <member name='rx_dec'                                type='ulong' />
+    <member name='rx_coef'             arraylength='128' type='short' />
+    <member name='rx_coef_size'                          type='uchar' />
+    <!-- member name='rx_path_clks'          arraylength='6' type='ulong' /--> <!-- rx_path_clks is a member of the struct but ad9361_set_rx_fir_config ignores this value, commented it out to avoid the scenario where end user thinks they are setting this value when they really aren't -->
+    <!-- member name='rx_bandwidth'                          type='ulong' /--> <!-- rx_bandwidth is a member of the struct but ad9361_set_rx_fir_config ignores this value, commented it out to avoid the scenario where end user thinks they are setting this value when they really aren't -->
+  </property>
+  <property name='rx_fir_en_dis'                         type='uchar'     volatile='1' writable='1' default='DISABLE' description='Get/set the status of the RX FIR filter. The status is one of the parameter values ENABLE or DISABLE.'/>
+  <property name='rx_rfdc_track_en_dis'                  type='uchar'     volatile='1' writable='1' default='DISABLE' description='Get/set the status of the RX RFDC Tracking. The status is one of the parameter values ENABLE or DISABLE.'/>
+>
+  <property name='rx_bbdc_track_en_dis'                  type='uchar'     volatile='1' writable='1' default='DISABLE' description='Get/set the status of the RX BasebandDC Tracking. The status is one of the parameter values ENABLE or DISABLE.'/>
+
+  <property name='rx_quad_track_en_dis'                  type='uchar'     volatile='1' writable='1' default='DISABLE' description='Get/set the status of the RX Quadrate Tracking. The status is one of the parameter values ENABLE or DISABLE.'/>
+  <property name='rx_rf_port_input'                      type='ulong'     volatile='1' writable='1' default='A_BALANCED' description='Get/set the RX RF input port.'/>
+  <property name='rx_fastlock_store'                     type='ulong'                  writable='1'             description='Store RX fastlock profile. Writing a value will initiate the process of creating an RX fast lock profile and store it in the AD9361 in the RX profile index indicated by the value written.'/>
+  <property name='rx_fastlock_recall'                    type='ulong'                  writable='1'             description='Recall specified RX fastlock profile. Writing a value will initiate the process of applying an RX fast lock profile that was previously stored inside the AD9361. The written value indicates the index of the RX profile to be applied.'/>
+  <property name='rx_fastlock_load'                      type='struct'                 writable='1'            >
+    <member name='ad9361_profile_id'                     type='ulong'                       description="Profile ID/index of the AD9361 profile which is to be overwritten by the indicated worker profile."/>
+    <member name='worker_profile_id'                     type='ulong'                       description="Profile ID of the worker profile which will be loaded into the AD9361."/>
+  </property>
+  <property name='rx_fastlock_save'                      type='struct'                 writable='1'            >
+    <member name='ad9361_profile_id'                     type='ulong'                       description="Profile ID/index of the AD9361 profile which will be saved into a worker profile (i.e. in memory within this worker)."/>
+    <member name='worker_profile_id'                     type='ulong'                       description="Profile ID to assign to the profile saved in this worker's memory. This is for future record keeping of profiles saved within this worker."/>
+  </property>
+  <property name='tx_attenuation'        arraylength='tx_nchannels' type='ulong'     volatile='1' writable='1' default='1000,1000' description="Get/set the transmit attenuation for the selected channel. The attenuation is in millidB. Note that the written value to the second index of this property will not be applied when this worker's ad9361_rf_phy.pdata.rx2tx2 property member is false."/>
+  <property name='tx_rf_bandwidth'                       type='ulong'     volatile='1' writable='1' default='18e6'            description='Get/set the TX RF bandwidth. The bandwidth is in dB.'/>
+  <property name='tx_sampling_freq'                      type='ulong'     volatile='1' writable='1' default='30.72e6'         description='Get/set the TX sampling frequency. The frequency is in Hz.'/>
+  <property name='tx_lo_freq'                            type='ulonglong' volatile='1' writable='1' default='2.4e9'           description='Get/set the TX LO frequency. The frequency is in Hz.'/>
+  <property name='tx_lo_int_ext'                         type='uchar'     readable='1' writable='1' default='INT_LO'          description='Switch between the internal and external LO. The TX LO is affected.'/>
+  <property name='tx_fir_config_write'                   type='struct'  default='tx 0x03,tx_gain 0,tx_int 1,tx_coef {1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},tx_coef_size 128'             writable='1'            >
+    <member name='tx'                                    type='ulong' />
+    <member name='tx_gain'                               type='long'  />
+    <member name='tx_int'                                type='ulong' />
+    <member name='tx_coef'             arraylength='128' type='short' />
+    <member name='tx_coef_size'                          type='uchar' />
+    <!-- member name='tx_path_clks'          arraylength='6' type='ulong' /--> <!-- tx_path_clks is a member of the struct but ad9361_set_tx_fir_config ignores this value, commented it out to avoid the scenario where end user thinks they are setting this value when they really aren't -->
+    <!-- member name='tx_bandwidth'                          type='ulong' /--> <!-- tx_bandwidth is a member of the struct but ad9361_set_tx_fir_config ignores this value, commented it out to avoid the scenario where end user thinks they are setting this value when they really aren't -->
+  </property>
+  <property name='tx_fir_config_read'    arraylength='tx_nchannels' type='struct' volatile='1'    description="Note that the readback value of the second index of this property should be ignored when this worker's ad9361_rf_phy.pdata.rx2tx2 property member is false."             >
+    <!-- member name='tx'                                    type='ulong' description=''/--> <!-- tx is a member of the struct but the information conveyed is redundant -->
+    <member name='tx_gain'                               type='long'  />
+    <member name='tx_int'                                type='ulong' />
+    <member name='tx_coef'             arraylength='128' type='short' />
+    <member name='tx_coef_size'                          type='uchar' />
+    <!-- member name='tx_path_clks'          arraylength='6' type='ulong' /--> <!-- tx_path_clks is a member of the struct but ad9361_set_tx_fir_config ignores this value, commented it out to avoid the scenario where end user thinks they are setting this value when they really aren't -->
+    <!-- member name='tx_bandwidth'                          type='ulong' /--> <!-- tx_bandwidth is a member of the struct but ad9361_set_tx_fir_config ignores this value, commented it out to avoid the scenario where end user thinks they are setting this value when they really aren't -->
+  </property>
+  <property name='tx_fir_en_dis'                         type='uchar'     volatile='1' writable='1' default='DISABLE' description='Get/set the status of the TX FIR filter. The status is one of the parameter values ENABLE or DISABLE.'/>
+  <property name='tx_rssi'               arraylength='tx_nchannels' type='ulong'     volatile='1'                             description="Get the TX RSSI for the selected channel. The value read represents the RSSI in millidB. Note that the readback value of the second index of this property should be ignored when this worker's ad9361_rf_phy.pdata.rx2tx2 property member is false."/>
+  <property name='tx_rf_port_output'                     type='ulong'     volatile='1' writable='1' default='TXA' description='Get/set the TX RF output port.'/>
+  <property name='tx_auto_cal_en_dis'                    type='uchar'     volatile='1' writable='1' default='DISABLE' description='Get/set the status of the auto calibration flag. The value should be one of the parameter values ENABLE or DISABLE.'/>
+  <property name='tx_fastlock_store'                     type='ulong'                  writable='1'             description='Store TX fastlock profile. Writing a value will initiate the process of creating a TX fast lock profile and store it in the AD9361 in the TX profile index indicated by the value written.'/>
+  <property name='tx_fastlock_recall'                    type='ulong'                  writable='1'             description='Recall specified TX fastlock profile. Writing a value will initiate the process of applying an TX fast lock profile that was previously stored inside the AD9361. The written value indicates the index of the TX profile to be applied.'/>
+  <property name='tx_fastlock_load'                      type='struct'                 writable='1'            >
+    <member name='ad9361_profile_id'                     type='ulong'                       description="Profile ID/index of the AD9361 profile which is to be overwritten by the indicated worker profile."/>
+    <member name='worker_profile_id'                     type='ulong'                       description="Profile ID of the worker profile which will be loaded into the AD9361."/>
+  </property>
+  <property name='tx_fastlock_save'                      type='struct'                 writable='1'            >
+    <member name='ad9361_profile_id'                     type='ulong'                       description="Profile ID/index of the AD9361 profile which will be saved into a worker profile (i.e. in memory within this worker)."/>
+    <member name='worker_profile_id'                     type='ulong'                       description="Profile ID to assign to the profile saved in this worker's memory. This is for future record keeping of profiles saved within this worker."/>
+  </property>
+  <property name='trx_path_clks'                         type='struct'    volatile='1' writable='1' description='Set the RX and TX path rates.'>
+    <member name='rx_path_clks'          arraylength='NUM_RX_CLOCKS' type='ulong' description='RX path rates buffer. Indices are indicated bye one of the parameter values BPLL_FREQ, ADC_FREQ, R2_FREQ, R1_FREQ, CLKRF_FREQ, and RX_SAMPL_FREQ.'/>
+    <member name='tx_path_clks'          arraylength='NUM_TX_CLOCKS' type='ulong' description='TX path rates buffer. Indices are indicated bye one of the parameter values IGNORE,    DAC_FREQ, T2_FREQ, T1_FREQ, CLKTF_FREQ, and TX_SAMPL_FREQ.'/>
+  </property>
+  <property name='no_ch_mode'                            type='uchar'                  writable='1' description='Set the number of channels mode. Accepted values are one of the parameter values MODE_1x1 or MODE_2x2.'/>
+  <!--property name='do_mcs'/--> <!-- TODO / FIXME - fill in this functionality, which would require synchronization with another instance of this worker somehow... -->
+  <property name='trx_fir_en_dis'                        type='uchar'                  writable='1' description='Enable/disable the TRX FIR filters. Accepted values are one of the parameter values ENABLE or DISABLE.'/>
+  <property name='trx_rate_gov'                          type='ulong'     volatile='1' writable='1' description='Get/set the OSR rate governor. Accepted values are one of the parameter values HIGHEST_OSR or NOMINAL_OSR.'/>
+  <property name='do_calib'                              type='struct'                 writable='1' description='Perform the selected calibration.'>
+    <member name='cal'                                   type='ulong' description='The selected calibration. Accepted values are one of the parameter values TX_QUAD_CAL or RFDC_CAL.'/>
+    <member name='arg'                                   type='long'  description='For TX_QUAD_CAL - the optional RX phase value overwrite (set to zero).'/>
+  </property>
+  <property name='trx_load_enable_fir'                   type='struct'                 writable='1' description='Load and enable TRX FIR filters configurations.'>
+    <member name='rx'                                    type='ulong'/>
+    <member name='rx_gain'                               type='long' />
+    <member name='rx_dec'                                type='ulong'/>
+    <member name='rx_coef'             arraylength='128' type='short'/>
+    <member name='rx_coef_size'                          type='uchar'/>
+    <member name='rx_path_clks'          arraylength='6' type='ulong'/>
+    <member name='rx_bandwidth'                          type='ulong'/>
+    <member name='tx'                                    type='ulong'/>
+    <member name='tx_gain'                               type='long' />
+    <member name='tx_int'                                type='ulong'/>
+    <member name='tx_coef'             arraylength='128' type='short'/>
+    <member name='tx_coef_size'                          type='uchar'/>
+    <member name='tx_path_clks'          arraylength='6' type='ulong'/>
+    <member name='tx_bandwidth'                          type='ulong'/>
+  </property>
+  <property name='do_dcxo_tune_coarse'                   type='ulong'                  writable='1' description='Do DCXO coarse tuning.'/>
+  <property name='do_dcxo_tune_fine'                     type='ulong'                  writable='1' description='Do DCXO fine tuning.'/>
+
+  <!--****** PROPERTIES CORRESPONDING TO libad9361 "ADVANCED" API (ad9361.h) *****-->
+
+  <property name='bist_loopback'                         type='long'      volatile='1' writable='1' description="BIST loopback mode. Valid values are 0 (disables loopback), 1 (loopback AD9361 internal TX-RX), or 2 (loopback (FPGA internal RX-.TX). While a value of 2 is handled by no-os, it is not expected to work with OpenCPI's AD9361 device workers"/>
+  <property name='bist_prbs'                             type='uchar'     volatile='1' writable='1' description='BIST mode. Valid values are either BIST_DISABLE or BIST_INJ_RX.'/>
+  <property name='bist_tone'                             type='struct'    volatile='1' writable='1' description='BIST tone. Valid values are either BIST_DISABLE, BIST_INJ_TX, or BIST_INJ_RX.'>
+    <member name='mode'                                  type='uchar'/>
+    <member name='freq_Hz'                               type='ulong'/>
+    <member name='level_dB'                              type='ulong'/>
+    <member name='mask'                                  type='ulong' description='Valid values are 0, 1, 2, 4, or 8 for no masking, chan 1 I, chan 1 Q, chan 2 I, chan 2 Q masking, respectively.'/>
+  </property>
+
+  <!--  PROPERTIES CORRESPONDING TO FUNCTIONALITY IMPLEMENTED OUTSIDE libad9361   -->
+
+  <property name='rx_sampling_freq_multiplier'           type='uchar'     volatile='1' writable='1' default='1' description='Value values are 1 and 2. 2 is only supported under certain conditions.'/>
+  <property name='bb_pll_is_locked' type='bool' volatile='1'/>
+  <property name='rx_pll_is_locked' type='enum' enums='false,true,unknown' volatile='1'/>
+  <property name='rx_fastlock_delete'                    type='ulong'                  writable='1' description="Performs a deletion of an RX fastlock profile saved in this worker's memory. The profile which is deleted is the one whose profile ID matches the value written to this property."/>
+  <property name='tx_pll_is_locked' type='enum' enums='false,true,unknown' volatile='1'/>
+  <property name='tx_fastlock_delete'                    type='ulong'                  writable='1' description="Performs a deletion of an RX fastlock profile saved in this worker's memory. The profile which is deleted is the one whose profile ID matches the value written to this property."/>
+  <property name='rx_vco_divider'   type='enum' enums='2,4,8,16,32,64,128,external_2,invalid' volatile='1'/>
+  <property name='rx_vco_n_integer'    type='ushort' volatile='1'/>
+  <property name='rx_vco_n_fractional' type='ulong'  volatile='1'/>
+  <property name='rx_ref_divider'   type='enum' enums='1, HALF, FOURTH, 2' volatile='1'/>
+  <property name='tx_vco_divider'   type='enum' enums='2,4,8,16,32,64,128,external_2,invalid' volatile='1'/>
+  <property name='tx_vco_n_integer'    type='ushort' volatile='1'/>
+  <property name='tx_vco_n_fractional' type='ulong'  volatile='1'/>
+  <property name='tx_ref_divider'   type='enum' enums='1, HALF, FOURTH, 2' volatile='1'/>
+  <property name='fpga_data_mode' type='enum' enums='cmos_singleport_halfduplex,cmos_singleport_fullduplex,cmos_dualport_halfduplex,cmos_dualport_fullduplex,lvds_dualport_fullduplex,invalid' volatile='1'/>
+  <property name='DATA_CLK_P_rate_Hz' type='double' volatile='1'/>
+</componentspec>

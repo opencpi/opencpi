@@ -1,0 +1,131 @@
+<!-- ADI ad9361 FMC card, officially named AD_FMCOMMS3-EBZ
+     This card definition maps the devices' signals to the slot's signals
+
+     The ad9361 chip is supported by other device workers, in hdl/devices/ad9361*
+
+     In addition to the ad9361 config device, this "card" also has;
+     - AD7291BCPZ 8 channel ADC for monitoring power supplies and temperation, on the I2C
+     - M24C02-WDW6TP 256x8 EEPROM also on I2C
+     - Several voltage regulators that are not programmable or observable except via the above ADC
+
+     So we have 3 devices: ad9361 (SPI), ad7291(I2C), and stm_mc24C02(I2C)
+
+     Since the ad9361 is such a multifunction device it uses multiple device workers
+
+     ad9361_config.hdl
+     ad9361_adc.hdl, ad9361_adc.hdl, ad9361_adc_sub.hdl for the ADC
+     ad9361_dac.hdl, ad9361_dac.hdl, ad9361_dac_sub.hdl for the DAC
+     ad9361_sub.hdl for sharing multiple wires (including SPI) between these functions.
+
+     While the ad9361 has lots of clocking and data options, none of them are restricted nor controlled by the fmcomms3
+     since all the signals are wired directly to the FPGA except the crystal.
+-->
+<card type="fmc_lpc">
+  <device worker='ad9361_adc'/>
+  <device worker='ad9361_adc'/>
+                                                  <!--ad9361 ad9361     
+                                                        pin  name -->
+  <device worker='ad9361_adc_sub'>
+    <Signal name='RX_FRAME_P'  slot='LA01_P_CC'/> <!--  G8   -->
+    <Signal name='RX_FRAME_N'  slot='LA01_N_CC'/> <!--  G7   -->
+
+    <!-- TODO / FIXME - enable these properties, there is currently a bug
+         preventing them from being enabled -->
+
+    <!-- The LVDS configuration is not a hard requirement but it is included
+         here since it is recommended by Analog Devices for FMCOMMS3 -->
+    <!--Property name='iostandard'  value='LVDS'/-->
+
+    <!-- value must be dual when iostandard parameter value is LVDS -->
+    <!--Property name='port_config'      value='dual'/-->
+
+    <!-- value must be full_duplex when iostandard parameter value is LVDS-->
+    <!--Property name='duplex_config'    value='full_duplex'/-->
+
+    <!-- value must be DDR when iostandard parameter value is LVDS -->
+    <!--Property name='data_rate_config' value='DDR'/-->
+
+  </device>
+
+  <device worker='ad9361_dac'/>
+  <device worker='ad9361_dac'/>
+  <device worker='ad9361_dac_sub'>
+    <Signal name='FB_CLK_P'    slot='LA08_P'/>    <!--  G12  -->
+    <Signal name='FB_CLK_N'    slot='LA08_N'/>    <!--  G13  -->
+    <Signal name='TX_FRAME_P'  slot='LA09_P'/>    <!--  D14  -->
+    <Signal name='TX_FRAME_N'  slot='LA09_N'/>    <!--  D15  -->
+
+    <!-- TODO / FIXME - enable these properties, there is currently a bug
+         preventing them from being enabled -->
+
+    <!-- The LVDS configuration is not a hard requirement but it is included
+         here since it is recommended by Analog Devices for FMCOMMS3 -->
+    <!--Property name='iostandard'  value='LVDS'/-->
+
+    <!-- value must be dual when iostandard parameter value is LVDS -->
+    <!--Property name='port_config'      value='dual'/-->
+
+    <!-- value must be full_duplex when iostandard parameter value is LVDS-->
+    <!--Property name='duplex_config'    value='full_duplex'/-->
+
+    <!-- value must be DDR when iostandard parameter value is LVDS -->
+    <!--Property name='data_rate_config' value='DDR'/-->
+
+  </device>
+  <device worker='ad9361_spi'>
+    <Signal name='SPI_DI'      slot='LA27_P'/>    <!--  C26  -->
+    <Signal name='SPI_CLK'     slot='LA26_N'/>    <!--  D27  -->
+    <Signal name='RESETB'      slot='LA28_P'/>    <!--  H31  -->
+    <Signal name='SPI_ENB'     slot='LA26_P'/>    <!--  D26  -->
+    <Signal name='SPI_DO'      slot='LA27_N'/>    <!--  C27  -->
+  </device>
+  <device worker='ad9361_data_sub'>
+    <Signal name='DATA_CLK_P'  slot='LA00_P_CC'/> <!--  G11  -->
+    <Signal name='DATA_CLK_N'  slot='LA00_N_CC'/> <!--  H11  -->
+    <Signal name='P0_D(0)'     slot='LA11_N'/>    <!--  H17  TX_D0_N -->
+    <Signal name='P0_D(1)'     slot='LA11_P'/>    <!--  H16  TX_D0_P -->
+    <Signal name='P0_D(2)'     slot='LA12_N'/>    <!--  G16  TX_D1_N -->
+    <Signal name='P0_D(3)'     slot='LA12_P'/>    <!--  G15  TX_D1_P -->
+    <Signal name='P0_D(4)'     slot='LA13_N'/>    <!--  D18  TX_D2_N -->
+    <Signal name='P0_D(5)'     slot='LA13_P'/>    <!--  D17  TX_D2_P -->
+    <Signal name='P0_D(6)'     slot='LA10_N'/>    <!--  C15  TX_D3_N -->
+    <Signal name='P0_D(7)'     slot='LA10_P'/>    <!--  C14  TX_D3_P -->
+    <Signal name='P0_D(8)'     slot='LA14_N'/>    <!--  C19  TX_D4_N -->
+    <Signal name='P0_D(9)'     slot='LA14_P'/>    <!--  C18  TX_D4_P -->
+    <Signal name='P0_D(10)'    slot='LA15_N'/>    <!--  H20  TX_D5_N -->
+    <Signal name='P0_D(11)'    slot='LA15_P'/>    <!--  H19  TX_D5_P -->
+    <Signal name='P1_D(0)'     slot='LA02_N'/>    <!--  H8   RX_D0_N -->
+    <Signal name='P1_D(1)'     slot='LA02_P'/>    <!--  H7   RX_D0_P -->
+    <Signal name='P1_D(2)'     slot='LA03_N'/>    <!--  G10  RX_D1_N -->
+    <Signal name='P1_D(3)'     slot='LA03_P'/>    <!--  G9   RX_D1_P -->
+    <Signal name='P1_D(4)'     slot='LA04_N'/>    <!--  H11  RX_D2_N -->
+    <Signal name='P1_D(5)'     slot='LA04_P'/>    <!--  H10  RX_D2_P -->
+    <Signal name='P1_D(6)'     slot='LA05_N'/>    <!--  D12  RX_D3_N -->
+    <Signal name='P1_D(7)'     slot='LA05_P'/>    <!--  D11  RX_D3_P -->
+    <Signal name='P1_D(8)'     slot='LA06_N'/>    <!--  C11  RX_D4_N -->
+    <Signal name='P1_D(9)'     slot='LA06_P'/>    <!--  C10  RX_D4_P -->
+    <Signal name='P1_D(10)'    slot='LA07_N'/>    <!--  H14  RX_D5_N -->
+    <Signal name='P1_D(11)'    slot='LA07_P'/>    <!--  H13  RX_D5_P -->
+
+    <!-- TODO / FIXME - enable this property, there is currently a bug
+         preventing it from being enabled -->
+    <!-- The LVDS configuration is not a hard requirement but it is included
+         here since it is recommended by Analog Devices for FMCOMMS3 -->
+    <!--Property name='P0_P1_ARE_SWAPPED_p' value='false'/-->
+    <!--Property name='DIFFERENTIAL_p'      value='true'/-->
+    <!--Property name='PORT_CONFIG_p'       value='dual'/-->
+    <!--Property name='DUPLEX_CONFIG_p'     value='full_duplex'/-->
+
+  </device>
+  <device worker='ad9361_config'/>
+  <!-- the ad7291 and mc24c02 are just an I2C slave devices so there are no specific pins -->
+  <device worker='ad7291'>
+    <Signal name='ALERT' slot=''/>
+    <Signal name='PD_RST_N' slot=''/>
+  </device>
+  <device worker='stm_mc24c02'/>
+  <device worker='fmcomms3_i2c'>
+    <Signal name='SCL'        slot='SCL'/>        <!--  C30 -->
+    <Signal name='SDA'        slot='SDA'/>        <!--  C31 -->
+  </device>
+</card>

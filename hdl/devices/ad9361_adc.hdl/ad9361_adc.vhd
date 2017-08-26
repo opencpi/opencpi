@@ -16,87 +16,34 @@
 -- You should have received a copy of the GNU Lesser General Public License
 -- along with this program. If not, see <http://www.gnu.org/licenses/>.
 
--- Lime ADC worker
-library IEEE, ocpi;
-use IEEE.std_logic_1164.all, ieee.numeric_std.all, ocpi.types.all;
+-- THIS FILE WAS ORIGINALLY GENERATED ON Thu Mar 23 18:26:07 2017 EDT
+-- BASED ON THE FILE: ad9361_adc.xml
+-- YOU *ARE* EXPECTED TO EDIT IT
+-- This file initially contains the architecture skeleton for worker: ad9361_adc
+
+library IEEE; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;
+library ocpi; use ocpi.types.all; -- remove this to avoid all ocpi name collisions
 library util; use util.util.all;
 architecture rtl of ad9361_adc_worker is
+  constant adc_width : positive := 12; -- must not be > 16 due to WSI width
   -- FIFO parameters
-  constant fifo_width : natural := 24; -- the fifo is just wide enough to feed lime DAC
-  constant fifo_depth : natural := 64; -- why? how about 16 for SRL?
+  constant fifo_width : natural := (adc_width*2); -- the fifo is just wide enough for ADC samples
+
   -- CTL/WSI clock domain
-  signal wsi_data     : std_logic_vector(23 downto 0);
-  signal div_ctl_clk  : std_logic;     -- the divided control clock
+  signal wsi_data : std_logic_vector((adc_width*2)-1 downto 0);
   -- ADC clock domain
-  signal adc_clk      : std_logic;
-  signal adc_clk_n    : std_logic;
-  signal adc_clk_bufg : std_logic;
-  signal adc_data     : std_logic_vector(23 downto 0);
-  signal adc_give     : bool_t;
-  signal rxd_r        : std_logic_vector(11 downto 0);
-  signal hold_i_r     : std_logic_vector(11 downto 0); -- hold I
-  signal hold_q_r     : std_logic_vector(11 downto 0); -- hold Q
-  signal rx_iq_sel_r  : std_logic;
+  signal adc_data : std_logic_vector((adc_width*2)-1 downto 0);
 begin
   -- Take data out of the FIFO and sign extend each I/Q part
-  out_out.data             <= (31 downto 28 => wsi_data(23)) & wsi_data(23 downto 12) &
-                              (15 downto 12 => wsi_data(11)) & wsi_data(11 downto 0);
-  ----------------------------------------------------------------------------------
-  ---- ADC Sample Clock choices
-  ----------------------------------------------------------------------------------
-  ---- 1. We are wired to the RX_CLK_OUT source-synchronous clock from the lime, and use it.
-  ---- 2. We get a copy of what is wired to the lime's RX_CLK input, and use that.
-  ---- 3. We get a clock that *we* are supposed to drive to the lime RX_CLK, and use that.
-  ---- 4. We divide-down the control clock, use it, and drive RX_CLK
-  ---- 5. We use a container clock, use that, and drive RX_CLK
-  --adc_clk <= rx_clk_out when its(USE_CLK_OUT_p) else
-  --           rx_clk_in when its(USE_CLK_IN_p) else
-  --           ctl_in.clk when its(USE_CTL_CLK_p) else
-  --           sample_clk;
-  --rx_clk <= adc_clk when its(DRIVE_CLK_p) else '0';
-  adc_clk <= dev_in.DATA_CLK_p;
-  adc_clk_n <= not adc_clk;
-
-  --Place ADC clock on global buffer for use in processing
-  buf_adc : buffer_clock_global
-    port map(
-      clk => adc_clk_n,
-      clk_buffered => adc_clk_bufg
-      );
-
-  --Register data and IQ select
-  adc_regs : process(adc_clk_bufg)
-  begin
-    if rising_edge(adc_clk_bufg) then
-      if ctl_in.reset = '1' then
-        rxd_r <= (others => '0');
-        rx_iq_sel_r <= '1';
-      else
-        rxd_r <= rx_d_p & rx_d_n;
-        rx_iq_sel_r <= not rx_iq_sel_r;
-      end if;
-    end if;
-  end process;
-  
-  -- ADC Clocked process: we just need to hold the I value until the corresponding Q value
-  -- is available to clock them together into the FIFO.
-  input : process(adc_clk_bufg)
-  begin
-    if rising_edge(adc_clk_bufg) then
-      if rx_iq_sel_r = '1' then
-        hold_i_r <= rxd_r;
-      else
-        hold_q_r <= rxd_r;
-      end if;
-    end if;
-  end process;
+  out_out.data <= (31 downto 16+adc_width => wsi_data((adc_width*2)-1)) & wsi_data((adc_width*2)-1 downto adc_width) &
+                  (15 downto adc_width    => wsi_data(adc_width-1))     & wsi_data(adc_width-1 downto 0);
+  out_out.byte_enable <= (others => '1');
 
   -- Temp signals necessary only because of older VHDL restrictions on "actuals".
-  adc_give             <= to_bool(rx_iq_sel_r = '1');
-  adc_data             <= hold_q_r & hold_i_r;
-  fifo : entity work.adc_fifo
-    generic map(width       => 24,
-                depth       => 64)
+  adc_data <= dev_adc_in.adc_data_Q & dev_adc_in.adc_data_I;
+  fifo : util.util.adc_fifo
+    generic map(width       => fifo_width,
+                depth       => to_integer(fifo_depth))
     port map   (clk         => ctl_in.clk,
                 reset       => ctl_in.reset,
                 operating   => ctl_in.is_operating,
@@ -110,7 +57,11 @@ begin
                 overrun     => props_out.overrun,
                 messageSize => props_in.messageSize,
                 -- In ADC clock domain
-                adc_clk     => adc_clk_bufg,
-                adc_give    => adc_give,
+                adc_clk     => dev_adc_in.adc_clk,
+                adc_give    => dev_adc_in.adc_give,
                 adc_data    => adc_data);
+
+  dev_adc_out.present <= '1';
+
 end rtl;
+

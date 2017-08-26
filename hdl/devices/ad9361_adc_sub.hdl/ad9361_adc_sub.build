@@ -1,0 +1,84 @@
+<build>
+  <!-- LVDS mode -->
+  <configuration id='0'>
+    <parameter name='ocpi_debug' value='false'/>
+    <parameter name='ocpi_endian' value='little'/>
+    <parameter name='DIFFERENTIAL_p'      value='true'/>
+    <parameter name='PORT_CONFIG_p'       value='dual'/>
+    <parameter name='DUPLEX_CONFIG_p'     value='full_duplex'/>
+    <parameter name='DATA_RATE_CONFIG_p'  value='DDR'/>
+  </configuration>
+  <!-- TODO / FIXME - comment in CMOS modes once supported -->
+  <!-- CMOS Single Port Half Duplex SDR mode -->
+  <!--configuration id='1'>
+    <parameter name='ocpi_debug' value='false'/>
+    <parameter name='ocpi_endian' value='little'/>
+    <parameter name='DIFFERENTIAL_p'      value='false'/>
+    <parameter name='PORT_CONFIG_p'       value='single'/>
+    <parameter name='DUPLEX_CONFIG_p'     value='half_duplex'/>
+    <parameter name='DATA_RATE_CONFIG_p'  value='SDR'/>
+  </configuration-->
+  <!-- CMOS Single Port Full Duplex SDR mode -->
+  <!--configuration id='2'>
+    <parameter name='ocpi_debug' value='false'/>
+    <parameter name='ocpi_endian' value='little'/>
+    <parameter name='DIFFERENTIAL_p'      value='false'/>
+    <parameter name='PORT_CONFIG_p'       value='single'/>
+    <parameter name='DUPLEX_CONFIG_p'     value='full_duplex'/>
+    <parameter name='DATA_RATE_CONFIG_p'  value='SDR'/>
+  </configuration-->
+  <!-- CMOS Dual Port Half Duplex SDR mode -->
+  <!--configuration id='3'>
+    <parameter name='ocpi_debug' value='false'/>
+    <parameter name='ocpi_endian' value='little'/>
+    <parameter name='DIFFERENTIAL_p'      value='false'/>
+    <parameter name='PORT_CONFIG_p'       value='dual'/>
+    <parameter name='DUPLEX_CONFIG_p'     value='half_duplex'/>
+    <parameter name='DATA_RATE_CONFIG_p'  value='SDR'/>
+  </configuration-->
+  <!-- CMOS Dual Port Full Duplex SDR mode -->
+  <!--configuration id='4'>
+    <parameter name='ocpi_debug' value='false'/>
+    <parameter name='ocpi_endian' value='little'/>
+    <parameter name='DIFFERENTIAL_p'      value='false'/>
+    <parameter name='PORT_CONFIG_p'       value='dual'/>
+    <parameter name='DUPLEX_CONFIG_p'     value='full_duplex'/>
+    <parameter name='DATA_RATE_CONFIG_p'  value='SDR'/>
+  </configuration-->
+  <!-- CMOS Single Port Half Duplex DDR mode -->
+  <!--configuration id='5'>
+    <parameter name='ocpi_debug' value='false'/>
+    <parameter name='ocpi_endian' value='little'/>
+    <parameter name='DIFFERENTIAL_p'      value='false'/>
+    <parameter name='PORT_CONFIG_p'       value='single'/>
+    <parameter name='DUPLEX_CONFIG_p'     value='half_duplex'/>
+    <parameter name='DATA_RATE_CONFIG_p'  value='DDR'/>
+  </configuration-->
+  <!-- CMOS Single Port Full Duplex DDR mode -->
+  <!--configuration id='6'>
+    <parameter name='ocpi_debug' value='false'/>
+    <parameter name='ocpi_endian' value='little'/>
+    <parameter name='DIFFERENTIAL_p'      value='false'/>
+    <parameter name='PORT_CONFIG_p'       value='single'/>
+    <parameter name='DUPLEX_CONFIG_p'     value='full_duplex'/>
+    <parameter name='DATA_RATE_CONFIG_p'  value='DDR'/>
+  </configuration-->
+  <!-- CMOS Dual Port Half Duplex DDR mode -->
+  <!--configuration id='7'>
+    <parameter name='ocpi_debug' value='false'/>
+    <parameter name='ocpi_endian' value='little'/>
+    <parameter name='DIFFERENTIAL_p'      value='false'/>
+    <parameter name='PORT_CONFIG_p'       value='dual'/>
+    <parameter name='DUPLEX_CONFIG_p'     value='half_duplex'/>
+    <parameter name='DATA_RATE_CONFIG_p'  value='DDR'/>
+  </configuration-->
+  <!-- CMOS Dual Port Full Duplex DDR mode -->
+  <!--configuration id='8'>
+    <parameter name='ocpi_debug' value='false'/>
+    <parameter name='ocpi_endian' value='little'/>
+    <parameter name='DIFFERENTIAL_p'      value='false'/>
+    <parameter name='PORT_CONFIG_p'       value='dual'/>
+    <parameter name='DUPLEX_CONFIG_p'     value='full_duplex'/>
+    <parameter name='DATA_RATE_CONFIG_p'  value='DDR'/>
+  </configuration-->
+</build>

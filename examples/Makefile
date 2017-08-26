@@ -37,6 +37,6 @@ all:
 	$(call DOALL,Building,)
 clean:
 	$(call DOALL,Cleaning,clean)
-	$(AT)rm -r -f *.log
+	$(AT)rm -r -f *.log simulations
 test run:
 	$(call DOALL,Running,run)

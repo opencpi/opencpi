@@ -28,14 +28,14 @@ VivadoZynqTargets=zynq
 # Vivado's core
 # We assume a sub-version of ps7 version 5
 # Older versions of vivado may use v4. These are not
-# directly supported 
+# directly supported
 XilinxZynqCore_base=processing_system7_v5_
 XilinxIpDir=$(call OcpiXilinxVivadoDir,infox)/data/ip/xilinx
 # Look for the most recent version of ps7 in the vivado installation
 XilinxZynqCore=$(notdir $(lastword $(wildcard $(XilinxIpDir)/$(XilinxZynqCore_base)*)))
 XilinxZynq=$(call OcpiXilinxVivadoDir, infox)/data/ip/xilinx/$(XilinxZynqCore)/hdl/verilog
 XilinxZynqPSFiles=atc aw_atc b_atc trace_buffer w_atc
-# The Vivado processing_system7 v5_5 verilog file must be generated. 
+# The Vivado processing_system7 v5_5 verilog file must be generated.
 # This is done via a make rule below.
 
 # Extract the PS7 version to pass to TCL. Replace '_' with '.' for the tool
@@ -98,19 +98,17 @@ endif
 # In order to generate the processing_system7 top verilog file with Vivado,
 # we need to run a series of TCL commands located in vivado/tcl
 vivado_zynq/$(XilinxZynqCore)_processing_system7.v:
-	rm -rf vivado_zynq/tmp ; \
-	mkdir vivado_zynq/tmp ; \
-	cd vivado_zynq/tmp ; \
-	$(call OcpiXilinxVivadoInit); \
-	vivado -mode batch -source ../ps7.tcl -tclargs $(XilinxZynqPS7Version) > ../ps7.log ;\
-	cd ..; \
-	cp tmp/managed_ip_project/managed_ip_project.srcs/sources_1/ip/processing_system7_0/hdl/verilog/$(XilinxZynqCore)_processing_system7.v .; \
-	rm -rf tmp;
+	$(AT)rm -rf vivado_zynq/tmp; \
+	     mkdir vivado_zynq/tmp; \
+	     cd vivado_zynq/tmp; \
+	     $(call OcpiXilinxVivadoInit); \
+	     vivado -mode batch -source ../ps7.tcl -tclargs $(XilinxZynqPS7Version) > ../ps7.log; \
+	     cd ..; \
+	     cp tmp/managed_ip_project/managed_ip_project.srcs/sources_1/ip/processing_system7_0/hdl/verilog/$(XilinxZynqCore)_processing_system7.v .; \
+	     rm -rf tmp;
 
 # Do not remove ps7 top level verilog on clean
 # This will save time
 clean::
-	rm -rf vivado_zynq/tmp; \
-	rm -f vivado_zynq/ps7.log;\
-
-
+	$(AT)rm -rf vivado_zynq/tmp; \
+	     rm -f vivado_zynq/ps7.log;

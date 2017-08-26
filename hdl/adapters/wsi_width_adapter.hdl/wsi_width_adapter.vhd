@@ -39,7 +39,8 @@ begin
     signal give_now     : bool_t;
     signal last_in_now  : bool_t; -- input is last in output word, not qualified by in_in.ready
     -- State
-    signal data_r       : buf_t;
+    signal data_r       : buf_t := (others=> (others=>'0')); --initialization required for simulation test
+    signal opcode_r     : in_OpCode_t;
     signal be_r         : be_t;
     signal full_r       : bool_t; -- we are holding a complete output word
     signal index_r      : unsigned(width_for_max(last_c) downto 0);
@@ -48,7 +49,7 @@ begin
     signal eom_r        : bool_t; -- is the buffered data at EOM? (must be last)
   begin
     assert (wout_c rem win_c) = 0 report "width_out must be a multiple of width_in";
-    could_take     <= out_in.ready or not full_r;
+    could_take     <= out_in.ready or not full_r when not its(last_in_now) else out_in.ready and not full_r;
     take_now       <= could_take and in_in.ready;
     -- is the current input word the last in an output word?
     last_in_now    <= to_bool((in_in.valid and in_in.byte_enable /= slv1(in_in.byte_enable'length)) or
@@ -63,13 +64,14 @@ begin
                       valid_r or in_in.valid when index_r /= 0 else
                       in_in.valid;
     out_out.give   <= give_now;
-    out_out.opcode <= in_in.opcode;
+    out_out.opcode <= in_in.opcode when not its(full_r) and last_in_now else opcode_r;
     g0: for i in 0 to last_c generate
       out_out.data(win_c * i + win_c - 1 downto win_c * i) <= 
         in_in.data        when not its(full_r) and last_in_now and index_r = i else
         data_r(i);
       out_out.byte_enable(in_bytes_c * i + in_bytes_c - 1 downto in_bytes_c * i) <=
         in_in.byte_enable when not its(full_r) and last_in_now and index_r = i else
+        (others => '0') when last_in_now and i > index_r else
         be_r(i);
     end generate g0;
 
@@ -82,6 +84,7 @@ begin
         elsif its(take_now) then
           -- capture into buffer
           data_r(to_integer(index_r)) <= in_in.data;
+          opcode_r                    <= in_in.opcode;
           be_r(to_integer(index_r))   <= in_in.byte_enable;
           if index_r = 0 then
             som_r                     <= in_in.som;
@@ -127,6 +130,7 @@ begin
     signal som_r        : bool_t;  -- we buffered a SOM
     signal eom_r        : bool_t;  -- we buffered an EOM
     signal data_r       : buf_t;   -- Buffer of inword
+    signal opcode_r     : in_OpCode_t;
     signal last_be_r    : std_logic_vector(out_bytes_c-1 downto 0); -- BE for last outword
     -- Compute the byte offset of the last outword in the inword.
     procedure find_extent(in_be : std_logic_vector(in_bytes_c-1 downto 0);
@@ -169,7 +173,7 @@ begin
                       btrue when its(have_data_r) else
                       in_in.valid;
     out_out.data   <= data_r(to_integer(index_r)) when its(have_data_r) else in_data(0);
-    out_out.opcode <= in_in.opcode;
+    out_out.opcode <= opcode_r when (its(on_last_word) or its(eom_r)) else in_in.opcode;
     out_out.byte_enable <= last_be_r when its(on_last_word) else
                            slv1(out_bytes_c) when its(have_data_r) else
                            in_in.byte_enable(out_bytes_c-1 downto 0);
@@ -183,6 +187,7 @@ begin
           last_r      <= (others => '0');
           som_r       <= bfalse;
           eom_r       <= bfalse;
+          opcode_r    <= (others => '0');
         else
           -- Capture everything when we can, whether its there or not
           if its(could_take) then
@@ -191,6 +196,7 @@ begin
             last_be_r <= last_be_in;
             som_r  <= in_in.som;
             eom_r  <= in_in.eom;
+            opcode_r <= in_in.opcode;
             -- If we are actually buffering any data (not passing through), set the indicator
             if take_now and (have_data_r or
                              ((last_word_in /= 0 or not its(out_in.ready)))) then

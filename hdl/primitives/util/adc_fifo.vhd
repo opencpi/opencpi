@@ -20,11 +20,11 @@
 -- Overrun is reported (and cleared) in the WSI clock domain
 -- Should be used in all ADC workers
 -- FIXME: enable SRL FIFOs
-library IEEE, ocpi, bsv;
+library IEEE, ocpi, bsv, util;
 use IEEE.std_logic_1164.all, ieee.numeric_std.all, ocpi.types.all, ocpi.util.all;
 entity adc_fifo is
   generic (width : positive := 32;
-           depth : positive := 64);
+           depth : positive := 16);
   port (-- WSI side signals for WSI input, in its clk domain
         clk         : in  std_logic;
         reset       : in  bool_t;
@@ -55,18 +55,28 @@ architecture rtl of adc_fifo is
   signal fifo_s_enq         : std_logic;
   signal fifo_s_not_full    : std_logic;
 begin
-  -- Give when we're operating and when we can
-  fifo_d_deq <= wsi_ready and operating and fifo_d_not_empty;
-  wsi_valid  <= fifo_d_not_empty;
-  wsi_give   <= fifo_d_deq;
+  -- when FIFO has data to give, ALWAYS dequeue (unless we're operating and wsi is not ready),
+  -- note we will dequeue even when not operating (to alleviate forward pressure from ADC),
+  --fifo_d_deq <= wsi_ready and operating and fifo_d_not_empty;
+  fifo_d_deq <= (not (operating and not wsi_ready)) and fifo_d_not_empty;
+
+  -- sample was dequeued last clock and in operating state this clock
+  --wsi_valid  <= fifo_d_not_empty;
+  wsi_valid  <= fifo_d_deq and operating;
+
+ -- sample was dequeued last clock and operating this clock and output port will accept it this clock
+  --wsi_give   <= fifo_d_deq;
+  wsi_give   <= fifo_d_deq and operating and wsi_ready;
+
   wsi_som    <= to_bool(samplesInMessage_r = 1);
   wsi_eom    <= to_bool(samplesInMessage_r = (messageSize srl 2));
+
   count: process(clk)
   begin
     if rising_edge(clk) then
       if reset or (samplesInMessage_r = (messageSize srl 2) and fifo_d_deq) then
         samplesInMessage_r <= (0 => '1', others => '0');
-      elsif fifo_d_deq = '1' then
+      elsif (fifo_d_deq = '1') and (operating = '1') and (wsi_ready = '1') then
         samplesInMessage_r <= samplesInMessage_r + 1;
       end if;
     end if;
@@ -75,7 +85,11 @@ begin
 
   -- Synchronizing FIFO from the WSI input clock domain to the ADC clock domain
   fifo_s_reset_n <= not adc_reset;
+
+  -- when data is available ALWAYS enqueue (unless FIFO is full)
+  --fifo_s_enq     <= fifo_s_not_full and adc_give and operating;
   fifo_s_enq     <= fifo_s_not_full and adc_give;
+
   fifo : bsv.bsv.SyncFIFO
     generic map (dataWidth => width,
                  depth     => depth,
@@ -91,7 +105,7 @@ begin
                  dD_OUT    => wsi_data);
 
   overrun_event <= not fifo_s_not_full;
-  status : entity work.sync_status
+  status : util.util.sync_status
     port map   (clk         => clk,
                 reset       => reset,
                 operating   => operating,

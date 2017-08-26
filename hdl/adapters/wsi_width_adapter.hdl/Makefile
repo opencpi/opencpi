@@ -17,7 +17,5 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 # Put Makefile customizations for worker wsi_width_adapter.hdl here:
-ParamValues_width_in=8/16/32/64/128
-ParamValues_width_out=8/16/32/64/128
 
 include $(OCPI_CDK_DIR)/include/worker.mk

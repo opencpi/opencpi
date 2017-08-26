@@ -68,7 +68,7 @@ architecture rtl of master is
   constant data_width : natural := n_bytes * byte_width;
   signal reset_i   : Bool_t; -- internal reset, in ports clock domain
   signal ready_i   : Bool_t;
-  signal early_som : Bool_t; -- som has been given without eom or valid
+  signal early_som : std_logic; -- som has been given without eom or valid
   signal last_eom  : Bool_t; -- previous give was eom
   signal opcode_i  : std_logic_vector(opcode'range);
 begin
@@ -102,24 +102,25 @@ begin
              byte_enable when its(valid) else (others => '0');
   MReqInfo <= opcode when last_eom or som else opcode_i;
   -- We need to manage the state at the start of the message
+  early_som <= give and ready_i and (som or last_eom) and not valid and not eom;
   process(Clk) is
   begin
     if rising_edge(Clk) then
       if its(reset_i) then
         ready_i <= bfalse;
         last_eom <= bfalse;
-        early_som <= bfalse;
+        --early_som <= bfalse;
         opcode_i <= (others => '0'); -- perhaps unnecessary, but supresses a warning
       else
         ready_i <= wci_is_operating and not SThreadBusy(0);
       end if;
       if give and ready_i then -- prevent the worker from giving when not ready
         if som or last_eom then
-          if not its(valid) and not its(eom) then
-            early_som <= btrue;
-          else
-            early_som <= bfalse; 
-          end if;
+          -- if not its(valid) and not its(eom) then
+          --   early_som <= btrue;
+          -- else
+          --   early_som <= bfalse; 
+          -- end if;
           opcode_i <= opcode;
         end if;   
         last_eom <= eom;

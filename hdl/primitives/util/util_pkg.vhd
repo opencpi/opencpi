@@ -19,6 +19,7 @@
 -- package for letting VHDL access the verilogs in this library
 library ieee; use ieee.std_logic_1164.all, ieee.numeric_std.all;
 library ocpi; use ocpi.types.all;
+library util; use util.types.all;
 package util is
 component ROM
   generic (WIDTH    : natural;
@@ -73,10 +74,12 @@ component cwd_internal is
 end component cwd_internal;
 
 component TSINOUT_1 is
+  generic (DIFFERENTIAL : boolean := false);
   port    (I  : in    std_logic;  -- OUTPUT to PIN when OE = 1
            OE : in    std_logic;                           -- output enable, 1 = enabled
            O  : out   std_logic;  -- INPUT from pin, all the time
-           IO : inout std_logic); -- pin/pad
+           IO : inout std_logic;  -- pin/pad
+           IOBAR : inout std_logic := 'Z');
 end component TSINOUT_1;
 
 component TSINOUT_N is
@@ -86,6 +89,50 @@ component TSINOUT_N is
            O  : out   std_logic_vector(width-1 downto 0);  -- INPUT from pin, all the time
            IO : inout std_logic_vector(width-1 downto 0)); -- pin/pad
 end component TSINOUT_N;
+
+-- instantiate vendor-specific input buffer primitive(s) (i.e., IBUF/IBUFDS/
+-- IBUFG/IBUFGDS for Xilinx, ALT_INBUF/ALT_INBUF_DIFF plus optional GLOBAL for
+-- Altera) and (optionally) enforce IOSTANDARD
+component BUFFER_IN_1 is
+  generic (IOSTANDARD   :     iostandard_t := UNSPECIFIED;
+           DIFFERENTIAL :     boolean; -- only used if IOSTANDARD is UNSPECIFIED
+           GLOBAL_CLOCK :     boolean       := FALSE);
+  port (   I            : in  std_logic             ;
+           IBAR         : in  std_logic     := 'X'  ; -- only used if relevant
+                                                      -- to IOSTANDARD
+           O            : out std_logic             );
+end component BUFFER_IN_1;
+
+component BUFFER_IN_N is
+  generic (width        :     natural;
+           IOSTANDARD   :     iostandard_t := UNSPECIFIED;
+           DIFFERENTIAL :     boolean; -- only used if IOSTANDARD is UNSPECIFIED
+           GLOBAL_CLOCK :     boolean       := FALSE);
+  port (   I            : in  std_logic_vector(width-1 downto 0);
+           IBAR         : in  std_logic_vector(width-1 downto 0) := (others => 'X'); -- only used if relevant to IOSTANDARD
+           O            : out std_logic_vector(width-1 downto 0));
+end component BUFFER_IN_N;
+
+-- instantiate vendor-specific output buffer primitive(s) (i.e., OBUF/OBUFDS for
+-- Xilinx, ALT_OUTBUF/ALT_OUTBUF_DIFF for Quartus) and (optionally) enforce
+-- IOSTANDARD
+component BUFFER_OUT_1 is
+  generic (IOSTANDARD   :   iostandard_t := UNSPECIFIED;
+           DIFFERENTIAL :   boolean); -- only used if IOSTANDARD is UNSPECIFIED
+  port (   I          : in  std_logic;
+           O          : out std_logic;
+           OBAR       : out std_logic := 'X'); -- only used if relevant to
+                                               -- IOSTANDARD
+end component BUFFER_OUT_1;
+
+component BUFFER_OUT_N is
+  generic (width        :   natural;
+           IOSTANDARD   :   iostandard_t := UNSPECIFIED;
+           DIFFERENTIAL :   boolean); -- only used if IOSTANDARD is UNSPECIFIED
+  port (   I          : in  std_logic_vector(width-1 downto 0);
+           O          : out std_logic_vector(width-1 downto 0);
+           OBAR       : out std_logic_vector(width-1 downto 0) := (others =>'X')); -- only used if relevant to IOSTANDARD
+end component BUFFER_OUT_N;
 
 component SyncRegister is
   generic (
@@ -187,4 +234,55 @@ component srl_fifo
           empty    : out bool_t;
           output   : out std_logic_vector(width-1 downto 0));
 end component srl_fifo;
+
+component sync_status
+  port   (clk         : in  std_logic;
+          reset       : in  bool_t;
+          operating   : in  bool_t;
+          start       : in  bool_t;
+          clear       : in  bool_t;
+          status      : out bool_t;
+          other_clk   : in  std_logic;
+          other_reset : out bool_t;
+          event       : in  bool_t);
+end component sync_status;
+
+component adc_fifo
+  generic(width : positive := 32;
+          depth : positive := 16);
+  port   (clk         : in  std_logic;
+          reset       : in  bool_t;
+          operating   : in  bool_t;
+          wsi_ready   : in  bool_t;
+          wsi_give    : out bool_t;
+          wsi_valid   : out bool_t;
+          wsi_som     : out bool_t;
+          wsi_eom     : out bool_t;
+          wsi_data    : out std_logic_vector(width-1 downto 0);
+          clear       : in  bool_t;
+          overrun     : out bool_t;
+          messageSize : in ulong_t;
+          adc_clk     : in  std_logic;
+          adc_give    : in  std_logic;
+          adc_data    : in  std_logic_vector(width-1 downto 0));
+end component adc_fifo;
+
+component dac_fifo
+  generic(width : positive := 32;
+          depth : positive := 16);
+  port   (clk         : in  std_logic;
+          reset       : in  bool_t;
+          operating   : in  bool_t;
+          wsi_ready   : in  bool_t;
+          wsi_valid   : in  bool_t;
+          wsi_data    : in std_logic_vector(width-1 downto 0);
+          clear       : in  bool_t;
+          wsi_take    : out bool_t;
+          underrun    : out bool_t;
+          dac_clk     : in  std_logic;
+          dac_take    : in bool_t;
+          dac_ready   : out bool_t;
+          dac_data    : out std_logic_vector(width-1 downto 0));
+end component dac_fifo;
+
 end package util;

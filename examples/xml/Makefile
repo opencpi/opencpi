@@ -47,4 +47,4 @@ run: runbias
 test:
 
 clean::
-	rm -f test.out test.output test.outputwrong time_test.out *_run.log
+	rm -r -f test.out test.output test.outputwrong time_test.out *_run.log simulations

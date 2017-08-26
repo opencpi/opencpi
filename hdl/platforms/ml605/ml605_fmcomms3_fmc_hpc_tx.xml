@@ -1,0 +1,13 @@
+<hdlconfig>
+  <device name="fmcomms3_i2c"  card="fmcomms3_hpc" slot="fmc_hpc">
+    <property name="CLK_FREQ_p" value="125e6"/> <!-- we MUST provide to this worker the ml605's control plane clock freq value -->
+    <property name="FMC_GA1" value="0"/> <!-- we MUST provide to this worker the ml605's hardwired value for FMC HPC slot -->
+    <property name="FMC_GA0" value="0"/> <!-- we MUST provide to this worker the ml605's hardwired value for FMC HPC slot -->
+  </device>
+  <device name="stm_mc24c02"    card="fmcomms3_hpc" slot="fmc_hpc"/>
+  <device name="ad7291"         card="fmcomms3_hpc" slot="fmc_hpc"/>
+  <device name="ad9361_config"  card="fmcomms3_hpc" slot="fmc_hpc"/>
+  <device name="ad9361_dac_sub" card="fmcomms3_hpc" slot="fmc_hpc"/>
+  <device name="ad9361_dac0"    card="fmcomms3_hpc" slot="fmc_hpc"/> <!-- connection must be defined in a container -->
+</hdlconfig>
+

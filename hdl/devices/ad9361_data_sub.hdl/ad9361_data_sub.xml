@@ -1,0 +1,55 @@
+<HdlDevice language="vhdl">
+  <ComponentSpec/>
+
+  <!-- Parameters -->
+  <Property name='P0_P1_ARE_SWAPPED_p' type='bool'
+                                       parameter='true'
+                                       default='false'
+                                       description='This parameter should be set to false when LVDS mode is used.'/>
+  <Property name='DIFFERENTIAL_p' type='bool'
+                                  parameter='true'
+                                  default='true'
+                                  description='A value of true indicates that the LVDS mode is used, and false indicates that CMOS mode is used.'/>
+  <Property name='PORT_CONFIG_p' type='enum' enums='single,dual'
+                                 parameter='true'
+                                 default='dual'
+                                 description='This should have a value of dual when LVDS mode is used (i.e. when DIFFERENTIAL_p has a value of true). Either value is acceptable when CMOS mode is used (i.e. when DIFFERENTIAL_p has a value of false).'/>
+  <Property name='DUPLEX_CONFIG_p' type='enum' enums='half_duplex,full_duplex'
+                                   parameter='true'
+                                   default='full_duplex'
+                                   description='This should have a value of full_duplex when LVDS mode is used (i.e. when DIFFERENTIAL_p has a value of true). Either value is acceptable when CMOS mode is used (i.e. when DIFFERENTIAL_p has a value of false).'/> <!-- TODO / FIXME support runtime_dynamic enumeration? -->
+
+  <!-- Properties -->
+  <Property name='port_direction' type='enum' enums='rx,tx' readable='1' writable='1' default='rx' description='Used to determine the P0 and P1 port directions when DUPLEX_CONFIG_p has a value of half_duplex (this functionality is necessary to support TDD modes). When DUPLEX_CONFIG_p has a value of full_duplex, this property is ignored.'/>
+
+  <!-- Dev Signal Ports -->
+  <devsignal name='dev_cfg_data_port' signals='ad9361-cfg-data-port-signals.xml'/>
+  <devsignal name='dev_data_clk' count='2' optional='true' signals='ad9361-data-clk-signals.xml'/>
+  <devsignal name='dev_data_adc' optional='true' signals='data-24-in-signals.xml'/>
+  <devsignal name='dev_data_dac' optional='true' signals='data-24-out-signals.xml'/>
+
+  <!-- Sub-Device Port Connections (Supports) -->
+  <supports worker='ad9361_config'>
+    <connect port="dev_cfg_data_port" to="dev_cfg_data_port"/>
+  </supports>
+  <supports worker='ad9361_adc_sub'>
+    <connect port="dev_data_clk" to="dev_data_clk" index='0'/>
+    <connect port="dev_data_from_pins" to="dev_data_adc"/>
+  </supports>
+  <supports worker='ad9361_dac_sub'>
+    <connect port="dev_data_clk" to="dev_data_clk" index='1'/>
+    <connect port="dev_data_to_pins" to="dev_data_dac"/>
+  </supports>
+
+  <!-- Signals -->
+  <Signal Input="DATA_CLK_P"/> <!-- Pin G11: RX Clock output -->
+  <Signal Input="DATA_CLK_N"/> <!-- Pin H11: RX Clock output -->
+  <Signal Output="P0_D" width="12"/>
+  <Signal Input="P1_D" width="12"/>
+  <!-- TODO / FIXME - add framework support for parameterized signal directions -->
+  <!--Property name='P0_direction' type='direction' parameter='true' default='inout'>
+  <Property name='P1_direction' type='direction' parameter='true' default='inout'/>
+  <Signal direction="P0_direction" name="P0_D" width="12"/>
+  <Signal direction="P1_direction" name="P1_D" width="12"/-->
+
+</HdlDevice>

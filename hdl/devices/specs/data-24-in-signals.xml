@@ -1,0 +1,3 @@
+<signals>
+  <signal input='data' width='24'/>
+</signals>

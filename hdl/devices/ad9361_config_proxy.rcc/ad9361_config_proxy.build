@@ -1,0 +1,8 @@
+<build>
+  <configuration id='0'>
+    <parameter name='ocpi_debug' value='false'/>
+  </configuration>
+  <configuration id='1'>
+    <parameter name='ocpi_debug' value='true'/>
+  </configuration>
+</build>

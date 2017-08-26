@@ -20,11 +20,11 @@
 -- Underrun is reported (and cleared) in the WSI clock domain
 -- We completely ignore message boundaries here.
 -- FIXME: enable SRL FIFOs
-library IEEE, ocpi, bsv;
+library IEEE, ocpi, bsv, util;
 use IEEE.std_logic_1164.all, ieee.numeric_std.all, ocpi.types.all, ocpi.util.all;
 entity dac_fifo is
   generic (width : positive := 32;
-           depth : positive := 64);
+           depth : positive := 16);
   port (-- WSI side signals
         clk       : std_logic;
         reset     : in bool_t;
@@ -32,7 +32,7 @@ entity dac_fifo is
         wsi_ready : in bool_t;
         wsi_valid : in bool_t;
         wsi_data  : in std_logic_vector(width-1 downto 0);
-        clear     : in bool_t;  -- pulse to clean underrun
+        clear     : in bool_t;  -- pulse to clear underrun
         wsi_take  : out bool_t;
         underrun  : out bool_t; -- sticky underrun indication
         -- DAC side signals
@@ -43,12 +43,13 @@ entity dac_fifo is
 end entity dac_fifo;
 architecture rtl of dac_fifo is
   signal seen_data_r      : bool_t;    -- data seen since operating
-  signal underrun_event   : std_logic; -- momentary determination of underrun on DAC side
-  signal dac_reset_n      : std_logic; -- inverted reset in dac clk domain
+  signal underrun_event   : std_logic := '0'; -- momentary determination of underrun on DAC side
+  signal dac_reset        : std_logic; -- inverted reset in dac clk domain
   signal fifo_s_reset_n   : std_logic; -- inverted reset in wsi clock domain
   signal fifo_s_enq       : std_logic;
   signal fifo_s_not_full  : std_logic;
   signal fifo_d_not_empty : std_logic;
+  signal fifo_d_not_empty_r : std_logic := '0';
 begin
   -- Underrun detection: the fifo is empty after is_operation and it has been not empty.
   dac_ready <= fifo_d_not_empty;
@@ -73,8 +74,24 @@ begin
                  dEMPTY_N  => fifo_d_not_empty,
                  dD_OUT    => dac_data);
 
-  underrun_event <= not fifo_d_not_empty;
-  status : entity work.sync_status
+  underrun_event_proc : process(dac_clk)
+  begin
+    if rising_edge(dac_clk) then
+      if dac_reset = '1' then -- or don't care about underrunthen
+        fifo_d_not_empty_r <= '0';
+        underrun_event <= '0';
+      else
+        fifo_d_not_empty_r <= fifo_d_not_empty;
+        if (fifo_d_not_empty_r = '1') and
+           (fifo_d_not_empty   = '0') then
+          -- event only happens during high -> low transition of fifo_d_not_empty
+          underrun_event <= '1';
+        end if;
+      end if;
+    end if;
+  end process;
+
+  status : util.util.sync_status
     port map   (clk         => clk,
                 reset       => reset,
                 operating   => operating,
@@ -82,7 +99,7 @@ begin
                 clear       => clear,
                 status      => underrun,
                 other_clk   => dac_clk,
-                other_reset => open, -- dac_reset,
+                other_reset => dac_reset,
                 event       => underrun_event);
 
 end rtl;

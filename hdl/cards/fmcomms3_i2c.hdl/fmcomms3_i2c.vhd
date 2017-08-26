@@ -39,9 +39,15 @@ architecture rtl of fmcomms3_i2c_worker is
   signal   slave_addr      : std_logic_vector(6 downto 0);
   -- addressing, assuming GA0 and GA1 set to 0
   constant ad7291_addr     : std_logic_vector(6 downto 0) := "0101111"; -- Table 31 in datasheet
-  constant stm_mc24c02_addr: std_logic_vector(6 downto 0) := "1010000"; -- Table 2 in datasheet
+  signal   stm_mc24c02_addr     : std_logic_vector(6 downto 0);
+  constant stm_mc24c02_addr_6_3 : std_logic_vector(3 downto 0) := "1010"; -- Table 2 in datasheet
+  -- MC24C02 TSSOP package-specific addressing
+  constant stm_mc24c02_addr_2   : std_logic := '0';     -- MC24C02 pin 3 (E2) is grounded on FMCOMMS3 board
+  signal   stm_mc24c02_addr_1   : std_logic := FMC_GA0; -- MC24C02 pin 2 (E1) is connected to FMC GA0
+  signal   stm_mc24c02_addr_0   : std_logic := FMC_GA1; -- MC24C02 pin 1 (E0) is connected to FMC GA0
 begin
   raw_enable      <= raw_in.raw.byte_enable;
+  stm_mc24c02_addr <= stm_mc24c02_addr_6_3 & stm_mc24c02_addr_2 & stm_mc24c02_addr_1 & stm_mc24c02_addr_0;
   slave_addr      <= ad7291_addr when index = 0 else stm_mc24c02_addr;
   number_of_bytes <= std_logic_vector(to_unsigned(count_ones(raw_in.raw.byte_enable), number_of_bytes'length));
   addr            <= std_logic_vector(raw_in.raw.address(addr'range));
@@ -95,7 +101,7 @@ begin
   -- State machine to control OpenCores I2C module
   fsm_controller : i2c.i2c.i2c_opencores_ctrl
     generic map (
-      CLK_CNT => to_ushort(200))
+      CLK_CNT => to_unsigned(from_float(CP_CLK_FREQ_p)/from_float(I2C_CLK_FREQ_p),16) )
     port map(
       WCI_CLK         => wci_clk,
       WCI_RESET       => wci_reset,

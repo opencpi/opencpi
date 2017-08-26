@@ -31,6 +31,8 @@ Assemblies=\
 	empty \
 	time_test \
 	time_test_file \
+	width_adapter_test \
+	width_adapter_test_file \
 
 ifndef OCPI_MINIMAL_BUILD
 Assemblies += \

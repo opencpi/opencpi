@@ -1,0 +1,74 @@
+<build>
+  <configuration id='0'>
+    <parameter name='FMC_GA1' value='0'/>
+    <parameter name='FMC_GA0' value='0'/>
+    <parameter name='CP_CLK_FREQ_p' value='100e6'/>
+    <parameter name='I2C_CLK_FREQ_p' value='250e3'/>
+  </configuration>
+  <configuration id='1'>
+    <parameter name='FMC_GA1' value='0'/>
+    <parameter name='FMC_GA0' value='1'/>
+    <parameter name='CP_CLK_FREQ_p' value='100e6'/>
+    <parameter name='I2C_CLK_FREQ_p' value='250e3'/>
+  </configuration>
+  <configuration id='2'>
+    <parameter name='FMC_GA1' value='1'/>
+    <parameter name='FMC_GA0' value='0'/>
+    <parameter name='CP_CLK_FREQ_p' value='100e6'/>
+    <parameter name='I2C_CLK_FREQ_p' value='250e3'/>
+  </configuration>
+  <configuration id='3'>
+    <parameter name='FMC_GA1' value='1'/>
+    <parameter name='FMC_GA0' value='1'/>
+    <parameter name='CP_CLK_FREQ_p' value='100e6'/>
+    <parameter name='I2C_CLK_FREQ_p' value='250e3'/>
+  </configuration>
+  <configuration id='4'>
+    <parameter name='FMC_GA1' value='0'/>
+    <parameter name='FMC_GA0' value='0'/>
+    <parameter name='CP_CLK_FREQ_p' value='125e6'/>
+    <parameter name='I2C_CLK_FREQ_p' value='250e3'/>
+  </configuration>
+  <configuration id='5'>
+    <parameter name='FMC_GA1' value='0'/>
+    <parameter name='FMC_GA0' value='1'/>
+    <parameter name='CP_CLK_FREQ_p' value='125e6'/>
+    <parameter name='I2C_CLK_FREQ_p' value='250e3'/>
+  </configuration>
+  <configuration id='6'>
+    <parameter name='FMC_GA1' value='1'/>
+    <parameter name='FMC_GA0' value='0'/>
+    <parameter name='CP_CLK_FREQ_p' value='125e6'/>
+    <parameter name='I2C_CLK_FREQ_p' value='250e3'/>
+  </configuration>
+  <configuration id='7'>
+    <parameter name='FMC_GA1' value='1'/>
+    <parameter name='FMC_GA0' value='1'/>
+    <parameter name='CP_CLK_FREQ_p' value='125e6'/>
+    <parameter name='I2C_CLK_FREQ_p' value='250e3'/>
+  </configuration>
+  <configuration id='8'>
+    <parameter name='FMC_GA1' value='0'/>
+    <parameter name='FMC_GA0' value='0'/>
+    <parameter name='CP_CLK_FREQ_p' value='50e6'/>
+    <parameter name='I2C_CLK_FREQ_p' value='250e3'/>
+  </configuration>
+  <configuration id='9'>
+    <parameter name='FMC_GA1' value='0'/>
+    <parameter name='FMC_GA0' value='1'/>
+    <parameter name='CP_CLK_FREQ_p' value='50e6'/>
+    <parameter name='I2C_CLK_FREQ_p' value='250e3'/>
+  </configuration>
+  <configuration id='10'>
+    <parameter name='FMC_GA1' value='1'/>
+    <parameter name='FMC_GA0' value='0'/>
+    <parameter name='CP_CLK_FREQ_p' value='50e6'/>
+    <parameter name='I2C_CLK_FREQ_p' value='250e3'/>
+  </configuration>
+  <configuration id='11'>
+    <parameter name='FMC_GA1' value='1'/>
+    <parameter name='FMC_GA0' value='1'/>
+    <parameter name='CP_CLK_FREQ_p' value='50e6'/>
+    <parameter name='I2C_CLK_FREQ_p' value='250e3'/>
+  </configuration>
+</build>

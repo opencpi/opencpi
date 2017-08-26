@@ -1,0 +1,48 @@
+<HdlDevice language="vhdl">
+  <ComponentSpec/>
+
+  <!-- Parameters -->
+  <Property name='DIFFERENTIAL_p' type='bool'
+                                  parameter='true'
+                                  default='true'
+                                  description='A value of true indicates that the LVDS mode is used, and false indicates that CMOS mode is used.'/>
+  <Property name='PORT_CONFIG_p' type='enum' enums='single,dual'
+                                 parameter='true'
+                                 default='dual'
+                                 description='This should have a value of dual when LVDS mode is used (i.e. when DIFFERENTIAL_p has a value of true). Either value is acceptable when CMOS mode is used (i.e. when DIFFERENTIAL_p has a value of false).'/>
+  <Property name='DUPLEX_CONFIG_p' type='enum' enums='half_duplex,full_duplex'
+                                   parameter='true'
+                                   default='full_duplex'
+                                   description='This should have a value of full_duplex when LVDS mode is used (i.e. when DIFFERENTIAL_p has a value of true). Either value is acceptable when CMOS mode is used (i.e. when DIFFERENTIAL_p has a value of false).'/> <!-- TODO / FIXME support runtime_dynamic enumeration? -->
+  <Property name='DATA_RATE_CONFIG_p' type='enum' enums='SDR,DDR'
+                                      parameter='true'
+                                      default='DDR'
+                                      description='This should have a value of DDR when LVDS mode is used (i.e. when DIFFERENTIAL_p has a value of true). Either value is acceptable when CMOS mode is used (i.e. when DIFFERENTIAL_p has a value of false).'/>
+
+  <!-- Properties -->
+  <Property name='channels_are_swapped' type='bool' readable='1' writable='1' default='false'/>
+  <Property name='r1_samps_dropped'    type='bool' volatile='1' writable='1' description="A value of true indicates that one or more samples were sent from AD9361 for its R1 channel (see UG-570 timing diagrams) at a moment in time where no ad9361\_adc.hdl worker was assigned to ingest them. A value of true is only possible when an assembly is built with only one ad9361\_adc.hdl worker and when this worker's channels\_are\_swapped property has a value of true, together which is an erroneous condition which should be avoided. The purpose of this property is to be an error check for the aforementioned erroneous condition. Writing a value of false will force the value to false. Writing a value of true will do nothing."/>
+  <Property name='r2_samps_dropped'    type='bool' volatile='1' writable='1' description="A value of true indicates that one or more samples were sent from AD9361 for its R2 channel (see UG-570 timing diagrams) at a moment in time where no ad9361\_adc.hdl worker was assigned to ingest them. A value of true is possible, for example, when when an assembly is built with only one ad9361\_adc.hdl worker and the AD9361 is configured for multichannel mode (2X2), together which is an erroneous condition which should be avoided. The purpose of this property is to be an error check for the aforementioned erroneous condition. Writing a value of false will force the value to false. Writing a value of true will do nothing."/>
+
+  <!-- Dev Signal Ports -->
+  <devsignal name='dev_cfg_data'       signals='ad9361-cfg-data-signals.xml'    master='true'/>
+  <devsignal name='dev_cfg_data_rx'    signals='ad9361-cfg-data-rx-signals.xml' master='true'/>
+  <devsignal name='dev_data_clk'       signals='ad9361-data-clk-signals.xml'    master='true'/>
+  <devsignal name='dev_data_from_pins' signals='data-24-in-signals.xml'         master='true'/>
+
+  <devsignal name='dev_data_ch0_out' signals='adc-12-signals.xml'/>
+  <devsignal name='dev_data_ch1_out' optional='true' signals='adc-12-signals.xml'/>
+
+  <!-- Sub-Device Port Connections (Supports) -->
+  <supports worker='ad9361_adc'>
+    <connect port="dev_adc" to="dev_data_ch0_out"/>
+  </supports>
+  <supports worker='ad9361_adc'>
+    <connect port="dev_adc" to="dev_data_ch1_out"/>
+  </supports>
+
+  <!-- Signals -->
+  <Signal Input="RX_FRAME_P"/>
+  <Signal Input="RX_FRAME_N"/>
+</HdlDevice>
+

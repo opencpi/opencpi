@@ -1,0 +1,5 @@
+<signals>
+  <!-- these dev signals are used to (eventually) tell higher level proxy(ies) about the data port configuration that was enforced when this worker was compiled, so that said proxy(ies) can set the AD9361 registers accordingly -->
+  <signal output='rx_frame_usage'/>
+  <signal output='rx_frame_is_inverted'/>
+</signals>

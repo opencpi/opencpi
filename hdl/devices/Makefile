@@ -25,19 +25,19 @@
 # The names of the device workers are only qualified when we have more than
 # one -- until we have a good naming convension.
 Package=ocpi.devices
-HdlLibraries=platform
-include $(OCPI_CDK_DIR)/include/util.mk
 # Remember that subdevices that support other devices must occur AFTER the devices they support
 # Similarly, emulators must occur after the devices they emulate
-Workers = \
+# TODO / FIXME - add ad9361_config_proxy.rcc to Workers
+Workers += \
         $(and $(call OcpiHavePrereq,ad9361), \
-          ad9361_rx.hdl \
-          ad9361_tx.hdl \
-          ad9361_rx_proxy.rcc \
-          ad9361_tx_proxy.rcc \
-          ad9361_adc.hdl \
+         ad9361_adc.hdl \
+          ad9361_adc_sub.hdl \
           ad9361_dac.hdl \
-          ad9361_sub.hdl $(Comment this must be last since it supports the above)) \
+          ad9361_dac_sub.hdl \
+          ad9361_config.hdl $(Comment this must be after adc/dac since it supports them) \
+          ad9361_config_proxy.rcc \
+          ad9361_spi.hdl $(Comment this must come after ad9361_config.hdl since it supports it) \
+          ad9361_data_sub.hdl $(Comment this must come last since it supports multiple ad9361 workers)) \
         ad7291.hdl \
         stm_mc24c02.hdl \
 	sdp_node.hdl \
@@ -66,7 +66,8 @@ Workers = \
 	cstest.hdl \
 	time_server.hdl
 
-ifeq (,$(OCPI_MINIMAL_BUILD))
+# These components are old / untested and not shipped (AV-790,AV-877)
+ifeq (,$(OCPI_MINIMAL_COMPONENTS_BUILD))
 Workers += \
 	lime_adc_em.hdl \
 	lime_dac_em.hdl \
@@ -76,7 +77,7 @@ Workers += \
 	dac.rcc \
 	icap.hdl \
 	gbe.hdl
-endif # OCPI_MINIMAL_BUILD
+endif # OCPI_MINIMAL_COMPONENTS_BUILD
 
 # These two require support for embedded IOBUFs which is currently turned off
 #	dram_v5.hdl \

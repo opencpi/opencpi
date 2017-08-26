@@ -23,6 +23,14 @@ Configurations=\
   gp1 \
   zed_zipper_fmc_rx \
   zed_zipper_fmc_tx \
-  zed_zipper_fmc_rx_tx
+  zed_zipper_fmc_rx_tx \
+#  zed_fmcomms3_rx \
+#  zed_fmcomms3_rx2 \
+#  zed_fmcomms3_tx \
+#  zed_fmcomms3_tx2 \
+#  zed_fmcomms3_rx_tx \
+#  zed_fmcomms3_rx_tx2 \
+#  zed_fmcomms3_rx2_tx \
+#  zed_fmcomms3_rx2_tx2
 ExportFiles=zed.xdc zed_bit.xdc zed.mk
 include $(OCPI_CDK_DIR)/include/hdl/hdl-platform.mk
