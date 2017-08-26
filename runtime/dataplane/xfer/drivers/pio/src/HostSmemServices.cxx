@@ -19,7 +19,7 @@
  */
 
 /*
- * Abstact:
+ * Abstract:
  *        This file contains the MCHOST implementation for shared memory functions
  *        originally in /vobs/Ocpi/prod_utils/system/smem/src/smem.cxx. Any
  *        target with an MCOS port can use this implementation.

@@ -19,7 +19,7 @@
  */
 
 /*
- * Abstact:
+ * Abstract:
  *   This file contains the Interface for the transfer template class.
  *
  * Revision History: 

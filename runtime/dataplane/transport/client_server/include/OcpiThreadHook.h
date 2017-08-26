@@ -19,7 +19,7 @@
  */
 
 /*
- * Abstact:
+ * Abstract:
  *   This file contains the Interface for the Ocpi transport thread hook class.
  *
  * Author: John F. Miller

@@ -19,7 +19,7 @@
  */
 
 /*
- * Abstact:
+ * Abstract:
  *   This file contains the OCPI transfer controller implementation.
  *
  * Revision History: 

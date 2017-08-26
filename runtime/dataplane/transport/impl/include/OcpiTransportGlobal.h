@@ -19,7 +19,7 @@
  */
 
 /*
- * Abstact:
+ * Abstract:
  *   This file contains the Interface for OCPI tranport globals.
  *
  * Revision History: 

@@ -19,7 +19,7 @@
  */
 
 /*
- * Abstact:
+ * Abstract:
  *   This file contains the Interface for the OCPI data distribution base class.
  *
  * Revision History: 

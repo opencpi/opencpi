@@ -19,7 +19,7 @@
  */
 
 /*
- * Abstact:
+ * Abstract:
  *   This file contains the Implementation for the block partition class.
  *
  * Revision History: 

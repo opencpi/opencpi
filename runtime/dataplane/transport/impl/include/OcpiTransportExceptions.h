@@ -19,7 +19,7 @@
  */
 
 /*
- * Abstact:
+ * Abstract:
  *   This file contains the exception definitions for the data transport system.
  *
  * Revision History: 

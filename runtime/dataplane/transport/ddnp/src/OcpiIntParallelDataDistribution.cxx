@@ -19,7 +19,7 @@
  */
 
 /*
- * Abstact:
+ * Abstract:
  *   This file contains the implementation for parallel data distribution
  *
  * Revision History: 

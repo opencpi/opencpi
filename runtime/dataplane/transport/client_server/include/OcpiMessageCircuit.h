@@ -19,7 +19,7 @@
  */
 
 /*
- * Abstact:
+ * Abstract:
  *   This file contains the Interface for the Ocpi transport message class.
  *   This class is a full duplex circuit used to send and receive unformatted
  *   messages.

@@ -19,7 +19,7 @@
  */
 
 /*
- * Abstact:
+ * Abstract:
  *   This file contains the interface for sequential data distribution
  *
  * Revision History: 

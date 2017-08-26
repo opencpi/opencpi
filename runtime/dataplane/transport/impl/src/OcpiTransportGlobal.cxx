@@ -19,7 +19,7 @@
  */
 
 /*
- * Abstact:
+ * Abstract:
  *   This class contains all global data used by the OCPI transport layer.
  *
  * Revision History: 
