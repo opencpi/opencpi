@@ -24,7 +24,6 @@ good.output test.input: mkTestFile.cxx
 	$(DIR)/a.out $(FILE_SIZE) > test.input 2> good.output
 
 run: all test.input
-	env | grep OCPI
 	$(VG) $(PROG) $(ARGS) > /dev/null	
 	cmp test.output good.output
 
