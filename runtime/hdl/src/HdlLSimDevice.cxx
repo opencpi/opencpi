@@ -474,17 +474,51 @@ protected:
     }
     return false;
   }
+  // Read a single character '1' from the sim process
+  //   Return failure (true) if sim process exits
+  //   Use select (with timeout) to probe for readiness
+  //   On select timeout, try again
   bool
   ack(std::string &error) {
-    char c;
-    ssize_t r = read(m_ack.m_rfd, &c, 1);
-    if (r != 1 || c != '1') {
-      OU::format(error, "ack read from sim failed. r %zd c %u", r, c);
-      return true;
+    // setup file descriptors for select
+    fd_set fds;
+    const int timeoutUsecs = 30000000; // number of micro seconds to wait
+    struct timeval timeout; // set the timeout for the timed read
+    timeout.tv_sec = timeoutUsecs / 1000000;
+    timeout.tv_usec =  timeoutUsecs % 1000000;
+    // Continue to try select/read until we read 1 byte, a non-eintr error occurs or sim process exits
+    while (true) {
+      FD_ZERO(&fds);
+      FD_SET(m_ack.m_rfd, &fds);
+      struct timeval tmpTimeout = timeout; // cleared by select attempt
+      if (mywait(false, error))
+        return true; // process ended
+      switch (::select(m_ack.m_rfd + 1, &fds, NULL, NULL, &tmpTimeout)) {
+        case 0:
+          continue; // timeout try again
+        case 1: { // fd ready for read
+          char c;
+          switch (::read(m_ack.m_rfd, &c, 1)) {
+            case 1: // one byte read as expected
+              if (c != '1')
+                return OU::eformat(error, "Unexpected: ack read from sim failed. c %d", c);
+              ocpiDebug("Sim sent ACK. Tick count at %" PRIu64, m_cumTicks);
+              m_spinning = false;
+              return false; // successful ack read
+            case -1:
+              if (errno == EINTR) // EINTR is not a failure. try select/read again
+                continue;
+              return OU::eformat(error, "Timed read failed. Error in 'select()': %s", strerror(errno));
+            default:
+              return OU::eformat(error, "Unexpected EOF");
+          }
+        }
+        default:
+          if (errno == EINTR) // EINTR is not a failure. try select/read again
+            continue;
+          return OU::eformat(error, "Timed read failed. Error in 'select()': %s", strerror(errno));
+      }
     }
-    ocpiDebug("Sim sent ACK. Tick count at %" PRIu64, m_cumTicks);
-    m_spinning = false;
-    return false;
   }
   bool
   sendCredit(size_t credit, std::string &error) {

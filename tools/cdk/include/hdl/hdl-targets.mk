@@ -111,7 +111,7 @@ HdlDoPlatformsDir=\
       $(foreach p,$(notdir $d),\
         $(if $(wildcard $d/$p.mk)$(wildcard $d/lib/hdl/$p.mk)$(wildcard $d/hdl/$p.mk),\
           $(call HdlDoPlatform,$d)))))
-  
+
 $(call OcpiDbgVar,HdlAllPlatforms)
 $(call OcpiDbgVar,OCPI_HDL_PLATFORM_PATH)
 $(foreach d,$(subst :, ,$(OCPI_HDL_PLATFORM_PATH)),\
@@ -129,4 +129,21 @@ $(call OcpiDbgVar,HdlAllFamilies)
 $(call OcpiDbgVar,HdlAllPlatforms)
 #$(info OCPI_ALL_HDL_PLATFORMS is $(OCPI_ALL_HDL_PLATFORMS))
 #$(info OCPI_ALL_HDL_TARGETS is $(OCPI_ALL_HDL_TARGETS))
+# Assignments that can be used to extract make variables into bash/python...
+ifdef ShellHdlTargetsVars
+include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
+all:
+$(info HdlAllFamilies="$(HdlAllFamilies)";\
+       HdlAllPlatforms="$(HdlAllPlatforms)";\
+       HdlAllTargets="$(HdlAllTargets)";\
+       HdlTargets="$(foreach t,$(HdlTopTargets),$(or $(HdlTargets_$t),$t))";\
+       $(foreach p,$(HdlAllPlatforms),HdlPart_$p=$(HdlPart_$p); )\
+       $(foreach f,$(HdlAllFamilies),\
+         $(if $(HdlTargets_$f),HdlTargets_$f="$(HdlTargets_$f)";)\
+         $(if $(HdlToolSet_$f),HdlToolSet_$f="$(HdlToolSet_$f)";)\
+         $(foreach t,$(HdlTargets_$f),\
+           $(if $(HdlTargets_$t),HdlTargets_$t="$(HdlTargets_$t)";)))\
+       $(foreach p,$(HdlAllPlatforms),\
+         HdlFamily_$(HdlPart_$p)=$(call HdlGetFamily,$(HdlPart_$p));))
+endif
 endif

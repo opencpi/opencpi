@@ -57,6 +57,10 @@ HdlToolNeedBB=
 HdlToolCoreRef=$1
 HdlToolCoreRef_quartus=$1
 ################################################################################
+# Variable required by toolset: HdlToolNeedsSourceList_<tool>=yes
+# Set if the tool requires a listing of source files and libraries
+HdlToolNeedsSourceList_quartus=yes
+################################################################################
 # Function required by toolset: $(call HdlToolLibRef,libname)
 # This is the name after library name in a path
 # It might adjust (genericize?) the target
@@ -129,8 +133,10 @@ QuartusMakeQsf=\
   $(and $(SubCores_$(HdlTarget)),echo '\#' Import QXP file for each core;) \
   $(foreach c,$(SubCores_$(HdlTarget)),$(infox CCC$c)\
     echo set_global_assignment -name QXP_FILE \
-      '\"'$(call FindRelative,$(TargetDir),$(if $(findstring /,$c),$c,$(call HdlCoreRef,$c,$(HdlTarget))))'\"';\
-    $(if $(filter $c,$(Cores)),,\
+      '\"'$(call FindRelative,$(TargetDir),$(call HdlCoreRefMaybeTargetSpecificFile,$c,$(HdlTarget)))'\"';\
+    $(if $(filter $c,$(Cores)),\
+      $(foreach s,$(call HdlExtractSourcesForLib,$(HdlTarget),$c,$(TargetDir)),\
+        echo set_global_assignment -name $(if $(filter vhdl,$(HdlLanguage)),VHDL,VERILOG)_FILE -library $c '\"'$s'\"';),\
       $(foreach w,$(subst _rv,,$(basename $(notdir $c))),$(infox WWW:$w)\
         $(foreach d,$(dir $c),$(infox DDD:$d)\
           $(foreach l,$(if $(filter vhdl,$(HdlLanguage)),vhd,v),$(infox LLLLL:$l)\

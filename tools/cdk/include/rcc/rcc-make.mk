@@ -43,8 +43,9 @@ ifdef RccHdlPlatforms
      $(if $(filter $p,$(HdlAllPlatforms)),\
        $(if $(HdlRccPlatform_$p),\
          $(eval override RccPlatforms:=$(call Unique,$(RccPlatforms) $(HdlRccPlatform_$p))), \
-         $(error There is no RCC platform associated with the HDL platform: $p)),\
-       $(error There is no HDL platform named: $p, so no RCC platform for it)))
+         $(eval override RccPlatforms:=$(call Unique,$(RccPlatforms) $(OCPI_TOOL_PLATFORM)))$(warning There is no RCC platform associated with the HDL platform: $p. Using $(OCPI_TOOL_PLATFORM))),\
+       $(eval override RccPlatforms:=$(call Unique,$(RccPlatforms) $(OCPI_TOOL_PLATFORM)))$(warning There is no HDL platform named: $p, so no RCC platform for it. Using $(OCPI_TOOL_PLATFORM))\
+     ))
 endif
 
 ifdef RccPlatforms
@@ -100,7 +101,7 @@ ifdef RccPlatforms
          $(foreach t,$(shell echo $$(< $f)),\
            $(eval RccTargets+=$t)\
            $(eval RccTarget_$p:=$t)),\
-         $(error RccPlatform $p is unknown, $t does not exist))))
+         $(error RccPlatform $p is unknown, $f does not exist))))
 else
   # Derive a platform from each target (somewhat expensive, but we have shortcuts)
   # This can be deprecated or accelerated as it makes sense
@@ -151,3 +152,15 @@ $(foreach p,$(RccPlatforms), \
           $(eval include $(word 1,$(files)))))))
 endif
 endif
+
+# Assignments that can be used to extract make variables into bash/python...
+ifdef ShellRccTargetsVars
+all:
+$(info RccAllPlatforms="$(RccAllPlatforms)";\
+       RccPlatforms="$(RccPlatforms)";\
+       RccAllTargets="$(RccAllTargets)";\
+       RccTargets="$(RccTargets)";\
+       $(foreach p,$(RccAllPlatforms),\
+         $(if $(RccTarget_$p),RccTarget_$p="$(RccTarget_$p)";)))
+endif
+#$(foreach t,$(RccTopTargets),$(or $(RccTargets_$t),$t))";\

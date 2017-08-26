@@ -182,23 +182,46 @@ endif
 # The first attempt is:
 # If there is a suffix or there is a "target" path component or a component matches the target,
 # Then try the path itself with the suffix
+
+# Try to match the alternative HdlBins to the suffix of $1
+HdlSuffixContainsAlternativeBin=$(strip $(infox HDSCAB:$1,$2)\
+  $(if $(word 1,$2),\
+    $(or $(filter $(word 1,$2),$(suffix $1)),\
+      $(call HdlSuffixContainsAlternativeBin,$1,$(filter-out $(word 1,$2),$2)))))
+
+# Check whether $1 contains a suffix (either HdlBin or one in
+# HdlBinAlternatives_<tool>. Return the suffix of $1 if it
+# matches an HdlBin option
+HdlSuffixContainsHdlBin=$(strip \
+  $(or $(filter $(HdlBin),$(suffix $1)),\
+    $(call HdlSuffixContainsAlternativeBin,$1,$(HdlBinAlternatives_$(HdlToolSet)))))
+
+# Iterate through $2 - the list of possible HdlBin suffices
+# Return $1 with a suffix appended (the first in $2 that exists)
+HdlChooseHdlBinThatExists=$(strip $(infox HCHBTE:$1:$2)\
+  $(if $2,\
+    $(or $(call HdlExists,$1$(word 1,$2)),$(call HdlChooseHdlBinThatExists,$1,$(filter-out $(word 1,$2),$2)))))
+
+# Check if $1$(HdlBin) exists. If not, try each alternative HdlBin value.
+# Return the first one that exists
+HdlBinExists=\
+  $(call HdlChooseHdlBinThatExists,$1,$(HdlBin) $(HdlBinAlternatives_$(HdlToolSet)))
+
 HdlCRF=$(strip \
   $(foreach r,\
-    $(or $(and $(HdlBin),$(filter $(HdlBin),$(suffix $1)),$(call HdlExists,$1)),$(strip \
-         $(infox ff:$(filter $2 target-%,$(subst /, ,$1)):$1$(HdlBin))\
-         $(and $(or $(HdlBin),$(filter $2 target-%,$(subst /, ,$1))),$(call HdlExists,$1$(HdlBin)))),$(strip \
-         $(infox ff1:$(filter $2 target-%,$(subst /, ,$1)):$1$(HdlBin))\
-         $(call HdlExists,$1/target-$2/$3)),$(strip \
-         $(call HdlExists,$1/$3)),$(strip \
-         $(call HdlExists,$1/$2/$3)),\
+    $(or $(and $(HdlBin),$(call HdlSuffixContainsHdlBin,$1),$(call HdlExists,$1)),$(strip \
+         $(infox ff:$(filter $2 target-%,$(subst /, ,$1)):$1$(call HdlSuffixContainsHdlBin,$1):$(call HdlBinExists,$1))\
+         $(and $(or $(HdlBin),$(filter $2 target-%,$(subst /, ,$1))),$(call HdlBinExists,$1))),$(strip \
+         $(infox ff1:$(filter $2 target-%,$(subst /, ,$1)):$1$(call HdlSuffixContainsHdlBin,$1))\
+         $(call HdlBinExists,$1/target-$2/$3)),$(strip \
+         $(call HdlBinExists,$1/$3)),$(strip \
+         $(call HdlBinExists,$1/$2/$3)),\
 	 $1/$2),\
-     $(infox HCRF:$1,$2,$3->$r,bin:$(HdlBin),t:$(HdlTarget))$r))
-#     $r))
-
+     $(infox HCRF:$1,$2,$3->$r,bin:$(call HdlSuffixContainsHdlBin,$1),t:$(HdlTarget))$r))
 
 # Check for given target or family target
 HdlCoreRef1=$(strip \
-   $(foreach c,$(notdir $1)$(HdlBin),\
+   $(foreach c,$(notdir $1),\
      $(infox checking $c)$(or $(call HdlExists,$(call HdlCRF,$1,$2,$c)),\
 	  $(and $2,$(call HdlExists,$(call HdlCRF,$1,$(call HdlGetFamily,$2),$c$(infox HdlCoreRef1 returning '$c'for '$1' and '$2')))))))
 
@@ -217,6 +240,18 @@ HdlCoreRef=$(infox HCR:$1:$2:$(HdlMode))$(strip \
      $(error No core found for "$1" on target "$2"))\
 )
 
+# $(call HdlCoreRefMaybeTargetSpecificFile,core-path-or-name,target)
+# Check whether arg 1 is actually a path to a core. This check is done
+#   by checking if the string contains '/', if the filename itself
+#   contains a '.', and if the path to the file actually exists.
+#   This is not foolproof, but gives us a good idea of whether arg 1
+#   is a path to a core that should be left as is. If so, return it.
+# If arg 1 is NOT a path that should be left alone, determine the
+#   tool-specific path to the core.
+HdlCoreRefMaybeTargetSpecificFile=$(infox HCRMTSF:$1:$2)$(strip \
+  $(if $(and $(findstring /,$1),$(findstring .,$(basename $1)),$(call HdlExists,$1)),\
+    $1,\
+    $(call HdlCoreRef,$(call HdlToolCoreRef,$1),$2)))
 
 ################################################################################
 # $(call HdlLibraryRefFile,location-dir,target)

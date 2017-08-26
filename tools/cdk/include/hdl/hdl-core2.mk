@@ -49,6 +49,10 @@ define DoImplConfig
 
 endef
 
+ifndef
+JOB_STARTTIME:=$(shell date +"%H:%M:%S")
+endif
+
 ifdef HdlToolRealCore
   ################################################################################
   # Build the real core if the tools can do it $(call DoCore,target,core,top,config)
@@ -88,6 +92,9 @@ ifdef HdlToolRealCore
       $(call WkrTargetDir,$1,$4)/$2$(HdlBin): $$$$(HdlPreCore) \
         $$(filter-out $$(filter-out %.vhd,$$(call CoreBlackBoxFiles,$1,$4)) $$(TargetSourceFiles),$$(CompiledSourceFiles)) 
 	$(AT)echo Building $(and $(filter-out core,$(HdlMode))) core \"$(2)\" for target \"$$(HdlTarget)\" $$(ParamConfig):$$(ParamMsg) $$@
+ifneq (,$(JENKINS_HOME))
+	$(AT)echo "============= ($$(shell date +"%H:%M:%S"), started $$(JOB_STARTTIME))"
+endif
 	$(AT)$$(HdlCompile)
     endif # end of else of prebuilt
 

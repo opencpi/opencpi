@@ -74,7 +74,7 @@ $(HdlInstallLibDir):
 	$(AT)echo Creating directory $@ for library $(LibName)
 	$(AT)mkdir -p $@
 
-install: $(OutLibFiles) $(HdlLibsList) $(HdlSourcesList) | $(HdlInstallLibDir) 
+install: $(OutLibFiles) $(HdlLibsList) $(HdlSourcesList) | $(HdlInstallLibDir)
 	$(AT)for f in $(HdlActualTargets); do \
 	  $(call ReplaceIfDifferent,$(strip \
              $(OutDir)target-$$f/$(WorkLib)),$(strip \

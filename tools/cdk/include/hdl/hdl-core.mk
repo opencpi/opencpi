@@ -94,13 +94,18 @@ CoreBlackBoxFiles=$(strip\
 # builds the real core or just a library for the core
 include $(OCPI_CDK_DIR)/include/hdl/hdl-core2.mk
 
+HdlInstallLibDir=$(HdlInstallDir)/$(LibName)
+$(HdlInstallLibDir):
+	$(AT)echo Creating directory $@ for library $(LibName)
+	$(AT)mkdir -p $@
+
 # Install the lib-name directory. This is used for non-real cores
 # or for real cores when a tool requires source listings (for stubs)
-install_lib_dir: | $(HdlInstallDir)
+install_lib_dir: | $(HdlInstallLibDir)
 	$(AT)for f in $(HdlActualTargets); do \
 	  $(call ReplaceIfDifferent,$(strip \
 	      $(OutDir)target-$$f/$(LibName)),$(strip \
-	      $(HdlInstallDir)/$(LibName)/$$f)); \
+	      $(HdlInstallLibDir)/$$f)); \
 	done
 
 ifdef HdlToolNeedsSourceList_$(HdlToolSet)

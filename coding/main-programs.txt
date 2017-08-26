@@ -1,0 +1,17 @@
+Main programs should be in source files whose name is <command>_main.{cxx,cc}
+See the scripts.txt file for command naming.
+
+The CmdOption.h system of command option parsing should be used.  This will force the behavior
+where a help message is generated and exit status is 1, when the command is issued with no
+arguments.
+
+This option parsing system allows for typed values consistent with the data typing system
+in OpenCPI, used in properties etc.  Only scalar types are allowed, but when the option
+is specified as allowing multiple values, the value of the option is a an array of the
+specified options.  See command-options.txt
+
+Executables should return zero on success and non-zero on failure.
+
+
+
+

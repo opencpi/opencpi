@@ -115,11 +115,14 @@ $(foreach t,$(OcpiXilinxDir)/SDK,$(infox vt:$t)\
       $(call $(or $1,error), Directory "$i", in OCPI_XILINX_DIR/SDK, not found)))))
 
 
+OcpiXilinxTryVivadoDir=$(strip $(foreach t,$(or $(OCPI_XILINX_VIVADO_DIR),/opt/Xilinx),$(infox TT is $t)\
+		 $(if $(shell test -d $t && echo 1),$t,\
+		    $(call $(or $1,error), Directory "$t" for OCPI_VIVADO_XILINX_DIR not found))))
 
 OcpiXilinxVivadoDir=$(strip\
-$(foreach t,$(OcpiXilinxDir)/Vivado,$(infox vt:$t)\
+$(foreach t,$(or $(OcpiXilinxTryVivadoDir),$(OcpiXilinxDir))/Vivado,$(infox vt:$t)\
   $(foreach i,\
-    $(or $(OCPI_XILINX_VIVADO_DIR),\
+    $(or $(OCPI_XILINX_VIVADO_TOOLS_DIR),\
       $(foreach v,\
         $(if $(filter-out undefined,$(origin OCPI_XILINX_VIVADO_VERSION)),\
           $(foreach e,$(OCPI_XILINX_VIVADO_VERSION),\

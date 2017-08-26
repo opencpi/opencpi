@@ -1,4 +1,3 @@
-#define NDEBUG 1
 /*
  * This file is protected by Copyright. Please refer to the COPYRIGHT file
  * distributed with this source distribution.
@@ -19,12 +18,16 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+ #define NDEBUG 1
+
+ #ifdef OPENSPLICE_MSG_SUPPORT
+
 /*
  * Abstract:
  *   This file contains the Interface for the OCPI DDS port.
  *
- * Revision History: 
- * 
+ * Revision History:
+ *
  *    Author: John F. Miller
  *    Date: 8/2011
  *    Revision Detail: Created
@@ -43,7 +46,7 @@
 #include <list>
 #include <stack>
 #include <map>
-#include <XferException.h>
+#include <XferExceptions.h>
 #include <iostream>
 #include <OcpiBuffer.h>
 #include <OpenSpliceBindings.h>
@@ -58,12 +61,12 @@ using namespace OpenSpliceBindings;
 namespace OU = OCPI::Util;
 namespace OA = OCPI::API;
 
-namespace OCPI {  
+namespace OCPI {
   namespace Msg {
     namespace DDS {
 
       struct EndPoint  {
-	EndPoint( const char * ep ) 
+	EndPoint( const char * ep )
 	  : m_url(ep)
 	{
 	  char ms[128];
@@ -74,11 +77,11 @@ namespace OCPI {
 	  //	  int c = sscanf(ep,"ocpi-dds-msg:%[^;];%[^;];%[^;];%s", t, m,s, k );
 	  int c = sscanf(ep,"ocpi-dds-msg:%[^;];%[^;];%s", t, ms, k );
 	  if ( c == 1 ) {
-	    topic = t;	      
+	    topic = t;
 	  }
 	  else if ( c != 3 ) {
 	    fprintf( stderr, "DDS::EndPoint  ERROR: Bad DDS endpoint format (%s)\n", ep );
-	    throw DataTransfer::DataTransferEx( DataTransfer::UNSUPPORTED_ENDPOINT, ep );	  
+	    throw DataTransfer::DataTransferEx( DataTransfer::UNSUPPORTED_ENDPOINT, ep );
 	  }
 	  else {
 	    c = strlen(ms)-1;
@@ -89,7 +92,7 @@ namespace OCPI {
 		ms[c-1] = 0;
 		module_name = ms;
 		break;
-	      }		   
+	      }
 	      c--;
 	    }
 	    topic = t;
@@ -103,7 +106,7 @@ namespace OCPI {
 	std::string topic;
 	std::string module_name;
 	std::string struct_name;
-	std::string key;	  
+	std::string key;
 	std::string m_url;
       };
 
@@ -133,7 +136,7 @@ namespace OCPI {
 	void setEp( EndPoint & ep) {
 
 
-	  
+
 	  // Override the user data if available
 	  if (  ! ep.key.empty() ) {
 	    key = ep.key;
@@ -157,7 +160,7 @@ namespace OCPI {
 	}
 
 
-	
+
 	TopicData & operator=( const OCPI::Util::Protocol * p )
 	{
 #ifdef G
@@ -189,14 +192,14 @@ namespace OCPI {
 	    m_maxMsgSize = DEFAULT_MAX_MSG_SIZE;
 	  }
 
-	  
+
 	  // Get defaults from protocol
 	  std::string tmp(p->m_qualifiedName);
 	  size_t pos = tmp.find_last_of("::");
 	  struct_name = tmp.substr(pos+1,tmp.length());
 	  module_name = tmp.substr(0,pos-1);
 
-	 
+
 	  return *this;
 	}
 
@@ -263,7 +266,7 @@ namespace OCPI {
 	std::string & formatType( OU::Member& m, std::string & format, bool typname=true ) {
 	  char buf[BUF_SIZE];
 
-	  if ( typname && m.m_isSequence && (m.m_arrayRank>0) ) { 
+	  if ( typname && m.m_isSequence && (m.m_arrayRank>0) ) {
 	    if ( snprintf( buf, BUF_SIZE, "<Type name=\"%s::TypeDef%s\"/>", module_name.c_str(), m.m_name.c_str() ) < 0 ) {
 	      throw formatErrorMsg;
 	    }
@@ -288,12 +291,12 @@ namespace OCPI {
 	  else {
 	    sprintf( buf, "<%s/>", ddsType(m) );
 	    format += buf;
-	  }	
+	  }
 	  return format;
 	}
 
 
-	std::string & formatSequence( OU::Member& m, std::string & format ) 
+	std::string & formatSequence( OU::Member& m, std::string & format )
 	{
 	  char buf[BUF_SIZE];
 	  if ( m.m_sequenceLength != 0 ) {
@@ -310,7 +313,7 @@ namespace OCPI {
 	  return format;
 	}
 
-	std::string & formatMember( OU::Member& m, std::string & format, bool named=true ) 
+	std::string & formatMember( OU::Member& m, std::string & format, bool named=true )
 	{
 	  char buf[BUF_SIZE];
 
@@ -335,8 +338,8 @@ namespace OCPI {
 		throw formatErrorMsg;
 	      }
 	      format += buf;
-	    }	    
-	    format += "</Enum>";	    
+	    }
+	    format += "</Enum>";
 	  }
 	  else if ( m.m_arrayRank > 0 ) {
 	    for ( unsigned int y=0; y<m.m_arrayRank; y++ ) {
@@ -365,7 +368,7 @@ namespace OCPI {
 	  }
 	  else {
 	    formatType( m, format);
-	  }	  
+	  }
 	  if ( named ) {
 	    format += "</Member>";
 	  }
@@ -374,10 +377,10 @@ namespace OCPI {
 
 
 
-	std::string & defineStruct( OU::Member &m, const char * name, std::string & format ) 
+	std::string & defineStruct( OU::Member &m, const char * name, std::string & format )
 	{
 	  char buf[BUF_SIZE];
-	    
+
 	  if (  m.m_baseType == OCPI::API::OCPI_Struct ) {
 
 	    if ( snprintf( buf, BUF_SIZE, "<Struct name=\"Struct%s\">", name  ) < 0 ) {
@@ -403,7 +406,7 @@ namespace OCPI {
 	  }
 
 	  // We also need to define Typedefs
-	  else if ( m.m_isSequence && (m.m_arrayRank>0) ) { 
+	  else if ( m.m_isSequence && (m.m_arrayRank>0) ) {
 
 	    if ( snprintf( buf, BUF_SIZE, "<TypeDef name=\"TypeDef%s\">", name  ) < 0 ) {
 	      throw formatErrorMsg;
@@ -432,19 +435,19 @@ namespace OCPI {
 	    for ( unsigned int y=0; y<m.m_arrayRank; y++ ) {
 	      format += "</Array>";
 	    }
-	      
+
 	    format += "</TypeDef>";
 	  }
 
 	  return format;
 	}
 
-	std::string & defineStructs( std::string & format ) 
+	std::string & defineStructs( std::string & format )
 	{
 	  char name[BUF_SIZE];
-	  for ( int n=0; n<nMembers(); n++ ) {	    
+	  for ( int n=0; n<nMembers(); n++ ) {
 	    OCPI::Util::Member & m = member(n);
-	    defineStruct ( m, m.m_name.c_str(), format );	    
+	    defineStruct ( m, m.m_name.c_str(), format );
 	    if ( m.m_type ) {
 	      OU::Member * mt = m.m_type;
 	      int count=0;
@@ -452,7 +455,7 @@ namespace OCPI {
 		if ( snprintf( name, BUF_SIZE, "%s%d", m.m_name.c_str(),count ) < 0 ) {
 		  throw formatErrorMsg;
 		}
-		defineStruct ( *mt, name, format );		
+		defineStruct ( *mt, name, format );
 		mt = mt->m_type;
 	      }
 	    }
@@ -475,7 +478,7 @@ namespace OCPI {
 
 	  sprintf( buf, "<Struct name=\"%s\">", struct_name.c_str() );
 	  format += buf;
-	  
+
 	  for ( int n=0; n<nMembers(); n++ ) {
 	    OCPI::Util::Member & m = member(n);
 	    std::string fdata = formatMember( m, format );
@@ -486,7 +489,7 @@ namespace OCPI {
 
 #ifndef NDEBUG
 	  cout << endl << endl << endl << format << endl << endl << endl;
-#endif	  
+#endif
 	}
 
 	int maxMsgSize() {
@@ -508,7 +511,7 @@ namespace OCPI {
 	    OCPI::Util::Member & m = member(n);
 	    if ( m.m_isSequence || (m.m_arrayRank>0) ) {
 	      if  (m.m_sequenceLength == 0) {
-		return -1;		
+		return -1;
 	      }
 	      else {
 		size += m.m_nBytes * m.m_sequenceLength;
@@ -521,7 +524,7 @@ namespace OCPI {
 
 	inline int nMembers(){return m_proto->operations()[0].nArgs();}
 
-	inline OCPI::Util::Member & member(int index) { 
+	inline OCPI::Util::Member & member(int index) {
 	  OCPI::Util::Member &m = m_proto->operations()[0].args()[index];
 	  if ( m.m_isSequence && (m.m_sequenceLength == 0) ) {  // Unbounded sequence
 	    m_unbounded = true;
@@ -531,7 +534,7 @@ namespace OCPI {
 	inline int mLength( int index, int vLen=0 ) {
 	  int len;
 	  OCPI::Util::Member &m = m_proto->operations()[0].args()[index];
-	  if ( m.m_isSequence && (m.m_sequenceLength == 0) ) {  
+	  if ( m.m_isSequence && (m.m_sequenceLength == 0) ) {
 	    len = vLen * m.m_nBytes;
 	  }
 	  else {
@@ -544,7 +547,7 @@ namespace OCPI {
 
 	  if ( m_unbounded ) {
 	    int off = m_OffsetOffset;
-	    if ( m.m_isSequence && (m.m_sequenceLength == 0) ) {  
+	    if ( m.m_isSequence && (m.m_sequenceLength == 0) ) {
 	      off += vLen * m.m_nBytes;
 	    }
 	    else {
@@ -555,7 +558,7 @@ namespace OCPI {
 	    m_OffsetOffset = off;
 	  }
 	  else {
-	    m_currentOffset = m.m_offset;	    
+	    m_currentOffset = m.m_offset;
 	  }
 	  if ( m_unbounded ) {
 	    if ( m_currentOffset >= m_maxMsgSize ) {
@@ -565,7 +568,7 @@ namespace OCPI {
 	  return m_currentOffset;
 
 	}
-      
+
       private:
 	int         m_maxMsgSize;
 	int m_currentOffset;
@@ -648,10 +651,10 @@ namespace OCPI {
 	  char  seq_type[128];
 	  snprintf(seq_type,128,"C_SEQUENCE<%s>", subt);
 
-#ifndef NDEBUG	
+#ifndef NDEBUG
 	  printf("To SEQ type = %s, sub_type = %s, len = %d, size = %d\n", seq_type, subt, length, size  );
 #endif
-	  
+
 	  type0 = c_metaSequenceTypeNew(c_metaObject(base), seq_type,subtype0,0);
 	  c_free(subtype0);
 	  dest0 = (c_long *)c_newSequence(c_collectionType(type0),length);
@@ -665,7 +668,7 @@ namespace OCPI {
 	    }
 	  }
 	  else {
-	    if ( size ) 
+	    if ( size )
 	      memcpy (dest0,buf,length*size);
 	  }
 	  return dest0;
@@ -675,7 +678,7 @@ namespace OCPI {
 
 
 
-      
+
       class Reader : public OU::Reader , public RWUtil {
 
 	TopicData & m_td;
@@ -697,7 +700,7 @@ namespace OCPI {
 	    :m_td(td),m_orig(s)  {
 	    m_source.push(s);
 	  }
-	
+
 	unsigned beginSequence(OU::Member &m) {
 
 #ifndef NDEBUG
@@ -708,7 +711,7 @@ namespace OCPI {
 	  align( 8,m_source.top());
 	  long size;
 	  c_long ** seq  = (c_long**)m_source.top();
-	  size = c_arraySize(c_sequence(*seq));		    
+	  size = c_arraySize(c_sequence(*seq));
 #ifndef NDEBUG
 	  cout << "Actual Sequence size = " << size << endl;
 #endif
@@ -742,7 +745,7 @@ namespace OCPI {
 	  uint32_t slen;
 	  if ( m_seq.size() == 0 ) { // Not within a sequence
 	    align(sizeof(void*),m_source.top());
-	    char** src = (char**)m_source.top();	
+	    char** src = (char**)m_source.top();
 #ifndef NDEBUG
 	  cout << "Returning " << *src << endl;
 #endif
@@ -752,7 +755,7 @@ namespace OCPI {
 	  }
 	  else {
 	    int idx = m_seq.top().idx;
-	    c_string * src = (c_string*)(*m_seq.top().source);	
+	    c_string * src = (c_string*)(*m_seq.top().source);
 	    slen = strlen(src[idx]);
 	    chars = src[idx];
 	    m_seq.top().idx++;
@@ -766,7 +769,7 @@ namespace OCPI {
 
 	    switch (m.m_baseType ) {
 	    case OCPI::API::OCPI_Struct:
-	      ocpiAssert(!"unsuporrted type for atomic read");	    
+	      ocpiAssert(!"unsuporrted type for atomic read");
 	    case OCPI::API::OCPI_Bool:
 	    case OCPI::API::OCPI_Char:
 	    case OCPI::API::OCPI_UChar:
@@ -786,7 +789,7 @@ namespace OCPI {
 
 	    processScalar:
 	      {
-		memcpy( t, m_source.top(), nBytes); 
+		memcpy( t, m_source.top(), nBytes);
 		m_source.top() += nBytes;
 	      }
 	      break;
@@ -826,7 +829,7 @@ namespace OCPI {
 	  uint8_t *target;
 	};
 	std::stack<Seq> m_seq;
-	
+
 
       public:
 
@@ -873,7 +876,7 @@ namespace OCPI {
 	  align(m.m_align,m_target);
 	}
 
-	void endSequence(OU::Member &m ) {	
+	void endSequence(OU::Member &m ) {
 	  if ( m_seqStrings.size() ) {
 	    ocpiAssert(  m_seqStrings.size() == m_nElements );
 	    align(8,m_target);
@@ -895,11 +898,11 @@ namespace OCPI {
 	  c_char * msg = (c_char*)(p.data);
 	  if ( m_inSequence ) {
 	    m_seqStrings.push_back( std::string( msg ) );
-	    return;	    
-	  }	  
+	    return;
+	  }
 	  align(8,m_target);
 	  c_string * st = (c_string*)m_target;
-	  *st = c_stringNew(m_base, (c_char*)msg);	  
+	  *st = c_stringNew(m_base, (c_char*)msg);
 	  m_target += sizeof(c_string);
 	}
 
@@ -927,7 +930,7 @@ namespace OCPI {
 	  case OCPI::API::OCPI_Char:
 	  case OCPI::API::OCPI_UChar:
 	    bytes = 1;
-	    if ( ! m_inArray ) 
+	    if ( ! m_inArray )
 	      {align(1,*target); goto processScalar;}  // for completeness
 	  case OCPI::API::OCPI_Struct:
 	  case OCPI::API::OCPI_Double:
@@ -935,18 +938,18 @@ namespace OCPI {
 	  case OCPI::API::OCPI_LongLong:
 	  case OCPI::API::OCPI_ULongLong:
 	    bytes = 8;
-	    if ( ! m_inArray ) 
+	    if ( ! m_inArray )
 	      {align(8,*target); goto processScalar;}
 	  case OCPI::API::OCPI_Short:
 	  case OCPI::API::OCPI_UShort:
 	    bytes = 2;
-	    if ( ! m_inArray ) 
+	    if ( ! m_inArray )
 	      {align(2,*target); goto processScalar;}
 	  case OCPI::API::OCPI_Enum:
 	  case OCPI::API::OCPI_Long:
 	  case OCPI::API::OCPI_ULong:
 	    bytes = 4;
-	    if ( ! m_inArray ) 
+	    if ( ! m_inArray )
 	      {align(4,*target); goto processScalar;}
 
 
@@ -1003,7 +1006,7 @@ namespace OCPI {
 	MsgTypeSupport_var m_mt;
 	std::list<char*>   m_freeBuffers;
 
-      public:	 
+      public:
 	uint8_t * align( int align, uint8_t * orig, uint8_t * cur )
 	{
 	  int offset = cur-orig;
@@ -1013,12 +1016,12 @@ namespace OCPI {
 
 	Topic( TopicManager & tm, TopicData & data  );
 	inline TopicData & data(){return m_data;}
-	inline CbFuncs & cbFunc(){return m_cbFuncs;} 
+	inline CbFuncs & cbFunc(){return m_cbFuncs;}
 
 
 
 	// Copy from DDS
-	void   copyOut( void* from, void * to ) 
+	void   copyOut( void* from, void * to )
 	{
 #ifndef NDEBUG
 	  OU::Protocol & p = *m_data.m_proto;
@@ -1114,7 +1117,7 @@ namespace OCPI {
 
 	inline std::string & module_name(){return m_data.module_name;}
 	inline std::string & struct_name(){return m_data.struct_name;}
-	// child class does this:	inline std::string & name(){return m_data.name;}	    
+	// child class does this:	inline std::string & name(){return m_data.name;}
 
       };
 
@@ -1122,8 +1125,21 @@ namespace OCPI {
 
 
 
-      static const int CB_COUNT=50;  
+      static const int CB_COUNT=50;
       static OCPI::Msg::DDS::Topic * g_t[CB_COUNT];
+/* cppcheck errors found in the next three macros (all three get the same parameters):
+[runtime/dataplane/msg_drivers/dds/src/OcpiDDSTransport.cxx:1148]: (error) Array 'g_t[50]' accessed at index 57, which is out of bounds.
+[runtime/dataplane/msg_drivers/dds/src/OcpiDDSTransport.cxx:1148]: (error) Array 'g_t[50]' accessed at index 58, which is out of bounds.
+[runtime/dataplane/msg_drivers/dds/src/OcpiDDSTransport.cxx:1148]: (error) Array 'g_t[50]' accessed at index 171, which is out of bounds.
+[runtime/dataplane/msg_drivers/dds/src/OcpiDDSTransport.cxx:1148]: (error) Array 'g_t[50]' accessed at index 172, which is out of bounds.
+[runtime/dataplane/msg_drivers/dds/src/OcpiDDSTransport.cxx:1148]: (error) Array 'g_t[50]' accessed at index 271, which is out of bounds.
+[runtime/dataplane/msg_drivers/dds/src/OcpiDDSTransport.cxx:1148]: (error) Array 'g_t[50]' accessed at index 272, which is out of bounds.
+[runtime/dataplane/msg_drivers/dds/src/OcpiDDSTransport.cxx:1148]: (error) Array 'g_t[50]' accessed at index 371, which is out of bounds.
+[runtime/dataplane/msg_drivers/dds/src/OcpiDDSTransport.cxx:1148]: (error) Array 'g_t[50]' accessed at index 372, which is out of bounds.
+[runtime/dataplane/msg_drivers/dds/src/OcpiDDSTransport.cxx:1148]: (error) Array 'g_t[50]' accessed at index 471, which is out of bounds.
+[runtime/dataplane/msg_drivers/dds/src/OcpiDDSTransport.cxx:1148]: (error) Array 'g_t[50]' accessed at index 472, which is out of bounds.
+*/
+
 #define C(v) static void co##v ( void * a1, void * a2 ){g_t[v]->copyOut(a1,a2);}
 #define S(a,b,c,d,e,f,g,h,i,j)C(a)C(b)C(c)C(d)C(e)C(f)C(g)C(h) C(i) C(j)
 #define M(a) S(a##0,a##1,a##2,a##3,a##4,a##5,a##6, a##7, a##71, a##72 )
@@ -1131,7 +1147,7 @@ namespace OCPI {
 #undef C
 #undef S
 #define S(a,b,c,d,e,f,g,h,i,j)C(a),C(b),C(c),C(d),C(e),C(f),C(g),C(h),C(i),C(j)
-#define C(v) co##v    
+#define C(v) co##v
 	static const gapi_copyOut g_coPointers[CB_COUNT]={M(0),M(1),M(2),M(3),M(4) };
 #undef C
 #undef S
@@ -1144,7 +1160,7 @@ namespace OCPI {
 #undef C
 #undef S
 #define S(a,b,c,d,e,f,g,h,i,j)C(a),C(b),C(c),C(d),C(e),C(f),C(g),C(h),C(i),C(j)
-#define C(v) ci##v    
+#define C(v) ci##v
 	static const gapi_copyIn g_ciPointers[CB_COUNT]={M(0),M(1),M(2),M(3),M(4) };
 #undef C
 #undef S
@@ -1158,7 +1174,7 @@ namespace OCPI {
 #undef C
 #undef S
 #define S(a,b,c,d,e,f,g,h,i,j)C(a),C(b),C(c),C(d),C(e),C(f),C(g),C(h),C(i),C(j)
-#define C(v) rc##v    
+#define C(v) rc##v
 	static const gapi_readerCopy g_rcPointers[CB_COUNT]={M(0),M(1),M(2),M(3),M(4) };
       int freeList[CB_COUNT];
 #undef C
@@ -1168,7 +1184,7 @@ namespace OCPI {
       class FuncPoolManager {
       private:
 
-	static int nextFree() 
+	static int nextFree()
 	{
 	  for (int n=0; n<CB_COUNT; n++ ) {
 	    if ( freeList[n]==0 ) {
@@ -1186,12 +1202,12 @@ namespace OCPI {
 	  }
 	}
 
-	void unRegisterCB( OCPI::Msg::DDS::Topic *  ) 
+	void unRegisterCB( OCPI::Msg::DDS::Topic *  )
 	{
 
 	}
 
-	static CbFuncs registerCB( OCPI::Msg::DDS::Topic * t ) 
+	static CbFuncs registerCB( OCPI::Msg::DDS::Topic * t )
 	{
 	  int index = nextFree();
 	  if ( index < 0 ) {
@@ -1213,11 +1229,11 @@ namespace OCPI {
 	std::list<Topic*> m_topics;
       public:
 	TopicManager() {}
-	~TopicManager() 
+	~TopicManager()
 	{
 	  m_topics.clear();
 	}
-	  
+
 	static TopicManager & manager() {
 	  static TopicManager * tp = NULL;
 	  if ( tp == NULL ) {
@@ -1235,14 +1251,14 @@ namespace OCPI {
 	  }
 	  Topic * t = new Topic( *this, data );
 	  m_topics.push_back( t );
-	  return t;	      
+	  return t;
 	}
       };
 
 
-      Topic::Topic( TopicManager & tm, TopicData & data ) 
+      Topic::Topic( TopicManager & tm, TopicData & data )
 	: OCPI::Util::Child<TopicManager,Topic>(tm, *this, data.name.c_str()),m_data(data)
-      {	
+      {
 	m_cbFuncs = FuncPoolManager::registerCB( this );
 
 	// create domain participant
@@ -1256,7 +1272,7 @@ namespace OCPI {
 	registerType(m_mt.in());
 
 	//create Topic
-	createTopic(m_data.name.c_str());	  
+	createTopic(m_data.name.c_str());
       };
 
 
@@ -1283,17 +1299,17 @@ namespace OCPI {
       };
 
       class XferFactory;
-      class XferServices;	
-      class MsgChannel : public DataTransfer::Msg::TransferBase<XferServices,MsgChannel> 
+      class XferServices;
+      class MsgChannel : public DataTransfer::Msg::TransferBase<XferServices,MsgChannel>
       {
       private:
 	Topic *   m_topic;
 	EndPoint  m_ep;
-	TopicData & m_td;	  
+	TopicData & m_td;
 	MsgDataReader_var  m_reader;
 	MsgDataWriter_var  m_writer;
 	int m_bufCount;
-	
+
 	::DDS::Publisher_ptr  m_publisher;
 	::DDS::Subscriber_ptr m_subscriber;
 	::DDS::DataWriter_ptr m_writer_ptr;
@@ -1303,7 +1319,7 @@ namespace OCPI {
 	std::list<Buffer*> m_freeRcvBuffers;
 	std::list<Buffer*> m_fullRcvBuffers;
 	Buffer * m_currentBuffer;
-	std::list<Buffer*> m_freeTxBuffers;	
+	std::list<Buffer*> m_freeTxBuffers;
 
       public:
 
@@ -1354,7 +1370,7 @@ namespace OCPI {
 							::DDS::STATUS_MASK_NONE);
 	  checkHandle(m_writer_ptr, "DDS::Publisher::create_datawriter");
 	  m_writer = MsgDataWriter::_narrow(m_writer_ptr);
-	    
+
 	}
 
 	virtual ~MsgChannel()
@@ -1374,7 +1390,7 @@ namespace OCPI {
 	  catch ( ... ) {}
 	  */
 	}
-	  
+
 	void sendOutputBuffer (OCPI::DataTransport::BufferUserFacet* b, uint32_t /* msg_size */,
 			       uint8_t /* opcode */)
 	{
@@ -1454,7 +1470,7 @@ namespace OCPI {
 	  checkStatus(status, "MsgDataReader::return_loan");
 	  m_freeRcvBuffers.push_back( buf  );
 	}
-	  
+
 	OCPI::DataTransport::BufferUserFacet*  getNextFullInputBuffer(void *&data, uint32_t &length,
 								      uint8_t &opcode)
 	{
@@ -1462,12 +1478,12 @@ namespace OCPI {
 	    return NULL;
 	  Buffer * buf = m_fullRcvBuffers.front();
 	  ocpiAssert( buf );
-	  m_fullRcvBuffers.pop_front();	  
+	  m_fullRcvBuffers.pop_front();
 	  length = buf->m_dLen;
 	  opcode = 0;
 	  data = (void*)buf->getBuffer(); // cast off volatile
 	  return buf;
-	}      
+	}
 
       };
 
@@ -1475,7 +1491,7 @@ namespace OCPI {
       class XferServices : public DataTransfer::Msg::ConnectionBase<XferFactory,XferServices,MsgChannel>
       {
       public:
-	XferServices ( const OCPI::Util::Protocol & protocol , const char  * other_url, 
+	XferServices ( const OCPI::Util::Protocol & protocol , const char  * other_url,
 		       const OCPI::Util::PValue *our_props=0,
 		       const OCPI::Util::PValue *other_props=0 );
 
@@ -1492,7 +1508,7 @@ namespace OCPI {
 	}
 	virtual ~XferServices ()
 	{
-	  // Empty 
+	  // Empty
 	}
 
       private:
@@ -1526,10 +1542,10 @@ namespace OCPI {
 	  if ((err = OX::checkAttrs(x, DDS_DEVICE_ATTRS, NULL)) ||
 	      (err = OX::getNumber(x, "ph", &m_ph, NULL, 0, false)) )
 	    {
-	      throw err; 
+	      throw err;
 	    }
 	}
- 
+
 	uint32_t m_ph;
       };
 
@@ -1547,7 +1563,7 @@ namespace OCPI {
 	virtual ~Device(){}
       };
 
-     
+
       class XferFactory
 	: public DataTransfer::Msg::DriverBase<XferFactory, Device,XferServices,DataTransfer::Msg::msg_transfer>, public FactoryConfig
       {
@@ -1556,12 +1572,12 @@ namespace OCPI {
 	inline const char* getProtocol(){return "ocpi-dds-msg";};
 	XferFactory()throw ();
 	virtual ~XferFactory()throw ();
- 
+
 	void configure(ezxml_t)
 	{
 	  // Empty
 	}
-	  
+
 	bool supportsTx( const char* url,
 			 const OCPI::Util::PValue *our_props,
 			 const OCPI::Util::PValue *other_props )
@@ -1597,11 +1613,11 @@ namespace OCPI {
 	    cout << "      align =  " << protocol.operations()[0].args()[n].m_align << endl;
 	    cout << "      nBytes =  " << protocol.operations()[0].args()[n].m_nBytes << endl;
 
-	    cout << "      type =  " << protocol.operations()[0].args()[n].m_baseType << endl;	      
-	    cout << "       seq =  " << protocol.operations()[0].args()[n].m_isSequence << endl;	      
+	    cout << "      type =  " << protocol.operations()[0].args()[n].m_baseType << endl;
+	    cout << "       seq =  " << protocol.operations()[0].args()[n].m_isSequence << endl;
 	    cout << "       ary =  " << protocol.operations()[0].args()[n].m_arrayRank << endl;
-	    cout << "       strlen =  " << protocol.operations()[0].args()[n].m_stringLength << endl;	      
-	    cout << "       sequence length =  " << protocol.operations()[0].args()[n].m_sequenceLength << endl;	      
+	    cout << "       strlen =  " << protocol.operations()[0].args()[n].m_stringLength << endl;
+	    cout << "       sequence length =  " << protocol.operations()[0].args()[n].m_sequenceLength << endl;
 	  }
 #endif
 
@@ -1623,7 +1639,7 @@ namespace OCPI {
 
       };
 
-	
+
       XferServices::
       XferServices ( const OCPI::Util::Protocol & protocol , const char  * other_url,
 		     const OCPI::Util::PValue *our_props,
@@ -1641,11 +1657,11 @@ namespace OCPI {
 	// Empty
       }
 
-      XferFactory::	
+      XferFactory::
       ~XferFactory()
 	throw ()
       {
-	
+
 
       }
 
@@ -1668,7 +1684,7 @@ using namespace DDS;
 namespace OpenSpliceBindings {
 
   // DDS Msg TypeSupport Object Body
-  MsgTypeSupport::MsgTypeSupport( OCPI::Msg::DDS::Topic * topic ) 
+  MsgTypeSupport::MsgTypeSupport( OCPI::Msg::DDS::Topic * topic )
     : TypeSupport_impl(
 		       topic->data().type.c_str(),
 		       topic->data().key.c_str(),

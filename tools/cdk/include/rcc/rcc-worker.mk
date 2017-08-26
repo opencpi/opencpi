@@ -147,7 +147,7 @@ endef
 
 CompilerWarnings= -Wall -Wextra
 CompilerDebugFlags=-g
-CompilerOptimizeFlags=-O3 -g -DNDEBUG=1
+CompilerOptimizeFlags=-O
 ifeq ($(OCPI_DEBUG),1)
 RccCompileOptions=$(CompilerDebugFlags)
 else

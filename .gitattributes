@@ -1,1 +1,5 @@
-*.ngc binary
+*.ngc -diff
+*.edf -diff
+*.bit -diff
+doc/html/** -diff
+releng/jenkins/jenkins_backups/** -diff
