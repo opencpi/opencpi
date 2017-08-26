@@ -1,0 +1,202 @@
+//#define DEBUG_TxRx_Datagram 1
+/*
+ *  Copyright (c) Mercury Federal Systems, Inc., Arlington VA., 2009-2010
+ *
+ *    Mercury Federal Systems, Incorporated
+ *    1901 South Bell Street
+ *    Suite 402
+ *    Arlington, Virginia 22202
+ *    United States of America
+ *    Telephone 703-413-0781
+ *    FAX 703-413-0784
+ *
+ *  This file is part of OpenCPI (www.opencpi.org).
+ *     ____                   __________   ____
+ *    / __ \____  ___  ____  / ____/ __ \ /  _/ ____  _________ _
+ *   / / / / __ \/ _ \/ __ \/ /   / /_/ / / /  / __ \/ ___/ __ `/
+ *  / /_/ / /_/ /  __/ / / / /___/ ____/_/ / _/ /_/ / /  / /_/ /
+ *  \____/ .___/\___/_/ /_/\____/_/    /___/(_)____/_/   \__, /
+ *      /_/                                             /____/
+ *
+ *  OpenCPI is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  OpenCPI is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with OpenCPI.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/*
+ * Abstact:
+ *   This file contains the interface for the Ocpi Datagram transfer driver.
+ *
+ *  John Miller -  5-24-12
+ *  Initial version
+ *
+ */
+#include <inttypes.h>
+#include "OcpiOsEther.h"
+#include "OcpiUtilException.h"
+#include "OcpiUtilMisc.h"
+#include "XferException.h"
+#include "DtDataGramXfer.h"
+
+namespace DataTransfer {
+
+  namespace XF = DataTransfer;
+  namespace DG = DataTransfer::Datagram;
+  namespace Ether {
+
+    namespace OE = OCPI::OS::Ether;
+    namespace OU = OCPI::Util;
+
+#define OCPI_ETHER_RDMA "ocpi-ether-rdma"
+#define DATAGRAM_PAYLOAD_SIZE OE::MaxPacketSize;
+
+    class Socket;
+    class XferFactory;
+    class EndPoint : public DG::DGEndPoint, public XF::EndPoint {
+      OE::Address m_addr;
+      std::string m_ifname;
+      ocpi_sockaddr_t m_sockaddr;
+
+      friend class Socket;
+      friend class XferFactory;
+    protected:
+      EndPoint(XF::XferFactory &factory, const char *protoInfo, const char *eps,
+	       const char *other, bool local, size_t size, const OU::PValue *params)
+	: XF::EndPoint(factory, eps, other, local, size, params) { 
+	if (protoInfo) {
+	  m_protoInfo = protoInfo;
+	  const char *cp = strchr(protoInfo, '/');
+	  if (cp) {
+	    m_ifname.assign(protoInfo, cp - protoInfo);
+	    protoInfo = cp + 1;
+	  }
+	  m_addr.setString(protoInfo);
+	  if (!cp || m_addr.hasError())
+	    throw DataTransfer::DataTransferEx(UNSUPPORTED_ENDPOINT,
+					       OCPI_ETHER_RDMA
+					       ": invalid ethernet address in endpoint string");
+	} else {
+	  std::string ifname;
+	  if (other) {
+	    const char *sp = strchr(other, '/');
+	    ifname.assign(other, sp - other);
+	  } else {
+	    const char *name;
+	    if (!OU::findString(params, "interface", name))
+	      name = getenv("OCPI_ETHER_INTERFACE");
+	    if (!name)
+	      throw OU::Error(OCPI_ETHER_RDMA ": no interface specified");
+	  }
+	  // FIXME: use first/only interface if there is one?
+	  std::string error;
+	  OE::Interface ifc(ifname.c_str(), error);
+	  if (error.size())
+	    throw OU::Error(OCPI_ETHER_RDMA ": bad ethernet interface: %s", error.c_str());
+	  OU::format(m_protoInfo, "%s/%s", ifc.name.c_str(), ifc.addr.pretty());
+	}
+      }
+      ~EndPoint() {
+	// FIXME:  this is generic behavior and belongs in a datagram endpoint base class
+	DG::SmemServices &sm = *static_cast<DG::SmemServices *>(&sMemServices());
+	sm.stop(); // stop the socket I/O
+	stop();
+	join();
+      }
+      // boilerplate
+      XF::SmemServices &createSmemServices();
+      const std::string &ifname() const { return m_ifname; }
+      OE::Address &addr() { return m_addr; } // not const
+    public:
+      bool isCompatibleLocal(const char *remote) const {
+	std::string interface;
+	const char *sp = strchr(remote, '/');
+	if (!sp)
+	  return true;
+	//	  throw OU::Error("Badly formed ether-rdma endpoint: %s", remote);
+	interface.assign(remote, sp - remote);
+	return m_ifname == interface;
+      }
+    };
+
+    class Socket : public DG::Socket {
+      friend class XferFactory;
+      EndPoint   &m_lep;
+      OE::Socket *m_socket;
+    public:
+      Socket(EndPoint &lep) : DG::Socket(lep), m_lep(lep), m_socket(NULL) {
+      }
+      uint16_t maxPayloadSize() { return DATAGRAM_PAYLOAD_SIZE; }
+    public:
+      void start() {
+	std::string error;
+	OE::Interface ifc(m_lep.ifname().c_str(), error);
+	if (error.size())
+	  throw OU::Error("Invalid ethernet interface name: %s", m_lep.ifname().c_str());
+	m_socket = new OE::Socket(ifc, ocpi_data, NULL, m_lep.mailBox(), error);
+	if (error.size()) {
+	  delete m_socket;
+	  throw OU::Error("Error opening opencpi ethernet socket: %s", error.c_str());
+	}
+	OCPI::Util::Thread::start();
+      }
+      void send(DG::Frame &frame) {
+	// FIXME: multithreaded..
+	EndPoint *dep = static_cast<EndPoint *>(frame.endpoint);
+	std::string error;
+	for (unsigned n = 0; error.empty() && n < 10; n++) {
+	  if (m_socket->send(frame.iov, frame.iovlen, dep->addr(), 0, NULL, error))
+	    return;
+	  ocpiDebug("Sending packet error: %s", error.size() ? error.c_str() : "timeout");
+	}
+	throw OU::Error("Error sending ether packet: %s", error.empty() ? "timeout" : error.c_str());
+      }
+      size_t
+      receive(uint8_t *buffer, size_t &offset) {
+	size_t length;
+	OE::Address from;
+	std::string error;
+	if (m_socket->receive(buffer, offset, length, 500, from, error))
+	  return length;
+	if (error.empty())
+	  return 0;
+	throw OU::Error("Ethernet socket read error: %s", error.c_str());
+      }
+    };
+
+    class Device;
+    class XferServices;
+    const char *datagram_ether = "datagram_ether";
+    class XferFactory
+      : public DriverBase<XferFactory, Device, XferServices, datagram_ether, DG::XferFactory>
+    {
+    protected:
+      ~XferFactory() throw () {}
+
+    public:
+      // Boilerplate methods that could be templatized
+      DG::SmemServices *
+      createSmemServices(XF::EndPoint *ep);
+      XF::XferServices &createXferServices(XF::EndPoint &source, XF::EndPoint &target);
+      DG::Socket &createSocket(XF::EndPoint&);
+      XF::EndPoint &createEndPoint(const char *protoInfo, const char *eps, const char *other,
+				   bool local, size_t size, const OCPI::Util::PValue *params);
+      // End boilerplate methods
+
+      const char* getProtocol() { return OCPI_ETHER_RDMA; }
+    };
+
+#include "DtDataGramBoilerplate.h"
+    // Used to register with the data transfer system;
+    RegisterTransferDriver<XferFactory> etherDatagramDriver;
+  }
+}
+

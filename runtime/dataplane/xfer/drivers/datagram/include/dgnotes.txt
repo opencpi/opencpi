@@ -1,0 +1,111 @@
+getsmemservices is a method of xferfactory (a driver), that gets the appropriate
+memory mapper for a given endpoint.
+This allows for the possibility that you might have a mem servives object that is shared
+among endpoints or among drivers, but this is really not true - its just a subsidiary
+object to the endpoint that is created on first get.
+pci:
+ creates a new sms per endpoint
+ sms::create: grab dma memory on first "map" call - internal
+ sms::attach(ep?) - nothing
+ sms::detach() - nothing
+ sms::map() - does mmap the whole thing, and return base-vaddr + offset
+ sms::unmap() - does nothing (leak).
+ sms::endpoint() - which of course suggests that these are one-to-one, just delayed.
+ sms::enable - does nothing, but returns whole vaddr
+ sms::disable - nada
+ sms::~ does nothing
+
+pio:
+ uses CreateSmemServices, per endpoint, basically an OS function
+ implemented in rdma_smb/host/src/OcpiHostSmemServices
+ actual lass is HostSmemServices
+ does create or attach based on locality at construction
+ uses CreateFileMapingServices in rdma_smb/linux/src/OcpiPosix...
+ attach opens an smb, but doesn't create it
+ detach disconnects from smb
+ map
+
+ofed:
+ uses posix_memalign to pagesize, then registers the memory
+ just uses the local SMB.
+
+Basically there is a lot of default behavior.
+
+
+What is specialized for UDP:
+DatagramSocket:
+- has own socket handler of its own type
+- start method binds m_server, updates endpoint string (why bind is deferred??)
+- updates endpoint string its way
+- only method is start
+
+DatagramEndpoint:
+- parses string
+- getId (returns port...)
+- getAddress (returns stringified address)
+- socket sets updated string after bind via endpoint
+
+ServerDatagramSocketHandler
+- has a thread, has a run loop reading socket
+- created by DatagramSocket start method.
+- why a different object anyway? same lifecycle...
+
+DatagramDriver:
+- has maypayloadsize
+- has getSmemServices
+- has getEndpoint?
+- has allocateEndpoint
+- has getprotocol
+- basically a delegatee from xfer services instead of just sharing code. HA: thats it.
+
+DatagramXferFactory inherits has class 
+
+
+
+Since there is a "session" from an output to an input, the output cannot be enabled until it knows that the input side has in fact received the feedback/shadow/flow control info.
+So when the output side does "setinitialprovider" info, it must return something to send to the other side.
+The idea is that we are deficient in our handshaking because we are currently relying on just whether we need to send to the other guy, but we also need to know whether to wait for a response.
+In this dg case the output guy returns non-empy from setinitialprovider, but also needs to know whether to wait fir the final provinder info before enabling.
+I.e. the input side needs to know of the existence of the output side before receiving data.
+Why???? Because the xferserices array is used, and that doesn't happen early enouhgh.
+
+Basically the output side MUST WAIT until it knows that the input side is finalized.
+
+But what does the context has to do with processFrame?
+What does the input side need to know about the sender other than its ordinal?
+Maybe the object for the connection doesn't need to be XferServices..
+Maybe the class can be something that doesn't really know about the other side?
+So maybe on-demand creation of peer mailboxes.
+
+The current port "finalize" operation needs to return an indication (based on transport),
+whether it needs more input before proceeding.
+When setinitialproviderinfo on an output returns initial user info, the transfer driver
+needs to be able to say:  and I need another set of info, which means it is not really "finalized"
+at all (the c.m_openCirciot = false). Which means that the "setfinalproviderinfo" hook has
+a different type of finalize...Perhaps we need a differemt verb.
+What is after "finalize"....
+If the current "finalize" was "confirm" or "establish" or "?
+Or there is a state of the port that allows "finalize" to be called again?
+"confirm" sounds good.
+
+(and the setinitialuserinfo must have a hook to return data too).
+
+Remember this doesn't apply to the localally controlled handshaking.
+Where all phases are local.
+The idea of "enabled" happens in the nested "connect", because it doens't return.
+But the distributed model in RTxTest is more statefull.
+So we add the "awaiting confirmation" state, so the implementation of "setFinalProviderInfo" is the
+thing that "enables" the port. But it means that these functions must return an indication that more is expected from the other side.  Perhaps this means that an empty messages will be send.
+I.e. the returned data packet has two items:
+1. the descriptor
+2. whether we need another handshake in any case (even of the other side returns an empty thing).
+
+So "finalize" returns whether a confirmation is required, and the opaque "info" is augmented with 
+the "confirmation needed".  So the descriptor needs this boolean.
+Or possibly the "message" is really two parts:
+- here is data for the other side
+- here is the indicator as to whether to expect another phase, which is sent back.
+So the receiver returns an empty confirmation even when the local side returned nothing more.
+
+
+

@@ -1,0 +1,19 @@
+Ordering of declarations/definitions within classes, and their naming conventions is:
+
+class name camel case initial capitalized
+types: camel case initial capitalized
+constants: - upper case or c_
+data members: - using m_
+static member data: using s_
+static member functions
+constructors
+destructors
+private "init" methods (code shared among constructors)
+private member functions
+protected member functions
+public member functions
+
+static member functions sometimes belong next to something else, rather than
+together before the contructors.
+
+
