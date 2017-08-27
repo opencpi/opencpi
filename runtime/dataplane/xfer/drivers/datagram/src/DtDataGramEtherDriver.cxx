@@ -56,9 +56,9 @@ namespace DataTransfer {
       friend class Socket;
       friend class XferFactory;
     protected:
-      EndPoint(XF::XferFactory &factory, const char *protoInfo, const char *eps,
-	       const char *other, bool local, size_t size, const OU::PValue *params)
-	: XF::EndPoint(factory, eps, other, local, size, params) { 
+      EndPoint(XF::XferFactory &a_factory, const char *protoInfo, const char *eps,
+	       const char *other, bool a_local, size_t a_size, const OU::PValue *params)
+	: XF::EndPoint(a_factory, eps, other, a_local, a_size, params) { 
 	if (protoInfo) {
 	  m_protoInfo = protoInfo;
 	  const char *cp = strchr(protoInfo, '/');
@@ -72,20 +72,20 @@ namespace DataTransfer {
 					       OCPI_ETHER_RDMA
 					       ": invalid ethernet address in endpoint string");
 	} else {
-	  std::string ifname;
+	  std::string a_ifname;
 	  if (other) {
 	    const char *sp = strchr(other, '/');
-	    ifname.assign(other, sp - other);
+	    a_ifname.assign(other, sp - other);
 	  } else {
-	    const char *name;
-	    if (!OU::findString(params, "interface", name))
-	      name = getenv("OCPI_ETHER_INTERFACE");
-	    if (!name)
+	    const char *l_name;
+	    if (!OU::findString(params, "interface", l_name))
+	      l_name = getenv("OCPI_ETHER_INTERFACE");
+	    if (!l_name)
 	      throw OU::Error(OCPI_ETHER_RDMA ": no interface specified");
 	  }
 	  // FIXME: use first/only interface if there is one?
 	  std::string error;
-	  OE::Interface ifc(ifname.c_str(), error);
+	  OE::Interface ifc(a_ifname.c_str(), error);
 	  if (error.size())
 	    throw OU::Error(OCPI_ETHER_RDMA ": bad ethernet interface: %s", error.c_str());
 	  OU::format(m_protoInfo, "%s/%s", ifc.name.c_str(), ifc.addr.pretty());

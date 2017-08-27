@@ -1165,7 +1165,7 @@ emitSkelRCC() {
  * container or just let the container use what it knows?
  */
 const char *Worker::
-parseRccImpl(const char *package) {
+parseRccImpl(const char *a_package) {
   const char *err;
   if ((err = OE::checkAttrs(m_xml, IMPL_ATTRS, "ExternMethods", "StaticMethods", "Threaded",
 			    "Language", "Slave", (void*)0)) ||
@@ -1176,7 +1176,7 @@ parseRccImpl(const char *package) {
   m_pattern = ezxml_cattr(m_xml, "ExternMethods");
   m_staticPattern = ezxml_cattr(m_xml, "StaticMethods");
   ezxml_t xctl;
-  if ((err = parseSpec(package)) ||
+  if ((err = parseSpec(a_package)) ||
       (err = parseImplControl(xctl, NULL)) ||
       (xctl && (err = OE::checkAttrs(xctl, GENERIC_IMPL_CONTROL_ATTRS, "Threaded", (void *)0))) ||
       (err = OE::getBoolean(m_xml, "Threaded", &m_isThreaded)))
@@ -1229,18 +1229,20 @@ parseRccImpl(const char *package) {
   }
   for (unsigned i = 0; i < m_ports.size(); i++)
     m_ports[i]->finalizeRccDataPort();
-  std::string slave;
-  if (OE::getOptionalString(m_xml, slave, "slave")) {
+  std::string l_slave;
+  if (OE::getOptionalString(m_xml, l_slave, "slave")) {
     // The slave attribute is the name of an implementation including the model.
     // Thus the search is in the same library
     std::string sw;
-    const char *dot = strrchr(slave.c_str(), '.');
+    const char *dot = strrchr(l_slave.c_str(), '.');
     if (!dot)
-      return OU::esprintf("slave attribute: '%s' has no authoring model suffix", slave.c_str());
-    OU::format(sw, "../%s/%.*s.xml", slave.c_str(), (int)(dot - slave.c_str()), slave.c_str());
+      return
+	OU::esprintf("slave attribute: '%s' has no authoring model suffix", l_slave.c_str());
+    OU::format(sw, "../%s/%.*s.xml",
+	       l_slave.c_str(), (int)(dot - l_slave.c_str()), l_slave.c_str());
     if (!(m_slave = Worker::create(sw.c_str(), m_file.c_str(), NULL, m_outDir, NULL, NULL, 0,
 				   err)))
-      return OU::esprintf("for slave worker %s: %s", slave.c_str(), err);
+      return OU::esprintf("for slave worker %s: %s", l_slave.c_str(), err);
   }
   m_model = RccModel;
   m_modelString = "rcc";
@@ -1265,7 +1267,7 @@ parseRccAssy() {
 
 // This is an RCC file, and perhaps an assembly or a platform
 const char *Worker::
-parseRcc(const char *package) {
+parseRcc(const char *a_package) {
   const char *lang = ezxml_cattr(m_xml, "Language");
   if (!lang)
     m_language = C;
@@ -1279,7 +1281,7 @@ parseRcc(const char *package) {
   const char *err;
   // Here is where there is a difference between a implementation and an assembly
   if (!strcasecmp(m_xml->name, "RccWorker") || !strcasecmp(m_xml->name, "RccImplementation")) {
-    if ((err = parseRccImpl(package)))
+    if ((err = parseRccImpl(a_package)))
       return OU::esprintf("in %s for %s: %s", m_xml->name, m_implName, err);
   } else if (!strcasecmp(m_xml->name, "RccAssembly")) {
     if ((err = parseRccAssy()))

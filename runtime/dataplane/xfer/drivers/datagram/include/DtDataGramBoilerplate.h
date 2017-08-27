@@ -29,8 +29,8 @@
 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 class Device : public DataTransfer::DeviceBase<XferFactory,Device> {
-  Device(const char* name)
-    : XF::DeviceBase<XferFactory,Device>(name, *this) {}
+  Device(const char *a_name)
+    : XF::DeviceBase<XferFactory,Device>(a_name, *this) {}
 };
 class XferRequest;
 class XferServices : public ConnectionBase<XferFactory,
@@ -50,8 +50,8 @@ class XferRequest
   : public TransferBase<XferServices,XferRequest,DG::XferRequest> {
   friend class XferServices;
 protected:
-  XferRequest(XferServices &parent)
-    : TransferBase<XferServices,XferRequest,DG::XferRequest>(parent, *this) {}
+  XferRequest(XferServices &a_parent)
+    : TransferBase<XferServices,XferRequest,DG::XferRequest>(a_parent, *this) {}
 };
 XF::XferRequest *XferServices::
 createXferRequest() {

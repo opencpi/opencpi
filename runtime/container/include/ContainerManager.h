@@ -126,9 +126,10 @@ namespace OCPI {
     protected:
       WorkerBase<App,Wrk,Prt>(App &app, Wrk &wrk, Artifact *art, const char *a_name,
 			      ezxml_t impl, ezxml_t inst, Worker *a_slave, bool a_hasMaster,
-			      size_t member, size_t crewSize, const OCPI::Util::PValue *params)
+			      size_t a_member, size_t a_crewSize,
+			      const OCPI::Util::PValue *params)
       : Child<App,Wrk,worker>(app, wrk, a_name),
-	Worker(art, impl, inst, a_slave, a_hasMaster, member, crewSize, params)
+	Worker(art, impl, inst, a_slave, a_hasMaster, a_member, a_crewSize, params)
       {
       }
       Application *application() { return &Child<App,Wrk,worker>::parent(); }

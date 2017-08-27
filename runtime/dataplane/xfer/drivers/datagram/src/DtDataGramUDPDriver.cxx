@@ -57,9 +57,9 @@ namespace DataTransfer {
       uint16_t  m_portNum;
       struct sockaddr_in m_sockaddr;
     public:
-      EndPoint(XF::XferFactory &factory, const char *protoInfo, const char *eps,
-	       const char *other, bool local, size_t size, const OU::PValue *params)
-	: XF::EndPoint(factory, eps, other, local, size, params) { 
+      EndPoint(XF::XferFactory &a_factory, const char *protoInfo, const char *eps,
+	       const char *other, bool a_local, size_t a_size, const OU::PValue *params)
+	: XF::EndPoint(a_factory, eps, other, a_local, a_size, params) { 
 	if (protoInfo) {
 	  m_protoInfo = protoInfo;
 	  char ipaddr[80];
@@ -76,11 +76,10 @@ namespace DataTransfer {
 	  } else
 	    strcpy(ip_addr, env);
 	  m_ipAddress = ip_addr;
-	  int port;
 	  const char* penv = getenv("OCPI_UDP_TRANSFER_PORT");
 	  if( !penv || (penv[0] == 0)) {
-	    ocpiDebug("Set ""OCPI_TRANSFER_PORT"" environment variable to set socket IP address");
-	    port = 0;
+	    ocpiDebug("Set the OCPI_TRANSFER_PORT environment variable to set socket IP address");
+	    m_portNum = 0;
 	  } else {
 	    static uint16_t s_port = 0;
 	    if ( s_port == 0 )

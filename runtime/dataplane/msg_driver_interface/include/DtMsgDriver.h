@@ -211,10 +211,10 @@ namespace DataTransfer {
        *                DataTransferEx for all exception conditions
        */
       XferServices (  const OCPI::Util::Protocol & p, 
-		      const char  *url,
+		      const char  *a_url,
 		      const OCPI::Util::PValue *our_props=0,
 		      const OCPI::Util::PValue *other_props=0 )
-	: m_protocol(p),m_url(url)
+	: m_protocol(p),m_url(a_url)
 	{(void)our_props;(void)other_props;attach(); };
 
       /*
@@ -292,13 +292,13 @@ namespace DataTransfer {
       {
       protected:
 	ConnectionBase<ConcDri, ConcConn, ConcXfer>(ConcConn &conn,
-						    const OCPI::Util::Protocol &protocol,
+						    const OCPI::Util::Protocol &a_protocol,
 						    const char* other_url,
 						    const OCPI::Util::PValue *our_props=0,
 						    const OCPI::Util::PValue *other_props=0 )
 	  : OCPI::Util::Child<ConcDri,ConcConn> (OCPI::Util::Singleton<ConcDri>::
 						 getSingleton(), conn),
-	  XferServices(protocol,other_url,our_props,other_props)
+	  XferServices(a_protocol,other_url,our_props,other_props)
 	    {}
       };
     template <class ConcConn, class ConcXfer>

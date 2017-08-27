@@ -47,8 +47,8 @@ namespace OCPI {
       findImplementations(params);
     }
 #endif
-    Assembly::Assembly(ezxml_t a_xml, const char *name, const OCPI::Util::PValue *params)
-      : OU::Assembly(a_xml, name, false, assyAttrs, instAttrs, params), m_refCount(1) {
+    Assembly::Assembly(ezxml_t a_xml, const char *a_name, const OCPI::Util::PValue *params)
+      : OU::Assembly(a_xml, a_name, false, assyAttrs, instAttrs, params), m_refCount(1) {
       findImplementations(params);
     }
     Assembly::~Assembly() {
@@ -385,15 +385,15 @@ namespace OCPI {
 	       "from artifact \"%s\"",
 	       m_utilInstance.m_name.c_str(),
 	       i.m_metadataImpl.specName().c_str(),
-	       i.m_metadataImpl.name().c_str(),
+	       i.m_metadataImpl.cname(),
 	       i.m_staticInstance ? "/" : "",
 	       i.m_staticInstance ? ezxml_cattr(i.m_staticInstance, "name") : "",
 	       i.m_artifact.name().c_str());
       // Check for worker name match
       if (m_utilInstance.m_implName.size() &&
-	  strcasecmp(m_utilInstance.m_implName.c_str(), i.m_metadataImpl.name().c_str())) {
+	  strcasecmp(m_utilInstance.m_implName.c_str(), i.m_metadataImpl.cname())) {
 	ocpiInfo("Rejected: worker name is \"%s\", while requested worker name is \"%s\"",
-		 i.m_metadataImpl.name().c_str(), m_utilInstance.m_implName.c_str());
+		 i.m_metadataImpl.cname(), m_utilInstance.m_implName.c_str());
 	return false;
       }
       // Check for model and platform matches
@@ -687,7 +687,7 @@ namespace OCPI {
     badConnection(const Implementation &impl, const Implementation &otherImpl,
 		  const OU::Assembly::Port &ap, unsigned port) {
       const OU::Port
-	&p = impl.m_metadataImpl.port(port),
+	&p = impl.m_metadataImpl.metaPort(port),
 	&other = *otherImpl.m_metadataImpl.findMetaPort(ap.m_connectedPort->m_name);
       if (impl.m_internals & (1 << port)) {
 	if (!(otherImpl.m_internals & (1 << other.m_ordinal)) ||
@@ -703,7 +703,7 @@ namespace OCPI {
 	}
       } else if (otherImpl.m_internals & (1 << other.m_ordinal)) {
 	ocpiInfo("Port %s of %s is external; the other port is connected: we're incompatible",
-		 p.m_name.c_str(), impl.m_metadataImpl.name().c_str());
+		 p.m_name.c_str(), impl.m_metadataImpl.cname());
 	ocpiInfo("other %p %u %s  m_internals %x, other internals %x", &other, other.m_ordinal,
 		 other.m_name.c_str(), impl.m_internals, otherImpl.m_internals);
 	ocpiInfo("me %p port ordinal %u port %s", &p, p.m_ordinal, p.m_name.c_str());

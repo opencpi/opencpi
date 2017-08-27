@@ -97,20 +97,20 @@ namespace OCPI {
 
     };
 
-    extern const char *port;
+    extern const char *portBase;
     template<class Wrk, class Prt, class Ext>
     class PortBase
-      : public OCPI::Util::Child<Wrk, Prt, port>,
+      : public OCPI::Util::Child<Wrk, Prt, portBase>,
 	public OCPI::Util::Parent<Ext>,
         public Port {
     protected:
       PortBase<Wrk,Prt,Ext>(Wrk &a_worker, Prt &prt, const OCPI::Util::Port &mport,
 			    const OCPI::Util::PValue *params)
-      : OCPI::Util::Child<Wrk,Prt,port>(a_worker, prt, mport.m_name.c_str()),
+      : OCPI::Util::Child<Wrk,Prt,portBase>(a_worker, prt, mport.m_name.c_str()),
 	Port(a_worker.parent().container(), mport, params) {}
-      inline Worker &worker() const { return OCPI::Util::Child<Wrk,Prt,port>::parent(); }
+      inline Worker &worker() const { return OCPI::Util::Child<Wrk,Prt,portBase>::parent(); }
     public:
-      const std::string &name() const { return OCPI::Util::Child<Wrk,Prt,port>::name(); }
+      const std::string &name() const { return OCPI::Util::Child<Wrk,Prt,portBase>::name(); }
     };
 
     // The direct interface for non-components to talk directly to the port,

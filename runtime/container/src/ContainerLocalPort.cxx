@@ -34,9 +34,9 @@ namespace OCPI {
     namespace OR = OCPI::RDT;
 
     LocalPort::
-    LocalPort(Container &container, const OCPI::Util::Port &mPort, bool isProvider,
+    LocalPort(Container &a_container, const OCPI::Util::Port &mPort, bool a_isProvider,
 	      const OU::PValue *params)
-      :  BasicPort(container, mPort, isProvider, params),
+      :  BasicPort(a_container, mPort, a_isProvider, params),
 	 m_scale(1), m_external(NULL), m_connectedBridgePorts(0), m_localBuffer(NULL),
 	 m_localDistribution(OU::Port::DistributionLimit), m_firstBridge(0), m_currentBridge(0),
 	 m_nextBridge(0) {
@@ -52,11 +52,11 @@ namespace OCPI {
 
     // This is called soon after construction, but not in the constructor.
     void LocalPort::
-    prepareOthers(size_t nOthers, size_t mine) {
+    prepareOthers(size_t a_nOthers, size_t mine) {
       m_scale = mine;
-      if (nOthers > 1) {
+      if (a_nOthers > 1) {
 	ocpiDebug("Preparing port for connection to ports scaled crew");
-	m_bridgePorts.resize(nOthers, NULL);
+	m_bridgePorts.resize(a_nOthers, NULL);
       }
     }
 

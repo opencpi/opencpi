@@ -124,7 +124,7 @@ namespace OCPI {
           return esprintf("Invalid xml port description: %s", err);
       // Second pass to do most of the parsing
       p = m_ports;
-      for (unsigned n = 0; n < m_nPorts; n++, p++)
+      for (n = 0; n < m_nPorts; n++, p++)
         if ((err = p->parse()))
           return esprintf("Invalid xml port description: %s", err);
       // Third pass to propagate info from one port to another
@@ -144,15 +144,15 @@ namespace OCPI {
         if ((err = m->parse(x)))
           return esprintf("Invalid xml local memory description: %s", err);
       for (x = ezxml_cchild(xml, "scaling"); x; x = ezxml_next(x)) {
-	std::string name;
-	OE::getOptionalString(x, name, "name");
+	std::string l_name;
+	OE::getOptionalString(x, l_name, "name");
 	Port::Scaling s;
 	if ((err = s.parse(x, this)))
 	  return err;
-	if (name.empty())
+	if (l_name.empty())
 	  m_scaling = s;
 	else
-	  m_scalingParameters[name] = s;
+	  m_scalingParameters[l_name] = s;
       }
       return NULL;
     }

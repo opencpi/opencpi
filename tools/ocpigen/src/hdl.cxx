@@ -28,7 +28,7 @@
 
 // This is an HDL file, and perhaps an assembly or a platform
 const char *Worker::
-parseHdl(const char *package) {
+parseHdl(const char *a_package) {
   const char *err;
   if (strcmp(m_implName, m_fileName.c_str()))
     return OU::esprintf("File name (%s) and implementation name in XML (%s) don't match",
@@ -43,7 +43,7 @@ parseHdl(const char *package) {
   if (!strcasecmp(m_xml->name, "HdlImplementation") || !strcasecmp(m_xml->name, "HdlWorker") ||
       !strcasecmp(m_xml->name, "HdlPlatform") || !strcasecmp(m_xml->name, "HdlDevice") ||
       !strcasecmp(m_xml->name, "HdlConfig") || !strcasecmp(m_xml->name, "HdlContainer")) {
-    if ((err = parseHdlImpl(package)))
+    if ((err = parseHdlImpl(a_package)))
       return OU::esprintf("in %s for %s: %s", m_xml->name, m_implName, err);
   } else if (!strcasecmp(m_xml->name, "HdlAssembly") ||
 	     !strcasecmp(m_xml->name, "HdlPlatformAssembly") ||
@@ -91,10 +91,10 @@ addWciClockReset() {
 }
 
 Clock *Worker::
-findClock(const char *name) const {
+findClock(const char *a_name) const {
   for (ClocksIter ci = m_clocks.begin(); ci != m_clocks.end(); ci++) {
     Clock *c = *ci;
-    if (!strcasecmp(name, c->cname()))
+    if (!strcasecmp(a_name, c->cname()))
       return c;
   }
   return NULL;
@@ -103,7 +103,7 @@ findClock(const char *name) const {
 const char *endians[] = {ENDIANS, NULL};
 
 const char *Worker::
-parseHdlImpl(const char *package) {
+parseHdlImpl(const char *a_package) {
   const char *err;
   ezxml_t xctl;
   size_t dw;
@@ -142,7 +142,7 @@ parseHdlImpl(const char *package) {
   // This must be here so that when the properties are parsed,
   // the first raw one is properly aligned.
   const char *firstRaw = ezxml_cattr(m_xml, "FirstRawProperty");
-  if ((err = parseSpec(package)) ||
+  if ((err = parseSpec(a_package)) ||
       (err = parseImplControl(xctl, firstRaw)) ||
       (err = OE::getNumber(m_xml, "datawidth", &dw, &dwFound)) ||
       (err = OE::getBoolean(m_xml, "outer", &m_outer)))

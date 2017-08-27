@@ -37,19 +37,19 @@ addParamConfigSuffix(std::string &s) {
 }
 
 const char *Worker::
-findParamProperty(const char *name, OU::Property *&prop, size_t &nParam, bool includeInitial) {
+findParamProperty(const char *a_name, OU::Property *&prop, size_t &nParam, bool includeInitial) {
   size_t n = 0;
   for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
-    if (!strcasecmp((*pi)->m_name.c_str(), name)) {
+    if (!strcasecmp((*pi)->m_name.c_str(), a_name)) {
       prop = *pi;
       if (prop->m_isParameter || (includeInitial && prop->m_isWritable)) {
 	nParam = n;
 	return NULL;
       } else
-	return OU::esprintf("The '%s' property is not a parameter", name);
+	return OU::esprintf("The '%s' property is not a parameter", a_name);
     } else if ((*pi)->m_isParameter || (includeInitial && (*pi)->m_isWritable))
       n++;
-  return OU::esprintf("Parameter property not found: '%s'", name);
+  return OU::esprintf("Parameter property not found: '%s'", a_name);
 }
 
 Param::Param() : m_valuesType(NULL), m_param(NULL), m_isDefault(false), m_worker(NULL), 
@@ -157,9 +157,9 @@ parse(ezxml_t px, const OU::Property &p, bool global) {
     *values = ezxml_cattr(px, "values"),
     *valueFile = ezxml_cattr(px, "valueFile"),
     *valuesFile = ezxml_cattr(px, "valuesFile");
-  unsigned n = (value ? 1 : 0) + (values ? 1 : 0) + (valueFile ? 1 : 0) + (valuesFile ? 1 : 0) +
+  unsigned v = (value ? 1 : 0) + (values ? 1 : 0) + (valueFile ? 1 : 0) + (valuesFile ? 1 : 0) +
     (generate ? 1 : 0);
-  if (n != 1)
+  if (v != 1)
     return OU::esprintf("Exactly one attribute must be specified among: "
 			"value, values, valuefile, valuesFile, or (for tests) generate");
   if (generate) {
@@ -549,11 +549,11 @@ parseBuildXml(ezxml_t x) {
   for (ezxml_t px = ezxml_cchild(x, "parameter"); px; px = ezxml_cnext(px)) {
     if ((err = OE::checkAttrs(px, PARAM_ATTRS, NULL)))
       return err;
-    std::string name;
+    std::string l_name;
     OU::Property *p;
     size_t nParam;
-    if ((err = OE::getRequiredString(px, name, "name", "property")) ||
-	(err = findParamProperty(name.c_str(), p, nParam, false)) ||
+    if ((err = OE::getRequiredString(px, l_name, "name", "property")) ||
+	(err = findParamProperty(l_name.c_str(), p, nParam, false)) ||
 	(err = m_build.m_globalParams.params[nParam].parse(px, *p, true)))
       return err;
     assert(nParam == p->m_paramOrdinal); // get rid of nParam someday
@@ -781,17 +781,17 @@ emitToolParameters() {
   ParamConfig info(*this);                          // Current config for generating them
   info.params.resize(m_ctl.nParameters);
   for (ezxml_t px = ezxml_cchild(x, "parameter"); px; px = ezxml_next(px)) {
-    std::string name;
+    std::string l_name;
     bool hasValues;
     OU::Property *p;
     size_t nParam;
 
-    if ((err = OE::getRequiredString(px, name, "name")) ||
+    if ((err = OE::getRequiredString(px, l_name, "name")) ||
 	(err = OE::getBoolean(px, "values", &hasValues)))
       return err;
-    if ((err = findParamProperty(name.c_str(), p, nParam))) {
+    if ((err = findParamProperty(l_name.c_str(), p, nParam))) {
       fprintf(stderr,
-	      "Warning: parameter '%s' ignored due to: %s\n", name.c_str(), err);
+	      "Warning: parameter '%s' ignored due to: %s\n", l_name.c_str(), err);
       continue;
     }
     if ((err = p->finalize(info, "property", false)))

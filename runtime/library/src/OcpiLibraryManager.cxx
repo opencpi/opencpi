@@ -219,8 +219,8 @@ namespace OCPI {
     setConnection(OU::Port &myPort, Implementation *otherImpl,
 		  OU::Port *otherPort) {
       ocpiDebug("Setting connection in %s on %s port %s with other %s port %s",
-	       m_artifact.name().c_str(), m_metadataImpl.name().c_str(), myPort.m_name.c_str(),
-	       otherImpl ? otherImpl->m_metadataImpl.name().c_str() : "none",
+	       m_artifact.name().c_str(), m_metadataImpl.cname(), myPort.m_name.c_str(),
+	       otherImpl ? otherImpl->m_metadataImpl.cname() : "none",
 	       otherPort ? otherPort->m_name.c_str() : "none");
       if (otherImpl) {
 	m_internals |= 1 << myPort.m_ordinal;
@@ -462,7 +462,7 @@ namespace OCPI {
       // Record in the globalmapping
       Manager::getSingleton().addImplementation(*impl);
       ocpiDebug("Added implementation in artifact \"%s\" spec \"%s\" name \"%s\" inst \"%s\"",
-		name().c_str(), metaImpl.specName().c_str(), metaImpl.name().c_str(), 
+		name().c_str(), metaImpl.specName().c_str(), metaImpl.cname(), 
 		staticInstance ? ezxml_cattr(staticInstance, "name") : "no-instance-name");
 
       return impl;
@@ -491,12 +491,12 @@ namespace OCPI {
 			  name().c_str(), err);
 	bool haveInstances = false;
 	for (ezxml_t i = ezxml_cchild(m_xml, "instance"); i; i = ezxml_next(i))
-	  if (!strcasecmp(metaImpl->name().c_str(), ezxml_cattr(i, "worker"))) {
+	  if (!strcasecmp(metaImpl->cname(), ezxml_cattr(i, "worker"))) {
 	    haveInstances = true;
 	    instances[ezxml_cattr(i, "name")] = addImplementation(*metaImpl, i);
 	  }
 	for (ezxml_t i = ezxml_cchild(m_xml, "io"); i; i = ezxml_next(i))
-	  if (!strcasecmp(metaImpl->name().c_str(), ezxml_cattr(i, "worker"))) {
+	  if (!strcasecmp(metaImpl->cname(), ezxml_cattr(i, "worker"))) {
 	    haveInstances = true;
 	    instances[ezxml_cattr(i, "name")] = addImplementation(*metaImpl, i);
 	  }
@@ -535,20 +535,20 @@ namespace OCPI {
       for (InstanceIter ii = instances.begin(); ii != instances.end(); ++ii) {
 	Implementation &i = *ii->second;
 	if (i.m_staticInstance)
-	  for (unsigned n = 0; n < i.m_metadataImpl.nPorts(); ++n)
-	    if (i.m_internals & (1<<n)) {
-	      Implementation &otherImpl = *i.m_connections[n].impl;
+	  for (unsigned nn = 0; nn < i.m_metadataImpl.nPorts(); ++nn)
+	    if (i.m_internals & (1<<nn)) {
+	      Implementation &otherImpl = *i.m_connections[nn].impl;
 	      if (otherImpl.m_inserted) {
 		// Big assumption that adapters only have two ports
-		unsigned other = i.m_connections[n].port->m_ordinal ? 0 : 1;
+		unsigned other = i.m_connections[nn].port->m_ordinal ? 0 : 1;
 		if (otherImpl.m_internals & (1 << other)) {
-		  i.m_connections[n] = otherImpl.m_connections[other];
+		  i.m_connections[nn] = otherImpl.m_connections[other];
 		  otherImpl.m_connections[other].impl = &i;
-		  otherImpl.m_connections[other].port = &i.m_metadataImpl.getPorts()[n];
+		  otherImpl.m_connections[other].port = &i.m_metadataImpl.getPorts()[nn];
 		} else {
 		  // other side of the adapter is external so this is external
-		  i.m_internals &= ~(1 << n);
-		  i.m_externals |= 1 << n;
+		  i.m_internals &= ~(1 << nn);
+		  i.m_externals |= 1 << nn;
 		}
 	      }
 	    }

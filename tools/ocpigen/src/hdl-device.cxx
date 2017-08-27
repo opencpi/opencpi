@@ -76,12 +76,12 @@ HdlDevice(ezxml_t xml, const char *file, const char *parentFile, Worker *parent,
     if ((err = m_supports.back().parse(spx, *this)))
       return;
     for (ezxml_t cx = ezxml_cchild(spx, "connect"); cx; cx = ezxml_next(cx)) {
-      std::string port, to;
+      std::string l_port, to;
       size_t index;
       bool idxFound = false;
       if ((err = OE::checkAttrs(cx, "port", "to", "index", NULL)) ||
 	  (err = OE::checkElements(cx, NULL)) ||
-	  (err = OE::getRequiredString(cx, port, "port")) ||
+	  (err = OE::getRequiredString(cx, l_port, "port")) ||
 	  (err = OE::getRequiredString(cx, to, "to")) ||
 	  (err = OE::getNumber(cx, "index", &index, &idxFound)))
 	return;
@@ -478,23 +478,23 @@ const char *Worker::
 parseInstance(Worker &parent, Instance &i, ezxml_t x) {
   const char *err;
   for (ezxml_t sx = ezxml_cchild(x, "signal"); sx; sx = ezxml_next(sx)) {
-    std::string name, base, external;
+    std::string l_name, base, external;
     size_t index;
     bool hasIndex;
-    if ((err = OE::getRequiredString(sx, name, "name")) ||
+    if ((err = OE::getRequiredString(sx, l_name, "name")) ||
 	(err = OE::getRequiredString(sx, external, "external")) ||
-	(err = decodeSignal(name, base, index, hasIndex)))
+	(err = decodeSignal(l_name, base, index, hasIndex)))
       return err;
     Signal *s = m_sigmap.findSignal(base);
     if (!s)
       return OU::esprintf("Worker \"%s\" of instance \"%s\" has no signal \"%s\"",
-			  m_implName, i.cname(), name.c_str());
+			  m_implName, i.cname(), l_name.c_str());
     assert(!hasIndex || s->m_width);
     if (external.length()) {
       bool single;
       if (i.m_extmap.findSignal(*s, index, single))
 	return OU::esprintf("Duplicate signal \"%s\" for worker \"%s\" instance \"%s\"",
-			    name.c_str(), m_implName, i.cname());
+			    l_name.c_str(), m_implName, i.cname());
       size_t dummy;
       if (i.m_extmap.findSignal(external, dummy) && s->m_direction == Signal::OUT)
 	return OU::esprintf("Multiple outputs drive external \"%s\" for worker \"%s\" "
@@ -503,7 +503,7 @@ parseInstance(Worker &parent, Instance &i, ezxml_t x) {
       if (!ps)
 	return OU::esprintf("External signal \"%s\" specified for signal \"%s\" of "
 			    "instance \"%s\" of worker \"%s\" is not an external signal of the "
-			    "assembly", external.c_str(), name.c_str(), i.cname(), m_implName);
+			    "assembly", external.c_str(), l_name.c_str(), i.cname(), m_implName);
       // If the board signal is bidirectional (can be anything), it should inherit
       // the direction of the device's signal
       if (ps->m_direction == Signal::BIDIRECTIONAL)

@@ -113,7 +113,7 @@ namespace OCPI {
     }
     bool Manager::findContainersX(Callback &cb, OU::Worker &i, const char *a_name) {
       ocpiDebug("Finding containers for worker %s container name %s",
-		i.name().c_str(), a_name);
+		i.cname(), a_name);
       parent().configureOnce();
       for (Driver *d = firstChild(); d; d = d->nextChild())
 	for (Container *c = d->firstContainer(); c; c = c->nextContainer()) {
@@ -139,7 +139,7 @@ namespace OCPI {
       *application = "application",
       *artifact ="artifact",
       *worker = "worker",
-      *port = "port",
+      *portBase = "port", // named differently to avoid shadowing issues
       *externalPort = "externalPort";
   }
   namespace API {

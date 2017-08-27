@@ -199,14 +199,13 @@ supportsEndPoints(
 }
 
 XferFactory::
-XferFactory(const char *name)
-  : OD::DriverType<XferManager,XferFactory>(name, *this)
-{
+XferFactory(const char *a_name)
+  : OD::DriverType<XferManager,XferFactory>(a_name, *this) {
 }
 
 // Destructor
-XferFactory::~XferFactory()
-{
+XferFactory::
+~XferFactory() {
   this->lock();
   
   // These are already children, so they get removec automatically
@@ -281,7 +280,7 @@ getEndPoint(const char *endPoint, bool local, bool cantExist, size_t size)
   EndPoint::getUuid(endPoint, uuid);
   OU::SelfAutoMutex guard (this); 
   EndPointsIter i = m_endPoints.find(uuid);
-  if (i != m_endPoints.end())
+  if (i != m_endPoints.end()) {
     if (cantExist)
       throw OU::Error("Local explicit endpoint already exists: '%s'", endPoint);
     else {
@@ -291,6 +290,7 @@ getEndPoint(const char *endPoint, bool local, bool cantExist, size_t size)
 #endif
       return *i->second;
     }
+  }
   return addEndPoint(endPoint, NULL, local, size);
 }
 

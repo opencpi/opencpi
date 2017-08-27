@@ -33,7 +33,6 @@ namespace OCPI {
       ocpiDebug("OCL Compile %zu sources to target %s", nSources, target);
       Device &device = OCPI::OCL::Driver::getSingleton().find(target);
       ocpiDebug("OCL Compile for device %s", device.name().c_str());
-      cl_int rc;
       cl_program program;
       OCL_RC(program,
 	     clCreateProgramWithSource(device.context(), OCPI_UTRUNCATE(cl_uint, nSources),
@@ -45,6 +44,7 @@ namespace OCPI {
       for (const char **ap = includes; ap && *ap; ap++)
 	OU::formatAdd(options, " -I%s", *ap);
       ocpiDebug("Compiler options: %s\n", options.c_str());
+      cl_int rc;
       if ((rc = clBuildProgram(program, 1, &device.id(), options.c_str(), NULL, NULL)) &&
 	  rc != CL_BUILD_PROGRAM_FAILURE)
 	throwOclError(rc, "Compiling worker");

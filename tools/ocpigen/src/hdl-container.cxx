@@ -345,7 +345,7 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
   if (icp && !cp) {
     UNoc &unoc = uNocs.at(icp->pname());
     std::string client;
-    const char *port;
+    const char *icPort;
     OU::format(client, "%s_unoc2cp", icp->pname());
     if (icp->m_type == SDPPort) {
       OU::formatAdd(assy,
@@ -354,10 +354,10 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
 		    "  </instance>\n",
 		    client.c_str(), m_config.sdpWidth());
 
-      port = "sdp";
+      icPort = "sdp";
     } else {
       OU::formatAdd(assy, "  <instance name='%s' worker='unoc2cp'/>\n", client.c_str());
-      port = "client";
+      icPort = "client";
     }
     OU::formatAdd(assy,
 		  "  <connection>\n"
@@ -365,7 +365,7 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
 		  "    <port instance='ocscp' name='cp'/>\n"
 		  "  </connection>\n",
 		  client.c_str());
-    unoc.addClient(assy, true, client.c_str(), port);
+    unoc.addClient(assy, true, client.c_str(), icPort);
   } else
     // Connect it to the pf config's cpmaster
     for (PortsIter ii = m_config.m_ports.begin(); ii != m_config.m_ports.end(); ii++) {
@@ -446,8 +446,7 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
 	nWCIs++;
       }
       // Instance time clients for the assembly
-      const Ports &ports = dt.ports();
-      for (PortsIter pi = ports.begin(); pi != ports.end(); pi++)
+      for (PortsIter pi = dt.ports().begin(); pi != dt.ports().end(); pi++)
 	if ((*pi)->m_type == WTIPort)
 	  emitTimeClient(assy, di.cname(), (*pi)->pname());
     }

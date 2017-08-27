@@ -348,16 +348,16 @@ namespace OCPI {
 	 = m_local->launch(m_members, m_connections) ? "<launching>" : "<launching done='1'>";
       // Whether we are done or not, we need to send any initial connection info to the other side.
       c = &m_connections[0];
-      for (unsigned n = 0; n < m_connections.size(); n++, c++) {
+      for (unsigned nn = 0; nn < m_connections.size(); nn++, c++) {
 	if (c->m_in.m_launcher == m_local && c->m_in.m_initial.length()) {
-	  OU::formatAdd(m_response, "  <connection id='%u'", n);
+	  OU::formatAdd(m_response, "  <connection id='%u'", nn);
 	  OU::encodeDescriptor("ipi", c->m_in.m_initial, m_response);
 	  m_response += "/>\n";
 	  c->m_in.m_initial.clear();
 	}
 	// Output ports may have initial info if they received IPI in this launch.
 	if (c->m_out.m_launcher == m_local && c->m_out.m_initial.length()) {
-	  OU::formatAdd(m_response, "  <connection id='%u'", n);
+	  OU::formatAdd(m_response, "  <connection id='%u'", nn);
 	  OU::encodeDescriptor("iui", c->m_out.m_initial, m_response);
 	  m_response += "/>\n";
 	  c->m_out.m_initial.clear();
@@ -513,8 +513,8 @@ namespace OCPI {
 	OU::format(info, "%s|%s|%s|%s|%s|%s|%c|", c.name().c_str(), c.model().c_str(), c.os().c_str(),
 		   c.osVersion().c_str(), c.arch().c_str(), c.platform().c_str(),
 		   c.dynamic() ? '1' : '0');
-	for (unsigned n = 0;  n < c.transports().size(); n++) {
-	  const OC::Transport &t = c.transports()[n];
+	for (unsigned nn = 0;  nn < c.transports().size(); nn++) {
+	  const OC::Transport &t = c.transports()[nn];
 	  OU::formatAdd(info, "%s,%s,%u,%u,0x%x,0x%x|",
 			t.transport.c_str(), t.id.c_str(), t.roleIn, t.roleOut, t.optionsIn,
 			t.optionsOut);

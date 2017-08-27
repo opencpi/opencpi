@@ -33,17 +33,17 @@ namespace OCPI {
     namespace OR = OCPI::RDT;
 
     PortData::
-    PortData(const OU::Port &mPort, bool isProvider, PortConnectionDesc *desc)
-      : m_ordinal(mPort.m_ordinal), m_isProvider(isProvider), m_connectionData(desc)
+    PortData(const OU::Port &mPort, bool a_isProvider, PortConnectionDesc *desc)
+      : m_ordinal(mPort.m_ordinal), m_isProvider(a_isProvider), m_connectionData(desc)
     {
       OR::Descriptors &d = getData().data;
       d.type = m_isProvider ? OR::ConsumerDescT : OR::ProducerDescT;
       d.role = OR::NoRole;
       d.options = 0;
       bzero((void *)&d.desc, sizeof(d.desc));
-      size_t nBuffers =
+      size_t l_nBuffers =
 	mPort.m_defaultBufferCount == SIZE_MAX ? DEFAULT_NBUFFERS : mPort.m_defaultBufferCount;
-      m_nBuffers = nBuffers > mPort.m_minBufferCount ? nBuffers : mPort.m_minBufferCount;
+      m_nBuffers = l_nBuffers > mPort.m_minBufferCount ? l_nBuffers : mPort.m_minBufferCount;
       // FIXME: this is really set at connection time and should be removed here and left
       // == SIZE_MAX
       if (mPort.m_bufferSize == SIZE_MAX) {
@@ -80,8 +80,8 @@ namespace OCPI {
     }
 
     ExternalBuffer::
-    ExternalBuffer(BasicPort &port, ExternalBuffer *next, unsigned n)
-      : m_port(port), m_full(false), m_position(n), m_next(next), m_zcFront(NULL),
+    ExternalBuffer(BasicPort &a_port, ExternalBuffer *a_next, unsigned n)
+      : m_port(a_port), m_full(false), m_position(n), m_next(a_next), m_zcFront(NULL),
 	m_zcBack(NULL), m_dtBuffer(NULL), m_dtData(NULL) {
       memset(&m_hdr, 0, sizeof(m_hdr));
     }
@@ -102,21 +102,21 @@ namespace OCPI {
 
     // ZC put
     void ExternalBuffer::
-    put(ExternalPort &port, size_t length, uint8_t opCode, bool end, size_t direct) {
-      m_hdr.m_length = OCPI_UTRUNCATE(uint32_t, length);
-      m_hdr.m_opCode = opCode;
-      m_hdr.m_eof    = end ? 1 : 0;
-      m_hdr.m_direct = OCPI_UTRUNCATE(uint8_t, direct);
+    put(ExternalPort &port, size_t a_length, uint8_t a_opCode, bool a_end, size_t a_direct) {
+      m_hdr.m_length = OCPI_UTRUNCATE(uint32_t, a_length);
+      m_hdr.m_opCode = a_opCode;
+      m_hdr.m_eof    = a_end ? 1 : 0;
+      m_hdr.m_direct = OCPI_UTRUNCATE(uint8_t, a_direct);
       put(port);
     }
 
     BasicPort::
-    BasicPort(Container &c, const OU::Port &metaData, bool isProvider, const OU::PValue *params)
-      : PortData(metaData, isProvider, NULL), m_lastInBuffer(NULL), m_lastOutBuffer(NULL),
+    BasicPort(Container &c, const OU::Port &mPort, bool a_isProvider, const OU::PValue *params)
+      : PortData(mPort, a_isProvider, NULL), m_lastInBuffer(NULL), m_lastOutBuffer(NULL),
 	m_dtLastBuffer(NULL), m_dtPort(NULL), m_allocation(NULL), m_bufferStride(0),
 	m_next2write(NULL), m_next2put(NULL), m_next2read(NULL), m_next2release(NULL),
-	m_forward(NULL), m_backward(NULL), m_nRead(0), m_nWritten(0), myDesc(getData().data.desc),
-	m_metaPort(metaData), m_container(c) {
+	m_forward(NULL), m_backward(NULL), m_nRead(0), m_nWritten(0),
+	myDesc(getData().data.desc), m_metaPort(mPort), m_container(c) {
       applyPortParams(params);
     }
 
@@ -593,15 +593,15 @@ namespace OCPI {
     }
 
     void ExternalBuffer::
-    send(size_t length, uint8_t opCode, bool end, size_t direct) {
-      ocpiDebug("Sending buffer %p: l %zu o %u %u %zu data %x %x", this, length, opCode, end,
-		direct,
+    send(size_t a_length, uint8_t a_opCode, bool a_end, size_t a_direct) {
+      ocpiDebug("Sending buffer %p: l %zu o %u %u %zu data %x %x", this, a_length, a_opCode,
+		a_end, a_direct,
 		((uint32_t*)((uint8_t *)this + m_hdr.m_data))[0],
 		((uint32_t*)((uint8_t *)this + m_hdr.m_data))[1]);
-      m_hdr.m_length = OCPI_UTRUNCATE(uint32_t, length);
-      m_hdr.m_opCode = opCode;
-      m_hdr.m_eof    = end ? 1 : 0;
-      m_hdr.m_direct = OCPI_UTRUNCATE(uint8_t, direct);
+      m_hdr.m_length = OCPI_UTRUNCATE(uint32_t, a_length);
+      m_hdr.m_opCode = a_opCode;
+      m_hdr.m_eof    = a_end ? 1 : 0;
+      m_hdr.m_direct = OCPI_UTRUNCATE(uint8_t, a_direct);
       put();
     }
     void BasicPort::
@@ -610,7 +610,8 @@ namespace OCPI {
 	throw OU::Error("put called on output port %s without a previous buffer",
 			name().c_str());
       m_lastOutBuffer->send(length, opCode, end, direct);
-      ocpiDebug("Putting (internal) on %p(f %p) buffer %p length %zu", this, m_forward, m_lastOutBuffer, length);
+      ocpiDebug("Putting (internal) on %p(f %p) buffer %p length %zu", this, m_forward,
+		m_lastOutBuffer, length);
       m_lastOutBuffer = NULL;
     }
     // Step 2: (API/high level) put the next2put buffer, it is full
@@ -624,8 +625,8 @@ namespace OCPI {
     }
     // Step 2: API level put last buffer method on buffer object
     void ExternalBuffer::
-    put(size_t length, uint8_t opCode, bool end, size_t direct) {
-      m_port.putInternal(length, opCode, end, direct);
+    put(size_t a_length, uint8_t a_opCode, bool a_end, size_t a_direct) {
+      m_port.putInternal(a_length, a_opCode, a_end, a_direct);
     }
     // Step 2: low level API on port
     void BasicPort::
@@ -751,7 +752,7 @@ namespace OCPI {
       if ((m_forward ? m_forward : this)->m_lastInBuffer)
 	throw
 	  OU::Error("getBuffer called on input port \"%s\" of worker \"%s\" without releasing "
-		    "previous buffer", name().c_str(), metaPort().metaWorker().name().c_str());
+		    "previous buffer", name().c_str(), metaPort().metaWorker().cname());
       ExternalBuffer *b = getFullBuffer();
       if (b) {
 	data = b->data();
@@ -924,8 +925,8 @@ namespace OCPI {
     }
 
     void BasicPort::
-    setBufferSize(size_t bufferSize) {
-      m_bufferSize = bufferSize;
+    setBufferSize(size_t a_bufferSize) {
+      m_bufferSize = a_bufferSize;
       getData().data.desc.dataBufferSize = OCPI_UTRUNCATE(uint32_t, m_bufferSize);
     }
 

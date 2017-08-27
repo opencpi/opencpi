@@ -276,21 +276,21 @@ namespace OCPI {
     // This info is for runtime.  We don't save everything from discovery time
     Device::
     Device(const std::string &dname, cl_platform_id pid, cl_device_id did,
-	   const std::string &vendor, bool verbose, bool print)
+	   const std::string &a_vendor, bool verbose, bool print)
       : m_name(dname), m_id(did), m_context(NULL), m_bufferAlignment(0), m_isCPU(false),
 	m_pid(pid), m_vendor(NULL), m_family(NULL), m_platform(NULL), m_nUnits(0),
 	m_nextQOrd(0), m_numSubDevices(0), m_maxGroupSize(0), m_maxComputeUnits(0) {
       memset(m_cmdq, 0, sizeof(m_cmdq));
       memset(m_outDevices, 0, sizeof(m_outDevices));
-      cl_int rc;
-      cl_device_type type;
+      //      cl_int rc;
+      cl_device_type l_type;
       cl_uint vendorId, nDimensions;
       size_t *sizes, argSize;
       cl_bool available, compiler;
       cl_device_exec_capabilities capabilities;
       cl_command_queue_properties properties;
-      OCLDEV_VAR(TYPE, type);
-      m_isCPU = type == CL_DEVICE_TYPE_CPU;
+      OCLDEV_VAR(TYPE, l_type);
+      m_isCPU = l_type == CL_DEVICE_TYPE_CPU;
 
       OCLDEV_VAR(VENDOR_ID, vendorId);
       OCLDEV_VAR(MAX_COMPUTE_UNITS, m_maxComputeUnits);
@@ -389,11 +389,10 @@ namespace OCPI {
 	  if (!strcasecmp(d->family->name, "cpu")) {
 	    for (OclFamily *f = families; f->name; f++)
 	      if (!strcasecmp(f->name, "cpu")) {
-		regex_t rx;
 		if (regcomp(&rx, f->vendor->regexpr, REG_NOSUB|REG_ICASE|REG_EXTENDED))
 		  throw OU::Error("Invalid regular expression for OpenCL vendor: %s",
 				  f->vendor->regexpr);
-		r = regexec(&rx, vendor.c_str(), 0, NULL, 0);
+		r = regexec(&rx, a_vendor.c_str(), 0, NULL, 0);
 		regfree(&rx);
 		if (!r) {
 		  m_vendor = f->vendor;
@@ -519,9 +518,9 @@ namespace OCPI {
 					 (void*)m_kernels[k].m_global_work_size, 0));
 #endif
 	    size_t compile_wgs = 1;
-	    for (unsigned n = 0; n < 3; n++)
-	      if (m_kernels[k].m_compile_work_group_size[n]) {
-		compile_wgs *= m_kernels[k].m_compile_work_group_size[n];
+	    for (unsigned nn = 0; nn < 3; nn++)
+	      if (m_kernels[k].m_compile_work_group_size[nn]) {
+		compile_wgs *= m_kernels[k].m_compile_work_group_size[nn];
 		m_kernels[k].m_nDims++;
 	      }
 	    ocpiDebug("for kernel %s, wgs: %zu, dims %u, cwgs: %zu,%zu,%zu",
@@ -557,16 +556,16 @@ namespace OCPI {
     };
 
     Container::
-    Container(OCPI::OCL::Device &device, const ezxml_t config, const OU::PValue* params)
+    Container(OCPI::OCL::Device &a_device, const ezxml_t config, const OU::PValue* params)
       : OC::ContainerBase<Driver,Container,Application,Artifact>
-	(*this, device.name().c_str(), config, params),
-	m_device(device) {
+	(*this, a_device.name().c_str(), config, params),
+	m_device(a_device) {
       m_model = "ocl";
       m_os = "opencl";
-      if (device.family() && device.family()->vendor) {
-	m_osVersion = device.family()->vendor->name;
-	m_arch = device.family()->name;
-	m_platform = device.platform()->platform;
+      if (a_device.family() && a_device.family()->vendor) {
+	m_osVersion = a_device.family()->vendor->name;
+	m_arch = a_device.family()->name;
+	m_platform = a_device.platform()->platform;
       } else
 	m_platform = m_osVersion = m_arch = "unknown";
     }
@@ -581,10 +580,10 @@ namespace OCPI {
       size_t rwgs;
       const char *err;
       if ((err = OX::getNumber(i.m_xml, "requiredworkgroupsize", &rwgs)))
-	ocpiInfo("Error parsing worker XML for worker %s: %s", i.name().c_str(), err);
+	ocpiInfo("Error parsing worker XML for worker %s: %s", i.cname(), err);
       if (rwgs > m_device.maxGroupSize()) {
 	ocpiInfo("OCL Worker %s needs group size %zu but device only supports %zu",
-		 i.name().c_str(), rwgs, m_device.maxGroupSize());
+		 i.cname(), rwgs, m_device.maxGroupSize());
 	return false;
       }
       return OC::Container::supportsImplementation(i);
@@ -666,14 +665,14 @@ namespace OCPI {
 
 
       for (size_t p = 0; p < np; p++) {
-	std::string name, vendor, profile, version, extensions;
+	std::string l_name, vendor, profile, version, extensions;
         char info[1024];
         OCL(clGetPlatformInfo(pids[p], CL_PLATFORM_PROFILE, sizeof(info), info, 0));
 	profile = info;
         OCL(clGetPlatformInfo(pids[p], CL_PLATFORM_VERSION, sizeof(info), info, 0));
 	version = info;
         OCL(clGetPlatformInfo(pids[p], CL_PLATFORM_NAME, sizeof(info), info, 0));
-	name = info;
+	l_name = info;
         OCL(clGetPlatformInfo(pids[p], CL_PLATFORM_VENDOR, sizeof(info), info, 0));
 	vendor = info;
         OCL(clGetPlatformInfo(pids[p], CL_PLATFORM_EXTENSIONS, sizeof(info), info, 0));
@@ -685,7 +684,7 @@ namespace OCPI {
 
 	if (verbose) {
 	  printf("OpenCL Platform: %zu/%p \"%s\" vendor \"%s\" profile \"%s\" version \"%s\"\n",
-		 p, pids[p], name.c_str(), vendor.c_str(), profile.c_str(), version.c_str());
+		 p, pids[p], l_name.c_str(), vendor.c_str(), profile.c_str(), version.c_str());
 	  printExtensions("    ", extensions);
 	}
 	for (size_t d = 0; d < nd; d++) {
@@ -720,24 +719,24 @@ namespace OCPI {
       return ndevs;
     }
     Device *Driver::
-    open(const char *name, bool verbose, bool print, std::string &error) {
+    open(const char *a_name, bool verbose, bool print, std::string &error) {
       unsigned p, d;
-      if (sscanf(name, "ocl%u.%u", &p, &d) != 2)
+      if (sscanf(a_name, "ocl%u.%u", &p, &d) != 2)
 	OU::format(error, "Bad format for OCL device: \"%s\".  Must be \"ocl<pnum>.<dnum>\"",
-		   name);
+		   a_name);
       else {
 	cl_uint np, nd;
 	OCL(clGetPlatformIDs(0, 0,&np));
 	if (!np)
 	  error = "There are no OpenCL platforms";
 	else if (p >= np)
-	  OU::format(error, "Bad platform number in OCL device name: \"%s\"", name);
+	  OU::format(error, "Bad platform number in OCL device name: \"%s\"", a_name);
 	else {
 	  std::vector<cl_platform_id> pids(np);
 	  OCL(clGetPlatformIDs(np, &pids[0], 0));
 	  OCL(clGetDeviceIDs(pids[p], CL_DEVICE_TYPE_ALL, 0, 0, &nd));
 	  if (d >= nd)
-	    OU::format(error, "Bad device number in OCL device name: \"%s\"", name);
+	    OU::format(error, "Bad device number in OCL device name: \"%s\"", a_name);
 	  else {
 	    std::string vendor;
 	    char info[1024];
@@ -853,10 +852,11 @@ namespace OCPI {
 
 
       Worker(Application &app, Artifact &art, Kernel &k, const char *a_name, ezxml_t implXml,
-	     ezxml_t instXml, OC::Worker *slave, bool hasMaster, size_t member, size_t crewSize,
-	     const OA::PValue* params, uint32_t que )
+	     ezxml_t instXml, OC::Worker *a_slave, bool a_hasMaster, size_t a_member,
+	     size_t a_crewSize, const OA::PValue* params, uint32_t que )
 	  : OC::WorkerBase<Application, Worker, Port>(app, *this, &art, a_name, implXml, instXml,
-						      slave, hasMaster, member, crewSize, params),
+						      a_slave, a_hasMaster, a_member, a_crewSize,
+						      params),
 	    OCPI::Time::Emit(&parent().parent(), "Worker", a_name), m_kernel(k),
 	    m_container(app.parent()), m_isEnabled(false), m_clKernel(NULL), m_que(que),
             m_running(false) {
@@ -899,8 +899,8 @@ namespace OCPI {
 	m_oclWorker = (OCLWorker*)m_oclWorkerBytes;
 	m_oclPorts = (OCLPort *)(m_oclWorker + 1);
 	memset(m_oclWorker, 0, sizeof(*m_oclWorker));
-	m_oclWorker->crew_size = OCPI_UTRUNCATE(uint16_t, crewSize);
-	m_oclWorker->member = OCPI_UTRUNCATE(uint16_t, member);
+	m_oclWorker->crew_size = OCPI_UTRUNCATE(uint16_t, a_crewSize);
+	m_oclWorker->member = OCPI_UTRUNCATE(uint16_t, a_member);
 	m_oclWorker->firstRun = true;
 	m_oclWorker->timedOut = false;
 	m_oclWorker->nPorts = OCPI_UTRUNCATE(uint8_t, m_nPorts);
@@ -962,7 +962,7 @@ namespace OCPI {
 	ocpiAssert ( 0 );
       }
 
-      OC::Port &createPort(const OU::Port& metaport, const OA::PValue* props);
+      OC::Port &createPort(const OU::Port &metaport, const OA::PValue *props);
 
       bool enabled() const {
 	return m_isEnabled;
@@ -1339,23 +1339,23 @@ namespace OCPI {
     controlOperation(OU::Worker::ControlOperation op) {
       if (op == OU::Worker::OpStart) {
 	m_oclWorker->connectedPorts = connectedPorts();
-	for (Port* p = firstChild(); p; p = p->nextChild()) {
+	for (Port *p = firstChild(); p; p = p->nextChild()) {
 	  assert(p->ordinal() < m_nPorts);
 	  m_myPorts[p->ordinal()] = p;
 	}
 	// Initialize the port structures in the kernel args.
-	OCLPort *op = m_oclPorts;
-	for (unsigned n = 0; n < m_nPorts; n++, op++) {
+	OCLPort *oclp = m_oclPorts;
+	for (unsigned n = 0; n < m_nPorts; n++, oclp++) {
 	  Port &p = *m_myPorts[n];
-	  memset(op, 0, sizeof(*op));
-	  op->maxLength =
+	  memset(oclp, 0, sizeof(*oclp));
+	  oclp->maxLength =
 	    OCPI_UTRUNCATE(uint32_t, p.bufferSize());
-	  op->isConnected = (connectedPorts() & (1 << n)) != 0;
-	  op->isOutput = !p.isProvider();
-	  op->connectedCrewSize = OCPI_UTRUNCATE(uint32_t, p.nOthers());
-	  op->dataValueWidthInBytes = OCPI_UTRUNCATE(uint32_t, p.metaPort().m_dataValueWidth);
-	  op->bufferStride = OCPI_UTRUNCATE(uint32_t, p.bufferStride());
-	  op->endOffset = OCPI_UTRUNCATE(uint32_t, p.bufferStride() * p.nBuffers());
+	  oclp->isConnected = (connectedPorts() & (1 << n)) != 0;
+	  oclp->isOutput = !p.isProvider();
+	  oclp->connectedCrewSize = OCPI_UTRUNCATE(uint32_t, p.nOthers());
+	  oclp->dataValueWidthInBytes = OCPI_UTRUNCATE(uint32_t, p.metaPort().m_dataValueWidth);
+	  oclp->bufferStride = OCPI_UTRUNCATE(uint32_t, p.bufferStride());
+	  oclp->endOffset = OCPI_UTRUNCATE(uint32_t, p.bufferStride() * p.nBuffers());
 	  cl_mem clb = p.myClBuffers();
 	  OCL(clSetKernelArg(m_clKernel, 1+n, sizeof(p.m_clBuffers), &clb));
 	}
@@ -1610,8 +1610,8 @@ namespace OCPI {
     }
 
     OC::Port& Worker::
-    createPort(const OU::Port& metaPort, const OA::PValue* props) {
-      return *new Port(*this, props, metaPort);
+    createPort(const OU::Port &mPort, const OA::PValue* props) {
+      return *new Port(*this, props, mPort);
     }
   } // End: namespace OCL
 

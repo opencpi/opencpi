@@ -34,19 +34,21 @@ namespace OCPI {
   namespace OCL {
 #define OCL(call) \
   do { \
-    cl_int rc = call; \
-    if (rc) \
-      throwOclError(rc, "from %s, file %s, line %u", #call, __FILE__, __LINE__); \
+    cl_int rc_OCL = call; \
+    if (rc_OCL) \
+      throwOclError(rc_OCL, "from %s, file %s, line %u", #call, __FILE__, __LINE__); \
   } while(0)
 
 #define OCLDEV(name, varp, size)				            \
     do {								    \
+      cl_int rc;							    \
       if ((rc = clGetDeviceInfo(m_id, CL_DEVICE_##name, size, varp, 0)))    \
 	throwOclError(rc, "clGetDeviceInfo() failed for CL_DEVICE_" #name); \
     } while (0)
 
 #define OCLDEVR(name, varp, size, rsize)                                    \
     do {								    \
+      cl_int rc;							    \
       if ((rc = clGetDeviceInfo(m_id, CL_DEVICE_##name, size, varp, &rsize))) \
 	throwOclError(rc, "clGetDeviceInfo() failed for CL_DEVICE_" #name); \
     } while (0)

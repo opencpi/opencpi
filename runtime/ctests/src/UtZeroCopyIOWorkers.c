@@ -267,7 +267,7 @@ static RCCResult ConsumerWorker_run(RCCWorker *this_,RCCBoolean timedout,RCCBool
     if ( (in_buffer[n] != (char)(n+props->buffersProcessed)%23) && (ncount++ < 100) ) {
                                         
 #ifndef NDEBUG
-      printf("\nConsumer(b-> %u,%u): Data integrity error(%zu) !!, expected %d, got %d\n", 
+      printf("\nConsumer(b-> %u,%zu): Data integrity error(%zu) !!, expected %d, got %d\n", 
              props->buffersProcessed, len+4, n, (char)(n+props->buffersProcessed)%23, in_buffer[n]);
 #endif
       passed = 0;

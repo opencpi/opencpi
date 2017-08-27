@@ -34,10 +34,10 @@ namespace OCPI {
 
 Worker::
 Worker(Application & app, Artifact *art, const char *a_name, ezxml_t impl, ezxml_t inst,
-       OC::Worker *a_slave, bool a_hasMaster, size_t member, size_t crewSize,
+       OC::Worker *a_slave, bool a_hasMaster, size_t a_member, size_t a_crewSize,
        const OU::PValue *wParams)
-  : OC::WorkerBase<Application,Worker,Port>(app, *this, art, a_name, impl, inst, a_slave, a_hasMaster,
-					    member, crewSize, wParams),
+  : OC::WorkerBase<Application,Worker,Port>(app, *this, art, a_name, impl, inst, a_slave,
+					    a_hasMaster, a_member, a_crewSize, wParams),
     OCPI::Time::Emit(&parent().parent(), "Worker", a_name), 
     m_entry(art ? art->getDispatch(ezxml_cattr(impl, "name")) : NULL), m_user(NULL),
     m_dispatch(NULL), m_portInit(0), m_context(NULL), m_mutex(app.container()),
@@ -1002,9 +1002,10 @@ OCPI_CONTROL_OPS
    size_t RCCUserWorker::
    memberItemTotal(uint64_t total, size_t maxPerMessage, size_t *perMessagep) {
     size_t 
-      perMessage = std::min((uint64_t)maxPerMessage, (total + getCrewSize() - 1)/getCrewSize()),
-      nMessages = (total + perMessage - 1)/perMessage,
-      itemRemainder = total % perMessage,
+      perMessage = OCPI_UTRUNCATE(size_t, std::min((uint64_t)maxPerMessage,
+						   (total + getCrewSize() - 1)/getCrewSize())),
+      nMessages = OCPI_UTRUNCATE(size_t, (total + perMessage - 1)/perMessage),
+      itemRemainder = OCPI_UTRUNCATE(size_t, total % perMessage),
       msgRemainder = (nMessages - (itemRemainder ? 1 : 0)) % getCrewSize();
     ocpiDebug("per %zu, messages %zu, mremainder %zu iremainder %zu\n",
 	      perMessage, nMessages, msgRemainder, itemRemainder);

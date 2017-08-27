@@ -37,10 +37,11 @@ namespace OU = OCPI::Util;
 namespace DataTransfer {
 
 EndPoint::
-EndPoint(XferFactory &factory, const char *eps, const char *other, bool local, size_t a_size,
+EndPoint(XferFactory &a_factory, const char *eps, const char *other, bool a_local, size_t a_size,
 	 const OCPI::Util::PValue */*params*/)
-  :  m_mailBox(0), m_maxCount(0), m_size(0), m_local(local), m_factory(factory), m_refCount(0),
-     m_receiver(NULL), m_sMemServices(NULL), m_resourceMgr(NULL), m_comms(NULL), m_address(0) {
+  :  m_mailBox(0), m_maxCount(0), m_size(0), m_local(a_local), m_factory(a_factory),
+     m_refCount(0), m_receiver(NULL), m_sMemServices(NULL), m_resourceMgr(NULL), m_comms(NULL),
+     m_address(0) {
   if (eps) {
     getUuid(eps, m_uuid);
     size_t psize;
@@ -49,9 +50,9 @@ EndPoint(XferFactory &factory, const char *eps, const char *other, bool local, s
     m_size = psize;
   } else {
     OU::generateUuid(m_uuid);
-    m_mailBox = factory.setNewMailBox(other);
-    m_maxCount = factory.getMaxMailBox();
-    m_size = a_size ? a_size : factory.getSMBSize();
+    m_mailBox = a_factory.setNewMailBox(other);
+    m_maxCount = a_factory.getMaxMailBox();
+    m_size = a_size ? a_size : a_factory.getSMBSize();
   }
 }
 
@@ -126,8 +127,8 @@ isCompatibleLocal(const XferFactory &argFactory, const char *other) {
   const char *after = strchr(other, ':');
   if (after) {
     after++; // for isCompatible below
-    size_t size;
-    parseEndPointString(other, &mBox, &maxMb, &size);
+    size_t l_size;
+    parseEndPointString(other, &mBox, &maxMb, &l_size);
   }
   return
     &m_factory == &argFactory &&
@@ -180,8 +181,8 @@ canSupport(const char *remoteEndpoint) {
   std::string remoteProtocol;
   EndPoint::getProtocolFromString(remoteEndpoint, remoteProtocol);
   uint16_t mBox, maxMb;
-  size_t size;
-  parseEndPointString(remoteEndpoint, &mBox, &maxMb, &size);
+  size_t l_size;
+  parseEndPointString(remoteEndpoint, &mBox, &maxMb, &l_size);
   bool ret = 
     m_factory.getProtocol() == remoteProtocol &&
     maxMb == m_maxCount && mBox != m_mailBox;

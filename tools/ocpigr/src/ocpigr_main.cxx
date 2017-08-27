@@ -55,9 +55,9 @@ struct Category {
   std::string name;
   StringSet blocks;
   std::vector<Category> categories;
-  void addWorker(const char *path, std::string &name) {
+  void addWorker(const char *path, std::string &a_name) {
     if (!path || !*path) {
-      blocks.insert(name);
+      blocks.insert(a_name);
       return;
     }
     std::string cname = path;
@@ -75,7 +75,7 @@ struct Category {
       cat = &categories.back();
       cat->name = cname;
     }
-    cat->addWorker(cp, name);
+    cat->addWorker(cp, a_name);
   }
   ezxml_t getXml(ezxml_t x = NULL, unsigned level = 0) {
     if (!x)
@@ -173,15 +173,15 @@ static void doWorker(OU::Worker &w) {
   }
   OU::Port *ports = w.ports(np);
   for (unsigned n = 0; n < np; n++, ports++) {
-    OU::Port &p = *ports;
-    ezxml_t px = OX::addChild(root, p.m_provider ? "sink" : "source", 1);
-    OX::addChild(px, "name", 2, p.cname());
-    if (p.nOperations() != 1 || p.operations()[0].nArgs() != 1) {
-      bad(w, "port", p.cname());
+    OU::Port &pp = *ports;
+    ezxml_t px = OX::addChild(root, pp.m_provider ? "sink" : "source", 1);
+    OX::addChild(px, "name", 2, pp.cname());
+    if (pp.nOperations() != 1 || pp.operations()[0].nArgs() != 1) {
+      bad(w, "port", pp.cname());
       OX::addChild(px, "type", 2, "s16"); //TODO FIX this
       continue;
     }
-    OU::Member &arg = p.operations()[0].args()[0];
+    OU::Member &arg = pp.operations()[0].args()[0];
     if ((arg.m_isSequence || arg.m_arrayRank) && arg.m_baseType != OA::OCPI_Struct &&
 	arg.m_baseType != OA::OCPI_Type && arg.m_baseType != OA::OCPI_String) {
       const char *type;
@@ -210,7 +210,7 @@ static void doWorker(OU::Worker &w) {
       }
       OX::addChild(px, "type", 2, type);
     } else {
-      bad(w, "port", p.cname());
+      bad(w, "port", pp.cname());
       OX::addChild(px, "type", 2, "s16"); //TODO FIX this
     }
   }

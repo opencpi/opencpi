@@ -230,8 +230,8 @@ static bool setup(const char *arg, ezxml_t &xml, std::string &file,
     struct Here {
       std::list<std::string> stargets;
       std::vector<const char *> ptargets;
-      static const char *addTarget(const char *target, void *arg) {
-	Here &me = *(Here *)arg;
+      static const char *addTarget(const char *target, void *a_arg) {
+	Here &me = *(Here *)a_arg;
 	me.stargets.push_back(target);
 	me.ptargets.push_back(me.stargets.back().c_str());
 	return NULL;

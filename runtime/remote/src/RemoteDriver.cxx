@@ -211,8 +211,8 @@ class Client
 protected:
   OS::Socket &m_socket;
   // Take ownership of the provided socket
-  Client(Driver &d, const char *name, OS::Socket &socket)
-    : OU::Child<Driver,Client,remote>(d, *this, name),
+  Client(Driver &d, const char *a_name, OS::Socket &socket)
+    : OU::Child<Driver,Client,remote>(d, *this, a_name),
       Launcher(socket),
       m_socket(socket)
   {
@@ -232,37 +232,37 @@ class Container
 public:
   Container(Client &client, const std::string &a_name,
 	    const char *a_model, const char *a_os, const char *a_osVersion, const char *a_arch,
-	    const char *a_platform, const char *a_dynamic, const char *transports,
+	    const char *a_platform, const char *a_dynamic, const char *a_transports,
             const OA::PValue* /*params*/)
     throw ( OU::EmbeddedException )
     : OC::ContainerBase<Driver,Container,Application,Artifact>(*this, a_name.c_str()),
       m_client(client) {
     ocpiDebug("Construct remote container %s with transports: %s", a_name.c_str(),
-	      transports ? transports : "<none>");
+	      a_transports ? a_transports : "<none>");
     m_model = a_model;
     m_os = a_os;
     m_osVersion = a_osVersion;
     m_arch = a_arch;
     m_platform = a_platform;
     unsigned nTransports = 0;
-    for (const char *p = transports; *p; p++)
+    for (const char *p = a_transports; *p; p++)
       if (*p == '|')
 	nTransports++;
     m_transports.resize(nTransports);
     OC::Transport *t = &m_transports[0];
-    char transport[strlen(transports)+1];
-    char id[strlen(transports)+1];
+    char transport[strlen(a_transports)+1];
+    char id[strlen(a_transports)+1];
     for (unsigned n = nTransports; n; n--, t++) {
       int nChars, rv;
       unsigned roleIn, roleOut;
-      if ((rv = sscanf(transports, "%[^,],%[^,],%u,%u,0x%x,0x%x|%n", transport, id, &roleIn, &roleOut,
+      if ((rv = sscanf(a_transports, "%[^,],%[^,],%u,%u,0x%x,0x%x|%n", transport, id, &roleIn, &roleOut,
 		       &t->optionsIn, &t->optionsOut, &nChars)) != 6)
-	throw OU::Error("Bad transport string in container discovery: %s: %d", transports, rv);
+	throw OU::Error("Bad transport string in container discovery: %s: %d", a_transports, rv);
       t->roleIn = (OR::PortRole)roleIn;
       t->roleOut = (OR::PortRole)roleOut;
       t->transport = transport;
       t->id = id;
-      transports += nChars;
+      a_transports += nChars;
     }
     OX::parseBool(a_dynamic, NULL, &m_dynamic);
   }
@@ -287,10 +287,10 @@ public:
 
 Worker::
 Worker(Application & app, Artifact *art, const char *a_name, ezxml_t impl, ezxml_t inst,
-       OC::Worker *a_slave, bool a_hasMaster, size_t member, size_t crewSize,
+       OC::Worker *a_slave, bool a_hasMaster, size_t a_member, size_t a_crewSize,
        const OU::PValue *wParams, unsigned remoteInstance)
   : OC::WorkerBase<Application,Worker,Port>(app, *this, art, a_name, impl, inst, a_slave,
-					    a_hasMaster, member, crewSize, wParams),
+					    a_hasMaster, a_member, a_crewSize, wParams),
     m_remoteInstance(remoteInstance),
     m_launcher(*static_cast<Launcher *>(&app.parent().launcher())) {
   setControlMask(getControlMask() | (OU::Worker::OpInitialize|

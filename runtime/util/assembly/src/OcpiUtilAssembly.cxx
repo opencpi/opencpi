@@ -236,32 +236,32 @@ namespace OCPI {
     }
 
     const char * Assembly::
-    getInstance(const char *name, unsigned &n) {
+    getInstance(const char *a_name, unsigned &n) {
       for (n = 0; n < m_instances.size(); n++)
-	if (m_instances[n]->m_name == name)
+	if (m_instances[n]->m_name == a_name)
 	  return NULL;
-      return esprintf("No instance named \"%s\" found", name);
+      return esprintf("No instance named \"%s\" found", a_name);
     }
 
     const char *Assembly::
-    addConnection(const char *name, Connection *&c) {
+    addConnection(const char *a_name, Connection *&c) {
       for (ConnectionsIter ci = m_connections.begin(); ci != m_connections.end(); ci++)
-	if (!strcasecmp((*ci).m_name.c_str(), name))
-	  return esprintf("Duplicate connection named '%s' in assembly", name);
+	if (!strcasecmp((*ci).m_name.c_str(), a_name))
+	  return esprintf("Duplicate connection named '%s' in assembly", a_name);
       Connection tmp;
       m_connections.push_back(tmp);
       c = &m_connections.back();
-      c->m_name = name;
+      c->m_name = a_name;
       return NULL;
     }
     const char *Assembly::
     addPortConnection(unsigned from, const char *fromPort, unsigned to, const char *toPort,
 		      const char *transport, const PValue *params) {
-      std::string name = m_instances[from]->m_name + "." + (fromPort ? fromPort : "output");
+      std::string l_name = m_instances[from]->m_name + "." + (fromPort ? fromPort : "output");
       Connection *c;
       Port *toP, *fromP;
       const char *err;
-      if ((err = addConnection(name.c_str(), c)) ||
+      if ((err = addConnection(l_name.c_str(), c)) ||
 	  (err = c->addPort(*this, to, toPort, true, false, true, 0, params, toP)) ||
 	  (err = c->addPort(*this, from, fromPort, false, false, true, 0, params, fromP)))
 	return err;
@@ -292,20 +292,20 @@ namespace OCPI {
     addExternalConnection(ezxml_t a_xml, const PValue *params) {
       const char *err;
       // What is the name for this connection?
-      std::string name, port;
+      std::string l_name, port;
       // We preparse some attributes of the external to get the connection name
-      OE::getOptionalString(a_xml, name, "name");
+      OE::getOptionalString(a_xml, l_name, "name");
       if ((err = OE::getRequiredString(a_xml, port, "port", "external")))
 	return err;
-      if (name.empty())
-	name = port;
+      if (l_name.empty())
+	l_name = port;
       Connection *c;
-      if ((err = addConnection(name.c_str(), c)))
+      if ((err = addConnection(l_name.c_str(), c)))
 	return err;
       External &e = c->addExternal();
       unsigned dummy = 0;
       // These names default from the port name, and
-      if ((err = e.parse(a_xml, name.c_str(), dummy, c->m_parameters)))
+      if ((err = e.parse(a_xml, l_name.c_str(), dummy, c->m_parameters)))
 	  return err;
       // Now attach an internal port to this connection
       std::string iName;

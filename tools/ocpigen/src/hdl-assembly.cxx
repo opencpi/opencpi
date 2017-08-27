@@ -230,9 +230,9 @@ parseHdlAssy() {
     unsigned nControl = 0;
     for (n = 0, i = &a->m_instances[0]; n < a->m_instances.size(); n++, i++)
       if (i->m_worker && i->m_worker->m_ports[0]->m_type == WCIPort && !i->m_worker->m_noControl) {
-	std::string name;
-	OU::format(name, "wci%u", nControl);
-	Connection &c = *new Connection(NULL, name.c_str());
+	std::string l_name;
+	OU::format(l_name, "wci%u", nControl);
+	Connection &c = *new Connection(NULL, l_name.c_str());
 	c.m_count = 1;
 	a->m_connections.push_back(&c);
 	if ((err = c.attachPort(i->m_ports[0], 0)) ||

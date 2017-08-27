@@ -47,11 +47,11 @@ namespace OCPI {
 
     Worker::
     Worker(Artifact *art, ezxml_t impl, ezxml_t inst, Worker *a_slave, bool a_hasMaster,
-	   size_t member, size_t crewSize, const OA::PValue *) 
+	   size_t a_member, size_t a_crewSize, const OA::PValue *) 
       : OU::Worker::Worker(),
 	m_artifact(art), m_xml(impl), m_instXml(inst), m_workerMutex(true),
-	m_controlOpPending(false), m_slave(a_slave), m_hasMaster(a_hasMaster), m_member(member),
-        m_crewSize(crewSize), m_connectedPorts(0), m_optionalPorts(0) {
+	m_controlOpPending(false), m_slave(a_slave), m_hasMaster(a_hasMaster),
+        m_member(a_member), m_crewSize(a_crewSize), m_connectedPorts(0), m_optionalPorts(0) {
       if (impl) {
 	const char *err = parse(impl);
 	if (err)
@@ -62,7 +62,7 @@ namespace OCPI {
       if (inst)
 	m_instTag = ezxml_cattr(inst, "name");
       for (unsigned n = 0; n < m_nPorts; n++)
-	if (port(n).m_isOptional)
+	if (metaPort(n).m_isOptional)
 	  m_optionalPorts |= 1 << n;
     }
 
@@ -88,10 +88,10 @@ namespace OCPI {
 	assert(p->nOthers() == nOthers);
         return *p;
       }
-      OU::Port *metaPort = findMetaPort(a_name);
-      if (!metaPort)
+      OU::Port *mPort = findMetaPort(a_name);
+      if (!mPort)
         throw OU::Error("no port found with name \"%s\"", a_name);
-      Port &newP = createPort(*metaPort, params);
+      Port &newP = createPort(*mPort, params);
       // This setting of the "other" is separate from construction so that the derived
       // port classes in particular containers stay unaware of the scaling.  If that changes
       // then this will become a constructor argument and an argument to worker::createPort.
@@ -446,7 +446,7 @@ namespace OCPI {
 	    if (bad & (1 << n)) {
 	      const char *inst = instTag().c_str();
 	      throw OU::Error("Port \"%s\" of%s%s%s worker \"%s\" is not connected",
-			      m_ports ? port(n).m_name.c_str() : "unnamed",
+			      m_ports ? metaPort(n).cname() : "unnamed",
 			      inst[0] ? " instance '" : "", inst, inst[0] ? "'" : "",
 			      implTag().c_str());
 	    }

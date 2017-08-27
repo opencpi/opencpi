@@ -284,10 +284,11 @@ namespace OCPI {
       friend class ExternalPort;
       Container &m_container;
       Worker(Application &app, OC::Artifact *art, const char *a_name, ezxml_t implXml,
-	     ezxml_t instXml, OC::Worker *a_slave, bool a_hasMaster,
-	     size_t member, size_t crewSize, const OA::PValue* execParams) :
-        OC::WorkerBase<Application, Worker, Port>(app, *this, art, a_name, implXml, instXml, a_slave,
-						  a_hasMaster, member, crewSize, execParams),
+	     ezxml_t instXml, OC::Worker *a_slave, bool a_hasMaster, size_t a_member,
+	     size_t a_crewSize, const OA::PValue* execParams) :
+        OC::WorkerBase<Application, Worker, Port>(app, *this, art, a_name, implXml, instXml,
+						  a_slave, a_hasMaster, a_member, a_crewSize,
+						  execParams),
         WciControl(app.parent().hdlDevice(), implXml, instXml, properties()),
         m_container(app.parent())
       {
@@ -789,8 +790,8 @@ OCPI_DATA_TYPES
     // The port may be bidirectional.  If so we need to defer its direction.
     // FIXME: share all this parsing with the OU::Implementation code etc.
     OC::Port &Worker::
-    createPort(const OU::Port &metaPort, const OA::PValue *props) {
-      const char *myName = metaPort.m_name.c_str();
+    createPort(const OU::Port &mPort, const OA::PValue *props) {
+      const char *myName = mPort.m_name.c_str();
       // Find connections attached to this port
       ezxml_t conn, ic = 0, icw = 0, ad = 0, adw = 0;
       for (conn = ezxml_cchild(myXml()->parent, "connection"); conn; conn = ezxml_next(conn)) {
@@ -907,7 +908,7 @@ OCPI_DATA_TYPES
 	  break; // we found a connection
 	}
       } // loop over all connections
-      return *new Port(*this, props, metaPort, conn, icw, ic, adw, ad);
+      return *new Port(*this, props, mPort, conn, icw, ic, adw, ad);
     }
 #if 0
     // only here for proper parent/child

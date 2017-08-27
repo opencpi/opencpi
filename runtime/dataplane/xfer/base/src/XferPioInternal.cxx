@@ -36,7 +36,6 @@ xfer_pio_action_transfer(PIO_transfer transfer)
   /* Get the alignments */
   uint32_t src_al = (uint32_t)((uintptr_t)transfer->src_va & 3);
   uint32_t dst_al = (uint32_t)((uintptr_t)transfer->dst_va & 3);
-  uint32_t i;
 
   /* Check src and dst alignment */
   if (src_al != dst_al) {
@@ -70,7 +69,7 @@ xfer_pio_action_transfer(PIO_transfer transfer)
     int32_t *src_w;
     int32_t *dst_w;
 
-    for (i=0; i < src_al; i++)
+    for (uint32_t i=0; i < src_al; i++)
       *dst_b++ = *src_b++;
 
     /* Get the word pointers */
@@ -82,11 +81,11 @@ xfer_pio_action_transfer(PIO_transfer transfer)
     size_t rem_nwords = (transfer->nbytes - src_al) % 4;
 
     if (src_w == 0) {
-      for (i=0; i < nwords; i++)    
+      for (uint32_t i=0; i < nwords; i++)    
         *dst_w++ = 0;
     }
     else {
-      for (i=0; i < nwords; i++)    
+      for (uint32_t i=0; i < nwords; i++)    
         *dst_w++ = *src_w++;
     }
     
@@ -97,11 +96,11 @@ xfer_pio_action_transfer(PIO_transfer transfer)
 
       /* Process remainder in bytes */
       if (src_w == 0) {
-        for (i=0; i < rem_nwords; i++)
+        for (uint32_t i=0; i < rem_nwords; i++)
           *dst_b++ = 0;
       }
       else {
-        for (i=0; i < rem_nwords; i++)
+        for (uint32_t i=0; i < rem_nwords; i++)
           *dst_b++ = *src_b++;
       }
     }
@@ -115,11 +114,11 @@ xfer_pio_action_transfer(PIO_transfer transfer)
     size_t rem_nwords = transfer->nbytes % 4;
 
     if (src_w == 0) {
-      for (i=0; i < nwords; i++)    
+      for (uint32_t i=0; i < nwords; i++)    
         *dst_w++ = 0;
     }
     else {
-      for (i=0; i < nwords; i++)    
+      for (uint32_t i=0; i < nwords; i++)    
         *dst_w++ = *src_w++;
     }
     
@@ -130,11 +129,11 @@ xfer_pio_action_transfer(PIO_transfer transfer)
 
       /* Process remainder in bytes */
       if (src_w == 0) {
-        for (i=0; i < rem_nwords; i++)
+        for (uint32_t i=0; i < rem_nwords; i++)
           *dst_b++ = 0;
       }
       else {
-        for (i=0; i < rem_nwords; i++)
+        for (uint32_t i=0; i < rem_nwords; i++)
           *dst_b++ = *src_b++;
       }
     }

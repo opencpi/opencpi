@@ -31,8 +31,8 @@ namespace OCPI {
     namespace OD = OCPI::DataTransport;
     namespace OR = OCPI::RDT;
 
-    Port::Port(Container &container, const OU::Port &mPort, const OU::PValue *params) :
-      LocalPort(container, mPort, mPort.m_provider, params),
+    Port::Port(Container &a_container, const OU::Port &mPort, const OU::PValue *params) :
+      LocalPort(a_container, mPort, mPort.m_provider, params),
       m_canBeExternal(true)
     {
     }
@@ -40,8 +40,8 @@ namespace OCPI {
       ocpiDebug("In  Container::Port::~Port()\n");
     }
 
-    bool Port::hasName(const char *name) {
-      return (name == m_metaPort.m_name );
+    bool Port::hasName(const char *a_name) {
+      return (a_name == m_metaPort.m_name);
     }
 
     void Port::portIsConnected() {
@@ -106,14 +106,14 @@ namespace OCPI {
     }
 #else
     ExternalPort::
-    ExternalPort(Launcher::Connection &c, bool isProvider)
+    ExternalPort(Launcher::Connection &c, bool a_isProvider)
       : LocalPort(Container::baseContainer(),
-		  isProvider ? *c.m_in.m_metaPort : *c.m_out.m_metaPort, isProvider,
-		  isProvider ? c.m_in.m_params : c.m_out.m_params),
+		  a_isProvider ? *c.m_in.m_metaPort : *c.m_out.m_metaPort, a_isProvider,
+		  a_isProvider ? c.m_in.m_params : c.m_out.m_params),
 	OU::Child<Application,ExternalPort,externalPort>
-	(*(isProvider ? c.m_in.m_containerApp : c.m_out.m_containerApp), *this, NULL)
+	(*(a_isProvider ? c.m_in.m_containerApp : c.m_out.m_containerApp), *this, NULL)
     {
-      prepareOthers(isProvider ? c.m_out.m_scale : c.m_in.m_scale, 1);
+      prepareOthers(a_isProvider ? c.m_out.m_scale : c.m_in.m_scale, 1);
     }
 #endif
 

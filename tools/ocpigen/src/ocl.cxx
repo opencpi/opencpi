@@ -172,8 +172,7 @@ emitImplOCL() {
 	    m_implName);
     last = "";
     for (unsigned n = 0; n < m_ports.size(); n++) {
-      Port *port = m_ports[n];
-      fprintf(f, "%s  %s_%s", last, upper, upperdup(port->pname()));
+      fprintf(f, "%s  %s_%s", last, upper, upperdup(m_ports[n]->pname()));
       // FIXME TWO WAY
       last = ",\n";
     }

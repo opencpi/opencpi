@@ -41,9 +41,9 @@ WmiPort(Worker &w, ezxml_t x, DataPort *sp, int ordinal, const char *&err)
 }
 // Our special copy constructor
 WmiPort::
-WmiPort(const WmiPort &other, Worker &w , std::string &name, size_t count,
+WmiPort(const WmiPort &other, Worker &w , std::string &a_name, size_t count,
 	OCPI::Util::Assembly::Role *role, const char *&err)
-  : DataPort(other, w, name, count, role, err) {
+  : DataPort(other, w, a_name, count, role, err) {
   if (err)
     return;
   m_talkBack = other.m_talkBack;
@@ -53,9 +53,9 @@ WmiPort(const WmiPort &other, Worker &w , std::string &name, size_t count,
 // Virtual constructor: the concrete instantiated classes must have a clone method,
 // which calls the corresponding specialized copy constructor
 Port &WmiPort::
-clone(Worker &w, std::string &name, size_t count, OCPI::Util::Assembly::Role *role,
+clone(Worker &w, std::string &a_name, size_t count, OCPI::Util::Assembly::Role *role,
       const char *&err) const {
-  return *new WmiPort(*this, w, name, count, role, err);
+  return *new WmiPort(*this, w, a_name, count, role, err);
 }
 
 void WmiPort::

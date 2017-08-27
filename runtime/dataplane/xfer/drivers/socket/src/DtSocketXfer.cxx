@@ -54,9 +54,9 @@ protected:
   std::string m_ipAddress;
   uint16_t    m_portNum;
 public:
-  EndPoint(XF::XferFactory &factory, const char *protoInfo, const char *eps, const char *other,
-	   bool local, size_t size, const OU::PValue *params)
-    : XF::EndPoint(factory, eps, other, local, size, params),
+  EndPoint(XF::XferFactory &a_factory, const char *protoInfo, const char *eps, const char *other,
+	   bool a_local, size_t a_size, const OU::PValue *params)
+    : XF::EndPoint(a_factory, eps, other, a_local, a_size, params),
       m_portNum(0) {
     if (protoInfo) {
       m_protoInfo = protoInfo;
@@ -79,20 +79,18 @@ public:
       } else
 	strcpy(ip_addr,env);
       m_ipAddress = ip_addr;
-      int port;
       const char *penv = getenv("OCPI_TRANSFER_PORT");
       if( !penv || (penv[0] == 0)) {
 	ocpiDebug("Set ""OCPI_TRANSFER_PORT"" environment variable to set socket IP address");
-	port = 0;
+	m_portNum = 0;
       } else {
 	static uint16_t s_port = 0;
 	if ( s_port == 0 ) {
 	  s_port = (uint16_t)atoi(penv);
 	}
-	port = s_port++;
+	m_portNum = s_port++;
       }
-      m_portNum = port;
-      OU::format(m_protoInfo, "%s:%u", ip_addr, port);
+      OU::format(m_protoInfo, "%s:%u", ip_addr, m_portNum);
     }
     // Socket endpoints need an address space too in come cases, so we provide one by
     // simply using the mailbox number as the high order bits.
@@ -159,7 +157,7 @@ public:
 	  continue; // allow timeout so m_run can go away and shut us down
 	size_t copy_len;
 	for (uint8_t *bp = buf; n; n -= copy_len, bp += copy_len) {
-	  if (bytes_left == 0) //starting the header or starting the payload
+	  if (bytes_left == 0) { //starting the header or starting the payload
 	    if (in_header) {
 	      current_ptr = (uint8_t*)&header;
 	      bytes_left = sizeof(header);
@@ -170,6 +168,7 @@ public:
 	      current_ptr =
 		m_sep.receiver() ? NULL : (uint8_t *)m_smem.map(header.offset, header.length);
 	    }
+	  }
 	  copy_len = std::min(n, bytes_left);
 	  ocpiDebug("Copying socket data to %p, size = %zu, in header %d, left %zu, first %lx",
 		    current_ptr, copy_len, in_header, bytes_left, *(unsigned long*)bp);
@@ -335,8 +334,8 @@ createXferServices(XF::EndPoint &source, XF::EndPoint &target)
 class XferRequest : public TransferBase<XferServices,XferRequest> {
   XF_transfer m_thandle;                // Transfer handle returned by xfer_xxx etal
 public:
-  XferRequest(XferServices &parent, XF_template temp)
-    : TransferBase<XferServices,XferRequest>(parent, *this, temp) {
+  XferRequest(XferServices &a_parent, XF_template temp)
+    : TransferBase<XferServices,XferRequest>(a_parent, *this, temp) {
   }
 
   // Get Information about a Data Transfer Request
@@ -363,8 +362,8 @@ createXferRequest() {
 }
 
 class Device : public XF::DeviceBase<XferFactory,Device> {
-  Device(const char *name)
-    : XF::DeviceBase<XferFactory,Device>(name, *this) {}
+  Device(const char *a_name)
+    : XF::DeviceBase<XferFactory,Device>(a_name, *this) {}
 };
 
 // Used to register with the data transfer system;

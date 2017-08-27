@@ -50,8 +50,8 @@ namespace OCPI {
 
     class XferFactory;
     class Device : public XF::DeviceBase<XferFactory,Device> {
-      Device(const char *name)
-	: XF::DeviceBase<XferFactory,Device>(name, *this) {}
+      Device(const char *a_name)
+	: XF::DeviceBase<XferFactory,Device>(a_name, *this) {}
     };
 
     class SmemServices;
@@ -62,9 +62,9 @@ namespace OCPI {
       uint32_t m_holeOffset, m_holeEnd;
       uint64_t m_busAddr;
     public:
-      EndPoint(XF::XferFactory &factory, const char *protoInfo, const char *eps,
-	       const char *other, bool local, size_t size, const OU::PValue *params)
-	: XF::EndPoint(factory, eps, other, local, size, params) { 
+      EndPoint(XF::XferFactory &a_factory, const char *protoInfo, const char *eps,
+	       const char *other, bool a_local, size_t a_size, const OU::PValue *params)
+	: XF::EndPoint(a_factory, eps, other, a_local, a_size, params) { 
 	if (protoInfo) {
 	  m_protoInfo = protoInfo;
 	  if (sscanf(protoInfo, "%" SCNx64 ".%" SCNx32 ".%" SCNx32,
@@ -72,7 +72,7 @@ namespace OCPI {
 	    throw OU::Error("Invalid format for DMA endpoint: %s", protoInfo);
 	  ocpiDebug("DMA ep %p %s: address = 0x%" PRIx64
 		    " size = 0x%zx hole 0x%" PRIx32 " end 0x%" PRIx32,
-		    this, protoInfo, m_busAddr, size, m_holeOffset, m_holeEnd);
+		    this, protoInfo, m_busAddr, a_size, m_holeOffset, m_holeEnd);
 	} else
 	  m_protoInfo = "0.0.0";
       };
@@ -111,14 +111,14 @@ namespace OCPI {
 	  throw OU::Error("cannot open /dev/mem for DMA (Use sudo or load the driver)");
 	else {
 	  m_usingKernelDriver = false;
-	  const char *dma = getenv("OCPI_DMA_MEMORY");
-	  if (!dma)
+	  const char *l_dma = getenv("OCPI_DMA_MEMORY");
+	  if (!l_dma)
 	    throw OU::Error("OCPI_DMA_MEMORY environment variable not set");
 	  unsigned sizeM, pagesize = getpagesize();
 	  uint64_t top;
-	  if (sscanf(dma, "%uM$0x%" SCNx64, &sizeM, &m_dmaBase) != 2)
+	  if (sscanf(l_dma, "%uM$0x%" SCNx64, &sizeM, &m_dmaBase) != 2)
 	    throw OU::Error("Bad format for OCPI_DMA_MEMORY environment variable: '%s'",
-			    dma);
+			    l_dma);
 	  ocpiDebug("DMA Memory:  %uM at 0x%" PRIx64, sizeM, m_dmaBase);
 	  unsigned dmaSize = sizeM * 1024 * 1024;
 	  top = m_dmaBase + dmaSize;
@@ -296,8 +296,8 @@ namespace OCPI {
     class XferServices;
     class XferRequest : public XF::TransferBase<XferServices, XferRequest> {
     public:
-      XferRequest(XferServices &parent, XFTemplate *temp)
-	: XF::TransferBase<XferServices, XferRequest>(parent, *this, temp) {
+      XferRequest(XferServices &a_parent, XFTemplate *temp)
+	: XF::TransferBase<XferServices, XferRequest>(a_parent, *this, temp) {
       }
       virtual ~XferRequest() {
       }

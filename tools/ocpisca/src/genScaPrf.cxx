@@ -39,9 +39,9 @@ namespace OCPI {
 	(pr.m_baseType == OCPI_Struct ? "struct" : "simple");
       std::string id;
       if (uuid) {
-	OU::UUID::BinaryUUID uuid = OU::UUID::produceRandomUUID();
+	OU::UUID::BinaryUUID buuid = OU::UUID::produceRandomUUID();
 	id = "DCE:";
-	id += OU::UUID::binaryToHex(uuid);
+	id += OU::UUID::binaryToHex(buuid);
       } else
 	id = name;
       std::string prf;

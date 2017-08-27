@@ -116,8 +116,8 @@ protected:
   void addRef();
   Receiver *receiver() const { return m_receiver; };
  public:
-  void setReceiver(Receiver &receiver) {
-    m_receiver = &receiver;
+  void setReceiver(Receiver &a_receiver) {
+    m_receiver = &a_receiver;
   }
   static void getProtocolFromString(const char* ep, std::string &);
   // get uuid from an endpoint string

@@ -489,12 +489,12 @@ verilogValue(const OU::Value &v, std::string &s) {
   return s.c_str();
 }
 const char *Worker::
-hdlValue(const std::string &name, const OU::Value &v, std::string &value, bool convert,
+hdlValue(const std::string &a_name, const OU::Value &v, std::string &value, bool convert,
 	 Language lang) {
   if (lang == NoLanguage)
     lang = m_language;
   return lang == VHDL ?
-    vhdlValue(NULL, name, v, value, convert) : verilogValue(v, value);
+    vhdlValue(NULL, a_name, v, value, convert) : verilogValue(v, value);
 }
 
 void Worker::

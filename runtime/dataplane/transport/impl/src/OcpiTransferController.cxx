@@ -319,17 +319,14 @@ void TransferController::init( PortSet* output, PortSet* input, bool whole_ss ) 
 /**********************************
  * This method determines if we can produce from the indicated buffer
  *********************************/
-bool TransferController::canBroadcast( 
-                                      Buffer* buffer                        // InOut - Buffer to produce from
-                                      )
-{
+bool TransferController::canBroadcast(Buffer* buffer) {
 
   // When s DD = whole only port 0 of the output port set can produce
   if (  m_wholeOutputSet && buffer->getPort()->getRank() != 0 ) {
     return true;
   }
 
-  bool produce = false;
+  bool l_produce = false;
 
   // We will go to each of our shadows and figure out if they are empty
 
@@ -342,21 +339,21 @@ bool TransferController::canBroadcast(
     for (PortOrdinal n = 0; n < m_input->getPortCount(); n++) {
       OCPI::DataTransport::Port* port = m_input->getPort(n);
       if ( port->getBuffer(p)->isEmpty() ) {
-        produce = true;
+        l_produce = true;
       }
       else {
-        produce = false;
+        l_produce = false;
         break;
       }
     }
 
     // All inputs have a free buffer
-    if ( produce ) {
+    if ( l_produce ) {
       m_nextTid = p;
       break;
     }
   }
-  return produce;
+  return l_produce;
 }
 
 
@@ -446,7 +443,7 @@ canProduce( Buffer* buffer )
     return canBroadcast( buffer );
   }
 
-  bool produce = false;
+  bool l_produce = false;
 
   // We will go to each of our shadows and figure out if they are empty
 
@@ -460,16 +457,16 @@ canProduce( Buffer* buffer )
     for ( OCPI::OS::uint32_t n=0; n<m_input->getPortCount(); n++ ) {
       OCPI::DataTransport::Port* port = m_input->getPort(n);
       if ( port->getBuffer(p)->isEmpty() ) {
-        produce = true;
+        l_produce = true;
       }
       else {
-        produce = false;
+        l_produce = false;
         break;
       }
     }
 
     // All inputs have a free buffer
-    if ( produce ) {
+    if ( l_produce ) {
       m_nextTid = p;
       break;
     }
@@ -482,10 +479,10 @@ canProduce( Buffer* buffer )
   for (PortOrdinal n = 0; n < m_input->getPortCount(); n++) {
     Port* port = m_input->getPort(n);
     if ( port->getBuffer(m_nextTid)->isEmpty() ) {
-      produce = true;
+      l_produce = true;
     }
     else {
-      produce = false;
+      l_produce = false;
       break;
     }
   }
@@ -494,7 +491,7 @@ canProduce( Buffer* buffer )
 #endif
 
 
-  return produce;
+  return l_produce;
 
 }
 
@@ -1039,8 +1036,8 @@ int TransferController4::produce( Buffer* b, bool bcast )
     if ( temp && temp->getTypeId() == 4 ) {
 
       // This is effectivly a broadcst to all port buffers, so we need to mark them as full
-      for (PortOrdinal n = 0; n < m_input->getPortCount(); n++) {
-        Buffer* tbuf = static_cast<Buffer*>(m_input->getPort(n)->getBuffer(m_nextTid));
+      for (PortOrdinal nn = 0; nn < m_input->getPortCount(); nn++) {
+        Buffer* tbuf = static_cast<Buffer*>(m_input->getPort(nn)->getBuffer(m_nextTid));
         tbuf->markBufferFull();
       }
 

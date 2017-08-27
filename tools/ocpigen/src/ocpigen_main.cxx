@@ -244,8 +244,7 @@ main(int argc, const char **argv) {
 	if (doTop) {
 	  ezxml_t xml;
 	  std::string file;
-	  const char *err;
-	  std::string parent, constraints, config;
+	  std::string constraints, config;
 	  OrderedStringSet platforms;
 	  if ((err = parseFile(*ap, parent, "HdlContainer", &xml, file, false, false)) ||
 	      (err = HdlContainer::parsePlatform(xml, config, constraints, platforms))) {

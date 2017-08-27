@@ -298,12 +298,10 @@ OcpiRccBinderConfigurator::g_options[] = {
 
 static
 void
-printUsage (OcpiRccBinderConfigurator & config,
-            const char * argv0)
-{
+printUsage (OcpiRccBinderConfigurator &a_config, const char * argv0) {
   std::cout << "usage: " << argv0 << " [options]" << std::endl
             << "  options: " << std::endl;
-  config.printOptions (std::cout);
+  a_config.printOptions(std::cout);
 }
 
 struct ConnectMemLayout {

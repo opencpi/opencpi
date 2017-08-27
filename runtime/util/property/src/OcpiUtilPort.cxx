@@ -99,18 +99,18 @@ namespace OCPI {
     // This is the clone constructor from internal to external - i.e. a different worker.
     // No xml here at all.  Used by tools.
     Port::
-    Port(const Port &other, Worker &w, const char *name, const char *&err)
+    Port(const Port &other, Worker &w, const char *a_name, const char *&err)
       : Protocol(other)
     {
       err = NULL;
-      if (w.findMetaPort(name)) {
-	err = esprintf("Can't create port named \"%s\" since it already exists", name);
+      if (w.findMetaPort(a_name)) {
+	err = esprintf("Can't create port named \"%s\" since it already exists", a_name);
 	return;
       }
       init();
       m_worker = &w;
       m_ordinal = w.m_nPorts++;
-      m_name = name;
+      m_name = a_name;
       m_clone = true;
       // everything else copied.
       m_provider = other.m_provider;
@@ -137,16 +137,16 @@ namespace OCPI {
     // First pass captures worker, name, ordinal and xml
     const char *Port::
     preParse(Worker &w, ezxml_t x, size_t ord, const char *defaultName) {
-      const char *name = ezxml_cattr(x, "name");
-      if (!name)
-	name = defaultName;
-      if (!name)
+      const char *l_name = ezxml_cattr(x, "name");
+      if (!l_name)
+	l_name = defaultName;
+      if (!l_name)
 	return "Missing \"name\" attribute for port";
       
-      if (w.findMetaPort(name, this))
+      if (w.findMetaPort(l_name, this))
 	return esprintf("Can't create port named \"%s\" since it already exists",
 			    m_name.c_str());
-      m_name = name;
+      m_name = l_name;
       m_worker = &w;
       m_ordinal = OCPI_UTRUNCATE(PortOrdinal, ord);
       m_xml = x;
@@ -222,7 +222,7 @@ namespace OCPI {
     const char *Port::
     postParse() {
       if (m_bufferSizePort != -1)
-	m_bufferSize = m_worker->port(m_bufferSizePort).m_bufferSize;
+	m_bufferSize = m_worker->metaPort(m_bufferSizePort).m_bufferSize;
       return parseScaling();
     }
 
@@ -249,7 +249,7 @@ namespace OCPI {
 	return size;
       } while (0);
       throw Error("%s bufferSize %zu is below minimum for worker %s port %s of: %zu",
-		  type, (size_t)size, m_worker->name().c_str(), m_name.c_str(),
+		  type, (size_t)size, m_worker->cname(), m_name.c_str(),
 		  m_minBufferSize);
     }
 
@@ -407,7 +407,7 @@ namespace OCPI {
 	  return esprintf("The \"hashfield\" attribute cannot be used with there is no protocol");
 	Operation *o = m_operations;
 	bool found = false;
-	for (unsigned n = 0; n < m_nOperations; n++)
+	for (unsigned nn = 0; nn < m_nOperations; nn++)
 	  if (o->findArg(hash.c_str()))
 	    found = true;
 	if (!found)
@@ -519,7 +519,7 @@ namespace OCPI {
       if (m_defaultBufferCount != SIZE_MAX)
 	formatAdd(out, " BufferCount=\"%zu\"", m_defaultBufferCount);
       if (m_bufferSizePort != -1)
-	formatAdd(out, " buffersize='%s'", m_worker->port(m_bufferSizePort).m_name.c_str());
+	formatAdd(out, " buffersize='%s'", m_worker->metaPort(m_bufferSizePort).cname());
       else if (m_bufferSize != SIZE_MAX && m_bufferSize != m_defaultBufferSize)
 	formatAdd(out, " bufferSize='%zu'", m_bufferSize);
       if (m_isOptional)

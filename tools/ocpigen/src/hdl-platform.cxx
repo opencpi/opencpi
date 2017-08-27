@@ -81,6 +81,6 @@ HdlPlatform::
 }
 
 Slot *HdlPlatform::
-findSlot(const char *name, const char *&err) const {
-  return Slot::find(name, m_slots, err);
+findSlot(const char *a_name, const char *&err) const {
+  return Slot::find(a_name, m_slots, err);
 }

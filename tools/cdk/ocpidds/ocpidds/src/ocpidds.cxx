@@ -659,8 +659,8 @@ doInterface(OU::Protocol &p, const char *&cp) {
       if (ex->m_nArgs)
 	ex->m_args = new OU::Member[ex->m_nArgs];
       // Loop over parameters to exception
-      for (OU::Member *m = ex->m_args; *cp != '\n'; m++)
-	getMember(*m, cp, " \n");
+      for (OU::Member *em = ex->m_args; *cp != '\n'; em++)
+	getMember(*em, cp, " \n");
       cp++;
     }
   }

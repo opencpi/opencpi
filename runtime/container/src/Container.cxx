@@ -275,11 +275,11 @@ namespace OCPI {
       return LocalLauncher::getSingleton();
     }
     void Container::
-    addTransport(const char *name, const char *id, OR::PortRole roleIn,  OR::PortRole roleOut,
+    addTransport(const char *a_name, const char *id, OR::PortRole roleIn,  OR::PortRole roleOut,
 		 uint32_t inOptions, uint32_t outOptions) {
-      if (XF::getManager().find(name)) {
+      if (XF::getManager().find(a_name)) {
 	Transport t;
-	t.transport = name;
+	t.transport = a_name;
 	t.id = id;
 	t.roleIn = roleIn;
 	t.roleOut = roleOut;
@@ -288,7 +288,7 @@ namespace OCPI {
 	m_transports.push_back(t);
       } else
 	ocpiInfo("Transport %s not supported in this process.  Not loaded/spec'd in system.xml?",
-		 name);
+		 a_name);
     }
   }
   namespace API {

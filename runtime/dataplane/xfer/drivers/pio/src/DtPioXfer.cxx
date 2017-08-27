@@ -48,9 +48,9 @@ class EndPoint : public XF::EndPoint {
   friend class XferFactory;
   std::string m_smb_name;
 protected:
-  EndPoint(XF::XferFactory &factory, const char *protoInfo, const char *eps, const char *other,
-	   bool local, size_t size, const OU::PValue *params)
-    : XF::EndPoint(factory, eps, other, local, size, params) { 
+  EndPoint(XF::XferFactory &a_factory, const char *protoInfo, const char *eps, const char *other,
+	   bool a_local, size_t a_size, const OU::PValue *params)
+    : XF::EndPoint(a_factory, eps, other, a_local, a_size, params) { 
     static uint16_t smb_count = 0;
     if (protoInfo) {
       m_protoInfo = protoInfo;
@@ -67,8 +67,8 @@ protected:
 
 class XferFactory;
 class Device : public XF::DeviceBase<XferFactory,Device> {
-  Device(const char *name)
-    : XF::DeviceBase<XferFactory, Device>(name, *this) {
+  Device(const char *a_name)
+    : XF::DeviceBase<XferFactory, Device>(a_name, *this) {
   }
 };
 
@@ -77,8 +77,8 @@ class XferServices;
 class XferRequest : public XF::TransferBase<XferServices, XferRequest> {
   friend class XferServices;
 protected:
-  XferRequest(XferServices & parent, XF_template temp)
-    : XF::TransferBase<XferServices, XferRequest>(parent, *this, temp) {
+  XferRequest(XferServices &a_parent, XF_template temp)
+    : XF::TransferBase<XferServices, XferRequest>(a_parent, *this, temp) {
   }
 };
 

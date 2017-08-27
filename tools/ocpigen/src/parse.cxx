@@ -65,20 +65,20 @@ const char *Worker::
 checkDataPort(ezxml_t impl, DataPort *&sp) {
   const char
     *err,
-    *name = ezxml_cattr(impl, "Name"),
+    *l_name = ezxml_cattr(impl, "Name"),
     *internal = ezxml_cattr(impl, "internal"),
     *portImplName = ezxml_cattr(impl, "implName");
   sp = NULL;
   Port *p;
-  if (name) {
-    if ((err = getPort(name, p)))
+  if (l_name) {
+    if ((err = getPort(l_name, p)))
       return err;
     if (!p->isData())
       return OU::esprintf("Name attribute of Stream/MessageInterface \"%s\" "
-			  "matches a non-data spec port", name);
+			  "matches a non-data spec port", l_name);
     if (p->m_type != WDIPort)
       return OU::esprintf("Name attribute of Stream/MessageInterface \"%s\" "
-			  "matches an implementation port, not a spec data port", name);
+			  "matches an implementation port, not a spec data port", l_name);
     sp = p->dataPort();
   } else if (portImplName) {
     if (!getPort(portImplName, p))
@@ -387,20 +387,20 @@ parseImplControl(ezxml_t &xctl, const char */*firstRaw*/) { // FIXME: nuke the s
   // FIXME: have an expression validator
   OE::getOptionalString(m_xml, m_validScaling, "validScaling");
   for (ezxml_t x = ezxml_cchild(m_xml, "scaling"); x; x = ezxml_next(x)) {
-    std::string name;
-    OE::getOptionalString(x, name, "name");
-    if (findProperty(name.c_str()))
+    std::string l_name;
+    OE::getOptionalString(x, l_name, "name");
+    if (findProperty(l_name.c_str()))
       return OU::esprintf("Scaling parameter \"%s\" conflicts with property name",
-			  name.c_str());
+			  l_name.c_str());
     OU::Port::Scaling s;
     if ((err = s.parse(x, this)))
       return err;
-    if (name.empty())
+    if (l_name.empty())
       m_scaling = s;
-    else if (m_scalingParameters.find(name) != m_scalingParameters.end())
-      return OU::esprintf("Duplicate scaling parameter name: \"%s\"", name.c_str());
+    else if (m_scalingParameters.find(l_name) != m_scalingParameters.end())
+      return OU::esprintf("Duplicate scaling parameter name: \"%s\"", l_name.c_str());
     else
-      m_scalingParameters[name] = s;
+      m_scalingParameters[l_name] = s;
     m_scalable = true;
   }
   return NULL;
@@ -519,11 +519,11 @@ parseOperation(ezxml_t op) {
 // If the spec already has a package prefix, then it will only
 // be used as the package of the impl.
 const char *Worker::
-findPackage(ezxml_t spec, const char *package) {
-  if (!package)
-    package = ezxml_cattr(spec, "package");
-  if (package)
-    m_package = package;
+findPackage(ezxml_t spec, const char *a_package) {
+  if (!a_package)
+    a_package = ezxml_cattr(spec, "package");
+  if (a_package)
+    m_package = a_package;
   else {
     std::string packageFileDir;
     // If the spec name already has a package, we don't use the package file name
@@ -560,7 +560,7 @@ findPackage(ezxml_t spec, const char *package) {
 }
 
 const char *Worker::
-parseSpec(const char *package) {
+parseSpec(const char *a_package) {
   const char *err;
   // xi:includes at this level are component specs, nothing else can be included
   ezxml_t spec = NULL;
@@ -584,19 +584,19 @@ parseSpec(const char *package) {
    {
      // default the specname from the file of the current file,
      // which may in fact be the name of the worker file if the component spec is embedded
-     std::string name, fileName;
-     if ((err = getNames(spec, m_specFile.c_str(), "ComponentSpec", name, fileName)))
+     std::string l_name, fileName;
+     if ((err = getNames(spec, m_specFile.c_str(), "ComponentSpec", l_name, fileName)))
        return err;
      size_t len = strlen("-spec");
-     if (name.length() > len) {
-       const char *tail = name.c_str() + name.length() - len;
+     if (l_name.length() > len) {
+       const char *tail = l_name.c_str() + l_name.length() - len;
        if (!strcasecmp(tail, "-spec") || !strcasecmp(tail, "_spec"))
-	 name.resize(name.size() - len);
+	 l_name.resize(l_name.size() - len);
      }
-     m_specName = strdup(name.c_str());
+     m_specName = strdup(l_name.c_str());
    }
   // Find the package even though the spec package might be specified already
-  if ((err = findPackage(spec, package)))
+  if ((err = findPackage(spec, a_package)))
     return err;
   if (strchr(m_specName, '.'))
     m_specName = strdup(m_specName);
@@ -956,17 +956,17 @@ Worker(ezxml_t xml, const char *xfile, const std::string &parentFile,
   if ((err = getNames(xml, xfile, NULL, m_name, m_fileName)))
     return;
   m_implName = m_name.c_str();
-  const char *name = ezxml_name(xml);
-  assert(name);
+  const char *l_name = ezxml_name(xml);
+  assert(l_name);
   if (ipvs)
     m_instancePVs = *ipvs;
-  if (!strncasecmp("hdl", name, 3)) {
+  if (!strncasecmp("hdl", l_name, 3)) {
     m_model = HdlModel;
     m_modelString = "hdl";
-  } else if (!strncasecmp("rcc", name, 3)) {
+  } else if (!strncasecmp("rcc", l_name, 3)) {
     m_model = RccModel;
     m_modelString = "rcc";
-  } else if (!strncasecmp("ocl", name, 3)) {
+  } else if (!strncasecmp("ocl", l_name, 3)) {
     m_model = OclModel;
     m_modelString = "ocl";
   }
@@ -975,9 +975,9 @@ Worker(ezxml_t xml, const char *xfile, const std::string &parentFile,
     // Parse things that the base class should parse.
     const char *lang = ezxml_cattr(m_xml, "Language");
     if (!lang)
-      if (!strcasecmp("HdlContainer", name) || !strcasecmp("HdlConfig", name))
+      if (!strcasecmp("HdlContainer", l_name) || !strcasecmp("HdlConfig", l_name))
 	m_language = VHDL;
-      else if (!strcasecmp("HdlAssembly", name))
+      else if (!strcasecmp("HdlAssembly", l_name))
 	m_language = Verilog;
       else {
 	err = "Missing Language attribute for HDL worker element";
@@ -1060,25 +1060,26 @@ setParent(Worker *parent) {
 
 // FIXME: look for all the places this can be used..
 Port *Worker::
-findPort(const char *name, const Port *except) const {
+findPort(const char *a_name, const Port *except) const {
   for (unsigned i = 0; i < m_ports.size(); i++) {
     Port *dp = m_ports[i];
-    if (dp && dp->m_name.length() && !strcasecmp(dp->pname(), name) && (!except || dp != except))
+    if (dp && dp->m_name.length() && !strcasecmp(dp->pname(), a_name) &&
+	(!except || dp != except))
       return dp;
   }
   return NULL;
 }
 const char *Worker::
-getPort(const char *name, Port *&p, Port *except) const {
-  p = findPort(name, except);
+getPort(const char *a_name, Port *&p, Port *except) const {
+  p = findPort(a_name, except);
   return p ? NULL :
-    OU::esprintf("No port named \"%s\" was found in worker \"%s\"", name, m_implName);
+    OU::esprintf("No port named \"%s\" was found in worker \"%s\"", a_name, m_implName);
 }
 
 // virtual Callback from OU::Port - indexed by data ports, not all ports
 // FIXME: have the util data ports injected into the OU::Worker as they are created...
 OU::Port &Worker::
-port(unsigned long which) const {
+metaPort(unsigned long which) const {
   unsigned long ordinal = 0;
   for (unsigned n = 0; n < m_ports.size(); ++n)
     if (m_ports[n]->isData()) {
@@ -1185,9 +1186,9 @@ deriveOCP() {
 }
 
 OU::Property *Worker::
-findProperty(const char *name) const {
+findProperty(const char *a_name) const {
   for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
-    if (!strcasecmp((*pi)->m_name.c_str(), name))
+    if (!strcasecmp((*pi)->m_name.c_str(), a_name))
       return *pi;
   return NULL;
 }

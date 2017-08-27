@@ -139,7 +139,7 @@ namespace OCPI {
       inline const std::string &model() const { return m_model; }
       inline const std::string &package() const { return m_package; }
       inline const std::string &specName() const { return m_specName; }
-      inline const std::string &name() const { return m_name; }
+      //      inline const std::string &name() const { return m_name; }
       inline const char *cname() const { return m_name.c_str(); }
       inline const std::string &slave() const { return m_slave; }
       inline const Attributes &attributes() const { return *m_attributes; }
@@ -167,8 +167,7 @@ namespace OCPI {
       }
       inline Port *findMetaPort(const std::string &id) const { return findMetaPort(id.c_str()); }
       virtual Port *findMetaPort(const char *name, const Port *except = NULL) const;
-      virtual Port &port(unsigned long which) const
-      {
+      virtual Port &metaPort(unsigned long which) const {
         ocpiAssert(m_ports && which < m_nPorts);
         return m_ports[which];
       }

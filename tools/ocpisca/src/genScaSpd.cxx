@@ -44,13 +44,13 @@ genScaSpd(const char *outDir, const char *pkg) const {
   id += OU::UUID::binaryToHex(uuid);
   ezxml_t root = ezxml_new("softpkg");
   ezxml_set_attr_d(root, "id", id.c_str());
-  std::string name;
+  std::string l_name;
   if (pkg) {
-    name = pkg;
-    name += ".";
+    l_name = pkg;
+    l_name += ".";
   }
-  name += m_assembly.name();
-  ezxml_set_attr_d(root, "name", name.c_str());
+  l_name += m_assembly.name();
+  ezxml_set_attr_d(root, "name", l_name.c_str());
   ezxml_set_attr(root, "type", "sca_compliant");
   OX::addChild(root, "author", 1);
   ezxml_t x = OX::addChild(root, "propertyfile", 1, NULL, "type", "PRF");

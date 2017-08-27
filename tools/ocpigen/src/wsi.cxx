@@ -44,9 +44,9 @@ WsiPort(Worker &w, ezxml_t x, DataPort *sp, int ordinal, const char *&err)
 
 // Our special copy constructor
 WsiPort::
-WsiPort(const WsiPort &other, Worker &w , std::string &name, size_t count,
-	OCPI::Util::Assembly::Role *role, const char *&err)
-  : DataPort(other, w, name, count, role, err) {
+WsiPort(const WsiPort &other, Worker &w , std::string &a_name, size_t count,
+	OU::Assembly::Role *role, const char *&err)
+  : DataPort(other, w, a_name, count, role, err) {
   if (err)
     return;
   m_abortable = other.m_abortable;
@@ -58,10 +58,10 @@ WsiPort(const WsiPort &other, Worker &w , std::string &name, size_t count,
 // Virtual constructor: the concrete instantiated classes must have a clone method,
 // which calls the corresponding specialized copy constructor
 Port &WsiPort::
-clone(Worker &w, std::string &name, size_t count, OCPI::Util::Assembly::Role *role,
+clone(Worker &w, std::string &a_name, size_t count, OCPI::Util::Assembly::Role *role,
       const char *&err) const {
   err = NULL;
-  return *new WsiPort(*this, w, name, count, role, err);
+  return *new WsiPort(*this, w, a_name, count, role, err);
 }
 
 WsiPort::

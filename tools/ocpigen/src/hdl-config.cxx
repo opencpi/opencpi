@@ -190,17 +190,17 @@ parseDeviceProperties(ezxml_t x, OU::Assembly::Properties &iPVs) {
   const char *err;
   // First pass for error checking
   for (ezxml_t px = ezxml_cchild(x, "Property"); px; px = ezxml_cnext(px)) {
-    std::string name;
+    std::string l_name;
     if ((err = OE::checkAttrs(px, "name", "value", "valuefile", NULL)) ||
-	(err = OE::getRequiredString(px, name, "name", "property")))
+	(err = OE::getRequiredString(px, l_name, "name", "property")))
       return err;
-    OU::Property *p = findProperty(name.c_str());
+    OU::Property *p = findProperty(l_name.c_str());
     if (!p)
       return OU::esprintf("\"%s\" is not a property of device \"%s\"",
-			  name.c_str(), m_implName);
+			  l_name.c_str(), m_implName);
     if (!p->m_isParameter)
       return OU::esprintf("\"%s\" is not a parameter property of device \"%s\"",
-			  name.c_str(), m_implName);
+			  l_name.c_str(), m_implName);
   }
   assert(!iPVs.size());
   iPVs.resize(m_ctl.nParameters);

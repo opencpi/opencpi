@@ -344,23 +344,23 @@ namespace DataTransfer {
       ibv_device       * m_dev;     
       ibv_device_attr    m_device_attribute;
       
-      Device(const char* name)
-	: XF::DeviceBase<XferFactory,Device>(name, *this)
+      Device(const char* a_name)
+	: XF::DeviceBase<XferFactory,Device>(a_name, *this)
       {
-	m_dev = find( name );
-	if ( ! m_dev ) {
-	  fprintf(stderr, "OFED::Device ERROR: OFED device not found (%s)\n", name );
-	  throw XF::DataTransferEx( DEV_NOT_FOUND, name );
+	m_dev = find(a_name);
+	if (!m_dev) {
+	  ocpiInfo("OFED::Device ERROR: OFED device not found (%s)", a_name);
+	  throw XF::DataTransferEx( DEV_NOT_FOUND, a_name);
 	}
 	m_context = ibv_open_device(m_dev);
 	if (!m_context) {
-	  fprintf(stderr, "OFED::Device ERROR: Couldn't get context for %s\n",
+	  ocpiInfo("OFED::Device ERROR: Couldn't get context for %s",
 		  ibv_get_device_name(m_dev));
-	  throw XF::DataTransferEx( COULD_NOT_OPEN_DEVICE, name );
+	  throw XF::DataTransferEx( COULD_NOT_OPEN_DEVICE, a_name);
 	}
 	m_pd = ibv_alloc_pd(m_context);
-	if (! m_pd ) {
-	  fprintf(stderr, "OFED::Device ERROR: Couldn't allocate verbs protection domain\n");
+	if (!m_pd) {
+	  ocpiInfo("OFED::Device ERROR: Couldn't allocate verbs protection domain");
 	  throw XF::DataTransferEx( RESOURCE_EXCEPTION, "protection domain" );	  
 	}
       }
@@ -373,12 +373,10 @@ namespace DataTransfer {
       virtual ~Device()
 	throw()
       {
-	if ( ibv_dealloc_pd(m_pd) < 0 ) {
-	  fprintf(stderr, "OFED::Device ERROR: Could not deallocate protection domain for device\n");
-	}
-	if ( ibv_close_device(m_context) < 0 ) {
-	  fprintf(stderr, "OFED::Device ERROR: Could not close device\n");
-	}
+	if (ibv_dealloc_pd(m_pd) < 0)
+	  ocpiInfo("OFED::Device ERROR: Could not deallocate protection domain for device");
+	if (ibv_close_device(m_context) < 0)
+	  ocpiInfo("OFED::Device ERROR: Could not close device");
       }
 
       ibv_device* find(const char *ib_devname) {
@@ -387,31 +385,29 @@ namespace DataTransfer {
 	ibv_device *ib_dev = NULL;
 	dev_list = ibv_get_device_list(&num_of_device);
 	if (num_of_device <= 0) {
-	  fprintf(stderr,"OFED::Device ERROR: Did not detect devices \n");
-	  fprintf(stderr,"If device exists, check if driver is up\n");
+	  ocpiInfo("OFED::Device ERROR: Did not detect devices");
+	  ocpiInfo("If device exists, check if driver is up");
 	  return NULL;
 	}
 	if (!ib_devname) {
 	  ib_dev = dev_list[0];
 	  if (!ib_dev)
-	    fprintf(stderr, "OFED::Device No IB devices found\n");
+	    ocpiInfo("OFED::Device No IB devices found");
 	} else {
 	  for (; (ib_dev = *dev_list); ++dev_list)
 	    if (!strcmp(ibv_get_device_name(ib_dev), ib_devname))
 	      break;
 	  if (!ib_dev)
-	    fprintf(stderr, "OFED::Device IB device %s not found\n", ib_devname);
+	    ocpiInfo("OFED::Device IB device %s not found", ib_devname);
 	}
 	return ib_dev;
       }
 
-      void destroyMemContext(  SmemServices * ms ) {
-	if ( ibv_destroy_cq( ms->getCq() ) ) {
-	  fprintf(stderr, "OFED::Device ERROR: Couldn't destroy Completion Queue\n");
-	}
-	if ( ibv_dereg_mr(  ms->getMr() ) ) {
-	  fprintf(stderr, "OFED::Device ERROR: Couldn't de-register memory");
-	}
+      void destroyMemContext(SmemServices *ms) {
+	if (ibv_destroy_cq( ms->getCq()))
+	  ocpiInfo("OFED::Device ERROR: Couldn't destroy Completion Queue");
+	if (ibv_dereg_mr(ms->getMr()))
+	  ocpiInfo("OFED::Device ERROR: Couldn't de-register memory");
       }
 
       void createMemContext( SmemServices * ms ) {
@@ -423,14 +419,14 @@ namespace DataTransfer {
 	  ibv_reg_mr(m_pd, ms->map(0,ms->endPoint().size()), ms->endPoint().size(),
 		     IBV_ACCESS_REMOTE_WRITE | IBV_ACCESS_LOCAL_WRITE);
 	if (! ms->getMr()) {
-	  fprintf(stderr, "OFED::Device ERROR: Couldn't register OFED memory\n");
-	  fprintf(stderr, "Check memory limits with ""ulimit -l""\n");
+	  ocpiInfo("OFED::Device ERROR: Couldn't register OFED memory");
+	  ocpiInfo("Check memory limits with ""ulimit -l""");
 	  throw XF::DataTransferEx( COULD_NOT_OPEN_DEVICE, "memory registration failed" );
 	}
 	
 	ms->getCq() = ibv_create_cq( m_context, MAX_Q_DEPTH, NULL,NULL, 0 );
 	if ( ms->getCq() == NULL ) {
-	  fprintf(stderr, "OFED::Device ERROR: Could not create completion Queue\n");
+	  ocpiInfo("OFED::Device ERROR: Could not create completion Queue");
 	  throw XF::DataTransferEx( RESOURCE_EXCEPTION, "completion channel Q" );	  
 	}
 
@@ -438,7 +434,8 @@ namespace DataTransfer {
 	ibv_port_attr pattr;
 	EndPoint * ep = static_cast<XF::OFED::SmemServices*>(ms)->getOfedEp();
 	if (ibv_query_port( ep->m_device->m_context,ep->m_port,&pattr)) {
-	  fprintf(stderr,"OFED::Device ERROR: Could not query device with ibv_query_port(%d)\n", ep->m_port);
+	  ocpiInfo("OFED::Device ERROR: Could not query device with ibv_query_port(%d)",
+		   ep->m_port);
 	  throw XF::DataTransferEx( API_ERROR, "ibv_query_port()");
 	}
 	ep->m_lid  = pattr.lid;
@@ -449,15 +446,16 @@ namespace DataTransfer {
 	if ((errno=ibv_query_gid( m_context, 
 				  ep->m_port, 0,
 				  &ep->m_gid))) {
-	  fprintf(stderr,"OFED::Device ERROR: Could not query device with ibv_query_gid() %s\n", strerror(errno));
+	  ocpiInfo("OFED::Device ERROR: Could not query device with ibv_query_gid() %s",
+		   strerror(errno));
 	  throw XF::DataTransferEx( API_ERROR, "ibv_query_gid()");
 	}
       }
     };
     EndPoint::
-    EndPoint(XferFactory &factory, const char *protoInfo, const char *eps, const char *other,
-	     bool local, size_t size, const OU::PValue *params)
-      : XF::EndPoint(factory, eps, other, local, size, params) { 
+    EndPoint(XferFactory &a_factory, const char *protoInfo, const char *eps, const char *other,
+	     bool a_local, size_t a_size, const OU::PValue *params)
+      : XF::EndPoint(a_factory, eps, other, a_local, a_size, params) { 
       if (protoInfo) {
 	m_protoInfo = protoInfo;
 	parse(protoInfo);
@@ -465,9 +463,9 @@ namespace DataTransfer {
 	Device *d;
 	const char *deviceName = 0;
 	if (OU::findString(params, "Device", deviceName))
-	  d = factory.findDevice(deviceName);
+	  d = a_factory.findDevice(deviceName);
 	else
-	  d = factory.firstDevice();
+	  d = a_factory.firstDevice();
 	if (!d)
 	  throw XF::DataTransferEx(DEV_NOT_FOUND , "OFED");
 	// First get the entry point from the properties
@@ -522,8 +520,8 @@ namespace DataTransfer {
       ibv_device *ib_dev = NULL;
       dev_list = ibv_get_device_list(&num_of_device);
       if ((num_of_device <= 0) || (dev_list[0] == NULL)) {
-	fprintf(stderr,"OFED::XferFactory ERROR: Did not detect any OFED devices in the system\n");
-	fprintf(stderr," If device exists, check if driver is up\n");
+	ocpiInfo("OFED::XferFactory ERROR: Did not detect any OFED devices in the system");
+	ocpiInfo(" If device exists, check if driver is up");
 	return 0;
       }
       for (; (ib_dev = *dev_list); ++dev_list) {
@@ -607,7 +605,7 @@ namespace DataTransfer {
 		     &m_lid, &m_psn, 
 		     &m_rkey, &m_vaddr);
       if ( c != 8 ) {
-	ocpiBad("OFED::EndPoint  ERROR: Bad OFED endpoint format (%s)\n", protoInfo);
+	ocpiBad("OFED::EndPoint  ERROR: Bad OFED endpoint format (%s)", protoInfo);
 	throw XF::DataTransferEx( UNSUPPORTED_ENDPOINT, protoInfo);
       }
       m_dev = buf;
@@ -674,7 +672,7 @@ namespace DataTransfer {
 	//	printf("*** Got a completion event\n");
 #endif
 	if ( c < 0 ) {
-	  fprintf(stderr,"OFED::XferServices ERROR: Couldn't poll completion Q()\n");
+	  ocpiInfo("OFED::XferServices ERROR: Couldn't poll completion Q()");
 	  throw XF::DataTransferEx( API_ERROR, "ibv_poll_cq()");
 	}
 	if ( wc[index].status == IBV_WC_SUCCESS ) {
@@ -720,7 +718,7 @@ namespace DataTransfer {
       iattr.qp_type = IBV_QPT_RC;
       qp = ibv_create_qp( getOfedEp()->m_device->m_pd, &iattr);
       if (! qp)  {
-	fprintf(stderr, "OFED::XferServices ERROR: Could not create Queue Pair\n");
+	ocpiInfo("OFED::XferServices ERROR: Could not create Queue Pair");
 	throw XF::DataTransferEx( RESOURCE_EXCEPTION, "completion channel Q" );	  
       }
       ibv_qp_attr tattr;
@@ -732,7 +730,7 @@ namespace DataTransfer {
       tattr.qp_access_flags = IBV_ACCESS_REMOTE_WRITE | IBV_ACCESS_LOCAL_WRITE;
       int errno;
       if ( (errno=ibv_modify_qp( qp, &tattr, flags ) ) ) {
-	fprintf(stderr, "OFED::SmemServices ERROR: Failed to modify RC QP to RTR, %s\n", strerror(errno));
+	ocpiInfo("OFED::SmemServices ERROR: Failed to modify RC QP to RTR, %s", strerror(errno));
 	throw XF::DataTransferEx( API_ERROR, "ibv_query_port()");
       }
       return qp;
@@ -762,7 +760,7 @@ namespace DataTransfer {
 
       ibv_port_attr pattr;
       if (ibv_query_port( sep->m_device->m_context,sep->m_port,&pattr)) {
-	fprintf(stderr,"OFED::XferServices ERROR: Could not query device with ibv_query_port()\n");
+	ocpiInfo("OFED::XferServices ERROR: Could not query device with ibv_query_port()");
 	throw XF::DataTransferEx( API_ERROR, "ibv_query_port()");
       }
       ibv_qp_attr attr;
@@ -796,7 +794,7 @@ namespace DataTransfer {
 			 IBV_QP_MIN_RNR_TIMER      |
 			 IBV_QP_MAX_DEST_RD_ATOMIC
 				 ))) {
-	fprintf(stderr, "OFED::XferServices ERROR: Failed to modify RC QP to RTR, %s\n", strerror(errno));
+	ocpiInfo("OFED::XferServices ERROR: Failed to modify RC QP to RTR, %s", strerror(errno));
 	throw XF::DataTransferEx( API_ERROR, "ibv_modify_qp()");
       }
 
@@ -815,7 +813,7 @@ namespace DataTransfer {
 		      IBV_QP_RNR_RETRY          |
 		      IBV_QP_MAX_QP_RD_ATOMIC
 				 ))) {
-	fprintf(stderr, "OFED::XferServices ERROR: Failed to modify RC QP to RTS, %s\n", strerror(errno));
+	ocpiInfo("OFED::XferServices ERROR: Failed to modify RC QP to RTS, %s", strerror(errno));
 	throw XF::DataTransferEx( API_ERROR, "ibv_modify_qp()");
       }
     }
@@ -922,7 +920,7 @@ namespace DataTransfer {
 	if ( (errno=ibv_post_send( parent().m_qp, m_firstWr, &m_badWr[0] )) ) {
 	  OCPI::OS::sleep( 1 );	  
 	  if ( (errno=ibv_post_send( parent().m_qp, m_firstWr, &m_badWr[0] )) ) {
-	    fprintf(stderr,"OFED::XferRequest ERROR: Couldn't post send with ibv_post_send(), %s\n", strerror(errno));
+	    ocpiInfo("OFED::XferRequest ERROR: Couldn't post send with ibv_post_send(), %s", strerror(errno));
 	    throw XF::DataTransferEx( API_ERROR, "ibv_post_send()");
 	  }
 	}
@@ -933,7 +931,7 @@ namespace DataTransfer {
 	if ( (errno=ibv_post_send( parent().m_qp, m_wr, &m_badWr[1] )) ) {
 	  OCPI::OS::sleep( 1 );	  
 	  if ( (errno=ibv_post_send( parent().m_qp, m_wr, &m_badWr[1] )) ) {
-	    fprintf(stderr,"OFED::XferRequest ERROR: Couldn't post send with ibv_post_send(), %s\n", strerror(errno));
+	    ocpiInfo("OFED::XferRequest ERROR: Couldn't post send with ibv_post_send(), %s", strerror(errno));
 	    throw XF::DataTransferEx( API_ERROR, "ibv_post_send()");
 	  }
 	}
@@ -944,7 +942,7 @@ namespace DataTransfer {
 	if ( (errno=ibv_post_send(parent().m_qp, m_lastWr, &m_badWr[2] )) ) {
 	  OCPI::OS::sleep( 1 );	  
 	  if ( (errno=ibv_post_send( parent().m_qp, m_lastWr, &m_badWr[2] )) ) {
-	    fprintf(stderr,"OFED::XferRequest ERROR: Couldn't post send with ibv_post_send(), %s\n", strerror(errno));
+	    ocpiInfo("OFED::XferRequest ERROR: Couldn't post send with ibv_post_send(), %s", strerror(errno));
 	    throw XF::DataTransferEx( API_ERROR, "ibv_post_send()");
 	  }
 	}
@@ -1017,7 +1015,7 @@ namespace DataTransfer {
     ~XferServices ()
     {
       if ( ibv_destroy_qp( m_qp ) ) {
-	fprintf(stderr, "OFED :XferServies ERROR: failed to destroy queue pair\n");
+	ocpiInfo("OFED :XferServies ERROR: failed to destroy queue pair");
       }
     }
 
@@ -1028,7 +1026,7 @@ namespace DataTransfer {
 
       if (ep.local()) {
 	if (posix_memalign((void**)&m_mem, sysconf(_SC_PAGESIZE), ep.size())) {
-	  ocpiDebug("OFED::SmemServices Error: Couldn't allocate SMB.\n");
+	  ocpiDebug("OFED::SmemServices Error: Couldn't allocate SMB.");
 	  throw XF::DataTransferEx( NO_MORE_SMB, "memalign failed" );
 	}
 	memset(m_mem, 0, ep.size());

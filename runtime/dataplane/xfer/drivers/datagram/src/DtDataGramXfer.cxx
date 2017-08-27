@@ -54,8 +54,8 @@ XferServices(XferFactory &driver, EndPoint &source, EndPoint &target)
 }
 
 XferFactory::
-XferFactory(const char *name) throw ()
-  : XF::XferFactory(name) {
+XferFactory(const char *a_name) throw ()
+  : XF::XferFactory(a_name) {
   ocpiDebug("In DatagramXferFactory::DatagramXferFactory()");
 }
 

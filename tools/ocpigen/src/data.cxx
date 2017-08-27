@@ -89,9 +89,9 @@ DataPort(Worker &w, ezxml_t x, int ordinal, const char *&err)
 
 // Our special clone copy constructor
 DataPort::
-DataPort(const DataPort &other, Worker &w , std::string &name, size_t count,
+DataPort(const DataPort &other, Worker &w , std::string &a_name, size_t count,
 	 OCPI::Util::Assembly::Role *role, const char *&err)
-  : OcpPort(other, w, name, count, err),
+  : OcpPort(other, w, a_name, count, err),
     OU::Port(other, w, pname(), err) {
   if (err)
     return;
@@ -191,7 +191,7 @@ parseProtocol() {
     }
     // The protx comes from an include, a child element, or the protocol attr file
     if (protx) {
-      std::string name;
+      std::string l_name;
       const char *file = worker().m_file.c_str();
       if (protFile.length() && protFile != worker().m_file) {
 	// If we are being parsed from a protocol file, default the name.
@@ -207,12 +207,12 @@ parseProtocol() {
 	last = checkSuffix(start, "_protocol", last);
 	last = checkSuffix(start, "_prot", last);
 	last = checkSuffix(start, "-prot", last);
-	name.assign(start, last - start);
+	l_name.assign(start, last - start);
 	file = protFile.c_str();
       } else if (protocolElem)
 	// If we are being parsed from an immediate element, default the name from port name.
-	name = cname();
-      if ((err = OU::Protocol::parse(protx, name.c_str(), file, doProtocolChild, this)))
+	l_name = cname();
+      if ((err = OU::Protocol::parse(protx, l_name.c_str(), file, doProtocolChild, this)))
 	return err;
       m_nOpcodes = nOperations();
     } else if (m_nOperations == 0 && !m_seenSummary) { // if we have never parsed a protocol yet
@@ -261,7 +261,7 @@ finalize() {
     return "Specified ByteWidth does not divide evenly into specified DataWidth";
   // Check if this port requires endianness
   // Either the granule is smaller than or not a multiple of data path width
-  if (granuleWidth < m_dataWidth || m_dataWidth && granuleWidth % m_dataWidth)
+  if (granuleWidth < m_dataWidth || (m_dataWidth && granuleWidth % m_dataWidth))
     worker().m_needsEndian = true;
   return NULL;
 }

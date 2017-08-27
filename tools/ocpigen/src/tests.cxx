@@ -910,7 +910,7 @@ namespace {
     }
     void
     generateAppInstance(Worker &w, ParamConfig &pc, unsigned nOut, unsigned nOutputs,
-			unsigned s, const DataPort *first, bool emulator, std::string &app) {
+			unsigned s, const DataPort *first, bool a_emulator, std::string &app) {
       OU::formatAdd(app, "  <instance component='%s'", w.m_specName);
       if (nOut == 1) {
 	if (nOutputs == 1)
@@ -944,7 +944,7 @@ namespace {
 	  app += "/>\n";
 	}
       }
-      if (!emulator)
+      if (!a_emulator)
 	app += m_delays;
       app += any ? "  </instance>\n" : "/>\n";
     }
@@ -1951,7 +1951,7 @@ createCases(const char **platforms, const char */*package*/, const char */*outDi
     }
     bool foundImplementation(const OL::Implementation &i, bool &accepted) {
       ocpiInfo("For platform %s, considering implementation %s from %s",
-	       m_platform.c_str(), i.m_metadataImpl.name().c_str(), i.m_artifact.name().c_str());
+	       m_platform.c_str(), i.m_metadataImpl.cname(), i.m_artifact.name().c_str());
       if (i.m_artifact.platform() == m_platform && i.m_metadataImpl.model() == m_model &&
 	  i.m_artifact.m_dynamic == m_dynamic) {
 	unsigned sn = 0;
@@ -1961,7 +1961,7 @@ createCases(const char **platforms, const char */*package*/, const char */*outDi
 	  for (ezxml_t sx = ezxml_cchild(cx, "subcase"); sx; sx = ezxml_cnext(sx), n++, sn++)
 	    if (included(m_platform.c_str(), sx))
 	      for (ezxml_t wx = ezxml_cchild(sx, "worker"); wx; wx = ezxml_cnext(wx))
-		if (i.m_metadataImpl.name() == ezxml_cattr(wx, "name") &&
+		if (!strcmp(i.m_metadataImpl.cname(), ezxml_cattr(wx, "name")) &&
 		    i.m_metadataImpl.model() == ezxml_cattr(wx, "model")) {
 		  ocpiInfo("Accepted for case %s subcase %u from file: %s", name, n,
 			   i.m_artifact.name().c_str());

@@ -105,11 +105,11 @@ emitCrew(const OCPI::Container::Launcher::Crew &crew) {
 }
 // FIXME: someday allow for instance parameters?
 void Launcher::
-emitMember(const char *name, unsigned contN, unsigned artN, unsigned crewN,
+emitMember(const char *a_name, unsigned contN, unsigned artN, unsigned crewN,
 	   const Launcher::Member &i, int slave) {
   OU::formatAdd(m_request,
 		"  <member name='%s' container='%u' artifact='%u' crew='%u' worker='%s'",
-		name, contN, artN, crewN, i.m_impl->m_metadataImpl.specName().c_str());
+		a_name, contN, artN, crewN, i.m_impl->m_metadataImpl.specName().c_str());
   if (i.m_impl->m_staticInstance)
     OU::formatAdd(m_request, " static='%s'", ezxml_cattr(i.m_impl->m_staticInstance, "name"));
   if (slave >= 0)

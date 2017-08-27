@@ -43,19 +43,15 @@ namespace OCPI {
 
     // Client side creation - providing optional protocol string info
     MessageCircuit::
-    MessageCircuit(Transport &transport,
-		   //		   OS::Mutex &mutex,
-		   const char *localEndpoint,
-		   const char *remoteEndpoint,
-		   uint32_t bufferSize,
-		   const char *protocol,
+    MessageCircuit(Transport &transport, const char *a_localEndpoint,
+		   const char *a_remoteEndpoint, uint32_t bufferSize, const char *protocol,
 		   OS::Timer *timer)
-      : m_transport(transport),	m_bufferSize(bufferSize ? bufferSize : defaultBufferSize), // m_mutex(mutex), 
+      : m_transport(transport),	m_bufferSize(bufferSize ? bufferSize : defaultBufferSize),
 	m_rcv_port(NULL), m_send_port(NULL)
     {
       DataTransfer::EndPoint
-	&local = transport.getLocalEndpoint(localEndpoint),
-	&remote = transport.addRemoteEndPoint(remoteEndpoint);
+	&local = transport.getLocalEndpoint(a_localEndpoint),
+	&remote = transport.addRemoteEndPoint(a_remoteEndpoint);
 
       Circuit &send = makeCircuit(local, remote, true, protocol, timer);
       try {
