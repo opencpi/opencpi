@@ -82,7 +82,7 @@ function docase {
       timearg=--timeout=$TestTimeout
     fi
     cmd=('OCPI_LIBRARY_PATH=../../../lib/rcc:../../gen/assemblies:$OCPI_CDK_DIR/lib/components/rcc' \
-         ocpirun -d -v -m$component=$1 -w$component=$2 -P$component=$platform \
+         $OCPI_CDK_DIR/bin/$OCPI_TOOL_DIR/ocpirun -d -v -m$component=$1 -w$component=$2 -P$component=$platform \
 	         --sim-dir=$3.$4.$2.$1.simulation $timearg \
 		 --dump-file=$3.$4.$2.$1.props $outputs ../../gen/applications/$3.$4.xml)
     rm -f -r $3.$4.$2.$1.*
