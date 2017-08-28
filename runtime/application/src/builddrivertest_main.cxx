@@ -29,15 +29,25 @@
 #include "XferDriver.h"
 #include "ContainerManager.h"
 
+#ifdef DRIVERLIST
+#define PREFIX ".libs/"
+#define SUFFIX ".so"
+#else
+// Allow standalone in OSS
+#define DRIVERLIST "libocpi_rcc libocpi_ocl libocpi_hdl libocpi_socket libocpi_pio libocpi_dma libocpi_remote libocpi_ofed "
+#define PREFIX "./"
+#define SUFFIX getenv("SUFFIX")
+#define CDTO "."
+#endif
 // Test driver loading
 bool doTestDrivers() {
   bool failure(false);
   const std::string DriverList(DRIVERLIST);
-  assert(NULL != dlopen(".libs/libocpi_ofed_stub.so", RTLD_NOW | RTLD_GLOBAL)); // for the ofed stuff
+  //  assert(NULL != dlopen(PREFIX "libocpi_ofed_stub" SUFFIX, RTLD_NOW | RTLD_GLOBAL)); // for the ofed stuff
   size_t pos(0), lastpos(0);
   // The list will always have an extra space at the end thanks to the Makefile.
   while (std::string::npos != (pos = DriverList.find(' ', lastpos))) {
-    const std::string Driver(".libs/" + DriverList.substr(lastpos, pos - lastpos) + ".so");
+    const std::string Driver(PREFIX + DriverList.substr(lastpos, pos - lastpos) + SUFFIX);
     std::cout << "Loading Driver '" << Driver << "': ";
     const void *handle = dlopen(Driver.c_str(), RTLD_NOW | RTLD_GLOBAL);
     if (handle) {

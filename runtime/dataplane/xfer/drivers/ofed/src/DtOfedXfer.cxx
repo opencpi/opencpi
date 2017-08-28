@@ -30,6 +30,7 @@
 #include <string.h>
 #include <limits.h>
 #include <time.h>
+#include <errno.h>
 #include <map>
 #include <list>
 #include <vector>
@@ -367,7 +368,7 @@ namespace DataTransfer {
       void configure(ezxml_t x) {
 	XF::Device::configure(x);
 	// Parse for ofed properties
-	OFED::FactoryConfig::parse(&parent(), x);
+	::DataTransfer::OFED::FactoryConfig::parse(&parent(), x);
       }
 
       virtual ~Device()
@@ -430,7 +431,7 @@ namespace DataTransfer {
 	  throw XF::DataTransferEx( RESOURCE_EXCEPTION, "completion channel Q" );	  
 	}
 
-	int errno;
+	int err;
 	ibv_port_attr pattr;
 	EndPoint * ep = static_cast<XF::OFED::SmemServices*>(ms)->getOfedEp();
 	if (ibv_query_port( ep->m_device->m_context,ep->m_port,&pattr)) {
@@ -443,11 +444,11 @@ namespace DataTransfer {
 	MASK_ADDR( ep->m_vaddr );
 	ep->m_rkey = ms->getMr()->rkey;
 	ep->m_lkey = ms->getMr()->lkey;
-	if ((errno=ibv_query_gid( m_context, 
+	if ((err=ibv_query_gid( m_context, 
 				  ep->m_port, 0,
 				  &ep->m_gid))) {
 	  ocpiInfo("OFED::Device ERROR: Could not query device with ibv_query_gid() %s",
-		   strerror(errno));
+		   strerror(err));
 	  throw XF::DataTransferEx( API_ERROR, "ibv_query_gid()");
 	}
       }
@@ -507,7 +508,7 @@ namespace DataTransfer {
       // First parse generic properties and default from parent's
       XF::FactoryConfig::parse(&parent(), x);
       // Next parse our own driver-specific configuration
-      OFED::FactoryConfig::parse(NULL, x);
+      ::DataTransfer::OFED::FactoryConfig::parse(NULL, x);
     }
 
     unsigned 
@@ -728,9 +729,9 @@ namespace DataTransfer {
       tattr.pkey_index      = 0;
       tattr.port_num        = getOfedEp()->m_port;
       tattr.qp_access_flags = IBV_ACCESS_REMOTE_WRITE | IBV_ACCESS_LOCAL_WRITE;
-      int errno;
-      if ( (errno=ibv_modify_qp( qp, &tattr, flags ) ) ) {
-	ocpiInfo("OFED::SmemServices ERROR: Failed to modify RC QP to RTR, %s", strerror(errno));
+      int err;
+      if ( (err=ibv_modify_qp( qp, &tattr, flags ) ) ) {
+	ocpiInfo("OFED::SmemServices ERROR: Failed to modify RC QP to RTR, %s", strerror(err));
 	throw XF::DataTransferEx( API_ERROR, "ibv_query_port()");
       }
       return qp;
@@ -752,7 +753,7 @@ namespace DataTransfer {
 	return;
       }
       m_finalized = true;
-      int errno;
+      int err;
       uint32_t qpn = (uint32_t)cookie;
 
       EndPoint * sep= m_sourceSmb->getOfedEp();
@@ -785,7 +786,7 @@ namespace DataTransfer {
       ocpiAssert( tep->m_port == 1 );
       attr.ah_attr.port_num   = tep->m_port;
 
-      if ( (errno=ibv_modify_qp( m_qp, &attr,
+      if ( (err=ibv_modify_qp( m_qp, &attr,
 			 IBV_QP_STATE              |
 			 IBV_QP_AV                 |
 			 IBV_QP_PATH_MTU           |
@@ -794,7 +795,7 @@ namespace DataTransfer {
 			 IBV_QP_MIN_RNR_TIMER      |
 			 IBV_QP_MAX_DEST_RD_ATOMIC
 				 ))) {
-	ocpiInfo("OFED::XferServices ERROR: Failed to modify RC QP to RTR, %s", strerror(errno));
+	ocpiInfo("OFED::XferServices ERROR: Failed to modify RC QP to RTR, %s", strerror(err));
 	throw XF::DataTransferEx( API_ERROR, "ibv_modify_qp()");
       }
 
@@ -805,7 +806,7 @@ namespace DataTransfer {
       attr.rnr_retry          = sep->m_device->m_ibv_qp_rnr_retry;
       attr.min_rnr_timer      = sep->m_device->m_ibv_qp_rnr_timer;
       attr.max_rd_atomic  = 1;
-      if ( (errno=ibv_modify_qp( m_qp, &attr,
+      if ( (err=ibv_modify_qp( m_qp, &attr,
 		      IBV_QP_STATE              |
 		      IBV_QP_SQ_PSN             |
 		      IBV_QP_TIMEOUT            |
@@ -813,7 +814,7 @@ namespace DataTransfer {
 		      IBV_QP_RNR_RETRY          |
 		      IBV_QP_MAX_QP_RD_ATOMIC
 				 ))) {
-	ocpiInfo("OFED::XferServices ERROR: Failed to modify RC QP to RTS, %s", strerror(errno));
+	ocpiInfo("OFED::XferServices ERROR: Failed to modify RC QP to RTS, %s", strerror(err));
 	throw XF::DataTransferEx( API_ERROR, "ibv_modify_qp()");
       }
     }
@@ -911,16 +912,16 @@ namespace DataTransfer {
     {
       m_PComplete = 0;
       m_status = XF::XferRequest::Pending;
-      int errno;
+      int err;
 
       parent().addPost( this );      
 
       if ( m_firstWr ) {
 	parent().m_post_count++;
-	if ( (errno=ibv_post_send( parent().m_qp, m_firstWr, &m_badWr[0] )) ) {
+	if ( (err=ibv_post_send( parent().m_qp, m_firstWr, &m_badWr[0] )) ) {
 	  OCPI::OS::sleep( 1 );	  
-	  if ( (errno=ibv_post_send( parent().m_qp, m_firstWr, &m_badWr[0] )) ) {
-	    ocpiInfo("OFED::XferRequest ERROR: Couldn't post send with ibv_post_send(), %s", strerror(errno));
+	  if ( (err=ibv_post_send( parent().m_qp, m_firstWr, &m_badWr[0] )) ) {
+	    ocpiInfo("OFED::XferRequest ERROR: Couldn't post send with ibv_post_send(), %s", strerror(err));
 	    throw XF::DataTransferEx( API_ERROR, "ibv_post_send()");
 	  }
 	}
@@ -928,10 +929,10 @@ namespace DataTransfer {
 
       if ( m_wr ) {
 	parent().m_post_count++;
-	if ( (errno=ibv_post_send( parent().m_qp, m_wr, &m_badWr[1] )) ) {
+	if ( (err=ibv_post_send( parent().m_qp, m_wr, &m_badWr[1] )) ) {
 	  OCPI::OS::sleep( 1 );	  
-	  if ( (errno=ibv_post_send( parent().m_qp, m_wr, &m_badWr[1] )) ) {
-	    ocpiInfo("OFED::XferRequest ERROR: Couldn't post send with ibv_post_send(), %s", strerror(errno));
+	  if ( (err=ibv_post_send( parent().m_qp, m_wr, &m_badWr[1] )) ) {
+	    ocpiInfo("OFED::XferRequest ERROR: Couldn't post send with ibv_post_send(), %s", strerror(err));
 	    throw XF::DataTransferEx( API_ERROR, "ibv_post_send()");
 	  }
 	}
@@ -939,10 +940,10 @@ namespace DataTransfer {
       
       if ( m_lastWr ) {	
 	parent().m_post_count++;
-	if ( (errno=ibv_post_send(parent().m_qp, m_lastWr, &m_badWr[2] )) ) {
+	if ( (err=ibv_post_send(parent().m_qp, m_lastWr, &m_badWr[2] )) ) {
 	  OCPI::OS::sleep( 1 );	  
-	  if ( (errno=ibv_post_send( parent().m_qp, m_lastWr, &m_badWr[2] )) ) {
-	    ocpiInfo("OFED::XferRequest ERROR: Couldn't post send with ibv_post_send(), %s", strerror(errno));
+	  if ( (err=ibv_post_send( parent().m_qp, m_lastWr, &m_badWr[2] )) ) {
+	    ocpiInfo("OFED::XferRequest ERROR: Couldn't post send with ibv_post_send(), %s", strerror(err));
 	    throw XF::DataTransferEx( API_ERROR, "ibv_post_send()");
 	  }
 	}

@@ -27,11 +27,14 @@
  *
  */
 
+
 #ifndef _PTWQ_PRIVATE_H
 #define _PTWQ_PRIVATE_H 1
 
-#define HAVE_ERR_H 1
+// Always included first.
+#ifndef __APPLE__
 #define _XOPEN_SOURCE 600
+#endif
 #include <errno.h>
 #include <limits.h>
 #include <signal.h>
