@@ -25,12 +25,13 @@
  *
  */
 
+#include "../private.h"
+
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
 
-#include "../private.h"
 
 /* Problem: does not include the length of the runqueue, and
      subtracting one from the # of actually running processes will

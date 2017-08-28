@@ -7,6 +7,8 @@
 TAGS
 # Ignore objects and archives.
 *.obj
+*.lo
+.dirstamp
 *.so
 *.dylib
 *.exe

@@ -26,8 +26,8 @@
  *
  */
 
-#include "platform.h"
-#include "private.h"
+#include "../private.h"
+#include "./platform.h"
 
 /* 
  

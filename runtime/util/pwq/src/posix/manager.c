@@ -28,11 +28,11 @@
  *
  */
 
-#include "platform.h"
-#include "private.h"
+#include "../private.h"
+#include "./platform.h"
 #include "pthread_workqueue.h"
-#include "thread_info.h"
-#include "thread_rt.h"
+#include "../thread_info.h"
+#include "../thread_rt.h"
 
 #include <sys/time.h>
 #include <semaphore.h>

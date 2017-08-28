@@ -26,8 +26,8 @@
  *
  */
 
-#include "platform.h"
-#include "private.h"
+#include "../private.h"
+#include "./platform.h"
 
 void ptwq_set_current_thread_priority(int priority)
 {    
