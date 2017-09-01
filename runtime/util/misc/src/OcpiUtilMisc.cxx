@@ -713,7 +713,7 @@ getSystemAddr() {
     OE::IfScanner ifs(error);
     if (error.empty()) {
       OE::Interface eif;
-      while (ifs.getNext(eif, error))
+      while (ifs.getNext(eif, error)) {
 	if (eif.addr.isEther()) {
 	  addr = eif.addr;
 	  ocpiDebug("Establishing system identify from interface '%s': %s",
@@ -721,6 +721,7 @@ getSystemAddr() {
 	  set = true;
 	  break;
 	}
+      }
       if (error.empty() && !set)
 	throw Error("No network interface found to establish a system identify from its MAC address");
     }

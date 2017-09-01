@@ -44,7 +44,7 @@ architecture rtl of fmcomms3_i2c_worker is
   -- MC24C02 TSSOP package-specific addressing
   constant stm_mc24c02_addr_2   : std_logic := '0';     -- MC24C02 pin 3 (E2) is grounded on FMCOMMS3 board
   signal   stm_mc24c02_addr_1   : std_logic := FMC_GA0; -- MC24C02 pin 2 (E1) is connected to FMC GA0
-  signal   stm_mc24c02_addr_0   : std_logic := FMC_GA1; -- MC24C02 pin 1 (E0) is connected to FMC GA0
+  signal   stm_mc24c02_addr_0   : std_logic := FMC_GA1; -- MC24C02 pin 1 (E0) is connected to FMC GA1
 begin
   raw_enable      <= raw_in.raw.byte_enable;
   stm_mc24c02_addr <= stm_mc24c02_addr_6_3 & stm_mc24c02_addr_2 & stm_mc24c02_addr_1 & stm_mc24c02_addr_0;

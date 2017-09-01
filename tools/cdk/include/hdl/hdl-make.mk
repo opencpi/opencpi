@@ -201,10 +201,9 @@ HdlCompile=\
   $(and $(SubCores_$(HdlTarget)),$(call HdlRecordCores,$(basename $@))$(infox DONERECORD:$(HdlTarget))) \
   $(HdlSourceListCompile)\
   $(infox SUBCORES:$(SubCores_$(HdlTarget))) \
-  set -e; cd $(TargetDir) ; \
-  $(infox PRECOMPILE:$(HdlPreCompile))$(and $(HdlPreCompile), $(HdlPreCompile) ;)\
+  cd $(TargetDir) && \
+  $(infox PRECOMPILE:$(HdlPreCompile))$(and $(HdlPreCompile), $(HdlPreCompile) &&)\
   export HdlCommand="set -e; $(HdlToolCompile)"; \
-  set +e; \
   $(TIME) bash -c \
    '(/bin/echo Commands to execute tool:@"$$HdlCommand" | sed "s/\([^\\]\); */\1;@/g" | tr "@" "\n"; /bin/echo Output from executing commands above:;eval "$$HdlCommand") > $(HdlLog) 2>&1' \
     > $(HdlTime) 2>&1; \
@@ -387,17 +386,17 @@ HdlRecordSources=\
 # asset $2 in question. If we are working with an absolute path,
 # just return the result of HdlLibraryRefDir. Otherwise, we are
 # working with a relative path. Return the path relative to $3.
-HdlRelativeOrAbsolutePathToLib=$(infox HRAPL:$1:$2:$3)\
+HdlRelativeOrAbsolutePathToLib=$(infox HRAPL:$1:$2:$3)$(strip \
   $(if $(filter /%,$2),\
-    $(patsubst %/,%,$(dir $(call HdlLibraryRefDir,$2,$1,,X4))),\
+    $(patsubst %/,%,$(call HdlLibraryRefDir,$2,$1,,X4)),\
     $(call FindRelative,$3,$(strip \
-      $(call HdlLibraryRefDir,$2,$1,,X4))))
+      $(call HdlLibraryRefDir,$2,$1,,X4)))))
 
 # For a given library $2 and target $1, extract the library's source
 # files from <lib>.sources
 #
 # Find the path relative or absolute path to '.' to determine a usable
-# path for the .source file. Grep the .sources file to collect source file
+# path for the .sources file. Grep the .sources file to collect source file
 # names.
 #
 # Return the paths (relative or absolute) to each file listed in .sources
@@ -405,7 +404,7 @@ HdlRelativeOrAbsolutePathToLib=$(infox HRAPL:$1:$2:$3)\
 HdlExtractSourcesForLib=$(infox Extract:$2:$1)\
   $(foreach f,\
     $(call HdlRelativeOrAbsolutePathToLib,$1,$2,.),$(infox ZF:$f)\
-      $(foreach z,$(shell grep -v  '\#' $(dir $f)/$(HdlTarget)/$(notdir $2).sources),$(infox found:$z)\
+      $(foreach z,$(shell grep -v  '\#' $f/$(notdir $2).sources),$(infox found:$z)\
         $(call HdlRelativeOrAbsolutePathToLib,$1,$2,$3)/$z ))
 
 #########################################################################################################

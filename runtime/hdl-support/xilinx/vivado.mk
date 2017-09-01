@@ -32,8 +32,10 @@ HdlRecurseLibraries_vivado=yes
 ################################################################################
 # Variable required by toolset: HdlBin
 # What suffix to give to the binary file result of building a core
-HdlBin=.edf
-HdlBin_vivado=.edf
+HdlBin=$(or $(suffix $(PreBuiltCore)),.edf)
+HdlBin_vivado=$(or $(suffix $(PreBuiltCore)),.edf)
+
+HdlBinAlternatives_vivado=.dcp .ngc .xci
 
 ################################################################################
 # Variable required by toolset: HdlToolRealCore
@@ -56,7 +58,7 @@ HdlToolCoreRef_vivado=$1
 
 CoreOrLibName=$(or $(Core),$(LibName))
 ################################################################################
-# Variable required by toolset: HdlToolNeedsSourceList_vivado=yes
+# Variable required by toolset: HdlToolNeedsSourceList_<tool>=yes
 # Set if the tool requires a listing of source files and libraries
 HdlToolNeedsSourceList_vivado=yes
 
@@ -81,14 +83,14 @@ endif
 $(call OcpiDbgVar,HdlMode)
 
 VivadoBadOptions_all=\
--quiet \
--verbose
+-quiet
 
 ###############################################################################
 # Options for synthesis
 ###############################################################################
 # Options that the user may specify/override
 VivadoGoodOptions_synth=\
+-verbose \
 -part \
 -constrset \
 -flatten_hierarchy \
@@ -179,6 +181,7 @@ VivadoMyExtraOptions_synth=$(strip \
 # Options for opt stage of implementation
 ###############################################################################
 VivadoGoodOptions_opt=\
+-verbose \
 -retarget \
 -propconst \
 -sweep \
@@ -206,6 +209,7 @@ VivadoDefaultOptions_opt=
 
 # TODO: is unplace acceptable?? : Unplace all the instances which are not locked by Constraints.
 VivadoGoodOptions_place=\
+-verbose \
 -directive \
 -no_timing_driven \
 -timing_summary \
@@ -222,6 +226,7 @@ VivadoDefaultOptions_place=
 # Options for phys_opt stage of implementation run post-place
 ###############################################################################
 VivadoGoodOptions_post_place_phys_opt=\
+-verbose \
 -fanout_opt \
 -placement_opt \
 -routing_opt \
@@ -251,6 +256,7 @@ VivadoDefaultOptions_post_place_phys_opt=\
 ###############################################################################
 # TODO: is unplace acceptable?? : Unplace all the instances which are not locked by Constraints.
 VivadoGoodOptions_route=\
+-verbose \
 -unroute \
 -release_memory \
 -nets \
@@ -279,6 +285,7 @@ VivadoDefaultOptions_route=\
 # Options for phys_opt stage of implementation run post-route
 ###############################################################################
 VivadoGoodOptions_post_route_phys_opt=\
+-verbose \
 -fanout_opt \
 -placement_opt \
 -routing_opt \
@@ -308,6 +315,7 @@ VivadoDefaultOptions_post_route_phys_opt=\
 ###############################################################################
 # TODO: Should we be using 'warn_on_violation' by default?
 VivadoGoodOptions_timing=\
+-verbose \
 -from \
 -rise_from \
 -fall_from \
@@ -359,6 +367,7 @@ VivadoDefaultOptions_timing=\
 # Options for bit stage of implementation
 ###############################################################################
 VivadoGoodOptions_bit=\
+-verbose \
 -raw_bitfile \
 -mask_file \
 -readback_file \
@@ -440,7 +449,8 @@ VivadoIncludeDependencies=\
 VivadoIncludeCores=\
   $(foreach c,$1,\
     echo read_edif_or_dcp $(call FindRelative,$(TargetDir),$(call HdlCoreRefMaybeTargetSpecificFile,$c,$(HdlTarget))) >> $(CoreOrLibName)-imports.tcl;\
-    $(if $(filter $c,$(Cores)),,\
+    $(if $(filter $c,$(Cores)),\
+	echo add_files_set_lib $c '\"'$(call HdlExtractSourcesForLib,$(HdlTarget),$c,$(TargetDir))'\"' >> $(CoreOrLibName)-imports.tcl;,\
       $(foreach w,$(subst _rv,,$(basename $(notdir $c))),\
         $(foreach d,$(dir $c),\
           $(foreach l,$(if $(filter vhdl,$(HdlLanguage)),vhd,v),\

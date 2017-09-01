@@ -314,11 +314,17 @@ rccMethodName(const char *method, const char *&mName) {
 
 void Worker::
 rccStruct(std::string &type, size_t nMembers, OU::Member *members, unsigned level,
-	  const char *parent, bool isFixed, bool &isLast, bool topSeq, unsigned predefine) {
+	  const char *parent, bool isFixed, bool &isLast, bool topSeq, unsigned predefine,
+	  size_t elementBytes) {
   size_t offset = 0;
   unsigned pad = 0;
   for (unsigned n = 0; !isLast && n < nMembers; n++, members++)
     rccMember(type, *members, level, offset, pad, parent, isFixed, isLast, topSeq, predefine);
+
+  // perform trailing struct padding if necessary
+  int indent = level * 2 + 2;
+  if (offset < elementBytes)
+    OU::formatAdd(type, "%*schar pad%u_[%zu];\n", indent, "", pad++, elementBytes - offset);
 }
 
 // An unparser specialized for C

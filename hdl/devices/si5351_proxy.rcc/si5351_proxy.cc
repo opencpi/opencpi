@@ -94,7 +94,12 @@ class Si5351_proxyWorker : public Si5351_proxyWorkerBase {
   RCCResult channels_written() {
     if (isOperating())
       for (unsigned i = 0; i < nChannels; i++)
-	if (memcmp(&m_properties.channels[i], &savedChannels[i], sizeof(Channels)))
+	if ((m_properties.channels[i].output_hz     != savedChannels[i].output_hz)    ||
+	    (m_properties.channels[i].source        != savedChannels[i].source)       ||
+	    (m_properties.channels[i].inverted      != savedChannels[i].inverted)     ||
+	    (m_properties.channels[i].spread        != savedChannels[i].spread)       ||
+	    (m_properties.channels[i].spreadAmount  != savedChannels[i].spreadAmount) ||
+	    (m_properties.channels[i].disabled_mode != savedChannels[i].disabled_mode))
 	  if (config(i) != RCC_OK)
 	    return RCC_ERROR;
     return RCC_OK;

@@ -33,16 +33,16 @@ if numCases <= 0 or (endingMessageSize-startingMessageSize)%messageSizeIncrement
     sys.exit(1)
 totalMetadataHeaderBytes=metadataHeaderSizeInBytes*numCases
 totalDataBytes=sum(range(startingMessageSize,endingMessageSize+1,messageSizeIncrement))
-numBytesInOutputFile=totalMetadataHeaderBytes+totalDataBytes#+metadataHeaderSizeInBytes #Total data size plus test ZLM
+numBytesInOutputFile=totalMetadataHeaderBytes+totalDataBytes+metadataHeaderSizeInBytes #Total data size plus test ZLM
 #Create an empty array for the output data
 outData = numpy.array(numpy.zeros(numBytesInOutputFile), dtype=fileType)
 messageSizeIndex=startingMessageSize
 idx=0
 #Insert ZLM with opcode 1 to test AV-3201
-#outData[idx:idx+3] = 0
-#outData[idx+4:idx+5] = idx % 255
-#outData[idx+6:idx+7] = 0
-#idx+=metadataHeaderSizeInBytes
+outData[idx:idx+3] = 0
+outData[idx+4:idx+5] = 1
+outData[idx+6:idx+7] = 0
+idx+=metadataHeaderSizeInBytes
 while messageSizeIndex <= endingMessageSize:
     outData[idx] = messageSizeIndex
     outData[idx+1] = messageSizeIndex >> 8
