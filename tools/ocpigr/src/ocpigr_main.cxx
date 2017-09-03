@@ -50,6 +50,34 @@ static const char *bad(OU::Worker &w, const char *tag, const char *val) {
   return "raw";
 }
 
+#define AUTO_PLATFORM_COLOR "#afaf75"
+
+// "Converts" an arbitrary string to some arbitrary color via hashing.
+//
+// Note: The total set of platforms encountered during parsing on a given system
+// is dynamic as it is based on what the workers have been built for, however,
+// we do want the colors to be consistent from one user to the other, from one run
+// to the other. Indexing into a static list of colors would cause each user to have
+// different colors for their platforms, or even different for a single user after
+// running this script after building for a new platform. We could use a static
+// mapping of all known platforms to colors, but it would be difficult to maintain.
+// This hash function maps the ID of the platform to a calculated color, so it is the
+// same every time for every run while supporting new platforms with minimal chances of
+// collision.
+static std::string stringToColorHash(std::string str) {
+  unsigned int hash = 0;
+  for(size_t i = 0; i < str.size(); i++) {
+    hash = str[i] + ((hash << 5) - hash);
+  }
+  std::string color;
+  OU::format(color, "#%02x%02x%02x", (hash & 0x0000FF), (hash & 0x00FF00) >> 8, (hash & 0xFF0000) >> 16);
+  return color;
+}
+
+// For each spec, which platforms are implemented by found workers in artifacts?
+std::map<std::string, StringSet> specToPlatforms;
+// For each platform, which model does it support
+std::map<std::string, std::string> platformToModel;
 StringSet specs;
 struct Category {
   std::string name;
@@ -85,6 +113,8 @@ struct Category {
       categories[n].getXml(OX::addChild(x, "cat", level + 1), level + 1);
     for (StringSetIter it = blocks.begin(); it != blocks.end(); ++it)
       OX::addChild(x, "block", level + 1, it->c_str());
+    if (name == "ocpi")
+      OX::addChild(x, "block", level + 1, "variable_ocpi_container");
     return x;
   }
 } top;
@@ -121,13 +151,26 @@ static void doWorker(OU::Worker &w) {
   OX::addChild(_px, "type", 2, "string");
   OX::addChild(_px, "hide", 2, "part");
 
+  _px = OX::addChild(root, "param", 1);
+  OX::addChild(_px, "name", 2, "Container");
+  OX::addChild(_px, "key", 2, "container");
+  OX::addChild(_px, "value", 2, "auto");
+  OX::addChild(_px, "type", 2, "enum");
+  OX::addChild(_px, "hide", 2, "none");
+
+  ezxml_t _ox = OX::addChild(_px, "option", 3);
+  OX::addChild(_ox, "name", 4, "auto");
+  OX::addChild(_ox, "key", 4, "auto");
+  StringSet &platforms = specToPlatforms[w.specName()];
+  for (StringSetIter it = platforms.begin(); it != platforms.end(); ++it) {
+    _ox = OX::addChild(_px, "option", 3);
+    OX::addChild(_ox, "name", 4, it->c_str());
+    OX::addChild(_ox, "key", 4, it->c_str());
+  }
+
   unsigned np;
   OU::Property *p = w.properties(np);
   for (unsigned n = 0; n < np; n++, p++) {
-    // Only expose properties to the user that are writable, so skip ones that aren't
-    if (!p->m_isWritable)
-        continue;
-
     ezxml_t px = OX::addChild(root, "param", 1);
     OX::addChild(px, "name", 2, p->pretty());
     OX::addChild(px, "key", 2, p->cname());
@@ -156,63 +199,38 @@ static void doWorker(OU::Worker &w) {
     case OA::OCPI_String:  type = isVector ? bad(w, "property", p->cname()) : "string"; break;
     case OA::OCPI_Enum:
       type = "enum";
-      for (const char **ep = p->m_enums; *ep; ep++) {
-	ezxml_t ox = OX::addChild(px, "option", 3);
-	OX::addChild(ox, "name", 4, *ep);
-	OX::addChild(ox, "key", 4, *ep);
-      }
       break;
     case OA::OCPI_Struct:
     case OA::OCPI_Type:
     default:
       type = bad(w, "property", p->cname()); break;
     }
-    OX::addChild(px, "type", 2, type);
     if (strval.size())
       OX::addChild(px, "value", 2, strval.c_str());
+    OX::addChild(px, "type", 2, type);
+
+    if (!p->m_isWritable && !p->m_isInitial) {
+        OX::addChild(px, "hide", 2, "all");
+        OX::addChild(px, "build_param", 2, "True");
+    }
+
+    if (p->m_baseType == OA::OCPI_Enum) {
+      for (const char **ep = p->m_enums; *ep; ep++) {
+        ezxml_t ox = OX::addChild(px, "option", 3);
+        OX::addChild(ox, "name", 4, *ep);
+        OX::addChild(ox, "key", 4, *ep);
+      }
+    }
+
   }
   OU::Port *ports = w.ports(np);
   for (unsigned n = 0; n < np; n++, ports++) {
-    OU::Port &pp = *ports;
-    ezxml_t px = OX::addChild(root, pp.m_provider ? "sink" : "source", 1);
-    OX::addChild(px, "name", 2, pp.cname());
-    if (pp.nOperations() != 1 || pp.operations()[0].nArgs() != 1) {
-      bad(w, "port", pp.cname());
-      OX::addChild(px, "type", 2, "s16"); //TODO FIX this
-      continue;
-    }
-    OU::Member &arg = pp.operations()[0].args()[0];
-    if ((arg.m_isSequence || arg.m_arrayRank) && arg.m_baseType != OA::OCPI_Struct &&
-	arg.m_baseType != OA::OCPI_Type && arg.m_baseType != OA::OCPI_String) {
-      const char *type;
-      switch (arg.m_baseType) {
-      case OA::OCPI_Float:     type = "f32"; break;
-      case OA::OCPI_Double:    type = "f64"; break;
-      case OA::OCPI_Char:      type = "s8";  break;
-      case OA::OCPI_UChar:     type = "s8";  break;
-      case OA::OCPI_Short:     type = "s16"; break;
-      case OA::OCPI_UShort:    type = "s16"; break;
-      case OA::OCPI_Long:      type = "s32"; break;
-      case OA::OCPI_ULong:     type = "s32"; break;
-      case OA::OCPI_LongLong:  type = "s64"; break;
-      case OA::OCPI_ULongLong: type = "s64"; break;
-      /*
-       * The following types don't have a direct mapping
-       * as a grc data stream/port type, so just have
-       * grc interpret them as bytes.
-       */
-      case OA::OCPI_String:
-      case OA::OCPI_Enum:
-      case OA::OCPI_Bool:
-      case OA::OCPI_Struct:
-      case OA::OCPI_Type:
-      default: type = "s8"; break;
-      }
-      OX::addChild(px, "type", 2, type);
-    } else {
-      bad(w, "port", pp.cname());
-      OX::addChild(px, "type", 2, "s16"); //TODO FIX this
-    }
+    OU::Port &port = *ports;
+    ezxml_t px = OX::addChild(root, port.m_provider ? "sink" : "source", 1);
+    OX::addChild(px, "name", 2, port.cname());
+    OX::addChild(px, "type", 2, "ocpi");
+    OX::addChild(px, "domain", 2, "$platform");
+    OX::addChild(px, "protocol", 2, port.OU::Protocol::cname());
   }
   std::string
     xml = ezxml_toxml(root),
@@ -223,6 +241,52 @@ static void doWorker(OU::Worker &w) {
     throw OU::Error("error writing GRC XML file:  %s", err);
 }
 
+static void containerBlock() {
+  std::string file;
+  OU::format(file, "%s/ocpi_container.xml", options.directory());
+
+  ezxml_t root = ezxml_new("block");
+  OX::addChild(root, "name", 1, "OpenCPI Container");
+  OX::addChild(root, "key", 1, "variable_ocpi_container");
+  OX::addChild(root, "make", 1, "");
+
+  ezxml_t px = OX::addChild(root, "param", 1);
+  OX::addChild(px, "name", 2, "ocpi_spec");
+  OX::addChild(px, "key", 2, "ocpi_spec");
+  OX::addChild(px, "value", 2, "");
+  OX::addChild(px, "type", 2, "string");
+  OX::addChild(px, "hide", 2, "all");
+
+  px = OX::addChild(root, "param", 1);
+  OX::addChild(px, "name", 2, "Platform");
+  OX::addChild(px, "key", 2, "value");
+  OX::addChild(px, "type", 2, "enum");
+
+  for (auto pi = platformToModel.begin(); pi != platformToModel.end(); ++pi) {
+    ezxml_t ox = OX::addChild(px, "option", 2);
+    OX::addChild(ox, "name", 1, pi->first.c_str());
+    OX::addChild(ox, "key", 1, pi->first.c_str());
+  }    
+
+  px = OX::addChild(root, "param", 1);
+  OX::addChild(px, "name", 2, "value");
+  OX::addChild(px, "key", 2, "container");
+  OX::addChild(px, "value", 2, "$value");
+  OX::addChild(px, "type", 2, "string");
+  OX::addChild(px, "hide", 2, "all");
+
+  std::string xml = "<?xml version=\"1.0\"?>";
+  xml += ezxml_toxml(root);
+  const char *err;
+  if ((err = OU::string2File(xml, file)))
+	  throw OU::Error("error writing GRC XML file:  %s", err);
+}
+
+static void doWorkerPlatform(OU::Worker &w) {
+  assert(w.attributes().platform().length());
+  specToPlatforms[w.specName()].insert(w.attributes().platform());
+  platformToModel[w.attributes().platform()] = w.model();
+}
 static int
 mymain(const char ** /*ap*/) {
   setenv("OCPI_SYSTEM_CONFIG", "", 1);
@@ -230,6 +294,8 @@ mymain(const char ** /*ap*/) {
   OL::getManager().enableDiscovery();
   OS::FileSystem::mkdir(options.directory(), true);
   top.name = "[OpenCPI]";
+  platformToModel["auto"] = "auto";
+  OL::getManager().doWorkers(doWorkerPlatform);
   OL::getManager().doWorkers(doWorker);
   std::string file;
   OU::format(file, "%s/ocpi_block_tree.xml", options.directory());
@@ -237,5 +303,30 @@ mymain(const char ** /*ap*/) {
   xml += ezxml_toxml(top.getXml());
   xml += "\n";
   OU::string2File(xml, file);
+
+  for (auto pi = platformToModel.begin(); pi != platformToModel.end(); ++pi) {
+    file = "";
+    OU::format(file, "%s/ocpi_%s_domain.xml", options.directory(), pi->first.c_str());
+    xml = "<?xml version=\"1.0\"?>\n";
+    ezxml_t root = ezxml_new("domain");
+    OX::addChild(root, "name", 1, pi->first.c_str());
+    OX::addChild(root, "key", 1, pi->first.c_str());
+    OX::addChild(root, "model", 1, pi->second.c_str());
+    OX::addChild(root, "color", 1,
+		 pi->first == "auto" ? AUTO_PLATFORM_COLOR :
+		 stringToColorHash(pi->first).c_str());
+    OX::addChild(root, "multiple_sinks", 1, "False");
+    OX::addChild(root, "multiple_sources", 1, "False");
+    for (auto other = platformToModel.begin(); other != platformToModel.end(); ++other) {
+      ezxml_t px = OX::addChild(root, "connection", 1);
+      OX::addChild(px, "source_domain", 2, pi->first.c_str());
+      OX::addChild(px, "sink_domain", 2, other->first.c_str());
+      OX::addChild(px, "make", 2, "");
+    }
+    xml += ezxml_toxml(root);
+    xml += "\n";
+    OU::string2File(xml, file);
+  }
+  containerBlock();
   return 0;
 }
