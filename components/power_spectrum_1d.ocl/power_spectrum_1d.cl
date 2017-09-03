@@ -41,8 +41,8 @@ static void realfft( __global float* src_dst,
               const unsigned n )
 {
     const unsigned int blockSize = BLOCK_SIZE;
-    const float PI = 3.14159265359;
-    const float ph = -1 * 2.0 * PI/n;
+    const float PI = 3.14159265359f;
+    const float ph = -1 * 2.0f * PI/n;
 
     const size_t bx = get_group_id(0);
     const size_t tx = get_local_id(0);
@@ -51,7 +51,7 @@ static void realfft( __global float* src_dst,
     const int start = (addr / n)* n;
     const int end = (addr / n + 1) * n;
 
-    float real = 0.0, imag = 0.0;
+    float real = 0.0f, imag = 0.0f;
     for (int k = start; k < end; k++) {
         const float rx = src_dst[k];
         const float ix = 0; // Real FFT
@@ -121,15 +121,17 @@ static void vsmulx ( __global float* src,
  * Methods to implement for worker power_spectrum_1d, based on metadata.
  */
 
-OCLResult power_spectrum_1d_run(__local OCLWorkerPower_spectrum_1d* self) {
+static OCLResult
+power_spectrum_1d_run(Power_spectrum_1dWorker* self,
+				__global Power_spectrum_1dProperties *properties) {
   /* Compute the FFT of the real signal */
-  float scale_factor = 10.0;
+  float scale_factor = 10.0f;
 
-  realfft((__global float *)self->in.current.data, 1 << self->properties->log2n);
-  cvmagsx(self->in.current.data, self->out.current.data, BLOCK_SIZE);
-  vlogx(self->out.current.data, self->out.current.data, BLOCK_SIZE);
-  vsmulx(self->out.current.data, scale_factor, self->out.current.data, BLOCK_SIZE);
-  self->out.current.length = self->in.current.length / 2;
-  self->out.current.opCode = 0;
+  realfft((__global float *)self->ports.in.current.data, 1 << properties->log2n);
+  cvmagsx(self->ports.in.current.data, self->ports.out.current.data, BLOCK_SIZE);
+  vlogx(self->ports.out.current.data, self->ports.out.current.data, BLOCK_SIZE);
+  vsmulx(self->ports.out.current.data, scale_factor, self->ports.out.current.data, BLOCK_SIZE);
+  self->ports.out.current.length = self->ports.in.current.length / 2;
+  self->ports.out.current.opCode = 0;
   return OCL_ADVANCE;
 }

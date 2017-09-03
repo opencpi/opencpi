@@ -121,7 +121,6 @@ function getElapsedTime {
 # echo the platform we are running on
 function ocpiGetToolPlatform {
   ocpiGetToolDir -
-  echo $OCPI_TOOL_PLATFORM
   return 0
 }
 

@@ -21,20 +21,66 @@ ifndef OCL_MAKE_MK
 OCL_MAKE_MK:=xxx
 include $(OCPI_CDK_DIR)/include/util.mk
 
-ifndef OclTargets
-  OclTargets:=$(OclTarget)
-  ifndef OclTargets
-    OclTargets:=all
-  endif
-endif
-ifeq ($(OclTargets),all)
-  override OclTargets:=$(shell $(ToolsDir)/ocpiocl targets)
-endif
-
-$(call OcpiDbgVar,OclTarget)
-$(call OcpiDbgVar,OclTargets)
 OclOs=opencl
 OclOsVersion=$(word 1,$(subst -, ,$1))
 OclArch=$(word 2,$(subst -, ,$1))
+
+$(call OcpiDbgVar,OclPlatform)
+$(call OcpiDbgVar,OclPlatforms)
+$(call OcpiDbgVar,OclTarget)
+$(call OcpiDbgVar,OclTargets)
+
+# OCL targets and platforms are dynamically determined by querying the OpenCL subsystem
+ifdef OCPI_ALL_OCL_PLATFORMS
+  OclAllPlatforms:=$(OCPI_ALL_OCL_PLATFORMS)
+  OclAllTargets:=$(OCPI_ALL_OCL_TARGETS)
+  OclTargetMap:=$(OCPI_OCL_TARGET_MAP)
+else
+  $(and $(call DoShell,$(ToolsDir)/ocpiocl targets,OclTargetMap),$(error $(OclTargetMap)))
+  OclAllTargets:=$(foreach p,$(OclTargetMap),$(word 2,$(subst =, ,$p)))
+  OclAllPlatforms:=$(foreach p,$(OclTargetMap),$(word 1,$(subst =, ,$p)))
+  export OCPI_ALL_OCL_PLATFORMS:=$(OclAllPlatforms)
+  export OCPI_ALL_OCL_TARGETS:=$(OclAllTargets)
+  export OCPI_OCL_TARGET_MAP:=$(OclTargetMap)
+endif
+
+$(foreach m,$(OclTargetMap),\
+  $(eval OclTarget_$(word 1,$(subst =, ,$m)):=$(word 2,$(subst =, ,$m))))
+
+# Mostly copied from rcc...
+ifdef OclPlatform
+OclPlatforms:=$(call OcpiUnique,$(OclPlatforms) $(OclPlatform))
+endif
+ifdef OclTarget
+OclTargets:=$(call OcpiUnique,$(OclTargets) $(OclTarget))
+endif
+
+ifdef OclPlatforms
+  override OclPlatforms:=$(filter-out $(ExcludePlatforms) $(OclExcludePlatforms),$(OclPlatforms))
+  ifneq ($(OnlyPlatforms)$(OclOnlyPlatforms),)
+    override OclPlatforms:=$(filter $(OnlyPlatforms) $(OclOnlyPlatforms),$(OclPlatforms))
+  endif
+  OclTargets:=
+  $(foreach p,$(OclPlatforms),\
+     $(if $(filter $p,$(OclAllPlatforms)),\
+        $(eval OclTargets+=$(OclTarget_$p)),\
+        $(error OclPlatform $p is unknown/unsupported on this system)))
+  OclTargets:=$(call OcpiUniq,$(OclTargets))
+else
+  ifdef OclTargets
+    OclPlatforms:=
+    $(foreach t,$(OclTargets),\
+      $(if $(filter $t,$(OcpiAllTargets)),\
+        $(foreach m,$(filter %=$t,$(OcpiTargetMap)),\
+          $(eval OcpiPlatforms+=$(word 1,$(subst =, ,$m))))))
+  else
+    OclPlatforms:=$(OclAllPlatforms)
+    OclTargets:=$(foreach p,$(OclPlatforms),$(OclTarget_$p))
+  endif
+endif
+$(call OcpiDbgVar,OclPlatform)
+$(call OcpiDbgVar,OclPlatforms)
+$(call OcpiDbgVar,OclTarget)
+$(call OcpiDbgVar,OclTargets)
 
 endif

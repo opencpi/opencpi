@@ -165,12 +165,13 @@ CooleyTukey1DFFT ( __global float* const r_real,
  * Methods to implement for worker fft1d, based on metadata.
  */
 
-OCLResult fft1d_run(__local OCLWorkerFft1d* self) {
-  CooleyTukey1DFFT((__global float* const )self->in_real.current.data,
-                   (__global float* const )self->in_imag.current.data,
-                   (__global float* )self->out_real.current.data,
-                   (__global float* )self->out_imag.current.data,
-                   1 << self->properties->log2n,
-                   self->properties->log2n );
+static OCLResult
+fft1d_run(Fft1dWorker* self, __global Fft1dProperties *properties) {
+  CooleyTukey1DFFT((__global float* )(self->ports.in_real.current.data),
+                   (__global float* )(self->ports.in_imag.current.data),
+                   (__global float* )(self->ports.out_real.current.data),
+                   (__global float* )(self->ports.out_imag.current.data),
+                   1 << properties->log2n,
+                   properties->log2n );
   return OCL_ADVANCE;
 }

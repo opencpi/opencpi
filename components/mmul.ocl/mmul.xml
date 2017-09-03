@@ -1,4 +1,1 @@
-<OclImplementation>
-  <xi:include href="mmul_spec.xml"/>
-  <ControlInterface Name="mmul"/>
-</OclImplementation>
+<OclWorker spec="mmul_spec.xml"/>

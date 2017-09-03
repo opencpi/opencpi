@@ -1,5 +1,5 @@
 <HDLImplementation language="vhdl">
-<ComponentSpec Name="bias">
+<ComponentSpec Name="bias16">
   <Property Name="biasValue" Initial="true" readable='true'/>
   <DataInterfaceSpec Name="in" protocol='iqstream_protocol'/>
   <DataInterfaceSpec Name="out" Producer="true" protocol='iqstream_protocol'/>

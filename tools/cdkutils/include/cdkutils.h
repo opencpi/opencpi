@@ -60,6 +60,7 @@ extern const char
   *getComponentLibrary(const char *lib, std::string &path),
   *getRccPlatforms(const StringSet *&platforms),
   *getHdlPlatforms(const StringSet *&platforms),
+  *getOclPlatforms(const StringSet *&platforms),
   *getAllPlatforms(const StringSet *&platforms, Model m = NoModel),
   *getAllTargets(const StringSet *&targets, Model m = NoModel),
   *getPlatforms(const char *attr, StringSet &targets, Model m),

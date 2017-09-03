@@ -1,4 +1,1 @@
-<OclImplementation>
-  <xi:include href="sin_spec.xml"/>
-  <ControlInterface Name="sin"/>
-</OclImplementation>
+<OclWorker spec="sin_spec.xml"/>

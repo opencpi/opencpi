@@ -706,7 +706,8 @@ namespace OCPI {
 	      delete dev;
 	    else if (targets) {
 	      std::string target;
-	      OU::format(target, "%s-%s", dev->vendor()->name, dev->family()->name);
+	      OU::format(target, "%s=%s-%s", 
+			 dev->platform()->platform, dev->vendor()->name, dev->family()->name);
 	      targets->insert(target);
 	      delete dev;
 	    } else
@@ -1475,9 +1476,9 @@ namespace OCPI {
 	      OC::ExternalBuffer *b =
 		p->isProvider() ? p->nextToRelease() : p->nextToPut();
 	      assert(b);
-	      if (p->isProvider()) {
-		p->release();
-	      } else
+	      if (p->isProvider())
+		b->release();
+	      else
 		b->put();
 	      assert(b);
 	    }
@@ -1541,11 +1542,11 @@ namespace OCPI {
 	if (!m_minReady || m_minReady == SIZE_MAX)
 	  return;
 	// See if any of our masks are satisfied
-	OC::PortMask *pmp;
-	for (pmp = m_runCondition->m_portMasks; *pmp; pmp++)
-	  if ((*pmp & readyMask) == *pmp)
+	OCLPortMask *pmp, pm = 0;
+	for (pmp = m_runCondition->m_portMasks; (pm = *pmp); pmp++)
+	  if ((pm & readyMask) == (pm & ~(OCL_ALL_PORTS << m_nPorts)))
 	    break;
-	if (!*pmp)
+	if (!pm)
 	  return;
 	m_oclWorker->runCount = OCPI_UTRUNCATE(uint8_t, m_minReady);
 	OCLPort *op = m_oclPorts;

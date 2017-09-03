@@ -23,6 +23,7 @@
 #include "fnmatch.h"
 #include "OcpiOsFileIterator.h"
 #include "OcpiOsFileSystem.h"
+#include "OcpiUtilCppMacros.h"
 #include "OcpiUtilMisc.h"
 #include "cdkutils.h"
 
@@ -35,7 +36,7 @@ namespace {
 typedef std::vector<std::string> StringArray;
 StringArray hdlPrimitivePath;
 StringArray componentPath;
-  //StringSet oclPlatforms; bool oclPlatformsDone;
+StringSet oclPlatforms; bool oclPlatformsDone;
 StringSet rccPlatforms; bool rccPlatformsDone;
 StringSet hdlPlatforms; bool hdlPlatformsDone;
 StringSet allPlatforms; bool allPlatformsDone;
@@ -249,6 +250,36 @@ getHdlPlatforms(const StringSet *&platforms) {
   return NULL;
 }
 
+const char *
+getOclPlatforms(const StringSet *&platforms) {
+  const char *err;
+  platforms = &oclPlatforms;
+  if (oclPlatformsDone)
+    return NULL;
+  std::string cmd;
+  if ((err = getCdkDir(cmd)))
+    return err;
+  OU::formatAdd(cmd, "/bin/%s-%s-%s/ocpiocl targets",
+		OCPI_CPP_STRINGIFY(OCPI_OS) + strlen("OCPI"),
+		OCPI_CPP_STRINGIFY(OCPI_OS_VERSION), OCPI_CPP_STRINGIFY(OCPI_ARCH));
+  FILE *out;
+  if ((out = popen(cmd.c_str(), "r")) == NULL)
+    return OU::esprintf("Could not execute the \"ocpiocl targets\" command");
+  std::string targets;
+  for (int c; (c = fgetc(out)) != EOF; targets += (char)c)
+    ;
+  for (OU::TokenIter ti(targets.c_str()); ti.token(); ti.next()) {
+    const char *eq = strchr(ti.token(), '=');
+    if (!eq)
+      return OU::esprintf("Invalid output from the \"ocpiocl targets\" command:  \"%s\"",
+			  targets.c_str());
+    std::string platform(ti.token(), eq - ti.token());
+    oclPlatforms.insert(platform);
+  }
+  oclPlatformsDone = true;
+  return NULL;
+}
+
 // Get it two ways.  If OCPI_ALL_PLATFORMS is provided we use it.  Otherwise we look around.
 const char *
 getAllPlatforms(const StringSet *&platforms, Model m) {
@@ -268,6 +299,8 @@ getAllPlatforms(const StringSet *&platforms, Model m) {
 	  addPlatform(p.c_str(), rccPlatforms);
 	else if (!strncmp(ep - 4, ".hdl", 4))
 	  addPlatform(p.c_str(), hdlPlatforms);
+	else if (!strncmp(ep - 4, ".ocl", 4))
+	  addPlatform(p.c_str(), oclPlatforms);
 	else
 	  return OU::esprintf("the environment variable OCPI_ALL_PLATFORMS (\"%s\") is invalid",
 			      env);
@@ -276,7 +309,8 @@ getAllPlatforms(const StringSet *&platforms, Model m) {
       const char *err;
       const StringSet *dummy;
       if ((err = getRccPlatforms(dummy)) ||
-	  (err = getHdlPlatforms(dummy)))
+	  (err = getHdlPlatforms(dummy)) ||
+	  (err = getOclPlatforms(dummy)))
 	return err;
     }
     allPlatformsDone = true;
@@ -284,6 +318,7 @@ getAllPlatforms(const StringSet *&platforms, Model m) {
   switch (m) {
   case NoModel: platforms = &allPlatforms; break;
   case RccModel: platforms = &rccPlatforms; break;
+  case OclModel: platforms = &oclPlatforms; break;
   case HdlModel: platforms = &hdlPlatforms; break;
   default:
     return "unsupported model for platforms";

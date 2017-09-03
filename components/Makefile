@@ -123,7 +123,8 @@ endif # not OCPI_MINIMAL_BUILD
 
 ifndef OCPI_MINIMAL_BUILD
 Workers += \
-	bias_spcm.hdl \
+	biasFGM_cc.rcc \
+	bias_spcm.rcc \
 	bias_wide.hdl \
 	comparator_complex.rcc \
 	comparator_real.rcc \
@@ -132,6 +133,7 @@ Workers += \
 
 ifeq ($(OCPI_HAVE_OPENCL),1)
 Workers += \
+	bias.ocl \
 	fft1d.ocl \
 	mmul.ocl \
 	power_spectrum_1d.ocl \

@@ -55,7 +55,7 @@ LinkBinary= $(ToolsDir)/ocpiocl $(ExtraCompilerOptions) \
   -I$(CURDIR)/gen \
   -I$(OCPI_CDK_DIR)/include/ocl \
   $(foreach i,$(IncludeDirs),-I$i) \
-  -o $$@ -t $$(OclTarget) compile $1
+  -o $@ -t $(OclTarget) compile $1
 Compile_cl=echo '\#include "'$$<'"'>$$@
 #Compile_cl=echo '\#include "../'$$<'"'>$$@
 
@@ -80,12 +80,13 @@ $(call ArtifactXmlFile,$1,$2): $(call OclAssemblyFile,$1,$2)
 	     -O $(call OclOs,$1) \
              -V $(call OclOsVersion,$1) \
              -H $(call OclArch,$1) \
+	     -P $3 \
 	     -D $(call WkrTargetDir,$1,$2) \
              $(XmlIncludeDirsInternal:%=-I%) \
              -A $(call OclAssemblyFile,$1,$2)
 
 endef
 
-$(foreach t,$(OclTargets),$(foreach c,$(ParamConfigurations),$(eval $(call DoOclArtifactFile,$t,$c))))
+$(foreach p,$(OclPlatforms),$(foreach c,$(ParamConfigurations),$(eval $(call DoOclArtifactFile,$(OclTarget_$p),$c,$p))))
 
 endif

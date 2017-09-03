@@ -19,7 +19,7 @@
  */
 
 #include "OcpiApi.hh"
-
+namespace OA=OCPI::API;
 #include <cmath>
 #include <cstdio>
 #include <cstring>
@@ -77,49 +77,23 @@ namespace
   void test_worker ( const char* container_name,
                      std::size_t n_buffers_to_process )
   {
-      // Find a container to run our worker
-     // (it returns a pointer since it might return NULL)
-      OCPI::API::Container* c =
-                        OCPI::API::ContainerManager::find ( container_name );
-      if ( !c )
-      {
-        throw std::string ( "Failed to find an OCL container" );
-      }
-
-      // Create an application context on that container
-      // (and delete it when we exit)
-      // (it returns a pointer since the caller is allowed to delete it)
-      OCPI::API::ContainerApplication& a = *c->createApplication ( "vsadd-app" );
-
-      // Create a worker of type "vsadd", whose name in this
-      // app will be "vsadd_instance".
-      OCPI::API::Worker& w = a.createWorker ( "vsadd", // vsadd_instance
-                                              "ocpi.vsadd");
-
-      // Get a handle (reference) on the "in" port of the worker
-      OCPI::API::Port& port_in = w.getPort ( "in" );
-      // Get an external port (that this program can use) connected to
-      // the "in" port.
-
-      OCPI::API::ExternalPort& xport_in = port_in.connectExternal ( );
-
-      // Get a handle (reference) on the "out" port of the worker
-      OCPI::API::Port& port_out = w.getPort ( "out" );
-
-      // Get an external port (that this program can use) connected to
-      // the "out" port.
-      OCPI::API::ExternalPort& xport_out = port_out.connectExternal ( );
-
-      OCPI::API::Property p ( w, "scalar" );
+      OA::PValue pvs[] = { OA::PVBool("verbose", true), OA::PVEnd };
+      OA::Application app("<application>"
+			  "  <instance component='ocpi.vsadd' externals='true'/>"
+			  "</application>", pvs);
+      app.initialize();
+      OA::ExternalPort &xport_in = app.getPort("in");
+      OA::ExternalPort &xport_out = app.getPort("out");
+      OA::Property p(app, "vsadd.scalar");
 
       float v = p.getFloatValue ( );
 
       v = p.getFloatValue ( );
       printf ( "scalar %f init\n", v ); fflush(stdout);
 
-      w.start ( ); // Start the worker running
+      app.start(); // Start the worker running
 
-      v = p.getFloatValue ( );
+      v = p.getFloatValue();
       printf ( "scalar %f start\n", v ); fflush(stdout);
 
       std::size_t n_buffers_processed ( 0 );
@@ -142,7 +116,7 @@ namespace
 
         std::vector<float> sent_data;
 
-        OCPI::API::ExternalBuffer* src = xport_in.getBuffer ( data, length );
+        OA::ExternalBuffer* src = xport_in.getBuffer ( data, length );
 
         p.setFloatValue ( ( float ) n_buffers_processed + 1 );
 
@@ -159,7 +133,7 @@ namespace
 
         data = 0;
         length = 0;
-        OCPI::API::ExternalBuffer* dst = xport_out.getBuffer ( data,
+        OA::ExternalBuffer* dst = xport_out.getBuffer ( data,
                                                                length,
                                                                opcode,
                                                                end );
@@ -186,15 +160,10 @@ namespace
       v = p.getFloatValue ( );
       printf ( "scalar %f post loop\n", v );
 
-      w.stop ( ); // Stop the worker running
+      app.stop(); // Stop the app
 
       v = p.getFloatValue ( );
       printf ( "scalar %f stop\n", v );
-
-      w.release ( ); // Release the worker running
-
-      v = p.getFloatValue ( );
-      printf ( "scalar %f release\n", v );
   }
 
 } // End: namespace<unamed>

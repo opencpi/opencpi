@@ -85,6 +85,7 @@ else
 #  $(info OCPI_ALL_RCC_TARGETS is $(OCPI_ALL_RCC_TARGETS))
 endif
 ifdef RccPlatforms
+  # FIXME: this logic is copied in ocl-make.mk
   override RccPlatforms:=$(filter-out $(ExcludePlatforms) $(RccExcludePlatforms),$(RccPlatforms))
   ifneq ($(OnlyPlatforms)$(RccOnlyPlatforms),)
     override RccPlatforms:=$(filter $(OnlyPlatforms) $(RccOnlyPlatforms),$(RccPlatforms))

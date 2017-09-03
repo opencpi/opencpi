@@ -81,6 +81,8 @@ typedef enum {
 
 typedef uint64_t OCLTime;
 typedef uint32_t OCLPortMask;
+#define OCL_ALL_PORTS (~(OCLPortMask)0)
+#define OCL_NO_PORTS ((OCLPortMask)0)
 
 // This structure must consist of portably defined sizes
 typedef struct {

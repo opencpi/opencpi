@@ -1,5 +1,4 @@
-<OclImplementation scalable='1'>
-  <xi:include href="vadd_spec.xml"/>
-  <ControlInterface Name="vadd"/>
+<OclWorker scalable='1' spec="vadd_spec.xml">
   <port name='in0' min='8' modulo='4'/>
-</OclImplementation>
+</OclWorker>
+

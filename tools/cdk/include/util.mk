@@ -321,7 +321,7 @@ OcpiGenEnv=\
     OCPI_HDL_PLATFORM_PATH="$(OCPI_HDL_PLATFORM_PATH)" \
     OCPI_ALL_HDL_TARGETS="$(OCPI_ALL_HDL_TARGETS)" \
     OCPI_ALL_RCC_TARGETS="$(OCPI_ALL_RCC_TARGETS)" \
-    OCPI_ALL_OCL_TARGETS="$(OCPI_ALL_HDL_TARGETS)"
+    OCPI_ALL_OCL_TARGETS="$(OCPI_ALL_OCL_TARGETS)"
 
 OcpiGenTool=$(OCPI_VALGRIND) $(OcpiGenEnv) $(ToolsDir)/ocpigen $(patsubst %,-I"%",$(call Unique,$(XmlIncludeDirsInternal)))
 OcpiGenArg=$(DYN_PREFIX) $(OcpiGenTool) $1 -M $(dir $@)$(@F).deps

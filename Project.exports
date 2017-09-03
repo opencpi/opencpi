@@ -113,6 +113,10 @@ tests
 +tools/cdk/include/rcc/rcc-make.mk include/rcc/
 +tools/cdk/include/rcc/rcc-worker.mk include/rcc/
 +tools/cdk/include/rcc/default.mk include/rcc/
+# OCL additions
++tools/cdk/include/ocl/ocl-make.mk include/ocl/
++tools/cdk/include/ocl/ocl-worker.mk include/ocl/
++runtime/ocl/include/OCL_Worker.h include/ocl/
 # We export everything in tools/cdk/include/hdl, although we could be more careful...
 +tools/cdk/include/hdl/* include/hdl/
 # These should be in a common-to-zynq-platforms dir in "platforms"...

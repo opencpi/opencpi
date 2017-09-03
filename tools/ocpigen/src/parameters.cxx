@@ -302,6 +302,7 @@ doDefaults() { // bool includeInitial) {
 	  params[n].m_value.setType(p);    // blank default value
 	params[n].m_value.unparse(params[n].m_uValue);
 	params[n].m_uValues.push_back(params[n].m_uValue);
+	params[n].m_attributes.resize(params[n].m_attributes.size() + 1);
 	params[n].m_isDefault = true;
       }
       n++;
@@ -816,6 +817,7 @@ emitToolParameters() {
 	std::string sval;
 	(*pi)->m_default->unparse(sval);
 	par->m_uValues.push_back(sval);
+	par->m_attributes.resize(par->m_attributes.size() + 1);
 	par->m_isDefault = true;
       }
       par++;

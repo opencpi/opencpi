@@ -39,16 +39,17 @@
  * Methods to implement for worker sin, based on metadata.
  */
 
-OCLResult sin_run(__local OCLWorkerSin* self) {
-  const size_t n_elems = self->in.current.length / sizeof(float);
-  __global const float* src = (__global float *)self->in.current.data;
-  __global float* dst = (__global float *)self->out.current.data;
+static OCLResult
+sin_run(SinWorker* self, __global SinProperties *properties) {
+  const size_t n_elems = self->ports.in.current.length / sizeof(float);
+  __global const float* src = (__global float *)self->ports.in.current.data;
+  __global float* dst = (__global float *)self->ports.out.current.data;
   size_t gid = get_global_id(0);
 
   if (gid < n_elems) {
     dst[gid] = sin(src[gid]);
-    self->out.current.length = self->in.current.length;
-    self->out.current.opCode = self->in.current.opCode;
+    self->ports.out.current.length = self->ports.in.current.length;
+    self->ports.out.current.opCode = self->ports.in.current.opCode;
   }
   return OCL_ADVANCE;
 }
