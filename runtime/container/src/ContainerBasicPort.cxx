@@ -25,6 +25,7 @@
 //#include "ContainerWorker.h"
 #include "ContainerPort.h"
 
+#define CAS __sync_bool_compare_and_swap
 namespace OCPI {
   namespace Container {
     namespace OA = OCPI::API;
@@ -81,8 +82,8 @@ namespace OCPI {
 
     ExternalBuffer::
     ExternalBuffer(BasicPort &a_port, ExternalBuffer *a_next, unsigned n)
-      : m_port(a_port), m_full(false), m_position(n), m_next(a_next), m_zcFront(NULL),
-	m_zcBack(NULL), m_dtBuffer(NULL), m_dtData(NULL) {
+      : m_port(a_port), m_full(false), m_position(n), m_next(a_next), m_zcHead(NULL),
+	m_zcTail(NULL), m_zcNext(NULL), m_dtBuffer(NULL), m_dtData(NULL) {
       memset(&m_hdr, 0, sizeof(m_hdr));
     }
 
@@ -721,9 +722,25 @@ namespace OCPI {
 		  &metaPort().metaWorker(), this, &b, m_next2write);
 	b.m_zcNext = NULL;
 	b.m_zcHost = m_next2write;
-	(m_next2write->m_zcFront ? m_next2write->m_zcBack->m_zcNext : m_next2write->m_zcFront) =
-	  m_next2write->m_zcBack = &b;
 	b.m_full = true;
+	if (!m_next2write->m_zcHead) // This buffer has never hosted any zc buffers before
+	  m_next2write->m_zcHead = m_next2write->m_zcTail = m_next2write;
+	// Protect against zero-copy buffer queueing across containers/threads.
+	// FIXME: Would be nice to know when it was NOT crossing threads and do a bit less
+	// See old 1998 IBM paper Michael & Scott (last names) on concurrent queues
+	ExternalBuffer *tail, *next;
+	for (;;) {
+	  tail = m_next2write->m_zcTail;
+	  next = tail->m_zcNext;
+	  if (tail == m_next2write->m_zcTail) {   // are tail and next consistent?
+	    if (next == NULL) {                   // tail is last and thus valid
+	      if (CAS(&tail->m_zcNext, NULL, &b)) // if it stays that way, we're done
+		break;
+	    } else                                // tail was added to so move it
+	      CAS(&m_next2write->m_zcTail, tail, next);  // chase our tail
+	  }
+	}
+	CAS(&m_next2write->m_zcTail, tail, &b);   // not really necessary for single writer
       } else if (m_dtPort && b.m_dtBuffer)
 	m_dtPort->sendZcopyInputBuffer(*b.m_dtBuffer,
 				       b.m_hdr.m_length, b.m_hdr.m_opCode, b.m_hdr.m_eof);
@@ -766,29 +783,67 @@ namespace OCPI {
       return b;
     }
 
+    ExternalBuffer *
+    ExternalBuffer::zcPeek() {
+      // A peek
+      ocpiDebug("zcpeek buf %p head %p tail %p next %p", this, m_zcHead, m_zcTail, m_zcHead->m_zcNext);
+      ExternalBuffer *l_next;
+      for (;;) {
+	ExternalBuffer
+	  *head = m_zcHead,
+	  *tail = m_zcTail;
+	l_next = head->m_zcNext;
+	if (head == m_zcHead) {
+	  if (head == tail) {
+	    if (l_next == NULL)
+	      break;
+	    CAS(&m_zcTail, tail, l_next);
+	  } else {
+	    ocpiAssert(l_next->m_full);
+	    if (CAS(&m_zcHead, head, l_next)) //for multiple readers
+	      break;
+	  }
+	}
+      } // iterate to advance tail
+      return l_next;
+    }
+    // This buffer is the head->next, we are the single reader
+    void ExternalBuffer::
+    zcPop() {
+      ocpiDebug("zcPop on %p host %p head %p headnext %p early next %p", this, m_zcHost,
+		m_zcHost->m_zcHead,
+		m_zcHost->m_zcHead ? m_zcHost->m_zcHead->m_zcNext : NULL, m_zcNext);
+      //      m_zcHost->m_zcHead->m_zcNext = m_zcNext;
+      m_zcHost = NULL;
+    }
+
     // Step 3: low level
     ExternalBuffer *BasicPort::
     getFullBuffer() {
       assert(!m_forward);
-      //      if (m_forward)
-      //	return m_forward->getFullBuffer();
       ExternalBuffer *b = m_next2read;
+      ocpiDebug("getfull on %p early next %p", this, b);
       if (b) { // if shim mode
-	if (b->m_zcFront) {
-	  b = b->m_zcFront;
-	  ocpiDebug("getFull ZC on %p %p returns %p  len %zu op %u", &metaPort().metaWorker(),
-		    this, b, (size_t)(b->m_hdr.m_length), b->m_hdr.m_opCode);
-	  //	  m_next2read->m_zcFront = b->m_zcNext;
-	  assert(b->m_full);
-	  return b;
-	}
-	if (b->m_full) {
-	  m_next2read = b->m_next;
-	  ocpiDebug("getFull on %p %p returns %p  len %zu op %u", &metaPort().metaWorker(),
-		    this, b, (size_t)(b->m_hdr.m_length), b->m_hdr.m_opCode);
-	  return b;
-	}
-	return NULL;
+	bool zc = false;
+	do {
+	  if (b->m_zcHead) {
+	    ExternalBuffer *zcb = b->zcPeek();
+	    if (zcb) {
+	      zc = true;
+	      zcb->zcPop();
+	      b = zcb;
+	      break;
+	    }
+	  }
+	  if (b->m_full)
+	    m_next2read = b->m_next;
+	  else
+	    return NULL;
+	} while (0);
+	ocpiDebug("getFull%s on %p %p returns %p  len %zu op %u", zc ? "ZC" : "",
+		  &metaPort().metaWorker(), this, b, (size_t)(b->m_hdr.m_length),
+		  b->m_hdr.m_opCode);
+	return b;
       }
       if (m_dtPort) {
 	size_t length;
@@ -813,12 +868,10 @@ namespace OCPI {
       if (m_forward)
 	return m_forward->peekOpCode(op);
       if (m_next2read) { // if shim mode
-	if (m_next2read->m_zcFront) {
-	  assert(m_next2read->m_zcFront->m_full);
-	  op = m_next2read->m_zcFront->m_hdr.m_opCode;
-	}
-	if (m_next2read->m_full) {
-	  op = m_next2read->m_hdr.m_opCode;
+	ExternalBuffer *b;
+	if ((m_next2read->m_zcHead && (b = m_next2read->zcPeek())) ||
+	    (b = m_next2read)->m_full) {
+	  op = b->m_hdr.m_opCode;
 	  return true;
 	}
       } else if (m_dtPort) {
@@ -871,14 +924,9 @@ namespace OCPI {
     void BasicPort::
     releaseBuffer(ExternalBuffer &b) {
       assert(!m_forward);
-      //      if (m_forward)
-      //	return m_forward->releaseBuffer(b);
-      if (b.m_zcHost) {
-	assert(b.m_zcHost->m_zcFront == &b); // we must be head of the queue
-	b.m_zcHost->m_zcFront = b.m_zcNext;    // dequeue
-	b.m_zcHost = NULL;                   // unmark as zc
-	b.m_port.releaseBuffer(b);           // release from its true port
-      } else if (m_next2release) {
+      if (&b.m_port != this)               // buffer is zc queued buffer
+	b.m_port.releaseBuffer(b);         // release from its true port
+      else if (m_next2release) {
 	assert(&b.m_port == this);
 	assert(&b == m_next2release);
 	b.m_full = false;

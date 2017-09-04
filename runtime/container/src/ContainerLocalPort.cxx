@@ -389,6 +389,7 @@ namespace OCPI {
 	do {
 	  ocpiDebug("getLocalBuffer input: port %p (%s) buf %p trying bpn %u %p ",
 		    this, name().c_str(), m_localBuffer, bpn, m_bridgePorts[bpn]);
+	  assert("Peeking for opcode for bridge ports disabled"==0);
 	  if (m_bridgePorts[bpn]->peekOpCode(op)) {
 	    assert(op < m_bridgeOps.size());
 	    BridgeOp &bo = m_bridgeOps[op];

@@ -106,17 +106,21 @@ namespace OCPI {
       // "hosting" the queue.
       union {
 	struct {
-	  ExternalBuffer *m_zcFront, *m_zcBack;
+	  ExternalBuffer *m_zcHead, *m_zcTail;
 	};
 	struct {
-	  ExternalBuffer *m_zcHost, *m_zcNext;
+	  ExternalBuffer *m_zcHost;
 	};
       };
+      ExternalBuffer *m_zcNext; // even the host has a next to make the lock-free alg work
+      
       // This is specific to the "transport" mode, with a buffer from the transport system
       OCPI::DataTransport::BufferUserFacet *m_dtBuffer;
       uint8_t *m_dtData;
     protected:
       ExternalBuffer(BasicPort &port, ExternalBuffer *next, unsigned position);
+      ExternalBuffer *zcPeek();
+      void zcPop();
     public:
       size_t length() { return m_hdr.m_length; }
       uint8_t *data() {
