@@ -27,6 +27,7 @@
 
 #echo PARMS: $*
 source $OCPI_CDK_DIR/scripts/util.sh
+ocpiGetToolPlatform
 tput=tput
 [ -z "$(which tput)" ] && tput=true 
 spec=$1; shift
@@ -63,7 +64,7 @@ function docase {
   [ -n "$header" ] || {
     header=1
     echo Performing test cases for $spec on platform $platform 1>&2
-    echo Functions performed in one pass are: $run $verify $view 1>&2
+    echo '  'Functions performed in one pass are: $run $verify $view 1>&2
   }
   r=0
   [ -z "$run" ] || {
@@ -81,7 +82,7 @@ function docase {
     elif [ -n "$TestTimeout" ]; then
       timearg=--timeout=$TestTimeout
     fi
-    cmd=('OCPI_LIBRARY_PATH=../../../lib/rcc:../../gen/assemblies:$OCPI_CDK_DIR/lib/components/rcc' \
+    cmd=('OCPI_LIBRARY_PATH=../../../lib/rcc:../../../lib/ocl:../../gen/assemblies:$OCPI_CDK_DIR/lib/components/rcc' \
          $OCPI_CDK_DIR/bin/$OCPI_TOOL_DIR/ocpirun -d -v -m$component=$1 -w$component=$2 -P$component=$platform \
 	         --sim-dir=$3.$4.$2.$1.simulation $timearg \
 		 --dump-file=$3.$4.$2.$1.props $outputs ../../gen/applications/$3.$4.xml)

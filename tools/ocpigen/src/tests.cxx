@@ -703,13 +703,18 @@ namespace {
     }
     const char *
     pruneSubCases() {
+      ocpiDebug("Pruning subcases for case %s starting with %zu subcases",
+		m_name.c_str(), m_subCases.size());
       for (unsigned s = 0; s < m_subCases.size(); s++) {
+	ocpiDebug("Considering pruning subcase %s.%u",	m_name.c_str(), s);
 	ParamConfig &pc = *m_subCases[s];
 	// For each worker configuration, decide whether it can support the subcase.
 	// Note worker configs only have *parameters*, while subcases can have runtime properties
 	unsigned viableConfigs = 0;
 	for (WorkerConfigsIter wci = configs.begin(); wci != configs.end(); ++wci) {
 	  ParamConfig &wcfg = *wci->first;
+	  ocpiDebug("--Considering worker %s.%s(%zu)", wci->second->cname(),
+		    wci->second->m_modelString, wci->first->nConfig);
 	  // For each property in the subcase, decide whether it conflicts with a *parameter*
 	  // in this worker config
 	  for (unsigned nn = 0; nn < pc.params.size(); nn++) {
@@ -722,6 +727,9 @@ namespace {
 	      if (wparam.m_param && !strcasecmp(sp.m_param->cname(), wparam.m_param->cname())) {
 		if (sp.m_uValue == wparam.m_uValue)
 		  goto next;     // match - this subcase property is ok for this worker config
+		ocpiDebug("--Skipping worker %s.%s(%zu) because its param %s is different",
+			  wci->second->cname(), wci->second->m_modelString,
+			  wci->first->nConfig, sp.m_param->cname());
 		goto skip_worker_config; // mismatch - this worker config rejected from subcase
 	      }
 	    }
@@ -736,7 +744,7 @@ namespace {
 	      continue;
 	    // The subcase property was not in this worker at all, so it must be
 	    // implementation specific or a test property or an emulator property
-	    if (sp.m_param->m_isImpl) {
+	    if (sp.m_param->m_isImpl && sp.m_uValue.size()) {
 	      if (sp.m_param->m_default) {
 		std::string uValue;
 		sp.m_param->m_default->unparse(uValue);
@@ -746,6 +754,11 @@ namespace {
 		  continue;
 	      }
 	      // The impl property is not the default so this worker config cannot be used
+	      ocpiDebug("Skipping worker %s.%s(%zu) because param %s(%s) is impl-specific and %s",
+			wci->second->cname(), wci->second->m_modelString, wci->first->nConfig,
+			sp.m_param->cname(), sp.m_uValue.c_str(),
+			sp.m_param->m_default ? " the value does not match the default" :
+			"there is no default to check");
 	      goto skip_worker_config;
 	    }
 	    // The property is a test property which is ok
@@ -755,6 +768,7 @@ namespace {
 	skip_worker_config:;
 	}
 	if (viableConfigs == 0) {
+	  ocpiDebug("Removing subcase %u since no workers implement it", s);
 	  m_subCases.erase(m_subCases.begin() + s);
 	  s--;
 	}
@@ -821,7 +835,8 @@ namespace {
 	  Param &p = pc.params[n];
 	  if (p.m_param && p.m_uValues.size() > 1) {
 	    fprintf(out, "  %*s", (int)sizes[n],
-		    last[n] && !strcmp(last[n], p.m_uValue.c_str()) ? "" : p.m_uValue.c_str());
+		    last[n] && !strcmp(last[n], p.m_uValue.c_str()) ? "" :
+		    p.m_uValue.empty() ? "-" : p.m_uValue.c_str());
 	    last[n] = p.m_uValue.c_str();
 	  }
 	}
@@ -922,7 +937,8 @@ namespace {
       for (unsigned n = 0; n < pc.params.size(); n++) {
 	Param &p = pc.params[n];
 	// FIXME: Should m_uValues hold the results of the generate? (AV-3114)
-	if (p.m_param && !p.m_isTest && (!p.m_uValues.empty() or !p.m_generate.empty())) {
+	if (p.m_param && !p.m_isTest && 
+	    ((p.m_uValues.size() && p.m_uValue.size()) || p.m_generate.size())) {
 	  if (p.m_worker && p.m_worker->m_emulate && !w.m_emulate)
 	    continue;
 	  if (p.m_param->m_isImpl && p.m_param->m_default) {
@@ -1128,14 +1144,15 @@ namespace {
       for (unsigned n = 0; n < m_ports.size(); n++) {
 	InputOutput &io = m_ports[n];
 	if (io.m_port->isDataProducer()) {
-	  if (io.m_script.size() || io.m_view.size()) {
+	  if (io.m_script.size() || io.m_view.size() || io.m_file.size()) {
 	    OU::formatAdd(verify,
-			  "echo '    '$msg case %s.$subcase for worker \"$worker\" using script on"
+			  "echo '    '$msg %s.$subcase for worker \"$worker\" using %s on"
 			  " output file:  %s.$subcase.$worker.%s.out\n"
 			  "while read comp name value; do\n"
 			  "  [ $comp = \"%s\"%s%s%s ] && eval export OCPI_TEST_$name=\"$value\"\n"
 			  "done < %s.$subcase.$worker.props\n",
-			  m_name.c_str(), m_name.c_str(), io.m_port->pname(),
+			  m_name.c_str(), io.m_script.size() ? "script" : "file comparison",
+			  m_name.c_str(), io.m_port->pname(),
 			  strrchr(specName.c_str(), '.') + 1,
 			  emulator ? " -o $comp = \"" : "",
 			  emulator ? strrchr(emulator->m_specName, '.') + 1 : "",
@@ -1181,17 +1198,18 @@ namespace {
 			    inArgs.c_str());
 	    if (io.m_script.size() || io.m_file.size()) {
 	      OU::formatAdd(verify, "[ -z \"$verify\" ] || {\n");
+	      std::string out;
+	      OU::format(out, "%s.$subcase.$worker.%s.out", m_name.c_str(), io.m_port->pname());
 	      if (io.m_script.size())
-		OU::formatAdd(verify, "  %s%s %s.$subcase.$worker.%s.out %s\n",
-			      io.m_script[0] == '/' ? "" : "../../",
-			      io.m_script.c_str(), m_name.c_str(), io.m_port->pname(),
-			      inArgs.c_str());
+		OU::formatAdd(verify, "  %s%s %s %s\n",
+			      io.m_script[0] == '/' ? "" : "../../", io.m_script.c_str(), 
+			      out.c_str(), inArgs.c_str());
 	      else
 		OU::formatAdd(verify,
-			      "  echo Comparing output file \"$1\" to specified file: %s\n"
-			      "  cmp $1 %s%s\n",
-			      io.m_file.c_str(), io.m_file[0] == '/' ? "" : "../../",
-			      io.m_file.c_str());
+			      "  echo '      'Comparing output file \"%s\" to specified file: \"%s\"\n"
+			      "  cmp %s %s%s\n",
+			      out.c_str(), io.m_file.c_str(), out.c_str(), 
+			      io.m_file[0] == '/' ? "" : "../../", io.m_file.c_str());
 	      OU::formatAdd(verify,
 			    "  r=$?\n"
 			    "  tput bold\n"
@@ -1279,6 +1297,8 @@ namespace {
 	// For each worker configuration, decide whether it can support the subcase.
 	// Note worker configs only have *parameters*, while subcases can have runtime properties
 	for (WorkerConfigsIter wci = configs.begin(); wci != configs.end(); ++wci) {
+	  ocpiDebug("  For case xml for %s.%u worker %s.%s(%zu)", m_name.c_str(), s,
+		    wci->second->cname(), wci->second->m_modelString, wci->first->nConfig);
 	  ParamConfig &wcfg = *wci->first;
 	  // For each property in the subcase, decide whether it conflicts with a *parameter*
 	  // in this worker config
@@ -1289,9 +1309,12 @@ namespace {
 	    OU::Property *wprop = wci->second->findProperty(sp.m_param->cname());
 	    for (unsigned n = 0; n < wcfg.params.size(); n++) {
 	      Param &wparam = wcfg.params[n];
-	      if (wparam.m_param  && !strcasecmp(sp.m_param->cname(), wparam.m_param->cname())) {
+	      if (wparam.m_param && !strcasecmp(sp.m_param->cname(), wparam.m_param->cname())) {
 		if (sp.m_uValue == wparam.m_uValue)
 		  goto next;     // match - this subcase property is ok for this worker config
+		ocpiDebug("--Skipping worker %s.%s(%zu) because its param %s is different",
+			  wci->second->cname(), wci->second->m_modelString,
+			  wci->first->nConfig, sp.m_param->cname());
 		goto skip_worker_config; // mismatch - this worker config rejected from subcase
 	      }
 	    }
@@ -1306,7 +1329,7 @@ namespace {
 	      continue;
 	    // The subcase property was not in this worker at all, so it must be
 	    // implementation specific or a test property
-	    if (sp.m_param->m_isImpl) {
+	    if (sp.m_param->m_isImpl && sp.m_uValue.size()) {
 	      if (sp.m_param->m_default) {
 		std::string uValue;
 		sp.m_param->m_default->unparse(uValue);
@@ -1316,6 +1339,11 @@ namespace {
 		  continue;
 	      }
 	      // The impl property is not the default so this worker config cannot be used
+	      ocpiDebug("--Skipping worker %s.%s(%zu) because param %s(%s) is impl-specific and %s",
+			wci->second->cname(), wci->second->m_modelString, wci->first->nConfig,
+			sp.m_param->cname(), sp.m_uValue.c_str(),
+			sp.m_param->m_default ? " the value does not match the default" :
+			"there is no default to check");
 	      goto skip_worker_config;
 	    }
 	    // The property is a test property which is ok
@@ -1565,6 +1593,8 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
   ParamConfig globals(*wFirst);
   for (WorkerConfigsIter wci = configs.begin(); wci != configs.end(); ++wci) {
     ParamConfig &pc = *wci->first;
+    ocpiDebug("Processing config %zu of worker %s.%s",
+	      pc.nConfig, wci->second->cname(), wci->second->m_modelString);
     for (unsigned n = 0; n < pc.params.size(); n++) {
       Param &p = pc.params[n];
       if (p.m_param == NULL)
@@ -1601,7 +1631,7 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
       if (!gp.m_param)
 	gp.m_param = p.m_param;
       ocpiDebug("existing value for %s(%u) is %s(%zu)",
-	     p.m_param->cname(), n, p.m_uValue.c_str(), pn);
+		p.m_param->cname(), n, p.m_uValue.c_str(), pn);
       for (unsigned nn = 0; nn < gp.m_uValues.size(); nn++)
 	if (p.m_uValue == gp.m_uValues[nn])
 	  goto next;
@@ -1620,7 +1650,39 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
     addNonParameterProperties(**wi, globals);
   if (emulator)
     addNonParameterProperties(*emulator, globals);
-
+  // ================= 4b. Add "empty" values for parameters that are not in all workers
+  for (WorkerConfigsIter wci = configs.begin(); wci != configs.end(); ++wci) {
+    ParamConfig &pc = *wci->first;
+    // Check if any properties have no values.
+    for (unsigned n = 0; n < globals.params.size(); n++) {
+      Param &gparam = globals.params[n];
+      if (!gparam.m_param)
+	continue;
+      for (unsigned nn = 0; nn < pc.params.size(); nn++) {
+	Param &p = pc.params[nn];
+	if (!p.m_param)
+	  continue;
+	if (!strcasecmp(gparam.m_param->cname(), p.m_param->cname()))
+	  goto found;
+      }
+      // A globally defined property was not found in this worker config, so we must add
+      // an empty value if there is not one already and there is no default
+      {
+	std::string defValue;
+	if (gparam.m_param->m_default)
+	  gparam.m_param->m_default->unparse(defValue);
+	for (auto it = gparam.m_uValues.begin(); it != gparam.m_uValues.end(); ++it)
+	  if (it->empty() || (*it) == defValue)
+	    goto found;
+      }
+      ocpiDebug("Adding empty value for property %s because it is not in worker %s.%s(%zu)",
+		gparam.m_param->cname(), wci->second->cname(), wci->second->m_modelString,
+		pc.nConfig);
+      gparam.m_uValues.push_back("");
+      gparam.m_attributes.push_back(Param::Attributes());
+    found:;
+    }
+  }
   // ================= 5. Parse and collect global property values specified for all cases
   // Parse explicit/default property values to apply to all cases
 #define TEST_ATTRS "generate", "add", "only", "exclude", "test"
@@ -1752,7 +1814,8 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
     if (p.m_param == NULL || p.m_uValues.size() != 1 || !p.m_generate.empty())
       continue;
     p.m_uValue = p.m_uValues[0];
-    fprintf(out, "      %s = %s", p.m_param->cname(), p.m_uValues[0].c_str());
+    fprintf(out, "      %s = %s", p.m_param->cname(),
+	    p.m_uValues[0].empty() ? "<no value>" : p.m_uValues[0].c_str());
     if (p.m_param->m_isImpl && strncasecmp("ocpi_", p.m_param->cname(), 5)) {
       assert(p.m_worker);
       fprintf(out, " (specific to worker %s.%s)",
@@ -1950,8 +2013,9 @@ createCases(const char **platforms, const char */*package*/, const char */*outDi
 	(!only || found(platform, only));
     }
     bool foundImplementation(const OL::Implementation &i, bool &accepted) {
-      ocpiInfo("For platform %s, considering implementation %s from %s",
-	       m_platform.c_str(), i.m_metadataImpl.cname(), i.m_artifact.name().c_str());
+      ocpiInfo("For platform %s, considering implementation %s.%s from %s",
+	       m_platform.c_str(), i.m_metadataImpl.cname(), i.m_metadataImpl.model().c_str(),
+	       i.m_artifact.name().c_str());
       if (i.m_artifact.platform() == m_platform && i.m_metadataImpl.model() == m_model &&
 	  i.m_artifact.m_dynamic == m_dynamic) {
 	unsigned sn = 0;
@@ -2003,7 +2067,7 @@ createCases(const char **platforms, const char */*package*/, const char */*outDi
     }
   };
   std::string path;
-  OU::format(path, "../lib/rcc:gen/assemblies:%s/lib/components/rcc",
+  OU::format(path, "../lib/rcc:../lib/ocl:gen/assemblies:%s/lib/components/rcc",
 	     getenv("OCPI_CDK_DIR"));
   setenv("OCPI_LIBRARY_PATH", path.c_str(), true);
   ocpiInfo("Initializing OCPI_LIBRARY_PATH to \"%s\"", path.c_str());

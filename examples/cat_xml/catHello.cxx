@@ -39,11 +39,8 @@ int main(int /* argc */, char ** /* argv */) {
     OA::Application app(hello, pvs);
     fprintf(stderr, "Application XML parsed and deployments (containers and implementations) chosen\n");
     app.initialize();
-    fprintf(stderr, "Application established: containers, workers, connections all created\n");
     OA::ExternalPort &ep = app.getPort("out");
-    fprintf(stderr, "Communication with the application established\n");
     app.start();
-    fprintf(stderr, "Application started/running\n");
     size_t length;
     bool end;
     do {

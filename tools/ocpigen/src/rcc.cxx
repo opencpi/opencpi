@@ -633,6 +633,7 @@ emitImplRCC() {
 	  "#ifndef OCPI_RCC_WORKER_%s_H__\n"
 	  "#define OCPI_RCC_WORKER_%s_H__\n"
 	  "#include <assert.h>\n"
+	  "#include <string.h>\n"
 	  "#include <RCC_Worker.h>\n",
 	  m_implName, m_language == C ? "C" : "C++", upper, upper);
   if ( m_language == CC )
@@ -842,13 +843,14 @@ emitImplRCC() {
     bool notifiers = false, writeNotifiers = false, readNotifiers = false;
     if (m_ctl.nRunProperties) {
       fprintf(f,
+	      "  %s() { memset((void*)&m_properties, 0, sizeof(m_properties)); }\n"
 	      "  %s::Properties m_properties;\n"
 	      "  uint8_t *rawProperties(size_t &size) const {\n"
 	      "    size = sizeof(m_properties);\n"
 	      "    return (uint8_t*)&m_properties;\n"
 	      "  }\n"
 	      "  inline %s::Properties &properties() { return m_properties; }\n",
-	      myTypes.c_str(), myTypes.c_str());
+	      s.c_str(), myTypes.c_str(), myTypes.c_str());
       for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
 	if ((**pi).m_writeSync || (**pi).m_readSync) {
 	  if (!notifiers)
