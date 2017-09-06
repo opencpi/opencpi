@@ -104,16 +104,13 @@ namespace OCPI {
       // the ZC queue at this point.  Thus the ZC buffers are "inserted" before the buffer
       // whose header holds some queued ZC buffers, which we can call the "host" buffer. It is
       // "hosting" the queue.
-      union {
-	struct {
-	  ExternalBuffer *m_zcHead, *m_zcTail;
-	};
-	struct {
-	  ExternalBuffer *m_zcHost;
-	};
-      };
-      ExternalBuffer *m_zcNext; // even the host has a next to make the lock-free alg work
-      
+      ExternalBuffer * volatile m_zcHead, * volatile m_zcTail; // when this buffer is hosting zc buffers, these are used
+      ExternalBuffer * volatile m_zcNext;             // Usedin both cases: hosting a zc queue and being on a zc queue
+      ExternalBuffer *m_zcHost;             // when this buffer is on a zc queue, this is the host buffer
+# if defined(__APPLE__) // FIXME
+typedef int pthread_spinlock_t;
+# endif
+      pthread_spinlock_t m_zcLock;          // use until lockless...
       // This is specific to the "transport" mode, with a buffer from the transport system
       OCPI::DataTransport::BufferUserFacet *m_dtBuffer;
       uint8_t *m_dtData;

@@ -19,10 +19,14 @@
  */
 
 #include <stdint.h>
+#include <pthread.h>
+// This is obviously temporary
+#ifdef __APPLE__
+#include "../../../util/pwq/src/platform.c"
+#endif
 #include "OcpiOsAssert.h"
 #include "OcpiUtilCDR.h"
 #include "Container.h"
-//#include "ContainerWorker.h"
 #include "ContainerPort.h"
 
 #define CAS __sync_bool_compare_and_swap
@@ -83,8 +87,9 @@ namespace OCPI {
     ExternalBuffer::
     ExternalBuffer(BasicPort &a_port, ExternalBuffer *a_next, unsigned n)
       : m_port(a_port), m_full(false), m_position(n), m_next(a_next), m_zcHead(NULL),
-	m_zcTail(NULL), m_zcNext(NULL), m_dtBuffer(NULL), m_dtData(NULL) {
+	m_zcTail(NULL), m_zcNext(NULL), m_zcHost(NULL), m_dtBuffer(NULL), m_dtData(NULL) {
       memset(&m_hdr, 0, sizeof(m_hdr));
+      pthread_spin_init(&m_zcLock, PTHREAD_PROCESS_PRIVATE);
     }
 
     size_t ExternalBuffer::offset() {
@@ -720,27 +725,18 @@ namespace OCPI {
       else if (m_next2write) {
 	ocpiDebug("Putting ZC buffer %p %p %p on host %p",
 		  &metaPort().metaWorker(), this, &b, m_next2write);
+	assert(&b.m_port != &m_next2write->m_port);
 	b.m_zcNext = NULL;
+	assert(b.m_zcHost == NULL);
 	b.m_zcHost = m_next2write;
 	b.m_full = true;
-	if (!m_next2write->m_zcHead) // This buffer has never hosted any zc buffers before
-	  m_next2write->m_zcHead = m_next2write->m_zcTail = m_next2write;
-	// Protect against zero-copy buffer queueing across containers/threads.
-	// FIXME: Would be nice to know when it was NOT crossing threads and do a bit less
-	// See old 1998 IBM paper Michael & Scott (last names) on concurrent queues
-	ExternalBuffer *tail, *next;
-	for (;;) {
-	  tail = m_next2write->m_zcTail;
-	  next = tail->m_zcNext;
-	  if (tail == m_next2write->m_zcTail) {   // are tail and next consistent?
-	    if (next == NULL) {                   // tail is last and thus valid
-	      if (CAS(&tail->m_zcNext, NULL, &b)) // if it stays that way, we're done
-		break;
-	    } else                                // tail was added to so move it
-	      CAS(&m_next2write->m_zcTail, tail, next);  // chase our tail
-	  }
-	}
-	CAS(&m_next2write->m_zcTail, tail, &b);   // not really necessary for single writer
+        pthread_spin_lock(&m_next2write->m_zcLock);
+	if (m_next2write->m_zcTail)
+	  m_next2write->m_zcTail->m_zcNext = &b;
+	else
+	  m_next2write->m_zcHead = &b;
+	m_next2write->m_zcTail = &b;
+	pthread_spin_unlock(&m_next2write->m_zcLock);
       } else if (m_dtPort && b.m_dtBuffer)
 	m_dtPort->sendZcopyInputBuffer(*b.m_dtBuffer,
 				       b.m_hdr.m_length, b.m_hdr.m_opCode, b.m_hdr.m_eof);
@@ -787,24 +783,16 @@ namespace OCPI {
     ExternalBuffer::zcPeek() {
       // A peek
       ocpiDebug("zcpeek buf %p head %p tail %p next %p", this, m_zcHead, m_zcTail, m_zcHead->m_zcNext);
-      ExternalBuffer *l_next;
-      for (;;) {
-	ExternalBuffer
-	  *head = m_zcHead,
-	  *tail = m_zcTail;
-	l_next = head->m_zcNext;
-	if (head == m_zcHead) {
-	  if (head == tail) {
-	    if (l_next == NULL)
-	      break;
-	    CAS(&m_zcTail, tail, l_next);
-	  } else {
-	    ocpiAssert(l_next->m_full);
-	    if (CAS(&m_zcHead, head, l_next)) //for multiple readers
-	      break;
-	  }
+      ExternalBuffer *l_next = NULL;
+      if (m_zcHead) {
+        pthread_spin_lock(&m_zcLock);
+	if ((l_next = m_zcHead)) {
+	  m_zcHead = l_next->m_zcNext;
+	  if (l_next == m_zcTail)
+	    m_zcTail = NULL;
 	}
-      } // iterate to advance tail
+	pthread_spin_unlock(&m_zcLock);
+      }      
       return l_next;
     }
     // This buffer is the head->next, we are the single reader
@@ -835,7 +823,7 @@ namespace OCPI {
 	      break;
 	    }
 	  }
-	  if (b->m_full)
+	  if (b->m_full && !b->m_zcHost)
 	    m_next2read = b->m_next;
 	  else
 	    return NULL;
@@ -932,7 +920,8 @@ namespace OCPI {
 	b.m_full = false;
 	m_nRead++;
 	m_next2release = b.m_next;
-	ocpiDebug("Release on %p of %p", this, &b);
+	ocpiDebug("Release on %p of %p head %p tail %p next %p", this, &b, b.m_zcHead, b.m_zcTail, b.m_zcNext);
+	b.m_zcHead = b.m_zcTail = b.m_zcNext = b.m_zcHost = NULL;
       } else if (m_dtPort) {
 	assert(&b.m_port == this);
 	assert(b.m_dtBuffer);

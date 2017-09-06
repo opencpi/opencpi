@@ -29,6 +29,7 @@ source ./scripts/setup-install.sh \
 
 ../configure  \
   ${OCPI_CROSS_HOST+--host=${OCPI_CROSS_HOST}} \
+  --enable-fat=yes \
   --enable-cxx=yes \
   --prefix=$OCPI_PREREQUISITES_INSTALL_DIR/gmp \
   --exec-prefix=$OCPI_PREREQUISITES_INSTALL_DIR/gmp/$OCPI_TARGET_DIR \
