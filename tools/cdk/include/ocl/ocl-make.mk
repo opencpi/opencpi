@@ -36,12 +36,14 @@ ifdef OCPI_ALL_OCL_PLATFORMS
   OclAllTargets:=$(OCPI_ALL_OCL_TARGETS)
   OclTargetMap:=$(OCPI_OCL_TARGET_MAP)
 else
-  $(and $(call DoShell,$(ToolsDir)/ocpiocl targets,OclTargetMap),$(error $(OclTargetMap)))
-  OclAllTargets:=$(foreach p,$(OclTargetMap),$(word 2,$(subst =, ,$p)))
-  OclAllPlatforms:=$(foreach p,$(OclTargetMap),$(word 1,$(subst =, ,$p)))
-  export OCPI_ALL_OCL_PLATFORMS:=$(OclAllPlatforms)
-  export OCPI_ALL_OCL_TARGETS:=$(OclAllTargets)
-  export OCPI_OCL_TARGET_MAP:=$(OclTargetMap)
+  ifeq ($(OCPI_HAVE_OPENCL),1)
+    $(and $(call DoShell,$(ToolsDir)/ocpiocl targets,OclTargetMap),$(error $(OclTargetMap)))
+    OclAllTargets:=$(foreach p,$(OclTargetMap),$(word 2,$(subst =, ,$p)))
+    OclAllPlatforms:=$(foreach p,$(OclTargetMap),$(word 1,$(subst =, ,$p)))
+    export OCPI_ALL_OCL_PLATFORMS:=$(OclAllPlatforms)
+    export OCPI_ALL_OCL_TARGETS:=$(OclAllTargets)
+    export OCPI_OCL_TARGET_MAP:=$(OclTargetMap)
+  endif
 endif
 
 $(foreach m,$(OclTargetMap),\

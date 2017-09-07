@@ -36,7 +36,7 @@ bias_start(BiasWorker *self, __global BiasProperties *properties) {
 
 static OCLResult
 bias_run(BiasWorker *self, __global BiasProperties *properties) {
-  size_t nElems                = self->ports.in.current.length / sizeof(uint32_t);
+  size_t nElems                = (self->ports.in.current.length + sizeof(uint32_t) - 1) / sizeof(uint32_t);
   __global const uint32_t *src = (__global uint32_t *)self->ports.in.current.data;
   __global uint32_t* dst       = (__global uint32_t *)self->ports.out.current.data;
 

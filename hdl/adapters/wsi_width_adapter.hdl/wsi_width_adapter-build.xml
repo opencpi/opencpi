@@ -119,4 +119,16 @@
     <parameter name='ocpi_debug' value='false'/>
     <parameter name='ocpi_endian' value='little'/>
   </configuration>
+  <configuration id='20'>
+    <parameter name='width_in' value='96'/>
+    <parameter name='width_out' value='32'/>
+    <parameter name='ocpi_debug' value='false'/>
+    <parameter name='ocpi_endian' value='little'/>
+  </configuration>
+  <configuration id='21'>
+    <parameter name='width_in' value='32'/>
+    <parameter name='width_out' value='96'/>
+    <parameter name='ocpi_debug' value='false'/>
+    <parameter name='ocpi_endian' value='little'/>
+  </configuration>
 </build>

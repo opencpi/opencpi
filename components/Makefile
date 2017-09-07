@@ -118,7 +118,8 @@ Tests += \
 	loopback.test \
 	sym_fir_real.test \
 	sym_fir_complex.test \
-	noise_gen_complex.test
+	noise_gen_complex.test \
+        bias.test
 endif # not OCPI_MINIMAL_BUILD
 
 ifndef OCPI_MINIMAL_BUILD

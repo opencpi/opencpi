@@ -92,7 +92,7 @@ TESTXML:=$(CwdName)-test.xml
 
 $(CASEXML): $(TESTXML)
 	$(AT)echo ========= Generating test assemblies, inputs and applications for $(CwdName):
-	$(AT)OCPI_ALL_PLATFORMS="$(HdlAllPlatforms:%=%.hdl) $(RccAllPlatforms:%=%.rcc) $(OclAllPlatforms:%=%.ocl)" \
+	$(AT)OCPI_ALL_PLATFORMS="$(strip $(HdlAllPlatforms:%=%.hdl) $(RccAllPlatforms:%=%.rcc) $(OclAllPlatforms:%=%.ocl))" \
 	     $(OcpiGen) -v -T $< && chmod a+x gen/applications/*.sh
 
 -include gen/*.deps

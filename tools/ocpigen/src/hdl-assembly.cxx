@@ -71,6 +71,7 @@ insertAdapter(Connection &c, InstancePort &from, InstancePort &to) {
     &dpTo = *static_cast<DataPort *>(to.m_port);
   if (dpFrom.m_dataWidth == dpTo.m_dataWidth)
     return NULL;
+  ocpiInfo("Inserting width adapter from %zu to %zu", dpFrom.m_dataWidth, dpTo.m_dataWidth);
   // 1. Create the adapter instance and its ports
   m_instances.resize(m_instances.size()+1);
   Instance &i = m_instances.back();

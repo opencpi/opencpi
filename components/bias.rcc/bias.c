@@ -52,11 +52,13 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
    self->errorString = "output buffer too small";
    return RCC_ERROR;
  }
+#if 0 // we want all the bias workers to pass all data
  if (in->input.length % sizeof(uint32_t)) {
    self->errorString = "input message size not a multiple of data type";
    return RCC_ERROR;
  }
- for (unsigned n = in->input.length / sizeof(uint32_t); n; n--)
+#endif
+ for (unsigned n = (in->input.length + sizeof(uint32_t) - 1) / sizeof(uint32_t); n; n--)
    *outData++ = *inData++ + props->biasValue;
  out->output.length = in->input.length;
  out->output.u.operation = in->input.u.operation;

@@ -1,5 +1,5 @@
 <tests>
   <property name='biasValue' value='0'/>
-  <input port='in' file='Makefile'/>
-  <output port='out' file='Makefile'/>
+  <input port='in' file='../../examples/xml/test.input'/>
+  <output port='out' file='../../examples/xml/test.input'/>
 </tests>

@@ -57,15 +57,15 @@ static int mymain(const char **ap) {
   OCPI::Driver::ManagerManager::suppressDiscovery();
   const char *env = getenv("OCPI_OPENCL_OBJS");
   const char *lib = env ? env : "libOpenCL.so";
-  if (*ap && !strcasecmp(*ap, "test")) {
-    try {
-      OCPI::OS::LoadableModule lm(lib, true);
-    } catch (...) {
-      return 1;
-    }
-    return 0;
+  try {
+    OCPI::OS::LoadableModule lm(lib, true);
+  } catch (...) {
+    if (!*ap || strcasecmp(*ap, "test"))
+      options.bad("Missing/invalid OpenCL support library:  %s", lib);
+    return 1;
   }
-  OCPI::OS::LoadableModule lm(lib, true);
+  if (*ap && strcasecmp(*ap, "test"))
+    return 0;
   if (!*ap)
     return 0;
   if (!strcasecmp(*ap, "search")) {
