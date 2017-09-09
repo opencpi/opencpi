@@ -37,7 +37,7 @@ ifdef OCPI_ALL_OCL_PLATFORMS
   OclTargetMap:=$(OCPI_OCL_TARGET_MAP)
 else
   ifeq ($(OCPI_HAVE_OPENCL),1)
-    $(and $(call DoShell,$(ToolsDir)/ocpiocl targets,OclTargetMap),$(error $(OclTargetMap)))
+    $(and $(call DoShell, OCPI_OPENCL_OBJS=$(OCPI_OPENCL_OBJS) $(ToolsDir)/ocpiocl targets,OclTargetMap),$(error $(OclTargetMap)))
     OclAllTargets:=$(foreach p,$(OclTargetMap),$(word 2,$(subst =, ,$p)))
     OclAllPlatforms:=$(foreach p,$(OclTargetMap),$(word 1,$(subst =, ,$p)))
     export OCPI_ALL_OCL_PLATFORMS:=$(OclAllPlatforms)
@@ -46,7 +46,7 @@ else
   endif
 endif
 
-$(foreach m,$(OclTargetMap),\
+$(foreach m,$(OCPI_OCL_TARGET_MAP),\
   $(eval OclTarget_$(word 1,$(subst =, ,$m)):=$(word 2,$(subst =, ,$m))))
 
 # Mostly copied from rcc...
@@ -58,6 +58,9 @@ OclTargets:=$(call OcpiUnique,$(OclTargets) $(OclTarget))
 endif
 
 ifdef OclPlatforms
+  ifeq ($(OclPlatforms),all)
+    OclPlatforms:=$(OCPI_ALL_OCL_PLATFORMS)
+  endif
   override OclPlatforms:=$(filter-out $(ExcludePlatforms) $(OclExcludePlatforms),$(OclPlatforms))
   ifneq ($(OnlyPlatforms)$(OclOnlyPlatforms),)
     override OclPlatforms:=$(filter $(OnlyPlatforms) $(OclOnlyPlatforms),$(OclPlatforms))
@@ -67,7 +70,7 @@ ifdef OclPlatforms
      $(if $(filter $p,$(OclAllPlatforms)),\
         $(eval OclTargets+=$(OclTarget_$p)),\
         $(error OclPlatform $p is unknown/unsupported on this system)))
-  OclTargets:=$(call OcpiUniq,$(OclTargets))
+  OclTargets:=$(call Unique,$(OclTargets))
 else
   ifdef OclTargets
     OclPlatforms:=

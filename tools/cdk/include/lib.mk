@@ -217,7 +217,12 @@ test: speclinks $(TestImplementations)
 checkocl:
 	$(AT)if ! test -x $(OCPI_CDK_DIR)/bin/$(OCPI_TOOL_HOST)/ocpiocl || ! $(OCPI_CDK_DIR)/bin/$(OCPI_TOOL_HOST)/ocpiocl test; then echo Error: OpenCL is not available; exit 1; fi
 
+ifeq ($(OCPI_HAVE_OPENCL),1)
 ocl: checkocl speclinks $(OclImplementations)
+else
+ocl:
+	$(AT)echo No OpenCL installed so no OCL workers built.
+endif
 
 .PHONY: hdl
 hdl: speclinks $(HdlImplementations)

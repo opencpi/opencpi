@@ -64,7 +64,7 @@ static int mymain(const char **ap) {
       options.bad("Missing/invalid OpenCL support library:  %s", lib);
     return 1;
   }
-  if (*ap && strcasecmp(*ap, "test"))
+  if (*ap && !strcasecmp(*ap, "test"))
     return 0;
   if (!*ap)
     return 0;

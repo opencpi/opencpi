@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
+# Temporary workaround for possible lack of environment here
+export OCPI_LIBRARY_PATH=.:$(OCPI_CDK_DIR)/lib/components/rcc
 OcpiRunArgs=-v -d
 
 include $(OCPI_CDK_DIR)/include/application.mk
