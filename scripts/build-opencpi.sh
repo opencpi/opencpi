@@ -43,7 +43,7 @@ echo ===========================================================================
 echo Now we will '"make"' the built-in RCC '(software)' components for $OCPI_TARGET_PLATFORM
 make rcc
 echo ================================================================================
-echo Now we will '"make"' the built-in OCL '(GPU)' components for available OCL platforms
+echo Now we will '"make"' the built-in OCL '(GPU)' components for the available OCL platforms
 make ocl
 echo ================================================================================
 echo Now we will '"make"' the examples for $OCPI_TARGET_PLATFORM
