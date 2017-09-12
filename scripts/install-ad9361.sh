@@ -50,6 +50,8 @@ OCPI_PREREQUISITES_INSTALL_DIR=.
 fi
 # End of no-RPM
 cp -r ../ad9361/sw/* .
+# Make global all-platform include dir
+mkdir -p $OCPI_PREREQUISITES_INSTALL_DIR/ad9361/include
 
 ################################################################################
 # 2. Patch their API headers so they actually act like API headers
