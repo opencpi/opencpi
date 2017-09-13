@@ -36,7 +36,7 @@ function findInProjectPath {
 function setVarsFromMake {
   local quiet
   [ -z "$3" ] && quiet=1   
-  [ -z $(which make 2> /dev/null) ] && {
+  [ -z $(command -v make 2> /dev/null) ] && {
     [ -n "$3" ] && echo The '"make"' command is not available. 2>&1
     return 1
   }
