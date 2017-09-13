@@ -25,7 +25,7 @@ export OCPI_XILINX_DIR= #/opt/Xilinx
 export OCPI_XILINX_VERSION= #14.7
 export OCPI_XILINX_LICENSE_FILE= #$OCPI_XILINX_DIR/OCPI_XILINX_VERSION/License.lic
 
-OCPI_TARGET_PLATFORM=xilinx13_4
+export OCPI_TARGET_PLATFORM=xilinx13_4
 
 # #### Location of the Modelsim tools ####################################### #
 
