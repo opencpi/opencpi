@@ -1,7 +1,7 @@
 <opencpi>
   <container>
    <rcc load='1'/>
-   <ocl load='1'/>
+   <ocl load='0'/>
    <remote load='1'/>
    <hdl load='1'>
      <device name="PCI:0000:05:00.0" esn="000013C1E1F401"/>
