@@ -909,13 +909,13 @@ namespace {
 	      return err;
 	    OU::formatAdd(env, "OCPI_TEST_%s='%s' ", p.m_param->cname(), p.m_uValue.c_str());
 	    OU::formatAdd(env, "OCPI_TESTFILE_%s='%s' ", p.m_param->cname(), file.c_str());
-
 	  }
 	}
+
 	for (unsigned n = 0; n < m_ports.size(); n++) {
 	  InputOutput &io = m_ports[n];
 	  if (!io.m_port->isDataProducer() && io.m_script.size()) {
-	    if ((err = generateFile(first, "inputs", "input port", s, 
+	    if ((err = generateFile(first, "inputs", "input port", s,
 				    io.m_port->OU::Port::m_name, io.m_script, env, file)))
 	      return err;
 	  }
@@ -937,7 +937,7 @@ namespace {
       for (unsigned n = 0; n < pc.params.size(); n++) {
 	Param &p = pc.params[n];
 	// FIXME: Should m_uValues hold the results of the generate? (AV-3114)
-	if (p.m_param && !p.m_isTest && 
+	if (p.m_param && !p.m_isTest &&
 	    ((p.m_uValues.size() && p.m_uValue.size()) || p.m_generate.size())) {
 	  if (p.m_worker && p.m_worker->m_emulate && !w.m_emulate)
 	    continue;
@@ -1202,13 +1202,13 @@ namespace {
 	      OU::format(out, "%s.$subcase.$worker.%s.out", m_name.c_str(), io.m_port->pname());
 	      if (io.m_script.size())
 		OU::formatAdd(verify, "  %s%s %s %s\n",
-			      io.m_script[0] == '/' ? "" : "../../", io.m_script.c_str(), 
+			      io.m_script[0] == '/' ? "" : "../../", io.m_script.c_str(),
 			      out.c_str(), inArgs.c_str());
 	      else
 		OU::formatAdd(verify,
 			      "  echo '      'Comparing output file \"%s\" to specified file: \"%s\"\n"
 			      "  cmp %s %s%s\n",
-			      out.c_str(), io.m_file.c_str(), out.c_str(), 
+			      out.c_str(), io.m_file.c_str(), out.c_str(),
 			      io.m_file[0] == '/' ? "" : "../../", io.m_file.c_str());
 	      OU::formatAdd(verify,
 			    "  r=$?\n"
@@ -1250,6 +1250,11 @@ namespace {
 	  assert((cp.m_param && sp.m_param) || (!cp.m_param && !sp.m_param));
 	  // We now support unset values (e.g. raw config registers...)
 	  //	  assert(!cp.m_param || cp.m_uValues.size() || cp.m_generate.size());
+      // AV-3372: If cp is generated, there's likely an empty string sitting in cp.m_uValues.
+      if (cp.m_generate.size() and (cp.m_uValues.size() == 1) and cp.m_uValues[0].empty() ) {
+          ocpiDebug("Erasing false empty value for generated %s", cp.m_param->pretty());
+          cp.m_uValues.clear();
+      }
 	  if (!cp.m_param || cp.m_uValues.empty()) // empty is generated - no exclusions
 	    continue;
 	  Param::Attributes *attrs = NULL;
@@ -1564,6 +1569,8 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
   // ================= 3. Get/collect the worker parameter configurations
   // Now "workers" has workers with parsed build files.
   // So next we globally enumerate PCs independent of them, that might be dependent on them.
+  if (workers.empty()) // AV-3369 (and possibly others)
+    return OU::esprintf("There are currently no valid workers implementing %s", specName.c_str());
   // But first!... we create the first one from the defaults.
   wFirst = *workers.begin();
 #if 0
@@ -1675,6 +1682,8 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
 	  if (it->empty() || (*it) == defValue)
 	    goto found;
       }
+      // AV-3372: We shouldn't do this if the property is generated, but we cannot tell at this point if it is.
+      // gparam.m_generate is empty because it's from the worker XML. We will remove this later if needed.
       ocpiDebug("Adding empty value for property %s because it is not in worker %s.%s(%zu)",
 		gparam.m_param->cname(), wci->second->cname(), wci->second->m_modelString,
 		pc.nConfig);

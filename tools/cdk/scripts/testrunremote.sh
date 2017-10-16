@@ -35,4 +35,4 @@ echo echo $3 > $pwfile
 chmod a+x $pwfile
 SSH_ASKPASS=./$pwfile $OCPI_CDK_DIR/scripts/setsid.py ssh $sshversion \
   -o "GSSAPIAuthentication no" -o "StrictHostKeyChecking no" -o "UserKnownHostsFile /dev/null" -o "ConnectTimeout=30" \
-  $2@$1 sh -l -c \'$4\'
+  $2@$1 sh -l -c \'"$4"\'

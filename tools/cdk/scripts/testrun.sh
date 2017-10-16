@@ -83,10 +83,10 @@ function docase {
       timearg=--timeout=$TestTimeout
     fi
     cmd=('OCPI_LIBRARY_PATH=../../../lib/rcc:../../../lib/ocl:../../gen/assemblies:$OCPI_CDK_DIR/lib/components/rcc' \
-         $OCPI_CDK_DIR/bin/$OCPI_TOOL_DIR/ocpirun -d -v -m$component=$1 -w$component=$2 -P$component=$platform \
+         '$OCPI_CDK_DIR/bin/$OCPI_TOOL_DIR/'ocpirun -d -v -m$component=$1 -w$component=$2 -P$component=$platform \
 	         --sim-dir=$3.$4.$2.$1.simulation $timearg \
 		 --dump-file=$3.$4.$2.$1.props $outputs ../../gen/applications/$3.$4.xml)
-    rm -f -r $3.$4.$2.$1.*
+    [ -z "$remote" ] && rm -f -r $3.$4.$2.$1.*
     set -o pipefail
     if [ "$TestVerbose" = 1 ]; then
 	out=/dev/stdout
@@ -97,8 +97,9 @@ function docase {
     if [ -z "$remote" -a -x runremote.sh ]; then
 	# We are local, running interleaved run/verify and platform is remote
 	# Remote execution is simply ocpirun
-	./runremote.sh "(export TestVerbose=$TestVerbose; echo ${cmd[@]}; time ${cmd[@]})" \
-		       2>&1 | tee $3.$4.$2.$1.remote_log > $out
+	./runremote.sh \
+	    "TestVerbose=$TestVerbose TestTimeout=$TestTimeout Cases=$3.$4 ./run.sh run remote" \
+	    2>&1 | tee $3.$4.$2.$1.remote_log > $out
     elif [ -z "$remote" ]; then
  	(echo ${cmd[@]}; eval time env ${cmd[@]}) 2>&1 | tee $3.$4.$2.$1.log > $out
     elif [ "$TestVerbose" = 1 ]; then
