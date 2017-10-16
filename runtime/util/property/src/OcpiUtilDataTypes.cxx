@@ -35,24 +35,55 @@ namespace OCPI {
     namespace OA = OCPI::API;
     namespace OE = OCPI::Util::EzXml;
 
-    ValueType::ValueType(OA::BaseType bt, bool a_isSequence)
-      : m_baseType(bt), m_arrayRank(0), m_nMembers(0), m_dataAlign(0), m_align(1), m_nBits(0),
-	m_elementBytes(0), m_isSequence(a_isSequence), m_nBytes(0), m_arrayDimensions(NULL),
-	m_stringLength(0), m_sequenceLength(0), m_members(NULL), m_type(NULL), m_enums(NULL),
-	m_nEnums(0), m_nItems(1), m_fixedLayout(true), m_usesParameters(false)
+    ValueTypeInternal::ValueTypeInternal(OCPI::API::BaseType bt, bool isSequence)
+      : m_baseType(bt), m_arrayRank(0), m_isSequence(isSequence), m_sequenceLength(0),
+	m_nMembers(0), m_stringLength(0), m_nEnums(0), m_dataAlign(0), m_align(1), m_nBits(0),
+	m_elementBytes(0), m_nBytes(0), m_nItems(1), m_fixedLayout(true), m_usesParameters(false)
     {}
-    ValueType::~ValueType() {
-      if (m_arrayDimensions)
-	delete [] m_arrayDimensions;
-      if (m_members)
-	delete [] m_members;
-      if (m_type)
-	delete m_type;
-      if (m_enums) {
-	for (unsigned n = 0; n < m_nEnums; n++)
-	  delete [] m_enums[n];
-	delete [] m_enums;
+    ValueType::ValueType(OA::BaseType bt, bool a_isSequence)
+      : ValueTypeInternal(bt, a_isSequence),
+	m_arrayDimensions(NULL), m_members(NULL), m_type(NULL), m_enums(NULL)
+    {}
+    // Using an inherited struct for default copy would be nice here
+    ValueType::ValueType(const ValueType &other)
+      : ValueTypeInternal(other),
+	m_arrayDimensions(other.m_arrayDimensions ? new size_t[other.m_arrayRank] : NULL),
+	m_members(other.m_nMembers ? new Member[other.m_nMembers] : NULL),
+	m_type(other.m_type ? new Member(*other.m_type) : NULL), // recursion
+	m_enums(other.m_enums ? new const char*[other.m_nEnums + 1] : NULL) {
+      // Do the deep copies for array dimensions, struct members, enum strings
+      std::copy(other.m_arrayDimensions, other.m_arrayDimensions + other.m_arrayRank,
+		m_arrayDimensions);
+      std::copy(other.m_members, other.m_members + other.m_nMembers, m_members);
+      for (size_t i = 0; i < m_nEnums; i++) {
+	char *p = new char[strlen(other.m_enums[i]) + 1];
+	strcpy(p, other.m_enums[i]);
+	m_enums[i] = p;
       }
+      if (m_enums)
+	m_enums[m_nEnums] = NULL;
+    }
+    // boiler plate copy-and-swap idiom delegating work to "swap"
+    ValueType& ValueType::operator=(ValueType other) {
+      swap(*this, other);
+      return *this;
+    }
+    // Swap
+    void swap(ValueType &f, ValueType &s) {
+      using std::swap;
+      swap<ValueTypeInternal>(f, s);
+      swap(f.m_arrayDimensions, s.m_arrayDimensions);
+      swap(f.m_members, s.m_members);
+      swap(f.m_type, s.m_type);
+      swap(f.m_enums, s.m_enums);
+    }
+    ValueType::~ValueType() {
+      delete [] m_arrayDimensions;
+      delete [] m_members;
+      delete m_type;
+      for (unsigned n = 0; n < m_nEnums; n++)
+	delete [] m_enums[n];
+      delete [] m_enums;
     }
     bool ValueType::isFixed(bool top) const {
       if (m_isSequence && !top)
@@ -69,6 +100,25 @@ namespace OCPI {
 	;
       }
       return true;
+    }
+     Member::Member(const Member &other) 
+       : ValueType(other), m_offset(0), m_isIn(false), m_isOut(false), m_isKey(false), 
+	 m_default(NULL) {
+       if (other.m_default)
+	 m_default = new Value(*other.m_default);
+     }
+    Member &Member::operator=(Member other){
+      swap(*this, other);
+      return *this;           
+    }
+    void swap(Member& f, Member& s){
+      using std::swap;
+      swap<ValueType>(f, s);
+      swap(f.m_offset, s.m_offset);
+      swap(f.m_isIn, s.m_isIn);
+      swap(f.m_isOut, s.m_isOut);
+      swap(f.m_isKey, s.m_isKey);
+      swap(f.m_default, s.m_default);
     }
     // Return a type object that is a sequence of this type
     // This is not a member function of ValueType because hierarchical types
