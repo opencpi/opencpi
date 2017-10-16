@@ -20,6 +20,7 @@ set -e -x
 OPTS=$1
 BIAS=$2
 BIAS0=$3
+DURATION=$4
 CMP=" && cmp test.input test.output"
 $VG ocpirun -v -d $OPTS $BIAS $FR $FW bias
 $VG ocpirun -v -d -pbias=biasValue=0 $OPTS $BIAS $FR $FW bias $CMP
@@ -30,7 +31,9 @@ $VG ocpirun -v -d $OPTS $BIAS $FW pattern-bias-file
 $VG ocpirun -v -d $OPTS $BIAS $FW pattern
 $VG ocpirun -v -d $OPTS $FR $FW proxybias
 $VG ocpirun -v -d -pproxy=proxybias=0 $OPTS $BIAS $FR $FW proxybias $CMP
-$VG ocpirun -v -d $OPTS $BIAS tb_bias
+# This delay is necessary until capture.hdl has the stop-on-eof feature
+# The default is appropropriate for hardware, but not sim
+$VG ocpirun -v -d $OPTS $BIAS -t ${DURATION:-3} tb_bias
 $VG ocpirun -v -d $OPTS $BIAS $FR tb_bias_file
 $VG ocpirun -v -d $OPTS $BIAS $FR $FW testbias
 $VG ocpirun -v -d -pbias=biasValue=0 $OPTS $BIAS $FR $FW testbias $CMP

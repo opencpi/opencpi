@@ -35,31 +35,38 @@ ifdef OCPI_ALL_OCL_PLATFORMS
   OclAllPlatforms:=$(OCPI_ALL_OCL_PLATFORMS)
   OclAllTargets:=$(OCPI_ALL_OCL_TARGETS)
   OclTargetMap:=$(OCPI_OCL_TARGET_MAP)
-else
-  ifeq ($(OCPI_HAVE_OPENCL),1)
-    $(and $(call DoShell, OCPI_OPENCL_OBJS=$(OCPI_OPENCL_OBJS) $(ToolsDir)/ocpiocl targets,OclTargetMap),$(error $(OclTargetMap)))
-    OclAllTargets:=$(foreach p,$(OclTargetMap),$(word 2,$(subst =, ,$p)))
-    OclAllPlatforms:=$(foreach p,$(OclTargetMap),$(word 1,$(subst =, ,$p)))
-    export OCPI_ALL_OCL_PLATFORMS:=$(OclAllPlatforms)
-    export OCPI_ALL_OCL_TARGETS:=$(OclAllTargets)
-    export OCPI_OCL_TARGET_MAP:=$(OclTargetMap)
-  endif
+else ifeq ($(OCPI_HAVE_OPENCL),1)
+       ifeq ($(filter clean%,$(MAKECMDGOALS)),)
+          $(and $(call DoShell,\
+                  OCPI_OPENCL_OBJS=$(OCPI_OPENCL_OBJS) $(ToolsDir)/ocpiocl targets,OclTargetMap),\
+                $(error $(OclTargetMap)))
+       else
+         OclTargetMap:=
+       endif
+  OclAllTargets:=$(foreach p,$(OclTargetMap),$(word 2,$(subst =, ,$p)))
+  OclAllPlatforms:=$(foreach p,$(OclTargetMap),$(word 1,$(subst =, ,$p)))
+  export OCPI_ALL_OCL_PLATFORMS:=$(OclAllPlatforms)
+  export OCPI_ALL_OCL_TARGETS:=$(OclAllTargets)
+  export OCPI_OCL_TARGET_MAP:=$(OclTargetMap)
 endif
-
-$(foreach m,$(OCPI_OCL_TARGET_MAP),\
+$(foreach m,$(OclTargetMap),\
   $(eval OclTarget_$(word 1,$(subst =, ,$m)):=$(word 2,$(subst =, ,$m))))
 
 # Mostly copied from rcc...
 ifdef OclPlatform
-OclPlatforms:=$(call OcpiUnique,$(OclPlatforms) $(OclPlatform))
+  OclPlatforms:=$(call Unique,$(OclPlatforms) $(OclPlatform))
 endif
 ifdef OclTarget
-OclTargets:=$(call OcpiUnique,$(OclTargets) $(OclTarget))
+  OclTargets:=$(call Unique,$(OclTargets) $(OclTarget))
 endif
-
+ifeq ($(origin OclPlatforms),undefined)
+  ifeq ($(origin OclPlatform),undefined)
+    OclPlatforms=all
+  endif
+endif
 ifdef OclPlatforms
   ifeq ($(OclPlatforms),all)
-    OclPlatforms:=$(OCPI_ALL_OCL_PLATFORMS)
+    OclPlatforms:=$(OclAllPlatforms)
   endif
   override OclPlatforms:=$(filter-out $(ExcludePlatforms) $(OclExcludePlatforms),$(OclPlatforms))
   ifneq ($(OnlyPlatforms)$(OclOnlyPlatforms),)
@@ -87,5 +94,4 @@ $(call OcpiDbgVar,OclPlatform)
 $(call OcpiDbgVar,OclPlatforms)
 $(call OcpiDbgVar,OclTarget)
 $(call OcpiDbgVar,OclTargets)
-
 endif
