@@ -233,6 +233,8 @@ addEndPoint(const char *endPoint, const char *other, bool local, size_t size) {
       colon++;
       const char *semi = strrchr(colon, ';');
       info.assign(colon, semi ? semi - colon : strlen(colon));
+      if (!semi)
+	endPoint = NULL;
     } else
       endPoint = NULL;
   }
