@@ -64,7 +64,7 @@ if test ! -r $bitfile; then
 fi
 source $OCPI_CDK_DIR/scripts/util.sh
 findInProjectPath jtagSupport_$platform lib/platforms/$platform jtagSupport || {
-  echo Trying to load onto a \"$platform\", but there is no support for loading it \(no executable lib/platforms/$platform/jtagSupport_$platform found in any project or CDK\)
+  echo Trying to load onto a \"$platform\", but there is no support for loading it \(no executable lib/platforms/$platform/jtagSupport_$platform found in any directory specified by OCPI_PROJECT_PATH or OCPI_CDK_DIR env variables\)
   exit 1
 }
 if test "$esn" = ""; then
@@ -109,7 +109,17 @@ if test "$jtagpermissionscheck" != ""; then
 fi
 cables=`$jtagSupport cables $temp 2>$temp.cables`
 if test $? != 0; then
-  echo JTAG cable setup for platform \"$platform\" failed. See \"$temp.cables\".
+  echo JTAG cable setup for platform \"$platform\" failed.
+  echo Dump of $temp.cables:
+  echo "********************************************************************************"
+  cat $temp.cables
+  echo "********************************************************************************"
+  if [ -f $temp.log ]; then
+    echo Dump of $temp.log:
+    echo "********************************************************************************"
+    cat $temp.log
+    echo "********************************************************************************"
+  fi
   exit 1
 fi
 if test "$cables" = ""; then

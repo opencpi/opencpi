@@ -44,6 +44,7 @@
 #include <linux/pci.h>
 #include <linux/net.h>
 #include <linux/netdevice.h>
+#include <linux/dma-mapping.h>
 #include <linux/etherdevice.h>
 #include <linux/if_ether.h>
 #include <linux/if_arp.h>
@@ -130,6 +131,7 @@ static scif_epd_t scif_fd=NULL; // handle to manage bus2memory access windows/ap
 typedef enum {
   ocpi_mmio,        // the block is memory-mapped io space - to a device
   ocpi_reserved,    // the block is allocated from reserved (boot time) memory
+  ocpi_dma,         // the block is allocated from the CMA region using the DMA API
   ocpi_kernel       // the block is allocated from the kernel memory at runtime
 } ocpi_type_t;
 
@@ -140,14 +142,16 @@ typedef struct {
   ocpi_address_t	end_phys;	// physical address of end of block
   ocpi_address_t	bus_addr;	// physical address as seen from the bus
   ocpi_size_t		size;		// block size
+  void                 *virt_addr;      // for DMA API, the vaddr of the initial block
   ocpi_type_t           type;           // what does this block of addresses point to?
   atomic_t              refcnt;         // how many users of this block: mappings + minor devices
   bool                  isCached;       // should mappings be cached?
   bool                  available;      // is the block (of memory) available to allocate?
   struct file          *file;           // for allocations, which file allocated it
   pid_t                 pid;            // for debug: allocating pid
-  u64                   kernel_alloc_id;// identity of original kernel allocation (before any splits)
+  u64                   kernel_alloc_id;// id of original kernel allocation (before any splits)
   u32			kernel_size;    // size of original size allocation (before any splits)
+  unsigned              minor;          // minor of device of block, for dmam_free_coherent
 } ocpi_block_t;
 
 // Our per-device structure - initialized to zero
@@ -246,9 +250,10 @@ dump_memory_map(char * label) {
 #endif
 
 // Make a new block, inserting it into the list, returing NULL on failure
+// The block is meta data about previously made allocations
 static ocpi_block_t *
 make_block(ocpi_address_t phys_addr, ocpi_address_t bus_addr, ocpi_size_t size, ocpi_type_t type,
-	   bool available, u64 kernel_alloc_id) {
+	   bool available, u64 kernel_alloc_id, void * virt_addr, unsigned minor) {
   ocpi_block_t *block;
   if (!phys_addr || // Guard against allocating to 0x00
       !(block = kzalloc(sizeof(ocpi_block_t), GFP_KERNEL)) || IS_ERR(block))
@@ -256,6 +261,8 @@ make_block(ocpi_address_t phys_addr, ocpi_address_t bus_addr, ocpi_size_t size, 
   block->start_phys = phys_addr;
   block->bus_addr = bus_addr;
   block->end_phys = phys_addr + size;
+  block->virt_addr = virt_addr;
+  block->minor = minor;
   block->size = size;
   block->type = type;
   block->isCached = false;
@@ -281,8 +288,18 @@ free_kernel_block(ocpi_block_t *block) {
     __free_pages(pfn_to_page(block->start_phys >> PAGE_SHIFT), get_order(block->size));
 }
 
-// This method will scan the list of memory blocks and merge any adjacent free blocks into a single free block.
-// And if a kernel block is completely coalesced, it will be freed
+// Free a DMA block
+static inline void
+free_dma_block(ocpi_block_t *block) {
+  if (block->size != block->kernel_size) {
+    log_debug_block(block, "failed to free dma block - not merged");
+    log_err("failed to free unmerged dma block %p - it is leaked\n", block);
+  } else
+    dmam_free_coherent(opencpi_devices[block->minor]->fsdev, block->size, block->virt_addr,
+		       block->bus_addr);
+}
+// This method will scan the list of memory blocks and merge any adjacent free blocks into a
+// single free block. And if a kernel block is completely coalesced, it will be freed
 static void
 merge_free_memory(void) {
   ocpi_block_t *block, *next;
@@ -291,8 +308,8 @@ merge_free_memory(void) {
   list_for_each_entry_safe(block, next, &block_list, list)
     if (block->available) {
       // Merge all the next contiguous blocks into me
-      log_debug("Merge: considering %p/%p/%p a %u %llx=%llx %llx=%llx\n", block, next, &block_list,
-		next->available,  block->start_phys + block->size, next->start_phys,
+      log_debug("Merge: considering %p/%p/%p a %u %llx=%llx %llx=%llx\n", block, next,
+		&block_list, next->available,  block->start_phys + block->size, next->start_phys,
 		block->kernel_alloc_id, next->kernel_alloc_id);
       while (&next->list != &block_list && next->available &&
 	     block->start_phys + block->size == next->start_phys &&
@@ -308,6 +325,12 @@ merge_free_memory(void) {
 	free_kernel_block(block);
 	list_del(&block->list);
 	kfree(block);
+      } else if (block->type == ocpi_dma && block->size == block->kernel_size &&
+		 block->virt_addr != NULL) {
+	// If I now have a fully merged dma allocation, I can free it
+        free_dma_block(block);
+        list_del(&block->list);
+        kfree(block);
       }
     }
   spin_unlock(&block_lock);
@@ -344,9 +367,9 @@ release_block(ocpi_block_t *block)
     merge_free_memory();
 }
 
-// -----------------------------------------------------------------------------------------------
-// Memory allocation management - blocks that are boot-time "reserved" or runtime "kernel" alloc'd
-// -----------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------
+// Memory allocation management: blocks that are boot-time "reserved" or runtime "kernel" alloc'd
+// ----------------------------------------------------------------------------------------------
 
 // Retrieve status of available memory, return zero or negative error code
 static int
@@ -374,6 +397,8 @@ get_status(ocpi_status_t *status) {
 // - sparep points to a spare block to use for splitting
 // - *sparep should be set to zero if the spare is used
 // if "file" is NULL it is an initial driver request, NOT a process request
+// 'splits' a previously allocated block of memory per information in request
+// adds the metadata to the list of metadata about blocks and returns
 static long
 get_memory(ocpi_request_t *request, struct file *file, ocpi_block_t **sparep) {
   long err = -ENOMEM;
@@ -447,6 +472,7 @@ establish_remote(struct file *file, ocpi_request_t *request) {
   bool found = false, bad = false;
   ocpi_address_t end_address = phys + request->actual;
   ocpi_block_t *block = NULL;
+  unsigned minor = iminor(file->f_dentry->d_inode);
 
   log_debug("Establishing remote from bus 0x%llx to phys 0x%llx size %x\n",
 	    request->bus_addr, phys, request->actual);
@@ -473,15 +499,59 @@ establish_remote(struct file *file, ocpi_request_t *request) {
     return -EEXIST;
   }
   request->address = phys;
-  return make_block(phys, request->bus_addr, request->actual, ocpi_mmio, false, 0) ?
+  return make_block(phys, request->bus_addr, request->actual, ocpi_mmio, false, 0, NULL, minor) ?
     0 : -EINVAL;
 }
+
+// makes allocation using DMA API, makes block, and adds block to list
+// returns 0 if successful
+// this actually makes an allocation, not just massaging metadata
+static long
+get_dma_memory(ocpi_request_t *request, unsigned minor) {
+  void *virtual_addr;
+  dma_addr_t dma_handle;
+  long err = -ENOMEM;
+
+  // don't need to do a page alignment, so actual can be the same as needed
+  // either it PAGE_ALIGN was already called to set request->actual or this is
+  // the initial memory grab and it's not important
+  // Continuing to use request->actual to mantain consistency with other similiar calls
+  request->actual = request->needed;
+  log_debug("memory request %lx -> %lx\n", (unsigned long)request->needed,
+	    (unsigned long)request->actual);
+  // dma_set_coherent_mask sets a bit mask describing which bits of an address the device
+  // supports, default is 32
+  if (dma_set_coherent_mask(opencpi_devices[minor]->fsdev, DMA_BIT_MASK(32)))
+    log_debug("dma_set_coherent_mask failed for device %p\n", opencpi_devices[minor]->fsdev);
+  if ((virtual_addr = dmam_alloc_coherent(opencpi_devices[minor]->fsdev, request->actual,
+					  &dma_handle, GFP_KERNEL)) == NULL) {
+    log_err("dmam_alloc_coherent failed\n");
+    return err;
+  }
+  request->bus_addr = (ocpi_address_t) dma_handle;
+  request->address = bus2phys(request->bus_addr);
+  if (make_block(request->address, request->bus_addr, request->actual,  ocpi_dma,
+		 true, ++opencpi_kernel_alloc_id, virtual_addr, minor) == NULL) {
+    dmam_free_coherent(opencpi_devices[minor]->fsdev, request->actual, virtual_addr,
+		       request->bus_addr);
+    return err;
+  }
+  log_debug("requested (%lx) reserved %lx @ %016llx\n", (unsigned long)request->needed,
+	    (unsigned long)request->actual, (unsigned long long)request->address);
+  err = 0;
+  return err;
+}
 // If file == NULL, this is a request for the initial driver memory, not a minor 0 ioctl request
+// this tries to split an existing block, if that fails it tries to allocate more memory
+// and use the memory in the new block
 static long
 request_memory(struct file *file, ocpi_request_t *request) {
   ocpi_block_t *spare;
   long err = -ENOMEM;
+  unsigned minor = 0;
 
+  if (file != NULL)
+    minor = iminor(file->f_dentry->d_inode);
   request->actual = PAGE_ALIGN(request->needed);
   log_debug("memory request file %p %lx -> %lx\n",
 	    file, (unsigned long)request->needed, (unsigned long)request->actual);
@@ -494,34 +564,42 @@ request_memory(struct file *file, ocpi_request_t *request) {
     if ((err = get_memory(request, file, &spare)) == 0)
       break;
     log_debug("couldn't get allocation in first pass\n");
-    // No memory in the list, try a kernel allocation
+    // No memory in the list, try an allocation
     if (request->actual > OPENCPI_MAXIMUM_MEMORY_ALLOCATION) {
       log_err("memory request exceeded driver's specified limit of %ld\n",
 	      OPENCPI_MAXIMUM_MEMORY_ALLOCATION);
       break;
     }
-    // Try to make a kernel allocation and stick it in the list
-    // can't use alloc_pages_exact for high mem in a 32 bit world
-    {
-      unsigned order = get_order(request->actual);
-      struct page *kpages = alloc_pages(GFP_KERNEL | __GFP_HIGHMEM, order);
-      ocpi_address_t phys_addr = (ocpi_address_t)page_to_pfn(kpages) << PAGE_SHIFT;
-      if (kpages == NULL) {
-	log_err("memory request of %ld could not be satified by the kernel\n",
-		(unsigned long)request->actual);
-	break;
+    // trying allocation from DMA API first
+    // Centos doesn't support contiguous memory allocation as of Centos 7
+    // AV-1645 - in centos 8 revist using the DMA API instead of memmap
+    if ((err = get_dma_memory(request, minor)) != 0) {
+      log_err("get_dma_memory in request_memory failed, trying fallback\n");
+      log_err("if allocation failure occurrs, see README for memmap configuration\n");
+      // Try to make a kernel allocation and stick it in the list
+      // can't use alloc_pages_exact for high mem in a 32 bit world
+      {
+	unsigned order = get_order(request->actual);
+	struct page *kpages = alloc_pages(GFP_KERNEL | __GFP_HIGHMEM, order);
+	ocpi_address_t phys_addr = (ocpi_address_t)page_to_pfn(kpages) << PAGE_SHIFT;
+	if (kpages == NULL) {
+	  log_err("memory request of %ld could not be satified by the kernel\n",
+		  (unsigned long)request->actual);
+	  break;
+	}
+	if (make_block(phys_addr, phys2bus(phys_addr), PAGE_SIZE << order, ocpi_kernel, true,
+		       ++opencpi_kernel_alloc_id, NULL, minor) == NULL) {
+	  __free_pages(kpages, order);
+	  break;
+	}
+	log_debug("allocated kernel pages: %lx @ %016llx\n", PAGE_SIZE << order, phys_addr);
       }
-      if (make_block(phys_addr, phys2bus(phys_addr), PAGE_SIZE << order, ocpi_kernel, true, ++opencpi_kernel_alloc_id) == NULL) {
-	__free_pages(kpages, order);
-	break;
-      }
-      log_debug("allocated kernel pages: %lx @ %016llx\n", PAGE_SIZE << order, phys_addr);
     }
-    // Now we try one more time after having added kernel pages
+    // Now we try one more time after having added kernel pages or made a DMA allocation
     // The only thing that can go wrong is someone else slipping in
     // FIXME: should we iterate/retry in this case?
     if ((err = get_memory(request, file, &spare)))
-      log_err("couldn't get to the kernel allocation that was just made: unexpected\n");
+      log_err("couldn't get to the allocation that was just made: unexpected\n");
   } while (0);
   if (spare)
     kfree(spare);
@@ -531,9 +609,9 @@ request_memory(struct file *file, ocpi_request_t *request) {
 	      (unsigned long long)request->address);
   return err;
 }
-// -----------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------
 // Our virtual memory operations on vma areas created initially in our mmap
-// -----------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------------
 
 // open is called either from our mmap or when the kernel does fork/munmap/split etc.
 //   We just keep track of the refcount since multiple processes may map to the block,
@@ -1081,8 +1159,10 @@ probe_pci(struct pci_dev *pcidev, const struct pci_device_id *id) {
       ocpi_address_t
 	phys_b0 = pci_resource_start(pcidev, 0),
 	phys_b1 = pci_resource_start(pcidev, 1);
-      if ((mydev->bar0 = make_block(phys_b0, phys_b0, sizes[0], ocpi_mmio, false, 0)) == NULL ||
-	  (mydev->bar1 = make_block(phys_b1, phys_b1, sizes[1], ocpi_mmio, false, 0)) == NULL)
+      if ((mydev->bar0 = make_block(phys_b0, phys_b0, sizes[0], ocpi_mmio, false, 0, NULL,
+				    new_device)) == NULL ||
+	  (mydev->bar1 = make_block(phys_b1, phys_b1, sizes[1], ocpi_mmio, false, 0, NULL,
+				    new_device)) == NULL)
 	break;
     }
     check(pcidev, "before drvdata");
@@ -1516,20 +1596,7 @@ free_driver(void) {
     opencpi_pci_registered = false;
   }
 #endif
-  if (opencpi_devices) {
-    unsigned n;
-    for (n = 0; n <= opencpi_ndevices; n++)
-      if (opencpi_devices[n])
-	free_device(opencpi_devices[n]);
-    kfree(opencpi_devices);
-    opencpi_devices = NULL;
-  }
-  log_debug("removed all our devices\n");
-  if (opencpi_class)
-    class_destroy(opencpi_class);
-  if (opencpi_device_number)
-    unregister_chrdev_region(opencpi_device_number, opencpi_max_devices + 1);
-  log_debug("removed our class and device number allocations\n");
+  // merge_free_memory now relies on devices still being available
   if (block_init) {
     ocpi_block_t *block, *temp;
     // FIXME:  how to shut down dma from devices...
@@ -1546,10 +1613,23 @@ free_driver(void) {
       kfree(block);
     }
     spin_unlock(&block_lock);
-
     block_init = 0;
   }
-  log_debug( "Cleanup done\n");
+  if (opencpi_devices) {
+    unsigned n;
+    for (n = 0; n <= opencpi_ndevices; n++)
+      if (opencpi_devices[n])
+	free_device(opencpi_devices[n]);
+    kfree(opencpi_devices);
+    opencpi_devices = NULL;
+  }
+  log_debug("removed all our devices\n");
+  if (opencpi_class)
+    class_destroy(opencpi_class);
+  if (opencpi_device_number)
+    unregister_chrdev_region(opencpi_device_number, opencpi_max_devices + 1);
+  log_debug("removed our class and device number allocations\n");
+  log_debug("Cleanup done\n");
 }
 
 #ifdef CONFIG_ARCH_ZYNQ
@@ -1620,8 +1700,7 @@ opencpi_init(void) {
 	break;
       }
       mydev->fsdev = fsdev;
-      log_debug("creating device in sysfs: %p kname '%s'\n",
-		fsdev, fsdev->kobj.name);
+      log_debug("creating device in sysfs: %p kname '%s'\n", fsdev, fsdev->kobj.name);
     }
 
 #ifdef CONFIG_PCI
@@ -1634,11 +1713,13 @@ opencpi_init(void) {
 #endif
 #ifdef CONFIG_ARCH_ZYNQ
     // Register the memory range of the control plane GP0 or GP1 on the PL
-    if (make_block(0x40000000, 0x40000000, sizeof(OccpSpace), ocpi_mmio, false, 0) == NULL ||
-        make_block(0x80000000, 0x80000000, sizeof(OccpSpace), ocpi_mmio, false, 0) == NULL)
+    if (make_block(0x40000000, 0x40000000, sizeof(OccpSpace), ocpi_mmio, false, 0,
+		   NULL, 0) == NULL ||
+        make_block(0x80000000, 0x80000000, sizeof(OccpSpace), ocpi_mmio, false, 0,
+		   NULL, 0) == NULL)
       break;
     log_debug("Control Plane physical addr space for Zynq/PL/AXI GP0 and GP1 slave reserved\n");
-   {
+    {
 #if 0
      int
        online = num_online_cpus(),
@@ -1668,24 +1749,32 @@ opencpi_init(void) {
 	// FIXME: But there are probably better checks
 #endif
       }
-      if (make_block(physical, physical, opencpi_size, ocpi_reserved, true, 0) == NULL)
+      if (make_block(physical, physical, opencpi_size, ocpi_reserved, true, 0, NULL, 0) == NULL)
 	break;
       // log_debug("parameters after parsing (opencpi_memmap = %s => opencpi_size = %ld (0x%lx) @ physical = 0x%lx)\n", opencpi_memmap, opencpi_size, opencpi_size, physical);
       log_debug("Using reserved memory %lx @ %llx\n", opencpi_size, physical);
-    } else { // Otherwise allocate what we can from the kernel, and use that to start.
+    } else {
+      // if memmap wasn't set, then try using the DMA API
+      // if the kernel was compiled with CMA support and the allocation has been requested
+      // either on the boot cmdline or by a kernel parameter then the memory chould be contiguous
+      // Using the DMA API is preferred to memmap or page allocation
+      // the fallback is to request kernel pages, but that can fail with limited memory
       ocpi_request_t request;
       if (opencpi_size == -1)
 	opencpi_size = OPENCPI_INITIAL_MEMORY_ALLOCATION;
       request.needed = opencpi_size;
       request.how_cached = ocpi_uncached;
-      // Allocate as much kernel memory as possible
-      for (request.needed = opencpi_size;
-	   request.needed >= OPENCPI_MINIMUM_MEMORY_ALLOCATION;
-	   request.needed /= 2)
-	if ((err = request_memory(NULL, &request)) == 0)
-	  break;
-      if (err)
-	break;
+      if ((err = get_dma_memory (&request,0)) != 0) {
+	log_err("get_dma_memory failed in opencpi_init, trying fallback\n");
+        for (request.needed = opencpi_size; request.needed >= OPENCPI_MINIMUM_MEMORY_ALLOCATION;
+	     request.needed /= 2)
+	  if ((err = request_memory(NULL, &request)) == 0)
+	    break;
+      }
+      if (err) {
+        log_err("get_dma_memory and fallback failed in opencpi_init\n");
+        break;
+      }
       opencpi_size = request.actual;
       log_debug("Using allocated kernel memory size %lx\n", opencpi_size);
     }

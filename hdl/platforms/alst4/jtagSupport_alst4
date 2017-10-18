@@ -49,7 +49,10 @@ function good {
 function bad {
   rm -f $temps
   if test -f $temp.log; then
-     echo Look at $temp.log for details. 1>&2
+     echo Dump of $temp.log:
+     echo "*******************************************************************************"
+     cat $temp.log
+     echo "*******************************************************************************"
   fi
   exit 1
 }

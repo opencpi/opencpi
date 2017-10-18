@@ -21,6 +21,9 @@
 function findInProjectPath {
   for p in ${OCPI_PROJECT_PATH//:/ } $OCPI_CDK_DIR ; do
     [ -d $p/exports ] && p=$p/exports
+    if [ "$OCPI_LOG_LEVEL" > 7 ]; then
+      echo "OCPI(           ): looking for $p/$2/$1" # TODO / FIXME - add timestamp similar to rest of debug printouts
+    fi
     if [ -e $p/$2/$1 ] ; then
       eval ${3}=$p/$2/$1
       return 0
@@ -36,7 +39,7 @@ function findInProjectPath {
 function setVarsFromMake {
   local quiet
   [ -z "$3" ] && quiet=1   
-  [ -z $(command -v make 2> /dev/null) ] && {
+  [ -z $(which make 2> /dev/null) ] && {
     [ -n "$3" ] && echo The '"make"' command is not available. 2>&1
     return 1
   }

@@ -134,7 +134,7 @@ HdlToolCompile=\
     $(if $(HdlNoSimElaboration),, \
       xelab $(WorkLib).$(WorkLib)$(and $(filter config,$(HdlMode)),_rv) work.glbl -v 2 \
              -prj $(Worker).prj -L unisims_ver -s $(Worker).exe --timescale 10ns/1ps \
-             --override_timeprecision --override_timeunit --timeprecision_vhdl 10ns \
+             --override_timeprecision --override_timeunit --timeprecision_vhdl 1ps \
              $(XsimXelabArgs) $(XsimXelabExtraArgs) -lib $(WorkLib)=$(WorkLib) $(XsimLibs)))
 
 # Since there is not a singular output, make's builtin deletion will not work

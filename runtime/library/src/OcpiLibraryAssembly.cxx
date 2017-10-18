@@ -660,13 +660,20 @@ namespace OCPI {
 	    throw OU::Error("Port name (\"%s\") in connection does not match any port in implementation",
 			    (ap0 ? c.m_ports.back() : c.m_ports.front()).m_name.c_str());
 	  if (ap0->m_provider == ap1->m_provider)
-	    throw OU::Error("Port roles (ports \"%s\" and \"%s\") in connection are incompatible",
-			    ap0->m_name.c_str(), ap1->m_name.c_str());
+	    throw OU::Error("Port roles in connection are incompatible: "
+			    "port \"%s\" of instance \"%s\" has m_provider=\"%s\" vs. "
+			    "port \"%s\" of instance \"%s\" has m_provider=\"%s\"",
+			    ap0->m_name.c_str(),
+			    utilInstance(c.m_ports.front().m_instance).m_name.c_str(),
+			    (ap0->m_provider ? "true" : "false"),
+			    ap1->m_name.c_str(),
+			    utilInstance(c.m_ports.back().m_instance).m_name.c_str(),
+			    (ap1->m_provider ? "true" : "false"));
 	  // Protocol on both sides of the connection
 	  OU::Protocol &p0 = *ap0, &p1 = *ap1;
 	  if (p0.m_name.size() && p1.m_name.size() && p0.m_name != p1.m_name)
 	    throw OU::Error("Protocols in connection are incompatible: "
-			    "port \"%s\" of instance \"%s\" has protocol \%s\" vs. "
+			    "port \"%s\" of instance \"%s\" has protocol \"%s\" vs. "
 			    "port \"%s\" of instance \"%s\" has protocol \"%s\"",
 			    ap0->m_name.c_str(),
 			    utilInstance(c.m_ports.front().m_instance).m_name.c_str(),
