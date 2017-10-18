@@ -207,7 +207,11 @@ XferFactory(const char *a_name)
 XferFactory::
 ~XferFactory() {
   this->lock();
-  
+  while (!m_endPoints.empty()) {
+    EndPointsIter epi = m_endPoints.begin();
+    epi->second->release();
+    m_endPoints.erase(epi);
+  }
   // These are already children, so they get removec automatically
   //  for (DataTransfer::TemplateMapIter tmi = m_templates.begin(); tmi != m_templates.end(); tmi++)
   //    delete tmi->second;
@@ -247,17 +251,17 @@ addEndPoint(const char *endPoint, const char *other, bool local, size_t size) {
   ep.addRef();
   return ep;
 }
+#if 0
 void XferFactory::
 removeEndPoint(EndPoint &ep) {
-#if 0
   //  if (ep.local)
   {
     assert(m_locations[ep.mailBox]);
     m_locations[ep.mailBox] = NULL; // note this might already be done.??
   }
-#endif
   ocpiCheck(m_endPoints.erase(ep.m_uuid) == 1);
 }
+#endif
 
 EndPoint* XferFactory::
 findEndPoint(const char *end_point) {
@@ -286,7 +290,7 @@ getEndPoint(const char *endPoint, bool local, bool cantExist, size_t size)
     if (cantExist)
       throw OU::Error("Local explicit endpoint already exists: '%s'", endPoint);
     else {
-      i->second->addRef(); // FIXME:: this likely happens too often and thus will leak.
+      // i->second->addRef(); // FIXME:: this likely happens too often and thus will leak.
 #if 0
       OCPI::OS::dumpStack(std::cerr);
 #endif

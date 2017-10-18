@@ -120,10 +120,12 @@ function docase {
         let s=r-128
         echo '    'Execution FAILED due to signal $s\; log is in run/$platform/$3.$4.$2.$1.log 1>&2
         $tput sgr0
-        exit $r
+        [ $s = 2 ] && exit $r
+      else
+        echo '    'Execution FAILED\($r\) - see log in run/$platform/$3.$4.$2.$1.log 1>&2
+        $tput sgr0
       fi
-      echo '    'Execution FAILED\($r\) - see log in run/$platform/$3.$4.$2.$1.log 1>&2
-      $tput sgr0
+      [ "$TestAccumulateErrors" != 1 ] && exit $r
       failed=1
       return 0
     fi
@@ -137,12 +139,19 @@ function docase {
 	if (( r > 128 )); then
 	  let s=r-128
 	  echo Verification exited with signal $s. 1>&2 
-	  exit $r
+          [ $s = 2 ] && exit $r
         fi
+	[ $r = 0 ] && return 0
+	failed=1
+        [ "$TestAccumulateErrors" = 1 ] && return 0
+        exit 1
       else
         $tput setaf 1
         echo '    'Verification for $3.$4:  FAILED.  No execution using $2.$1 on platform $platform. 1>&2 
         $tput sgr0
+	failed=1
+        [ "$TestAccumulateErrors" = 1 ] && return 0
+        exit 1
       fi
     else
       echo Execution failed so verify or view not performed.

@@ -71,6 +71,8 @@ namespace OCPI {
       if (m_xml && !m_xmlOnly)
 	ezxml_free(m_xml);
       delete [] m_copy;
+      for (size_t i = 0; i < m_instances.size(); ++i)
+	delete m_instances[i];
     }
 
     unsigned Assembly::s_count = 0;

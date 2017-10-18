@@ -113,7 +113,6 @@ protected:
 				  size_t* size);
  protected:
   void setName();
-  void addRef();
   Receiver *receiver() const { return m_receiver; };
  public:
   void setReceiver(Receiver &a_receiver) {
@@ -138,6 +137,7 @@ protected:
   bool canSupport(const char *remote_endpoint);
   // Given a string form of "other" is this one an acceptable counterparty?
   bool isCompatibleLocal(const XferFactory &factory, const char *other);
+  void addRef();
   void release();
   // Commit resources.  Caller says whether remote access will be required.
   void finalize(bool remoteAccess = false);

@@ -441,6 +441,7 @@ OCPI_DATA_TYPES
 	// But it is possible to have both PCI and Ether ports and this will require it.
 	// If the endpoint into is just a protocol, we just create one locally
 	m_endPoint = &device.getEndPoint();
+	m_endPoint->addRef();
 	OD::Transport::fillDescriptorFromEndPoint(*m_endPoint, getData().data);
         // These will be determined at connection time
         myDesc.dataBufferPitch   = 0;

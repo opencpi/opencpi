@@ -143,6 +143,7 @@ namespace OCPI {
 	m_dtPort->reset();
       if (m_allocation && m_allocator == this)
 	freeBuffers(m_allocation);
+      delete m_dtLastBuffer;
     }
 
     void BasicPort::

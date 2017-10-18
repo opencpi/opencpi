@@ -81,8 +81,8 @@ addRef()
 }
 void EndPoint::
 release() {
-  ocpiAssert(m_refCount);
   ocpiLog(9, "Releasing ep %p %s refCount %u", this, m_name.c_str(), m_refCount);
+  ocpiAssert(m_refCount);
   if (--m_refCount == 0) {
     ocpiInfo("Dataplane endpoint %p destroyed: %s", this, m_name.c_str());
     delete this;

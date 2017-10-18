@@ -216,14 +216,15 @@ parseProtocol() {
 	return err;
       m_nOpcodes = nOperations();
     } else if (m_nOperations == 0 && !m_seenSummary) { // if we have never parsed a protocol yet
-      // When there is no protocol, we force it to variable, unbounded at 64k, diverse, zlm
-      // I.e. assume it can do anything up to 64KB
+      // When there is no protocol, we force it to variable, unbounded, diverse, zlm
+      // I.e. assume it can deal with anything
       // But with no operations, we can scale back when connecting to something more specific
       // Note that these values can be overridden at the port level.
-      // FIXME: why are these just not the basic defaults?
+      // Note that these defaults are not the same as the defaults for a PARSED protocol, but
+      // rather the defaults when there IS NO PROTOCOL AT ALL that are different from the defaults
+      // for a parsed protocol, which are in the constructor/init for OU::Protocol
       m_diverseDataSizes = true;
       m_variableMessageLength = true;
-      m_maxMessageValues = 64*1024;
       m_zeroLengthMessages = true;
       m_isUnbounded = true;
       m_nOpcodes = 256;

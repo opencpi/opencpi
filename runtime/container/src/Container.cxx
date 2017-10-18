@@ -231,7 +231,8 @@ namespace OCPI {
       try {
 	((Container *)arg)->thread();
       } catch (const std::string &s) {
-	std::cerr << "Container background thread exception: " << s << std::endl;
+	std::cerr << "Container \"" << ((Container *)arg)->name()
+		  << "\" background thread exception:  " << s << std::endl;
 	abort();
       } catch (...) {
 	std::cerr << "Container background thread unknown exception" << std::endl;

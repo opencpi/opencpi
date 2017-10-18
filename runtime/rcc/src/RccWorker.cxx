@@ -614,6 +614,19 @@ run(bool &anyone_run) {
 	enabled = false;
 	setControlState(OU::Worker::UNUSABLE);
 	m_runTimer.reset();
+	{
+	  const char *err = m_context->errorString ? m_context->errorString : m_errorString;
+	  if (!err)
+	    err = rc == RCC_ERROR ? "RCC_ERROR" : "RCC_FATAL";
+	  std::string serr;
+	  OU::format(serr, "Worker \"%s\" produced error during its run method:  %s",
+		     name().c_str(), err);
+	  throw
+	    OU::EmbeddedException(rc == RCC_ERROR ?
+				  OU::WORKER_ERROR : OU::WORKER_FATAL, serr.c_str(),
+				  rc == RCC_ERROR ?
+				  OU::ApplicationRecoverable : OU::ApplicationFatal);
+	}
       }
     worker_run_count++;
   }

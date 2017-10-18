@@ -138,6 +138,7 @@ getLocalCompatibleEndpoint(const char *remote, bool /* exclusive */) {
   if (!lep) {
     lep = &tfactory->addCompatibleLocalEndPoint(remote);
     m_localEndpoints[lep->uuid()] = lep;
+    lep->addRef();
   }
   lep->finalize();
   return *lep;
@@ -849,6 +850,7 @@ addRemoteEndPoint( const char* loc )
   ep = &tfactory->getEndPoint(loc, false);
   ep->finalize();
   m_remoteEndpoints[ep->uuid()] = ep;
+  ep->addRef();
   return *ep;
 }
 
