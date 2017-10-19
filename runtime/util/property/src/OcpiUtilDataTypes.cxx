@@ -101,13 +101,32 @@ namespace OCPI {
       }
       return true;
     }
-     Member::Member(const Member &other) 
-       : ValueType(other), m_offset(0), m_isIn(false), m_isOut(false), m_isKey(false), 
-	 m_default(NULL) {
-       if (other.m_default)
-	 m_default = new Value(*other.m_default);
-     }
-    Member &Member::operator=(Member other){
+
+    Member::
+    Member() : m_offset(0), m_isIn(false), m_isOut(false), m_isKey(false), m_default(NULL)
+    {
+    }
+    Member::
+    Member(const Member &other) 
+      : ValueType(other), m_offset(0), m_isIn(false), m_isOut(false), m_isKey(false), 
+	m_default(NULL) {
+      if (other.m_default)
+	m_default = new Value(*other.m_default);
+    }
+    // Constructor when you are not parsing, and doing static initialization
+    Member::
+    Member(const char *name, const char *abbrev, const char *description, OA::BaseType type,
+	   bool a_isSequence, const char *defaultValue)
+      : ValueType(type, a_isSequence), m_name(name), m_abbrev(abbrev ? abbrev : ""),
+	m_description(description ? description : ""),
+	m_offset(0), m_isIn(false), m_isOut(false), m_isKey(false), m_default(NULL) {
+      if (defaultValue) {
+	m_default = new Value(*this);
+	ocpiCheck(m_default->parse(defaultValue) == 0);
+      }
+    }
+    Member &Member::
+    operator=(Member other){
       swap(*this, other);
       return *this;           
     }
@@ -119,6 +138,10 @@ namespace OCPI {
       swap(f.m_isOut, s.m_isOut);
       swap(f.m_isKey, s.m_isKey);
       swap(f.m_default, s.m_default);
+    }
+    Member::~Member() {
+      if (m_default)
+	delete m_default;
     }
     // Return a type object that is a sequence of this type
     // This is not a member function of ValueType because hierarchical types
@@ -138,49 +161,6 @@ namespace OCPI {
       return newType;
     }
 
-    Reader::Reader(){}
-    Reader::~Reader(){}
-    void Reader::endSequence(const Member &){}
-    void Reader::endString(const Member &){}
-    void Reader::beginStruct(const Member &){}
-    void Reader::beginArray(const Member &, size_t){}
-    void Reader::endArray(const Member &){}
-    void Reader::endStruct(const Member &){}
-    void Reader::beginType(const Member &){}
-    void Reader::endType(const Member &){}
-    void Reader::end(){}
-    Writer::Writer(){}
-    Writer::~Writer(){}
-    void Writer::endSequence(Member &){}
-    void Writer::writeOpcode(const char *, uint8_t) {}
-    void Writer::beginStruct(Member &){}
-    void Writer::beginArray(Member &, size_t){}
-    void Writer::endArray(Member &){}
-    void Writer::endStruct(Member &){}
-    void Writer::beginType(Member &){}
-    void Writer::endType(Member &){}
-    void Writer::end(){}
-
-    Member::Member()
-      :  m_offset(0), m_isIn(false), m_isOut(false), m_isKey(false), m_default(NULL)
-    {
-    }
-    // Constructor when you are not parsing, and doing static initialization
-    Member::
-    Member(const char *name, const char *abbrev, const char *description, OA::BaseType type,
-	   bool a_isSequence, const char *defaultValue)
-      : ValueType(type, a_isSequence), m_name(name), m_abbrev(abbrev ? abbrev : ""),
-	m_description(description ? description : ""),
-	m_offset(0), m_isIn(false), m_isOut(false), m_isKey(false), m_default(NULL) {
-      if (defaultValue) {
-	  m_default = new Value(*this);
-	  ocpiCheck(m_default->parse(defaultValue) == 0);
-      }
-    }
-    Member::~Member() {
-      if (m_default)
-	delete m_default;
-    }
     // THis is called during normal parsing of a member, but also used after initial parsing
     // of the member XML when a value is being overriden later.
     const char * Member::
@@ -198,9 +178,9 @@ namespace OCPI {
       // FIXME: if any children (struct or type) have defaults, build a sparse default here
       return NULL;
     }
-    const char *
-    Member::parse(ezxml_t xm, bool a_isFixed, bool hasName, const char *hasDefault,
-		  const char *tag, unsigned ordinal, const IdentResolver *resolver) {
+    const char * Member::
+    parse(ezxml_t xm, bool a_isFixed, bool hasName, const char *hasDefault, const char *tag,
+	  unsigned ordinal, const IdentResolver *resolver) {
       bool found;
       const char *err;
       const char *name = ezxml_cattr(xm, "Name");
@@ -344,10 +324,10 @@ namespace OCPI {
       if (m_arrayRank && !m_arrayDimensionsExprs[0].empty())
 	m_usesParameters = true;
       if ((err = OE::getExprNumber(xm, "SequenceLength", m_sequenceLength, &m_isSequence,
-			       m_sequenceLengthExpr, resolver)) ||
+				   m_sequenceLengthExpr, resolver)) ||
 	  (!m_isSequence &&
 	   ((err = OE::getExprNumber(xm, "SequenceSize", m_sequenceLength, &m_isSequence,
-				 m_sequenceLengthExpr, resolver)))))
+				     m_sequenceLengthExpr, resolver)))))
 	return err;
       if (m_isSequence) {
 	if (a_isFixed) {
@@ -461,7 +441,8 @@ namespace OCPI {
       } else
 	formatAdd(out, "/>\n");
     }
-    void Member::printXML(std::string &out, const char *tag, unsigned indent) {
+    void Member::
+    printXML(std::string &out, const char *tag, unsigned indent) {
       printAttrs(out, tag, indent);
       printChildren(out, tag, indent);
     }
@@ -486,7 +467,8 @@ namespace OCPI {
       align(*(const uint8_t **)&p, n, length);
     }
     // Push the data in the linear buffer into a writer object
-    void Member::write(Writer &writer, const uint8_t *&data, size_t &length, bool topSeq) {
+    void Member::
+    write(Writer &writer, const uint8_t *&data, size_t &length, bool topSeq) {
       size_t nElements = 1;
       const uint8_t *startData = NULL; // quiet warning
       size_t startLength = 0; // quiet warning
@@ -567,7 +549,8 @@ namespace OCPI {
     }
 
     // Fill the linear buffer from a reader object
-    void Member::read(Reader &reader, uint8_t *&data, size_t &length, bool fake, bool top) const {
+    void Member::
+    read(Reader &reader, uint8_t *&data, size_t &length, bool fake, bool top) const {
       size_t nElements = 1;
       uint8_t *startData = NULL; // quiet warning
       size_t startLength = 0; // quiet warning
@@ -650,7 +633,8 @@ namespace OCPI {
 	}
       }
     }
-    void Member::generate(const char *name, unsigned ordinal, unsigned depth) {
+    void Member::
+    generate(const char *name, unsigned ordinal, unsigned depth) {
       m_name = name;
       m_ordinal = ordinal;
       m_baseType = (OA::BaseType)((random() >> 24) % (OA::OCPI_scalar_type_limit - 1) + 1);
@@ -721,9 +705,9 @@ namespace OCPI {
     // This static method is shared between parsing members of a structure and parsing arguments
     // to an operation.
     const char *
-    Member::parseMembers(ezxml_t mems, size_t &nMembers, Member *&members, bool a_isFixed,
-			 const char *tag, const char *hasDefault,
-			 const IdentResolver *resolver) {
+    Member::
+    parseMembers(ezxml_t mems, size_t &nMembers, Member *&members, bool a_isFixed,
+		 const char *tag, const char *hasDefault, const IdentResolver *resolver) {
       for (ezxml_t m = ezxml_cchild(mems, tag); m ; m = ezxml_next(m))
 	nMembers++;
       if (nMembers) {
@@ -875,5 +859,28 @@ namespace OCPI {
 #undef OCPI_DATA_TYPE
       0, 32, 0 // enum size is 32 bits
     };
+
+    Reader::Reader() {}
+    Reader::~Reader() {}
+    void Reader::endSequence(const Member &) {}
+    void Reader::endString(const Member &) {}
+    void Reader::beginStruct(const Member &) {}
+    void Reader::beginArray(const Member &, size_t) {}
+    void Reader::endArray(const Member &) {}
+    void Reader::endStruct(const Member &) {}
+    void Reader::beginType(const Member &) {}
+    void Reader::endType(const Member &) {}
+    void Reader::end() {}
+    Writer::Writer() {}
+    Writer::~Writer() {}
+    void Writer::endSequence(Member &) {}
+    void Writer::writeOpcode(const char *, uint8_t) {}
+    void Writer::beginStruct(Member &) {}
+    void Writer::beginArray(Member &, size_t) {}
+    void Writer::endArray(Member &) {}
+    void Writer::endStruct(Member &) {}
+    void Writer::beginType(Member &) {}
+    void Writer::endType(Member &) {}
+    void Writer::end() {}
   }
 }

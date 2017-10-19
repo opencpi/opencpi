@@ -59,7 +59,7 @@ namespace OCPI {
     init(std::string &err) {
       m_isAlive = false;
       sig_t old = signal(SIGBUS, catchBusError); // FIXME: we could make this thread safe
-      uint64_t magic = 0x0BAD1BADDEADBEEF;
+      volatile uint64_t magic = 0x0BAD1BADDEADBEEF;
       try {
 	if (sigsetjmp(jmpbuf, 1) == 0) {
 	  magic = m_cAccess.get64Register(magic, OccpAdminRegisters);

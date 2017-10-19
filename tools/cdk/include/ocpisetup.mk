@@ -52,7 +52,6 @@ else
   export OCPI_CDK_DIR:= $(abspath $(dir $(abspath $(OcpiThisFile)))/..)
   $(warning RPM Building - Forcing OCPI_CDK_DIR = $(OCPI_CDK_DIR))
 endif
-include $(OCPI_CDK_DIR)/include/util.mk
 endif # The end of processing this file once - ifndef OCPISETUP_MK
 ################################################################################
 # OCPI_CDK_DIR has been established and verified.
@@ -78,6 +77,10 @@ ARSUFFIX=a
 ifneq (1,$(OCPI_AUTOCONFIG_IMPORTED))
 -include $(OCPI_CDK_DIR)/include/autoconfig_import.mk
 endif
+
+# Bring in global utils
+include $(OCPI_CDK_DIR)/include/util.mk
+
 # Native non-autotools/RPM CDK
 # Determine unset variables dynamically here, again with the goal of sane default
 # behavior with no environment requirements at all.
@@ -133,7 +136,7 @@ else
    OCPI_BUILD_SHARED_LIBRARIES:=0
   endif
 endif
-export OCPI_BUILD_SHARED_LIBRARIES 
+export OCPI_BUILD_SHARED_LIBRARIES
 export OCPI_DYNAMIC
 ifdef OCPI_TARGET_DIR
   # $(warning OCPI_TARGET_DIR is unexpectedly set.)
@@ -233,5 +236,11 @@ $(info OCPI_CROSS_BUILD_BIN_DIR=$(OCPI_CROSS_BUILD_BIN_DIR);export OCPI_CROSS_BU
 $(info OCPI_CROSS_HOST=$(OCPI_CROSS_HOST);export OCPI_CROSS_HOST;)
 $(info OCPI_TARGET_DYNAMIC_SUFFIX=$(OcpiDynamicSuffix);export OCPI_TARGET_DYNAMIC_SUFFIX;)
 $(info OCPI_TARGET_DYNAMIC_FLAGS="$(OcpiDynamicFlags)";export OCPI_TARGET_DYNAMIC_FLAGS;)
+ifdef OCPI_TARGET_CFLAGS
+$(info OCPI_TARGET_CFLAGS="$(OCPI_TARGET_CFLAGS)";export OCPI_TARGET_CFLAGS;)
+endif
+ifdef OCPI_TARGET_CXXFLAGS
+$(info OCPI_TARGET_CXXFLAGS="$(OCPI_TARGET_CXXFLAGS)";export OCPI_TARGET_CXXFLAGS;)
+endif
 
 endif

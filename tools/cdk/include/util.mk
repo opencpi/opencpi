@@ -47,6 +47,7 @@ OcpiThisFile:=$(OcpiSaveFile)
 endef
 OcpiInclude=$(eval $(call OcpiDoInclude,$1))
 endif
+
 ifneq ($(OCPI_DEBUG_MAKE),)
 define OcpiDbg
 $(warning Debug: $(1))
@@ -55,11 +56,14 @@ define OcpiDbgVar
 $(call OcpiDbg,$(2)$(1) is <$(call $(1))> origin $(origin $(1)))
 endef
 endif
-# Options we alway use and will assume everywhere
+
+# Options we alway use and will assume everywhere (except when building framework; AV-3464)
 .DELETE_ON_ERROR:
+ifndef OCPI_AUTOCONFIG_IMPORTED
 .SUFFIXES:
+endif
 .SECONDEXPANSION:
-export AT
+
 # Utilities used by many other makefile files
 # Allow us to include this early by establishing the default initial target (all).
 all:
@@ -71,6 +75,7 @@ Space:=$(Empty) $(Empty)
 # This variable is set to the character that is invalid in pathnames.
 # It should be the one printable character that we will not support in pathnames.
 Invalid:="
+# end hanging quote above for some editors --> "
 CwdDirName:=$(subst $(Invalid),$(Space),$(notdir $(subst $(Space),$(Invalid),$(Cwd))))
 CwdName:=$(basename $(CwdDirName))
 $(call OcpiDbgVar,CwdName)
@@ -117,7 +122,6 @@ OcpiLibraryPathEnv=DYLD_LIBRARY_PATH
 endif
 # this is to ensure support for the -n flag
 ECHO=/bin/echo
-Empty=
 #default assumes all generated files go before all authored files
 CompiledSourceFiles=$(TargetSourceFiles) $(GeneratedSourceFiles) $(AuthoredSourceFiles)
 # Just for history (thanks Andrew): this only works with tcsh, not traditional csh.  And csh isn't posix anywah
@@ -213,7 +217,7 @@ $(GeneratedDir): | $(OutDir)
 # Make all target dirs
 TargetDir=$(OutDir)target-$($(CapModel)Target)
 #$(AT)echo Creating target directory: $@
-$(OutDir)target-%: | $(OutDIr)
+$(OutDir)target-%: | $(OutDir)
 	$(AT)mkdir $@
 
 ################################################################################
@@ -379,7 +383,7 @@ OcpiDefaultOWD=$(if $(call OcpiDefaultSpec,$1),,$(error No default spec found fo
 # FIXME: shouldn't really be named "Wkr"
 WkrTargetDir=$(OutDir)target$(if $(filter 0,$2),,-$2)-$1
 
-Comma:=, 
+Comma:=,
 ParamMsg=$(and $(ParamConfigurations), $(strip \
   '($(foreach n,$(WorkerParamNames),$n=$(ParamMsg_$(ParamConfig)_$n)$(eval o:=1)))'))
 

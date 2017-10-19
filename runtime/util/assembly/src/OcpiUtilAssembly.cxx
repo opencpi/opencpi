@@ -126,7 +126,7 @@ namespace OCPI {
 	  else
 	    return esprintf("Invalid policy mapping option: %s", tmp);
 	}
-	tmp  = ezxml_attr(plx, "processors");	
+	tmp  = ezxml_attr(plx, "processors");
 	if (tmp) {
 	  m_processors = atoi(tmp);
 	}
@@ -204,7 +204,7 @@ namespace OCPI {
 
     // Error check parameters for that have instance names
     const char *Assembly::
-    checkInstanceParams(const char *pName, const PValue *params, bool checkMapped, 
+    checkInstanceParams(const char *pName, const PValue *params, bool checkMapped,
 			bool singleAssignment) {
       const char *assign;
       // Keep track of which instances we have seen for this parameter, using ordinals
@@ -463,8 +463,8 @@ namespace OCPI {
       do { // break to add instance and property name to error
 	if ((err = OE::checkElements(px, isProperty ? "set" : NULL, NULL)))
 	  break;
-	Delay delay;
-	bool hasDelay;
+	Delay delay = 0; // some compilers' warnings don't recognize parseDelay setting these
+	bool hasDelay = false; // ditto
 	if ((err = parseDelay(px, delay, hasDelay)))
 	  return err;
 	const char
@@ -519,7 +519,7 @@ namespace OCPI {
 	      break;
       } while (0);
       return err ?
-	(isProperty ? 
+	(isProperty ?
 	esprintf("error for instance \"%s\" property \"%s\":  %s", m_name.c_str(), name, err) :
 	 err) :
 	NULL;
@@ -666,7 +666,7 @@ namespace OCPI {
 	  //	  (err = OE::checkAttrs(cx, "name", "transport", "external", "count", NULL)) ||
 	  (err = OE::getNumber(cx, "count", &m_count, NULL, 0)))
 	return err;
-      
+
       OE::getNameWithDefault(cx, m_name, "conn%u", n);
       if ((err = m_parameters.parse(cx, "name", "external", "count", NULL)))
 	return err;
@@ -874,4 +874,3 @@ namespace OCPI {
     }
   }
 }
-

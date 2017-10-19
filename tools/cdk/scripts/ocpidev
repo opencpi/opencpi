@@ -26,7 +26,7 @@
 
 # Database of models, languages and suffixes, redundant with util.mk
 Models=(rcc hdl ocl)
-Language_rcc=c
+Language_rcc=c++
 Languages_rcc=(c:c c++:cc)
 Language_hdl=vhdl
 Languages_hdl=(vhdl:vhd verilog:v)
@@ -723,6 +723,7 @@ function do_library {
             ${hdlplats:+HdlPlatforms=" ${hdlplats[@]}"} \
             ${hdltargets:+HdlTargets=" ${hdltargets[@]}"} \
             ${swplats:+RccPlatforms=" ${swplats[@]}"} \
+            ${workerList:+Workers=" ${workerList[@]}"} \
             ${hwswplats:+RccHdlPlatforms=" ${hwswplats[@]}"}
     return 0
   fi
@@ -853,9 +854,10 @@ function do_worker {
   else
     language=$(echo $language | tr A-Z a-z)
     for l in $(eval echo \${Languages_$model[*]}); do
+      valid_languages+="\"${l/:*/}\" "
       [ "$language" = ${l/:*/} ] && suff=${l/*:/} langattr=" language='${l/:*/}'"
     done
-    [ -z "$langattr" ] && bad invalid language \"$language\" for model \"$model\"
+    [ -z "$langattr" ] && bad Invalid language \"$language\" for model \"$model\". Available: ${valid_languages}
   fi
   [ -n "$emulates" ] && emuattr=" emulate='$emulates'"
   [ -n "$slave" ] && slaveattr=" slave='$slave'"
@@ -1671,19 +1673,23 @@ Options with * may occur multiple times
  == when building assets ==
   --clean            Clean the build with the rest of the settings specified 
 		     Also works as a verb instead of build i.e.(ocpidev clean) 
-  --build-rcc        Build rcc workers, when building at the project or library level.
-  --build-hdl        Build hdl workers, when building at the project or library level.
-  --build-no-assemblies
+  --rcc              Build rcc workers, when building at the project or library level.
+  --hdl              Build hdl workers, when building at the project or library level.
+   --worker <worker>
+                     *Add a worker to be specificially built and don't build any other workers.
+  --no-assemblies
                      Do not build assemblies, when building at the project level.
-  --build-hdl-assembly <assembly>
-                     *Add an assembly to be specificially built (and don't build any others).
-  --build-hdl-target <target>
-                     *Add an HDL target to be specifically built and don't build for any others.
-  --build-hdl-platform <platform>
-                     *Add an HDL platform to be built and don't build for any others.
-  --build-rcc-platform <platform>
-                     *Add an RCC platform to be built and don't build for any others.
-  --build-hdl-rcc-platform <hdl-platform>
+  --hdl-assembly <assembly>
+                     *Add an assembly to be specificially built and don't build any other 
+                     assemblies.
+  --hdl-target <target>
+                     *Add an HDL target to be specifically built and don't build for any other 
+		     targets.
+  --hdl-platform <platform>
+                     *Add an HDL platform to be built and don't build for any other platforms.
+  --rcc-platform <platform>
+                     *Add an RCC platform to be built and don't build for any other platforms.
+  --hdl-rcc-platform <hdl-platform>
                      *Add an RCC platform to be built based on the HDL platform specified.  E.g.
                      "zed" (an HDL platform) means "xilinx13_3", the associated RCC platform.
 EOF
@@ -1787,14 +1793,15 @@ while [[ "${argv[0]}" != "" ]] ; do
       (-x) xmldirapp=1;;
       (-help|--help)  help;;
       # for building
-      (--build-rcc) buildRcc=1;;
-      (--build-hdl) buildHdl=1;;
-      (--build-no-assemblies) buildNoAssemblies=1;;
-      (--build-hdl-assembly|--build--assembly) takeval assy; assys="${assys[@]} $assy";;
-      (--build-hdl-target) takeval hdltarget; hdltargets="${hdltargets[@]} $hdltarget";;
-      (--build-hdl-platform) takeval hdlplat; hdlplats="${hdlplats[@]} $hdlplat";;
-      (--build-rcc-platform) takeval swplat;  swplats="${swplats[@]} $swplat";;
-      (--build-hdl-rcc-platform) takeval hwswplat;  hwswplats="${hwswplats[@]} $hwswplat";;
+      (--build-rcc|--rcc) buildRcc=1;;
+      (--build-hdl|--hdl) buildHdl=1;;
+      (--worker) takeval curWorker; workerList="${workerList[@]} $curWorker";;
+      (--build-no-assemblies|--no-assemblies) buildNoAssemblies=1;;
+      (--build-hdl-assembly|--build--assembly|--hdl-assembly) takeval assy; assys="${assys[@]} $assy";;
+      (--build-hdl-target|--hdl-target) takeval hdltarget; hdltargets="${hdltargets[@]} $hdltarget";;
+      (--build-hdl-platform|--hdl-platform) takeval hdlplat; hdlplats="${hdlplats[@]} $hdlplat";;
+      (--build-rcc-platform|--rcc-platform) takeval swplat;  swplats="${swplats[@]} $swplat";;
+      (--build-hdl-rcc-platform|--hdl-rcc-platform) takeval hwswplat;  hwswplats="${hwswplats[@]} $hwswplat";;
       (--create-build-files) OCPI_CREATE_BUILD_FILES=1;;
       (*)
         bad unknown option: ${argv[0]}
