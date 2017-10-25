@@ -45,16 +45,17 @@
 #include <OcpiTransferController.h>
 
 
-using namespace OCPI::DataTransport;
-using namespace DtI;
+//using namespace OCPI::DataTransport;
+//using namespace DtI;
 namespace OS = OCPI::OS;
 namespace OU = OCPI::Util;
 namespace DDT = DtOsDataTypes;
 namespace XF = DataTransfer;
 // Buffer allignment
-#define BUF_ALIGNMENT 8
-
-void OCPI::DataTransport::Port::reset()
+#define BUF_ALIGNMENT 16
+namespace OCPI {
+namespace DataTransport {
+void Port::reset()
 {
   ocpiDebug("In OCPI::DataTransport::Port::reset() %p", this);
   if ( ! this->isShadow() ) {
@@ -81,7 +82,7 @@ void OCPI::DataTransport::Port::reset()
 /**********************************
  * Internal port initialization
  *********************************/
-void OCPI::DataTransport::Port::initialize()
+void Port::initialize()
 {
   if ( m_initialized ) {
     return;
@@ -157,7 +158,7 @@ void OCPI::DataTransport::Port::initialize()
 /**********************************
  * Constructors
  *********************************/
-OCPI::DataTransport::Port::Port(PortMetaData* data, PortSet* ps)
+Port::Port(PortMetaData* data, PortSet* ps)
   : CU::Child<PortSet,Port>(*ps, *this), OCPI::Time::Emit( ps, "Port", "",NULL ), 
     m_initialized(false), // reset to false in reset(), set to true in initialize()
     m_data(data),
@@ -190,7 +191,7 @@ OCPI::DataTransport::Port::Port(PortMetaData* data, PortSet* ps)
     initialize();
 }
 
-XF::XferServices &OCPI::DataTransport::Port::
+XF::XferServices &Port::
 getTemplate(XF::EndPoint &source, XF::EndPoint &target) {
   DataTransfer::TemplatePair pair(&source, &target);
   OU::SelfAutoMutex guard(getCircuit());
@@ -203,7 +204,7 @@ getTemplate(XF::EndPoint &source, XF::EndPoint &target) {
 /**********************************
  * Get the shared memory object
  *********************************/
-XF::SmemServices* OCPI::DataTransport::Port::getRealShemServices()
+XF::SmemServices* Port::getRealShemServices()
 {
 #if 1
   XF::EndPoint *ep = checkEndPoint();
@@ -290,7 +291,7 @@ finalize(const OCPI::RDT::Descriptors *other, OCPI::RDT::Descriptors &mine,
 }
 bool Port::
 isFinalized() {
-  OCPI::DataTransport::Circuit* c = getCircuit();
+  Circuit* c = getCircuit();
   return c && !c->isCircuitOpen();
 }
 
@@ -310,8 +311,8 @@ setFlowControlDescriptorInternal( const OCPI::RDT::Descriptors & desc )
 
   // For each buffer, set the descriptor
   PortSet* s_ps = static_cast<PortSet*>(getCircuit()->getOutputPortSet());
-  OCPI::DataTransport::Port* output_port = 
-    static_cast<OCPI::DataTransport::Port*>(s_ps->getPortFromIndex(0));
+  Port* output_port = 
+    static_cast<Port*>(s_ps->getPortFromIndex(0));
   int idx = output_port->getEndPoint().mailBox();
   for ( OCPI::OS::uint32_t n=0; n<getPortSet()->getBufferCount(); n++ )  {
     InputBuffer* tb = static_cast<InputBuffer*>(getBuffer(n));
@@ -338,7 +339,7 @@ setFlowControlDescriptorInternal( const OCPI::RDT::Descriptors & desc )
  * Get port dependency data.  This is the data that is needed by an
  * external circuit to connect to this port.
  *********************************/
-void OCPI::DataTransport::Port::
+void Port::
 getPortDescriptor(OCPI::RDT::Descriptors& desc, const OCPI::RDT::Descriptors *other) {
 
   // If we are not a shadow port, we fill in all of the real descriptor dependency information
@@ -426,7 +427,7 @@ getPortDescriptor(OCPI::RDT::Descriptors& desc, const OCPI::RDT::Descriptors *ot
 /**********************************
  * Get the shared memory object
  *********************************/
-XF::SmemServices* OCPI::DataTransport::Port::getShadowShemServices()
+XF::SmemServices* Port::getShadowShemServices()
 {
   
   return &getShadowEndPoint().sMemServices();
@@ -436,7 +437,7 @@ XF::SmemServices* OCPI::DataTransport::Port::getShadowShemServices()
 /**********************************
  * Get the shared memory object
  *********************************/
-XF::SmemServices* OCPI::DataTransport::Port::getLocalShemServices()
+XF::SmemServices* Port::getLocalShemServices()
 {
   return &getLocalEndPoint().sMemServices();
 }
@@ -445,7 +446,7 @@ XF::SmemServices* OCPI::DataTransport::Port::getLocalShemServices()
 /**********************************
  * Updates the port with addition meta-data information
  *********************************/
-void OCPI::DataTransport::Port::update()
+void Port::update()
 {
   this->initialize();
 }
@@ -454,7 +455,7 @@ void OCPI::DataTransport::Port::update()
 /**********************************
  * Advance the ports circular buffer
  *********************************/
-void OCPI::DataTransport::Port::advance( OCPI::OS::uint64_t value )
+void Port::advance( OCPI::OS::uint64_t value )
 {
   ( void ) value;
   if ( isOutput() ) {
@@ -499,7 +500,7 @@ void OCPI::DataTransport::Port::advance( OCPI::OS::uint64_t value )
 /**********************************
  * Can these two ports support Zero Copy transfers
  *********************************/
-bool OCPI::DataTransport::Port::supportsZeroCopy( OCPI::DataTransport::Port* port )
+bool Port::supportsZeroCopy( Port* port )
 {
 
   if ( getCircuit()->m_transport->isLocalEndpoint(*port->m_data->m_real_location ) &&
@@ -526,7 +527,7 @@ bool OCPI::DataTransport::Port::supportsZeroCopy( OCPI::DataTransport::Port* por
  * Destructor
  *********************************/
 void 
-OCPI::DataTransport::Port::
+Port::
 createBuffers()
 {
         
@@ -571,7 +572,7 @@ getBufferCount()
 /**********************************
  * Destructor
  *********************************/
-OCPI::DataTransport::Port::
+Port::
 ~Port()
 {
   ocpiDebug("In OCPI::DataTransport::Port::~Port");
@@ -659,7 +660,7 @@ OCPI::DataTransport::Port::
 /**********************************
  * Get our associated circuit
  *********************************/
-OCPI::DataTransport::Circuit* Port::getCircuit()
+Circuit* Port::getCircuit()
 {
   return m_portSet->getCircuit();
 }
@@ -669,7 +670,7 @@ OCPI::DataTransport::Circuit* Port::getCircuit()
 /**********************************
  * Determines of a port is ready to go
  *********************************/
-bool OCPI::DataTransport::Port::ready()
+bool Port::ready()
 {
 
   if ( ! getCircuit()->m_transport->supportsMailboxes() ) {
@@ -697,7 +698,7 @@ bool OCPI::DataTransport::Port::ready()
       for (PortOrdinal n = 0; n < getCircuit()->getOutputPortSet()->getPortCount(); n++) {
 
         PortSet* s_ps = static_cast<PortSet*>(getCircuit()->getOutputPortSet());
-        OCPI::DataTransport::Port* output_port = static_cast<OCPI::DataTransport::Port*>(s_ps->getPortFromIndex(n));
+        Port* output_port = static_cast<Port*>(s_ps->getPortFromIndex(n));
         int idx = output_port->getEndPoint().mailBox();
         if ( ! m_portDependencyData.offsets[last_idx].inputOffsets.myShadowsRemoteStateOffsets[idx] ) {
                                         
@@ -817,7 +818,7 @@ bool OCPI::DataTransport::Port::ready()
       for (PortOrdinal n = 0; n < getCircuit()->getOutputPortSet()->getPortCount(); n++) {
                                 
         PortSet* s_ps = static_cast<PortSet*>(getCircuit()->getOutputPortSet());
-        OCPI::DataTransport::Port* shadow_port = static_cast<OCPI::DataTransport::Port*>(s_ps->getPortFromIndex(n));
+        Port* shadow_port = static_cast<Port*>(s_ps->getPortFromIndex(n));
         int idx = shadow_port->getMailbox();
 
         if ( ! m_portDependencyData.offsets[last_idx].inputOffsets.myShadowsRemoteStateOffsets[idx] ) {
@@ -948,7 +949,7 @@ bool OCPI::DataTransport::Port::ready()
 /**********************************
  * writes buffer offsets to address
  *********************************/
-void OCPI::DataTransport::Port::writeOffsets( PortMetaData::BufferOffsets* offset )
+void Port::writeOffsets( PortMetaData::BufferOffsets* offset )
 {
   // for all buffers
   if ( ! isOutput() ) { 
@@ -1005,7 +1006,7 @@ void OCPI::DataTransport::Port::writeOffsets( PortMetaData::BufferOffsets* offse
 }
 
 
-void OCPI::DataTransport::Port::releaseOffsets( OCPI::Util::VList& offsets )
+void Port::releaseOffsets( OCPI::Util::VList& offsets )
 {
   for ( OCPI::OS::uint32_t n=0; n<offsets.size(); n++ ) {
     ToFrom* tf = static_cast<ToFrom*>(offsets[n]);
@@ -1033,7 +1034,7 @@ addOffset(OU::VList& offsets, DDT::Offset from_base, DDT::Offset to_base,
 // g++ doesn't allow a computed address
 #define myoffsetof(t,m) ((size_t)(&((t*)0)->m))
 
-void OCPI::DataTransport::Port::
+void Port::
 getOffsets( DDT::Offset to_base_offset, OU::VList& offsets )
 {
   DDT::Offset
@@ -1138,14 +1139,14 @@ getOffsets( DDT::Offset to_base_offset, OU::VList& offsets )
 /**********************************
  * Has an End Of Stream been detcted on this port
  *********************************/
-bool OCPI::DataTransport::Port::isEOS()
+bool Port::isEOS()
 {
   return m_eos;
 }
 
 
 
-void OCPI::DataTransport::Port::resetEOS()
+void Port::resetEOS()
 {
   m_eos=false;
 }
@@ -1155,13 +1156,13 @@ void OCPI::DataTransport::Port::resetEOS()
 /**********************************
  * Get/Set the SMB name
  *********************************/
-void OCPI::DataTransport::Port::setEndpoint( std::string& ep)
+void Port::setEndpoint( std::string& ep)
 {
   m_data->m_real_location->setEndpoint( ep );
 }
 #endif
 
-void OCPI::DataTransport::Port::debugDump()
+void Port::debugDump()
 {
   printf("  Port id = %d\n", m_data->id );
   printf("    we are a %s port\n", m_data->output ? "output" : "input" );
@@ -1404,7 +1405,7 @@ allocateBufferResources()
 }
 
 bool 
-OCPI::DataTransport::Port::
+Port::
 hasFullInputBuffer()
 {
 
@@ -1425,7 +1426,7 @@ hasFullInputBuffer()
     if ( tb->m_zCopyPort && tb->m_attachedZBuffer ) {
       assert("Unexpected zero copy to input port"==0);
       if ( tb->m_attachedZBuffer->isEmpty() && ! tb->m_attachedZBuffer->inUse() ) {
-        OCPI::DataTransport::PortSet* aps = static_cast<OCPI::DataTransport::PortSet*>(tb->m_zCopyPort->getPortSet());
+        PortSet* aps = static_cast<PortSet*>(tb->m_zCopyPort->getPortSet());
         aps->getTxController()->modifyOutputOffsets( tb->m_attachedZBuffer, tb, true );
         inputAvailable( tb );
         tb->m_zCopyPort = NULL;
@@ -1440,7 +1441,7 @@ hasFullInputBuffer()
 
 
 bool 
-OCPI::DataTransport::Port::
+Port::
 hasEmptyOutputBuffer()
 {
   if ( getCircuit()->isCircuitOpen() ) {
@@ -1453,8 +1454,8 @@ hasEmptyOutputBuffer()
 }
 
 
-OCPI::DataTransport::BufferUserFacet* 
-OCPI::DataTransport::Port::
+BufferUserFacet* 
+Port::
 getNextFullInputBuffer(uint8_t *&data, size_t &length, uint8_t &opcode)
 {
   Circuit *c = getCircuit();
@@ -1473,6 +1474,8 @@ getNextFullInputBuffer(uint8_t *&data, size_t &length, uint8_t &opcode)
     data = (uint8_t*)buf->getBuffer(); // cast off the volatile
     opcode = (uint8_t)buf->getMetaData()->ocpiMetaDataWord.opCode;
     length = buf->getDataLength();
+    if (buf->getMetaData()->ocpiMetaDataWord.truncate)
+      ocpiBad("Message was truncated to %zu bytes", length);
     OCPI_EMIT_CAT__("Data Buffer Received" , OCPI_EMIT_CAT_WORKER_DEV,OCPI_EMIT_CAT_WORKER_DEV_BUFFER_FLOW, buf);
 
     OCPI_EMIT_REGISTER_FULL_VAR( "Data Buffer Opcode and length", OCPI::Time::Emit::DT_u, 64, OCPI::Time::Emit::Value, dbre ); 
@@ -1485,7 +1488,7 @@ getNextFullInputBuffer(uint8_t *&data, size_t &length, uint8_t &opcode)
 }
 
 // For use by bridge ports, meaning this port is passive
-BufferUserFacet* OCPI::DataTransport::Port::
+BufferUserFacet* Port::
 getNextEmptyInputBuffer(uint8_t *&data, size_t &length) {
   OU::SelfAutoMutex guard(getCircuit());
   Buffer &b = *m_buffers[m_nextBridgeOrd];
@@ -1499,7 +1502,7 @@ getNextEmptyInputBuffer(uint8_t *&data, size_t &length) {
   }
   return NULL;
 }
-void OCPI::DataTransport::Port::
+void Port::
 sendInputBuffer(BufferUserFacet &ib, size_t length, uint8_t opcode) {
   OU::SelfAutoMutex guard(getCircuit());
   Buffer &b = *static_cast<Buffer *>(&ib);
@@ -1508,7 +1511,7 @@ sendInputBuffer(BufferUserFacet &ib, size_t length, uint8_t opcode) {
   b.markBufferFull();
 }
 
-BufferUserFacet* OCPI::DataTransport::Port::
+BufferUserFacet* Port::
 getNextFullOutputBuffer(uint8_t *&data, size_t &length, uint8_t &opcode) {
   OU::SelfAutoMutex guard(getCircuit());
   Buffer &b = *m_buffers[m_nextBridgeOrd];
@@ -1524,7 +1527,7 @@ getNextFullOutputBuffer(uint8_t *&data, size_t &length, uint8_t &opcode) {
   return NULL;
 }
 
-void OCPI::DataTransport::Port::
+void Port::
 releaseOutputBuffer(BufferUserFacet &ob) {
   OU::SelfAutoMutex guard(getCircuit());
   Buffer &b = *static_cast<Buffer *>(&ob);
@@ -1536,7 +1539,7 @@ releaseOutputBuffer(BufferUserFacet &ob) {
  * as available.
  *********************************/
 OCPI::OS::int32_t 
-OCPI::DataTransport::Port::
+Port::
 inputAvailable( Buffer* input_buf )
 {
   Circuit *c = getCircuit();
@@ -1562,19 +1565,20 @@ inputAvailable( Buffer* input_buf )
  * This method retreives the next available buffer from the local (our)
  * port set.  A NULL port indicates local context.
  *********************************/
-OCPI::DataTransport::BufferUserFacet* 
-OCPI::DataTransport::Port::
+BufferUserFacet* 
+Port::
 getNextEmptyOutputBuffer(uint8_t *&data, size_t &length)
 {
-  OCPI::DataTransport::Buffer *buf = getNextEmptyOutputBuffer();
+  Buffer *buf = getNextEmptyOutputBuffer();
   if (buf) {
     data = (uint8_t*)buf->getBuffer(); // cast off the volatile
     length = buf->getLength(); // not really data length, but buffer length
+    ocpiDebug("getNextEmptOutputBuffer: %p %p %zu", buf, data, length);
   }
   return buf;
 }
-OCPI::DataTransport::Buffer* 
-OCPI::DataTransport::Port::
+Buffer* 
+Port::
 getNextEmptyOutputBuffer()
 {
   Circuit *c = getCircuit();
@@ -1620,7 +1624,7 @@ getNextEmptyOutputBuffer()
   // Determine if this buffer has an associate ZCopy input buffer
   if ( buffer && buffer->m_attachedZBuffer ) {
     // Modify the output port transfer to point to the input buffer output
-    OCPI::DataTransport::PortSet* aps = static_cast<OCPI::DataTransport::PortSet*>(getPortSet());
+    PortSet* aps = static_cast<PortSet*>(getPortSet());
     aps->getTxController()->modifyOutputOffsets( buffer, buffer->m_attachedZBuffer, true );
     inputAvailable( buffer->m_attachedZBuffer );
     buffer->m_attachedZBuffer->m_zCopyPort = NULL;
@@ -1628,7 +1632,7 @@ getNextEmptyOutputBuffer()
     buffer->m_attachedZBuffer = NULL;
   }
 
-  return static_cast<OCPI::DataTransport::Buffer*>(buffer);
+  return static_cast<Buffer*>(buffer);
 }
 
 void 
@@ -1640,6 +1644,11 @@ sendZcopyInputBuffer(BufferUserFacet &buf, size_t len, uint8_t op, bool /*end*/)
   src_buf->getMetaData()->ocpiMetaDataWord.opCode = op;
   src_buf->getMetaData()->ocpiMetaDataWord.timestamp = 0x01234567;
   src_buf->getMetaData()->ocpiMetaDataWord.xferMetaData = packXferMetaData(len, op, false);
+  ocpiLog(9,"METAZ: @%p %x %x %x %x", src_buf->getMetaData(),
+	  src_buf->getMetaData()->ocpiMetaDataWord.length,
+	  src_buf->getMetaData()->ocpiMetaDataWord.opCode,
+	  src_buf->getMetaData()->ocpiMetaDataWord.timestamp,
+	  src_buf->getMetaData()->ocpiMetaDataWord.xferMetaData);
   Circuit *c = getCircuit();
   OU::SelfAutoMutex guard(c); // FIXME: refactor to make this a circuit method
   c->sendZcopyInputBuffer( this, src_buf, len );
@@ -1669,6 +1678,12 @@ sendOutputBuffer( BufferUserFacet* buf, size_t length, uint8_t opcode, bool /*en
     b->getMetaData()->ocpiMetaDataWord.timestamp +=
       OCPI_UTRUNCATE(uint32_t, getBufferCount() << 1);
   b->getMetaData()->ocpiMetaDataWord.xferMetaData = packXferMetaData(length, opcode, false);
+  ocpiLog(9,"METAs: @%p %x %x %x %x sz %zu %zu", b->getMetaData(),
+	  b->getMetaData()->ocpiMetaDataWord.length,
+	  b->getMetaData()->ocpiMetaDataWord.opCode,
+	  b->getMetaData()->ocpiMetaDataWord.timestamp,
+	  b->getMetaData()->ocpiMetaDataWord.xferMetaData,
+	  sizeof(RplMetaData), sizeof(BufferMetaData));
 
   Circuit * c = getCircuit();
   OU::SelfAutoMutex guard(c); // FIXME: refactor to make this a circuit method
@@ -1681,6 +1696,8 @@ sendOutputBuffer( BufferUserFacet* buf, size_t length, uint8_t opcode, bool /*en
     c->queTransfer( b );
   }
 
+}
+}
 }
 OCPI::RDT::Descriptors::Descriptors()
   : type(0), // this is illegal

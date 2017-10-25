@@ -73,10 +73,10 @@ Container(const char *a_name, const OA::PValue* /* params */)
   addTransport("ocpi-scif-dma", system, OR::ActiveMessage, OR::ActiveMessage,
 	       (1 << OR::ActiveFlowControl) | (1 << OR::ActiveMessage) | (1 << OR::Passive),
 	       (1 << OR::ActiveFlowControl) | (1 << OR::ActiveMessage) | (1 << OR::Passive));
-  addTransport("ocpi-socket-rdma", system, OR::ActiveMessage, OR::ActiveMessage,
+  addTransport("ocpi-socket-rdma", NULL, OR::ActiveMessage, OR::ActiveMessage,
 	       (1 << OR::ActiveFlowControl) | (1 << OR::ActiveMessage) | (1 << OR::Passive),
 	       (1 << OR::ActiveFlowControl) | (1 << OR::ActiveMessage) | (1 << OR::Passive));
-  addTransport("ocpi-udp-rdma", system, OR::ActiveMessage, OR::ActiveMessage,
+  addTransport("ocpi-udp-rdma", NULL, OR::ActiveMessage, OR::ActiveMessage,
 	       (1 << OR::ActiveFlowControl) | (1 << OR::ActiveMessage) | (1 << OR::Passive),
 	       (1 << OR::ActiveFlowControl) | (1 << OR::ActiveMessage) | (1 << OR::Passive));
   m_dynamic = OC::Manager::dynamic();

@@ -1,0 +1,115 @@
+#!/usr/bin/python
+# This file is protected by Copyright. Please refer to the COPYRIGHT file
+# distributed with this source distribution.
+#
+# This file is part of OpenCPI <http://www.opencpi.org>
+#
+# OpenCPI is free software: you can redistribute it and/or modify it under the
+# terms of the GNU Lesser General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your option) any
+# later version.
+#
+# OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+# A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Lesser General Public License along
+# with this program. If not, see <http://www.gnu.org/licenses/>.
+
+# TODO: integegrate more inline with ocpirun -A o get information instead of metadata file
+
+import argparse
+import subprocess
+import os
+from lxml import etree as ET
+
+nounsList = ["workers", "hdlplatforms", "hdltargets", "rccplatforms", "components"]
+nounsString = "workers, hdlplatforms, hdltargets, rccplatforms, components"
+
+def parseCLVars(): 
+  parser = argparse.ArgumentParser(description='Metadata Utility for determing availaible options for building')
+  #usage="usage: %prog [options] NOUN\n\nValid Nouns are: "+nounsString)
+
+  parser.add_argument("--hdl-platform", action="append", dest="hdlPlatform")
+  parser.add_argument("--rcc-platform", action="append", dest="rccPlatform")
+  parser.add_argument("--component", action="store", dest="component")
+  parser.add_argument("noun", metavar='N', type=None, action="store")
+
+  args = parser.parse_args()
+  
+
+  if (args.noun not in nounsList): 
+    parser.error("invalid Noun")
+  #if (len(args) > 1):
+  #  parser.error("Multiple Nouns specified only one at a time is supported")
+  #if (args[0] not in nounsList):
+  #  parser.error("Invalid Noun")
+  
+  return args, args.noun
+
+def do_makeShow(makeTarget): 
+  make_output = subprocess.check_output(['make','-f',os.environ['OCPI_CDK_DIR']+'/include/show.mk',makeTarget])
+  print make_output 
+
+def do_rccplatforms(options): 
+  do_makeShow("rccPlatform")
+def do_hdlplatforms(options): 
+  do_makeShow("hdlPlatform")
+def do_hdltargets(options): 
+  do_makeShow("hdlTarget")
+
+def do_workers(options): 
+  mdString=os.environ['OCPI_PROJECT_PATH'] + ":" + os.environ['OCPI_CDK_DIR']
+  # TODO: regen project metadatas for all projects in proj path.   
+  mdFileList = mdString.split(":")  
+  #print mdFileList
+  workList = ""
+  for mdFile in mdFileList:
+    mdFile = rchop(mdFile, '/')
+    mdFile = rchop(mdFile, 'exports')
+    subprocess.check_output([os.environ['OCPI_CDK_DIR']+'/scripts/genProjMetaData.py', mdFile])
+    mdFile = mdFile + "/project.xml"
+    workList = workList + get_tags(mdFile, "worker")
+  print "Workers: " + workList 
+
+def rchop(thestring, ending):
+  if thestring.endswith(ending):
+    return thestring[:-len(ending)]
+  return thestring
+
+def get_tags(mdFile, tagName):
+  #print "File is: " + mdFile
+  retVal = ""
+  if (os.path.isfile(mdFile)): 
+    tree = ET.parse(mdFile)
+    for tag in tree.iter(tagName): 
+      retVal = retVal + " " + tag.get('name')
+  return retVal
+
+def do_components(options):  
+  mdString=os.environ['OCPI_PROJECT_PATH'] + ":" + os.environ['OCPI_CDK_DIR']
+  # TODO: regen project metadatas for all projects in proj path.   
+  mdFileList = mdString.split(":")  
+  #print mdFileList
+  compList = ""
+  for mdFile in mdFileList:
+    mdFile = rchop(mdFile, '/')
+    mdFile = rchop(mdFile, 'exports')
+    subprocess.check_output([os.environ['OCPI_CDK_DIR']+'/scripts/genProjMetaData.py', mdFile])
+    mdFile = mdFile + "/project.xml"
+    compList = compList + get_tags(mdFile, "spec")
+  print "Components: " + compList 
+  
+# main
+(options, noun) = parseCLVars() 
+
+action = {"workers": do_workers, 
+          "components": do_components,
+          "hdlplatforms": do_hdlplatforms,
+          "hdltargets": do_hdltargets,
+          "rccplatforms": do_rccplatforms}
+
+# call the correct noun function
+action[noun](options)
+

@@ -37,7 +37,7 @@
 #include "OcpiOsFileSystem.h"
 #include "OcpiUtilMisc.h"
 #include "OcpiUtilEzxml.h"
-#include "RemoteDriver.h"
+#include "RemoteClient.h"
 #define OCPI_OPTIONS_HELP \
   "Usage is: ocpirun <options>... [<application-xml-file>]\n" \
 
@@ -116,7 +116,6 @@
 //  CMD_OPTION(build,      ,  String, 0, "Build any source workers deployed")
 
 #include "CmdOption.h"
-#include "RemoteServer.h"
 
 namespace OA = OCPI::API;
 namespace OU = OCPI::Util;
@@ -258,8 +257,8 @@ static bool setup(const char *arg, ezxml_t &xml, std::string &file,
   }
   if (options.deployment())
     OL::Manager::getSingleton().suppressDiscovery();
-  if (!options.remote())
-    OR::g_suppressRemoteDiscovery = true;
+  if (options.remote())
+    OR::g_enableRemoteDiscovery = true;
   // Establish simulator-related options to feed them to sims during discovery
   std::vector<OA::PValue> simParams;
   if (options.sim_dir())

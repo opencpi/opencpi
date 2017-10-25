@@ -146,7 +146,7 @@ unparseParams(const OU::PValue *params, std::string &out) {
 }
 // This connection is one of ours, either internal or external
 void Launcher::
-emitSide(const Launcher::Members &members, Launcher::Port &p, bool input) {
+emitSide(const Launcher::Members &members, Launcher::Port &p, bool input, size_t bufferSize) {
   const char *type = input ? "in" : "out";
   OU::formatAdd(m_request, "    <%s scale='%zu' index='%zu'", type, p.m_scale, p.m_index);
   if (p.m_name)
@@ -167,7 +167,7 @@ emitSide(const Launcher::Members &members, Launcher::Port &p, bool input) {
       m_request += "/>\n";
     }
     if (!p.m_url && p.m_launcher != this)
-	p.m_metaPort->emitXml(m_request);
+      p.m_metaPort->emitXml(m_request, bufferSize);
     OU::formatAdd(m_request, "    </%s>\n", type);
   } else
     m_request += "/>\n";
@@ -183,8 +183,8 @@ emitConnection(const Launcher::Members &members, Launcher::Connection &c) {
 		c.m_transport.roleIn, c.m_transport.roleOut,
 		c.m_transport.optionsIn, c.m_transport.optionsOut,
 		c.m_bufferSize);
-  emitSide(members, c.m_in, true);
-  emitSide(members, c.m_out, false);
+  emitSide(members, c.m_in, true, c.m_bufferSize);
+  emitSide(members, c.m_out, false, c.m_bufferSize);
   m_request += "  </connection>\n";
 }
 void Launcher::

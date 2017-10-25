@@ -25,7 +25,7 @@
 #include "ContainerManager.h"
 #include "RemoteLauncher.h"
 #include "RemoteServer.h"
-#include "RemoteDriver.h"
+#include "RemoteClient.h"
 
 // This is the "driver" for remote containers, which finds them, constructs them, and 
 // in general manages them. It acts as the factory for Remote containers.
@@ -255,13 +255,14 @@ public:
     for (unsigned n = nTransports; n; n--, t++) {
       int nChars, rv;
       unsigned roleIn, roleOut;
+      uint32_t optionsIn, optionsOut;
       if ((rv = sscanf(a_transports, "%[^,],%[^,],%u,%u,0x%x,0x%x|%n", transport, id, &roleIn, &roleOut,
-		       &t->optionsIn, &t->optionsOut, &nChars)) != 6)
+		       &optionsIn, &optionsOut, &nChars)) != 6)
 	throw OU::Error("Bad transport string in container discovery: %s: %d", a_transports, rv);
-      t->roleIn = (OR::PortRole)roleIn;
-      t->roleOut = (OR::PortRole)roleOut;
-      t->transport = transport;
-      t->id = id;
+      if (id[0] == ' ') // local sscanf issue - field cannot be empty
+	id[0] = '\0';
+      addTransport(transport, id, (OR::PortRole)roleIn, (OR::PortRole)roleOut, optionsIn,
+		   optionsOut);
       a_transports += nChars;
     }
     OX::parseBool(a_dynamic, NULL, &m_dynamic);
@@ -501,7 +502,9 @@ public:
   // whatever containers are local to that server/system
   unsigned
   search(const OA::PValue* props, const char **exclude, bool discoveryOnly) {
-    if (g_suppressRemoteDiscovery)
+    ocpiInfo("Remote container discovery is %s", g_enableRemoteDiscovery ?
+	     "on, starting discovery" : "off");
+    if (!g_enableRemoteDiscovery)
       return 0;
     std::string error;
     unsigned count = 0;
@@ -516,18 +519,18 @@ public:
     while (ifs.getNext(eif, error, ifName)) {
       if (eif.name == "udp") // the udp pseudo interface is not used for discovery
 	continue;
-      ocpiDebug("RemoteDriver: Considering interface \"%s\", addr 0x%x",
+      ocpiInfo("RemoteDriver: Considering interface \"%s\", addr 0x%x",
 		eif.name.c_str(), eif.ipAddr.addrInAddr());
       if (eif.up && eif.connected && eif.ipAddr.addrInAddr()) {
 	OE::Address bcast(true, REMOTE_PORT);
 	count += tryIface(servers, eif, bcast, exclude, discoveryOnly, error);
 	if (error.size()) {
-	  ocpiDebug("Error during container server discovery on '%s': %s",
+	  ocpiInfo("Error during container server discovery on '%s': %s",
 		    eif.name.c_str(), error.c_str());
 	  error.clear();
 	}
       } else
-	ocpiDebug("In RemoteDriver.cxx Interface '%s' is %s and %s",
+	ocpiInfo("In RemoteDriver.cxx Interface '%s' is %s and %s",
 		  eif.name.c_str(), eif.up ? "up" : "down",
 		  eif.connected ? "connected" : "not connected");
       if (ifName)

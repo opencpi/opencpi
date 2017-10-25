@@ -1,4 +1,3 @@
-#error NOT NEEDED
 /*
  * This file is protected by Copyright. Please refer to the COPYRIGHT file
  * distributed with this source distribution.
@@ -19,16 +18,13 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _OCPI_REMOTE_DRIVER_H_
-#define _OCPI_REMOTE_DRIVER_H_
 namespace OCPI {
   namespace Remote {
-    // These are common - they are initialized to zero, but accessible by driver users
-    // even when the driver is not loaded.  They are declared in the driver because
-    // the driver cannot depend on the non-driver/server code or headers.
+    // This function is called without knowing whether the driver is available.
+    // Thus it is not in the driver.
     extern bool g_enableRemoteDiscovery;
     extern bool (*g_probeServer)(const char *server, bool verbose, const char **exclude,
 			  std::string &error);
+    bool useServer(const char *server, bool verbose, const char **exclude, std::string &error);
   }
 }
-#endif

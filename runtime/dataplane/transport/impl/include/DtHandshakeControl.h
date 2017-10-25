@@ -230,29 +230,34 @@ namespace OCPI {
   const unsigned int ZeroCopyReady = 0x10000000;
 
   const unsigned
-    lengthBits = 22, // 8Mbytes - 1
+    lengthBits = 21, // 2Mbytes - 1 MUST BE IN SYNC WITH HDL: sdp_pkg.vhd
     opCodeBits = 8;
 
   // This packing is simply to make it easier to read the values in hex dumps
-  const uint32_t maxXferLength = (1 << 22) - 1;
+  // MUST BE IN SYNC WITH HDL sdp_pkg.vhd
+  const uint32_t maxXferLength = (1 << lengthBits) - 1;
   inline uint32_t packXferMetaData(size_t length, uint8_t opcode, bool eof) {
     assert(length <= maxXferLength);
     return (uint32_t)
-      ((opcode << (32 - opCodeBits)) | // high byte
-       (1 << (lengthBits+1)) |         // 800000 always set to ensure it is non-zero
-       ((eof ? 1 : 0) << lengthBits) | // 400000 EOF independent of length
-       length);                         // length in bytes up to 2^22-1
+      ((length & ~(UINT32_MAX << lengthBits)) | // length is LSB
+       ((eof ? 1 : 0) << lengthBits) |          // EOF independent of length, above length
+       (1 << (lengthBits+1)) |                  // always-1 is above eof
+                                                // truncation indicator is above always-1
+       (opcode << (32 - opCodeBits)));          // high byte is opcode
   }
-  inline void unpackXferMetaData(uint32_t md, size_t &length, uint8_t &opcode, bool &eof) {
-    assert(md & (1 << (lengthBits+1)));
+  inline void unpackXferMetaData(uint32_t md, size_t &length, uint8_t &opcode, bool &eof,
+				 bool &truncate) {
     length = md & ~(UINT32_MAX << lengthBits);
-    opcode = (uint8_t)((md >> (32 - opCodeBits)) & ((1 << opCodeBits) - 1));
     eof = md & (1 << lengthBits) ? true : false;
+    assert(md & (1 << (lengthBits+1)));
+    truncate = md & (1 << (lengthBits+2)) ? true : false;
+    opcode = (uint8_t)((md >> (32 - opCodeBits)) & ((1 << opCodeBits) - 1));
   }
   struct RplMetaData {
     uint32_t length;
     uint8_t opCode;
     uint8_t end;
+    uint8_t truncate;
     uint32_t xferMetaData; // the compressed version when required.
     uint32_t timestamp;
   };
@@ -268,17 +273,16 @@ namespace OCPI {
     int32_t       metaDataOnlyTransfer; // Only meta data transfered
     uint32_t      srcRank;              // rank of the output buffer
     int32_t       srcTemporalId;        // temporal buffer id
-    BooleanToken           endOfWhole;           // end of whole data distribution
-    uint32_t           nPartsPerWhole;                // Number of parts to make up the whole data set
-    uint32_t           partsSequence;            // This buffers sequence in the whole
-    BooleanToken           endOfStream;          // end of data stream
-    int32_t           timeStamp;                        // Buffer time stamp
-    DtOsDataTypes::Offset  localStateOffset;     // offset back to local state
+    BooleanToken  endOfWhole;           // end of whole data distribution
+    uint32_t      nPartsPerWhole;       // Number of parts to make up the whole data set
+    uint32_t      partsSequence;        // This buffers sequence in the whole
+    BooleanToken  endOfStream;          // end of data stream
+    int32_t       timeStamp;            // Buffer time stamp
+    DtOsDataTypes::Offset localStateOffset; // offset back to local state
     int32_t       outputSmbId;          // Output smb id
-    BufferShape                   shape;                                // buffer shape
-    uint32_t             zcopy;
-
-
+    BufferShape   shape;                // buffer shape
+    uint32_t      zcopy;
+    uint32_t      pad_to_16[3];         // make a multiple of 16 bytes
   };
 
 

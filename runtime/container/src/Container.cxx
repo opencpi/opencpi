@@ -281,12 +281,14 @@ namespace OCPI {
       if (XF::getManager().find(a_name)) {
 	Transport t;
 	t.transport = a_name;
-	t.id = id;
+	t.id = id ? id : "";
 	t.roleIn = roleIn;
 	t.roleOut = roleOut;
 	t.optionsIn = inOptions;
 	t.optionsOut = outOptions;
 	m_transports.push_back(t);
+	ocpiLog(9, "Adding transport %s(%s) to container %s",
+		a_name, t.id.c_str(), name().c_str());
       } else
 	ocpiInfo("Transport %s not supported in this process.  Not loaded/spec'd in system.xml?",
 		 a_name);

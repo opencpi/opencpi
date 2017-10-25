@@ -165,7 +165,7 @@ namespace OCPI {
       void emitDistribution(std::string &out, const Distribution &d) const;
       const char *parseOperations();
       const char *parseScaling();
-      void emitXml(std::string &out) const;
+      void emitXml(std::string &out, size_t bufferSize = SIZE_MAX) const;
       void emitScalingAttrs(std::string &out) const;
       void emitScaling(std::string &out) const;
       // Get the buffer size to use on this port given meta info and params and defaults

@@ -32,7 +32,6 @@
 #include "ContainerLauncher.h"
 #include "RemoteLauncher.h"
 #include "RemoteServer.h"
-#include "RemoteDriver.h"
 
 namespace OX = OCPI::Util::EzXml;
 namespace OC = OCPI::Container;
@@ -516,8 +515,8 @@ namespace OCPI {
 	for (unsigned nn = 0;  nn < c.transports().size(); nn++) {
 	  const OC::Transport &t = c.transports()[nn];
 	  OU::formatAdd(info, "%s,%s,%u,%u,0x%x,0x%x|",
-			t.transport.c_str(), t.id.c_str(), t.roleIn, t.roleOut, t.optionsIn,
-			t.optionsOut);
+			t.transport.c_str(), t.id.c_str()[0] ? t.id.c_str() : " ", t.roleIn,
+			t.roleOut, t.optionsIn, t.optionsOut);
 	}
 	info += '\n';
 	if (info.length() >= length) {
@@ -531,14 +530,14 @@ namespace OCPI {
       length--; // account for the null char of the last line
       return false;
     }
-    bool
-    useServer(const char *server, bool verbose, const char **exclude, std::string &error) {
-      if (g_probeServer)
-	return (*g_probeServer)(server, verbose, exclude, error);
-      OU::format(error,
-		 "the remote container driver is not loaded; server \"%s\" cannot be accessed",
-		 server);
-      return true;
+  }
+#if 0
+  namespace API {
+    void useServer(const char *server, bool verbose) {
+      std::string error;
+      if (OCPI::Remote::useServer(server, verbose, NULL, error))
+	throw OU::Error("error trying to use remote server \"%s\": %s", server, error.c_str());
     }
   }
+#endif
 }

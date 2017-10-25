@@ -125,6 +125,9 @@ start_pio(PIO_transfer pio_transfer, bool last) {
 void XferRequest::
 post() {
   struct xf_transfer_ *xf_transfer = (struct xf_transfer_ *)m_thandle;
+  ocpiDebug("POST: %p %p %p %p",
+	    xf_transfer, xf_transfer->first_pio_transfer, xf_transfer->pio_transfer,
+	    xf_transfer->last_pio_transfer);	    
   
   /* Process the first transfers */
   if (xf_transfer->first_pio_transfer)

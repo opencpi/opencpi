@@ -18,16 +18,18 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ContainerManager.h"
-#include "ContainerLauncher.h"
-#include "ContainerPort.h"          // just for linkage hooks
-#include "OcpiUuid.h"               // just for linkage hooks
-#include "OcpiOsSocket.h"           // just for linkage hooks
-#include "OcpiOsServerSocket.h"     // just for linkage hooks
-#include "OcpiOsSemaphore.h"        // just for linkage hooks
 #include "lzma.h"                   // just for linkage hooks
 #include "zlib.h"                   // just for linkage hooks
 #include "pthread_workqueue.h"      // just for linkage hooks
+#include "OcpiOsSocket.h"           // just for linkage hooks
+#include "OcpiOsServerSocket.h"     // just for linkage hooks
+#include "OcpiOsSemaphore.h"        // just for linkage hooks
+#include "OcpiUuid.h"               // just for linkage hooks
+#include "RemoteClient.h"           // just for linkage hooks
+#include "ContainerPort.h"          // just for linkage hooks
+
+#include "ContainerManager.h"
+#include "ContainerLauncher.h"
 namespace OCPI {
   namespace Container {
     namespace OA = OCPI::API;
@@ -160,42 +162,45 @@ namespace OCPI {
 	&OCPI::Container::Container::nthContainer(n);
     }
   }
+  /*
+   * This ensures the following functions are linked into the final ocpirun/ACI executables when
+   * the functions are used by driver plugin(s) (which are dynamically loaded, but linked against
+   * dynamic libraries that do not exist at runtime, e.g. uuid.so) but nowhere else in the
+   * framework infrastructure, forcing them to be statically linked here:
+   */
   namespace Container {
-    // Hooks to ensure that if we are linking statically, everything is pulled in
-    // to support drivers and workers.
-    void dumb1(/*BasicPort &p*/) {
+    intptr_t dumb1() {
+      ((DataTransfer::XferServices*)dumb1)->DataTransfer::XferServices::send(0, NULL, 0);
+      OCPI::Util::Uuid uuid;
+      OCPI::Util::UuidString us;
+      OCPI::Util::uuid2string(uuid, us);
+      std::string str;
+      OCPI::Util::searchPath(NULL, NULL, str, NULL, NULL);
+      // Msg::XferFactoryManager::getFactoryManager();
+      OCPI::OS::Socket s;
+      OCPI::OS::ServerSocket ss;
+      OCPI::OS::Semaphore sem;
+      gzerror(NULL, (int*)0);
       // p.applyConnectParams(NULL, NULL);
       ((OCPI::Container::Application*)0)->createWorker(NULL, NULL, NULL, NULL, NULL, NULL);
+      pthread_workqueue_create_np(NULL, NULL);
+      std::string sss;
+      OCPI::Remote::useServer(NULL, false, NULL, sss);
+      return (intptr_t)&lzma_stream_buffer_decode;
     }
   }
+#if 0
   // When the remote container driver is loaded it needs to see this.
   namespace Remote {
-    bool g_suppressRemoteDiscovery = false;
+    bool g_enableRemoteDiscovery = false;
     bool (*g_probeServer)(const char *server, bool verbose, const char **exclude,
 			  std::string &error) = NULL;
+    void useServer(const char *server, bool verbose) {
+      std::string error;
+      if (OCPI::Remote::useServer(server, verbose, NULL, error))
+	throw OU::Error("error trying to use remote server \"%s\": %s", server, error.c_str());
+    }
   }
-}
-/*
- * This ensures the following functions are linked into the final ocpirun / ACI executables when
- * the functions are used by driver plugin(s) (which are dynamically loaded, but linked against
- * dynamic libraries that do not exist at runtime, e.g. uuid.so) but nowhere else in the
- * framework infrastructure, forcing them to be statically linked here:
-*/
-namespace DataTransfer {
-  intptr_t dumb2(/*EndPoint &loc*/) {
-    ((XferServices*)dumb2)->XferServices::send(0, NULL, 0);
-    OCPI::Util::Uuid uuid;
-    OCPI::Util::UuidString us;
-    OCPI::Util::uuid2string(uuid, us);
-    std::string str;
-    OCPI::Util::searchPath(NULL, NULL, str, NULL, NULL);
-    // Msg::XferFactoryManager::getFactoryManager();
-    OCPI::OS::Socket s;
-    OCPI::OS::ServerSocket ss;
-    OCPI::OS::Semaphore sem;
-    gzerror(NULL, (int*)0);
-    pthread_workqueue_create_np(NULL, NULL);
-    return (intptr_t)&lzma_stream_buffer_decode;
-  }
+#endif
 }
 

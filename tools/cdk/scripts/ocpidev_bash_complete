@@ -1,0 +1,106 @@
+# This file is protected by Copyright. Please refer to the COPYRIGHT file
+# distributed with this source distribution.
+#
+# This file is part of OpenCPI <http://www.opencpi.org>
+#
+# OpenCPI is free software: you can redistribute it and/or modify it under the
+# terms of the GNU Lesser General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your option) any
+# later version.
+#
+# OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+# A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Lesser General Public License along
+# with this program. If not, see <http://www.gnu.org/licenses/>.
+
+_ocpidev()
+{
+    local cur prev opts
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    oneopts="-v -f -s -p -t -n -u -H -J -X -x"
+    i=$((1)) 
+    # this first section is deciding to bash complete on the current word some options take a unique
+    # word after some don't.  this code is dealing with that difference and selecting which nouns and 
+    # verbs go where.  
+    while [[ ${COMP_WORDS[i]} == -* ]] 
+    do
+      if [[ $oneopts != *"${COMP_WORDS[i]}"* ]] ; then
+        i=$(( $i + 1 ))
+      fi
+      i=$(( $i + 1 ))
+    done 
+    verb="${COMP_WORDS[i]}"
+    i=$(( $i + 1 ))
+    while [[ ${COMP_WORDS[i]} == -* ]] 
+    do
+      if [[ $oneopts != *"${COMP_WORDS[i]}"* ]] ; then
+        i=$(( $i + 1 ))
+      fi
+      i=$(( $i + 1 ))
+    done 
+    noun1="${COMP_WORDS[i]}"
+    i=$(( $i + 1 ))
+    while [[ ${COMP_WORDS[i]} == -* ]] 
+    do
+      if [[ $oneopts != *"${COMP_WORDS[i]}"* ]] ; then
+        i=$(( $i + 1 ))
+      fi
+      i=$(( $i + 1 ))
+    done 
+    noun2="${COMP_WORDS[i]}"
+    i=$(( $i + 1 ))
+    while [[ ${COMP_WORDS[i]} == -* ]] 
+    do
+      if [[ $oneopts != *"${COMP_WORDS[i]}"* ]] ; then
+        i=$(( $i + 1 ))
+      fi
+      i=$(( $i + 1 ))
+    done 
+    noun3="${COMP_WORDS[i]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+    # valid verbs 
+    verbs="build delete create report clean"
+    # valid nouns in first slot 
+    nouns1="project application spec protocol test library worker hdl"
+    # valid nouns in second slot
+    nouns2="assembly card slot device platform primitive"
+    # valid nouns in third slot
+    nouns3="library core"
+    #valid build options  
+    bopts="--rcc --hdl --no-assemblies --hdl-assembly --hdl-target --hdl-platform \
+           --rcc-platform --hdl-rcc-platform --worker"
+    #valid options not having to do with build
+    opts="-v -f -d -s -p -t -n -l -h -F -D -K -S -P -L -V -E -W -R -r -g -q -u -I -A -O -C -Y -y \
+	-T -Z -G -Q -U -M -B -H -J -X -x"
+    # if current word stars with a - it is an option of some sort
+    if [[ ${cur} == -* ]] ; then
+      if [[ (${verb} == build || ${verb} == clean) && ${cur} == --* ]] ; then
+        COMPREPLY=( $(compgen -W "${bopts}" -- ${cur}) )
+        return 0
+      fi
+      COMPREPLY=( $(compgen -W "${bopts} ${opts}" -- ${cur}) )
+      return 0  
+    # if current word is in the verb slot
+    elif [[ ${verb} == ${cur} ]] ; then  
+      COMPREPLY=( $(compgen -W "${verbs}" ${cur}) )
+      return 0
+    # if current word is in the first noun slot
+    elif [[ ${noun1} == ${cur} ]] ; then  
+      COMPREPLY=( $(compgen -W "${nouns1}" ${cur}) )
+      return 0
+    # if current word is in the second noun slot
+    elif [[ ${noun1} == hdl && ${noun2} == ${cur} ]] ; then  
+      COMPREPLY=( $(compgen -W "${nouns2}" ${cur}) )
+      return 0
+    # if current word is in the third noun slot
+    elif [[ ${noun2} == primitive && ${noun3} == ${cur} ]] ; then  
+      COMPREPLY=( $(compgen -W "${nouns3}" ${cur}) )
+      return 0
+    fi
+}
+complete -F _ocpidev ocpidev
+

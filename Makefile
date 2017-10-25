@@ -77,10 +77,10 @@ PACKAGES += \
 	 runtime/rcc \
 	 runtime/ocl \
 	 runtime/ocl-support \
-	 runtime/ctests \
 	 runtime/hdl \
+         runtime/application \
 	 runtime/hdl-support \
-         runtime/application
+	 runtime/ctests
 
 PACKAGES += tools/cdkutils
 PACKAGES += tools/ocpigen

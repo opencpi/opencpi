@@ -47,7 +47,6 @@ xfer_pio_action_transfer(PIO_transfer transfer)
     char *dst = (char *)transfer->dst_va;
     size_t nbytes = transfer->nbytes;
 
-
     if (src == 0) {
       for (uint32_t i=0; i < nbytes; i++)
         *dst++ = 0;
@@ -112,6 +111,7 @@ xfer_pio_action_transfer(PIO_transfer transfer)
 
     size_t nwords = transfer->nbytes / 4;
     size_t rem_nwords = transfer->nbytes % 4;
+    ocpiDebug("XFER:0x%p->0x%p %zu %zu", src_w, dst_w, nwords, rem_nwords); 
 
     if (src_w == 0) {
       for (uint32_t i=0; i < nwords; i++)    
@@ -150,7 +150,7 @@ xfer_pio_action_transfer(PIO_transfer transfer)
 
 }
 #else
-
+#error unexpected
 void
 xfer_pio_action_transfer(PIO_transfer transfer)
 {
@@ -310,7 +310,7 @@ xfer_pio_copy(PIO_template pio_template, DtOsDataTypes::Offset src_os, DtOsDataT
 #if CONTIGUOUS_MAP
     pio_transfer->dst_va = ((char *)pio_template->dst_va + dst_os);
 #else
-    pio_transfer->dst_va = pio_template->t_smem->mapTx(dst_os, nbytes);
+    pio_transfer->dst_va = pio_template->t_smem->mapRx(dst_os, nbytes);
 #endif
 #endif
                 

@@ -506,7 +506,7 @@ namespace OCPI {
     }
 
     void Port::
-    emitXml(std::string &out) const {
+    emitXml(std::string &out, size_t bufferSize) const {
       formatAdd(out, "  <port name=\"%s\"", m_name.c_str());
       if (m_isBidirectional)
 	formatAdd(out, " bidirectional='1'");
@@ -518,7 +518,9 @@ namespace OCPI {
 	formatAdd(out, " minBufferCount=\"%zu\"", m_minBufferCount);
       if (m_defaultBufferCount != SIZE_MAX)
 	formatAdd(out, " BufferCount=\"%zu\"", m_defaultBufferCount);
-      if (m_bufferSizePort != -1)
+      if (bufferSize != SIZE_MAX)
+	formatAdd(out, " bufferSize='%zu'", bufferSize);
+      else if (m_bufferSizePort != -1)
 	formatAdd(out, " buffersize='%s'", m_worker->metaPort(m_bufferSizePort).cname());
       else if (m_bufferSize != SIZE_MAX && m_bufferSize != m_defaultBufferSize)
 	formatAdd(out, " bufferSize='%zu'", m_bufferSize);

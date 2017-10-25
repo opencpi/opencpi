@@ -51,7 +51,7 @@ tests
 +runtime/util/target-<target>/ocpixml bin/<target>/
 -runtime/dataplane main
 -runtime/ctests
-+runtime/ctests/target-<target>/test_* bin/<target>/ctests/
++|runtime/ctests/target-<target>/test_[^.]* bin/<target>/ctests/
 -tests library
 -runtime/dataplane/xfer/tests library
 ################################################################################

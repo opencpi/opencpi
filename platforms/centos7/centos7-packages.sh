@@ -20,7 +20,8 @@
 # Install prerequisite packages for Centos6
 echo Installing standard extra packages using "yum"
 sudo yum -y groupinstall "development tools"
-echo Installing packages required: tcl pax python-devel fakeroot which
-sudo yum -y install tcl pax python-devel fakeroot which
+CENTOS7_PKGS="tcl pax python-devel fakeroot which nfs-utils"
+echo Installing packages required: $CENTOS7_PKGS
+sudo yum -y install $CENTOS7_PKGS
 echo Installing 32 bit libraries '(really only required for modelsim)'
 sudo yum -y install glibc.i686 libXft.i686 libXext.i686 ncurses-libs.i686

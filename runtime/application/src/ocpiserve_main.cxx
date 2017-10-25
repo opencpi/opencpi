@@ -24,7 +24,6 @@
 #include "OcpiContainerApi.h"
 #include "OcpiComponentLibrary.h"
 #include "Container.h"
-#include "RemoteDriver.h"
 #include "OcpiServer.h"
 
 namespace OU =  OCPI::Util;
@@ -35,16 +34,16 @@ namespace OU =  OCPI::Util;
   "This command acts as a server allowing other systems to use this system's containers.\n" \
   "Some option must be provided, e.g. -v, or -d, or -p.\n"
 #define OCPI_OPTIONS \
-  CMD_OPTION(directory,  D,    String, "artifacts", "The directory used to capture artifact/executable files") \
+  CMD_OPTION(directory,  D,    String, "artifacts", "The directory used for caching artifact/executable files") \
   CMD_OPTION(verbose,    v,    Bool,    0,   "Provide verbose output during operation") \
   CMD_OPTION(loglevel,   l,    UChar,   "0", "The logging level to be used during operation") \
   CMD_OPTION(processors, n,    UShort,  "1", "The number of software (rcc) containers to create") \
-  CMD_OPTION(remove,     r,    Bool,    0,   "Remove artifacts") \
-  CMD_OPTION(port,       p,    UShort,  0,   "Explicit TCP port for server, zero for any") \
-  CMD_OPTION(discoverable, d,  Bool,    0,   "Make server discoverable, via UDP") \
-  CMD_OPTION(addresses , a,    String,  0,   "Write TCP addresses to this file, one per line") \
-  CMD_OPTION(loopback  , L,    Bool,    0,   "Include loopback network server address") \
-  CMD_OPTION(onlyloopback, O,  Bool,    0,   "Include ONLY loopback network server address") \
+  CMD_OPTION(remove,     r,    Bool,    0,   "Remove cached artifacts after execution or control-C") \
+  CMD_OPTION(port,       p,    UShort,  0,   "Explicit TCP port for server; default is dynamic") \
+  CMD_OPTION(discoverable, d,  Bool,    0,   "Make this server discoverable, via UDP multicast") \
+  CMD_OPTION(addresses , a,    String,  0,   "Write server's TCP addresses to this file, one per line") \
+  CMD_OPTION(loopback  , L,    Bool,    0,   "Allow discovery on the local/loopback subnet") \
+  CMD_OPTION(onlyloopback, O,  Bool,    0,   "Allow discovery ONLY on local/loopback subnet") \
 
 // FIXME: local-only like ocpihdl simulate?
 #include "CmdOption.h"
@@ -94,7 +93,6 @@ static int mymain(const char **) {
     ocpiCheck(signal(SIGINT, sigint) != SIG_ERR);
     ocpiCheck(signal(SIGTERM, sigint) != SIG_ERR);
   }
-  OCPI::Remote::g_suppressRemoteDiscovery = true;
   OCPI::Driver::ManagerManager::configure();
   assert(OCPI::Library::Library::s_firstLibrary);
   for (unsigned n = 1; n < options.processors(); n++) {

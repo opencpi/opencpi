@@ -102,9 +102,15 @@ namespace OCPI {
 		     file_id.m_opaque[0], file_id.m_opaque[1]);
 	    // New id was inserted, and thus was not already there
 	    if (isDir) {
-	      OS::FileIterator dir(a_libName, "*");
-	      for (; !dir.end(); dir.next())
-		doPath(OS::FileSystem::joinNames(a_libName, dir.relativeName()));
+	      try { // this is really checking the constructor
+		OS::FileIterator dir(a_libName, "*");
+		for (; !dir.end(); dir.next())
+		  doPath(OS::FileSystem::joinNames(a_libName, dir.relativeName()));
+	      } catch(...) {
+		ocpiBad("For OCPI_LIBRARY_PATH: failed to enter directory \"%s\".  Permissions?",
+			a_libName.c_str());
+		return;
+	      }
 	    } else {
 	      const char *l_name = a_libName.c_str();
 	      size_t len = strlen(l_name), xlen = strlen(".xml");

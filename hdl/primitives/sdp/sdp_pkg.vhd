@@ -108,7 +108,7 @@ function header2be(h : header_t; word : unsigned) return std_logic_vector;
 -- Definitions for the compressed metadata dword used for DMA
 -- Metadata (internal) definitions are consistent with DtHandshakeControl.h
 --------------------------------------------------------------------------------
-constant meta_length_width_c : natural := 21;
+constant meta_length_width_c : natural := 21; -- MUST BE IN SYNC WITH SW DtHandshakeControl.h
 constant meta_eof_c          : natural := meta_length_width_c;
 constant meta_one_c          : natural := meta_eof_c + 1;
 constant meta_truncate_c     : natural := meta_one_c + 1;
