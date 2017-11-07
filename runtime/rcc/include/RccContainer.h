@@ -99,8 +99,8 @@ namespace OCPI {
       void addTask( RCCUserTask * task );
       bool join( bool block, OCPI::OS::Semaphore & sem );
 
-      void start(DataTransfer::EventManager* event_manager) throw();
-      void stop(DataTransfer::EventManager* event_manager) throw();
+      //      void start(DataTransfer::EventManager* event_manager) throw();
+      //      void stop(DataTransfer::EventManager* event_manager) throw();
       DataTransfer::EventManager*  getEventManager();
       bool needThread() { return true; }
     };

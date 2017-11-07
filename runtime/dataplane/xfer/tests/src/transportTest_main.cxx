@@ -581,11 +581,11 @@ int main( int argc, char** argv )
   }
   catch (const std::string & oops) {
     std::cerr << "Error: " << oops << std::endl;
-    return false;
+    return 1;
   }
   if (config.help) {
     printUsage (config, argv[0]);
-    return false;
+    return 1;
   }
 
 
@@ -655,7 +655,7 @@ int main( int argc, char** argv )
   }
 #endif
 
-  DataTransfer::XferFactory * factory = fm.find( config.endpoint.c_str(), NULL );  
+  DataTransfer::XferFactory * factory = fm.find(config.endpoint.c_str());  
   ocpiAssert( factory );
 
   bool tpassed = true;

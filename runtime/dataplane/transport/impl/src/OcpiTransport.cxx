@@ -285,7 +285,7 @@ requestNewConnection( Circuit* circuit, bool send, const char *protocol, OS::Tim
 
   ocpiDebug("requestNewConnection: c: %s s: %s", client_loc->c_str(), server_loc->c_str());
   XF::XferFactory* tfactory = 
-    XF::getManager().find( *client_loc, nuls );
+    XF::getManager().find(*client_loc);
   if ( ! tfactory ) {
     throw UnsupportedEndpointEx(client_loc->c_str());
   }
@@ -461,7 +461,6 @@ createInputPort(OCPI::RDT::Descriptors& desc, const OU::PValue */*params*/)
   Circuit *circuit = createCircuit(0, new ConnectionMetaData(NULL, ep, desc.desc.nBuffers,
 							     desc.desc.dataBufferSize));
   Port *port = circuit->getInputPortSet(0)->getPortFromOrdinal(1);    
-  circuit->attach(); // FIXME: why wouldn't port creation do the attach?
   // Merge port descriptor info between what was passed in and what is determined here.
   port->getPortDescriptor(desc, NULL);
   return port;

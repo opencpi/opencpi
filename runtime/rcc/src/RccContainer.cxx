@@ -288,7 +288,7 @@ createApplication(const char *a_name, const OCPI::Util::PValue *props)
   return ca;
 }
 
-
+#if 0
 void 
 Container::
 start(DataTransfer::EventManager* event_manager)
@@ -332,5 +332,6 @@ stop(DataTransfer::EventManager* event_manager)
     // Ignore
   }
 }
+#endif
   }
 }

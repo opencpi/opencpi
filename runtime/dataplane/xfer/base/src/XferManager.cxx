@@ -75,6 +75,7 @@ getListOfSupportedProtocols() {
   return l;
 }
 
+#if 0
 std::string XferManager::null;
 
 // Find the Data transfer class
@@ -100,6 +101,16 @@ find(std::string& ep1, std::string& ep2) {
   OU::AutoMutex guard ( m_mutex, true );
   for (XferFactory* d = firstDriver(); d; d = d->nextDriver())
     if (d->supportsEndPoints(ep1, ep2))
+      return d;
+  return NULL;
+}
+#endif
+XferFactory* XferManager::
+getDriver(const char *name) {
+  parent().configure();
+  OU::AutoMutex guard(m_mutex, true);
+  for (XferFactory* d = firstDriver(); d; d = d->nextDriver())
+    if (d->supportsEndPoint(name))
       return d;
   return NULL;
 }
@@ -130,10 +141,7 @@ allocateProxyEndPoint(const char *loc, bool local, size_t size) {
 EndPoint &XferManager::
 getEndPoint(std::string &s) {
   parent().configure();
-  // Find the factory that knows how to create the shared memory block for
-  // this address
-  std::string nuls;
-  XferFactory* factory = find(s, nuls );
+  XferFactory* factory = find(s);
   if (!factory)
     throw OU::EmbeddedException( UNSUPPORTED_ENDPOINT, s.c_str());
   return factory->getEndPoint(s.c_str());

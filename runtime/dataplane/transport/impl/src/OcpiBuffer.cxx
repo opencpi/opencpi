@@ -50,12 +50,12 @@ using namespace DataTransfer;
  *********************************/
 Buffer::Buffer( OCPI::DataTransport::Port* port, OCPI::OS::uint32_t tid )
   : OCPI::Time::Emit( port, "Buffer", ""),
-  m_zeroCopyFromBuffer(NULL),m_port(port),
-  m_zCopyPort(0),m_attachedZBuffer(0),m_tid(tid),m_buffer(0),
-  m_dependentZeroCopyPorts(1),  m_dependentZeroCopyCount(0), 
-  m_InUse(false),m_remoteZCopy(false), m_threadSafeMutex(true)
+  m_zeroCopyFromBuffer(NULL), m_startOffset(0), m_length(0), m_port(port), m_zCopyPort(0),
+  m_attachedZBuffer(0), m_tid(tid), m_pullTransferInProgress(NULL), m_pid(0), m_sbMd(NULL),
+  m_bmdVaddr(NULL), m_state(NULL), m_bsVaddr(NULL), m_buffer(0), m_bVaddr(NULL),
+  m_dependentZeroCopyPorts(1), m_dependentZeroCopyCount(0), m_InUse(false), m_remoteZCopy(false),
+  m_threadSafeMutex(true), m_noTransfer(false)
 {
-  m_pullTransferInProgress = NULL;
   m_pid=m_port->getPortId();
 }
 

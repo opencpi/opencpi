@@ -26,6 +26,7 @@
 #include "RemoteLauncher.h"
 #include "RemoteServer.h"
 #include "RemoteClient.h"
+#include "RemoteDriver.h"
 
 // This is the "driver" for remote containers, which finds them, constructs them, and 
 // in general manages them. It acts as the factory for Remote containers.
@@ -279,6 +280,9 @@ public:
     throw (OU::EmbeddedException) {
     return new Application(*this, a_name, props);
   }
+  // Fixme - use a background thread to simply monitor the state of the connection to the
+  // server to do something when it hangs or crashes.
+  // This could include waiting.
   bool needThread() { return false; }
   OC::Artifact &
   createArtifact(OCPI::Library::Artifact &lart, const OA::PValue *artifactParams) {
@@ -307,256 +311,293 @@ Worker(Application & app, Artifact *art, const char *a_name, ezxml_t impl, ezxml
 
 // The driver class owns the containers (like all container driver classes)
 // and also owns the clients of those containers.
-class Driver : public OC::DriverBase<Driver, Container, remote>,
-	       public OU::Parent<Client> {
-public:
-  static pthread_key_t s_threadKey;
-  Driver() throw() {
-    ocpiCheck(pthread_key_create(&s_threadKey, NULL) == 0);
-    ocpiDebug("Registering the Remote Container driver");
-    g_probeServer = probeServer;
-  }
-  // Called either from UDP discovery or explicitly, e.g. from ocpirun
-  // If the latter, the "containers" argument will be NULL
-  bool
-  probeServer(const char *server, bool /*verbose*/, const char **exclude, char *containers,
-	      std::string &error) {
-    ocpiDebug("probing remote container server: %s", server);
-    error.clear();
-    OS::Socket *sock = NULL;
-    uint16_t port;
-    std::string host(server);
-    const char *sport = strchr(server, ':');
-    if (sport) {
-      const char *err;
-      if ((err = OU::Value::parseUShort(sport + 1, NULL, port)))
-	return OU::eformat(error, "Bad port number in server name: \"%s\"", server);
-      host.resize(sport - server);
-    } else
-      port = REMOTE_PORT;
-    ezxml_t rx = NULL; // need to explicitly free this below via "bad:" or "out:"
-    std::vector<char> rbuf;
-    bool taken = false; // whether the socket has been taken by a launcher
-    Client *client = OU::Parent<Client>::findChildByName(server);
-    if (!containers) {
-      // We are not being called during discovery, but explicitly (when avoiding discovery).
-      // Whereas during UDP discovery, this info comes back in the UDP datagram, here we must go
-      // get it via TCP by opening the TCP socket early, before excluding specific containers.
-      try {
-	sock = new OS::Socket(host, port);
-      } catch (const std::string &e) {
-	return OU::eformat(error, "Error connecting to server \"%s\": %s", server, e.c_str());
-      }
-      std::string request("<discover>");
-      bool eof;
-      if (OX::sendXml(sock->fd(), request, "TCP server for discovery", error) ||
-	  OX::receiveXml(sock->fd(), rx, rbuf, eof, error))
-	goto out;
-      if (strcmp(OX::ezxml_tag(rx), "discovery") || !(containers = OX::ezxml_content(rx)))
-	goto bad;
+
+// class Driver : public OC::DriverBase<Driver, Container, remote>,
+//	       public OU::Parent<Client> {
+  // public:
+  //  static pthread_key_t s_threadKey;
+Driver::Driver() throw() {
+  ocpiCheck(pthread_key_create(&s_threadKey, NULL) == 0);
+  ocpiDebug("Registering the Remote Container driver");
+  g_probeServer = probeServer;
+}
+// Called either from UDP discovery or explicitly, e.g. from ocpirun
+// If the latter, the "containers" argument will be NULL
+bool Driver::
+probeServer(const char *server, bool verbose, const char **exclude, char *containers,
+	    bool discovery, std::string &error) {
+  ocpiDebug("probing remote container server: %s", server);
+  error.clear();
+  OS::Socket *sock = NULL;
+  uint16_t port;
+  std::string host(server);
+  const char *sport = strchr(server, ':');
+  if (sport) {
+    const char *err;
+    if ((err = OU::Value::parseUShort(sport + 1, NULL, port)))
+      return OU::eformat(error, "Bad port number in server name: \"%s\"", server);
+    host.resize(sport - server);
+  } else
+    port = REMOTE_PORT;
+  ezxml_t rx = NULL; // need to explicitly free this below via "bad:" or "out:"
+  std::vector<char> rbuf;
+  bool taken = false; // whether the socket has been taken by a launcher
+  Client *client = OU::Parent<Client>::findChildByName(server);
+  if (!containers) {
+    // We are not being called during discovery, but explicitly (when avoiding discovery).
+    // Whereas during UDP discovery, this info comes back in the UDP datagram, here we must go
+    // get it via TCP by opening the TCP socket early, before excluding specific containers.
+    try {
+      sock = new OS::Socket(host, port);
+    } catch (const std::string &e) {
+      return OU::eformat(error, "Error connecting to server \"%s\": %s", server, e.c_str());
     }
-    // Now process the discovery information per container - either from UDP discovery or from
-    // explicit contact via TCP and xml
-    for (char *cp = containers, *end; *cp; cp = end) {
-      while (isspace(*cp)) cp++;
-      if (!(end = strchr(cp, '\n')))
-	goto bad;
-      *end++ = '\0';
-      char *args[REMOTE_NARGS + 1];
-      for (char **ap = args; (*ap++ = strsep(&cp, "|")); )
-	if ((ap - args) >= REMOTE_NARGS)
+    std::string request("<discover>");
+    bool eof;
+    if (OX::sendXml(sock->fd(), request, "TCP server for discovery", error) ||
+	OX::receiveXml(sock->fd(), rx, rbuf, eof, error))
+      goto out;
+    if (strcmp(OX::ezxml_tag(rx), "discovery") || !(containers = OX::ezxml_content(rx)))
+      goto bad;
+  }
+  if (verbose)
+    printf("Received server information from \"%s\".  Available containers are:\n", server);
+  // Now process the discovery information per container - either from UDP discovery or from
+  // explicit contact via TCP and xml
+  for (char *cp = containers, *end; *cp; cp = end) {
+    while (isspace(*cp)) cp++;
+    if (!(end = strchr(cp, '\n')))
+      goto bad;
+    *end++ = '\0';
+    char *args[REMOTE_NARGS + 1];
+    for (char **ap = args; (*ap++ = strsep(&cp, "|")); )
+      if ((ap - args) >= REMOTE_NARGS)
+	break;
+    // cp now points to transports
+    std::string cname;
+    OU::format(cname, "%s/%s", server, args[0]);
+    if (exclude) {
+      bool excluded = false;
+      for (const char **ap = exclude; *ap; ap++)
+	if (!strcasecmp(cname.c_str(), *ap)) {
+	  ocpiInfo("Remote container \"%s specifically excluded/ignored", *ap);
+	  excluded = true;
 	  break;
-      // cp now points to transports
-      std::string cname;
-      OU::format(cname, "%s/%s", server, args[0]);
-      if (exclude) {
-	bool excluded = false;
-	for (const char **ap = exclude; *ap; ap++)
-	  if (!strcasecmp(cname.c_str(), *ap)) {
-	    ocpiInfo("Remote container \"%s specifically excluded/ignored", *ap);
-	    excluded = true;
-	    break;
-	  }
-	if (excluded)
-	  continue;
-      }
-      // We have a remote container.  Make sure we have a client (remote launcher) for it.
-      if (!client) {
-	if (!sock) { // if we got the discovery info from UDP, the TCP socket wasn't created
-	  try {
-	    sock = new OS::Socket(host, port);
-	  } catch (const std::string &e) {
-	    OU::format(error, "Error opening socket to server: %s", e.c_str());
-	    goto out;
-	  }
 	}
-	client = new Client(*this, server, *sock);
-	taken = true;
+      if (excluded)
+	continue;
+    }
+    // We have a remote container.  Make sure we have a client (remote launcher) for it.
+    if (!client && !discovery) {
+      if (!sock) { // if we got the discovery info from UDP, the TCP socket wasn't created
+	try {
+	  sock = new OS::Socket(host, port);
+	} catch (const std::string &e) {
+	  OU::format(error, "Error opening socket to server: %s", e.c_str());
+	  goto out;
+	}
       }
-      ocpiDebug("Creating remote container: \"%s\", model %s, os %s, version %s, arch %s, platform %s dynamic %s",
-		cname.c_str(), args[1], args[2], args[3], args[4], args[5], args[6]);
-      ocpiDebug("Transports are: '%s'", cp);
+      client = new Client(*this, server, *sock);
+      taken = true;
+    }
+    if (verbose || discovery)
+      printf("%-35s  platform %s, model %s, os %s, version %s, arch %s, dynamic %s\n",
+	     cname.c_str(), args[5], args[1], args[2], args[3], args[4], args[6]);
+    if (verbose)
+      printf("  Transports: %s\n", cp);
+    ocpiDebug("Creating remote container: \"%s\", model %s, os %s, version %s, arch %s, "
+	      "platform %s dynamic %s",
+	      cname.c_str(), args[1], args[2], args[3], args[4], args[5], args[6]);
+    ocpiDebug("Transports are: '%s'", cp);
+    if (!discovery) {
       Container &c = *new Container(*client, cname.c_str(), args[1], args[2], args[3], args[4],
 				    args[5], args[6], cp, NULL);
       (void)&c;
     }
-    sock = NULL;
-    goto out;
-  bad:
-    OU::format(error, "Bad server container response from \"%s\"", server);
-  out:
-    if (sock && !taken)
-      delete sock;
-    if (rx)
-      ezxml_free(rx);
-    return !error.empty();
   }
-  OC::Container *
-  probeContainer(const char *which, std::string &/*error*/, const OA::PValue */*params*/) {
-    throw OU::Error("Remote containers may only be discovered, not probed: \"%s\"", which);
-  }
-  // Try a discovery (send and receive) on a socket from an interface
-  bool
-  trySocket(std::set<std::string> &servers, OE::Interface &ifc, OE::Socket &s,
-	    OE::Address &addr, bool /*discovery*/, const char **exclude, std::string &error) {
-    // keep track of different addresses discovered when we broadcast.
-    std::set<OE::Address,OE::Address::Compare> addrs;
-    OE::Packet sendFrame;
-    strcpy((char *)sendFrame.payload, "discover");
-    unsigned count = 0;
-    for (unsigned n = 0; error.empty() && n < RETRIES; n++) {
-      if (!s.send(sendFrame, strlen((const char*)sendFrame.payload), addr, 0, &ifc, error))
-	break;
-      OE::Packet recvFrame;
-      OE::Address devAddr;
-      size_t length;
+  sock = NULL;
+  goto out;
+ bad:
+  OU::format(error, "Bad server container response from \"%s\"", server);
+ out:
+  if (sock && !taken)
+    delete sock;
+  if (rx)
+    ezxml_free(rx);
+  return !error.empty();
+}
 
-      OS::Timer timer(0, DELAYMS * 1000000);
-      while (s.receive(recvFrame, length, DELAYMS, devAddr, error)) {
-	if (addr.isBroadcast()) {
-	  if (!addrs.insert(devAddr).second) {
-	    ocpiDebug("Received redundant ethernet discovery response");
-	    continue;
-	  }
-	} else if (devAddr != addr) {
-	  ocpiInfo("Received ethernet discovery response from wrong address");
+OC::Container *Driver::
+probeContainer(const char *which, std::string &/*error*/, const OA::PValue */*params*/) {
+  throw OU::Error("Remote containers may only be discovered, not probed: \"%s\"", which);
+}
+
+// Try a discovery (send and receive) on a socket from an interface
+bool Driver::
+trySocket(std::set<std::string> &servers, OE::Interface &ifc, OE::Socket &s, OE::Address &addr,
+	  bool discovery, const char **exclude, bool verbose, std::string &error) {
+  // keep track of different addresses discovered when we broadcast.
+  std::set<OE::Address,OE::Address::Compare> addrs;
+  OE::Packet sendFrame;
+  strcpy((char *)sendFrame.payload, "discover");
+  unsigned count = 0;
+  for (unsigned n = 0; error.empty() && n < RETRIES; n++) {
+    if (!s.send(sendFrame, strlen((const char*)sendFrame.payload), addr, 0, &ifc, error))
+      break;
+    OE::Packet recvFrame;
+    OE::Address devAddr;
+    size_t length;
+
+    OS::Timer timer(0, DELAYMS * 1000000);
+    while (s.receive(recvFrame, length, DELAYMS, devAddr, error)) {
+      if (addr.isBroadcast()) {
+	if (!addrs.insert(devAddr).second) {
+	  ocpiDebug("Received redundant ethernet discovery response");
 	  continue;
 	}
-	char *response = (char *)recvFrame.payload;
-	if (strlen(response) >= length) {
-	  ocpiInfo("Discovery response invalid from %s: strlen %zu length %zu",
-		   devAddr.pretty(), strlen(response), length);
-	  continue;
-	}
-	ocpiDebug("Discovery response from %s is:\n%s-- end of discovery",
-		  devAddr.pretty(), response);
-	char *cp = strchr(response, '\n');
-	char *sport = strchr(response, ':');
-	if (!cp || !sport || cp < sport)
-	  ocpiBad("Invalid response during container server discovery from %s",
-		  devAddr.pretty());
-	else {
-	  *cp++ = '\0';
-	  if (!servers.insert(response).second) {
-	    ocpiDebug("Received redundant server discovery response from: \"%s\"", response);
-	    continue;
-	  }
-	  if (probeServer(response, false, exclude, cp, error))
-	    ocpiBad("Discovered server error: %s", error.c_str());
-	}
-      }
-      if (!timer.expired())
-	OS::sleep(2);
-    }
-    if (error.size())
-      ocpiInfo("error on interface '%s' when probing for %s: %s",
-	       ifc.name.c_str(), addr.pretty(), error.c_str());
-    else if (!count && !addr.isBroadcast())
-      ocpiInfo("no network probe response on '%s' from '%s' after %u attempts %ums apart",
-	       ifc.name.c_str(), addr.pretty(), RETRIES, DELAYMS);
-    return count;
-  }
-  // Find container servers on this interface, perhaps at one specific address
-  unsigned
-  tryIface(std::set<std::string> &servers, OE::Interface &ifc, OE::Address &devAddr,
-	   const char **exclude, bool discovery, std::string &error) {
-    unsigned count = 0;
-    OE::Interface i("udp", error);
-    if (error.length())
-      ocpiInfo("Could not open udp interface for discovery: %s", error.c_str());
-    else {
-      OE::Socket s(i, discovery ? ocpi_discovery : ocpi_master, NULL, 0, error);
-      if (error.length())
-	ocpiInfo("Could not open socket for udp discovery: %s", error.c_str());
-      else {
-	count = trySocket(servers, ifc, s, devAddr, discovery, exclude, error);
-	if (error.length())
-	  ocpiInfo("Error in container server discovery for \"%s\" interface: %s",
-		   ifc.name.c_str(), error.c_str());
-      }
-    }
-    return count;
-  }
-  // Per driver discovery routine to create devices
-  // In this case we "discover" container servers, each of which serves us 
-  // whatever containers are local to that server/system
-  unsigned
-  search(const OA::PValue* props, const char **exclude, bool discoveryOnly) {
-    ocpiInfo("Remote container discovery is %s", g_enableRemoteDiscovery ?
-	     "on, starting discovery" : "off");
-    if (!g_enableRemoteDiscovery)
-      return 0;
-    std::string error;
-    unsigned count = 0;
-    OE::IfScanner ifs(error);
-    if (error.size())
-      return 0;
-    const char *ifName = NULL;
-    OU::findString(props, "interface", ifName);
-    OE::Interface eif;
-    ocpiDebug("Searching for container servers in interfaces");
-    std::set<std::string> servers;
-    while (ifs.getNext(eif, error, ifName)) {
-      if (eif.name == "udp") // the udp pseudo interface is not used for discovery
+      } else if (devAddr != addr) {
+	ocpiInfo("Received ethernet discovery response from wrong address");
 	continue;
-      ocpiInfo("RemoteDriver: Considering interface \"%s\", addr 0x%x",
-		eif.name.c_str(), eif.ipAddr.addrInAddr());
-      if (eif.up && eif.connected && eif.ipAddr.addrInAddr()) {
-	OE::Address bcast(true, REMOTE_PORT);
-	count += tryIface(servers, eif, bcast, exclude, discoveryOnly, error);
-	if (error.size()) {
-	  ocpiInfo("Error during container server discovery on '%s': %s",
-		    eif.name.c_str(), error.c_str());
-	  error.clear();
+      }
+      char *response = (char *)recvFrame.payload;
+      if (strlen(response) >= length) {
+	ocpiInfo("Discovery response invalid from %s: strlen %zu length %zu",
+		 devAddr.pretty(), strlen(response), length);
+	continue;
+      }
+      ocpiDebug("Discovery response from %s is:\n%s-- end of discovery",
+		devAddr.pretty(), response);
+      char *cp = strchr(response, '\n');
+      char *sport = strchr(response, ':');
+      if (!cp || !sport || cp < sport)
+	ocpiBad("Invalid response during container server discovery from %s",
+		devAddr.pretty());
+      else {
+	*cp++ = '\0';
+	if (!servers.insert(response).second) {
+	  ocpiDebug("Received redundant server discovery response from: \"%s\"", response);
+	  continue;
 	}
-      } else
-	ocpiInfo("In RemoteDriver.cxx Interface '%s' is %s and %s",
-		  eif.name.c_str(), eif.up ? "up" : "down",
-		  eif.connected ? "connected" : "not connected");
-      if (ifName)
-	break;
+	if (probeServer(response, verbose, exclude, cp, discovery, error))
+	  ocpiBad("Discovered server error: %s", error.c_str());
+      }
     }
-    if (error.size())
-      ocpiInfo("Error during container server discovery on '%s': %s",
-	       eif.name.c_str(), error.c_str());
-    return count;
+    if (!timer.expired())
+      OS::sleep(2);
   }
-  ~Driver() throw ( ) {
-    // Force containers to shutdown before we remove transport globals.
-    OU::Parent<Container>::deleteChildren();
-    //      if ( m_tpg_no_events ) delete m_tpg_no_events;
-    //      if ( m_tpg_events ) delete m_tpg_events;
-    ocpiCheck(pthread_key_delete(s_threadKey) == 0);
-  }
-  static bool
-  probeServer(const char *server, bool verbose, const char **exclude, std::string &error) {
-    return Driver::getSingleton().probeServer(server, verbose, exclude, NULL, error);
-  }
+  if (error.size())
+    ocpiInfo("error on interface '%s' when probing for %s: %s",
+	     ifc.name.c_str(), addr.pretty(), error.c_str());
+  else if (!count && !addr.isBroadcast())
+    ocpiInfo("no network probe response on '%s' from '%s' after %u attempts %ums apart",
+	     ifc.name.c_str(), addr.pretty(), RETRIES, DELAYMS);
+  return count;
+}
 
-};
+// Find container servers on this interface, perhaps at one specific address
+unsigned Driver::
+tryIface(std::set<std::string> &servers, OE::Interface &ifc, OE::Address &devAddr,
+	 const char **exclude, bool discovery, bool verbose, std::string &error) {
+  if (verbose)
+    printf("Trying interface \"%s\"; it is %s, %s, and has IP address: %s\n",
+	   ifc.name.c_str(), ifc.up ? "up" : "down",
+	   ifc.connected ? "connected" : "not connected",
+	   ifc.ipAddr.addrInAddr() ? ifc.ipAddr.pretty() : "<none>");
+  unsigned count = 0;
+  OE::Interface i("udp", error);
+  if (error.length())
+    ocpiInfo("Could not open udp interface for discovery: %s", error.c_str());
+  else {
+    OE::Socket s(i, discovery ? ocpi_discovery : ocpi_master, NULL, 0, error);
+    if (error.length())
+      ocpiInfo("Could not open socket for udp discovery: %s", error.c_str());
+    else {
+      count = trySocket(servers, ifc, s, devAddr, discovery, exclude, verbose, error);
+      if (error.length())
+	ocpiInfo("Error in container server discovery for \"%s\" interface: %s",
+		 ifc.name.c_str(), error.c_str());
+    }
+  }
+  return count;
+}
+
+// Per driver discovery routine to create devices
+// In this case we "discover" container servers, each of which serves us 
+// whatever containers are local to that server/system
+unsigned Driver::
+search(const OA::PValue* params, const char **exclude, bool discoveryOnly) {
+  const char *env = getenv("OCPI_ENABLE_REMOTE_DISCOVERY");
+  if (!g_enableRemoteDiscovery && (!env || env[0] != '1')) {
+    ocpiInfo("Remote container discovery is off");
+    return 0;
+  }
+  g_enableRemoteDiscovery = true;
+  ocpiInfo("Remote container discovery is on");
+  std::string error;
+  unsigned count = 0;
+  OE::IfScanner ifs(error);
+  if (error.size())
+    return 0;
+  bool printOnly = discoveryOnly, verbose = false;
+  OU::findBool(params, "printOnly", printOnly);
+  OU::findBool(params, "verbose", verbose);
+  const char *ifName = NULL;
+  OU::findString(params, "interface", ifName);
+  OE::Interface eif;
+  if (verbose)
+    printf("Searching for container servers via all active network interfaces.\n");
+  std::set<std::string> servers;
+  while (ifs.getNext(eif, error, ifName)) {
+    if (eif.name == "udp") // the udp pseudo interface is not used for discovery
+      continue;
+    ocpiInfo("RemoteDriver: Considering interface \"%s\", addr %s, 0x%x",
+	     eif.name.c_str(), eif.ipAddr.pretty(), eif.ipAddr.addrInAddr());
+    if (eif.up && eif.connected && eif.ipAddr.addrInAddr()) {
+      OE::Address bcast(true, REMOTE_PORT);
+      count += tryIface(servers, eif, bcast, exclude, printOnly, verbose, error);
+      if (error.size()) {
+	ocpiInfo("Error during container server discovery on '%s': %s",
+		 eif.name.c_str(), error.c_str());
+	error.clear();
+      }
+    } else {
+      if (verbose)
+	printf("Skipping interface \"%s\"; it is %s, %s, and %s%s\n",
+	       eif.name.c_str(), eif.up ? "up" : "down",
+	       eif.connected ? "connected" : "not connected",
+	       eif.ipAddr.addrInAddr() ? "has IP address: " : "has no IP address",
+	       eif.ipAddr.addrInAddr() ? eif.ipAddr.pretty() : "");
+      ocpiInfo("In RemoteDriver.cxx Interface '%s' is %s and %s",
+	       eif.name.c_str(), eif.up ? "up" : "down",
+	       eif.connected ? "connected" : "not connected");
+    }
+    if (ifName)
+      break;
+  }
+  if (error.size())
+    ocpiInfo("Error during container server discovery on '%s': %s",
+	     eif.name.c_str(), error.c_str());
+  return count;
+}
+
+Driver::
+~Driver() throw ( ) {
+  // Force containers to shutdown before we remove transport globals.
+  OU::Parent<Container>::deleteChildren();
+  //      if ( m_tpg_no_events ) delete m_tpg_no_events;
+  //      if ( m_tpg_events ) delete m_tpg_events;
+  ocpiCheck(pthread_key_delete(s_threadKey) == 0);
+}
+
+bool Driver::
+probeServer(const char *server, bool verbose, const char **exclude, bool discovery,
+	    std::string &error) {
+  return Driver::getSingleton().probeServer(server, verbose, exclude, NULL, discovery, error);
+}
 
 pthread_key_t Driver::s_threadKey;
 // Register this driver
 OC::RegisterContainerDriver<Driver> driver;
-  }
+
+}
 }

@@ -30,12 +30,12 @@ namespace OCPI {
   // When the remote container driver is loaded it needs to see this.
   namespace Remote {
     bool g_enableRemoteDiscovery = false;
-    bool (*g_probeServer)(const char *server, bool verbose, const char **exclude,
+    bool (*g_probeServer)(const char *server, bool verbose, const char **exclude, bool discovery,
 			  std::string &error) = NULL;
     bool
     useServer(const char *server, bool verbose, const char **exclude, std::string &error) {
       if (g_probeServer)
-	return (*g_probeServer)(server, verbose, exclude, error);
+	return (*g_probeServer)(server, verbose, exclude, false, error);
       OU::format(error,
 		 "the remote container driver is not loaded; server \"%s\" cannot be accessed",
 		 server);

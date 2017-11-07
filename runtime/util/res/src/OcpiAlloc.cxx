@@ -158,9 +158,9 @@ alloc(size_t nbytes, unsigned int alignment, OCPI::Util::ResAddrType& req_addr)
         m_pool->alloc_list.push_back(*it);
         m_pool->free_list.erase(it);      
       }
-      ocpiDebug("**** Alloc Returning address = %" OCPI_UTIL_RESADDR_PRIx ", %" 
-		OCPI_UTIL_RESADDR_PRIx "", taddr, req_addr);
       m_pool->used += nbytes;
+      //ocpiDebug("**** Alloc of %zu Returning address = %" OCPI_UTIL_RESADDR_PRIx ", %" 
+      //          OCPI_UTIL_RESADDR_PRIx " used %zu", nbytes, taddr, req_addr, m_pool->used);
       return 0;
     }
     m_pool->defrag();  
@@ -204,6 +204,7 @@ int OCPI::Util::MemBlockMgr::free( OCPI::Util::ResAddrType addr )
       m_pool->free_list.push_back( Block( m_pool, (*it).size, addr, addr ) );
       m_pool->alloc_list.erase( it );
       m_pool->defrag();  
+      // ocpiDebug("**** Free of = %" OCPI_UTIL_RESADDR_PRIx " used %zu", addr, m_pool->used);
       return 0;
     }
   }
@@ -226,6 +227,7 @@ OCPI::Util::MemBlockMgr::MemBlockMgr(OCPI::Util::ResAddrType start, size_t size 
 OCPI::Util::MemBlockMgr::~MemBlockMgr()
   throw()
 {
+  ocpiDebug("Memory pool is using %zu of %zu on deletion", m_pool->used, m_pool->total_size);
   delete m_pool;
 }
 

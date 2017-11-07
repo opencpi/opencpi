@@ -970,7 +970,7 @@ namespace OCPI {
 		  const std::string &a_name, const OU::PValue *portParams,
 		  const OC::Launcher::Member *member, const OU::Assembly::External *ep,
 		  size_t scale, size_t index) {
-      p.m_scale = scale;
+      p.m_scale = scale == 1 ? 0 : scale; // zero means no scaling/bridging/fanin/fanout
       p.m_index = index;
       p.m_member = member;
       p.m_metaPort = mp;

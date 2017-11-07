@@ -126,7 +126,7 @@ namespace OCPI {
     }
     // This is for the derived class's destructor to call
     void Container::shutdown() {
-      stop(NULL);
+      stop();
       if (m_thread)
 	m_thread->join();
     }
@@ -137,12 +137,14 @@ namespace OCPI {
       delete &m_transport;
     }
 
+#if 0
     //    bool m_start;
 
     void Container::start(DataTransfer::EventManager* event_manager)
       throw()
     {
       (void)event_manager;
+      start();
       m_enabled = true;
     }
 
@@ -152,7 +154,7 @@ namespace OCPI {
       (void)event_manager;
       m_enabled = false;
     }
-
+#endif
     Container::DispatchRetCode Container::dispatch(DataTransfer::EventManager*)
     {
       return Container::DispatchNoMore;
@@ -209,7 +211,7 @@ namespace OCPI {
 	;
     }
     void Container::stop() {
-      stop(getEventManager());
+      //      stop(getEventManager());
       m_enabled = false;
     }
     void runContainer(void*arg) {
@@ -240,13 +242,19 @@ namespace OCPI {
       }
     }
     void Container::start() {
+      Container &base = baseContainer();
+      if (this != &base && base.m_bridgedPorts.size())
+	base.start();
       if (!m_enabled) {
+	if (this != &base && base.m_bridgedPorts.size())
+	  base.start();
 	m_enabled = true;
+	ocpiDebug("Starting container %s(%u): %p", name().c_str(), m_ordinal, this);
 	if (!m_thread && m_ownThread && needThread()) {
 	  m_thread = new OCPI::OS::ThreadManager;
 	  m_thread->start(runContainer, (void*)this);
 	}
-	start(getEventManager());
+	//	start(getEventManager());
       }
     }
     Container &Container::nthContainer(unsigned n) {
@@ -266,10 +274,14 @@ namespace OCPI {
     }
     void Container::registerBridgedPort(LocalPort &p) {
       OU::SelfAutoMutex guard (this);
+      ocpiDebug("BridgePort %p of container %p registered with container %p",
+		&p, &p.container(), this);
       m_bridgedPorts.insert(&p);
     }
     void Container::unregisterBridgedPort(LocalPort &p) {
       OU::SelfAutoMutex guard (this);
+      ocpiDebug("BridgePort %p of container %p unregistered from container %p",
+		&p, &p.container(), this);
       m_bridgedPorts.erase(&p);
     }
     Launcher &Container::launcher() const {

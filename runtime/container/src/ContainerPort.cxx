@@ -96,15 +96,6 @@ namespace OCPI {
       ocpiAssert( 0 );
     }
 
-#if 0
-    ExternalPort::
-    ExternalPort(const OCPI::Util::Port &mPort, Application &app, size_t nOthers,
-		 const OU::PValue *params)
-      : LocalPort(Container::baseContainer(), mPort, params),
-	OU::Child<Application,ExternalPort,externalPort>(app, *this, NULL) {
-      prepareOthers(nOthers, 1);
-    }
-#else
     ExternalPort::
     ExternalPort(Launcher::Connection &c, bool a_isProvider)
       : LocalPort(Container::baseContainer(),
@@ -115,7 +106,6 @@ namespace OCPI {
     {
       prepareOthers(a_isProvider ? c.m_out.m_scale : c.m_in.m_scale, 1);
     }
-#endif
 
     ExternalPort::
     ~ExternalPort() {
@@ -123,8 +113,8 @@ namespace OCPI {
 
     // Bridge port constructor also does the equivalent of "startConnect" for itself.
     BridgePort::
-    BridgePort(LocalPort &port, const OU::PValue *params)
-      : BasicPort(port.container(), port.metaPort(), port.metaPort().m_provider, params)
+    BridgePort(LocalPort &port, bool provider, const OU::PValue *params)
+      : BasicPort(port.container(), port.metaPort(), provider, params)
     {
     }
 

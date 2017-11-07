@@ -23,7 +23,6 @@
 #include "OcpiOsAssert.h"
 #include "OcpiUtilCDR.h"
 #include "Container.h"
-//#include "ContainerWorker.h"
 #include "ContainerPort.h"
 
 namespace OCPI {
@@ -37,24 +36,28 @@ namespace OCPI {
     LocalPort(Container &a_container, const OCPI::Util::Port &mPort, bool a_isProvider,
 	      const OU::PValue *params)
       :  BasicPort(a_container, mPort, a_isProvider, params),
-	 m_scale(1), m_external(NULL), m_connectedBridgePorts(0), m_localBuffer(NULL),
-	 m_localDistribution(OU::Port::DistributionLimit), m_firstBridge(0), m_currentBridge(0),
-	 m_nextBridge(0) {
+	 m_scale(0), m_external(NULL), m_connectedBridgePorts(0), m_localBridgePort(NULL),
+	 m_localBuffer(NULL), m_localDistribution(OU::Port::DistributionLimit), m_firstBridge(0),
+	 m_currentBridge(0), m_nextBridge(0) {
     }
 
     LocalPort::
     ~LocalPort() {
-      container().unregisterBridgedPort(*this);
+      (container().needThread() ? container() : Container::baseContainer()).
+	unregisterBridgedPort(*this);
+      // Do not unregister from the base container since it might not exist
       for (unsigned n = 0; n < m_bridgePorts.size(); n++)
 	if (m_bridgePorts[n]) // maybe connections did not complete
 	  delete m_bridgePorts[n];
+      if (m_localBridgePort != this)
+	delete m_localBridgePort;
     }
 
     // This is called soon after construction, but not in the constructor.
     void LocalPort::
     prepareOthers(size_t a_nOthers, size_t mine) {
       m_scale = mine;
-      if (a_nOthers > 1) {
+      if (a_nOthers) { // nOthers == 0 means no bridging, but to expect one connection
 	ocpiDebug("Preparing port for connection to ports scaled crew");
 	m_bridgePorts.resize(a_nOthers, NULL);
       }
@@ -244,60 +247,37 @@ namespace OCPI {
       bridgeModes[output.getDistribution(op)][input.getDistribution(op)][isProvider() ? 1 : 0]
 	(c, output, input, op, bo);
     }
-
-#if 0
-    // To allow the codec to access this worker port, which is local but not in this process,
-    // we need add an "external port" between the codec and the worker port (e.g. on an FPGA),
-    // to provide a software interface to the codec processing
-    // So we create the external port (which is local and inprocess) and connect it to this port
-    // We will delegate the external buffer API on this port to the inserted external port
-    // FIXME:  a layering violation - a local port is creating an external port which inherits
-    // local port.
-    void LocalPort::
-    insertExternal(Launcher::Connection &c) {
-      Launcher::Port
-	&me = isProvider() ? c.m_in : c.m_out,
-	&other = isProvider() ? c.m_out : c.m_in;
-      // Communication with this port will be via a newly created external port.
-      // The codec will talk to this port
-      // The "connection" between the external port and "this" port will be
-      // via the preferred method of this port's container.
-      // We copy and patch the connection description to accomplish this.
-      Launcher::Connection ext2local = c;
-      ext2local.m_transport = container().transports()[0];
-      Launcher::Port &ext = isProvider() ? c.m_out : c.m_in;
-      ext.m_launcher = &Container::baseContainer().launcher();
-      ext.m_member = NULL;
-      ext.m_port = NULL;
-      ext.m_name = name().c_str();
-      ext.m_scale = 1;
-      ext.m_metaPort = &m_metaPort;
-      // Need to qualify this class since we inherit the API::ExternalPort...
-      ext.m_port = m_external =
-	new OCPI::Container::ExternalPort(other.m_metaPort, me.m_containerApp, other.m_scale);
-					  
-					  
-					  
-      M->initialConnect(c);
-    }
-#endif
     void LocalPort::
     setupBridging(Launcher::Connection &c) {
-      LocalPort *other = (isProvider() ? c.m_out : c.m_in).m_port;
-      //      if (isInProcess()) {
-      //	assert(other);
-	becomeShim(NULL);    // skinny set of buffers and flags between codec and worker
-	//      } else
-	//	insertExternal(c);     // insert external port between codec and worker port
-      assert(other || (isProvider() ? c.m_out : c.m_in).m_metaPort);
-      const OU::Port &otherMeta =
-	other ? other->m_metaPort : *(isProvider() ? c.m_out : c.m_in).m_metaPort,
+      const Launcher::Port &other = isProvider() ? c.m_out : c.m_in;
+      assert(other.m_port || other.m_metaPort);
+      const OU::Port
+	&otherMeta = other.m_port ? other.m_port->m_metaPort : *other.m_metaPort,
 	&input = isProvider() ? m_metaPort : otherMeta,
 	&output = isProvider() ? otherMeta : m_metaPort;
       size_t nOps = std::max((size_t)1, std::max(input.nOperations(), output.nOperations()));
       m_bridgeOps.resize(nOps);
       for (unsigned n = 0; n < nOps; n++)
 	determineBridgeOp(c, output, input, n, m_bridgeOps[n]);
+      if (isInProcess(NULL)) {
+	becomeShim(NULL);    // skinny set of buffers and flags between codec and worker
+	m_localBridgePort = this;
+      } else {
+	// Communication with this local port will be via a newly created bridge port
+	// The codec will talk to this bridge port (thus a bridge port on BOTH sides)
+	// The "connection" between the bridge port and "this" local port will be
+	// via the preferred method of this port's container.
+	const Transports
+	  &base = Container::baseContainer().transports(),
+	  &mine = container().transports();
+	Transport bridged;
+	determineTransport(isProvider() ? mine : base, isProvider() ? base : mine,
+			   NULL, NULL, NULL, bridged);
+	applyConnection(bridged, c.m_bufferSize);
+	m_localBridgePort = new BridgePort(*this, !isProvider(), NULL);
+	m_localBridgePort->applyConnection(bridged, c.m_bufferSize); // native transport
+	m_localBridgePort->connectLocal(*this, NULL);
+      }
     }
 
     // Return true if there is something to return to the other side, even if this side is
@@ -306,19 +286,20 @@ namespace OCPI {
     initialConnect(Launcher::Connection &c) {
       OU::SelfAutoMutex guard(this);
       bool more = false;
-      applyConnection(c);
       Launcher::Port &otherSide = isProvider() ? c.m_out : c.m_in;
+      if (m_bridgePorts.size() && m_connectedBridgePorts == 0)
+	setupBridging(c); // this will applyConnection as necessary
+      else
+	applyConnection(c.m_transport, c.m_bufferSize);
       LocalPort *other = otherSide.m_port;
       if (m_bridgePorts.size()) {
 	size_t otherOrdinal = (isProvider() ? c.m_out : c.m_in).m_index;
-	if (m_connectedBridgePorts == 0)
-	  // When we are connecting the first "other", we do some one-time initialization.
-	  setupBridging(c);
 	assert(!m_bridgePorts[otherOrdinal]);
-	BridgePort &bp = *(m_bridgePorts[otherOrdinal] =
-			   new BridgePort(*this, (isProvider() ? c.m_in : c.m_out).m_params));
+	BridgePort &bp =
+	  *(m_bridgePorts[otherOrdinal] =
+	    new BridgePort(*this, isProvider(), (isProvider() ? c.m_in : c.m_out).m_params));
 	// we can't imply recurse here without creating a dummy connection.
-	bp.applyConnection(c);
+	bp.applyConnection(c.m_transport, c.m_bufferSize);
 	if (!other)
 	  more = bp.startRemote(c);
 	else if (other->m_bridgePorts.size()) {
@@ -332,9 +313,10 @@ namespace OCPI {
 	} else if (other->isInProcess(this))
 	  bp.connectInProcess(c, *other);
 	else
-	  bp.connectLocal(c);
+	  bp.connectLocal(*other, &c);
 	if (++m_connectedBridgePorts == m_bridgePorts.size()) {
-	  container().registerBridgedPort(*this);
+	  (container().needThread() ? container() : Container::baseContainer()).
+	    registerBridgedPort(*this);
 	  portIsConnected();
 	}
       } else if (!other) // if other side is remote
@@ -348,8 +330,8 @@ namespace OCPI {
       } else if (isInProcess(other) && other->isInProcess(this))
 	connectInProcess(c, *other);
       else {
-	other->applyConnection(c);
-	connectLocal(c); // both workers are in this process
+	other->applyConnection(c.m_transport, c.m_bufferSize);
+	connectLocal(*other, &c); // both workers are in this process
       }
       return more;
     }
@@ -377,10 +359,13 @@ namespace OCPI {
     // there is an acceptable incoming message to receive.
     inline bool LocalPort::
     getLocalBuffer() {
+      BasicPort &lbp = *m_localBridgePort;
       if (m_localBuffer) {
 	if (m_bridgeOp)
 	  return true; // we're processing a local buffer with a known opcode
-      } else if (!((m_localBuffer = isProvider() ? getEmptyBuffer() : getFullBuffer())))
+      } else if (!((m_localBuffer = 
+		    isProvider() ?
+		    lbp.getEmptyBuffer() : lbp.getFullBuffer())))
 	return false;  // there is no local buffer to work with  
       uint8_t op;
       if (isProvider()) {
@@ -389,7 +374,7 @@ namespace OCPI {
 	do {
 	  ocpiDebug("getLocalBuffer input: port %p (%s) buf %p trying bpn %u %p ",
 		    this, name().c_str(), m_localBuffer, bpn, m_bridgePorts[bpn]);
-	  assert("Peeking for opcode for bridge ports disabled"==0);
+	  //	  assert("Peeking for opcode for bridge ports disabled"==0);
 	  if (m_bridgePorts[bpn]->peekOpCode(op)) {
 	    assert(op < m_bridgeOps.size());
 	    BridgeOp &bo = m_bridgeOps[op];
@@ -436,12 +421,13 @@ namespace OCPI {
       while (getLocalBuffer()) {
 	BridgeOp &bo = *m_bridgeOp;
 	if (isProvider()) {
-	  ocpiDebug("bridge got input %p", m_localBuffer);
 	  // getLocalBuffer already found a bridge port so it is ready to go.
 	  // it had to find a bridge port since it had to know what message opcode is current
 	  BridgePort &bp = *m_bridgePorts[bo.m_next];
 	  ExternalBuffer *b = bp.getFullBuffer();
 	  assert(b);
+	  ocpiDebug("bridging for %p got local input %p from local side len %zu %zu",
+		    this, m_localBuffer, m_localBuffer->length(), b->length());
 	  assert(m_localBuffer->length() >= b->length());
 	  assert(m_localBuffer->data());
 	  memcpy(m_localBuffer->data(), b->data(), b->length());
@@ -457,9 +443,10 @@ namespace OCPI {
 	  else
 	    bo.m_next = bo.m_next == bo.m_last ? bo.m_first : bo.m_next + 1;
 	} else {
-	  ocpiDebug("bridge got output %p mode %u next %zu last %zu",
+	  ocpiDebug("bridging for %p got local output %p mode %u next %zu last %zu", this,
 		    m_localBuffer, bo.m_mode, bo.m_next, bo.m_last);
 	  size_t next = bo.m_next;
+	  ExternalBuffer *lb = m_localBuffer; // save for later release
 	  // Phase 1: figure out which bridge port and whether to discard the message.
 	  switch (bo.m_mode) {
 	  case CyclicSparse:
@@ -488,7 +475,7 @@ namespace OCPI {
 	    break;
 	  default:;
 	  }
-	  if (m_localBuffer) {
+	  if (m_localBuffer) { // have a full output from local port
 	    // Phase 2: see if the identified bridge port has a buffer after all and ship it.
 	    BridgePort *bp = m_bridgePorts[next];
 	    ExternalBuffer *b = bp->getEmptyBuffer();
@@ -527,7 +514,7 @@ namespace OCPI {
 	    }
 	    m_localBuffer = NULL;
 	  }
-	  release();
+	  lb->release();
 	} // end of output processing
       } // end of loop through local buffers
     }  // end of method

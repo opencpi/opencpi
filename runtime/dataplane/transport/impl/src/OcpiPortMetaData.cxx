@@ -51,7 +51,7 @@ init()
   std::string nuls;
   if ( !m_real_location && real_location_string.length()  ) {
     m_real_tfactory = 
-      XF::getManager().find( real_location_string, nuls );
+      XF::getManager().find(real_location_string);
     if ( ! m_real_tfactory ) {
       std::string ex("Endpoint Not Supported ->");
       ex += real_location_string.c_str();
@@ -62,7 +62,7 @@ init()
 
   if ( !m_shadow_location && shadow_location_string.length() ) {
     m_shadow_tfactory = 
-      XF::getManager().find( nuls, shadow_location_string );
+      XF::getManager().find(shadow_location_string);
     if ( ! m_shadow_tfactory ) {
       std::string ex("Endpoint Not Supported ->");
       ex += shadow_location_string.c_str();

@@ -20,6 +20,7 @@
 
 #include <string>
 #include <list>
+#include <vector>
 #include "OcpiOsMisc.h"
 #include "OcpiOsEther.h"
 #include "OcpiOsServerSocket.h"
@@ -54,6 +55,8 @@ namespace OCPI {
       fd_set m_alwaysSet;
       unsigned m_sleepUsecs;
       std::string m_directory;
+      std::string m_discoveryInfo;       // what to tell clients about our containers, etc.
+      std::vector<bool> m_needsBridging; // per container, does it need bridging to sockets
     public:
       Server(bool verbose, bool discoverable, bool loopback, bool onlyloopback,
 	     OCPI::Library::Library &lib, uint16_t port, bool remove, const char *addrFile,

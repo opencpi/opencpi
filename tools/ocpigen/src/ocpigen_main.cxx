@@ -98,6 +98,7 @@ add to tree.
 
 int
 main(int argc, const char **argv) {
+  OCPI::Driver::ManagerManager::suppressDiscovery();
   if (options.setArgv(argv))
     return 1;
   const char *outDir = NULL, *wksFile = NULL, *package = NULL;

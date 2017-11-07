@@ -95,8 +95,7 @@ namespace OCPI {
       // This setting of the "other" is separate from construction so that the derived
       // port classes in particular containers stay unaware of the scaling.  If that changes
       // then this will become a constructor argument and an argument to worker::createPort.
-      if (nOthers > 1)
-	newP.prepareOthers(nOthers, m_crewSize);
+      newP.prepareOthers(nOthers, m_crewSize);
       return newP;
     }
     OA::Port &Worker::
@@ -461,7 +460,7 @@ namespace OCPI {
 		    instTag().empty() ? "" : "/", instTag().c_str(),
 		    OU::Worker::s_controlStateNames[cs]);
       Application *a = application();
-      if (a)
+      if (a && op == OU::Worker::OpStart)
 	a->container().start();
       return false;
     }

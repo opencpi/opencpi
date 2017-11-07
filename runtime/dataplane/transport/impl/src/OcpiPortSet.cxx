@@ -57,7 +57,7 @@ PortSet( PortSetMetaData* psmd, Circuit* circuit )
    m_data.portCount = 0;
    m_data.outputPortRank = 0;
 
-   ocpiDebug("In PortSet::PortSet()");
+   ocpiDebug("**** In PortSet::PortSet() %p", this);
 
    // cache our meta data
    m_output = m_data.psMetaData->output;
@@ -81,15 +81,18 @@ update( PortSetMetaData* psmd )
 {
   // Here we will create our ports
 
-  ocpiDebug("PortSet::update: size = %d", psmd->m_portMd.size() );
+  ocpiDebug("**** PortSet::update: %p size = %d", this, psmd->m_portMd.size() );
 
   for ( unsigned int n=0; n<psmd->m_portMd.size(); n++ ) {
 
     PortMetaData* pmd = static_cast<PortMetaData*>(psmd->m_portMd[n]);
     OCPI::DataTransport::Port* port = static_cast<OCPI::DataTransport::Port*>(this->getPortFromOrdinal( pmd->id ));
+    if (port)
+      ocpiDebug("**** Existing Port %p index %u", port, n);
     if ( !port ) {
       port = new OCPI::DataTransport::Port( pmd, this );
       this->add( port );
+      ocpiDebug("**** New Port %p index %u", port, n);
     }
   }
 }
@@ -168,6 +171,7 @@ pullData( Buffer* buffer )
 PortSet::
 ~PortSet()
 {
+  ocpiDebug("**** In PortSet::~PortSet() %p", this);
   for ( int n =0; n< m_data.portCount; n++ ) {
     Port *p = getPortFromIndex(n);
     delete p;

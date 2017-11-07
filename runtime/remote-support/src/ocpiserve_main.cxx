@@ -78,7 +78,8 @@ static void
 sigint(int /* signal */) {
   signal(SIGINT, SIG_DFL);
   signal(SIGTERM, SIG_DFL);
-  rmdir();
+  if (options.remove())
+    rmdir();
   options.bad("interrupted");
 }
 
@@ -89,10 +90,10 @@ static int mymain(const char **) {
   OCPI::OS::logSetLevel(options.loglevel());
   setenv("OCPI_LIBRARY_PATH", options.directory(), 1);
   // Catch signals in order to delete the artifact cache
-  if (options.remove()) {
-    ocpiCheck(signal(SIGINT, sigint) != SIG_ERR);
+  // Catch SIGINT all the time to make valgrind happe
+  ocpiCheck(signal(SIGINT, sigint) != SIG_ERR);
+  if (options.remove())
     ocpiCheck(signal(SIGTERM, sigint) != SIG_ERR);
-  }
   OCPI::Driver::ManagerManager::configure();
   assert(OCPI::Library::Library::s_firstLibrary);
   for (unsigned n = 1; n < options.processors(); n++) {

@@ -133,8 +133,8 @@ namespace OCPI {
       virtual Artifact *findLoadedArtifact(const OCPI::Library::Artifact &a) = 0;
       virtual Artifact &createArtifact(OCPI::Library::Artifact &,
 				       const OCPI::API::PValue *props = NULL) = 0;
-      virtual void start(DataTransfer::EventManager* event_manager) throw();
-      virtual void stop(DataTransfer::EventManager* event_manager) throw();
+      //      virtual void start(DataTransfer::EventManager* event_manager) throw();
+      //      virtual void stop(DataTransfer::EventManager* event_manager) throw();
       virtual void stop();
       // FIXME: default start behavior is for software containers.
       virtual void start();

@@ -72,17 +72,12 @@ namespace OCPI {
       m_osVersion = "";
       m_platform = m_device.platform();
       m_arch = m_device.arch();
-      m_transports.resize(1);
-      m_transports[0].transport = m_device.protocol();
-      m_transports[0].id = OU::getSystemId().c_str();
-      m_transports[0].optionsIn = m_device.dmaOptions(NULL, NULL, true);
-      m_transports[0].optionsOut = m_device.dmaOptions(NULL, NULL, false);
-      m_transports[0].roleIn =
-	m_transports[0].optionsIn & (1 << OR::ActiveMessage) ?
-	OR::ActiveMessage : OR::ActiveFlowControl;
-      m_transports[0].roleOut =
-	m_transports[0].optionsOut & (1 << OR::ActiveMessage) ?
-	OR::ActiveMessage : OR::ActiveFlowControl;
+      addTransport(m_device.protocol(),
+		   // FIXME delegate this better to the device
+		   strstr(m_device.protocol(), "socket") ? "" : OU::getSystemId().c_str(),
+		   OR::ActiveMessage, OR::ActiveMessage,
+		   m_device.dmaOptions(NULL, NULL, true),
+		   m_device.dmaOptions(NULL, NULL, false));		   
       ocpiDebug("HDL Container for device %s constructed.  ESN: '%s' Platform/part is %s/%s.",
 		name().c_str(), m_device.esn().c_str(), m_device.platform().c_str(),
 		m_device.part().c_str());
@@ -103,6 +98,7 @@ namespace OCPI {
       delete &m_device;
       ocpiDebug("Leaving ~HDL::Container()");
     }
+#if 0
     void Container::
     start() {
       if (m_device.needThread())
@@ -110,6 +106,7 @@ namespace OCPI {
     }
     void Container::
     stop() {}
+#endif
     bool Container::
     needThread() { return m_device.needThread(); }
 
@@ -296,6 +293,7 @@ namespace OCPI {
     public:
       ~Worker()
       {
+	deleteChildren(); // delete before out base class is gone.
       }
       inline void controlOperation(OU::Worker::ControlOperation op) {
 	WciControl::controlOperation(op);
@@ -911,24 +909,5 @@ OCPI_DATA_TYPES
       } // loop over all connections
       return *new Port(*this, props, mPort, conn, icw, ic, adw, ad);
     }
-#if 0
-    // only here for proper parent/child
-    class ExternalPort : public OC::ExternalPortBase<Port,ExternalPort> {
-      friend class Port;
-    protected:
-      ExternalPort(Port &port, const char *a_name, bool a_isProvider,
-		   const OA::PValue *extParams, const OA::PValue *connParams) :
-        OC::ExternalPortBase<Port,ExternalPort>(port, *this, a_name, extParams, connParams,
-						a_isProvider) {
-      }
-    public:
-      virtual ~ExternalPort() {}
-    };
-    OC::ExternalPort &Port::createExternal(const char *extName, bool a_isProvider,
-					       const OU::PValue *extParams, const OU::PValue *connParams) {
-      return *new ExternalPort(*this, extName, a_isProvider, extParams, connParams);
-    }
-#endif
   }
 }
-

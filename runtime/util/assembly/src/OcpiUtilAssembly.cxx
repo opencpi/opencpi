@@ -209,14 +209,17 @@ namespace OCPI {
       const char *assign;
       // Keep track of which instances we have seen for this parameter, using ordinals
       std::set<unsigned> instancesSeen;
+      bool emptySeen = false;
       for (unsigned n = 0; findAssignNext(params, pName, NULL, assign, n); ) {
 	const char *eq = strchr(assign, '=');
-	if (!eq || !eq[1]) // empty values are not allowed for any instance params (so far)
+	if (!eq || (!emptySeen && !eq[1])) // empty value only if wildcard previously
 	  return esprintf("Parameter assignment '%s' is invalid. "
 			  "Format is: [<instance>]=<parameter-value>", assign);
 	size_t len = eq - assign;
-	if (len == 0) // an empty assignment is ok as default for later ones
+	if (len == 0) { // an empty assignment is ok as default for later ones
+	  emptySeen = true; // this means a later empty assigned value is ok
 	  continue;
+	}
 	for (unsigned nn = 0; assign && nn < m_instances.size(); nn++)
 	  if (m_instances[nn]->m_name.length() == len &&
 	      !strncasecmp(assign, m_instances[nn]->m_name.c_str(), len)) {

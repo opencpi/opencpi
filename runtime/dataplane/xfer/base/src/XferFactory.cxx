@@ -46,11 +46,13 @@ getTemplate(EndPoint &source, EndPoint &target) {
   TemplatePair pair(&source, &target);
   OU::SelfAutoMutex guard(this);
   TemplateMapIter ti = m_templates.find(pair);
-  XferServices *temp = 
-    ti == m_templates.end() ? 
-    (m_templates[pair] = &createXferServices(source, target)) :
-    ti->second;
-  temp->addRef();
+  XferServices *temp;
+  if (ti == m_templates.end()) {
+    temp = m_templates[pair] = &createXferServices(source, target);
+    temp->addRef(); // add one for us
+  } else
+    temp = ti->second;
+  temp->addRef(); // add a ref for our caller
   return *temp;
 }
 void XferFactory::
@@ -157,6 +159,13 @@ parse(FactoryConfig *parent, ezxml_t x) {
   }
 }
 
+bool XferFactory::
+supportsEndPoint(const char *name) {
+  const char *protocol = getProtocol();
+  size_t len = strlen(protocol);
+  return !strncmp(name, protocol, len) && (!name[len] || name[len] == ':');
+}
+#if 0
 bool 
 XferFactory::
 supportsEndPoints(
@@ -197,7 +206,7 @@ supportsEndPoints(
 
   return false;
 }
-
+#endif
 XferFactory::
 XferFactory(const char *a_name)
   : OD::DriverType<XferManager,XferFactory>(a_name, *this) {
@@ -251,17 +260,6 @@ addEndPoint(const char *endPoint, const char *other, bool local, size_t size) {
   ep.addRef();
   return ep;
 }
-#if 0
-void XferFactory::
-removeEndPoint(EndPoint &ep) {
-  //  if (ep.local)
-  {
-    assert(m_locations[ep.mailBox]);
-    m_locations[ep.mailBox] = NULL; // note this might already be done.??
-  }
-  ocpiCheck(m_endPoints.erase(ep.m_uuid) == 1);
-}
-#endif
 
 EndPoint* XferFactory::
 findEndPoint(const char *end_point) {
@@ -276,8 +274,7 @@ findEndPoint(const char *end_point) {
 // Get, and possible create, the endpoint.  The "local" argument is not involved in the lookup,
 // only in the creation.
 EndPoint &XferFactory::
-getEndPoint(const char *endPoint, bool local, bool cantExist, size_t size)
-{ 
+getEndPoint(const char *endPoint, bool local, bool cantExist, size_t size) { 
   assert(endPoint); // find out if anyone uses NULL
   const char *semi = strrchr(endPoint, ';');
   if (!semi || !semi[0]) // not a complete endpoint, a true allocation
@@ -289,26 +286,11 @@ getEndPoint(const char *endPoint, bool local, bool cantExist, size_t size)
   if (i != m_endPoints.end()) {
     if (cantExist)
       throw OU::Error("Local explicit endpoint already exists: '%s'", endPoint);
-    else {
-      // i->second->addRef(); // FIXME:: this likely happens too often and thus will leak.
-#if 0
-      OCPI::OS::dumpStack(std::cerr);
-#endif
+    else
       return *i->second;
-    }
   }
   return addEndPoint(endPoint, NULL, local, size);
 }
-
-#if 0
-// The default is that the remote one doesn't matter to this allocation
-std::string XferFactory::
-allocateCompatibleEndpoint(const OU::PValue*params,
-			   const char *,
-			   MailBox mailBox, MailBox maxMailBoxes) {
-  return allocateEndpoint(params, mailBox, maxMailBoxes);
-}
-#endif
 
 // Return a mailbox number for a new endpoint, given an "other" endpoint that we might
 // want to avoid.
@@ -327,13 +309,6 @@ setNewMailBox(const char *other) {
     // Find an unused slot that is different from the remote one
     // mailbox might be zero so this will find the first free slot in any case
     MailBox n = 0;
-#if 0
-    for (n = 1; n < m_locations.size(); n++)
-      if (n != mailBox && !m_locations[n])  { // if the index is different and unused..
-	mailBox = n;
-	break;
-      }
-#endif
     if (!mailBox) {
       if (n == MAX_SYSTEM_SMBS || n > myMax)
 	throw OU::Error("Mailboxes for protocol %s are exhausted (all %u are used)",
@@ -357,12 +332,6 @@ addCompatibleLocalEndPoint(const char *remote) {
   if (!strchr(remote, ':'))
     remote = NULL;
   OU::SelfAutoMutex guard (this); 
-#if 0 // we dont share local endpoints among containers (yet)
-  if (!remote && !maxMb)
-    for (EndPoints::iterator i = m_endPoints.begin(); i != m_endPoints.end(); i++)
-      if (*i && (*i)->local)
-	return *i;
-#endif
   return addEndPoint(NULL, remote, true, 0);
 }
 

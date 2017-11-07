@@ -93,7 +93,7 @@ Circuit(
 {
   ( void ) src_ps;
   ( void ) dest_pss;
-  m_ref_count = 1;
+  m_ref_count = 1; // the creator of this has an implicit ref to it
   m_circuitId = id;
   m_openCircuit=true;
   m_templatesGenerated = false;
@@ -262,7 +262,7 @@ Circuit(
     m_maxPortOrd+= static_cast<PortSetMetaData*>(m_metaData->m_portSetMd[psc])->m_portMd.size();
   }
 
-  ocpiDebug("Circuit::Circuit: po = %d", m_maxPortOrd );
+  ocpiDebug("**** Circuit::Circuit: %p po = %d", this, m_maxPortOrd );
 
   if ( m_maxPortOrd > 1 ) {
     Port* port = this->getOutputPortSet()->getPortFromIndex(0);
@@ -304,6 +304,7 @@ finalize( const char* endpoint )
 OCPI::DataTransport::Circuit::
 ~Circuit()
 {
+  ocpiDebug("**** Circuit::~Circuit: %p", this);
 
 #ifdef DD_N_P_SUPPORTED
   // First we will try to tell all of the input ports that we are going away.
@@ -1524,6 +1525,7 @@ void
 Circuit::
 attach()
 {
+  ocpiDebug("**** Circuit::attach() %p count was %u", this, m_ref_count);
   m_ref_count++;  
 }
 
@@ -1531,6 +1533,8 @@ void
 Circuit::
 release()
 {
+  ocpiDebug("**** Circuit::release() %p count was %u", this, m_ref_count);
+  ocpiCheck(m_ref_count);
   if (--m_ref_count == 0)
     m_transport->deleteCircuit(this);
 }

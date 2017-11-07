@@ -70,11 +70,12 @@ namespace OCPI {
 	Discard,        // output: discard messages
 	ModeLimit
       };
-      size_t                         m_scale;
+      size_t                         m_scale;               // zero is no bridging at all
       LocalPort                     *m_external;            // inserted external port
       // State relating to having bridge ports (member talking to multiple other members)
       std::vector<BridgePort*>       m_bridgePorts;
       unsigned                       m_connectedBridgePorts;// count to know when all are ready
+      BasicPort                     *m_localBridgePort;     // bridging to not-in-process ports
       struct BridgeOp {
 	size_t
 	  m_first,  // first opposite member to deal with

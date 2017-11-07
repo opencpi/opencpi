@@ -20,17 +20,30 @@
 
 # A script for setting up jtag cables for Altera.  Stdout is a list of <port>=<serial>.
 
-if test "$OCPI_ALTERA_TOOLS_DIR" = ""; then
-  echo "Altera environment variable (OCPI_ALTERA_TOOLS_DIR) is not set." 1>&2
+if [[ $# == 0 ]]; then
+  echo Usage is: `basename $0` 'all'
+  echo '  'This script scans USB ports for Altera JTAG cables/pods and
+  echo '  'prints which parts are at which positions on each one found.
+  echo '  'Always use the \"all\" argument to scan for all cables.
   exit 1
 fi
-if test ! -d "$OCPI_ALTERA_TOOLS_DIR"; then
-  echo "Altera directory (set by OCPI_ALTERA_TOOLS_DIR) does not exist." 1>&2
+source $OCPI_CDK_DIR/scripts/util.sh
+setVarsFromMake $OCPI_CDK_DIR/include/hdl/altera.mk ShellIseVars=1 $verbose
+[ -z "$OcpiAlteraProgrammerDir" ] && {
+  echo Error: Could not find the directory for Altera Quartus or programming tools.
   exit 1
-fi
+}
 
-QBIN="$OCPI_ALTERA_TOOLS_DIR/quartus/bin"
+QBIN="$OcpiAlteraProgrammerDir/quartus/bin"
+[ ! -d $QBIN ] && {
+  QBIN="$OcpiAlteraProgrammerDir/qprogrammer/bin"
+  [ ! -d $QBIN ] && {
+    echo Neither $OcpiAlteraProgrammerDir/quartus/bin nor $OcpiAlteraProgrammerDir/qprogrammer/bin exist
+    exit 1
+  }
+}
 if test ! -x "$QBIN"/jtagconfig -o ! -x "$QBIN/quartus_pgm"; then
+  echo With tools bin directory: $QBIN
   echo "The required Altera executables (jtagconfig, quartus_pgm) are not present." 1>&2
   exit 1
 fi

@@ -390,6 +390,10 @@ namespace OCPI {
 #define OCPI_DATA_TYPE_S OCPI_DATA_TYPE
 #undef OCPI_DATA_TYPE
     };
+    // ACI functions for using servers
+    void useServer(const char *server, bool verbose);
+    void enableServerDiscovery();
+    bool isServerSupportAvailable();
   }
 }
 #endif

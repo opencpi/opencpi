@@ -147,6 +147,7 @@ typedef int pthread_spinlock_t;
       friend class Container;
       friend class BridgePort;
       friend class ExternalBuffer;
+      friend class LocalPort;
     private:
       ExternalBuffer *m_lastInBuffer; // only used for upper level API
       ExternalBuffer *m_lastOutBuffer; // only used for upper level API
@@ -178,11 +179,11 @@ typedef int pthread_spinlock_t;
       void applyPortParams(const OCPI::Util::PValue *params);
       // Apply information in the connection to the descriptor for this port
       void setBufferSize(size_t bufferSize);
-      void applyConnection(const Launcher::Connection &c);
+      void applyConnection(const Transport &t, size_t bufferSize);
       // This port becomes a shim (with built-in zero-copy buffers)
       // The "other" is only for purposes of alignment and allocation if needed
       void becomeShim(BasicPort *other);
-      void connectLocal(Launcher::Connection &c);
+      void connectLocal(BasicPort &other, Launcher::Connection *c); // c == NULL if bridged etc.
       void connectInProcess(Launcher::Connection &c, BasicPort &p);
       void forward2shim(BasicPort &shim);
       virtual size_t bufferAlignment() const;

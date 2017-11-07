@@ -319,6 +319,8 @@ namespace OCPI {
 	      OS::setError(error, "binding udp socket for role %u", role);
 	      break;
 	    }
+	    ocpiDebug("Successfully bound UDP socket on '%s' to %s %s",
+		      i.name.c_str(), i.addr.pretty(), i.ipAddr.pretty());
 	    switch (role) {
 	    case ocpi_slave:
 	      if (::setsockopt(m_fd, IPPROTO_IP, IP_PKTINFO, &val, sizeof(val))) {
@@ -656,8 +658,9 @@ namespace OCPI {
         msg.msg_iov = (iovec*)iov;
 	msg.msg_iovlen = iovlen;
 	ssize_t rlen = sendmsg(m_fd, &msg, 0);
-	ocpiDebug("Send packet length %zd, to %s/%s via %u, port %u returned %zd errno %u (%s) fd %u",
+	ocpiDebug("Send packet length %zd, to %s/%s via %u(%s), port %u returned %zd errno %u (%s) fd %u",
 		  len, inet_ntoa(sa.in.sin_addr), addr.pretty(), ifc ? ifc->index : 0,
+		  m_ifAddr.pretty(),
 		  ntohs(sa.in.sin_port), rlen, errno, strerror(errno), m_fd);
 	if (rlen != (ssize_t)len) {
 	  setError(error, "sendto of %u bytes failed, returning %d", len, rlen);

@@ -38,6 +38,7 @@ runtime/ocl
 runtime/ocl-support
 runtime/rcc
 runtime/remote
+runtime/remote-support
 runtime/ctests
 runtime/application
 tools/cdkutils
@@ -154,6 +155,7 @@ tests
 -runtime/hdl-support/scripts/donft
 -runtime/hdl-support/scripts/dmaTestBasic
 # base vendor-specific scripts not in a platform and not in hdl-support
++runtime/hdl-support/altera/altera.mk include/hdl/
 +runtime/hdl-support/altera/loadFlash_altera scripts/
 +runtime/hdl-support/altera/probeJtag_altera scripts/
 +runtime/hdl-support/xilinx/loadFlash_xilinx scripts/

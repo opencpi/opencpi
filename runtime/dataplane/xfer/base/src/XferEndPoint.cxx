@@ -142,6 +142,9 @@ class XferPool : public OU::MemBlockMgr, public ResourceServices {
 public:
   XferPool(size_t size)
     : OU::MemBlockMgr(0, size) {
+    OCPI::Util::ResAddrType dummy;    
+    alloc(16, 16, &dummy);
+    assert(!dummy);
   }
   int alloc(size_t nbytes, unsigned alignment, OCPI::Util::ResAddrType *addr_p) {
     return OU::MemBlockMgr::alloc(nbytes, alignment, *addr_p);
@@ -149,29 +152,16 @@ public:
   int free(OCPI::Util::ResAddrType addr, size_t /*nbytes*/) {
     return OU::MemBlockMgr::free(addr);
   }
-
 };
 
 void EndPoint::
-finalize(bool remoteAccess) {
+finalize() { // bool remoteAccess) {
   // Create the mapping service if needed
+  bool remoteAccess = false;
   if ((m_local || remoteAccess) && !m_sMemServices)
     m_sMemServices = &createSmemServices();
-#if 1
   if (m_local && !m_resourceMgr)
     m_resourceMgr = new XferPool(m_size);
-#else
-  if (!m_resourceMgr) {
-    m_resourceMgr = new XferPool(m_size);
-    // Create the pool allocator even if remote (for m_comms)
-    OCPI::Util::ResAddr offset;
-    // We need to move this stuff out of this layer
-    if (m_resourceMgr->alloc(sizeof(ContainerComms), 0, &offset) != 0)
-      throw OCPI::Util::EmbeddedException(NO_MORE_SMB, name().c_str());
-    m_comms = static_cast<ContainerComms*>
-      (m_sMemServices->mapTx(offset, sizeof(ContainerComms)));
-  }
-#endif
   ocpiDebug("Finalize endpoint %p %s %p %p %p %u %u", this, name().c_str(),
 	    m_sMemServices, m_resourceMgr, m_comms, m_local, remoteAccess);
 }

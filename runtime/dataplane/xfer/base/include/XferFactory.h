@@ -71,13 +71,15 @@ namespace DataTransfer {
 
     // Get our protocol string
     virtual const char* getProtocol()=0;
+#if 0
     /***************************************
      * This method is called on this factory to dertermine if it supports
      * the specified endpoints.  This method may be called with either one
      * of the endpoints equal to NULL.
      ***************************************/
     virtual bool supportsEndPoints(std::string& end_point1, std::string& end_point2);
-                 
+#endif                 
+    bool supportsEndPoint(const char *name);
     EndPoint &getEndPoint(const char *endpoint, bool local=false, bool cantExist = false,
 			  size_t size = 0);
     // Find it or return NULL if you can't find it.  Remote or local.

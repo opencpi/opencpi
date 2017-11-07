@@ -189,18 +189,5 @@ namespace OCPI {
       return (intptr_t)&lzma_stream_buffer_decode;
     }
   }
-#if 0
-  // When the remote container driver is loaded it needs to see this.
-  namespace Remote {
-    bool g_enableRemoteDiscovery = false;
-    bool (*g_probeServer)(const char *server, bool verbose, const char **exclude,
-			  std::string &error) = NULL;
-    void useServer(const char *server, bool verbose) {
-      std::string error;
-      if (OCPI::Remote::useServer(server, verbose, NULL, error))
-	throw OU::Error("error trying to use remote server \"%s\": %s", server, error.c_str());
-    }
-  }
-#endif
 }
 

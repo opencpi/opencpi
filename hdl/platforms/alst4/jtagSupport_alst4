@@ -23,23 +23,30 @@
 # Be sure to write error messages to stderr since some funtions return
 # data on stdout
 ################################################################################
-func=$1
-temp=$2
-dir=`dirname $0`
-#echo bitfile=$1 device=$2 part=$3 esn=$4 position=$5 temp=$6
-if test "$OCPI_ALTERA_TOOLS_DIR" = ""; then
-  echo "Altera environment variable (OCPI_ALTERA_TOOLS_DIR) is not set." 1>&2
+source $OCPI_CDK_DIR/scripts/util.sh
+setVarsFromMake $OCPI_CDK_DIR/include/hdl/altera.mk ShellIseVars=1 $verbose
+[ -z "$OcpiAlteraProgrammerDir" ] && {
+  echo Error: Could not find the directory for Altera Quartus or programming tools.
   exit 1
-fi
-if test ! -d "$OCPI_ALTERA_TOOLS_DIR" ; then
-  echo "Altera directory (set by OCPI_ALTERA_TOOLS_DIR) does not exist." 1>&2
-  exit 1
-fi
-QBIN="$OCPI_ALTERA_TOOLS_DIR/quartus/bin"
+}
+
+QBIN="$OcpiAlteraProgrammerDir/quartus/bin"
+[ ! -d $QBIN ] && {
+  QBIN="$OcpiAlteraProgrammerDir/qprogrammer/bin"
+  [ ! -d $QBIN ] && {
+    echo Neither $OcpiAlteraProgrammerDir/quartus/bin nor $OcpiAlteraProgrammerDir/qprogrammer/bin exist
+    exit 1
+  }
+}
+
 if test ! -x "$QBIN"/jtagconfig -o ! -x "$QBIN/quartus_pgm"; then
   echo "The required executables (jtagconfig, quartus_pgm) are not present." 1>&2
   exit 1
 fi
+func=$1
+temp=$2
+dir=`dirname $0`
+#echo bitfile=$1 device=$2 part=$3 esn=$4 position=$5 temp=$6
 IFS=!
 
 function good {
@@ -113,6 +120,7 @@ case $func in
        bitfile=$tempfile
        ;;
     esac
+    echo Proceeding to load bitstream from $bitfile...
     echo doing "$QBIN"/quartus_pgm -m jtag -c "$port" -o "p;$bitfile@$pos" > $temp.log 2>&1
     "$QBIN"/quartus_pgm -m jtag -c "$port" -o "p;$bitfile@$pos" >> $temp.log 2>&1
     if test $? != 0; then

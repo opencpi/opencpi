@@ -135,7 +135,7 @@ namespace OCPI {
     class BridgePort : public BasicPort {
       friend class LocalPort;
     protected:
-      BridgePort(LocalPort &port, const OCPI::Util::PValue *params);
+      BridgePort(LocalPort &port, bool provider, const OCPI::Util::PValue *params);
       ~BridgePort();
       bool canBeExternal() const { return true; }
     };

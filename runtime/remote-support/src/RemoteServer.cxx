@@ -44,9 +44,10 @@ namespace OCPI {
   namespace Remote {
 
     Server::
-    Server(OL::Library &l, OS::ServerSocket &svrSock, std::string &/*error*/)
+    Server(OL::Library &l, OS::ServerSocket &svrSock, std::string &discoveryInfo,
+	   std::vector<bool> &needsBridging, std::string &/*error*/)
       : m_library(l), m_downloading(false), m_downloaded(false), m_rx(NULL), m_lx(NULL),
-	m_local(NULL) {
+	m_local(NULL), m_discoveryInfo(discoveryInfo), m_needsBridging(needsBridging) {
       svrSock.accept(m_socket);
       std::string host;
       uint16_t port;
@@ -195,6 +196,21 @@ namespace OCPI {
       }
       return NULL;
     }
+    // Second pass after both sides are parsed
+    const char *Server::
+    doSide2(OC::Launcher::Port &p, OC::Launcher::Port &other) {
+      // Force a bridge port if this container needs transport bridging
+      // and the connection is between local and remote
+      if (p.m_member && m_needsBridging[p.m_member->m_container->ordinal()] && !other.m_member) {
+	// We have a remote connection and we need transport bridging
+	// The transport specified in the connection will be the bridged transport to talk
+	// remotely.  But we need the local port to use its native transport.
+	p.m_transportBridged = true;
+	if (other.m_scale == 0)
+	  other.m_scale = 1; // force bridging even if its 1-to-1
+      }	
+      return NULL;
+    }
 
     static void
     updateConnection(OC::Launcher::Connection &c, ezxml_t cx) {
@@ -225,7 +241,9 @@ namespace OCPI {
 	  (err = OX::getNumber(cx, "optionsOut", &optionsOut, NULL, 0)) ||
 	  (err = OX::getNumber(cx, "bufferSize", &c.m_bufferSize, NULL, 0)) ||
 	  (err = doSide(cx, c.m_in, "in")) ||
-	  (err = doSide(cx, c.m_out, "out")))
+	  (err = doSide(cx, c.m_out, "out")) ||
+	  (err = doSide2(c.m_in, c.m_out)) ||
+	  (err = doSide2(c.m_out, c.m_in)))
 	return OU::eformat(error, "Error processing connection values for launch: %s", err);
       c.m_transport.roleIn = OCPI_UTRUNCATE(OR::PortRole, roleIn);
       c.m_transport.roleOut = OCPI_UTRUNCATE(OR::PortRole, roleOut);
@@ -493,16 +511,11 @@ namespace OCPI {
     }
     bool Server::
     discover(std::string &error) {
-      // Use a buffer the same size as a datagram payload.
-      size_t length = OE::MaxPacketSize;
-      char buf[OE::MaxPacketSize];
-      if (fillDiscoveryInfo(buf, length, error))
-	return true;
-      OU::format(m_response, "<discovery>\n%s", buf);
-      return OX::sendXml(fd(), m_response, "responding with discovery from server",
-			       error);
+      OU::format(m_response, "<discovery>\n%s", m_discoveryInfo.c_str());
+      return OX::sendXml(fd(), m_response, "responding with discovery from server", error);
     }
-    bool Server::
+#if 0
+    bool Server:: // static
     fillDiscoveryInfo(char *cp, size_t &length, std::string &error) {
       OA::Container *ac;
       *cp = '\0'; // in case there are NO containers
@@ -512,11 +525,14 @@ namespace OCPI {
 	OU::format(info, "%s|%s|%s|%s|%s|%s|%c|", c.name().c_str(), c.model().c_str(), c.os().c_str(),
 		   c.osVersion().c_str(), c.arch().c_str(), c.platform().c_str(),
 		   c.dynamic() ? '1' : '0');
+	bool hasSockets = false;
 	for (unsigned nn = 0;  nn < c.transports().size(); nn++) {
 	  const OC::Transport &t = c.transports()[nn];
 	  OU::formatAdd(info, "%s,%s,%u,%u,0x%x,0x%x|",
 			t.transport.c_str(), t.id.c_str()[0] ? t.id.c_str() : " ", t.roleIn,
 			t.roleOut, t.optionsIn, t.optionsOut);
+	  if (t.transport == "ocpi-socket-rdma")
+	    hasSockets = true;
 	}
 	info += '\n';
 	if (info.length() >= length) {
@@ -530,14 +546,6 @@ namespace OCPI {
       length--; // account for the null char of the last line
       return false;
     }
-  }
-#if 0
-  namespace API {
-    void useServer(const char *server, bool verbose) {
-      std::string error;
-      if (OCPI::Remote::useServer(server, verbose, NULL, error))
-	throw OU::Error("error trying to use remote server \"%s\": %s", server, error.c_str());
-    }
-  }
 #endif
+  }
 }

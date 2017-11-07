@@ -74,6 +74,7 @@ PACKAGES += \
 	 runtime/library \
 	 runtime/container \
 	 runtime/remote \
+	 runtime/remote-support \
 	 runtime/rcc \
 	 runtime/ocl \
 	 runtime/ocl-support \
@@ -110,6 +111,7 @@ ALLPACKAGES = \
 	runtime/library \
 	runtime/container \
 	runtime/remote \
+	runtime/remote-support \
 	runtime/rcc \
 	runtime/ocl \
 	runtime/ocl-support \

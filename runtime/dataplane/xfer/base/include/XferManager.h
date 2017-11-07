@@ -54,11 +54,16 @@ namespace DataTransfer {
     void configure(ezxml_t config);
 
     EndPoint &getEndPoint(std::string &s);
+    XferFactory *getDriver(const char *name);
+    XferFactory *getDriver(const std::string &name) { return getDriver(name.c_str()); }
+    XferFactory *find(const char *name) { return getDriver(name); } // backward compatibility
+    XferFactory *find(const std::string &name) { return find(name.c_str()); }
+#if 0
     // Retrieves the factory based upon the transfer type
     static std::string null;
     XferFactory *find(std::string& end_point1,std::string& end_point2 = null);
     XferFactory *find(const char* end_point1,const char* end_point2 = NULL);
-
+#endif
     // Creates a transfer service template - should be expunged.
     XferServices *getService(EndPoint *s_endpoint, EndPoint *t_endpoint);        
 

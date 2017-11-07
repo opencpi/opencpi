@@ -36,6 +36,8 @@ class Bias_spcmWorker : public Bias_spcmWorkerTypes::Bias_spcmWorkerBase {
     const uint32_t *inData  = in.data().data().data();   // data arg of data message at "in" port
     uint32_t *outData = out.data().data().data();  // same at "out" port
 
+#if 0 // no good for remote execution of unit test.
+    // FIXME:  We need to prevent such workers from executing remotely
     static int x = 0;
     if (!x) {
       OCPI::API::Application &app = getApplication(); // test this method
@@ -45,6 +47,7 @@ class Bias_spcmWorker : public Bias_spcmWorkerTypes::Bias_spcmWorkerBase {
 	fprintf(stderr, "Property %2u: %s = \"%s\"\n", n, name.c_str(), value.c_str());
       x = 1;
     }
+#endif
     out.checkLength(in.length());               // make sure input will fit in output buffer
     for (unsigned n = in.data().data().size(); n; n--) // n is length in sequence elements of input
       *outData++ = *inData++ + properties().biasValue;

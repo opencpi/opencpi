@@ -57,8 +57,8 @@ namespace OCPI {
       inline HDL::Device &hdlDevice() const { return m_device; }
     public:
       bool connectInside(OCPI::Container::BasicPort &in, OCPI::Container::BasicPort &out);
-      void start();
-      void stop();
+      //      void start();
+      // void stop();
       OCPI::Container::Artifact &
 	createArtifact(OCPI::Library::Artifact &lart, const OCPI::API::PValue *artifactParams);
       OCPI::API::ContainerApplication *

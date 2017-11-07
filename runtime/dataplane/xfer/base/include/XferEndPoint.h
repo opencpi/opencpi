@@ -140,7 +140,7 @@ protected:
   void addRef();
   void release();
   // Commit resources.  Caller says whether remote access will be required.
-  void finalize(bool remoteAccess = false);
+  void finalize(); //bool remoteAccess = false);
 };
 typedef std::map<OCPI::Util::Uuid, EndPoint *, OCPI::Util::UuidComp> EndPoints;
 typedef EndPoints::iterator EndPointsIter;

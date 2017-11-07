@@ -64,7 +64,8 @@ namespace OCPI {
     public:
       EndPoint(XF::XferFactory &a_factory, const char *protoInfo, const char *eps,
 	       const char *other, bool a_local, size_t a_size, const OU::PValue *params)
-	: XF::EndPoint(a_factory, eps, other, a_local, a_size, params) { 
+	: XF::EndPoint(a_factory, eps, other, a_local, a_size, params), 
+          m_holeOffset(0), m_holeEnd(0), m_busAddr(0) {
 	if (protoInfo) {
 	  m_protoInfo = protoInfo;
 	  if (sscanf(protoInfo, "%" SCNx64 ".%" SCNx32 ".%" SCNx32,

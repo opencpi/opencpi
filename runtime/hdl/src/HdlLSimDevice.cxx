@@ -150,7 +150,7 @@ class Device
   fd_set m_alwaysSet;
   pid_t m_pid;
   bool m_exited;
-  static bool s_stopped;
+  bool m_stopped;
   uint64_t m_dcp;
   size_t m_respLeft;
   uint8_t m_admin[sizeof(OH::OccpAdminRegisters)];
@@ -211,9 +211,9 @@ protected:
       m_resp(simDir + "/response", true),
       m_ctl(simDir + "/control", false),
       m_ack(simDir + "/ack", false),
-      m_maxFd(-1), m_pid(0), m_exited(false), m_dcp(0), m_respLeft(0), m_simDir(simDir),
-      m_platform(a_platform), m_script(script), m_dump(dump),
-      m_spinning(false), m_sleepUsecs(sleepUsecs), m_simTicks(simTicks), m_spinCount(spinCount),
+      m_maxFd(-1), m_pid(0), m_exited(false), m_stopped(false), m_dcp(0), m_respLeft(0),
+      m_simDir(simDir), m_platform(a_platform), m_script(script), m_dump(dump), m_spinning(false),
+      m_sleepUsecs(sleepUsecs), m_simTicks(simTicks), m_spinCount(spinCount),
       m_cumTicks(0), /* m_metadata(NULL), m_xml(NULL),*/ m_firstRun(true), m_lastTicks(0) {
     if (error.length())
       return;
@@ -617,8 +617,9 @@ protected:
 	} else {
 	  // Active message read/pull DMA, which will only work with locally mapped endpoints
 	  uint8_t *data =
-	    (uint8_t *)xfs[mbox]->from().sMemServices().map(OCPI_UTRUNCATE(DtOsDataTypes::Offset, whole_addr),
-					       h.getLength());
+	    (uint8_t *)xfs[mbox]->
+	    from().sMemServices().map(OCPI_UTRUNCATE(DtOsDataTypes::Offset, whole_addr),
+				      h.getLength());
 	  send2sdp(h, data, true, "DMA read response", error);
 	}
       } else {
@@ -649,27 +650,34 @@ protected:
     (void)write(m_ctl.m_wfd, msg, 2);
   }
 
-  // FIXME: for object scope
-  static Device *s_one;
+  // FIXME: signal safety even if we are just terminating anyway...
+  static std::set<Device *> s_devices;
   static void
   sigint(int /* signal */) {
-    if (s_one && s_one->m_pid) {
-      w2("\nInterrupt: Simulator process pid %u running.\n", s_one->m_pid);
-      s_one->terminate();
-      if (s_stopped) {
-	w2("\nSimulator process pid %u still running.\n", s_one->m_pid);
-	signal(SIGINT, SIG_DFL);
+    bool any = false;
+    for (auto it = s_devices.begin(); it != s_devices.end(); ++it) {
+      Device &d = **it;
+      if (d.m_pid) {
+	any = true;
+	w2("\nInterrupt: Simulator process pid %u running.\n", d.m_pid);
+	d.terminate();
+	if (d.m_stopped) {
+	  w2("\nSimulator process pid %u still running.\n", d.m_pid);
+	  signal(SIGINT, SIG_DFL);
+	}
+	d.m_stopped = true;
       }
-      s_stopped = true;
-    } else
-      _exit(1);
+    }
+    if (!any) {
+      signal(SIGINT, SIG_DFL);
+      kill(0, SIGINT);
+    }
   }
 public:
   ~Device() {
     lock(); // unlocked by SeftMutex destructor
     shutdown();
-    if (s_one == this)
-      s_one = NULL;
+    s_devices.erase(this);
     ocpiDebug("Simulation server %s destruction", m_name.c_str());
     if (m_simDir.length()) {
       m_req.close();
@@ -705,7 +713,7 @@ public:
       m_firstRun = false;
     }
     std::string error;
-    if (!m_exited && !s_stopped && m_cumTicks < m_simTicks) {
+    if (!m_exited && !m_stopped && m_cumTicks < m_simTicks) {
       if (m_cumTicks - m_lastTicks > 1000) {
 	ocpiDebug("Spin credit at: %20" PRIu64, m_cumTicks);
 	m_lastTicks = m_cumTicks;
@@ -714,12 +722,12 @@ public:
 	return false;
     }
     ocpiInfo("exit simulator container thread x %d s %d ct %" PRIu64 " st %u e '%s'",
-	      m_exited, s_stopped, m_cumTicks, m_simTicks, error.c_str());
+	      m_exited, m_stopped, m_cumTicks, m_simTicks, error.c_str());
     if (m_exited) {
       if (m_verbose)
 	fprintf(stderr, "Simulator \"%s\" exited normally\n", m_name.c_str());
       ocpiInfo("Simulator \"%s\" exited normally", m_name.c_str());
-    } else if (s_stopped) {
+    } else if (m_stopped) {
       if (m_verbose)
 	fprintf(stderr, "Stopping simulator \"%s\" due to signal\n", m_name.c_str());
       ocpiInfo("Stopping simulator \"%s\" due to signal", m_name.c_str());
@@ -771,12 +779,14 @@ public:
   }
 
   bool load(const char *file, std::string &error) {
+#if 0
     static Device *loaded = NULL;
     if (loaded && loaded != this) {
       error = "Multiple HDL simulator containers are not yet supported";
       return true;
     }
     loaded = this;
+#endif
     if (myload(file, error)) {
       m_isAlive = false;
       return true;
@@ -789,11 +799,7 @@ public:
     if (m_state == EMULATING) {
       if (initFifos(error))
 	  return true;
-      if (Device::s_one) {
-	error = "multiple simulators cannot be used in the same process yet";
-	return true;
-      }
-      Device::s_one = this;
+      s_devices.insert(this);
     } else {
       ocpiInfo("Shutting down previous simulation before (re)loading");
       shutdown();
@@ -1048,6 +1054,7 @@ public:
     DT::EndPoint &ep =
       DT::getManager().allocateProxyEndPoint(m_endpointSpecific.c_str(), true,
 					     OCPI_UTRUNCATE(size_t, m_endpointSize));
+    ep.finalize();
     // This is the hook that allows us to receive data/metadata/flags pushed to this
     // endpoint from elsewhere - from multiple other endpoints.
     ep.setReceiver(*this);
@@ -1059,25 +1066,32 @@ public:
   // FIXME: the "other" argument should be an endpoint, but that isn't easy now
   void connect(DT::EndPoint &ep, OCPI::RDT::Descriptors &mine,
 	       const OCPI::RDT::Descriptors &other) {
+    OT::Transport::fillDescriptorFromEndPoint(ep, mine); // needed?
     assert(m_endPoint);
     assert(&ep == m_endPoint);
-    DT::EndPoint *otherEp = m_endPoint->factory().findEndPoint(other.desc.oob.oep);
-    assert(otherEp);
-    assert(otherEp->mailBox() < m_writeServices.size());
-    DT::XferServices *s = &m_endPoint->factory().getTemplate(*m_endPoint, *otherEp);
-    assert(m_writeServices[otherEp->mailBox()] == NULL || m_writeServices[otherEp->mailBox()] == s);
-    if (m_writeServices[otherEp->mailBox()] == NULL)
-      m_writeServices[otherEp->mailBox()] = s;
-    assert(otherEp->mailBox() < m_readServices.size());
-    s = &m_endPoint->factory().getTemplate(*otherEp, *m_endPoint);
-    assert(m_readServices[otherEp->mailBox()] == NULL || m_readServices[otherEp->mailBox()] == s);
-    if (m_readServices[otherEp->mailBox()] == NULL)
-      m_readServices[otherEp->mailBox()] = s;
-    OT::Transport::fillDescriptorFromEndPoint(ep, mine);
+    DT::EndPoint &otherEp = m_endPoint->factory().getEndPoint(other.desc.oob.oep);
+    assert(otherEp.mailBox() < m_writeServices.size() &&
+	   otherEp.mailBox() < m_readServices.size());
+    DT::XferServices
+      &newWrite = m_endPoint->factory().getTemplate(*m_endPoint, otherEp),
+      &newRead = m_endPoint->factory().getTemplate(otherEp, *m_endPoint),
+      **oldWrite = &m_writeServices[otherEp.mailBox()],
+      **oldRead = &m_readServices[otherEp.mailBox()];
+    if (*oldWrite != &newWrite) {
+      if (*oldWrite)
+	(*oldWrite)->release();
+      *oldWrite = &newWrite;
+      newWrite.addRef();
+    }
+    if (*oldRead != &newRead) {
+      if (*oldRead)
+	(*oldRead)->release();
+      *oldRead = &newRead;
+      newRead.addRef();
+    }
   }
 };
-Device *Device::s_one = NULL;
-bool Device::s_stopped = false;
+std::set<Device *> Device::s_devices;
 
 Driver::
 ~Driver() {

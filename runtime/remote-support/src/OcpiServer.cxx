@@ -38,6 +38,7 @@ namespace OA = OCPI::API;
 namespace OC = OCPI::Container;
 namespace OR = OCPI::Remote;
 namespace OU = OCPI::Util;
+namespace OT = OCPI::RDT;
 namespace OCPI {
   namespace Application {
 
@@ -156,15 +157,33 @@ namespace OCPI {
 		  "Artifacts stored/cached in the directory \"%s\"; which will be %s on exit.\n",
 		  m_library.libName().c_str(), m_remove ? "removed" : "retained");
 	  fprintf(stderr, "Containers offered to clients are:\n");
-	  OA::Container *ac;
-	  for (unsigned n = 0; (ac = OA::ContainerManager::get(n)); n++) {
-	    OC::Container &c = *static_cast<OC::Container *>(ac);
+	}
+	m_needsBridging.resize(OC::Manager::s_nContainers, true); // initially false
+	OA::Container *ac;
+	for (unsigned n = 0; (ac = OA::ContainerManager::get(n)); n++) {
+	  OC::Container &c = *static_cast<OC::Container *>(ac);
+	  if (verbose)
 	    fprintf(stderr, "  %2d: %s, model: %s, os: %s, osVersion: %s, platform: %s\n",
 		    n, c.name().c_str(), c.model().c_str(), c.os().c_str(),
 		    c.osVersion().c_str(), c.platform().c_str());
+	  OU::formatAdd(m_discoveryInfo, "%s|%s|%s|%s|%s|%s|%c|", c.name().c_str(),
+			c.model().c_str(), c.os().c_str(), c.osVersion().c_str(),
+			c.arch().c_str(), c.platform().c_str(), c.dynamic() ? '1' : '0');
+	  for (unsigned nn = 0;  nn < c.transports().size(); nn++) {
+	    const OC::Transport &t = c.transports()[nn];
+	    OU::formatAdd(m_discoveryInfo, "%s,%s,%u,%u,0x%x,0x%x|",
+			  t.transport.c_str(), t.id.c_str()[0] ? t.id.c_str() : " ", t.roleIn,
+			  t.roleOut, t.optionsIn, t.optionsOut);
+	    if (t.transport == "ocpi-socket-rdma")
+	      m_needsBridging[n] = false;
 	  }
-	  fflush(stderr);
+	  if (m_needsBridging[n])
+	    OU::formatAdd(m_discoveryInfo, "%s,%s,%u,%u,0x%x,0x%x|",
+			  "ocpi-socket-rdma", " ", OT::ActiveFlowControl, OT::ActiveMessage,
+			  (1 << OT::ActiveFlowControl), (1 << OT::ActiveMessage));
+	  m_discoveryInfo += "\n";
 	}
+	fflush(stderr); //why?
 	if (safp)
 	  fclose(safp);
       }
@@ -267,11 +286,13 @@ namespace OCPI {
 	  strcpy(cp, m_name.c_str());
 	  cp += m_name.length();
 	  *cp++ = '\n';
-	  size_t left = OE::MaxPacketSize - (cp - start);
-	  if (OR::Server::fillDiscoveryInfo(cp, left, error))
+	  if (m_discoveryInfo.length() + 1 > (size_t)(OE::MaxPacketSize - (cp - start))) {
+	    OU::format(error, "Too many containers, discovery buffer would overflow");
 	    return true;
-	  length = OE::MaxPacketSize - left;
-	  ocpiDebug("Container server %s discovery returns: \n%s---end of discovery",
+	  }
+	  strcpy(cp, m_discoveryInfo.c_str());
+	  length = strlen(start) + 1;
+	  ocpiLog(9, "Container server %s discovery returns: \n%s---end of discovery",
 		    m_name.c_str(), start);
 	  return !s->send(rFrame, length, from, 0, NULL, error);
 	} else
@@ -287,7 +308,8 @@ namespace OCPI {
     bool Server::
     receiveServer(std::string &error) {
       ocpiDebug("Received connection request: creating a new client");
-      OR::Server *c = new OR::Server(library(), m_server, error);
+      OR::Server *c =
+	new OR::Server(library(), m_server, m_discoveryInfo, m_needsBridging, error);
       if (error.length()) {
 	delete c;
 	return true;

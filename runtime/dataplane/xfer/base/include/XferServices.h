@@ -38,7 +38,6 @@ typedef struct pio_transfer_ * PIO_transfer;
 namespace DataTransfer {
 
   // Forward references
-  class SmemServices;
   class XferServices;
   class XferFactory;
   class EndPoint;
@@ -157,7 +156,6 @@ namespace DataTransfer {
   class XferServices {
     friend class XferFactory;
     XferFactory &m_driver;
-    //    SmemServices &m_source;
     unsigned m_users; // how many ports are using this template?
   protected:
     EndPoint &m_from, &m_to;

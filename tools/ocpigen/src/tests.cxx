@@ -1146,10 +1146,10 @@ namespace {
 	if (io.m_port->isDataProducer()) {
 	  if (io.m_script.size() || io.m_view.size() || io.m_file.size()) {
 	    OU::formatAdd(verify,
-			  "echo '    '$msg %s.$subcase for worker \"$worker\" using %s on"
+			  "echo '  '$msg case %s.$subcase for worker \"$worker\" using %s on"
 			  " output file:  %s.$subcase.$worker.%s.out\n"
 			  "while read comp name value; do\n"
-			  "  [ $comp = \"%s\"%s%s%s ] && eval export OCPI_TEST_$name=\"$value\"\n"
+			  "  [ $comp = \"%s\"%s%s%s ] && eval export OCPI_TEST_$name=\\\"$value\\\"\n"
 			  "done < %s.$subcase.$worker.props\n",
 			  m_name.c_str(), io.m_script.size() ? "script" : "file comparison",
 			  m_name.c_str(), io.m_port->pname(),
@@ -1206,9 +1206,9 @@ namespace {
 			      out.c_str(), inArgs.c_str());
 	      else
 		OU::formatAdd(verify,
-			      "  echo '      'Comparing output file \"%s\" to specified file: \"%s\"\n"
+			      "  echo '    'Comparing output file to specified file: \"%s\"\n"
 			      "  cmp %s %s%s\n",
-			      out.c_str(), io.m_file.c_str(), out.c_str(),
+			      io.m_file.c_str(), out.c_str(),
 			      io.m_file[0] == '/' ? "" : "../../", io.m_file.c_str());
 	      OU::formatAdd(verify,
 			    "  r=$?\n"

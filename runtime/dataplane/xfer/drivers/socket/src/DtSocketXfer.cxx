@@ -25,6 +25,7 @@
 #include "OcpiOsMisc.h"
 #include "OcpiOsAssert.h"
 #include "OcpiOsServerSocket.h"
+#include "OcpiOsEther.h"
 #include "OcpiUtilMisc.h"
 #include "OcpiThread.h"
 #include "XferDriver.h"
@@ -35,6 +36,7 @@ namespace DataTransfer {
   namespace Socket {
     namespace OU = OCPI::Util;
     namespace OS = OCPI::OS;
+    namespace OE = OCPI::OS::Ether;
     namespace XF = DataTransfer;
 
 struct DataHeader {
@@ -71,26 +73,43 @@ public:
       // FIXME: we could do more parsing/checking on the ipaddress
       m_ipAddress.assign(protoInfo, colon - protoInfo);
     } else {
-      char ip_addr[128];
-      const char *env = getenv("OCPI_TRANSFER_IP_ADDR");
-      if( !env || (env[0] == 0)) {
-	ocpiDebug("Set ""OCPI_TRANSFER_IP_ADDR"" environment variable to set socket IP address");
-	gethostname(ip_addr,128);
-      } else
-	strcpy(ip_addr,env);
-      m_ipAddress = ip_addr;
-      const char *penv = getenv("OCPI_TRANSFER_PORT");
-      if( !penv || (penv[0] == 0)) {
-	ocpiDebug("Set ""OCPI_TRANSFER_PORT"" environment variable to set socket IP address");
-	m_portNum = 0;
-      } else {
-	static uint16_t s_port = 0;
-	if ( s_port == 0 ) {
-	  s_port = (uint16_t)atoi(penv);
+      const char *env = getenv("OCPI_TRANSFER_IP_ADDRESS"); // alllow env for interface?
+      if (env && env[0])
+	m_ipAddress = env;
+      else {
+	// Use the IP address of the first connected, up, interface with ether MAC address
+	// Cannot use host name since remote systems might not have DNS
+	static std::string myAddr;
+	if (myAddr.empty()) {
+	  std::string error;
+	  OE::IfScanner ifs(error);
+	  OE::Interface eif;
+	  if (error.empty())
+	    while (ifs.getNext(eif, error)) {
+	      if (eif.connected && eif.up && !eif.loopback && eif.addr.isEther() &&
+		  eif.ipAddr.addrInAddr()) {
+		if ((env = getenv("OCPI_SOCKET_INTERFACE")) && strcasecmp(eif.name.c_str(), env))
+		  continue;
+		myAddr = eif.ipAddr.prettyInAddr();
+		ocpiInfo("Choosing our IP address, %s, using interface %s with MAC %s",
+			 myAddr.c_str(), eif.name.c_str(), eif.addr.pretty());
+		break;
+	      }
+	    }
+	  if (!error.empty())
+	    throw OU::Error("Cannot obtain a local IP address:  %s", error.c_str());
 	}
-	m_portNum = s_port++;
+	m_ipAddress = myAddr;
       }
-      OU::format(m_protoInfo, "%s:%u", ip_addr, m_portNum);
+      env = getenv("OCPI_TRANSFER_PORT");
+      if (env && env[0]) {
+	static uint16_t s_port = 0;
+	if (!s_port)
+	  s_port = (uint16_t)atoi(env);
+	m_portNum = s_port++;
+      } else
+	m_portNum = 0;
+      OU::format(m_protoInfo, "%s:%u", m_ipAddress.c_str(), m_portNum);
     }
     // Socket endpoints need an address space too in come cases, so we provide one by
     // simply using the mailbox number as the high order bits.
@@ -149,7 +168,7 @@ public:
       size_t     n;
       uint8_t    buf[TCP_BUFSIZE];
       DataHeader header;
-      uint8_t   *current_ptr;
+      uint8_t   *current_ptr = NULL;
       size_t     bytes_left = 0;
       bool       in_header = true;;
       while(m_run && (n = m_socket.recv((char*)buf, TCP_BUFSIZE, 500))) {
@@ -170,8 +189,8 @@ public:
 	    }
 	  }
 	  copy_len = std::min(n, bytes_left);
-	  ocpiDebug("Copying socket data to %p, size = %zu, in header %d, left %zu, first %lx",
-		    current_ptr, copy_len, in_header, bytes_left, *(unsigned long*)bp);
+	  ocpiDebug("Copying socket data to %p, size = %zu, in header %d, left %zu, first %x",
+		    current_ptr, copy_len, in_header, bytes_left, *(uint32_t *)bp);
 	  if (current_ptr) {
 	    memcpy(current_ptr, bp, copy_len );
 	    current_ptr += copy_len;
@@ -224,6 +243,7 @@ public:
       m_sep.m_portNum = m_server.getPortNo();
       OU::format(m_sep.m_protoInfo, "%s:%u", m_sep.m_ipAddress.c_str(), m_sep.m_portNum);
       m_sep.setName();
+      ocpiInfo("Finalizing socket endpoint with port: %s", m_sep.name().c_str());
     }
   }
   ~ServerT(){

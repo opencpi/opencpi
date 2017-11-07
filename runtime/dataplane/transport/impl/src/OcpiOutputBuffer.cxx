@@ -47,7 +47,7 @@ using namespace OCPI::OS;
  * Constructors
  *********************************/
 OutputBuffer::OutputBuffer( OCPI::DataTransport::Port* port, OCPI::OS::uint32_t tid )
-  : OCPI::DataTransport::Buffer( port, tid ),m_slave(false)
+  : OCPI::DataTransport::Buffer(port, tid ), m_spsControl(NULL), m_bcsVaddr(NULL), m_slave(false)
 {
   m_bVaddr = 0;
   m_bsVaddr = 0;
@@ -82,6 +82,8 @@ void OutputBuffer::update(bool critical)
   struct PortMetaData::OutputPortBufferControlMap *output_offsets = 
     &getPort()->getMetaData()->m_bufferData[tid].outputOffsets;
 
+  ocpiDebug("Output buffer update: %p (casted %p) tid %u mbv %p bo %u",
+	    this, static_cast<Buffer*>(this), tid, m_bVaddr, output_offsets->bufferOffset);
   if ( this->m_port->isShadow()) {
     return;
   }

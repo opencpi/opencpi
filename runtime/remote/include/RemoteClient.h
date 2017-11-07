@@ -20,11 +20,11 @@
 
 namespace OCPI {
   namespace Remote {
-    // This function is called without knowing whether the driver is available.
-    // Thus it is not in the driver.
+    // These function are called without knowing whether the driver is available.
+    // Thus they are not in the driver.
     extern bool g_enableRemoteDiscovery;
     extern bool (*g_probeServer)(const char *server, bool verbose, const char **exclude,
-			  std::string &error);
+				 bool discovery, std::string &error);
     bool useServer(const char *server, bool verbose, const char **exclude, std::string &error);
   }
 }

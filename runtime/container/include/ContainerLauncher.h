@@ -91,8 +91,11 @@ namespace OCPI {
 	const char *m_name;
 	OCPI::Util::PValueList m_params;
 	const OCPI::Util::Port *m_metaPort; // needed on a server for the port that is not local
-	size_t m_scale, m_index;      // ditto
+	// m_scale can be zero, meaning no fanout/fanin or bridging at all.
+	// If non-zero, it implies the need for bridging for local ports
+	size_t m_scale, m_index;           // ditto
 	const char *m_url;
+	bool m_transportBridged;           // port required transport bridging
 	std::string m_initial, m_final;
 	bool m_started; // the connection has passed its initial phase and initial info has been sent
 	bool m_done;

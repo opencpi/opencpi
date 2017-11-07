@@ -26,6 +26,8 @@
 #include "ContainerLauncher.h"
 // This file implements the container server, which "serves up" containers on the system
 // the server is running on.  The server uses a local launcher.
+// The source code for the server is in the application directory since this directory
+// is the "remote container driver", and the server is not part of that.
 namespace OCPI {
   namespace Remote {
     class Server {
@@ -49,8 +51,11 @@ namespace OCPI {
       Crews m_crews;
       OCPI::Container::Launcher::Members m_members;
       OCPI::Container::Launcher::Connections m_connections;
+      std::string &m_discoveryInfo;       // what to tell clients about our containers, etc.
+      std::vector<bool> &m_needsBridging; // per container, does it need bridging to sockets
     public:
-      Server(OCPI::Library::Library &l, OCPI::OS::ServerSocket &svrSock, std::string &error);
+      Server(OCPI::Library::Library &l, OCPI::OS::ServerSocket &svrSock,
+	     std::string &discoveryInfo, std::vector<bool> &needsBridging, std::string &error);
       ~Server();
       bool receive(bool &eof, std::string &error);
       inline int fd() const { return m_socket.fd(); }
@@ -65,7 +70,9 @@ namespace OCPI {
     private:
       const char
 	*downloadFile(int wfd, uint64_t length),
-	*doSide(ezxml_t cx, OCPI::Container::Launcher::Port &p, const char *type);
+	*doSide(ezxml_t cx, OCPI::Container::Launcher::Port &p, const char *type),
+        *doSide2(OCPI::Container::Launcher::Port &p,
+		 OCPI::Container::Launcher::Port &other);
       bool
 	download(std::string &error),
 	launch(std::string &error),

@@ -264,6 +264,7 @@ namespace OCPI {
       packer.putULongLong (d.oob.port_id);
       packer.putString    (d.oob.oep);
       packer.putULongLong (d.oob.cookie);
+      packer.putULongLong (d.oob.address);
       out = packer.data();
       ocpiDebug("Packed desc %p into %p %p %zu %zu",
 		&desc, &out, out.data(), out.length(), out.capacity());
@@ -301,6 +302,7 @@ namespace OCPI {
         if (oep.length()+1 > sizeof(d.oob.oep))
           return false;
 	unpacker.getULongLong (d.oob.cookie);
+	unpacker.getULongLong (d.oob.address);
         std::strcpy (d.oob.oep, oep.c_str());
       }
       catch (const OU::CDR::Decoder::InvalidData &) {
@@ -811,7 +813,7 @@ namespace OCPI {
     getFullBuffer() {
       assert(!m_forward);
       ExternalBuffer *b = m_next2read;
-      ocpiDebug("getfull on %p early next %p", this, b);
+      ocpiDebug("getfull on %p early next %p dt %p", this, b, m_dtPort);
       if (b) { // if shim mode
 	bool zc = false;
 	do {
@@ -969,15 +971,14 @@ namespace OCPI {
     }
 
     void BasicPort::
-    applyConnection(const Launcher::Connection &c) {
+    applyConnection(const Transport &t, size_t bufferSize) {
       OR::Descriptors &d = getData().data;
-      d.role = isProvider() ? c.m_transport.roleIn : c.m_transport.roleOut;
-      d.options = isProvider() ? c.m_transport.optionsIn : c.m_transport.optionsOut;
+      d.role = isProvider() ? t.roleIn : t.roleOut;
+      d.options = isProvider() ? t.optionsIn : t.optionsOut;
       if (!d.desc.oob.oep[0])
-	strcpy(d.desc.oob.oep, c.m_transport.transport.c_str());
-      assert(!strncmp(d.desc.oob.oep, c.m_transport.transport.c_str(),
-		      strlen(c.m_transport.transport.c_str())));
-      setBufferSize(c.m_bufferSize);
+	strcpy(d.desc.oob.oep, t.transport.c_str());
+      assert(!strncmp(d.desc.oob.oep, t.transport.c_str(), strlen(t.transport.c_str())));
+      setBufferSize(bufferSize);
     }
 
     uint8_t *BasicPort::
@@ -1050,22 +1051,25 @@ namespace OCPI {
     // Connect inside the same process, but between containers.
     // The actual ports are not in this process (this cannot be shimmed).
     void BasicPort::
-    connectLocal(Launcher::Connection &c) {
+    connectLocal(BasicPort &other, Launcher::Connection *c) {
       BasicPort
-	&in = isProvider() ? *this : *c.m_in.m_port,
-	&out = isProvider() ? *c.m_out.m_port : *this;
+	&in = isProvider() ? *this : other,
+	&out = isProvider() ? other : *this;
       OR::Descriptors buf, buf1;
-      const OR::Descriptors *result = in.startConnect(NULL, buf, c.m_in.m_done);
+      bool inDone = false, outDone = false;
+      const OR::Descriptors *result = in.startConnect(NULL, buf, inDone);
       assert(result);
-      result = out.startConnect(result, buf1, c.m_out.m_done);
-      assert((result && !c.m_in.m_done) || (!result && c.m_in.m_done));
+      result = out.startConnect(result, buf1, outDone);
+      assert((result && !inDone) || (!result && inDone));
       if (result) {
-	result = in.finishConnect(result, buf, c.m_in.m_done);
-	assert((result && !c.m_out.m_done) || (!result && c.m_out.m_done));
+	result = in.finishConnect(result, buf, inDone);
+	assert((result && !outDone) || (!result && outDone));
 	if (result)
-	  result = out.finishConnect(result, buf1, c.m_out.m_done);
+	  result = out.finishConnect(result, buf1, outDone);
       }
-      assert(c.m_in.m_done && c.m_out.m_done && !result);
+      assert(inDone && outDone && !result);
+      if (c)
+	c->m_in.m_done = c->m_out.m_done = true;
     }
 
     // return true if we need more info, false if we're done.
@@ -1153,11 +1157,6 @@ namespace OCPI {
 	assert(!isProvider());
 	assert(other);
 	rv = startConnect(other, feedback, done);
-	//	if (done) {
-	  //	  rv = m_dtPort->finalize(other, getData().data, &feedback, done);
-	  //	  assert(!rv);
-	//	  assert(done);
-	//	}
       } else  
 	rv = m_dtPort->finalize(other, getData().data, &feedback, done);
       if (done)
