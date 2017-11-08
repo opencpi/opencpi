@@ -100,7 +100,7 @@ namespace OCPI {
     }
     OA::Port &Worker::
     getPort(const char *a_name, const OA::PValue *params ) {
-      return getPort(a_name, 1, params);
+      return getPort(a_name, 0, params);
     }
     OA::PropertyInfo & Worker::setupProperty(const char *pname, 
 					     volatile uint8_t *&m_writeVaddr,

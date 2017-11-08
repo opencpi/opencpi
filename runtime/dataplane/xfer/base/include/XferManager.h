@@ -55,9 +55,9 @@ namespace DataTransfer {
 
     EndPoint &getEndPoint(std::string &s);
     XferFactory *getDriver(const char *name);
-    XferFactory *getDriver(const std::string &name) { return getDriver(name.c_str()); }
-    XferFactory *find(const char *name) { return getDriver(name); } // backward compatibility
-    XferFactory *find(const std::string &name) { return find(name.c_str()); }
+    XferFactory *getDriver(const std::string &a_name) { return getDriver(a_name.c_str()); }
+    XferFactory *find(const char *a_name) { return getDriver(a_name); } // backward compatibility
+    XferFactory *find(const std::string &a_name) { return find(a_name.c_str()); }
 #if 0
     // Retrieves the factory based upon the transfer type
     static std::string null;
