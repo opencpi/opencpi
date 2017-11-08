@@ -30,7 +30,9 @@ OcpiAlteraDir=$(strip $(foreach t,$(or $(OCPI_ALTERA_DIR),/opt/Altera),$(infox T
 		 $(if $(shell test -d $t && echo 1),$t,\
 		    $(call $(or $1,error), Directory "$t" for OCPI_ALTERA_DIR not found))))
 
-OcpiAlteraLicenseFile=$(strip $(foreach t,$(or $(OCPI_ALTERA_LICENSE_FILE),\
+OcpiAlteraLicenseFile=$(strip $(foreach t,$(or $(foreach f,$(OCPI_ALTERA_LICENSE_FILE),\
+	                                          $(if $(findstring /,$f),$f,\
+                                                    $(call OcpiAlteraDir,$1)/$f)),\
                                                $(call OcpiAlteraDir,$1)/Altera-License.lic),\
 			 $(if $(or $(findstring @,$t),$(findstring :,$t),$(shell test -f $t && echo 1)),$t,\
                             $(call $(or $1,error), File "$t", for OCPI_ALTERA_LICENSE_FILE, not found))))
@@ -38,7 +40,7 @@ OcpiAlteraLicenseFile=$(strip $(foreach t,$(or $(OCPI_ALTERA_LICENSE_FILE),\
 OcpiAlteraQuartusDir=$(strip\
   $(foreach i,\
     $(or $(OCPI_ALTERA_TOOLS_DIR),\
-      $(foreach t,$(OcpiAlteraDir,$1),\
+      $(foreach t,$(call OcpiAlteraDir,$1),\
         $(foreach v,\
           $(if $(filter-out undefined,$(origin OCPI_ALTERA_VERSION)),\
             $(foreach e,$(OCPI_ALTERA_VERSION),\
@@ -82,7 +84,7 @@ $(if $(OCPI_ALTERA_LAB_TOOLS_DIR),\
 # Note THIS REQUIRES BASH not just POSIX SH due to pipefail option
 DoAltera=(set -o pipefail; set +e; \
          export LM_LICENSE_FILE=$(OcpiAlteraLicenseFile) ; \
-         $(TIME) $(OcpiAlteraQuartusDir)/quartus/bin/$1 --64bit $2 > $3-$4.tmp 2>&1; \
+         $(TIME) $(OcpiAlteraQuartusDir)/bin/$1 --64bit $2 > $3-$4.tmp 2>&1; \
          ST=\$$?; sed 's/^.\[0m.\[0;32m//' < $3-$4.tmp > $3-$4.out ; \
          rm $3-$4.tmp ; \
          if test \$$ST = 0; then \
@@ -96,7 +98,7 @@ DoAltera=(set -o pipefail; set +e; \
 
 DoAltera1=(set -o pipefail; set +e; \
          export LM_LICENSE_FILE=$(OcpiAlteraLicenseFile) ; \
-         $(TIME) $(OcpiAlteraQuartusDir)/quartus/bin/$1 --64bit $2 > $3-$4.tmp 2>&1; \
+         $(TIME) $(OcpiAlteraQuartusDir)/bin/$1 --64bit $2 > $3-$4.tmp 2>&1; \
          ST=$$$$?; sed 's/^.\[0m.\[0;32m//' < $3-$4.tmp > $3-$4.out ; \
          rm $3-$4.tmp ; \
          if test $$$$ST = 0; then \

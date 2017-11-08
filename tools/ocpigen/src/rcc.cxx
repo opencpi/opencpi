@@ -147,9 +147,9 @@ rccBaseType(std::string &type, OU::Member &m, unsigned level, size_t &offset, un
     std::string s;
     camel(s, parent, m.m_name.c_str());
     if (level == predefine || predefine == UINT_MAX-1) {
-      OU::formatAdd(type, "%*s%sstruct %s {\n", indent, "", cnst, s.c_str());
+      OU::formatAdd(type, "%*s%sstruct __attribute__ ((__packed__)) %s {\n", indent, "", cnst, s.c_str());
       rccStruct(type, m.m_nMembers, m.m_members, level + 1, s.c_str(), isFixed, isLast,
-                    false, predefine);
+                    false, predefine, m.m_elementBytes);
       OU::formatAdd(type, "%*s}%s", indent, "", predefine == UINT_MAX-1 ? "" : ";\n");
     } else if (level > predefine)
       OU::formatAdd(type, "%*s%sstruct %s", indent, "", cnst, s.c_str());
