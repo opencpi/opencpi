@@ -20,7 +20,7 @@
 
 # Capture whatever is in the current file, allowing more to be reset in the project file
 override ComponentLibrariesInternal:=$(ComponentLibrariesInternal) $(ComponentLibraries)
-override HdlLibrariesInternal:=$(HdlLibrariesInternal) $(HdlLibraries) $(Libraries)
+override HdlLibrariesInternal:=$(HdlLibrariesInternal) $(HdlLibraries) $(LibrariesInternal) $(Libraries)
 ComponentLibraries=
 HdlLibraries=
 Libraries=

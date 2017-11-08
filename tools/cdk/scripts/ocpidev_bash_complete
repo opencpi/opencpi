@@ -63,23 +63,62 @@ _ocpidev()
     noun3="${COMP_WORDS[i]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
     # valid verbs 
-    verbs="build delete create report clean"
+    verbs="build delete create report clean register unregister show"
     # valid nouns in first slot 
     nouns1="project application spec protocol test library worker hdl"
     # valid nouns in second slot
-    nouns2="assembly card slot device platform primitive"
+    nouns2="assembly card slot device platform platforms targets primitive"
     # valid nouns in third slot
     nouns3="library core"
     #valid build options  
     bopts="--rcc --hdl --no-assemblies --hdl-assembly --hdl-target --hdl-platform \
            --rcc-platform --hdl-rcc-platform --worker"
-    #valid options not having to do with build
-    opts="-v -f -d -s -p -t -n -l -h -F -D -K -S -P -L -V -E -W -R -r -g -q -u -I -A -O -C -Y -y \
+    # show verb has different options and nouns
+    showopts="-h --help -v -d --table --json"
+    if [[ ${verb} == show ]] ; then
+      # valid nouns in first slot
+      nouns1="workers components platforms targets hdl rcc"
+      # valid nouns in second slot
+      nouns2="platforms targets"
+      # valid nouns in third slot
+      nouns3=""
+      #valid options not having to do with build
+    fi
+    opts="-v -f -d -s -p -t -n -l -h -F -D -K -N -S -P -L -V -E -W -R -r -g -q -u -I -A -O -C -Y -y \
 	-T -Z -G -Q -U -M -B -H -J -X -x"
+    # for project noun, add the --register option
+    if [[ ${noun1} == project ]]; then
+      opts="${opts} --register"
+    fi
+    if [[ ${verb} == *register ]]; then
+      nouns1="project"
+      nouns2=""
+      nouns3=""
+    fi
     # if current word stars with a - it is an option of some sort
-    if [[ ${cur} == -* ]] ; then
+    if [[ ${prev} == --hdl-platform || ${prev} == --build-hdl-platform ]] ; then
+      plats=`ocpidev show hdl platforms`
+      COMPREPLY=( $(compgen -W "${plats}" -- ${cur}) )
+      return 0
+    elif [[ ${prev} == --hdl-target || ${prev} == --build-hdl-target ]] ; then
+      tgts=`ocpidev show hdl targets`
+      COMPREPLY=( $(compgen -W "${tgts}" -- ${cur}) )
+      return 0
+    # Not supported yet:
+    #elif [[ ${prev} == --rcc-target || ${prev} == --build-rcc-target ]] ; then
+    #  tgts=`ocpidev show rcc targets`
+    #  COMPREPLY=( $(compgen -W "${tgts}" -- ${cur}) )
+    #  return 0
+    elif [[ ${prev} == --rcc-platform || ${prev} == --build-rcc-platform ]] ; then
+      plats=`ocpidev show rcc platforms`
+      COMPREPLY=( $(compgen -W "${plats}" -- ${cur}) )
+      return 0
+    elif [[ ${cur} == -* ]] ; then
       if [[ (${verb} == build || ${verb} == clean) && ${cur} == --* ]] ; then
         COMPREPLY=( $(compgen -W "${bopts}" -- ${cur}) )
+        return 0
+      elif [[ ${verb} == show ]] ; then
+        COMPREPLY=( $(compgen -W "${showopts}" -- ${cur}) )
         return 0
       fi
       COMPREPLY=( $(compgen -W "${bopts} ${opts}" -- ${cur}) )

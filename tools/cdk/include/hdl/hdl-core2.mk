@@ -151,7 +151,7 @@ ifdef HdlToolNeedBB
 # Black box libraries for cores are built when it is necessary to have a library containing
 # the black box module in order for higher level designs to find the core during synthesis.
 # To enable instantiation from verilog this means a foo_bb.v file with an empty module.
-# To enable instantiaiton from VHDL this just means the foo_pkg.vhd file with the module definition
+# To enable instantiation from VHDL this just means the foo_pkg.vhd file with the module definition
 # The bb library is built using the same library name, but in the bb subdirectory
 # BUT: it is installed under the foo_bb name
 # FIXME: we don't yet build with the VHDL pkg file for instantiating cores from VHDL

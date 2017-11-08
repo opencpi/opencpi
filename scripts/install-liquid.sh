@@ -22,7 +22,7 @@
 # 2. OCPI_TARGET_DIR is set properly (our target scheme, not the gnu target scheme)
 # 3. OCPI_CROSS_HOST is the gnu cross target
 set -e
-OCPI_LIQUID_VERSION=v1.2.0
+OCPI_LIQUID_VERSION=v1.3.1
 dir=liquid-dsp
 source ./scripts/setup-install.sh \
        "$1" \

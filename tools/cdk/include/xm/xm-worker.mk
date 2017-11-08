@@ -123,7 +123,7 @@ $(RccAssemblyFile): | $(GeneratedDir)
 
 $(ArtifactXmlFile): $(RccAssemblyFile)
 	@echo Generating artifact/runtime xml file \($(ArtifactXmlFile)\) for all workers in one binary
-	$(AT)$(OcpiGen) -A $(RccAssemblyFile)
+	$(AT)$(call OcpiGen, -A $(RccAssemblyFile))
 
 #disable builtin suffix rules
 %.o : %.c

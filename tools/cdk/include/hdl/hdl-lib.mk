@@ -23,6 +23,8 @@
 
 # Tell all the general purpose and toolset make scripts we are building libraries
 HdlMode:=library
+include $(OCPI_CDK_DIR)/include/util.mk
+$(OcpiIncludeProject)
 include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
 .PHONY: stublibrary
 ifndef HdlSkip

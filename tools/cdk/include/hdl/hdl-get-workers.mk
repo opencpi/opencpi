@@ -24,9 +24,9 @@ include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
 all: $(AssyWorkersFile)
 -include $(AssyWorkersFile).deps
 $(AssyWorkersFile): $(Worker_xml) | $(GeneratedDir)
-	$(AT)$(OcpiGen) -D $(GeneratedDir)\
+	$(AT)$(call OcpiGen, -D $(GeneratedDir)\
                         $(and $(Platform),-P $(Platform)) $(and $(Assembly),-S $(Assembly))\
 			$(and $(PlatformDir),-F $(PlatformDir)) \
-                        -W $(Worker) $<
+                        -W $(Worker) $<)
 
 

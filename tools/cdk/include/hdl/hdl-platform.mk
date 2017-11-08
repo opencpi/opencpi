@@ -190,11 +190,10 @@ ifndef HdlSkip
     all: $(ExportLinks)
   endif
 endif # skip after hel-pre.mk
+
 # There is no test target here, but there might be in the devices subdir
 test:
 
 clean::
 	$(AT)if test -d devices; then make -C devices clean; fi
 	$(AT) rm -r -f config-* lib
-
-

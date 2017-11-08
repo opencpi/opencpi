@@ -21,8 +21,6 @@
 # Slot type specs are in the "specs" directory.
 # This directory should only depend on the "primitives" library
 
-Package=ocpi.devices
-XmlIncludeDirs=../../components/specs ../devices/lib/hdl ../devices/specs
 Workers = zipper_i2c.hdl \
           zipper_i2c_em.hdl \
           fmcomms3_i2c.hdl \

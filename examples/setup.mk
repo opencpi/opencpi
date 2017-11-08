@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
+Package=local
 ifndef OCPI_CDK_DIR
 OCPI_CDK_DIR=$(realpath ../../exports)
 endif

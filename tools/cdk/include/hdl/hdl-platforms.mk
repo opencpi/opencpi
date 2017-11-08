@@ -38,7 +38,6 @@ endif
 #  $(warning Platform $p not present in this platforms directory, not building it here.)\
 #  $(eval override HdlPlatforms:=$(filter-out $p,$(HdlPlatforms)))))
 
-Package=ocpi
 include $(OCPI_CDK_DIR)/include/package.mk
 
 .PHONY: $(HdlMyPlatforms)

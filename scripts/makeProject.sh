@@ -141,123 +141,84 @@ function get_make_option {
   get_make_opt $1 $2 $3 2> /dev/null || {
     [ "$QUIET" == 1 ] || echo "String in \"$1\" for variable \"$2\" is too complicated to parse and pass to ocpidev. Skipping. You will have to do this manually."
     eval "$3=()"
-#    failedmakeoption=1
   }
 }
 
 # This function gets the values of a Makefile variable. It continues on the next line if a backslash is used, and ignores comments
 function get_make_opt {
     eval "$3=($(sed -e :a -e '/\\\s*$/N; s/#.*//; s/\\\s*\n//; ta' $1 \
-                | sed -n "/^[         ]*$2/s/^[      ]*$2[  ]*:*=[    ]*\(.*\)$/\1/p" ))"
+      | sed -n "/^[         ]*$2/s/^[      ]*$2[  ]*:*\(+\|\)=[    ]*\(.*\)$/\2/p" ))"
 }
 
+# Options to extract from makefiles and pass to ocpidev create
+opts_to_get="workers:Workers others:SourceFiles cores:Cores onlys:OnlyTargets exes:ExcludeTargets onlyplats:OnlyPlatforms explats:ExcludePlatforms includes:IncludeDirs xmlincludes:XmlIncludeDirs liblibs:Libraries complibs:ComponentLibraries package:Package hdlnolib:HdlNoLibraries hdlnoelab:HdlNoElaboration module:Top prebuiltcore:PreBuiltCore rccstatprereqs:RccStaticPrereqLibs rccdynprereqs:RccDynamicPrereqLibs"
 # Look for all of the known make options in a given makefile
 function get_make_options {
-#    failedmakeoption=0
-    unset workers
-    unset others
-    unset cores
-    unset onlys
-    unset exes
-    unset onlyplats
-    unset explats
-    unset includes
-    unset xmlincludes
-    unset liblibs
-    unset complibs
-    unset package
-    unset hdlnolib
-    unset hdlnoelab
-    unset module
-    unset prebuiltcore
-    unset rccstatprereqs
-    unset rccdynprereqs
-    if [ "$2" != noworkers ] ; then
-      get_make_option $1 Workers             workers
+  if [ -d "$1" ] ; then
+    mk_files="$1/*.mk $1/Makefile"
+  else
+    mk_files=$1
+  fi
+  for o in ${opts_to_get[@]} ; do
+    varinfo=(${o//:/ })
+    varname=${varinfo[0]}
+    if [[ "$varname" != workers || "$2" != noworkers ]] ; then
+      vartext=${varinfo[1]}
+      unset $varname
+      index=0
+      for f in ${mk_files[@]} ; do
+        varnamef=$varname$index
+        unset $varnamef
+        get_make_option $f $vartext $varnamef
+        unset varvalue
+        varvalue="${!varname} ${!varnamef}"
+        varvalue="${varvalue#"${varvalue%%[![:space:]]*}"}"
+        varvalue="${varvalue%"${varvalue##*[![:space:]]}"}"
+        if [ -n "$varvalue" ]; then
+          eval $varname=$varvalue
+        fi
+        index=$((index+1))
+      done
     fi
-    get_make_option $1 SourceFiles         others
-    get_make_option $1 Cores               cores
-    get_make_option $1 OnlyTargets         onlys
-    get_make_option $1 ExcludeTargets      exes
-    get_make_option $1 OnlyPlatforms       onlyplats
-    get_make_option $1 ExcludePlatforms    explats
-    get_make_option $1 IncludeDirs         includes
-    get_make_option $1 XmlIncludeDirs      xmlincludes
-    get_make_option $1 Libraries            liblibs
-    get_make_option $1 HdlLibraries         hdllibs
-    # Support HdlLibraries for backwards compatibility
-    liblibs=(${liblibs[@]} ${hdllibs[@]})
-    get_make_option $1 ComponentLibraries   complibs
-    get_make_option $1 Package             package
-    get_make_option $1 HdlNoLibraries      hdlnolib
-    get_make_option $1 HdlNoElaboration    hdlnoelab
-    get_make_option $1 Top                 module
-    get_make_option $1 PreBuiltCore        prebuiltcore
-    get_make_option $1 RccStaticPrereqLibs rccstatprereqs
-    get_make_option $1 RccDynamicPrereqLibs rccdynprereqs
+  done
 }
 
 # Check all of the known make options in a given makefile against the last ones found by get_make_options
 function check_make_options {
-    unset workers2
-    unset others2
-    unset cores2
-    unset onlys2
-    unset exes2
-    unset onlyplats2
-    unset explats2
-    unset includes2
-    unset xmlincludes2
-    unset liblibs2
-    unset complibs2
-    unset package2
-    unset hdlnolib2
-    unset hdlnoelab2
-    unset module2
-    unset prebuiltcore2
-    unset rccstatprereqs2
-    unset rccdynprereqs2
-    if [ "$2" != noworkers ] ; then
-      get_make_option $1 Workers             workers2
-      [ "${workers[*]}" == "${workers2[*]}" ] || bad "Workers do not match in original and generated Makefile for asset generated at \"$1\""
+  if [ -d "$1" ] ; then
+    mk_files="$1/*.mk $1/Makefile"
+  else
+    mk_files=$1
+  fi
+  for o in ${opts_to_get[@]} ; do
+    varinfo=(${o//:/ })
+    varname=${varinfo[0]}
+    if [[ "$varname" != workers || "$2" != noworkers ]] ; then
+      varname2=${varinfo[0]}2
+      vartext=${varinfo[1]}
+      unset $varname2
+      index=0
+      for f in ${mk_files[@]} ; do
+        varname2f=$varname2$index
+        unset $varname2f
+        get_make_option $f $vartext $varname2f
+        unset varvalue
+        varvalue="${!varname2} ${!varname2f}"
+        varvalue="${varvalue#"${varvalue%%[![:space:]]*}"}"
+        varvalue="${varvalue%"${varvalue##*[![:space:]]}"}"
+        if [ -n "$varvalue" ]; then
+          eval $varname2=$varvalue
+        fi
+        index=$((index+1))
+      done
+      if [[ "$varname" == liblibs || "$varname" == hdllibs ]] ; then
+        [ "$QUIET" == 1 ] || echo "Skipping Libraries and HdlLibraries for now because either can be used (HdlLibraries is legacy)."
+      else
+        [ "${!varname}" == "${!varname2}" ] || bad "$vartext do not match in original and generated Makefile for asset generated at \"$1\""
+      fi
     fi
-    get_make_option $1 SourceFiles         others2
-    [ "${others[*]}" == "${others2[*]}" ] || bad "SourceFiles do not match in original and generated Makefile for asset generated at \"$1\""
-    get_make_option $1 Cores               cores2
-    [ "${cores[*]}" == "${cores2[*]}" ] || bad "Core does not match in original and generated Makefile for asset generated at \"$1\""
-    get_make_option $1 OnlyTargets         onlys2
-    [ "${onlys[*]}" == "${onlys2[*]}" ] || bad "OnlyTargets do not match in original and generated Makefile for asset generated at \"$1\""
-    get_make_option $1 ExcludeTargets      exes2
-    [ "${exes[*]}" == "${exes2[*]}" ] || bad "ExcludeTargets do not match in original and generated Makefile for asset generated at \"$1\""
-    get_make_option $1 OnlyPlatforms       onlyplats2
-    [ "${onlyplats[*]}" == "${onlyplats2[*]}" ] || bad "OnlyPlatforms do not match in original and generated Makefile for asset generated at \"$1\""
-    get_make_option $1 ExcludePlatforms    explats2
-    [ "${explats[*]}" == "${explats2[*]}" ] || bad "ExcludePlatforms do not match in original and generated Makefile for asset generated at \"$1\""
-    get_make_option $1 IncludeDirs         includes2
-    [ "${includes[*]}" == "${includes2[*]}" ] || bad "IncludeDirs do not match in original and generated Makefile for asset generated at \"$1\""
-    get_make_option $1 XmlIncludeDirs      xmlincludes2
-    [ "${xmlincludes[*]}" == "${xmlincludes2[*]}" ] || bad "XmlIncludeDirs do not match in original and generated Makefile for asset generated at \"$1\""
-    get_make_option $1 Libraries            liblibs2
-    [ "${liblibs[*]}" == "${liblibs2[*]}" ] || bad "Libraries do not match in original and generated Makefile for asset generated at \"$1\""
-    get_make_option $1 ComponentLibraries   complibs2
-    [ "${complibs[*]}" == "${complibs2[*]}" ] || bad "ComponentLibraries do not match in original and generated Makefile for asset generated at \"$1\""
-    get_make_option $1 Package             package2
-    [ "$package" == "$package2" ] || bad "Package do not match in original and generated Makefile for asset generated at \"$1\""
-    get_make_option $1 HdlNoLibraries       hdlnolib2
-    [ "$hdlnolib" == "$hdlnolib2" ] || bad "HdlNoLibraries do not match in original and generated Makefile for asset generated at \"$1\""
-    get_make_option $1 HdlNoElaboration    hdlnoelab2
-    [ "$hdlnoelab" == "$hdlnoelab2" ] || bad "HdlNoElaboration do not match in original and generated Makefile for asset generated at \"$1\""
-    get_make_option $1 Top                 module2
-    [ "${module[*]}" == "${module2[*]}" ] || bad "Top does not match in original and generated Makefile for asset generated at \"$1\""
-    get_make_option $1 PreBuiltCore        prebuiltcore2
-    [ "${prebuiltcore[*]}" == "${prebuiltcore2[*]}" ] || bad "PreBuiltCore do not match in original and generated Makefile for asset generated at \"$1\""
-    get_make_option $1 RccStaticPrereqLibs rccstatprereqs2
-    [ "${rccstatprereqs[*]}" == "${rccstatprereqs2[*]}" ] || bad "RccStaticPrereqLibs does not match in original and generated Makefile for asset generated at \"$1\""
-    get_make_option $1 RccDynamicPrereqLibs rccdynprereqs2
-    [ "${rccdynprereqs[*]}" == "${rccdynprereqs2[*]}" ] || bad "RccDynamicPrereqLibs does not match in original and generated Makefile for asset generated at \"$1\""
+  done
 }
-
-
 
 # This was an attempt to grab a raw string value from a Makefile when the value of a Make variable is actually
 # some complicated expression. This a future TODO.
@@ -334,22 +295,37 @@ mkdir -p $(dirname $1)
 if [ "$OCPI_BASE" == "1" ] ; then
   project_type=Base
   pkg=ocpi
+  pj_name=base
+  pj_pref=ocpi
 elif [ "$OCPI_BASE" == "-1" ] ; then
   project_type=Assets
   pkg=ocpiassets
+  pj_name=assets
+  pj_pref=ocpi
 else
   project_type=Custom
-  get_make_option $(pwd)/Project.mk ProjectPackage pjpackage
+  unset pjpackage
+  get_make_option $(pwd)/Project.mk Package pjpackage
+  unset pjname
+  get_make_option $(pwd)/Project.mk PackageName pjname
+  unset pjpref
+  get_make_option $(pwd)/Project.mk PackagePrefix pjpref
   pkg=$pjpackage
+  pj_name=$pjname
+  pj_pref=$pjpref
 fi
 
-do_ocpidev ${pkg:+-K $pkg} -d $(dirname $1) create project $(basename $1)
+do_ocpidev --register ${pkg:+-K $pkg} ${pj_name:+-N $pj_name} ${pj_pref:+-F $pj_pref} -d $(dirname $1) create project $(basename $1)
 
 echo "Creating $project_type project with name \"$(basename $1)\""
 
 if [ -f "$(pwd)/Project.mk" -a -n "$pkg" ] ; then
-  get_make_option $1/Project.mk ProjectPackage pkg2
-  [ "${pkg[*]}" == "${pkg2[*]}" ] || bad "ProjectPackage do not match in original and generated Project.mk for asset generated at \"$1\""
+  unset pkg2
+  get_make_option $1/Project.mk Package pkg2
+  [ "${pkg[*]}" == "${pkg2[*]}" ] || bad "${pkg[*]}" == "${pkg2[*]}"" PackageName do not match in original and generated Project.mk for asset generated at \"$1\""
+  unset pjname2
+  get_make_option $1/Project.mk PackageName pjname2
+  [ "${pj_name[*]}" == "${pjname2[*]}" ] || bad "PackageName do not match in original and generated Project.mk for asset generated at \"$1\""
 fi
 
 from=$(pwd)
@@ -429,12 +405,10 @@ ${prebuiltcore[@]/#/-B } \
       (*) bad invalid primitive subdir \"$primdir\" ;;
     esac
     check_make_options hdl/primitives/$primname/Makefile
-    #cat  hdl/primitives/$primname/Makefile
     [ -n "$others" ] && {
       for o in ${others[@]} ; do
         if [ ! -r "$primdir/$o" ] ; then
           [ "$QUIET" == 1 ] || echo "Warning: missing other file $o. It may be in primitives"
-          #bad for $i missing other file $o
           continue
         else
           mkdir -p $(dirname hdl/primitives/$primname/$o)
@@ -446,11 +420,7 @@ ${prebuiltcore[@]/#/-B } \
         fi
       done
     }
-    # Need to do this for now otherwise the primitives wont build
-#    if [ "$failedmakeoption" == "1" ] ; then
-#      echo Overwriting makefile for prim =====================================================================
-      cp $primdir/Makefile hdl/primitives/$primname/
-#    fi
+    cp $primdir/Makefile hdl/primitives/$primname/
     [ "$SKELETON" == 1 ] || {
      rm -rf hdl/primitives/$primname/*
     }
@@ -478,6 +448,7 @@ for platdir in $from/hdl/platforms/* ; do
     if [ "$dirtype" == "platform" ] ; then
       platname=$(basename $platdir)
       get_make_options $platdir/Makefile
+      unset hdlpart
       get_make_option $platdir/"$platname".mk HdlPart_$platname hdlpart
       do_ocpidev create hdl platform $platname \
 ${others[@]/#/-O } \
@@ -495,9 +466,9 @@ ${hdlpart[@]/#/-g } \
 -q 100e6 \
 
       check_make_options hdl/platforms/$platname/Makefile
-      #cat hdl/platforms/$platname/Makefile
       # cant check this for base because in base there are platforms without *.mk files
       [ ! -f $platdir/"$platname".mk ] || {
+        unset hdlpart2
         get_make_option hdl/platforms/$platname/"$platname".mk HdlPart_$platname hdlpart2
         [ "$hdlpart" == "$hdlpart2" ] || bad HdlPart does not match in created mk file for platform "$platname"
       }
@@ -505,7 +476,6 @@ ${hdlpart[@]/#/-g } \
         for o in ${others[@]} ; do
           if [ ! -r "$platdir/$o" ] ; then
             [ "$QUIET" == 1 ] || echo "Warning: missing other file $o. It may be in primitives"
-            #bad for $i missing other file $o
             continue
           else
             mkdir -p $(dirname hdl/platforms/$platname/$n/$o)
@@ -547,25 +517,29 @@ for libdir in ${libs[@]} ; do
   fi
   libname=${libdir##components/}
   libname=${libname##hdl/}
-  get_make_options $from/$libdir/Makefile
+  get_make_options $from/$libdir
   if contains ${hdllibdirs[@]} $libdir ; then
     do_ocpidev create hdl library $libname \
 ${complibs[@]/#/-y } \
+${liblibs[@]/#/-Y } \
 ${xmlincludes[@]/#/-A } \
+${includes[@]/#/-I } \
 ${package:+-K $package} \
 
     liboption=" -h "
     # Ignore the Workers= lines in the library Makefile because these cannot be set at creation
-    check_make_options $libdir/Makefile "noworkers"
+    check_make_options $libdir "noworkers"
   elif contains ${complibdirs[@]} $libdir ; then
     do_ocpidev create library $libname \
 ${complibs[@]/#/-y } \
+${liblibs[@]/#/-Y } \
 ${xmlincludes[@]/#/-A } \
+${includes[@]/#/-I } \
 ${package:+-K $package} \
 
     liboption=" -l "
     # Ignore the Workers= lines in the library Makefile because these cannot be set at creation
-    check_make_options $libdir/Makefile "noworkers"
+    check_make_options $libdir "noworkers"
   fi
   [ "$QUIET" == 1 ] || echo "Created the $libdir library. Now copying our custom Makefile and other files."
   [ "$SKELETON" == 1 ] || copy_extra_files || true
@@ -977,13 +951,16 @@ done
 
 
 if [ "$OCPI_BASE" == "-1" ] ; then
+  unset complibs
   get_make_option $from/Project.mk ComponentLibraries+ complibs
+  unset liblibs
   get_make_option $from/Project.mk HdlLibraries+ liblibs
-  echo "ComponentLibraries+=misc_comps util_comps dsp_comps comms_comps devices
-HdlLibraries+=misc_prims util_prims dsp_prims comms_prims" >> $1/Project.mk
+  echo "ComponentLibraries+=misc_comps util_comps dsp_comps comms_comps devices" >> $1/Project.mk
 
+  unset complibs2
   get_make_option $1/Project.mk ComponentLibraries+ complibs2
   [ "${complibs[*]}" == "${complibs2[*]}" ] || bad "ComponentLibraries do not match in original and generated Makefile for asset generated at \"$1\""
+  unset liblibs2
   get_make_option $1/Project.mk HdlLibraries+ liblibs2
   [ "${liblibs[*]}" == "${liblibs2[*]}" ] || bad "Libraries do not match in original and generated Makefile for asset generated at \"$1\""
 

@@ -253,6 +253,13 @@ if [ -d hdl/platforms ]; then
   done
 fi
 
+# Add rcc platforms
+[ -n "$verbose" ] && echo Processing rcc platforms
+for p in rcc/platforms/*; do
+  name=$(basename $p)
+  make_filtered_link $p exports/lib/rcc/platforms/$name rcc-platform
+done
+
 # Add component libraries at top level and under hdl
 [ -n "$verbose" ] && echo Processing component libraries
 for d in components components/* hdl/*; do
@@ -311,7 +318,7 @@ done
 # Move around the binaries to keep the main directory clean (only relevent in autotools mode)
 set +f
 if [ "x$1" != "x-" ]; then
-  for dir in ctests rdma_tests utils; do
+  for dir in ctests xfer_tests utils; do
     if [ -d target-cdk-staging/bin/$1/${dir} ]; then
       for file in target-cdk-staging/bin/$1/${dir}/*; do
         rm -f exports/bin/$1/$(basename ${file})

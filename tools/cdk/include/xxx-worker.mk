@@ -40,11 +40,11 @@ $(call OcpiDbgVar,ImplHeaderFiles)
 # FIXME: HdlPlatform is incorrect here
 $(ImplHeaderFiles): $(GeneratedDir)/%$(ImplSuffix) : $$(Worker_%_xml) | $(GeneratedDir)
 	$(AT)echo Generating the implementation header file: $@ from $< 
-	$(AT)$(OcpiGen) -D $(GeneratedDir) $(and $(Package),-p $(Package)) \
+	$(AT)$(call OcpiGen, -D $(GeneratedDir) $(and $(Package),-p $(Package)) \
         $(and $(Assembly),-S $(Assembly)) \
 	$(and $(HdlPlatform),-P $(HdlPlatform)) \
 	$(and $(PlatformDir),-F $(PlatformDir)) \
-	$(HdlVhdlLibraries) -i $<
+	$(HdlVhdlLibraries) -i $<)
 
 ifeq ($(origin SkelFiles),undefined)
   SkelFiles=$(foreach w,$(Workers),$(GeneratedDir)/$w$(SkelSuffix))
@@ -60,11 +60,11 @@ all: skeleton
 $(SkelFiles): $(GeneratedDir)/%$(SkelSuffix) : $$(Worker_%_xml) | $(GeneratedDir)
 	$(AT)$(OcpiRemoveSkeletons)
 	$(AT)echo Generating the implementation skeleton file: $@
-	$(AT)$(OcpiGen) -D $(GeneratedDir) \
+	$(AT)$(call OcpiGen, -D $(GeneratedDir) \
               $(and $(Assembly),-S $(Assembly)) \
 	      $(and $(Platform),-P $(Platform)) \
               $(and $(PlatformDir),-F $(PlatformDir)) \
-              $(and $(Package),-p $(Package)) -s $<
+              $(and $(Package),-p $(Package)) -s $<)
 endif
 
 clean:: cleanfirst
@@ -210,6 +210,21 @@ endif
 
 ifndef WkrExportNames
 WkrExportNames+=$(WkrBinaryName)$(BF)
+endif
+
+# If we LibDir is unset, but the parent directory is a library
+# and we are currently building a worker (rcc, ocl, hdl),
+# set libdir to ../lib/$(Model)
+ShouldSetLibDir=$(strip \
+  $(if $(and $(filter $(call OcpiGetDirType,../),library),\
+             $(or $(filter $(Model),rcc ocl),\
+                  $(and $(filter $(Model),hdl),\
+	                $(filter $(HdlMode),worker)))),\
+    true))
+ifndef LibDir
+  ifneq ($(ShouldSetLibDir),)
+    LibDir=../lib/$(Model)
+  endif
 endif
 ifdef LibDir
 # The default for things in the target dir to export into the component library's

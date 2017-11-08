@@ -21,6 +21,10 @@
 /*
  * This file is the only header that includes opencl.
  */
+#ifdef VERSION
+// autotools is: #warning WHO IS DEFINING THE MACRO WHOSE NAME IS: VERSION????
+#undef VERSION
+#endif
 #ifndef __OCL_DEVICE_H__
 #define __OCL_DEVICE_H__
 //#pragma weak clGetPlatformIDs
@@ -77,7 +81,7 @@ namespace OCPI {
     struct OclFamily;
     struct OclVendor;
     struct OclDevice;
-    
+
     // The Device before it is a container
     // This info is for runtime.  We don't save everything from discovery time
     class Container;

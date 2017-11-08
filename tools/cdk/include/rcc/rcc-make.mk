@@ -73,11 +73,12 @@ ifdef OCPI_ALL_RCC_PLATFORMS
   RccAllPlatforms:=$(OCPI_ALL_RCC_PLATFORMS)
   RccAllTargets:=$(OCPI_ALL_RCC_TARGETS)
 else
-  $(foreach p,$(wildcard $(OCPI_CDK_DIR)/platforms/*),\
-    $(and $(wildcard $p/$(notdir $p)-target.mk),\
-      $(eval RccAllPlatforms:=$(RccAllPlatforms) $(notdir $p))) \
-    $(and $(wildcard $p/target),\
-      $(eval RccAllTargets:=$(RccAllTargets) $(shell cat $p/target))))
+  $(foreach d,$(OcpiGetRccPlatformPaths),\
+    $(foreach p,$(wildcard $d/*),\
+      $(and $(wildcard $p/$(notdir $p)-target.mk),\
+        $(eval RccAllPlatforms:=$(RccAllPlatforms) $(notdir $p))) \
+      $(and $(wildcard $p/target),\
+        $(eval RccAllTargets:=$(RccAllTargets) $(shell cat $p/target)))))
   RccAllTargets:=$(call Unique,$(RccAllTargets))
   export OCPI_ALL_RCC_PLATFORMS:=$(RccAllPlatforms)
   export OCPI_ALL_RCC_TARGETS:=$(RccAllTargets)
@@ -96,13 +97,18 @@ ifdef RccPlatforms
   #   $(error You cannot set both RccTarget(s) and RccPlatform(s))
   # endif
   RccTargets:=
+  RccFound:=
   $(foreach p,$(RccPlatforms),\
-    $(foreach f,$(OCPI_CDK_DIR)/platforms/$p/target,\
-       $(if $(wildcard $f),\
-         $(foreach t,$(shell echo $$(< $f)),\
-           $(eval RccTargets+=$t)\
-           $(eval RccTarget_$p:=$t)),\
-         $(error RccPlatform $p is unknown, $f does not exist))))
+    $(foreach d,$(OcpiGetRccPlatformPaths),\
+      $(foreach f,$d/$p/target,\
+         $(if $(wildcard $f),\
+           $(foreach t,$(shell echo $$(< $f)),\
+             $(eval RccTargets+=$t)\
+             $(eval RccTarget_$p:=$t)\
+             $(eval RccFound+=$p))))))\
+  $(foreach p,$(RccPlatforms),\
+    $(if $(findstring $p,$(RccFound)),,\
+      $(error RccPlatform $p is unknown, $f does not exist)))
 else
   # Derive a platform from each target (somewhat expensive, but we have shortcuts)
   # This can be deprecated or accelerated as it makes sense
@@ -110,17 +116,18 @@ else
   # (A single wildcard then does it)
   # We could also cache this
   RccPlatforms:=
-  RccFound:=
-  $(foreach f,$(wildcard $(OCPI_CDK_DIR)/platforms/*/target),\
-    $(foreach p,$(notdir $(patsubst %/,%,$(dir $f))),\
-      $(foreach t,$(shell echo $$(< $f)),\
-        $(if $(findstring $t,$(RccTargets)),\
-          $(eval RccTarget_$p:=$t)\
-          $(eval RccPlatforms+=$p)\
-          $(eval RccFound+=$t)))))
+  RccFound:=\
+  $(foreach d,$(OcpiGetRccPlatformPaths),\
+    $(foreach f,$(wildcard $d/*/target),\
+      $(foreach p,$(notdir $(patsubst %/,%,$(dir $f))),\
+        $(foreach t,$(shell echo $$(< $f)),\
+          $(if $(findstring $t,$(RccTargets)),\
+            $(eval RccTarget_$p:=$t)\
+            $(eval RccPlatforms+=$p)\
+            $(eval RccFound+=$t))))))\
   $(foreach t,$(RccTargets),\
      $(if $(findstring $t,$(RccFound)),,\
-        $(error The RccTarget $t is not the target for any software platform (in $(OCPI_CDK_DIR)/platforms))))
+        $(error The RccTarget $t is not the target for any software platform (in $(OCPI_CDK_DIR) or $(OCPI_PROJECT_PATH)))))
 endif
 
 $(call OcpiDbgVar,RccPlatforms)
@@ -138,19 +145,20 @@ $(foreach p,$(RccPlatforms), \
   $(foreach t,$(RccTarget_$p),\
     $(eval files:=)\
     $(eval cross:=)\
-    $(foreach m,$(if $(findstring $(OCPI_TOOL_PLATFORM),$p),rcc=$p,rcc=$(OCPI_TOOL_PLATFORM)=$p) \
-                $(if $(findstring $(OCPI_TOOL_HOST),$t),$t,$(OCPI_TOOL_HOST)=$t),\
-      $(eval files:=$(files) $(or $(wildcard $(OCPI_CDK_DIR)/include/rcc/$m.mk),\
-                                  $(wildcard $(OCPI_CDK_DIR)/platforms/$p/$m.mk)))\
-      $(and $(findstring =,$(subst rcc=,,$m)),$(eval cross:=1)))\
-    $(foreach n,$(words $(files)),\
-       $(if $(filter 0,$n),\
-	  $(if $(cross),\
-             $(error There is no cross compiler defined from $(OCPI_TOOL_PLATFORM) to $p),\
-             $(eval include $(OCPI_CDK_DIR)/include/rcc/default.mk)),\
-	  $(if $(filter 1,$n),,\
-             $(warning More than one file defined for compiling $(OCPI_TOOL_PLATFORM) to $p, using $(word 1,$(files)), others are $(wordlist 2,$(words $(files)),$(files)).))\
-          $(eval include $(word 1,$(files)))))))
+    $(foreach d, $(call OcpiGetRccPlatformDir,$p),\
+      $(foreach m,$(if $(findstring $(OCPI_TOOL_PLATFORM),$p),rcc=$p,rcc=$(OCPI_TOOL_PLATFORM)=$p) \
+                  $(if $(findstring $(OCPI_TOOL_HOST),$t),$t,$(OCPI_TOOL_HOST)=$t),\
+        $(eval files:=$(files) $(or $(wildcard $(OCPI_CDK_DIR)/include/rcc/$m.mk),\
+                                    $(wildcard $d/$m.mk)))\
+        $(and $(findstring =,$(subst rcc=,,$m)),$(eval cross:=1)))\
+      $(foreach n,$(words $(files)),\
+         $(if $(filter 0,$n),\
+	    $(if $(cross),\
+               $(error There is no cross compiler defined from $(OCPI_TOOL_PLATFORM) to $p),\
+               $(eval include $(OCPI_CDK_DIR)/include/rcc/default.mk)),\
+	    $(if $(filter 1,$n),,\
+               $(warning More than one file defined for compiling $(OCPI_TOOL_PLATFORM) to $p, using $(word 1,$(files)), others are $(wordlist 2,$(words $(files)),$(files)).))\
+            $(eval include $(word 1,$(files))))))))
 endif
 endif
 

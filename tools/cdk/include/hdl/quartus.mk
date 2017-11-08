@@ -18,6 +18,16 @@
 
 # This file has the HDL tool details for altera quartus
 
+################################################################################
+# Name of the tool that needs to be installed to use this compilation flow
+HdlToolName_quartus=Quartus
+
+# This variable is needed when including this file
+# for the sole purpose of extracting variable information
+# E.g. if you want to know some information about a supported tool,
+# you should not need the corresponding toolchain installed
+ifndef __ONLY_TOOL_VARS__
+
 include $(OCPI_CDK_DIR)/include/hdl/altera.mk
 
 ################################################################################
@@ -262,3 +272,4 @@ $1/$3.sof: $$(call QuartusConstraints,$5)
 	cp $4-top.sof $3.sof
 
 endef
+endif

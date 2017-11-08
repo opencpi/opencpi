@@ -22,94 +22,247 @@
 import argparse
 import subprocess
 import os
+import sys
+import json
 from lxml import etree as ET
+import ocpiutil
+from hdltargets import HdlToolSet, HdlTarget, HdlPlatform
 
-nounsList = ["workers", "hdlplatforms", "hdltargets", "rccplatforms", "components"]
-nounsString = "workers, hdlplatforms, hdltargets, rccplatforms, components"
+subParserNouns = ["hdl", "rcc"]
+plainNouns = ["workers", "components", "platforms", "targets"]
+flatNouns = plainNouns
+nounsList = plainNouns + subParserNouns
+subnouns = {}
+subnouns['hdl'] = ["targets", "platforms"]
+subnouns['rcc'] = ["targets", "platforms"]
 
-def parseCLVars(): 
-  parser = argparse.ArgumentParser(description='Metadata Utility for determing availaible options for building')
-  #usage="usage: %prog [options] NOUN\n\nValid Nouns are: "+nounsString)
+def parseCLVars():
+    parser = argparse.ArgumentParser(description="Utility for showing available components, "
+                                     + "workers, HDL/RCC Platforms and Targets available at "
+                                     + "built time.")
 
-  parser.add_argument("--hdl-platform", action="append", dest="hdlPlatform")
-  parser.add_argument("--rcc-platform", action="append", dest="rccPlatform")
-  parser.add_argument("--component", action="store", dest="component")
-  parser.add_argument("noun", metavar='N', type=None, action="store")
+    parser.add_argument("noun", type=str, help="This is either the noun to show or the " +
+                        "authoring model to operate on. If choosing an authoring model " +
+                        "(hdl/rcc), the platforms or targets nouns can follow.",
+                        choices=nounsList)
+    parser.add_argument("-v", "--verbose", action="store_true", help="Be verbose with output.")
+    parser.add_argument("-d", dest="dir", default=os.path.curdir,
+                        help="Change directory to the specified path " + "before proceeding. " +
+                        "Changing directory may have no effect for some commands.")
 
-  args = parser.parse_args()
-  
+    details_group = parser.add_mutually_exclusive_group()
+    details_group.add_argument("--table", action="store_true", dest="table",
+                               help="Pretty-print details in a table " +
+                               "associated with the chosen noun")
+    details_group.add_argument("--json", action="store_true", dest="json",
+                               help="Print information in a json format")
+    first_pass_args, remaining_args = parser.parse_known_args()
+    if first_pass_args.noun in plainNouns:
+        args = first_pass_args
+        noun = first_pass_args.noun
+    elif first_pass_args.noun in subParserNouns:
+        subparser = argparse.ArgumentParser(description="Utility for showing available components, "
+                                            + "workers, HDL/RCC Platforms and Targets available at "
+                                            + "built time.")
 
-  if (args.noun not in nounsList): 
-    parser.error("invalid Noun")
-  #if (len(args) > 1):
-  #  parser.error("Multiple Nouns specified only one at a time is supported")
-  #if (args[0] not in nounsList):
-  #  parser.error("Invalid Noun")
-  
-  return args, args.noun
+        subparser.add_argument("subnoun", type=str, help="This is either the noun to show or the " +
+                               "authoring model to operate on. If choosing an authoring model " +
+                               "(hdl/rcc), the platforms or targets noun can follow.",
+                               choices=subnouns[first_pass_args.noun])
+        args = subparser.parse_args(remaining_args, namespace=first_pass_args)
+        noun = first_pass_args.noun + args.subnoun
 
-def do_makeShow(makeTarget): 
-  make_output = subprocess.check_output(['make','-f',os.environ['OCPI_CDK_DIR']+'/include/show.mk',makeTarget])
-  print make_output 
+    return args, noun
 
-def do_rccplatforms(options): 
-  do_makeShow("rccPlatform")
-def do_hdlplatforms(options): 
-  do_makeShow("hdlPlatform")
-def do_hdltargets(options): 
-  do_makeShow("hdlTarget")
+def do_rccplatforms(options):
+    """
+    Print out the list of available RccPlatforms
+    Without options this will just be a list.
+    If the "table" option is provided, print out a formatted table of the platforms and targets.
+    If the "json" option is provided, dump json output for the platform/target details.
+    """
+    rccDict = ocpiutil.get_make_vars_rcc_targets()
+    rccPlatforms = rccDict["RccAllPlatforms"]
+    rccTargets   = rccDict["RccAllTargets"]
+    if options.table:
+        rows = [["Platform", "Target"]]
+        rows += [["---------", "---------"]]
+        # Collect the information for each platform into a "row" list
+        for platform, target in zip(rccPlatforms, rccTargets):
+            platformRow = [platform, target]
+            rows.append(platformRow)
+        # Format the list of rows into a table and print
+        ocpiutil.print_table(rows)
+    elif options.json:
+        platformDict = {}
+        for platform, target in zip(rccPlatforms, rccTargets):
+            platformDict[platform] = {"target": target}
+        json.dump(platformDict, sys.stdout)
+        print
+    else:
+        print ocpiutil.python_list_to_bash(rccDict["RccAllPlatforms"])
 
-def do_workers(options): 
-  mdString=os.environ['OCPI_PROJECT_PATH'] + ":" + os.environ['OCPI_CDK_DIR']
-  # TODO: regen project metadatas for all projects in proj path.   
-  mdFileList = mdString.split(":")  
-  #print mdFileList
-  workList = ""
-  for mdFile in mdFileList:
-    mdFile = rchop(mdFile, '/')
-    mdFile = rchop(mdFile, 'exports')
-    subprocess.check_output([os.environ['OCPI_CDK_DIR']+'/scripts/genProjMetaData.py', mdFile])
-    mdFile = mdFile + "/project.xml"
-    workList = workList + get_tags(mdFile, "worker")
-  print "Workers: " + workList 
+def do_rcctargets(options):
+    """
+    Print out the list of available RccTargets
+    Without options this will just be a list.
+    If the "table" option is provided, print out a formatted table of the platforms and targets.
+    If the "json" option is provided, dump json output for the platform/target details.
+    """
+    if options.table or options.json:
+        do_rccplatforms(options)
+    else:
+        rccDict = ocpiutil.get_make_vars_rcc_targets()
+        print ocpiutil.python_list_to_bash(rccDict["RccAllTargets"])
+
+
+def do_hdlplatforms(options):
+    """
+    Print out the list of available HdlPlatforms.
+    Without options, this will just be a list.
+    If the "table" option is provided, print out a formatted table of the platforms an
+    the details associated with each.
+    If the "json" option is provided, dump json output for the platform details.
+    """
+    platforms = HdlPlatform.all()
+    if options.table:
+        rows = [["Platform", "Target", "Part", "Vendor", "Toolset"]]
+        rows += [["---------", "---------", "---------", "---------", "---------"]]
+        # Collect the information for each platform into a "row" list
+        for platform in HdlPlatform.all():
+            target = platform.target
+            platformStr = platform.name
+            if not platform.built:
+                platformStr += '*'
+            platformRow = [platformStr, str(target), platform.exactpart,
+                           target.vendor, target.toolset.title]
+            rows.append(platformRow)
+        # Format the list of rows into a table and print
+        ocpiutil.print_table(rows)
+        print "* An asterisk indicates that the platform has not been built yet.\n" + \
+              "  Assemblies and tests cannot be built until the platform is built."
+    elif options.json:
+        # Dump the json containing each platform's attributes
+        platformDict = {}
+        for platform in HdlPlatform.all():
+            target = platform.target
+            platformDict[platform.name] = {"target": target.name,
+                                           "part": platform.exactpart,
+                                           "vendor": target.vendor,
+                                           "tool": target.toolset.title,
+                                           "built": platform.built}
+        json.dump(platformDict, sys.stdout)
+        print
+    else:
+        print ocpiutil.python_list_to_bash(platforms)
+
+def do_hdltargets(options):
+    """
+    Print out the list of available HdlTargets.
+    Without options, this will just be a list.
+    If the "dense" option is provided, print out an ugly but parsable list of targets and
+    the details associated with each.
+    If the "table" option is provided, print out a formatted table of the targets an
+    the details associated with each.
+    If the "json" option is provided, dump json output for the target details.
+    """
+    if options.table:
+        rows = [["Target", "Parts", "Vendor", "Toolset"]]
+        rows += [["---------", "---------", "---------", "---------"]]
+        # Collect the information for each target into a "row" list
+        for target in HdlTarget.all():
+            targetRow = [str(target), ','.join(target.parts), target.vendor, target.toolset.title]
+            rows.append(targetRow)
+        ocpiutil.print_table(rows)
+    elif options.json:
+        # Dump the json containing each platform's attributes
+        vendorDict = {}
+        for vendor in HdlTarget.get_all_vendors():
+            targetDict = {}
+            for target in HdlTarget.get_all_targets_for_vendor(vendor):
+                targetDict[target.name] = {"parts": target.parts,
+                                           "tool": target.toolset.title}
+            vendorDict[vendor] = targetDict
+        json.dump(vendorDict, sys.stdout)
+        print
+    else:
+        print ocpiutil.python_list_to_bash(HdlTarget.all())
+
+def do_platforms(options):
+    """
+    Print out platforms for all authoring models
+    """
+    if not options.json:
+        print "RCC:"
+    do_rccplatforms(options)
+    if not options.json:
+        print "HDL:"
+    do_hdlplatforms(options)
+
+def do_targets(options):
+    """
+    Print out targets for all authoring models
+    """
+    if not options.json:
+        print "RCC:"
+    do_rcctargets(options)
+    if not options.json:
+        print "HDL:"
+    do_hdltargets(options)
+
+def do_workers(options):
+    # TODO: regen project metadatas for all projects in proj path.
+    mdFileList = ocpiutil.get_all_projects()
+    #print mdFileList
+    workList = ""
+    for mdFile in mdFileList:
+        mdFile = rchop(mdFile, '/')
+        mdFile = rchop(mdFile, 'exports')
+        subprocess.check_output([os.environ['OCPI_CDK_DIR']+"/scripts/genProjMetaData.py", mdFile])
+        mdFile = mdFile + "/project.xml"
+        workList = workList + get_tags(mdFile, "worker")
+    print "Workers: " + workList
 
 def rchop(thestring, ending):
-  if thestring.endswith(ending):
-    return thestring[:-len(ending)]
-  return thestring
+    if thestring.endswith(ending):
+        return thestring[:-len(ending)]
+    return thestring
 
 def get_tags(mdFile, tagName):
-  #print "File is: " + mdFile
-  retVal = ""
-  if (os.path.isfile(mdFile)): 
-    tree = ET.parse(mdFile)
-    for tag in tree.iter(tagName): 
-      retVal = retVal + " " + tag.get('name')
-  return retVal
+    #print "File is: " + mdFile
+    retVal = ""
+    if (os.path.isfile(mdFile)):
+        tree = ET.parse(mdFile)
+        for tag in tree.iter(tagName):
+          retVal = retVal + " " + tag.get("name")
+    return retVal
 
-def do_components(options):  
-  mdString=os.environ['OCPI_PROJECT_PATH'] + ":" + os.environ['OCPI_CDK_DIR']
-  # TODO: regen project metadatas for all projects in proj path.   
-  mdFileList = mdString.split(":")  
-  #print mdFileList
-  compList = ""
-  for mdFile in mdFileList:
-    mdFile = rchop(mdFile, '/')
-    mdFile = rchop(mdFile, 'exports')
-    subprocess.check_output([os.environ['OCPI_CDK_DIR']+'/scripts/genProjMetaData.py', mdFile])
-    mdFile = mdFile + "/project.xml"
-    compList = compList + get_tags(mdFile, "spec")
-  print "Components: " + compList 
-  
+def do_components(options):
+    # TODO: regen project metadatas for all projects in proj path.
+    mdFileList = ocpiutil.get_all_projects()
+    #print mdFileList
+    compList = ""
+    for mdFile in mdFileList:
+        mdFile = rchop(mdFile, '/')
+        mdFile = rchop(mdFile, 'exports')
+        subprocess.check_output([os.environ['OCPI_CDK_DIR']+"/scripts/genProjMetaData.py", mdFile])
+        mdFile = mdFile + "/project.xml"
+        compList = compList + get_tags(mdFile, "spec")
+    print "Components: " + compList
+ 
 # main
-(options, noun) = parseCLVars() 
+(args, noun) = parseCLVars()
 
-action = {"workers": do_workers, 
-          "components": do_components,
+action = {"workers":      do_workers,
+          "components":   do_components,
+          "platforms":    do_platforms,
+          "targets":      do_targets,
           "hdlplatforms": do_hdlplatforms,
-          "hdltargets": do_hdltargets,
-          "rccplatforms": do_rccplatforms}
-
-# call the correct noun function
-action[noun](options)
-
+          "hdltargets":   do_hdltargets,
+          "rccplatforms": do_rccplatforms,
+          "rcctargets":   do_rcctargets}
+if args.verbose:
+    print "ocpishow is processing noun \"" + str(noun) + "\" with options \"" + str(args) + "\""
+with ocpiutil.cd(args.dir):
+    # call the correct noun function
+    action[noun](args)

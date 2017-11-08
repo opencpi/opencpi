@@ -41,13 +41,15 @@ if [ -x /sbin/udevcontrol ] ; then
 RELOAD="/sbin/udevcontrol reload_rules"
 elif [ -x /sbin/udevadm ] ; then
 RELOAD="/sbin/udevadm control --reload-rules"
+elif [ -x /usr/bin/udevadm ] ; then
+RELOAD="/usr/bin/udevadm control --reload-rules"
 elif [ -x /sbin/mdev ] ; then
 # Note: blank RELOAD used to assume mdev below
 RELOAD=
 SUDO=
 RULESFILE=mdev-$MODNAME.rules
 else
- echo Error: None of /sbin/udevcontrol, /sbin/udevadm, or /sbin/mdev were found and executable.
+ echo Error: None of /sbin/udevcontrol, /{sbin,usr/bin}/udevadm, or /sbin/mdev were found as executables.
  exit 1
 fi
 # Don't run sudo if already root

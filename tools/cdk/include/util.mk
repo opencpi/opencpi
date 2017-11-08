@@ -138,11 +138,23 @@ OcpiHostTarget=$(HostTarget)
 # Physical and realpath are broken on some NFS mounts..
 OcpiAbsDir=$(foreach d,$(shell cd $1; pwd -L),$d)
 OcpiAbsPath=$(strip \
+  $(call OcpiCacheFunctionOnPath,OcpiAbsPathX,$(or $1,.)))
+OcpiAbsPathX=$(strip \
   $(foreach p,$(strip \
     $(if $(filter /%,$1),$1,\
-         $(if $(filter . ./,$1),$(call OcpiAbsDir,.),\
-              $(if $(filter ./%,$1),$(call OcpiAbsDir,.)$(patsubst .%,%,$1),\
-	           $(call OcpiAbsDir,.)/$1)))),$(abspath $p)))
+      $(if $(filter . ./,$1),$(call OcpiAbsDir,.),\
+        $(if $(filter ./%,$1),$(call OcpiAbsDir,.)$(patsubst .%,%,$1),\
+          $(call OcpiAbsDir,.)/$1)))),$(abspath $p)))
+
+# Call a function ($1) with a single path argument ($2).
+# If this is the first time that function has been called with that argument,
+# cache the results. Otherwise, return the cached results.
+# $(call OcpiCacheFunctionOnPath,<function-to-call>,<path-argument>)
+OcpiCacheFunctionOnPath=$(strip \
+  $(or \
+    $(foreach c,$(filter $2:%,$(OcpiCacheFunctionOnPath_$1_cache)),\
+        $(word 2,$(subst :, ,$c))),\
+    $(foreach c,$(call $1,$2),$(eval OcpiCacheFunctionOnPath_$1_cache:=$(OcpiCacheFunctionOnPath_$1_cache) $2:$c)$c)))
 
 # helper function to FindRelative, recursive
 # arg 1 is from-list of path components, arg 2 is to-list
@@ -322,14 +334,29 @@ endif
 # that must be propagated to ocpigen.
 OcpiGenEnv=\
     OCPI_PREREQUISITES_DIR="$(OCPI_PREREQUISITES_DIR)" \
-    OCPI_HDL_PLATFORM_PATH="$(OCPI_HDL_PLATFORM_PATH)" \
+    OCPI_HDL_PLATFORM_PATH="$(subst $(Space),:,$(strip \
+                              $(call OcpiRelativePathsInsideProjectOrImports,.,$(subst :, ,$(OCPI_HDL_PLATFORM_PATH)))))" \
     OCPI_ALL_HDL_TARGETS="$(OCPI_ALL_HDL_TARGETS)" \
     OCPI_ALL_RCC_TARGETS="$(OCPI_ALL_RCC_TARGETS)" \
     OCPI_ALL_OCL_TARGETS="$(OCPI_ALL_OCL_TARGETS)"
 
-OcpiGenTool=$(OCPI_VALGRIND) $(OcpiGenEnv) $(ToolsDir)/ocpigen $(patsubst %,-I"%",$(call Unique,$(XmlIncludeDirsInternal)))
-OcpiGenArg=$(DYN_PREFIX) $(OcpiGenTool) $1 -M $(dir $@)$(@F).deps
-OcpiGen=$(call OcpiGenArg,)
+OcpiGenTool=$(OCPI_VALGRIND) $(OcpiGenEnv) $(ToolsDir)/ocpigen \
+  $(call OcpiFixPathArgs,$(patsubst %,-I%,$(XmlIncludeDirsInternal)) $1)
+# Given a collection of arguments, fix each path in the argument
+# that starts with '/' or '-I/' for use with ocpigen or compilation.
+# This will prevent absolute paths whenever possible and instead compute
+# paths relative to the project's top or 'imports' when possible.
+# $(call OcpiFixPathArgs,"-Igen -Itarget-zynq -M target-14-zynq/generics.vh.deps /data/...")
+OcpiFixPathArgs=\
+  $(foreach p,$1,\
+    $(if $(filter /%,$p),\
+      $(call OcpiPathThroughProjectTopOrImports,.,$p),\
+      $(if $(filter -I/%,$p),\
+        $(patsubst %,-I"%",$(call OcpiPathThroughProjectTopOrImports,.,$(patsubst -I%,%,$p))),\
+        $p)))
+OcpiGenArg=$(DYN_PREFIX) $(call OcpiGenTool, $1 -M $(dir $@)$(@F).deps $2)
+OcpiGen=$(call OcpiGenArg,,$1)$(infox OGA:$(call OcpiGenArg,,$1))
+
 # Return stderr and the exit status as variables
 # Return non-empty on failure, empty on success, and set var
 # $(call DoShell,<command>,<status var>,<value var>)
@@ -346,6 +373,18 @@ DoShell=$(eval X:=$(shell X=`bash -c '$1; exit $$?'`;echo $$?; echo "$$X" | sed 
 	     $(call OcpiDbgVar,$2) \
              $(filter-out 0,$(firstword $X)))
 
+# Convert a space separated string (a make-list) to a python list containing '[,]'
+# $(call OcpiConvertListToPythonList,<space-separated-string-list>)
+OcpiConvertListToPythonList=$(strip \
+  ["$(subst $(Space),"$(Comma) ",$(strip $1))"])
+
+# Import the ocpiutil module and run the python code in $1
+# Usage: $(call OcpiCallPythonUtil,ocpiutil.utility_function(arg1, arg2))
+OcpiCallPythonUtil=$(infox OPYTHON:$1)\
+  $(shell python -c 'import sys; \
+sys.path.append("$(OCPI_CDK_DIR)/scripts/"); \
+import ocpiutil; \
+$1')
 
 # Like the builtin "dir", but without the trailing slash
 OcpiDir=$(foreach d,$1,$(patsubst %/,%,$(dir $1)))
@@ -409,7 +448,7 @@ OcpiCheckLinks=$(strip \
 define OcpiComponentSearchError
 The component library "$1" was not found in any of these locations: $(call OcpiCheckLinks,$2)
 OCPI_COMPONENT_LIBRARY_PATH is: $(OCPI_COMPONENT_LIBRARY_PATH)
-OCPI_PROJECT_PATH is: $(OCPI_PROJECT_PATH)
+Internal Project Path is: $(OcpiGetProjectPath)
 OCPI_CDK_DIR is: $(OCPI_CDK_DIR)
 endef
 
@@ -451,10 +490,227 @@ OcpiXmlComponentLibraries=$(infox HXC)\
   $(infox OcpiXmlComponentLibraries returned: $(OcpiTempDirs))\
   $(OcpiTempDirs)
 
+# Collect the projects in path from the different sources.
+# OCPI_PROJECT_PATH comes first and is able to shadow the others.
+# ProjectDependencies comes next which can be user-defined and is appended with
+# the 'required' projects (e.g. core/cdk).
+# If CDK is not in the resulting list of projects, add it at the end.
 OcpiGetProjectPath=$(strip \
-                     $(foreach p,$(subst :, ,$(OCPI_PROJECT_PATH)) $(OCPI_CDK_DIR),\
+                     $(foreach p,$(subst :, ,$(OCPI_PROJECT_PATH)) $(OcpiGetProjectDependencies)\
+                       $(if $(filter $(realpath $(OCPI_CDK_DIR)),$(realpath $(OcpiGetProjectDependencies))),\
+                         ,$(OCPI_CDK_DIR)),\
                        $(or $(call OcpiExists,$p/exports),$(call OcpiExists,$p),\
-                         $(info Warning: The path $p in OCPI_PROJECT_PATH does not exist.))))
+                         $(info Warning: The path $p in Project Path does not exist.))))
+
+# There are certain cases where we will want all projects that are 'registered' (not just the ones
+# explicitly or implicitly depended on by the current project).
+# For example, available platforms can be determined based on all known projects.
+OcpiGetExtendedProjectPath=$(strip $(OcpiGetProjectPath) \
+                     $(foreach p,$(OcpiGetImportsNotInDependencies),\
+                       $(or $(call OcpiExists,$p/exports),$(call OcpiExists,$p),\
+                         $(info Warning: The path $p in Project Path does not exist.))))
+
+OcpiGetRccPlatformPaths=$(strip \
+                    $(foreach p,$(OcpiGetExtendedProjectPath),\
+                      $(or $(if $(call OcpiIsPathCdk,$p),\
+                        $(call OcpiExists,$p/platforms),\
+                        $(if $(filter $(notdir $p),exports),\
+                          $(call OcpiExists,$p/lib/rcc/platforms),\
+                          $(call OcpiExists,$p/rcc/platforms))),\
+                            $(info Warning: The path $p/rcc/platforms does not exist.))))
+
+OcpiGetRccPlatformDir=$(strip $(firstword \
+		      $(foreach p,$(OcpiGetRccPlatformPaths),\
+                          $(wildcard $p/$1))))
+
+##################################################################################
+# Functions for collecting Project Dependencies and imports for use with project
+# path
+##################################################################################
+# Project Dependencies are defined by those explicitly listed in a Project.mk as well as the 'required'
+# projects such as core/cdk
+OcpiProjectDependenciesInternal=$(strip $(call Unique,$(ProjectDependencies) ocpi ocpi.core ocpi.cdk))
+# If a project dependency is a path, use it as is. Otherwise, check for it in imports.
+OcpiGetProjectDependencies=$(strip \
+  $(foreach d,$(OcpiProjectDependenciesInternal),\
+    $(if $(findstring /,$d),\
+      $d,\
+      $(call OcpiGetProjectInImports,.,$d)) ))
+# These are the leftover imports that are not listed in the ProjectDependencies
+OcpiGetImportsNotInDependencies=$(strip \
+  $(foreach i,$(OcpiGetProjectImports),\
+    $(if $(filter $(notdir $i),$(OcpiProjectDependenciesInternal)),\
+      ,\
+      $i) ))
+
+###################################################################################
+# Functions for collecting paths to/through/from the top level of a project
+# and potentially through a project's 'imports' directory
+###################################################################################
+# This is the 'project registry' where symlinks
+# exist to any projects created on a system
+OcpiProjectRegistryDir=$(strip \
+  $(or $(strip $(OCPI_PROJECT_REGISTRY_DIR)),\
+    $(if $(strip $(OCPI_CDK_DIR)),\
+      $(OCPI_CDK_DIR)/../project_registry,\
+      $(error Warning: OCPI_CDK_DIR is unset))))
+
+# Return the path to the 'imports' directory for the project containing $1
+# $(call OcpiImportsDirForContainingProject,.)
+OcpiImportsDirForContainingProject=$(strip $(foreach p,$(call OcpiAbsPathToContainingProject,$1),$p/imports))
+
+# Return the list of projects that are imported by the project containing
+# $(call OcpiGetProjectImports)
+OcpiGetProjectImports=$(strip \
+  $(foreach i,$(call OcpiImportsDirForContainingProject,.),\
+    $(wildcard $i/*)))
+
+# Determine if a path is in fact the CDK. If so, return the CDK's
+# import alias 'ocpi.cdk'
+# $(call OcpiIsPathCdk,<path>)
+OcpiIsPathCdk=$(strip \
+  $(if $(filter $(realpath $1),$(realpath $(OCPI_CDK_DIR))),ocpi.cdk))
+
+# Given an 'origin' path ($1) and a path to a 'destination' project $2,
+# if the 'destination' project is imported in 'origin's project,
+# return the path to that import.
+#
+# If $2 is just a name (not a path), just check a link with that name is
+# imported.
+#
+# If $2 is not found in imports by name, check if it is actually the CDK,
+# in which case use the CDK import alias
+#
+# If no import with the correct name exists, make one last attempt to find
+# the requested import by checking the 'realpath' of each import against $2
+# $(call OcpiGetProjectInImports,<origin-path>,<destination-project>)
+OcpiGetProjectInImports=$(strip \
+  $(foreach i,$(call OcpiImportsDirForContainingProject,$1),\
+    $(or \
+      $(if $(filter $2,$(notdir $2)),\
+        $(call OcpiExists,$i/$2)),\
+      $(foreach a,$(call OcpiExists,$i/$(notdir $2)),\
+        $(if $(filter $(realpath $a),$(realpath $2)),$a)),\
+      $(call OcpiExists,$(foreach c,$(call OcpiIsPathCdk,$2),$i/$c)),\
+      $(foreach a,$(wildcard $i/*),\
+        $(if $(filter $(realpath $a),$(realpath $2)),$a)))))
+
+# Given an 'origin' path ($1) and a 'destination' path $2,
+# if the 'destination's project is imported in 'origin's project,
+# return that import (imports/<destination-project>
+# $(call OcpiGetRelevantProjectImport,<origin-path>,<destination-path>)
+OcpiGetRelevantProjectImport=$(strip $(infox OGRPI:$1:$2)\
+  $(foreach a,$(call OcpiAbsPathToContainingProject,$2),\
+    $(foreach i,$(call OcpiGetProjectInImports,$1,$a),\
+      imports/$(notdir $i))))
+
+# Given a path, determine the relative path to the project containing it
+# $(call OcpiRelPathToContainingProject,<path>)
+OcpiRelPathToContainingProject=$(strip $(infox ORPTCP:$1)\
+  $(call OcpiCacheFunctionOnPath,OcpiRelPathToContainingProjectX,$(call OcpiAbsPath,$(or $1,.))))
+OcpiRelPathToContainingProjectX=$(strip \
+  $(if $(filter project,$(call OcpiGetDirType,$1)),\
+    $(or $2,.),\
+    $(if $(call OcpiExists,$1),\
+      $(if $(filter $(dir $1),"/"),\
+        $(warning Path $1 is not inside a project.),\
+        $(call OcpiRelPathToContainingProjectX,$(call OcpiDir,$1),$(or $2,.)/..)))))
+
+# Given a path, determine the absolute path to the project containing it
+# $(call OcpiAbsPathToContainingProject,<path>)
+OcpiAbsPathToContainingProject=$(strip $(infox OAPTCP:$1)\
+  $(call OcpiCacheFunctionOnPath,OcpiAbsPathToContainingProjectX,$(call OcpiAbsPath,$(or $1,.))))
+OcpiAbsPathToContainingProjectX=$(strip \
+  $(if $(filter project,$(call OcpiGetDirType,$1)),\
+    $1,\
+    $(if $(call OcpiExists,$1),\
+      $(if $(filter $(dir $1),"/"),\
+        $(warning Path $1 is not inside a project.),\
+        $(call OcpiAbsPathToContainingProjectX,$(call OcpiDir,$1))))))
+
+# If two paths are contained in the same project, return the path to the project
+# Otherwise return empty
+# Note: We need to get the real/abs path to ensure that they are of the same form.
+#       This will allow 'filter' to correctly determine if they are the same.
+#
+# $(call OcpiArePathsInSameProject,<path1>,<path2>)
+OcpiArePathsInSameProject=$(strip $(infox OAPISP:$1:$2)\
+  $(filter $(realpath $(call OcpiAbsPathToContainingProject,$1)),$(realpath $(call OcpiAbsPathToContainingProject,$2))))
+
+# Given a path, determine the path from the top level of the containing project.
+# This path will NOT include the path TO the current project.
+# E.g: /data/myproject/hdl/platforms -> hdl/platforms
+# $(call OcpiGetPathFromProjectTop,<path>)
+OcpiPathFromProjectTop=$(strip $(infox OPFPT:$1)\
+  $(patsubst %/,%,$(call OcpiCacheFunctionOnPath,OcpiPathFromProjectTopX,$(call OcpiAbsPath,$1))))
+OcpiPathFromProjectTopX=$(strip \
+  $(if $(filter project,$(call OcpiGetDirType,$1)),\
+    ,\
+    $(if $(call OcpiExists,$1),\
+      $(if $(filter $(dir $1),$1),\
+        $(warning CWD is not inside a project.),\
+        $(call OcpiPathFromProjectTopX,$(call OcpiDir,$1))$(notdir $1)/))))
+
+# Given an 'origin' path ($1) and a 'destination' path $2:
+# If the 'destination's project is imported in 'origin's project,
+#   return the path from $1 to $2 through 'origin's imports.
+# Otherwise, just return the absolute path to $2
+# $(call OcpiPathToAssetOutsideProject,<origin-path>,<destination-path>)
+OcpiPathToAssetOutsideProject=$(strip $(infox OPTAOP:$1:$2)\
+  $(or \
+  $(strip $(foreach i,$(call OcpiGetRelevantProjectImport,$1,$2),\
+      $(if $i,$(call OcpiRelPathToContainingProject,$1)/$i/$(call OcpiPathFromProjectTop,$2)))),\
+    $(call OcpiAbsPath,$2)))
+
+# Given an 'origin' path ($1) and a 'destination' path $2:
+# If the 'destination's project is imported in 'origin's project,
+#   return the path from the top level of 'origin's project to $2
+#   through 'origin's imports.
+# Otherwise, just return the absolute path to $2
+# $(call OcpiPathFromProjectTopToAssetOutsideProject,<origin-path>,<destination-path>)
+OcpiPathFromProjectTopToAssetOutsideProject=$(strip $(infox OPFPTAOP:$1:$2)\
+  $(or \
+    $(strip $(foreach i,$(call OcpiGetRelevantProjectImport,$1,$2),\
+      $i/$(call OcpiPathFromProjectTop,$2))),\
+    $(call OcpiAbsPath,$2)))
+
+# Given an 'origin' path ($1) and a 'destination' path $2:
+# If the paths are in the same project,
+#   return the path from $1 to $2 through the project top.
+# Otherwise,
+#   return the path through 'origin's imports or the return absolute path.
+# $(call OcpiPathThroughProjectTopOrImports,<origin-path>,<destination-path>)
+OcpiPathThroughProjectTopOrImports=$(strip $(infox OPTPTOI:$1:$2)\
+  $(and $(call OcpiExists,$2),\
+    $(if $(call OcpiArePathsInSameProject,$1,$2),\
+      $(call OcpiRelPathToContainingProject,$1)/$(call OcpiPathFromProjectTop,$2),\
+      $(call OcpiPathToAssetOutsideProject,$1,$2))))
+
+# Return the paths from $1 through the project top (and possibly imports) to each
+# path in $2
+# $(call OcpiRelativePathsInsideProjectOrImports,<origin-path>,<destination-paths>)
+OcpiRelativePathsInsideProjectOrImports=$(strip $(infox ORPIPOI:$1:$2)\
+  $(foreach p,$2,$(call OcpiPathThroughProjectTopOrImports,$1,$p) ))
+
+# Given an 'origin' path ($1) and a 'destination' path $2:
+# If the paths are in the same project,
+#   return the path to $2 from the project top.
+# Otherwise,
+#   return the path through 'origin's imports or return the absolute path
+# $(call OcpiPathFromProjectTopOrImports,<origin-path>,<destination-path>)
+OcpiPathFromProjectTopOrImports=$(strip $(infox OPFPTOI:$1:$2)\
+  $(and $(call OcpiExists,$2),\
+    $(if $(call OcpiArePathsInSameProject,$1,$2),\
+      $(call OcpiPathFromProjectTop,$2),\
+      $(call OcpiPathFromProjectTopToAssetOutsideProject,$1,$2))))
+
+# Return the paths from $1's project top (and possibly through imports) to each
+# path in $2
+# $(call OcpiPathsFromProjectTopOrImports,<origin-path>,<destination-paths>)
+OcpiPathsFromProjectTopOrImports=$(strip $(infox ORPIPOI:$1:$2)\
+  $(foreach p,$2,$(call OcpiPathFromProjectTopOrImports,$1,$p) ))
+
+###################################################################################
 
 # Add a directory to the front of a path in the environment
 # $(call OcpiPrependEnvPath,var-name,dir)
@@ -480,15 +736,49 @@ define OcpiSetProject
   endif
   override OCPI_PROJECT_DIR=$$(OcpiTempProjDir)
   export OCPI_PROJECT_DIR
+
+  # Save the Package, PackagePrefix, and PackageName variables
+  # so that they can be used as is later on (if set at the command
+  # or in a 'Makefile' file), but so they do not interfere with
+  # ProjectPackage results
+  PackageSaved:=$$(Package)
+  unexport Package
+  PackagePrefixSaved:=$$(PackagePrefix)
+  unexport PackagePrefix
+  PackageNameSaved:=$$(PackageName)
+  unexport PackageName
+
+  # Include Project.mk to determine ProjectPackage
   include $1/Project.mk
-  # The project package defaults to "local".
+  # Determine ProjectPackage as follows:
+  # If it is already set, use it as-is
+  # If ProjectPackage or Package is set, use that as-is
+  # Otherwise, use PackagePrefix.PackageName
+  # PackagePrefix defaults to 'local'
+  # PackageName defaults to directory name
   ifndef ProjectPackage
-    ProjectPackage:=local
+    ifneq ($$(Package),)
+      ProjectPackage:=$$(Package)
+    else
+      ifeq ($$(PackagePrefix),)
+        PackagePrefix:=local
+      endif
+      ifeq ($$(PackageName),)
+        PackageName:=$$(notdir $$(call OcpiAbsDir,$1))
+      endif
+      ProjectPackage:=$$(if $$(PackagePrefix),$$(patsubst %.,%,$$(PackagePrefix)).)$$(PackageName)
+    endif
   endif
-  # Any project dependencies are added to the project path
-  ifdef ProjectDependencies
-    export OCPI_PROJECT_PATH:=$$(subst $$(Space),:,$$(call Unique,$$(ProjectDependencies) $$(subst :, ,$$(OCPI_PROJECT_PATH))))
-  endif
+
+  # Restore the Package* variables in case they were set at the command line
+  # for a library or in a library 'Makefile'
+  Package:=$$(PackageSaved)
+  unexport PackageSaved
+  PackagePrefix:=$$(PackagePrefixSaved)
+  unexport PackagePrefixSaved
+  PackageName:=$$(PackageNameSaved)
+  unexport PackageNameSaved
+
   # A project is always added to the below-project/non-project search paths
   # I.e. where the project path looks for other projects, and their exports,
   # the current project is searched internally, not in exports
@@ -508,7 +798,7 @@ define OcpiSetProject
          $$(foreach d,$$(m:%/Makefile=%),$$(infox DDD:$$d)\
             $$(and $$(filter library,$$(call OcpiGetDirType,$$d)),$$d))),\
       $$(OcpiTempProjDir)/components),\
-    $$(eval override ComponentLibrariesInternal:=$(ComponentLibrariesInternal) $$(notdir $$l)) \
+    $$(eval override ComponentLibrariesInternal:=$$(call Unique,$(ComponentLibrariesInternal) $$(notdir $$l))) \
     $$(call OcpiPrependEnvPath,OCPI_COMPONENT_LIBRARY_PATH,$$(patsubst %/,%,$$(dir $$l))))
 endef
 ifdef NEVER
@@ -527,8 +817,11 @@ ifdef NEVER
 endif
 # Look into a directory in $1 and determine which type of directory it is by looking at the Makefile.
 # Also checks Makefile.am for autotools version
+# If a dirtype is not found, check if $1 is the CDK. If so, return 'project'
 # Return null if there is no type to be found
 OcpiGetDirType=$(strip\
+  $(call OcpiCacheFunctionOnPath,OcpiGetDirTypeX,$1))
+OcpiGetDirTypeX=$(strip $(infox GDT1:$1)\
   $(or \
     $(and $(wildcard $1/Makefile),\
       $(foreach d,$(shell sed -n \
@@ -540,6 +833,7 @@ OcpiGetDirType=$(strip\
                   's=^[ 	]*@AUTOGUARD@[ 	]*include[ 	]*.*OCPI_CDK_DIR.*/include/\(.*\).mk$$=\1=p' \
                   $1/Makefile.am | tail -1),\
       $(warning Found what I think is a $d in "$1", but it is not fully configured and may not work as expected.)$(notdir $d))) \
+    ,$(and $(filter $(realpath $1),$(realpath $(OCPI_CDK_DIR))),project)\
   ) \
 )
 
@@ -680,21 +974,21 @@ ParamShell=\
   if [ -n "$(OcpiBuildFile)" -a -r "$(OcpiBuildFile)" ] ; then \
     (mkdir -p $(GeneratedDir) &&\
     $(call MakeSymLink2,$(OcpiBuildFile),$(GeneratedDir),$(Worker)-build.xml); \
-    $(OcpiGenTool) -D $(GeneratedDir) $(and $(Package),-p $(Package))\
+    $(call OcpiGenTool, -D $(GeneratedDir) $(and $(Package),-p $(Package))\
       $(and $(Platform),-P $(Platform)) \
       $(and $(PlatformDir), -F $(PlatformDir)) \
       $(HdlVhdlLibraries) \
       $(and $(Assembly),-S $(Assembly)) \
-      -b $(Worker_$(Worker)_xml)) || echo 1;\
+      -b $(Worker_$(Worker)_xml))) || echo 1;\
   else \
     (mkdir -p $(GeneratedDir) &&\
     $(MakeRawParams) |\
-    $(OcpiGenTool) -D $(GeneratedDir) $(and $(Package),-p $(Package))\
+    $(call OcpiGenTool, -D $(GeneratedDir) $(and $(Package),-p $(Package))\
       $(and $(Platform),-P $(Platform)) \
       $(and $(PlatformDir), -F $(PlatformDir)) \
       $(HdlVhdlLibraries) \
       $(and $(Assembly),-S $(Assembly)) \
-      -r $(Worker_$(Worker)_xml)) || echo 1;\
+      -r $(Worker_$(Worker)_xml))) || echo 1;\
   fi
 
 # Create the internal, transient XML document to convey property values in the Makefile

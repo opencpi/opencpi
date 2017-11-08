@@ -16,34 +16,5 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-Assemblies=\
-	captureonly \
-	filecapture \
-	testbias_file \
-	testbias \
-	tb_bias \
-	tb_bias_param \
-	biascapture \
-	tb_bias_vhdl \
-	testpsd \
-	testddc \
-	testbias2 \
-	testbias5 \
-	testbias_ver \
-	empty \
-	time_test \
-	time_test_file \
-	width_adapter_test \
-	width_adapter_test_file \
-
-ifndef OCPI_MINIMAL_BUILD
-Assemblies += \
-	patternbias \
-	test_width \
-	testbias_file_read \
-	testbias_file_write \
-	ptestonly \
-	adapt \
-
-endif
-include $(OCPI_CDK_DIR)/include/hdl/hdl-assemblies.mk
+OnlyPlatforms=isim modelsim xsim
+include $(OCPI_CDK_DIR)/include/hdl/hdl-assembly.mk

@@ -49,7 +49,7 @@ ifneq ($(MAKECMDGOALS),clean)
   endif
   ifndef HdlConfig
     # This is only for standalone container directories
-    $(and $(call DoShell,$(OcpiGen) -X $(Worker_xml),HdlContPfConfig),\
+    $(and $(call DoShell,$(call OcpiGen, -X $(Worker_xml)),HdlContPfConfig),\
        $(error Processing container XML $(Worker_xml): $(HdlContPfConfig)))
     HdlContPf:=$(patsubst %_pf,%,$(word 3,$(HdlContPfConfig)))
     ifdef HdlContPf
@@ -118,8 +118,8 @@ ifneq ($(MAKECMDGOALS),clean)
       HdlContPreCompile=\
         echo Generating UUID, artifact xml file and metadata ROM file for container $(Worker) "($1)". && \
         (cd .. && \
-         $(OcpiGen) -D $(call WkrTargetDir,$(HdlTarget),$1) -A -S $(Assembly) -P $(HdlPlatform) \
-                    -e $(HdlPart) -F $(PlatformDir) $(ImplXmlFile) && \
+         $(call OcpiGen, -D $(call WkrTargetDir,$(HdlTarget),$1) -A -S $(Assembly) -P $(HdlPlatform) \
+                    -e $(HdlPart) -F $(PlatformDir) $(ImplXmlFile)) && \
          $(OcpiHdl) bram $(call ArtifactXmlName,$1) $(call MetadataRom,$1) \
         )
       # Now we need to make a bit file from every paramconfig for this worker

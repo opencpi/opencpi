@@ -65,6 +65,7 @@ include $(OCPI_CDK_DIR)/include/ocl/ocl-make.mk
 
 # We need the project dir because remote system mount dirs point to the project
 $(call OcpiIncludeProject,error)
+$(call OcpiIncludeLibrary,..)
 
 # This is to allow the spec to be found and any protocols it depends on
 ifneq ($(if $(MAKECMDGOALS),$(filter build all generate generated,$(MAKECMDGOALS)),1),)
@@ -93,7 +94,7 @@ TESTXML:=$(CwdName)-test.xml
 $(CASEXML): $(TESTXML)
 	$(AT)echo ========= Generating test assemblies, inputs and applications for $(CwdName):
 	$(AT)OCPI_ALL_PLATFORMS="$(strip $(HdlAllPlatforms:%=%.hdl) $(RccAllPlatforms:%=%.rcc) $(OclAllPlatforms:%=%.ocl))" \
-	     $(OcpiGen) -v -T $< && chmod a+x gen/applications/*.sh
+	     $(call OcpiGen, -v -T $<) && chmod a+x gen/applications/*.sh
 
 -include gen/*.deps
 generate: $(CASEXML)
@@ -104,7 +105,12 @@ $(TESTXML):
 # This is the target to build test-related artifacts using tools
 build: generate
 	$(AT)[ ! -d gen/assemblies ] || \
-           $(MAKE) -C gen/assemblies ComponentLibrariesInternal=../../..
+		$(MAKE) -C gen/assemblies \
+			ComponentLibrariesInternal="../../.. $(call OcpiAdjustLibraries,$(ComponentLibraries))" \
+			LibrariesInternal="$(call OcpiAdjustLibraries,$(Libraries))" \
+			HdlLibrariesInternal="$(call OcpiAdjustLibraries,$(HdlLibraries))" \
+			IncludeDirsInternal="$(call AdjustRelative,$(IncludeDirs))" \
+			XmlIncludeDirsInternal="$(call AdjustRelative,$(XmlIncludeDirs))";
 
 # Prepare to run by looking for available containers and generating run scripts for the
 # current platform environment - this is context/platform sensitiive

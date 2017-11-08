@@ -19,6 +19,16 @@
 # This file has the HDL tool details for modelsim
 
 ################################################################################
+# Name of the tool that needs to be installed to use this compilation flow
+HdlToolName_modelsim=Modelsim
+
+# This variable is needed when including this file
+# for the sole purpose of extracting variable information
+# E.g. if you want to know some information about a supported tool,
+# you should not need the corresponding toolchain installed
+ifndef __ONLY_TOOL_VARS__
+
+################################################################################
 # $(call HdlToolLibraryFile,target,libname)
 # Function required by toolset: return the file to use as the file that gets
 # built when the library is built.
@@ -118,4 +128,4 @@ $1/$3.tar:
                      --xform=s=$$(if $$(filter /%,$$p),$$(patsubst /%,%,$$p),$$(subst ../,,$$p))=$$l= $$p ))) $3 ) > $1/$3-modelsim.out 2>&1
 
 endef
-
+endif

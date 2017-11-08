@@ -41,9 +41,17 @@ else
   if ! grep -q $myhostname /etc/hosts; then echo $myipaddr $myhostname >> /etc/hosts; fi
   # Run the generic script to setup the OpenCPI environment
   # Note the ocpidriver load command is innocuous if run redundantly
+  # Some Zynq-based SD cards are ephemeral and lose $HOME on reboots. Others don't.
+  # This tries to handle both cases sanely.
+  if test -d /etc/profile.d; then
+    export PROFILE_FILE=/etc/profile.d/opencpi-persist.sh
+  else
+    export PROFILE_FILE=$HOME/.profile
+  fi
   export OCPI_CDK_DIR=/mnt/net/$3
-  cat <<EOF > $HOME/.profile
-    echo Executing $HOME/.profile.
+  cat <<EOF > $PROFILE_FILE
+  if test -e /mnt/net/cdk; then
+    echo Executing $PROFILE_FILE
     export OCPI_CDK_DIR=$OCPI_CDK_DIR
     if test -f /etc/opencpi-release; then
       read OCPI_TOOL_PLATFORM OCPI_TOOL_HOST x < /etc/opencpi-release
@@ -67,8 +75,10 @@ else
     else
        echo Error: enable to find /mnt/card/opencpi/mynetsetup.sh
     fi
+  else
+    echo NFS mounts not yet set up. Please mount the OpenCPI CDK into /mnt/net/.
+  fi
 EOF
   echo Running login script. OCPI_CDK_DIR is now $OCPI_CDK_DIR.
-  source $HOME/.profile
+  source $PROFILE_FILE
 fi
-

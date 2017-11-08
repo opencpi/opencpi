@@ -18,6 +18,16 @@
 
 # This file has the HDL tool details for isim
 
+################################################################################
+# Name of the tool that needs to be installed to use this compilation flow
+HdlToolName_isim=ISE
+
+# This variable is needed when including this file
+# for the sole purpose of extracting variable information
+# E.g. if you want to know some information about a supported tool,
+# you should not need the corresponding toolchain installed
+ifndef __ONLY_TOOL_VARS__
+
 include $(OCPI_CDK_DIR)/include/hdl/xilinx.mk
 toolsDir:=$(OcpiXilinxIseDir)
 ################################################################################
@@ -129,4 +139,5 @@ Notes:
 Workers in an assembly need individual library treatment since we need to point to the actual
 per-worker libraries.  ComponentLibraries need specific treatment to point to the worker cores.
 
+endif
 endif

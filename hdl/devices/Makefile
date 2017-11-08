@@ -24,7 +24,7 @@
 
 # The names of the device workers are only qualified when we have more than
 # one -- until we have a good naming convension.
-Package=ocpi.devices
+#
 # Remember that subdevices that support other devices must occur AFTER the devices they support
 # Similarly, emulators must occur after the devices they emulate
 # TODO / FIXME - add ad9361_config_proxy.rcc to Workers

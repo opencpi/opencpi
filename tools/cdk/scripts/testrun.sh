@@ -75,7 +75,7 @@ function docase {
     for o in ${ports[@]}; do
       output="file_write"
       [ ${#ports[@]} != 1 ] && output+="_from_$o"
-      outputs+=" -p$output=fileName=$3.$4.$2.$1.$o.out"
+      outputs="$outputs -p$output=fileName=$3.$4.$2.$1.$o.out"
     done
     echo '  'Executing case "$3.$4" using worker $2.$1... 1>&2
     if [ $5 != 0 ]; then

@@ -16,11 +16,50 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-# This file has the HDL tool details for xst
+###############################################################################
+# This file has the HDL tool details for vivado
+# This file defines the HDL compilation (synthesis and implementation stages)
+# specific to the vivado toolset.
+#
+# The first section of the file defines a set of tool-specific flags and
+# variables. These are used in various places in the make-system when a tool
+# specific parameter is asked for. For example, the extension of synthesis
+# artifacts differ from tool to tool. For vivado, they generally end in .edf
+# which is defined by the HdlBin variable.
+#
+# The second section of this file lists acceptable and unacceptable compilation
+# options for the various stages of the vivado compilation flow. This is
+# necessary because there are certain HDL compilation options that can break or
+# interfere with the OpenCPI make-flow.
+#
+# Next, there are a set of functions defined for collecting source/core files
+# when building workers, primitives....
+#
+# Those functions are called from HdlToolCompile, which actually performs the
+# synthesis for any primitives, workers, platforms, assemblies.... This is done
+# by executing vivado and directing it to a Tcl file with OpenCPI's synthesis
+# commands.
+#   Note: HdlToolCompile is called from hdl-make's HdlCompile
+#
+# Finally, the vivado implementation stages are defined one at a time. This
+# allows the build system to resume when an a failure happens between stages
+# (e.g. a license failure). These make-rules execute the vivado tool and
+# perform each stage implementation via an Tcl script.
+#
+# Definition:
+#   toolset: within this file, toolset refers to vivado
+#
+# Documentation:
+#   Reference Vivado_Usage document for further information regarding the
+#   options, functionality, and usage of this file and the vivado tool with
+#   OpenCPI
 
 include $(OCPI_CDK_DIR)/include/hdl/xilinx.mk
 
 
+################################################################################
+# Name of the tool that needs to be installed to use this compilation flow
+HdlToolName_vivado=Vivado
 ################################################################################
 # $(call HdlToolLibraryFile,target,libname)
 # Function required by toolset: return the file to use as the file that gets
@@ -119,9 +158,6 @@ VivadoGoodOptions_synth=\
 -sfcu
 
 # Vivado parameters controlled by the user should NOT include these:
-# name: 
-# top:       because the top level module is named in metadata
-# mode:	    because we use OOC mode always except for containers
 VivadoBadOptions_synth=\
 -name \
 -top \
@@ -631,7 +667,7 @@ $(call OptName,$1,$3): $(call SynthName,$1,$3) $(call VivadoConstraints,$5)
 		target_file=$(notdir $(call OptName,$1,$3)) \
 		part=$(call VivadoChoosePart,$(HdlPart_$5)) \
 		edif_file=$(notdir $(call SynthName,$1,$3)) \
-		constraints='$(call VivadoConstraints,$5)' \
+		constraints='$(foreach u,$(call VivadoConstraints,$5),$(call AdjustRelative,$u))' \
 		impl_opts='$(call VivadoOptions,opt)' \
 		power_opt=$(if $(VivadoPowerOpt),true,false) \
 		,opt)

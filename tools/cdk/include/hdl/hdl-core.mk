@@ -35,6 +35,8 @@
 # - export an implementation library if the tool can't really produce a "core"
 
 HdlMode:=core
+include $(OCPI_CDK_DIR)/include/util.mk
+$(OcpiIncludeProject)
 include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
 ifndef HdlSkip
 
@@ -86,7 +88,7 @@ endif
 CoreBlackBoxFiles=$(strip\
   $(if $(ImportBlackBox),\
         $(OutDir)imports/$(notdir $(ImportBlackBox)),\
-          $(Top)_bb.v)\
+          $(Top)_bb.v )\
   $(call HdlExists,$(Top)_pkg.vhd))
 
 ################################################################################

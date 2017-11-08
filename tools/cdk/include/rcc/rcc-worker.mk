@@ -45,10 +45,11 @@ $(call OcpiDbgVar,RccIncludeDirsInternal)
 RccIncludeDirsActual=$(RccIncludeDirsInternal)\
  $(if $(OcpiBuildingACI),. include,../include gen) \
  $(OCPI_CDK_DIR)/include/$(if $(OcpiBuildingACI),aci,rcc) \
- $(wildcard $(OCPI_CDK_DIR)/platforms/$(RccPlatform)/include) \
+ $(call OcpiGetRccPlatformDir,$(RccPlatform))/include \
  $(foreach l,$(RccPrereqLibs),\
    $(OCPI_PREREQUISITES_DIR)/$l/$(RccTarget)/include\
    $(OCPI_PREREQUISITES_DIR)/$l/include)
+
 BF=$(BF_$(call RccOs,$1))
 # This is for backward compatibility
 RccLinkOptions=$(SharedLibLinkOptions)
@@ -72,7 +73,7 @@ DispatchSourceFile=$(call WkrTargetDir,$1,$2)/$(CwdName)_dispatch.c
 ArtifactFile=$(BinaryFile)
 # Artifacts are target-specific since they contain things about the binary
 ArtifactXmlFile=$(call WkrTargetDir,$1,$2)/$(word 1,$(Workers))_assy-art.xml
-ToolSeparateObjects:=yes
+ToolSeparateObjects:=yes 
 OcpiLibDir=$(OCPI_CDK_DIR)/lib/$$(RccTarget)$(and $(OCPI_TARGET_MODE),/$(OCPI_TARGET_MODE))
 # Add the libraries we know a worker might reference.
 ifdef OcpiBuildingACI
@@ -193,14 +194,14 @@ RccFinalCompileOptions=\
   $(call RccPrioritize,CompileOptions,$1,$2,$3) \
   $(call RccPrioritize,ExtraCompileOptions,$1,$2,$3) \
 
-Compile_c=\
+Compile_c=$$(call OcpiFixPathArgs,\
   $$(Gc_$$(RccTarget)) -MMD -MP -MF $$@.deps -c \
   $$(call RccFinalCompileOptions,C,$$(RccTarget),$$(RccPlatform)) \
-  $$(RccIncludeDirsActual:%=-I%) -o $$@ $$(RccParams) $$<
-Compile_cc=\
+  $$(RccIncludeDirsActual:%=-I%) -o $$@ $$(RccParams) $$<)
+Compile_cc=$$(call OcpiFixPathArgs,\
   $$(Gc++_$$(RccTarget)) -MMD -MP -MF $$@.deps -c \
   $$(call RccFinalCompileOptions,CC,$$(RccTarget),$$(RccPlatform)) \
-  $$(RccIncludeDirsActual:%=-I%) -o $$@ $$(RccParams) $$<
+  $$(RccIncludeDirsActual:%=-I%) -o $$@ $$(RccParams) $$<)
 Compile_cpp=$(Compile_cc)
 Compile_cxx=$(Compile_cc)
 
@@ -249,12 +250,12 @@ $(call RccAssemblyFile,$1,$2): | $(call WkrTargetDir,$1,$2)
 # FIXME: it is theoretically better to generate the XML as part of the final link phase.
 $(call ArtifactXmlFile,$1,$2): $(call RccAssemblyFile,$1,$2) $$(ObjectFiles_$1_$2)
 	$(AT)echo Generating artifact/runtime xml file $$@ for all workers in one binary
-	$(AT)$(DYN_PREFIX) $(ToolsDir)/ocpigen -M $(call WkrTargetDir,$1,$2)/$$(@F).deps \
+	$(AT)$(DYN_PREFIX) $(ToolsDir)/ocpigen $(call OcpiFixPathArgs,-M $(call WkrTargetDir,$1,$2)/$$(@F).deps \
 	     -O $(call RccOs,$1) \
              -V $(call RccOsVersion,$1) \
              -H $(call RccArch,$1) \
 	     -P $3 \
-	     -D $(call WkrTargetDir,$1,$2) $(XmlIncludeDirsInternal:%=-I%) -A $(RccAssemblyFile)
+	     -D $(call WkrTargetDir,$1,$2) $(XmlIncludeDirsInternal:%=-I%) -A $(RccAssemblyFile))
 
 endef
 

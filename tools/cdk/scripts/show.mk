@@ -16,34 +16,20 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-Assemblies=\
-	captureonly \
-	filecapture \
-	testbias_file \
-	testbias \
-	tb_bias \
-	tb_bias_param \
-	biascapture \
-	tb_bias_vhdl \
-	testpsd \
-	testddc \
-	testbias2 \
-	testbias5 \
-	testbias_ver \
-	empty \
-	time_test \
-	time_test_file \
-	width_adapter_test \
-	width_adapter_test_file \
+#include $(OCPI_CDK_DIR)/include/util.mk
+include $(OCPI_CDK_DIR)/include/hdl/hdl-targets.mk
+include $(OCPI_CDK_DIR)/include/rcc/rcc-make.mk
 
-ifndef OCPI_MINIMAL_BUILD
-Assemblies += \
-	patternbias \
-	test_width \
-	testbias_file_read \
-	testbias_file_write \
-	ptestonly \
-	adapt \
+.PHONY: rccPlatform hdlPlatform hdlTarget all
+.SILENT: rccPlatform hdlPlatform hdlTarget all
+all: hdlPlatform rccPlatform hdlTarget
 
-endif
-include $(OCPI_CDK_DIR)/include/hdl/hdl-assemblies.mk
+hdlPlatform:
+	echo "HdlAllPlatforms: $(HdlAllPlatforms)"
+
+rccPlatform:
+	echo "RccAllPlatforms: $(RccAllPlatforms)"
+
+hdlTarget:
+	echo "HdlAllTargets: $(HdlAllTargets)"
+

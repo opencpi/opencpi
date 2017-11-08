@@ -1,167 +1,706 @@
+# This file is protected by Copyright. Please refer to the COPYRIGHT file
+# distributed with this source distribution.
+#
+# This file is part of OpenCPI <http://www.opencpi.org>
+#
+# OpenCPI is free software: you can redistribute it and/or modify it under the
+# terms of the GNU Lesser General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your option) any
+# later version.
+#
+# OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+# A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Lesser General Public License along
+# with this program. If not, see <http://www.gnu.org/licenses/>.
+"""
+This module a collection of OpenCPI utility functions.
+
+Some of the utilities found here include string/number manipulation
+and parsing functions as well as path calculation/manipulation functions.
+There are also utilities for collecting variable values from GNU make.
+
+Documentation and testing:
+    Docstring tests can be executed as follows:
+        $ python ocpiutil.py -v
+    Documentation can be viewed by running:
+        $ pydoc ocpiutil
+"""
+import sys
 import os
 import os.path
 import re
 import subprocess
+from glob import glob
+import logging
+from contextlib import contextmanager
 
-# Print an error message and raise an exception
-def bad(message, error=RuntimeError):
-  print "Error: " + message
-  raise error
+def configure_logging(level=None, output_fd=sys.stderr):
+    """
+    Initialize the root logging module such that:
+            OCPI_LOG_LEVEL <  8 : only log WARNINGS, ERRORS and CRITICALs
+        8 < OCPI_LOG_LEVEL <  11: also log INFOs
+            OCPI_LOG_LEVEL >= 11: also log DEBUGs
+    This can be used in other modules to change the default log level of the
+    logging module. For example, from another module:
+    >>> import logging
+    >>> import ocpiutil
+    >>> os.environ['OCPI_LOG_LEVEL'] = "11"
+    >>> ocpiutil.configure_logging(output_fd=sys.stdout)
+    <logging.RootLogger object at 0x...>
 
-# Given an argument list, join the args in a single
-# string and print them. Print nothing if any arg
-# is empty or None
-def print_if_exists(*args):
-  for a in args:
-    if a == None or a == "":
-      return
-  print "".join(args)
+    # Now, logging will be determined based on OCPI_LOG_LEVEL environment
+    # variable. So, the following will only print if OCPI_LOG_LEVEL is >= 8
+    >>> logging.info("info message")
 
-###############################################################################
-# Collect a dictionary of variables from a makefile
-###
-# First arg is .mk_ file to use
-# second arg is Make arg to invoke the right output
-#   The output can be an assignment or a target
-# third arg = verbose
-# Return a dictionary of variable names mapped to values
-# from Make land
-###############################################################################
+    # You should see 'OCPI:INFO: info message', but it will print to stderr, not stdout
+    """
+    logging.basicConfig(stream=output_fd, format='OCPI:%(levelname)s: %(message)s')
+    rootlogger = logging.getLogger()
+    if level:
+        rootlogger.setLevel(level=level)
+    else:
+        log_level = os.environ.get('OCPI_LOG_LEVEL')
+        if not log_level or int(log_level) < 8:
+            rootlogger.setLevel(level=logging.WARNING)
+        elif int(log_level) < 11:
+            rootlogger.setLevel(level=logging.INFO)
+        else:
+            rootlogger.setLevel(level=logging.DEBUG)
+    return rootlogger
+
+def python_list_to_bash(pylist):
+    """
+    Convert a python list to a Makefile list (a space separated string)
+
+    For example (docstring):
+    >>> python_list_to_bash(["element1", "element2"])
+    'element1 element2'
+    >>> python_list_to_bash([""])
+    ''
+    >>> python_list_to_bash([])
+    ''
+    """
+    mklist = ""
+    for pyelem in pylist:
+        mklist = mklist + " " + str(pyelem)
+    return mklist.strip()
+
+def bash_list_to_python(mklist):
+    """
+    Convert a bash list (a space separated string) to a python list
+
+    For example (doctest):
+    >>> bash_list_to_python("element0 element1 element2     element3     ")
+    ['element0', 'element1', 'element2', 'element3']
+    >>> bash_list_to_python(" element1 ")
+    ['element1']
+    >>> bash_list_to_python("  ")
+    []
+    >>> bash_list_to_python("")
+    []
+    """
+    return [elem for elem in mklist.strip().split(" ") if elem != ""]
+
 def set_vars_from_make(mk_file, mk_arg="", verbose=None):
-  FNULL = open(os.devnull, 'w')
-  make_exists = subprocess.Popen(["which", "make"], stdout=subprocess.PIPE, stderr=FNULL).communicate()[0]
-  if (make_exists == None or make_exists == ""):
-    if (verbose != None and verbose != ""):
-      print "The '\"make\"' command is not available."
-    return 1
+    """
+    -------------------------------------------------------------------------------
+    | Collect a dictionary of variables from a makefile
+    |--------------------------------------------------
+    | First arg is .mk file to use
+    | Second arg is make arguments needed to invoke correct output
+    |     The output can be an assignment or a target
+    | Third arg is a verbosity flag
+    | Return a dictionary of variable names mapped to values from make
+    -------------------------------------------------------------------------------
+    """
+    fnull = open(os.devnull, 'w')
+    make_exists = subprocess.Popen(["which", "make"],\
+                  stdout=subprocess.PIPE, stderr=fnull).communicate()[0]
+    if make_exists is None or make_exists == "":
+        if verbose != None and verbose != "":
+            logging.error("The '\"make\"' command is not available.")
+        return 1
 
-  make_cmd = "make -n -r -s -f " + mk_file + " " + mk_arg
-  if (verbose == None or verbose == ""):
-    mk_process = subprocess.Popen(make_cmd.split(), stdout=subprocess.PIPE)
-  else:
-    mk_process = subprocess.Popen(make_cmd.split(), stdout=subprocess.PIPE, stderr=FNULL)
-  mk_output =  mk_process.communicate()[0]
+    make_cmd = "make -n -r -s -f " + mk_file + " " + mk_arg
+    # If verbose is unset, redirect 'make' stderr to /dev/null
+    if verbose is None or verbose == "":
+        mk_output = subprocess.Popen(make_cmd.split(),
+                                     stdout=subprocess.PIPE, stderr=fnull).communicate()[0]
+    else:
+        mk_output = subprocess.Popen(make_cmd.split(), stdout=subprocess.PIPE).communicate()[0]
+    try:
+        grep_str = re.search(r'(^|\n)[a-zA-Z_][a-zA-Z_]*=.*', mk_output.strip()).group()
+    except AttributeError:
+        logging.warning("No variables are set from \"" + mk_file + "\"")
+        return None
 
-  try:
-    grep_str = re.match(r'^[a-zA-Z_][a-zA-Z_]*=.*', mk_output).group()
-  except AttributeError:
-    print "No variables are set from \"" + mk_file + "\""
-    return -1
-
-  assignment_strs = filter(lambda s: len(s) > 0, [ x.strip() for x in grep_str.split(';')])
-  make_vars = {}
-  for x in assignment_strs:
-    make_vars[x.split('=')[0]] = x.split('=')[1]
-    #print make_vars[x.split('=')[0]]
-  return make_vars
-
-###############################################################################
-# Utility functions for extracting variables and information from
-# hdl-targets.mk
-###############################################################################
-
-# Get make variables from hdl-targets.mk
-# Dictionary key examples are:
-#   HdlAllTargets, HdlTargets (filtered), HdlAllPlatforms, HdlAllFamilies,
-#   HdlTargets_<family> (HdlTargets_zynq), HdlPart_<platform> (HdlPart_zed)
-def get_make_vars_hdl_targets():
-  return set_vars_from_make(os.environ["OCPI_CDK_DIR"] + "/include/hdl/hdl-targets.mk", "ShellHdlTargetsVars=1", "verbose")
-
-def get_part_for_platform(platform, make_vars):
-  return make_vars['HdlPart_' + platform]
-
-def get_target_for_part(part, make_vars):
-  return make_vars['HdlFamily_' + part]
-
-def get_toolset_for_target(target, make_vars):
-  return make_vars['HdlToolSet_' + target]
-
-def get_toolset_for_platform(platform, make_vars):
-  return get_toolset_for_target(get_target_for_part(get_part_for_platform(platform, make_vars), make_vars), make_vars)
+    assignment_strs = [x.strip() for x in grep_str.split(';') if len(x.strip()) > 0]
+    make_vars = {}
+    for var_assignment in assignment_strs:
+        var_name, var_val = var_assignment.split('=')
+        # If the value is an empty string or just matching quotes, assign [] as the value
+        if var_val == "\"\"" or var_val == "\'\'" or var_val == "":
+            assignment_value = []
+        else:
+            assignment_value = var_val.strip('"').strip().split(' ')
+        make_vars[var_name] = assignment_value
+    return make_vars
 
 ###############################################################################
 # Utility functions for extracting variables and information from
 # rcc-make.mk
 ###############################################################################
 
-# Get make variables from rcc-make.mk
-# Dictionary key examples are:
-#   RccAllPlatforms, RccPlatforms, RccAllTargets, RccTargets
 def get_make_vars_rcc_targets():
-  return set_vars_from_make(os.environ["OCPI_CDK_DIR"] + "/include/rcc/rcc-make.mk", "ShellRccTargetsVars=1", "verbose")
+    """
+    Get make variables from rcc-make.mk
+    Dictionary key examples are:
+        RccAllPlatforms, RccPlatforms, RccAllTargets, RccTargets
+    """
+    return set_vars_from_make(os.environ["OCPI_CDK_DIR"] +
+                              "/include/rcc/rcc-make.mk",
+                              "ShellRccTargetsVars=1", "verbose")
 
 ###############################################################################
 # Utility functions for collecting information about the directories
 # in a project
 ###############################################################################
 
-# Determine a directoy's type by parsing it for the last 'include ... *.mk' line
-def get_dirtype(directory=".",noerror=False):
-  match = None
-  if os.path.isfile(directory + "/Makefile"):
-    for line in open(directory + "/Makefile"):
-      result = re.match("^\s*include\s*.*OCPI_CDK_DIR.*/include/(hdl/)?(.*)\.mk.*", line)
-      match = result.group(2) if result != None else match
-  if match == None:
-    if noerror:
-      return None
-    else:
-      bad("directory \"" + directory + "\" does not have a dirtype.")
-  return match
+def get_dirtype(directory="."):
+    """
+    Determine a directory's type by parsing it for the last 'include ... *.mk' line
+    """
+    match = None
+    if os.path.isfile(directory + "/Makefile"):
+        for line in open(directory + "/Makefile"):
+            result = re.match(r"^\s*include\s*.*OCPI_CDK_DIR.*/include/(hdl/)?(.*)\.mk.*", line)
+            match = result.group(2) if result != None else match
+    if match is None:
+        return None
+    return match
 
-# Return a list of directories underneath the given directory
-# that have a certain type (library, worker, hdl-assembly...)
-def get_subdirs_of_type(dirtype,directory="."):
-  subdir_list = []
-  for subdir,_,_  in os.walk(directory):
-    if get_dirtype(subdir, noerror=True) == dirtype:
-      subdir_list.append(subdir)
-  return subdir_list
+def get_subdirs_of_type(dirtype, directory="."):
+    """
+    Return a list of directories underneath the given directory
+    that have a certain type (library, worker, hdl-assembly...)
+    """
+    subdir_list = []
+    if dirtype:
+        for subdir, _, _ in os.walk(directory):
+            if get_dirtype(subdir) == dirtype:
+                subdir_list.append(subdir)
+    return subdir_list
+
+###############################################################################
+# Utility functions for determining paths to/from the top level of a project
+# or a project's imports directory.
+###############################################################################
+
+def is_path_in_project(origin_path=".",):
+    """
+    Determine whether a path is inside a project
+    """
+    if os.path.exists(origin_path):
+        abs_path = os.path.abspath(origin_path)
+        if get_dirtype(origin_path) == "project":
+            return True
+        elif abs_path != "/":
+            return is_path_in_project(os.path.dirname(abs_path))
+    return False
+
+# Get the path to the project containing 'origin_path'
+# relative_mode : default=False
+# If relative_mode is False,
+#     an absolute path to the containing project is returned
+# If relative_mode is True,
+#     a relative path from origin_path is returned
+# accum_path is an internal argument that accumulates the path to
+#    return across recursive calls
+def __get_path_to_project_top(origin_path, relative_mode, accum_path):
+    if origin_path and os.path.exists(origin_path):
+        abs_path = os.path.abspath(origin_path)
+        if get_dirtype(origin_path) == "project":
+            return abs_path if relative_mode is False else accum_path
+        elif abs_path != "/":
+            return __get_path_to_project_top(os.path.dirname(abs_path),
+                                             relative_mode, accum_path + "/..")
+    logging.debug("Path did not exist")
+    return None
+def get_path_to_project_top(origin_path=".", relative_mode=False):
+    """
+    Get the path to the top of the project containing 'origin_path'.
+    Optionally enable relative_mode for relative paths.
+    Note: call aux function to set accum_path internal arg
+    """
+    return __get_path_to_project_top(origin_path, relative_mode, ".")
+
+
+# Get the path from 'to_path's project top to 'to_path'.
+# accum_path is an internal argument that accumulates the path to
+#    return across recursive calls
+def __get_path_from_project_top(to_path, accum_path):
+    if os.path.exists(to_path):
+        abs_path = os.path.abspath(to_path)
+        if get_dirtype(to_path) == "project":
+            return accum_path
+        elif abs_path != "/":
+            appended_accum = os.path.basename(abs_path)
+            if accum_path != "":
+                appended_accum = appended_accum + "/" + accum_path
+            return __get_path_from_project_top(os.path.dirname(abs_path), appended_accum)
+    logging.debug("Path did not exist")
+    return None
+def get_path_from_project_top(to_path="."):
+    """
+    Get the path to a location from the top of the project containing it.
+    The returned path STARTS AT THE PROJECT TOP and therefore does not include
+    the path TO the project top.
+    Note: call aux function to set accum_path internal arg
+    """
+    return __get_path_from_project_top(to_path, "")
+
+def get_project_imports(origin_path="."):
+    """
+    Get the contents of a project's imports directory.
+    The current project is determined based on 'origin_path'
+    """
+    project_top = get_path_to_project_top(origin_path, False)
+    return os.listdir(project_top + "/imports") if project_top is not None else None
+
+# NOTE: This function is not thoroughly tested
+def get_path_from_given_project_top(origin_top, dest_path, path_to_origin_top=""):
+    """
+    Determine the path from the top level of a project (origin_top) to the
+    destination path (dest_path). Whenever possible, try to stay internal to
+    the project or go through the project's imports directory. If that is not
+    possible, return destination path as handed to this function.
+
+    Optionally, a path TO the origin-path's top directory can be provided
+    and prepended to the return value whenever possible (when the function
+    determined a path inside the project or its imports.
+    """
+    dest_top = get_path_to_project_top(dest_path, False)
+    if dest_top:
+        path_from_dest_top = get_path_from_project_top(dest_path)
+        prepend_path = path_to_origin_top + "/" if path_to_origin_top != "" else ""
+        if os.path.samefile(origin_top, dest_top):
+            return prepend_path + path_from_dest_top
+        else:
+            to_import = "imports/" + os.path.basename(dest_top)
+            if os.path.isdir(origin_top + "/" + to_import):
+                return prepend_path + to_import + "/" + path_from_dest_top
+    return dest_path
+
+# NOTE: This function is not thoroughly tested
+def get_paths_from_project_top(origin_path, dest_paths):
+    """
+    Given an origin and a list of destination paths, return a list of paths
+    from origin's project top to each destination (potentially through imports).
+    If a destination path is not in the current or an imported project,
+    return an absolute path.
+    """
+    origin_top = get_path_to_project_top(origin_path, False)
+    if origin_top is None:
+        raise ValueError("origin_path \"" + origin_path + "\" is not in a project")
+    paths_from_top = []
+    for dest_p in dest_paths:
+        paths_from_top.append(get_path_from_given_project_top(origin_top, dest_p))
+    return paths_from_top
+
+# NOTE: This function does is not thoroughly tested
+def get_paths_through_project_top(origin_path, dest_paths):
+    """
+    origin to each destination going through the project top (and potentially
+    imports) when possible.
+    """
+    origin_top = get_path_to_project_top(origin_path, False)
+    origin_top_rel = get_path_to_project_top(origin_path, True)
+    if origin_top is None:
+        raise ValueError("origin_path \"" + origin_path + "\" is not in a project")
+    paths_through_top = []
+    for dest_p in dest_paths:
+        paths_through_top.append(
+            get_path_from_given_project_top(origin_top, dest_p, origin_top_rel))
+    return paths_through_top
+
+###############################################################################
+# Functions for determining project package information and accessing/modifying
+# the registry of projects in OCPI_PROJECT_REGISTRY_DIR
+###############################################################################
+
+def get_project_registry_dir():
+    """
+    Determine the project registry directory. First check OCPI_PROJECT_REGISTRY_DIR
+    then check OCPI_CDK_DIR/../project_registry, and finally default to
+    /opt/opencpi/project_registry.
+
+    Determine whether the resulting path exists.
+
+    Return the exists boolean and the path to the project registry directory.
+    """
+    project_registry_dir = os.environ.get('OCPI_PROJECT_REGISTRY_DIR')
+    if project_registry_dir is None:
+        cdkdir = os.environ.get('OCPI_CDK_DIR')
+        if cdkdir:
+            return True, cdkdir + "/../project_registry"
+        else:
+            return True, "/opt/opencpi/project_registry"
+    exists = os.path.exists(project_registry_dir)
+    if not exists:
+        logging.warning("The project registry directory '" + project_registry_dir +
+                        "' does not exist.\nCorrect " + "'OCPI_PROJECT_REGISTRY_DIR' or run: " +
+                        "'mkdir " + project_registry_dir + "'")
+    return exists, project_registry_dir
+
+def get_all_projects():
+    """
+    Iterate through the cdk, project path and project registry.
+    Return the list of all projects.
+    """
+    projects = []
+    cdkdir = os.environ.get('OCPI_CDK_DIR')
+    if cdkdir:
+        projects.append(cdkdir)
+    project_path = os.environ.get('OCPI_PROJECT_PATH')
+    if project_path:
+        projects += project_path.split(':')
+    exists, project_registry_dir = get_project_registry_dir()
+    if exists:
+        projects += glob(project_registry_dir + '/*')
+    return projects
+
+
+def get_project_package(origin_path="."):
+    """
+    Get the Package Name of the project containing 'origin_path'.
+    """
+    path_to_project = get_path_to_project_top(origin_path)
+    if path_to_project is None:
+        logging.debug("Path \"" + str(origin_path) + "\"is not inside a project")
+        return None
+    # From the project top, probe the Makefile for the projectpackage
+    # which is printed in cdk/include/project.mk in the projectpackage rule
+    # if ShellProjectVars is defined
+    with cd(path_to_project):
+        project_vars = set_vars_from_make("Makefile",
+                                          "projectpackage ShellProjectVars=1", "verbose")
+    return project_vars['ProjectPackage'][0]
+
+def does_project_with_package_exist(origin_path=".", package=None):
+    """
+    Get a project's package and determine if a project with that package exists in the
+    project registry. If origin_path and/or is not specified, assume we are
+    unterested in the current project/package.
+    """
+    project_registry_dir_exists, project_registry_dir = get_project_registry_dir()
+    if not project_registry_dir_exists:
+        return False
+    if package is None:
+        package = get_project_package(origin_path)
+        if package is None:
+            return False
+    for project in glob(project_registry_dir + "/*"):
+        if get_project_package(project) == package or os.path.basename(project) == package:
+            return True
+    return False
+
+def register_project(project_path):
+    """
+    Given a project, determine its package name and create the corresponding link
+    in the project registry. If a link with the same name already exists
+    (e.g. a project is already registered with that package name), return False for
+    failure. Return True on success.
+    """
+    project_package = get_project_package(project_path)
+    if project_package is None:
+        logging.error("Failure to register project with path/name '" + project_path +
+                      "'. Project does not exist (or package could not be determined).")
+        return False
+    project_registry_dir_exists, project_registry_dir = get_project_registry_dir()
+    if not project_registry_dir_exists:
+        return False
+    project_link = project_registry_dir + "/" + project_package
+
+    # Set the containing directory for use in error logging and command-run recommendations
+    containing_dir = os.path.dirname(os.path.abspath(project_path))
+    if containing_dir == "" or containing_dir == ".":
+        containing_dir = os.path.abspath(os.path.curdir)
+    if does_project_with_package_exist(package=project_package):
+        logging.error("Failure to register project with package '" + str(project_package) +
+                      "'.\nA project/link with that package qualifier already exists and is " +
+                      "registered in '" + project_registry_dir + "'.\nTo unregister that " +
+                      "project, call: 'ocpidev unregister project " + str(project_package) +
+                      "'.\nThen, rerun the command: 'ocpidev -d " + containing_dir +
+                      " register project " + os.path.basename(os.path.abspath(project_path)) + "'.")
+        return False
+    if os.path.lexists(project_link):
+        logging.error("Failure to register project with package '" + str(project_package) +
+                      "'\n. The following link is causing this conflict: '" +
+                      project_link + " --> " + os.path.realpath(project_link) +
+                      "'\nTo unregister that project, call: 'rm " + project_link + "'." +
+                      "Then, rerun the command: 'ocpidev -d " + containing_dir +
+                      " register project " + os.path.basename(os.path.abspath(project_path)) + "'.")
+
+        return False
+
+    project_to_reg = os.path.abspath(get_path_to_project_top(project_path))
+    try:
+        os.symlink(project_to_reg, project_link)
+    except OSError:
+        logging.error("Failure to register project link: " +
+                      project_link + " --> " + project_to_reg +
+                      "\nCommand attempted: " + "'ln -s " + project_to_reg + " " + project_link +
+                      "'.\nTo (un)register projects in /opt/opencpi/project_registry, " +
+                      "you need to be a member of the opencpi group.")
+        return False
+    return True
+
+def unregister_project(project_path):
+    """
+    Given a project, determine its package name. If a project is registered with that
+    name via a link in the project registry, remove that link. If 'project_path'
+    does not correspond to an existing project, assume it is a package name itself that
+    should be unregistered.
+    """
+    project_package = get_project_package(project_path)
+    # If the project_package could not be determined, set it to project_path itself
+    # In this mode, we are assuming project_path is actually just a link-name to
+    # try and remove from the registry
+    if project_package is None:
+        project_package = project_path if not os.path.exists(project_path) else \
+                                           os.path.basename(os.path.abspath(project_path))
+    project_registry_dir_exists, project_registry_dir = get_project_registry_dir()
+    if not project_registry_dir_exists:
+        return False
+    project_link = project_registry_dir + "/" + str(project_package)
+    if not os.path.lexists(project_link):
+        logging.error("Failure to unregister project with package '" + str(project_package) +
+                      "'.\nThere is no registered project link '" + project_link + "'")
+        return False
+    if os.path.exists(project_path) and \
+       os.path.realpath(project_path) != os.path.realpath(project_link):
+        logging.error("Failure to unregister project with package '" + str(project_package) +
+                      "'.\nThe registered project with link '" + project_link + " --> " +
+                      os.path.realpath(project_link)+ "' does not point to the specified project " +
+                      "'" + os.path.realpath(project_path) + "'." +
+                      "\nThis project does not appear to be registered.")
+        return False
+
+    try:
+        os.unlink(project_link)
+    except OSError:
+        logging.error("Failure to unregister link to project: " +project_link + " --> " +
+                      project_path + "\nCommand attempted: " +
+                      "'unlink " + project_link + "'\nTo (un)register projects in " +
+                      "/opt/opencpi/project_registry, you need to be a member of " +
+                      "the opencpi group.")
+        return False
+    return True
 
 ###############################################################################
 # String and number manipulation utility functions
 ###############################################################################
 
 def isfloat(value):
-  try:
-    float(value)
-    return True
-  except ValueError:
-    return False
+    """
+    Can the parameter be represented as an float?
+
+    For example (doctest):
+    >>> isfloat("1")
+    True
+    >>> isfloat("1.0")
+    True
+    >>> isfloat("")
+    False
+    >>> isfloat("string")
+    False
+    """
+    try:
+        float(value)
+        return True
+    except ValueError:
+        return False
 
 def isint(value):
-  try:
-    int(value)
-    return True
-  except ValueError:
-    return False
+    """
+    Can the parameter be represented as an int?
 
-# Convert a string representing period in ns
-# to a string representing frequency in MHz
-# Return the string or "" on failure
-def freq_from_period(prd_string):
-  if prd_string == None:
+    For example (doctest):
+    >>> isint("1")
+    True
+    >>> isint("1.0")
+    False
+    >>> isint("")
+    False
+    >>> isint("string")
+    False
+    """
+    try:
+        int(value)
+        return True
+    except ValueError:
+        return False
+
+def freq_from_ns_period(prd_string):
+    """
+    Convert a string representing period in ns
+    to a string representing frequency in MHz
+    Return the string or "" on failure
+
+    For example (doctest):
+    >>> freq_from_ns_period("1000ns")
+    '1.000'
+    >>> freq_from_ns_period("1000")
+    '1.000'
+
+    Only ns period is supported
+    >>> freq_from_ns_period("250ms")
+    ''
+    >>> freq_from_ns_period("250ns")
+    '4.000'
+    >>> freq_from_ns_period("")
+    ''
+    >>> freq_from_ns_period("string")
+    ''
+    """
+    if prd_string is None:
+        return ""
+    period = 0.0
+    prd = re.sub('ns', '', prd_string)
+    if isfloat(prd):
+        period = float(prd)
+    if period != 0:
+        freq = 1000/float(period)
+        return '{:.3f}'.format(freq)
     return ""
-  period=0
-  prd=re.sub('ns','',prd_string)
-  if isfloat(prd):
-    period=float(prd)
-  if period != 0:
-    freq=1000/float(period)
-    return '{:.3f}'.format(freq)
-  return ""
 
-# Return the first number in a list
-# of strings. Ignore commas and 'ns'
-# Return "" if no number is found
-def first_num_in_str_list(strings):
-  for i in strings.split(' '):
-    num=re.sub(',','',i)
-    num=re.sub('ns','',i)
-    if isfloat(num):
-       if isint(num):
-         return str(num)
-       else:
-         return '{:.3f}'.format(float(num))
-  return ""
+def first_num_in_str(parse_string):
+    """
+    Return the first number in a list of strings. Allow ',' or '.'  and trailing text
+    (e.g. MHz, ns). Return "" if no number is found.
 
+    For example (doctest):
+    >>> first_num_in_str("Here is my number: 12345.12345 (here is a second number 222.222)")
+    '12345.12345'
+    >>> first_num_in_str("Another number: 12,345,123")
+    '12,345,123'
+    >>> first_num_in_str("A frequency: 123,000MHz")
+    '123,000'
+    >>> first_num_in_str("A period: 123,000ns")
+    '123,000'
+    >>> first_num_in_str("abcd1234efgh5678")
+    '1234'
+    >>> first_num_in_str("There is no string here!")
+    """
+    first_num_regex = re.compile(r"([-+]?([0-9]{1,3}\,?)+(\.[0-9]*)?)")
+    result = re.search(first_num_regex, parse_string)
+    if result:
+        return result.group(0)
+    else:
+        return None
+
+def match_regex(target_file, regex):
+    """
+    Parse the target file for a regex and return the first group/element
+    of the first match
+
+    For example (doctest):
+    Here, we have a line of text below and we parse this current file
+    using a regular expression to grab the 'ns' number from the string.
+    # This text right here contains a number (2.000ns)!!!! It should match the regex
+    >>> match_regex(os.path.realpath(__file__), "#.*This text right.*\((.*)ns\)!!!!.*")
+    '2.000'
+    """
+    if isinstance(regex, basestring):
+        regex = re.compile(regex)
+    elif not isinstance(regex, type(re.compile(''))):
+        raise ValueError("Error: regular expression invalid")
+    matches = [re.findall(regex, line) for line in open(target_file)]
+    matches = filter(lambda m: m != [] and m != None, matches)
+    if len(matches) > 0 and len(matches[0]) > 0:
+        match = matches[0][0]
+        if isinstance(match, tuple):
+            return match[0]
+        return match
+    return "N/A"
+
+# This function first finds the max-length of each 'column' and then iterates
+# through each list and reformats each element to match the length corresponding
+# to its 'column'
+def normalize_column_lengths(lists):
+    """
+    This function takes a list of lists and treats each list like a row in a table.
+    It then space-expands the length of each string element so that all elements in
+    the same column have the same length.
+
+    For example (doctest):
+    >>> list1, list2 = normalize_column_lengths([["15 chr long str",\
+                                                  "this is a longgg string"],\
+                                                 ["< 15", "pretty short"]])
+    >>> print str(list1)
+    ['15 chr long str', 'this is a longgg string']
+    >>> print str(list2)
+    ['< 15           ', 'pretty short           ']
+    """
+    format_function = lambda length, string_elem: ("{:<" + str(length) + "}").format(string_elem)
+    newlens = []
+    for column in zip(*lists):
+        newlens.append(len(max(column, key=len)))
+    newlists = []
+    for oldlist in lists:
+        newlists.append([format_function(length, elem) for elem, length in zip(oldlist, newlens)])
+    return newlists
+
+def print_table(rows, col_delim='|', row_delim=None, surr_cols_delim='|', surr_rows_delim='-'):
+    """
+    Print a table specified by the list of rows in the 'rows' parameter. Optionally specify
+    col_delim and row_delim which are each a single character that will separate cols and rows.
+    surr_rows_delim and surr_cols_delim determine the border of the border of the table
+    """
+    rows = normalize_column_lengths(rows)
+    row_strs = []
+    for row in rows:
+        row_strs.append(surr_cols_delim + ' '
+                        + reduce(lambda x, y: x + ' ' + col_delim + ' ' + y, row)
+                        + ' ' + surr_cols_delim)
+    max_row_len = len(max(row_strs, key=len))
+    if row_delim:
+        row_line = row_delim * max_row_len
+    print surr_rows_delim * max_row_len
+    for line in row_strs:
+        print line
+        if row_delim:
+            print row_line
+    print surr_rows_delim * max_row_len
+
+###############################################################################
+# Functions to ease filesystem navigation
+###############################################################################
+@contextmanager
+def cd(target):
+    """
+    Change directory to 'target'. To be used with 'with' so that origin directory
+    is automatically returned to on completion of 'with' block
+    """
+    origin = os.getcwd()
+    os.chdir(os.path.expanduser(target))
+    try:
+        yield
+    finally:
+        os.chdir(origin)
+
+if __name__ == "__main__":
+    import doctest
+    __LOG_LEVEL = os.environ.get('OCPI_LOG_LEVEL')
+    __VERBOSITY = False
+    if __LOG_LEVEL:
+        try:
+            if int(__LOG_LEVEL) >= 8:
+                __VERBOSITY = True
+        except ValueError:
+            pass
+    doctest.testmod(verbose=__VERBOSITY, optionflags=doctest.ELLIPSIS)
+configure_logging()

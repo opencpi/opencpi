@@ -18,8 +18,17 @@
 
 # This file has the HDL tool details for xst
 
-include $(OCPI_CDK_DIR)/include/hdl/xilinx.mk
+################################################################################
+# Name of the tool that needs to be installed to use this compilation flow
+HdlToolName_xst=ISE
 
+# This variable is needed when including this file
+# for the sole purpose of extracting variable information
+# E.g. if you want to know some information about a supported tool,
+# you should not need the corresponding toolchain installed
+ifndef __ONLY_TOOL_VARS__
+
+include $(OCPI_CDK_DIR)/include/hdl/xilinx.mk
 
 ################################################################################
 # $(call HdlToolLibraryFile,target,libname)
@@ -240,7 +249,8 @@ XstIniFile=$(Core).ini
 
 XstLibraries=$(HdlLibrariesInternal)
 
-XstNeedIni= $(strip $(XstLibraries)$(ComponentLibraries)$(CDKCompenentLibraries)$(CDKDeviceLibraries)$(Cores))
+XstNeedLso= $(strip $(XstCompLibs)$(HdlLibrariesInternal)$(XstCores))
+XstNeedIni= $(strip $(XstCores)$(HdlLibrariesInternal))
 #   $(and $(findstring worker,$(HdlMode)),echo $(call ToLower,$(Worker))=$(call ToLower,$(Worker));) 
 
 # Choices as to where a bb might be
@@ -293,7 +303,7 @@ XstMakeIni=\
           $(firstword $(foreach c,$(call XstCoreLibraryChoices,$(call XstPathFromCore,$l),a),$(infox CECEL:$c)$(call HdlExists,$c)))));) \
   ) > $(XstIniFile);
 
-XstOptions += $(and $(XstNeedIni),-lso $(XstLsoFile))
+XstOptions += $(and $(XstNeedLso),-lso $(XstLsoFile))
 #endif
 XstPrjFile=$(Core).prj
 # old XstMakePrj=($(foreach f,$(HdlSources),echo verilog $(if $(filter $(WorkLibrarySources),$(f)),work,$(WorkLib)) '"$(call FindRelative,$(TargetDir),$(dir $(f)))/$(notdir $(f))"';)) > $(XstPrjFile);
@@ -385,7 +395,7 @@ HdlToolCompile=\
   rm -f $(notdir $@);\
   $(XstMakeGenerics)\
   $(XstMakePrj)\
-  $(and $(XstNeedIni),$(XstMakeLso))\
+  $(and $(XstNeedLso),$(XstMakeLso))\
   $(and $(XstNeedIni),$(XstMakeIni))\
   $(XstMakeScr)\
   $(call OcpiXilinxIseInit); xst -ifn $(XstScrFile) && touch $(WorkLib)\
@@ -524,4 +534,5 @@ But -sd do need all cores.
 So even though the cores are not "merged", they are remembered enough to not require bb libs.
 When we build an assembly, we can use the component library's stub library and single directory to find the cores.  Thus we never need to point at individual cores.
 
+endif
 endif

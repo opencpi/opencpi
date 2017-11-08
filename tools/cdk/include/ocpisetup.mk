@@ -86,7 +86,7 @@ include $(OCPI_CDK_DIR)/include/util.mk
 # behavior with no environment requirements at all.
 # Setting just OCPI_TARGET_PLATFORM will do cross builds
 $(eval $(OcpiEnsureToolPlatform))
-p:=$(OCPI_CDK_DIR)/platforms/$(OCPI_TOOL_PLATFORM)
+p:=$(call OcpiGetRccPlatformDir,$(OCPI_TARGET_PLATFORM)))
 f:=$p/$(OCPI_TOOL_PLATFORM)-tool.mk
 ifeq ($(wildcard $f),)
 #   $(warning There is no tool setup file ($f) for platform $(OCPI_TOOL_PLATFORM).  This may be ok.)
@@ -97,7 +97,7 @@ ifndef OCPI_TARGET_PLATFORM
   export OCPI_TARGET_PLATFORM:=$(OCPI_TOOL_PLATFORM)
 endif
 ifndef OCPI_TARGET_HOST
-  f=$(OCPI_CDK_DIR)/platforms/$(OCPI_TARGET_PLATFORM)/target
+  f=$(call OcpiGetRccPlatformDir,$(OCPI_TARGET_PLATFORM))/target
   ifeq ($(wildcard $f),)
     $(error OCPI_TARGET_PLATFORM is $(OCPI_TARGET_PLATFORM).  File $f is missing.)
   endif
@@ -116,7 +116,7 @@ endif
 ################################################################################
 # Run the target-specific make setup script
 # Note that this script has access to OCPI_TOOL_xxx if the settings vary by tool host
-f:=$(OCPI_CDK_DIR)/platforms/$(OCPI_TARGET_PLATFORM)/$(OCPI_TARGET_PLATFORM)-target.mk
+f=$(call OcpiGetRccPlatformDir,$(OCPI_TARGET_PLATFORM))/$(OCPI_TARGET_PLATFORM)-target.mk
 ifeq ($(wildcard $f),)
   $(error There is no target setup file ($f) for platform $(OCPI_TARGET_PLATFORM).)
 else

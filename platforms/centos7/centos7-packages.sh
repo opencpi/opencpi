@@ -17,11 +17,11 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-# Install prerequisite packages for Centos6
+# Install prerequisite packages for Centos7
 echo Installing standard extra packages using "yum"
 sudo yum -y groupinstall "development tools"
-CENTOS7_PKGS="tcl pax python-devel fakeroot which nfs-utils"
-echo Installing packages required: $CENTOS7_PKGS
+CENTOS7_PKGS="mlocate tcl pax python-devel fakeroot which nfs-utils"
+echo Installing packages required or commonly used: $CENTOS7_PKGS
 sudo yum -y install $CENTOS7_PKGS
 echo Installing 32 bit libraries '(really only required for modelsim)'
 sudo yum -y install glibc.i686 libXft.i686 libXext.i686 ncurses-libs.i686

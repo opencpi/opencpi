@@ -21,6 +21,20 @@ _HDL_TARGETS_=here
 # Include this here so that hdl-targets.mk (this file) can be included on its own when
 # things like HdlAllPlatforms is required.
 include $(OCPI_CDK_DIR)/include/util.mk
+
+# IncludeProject so that platforms in current project are discovered
+$(OcpiIncludeProject)
+
+# The block below needs to happen prior to the HdlTargets:= assignments for
+# extracting HdlTarget info from this makefile
+ifdef ShellHdlTargetsVars
+# When collecting a list of HDL targets/platforms, you do not need to be inside a project.
+# So, collect all projects in the Project Registry Dir into the project path for searching.
+export OCPI_PROJECT_PATH:=$(OCPI_PROJECT_PATH):$(subst $(Space),:,$(wildcard $(OcpiProjectRegistryDir)/*))
+# hdl-make is needed for HdlGetFamily to determine HdlFamily_*
+include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
+endif
+
 # This file is the database of hdl targets and associated tools
 # It is a "leaf file" that is used in several places.
 
@@ -68,10 +82,11 @@ HdlToolSet_stratix5:=quartus
 
 # Make the initial definition as a simply-expanded variable
 HdlAllPlatforms:=
+HdlBuiltPlatforms:=
 
 override OCPI_HDL_PLATFORM_PATH:=$(subst $(Space),:,$(call Unique,\
   $(subst :, ,$(OCPI_HDL_PLATFORM_PATH)) \
-  $(foreach p,$(OcpiGetProjectPath),$(call OcpiExists,$p/lib/platforms))))
+  $(foreach p,$(OcpiGetExtendedProjectPath),$(call OcpiExists,$p/lib/platforms))))
 export OCPI_HDL_PLATFORM_PATH
 $(call OcpiDbgVar,OCPI_HDL_PLATFORM_PATH)
 # Add a platform to the database.
@@ -83,7 +98,11 @@ HdlAddPlatform=\
   $(if $(HdlPlatformDir_$2),,\
     $(eval include $1/$2.mk)\
     $(eval HdlAllPlatforms+=$2)\
-    $(eval HdlPlatformDir_$2:=$3))
+    $(eval HdlPlatformDir_$2:=$3)\
+    $(if $(or \
+	   $(call OcpiExists,$3/lib/hdl/$(HdlFamily_$(HdlPart_$2))),\
+           $(call OcpiExists,$3/hdl/$(HdlFamily_$(HdlPart_$2)))),\
+      $(eval HdlBuiltPlatforms+=$2)))
 
 # Call this with a directory that is a platform's directory, either source (with "lib" subdir 
 # if built) or exported. For the individual platform directories we need to deal with
@@ -125,25 +144,34 @@ HdlAllFamilies:=$(call Unique,$(foreach t,$(HdlTopTargets),$(or $(HdlTargets_$(t
 HdlAllTargets:=$(call Unique,$(HdlAllFamilies) $(HdlTopTargets))
 export OCPI_ALL_HDL_TARGETS:=$(HdlAllTargets)
 export OCPI_ALL_HDL_PLATFORMS:=$(strip $(HdlAllPlatforms))
+export OCPI_BUILT_HDL_PLATFORMS:=$(strip $(HdlBuiltPlatforms))
 $(call OcpiDbgVar,HdlAllFamilies)
 $(call OcpiDbgVar,HdlAllPlatforms)
+$(call OcpiDbgVar,HdlBuiltPlatforms)
 #$(info OCPI_ALL_HDL_PLATFORMS is $(OCPI_ALL_HDL_PLATFORMS))
 #$(info OCPI_ALL_HDL_TARGETS is $(OCPI_ALL_HDL_TARGETS))
 # Assignments that can be used to extract make variables into bash/python...
 ifdef ShellHdlTargetsVars
-include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
 all:
-$(info HdlAllFamilies="$(HdlAllFamilies)";\
+$(info HdlTopTargets="$(HdlTopTargets)";\
+       HdlSimTools="$(HdlSimTools)";\
+       HdlAllFamilies="$(HdlAllFamilies)";\
        HdlAllPlatforms="$(HdlAllPlatforms)";\
+       HdlBuiltPlatforms="$(HdlBuiltPlatforms)";\
        HdlAllTargets="$(HdlAllTargets)";\
        HdlTargets="$(foreach t,$(HdlTopTargets),$(or $(HdlTargets_$t),$t))";\
        $(foreach p,$(HdlAllPlatforms),HdlPart_$p=$(HdlPart_$p); )\
-       $(foreach f,$(HdlAllFamilies),\
+       $(foreach f,$(HdlAllTargets),\
          $(if $(HdlTargets_$f),HdlTargets_$f="$(HdlTargets_$f)";)\
          $(if $(HdlToolSet_$f),HdlToolSet_$f="$(HdlToolSet_$f)";)\
          $(foreach t,$(HdlTargets_$f),\
            $(if $(HdlTargets_$t),HdlTargets_$t="$(HdlTargets_$t)";)))\
+       $(foreach t,$(call Unique,\
+         $(foreach f,$(HdlAllTargets),$(if $(HdlToolSet_$f),$(HdlToolSet_$f) ))),\
+	   $(eval __ONLY_TOOL_VARS__:=true)\
+	   $(eval include $(OCPI_CDK_DIR)/include/hdl/$t.mk)\
+	   HdlToolName_$t="$(or $(HdlToolName_$t),$t)";)\
        $(foreach p,$(HdlAllPlatforms),\
-         HdlFamily_$(HdlPart_$p)=$(call HdlGetFamily,$(HdlPart_$p));))
+	 HdlFamily_$(HdlPart_$p)=$(call HdlGetFamily,$(HdlPart_$p));))
 endif
 endif

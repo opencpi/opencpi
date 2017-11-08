@@ -138,27 +138,27 @@ OcpiHdl=$(DYN_PREFIX) $(ToolsDir)/ocpihdl
 
 $(WDefsFile): $(Worker_$(Worker)_xml) | $(GeneratedDir)
 	$(AT)echo Generating the opposite language definition file: $@
-	$(AT)$(OcpiGen) -D $(GeneratedDir) $(and $(Package),-p $(Package))  \
+	$(AT)$(call OcpiGen, -D $(GeneratedDir) $(and $(Package),-p $(Package))  \
 	  $(and $(HdlPlatform),-P $(HdlPlatform)) \
           $(and $(Assembly),-S $(Assembly)) \
           $(and $(PlatformDir), -F $(PlatformDir)) \
-	  $(HdlVhdlLibraries) -w -d $<
+	  $(HdlVhdlLibraries) -w -d $<)
 
 $(DefsFile): $(Worker_$(Worker)_xml) | $(GeneratedDir)
 	$(AT)echo Generating the definition file: $@
-	$(AT)$(OcpiGen) -D $(GeneratedDir) $(and $(Package),-p $(Package)) \
+	$(AT)$(call OcpiGen, -D $(GeneratedDir) $(and $(Package),-p $(Package)) \
            $(and $(Assembly),-S $(Assembly)) \
 	   $(and $(HdlPlatform),-P $(HdlPlatform)) \
            $(and $(PlatformDir), -F $(PlatformDir)) \
-	   $(HdlVhdlLibraries) -d $<
+	   $(HdlVhdlLibraries) -d $<)
 
 $(HdlOtherImplSourceFile): $(WDefsFile) $$(Worker_$(Worker)_xml) | $(GeneratedDir)
 	$(AT)echo Generating the $(HdlOtherLanguage) implementation file: $@ from $(Worker_$(Worker)_xml)
-	$(AT)$(OcpiGen) -D $(GeneratedDir) $(and $(Package),-p $(Package)) \
+	$(AT)$(call OcpiGen, -D $(GeneratedDir) $(and $(Package),-p $(Package)) \
         $(and $(Assembly),-S $(Assembly)) \
 	$(and $(HdlPlatform),-P $(HdlPlatform)) \
         $(and $(PlatformDir), -F $(PlatformDir)) \
-	$(HdlVhdlLibraries) -w -i $(Worker_$(Worker)_xml) \
+	$(HdlVhdlLibraries) -w -i $(Worker_$(Worker)_xml))
 
 $(ImplHeaderFiles): $(DefsFile)
 

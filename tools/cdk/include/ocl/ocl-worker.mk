@@ -76,14 +76,14 @@ $(call OclAssemblyFile,$1,$2): | $(call WkrTargetDir,$1,$2)
 # Different since it is in the targetdir
 $(call ArtifactXmlFile,$1,$2): $(call OclAssemblyFile,$1,$2)
 	$(AT)echo Generating artifact/runtime xml file $$@ for all workers in one binary
-	$(AT)$(DYN_PREFIX) $(ToolsDir)/ocpigen -M $(call WkrTargetDir,$1,$2)/$$(@F).deps \
+	$(AT)$(DYN_PREFIX) $(ToolsDir)/ocpigen $(call OcpiFixPathArgs,-M $(call WkrTargetDir,$1,$2)/$$(@F).deps \
 	     -O $(call OclOs,$1) \
              -V $(call OclOsVersion,$1) \
              -H $(call OclArch,$1) \
 	     -P $3 \
 	     -D $(call WkrTargetDir,$1,$2) \
              $(XmlIncludeDirsInternal:%=-I%) \
-             -A $(call OclAssemblyFile,$1,$2)
+             -A $(call OclAssemblyFile,$1,$2))
 
 endef
 

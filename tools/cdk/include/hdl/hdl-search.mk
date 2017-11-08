@@ -132,7 +132,7 @@ HdlXmlComponentLibraries=$(infox HXC)\
 define HdlPrimitiveSearchError
 The primitive core/library "$1" was not found in any of these locations: $(call OcpiCheckLinks,$2)
 OCPI_HDL_PRIMITIVE_PATH is: $(OCPI_HDL_PRIMITIVE_PATH)
-OCPI_PROJECT_PATH is: $(OCPI_PROJECT_PATH)
+Internal Project Path is: $(OcpiGetProjectPath)
 OCPI_CDK_DIR is: $(OCPI_CDK_DIR)
 HdlLibraries is: $(HdlLibraries) $(Libraries)
 

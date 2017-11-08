@@ -26,18 +26,6 @@ $(OcpiIncludeProject)
 # Thus library settings can depend on project settings
 $(call OcpiIncludeLibrary,.,error)
 
-ifndef ProjectPackage
-  ProjectPackage:=local
-endif
-ifdef Package
-  ifneq ($(filter .%,$(Package)),)
-    Package:=$(ProjectPackage)$(Package)
-  endif
-else ifeq ($(CwdName),components)
-  Package:=$(ProjectPackage)
-else
-  Package:=$(ProjectPackage).$(CwdName)
-endif
 include $(OCPI_CDK_DIR)/include/lib.mk
 
 .PHONY: generate run $(OcpiTestGoals)

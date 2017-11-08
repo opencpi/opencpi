@@ -38,6 +38,21 @@ ifeq ($(HdlPlatform)$(HdlPlatforms),)
   endif
 endif
 
+ifeq ($(wildcard imports),)
+  ifeq ($(filter clean%,$(MAKECMDGOALS)),)
+    doimports=$(shell \
+	[ -d imports ] || mkdir imports; \
+	for i in $(CollectCreatableImports); do \
+	  [ -L imports/$$(basename $$i) ] || ln -s $$i imports/; \
+	done; \
+	[ -L imports/ocpi.cdk ] || ln -s $(OCPI_CDK_DIR) imports/ocpi.cdk;)
+    $(info Imports are not set up for this project.  Doing it now. $(doimports))
+  else
+    # we are assuming that imports are not required for any clean goal.
+    # $(nuthin $(doimports))
+  endif
+endif
+
 ifeq ($(wildcard exports),)
   doexports=$(shell $(OCPI_CDK_DIR)/scripts/makeExportLinks.sh - $(ProjectPrefix)_ xxx)
   ifeq ($(filter clean%,$(MAKECMDGOALS)),)
@@ -51,7 +66,7 @@ endif
 include $(OCPI_CDK_DIR)/include/ocpisetup.mk
 
 ifeq (@,$(AT))
-  .SILENT: clean exports components hdlprimitives hdlcomponents hdldevices hdladapters hdlcards hdlplatforms hdlassemblies cleanhdl rcc cleanrcc ocl cleanocl applications run cleancomponents cleanapplications cleanexports cleaneverything $(OcpiTestGoals)
+  .SILENT: clean imports exports components hdlprimitives hdlcomponents hdldevices hdladapters hdlcards hdlplatforms hdlassemblies cleanhdl rcc cleanrcc ocl cleanocl applications run cleancomponents cleanapplications cleanimports cleanexports cleaneverything $(OcpiTestGoals)
 endif
 
 MaybeMake=if [ -d $1 ]; then $(MAKE) -C $1 $2; fi
@@ -62,11 +77,11 @@ $(foreach p,$(HdlPlatform) $(HdlPlatforms),\
    echo =============Building platform $p/$2 for $3 &&\
    $(call MaybeMake,$1/$p/$2,$3) &&) true
 
-.PHONY: all applications clean exports components cleanhdl $(OcpiTestGoals)
+.PHONY: all applications clean imports exports components cleanhdl $(OcpiTestGoals)
 .PHONY: hdl hdlassemblies hdlprimitives hdlcomponents hdldevices hdladapters hdlplatforms hdlassemblies hdlportable
 all: applications
 
-hdlassemblies applications: exports
+hdlassemblies applications: imports exports
 
 # Perform test-related goals where they might be found.
 DoTests=$(foreach t,\
@@ -78,18 +93,40 @@ $(OcpiTestGoals):
 clean: cleanhdl
 	$(call MaybeMake,components,clean)
 
+CollectCreatableImports=$(strip $(infox OGCrI)\
+			$(foreach p,$(wildcard $(OcpiProjectRegistryDir)/*),\
+    $(if $(strip \
+      $(or \
+        $(filter $(realpath $p),$(realpath .)),\
+        $(foreach i,$(OcpiGetProjectImports),\
+          $(filter $(notdir $p),$(notdir $i))))),,\
+      $p )))
+
+# Make the imports directory if it does not exist.
+# For any projects that do not already have a manually created
+# link in imports/ create symlinks to project registry directory.
+imports:
+	[ -d imports ] || mkdir imports
+	for i in $(CollectCreatableImports); do \
+	  [ -L imports/$$(basename $$i) ] || ln -s $$i imports/; \
+	done
+	[ -L imports/ocpi.cdk ] || ln -s $(OCPI_CDK_DIR) imports/ocpi.cdk; \
+
 exports:
 	$(OCPI_CDK_DIR)/scripts/makeExportLinks.sh $(OCPI_TARGET_DIR) $(ProjectPrefix)_
 
 components: hdlprimitives
+	$(MAKE) imports
 	$(call MaybeMake,components,rcc hdl)
 	$(MAKE) exports
 
 hdlprimitives:
+	$(MAKE) imports
 	$(call MaybeMake,hdl/primitives)
 	$(MAKE) exports
 
 hdlcomponents: hdlprimitives
+	$(MAKE) imports
 	$(call MaybeMake,components,hdl)
 	$(MAKE) exports
 
@@ -103,6 +140,7 @@ hdlcards: hdlprimitives
 	$(call MaybeMake,hdl/cards)
 
 hdlplatforms: hdldevices hdlcards hdladapters
+	$(MAKE) imports
 	$(call MaybeMake,hdl/platforms)
 	$(MAKE) exports
 
@@ -120,7 +158,7 @@ cleanhdl:
 	  [ ! -d hdl/$$d ] || $(MAKE) -C hdl/$$d clean; \
 	done
 
-rcc ocl hdl: exports
+rcc ocl hdl: imports exports
 
 rcc:
 	$(call MaybeMake,components,rcc)
@@ -151,7 +189,28 @@ cleancomponents:
 cleanapplications:
 	$(call MaybeMake,applications,clean)
 
-clean: cleancomponents cleanapplications cleanrcc cleanhdl cleanexports
+clean: cleancomponents cleanapplications cleanrcc cleanhdl cleanimports cleanexports
+
+# Iterate through symlinks in imports. If the link points to the project registry dir,
+# it is the CDK, or is a broken link, it can be cleaned/removed. If the imports directory
+# is empty after clean, the whole directory can be removed.
+cleanimports:
+	for i in $(OcpiGetProjectImports) ; do \
+	  if [ -L "$$i" ]; then \
+	    if [[ "$$(dirname $(call SymLinkContents,$$i))" == "$(OcpiProjectRegistryDir)" \
+	          || "$$(basename $$i)" == ocpi.cdk ]]; then \
+	      rm "$$i"; \
+	    fi; \
+	  fi; \
+	done; \
+	if [ -e "$(OcpiImportsDirForContainingProject)" ]; then \
+	  for i in $(OcpiImportsDirForContainingProject)/* ; do \
+	    if [[ -L "$$i" && ! -e "$$i" ]]; then \
+	        rm "$$i"; \
+	    fi; \
+	  done; \
+	fi; \
+	[ ! -d imports ] || [ "$$(ls -A imports)" ] || rm -r imports
 
 cleanexports:
 	rm -r -f exports
@@ -173,4 +232,9 @@ ifneq ($(wildcard specs),)
 	$(AT)echo "$(ProjectPackage)" > specs/package-name
     components: specs/package-name
   endif
+endif
+
+ifdef ShellProjectVars
+projectpackage:
+$(info ProjectPackage="$(ProjectPackage)";)
 endif

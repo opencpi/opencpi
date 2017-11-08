@@ -98,7 +98,7 @@ ifneq ($(MAKECMDGOALS),clean)
     # when targets are not specified.
     # ocpigen -X returns the config as word 1 followed by "only platforms" as subsequent words
     define doGetPlatform
-      $$(and $$(call DoShell,$(OcpiGen) -X $1,HdlContPfConfig),\
+      $$(and $$(call DoShell,$(call OcpiGen, -X $1),HdlContPfConfig),\
           $$(error Processing container XML $1: $$(HdlContPfConfig)))
       HdlContPlatforms:=$$(wordlist 3,$$(words $$(HdlContPfConfig)),$$(HdlContPfConfig))
       $$(foreach p,$$(filter $$(or $$(HdlContPlatforms),$$(OnlyPlatforms),$$(HdlAllPlatforms)),\

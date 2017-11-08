@@ -21,7 +21,7 @@
 # Clock constraints                                                        #
 ############################################################################
 # 10 ns period = 100000 KHz
-create_clock -name clk_fpga_0 -period 10.000 [get_nets {ftop/pfconfig_cp_out*[clk]}]
+create_clock -name clk_fpga_0 -period 10.000 [get_pins {ftop/pfconfig_i/zed_i/worker/ps/ps/PS7_i/FCLKCLK[0]}]
 
 # ----------------------------------------------------------------------------
 # User LEDs - Bank 33

@@ -97,7 +97,7 @@ static int mymain(const char **ap) {
     std::vector<int> fds(numSources, -1);
     std::vector<off_t> sizes(numSources*2, 0);
     std::vector<const char *> mapped(numSources*2, NULL);
-    void *maddr;
+    void *maddr = NULL;
     for (unsigned n = 0; n < numSources; n++) {
       ocpiDebug("Compiling OCL input file %s", sources[n]);
       if ((fds[n] = open(sources[n], O_RDONLY)) < 0 ||

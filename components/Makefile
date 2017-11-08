@@ -18,12 +18,6 @@
 
 $(if $(realpath $(OCPI_CDK_DIR)),,$(error The OCPI_CDK_DIR environment variable is not set correctly (currently $(OCPI_CDK_DIR)).))
 
-Package=ocpi
-
-Tests =
-#	unit.test \
-#	genExpected.test
-
 # These are the components that would ship in an RCC-only version of the CDK.
 #  a. What we would consider a "bare minimum" of a runtime environment (file read, file write, etc)
 #  b. The ones needed by a default run of "make run" in the "examples" subdir

@@ -34,6 +34,15 @@ Language_ocl=cl
 
 CheckCDK='$(if $(realpath $(OCPI_CDK_DIR)),,\
   $(error The OCPI_CDK_DIR environment variable is not set correctly.))'
+
+if [ -z "$OCPI_PROJECT_REGISTRY_DIR"  ]; then
+  if [ -n "$OCPI_CDK_DIR" ]; then
+    export OCPI_PROJECT_REGISTRY_DIR=$OCPI_CDK_DIR/../project_registry
+  else
+    export OCPI_PROJECT_REGISTRY_DIR=/opt/opencpi/project_registry
+  fi
+fi
+
 # Print error message and exit
 function bad {
   echo Error: $* >&2
@@ -102,6 +111,42 @@ function check_dirtype {
   [ -z "$dirtype" ] && bad $1/Makefile is not correctly formatted.  No \"include *.mk\" lines.
   [ "$dirtype" != "$2" ] && bad $1/Makefile has unexpected type \"$dirtype\", expected \"$2\".
 }
+# Determine the path to the current project's top level
+function get_project_top {
+  project_top=`python -c "\
+import sys; sys.path.append(\"$OCPI_CDK_DIR/scripts/\");
+import ocpiutil; print ocpiutil.get_path_to_project_top();"`
+  [ "$project_top" != None ] || bad failure to find project containing path \"`pwd`\"
+  echo $project_top
+}
+# Create the link to a project in the installation registry (OCPI_PROJECT_REGISTRY_DIR)
+# based on the project's package name
+function register_project {
+  if [ -n "$1" ]; then
+    project="$1"
+  else
+    project="."
+  fi
+  reg_success=`python -c "\
+import sys; sys.path.append(\"$OCPI_CDK_DIR/scripts/\");
+import ocpiutil; print ocpiutil.register_project(\"$project\");"`
+  echo $reg_success
+}
+# Remove the link to a project in the installation registry which should be named
+# based on the project's package name. If a project does not exist with as
+# specified by $1, assume $1 is actually a package name/link name itself
+function unregister_project {
+  if [ -n "$1" ]; then
+    project="$1"
+  else
+    project="."
+  fi
+  unreg_success=`python -c "\
+import sys; sys.path.append(\"$OCPI_CDK_DIR/scripts/\");
+import ocpiutil; print ocpiutil.unregister_project(\"$project\");"`
+  echo $unreg_success
+}
+
 
 # This function sets the subdir variable based on the current directory
 # and whether the library/platform options are set. This is for use only
@@ -246,13 +291,38 @@ function ask {
 
 function do_project {
   set -e
-  if [ "$verb" == delete ]; then
+  if [ "$verb" == register ]; then
+    reg_success=`register_project $1`
+    if [ "$reg_success" != "True" ]; then
+      # Error message printed from python
+      exit 1
+      #bad failure to register project \"$1\": \(error message: \"$reg_success\"\)
+    fi
+    [ -z "$verbose" ] || echo "Successfully registered project \"$1\" in project registry."
+    return 0
+  elif [ "$verb" == unregister ]; then
+    pj_title=\"$1\"
+    [ -n "$1" ] || pj_title=current
+    ask unregister the $pj_title project/package from the registered projects registry
+    unreg_success=`unregister_project $1`
+    if [ "$unreg_success" != "True" ]; then
+      # Error message printed from python
+      exit 1
+      #bad failure to unregister project \"$1\": \(error message: \"$unreg_success\"\)
+    fi
+    [ -z "$verbose" ] || echo "Successfully unregistered project \"$1\" in project registry."
+    return 0
+  elif [ "$verb" == delete ]; then
     [ -e "$1" ] || bad the project \"$1\" does not exist
     [ -d "$1" ] || bad the project \"$1\" does not appear to be a directory
     get_dirtype $1
     [ -z "$dirtype" ] && bad the directory \"$directory\", is not project directory, no correct Makefile found
     [ "$dirtype" != project ] && bad the directory \"$directory\" appears to be a \"$dirtype\" rather than a project
     ask delete the \"$1\" project in the directory \"$directory\"
+    unreg_success=$(unregister_project $1 2> /dev/null)
+    if [ "$unreg_success" != "True" ]; then
+      [ -z "$verbose" ] || echo "Skipping 'unregister'. Project \"$1\" is not registered. Continuing with deletion."
+    fi
     rm -r -f $1
     [ -z "$verbose" ] || echo The project \"$1\" in the directory \"$directory\" has been deleted.
     return 0
@@ -278,13 +348,11 @@ function do_project {
     return 0
   fi
   [ -n "$dirtype" ] &&
-     bad the directory \"$directory\", where the project directory would be created, has an OpenCPI Makefile of type \"$dirtype\"\?\?
+     bad the directory \"$directory\" where the project directory would be created is inside an OpenCPI project
   [ -n "$top" -o -n "$platform" -o -n "$prebuilt" -o -n "$library" ] &&
     bad illegal options present for creating project
   noslash $1
   noexist $1
-  [ -z "$prefix" ] && prefix=${1}_
-  [ -z "$package" ] && package=local
   mkdir $1
   cd $1
   cat <<EOF > Project.exports
@@ -296,10 +364,22 @@ function do_project {
 EOF
   cat <<EOF > Project.mk
 # This Makefile fragment is for the "$1" project created at `pwd`
-ProjectName=$1
-ProjectPrefix=$prefix
-ProjectPackage=$package
+
+ProjectPrefix=$1
+
+# Package identifier is used in a hierachical fashion from Project to Libraries....
+# The PackageName, PackagePrefix and Package variables can optionally be set here:
+# PackageName defaults to the name of the directory
+# PackagePrefix defaults to local
+# Package defaults to PackageName.PackagePrefix
+${packagename:+PackageName=$packagename}
+${packageprefix:+PackagePrefix=$packageprefix}
+${package:+Package=$package}
 ProjectDependencies=${dependencies[@]}
+${liblibs:+Libraries=${liblibs[@]}}
+${includes:+IncludeDirs=${includes[@]}}
+${xmlincludes:+XmlIncludeDirs=${xmlincludes[@]}}
+${complibs:+ComponentLibraries=${complibs[@]}}
 EOF
   cat <<EOF > Makefile
 $CheckCDK
@@ -348,6 +428,8 @@ lib/
 **/doc*/*.lof
 **/doc*/*.lot
 run/
+exports/
+imports/
 *.pyc
 EOF
 
@@ -357,18 +439,29 @@ cat <<EOF > .gitattributes
 *.bit -diff
 EOF
 
-# Create IDE .project file (AV-1247)
-  cat << EOF > .project
-<?xml version="1.0" encoding="UTF-8"?>
-<projectDescription>
-  <name>$1</name>
-  <comment></comment>
-  <projects></projects>
-  <buildSpec></buildSpec>
-  <natures></natures>
-</projectDescription>
-EOF
-  [ -z "$verbose" ] || echo A new project named \"$1\" has been created in `pwd`, with prefix \"$prefix\" and package \"$package\".
+  if [ -n "$register_enable" ]; then
+    # Register a link to the project in the project registry
+    reg_success=`register_project`
+    if [ "$reg_success" != "True" ]; then
+      if [ -n "$keep" ]; then
+        echo The project directory has been created, but not registered \(which may be fine\).
+        echo If the project must be registered, resolve the conflict and run:
+        echo ocpidev register project $1
+      else
+        echo Removing the project directory \"$1\" due to errors.
+        cd ..
+        rm -r -f $1
+      fi
+      # Error message printed from python
+      exit 1
+      #bad failure to register project \"$1\": \(error message: \"$reg_success\"\)
+    fi
+  fi
+  # Generate exports and imports
+  make exports
+  make imports
+
+  [ -z "$verbose" ] || echo A new project named \"$1\" has been created in `pwd`.
 }
 
 function do_applications {
@@ -652,10 +745,31 @@ function make_library {
 # All tests created here in *.test directories will be built/run automatically
 # To limit the workers that actually get built, set the Workers= variable
 # To limit the tests that actually get built/run, set the Tests= variable
-${package:+Package=$package}
-${complibs:+ComponentLibraries=${complibs[@]}}
-${xmlincludes:+XmlIncludeDirs=${xmlincludes[@]}}
+
+# Any variable definitions that should apply for each individual worker/test
+# in this library belong in Library.mk
+
 include \$(OCPI_CDK_DIR)/include/library.mk
+EOF
+
+  cat <<EOF > $2/Library.mk
+# This is the $1 library
+
+# This makefile contains variable definitions that will apply when building each
+# individual worker and test in the libary
+
+# Package identifier is used in a hierachical fashion from Project to Libraries....
+# The PackageName, PackagePrefix and Package variables can optionally be set here:
+# PackageName defaults to the name of the directory
+# PackagePrefix defaults to package of parent (project)
+# Package defaults to PackageName.PackagePrefix
+${packagename:+PackageName=$packagename}
+${packageprefix:+PackagePrefix=$packageprefix}
+${package:+Package=$package}
+${liblibs:+Libraries=${liblibs[@]}}
+${complibs:+ComponentLibraries=${complibs[@]}}
+${includes:+IncludeDirs=${includes[@]}}
+${xmlincludes:+XmlIncludeDirs=${xmlincludes[@]}}
 EOF
   make --no-print-directory -C $2 ||
     bad library creation failed, you may want to do: ocpidev delete library $1
@@ -700,7 +814,7 @@ function do_library {
       bad the directory \"$subdir\" does not appear to be a library
     ask delete the library directory \"$subdir\"
     rm -r -f $subdir
-    if [ "$odirtype" == project -a "$subdir" != "$libbase" -a "$(ls $libbase)" == Makefile ] ; then
+    if [ "$odirtype" == project -a "$subdir" != "$libbase" -a "$(ls $libbase 2> /dev/null)" == Makefile ] ; then
       rm -r -f $libbase
     fi
     [ -z "$verbose" ] || echo The library named \"$1\" \(directory \"$subdir/\"\) has been deleted.
@@ -1050,7 +1164,7 @@ function do_test {
   #   if it does, delete it and its contents
   #     warn first/ask for confirmation
   if [ "$verb" == build ] ; then
-    make -C $testdir \
+    make -C $testdir ${buildClean:+clean}\
          ${hdlplats:+HdlPlatforms=" ${hdlplats[@]}"} \
          ${swplats:+RccPlatforms=" ${swplats[@]}"} \
          ${hwswplats:+RccHdlPlatforms=" ${hwswplats[@]}"}
@@ -1125,22 +1239,19 @@ EOF
 }
 
 function do_hdl_platforms {
-  case "$dirtype" in
-    (project)
-      subdir=hdl/platforms/
-      [ -d "hdl" -o "$verb" != create ] || make_hdl_dir
-      ;;
-    (hdl-platforms)subdir=./;;
-    (hdl-make) subdir=platforms/;; # This handles being inside the hdl subdirectory
-    (*) bad this command can only be issued in a project directory, hdl, or hdl/platforms directory;;
-  esac
   if [ "$verb" ==  build ]; then
-    make -C $subdir ${buildClean:+clean} \
+    cd $(get_project_top)
+    if [ -n "$buildClean" ]; then
+      make_target=clean
+    else
+      make_target=hdlplatforms
+    fi
+    make $make_target ${buildClean:+-C hdl/platforms} \
          ${hdlplats:+HdlPlatforms=" ${hdlplats[@]}"} \
          ${hdltargets:+HdlTargets=" ${hdltargets[@]}"}
     return 0;
   fi
-  bad The only verb available for primatives is build. Did you mean platform
+  bad The only verb available for primitives is build. Did you mean platform
 }
 
 function do_hdl_platform {
@@ -1186,6 +1297,7 @@ EOF
   cat <<EOF > $subdir$1/Makefile
 $CheckCDK
 # This is an HDL platform Makefile for the "$1" platform
+${includes:+IncludeDirs=${includes[@]}}
 ${xmlincludes:+XmlIncludeDirs=${xmlincludes[@]}}
 ${liblibs:+Libraries=${liblibs[@]}}
 ${others:+SourceFiles=${others[@]}}
@@ -1301,21 +1413,25 @@ EOF
 }
 
 function do_primitives {
-  echo $dirtype
-  case "$dirtype" in
-    (project) dir="hdl/primitives/";;
-    (hdl-primitives) dir=".";;
-    (*) bad this command can only be executed in a project or hdl/primitives/ directory;;
-  esac
   if [ "$verb" == build ]; then
+    pjtop=$(get_project_top)
+    if [ -n "$pjtop" ]; then
+      [ -z "$verbose" ] || echo "Building from: $pj_top"
+      cd $pjtop
+    fi
     echo $hdlplats
     echo $hdltargets
-    make -C $dir ${buildClean:+clean} \
+    if [ -n "$buildClean" ]; then
+      make_target=clean
+    else
+      make_target=hdlprimitives
+    fi
+    make $make_target ${buildClean:+-C hdl/primitives} \
                  ${hdlplats:+HdlPlatforms=" ${hdlplats[@]}"} \
                  ${hdltargets:+HdlTargets=" ${hdltargets[@]}"}
     return 0
   fi
-  bad The only verb available for primatives is build. Did you mean primative
+  bad The only verb available for primitives is build. Did you mean primitive
 }
 
 function do_primitive {
@@ -1340,7 +1456,6 @@ function do_primitive {
   if [ "$verb" == delete ]; then
     [ -d "$dir" ] || bad no $1 named \"$2\" exists in $mydir directory
     get_dirtype $dir
-    echo DT: $dirtype
     case "$dirtype" in
       (hdl-library|hdl-lib) [ "$1" = library ] || bad the primitive in $dir is not a library;;
       (hdl-core) [ "$1" = core ] || bad the primitive in $dir is not a core;;
@@ -1451,20 +1566,20 @@ EOF
 }
 
 function do_assemblies {
-  case "$dirtype" in
-    (project)
-      [ -d "hdl" -o "$verb" != create ] || make_hdl_dir
-      subdir=hdl/assemblies/
-      ;;
-    (hdl-assemblies)subdir=./;;
-    (hdl-make) subdir=assemblies/;;
-    (*) bad this command can only be issued in a project directory, hdl, or  hdl/assemblies directory;;
-  esac
   if [ "$verb" == build ]; then
-    make -C $subdir ${buildClean:+clean} ${hdlplats:+HdlPlatforms=" ${hdlplats[@]}"}
+    pjtop=$(get_project_top)
+    if [ -n "$pjtop" ]; then
+      cd $pjtop
+    fi
+    if [ -n "$buildClean" ]; then
+      make_target=clean
+    else
+      make_target=hdlassemblies
+    fi
+    make $make_target ${buildClean:+-C hdl/assemblies} ${hdlplats:+HdlPlatforms=" ${hdlplats[@]}"}
     return 0
   fi
-  bad The only verb available for primatives is build. Did you mean assembly
+  bad The only verb available for primitives is build. Did you mean assembly
 }
 
 function do_build_here {
@@ -1584,12 +1699,14 @@ function help {
   cat <<"EOF" >&2
 The ocpidev command performs developer functions on/in projects for OpenCPI.
 Usage is: ocpidev [options] <verb> [<noun> [<name> [<args>*]]]
-Verbs are: create, delete, build or clean
+Verbs are: create, delete, build, clean, register, unregister, or show
 Nouns are: project, application, spec, protocol, test, library, worker, or hdl <noun>
 After hdl, nouns are: assembly, card, slot, device, platform, or primitive <noun>
 After hdl primitive, nouns are: library or core
 Most commands may have a <name> argument.  Some have additional required or optional arguments.
 All the "delete" commands prompt for confirmation without the -f option (like rm).
+"(un)register" is used with the noun "project" to add/remove a project to the installation registry.
+For details on "show" run "ocpidev show --help"
 Options are single letters after a single hyphen, or hyphenated words after two hyphens.
 Single letter options are lower case for general options and upper case for creation options
 Options with * may occur multiple times
@@ -1613,10 +1730,13 @@ Options with * may occur multiple times
   -h <hdl-library>   A library underneath hdl/ to add assets to.  Default is "devices".
                      Valid <hdl-library> options are "devices", "cards" and "adapters".
  == when creating projects ==
-  -F <prefix>        The project prefix when creating projects, defaults to <name>_
-  -D <project>       *Another project that this project depends on.
+  -D <project>       *Another project that this project depends on (format: package.name)
+  --register         Install this project in the project registry (e.g. for all users to access)
  == when creating projects or libraries ==
-  -K <package>       The package name when creating projects or libraries
+  -N <pkg-name>      The package name, defaults to directory name
+  -F <pkg-prefix>    The package prefix, defaults to 'local' for projects.
+                     For a library, defaults to package of parent
+  -K <package>       The package name, defaults to pkg-name.pkg-prefix
  == when creating workers or devices (device workers) ==
   -S <spec>          The spec to use when it is not <worker>[-_]spec
   -P <platform>      The HDL platform for creating device workers or proxies that are specific
@@ -1637,18 +1757,17 @@ Options with * may occur multiple times
                      If specified, this may need to be modified later in the platform OWD.
   -u                 Do not use SDP. This legacy option should be used
                      when creating platforms that do not use SDP.
- == when creating workers, devices, or platforms ==
-  -I <include>       *A directory to search for language include files (e.g. C/C++ or Verilog)
-                     Adds to "IncludeDirs" in worker Makefile
-  -A <xml-include>   *A directory to search for XML files (adds to "XmlIncludeDirs" in Makefile)
  == when creating workers, devices, primitives, or platforms ==
   -O <other>         *Other source files to include (adds to "SourceFiles" in Makefile)
   -C <core>          *Core to be included by this asset (adds to "Cores" in Makefile)
-  -Y <library>       *Specify a primitive library that this asset depends on
-                     (adds to "Libraries" in Makefile).
- == when creating workers, devices, platforms, or libraries ==
+ == when creating workers, devices, platforms, libraries, or projects ==
+  -A <xml-include>   *A directory to search for XML files (adds to "XmlIncludeDirs" in Makefile)
+  -I <include>       *A directory to search for language include files (e.g. C/C++ or Verilog)
+                     (Adds to "IncludeDirs" in Makefile)
   -y <comp-library>  *Specify a component library to search for workers/devices/specs that this
                      asset references (adds to "ComponentLibraries" in Makefile)
+  -Y <library>       *Specify a primitive library that this asset depends on
+                     (adds to "Libraries" in Makefile).
  == when creating workers, devices, primitives, platforms, or assemblies ==
   -T <target>        *Specify one of the only allowed build-targets for this asset.
                      (adds to "OnlyTargets" in Makefile)
@@ -1712,13 +1831,21 @@ function takeval {
 }
 
 set -e
-[ "$#" == 0 -o "$1" == -help -o "$1" == --help -o \( "$1" == -h -a -z "$2" \) ] && help
+[ "$#" == 0 -o "$1" == -help -o "$1" == --help -o \( "$1" == -h -a -z "$2" \) ] && help_screen=true
 
 # Collect all flag arguments and do preliminary error checking that does not depend
 # on other potential flags.
 argv=($*)
+# Keep an untouched argv to be passed to other executables
+original_argv=($*)
 while [[ "${argv[0]}" != "" ]] ; do
-  if [[ "${argv[0]}" == -* ]] ; then
+  if [[ "${argv[0]}" == show ]] ; then
+    ocpishow_options=`sed 's/\(^\| \)show\( \|$\)/\1\2/' <<< "${original_argv[@]}"`
+    ocpishow $ocpishow_options
+    exit $?
+  elif [[ -n "$verb" && -n "$help_screen" ]]; then
+    help
+  elif [[ "${argv[0]}" == -* ]] ; then
     case "${argv[0]}" in
       (-v) verbose=1;;
       (-k) keep=1;;
@@ -1742,14 +1869,22 @@ while [[ "${argv[0]}" != "" ]] ; do
         library=hdl/$hdllibrary
         case "$hdllibrary" in
           (devices|cards|adapters) ;;
-          (*) bad the only valid libraries underneath hdl/ are devices, cards and adapters. ;;
+          (*)
+            error_msg="the only valid libraries underneath hdl/ are devices, cards and adapters."
+            if [ -n "$verb" ]; then
+              bad "$error_msg"
+            fi
+            postponed_error="$error_msg"
+            ;;
         esac
         hdlliboptset=1
         ;;
       (-s) standalone=1;;
       # project options
-      (-F) takeval prefix ;; #default is <project>
-      (-K) takeval package ;; #default is local.<project>
+      (-N) takeval packagename; wname=$packagename ;; #internally defaults to dirname (except components)
+      (-F) takeval packageprefix ;; #default is 'local' for projects (internally defaults to package-id of parent for libraries)
+      (-K) takeval package ;; #default is empty. internally, this defaults to prefix.name
+      (--register) register_enable=1 ;;
       (-D) takeval dependency; dependencies=(${dependencies[@]} ${dependency//:/ }) ;;
       # worker options
       (-S) takeval spec ;; # default for worker is <worker-name>-spec.xml
@@ -1781,7 +1916,6 @@ while [[ "${argv[0]}" != "" ]] ; do
       (-Q) takeval explat; explats=(${explats[@]} $explat) ;;
 
       (-U) takeval supports; supported=(${supported[@]} $supports) ;;
-      (-N) takeval wname ;;
       # hdl primitive options
       (-M) takeval module ;;
       (-B) takeval prebuilt ;;
@@ -1791,7 +1925,7 @@ while [[ "${argv[0]}" != "" ]] ; do
       # for apps
       (-X) xmlapp=1;;
       (-x) xmldirapp=1;;
-      (-help|--help)  help;;
+      (-help|--help)  help_screen=true;;
       # for building
       (--build-rcc|--rcc) buildRcc=1;;
       (--build-hdl|--hdl) buildHdl=1;;
@@ -1804,7 +1938,11 @@ while [[ "${argv[0]}" != "" ]] ; do
       (--build-hdl-rcc-platform|--hdl-rcc-platform) takeval hwswplat;  hwswplats="${hwswplats[@]} $hwswplat";;
       (--create-build-files) OCPI_CREATE_BUILD_FILES=1;;
       (*)
-        bad unknown option: ${argv[0]}
+        error_msg="unknown option: ${argv[0]}"
+        if [ -n "$verb" ]; then
+          bad "$error_msg"
+        fi
+        postponed_error="$error_msg"
         ;;
     esac
   elif [ -z "$verb" ]; then
@@ -1813,6 +1951,9 @@ while [[ "${argv[0]}" != "" ]] ; do
       (delete|rm) verb=delete;;
       (build) verb=build;;
       (clean) verb=build; buildClean=1;;
+      (reg|register) verb=register;;
+      (unreg|unregister) verb=unregister;;
+      (show) verb=show;;
       ("") bad missing command name;;
       (*) bad there is no command named \"${argv[0]}\";;
     esac
@@ -1852,7 +1993,7 @@ while [[ "${argv[0]}" != "" ]] ; do
       rcc="rcc "
     elif [ -n "$rcc" ]; then
       case "${argv[0]}" in
-        (platform) noun=${argv[0]} ;;
+        (platform|platforms) noun=${argv[0]} ;;
         (*) bad invalid argument \"${argv[0]}\" after rcc;;
       esac
     else
@@ -1866,6 +2007,12 @@ while [[ "${argv[0]}" != "" ]] ; do
   fi
   myshift
 done
+if [ -n "$help_screen" ]; then
+  help
+fi
+if [ -n "$postponed_error" ]; then
+  bad $postponed_error
+fi
 # option checking independent of noun and verb
 [ -n "$project" -a -n "$library" ] && bad the -l and -p options are mutually exclusive.
 [ -n "$standalone" -a -n "$library" ] && bad the -l and -s options are mutually exclusive.
@@ -1883,9 +2030,9 @@ fi
 [ -z $verb ] && bad missing verb, nothing to do
 [ -z "$noun" -a "$verb" != build ] && bad the \"$verb\" command must be followed by the type of asset
 # option testing dependent on noun and verb
-[ -z "$args" -a "$noun" != primitives -a "$noun" != assemblies  -a "$noun" != applications  -a "$noun" != platforms -a "$verb" != build ] && bad there must be a name argument after: $verb $hdl$noun
+[ -z "$args" -a "$noun" != primitives -a "$noun" != assemblies  -a "$noun" != applications  -a "$noun" != platforms -a "$verb" != build -a "$verb" != register -a "$verb" != unregister ] && bad there must be a name argument after: $verb $hdl$noun
 # force
-[ -n "$force" -a "$verb" != delete ] &&
+[ -n "$force" -a "$verb" != delete -a "$verb" != unregister ] &&
   bad the -f '(force)' option is only valid when deleting an asset
 # project
 [ -n "$project" -a \( "$noun" != spec -a "$noun" != protocol -a "$noun" != properties -a "$noun" != signals \) ] &&
@@ -1905,9 +2052,12 @@ fi
 # standalone
 [ -n "$standalone" -a \( "$noun" != library -a "$noun" != worker -a "$noun" != device \) ] &&
   bad the -s '(standalone - outside a project)' option is only valid when creating a library, a worker or a device
-# prefix
-[ -n "$prefix" -a \( "$verb" != create -o "$noun" != project \) ] &&
-  bad the -F '(prefix)' option is only valid when creating a project
+# packagename
+[ -n "$packagename" -a \( "$verb" != create -o "$noun" != project -a "$noun" != library -a "$noun" != worker -a "$noun" != device \) ] &&
+  bad the -N '(packagename)' option is only valid when creating a project or library
+# packageprefix
+[ -n "$packageprefix" -a \( "$verb" != create -o "$noun" != project -a "$noun" != library \) ] &&
+  bad the -F '(packageprefix)' option is only valid when creating a project or library
 # package
 [ -n "$package" -a \( "$verb" != create -o \( "$noun" != project -a "$noun" != library \) \) ] &&
   bad the -K '(package)' option is only valid when creating a project or library
@@ -1947,11 +2097,11 @@ fi
 [ \( -n "$hdlpart" -o -n "$timefreq" -o -n "$nosdp" \) -a \( "$verb" != create -o "$noun" != "platform" \) ] &&
   bad the -g, -q, or -u '(hdl-part, time-freq, no-sdp)' are only valid when creating an hdl platform.
 # includes
-[ \( -n "$includes" \) -a \( "$verb" != create -o \( "$noun" != "worker" -a "$noun" != "device" -a "$noun" != "platform" \) \) ] &&
-  bad the -I '(includes)' option is only valid when creating a worker, device, or platform
+[ \( -n "$includes" \) -a \( "$verb" != create -o \( "$noun" != "worker" -a "$noun" != "device" -a "$noun" != "platform" -a "$noun" != "library" -a "$noun" != "project" \) \) ] &&
+  bad the -I '(includes)' option is only valid when creating a worker, device, platform, library, or project
 # xml includes
-[ \( -n "$xmlincludes" \) -a \( "$verb" != create -o \( "$noun" != "worker" -a "$noun" != "device" -a "$noun" != "platform" -a "$noun" != "library" \) \) ] &&
-  bad the -A '(xmlincludes)' option is only valid when creating a worker, device, platform, or library
+[ \( -n "$xmlincludes" \) -a \( "$verb" != create -o \( "$noun" != "worker" -a "$noun" != "device" -a "$noun" != "platform" -a "$noun" != "library" -a "$noun" != "project" \) \) ] &&
+  bad the -A '(xmlincludes)' option is only valid when creating a worker, device, platform, library, or project
 # primitive library options
 [ \( -n "$hdlnoelab" -o -n "$hdlnolib" \) -a \( "$verb" != create -o \( "$noun" != "primitive" -o  "${args[0]}" != library \) \) ] &&
   bad the -H or -J '(hdlnolib, hdlnoelab)' options are only valid when creating an hdl primitive library.
@@ -1959,11 +2109,11 @@ fi
 [ \( -n "$rccstatprereqs" -o -n "$rccdynprereqs" \) -a \( "$verb" != create -o \( "$noun" != "worker" \) \) ] &&
   bad the -R or -r '(rcc static/dynamic prereq)' option is only valid when creating a proxy worker
 # libraries include
-[ \( -n "$liblibs" \) -a \( "$verb" != create -o \( "$noun" != "worker" -a "$noun" != "device" -a "$noun" != "platform" -a "$noun" != "primitive" \) \) ] &&
-  bad the -Y, '(libraries)' option is only valid when creating a worker, device, platform, or primitive
+[ \( -n "$liblibs" \) -a \( "$verb" != create -o \( "$noun" != "worker" -a "$noun" != "device" -a "$noun" != "platform" -a "$noun" != "primitive" -a "$noun" != "library" -a "$noun" != "project" \) \) ] &&
+  bad the -Y, '(libraries)' option is only valid when creating a worker, device, platform, primitive, library, or project
 # componentlibraries reference
-[ \( -n "$complibs" \) -a \( "$verb" != create -o \( \( "$noun" != "worker" -o -z "$slave" \) -a \( \( "$noun" != "device" \) -o \( -z "$emulates" -a -z "$supported" \) \) -a "$noun" != "platform" -a "$noun" != "library" \) \) ] &&
-  bad the -y, '(component-libraries)' option is only valid when creating a proxy worker, device emulator, subdevice, platform, or library
+[ \( -n "$complibs" \) -a \( "$verb" != create -o \( \( "$noun" != "worker" -o -z "$slave" \) -a \( \( "$noun" != "device" \) -o \( -z "$emulates" -a -z "$supported" \) \) -a "$noun" != "platform" -a "$noun" != "library" -a "$noun" != "project" \) \) ] &&
+  bad the -y, '(component-libraries)' option is only valid when creating a proxy worker, device emulator, subdevice, platform, library, or project
 # xml app
 [ \( -n "$xmlapp" -o -n "$xmldirapp" \) -a \( \( "$verb" != create -a "$verb" != delete \) -o "$noun" != "application" \) ] &&
   bad the -X '(xml/simple)' or -x '(application directory with xml)' option is only valid when creating an application
@@ -1978,6 +2128,12 @@ fi
 # Get dir type unless creating something standalone
 needname ${argv[0]} $verb $noun
 
+if [ "$verb" == "build" -a -z "$buildClean" ]; then
+  pjtop=$(get_project_top)
+  if [ -n "$pjtop" ]; then
+    (cd $pjtop && make imports)
+  fi
+fi
 # if verb is not build, if it is build and it has a noun, unless the noun is test with no argumnets
 if [ \( "$verb" != "build" \) -o \( -n "$noun" -a ! \( "$noun" == "test" -a -z "$args" \) \) ] ; then
   get_subdir

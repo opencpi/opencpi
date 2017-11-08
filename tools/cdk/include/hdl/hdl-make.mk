@@ -174,7 +174,7 @@ HdlGetFamily_core=$(call OcpiDbg,Entering HdlGetFamily_core($1,$2))$(strip \
 ################################################################################
 # $(call HdlGetFamilies,hdl-target)
 # Return all the families for this target
-# HdlGetFamilies=$(call OcpiDbg,Entering HdlGetFamilies($1))$(strip 
+# HdlGetFamilies=$(call OcpiDbg,Entering HdlGetFamilies($1))$(strip
 HdlGetFamilies=$(strip \
   $(foreach fs,$(call Unique,$(foreach t,$1,\
                          $(if $(findstring $(t),all),\
@@ -205,7 +205,7 @@ HdlCompile=\
   $(infox PRECOMPILE:$(HdlPreCompile))$(and $(HdlPreCompile), $(HdlPreCompile) &&)\
   export HdlCommand="set -e; $(HdlToolCompile)"; \
   $(TIME) bash -c \
-   '(/bin/echo Commands to execute tool:@"$$HdlCommand" | sed "s/\([^\\]\); */\1;@/g" | tr "@" "\n"; /bin/echo Output from executing commands above:;eval "$$HdlCommand") > $(HdlLog) 2>&1' \
+   '(/bin/echo Commands to execute tool:@@@"$$HdlCommand" | sed "s/\([^\\]\); */\1;@@@/g" | sed "s/@@@/\n/g"; /bin/echo Output from executing commands above:;eval "$$HdlCommand") > $(HdlLog) 2>&1' \
     > $(HdlTime) 2>&1; \
   HdlExit=$$?; \
   (cat $(HdlTime) | tr -d "\n"; $(ECHO) -n " at "; date +%T) >> $(HdlLog); \
@@ -300,20 +300,24 @@ HdlRecordCores=\
   $(and $(call HdlExists,$(dir $1)),\
   (\
    echo '\#' This generated file records cores necessary to build this $(LibName) $(HdlMode); \
-   echo $(foreach c,$(call HdlCollectCores,$(HdlTarget),HdlRecordCores),$(strip\
-   $(call OcpiAbsPath,$(call HdlCoreRefMaybeTargetSpecificFile,$c,$(HdlTarget))))) \
+   echo $(call OcpiPathsFromProjectTopOrImports,$(dir $1),\
+          $(foreach p,$(foreach c,$(call HdlCollectCores,$(HdlTarget),HdlRecordCores),$(strip\
+            $(call HdlCoreRefMaybeTargetSpecificFile,$c,$(HdlTarget)))),$p)); \
   ) > $(call HdlRmRv,$1).cores;)
 
 # Collect a list of cores that this asset depends on. If the path to the core
 # is correct as is, use that path. Otherwise, use HdlCoreRef to determine the
 # path to the core.
-HdlCollectCores=$(infox CCCC:$(SubCores_$(HdlTarget)):$1:$2)$(call Unique,\
-		  $(foreach a,\
-                   $(foreach c,$(SubCores_$(HdlTarget)),$(infox ZC:$c)$c \
-	             $(foreach r,$(basename $(call HdlCoreRefMaybeTargetSpecificFile,$c,$1)),$(infox ZR:$r)\
-                       $(foreach f,$(call HdlExists,$(call HdlRmRv,$r).cores),$(infox ZF:$f)\
-                          $(foreach z,$(shell grep -v '\#' $f),$(infox found:$z)$z)))),$a))
-
+HdlCollectCores=$(infox CCCC:$(SubCores_$(HdlTarget)):$1:$2)$(strip $(call Unique,\
+  $(foreach a,\
+    $(foreach c,$(SubCores_$(HdlTarget)),$(infox ZC:$c)$c \
+      $(foreach r,$(basename $(call HdlCoreRefMaybeTargetSpecificFile,$c,$1)),$(infox ZR:$r)\
+        $(foreach f,$(call HdlExists,$(call HdlRmRv,$r).cores),$(infox ZF:$f)\
+          $(foreach p,$(call OcpiAbsPathToContainingProject,$f),\
+            $(foreach z,$(shell grep -v '\#' $f),$(infox found:$z)\
+              $(if $(filter /%,$z),\
+                $z,\
+                $p/$z )))))),$a)))
 
 #########################################################################################################
 # Record all of the libraries and sources required for this asset (onl when a tool requires this is done)
@@ -334,7 +338,7 @@ HdlRecordLibraries=\
   (\
    echo '\#' This generated file records libraries necessary to build this $(LibName) $(HdlMode); \
    $(foreach l,$(HdlLibrariesInternal),\
-     echo $(if $(filter /%,$l),$(notdir $l),$l);) \
+     echo $(if $(filter /%,$l),$(notdir $l),$(call OcpiPathBetweenAssetsMaybeInDiffProjects,.,$l));) \
   ) > $(patsubst %/,%,$(call HdlRmRv,$1)).libs;)\
 
 # Extract the list of libraries required by an asset/library $2 for target $1
@@ -380,7 +384,7 @@ HdlRecordSources=\
   (\
    echo '\#' This generated file records sources necessary to build this $(LibName) $(HdlMode); \
    $(foreach s,$(if $(filter $(HdlMode),core),$(wildcard $(CoreBlackBoxFiles)),$(HdlSources)),echo $(notdir $s);) \
-  ) > $(patsubst %/,%,$(call HdlRmRv,$1)).sources ;)\
+  ) > $(patsubst %/,%,$(call HdlRmRv,$1)).sources ;)
 
 # Here, we use HdlLibraryRefDir to determine the path to the library
 # asset $2 in question. If we are working with an absolute path,
@@ -440,17 +444,17 @@ HdlTargetSrcFiles=$(and $(filter-out library core,$(HdlMode)),\
 
 $(OutDir)target-%/generics.vhd: $$(ImplXmlFile) | $(OutDir)target-%
 	$(AT)echo Generating the VHDL constants file for config $(ParamConfig): $@
-	$(AT)$(OcpiGen) -D $(@D) \
+	$(AT)$(call OcpiGen, -D $(@D) \
 	                $(and $(Assembly),-S $(Assembly)) $(and $(Platform),-P $(Platform)) \
 	                $(and $(PlatformDir),-F $(PlatformDir)) \
-	                -g$(ParamConfig) $(and $(filter verilog,$(HdlLanguage)),-w) $(ImplXmlFile)
+	                -g$(ParamConfig) $(and $(filter verilog,$(HdlLanguage)),-w) $(ImplXmlFile))
 
 $(OutDir)target-%/generics.vh: $$(ImplXmlFile) | $(OutDir)target-%
 	$(AT)echo Generating the Verilog constants file for config $(ParamConfig): $@
-	$(AT)$(OcpiGen) -D $(dir $@) \
+	$(AT)$(call OcpiGen, -D $(dir $@) \
 	                $(and $(Assembly),-S $(Assembly)) $(and $(Platform),-P $(Platform)) \
 	                $(and $(PlatformDir),-F $(PlatformDir)) \
-	                -g$(ParamConfig) $(and $(filter vhdl,$(HdlLanguage)),-w) $(ImplXmlFile)
+	                -g$(ParamConfig) $(and $(filter vhdl,$(HdlLanguage)),-w) $(ImplXmlFile))
 
 ifneq (,)
 # Establish where the platforms are
@@ -486,10 +490,10 @@ define HdlPrepareAssembly
   ImplFile:=$$(GeneratedDir)/$$(Worker)-assy$$(HdlSourceSuffix)
   $$(ImplFile): $$$$(ImplXmlFile) | $$$$(GeneratedDir)
 	$(AT)echo Generating the $$(HdlMode) source file: $@ from $$<
-	$(AT)$$(OcpiGen) -D $$(GeneratedDir) \
+	$(AT)$$(call OcpiGen, -D $$(GeneratedDir) \
                          $(and $(Assembly),-S $(Assembly)) $(and $(Platform),-P $(Platform)) \
 			 $(and $(PlatformDir),-F $(PlatformDir)) \
-                         -a $$<
+                         -a $$<)
   # 4. Make the generated assembly source file one of the files to compile
   WorkerSourceFiles=$$(ImplFile)
   # 5. Define the variable used for dependencies when the worker is actually built

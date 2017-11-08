@@ -16,6 +16,16 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
+################################################################################
+# Name of the tool that needs to be installed to use this compilation flow
+HdlToolName_xsim=Vivado
+
+# This variable is needed when including this file
+# for the sole purpose of extracting variable information
+# E.g. if you want to know some information about a supported tool,
+# you should not need the corresponding toolchain installed
+ifndef __ONLY_TOOL_VARS__
+
 include $(OCPI_CDK_DIR)/include/hdl/xilinx.mk
 
 ################################################################################
@@ -188,4 +198,5 @@ $$(BitName): $(XsimPlatformDir)/target-xsim/$(XsimPlatform) $(XsimTargetDir)/mkO
 	$(AT)echo Building xsim simulation executable: $$(BitName).  Details in $$(XsimAppName)-xelab.out
 	$(AT)$$(HdlCompile)
 endef
+endif
 endif

@@ -1,0 +1,4 @@
+<HdlAssembly>
+  <Instance Worker='file_read' connect='capture'/>
+  <Instance Worker='capture'/>
+</HdlAssembly>
