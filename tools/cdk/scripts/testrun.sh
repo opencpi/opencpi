@@ -63,18 +63,21 @@ function docase {
   }
   [ -n "$header" ] || {
     header=1
-    echo Performing test cases for $spec on platform $platform 1>&2
-    echo '  'Functions performed in one pass are: $run $verify $view 1>&2
-  }
+    $OcpiEcho -n "Performing test cases for $spec on platform "
+    $tput setaf 4
+    $OcpiEcho -n $platform
+    $tput sgr0
+    echo ".  Functions are: $run $verify $view"
+  } 1>&2
   r=0
   [ -z "$run" ] || {
     local output outputs timearg
     for o in ${ports[@]}; do
-      output=" -pfile_write"
+      output="file_write"
       [ ${#ports[@]} != 1 ] && output+="_from_$o"
-      outputs+="$output=fileName=$3.$4.$2.$1.$o.out"
+      outputs+=" -p$output=fileName=$3.$4.$2.$1.$o.out"
     done
-    echo '  'Executing $component test case: "$3.$4" on platform $platform using worker $2.$1... 1>&2
+    echo '  'Executing case "$3.$4" using worker $2.$1... 1>&2
     if [ $5 != 0 ]; then
       timearg=--timeout=$5
     elif [ $6 != 0 ]; then
@@ -82,8 +85,11 @@ function docase {
     elif [ -n "$TestTimeout" ]; then
       timearg=--timeout=$TestTimeout
     fi
+    lockrcc=
+    [ "$OCPI_ENABLE_REMOTE_DISCOVERY" = 1 ] && lockrcc="-c=rcc0 -c$component="
     cmd=('OCPI_LIBRARY_PATH=../../../lib/rcc:../../../lib/ocl:../../gen/assemblies:$OCPI_CDK_DIR/lib/components/rcc' \
-         '$OCPI_CDK_DIR/bin/$OCPI_TOOL_DIR/'ocpirun -d -v -m$component=$1 -w$component=$2 -P$component=$platform \
+             '$OCPI_CDK_DIR/bin/$OCPI_TOOL_DIR/'ocpirun -d -v -m$component=$1 -w$component=$2 \
+	         $lockrcc -P$component=$platform \
 	         --sim-dir=$3.$4.$2.$1.simulation $timearg \
 		 --dump-file=$3.$4.$2.$1.props $outputs ../../gen/applications/$3.$4.xml)
     [ -z "$remote" ] && rm -f -r $3.$4.$2.$1.*

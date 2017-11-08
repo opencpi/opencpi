@@ -616,6 +616,8 @@ OCPI_DATA_TYPES
 	  m_properties.set8Register(buffer_count, SDP::Properties,
 				    OCPI_UTRUNCATE(uint8_t, myDesc.nBuffers));
 	  m_properties.set32Register(buffer_size, SDP::Properties, myDesc.dataBufferPitch);
+	  m_properties.set8Register(readsAllowed, SDP::Properties,
+				    getData().data.options & (1<<OCPI::RDT::FlagIsMeta) ? 1 : 0);
 	} else {
 	  // Here is where we can setup the OCDP producer/user
 	  ocpiAssert(m_properties.get32Register(foodFace, OcdpProperties) == 0xf00dface);

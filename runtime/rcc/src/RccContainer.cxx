@@ -66,7 +66,7 @@ Container(const char *a_name, const OA::PValue* /* params */)
 	       //	       (1 << OR::FlagIsCounting) | // ask for counting flags
 	       (1 << OR::ActiveFlowControl) | (1 << OR::ActiveMessage) | (1 << OR::Passive),
 	       //	       (1 << OR::FlagIsCounting) | // ask for counting flags
-	       (1 << OR::ActiveFlowControl) | (1 << OR::ActiveMessage) | (1 << OR::Passive));
+	       (1 << OR::ActiveFlowControl) | (1 << OR::ActiveMessage) | (1 << OR::FlagIsMetaOptional));
   addTransport("ocpi-smb-pio", system, OR::ActiveMessage, OR::ActiveMessage,
 	       (1 << OR::ActiveFlowControl) | (1 << OR::ActiveMessage) | (1 << OR::Passive),
 	       (1 << OR::ActiveFlowControl) | (1 << OR::ActiveMessage) | (1 << OR::Passive));
@@ -75,7 +75,7 @@ Container(const char *a_name, const OA::PValue* /* params */)
 	       (1 << OR::ActiveFlowControl) | (1 << OR::ActiveMessage) | (1 << OR::Passive));
   addTransport("ocpi-socket-rdma", NULL, OR::ActiveMessage, OR::ActiveMessage,
 	       (1 << OR::ActiveFlowControl) | (1 << OR::ActiveMessage) | (1 << OR::Passive),
-	       (1 << OR::ActiveFlowControl) | (1 << OR::ActiveMessage) | (1 << OR::Passive));
+	       (1 << OR::ActiveFlowControl) | (1 << OR::ActiveMessage) | (1 << OR::FlagIsMetaOptional));
   addTransport("ocpi-udp-rdma", NULL, OR::ActiveMessage, OR::ActiveMessage,
 	       (1 << OR::ActiveFlowControl) | (1 << OR::ActiveMessage) | (1 << OR::Passive),
 	       (1 << OR::ActiveFlowControl) | (1 << OR::ActiveMessage) | (1 << OR::Passive));

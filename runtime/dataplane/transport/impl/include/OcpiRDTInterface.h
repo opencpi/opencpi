@@ -36,7 +36,6 @@ namespace OCPI {
     // These roles are not supported for all protocols, but those that need it
     // specify it.  Roughly, the order is the order of "goodness" when there is
     // no other basis for choosing a role
-    // !!!!****** Adjust the role name strings in ContainerPort.cxx if you change this.
     enum PortRole {
       ActiveMessage,     // Port will move data
                          // For a consumer, this means pulling data from the producer.
@@ -61,15 +60,14 @@ namespace OCPI {
     // These options are smaller issues than port roles, and may apply across roles
     // The low order bits are used for what roles are possible for a port (during negotiation)
     enum ProtocolOptions {
-      FeedbackIsCount = MaxRole, // The doorbell indicating feedback is a count of buffers rather than a constant
+      FeedbackIsCount = MaxRole, // The doorbell a count of buffers rather than a constant
       MandatedRole,              // Role is not a preference, but a mandate
       FlagIsMeta,                // Flag is compressed metadata
       FlagIsCounting,            // Flag is an incrementing counter
+      FlagIsMetaOptional,        // This mode is optional: FIXME have a more general scheme
       MaxOption
     };
-
-    //    const uint32_t MAX_EPS_SIZE=256;
-    //    const uint32_t MAX_PROTOS_SIZE=64;
+    
     struct OutOfBandData {
       uint64_t               port_id;     // Port Id
       char                   oep[256];    // Originators endpoint

@@ -268,7 +268,7 @@ protected:
     return isProvider ?
       (e && !strcmp(e, "1") ? 0 : 1 << OCPI::RDT::ActiveFlowControl) |
       (1 << OCPI::RDT::ActiveMessage) | (1 << OCPI::RDT::FlagIsMeta) :
-      1 << OCPI::RDT::ActiveMessage;
+      1 << OCPI::RDT::ActiveMessage  | (1 << OCPI::RDT::FlagIsMetaOptional) ;
   }
   // Our added-value wait-for-process call.
   // If "hang", we wait for the process to end, and if it stops, we term+kill it.
@@ -983,7 +983,7 @@ public:
   void
   set(RegisterOffset offset, size_t bytes, uint32_t data, uint32_t *status) {
     ocpiDebug("SDP Accessor write 0x%x (%d) for offset 0x%zx of %zu bytes", data, data, offset, bytes);
-    sdpRequest(false, offset, bytes, (uint8_t *)&data + (offset & 3), status);
+    sdpRequest(false, offset, bytes, (uint8_t *)&data/* + (offset & 3)*/, status);
     ocpiDebug("SDP Accessor write from offset %zx complete", offset);
   }
   uint64_t

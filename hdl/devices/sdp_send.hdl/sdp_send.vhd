@@ -357,6 +357,8 @@ g0: for i in 0 to sdp_width_c-1 generate
     begin
       return sdp_remotes(r).empty /= 0 or (flag_not_empty = '1' and flag_out = r);
     end remote_is_ready;
+    -- Start a segment, given how many DWs are left in the message,
+    -- and set the left-in-segment, left-in-message, and segment header count
     procedure begin_segment(ndws_left : meta_dw_count_t) is
       variable ndws : unsigned(ndws_left'range);
     begin
@@ -373,17 +375,35 @@ g0: for i in 0 to sdp_width_c-1 generate
       sdp_msg_dws_left_r     <= ndws_left - ndws; -- this does no harm in non-data phases
       sdp_segment_count_r    <= resize(ndws - 1, sdp_segment_count_r'length);
     end procedure begin_segment;
-    -- Start a segment, given how many DWs are left in the message,
-    -- and set the left-in-segment, left-in-message, and segment header count
+    -- Enter the flag phase
+    procedure begin_flag(flag : dword_t) is
+    begin
+      sdp_segment_count_r   <= (others => '0');
+      sdp_remote_phase_r    <= flag_e;
+      sdp_out_r(flag'range) <= flag;
+      -- Advance the buffer pointer here (not in flag_e) to pipeline the bram address
+      if r = sdp_last_remote then
+        if sdp_msg_idx_r = props_in.buffer_count - 1 then
+          sdp_msg_idx_r    <= (others => '0');
+        else
+          sdp_msg_idx_r    <= sdp_msg_idx_r + 1;
+        end if;
+      end if;
+    end procedure begin_flag;
     procedure begin_meta is
       variable meta :std_logic_vector(55 downto 0)
         := slv(slv(md_out.truncate),8) & slv(slv(md_out.eof),8) & md_out.opcode &
         std_logic_vector(resize(md_out.length, 32));
+      variable metaflag : metadata_t;
     begin
-      sdp_out_r <= std_logic_vector(meta(sdp_out_r'range));
-      sdp_remote_phase_r <= meta_e;
+      if props_in.readsAllowed(0) = '1' then
+        begin_flag(meta2slv(md_out));
+      else
+        sdp_out_r <= std_logic_vector(meta(sdp_out_r'range));
+        sdp_remote_phase_r <= meta_e;
+        begin_segment(to_unsigned(sdp_meta_ndws_c, meta_dw_count_t'length));
+      end if;
       sdp_out_valid_r    <= btrue;
-      begin_segment(to_unsigned(sdp_meta_ndws_c, meta_dw_count_t'length));
     end procedure begin_meta;
     -- initialization for sending the current message to the indicated remote
     procedure begin_remote is
@@ -489,17 +509,7 @@ g0: for i in 0 to sdp_width_c-1 generate
                     begin_meta;
                   end if;
                 when meta_e =>
-                  sdp_segment_count_r <= (others => '0');
-                  sdp_remote_phase_r  <= flag_e;
-                  sdp_out_r           <= slv1(sdp_out_r'length);
-                  -- Advance the buffer pointer here (not in flag_e) to pipeline the bram address
-                  if r = sdp_last_remote then
-                    if sdp_msg_idx_r = props_in.buffer_count - 1 then
-                      sdp_msg_idx_r    <= (others => '0');
-                    else
-                      sdp_msg_idx_r    <= sdp_msg_idx_r + 1;
-                    end if;
-                  end if;
+                  begin_flag(slv1(dword_t'length));
                 when flag_e =>
                   -- end of transferring a message to a remote
                   if r = sdp_last_remote then

@@ -61,7 +61,7 @@ fi
 
 echo Filename: $1 1>&2 
 read assyname contname<<EOF
-`echo $1 | sed 's/^\(.*\)_modelsim.*$/\1 &/'`
+`echo $1 | sed 's/^.*://' | sed 's/^\(.*\)_modelsim.*$/\1 &/'`
 EOF
 echo Assembly: $assyname  Container: $contname 1>&2
 shift

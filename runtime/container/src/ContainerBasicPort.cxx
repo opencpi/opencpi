@@ -326,7 +326,7 @@ namespace OCPI {
     // The existing settings are either NoRole, a preference, or a mandate
     // static method
     const char *BasicPort::
-    chooseRoles(OR::PortRole &uRole, unsigned uOptions, OR::PortRole &pRole, unsigned pOptions)
+    chooseRoles(OR::PortRole &uRole, unsigned &uOptions, OR::PortRole &pRole, unsigned &pOptions)
     {
       // FIXME this relies on knowledge of the values of the enum constants
       static OR::PortRole otherRoles[] = { OCPI_RDT_OTHER_ROLES };
@@ -335,6 +335,18 @@ namespace OCPI {
       OR::PortRole
         pOther = otherRoles[pRole],
         uOther = otherRoles[uRole];
+      if (uOptions & (1 << OCPI::RDT::FlagIsMeta)) {
+	if (!(pOptions & ((1 << OCPI::RDT::FlagIsMeta) | (1 << OCPI::RDT::FlagIsMetaOptional))))
+	  return "Incompatible Metadata mode: input side cannot do flag-is-meta, output must";
+	pOptions |= (1 << OCPI::RDT::FlagIsMeta);
+      } else if (uOptions & (1 << OCPI::RDT::FlagIsMetaOptional)) {
+	if (pOptions & ((1 << OCPI::RDT::FlagIsMeta) | (1 << OCPI::RDT::FlagIsMetaOptional))) {
+	  pOptions |= (1 << OCPI::RDT::FlagIsMeta);
+	  uOptions |= (1 << OCPI::RDT::FlagIsMeta);
+	} else
+	  uOptions &= ~(1 << OCPI::RDT::FlagIsMeta);
+      } else if (pOptions & (1 << OCPI::RDT::FlagIsMeta))
+	return "Incompatible Metadata mode: output side cannot do flag-is-meta, input must";
       if (pOptions & (1 << OR::MandatedRole)) {
         // provider has a mandate
         ocpiAssert(pRole != OR::NoRole);
@@ -971,14 +983,14 @@ namespace OCPI {
     }
 
     void BasicPort::
-    applyConnection(const Transport &t, size_t bufferSize) {
+    applyConnection(const Transport &t, size_t a_bufferSize) {
       OR::Descriptors &d = getData().data;
       d.role = isProvider() ? t.roleIn : t.roleOut;
       d.options = isProvider() ? t.optionsIn : t.optionsOut;
       if (!d.desc.oob.oep[0])
 	strcpy(d.desc.oob.oep, t.transport.c_str());
       assert(!strncmp(d.desc.oob.oep, t.transport.c_str(), strlen(t.transport.c_str())));
-      setBufferSize(bufferSize);
+      setBufferSize(a_bufferSize);
     }
 
     uint8_t *BasicPort::

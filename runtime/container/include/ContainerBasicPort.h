@@ -230,8 +230,8 @@ typedef int pthread_spinlock_t;
       static void packPortDesc(const OCPI::RDT::Descriptors&  port, std::string &out ) throw ();
       static bool unpackPortDesc(const std::string& desc, OCPI::RDT::Descriptors &desc_storage)
         throw ();
-      static const char *chooseRoles(OCPI::RDT::PortRole &uRole, unsigned uOptions,
-				     OCPI::RDT::PortRole &pRole, unsigned pOptions);
+      static const char *chooseRoles(OCPI::RDT::PortRole &uRole, unsigned &uOptions,
+				     OCPI::RDT::PortRole &pRole, unsigned &pOptions);
       OCPI::API::ExternalBuffer
         *getBuffer(uint8_t *&data, size_t &length, uint8_t &opCode, bool &end),
 	*getBuffer(uint8_t *&data, size_t &length);

@@ -142,8 +142,10 @@
 	// since the SDP is only attached as master to the S_AXI_HP ports.
 	// Thus we only allow ActiveMessage since the SDP BRAMs are not memory mapped.
 	// (M_AXI_GP0/1 is dedicated to the control plane).
-	uint32_t dmaOptions(ezxml_t /*icImplXml*/, ezxml_t /*icInstXml*/, bool /*isProvider*/) {
-	  return (1 << OCPI::RDT::ActiveMessage) | (1 << OCPI::RDT::FlagIsMeta);
+	uint32_t dmaOptions(ezxml_t /*icImplXml*/, ezxml_t /*icInstXml*/, bool isProvider) {
+	  return isProvider ?
+	    (1 << OCPI::RDT::ActiveMessage) | (1 << OCPI::RDT::FlagIsMeta) :
+	    (1 << OCPI::RDT::ActiveMessage) | (1 << OCPI::RDT::FlagIsMetaOptional);
 	}
 
 	// Scan the buffer and identify the start of the sync pattern

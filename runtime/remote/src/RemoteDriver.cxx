@@ -249,11 +249,13 @@ public:
     for (const char *p = a_transports; *p; p++)
       if (*p == '|')
 	nTransports++;
+#if 0
     m_transports.resize(nTransports);
     OC::Transport *t = &m_transports[0];
+#endif
     char transport[strlen(a_transports)+1];
     char id[strlen(a_transports)+1];
-    for (unsigned n = nTransports; n; n--, t++) {
+    for (unsigned n = nTransports; n; n--) { // , t++) {
       int nChars, rv;
       unsigned roleIn, roleOut;
       uint32_t optionsIn, optionsOut;
