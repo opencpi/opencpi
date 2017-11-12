@@ -250,6 +250,7 @@
   </property>
   <property name='do_dcxo_tune_coarse'                   type='ulong'                  writable='1' description='Do DCXO coarse tuning.'/>
   <property name='do_dcxo_tune_fine'                     type='ulong'                  writable='1' description='Do DCXO fine tuning.'/>
+  <property name='temperature'                           type='long'      volatile='1'              description='Get the temperature.'/>
 
   <!--****** PROPERTIES CORRESPONDING TO libad9361 "ADVANCED" API (ad9361.h) *****-->
 
@@ -280,4 +281,6 @@
   <property name='tx_ref_divider'   type='enum' enums='1, HALF, FOURTH, 2' volatile='1'/>
   <property name='fpga_data_mode' type='enum' enums='cmos_singleport_halfduplex,cmos_singleport_fullduplex,cmos_dualport_halfduplex,cmos_dualport_fullduplex,lvds_dualport_fullduplex,invalid' volatile='1'/>
   <property name='DATA_CLK_P_rate_Hz' type='double' volatile='1'/>
+
+
 </componentspec>

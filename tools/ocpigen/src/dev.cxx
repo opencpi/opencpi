@@ -149,9 +149,10 @@ emitPortSignalsDir(FILE *f, bool output, const char *indent, bool &any, std::str
   OU::format(port, output ? typeNameOut.c_str() : typeNameIn.c_str(), "");
   std::string conn;
   if (other)
-    conn = m_master != output ?
-      other->m_connection.m_slaveName.c_str() : other->m_connection.m_masterName.c_str();
-
+    OU::format(conn,
+	       m_master != output ?
+	       other->m_connection.m_slaveName.c_str() :
+	       other->m_connection.m_masterName.c_str(), "");
   if (!m_master)
     output = !output; // signals that are included are not relevant
   for (SignalsIter si = m_signals.begin(); si != m_signals.end(); si++)
@@ -212,6 +213,8 @@ emitExtAssignment(FILE *f, bool int2ext, const std::string &extName, const std::
     std::string theirs = intName;
     OU::formatAdd(theirs, "(%zu)", intAt.m_index + n);
     for (SignalsIter si = m_signals.begin(); si != m_signals.end(); si++)
+      if ((int2ext && (*si)->m_direction == Signal::IN) ||
+	  (!int2ext && (*si)->m_direction == Signal::OUT))
       fprintf(f, "  %s.%s <= %s.%s;\n",
 	      int2ext ? ours.c_str() : theirs.c_str(), (*si)->cname(),
 	      int2ext ? theirs.c_str() : ours.c_str(), (*si)->cname());

@@ -31,21 +31,21 @@ Configurations=base ml605_flash ml605_lime_tx \
                ml605_zipper_fmc_lpc_tx \
                ml605_zipper_fmc_hpc_rx_tx \
                ml605_zipper_fmc_hpc_rx \
-               ml605_zipper_fmc_hpc_tx
-#               ml605_fmcomms3_fmc_hpc_rx \
-#               ml605_fmcomms3_fmc_hpc_rx2 \
-#               ml605_fmcomms3_fmc_hpc_tx \
-#               ml605_fmcomms3_fmc_hpc_tx2 \
-#               ml605_fmcomms3_fmc_hpc_rx_tx \
-#               ml605_fmcomms3_fmc_hpc_rx_tx2 \
-#               ml605_fmcomms3_fmc_hpc_rx2_tx \
-#               ml605_fmcomms3_fmc_hpc_rx2_tx2 \
-#               ml605_fmcomms3_fmc_lpc_rx \
-#               ml605_fmcomms3_fmc_lpc_rx2 \
-#               ml605_fmcomms3_fmc_lpc_tx \
-#               ml605_fmcomms3_fmc_lpc_tx2 \
-#               ml605_fmcomms3_fmc_lpc_rx_tx \
-#               ml605_fmcomms3_fmc_lpc_rx_tx2 \
-#               ml605_fmcomms3_fmc_lpc_rx2_tx \
-#               ml605_fmcomms3_fmc_lpc_rx2_tx2
+               ml605_zipper_fmc_hpc_tx \
+               ml605_fmcomms3_fmc_hpc_rx \
+               ml605_fmcomms3_fmc_hpc_rx2 \
+               ml605_fmcomms3_fmc_hpc_tx \
+               ml605_fmcomms3_fmc_hpc_tx2 \
+               ml605_fmcomms3_fmc_hpc_rx_tx \
+               ml605_fmcomms3_fmc_hpc_rx_tx2 \
+               ml605_fmcomms3_fmc_hpc_rx2_tx \
+               ml605_fmcomms3_fmc_hpc_rx2_tx2 \
+               ml605_fmcomms3_fmc_lpc_rx \
+               ml605_fmcomms3_fmc_lpc_rx2 \
+               ml605_fmcomms3_fmc_lpc_tx \
+               ml605_fmcomms3_fmc_lpc_tx2 \
+               ml605_fmcomms3_fmc_lpc_rx_tx \
+               ml605_fmcomms3_fmc_lpc_rx_tx2 \
+               ml605_fmcomms3_fmc_lpc_rx2_tx \
+               ml605_fmcomms3_fmc_lpc_rx2_tx2
 include $(OCPI_CDK_DIR)/include/hdl/hdl-platform.mk

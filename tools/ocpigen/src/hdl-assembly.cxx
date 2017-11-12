@@ -827,7 +827,7 @@ emitAssyHDL() {
     fprintf(f, "  signal unused : std_logic_vector(0 to %zu);\n", unused - 1);
   if (m_language == VHDL)
     fprintf(f, "begin\n");
-  // Set assign external signals where necessary
+  // Assign external signals where necessary
   for (ConnectionsIter ci = m_assembly->m_connections.begin();
        ci != m_assembly->m_connections.end(); ci++) {
     Connection &c = **ci;

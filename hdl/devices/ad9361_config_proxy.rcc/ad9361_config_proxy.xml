@@ -46,6 +46,7 @@
   <specproperty name='trx_load_enable_fir'                   writesync='true'/>
   <specproperty name='do_dcxo_tune_coarse'                   writesync='true'/>
   <specproperty name='do_dcxo_tune_fine'                     writesync='true'/>
+  <specproperty name='temperature'           readsync='true'                 />
 
   <!--****** PROPERTIES CORRESPONDING TO libad9361 "ADVANCED" API (ad9361.h) *****-->
   <specproperty name='bist_loopback'         readsync='true' writesync='true'/>

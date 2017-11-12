@@ -54,25 +54,25 @@ HdlDevice(ezxml_t xml, const char *file, const char *parentFile, Worker *parent,
     return;
   // Parse submodule support for users - note that this information is only used
   // for platform configurations and containers, but we do a bit of error checking here
+  // We need to compute the ordinal for each device type we support
+  std::map<const char *, unsigned, OU::ConstCharComp> countPerSupportedWorkerType;
   for (ezxml_t spx = ezxml_cchild(m_xml, "supports"); spx; spx = ezxml_next(spx)) {
     std::string worker;
     if ((err = OE::checkAttrs(spx, "worker", NULL)) ||
 	(err = OE::checkElements(spx, "connect", NULL)) ||
 	(err = OE::getRequiredString(spx, worker, "worker")))
       return;
-    //    std::string supFile;
-    //    OU::format(supFile, "../%s.hdl/%s.xml", worker.c_str(),  worker.c_str());
-    // Note that a supporting subdevice must be in a library built AFTER the
-    // device it is supporting since it relies on the export of the xml of the
-    // device it supports.
-    //    OU::format(supFile, "%s.xml", worker.c_str());
-    // New device type, which must be a file.
+    // Record how many each worker type we support and remember the ordinal
+    auto pair = countPerSupportedWorkerType.insert(std::make_pair(worker.c_str(), 0));
+    if (!pair.second)
+      pair.first->second++;
     DeviceType *dt = get(worker.c_str(), file, parent, err);
     if (err) {
       err = OU::esprintf("for supported worker %s: %s", worker.c_str(), err);
       return;
     }
     m_supports.push_back(Support(*dt));
+    m_supports.back().m_ordinal = pair.first->second;
     if ((err = m_supports.back().parse(spx, *this)))
       return;
     for (ezxml_t cx = ezxml_cchild(spx, "connect"); cx; cx = ezxml_next(cx)) {
@@ -109,7 +109,11 @@ get(const char *a_name, const char *parentFile, Worker *parent, const char *&err
     name.assign(a_name, dot - a_name);
   } else
     name = a_name;
-  if (!(err = parseFile(name.c_str(), parentFile, NULL, &xml, xfile))) {
+  // First look for the file assuming we are building a worker and the sought worker is in the
+  // same library as we are.
+  std::string file("../" + name + ".hdl/" + name);
+  if (!(err = parseFile(file.c_str(), parentFile, NULL, &xml, xfile)) ||
+      !(err = parseFile(name.c_str(), parentFile, NULL, &xml, xfile))) {
     dt = HdlDevice::create(xml, xfile.c_str(), parentFile, parent, NULL, err);
 #if 0
     dt = new DeviceType(xml, xfile.c_str(), parentFile, parent, Worker::Device, NULL, err);
@@ -208,6 +212,32 @@ parse(ezxml_t xml, Board &b, SlotType *stype) {
       if ((err = pv->setValue(px)))
 	return err;
     }
+  }
+  // Parse the "supports map" that says exacty which platform/card/board device instances
+  // that this supporting device supports.
+  std::map<const char *, unsigned, OU::ConstCharComp> countPerSupportedWorkerType;
+  for (ezxml_t xs = ezxml_cchild(xml, "supports"); xs; xs = ezxml_cnext(xs)) {
+    std::string worker, device;
+    if ((err = OE::getRequiredString(xs, worker, "worker")) ||
+	(err = OE::getRequiredString(xs, device, "device")))
+      return err;
+    auto pair = countPerSupportedWorkerType.insert(std::make_pair(worker.c_str(), 0));
+    // Find the support element of the device-type
+    // Record how many each worker type we support and remember the ordinal
+    Support *sup = NULL;
+    for (auto si = m_deviceType.m_supports.begin(); si != m_deviceType.m_supports.end(); ++si)
+      if (!strcasecmp((*si).m_type.m_implName, worker.c_str()) &&
+	  pair.first->second == (*si).m_ordinal) {
+	sup = &*si;
+	break;
+      }
+    if (!sup)
+      return OU::esprintf("<supports> element for device \"%s\" on board \"%s\" does not match "
+			  "any <supports> element on the \"%s\" worker",
+			  m_name.c_str(), b.cname(), m_deviceType.m_implName);
+    // We found the matching one
+    m_supportsMap[std::make_pair(worker.c_str(), pair.first->second)] = device;
+    pair.first->second++;
   }
   // Now we parse the mapping between device-type signals and board signals
   for (ezxml_t xs = ezxml_cchild(xml, "Signal"); xs; xs = ezxml_next(xs)) {
@@ -453,7 +483,7 @@ parse(ezxml_t cx, Worker &w, Support &r) {
 
 Support::
 Support(const DeviceType &dt)
-  : m_type(dt) {
+  : m_type(dt), m_ordinal(0) {
 }
 
 const char *Support::

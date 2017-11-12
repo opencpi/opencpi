@@ -288,22 +288,35 @@ emitSubdeviceConnections(std::string &assy,  DevInstances *baseInstances) {
       const DevInstance *sdi = NULL;
       const Support *sup = NULL;
       if (&*sii != &*dii)
-	for (SupportsIter si = s.m_deviceType.m_supports.begin();
-	     si != s.m_deviceType.m_supports.end(); si++)
-	  //	  if (&(*si).m_type == &d.m_deviceType && // the subdevice supports this TYPE of device
-	  if (!strcasecmp((*si).m_type.m_implName, d.m_deviceType.m_implName) &&
-	      s.m_ordinal == d.m_ordinal) {  // and the ordinals match. FIXME allow mapping
-	    // Find whether it is in the platform config or not.
-	    sdi = findDevInstance(s, (*dii).card, (*dii).slot, baseInstances, &inConfig);
-	    assert(sdi);
-	    sup = &*si;
-	    break;
+	for (auto si = s.m_deviceType.m_supports.begin();
+	     si != s.m_deviceType.m_supports.end(); ++si) {
+	  if (strcasecmp((*si).m_type.m_implName, d.m_deviceType.m_implName))
+	    continue;
+	  // The device type of this supports element matches the device type of the
+	  // devinstance (*dii).  Now we see if it is for this PARTICULAR devinstance.
+	  // If there are no mapping entries, then we use the implicit ordinal of the
+	  // supports element among supports elements for that device type
+	  if (s.m_supportsMap.empty()) {
+	    if (si->m_ordinal != d.m_ordinal)
+	      continue;
+	  } else {
+	    auto it =
+	      s.m_supportsMap.find(std::make_pair(d.m_deviceType.m_implName, si->m_ordinal));
+	    if (it == s.m_supportsMap.end() || it->second != d.m_name)
+	      continue;
 	  }
+	  // Find whether it is in the platform config or not.
+	  sdi = findDevInstance(s, (*dii).card, (*dii).slot, baseInstances, &inConfig);
+	  assert(sdi);
+	  sup = &*si;
+	  break;
+	}
       if (!sup)
 	continue; // this (sub)dev instance does not support this device;
       for (SupportConnectionsIter sci = sup->m_connections.begin();
 	   sci != sup->m_connections.end(); sci++) {
-	// A port connection
+	Port &supPort = *(*sci).m_sup_port;
+	// A port connection between the supporting device and this device instance (*dii)
 	OU::formatAdd(assy,
 		      "  <connection>\n"
 		      "    <port instance='%s' name='%s'/>\n"
@@ -311,18 +324,21 @@ emitSubdeviceConnections(std::string &assy,  DevInstances *baseInstances) {
 		      (*dii).cname(), (*sci).m_port->pname(),
 		      inConfig ? "pfconfig" : sdi->cname(),
 		      inConfig ? sdi->cname() : "", inConfig ? "_" : "",
-		      (*sci).m_sup_port->pname());
-	if ((*sci).m_indexed) {
+		      supPort.pname());
+	// If this <connect> element expresses an index, make sure to account for
+	size_t supOrdinal = supPort.m_ordinal;
+	if ((*sci).m_indexed) { // <supports><connect> connection has an index
 	  size_t
-	    supOrdinal = (*sci).m_sup_port->m_ordinal,
 	    supIndex = (*sci).m_index,
 	    unconnected = 0,
 	    index = supIndex;
-	  // If we are in a container and the subdevice is in the config,
-	  // we may need to index relative to what is NOT connected in the config,
-	  // and thus externalized.
-	  if (inConfig) {
-	    for (size_t i = 0; i < (*sci).m_sup_port->m_count; i++)
+	  if (inConfig) { // 
+	    // If we are in a container and the subdevice is in the config,
+	    // we may need to index relative to what is NOT connected in the config,
+	    // and thus externalized.
+	    // We ASSUME that the indices in the config are contiguous and start at 0
+	    // FIXME:  remove this constraint
+	    for (size_t i = 0; i < supPort.m_count; i++)
 	      if (sdi->m_connected[supOrdinal] & (1 << i)) {
 		assert(i != supIndex);
 		if (i < supIndex)
@@ -333,6 +349,12 @@ emitSubdeviceConnections(std::string &assy,  DevInstances *baseInstances) {
 	  } else // the subdevice is where the device is, so record the connection
 	    sdi->m_connected[supOrdinal] |= 1 << supIndex;
 	  OU::formatAdd(assy, " index='%zu'", index);
+	} else if (!inConfig) {
+	  // supporting connection is not indexed, and is local,which means it is connected whole
+	  assert(supPort.m_count);
+	  uint64_t mask = ~(UINT64_MAX << supPort.m_count);
+	  assert(!(sdi->m_connected[supOrdinal] & mask));
+	  sdi->m_connected[supOrdinal] |= mask;
 	}
 	OU::formatAdd(assy,
 		      "/>\n"
@@ -646,4 +668,3 @@ emitConfigImplHDL(FILE *f) {
   fprintf(f, "end entity %s_rv;\n", m_implName);
   return NULL;
 }
-

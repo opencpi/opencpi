@@ -44,6 +44,7 @@ typedef SupportConnections::const_iterator SupportConnectionsIter;
 class HdlDevice;
 struct Support {
   const HdlDevice &m_type;
+  unsigned m_ordinal;  // ordinal within "supports" relationships for the same device type/worker
   SupportConnections m_connections;
   Support(const HdlDevice &);
   const char *parse(ezxml_t rx, Worker &w);
@@ -75,15 +76,15 @@ struct Device {
   DeviceType &m_deviceType;
   std::string m_name;           // a platform-scoped device name - usually type<ordinal>
   unsigned m_ordinal;           // Ordinal of this device on this platform/card
-#if 0
-  SigMap   m_sigmap;            // map from device type signals (WITH INDICES) to board signals
-#else
   ExtMap   m_dev2bd;            // map from device type signals to board signals
-#endif
-  //  Signals  m_signals;           // mapped board signals
   std::list<std::string> m_strings; // storage management since sigmaps don't hold strings
-  // The map from the device's signal to the board's signal.
-  //  std::map<Signal *, Signal *> m_dev2bd;
+  // A map for supporting(sub) devices, to indicate the actual devices they are supporting
+  // when it isn't obvious (there is only one such supported device or the ordinals match)
+  // Maps the pair:
+  //       - devtypename
+  //       - ordinal for supports elements for that devtype in supporting devicetype
+  // to a device name on the platform/card/board
+  std::map<std::pair<std::string, unsigned>, std::string> m_supportsMap;
   // Constructor for defining new devices.
   // If on a card, the stype will be supplied
   Device(Board &b, DeviceType &dt, const std::string &wname, ezxml_t xml, bool single,

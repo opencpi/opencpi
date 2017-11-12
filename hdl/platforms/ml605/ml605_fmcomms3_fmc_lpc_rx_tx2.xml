@@ -1,6 +1,6 @@
 <hdlconfig>
-  <device name="fmcomms3_i2c"  card="fmcomms3_fmc_lpc" slot="fmc_lpc">
-    <property name="CLK_FREQ_p" value="125e6"/> <!-- we MUST provide to this worker the ml605's control plane clock freq value -->
+  <device name="fmcomms3_i2c"  card="fmcomms3_lpc" slot="fmc_lpc">
+    <property name="CP_CLK_FREQ_p" value="125e6"/> <!-- we MUST provide to this worker the ml605's control plane clock freq value -->
     <property name="FMC_GA1" value="1"/> <!-- we MUST provide to this worker the ml605's hardwired value for FMC LPC slot -->
     <property name="FMC_GA0" value="0"/> <!-- we MUST provide to this worker the ml605's hardwired value for FMC LPC slot -->
   </device>

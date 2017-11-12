@@ -73,7 +73,9 @@ if [ -n "$url" ]; then
     if [ -d $directory ]; then
       echo The git repo directory for $package, $directory, exists and is being '(re)'used.
       echo Remove `pwd`/$directory if you want to download it again.
+      echo It will be updated now
       cd $directory
+      git fetch
     else
       echo Downloading/cloning the distribution/repo for $package: $url
       git clone $url
@@ -83,8 +85,8 @@ if [ -n "$url" ]; then
 	  exit 1
       }
       cd $directory
-      git checkout $file
     fi
+    git checkout $file
   else
     if [ -f "$file" ]; then
       echo The distribution file for $package, $file, exists and is being '(re)'used.
