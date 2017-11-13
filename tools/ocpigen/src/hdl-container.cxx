@@ -636,6 +636,43 @@ parseConnection(ezxml_t cx, ContConnect &c) {
     if (!c.port)
       return OU::esprintf("There are no data ports for device '%s'", d.cname());
   }
+  //TODO: There should be much more code sharing between device and otherdevice 
+  c.otherDevInConfig = false;
+  if ((attr = ezxml_cattr(cx, "otherdevice")) &&
+      (err = parseDevInstance(attr, cx, m_file.c_str(), this, false, &m_config.devInstances(),
+			      &c.otherDevInstance, &c.otherDevInConfig)))
+    return err;
+  ocpiDebug("attr is: %s",attr);
+  if ((attr = ezxml_cattr(cx, "otherport"))) {
+    ocpiDebug("Found otherport");
+    if (!c.otherDevInstance)
+      return OU::esprintf("Port '%s' specified without specifying a device", attr);
+    const ::Device &d = c.otherDevInstance->device;
+    for (PortsIter pi = d.deviceType().ports().begin();
+	 pi != d.deviceType().ports().end(); pi++)
+      if (!strcasecmp((*pi)->pname(), attr)) {
+	c.otherPort = *pi;
+	break;
+      }
+    if (!c.otherPort)
+      return OU::esprintf("Port '%s' not found for device '%s'", attr, d.cname());
+    if (!c.otherPort->isData())
+      return OU::esprintf("Port '%s' for device '%s' is not a data port", attr, d.cname());
+  } else if (c.otherDevInstance) {
+    ocpiDebug("Did not find otherport");
+    const ::Device &d = c.otherDevInstance->device;
+    // Find the one data port
+    for (PortsIter pi = d.deviceType().ports().begin();
+	 pi != d.deviceType().ports().end(); pi++)
+      if ((*pi)->isData()) {
+	if (c.otherPort)
+	  return OU::esprintf("There are multiple data ports for device '%s'; you must specify one",
+			      d.cname());
+	c.otherPort = *pi;
+      }
+    if (!c.otherPort)
+      return OU::esprintf("There are no data ports for device '%s'", d.cname());
+  }
   if ((attr = ezxml_cattr(cx, "interconnect"))) {
     // An interconnect can be on any device worker, but for now it is on the config.
     for (PortsIter pi = m_config.m_ports.begin(); pi != m_config.m_ports.end(); pi++) {
@@ -796,6 +833,22 @@ emitConnection(std::string &assy, UNocs &uNocs, size_t &index, const ContConnect
 		  m_appAssembly.m_implName, c.external->pname(),
 		  c.devInConfig ? "pfconfig" : c.devInstance->cname(),
 		  c.devInConfig ? devport.c_str() : c.port->pname());
+  } else if (c.devInstance && c.otherDevInstance) {
+    // We need to connect a port of a device instance to another device.
+    std::string devport, otherDevport;
+    if (c.devInConfig)
+      OU::format(devport, "%s_%s", c.devInstance->cname(), c.port->pname());
+    if (c.otherDevInConfig)
+      OU::format(otherDevport, "%s_%s", c.otherDevInstance->cname(), c.otherPort->pname());
+    OU::formatAdd(assy,
+  		  "  <connection>\n"
+  		  "    <port instance='%s' name='%s'/>\n"
+  		  "    <port instance='%s' name='%s'/>\n"
+  		  "  </connection>\n",
+  		  c.devInConfig ? "pfconfig" : c.devInstance->cname(),
+  		  c.devInConfig ? devport.c_str() : c.port->pname(),
+  		  c.otherDevInConfig ? "pfconfig" : c.otherDevInstance->cname(),
+  		  c.otherDevInConfig ? otherDevport.c_str() : c.otherPort->pname());
   } else
     return "unsupported container connection";
   return NULL;

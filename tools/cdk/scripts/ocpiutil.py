@@ -49,7 +49,7 @@ def configure_logging(level=None, output_fd=sys.stderr):
     >>> import ocpiutil
     >>> os.environ['OCPI_LOG_LEVEL'] = "11"
     >>> ocpiutil.configure_logging(output_fd=sys.stdout)
-    <logging.RootLogger object at 0x...>
+    <logging.RootLogger...>
 
     # Now, logging will be determined based on OCPI_LOG_LEVEL environment
     # variable. So, the following will only print if OCPI_LOG_LEVEL is >= 8
@@ -574,7 +574,7 @@ def freq_from_ns_period(prd_string):
         period = float(prd)
     if period != 0:
         freq = 1000/float(period)
-        return '{:.3f}'.format(freq)
+        return '{0:.3f}'.format(freq)
     return ""
 
 def first_num_in_str(parse_string):
@@ -645,7 +645,7 @@ def normalize_column_lengths(lists):
     >>> print str(list2)
     ['< 15           ', 'pretty short           ']
     """
-    format_function = lambda length, string_elem: ("{:<" + str(length) + "}").format(string_elem)
+    format_function = lambda length, string_elem: ("{0:<" + str(length) + "}").format(string_elem)
     newlens = []
     for column in zip(*lists):
         newlens.append(len(max(column, key=len)))

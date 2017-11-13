@@ -28,12 +28,12 @@
 // Container connections (user oriented high level)
 struct ContConnect {
   Port *external;
-  const DevInstance *devInstance;
-  bool devInConfig;
-  Port *port;
+  const DevInstance *devInstance, *otherDevInstance;
+  bool devInConfig, otherDevInConfig;
+  Port *port, *otherPort;
   Port *interconnect;
   ContConnect()
-    : external(NULL), devInstance(NULL), devInConfig(false), port(NULL), interconnect(port) {
+  : external(NULL), devInstance(NULL), otherDevInstance(NULL), devInConfig(false), otherDevInConfig(false), port(NULL), otherPort(NULL), interconnect(port) {
   }
 };
 typedef std::list<ContConnect> ContConnects;

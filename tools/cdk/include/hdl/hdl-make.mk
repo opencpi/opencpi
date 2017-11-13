@@ -318,7 +318,10 @@ HdlCollectCores=$(infox CCCC:$(SubCores_$(HdlTarget)):$1:$2)$(strip $(call Uniqu
               $(if $(filter /%,$z),\
                 $z,\
 	        $(or $(call OcpiExists,$p/$z),\
-	             $p/$(subst /lib/,/,$(patsubst hdl/%,lib/%,$z))))))))),$a)))
+                     $(call OcpiExists,$p/$(subst /lib/,/,$(patsubst hdl/platforms/%,lib/platforms/%,$z))),\
+                     $(call OcpiExists,$p/$(subst /lib/,/,$(patsubst hdl/devices/%,lib/devices/%,$z))),\
+	             $(call OcpiExists,$p/$(subst /lib/,/,$(patsubst hdl/primitives/%,lib/hdl/%,$z)))))))))),\
+    $a)))
 
 #########################################################################################################
 # Record all of the libraries and sources required for this asset (onl when a tool requires this is done)
