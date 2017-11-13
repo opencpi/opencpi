@@ -55,7 +55,7 @@ HdlDevice(ezxml_t xml, const char *file, const char *parentFile, Worker *parent,
   // Parse submodule support for users - note that this information is only used
   // for platform configurations and containers, but we do a bit of error checking here
   // We need to compute the ordinal for each device type we support
-  std::map<const char *, unsigned, OU::ConstCharComp> countPerSupportedWorkerType;
+  std::map<std::string, unsigned> countPerSupportedWorkerType;
   for (ezxml_t spx = ezxml_cchild(m_xml, "supports"); spx; spx = ezxml_next(spx)) {
     std::string worker;
     if ((err = OE::checkAttrs(spx, "worker", NULL)) ||
@@ -63,7 +63,7 @@ HdlDevice(ezxml_t xml, const char *file, const char *parentFile, Worker *parent,
 	(err = OE::getRequiredString(spx, worker, "worker")))
       return;
     // Record how many each worker type we support and remember the ordinal
-    auto pair = countPerSupportedWorkerType.insert(std::make_pair(worker.c_str(), 0));
+    auto pair = countPerSupportedWorkerType.insert(std::make_pair(worker, 0));
     if (!pair.second)
       pair.first->second++;
     DeviceType *dt = get(worker.c_str(), file, parent, err);
