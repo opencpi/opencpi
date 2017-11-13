@@ -317,7 +317,8 @@ HdlCollectCores=$(infox CCCC:$(SubCores_$(HdlTarget)):$1:$2)$(strip $(call Uniqu
             $(foreach z,$(shell grep -v '\#' $f),$(infox found:$z)\
               $(if $(filter /%,$z),\
                 $z,\
-                $p/$z )))))),$a)))
+	        $(or $(call OcpiExists,$p/$z),\
+	             $p/$(subst /lib/,/,$(patsubst hdl/%,lib/%,$z))))))))),$a)))
 
 #########################################################################################################
 # Record all of the libraries and sources required for this asset (onl when a tool requires this is done)
