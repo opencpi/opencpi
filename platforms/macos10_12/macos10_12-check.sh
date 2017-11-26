@@ -18,7 +18,10 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 if test $1 = darwin && which -s sw_vers; then
-  echo macos `sw_vers -productVersion | sed 's/^\([0-9][0-9]*\.[0-9][0-9]*\).*/\1/' | tr . _` $2
-  exit 0
+  vers=`sw_vers -productVersion | sed 's/^\([0-9][0-9]*\.[0-9][0-9]*\).*/\1/' | tr . _`
+  if test macos$vers = $(basename $(dirname $0)); then
+     echo macos $vers $2
+     exit 0
+  fi
 fi
 exit 1

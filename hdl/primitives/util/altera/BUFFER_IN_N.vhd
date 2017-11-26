@@ -28,154 +28,20 @@ entity BUFFER_IN_N is
            DIFFERENTIAL :     boolean; -- only used if IOSTANDARD is UNSPECIFIED
            GLOBAL_CLOCK :     boolean       := FALSE);
   port (   I            : in  std_logic_vector(width-1 downto 0);
-           IBAR         : in  std_logic_vector(width-1 downto 0) := 'X'; -- only used if relevant to IOSTANDARD
+           IBAR         : in  std_logic_vector(width-1 downto 0) := (others => 'X'); -- only used if relevant to IOSTANDARD
            O            : out std_logic_vector(width-1 downto 0));
 end entity BUFFER_IN_N;
 architecture rtl of BUFFER_IN_N is
-  signal tmp : std_logic_vector(width-1 downto 0);
+  -- signal tmp : std_logic_vector(width-1 downto 0);
 begin
-
-  -- technology: unspecified, supply voltage: unspecified
-  UNSPECIFIED_gen : if IOSTANDARD = UNSPECIFIED generate
-    single_ended_prim : if DIFFERENTIAL = false generate
-      buf_generic : if GLOBAL_CLOCK = false generate
-        gen_loop : for idx in width-1 downto 0 generate
-          buf : ALT_INBUF
-            port map(
-              I  => I(idx),
-              O  => O(idx)); -- equivalent to output of Xilinx IBUF
-        end generate;
-      end generate;
-
-      buf_clk : if GLOBAL_CLOCK = true generate
-        gen_loop : for idx in width-1 downto 0 generate
-          buf : ALT_INBUF
-            port map(
-              I  => I(idx),
-              O  => tmp(idx));
-          buf_global : GLOBAL
-            port map(
-              A_IN  => tmp(idx),
-              A_OUT => O(idx)); -- equivalent to output of Xilinx IBUFG
-        end generate;
-      end generate;
-    end generate;
-
-    differential_prim : if DIFFERENTIAL = true generate
-      buf_generic : if GLOBAL_CLOCK = false generate
-        gen_loop : for idx in width-1 downto 0 generate
-          buf : ALT_INBUF_DIFF
-            port map(
-              I    => I(idx),
-              IBAR => IBAR(idx),
-              O    => O(idx)); -- equivalent to output of Xilinx IBUFDS
-        end generate;
-      end generate;
-
-      buf_clk : if GLOBAL_CLOCK = true generate
-        gen_loop : for idx in width-1 downto 0 generate
-          buf : ALT_INBUF_DIFF
-            port map(
-              I    => I(idx),
-              IBAR => IBAR(idx),
-              O    => tmp(idx));
-          buf_global : GLOBAL
-            port map(
-              A_IN  => tmp(idx),
-              A_OUT => O(idx)); -- equivalent to output of Xilinx IBUFGDS
-        end generate;
-      end generate;
-    end generate;
+  gen_loop : for idx in width-1 downto 0 generate
+    buf : work.BUFFER_IN_1
+      generic map(IOSTANDARD   => IOSTANDARD,
+                  DIFFERENTIAL => DIFFERENTIAL,
+                  GLOBAL_CLOCK => GLOBAL_CLOCK)
+      port map   (I            => I(idx),
+                  IBAR         => IBAR(idx),
+                  O            => O(idx));
   end generate;
-
-  -- technology: CMOS, supply voltage: 1.8V
-  CMOS18_gen : if IOSTANDARD = CMOS18 generate
-    buf_generic : if GLOBAL_CLOCK = false generate
-      gen_loop : for idx in width-1 downto 0 generate
-        buf : ALT_INBUF
-          generic map(
-            IO_STANDARD => "1.8 V")
-          port map(
-            I  => I(idx),
-            O  => O(idx)); -- equivalent to output of Xilinx IBUF
-      end generate;
-    end generate;
-
-    buf_clk : if GLOBAL_CLOCK = true generate
-      gen_loop : for idx in width-1 downto 0 generate
-        buf : ALT_INBUF
-          generic map(
-            IO_STANDARD => "1.8 V")
-          port map(
-            I  => I(idx),
-            O  => tmp(idx));
-        buf_global : GLOBAL
-          port map(
-            A_IN  => tmp(idx),
-            A_OUT => O(idx)); -- equivalent to output of Xilinx IBUFG
-      end generate;
-    end generate;
-  end generate;
-
-  -- technology: CMOS, supply voltage: 2.5V
-  CMOS25_gen : if IOSTANDARD = CMOS25 generate
-    buf_generic : if GLOBAL_CLOCK = false generate
-      gen_loop : for idx in width-1 downto 0 generate
-        buf : ALT_INBUF
-          generic map(
-            IO_STANDARD => "2.5 V")
-          port map(
-            I  => I(idx),
-            O  => O(idx)); -- equivalent to output of Xilinx IBUF
-      end generate;
-    end generate;
-
-    buf_clk : if GLOBAL_CLOCK = true generate
-      gen_loop : for idx in width-1 downto 0 generate
-        buf : ALT_INBUF
-          generic map(
-            IO_STANDARD => "2.5 V")
-          port map(
-            I  => I(idx),
-            O  => tmp(idx));
-        buf_global : GLOBAL
-          port map(
-            A_IN  => tmp(idx),
-            A_OUT => O(idx)); -- equivalent to output of Xilinx IBUFG
-      end generate;
-    end generate;
-  end generate;
-
-  -- technology: LVDS (TIA/EIA-644 specification), supply voltage: 2.5V
-  LVDS25_gen : if IOSTANDARD = LVDS25 generate
-    buf_generic : if GLOBAL_CLOCK = false generate
-      gen_loop : for idx in width-1 downto 0 generate
-        buf : ALT_INBUF_DIFF
-          generic map(
-            IO_STANDARD  => "LVDS")
-          port map(
-            I    => I(idx),
-            IBAR => IBAR(idx),
-            O    => O(idx)); -- equivalent to output of Xilinx IBUFDS
-      end generate;
-    end generate;
-
-    buf_clk : if GLOBAL_CLOCK = true generate
-      gen_loop : for idx in width-1 downto 0 generate
-        buf : ALT_INBUF_DIFF
-          generic map(
-            IO_STANDARD  => "LVDS")
-          port map(
-            I    => I(idx),
-            IBAR => IBAR(idx),
-            O    => tmp(idx));
-        buf_global : GLOBAL
-          port map(
-            A_IN  => tmp(idx),
-            A_OUT => O(idx)); -- equivalent to output of Xilinx IBUFGDS
-      end generate;
-    end generate;
-  end generate;
-
 end rtl;
 

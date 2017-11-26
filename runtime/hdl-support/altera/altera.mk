@@ -30,12 +30,18 @@ OcpiAlteraDir=$(strip $(foreach t,$(or $(OCPI_ALTERA_DIR),/opt/Altera),$(infox T
 		 $(if $(shell test -d $t && echo 1),$t,\
 		    $(call $(or $1,error), Directory "$t" for OCPI_ALTERA_DIR not found))))
 
-OcpiAlteraLicenseFile=$(strip $(foreach t,$(or $(foreach f,$(OCPI_ALTERA_LICENSE_FILE),\
-	                                          $(if $(findstring /,$f),$f,\
-                                                    $(call OcpiAlteraDir,$1)/$f)),\
-                                               $(call OcpiAlteraDir,$1)/Altera-License.lic),\
-			 $(if $(or $(findstring @,$t),$(findstring :,$t),$(shell test -f $t && echo 1)),$t,\
-                            $(call $(or $1,error), File "$t", for OCPI_ALTERA_LICENSE_FILE, not found))))
+# the license file can be either:
+# - an absolute path (which can contain @ or :)
+# - a network address with and @ or :
+# - a path relative to OcpiAlteraDir
+OcpiAlteraLicenseFile=$(strip\
+  $(foreach e,$(or $(OCPI_ALTERA_LICENSE_FILE),Altera-License.lic),$(infox XX:$e)\
+    $(foreach f,$(if $(filter /%,$e),$e,\
+                  $(if $(or $(findstring @,$e),$(findstring :,$e)),$e,$(call OcpiAlteraDir,$1)/$e)),\
+      $(infox ALF:$f)$(if $(filter /%,$f),\
+        $(or $(call OcpiExists,$f),\
+          $(call $(or $1,error), File "$f" for the Altera Quartus License File, not found)),\
+        $f))))
 
 OcpiAlteraQuartusDir=$(strip\
   $(foreach i,\
@@ -52,10 +58,10 @@ OcpiAlteraQuartusDir=$(strip\
                          [ -d $$i -a -d $$i/quartus ] && echo `basename $$i` && break; \
                        done),\
                  $(call $(or $1,error), No version directory under $t/*/q* for Altera tools))),\
-        $(infox VV:$v)$t/$v/quartus))),\
+        $(infox VV:$v)$t/$v)))/quartus,\
     $(infox II:$i.)\
     $(if $(shell test -d $i && echo 1),$i,\
-      $(call $(or $1,error), Directory "$i", in OCPI_ALTERA_TOOLS_DIR for Quartus, not found))))
+      $(call $(or $1,error), Directory "$i" for Altera Quartus tools, not found))))
 # We call this if all we really need is lab tools (e.g. impact)
 # First look for lab tools, then look for ise
 OcpiAlteraProgrammerDir=$(strip\
@@ -83,7 +89,7 @@ $(if $(OCPI_ALTERA_LAB_TOOLS_DIR),\
 # The trick here is to filter the output and capture the exit code.
 # Note THIS REQUIRES BASH not just POSIX SH due to pipefail option
 DoAltera=(set -o pipefail; set +e; \
-         export LM_LICENSE_FILE=$(OcpiAlteraLicenseFile) ; \
+         export LM_LICENSE_FILE=$(call OcpiAlteraLicenseFile,) ; \
          $(TIME) $(OcpiAlteraQuartusDir)/bin/$1 --64bit $2 > $3-$4.tmp 2>&1; \
          ST=\$$?; sed 's/^.\[0m.\[0;32m//' < $3-$4.tmp > $3-$4.out ; \
          rm $3-$4.tmp ; \
@@ -97,7 +103,7 @@ DoAltera=(set -o pipefail; set +e; \
          exit \$$ST)
 
 DoAltera1=(set -o pipefail; set +e; \
-         export LM_LICENSE_FILE=$(OcpiAlteraLicenseFile) ; \
+         export LM_LICENSE_FILE=$(call OcpiAlteraLicenseFile,) ; \
          $(TIME) $(OcpiAlteraQuartusDir)/bin/$1 --64bit $2 > $3-$4.tmp 2>&1; \
          ST=$$$$?; sed 's/^.\[0m.\[0;32m//' < $3-$4.tmp > $3-$4.out ; \
          rm $3-$4.tmp ; \

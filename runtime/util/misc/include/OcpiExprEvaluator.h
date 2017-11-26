@@ -99,17 +99,20 @@ namespace OCPI {
       virtual const char *getValue(const char *sym, ExprValue &val) const = 0;
     };
     
-    // The core function that evaluates expressions
-    const char *evalExpression(const char *string, ExprValue &val, const
-			       IdentResolver *resolve = NULL, const char *end = NULL);
-    // Evaluate the expression, using the resolver, and if the expression was variable,
-    // save the expression so it can be reevaluated again later when the values of
-    // variables are different.
-    const char *parseExprNumber(const char *a, size_t &np, std::string *expr,
-				const IdentResolver *resolver);
-    // Convert an expression to C/C++
-    const char *makeCexpression(const char *expr, const char *prefix, const char *suffix,
-				bool toUpper, std::string &out);
+    const char
+      // The core function that evaluates expressions
+      *evalExpression(const char *string, ExprValue &val, const IdentResolver *resolve = NULL,
+		      const char *end = NULL),
+      // Evaluate the expression, using the resolver, and if the expression was variable,
+      // save the expression so it can be reevaluated again later when the values of
+      // variables are different.
+      *parseExprNumber(const char *a, size_t &np, std::string *expr,
+		       const IdentResolver *resolver),
+      *parseExprString(const char *a, std::string &s, std::string *expr,
+		       const IdentResolver *resolver),
+      // Convert an expression to C/C++
+      *makeCexpression(const char *expr, const char *prefix, const char *suffix,
+		       bool toUpper, std::string &out);
   }
 }
 

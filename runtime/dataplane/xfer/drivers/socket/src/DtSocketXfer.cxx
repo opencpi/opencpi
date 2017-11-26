@@ -140,6 +140,7 @@ protected:
   }
 };
 
+// Thread per peer writing to this endpoint
 class ServerSocketHandler : public OU::Thread {
   EndPoint     &m_sep;
   SmemServices &m_smem;
@@ -213,6 +214,7 @@ public:
   }
 };
 
+// Master listener thread per endpoint to receive connection requests from peers
 class ServerT : public OU::Thread {
   EndPoint                         &m_sep;
   SmemServices                     &m_smem;

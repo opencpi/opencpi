@@ -160,10 +160,10 @@ parse(FactoryConfig *parent, ezxml_t x) {
 }
 
 bool XferFactory::
-supportsEndPoint(const char *name) {
+supportsEndPoint(const char *a_name) {
   const char *protocol = getProtocol();
   size_t len = strlen(protocol);
-  return !strncmp(name, protocol, len) && (!name[len] || name[len] == ':');
+  return !strncmp(a_name, protocol, len) && (!a_name[len] || a_name[len] == ':');
 }
 #if 0
 bool 

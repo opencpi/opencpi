@@ -37,11 +37,11 @@ namespace OX = OCPI::Util::EzXml;
 namespace OA = OCPI::API;
 namespace {
  #define ALLOPS								\
-   OPS(Cond1, "?") OPS(Cond2, ":") OPS(Lor, "||") OPS(Land, "&&")	\
+   OP(Rpar, ")") OPS(Cond2, ":") OPS(Cond1, "?") OPS(Lor, "||") OPS(Land, "&&")	\
    OP(Bor, "|") OP(Xor, "^") OP(Band, "&")				\
    OPS(Eq, "==") OPS(Neq, "!=") OPS(Lt, "<") OPS(Gt, ">") OPS(Le, "<=") OPS(Ge, ">=") \
    OP(Sl, "<<") OP(Sr, ">>") OPS(Plus, "+") OP(Minus, "-") OP(Mult, "*") OP(Div, "/") OP(Mod, "%") \
-   OP(Pow,"**") OP(UMinus, "") OP(UPlus, "") OP(Tilde, "~") OP(Not, "!") OP(Lpar, "(") OP(Rpar, ")") \
+   OP(Pow,"**") OP(UMinus, "") OP(UPlus, "") OP(Tilde, "~") OP(Not, "!") OP(Lpar, "(")
    /**/
 #define OPS(n,s) true,
 #define OP(n,s) false,
@@ -215,6 +215,8 @@ public:
   }
   const char *
   lex(const char *&cp, const char *last, const char *&start, const char *&end, OpCode &op) {
+    m_isString = false;
+    m_usesVariable = false;
     op = OpLimit;
     while (cp != last && isspace(*cp))
       cp++;
@@ -340,149 +342,155 @@ struct ExprToken {
 // "end" is set to point to the preserved token at the end
 const char * ExprValue::Internal::
 reduce(ExprToken *start, ExprToken *&end, bool parens) {
-  if (end != start + 1) {
-    ExprToken *t;
-    for (t = end; --t > start;) {
-      if (t->op != OpConstant)
-	return "expression syntax";
-      if (t->value.m_isString && !opStringOk[t[-1].op])
-	return "operator illegal for string";
-      OpCode op = t[-1].op;
+  ExprToken *t;
+  for (t = end; --t > start;) {
+    if (t->op != OpConstant)
+      return "expression syntax";
+    if (t->value.m_isString && !opStringOk[t[-1].op])
+      return "operator illegal for string";
+    OpCode op = t[-1].op;
+    if (op < end->op) // don't reduce further if forcing op is tighter
+      break;
+    bool b;
+    switch (op) {
+    case OpTilde:
+      // If it is an integer, then complement it
+      if (ceil(t->value.m_number) != t->value.m_number)
+	return "tilde operator on non-integer value";
+      {
+	mpz_class i(t->value.m_number);
+	i = ~i;
+	t[-1].value.m_number = i;
+      }
+      break;
+    case OpNot:
+      b = t->value.m_isString ? t->value.m_string.size() != 0 : t->value.m_number != 0;
       t[-1].op = OpConstant;
-      bool b;
-      switch (op) {
-      case OpTilde:
-	// If it is an integer, then complement it
-	if (ceil(t->value.m_number) != t->value.m_number)
-	  return "tilde operator on non-integer value";
-	{
-	  mpz_class i(t->value.m_number);
-	  i = ~i;
-	  t[-1].value.m_number = i;
-	}
-	break;
-      case OpNot:
-	b = t->value.m_isString ? t->value.m_string.size() != 0 : t->value.m_number != 0;
-	t[-1].value.m_number = b ? 1 : 0;
-	t[-1].value.m_isString = false;
-	break;
-      case OpUPlus: // not useful for anything
-	t[-1].value = t->value;
-	break;
-      case OpUMinus:
-	t[-1].value.m_number = - t->value.m_number;
-	break;
-      case OpPlus:
-	if (t[-2].op != OpConstant)
-	  return "expression syntax";
-	if (t[-2].value.m_isString != t->value.m_isString)
-	  return "mixing strings and numbers";
-	if (t->value.m_isString)
-	  t[-2].value.m_string += t->value.m_string;
-	else
-	  t[-2].value.m_number += t->value.m_number;
-	t--;
-	break;
-      case OpPow:
-	if (t[-2].op != OpConstant)
-	  return "expression syntax";
-	mpf_pow_ui(t[-2].value.m_number.get_mpf_t(), t[-2].value.m_number.get_mpf_t(),
-		   t->value.m_number.get_ui());
-	t--;
-	break;
+      t[-1].value.m_number = b ? 1 : 0;
+      t[-1].value.m_isString = false;
+      break;
+    case OpUPlus: // not useful for anything
+      t[-1].op = OpConstant;
+      t[-1].value = t->value;
+      break;
+    case OpUMinus:
+      t[-1].op = OpConstant;
+      t[-1].value.m_number = - t->value.m_number;
+      break;
+    case OpPlus:
+      if (t[-2].op != OpConstant)
+	return "expression syntax";
+      if (t[-2].value.m_isString != t->value.m_isString)
+	return "mixing strings and numbers";
+      if (t->value.m_isString)
+	t[-2].value.m_string += t->value.m_string;
+      else
+	t[-2].value.m_number += t->value.m_number;
+      t--;
+      break;
+    case OpPow:
+      if (t[-2].op != OpConstant)
+	return "expression syntax";
+      mpf_pow_ui(t[-2].value.m_number.get_mpf_t(), t[-2].value.m_number.get_mpf_t(),
+		 t->value.m_number.get_ui());
+      t--;
+      break;
 
 #define NumOp(tokenOp, opn)				\
-	case tokenOp:					\
-	  if (t[-2].op != OpConstant)			\
-	    return "expression syntax";			\
-	  t[-2].value.m_number opn t->value.m_number;	\
-	  t--;						\
-	  break
-	NumOp(OpMinus, -=);
-	NumOp(OpMult, *=);
-	NumOp(OpDiv, /=);
-	// These are operations that must be converted to integers
-#define BinOp(tokenOp, op)						\
-	case tokenOp: {							\
-	  mpz_class op1, op2;						\
-	  const char *err;						\
-	  if ((err = mpf2mpz(t[-2].value.m_number, op1)) ||		\
-	      (err = mpf2mpz(t[0].value.m_number, op2)))		\
-	    return err;							\
-	  op1 op op2;							\
-	  mpf_set_z(t[-2].value.m_number.get_mpf_t(), op1.get_mpz_t()); \
-	  t--;								\
-	  break;							\
-	}
-	BinOp(OpMod, %=);
-	BinOp(OpXor, ^=);
-	BinOp(OpBor, |=);
-	BinOp(OpBand, &=);
-#define ShiftOp(tokenOp, op)						\
-	case tokenOp: {							\
-	  mpz_class op1, op2;						\
-	  const char *err;						\
-	  if ((err = mpf2mpz(t[-2].value.m_number, op1)) ||		\
-	      (err = mpf2mpz(t[0].value.m_number, op2)))		\
-	    return err;							\
-	  unsigned long int ui = op2.get_ui();				\
-	  op1 op ui;							\
-	  mpf_set_z(t[-2].value.m_number.get_mpf_t(), op1.get_mpz_t());	\
-	  t--;								\
-	}								\
+      case tokenOp:					\
+	if (t[-2].op != OpConstant)			\
+	  return "expression syntax";			\
+	t[-2].value.m_number opn t->value.m_number;	\
+	t--;						\
 	break
-	ShiftOp(OpSl, <<=);
-	ShiftOp(OpSr, >>=);
-#define CmpOp(tokenOp, cop)					\
-	case tokenOp:						\
-	  if (t[-2].op != OpConstant)				\
-	    return "expression syntax";				\
-	  if (t[-2].value.m_isString != t->value.m_isString)	\
-	    return "cannot compare strings and numbers";	\
-	  b = t[-2].value.m_isString ?				\
-	    t[-2].value.m_string cop t->value.m_string :		\
-	    t[-2].value.m_number cop t->value.m_number;		\
-	  t[-2].value.m_number = b ? 1 : 0;			\
-	  t[-2].value.m_isString = false;			\
-	  t--;							\
-	  break;
-	CmpOp(OpEq, ==);
-	CmpOp(OpNeq, !=);
-	CmpOp(OpLt, <);
-	CmpOp(OpGt, >);
-	CmpOp(OpLe, <=);
-	CmpOp(OpGe, >=);
-      case OpLor:
-      case OpLand:
-	t[-2].string2Number();
-	t[0].string2Number();
-	t[-2].value.m_number = op == OpLor ?
-	  mpf2bool(t[-2].value.m_number) || mpf2bool(t[0].value.m_number) :
-	  mpf2bool(t[-2].value.m_number) && mpf2bool(t[0].value.m_number);
-	t--;
-	break;
-      case OpCond2:
-	if (t < start + 4 || t[-3].op != OpCond1 || t[-2].op <= OpEnd)
-	  return "bad conditional operator syntax";
-	t[-4].string2Number();
-	t[-4] = mpf2bool(t[-4].value.m_number) ? t[-2] : t[0];
-	t -= 3;
-	break;
-      default:
-	return "bad operator syntax";
+      NumOp(OpMinus, -=);
+      NumOp(OpMult, *=);
+      NumOp(OpDiv, /=);
+      // These are operations that must be converted to integers
+#define BinOp(tokenOp, op)						\
+      case tokenOp: {							\
+	mpz_class op1, op2;						\
+	const char *err;						\
+	if ((err = mpf2mpz(t[-2].value.m_number, op1)) ||		\
+	    (err = mpf2mpz(t[0].value.m_number, op2)))			\
+	  return err;							\
+	op1 op op2;							\
+	mpf_set_z(t[-2].value.m_number.get_mpf_t(), op1.get_mpz_t());	\
+	t--;								\
+	break;								\
       }
+      BinOp(OpMod, %=);
+      BinOp(OpXor, ^=);
+      BinOp(OpBor, |=);
+      BinOp(OpBand, &=);
+#define ShiftOp(tokenOp, op)						\
+      case tokenOp: {							\
+	mpz_class op1, op2;						\
+	const char *err;						\
+	if ((err = mpf2mpz(t[-2].value.m_number, op1)) ||		\
+	    (err = mpf2mpz(t[0].value.m_number, op2)))			\
+	  return err;							\
+	unsigned long int ui = op2.get_ui();				\
+	op1 op ui;							\
+	mpf_set_z(t[-2].value.m_number.get_mpf_t(), op1.get_mpz_t());	\
+	t--;								\
+      }									\
+	break
+      ShiftOp(OpSl, <<=);
+      ShiftOp(OpSr, >>=);
+#define CmpOp(tokenOp, cop)					\
+      case tokenOp:						\
+	if (t[-2].op != OpConstant)				\
+	  return "expression syntax";				\
+	if (t[-2].value.m_isString != t->value.m_isString)	\
+	  return "cannot compare strings and numbers";		\
+	b = t[-2].value.m_isString ?				\
+	  t[-2].value.m_string cop t->value.m_string :		\
+	  t[-2].value.m_number cop t->value.m_number;		\
+	t[-2].value.m_number = b ? 1 : 0;			\
+	t[-2].value.m_isString = false;				\
+	t--;							\
+	break;
+      CmpOp(OpEq, ==);
+      CmpOp(OpNeq, !=);
+      CmpOp(OpLt, <);
+      CmpOp(OpGt, >);
+      CmpOp(OpLe, <=);
+      CmpOp(OpGe, >=);
+    case OpLor:
+    case OpLand:
+      t[-2].string2Number();
+      t[0].string2Number();
+      t[-2].value.m_number = op == OpLor ?
+	mpf2bool(t[-2].value.m_number) || mpf2bool(t[0].value.m_number) :
+	mpf2bool(t[-2].value.m_number) && mpf2bool(t[0].value.m_number);
+      t--;
+      break;
+    case OpCond1: // we must have encountered the ":".  Implement right-to-left associativity.
+      if (t < start + 2 || t[+1].op != OpCond2 || t[-2].op <= OpEnd || parens)
+	return "bad conditional operator syntax";
+      if (mpf2bool(t[-2].value.m_number)) { // true conditional, leave residue
+	t[-2] = t[0]; // save good value as LHS of colon operator
+	t[-1] = t[1]; // convert ? to :
+	end = t - 1;
+      } else
+	end = t - 3; // backup and leave nothing.
+      return NULL;
+    case OpCond2: // either we have nothing before us or the first value to keep
+      if (t < start+2) // || !(t[+1].op == OpRpar || t[+1].op == OpEnd || t[+1].op == OpCond2))
+	return "bad conditional operator syntax";
+      t--;
+      break;
+    default:
+      return "bad operator syntax";
     }
-    if (t != start)
-      return "bad expression syntax";
   }
   if (parens) {
-    start[-1] = start[0]; // clobber lparen with computed value
-    start--;
-  } else {
-    start[1] = end[0];    // move new token that triggered us after computed value
-    start++;
-  }
-  end = start;
+    assert(t == start);
+    *--t = *start; // t points to reduced value and we are discarding the RPAREN token;
+  } else
+    *++t = *end;   // t now points to the operator that triggered the reduction
+  end = t;
   return NULL;
 }
 
@@ -525,10 +533,16 @@ parse(const char *buf, const char *end, ExprToken *&tokens, const IdentResolver 
 	  OU::ExprValue v;
 	  if ((err = resolver->getValue(sym.c_str(), v)))
 	    return err;
+	  if (!v.m_internal || v.m_internal->m_isString)
+	    ocpiDebug("Retrieved value for %s: string \"%s\"\n",
+		      sym.c_str(), v.m_internal ? v.m_internal->m_string.c_str() : "");
+	  else
+	    ocpiDebug("Retrieved value for %s: num %u %lld\n",
+		      sym.c_str(), v.m_numberSet, v.getNumber());
 	  t->value = *v.m_internal;
 	  t->op = OpConstant;
 	  usesVariable = true;
-	  std::string s;
+	  //std::string s;
 	  //ocpiDebug("Expression variable %s has value %s", sym.c_str(), t->value.getString(s));
 	}
       }
@@ -573,7 +587,7 @@ parse(const char *buf, const char *end, ExprToken *&tokens, const IdentResolver 
       if (t == tokens || t[-1].op < OpEnd)
 	return esprintf("binary operator \"%s\" with no value on left side",
 			opNames[t->op]);
-      if (t > (lpar ? lpar : tokens) + 2 && t->op < t[-2].op)
+      if (t > (lpar ? lpar : tokens) + 2 && t->op <= t[-2].op)
 	if ((err = reduce(lpar ? lpar + 1 : tokens, t)))
 	  return err;
     }
@@ -594,8 +608,8 @@ const char *evalExpression(const char *start, ExprValue &val, const IdentResolve
   delete [] tokens;
   v->setInternal(val);
   std::string s;
-  //ocpiDebug("Evaluating expression: %.*s err: \"%s\" value: \"%s\"",
-  //	    (int)(end - start), start, err ? err : "", val.getString(s));
+  ocpiDebug("Evaluating expression: %.*s err: \"%s\" value: \"%s\"",
+  	    (int)(end - start), start, err ? err : "", val.getString(s));
   return
     err ? esprintf("when parsing expression \"%.*s\": %s", (int)(end-start), start, err) :
     NULL;
@@ -615,6 +629,30 @@ parseExprNumber(const char *a, size_t &np, std::string *expr, const IdentResolve
       err = esprintf("the expression \"%s\" does not evaluate to a number", a);
     else {
       np = OCPI_UTRUNCATE(size_t, v.getNumber());
+      if (expr) {
+	expr->clear();
+	if (v.isVariable()) {
+	  //ocpiDebug("Found an expression: '%s' that was based on variables. prev:'%s'",
+	  //		    a, expr->c_str());
+	  *expr = a; // provide the expression to the caller in a string
+	}
+      }
+    }
+  }
+  return err;
+}
+// Evaluate the expression, using the resolver, and if the expression was variable,
+// save the expression so it can be reevaluated again later when the values of
+// variables are different.
+const char *
+parseExprString(const char *a, std::string &s, std::string *expr, const IdentResolver *resolver) {
+  ExprValue v;
+  const char *err = evalExpression(a, v, resolver);
+  if (!err) {
+    if (v.isNumber())
+      err = esprintf("the expression \"%s\" does not evaluate to a string", a);
+    else {
+      v.getString(s);
       if (expr) {
 	expr->clear();
 	if (v.isVariable()) {

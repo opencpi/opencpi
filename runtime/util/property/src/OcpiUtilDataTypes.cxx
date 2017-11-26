@@ -161,9 +161,9 @@ namespace OCPI {
       return newType;
     }
 
-    // THis is called during normal parsing of a member, but also used after initial parsing
+    // This is called during normal parsing of a member, but also used after initial parsing
     // of the member XML when a value is being overriden later.
-    const char * Member::
+    const char *Member::
     parseDefault(const char *defValue, const char *tag, const IdentResolver *resolv) {
       if (defValue) {
 	delete m_default;
@@ -178,7 +178,7 @@ namespace OCPI {
       // FIXME: if any children (struct or type) have defaults, build a sparse default here
       return NULL;
     }
-    const char * Member::
+    const char *Member::
     parse(ezxml_t xm, bool a_isFixed, bool hasName, const char *hasDefault, const char *tag,
 	  unsigned ordinal, const IdentResolver *resolver) {
       bool found;

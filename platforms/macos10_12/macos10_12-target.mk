@@ -28,5 +28,5 @@ export OCPI_EXPORT_DYNAMIC=-Xlinker -export_dynamic
 export OCPI_DYNAMIC=1
 #export OCPI_TARGET_CXXFLAGS+=-std=c++0x
 export OCPI_HAVE_OPENCL=1
-export OCPI_OPENCL_OBJS=/System/Library/Frameworks/OpenCL.framework/Versions/A/OpenCL
+export OCPI_OPENCL_LIB=/System/Library/Frameworks/OpenCL.framework/Versions/A/OpenCL
 #export OCPI_OPENCV_HOME=/opt/opencpi/prerequisites/opencv/macos-10.8-x86_64

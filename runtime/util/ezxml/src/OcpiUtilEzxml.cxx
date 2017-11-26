@@ -755,6 +755,8 @@ namespace OCPI {
       }
       const char *
       ezxml_parse_str(char *string, size_t len, ezxml_t &xml) {
+	if (!len)
+	  len = strlen(string);
 	if (!(xml = ::ezxml_parse_str(string, len)))
 	  return "Could not parse xml string";
 	else if (ezxml_error(xml)[0]) {

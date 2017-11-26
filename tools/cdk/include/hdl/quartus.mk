@@ -176,7 +176,7 @@ QuartusMakeQsf=\
   echo '\#' Assignment for local source files using search paths above; \
   $(foreach s,$(QuartusSources), \
     echo set_global_assignment -name $(if $(filter %.vhd,$s),VHDL_FILE -library $(LibName),$(if $(filter %.sv,$s),SYSTEMVERILOG_FILE,VERILOG_FILE)) \
-        '\"'$(notdir $s)'\"';) \
+        '\"'$(call FindRelative,$(TargetDir),$s)'\"';) \
   \
   $(if $(findstring $(HdlMode),core worker platform assembly container),\
     echo '\#' Assignments for building cores; \
