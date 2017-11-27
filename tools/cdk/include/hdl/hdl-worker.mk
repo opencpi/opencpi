@@ -56,7 +56,10 @@ ifeq ($(HdlMode),worker)
   ifneq ($(shell egrep -i '<hdldevice' $(Worker_$(Worker)_xml)),)
     HdlIsDevice:=1
   endif
+else ifneq ($(filter config container,$(HdlMode)),)
+    HdlIsDevice:=1
 endif
+
 ifndef Tops
   ifdef Top
     Tops:=$(Top)

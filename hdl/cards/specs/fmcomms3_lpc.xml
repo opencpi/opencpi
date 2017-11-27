@@ -26,8 +26,6 @@
                                                   <!--ad9361 ad9361     
                                                         pin  name -->
   <device worker='ad9361_adc_sub'>
-    <Signal name='RX_FRAME_P'  slot='LA01_P_CC'/> <!--  G8   -->
-    <Signal name='RX_FRAME_N'  slot='LA01_N_CC'/> <!--  G7   -->
 
     <!-- TODO / FIXME - enable these properties, there is currently a bug
          preventing them from being enabled -->
@@ -50,10 +48,6 @@
   <device worker='ad9361_dac'/>
   <device worker='ad9361_dac'/>
   <device worker='ad9361_dac_sub'>
-    <Signal name='FB_CLK_P'    slot='LA08_P'/>    <!--  G12  -->
-    <Signal name='FB_CLK_N'    slot='LA08_N'/>    <!--  G13  -->
-    <Signal name='TX_FRAME_P'  slot='LA09_P'/>    <!--  D14  -->
-    <Signal name='TX_FRAME_N'  slot='LA09_N'/>    <!--  D15  -->
 
     <!-- TODO / FIXME - enable these properties, there is currently a bug
          preventing them from being enabled -->
@@ -82,31 +76,37 @@
   <device worker='ad9361_data_sub'>
     <Signal name='DATA_CLK_P'  slot='LA00_P_CC'/> <!--  G11  -->
     <Signal name='DATA_CLK_N'  slot='LA00_N_CC'/> <!--  H11  -->
-    <Signal name='P0_D(0)'     slot='LA11_N'/>    <!--  H17  TX_D0_N -->
-    <Signal name='P0_D(1)'     slot='LA11_P'/>    <!--  H16  TX_D0_P -->
-    <Signal name='P0_D(2)'     slot='LA12_N'/>    <!--  G16  TX_D1_N -->
-    <Signal name='P0_D(3)'     slot='LA12_P'/>    <!--  G15  TX_D1_P -->
-    <Signal name='P0_D(4)'     slot='LA13_N'/>    <!--  D18  TX_D2_N -->
-    <Signal name='P0_D(5)'     slot='LA13_P'/>    <!--  D17  TX_D2_P -->
-    <Signal name='P0_D(6)'     slot='LA10_N'/>    <!--  C15  TX_D3_N -->
-    <Signal name='P0_D(7)'     slot='LA10_P'/>    <!--  C14  TX_D3_P -->
-    <Signal name='P0_D(8)'     slot='LA14_N'/>    <!--  C19  TX_D4_N -->
-    <Signal name='P0_D(9)'     slot='LA14_P'/>    <!--  C18  TX_D4_P -->
-    <Signal name='P0_D(10)'    slot='LA15_N'/>    <!--  H20  TX_D5_N -->
-    <Signal name='P0_D(11)'    slot='LA15_P'/>    <!--  H19  TX_D5_P -->
-    <Signal name='P1_D(0)'     slot='LA02_N'/>    <!--  H8   RX_D0_N -->
-    <Signal name='P1_D(1)'     slot='LA02_P'/>    <!--  H7   RX_D0_P -->
-    <Signal name='P1_D(2)'     slot='LA03_N'/>    <!--  G10  RX_D1_N -->
-    <Signal name='P1_D(3)'     slot='LA03_P'/>    <!--  G9   RX_D1_P -->
-    <Signal name='P1_D(4)'     slot='LA04_N'/>    <!--  H11  RX_D2_N -->
-    <Signal name='P1_D(5)'     slot='LA04_P'/>    <!--  H10  RX_D2_P -->
-    <Signal name='P1_D(6)'     slot='LA05_N'/>    <!--  D12  RX_D3_N -->
-    <Signal name='P1_D(7)'     slot='LA05_P'/>    <!--  D11  RX_D3_P -->
-    <Signal name='P1_D(8)'     slot='LA06_N'/>    <!--  C11  RX_D4_N -->
-    <Signal name='P1_D(9)'     slot='LA06_P'/>    <!--  C10  RX_D4_P -->
-    <Signal name='P1_D(10)'    slot='LA07_N'/>    <!--  H14  RX_D5_N -->
-    <Signal name='P1_D(11)'    slot='LA07_P'/>    <!--  H13  RX_D5_P -->
+    <Signal name='P0_D_5_0(0)'     slot='LA11_N'/>    <!--  H17  TX_D0_N -->
+    <Signal name='P0_D_5_0(1)'     slot='LA11_P'/>    <!--  H16  TX_D0_P -->
+    <Signal name='P0_D_5_0(2)'     slot='LA12_N'/>    <!--  G16  TX_D1_N -->
+    <Signal name='P0_D_5_0(3)'     slot='LA12_P'/>    <!--  G15  TX_D1_P -->
+    <Signal name='P0_D_5_0(4)'     slot='LA13_N'/>    <!--  D18  TX_D2_N -->
+    <Signal name='P0_D_5_0(5)'     slot='LA13_P'/>    <!--  D17  TX_D2_P -->
+    <Signal name='P0_D_11_6(0)'     slot='LA10_N'/>    <!--  C15  TX_D3_N -->
+    <Signal name='P0_D_11_6(1)'     slot='LA10_P'/>    <!--  C14  TX_D3_P -->
+    <Signal name='P0_D_11_6(2)'     slot='LA14_N'/>    <!--  C19  TX_D4_N -->
+    <Signal name='P0_D_11_6(3)'     slot='LA14_P'/>    <!--  C18  TX_D4_P -->
+    <Signal name='P0_D_11_6(4)'    slot='LA15_N'/>    <!--  H20  TX_D5_N -->
+    <Signal name='P0_D_11_6(5)'    slot='LA15_P'/>    <!--  H19  TX_D5_P -->
+    <Signal name='P1_D_5_0(0)'     slot='LA02_N'/>    <!--  H8   RX_D0_N -->
+    <Signal name='P1_D_5_0(1)'     slot='LA02_P'/>    <!--  H7   RX_D0_P -->
+    <Signal name='P1_D_5_0(2)'     slot='LA03_N'/>    <!--  G10  RX_D1_N -->
+    <Signal name='P1_D_5_0(3)'     slot='LA03_P'/>    <!--  G9   RX_D1_P -->
+    <Signal name='P1_D_5_0(4)'     slot='LA04_N'/>    <!--  H11  RX_D2_N -->
+    <Signal name='P1_D_5_0(5)'     slot='LA04_P'/>    <!--  H10  RX_D2_P -->
+    <Signal name='P1_D_11_6(0)'     slot='LA05_N'/>    <!--  D12  RX_D3_N -->
+    <Signal name='P1_D_11_6(1)'     slot='LA05_P'/>    <!--  D11  RX_D3_P -->
+    <Signal name='P1_D_11_6(2)'     slot='LA06_N'/>    <!--  C11  RX_D4_N -->
+    <Signal name='P1_D_11_6(3)'     slot='LA06_P'/>    <!--  C10  RX_D4_P -->
+    <Signal name='P1_D_11_6(4)'    slot='LA07_N'/>    <!--  H14  RX_D5_N -->
+    <Signal name='P1_D_11_6(5)'    slot='LA07_P'/>    <!--  H13  RX_D5_P -->
 
+    <Signal name='RX_FRAME_P'  slot='LA01_P_CC'/> <!--  G8   -->
+    <Signal name='RX_FRAME_N'  slot='LA01_N_CC'/> <!--  G7   -->
+    <Signal name='FB_CLK_P'    slot='LA08_P'/>    <!--  G12  -->
+    <Signal name='FB_CLK_N'    slot='LA08_N'/>    <!--  G13  -->
+    <Signal name='TX_FRAME_P'  slot='LA09_P'/>    <!--  D14  -->
+    <Signal name='TX_FRAME_N'  slot='LA09_N'/>    <!--  D15  -->
     <!-- TODO / FIXME - enable this property, there is currently a bug
          preventing it from being enabled -->
     <!-- The LVDS configuration is not a hard requirement but it is included
@@ -115,7 +115,7 @@
     <!--Property name='DIFFERENTIAL_p'      value='true'/-->
     <!--Property name='PORT_CONFIG_p'       value='dual'/-->
     <!--Property name='DUPLEX_CONFIG_p'     value='full_duplex'/-->
-
+    <Property name='LVDS_P' value='true'/>
   </device>
   <device worker='ad9361_config'/>
   <!-- the ad7291 and mc24c02 are just an I2C slave devices so there are no specific pins -->

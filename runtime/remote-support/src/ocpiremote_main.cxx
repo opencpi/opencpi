@@ -22,7 +22,7 @@
 namespace OU =  OCPI::Util;
 
 #define OCPI_OPTIONS_HELP \
-  "Usage syntax is: ocpiocl [options] <command>\n" \
+  "Usage syntax is: ocpiremote [options] <command>\n" \
   "  Commands are:\n" \
   "    search    - find available discoverable devices\n" \
   "    probe     - test whether a server is available\n" \

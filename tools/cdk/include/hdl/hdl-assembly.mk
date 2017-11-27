@@ -81,7 +81,7 @@ ifneq ($(MAKECMDGOALS),clean)
       ifdef HdlConfConstraints
         HdlConstraints_$1:=$$(HdlConfConstraints)
       endif
-    endif
+    endef
     # Add a defined non-default container to the build
     # $(call addContainer,<container>,<platform>,<config>,<constraints>)
     define addContainer

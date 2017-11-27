@@ -46,6 +46,6 @@
     <parameter name='lvds_p' value='1'/>
     <parameter name='single_port_p' value='0'/>
     <parameter name='half_duplex_p' value='0'/>
-    <parameter name='swap_ports_p' value='1'/>
+    <parameter name='swap_ports_p' value='0'/>
   </configuration>
 </build>

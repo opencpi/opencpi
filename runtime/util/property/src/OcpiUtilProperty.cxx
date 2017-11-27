@@ -45,8 +45,8 @@
   "WriteError",    /* impl says writing this can return an error */\
   "Indirect",      /* impl is supplying an indirect address */	\
   "Debug",         /* property is for debug only */		\
-  "ReadScalable"   /* property has scalable read behavior */     \
-
+  "ReadScalable",   /* property has scalable read behavior */	\
+  "isimpl"
 
 namespace OCPI {
   namespace API {

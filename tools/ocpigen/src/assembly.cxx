@@ -536,6 +536,8 @@ emitXmlWorker(FILE *f) {
   for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++) {
     OU::Property *prop = *pi;
     prop->printAttrs(out, "property", 1, prop->m_isParameter); // suppress default values for parameters
+    if (prop->m_isImpl)
+      out += " isImpl='1'";
     if (prop->m_isVolatile)
       out += " volatile='1'";
     else if (prop->m_isReadable)

@@ -583,6 +583,8 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
   for (Instance *i = &m_assembly->m_instances[0]; n < m_assembly->m_instances.size(); i++, n++) {
     for (SignalsIter si = i->m_worker->m_signals.begin(); si != i->m_worker->m_signals.end();
 	 si++) {
+      if ((**si).m_direction == Signal::UNUSED)
+	continue;
       Signal *s = new Signal(**si);
       if (i->m_worker->m_type != Worker::Platform)
 	OU::format(s->m_name, "%s_%s", i->cname(), (**si).m_name.c_str());

@@ -256,14 +256,14 @@ getOclPlatforms(const StringSet *&platforms) {
   platforms = &oclPlatforms;
   if (oclPlatformsDone)
     return NULL;
-  std::string cmd;
-  if ((err = getCdkDir(cmd)))
-    return err;
   std::string ocpiocl;
+  if ((err = getCdkDir(ocpiocl)))
+    return err;
   OU::formatAdd(ocpiocl, "/bin/%s-%s-%s/ocpiocl",
 		OCPI_CPP_STRINGIFY(OCPI_OS) + strlen("OCPI"),
 		OCPI_CPP_STRINGIFY(OCPI_OS_VERSION), OCPI_CPP_STRINGIFY(OCPI_ARCH));
-  OU::formatAdd(cmd, "%s test && %s targets", ocpiocl.c_str(), ocpiocl.c_str());
+  std::string cmd;
+  OU::format(cmd, "%s test && %s targets", ocpiocl.c_str(), ocpiocl.c_str());
   FILE *out;
   if ((out = popen(cmd.c_str(), "r")) == NULL)
     return OU::esprintf("Could not execute the \"ocpiocl targets\" command");

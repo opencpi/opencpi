@@ -655,8 +655,10 @@ emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
       prefix = i->cname();
     prefix += "_";
   }
-  for (SignalsIter si = i->m_worker->m_signals.begin(); si != i->m_worker->m_signals.end(); si++) {
+  for (auto si = i->m_worker->m_signals.begin(); si != i->m_worker->m_signals.end(); si++) {
     Signal &s = **si;
+    if (s.m_direction == Signal::UNUSED)
+      continue;
     bool anyMapped = false;
     std::string name;
     // Allow for signals in a vector to be mapped individually (e.g. to slot signal).
@@ -758,7 +760,8 @@ emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
 	}
       assert(otherIp);
       std::string externalName, num;
-      OU::format(num, "%zu", at->m_index);
+      if (lang == Verilog)
+	OU::format(num, "%zu", at->m_index);
       OU::format(externalName, ip->m_attachments.front()->m_connection.m_slaveName.c_str(), num.c_str());
       if (lang == Verilog)
 	fprintf(f, "assign %sSData = 32'b0;\n", externalName.c_str());
