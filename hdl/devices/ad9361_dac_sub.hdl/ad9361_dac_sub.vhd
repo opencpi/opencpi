@@ -368,15 +368,8 @@ begin
     end generate;
   end generate;
 
-  signals : entity work.signals -- this should work for all AD9361 modes
-    generic map(
-      DIFFERENTIAL   => (DIFFERENTIAL_p = btrue))
-    port map(
-      w_TX_FRAME_P => TX_FRAME_P_s,
-      w_FB_CLK_P   => FB_CLK_P_s,
-      TX_FRAME_P   => TX_FRAME_P,
-      TX_FRAME_N   => TX_FRAME_N,
-      FB_CLK_P     => FB_CLK_P,
-      FB_CLK_N     => FB_CLK_N);
+  -- delegate LVDS issues to the data_sub.
+  dev_data_to_pins_out.tx_frame <= TX_FRAME_P_s;
+  dev_data_to_pins_out.fb_clk   <= FB_CLK_P_s;
 
 end rtl;

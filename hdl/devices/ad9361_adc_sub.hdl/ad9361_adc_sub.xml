@@ -40,9 +40,5 @@
   <supports worker='ad9361_adc'>
     <connect port="dev_adc" to="dev_data_ch1_out"/>
   </supports>
-
-  <!-- Signals -->
-  <Signal Input="RX_FRAME_P"/>
-  <Signal Input="RX_FRAME_N"/>
 </HdlDevice>
 

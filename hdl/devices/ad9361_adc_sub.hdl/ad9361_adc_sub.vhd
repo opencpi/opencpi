@@ -356,16 +356,8 @@ begin
                 other_clk   => adc_clk,
                 other_reset => open,
                 event       => adc_r2_samps_dropped);
-
-  signals : entity work.signals -- this should work for all AD9361 modes
-    generic map(
-      adc_width      => adc_width,
-      DIFFERENTIAL   => (DIFFERENTIAL_p = btrue),
-      data_bus_bits_are_reversed => (data_bus_bits_are_reversed = btrue))
-    port map(
-      w_RX_FRAME_P => RX_FRAME_P_s,
-      RX_FRAME_P   => RX_FRAME_P,
-      RX_FRAME_N   => RX_FRAME_N);
-
+    -- delegate LVDS issues to the data_sub.
+    RX_FRAME_P_s <= dev_data_from_pins_in.rx_frame;
+     
 end rtl;
 

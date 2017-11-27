@@ -1,27 +1,52 @@
 <HdlDevice language="vhdl">
   <ComponentSpec/>
 
-  <!-- Parameters -->
-  <Property name='P0_P1_ARE_SWAPPED_p' type='bool'
-                                       parameter='true'
-                                       default='false'
-                                       description='This parameter should be set to false when LVDS mode is used.'/>
-  <Property name='DIFFERENTIAL_p' type='bool'
-                                  parameter='true'
-                                  default='true'
-                                  description='A value of true indicates that the LVDS mode is used, and false indicates that CMOS mode is used.'/>
-  <Property name='PORT_CONFIG_p' type='enum' enums='single,dual'
-                                 parameter='true'
-                                 default='dual'
-                                 description='This should have a value of dual when LVDS mode is used (i.e. when DIFFERENTIAL_p has a value of true). Either value is acceptable when CMOS mode is used (i.e. when DIFFERENTIAL_p has a value of false).'/>
-  <Property name='DUPLEX_CONFIG_p' type='enum' enums='half_duplex,full_duplex'
-                                   parameter='true'
-                                   default='full_duplex'
-                                   description='This should have a value of full_duplex when LVDS mode is used (i.e. when DIFFERENTIAL_p has a value of true). Either value is acceptable when CMOS mode is used (i.e. when DIFFERENTIAL_p has a value of false).'/> <!-- TODO / FIXME support runtime_dynamic enumeration? -->
+  <!-- Parameters:  per modes in Table 48 and Table 50 in reference manual and Table 11 in the 
+       regsiter map reference manual.
+       Of course the worker will only be built for valid combinations of parameter values. -->
 
-  <!-- Properties -->
-  <Property name='port_direction' type='enum' enums='rx,tx' readable='1' writable='1' default='rx' description='Used to determine the P0 and P1 port directions when DUPLEX_CONFIG_p has a value of half_duplex (this functionality is necessary to support TDD modes). When DUPLEX_CONFIG_p has a value of full_duplex, this property is ignored.'/>
+  <!-- This parameter property corresponds to the "LVDS Mode" bit 4 in the parallel port configuration 3
+       register at 0x012. -->
+  <Property name='LVDS_p' type='bool' parameter='true' default='false'
+            description='Use LVDS mode for Data/clock/frame signals.
+			 Default is CMOS/single-ended mode.'/>
+  <!-- This parameter property corresponds to the "Half Duplex Mode" bit 3 in the parallel port
+       configuration 3 register 0x12 -->
+  <Property name='HALF_DUPLEX_p' type='bool' parameter='true' default='false'
+            description='Use full duplex mode, required in LVDS mode, optional in CMOS modes.'/>
+  <!-- This parameter property corresponds to the "Single Port Mode" bit 2 in the parallel port
+       configuration 3 register 0x12 -->
+  <Property name='SINGLE_PORT_p' type='bool' parameter='true' default='false'
+            description='Use both (dual) ports.  Default is to use a single port.'/>
+  <!-- This parameter property corresponds to the "Swap Ports" bit 6 in the parallel port
+       configuration 3 register 0x12 -->
+  <Property name='SWAP_PORTS_p' type='bool' parameter='true' default='false'
+            description='Use port 1 rather than port 0, when in single port, half duplex mode.'/>
+  <!-- The MODE_p parameter just maps the above 4 booleans into 8 modes, which determine pin usage
+       These modes are listed in the same order as the Digital Interface Specification section and Tables 48 and 50 in the
+       reference manual (UG570), with swapped modes inserted.
 
+    modes:                           P0[11:6] P0[5:0] P1[11:6] P1[5:0]
+    CMOS:
+      0. single port half duplex:    inout    inout   unused   unused
+      1. ==same with SwapPorts       unused   unused  inout    inout
+      2. single port full duplex:    out      in      unused   unused
+      3. ==same with SwapPorts       unused   unused  out      in
+      4. dual port half duplex:      inout    inout   inout    inout (swap is the same)
+      5. dual port full duplex:      in       in      out      out
+      6. ==same with SwapPorts:      out      out     in       in
+    LVDS:
+      7. dual port full duplex:      out      out     in       in
+
+    So the following expression just encodes the above table for convenience in setting the
+    signal direction attributes.  Note mode 6 and 7 have identical signal directions but are
+    still used to distinguish enabling LVDS
+  -->
+  <Property name='MODE_p' type='uchar' parameter='true'
+	    default='lvds_p ? 7 :
+		     single_port_p ? (half_duplex_p ? (swap_ports_p ? 1 : 0) : (swap_ports_p ? 3 : 2)) :
+		     half_duplex_p ? 4 : (swap_ports_p ? 6 : 5)'
+            description='a convenience parameter to map the various options into 8 modes.'/>
   <!-- Dev Signal Ports -->
   <devsignal name='dev_cfg_data_port' signals='ad9361-cfg-data-port-signals.xml'/>
   <devsignal name='dev_data_clk' count='2' optional='true' signals='ad9361-data-clk-signals.xml'/>
@@ -41,15 +66,50 @@
     <connect port="dev_data_to_pins" to="dev_data_dac"/>
   </supports>
 
-  <!-- Signals -->
-  <Signal Input="DATA_CLK_P"/> <!-- Pin G11: RX Clock output -->
-  <Signal Input="DATA_CLK_N"/> <!-- Pin H11: RX Clock output -->
-  <Signal Output="P0_D" width="12"/>
-  <Signal Input="P1_D" width="12"/>
-  <!-- TODO / FIXME - add framework support for parameterized signal directions -->
-  <!--Property name='P0_direction' type='direction' parameter='true' default='inout'>
-  <Property name='P1_direction' type='direction' parameter='true' default='inout'/>
-  <Signal direction="P0_direction" name="P0_D" width="12"/>
-  <Signal direction="P1_direction" name="P1_D" width="12"/-->
-
+  <!-- Signals per data sheet.  Necessary changes from the data sheet signal naming:
+       When a differential signal is used in CMOS mode, the positive (e.g. DATA_CLK_P) signal is
+       used, but the data sheet may use the signal name without any suffix (e.g. DATA_CLK)
+       The two ports (P0_D[11:0] and P1_D [11:0]) are split in half since the halves are in fact
+       sometimes used in opposite directions.
+       Direction of most signals depends on the mode. -->       
+  <Signal name='DATA_CLK_P' direction='in' pin='1'
+	  description='Pin G11: RX Clock from ad9361 (positive).'/>
+  <Signal name='DATA_CLK_N' direction='lvds_p ? in : unused' pin='1'
+	  description='Pin H11: RX Clock from ad9361 (negative), unused in CMOS mode.'/>
+  <Signal name='RX_FRAME_P' direction='in' pin='1'
+	  description='Pin G8:  RX Data Valid from ad9361 (positive).'/>
+  <Signal name='RX_FRAME_N' direction='lvds_p ? in : unused' pin='1'
+	  description='Pin G7:  RX Data Valid from ad9361 (negative), unused in CMOS mode.'/>
+  <!-- theoretically these might not be connected in a receive-only configuration -->
+  <Signal name='FB_CLK_P'   direction='out' pin='1'
+	  description='Pin F10: TX Clock to ad9361 (positive).'/>
+  <Signal name='FB_CLK_N'   direction='lvds_p ? out : unused' pin='1'
+	  description='Pin G10: TX Clock to ad9361 (negative), unused in CMOS mode.'/>
+  <Signal name='TX_FRAME_P' direction='out' pin='1'
+	  description='Pin G9:  TX Data Valid to ad9361 (positive).'/>
+  <Signal name='TX_FRAME_N' direction='lvds_p ? out : unused' pin='1'
+	  description='Pin H9:  TX Data Valid to ad9361 (negative), unused in CMOS mode.'/>
+  <!-- this is in fact unused in some modes but we assume it will always be connected -->
+  <Signal name='TXNRX'      direction='out'
+	  description='Pin H4:  Half duplex RF direction control (1==TX), unused in LVDS mode.'/>
+  <!-- this is in fact unused in some modes but we assume it will always be connected -->
+  <Signal name='ENABLE'     direction='lvds_p ? unused : out'
+	  description='Pin G6:  Half duplex RF state machine control, unused in LVDS mode..'/>
+  <!-- P0 signals are aliased to LDVS TX_D[5:0]_N and TX_D[5:0]_P pairs in the data sheet -->
+  <Signal name='P0_D_11_6' width='6' pin='1' direction='mode_p == 0 || mode_p == 4 ? inout :
+		 					mode_p == 1 || mode_p == 3 ? unused :
+							mode_p == 5 ? in : out'/>
+  <Signal name='P0_D_5_0'  width='6' pin='1' direction='mode_p == 0 || mode_p == 4 ? inout :
+							mode_p == 1 || mode_p == 3 ? unused :
+							mode_p == 2 || mode_p == 5 ? in :
+							out'/>
+  <!-- P1 signals are aliased to LDVS RX_D[5:0]_N and RX_D[5:0]_P pairs in the data sheet -->
+  <Signal name='P1_D_11_6' width='6' pin='1' direction='mode_p == 0 || mode_p == 2 ? unused :
+							mode_p == 1 || mode_p == 4 ? inout :
+							mode_p == 6 || mode_p == 7 ? in :
+							out'/>
+  <Signal name='P1_D_5_0'  width='6' pin='1' direction='mode_p == 0 || mode_p == 2 ? unused :
+							mode_p == 1 || mode_p == 4 ? inout :
+							mode_p == 5 ? out :
+							in'/>
 </HdlDevice>

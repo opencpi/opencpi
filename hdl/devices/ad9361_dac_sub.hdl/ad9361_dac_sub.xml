@@ -35,14 +35,5 @@
   <supports worker='ad9361_dac'>
     <connect port="dev_dac" to="dev_data_ch1_in"/>
   </supports>
-
-  <!-- Signals -->
-  <Signal Output="TX_FRAME_P"/>
-  <Signal Output="TX_FRAME_N"/>
-  <Signal Output="FB_CLK_P"/> <!-- forwarded source synchronous transmit data clk -->
-  <Signal Output="FB_CLK_N"/> <!-- forwarded source synchronous transmit data clk -->
-  <!-- when differential signals have better support -->
-  <!-- <Signal Output="FB_CLK" differential='true' pos='%s_P' neg='%s_N'/> -->
-  <!-- <Signal Output="TX_FRAME" differential='true' pos='%s_P' neg='%s_N'/> -->
 </HdlDevice>
 

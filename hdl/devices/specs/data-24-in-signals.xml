@@ -1,3 +1,4 @@
 <signals>
   <signal input='data' width='24'/>
+  <signal input='rx_frame'/>
 </signals>

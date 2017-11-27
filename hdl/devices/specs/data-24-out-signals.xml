@@ -1,3 +1,5 @@
 <signals>
   <signal output='data' width='24'/>
+  <signal output='tx_frame'/>
+  <signal output='fb_clk'/>
 </signals>

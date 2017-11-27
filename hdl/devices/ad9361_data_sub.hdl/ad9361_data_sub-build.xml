@@ -1,0 +1,51 @@
+<build>
+  <!-- configuration ids correspond to the "modes" defined in the OWD -->
+  <configuration id='0'>
+    <parameter name='lvds_p' value='0'/>
+    <parameter name='single_port_p' value='1'/>
+    <parameter name='half_duplex_p' value='1'/>
+    <parameter name='swap_ports_p' value='0'/>
+  </configuration>
+  <configuration id='1'>
+    <parameter name='lvds_p' value='0'/>
+    <parameter name='single_port_p' value='1'/>
+    <parameter name='half_duplex_p' value='1'/>
+    <parameter name='swap_ports_p' value='1'/>
+  </configuration>
+  <configuration id='2'>
+    <parameter name='lvds_p' value='0'/>
+    <parameter name='single_port_p' value='1'/>
+    <parameter name='half_duplex_p' value='0'/>
+    <parameter name='swap_ports_p' value='0'/>
+  </configuration>
+  <configuration id='3'>
+    <parameter name='lvds_p' value='0'/>
+    <parameter name='single_port_p' value='1'/>
+    <parameter name='half_duplex_p' value='0'/>
+    <parameter name='swap_ports_p' value='1'/>
+  </configuration>
+  <configuration id='4'>
+    <parameter name='lvds_p' value='0'/>
+    <parameter name='single_port_p' value='0'/>
+    <parameter name='half_duplex_p' value='1'/>
+    <parameter name='swap_ports_p' value='0'/>
+  </configuration>
+  <configuration id='5'>
+    <parameter name='lvds_p' value='0'/>
+    <parameter name='single_port_p' value='0'/>
+    <parameter name='half_duplex_p' value='0'/>
+    <parameter name='swap_ports_p' value='0'/>
+  </configuration>
+  <configuration id='6'>
+    <parameter name='lvds_p' value='0'/>
+    <parameter name='single_port_p' value='0'/>
+    <parameter name='half_duplex_p' value='0'/>
+    <parameter name='swap_ports_p' value='1'/>
+  </configuration>
+  <configuration id='7'>
+    <parameter name='lvds_p' value='1'/>
+    <parameter name='single_port_p' value='0'/>
+    <parameter name='half_duplex_p' value='0'/>
+    <parameter name='swap_ports_p' value='1'/>
+  </configuration>
+</build>
