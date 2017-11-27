@@ -16,14 +16,24 @@ import numpy
 import sys
 import os.path
 
-if len(sys.argv) != 5:
+if len(sys.argv) != 5 and len(sys.argv) > 1:
     print("Invalid arguments:  usage is: generate.py <starting-message-size> <ending-message-size> <message-size-increment> <output-file>")
     sys.exit(1)
-
-startingMessageSize=int(sys.argv[1])
-endingMessageSize=int(sys.argv[2])
-messageSizeIncrement=int(sys.argv[3])
-fileName = sys.argv[4]
+if  len(sys.argv) == 5:
+    startingMessageSize=int(sys.argv[1])
+    endingMessageSize=int(sys.argv[2])
+    messageSizeIncrement=int(sys.argv[3])
+    fileName = sys.argv[4]
+else: #sensible defaults if no arguments are given
+    print "Using default input parameters:"
+    print "Starting Message Size: 2"
+    print "Ending message size: 8192"
+    print "Message size increment: 315"
+    print "Output file: test.input.width_adapter"
+    startingMessageSize=2
+    endingMessageSize=8192
+    messageSizeIncrement=315
+    fileName = "test.input.width_adapter_test"    
 fileType = 'uint8'
 packType = 'B'
 metadataHeaderSizeInBytes=8

@@ -99,13 +99,13 @@ ifdef RccPlatforms
   RccTargets:=
   RccFound:=
   $(foreach p,$(RccPlatforms),\
-    $(foreach d,$(OcpiGetRccPlatformPaths),\
-      $(foreach f,$d/$p/target,\
+    $(foreach d, $(call OcpiGetRccPlatformDir,$p),\
+      $(foreach f,$d/target,\
          $(if $(wildcard $f),\
            $(foreach t,$(shell echo $$(< $f)),\
-             $(eval RccTargets+=$t)\
-             $(eval RccTarget_$p:=$t)\
-             $(eval RccFound+=$p))))))\
+               $(eval RccTargets+=$t)\
+               $(eval RccTarget_$p:=$t)\
+               $(eval RccFound+=$p))))))\
   $(foreach p,$(RccPlatforms),\
     $(if $(findstring $p,$(RccFound)),,\
       $(error RccPlatform $p is unknown, $f does not exist)))

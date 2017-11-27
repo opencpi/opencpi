@@ -937,6 +937,8 @@ done
 
 [ "$SKELETON" == 1 ] || [ "$OCPI_BASE" != 1 ] || cp $from/$xmldir/test.input* applications 2> /dev/null || true
 [ "$SKELETON" == 1 ] || [ "$OCPI_BASE" != 1 ] || cp $from/$xmldir/run.sh applications 2> /dev/null || true
+#Some baseproj apps (wsi_width_adapter_test) rely on python scripts in examples 
+[ "$SKELETON" == 1 ] || [ "$OCPI_BASE" != 1 ] || cp $from/$xmldir/*.py applications 2> /dev/null || true
 
 
 ######################################################

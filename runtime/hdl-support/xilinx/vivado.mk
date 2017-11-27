@@ -587,7 +587,8 @@ HdlGrepExclude_vivado:=-e '^CRITICAL WARNING:' -e '|      |Item              |Er
 ################################################################################
 # Echo error or success based on the exit status
 # XilinxAfter: <target-dir> <stage> <exit-status>
-XilinxAfter=echo Time: `cat $1.time` at `date +%T`; \
+XilinxAfter=set +e; grep -e "ERROR:" $1.out; \
+        echo Time: `cat $1.time` at `date +%T`; \
         if test $2 != 0; then \
           $(ECHO) Error: $(HdlToolSet) failed\($2\) on stage "$1". See $1.out.'  '; \
 	  exit 1;\
@@ -607,8 +608,10 @@ DoXilinx=\
         fi; \
 	echo " "Details in $4.out; cd $2 ; $(call OcpiXilinxVivadoInit,$4.out);\
 	echo Command: $1 $3 >> $4.out; \
-	(/usr/bin/time -f %E -o $4.time bash -c "$1 $3" >> $4.out) 2>&1;\
+	set +e;\
+	(/usr/bin/time -f %E -o $4.time bash -c "$1 $3") >> $4.out 2>&1;\
         HdlExit=$$$$?;\
+	set -e;\
 	(echo -n Elapsed time:; tr -d '\n' <$4.time; echo -n ', completed at '; date +%T; echo -n Exit status: $$$$HdlExit) >> $4.out; \
 	$(call XilinxAfter,$4,$$$$HdlExit)
 

@@ -22,57 +22,57 @@ _ocpidev()
     COMPREPLY=()
     cur="${COMP_WORDS[COMP_CWORD]}"
     oneopts="-v -f -s -p -t -n -u -H -J -X -x"
-    i=$((1)) 
+    i=$((1))
     # this first section is deciding to bash complete on the current word some options take a unique
-    # word after some don't.  this code is dealing with that difference and selecting which nouns and 
-    # verbs go where.  
-    while [[ ${COMP_WORDS[i]} == -* ]] 
+    # word after some don't.  this code is dealing with that difference and selecting which nouns and
+    # verbs go where.
+    while [[ ${COMP_WORDS[i]} == -* ]]
     do
       if [[ $oneopts != *"${COMP_WORDS[i]}"* ]] ; then
         i=$(( $i + 1 ))
       fi
       i=$(( $i + 1 ))
-    done 
+    done
     verb="${COMP_WORDS[i]}"
     i=$(( $i + 1 ))
-    while [[ ${COMP_WORDS[i]} == -* ]] 
+    while [[ ${COMP_WORDS[i]} == -* ]]
     do
       if [[ $oneopts != *"${COMP_WORDS[i]}"* ]] ; then
         i=$(( $i + 1 ))
       fi
       i=$(( $i + 1 ))
-    done 
+    done
     noun1="${COMP_WORDS[i]}"
     i=$(( $i + 1 ))
-    while [[ ${COMP_WORDS[i]} == -* ]] 
+    while [[ ${COMP_WORDS[i]} == -* ]]
     do
       if [[ $oneopts != *"${COMP_WORDS[i]}"* ]] ; then
         i=$(( $i + 1 ))
       fi
       i=$(( $i + 1 ))
-    done 
+    done
     noun2="${COMP_WORDS[i]}"
     i=$(( $i + 1 ))
-    while [[ ${COMP_WORDS[i]} == -* ]] 
+    while [[ ${COMP_WORDS[i]} == -* ]]
     do
       if [[ $oneopts != *"${COMP_WORDS[i]}"* ]] ; then
         i=$(( $i + 1 ))
       fi
       i=$(( $i + 1 ))
-    done 
+    done
     noun3="${COMP_WORDS[i]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
-    # valid verbs 
+    # valid verbs
     verbs="build delete create report clean register unregister show"
-    # valid nouns in first slot 
+    # valid nouns in first slot
     nouns1="project application spec protocol test library worker hdl"
     # valid nouns in second slot
     nouns2="assembly card slot device platform platforms targets primitive"
     # valid nouns in third slot
     nouns3="library core"
-    #valid build options  
+    #valid build options
     bopts="--rcc --hdl --no-assemblies --hdl-assembly --hdl-target --hdl-platform \
-           --rcc-platform --hdl-rcc-platform --worker"
+           --rcc-platform --rcc-hdl-platform --worker"
     # show verb has different options and nouns
     showopts="-h --help -v -d --table --json"
     if [[ ${verb} == show ]] ; then
@@ -122,24 +122,23 @@ _ocpidev()
         return 0
       fi
       COMPREPLY=( $(compgen -W "${bopts} ${opts}" -- ${cur}) )
-      return 0  
+      return 0
     # if current word is in the verb slot
-    elif [[ ${verb} == ${cur} ]] ; then  
+    elif [[ ${verb} == ${cur} ]] ; then
       COMPREPLY=( $(compgen -W "${verbs}" ${cur}) )
       return 0
     # if current word is in the first noun slot
-    elif [[ ${noun1} == ${cur} ]] ; then  
+    elif [[ ${noun1} == ${cur} ]] ; then
       COMPREPLY=( $(compgen -W "${nouns1}" ${cur}) )
       return 0
     # if current word is in the second noun slot
-    elif [[ ${noun1} == hdl && ${noun2} == ${cur} ]] ; then  
+    elif [[ ${noun1} == hdl && ${noun2} == ${cur} ]] ; then
       COMPREPLY=( $(compgen -W "${nouns2}" ${cur}) )
       return 0
     # if current word is in the third noun slot
-    elif [[ ${noun2} == primitive && ${noun3} == ${cur} ]] ; then  
+    elif [[ ${noun2} == primitive && ${noun3} == ${cur} ]] ; then
       COMPREPLY=( $(compgen -W "${nouns3}" ${cur}) )
       return 0
     fi
 }
 complete -F _ocpidev ocpidev
-

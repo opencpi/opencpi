@@ -49,6 +49,10 @@ function bad {
   exit 1
 }
 
+function warn {
+  echo "Warning: $*" >&2
+}
+
 function noslash {
   [ "$(dirname $1)" != . ] && bad no slashes allowed in \"$1\": perhaps use the -d option\?
   return 0
@@ -1790,8 +1794,8 @@ Options with * may occur multiple times
   -x                 For use only without -X.  The application's directory have an
                      application XML file rather then the default of an ACI file (<app>.cc).
  == when building assets ==
-  --clean            Clean the build with the rest of the settings specified 
-		     Also works as a verb instead of build i.e.(ocpidev clean) 
+  --clean            Clean the build with the rest of the settings specified
+		     Also works as a verb instead of build i.e.(ocpidev clean)
   --rcc              Build rcc workers, when building at the project or library level.
   --hdl              Build hdl workers, when building at the project or library level.
    --worker <worker>
@@ -1799,10 +1803,10 @@ Options with * may occur multiple times
   --no-assemblies
                      Do not build assemblies, when building at the project level.
   --hdl-assembly <assembly>
-                     *Add an assembly to be specificially built and don't build any other 
+                     *Add an assembly to be specificially built and don't build any other
                      assemblies.
   --hdl-target <target>
-                     *Add an HDL target to be specifically built and don't build for any other 
+                     *Add an HDL target to be specifically built and don't build for any other
 		     targets.
   --hdl-platform <platform>
                      *Add an HDL platform to be built and don't build for any other platforms.
@@ -1934,8 +1938,10 @@ while [[ "${argv[0]}" != "" ]] ; do
       (--build-hdl-assembly|--build--assembly|--hdl-assembly) takeval assy; assys="${assys[@]} $assy";;
       (--build-hdl-target|--hdl-target) takeval hdltarget; hdltargets="${hdltargets[@]} $hdltarget";;
       (--build-hdl-platform|--hdl-platform) takeval hdlplat; hdlplats="${hdlplats[@]} $hdlplat";;
-      (--build-rcc-platform|--rcc-platform) takeval swplat;  swplats="${swplats[@]} $swplat";;
-      (--build-hdl-rcc-platform|--hdl-rcc-platform) takeval hwswplat;  hwswplats="${hwswplats[@]} $hwswplat";;
+      (--build-rcc-platform|--rcc-platform) takeval swplat; swplats="${swplats[@]} $swplat";;
+      (--build-rcc-hdl-platform|--rcc-hdl-platform) takeval hwswplat; hwswplats="${hwswplats[@]} $hwswplat";;
+      # AV_API_DEPRECATED 2.0 (AV-3457, specific search string)
+      (--build-hdl-rcc-platform|--hdl-rcc-platform) warn "${argv[0]} is deprecated: use --rcc-hdl-platform to specify RCC platform using HDL name"; takeval hwswplat; hwswplats="${hwswplats[@]} $hwswplat";;
       (--create-build-files) OCPI_CREATE_BUILD_FILES=1;;
       (*)
         error_msg="unknown option: ${argv[0]}"
@@ -2176,7 +2182,7 @@ gpmd=$OCPI_CDK_DIR/scripts/genProjMetaData.py
 if [ -x $gpmd ] ; then
   if [ "$verb" == create -a "$noun" == project ] ; then
     $gpmd $(pwd) force
-  elif [ "$verb" == create -o \( "$verb" == delete -a "$noun" != project \) ] ; then 
+  elif [ "$verb" == create -o \( "$verb" == delete -a "$noun" != project \) ] ; then
     $gpmd $(pwd)
   fi
 fi

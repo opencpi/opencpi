@@ -575,7 +575,7 @@ request_memory(struct file *file, ocpi_request_t *request) {
     // AV-1645 - in centos 8 revist using the DMA API instead of memmap
     if ((err = get_dma_memory(request, minor)) != 0) {
       log_err("get_dma_memory in request_memory failed, trying fallback\n");
-      log_err("if allocation failure occurrs, see README for memmap configuration\n");
+      log_err("if allocation failure occurs, see README for memmap configuration\n");
       // Try to make a kernel allocation and stick it in the list
       // can't use alloc_pages_exact for high mem in a 32 bit world
       {
