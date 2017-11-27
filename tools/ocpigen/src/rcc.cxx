@@ -362,12 +362,12 @@ struct C_Unparser : public OU::Unparser {
   }
   bool
   unparseString(std::string &s, const char *val, bool hex) const {
-    if (*val)
+    if (val && *val)
       s += '\"';
     Unparser::unparseString(s, val, hex);
-    if (*val)
+    if (val && *val)
       s += '\"';
-    return *val != '\0';
+    return !val || *val == '\0';
   }
 };
 

@@ -36,7 +36,6 @@ namespace OU =  OCPI::Util;
   "    search    - find available OpenCL devices\n" \
   "    probe     - test whether an OpenCL device exists\n" \
   "    targets   - print all targets found on this system\n" \
-  "    test      - test for the existence of an OpenCL environment\n"
 
 //           name      abbrev  type    value description
 #define OCPI_OPTIONS \
@@ -52,22 +51,33 @@ namespace OU =  OCPI::Util;
 namespace OC = OCPI::Container;
 namespace OA = OCPI::API;
 
+const char *defaultLib =
+#ifdef OCPI_OS_macos
+  "/System/Library/Frameworks/OpenCL.framework/Versions/A/OpenCL"
+#else
+ "libOpenCL.so.1"
+#endif
+  ;
+
 static int mymain(const char **ap) {
   OCPI::OS::logSetLevel(options.loglevel());
   OCPI::Driver::ManagerManager::suppressDiscovery();
-  const char *env = getenv("OCPI_OPENCL_OBJS");
-  const char *lib = env ? env : "libOpenCL.so";
+  const char *env = getenv("OCPI_OPENCL_LIB");
+  const char *lib = env ? env : defaultLib;
   try {
     OCPI::OS::LoadableModule lm(lib, true);
   } catch (...) {
-    if (!*ap || strcasecmp(*ap, "test"))
-      options.bad("Missing/invalid OpenCL support library:  %s", lib);
+    options.bad("Missing/invalid OpenCL support library:  %s", lib);
     return 1;
   }
-  if (*ap && !strcasecmp(*ap, "test"))
-    return 0;
   if (!*ap)
     return 0;
+  std::string error;  
+#if 0
+  // Explicitly load the OCL driver here so it is not statically linked.
+  if (OCPI::Driver::ManagerManager::loadDriver("container", "ocl", error))
+    options.bad("Error loading the OCL container driver: %s", error.c_str());
+#endif
   if (!strcasecmp(*ap, "search")) {
     OA::PVarray vals(5);
     unsigned n = 0;
@@ -126,10 +136,3 @@ static int mymain(const char **ap) {
   }
   return 0;
 }
-
-#if 0
-int
-main(int /*argc*/, const char **argv) {
-  return options.main(argv, mymain);
-}
-#endif

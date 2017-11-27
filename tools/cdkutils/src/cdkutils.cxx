@@ -267,7 +267,7 @@ openOutput(const char *name, const char *outDir, const char *prefix, const char 
 	err = "Cannot create symlink";
     }
   } while (0);
-  if (err)
+  if (err && f)
     fclose(f);
   return err;
 }

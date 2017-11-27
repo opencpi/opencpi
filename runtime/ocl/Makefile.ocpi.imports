@@ -38,13 +38,13 @@ ALLLIBS += \
 	$(LOGGER_LIBS) \
 	$(OCPIOS_LIBS)
 
-EXTRALIBOBJS += $(OCPI_OPENCL_OBJS)
+EXTRALIBOBJS += $(OCPI_OPENCL_LIB)
 EXTRA_LDFLAGS=$(LD_ALLOW_UNDEFINED)
 
 ifeq ($(OCPI_HAVE_OPENCL),1)
   # This redundancy can be removed when we always build dynamic libraries
-  SHARED+=-Xlinker -rpath -Xlinker $(dir $(OCPI_OPENCL_OBJS))
-  SHARED_ALLOW_UNDEFINED+=-Xlinker -rpath -Xlinker $(dir $(OCPI_OPENCL_OBJS))
+  SHARED+=-Xlinker -rpath -Xlinker $(dir $(OCPI_OPENCL_LIB))
+  SHARED_ALLOW_UNDEFINED+=-Xlinker -rpath -Xlinker $(dir $(OCPI_OPENCL_LIB))
   #ifeq ($(OCPI_TARGET_OS),linux)
   #SYSLIBS += $(dir $(OCPI_OPENCL_OBJS))/OpenCL
   #else

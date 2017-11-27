@@ -349,7 +349,7 @@ reduce(ExprToken *start, ExprToken *&end, bool parens) {
     if (t->value.m_isString && !opStringOk[t[-1].op])
       return "operator illegal for string";
     OpCode op = t[-1].op;
-    if (op < end->op) // don't reduce further if forcing op is tighter
+    if (op < end->op && end->op != OpEnd) // don't reduce further if forcing op is tighter
       break;
     bool b;
     switch (op) {
@@ -537,7 +537,7 @@ parse(const char *buf, const char *end, ExprToken *&tokens, const IdentResolver 
 	    ocpiDebug("Retrieved value for %s: string \"%s\"\n",
 		      sym.c_str(), v.m_internal ? v.m_internal->m_string.c_str() : "");
 	  else
-	    ocpiDebug("Retrieved value for %s: num %u %lld\n",
+	    ocpiDebug("Retrieved value for %s: num %u %" PRIi64 "\n",
 		      sym.c_str(), v.m_numberSet, v.getNumber());
 	  t->value = *v.m_internal;
 	  t->op = OpConstant;

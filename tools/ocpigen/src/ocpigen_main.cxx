@@ -104,7 +104,8 @@ main(int argc, const char **argv) {
   const char *outDir = NULL, *wksFile = NULL, *package = NULL;
   bool
     doDefs = false, doImpl = false, doSkel = false, doAssy = false, doWrap = false,
-    doArt = false, doTop = false, doTest = false, doCases = false, verbose = false;
+    doArt = false, doTopContainer = false, doTest = false, doCases = false, verbose = false,
+    doTopConfig = false;
   int doGenerics = -1;
   if (argc <= 1) {
     fprintf(stderr,
@@ -168,7 +169,10 @@ main(int argc, const char **argv) {
 	doWrap = true;
 	break;
       case 'X':
-	doTop = true;
+	doTopContainer = true;
+	break;
+      case 'Y':
+	doTopConfig = true;
 	break;
       case 'T':
 	doTest = true;
@@ -242,10 +246,10 @@ main(int argc, const char **argv) {
 	if (doCases)
 	  OCPI::Library::getManager().enableDiscovery();
 	std::string parent;
-	if (doTop) {
-	  ezxml_t xml;
-	  std::string file;
-	  std::string constraints, config;
+	ezxml_t xml;
+	std::string file;
+	if (doTopContainer) {
+	  std::string config, constraints;
 	  OrderedStringSet platforms;
 	  if ((err = parseFile(*ap, parent, "HdlContainer", &xml, file, false, false)) ||
 	      (err = HdlContainer::parsePlatform(xml, config, constraints, platforms))) {
@@ -256,6 +260,16 @@ main(int argc, const char **argv) {
 	  for (auto pi = platforms.begin(); pi != platforms.end(); ++pi)
 	    printf(" %s", (*pi).c_str());
 	  fputs("\n", stdout); 
+	  return 0;
+	}
+	if (doTopConfig) {
+	  if ((err = parseFile(*ap, parent, "HdlConfig", &xml, file, false, false))) {
+	    err = OU::esprintf("for platform configuration file %s:  %s\n", *ap, err);
+	    break;
+	  }
+	  const char *csf = ezxml_cattr(xml, "constraints");
+	  if (csf)
+	    printf("%s\n", csf);
 	  return 0;
 	}
 	if (doTest) {
