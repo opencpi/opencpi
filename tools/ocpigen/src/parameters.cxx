@@ -296,14 +296,20 @@ doDefaults() { // bool includeInitial) {
       if (!params[n].m_param) { // If we didn't see it when parsing this config
 	assert(params[n].m_uValues.size() == 0);
 	params[n].m_param = &p;
-	if (p.m_default)
-	  params[n].m_value = *p.m_default; // assignment operator
-	else
-	  params[n].m_value.setType(p);    // blank default value
+	params[n].m_isDefault = true;
+	if (p.m_default) {
+	  if (p.m_defaultExpr.length()) {
+	    // If the default is an expression, reevaluate it with the current parameter values.
+	    params[n].m_value.setType(p);    // blank default value
+	    params[n].m_value.parse(p.m_defaultExpr.c_str(), NULL, false, this, NULL);
+	    params[n].m_isDefault = false;
+	  } else
+	    params[n].m_value = *p.m_default; // assignment operator to copy the value
+	} else
+	  params[n].m_value.setType(p);       // blank default value
 	params[n].m_value.unparse(params[n].m_uValue);
 	params[n].m_uValues.push_back(params[n].m_uValue);
 	params[n].m_attributes.resize(params[n].m_attributes.size() + 1);
-	params[n].m_isDefault = true;
       }
       n++;
     }
@@ -384,8 +390,9 @@ write(FILE *xf, FILE *mf) {
     if (used) {
       // Put out the Makefile value lines
       std::string val;
+#if 0
       if (m_worker.m_model == HdlModel) {
-#if 0 // we generate the generics files directly now, not via make, thank goodness
+	// we generate the generics files directly now, not via make, thank goodness
 	std::string typeDecl, type;
 	vhdlType(*p.m_param, typeDecl, type);
 	//	if (typeDecl.length())
@@ -415,11 +422,12 @@ write(FILE *xf, FILE *mf) {
 	  fputc(*cp, mf);
 	}
 	fputs("\n", mf);
+      } else
 #endif
-      } else {
+	{
 	// FIXME: this should be an RCC method
 	fprintf(mf, "Param_%zu_%s:=", nConfig, p.m_param->m_name.c_str());
-	for (const char *cp = m_worker.paramValue(*p.m_param, p.m_value, val); *cp; cp++) {
+	for (const char *cp = m_worker.rccValue(p.m_value, val, *p.m_param); *cp; cp++) {
 	  if (*cp == '#' || (*cp == '\\' && !cp[1]))
 	    fputc('\\', mf);
 	  fputc(*cp, mf);
@@ -482,6 +490,7 @@ writeConstants(FILE *gf, Language lang) {
   m_worker.emitPropertyAttributeConstants(gf, lang);
   for (unsigned i = 0; i < m_worker.m_ports.size(); i++)
     m_worker.m_ports[i]->emitInterfaceConstants(gf, lang);
+  m_worker.emitSignalMacros(gf, lang);
   if (lang == VHDL)
     fprintf(gf, "end %s_constants;\n", m_worker.m_implName);
 }
@@ -847,7 +856,7 @@ emitMakefile(FILE *xmlFile) {
     m_paramConfigs[n]->used = true;
   return writeParamFiles(mkFile, xmlFile);  
 }
-// Based on worker xml, read the <worker>.build, and emit the generics file
+// Based on worker xml, read the <worker>-build.xml, and emit the generics file
 const char *Worker::
 emitHDLConstants(size_t config, bool other) {
   const char *err;
@@ -858,6 +867,9 @@ emitHDLConstants(size_t config, bool other) {
     return err;
   if (config >= m_paramConfigs.size() || m_paramConfigs[config] == NULL)
     return OU::esprintf("Invalid parameter configuration for VHDL generics: %zu", config);
+  // we must resolve non-parameter expression for the worker based on the parameter
+  // configuration we are emitting.  E.g. ports and signals.
+  resolveExpressions(*m_paramConfigs[config]);
   m_paramConfigs[config]->writeConstants(f, lang);
   return fclose(f) ?
     OU::esprintf("File close of VHDL generics file failed.  Disk full?") : NULL;

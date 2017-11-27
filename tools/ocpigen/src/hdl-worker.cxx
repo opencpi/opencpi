@@ -41,7 +41,8 @@ emitSignal(const char *signal, FILE *f, Language lang, Signal::Direction dir,
   if (lang == VHDL) {
     const char *io =
       dir == Signal::NONE ? "" :
-      (dir == Signal::IN ? "in  " : (dir == Signal::OUT ? "out " : "inout "));
+      (dir == Signal::IN || dir == Signal::UNUSED ? "in  " :
+       (dir == Signal::OUT ? "out " : "inout "));
     if (last.size())
       fprintf(f, last.c_str(), ";");
     if (width < 0) {
@@ -246,12 +247,12 @@ static struct VhdlUnparser : public OU::Unparser {
     }
     return false;
   }
-  bool 
+  bool
   unparseBool(std::string &s, bool val, bool) const {
     s += val ? "btrue" : "bfalse";
     return !val;
   }
-  bool 
+  bool
   unparseChar(std::string &s, char val, bool) const {
     if (isprint(val)) {
       s += '\'';
@@ -263,7 +264,7 @@ static struct VhdlUnparser : public OU::Unparser {
       OU::formatAdd(s, "character'val(%u)", val & 0xff);
     return val == 0;
   }
-  bool 
+  bool
   unparseString(std::string &s, const char *val, bool) const {
     if (!val || !*val) {
       s += "\"\"";
@@ -277,14 +278,14 @@ static struct VhdlUnparser : public OU::Unparser {
       } else {
 	ocpiBad("Illegal string character converting to VHDL: 0x%x, replaced by space", *cp & 0xff);
 	s += ' ';
-      }	
+      }
     return false;
   }
-  bool 
+  bool
   unparseFloat(std::string &s, float val, bool hex) const {
     return unparseDouble(s, val, hex);
   }
-  bool 
+  bool
   unparseDouble(std::string &s, double val, bool hex) const {
     size_t len = s.length();
     bool zip = Unparser::unparseDouble(s, val, hex);
@@ -568,42 +569,88 @@ emitParameters(FILE *f, Language lang, bool useDefaults, bool convert) {
 
 // Default may be overridden
 void Worker::
-emitDeviceSignal(FILE *f, Language lang, std::string &last, Signal &s) {
+emitDeviceSignal(FILE *f, Language lang, std::string &last, Signal &s, const char *prefix) {
   std::string name;
   if (s.m_differential) {
     OU::format(name, s.m_pos.c_str(), s.m_name.c_str());
     emitSignal(name.c_str(), f, lang, s.m_direction, last,
 	       s.m_width ? (int)s.m_width : -1, 0, "", s.m_type);
+    last += prefix;
     OU::format(name, s.m_neg.c_str(), s.m_name.c_str());
     emitSignal(name.c_str(), f, lang, s.m_direction, last,
 	       s.m_width ? (int)s.m_width : -1, 0, "", s.m_type);
-  } else if (s.m_direction == Signal::INOUT) {
+  } else if (s.m_direction == Signal::INOUT && !s.m_pin) {
     OU::format(name, s.m_in.c_str(), s.m_name.c_str());
     emitSignal(name.c_str(), f, lang, Signal::IN, last,
 	       s.m_width ? (int)s.m_width : -1, 0, "", s.m_type);
+    last += prefix;
     OU::format(name, s.m_out.c_str(), s.m_name.c_str());
     emitSignal(name.c_str(), f, lang, Signal::OUT, last,
 	       s.m_width ? (int)s.m_width : -1, 0, "", s.m_type);
+    last += prefix;
     OU::format(name, s.m_oe.c_str(), s.m_name.c_str());
     emitSignal(name.c_str(), f, lang, Signal::OUT, last, -1, 0, "", s.m_type);
   } else if (s.m_direction == Signal::OUTIN) {
+    assert(!s.m_pin);
     OU::format(name, s.m_in.c_str(), s.m_name.c_str());
     emitSignal(name.c_str(), f, lang, Signal::OUT, last,
 	       s.m_width ? (int)s.m_width : -1, 0, "", s.m_type);
+    last += prefix;
     OU::format(name, s.m_out.c_str(), s.m_name.c_str());
     emitSignal(name.c_str(), f, lang, Signal::IN, last,
 	       s.m_width ? (int)s.m_width : -1, 0, "", s.m_type);
+    last += prefix;
     OU::format(name, s.m_oe.c_str(), s.m_name.c_str());
     emitSignal(name.c_str(), f, lang, Signal::IN, last, -1, 0, "", s.m_type);
-  } else
+  }
+#if 0
+  else if (s.m_pin && s.m_directionExpr.size())
+    emitSignal(s.m_name.c_str(), f, lang, Signal::INOUT, last,
+	       s.m_width ? (int)s.m_width : -1, 0, "", s.m_type);
+#endif
+  else
     emitSignal(s.m_name.c_str(), f, lang, s.m_direction, last,
 	       s.m_width ? (int)s.m_width : -1, 0, "", s.m_type);
 }
 
 void Worker::
-emitDeviceSignals(FILE *f, Language lang, std::string &last) {
+emitDeviceSignalMappings(FILE *f, std::string &last) {
+  bool anyExpr = false;
   for (SignalsIter si = m_signals.begin(); si != m_signals.end(); si++)
-    emitDeviceSignal(f, lang, last, **si);
+    if ((*si)->m_directionExpr.size())
+      anyExpr = true;
+    else
+      emitDeviceSignalMapping(f, last, **si, "");
+  if (anyExpr) {
+    fputs(last.c_str(), f);
+    fprintf(f,
+	    "  %s There are additional signals whose direction is parameterized and are not\n"
+	    "  %s mapped here. They are defined in comments in the generics.vhd file for each\n"
+	    "  %s specific build configuration.  They are inserted below in the copy of this\n"
+	    "  %s file that is created in each target directory.\n"
+	    "  %s_parameterized_signal_map\n", hdlComment(VHDL), hdlComment(VHDL),
+	    hdlComment(VHDL), hdlComment(VHDL), hdlComment(VHDL));
+  }
+}
+// A prefix means for every line
+void Worker::
+emitDeviceSignals(FILE *f, Language lang, std::string &last) {
+  bool anyExpr = false;
+  for (SignalsIter si = m_signals.begin(); si != m_signals.end(); si++)
+    if ((*si)->m_directionExpr.size() && lang == VHDL)
+      anyExpr = true;
+    else
+      emitDeviceSignal(f, lang, last, **si, "");
+  if (anyExpr) {
+    emitLastSignal(f, last, lang, false);
+    fprintf(f,
+	    "  %s There are additional signals whose direction is parameterized and are not\n"
+	    "  %s defined here. They are defined in comments in the generics.vhd file for each\n"
+	    "  %s specific build configuration.  They are inserted below in the copy of this\n"
+	    "  %s file that is created in each target directory.\n"
+	    "  %s_parameterized_signal_decls\n", hdlComment(lang), hdlComment(lang), hdlComment(lang),
+	    hdlComment(lang), hdlComment(lang));
+  }
 }
 
 // Used in various places:
@@ -644,7 +691,7 @@ emitSignals(FILE *f, Language lang, bool useRecords, bool inPackage, bool inWork
   }
   if (m_signals.size()) {
     emitLastSignal(f, last, lang, false);
-    fprintf(f, "  \n  %s   Extra signals not part of any WIP interface:\n", comment);
+    fprintf(f, "  \n  %s Extra signals not part of any WIP interface:\n", comment);
     emitDeviceSignals(f, lang, last);
   }
   if (last != init) {
@@ -749,7 +796,7 @@ emitVhdlPropMember(FILE *f, OU::Property &pr, unsigned maxPropName, bool in2work
 						  pr.m_name.c_str()));
 	if (pr.m_arrayRank || pr.m_stringLength > 3 || pr.m_isSequence)
 	  fprintf(f,
-		  "    %s : Bool_t;\n", 
+		  "    %s : Bool_t;\n",
 		  tempName(temp, maxPropName, "%s_any_written", pr.m_name.c_str()));
       }
     }
@@ -807,7 +854,7 @@ emitVhdlPackageConstants(FILE *f) {
       ops[OU::Worker::OpsLimit - op] = m_ctl.controlOps & (1 << op) ? '1' : '0';
     rawBase = m_ctl.rawProperties ?
       (m_ctl.firstRaw ? m_ctl.firstRaw->m_offset : 0) :
-      OCPI_UTRUNCATE(size_t, m_ctl.sizeOfConfigSpace); 
+      OCPI_UTRUNCATE(size_t, m_ctl.sizeOfConfigSpace);
   }
   if (!m_ctl.nNonRawRunProperties) {
     fprintf(f, "-- no properties for this worker\n");
@@ -844,7 +891,7 @@ emitVhdlPackageConstants(FILE *f) {
 	last = pr->m_name.c_str();
 	n++;
       }
-    }    
+    }
     fprintf(f, "  -- %s\n  );\n", last);
   }
   if (!m_noControl)
@@ -870,7 +917,7 @@ emitVhdlWorkerPackage(FILE *f, unsigned maxPropName) {
     fprintf(f,"\n"
 	    "  -- The following record is for the writable properties of worker \"%s\"\n"
 	    "  -- and/or the read strobes of volatile or readonly properties\n"
-	    "  type worker_props_in_t is record\n", 
+	    "  type worker_props_in_t is record\n",
 	    m_implName);
     for (PropertiesIter pi = m_ctl.properties.begin(); nonRaw(pi); pi++)
       if ((*pi)->m_isWritable || (*pi)->m_isReadable)
@@ -886,9 +933,9 @@ emitVhdlWorkerPackage(FILE *f, unsigned maxPropName) {
 	      "    %-*s : Bool_t;\n"
 	      "    %-*s : std_logic_vector(31 downto 0);\n",
 	      maxPropName, "raw_address", m_wci->decodeWidth() - 1,
-	      maxPropName, "raw_byte_enable", 
-	      maxPropName, "raw_is_read", 
-	      maxPropName, "raw_is_write", 
+	      maxPropName, "raw_byte_enable",
+	      maxPropName, "raw_is_read",
+	      maxPropName, "raw_is_write",
 	      maxPropName, "raw_data");
 #endif
     fprintf(f,
@@ -897,7 +944,7 @@ emitVhdlWorkerPackage(FILE *f, unsigned maxPropName) {
   if (m_ctl.readbacks || m_ctl.rawReadables) {
     fprintf(f,"\n"
 	    "  -- The following record is for the readable properties of worker \"%s\"\n"
-	    "  type worker_props_out_t is record\n", 
+	    "  type worker_props_out_t is record\n",
 	    m_implName);
     for (PropertiesIter pi = m_ctl.properties.begin(); nonRaw(pi); pi++)
       if (!(*pi)->m_isParameter &&
@@ -937,7 +984,7 @@ emitVhdlWorkerEntity(FILE *f) {
 	  "entity %s_worker is\n",
 	  m_implName, m_implName, m_implName, m_implName);
   emitParameters(f, VHDL);
-    
+
   emitSignals(f, VHDL, true, true, true);
   fprintf(f, "\nend entity %s_worker;\n", m_implName);
   return NULL;
@@ -1099,7 +1146,7 @@ emitDefsHDL(bool wrap) {
 	    fprintf(f, "  %s [%3zu:0] %s;\n", dir, s->m_width - 1, name.c_str());
 	  else
 	    fprintf(f, "  %s         %s;\n", dir, name.c_str());
-	} else if (s->m_direction == Signal::INOUT) {
+	} else if (s->m_direction == Signal::INOUT && !s->m_pin) {
 	  OU::format(name, s->m_in.c_str(), s->m_name.c_str());
 	  if (s->m_width)
 	    fprintf(f, "  input [%3zu:0] %s;\n", s->m_width - 1, name.c_str());
@@ -1253,52 +1300,38 @@ emitVhdlShell(FILE *f) {
     fprintf(f, ",\n    props_in => props_to_worker");
   if (m_ctl.nonRawReadbacks || m_ctl.rawReadables)
     fprintf(f, ",\n    props_out => props_from_worker");
-  if (m_signals.size()) {
-    for (SignalsIter si = m_signals.begin(); si != m_signals.end(); si++) {
-      Signal *s = *si;
-      std::string name;
-      if (s->m_differential) {
-	OU::format(name, s->m_pos.c_str(), s->m_name.c_str());
-	fprintf(f, ",\n    %s => %s", name.c_str(), name.c_str());
-	OU::format(name, s->m_neg.c_str(), s->m_name.c_str());
-	fprintf(f, ",\n    %s => %s", name.c_str(), name.c_str());
-      } else if (s->m_direction == Signal::INOUT || s->m_direction == Signal::OUTIN) {
-	OU::format(name, s->m_in.c_str(), s->m_name.c_str());
-	fprintf(f, ",\n    %s => %s", name.c_str(), name.c_str());
-	OU::format(name, s->m_out.c_str(), s->m_name.c_str());
-	fprintf(f, ",\n    %s => %s", name.c_str(), name.c_str());
-	OU::format(name, s->m_oe.c_str(), s->m_name.c_str());
-	fprintf(f, ",\n    %s => %s", name.c_str(), name.c_str());
-      } else
-	fprintf(f, ",\n    %s => %s", s->m_name.c_str(), s->m_name.c_str());
-    }
-  }
+  emitDeviceSignalMappings(f, last);
   fprintf(f, ");\n");
   fprintf(f, "end rtl;\n");
 }
 
 void Worker::
-emitDeviceSignalMapping(FILE *f, std::string &last, Signal &s) {
+emitDeviceSignalMapping(FILE *f, std::string &last, Signal &s, const char *prefix) {
+  assert(m_paramConfig);
+  ocpiDebug("DeviceSignalMapping %s: %zu %u", s.cname(), m_paramConfig->nConfig, s.m_direction);
   std::string name;
+  if (s.m_direction == Signal::UNUSED)
+    return;
   if (s.m_differential) {
     OU::format(name, s.m_pos.c_str(), s.m_name.c_str());
-    fprintf(f, "%s      %s => %s,\n", last.c_str(), name.c_str(), name.c_str());
+    fprintf(f, "%s%s      %s => %s,\n", last.c_str(), prefix, name.c_str(), name.c_str());
     OU::format(name, s.m_neg.c_str(), s.m_name.c_str());
-    fprintf(f, "      %s => %s", name.c_str(), name.c_str());
-  } else if (s.m_direction == Signal::INOUT || s.m_direction == Signal::OUTIN) {
+    fprintf(f, "%s      %s => %s", prefix, name.c_str(), name.c_str());
+  } else if (!s.m_pin && (s.m_direction == Signal::INOUT || s.m_direction == Signal::OUTIN)) {
     OU::format(name, s.m_in.c_str(), s.m_name.c_str());
-    fprintf(f, "%s      %s => %s,\n", last.c_str(), name.c_str(), name.c_str());
+    fprintf(f, "%s%s      %s => %s,\n", last.c_str(), prefix, name.c_str(), name.c_str());
     OU::format(name, s.m_out.c_str(), s.m_name.c_str());
-    fprintf(f, "      %s => %s,\n", name.c_str(), name.c_str());
+    fprintf(f, "%s      %s => %s,\n", prefix, name.c_str(), name.c_str());
     OU::format(name, s.m_oe.c_str(), s.m_name.c_str());
-    fprintf(f, "      %s => %s", name.c_str(), name.c_str());
+    fprintf(f, "%s      %s => %s", prefix, name.c_str(), name.c_str());
   } else
-    fprintf(f, "%s      %s => %s", last.c_str(), s.m_name.c_str(), s.m_name.c_str());
+    fprintf(f, "%s%s      %s => %s", last.c_str(), prefix, s.m_name.c_str(), s.m_name.c_str());
+  last = ",\n";
 }
 
 void Worker::
 emitVhdlSignalWrapper(FILE *f, const char *topinst) {
-    fprintf(f, 
+    fprintf(f,
 	    "\n"
 	    "-- This is the wrapper entity that does NOT use records for ports\n"
 	    "-- It \"wraps\" the _rv entity that DOES use records for ports\n"
@@ -1383,10 +1416,7 @@ emitVhdlSignalWrapper(FILE *f, const char *topinst) {
       }
     for (unsigned i = 0; i < m_ports.size(); i++)
       m_ports[i]->emitVHDLSignalWrapperPortMap(f, last);
-    for (SignalsIter si = m_signals.begin(); si != m_signals.end(); si++) {
-      emitDeviceSignalMapping(f, last, **si);
-      last = ",\n";
-    }
+    emitDeviceSignalMappings(f, last);
     if (last != init)
       fprintf(f, ")");
     fprintf(f,
@@ -1396,7 +1426,7 @@ emitVhdlSignalWrapper(FILE *f, const char *topinst) {
 
 void Worker::
 emitVhdlRecordWrapper(FILE *f) {
-    fprintf(f, 
+    fprintf(f,
 	    "\n"
 	    "-- This is the wrapper entity that uses records for ports\n"
 	    "-- It \"wraps\" the signal-level, Verilog compatible entity that only uses signals for ports\n"
@@ -1464,25 +1494,7 @@ emitVhdlRecordWrapper(FILE *f) {
 	}
       for (unsigned i = 0; i < m_ports.size(); i++)
 	m_ports[i]->emitVHDLRecordWrapperPortMap(f, last);
-      for (SignalsIter si = m_signals.begin(); si != m_signals.end(); si++) {
-	Signal *s = *si;
-	std::string name;
-	if (s->m_differential) {
-	  OU::format(name, s->m_pos.c_str(), s->m_name.c_str());
-	  fprintf(f, "%s      %s => %s,\n", last.c_str(), name.c_str(), name.c_str());
-	  OU::format(name, s->m_neg.c_str(), s->m_name.c_str());
-	  fprintf(f, "      %s => %s", name.c_str(), name.c_str());
-	} else if (s->m_direction == Signal::INOUT || s->m_direction == Signal::OUTIN) {
-	  OU::format(name, s->m_in.c_str(), s->m_name.c_str());
-	  fprintf(f, "%s      %s => %s,\n", last.c_str(), name.c_str(), name.c_str());
-	  OU::format(name, s->m_out.c_str(), s->m_name.c_str());
-	  fprintf(f, "      %s => %s,\n", name.c_str(), name.c_str());
-	  OU::format(name, s->m_oe.c_str(), s->m_name.c_str());
-	  fprintf(f, "      %s => %s", name.c_str(), name.c_str());
-	} else
-	  fprintf(f, "%s      %s => %s", last.c_str(), s->m_name.c_str(), s->m_name.c_str());
-	last = ",\n";
-      }
+      emitDeviceSignalMappings(f, last);
       fprintf(f, ")");
     }
     fprintf(f, ";\nend rtl;\n");
@@ -1575,14 +1587,14 @@ emitImplHDL(bool wrap) {
     if ((err = emitVhdlWorkerPackage(f, maxPropName)) ||
 	(err = emitVhdlWorkerEntity(f)))
       return err;
-    
+
     fprintf(f,
 	    "-- The rest of the file below here is the implementation of the worker shell\n"
 	    "-- which surrounds the entity to be implemented, above.\n");
   }
   if (m_language == VHDL) {
     //    emitVhdlPackageBody(f);
-    fprintf(f, 
+    fprintf(f,
 	    "\n"
 	    "-- This is the entity declaration for the top level record-based VHDL\n"
 	    "-- The achitecture for this entity will be in the implementation file\n"
@@ -1665,7 +1677,7 @@ emitImplHDL(bool wrap) {
 	      maxPropName, "abort_control_op",
 	      !m_scalable && m_ctl.nRunProperties == 0 ? " " : ";");
       if (m_scalable)
-	fprintf(f, 
+	fprintf(f,
 		"    %-*s : in  bool_t;           -- for scalable workers that do barriers\n"
 		"    %-*s : out bool_t;           -- for scalable workers that do barriers\n"
 		"    %-*s : out uchar_t;           -- for scalable workers\n"
@@ -1782,7 +1794,7 @@ emitImplHDL(bool wrap) {
 	    fprintf(f,
 		    "  -- signal for conveying the volatile enum value to readback mux\n"
 		    "  signal my_volatile_%s : ulong_t;\n", temp); //, type.c_str());
-	    
+
 	  }
 	  free(temp);
 	}
@@ -1800,7 +1812,7 @@ emitImplHDL(bool wrap) {
               "  is_big_endian                          <= my_big_endian;\n"
 	      "  wciAddr(inputs.MAddr'range)            <= inputs.MAddr;\n"
 	      "%s",
-	      m_scalable ? 
+	      m_scalable ?
 	      "  MFlag                                  <= inputs.MFlag;\n" :
 	      "  MFlag                                  <= util.slv0(17) & inputs.MFlag;\n");
       if (m_ctl.rawProperties)
@@ -1919,8 +1931,8 @@ emitImplHDL(bool wrap) {
 		m_implName);
       if (m_ctl.readables)
 	fprintf(f, "  outputs.SData <= %s;\n",
-		m_ctl.nonRawReadables ? 
-		(m_ctl.rawReadables ? 
+		m_ctl.nonRawReadables ?
+		(m_ctl.rawReadables ?
 		 "props_from_worker.raw.data when its(raw_to_worker.is_read) else nonRaw_SData" :
 		 "nonRaw_SData") :
 		(m_ctl.rawReadables ? "props_from_worker.raw.data" : "(others => '0')"));
@@ -1968,7 +1980,7 @@ emitImplHDL(bool wrap) {
 		    name, name, len, name, len, name, pr.m_stringLength+1, name, name,
 		    pr.m_stringLength+1, out.c_str());
 	  }
-	  fprintf(f, 
+	  fprintf(f,
 		  "  %s_property : component ocpi.props.%s%s_property\n"
 		  "    generic map(worker       => work.%s_worker_defs.worker,\n"
 		  "                property     => work.%s_worker_defs.properties(%u)",
@@ -1992,7 +2004,7 @@ emitImplHDL(bool wrap) {
 	      else
 		fputs(vv.c_str(), f);
 	    }
-	  }	
+	  }
 	  fprintf(f,
 		  ")\n"
 		  "    port map(   clk          => inputs.Clk,\n"
@@ -2003,7 +2015,7 @@ emitImplHDL(bool wrap) {
 		  n, n,
 		  pr.m_nBits >= 32 || pr.m_arrayRank || pr.m_isSequence ?
 		  31 : (pr.m_baseType == OA::OCPI_Bool ? 0 : pr.m_nBits-1));
-	  //	  if ((pr.m_isSequence || pr.m_arrayRank) && pr.m_baseType != OA::OCPI_String) 
+	  //	  if ((pr.m_isSequence || pr.m_arrayRank) && pr.m_baseType != OA::OCPI_String)
 	  //	    fprintf(f,
 	  //		    "                %s_t(value)    => ", pr.m_name.c_str());
 	  //	  else
@@ -2093,7 +2105,7 @@ emitImplHDL(bool wrap) {
 		    "    end generate g0;\n",
 		    name, name, OU::roundUp(pr.m_stringLength+1, 4), name, pr.m_stringLength+1,
 		    var.c_str());
-	  fprintf(f, 
+	  fprintf(f,
 		  "  %s_readback : component ocpi.props.%s_read%s_property\n"
 		  "    generic map(worker       => work.%s_worker_defs.worker,\n"
 		  "                property     => work.%s_worker_defs.properties(%u))\n"

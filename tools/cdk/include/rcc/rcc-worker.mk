@@ -213,7 +213,7 @@ RccAssemblyFile=$(call WkrTargetDir,$1,$2)/$(word 1,$(Workers))_assy.xml
 
 define DoRccArtifactFile
 
-TargetSourceFiles += $(call DispatchSourceFile,$1,$2)
+TargetSourceFiles_$2 += $(call DispatchSourceFile,$1,$2)
 $(call WkrMakeObject,$(call DispatchSourceFile,$1,$2),$1,$2)
 
 $(call DispatchSourceFile,$1,$2): $$(ImplHeaderFiles) | $$(call WkrTargetDir,$1,$2)

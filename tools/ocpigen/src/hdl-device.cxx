@@ -125,6 +125,21 @@ get(const char *a_name, const char *parentFile, Worker *parent, const char *&err
   }
   return dt;
 }
+const char *HdlDevice::
+resolveExpressions(OCPI::Util::IdentResolver &ir) {
+  Worker::resolveExpressions(ir);
+  const char *err;
+  for (SignalsIter si = m_signals.begin(); si != m_signals.end(); si++) {
+    Signal &s = **si;
+    if (s.m_directionExpr.length() &&
+	(err = s.parseDirection(s.m_directionExpr.c_str(), NULL, ir)))
+      return OU::esprintf("parsing the signal direction for \"%s\": %s", s.cname(), err);
+  }
+  return NULL;
+}
+
+
+
 const char *DeviceType::
 cname() const {
   return m_implName;

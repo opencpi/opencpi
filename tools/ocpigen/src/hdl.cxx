@@ -291,7 +291,7 @@ parseHdlImpl(const char *a_package) {
 	  new RawPropPort(*this, nx, NULL, -1, err);
       }
     }
-  } else if ((err = Signal::parseSignals(m_xml, m_file, m_signals, m_sigmap)))
+  } else if ((err = Signal::parseSignals(m_xml, m_file, m_signals, m_sigmap, this)))
     return err;
   // now make sure clockPort references are sorted out and counts are non-zero
   for (unsigned i = 0; i < m_ports.size(); i++) {
@@ -310,7 +310,7 @@ parseHdlImpl(const char *a_package) {
 
 Signal::
 Signal()
-  : m_direction(IN), m_width(0), m_differential(false), m_type(NULL) {
+  : m_direction(NONE), m_width(0), m_differential(false), m_pin(false), m_type(NULL) {
 }
 
 Signal * Signal::
@@ -333,24 +333,85 @@ static void ucase(std::string &s) {
     else if (islower(s[n]))
       s[n] = (char)toupper(s[n]);
 }
+const char *Signal::directions[] = { DIRECTIONS, NULL };
+
 const char *Signal::
-parse(ezxml_t x) {
+parseDirection(const char *direction, std::string *expr, OCPI::Util::IdentResolver &ir) {
+  static OU::Member dirType;
+  if (dirType.m_baseType == OA::OCPI_none) {
+    std::string enums;
+    for (const char **ap = directions; *ap; ap++)
+      OU::formatAdd(enums, "%s%s", enums.empty() ? "" : ",", *ap);
+    char *xml;
+    asprintf(&xml, "<member type='enum' enums='%s'/>", enums.c_str());
+    ezxml_t tx;
+    ocpiCheck(!OE::ezxml_parse_str(xml, 0, tx));
+    ocpiCheck(!dirType.parse(tx, false, false, NULL, "direction", 0, NULL));
+    free(xml);
+  }
+  OU::Value dirValue(dirType);
+  bool isVariable;
   const char *err;
-  if ((err = OE::checkAttrs(x, "input", "inout", "bidirectional", "output", "width",
-			    "differential", "type", "pos", "neg", "in", "out", "oe", (void*)0)))
+  if ((err = dirValue.parse(direction, NULL, false, &ir, &isVariable)))
+    return OU::esprintf("error parsing direction attribute for \"%s\" signal: %s", cname(), err);
+  if ((Direction)dirValue.m_ULong >= NONE)
+    return OU::esprintf("direction attribute for \"%s\" invalid:  numeric value is %zu",
+			cname(), (size_t)dirValue.m_ULong);
+  m_direction = (Direction)dirValue.m_ULong;
+  if (isVariable && expr)
+    *expr = direction;
+  return NULL;
+}
+const char *Signal::
+parse(ezxml_t x, Worker *w) {
+  const char *err;
+  if ((err =
+       OE::checkAttrs(x, "input", "inout", "bidirectional", "output", "width", "direction",
+		      "name", "differential", "type", "pos", "neg", "in", "out", "oe",
+		      "description", "pin", (void*)0)))
     return err;
-  const char *name;
-  if ((name = ezxml_cattr(x, "Input")))
-    m_direction = IN;
-  else if ((name = ezxml_cattr(x, "Output")))
-    m_direction = OUT;
-  else if ((name = ezxml_cattr(x, "Inout")))
-    m_direction = INOUT;
-  else if ((name = ezxml_cattr(x, "bidirectional")))
-    m_direction = BIDIRECTIONAL;
-  else
-    return "Missing input, output, or inout attribute for signal element";
+  const char
+    *name = ezxml_cattr(x, "name"),
+    *nameIn = ezxml_cattr(x, "Input"),
+    *nameOut = ezxml_cattr(x, "Output"),
+    *nameInOut = ezxml_cattr(x, "InOut"),
+    *nameOutIn = ezxml_cattr(x, "OutIn"),
+    *nameBiDir = ezxml_cattr(x, "Bidirectional"),
+    *direction = ezxml_cattr(x, "direction");
+  if (name) {
+    if (nameIn || nameOut || nameInOut || nameBiDir)
+      return "Signal directions must be specified using the \"direction\" attribute when the "
+	"\"name\" attribute is used";
+    if (!direction)
+      return "The \"direction\" attribute us required when the \"name\" attribute is present";
+    if ((err = parseDirection(direction, &m_directionExpr, *w)))
+      return err;
+  } else {
+    if (direction)
+      return "Signal directions must be specified using the "
+	"input/output/inout/bidirecitonal attributes if the name attribute is "
+	"not used.  Using \"name\" and \"direction\" is recommended";
+    switch ((nameIn ? 1 : 0) + (nameOut ? 1 : 0) + (nameInOut ? 1 : 0) + (nameBiDir ? 1 : 0)) {
+    default:
+      return "Only one of the input/output/inout/bidirecitonal attributes can be specified";
+    case 0:
+      return "If the \"name\" attribute is unspecified, one of input/output/inout/bidirecitonal "
+	"must be specified";
+    case 1:
+      if ((name = nameIn))
+	m_direction = IN;
+      else if ((name = nameOut))
+	m_direction = OUT;
+      else if ((name = nameInOut))
+	m_direction = INOUT;
+      else if ((name = nameBiDir))
+	m_direction = BIDIRECTIONAL;
+      else if ((name = nameOutIn))
+	m_direction = OUTIN;
+    }
+  }
   if ((err = OE::getNumber(x, "Width", &m_width, 0, 0)) ||
+      (err = OE::getBoolean(x, "pin", &m_pin)) ||
       (err = OE::getBoolean(x, "differential", &m_differential)))
     return err;
   if (m_direction == INOUT && m_differential)
@@ -379,20 +440,21 @@ parse(ezxml_t x) {
 }
 
 const char *Signal::
-parseSignals(ezxml_t xml, const std::string &parent, Signals &signals, SigMap &sigmap) {
+parseSignals(ezxml_t xml, const std::string &parent, Signals &signals, SigMap &sigmap,
+	     Worker *w) {
   const char *err = NULL;
   std::string sigattr;
   if (OE::getOptionalString(xml, sigattr, "signals")) {
     ezxml_t sigx;
     std::string sigFile;
     if ((err = parseFile(sigattr.c_str(), parent, "Signals", &sigx, sigFile, false)) ||
-	(err = parseSignals(sigx, sigFile, signals, sigmap)))
+	(err = parseSignals(sigx, sigFile, signals, sigmap, w)))
       return err;
   }
   // process ad hoc signals
   for (ezxml_t xs = ezxml_cchild(xml, "Signal"); !err && xs; xs = ezxml_next(xs)) {
     Signal *s = new Signal;
-    if ( !(err = s->parse(xs)) ) {
+    if (!(err = s->parse(xs, w)))  {
       if (sigmap.find(s->m_name.c_str()) == sigmap.end()) {
 	signals.push_back(s);
 	sigmap[s->m_name.c_str()] = s;
@@ -489,3 +551,44 @@ emitConnectionSignal(FILE *f, const char *iname, const char *pattern, bool singl
 }
 
 
+// emit the "signal pseudo constants" for the worker.
+// We record "macros" that define the directions of the ad-hoc signals for device workers.
+// They are recorded in the generics file since they are similar in spirit to the
+// constants that are defined there even though they are basically macros embedded in comments.
+// The macro definition is of the form:
+// <comment-prefix>__name=value
+// The underscores are in fact part of the name of the macro
+// This is inching toward VHDL template programming (cheetah etc.), but not enough to go all the
+// way there.
+void Worker::
+emitSignalMacros(FILE *f, Language lang) {
+  std::string prefix, last;
+  OU::format(prefix, "  %s__decl", hdlComment(lang));
+  bool first = true;
+  for (SignalsIter si = m_signals.begin(); si != m_signals.end(); si++) {
+    Signal &s = **si;
+    if (s.m_directionExpr.length() && s.m_direction != Signal::UNUSED) {
+      if (first)
+	fprintf(f, "  %s Define signals that are parameterized\n", hdlComment(lang));
+      first = false;
+      last += prefix;
+      emitDeviceSignal(f, lang, last, s, prefix.c_str());
+    }
+  }
+  if (!first)
+    emitLastSignal(f, last, lang, true);
+  OU::format(prefix, "  %s__map", hdlComment(lang));
+  last = "";
+  first = true;
+  for (SignalsIter si = m_signals.begin(); si != m_signals.end(); si++) {
+    Signal &s = **si;
+    if (s.m_directionExpr.length() && s.m_direction != Signal::UNUSED) {
+      if (first)
+	fprintf(f, "  %s Map signals that are parameterized\n", hdlComment(lang));
+      first = false;
+      emitDeviceSignalMapping(f, last, s, prefix.c_str());
+      last = ",\n";
+    }
+  }
+  fprintf(f, "\n");
+}

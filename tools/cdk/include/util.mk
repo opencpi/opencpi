@@ -123,7 +123,7 @@ endif
 # this is to ensure support for the -n flag
 ECHO=/bin/echo
 #default assumes all generated files go before all authored files
-CompiledSourceFiles=$(TargetSourceFiles) $(GeneratedSourceFiles) $(AuthoredSourceFiles)
+CompiledSourceFiles=$(TargetSourceFiles_$(ParamConfig)) $(GeneratedSourceFiles) $(AuthoredSourceFiles)
 # Just for history (thanks Andrew): this only works with tcsh, not traditional csh.  And csh isn't posix anywah
 # function to add a ../ to pathnames, avoiding changing absolute ones
 AdjustRelative2=$(foreach i,$(1),$(if $(filter /%,$(i)),$(i),../../$(patsubst ./%,%,$(filter-out .,$(i)))))
@@ -340,7 +340,7 @@ OcpiGenEnv=\
     OCPI_ALL_RCC_TARGETS="$(OCPI_ALL_RCC_TARGETS)" \
     OCPI_ALL_OCL_TARGETS="$(OCPI_ALL_OCL_TARGETS)"
 
-OcpiGenTool=$(OCPI_VALGRIND) $(OcpiGenEnv) $(ToolsDir)/ocpigen \
+OcpiGenTool=$(OcpiGenEnv) $(OCPI_VALGRIND) $(ToolsDir)/ocpigen \
   $(call OcpiFixPathArgs,$(patsubst %,-I%,$(XmlIncludeDirsInternal)) $1)
 # Given a collection of arguments, fix each path in the argument
 # that starts with '/' or '-I/' for use with ocpigen or compilation.

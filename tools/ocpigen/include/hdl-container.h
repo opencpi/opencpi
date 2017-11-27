@@ -105,8 +105,8 @@ public:
     *emitUuid(const OU::Uuid &uuid);
 
   void 
-    emitDeviceSignalMapping(FILE *f, std::string &last, Signal &s),
-    emitDeviceSignal(FILE *f, Language lang, std::string &last, Signal &s),
+    emitDeviceSignalMapping(FILE *f, std::string &last, Signal &s, const char *prefix),
+    emitDeviceSignal(FILE *f, Language lang, std::string &last, Signal &s, const char *prefix),
     recordSignalConnection(Signal &s, const char *from),
     emitTieoffSignals(FILE *f),
     emitXmlWorkers(FILE *f),

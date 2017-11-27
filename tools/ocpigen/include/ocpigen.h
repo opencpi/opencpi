@@ -39,6 +39,7 @@ enum Language {
 };
 
 class Port;
+class Worker;
 typedef std::vector<Port*> Ports;
 typedef Ports::const_iterator PortsIter;
 struct Clock {
@@ -71,14 +72,18 @@ class SigMap : public SigMap_ {
 // This container provides processing in the original order (user friendly)
 typedef std::list<Signal *> Signals;
 typedef Signals::const_iterator SignalsIter;
+namespace OCPI { namespace Util { struct IdentResolver; }}
 struct Signal {
   std::string m_name;
   // The NONE is used in contexts where you are saying do not deal with direction
   // The OUTIN direction is for emulators on the opposite side of an INOUT,
-  // which, inside the FPGA is a triple if in/out/oe
-  enum Direction { IN, OUT, INOUT, BIDIRECTIONAL, OUTIN, NONE } m_direction;
+  // which, inside the FPGA is a triple of in/out/oe
+  enum Direction { IN, OUT, INOUT, BIDIRECTIONAL, OUTIN, UNUSED, NONE } m_direction;
+#define DIRECTIONS "in", "out", "inout", "bidirectional", "outin", "unused"
+  std::string m_directionExpr;
   size_t m_width;
   bool m_differential;
+  bool m_pin;        // this signal is at a pin, outside of any IO block/pad.
   std::string m_pos; // pattern for positive if not %sp
   std::string m_neg; // pattern for negative if not %sn
   std::string m_in;  // pattern for in of tristate if not %s_i
@@ -86,16 +91,19 @@ struct Signal {
   std::string m_oe;  // pattern for output enable of tristate if not %s_oe
   const char *m_type;
   Signal();
-  const char * parse(ezxml_t);
+  const char *parseDirection(const char *direction, std::string *expr,
+			     OCPI::Util::IdentResolver &ir);
+  const char *parse(ezxml_t, Worker *w);
   const char *cname() const { return m_name.c_str(); }
   Signal *reverse();
   void emitConnectionSignal(FILE *f, const char *iname, const char *pattern, bool single,
 			    Language lang);
   //  static void emitConnectionSignals(FILE *f, const char *iname, Signals &signals);
   static const char *parseSignals(ezxml_t x, const std::string &parent, Signals &signals,
-				  SigMap &sigmap);
+				  SigMap &sigmap, Worker *w);
   static void deleteSignals(Signals &signals);
   static const Signal *find(const SigMap &signals, const char *name);
+  static const char *directions[];
 };
 // This container provides lookup by name
 typedef std::map<const char *,

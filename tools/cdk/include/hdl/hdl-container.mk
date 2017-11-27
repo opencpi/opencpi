@@ -132,7 +132,7 @@ ifneq ($(MAKECMDGOALS),clean)
         $(infox HCBF:$(call HdlContBitName,$1))
         $(call UUIDFileName,$1):
         $(call WkrBinary,$(HdlTarget),$1): HdlPreCompile=$(call HdlContPreCompile,$1)
-        $(call WkrBinary,$(HdlTarget),$1): TargetSourceFiles+=$(call UUIDFileName,$1)
+        $(call WkrBinary,$(HdlTarget),$1): TargetSourceFiles_$1+=$(call UUIDFileName,$1)
         $(call WkrBinary,$(HdlTarget),$1): HdlExactPart=$(HdlPart_$(Platform))
         $(call HdlContBitName,$1): $(call WkrBinary,$(HdlTarget),$1)
         $(call HdlContBitZName,$1): $(call HdlContBitName,$1)

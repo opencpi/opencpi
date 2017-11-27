@@ -25,7 +25,7 @@ DevSignalsPort::
 DevSignalsPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
   : Port(w, x, sp, ordinal, DevSigPort, "dev", err),
     m_hasInputs(false), m_hasOutputs(false) {
-  if ((err = Signal::parseSignals(x, w.m_file, m_signals, m_sigmap)))
+  if ((err = Signal::parseSignals(x, w.m_file, m_signals, m_sigmap, &w)))
     return;
   for (SignalsIter si = m_signals.begin(); si != m_signals.end(); si++) {
     Signal &s = **si;

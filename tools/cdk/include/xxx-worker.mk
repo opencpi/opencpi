@@ -78,17 +78,15 @@ clean:: cleanfirst
 # FIXME: this should not reference an Hdl variable
 ifeq ($(findstring $(HdlMode),assembly container),)
 ifeq ($(origin WorkerSourceFiles),undefined)
-WorkerSourceFiles=$(foreach w,$(Workers),$(w)$(SourceSuffix))
-# We must preserve the order of CompiledSourceFiles
-#$(call OcpiDbgVar,CompiledSourceFiles)
-#AuthoredSourceFiles:=$(strip $(SourceFiles) $(filter-out $(SourceFiles),$(WorkerSourceFiles)))
+WorkerSourceFiles=$(foreach w,$(Workers),$(strip\
+                    $(or $(wildcard $w.cpp_$(subst .,,$(SourceSuffix))),$w$(SourceSuffix))))
 ifeq ($(origin ModelSpecificBuildHook),undefined)
 $(call OcpiDbgVar,SourceSuffix)
 $(call OcpiDbgVar,WorkerSourceFiles)
 $(call OcpiDbgVar,AuthoredSourceFiles)
 # This rule get's run a lot, since it is basically sees that the generated
 # skeleton is newer than the source file.
-$(WorkerSourceFiles): %$(SourceSuffix) : $(GeneratedDir)/%$(SkelSuffix)
+$(filter %$(SourceSuffix),$(WorkerSourceFiles)): %$(SourceSuffix) : $(GeneratedDir)/%$(SkelSuffix)
 	$(AT)if test ! -e $@; then \
 		echo No source file exists. Copying skeleton \($<\) to $@. ; \
 		cp $< $@;\
@@ -97,7 +95,22 @@ endif
 endif
 endif
 skeleton: $(WorkerSourceFiles)
-AuthoredSourceFiles=$(call Unique,$(SourceFiles) $(WorkerSourceFiles))
+# $(call CPPGenFile,<file>,<target>,<config>)
+CPPGenFile=$(call WkrTargetDir,$2,$3)/$(basename $(notdir $1))$(patsubst .cpp_%,.%,$(suffix $1))
+# $(call WkrCPPSource,<file>,<target>,<config>)
+define WkrCPPSource
+  TargetSourceFiles_$3+=$$(call CPPGenFile,$1,$2,$3)
+  $$(call WkrBinary,$2,$3): $$(call CPPGenFile,$1,$2,$3)
+  $$(call CPPGenFile,$1,$2,$3): $1 | $(call WkrTargetDir,$2,$3)
+	$(AT)gcc -MMD -MP -MF $$@.deps -E -P -std=c99 -xc \
+               $$(foreach n,$$(WorkerParamNames), '-DOCPI_PARAM_$$n()=$$(Param_$3_$$n)') $$< | \
+               tr '$$$$@`' "\n '" | sed '/^ *$$$$/d' > $$@
+endef
+MaybeCPPSources=$(call Unique,$(SourceFiles) $(WorkerSourceFiles))
+$(call OcpiDbgVar,MaybeCPPSources)
+CPPSources=$(strip $(foreach f,$(MaybeCPPSources),$(and $(filter .cpp_%,$(suffix $f)),$f)))
+$(call OcpiDbgVar,CPPSources)
+AuthoredSourceFiles=$(filter-out $(CPPSources),$(MaybeCPPSources))
 $(call OcpiDbgVar,AuthoredSourceFiles)
 
 ################################################################################
@@ -164,6 +177,7 @@ define WkrDoTargetConfig
   # The target directory
   $$(call WkrTargetDir,$1,$2): | $$(OutDir) $$(GeneratedDir)
 	$(AT)mkdir $$@
+  $$(foreach f,$$(CPPSources),$$(eval $$(call WkrCPPSource,$$f,$1,$2)))
   # If object files are separate from the final binary,
   # Make them individually, and then link them together
   ifdef ToolSeparateObjects

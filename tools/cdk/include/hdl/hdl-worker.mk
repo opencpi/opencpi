@@ -51,6 +51,12 @@ HdlOtherDefsSuffix=$(HdlDefs)$(HdlOtherIncSuffix)
 HdlImplSuffix=-impl$(HdlIncSuffix)
 HdlOtherImplSuffix=-impl$(HdlOtherIncSuffix)
 
+HdlIsDevice:=
+ifeq ($(HdlMode),worker)
+  ifneq ($(shell egrep -i '<hdldevice' $(Worker_$(Worker)_xml)),)
+    HdlIsDevice:=1
+  endif
+endif
 ifndef Tops
   ifdef Top
     Tops:=$(Top)
@@ -59,7 +65,7 @@ ifndef Tops
 #    Tops=$(Worker) $(Worker)_rv
   else ifeq ($(HdlMode),worker)
 # FIXME: when we create assemblies in VHDL, we can finally nuke this
-    ifneq ($(shell egrep -i '<hdldevice' $(Worker_$(Worker)_xml)),)
+    ifneq ($(HdlIsDevice),)
       Tops:=$(Worker)_rv
     else
       ifneq ($(shell egrep -i '<hdlworker' $(Worker_$(Worker)_xml)),)
@@ -128,9 +134,7 @@ HdlVHDLTargetImpl=$(call WkrTargetDir,$1,$2)/$(Worker)$(HdlImpl)$(HdlVHDLSuffix)
 #                      $(call WkrTargetDir,$1,$2)/generics.vhd \
 #                      $(call WkrTargetDir,$1,$2)/generics.vh
 CoreBlackBoxFiles=$(and $(filter-out library core,$(HdlMode)),\
-  $(if $(and $2,$(filter-out 0,$2)),\
-    $(call HdlVHDLTargetDefs,$1,$2),\
-    $(VHDLDefsFile)) \
+  $(call HdlVHDLTargetDefs,$1,$2)\
   $(call HdlVerilogTargetDefs,$1,$2) \
   $(call WkrTargetDir,$1,$2)/generics$(HdlVHDLIncSuffix))\
 
@@ -177,7 +181,7 @@ endif
 # VHDL doesn't have header files - they are just source files
 $(call OcpiDbgVar,GeneratedSourceFiles,before vhdl)
 ifeq (,$(filter $(HdlMode),container config))
-  GeneratedSourceFiles+=$(WDefsFile) $(HdlOtherImplSourceFile)
+#  GeneratedSourceFiles+=$(WDefsFile) $(HdlOtherImplSourceFile)
 endif
 $(call OcpiDbgVar,GeneratedSourceFiles,after vhdl)
 
@@ -188,6 +192,56 @@ $(call OcpiDbgVar,WkrExportNames)
 $(call OcpiDbgVar,GeneratedSourceFiles)
 LibName=$(Worker)
 
+HdlVHDLParamSignalDecls=$(call WkrTargetDir,$1,$2)/parameterized_signal_decls.vhd
+HdlVHDLParamSignalMap=$(call WkrTargetDir,$1,$2)/parameterized_signal_map.vhd
+HdlVerilogParamSignalDecls=$(call WkrTargetDir,$1,$2)/parameterized_signal_decls.v
+
+define DoImplConfig
+  $(call HdlVHDLParamSignalDecls,$1,$2): $(call WkrTargetDir,$1,$2)/generics.vhd \
+	                                 | $(call WkrTargetDir,$1,$2)
+	$(AT)sed -n -e '/^ *--__decl/s///p' $$< >$$@
+
+  $(call HdlVHDLParamSignalMap,$1,$2): $(call WkrTargetDir,$1,$2)/generics.vhd \
+	                               | $(call WkrTargetDir,$1,$2)
+	$(AT)sed -n -e '/^ *--__map/s///p' $$< >$$@
+
+  $(call HdlVerilogParamSignalDecls,$1,$2): $(call WkrTargetDir,$1,$2)/generics.vh \
+	                               | $(call WkrTargetDir,$1,$2)
+	$(AT)sed -n -e '+^ *//__decl+s+++p' $$< >$$@
+
+  $(call HdlVHDLTargetImpl,$1,$2) $(call HdlVHDLTargetDefs,$1,$2): \
+                     $(call WkrTargetDir,$1,$2)/%: $(GeneratedDir)/% \
+	             $(and $(HdlIsDevice),\
+                           $(call HdlVHDLParamSignalMap,$1,$2) \
+                           $(call HdlVHDLParamSignalDecls,$1,$2)) \
+                     $(call WkrTargetDir,$1,$2)/generics.vhd | $(call WkrTargetDir,$1,$2)
+	$(AT)sed -e :x \
+              $(if $(filter 0,$2),,-e "s/--__/_c$2/") \
+              $(and $(HdlIsDevice),\
+                -e "/--_parameterized_signal_decls/r $(call HdlVHDLParamSignalDecls,$1,$2)" \
+                -e "/--_parameterized_signal_map/r $(call HdlVHDLParamSignalMap,$1,$2)" \
+	       ) \
+              $$< >$$@
+
+  # For Verilog we must insert the constants file into the defs file so that we don't
+  # need to export the "include" file.
+  $(call HdlVerilogTargetDefs,$1,$2): $(call WkrTargetDir,$1,$2)/% : \
+                                      $(GeneratedDir)/% $(call WkrTargetDir,$1,$2)/generics.vh
+	$(AT)sed $(and $2,$(filter-out 0,$2),-e s-//__-_c$2-) \
+              -e '/`include.*"generics.vh"/r $(call WkrTargetDir,$1,$2)/generics.vh' \
+              -e '/`include.*"generics.vh"/d' \
+              $(and $(HdlIsDevice),\
+                -e '/\/\/_parameterized_signal_decls/r $(call HdlVerilogParamSignals,$1,$2)') \
+              $$< > $$@
+
+endef
+ifneq ($(MAKECMDGOALS),clean)
+  ifneq ($(MAKECMDGOALS),skeleton)
+    $(foreach c,$(ParamConfigurations),\
+      $(foreach t,$(HdlActualTargets),\
+        $(eval $(call DoImplConfig,$t,$c))))
+  endif
+endif
 ################################################################################
 # Include this to build the core or the library
 include $(OCPI_CDK_DIR)/include/hdl/hdl-core2.mk

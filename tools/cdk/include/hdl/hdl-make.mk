@@ -437,13 +437,12 @@ HdlShadowFiles=\
 # FIXME: this has worker stuff in it - should it be elsewhere?
 # $(call HdlTargetSrcFiles,target-dir,paramconfig)
 HdlTargetSrcFiles=$(and $(filter-out library core,$(HdlMode)),\
-  $(if $(and $2,$(filter-out 0,$2)),\
-    $(call HdlVHDLTargetDefs,$1,$2),\
-    $(VHDLDefsFile)) \
-  $(call HdlVerilogTargetDefs,$1,$2) \
+  $(call HdlVHDLTargetDefs,$1,$2)\
+  $(call HdlVerilogTargetDefs,$1,$2)\
   $(call WkrTargetDir,$1,$2)/generics$(HdlVHDLIncSuffix)\
-  $(call WkrTargetDir,$1,$2)/generics$(HdlVerilogIncSuffix) \
-  $(if $(and $2,$(filter-out 0,$2)),$(call HdlVHDLTargetImpl,$1,$2),$(VHDLImplFile))\
+  $(call WkrTargetDir,$1,$2)/generics$(HdlVerilogIncSuffix)\
+  $(call HdlVHDLTargetImpl,$1,$2)\
+  $(TargetSourceFiles_$2) \
   $(ImplFile))
 
 $(OutDir)target-%/generics.vhd: $$(ImplXmlFile) | $(OutDir)target-%

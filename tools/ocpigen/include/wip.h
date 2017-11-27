@@ -493,7 +493,7 @@ class Worker : public OU::Worker {
     *emitSkelOCL(),
     *emitAssyHDL();
   virtual const char
-    *resolveExpressions(),
+    *resolveExpressions(OCPI::Util::IdentResolver &ir),
     *parseInstance(Worker &parent, Instance &inst, ezxml_t x), // FIXME: should be HdlInstance...
     *emitArtXML(const char *wksFile),
     *emitWorkersHDL(const char *file),
@@ -502,8 +502,8 @@ class Worker : public OU::Worker {
   Port *findPort(const char *name, const Port *except = NULL) const;
   Clock *findClock(const char *name) const;
   virtual void
-    emitDeviceSignalMapping(FILE *f, std::string &last, Signal &s),
-    emitDeviceSignal(FILE *f, Language lang, std::string &last, Signal &s),
+    emitDeviceSignalMapping(FILE *f, std::string &last, Signal &s, const char *prefix),
+    emitDeviceSignal(FILE *f, Language lang, std::string &last, Signal &s, const char *prefix),
     recordSignalConnection(Signal &s, const char *from),
     emitTieoffSignals(FILE *f),
     emitXmlWorkers(FILE *f),
@@ -541,6 +541,8 @@ class Worker : public OU::Worker {
     rccBaseType(std::string &type, OU::Member &m, unsigned level, size_t &offset, unsigned &pad,
 		const char *parent, bool isFixed, bool &isLast, unsigned predefine, bool cnst = false),
     emitPropertyAttributeConstants(FILE *f, Language lang),
+    emitSignalMacros(FILE *f, Language lang),
+    emitDeviceSignalMappings(FILE *f, std::string &last),
     emitDeviceSignals(FILE *f, Language lang, std::string &last);
 };
 #define SKEL "-skel"

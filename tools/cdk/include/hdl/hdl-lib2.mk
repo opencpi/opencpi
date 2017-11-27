@@ -45,7 +45,7 @@ $(call OutLibFile,$1,$2): $$$$(HdlPreCore) $$$$(HdlSources) | $$$$(TargetDir)
 endef
 
 $(foreach f,$(HdlActualTargets),\
-  $(eval $(foreach c,$(ParamConfigurations),$(call DoLibTarget,$f,$c)$(call DoImplConfig,$f,$c))))
+  $(eval $(foreach c,$(ParamConfigurations),$(call DoLibTarget,$f,$c))))
 
 # If anything changes in the imports directory, we better rebuild
 ifdef Imports

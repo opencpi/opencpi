@@ -34,20 +34,6 @@ ifndef WorkLib
 endif
 $(call OcpiDbgVar,HdlToolRealCore)
 $(call OcpiDbgVar,LibName)
-define DoImplConfig
-  ifneq ($2,0)
-    $(call HdlVHDLTargetImpl,$1,$2) $(call HdlVHDLTargetDefs,$1,$2): $(call WkrTargetDir,$1,$2)/%: $(GeneratedDir)/% | $(call WkrTargetDir,$1,$2)
-	$(AT)sed s/--__/_c$2/ $$< > $$@
-  endif
-  # For Verilog we must insert the constants file into the defs file so that we don't
-  # need to export the "include" file.
-  $(call HdlVerilogTargetDefs,$1,$2):  $(call WkrTargetDir,$1,$2)/% : $(GeneratedDir)/% $(call WkrTargetDir,$1,$2)/generics.vh
-	$(AT)sed $(and $2,$(filter-out 0,$2),-e s-//__-_c$2-) \
-                 -e '/`include.*"generics.vh"/r $(call WkrTargetDir,$1,$2)/generics.vh' \
-                 -e '/`include.*"generics.vh"/d' \
-                 $$< > $$@
-
-endef
 
 ifndef
 JOB_STARTTIME:=$(shell date +"%H:%M:%S")
@@ -90,7 +76,7 @@ ifdef HdlToolRealCore
       $(call WkrTargetDir,$1,$4)/$2$(HdlBin): \
         $$$$(foreach l,$$$$(HdlLibrariesInternal),$$$$(call HdlLibraryRefDir,$$$$l,$$$$(HdlTarget),,DoCore1))
       $(call WkrTargetDir,$1,$4)/$2$(HdlBin): $$$$(HdlPreCore) \
-        $$(filter-out $$(filter-out %.vhd,$$(call CoreBlackBoxFiles,$1,$4)) $$(TargetSourceFiles),$$(CompiledSourceFiles)) 
+        $$(filter-out $$(filter-out %.vhd,$$(call CoreBlackBoxFiles,$1,$4)) $$(TargetSourceFiles_$4),$$(CompiledSourceFiles)) 
 	$(AT)echo Building $(and $(filter-out core,$(HdlMode))) core \"$(2)\" for target \"$$(HdlTarget)\" $$(ParamConfig):$$(ParamMsg) $$@
 ifneq (,$(JENKINS_HOME))
 	$(AT)echo "============= ($$(shell date +"%H:%M:%S"), started $$(JOB_STARTTIME))"
@@ -114,7 +100,6 @@ endif
    ifneq ($(MAKECMDGOALS),skeleton)
     $(foreach c,$(ParamConfigurations),\
       $(foreach t,$(HdlActualTargets),\
-        $(eval $(call DoImplConfig,$t,$c)) \
         $(foreach both,$(join $(HdlCores),$(Tops:%=:%)),\
           $(foreach core,$(word 1,$(subst :, ,$(both))),\
             $(foreach top,$(word 2,$(subst :, ,$(both))),\

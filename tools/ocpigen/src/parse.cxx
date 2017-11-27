@@ -637,7 +637,7 @@ parseSpec(const char *a_package) {
     if (p.isData() && (err = (**pi).parse()))
       return err;
   }
-  return Signal::parseSignals(spec, m_file, m_signals, m_sigmap);
+  return Signal::parseSignals(spec, m_file, m_signals, m_sigmap, this);
 }
 
 // Called for each non-data impl port type
@@ -822,7 +822,7 @@ create(const char *file, const std::string &parentFile, const char *package, con
   if (!err &&
       !(err = w->setParamConfig(instancePVs, paramConfig)) &&
       !(err = w->finalizeProperties()) &&
-      !(err = w->resolveExpressions()) &&
+      !(err = w->resolveExpressions(*w)) &&
       w->m_model == HdlModel)
     err = w->finalizeHDL();
   if (err) {
@@ -1040,10 +1040,10 @@ Worker(ezxml_t xml, const char *xfile, const std::string &parentFile,
 
 // Base class has no worker level expressions, but does all the ports
 const char *Worker::
-resolveExpressions() {
+resolveExpressions(OCPI::Util::IdentResolver &ir) {
   const char *err;
   for (PortsIter pi = m_ports.begin(); pi != m_ports.end(); pi++)
-    if ((err = (**pi).resolveExpressions(*this)))
+    if ((err = (**pi).resolveExpressions(ir)))
       return err;
   return NULL;
 }

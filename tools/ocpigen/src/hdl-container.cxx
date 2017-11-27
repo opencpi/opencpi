@@ -1031,21 +1031,21 @@ recordSignalConnection(Signal &s, const char *from) {
   //  m_connectedSignals.insert(&s);
 }
 void HdlContainer::
-emitDeviceSignalMapping(FILE *f, std::string &last, Signal &s) {
+emitDeviceSignalMapping(FILE *f, std::string &last, Signal &s, const char *prefix) {
   std::string name;
   if (s.m_direction == Signal::INOUT)
     fprintf(f, "%s      %s => %s", last.c_str(), s.m_name.c_str(), s.m_name.c_str());
   else
-    Worker::emitDeviceSignalMapping(f, last, s);
+    Worker::emitDeviceSignalMapping(f, last, s, prefix);
 }
 void HdlContainer::
-emitDeviceSignal(FILE *f, Language lang, std::string &last, Signal &s) {
+emitDeviceSignal(FILE *f, Language lang, std::string &last, Signal &s, const char *prefix) {
   if (s.m_direction == Signal::INOUT) {
     // Inouts are different for containers since the tristate IOBUF is inserted.
     emitSignal(s.m_name.c_str(), f, lang, s.m_direction, last,
 	       s.m_width ? (int)s.m_width : -1, 0, "", s.m_type);
   } else
-    Worker::emitDeviceSignal(f, lang, last, s);
+    Worker::emitDeviceSignal(f, lang, last, s, prefix);
 }
 
 void HdlContainer::

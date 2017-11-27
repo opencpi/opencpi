@@ -32,7 +32,7 @@ SlotType(const char *file, const std::string &parent, const char *&err) {
   std::string xfile;
   err = NULL;
   if ((err = parseFile(file, parent, NULL, &xml, xfile)) ||
-      (err = Signal::parseSignals(xml, parent, m_signals, m_sigmap)))
+      (err = Signal::parseSignals(xml, parent, m_signals, m_sigmap, NULL)))
     return;
   OE::getOptionalString(xml, m_name, "name");
   char *cp = strdup(xfile.c_str());
