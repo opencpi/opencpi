@@ -13,7 +13,7 @@
   <!-- This parameter property corresponds to the "Half Duplex Mode" bit 3 in the parallel port
        configuration 3 register 0x12 -->
   <Property name='HALF_DUPLEX_p' type='bool' parameter='true' default='false'
-            description='Use full duplex mode, required in LVDS mode, optional in CMOS modes.'/>
+            description='Use half duplex mode, false in LVDS mode, optional in CMOS modes.'/>
   <!-- This parameter property corresponds to the "Single Port Mode" bit 2 in the parallel port
        configuration 3 register 0x12 -->
   <Property name='SINGLE_PORT_p' type='bool' parameter='true' default='false'
@@ -21,7 +21,7 @@
   <!-- This parameter property corresponds to the "Swap Ports" bit 6 in the parallel port
        configuration 3 register 0x12 -->
   <Property name='SWAP_PORTS_p' type='bool' parameter='true' default='false'
-            description='Use port 1 rather than port 0, when in single port, half duplex mode.'/>
+            description='Swaps Port 0 and Port 1, must be false in LVDS mode.'/>
   <!-- The MODE_p parameter just maps the above 4 booleans into 8 modes, which determine pin usage
        These modes are listed in the same order as the Digital Interface Specification section and Tables 48 and 50 in the
        reference manual (UG570), with swapped modes inserted.
@@ -89,12 +89,10 @@
 	  description='Pin G9:  TX Data Valid to ad9361 (positive).'/>
   <Signal name='TX_FRAME_N' direction='lvds_p ? out : unused' pin='1'
 	  description='Pin H9:  TX Data Valid to ad9361 (negative), unused in CMOS mode.'/>
-  <!-- this is in fact unused in some modes but we assume it will always be connected -->
-  <Signal name='TXNRX'      direction='lvds_p ? unused : out'
-	  description='Pin H4:  Half duplex RF direction control (1==TX), unused in LVDS mode.'/>
-  <!-- this is in fact unused in some modes but we assume it will always be connected -->
-  <Signal name='ENABLE'     direction='lvds_p ? unused : out'
-	  description='Pin G6:  Half duplex RF state machine control, unused in LVDS mode..'/>
+  <Signal name='TXNRX'      direction='out'
+	  description='Pin H4:  TDD mode RF direction control (1==TX), serves as OE in half duplex CMOS modes'/>
+  <Signal name='ENABLE'     direction='out'
+	  description='Pin G6:  TDD mode RF state machine control.'/>
   <!-- P0 signals are aliased to LDVS TX_D[5:0]_N and TX_D[5:0]_P pairs in the data sheet -->
   <Signal name='P0_D_11_6' width='6' pin='1' direction='mode_p == 0 || mode_p == 4 ? inout :
 		 					mode_p == 1 || mode_p == 3 ? unused :
