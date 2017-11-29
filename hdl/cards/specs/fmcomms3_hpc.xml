@@ -107,6 +107,8 @@
     <Signal name='FB_CLK_N'    slot='LA08_N'/>    <!--  G13  -->
     <Signal name='TX_FRAME_P'  slot='LA09_P'/>    <!--  D14  -->
     <Signal name='TX_FRAME_N'  slot='LA09_N'/>    <!--  D15  -->
+    <Signal name='TXNRX'       slot='LA16_N'/>    <!--  H4   -->
+    <Signal name='ENABLE'      slot='LA16_P'/>    <!--  G6   -->
     <!-- TODO / FIXME - enable this property, there is currently a bug
          preventing it from being enabled -->
     <!-- The LVDS configuration is not a hard requirement but it is included

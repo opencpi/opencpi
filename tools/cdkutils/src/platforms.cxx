@@ -263,7 +263,7 @@ getOclPlatforms(const StringSet *&platforms) {
 		OCPI_CPP_STRINGIFY(OCPI_OS) + strlen("OCPI"),
 		OCPI_CPP_STRINGIFY(OCPI_OS_VERSION), OCPI_CPP_STRINGIFY(OCPI_ARCH));
   std::string cmd;
-  OU::format(cmd, "%s test && %s targets", ocpiocl.c_str(), ocpiocl.c_str());
+  OU::format(cmd, "%stest test && %s targets", ocpiocl.c_str(), ocpiocl.c_str());
   FILE *out;
   if ((out = popen(cmd.c_str(), "r")) == NULL)
     return OU::esprintf("Could not execute the \"ocpiocl targets\" command");

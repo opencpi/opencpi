@@ -215,7 +215,7 @@ rcc: speclinks $(RccImplementations)
 test: speclinks $(TestImplementations)
 
 checkocl:
-	$(AT)if ! test -x $(OCPI_CDK_DIR)/bin/$(OCPI_TOOL_HOST)/ocpiocl || ! $(OCPI_CDK_DIR)/bin/$(OCPI_TOOL_HOST)/ocpiocl test; then echo Error: OpenCL is not available; exit 1; fi
+	$(AT)if ! test -x $(OCPI_CDK_DIR)/bin/$(OCPI_TOOL_HOST)/ocpiocltest || ! $(OCPI_CDK_DIR)/bin/$(OCPI_TOOL_HOST)/ocpiocltest test; then echo Error: OpenCL is not available; exit 1; fi
 
 ifeq ($(OCPI_HAVE_OPENCL),1)
 ocl: checkocl speclinks $(OclImplementations)
@@ -244,18 +244,12 @@ cleantest:
 	$(call CleanModel,test)
 
 cleanocl:
-ifeq ($(OCPI_HAVE_OPENCL),1)
 	$(call CleanModel,ocl)
-else
-	@true
-endif
 
 cleanhdl:
 	$(call CleanModel,hdl)
 
-ifeq ($(OCPI_HAVE_OPENCL),1)
 clean:: cleanocl
-endif
 
 clean:: cleanxm cleanrcc cleanhdl cleantest
 	$(AT)echo Cleaning \"$(CwdName)\" component library directory for all targets.

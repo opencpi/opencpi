@@ -616,11 +616,15 @@ emitDeviceSignal(FILE *f, Language lang, std::string &last, Signal &s, const cha
 void Worker::
 emitDeviceSignalMappings(FILE *f, std::string &last) {
   bool anyExpr = false;
-  for (SignalsIter si = m_signals.begin(); si != m_signals.end(); si++)
-    if ((*si)->m_directionExpr.size())
+  for (SignalsIter si = m_signals.begin(); si != m_signals.end(); si++) {
+    Signal &s = **si;
+    ocpiDebug("DeviceSignalMappings %s: %zu %u %d",
+	      s.cname(), m_paramConfig->nConfig, s.m_direction, m_type == Container);
+    if (s.m_directionExpr.size() && m_type != Container)
       anyExpr = true;
     else
-      emitDeviceSignalMapping(f, last, **si, "");
+      emitDeviceSignalMapping(f, last, s, "");
+  }
   if (anyExpr) {
     fputs(last.c_str(), f);
     fprintf(f,
@@ -1308,9 +1312,8 @@ emitVhdlShell(FILE *f) {
 void Worker::
 emitDeviceSignalMapping(FILE *f, std::string &last, Signal &s, const char *prefix) {
   assert(m_paramConfig);
-  ocpiDebug("DeviceSignalMapping %s: %zu %u", s.cname(), m_paramConfig->nConfig, s.m_direction);
   std::string name;
-  if (s.m_direction == Signal::UNUSED)
+  if (s.m_direction == Signal::UNUSED && m_type != Container)
     return;
   if (s.m_differential) {
     OU::format(name, s.m_pos.c_str(), s.m_name.c_str());

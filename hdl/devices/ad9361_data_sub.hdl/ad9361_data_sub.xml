@@ -90,7 +90,7 @@
   <Signal name='TX_FRAME_N' direction='lvds_p ? out : unused' pin='1'
 	  description='Pin H9:  TX Data Valid to ad9361 (negative), unused in CMOS mode.'/>
   <!-- this is in fact unused in some modes but we assume it will always be connected -->
-  <Signal name='TXNRX'      direction='out'
+  <Signal name='TXNRX'      direction='lvds_p ? unused : out'
 	  description='Pin H4:  Half duplex RF direction control (1==TX), unused in LVDS mode.'/>
   <!-- this is in fact unused in some modes but we assume it will always be connected -->
   <Signal name='ENABLE'     direction='lvds_p ? unused : out'

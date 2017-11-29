@@ -122,7 +122,11 @@ namespace OCPI {
        * declared to be of C linkage (extern "C").
        */
 
-      void * getSymbol (const std::string & symbolName)
+      void *getSymbol(const std::string & symbolName)
+        throw (std::string) {
+	return getSymbol(symbolName.c_str());
+      }
+      void *getSymbol(const char *symbolName)
         throw (std::string);
 
       /**

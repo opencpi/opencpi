@@ -1040,11 +1040,11 @@ emitDeviceSignalMapping(FILE *f, std::string &last, Signal &s, const char *prefi
 }
 void HdlContainer::
 emitDeviceSignal(FILE *f, Language lang, std::string &last, Signal &s, const char *prefix) {
-  if (s.m_direction == Signal::INOUT) {
+  if (s.m_direction == Signal::INOUT)
     // Inouts are different for containers since the tristate IOBUF is inserted.
     emitSignal(s.m_name.c_str(), f, lang, s.m_direction, last,
 	       s.m_width ? (int)s.m_width : -1, 0, "", s.m_type);
-  } else
+  else
     Worker::emitDeviceSignal(f, lang, last, s, prefix);
 }
 
@@ -1093,6 +1093,10 @@ emitTieoffSignals(FILE *f) {
 	fprintf(f, ", IO => %s, O => open, OE => '0');\n", s.cname());
 	break;
       case Signal::BIDIRECTIONAL: // not really supported properly
+	break;
+      case Signal::UNUSED: // not really supported properly
+	fprintf(f, "  -- Signal \"%s\" is unused and unconnected in this module\n",
+		s.cname());
 	break;
       default:
 	assert("Unexpected signal type for assembly tieoff" == 0);

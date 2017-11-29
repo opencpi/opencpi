@@ -153,13 +153,13 @@ begin
       port map(I => dev_data_dac_in.tx_frame, O => TX_FRAME_P, OBAR => TX_FRAME_N);
     p0p1: for idx in 0 to lvds_width_c/2-1 generate
       p0hi: BUFFER_OUT_1 generic map(DIFFERENTIAL => true)
-        port map(I => dev_data_dac_in.data(lvds_width_c + idx),
+        port map(I => dev_data_dac_in.data(lvds_width_c/2 + idx),
                  O => p0_d_11_6(idx*2+1), OBAR => p0_d_11_6(idx*2));
       p0lo: BUFFER_OUT_1 generic map(DIFFERENTIAL => true)
         port map(I => dev_data_dac_in.data(idx),
                  O => p0_d_5_0(idx*2+1), OBAR => p0_d_5_0(idx*2));
       p1hi: BUFFER_IN_1 generic map(DIFFERENTIAL => true)
-        port map(O => dev_data_adc_out.data(lvds_width_c + idx),
+        port map(O => dev_data_adc_out.data(lvds_width_c/2 + idx),
                  I => p1_d_11_6(idx*2+1), IBAR => p1_d_11_6(idx*2));
       p1lo: BUFFER_IN_1 generic map(DIFFERENTIAL => true)
         port map(O => dev_data_adc_out.data(idx),

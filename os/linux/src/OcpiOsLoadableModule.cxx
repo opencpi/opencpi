@@ -114,7 +114,7 @@ OCPI::OS::LoadableModule::suffix() throw() {
 
 
 void *
-OCPI::OS::LoadableModule::getSymbol (const std::string & functionName)
+OCPI::OS::LoadableModule::getSymbol (const char *functionName)
   throw (std::string)
 {
 #if !defined(NDEBUG)
@@ -124,7 +124,7 @@ OCPI::OS::LoadableModule::getSymbol (const std::string & functionName)
   pthread_mutex_lock (&g_slMutex);
 
   void * addr;
-  if (!(addr = dlsym (o2vp (m_osOpaque), functionName.c_str()))) {
+  if (!(addr = dlsym(o2vp (m_osOpaque), functionName))) {
     std::string reason = dlerror ();
     pthread_mutex_unlock (&g_slMutex);
     throw reason;

@@ -36,22 +36,30 @@ ifdef OCPI_ALL_OCL_PLATFORMS
   OclAllTargets:=$(OCPI_ALL_OCL_TARGETS)
   OclTargetMap:=$(OCPI_OCL_TARGET_MAP)
 else ifeq ($(OCPI_HAVE_OPENCL),1)
-       ifeq ($(filter clean%,$(MAKECMDGOALS)),)
-          $(and $(call DoShell,\
-                  OCPI_OPENCL_OBJS=$(OCPI_OPENCL_OBJS) $(ToolsDir)/ocpiocl targets,OclTargetMap),\
-                $(error $(OclTargetMap)))
-       else
-         OclTargetMap:=
-       endif
-  OclAllTargets:=$(foreach p,$(OclTargetMap),$(word 2,$(subst =, ,$p)))
-  OclAllPlatforms:=$(foreach p,$(OclTargetMap),$(word 1,$(subst =, ,$p)))
-  export OCPI_ALL_OCL_PLATFORMS:=$(OclAllPlatforms)
-  export OCPI_ALL_OCL_TARGETS:=$(OclAllTargets)
-  export OCPI_OCL_TARGET_MAP:=$(OclTargetMap)
+  OclTargetMap:=
+  ifeq ($(filter clean%,$(MAKECMDGOALS)),)
+    # OCPI_HAVE_OPENCL enables us to even try to use OpenCL
+    # OCPI_FOUND_OPENCL is internal telling us the guard has succeeeded previously
+    ifndef OCPI_FOUND_OPENCL
+      ifeq ($(call DoShell,\
+              OCPI_OPENCL_LIB=$(OCPI_OPENCL_LIB) $(ToolsDir)/ocpiocltest test,OclTargetMap,1),)
+        export OCPI_FOUND_OPENCL:=1
+      endif
+    endif
+    ifdef OCPI_FOUND_OPENCL
+      $(and $(call DoShell,\
+               OCPI_OPENCL_LIB=$(OCPI_OPENCL_LIB) $(ToolsDir)/ocpiocl targets,OclTargetMap),\
+             $(error $(OclTargetMap)))
+      OclAllTargets:=$(foreach p,$(OclTargetMap),$(word 2,$(subst =, ,$p)))
+      OclAllPlatforms:=$(foreach p,$(OclTargetMap),$(word 1,$(subst =, ,$p)))
+      export OCPI_ALL_OCL_PLATFORMS:=$(OclAllPlatforms)
+      export OCPI_ALL_OCL_TARGETS:=$(OclAllTargets)
+      export OCPI_OCL_TARGET_MAP:=$(OclTargetMap)
+    endif
+  endif
 endif
 $(foreach m,$(OclTargetMap),\
   $(eval OclTarget_$(word 1,$(subst =, ,$m)):=$(word 2,$(subst =, ,$m))))
-
 # Mostly copied from rcc...
 ifdef OclPlatform
   OclPlatforms:=$(call Unique,$(OclPlatforms) $(OclPlatform))
