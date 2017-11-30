@@ -702,9 +702,11 @@ extractExprValue(const OU::Property &p, const OU::Value &v, OU::ExprValue &val) 
   if (err)
     return OU::esprintf("the '%s' parameter property expression is invalid: %s",
 			p.m_name.c_str(), err);
+#if 0 // no longer needed here - callers that must have numbers use parseExprNumber
   if (!val.isNumber())
     return OU::esprintf("the '%s' parameter property is not numeric, so is invalid here",
 			p.m_name.c_str());
+#endif
   return NULL;
 }
 
