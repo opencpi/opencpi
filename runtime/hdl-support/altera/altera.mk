@@ -35,10 +35,10 @@ OcpiAlteraDir=$(strip $(foreach t,$(or $(OCPI_ALTERA_DIR),/opt/Altera),$(infox T
 # - a network address with and @ or :
 # - a path relative to OcpiAlteraDir
 OcpiAlteraLicenseFile=$(strip\
-  $(foreach e,$(or $(OCPI_ALTERA_LICENSE_FILE),Altera-License.lic),$(infox XX:$e)\
+  $(foreach e,$(or $(OCPI_ALTERA_LICENSE_FILE),Altera-License.lic),$(info XX:$e)\
     $(foreach f,$(if $(filter /%,$e),$e,\
                   $(if $(or $(findstring @,$e),$(findstring :,$e)),$e,$(call OcpiAlteraDir,$1)/$e)),\
-      $(infox ALF:$f)$(if $(filter /%,$f),\
+      $(info ALF:$f)$(if $(filter /%,$f),\
         $(or $(call OcpiExists,$f),\
           $(call $(or $1,error), File "$f" for the Altera Quartus License File, not found)),\
         $f))))
@@ -58,8 +58,8 @@ OcpiAlteraQuartusDir=$(strip\
                          [ -d $$i -a -d $$i/quartus ] && echo `basename $$i` && break; \
                        done),\
                  $(call $(or $1,error), No version directory under $t/*/q* for Altera tools))),\
-        $(infox VV:$v)$t/$v)))/quartus,\
-    $(infox II:$i.)\
+        $(info VV:$v)$t/$v)))/quartus,\
+    $(info II:$i.)\
     $(if $(shell test -d $i && echo 1),$i,\
       $(call $(or $1,error), Directory "$i" for Altera Quartus tools, not found))))
 # We call this if all we really need is lab tools (e.g. impact)

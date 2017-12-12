@@ -179,6 +179,8 @@ def get_dirtype(directory="."):
             result = re.match(r"^\s*include\s*.*OCPI_CDK_DIR.*/include/(hdl/)?(.*)\.mk.*", line)
             match = result.group(2) if result != None else match
     if match is None:
+        if os.path.isfile(directory + "/project-package-id"):
+            return "project"
         return None
     return match
 
@@ -381,13 +383,31 @@ def get_project_package(origin_path="."):
     if path_to_project is None:
         logging.debug("Path \"" + str(origin_path) + "\"is not inside a project")
         return None
+
     # From the project top, probe the Makefile for the projectpackage
     # which is printed in cdk/include/project.mk in the projectpackage rule
     # if ShellProjectVars is defined
     with cd(path_to_project):
-        project_vars = set_vars_from_make("Makefile",
-                                          "projectpackage ShellProjectVars=1", "verbose")
-    return project_vars['ProjectPackage'][0]
+        project_package = None
+        # If the project-package-id file exists, set package-id to its contents
+        if os.path.isfile(path_to_project + "/project-package-id"):
+            with open(path_to_project + "/project-package-id", "r") as package_id_file:
+                project_package = package_id_file.read().strip()
+                logging.debug("Read Project-ID '" + project_package + "' from file: " +
+                              path_to_project + "/project-package-id")
+
+        # Otherwise, ask Makefile at the project top for the ProjectPackage
+        if project_package is None or project_package == "":
+            project_vars = set_vars_from_make("Makefile",
+                                              "projectpackage ShellProjectVars=1", "verbose")
+            if not project_vars is None and 'ProjectPackage' in project_vars and \
+               len(project_vars['ProjectPackage']) > 0:
+                # There is only one value associated with ProjectPackage, so get element 0
+                project_package = project_vars['ProjectPackage'][0]
+            else:
+                logging.error("Could not determine Package-ID of project.")
+                return None
+    return project_package
 
 def does_project_with_package_exist(origin_path=".", package=None):
     """

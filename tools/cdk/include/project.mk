@@ -29,7 +29,7 @@ $(OcpiIncludeProject)
 # As a default, build for everything supported in the CDK
 # FIXME: can we test for licensing?
 ifeq ($(HdlPlatform)$(HdlPlatforms),)
-  ifeq ($(filter clean%,$(MAKECMDGOALS)),)
+  ifeq ($(filter clean%,$(MAKECMDGOALS))$(filter projectpackage,$(MAKECMDGOALS)),)
     include $(OCPI_CDK_DIR)/include/hdl/hdl-targets.mk
     ifeq ($(findstring export,$(MAKECMDGOALS)),)
       $(info No HDL platforms specified.  No HDL assets will be targeted.)
@@ -39,7 +39,7 @@ ifeq ($(HdlPlatform)$(HdlPlatforms),)
 endif
 
 ifeq ($(wildcard imports),)
-  ifeq ($(filter clean%,$(MAKECMDGOALS)),)
+  ifeq ($(filter clean%,$(MAKECMDGOALS))$(filter projectpackage,$(MAKECMDGOALS)),)
     doimports=$(shell \
 	[ -d imports ] || mkdir imports; \
 	for i in $(CollectCreatableImports); do \
@@ -53,8 +53,8 @@ ifeq ($(wildcard imports),)
   endif
 endif
 
-ifeq ($(wildcard exports),)
-  doexports=$(shell $(OCPI_CDK_DIR)/scripts/makeExportLinks.sh - $(ProjectPrefix)_ xxx)
+ifeq ($(wildcard exports)$(filter projectpackage,$(MAKECMDGOALS)),)
+  doexports=$(shell $(OCPI_CDK_DIR)/scripts/makeExportLinks.sh - $(ProjectPrefix)_ $(ProjectPackage) xxx)
   ifeq ($(filter clean%,$(MAKECMDGOALS)),)
     $(info Exports are not set up for this project.  Doing it now. $(doexports))
   else
@@ -63,7 +63,10 @@ ifeq ($(wildcard exports),)
   endif
 endif
 
-include $(OCPI_CDK_DIR)/include/ocpisetup.mk
+# Do not want to import ocpisetup.mk if all we are doing is exporting project variables to python/bash
+ifeq ($(filter imports exports cleanimports cleanexports projectpackage,$(MAKECMDGOALS)),)
+  include $(OCPI_CDK_DIR)/include/ocpisetup.mk
+endif
 
 ifeq (@,$(AT))
   .SILENT: clean imports exports components hdlprimitives hdlcomponents hdldevices hdladapters hdlcards hdlplatforms hdlassemblies cleanhdl rcc cleanrcc ocl cleanocl applications run cleancomponents cleanapplications cleanimports cleanexports cleaneverything $(OcpiTestGoals)
@@ -90,11 +93,8 @@ DoTests=$(foreach t,\
 $(OcpiTestGoals):
 	$(call DoTests,$@)
 
-clean: cleanhdl
-	$(call MaybeMake,components,clean)
-
 CollectCreatableImports=$(strip $(infox OGCrI)\
-			$(foreach p,$(wildcard $(OcpiProjectRegistryDir)/*),\
+  $(foreach p,$(wildcard $(OcpiProjectRegistryDir)/*),\
     $(if $(strip \
       $(or \
         $(filter $(realpath $p),$(realpath .)),\
@@ -113,7 +113,7 @@ imports:
 	[ -L imports/ocpi.cdk ] || ln -s $(OCPI_CDK_DIR) imports/ocpi.cdk; \
 
 exports:
-	$(OCPI_CDK_DIR)/scripts/makeExportLinks.sh $(OCPI_TARGET_DIR) $(ProjectPrefix)_
+	$(OCPI_CDK_DIR)/scripts/makeExportLinks.sh $(OCPI_TARGET_DIR) $(ProjectPrefix)_ $(ProjectPackage)
 
 components: hdlprimitives
 	$(MAKE) imports
@@ -189,7 +189,10 @@ cleancomponents:
 cleanapplications:
 	$(call MaybeMake,applications,clean)
 
-clean: cleancomponents cleanapplications cleanrcc cleanhdl cleanimports cleanexports
+# Note that imports must be cleaned last because the host rcc platform directory
+# needs to be accessible via imports for projects other than core
+# (e.g. for cleaning rcc)
+clean: cleancomponents cleanapplications cleanrcc cleanhdl cleanexports cleanimports
 
 # Iterate through symlinks in imports. If the link points to the project registry dir,
 # it is the CDK, or is a broken link, it can be cleaned/removed. If the imports directory
@@ -227,10 +230,10 @@ cleaneverything: clean
 # project and outside it (when this project is accessed via OCPI_PROJECT_PATH)
 
 ifneq ($(wildcard specs),)
-  ifeq ($(filter clean%,$(MAKECMDGOALS)),)
-    specs/package-name: Project.mk
-	$(AT)echo "$(ProjectPackage)" > specs/package-name
-    components: specs/package-name
+  ifeq ($(filter clean%,$(MAKECMDGOALS))$(filter projectpackage,$(MAKECMDGOALS)),)
+    specs/package-id: Project.mk
+	$(AT)echo "$(ProjectPackage)" > specs/package-id
+    components: specs/package-id
   endif
 endif
 

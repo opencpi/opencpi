@@ -147,7 +147,7 @@ fi
 if [ "$1" = "-v" -o "$OCPI_EXPORTS_VERBOSE" = 1 ]; then
   verbose=yes
   [ "$1" = "-v" ] && shift
-  [ -n "$verbose" ] && echo Setting verbose mode.    
+  [ -n "$verbose" ] && echo Setting verbose mode.
 fi
 os=$(echo $1 | sed 's/^\([^-]*\).*$/\1/')
 dylib=$(if [ "$os" = macos ]; then echo dylib; else echo so; fi)
@@ -162,6 +162,13 @@ additions=$(test -f Project.exports && grep '^[ 	]*+' Project.exports | sed 's/^
 set +f
 facilities=$(test -f Project.exports &&  grep -v '^[ 	]*[-+#]' Project.exports | grep -v '^[ 	]*$' | \
   sed 's/^[ 	]*\([^ 	#]*\)[ 	]*\([^ 	#]*\).*$/\1:\2/') || true
+[ -n "$3" -a "$3" != "-" ] && \
+  if [[ "$3" != `cat exports/project-package-id 2>/dev/null` ]]; then
+    echo "$3" > exports/project-package-id;
+  fi
+if [ -d imports ]; then
+  make_filtered_link imports exports/imports main
+fi
 for ff in $facilities; do
   declare -a fboth=($(echo $ff | tr : ' '))
   f=${fboth[0]}
@@ -186,7 +193,7 @@ for ff in $facilities; do
     if [ ! -e $exe ]; then
       exe=$(find target-cdk-staging/ -name $m 2>/dev/null | grep $1 || :)
       if [ -z "$exe" ]; then
-        if [ "$3" == "" ]; then
+        if [ "$4" == "" ]; then
           echo Executable $m not found in $f/target-$1/$m nor target-cdk-staging/\*\*/$m
         fi
         continue
@@ -215,7 +222,7 @@ for ff in $facilities; do
     make_filtered_link $libpath exports/lib/$1/$lib library
   done
   if [ "$foundlib" = "" ]; then
-     if [ "$3" == "" ]; then
+     if [ "$4" == "" ]; then
        echo Library $libname not found in $f/target-$1/\* nor target-cdk-staging/lib/$1/\*
      fi
 #    exit 1

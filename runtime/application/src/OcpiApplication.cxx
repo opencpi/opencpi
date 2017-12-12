@@ -287,6 +287,9 @@ namespace OCPI {
 	
 	std::string slaveWkrName;
 	OU::format(slaveWkrName, "%s.%s", sImpl->cname(), sImpl->model().c_str());
+	size_t dashIdx =  slaveWkrName.rfind('-');
+	if (dashIdx != std::string::npos) // if worker has configuration suffix, remove it
+	  slaveWkrName.erase(dashIdx, slaveWkrName.rfind('.') - dashIdx);
 	if (strcasecmp(mImpl->slave().c_str(), slaveWkrName.c_str())) {
 	  // FIXME: make impl namespace part of this. implnames should really be qualified.
 	  if (isMaster)

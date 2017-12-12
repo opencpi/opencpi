@@ -103,10 +103,18 @@ function needname {
 function get_dirtype {
   [ ! -e "$1" ] && bad $1 should exist and does not
   [ ! -d "$1" ] && bad $1 should be a directory and is not
-  [ ! -f "$1"/Makefile ] && dirtype= && return 0
-  dirtype=$(sed -n 's=^[ 	]*include[ 	]*.*OCPI_CDK_DIR.*/include/\(.*\)\.mk.*=\1=p' $1/Makefile | tail -1)
-  dirtype=${dirtype##hdl\/}
-  dirtype=${dirtype##rcc\/}
+  if [ -f "$1"/Makefile ]; then
+    dirtype=$(sed -n 's=^[ 	]*include[ 	]*.*OCPI_CDK_DIR.*/include/\(.*\)\.mk.*=\1=p' $1/Makefile | tail -1)
+    dirtype=${dirtype##hdl\/}
+    dirtype=${dirtype##rcc\/}
+  else
+    dirtype=
+  fi
+  if [ -z "$dirtype" ]; then
+    if [ -e "$1/project-package-id" ]; then
+      dirtype=project
+    fi
+  fi
 }
 
 # Look in a directory and determine the type of the Makefile, set dirtype
@@ -653,8 +661,9 @@ function do_protocol_or_spec {
   # Make sure we record the package's prefix in the specs directory so that spec files used
   # by other projects (or this one) know what the package should be.
   # This is done in the project.mk file too.
-  if [ "$subdir" == specs -a ! -e specs/package-name ] ; then
-    sed -n 's/ *ProjectPackage *= *//p' Project.mk > specs/package-name
+  # TODO: This will not work if PackagePrefix/PackageName/Package are used instead of ProjectPackage
+  if [ "$subdir" == specs -a ! -e specs/package-id ] ; then
+    sed -n 's/ *ProjectPackage *= *//p' Project.mk > specs/package-id
   fi
   case "$noun" in
     (protocol)
@@ -1716,7 +1725,7 @@ Single letter options are lower case for general options and upper case for crea
 Options with * may occur multiple times
   -v                 Be verbose, describing what is happening in more detail
   -f                 Force without asking, analogious to the "-f" option in the "rm" command
-                     The delete verb may ask for confirmation without this.
+                     The delete and unregister verbs may ask for confirmation without this.
   -d <directory>     A directory in which to perform the function, e.g. used rather than changing
                      into a project directory.
   -s                 Operate ocpidev in standalone mode (i.e. outside a project).
@@ -1798,10 +1807,8 @@ Options with * may occur multiple times
 		     Also works as a verb instead of build i.e.(ocpidev clean)
   --rcc              Build rcc workers, when building at the project or library level.
   --hdl              Build hdl workers, when building at the project or library level.
-   --worker <worker>
-                     *Add a worker to be specificially built and don't build any other workers.
-  --no-assemblies
-                     Do not build assemblies, when building at the project level.
+  --worker <worker>  *Add a worker to be specificially built and don't build any other workers.
+  --no-assemblies    Do not build assemblies, when building at the project level.
   --hdl-assembly <assembly>
                      *Add an assembly to be specificially built and don't build any other
                      assemblies.
