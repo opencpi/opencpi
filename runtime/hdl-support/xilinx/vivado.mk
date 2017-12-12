@@ -658,6 +658,7 @@ TimingName=$1/$2-timing.rpx
 DoVivado=$(call DoXilinx,vivado -mode batch -source $(OCPI_CDK_DIR)/include/hdl/$1 -nolog -journal vivado-$4.jou,$2,$3,$4)
 
 # The constraint file(s) to use, first/only arg is platform
+HdlConstraintsSuffix_vivado=.xdc
 VivadoConstraints=\
   $(or $(HdlConstraints),$(filter-out %_bit.xdc,$(wildcard $(HdlPlatformDir_$1)/*.xdc)))
 # For synth rule: load dcp files of platform and app workers.

@@ -114,6 +114,9 @@ ifeq ($(filter $(Worker),$(HdlPlatforms))$(filter clean,$(MAKECMDGOALS)),)
 else
   override HdlPlatform:=$(Worker)
   include $(OCPI_CDK_DIR)/include/hdl/hdl-pre.mk
+  ifneq ($(filter clean,$(MAKECMDGOALS)),)
+    HdlSkip:=1
+  endif
 endif
 # the target preprocessing may tell us there is nothing to do
 # some platforms may have been used for the devices subdir (tests, sims, .etc.)
@@ -156,10 +159,20 @@ ifndef HdlSkip
     # We already build the directories for default containers, and we already
     # did a first pass parse of the container XML for these containers
     .PHONY: configs
+    getConstraints=$(and $(filter-out base,$1),$(strip\
+      $(if $(call DoShell,$(call OcpiGenTool,-I. -Igen -Y $1),HdlConfConstraints),\
+           $(error Processing platform configuration XML "$1": $(HdlConfConstraints)),\
+	   $(call HdlGetConstraintsFile,$(HdlConfConstraints),$(HdlPlatform)))))
+
     define doConfig
       configs: $(call HdlConfOutDir,$1)
-#       Cores="$(call OcpiAdjustLibraries,$(Cores))" \
-
+      HdlConstraints:=$$(call getConstraints,$1)
+      ifdef HdlConstraints
+        ifeq ($$(wildcard $$(HdlConstraints)),)
+          $$(error The constraints file, $$(HdlConstraints), from configuration $1, not found)
+        endif
+        ExportFiles:=$$(ExportFiles) $$(HdlConstraints)
+      endif
       $(call HdlConfOutDir,$1): exports
 	$(AT)mkdir -p $$@
 	$(AT)echo ======= Entering the \"$1\" configuration for the \"$(Worker)\" platform.
@@ -189,7 +202,7 @@ ifndef HdlSkip
 
     all: $(ExportLinks)
   endif
-endif # skip after hel-pre.mk
+endif # skip after hdl-pre.mk
 
 # There is no test target here, but there might be in the devices subdir
 test:

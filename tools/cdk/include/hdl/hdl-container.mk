@@ -54,7 +54,9 @@ ifneq ($(MAKECMDGOALS),clean)
     HdlContPf:=$(patsubst %_pf,%,$(word 3,$(HdlContPfConfig)))
     ifdef HdlContPf
       HdlConfig:=$(word 1,$(HdlContPfConfig))
-      HdlConstraints:=$(filter-out -,$(word 2,$(HdlContPfConfig)))
+      HdlConstraints:=$(foreach c,$(filter-out -,$(word 2,$(HdlContPfConfig))),\
+                        $(foreach s,$(call HdlGetConstraintsSuffix,$(HdlConfPf)),\
+                           $c$(if $(filter %$s,$c),,$s)))
     else
       HdlContPf:=$(or $(HdlPlatform) $(word 1,$(HdlPlatforms)))
       HdlConfig:=base

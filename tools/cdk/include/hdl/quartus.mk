@@ -120,6 +120,7 @@ $(if $(HdlExactPart),$(call ToUpper,$(call QuartusMakePart,$(HdlExactPart))),AUT
 #		  $(infox GOTZ:AUTO:$(HdlMode))AUTO));
 
 
+HdlConstraintsSuffix_quartus=.qsf
 QuartusConstraints=$(or $(HdlConstraints),$(HdlPlatformDir_$1)/$1.qsf)
 # Make the settings file
 # Note that the local source files use notdir names and search paths while the

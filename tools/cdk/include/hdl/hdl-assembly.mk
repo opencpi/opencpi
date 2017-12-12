@@ -70,18 +70,14 @@ ifneq ($(MAKECMDGOALS),clean)
   $(eval $(HdlPrepareAssembly))
   # default the container names
   $(foreach c,$(Containers),$(eval HdlContXml_$c:=$c))
+  # $(call doConfigConstraints,<container>,<platform>,<config>)
+  getConfigConstraints=$(strip\
+     $(if $(call DoShell,$(call OcpiGenTool) -Y $(HdlPlatformDir_$2)/hdl/$3,HdlConfConstraints),\
+          $(error Processing platform configuration XML "$3" for platform "$2" for container "$1"),\
+	  $(call HdlGetConstraintsFile,$(HdlConfConstraints),$2)))
   ## Extract the platforms and targets from the containers that have their own xml
   ## Then we can filter the platforms and targets based on that
   ifdef Containers
-    # Set the configuration-based constraints
-    # $(call doConfigConstraints,<container>,<platform>,<config>)
-    define doConfigConstraints
-      $$(and $$(call DoShell,$(call OcpiGen, -Y $$(HdlPlatformDir_$2)/$3),HdlConfConstraints),\
-             $$(error Processing platform configuration XML "$3" for platform "$2" for container "$1"))
-      ifdef HdlConfConstraints
-        HdlConstraints_$1:=$$(HdlConfConstraints)
-      endif
-    endef
     # Add a defined non-default container to the build
     # $(call addContainer,<container>,<platform>,<config>,<constraints>)
     define addContainer
@@ -94,9 +90,13 @@ ifneq ($(MAKECMDGOALS),clean)
       HdlTarget_$$(ContName):=$$(call HdlGetFamily,$$(HdlPart_$2))
       HdlConfig_$$(ContName):=$3
       ifeq ($4,-)
-        HdlConstraints_$$(ContName):=$(call getConfigConstraints,$2,$3)
+        HdlConstraints_$$(ContName):=$$(strip\
+          $$(foreach c,$$(call getConfigConstraints,$1,$2,$3),\
+             $$(HdlPlatformDir_$2)/$$c))
       else
-        HdlConstraints_$$(ContName):=$(filter-out -,$4)
+        HdlConstraints_$$(ContName):=$$(strip \
+          $$(foreach c,$4,\
+             $$(call AdjustRelative,$$c,$$(HdlPlatformDir_$2))))
       endif
       HdlContXml_$$(ContName):=$$(call HdlContOutDir,$$(ContName))/gen/$$(ContName).xml
       $$(shell mkdir -p $$(call HdlContOutDir,$$(ContName))/gen; \
@@ -205,7 +205,7 @@ else
 	  $(AT)mkdir -p $(call HdlContOutDir,$1)
 	  $(AT)$(MAKE) -C $(call HdlContOutDir,$1) -f $(OCPI_CDK_DIR)/include/hdl/hdl-container.mk \
                HdlAssembly=../../$(CwdName)  HdlConfig=$(HdlConfig_$1) \
-               HdlConstraints=$(call AdjustRelative,$(HdlConstraints_$1)) \
+               HdlConstraints=$(HdlConstraints_$1) \
                HdlPlatforms=$(HdlPlatform_$1) HdlPlatform=$(HdlPlatform_$1) \
 	       ComponentLibrariesInternal="$(call OcpiAdjustLibraries,$(ComponentLibraries))" \
 	       HdlLibrariesInternal="$(call OcpiAdjustLibraries,$(HdlMyLibraries))" \

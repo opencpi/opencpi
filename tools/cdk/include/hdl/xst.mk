@@ -467,6 +467,7 @@ export OcpiXstParOptionsDefault=-mt 4 -w -xe n
 # $(call HdlToolDoPlatform,1:<target-dir>,2:<app-name>,3:<app-core-name>,4:<pfconfig>,5:<platform-name>,6: paramconfig)
 # The constraint file(s) to use, first/only arg is platform
 XstConstraints=$(or $(HdlConstraints),$(wildcard $(HdlPlatformDir_$1)/*.ucf))
+HdlConstraintsSuffix_xst=.ucf
 define HdlToolDoPlatform_xst
 
 # This dependency is required, since without it, ngdbuild can fail

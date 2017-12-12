@@ -22,6 +22,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <memory>
+#include "OcpiOsFileSystem.h"
 #include "OcpiDriverManager.h"
 #include "OcpiLibraryManager.h"
 #include "wip.h"
@@ -88,6 +89,7 @@ add to tree.
   CMD_OPTION  (arch,      H,    String, NULL, "Specify the architecture for the artifact") \
   CMD_OPTION  (package,   p,    String, NULL, "Specify the HDL package for the worker") \
   CMD_OPTION  (pfconfig,  X,    String, NULL, "Parse top level platform/configuration attribute") \
+  CMD_OPTION  (configcons,Y,    Bool,   NULL, "Parse top level constrainst from config") \
   CMD_OPTION  (pfdir,     F,    String, NULL, "The directory where the current platform lives") \
   CMD_OPTION  (gentest,   T,    Bool,   NULL, "Generate unit testing files, assemblies, apps")  \
   CMD_OPTION  (gencases,  C,    Bool,   NULL, "Figure out which test cases to run on which platforms") \
@@ -253,7 +255,7 @@ main(int argc, const char **argv) {
 	  OrderedStringSet platforms;
 	  if ((err = parseFile(*ap, parent, "HdlContainer", &xml, file, false, false)) ||
 	      (err = HdlContainer::parsePlatform(xml, config, constraints, platforms))) {
-	    err = OU::esprintf("for container file %s:  %s\n", *ap, err);
+	    err = OU::esprintf("For container file %s:  %s", *ap, err);
 	    break;
 	  }
 	  printf("%s %s", config.c_str(), constraints.c_str());
@@ -263,8 +265,8 @@ main(int argc, const char **argv) {
 	  return 0;
 	}
 	if (doTopConfig) {
-	  if ((err = parseFile(*ap, parent, "HdlConfig", &xml, file, false, false))) {
-	    err = OU::esprintf("for platform configuration file %s:  %s\n", *ap, err);
+	  if ((err = parseFile(*ap, parent, "HdlConfig", &xml, file, false, true))) {
+	    err = OU::esprintf("For platform configuration file %s:  %s", *ap, err);
 	    break;
 	  }
 	  const char *csf = ezxml_cattr(xml, "constraints");

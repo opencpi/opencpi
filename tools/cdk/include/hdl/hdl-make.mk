@@ -274,6 +274,18 @@ HdlGetTargetsForToolSet=$(call Unique,\
     $(foreach t,$(2),\
        $(and $(findstring $(1),$(call HdlGetToolSet,$(t))),$(t))))
 
+################################################################################
+# $(call HdlGetConstraintsSuffix,<platform>)
+# Return the suffix for constraints files for this platform
+HdlGetConstraintsSuffix=$(strip \
+  $(HdlConstraintsSuffix_$(HdlToolSet_$(call HdlGetFamily,$(HdlPart_$1)))))
+################################################################################
+# $(call HdlGetConstraintsFile,<file,platform>)
+# Return the constraints file name adding suffix if not present
+HdlGetConstraintsFile=$(strip $(and $1,\
+  $(foreach s,$(call HdlGetConstraintsSuffix,$2),\
+    $1$(if $(filter %$s,$1),,$s))))
+
 $(call OcpiDbgVar,HdlPlatform)
 $(call OcpiDbgVar,HdlPlatforms)
 $(call OcpiDbgVar,HdlTargets)

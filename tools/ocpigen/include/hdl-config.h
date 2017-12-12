@@ -44,7 +44,7 @@ struct DevInstance {
 typedef std::list<DevInstance> DevInstances;
 typedef DevInstances::const_iterator DevInstancesIter;
 
-#define HDL_CONFIG_ATTRS "platform", "sdpWidth"
+#define HDL_CONFIG_ATTRS "platform", "sdpWidth", "constraints"
 #define HDL_CONFIG_ELEMS "cpmaster", "nocmaster", "device", "property"
 
 typedef std::vector<const Card*> Plugged;
