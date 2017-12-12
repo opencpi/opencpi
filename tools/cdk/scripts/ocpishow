@@ -82,8 +82,12 @@ def do_rccplatforms(options):
     If the "json" option is provided, dump json output for the platform/target details.
     """
     rccDict = ocpiutil.get_make_vars_rcc_targets()
-    rccPlatforms = rccDict["RccAllPlatforms"]
-    rccTargets   = rccDict["RccAllTargets"]
+    try:
+      rccPlatforms = rccDict["RccAllPlatforms"]
+      rccTargets   = rccDict["RccAllTargets"]
+    except TypeError:
+        print "No RCC platforms found. Make sure the core project is registered or in your OCPI_PROJECT_PATH."
+        return
     if options.table:
         rows = [["Platform", "Target"]]
         rows += [["---------", "---------"]]

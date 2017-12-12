@@ -54,7 +54,7 @@ extern const char
   *expandEnv(const char *in, std::string &out),
   *getCdkDir(std::string &cdk), // FIXME: put in runtime?
   *getPrereqDir(std::string &dir),
-  *getPlatforms(const char *attr, OrderedStringSet &platforms, Model m = NoModel),
+  *getPlatforms(const char *attr, OrderedStringSet &platforms, Model m = NoModel, bool onlyValidPlatforms = true),
   *getHdlPrimitive(const char *prim, const char *type, OrderedStringSet &prims),
   *getComponentLibrary(const char *lib, OrderedStringSet &libs),
   *getComponentLibrary(const char *lib, std::string &path),
@@ -63,7 +63,7 @@ extern const char
   *getOclPlatforms(const StringSet *&platforms),
   *getAllPlatforms(const StringSet *&platforms, Model m = NoModel),
   *getAllTargets(const StringSet *&targets, Model m = NoModel),
-  *getPlatforms(const char *attr, StringSet &targets, Model m),
+  *getPlatforms(const char *attr, StringSet &targets, Model m, bool onlyValidPlatformsPlatforms = true),
   *getTargets(const char *attr, OrderedStringSet &targets, Model m),
   *closeDep(),
   // Optional allows the element type might not match

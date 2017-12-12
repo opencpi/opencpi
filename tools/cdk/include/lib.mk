@@ -330,7 +330,7 @@ ifdef Worker
         ifeq ($(dir $(SpecFile)),specs/)
           OcpiSpecFile:=$(notdir $(SpecFile))
         else
-          ifeq ($(wildcard $(dir $(SpecFile))../lib/package-name),)
+          ifeq ($(wildcard $(dir $(SpecFile))../lib/package-id),)
             $(error The given spec file, "$(SpecFile)" must be in a built component library)
           endif
           OcpiSpecFile:=$(call AdjustRelative,$(SpecFile))

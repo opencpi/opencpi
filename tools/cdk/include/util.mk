@@ -428,7 +428,7 @@ ParamMsg=$(and $(ParamConfigurations), $(strip \
 
 RmRv=$(if $(filter %_rv,$1),$(patsubst %_rv,%,$1),$1)
 
-OcpiAdjustLibraries=$(foreach l,$1,$(if $(findstring /,$l),$(call AdjustRelative,$l),$l))
+OcpiAdjustLibraries=$(call Unique,$(foreach l,$1,$(if $(findstring /,$l),$(call AdjustRelative,$l),$l)))
 
 ifndef OCPI_PREREQUISITES_INSTALL_DIR
   export OCPI_PREREQUISITES_INSTALL_DIR:=$(OCPI_PREREQUISITES_DIR)
@@ -506,21 +506,31 @@ OcpiGetProjectPath=$(strip \
 # explicitly or implicitly depended on by the current project).
 # For example, available platforms can be determined based on all known projects.
 OcpiGetExtendedProjectPath=$(strip $(OcpiGetProjectPath) \
-                     $(foreach p,$(OcpiGetImportsNotInDependencies),\
-                       $(or $(call OcpiExists,$p/exports),$(call OcpiExists,$p),\
-                         $(info Warning: The path $p in Project Path does not exist.))))
+                             $(foreach p,$(OcpiGetImportsNotInDependencies),\
+                               $(or $(call OcpiExists,$p/exports),$(call OcpiExists,$p),\
+                                 $(info Warning: The path $p in Project Path does not exist.))))
 
+# Loop through all imported projects and check for 'exports' and then try to find
+# rcc/platforms. Return a list of paths to 'rcc/platforms' directories found in each
+# imported project. Search the current project's rcc/platforms first.
+#
+# Note: the path 'platforms' without a leading 'rcc/' is searched as well for legacy
+#       compatibilty before rcc platforms were supported outside of the CDK
 OcpiGetRccPlatformPaths=$(strip \
-                    $(foreach p,$(OcpiGetExtendedProjectPath),\
-                      $(or $(if $(call OcpiIsPathCdk,$p),\
-                        $(call OcpiExists,$p/platforms),\
-                        $(if $(filter $(notdir $p),exports),\
-                          $(call OcpiExists,$p/lib/rcc/platforms),\
-                          $(call OcpiExists,$p/rcc/platforms))),\
-                            $(info Warning: The path $p/rcc/platforms does not exist.))))
+                          $(foreach p,$(OCPI_PROJECT_DIR),\
+                            $(call OcpiExists,$p/rcc/platforms))\
+                          $(foreach p,$(OcpiGetExtendedProjectPath),\
+                            $(or $(if $(call OcpiIsPathCdk,$p),\
+                              $(call OcpiExists,$p/platforms),\
+                              $(if $(filter $(notdir $p),exports),\
+                                $(call OcpiExists,$p/lib/rcc/platforms),\
+                                $(call OcpiExists,$p/rcc/platforms))),\
+                                  $(info Warning: The path $p/rcc/platforms does not exist.))))
 
+# Search for a given platform ($1) in the list of 'rcc/platform' directories found
+# by OcpiGetRccPlatformPaths.
 OcpiGetRccPlatformDir=$(strip $(firstword \
-		      $(foreach p,$(OcpiGetRccPlatformPaths),\
+		        $(foreach p,$(OcpiGetRccPlatformPaths),\
                           $(wildcard $p/$1))))
 
 ##################################################################################
@@ -742,11 +752,11 @@ define OcpiSetProject
   # or in a 'Makefile' file), but so they do not interfere with
   # ProjectPackage results
   PackageSaved:=$$(Package)
-  unexport Package
+  export Package:=
   PackagePrefixSaved:=$$(PackagePrefix)
-  unexport PackagePrefix
+  export PackagePrefix:=
   PackageNameSaved:=$$(PackageName)
-  unexport PackageName
+  export PackageName:=
 
   # Include Project.mk to determine ProjectPackage
   include $1/Project.mk
@@ -758,26 +768,23 @@ define OcpiSetProject
   # PackageName defaults to directory name
   ifndef ProjectPackage
     ifneq ($$(Package),)
-      ProjectPackage:=$$(Package)
+      override ProjectPackage:=$$(Package)
     else
       ifeq ($$(PackagePrefix),)
-        PackagePrefix:=local
+        override PackagePrefix:=local
       endif
       ifeq ($$(PackageName),)
-        PackageName:=$$(notdir $$(call OcpiAbsDir,$1))
+        override PackageName:=$$(notdir $$(call OcpiAbsDir,$1))
       endif
-      ProjectPackage:=$$(if $$(PackagePrefix),$$(patsubst %.,%,$$(PackagePrefix)).)$$(PackageName)
+      override ProjectPackage:=$$(if $$(PackagePrefix),$$(patsubst %.,%,$$(PackagePrefix)).)$$(PackageName)
     endif
   endif
 
   # Restore the Package* variables in case they were set at the command line
   # for a library or in a library 'Makefile'
   Package:=$$(PackageSaved)
-  unexport PackageSaved
   PackagePrefix:=$$(PackagePrefixSaved)
-  unexport PackagePrefixSaved
   PackageName:=$$(PackageNameSaved)
-  unexport PackageNameSaved
 
   # A project is always added to the below-project/non-project search paths
   # I.e. where the project path looks for other projects, and their exports,

@@ -272,7 +272,7 @@ $(LibDir)/$(notdir $(ImplXmlFile)): | $(LibDir)
 
 $(call OcpiDbgVar,DefsFile)
 # Macro to generate a links for a target $1 and a configuration $2
-HdlDefsDir=$(if $(and $(filter $2,0),$(filter vhdl,$3)),$(GeneratedDir),$(call WkrTargetDir,$1,$2))
+HdlDefsDir=$(call WkrTargetDir,$1,$2)
 define DoDefsLinks
 
 $(LibDir)/$1/$(Worker)$3$(HdlSourceSuffix): \

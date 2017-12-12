@@ -16,10 +16,24 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
+# include all possible project that can be searched. This includes
+# OCPI_PROJECT_PATH, the contents of the project registry (which defaults to
+# OCPI_CDK_DIR/../project_registry), and OCPI_CDK_DIR.
+function getProjectPathAndRegistered {
+  if [ -z "$OCPI_PROJECT_REGISTRY_DIR" ]; then
+    if [ -z "$OCPI_CDK_DIR" ]; then
+      OCPI_CDK_DIR=/opt/opencpi/cdk
+    fi
+    OCPI_PROJECT_REGISTRY_DIR=$OCPI_CDK_DIR/../project_registry
+  fi
+  echo ${OCPI_PROJECT_PATH//:/ } \
+           `find $OCPI_PROJECT_REGISTRY_DIR -mindepth 1 -maxdepth 1 -not -type f` $OCPI_CDK_DIR
+}
+
 # look for the name $1 in the directory $2 in the project path, and set $3 to the result
 # return 0 on found, 1 on not found
 function findInProjectPath {
-  for p in ${OCPI_PROJECT_PATH//:/ } $OCPI_CDK_DIR ; do
+  for p in `getProjectPathAndRegistered`; do
     [ -d $p/exports ] && p=$p/exports
     if [ "$OCPI_LOG_LEVEL" > 7 ]; then
       echo "OCPI(           ): looking for $p/$2/$1" # TODO / FIXME - add timestamp similar to rest of debug printouts

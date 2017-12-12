@@ -138,8 +138,6 @@ resolveExpressions(OCPI::Util::IdentResolver &ir) {
   return NULL;
 }
 
-
-
 const char *DeviceType::
 cname() const {
   return m_implName;

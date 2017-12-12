@@ -61,15 +61,15 @@ namespace {
 	packageFileDir.assign(base, cp + 1 - base);
 
       // FIXME: Fix this using the include path maybe?
-      std::string packageFileName = packageFileDir + "package-name";
+      std::string packageFileName = packageFileDir + "package-id";
       if ((err = OU::file2String(package_out, packageFileName.c_str()))) {
 	// If that fails, try going up a level (e.g. the top level of a library)
-	packageFileName = packageFileDir + "../package-name";
+	packageFileName = packageFileDir + "../package-id";
 	if ((err = OU::file2String(package_out, packageFileName.c_str()))) {
 	  // If that fails, try going up a level and into "lib" where it may be generated
-	  packageFileName = packageFileDir + "../lib/package-name";
+	  packageFileName = packageFileDir + "../lib/package-id";
 	  if ((err = OU::file2String(package_out, packageFileName.c_str())))
-	    return OU::esprintf("Missing package-name file: %s", err);
+	    return OU::esprintf("Missing package-id file: %s", err);
 	}
       }
       for (cp = package_out.c_str(); *cp && isspace(*cp); cp++)

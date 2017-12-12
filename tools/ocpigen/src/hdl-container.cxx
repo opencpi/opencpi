@@ -1127,10 +1127,11 @@ emitTieoffSignals(FILE *f) {
 // I.e. the only error checks done are the simple lexical check on this XML file,
 // and the correct top level element and platform attributes.  Any other errors in this file
 // or files it references will be generated later, in a better place to report them.
+// If onlyValidPlatforms is true, make sure each platform is valid.
 // A static method.
 const char *HdlContainer::
 parsePlatform(ezxml_t xml, std::string &config, std::string &constraints,
-	      OrderedStringSet &platforms) {
+	      OrderedStringSet &platforms, bool onlyValidPlatforms) {
   const char
     *err,
     *pf = ezxml_cattr(xml, "platform"),
@@ -1162,12 +1163,12 @@ parsePlatform(ezxml_t xml, std::string &config, std::string &constraints,
     only = p.c_str();
   }
   if (only) {
-    if ((err = getPlatforms(only, platforms, HdlModel)))
+    if ((err = getPlatforms(only, platforms, HdlModel, onlyValidPlatforms)))
       return err;
   } else if (exclude) {
     OrderedStringSet excludedPlatforms, allPlatforms;
     const StringSet *hdlPlatforms;
-    if ((err = getPlatforms(exclude, excludedPlatforms, HdlModel)) ||
+    if ((err = getPlatforms(exclude, excludedPlatforms, HdlModel, onlyValidPlatforms)) ||
 	(err = getAllPlatforms(hdlPlatforms, HdlModel)))
       return err;
     for (auto pi = hdlPlatforms->begin(); pi != hdlPlatforms->end(); ++pi)

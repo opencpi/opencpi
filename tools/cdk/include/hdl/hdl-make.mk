@@ -354,7 +354,7 @@ HdlRecordLibraries=\
   (\
    echo '\#' This generated file records libraries necessary to build this $(LibName) $(HdlMode); \
    $(foreach l,$(HdlLibrariesInternal),\
-     echo $(if $(filter /%,$l),$(notdir $l),$(call OcpiPathBetweenAssetsMaybeInDiffProjects,.,$l));) \
+     echo $(if $(filter /%,$l),$(notdir $l),$(call OcpiPathToAssetOutsideProject,.,$l));) \
   ) > $(patsubst %/,%,$(call HdlRmRv,$1)).libs;)\
 
 # Extract the list of libraries required by an asset/library $2 for target $1

@@ -329,8 +329,10 @@ getAllPlatforms(const StringSet *&platforms, Model m) {
 }
 
 // Parse the attribute value, validating it, and expanding it if wildcard
+// Do not bother to determine whether each platform is valid unless
+// 'onlyValidPlatforms' is set to true
 const char *
-getPlatforms(const char *attr, OrderedStringSet &platforms, Model m) {
+getPlatforms(const char *attr, OrderedStringSet &platforms, Model m, bool onlyValidPlatforms) {
   if (!attr)
     return NULL;
   const char *err;
@@ -339,14 +341,17 @@ getPlatforms(const char *attr, OrderedStringSet &platforms, Model m) {
     return err;
   for (OU::TokenIter ti(attr); ti.token(); ti.next()) {
     bool found;
-    for (StringSetIter si = universe->begin(); si != universe->end(); ++si)
-      if (fnmatch(ti.token(), (*si).c_str(), FNM_CASEFOLD) == 0) {
-	found = true;
-	platforms.push_back(*si);
-      }
-    if (!found)
-      return OU::esprintf("the string \"%s\" does not indicate or match any platforms",
-			  ti.token());
+    if (onlyValidPlatforms) {
+      for (StringSetIter si = universe->begin(); si != universe->end(); ++si)
+        if (fnmatch(ti.token(), (*si).c_str(), FNM_CASEFOLD) == 0) {
+          found = true;
+          platforms.push_back(*si);
+	}
+      if (!found)
+	return OU::esprintf("the string \"%s\" does not indicate or match any platforms",
+			    ti.token());
+    } else
+      platforms.push_back(ti.token());
   }
   return NULL;
 }

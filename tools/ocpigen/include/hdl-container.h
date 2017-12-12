@@ -94,7 +94,7 @@ public:
   static HdlContainer *
   create(ezxml_t xml, const char *xfile, const char *&err);
   static const char *parsePlatform(ezxml_t xml, std::string &config, std::string &constraints,
-				   OrderedStringSet &platforms);
+				   OrderedStringSet &platforms, bool onlyValidPlatforms = true);
   HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const char *xfile,
 	       const char *&err);
   virtual ~HdlContainer();

@@ -73,9 +73,9 @@ function docase {
   [ -z "$run" ] || {
     local output outputs timearg
     for o in ${ports[@]}; do
-      output="file_write"
-      [ ${#ports[@]} != 1 ] && output+="_from_$o"
-      outputs="$outputs -p$output=fileName=$3.$4.$2.$1.$o.out"
+      output=" -pfile_write"
+      [ ${#ports[@]} != 1 ] && output="$output""_from_$o"
+      outputs="$outputs$output=fileName=$3.$4.$2.$1.$o.out"
     done
     echo '  'Executing case "$3.$4" using worker $2.$1... 1>&2
     if [ $5 != 0 ]; then
@@ -87,7 +87,7 @@ function docase {
     fi
     lockrcc=
     [ "$OCPI_ENABLE_REMOTE_DISCOVERY" = 1 ] && lockrcc="-c=rcc0 -c$component="
-    cmd=('OCPI_LIBRARY_PATH=../../../lib/rcc:../../../lib/ocl:../../gen/assemblies:$OCPI_CDK_DIR/lib/components/rcc' \
+    cmd=('OCPI_LIBRARY_PATH=../../../lib/rcc:../../../lib/ocl:../../gen/assemblies:$OCPI_CDK_DIR/../project_registry/ocpi/exports/lib/components/rcc' \
              '$OCPI_CDK_DIR/bin/$OCPI_TOOL_DIR/'ocpirun -d -v -m$component=$1 -w$component=$2 \
 	         $lockrcc -P$component=$platform \
 	         --sim-dir=$3.$4.$2.$1.simulation $timearg \
