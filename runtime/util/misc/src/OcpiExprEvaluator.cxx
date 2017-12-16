@@ -110,8 +110,8 @@ void init() {
 #ifndef NDEBUG
   for (unsigned i = 0; i <= OA::OCPI_ULongLong; i++) {
     std::string s1, s2;
-    ocpiDebug("GMP MPF init: for %s min: %s max: %s",
-	      OU::baseTypeNames[i], mpfString(mpz_min[i], s1), mpfString(mpz_max[i], s2));
+    ocpiLog(20, "GMP MPF init: for %s min: %s max: %s",
+	    OU::baseTypeNames[i], mpfString(mpz_min[i], s1), mpfString(mpz_max[i], s2));
   }
 #endif
 }
@@ -534,10 +534,10 @@ parse(const char *buf, const char *end, ExprToken *&tokens, const IdentResolver 
 	  if ((err = resolver->getValue(sym.c_str(), v)))
 	    return err;
 	  if (!v.m_internal || v.m_internal->m_isString)
-	    ocpiDebug("Retrieved value for %s: string \"%s\"\n",
+	    ocpiLog(20, "Retrieved value for %s: string \"%s\"\n",
 		      sym.c_str(), v.m_internal ? v.m_internal->m_string.c_str() : "");
 	  else
-	    ocpiDebug("Retrieved value for %s: num %u %" PRIi64 "\n",
+	    ocpiLog(20, "Retrieved value for %s: num %u %" PRIi64 "\n",
 		      sym.c_str(), v.m_numberSet, v.getNumber());
 	  t->value = *v.m_internal;
 	  t->op = OpConstant;
@@ -608,7 +608,7 @@ const char *evalExpression(const char *start, ExprValue &val, const IdentResolve
   delete [] tokens;
   v->setInternal(val);
   std::string s;
-  ocpiDebug("Evaluating expression: %.*s err: \"%s\" value: \"%s\"",
+  ocpiLog(20, "Evaluating expression: %.*s err: \"%s\" value: \"%s\"",
   	    (int)(end - start), start, err ? err : "", val.getString(s));
   return
     err ? esprintf("when parsing expression \"%.*s\": %s", (int)(end-start), start, err) :

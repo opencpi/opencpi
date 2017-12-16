@@ -76,6 +76,7 @@ namespace OCPI {
       std::vector<BridgePort*>       m_bridgePorts;
       unsigned                       m_connectedBridgePorts;// count to know when all are ready
       BasicPort                     *m_localBridgePort;     // bridging to not-in-process ports
+      Container                     *m_bridgeContainer;     // container we are registered with
       struct BridgeOp {
 	size_t
 	  m_first,  // first opposite member to deal with

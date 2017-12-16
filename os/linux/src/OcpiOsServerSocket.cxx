@@ -110,13 +110,18 @@ bind(uint16_t portNo, bool reuse, bool udp, bool loopback) throw (std::string) {
   if (fileno < 0)
     throw Posix::getErrorMessage (errno, "bind/socket");
   int reuseopt = reuse ? 1 : 0;
+  socklen_t len = sizeof(sin);
   if (::setsockopt(fileno, SOL_SOCKET, SO_REUSEADDR, (void *)&reuseopt, sizeof (int)) != 0 ||
-      ::bind (fileno, &sin.sa, sizeof (sin)) != 0 ||
+      ::bind (fileno, &sin.sa, sizeof(sin)) != 0 ||
+      ::getsockname(fileno, &sin.sa, &len) != 0 ||
       (!udp && ::listen (fileno, DEFAULT_LISTEN_BACKLOG) != 0)) {
     ::close (fileno);
     throw Posix::getErrorMessage(errno, "bind/setsockopt/listen");
   }
   o2fd (m_osOpaque) = fileno;
+  ocpiDebug("Server Socket %p bound to \"%s\" port %u", this, inet_ntoa(sin.in.sin_addr),
+	    ntohs(sin.in.sin_port));
+  
 }
 
 uint16_t ServerSocket::
@@ -139,6 +144,7 @@ void ServerSocket::
 accept (Socket &sock) throw (std::string) {
   ocpiAssert(o2fd(m_osOpaque) != -1);
 
+  ocpiDebug("Socket accepting");
   int newfd = ::accept(o2fd(m_osOpaque), 0, 0);
   if (newfd == -1)
     throw Posix::getErrorMessage (errno, "server/accept");
@@ -180,7 +186,9 @@ ServerSocket::wait (unsigned long msecs)
     timeout.tv_usec = 0;
   }
 
+  ocpiDebug("Server Socket %p waiting", this);
   int res = ::select (pfd+1, &readfds, 0, 0, &timeout);
+  ocpiDebug("Server Socket %p waiting, res: %d errno: %d", this, res, errno);
 
   if (res < 0) {
     throw Posix::getErrorMessage (errno);

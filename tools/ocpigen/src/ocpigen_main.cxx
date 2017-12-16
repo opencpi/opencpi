@@ -65,6 +65,8 @@ add to tree.
   "XML file can be a worker, an assembly, a platform configuration, or a container.\n"
 #define OCPI_OPTIONS \
   CMD_OPTION  (verbose,   v,    Bool,   NULL, "Be verbose") \
+  CMD_OPTION  (log_level, l,    ULong,  0,    "<log-level>\n" \
+	                                      "set log level during execution, overriding OCPI_LOG_LEVEL")\
   CMD_OPTION  (defs,      d,    Bool,   NULL, "Generate the definition file (used for instantiation)") \
   CMD_OPTION  (impl,      i,    Bool,   NULL, "Generate the implementation header file (readonly)") \
   CMD_OPTION  (skel,      s,    Bool,   NULL, "Generate the implementation skeleton file (modified part)") \
@@ -77,7 +79,7 @@ add to tree.
   CMD_OPTION  (attribute, x,    String, NULL, "Emit to standard output the value of an XML attribute") \
   CMD_OPTION  (alternate, w,    Bool,   NULL, "Use the alternate language (VHDL vs. Verilog) when generating defs and impl") \
   CMD_OPTION  (dependency,M,    String, NULL, "Specify the name of the dependency file when processing XML") \
-  CMD_OPTION_S(library,   l,    String, NULL, "Add a library dependency for the worker") \
+  CMD_OPTION_S(library,   B,    String, NULL, "Add a library dependency for the worker") \
   CMD_OPTION_S(include,   I,    String, NULL, "Add an XML include directory to search") \
   CMD_OPTION  (directory, D,    String, NULL, "Specify the directory in which to put output generated files") \
   CMD_OPTION  (assembly,  S,    String, NULL, "Specify the the default assembly for containers") \
@@ -103,6 +105,8 @@ main(int argc, const char **argv) {
   OCPI::Driver::ManagerManager::suppressDiscovery();
   if (options.setArgv(argv))
     return 1;
+  if (options.log_level())
+    OCPI::OS::logSetLevel(options.log_level());
   const char *outDir = NULL, *wksFile = NULL, *package = NULL;
   bool
     doDefs = false, doImpl = false, doSkel = false, doAssy = false, doWrap = false,
@@ -128,7 +132,7 @@ main(int argc, const char **argv) {
 	    " -e <device>   The device for the artifact\n"
             " -p <package>  The package name for component specifications\n"
 	    " Other options:\n"
-	    " -l <lib>      The VHDL library name that <www>_defs.vhd will be placed in (-i)\n"
+	    " -B <lib>      The VHDL library name that <www>_defs.vhd will be placed in (-i)\n"
 	    " -L <complib>:<xml-dir>\n"
 	    "               Associate a component library name with an xml search dir\n"
 	    " -D <dir>      Specify the output directory for generated files\n"
@@ -191,7 +195,7 @@ main(int argc, const char **argv) {
       case 'M':
 	setDep(*++ap);
 	break;
-      case 'l':
+      case 'B':
 	err = addLibrary(ap[0][2] ? &ap[0][2] : *++ap);
 	break;
       case 'I':

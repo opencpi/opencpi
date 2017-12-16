@@ -80,6 +80,8 @@ namespace OCPI {
       static void configError(ezxml_t x, const char *fmt,...);
       // Global suppression of discovery
       static void suppressDiscovery();
+      // Load a specific driver
+      static bool loadDriver(const char *managerName, const char *drvrName, std::string &error);
     };
     // The base class for all (singleton) driver managers which are children of
     // ManagerManager. This is NOT directly inherited by derived managers. They

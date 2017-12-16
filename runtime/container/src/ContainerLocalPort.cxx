@@ -37,15 +37,16 @@ namespace OCPI {
 	      const OU::PValue *params)
       :  BasicPort(a_container, mPort, a_isProvider, params),
 	 m_scale(0), m_external(NULL), m_connectedBridgePorts(0), m_localBridgePort(NULL),
-	 m_localBuffer(NULL), m_localDistribution(OU::Port::DistributionLimit), m_firstBridge(0),
-	 m_currentBridge(0), m_nextBridge(0) {
+	 m_bridgeContainer(NULL), m_localBuffer(NULL),
+	 m_localDistribution(OU::Port::DistributionLimit), m_firstBridge(0), m_currentBridge(0),
+	 m_nextBridge(0) {
     }
 
     LocalPort::
     ~LocalPort() {
-      (container().needThread() ? container() : Container::baseContainer()).
-	unregisterBridgedPort(*this);
-      // Do not unregister from the base container since it might not exist
+      // FIXME: we need to ensure base containers are destroyed last
+      if (m_bridgeContainer)
+	m_bridgeContainer->unregisterBridgedPort(*this);
       for (unsigned n = 0; n < m_bridgePorts.size(); n++)
 	if (m_bridgePorts[n]) // maybe connections did not complete
 	  delete m_bridgePorts[n];
@@ -315,8 +316,11 @@ namespace OCPI {
 	else
 	  bp.connectLocal(*other, &c);
 	if (++m_connectedBridgePorts == m_bridgePorts.size()) {
-	  (container().needThread() ? container() : Container::baseContainer()).
-	    registerBridgedPort(*this);
+	  // Save the bridge container so we know it in our destructor when we can't call
+	  // containers' virtual methods
+	  m_bridgeContainer =
+	    &(container().needThread() ? container() : Container::baseContainer());
+	  m_bridgeContainer->registerBridgedPort(*this);
 	  portIsConnected();
 	}
       } else if (!other) // if other side is remote

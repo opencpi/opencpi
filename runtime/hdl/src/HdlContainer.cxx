@@ -94,6 +94,9 @@ namespace OCPI {
 	(void)write(2, msg, strlen(msg));
       }
       this->lock();
+      // We need to shut down the apps and workers since they
+      // depend on artifacts and transport.
+      OU::Parent<Application>::deleteChildren();
       shutdown();
       delete &m_device;
       ocpiDebug("Leaving ~HDL::Container()");

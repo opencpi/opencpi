@@ -63,7 +63,7 @@ static int mymain(const char **ap) {
   OCPI::OS::logSetLevel(options.loglevel());
   OCPI::Driver::ManagerManager::suppressDiscovery();
   const char *env = getenv("OCPI_OPENCL_LIB");
-  const char *lib = env ? env : defaultLib;
+  const char *lib = env && env[0] ? env : defaultLib;
   try {
     OCPI::OS::LoadableModule lm(lib, true);
   } catch (...) {

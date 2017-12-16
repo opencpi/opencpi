@@ -117,7 +117,11 @@ def do_rcctargets(options):
         do_rccplatforms(options)
     else:
         rccDict = ocpiutil.get_make_vars_rcc_targets()
-        print ocpiutil.python_list_to_bash(rccDict["RccAllTargets"])
+        try:
+          print ocpiutil.python_list_to_bash(rccDict["RccAllTargets"])
+        except TypeError:
+            print "No RCC targets found. Make sure the core project is registered or in your OCPI_PROJECT_PATH."
+            return
 
 
 def do_hdlplatforms(options):

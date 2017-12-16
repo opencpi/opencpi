@@ -121,18 +121,18 @@ namespace OCPI {
       unsigned n = 0;
       for (x = ezxml_cchild(xml, "port"); x; x = ezxml_next(x), p++, n++)
         if ((err = p->preParse(*this, x, n)))
-          return esprintf("Invalid xml port description: %s", err);
+          return esprintf("Invalid xml port description(1): %s", err);
       // Second pass to do most of the parsing
       p = m_ports;
       for (n = 0; n < m_nPorts; n++, p++)
         if ((err = p->parse()))
-          return esprintf("Invalid xml port description: %s", err);
+          return esprintf("Invalid xml port description(2): %s", err);
       // Third pass to propagate info from one port to another
       p = m_ports;
       bool hasInput = false, hasOutput = false;
       for (unsigned nn = 0; nn < m_nPorts; nn++, p++)
 	if ((err = p->postParse()))
-          return esprintf("Invalid xml port description: %s", err);
+          return esprintf("Invalid xml port description(3): %s", err);
         else if (p->m_provider) {
 	  if (!p->m_isOptional)
 	    hasInput = true;

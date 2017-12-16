@@ -76,6 +76,7 @@ $ToolsDir/ocpigen -v -C ${localplatforms[@]} ${remoteplatforms[@]}
       cat <<-EOF
 	if onlyExclude $p "\$OnlyPlatforms" "\$ExcludePlatforms"; then
 	  (cd ./run/$p && ./run.sh \$*)
+          if [ \$? = 130 ]; then exit 130; fi
 	fi
 	EOF
  done

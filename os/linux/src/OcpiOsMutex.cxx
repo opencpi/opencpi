@@ -102,7 +102,8 @@ OCPI::OS::Mutex::unlock (bool okIfUnlocked)
   int res;
   if (okIfUnlocked && !m_locked)
     return;
-  if ((res = pthread_mutex_unlock (o2pm (m_osOpaque))))
-    throw OCPI::OS::Posix::getErrorMessage (res);
+  ocpiAssert(m_locked);
   m_locked--;
+ if ((res = pthread_mutex_unlock (o2pm (m_osOpaque))))
+    throw OCPI::OS::Posix::getErrorMessage (res);
 }

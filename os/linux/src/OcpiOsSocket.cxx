@@ -144,11 +144,14 @@ connect(const std::string & remoteHost, uint16_t remotePort, bool udp) throw (st
   int fileno = ::socket (PF_INET, udp ? SOCK_DGRAM : SOCK_STREAM, udp ? IPPROTO_UDP : 0);
   if (fileno < 0)
     throw Posix::getErrorMessage(errno);
-  if (::connect(fileno, (struct sockaddr *) &sin, sizeof (sin)) != 0) {
-    ocpiDebug("Connect failed to \"%s\" (%s) port %u with error \"%s\" (%d)\n",
-	      remoteHost.c_str(), inet_ntoa(sin.sin_addr), remotePort, strerror(errno), errno);
-    throw Posix::getErrorMessage(errno);
-  }
+  ocpiDebug("Socket connecting to \"%s\" (%s) port %u",
+	    remoteHost.c_str(), inet_ntoa(sin.sin_addr), remotePort);
+  while (::connect(fileno, (struct sockaddr *) &sin, sizeof (sin)))
+    if (errno != EINTR) {
+      ocpiDebug("Connect failed to \"%s\" (%s) port %u with error \"%s\" (%d)",
+		remoteHost.c_str(), inet_ntoa(sin.sin_addr), remotePort, strerror(errno), errno);
+      throw Posix::getErrorMessage(errno);
+    }
   o2fd(m_osOpaque) = fileno;
 }
 

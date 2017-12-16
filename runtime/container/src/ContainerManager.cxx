@@ -25,6 +25,7 @@
 #include "OcpiOsServerSocket.h"     // just for linkage hooks
 #include "OcpiOsSemaphore.h"        // just for linkage hooks
 #include "OcpiUuid.h"               // just for linkage hooks
+#include "OcpiThread.h"             // just for linkage hooks
 #include "RemoteClient.h"           // just for linkage hooks
 #include "ContainerPort.h"          // just for linkage hooks
 
@@ -171,7 +172,8 @@ namespace OCPI {
   namespace Container {
     intptr_t dumb1() {
       ((DataTransfer::XferServices*)dumb1)->DataTransfer::XferServices::send(0, NULL, 0);
-      OCPI::Util::Uuid uuid;
+      ((OCPI::Util::Thread*)dumb1)->join();
+	OCPI::Util::Uuid uuid;
       OCPI::Util::UuidString us;
       OCPI::Util::uuid2string(uuid, us);
       std::string str;

@@ -413,16 +413,14 @@ Socket::
 SmemServices::
 ~SmemServices () {
   ocpiDebug("DatagramSmemServices::~DatagramSmemServices entered");
-  lock();
+  OU::SelfAutoMutex guard(this);
   try {
     stop();
     delete [] m_mem;
     // Thread already joined join();
   }
   catch( ... ) {
-
   }
-  unlock();
 }
 
 void 

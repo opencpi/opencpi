@@ -27,7 +27,7 @@ function getProjectPathAndRegistered {
     OCPI_PROJECT_REGISTRY_DIR=$OCPI_CDK_DIR/../project_registry
   fi
   echo ${OCPI_PROJECT_PATH//:/ } \
-           `find $OCPI_PROJECT_REGISTRY_DIR -mindepth 1 -maxdepth 1 -not -type f` $OCPI_CDK_DIR
+           `test -d $OCPI_PROJECT_REGISTRY_DIR && find $OCPI_PROJECT_REGISTRY_DIR -mindepth 1 -maxdepth 1 -not -type f` $OCPI_CDK_DIR
 }
 
 # look for the name $1 in the directory $2 in the project path, and set $3 to the result

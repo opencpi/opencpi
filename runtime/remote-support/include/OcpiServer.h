@@ -1,3 +1,5 @@
+#ifndef __OCPI_SERVER_H__
+#define __OCPI_SERVER_H__
 /*
  * This file is protected by Copyright. Please refer to the COPYRIGHT file
  * distributed with this source distribution.
@@ -24,18 +26,21 @@
 #include "OcpiOsMisc.h"
 #include "OcpiOsEther.h"
 #include "OcpiOsServerSocket.h"
-#include "OcpiLibraryManager.h"
-#include "RemoteServer.h"
+//#include "OcpiLibraryManager.h"
+//#include "RemoteServer.h"
 
 // This file implements the container server, which "serves up" containers on the system
 // the server is running on.  The server uses a local launcher.
 namespace OCPI {
-  namespace Application {
+  namespace Util {
+    class Client;
     class Server {
-      OCPI::Library::Library &m_library;
+      //      OCPI::Library::Library &m_library;
       std::string m_name;
+      std::string m_serverType;
       bool m_verbose;
-      bool m_remove;
+      std::string m_discoveryInfo;       // what to tell clients about our capabilities, etc.
+      //      bool m_remove;
       // This UDP endpoint is where we get "discovered" and we only only receive, never transmit
       // We receive multicast UDP discovery probes, but respond on the interface-specific
       // endpoints in m_discSockets
@@ -47,24 +52,22 @@ namespace OCPI {
       DiscSockets m_discSockets;
       // This is our TCP server socket on which to establish per-client connections
       OCPI::OS::ServerSocket m_server;
-      // These clients are TCP clients that are using us as a container server
-      typedef std::list<OCPI::Remote::Server *> Clients;
+      // These clients are TCP clients that are using us as a server
+      typedef std::list<Client *> Clients;
       typedef Clients::iterator ClientsIter;
       Clients m_clients;
       int m_maxFd;
       fd_set m_alwaysSet;
       unsigned m_sleepUsecs;
-      std::string m_directory;
-      std::string m_discoveryInfo;       // what to tell clients about our containers, etc.
-      std::vector<bool> m_needsBridging; // per container, does it need bridging to sockets
     public:
       Server(bool verbose, bool discoverable, bool loopback, bool onlyloopback,
-	     OCPI::Library::Library &lib, uint16_t port, bool remove, const char *addrFile,
-	     std::string &error);
+	     uint16_t port, const char *label, const char *addrFile, std::string &error);
       ~Server();
       bool run(std::string &error);
+      //    protected:
     protected:
-      OCPI::Library::Library &library() { return m_library; }
+      std::string &discoveryInfo() { return m_discoveryInfo; }
+      virtual Client *newClient(OCPI::OS::ServerSocket &server, std::string &error) = 0;
     private:
       bool doit(std::string &error);
       void shutdown() {};
@@ -73,5 +76,20 @@ namespace OCPI {
       bool receiveServer(std::string &error);
       bool receiveDiscSocket(OCPI::OS::Ether::Socket &c, std::string &error);
     };
+    // The server side object representing a connected client
+    class Client {
+      friend class Server;
+      OCPI::OS::Socket m_socket;
+      std::string m_client;
+    protected:
+      Client(OCPI::OS::ServerSocket &svrSock, std::string &error);
+      virtual ~Client();
+      virtual bool receive(bool &eof, std::string &error) = 0;
+      const OCPI::OS::Socket &socket() const { return m_socket; }
+      inline int fd() const { return m_socket.fd(); }
+      const char *client() const { return m_client.c_str(); }
+      // xml message buffers?
+    };
   }
 }
+#endif

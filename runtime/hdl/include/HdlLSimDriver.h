@@ -20,6 +20,7 @@
 
 #ifndef HDLLSIMDRIVER_H
 #define HDLLSIMDRIVER_H
+#include <set>
 #include "HdlNetDriver.h"
 
 namespace OCPI {
@@ -32,6 +33,7 @@ namespace OCPI {
       class Device;
       class Driver {
 	friend class Device;
+	std::set<Device *> m_devices;
       protected:
 	virtual ~Driver();
       private:

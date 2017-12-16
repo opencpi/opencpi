@@ -84,6 +84,39 @@ namespace OCPI {
       return OS::FileSystem::exists(path.c_str());
     }
 
+    bool ManagerManager::
+    loadDriver(const char *managerName, const char *driverName, std::string &err) {
+      std::string libDir;
+      assert(getenv("OCPI_CDK_DIR"));
+      OU::format(libDir, "%s/lib/%s-%s-%s", getenv("OCPI_CDK_DIR"),
+		 OCPI_CPP_STRINGIFY(OCPI_OS) + strlen("OCPI"),
+		 OCPI_CPP_STRINGIFY(OCPI_OS_VERSION), OCPI_CPP_STRINGIFY(OCPI_ARCH));
+      if (!OS::FileSystem::exists(libDir))
+	return
+	  OU::eformat(err,
+		      "when loading the \"%s\" \"%s\" driver, directory \"%s\" does not exist",
+		      driverName, managerName, libDir.c_str());
+      // Search, in order:
+      // 1. The driver built like we are built, if modes are available
+      // 2. The driver built with modes that is not the way we were built
+      // 3. The driver built without modes
+      std::string lib;
+      if (!checkLibPath(lib, libDir, driverName, true, OCPI_DYNAMIC, OCPI_DEBUG) &&
+	  !checkLibPath(lib, libDir, driverName, true, OCPI_DYNAMIC, !OCPI_DEBUG) &&
+	  !checkLibPath(lib, libDir, driverName, false, false, false))
+	return 
+	  OU::eformat(err,
+		      "could not find the \"%s\" \"%s\" driver in directory \"%s\", e.g.: %s",
+		      driverName, managerName, libDir.c_str(), lib.c_str());
+      ocpiInfo("Loading the \"%s\" \"%s\" driver from \"%s\"",
+	       driverName, managerName, lib.c_str());
+      std::string lme;
+      if (!OS::LoadableModule::load(lib.c_str(), true, lme))
+	return OU::eformat(err, "error loading the \"%s\" \"%s\" driver from \"%s\": %s",
+			   driverName, managerName, lib.c_str(), lme.c_str());
+      return false;
+    }
+
     // This is NOT a static method
     void ManagerManager::configureOnce(const char *file, const OCPI::Util::PValue *params) {
       if (m_configured)
@@ -147,6 +180,10 @@ namespace OCPI {
 	      err = e;
 	      break;
 	    }
+#if 1
+	    if (load)
+	      loadDriver(m->name().c_str(), d->name, err);
+#else
 	    if (!load)
 	      continue;
 	    std::string libDir;
@@ -180,6 +217,7 @@ namespace OCPI {
 			 d->name, m->name().c_str(), lib.c_str(), lme.c_str());
 	      break;
 	    }
+#endif
 	  }
 	}
       }

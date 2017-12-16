@@ -22,6 +22,7 @@
 #include <string>
 
 #include "OcpiOsServerSocket.h"
+#include "OcpiServer.h"
 #include "OcpiLibraryManager.h"
 #include "ContainerLauncher.h"
 // This file implements the container server, which "serves up" containers on the system
@@ -30,9 +31,8 @@
 // is the "remote container driver", and the server is not part of that.
 namespace OCPI {
   namespace Remote {
-    class Server {
+    class Server : public OCPI::Util::Client {
       OCPI::Library::Library &m_library;
-      OCPI::OS::Socket m_socket;
       bool m_downloading;                     // true when downloading artifacts
       bool m_downloaded;                      // true if any were actually downloaded
       std::vector<char> m_buf;                // xml message buffer
@@ -41,7 +41,6 @@ namespace OCPI {
       ezxml_t m_lx;                           // saved initial launch XML
       std::vector<OCPI::Library::Artifact*> m_artifacts; // in order of launch request
       std::string m_response;                 // xml response to send to client
-      std::string m_client;
       std::vector<char> m_downloadBuf;
       OCPI::Container::Launcher *m_local;
       // These two are what the underlying local launcher needs
@@ -58,9 +57,6 @@ namespace OCPI {
 	     std::string &discoveryInfo, std::vector<bool> &needsBridging, std::string &error);
       ~Server();
       bool receive(bool &eof, std::string &error);
-      inline int fd() const { return m_socket.fd(); }
-      const OCPI::OS::Socket &socket() const { return m_socket; }
-      const char *client() const { return m_client.c_str(); }
       // fill discovery into (container list) into buf, including null termination.
       // length argument is the actual buffer size, and it is decremented with what is
       // put into the buffer, NOT including the NULL termination that is also put in,

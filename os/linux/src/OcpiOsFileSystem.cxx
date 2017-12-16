@@ -538,6 +538,7 @@ copy (const std::string & srcName,
   struct stat ins, outs;
   stat(srcNativeName.c_str(), &ins);
   stat(destNativeName.c_str(), &outs);
+  // These next three are questionable...
   if (ins.st_uid != outs.st_uid) throw std::string("File UID did not match!");
   if (ins.st_gid != outs.st_gid) throw std::string("File GID did not match!");
   if (ins.st_mode != outs.st_mode) throw std::string("File Mode did not match!");

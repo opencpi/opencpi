@@ -81,8 +81,7 @@ namespace OCPI {
 	  size_t metaLength;
 	  char *metadata = OCPI::Library::Artifact::getMetadata(url, mtime, length, metaLength);
 	  if (!metadata)
-	    throw OU::Error(OCPI_LOG_DEBUG,
-			    "Cannot open or retrieve metadata from file \"%s\"", url);
+	    throw OU::Error(20, "Cannot open or retrieve metadata from file \"%s\"", url);
 	  Artifact *a = new Artifact(*this, url, metadata, mtime, length, metaLength, params);
 	  a->configure(); // FIXME: there could be config info in the platform.xml
 	  // FIXME: return NULL if this doesn't look like an artifact we can support?
@@ -98,7 +97,7 @@ namespace OCPI {
 		     "is nonexistent, not a normal file, or a broken link.  It will be ignored",
 		     a_libName.c_str());
 	  else if (m_fileIds.insert(file_id).second) {
-	    ocpiDebug("Found ARTIFACT: %s id is: %016" PRIx64 "%016" PRIx64, a_libName.c_str(),
+	    ocpiLog(20, "Found ARTIFACT: %s id is: %016" PRIx64 "%016" PRIx64, a_libName.c_str(),
 		     file_id.m_opaque[0], file_id.m_opaque[1]);
 	    // New id was inserted, and thus was not already there
 	    if (isDir) {

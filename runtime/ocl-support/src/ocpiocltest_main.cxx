@@ -53,8 +53,15 @@ mymain(const char **/*ap*/) {
   if (options.verbose() && !OCPI::OS::logWillLog(8))
     OS::logSetLevel(8);
   OCPI::Driver::ManagerManager::suppressDiscovery();
-  const char *env = getenv("OCPI_OPENCL_LIB");
+  const char *env = getenv("OCPI_HAVE_OPENCL");
+  if (!env || env[0] != '1') {
+    if (options.verbose())
+      ocpiLog(8, "OCL test failed since OCPI_HAVE_OPENCL not set to 1");
+    return 1;
+  }
+  env = getenv("OCPI_OPENCL_LIB");
   const char *lib = env && env[0] ? env : options.library() ? options.library() : defaultLib;
+
   try {
     OS::LoadableModule lm(lib, true);
     if (options.verbose() || OCPI::OS::logWillLog(8))

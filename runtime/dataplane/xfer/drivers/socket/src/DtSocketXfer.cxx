@@ -149,6 +149,7 @@ class ServerSocketHandler : public OU::Thread {
 public:
   ServerSocketHandler(OS::ServerSocket &server, EndPoint &sep, SmemServices &smem)
     : m_sep(sep), m_smem(smem), m_run(true) {
+    ocpiDebug("ServerSockletHandler accepting %u", sep.m_portNum);
     server.accept(m_socket);
     m_socket.linger(true); // give some time for data to the client FIXME timeout param?
     start();

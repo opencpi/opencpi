@@ -61,9 +61,9 @@ include $(OCPI_CDK_DIR)/include/hdl/hdl-targets.mk
 
 # The libraries with names suitable for the library clause in VHDL, as passed to ocpigen
 HdlVhdlLibraries=\
-  $(infox HdlMyLibraries=$(HdlMyLibraries) HdlVhdlLibraries=$(and $(HdlMyLibraries),$(foreach l,$(sort $(HdlMyLibraries)),$(and $(notdir $l),-l $(notdir $l)))))\
+  $(infox HdlMyLibraries=$(HdlMyLibraries) HdlVhdlLibraries=$(and $(HdlMyLibraries),$(foreach l,$(sort $(HdlMyLibraries)),$(and $(notdir $l),-B $(notdir $l)))))\
   $(and $(HdlMyLibraries),$(foreach l,$(call Unique,$(HdlMyLibraries)),$(strip\
-                             -l $(or $(notdir $l),$(error BROKEN)))))
+                             -B $(or $(notdir $l),$(error BROKEN)))))
 
 # This default is only overridden for testing the makefiles
 HdlError:=error

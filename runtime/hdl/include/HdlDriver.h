@@ -35,13 +35,16 @@ namespace OCPI {
 
     class Container;
     class Driver
-      : public OCPI::Container::DriverBase<Driver, Container, hdl>,
-	OCPI::HDL::PCI::Driver,
+      // Note DriverBase must be destructed before the specific Driver destructors
+      // In particular, destructors of specific devices (destroyed by DriverBase)
+      // can know that their specific drivers (which are not strictly parents) still exist
+      : OCPI::HDL::PCI::Driver,
 	OCPI::HDL::Ether::Driver,
 	OCPI::HDL::Sim::Driver,
-	OCPI::HDL::LSim::Driver,
+	public OCPI::HDL::LSim::Driver,
 	OCPI::HDL::Zynq::Driver,
-	Access, // for temporary probing
+        public OCPI::Container::DriverBase<Driver, Container, hdl>,
+      Access, // for temporary probing
 	virtual protected OCPI::Util::SelfMutex
     {
       const OCPI::Util::PValue *m_params; // a temporary during discovery

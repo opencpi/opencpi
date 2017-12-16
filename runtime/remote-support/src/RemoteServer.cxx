@@ -45,14 +45,10 @@ namespace OCPI {
 
     Server::
     Server(OL::Library &l, OS::ServerSocket &svrSock, std::string &discoveryInfo,
-	   std::vector<bool> &needsBridging, std::string &/*error*/)
-      : m_library(l), m_downloading(false), m_downloaded(false), m_rx(NULL), m_lx(NULL),
-	m_local(NULL), m_discoveryInfo(discoveryInfo), m_needsBridging(needsBridging) {
-      svrSock.accept(m_socket);
-      std::string host;
-      uint16_t port;
-      m_socket.getPeerName(host, port);
-      OU::format(m_client, "%s:%u", host.c_str(), port);
+	   std::vector<bool> &needsBridging, std::string &error) :
+      OU::Client(svrSock, error),
+      m_library(l), m_downloading(false), m_downloaded(false), m_rx(NULL),
+      m_lx(NULL), m_local(NULL), m_discoveryInfo(discoveryInfo), m_needsBridging(needsBridging) {
     }
     Server::
     ~Server() {

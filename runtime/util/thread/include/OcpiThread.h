@@ -70,34 +70,6 @@ namespace OCPI {
       OCPI::OS::ThreadManager         *m_pobjThreadServices;
       bool m_joined;
     };
-
-    /**
-     * Helper function for the OCPI::Util::Thread class.
-     */
-
-    inline void thread_proc (void *obj)
-    {
-      // Argument is reference to "this". Invoke derived
-      // class run method.
-      Thread* thr = static_cast<Thread*>(obj);
-      thr->run ();
-    }
-
-
-    // Thread control
-    inline void Thread::start ()
-    {
-      // Create a new thread
-      m_pobjThreadServices->start (thread_proc, (void *)this);
-      m_joined = false;
-    }
-
-    inline void Thread::join ()
-    {
-      m_pobjThreadServices->join ();
-      m_joined = true;
-    }
-
   }
 }
 

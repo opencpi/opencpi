@@ -20,6 +20,14 @@
 ifndef RCC_MAKE_MK
 RCC_MAKE_MK:=xxx
 include $(OCPI_CDK_DIR)/include/util.mk
+#
+# The block below needs to happen prior to the assignments below for
+# extracting RccTarget/Platform info from this makefile
+ifdef ShellRccTargetsVars
+# When collecting a list of RCC targets/platforms, you do not need to be inside a project.
+# So, collect all projects in the Project Registry Dir into the project path for searching.
+export OCPI_PROJECT_PATH:=$(OCPI_PROJECT_PATH):$(subst $(Space),:,$(wildcard $(OcpiProjectRegistryDir)/*))
+endif
 
 RccOs=$(word 1,$(subst -, ,$(or $1,$(RccTarget))))
 RccOsVersion=$(word 2,$(subst -, ,$1))

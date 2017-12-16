@@ -37,6 +37,8 @@
 #include "LibrarySimple.h"
 #include "HdlSdp.h"
 #include "HdlLSimDriver.h"
+#include "HdlDriver.h"
+#include "HdlContainer.h"
 
 namespace OCPI {
   namespace HDL {
@@ -651,11 +653,11 @@ protected:
   }
 
   // FIXME: signal safety even if we are just terminating anyway...
-  static std::set<Device *> s_devices;
   static void
   sigint(int /* signal */) {
     bool any = false;
-    for (auto it = s_devices.begin(); it != s_devices.end(); ++it) {
+    OH::Driver &dv = OH::Driver::getSingleton();
+    for (auto it = dv.m_devices.begin(); it != dv.m_devices.end(); ++it) {
       Device &d = **it;
       if (d.m_pid) {
 	any = true;
@@ -677,7 +679,7 @@ public:
   ~Device() {
     lock(); // unlocked by SeftMutex destructor
     shutdown();
-    s_devices.erase(this);
+    OH::Driver::getSingleton().m_devices.erase(this);
     ocpiDebug("Simulation server %s destruction", m_name.c_str());
     if (m_simDir.length()) {
       m_req.close();
@@ -799,7 +801,7 @@ public:
     if (m_state == EMULATING) {
       if (initFifos(error))
 	  return true;
-      s_devices.insert(this);
+      OH::Driver::getSingleton().m_devices.insert(this);
     } else {
       ocpiInfo("Shutting down previous simulation before (re)loading");
       shutdown();
@@ -1091,7 +1093,6 @@ public:
     }
   }
 };
-std::set<Device *> Device::s_devices;
 
 Driver::
 ~Driver() {

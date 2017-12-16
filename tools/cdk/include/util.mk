@@ -495,19 +495,21 @@ OcpiXmlComponentLibraries=$(infox HXC)\
 # ProjectDependencies comes next which can be user-defined and is appended with
 # the 'required' projects (e.g. core/cdk).
 # If CDK is not in the resulting list of projects, add it at the end.
+# Warning is suppressed during RPM builds
 OcpiGetProjectPath=$(strip \
                      $(foreach p,$(subst :, ,$(OCPI_PROJECT_PATH)) $(OcpiGetProjectDependencies)\
                        $(if $(filter $(realpath $(OCPI_CDK_DIR)),$(realpath $(OcpiGetProjectDependencies))),\
                          ,$(OCPI_CDK_DIR)),\
-                       $(or $(call OcpiExists,$p/exports),$(call OcpiExists,$p),\
+                       $(or $(call OcpiExists,$p/exports),$(call OcpiExists,$p),$(RPM_BUILD_ROOT),\
                          $(info Warning: The path $p in Project Path does not exist.))))
 
 # There are certain cases where we will want all projects that are 'registered' (not just the ones
 # explicitly or implicitly depended on by the current project).
 # For example, available platforms can be determined based on all known projects.
+# Warning is suppressed during RPM builds
 OcpiGetExtendedProjectPath=$(strip $(OcpiGetProjectPath) \
                              $(foreach p,$(OcpiGetImportsNotInDependencies),\
-                               $(or $(call OcpiExists,$p/exports),$(call OcpiExists,$p),\
+                               $(or $(call OcpiExists,$p/exports),$(call OcpiExists,$p),$(RPM_BUILD_ROOT),\
                                  $(info Warning: The path $p in Project Path does not exist.))))
 
 # Loop through all imported projects and check for 'exports' and then try to find

@@ -157,10 +157,8 @@ OCPI::OS::ThreadManager::join ()
   ThreadData & td = o2td (m_osOpaque);
   int res;
 
-#if !defined(NDEBUG)
-  ocpiAssert (td.running);
-#endif
-
+  if (!td.running) // since we don't return anything its ok to join something that never ran
+    return;
   void * dummy;
   if ((res = pthread_join (td.th, &dummy))) {
     throw OCPI::OS::Posix::getErrorMessage (res);

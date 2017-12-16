@@ -131,6 +131,14 @@ import ocpiutil; print ocpiutil.get_path_to_project_top();"`
   [ "$project_top" != None ] || bad failure to find project containing path \"`pwd`\"
   echo $project_top
 }
+# Determine the package-id of the current project
+function get_project_package {
+  project_pkg=`python -c "\
+import sys; sys.path.append(\"$OCPI_CDK_DIR/scripts/\");
+import ocpiutil; print ocpiutil.get_project_package();"`
+  [ "$project_pkg" != None ] || bad failure to find project package for path \"`pwd`\"
+  echo $project_pkg
+}
 # Create the link to a project in the installation registry (OCPI_PROJECT_REGISTRY_DIR)
 # based on the project's package name
 function register_project {
@@ -663,7 +671,7 @@ function do_protocol_or_spec {
   # This is done in the project.mk file too.
   # TODO: This will not work if PackagePrefix/PackageName/Package are used instead of ProjectPackage
   if [ "$subdir" == specs -a ! -e specs/package-id ] ; then
-    sed -n 's/ *ProjectPackage *= *//p' Project.mk > specs/package-id
+    echo `get_project_package` > specs/package-id
   fi
   case "$noun" in
     (protocol)

@@ -24,9 +24,16 @@
 #include "OcpiContainerApi.h"
 #include "OcpiComponentLibrary.h"
 #include "Container.h"
+#include "ContainerManager.h"
+#include "RemoteServer.h"
 #include "OcpiServer.h"
 
 namespace OU =  OCPI::Util;
+namespace OC = OCPI::Container;
+namespace OA = OCPI::API;
+namespace OS = OCPI::OS;
+namespace OT = OCPI::RDT;
+namespace OR = OCPI::Remote;
 
 
 #define OCPI_OPTIONS_HELP \
@@ -47,9 +54,6 @@ namespace OU =  OCPI::Util;
 
 // FIXME: local-only like ocpihdl simulate?
 #include "CmdOption.h"
-
-namespace OC = OCPI::Container;
-namespace OA = OCPI::API;
 
 static void
 rmdir() {
@@ -80,9 +84,63 @@ sigint(int /* signal */) {
   signal(SIGTERM, SIG_DFL);
   if (options.remove())
     rmdir();
-  options.bad("interrupted");
+  // We can't throw here to we just exit...
+  options.exitbad("interrupted");
 }
 
+namespace {
+class RemoteContainerServer : public OU::Server {
+  OCPI::Library::Library &m_library;
+  bool m_remove;
+  std::string m_directory;
+  std::vector<bool> m_needsBridging; // per container, does it need bridging to sockets
+public:
+  RemoteContainerServer(const char *addrFile) :
+    OU::Server(options.verbose(), options.discoverable(), options.loopback(),
+		 options.onlyloopback(), options.port(), "container", addrFile, options.error()),
+    m_library(*OCPI::Library::Library::s_firstLibrary),
+    m_remove(options.remove()) {
+    if (!options.error().empty())
+      return;
+    if (options.verbose()) {
+      fprintf(stderr,
+	      "Artifacts stored/cached in the directory \"%s\", which will be %s on exit.\n",
+	      m_library.libName().c_str(), m_remove ? "removed" : "retained");
+      fprintf(stderr, "Containers offered to clients are:\n");
+    }
+    m_needsBridging.resize(OC::Manager::s_nContainers, true); // initially false
+    OA::Container *ac;
+    for (unsigned n = 0; (ac = OA::ContainerManager::get(n)); n++) {
+      OC::Container &c = *static_cast<OC::Container *>(ac);
+      if (options.verbose())
+	fprintf(stderr, "  %2d: %s, model: %s, os: %s, osVersion: %s, platform: %s\n",
+		n, c.name().c_str(), c.model().c_str(), c.os().c_str(),
+		c.osVersion().c_str(), c.platform().c_str());
+      OU::formatAdd(discoveryInfo(), "%s|%s|%s|%s|%s|%s|%c|", c.name().c_str(),
+		    c.model().c_str(), c.os().c_str(), c.osVersion().c_str(),
+		    c.arch().c_str(), c.platform().c_str(), c.dynamic() ? '1' : '0');
+      for (unsigned nn = 0;  nn < c.transports().size(); nn++) {
+	const OC::Transport &t = c.transports()[nn];
+	OU::formatAdd(discoveryInfo(), "%s,%s,%u,%u,0x%x,0x%x|",
+		      t.transport.c_str(), t.id.c_str()[0] ? t.id.c_str() : " ", t.roleIn,
+		      t.roleOut, t.optionsIn, t.optionsOut);
+	if (t.transport == "ocpi-socket-rdma")
+	  m_needsBridging[n] = false;
+      }
+      if (m_needsBridging[n])
+	OU::formatAdd(discoveryInfo(), "%s,%s,%u,%u,0x%x,0x%x|",
+		      "ocpi-socket-rdma", " ", OT::ActiveFlowControl, OT::ActiveMessage,
+		      (1 << OT::ActiveFlowControl), (1 << OT::ActiveMessage));
+      discoveryInfo() += "\n";
+    }
+  }
+  // callback from derived server class
+protected:
+  OU::Client *newClient(OS::ServerSocket &server, std::string &error) {
+    return new OR::Server(m_library, server, discoveryInfo(), m_needsBridging, error);
+  }
+};
+}
 static int mymain(const char **) {
   // Cause the normal library discovery process to only use the one directory
   // that will also act as a cache.
@@ -106,14 +164,7 @@ static int mymain(const char **) {
     addrFile = getenv("OCPI_SERVER_ADDRESSES_FILE");
   if (!addrFile)
     addrFile = getenv("OCPI_SERVER_ADDRESS_FILE"); // deprecated
-  if (options.verbose())
-    fprintf(stderr, "Discovery options:  discoverable: %u, loopback: %u, onlyloopback: %u\n",
-	    options.discoverable(), options.loopback(), options.onlyloopback());
-  OCPI::Application::Server server(options.verbose(), options.discoverable(),
-				   options.loopback(), options.onlyloopback(),
-				   *OCPI::Library::Library::s_firstLibrary,
-				   options.port(), options.remove(), addrFile,
-				   options.error());
+  RemoteContainerServer server(addrFile);
   if (options.error().length() || server.run(options.error()))
     options.bad("Container server error");
   if (options.remove())

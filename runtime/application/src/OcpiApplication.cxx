@@ -1609,7 +1609,7 @@ namespace OCPI {
       for (unsigned n = 0; n < m_nInstances; n++, i++) {
 	const OL::Implementation &impl = *i->m_bestDeployment.m_impl;
 	OC::Container &c =
-	  OC::Container::nthContainer(m_usedContainers[i->m_bestDeployment.m_container]);
+	  OC::Container::nthContainer(m_usedContainers[i->m_usedContainer]);
 	fprintf(f,
 		"  <instance name='%s' spec='%s' worker='%s' model='%s' container='%s'\n"
 		"            artifact='%s'",

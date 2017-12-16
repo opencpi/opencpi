@@ -213,16 +213,16 @@ namespace OCPI {
                 ((asp.m_role.m_provider && p->m_provider) ||
 		 (!asp.m_role.m_provider && !p->m_provider))) {
 	      if (found) {
-		  ocpiInfo("Rejected: the '%s' connection at instance '%s' is ambiguous: "
-			   " port name must be specified.",
-			   asp.m_role.m_provider ? "input" : "output",
-			   m_utilInstance.m_name.c_str());
-		  goto rejected;
+		ocpiInfo("Rejected \"%s\": the '%s' connection at instance '%s' is ambiguous: "
+			 " port name must be specified.", i.m_artifact.name().c_str(),
+			 asp.m_role.m_provider ? "input" : "output",
+			 m_utilInstance.m_name.c_str());
+		goto rejected;
 	      }
 	      if (ap[n]) {
-		ocpiInfo("Rejected: the '%s' connection at instance '%s' is redundant: "
+		ocpiInfo("Rejected \"%s\": the '%s' connection at instance '%s' is redundant: "
 			 " implicit port '%s' already has a connection.",
-			 asp.m_role.m_provider ? "input" : "output",
+			 i.m_artifact.name().c_str(), asp.m_role.m_provider ? "input" : "output",
 			 m_utilInstance.m_name.c_str(), p->m_name.c_str());
 		goto rejected;
 	      }
@@ -231,8 +231,8 @@ namespace OCPI {
 	      found = true;
 	    }
 	  if (!found) {
-	    ocpiInfo("Rejected: there is no %s port for connection at instance '%s'.",
-		     asp.m_role.m_provider ? "input" : "output",
+	    ocpiInfo("Rejected \"%s\": there is no %s port for connection at instance '%s'.",
+		     i.m_artifact.name().c_str(), asp.m_role.m_provider ? "input" : "output",
 		     m_utilInstance.m_name.c_str());
 	    goto rejected;
 	  }
@@ -246,8 +246,8 @@ namespace OCPI {
 		goto rejected;
 	      }
 	      if (ap[n]) {
-		ocpiInfo("Rejected: the '%s' connection at instance '%s' is redundant: "
-			 " port '%s' already has a connection.",
+		ocpiInfo("Rejected \"%s\": the '%s' connection at instance '%s' is redundant: "
+			 " port '%s' already has a connection.", i.m_artifact.name().c_str(),
 			 asp.m_role.m_provider ? "input" : "output",
 			 m_utilInstance.m_name.c_str(), p->m_name.c_str());
 		goto rejected;
@@ -259,7 +259,8 @@ namespace OCPI {
 	      break;
 	    }
 	  if (!found) {
-	    ocpiInfo("Rejected: assembly instance '%s' of worker '%s' has no port named '%s'",
+	    ocpiInfo("Rejected \"%s\": assembly instance '%s' of worker '%s' has no port named "
+		     "'%s'", i.m_artifact.name().c_str(),
 		     inst.m_name.c_str(), i.m_metadataImpl.specName().c_str(),
 		     asp.m_name.c_str());
 	    goto rejected;
@@ -335,8 +336,9 @@ namespace OCPI {
 	      // Now check that the port connected in the assembly has the same
 	      // name as the port connected in the artifact
 	      if (!ap->m_connectedPort) {
-		ocpiInfo("Rejected because artifact has port '%s' connected while "
-			 "application doesn't.", p->m_name.c_str());
+		ocpiInfo("Rejected \"%s\" because artifact has port '%s' connected while "
+			 "application doesn't.", i.m_artifact.name().c_str(),
+			 p->m_name.c_str());
 		return false;
 	      }
 	      // This check can only be made for the port of the internal connection that is
@@ -347,8 +349,8 @@ namespace OCPI {
 			      c->port->m_name.c_str()) || // port name different
 		   assy.utilInstance(ap->m_connectedPort->m_instance).m_specName !=
 		   c->impl->m_metadataImpl.specName())) {             // or spec name different
-		ocpiInfo("Rejected due to incompatible connection on port \"%s\"",
-			 p->m_name.c_str());
+		ocpiInfo("Rejected \"%s\" due to incompatible connection on port \"%s\"",
+			 i.m_artifact.name().c_str(), p->m_name.c_str());
 		ocpiInfo("Artifact connects it to port '%s' of spec '%s', "
 			 "but application wants port '%s' of spec '%s'",
 			 c->port->m_name.c_str(), c->impl->m_metadataImpl.specName().c_str(),
@@ -359,8 +361,9 @@ namespace OCPI {
 	      bump = 1;; // An implementation with hardwired connections gets a score bump
 	    } else {
 	      // There is no connection in the assembly for a statically connected impl port
-	      ocpiInfo("Rejected because artifact has port '%s' connected while "
-		       "application doesn't mention it.", p->m_name.c_str());
+	      ocpiInfo("Rejected \"%s\" because artifact has port '%s' connected while "
+		       "application doesn't mention it.", i.m_artifact.name().c_str(),
+		       p->m_name.c_str());
 	      return false;
 	    }
 	  }
@@ -640,6 +643,12 @@ namespace OCPI {
 	    ++ci;
 	  else
 	    ci = i.m_candidates.erase(ci);
+      }
+      for (unsigned n = 0; n < nUtilInstances(); n++) {
+	Instance &i = *m_instances[n];
+	if (i.m_candidates.empty())
+	  throw OU::Error("No viable candidates found for instance \"%s\"",
+			  i.m_utilInstance.cname());
       }
       if (m_deployed) // we don't have candidates here.  deployments are pre-checked.
 	return;

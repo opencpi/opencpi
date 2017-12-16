@@ -131,8 +131,11 @@ namespace OCPI {
 	m_thread->join();
     }
     Container::~Container() {
-      if (m_thread)
+      m_enabled = false;
+      if (m_thread) {
+	m_thread->join();
 	delete m_thread;
+      }
       Manager::s_containers[m_ordinal] = 0;
       delete &m_transport;
     }
@@ -258,10 +261,10 @@ namespace OCPI {
       }
     }
     Container &Container::nthContainer(unsigned n) {
-      if (!Manager::s_containers[n])
-	throw OU::Error("Missing container %u", n);
       if (n >= Manager::s_maxContainer)
 	throw OU::Error("Invalid container %u", n);
+      if (!Manager::s_containers[n])
+	throw OU::Error("Missing container %u", n);
       return *Manager::s_containers[n];
     }
     Container &Container::baseContainer() {

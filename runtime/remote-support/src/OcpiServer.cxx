@@ -28,29 +28,28 @@
 #include <unistd.h>
 #include <utime.h>
 #include "OcpiOsFileSystem.h"
-#include "Container.h"
-#include "ContainerManager.h"
-#include "RemoteLauncher.h"
+#include "OcpiOsAssert.h"
+#include "OcpiUtilMisc.h"
 #include "OcpiServer.h"
 
 namespace OE = OCPI::OS::Ether;
-namespace OA = OCPI::API;
-namespace OC = OCPI::Container;
-namespace OR = OCPI::Remote;
 namespace OU = OCPI::Util;
-namespace OT = OCPI::RDT;
+namespace OS = OCPI::OS;
+
 namespace OCPI {
-  namespace Application {
+  namespace Util {
 
     Server::
     Server(bool verbose, bool discoverable, bool loopback, bool onlyloopback,
-	   OCPI::Library::Library &a_library, uint16_t port, bool remove, const char *addrFile,
-	   std::string &error)
-      : m_library(a_library), m_verbose(verbose), m_remove(remove), m_disc(NULL),
-	m_maxFd(-1), m_sleepUsecs(1000000) {
+	   uint16_t port, const char *label, const char *addrFile, std::string &error) :
+      m_serverType(label), m_verbose(verbose), m_disc(NULL), m_maxFd(-1), m_sleepUsecs(1000000) {
       if (!error.empty())
 	return;
       FD_ZERO(&m_alwaysSet);
+      if (m_verbose)
+	fprintf(stderr,
+		"Discovery options:  discoverable: %u, loopback: %u, onlyloopback: "
+		"%u\n", discoverable, loopback, onlyloopback);
       if (discoverable) {
 	OE::Interface udpIf("udp", error);
 	if (error.length())
@@ -65,7 +64,8 @@ namespace OCPI {
 	OE::Interface eif;
 	std::string loopName;
 	OE::Address udp(true, 17171);
-	ocpiInfo("Listening on all network interfaces to be discovered as a container server");
+	ocpiInfo("Listening on all network interfaces to be discovered as %s %s server",
+		 strchr("aeiou", m_serverType[0]) ? "an" : "a", m_serverType.c_str());
 	while (ifs.getNext(eif, error, NULL) && error.empty()) {
 	  if (eif.up && eif.connected && eif.ipAddr.addrInAddr()) {
 	    ocpiDebug("Interface \"%s\"(%u) up and connected and has IP address %s.",
@@ -108,13 +108,15 @@ namespace OCPI {
       if (verbose) {
 	if (discoverable) {
 	  fprintf(stderr,
-		  "Container server %s at %s, discoverable at UDP: %s\n"
+		  "%c%s server %s at %s, discoverable at UDP: %s\n"
 		  "  Using UDP discovery response addresses:\n",
+		  toupper(m_serverType[0]), m_serverType.c_str() + 1,
 		  m_name.c_str(), a.pretty(), m_disc->ifAddr().pretty());
 	  for (DiscSocketsIter ci = m_discSockets.begin(); ci != m_discSockets.end(); ci++)
 	    fprintf(stderr, "    %s\n", (*ci)->ifAddr().pretty());
 	} else
-	  fprintf(stderr, "Container server at %s\n", a.pretty());
+	  fprintf(stderr, "%c%s server at %s\n",
+		  toupper(m_serverType[0]), m_serverType.c_str() + 1, a.pretty());
       }
       FILE *safp = NULL;
       if (addrFile && (safp = fopen(addrFile, "w")) == NULL) {
@@ -153,35 +155,12 @@ namespace OCPI {
 	  if (addrFile)
 	    fprintf(stderr, "Server IP addresses stored in file \"%s\", one per line.\n",
 		    addrFile);
+#if 0
 	  fprintf(stderr,
 		  "Artifacts stored/cached in the directory \"%s\"; which will be %s on exit.\n",
 		  m_library.libName().c_str(), m_remove ? "removed" : "retained");
 	  fprintf(stderr, "Containers offered to clients are:\n");
-	}
-	m_needsBridging.resize(OC::Manager::s_nContainers, true); // initially false
-	OA::Container *ac;
-	for (unsigned n = 0; (ac = OA::ContainerManager::get(n)); n++) {
-	  OC::Container &c = *static_cast<OC::Container *>(ac);
-	  if (verbose)
-	    fprintf(stderr, "  %2d: %s, model: %s, os: %s, osVersion: %s, platform: %s\n",
-		    n, c.name().c_str(), c.model().c_str(), c.os().c_str(),
-		    c.osVersion().c_str(), c.platform().c_str());
-	  OU::formatAdd(m_discoveryInfo, "%s|%s|%s|%s|%s|%s|%c|", c.name().c_str(),
-			c.model().c_str(), c.os().c_str(), c.osVersion().c_str(),
-			c.arch().c_str(), c.platform().c_str(), c.dynamic() ? '1' : '0');
-	  for (unsigned nn = 0;  nn < c.transports().size(); nn++) {
-	    const OC::Transport &t = c.transports()[nn];
-	    OU::formatAdd(m_discoveryInfo, "%s,%s,%u,%u,0x%x,0x%x|",
-			  t.transport.c_str(), t.id.c_str()[0] ? t.id.c_str() : " ", t.roleIn,
-			  t.roleOut, t.optionsIn, t.optionsOut);
-	    if (t.transport == "ocpi-socket-rdma")
-	      m_needsBridging[n] = false;
-	  }
-	  if (m_needsBridging[n])
-	    OU::formatAdd(m_discoveryInfo, "%s,%s,%u,%u,0x%x,0x%x|",
-			  "ocpi-socket-rdma", " ", OT::ActiveFlowControl, OT::ActiveMessage,
-			  (1 << OT::ActiveFlowControl), (1 << OT::ActiveMessage));
-	  m_discoveryInfo += "\n";
+#endif
 	}
 	fflush(stderr); //why?
 	if (safp)
@@ -204,11 +183,12 @@ namespace OCPI {
     bool Server::run(std::string &error) {
       while (!doit(error))
 	;
-      ocpiBad("Container server stopped on error: %s", error.c_str());
+      ocpiBad("%c%s server stopped on error: %s",
+	      toupper(m_serverType[0]), m_serverType.c_str() + 1, error.c_str());
       shutdown();
       return !error.empty();
     }
-    // Container server is launching apps and doing control operations.
+    // Server is doing what it does
     bool Server::doit(std::string &error) {
       fd_set fds[1];
       *fds = m_alwaysSet;
@@ -250,7 +230,7 @@ namespace OCPI {
 	  ocpiInfo("Shutting down client \"%s\" due to error: %s",
 		   (*ci)->client(), error.c_str());
 	  error.clear();
-	  OR::Server *c = *ci;
+	  Client *c = *ci;
 	  ClientsIter tmp = ci;
 	  ci++;
 	  m_clients.erase(tmp);
@@ -267,8 +247,8 @@ namespace OCPI {
       OE::Address from;
       unsigned index = 0;
       if (m_disc->receive(rFrame, length, 0, from, error, &index)) {
-	ocpiDebug("Received to %s container server discovery request from %s, length %zu, index %u",
-		  m_name.c_str(), from.pretty(), length, index);
+	ocpiDebug("Received to %s %s server discovery request from %s, length %zu, index %u",
+		  m_name.c_str(), m_serverType.c_str(), from.pretty(), length, index);
 	if (index) {
 	  OE::Socket *s = NULL;
 	  for (DiscSocketsIter ci = m_discSockets.begin(); ci != m_discSockets.end(); ci++)
@@ -292,8 +272,8 @@ namespace OCPI {
 	  }
 	  strcpy(cp, m_discoveryInfo.c_str());
 	  length = strlen(start) + 1;
-	  ocpiLog(9, "Container server %s discovery returns: \n%s---end of discovery",
-		    m_name.c_str(), start);
+	  ocpiLog(9, "%c%s server %s discovery returns: \n%s---end of discovery",
+		  toupper(m_serverType[0]), m_serverType.c_str() + 1, m_name.c_str(), start);
 	  return !s->send(rFrame, length, from, 0, NULL, error);
 	} else
 	  error = "No interface index for receiving discovery datagrams";
@@ -308,8 +288,11 @@ namespace OCPI {
     bool Server::
     receiveServer(std::string &error) {
       ocpiDebug("Received connection request: creating a new client");
+      Client *c = newClient(m_server, error);
+#if 0
       OR::Server *c =
 	new OR::Server(library(), m_server, m_discoveryInfo, m_needsBridging, error);
+#endif
       if (error.length()) {
 	delete c;
 	return true;
@@ -320,5 +303,13 @@ namespace OCPI {
 	fprintf(stderr, "New client is \"%s\".\n", c->client());
       return false;
     }
+    Client::Client(OS::ServerSocket &serverSocket, std::string &/*error*/) {
+      serverSocket.accept(m_socket);
+      std::string host;
+      uint16_t port;
+      m_socket.getPeerName(host, port);
+      OU::format(m_client, "%s:%u", host.c_str(), port);
+    }
+    Client::~Client() {}
   }
 }
