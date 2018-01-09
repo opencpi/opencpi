@@ -1101,7 +1101,7 @@ emitTieoffSignals(FILE *f) {
       default:
 	assert("Unexpected signal type for assembly tieoff" == 0);
       }
-    } else if (s.m_direction == Signal::INOUT) {
+    } else if (s.m_direction == Signal::INOUT && !s.m_pin) {
       std::string in, out, oe;
       OU::format(in, s.m_in.c_str(), csi->second.c_str());
       OU::format(out, s.m_out.c_str(), csi->second.c_str());

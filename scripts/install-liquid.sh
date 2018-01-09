@@ -31,7 +31,6 @@ source ./scripts/setup-install.sh \
        https://github.com/jgaeddert/liquid-dsp.git \
        $dir \
        1
-echo PWD `pwd`
 SHARED=yes
 SEDINPLACE="sed --in-place"
 if test "$OCPI_TARGET_OS" = macos; then
@@ -42,19 +41,19 @@ elif test "$OCPI_CROSS_HOST" != ""; then
  crossConfig="CC=$OCPI_CROSS_HOST-gcc CXX=$OCPI_CROSS_HOST-g++ --host=$OCPI_CROSS_HOST"
 # SHARED=no
 fi
-generators="\
-./src/fec/gentab/reverse_byte_gentab \
-./src/utility/gentab/count_ones_gentab \
-"
+#generators="\
+#./src/fec/gentab/reverse_byte_gentab \
+#./src/utility/gentab/count_ones_gentab \
+#"
 [ $OCPI_TOOL_PLATFORM != $OCPI_TARGET_PLATFORM -a ! -f $OCPI_PREREQUISITES_INSTALL_DIR/liquid/$OCPI_TOOL_DIR/bin/reverse_byte_gentab ] && {
   echo It appears that you have not built the liquid library for $OCPI_TOOL_PLATFORM yet.
   echo This is required before trying to build this library for $OCPI_TARGET_PLATFORM, on $OCPI_TOOL_PLATFORM.
   exit 1
 }
-(echo Performing '"reconf"' on git repo; cd ..; ./reconf)
+(echo Performing '"./bootstrap.sh"' on git repo; cd ..; ./bootstrap.sh)
 base=$(basename `pwd`)
 echo Copying git repo for building in `pwd`
-(cd ..; cp -R $(ls . | grep -v $base) $base)
+(cd ..; cp -R $(ls . | grep -v ocpi-build-) $base)
 [ $OCPI_TOOL_PLATFORM != $OCPI_TARGET_PLATFORM ] && {
   for g in $generators; do
    cp $OCPI_PREREQUISITES_INSTALL_DIR/liquid/$OCPI_TOOL_DIR/bin/$(basename $g) $(dirname $g)

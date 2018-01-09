@@ -1099,23 +1099,10 @@ Driver::
 }
 
 static const char *
-getPath(std::string &path) {
-  const char
-    *xenv = getenv("OCPI_CDK_DIR"),
-    *ppenv = getenv("OCPI_PROJECT_PATH");
-  if (!xenv)
-    return "The OCPI_CDK_DIR environment variable is not set";
-  if (ppenv)
-    OU::format(path, "%s:", ppenv);
-  path += xenv;
-  return NULL;
-}
-
-static const char *
 getSims(std::vector<std::string> &sims) {
   std::string path;
   const char *err;
-  if ((err = getPath(path)))
+  if ((err = OU::getAllProjects(path)))
     return err;
   std::vector<std::string> pdirs;
   sims.clear();
@@ -1242,7 +1229,7 @@ createDevice(const std::string &name, const std::string &platform, uint8_t spinC
 	     const char *dir, std::string &error) {
   std::string path, script, actualPlatform;
   const char *err;
-  if ((err = getPath(path))) {
+  if ((err = OU::getAllProjects(path))) {
     error = err;
     return NULL;
   }

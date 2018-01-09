@@ -224,11 +224,12 @@ namespace OCPI {
 	} else if (n == 64)						\
 	  m_properties.m_accessor->set64(m_properties.m_base + offset, val, &status); \
 	else								\
-	  m_properties.m_accessor->set(m_properties.m_base + offset, sizeof(uint##n##_t), \
-                                       (uint32_t)(val << ((offset &3) * 8)), &status);    \
+	  m_properties.m_accessor->set(m_properties.m_base + offset, sizeof(uint##n##_t), val, \
+                                       &status);			     \
 	if (status)							     \
 	  throwPropertyWriteError(status);				     \
       }
+    //                                       (uint32_t)(val << ((offset &3) * 8)), &status);
       PUT_GET_PROPERTY(8)
       PUT_GET_PROPERTY(16)
       PUT_GET_PROPERTY(32)

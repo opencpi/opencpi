@@ -136,4 +136,4 @@ else
   AR=ar
 fi
 mkdir -p $OCPI_PREREQUISITES_INSTALL_DIR/$package/$OCPI_TARGET_DIR
-echo ====== Building package \"$package\" for platform \"$platform\".
+echo ====== Building package \"$package\" for platform \"$platform\" in `pwd`.

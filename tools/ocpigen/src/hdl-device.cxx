@@ -551,6 +551,7 @@ parseInstance(Worker &parent, Instance &i, ezxml_t x) {
       // the direction of the device's signal
       if (ps->m_direction == Signal::BIDIRECTIONAL)
 	ps->m_direction = s->m_direction;
+      ps->m_pin = s->m_pin;
     }
     ocpiDebug("Instance '%s' signal '%s' index '%zu' mapped to '%s'",
 	      i.cname(), s->cname(), index, external.c_str());

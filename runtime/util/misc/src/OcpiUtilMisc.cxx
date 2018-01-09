@@ -838,6 +838,48 @@ searchPath(const char *path, const char *item, std::string &result, const char *
   }
   return result.empty();
 }
+
+// Determine the full list of projects from either the project path
+// or project registry.
+// Return, via "path", a ":" separated list of all projects registered
+// or present in the project path.
+// Return error-message string on error, NULL on success
+const char *
+getAllProjects(std::string &path) {
+  // Collect path variables from environment used to determine
+  // projects in path
+  const char
+    *xenv = getenv("OCPI_CDK_DIR"),
+    *ppenv = getenv("OCPI_PROJECT_PATH"),
+    *prenv = getenv("OCPI_PROJECT_REGISTRY_DIR");
+
+  if (!xenv)
+    return "The OCPI_CDK_DIR environment variable is not set";
+  // Append path with the contents of OCPI_PROJECT_PATH
+  if (ppenv)
+    format(path, "%s:", ppenv);
+
+  bool isDir;
+  std::string prpath;
+  // Determine the project registry from either the environment
+  // variable or from CDK/../project_registry
+  if (prenv) {
+    if (!OS::FileSystem::exists(prenv, &isDir) || !isDir)
+      return "The OCPI_PROJECT_REGISTRY_DIR environment variable is not a directory";
+    prpath = prenv;
+  } else {
+    prpath = xenv + std::string("/../project_registry");
+  }
+  // If the project registry is does not exist, skip this
+  // Determine all of the files that exist inside project_registry.
+  // Add each one to 'path' so that each registered project can be searched.
+  if (OS::FileSystem::exists(prpath, &isDir) && isDir)
+    for (OS::FileIterator fi(prpath, "*"); !fi.end(); fi.next())
+      path += fi.absoluteName() + ":";
+  // Finally, add CDK as the last element of 'path'
+  path += xenv;
+  return NULL;
+}
   }
 
 }

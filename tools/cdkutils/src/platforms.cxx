@@ -107,7 +107,7 @@ getPrereqDir(std::string &dir) {
   dir = env ? env : "/opt/opencpi/prerequisites";
   bool isDir;
   if (OF::exists(dir, &isDir) && isDir) {
-    ocpiInfo("OCPI_PREREQUISITES_DIR: %s", env);
+    ocpiDebug("OCPI_PREREQUISITES_DIR: %s", env);
     return NULL;
   }
   return

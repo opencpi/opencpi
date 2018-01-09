@@ -679,7 +679,8 @@ emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
 	  mapOneSignal(f, s, n, isSingle, mappedExt, front, s.m_pos.c_str(), false);
 	  doPrev(f, last, comment, myComment());
 	  mapOneSignal(f, s, n, isSingle, mappedExt, front, s.m_neg.c_str(), false);
-	} else if (s.m_direction == Signal::INOUT || s.m_direction == Signal::OUTIN) {
+	} else if (!s.m_pin &&
+		   (s.m_direction == Signal::INOUT || s.m_direction == Signal::OUTIN)) {
 	  // For inout, we only want to map the signals if they are NOT connected,
 	  if (!*mappedExt) {
 	    doPrev(f, last, comment, myComment());
@@ -703,7 +704,8 @@ emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
       }	else
 	assert(!anyMapped);
     }
-    if (anyMapped && (s.m_direction != Signal::INOUT && s.m_direction != Signal::OUTIN))
+    if (anyMapped &&
+	(s.m_pin || (s.m_direction != Signal::INOUT && s.m_direction != Signal::OUTIN)))
       continue;
     doPrev(f, last, comment, myComment());
     if (s.m_differential) {
@@ -715,7 +717,7 @@ emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
       if (lang == VHDL)
 	fprintf(f, "%s%s => %s%s", any ? indent : "",
 		name.c_str(), prefix.c_str(), name.c_str());
-    } else if (s.m_direction == Signal::INOUT || s.m_direction == Signal::OUTIN) {
+    } else if (!s.m_pin && (s.m_direction == Signal::INOUT || s.m_direction == Signal::OUTIN)) {
       OU::format(name, s.m_in.c_str(), s.cname());
       fprintf(f, "%s%s => %s%s,\n", any ? indent : "",
 	      name.c_str(), prefix.c_str(), name.c_str());

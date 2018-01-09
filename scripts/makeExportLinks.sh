@@ -262,6 +262,7 @@ fi
 
 # Add rcc platforms
 [ -n "$verbose" ] && echo Processing rcc platforms
+shopt -s nullglob
 for p in rcc/platforms/*; do
   name=$(basename $p)
   make_filtered_link $p exports/lib/rcc/platforms/$name rcc-platform

@@ -355,6 +355,7 @@ namespace OCPI {
 				     bool leaveExisting = false, bool onlyIfDifferent = false) {
 	return string2File(in, file.c_str(), leaveExisting, onlyIfDifferent);
       }
+
       // Simple wrapper for strsep, allowing empty tokens if desired.
       // When empty tokens not allowed, consecutive delimiters are simply consumed
       // Usage is: for (OU::TokenIter li(input); li.token(), li.next()) { use li.token(); }
@@ -390,7 +391,9 @@ namespace OCPI {
           return strcasecmp(lhs.c_str(), rhs.c_str()) < 0;
         }
       };
-      /* These operators are for using std::unordered_set/unordered_map, when we use them.
+      /* DO NOT USE THESE - they are invalid in containers like "map" which
+       * want a "less" compare and assume equal when !(a<b) and !(b<a).
+       * See also: http://www.cplusplus.com/reference/map/map/ (Compare)
       struct ConstCharEqual {
 	inline bool operator() (const char *lhs, const char *rhs) const {
 	  return strcmp(lhs, rhs) == 0;
@@ -447,6 +450,10 @@ namespace OCPI {
       // return true on error
       bool searchPath(const char *path, const char *item, std::string &result,
 		      const char *preferredSuffix = NULL, std::vector<std::string> *all = NULL);
+      // return, via "path", a ":" separated list of all projects registered
+      // or present in the project path.
+      // return error-message string on error
+      const char *getAllProjects(std::string &path);
       // A convenience template for singletons possibly created at static construction
       // time (moved from OcpiDriverManager)
       template <class S> class Singleton {

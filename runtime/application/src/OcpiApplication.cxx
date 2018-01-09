@@ -847,6 +847,8 @@ namespace OCPI {
     init(const PValue *params) {
       try {
 	// In order from class definition except for instance-related
+	// We must initialize everything before anything that might cause an exception
+	m_instances = NULL;
         m_bookings = NULL;
 	m_properties = NULL;
 	m_nProperties = 0;
