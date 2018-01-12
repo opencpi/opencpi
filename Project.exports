@@ -44,7 +44,7 @@ runtime/application
 tools/cdkutils
 tools/ocpigen
 tools/ocpisca
-tools/cdk/ocpidds
+tools/ocpidds
 tests
 ################################################################################
 # exclusions, sometimes only applying to categories
@@ -96,7 +96,7 @@ tests
 +tools/cdk/scripts/testrun.sh scripts/
 +tools/cdk/scripts/testutil.sh scripts/
 +tools/cdk/scripts/setsid.py scripts/
-#+tools/cdk/scripts/makeExportLinks.sh scripts/
++tools/cdk/scripts/makeProjectExports.sh scripts/
 +scripts/makeExportLinks.sh scripts/
 +tools/cdk/scripts/maybeExport.sh scripts/
 # user level scripts made available in the bin directory

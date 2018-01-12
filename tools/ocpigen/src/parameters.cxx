@@ -531,7 +531,7 @@ parseBuildFile(bool optional) {
 	if (!OS::FileSystem::exists(fname))
 	  return optional ? NULL :
 	    OU::esprintf("Cannot find %s.build or %s-build.xml in worker directory or \"gen\" "
-			 "subdirectory", m_implName, m_implName);
+			 "subdirectory (%s)", m_implName, m_implName, dir.c_str());
       }
     }
   }
