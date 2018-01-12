@@ -80,6 +80,12 @@ ifneq ($(MAKECMDGOALS),clean)
   Platform:=$(HdlPlatform)
   PlatformDir:=$(HdlPlatformDir)
 endif
+
+# Make sure the platform's containing project is searched.
+# It may not be in the project dependencies, but it may depend
+# on devices in the current project's hdl/devices library.
+export OCPI_PROJECT_PATH:=$(call OcpiAbsPathToContainingProject,$(HdlPlatformDir_$(HdlPlatform))):$(OCPI_PROJECT_PATH)
+
 OcpiLanguage:=vhdl
 override HdlLibraries+=sdp axi platform
 # ComponentLibraries and XmlIncludeDirs are already passed to us on the command line.

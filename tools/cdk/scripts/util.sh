@@ -16,24 +16,32 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-# include all possible project that can be searched. This includes
-# OCPI_PROJECT_PATH, the contents of the project registry (which defaults to
-# OCPI_CDK_DIR/../project_registry), and OCPI_CDK_DIR.
-function getProjectPathAndRegistered {
-  if [ -z "$OCPI_PROJECT_REGISTRY_DIR" ]; then
-    if [ -z "$OCPI_CDK_DIR" ]; then
-      OCPI_CDK_DIR=/opt/opencpi/cdk
-    fi
-    OCPI_PROJECT_REGISTRY_DIR=$OCPI_CDK_DIR/../project_registry
+# Get the project registry directory. This is OCPI_PROJECT_REGISTRY_DIR,
+# or OCPI_CDK_DIR/../project_registry, or /opt/opencpi/cdk.
+# Call the python function so this can have one true implementation in
+# python instead of both python and bash.
+function getProjectRegistryDir {
+  if [ -n "$(which python 2> /dev/null)" ]; then
+    python -c "\
+import sys; sys.path.append(\"$OCPI_CDK_DIR/scripts/\");
+import ocpiutil; print ocpiutil.get_project_registry_dir()[1];"
+  else
+    echo The '"python"' command is not available. 1>&2
   fi
+}
+
+# include all possible project that can be searched. This includes
+# OCPI_PROJECT_PATH, the contents of the project registry and OCPI_CDK_DIR.
+function getProjectPathAndRegistered {
+  registry_dir=$(getProjectRegistryDir)
   echo ${OCPI_PROJECT_PATH//:/ } \
-           `test -d $OCPI_PROJECT_REGISTRY_DIR && find $OCPI_PROJECT_REGISTRY_DIR -mindepth 1 -maxdepth 1 -not -type f` $OCPI_CDK_DIR
+           `test -d $registry_dir && find $registry_dir -mindepth 1 -maxdepth 1 -not -type f` $OCPI_CDK_DIR
 }
 
 # look for the name $1 in the directory $2 in the project path, and set $3 to the result
 # return 0 on found, 1 on not found
 function findInProjectPath {
-  for p in `getProjectPathAndRegistered`; do
+  for p in $(getProjectPathAndRegistered); do
     [ -d $p/exports ] && p=$p/exports
     if [ "$OCPI_LOG_LEVEL" > 7 ]; then
       echo "OCPI(           ): looking for $p/$2/$1" # TODO / FIXME - add timestamp similar to rest of debug printouts

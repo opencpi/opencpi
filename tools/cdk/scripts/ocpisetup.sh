@@ -42,6 +42,7 @@ if test `basename $_MYPATH` != "$_MYNAME"; then
     echo Error: ocpisetup.sh must be given its path as its first argument. 1>&2
   else
     echo Error: ocpisetup.sh can only be run using the \".\" or \"source\" command. 1>&2
+    exit 1
   fi
   exit 1
 elif test -f $_MYNAME; then
@@ -72,8 +73,9 @@ export OCPI_BUILD_SHARED_LIBRARIES=$OCPI_DYNAMIC
 
 export PATH=$OCPI_CDK_DIR/bin/$OCPI_TOOL_DIR:$PATH
 if test "$OCPI_LIBRARY_PATH" = ""; then
-  # Default library path for core RCC workers and HDL assembliesa
-  export OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/lib/components:$OCPI_CDK_DIR/lib/hdl/assemblies
+  # Default library path for core RCC workers and HDL assemblies
+  source $OCPI_CDK_DIR/scripts/util.sh
+  export OCPI_LIBRARY_PATH=$(getProjectRegistryDir)/ocpi.core/exports/lib/components
 fi
 
 # Initialize target variables, using OCPI_TARGET_PLATFORM if it is set

@@ -1025,7 +1025,7 @@ namespace {
 	if (nInputs)
 	  for (unsigned n = 0; n < m_ports.size(); n++)
 	    if (!m_ports[n].m_port->isDataProducer()) {
-	      OU::formatAdd(app, "  <instance component='ocpi.file_read' connect='%s'", dut);
+	      OU::formatAdd(app, "  <instance component='ocpi.core.file_read' connect='%s'", dut);
 	      InputOutput &io = m_ports[n];
 	      if (nInputs > 1)
 		OU::formatAdd(app, " to='%s'",  io.m_port->pname());
@@ -1054,7 +1054,7 @@ namespace {
 	  for (unsigned n = 0; n < m_ports.size(); n++) {
 	    InputOutput &io = m_ports[n];
 	    if (io.m_port->isDataProducer()) {
-	      OU::formatAdd(app, "  <instance component='ocpi.file_write'");
+	      OU::formatAdd(app, "  <instance component='ocpi.core.file_write'");
 	      if (nOutputs > 1)
 		OU::formatAdd(app, " name='file_write_from_%s'", io.m_port->pname());
 	      if (!io.m_messagesInFile && io.m_stopOnEOF)

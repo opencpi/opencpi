@@ -67,12 +67,12 @@ _ocpidev()
     # valid nouns in first slot
     nouns1="project application spec protocol test library worker hdl"
     # valid nouns in second slot
-    nouns2="assembly card slot device platform platforms targets primitive"
+    nouns2="assembly card slot device platform platforms targets primitive primitives"
     # valid nouns in third slot
     nouns3="library core"
     #valid build options
     bopts="--rcc --hdl --no-assemblies --hdl-assembly --hdl-target --hdl-platform \
-           --rcc-platform --rcc-hdl-platform --worker"
+           --rcc-platform --rcc-hdl-platform --ok-if-missing --worker"
     # show verb has different options and nouns
     showopts="-h --help -v -d --table --json"
     if [[ ${verb} == show ]] ; then

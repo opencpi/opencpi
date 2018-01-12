@@ -17,7 +17,6 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 # This file is the make file for a project
-
 include $(OCPI_CDK_DIR)/include/util.mk
 
 # This is mandatory since it signifies that this directory is a project
@@ -31,30 +30,43 @@ $(OcpiIncludeProject)
 ifeq ($(HdlPlatform)$(HdlPlatforms),)
   ifeq ($(filter clean%,$(MAKECMDGOALS))$(filter projectpackage,$(MAKECMDGOALS)),)
     include $(OCPI_CDK_DIR)/include/hdl/hdl-targets.mk
-    ifeq ($(findstring export,$(MAKECMDGOALS)),)
+    ifeq ($(findstring export,$(MAKECMDGOALS))$(findstring import,$(MAKECMDGOALS)),)
       $(info No HDL platforms specified.  No HDL assets will be targeted.)
       $(info Possible HdlPlatforms are: $(sort $(HdlAllPlatforms)).)
     endif
   endif
 endif
 
-ifeq ($(wildcard imports),)
-  ifeq ($(filter clean%,$(MAKECMDGOALS))$(filter projectpackage,$(MAKECMDGOALS)),)
-    doimports=$(shell \
-	[ -d imports ] || mkdir imports; \
-	for i in $(CollectCreatableImports); do \
-	  [ -L imports/$$(basename $$i) ] || ln -s $$i imports/; \
-	done; \
-	[ -L imports/ocpi.cdk ] || ln -s $(OCPI_CDK_DIR) imports/ocpi.cdk;)
+CollectCreatableImports=$(strip $(infox OGCrI)\
+  $(foreach p,$(wildcard $(OcpiProjectRegistryDir)/*),\
+    $(if $(strip \
+      $(or \
+        $(filter $(realpath $p),$(realpath .)),\
+        $(foreach i,$(OcpiGetProjectImports),\
+          $(filter $(notdir $p),$(notdir $i))))),,\
+      $p )))
+
+# imports need to be set up before ocpisetup.mk is included. ocpisetup.mk
+# needs to be able to find the core project (the host rcc platform)
+ifeq ($(filter clean%,$(MAKECMDGOALS))$(filter projectpackage,$(MAKECMDGOALS)),)
+  doimports=$(shell \
+      [ -d imports ] || mkdir imports; \
+      for i in $(CollectCreatableImports); do \
+        [ -L imports/$$(basename $$i) ] || ln -s $$i imports/; \
+      done; \
+      [ -L imports/ocpi.cdk ] || ln -s $(OCPI_CDK_DIR) imports/ocpi.cdk;)
+  ifeq ($(wildcard imports),)
     $(info Imports are not set up for this project.  Doing it now. $(doimports))
   else
-    # we are assuming that imports are not required for any clean goal.
-    # $(nuthin $(doimports))
+    $(infox Updating imports. $(doimports))
   endif
+else
+  # we are assuming that imports are not required for any clean goal.
+  # $(nuthin $(doimports))
 endif
 
 ifeq ($(wildcard exports)$(filter projectpackage,$(MAKECMDGOALS)),)
-  doexports=$(shell $(OCPI_CDK_DIR)/scripts/makeExportLinks.sh - $(ProjectPrefix)_ $(ProjectPackage) xxx)
+  doexports=$(shell $(OCPI_CDK_DIR)/scripts/makeProjectExports.sh - $(ProjectPackage) xxx)
   ifeq ($(filter clean%,$(MAKECMDGOALS)),)
     $(info Exports are not set up for this project.  Doing it now. $(doexports))
   else
@@ -93,27 +105,18 @@ DoTests=$(foreach t,\
 $(OcpiTestGoals):
 	$(call DoTests,$@)
 
-CollectCreatableImports=$(strip $(infox OGCrI)\
-  $(foreach p,$(wildcard $(OcpiProjectRegistryDir)/*),\
-    $(if $(strip \
-      $(or \
-        $(filter $(realpath $p),$(realpath .)),\
-        $(foreach i,$(OcpiGetProjectImports),\
-          $(filter $(notdir $p),$(notdir $i))))),,\
-      $p )))
-
 # Make the imports directory if it does not exist.
 # For any projects that do not already have a manually created
 # link in imports/ create symlinks to project registry directory.
 imports:
-	[ -d imports ] || mkdir imports
+	[ -d imports ] || mkdir imports; \
 	for i in $(CollectCreatableImports); do \
 	  [ -L imports/$$(basename $$i) ] || ln -s $$i imports/; \
 	done
 	[ -L imports/ocpi.cdk ] || ln -s $(OCPI_CDK_DIR) imports/ocpi.cdk; \
 
 exports:
-	$(OCPI_CDK_DIR)/scripts/makeExportLinks.sh $(OCPI_TARGET_DIR) $(ProjectPrefix)_ $(ProjectPackage)
+	$(OCPI_CDK_DIR)/scripts/makeProjectExports.sh "$(OCPI_TARGET_DIR)" $(ProjectPackage)
 
 components: hdlprimitives
 	$(MAKE) imports
@@ -228,12 +231,17 @@ cleaneverything: clean
 # Package issue - if we have a top level specs directory, we must make the
 # associate package name available to anything that includes it, both within the
 # project and outside it (when this project is accessed via OCPI_PROJECT_PATH)
-
 ifneq ($(wildcard specs),)
   ifeq ($(filter clean%,$(MAKECMDGOALS))$(filter projectpackage,$(MAKECMDGOALS)),)
+    # package-id needs to be created early on by any non-clean make command.
+    # This can be accomplished by having imports depend on it.
+    imports: specs/package-id
+    # If Project.mk changes, recreate specs/package-id file unless the package-id file contents
+    # exactly match ProjectPackage.
     specs/package-id: Project.mk
-	$(AT)echo "$(ProjectPackage)" > specs/package-id
-    components: specs/package-id
+	$(AT)if [ ! -e specs/package-id ] || [ "$$(cat specs/package-id)" != "$(ProjectPackage)" ]; then \
+	       echo "$(ProjectPackage)" > specs/package-id; \
+	     fi
   endif
 endif
 

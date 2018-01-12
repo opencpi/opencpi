@@ -23,9 +23,7 @@ $(call OcpiIncludeLibrary,..)
 ifndef Model
   $(error This directory named $(CwdName) does not end in any of: $(Models))
 endif
-ifndef Package
-  Package:= local
-endif
+include $(OCPI_CDK_DIR)/include/package.mk
 ifdef Worker
   ifdef Workers
     $(error Cannot set both Worker and Workers variables in Makefile)

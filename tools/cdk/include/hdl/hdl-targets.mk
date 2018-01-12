@@ -104,12 +104,12 @@ HdlAddPlatform=\
            $(call OcpiExists,$3/hdl/$(HdlFamily_$(HdlPart_$2)))),\
       $(eval HdlBuiltPlatforms+=$2)))
 
-# Call this with a directory that is a platform's directory, either source (with "lib" subdir 
+# Call this with a directory that is a platform's directory, either source (with "lib" subdir
 # if built) or exported. For the individual platform directories we need to deal with
 # the prebuilt, postbuilt, and exported scenarios.  Hence the complexity.
 # Both the *.xml and *.mk are generally needed, but the *.mk is more critical here,
 # so we key on that.
-# If we are pointing at a non-exported platform directory, we prefer its local export subdir 
+# If we are pointing at a non-exported platform directory, we prefer its local export subdir
 # ("lib"), if the hdl/*.mk is present.
 # (under hdl since it is in fact a worker in a library)
 HdlDoPlatform=\
@@ -133,8 +133,9 @@ HdlDoPlatformsDir=\
 
 $(call OcpiDbgVar,HdlAllPlatforms)
 $(call OcpiDbgVar,OCPI_HDL_PLATFORM_PATH)
+# The warning below would apply, e.g. if a new project has been registered.
 $(foreach d,$(subst :, ,$(OCPI_HDL_PLATFORM_PATH)),\
-  $(if $(wildcard $d),,$(error in OCPI_HDL_PLATFORM_PATH "$d" does not exist))\
+  $(if $(wildcard $d),,$(warning "$d" does not exist, so no hardware platform(s) can be imported from it))\
   $(if $(filter platforms,$(notdir $d)),\
     $(call HdlDoPlatformsDir,$d),\
     $(call HdlDoPlatform,$d)))

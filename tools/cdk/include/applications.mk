@@ -19,7 +19,7 @@
 include $(OCPI_CDK_DIR)/include/util.mk
 include $(OCPI_CDK_DIR)/include/ocpisetup.mk
 
-$(call OcpiIncludeProject)
+$(OcpiIncludeProject)
 
 ifeq ($(origin Applications),undefined)
   Applications:=$(call OcpiFindSubdirs,application) $(wildcard *.xml)
@@ -39,12 +39,12 @@ DOALL=$(AT)\
   for i in $(filter-out %.xml,$(FILTER)); do\
     echo ========$1 $$i: ; $(MAKE) --no-print-directory -C $$i $2;\
   done
-
 OcpiUse=$(if $(filter undefined,$(origin OcpiRun$1_$2)),$(OcpiRun$1),$(OcpiRun$1_$2))
 ifndef OcpiRunXML
 
   OcpiRunXML=$(strip \
     $(call OcpiUse,Before,$1) \
+    $(if $(or $2,$(OCPI_LIBRARY_PATH)),,OCPI_LIBRARY_PATH=$(OcpiGetDefaultLibraryPath)) \
     $(if $2,ocpirun,$(OCPI_BIN_DIR)/ocpirun) \
     $(call OcpiUse,Args,$1) \
     $1 \
@@ -55,7 +55,7 @@ endif
 all:
 	$(call DOALL,Building apps,)
 
-clean:
+clean::
 	$(call DOALL,Cleaning,clean)
 
 test:

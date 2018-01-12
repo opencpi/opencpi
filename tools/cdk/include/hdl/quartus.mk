@@ -120,8 +120,11 @@ $(if $(HdlExactPart),$(call ToUpper,$(call QuartusMakePart,$(HdlExactPart))),AUT
 #		  $(infox GOTZ:AUTO:$(HdlMode))AUTO));
 
 
+# The constraint file(s) to use, first/only arg is platform
 HdlConstraintsSuffix_quartus=.qsf
-QuartusConstraints=$(or $(HdlConstraints),$(HdlPlatformDir_$1)/$1.qsf)
+QuartusConstraints_default=$(HdlPlatformDir_$1)/$1$(HdlConstraintsSuffix_quartus)
+QuartusConstraints=$(or $(HdlConstraints),$(QuartusConstraints_default))
+
 # Make the settings file
 # Note that the local source files use notdir names and search paths while the
 # remote libraries use pathnames so that you can have files with the same names.

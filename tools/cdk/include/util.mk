@@ -490,6 +490,19 @@ OcpiXmlComponentLibraries=$(infox HXC)\
   $(infox OcpiXmlComponentLibraries returned: $(OcpiTempDirs))\
   $(OcpiTempDirs)
 
+# Return a colon separated default OCPI_LIBRARY_PATH. It contains arg1 (or .), the core project's exports,
+# the current project's libraries underneath 'components', and the current project's hdl/assemblies
+OcpiGetDefaultLibraryPath=$(infox OGDLP)$(strip \
+  $(or $1,.):$(OcpiProjectRegistryDir)/ocpi.core/exports:$(subst $(Space),:,$(strip \
+    $(if $(call OcpiAbsPathToContainingProject,$1),\
+      $(if $(filter libraries,$(call OcpiGetDirType,$(call OcpiAbsPathToContainingProject,$1)/components)),\
+        $(wildcard $(call OcpiAbsPathToContainingProject,$1)/components/*/lib),\
+        $(wildcard $(call OcpiAbsPathToContainingProject,$1)/components/lib))\
+      $(call OcpiAbsPathToContainingProject,$1)/hdl/assemblies))))
+
+# Export the library path as the default
+OcpiSetDefaultLibraryPath=$(eval export OCPI_LIBRARY_PATH=$(call OcpiGetDefaultLibraryPath,$1))
+
 # Collect the projects in path from the different sources.
 # OCPI_PROJECT_PATH comes first and is able to shadow the others.
 # ProjectDependencies comes next which can be user-defined and is appended with
@@ -541,7 +554,7 @@ OcpiGetRccPlatformDir=$(strip $(firstword \
 ##################################################################################
 # Project Dependencies are defined by those explicitly listed in a Project.mk as well as the 'required'
 # projects such as core/cdk
-OcpiProjectDependenciesInternal=$(strip $(call Unique,$(ProjectDependencies) ocpi ocpi.core ocpi.cdk))
+OcpiProjectDependenciesInternal=$(strip $(call Unique,$(ProjectDependencies) ocpi.core ocpi.cdk))
 # If a project dependency is a path, use it as is. Otherwise, check for it in imports.
 OcpiGetProjectDependencies=$(strip \
   $(foreach d,$(OcpiProjectDependenciesInternal),\

@@ -22,7 +22,7 @@
 
 # FIXME: add option to copy "other" files when creating worker
 
-[ ! -d $OCPI_CDK_DIR ] && echo Error: OCPI_CDK_DIR environment setting not valid. && exit 1
+[ -z "$OCPI_CDK_DIR" -o ! -d "$OCPI_CDK_DIR" ] && echo "Error: OCPI_CDK_DIR environment setting not valid: '${OCPI_CDK_DIR}'" && exit 1
 
 # Database of models, languages and suffixes, redundant with util.mk
 Models=(rcc hdl ocl)
@@ -35,17 +35,9 @@ Language_ocl=cl
 CheckCDK='$(if $(realpath $(OCPI_CDK_DIR)),,\
   $(error The OCPI_CDK_DIR environment variable is not set correctly.))'
 
-if [ -z "$OCPI_PROJECT_REGISTRY_DIR"  ]; then
-  if [ -n "$OCPI_CDK_DIR" ]; then
-    export OCPI_PROJECT_REGISTRY_DIR=$OCPI_CDK_DIR/../project_registry
-  else
-    export OCPI_PROJECT_REGISTRY_DIR=/opt/opencpi/project_registry
-  fi
-fi
-
 # Print error message and exit
 function bad {
-  echo Error: $* >&2
+  echo "Error: $*" >&2
   exit 1
 }
 
@@ -358,6 +350,10 @@ function do_project {
       buildHdl=""
       cleanTarget+=" cleanhdl"
     fi
+    # Normally we build imports outside of any do_* function because
+    # we always want to build imports when building. For project, we
+    # do this here because 
+    make -C $subdir/$1 imports
     make -C $subdir/$1 ${cleanTarget:+$cleanTarget} ${buildRcc:+rcc} ${buildHdl:+hdl} \
             ${buildNoAssemblies:+Assemblies=} \
             ${assys:+Assemblies=" ${assys[@]}"} \
@@ -384,8 +380,6 @@ function do_project {
 EOF
   cat <<EOF > Project.mk
 # This Makefile fragment is for the "$1" project created at `pwd`
-
-ProjectPrefix=$1
 
 # Package identifier is used in a hierachical fashion from Project to Libraries....
 # The PackageName, PackagePrefix and Package variables can optionally be set here:
@@ -668,10 +662,8 @@ function do_protocol_or_spec {
   mkdir -p $subdir
   # Make sure we record the package's prefix in the specs directory so that spec files used
   # by other projects (or this one) know what the package should be.
-  # This is done in the project.mk file too.
-  # TODO: This will not work if PackagePrefix/PackageName/Package are used instead of ProjectPackage
   if [ "$subdir" == specs -a ! -e specs/package-id ] ; then
-    echo `get_project_package` > specs/package-id
+    make specs/package-id
   fi
   case "$noun" in
     (protocol)
@@ -842,7 +834,11 @@ function do_library {
     return 0
   elif [ "$verb" == build ]; then
     [ -n "$1" ] || bad the library was not specified
-    [ -e "$subdir" ] || bad the library \(directory\) \"$subdir\" does not exist
+    if [ ! -d "${subdir}" -a -n "${missingOK}" ]; then
+      warn The library \(directory\) \"$subdir\" does not exist, but \"--ok-if-missing\" specified
+      return 0
+    fi
+    [ -d "$subdir" ] || bad the library \(directory\) \"$subdir\" does not exist
     if [ -z "$buildRcc" -a -z "$buildHdl" -a -n "$buildClean" ]; then
       cleanTarget="clean"
     fi
@@ -1830,6 +1826,7 @@ Options with * may occur multiple times
   --hdl-rcc-platform <hdl-platform>
                      *Add an RCC platform to be built based on the HDL platform specified.  E.g.
                      "zed" (an HDL platform) means "xilinx13_3", the associated RCC platform.
+  --ok-if-missing    Do not error if target library is missing (only applies to library noun).
 EOF
   exit 1
 
@@ -1958,6 +1955,7 @@ while [[ "${argv[0]}" != "" ]] ; do
       # AV_API_DEPRECATED 2.0 (AV-3457, specific search string)
       (--build-hdl-rcc-platform|--hdl-rcc-platform) warn "${argv[0]} is deprecated: use --rcc-hdl-platform to specify RCC platform using HDL name"; takeval hwswplat; hwswplats="${hwswplats[@]} $hwswplat";;
       (--create-build-files) OCPI_CREATE_BUILD_FILES=1;;
+      (--ok-if-missing) missingOK=1;;
       (*)
         error_msg="unknown option: ${argv[0]}"
         if [ -n "$verb" ]; then
@@ -2149,15 +2147,16 @@ fi
 # Get dir type unless creating something standalone
 needname ${argv[0]} $verb $noun
 
-if [ "$verb" == "build" -a -z "$buildClean" ]; then
-  pjtop=$(get_project_top)
-  if [ -n "$pjtop" ]; then
-    (cd $pjtop && make imports)
-  fi
-fi
 # if verb is not build, if it is build and it has a noun, unless the noun is test with no argumnets
 if [ \( "$verb" != "build" \) -o \( -n "$noun" -a ! \( "$noun" == "test" -a -z "$args" \) \) ] ; then
   get_subdir
+fi
+
+if [ "$verb" == "build" -a -z "$buildClean" ]; then
+  pjtop=$(if [ "$noun" == "project" ]; then cd $subdir/${args[0]}; fi; get_project_top)
+  if [ -n "$pjtop" ]; then
+    (cd $pjtop && make imports)
+  fi
 fi
 [ -z "$verbose" ] || echo Executing the \"$verb $hdl$noun\" command in a ${dirtype:-unknown type of} directory: $directory.
 case $noun in

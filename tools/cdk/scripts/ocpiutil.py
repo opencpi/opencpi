@@ -37,6 +37,12 @@ from glob import glob
 import logging
 from contextlib import contextmanager
 
+# Use python3's input name
+try:
+    input = raw_input
+except NameError:
+    pass
+
 def configure_logging(level=None, output_fd=sys.stderr):
     """
     Initialize the root logging module such that:
@@ -87,6 +93,16 @@ def python_list_to_bash(pylist):
     for pyelem in pylist:
         mklist = mklist + " " + str(pyelem)
     return mklist.strip()
+
+def get_ok(prompt=""):
+    """Prompt the user to say okay"""
+    print prompt,
+    while True:
+        ok = input(" [y/n]? ")
+        if ok.lower() in ('y', 'yes', 'ok'):
+            return True
+        if ok.lower() in ('', 'n', 'no', 'nope'):
+            return False
 
 def bash_list_to_python(mklist):
     """
@@ -347,9 +363,9 @@ def get_project_registry_dir():
     if project_registry_dir is None:
         cdkdir = os.environ.get('OCPI_CDK_DIR')
         if cdkdir:
-            return True, cdkdir + "/../project_registry"
+            project_registry_dir = cdkdir + "/../project_registry"
         else:
-            return True, "/opt/opencpi/project_registry"
+            project_registry_dir = "/opt/opencpi/project_registry"
     exists = os.path.exists(project_registry_dir)
     if not exists:
         logging.warning("The project registry directory '" + project_registry_dir +
@@ -439,8 +455,16 @@ def register_project(project_path):
         logging.error("Failure to register project with path/name '" + project_path +
                       "'. Project does not exist (or package could not be determined).")
         return False
+    if project_package == "local":
+        logging.error("Failure to register project. Cannot register a project with package-ID " +
+                      "'local'.\nSet the PackageName, PackagePrefix and/or Package variables in " +
+                      "your Project.mk.")
+        return False
     project_registry_dir_exists, project_registry_dir = get_project_registry_dir()
     if not project_registry_dir_exists:
+        logging.error("Failure to register project because the project registry dir is not set.\n" +
+                      "Double check your OCPI_PROJECT_REGISTRY_DIR or make sure " +
+                      "$OCPI_CDK_DIR/../project_registry exists.")
         return False
     project_link = project_registry_dir + "/" + project_package
 

@@ -486,6 +486,7 @@ endif
 define HdlPrepareAssembly
 
   # 1. Scan component libraries to add to XmlIncludeDirs
+  $$(call OcpiSetXmlIncludes)
   $$(eval $$(HdlSearchComponentLibraries))
   # 2. Generate (when needed) the workers file immediately to use for dependencies
   AssyWorkersFile:=$$(GeneratedDir)/$$(Worker).wks

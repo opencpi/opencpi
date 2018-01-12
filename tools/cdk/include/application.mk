@@ -21,7 +21,16 @@
 # The "app" is either the foo.{cc,cxx,cpp} or foo.xml
 
 include $(OCPI_CDK_DIR)/include/util.mk
-$(eval $(OcpiEnsureToolPlatform))
+
+$(OcpiIncludeProject)
+# If library path is unset, provide a default
+ifeq ($(filter clean%,$(MAKECMDGOALS)),)
+ $(eval $(OcpiEnsureToolPlatform))
+  ifndef OCPI_LIBRARY_PATH
+    $(OcpiSetDefaultLibraryPath)
+  endif
+endif
+
 # Allow old-style "APP" to rename
 ifdef APP
 OcpiApp:=$(APP)
@@ -29,7 +38,6 @@ endif
 ifndef OcpiApp
 OcpiApp:=$(CwdName)
 endif
-$(call OcpiIncludeProject)
 
 # The existence of a C++ app file determines if this is an ACI app
 OcpiAppCC:=$(strip $(foreach s,cc cxx cpp,$(wildcard $(OcpiApp).$s)))

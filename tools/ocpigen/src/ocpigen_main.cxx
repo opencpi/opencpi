@@ -258,7 +258,8 @@ main(int argc, const char **argv) {
 	  std::string config, constraints;
 	  OrderedStringSet platforms;
 	  if ((err = parseFile(*ap, parent, "HdlContainer", &xml, file, false, false)) ||
-	      (err = HdlContainer::parsePlatform(xml, config, constraints, platforms))) {
+	      // Get the platform field. Do not bother to verify that each platform exists
+	      (err = HdlContainer::parsePlatform(xml, config, constraints, platforms, false))) {
 	    err = OU::esprintf("For container file %s:  %s", *ap, err);
 	    break;
 	  }

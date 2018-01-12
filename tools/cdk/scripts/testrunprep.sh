@@ -72,6 +72,7 @@ $ToolsDir/ocpigen -v -C ${localplatforms[@]} ${remoteplatforms[@]}
      file=run/$p/$f.sh
      [ -f $file -a ! -x $file ] && chmod a+x $file
    done
+   # 130 = 128+2 = Ctrl-C / SIGINT
    [ -x run/$p/run.sh ] &&
       cat <<-EOF
 	if onlyExclude $p "\$OnlyPlatforms" "\$ExcludePlatforms"; then
