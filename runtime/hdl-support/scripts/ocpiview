@@ -68,6 +68,6 @@ else
   if test -f $last/isim.wdb -o -f $last/vsim.wlf -o -f $last/xsim.wdb; then
     exec sh $0 $last
   fi
-  echo Although a simulation directory was found \($last\), no sim files were found \($last/isim.wdb or $last/vsim.wlf\)
+  echo Although a simulation directory was found \($last\), no sim files were found \($last /xsim.wdb or $last/isim.wdb or $last/vsim.wlf\)
   exit 1
 fi

@@ -106,7 +106,7 @@ struct CWorker {
     OCPI::Util::PValue            *props;
     bool                          input;
     size_t                        bufferCount;
-    OCPI::Container::Port *        port;
+    OCPI::Container::Port *       port;
     ConData                       down_stream_connection;
     Pdata():props(NULL),bufferCount(2),port(NULL) {}
   };

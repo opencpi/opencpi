@@ -226,7 +226,7 @@ namespace OCPI {
 	    else
 	      fprintf(stderr, "Shutting down client \"%s\" due to error: %s\n",
 		      (*ci)->client(), error.c_str());
-	  }
+          }
 	  ocpiInfo("Shutting down client \"%s\" due to error: %s",
 		   (*ci)->client(), error.c_str());
 	  error.clear();

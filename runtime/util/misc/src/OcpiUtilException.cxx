@@ -87,9 +87,9 @@ namespace OCPI {
 	// We are in a very primitive mode here. No error checking.
 	static const char pre[] = "\n***Exception during shutdown: ";
 	static const char post[] = "***\n";
-	(void)write(2, pre, strlen(pre));
-	(void)write(2, s, strlen(s));
-	(void)write(2, post, strlen(post));
+	write(2, pre, strlen(pre)) &&
+	write(2, s, strlen(s)) &&
+	write(2, post, strlen(post));
 	OCPI::OS::dumpStack();
       }
       append(s);

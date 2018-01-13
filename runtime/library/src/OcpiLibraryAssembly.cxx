@@ -137,7 +137,7 @@ namespace OCPI {
 	bool reading = port->m_provider;
 	// create a file read/write instance connected to the specified instance and port
 	ezxml_t inst = ezxml_new("instance");
-	ezxml_set_attr_d(inst, "component", reading ? "ocpi.file_read" : "ocpi.file_write");
+	ezxml_set_attr_d(inst, "component", reading ? "ocpi.core.file_read" : "ocpi.core.file_write");
 	ezxml_set_attr_d(inst, reading ? "connect" : "connectInput", utilInstance(instn).cname());
 	ezxml_set_attr_d(inst, reading ? "to" : "from", port->cname());
 	ezxml_t fpx = ezxml_add_child(inst, "property", 0);

@@ -21,6 +21,7 @@
 #ifndef OCPI_METADATA_PROTOCOL_H
 #define OCPI_METADATA_PROTOCOL_H
 #include <string>
+#include "OcpiUtilException.h"
 #include "OcpiUtilProperty.h"
 #include "OcpiUtilEzxml.h"
 

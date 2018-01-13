@@ -164,8 +164,8 @@ int  main( int argc, char** argv)
   try {
   // New library-based components
   OCPI::API::Worker
-    & consumer = ca[0].app->createWorker("testConsumer", "ocpi.Consumer" ),
-    & producer = ca[0].app->createWorker("testProducer", "ocpi.Producer" );
+    & consumer = ca[0].app->createWorker("testConsumer", "ocpi.core.Consumer" ),
+    & producer = ca[0].app->createWorker("testProducer", "ocpi.core.Producer" );
   OCPI::API::Port & pout = producer.getPort( "Out" );
   OCPI::API::Port & cin = consumer.getPort( "In" );
 
