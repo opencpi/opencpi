@@ -61,16 +61,20 @@ export OCPI_TARGET_HOST=$(< ../$OCPI_TARGET_PLATFORM/target)
 # This one might be overridden if we want an SD from a particular build mode
 export OCPI_TARGET_DIR=$OCPI_TARGET_HOST
 export HDL_PLATFORM=${2:-zed}
+if [ -z "$OCPI_PROJECT_REGISTRY_DIR" ]; then
+  OCPI_PROJECT_REGISTRY_DIR=$OCPI_CDK_DIR/../project_registry
+fi
+source $OCPI_CDK_DIR/scripts/util.sh
 echo Software platform is $OCPI_TARGET_PLATFORM, and hardware platform is $HDL_PLATFORM.
 if test -z $RPM_BUILD_ROOT; then
   # We assume a built tree for the tool platform - check for exports etc.?
   # ensure OCPI_CDK_DIR and OCPI_TOOL_DIR
-  OCPI_BOOTSTRAP=`pwd`/../../exports/scripts/ocpibootstrap.sh; source $OCPI_BOOTSTRAP
-  source ../../exports/scripts/ocpitarget.sh ""
-  EXAMPLES_ROOTDIR=$OCPI_CDK_DIR
+  OCPI_BOOTSTRAP=$OCPI_CDK_DIR/exports/scripts/ocpibootstrap.sh; source $OCPI_BOOTSTRAP
+  source $OCPI_CDK_DIR/exports/scripts/ocpitarget.sh ""
+  EXAMPLES_ROOTDIR=$(getProjectRegistryDir)/ocpi.core
   if test "$OCPI_LIBRARY_PATH" = ""; then
     # Put all rcc components, and available bitstreams for the platform.
-    export OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/lib/components:$OCPI_CDK_DIR/lib/hdl/assemblies:$OCPI_CDK_DIR/lib/platforms/$HDL_PLATFORM
+    export OCPI_LIBRARY_PATH=$(getProjectRegistryDir)/ocpi.core/exports/lib/components:$OCPI_CDK_DIR/lib/platforms/$HDL_PLATFORM
   fi
 else
   echo RPM Build detected - faking directory structure
@@ -78,7 +82,7 @@ else
   # Cannot just use CDK/lib and CDK/bin because the driver stuff isn't pushed there
   # EXAMPLES_ROOTDIR set externally
   # This is using a "path" variable assuming it has no colons in it!
-  export OCPI_LIBRARY_PATH=${OCPI_CDK_DIR}/components/:${OCPI_HDL_PLATFORM_PATH}/${HDL_PLATFORM}/
+  export OCPI_LIBRARY_PATH=$(getProjectRegistryDir)/ocpi.core/exports/lib/components:${OCPI_HDL_PLATFORM_PATH}/${OCPI_TARGET_PLATFORM}/
 fi
 BIN_DIR=${OCPI_CDK_DIR}/bin/${OCPI_TARGET_DIR}
 KERNEL_LIB_DIR=$OCPI_CDK_DIR/lib/${OCPI_TARGET_DIR}
@@ -103,13 +107,13 @@ cp uImage $sd
 cp uramdisk.image.gz $sd
 echo Adding OpenCPI setup scripts to the SD image directory
 mkdir -p $sd/opencpi/lib $sd/opencpi/bin $sd/opencpi/artifacts $sd/opencpi/xml
-cp ../../zynq/zynq_net_setup.sh ../../zynq/zynq_setup.sh $sd/opencpi
+cp $OCPI_CDK_DIR/platforms/zynq/zynq_net_setup.sh $OCPI_CDK_DIR/platforms/zynq/zynq_setup.sh $sd/opencpi
 echo You should have already customized the mysetup.sh script for your environment
-if test -r ../../zynq/mynetsetup.sh; then
-  cp ../../zynq/mynetsetup.sh $sd/opencpi
+if test -r $OCPI_CDK_DIR/platforms/zynq/mynetsetup.sh; then
+  cp $OCPI_CDK_DIR/platforms/zynq/mynetsetup.sh $sd/opencpi
 fi
-if test -r ../../zynq/mysetup.sh; then
-  cp ../../zynq/mysetup.sh $sd/opencpi
+if test -r $OCPI_CDK_DIR/platforms/zynq/mysetup.sh; then
+  cp $OCPI_CDK_DIR/platforms/zynq/mysetup.sh $sd/opencpi
 fi
 
 # After this is files for standalone operation
@@ -139,11 +143,11 @@ cp -L ${RUNTIME_LIB_DIR}/*_s.so $sd/opencpi/lib/${OCPI_TARGET_HOST}
 cp -L $OCPI_CDK_DIR/scripts/ocpibootstrap.sh $sd/opencpi/bin
 cp -L $OCPI_CDK_DIR/scripts/ocpidriver $sd/opencpi/bin
 cp -L $OCPI_CDK_DIR/scripts/ocpi_linux_driver $sd/opencpi/bin
-cp -L ${EXAMPLES_ROOTDIR}/examples/xml/{*.xml,test.input} $sd/opencpi/xml
+cp -L ${EXAMPLES_ROOTDIR}/applications/{*.xml,test.input} $sd/opencpi/xml
 
 # Add the default system.xml to the SD card.
 sx=../system.xml
-[ -f $sx ] || sx=../../zynq/zynq_system.xml
+[ -f $sx ] || sx=$OCPI_CDK_DIR/platforms/zynq/zynq_system.xml
 cp $sx $sd/opencpi/system.xml
 n=0
 echo Adding artifacts found in OCPI_LIBRARY_PATH for ${OCPI_TARGET_PLATFORM} and ${HDL_PLATFORM} HDL targets.

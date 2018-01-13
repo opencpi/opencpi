@@ -23,7 +23,11 @@ compilation tools and runtime libraries for C and C++.
 We define something called an OpenCPI Zynq release, which is of course based on a Xilinx release
 of three things:  the EDK, the binary Linux release, and the kernel sources.  Xilinx defines
 releases based on calendar year and quarter (e.g. 2013.4), and ideally all three items from
-Xilinx should be at the same release.
+Xilinx should be at the same release.  
+NOTE: AngryViper only supports version xilinx13_3 release due to FSBL compatibility with the
+matchstiq_z1(located in the ocpiassets project).  The FSBL that is flashed onto the matchstiq_z1
+only works with a certain version of the Xilinx linux release and this would need to be changed
+in order to change the Linux version.   
 
 To fit with the various ways OpenCPI defines software platform versioning, we translate the
 Xilinx release tags like YYYY.Q into YY_Q as a sort of major release identifier.

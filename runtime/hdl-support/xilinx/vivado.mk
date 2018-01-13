@@ -659,8 +659,9 @@ DoVivado=$(call DoXilinx,vivado -mode batch -source $(OCPI_CDK_DIR)/include/hdl/
 
 # The constraint file(s) to use, first/only arg is platform
 HdlConstraintsSuffix_vivado=.xdc
-VivadoConstraints=\
-  $(or $(HdlConstraints),$(filter-out %_bit.xdc,$(wildcard $(HdlPlatformDir_$1)/*.xdc)))
+VivadoConstraints_default=$(HdlPlatformDir_$1)/$1$(HdlConstraintsSuffix_vivado)
+VivadoConstraints=$(or $(HdlConstraints),$(VivadoConstraints_default))
+
 # For synth rule: load dcp files of platform and app workers.
 define HdlToolDoPlatform_vivado
 

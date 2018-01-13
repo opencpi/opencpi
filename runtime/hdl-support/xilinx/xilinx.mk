@@ -96,7 +96,7 @@ OcpiXilinxIseInit=\
 
 # Looks for the Vivado SDK dir
 OcpiXilinxVivadoSdkDir=$(strip\
-$(foreach t,$(OcpiXilinxDir)/SDK,$(infox vt:$t)\
+$(foreach t,$(OcpiXilinxTryVivadoDir)/SDK,$(infox vt:$t)\
   $(foreach i,\
       $(foreach v,\
         $(if $(filter-out undefined,$(origin OCPI_XILINX_VIVADO_SDK_VERSION)),\
@@ -109,18 +109,18 @@ $(foreach t,$(OcpiXilinxDir)/SDK,$(infox vt:$t)\
                          [ -d $$i -a -r $$i/settings64.sh ] && echo `basename $$i` && break; \
                        done),\
             $(call $(or $1,error), No version directory under $t/* for Xilinx Vivado SDK))),\
-        $(infox VV:$v)$(call OcpiXilinxDir,$1)/SDK/$v),\
+        $(infox VV:$v)$(call OcpiXilinxTryVivadoDir,$1)/SDK/$v),\
     $(infox II:$i.)\
     $(if $(shell test -d $i && echo 1),$i,\
       $(call $(or $1,error), Directory "$i", in OCPI_XILINX_DIR/SDK, not found)))))
 
 
-OcpiXilinxTryVivadoDir=$(strip $(foreach t,$(or $(OCPI_XILINX_VIVADO_DIR),/opt/Xilinx),$(infox TT is $t)\
+OcpiXilinxTryVivadoDir=$(strip $(foreach t,$(or $(OCPI_XILINX_VIVADO_DIR),$(OCPI_XILINX_DIR),/opt/Xilinx),$(infox TT is $t)\
 		 $(if $(shell test -d $t && echo 1),$t,\
-		    $(call $(or $1,error), Directory "$t" for OCPI_VIVADO_XILINX_DIR not found))))
+		    $(call $(or $1,error), Directory "$t" for OCPI_VIVADO_XILINX_DIR or OCPI_XILINX_DIR not found))))
 
 OcpiXilinxVivadoDir=$(strip\
-$(foreach t,$(or $(OcpiXilinxTryVivadoDir),$(OcpiXilinxDir))/Vivado,$(infox vt:$t)\
+$(foreach t,$(OcpiXilinxTryVivadoDir)/Vivado,$(infox vt:$t)\
   $(foreach i,\
     $(or $(OCPI_XILINX_VIVADO_TOOLS_DIR),\
       $(foreach v,\
@@ -134,7 +134,7 @@ $(foreach t,$(or $(OcpiXilinxTryVivadoDir),$(OcpiXilinxDir))/Vivado,$(infox vt:$
                          [ -d $$i -a -r $$i/settings64.sh ] && echo `basename $$i` && break; \
                        done),\
             $(call $(or $1,error), No version directory under $t/* for Xilinx Vivado))),\
-        $(infox VV:$v)$(call OcpiXilinxDir,$1)/Vivado/$v)),\
+        $(infox VV:$v)$(call OcpiXilinxTryVivadoDir,$1)/Vivado/$v)),\
     $(infox II:$i.)\
     $(if $(shell test -d $i && echo 1),$i,\
       $(call $(or $1,error), Directory "$i", in OCPI_XILINX_VIVADO_DIR, not found)))))
@@ -144,7 +144,7 @@ $(foreach t,$(or $(OcpiXilinxTryVivadoDir),$(OcpiXilinxDir))/Vivado,$(infox vt:$
 # Finally, we resort to checking for the plain/ISE Xilinx license 
 OcpiXilinxVivadoLicenseFile=$(strip\
   $(foreach t,$(or $(OCPI_XILINX_VIVADO_LICENSE_FILE),\
-                $(wildcard $(call OcpiXilinxDir,$1)/Vivado/Xilinx-License.lic),$(call OcpiXilinxLicenseFile,$1)),\
+                $(wildcard $(call OcpiXilinxTryVivadoDir,$1)/Vivado/Xilinx-License.lic),$(call OcpiXilinxLicenseFile,$1)),\
     $(if $(or $(findstring @,$t),$(findstring :,$t),$(shell test -f $t && echo 1)),$t,\
       $($(or $1,error) File "$t", for OCPI_XILINX_VIVADO_LICENSE_FILE, not found))))
 
