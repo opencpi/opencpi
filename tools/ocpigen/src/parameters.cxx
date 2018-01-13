@@ -507,10 +507,12 @@ equal(ParamConfig &other) {
 }
 
 const char *Worker::
-parseBuildFile(bool optional) {
+parseBuildFile(bool optional, bool *missing) {
   const char *err;
   std::string fname;
-  if (m_paramConfigs.size())
+  if (missing)
+    *missing = false;
+  if (m_paramConfigs.size()) // file is not missing since it has already been parsed.
     return NULL;
   // We are only looking next to the OWD or "gen" below it
   // And it may be optional in any case.
@@ -528,10 +530,13 @@ parseBuildFile(bool optional) {
       if (!OS::FileSystem::exists(fname)) {
 	// Finally look in the local gen subdir
 	OU::format(fname, "gen/%s-build.xml", m_implName);
-	if (!OS::FileSystem::exists(fname))
+	if (!OS::FileSystem::exists(fname)) {
+	  if (missing)
+	    *missing = true;
 	  return optional ? NULL :
 	    OU::esprintf("Cannot find %s.build or %s-build.xml in worker directory or \"gen\" "
 			 "subdirectory (%s)", m_implName, m_implName, dir.c_str());
+	}
       }
     }
   }

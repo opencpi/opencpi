@@ -442,7 +442,7 @@ class Worker : public OU::Worker {
     //    *preParseSpecDataPort(ezxml_t x),
     //    *parseSpecPort(Port *p),
     *parseHdlImpl(const char* package = NULL),
-    *parseBuildFile(bool optional),
+    *parseBuildFile(bool optional, bool *missing = NULL),
     *parseBuildXml(ezxml_t x),
     *startBuildXml(FILE *&f),
     *doProperties(ezxml_t top, const char *parent, bool impl, bool anyIsBad),

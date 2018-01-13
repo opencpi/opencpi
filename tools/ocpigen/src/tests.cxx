@@ -262,13 +262,19 @@ namespace {
     }
     const char *err;
     Worker *w = Worker::create(file.c_str(), empty, argPackage, NULL, NULL, NULL, 0, err);
+    bool missing;
     if (!err && (matchSpec ? w->m_specName == matchName :
 		 w->m_emulate && w->m_emulate->m_implName == matchName) &&
-	!(err = w->parseBuildFile(false))) {
+	!(err = w->parseBuildFile(true, &missing))) {
       if (verbose)
 	fprintf(stderr,
 		"Found worker for %s:  %s\n", matchSpec ? "this spec" : "emulating this worker",
 		wname);
+      if (missing) {
+	if (verbose)
+	  fprintf(stderr, "Skipping worker \"%s\" since it isn't built for any target\n", wname);
+	return NULL;
+      }
       if (matchSpec) {
 	if (w->m_signals.size()) {
 	  if (verbose)
@@ -1511,10 +1517,13 @@ addNonParameterProperties(Worker &w, ParamConfig &globals) {
 	// This is expected.  The emulator has a superset of the device worker's properties
       } else if (!found->m_param->m_isImpl) {
 	// This is expected since workers with the same spec have the same properties
-      } else
+      } else {
 	// This is unsupported: we don't know what to do with same-named impl-specific properties
 	// in different workers
+	ocpiBad("same property name (\"%s\") for worker-specific properties in different workers",
+		found->m_param->cname());
 	assert("same property name for worker-specific properties in different workers"==0);
+      }
     } else {
       globals.params.resize(globals.params.size()+1);
       Param &param = globals.params.back();
