@@ -1,0 +1,20 @@
+<application done="file_write">
+  <instance component='ocpi.core.file_read' connect='qdac_ts'>
+    <property name='filename' value='idata/input_file.bin'/>
+    <property name="messagesInFile" value="true"/>
+    <property name='messageSize' value='8192'/>
+  </instance>
+  <instance component='ocpi.assets.devices.qdac_ts'>
+    <property name='USE_CLK_IN_p' value='true'/>
+    <property name='USE_CTL_CLK_p' value='false'/>
+    <property name='DRIVE_CLK_p' value='true'/>
+    <property name='SECONDS_WIDTH_p' value='32'/>
+    <property name='FRACTION_WIDTH_p' value='32'/>
+  </instance>
+  <instance component='ocpi.unsupported.devices.lime_dac_em' connect='file_write'>
+    <property name='messageSize' value='128'/>
+  </instance>
+  <instance component='ocpi.core.file_write'>
+    <property name='filename' value='odata/output_file.bin'/>
+  </instance>
+</application>

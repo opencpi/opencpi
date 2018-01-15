@@ -58,6 +58,18 @@ using namespace Ad9361_config_proxyWorkerTypes;
 #define LIBAD9361_API_CHAN_GETN(pfun, a1)  libad9361_API_chan_get(pfun, a1, #pfun, true)
 #define LIBAD9361_API_CHAN_SET(pfun, a1)   libad9361_API_chan_set(pfun, a1, #pfun)
 
+#define ENUM_BBPLL_DIVIDER(val, prop)       case val: m_properties.prop = BBPLL_DIVIDER_##val; break;
+#define ENUM_TX_BBF_TUNE_DIVIDER(val, prop) case val: m_properties.prop = TX_BBF_TUNE_DIVIDER_##val; break;
+
+#define D7_BITMASK 0x80
+#define D6_BITMASK 0x40
+#define D5_BITMASK 0x20
+#define D4_BITMASK 0x10
+#define D3_BITMASK 0x08
+#define D2_BITMASK 0x04
+#define D1_BITMASK 0x02
+#define D0_BITMASK 0x01
+
 class Ad9361_config_proxyWorker : public Ad9361_config_proxyWorkerBase {
 
   // note that RX_FAST_LOCK_CONFIG_WORD_NUM is in fact applicable to both
@@ -144,13 +156,13 @@ class Ad9361_config_proxyWorker : public Ad9361_config_proxyWorkerBase {
       AD9361_InitParam* param, const char* functionStr) {
     libad9361_API_print_idk(functionStr, param);
     
-    const uint8_t iostandard    = (uint8_t)slave.get_iostandard();
-    const uint8_t port_config   = (uint8_t)slave.get_port_config();
-    const uint8_t duplex_config = (uint8_t)slave.get_duplex_config();
+    const bool    LVDS          = slave.get_LVDS();
+    const bool    single_port   = slave.get_single_port();
+    const bool    half_duplex   = slave.get_half_duplex();
     const uint8_t drs           = (uint8_t)slave.get_data_rate_config();
-    const bool modeIsCMOS       = (iostandard    == 0);
-    const bool modeIsFullDuplex = (duplex_config == 1);
-    const bool modeIsDualPort   = (port_config   == 1);
+    const bool modeIsCMOS       = (LVDS          == false);
+    const bool modeIsFullDuplex = (half_duplex   == false);
+    const bool modeIsDualPort   = (single_port   == false);
     const bool modeIsDDR        = (drs           == 1);
 
     param->lvds_rx_onchip_termination_enable = modeIsCMOS ? 0 : 1;
@@ -217,9 +229,8 @@ class Ad9361_config_proxyWorker : public Ad9361_config_proxyWorkerBase {
     // on runtime libad9361 API to set this
     
     // D6-Swap Ports
-    const uint8_t p0_p1_are_swapped = (uint8_t)slave.get_p0_p1_are_swapped();
-    const bool portsAreSwapped = (p0_p1_are_swapped == 1);
-    param->swap_ports_enable = modeIsCMOS ? (portsAreSwapped ? 1 : 0) : 0;
+    const bool swap_ports = slave.get_swap_ports();
+    param->swap_ports_enable = modeIsCMOS ? (swap_ports ? 1 : 0) : 0;
     
     // D4-LVDS Mode
     param->lvds_mode_enable = modeIsCMOS ? 0 : 1;
@@ -1543,6 +1554,726 @@ class Ad9361_config_proxyWorker : public Ad9361_config_proxyWorkerBase {
     m_properties.rx_sampling_freq_multiplier = 1;
     return RCC_OK;
   }
+  // notification that THB3_Enable_and_Interp property will be read
+  RCCResult THB3_Enable_and_Interp_read() {
+    // see AD9361_Register_Map_Reference_Manual_UG-671.pdf Rev. 0 pg. 4
+    uint8_t reg = slave.get_general_tx_enable_filter_ctrl();
+    uint8_t THB3_Enable_and_Interp_1_0 = (reg & (D5_BITMASK | D4_BITMASK)) >> 4;
+    enum THB3_Enable_and_Interp& p = m_properties.THB3_Enable_and_Interp;
+    // see AD9361_Register_Map_Reference_Manual_UG-671.pdf Rev. 0 pg. 5 Table 2.
+    switch(THB3_Enable_and_Interp_1_0)
+    {
+      case        0x00:
+        p = THB3_ENABLE_AND_INTERP_INTERPOLATE_BY_1_NO_FILTERING;
+        break;
+      case        0x01:
+        p = THB3_ENABLE_AND_INTERP_INTERPOLATE_BY_2_HALF_BAND_FILTER;
+        break;
+      case        0x10:
+        p = THB3_ENABLE_AND_INTERP_INTERPOLATE_BY_3_AND_FILTER;
+        break;
+      default: // 0x11
+        p = THB3_ENABLE_AND_INTERP_INVALID;  break;
+    }
+    return RCC_OK;
+  }
+  // notification that THB2_Enable property will be read
+  RCCResult THB2_Enable_read() {
+    // see AD9361_Register_Map_Reference_Manual_UG-671.pdf Rev. 0 pg. 4
+    uint8_t reg = slave.get_general_tx_enable_filter_ctrl();
+    uint8_t THB2_Enable = (reg & D3_BITMASK) >> 3;
+    m_properties.THB2_Enable = (THB2_Enable == 1) ? true : false;
+    return RCC_OK;
+  }
+  // notification that THB1_Enable property will be read
+  RCCResult THB1_Enable_read() {
+    // see AD9361_Register_Map_Reference_Manual_UG-671.pdf Rev. 0 pg. 4
+    uint8_t reg = slave.get_general_tx_enable_filter_ctrl();
+    uint8_t THB1_Enable = (reg & D2_BITMASK) >> 2;
+    m_properties.THB1_Enable = (THB1_Enable == 1) ? true : false;
+    return RCC_OK;
+  }
+  // notification that DAC_Clk_div2 property will be read
+  RCCResult DAC_Clk_div2_read() {
+    // see AD9361_Register_Map_Reference_Manual_UG-671.pdf Rev. 0 pg. 7
+    uint8_t BBPLL = slave.get_clock_bbpll();
+    uint8_t DAC_Clk_div2 = (BBPLL & 0x08) >> 3;
+    m_properties.DAC_Clk_div2 = (DAC_Clk_div2 == 1) ? true : false;
+    return RCC_OK;
+  }
+  // notification that BBPLL_Divider property will be read
+  RCCResult BBPLL_Divider_read() {
+    // from AD9361_Register_Map_Reference_Manual_UG-671.pdf Rev. 0 pg. 7:
+    // SPI Register 0x00A-BBPLL
+    // [D2:D0]-BBPLL Divider[2:0]
+    // BBPLL Divider[2:0] is valid from 1 through 6.
+    uint8_t val_reg_read = slave.get_clock_bbpll();
+    uint8_t BBPLL_Divider_2_0 = (val_reg_read & 0x07);
+    if((BBPLL_Divider_2_0 == 0) or
+       (BBPLL_Divider_2_0 == 7))
+    {
+      m_properties.BBPLL_Divider = BBPLL_DIVIDER_INVALID;
+    }
+    else
+    {
+      switch(BBPLL_Divider_2_0)
+      {
+        ENUM_BBPLL_DIVIDER(1, BBPLL_Divider);
+        ENUM_BBPLL_DIVIDER(2, BBPLL_Divider);
+        ENUM_BBPLL_DIVIDER(3, BBPLL_Divider);
+        ENUM_BBPLL_DIVIDER(4, BBPLL_Divider);
+        ENUM_BBPLL_DIVIDER(5, BBPLL_Divider);
+        default: // 6
+          m_properties.BBPLL_Divider = BBPLL_DIVIDER_6; break;
+      }
+    }
+
+    return RCC_OK;
+  }
+  // notification that Fractional_BB_Frequency_Word property will be read
+  RCCResult Fractional_BB_Frequency_Word_read() {
+    uint8_t val_reg_read;
+    uint32_t tmp = 0;
+
+    // see AD9361_Register_Map_Reference_Manual_UG-671.pdf Rev. 0 pg. 19
+
+    // Fractional BB Frequency Word[20:16]
+    {
+    val_reg_read = slave.get_bbpll_fract_bb_freq_word_1();
+    uint8_t Fractional_BB_Frequency_Word_20_16 = (val_reg_read & 0x1f);
+    tmp |= ((uint32_t)Fractional_BB_Frequency_Word_20_16) << 16;
+    }
+
+    // Fractional BB Frequency Word[15:8]
+    {
+    val_reg_read = slave.get_bbpll_fract_bb_freq_word_2();
+    uint8_t Fractional_BB_Frequency_Word_15_8 = val_reg_read;
+    tmp |= ((uint32_t)Fractional_BB_Frequency_Word_15_8) << 8;
+    }
+
+    // Fractional BB Frequency Word[7:0]
+    {
+    val_reg_read = slave.get_bbpll_fract_bb_freq_word_3();
+    uint8_t Fractional_BB_Frequency_Word_7_0 = val_reg_read;
+    tmp |= ((uint32_t)Fractional_BB_Frequency_Word_7_0);
+    }
+
+    m_properties.Fractional_BB_Frequency_Word = tmp;
+    return RCC_OK;
+  }
+  // notification that Integer_BB_Frequency_Word property will be read
+  RCCResult Integer_BB_Frequency_Word_read() {
+    // see AD9361_Register_Map_Reference_Manual_UG-671.pdf Rev. 0 pg. 19
+    uint8_t val_reg_read = slave.get_bbpll_integer_bb_freq_word();
+    m_properties.Integer_BB_Frequency_Word = (uint16_t) val_reg_read;
+    return RCC_OK;
+  }
+  // notification that BBPLL_Ref_Clock_Scaler property will be read
+  RCCResult BBPLL_Ref_Clock_Scaler_read() {
+    // from AD9361_Register_Map_Reference_Manual_UG-671.pdf Rev. 0 pg. 21:
+    // SPI Register 0x045-Ref Clock Scaler
+    // [D1:D0]-Ref Clock Scaler[1:0]
+    // The reference clock frequency is scaled before it enters the
+    // BBPLL. 00: x1; 01: x1/2; 10: x1/4; 11: x2.
+    uint8_t val_reg_read = slave.get_bbpll_ref_clock_scaler();
+    uint8_t Ref_Clock_Scaler_1_0 = (val_reg_read & 0x03);
+    switch(Ref_Clock_Scaler_1_0)
+    {
+      case        0x00: m_properties.BBPLL_Ref_Clock_Scaler = 1.0F;  break;
+      case        0x01: m_properties.BBPLL_Ref_Clock_Scaler = 0.5F;  break;
+      case        0x10: m_properties.BBPLL_Ref_Clock_Scaler = 0.25F; break;
+      default: // 0x11
+                        m_properties.BBPLL_Ref_Clock_Scaler = 2.0F;  break;
+    }
+    return RCC_OK;
+  }
+  // notification that Tx_BBF_Tune_Divider property will be read
+  RCCResult Tx_BBF_Tune_Divider_read() {
+
+    // see AD9361_Register_Map_Reference_Manual_UG-671.pdf Rev. 0 pg. 34
+
+    uint16_t Tx_BBF_Tune_Divider_8_0;
+    {
+      uint16_t tmp = 0;
+
+      // Tx BBF Tune Divider[7:0]
+      {
+      uint8_t Tx_BBF_Tune_Divider_7_0 = slave.get_tx_bbf_tune_divider();
+      tmp |= ((uint16_t)Tx_BBF_Tune_Divider_7_0);
+      }
+
+      // Tx BBF Tune Divider[8]
+      {
+      uint8_t val_reg_read = slave.get_tx_bbf_tune_mode();
+      uint8_t Tx_BBF_Tune_Divider_8  = (val_reg_read & 0x01);
+      tmp |= (((uint16_t)Tx_BBF_Tune_Divider_8) << 8);
+      }
+
+      Tx_BBF_Tune_Divider_8_0 = tmp;
+    }
+
+    if(Tx_BBF_Tune_Divider_8_0 == 0)
+    {
+      m_properties.Tx_BBF_Tune_Divider = TX_BBF_TUNE_DIVIDER_INVALID;
+    }
+    else
+    {
+      switch(Tx_BBF_Tune_Divider_8_0)
+      {
+        ENUM_TX_BBF_TUNE_DIVIDER(1,   Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(2,   Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(3,   Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(4,   Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(5,   Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(6,   Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(7,   Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(8,   Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(9,   Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(10,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(11,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(12,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(13,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(14,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(15,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(16,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(17,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(18,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(19,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(20,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(21,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(22,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(23,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(24,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(25,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(26,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(27,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(28,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(29,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(30,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(31,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(32,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(33,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(34,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(35,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(36,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(37,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(38,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(39,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(40,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(41,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(42,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(43,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(44,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(45,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(46,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(47,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(48,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(49,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(50,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(51,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(52,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(53,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(54,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(55,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(56,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(57,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(58,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(59,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(60,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(61,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(62,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(63,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(64,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(65,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(66,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(67,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(68,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(69,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(70,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(71,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(72,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(73,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(74,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(75,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(76,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(77,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(78,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(79,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(80,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(81,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(82,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(83,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(84,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(85,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(86,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(87,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(88,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(89,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(90,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(91,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(92,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(93,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(94,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(95,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(96,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(97,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(98,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(99,  Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(100, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(101, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(102, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(103, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(104, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(105, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(106, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(107, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(108, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(109, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(110, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(111, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(112, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(113, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(114, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(115, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(116, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(117, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(118, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(119, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(120, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(121, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(122, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(123, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(124, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(125, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(126, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(127, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(128, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(129, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(130, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(131, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(132, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(133, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(134, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(135, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(136, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(137, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(138, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(139, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(140, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(141, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(142, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(143, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(144, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(145, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(146, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(147, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(148, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(149, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(150, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(151, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(152, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(153, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(154, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(155, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(156, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(157, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(158, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(159, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(160, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(161, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(162, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(163, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(164, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(165, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(166, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(167, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(168, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(169, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(170, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(171, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(172, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(173, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(174, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(175, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(176, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(177, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(178, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(179, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(180, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(181, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(182, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(183, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(184, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(185, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(186, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(187, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(188, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(189, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(190, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(191, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(192, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(193, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(194, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(195, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(196, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(197, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(198, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(199, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(200, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(201, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(202, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(203, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(204, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(205, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(206, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(207, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(208, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(209, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(210, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(211, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(212, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(213, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(214, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(215, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(216, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(217, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(218, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(219, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(220, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(221, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(222, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(223, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(224, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(225, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(226, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(227, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(228, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(229, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(230, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(231, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(232, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(233, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(234, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(235, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(236, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(237, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(238, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(239, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(240, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(241, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(242, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(243, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(244, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(245, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(246, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(247, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(248, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(249, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(250, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(251, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(252, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(253, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(254, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(255, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(256, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(257, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(258, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(259, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(260, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(261, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(262, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(263, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(264, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(265, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(266, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(267, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(268, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(269, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(270, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(271, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(272, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(273, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(274, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(275, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(276, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(277, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(278, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(279, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(280, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(281, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(282, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(283, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(284, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(285, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(286, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(287, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(288, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(289, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(290, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(291, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(292, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(293, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(294, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(295, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(296, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(297, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(298, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(299, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(300, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(301, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(302, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(303, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(304, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(305, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(306, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(307, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(308, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(309, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(310, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(311, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(312, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(313, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(314, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(315, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(316, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(317, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(318, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(319, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(320, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(321, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(322, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(323, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(324, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(325, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(326, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(327, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(328, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(329, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(330, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(331, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(332, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(333, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(334, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(335, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(336, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(337, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(338, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(339, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(340, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(341, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(342, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(343, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(344, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(345, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(346, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(347, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(348, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(349, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(350, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(351, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(352, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(353, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(354, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(355, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(356, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(357, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(358, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(359, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(360, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(361, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(362, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(363, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(364, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(365, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(366, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(367, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(368, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(369, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(370, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(371, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(372, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(373, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(374, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(375, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(376, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(377, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(378, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(379, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(380, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(381, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(382, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(383, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(384, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(385, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(386, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(387, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(388, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(389, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(390, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(391, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(392, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(393, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(394, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(395, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(396, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(397, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(398, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(399, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(400, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(401, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(402, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(403, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(404, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(405, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(406, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(407, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(408, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(409, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(410, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(411, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(412, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(413, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(414, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(415, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(416, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(417, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(418, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(419, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(420, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(421, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(422, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(423, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(424, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(425, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(426, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(427, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(428, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(429, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(430, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(431, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(432, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(433, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(434, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(435, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(436, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(437, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(438, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(439, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(440, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(441, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(442, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(443, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(444, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(445, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(446, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(447, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(448, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(449, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(450, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(451, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(452, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(453, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(454, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(455, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(456, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(457, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(458, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(459, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(460, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(461, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(462, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(463, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(464, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(465, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(466, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(467, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(468, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(469, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(470, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(471, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(472, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(473, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(474, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(475, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(476, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(477, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(478, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(479, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(480, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(481, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(482, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(483, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(484, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(485, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(486, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(487, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(488, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(489, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(490, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(491, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(492, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(493, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(494, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(495, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(496, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(497, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(498, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(499, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(500, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(501, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(502, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(503, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(504, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(505, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(506, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(507, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(508, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(509, Tx_BBF_Tune_Divider);
+        ENUM_TX_BBF_TUNE_DIVIDER(510, Tx_BBF_Tune_Divider);
+        default: // 511
+          m_properties.Tx_BBF_Tune_Divider = TX_BBF_TUNE_DIVIDER_511; break;
+      }
+    }
+    return RCC_OK;
+  }
+  // notification that Tx_Secondary_Filter_Resistor property will be read
+  RCCResult Tx_Secondary_Filter_Resistor_read() {
+    // from AD9361_Register_Map_Reference_Manual_UG-671.pdf Rev. 0 pg. 33:
+    // SPI Register 0x0D1-Resistor[3:0]
+    //------------------------------------------------------
+    // Resistor[3:0]  | Post-Filter Stage Resistance (ohms)
+    //------------------------------------------------------
+    // 0001           | 800
+    // 0011           | 400
+    // 0100           | 200
+    // 1100           | 100
+    //------------------------------------------------------
+    uint8_t Resistor_3_0;
+    {
+    uint8_t val_reg_read = slave.get_tx_secondf_resistor();
+    Resistor_3_0 = (val_reg_read & 0x0f);
+    }
+    switch(Resistor_3_0)
+    {
+      case 0x01: m_properties.Tx_Secondary_Filter_Resistor = TX_SECONDARY_FILTER_RESISTOR_800;     break;
+      case 0x03: m_properties.Tx_Secondary_Filter_Resistor = TX_SECONDARY_FILTER_RESISTOR_400;     break;
+      case 0x04: m_properties.Tx_Secondary_Filter_Resistor = TX_SECONDARY_FILTER_RESISTOR_200;     break;
+      case 0x0c: m_properties.Tx_Secondary_Filter_Resistor = TX_SECONDARY_FILTER_RESISTOR_100;     break;
+      default:   m_properties.Tx_Secondary_Filter_Resistor = TX_SECONDARY_FILTER_RESISTOR_INVALID; break;
+    }
+    return RCC_OK;
+  }
+  // notification that Tx_Secondary_Filter_Capacitor property will be read
+  RCCResult Tx_Secondary_Filter_Capacitor_read() {
+    // see AD9361_Register_Map_Reference_Manual_UG-671.pdf Rev. 0 pg. 33
+    uint8_t Capacitor_5_0;
+    {
+    uint8_t val_reg_read = slave.get_tx_secondf_capacitor();
+    Capacitor_5_0 = (val_reg_read & 0x3f);
+    }
+    m_properties.Tx_Secondary_Filter_Capacitor = Capacitor_5_0;
+    return RCC_OK;
+  }
   // notification that bb_pll_is_locked property will be read
   RCCResult bb_pll_is_locked_read() {
     m_properties.bb_pll_is_locked = (slave.get_overflow_ch_1() & BBPLL_LOCK) == BBPLL_LOCK;
@@ -1648,16 +2379,21 @@ class Ad9361_config_proxyWorker : public Ad9361_config_proxyWorkerBase {
     m_properties.rx_vco_n_fractional = frac;
     return RCC_OK;
   }
-  // notification that rx_ref_divider property will be read
-  RCCResult rx_ref_divider_read() {
-    uint8_t div = (uint8_t)((slave.get_ref_divide_config_1() & 0x01) << 1);
-    div |= (uint8_t)((slave.get_ref_divide_config_2() & 0x80) >> 7);
-    switch(div)
+  // notification that Rx_Ref_Divider property will be read
+  RCCResult Rx_Ref_Divider_read() {
+    // see AD9361_Register_Map_Reference_Manual_UG-671.pdf Rev. 0 pg. 68
+    uint8_t Ref_Divide_Config_1 = slave.get_ref_divide_config_1();
+    uint8_t Ref_Divide_Config_2 = slave.get_ref_divide_config_2();
+    uint8_t Rx_Ref_Divider_1 = (uint8_t)(Ref_Divide_Config_1 & 0x01);
+    uint8_t Rx_Ref_Divider_0 = (uint8_t)(Ref_Divide_Config_2 & 0x80) >> 7;
+    uint8_t Rx_Ref_Divider_1_0 = (Rx_Ref_Divider_1 << 1) || Rx_Ref_Divider_0;
+    switch(Rx_Ref_Divider_1_0)
     {
-      case 0: m_properties.rx_ref_divider = RX_REF_DIVIDER_1; break;
-      case 1: m_properties.rx_ref_divider = RX_REF_DIVIDER_HALF; break;
-      case 2: m_properties.rx_ref_divider = RX_REF_DIVIDER_FOURTH; break;
-      default: m_properties.rx_ref_divider = RX_REF_DIVIDER_2; break;
+      case        0x00: m_properties.Rx_Ref_Divider = 1.0F;  break;
+      case        0x01: m_properties.Rx_Ref_Divider = 0.5F;  break;
+      case        0x10: m_properties.Rx_Ref_Divider = 0.25F; break;
+      default: // 0x11
+                        m_properties.Rx_Ref_Divider = 2.0F;  break;
     }
     return RCC_OK;
   }
@@ -1693,69 +2429,56 @@ class Ad9361_config_proxyWorker : public Ad9361_config_proxyWorkerBase {
     m_properties.tx_vco_n_fractional = frac;
     return RCC_OK;
   }
-  // notification that tx_ref_divider property will be read
-  RCCResult tx_ref_divider_read() {
-    uint8_t div = (uint8_t)(slave.get_ref_divide_config_2() & 0x0c) >> 2;
-    switch(div)
+  // notification that Tx_Ref_Divider property will be read
+  RCCResult Tx_Ref_Divider_read() {
+    // see AD9361_Register_Map_Reference_Manual_UG-671.pdf Rev. 0 pg. 68
+    uint8_t Ref_Divide_Config_2 = slave.get_ref_divide_config_2();
+    uint8_t Tx_Ref_Divider_1_0 = (uint8_t)(Ref_Divide_Config_2 & 0x0c) >> 2;
+    switch(Tx_Ref_Divider_1_0)
     {
-      case 0: m_properties.tx_ref_divider = TX_REF_DIVIDER_1; break;
-      case 1: m_properties.tx_ref_divider = TX_REF_DIVIDER_HALF; break;
-      case 2: m_properties.tx_ref_divider = TX_REF_DIVIDER_FOURTH; break;
-      default: m_properties.tx_ref_divider = TX_REF_DIVIDER_2; break;
+      case        0x00: m_properties.Tx_Ref_Divider = 1.0F;  break;
+      case        0x01: m_properties.Tx_Ref_Divider = 0.5F;  break;
+      case        0x10: m_properties.Tx_Ref_Divider = 0.25F; break;
+      default: // 0x11
+                        m_properties.Tx_Ref_Divider = 2.0F;  break;
     }
     return RCC_OK;
   }
-  // notification that fpga_data_mode_property will be read
-  RCCResult fpga_data_mode_read() {
-    const uint8_t iostandard = (uint8_t)slave.get_iostandard();
-    const uint8_t port_config = (uint8_t)slave.get_port_config();
-    const uint8_t duplex_config = (uint8_t)slave.get_duplex_config();
-    //uint8_t data_rate_config = (uint8_t)slave.get_data_rate_config();
-    //std::cout << "adc_mode=" << (int)adc_mode << std::endl;
-    if(iostandard == 1)
-    {
-      // is LVDS
-      m_properties.fpga_data_mode = FPGA_DATA_MODE_LVDS_DUALPORT_FULLDUPLEX;
-    }
-    else
-    {
-      // is CMOS
-      if(port_config == 0)
-      {
-        // is single port
-        if(duplex_config == 0)
-        {
-          // is half duplex
-          m_properties.fpga_data_mode = FPGA_DATA_MODE_CMOS_SINGLEPORT_HALFDUPLEX;
-        }
-        else
-        {
-          // is full duplex
-          m_properties.fpga_data_mode = FPGA_DATA_MODE_CMOS_SINGLEPORT_FULLDUPLEX;
-        }
-      }
-      else
-      {
-        // is dual port
-        if(duplex_config == 0)
-        {
-          // is half duplex
-          m_properties.fpga_data_mode = FPGA_DATA_MODE_CMOS_DUALPORT_HALFDUPLEX;
-        }
-        else
-        {
-          // is full duplex
-          m_properties.fpga_data_mode = FPGA_DATA_MODE_CMOS_DUALPORT_FULLDUPLEX;
-        }
-      }
-    }
+  // notification that LVDS property will be read
+  RCCResult LVDS_read() {
+    m_properties.LVDS = slave.get_LVDS();
+    return RCC_OK;
+  }
+  // notification that single_port property will be read
+  RCCResult single_port_read() {
+    m_properties.single_port = slave.get_single_port();
+    return RCC_OK;
+  }
+  // notification that swap_ports property will be read
+  RCCResult swap_ports_read() {
+    m_properties.swap_ports = slave.get_swap_ports();
+    return RCC_OK;
+  }
+  // notification that half_duplex property will be read
+  RCCResult half_duplex_read() {
+    m_properties.half_duplex = slave.get_half_duplex();
+    return RCC_OK;
+  }
+  // notification that data_rate_config property will be read
+  RCCResult data_rate_config_read() {
+    const uint8_t drs           = (uint8_t)slave.get_data_rate_config();
+    const bool modeIsDDR        = (drs           == 1);
+    m_properties.data_rate_config = modeIsDDR ? DATA_RATE_CONFIG_DDR : DATA_RATE_CONFIG_SDR;
     return RCC_OK;
   }
   // notification that DATA_CLK_P_rate_Hz property will be read
   RCCResult DATA_CLK_P_rate_Hz_read() {
+
+    //! @TODO / FIXME - replace this with nominal in-situ calculation for maximum precision
     uint32_t rx_sampling_freq;
     RCCResult res = LIBAD9361_API_1PARAM(&ad9361_get_rx_sampling_freq,
                                          &rx_sampling_freq);
+
     if(res != RCC_OK) { return res; }
     res = CHECK_IF_POINTER_IS_NULL(ad9361_phy);
     if(res != RCC_OK) { return res; }
@@ -1765,9 +2488,8 @@ class Ad9361_config_proxyWorker : public Ad9361_config_proxyWorkerBase {
     const uint8_t two_t_two_r_timing_enable = ((parallel_port_conf_1 & 0x04) >> 2);
     double DATA_CLK_P_rate_Hz = (two_t_two_r_timing_enable == 1) ?
        2.*rx_sampling_freq : rx_sampling_freq;
-    const uint8_t iostandard    = (uint8_t)slave.get_iostandard();
-    const bool modeIsCMOS       = (iostandard    == 0);
-    DATA_CLK_P_rate_Hz *= modeIsCMOS ? 1. : 2.;
+    const bool LVDS = slave.get_LVDS();
+    DATA_CLK_P_rate_Hz *= LVDS ? 2. : 1.;
     m_properties.DATA_CLK_P_rate_Hz = DATA_CLK_P_rate_Hz;
     return RCC_OK;
   }

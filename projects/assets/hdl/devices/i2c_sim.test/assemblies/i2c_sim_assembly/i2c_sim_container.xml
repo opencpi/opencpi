@@ -1,0 +1,8 @@
+<HdlContainer platform='isim'>
+   <device worker='i2c_em' floating='1'/>
+   <device worker='i2c_sim_master' floating='1'/>
+   <device worker='i2c_sim_master_16b_props' floating='1'/>
+   <device worker='i2c_sim_master_mix_props' floating='1'/>
+   <device worker='i2c_sim_master_16b_ext_wr_props' floating='1'/>
+   <device worker='i2c_sim_subdevice' floating='1'/>
+</HdlContainer>

@@ -19,6 +19,7 @@
 -- Lime DAC worker
 library IEEE, ocpi;
 use IEEE.std_logic_1164.all, ieee.numeric_std.all, ocpi.types.all, ocpi.util.all;
+library util; use util.util.all;
 architecture rtl of lime_dac_worker is
   -- FIFO parameters
   constant fifo_width : natural := 24; -- the fifo is just wide enough to feed lime DAC
@@ -61,7 +62,7 @@ begin
   wsi_data <= slv(unsigned(in_in.data(31 downto 20)) + ('0' & in_in.data(19))) &
               slv(unsigned(in_in.data(15 downto 4)) + ('0' & in_in.data(3)));
   dac_take  <= not sel_iq_r and dac_ready;
-  fifo : entity work.dac_fifo
+  fifo : util.util.dac_fifo
     generic map(width     => fifo_width,
                 depth     => fifo_depth)
     port map   (clk       => ctl_in.clk,
@@ -74,6 +75,7 @@ begin
                 wsi_take  => in_out.take,
                 underrun  => props_out.underrun,
                 dac_clk   => dac_clk,
+                dac_reset => open,
                 dac_take  => dac_take,
                 dac_ready => dac_ready,
                 dac_data  => dac_data);

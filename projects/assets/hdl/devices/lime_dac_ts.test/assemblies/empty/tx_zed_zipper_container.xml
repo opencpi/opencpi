@@ -1,0 +1,5 @@
+<HdlContainer Platform='zed'>
+  <device name='si5351' card='lime_zipper_ts_fmc_lpc'/>
+  <connection device='lime_tx' port='event_in' otherdevice='lime_dac_ts' otherport='event_out' card='lime_zipper_ts_fmc_lpc'/>
+  <connection interconnect='zynq' device='lime_dac_ts' port='in' card='lime_zipper_ts_fmc_lpc'/>
+</HdlContainer>

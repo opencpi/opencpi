@@ -1,0 +1,1872 @@
+\documentclass{article}
+\iffalse
+This file is protected by Copyright. Please refer to the COPYRIGHT file
+distributed with this source distribution.
+
+This file is part of OpenCPI <http://www.opencpi.org>
+
+OpenCPI is free software: you can redistribute it and/or modify it under the
+terms of the GNU Lesser General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License along
+with this program. If not, see <http://www.gnu.org/licenses/>.
+\fi
+
+\author{} % Force author to be blank
+%----------------------------------------------------------------------------------------
+% Paper size, orientation and margins
+%----------------------------------------------------------------------------------------
+\usepackage{geometry}
+\geometry{
+  letterpaper,      % paper type
+  portrait,       % text direction
+  left=.75in,       % left margin
+  top=.75in,        % top margin
+  right=.75in,      % right margin
+  bottom=.75in      % bottom margin
+ }
+%----------------------------------------------------------------------------------------
+% Header/Footer
+%----------------------------------------------------------------------------------------
+\usepackage{fancyhdr} \pagestyle{fancy} % required for fancy headers
+\renewcommand{\headrulewidth}{0.5pt}
+\renewcommand{\footrulewidth}{0.5pt}
+\newcommand{\terminaloutput}[1]{\texttt{#1}}
+\rhead{\small{Project ANGRYVIPER}}
+%----------------------------------------------------------------------------------------
+% Appendix packages
+%----------------------------------------------------------------------------------------
+\usepackage[toc,page]{appendix}
+%----------------------------------------------------------------------------------------
+% Defined Commands & Renamed Commands
+%----------------------------------------------------------------------------------------
+\renewcommand{\contentsname}{Table of Contents}
+\renewcommand{\listfigurename}{List of Figures}
+\renewcommand{\listtablename}{List of Tables}
+\newcommand{\todo}[1]{\textcolor{red}{TODO: #1}\PackageWarning{TODO:}{#1}} % To do notes
+\newcommand{\code}[1]{\texttt{#1}} % For inline code snippet or command line
+%----------------------------------------------------------------------------------------
+% Various pacakges
+%----------------------------------------------------------------------------------------
+\usepackage{hyperref} % for linking urls and lists
+\usepackage{graphicx} % for including pictures by file
+\usepackage{listings} % for coding language styles
+\usepackage{rotating} % for sideways table
+\usepackage{pifont}   % for sideways table
+\usepackage{pdflscape} % for landscape view
+\usepackage{longtable}
+%----------------------------------------------------------------------------------------
+% Table packages
+%----------------------------------------------------------------------------------------
+\usepackage{tabularx} % c=center,l=left,r=right,X=fill
+\usepackage{float}
+\floatstyle{plaintop}
+\usepackage[tableposition=top]{caption}
+\newcolumntype{P}[1]{>{\centering\arraybackslash}p{#1}}
+\newcolumntype{M}[1]{>{\centering\arraybackslash}m{#1}}
+%----------------------------------------------------------------------------------------
+% Block Diagram / FSM Drawings
+%----------------------------------------------------------------------------------------
+\usepackage{tikz}
+\usetikzlibrary{shapes,arrows,fit,positioning}
+\usetikzlibrary{automata} % used for the fsm
+\usetikzlibrary{calc} % For duplicating clients
+\usepgfmodule{oo} % To define a client box
+%----------------------------------------------------------------------------------------
+% Colors Used
+%----------------------------------------------------------------------------------------
+\usepackage{colortbl}
+\definecolor{blue}{rgb}{.7,.8,.9}
+\definecolor{ceruleanblue}{rgb}{0.16, 0.32, 0.75}
+\definecolor{drkgreen}{rgb}{0,0.6,0}
+\definecolor{deepmagenta}{rgb}{0.8, 0.0, 0.8}
+\definecolor{cyan}{rgb}{0.0,0.6,0.6}
+\definecolor{maroon}{rgb}{0.5,0,0}
+\usepackage{multirow}
+%----------------------------------------------------------------------------------------
+% Update the docTitle and docVersion per document
+%----------------------------------------------------------------------------------------
+\def\docTitle{Component Data Sheet}
+\def\docVersion{1.3}
+%----------------------------------------------------------------------------------------
+\date{Version \docVersion} % Force date to be blank and override date with version
+\title{\docTitle}
+\lhead{\small{\docTitle}}
+
+\def\comp{ad9361\_config}
+\def\Comp{AD9361 Config}
+\graphicspath{ {figures/} }
+
+\begin{document}
+
+\section*{Summary - \Comp}
+\begin{tabular}{|c|M{13.5cm}|}
+  \hline
+  \rowcolor{blue}
+                    &                  \\
+  \hline
+  Name              & \comp            \\
+  \hline
+  Worker Type       & Device           \\
+  \hline
+  Version           & v\docVersion{}   \\
+  \hline
+  Release Date      & Aug 2017         \\
+  \hline
+  Component Library & ocpi.devices     \\
+  \hline
+  Workers           & \comp.hdl        \\
+  \hline
+  Tested Platforms  & Zedboard (ISE), Zedboard (Vivado), ML605 (FMC LPC slot) \\
+  \hline
+\end{tabular}
+
+\section*{Functionality}
+  The \Comp{} is a subdevice worker which provides an entry point to the major functionality of the AD9361 IC\cite{ad9361}. This includes both SPI bus functionality for intercommunication with the AD9361 register map as well as additional command/control between the software and the FPGA. Note that, while the register address decoding is performed within this worker, the SPI state machine itself is implemented in one or more separate, platform-specific or card-specific subdevice workers\footnote{For an example, see \cite{spi_comp_datasheet}}. This worker's register map provides an API for integrating with Analog Devices's No-OS software\cite{no_os}. This integration is implemented in \cite{config_proxy_comp_datasheet}.
+
+\section*{Worker Implementation Details}
+\subsection*{\comp.hdl}
+The AD9361 register map is realized via a rawprops port whose communication is forwarded on to a SPI subdevice worker. The register map is implemented via the Component Spec properties for this worker, all of which correspond with the AD9361 register map specified in \cite{adi_ug671}. This worker also operates itself as subdevice which 1) conveys build-time information from the ad9361\_adc\_sub.hdl and ad9361\_dac\_sub.hdl device workers up to the processor via properties and 2) conveys processor-known assumptions about the AD9361 multichannel configuration to the ad9361\_adc\_sub.hdl and ad9361\_dac\_sub.hdl workers.
+
+\section*{Block Diagrams}
+\subsection*{Top level}
+\makeatletter
+\newcommand{\gettikzxy}[3]{%
+  \tikz@scan@one@point\pgfutil@firstofone#1\relax
+  \edef#2{\the\pgf@x}%
+  \edef#3{\the\pgf@y}%
+}
+\makeatother
+\pgfooclass{clientbox}{ % This is the class clientbox
+    \method clientbox() { % The clientbox
+    }
+    \method apply(#1,#2,#3,#4) { % Causes the clientbox to be shown at coordinate (#1,#2) and named #3
+        \node[rectangle,draw=white,fill=white] at (#1,#2) (#3) {#4};
+    }
+}
+\pgfoonew \myclient=new clientbox()
+\begin{center}
+  \begin{tikzpicture}[% List of styles applied to all, to override specify on a case-by-case
+      every node/.style={
+        align=center,      % use this so that the "\\" for line break works
+        minimum size=1cm,  % creates space above and below text in rectangle
+      },
+      every edge/.style={draw,thick}
+    ]
+    \node[rectangle,ultra thick,draw=black,fill=blue,minimum size=2cm,minimum width=15cm](R1){\Comp};
+    \node[rectangle,draw=white,fill=white](R4)[above= of R1]{ };
+    \node[rectangle,draw=white,fill=white](placeholder)[above= of R1] { Non-parameter \\ Properties:\\ \verb+other_present+ \\ \verb+force_reset+ \\ \verb+qadc0_is_present+ \\ \verb+qadc1_is_present+ \\ \verb+qdac0_is_present+ \\ \verb+qdac1_is_present+ \\ \verb+rx_frame_usage+ \\ \verb+data_bus_index_direction+ \\ \verb+data_clk_is_inverted+ \\ \verb+rx_frame_is_inverted+ \\ \verb+p0_p1_are_swapped+ \\ \verb+iostandard+ \\ \verb+port_config+ \verb+duplex_config+ \\ \verb+data_rate_config+ \\ \verb+data_configs_are_valid+ \\ \verb+config_is_two_r+ \\ \verb+config_is_two_t+ \\ \verb+force_two_r_two_t_timing+ \\ (ad9361 register set - see Appendix \ref{appendix1}) };
+    \path[->]
+  (R1)edge [] node [] {} (R4)
+  (R4)edge [] node [] {} (R1)
+    ;
+    \gettikzxy{(placeholder)}{\rx}{\ry}
+    \myclient.apply(\rx - 120,\ry-250,C1, ``dev\_force\_spi\_reset" \\ dev signal port \texttt{(}see \\ AD9361\_SPI.pdf\texttt{)} );
+    \path[->]($(R1.south) + (-120 pt,0)$) edge [] node [] {} (C1);
+    \myclient.apply(\rx,\ry-250,C1, ``rawprops" \\ rawprop \texttt{(}see \\ AD9361\_SPI.pdf\texttt{)} );
+    \path[->]($(R1.south) + (0,0)$) edge [] node [] {} (C1);
+    \myclient.apply(\rx + 120,\ry-250,C1, ``dev\_cfg\_data\_port" \\ dev signal port \texttt{(}see \\ AD9361\_DATA\_SUB.pdf\texttt{)} );
+    \path[->]($(R1.south) + (120 pt,0)$) edge [] node [] {} (C1);
+	\fontsize{9.5}{12}\selectfont
+    \myclient.apply(\rx - 190,\ry,C1, ``dev\_cfg\_data\_rx" \\ dev signal port \\ sent from \\ ad9361\_adc\_sub.hdl);
+    \path[<-]($(R1.north) + (-190 pt,0)$) edge [] node [] {} (C1);
+    \myclient.apply(\rx - 108,\ry,C1, ``dev\_cfg\_data"[0] \\ dev signal port \\ sent to \\ ad9361\_adc\_sub.hdl );
+    \path[->]($(R1.north) + (-108 pt,0)$) edge [] node [] {} (C1);
+    \myclient.apply(\rx + 108,\ry,C1, ``dev\_cfg\_data"[1] \\ dev signal port \\ sent to \\ ad9361\_dac\_sub.hdl );
+    \path[->]($(R1.north) + (+108 pt,0)$) edge [] node [] {} (C1);
+    \myclient.apply(-\rx + 190,\ry,C1, ``dev\_cfg\_data\_tx" \\ dev signal port \\ sent from \\ ad9361\_dac\_sub.hdl);
+    \path[<-]($(R1.north) + (190 pt,0)$) edge [] node [] {} (C1);
+  \end{tikzpicture}
+\end{center}
+
+\section*{Source Dependencies}
+\subsection*{\comp.hdl}
+\begin{itemize}
+  \item opencpi/hdl/devices/ad9361\_config.hdl/ad9361\_config.vhd
+\end{itemize}
+\begin{landscape}
+
+  \section*{Component Spec Properties}
+  \begin{scriptsize}
+  \subsection*{\comp.hdl}
+      \begin{tabular}{|p{2cm}|p{5cm}|p{1cm}|p{2cm}|p{2cm}|p{1.75cm}|p{1.5cm}|p{5.24cm}|}
+      \hline
+      \rowcolor{blue}
+      Scope    & Name  & Type  & Sequence Length & Array Dimensions & Accessibility & Valid Range & Usage \\
+      \hline
+      Property & other\_present & Bool & - & - & Readable & Standard & Value is true if raw property port is connected. \\
+      \hline
+      Property & force\_reset & Bool & - & - & Writable, Readable  & Standard & If true, the force\_reset signal of the dev\_force\_spi\_reset devsignal port is 1. If false, 0. \\
+      \hline
+      Property & qadc0\_is\_present & Bool & - & - & Volatile & Standard & Value is true if a qadc worker is present in the bitstream that can handle channel 0 data. \\
+      \hline
+      Property & qadc1\_is\_present & Bool & - & - & Volatile & Standard & Value is true if a qadc worker is present in the bitstream that can handle channel 1 data. \\
+      \hline
+      Property & qdac0\_is\_present & Bool & - & - & Volatile & Standard & Value is true if a qdac worker is present in the bitstream that can handle channel 0 data.  \\
+      \hline
+      Property & qdac1\_is\_present & Bool & - & - & Volatile & Standard & Value is true if a qdac worker is present in the bitstream that can handle channel 1 data. \\
+      \hline
+      Property & rx\_frame\_usage & Enum & - & - & Volatile & enable, toggle & Value represents the only supported usage of the AD9361 RX\_FRAME\_P pin. \\
+      \hline
+      Property & data\_bus\_index\_direction & Enum & - & - & Volatile & normal, reverse & Value represents the expected direction of the AD9361 data buses. \\
+      \hline
+      Property & data\_clk\_is\_inverted & Bool & - & - & Volatile & Standard & Value represents the expected inversion of the AD9361 DATA\_CLK\_P pin.\\
+      \hline
+      Property & rx\_frame\_is\_inverted & Bool & - & - & Volatile & Standard & Value represents the expected inversion of the AD9361 RX\_FRAME\_P pin.\\
+      \hline
+      Property & p0\_p1\_are\_swapped & Bool & - & - & Volatile & Standard & Value represents the expected usage of the AD9361 P0\_D/P1\_D data ports.\\
+      \hline
+      Property & iostandard & Enum & - & - & Volatile & CMOS, LVDS & Value represents the only supported AD9361 data port configuration.\\
+      \hline
+      Property & port\_config & Enum & - & - & Volatile & single, dual & Value represents the only supported AD9361 data port configuration.\\
+      \hline
+      Property & duplex\_config & Enum & - & - & Volatile & half\_duplex, full\_duplex, runtime\_dynamic & Value represents the only supported AD9361 data port configuration.\\
+      \hline
+      Property & data\_rate\_config & Enum & - & - & Volatile & SDR, DDR & Value represents the only supported AD9361 data port configuration.\\
+      \hline
+      Property & config\_is\_two\_r & Bool & - & - & Readable, Writable & Standard & Should be set to true when both RX channels are used and false when one RX channel is used.\\
+      \hline
+      Property & config\_is\_two\_t & Bool & - & - & Readable, Writable & Standard & Should be set to true when both TX channels are used and false when one TX channel is used.\\
+      \hline
+      Property & force\_two\_r\_two\_t\_timing & Bool & - & - & Readable, Writable & Standard & Should be set to true when 2R2T timing is forced (the AD9361 register 0x010 bit D2 is 1) and false when not foced (D2 is 0).\\
+      \hline
+      ... & ... & ... & ... & ... & ... & ... & ... \\
+      Property & AD9361 register set (see Appendix \ref{appendix1}) & ... & ... & ... & ... & ... & ... \\
+      ... & ... & ... & ... & ... & ... & ... & ... \\
+      \hline
+  \end{tabular}
+  \end{scriptsize}
+
+  \section*{Component Ports}
+  \begin{scriptsize}
+    \begin{tabular}{|p{2cm}|p{1.5cm}|p{4cm}|p{1.5cm}|p{1.5cm}|p{10.85cm}|}
+      \hline
+      \rowcolor{blue}
+      Name & Producer & Protocol           & Optional & Advanced & Usage                  \\
+      \hline
+      -    & -        & -                  & -        & -        & - \\
+      \hline
+    \end{tabular}
+  \end{scriptsize}
+
+  \section*{Worker Properties}
+  \begin{scriptsize}
+    \begin{tabular}{|p{3.75cm}|p{1.25cm}|p{2cm}|p{2.75cm}|p{1.5cm}|p{1.5cm}|p{1cm}|p{6.74cm}|}
+      \hline
+      \rowcolor{blue}
+      Name               & Type & SequenceLength & ArrayDimensions & Accessibility      & Valid Range & Default & Usage                                                                               \\
+      \hline
+      - & - & - & - & - & - & - & - \\
+      \hline
+    \end{tabular}
+  \end{scriptsize}
+
+  \section*{Worker Interfaces}
+  \subsection*{\comp.hdl}
+  \begin{scriptsize}
+    \begin{longtable}{|p{1.75cm}|p{3.25cm}|p{17.67cm}|}
+    \hline
+    \rowcolor{blue}
+    Type              & Name                    & Master    \\
+    \hline
+    Rawprop           & rawprops                & True      \\
+    \hline
+    \end{longtable}
+  \pagebreak
+\begin{longtable}{|p{1.75cm}|p{2.25cm}|p{1.25cm}|p{1.25cm}|p{0.95cm}|p{3cm}|p{1.4cm}|p{0.9cm}|p{7.25cm}|}
+			\hline
+			\rowcolor{blue}
+			Type                       & Name                            & Count & Optional & Master                & Signal                & Direction                  & Width                    & Description                                                                                                                  \\
+			\hline
+			\multirow{2}{*}{DevSignal} & \multirow{2}{*}{dev\_force\_spi\_reset} & \multirow{2}{*}{1} & \multirow{2}{*}{False} & \multirow{2}{*}{True} & force\_reset & Output & 1 & Used to force AD9361 RESETB pin, which is active-low, to logic 0. \\
+			\hline
+			\multirow{5}{*}{DevSignal} & \multirow{5}{*}{dev\_cfg\_data\_port} & \multirow{5}{*}{1} & \multirow{5}{*}{False} & \multirow{5}{*}{True} & iostandard\_is\_lvds & Input     & 1      & Value is 1 if the buildtime configuration was for the LVDS mode and 0 otherwise. \\
+			\cline{6-9}
+			                           &                                 &                    &                       &                        & p0\_p1\_are\_swapped & Input               &                           1 & Value is 1 if the buildtime configuration was with the AD9361 P0 and P1 data port roles inverted and 0 otherwise. \\
+			\hline
+			\multirow{38}{*}{DevSignal} & \multirow{38}{*}{dev\_cfg\_data} & \multirow{38}{*}{2} & \multirow{38}{*}{True} & \multirow{38}{*}{False} & config\_is\_two\_r &Input& 1      & Some data port configurations (such as LVDS) require the TX bus to use 2R2T timing if either 2 TX or 2 RX channels are used. For example, if using LVDS and this has a value of 1, 2R2T timing will be forced. \\
+			\cline{6-9}
+			&             &        &     &      & ch0\_handler\_is\_present &Output & 1      & Value is 1 if the dev\_data\_ch0 dev signal is connected to a worker (that "handles" the data) and 0 otherwise. This is expected to be hardcoded at buildtime. \\
+			\cline{6-9}
+			&             &        &     &      & ch1\_handler\_is\_present &Output & 1      &  Value is 1 if the dev\_data\_ch1 dev signal is connected to a worker (that "handles" the data) and 0 otherwise. This is expected to be hardcoded at buildtime. \\
+			\cline{6-9}
+			&             &        &     &      & data\_bus\_index\_direction &Output&1      &  Value is 1 if the bus indexing of the P0\_D/P1\_D signals from dev\_data\_from\_pins was reversed before processing. This is expected to be hardcoded at buildtime. \\
+			\cline{6-9}
+			&             &        &     &      & data\_clk\_is\_inverted     &Output& 1      & Value is 1 if the clock in via dev\_data\_clk was inverted inside this worker before used as an active-edge rising clock. This is expected to be hardcoded at buildtime. \\
+			\cline{6-9}
+			&             &        &     &      & islvds       & Output     & 1      &  Value is 1 if \verb+DIFFERENTIAL_p+ has a value of true and 0 if \verb+DIFFERENTIAL_p+ has a value of false. Because \verb+DIFFERENTIAL_p+ is a parameter property, this is hardcoded at buildtime.\\
+			\cline{6-9}
+			&             &        &     &      & isdualport   & Output     & 1      &  Value is 1 if \verb+PORT_CONFIG_p+ has a value of dual and 0 if \verb+PORT_CONFIG_p+ has a value of single. Because \verb+PORT_CONFIG_p+ is a parameter property, this is hardcoded at buildtime.\\
+			\cline{6-9}
+			&             &        &     &      & isfullduplex & Output     & 1      &  Value is 1 if \verb+DUPLEX_CONFIG_p+ has a value of full\_duplex and 0 if \verb+DUPLEX_CONFIG_p+ has a value of half\_duplex. Because \verb+DUPLEX_CONFIG_p+ is a parameter property, this is hardcoded at buildtime.\\
+			\cline{6-9}
+			&             &        &     &      & isDDR        & Output     & 1      &  Value is 1 if \verb+DATA_RATE_CONFIG_p+ has a value of DDR and 0 if \verb+DATA_RATE_CONFIG_p+ has a value of SDR. Because \verb+DATA_RATE_CONFIG_p+ is a parameter property, this is hardcoded at buildtime.\\
+			\cline{6-9}
+			&             &        &     &      & present      & Output     & 1      &  Used to communicate to ad9361\_config.hdl that it should validate the islvds, isdualport, isfullduplex, and isddr signals against similar signals in the ad9361\_adc\_sub.hdl and ad9361\_data\_sub.hdl workers if they are present in the bitstream. This is expected to be hardcoded at buildtime. \\
+			\cline{6-9}
+			\hline
+			\multirow{10}{*}{DevSignal} & \multirow{10}{*}{dev\_cfg\_data\_rx} & \multirow{10}{*}{1} & \multirow{10}{*}{True} & \multirow{10}{*}{False}  & rx\_frame\_usage & Output     & 1      & Value is 1 of worker was built with the assumption that the RX frame operates in its toggle setting and 0 if the assumption was that RX frame has a rising edge on the first sample and then stays high. This value is intended to match that of AD9361 register 0x010 BIT D3\cite{adi_ug671}. This is expected to be hardcoded at buildtime.\\
+			\cline{6-9}
+			&             &        &     &      & rx\_frame\_is\_inverted &Output& 1 & Rx path-specific data port configuration. Used to tell other workers about the configuration that was enforced when this worker was compiled. This is expected to be hardcoded at buildtime.\\
+			\hline
+			\multirow{6}{*}{DevSignal} & \multirow{6}{*}{dev\_cfg\_data\_tx} & \multirow{6}{*}{1} & \multirow{6}{*}{True} & \multirow{6}{*}{False}  & config\_is\_two\_t & Input     & 1      & Some data port configurations (such as LVDS) require the TX bus to use 2R2T timing if either 2 TX or 2 RX channels are used. For example, if using LVDS and this has a value of 1, 2R2T timing will be forced.\\
+			\cline{6-9}
+			&             &        &     &      & force\_two\_r\_two\_t\_timing &Input& 1 & Expected to match value of AD9361 register 0x010 bit D2\cite{adi_ug671}.\\
+			\hline
+		\end{longtable}
+	\end{scriptsize}
+  
+  \section*{Subdevice Connections}
+  \begin{scriptsize}
+    \begin{tabular}{|p{5cm}|p{5cm}|p{5cm}|p{7.22cm}|}
+      \hline
+      \rowcolor{blue}
+      Supports Worker  & Supports Worker Port & \comp{}.hdl Port   & Index \\
+      \hline
+      \multirow{2}{*}{ad9361\_adc\_sub} & dev\_cfg\_data       & dev\_cfg\_data     &0 \\
+                       & dev\_cfg\_data\_rx   & dev\_cfg\_data\_rx &0 \\
+      \hline
+      \multirow{2}{*}{ad9361\_dac\_sub} & dev\_cfg\_data       & dev\_cfg\_data     &1 \\
+                       & dev\_cfg\_data\_tx   & dev\_cfg\_data\_tx &0 \\
+      \hline
+    \end{tabular}
+  \end{scriptsize}
+
+\end{landscape}
+
+\section*{Control Timing and Signals}
+The \Comp{} subdevice worker operates in the control plane clock domain. Note that this worker is essentially the central worker that command/control passes through, and no RX or TX data paths flow through this worker.
+
+\section*{Performance and Resource Utilization}
+\subsubsection*{\comp.hdl}
+Fmax refers to the maximum allowable clock rate for any registered signal paths within a given clock domain for an FPGA design. Fmax in the table below is specific only to this worker and represents the maximum possible Fmax for any OpenCPI bitstream built with this worker included. Note that the Fmax value for a given clock domain for the final bitstream is often worse than the Fmax specific to this worker, even if this worker is the only one included in the bitstream. \\ \\
+%ad9361_config.hdl/target-stratix4/ad9361_config_rv.merge.summary
+\iffalse
+Partition Merge Status : Successful - Tue Aug  1 18:31:58 2017
+Quartus Prime Version : 15.1.0 Build 185 10/21/2015 SJ Standard Edition
+Revision Name : ad9361_config_rv
+Top-level Entity Name : ad9361_config_rv
+Family : Stratix IV
+Logic utilization : N/A
+    Combinational ALUTs : 167
+    Memory ALUTs : 0
+    Dedicated logic registers : 70
+Total registers : 70
+Total pins : 216
+Total virtual pins : 0
+Total block memory bits : 0
+DSP block 18-bit elements : 0
+Total GXB Receiver Channel PCS : 0
+Total GXB Receiver Channel PMA : 0
+Total GXB Transmitter Channel PCS : 0
+Total GXB Transmitter Channel PMA : 0
+Total PLLs : 0
+Total DLLs : 0
+\fi
+%ad9361_config.hdl/target-zynq_ise/ad9361_config_rv-xst.out
+\iffalse
+Primitive and Black Box Usage:
+------------------------------
+# BELS                             : 210
+#      GND                         : 16
+#      INV                         : 2
+#      LUT2                        : 56
+#      LUT3                        : 18
+#      LUT4                        : 9
+#      LUT5                        : 23
+#      LUT6                        : 81
+#      MUXF7                       : 4
+#      VCC                         : 1
+# FlipFlops/Latches                : 64
+#      FD                          : 6
+#      FDE                         : 32
+#      FDR                         : 4
+#      FDRE                        : 21
+#      FDS                         : 1
+
+Device utilization summary:
+---------------------------
+
+Selected Device : 7z010clg400-3 
+
+
+Slice Logic Utilization: 
+ Number of Slice Registers:              64  out of  35200     0%  
+ Number of Slice LUTs:                  189  out of  17600     1%  
+    Number used as Logic:               189  out of  17600     1%  
+
+Slice Logic Distribution: 
+ Number of LUT Flip Flop pairs used:    253
+   Number with an unused Flip Flop:     189  out of    253    74%  
+   Number with an unused LUT:            64  out of    253    25%  
+   Number of fully used LUT-FF pairs:     0  out of    253     0%  
+   Number of unique control sets:        10
+
+IO Utilization: 
+ Number of IOs:                         216
+ Number of bonded IOBs:                   0  out of    100     0%  
+
+Specific Feature Utilization:
+
+\fi
+%ad9361_config.hdl/target-zynq_ise/ad9361_config_rv-xst.out
+\iffalse
+Timing Summary:
+---------------
+Speed Grade: -3
+
+   Minimum period: 2.093ns (Maximum Frequency: 477.737MHz)
+   Minimum input arrival time before clock: 1.156ns
+   Maximum output required time after clock: 2.161ns
+   Maximum combinational path delay: 2.405ns
+
+Timing Details:
+---------------
+All values displayed in nanoseconds (ns)
+
+=========================================================================
+Timing constraint: Default period analysis for Clock 'ctl_in_Clk'
+  Clock period: 2.093ns (frequency: 477.737MHz)
+  Total number of paths / destination ports: 806 / 74
+-------------------------------------------------------------------------
+Delay:               2.093ns (Levels of Logic = 5)
+  Source:            wci/wci_decode/my_offset_r_4 (FF)
+  Destination:       wci/wci_decode/my_read_index_r_0 (FF)
+  Source Clock:      ctl_in_Clk rising
+  Destination Clock: ctl_in_Clk rising
+
+  Data Path: wci/wci_decode/my_offset_r_4 to wci/wci_decode/my_read_index_r_0
+                                Gate     Net
+    Cell:in->out      fanout   Delay   Delay  Logical Name (Net Name)
+    ----------------------------------------  ------------
+     FDRE:C->Q            24   0.232   0.645  my_offset_r_4 (my_offset_r_4)
+     begin scope: 'wci/wci_decode/g0.g1[13].g2.prop:offset_in<4>'
+     LUT5:I0->O            1   0.043   0.289  read_enable_SW0 (N01)
+     LUT6:I5->O            3   0.043   0.466  read_enable (read_enable)
+     end scope: 'wci/wci_decode/g0.g1[13].g2.prop:read_enable'
+     LUT4:I0->O            1   0.043   0.289  Mmux_GND_19_o_GND_19_o_mux_90_OUT1_SW0 (N6)
+     LUT6:I5->O            1   0.043   0.000  Mmux_GND_19_o_GND_19_o_mux_90_OUT1 (GND_19_o_GND_19_o_mux_90_OUT<0>)
+     FDRE:D                   -0.001          my_read_index_r_0
+    ----------------------------------------
+    Total                      2.093ns (0.404ns logic, 1.689ns route)
+                                       (19.3% logic, 80.7% route)
+\fi
+%ad9361_config.hdl/target-zynq/ad9361_config_rv-vivado.out
+\iffalse
+Synthesis complete.
+Copyright 1986-2017 Xilinx, Inc. All Rights Reserved.
+-----------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2017.1 (lin64) Build 1846317 Fri Apr 14 18:54:47 MDT 2017
+| Date         : Tue Aug  1 18:30:41 2017
+| Host         : embdev007.wb.vsi-corp.com running 64-bit CentOS Linux release 7.2.1511 (Core)
+| Command      : report_utilization
+| Design       : ad9361_config_rv
+| Device       : 7z020clg484-1
+| Design State : Synthesized
+-----------------------------------------------------------------------------------------------
+
+Utilization Design Information
+
+Table of Contents
+-----------------
+1. Slice Logic
+1.1 Summary of Registers by Type
+2. Memory
+3. DSP
+4. IO and GT Specific
+5. Clocking
+6. Specific Feature
+7. Primitives
+8. Black Boxes
+9. Instantiated Netlists
+
+1. Slice Logic
+--------------
+
++-------------------------+------+-------+-----------+-------+
+|        Site Type        | Used | Fixed | Available | Util% |
++-------------------------+------+-------+-----------+-------+
+| Slice LUTs*             |  117 |     0 |     53200 |  0.22 |
+|   LUT as Logic          |  117 |     0 |     53200 |  0.22 |
+|   LUT as Memory         |    0 |     0 |     17400 |  0.00 |
+| Slice Registers         |   67 |     0 |    106400 |  0.06 |
+|   Register as Flip Flop |   67 |     0 |    106400 |  0.06 |
+|   Register as Latch     |    0 |     0 |    106400 |  0.00 |
+| F7 Muxes                |    0 |     0 |     26600 |  0.00 |
+| F8 Muxes                |    0 |     0 |     13300 |  0.00 |
++-------------------------+------+-------+-----------+-------+
+* Warning! The Final LUT count, after physical optimizations and full implementation, is typically lower. Run opt_design after synthesis, if not already completed, for a more realistic count.
+
+
+1.1 Summary of Registers by Type
+--------------------------------
+
++-------+--------------+-------------+--------------+
+| Total | Clock Enable | Synchronous | Asynchronous |
++-------+--------------+-------------+--------------+
+| 0     |            _ |           - |            - |
+| 0     |            _ |           - |          Set |
+| 0     |            _ |           - |        Reset |
+| 0     |            _ |         Set |            - |
+| 0     |            _ |       Reset |            - |
+| 0     |          Yes |           - |            - |
+| 0     |          Yes |           - |          Set |
+| 0     |          Yes |           - |        Reset |
+| 2     |          Yes |         Set |            - |
+| 65    |          Yes |       Reset |            - |
++-------+--------------+-------------+--------------+
+
+
+2. Memory
+---------
+
++----------------+------+-------+-----------+-------+
+|    Site Type   | Used | Fixed | Available | Util% |
++----------------+------+-------+-----------+-------+
+| Block RAM Tile |    0 |     0 |       140 |  0.00 |
+|   RAMB36/FIFO* |    0 |     0 |       140 |  0.00 |
+|   RAMB18       |    0 |     0 |       280 |  0.00 |
++----------------+------+-------+-----------+-------+
+* Note: Each Block RAM Tile only has one FIFO logic available and therefore can accommodate only one FIFO36E1 or one FIFO18E1. However, if a FIFO18E1 occupies a Block RAM Tile, that tile can still accommodate a RAMB18E1
+
+
+3. DSP
+------
+
++-----------+------+-------+-----------+-------+
+| Site Type | Used | Fixed | Available | Util% |
++-----------+------+-------+-----------+-------+
+| DSPs      |    0 |     0 |       220 |  0.00 |
++-----------+------+-------+-----------+-------+
+
+
+4. IO and GT Specific
+---------------------
+
++-----------------------------+------+-------+-----------+-------+
+|          Site Type          | Used | Fixed | Available | Util% |
++-----------------------------+------+-------+-----------+-------+
+| Bonded IOB                  |    0 |     0 |       200 |  0.00 |
+| Bonded IPADs                |    0 |     0 |         2 |  0.00 |
+| Bonded IOPADs               |    0 |     0 |       130 |  0.00 |
+| PHY_CONTROL                 |    0 |     0 |         4 |  0.00 |
+| PHASER_REF                  |    0 |     0 |         4 |  0.00 |
+| OUT_FIFO                    |    0 |     0 |        16 |  0.00 |
+| IN_FIFO                     |    0 |     0 |        16 |  0.00 |
+| IDELAYCTRL                  |    0 |     0 |         4 |  0.00 |
+| IBUFDS                      |    0 |     0 |       192 |  0.00 |
+| PHASER_OUT/PHASER_OUT_PHY   |    0 |     0 |        16 |  0.00 |
+| PHASER_IN/PHASER_IN_PHY     |    0 |     0 |        16 |  0.00 |
+| IDELAYE2/IDELAYE2_FINEDELAY |    0 |     0 |       200 |  0.00 |
+| ILOGIC                      |    0 |     0 |       200 |  0.00 |
+| OLOGIC                      |    0 |     0 |       200 |  0.00 |
++-----------------------------+------+-------+-----------+-------+
+
+
+5. Clocking
+-----------
+
++------------+------+-------+-----------+-------+
+|  Site Type | Used | Fixed | Available | Util% |
++------------+------+-------+-----------+-------+
+| BUFGCTRL   |    0 |     0 |        32 |  0.00 |
+| BUFIO      |    0 |     0 |        16 |  0.00 |
+| MMCME2_ADV |    0 |     0 |         4 |  0.00 |
+| PLLE2_ADV  |    0 |     0 |         4 |  0.00 |
+| BUFMRCE    |    0 |     0 |         8 |  0.00 |
+| BUFHCE     |    0 |     0 |        72 |  0.00 |
+| BUFR       |    0 |     0 |        16 |  0.00 |
++------------+------+-------+-----------+-------+
+
+
+6. Specific Feature
+-------------------
+
++-------------+------+-------+-----------+-------+
+|  Site Type  | Used | Fixed | Available | Util% |
++-------------+------+-------+-----------+-------+
+| BSCANE2     |    0 |     0 |         4 |  0.00 |
+| CAPTUREE2   |    0 |     0 |         1 |  0.00 |
+| DNA_PORT    |    0 |     0 |         1 |  0.00 |
+| EFUSE_USR   |    0 |     0 |         1 |  0.00 |
+| FRAME_ECCE2 |    0 |     0 |         1 |  0.00 |
+| ICAPE2      |    0 |     0 |         2 |  0.00 |
+| STARTUPE2   |    0 |     0 |         1 |  0.00 |
+| XADC        |    0 |     0 |         1 |  0.00 |
++-------------+------+-------+-----------+-------+
+
+
+7. Primitives
+-------------
+
++----------+------+---------------------+
+| Ref Name | Used | Functional Category |
++----------+------+---------------------+
+| FDRE     |   65 |        Flop & Latch |
+| LUT6     |   40 |                 LUT |
+| LUT3     |   40 |                 LUT |
+| LUT5     |   30 |                 LUT |
+| LUT2     |   22 |                 LUT |
+| LUT4     |   17 |                 LUT |
+| FDSE     |    2 |        Flop & Latch |
+| LUT1     |    1 |                 LUT |
++----------+------+---------------------+
+
+
+8. Black Boxes
+--------------
+
++----------+------+
+| Ref Name | Used |
++----------+------+
+
+
+9. Instantiated Netlists
+------------------------
+
++----------+------+
+| Ref Name | Used |
++----------+------+
+
+\fi
+%ad9361_config.hdl/target-zynq/ad9361_config_rv-vivado.out
+\iffalse
+INFO: [Timing 38-78] ReportTimingParams: -max_paths 1 -nworst 1 -delay_type max -sort_by slack.
+Copyright 1986-2017 Xilinx, Inc. All Rights Reserved.
+-----------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2017.1 (lin64) Build 1846317 Fri Apr 14 18:54:47 MDT 2017
+| Date         : Tue Aug  1 18:30:48 2017
+| Host         : embdev007.wb.vsi-corp.com running 64-bit CentOS Linux release 7.2.1511 (Core)
+| Command      : report_timing
+| Design       : ad9361_config_rv
+| Device       : 7z020-clg484
+| Speed File   : -1  PRODUCTION 1.11 2014-09-11
+-----------------------------------------------------------------------------------------------
+
+Timing Report
+
+Slack:                    inf
+  Source:                 dev_cfg_data_in[1][data_bus_index_direction]
+                            (input port)
+  Destination:            ctl_out[SData][0]
+                            (output port)
+  Path Group:             (none)
+  Path Type:              Max at Slow Process Corner
+  Data Path Delay:        4.331ns  (logic 0.372ns (8.589%)  route 3.959ns (91.411%))
+  Logic Levels:           3  (LUT4=1 LUT5=1 LUT6=1)
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                                                      0.000     0.000 r  dev_cfg_data_in[1][data_bus_index_direction] (IN)
+                         net (fo=1, unset)            0.973     0.973    dev_cfg_data_in[1][data_bus_index_direction]
+                         LUT4 (Prop_lut4_I3_O)        0.124     1.097 f  ctl_out[SData][0]_INST_0_i_9/O
+                         net (fo=1, unplaced)         1.111     2.208    wci/wci_decode/dev_cfg_data_in[1][data_bus_index_direction]_0
+                         LUT5 (Prop_lut5_I1_O)        0.124     2.332 r  wci/wci_decode/ctl_out[SData][0]_INST_0_i_4/O
+                         net (fo=1, unplaced)         0.902     3.234    wci/wci_decode/ctl_out[SData][0]_INST_0_i_4_n_0
+                         LUT6 (Prop_lut6_I3_O)        0.124     3.358 r  wci/wci_decode/ctl_out[SData][0]_INST_0/O
+                         net (fo=0)                   0.973     4.331    ctl_out[SData][0]
+                                                                      r  ctl_out[SData][0] (OUT)
+  -------------------------------------------------------------------    -------------------
+\fi
+%ad9361_config.hdl/target-virtex6/ad9361_config_rv-xst.out
+\iffalse
+Primitive and Black Box Usage:
+------------------------------
+# BELS                             : 210
+#      GND                         : 16
+#      INV                         : 2
+#      LUT2                        : 56
+#      LUT3                        : 18
+#      LUT4                        : 9
+#      LUT5                        : 23
+#      LUT6                        : 81
+#      MUXF7                       : 4
+#      VCC                         : 1
+# FlipFlops/Latches                : 70
+#      FD                          : 6
+#      FDE                         : 32
+#      FDR                         : 4
+#      FDRE                        : 27
+#      FDS                         : 1
+
+Device utilization summary:
+---------------------------
+
+Selected Device : 6vlx240tff1156-1 
+
+
+Slice Logic Utilization: 
+ Number of Slice Registers:              70  out of  301440     0%  
+ Number of Slice LUTs:                  189  out of  150720     0%  
+    Number used as Logic:               189  out of  150720     0%  
+
+Slice Logic Distribution: 
+ Number of LUT Flip Flop pairs used:    259
+   Number with an unused Flip Flop:     189  out of    259    72%  
+   Number with an unused LUT:            70  out of    259    27%  
+   Number of fully used LUT-FF pairs:     0  out of    259     0%  
+   Number of unique control sets:        10
+
+IO Utilization: 
+ Number of IOs:                         216
+ Number of bonded IOBs:                   0  out of    600     0%  
+
+Specific Feature Utilization:
+
+\fi
+%ad9361_config.hdl/target-virtex6/ad9361_config_rv-xst.out
+\iffalse
+Timing Summary:
+---------------
+Speed Grade: -1
+
+   Minimum period: 3.037ns (Maximum Frequency: 329.272MHz)
+   Minimum input arrival time before clock: 1.656ns
+   Maximum output required time after clock: 3.134ns
+   Maximum combinational path delay: 3.395ns
+
+Timing Details:
+---------------
+All values displayed in nanoseconds (ns)
+
+=========================================================================
+Timing constraint: Default period analysis for Clock 'ctl_in_Clk'
+  Clock period: 3.037ns (frequency: 329.272MHz)
+  Total number of paths / destination ports: 818 / 80
+-------------------------------------------------------------------------
+Delay:               3.037ns (Levels of Logic = 5)
+  Source:            wci/wci_decode/my_offset_r_0 (FF)
+  Destination:       wci/wci_decode/my_read_index_r_1 (FF)
+  Source Clock:      ctl_in_Clk rising
+  Destination Clock: ctl_in_Clk rising
+
+  Data Path: wci/wci_decode/my_offset_r_0 to wci/wci_decode/my_read_index_r_1
+                                Gate     Net
+    Cell:in->out      fanout   Delay   Delay  Logical Name (Net Name)
+    ----------------------------------------  ------------
+     FDRE:C->Q            17   0.375   0.884  my_offset_r_0 (my_offset_r_0)
+     begin scope: 'wci/wci_decode/g0.g1[3].g2.prop:offset_in<0>'
+     LUT6:I0->O            1   0.068   0.491  read_enable1 (read_enable1)
+     LUT2:I0->O            2   0.068   0.587  read_enable3 (read_enable)
+     end scope: 'wci/wci_decode/g0.g1[3].g2.prop:read_enable'
+     LUT4:I1->O            1   0.068   0.417  Mmux_GND_19_o_GND_19_o_mux_90_OUT2_SW0_SW0 (N18)
+     LUT6:I5->O            1   0.068   0.000  Mmux_GND_19_o_GND_19_o_mux_90_OUT2 (GND_19_o_GND_19_o_mux_90_OUT<1>)
+     FDRE:D                    0.011          my_read_index_r_1
+    ----------------------------------------
+    Total                      3.037ns (0.658ns logic, 2.379ns route)
+                                       (21.7% logic, 78.3% route)
+\fi
+\begin{scriptsize}
+	\begin{tabular}{|M{4.4cm}|M{1.9cm}|M{1.9cm}|M{1.5cm}|M{1.8cm}|M{1.4cm}|}
+    \hline
+    \rowcolor{blue}
+    Device                    & Registers (typical) & LUTs (typical) & Fmax (typical) & Memory/Special Functions & Design Suite \\
+    \hline
+    \multirow{2}{*}{Zynq XC7Z020-1-CLG484} & 67        & 117  & 318 MHz\textsuperscript{\ref{abc}} & -                        & Vivado 2017.1 \\
+    \cline{2-6}
+                              & 64        & 189  & 477 MHz & -                        & ISE 14.7      \\
+    \hline
+		Virtex-6 XC6VLX240T-1-FF1156 & 70        & 189  & 329 MHz & -                        & ISE 14.7     \\
+    \hline
+    Stratix IV EP4SGX230K-C2-F40 & 70     & 167  & \ref{quartustiming} & -                        & Quartus Prime 15.1 \\
+    \hline
+  \end{tabular}
+\end{scriptsize}
+\footnotetext[1]{\label{abc}These measurements were the result of a Vivado timing analysis which was different from the Vivado analysis performed by default for OpenCPI worker builds. For more info see Appendix \ref{appendix1}}
+\footnotetext[2]{\label{quartustiming}Quartus does not perform timing analysis at the OpenCPI worker build (i.e. synthesis) stage.}
+
+\section*{Test and Verification}
+No standalone unit test currently exists for this worker. However, the test outlined in \cite{dac_comp_datasheet} includes validation of a subset of this worker's functionality (for LVDS only).
+
+\begin{thebibliography}{1}
+
+\bibitem{ad9361} AD9361 Datasheet and Product Info \\
+\url{http://www.analog.com/en/products/rf-microwave/integrated-transceivers-transmitters-receivers/wideband-transceivers-ic/ad9361.html}
+\bibitem{no_os} AD9361 No-OS Software [Analog Devices Wiki]\\
+\url{https://wiki.analog.com/resources/eval/user-guides/ad-fmcomms2-ebz/software/no-os-functions}
+\bibitem{adi_ug570} AD9361 Reference Manual UG-570\\
+AD9361\_Reference\_Manual\_UG-570.pdf
+\bibitem{adi_ug671} AD9361 Register Map Reference Manual UG-671\\
+AD9361\_Register\_Map\_Reference\_Manual\_UG-671.pdf
+\bibitem{spi_comp_datasheet} AD361 SPI Component Data Sheet \\AD9361\_SPI.pdf
+\bibitem{dac_comp_datasheet} AD361 DAC Component Data Sheet \\AD9361\_DAC.pdf
+\bibitem{config_proxy_comp_datasheet} AD361 Config Proxy Component Data Sheet \\AD9361\_Config\_Proxy.pdf
+
+\end{thebibliography}
+\pagebreak
+\landscape
+\section{Appendix - \comp{}.hdl Properties for AD9361 Register Set}
+\label{appendix1}
+  \begin{scriptsize}
+    \begin{longtable}{|p{2cm}|p{5cm}|p{1cm}|p{2cm}|p{2cm}|p{1.75cm}|p{1.5cm}|p{5.1cm}|}
+      \hline
+      \rowcolor{blue}
+  Scope    & Name                                                     & Type  & Sequence Length  & Array Dimensions & Accessibility       & Padding & Usage \\
+  \hline
+  Property & general\_spi\_conf                                       & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d0\_0x0000   Table 1:  CHIP LEVEL SETUP: SPI Configuration \\
+  \hline
+  Property & general\_multichip\_sync\_and\_tx\_mon\_ctrl             & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d1\_0x0001   Table 1:  CHIP LEVEL SETUP: Multichip Sync and Tx Mon Control \\
+  \hline
+  Property & general\_tx\_enable\_filter\_ctrl                        & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d2\_0x0002   Table 1:  CHIP LEVEL SETUP: Tx Enable \& Filter Control \\
+  \hline
+  Property & general\_rx\_enable\_filter\_ctrl                        & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d3\_0x0003   Table 1:  CHIP LEVEL SETUP: Rx Enable \& Filter Control \\
+  \hline
+  Property & general\_input\_select                                   & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d4\_0x0004   Table 1:  CHIP LEVEL SETUP: Input Select \\
+  \hline
+  Property & general\_rfpll\_dividers                                 & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d5\_0x0005   Table 1:  CHIP LEVEL SETUP: RFPLL Dividers \\
+  \hline
+  Property & general\_rx\_clock\_data\_delay                          & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d6\_0x0006   Table 1:  CHIP LEVEL SETUP: Rx Clock and Data  Delay \\
+  \hline
+  Property & general\_tx\_clock\_data\_delay                          & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d7\_0x0007   Table 1:  CHIP LEVEL SETUP: Tx Clock and Data Delay \\
+  \hline
+  Property & ocpi\_pad\_008                                           & UChar &                  & 1                &                     & True    & reg\_addr\_d8\_0x0008 \\
+  \hline
+  Property & clock\_enable                                            & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d9\_0x0009   Table 8:  CLOCK CONTROL: Clock Enable \\
+  \hline
+  Property & clock\_bbpll                                             & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d10\_0x000a  Table 8:  CLOCK CONTROL: BBPLL \\
+  \hline
+  Property & temp\_offset                                             & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d11\_0x000b  Table 10: TEMPERATURE SENSOR: Offset \\
+  \hline
+  Property & temp\_start\_reading                                     & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d12\_0x000c  Table 10: TEMPERATURE SENSOR: Start Temp Reading \\
+  \hline
+  Property & temp\_sense2                                             & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d13\_0x000d  Table 10: TEMPERATURE SENSOR: Temp Sense2 \\
+  \hline
+  Property & temp\_temperature                                        & UChar &                  &                  & Volatile,           &         & reg\_addr\_d14\_0x000e  Table 10: TEMPERATURE SENSOR: Temperature \\
+  \hline
+  Property & temp\_sensor\_config                                     & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d15\_0x000f  Table 10: TEMPERATURE SENSOR: Temp Sensor Config \\
+  \hline
+  Property & parallel\_port\_conf\_1                                  & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d16\_0x0010  Table 11: PARALLEL PORT CONFIGURATION: Parallel Port Configuration 1 \\
+  \hline
+  Property & parallel\_port\_conf\_2                                  & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d17\_0x0011  Table 11: PARALLEL PORT CONFIGURATION: Parallel Port Configuration 2 \\
+  \hline
+  Property & parallel\_port\_conf\_3                                  & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d18\_0x0012  Table 11: PARALLEL PORT CONFIGURATION: Parallel Port Configuration 3 \\
+  \hline
+  Property & ensm\_mode                                               & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d19\_0x0013  Table 12: ENABLE STATE MACHINE: ENSM Mode \\
+  \hline
+  Property & ensm\_config\_1                                          & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d20\_0x0014  Table 12: ENABLE STATE MACHINE: ENSM Config 1 \\
+  \hline
+  Property & ensm\_config\_2                                          & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d21\_0x0015  Table 12: ENABLE STATE MACHINE: ENSM Config 2 \\
+  \hline
+  Property & ensm\_calibration\_ctrl                                  & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d22\_0x0016  Table 12: ENABLE STATE MACHINE: Calibration Control \\
+  \hline
+  Property & ensm\_state                                              & UChar &                  &                  & Volatile,           &         & reg\_addr\_d23\_0x0017  Table 12: ENABLE STATE MACHINE: State \\
+  \hline
+  Property & auxdac\_1\_word                                          & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d24\_0x0018  Table 15: AUXDAC: AuxDAC 1 Word \\
+  \hline
+  Property & auxdac\_2\_word                                          & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d25\_0x0019  Table 15: AUXDAC: AuxDAC 2 Word \\
+  \hline
+  Property & auxdac\_1\_config                                        & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d26\_0x001a  Table 15: AUXDAC: AuxDAC 1 Config \\
+  \hline
+  Property & auxdac\_2\_config                                        & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d27\_0x001b  Table 15: AUXDAC: AuxDAC 2 Config \\
+  \hline
+  Property & auxadc\_clock\_divider                                   & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d28\_0x001c  Table 17: AUXILARYADC: AuxADC Clock Divider \\
+  \hline
+  Property & auxadc\_config                                           & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d29\_0x001d  Table 17: AUXILARYADC: Aux ADC Config \\
+  \hline
+  Property & auxadc\_word\_msb                                        & UChar &                  &                  & Volatile,           &         & reg\_addr\_d30\_0x001e  Table 17: AUXILARYADC: AuxADC Word MSB \\
+  \hline
+  Property & auxadc\_world\_lsb                                       & UChar &                  &                  & Volatile,           &         & reg\_addr\_d31\_0x001f  Table 17: AUXILARYADC: AuxADC Word LSB \\
+  \hline
+  Property & misc\_auto\_gpo                                          & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d32\_0x0020  Table 18: GPO, AUXDAC, AGC DELAY, AND SYNTH DELOY CONTROL: Auto GPO \\
+  \hline
+  Property & misc\_agc\_gain\_lock\_delay                             & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d33\_0x0021  Table 18: GPO, AUXDAC, AGC DELAY, AND SYNTH DELOY CONTROL: AGC Gain Lock Delay \\
+  \hline
+  Property & misc\_agc\_attack\_delay                                 & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d34\_0x0022  Table 18: GPO, AUXDAC, AGC DELAY, AND SYNTH DELOY CONTROL: AGC Attack Delay \\
+  \hline
+  Property & misc\_auxdac\_enable\_ctrl                               & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d35\_0x0023  Table 18: GPO, AUXDAC, AGC DELAY, AND SYNTH DELOY CONTROL: AuxDAC Enable Control \\
+  \hline
+  Property & misc\_rx\_load\_synth\_delay                             & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d36\_0x0024  Table 18: GPO, AUXDAC, AGC DELAY, AND SYNTH DELOY CONTROL: RX Load Synth Delay \\
+  \hline
+  Property & misc\_tx\_load\_synth\_delay                             & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d37\_0x0025  Table 18: GPO, AUXDAC, AGC DELAY, AND SYNTH DELOY CONTROL: TX Load Synth Delay \\
+  \hline
+  Property & misc\_external\_lna\_ctrl                                & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d38\_0x0026  Table 18: GPO, AUXDAC, AGC DELAY, AND SYNTH DELOY CONTROL: External LNA control \\
+  \hline
+  Property & misc\_gpo\_force\_and\_init                              & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d39\_0x0027  Table 18: GPO, AUXDAC, AGC DELAY, AND SYNTH DELOY CONTROL: GPO Force and Init \\
+  \hline
+  Property & misc\_gpo0\_rx\_delay                                    & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d40\_0x0028  Table 18: GPO, AUXDAC, AGC DELAY, AND SYNTH DELOY CONTROL: GPO0 Rx delay \\
+  \hline
+  Property & misc\_gpo1\_rx\_delay                                    & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d41\_0x0029  Table 18: GPO, AUXDAC, AGC DELAY, AND SYNTH DELOY CONTROL: GPO1 Rx delay \\
+  \hline
+  Property & misc\_gpo2\_rx\_delay                                    & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d42\_0x002a  Table 18: GPO, AUXDAC, AGC DELAY, AND SYNTH DELOY CONTROL: GPO2 Rx delay \\
+  \hline
+  Property & misc\_gpo3\_rx\_delay                                    & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d43\_0x002b  Table 18: GPO, AUXDAC, AGC DELAY, AND SYNTH DELOY CONTROL: GPO3 Rx delay \\
+  \hline
+  Property & misc\_gpo0\_tx\_delay                                    & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d44\_0x002c  Table 18: GPO, AUXDAC, AGC DELAY, AND SYNTH DELOY CONTROL: GPO0 Tx Delay \\
+  \hline
+  Property & misc\_gpo1\_tx\_delay                                    & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d45\_0x002d  Table 18: GPO, AUXDAC, AGC DELAY, AND SYNTH DELOY CONTROL: GPO1 Tx Delay \\
+  \hline
+  Property & misc\_gpo2\_tx\_delay                                    & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d46\_0x002e  Table 18: GPO, AUXDAC, AGC DELAY, AND SYNTH DELOY CONTROL: GPO2 Tx Delay \\
+  \hline
+  Property & misc\_gpo3\_tx\_delay                                    & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d47\_0x002f  Table 18: GPO, AUXDAC, AGC DELAY, AND SYNTH DELOY CONTROL: GPO3 Tx Delay \\
+  \hline
+  Property & misc\_auxdac1\_rx\_delay                                 & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d48\_0x0030  Table 18: GPO, AUXDAC, AGC DELAY, AND SYNTH DELOY CONTROL: AuxDAC1 Rx Delay \\
+  \hline
+  Property & misc\_auxdac1\_tx\_delay                                 & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d49\_0x0031  Table 18: GPO, AUXDAC, AGC DELAY, AND SYNTH DELOY CONTROL: AuxDAC1 Tx Delay \\
+  \hline
+  Property & misc\_auxdac2\_rx\_delay                                 & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d50\_0x0032  Table 18: GPO, AUXDAC, AGC DELAY, AND SYNTH DELOY CONTROL: AuxDAC2 Rx Delay \\
+  \hline
+  Property & misc\_auxdac2\_tx\_delay                                 & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d51\_0x0033  Table 18: GPO, AUXDAC, AGC DELAY, AND SYNTH DELOY CONTROL: AuxDAC2 Tx Delay \\
+  \hline
+  Property & ocpi\_pad\_034                                           & UChar &                  & 1                &                     & True    & reg\_addr\_d52\_0x0034 \\
+  \hline
+  Property & ctrl\_output\_pointer                                    & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d53\_0x0035  Table 19: CONTROL OUTPUT: Control Output Pointer \\
+  \hline
+  Property & ctrl\_output\_enable                                     & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d54\_0x0036  Table 19: CONTROL OUTPUT: Control Output Enable \\
+  \hline
+  Property & product\_id                                              & UChar &                  &                  & Volatile,           &         & reg\_addr\_d55\_0x0037  Table 20: PRODUCT ID: Product ID \\
+  \hline
+  Property & ocpi\_pad\_038                                           & UChar &                  & 2                &                     & True    & reg\_addr\_d56\_0x0038 \\
+  \hline
+  Property & reference\_clock\_cycles                                 & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d58\_0x003a  Table 22: REFERENCE CLOCK CYCLES: Reference Clock Cycles \\
+  \hline
+  Property & digital\_io\_digital\_io\_ctrl                           & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d59\_0x003b  Table 23: DIGITAL IO CONTROL: Digital I/O Control \\
+  \hline
+  Property & digital\_io\_lvds\_bias\_ctrl                            & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d60\_0x003c  Table 23: DIGITAL IO CONTROL: LVDS Bias control \\
+  \hline
+  Property & digital\_io\_lvds\_invert\_ctrl1                         & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d61\_0x003d  Table 23: DIGITAL IO CONTROL: LVDS Invert control1 \\
+  \hline
+  Property & digital\_io\_lvds\_invert\_ctrl2                         & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d62\_0x003e  Table 23: DIGITAL IO CONTROL: LVDS Invert control2 \\
+  \hline
+  Property & bbpll\_ctrl\_1                                           & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d63\_0x003f  Table 25: BBPLL CONTROL: BPLL Control 1 \\
+  \hline
+  Property & bbpll\_mustbe0x00                                        & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d64\_0x0040  Table 25: BBPLL CONTROL: Must be 0 \\
+  \hline
+  Property & bbpll\_fract\_bb\_freq\_word\_1                          & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d65\_0x0041  Table 25: BBPLL CONTROL: Fractional BB Freq Word 1 \\
+  \hline
+  Property & bbpll\_fract\_bb\_freq\_word\_2                          & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d66\_0x0042  Table 25: BBPLL CONTROL: Fractional BB Freq Word 2 \\
+  \hline
+  Property & bbpll\_fract\_bb\_freq\_word\_3                          & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d67\_0x0043  Table 25: BBPLL CONTROL: Fractional BB Freq Word 3 \\
+  \hline
+  Property & bbpll\_integer\_bb\_freq\_word                           & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d68\_0x0044  Table 25: BBPLL CONTROL: Integer BB Freq Word \\
+  \hline
+  Property & bbpll\_ref\_clock\_scaler                                & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d69\_0x0045  Table 25: BBPLL CONTROL: Ref Clock Scaler \\
+  \hline
+  Property & bbpll\_cp\_current                                       & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d70\_0x0046  Table 25: BBPLL CONTROL: CP Current \\
+  \hline
+  Property & bbpll\_msc\_scale                                        & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d71\_0x0047  Table 25: BBPLL CONTROL: MSC Scale \\
+  \hline
+  Property & bbpll\_loop\_filter\_1                                   & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d72\_0x0048  Table 25: BBPLL CONTROL: Loop Filter 1 \\
+  \hline
+  Property & bbpll\_loop\_filter\_2                                   & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d73\_0x0049  Table 25: BBPLL CONTROL: Loop Filter 2 \\
+  \hline
+  Property & bbpll\_loop\_filter\_3                                   & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d74\_0x004a  Table 25: BBPLL CONTROL: Loop Filter 3 \\
+  \hline
+  Property & bbpll\_vco\_ctrl                                         & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d75\_0x004b  Table 25: BBPLL CONTROL: VCO Control \\
+  \hline
+  Property & bbpll\_mustbe0x86                                        & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d76\_0x004c  Table 25: BBPLL CONTROL: Must be\_0x86 \\
+  \hline
+  Property & bpll\_control\_2                                         & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d77\_0x004d  Table 25: BBPLL CONTROL: BPLL Control 2 \\
+  \hline
+  Property & bpll\_control\_3                                         & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d78\_0x004e  Table 25: BBPLL CONTROL: BPLL Control 3 \\
+  \hline
+  Property & ocpi\_pad\_04f                                           & UChar &                  & 1                &                     & True    & reg\_addr\_d79\_0x004f \\
+  \hline
+  Property & power\_down\_override\_rx\_synth                         & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d80\_0x0050  Table 26: POWER DOWN OVERRIDE: Rx Synth Power Down Override \\
+  \hline
+  Property & power\_down\_override\_tx\_synth                         & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d81\_0x0051  Table 26: POWER DOWN OVERRIDE: TX Synth Power Down Override \\
+  \hline
+  Property & power\_down\_override\_rx\_control\_0                    & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d82\_0x0052  Table 26: POWER DOWN OVERRIDE: Control 0 \\
+  \hline
+  Property & power\_down\_override\_mustbe0x00                        & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d83\_0x0053  Table 26: POWER DOWN OVERRIDE: Must be 0 \\
+  \hline
+  Property & power\_down\_override\_rx1\_adc                          & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d84\_0x0054  Table 26: POWER DOWN OVERRIDE: Rx1 ADC Power Down Override \\
+  \hline
+  Property & power\_down\_override\_rx2\_adc                          & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d85\_0x0055  Table 26: POWER DOWN OVERRIDE: Rx2 ADC Power Down Override \\
+  \hline
+  Property & power\_down\_override\_tx\_analog                        & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d86\_0x0056  Table 26: POWER DOWN OVERRIDE: Tx Analog Power Down Override 1 \\
+  \hline
+  Property & power\_down\_override\_analog                            & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d87\_0x0057  Table 26: POWER DOWN OVERRIDE: Analog Power Down Override \\
+  \hline
+  Property & power\_down\_override\_misc                              & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d88\_0x0058  Table 26: POWER DOWN OVERRIDE: Misc Power Down Override \\
+  \hline
+  Property & ocpi\_pad\_059                                           & UChar &                  & 5                &                     & True    & reg\_addr\_d89\_0x0059 \\
+  \hline
+  Property & overflow\_ch\_1                                          & UChar &                  &                  & Volatile,           &         & reg\_addr\_d94\_0x005e  Table 27: OVERFLOW: CH 1 Overflow \\
+  \hline
+  Property & overflow\_ch\_2                                          & UChar &                  &                  & Volatile,           &         & reg\_addr\_d95\_0x005f  Table 27: OVERFLOW: CH 2 Overflow \\
+  \hline
+  Property & tx\_filter\_coef\_addr                                   & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d96\_0x0060  Table 28: Tx PROGRAMMABLE FIR FILTER: TX Filter Coefficient Address \\
+  \hline
+  Property & tx\_filter\_coef\_write\_data\_1                         & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d97\_0x0061  Table 28: Tx PROGRAMMABLE FIR FILTER: TX Filter Coefficient Write Data 1 \\
+  \hline
+  Property & tx\_filter\_coef\_write\_data\_2                         & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d98\_0x0062  Table 28: Tx PROGRAMMABLE FIR FILTER: TX Filter Coefficient Write Data 2 \\
+  \hline
+  Property & tx\_filter\_coef\_read\_data\_1                          & UChar &                  &                  & Volatile,           &         & reg\_addr\_d99\_0x0063  Table 28: Tx PROGRAMMABLE FIR FILTER: TX Filter Coefficient Read Data 1 \\
+  \hline
+  Property & tx\_filter\_coef\_read\_data\_2                          & UChar &                  &                  & Volatile,           &         & reg\_addr\_d100\_0x0064 Table 28: Tx PROGRAMMABLE FIR FILTER: TX Filter Coefficient Read Data 2 \\
+  \hline
+  Property & tx\_filter\_conf                                         & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d101\_0x0065 Table 28: Tx PROGRAMMABLE FIR FILTER: TX Filter Configuration \\
+  \hline
+  Property & ocpi\_pad\_066                                           & UChar &                  & 1                &                     & True    & reg\_addr\_d102\_0x0066 \\
+  \hline
+  Property & tx\_mon\_low\_gain                                       & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d103\_0x0067 Table 29: Tx MONITOR: Tx Mon Low Gain \\
+  \hline
+  Property & tx\_mon\_high\_gain                                      & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d104\_0x0068 Table 29: Tx MONITOR: Tx Mon High Gain \\
+  \hline
+  Property & tx\_mon\_delay\_counter                                  & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d105\_0x0069 Table 29: Tx MONITOR: Tx Mon Delay Counter \\
+  \hline
+  Property & tx\_mon\_level\_thresh                                   & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d106\_0x006a Table 29: Tx MONITOR: Tx Level Threshold \\
+  \hline
+  Property & tx\_mon\_rssi1                                           & UChar &                  &                  & Volatile,           &         & reg\_addr\_d107\_0x006b Table 29: Tx MONITOR: TX RSSI1 \\
+  \hline
+  Property & tx\_mon\_rssi2                                           & UChar &                  &                  & Volatile,           &         & reg\_addr\_d108\_0x006c Table 29: Tx MONITOR: TX RSSI2 \\
+  \hline
+  Property & tx\_mon\_rssi\_lsb                                       & UChar &                  &                  & Volatile,           &         & reg\_addr\_d109\_0x006d Table 29: Tx MONITOR: TX RSSI LSB \\
+  \hline
+  Property & tx\_mon\_tpm\_mode\_enable                               & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d110\_0x006e Table 29: Tx MONITOR: TPM Mode Enable \\
+  \hline
+  Property & tx\_mon\_temp\_gain\_coef                                & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d111\_0x006f Table 29: Tx MONITOR: Temp Gain Coefficient \\
+  \hline
+  Property & tx\_mon\_1\_config                                       & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d112\_0x0070 Table 29: Tx MONITOR: Tx Mon 1 Config \\
+  \hline
+  Property & tx\_mon\_2\_config                                       & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d113\_0x0071 Table 29: Tx MONITOR: Tx Mon 2 Config \\
+  \hline
+  Property & ocpi\_pad\_072                                           & UChar &                  & 1                &                     & True    & reg\_addr\_d114\_0x0072 \\
+  \hline
+  Property & tx\_pwr\_atten\_tx1\_atten\_0                            & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d115\_0x0073 Table 31: Tx POWER CONTROL AND ATTENUATION: Tx1 Atten 0 \\
+  \hline
+  Property & tx\_pwr\_atten\_tx1\_atten\_1                            & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d116\_0x0074 Table 31: Tx POWER CONTROL AND ATTENUATION: Tx1 Atten 1 \\
+  \hline
+  Property & tx\_pwr\_atten\_tx2\_atten\_0                            & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d117\_0x0075 Table 31: Tx POWER CONTROL AND ATTENUATION: Tx2 Atten 0 \\
+  \hline
+  Property & tx\_pwr\_atten\_tx2\_atten\_1                            & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d118\_0x0076 Table 31: Tx POWER CONTROL AND ATTENUATION: Tx2 Atten 1 \\
+  \hline
+  Property & tx\_pwr\_atten\_tx\_atten\_offset                        & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d119\_0x0077 Table 31: Tx POWER CONTROL AND ATTENUATION: Tx Atten Offset \\
+  \hline
+  Property & tx\_pwr\_atten\_tx\_atten\_thresh                        & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d120\_0x0078 Table 31: Tx POWER CONTROL AND ATTENUATION: Tx Atten Threshold \\
+  \hline
+  Property & tx\_pwr\_atten\_set\_tx1\_tx2                            & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d121\_0x0079 Table 31: Tx POWER CONTROL AND ATTENUATION: Set Tx1/Tx2 \\
+  \hline
+  Property & ocpi\_pad\_07a                                           & UChar &                  & 2                &                     & True    & reg\_addr\_d122\_0x007a \\
+  \hline
+  Property & tx\_pwr\_atten\_immediate\_update                        & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d124\_0x007c Table 31: Tx POWER CONTROL AND ATTENUATION: Immediate Update \\
+  \hline
+  Property & ocpi\_pad\_07d                                           & UChar &                  & 17               &                     & True    & reg\_addr\_d125\_0x007d \\
+  \hline
+  Property & tx\_pgo\_phase\_corr\_tx1\_out1                          & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d142\_0x008e Table 32: Tx QUADRATURE CALIBRATION, PHASE, GAIN, AND OFFSET CORRECTION: Tx1 Out 1 Phase Corr \\
+  \hline
+  Property & tx\_pgo\_gain\_corr\_tx1\_out1                           & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d143\_0x008f Table 32: Tx QUADRATURE CALIBRATION, PHASE, GAIN, AND OFFSET CORRECTION: Tx1 Out 1 Gain Corr \\
+  \hline
+  Property & tx\_pgo\_phase\_corr\_tx2\_out1                          & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d144\_0x0090 Table 32: Tx QUADRATURE CALIBRATION, PHASE, GAIN, AND OFFSET CORRECTION: Tx2 Out 1 Phase Corr \\
+  \hline
+  Property & tx\_pgo\_gain\_corr\_tx2\_out1                           & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d145\_0x0091 Table 32: Tx QUADRATURE CALIBRATION, PHASE, GAIN, AND OFFSET CORRECTION: Tx2 Out 1 Gain Corr \\
+  \hline
+  Property & tx\_pgo\_offset\_corr\_tx1\_out1\_i                      & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d146\_0x0092 Table 32: Tx QUADRATURE CALIBRATION, PHASE, GAIN, AND OFFSET CORRECTION: Tx1 Out 1 Offset I \\
+  \hline
+  Property & tx\_pgo\_offset\_corr\_tx1\_out1\_q                      & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d147\_0x0093 Table 32: Tx QUADRATURE CALIBRATION, PHASE, GAIN, AND OFFSET CORRECTION: Tx1 Out 1 Offset Q \\
+  \hline
+  Property & tx\_pgo\_offset\_corr\_tx2\_out1\_i                      & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d148\_0x0094 Table 32: Tx QUADRATURE CALIBRATION, PHASE, GAIN, AND OFFSET CORRECTION: Tx2 Out 1 Offset I \\
+  \hline
+  Property & tx\_pgo\_offset\_corr\_tx2\_out1\_q                      & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d149\_0x0095 Table 32: Tx QUADRATURE CALIBRATION, PHASE, GAIN, AND OFFSET CORRECTION: Tx2 Out 1 Offset Q \\
+  \hline
+  Property & tx\_pgo\_phase\_corr\_tx1\_out2                          & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d150\_0x0096 Table 32: Tx QUADRATURE CALIBRATION, PHASE, GAIN, AND OFFSET CORRECTION: Tx1 Out 2 Phase Corr \\
+  \hline
+  Property & tx\_pgo\_gain\_corr\_tx1\_out2                           & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d151\_0x0097 Table 32: Tx QUADRATURE CALIBRATION, PHASE, GAIN, AND OFFSET CORRECTION: Tx1 Out 2 Gain Corr \\
+  \hline
+  Property & tx\_pgo\_phase\_corr\_tx2\_out2                          & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d152\_0x0098 Table 32: Tx QUADRATURE CALIBRATION, PHASE, GAIN, AND OFFSET CORRECTION: Tx2 Out 2 Phase Corr \\
+  \hline
+  Property & tx\_pgo\_gain\_corr\_tx2\_out2                           & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d153\_0x0099 Table 32: Tx QUADRATURE CALIBRATION, PHASE, GAIN, AND OFFSET CORRECTION: Tx2 Out 2 Gain Corr \\
+  \hline
+  Property & tx\_pgo\_offset\_corr\_tx1\_out2\_i                      & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d154\_0x009a Table 32: Tx QUADRATURE CALIBRATION, PHASE, GAIN, AND OFFSET CORRECTION: Tx1 Out 2 Offset I \\
+  \hline
+  Property & tx\_pgo\_offset\_corr\_tx1\_out2\_q                      & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d155\_0x009b Table 32: Tx QUADRATURE CALIBRATION, PHASE, GAIN, AND OFFSET CORRECTION: Tx1 Out 2 Offset Q \\
+  \hline
+  Property & tx\_pgo\_offset\_corr\_tx2\_out2\_i                      & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d156\_0x009c Table 32: Tx QUADRATURE CALIBRATION, PHASE, GAIN, AND OFFSET CORRECTION: Tx2 Out 2 Offset I \\
+  \hline
+  Property & tx\_pgo\_offset\_corr\_tx2\_out2\_q                      & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d157\_0x009d Table 32: Tx QUADRATURE CALIBRATION, PHASE, GAIN, AND OFFSET CORRECTION: Tx2 Out 2 Offset Q \\
+  \hline
+  Property & ocpi\_pad\_09e                                           & UChar &                  & 1                &                     & True    & reg\_addr\_d158\_0x009e \\
+  \hline
+  Property & tx\_quad\_cal\_pgo\_force\_bits                          & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d159\_0x009f Table 32: Tx QUADRATURE CALIBRATION, PHASE, GAIN, AND OFFSET CORRECTION: Force Bits \\
+  \hline
+  Property & tx\_quad\_cal\_nco\_freq\_phase\_offset                  & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d160\_0x00a0 Table 33: Tx QUADRATE CALIBRATION CONFIGURATION: Quad Cal NCO Freq \& Phase Offset \\
+  \hline
+  Property & tx\_quad\_cal\_ctrl                                      & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d161\_0x00a1 Table 33: Tx QUADRATE CALIBRATION CONFIGURATION: Quad Cal Control \\
+  \hline
+  Property & tx\_quad\_cal\_kexp\_1                                   & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d162\_0x00a2 Table 33: Tx QUADRATE CALIBRATION CONFIGURATION: Kexp 1 \\
+  \hline
+  Property & tx\_quad\_cal\_kexp\_2                                   & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d163\_0x00a3 Table 33: Tx QUADRATE CALIBRATION CONFIGURATION: Kexp 2 \\
+  \hline
+  Property & tx\_quad\_cal\_settle\_count                             & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d164\_0x00a4 Table 33: Tx QUADRATE CALIBRATION CONFIGURATION: QUAD Settle count \\
+  \hline
+  Property & tx\_quad\_cal\_mag\_ftest\_thresh                        & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d165\_0x00a5 Table 33: Tx QUADRATE CALIBRATION CONFIGURATION: Mag. Ftest Thresh \\
+  \hline
+  Property & tx\_quad\_cal\_mag\_ftest\_thresh\_2                     & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d166\_0x00a6 Table 33: Tx QUADRATE CALIBRATION CONFIGURATION: Mag. Ftest Thresh 2 \\
+  \hline
+  Property & tx\_quad\_cal\_status\_tx1                               & UChar &                  &                  & Volatile,           &         & reg\_addr\_d167\_0x00a7 Table 33: Tx QUADRATE CALIBRATION CONFIGURATION: Quad cal status Tx1 \\
+  \hline
+  Property & tx\_quad\_cal\_status\_tx2                               & UChar &                  &                  & Volatile,           &         & reg\_addr\_d168\_0x00a8 Table 33: Tx QUADRATE CALIBRATION CONFIGURATION: Quad cal status Tx2 \\
+  \hline
+  Property & tx\_quad\_cal\_count                                     & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d169\_0x00a9 Table 33: Tx QUADRATE CALIBRATION CONFIGURATION: Quad cal Count \\
+  \hline
+  Property & tx\_quad\_cal\_full\_lmt\_gain                           & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d170\_0x00aa Table 33: Tx QUADRATE CALIBRATION CONFIGURATION: Tx Quad Full/LMT Gain \\
+  \hline
+  Property & tx\_quad\_cal\_squarer\_config                           & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d171\_0x00ab Table 33: Tx QUADRATE CALIBRATION CONFIGURATION: Squarer Config \\
+  \hline
+  Property & tx\_quad\_cal\_atten                                     & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d172\_0x00ac Table 33: Tx QUADRATE CALIBRATION CONFIGURATION: TX Quad Cal Atten \\
+  \hline
+  Property & tx\_quad\_cal\_thresh\_accum                             & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d173\_0x00ad Table 33: Tx QUADRATE CALIBRATION CONFIGURATION: Thresh Accum \\
+  \hline
+  Property & tx\_quad\_cal\_lpf\_gain                                 & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d174\_0x00ae Table 33: Tx QUADRATE CALIBRATION CONFIGURATION: Tx Quad LPF Gain \\
+  \hline
+  Property & ocpi\_pad\_0af                                           & UChar &                  & 19               &                     & True    & reg\_addr\_d175\_0x00af \\
+  \hline
+  Property & tx\_bbf\_r1                                              & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d194\_0x00c2 Table 34: Tx BASEBAND FILTER REGISTERS: Tx BBF R1 \\
+  \hline
+  Property & tx\_bbf\_r2                                              & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d195\_0x00c3 Table 34: Tx BASEBAND FILTER REGISTERS: Tx BBF R2 \\
+  \hline
+  Property & tx\_bbf\_r3                                              & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d196\_0x00c4 Table 34: Tx BASEBAND FILTER REGISTERS: Tx BBF R3 \\
+  \hline
+  Property & tx\_bbf\_r4                                              & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d197\_0x00c5 Table 34: Tx BASEBAND FILTER REGISTERS: Tx BBF R4 \\
+  \hline
+  Property & tx\_bbf\_rp                                              & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d198\_0x00c6 Table 34: Tx BASEBAND FILTER REGISTERS: Tx BBF RP \\
+  \hline
+  Property & tx\_bbf\_c1                                              & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d199\_0x00c7 Table 34: Tx BASEBAND FILTER REGISTERS: Tx BBF C1 \\
+  \hline
+  Property & tx\_bbf\_c2                                              & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d200\_0x00c8 Table 34: Tx BASEBAND FILTER REGISTERS: Tx BBF C2 \\
+  \hline
+  Property & tx\_bbf\_cp                                              & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d201\_0x00c9 Table 34: Tx BASEBAND FILTER REGISTERS: Tx BBF CP \\
+  \hline
+  Property & tx\_bbf\_tuner\_pd                                       & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d202\_0x00ca Table 34: Tx BASEBAND FILTER REGISTERS: Tx Tuner PD \\
+  \hline
+  Property & tx\_bbf\_r2b                                             & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d203\_0x00cb Table 34: Tx BASEBAND FILTER REGISTERS: Tx BBF R2b \\
+  \hline
+  Property & ocpi\_pad\_0cc                                           & UChar &                  & 4                &                     & True    & reg\_addr\_d204\_0x00cc \\
+  \hline
+  Property & tx\_secondf\_config0                                     & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d208\_0x00d0 Table 35: Tx SECONDARY FILTER REGISTERS: Config0 \\
+  \hline
+  Property & tx\_secondf\_resistor                                    & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d209\_0x00d1 Table 35: Tx SECONDARY FILTER REGISTERS: Resistor \\
+  \hline
+  Property & tx\_secondf\_capacitor                                   & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d210\_0x00d2 Table 35: Tx SECONDARY FILTER REGISTERS: Capacitor \\
+  \hline
+  Property & tx\_secondf\_mustbe0x60                                  & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d211\_0x00d3 Table 35: Tx SECONDARY FILTER REGISTERS: Must be 0x60 \\
+  \hline
+  Property & ocpi\_pad\_0d4                                           & UChar &                  & 2                &                     & True    & reg\_addr\_d212\_0x00d4 \\
+  \hline
+  Property & tx\_bbf\_tune\_divider                                   & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d214\_0x00d6 Table 38: Tx BBF TUNER CONFIGURATION: TX BBF Tune Divider \\
+  \hline
+  Property & tx\_bbf\_tune\_mode                                      & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d215\_0x00d7 Table 38: Tx BBF TUNER CONFIGURATION: TX BBF Tune Mode \\
+  \hline
+  Property & ocpi\_pad\_0d8                                           & UChar &                  & 24               &                     & True    & reg\_addr\_d216\_0x00d8 \\
+  \hline
+  Property & rx\_filter\_coef\_addr                                   & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d240\_0x00f0 Table 39: Rx PROGRAMMABLE FIR FILTER: Rx Filter Coeff Addr \\
+  \hline
+  Property & rx\_filter\_coef\_write\_data\_1                         & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d241\_0x00f1 Table 39: Rx PROGRAMMABLE FIR FILTER: Rx Filter Coeff Data 1 \\
+  \hline
+  Property & rx\_filter\_coef\_write\_data\_2                         & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d242\_0x00f2 Table 39: Rx PROGRAMMABLE FIR FILTER: Rx Filter Coeff Data 2 \\
+  \hline
+  Property & rx\_filter\_coef\_read\_data\_1                          & UChar &                  &                  & Volatile,           &         & reg\_addr\_d243\_0x00f3 Table 39: Rx PROGRAMMABLE FIR FILTER: Rx Filter Coeff Read Data 1 \\
+  \hline
+  Property & rx\_filter\_coef\_read\_data\_2                          & UChar &                  &                  & Volatile,           &         & reg\_addr\_d244\_0x00f4 Table 39: Rx PROGRAMMABLE FIR FILTER: Rx Filter Coeff Read Data 2 \\
+  \hline
+  Property & rx\_filter\_conf                                         & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d245\_0x00f5 Table 39: Rx PROGRAMMABLE FIR FILTER: Rx Filter Configuration \\
+  \hline
+  Property & rx\_filter\_gain                                         & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d246\_0x00f6 Table 39: Rx PROGRAMMABLE FIR FILTER: Rx Filter Gain \\
+  \hline
+  Property & ocpi\_pad\_0f7                                           & UChar &                  & 3                &                     & True    & reg\_addr\_d247\_0x00f7 \\
+  \hline
+  Property & gain\_agc\_config\_1                                     & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d250\_0x00fa Table 42: GAIN CONTROL SETUP: AGC Config1 \\
+  \hline
+  Property & gain\_agc\_config\_2                                     & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d251\_0x00fb Table 42: GAIN CONTROL SETUP: AGC config2 \\
+  \hline
+  Property & gain\_agc\_config\_3                                     & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d252\_0x00fc Table 42: GAIN CONTROL SETUP: AGC Config3 \\
+  \hline
+  Property & gain\_max\_lmt\_full\_gain                               & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d253\_0x00fd Table 42: GAIN CONTROL SETUP: Max LMT/Full Gain \\
+  \hline
+  Property & gain\_peak\_wait\_time                                   & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d254\_0x00fe Table 42: GAIN CONTROL SETUP: Peak Wait Time \\
+  \hline
+  Property & ocpi\_pad\_0ff                                           & UChar &                  & 1                &                     & True    & reg\_addr\_d255\_0x00ff \\
+  \hline
+  Property & gain\_digital\_gain                                      & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d256\_0x0100 Table 42: GAIN CONTROL SETUP: Digital Gain \\
+  \hline
+  Property & gain\_agc\_lock\_level                                   & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d257\_0x0101 Table 42: GAIN CONTROL SETUP: AGC Lock Level \\
+  \hline
+  Property & ocpi\_pad\_102                                           & UChar &                  & 1                &                     & True    & reg\_addr\_d258\_0x0102 \\
+  \hline
+  Property & gain\_gain\_stp\_config\_1                               & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d259\_0x0103 Table 42: GAIN CONTROL SETUP: Gain Step Config 1 \\
+  \hline
+  Property & gain\_adc\_small\_overload\_thresh                       & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d260\_0x0104 Table 42: GAIN CONTROL SETUP: ADC Small Overload Threshold \\
+  \hline
+  Property & gain\_adc\_large\_overload\_thresh                       & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d261\_0x0105 Table 42: GAIN CONTROL SETUP: ADC Large Overload Threshold \\
+  \hline
+  Property & gain\_stp\_config\_2                                     & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d262\_0x0106 Table 42: GAIN CONTROL SETUP: Gain Step Config 2 \\
+  \hline
+  Property & gain\_small\_lmt\_overload\_thresh                       & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d263\_0x0107 Table 42: GAIN CONTROL SETUP: Small LMT Overload Threshold \\
+  \hline
+  Property & gain\_large\_lmt\_overload\_thresh                       & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d264\_0x0108 Table 42: GAIN CONTROL SETUP: Large LMT Overload Threshold \\
+  \hline
+  Property & gain\_rx1\_manual\_lmt\_full\_gain                       & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d265\_0x0109 Table 42: GAIN CONTROL SETUP: Rx1 Manual LMT/Full Gain \\
+  \hline
+  Property & gain\_rx1\_manual\_lpf\_gain                             & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d266\_0x010a Table 42: GAIN CONTROL SETUP: Rx1 Manual LPF gain \\
+  \hline
+  Property & gain\_rx1\_manual\_digitalforced\_gain                   & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d267\_0x010b Table 42: GAIN CONTROL SETUP: Rx1 Manual Digital/Forced Gain \\
+  \hline
+  Property & gain\_rx2\_manual\_lmt\_full\_gain                       & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d268\_0x010c Table 42: GAIN CONTROL SETUP: Rx2 Manual LMT/Full Gain \\
+  \hline
+  Property & gain\_rx2\_manual\_lpf\_gain                             & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d269\_0x010d Table 42: GAIN CONTROL SETUP: Rx2 Manual LPF Gain \\
+  \hline
+  Property & gain\_rx2\_manual\_digitalforced\_gain                   & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d270\_0x010e Table 42: GAIN CONTROL SETUP: Rx2 Manual Digital/Forced Gain \\
+  \hline
+  Property & ocpi\_pad\_10f                                           & UChar &                  & 1                &                     & True    & reg\_addr\_d271\_0x010f \\
+  \hline
+  Property & fast\_agc\_config\_1                                     & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d272\_0x0110 Table 44: FAST ATTACK AGC SETUP: Config 1 \\
+  \hline
+  Property & fast\_agc\_config\_2\_settling\_delay                    & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d273\_0x0111 Table 44: FAST ATTACK AGC SETUP: Config 2 \& Settling Delay \\
+  \hline
+  Property & fast\_agc\_energy\_lost\_thresh                          & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d274\_0x0112 Table 44: FAST ATTACK AGC SETUP: Energy Lost Threshold \\
+  \hline
+  Property & fast\_agc\_stronger\_signal\_thresh                      & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d275\_0x0113 Table 44: FAST ATTACK AGC SETUP: Stronger Signal Threshold \\
+  \hline
+  Property & fast\_agc\_low\_power\_thresh                            & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d276\_0x0114 Table 44: FAST ATTACK AGC SETUP: Low Power Threshold \\
+  \hline
+  Property & fast\_agc\_strong\_signal\_freeze                        & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d277\_0x0115 Table 44: FAST ATTACK AGC SETUP: Strong Signal Freeze \\
+  \hline
+  Property & fast\_agc\_final\_over\_range\_and\_opt\_gain            & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d278\_0x0116 Table 44: FAST ATTACK AGC SETUP: Final Over Range and Opt Gain \\
+  \hline
+  Property & fast\_agc\_energy\_detect\_count                         & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d279\_0x0117 Table 44: FAST ATTACK AGC SETUP: Energy Detect Count \\
+  \hline
+  Property & fast\_agc\_agcll\_upper\_limit                           & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d280\_0x0118 Table 44: FAST ATTACK AGC SETUP: AGCLL Upper Limit \\
+  \hline
+  Property & fast\_agc\_gain\_lock\_exit\_count                       & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d281\_0x0119 Table 44: FAST ATTACK AGC SETUP: Gain Lock Exit Count \\
+  \hline
+  Property & fast\_agc\_initial\_lmt\_gain\_limit                     & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d282\_0x011a Table 44: FAST ATTACK AGC SETUP: Initial LMT Gain Limit \\
+  \hline
+  Property & fast\_agc\_increment\_time                               & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d283\_0x011b Table 44: FAST ATTACK AGC SETUP: Increment Time \\
+  \hline
+  Property & ocpi\_pad\_11c                                           & UChar &                  & 4                &                     & True    & reg\_addr\_d284\_0x011c \\
+  \hline
+  Property & slowhybrid\_agc\_inner\_low\_thresh                      & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d288\_0x0120 Table 45: SLOW ATTACK AND HYBRID AGC: AGC Inner Low Threshold \\
+  \hline
+  Property & slowhybrid\_agc\_lmt\_overload\_counters                 & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d289\_0x0121 Table 45: SLOW ATTACK AND HYBRID AGC: LMT Overload Counters \\
+  \hline
+  Property & slowhybrid\_agc\_adc\_overload\_counters                 & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d290\_0x0122 Table 45: SLOW ATTACK AND HYBRID AGC: ADC Overload Counters \\
+  \hline
+  Property & slowhybrid\_agc\_gain\_stp1                              & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d291\_0x0123 Table 45: SLOW ATTACK AND HYBRID AGC: Gain Step1 \\
+  \hline
+  Property & slowhybrid\_agc\_gain\_update\_counter1                  & UChar &                  &                  & Volatile,           &         & reg\_addr\_d292\_0x0124 Table 45: SLOW ATTACK AND HYBRID AGC: Gain Update Counter1 \\
+  \hline
+  Property & slowhybrid\_agc\_gain\_update\_counter2                  & UChar &                  &                  & Volatile,           &         & reg\_addr\_d293\_0x0125 Table 45: SLOW ATTACK AND HYBRID AGC: Gain Update Counter2 \\
+  \hline
+  Property & ocpi\_pad\_126                                           & UChar &                  & 2                &                     & True    & reg\_addr\_d294\_0x0126 \\
+  \hline
+  Property & slowhybrid\_agc\_digital\_sat\_counter                   & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d296\_0x0128 Table 45: SLOW ATTACK AND HYBRID AGC: Digital Sat Counter \\
+  \hline
+  Property & slowhybrid\_agc\_outer\_power\_threshs                   & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d297\_0x0129 Table 45: SLOW ATTACK AND HYBRID AGC: Outer Power Thresholds \\
+  \hline
+  Property & slowhybrid\_agc\_gain\_stp\_2                            & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d298\_0x012a Table 45: SLOW ATTACK AND HYBRID AGC: Gain Step 2 \\
+  \hline
+  Property & ocpi\_pad\_12b                                           & UChar &                  & 1                &                     & True    & reg\_addr\_d299\_0x012b \\
+  \hline
+  Property & ext\_lna\_high\_gain                                     & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d300\_0x012c Table 46: EXTERNAL LNA GAIN WORD: Ext LNA High Gain \\
+  \hline
+  Property & ext\_lna\_low\_gain                                      & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d301\_0x012d Table 46: EXTERNAL LNA GAIN WORD: Ext LNA Low Gain \\
+  \hline
+  Property & ocpi\_pad\_12e                                           & UChar &                  & 2                &                     & True    & reg\_addr\_d302\_0x012e \\
+  \hline
+  Property & gain\_table                                              & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d304\_0x0130 Table 47: AGC GAIN TABLE: Gain Table Address \\
+  \hline
+  Property & gain\_table\_write\_data1                                & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d305\_0x0131 Table 47: AGC GAIN TABLE: Gain Table Write Data1 \\
+  \hline
+  Property & gain\_table\_write\_data2                                & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d306\_0x0132 Table 47: AGC GAIN TABLE: Gain Table Write Data2 \\
+  \hline
+  Property & gain\_table\_write\_data3                                & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d307\_0x0133 Table 47: AGC GAIN TABLE: Gain Table Write Data 3 \\
+  \hline
+  Property & gain\_table\_read\_data1                                 & UChar &                  &                  & Volatile,           &         & reg\_addr\_d308\_0x0134 Table 47: AGC GAIN TABLE: Gain Table Read Data 1 \\
+  \hline
+  Property & gain\_table\_read\_data2                                 & UChar &                  &                  & Volatile,           &         & reg\_addr\_d309\_0x0135 Table 47: AGC GAIN TABLE: Gain Table Read Data 2 \\
+  \hline
+  Property & gain\_table\_read\_data3                                 & UChar &                  &                  & Volatile,           &         & reg\_addr\_d310\_0x0136 Table 47: AGC GAIN TABLE: Gain Table Read Data 3 \\
+  \hline
+  Property & gain\_table\_config                                      & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d311\_0x0137 Table 47: AGC GAIN TABLE: Gain Table Config \\
+  \hline
+  Property & mixer\_subtable                                          & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d312\_0x0138 Table 48: MIXER SUBTABLE: Mixer Subtable Address \\
+  \hline
+  Property & mixer\_subtable\_gain\_write                             & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d313\_0x0139 Table 48: MIXER SUBTABLE: Mixer Subtable Gain Word Write \\
+  \hline
+  Property & mixer\_subtable\_bias\_write                             & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d314\_0x013a Table 48: MIXER SUBTABLE: Mixer Subtable Bias Word Write \\
+  \hline
+  Property & mixer\_subtable\_ctrl\_write                             & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d315\_0x013b Table 48: MIXER SUBTABLE: Mixer Subtable Control Word Write \\
+  \hline
+  Property & mixer\_subtable\_gain\_read                              & UChar &                  &                  & Volatile,           &         & reg\_addr\_d316\_0x013c Table 48: MIXER SUBTABLE: Mixer Subtable Gain Word Read \\
+  \hline
+  Property & mixer\_subtable\_bias\_read                              & UChar &                  &                  & Volatile,           &         & reg\_addr\_d317\_0x013d Table 48: MIXER SUBTABLE: Mixer Subtable Bias Word Read \\
+  \hline
+  Property & mixer\_subtable\_ctrl\_read                              & UChar &                  &                  & Volatile,           &         & reg\_addr\_d318\_0x013e Table 48: MIXER SUBTABLE: Mixer Subtable Control Word Read \\
+  \hline
+  Property & mixer\_subtable\_config                                  & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d319\_0x013f Table 48: MIXER SUBTABLE: Mixer Subtable Config \\
+  \hline
+  Property & calib\_gain\_table\_word                                 & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d320\_0x0140 Table 49: CALIBRATION GAIN TABLE: Word\_Address \\
+  \hline
+  Property & calib\_gain\_table\_diff\_worderror\_write               & UChar &                  &                  &            Writable &         & reg\_addr\_d321\_0x0141 Table 49: CALIBRATION GAIN TABLE: Gain Diff Word/Error Write \\
+  \hline
+  Property & calib\_gain\_table\_gain\_error\_read                    & UChar &                  &                  & Volatile,           &         & reg\_addr\_d322\_0x0142 Table 49: CALIBRATION GAIN TABLE: Gain Error Read \\
+  \hline
+  Property & calib\_gain\_table\_config                               & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d323\_0x0143 Table 49: CALIBRATION GAIN TABLE: Config \\
+  \hline
+  Property & calib\_gain\_table\_lna\_diff\_read\_back                & UChar &                  &                  & Volatile,           &         & reg\_addr\_d324\_0x0144 Table 49: CALIBRATION GAIN TABLE: LNA Gain Diff Read Back \\
+  \hline
+  Property & gen\_calib\_max\_mixer\_gain\_index                      & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d325\_0x0145 Table 50: GENERAL CALIBRATION: Max Mixer Calibration Gain Index \\
+  \hline
+  Property & gen\_calib\_temp\_gain\_coef                             & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d326\_0x0146 Table 50: GENERAL CALIBRATION: Temp Gain Coefficient \\
+  \hline
+  Property & gen\_calib\_settle\_time                                 & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d327\_0x0147 Table 50: GENERAL CALIBRATION: Settle Time \\
+  \hline
+  Property & gen\_calib\_measure\_duration                            & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d328\_0x0148 Table 50: GENERAL CALIBRATION: Measure Duration \\
+  \hline
+  Property & gen\_calib\_cal\_temp\_sensor\_word                      & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d329\_0x0149 Table 50: GENERAL CALIBRATION: Cal Temp sensor word \\
+  \hline
+  Property & ocpi\_pad\_14a                                           & UChar &                  & 6                &                     & True    & reg\_addr\_d330\_0x014a \\
+  \hline
+  Property & rssi\_measure\_duration\_01                              & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d336\_0x0150 Table 51: RSSI MEASUREMENT CONFIGURATION: Measure Duration 0,1 \\
+  \hline
+  Property & rssi\_measure\_duration\_23                              & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d337\_0x0151 Table 51: RSSI MEASUREMENT CONFIGURATION: Measure Duration 2,3 \\
+  \hline
+  Property & rssi\_weight\_0                                          & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d338\_0x0152 Table 51: RSSI MEASUREMENT CONFIGURATION: RSSI Weight 0 \\
+  \hline
+  Property & rssi\_weight\_1                                          & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d339\_0x0153 Table 51: RSSI MEASUREMENT CONFIGURATION: RSSI Weight 1 \\
+  \hline
+  Property & rssi\_weight\_2                                          & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d340\_0x0154 Table 51: RSSI MEASUREMENT CONFIGURATION: RSSI Weight 2 \\
+  \hline
+  Property & rssi\_weight\_3                                          & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d341\_0x0155 Table 51: RSSI MEASUREMENT CONFIGURATION: RSSI Weight 3 \\
+  \hline
+  Property & rssi\_delay                                              & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d342\_0x0156 Table 51: RSSI MEASUREMENT CONFIGURATION: RSSI delay \\
+  \hline
+  Property & rssi\_wait\_time                                         & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d343\_0x0157 Table 51: RSSI MEASUREMENT CONFIGURATION: RSSI wait time \\
+  \hline
+  Property & rssi\_config                                             & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d344\_0x0158 Table 51: RSSI MEASUREMENT CONFIGURATION: RSSI Config \\
+  \hline
+  Property & ocpi\_pad\_159                                           & UChar &                  & 3                &                     & True    & reg\_addr\_d345\_0x0159 \\
+  \hline
+  Property & rssi\_dec\_power\_duration\_0                            & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d348\_0x015c Table 51: RSSI MEASUREMENT CONFIGURATION: Dec Power Duration \\
+  \hline
+  Property & rssi\_lna\_gain                                          & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d349\_0x015d Table 51: RSSI MEASUREMENT CONFIGURATION: LNA Gain \\
+  \hline
+  Property & ocpi\_pad\_15e                                           & UChar &                  & 3                &                     & True    & reg\_addr\_d350\_0x015e \\
+  \hline
+  Property & power\_ch1\_rx\_filter\_power                            & UChar &                  &                  & Volatile,           &         & reg\_addr\_d353\_0x0161 Table 53: POWER WORD: CH1 Rx filter Power \\
+  \hline
+  Property & ocpi\_pad\_162                                           & UChar &                  & 1                &                     & True    & reg\_addr\_d354\_0x0162 \\
+  \hline
+  Property & power\_ch2\_rx\_filter\_power                            & UChar &                  &                  & Volatile,           &         & reg\_addr\_d355\_0x0163 Table 53: POWER WORD: CH2 Rx filter Power \\
+  \hline
+  Property & ocpi\_pad\_164                                           & UChar &                  & 5                &                     & True    & reg\_addr\_d356\_0x0164 \\
+  \hline
+  Property & calibration\_config\_1                                   & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d361\_0x0169 Table 54: Rx QUADRATURE CALIBRATION: Calibration Config 1 \\
+  \hline
+  Property & calibration\_mustbe0x75                                  & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d362\_0x016a Table 54: Rx QUADRATURE CALIBRATION: Must be 0x75 \\
+  \hline
+  Property & calibration\_mustbe0x95                                  & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d363\_0x016b Table 54: Rx QUADRATURE CALIBRATION: Must be 0x95 \\
+  \hline
+  Property & ocpi\_pad\_16c                                           & UChar &                  & 4                &                     & True    & reg\_addr\_d364\_0x016c \\
+  \hline
+  Property & rx\_pgo\_phase\_corr\_rx1\_ina                           & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d368\_0x0170 Table 55: Rx PHASE AND GAIN CORRECTION: Rx1A Phase Corr \\
+  \hline
+  Property & rx\_pgo\_gain\_corr\_rx1\_ina                            & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d369\_0x0171 Table 55: Rx PHASE AND GAIN CORRECTION: Rx1A Gain Corr \\
+  \hline
+  Property & rx\_pgo\_phase\_corr\_rx2\_ina                           & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d370\_0x0172 Table 55: Rx PHASE AND GAIN CORRECTION: Rx2A Phase Corr \\
+  \hline
+  Property & rx\_pgo\_gain\_corr\_rx2\_ina                            & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d371\_0x0173 Table 55: Rx PHASE AND GAIN CORRECTION: Rx2A Gain Corr \\
+  \hline
+  Property & rx\_pgo\_offset\_corr\_rx1\_ina\_q                       & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d372\_0x0174 Table 55: Rx PHASE AND GAIN CORRECTION: Rx1A Q Offset \\
+  \hline
+  Property & rx\_pgo\_offset\_corr\_rx1\_ina                          & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d373\_0x0175 Table 55: Rx PHASE AND GAIN CORRECTION: Rx1A Offset \\
+  \hline
+  Property & rx\_pgo\_offset\_corr\_ina                               & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d374\_0x0176 Table 55: Rx PHASE AND GAIN CORRECTION: Input A Offsets \\
+  \hline
+  Property & rx\_pgo\_offset\_corr\_rx2\_ina                          & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d375\_0x0177 Table 55: Rx PHASE AND GAIN CORRECTION: Rx2A Offset \\
+  \hline
+  Property & rx\_pgo\_offset\_corr\_rx2\_ina\_i                       & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d376\_0x0178 Table 55: Rx PHASE AND GAIN CORRECTION: Rx2A I Offset \\
+  \hline
+  Property & rx\_pgo\_phase\_corr\_rx1\_inbc                          & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d377\_0x0179 Table 55: Rx PHASE AND GAIN CORRECTION: Rx1B/C Phase Corr \\
+  \hline
+  Property & rx\_pgo\_gain\_corr\_rx1\_inbc                           & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d378\_0x017a Table 55: Rx PHASE AND GAIN CORRECTION: Rx1B/C Gain Corr \\
+  \hline
+  Property & rx\_pgo\_phase\_corr\_rx2\_inbc                          & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d379\_0x017b Table 55: Rx PHASE AND GAIN CORRECTION: Rx2B/C Phase Corr \\
+  \hline
+  Property & rx\_pgo\_gain\_corr\_rx2\_inbc                           & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d380\_0x017c Table 55: Rx PHASE AND GAIN CORRECTION: Rx2B/C Gain Corr \\
+  \hline
+  Property & rx\_pgo\_offset\_corr\_rx1\_inbc\_q                      & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d381\_0x017d Table 55: Rx PHASE AND GAIN CORRECTION: Rx1B/C Q Offset \\
+  \hline
+  Property & rx\_pgo\_offset\_corr\_rx1\_inbc\_i                      & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d382\_0x017e Table 55: Rx PHASE AND GAIN CORRECTION: Rx1B/C I Offset \\
+  \hline
+  Property & rx\_pgo\_offset\_corr\_inpbc                             & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d383\_0x017f Table 55: Rx PHASE AND GAIN CORRECTION: Input B/C Offsets \\
+  \hline
+  Property & rx\_pgo\_offset\_corr\_rx2\_inbc                         & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d384\_0x0180 Table 55: Rx PHASE AND GAIN CORRECTION: Rx2 B/C Offset \\
+  \hline
+  Property & rx\_pgo\_offset\_corr\_rx2\_inbc\_i                      & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d385\_0x0181 Table 55: Rx PHASE AND GAIN CORRECTION: Rx2 B/C I Offset \\
+  \hline
+  Property & rx\_pgo\_force\_bits                                     & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d386\_0x0182 Table 55: Rx PHASE AND GAIN CORRECTION: Force Bits \\
+  \hline
+  Property & ocpi\_pad\_183                                           & UChar &                  & 2                &                     & True    & reg\_addr\_d387\_0x0183 \\
+  \hline
+  Property & rx\_dc\_offset\_wait\_count                              & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d389\_0x0185 Table 56: Rx DC OFFSET CONTROL: Wait Count \\
+  \hline
+  Property & rx\_dc\_offset\_count                                    & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d390\_0x0186 Table 56: Rx DC OFFSET CONTROL: RF DC Offset Count \\
+  \hline
+  Property & rx\_dc\_offset\_config\_1                                & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d391\_0x0187 Table 56: Rx DC OFFSET CONTROL: RF DC Offset Config 1 \\
+  \hline
+  Property & rx\_dc\_offset\_atten                                    & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d392\_0x0188 Table 56: Rx DC OFFSET CONTROL: RF DC Offset Attenuation \\
+  \hline
+  Property & rx\_dc\_offset\_mustbe0x30                               & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d393\_0x0189 Table 56: Rx DC OFFSET CONTROL: Must be 0x30 \\
+  \hline
+  Property & ocpi\_pad\_18a                                           & UChar &                  & 1                &                     & True    & reg\_addr\_d394\_0x018a \\
+  \hline
+  Property & rx\_dc\_offset\_config2                                  & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d395\_0x018b Table 56: Rx DC OFFSET CONTROL: DC Offset Config2 \\
+  \hline
+  Property & rx\_dc\_offset\_rf\_cal\_gain\_index                     & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d396\_0x018c Table 56: Rx DC OFFSET CONTROL: RF Cal Gain Index \\
+  \hline
+  Property & rx\_dc\_offset\_soi\_thresh                              & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d397\_0x018d Table 56: Rx DC OFFSET CONTROL: SOI Threshold \\
+  \hline
+  Property & ocpi\_pad\_18e                                           & UChar &                  & 2                &                     & True    & reg\_addr\_d398\_0x018e \\
+  \hline
+  Property & rx\_dc\_offset\_bb\_shift                                & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d400\_0x0190 Table 56: Rx DC OFFSET CONTROL: BB DC Offset Shift \\
+  \hline
+  Property & rx\_dc\_offset\_bb\_fast\_settle\_shift                  & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d401\_0x0191 Table 56: Rx DC OFFSET CONTROL: BB DC Offset Fast Settle Shift \\
+  \hline
+  Property & rx\_dc\_offset\_bb\_fast\_settle\_dur                    & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d402\_0x0192 Table 56: Rx DC OFFSET CONTROL: BB Fast Settle Dur \\
+  \hline
+  Property & rx\_dc\_offset\_bb\_count                                & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d403\_0x0193 Table 56: Rx DC OFFSET CONTROL: BB DC Offset Count \\
+  \hline
+  Property & rx\_dc\_offset\_bb\_atten                                & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d404\_0x0194 Table 56: Rx DC OFFSET CONTROL: BB DC Offset Attenuation \\
+  \hline
+  Property & ocpi\_pad\_195                                           & UChar &                  & 5                &                     & True    & reg\_addr\_d405\_0x0195 \\
+  \hline
+  Property & rx\_bb\_dc\_offset\_rx1\_word\_i\_msb                    & UChar &                  &                  & Volatile,           &         & reg\_addr\_d410\_0x019a Table 60: Rx BB DC OFFSET: RX1 BB DC word I MSB \\
+  \hline
+  Property & rx\_bb\_dc\_offset\_rx1\_word\_i\_lsb                    & UChar &                  &                  & Volatile,           &         & reg\_addr\_d411\_0x019b Table 60: Rx BB DC OFFSET: RX1 BB DC word I LSB \\
+  \hline
+  Property & rx\_bb\_dc\_offset\_rx1\_word\_q\_msb                    & UChar &                  &                  & Volatile,           &         & reg\_addr\_d412\_0x019c Table 60: Rx BB DC OFFSET: RX1 BB DC word Q MSB \\
+  \hline
+  Property & rx\_bb\_dc\_offset\_rx1\_word\_q\_lsb                    & UChar &                  &                  & Volatile,           &         & reg\_addr\_d413\_0x019d Table 60: Rx BB DC OFFSET: RX1 BB DC word Q LSB \\
+  \hline
+  Property & rx\_bb\_dc\_offset\_rx2\_word\_i\_msb                    & UChar &                  &                  & Volatile,           &         & reg\_addr\_d414\_0x019e Table 60: Rx BB DC OFFSET: RX2 BB DC word I MSB \\
+  \hline
+  Property & rx\_bb\_dc\_offset\_rx2\_word\_i\_lsb                    & UChar &                  &                  & Volatile,           &         & reg\_addr\_d415\_0x019f Table 60: Rx BB DC OFFSET: RX2 BB DC word I LSB \\
+  \hline
+  Property & rx\_bb\_dc\_offset\_rx2\_word\_q\_msb                    & UChar &                  &                  & Volatile,           &         & reg\_addr\_d416\_0x01a0 Table 60: Rx BB DC OFFSET: RX2 BB DC word Q MSB \\
+  \hline
+  Property & rx\_bb\_dc\_offset\_rx2\_word\_q\_lsb                    & UChar &                  &                  & Volatile,           &         & reg\_addr\_d417\_0x01a1 Table 60: Rx BB DC OFFSET: RX2 BB DC word Q LSB \\
+  \hline
+  Property & rx\_bb\_dc\_offset\_track\_corr\_word\_i\_msb            & UChar &                  &                  & Volatile,           &         & reg\_addr\_d418\_0x01a2 Table 60: Rx BB DC OFFSET: BB Track corr word I MSB \\
+  \hline
+  Property & rx\_bb\_dc\_offset\_track\_corr\_word\_i\_lsb            & UChar &                  &                  & Volatile,           &         & reg\_addr\_d419\_0x01a3 Table 60: Rx BB DC OFFSET: BB Track corr word I LSB \\
+  \hline
+  Property & rx\_bb\_dc\_offset\_track\_corr\_word\_q\_msb            & UChar &                  &                  & Volatile,           &         & reg\_addr\_d420\_0x01a4 Table 60: Rx BB DC OFFSET: BB Track corr word Q MSB \\
+  \hline
+  Property & rx\_bb\_dc\_offset\_track\_corr\_word\_q\_lsb            & UChar &                  &                  & Volatile,           &         & reg\_addr\_d421\_0x01a5 Table 60: Rx BB DC OFFSET: BB Track corr word Q LSB \\
+  \hline
+  Property & ocpi\_pad\_1a6                                           & UChar &                  & 1                &                     & True    & reg\_addr\_d422\_0x01a6 \\
+  \hline
+  Property & rssi\_readback\_rx1\_symbol                              & UChar &                  &                  & Volatile,           &         & reg\_addr\_d423\_0x01a7 Table 61: RSSI READBACK: Rx1 RSSI Symbol \\
+  \hline
+  Property & rssi\_readback\_rx1\_preamble                            & UChar &                  &                  & Volatile,           &         & reg\_addr\_d424\_0x01a8 Table 61: RSSI READBACK: Rx1 RSSI preamble \\
+  \hline
+  Property & rssi\_readback\_rx2\_symbol                              & UChar &                  &                  & Volatile,           &         & reg\_addr\_d425\_0x01a9 Table 61: RSSI READBACK: Rx2 RSSI symbol \\
+  \hline
+  Property & rssi\_readback\_rx2\_preamble                            & UChar &                  &                  & Volatile,           &         & reg\_addr\_d426\_0x01aa Table 61: RSSI READBACK: Rx2 RSSI preamble \\
+  \hline
+  Property & rssi\_readback\_symbol\_lsb                              & UChar &                  &                  & Volatile,           &         & reg\_addr\_d427\_0x01ab Table 61: RSSI READBACK: Symbol LSB \\
+  \hline
+  Property & rssi\_readback\_preamble\_lsb                            & UChar &                  &                  & Volatile,           &         & reg\_addr\_d428\_0x01ac Table 61: RSSI READBACK: Preamble LSB \\
+  \hline
+  Property & ocpi\_pad\_1ad                                           & UChar &                  & 46               &                     & True    & reg\_addr\_d429\_0x01ad \\
+  \hline
+  Property & rx\_tia\_config                                          & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d475\_0x01db Table 62: Rx TIA: Rx TIA Config \\
+  \hline
+  Property & rx\_tia\_1\_c\_lsb                                       & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d476\_0x01dc Table 62: Rx TIA: TIA1 C LSB \\
+  \hline
+  Property & rx\_tia\_1\_c\_msb                                       & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d477\_0x01dd Table 62: Rx TIA: TIA1 C MSB \\
+  \hline
+  Property & rx\_tia\_2\_c\_lsb                                       & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d478\_0x01de Table 62: Rx TIA: TIA2 C LSB \\
+  \hline
+  Property & rx\_tia\_2\_c\_msb                                       & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d479\_0x01df Table 62: Rx TIA: TIA2 C MSB \\
+  \hline
+  Property & rx\_bbf\_rx1\_r1a                                        & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d480\_0x01e0 Table 65: Rx BFF: Rx1 BBF R1A \\
+  \hline
+  Property & rx\_bbf\_rx2\_r1a                                        & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d481\_0x01e1 Table 65: Rx BFF: Rx2 BBF R1A \\
+  \hline
+  Property & rx\_bff\_rx1\_tune\_ctrl                                 & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d482\_0x01e2 Table 65: Rx BFF: Rx1 Tune Control \\
+  \hline
+  Property & rx\_bff\_rx2\_tune\_ctrl                                 & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d483\_0x01e3 Table 65: Rx BFF: Rx2 Tune Control \\
+  \hline
+  Property & rx\_bff\_rx1\_bbf\_r5                                    & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d484\_0x01e4 Table 65: Rx BFF: Rx1 BBF R5 \\
+  \hline
+  Property & rx\_bff\_rx2\_bbf\_r5                                    & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d485\_0x01e5 Table 65: Rx BFF: Rx2 BBF R5 \\
+  \hline
+  Property & rx\_bbf\_r2346                                           & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d486\_0x01e6 Table 65: Rx BFF: Rx BBF R2346 \\
+  \hline
+  Property & rx\_bbf\_c1\_msb                                         & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d487\_0x01e7 Table 65: Rx BFF: Rx BBF C1 MSB \\
+  \hline
+  Property & rx\_bbf\_c1\_lsb                                         & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d488\_0x01e8 Table 65: Rx BFF: Rx BBF C1 LSB \\
+  \hline
+  Property & rx\_bbf\_c2\_msb                                         & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d489\_0x01e9 Table 65: Rx BFF: Rx BBF C2 MSB \\
+  \hline
+  Property & rx\_bbf\_c2\_lsb                                         & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d490\_0x01ea Table 65: Rx BFF: Rx BBF C2 LSB \\
+  \hline
+  Property & rx\_bbf\_c3\_msb                                         & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d491\_0x01eb Table 65: Rx BFF: Rx BBF C3 MSB \\
+  \hline
+  Property & rx\_bbf\_c3\_lsb                                         & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d492\_0x01ec Table 65: Rx BFF: Rx BBF C3 LSB \\
+  \hline
+  Property & rx\_bbf\_cc1\_ctr                                        & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d493\_0x01ed Table 65: Rx BFF: Rx BBF CC1 Ctr \\
+  \hline
+  Property & rx\_bbf\_mustbe0x60                                      & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d494\_0x01ee Table 65: Rx BFF: Must be 0x60 \\
+  \hline
+  Property & rx\_bbf\_cc2\_ctr                                        & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d495\_0x01ef Table 65: Rx BFF: Rx BBF CC2 Ctr \\
+  \hline
+  Property & rx\_bbf\_pow\_rz\_byte1                                  & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d496\_0x01f0 Table 65: Rx BFF: Rx BBF Pow Rz Byte1 \\
+  \hline
+  Property & rx\_bbf\_cc3\_ctr                                        & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d497\_0x01f1 Table 65: Rx BFF: Rx BBF CC3 Ctr \\
+  \hline
+  Property & rx\_bbf\_r5\_tune                                        & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d498\_0x01f2 Table 65: Rx BFF: Rx BBF R5 Tune \\
+  \hline
+  Property & rx\_bbf\_tune                                            & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d499\_0x01f3 Table 65: Rx BFF: Rx BBF Tune \\
+  \hline
+  Property & rx\_bff\_rx1\_bbf\_man\_gain                             & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d500\_0x01f4 Table 65: Rx BFF: Rx1 BBF Man Gain \\
+  \hline
+  Property & rx\_bff\_rx2\_bbf\_man\_gain                             & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d501\_0x01f5 Table 65: Rx BFF: Rx2 BBF Man Gain \\
+  \hline
+  Property & ocpi\_pad\_1f6                                           & UChar &                  & 2                &                     & True    & reg\_addr\_d502\_0x01f6 \\
+  \hline
+  Property & rx\_bbf\_tune\_config\_divide                            & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d504\_0x01f8 Table 66: Rx BBF TUNER CONFIGURATION: RX BBF Tune Divide \\
+  \hline
+  Property & rx\_bbf\_tune\_config\_config                            & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d505\_0x01f9 Table 66: Rx BBF TUNER CONFIGURATION: RX BBF Tune Config \\
+  \hline
+  Property & rx\_bbf\_tune\_config\_mustbe0x01                        & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d506\_0x01fa Table 66: Rx BBF TUNER CONFIGURATION: Must be 0x01 \\
+  \hline
+  Property & rx\_bbf\_tune\_config\_rx\_bbbw\_mhz                     & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d507\_0x01fb Table 66: Rx BBF TUNER CONFIGURATION: Rx BBBW MHz \\
+  \hline
+  Property & rx\_bbf\_tune\_config\_rx\_bbbw\_khz                     & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d508\_0x01fc Table 66: Rx BBF TUNER CONFIGURATION: Rx BBBW kHz \\
+  \hline
+  Property & ocpi\_pad\_1fd                                           & UChar &                  & 51               &                     & True    & reg\_addr\_d509\_0x01fd \\
+  \hline
+  Property & rx\_synth\_disable\_vco\_cal                             & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d560\_0x0230 Table 67: Rx SYNTHESIZER: Disable VCO Cal \\
+  \hline
+  Property & rx\_synth\_integer\_byte\_0                              & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d561\_0x0231 Table 67: Rx SYNTHESIZER: RX Integer Byte 0 \\
+  \hline
+  Property & rx\_synth\_integer\_byte\_1                              & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d562\_0x0232 Table 67: Rx SYNTHESIZER: RX Integer Byte 1 \\
+  \hline
+  Property & rx\_synth\_fract\_byte\_0                                & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d563\_0x0233 Table 67: Rx SYNTHESIZER: RX Fractional Byte 0 \\
+  \hline
+  Property & rx\_synth\_fract\_byte\_1                                & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d564\_0x0234 Table 67: Rx SYNTHESIZER: RX Fractional Byte 1 \\
+  \hline
+  Property & rx\_synth\_fract\_byte\_2                                & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d565\_0x0235 Table 67: Rx SYNTHESIZER: RX Fractional Byte 2 \\
+  \hline
+  Property & rx\_synth\_force\_alc                                    & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d566\_0x0236 Table 67: Rx SYNTHESIZER: RX Force ALC \\
+  \hline
+  Property & rx\_synth\_force\_vco\_tune\_0                           & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d567\_0x0237 Table 67: Rx SYNTHESIZER: RX Force VCO Tune 0 \\
+  \hline
+  Property & rx\_synth\_force\_vco\_tune\_1                           & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d568\_0x0238 Table 67: Rx SYNTHESIZER: RX Force VCO Tune 1 \\
+  \hline
+  Property & rx\_synth\_alc\_varactor                                 & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d569\_0x0239 Table 67: Rx SYNTHESIZER: RX ALC/Varactor \\
+  \hline
+  Property & rx\_synth\_vco\_output                                   & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d570\_0x023a Table 67: Rx SYNTHESIZER: RX VCO Output \\
+  \hline
+  Property & rx\_synth\_cp\_current                                   & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d571\_0x023b Table 67: Rx SYNTHESIZER: RX CP Current \\
+  \hline
+  Property & rx\_synth\_cp\_offset                                    & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d572\_0x023c Table 67: Rx SYNTHESIZER: RX CP Offset \\
+  \hline
+  Property & rx\_synth\_cp\_config                                    & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d573\_0x023d Table 67: Rx SYNTHESIZER: RX CP Config \\
+  \hline
+  Property & rx\_synth\_loop\_filter\_1                               & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d574\_0x023e Table 67: Rx SYNTHESIZER: RX Loop Filter 1 \\
+  \hline
+  Property & rx\_synth\_loop\_filter\_2                               & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d575\_0x023f Table 67: Rx SYNTHESIZER: RX Loop Filter 2 \\
+  \hline
+  Property & rx\_synth\_loop\_filter\_3                               & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d576\_0x0240 Table 67: Rx SYNTHESIZER: RX Loop Filter 3 \\
+  \hline
+  Property & rx\_synth\_dithercp\_cal                                 & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d577\_0x0241 Table 67: Rx SYNTHESIZER: RX Dither/CP Cal \\
+  \hline
+  Property & rx\_synth\_vco\_bias\_1                                  & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d578\_0x0242 Table 67: Rx SYNTHESIZER: RX VCO Bias 1 \\
+  \hline
+  Property & rx\_synth\_mustbe0x0d                                    & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d579\_0x0243 Table 67: Rx SYNTHESIZER: Must be 0x0D \\
+  \hline
+  Property & rx\_synth\_cal\_status                                   & UChar &                  &                  & Volatile,           &         & reg\_addr\_d580\_0x0244 Table 67: Rx SYNTHESIZER: RX Cal Status \\
+  \hline
+  Property & rx\_synth\_mustbe0x00                                    & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d581\_0x0245 Table 67: Rx SYNTHESIZER: Must be 0x00 \\
+  \hline
+  Property & rx\_synth\_mustbe0x02                                    & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d582\_0x0246 Table 67: Rx SYNTHESIZER: Set to 0x02 (Must be 0x02) \\
+  \hline
+  Property & rx\_synth\_cp\_ovrg\_vco\_lock                           & UChar &                  &                  & Volatile,           &         & reg\_addr\_d583\_0x0247 Table 67: Rx SYNTHESIZER: RX CP Ovrg/VCO Lock \\
+  \hline
+  Property & rx\_synth\_mustbe0x0b                                    & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d584\_0x0248 Table 67: Rx SYNTHESIZER: Set to 0x0B (Must be 0x0B) \\
+  \hline
+  Property & rx\_synth\_vco\_cal                                      & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d585\_0x0249 Table 67: Rx SYNTHESIZER: RX VCO Cal \\
+  \hline
+  Property & rx\_synth\_lock\_detect\_config                          & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d586\_0x024a Table 67: Rx SYNTHESIZER: RX Lock Detect Config \\
+  \hline
+  Property & rx\_synth\_mustbe0x17                                    & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d587\_0x024b Table 67: Rx SYNTHESIZER: Must be 0x17 \\
+  \hline
+  Property & rx\_synth\_mustbe0x00\_also                              & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d588\_0x024c Table 67: Rx SYNTHESIZER: Must be 0x00 \\
+  \hline
+  Property & rx\_synth\_mustbe0x00\_also\_also                        & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d589\_0x024d Table 67: Rx SYNTHESIZER: Must be 0x00 \\
+  \hline
+  Property & ocpi\_pad\_24e                                           & UChar &                  & 2                &                     & True    & reg\_addr\_d590\_0x024e \\
+  \hline
+  Property & rx\_synth\_must\_be\_0x70                                & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d592\_0x0250 Table 67: Rx SYNTHESIZER: Set to 0x70 (Must be 0x70) \\
+  \hline
+  Property & rx\_synth\_vco\_varactor\_ctrl\_1                        & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d593\_0x0251 Table 67: Rx SYNTHESIZER: RX VCO Varactor Control 1 \\
+  \hline
+  Property & ocpi\_pad\_252                                           & UChar &                  & 8                &                     & True    & reg\_addr\_d594\_0x0252 \\
+  \hline
+  Property & rx\_fast\_lock\_setup                                    & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d602\_0x025a Table 71: Rx FAST LOCK: Rx Fast Lock Setup \\
+  \hline
+  Property & rx\_fast\_lock\_setup\_init\_delay                       & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d603\_0x025b Table 71: Rx FAST LOCK: Rx Fast Lock Setup Init Delay \\
+  \hline
+  Property & rx\_fast\_lock\_program\_addr                            & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d604\_0x025c Table 71: Rx FAST LOCK: Rx Fast Lock Program Address \\
+  \hline
+  Property & rx\_fast\_lock\_program\_data                            & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d605\_0x025d Table 71: Rx FAST LOCK: Rx Fast Lock Program Data \\
+  \hline
+  Property & rx\_fast\_lock\_program\_read                            & UChar &                  &                  & Volatile,           &         & reg\_addr\_d606\_0x025e Table 71: Rx FAST LOCK: Rx Fast Lock Program Read \\
+  \hline
+  Property & rx\_fast\_lock\_program\_ctrl                            & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d607\_0x025f Table 71: Rx FAST LOCK: Rx Fast Lock Program Control \\
+  \hline
+  Property & ocpi\_pad\_260                                           & UChar &                  & 1                &                     & True    & reg\_addr\_d608\_0x0260 \\
+  \hline
+  Property & rx\_lo\_gen\_power\_mode                                 & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d609\_0x0261 Table 72: Rx LO GENERATION: Rx LO Gen Power Mode \\
+  \hline
+  Property & ocpi\_pad\_262                                           & UChar &                  & 14               &                     & True    & reg\_addr\_d610\_0x0262 \\
+  \hline
+  Property & tx\_synth\_disable\_vco\_cal                             & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d624\_0x0270 Table 73: Tx SYNTHESIZER: Disable VCO Cal \\
+  \hline
+  Property & tx\_synth\_integer\_byte\_0                              & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d625\_0x0271 Table 73: Tx SYNTHESIZER: Integer Byte 0 \\
+  \hline
+  Property & tx\_synth\_integer\_byte\_1                              & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d626\_0x0272 Table 73: Tx SYNTHESIZER: Integer Byte 1 \\
+  \hline
+  Property & tx\_synth\_fract\_byte\_0                                & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d627\_0x0273 Table 73: Tx SYNTHESIZER: Fractional Byte 0 \\
+  \hline
+  Property & tx\_synth\_fract\_byte\_1                                & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d628\_0x0274 Table 73: Tx SYNTHESIZER: Fractional Byte 1 \\
+  \hline
+  Property & tx\_synth\_fract\_byte\_2                                & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d629\_0x0275 Table 73: Tx SYNTHESIZER: Fractional Byte 2 \\
+  \hline
+  Property & tx\_synth\_force\_alc                                    & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d630\_0x0276 Table 73: Tx SYNTHESIZER: Force ALC \\
+  \hline
+  Property & tx\_synth\_force\_vco\_tune\_0                           & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d631\_0x0277 Table 73: Tx SYNTHESIZER: Force VCO Tune 0 \\
+  \hline
+  Property & tx\_synth\_force\_vco\_tune\_1                           & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d632\_0x0278 Table 73: Tx SYNTHESIZER: Force VCO Tune 1 \\
+  \hline
+  Property & tx\_synth\_alcvaract\_or                                 & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d633\_0x0279 Table 73: Tx SYNTHESIZER: ALC/Varactor \\
+  \hline
+  Property & tx\_synth\_vco\_output                                   & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d634\_0x027a Table 73: Tx SYNTHESIZER: VCO Output \\
+  \hline
+  Property & tx\_synth\_cp\_current                                   & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d635\_0x027b Table 73: Tx SYNTHESIZER: CP Current \\
+  \hline
+  Property & tx\_synth\_cp\_offset                                    & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d636\_0x027c Table 73: Tx SYNTHESIZER: CP Offset \\
+  \hline
+  Property & tx\_synth\_cp\_config                                    & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d637\_0x027d Table 73: Tx SYNTHESIZER: CP Config \\
+  \hline
+  Property & tx\_synth\_loop\_filter\_1                               & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d638\_0x027e Table 73: Tx SYNTHESIZER: Loop Filter 1 \\
+  \hline
+  Property & tx\_synth\_loop\_filter\_2                               & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d639\_0x027f Table 73: Tx SYNTHESIZER: Loop Filter 2 \\
+  \hline
+  Property & tx\_synth\_loop\_filter\_3                               & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d640\_0x0280 Table 73: Tx SYNTHESIZER: Loop Filter 3 \\
+  \hline
+  Property & tx\_synth\_dithercp\_cal                                 & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d641\_0x0281 Table 73: Tx SYNTHESIZER: Dither/CP Cal \\
+  \hline
+  Property & tx\_synth\_vco\_bias\_1                                  & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d642\_0x0282 Table 73: Tx SYNTHESIZER: VCO Bias 1 \\
+  \hline
+  Property & tx\_synth\_mustbe0x0d                                    & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d643\_0x0283 Table 73: Tx SYNTHESIZER: Must be 0x0D \\
+  \hline
+  Property & tx\_synth\_cal\_status                                   & UChar &                  &                  & Volatile,           &         & reg\_addr\_d644\_0x0284 Table 73: Tx SYNTHESIZER: Cal Status \\
+  \hline
+  Property & tx\_synth\_mustbe0x00                                    & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d645\_0x0285 Table 73: Tx SYNTHESIZER: Must be 0x00 \\
+  \hline
+  Property & tx\_synth\_mustbe0x02                                    & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d646\_0x0286 Table 73: Tx SYNTHESIZER: Set to 0x02 (Must be 0x02) \\
+  \hline
+  Property & tx\_synth\_cp\_overrange\_vco\_lock                      & UChar &                  &                  & Volatile,           &         & reg\_addr\_d647\_0x0287 Table 73: Tx SYNTHESIZER: CP Over Range/VCO Lock \\
+  \hline
+  Property & tx\_synth\_mustbe0x0b                                    & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d648\_0x0288 Table 73: Tx SYNTHESIZER: Set to 0x0B (Must be 0x0B) \\
+  \hline
+  Property & tx\_synth\_vco\_cal                                      & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d649\_0x0289 Table 73: Tx SYNTHESIZER: VCO Cal \\
+  \hline
+  Property & tx\_synth\_lock\_detect\_config                          & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d650\_0x028a Table 73: Tx SYNTEHSIZER: Lock Detect Config \\
+  \hline
+  Property & tx\_synth\_mustbe0x17                                    & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d651\_0x028b Table 73: Tx SYNTEHSIZER: Must be 0x17 \\
+  \hline
+  Property & tx\_synth\_mustbe0x00\_also                              & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d652\_0x028c Table 73: Tx SYNTEHSIZER: Must be 0x00 \\
+  \hline
+  Property & tx\_synth\_mustbe0x00\_also\_also                        & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d653\_0x028d Table 73: Tx SYNTEHSIZER: Must be 0x00 \\
+  \hline
+  Property & ocpi\_pad\_28e                                           & UChar &                  & 2                &                     & True    & reg\_addr\_d654\_0x028e \\
+  \hline
+  Property & tx\_synth\_mustbe0x70                                    & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d656\_0x0290 Table 73: Tx SYNTEHSIZER: Set to 0x70 (Must be 0x70) \\
+  \hline
+  Property & tx\_synth\_vco\_varactor\_ctrl\_1                        & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d657\_0x0291 Table 73: Tx SYNTEHSIZER: VCO Varactor Control 1 \\
+  \hline
+  Property & dcxo\_coarse\_tune                                       & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d658\_0x0292 Table 74: DCXO: DCXO Coarse Tune \\
+  \hline
+  Property & dcxo\_fine\_tune\_high                                   & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d659\_0x0293 Table 74: DCXO: DCXO Fine Tune2 \\
+  \hline
+  Property & dcxo\_fine\_tune\_low                                    & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d660\_0x0294 Table 74: DCXO: DCXO Fine Tune1 \\
+  \hline
+  Property & ocpi\_pad\_295                                           & UChar &                  & 5                &                     & True    & reg\_addr\_d661\_0x0295 \\
+  \hline
+  Property & tx\_fast\_lock\_setup                                    & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d666\_0x029a Table 65: Tx SYNTH FAST LOCK: Tx Fast Lock Setup \\
+  \hline
+  Property & tx\_fast\_lock\_setup\_init\_delay                       & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d667\_0x029b Table 65: Tx SYNTH FAST LOCK: Tx Fast Lock Setup Init Delay \\
+  \hline
+  Property & tx\_fast\_lock\_program\_addr                            & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d668\_0x029c Table 65: Tx SYNTH FAST LOCK: Tx Fast Lock Program Addr \\
+  \hline
+  Property & tx\_fast\_lock\_program\_data                            & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d669\_0x029d Table 65: Tx SYNTH FAST LOCK: Tx Fast Lock Program Data \\
+  \hline
+  Property & tx\_fast\_lock\_program\_read                            & UChar &                  &                  & Volatile,           &         & reg\_addr\_d670\_0x029e Table 65: Tx SYNTH FAST LOCK: Tx Fast Lock Program Read \\
+  \hline
+  Property & tx\_fast\_lock\_program\_ctrl                            & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d671\_0x029f Table 65: Tx SYNTH FAST LOCK: Tx Fast Lock Program Ctrl \\
+  \hline
+  Property & ocpi\_pad\_2a0                                           & UChar &                  & 1                &                     & True    & reg\_addr\_d672\_0x02a0 \\
+  \hline
+  Property & tx\_lo\_gen\_power\_mode                                 & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d673\_0x02a1 Table 76: Tx LO GENERATION: Tx LO Gen Power Mode \\
+  \hline
+  Property & ocpi\_pad\_2a2                                           & UChar &                  & 4                &                     & True    & reg\_addr\_d674\_0x02a2 \\
+  \hline
+  Property & bandgap\_mustbe0x0e                                      & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d678\_0x02a6 Table 77: MASTER BIAS AND BANDGAP CONFIGURATION: Set to 0x0E (Must be 0x0E) \\
+  \hline
+  Property & ocpi\_pad\_2a7                                           & UChar &                  & 1                &                     & True    & reg\_addr\_d679\_0x02a7 \\
+  \hline
+  Property & bandgap\_mustbe0x0e\_also                                & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d680\_0x02a8 Table 77: MASTER BIAS AND BANDGAP CONFIGURATION: Set to 0x0E (Must be 0x0E) \\
+  \hline
+  Property & ocpi\_pad\_2a9                                           & UChar &                  & 2                &                     & True    & reg\_addr\_d681\_0x02a9 \\
+  \hline
+  Property & ref\_divide\_config\_1                                   & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d683\_0x02ab Table 78: REFERENCE DIVIDER: Ref Divide Config 1 \\
+  \hline
+  Property & ref\_divide\_config\_2                                   & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d684\_0x02ac Table 78: REFERENCE DIVIDER: Ref Divide Config 2 \\
+  \hline
+  Property & ocpi\_pad\_2ad                                           & UChar &                  & 3                &                     & True    & reg\_addr\_d685\_0x02ad \\
+  \hline
+  Property & gain\_readback\_gain\_rx1                                & UChar &                  &                  & Volatile,           &         & reg\_addr\_d688\_0x02b0 Table 80: Rx GAIN READ BACK: Gain Rx1 \\
+  \hline
+  Property & gain\_readback\_lpf\_gain\_rx1                           & UChar &                  &                  & Volatile,           &         & reg\_addr\_d689\_0x02b1 Table 80: Rx GAIN READ BACK: LPF Gain Rx1 \\
+  \hline
+  Property & gain\_readback\_dig\_gain\_rx1                           & UChar &                  &                  & Volatile,           &         & reg\_addr\_d690\_0x02b2 Table 80: Rx GAIN READ BACK: Dig gain Rx1 \\
+  \hline
+  Property & gain\_readback\_fast\_attack\_state                      & UChar &                  &                  & Volatile,           &         & reg\_addr\_d691\_0x02b3 Table 80: Rx GAIN READ BACK: Fast Attack State \\
+  \hline
+  Property & gain\_readback\_slow\_loop\_state                        & UChar &                  &                  & Volatile,           &         & reg\_addr\_d692\_0x02b4 Table 80: Rx GAIN READ BACK: Slow Loop State \\
+  \hline
+  Property & gain\_readback\_gain\_rx2                                & UChar &                  &                  & Volatile,           &         & reg\_addr\_d693\_0x02b5 Table 80: Rx GAIN READ BACK: Gain Rx2 \\
+  \hline
+  Property & gain\_readback\_lpf\_gain\_rx2                           & UChar &                  &                  & Volatile,           &         & reg\_addr\_d694\_0x02b6 Table 80: Rx GAIN READ BACK: LPF Gain Rx2 \\
+  \hline
+  Property & gain\_readback\_dig\_gain\_rx2                           & UChar &                  &                  & Volatile,           &         & reg\_addr\_d695\_0x02b7 Table 80: Rx GAIN READ BACK: Dig Gain Rx2 \\
+  \hline
+  Property & gain\_readback\_ovrg\_sigs\_rx1                          & UChar &                  &                  & Volatile,           &         & reg\_addr\_d696\_0x02b8 Table 80: Rx GAIN READ BACK: Ovrg Sigs Rx1 \\
+  \hline
+  Property & gain\_readback\_ovrg\_sigs\_rx2                          & UChar &                  &                  & Volatile,           &         & reg\_addr\_d697\_0x02b9 Table 80: Rx GAIN READ BACK: Ovrg Sigs Rx2 \\
+  \hline
+  Property & ocpi\_pad\_2ba                                           & UChar &                  & 293              &                     & True    & reg\_addr\_d698\_0x02ba \\
+  \hline
+  Property & ctrl                                                     & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d991\_0x03df Table 83: CONTROL: Control \\
+  \hline
+  Property & ocpi\_pad\_3e0                                           & UChar &                  & 20               &                     & True    & reg\_addr\_d992\_0x03e0 \\
+  \hline
+  Property & test\_bist\_config                                       & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d1012\_0x03f4 Table 84: DIGITAL TEST: BIST Config \\
+  \hline
+  Property & test\_observe\_config                                    & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d1013\_0x03f5 Table 84: DIGITAL TEST: Observe Config \\
+  \hline
+  Property & test\_bist\_and\_data\_port\_test\_config                & UChar &                  &                  & Volatile,  Writable &         & reg\_addr\_d1014\_0x03f6 Table 84: DIGITAL TEST: BIST and Data Port Test Config \\
+      \hline
+    \end{longtable}
+  \end{scriptsize}
+
+\section{Appendix - Vivado Timing Analysis} \label{appendix}
+
+The Vivado timing report that OpenCPI runs for device workers may erroneously report a max delay for a clocking path which should have been ignored. Custom Vivado tcl commands had to be run for this device worker to extract pertinent information from Vivado timing analysis. After building the worker, the following commands were run from the base project directory (after the Vivado settings64.sh was sourced):
+\lstset{language=bash, columns=flexible, breaklines=true, prebreak=\textbackslash, basicstyle=\ttfamily, showstringspaces=false,upquote=true, aboveskip=\baselineskip, belowskip=\baselineskip}
+\begin{lstlisting}
+cd hdl/devices/
+vivado -mode tcl
+\end{lstlisting}
+Then the following commands were run inside the Vivado tcl terminal:
+\begin{lstlisting}
+open_project ad9361_config.hdl/target-zynq/ad9361_config_rv.xpr
+synth_design -part xc7z020clg484-1 -top ad9361_config_rv -mode out_of_context
+create_clock -name clk1 -period 0.001 [get_nets {ctl_in[Clk]}]
+report_timing -delay_type min_max -sort_by slack -input_pins -group clk1
+\end{lstlisting}
+The following is the output of the timing report. The Fmax for the control plane clock for this worker is computed as the maximum magnitude slack with a control plane clock of 1 ps plus 2 times the assumed 1 ps control plane clock period (3.135 ns + 0.002 ns = 3.137 ns, 1/3.137 ns = 318.78 MHz).
+\fontsize{6}{12}\selectfont
+\begin{lstlisting}
+Vivado% report_timing -delay_type min_max -sort_by slack -input_pins -group clk1
+INFO: [Timing 38-35] Done setting XDC timing constraints.
+INFO: [Timing 38-91] UpdateTimingParams: Speed grade: -1, Delay Type: min_max.
+INFO: [Timing 38-191] Multithreading enabled for timing update using a maximum of 8 CPUs
+WARNING: [Timing 38-242] The property HD.CLK_SRC of clock port "ctl_in[Clk]" is not set. In out-of-context mode, this prevents timing estimation for clock delay/skew
+Resolution: Set the HD.CLK_SRC property of the out-of-context port to the location of the clock buffer instance in the top-level design
+INFO: [Timing 38-78] ReportTimingParams: -max_paths 1 -nworst 1 -delay_type min_max -sort_by slack.
+Copyright 1986-2017 Xilinx, Inc. All Rights Reserved.
+-----------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2017.1 (lin64) Build 1846317 Fri Apr 14 18:54:47 MDT 2017
+| Date         : Fri Dec 15 13:36:10 2017
+| Host         : embdev007.wb.vsi-corp.com running 64-bit CentOS Linux release 7.2.1511 (Core)
+| Command      : report_timing -delay_type min_max -sort_by slack -input_pins -group clk1
+| Design       : ad9361_config_rv
+| Device       : 7z020-clg484
+| Speed File   : -1  PRODUCTION 1.11 2014-09-11
+-----------------------------------------------------------------------------------------------
+
+Timing Report
+
+Slack (VIOLATED) :        -3.135ns  (required time - arrival time)
+  Source:                 wci/wci_decode/my_state_r_reg[2]/C
+                            (rising edge-triggered cell FDRE clocked by clk1  {rise@0.000ns fall@0.001ns period=0.001ns})
+  Destination:            wci/wci_decode/FSM_onehot_my_access_r_reg[0]/CE
+                            (rising edge-triggered cell FDSE clocked by clk1  {rise@0.000ns fall@0.001ns period=0.001ns})
+  Path Group:             clk1
+  Path Type:              Setup (Max at Slow Process Corner)
+  Requirement:            0.002ns  (clk1 rise@0.002ns - clk1 rise@0.000ns)
+  Data Path Delay:        2.884ns  (logic 0.937ns (32.490%)  route 1.947ns (67.510%))
+  Logic Levels:           2  (LUT6=2)
+  Clock Path Skew:        -0.049ns (DCD - SCD + CPR)
+    Destination Clock Delay (DCD):    0.924ns = ( 0.926 - 0.002 ) 
+    Source Clock Delay      (SCD):    0.973ns
+    Clock Pessimism Removal (CPR):    0.000ns
+  Clock Uncertainty:      0.035ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
+    Total System Jitter     (TSJ):    0.071ns
+    Total Input Jitter      (TIJ):    0.000ns
+    Discrete Jitter          (DJ):    0.000ns
+    Phase Error              (PE):    0.000ns
+
+    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
+  -------------------------------------------------------------------    -------------------
+                         (clock clk1 rise edge)       0.000     0.000 r  
+                                                      0.000     0.000 r  ctl_in[Clk] (IN)
+                         net (fo=66, unset)           0.973     0.973    wci/wci_decode/ctl_in[Clk]
+                         FDRE                                         r  wci/wci_decode/my_state_r_reg[2]/C
+  -------------------------------------------------------------------    -------------------
+                         FDRE (Prop_fdre_C_Q)         0.518     1.491 r  wci/wci_decode/my_state_r_reg[2]/Q
+                         net (fo=5, unplaced)         0.993     2.484    wci/wci_decode/wci_state[2]
+                                                                      r  wci/wci_decode/ctl_out[SResp][1]_INST_0_i_2/I0
+                         LUT6 (Prop_lut6_I0_O)        0.295     2.779 r  wci/wci_decode/ctl_out[SResp][1]_INST_0_i_2/O
+                         net (fo=4, unplaced)         0.443     3.222    wci/wci_decode/ctl_out[SResp][1]_INST_0_i_2_n_0
+                                                                      r  wci/wci_decode/FSM_onehot_my_access_r[4]_i_1/I2
+                         LUT6 (Prop_lut6_I2_O)        0.124     3.346 r  wci/wci_decode/FSM_onehot_my_access_r[4]_i_1/O
+                         net (fo=8, unplaced)         0.511     3.857    wci/wci_decode/my_access_r
+                         FDSE                                         r  wci/wci_decode/FSM_onehot_my_access_r_reg[0]/CE
+  -------------------------------------------------------------------    -------------------
+
+                         (clock clk1 rise edge)       0.002     0.002 r  
+                                                      0.000     0.002 r  ctl_in[Clk] (IN)
+                         net (fo=66, unset)           0.924     0.926    wci/wci_decode/ctl_in[Clk]
+                         FDSE                                         r  wci/wci_decode/FSM_onehot_my_access_r_reg[0]/C
+                         clock pessimism              0.000     0.926    
+                         clock uncertainty           -0.035     0.891    
+                         FDSE (Setup_fdse_C_CE)      -0.169     0.722    wci/wci_decode/FSM_onehot_my_access_r_reg[0]
+  -------------------------------------------------------------------
+                         required time                          0.722    
+                         arrival time                          -3.857    
+  -------------------------------------------------------------------
+                         slack                                 -3.135    
+
+
+
+
+report_timing: Time (s): cpu = 00:00:07 ; elapsed = 00:00:08 . Memory (MB): peak = 2093.707 ; gain = 496.523 ; free physical = 13626 ; free virtual = 87791
+\end{lstlisting}
+
+
+
+\end{document}

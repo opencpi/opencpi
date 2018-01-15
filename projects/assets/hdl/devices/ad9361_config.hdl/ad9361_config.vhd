@@ -49,7 +49,7 @@ begin
   -- use of logic 'or' is prevalent below because (**c_c).config and
   -- (**c_c).present signals are logic '0' when the adc or dac device workers
   -- are not included in a bitsream
-  props_out.p0_p1_are_swapped        <= btrue     when   dev_cfg_data_port_in.p0_p1_are_swapped               = '1'  else bfalse;
+  props_out.swap_ports               <= btrue     when   dev_cfg_data_port_in.p0_p1_are_swapped               = '1'  else bfalse;
   props_out.rx_frame_usage           <= toggle_e  when   dev_cfg_data_rx_in.rx_frame_usage                    = '1'  else enable_e;
   props_out.rx_frame_is_inverted     <= btrue     when   dev_cfg_data_rx_in.rx_frame_is_inverted              = '1'  else bfalse;
   props_out.qadc0_is_present         <= btrue     when   dev_cfg_data_in(adc_sub_c).ch0_handler_is_present    = '1'  else bfalse;
@@ -60,14 +60,14 @@ begin
                                                          dev_cfg_data_in(dac_sub_c).data_bus_index_direction) = '1') else normal_e;
   props_out.data_clk_is_inverted     <= btrue     when ((dev_cfg_data_in(adc_sub_c).data_clk_is_inverted or
                                                          dev_cfg_data_in(dac_sub_c).data_clk_is_inverted)     = '1') else bfalse;
-  props_out.iostandard               <= CMOS_e    when ((dev_cfg_data_in(adc_sub_c).islvds or
+  props_out.LVDS                     <= bfalse    when ((dev_cfg_data_in(adc_sub_c).islvds or
                                                          dev_cfg_data_in(dac_sub_c).islvds or
-                                                         dev_cfg_data_port_in.iostandard_is_lvds)             = '0') else LVDS_e;
-  props_out.port_config              <= single_e  when ((dev_cfg_data_in(adc_sub_c).isdualport or
-                                                         dev_cfg_data_in(dac_sub_c).isdualport)               = '0') else dual_e;
-  props_out.duplex_config        <= half_duplex_e when ((dev_cfg_data_in(adc_sub_c).isfullduplex or
-                                                         dev_cfg_data_in(dac_sub_c).isfullduplex)             = '0') else full_duplex_e;
-  props_out.data_rate_config          <= SDR_e    when ((dev_cfg_data_in(adc_sub_c).isddr or
+                                                         dev_cfg_data_port_in.iostandard_is_lvds)             = '0') else btrue;
+  props_out.single_port              <= btrue     when ((dev_cfg_data_in(adc_sub_c).isdualport or
+                                                         dev_cfg_data_in(dac_sub_c).isdualport)               = '0') else bfalse;
+  props_out.half_duplex              <= btrue     when ((dev_cfg_data_in(adc_sub_c).isfullduplex or
+                                                         dev_cfg_data_in(dac_sub_c).isfullduplex)             = '0') else bfalse;
+  props_out.data_rate_config         <=  SDR_e    when ((dev_cfg_data_in(adc_sub_c).isddr or
                                                          dev_cfg_data_in(dac_sub_c).isddr)                    = '0') else DDR_e;
   both_present <= dev_cfg_data_in(adc_sub_c).present and dev_cfg_data_in(dac_sub_c).present;
   props_out.data_configs_are_valid <= '1' when

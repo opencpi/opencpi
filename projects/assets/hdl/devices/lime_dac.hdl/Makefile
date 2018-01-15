@@ -16,5 +16,4 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-SourceFiles=../lime_adc.hdl/sync_status.vhd dac_fifo.vhd
 include $(OCPI_CDK_DIR)/include/worker.mk

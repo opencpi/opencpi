@@ -1,0 +1,9 @@
+<!-- 
+TI TMP100 Temperature Sensor I2C Device Worker OWD
+-->
+<HdlDevice language="vhdl" FirstRawProperty="temp_reg" spec="tmp100_spec">
+  <!-- I2C read/write transactions require additional time to complete -->
+  <ControlInterface Timeout="131072"/>
+  <!--Need these signals to control i2c_opencores -->
+  <Rawprop name="rawprops" master="true"/>
+</HdlDevice>

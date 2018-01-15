@@ -58,6 +58,7 @@ begin
                 messageSize => props_in.messageSize,
                 -- In ADC clock domain
                 adc_clk     => dev_adc_in.adc_clk,
+                adc_reset   => open,
                 adc_give    => dev_adc_in.adc_give,
                 adc_data    => adc_data);
 

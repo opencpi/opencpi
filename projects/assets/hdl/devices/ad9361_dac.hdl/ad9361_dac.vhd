@@ -52,6 +52,7 @@ begin
                 wsi_take  => in_out.take,
                 underrun  => props_out.underrun,
                 dac_clk   => dev_dac_in.dac_clk, -- dac_clk is rising edge aligned with data
+                dac_reset => open,
                 dac_take  => dev_dac_in.dac_take,
                 dac_ready => dev_dac_out.dac_ready,
                 dac_data  => dac_data);

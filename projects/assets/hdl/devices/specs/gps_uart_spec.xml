@@ -1,0 +1,8 @@
+
+<ComponentSpec>
+  <property name='nmea_in' type='char'  volatile='true'/>
+  <property name='nmea_out' type='char' writable='true' readable='false'/>
+  <property name='byte_count' type='ulong' volatile='true'/>
+  <Signal Input='rx'/>
+  <Signal Output='tx'/>
+</ComponentSpec>

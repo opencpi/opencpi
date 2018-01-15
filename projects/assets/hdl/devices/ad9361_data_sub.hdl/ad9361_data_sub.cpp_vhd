@@ -18,14 +18,14 @@
 
 library IEEE; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;
 library ocpi; use ocpi.types.all, ocpi.util.all; // remove this to avoid all ocpi name collisions
-library util; use util.util.all;
+library util; use util.util.all, util.types.all;
 architecture rtl of ad9361_data_sub_worker is
   constant adc_c        : natural := 0;
   constant dac_c        : natural := 1;
   constant lvds_width_c : natural := 6;
   constant port_width_c : natural := 12;
   signal   DATA_CLK_s   : std_logic; // data clock to both adc and dac workers
-  signal   TXNRX_i      : std_logic; // from upstream somewhere
+  signal   TXNRX_i      : std_logic := '0'; // TODO / FIXME - from upstream somewhere
 begin
   // inform supported workers about our parameters
   dev_cfg_data_port_out.p0_p1_are_swapped  <= swap_ports_p;
@@ -143,25 +143,25 @@ begin
     signal p0 : std_logic_vector(lvds_width_c*2-1 downto 0);
   begin
     // Instantiate LVDS IO buffers
-    data_clk : BUFFER_IN_1 generic map(DIFFERENTIAL => true)
+    data_clk : BUFFER_IN_1 generic map(DIFFERENTIAL => true, IOSTANDARD => LVDS25)
       port map(I => DATA_CLK_P, IBAR => DATA_CLK_N, O => DATA_CLK_s);
-    rx_frame : BUFFER_IN_1 generic map(DIFFERENTIAL => true)
+    rx_frame : BUFFER_IN_1 generic map(DIFFERENTIAL => true, IOSTANDARD => LVDS25)
       port map(I => RX_FRAME_P, IBAR => RX_FRAME_N, O => dev_data_adc_out.rx_frame);
-    fb_clk : BUFFER_OUT_1 generic map(DIFFERENTIAL => true)
+    fb_clk : BUFFER_OUT_1 generic map(DIFFERENTIAL => true, IOSTANDARD => LVDS25)
       port map(I => dev_data_dac_in.fb_clk, O => FB_CLK_P, OBAR => FB_CLK_N);
-    tx_frame : BUFFER_OUT_1 generic map(DIFFERENTIAL => true)
+    tx_frame : BUFFER_OUT_1 generic map(DIFFERENTIAL => true, IOSTANDARD => LVDS25)
       port map(I => dev_data_dac_in.tx_frame, O => TX_FRAME_P, OBAR => TX_FRAME_N);
     p0p1: for idx in 0 to lvds_width_c/2-1 generate
-      p0hi: BUFFER_OUT_1 generic map(DIFFERENTIAL => true)
+      p0hi: BUFFER_OUT_1 generic map(DIFFERENTIAL => true, IOSTANDARD => LVDS25)
         port map(I => dev_data_dac_in.data(lvds_width_c/2 + idx),
                  O => p0_d_11_6(idx*2+1), OBAR => p0_d_11_6(idx*2));
-      p0lo: BUFFER_OUT_1 generic map(DIFFERENTIAL => true)
+      p0lo: BUFFER_OUT_1 generic map(DIFFERENTIAL => true, IOSTANDARD => LVDS25)
         port map(I => dev_data_dac_in.data(idx),
                  O => p0_d_5_0(idx*2+1), OBAR => p0_d_5_0(idx*2));
-      p1hi: BUFFER_IN_1 generic map(DIFFERENTIAL => true)
+      p1hi: BUFFER_IN_1 generic map(DIFFERENTIAL => true, IOSTANDARD => LVDS25)
         port map(O => dev_data_adc_out.data(lvds_width_c/2 + idx),
                  I => p1_d_11_6(idx*2+1), IBAR => p1_d_11_6(idx*2));
-      p1lo: BUFFER_IN_1 generic map(DIFFERENTIAL => true)
+      p1lo: BUFFER_IN_1 generic map(DIFFERENTIAL => true, IOSTANDARD => LVDS25)
         port map(O => dev_data_adc_out.data(idx),
                  I => p1_d_5_0(idx*2+1), IBAR => p1_d_5_0(idx*2));
     end generate;

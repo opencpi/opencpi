@@ -94,7 +94,7 @@ begin
   -- Temp signals necessary only because of older VHDL restrictions on "actuals".
   adc_give             <= to_bool(rx_iq_sel_r = '1');
   adc_data             <= hold_q_r & hold_i_r;
-  fifo : entity work.adc_fifo
+  fifo : util.util.adc_fifo
     generic map(width       => 24,
                 depth       => 4096)
     port map   (clk         => ctl_in.clk,
@@ -111,6 +111,7 @@ begin
                 messageSize => props_in.messageSize,
                 -- In ADC clock domain
                 adc_clk     => adc_clk_buf,
+                adc_reset   => open,
                 adc_give    => adc_give,
                 adc_data    => adc_data);
 end rtl;

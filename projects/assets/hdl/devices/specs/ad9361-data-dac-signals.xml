@@ -1,0 +1,24 @@
+<signals>
+  <!-- Data bus containing configuration-specific AD9361 pins corresponding to the TX data path:
+        * CMOS single port half duplex: [12'b0 P0_D[11:0]],
+        * CMOS single port full duplex: [18'b0 P0_D[11:6]],
+        * CMOS dual port half duplex: [P0_D[11:0] P1_D[11:0]],
+        * CMOS dual port full duplex: [12'b0 P1_D[11:0]],
+        * LVDS: [18'b0 TX D[5:0]],
+       or, if ports are swapped:
+        * CMOS single port half duplex: [12'b0 P1_D[11:0]],
+        * CMOS single port full duplex: [18'b0 P1_D[11:6]],
+        * CMOS dual port half duplex: [P1_D[11:0] P0_D[11:0]],
+        * CMOS dual port full duplex: [12'b0 P0_D[11:0]],
+        * LVDS: (unsupported with port swap). -->
+  <signal output='data' width='24'/>
+
+  <!-- Signal which will drive the output buffer which drives
+       the AD9361 TX FRAME P pin. -->
+  <signal output='tx_frame'/>
+
+  <!-- Signal which will drive the output buffer which will drive
+       the AD9361 FB CLK P pin. -->
+  <signal output='fb_clk'/>
+
+</signals>

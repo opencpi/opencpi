@@ -45,12 +45,6 @@ architecture rtl of ad9361_dac_sub_worker is
   constant data_bus_bits_are_reversed    : bool_t := bfalse;
   constant data_clk_p_is_inverted        : bool_t := bfalse;
 
-  constant iostandard_is_lvds : boolean := DIFFERENTIAL_p = btrue;
-
-  type state_t is (HIGH_NIBBLE_CHAN0, LOW_NIBBLE_CHAN0,
-                   HIGH_NIBBLE_CHAN1, LOW_NIBBLE_CHAN1);
-  signal state : state_t := HIGH_NIBBLE_CHAN0;
-
   -- no clock domain / static signals
   signal ch0_worker_present : std_logic := '0';
   signal ch1_worker_present : std_logic := '0';
@@ -143,17 +137,17 @@ begin
   -- these dev signals are used to (eventually) tell higher level proxy(ies)
   -- about the data port configuration that was enforced when this worker was
   -- compiled, so that said proxy(ies) can set the AD9361 registers accordingly
-  wsi_dual_port   <= '1' when PORT_CONFIG_p      = dual_e        else '0';
-  wsi_full_duplex <= '1' when DUPLEX_CONFIG_p    = full_duplex_e else '0';
+  wsi_dual_port   <= '1' when SINGLE_PORT_p      = bfalse        else '0';
+  wsi_full_duplex <= '1' when HALF_DUPLEX_p      = bfalse        else '0';
   wsi_data_rate   <= '1' when DATA_RATE_CONFIG_p = DDR_e         else '0';
   dev_cfg_data_out.ch0_handler_is_present   <= ch0_worker_present;
   dev_cfg_data_out.ch1_handler_is_present   <= ch1_worker_present;
   dev_cfg_data_out.data_bus_index_direction <= '1' when data_bus_bits_are_reversed = btrue  else '0';
   dev_cfg_data_out.data_clk_is_inverted     <= '1' when data_clk_p_is_inverted     = btrue  else '0';
-  dev_cfg_data_out.islvds                   <= '1' when iostandard_is_lvds         = true   else '0';
-  dev_cfg_data_out.isdualport               <= '1' when iostandard_is_lvds         = true   else wsi_dual_port;
-  dev_cfg_data_out.isfullduplex             <= '1' when iostandard_is_lvds         = true   else wsi_full_duplex;
-  dev_cfg_data_out.isddr                    <= '1' when iostandard_is_lvds         = true   else wsi_data_rate;
+  dev_cfg_data_out.islvds                   <= '1' when LVDS_p                     = btrue  else '0';
+  dev_cfg_data_out.isdualport               <= '1' when LVDS_p                     = btrue  else wsi_dual_port;
+  dev_cfg_data_out.isfullduplex             <= '1' when LVDS_p                     = btrue  else wsi_full_duplex;
+  dev_cfg_data_out.isddr                    <= '1' when LVDS_p                     = btrue  else wsi_data_rate;
   dev_cfg_data_out.present <= '1';
 
   -- ch0_worker_preset should always be '1' since we are it's subdevice
@@ -163,29 +157,37 @@ begin
   dev_data_ch0_in_out.dac_clk <= dacd2_clk;
   dev_data_ch1_in_out.dac_clk <= dacd2_clk;
 
-  data_mode_cmos: if iostandard_is_lvds = false generate -- i.e. iostandard is cmos
+  data_mode_cmos: if LVDS_p = bfalse generate -- i.e. iostandard is cmos
   begin
     -- don't compile for this!!!
     -- TODO / FIXME fill in this code
     dacm2_tx_data_r <= (others => '0');
+
+    -- we normally would force unsuccessful end of all control operations here
+    -- but we can't since this worker has no control plane
     --ctl_out.error <= '1';
+
     -- TODO / FIXME support runtime dynamic enumeration for CMOS? (if so, we need to check duplex_config = runtime_dynamic)
   end generate;
 
-  data_mode_lvds_invalid: if ((iostandard_is_lvds  = true) and
-                              ((PORT_CONFIG_p      = single_e) or
-                               (DUPLEX_CONFIG_p    = half_duplex_e) or
+  data_mode_lvds_invalid: if ((LVDS_p = btrue) and
+                              ((SINGLE_PORT_p      = btrue) or
+                               (HALF_DUPLEX_p      = btrue) or
                                (DATA_RATE_CONFIG_p = SDR_e))) generate
   begin
     -- this OpenCPI build configuration is not supported by AD9361
     -- and should never be used
     dacm2_tx_data_r <= (others => '0');
+
+    -- we normally would force unsuccessful end of all control operations here
+    -- but we can't since this worker has no control plane
     --ctl_out.error <= '1';
+
   end generate;
 
-  data_mode_lvds: if (iostandard_is_lvds = true) and
-                     (PORT_CONFIG_p       = dual_e) and
-                     (DUPLEX_CONFIG_p     = full_duplex_e) and
+  data_mode_lvds: if (LVDS_p = btrue) and
+                     (SINGLE_PORT_p       = bfalse) and
+                     (HALF_DUPLEX_p       = bfalse) and
                      (DATA_RATE_CONFIG_p  = DDR_e) generate
   begin
 
@@ -270,7 +272,7 @@ begin
                         dacd2_ch1_q_r(idx);
     end generate;
 
-    -- 12-bit word-> 6-bit nibble serialization registers (high 6 bits one
+    -- 12-bit word-> 6-bit word serialization registers (high 6 bits one
     -- dac_clk, low 6 bits next dac_clk)
     word_serial_regs : process(dac_clk)
     begin
@@ -337,7 +339,7 @@ begin
     end generate;
   end generate;
 
-  buf_cmos : if iostandard_is_lvds = false generate -- i.e. iostandard is cmos
+  buf_cmos : if LVDS_p = bfalse generate -- i.e. iostandard is cmos
   begin
     data_bus_bits_are_not_reversed : if data_bus_bits_are_reversed = bfalse generate
       dev_data_to_pins_out.data(dev_data_to_pins_out.data'left downto dac_width) <= (others => '0');
@@ -352,7 +354,7 @@ begin
       end generate;
     end generate;
   end generate;
-  buf_lvds : if (iostandard_is_lvds = true) generate
+  buf_lvds : if (LVDS_p = btrue) generate
   begin
     data_bus_bits_are_not_reversed : if data_bus_bits_are_reversed = bfalse generate
       dev_data_to_pins_out.data(dev_data_to_pins_out.data'left downto dac_width/2) <= (others => '0');

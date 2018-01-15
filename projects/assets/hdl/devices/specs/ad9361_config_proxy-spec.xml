@@ -266,6 +266,139 @@
   <!--  PROPERTIES CORRESPONDING TO FUNCTIONALITY IMPLEMENTED OUTSIDE libad9361   -->
 
   <property name='rx_sampling_freq_multiplier'           type='uchar'     volatile='1' writable='1' default='1' description='Value values are 1 and 2. 2 is only supported under certain conditions.'/>
+  <property name='THB3_Enable_and_Interp' type='enum'
+                                          enums='Interpolate_by_1_no_filtering,
+                                                 Interpolate_by_2_half_band_filter,
+                                                 Interpolate_by_3_and_filter,
+                                                 Invalid'
+                                          volatile='1'
+                                          description='Note that there are
+                                            several functions that calculate
+                                            digital filter settings. The
+                                            ad9361_calculate_rf_clock_chain
+                                            function calculates all Rx and Tx
+                                            rates. This sets interpolation of
+                                            the digital filter that feeds the
+                                            DAC. The purpose of this property is
+                                            to expose this value as it exists on
+                                            the AD9361 IC in order to precisely
+                                            calculate the current on-chip
+                                            (in-situ) nominal DAC clock rate
+                                            (No-OS does not provide a method for
+                                            high-precision calculation of the
+                                            nominal DAC rate).'/>
+  <property name='THB2_Enable' type='bool'
+                               volatile='1'
+                               description='Note that there are several
+                                 functions that calculate digital filter
+                                 settings. The ad9361_calculate_rf_clock_chain
+                                 function calculates all Rx and Tx rates.
+                                 Setting to true enables the interpolate-by-2
+                                 THB2 half-band filter. Setting to false
+                                 bypasses the filter.  The purpose of this
+                                 property is to expose this value as it exists
+                                 on the AD9361 IC in order to precisely
+                                 calculate the current on-chip (in-situ) nominal
+                                 DAC clock rate (No-OS does not provide a method
+                                 for high-precision calculation of the nominal
+                                 DAC rate).'/>
+  <property name='THB1_Enable' type='bool'
+                               volatile='1'
+                               description='Note that there are several
+                                 functions that calculate digital filter
+                                 settings. The ad9361_calculate_rf_clock_chain
+                                 function calculates all Rx and Tx rates.
+                                 Setting to true enables the interpolate-by-2
+                                 THB1 half-band filter. Setting to false
+                                 bypasses the filter.  The purpose of this
+                                 property is to expose this value as it exists
+                                 on the AD9361 IC in order to precisely
+                                 calculate the current on-chip (in-situ) nominal
+                                 DAC clock rate (No-OS does not provide a method
+                                 for high-precision calculation of the nominal
+                                 DAC rate).'/>
+  <property name='DAC_Clk_div2' type='bool'
+                                volatile='1'
+                                description='The ad9361_calculate_rf_clock_chain
+                                  function configures this value. When false,
+                                  the DAC clock rate equals the ADC clock rate.
+                                  When true, the DAC clock equals 1/2 of the ADC
+                                  rate. The purpose of this property is to
+                                  expose this value as it exists on the AD9361
+                                  IC in order to precisely calculate the current
+                                  on-chip (in-situ) nominal DAC clock rate
+                                  (No-OS does not provide a method for
+                                  high-precision calculation of the nominal DAC
+                                  rate).'/>
+  <property name='BBPLL_Divider' type='enum'
+                                 enums='invalid,1,2,3,4,5,6'
+                                 volatile='1'
+                                 description='The ad9361_bbpll_set_rate function
+                                   controls this value. The ADC clock rate
+                                   equals the BBPLL divided by the factor which
+                                   is a function of this value, shown in the
+                                   following equation.
+                                   ADC Clock Rate=BBPLL Clock Rate /
+                                                  [2^(BBPLL Divider)].
+                                   BBPLL Divider is valid from 1 through 6.'/>
+  <property name='Fractional_BB_Frequency_Word' type='ulong'
+                                                volatile='1'
+                                                description='Fractional BB
+                                                             Frequency Word.'/>
+  <property name='Integer_BB_Frequency_Word' type='ushort'
+                                             volatile='1'
+                                             description='Integer BB Frequency
+                                                          Word.'/>
+  <property name='BBPLL_Ref_Clock_Scaler' type='float'
+                                          volatile='1'
+                                          description='Ref Clock Scaler. The
+                                            reference clock frequency is scaled
+                                            before it enters the BBPLL. Only
+                                            possible scaler values are: x1;
+                                            x1/2; x1/4; x2.'/>
+  <property name='Tx_BBF_Tune_Divider' type='enum'
+                                       enums='invalid,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,125,126,127,128,129,130,131,132,133,134,135,136,137,138,139,140,141,142,143,144,145,146,147,148,149,150,151,152,153,154,155,156,157,158,159,160,161,162,163,164,165,166,167,168,169,170,171,172,173,174,175,176,177,178,179,180,181,182,183,184,185,186,187,188,189,190,191,192,193,194,195,196,197,198,199,200,201,202,203,204,205,206,207,208,209,210,211,212,213,214,215,216,217,218,219,220,221,222,223,224,225,226,227,228,229,230,231,232,233,234,235,236,237,238,239,240,241,242,243,244,245,246,247,248,249,250,251,252,253,254,255,256,257,258,259,260,261,262,263,264,265,266,267,268,269,270,271,272,273,274,275,276,277,278,279,280,281,282,283,284,285,286,287,288,289,290,291,292,293,294,295,296,297,298,299,300,301,302,303,304,305,306,307,308,309,310,311,312,313,314,315,316,317,318,319,320,321,322,323,324,325,326,327,328,329,330,331,332,333,334,335,336,337,338,339,340,341,342,343,344,345,346,347,348,349,350,351,352,353,354,355,356,357,358,359,360,361,362,363,364,365,366,367,368,369,370,371,372,373,374,375,376,377,378,379,380,381,382,383,384,385,386,387,388,389,390,391,392,393,394,395,396,397,398,399,400,401,402,403,404,405,406,407,408,409,410,411,412,413,414,415,416,417,418,419,420,421,422,423,424,425,426,427,428,429,430,431,432,433,434,435,436,437,438,439,440,441,442,443,444,445,446,447,448,449,450,451,452,453,454,455,456,457,458,459,460,461,462,463,464,465,466,467,468,469,470,471,472,473,474,475,476,477,478,479,480,481,482,483,484,485,486,487,488,489,490,491,492,493,494,495,496,497,498,499,500,501,502,503,504,505,506,507,508,509,510,511'
+                                       volatile='1'
+                                       description='Tx BBF Tune Divider. The
+                                         baseband Tx analog filter calibration
+                                         sets the 3dB cutoff frequency of the
+                                         third-order Butterworth Tx anti-imaging
+                                         filter based on the Tx BBF Tune
+                                         Divider. The third-order Tx filter is
+                                         located just after the DAC in the Tx
+                                         signal path and is normally calibrated
+                                         to 1.6x the BBBW. Note that the BBBW is
+                                         half the complex bandwidth. To set the
+                                         cutoff frequency value, the BBPLL is
+                                         divided down using a divide by 1 to 511
+                                         divider dedicated to the Tx tuner
+                                         block.'/>
+  <property name='Tx_Secondary_Filter_Resistor' type='enum'
+                                                enums='invalid,800,400,200,100'
+                                                volatile='1'
+                                                description='Secondary Tx filter
+                                                  resistor, which, along with
+                                                  the secondary Tx Capacitor,
+                                                  sets the 3 dB corner frequency
+                                                  of the secondary single-pole
+                                                  Tx RC filter via the equation
+                                                  1/(2*pi*R*C). Value is
+                                                  represented in ohms.'/>
+  <property name='Tx_Secondary_Filter_Capacitor' type='ushort'
+                                                 volatile='1'
+                                                 description='Secondary Tx
+                                                   filter capacitor, which,
+                                                   along with the secondary Tx
+                                                   Resistor, sets the 3 dB
+                                                   corner frequency of the
+                                                   secondary single-pole Tx RC
+                                                   filter via the equation
+                                                   1/(2*pi*R*C). Resolution:
+                                                   1pF/LSB. Total capacitance
+                                                   (C in previous equation) is
+                                                   12pF + (
+                                                   Tx_Secondary_Filter_Capacitor
+                                                   *1pF)'/>
   <property name='bb_pll_is_locked' type='bool' volatile='1'/>
   <property name='rx_pll_is_locked' type='enum' enums='false,true,unknown' volatile='1'/>
   <property name='rx_fastlock_delete'                    type='ulong'                  writable='1' description="Performs a deletion of an RX fastlock profile saved in this worker's memory. The profile which is deleted is the one whose profile ID matches the value written to this property."/>
@@ -274,12 +407,42 @@
   <property name='rx_vco_divider'   type='enum' enums='2,4,8,16,32,64,128,external_2,invalid' volatile='1'/>
   <property name='rx_vco_n_integer'    type='ushort' volatile='1'/>
   <property name='rx_vco_n_fractional' type='ulong'  volatile='1'/>
-  <property name='rx_ref_divider'   type='enum' enums='1, HALF, FOURTH, 2' volatile='1'/>
+  <property name='Rx_Ref_Divider' type='float'
+                                  volatile='1'
+                                  description='Rx Ref Divider. This controls the
+                                    Rx path divider which scales the rate of the
+                                    analog clock which is input to the Rx PLL
+                                    Synthesizer (which generates the Rx LO
+                                    clock). Only possible ratios are: 1, 1/2,
+                                    1/4, 2. The purpose of this property is to
+                                    expose this value as it exists on the AD9361
+                                    IC in order to precisely calculate the
+                                    current on-chip (in-situ) nominal Rx LO
+                                    frequency value (No-OS does not provide a
+                                    method for high-precision calculation of the
+                                    nominal LO frequencies).'/>
   <property name='tx_vco_divider'   type='enum' enums='2,4,8,16,32,64,128,external_2,invalid' volatile='1'/>
   <property name='tx_vco_n_integer'    type='ushort' volatile='1'/>
   <property name='tx_vco_n_fractional' type='ulong'  volatile='1'/>
-  <property name='tx_ref_divider'   type='enum' enums='1, HALF, FOURTH, 2' volatile='1'/>
-  <property name='fpga_data_mode' type='enum' enums='cmos_singleport_halfduplex,cmos_singleport_fullduplex,cmos_dualport_halfduplex,cmos_dualport_fullduplex,lvds_dualport_fullduplex,invalid' volatile='1'/>
+  <property name='Tx_Ref_Divider' type='float'
+                                  volatile='1'
+                                  description='Tx Ref Divider. This controls the
+                                    Tx path divider which scales the rate of the
+                                    analog clock which is input to the Tx PLL
+                                    Synthesizer (which generates the Tx LO
+                                    clock). Only possible ratios are: 1, 1/2,
+                                    1/4, 2. The purpose of this property is to
+                                    expose this value as it exists on the AD9361
+                                    IC in order to precisely calculate the
+                                    current on-chip (in-situ) nominal Tx LO
+                                    frequency value (No-OS does not provide a
+                                    method for high-precision calculation of the
+                                    nominal LO frequencies).'/>
+  <property name='LVDS'             type='bool' volatile='1' description="Value is true if bitstream monitored by instance of this worker was built to use LVDS mode for Data/clock/frame signals, and false if CMOS mode was used."/>
+  <property name='single_port'      type='bool' volatile='1' description="Value is true if bitstream monitored by instance of this worker was built to use single port, and false if dual ports."/>
+  <property name='swap_ports'       type='bool' volatile='1' description="Value is true if bitstream monitored by instance of this worker was built to swap Port 0 and Port 1, and false if there was no swap."/>
+  <property name='half_duplex'      type='bool' volatile='1' description="Value is true if bitstream monitored by instance of this worker was built to use half duplex mode, and false if full duplex mode."/>
+  <property name='data_rate_config' type='enum' enums='SDR,DDR'     volatile='1' description="Value indicates which data rate mode (SDR/DDR) the bitstream was built to use."/>
   <property name='DATA_CLK_P_rate_Hz' type='double' volatile='1'/>
 
 

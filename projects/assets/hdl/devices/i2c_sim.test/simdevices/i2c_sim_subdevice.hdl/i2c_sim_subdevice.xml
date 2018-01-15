@@ -1,0 +1,20 @@
+<!-- 
+ I2C Sim Subdevice Worker OWD
+-->
+<HdlDevice language="vhdl" spec="i2c_sim_subdevice_spec">
+  <rawprop name="rprops" count="NUSERS_p" optional="true"/>
+  <supports worker="i2c_sim_master">
+    <connect port="rawprops" to="rprops" index="0"/>
+  </supports>
+  <supports worker="i2c_sim_master_16b_props">
+    <connect port="rawprops" to="rprops" index="1"/>
+  </supports>
+  <supports worker="i2c_sim_master_mix_props">
+    <connect port="rawprops" to="rprops" index="2"/>
+  </supports>
+  <supports worker="i2c_sim_master_16b_ext_wr_props">
+    <connect port="rawprops" to="rprops" index="3"/>
+  </supports>
+  <Signal Inout="sda"/>
+  <Signal Inout="scl"/>
+</HdlDevice>

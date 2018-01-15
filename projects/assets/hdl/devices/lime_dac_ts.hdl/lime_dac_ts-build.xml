@@ -1,0 +1,22 @@
+<build>
+  <configuration id='0'>
+    <!-- Matchstiq settings -->
+    <parameter name='USE_CLK_IN_p' value='1'/>
+    <parameter name='USE_CTL_CLK_p' value='0'/>
+    <parameter name='DRIVE_CLK_p' value='1'/>
+    <parameter name='SECONDS_WIDTH_p' value='32'/>
+    <parameter name='FRACTION_WIDTH_p' value='32'/>
+    <parameter name='ocpi_debug' value='false'/>
+    <parameter name='ocpi_endian' value='little'/>
+  </configuration>
+  <configuration id='1'>
+    <!-- Matchstiq settings -->
+    <parameter name='USE_CLK_IN_p' value='1'/>
+    <parameter name='USE_CTL_CLK_p' value='0'/>
+    <parameter name='DRIVE_CLK_p' value='1'/>
+    <parameter name='SECONDS_WIDTH_p' value='32'/>
+    <parameter name='FRACTION_WIDTH_p' value='26'/>
+    <parameter name='ocpi_debug' value='false'/>
+    <parameter name='ocpi_endian' value='little'/>
+  </configuration>
+</build>

@@ -41,11 +41,10 @@ architecture rtl of ad9361_adc_sub_worker is
   constant rx_frame_is_inverted          : bool_t := bfalse;
 
   constant rx_frame_usage_is_toggle      : bool_t := btrue;  -- no need for us to support non-toggle ("enable")
-  constant iostandard_is_lvds : boolean := DIFFERENTIAL_p = btrue;
 
-  type state_t is (HIGH_NIBBLE_R1, LOW_NIBBLE_R1,
-                   HIGH_NIBBLE_R2, LOW_NIBBLE_R2);
-  signal state : state_t := HIGH_NIBBLE_R1;
+  type state_t is (R1_11_6, R1_5_0,
+                   R2_11_6, R2_5_0);
+  signal state : state_t := R1_11_6;
 
   -- internal signals
   signal dual_port   : std_logic := '0';
@@ -98,17 +97,17 @@ begin
   -- these dev signals are used to (eventually) tell higher level proxy(ies)
   -- about the data port configuration that was enforced when this worker was
   -- compiled, so that said proxy(ies) can set the AD9361 registers accordingly
-  dual_port   <= '1' when PORT_CONFIG_p      = dual_e        else '0';
-  full_duplex <= '1' when DUPLEX_CONFIG_p    = full_duplex_e else '0';
+  dual_port   <= '1' when SINGLE_PORT_p      = bfalse        else '0';
+  full_duplex <= '1' when HALF_DUPLEX_p      = bfalse        else '0';
   data_rate   <= '1' when DATA_RATE_CONFIG_p = DDR_e         else '0';
   dev_cfg_data_out.ch0_handler_is_present   <= ch0_worker_present;
   dev_cfg_data_out.ch1_handler_is_present   <= ch1_worker_present;
   dev_cfg_data_out.data_bus_index_direction <= '1' when data_bus_bits_are_reversed = btrue else '0';
   dev_cfg_data_out.data_clk_is_inverted     <= '1' when data_clk_p_is_inverted     = btrue else '0';
-  dev_cfg_data_out.islvds                   <= '1' when iostandard_is_lvds         = true  else '0';
-  dev_cfg_data_out.isdualport               <= '1' when iostandard_is_lvds         = true  else dual_port;
-  dev_cfg_data_out.isfullduplex             <= '1' when iostandard_is_lvds         = true  else full_duplex;
-  dev_cfg_data_out.isddr                    <= '1' when iostandard_is_lvds         = true  else data_rate;
+  dev_cfg_data_out.islvds                   <= '1' when LVDS_p                     = btrue else '0';
+  dev_cfg_data_out.isdualport               <= '1' when LVDS_p                     = btrue else dual_port;
+  dev_cfg_data_out.isfullduplex             <= '1' when LVDS_p                     = btrue else full_duplex;
+  dev_cfg_data_out.isddr                    <= '1' when LVDS_p                     = btrue else data_rate;
   dev_cfg_data_out.present <= '1';
   dev_cfg_data_rx_out.rx_frame_usage        <= '1' when rx_frame_usage_is_toggle   = '1'   else '0';
   dev_cfg_data_rx_out.rx_frame_is_inverted  <= '1' when rx_frame_is_inverted       = btrue else '0';
@@ -127,7 +126,7 @@ begin
      I => dev_data_clk_in.DATA_CLK_P -- 1-bit input: Clock buffer input driven by an IBUFG, MMCM or local interconnect
   );
 
-  buf_lvds : if DIFFERENTIAL_p = btrue generate
+  buf_lvds : if LVDS_p = btrue generate
     data_bus_bits_are_not_reversed : if data_bus_bits_are_reversed = bfalse generate
       adc_rx_data_buf_ordered <= adc_data((adc_width/2)-1 downto 0);
     end generate;
@@ -158,28 +157,28 @@ begin
     adc_rx_frame_p_buf <= not RX_FRAME_P_s;
   end generate;
 
-  data_mode_cmos: if iostandard_is_lvds = false generate -- i.e. iostandard is cmos
+  data_mode_cmos: if LVDS_p = bfalse generate -- i.e. iostandard is cmos
   begin
     -- don't compile for this!!!
     -- TODO / FIXME fill in this code
-    ctl_out.error <= '1';
+    ctl_out.error <= '1'; -- force unsuccessful end of all control operations
     -- TODO / FIXME support runtime dynamic enumeration for CMOS? (if so, we need to check duplex_config = runtime_dynamic)
   end generate;
 
   -- TODO / FIXME support runtime dynamic enumeration for CMOS? (if so, we need to check duplex_config = runtime_dynamic)
-  data_mode_lvds_invalid: if ((iostandard_is_lvds  = true) and
-                              ((PORT_CONFIG_p      = single_e) or
-                               (DUPLEX_CONFIG_p    = half_duplex_e) or
+  data_mode_lvds_invalid: if ((LVDS_p = btrue) and
+                              ((SINGLE_PORT_p      = btrue) or
+                               (HALF_DUPLEX_p      = btrue) or
                                (DATA_RATE_CONFIG_p = SDR_e))) generate
   begin
     -- this OpenCPI build configuration is not supported by AD9361
     -- and should never be used
-    ctl_out.error <= '1';
+    ctl_out.error <= '1'; -- force unsuccessful end of all control operations
   end generate;
 
-  data_mode_lvds: if (iostandard_is_lvds = true) and
-                     (PORT_CONFIG_p       = dual_e) and
-                     (DUPLEX_CONFIG_p     = full_duplex_e) and
+  data_mode_lvds: if (LVDS_p = btrue) and
+                     (SINGLE_PORT_p       = bfalse) and
+                     (HALF_DUPLEX_p       = bfalse) and
                      (DATA_RATE_CONFIG_p  = DDR_e) generate
   begin
 
@@ -235,20 +234,22 @@ begin
       end if;
     end process;
 
+    -- simultaneously handles both possible 1R1T and 2R2T timing diagrams from
+    -- AD9361_Reference_Manual_UG-570.pdf Figure 79.
     data_ingest_fsm : process(adc_clk)
     begin
       if rising_edge(adc_clk) then
         case state is
-          when HIGH_NIBBLE_R1 =>
+          when R1_11_6 =>
             adc_r1_give_rrrr <= '0';
-            adc_r1_give_rrrr <= '0';
+            adc_r2_give_rrrr <= '0';
             -- this is why we set rx_frame_usage_is_toggle to btrue above
             if(adc_rx_frame_p_buf_rr = '1') then
               adc_r1_i_h_rrr <= adc_ddr_out_rising_rr;
               adc_r1_q_h_rrr <= adc_ddr_out_falling_rr;
-              state <= LOW_NIBBLE_R1;
+              state <= R1_5_0;
             end if;
-          when LOW_NIBBLE_R1 =>
+          when R1_5_0 =>
             adc_r1_i_rrrr <= adc_r1_i_h_rrr & adc_ddr_out_rising_rr;
             adc_r1_q_rrrr <= adc_r1_q_h_rrr & adc_ddr_out_falling_rr;
 
@@ -260,16 +261,16 @@ begin
 
             -- this is why we set rx_frame_usage_is_toggle to btrue above
             if(adc_rx_frame_p_buf_rr = '1') then
-              state <= HIGH_NIBBLE_R2;
+              state <= R2_11_6;
             else
-              state <= HIGH_NIBBLE_R1;
+              state <= R1_11_6;
             end if;
-          when HIGH_NIBBLE_R2 =>
+          when R2_11_6 =>
             adc_r2_i_h_rrr <= adc_ddr_out_rising_rr;
             adc_r2_q_h_rrr <= adc_ddr_out_falling_rr;
             adc_r1_give_rrrr <= '0';
-            state <= LOW_NIBBLE_R2;
-          when LOW_NIBBLE_R2 =>
+            state <= R2_5_0;
+          when R2_5_0 =>
             adc_r2_i_rrrr <= adc_r2_i_h_rrr & adc_ddr_out_rising_rr;
             adc_r2_q_rrrr <= adc_r2_q_h_rrr & adc_ddr_out_falling_rr;
 
@@ -286,7 +287,7 @@ begin
             adc_r2_samps_dropped <= dev_cfg_data_in.config_is_two_r and
                                     (not r2_worker_present);
 
-            state <= HIGH_NIBBLE_R1;
+            state <= R1_11_6;
         end case;
       end if;
     end process;

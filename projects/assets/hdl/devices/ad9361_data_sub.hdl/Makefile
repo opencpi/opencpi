@@ -16,8 +16,6 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-SourceFiles=signals_cmos.vhd signals_lvds.vhd
-
 # During the build process, swap HdlTarget with 'actual' target part of the target platform
 # We do this to build for a part with the correct number of resources, such as hardware
 # multipliers, rather than the default smallest part in the family

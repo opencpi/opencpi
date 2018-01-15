@@ -55,6 +55,17 @@
 
   <!--  PROPERTIES CORRESPONDING TO FUNCTIONALITY IMPLEMENTED OUTSIDE libad9361   -->
   <specproperty name='rx_sampling_freq_multiplier' readsync='true' writesync='true'/>
+  <specproperty name='THB3_Enable_and_Interp' readsync='true'                />
+  <specproperty name='THB2_Enable'           readsync='true'                 />
+  <specproperty name='THB1_Enable'           readsync='true'                 />
+  <specproperty name='DAC_Clk_div2'          readsync='true'                 />
+  <specproperty name='BBPLL_Divider'         readsync='true'                 />
+  <specproperty name='Fractional_BB_Frequency_Word' readsync='true'          />
+  <specproperty name='Integer_BB_Frequency_Word'    readsync='true'          />
+  <specproperty name='BBPLL_Ref_Clock_Scaler'       readsync='true'          />
+  <specproperty name='Tx_BBF_Tune_Divider'   readsync='true'                 />
+  <specproperty name='Tx_Secondary_Filter_Resistor'  readsync='true'         />
+  <specproperty name='Tx_Secondary_Filter_Capacitor' readsync='true'         />
   <specproperty name='bb_pll_is_locked'      readsync='true'                 />
   <specproperty name='rx_pll_is_locked'      readsync='true'                 />
   <specproperty name='rx_fastlock_delete'                    writesync='true'/>
@@ -63,13 +74,16 @@
   <specproperty name='rx_vco_divider'        readsync='true'                 />
   <specproperty name='rx_vco_n_integer'      readsync='true'                 />
   <specproperty name='rx_vco_n_fractional'   readsync='true'                 />
-  <specproperty name='rx_ref_divider'        readsync='true'                 />
+  <specproperty name='Rx_Ref_Divider'        readsync='true'                 />
   <specproperty name='tx_vco_divider'        readsync='true'                 />
   <specproperty name='tx_vco_n_integer'      readsync='true'                 />
   <specproperty name='tx_vco_n_fractional'   readsync='true'                 />
-  <specproperty name='tx_ref_divider'        readsync='true'                 />
-  <specproperty name='tx_ref_divider'        readsync='true'                 />
-  <specproperty name='fpga_data_mode'        readsync='true'                 />
+  <specproperty name='Tx_Ref_Divider'        readsync='true'                 />
+  <specproperty name='LVDS'                  readsync='true'                 />
+  <specproperty name='single_port'           readsync='true'                 />
+  <specproperty name='swap_ports'            readsync='true'                 />
+  <specproperty name='half_duplex'           readsync='true'                 />
+  <specproperty name='data_rate_config'      readsync='true'                 />
   <specproperty name='DATA_CLK_P_rate_Hz'    readsync='true'                 />
 
 </rccworker>

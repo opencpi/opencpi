@@ -1,0 +1,10 @@
+<!-- 
+ PCA9534 Device Worker OCS
+-->
+<ComponentSpec>
+                                                                                      <!--Device Offset-->
+  <property name="input_port"    type="uchar" readable="true"/>  		      <!-- 0-->
+  <property name="output_port"   type="uchar" readable="true" writable="true"/>       <!-- 1-->
+  <property name="pol_inv_port"  type="uchar" readable="true" writable="true"/>       <!-- 2-->
+  <property name="config_port"   type="uchar" readable="true" writable="true"/>       <!-- 3-->
+</ComponentSpec>

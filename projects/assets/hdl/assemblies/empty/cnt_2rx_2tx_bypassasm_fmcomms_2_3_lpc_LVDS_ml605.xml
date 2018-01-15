@@ -1,0 +1,57 @@
+<!-- filename:             cnt_2rx_2tx_bypassasm_fmcomms_2_3_lpc_LVDS_ml605.xml -->
+<!-- filename description: cnt                                                   (this is a container)                              -->
+<!--                           2rx                                               (number of RX channels used)                       -->
+<!--                               2tx                                           (number of TX channels used)                       -->
+<!--                                   bypassasm                                 (container architecture description)               -->
+<!--                                             fmcomms_2_3_lpc                 (frontend and/or slot descriptions, if applicable) -->
+<!--                                                             LVDS            (other details, if applicable)                     -->
+<!--                                                                  ml605      (platform description, if applicable)              -->
+<!--                                                                       .xml                                                     -->
+<!--      CPU                  FPGA                                          -->
+<!--     ______     _________________________________________                -->
+<!--    +      +   +                                         +               -->
+<!--    |      | i |          container               ___    |               -->
+<!--    |      | n |                                 +   +   |               -->
+<!--    |      |*t*|*********************************|dev|   |               -->
+<!--    |      | e |    (3)                    *     +___+   |               -->
+<!--    |      | r |                           *             |               -->
+<!--    |      | c |          ______________   *             |               -->
+<!--    |      | o |         +  assembly   +   *(1)          |               -->
+<!--    |      | n |         |             |   *             |               -->
+<!--    |      | n |   (2)   |             |   *             |               -->
+<!--    |      |*e*|*********|             |****             |               -->
+<!--    |      | c |         |             |                 |               -->
+<!--    |      | t |         |             |                 |               -->
+<!--    +______+   +_________+_____________+_________________+               -->
+<!--                                                                         -->
+<HdlContainer Config="cfg_2rx_2tx_fmcomms_2_3_lpc_lvds" Platform="ml605">
+
+  <!-- (1) external-to-FPGA device (worker) to FPGA assembly connections -->
+  <!--Connection External="<assembly_port_name>"
+                 Port="<device_port_name>"
+                 Device="<device_name>"
+                 Card="<card_name>" (required if card is used)
+                 Slot="<slot_name>" (required if more than one platform slot of the card slot type exists) -->
+  <!-- e.g. <Connection External="in_to_asm_rx_path_from_adc"  Port="out" Device="lime_adc"/> -->
+  <!-- e.g. <Connection External="out_from_asm_tx_path_to_dac" Port="in"  Device="lime_dac"/> -->
+
+  <!-- (2) FPGA assembly to CPU interconnect connections -->
+  <!--Connection External="<assembly_port_name>"
+                 Interconnect="<interconnect_name, probably zynq or pcie>"/-->
+  <!-- e.g. <Connection External="out_from_asm_rx_path" Interconnect="zynq"/> -->
+  <!-- e.g. <Connection External="in_to_asm_tx_path"    Interconnect="zynq"/> -->
+
+  <!-- (3) external-to-FPGA device (worker) to CPU interconnect connections (bypassing the assembly)-->
+  <!--Connection Device="<device_name>"
+                 Port="<device_port_name>"
+                 Card="<card_name>" (required if card is used)
+                 Slot="<slot_name>" (required if more than one platform slot of the card slot type exists)
+                 Interconnect="<interconnect_name, probably zynq or pcie>"/-->
+  <!-- e.g. <Connection Device="lime_adc" Port="out" Interconnect="pcie"/> -->
+  <!-- e.g. <Connection Device="lime_dac" Port="in"  Interconnect="pcie"/> -->
+  <Connection Device="ad9361_adc0" Port="out" Card="fmcomms_2_3_lpc" Slot="fmc_lpc" Interconnect="pcie"/>
+  <Connection Device="ad9361_adc1" Port="out" Card="fmcomms_2_3_lpc" Slot="fmc_lpc" Interconnect="pcie"/>
+  <Connection Device="ad9361_dac0" Port="in"  Card="fmcomms_2_3_lpc" Slot="fmc_lpc" Interconnect="pcie"/>
+  <Connection Device="ad9361_dac1" Port="in"  Card="fmcomms_2_3_lpc" Slot="fmc_lpc" Interconnect="pcie"/>
+
+</HdlContainer>

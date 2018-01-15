@@ -1,0 +1,8 @@
+<application package='ocpi.assets'>
+  <instance component='ocpi.assets.devices.i2c_sim.simdevices.i2c_sim_master'/>
+  <instance component='ocpi.assets.devices.i2c_sim.simdevices.i2c_sim_master_16b_props'/>
+  <instance component='ocpi.assets.devices.i2c_sim.simdevices.i2c_sim_master_mix_props'/>
+  <instance component='ocpi.assets.devices.i2c_sim.simdevices.i2c_sim_master_16b_ext_wr_props'/>
+  <instance component='ocpi.assets.devices.i2c_sim.simdevices.i2c_sim_subdevice'/>
+  <instance component='ocpi.assets.devices.i2c_sim.simdevices.i2c_em'/>
+</application>

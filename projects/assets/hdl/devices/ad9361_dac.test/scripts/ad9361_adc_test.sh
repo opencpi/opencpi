@@ -1,0 +1,1 @@
+../../ad9361_adc.test/scripts/ad9361_adc_test.sh

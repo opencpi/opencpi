@@ -1,0 +1,21 @@
+<HdlAssembly>
+  <Connection Name="in_to_asm_rx_path_from_adc" External="consumer">
+    <Port Instance="fifo" Name="in"/>
+  </Connection>
+  <Instance Worker="fifo">
+    <Property Name="FIFO_DEPTH_p" Value="8192"/>
+    <Property Name="ZLM_WHEN_ONESHOT_DONE_p" Value="false"/>
+  </Instance>
+  <Connection Name="out_from_asm_rx_path" External="producer">
+    <Port Instance="fifo" Name="out"/>
+  </Connection>
+  <Instance Worker="data_src">
+    <Property Name="DATA_BIT_WIDTH_p" Value="12"/> <!-- same as DAC bit width -->
+    <Property Name="LFSR_POLYNOMIAL_p" Value='1,1,1,0,0,0,0,0,1,0,0,0'/> <!-- x^12 + x^11 + x^10 + x^4 + 1(implied) -->
+    <Property Name="LFSR_SEED_p" Value='1,1,1,1,1,1,1,1,1,1,1,1'/>
+    <Property Name="ZLM_WHEN_NUM_SAMPLES_REACHED_p" Value="false"/>
+  </Instance>
+  <Connection Name="out_from_asm_tx_path_to_dac" External="producer">
+    <Port Instance="data_src" Name="out"/>
+  </Connection>
+</HdlAssembly>

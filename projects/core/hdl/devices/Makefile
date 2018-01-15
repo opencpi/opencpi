@@ -18,7 +18,7 @@
 
 # This directory contains a library of device workers.
 # It is a lot like the components directory except that all of the workers
-# are device specific - each worker controls some piece of hardware on a 
+# are device specific - each worker controls some piece of hardware on a
 # chip or attached to a chip.  Currently we have no notion of anything but
 # hdl device workers, although that could (should?) change.
 

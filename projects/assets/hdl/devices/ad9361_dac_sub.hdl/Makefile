@@ -19,7 +19,6 @@
 # This is the Makefile for worker ad9361_dac_sub.hdl
 #Only tested targets
 OnlyTargets=zynq zynq_ise virtex6 isim xsim # cause of BUFR primitive
-SourceFiles=signals.vhd
 
 # During the build process, swap HdlTarget with 'actual' target part of the target platform
 # We do this to build for a part with the correct number of resources, such as hardware
