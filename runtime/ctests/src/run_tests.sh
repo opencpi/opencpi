@@ -21,10 +21,13 @@
 # First ensure CDK and TOOL_xxx vars
 OCPI_BOOTSTRAP=$OCPI_CDK_DIR/scripts/ocpibootstrap.sh; . $OCPI_BOOTSTRAP
 export OCPI_SMB_SIZE=3000000
-if [ -z "$OCPI_PROJECT_REGISTRY_DIR" ]; then
-  export OCPI_PROJECT_REGISTRY_DIR=$OCPI_CDK_DIR/../project_registry
-fi
-export OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/lib/components/rcc:$OCPI_PROJECT_REGISTRY_DIR/ocpi/exports/lib/components/rcc
+
+source $OCPI_CDK_DIR/scripts/util.sh
+# Add core AND the default installed projects/core project so that
+# core's artifacts can be found on a remote system via the default
+# installed location
+export OCPI_LIBRARY_PATH=$(getProjectRegistryDir)/ocpi.core/exports/lib/components/rcc:$OCPI_CDK_DIR/../projects/core/exports/lib/components/rcc
+
 # export OCPI_LOG_LEVEL=11
 export DIR=$(mktemp -d -t ocpi_ctests.XXXXX)
 echo "========= Outputs from these tests will be in: $DIR"

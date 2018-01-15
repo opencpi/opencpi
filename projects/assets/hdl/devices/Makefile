@@ -63,7 +63,5 @@ Workers = \
 	stm_mc24c02.hdl \
 	tmp100.hdl \
 	tmp100_proxy.rcc \
-	zipper_rx.rcc \
-	zipper_tx.rcc
 
 include $(OCPI_CDK_DIR)/include/library.mk

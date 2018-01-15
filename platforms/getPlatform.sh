@@ -27,7 +27,7 @@ isCurPlatform()
 {
   vars=($(sh $1-check.sh $HostSystem $HostProcessor))
   if test ${#vars[@]} = 3; then
-    [ -n "$1" ] && echo succeeded.  Target is ${vars[0]}-${vars[1]}-${vars[2]}. 1>&2
+    [ -n "$1" ] && echo Target is ${vars[0]}-${vars[1]}-${vars[2]}. 1>&2
     echo ${vars[@]}  ${vars[0]}-${vars[1]}-${vars[2]} $p
     exit 0
   fi

@@ -215,10 +215,10 @@ int main(int argc, char **argv)
       //  	{
       //  	  printLimits("Error: invalid sample_rate.\n", sample_rate, sample_rate_min, sample_rate_max);
       //  	}
-      cout << "Setting sample rate to " << to_string(sample_rate) << " MHz " << endl;
+      cout << "Setting sample rate to " << to_string((long double)sample_rate) << " MHz " << endl;
 
       // Si5338:CLKIN (i.e. Si5338:CH0 = Rx clock to Lime transceiver) = 2 x sample_rate x 1 MHz
-      ClkInStr = to_string(2 * sample_rate * 1e6).c_str();
+      ClkInStr = to_string((long double)(2 * sample_rate * 1e6)).c_str();
 
       // Only required to set CH0 of the Clock Synthesis device
       clock_gen_config <<
@@ -267,10 +267,10 @@ int main(int argc, char **argv)
       //  	{
       //  	  printLimits("Error: invalid sample_rate.\n", sample_rate, sample_rate_min, sample_rate_max);
       //  	}
-      cout << "Setting sample rate to " << to_string(sample_rate) << " MHz " << endl;
+      cout << "Setting sample rate to " << to_string((long double)sample_rate) << " MHz " << endl;
 
       // Si5351:CLKIN (i.e. Si5351:CH4 & 5 = Rx clock to Lime transceiver & FPGA) = 2 x sample_rate x 1 MHz
-      rxClkInStr = to_string(2 * sample_rate * 1e6).c_str();
+      rxClkInStr = to_string((long double)(2 * sample_rate * 1e6)).c_str();
 
       // CH 4&5 tx CH 2&3 rx
       clock_gen_config <<

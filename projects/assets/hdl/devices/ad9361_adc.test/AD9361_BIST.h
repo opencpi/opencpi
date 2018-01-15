@@ -61,7 +61,7 @@ inline int read_iqstream_sample_from_file(FILE*& fd, uint16_t& I, uint16_t& Q,
   {
     if((fd == NULL) || (ferror(fd)))
     {
-      return EBADFD;
+      return EBADF;
     }
     c = fgetc(fd);
     if(feof(fd))

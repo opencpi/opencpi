@@ -163,39 +163,40 @@ hdlportable:
 	$(MAKE) -C hdl portable
 
 cleanhdl:
-	$(MAKE) -C hdl clean
+	$(MAKE) -C projects/core cleanhdl && $(MAKE) -C projects/assets cleanhdl
 
 #	$(MAKE) -C components cleanhdl this happens in the hdl subdir (using ../components)
 
 rcc ocl hdl: exports
 
 rcc:
-	make -C components rcc
+	make -C projects/core/components rcc && make -C projects/assets/components rcc
+
 
 cleanrcc:
-	make -C components cleanrcc
+	make -C projects/core/components cleanrcc && make -C projects/assets/components rcc
 
 ocl:
-	make -C components ocl
+	make -C projects/core/components ocl && make -C projects/assets/components ocl
 
 cleanocl:
-	make -C components cleanocl
+	make -C projects/core/components cleanocl && make -C projects/assets/components cleanocl
 
 .PHONY : examples
 examples: exports
-	$(MAKE) -C examples
+	$(MAKE) -C projects/assets/applications
 
 cleanexamples:
-	make -C examples clean
+	make -C projects/assets/applications clean
 
 runexamples:
-	make -C examples run
+	make -C projects/assets/applications run
 
 runtests:
 	make -C tests run
 
 cleancomponents:
-	make -C components clean
+	make -C projects/core/components clean && make -C projects/assets/components clean
 
 .PHONY: prims
 hdlprimitives: exports
@@ -237,6 +238,8 @@ clean: cleancomponents cleanexamples
 			$(MAKE) --no-print-directory $(call DescendMake,$p) -f $(call AdjustRelative,$p,)/Makefile.ocpi.for-pkg $@ ; \
 		fi ; \
 	)
+	$(AT)make -C projects/core clean && make -C projects/assets clean
+	$(AT)rm -r -f exports
 
 cleanexports:
 	$(AT)rm -r -f exports
@@ -249,7 +252,6 @@ distclean: clean
 	-rm -r -f lib
 
 cleaneverything: distclean cleandrivers
-	make -C components cleanhdl
 	-find . -depth -name 'timeData.raw' -exec rm -f '{}' ';'
 	-find . -depth -name 'target-*' -exec rm -r '{}' ';'
 	-find . -depth -name 'gen' -exec rm -r '{}' ';'

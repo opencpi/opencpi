@@ -37,7 +37,7 @@ $(DIR):
 ifdef APP
 $(PROG): $(APP).cxx | $(DIR)
 	$(AT)echo Building $@...
-	$(AT)$(CXX) -g -std=c++11 -Wall $(OCPI_EXPORT_DYNAMIC) -o $@ $(INCS) $^ $(OCPI_LD_FLAGS)
+	$(AT)$(CXX) -g -std=c++0x -Wall $(OCPI_EXPORT_DYNAMIC) -o $@ $(INCS) $^ $(OCPI_LD_FLAGS)
 endif
 
 clean::
