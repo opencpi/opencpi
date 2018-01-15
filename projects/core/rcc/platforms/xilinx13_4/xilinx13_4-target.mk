@@ -39,5 +39,6 @@ export OCPI_EXTRA_LIBS:=rt dl pthread
 ifndef OCPI_TARGET_KERNEL_DIR
   # When we build the driver the kernel should be cloned, checked out
   # with the label consistent with the ISE version, and build there
-  export OCPI_TARGET_KERNEL_DIR=$(OCPI_CDK_DIR)/platforms/$(OCPI_TARGET_PLATFORM)/release/kernel-headers
+  include $(OCPI_CDK_DIR)/include/util.mk
+  export OCPI_TARGET_KERNEL_DIR=$(call OcpiGetRccPlatformDir,$(OCPI_TARGET_PLATFORM))/release/kernel-headers
 endif
