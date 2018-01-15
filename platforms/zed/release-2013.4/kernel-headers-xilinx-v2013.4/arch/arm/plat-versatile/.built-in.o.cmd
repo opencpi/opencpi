@@ -1,1 +1,0 @@
-cmd_arch/arm/plat-versatile/built-in.o :=  /home/jek/mac/Xilinx/14.6/ISE_DS/EDK/gnu/arm/lin/bin/arm-xilinx-linux-gnueabi-ld -EL    -r -o arch/arm/plat-versatile/built-in.o arch/arm/plat-versatile/clcd.o arch/arm/plat-versatile/sched-clock.o arch/arm/plat-versatile/headsmp.o arch/arm/plat-versatile/platsmp.o 
