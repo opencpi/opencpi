@@ -16,13 +16,13 @@
 -- You should have received a copy of the GNU Lesser General Public License
 -- along with this program. If not, see <http://www.gnu.org/licenses/>.
 
--- An I2C generic subdevice for the fmcomms3 card
+-- An I2C generic subdevice for the fmcomms2/3 cards
 
 library IEEE, ocpi, i2c;
 use IEEE.std_logic_1164.all, ieee.numeric_std.all;
 use ocpi.all, ocpi.types.all;
 use i2c.i2c.all;
-architecture rtl of fmcomms3_i2c_worker is
+architecture rtl of fmcomms_2_3_i2c_worker is
   constant addr_width_c    : natural := 7;
   signal   scl_padoen      : std_logic;
   signal   sda_padoen      : std_logic;
@@ -42,7 +42,7 @@ architecture rtl of fmcomms3_i2c_worker is
   signal   stm_mc24c02_addr     : std_logic_vector(6 downto 0);
   constant stm_mc24c02_addr_6_3 : std_logic_vector(3 downto 0) := "1010"; -- Table 2 in datasheet
   -- MC24C02 TSSOP package-specific addressing
-  constant stm_mc24c02_addr_2   : std_logic := '0';     -- MC24C02 pin 3 (E2) is grounded on FMCOMMS3 board
+  constant stm_mc24c02_addr_2   : std_logic := '0';     -- MC24C02 pin 3 (E2) is grounded on FMCOMMS2/3 boards
   signal   stm_mc24c02_addr_1   : std_logic := FMC_GA0; -- MC24C02 pin 2 (E1) is connected to FMC GA0
   signal   stm_mc24c02_addr_0   : std_logic := FMC_GA1; -- MC24C02 pin 1 (E0) is connected to FMC GA1
 begin

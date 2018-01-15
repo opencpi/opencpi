@@ -1,4 +1,4 @@
-<!-- ADI ad9361 FMC card, officially named AD_FMCOMMS3-EBZ
+<!-- ADI ad9361 FMC cards, officially named AD_FMCOMMS2-EBZ/AD_FMCOMMS3-EBZ
      This card definition maps the devices' signals to the slot's signals
 
      The ad9361 chip is supported by other device workers, in hdl/devices/ad9361*
@@ -13,11 +13,13 @@
      Since the ad9361 is such a multifunction device it uses multiple device workers
 
      ad9361_config.hdl
-     ad9361_adc.hdl, ad9361_adc.hdl, ad9361_adc_sub.hdl for the ADC
-     ad9361_dac.hdl, ad9361_dac.hdl, ad9361_dac_sub.hdl for the DAC
-     ad9361_sub.hdl for sharing multiple wires (including SPI) between these functions.
+     ad9361_adc.hdl, ad9361_adc.hdl, ad9361_adc_sub.hdl for the 2-channel ADC
+     ad9361_dac.hdl, ad9361_dac.hdl, ad9361_dac_sub.hdl for the 2-channel DAC
+     ad9361_data_sub.hdl for sharing multiple wires between these functions
+     ad9361_spi.hdl for SPI bus
+     fmcomms_2_3_i2c.hdl for I2C bus
 
-     While the ad9361 has lots of clocking and data options, none of them are restricted nor controlled by the fmcomms3
+     While the ad9361 has lots of clocking and data options, none of them are restricted nor controlled by the fmcomms2/3
      since all the signals are wired directly to the FPGA except the crystal.
 -->
 <card type="fmc_lpc">
@@ -31,7 +33,7 @@
          preventing them from being enabled -->
 
     <!-- The LVDS configuration is not a hard requirement but it is included
-         here since it is recommended by Analog Devices for FMCOMMS3 -->
+         here since it is recommended by Analog Devices for FMCOMMS2/3 -->
     <!--Property name='iostandard'  value='LVDS'/-->
 
     <!-- value must be dual when iostandard parameter value is LVDS -->
@@ -53,7 +55,7 @@
          preventing them from being enabled -->
 
     <!-- The LVDS configuration is not a hard requirement but it is included
-         here since it is recommended by Analog Devices for FMCOMMS3 -->
+         here since it is recommended by Analog Devices for FMCOMMS2/3 -->
     <!--Property name='iostandard'  value='LVDS'/-->
 
     <!-- value must be dual when iostandard parameter value is LVDS -->
@@ -112,7 +114,7 @@
     <!-- TODO / FIXME - enable this property, there is currently a bug
          preventing it from being enabled -->
     <!-- The LVDS configuration is not a hard requirement but it is included
-         here since it is recommended by Analog Devices for FMCOMMS3 -->
+         here since it is recommended by Analog Devices for FMCOMMS2/3 -->
     <!--Property name='P0_P1_ARE_SWAPPED_p' value='false'/-->
     <!--Property name='DIFFERENTIAL_p'      value='true'/-->
     <!--Property name='PORT_CONFIG_p'       value='dual'/-->
@@ -126,7 +128,7 @@
     <Signal name='PD_RST_N' slot=''/>
   </device>
   <device worker='stm_mc24c02'/>
-  <device worker='fmcomms3_i2c'>
+  <device worker='fmcomms_2_3_i2c'>
     <Signal name='SCL'        slot='SCL'/>        <!--  C30 -->
     <Signal name='SDA'        slot='SDA'/>        <!--  C31 -->
   </device>

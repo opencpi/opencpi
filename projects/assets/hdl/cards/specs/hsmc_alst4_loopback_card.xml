@@ -1,0 +1,113 @@
+<card type="hsmc_alst4">
+  <device worker="hsmc_loopback">
+
+    <!--  bank 1                                  -->
+    <!--signal name="xcvr_txp7" slot="XCVR_TXp7"      /-->
+    <!--signal name="xcvr_rxp7" slot="XCVR_RXp7"      /-->
+    <!--signal name="xcvr_txp6" slot="XCVR_TXp6"      /-->
+    <!--signal name="xcvr_rxp6" slot="XCVR_RXp6"      /-->
+    <!--signal name="xcvr_txp5" slot="XCVR_TXp5"      /-->
+    <!--signal name="xcvr_rxp5" slot="XCVR_RXp5"      /-->
+    <!--signal name="xcvr_txp4" slot="XCVR_TXp4"      /-->
+    <!--signal name="xcvr_rxp4" slot="XCVR_RXp4"      /-->
+    <!--signal name="xcvr_txp3" slot="XCVR_TXp3"      /-->
+    <!--signal name="xcvr_rxp3" slot="XCVR_RXp3"      /-->
+    <!--signal name="xcvr_txp2" slot="XCVR_TXp2"      /-->
+    <!--signal name="xcvr_rxp2" slot="XCVR_RXp2"      /-->
+    <!--signal name="xcvr_txp1" slot="XCVR_TXp1"      /-->
+    <!--signal name="xcvr_rxp1" slot="XCVR_RXp1"      /-->
+    <!--signal name="xcvr_txp0" slot="XCVR_TXp0"      /-->
+    <!--signal name="xcvr_rxp0" slot="XCVR_RXp0"      /-->
+    <signal name="sda"      slot="SDA"             />
+    <signal name="scl"      slot="SCL"             />
+    <signal name="clkout0"  slot="CLKOUT0"         />
+    <signal name="clkin0"   slot="CLKIN0"          />
+
+    <!--  bank 2                                  -->
+    <signal name="d0"       slot="D0"              />
+    <signal name="d1"       slot="D1"              />
+    <signal name="d2"       slot="D2"              />
+    <signal name="d3"       slot="D3"              />
+    <signal name="d4"       slot="D4_OR_LVDS_TXp0" />
+    <signal name="d5"       slot="D5_OR_LVDS_RXp0" />
+    <signal name="d6"       slot="D6_OR_LVDS_TXn0" />
+    <signal name="d7"       slot="D7_OR_LVDS_RXn0" />
+    <signal name="d8"       slot="D8_OR_LVDS_TXp1" />
+    <signal name="d9"       slot="D9_OR_LVDS_RXp1" />
+    <signal name="d10"      slot="D10_OR_LVDS_TXn1"/>
+    <signal name="d11"      slot="D11_OR_LVDS_RXn1"/>
+    <signal name="d12"      slot="D12_OR_LVDS_TXp2"/>
+    <signal name="d13"      slot="D13_OR_LVDS_RXp2"/>
+    <signal name="d14"      slot="D14_OR_LVDS_TXn2"/>
+    <signal name="d15"      slot="D15_OR_LVDS_RXn2"/>
+    <signal name="d16"      slot="D16_OR_LVDS_TXp3"/>
+    <signal name="d17"      slot="D17_OR_LVDS_RXp3"/>
+    <signal name="d18"      slot="D18_OR_LVDS_TXn3"/>
+    <signal name="d19"      slot="D19_OR_LVDS_RXn3"/>
+    <signal name="d20"      slot="D20_OR_LVDS_TXp4"/>
+    <signal name="d21"      slot="D21_OR_LVDS_RXp4"/>
+    <signal name="d22"      slot="D22_OR_LVDS_TXn4"/>
+    <signal name="d23"      slot="D23_OR_LVDS_RXn4"/>
+    <signal name="d24"      slot="D24_OR_LVDS_TXp5"/>
+    <signal name="d25"      slot="D25_OR_LVDS_RXp5"/>
+    <signal name="d26"      slot="D26_OR_LVDS_TXn5"/>
+    <signal name="d27"      slot="D27_OR_LVDS_RXn5"/>
+    <signal name="d28"      slot="D28_OR_LVDS_TXp6"/>
+    <signal name="d29"      slot="D29_OR_LVDS_RXp6"/>
+    <signal name="d30"      slot="D30_OR_LVDS_TXn6"/>
+    <signal name="d31"      slot="D31_OR_LVDS_RXn6"/>
+    <signal name="d32"      slot="D32_OR_LVDS_TXp7"/>
+    <signal name="d33"      slot="D33_OR_LVDS_RXp7"/>
+    <signal name="d34"      slot="D34_OR_LVDS_TXn7"/>
+    <signal name="d35"      slot="D35_OR_LVDS_RXn7"/>
+    <signal name="clkout1p" slot="D36_OR_LVDS_CLKOUT1p"/>
+    <signal name="clkin1p"  slot="CLKIN1p"             />
+    <signal name="clkout1n" slot="D38_OR_LVDS_CLKOUT1n"/>
+    <signal name="clkin1n"  slot="CLKIN1n"             />
+
+    <!--  bank 3                                      -->
+    <signal name="d40"         slot="D40_OR_LVDS_TXp8" />
+    <signal name="d41"         slot="D41_OR_LVDS_RXp8" />
+    <signal name="d42"         slot="D42_OR_LVDS_TXn8" />
+    <signal name="d43"         slot="D43_OR_LVDS_RXn8" />
+    <signal name="d44"         slot="D44_OR_LVDS_TXp9" />
+    <signal name="d45"         slot="D45_OR_LVDS_RXp9" />
+    <signal name="d46"         slot="D46_OR_LVDS_TXn9" />
+    <signal name="d47"         slot="D47_OR_LVDS_RXn9" />
+    <signal name="d48"         slot="D48_OR_LVDS_TXp10"/>
+    <signal name="d49"         slot="D49_OR_LVDS_RXp10"/>
+    <signal name="d50"         slot="D50_OR_LVDS_TXn10"/>
+    <signal name="d51"         slot="D51_OR_LVDS_RXn10"/>
+    <signal name="d52"         slot="D52_OR_LVDS_TXp11"/>
+    <signal name="d53"         slot="D53_OR_LVDS_RXp11"/>
+    <signal name="d54"         slot="D54_OR_LVDS_TXn11"/>
+    <signal name="d55"         slot="D55_OR_LVDS_RXn11"/>
+    <signal name="d56"         slot="D56_OR_LVDS_TXp12"/>
+    <signal name="d57"         slot="D57_OR_LVDS_RXp12"/>
+    <signal name="d58"         slot="D58_OR_LVDS_TXn12"/>
+    <signal name="d59"         slot="D59_OR_LVDS_RXn12"/>
+    <signal name="d60"         slot="D60_OR_LVDS_TXp13"/>
+    <signal name="d61"         slot="D61_OR_LVDS_RXp13"/>
+    <signal name="d62"         slot="D62_OR_LVDS_TXn13"/>
+    <signal name="d63"         slot="D63_OR_LVDS_RXn13"/>
+    <signal name="d64"         slot="D64_OR_LVDS_TXp14"/>
+    <signal name="d65"         slot="D65_OR_LVDS_RXp14"/>
+    <signal name="d66"         slot="D66_OR_LVDS_TXn14"/>
+    <signal name="d67"         slot="D67_OR_LVDS_RXn14"/>
+    <signal name="d68"         slot="D68_OR_LVDS_TXp15"/>
+    <signal name="d69"         slot="D69_OR_LVDS_RXp15"/>
+    <signal name="d70"         slot="D70_OR_LVDS_TXn15"/>
+    <signal name="d71"         slot="D71_OR_LVDS_RXn15"/>
+    <signal name="d72"         slot="D72_OR_LVDS_TXp16"/>
+    <signal name="d73"         slot="D73_OR_LVDS_RXp16"/>
+    <signal name="d74"         slot="D74_OR_LVDS_TXn16"/>
+    <signal name="d75"         slot="D75_OR_LVDS_RXn16"/>
+    <signal name="d76"         slot="D76_OR_CLKOUT2p"  />
+    <signal name="d77"         slot="D77_OR_CLKIN2p"   />
+    <signal name="d78"         slot="D78_OR_CLOUT2n"   />
+    <signal name="d79"         slot="D79_OR_CLKIN2n"   />
+    <signal name="psntn"       slot="PSNTn"            />
+
+  </device>
+</card>
+

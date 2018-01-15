@@ -1,0 +1,5 @@
+<hdlcontainer platform="alst4">
+  <device name="hsmc_loopback" card="hsmc_alst4_loopback_card" slot="HSMC_ALST4_A"/>
+  <device name="hsmc_loopback" card="hsmc_alst4_loopback_card" slot="HSMC_ALST4_B"/>
+</hdlcontainer>
+

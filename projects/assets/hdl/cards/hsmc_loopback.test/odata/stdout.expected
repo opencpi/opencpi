@@ -1,0 +1,75 @@
+usage: ./test.sh
+searching for OpenCPI-enabled PCIE devices...
+loading and initializing FPGA bitfile...
+HSMC Port A card detected... true
+HSMC Port B card detected... true
+
+-TESTING ALST4 HSMC PORT A BANK 1
+   sda:true
+   sda:false
+   clkin0:true
+   clkin0:false
+
+-TESTING ALST4 HSMC PORT A BANK 2
+   setting direction even Dxx -> odd  Dxx
+   setting all outputs to 1
+          d0   d1   d2   d3   d4   d5   d6   d7   d8   d9   d10  d11  d12  d13  d14  d15  d16  d17  d18  d19  d20  d21  d22  d23  d24  d25  d26  d27  d28  d29  d30  d31  d32  d33  d34  d35
+   d_0_35:true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true
+   setting all outputs to 0
+          d0    d1    d2    d3    d4    d5    d6    d7    d8    d9    d10   d11   d12   d13   d14   d15   d16   d17   d18   d19   d20   d21   d22   d23   d24   d25   d26   d27   d28   d29   d30   d31   d32   d33   d34   d35
+   d_0_35:false
+   setting direction odd  Dxx -> even Dxx
+   setting all outputs to 1
+          d0   d1   d2   d3   d4   d5   d6   d7   d8   d9   d10  d11  d12  d13  d14  d15  d16  d17  d18  d19  d20  d21  d22  d23  d24  d25  d26  d27  d28  d29  d30  d31  d32  d33  d34  d35
+   d_0_35:true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true
+   setting all outputs to 0
+          d0    d1    d2    d3    d4    d5    d6    d7    d8    d9    d10   d11   d12   d13   d14   d15   d16   d17   d18   d19   d20   d21   d22   d23   d24   d25   d26   d27   d28   d29   d30   d31   d32   d33   d34   d35
+   d_0_35:false
+   num_clkout1p_rising_edges:32767
+   num_clkout1n_rising_edges:32767
+
+-TESTING ALST4 HSMC PORT A BANK 3
+   setting all outputs to 1
+   d_40_79:true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true
+   setting all outputs to 0
+   d_40_79:false
+   setting direction odd  Dxx -> even Dxx
+   setting all outputs to 1
+   d_40_79:true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true
+   setting all outputs to 0
+   d_40_79:false
+
+-TESTING ALST4 HSMC PORT B BANK 1
+   sda:true
+   sda:false
+   clkin0:true
+   clkin0:false
+
+-TESTING ALST4 HSMC PORT B BANK 2
+   setting direction even Dxx -> odd  Dxx
+   setting all outputs to 1
+          d0   d1   d2   d3   d4   d5   d6   d7   d8   d9   d10  d11  d12  d13  d14  d15  d16  d17  d18  d19  d20  d21  d22  d23  d24  d25  d26  d27  d28  d29  d30  d31  d32  d33  d34  d35
+   d_0_35:true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true
+   setting all outputs to 0
+          d0    d1    d2    d3    d4    d5    d6    d7    d8    d9    d10   d11   d12   d13   d14   d15   d16   d17   d18   d19   d20   d21   d22   d23   d24   d25   d26   d27   d28   d29   d30   d31   d32   d33   d34   d35
+   d_0_35:false
+   setting direction odd  Dxx -> even Dxx
+   setting all outputs to 1
+          d0   d1   d2   d3   d4   d5   d6   d7   d8   d9   d10  d11  d12  d13  d14  d15  d16  d17  d18  d19  d20  d21  d22  d23  d24  d25  d26  d27  d28  d29  d30  d31  d32  d33  d34  d35
+   d_0_35:true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true
+   setting all outputs to 0
+          d0    d1    d2    d3    d4    d5    d6    d7    d8    d9    d10   d11   d12   d13   d14   d15   d16   d17   d18   d19   d20   d21   d22   d23   d24   d25   d26   d27   d28   d29   d30   d31   d32   d33   d34   d35
+   d_0_35:false
+   num_clkout1p_rising_edges:32767
+   num_clkout1n_rising_edges:32767
+
+-TESTING ALST4 HSMC PORT B BANK 3
+   setting all outputs to 1
+   d_40_79:true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true
+   setting all outputs to 0
+   d_40_79:false
+   setting direction odd  Dxx -> even Dxx
+   setting all outputs to 1
+   d_40_79:true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true
+   setting all outputs to 0
+   d_40_79:false

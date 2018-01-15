@@ -1,0 +1,11 @@
+<!-- filename           : alst4_hsmc_alst4_b_debug_header_breakout_container -->
+<!--                                                                         -->
+<!-- platform           : alst4                                              -->
+<!-- slot name          :       hsmc_alst4_b                                 -->
+<!-- worker/card description :               debug_header_breakout           -->
+<!-- filetype           :                                          container -->
+<!--                                                                         -->
+<hdlcontainer platform="alst4">
+  <device name="hsmc_debug_header_breakout" card="hsmc_alst4_debug_header_breakout_card" slot="HSMC_ALST4_B"/>
+</hdlcontainer>
+
