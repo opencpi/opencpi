@@ -26,8 +26,4 @@
 PackageName=unsupported
 PackagePrefix=ocpi
 
-ProjectDependencies=
-
-
-
-
+ProjectDependencies=ocpi.assets
