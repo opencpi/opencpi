@@ -1,0 +1,35 @@
+<hdlconfig constraints="fmcomms_2_3_lpc_ad9361_adc_sub_ad9361_dac_sub_LVDS">
+  <!-- comm buses (e.g. I2C/SPI) -->
+  <device name="fmcomms_2_3_i2c"  card="fmcomms_2_3_lpc" slot="fmc_lpc">
+    <property name="CP_CLK_FREQ_p" value="125e6"/> <!-- we MUST provide to this worker the ml605's control plane clock freq value -->
+    <property name="FMC_GA1" value="1"/> <!-- we MUST provide to this worker the ml605's hardwired value for FMC LPC slot -->
+    <property name="FMC_GA0" value="0"/> <!-- we MUST provide to this worker the ml605's hardwired value for FMC LPC slot -->
+  </device>
+  <device name="ad9361_spi"  card="fmcomms_2_3_lpc">
+    <property name="CP_CLK_FREQ_HZ_p" value="125e6"/> <!-- we MUST provide to this worker the ml605's control plane clock freq value -->
+  </device>
+
+  <!-- command/control -->
+  <device name="ad9361_data_sub" card="fmcomms_2_3_lpc">
+    <property name='LVDS_p' value='true'/>
+    <!-- we MUST enforce use of a particular parameterized build of this
+         worker which corresponds to parameter property values which are
+         required for the RX/TX clock/data paths for the zed/fmcomms2/3 setup/hold
+         requirements -->
+    <property name='DATA_CLK_Delay' value='2'/>
+    <property name='RX_Data_Delay'  value='0'/>
+    <property name='FB_CLK_Delay'   value='7'/>
+    <property name='TX_Data_Delay'  value='0'/>
+  </device>
+  <device name="ad9361_config"  card="fmcomms_2_3_lpc" slot="fmc_lpc"/>
+
+  <!-- 2 RX channel(s), 1 TX channel(s) data interface(s) -->
+  <device name="ad9361_adc_sub" card="fmcomms_2_3_lpc" slot="fmc_lpc"/>
+  <device name="ad9361_dac_sub" card="fmcomms_2_3_lpc" slot="fmc_lpc"/>
+  <device name="ad9361_adc0"    card="fmcomms_2_3_lpc" slot="fmc_lpc"/> <!-- connection must be defined in a container -->
+  <device name="ad9361_adc1"    card="fmcomms_2_3_lpc" slot="fmc_lpc"/> <!-- connection must be defined in a container -->
+  <device name="ad9361_dac0"    card="fmcomms_2_3_lpc" slot="fmc_lpc"/> <!-- connection must be defined in a container -->
+
+  <!-- other peripherals -->
+
+</hdlconfig>
