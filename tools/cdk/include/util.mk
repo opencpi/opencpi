@@ -545,8 +545,8 @@ OcpiGetRccPlatformPaths=$(strip \
 # Search for a given platform ($1) in the list of 'rcc/platform' directories found
 # by OcpiGetRccPlatformPaths.
 OcpiGetRccPlatformDir=$(strip $(firstword \
-		        $(foreach p,$(OcpiGetRccPlatformPaths),\
-                          $(wildcard $p/$1))))
+		        $(or $(strip $(foreach p,$(OcpiGetRccPlatformPaths),$(wildcard $p/$1))),\
+                             $(error Cannot find RCC platform "$1" in $(OcpiGetRccPlatformPaths)))))
 
 ##################################################################################
 # Functions for collecting Project Dependencies and imports for use with project
@@ -560,7 +560,8 @@ OcpiGetProjectDependencies=$(strip \
   $(foreach d,$(OcpiProjectDependenciesInternal),\
     $(if $(findstring /,$d),\
       $d,\
-      $(call OcpiGetProjectInImports,.,$d)) ))
+      $(or $(call OcpiGetProjectInImports,.,$d),\
+         $(and $(filter ocpi.core ocpi.cdk,$d),$(wildcard $(OcpiProjectRegistryDir)/$d))))))
 # These are the leftover imports that are not listed in the ProjectDependencies
 OcpiGetImportsNotInDependencies=$(strip \
   $(foreach i,$(OcpiGetProjectImports),\

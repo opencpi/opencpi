@@ -326,7 +326,9 @@ for a in $assets; do
 		  fi
 	      else
 		  if [ -z "$model" ] ; then
-		     if egrep -q '^[ 	]*include[ 	]*.*/include/(lib|library).mk' components/Makefile; then
+		      if [ -f components/Makefile ] &&
+			     egrep -q '^[ 	]*include[ 	]*.*/include/(lib|library).mk' \
+				   components/Makefile; then
 			 libraries=(components)
 		     else
 			 libraries=(`topdirs components "(lib|library)"`)

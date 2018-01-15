@@ -16,19 +16,19 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-# This Makefile fragment is for the "ocpi.assets" project
+OcpiApp=biasFile
 
-# Package identifier is used in a hierachical fashion from Project to Libraries....
-# The PackageName, PackagePrefix and Package variables can optionally be set here:
-# PackageName defaults to the name of the directory
-# PackagePrefix defaults to local
-# Package overrides the other variables and defaults to PackageName.PackagePrefix
-PackageName=assets
-PackagePrefix=ocpi
+OcpiRunArgs?= $(ARGS)
 
-ProjectDependencies=
+# Prepare the input data before the app is run
+override OcpiRunBefore+= \
+  g++ -Wall -o target-$(OCPI_TOOL_DIR)/a.out mkTestFile.cxx; \
+  target-$(OCPI_TOOL_DIR)/a.out $(FILE_SIZE) > test.input 2> good.output; $(VG)
 
-# These assignments support building from any directory.
-ComponentLibraries+=misc_comps util_comps dsp_comps comms_comps devices cards
-#example remote system: note there can be multiple remote systems, colon-separated.
-#export OCPI_REMOTE_TEST_SYSTEMS:=10.0.1.16=root=root=/mnt/net/workspace/git/ocpi.assets
+# Verify after output after the app is run
+override OcpiRunAfter+= ; cmp test.output good.output && echo PASSED
+
+include $(OCPI_CDK_DIR)/include/application.mk
+
+clean::
+	$(AT)rm -f -r test.output test.input good.output sss simulations/

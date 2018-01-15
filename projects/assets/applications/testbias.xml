@@ -1,0 +1,13 @@
+<application done='file_write' package='ocpi.core'>
+  <instance component='file_read' connect='bias'>
+    <property name='filename' value='test.input'/>
+    <property name='granularity' value='4'/>
+    <property name='messageSize' value='16'/>
+  </instance>
+  <instance component='bias' connect='file_write'>
+    <property name='biasValue' value='0x01020304'/>
+  </instance>
+  <instance component='file_write'>
+    <property name='filename' value='test.output'/>
+  </instance>
+</application>

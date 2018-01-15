@@ -16,19 +16,17 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-# This Makefile fragment is for the "ocpi.assets" project
+OcpiApp=hello
 
-# Package identifier is used in a hierachical fashion from Project to Libraries....
-# The PackageName, PackagePrefix and Package variables can optionally be set here:
-# PackageName defaults to the name of the directory
-# PackagePrefix defaults to local
-# Package overrides the other variables and defaults to PackageName.PackagePrefix
-PackageName=assets
-PackagePrefix=ocpi
+override OcpiRunBefore+= $(VG)
+override OcpiRunAfter+= > /dev/null
 
-ProjectDependencies=
+include $(OCPI_CDK_DIR)/include/application.mk
 
-# These assignments support building from any directory.
-ComponentLibraries+=misc_comps util_comps dsp_comps comms_comps devices cards
-#example remote system: note there can be multiple remote systems, colon-separated.
-#export OCPI_REMOTE_TEST_SYSTEMS:=10.0.1.16=root=root=/mnt/net/workspace/git/ocpi.assets
+# Set package to local for the hello.rcc worker
+Package=local
+export OCPI_LIBRARY_PATH=lib
+
+# These make the worker library for this application
+Implementations = hello.rcc
+include $(OCPI_CDK_DIR)/include/lib.mk

@@ -16,19 +16,12 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-# This Makefile fragment is for the "ocpi.assets" project
+OcpiApp=copyFile
 
-# Package identifier is used in a hierachical fashion from Project to Libraries....
-# The PackageName, PackagePrefix and Package variables can optionally be set here:
-# PackageName defaults to the name of the directory
-# PackagePrefix defaults to local
-# Package overrides the other variables and defaults to PackageName.PackagePrefix
-PackageName=assets
-PackagePrefix=ocpi
+override OcpiRunAfter+= $(Transport) > /dev/null ; \
+               cmp hello.file out.file
 
-ProjectDependencies=
+include $(OCPI_CDK_DIR)/include/application.mk
 
-# These assignments support building from any directory.
-ComponentLibraries+=misc_comps util_comps dsp_comps comms_comps devices cards
-#example remote system: note there can be multiple remote systems, colon-separated.
-#export OCPI_REMOTE_TEST_SYSTEMS:=10.0.1.16=root=root=/mnt/net/workspace/git/ocpi.assets
+clean::
+	$(AT)rm -f -r out.file
