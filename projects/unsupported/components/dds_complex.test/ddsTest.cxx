@@ -94,7 +94,7 @@ printUsage (UnitTestConfigurator & config,
 int main ( int argc, char* argv [ ] )
 {
   int passed = 1;
-  const char * xml("<application package='ocpi'>"
+  const char * xml("<application package='ocpi.unsupported'>"
 		   " <policy mapping='MaxProcessors' processors='0'/>"
 
 		   "  <instance component='dds_complex' name='unit_test' selection='model==\"%s\"'>"

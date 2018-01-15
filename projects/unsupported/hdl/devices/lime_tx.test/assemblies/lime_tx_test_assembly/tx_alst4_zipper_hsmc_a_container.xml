@@ -1,0 +1,3 @@
+<HdlContainer Platform='alst4/alst4_zipper_hsmc_alst4_port_a_tx'>
+  <connection external='out' device='lime_tx' port='event_in' card='lime_zipper_hsmc_alst4' slot='hsmc_alst4_a'/>
+</HdlContainer>

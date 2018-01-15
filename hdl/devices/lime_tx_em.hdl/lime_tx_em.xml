@@ -1,3 +1,0 @@
-<HdlDevice language="vhdl" spec="emulator-spec" emulate="lime_tx.hdl" spec="emulator">
-  <!-- Insert any other implementation-specific information here -->
-</HdlDevice>

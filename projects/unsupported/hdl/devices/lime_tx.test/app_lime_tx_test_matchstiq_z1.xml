@@ -1,0 +1,36 @@
+<Application Package="ocpi.unsupported">
+  <!-- HDL Components-->
+  <!-- TX Chain -->
+  <Instance Component="ocpi.assets.devices.rf_tx"/>
+
+  <!-- Command and Control -->
+  <Instance Component="ocpi.assets.devices.si5338"/>
+  <Instance Component="ocpi.assets.devices.tmp100"/>
+  <Instance Component="ocpi.assets.platforms.matchstiq_z1.devices.matchstiq_z1_avr"/>
+  <Instance Component="ocpi.unsupported.test_tx_event"/>
+  
+  <!-- RCC Proxies -->
+  <!-- TX Chain -->
+  <Instance Component="ocpi.assets.devices.rf_tx_proxy" Slave="rf_tx"/>
+  <!-- Command and Control -->
+  <Instance Component="ocpi.core.devices.clock_gen" Slave="si5338"/>
+  <Instance Component="ocpi.assets.platforms.matchstiq_z1.devices.matchstiq_z1_avr_proxy" Slave="matchstiq_z1_avr">
+    <Property Name="warp_voltage" Value="1970"/>
+    <Property Name="led" Value="green"/>
+  </Instance>
+  <Instance Component="ocpi.assets.devices.tmp100_proxy" Slave="tmp100"/>
+  
+  <!-- RCC Frontend Proxies -->
+  <!-- TX Chain -->
+  <Instance Component="ocpi.core.tx">
+    <Property Name="sample_rate_min_MHz" Value="0.100"/>
+  </Instance>
+
+  <!-- Connections -->
+  <!-- Command and Control -->
+  <Connection>
+    <Port Instance="test_tx_event" Name="event_out"/>
+    <Port Instance="rf_tx" Name="event_in"/>
+  </Connection>
+
+</Application>

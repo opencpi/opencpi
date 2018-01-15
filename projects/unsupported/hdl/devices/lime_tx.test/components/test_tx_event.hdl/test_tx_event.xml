@@ -1,0 +1,3 @@
+<hdlworker language='vhdl' spec='test_tx_event-spec'>
+  <streaminterface name='event_out' optional='true'/>
+</hdlworker>
