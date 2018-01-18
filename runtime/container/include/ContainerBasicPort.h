@@ -97,7 +97,7 @@ namespace OCPI {
       BufferHeader     m_hdr;
       BasicPort       &m_port;   // which port to I belong to
       bool             m_full;   // This buffer has a complete message in it
-      bool             m_filling;// The buffer is in the process of being filled
+      bool             m_busy;   // The buffer is in the process of being emptied or filled
       unsigned         m_position;
       ExternalBuffer  *m_next;   // prewrapped, initialized once, !==NULL indicates shim mode
       // These are for zero-copy.  The header of a non-ZC buffer is used to store
@@ -195,6 +195,7 @@ typedef int pthread_spinlock_t;
     public:
       Container &container() const { return m_container; }
       inline const OCPI::Util::Port &metaPort() const { return m_metaPort; }
+      OCPI::API::BaseType getOperationInfo(uint8_t opCode, size_t &nbytes);
       virtual void mapBuffers(size_t /*offset*/, size_t /*size*/) {};
       virtual void unmapBuffers(size_t /*offset*/, size_t /*size*/) {};
       // FIXME: Horrible hack to allow retrieving special memory handles

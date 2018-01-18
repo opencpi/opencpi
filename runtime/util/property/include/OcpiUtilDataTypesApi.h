@@ -71,10 +71,15 @@
     /**/
 // NOTE above that strings are aligned at 32 bits
 
+#if 0 // These don't work with SWIG because SWIG has bugs in its ability to do C/C++ preprocessing
 #define OCPI_DATA_TYPE_H OCPI_DATA_TYPE
 #define OCPI_DATA_TYPE_X OCPI_DATA_TYPE
 #define OCPI_DATA_TYPE_S OCPI_DATA_TYPE
-
+#else
+#define OCPI_DATA_TYPE_H(sca,corba,letter,bits,run,pretty,store) OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)
+#define OCPI_DATA_TYPE_X(sca,corba,letter,bits,run,pretty,store) OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)
+#define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store) OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)
+#endif
 namespace OCPI {
   namespace API {
     // Enumerated type for base builtin types
@@ -102,7 +107,11 @@ namespace OCPI {
     OCPI_DATA_TYPES
 #undef OCPI_DATA_TYPE
 #undef OCPI_DATA_TYPE_S
+#if 0 // avoid SWIG bugs
 #define OCPI_DATA_TYPE_S OCPI_DATA_TYPE
+#else
+#define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store) OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)
+#endif
   } // API
 } // OCPI
 #endif

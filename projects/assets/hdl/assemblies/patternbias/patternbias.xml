@@ -1,6 +1,6 @@
 <HdlAssembly>
-  <Instance Worker='pattern' connect='bias_16'/>
-  <Instance Worker="bias_16" external='out'/>
+  <Instance Worker='pattern' connect='bias_vhdl'/>
+  <Instance Worker="bias_vhdl" external='out'/>
 </HdlAssembly>
 
    

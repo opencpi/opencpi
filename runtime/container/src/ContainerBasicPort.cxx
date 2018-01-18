@@ -86,8 +86,9 @@ namespace OCPI {
 
     ExternalBuffer::
     ExternalBuffer(BasicPort &a_port, ExternalBuffer *a_next, unsigned n)
-      : m_port(a_port), m_full(false), m_position(n), m_next(a_next), m_zcHead(NULL),
-	m_zcTail(NULL), m_zcNext(NULL), m_zcHost(NULL), m_dtBuffer(NULL), m_dtData(NULL) {
+      : m_port(a_port), m_full(false), m_busy(false), m_position(n), m_next(a_next),
+	m_zcHead(NULL), m_zcTail(NULL), m_zcNext(NULL), m_zcHost(NULL), m_dtBuffer(NULL),
+	m_dtData(NULL) {
       memset(&m_hdr, 0, sizeof(m_hdr));
       pthread_spin_init(&m_zcLock, PTHREAD_PROCESS_PRIVATE);
     }
@@ -570,15 +571,15 @@ namespace OCPI {
 	return m_forward->getEmptyBuffer();
       if (m_next2write) { // shim mode
 	ocpiDebug("getempty: %p %p %p %u", &metaPort().metaWorker(), this, m_next2write, m_next2write->m_full);
-	if (!m_next2write->m_full) {
-	  m_next2write->m_hdr.m_data =
-	    OCPI_UTRUNCATE(uint8_t,
-			   sizeof(ExternalBuffer) -
-			   OCPI_OFFSETOF(size_t, ExternalBuffer, m_hdr));
-	  m_next2write->m_hdr.m_length = OCPI_UTRUNCATE(uint32_t, m_bufferSize);
-	  ExternalBuffer *b = m_next2write;
-	  m_next2write = m_next2write->m_next;
+	ExternalBuffer *b = m_next2write;
+	if (!b->m_full && !b->m_busy) {
+	  b->m_hdr.m_data = OCPI_UTRUNCATE(uint8_t,
+					   sizeof(ExternalBuffer) -
+					   OCPI_OFFSETOF(size_t, ExternalBuffer, m_hdr));
+	  b->m_hdr.m_length = OCPI_UTRUNCATE(uint32_t, m_bufferSize);
+	  m_next2write = b->m_next;
 	  ocpiDebug("GetEmpty on %p returns %p", this, b);
+	  b->m_busy = true;
 	  return b;
 	}
 	return NULL;
@@ -680,6 +681,7 @@ namespace OCPI {
 		(uint8_t*)&m_full - (uint8_t*)this);
 
       m_full = true;
+      m_busy = false;
       if (m_next) {
 	m_port.m_nWritten++;
 	assert(this == m_port.m_next2put);
@@ -838,7 +840,7 @@ namespace OCPI {
 	      break;
 	    }
 	  }
-	  if (b->m_full && !b->m_zcHost)
+	  if (b->m_full && !b->m_busy && !b->m_zcHost)
 	    m_next2read = b->m_next;
 	  else
 	    return NULL;
@@ -846,6 +848,7 @@ namespace OCPI {
 	ocpiDebug("getFull%s on %p %p returns %p  len %zu op %u", zc ? "ZC" : "",
 		  &metaPort().metaWorker(), this, b, (size_t)(b->m_hdr.m_length),
 		  b->m_hdr.m_opCode);
+	b->m_busy = true;
 	return b;
       }
       if (m_dtPort) {
@@ -903,6 +906,7 @@ namespace OCPI {
     // This is the lower API
     void BasicPort::
     takeBuffer(ExternalBuffer &b) {
+      ocpiDebug("takeBuffer: port %p last %p", this, m_lastInBuffer);
       assert(!m_forward);
       // if (m_forward)
       //   return m_forward->takeBuffer(b);
@@ -932,7 +936,9 @@ namespace OCPI {
       else if (m_next2release) {
 	assert(&b.m_port == this);
 	assert(&b == m_next2release);
+	assert(b.m_busy);
 	b.m_full = false;
+	b.m_busy = false;
 	m_nRead++;
 	m_next2release = b.m_next;
 	ocpiDebug("Release on %p of %p head %p tail %p next %p", this, &b, b.m_zcHead, b.m_zcTail, b.m_zcNext);
@@ -1194,6 +1200,15 @@ namespace OCPI {
 	return r + (r > w ? 0 : OCPI_UTRUNCATE(unsigned, m_nBuffers)) - w;
       }
       return 0;
+    }
+    OA::BaseType BasicPort::
+    getOperationInfo(uint8_t opCode, size_t &nbytes) {
+      OU::Operation *ops = m_metaPort.operations();
+      if (ops && opCode >= m_metaPort.nOperations() && ops[opCode].nArgs() == 1) {
+	nbytes = ops[opCode].args()->m_elementBytes;
+	return ops[opCode].args()->m_baseType;
+      }
+      return OA::OCPI_none;
     }
   } // end of namespace Container
 } // end of namespace OCPI

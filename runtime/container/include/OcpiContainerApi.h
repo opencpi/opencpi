@@ -77,6 +77,11 @@ namespace OCPI {
       virtual void put(size_t length, uint8_t opCode, bool end, size_t direct = 0) = 0;
       // put/send a particular buffer, PERHAPS FROM ANOTHER PORT
       virtual void put(OCPI::API::ExternalBuffer &b) = 0;
+      // UNSUPPORTED AND SUBJECT TO CHANGE AT THIS TIME
+      // Supply info for minimal marshalling/demarshalling of messages of scalars
+      // Return OA::OCPI_None if opcode is out of range of known protocol information
+      // Note nbytes for string "scalars" is max bytes per string
+      virtual OCPI::API::BaseType getOperationInfo(uint8_t opCode, size_t &nbytes) = 0;
     };
     class Port {
       friend class OCPI::Container::LocalLauncher;

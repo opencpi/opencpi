@@ -1320,6 +1320,8 @@ namespace OCPI {
 	m_containerApps[n]->startMasterSlave(isMaster, isSlave, isSource);
     }
     void ApplicationI::start() {
+      if (!m_launched)
+	throw OU::Error("OA::Application::start() called before/without calling initialize().");
       if (m_dump)
 	dumpProperties(true, true, "initial");
       if (m_dumpPlatforms)

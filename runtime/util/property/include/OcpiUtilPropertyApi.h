@@ -72,7 +72,11 @@ OCPI_PROPERTY_DATA_TYPES
 
 #undef OCPI_DATA_TYPE
 #undef OCPI_DATA_TYPE_S
+#if 0 // avoid SWIG bugs
 #define OCPI_DATA_TYPE_S OCPI_DATA_TYPE
+#else
+#define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store) OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)
+#endif
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		                   \
   struct Writable##pretty##Property {                                                      \
     void set(const run);                                                                   \

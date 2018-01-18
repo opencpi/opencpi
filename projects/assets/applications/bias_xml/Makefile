@@ -26,7 +26,7 @@ override OcpiRunBefore+= \
   target-$(OCPI_TOOL_DIR)/a.out $(FILE_SIZE) > test.input 2> good.output; $(VG)
 
 # Verify after output after the app is run
-override OcpiRunAfter+= ; cmp test.output good.output && echo PASSED
+override OcpiRunAfter+= && cmp test.output good.output && echo PASSED
 
 include $(OCPI_CDK_DIR)/include/application.mk
 
