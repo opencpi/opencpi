@@ -62,7 +62,7 @@ export OCPI_TARGET_HOST=$(< ../$OCPI_TARGET_PLATFORM/target)
 export OCPI_TARGET_DIR=$OCPI_TARGET_HOST
 export HDL_PLATFORM=${2:-zed}
 if [ -z "$OCPI_PROJECT_REGISTRY_DIR" ]; then
-  OCPI_PROJECT_REGISTRY_DIR=$OCPI_CDK_DIR/../project_registry
+  OCPI_PROJECT_REGISTRY_DIR=$OCPI_CDK_DIR/../project-registry
 fi
 source $OCPI_CDK_DIR/scripts/util.sh
 echo Software platform is $OCPI_TARGET_PLATFORM, and hardware platform is $HDL_PLATFORM.

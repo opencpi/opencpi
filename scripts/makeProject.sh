@@ -281,8 +281,8 @@ OCPI_BASE
 - In general you will want to leave the default OCPI_BASE=0 to recreate
   any project. Only set this option to remove/add custom content associated
   with the base/assets repos.
-- Set OCPI_BASE=1 if recreating base project from the opencpi.git repo
-- Set OCPI_BASE=-1 if recreating assets project from the ocpiassets repo
+- Set OCPI_BASE=1 if recreating core project
+- Set OCPI_BASE=-1 if recreating assets project
 
 OCPI_LOG_LEVEL
 - As used elsewhere
@@ -294,12 +294,10 @@ mkdir -p $(dirname $1)
 
 if [ "$OCPI_BASE" == "1" ] ; then
   project_type=Base
-  pkg=ocpi
-  pj_name=base
+  pj_name=core
   pj_pref=ocpi
 elif [ "$OCPI_BASE" == "-1" ] ; then
   project_type=Assets
-  pkg=ocpiassets
   pj_name=assets
   pj_pref=ocpi
 else
@@ -783,7 +781,7 @@ ${complibs[@]/#/-y } \
 
     # This section is now obsolete (AV-2913)
     # ocpidev automatically adds ComponentLibraries=devices to the makefile of an emulator 
-    # because they need to access the baseproject\'s hdl/devices/specs/emulator-spec.xml
+    # because they need to access the core\'s hdl/devices/specs/emulator-spec.xml
     # if [ -n "$emulate" -a -z "$comlibs" ] ; then
     #   complibs=(devices)
     # fi

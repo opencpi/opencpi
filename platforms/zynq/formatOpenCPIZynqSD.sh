@@ -46,7 +46,7 @@ fi
 echo =============Unmounting all file systems for SD device: $1
 #eject $3 || true
 for i in $(seq 0 20);do
-   umount $1${PART}$i 2>/dev/null || true 
+   umount $1${PART}$i 2>/dev/null || true
 done
 echo =============Formatting the SD device: $1
 SIZE=$(parted -s $1 unit B print| grep -m1 Disk | sed 's/^.* \([0-9]*\)B$/\1/')

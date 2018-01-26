@@ -45,8 +45,8 @@ if test "$OCPI_CDK_DIR" = ""; then
   # Fourth argument is time server for the (old) time protocol used by the rdate command
   # Fifth arg is timezone spec - see "man timezone" for the format.
   source /mnt/card/opencpi/zynq_net_setup.sh $1 /opt/opencpi cdk time.nist.gov EST5EDT,M3.2.0,M11.1.0
-  # mkdir -p /mnt/ocpi_baseproject
-  # mount -t nfs -o udp,nolock,soft,intr $1:/home/user/baseProject /mnt/ocpi_baseproject
+  # mkdir -p /mnt/ocpi_core
+  # mount -t nfs -o udp,nolock,soft,intr $1:/home/user/core /mnt/ocpi_core
   # mkdir -p /mnt/ocpiassets
   # mount -t nfs -o udp,nolock,soft,intr $1:/home/user/ocpiassets /mnt/ocpiassets
   # add any commands to be run only the first time this script is run

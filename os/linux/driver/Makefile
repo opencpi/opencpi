@@ -168,5 +168,10 @@ platform_not_supported:
 # This rule also allows the local host tools (e.g. /scripts/basic/fixdep) to be compiled, if required
 .SILENT: $(KERNELDIR)/include/config/auto.conf
 $(KERNELDIR)/include/config/auto.conf:
+	# make -C $(KERNELDIR) clean V=2 ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE)
+	# make -C $(KERNELDIR) oldconfig V=2 ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE)
+	# make -C $(KERNELDIR) prepare V=2 ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE)
+	# make -C $(KERNELDIR) V=2 ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE)
+	# make -C $(KERNELDIR) modules V=2 ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE)
 	make -C $(KERNELDIR) modules_prepare V=2 ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE)
 endif # ifdef KERNELRELEASE else..

@@ -77,8 +77,8 @@ function match_filter {
     elif [[ "${edirs[$i]}" != "${pdirs[$i]}" ]]; then
       return 1
     fi
-  done 
-  return 0   
+  done
+  return 0
 }
 
 function make_relative_link {

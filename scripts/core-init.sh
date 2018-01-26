@@ -25,5 +25,5 @@ if test "$OCPI_CDK_DIR" == "" -a ! -d exports; then
     exit 1
   fi
   # Ensure a skeletal CDK
-  ./scripts/makeExportLinks.sh - x x
+  ./scripts/makeExportLinks.sh - x - x
 fi
