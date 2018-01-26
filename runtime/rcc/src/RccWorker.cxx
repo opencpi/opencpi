@@ -715,8 +715,10 @@ OCPI_CONTROL_OPS
   }
   const char *err = m_context->errorString ? m_context->errorString : m_errorString;
   std::string serr;
-  if (err) {
-    OU::format(serr, "Worker '%s' produced error during the '%s' control operation: %s",
+  if (err || rc != RCC_OK) {
+    if (!err)
+      err = rc == RCC_ERROR ? "returned RCC_ERROR" : "returned RCC_FATAL";
+    OU::format(serr, "Worker \"%s\" produced an error during the \"%s\" control operation: %s",
 	       name().c_str(), OU::Worker::s_controlOpNames[op], err);
     m_context->errorString = NULL;
     if (m_errorString) {

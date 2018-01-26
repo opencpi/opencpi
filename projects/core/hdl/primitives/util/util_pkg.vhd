@@ -287,4 +287,24 @@ component dac_fifo
           dac_data    : out std_logic_vector(width-1 downto 0));
 end component dac_fifo;
 
+component flag_cross_domain
+  port (
+    clkA         : in  std_logic;
+    flagIn_clkA  : in  std_logic;
+    busy_clkA    : out std_logic;
+    clkB         : in  std_logic;
+    flagOut_clkB : out std_logic);
+end component;
+
+component clock_forward
+  generic (
+    INVERT_CLOCK : boolean := false;
+    SINGLE_ENDED : boolean := true);
+  port (
+    RST       : in  std_logic;
+    CLK_IN    : in  std_logic;
+    CLK_OUT_P : out std_logic;
+    CLK_OUT_N : out std_logic);
+end component clock_forward;
+
 end package util;

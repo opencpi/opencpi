@@ -85,7 +85,7 @@ begin
              sample_clk;
 
   tx_clk_gen : if its(DRIVE_CLK_p) generate
-    clk_fwd_gen : util_prims.util_prims.clock_forward
+    clk_fwd_gen : clock_forward
       generic map (
         INVERT_CLOCK => its(TX_CLK_INV_p)
       )
@@ -142,7 +142,7 @@ begin
 
   flush_written <= props_in.flush_written and ctl_in.is_operating;
 
-  flush_written_cdc : misc_prims.misc_prims.flag_cross_domain
+  flush_written_cdc : flag_cross_domain
     port map (
       clkA         => ctl_in.clk,
       flagIn_clkA  => flush_written,
@@ -238,7 +238,7 @@ begin
     end if;
   end process time_check;
 
-  transmit_now_cdc : misc_prims.misc_prims.flag_cross_domain
+  transmit_now_cdc : flag_cross_domain
     port map (
       clkA         => ctl_in.clk,
       flagIn_clkA  => transmit_now_re,

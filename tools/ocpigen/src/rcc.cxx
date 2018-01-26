@@ -792,7 +792,7 @@ emitImplRCC() {
 		    p.m_name.c_str(), dims.c_str(), comma, pretty.c_str(),
 		    p.m_isParameter ? "Parameter" : "PropertyOrd", p.m_ordinal, comma,
 		    offset.c_str(), p.m_name.c_str(), dims.c_str(), comma, p.m_name.c_str(),
-		    pretty.c_str(), p.m_isParameter ? "Parameter" : "Property", p.m_ordinal,
+		    pretty.c_str(), p.m_isParameter ? "Parameter" : "PropertyOrd", p.m_ordinal,
 		    comma, offset.c_str());
 	  else
 	    fprintf(f,

@@ -1204,7 +1204,7 @@ namespace OCPI {
     OA::BaseType BasicPort::
     getOperationInfo(uint8_t opCode, size_t &nbytes) {
       OU::Operation *ops = m_metaPort.operations();
-      if (ops && opCode >= m_metaPort.nOperations() && ops[opCode].nArgs() == 1) {
+      if (ops && opCode < m_metaPort.nOperations() && ops[opCode].nArgs() == 1) {
 	nbytes = ops[opCode].args()->m_elementBytes;
 	return ops[opCode].args()->m_baseType;
       }

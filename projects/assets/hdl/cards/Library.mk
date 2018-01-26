@@ -19,4 +19,4 @@
 # Defines the library namespace
 Package=ocpi.assets.devices
 
-Libraries+=misc_prims util_prims dsp_prims comms_prims
+#Libraries+=misc_prims util_prims dsp_prims comms_prims

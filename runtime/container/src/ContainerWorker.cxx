@@ -256,6 +256,7 @@ namespace OCPI {
 	    throw OU::Error("Worker's %s property has invalid sequence length: %zu",
 			    info.m_name.c_str(), v.m_nElements);
 	  v.m_nTotal *= v.m_nElements;
+	  ocpiDebug("Sequence length for %s is %zu", info.m_name.c_str(), v.m_nElements);
 	}
 	size_t nBytes = v.m_nTotal * info.m_elementBytes;
 	if (info.m_baseType == OA::OCPI_String) {
@@ -271,6 +272,8 @@ namespace OCPI {
 	      memcpy(v.m_stringNext, cache + (offset - info.m_offset), length);
 	    else
 	      getPropertyBytes(info, offset, (uint8_t *)v.m_stringNext, length);
+	    // Guarantee that the string values do not exceed info.m_stringLength
+	    v.m_stringNext[info.m_stringLength] = '\0';
 	    v.m_stringNext += length;
 	    offset += length;
 	  }	  
