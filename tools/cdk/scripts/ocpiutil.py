@@ -27,6 +27,9 @@ Documentation and testing:
         $ python ocpiutil.py -v
     Documentation can be viewed by running:
         $ pydoc ocpiutil
+Note on testing:
+    When adding functions to this file, add unit tests to
+    opencpi/tests/pytests/ocpiutil_test.py
 """
 import sys
 import os
@@ -47,8 +50,8 @@ def configure_logging(level=None, output_fd=sys.stderr):
     """
     Initialize the root logging module such that:
             OCPI_LOG_LEVEL <  8 : only log WARNINGS, ERRORS and CRITICALs
-        8 < OCPI_LOG_LEVEL <  11: also log INFOs
-            OCPI_LOG_LEVEL >= 11: also log DEBUGs
+        8 < OCPI_LOG_LEVEL <  10: also log INFOs
+            OCPI_LOG_LEVEL >= 10: also log DEBUGs
     This can be used in other modules to change the default log level of the
     logging module. For example, from another module:
     >>> import logging
@@ -71,54 +74,11 @@ def configure_logging(level=None, output_fd=sys.stderr):
         log_level = os.environ.get('OCPI_LOG_LEVEL')
         if not log_level or int(log_level) < 8:
             rootlogger.setLevel(level=logging.WARNING)
-        elif int(log_level) < 11:
+        elif int(log_level) < 10:
             rootlogger.setLevel(level=logging.INFO)
         else:
             rootlogger.setLevel(level=logging.DEBUG)
     return rootlogger
-
-def python_list_to_bash(pylist):
-    """
-    Convert a python list to a Makefile list (a space separated string)
-
-    For example (docstring):
-    >>> python_list_to_bash(["element1", "element2"])
-    'element1 element2'
-    >>> python_list_to_bash([""])
-    ''
-    >>> python_list_to_bash([])
-    ''
-    """
-    mklist = ""
-    for pyelem in pylist:
-        mklist = mklist + " " + str(pyelem)
-    return mklist.strip()
-
-def get_ok(prompt=""):
-    """Prompt the user to say okay"""
-    print prompt,
-    while True:
-        ok = input(" [y/n]? ")
-        if ok.lower() in ('y', 'yes', 'ok'):
-            return True
-        if ok.lower() in ('', 'n', 'no', 'nope'):
-            return False
-
-def bash_list_to_python(mklist):
-    """
-    Convert a bash list (a space separated string) to a python list
-
-    For example (doctest):
-    >>> bash_list_to_python("element0 element1 element2     element3     ")
-    ['element0', 'element1', 'element2', 'element3']
-    >>> bash_list_to_python(" element1 ")
-    ['element1']
-    >>> bash_list_to_python("  ")
-    []
-    >>> bash_list_to_python("")
-    []
-    """
-    return [elem for elem in mklist.strip().split(" ") if elem != ""]
 
 def set_vars_from_make(mk_file, mk_arg="", verbose=None):
     """
@@ -213,6 +173,19 @@ def get_subdirs_of_type(dirtype, directory="."):
     return subdir_list
 
 ###############################################################################
+# Utility function for exporting libraries in a project
+###############################################################################
+def export_libraries():
+    """
+    Build the lib directory and links to specs in each library in a project.
+    This will allow specs to be exported before workers in a library are built.
+    """
+    for lib_dir in get_subdirs_of_type("library"):
+        logging.debug("Library found at \"" + lib_dir + "\", runnning \"make speclinks\" there.")
+        subprocess.Popen(["make", "-C", lib_dir, "speclinks"], stdout=subprocess.PIPE,\
+                         stderr=subprocess.PIPE).communicate()
+
+###############################################################################
 # Utility functions for determining paths to/from the top level of a project
 # or a project's imports directory.
 ###############################################################################
@@ -245,7 +218,7 @@ def __get_path_to_project_top(origin_path, relative_mode, accum_path):
         elif abs_path != "/":
             return __get_path_to_project_top(os.path.dirname(abs_path),
                                              relative_mode, accum_path + "/..")
-    logging.debug("Path did not exist")
+    logging.debug("Path \"" + str(origin_path) + "\" did not exist")
     return None
 def get_path_to_project_top(origin_path=".", relative_mode=False):
     """
@@ -254,6 +227,18 @@ def get_path_to_project_top(origin_path=".", relative_mode=False):
     Note: call aux function to set accum_path internal arg
     """
     return __get_path_to_project_top(origin_path, relative_mode, ".")
+
+# Go to the project top and check if the project-package-id file is present.
+def is_path_in_exported_project(origin_path):
+    """
+    Given a path, determine whether it is inside an exported project.
+    """
+    project_top = get_path_to_project_top(origin_path)
+    if project_top is not None:
+        if os.path.isfile(project_top + "/project-package-id"):
+            logging.debug("Path \"" + str(origin_path) + "\" is in a exported project.")
+            return True
+    return False
 
 
 # Get the path from 'to_path's project top to 'to_path'.
@@ -269,7 +254,7 @@ def __get_path_from_project_top(to_path, accum_path):
             if accum_path != "":
                 appended_accum = appended_accum + "/" + accum_path
             return __get_path_from_project_top(os.path.dirname(abs_path), appended_accum)
-    logging.debug("Path did not exist")
+    logging.debug("Path \"" + str(to_path) + "\" did not exist")
     return None
 def get_path_from_project_top(to_path="."):
     """
@@ -322,7 +307,7 @@ def get_paths_from_project_top(origin_path, dest_paths):
     """
     origin_top = get_path_to_project_top(origin_path, False)
     if origin_top is None:
-        raise ValueError("origin_path \"" + origin_path + "\" is not in a project")
+        raise ValueError("origin_path \"" + str(origin_path) + "\" is not in a project")
     paths_from_top = []
     for dest_p in dest_paths:
         paths_from_top.append(get_path_from_given_project_top(origin_top, dest_p))
@@ -337,7 +322,7 @@ def get_paths_through_project_top(origin_path, dest_paths):
     origin_top = get_path_to_project_top(origin_path, False)
     origin_top_rel = get_path_to_project_top(origin_path, True)
     if origin_top is None:
-        raise ValueError("origin_path \"" + origin_path + "\" is not in a project")
+        raise ValueError("origin_path \"" + str(origin_path) + "\" is not in a project")
     paths_through_top = []
     for dest_p in dest_paths:
         paths_through_top.append(
@@ -345,59 +330,15 @@ def get_paths_through_project_top(origin_path, dest_paths):
     return paths_through_top
 
 ###############################################################################
-# Functions for determining project package information and accessing/modifying
-# the registry of projects in OCPI_PROJECT_REGISTRY_DIR
+# Functions for determining project package information
 ###############################################################################
-
-def get_project_registry_dir():
-    """
-    Determine the project registry directory. First check OCPI_PROJECT_REGISTRY_DIR
-    then check OCPI_CDK_DIR/../project_registry, and finally default to
-    /opt/opencpi/project_registry.
-
-    Determine whether the resulting path exists.
-
-    Return the exists boolean and the path to the project registry directory.
-    """
-    project_registry_dir = os.environ.get('OCPI_PROJECT_REGISTRY_DIR')
-    if project_registry_dir is None:
-        cdkdir = os.environ.get('OCPI_CDK_DIR')
-        if cdkdir:
-            project_registry_dir = cdkdir + "/../project_registry"
-        else:
-            project_registry_dir = "/opt/opencpi/project_registry"
-    exists = os.path.exists(project_registry_dir)
-    if not exists:
-        logging.warning("The project registry directory '" + project_registry_dir +
-                        "' does not exist.\nCorrect " + "'OCPI_PROJECT_REGISTRY_DIR' or run: " +
-                        "'mkdir " + project_registry_dir + "'")
-    return exists, project_registry_dir
-
-def get_all_projects():
-    """
-    Iterate through the cdk, project path and project registry.
-    Return the list of all projects.
-    """
-    projects = []
-    cdkdir = os.environ.get('OCPI_CDK_DIR')
-    if cdkdir:
-        projects.append(cdkdir)
-    project_path = os.environ.get('OCPI_PROJECT_PATH')
-    if project_path:
-        projects += project_path.split(':')
-    exists, project_registry_dir = get_project_registry_dir()
-    if exists:
-        projects += glob(project_registry_dir + '/*')
-    return projects
-
-
 def get_project_package(origin_path="."):
     """
     Get the Package Name of the project containing 'origin_path'.
     """
     path_to_project = get_path_to_project_top(origin_path)
     if path_to_project is None:
-        logging.debug("Path \"" + str(origin_path) + "\"is not inside a project")
+        logging.debug("Path \"" + str(origin_path) + "\" is not inside a project")
         return None
 
     # From the project top, probe the Makefile for the projectpackage
@@ -427,21 +368,89 @@ def get_project_package(origin_path="."):
 
 def does_project_with_package_exist(origin_path=".", package=None):
     """
-    Get a project's package and determine if a project with that package exists in the
-    project registry. If origin_path and/or is not specified, assume we are
-    unterested in the current project/package.
+    Determine if a project with the given package exists and is registered. If origin_path is not
+    specified, assume we are interested in the current project. If no package is given, determine
+    the current project's package.
     """
     project_registry_dir_exists, project_registry_dir = get_project_registry_dir()
     if not project_registry_dir_exists:
+        logging.debug("Registry does not exist, so project with any package cannot be found.")
         return False
     if package is None:
         package = get_project_package(origin_path)
         if package is None:
+            logging.debug("No package was provided to the does_project_with_package_exist " +
+                          "function, and the path provided does not have a package.")
             return False
     for project in glob(project_registry_dir + "/*"):
         if get_project_package(project) == package or os.path.basename(project) == package:
             return True
     return False
+
+###############################################################################
+# Functions for and accessing/modifying the project registry and collecting
+# existing projects
+###############################################################################
+def get_default_project_registry_dir():
+    """
+    Get the default registry from the environment setup. Check in the following order:
+    OCPI_PROJECT_REGISTRY_DIR, OCPI_CDK_DIR/../project-registry or /opt/opencpi/project-registry
+    """
+    project_registry_dir = os.environ.get('OCPI_PROJECT_REGISTRY_DIR')
+    if project_registry_dir is None:
+        cdkdir = os.environ.get('OCPI_CDK_DIR')
+        if cdkdir:
+            project_registry_dir = cdkdir + "/../project-registry"
+        else:
+            project_registry_dir = "/opt/opencpi/project-registry"
+    return project_registry_dir
+
+def get_project_registry_dir():
+    """
+    Determine the project registry directory. If in a project, check for the imports link.
+    Otherwise, get the default registry from the environment setup:
+        OCPI_PROJECT_REGISTRY_DIR, OCPI_CDK_DIR/../project-registry or /opt/opencpi/project-registry
+
+    Determine whether the resulting path exists.
+
+    Return the exists boolean and the path to the project registry directory.
+    """
+    if is_path_in_project() and os.path.isdir(get_path_to_project_top() + "/imports"):
+        # allow imports to be a link OR a directory (needed for deep copies of exported projects)
+        project_registry_dir = os.path.realpath(get_path_to_project_top() + "/imports")
+    else:
+        project_registry_dir = get_default_project_registry_dir()
+
+    exists = os.path.exists(project_registry_dir)
+    if not exists:
+        logging.warning("The project registry directory '" + project_registry_dir +
+                        "' does not exist.\nCorrect " + "'OCPI_PROJECT_REGISTRY_DIR' or run: " +
+                        "'mkdir " + project_registry_dir + "'")
+    elif not os.path.isdir(project_registry_dir):
+        raise OSError("The current project registry '" + project_registry_dir +
+                      "' exists but is not a directory.\nCorrect " +
+                      "'OCPI_PROJECT_REGISTRY_DIR'")
+    return exists, project_registry_dir
+
+def get_all_projects():
+    """
+    Iterate through the project path and project registry.
+    If the registry does not exist, manually locate the CDK.
+    Return the list of all projects.
+    """
+    projects = []
+    project_path = os.environ.get('OCPI_PROJECT_PATH')
+    if project_path:
+        projects += project_path.split(':')
+    exists, project_registry_dir = get_project_registry_dir()
+    if exists:
+        projects += glob(project_registry_dir + '/*')
+    else:
+        cdkdir = os.environ.get('OCPI_CDK_DIR')
+        if cdkdir:
+            projects.append(cdkdir)
+    logging.debug("All projects: " + str(projects))
+    return projects
 
 def register_project(project_path):
     """
@@ -452,7 +461,7 @@ def register_project(project_path):
     """
     project_package = get_project_package(project_path)
     if project_package is None:
-        logging.error("Failure to register project with path/name '" + project_path +
+        logging.error("Failure to register project with path/name '" + str(project_path) +
                       "'. Project does not exist (or package could not be determined).")
         return False
     if project_package == "local":
@@ -464,10 +473,14 @@ def register_project(project_path):
     if not project_registry_dir_exists:
         logging.error("Failure to register project because the project registry dir is not set.\n" +
                       "Double check your OCPI_PROJECT_REGISTRY_DIR or make sure " +
-                      "$OCPI_CDK_DIR/../project_registry exists.")
+                      "$OCPI_CDK_DIR/../project-registry exists.")
         return False
     project_link = project_registry_dir + "/" + project_package
-
+    # If the project is already registered and is the same
+    if get_path_to_project_top(".") is not None and \
+       os.path.realpath(project_link) == os.path.realpath(get_path_to_project_top(".")):
+        logging.debug("Project link is already in the registry. Proceeding...")
+        return True
     # Set the containing directory for use in error logging and command-run recommendations
     containing_dir = os.path.dirname(os.path.abspath(project_path))
     if containing_dir == "" or containing_dir == ".":
@@ -491,13 +504,25 @@ def register_project(project_path):
         return False
 
     project_to_reg = os.path.abspath(get_path_to_project_top(project_path))
+
+    # TODO: pull this relative link functionality into a helper function
+    # Try to make the path relative. This helps with environments involving mounted directories
+    # Find the path that is common to the project and registry
+    common_prefix = os.path.commonprefix([project_to_reg, project_registry_dir])
+    # If the two paths contain no common directory except root,
+    #     use the path as-is
+    # Otherwise, use the relative path from the registry to the project
+    if common_prefix == '/' or common_prefix == '':
+        project_to_reg = os.path.normpath(project_to_reg)
+    else:
+        project_to_reg = os.path.relpath(os.path.normpath(project_to_reg), project_registry_dir)
     try:
         os.symlink(project_to_reg, project_link)
     except OSError:
         logging.error("Failure to register project link: " +
                       project_link + " --> " + project_to_reg +
                       "\nCommand attempted: " + "'ln -s " + project_to_reg + " " + project_link +
-                      "'.\nTo (un)register projects in /opt/opencpi/project_registry, " +
+                      "'.\nTo (un)register projects in /opt/opencpi/project-registry, " +
                       "you need to be a member of the opencpi group.")
         return False
     return True
@@ -524,7 +549,7 @@ def unregister_project(project_path):
         logging.error("Failure to unregister project with package '" + str(project_package) +
                       "'.\nThere is no registered project link '" + project_link + "'")
         return False
-    if os.path.exists(project_path) and \
+    if os.path.exists(project_path) and not os.path.exists(os.path.realpath(project_path)) and \
        os.path.realpath(project_path) != os.path.realpath(project_link):
         logging.error("Failure to unregister project with package '" + str(project_package) +
                       "'.\nThe registered project with link '" + project_link + " --> " +
@@ -539,14 +564,134 @@ def unregister_project(project_path):
         logging.error("Failure to unregister link to project: " +project_link + " --> " +
                       project_path + "\nCommand attempted: " +
                       "'unlink " + project_link + "'\nTo (un)register projects in " +
-                      "/opt/opencpi/project_registry, you need to be a member of " +
+                      "/opt/opencpi/project-registry, you need to be a member of " +
                       "the opencpi group.")
         return False
+    return True
+
+def set_project_registry(registry_path=None):
+    """
+    Set the project registry link for a given project. If a registry path is provided,
+    set the link to that path. Otherwise, set it to the default registry based on the
+    current environment.
+    I.e. Create the 'imports' link at the top-level of the project to point to the project registry
+    """
+    # MUST be in a project to run this. Project registry is (un)set per-project.
+    if not is_path_in_project():
+        logging.error("Can only set the project registry from within a project.\n" +
+                      "Enter a project and try again.")
+        return False
+    # If registry path is not provided, get the default
+    if registry_path is None or registry_path == "":
+        # Get the default project registry set by the environment state
+        registry_path = get_default_project_registry_dir()
+
+    # TODO: pull this relative link functionality into a helper function
+    # Try to make the path relative. This helps with environments involving mounted directories
+    # Find the path that is common to the registry AND CWD
+    common_prefix = os.path.commonprefix([os.path.normpath(registry_path), os.getcwd()])
+    # If the two paths contain no common directory except root,
+    #     use the path as-is
+    # Otherwise, use the relative path from CWD to registry_path
+    if common_prefix == '/' or common_prefix == '':
+        registry_path = os.path.normpath(registry_path)
+    else:
+        registry_path = os.path.relpath(os.path.normpath(registry_path), os.getcwd())
+    # Registry must exist and must be a directory
+    if os.path.isdir(registry_path):
+        imports_link = get_path_to_project_top() + "/imports"
+        # If it exists and IS NOT a link, tell the user to manually remove it.
+        # If 'imports' exists and is a link, remove the link.
+        if os.path.exists(imports_link):
+            if not os.path.islink(imports_link):
+                logging.error("The 'imports' for the current project ('" + imports_link + \
+                              "') is not a symbolic link.\nMove or remove this file and try " +
+                              "to set the project registry again.")
+                return False
+            else:
+                os.unlink(imports_link)
+        # ln -s registry_path imports_link
+        try:
+            os.symlink(registry_path, imports_link)
+        except OSError:
+            # Symlink creation failed....
+            # User probably does not have write permissions in the project
+            logging.error("Failure to set project link: " +
+                          imports_link + " --> " + registry_path +
+                          "\nCommand attempted: " + "'ln -s " + registry_path + " " + imports_link +
+                          "'.\nMake sure you have correct permissions in this project.")
+            return False
+    else:
+        logging.error("Failure to set project registry to '" + registry_path + "'." +
+                      "'.\nPath does not exist or is not a directory.")
+        return False
+    if not os.path.isdir(registry_path + "/ocpi.cdk"):
+        logging.warning("There is no CDK registered in '" + registry_path + "'. Make sure to " +
+                        "register the CDK before moving on.\nNext time, consider using " +
+                        "'ocpidev create registry', which will automatically register your CDK.")
+    return True
+
+def unset_project_registry():
+    """
+    Unset the project registry link for a given project.
+    I.e. remove the 'imports' link at the top-level of the project.
+    """
+    # MUST be in a project to run this. Project registry is (un)set per-project.
+    if not is_path_in_project():
+        logging.error("Can only unset the project registry from within a project.\n" +
+                      "Enter a project and try again.")
+        return False
+    # If the 'imports' link exists at the project-top, and it is a link, remove it.
+    # If it is not a link, let the user remove it manually.
+    imports_link = get_path_to_project_top() + "/imports"
+    if os.path.islink(imports_link):
+        os.unlink(imports_link)
+    else:
+        if os.path.exists(imports_link):
+            logging.error("The 'imports' for the current project ('" + imports_link + \
+                          "') is not a symbolic link.\nThis file will need to be removed manually.")
+            return False
+        else:
+            logging.debug("Unset project registry has succeeded, but nothing was done.\n" +
+                          "Registry was not set in the first place for this project.")
     return True
 
 ###############################################################################
 # String and number manipulation utility functions
 ###############################################################################
+def python_list_to_bash(pylist):
+    """
+    Convert a python list to a Makefile list (a space separated string)
+
+    For example (docstring):
+    >>> python_list_to_bash(["element1", "element2"])
+    'element1 element2'
+    >>> python_list_to_bash([""])
+    ''
+    >>> python_list_to_bash([])
+    ''
+    """
+    mklist = ""
+    for pyelem in pylist:
+        mklist = mklist + " " + str(pyelem)
+    return mklist.strip()
+
+def bash_list_to_python(mklist):
+    """
+    Convert a bash list (a space separated string) to a python list
+
+    For example (doctest):
+    >>> bash_list_to_python("element0 element1 element2     element3     ")
+    ['element0', 'element1', 'element2', 'element3']
+    >>> bash_list_to_python(" element1 ")
+    ['element1']
+    >>> bash_list_to_python("  ")
+    []
+    >>> bash_list_to_python("")
+    []
+    """
+    return [elem for elem in mklist.strip().split(" ") if elem != ""]
+
 
 def isfloat(value):
     """
@@ -689,6 +834,7 @@ def normalize_column_lengths(lists):
     >>> print str(list2)
     ['< 15           ', 'pretty short           ']
     """
+    lists = [[str(elem) for elem in lst] for lst in lists]
     format_function = lambda length, string_elem: ("{0:<" + str(length) + "}").format(string_elem)
     newlens = []
     for column in zip(*lists):
@@ -735,6 +881,20 @@ def cd(target):
         yield
     finally:
         os.chdir(origin)
+
+###############################################################################
+# Functions for prompting the user for input
+###############################################################################
+def get_ok(prompt=""):
+    """Prompt the user to say okay"""
+    print prompt,
+    while True:
+        ok = input(" [y/n]? ")
+        if ok.lower() in ('y', 'yes', 'ok'):
+            return True
+        if ok.lower() in ('', 'n', 'no', 'nope'):
+            return False
+
 
 if __name__ == "__main__":
     import doctest

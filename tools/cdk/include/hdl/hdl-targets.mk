@@ -30,7 +30,10 @@ $(OcpiIncludeProject)
 ifdef ShellHdlTargetsVars
 # When collecting a list of HDL targets/platforms, you do not need to be inside a project.
 # So, collect all projects in the Project Registry Dir into the project path for searching.
-export OCPI_PROJECT_PATH:=$(OCPI_PROJECT_PATH):$(subst $(Space),:,$(wildcard $(OcpiProjectRegistryDir)/*))
+# If inside a project, the registry should be searched automatically via the project's imports.
+ifeq ($(OCPI_PROJECT_DIR),)
+  export OCPI_PROJECT_PATH:=$(OCPI_PROJECT_PATH):$(subst $(Space),:,$(wildcard $(OcpiProjectRegistryDir)/*))
+endif
 # hdl-make is needed for HdlGetFamily to determine HdlFamily_*
 include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
 endif
@@ -45,8 +48,18 @@ endif
 #Testing: HdlTopTargets=xilinx altera verilator icarus
 HdlTopTargets:=xilinx altera modelsim # icarus altera # verilator # altera
 
-# The first part in a family is the one used for core building
-# Usually it should be the largest
+# The HdlDefaultTarget_<family> is the one used for core building (primitives, workers...).
+# TODO: HdlDefaultTarget_<family> is only supported by Vivado at this time.
+# If the default is unset, the first part in a family is the one used for core building.
+# Usually the default should be the smallest so that you ensure each worker will fit
+# on the smaller parts. If you want to ensure that worker-synthesis uses as many
+# resources as necessary, you can set it to a larger part or set HdlExactPart
+# for a worker or library.
+#
+# HdlPart_<platform> in a <platform>.mk file will define a full part. That part
+# can be mapped to a part here and therefore a family as well.
+# E.g. in zed.mk, HdlPart_zed=xc7z020-1-clg484, which maps to xc7z020, which
+# maps to the 'zynq' family with a default target of xc7z020 for building pre-platform cores.
 HdlTargets_xilinx:=isim virtex5 virtex6 spartan3adsp spartan6 zynq_ise zynq xsim
 HdlTargets_virtex5:=xc5vtx240t xc5vlx50t xc5vsx95t xc5vlx330t xc5vlx110t
 HdlTargets_virtex6:=xc6vlx240t
@@ -54,6 +67,7 @@ HdlTargets_spartan6:=xc6slx45
 HdlTargets_spartan3adsp:=xc3sd3400a
 HdlTargets_zynq_ise:=xc7z020_ise_alias
 HdlTargets_zynq:=xc7z020
+HdlDefaultTarget_zynq:=xc7z020
 
 HdlTargets_altera:=stratix4 stratix5 # altera-sim
 # The "k", when present indicates the transceiver count (k = 36)

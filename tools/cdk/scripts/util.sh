@@ -17,9 +17,11 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 # Get the project registry directory. This is OCPI_PROJECT_REGISTRY_DIR,
-# or OCPI_CDK_DIR/../project_registry, or /opt/opencpi/cdk.
+# or OCPI_CDK_DIR/../project-registry, or /opt/opencpi/cdk.
 # Call the python function so this can have one true implementation in
 # python instead of both python and bash.
+# If currently in a project, the current project's imports link to the
+# registry will be used
 function getProjectRegistryDir {
   if [ -n "$(which python 2> /dev/null)" ]; then
     python -c "\

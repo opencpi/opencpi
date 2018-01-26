@@ -18,12 +18,13 @@
 
 # Generic top level worker makefile
 include $(OCPI_CDK_DIR)/include/util.mk
-$(OcpiIncludeProject)
-$(call OcpiIncludeLibrary,..)
+# Plain workers do not have their own package-id file
+# They inherit the containing library's package-id
+$(call OcpiIncludeAssetAndParent,..)
+
 ifndef Model
   $(error This directory named $(CwdName) does not end in any of: $(Models))
 endif
-include $(OCPI_CDK_DIR)/include/package.mk
 ifdef Worker
   ifdef Workers
     $(error Cannot set both Worker and Workers variables in Makefile)

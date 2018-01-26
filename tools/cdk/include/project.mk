@@ -27,6 +27,7 @@ $(OcpiIncludeProject)
 
 # As a default, build for everything supported in the CDK
 # FIXME: can we test for licensing?
+# FIXME: Error message makes no sense if give hdltargets but not platforms
 ifeq ($(HdlPlatform)$(HdlPlatforms),)
   ifeq ($(filter clean%,$(MAKECMDGOALS))$(filter projectpackage,$(MAKECMDGOALS)),)
     include $(OCPI_CDK_DIR)/include/hdl/hdl-targets.mk
@@ -37,32 +38,15 @@ ifeq ($(HdlPlatform)$(HdlPlatforms),)
   endif
 endif
 
-CollectCreatableImports=$(strip $(infox OGCrI)\
-  $(foreach p,$(wildcard $(OcpiProjectRegistryDir)/*),\
-    $(if $(strip \
-      $(or \
-        $(filter $(realpath $p),$(realpath .)),\
-        $(foreach i,$(OcpiGetProjectImports),\
-          $(filter $(notdir $p),$(notdir $i))))),,\
-      $p )))
-
-# imports need to be set up before ocpisetup.mk is included. ocpisetup.mk
-# needs to be able to find the core project (the host rcc platform)
-ifeq ($(filter clean%,$(MAKECMDGOALS))$(filter projectpackage,$(MAKECMDGOALS)),)
-  doimports=$(shell \
-      [ -d imports ] || mkdir imports; \
-      for i in $(CollectCreatableImports); do \
-        [ -L imports/$$(basename $$i) ] || ln -s $$i imports/; \
-      done; \
-      [ -L imports/ocpi.cdk ] || ln -s $(OCPI_CDK_DIR) imports/ocpi.cdk;)
+# imports need to be created before ocpisetup.mk no matter what
+ifeq ($(filter imports projectpackage,$(MAKECMDGOALS)),)
+  doimports=$(shell $(MAKE) imports)
   ifeq ($(wildcard imports),)
     $(info Imports are not set up for this project.  Doing it now. $(doimports))
   else
+    # If the imports already exist, we still want to make sure they are up to date
     $(infox Updating imports. $(doimports))
   endif
-else
-  # we are assuming that imports are not required for any clean goal.
-  # $(nuthin $(doimports))
 endif
 
 ifeq ($(wildcard exports)$(filter projectpackage,$(MAKECMDGOALS)),)
@@ -96,6 +80,23 @@ $(foreach p,$(HdlPlatform) $(HdlPlatforms),\
 .PHONY: hdl hdlassemblies hdlprimitives hdlcomponents hdldevices hdladapters hdlplatforms hdlassemblies hdlportable
 all: applications
 
+# Package issue - if we have a top level specs directory, we must make the
+# associate package name available to anything that includes it, both within the
+# project and outside it (when this project is accessed via OCPI_PROJECT_PATH)
+ifneq ($(wildcard specs),)
+  ifeq ($(filter clean%,$(MAKECMDGOALS))$(filter projectpackage,$(MAKECMDGOALS)),)
+    # package-id needs to be created early on by any non-clean make command.
+    # This can be accomplished by having imports depend on it.
+    imports: specs/package-id
+    # If Project.mk changes, recreate specs/package-id file unless the package-id file contents
+    # exactly match ProjectPackage.
+    specs/package-id: Project.mk
+	$(AT)if [ ! -e specs/package-id ] || [ "$$(cat specs/package-id)" != "$(ProjectPackage)" ]; then \
+	       echo "$(ProjectPackage)" > specs/package-id; \
+	     fi
+  endif
+endif
+
 hdlassemblies applications: imports exports
 
 # Perform test-related goals where they might be found.
@@ -105,15 +106,44 @@ DoTests=$(foreach t,\
 $(OcpiTestGoals):
 	$(call DoTests,$@)
 
-# Make the imports directory if it does not exist.
-# For any projects that do not already have a manually created
-# link in imports/ create symlinks to project registry directory.
+# Make the imports link to the registry if it does not exist.
+# If imports exists and is a link, leave it alone
+# If imports is not a link, error
+# If imports exists, but does not match the environment variable, warn
+# If imports exists but is a broken link, replace it
 imports:
-	[ -d imports ] || mkdir imports; \
-	for i in $(CollectCreatableImports); do \
-	  [ -L imports/$$(basename $$i) ] || ln -s $$i imports/; \
-	done
-	[ -L imports/ocpi.cdk ] || ln -s $(OCPI_CDK_DIR) imports/ocpi.cdk; \
+	if [ ! -L imports ]; then \
+	  if [ -e imports ]; then \
+	    echo "Error: This project's imports is not a symbolic link and is therefore invalid." >&2 ; \
+	    echo "Remove the imports file at the top level of the project before proceeding." >&2 ; \
+	    exit 1 ; \
+	  fi; \
+	  if [ -d "$(OcpiProjectRegistryDir)" ]; then \
+            $(call MakeSymLink2,$(OcpiProjectRegistryDir),$(realpath .),imports); \
+	  else \
+	    echo "Warning: The project registry '$(OcpiProjectRegistryDir)' does not exist" >&2 ; \
+	  fi; \
+	else \
+	  if [ -n "$(OCPI_PROJECT_REGISTRY_DIR)" ]; then \
+	    if [ "$(realpath $(OCPI_PROJECT_REGISTRY_DIR))" != "$(realpath imports)" ]; then \
+	      echo "Warning: OCPI_PROJECT_REGISTRY_DIR is globally set to \"$(OCPI_PROJECT_REGISTRY_DIR)\"," >&2 ; \
+	      echo "         but the '$(ProjectPackage)' project located at '$$(pwd)' is using" >&2 ; \
+	      echo "         'imports -> $(realpath imports)'" >&2 ; \
+	      echo "         The project's 'imports' link will take precedence when within the project." >&2 ; \
+	    fi; \
+	  fi; \
+	  if [ ! -e imports ]; then \
+	    if [ -d "$(OcpiProjectRegistryDir)" ]; then \
+	      echo "Warning: 'imports' is a broken link and will be replaced with the default \"$(OcpiProjectRegistryDir)\"" >&2 ; \
+	      rm imports; \
+              $(call MakeSymLink2,$(OcpiProjectRegistryDir),$(realpath .),imports); \
+	    else \
+	      echo "Warning: Tried to update the broken 'imports' link, but the project registry '$(OcpiProjectRegistryDir)' does not exist" >&2 ; \
+	    fi; \
+	  elif [ ! -d "$(realpath imports)" ]; then \
+	    echo "Warning: The project registry '$(realpath imports)' pointed to by 'imports' is not a directory" >&2 ; \
+	  fi; \
+	fi
 
 exports:
 	$(OCPI_CDK_DIR)/scripts/makeProjectExports.sh "$(OCPI_TARGET_DIR)" $(ProjectPackage)
@@ -123,7 +153,7 @@ components: hdlprimitives
 	$(call MaybeMake,components,rcc hdl)
 	$(MAKE) exports
 
-hdlprimitives:
+hdlprimitives: imports
 	$(MAKE) imports
 	$(call MaybeMake,hdl/primitives)
 	$(MAKE) exports
@@ -134,13 +164,19 @@ hdlcomponents: hdlprimitives
 	$(MAKE) exports
 
 hdldevices: hdlprimitives
+	$(MAKE) imports
 	$(call MaybeMake,hdl/devices)
+	$(MAKE) exports
 
 hdladapters: hdlprimitives
+	$(MAKE) imports
 	$(call MaybeMake,hdl/adapters)
+	$(MAKE) exports
 
 hdlcards: hdlprimitives
+	$(MAKE) imports
 	$(call MaybeMake,hdl/cards)
+	$(MAKE) exports
 
 hdlplatforms: hdldevices hdlcards hdladapters
 	$(MAKE) imports
@@ -148,12 +184,16 @@ hdlplatforms: hdldevices hdlcards hdladapters
 	$(MAKE) exports
 
 hdlassemblies: hdlcomponents hdlplatforms hdlcards hdladapters
+	$(MAKE) imports
 	$(call MaybeMake,hdl/assemblies)
+	$(MAKE) exports
 
 # Everything that does not need platforms
 hdlportable: hdlcomponents hdladapters hdldevices hdlcards
 
 hdl: hdlassemblies
+
+cleanhdl cleanrcc cleanocl cleancomponents cleanapplications: imports
 
 cleanhdl:
 	$(call MaybeMake,components,cleanhdl)
@@ -201,22 +241,10 @@ clean: cleancomponents cleanapplications cleanrcc cleanhdl cleanexports cleanimp
 # it is the CDK, or is a broken link, it can be cleaned/removed. If the imports directory
 # is empty after clean, the whole directory can be removed.
 cleanimports:
-	for i in $(OcpiGetProjectImports) ; do \
-	  if [ -L "$$i" ]; then \
-	    if [[ "$$(dirname $(call SymLinkContents,$$i))" == "$(OcpiProjectRegistryDir)" \
-	          || "$$(basename $$i)" == ocpi.cdk ]]; then \
-	      rm "$$i"; \
-	    fi; \
-	  fi; \
-	done; \
-	if [ -e "$(OcpiImportsDirForContainingProject)" ]; then \
-	  for i in $(OcpiImportsDirForContainingProject)/* ; do \
-	    if [[ -L "$$i" && ! -e "$$i" ]]; then \
-	        rm "$$i"; \
-	    fi; \
-	  done; \
-	fi; \
-	[ ! -d imports ] || [ "$$(ls -A imports)" ] || rm -r imports
+	if [ \( -L imports -a "$$(readlink -e imports)" == "$$(readlink -e $(OcpiProjectRegistryDir))" \) \
+	     -o \( -L imports -a ! -e imports \) ]; then \
+	  rm imports; \
+	fi
 
 cleanexports:
 	rm -r -f exports
@@ -227,23 +255,6 @@ cleaneverything: clean
 	find . -depth -name gen -exec rm -r -f {} \;
 	find . -depth -name 'target-*' -exec rm -r -f {} \;
 	find . -depth -name lib -exec rm -r -f {} \;
-
-# Package issue - if we have a top level specs directory, we must make the
-# associate package name available to anything that includes it, both within the
-# project and outside it (when this project is accessed via OCPI_PROJECT_PATH)
-ifneq ($(wildcard specs),)
-  ifeq ($(filter clean%,$(MAKECMDGOALS))$(filter projectpackage,$(MAKECMDGOALS)),)
-    # package-id needs to be created early on by any non-clean make command.
-    # This can be accomplished by having imports depend on it.
-    imports: specs/package-id
-    # If Project.mk changes, recreate specs/package-id file unless the package-id file contents
-    # exactly match ProjectPackage.
-    specs/package-id: Project.mk
-	$(AT)if [ ! -e specs/package-id ] || [ "$$(cat specs/package-id)" != "$(ProjectPackage)" ]; then \
-	       echo "$(ProjectPackage)" > specs/package-id; \
-	     fi
-  endif
-endif
 
 ifdef ShellProjectVars
 projectpackage:

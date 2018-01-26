@@ -24,9 +24,13 @@ include $(OCPI_CDK_DIR)/include/util.mk
 # The block below needs to happen prior to the assignments below for
 # extracting RccTarget/Platform info from this makefile
 ifdef ShellRccTargetsVars
+$(OcpiIncludeProject)
 # When collecting a list of RCC targets/platforms, you do not need to be inside a project.
 # So, collect all projects in the Project Registry Dir into the project path for searching.
-export OCPI_PROJECT_PATH:=$(OCPI_PROJECT_PATH):$(subst $(Space),:,$(wildcard $(OcpiProjectRegistryDir)/*))
+# If inside a project, the registry should be searched automatically via the project's imports.
+ifeq ($(OCPI_PROJECT_DIR),)
+  export OCPI_PROJECT_PATH:=$(OCPI_PROJECT_PATH):$(subst $(Space),:,$(wildcard $(OcpiProjectRegistryDir)/*))
+endif
 endif
 
 RccOs=$(word 1,$(subst -, ,$(or $1,$(RccTarget))))
@@ -173,11 +177,11 @@ endif
 # Assignments that can be used to extract make variables into bash/python...
 ifdef ShellRccTargetsVars
 all:
-$(info RccAllPlatforms="$(RccAllPlatforms)";\
-       RccPlatforms="$(RccPlatforms)";\
-       RccAllTargets="$(RccAllTargets)";\
-       RccTargets="$(RccTargets)";\
-       $(foreach p,$(RccAllPlatforms),\
+$(info RccAllPlatforms="$(sort $(RccAllPlatforms))";\
+       RccPlatforms="$(sort $(RccPlatforms))";\
+       RccAllTargets="$(sort $(RccAllTargets))";\
+       RccTargets="$(sort $(RccTargets))";\
+       $(foreach p,$(sort $(RccAllPlatforms)),\
          $(if $(RccTarget_$p),RccTarget_$p="$(RccTarget_$p)";)))
 endif
 #$(foreach t,$(RccTopTargets),$(or $(RccTargets_$t),$t))";\

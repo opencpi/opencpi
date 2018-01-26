@@ -63,9 +63,9 @@ _ocpidev()
     noun3="${COMP_WORDS[i]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
     # valid verbs
-    verbs="build delete create report clean register unregister show"
+    verbs="build delete create report clean register unregister set unset show"
     # valid nouns in first slot
-    nouns1="project application spec protocol test library worker hdl"
+    nouns1="project registry application spec protocol test library worker hdl"
     # valid nouns in second slot
     nouns2="assembly card slot device platform platforms targets primitive primitives"
     # valid nouns in third slot
@@ -77,7 +77,7 @@ _ocpidev()
     showopts="-h --help -v -d --table --json"
     if [[ ${verb} == show ]] ; then
       # valid nouns in first slot
-      nouns1="workers components platforms targets hdl rcc"
+      nouns1="projects registry components workers platforms targets hdl rcc"
       # valid nouns in second slot
       nouns2="platforms targets"
       # valid nouns in third slot
@@ -95,13 +95,18 @@ _ocpidev()
       nouns2=""
       nouns3=""
     fi
+    if [[ ${verb} == *set ]]; then
+      nouns1="registry"
+      nouns2=""
+      nouns3=""
+    fi
     # if current word stars with a - it is an option of some sort
     if [[ ${prev} == --hdl-platform || ${prev} == --build-hdl-platform ]] ; then
-      plats=`ocpidev show hdl platforms`
+      plats=`ocpidev show hdl platforms 2>/dev/null`
       COMPREPLY=( $(compgen -W "${plats}" -- ${cur}) )
       return 0
     elif [[ ${prev} == --hdl-target || ${prev} == --build-hdl-target ]] ; then
-      tgts=`ocpidev show hdl targets`
+      tgts=`ocpidev show hdl targets 2>/dev/null`
       COMPREPLY=( $(compgen -W "${tgts}" -- ${cur}) )
       return 0
     # Not supported yet:
@@ -110,7 +115,7 @@ _ocpidev()
     #  COMPREPLY=( $(compgen -W "${tgts}" -- ${cur}) )
     #  return 0
     elif [[ ${prev} == --rcc-platform || ${prev} == --build-rcc-platform ]] ; then
-      plats=`ocpidev show rcc platforms`
+      plats=`ocpidev show rcc platforms 2>/dev/null`
       COMPREPLY=( $(compgen -W "${plats}" -- ${cur}) )
       return 0
     elif [[ ${cur} == -* ]] ; then
@@ -123,6 +128,10 @@ _ocpidev()
       fi
       COMPREPLY=( $(compgen -W "${bopts} ${opts}" -- ${cur}) )
       return 0
+    elif [[ ${verb} == unregister && ${prev} == project ]]; then
+      projs=`ocpidev show registry 2>/dev/null`
+      COMPREPLY=( $(compgen -W "${projs}" -- ${cur}) )
+      return 0
     # if current word is in the verb slot
     elif [[ ${verb} == ${cur} ]] ; then
       COMPREPLY=( $(compgen -W "${verbs}" ${cur}) )
@@ -132,7 +141,7 @@ _ocpidev()
       COMPREPLY=( $(compgen -W "${nouns1}" ${cur}) )
       return 0
     # if current word is in the second noun slot
-    elif [[ ${noun1} == hdl && ${noun2} == ${cur} ]] ; then
+    elif [[ ${noun1} == hdl && ${noun2} == ${cur} ]] || [[ ${noun1} == rcc && ${noun2} == ${cur} && ${verb} == show ]] ; then
       COMPREPLY=( $(compgen -W "${nouns2}" ${cur}) )
       return 0
     # if current word is in the third noun slot
@@ -141,4 +150,4 @@ _ocpidev()
       return 0
     fi
 }
-complete -F _ocpidev ocpidev
+complete -o default -F _ocpidev ocpidev

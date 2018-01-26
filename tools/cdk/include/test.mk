@@ -64,8 +64,10 @@ include $(OCPI_CDK_DIR)/include/rcc/rcc-make.mk
 include $(OCPI_CDK_DIR)/include/ocl/ocl-make.mk
 
 # We need the project dir because remote system mount dirs point to the project
-$(call OcpiIncludeProject,error)
-$(call OcpiIncludeLibrary,..)
+#
+# Tests do not have their own package-id file
+# They inherit the containing library's package-id
+$(call OcpiIncludeAssetAndParent,..,error)
 
 # This is to allow the spec to be found and any protocols it depends on
 ifneq ($(if $(MAKECMDGOALS),$(filter build all generate generated,$(MAKECMDGOALS)),1),)

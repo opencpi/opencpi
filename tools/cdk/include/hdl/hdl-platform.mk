@@ -24,8 +24,8 @@
 HdlMode:=platform
 Model:=hdl
 include $(OCPI_CDK_DIR)/include/util.mk
-$(OcpiIncludeProject)
-include $(OCPI_CDK_DIR)/include/package.mk
+$(OcpiIncludeAssetAndParent)
+
 HdlLibraries+=platform
 # Force the platform path to point to this directory.
 # This means we can build this platform without it being

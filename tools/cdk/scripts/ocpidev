@@ -143,6 +143,17 @@ function register_project {
 import sys; sys.path.append(\"$OCPI_CDK_DIR/scripts/\");
 import ocpiutil; print ocpiutil.register_project(\"$project\");"`
   echo $reg_success
+
+  # We want to export a project on register, but only if it is not
+  # an exported project itself
+  is_exported=`python -c "\
+import sys; sys.path.append(\"$OCPI_CDK_DIR/scripts/\");
+import ocpiutil; print ocpiutil.is_path_in_exported_project(\"$project\");"`
+  if [ "$is_exported" == "False" ]; then
+    make -C $project exports 1>&2
+  else
+     [ -z "$verbose" ] || echo Skipped making exports because this is an exported standalone project. 1>&2
+  fi
 }
 # Remove the link to a project in the installation registry which should be named
 # based on the project's package name. If a project does not exist with as
@@ -170,7 +181,7 @@ import ocpiutil; print ocpiutil.unregister_project(\"$project\");"`
 function get_subdir {
   case "$noun" in
     (worker|device|spec|protocol|properties|signals|test|card|slot) libasset=1;;
-    (library|assembly|assemblies|platform|platforms|primitive|primitives|application|applications|project) libasset=;;
+    (library|assembly|assemblies|platform|platforms|primitive|primitives|application|applications|project|registry) libasset=;;
     (*) bad invalid noun \"$noun\";;
   esac
   get_dirtype .
@@ -292,12 +303,66 @@ function get_deletecmd {
 }
 
 function ask {
+  ans=''
+  if [ -n "${JENKINS_HOME}" ]; then
+    echo "OCPI:WARNING: Running under Jenkins: auto-answered 'yes' to '${*}?'"
+    ans=y
+  fi
   if [ -z "$force" ]; then
-    until [[ -n "$force" || "$ans" == [yY] || "$ans" == [nN] ]]; do
-      read -p "Are you sure you want to $* (y or n)?  " ans
+    until [[ "$ans" == [yY] || "$ans" == [nN] ]]; do
+      read -p "Are you sure you want to $* (y or n)? " ans
     done
-    [[ "$ans" == [Nn] ]] && exit 0
-    return 0
+    [[ "$ans" == [Nn] ]] && exit 1
+  fi
+  return 0
+}
+
+function do_registry {
+  if [ "$verb" == create ]; then
+    if [ -z "$1" ]; then
+      bad provide a registry directory to create
+      exit 1
+    elif [ -e "$1" ]; then
+      bad the registry to create \(\"$1\"\) already exists. Use that one, or remove it and try again
+    else
+      [ -z "$verbose" ] || echo The project registry \"$1\" has been created
+      mkdir $1
+      ln -s $OCPI_CDK_DIR $1/ocpi.cdk
+    fi
+  elif [ "$verb" == delete ]; then
+    if [ -z "$1" ]; then
+      registry_to_delete=$OCPI_PROJECT_REGISTRY_DIR
+    else
+      registry_to_delete=$1
+    fi
+    if [ -e "$registry_to_delete" ]; then
+      if [ "$(readlink -e $registry_to_delete)" == "$(readlink -e $OCPI_CDK_DIR/../project-registry)" \
+           -o "$(readlink -e $registry_to_delete)" == "/opt/opencpi/project-registry" ] ; then
+        bad cannot delete the default project registry \"$registry_to_delete\"
+      fi
+      ask delete the project registry at \"$registry_to_delete\"
+      rm -rf "$1"
+    else
+      bad registry to delete \(\"$registry_to_delete\"\) does not exist
+    fi
+  elif [ "$verb" == set ]; then
+    setreg_success=`python -c "\
+import sys; sys.path.append(\"$OCPI_CDK_DIR/scripts/\");
+import ocpiutil; print ocpiutil.set_project_registry(\"$1\");"`
+    if [ "$setreg_success" != "True" ]; then
+      # Error is printed in python
+      exit 1
+    fi
+  elif [ "$verb" == unset ]; then
+    unsetreg_success=`python -c "\
+import sys; sys.path.append(\"$OCPI_CDK_DIR/scripts/\");
+import ocpiutil; print ocpiutil.unset_project_registry();"`
+    if [ "$unsetreg_success" != "True" ]; then
+      # Error is printed in python
+      exit 1
+    fi
+  else
+    bad the registry noun is only valid after the create/delete or set/unset verbs
   fi
 }
 
@@ -377,6 +442,7 @@ function do_project {
 # documented rules.
 # Lines starting with + add to the exports
 # Lines starting with - subtract from the exports
+all
 EOF
   cat <<EOF > Project.mk
 # This Makefile fragment is for the "$1" project created at `pwd`
@@ -443,7 +509,7 @@ lib/
 **/doc*/*.lot
 run/
 exports/
-imports/
+imports
 *.pyc
 EOF
 
@@ -457,6 +523,7 @@ EOF
     # Register a link to the project in the project registry
     reg_success=`register_project`
     if [ "$reg_success" != "True" ]; then
+      [ -z "$verbose" ] || echo "Register project \"$1\" failed with python results: $reg_success"
       if [ -n "$keep" ]; then
         echo The project directory has been created, but not registered \(which may be fine\).
         echo If the project must be registered, resolve the conflict and run:
@@ -468,7 +535,6 @@ EOF
       fi
       # Error message printed from python
       exit 1
-      #bad failure to register project \"$1\": \(error message: \"$reg_success\"\)
     fi
   fi
   # Generate exports and imports
@@ -571,7 +637,7 @@ EOF
   cat <<-EOF > $subdir$appdir/$app.xml
 	<!-- The $1 application xml file -->
 	<application>
-	  <instance component='ocpi.nothing'/>
+	  <instance component='ocpi.core.nothing'/>
 	</application>
 	EOF
   if [ -z "$xmlapp" -a -z "$xmldirapp" ] ; then
@@ -1263,12 +1329,14 @@ function do_hdl_platforms {
     else
       make_target=hdlplatforms
     fi
+    # Note: If this implementation changes in the future, be sure to add logic to respect
+    # missingOK; "make hdlprimitives" returns success even if no hdl/primitives present.
     make $make_target ${buildClean:+-C hdl/platforms} \
          ${hdlplats:+HdlPlatforms=" ${hdlplats[@]}"} \
          ${hdltargets:+HdlTargets=" ${hdltargets[@]}"}
     return 0;
   fi
-  bad The only verb available for primitives is build. Did you mean platform
+  bad The only verb available for platforms is build. Did you mean platform
 }
 
 function do_hdl_platform {
@@ -1436,13 +1504,15 @@ function do_primitives {
       [ -z "$verbose" ] || echo "Building from: $pj_top"
       cd $pjtop
     fi
-    echo $hdlplats
-    echo $hdltargets
+    # echo $hdlplats
+    # echo $hdltargets
     if [ -n "$buildClean" ]; then
       make_target=clean
     else
       make_target=hdlprimitives
     fi
+    # Note: If this implementation changes in the future, be sure to add logic to respect
+    # missingOK; "make hdlprimitives" returns success even if no hdl/primitives present.
     make $make_target ${buildClean:+-C hdl/primitives} \
                  ${hdlplats:+HdlPlatforms=" ${hdlplats[@]}"} \
                  ${hdltargets:+HdlTargets=" ${hdltargets[@]}"}
@@ -1716,14 +1786,15 @@ function help {
   cat <<"EOF" >&2
 The ocpidev command performs developer functions on/in projects for OpenCPI.
 Usage is: ocpidev [options] <verb> [<noun> [<name> [<args>*]]]
-Verbs are: create, delete, build, clean, register, unregister, or show
-Nouns are: project, application, spec, protocol, test, library, worker, or hdl <noun>
+Verbs are: create, delete, build, clean, register, unregister, set, unset or show
+Nouns are: project, registry application, spec, protocol, test, library, worker, or hdl <noun>
 After hdl, nouns are: assembly, card, slot, device, platform, or primitive <noun>
 After hdl primitive, nouns are: library or core
 Most commands may have a <name> argument.  Some have additional required or optional arguments.
 All the "delete" commands prompt for confirmation without the -f option (like rm).
 "(un)register" is used with the noun "project" to add/remove a project to the installation registry.
-For details on "show" run "ocpidev show --help"
+"(un)set" is used with the noun "registry" to set the registry used by the current project.
+**For details on "show" run "ocpidev show --help"
 Options are single letters after a single hyphen, or hyphenated words after two hyphens.
 Single letter options are lower case for general options and upper case for creation options
 Options with * may occur multiple times
@@ -1857,7 +1928,7 @@ original_argv=($*)
 while [[ "${argv[0]}" != "" ]] ; do
   if [[ "${argv[0]}" == show ]] ; then
     ocpishow_options=`sed 's/\(^\| \)show\( \|$\)/\1\2/' <<< "${original_argv[@]}"`
-    ocpishow $ocpishow_options
+    $OCPI_CDK_DIR/scripts/ocpishow $ocpishow_options
     exit $?
   elif [[ -n "$verb" && -n "$help_screen" ]]; then
     help
@@ -1972,6 +2043,8 @@ while [[ "${argv[0]}" != "" ]] ; do
       (clean) verb=build; buildClean=1;;
       (reg|register) verb=register;;
       (unreg|unregister) verb=unregister;;
+      (set) verb="set";;
+      (unset) verb="unset";;
       (show) verb=show;;
       ("") bad missing command name;;
       (*) bad there is no command named \"${argv[0]}\";;
@@ -1981,8 +2054,10 @@ while [[ "${argv[0]}" != "" ]] ; do
       libbase=hdl
       case "${argv[0]}" in
         (library)
-          echo "Warning: user creation of libraries underneath hdl/ is not fully supported."
-          echo "         You probably just want to create a components library using 'ocpidev create library ...'"
+          if [ "${verb}" != "build" ]; then
+            echo "Warning: user creation of libraries underneath hdl/ is not fully supported."
+            echo "         You probably just want to create a components library using 'ocpidev create library ...'"
+          fi
           noun=${argv[0]}
           ;;
         (device|subdevice|platform|platforms|assembly|assemblies|signals) noun=${argv[0]} ;;
@@ -2049,7 +2124,7 @@ fi
 [ -z $verb ] && bad missing verb, nothing to do
 [ -z "$noun" -a "$verb" != build ] && bad the \"$verb\" command must be followed by the type of asset
 # option testing dependent on noun and verb
-[ -z "$args" -a "$noun" != primitives -a "$noun" != assemblies  -a "$noun" != applications  -a "$noun" != platforms -a "$verb" != build -a "$verb" != register -a "$verb" != unregister ] && bad there must be a name argument after: $verb $hdl$noun
+[ -z "$args" -a "$noun" != primitives -a "$noun" != assemblies  -a "$noun" != applications  -a "$noun" != platforms -a "$verb" != build -a "$verb" != register -a "$verb" != unregister  -a "$verb" != set -a "$verb" != unset -a \( "$verb" != delete -a "$noun" != registry \) ] && bad there must be a name argument after: $verb $hdl$noun
 # force
 [ -n "$force" -a "$verb" != delete -a "$verb" != unregister ] &&
   bad the -f '(force)' option is only valid when deleting an asset
@@ -2161,6 +2236,7 @@ fi
 [ -z "$verbose" ] || echo Executing the \"$verb $hdl$noun\" command in a ${dirtype:-unknown type of} directory: $directory.
 case $noun in
   (project)      do_project ${args[@]} ;;
+  (registry)     do_registry ${args[@]} ;;
   (application)  do_application ${args[@]} ;;
   (applications) do_applications ${args[@]} ;;
   (protocol)     do_protocol_or_spec ${args[@]} ;;
@@ -2196,7 +2272,8 @@ gpmd=$OCPI_CDK_DIR/scripts/genProjMetaData.py
 if [ -x $gpmd ] ; then
   if [ "$verb" == create -a "$noun" == project ] ; then
     $gpmd $(pwd) force
-  elif [ "$verb" == create -o \( "$verb" == delete -a "$noun" != project \) ] ; then
+  elif [ \( "$verb" == create -a "$noun" != registry \) \
+         -o \( "$verb" == delete -a "$noun" != project -a "$noun" != registry \) ] ; then
     $gpmd $(pwd)
   fi
 fi

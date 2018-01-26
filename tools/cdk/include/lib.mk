@@ -26,6 +26,11 @@
 # We also list the targets per model.
 $(if $(wildcard $(OCPI_CDK_DIR)),,$(error OCPI_CDK_DIR environment variable not set properly.))
 
+include $(OCPI_CDK_DIR)/include/util.mk
+# Include library settings for this library, which are available here and for workers
+# Thus library settings can depend on project settings
+$(OcpiIncludeAssetAndParent)
+
 ifneq ($(origin Workers),undefined)
   ifneq ($(origin Implementations),undefined)
     $(error You cannot set both Workers and Implementations variables.)
@@ -46,7 +51,6 @@ endif
 ifndef LibName
 LibName=$(CwdName)
 endif
-include $(OCPI_CDK_DIR)/include/package.mk
 ifeq ($(origin Implementations),undefined)
 Implementations=$(foreach m,$(Models),$(wildcard *.$m))
 endif

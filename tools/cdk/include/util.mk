@@ -527,7 +527,8 @@ OcpiGetExtendedProjectPath=$(strip $(OcpiGetProjectPath) \
 
 # Loop through all imported projects and check for 'exports' and then try to find
 # rcc/platforms. Return a list of paths to 'rcc/platforms' directories found in each
-# imported project. Search the current project's rcc/platforms first.
+# imported project. Search the current project's rcc/platforms first. If the current
+# project is in OcpiGetExtendedProjectPath, filter it out.
 #
 # Note: the path 'platforms' without a leading 'rcc/' is searched as well for legacy
 #       compatibilty before rcc platforms were supported outside of the CDK
@@ -535,18 +536,20 @@ OcpiGetRccPlatformPaths=$(strip \
                           $(foreach p,$(OCPI_PROJECT_DIR),\
                             $(call OcpiExists,$p/rcc/platforms))\
                           $(foreach p,$(OcpiGetExtendedProjectPath),\
+                          $(if $(filter-out $(realpath $(OCPI_PROJECT_DIR)),\
+                                            $(realpath $(call OcpiAbsPathToContainingProject,$p))),\
                             $(or $(if $(call OcpiIsPathCdk,$p),\
                               $(call OcpiExists,$p/platforms),\
                               $(if $(filter $(notdir $p),exports),\
                                 $(call OcpiExists,$p/lib/rcc/platforms),\
                                 $(call OcpiExists,$p/rcc/platforms))),\
-                                  $(info Warning: The path $p/rcc/platforms does not exist.))))
+                                  $(info Warning: The path $p/rcc/platforms does not exist.)))))
 
 # Search for a given platform ($1) in the list of 'rcc/platform' directories found
 # by OcpiGetRccPlatformPaths.
 OcpiGetRccPlatformDir=$(strip $(firstword \
-		        $(or $(strip $(foreach p,$(OcpiGetRccPlatformPaths),$(wildcard $p/$1))),\
-                             $(error Cannot find RCC platform "$1" in $(OcpiGetRccPlatformPaths)))))
+		        $(foreach p,$(OcpiGetRccPlatformPaths),\
+                          $(call OcpiExists,$p/$1))))
 
 ##################################################################################
 # Functions for collecting Project Dependencies and imports for use with project
@@ -560,8 +563,7 @@ OcpiGetProjectDependencies=$(strip \
   $(foreach d,$(OcpiProjectDependenciesInternal),\
     $(if $(findstring /,$d),\
       $d,\
-      $(or $(call OcpiGetProjectInImports,.,$d),\
-         $(and $(filter ocpi.core ocpi.cdk,$d),$(wildcard $(OcpiProjectRegistryDir)/$d))))))
+      $(call OcpiGetProjectInImports,.,$d)) ))
 # These are the leftover imports that are not listed in the ProjectDependencies
 OcpiGetImportsNotInDependencies=$(strip \
   $(foreach i,$(OcpiGetProjectImports),\
@@ -574,22 +576,28 @@ OcpiGetImportsNotInDependencies=$(strip \
 # and potentially through a project's 'imports' directory
 ###################################################################################
 # This is the 'project registry' where symlinks
-# exist to any projects created on a system
+# exist to any projects created on a system.
+# If inside a project, try to use its imports.
 OcpiProjectRegistryDir=$(strip \
-  $(or $(strip $(OCPI_PROJECT_REGISTRY_DIR)),\
+  $(or \
+    $(and $(OCPI_PROJECT_DIR),$(call OcpiExists,$(call OcpiImportsDirForContainingProject,.))),\
+    $(strip $(OCPI_PROJECT_REGISTRY_DIR)),\
     $(if $(strip $(OCPI_CDK_DIR)),\
-      $(OCPI_CDK_DIR)/../project_registry,\
-      $(error Warning: OCPI_CDK_DIR is unset))))
+      $(OCPI_CDK_DIR)/../project-registry,\
+      $(error Error: OCPI_CDK_DIR is unset))))
 
 # Return the path to the 'imports' directory for the project containing $1
 # $(call OcpiImportsDirForContainingProject,.)
 OcpiImportsDirForContainingProject=$(strip $(foreach p,$(call OcpiAbsPathToContainingProject,$1),$p/imports))
 
-# Return the list of projects that are imported by the project containing
+# Return the list of projects that are imported by the project containing.
+# Do no include the current project if it is found in imports.
 # $(call OcpiGetProjectImports)
 OcpiGetProjectImports=$(strip \
-  $(foreach i,$(call OcpiImportsDirForContainingProject,.),\
-    $(wildcard $i/*)))
+  $(foreach p,$(foreach i,$(call OcpiImportsDirForContainingProject,.),$(wildcard $i/*)),\
+    $(if $(filter $(realpath $p),$(realpath $(OcpiAbsPathToContainingProject))),\
+      ,\
+      $p )))
 
 # Determine if a path is in fact the CDK. If so, return the CDK's
 # import alias 'ocpi.cdk'
@@ -860,6 +868,16 @@ OcpiGetDirTypeX=$(strip $(infox GDT1:$1)\
   ) \
 )
 
+# Get the directory type of arg1, and return the portion after the last dash.
+# E.g. in an hdl-platform directory, this will return platform
+OcpiGetShortenedDirType=$(strip \
+  $(foreach t,$(lastword $(subst -, ,$(call OcpiGetDirType,$1))),\
+    $(if $(filter lib,$t),library,$t)))
+
+###############################################################################
+# Functions for including an asset and its parents
+###############################################################################
+
 # Recursive
 OcpiIncludeProjectX=$(infox OIPX:$1:$2:$3)\
   $(if $(wildcard $1/Project.mk),\
@@ -876,16 +894,91 @@ OcpiIncludeProjectX=$(infox OIPX:$1:$2:$3)\
 # FIXME: can we avoid this when cleaning?
 OcpiIncludeProject=$(call OcpiIncludeProjectX,$(or $(OCPI_PROJECT_DIR),.),$1,$(call OcpiAbsDir,.))
 
-define OcpiSetLibrary
-  ifeq ($(filter library lib,$(call OcpiGetDirType,$1)),)
-    $($2 This directory ($(call OcpiAbsDir,$1)) is not a library)
-  endif
-  ifneq ($(wildcard $1/Library.mk),)
-    include $1/Library.mk
+# OcpiIncludeParentAsset_<asset-type> defines how to include an asset's parent.
+# This is done on a per-asset-type basis (e.g. platform, platforms, library ...).
+# If an asset-type does not define an OcpiIncludeParentAsset_<asset-type> function,
+# it is assumed that the project itself is the parent.
+#
+# For OcpiIncludeParentAsset_* functions, arguments are as follows:
+#   Arg1 = reference directory
+#   Arg2 = error/warning/info mode
+
+# So, for library, first check if this is a platform's devices library.
+# If so, include the parent (../) with type Platform so it can
+# find Platform.mk if it exists. Otherwise, the parent is just the project
+OcpiIncludeParentAsset_library=\
+  $(if $(filter %-platform,$(call OcpiGetDirType,$1/../)),\
+    $(call OcpiIncludeAssetAndParentX,$1/../,$2),\
+    $(call OcpiIncludeProject,$2))
+
+# For a platform directory, we include the platforms directory in ../
+# We provide it with type Platforms so it can find the Platforms.mk
+# file if it exists. If the platform is not inside a platforms directory,
+# then it is not in a project at all and does not have a parent.
+OcpiIncludeParentAsset_platform=\
+  $(if $(filter %-platforms,$(call OcpiGetDirType,$1/../)),\
+    $(call OcpiIncludeAssetAndParentX,$1/../,$2))
+
+# For asset in directory arg1, look for makefile <arg2>.mk and include it to
+# extract any variables that are set.  Clear the package variables so that the
+# current asset's environment is not polluted with package variables from a
+# parent assets settings
+#   Arg1 = reference directory
+#   Arg2 = shortened directory type with capitalized first letter
+#            this is the word used to find the .mk  file
+#            e.g. Library, Platforms, Platform
+define OcpiSetAsset
+  Package:=
+  unexport Package
+  PackagePrefix:=
+  unexport PackagePrefix
+  PackageName:=
+  unexport PackagePrefix
+  ifneq ($$(wildcard $1/$2.mk),)
+    include $1/$2.mk
   endif
 endef
 
-OcpiIncludeLibrary=$(eval $(call OcpiSetLibrary,$1,$2))
+# First determine the shortened directory type which is the portion
+# of dirtype after the last '-' (e.g. hdl-platforms -> platforms).
+#   Store this value in s
+# Next, save a version of this shortened dirtype with the first letter
+# capitalized so that the *.mk file can be found (e.g. Library.mk)
+#   Store this in c
+# Note: the two outer loops will only ever have one iteration. They
+#       are essentially just saying:
+#         s = shortened_dir_type(<arg1>)
+#         c = capitalize_first_letter(s)
+#
+# If the current asset's parent defines an OcpiIncludeParentAsset_<asset-type>
+# function, call that to include the parent. Otherwise parent is the project,
+# so include the project. Next, include the current asset by importing its
+# *.mk file and determining its package via OcpiSetAndGetPackageId
+#   Arg1 = reference directory
+#   Arg2 = error/warning/info mode (optional)
+OcpiIncludeAssetAndParentX=$(infox OIAAPX:$1:$2)$(strip \
+  $(foreach s,$(call OcpiGetShortenedDirType,$1),\
+    $(foreach c,$(call Capitalize,$s),\
+      $(if $(filter-out undefined,$(origin OcpiIncludeParentAsset_$s)),\
+        $(call OcpiIncludeParentAsset_$s,$1,$c,$2),\
+        $(call OcpiIncludeProject,$2))\
+      $(eval $(call OcpiSetAsset,$1,$c))\
+      $(eval ParentPackage:=)\
+      $(eval unexport ParentPackage)\
+      $(eval override ParentPackage:=$(call OcpiSetAndGetPackageId,$1)))))
+
+# Wrapper function for OcpiIncludeAssetAndParentX. package.mk is included here
+# so that it is not included many times during recursive calls of the *X
+# function above. This function assumes Arg1 should be the current directory if
+# none is provided. Finally, it determines the shortened and capitalized
+# directory type to be used for finding *.mk files.
+#   Arg1 = reference directory
+#   Arg2 = error/warning/info mode (optional)
+OcpiIncludeAssetAndParent=$(strip \
+  $(eval include $(OCPI_CDK_DIR)/include/package.mk)\
+  $(call OcpiIncludeAssetAndParentX,$(or $1,.),$2))
+
+###############################################################################
 
 # Find the subdirectories that make a Makefile that includes something
 OcpiFindSubdirs=$(strip \
