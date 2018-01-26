@@ -17,7 +17,8 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 include $(OCPI_CDK_DIR)/include/util.mk
-$(OcpiIncludeProject)
+$(OcpiIncludeAssetAndParent)
+
 # FIXME: create an hdl-platforms.mk template to share among platform developers.
 # This variable specifies the local list of platforms that are active here.
 HdlMyPlatforms?=$(foreach d,$(filter-out %.txt %.mk test Makefile common README README.txt lib specs old,$(wildcard *)),$(and $(wildcard $d/$d.mk),$d))
@@ -37,8 +38,6 @@ endif
 #$(foreach p,$(HdlPlatforms),$(if $(wildcard $p),,\
 #  $(warning Platform $p not present in this platforms directory, not building it here.)\
 #  $(eval override HdlPlatforms:=$(filter-out $p,$(HdlPlatforms)))))
-
-include $(OCPI_CDK_DIR)/include/package.mk
 
 .PHONY: $(HdlMyPlatforms)
 
