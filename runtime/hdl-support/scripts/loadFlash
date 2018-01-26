@@ -20,6 +20,10 @@
 # Load the user-bit-stream flash on a platform
 # This script loads the flash, and may also load the same bitstream onto the FPGA in the process,
 # or (worse) may trash the currently loaded bitstream.
+[ "$1" = -v ] && {
+    verbose=-v
+    shift
+}
 if test $# != 3; then
   echo "This script loads a bitstream file into the user-loadable boot flash memory on a HDL/FPGA platform/card."
   echo "There must be three arguments, which are:"
@@ -30,12 +34,17 @@ if test $# != 3; then
   exit 1
 fi
 [ ! -d "$OCPI_CDK_DIR" ] && echo Error: OCPI_CDK_DIR environment variable setting is not valid. && exit 1
+[ -r "$2" ] || {
+    echo Bitstream file \"$2\" does not exist or is not readable.
+    exit 1
+}
 source $OCPI_CDK_DIR/scripts/util.sh
 if findInProjectPath loadFlash_$1 lib/platforms/$1 pfscript ; then
   echo Loading the flash memory on the $1 platform attached to the JTAG pod with ESN $3
   echo Loading from file: $2
   # do not require execute permission on the file
-  exec sh $pfscript $2 $3
+  # echo exec sh $pfscript $verbose $2 $3
+  exec sh $pfscript $verbose $2 $3
 fi
 echo 'The "'$1'" platform does not appear to be supported for flash loading.  Misspelled?'
 echo "Looked for \"loadFlash_$1\" internal script in OCPI_PROJECT_PATH and OCPI_CDK_DIR."

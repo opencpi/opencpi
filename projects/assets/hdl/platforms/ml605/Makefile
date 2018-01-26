@@ -17,9 +17,8 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 # The ml605 platform.
-Libraries=virtex6 xilinx
-Cores=pcie_4243_trn_v6_gtx_x4_250
-#Cores=pcie_4243_trn_v6_gtx_x4_250 ./chipscope_icon ./chipscope_ila
+Libraries=virtex6 xilinx pcie_4243_trn_v6_gtx_x4_250
+#Cores=./chipscope_icon ./chipscope_ila
 ExportFiles=jtagSupport_ml605 loadFlash_ml605 \
             ml605.ucf ml605.ut ml605.mk testbias_ml605_base.bitz
 # We specify these to get the order we want

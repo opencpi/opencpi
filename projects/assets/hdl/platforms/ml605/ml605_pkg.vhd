@@ -21,6 +21,7 @@ library IEEE; use IEEE.std_logic_1164.all, IEEE.numeric_std.all;
 library ocpi; use ocpi.all, ocpi.types.all;
 package ml605_pkg is
 component pci_ml605 is
+  generic(VENDOR_ID, DEVICE_ID, CLASS_CODE : natural);
   port(
     pci0_clkp               : in  std_logic;
     pci0_clkn               : in  std_logic;

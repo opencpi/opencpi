@@ -20,37 +20,62 @@
 
 # A script for loading the user-bit-stream flash memory on altera development boards.
 
-if test "$OCPI_ALTERA_TOOLS_DIR" = "" -o "$OCPI_ALTERA_KITS_DIR" = ""; then
-  echo "Altera environment variables (OCPI_ALTERA_TOOLS_DIR and OCPI_ALTERA_KITS_DIR) are not set."
-  exit 1
-fi
-if test ! -d "$OCPI_ALTERA_TOOLS_DIR" -o ! -d "$OCPI_ALTERA_KITS_DIR" ; then
-  echo "Altera directories (set by OCPI_ALTERA_TOOLS_DIR and OCPI_ALTERA_KITS_DIR) do not exist."
-  exit 1
-fi
+[ "$1" = -v ] && {
+    verbose=1
+    shift
+}
+source $OCPI_CDK_DIR/scripts/util.sh
+setVarsFromMake $OCPI_CDK_DIR/include/hdl/altera.mk ShellQuartusVars=1 Verbose=$verbose
 if test $# != 5; then
   echo "This is an internal script meant to be called from a platform-specific script"
   echo "There must be four arguments, which are:"
+  echo "0. Optional -v for verbose"
   echo "1. The name of the board/kit as defined by Altera, e.g. stratixIVGX_4sgx530"
   echo "2. The name of the part as defined in the Altera kit, e.g. s4gx530".
   echo "3. The serial number in hex, of the jtag cable".
   echo "4. The flash memory offset for the board."
   echo "5. The bit file to write into the flash."
-  echo "See alternatives in the $OCPI_ALTERA_KITS_DIR directory (without the '_fpga' suffix)."
+  echo "See alternatives in the $OcpiAlteraKitsDir directory (without the '_fpga' suffix)."
   exit 1
 fi
-if test ! -d "$OCPI_ALTERA_KITS_DIR/"${1}_fpga; then
-  echo "There is no kit installed with the name $1 (no directory named $OCPI_ALTERA_KITS_DIR/${1}_fpga)."
-  exit 1
-fi
+[ -n "$verbose" ] && {
+  echo OcpiAlteraQuartusDir=$OcpiAlteraQuartusDir
+  echo OcpiAlteraProgrammerDir=$OcpiAlteraProgrammerDir
+  echo OcpiAlteraLicenseFile=$OcpiAlteraLicenseFile
 
-QBIN="$OCPI_ALTERA_TOOLS_DIR/quartus/bin"
-NBIN="$OCPI_ALTERA_TOOLS_DIR/nios2eds/bin"
-NTOP="$OCPI_ALTERA_TOOLS_DIR/nios2eds"
+}
+[ -z "$OcpiAlteraProgrammerDir" ] && {
+  echo Error: Could not find the directory for Altera Quartus or programming tools.
+  exit 1
+}
+QBIN="$OcpiAlteraProgrammerDir/quartus/bin"
+[ ! -d $QBIN ] && {
+  QBIN="$OcpiAlteraProgrammerDir/qprogrammer/bin"
+  [ ! -d $QBIN ] && {
+    echo Neither $OcpiAlteraProgrammerDir/quartus/bin nor $OcpiAlteraProgrammerDir/qprogrammer/bin exist
+    exit 1
+  }
+}
+if test ! -x "$QBIN"/jtagconfig -o ! -x "$QBIN/quartus_pgm"; then
+  echo With tools bin directory: $QBIN
+  echo "The required Altera executables (jtagconfig, quartus_pgm) are not present." 1>&2
+  exit 1
+fi
+# up to this point we are doing the same tests as for normal/jtag bitstream loading
+# now we start depending on the nios stuff that requires the full quartus installation...
+NTOP="$OcpiAlteraProgrammerDir/nios2eds"
 NBIN="$NTOP/bin"
 NSH="$NTOP/nios2_command_shell.sh"
-if test ! -x "$QBIN"/jtagconfig -o ! -x "$QBIN/quartus_pgm" -o ! -x "$NBIN/sof2flash" -o ! -x "$NBIN/nios2-flash-programmer" -o ! -x "$NSH"; then
+[ -x "$NBIN/sof2flash" -a -x "$NBIN/nios2-flash-programmer" -a -x "$NSH" ] || {
   echo "The required executables (jtagconfig, quartus_pgm, sof2flash, nios2-flash-programmer) are not present."
+  exit 1
+}
+if test ! -d "$OcpiAlteraKitsDir" -o ! -d "$OcpiAlteraKitsDir" ; then
+  echo "Altera directories (set by OCPI_ALTERA_DIR and OCPI_ALTERA_KITS_DIR) do not exist."
+  exit 1
+fi
+if test ! -d "$OcpiAlteraKitsDir/"${1}_fpga; then
+  echo "There is no kit installed with the name $1 (no directory named $OCPI_ALTERA_KITS_DIR/${1}_fpga)."
   exit 1
 fi
 
@@ -90,7 +115,7 @@ if test "$Found" = ""; then
   exit 1
 fi
 echo Using cable \"$Found\" with serial number $FSerial.
-FBS="$OCPI_ALTERA_KITS_DIR/"${1}_fpga/factory_recovery/${2}_fpga_bup.sof
+FBS="$OcpiAlteraKitsDir/"${1}_fpga/factory_recovery/${2}_fpga_bup.sof
 if test ! -r "$FBS"; then
   echo No readable factory bitstream. Looking for: \"$FBS\"
   exit 1
@@ -124,6 +149,7 @@ case $5 in
 esac
 
 echo Converting bitstream file \"$bitfile\" to flash format in \"$temp.flash\" using sof2flash
+echo This step takes a few minutes. Starting at `date`.
 echo "$NSH" sof2flash --input=$bitfile --output=$temp.flash --offset=$4 --pfl --optionbit=0x00018000 --programmingmode=PS > $temp.2
 "$NSH" sof2flash --input=$bitfile --output=$temp.flash --offset=$4 --pfl --optionbit=0x00018000 --programmingmode=PS >> $temp.2 2>&1
 if test $? != 0; then
@@ -133,14 +159,15 @@ fi
 rm $temp.2
 rm -f $temp.sof
 echo Loading factory bitstream \"$FBS\" to use for indirectly writing flash memory.
-echo "$OCPI_ALTERA_TOOLS_DIR"/quartus/bin/quartus_pgm -m jtag -c "$Found" -o "p;$FBS" > $temp.3
-"$OCPI_ALTERA_TOOLS_DIR"/quartus/bin/quartus_pgm -m jtag -c "$Found" -o "p;$FBS" >> $temp.3 2>&1
+echo $OcpiAlteraProgrammerDir/quartus/bin/quartus_pgm -m jtag -c "$Found" -o "p;$FBS" > $temp.3
+$OcpiAlteraProgrammerDir/quartus/bin/quartus_pgm -m jtag -c "$Found" -o "p;$FBS" >> $temp.3 2>&1
 if test $? != 0; then
   echo JTAG loading of the factory bitstream failed.  See log in $temp.3
   exit 1
 fi
 rm $temp.3
 echo JTAG Loading of the factory bitstream succeeded.  Now using it to write the flash.
+echo Starting to write the flash at `date`.
 echo "$NSH" nios2-flash-programmer --base 0x08000000 $temp.flash > $temp.4
 time "$NSH" nios2-flash-programmer --base 0x08000000 $temp.flash > $temp.5 2>$temp.6
 if test $? != 0; then

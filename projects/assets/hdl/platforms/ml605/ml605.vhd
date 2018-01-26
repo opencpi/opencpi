@@ -30,7 +30,7 @@
 library IEEE; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;
 library ocpi; use ocpi.types.all; -- remove this to avoid all ocpi name collisions
 library unisim; use unisim.vcomponents.all;
-library platform; use platform.platform_pkg.all;
+library platform; use platform.pci_pkg.all, platform.platform_pkg.all;
 library bsv;
 library ml605;
 architecture rtl of ml605_worker is
@@ -94,6 +94,9 @@ begin
   -- clock-domain crossing for lots of logic (control plane and data plane)
 
   pcie : work.ml605_pkg.pci_ml605
+    generic map(VENDOR_ID  => pci_vendor_id_c, -- the vendor ID for OpenCPI
+                DEVICE_ID  => pci_device_id_t'pos(pci_device_id), -- the enum value from the OWD
+                CLASS_CODE => pci_class_code_c) -- the pci class code for OpenCPI
     port map(pci0_clkp      => pci0_clkp,
              pci0_clkn      => pci0_clkn,
              pci0_rstn      => pci0_reset_n,

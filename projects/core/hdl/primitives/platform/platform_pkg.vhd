@@ -440,3 +440,13 @@ component unoc_node_rv is
 end component unoc_node_rv;
 end package unoc_node_defs;
 
+package pci_pkg is
+  constant pci_any_id_c         : natural := 16#ffff#;      -- wild card
+  constant pci_vendor_id_c      : natural := 16#1df7#;      -- opencpi.org
+  constant pci_device_id_c      : natural := pci_any_id_c;  -- device is our platform
+  constant pci_class_c          : natural := 16#b#;         -- processor
+  constant pci_subclass_c       : natural := 16#40#;        -- coprocessor
+  constant pci_class_code_c     : natural := pci_class_c * 2 ** 16 + pci_subclass_c * 2 ** 8;
+  constant pci_device_unknown_c : natural := 0;
+  -- All other defined PCI device platforms are registered in the platform worker spec xml
+end package pci_pkg;

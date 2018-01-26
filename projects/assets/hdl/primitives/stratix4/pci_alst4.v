@@ -59,6 +59,14 @@ module pci_alst4(input          sys0_clk,
 		 input 		unoc_in_take
 );
 
+  parameter VENDOR_ID=0;
+  parameter DEVICE_ID=0;
+  parameter CLASS_CODE=0;
+  defparam pciw_pci0_pcie_ep.epmap.wrapper.VENDOR_ID=VENDOR_ID;
+  defparam pciw_pci0_pcie_ep.epmap.wrapper.SUBSYSTEM_VENDOR_ID=VENDOR_ID;
+  defparam pciw_pci0_pcie_ep.epmap.wrapper.DEVICE_ID=DEVICE_ID;
+  defparam pciw_pci0_pcie_ep.epmap.wrapper.SUBSYSTEM_ID=DEVICE_ID;
+  defparam pciw_pci0_pcie_ep.epmap.wrapper.CLASS_CODE=CLASS_CODE;
   // inlined wires
   wire [127 : 0] pciw_pci0_rxDws_new_data$wget, pciw_pci0_txDws_new_data$wget;
   wire [2 : 0] pciw_pci0_rxDws_delta_deq$wget,

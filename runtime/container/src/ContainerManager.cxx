@@ -26,6 +26,7 @@
 #include "OcpiOsSemaphore.h"        // just for linkage hooks
 #include "OcpiUuid.h"               // just for linkage hooks
 #include "OcpiThread.h"             // just for linkage hooks
+#include "OcpiUtilPci.h"            // just for linkage hooks
 #include "RemoteClient.h"           // just for linkage hooks
 #include "ContainerPort.h"          // just for linkage hooks
 
@@ -173,11 +174,15 @@ namespace OCPI {
     intptr_t dumb1() {
       ((DataTransfer::XferServices*)dumb1)->DataTransfer::XferServices::send(0, NULL, 0);
       ((OCPI::Util::Thread*)dumb1)->join();
-	OCPI::Util::Uuid uuid;
+      OCPI::Util::Uuid uuid;
       OCPI::Util::UuidString us;
       OCPI::Util::uuid2string(uuid, us);
       std::string str;
       OCPI::Util::searchPath(NULL, NULL, str, NULL, NULL);
+      size_t dum2;
+      (void)((BasicPort*)dumb1)->BasicPort::getOperationInfo(0, dum2);
+      unsigned dum3;
+      (void)OCPI::Util::probePci(NULL, 0, 0, 0, 0, 0, NULL, dum3, str);
       // Msg::XferFactoryManager::getFactoryManager();
       OCPI::OS::Socket s;
       OCPI::OS::ServerSocket ss;

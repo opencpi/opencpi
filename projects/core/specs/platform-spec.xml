@@ -13,6 +13,11 @@
   <property name='platform' type='string' parameter='1' stringlength="31"/>
   <!-- Width of data plane in DWORDS -->
   <property name='sdp_width' type='uchar' parameter='1' default='1'/>
+  <!-- PCI Device ID for PCI devices
+       This is essentially the "registry" of PCI device IDs
+       New platforms can use "unknown" before they are registered -->
+  <property name='pci_device_id' parameter='1' default='unknown'
+	    type='enum' enums='unknown,ml605,alst4,alst4x'/>
   <!-- ======================================================
        === 2. Required first non-parameters - fixed/known in bootstrapping code -->
   <!-- UUID of this platform: MUST BE FIRST for bootstrapping purposes ========= -->

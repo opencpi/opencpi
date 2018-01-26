@@ -66,6 +66,14 @@ module pci_ml605(// PCI signals from hardware
 		 // input 		RDY_server_response_get
 );
 
+  parameter VENDOR_ID=0;
+  parameter DEVICE_ID=0;
+  parameter CLASS_CODE=0;
+  defparam pciw_pci0_pcie_ep.ep.VENDOR_ID=VENDOR_ID;
+  defparam pciw_pci0_pcie_ep.ep.SUBSYSTEM_VENDOR_ID=VENDOR_ID;
+  defparam pciw_pci0_pcie_ep.ep.DEVICE_ID=DEVICE_ID;
+  defparam pciw_pci0_pcie_ep.ep.SUBSYSTEM_ID=DEVICE_ID;
+  defparam pciw_pci0_pcie_ep.ep.CLASS_CODE=CLASS_CODE;
   // signals for module outputs
 //  wire [3 : 0] pcie_txn, pcie_txp;
 //  wire CLK_GATE_p125clk,
@@ -1143,5 +1151,3 @@ module pci_ml605(// PCI signals from hardware
   `endif // BSV_NO_INITIAL_BLOCKS
   // synopsys translate_on
 endmodule  // pci_ml605
-
-

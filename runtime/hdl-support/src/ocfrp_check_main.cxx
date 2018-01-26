@@ -33,31 +33,32 @@
 #include <sys/mman.h>
 #include "OcpiUuid.h"
 #include "HdlOCCP.h"
+#include "OcpiUtilPci.h"
 #include "HdlPciDriver.h"
 
 namespace OP = OCPI::HDL::PCI;
 namespace OH = OCPI::HDL;
+namespace OU = OCPI::Util;
 
-static const char *found(const char *name, OP::Bar *bars, unsigned nBars, bool verbose);
+static const char *found(const char *name, OU::Bar *bars, unsigned nBars, bool verbose);
 
 // consider a specific PCI device return error if something
 // bad happened.
 const char *
-doDevice(const char *name,
-	 unsigned theVendor, unsigned theDevice, unsigned theClass, unsigned theSubClass,
-	 bool verbose) {
-  OP::Bar bars[OP::MAXBARS];
-  unsigned nbars = OP::MAXBARS;
-  static std::string error;
-  if (!OP::probePci(name, theVendor, theDevice, theClass, theSubClass, verbose, bars, nbars, error))
-    return error.empty() ? NULL : error.c_str();
-  return nbars ? found(name, bars, nbars, verbose) : NULL;
+doDevice(const char *name, bool verbose) {
+  OU::Bar bars[OU::MAXBARS];
+  unsigned nbars = OU::MAXBARS;
+  static std::string error, dummy;
+  if (OU::probePci(name, OCPI_HDL_PCI_VENDOR_ID, UINT_MAX, OCPI_HDL_PCI_CLASS,
+		   OCPI_HDL_PCI_SUBCLASS, verbose, bars, nbars, error) ||
+      OU::probePci(name, OCPI_HDL_PCI_OLD_VENDOR_ID, OCPI_HDL_PCI_OLD_DEVICE_ID,
+		   OCPI_HDL_PCI_OLD_CLASS, OCPI_HDL_PCI_OLD_SUBCLASS, verbose, bars, nbars, dummy))
+    return nbars ? found(name, bars, nbars, verbose) : NULL;
+  return error.empty() ? NULL : error.c_str();
 }
 
 const char *
-search(const char **/*exclude*/,
-       unsigned theVendor, unsigned theDevice, unsigned theClass, unsigned theSubClass,
-       bool verbose) {
+search(bool verbose) {
   const char *err = NULL;
   struct dirent *ent;
   DIR *pcid = opendir(OCPI_HDL_SYS_PCI_DIR);
@@ -65,7 +66,7 @@ search(const char **/*exclude*/,
     return "Can't open the " OCPI_HDL_SYS_PCI_DIR " directory";
   while (!err && (ent = readdir(pcid)) != NULL)
     if (ent->d_name[0] != '.')
-      err = doDevice(ent->d_name, theVendor, theDevice, theClass, theSubClass, verbose);
+      err = doDevice(ent->d_name, verbose);
   closedir(pcid);
   return err;
 }
@@ -75,7 +76,7 @@ unsigned nFound = 0;
 
 // found a correctly looking PCI device
 static const char*
-found(const char *name, OP::Bar *bars, unsigned nbars, bool verbose) {
+found(const char *name, OU::Bar *bars, unsigned nbars, bool verbose) {
   const char *err = 0;
   void *bar0 = 0, *bar1 = 0;
   volatile OH::OccpSpace *occp;
@@ -178,8 +179,7 @@ main(int /*argc*/, char **argv)
   const char *err;
   int rv = 0;
   if (argv[1]) {
-    if ((err = doDevice(argv[1], OCPI_HDL_PCI_VENDOR_ID, OCPI_HDL_PCI_DEVICE_ID, OCPI_HDL_PCI_CLASS, OCPI_HDL_PCI_SUBCLASS,
-			verbose))) {
+    if ((err = doDevice(argv[1], verbose))) {
       fprintf(stderr, "Error: Couldn't find \"%s\": %s\n", argv[1], err);
       rv = 1;
     } else if (!nFound) {
@@ -187,8 +187,7 @@ main(int /*argc*/, char **argv)
       rv = 1;
     }
   } else {
-    if ((err = search(0, OCPI_HDL_PCI_VENDOR_ID, OCPI_HDL_PCI_DEVICE_ID, OCPI_HDL_PCI_CLASS, OCPI_HDL_PCI_SUBCLASS,
-		      verbose))) {
+    if ((err = search(verbose))) {
       fprintf(stderr, "Error: PCI Scanner Error: %s\n", err);
       rv = 1;
     } else if (!nFound) {
@@ -206,7 +205,7 @@ main(int /*argc*/, char **argv)
     if (!(dmaEnv = getenv("OCPI_DMA_MEMORY"))) {
       if (verbose)
 	fprintf(stderr,
-		"Warning: You must set the OCPI_DMA_MEMORY environment variable or load the driver before using any OpenCPI FPGA platform\n"
+		"Warning: You must set the OCPI_DMA_MEMORY environment variable or load the kernel driver before using any OpenCPI FPGA platform\n"
 		"         Use \"sudo -E\" to allow this program to have access to environmant variables\n");
     } else if (sscanf(dmaEnv, "%uM$0x%llx", &dmaMeg, (unsigned long long *) &dmaBase) != 2) {
       fprintf(stderr, "Error: The OCPI_DMA_MEMORY environment variable is not formatted correctly\n");

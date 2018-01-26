@@ -18,34 +18,40 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
-# A script specific to the alst4 platform, with the sgx230 part
+# A script shared by Xilinx platforms
 # Args are:
+# 0. Optional -v for verbose
 # 1. The bitstream file to load to flash
 # 2. The serial number of the jtag pod to use
 # 3. The promgen args is one argument
 dir=`dirname $0`
+[ "$1" = -v ] && {
+    verbose=1
+    shift
+}
 if [[ $# != 3 ]]; then
   echo Usage is: `basename $0` bitfile jtag-esn 1>&2
   exit 1
 fi
-if ! test -r $1; then
-  echo Bitstream file \'$1\' does not exist.
-  exit 1
-fi
 source $OCPI_CDK_DIR/scripts/util.sh
 setVarsFromMake $OCPI_CDK_DIR/include/hdl/xilinx.mk ShellIseVars=1 $verbose
-[ -z "$OcpiXilinxIseDir" ] && {
-  echo Error: Could not find the directory for XILINX ISE Tools.
+[ -z "$OcpiXilinxLabToolsDir" ] && {
+  echo Error: Could not find the directory for XILINX LabTools or ISE.
+  exit 1
+}
+source $OcpiXilinxLabToolsDir/../settings64.sh 1>&2
+if test $? != 0; then
+  echo Xilinx tools setup failed. 1>&2
   exit 1
 fi
-if test -x $OcpiXilinxIseDir/ISE/bin/lin64/impact; then
-  imp="$OcpiXilinxIseDir/ISE/bin/lin64/impact"
-  pgen="$OcpiXilinxIseDir/ISE/bin/lin64/promgen"
-elif test -x $OcpiXilinxIseDir/LabTools/bin/lin64/impact; then
-  imp="$OcpiXilinxIseDir/LabTools/bin/lin64/impact"
-  pgen="$OcpiXilinxIseDir/LabTools/bin/lin64/promgen"
-else
-  echo Error: neither $OcpiXilinxIseDir/ISE/bin/lin64/impact nor $OcpiXilinxIseDir/LabTools/bin/lin64/impact was found
+imp="$OcpiXilinxLabToolsDir/bin/lin64/impact"
+if test ! -x $imp; then
+  echo Error: Xilinx impact tool not found at $imp 1>&2
+  exit 1
+fi
+pgen="$OcpiXilinxLabToolsDir/bin/lin64/promgen"
+if test ! -x $imp; then
+  echo Error: Xilinx promgen tool not found at $pgen 1>&2
   exit 1
 fi
 myusb=`$dir/findJtagByESN_xilinx $imp $2`

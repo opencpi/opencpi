@@ -16,8 +16,8 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-Core=pcie_4243_trn_v6_gtx_x4_250
-Top=v6_pcie_v1_7
+#Core=pcie_4243_trn_v6_gtx_x4_250
+#Top=v6_pcie_v1_7
 ExcludeTargets=
 OnlyTargets=virtex6 isim xsim
 SourceFiles=\
@@ -38,4 +38,4 @@ SourceFiles=\
  v6_pcie_v1_7.v\
  gtx_wrapper_v6.v\
 # end of files
-include $(OCPI_CDK_DIR)/include/hdl/hdl-core.mk
+include $(OCPI_CDK_DIR)/include/hdl/hdl-lib.mk

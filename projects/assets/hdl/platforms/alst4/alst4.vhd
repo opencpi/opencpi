@@ -29,7 +29,7 @@
 
 library IEEE; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;
 library ocpi; use ocpi.types.all; -- remove this to avoid all ocpi name collisions
-library platform; use platform.platform_pkg.all;
+library platform; use platform.pci_pkg.all, platform.platform_pkg.all;
 library bsv;
 architecture rtl of alst4_worker is
   signal ctl_clk            : std_logic;        -- clock we produce and use for the control plane
@@ -40,6 +40,7 @@ architecture rtl of alst4_worker is
   signal led_n_7            : std_logic;
   signal led_n_0            : std_logic;
   component pci_alst4 is
+  generic(VENDOR_ID, DEVICE_ID, CLASS_CODE : natural);
   port(
     sys0_clk                : in  std_logic;
     sys0_rstn               : in  std_logic;
@@ -73,6 +74,9 @@ begin
   -- clock-domain crossing for lots of logic (control plane and data plane)
 
   pcie : pci_alst4
+    generic map(VENDOR_ID  => pci_vendor_id_c, -- the vendor ID for OpenCPI
+                DEVICE_ID  => pci_device_id_t'pos(pci_device_id), -- the enum value from the OWD
+                CLASS_CODE => pci_class_code_c) -- the pci class code for OpenCPI
     port map(sys0_clk       => sys0_clk,
              sys0_rstn      => sys0_rstn,
              pcie_clk       => pcie_clk,

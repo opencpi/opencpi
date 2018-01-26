@@ -17,4 +17,4 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-exec $OCPI_CDK_DIR/scripts/loadFlash_xilinx $1 $2 "-x xcf128x -data_width 16 -u 00000000"
+exec $OCPI_CDK_DIR/scripts/loadFlash_xilinx $* "-x xcf128x -data_width 16 -u 00000000"

@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-Top=pcie_hip_s4gx_gen2_x4_128
+#Top=pcie_hip_s4gx_gen2_x4_128
 ExcludeTargets=
 OnlyTargets=stratix4
 SourceFiles=\
@@ -27,4 +27,4 @@ SourceFiles=\
  pciexp_dcram.v\
  altpcie_rs_serdes.v\
 # end of files
-include $(OCPI_CDK_DIR)/include/hdl/hdl-core.mk
+include $(OCPI_CDK_DIR)/include/hdl/hdl-lib.mk

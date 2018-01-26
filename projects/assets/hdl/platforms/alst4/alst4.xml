@@ -2,6 +2,7 @@
   <specproperty name='platform' value='alst4'/>
   <specproperty name="nSlots" value='2'/>
   <specproperty name="slotNames" value='hsmc_a,hsmc_b'/>
+  <specproperty name="pci_device_id" value='alst4'/>
   <!-- All platform workers must provide these two ports -->
   <metadata master='true'/> <!-- access to container metadata via the platform worker -->
   <timebase master='true'/> <!-- providing a timebase for the time service -->

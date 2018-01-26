@@ -33,25 +33,18 @@ namespace OCPI {
   namespace HDL {
     namespace PCI {
 #endif
-      //#define OCPI_HDL_PCI_DIR "/dev/ocpi/pci"
-#define OCPI_HDL_PCI_VENDOR_ID 0x10ee
-#define OCPI_HDL_PCI_DEVICE_ID 0x4243
-#define OCPI_HDL_PCI_CLASS 0x05    // PCI_BASE_CLASS_MEMORY on linux
-#define OCPI_HDL_PCI_SUBCLASS 0x00 // PCI_CLASS_MEMOR_RAM & 0xff on linux
+// !!!!! These definitions are also in core/hdl/primitives/platform/platform_pkg.vhd
+#define OCPI_HDL_PCI_ANY (~0)              // PCI_ANY_ID on linux
+#define OCPI_HDL_PCI_OLD_VENDOR_ID 0x10ee  // Xilinx
+#define OCPI_HDL_PCI_OLD_DEVICE_ID 0x4243  // Where did this come from?  Shep?
+#define OCPI_HDL_PCI_OLD_CLASS     0x05    // PCI_BASE_CLASS_MEMORY on linux
+#define OCPI_HDL_PCI_OLD_SUBCLASS  0x00    // PCI_CLASS_MEMOR_RAM on linux
+#define OCPI_HDL_PCI_VENDOR_ID     0x1df7  // opencpi.org
+#define OCPI_HDL_PCI_DEVICE_ID     OCPI_HDL_PCI_ANY
+#define OCPI_HDL_PCI_CLASS         0x0B    // PCI_BASE_CLASS_PROCESSOR on linux
+#define OCPI_HDL_PCI_SUBCLASS      0x40    // PCI_CLASS_PROCESSOR_CO on linux
 #define OCPI_HDL_SYS_PCI_DIR "/sys/bus/pci/devices"
 #ifdef __cplusplus
-      struct Bar {
-	uint64_t address;
-	uint64_t size;
-	bool io, prefetch;
-	unsigned addressSize;
-      };
-      const unsigned MAXBARS = 6;
-      // Utility functions, for use even when driver class is not used.
-      bool
-      probePci(const char *name, unsigned theVendor, unsigned theDevice, unsigned theClass,
-	       unsigned theSubClass, bool probe, Bar *bars, unsigned &nbars, std::string &error);
-
       class Driver {
 	int m_pciMemFd;
 	bool m_useDriver;

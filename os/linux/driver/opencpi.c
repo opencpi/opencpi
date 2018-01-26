@@ -1125,9 +1125,10 @@ probe_pci(struct pci_dev *pcidev, const struct pci_device_id *id) {
       }
     }
     log_debug("Discovered opencpi PCI device %d of %ld, with good magic,"
-	      " at %04x:%02x:%02x.%x\n",
+	      " at %04x:%02x:%02x.%x vendor %x device %x class %x subvendor %x subdevice %x\n",
 	      new_device, opencpi_max_devices, pci_domain_nr(pcidev->bus), pcidev->bus->number,
-	      PCI_SLOT(pcidev->devfn), PCI_FUNC(pcidev->devfn));
+	      PCI_SLOT(pcidev->devfn), PCI_FUNC(pcidev->devfn), pcidev->vendor, pcidev->device,
+	      pcidev->class, pcidev->subsystem_vendor, pcidev->subsystem_device);
     // We assume no real side effects on this initialization (nothing to undo)
     if ((err = add_cdev(mydev)))
       break;
@@ -1194,13 +1195,23 @@ remove_pci(struct pci_dev *dev) {
 // PCI Device IDs table
 static struct pci_device_id pci_device_ids[] = {
   {
-    .vendor = OCPI_HDL_PCI_VENDOR_ID,
-    .device = OCPI_HDL_PCI_DEVICE_ID,
+    .vendor = OCPI_HDL_PCI_OLD_VENDOR_ID,
+    .device = OCPI_HDL_PCI_OLD_DEVICE_ID,
     .subvendor = PCI_ANY_ID,
     .subdevice = PCI_ANY_ID,
+    .class = (OCPI_HDL_PCI_OLD_CLASS << 16) |
+             (OCPI_HDL_PCI_OLD_SUBCLASS << 8) |
+             OCPI_PCI_XHCI,
+    .class_mask = ~0,
+  },
+  {
+    .vendor = OCPI_HDL_PCI_VENDOR_ID,
+    .device = PCI_ANY_ID,
+    .subvendor = OCPI_HDL_PCI_VENDOR_ID,
+    .subdevice = PCI_ANY_ID,
     .class = (OCPI_HDL_PCI_CLASS << 16) |
-    (OCPI_HDL_PCI_SUBCLASS << 8) |
-    OCPI_PCI_XHCI,
+             (OCPI_HDL_PCI_SUBCLASS << 8) |
+             OCPI_PCI_XHCI,
     .class_mask = ~0,
   },
   {}

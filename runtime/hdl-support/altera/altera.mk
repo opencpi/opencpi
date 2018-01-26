@@ -26,7 +26,7 @@ _ALTERA_MK=1
 # an error
 
 # The default during installation is sometimes in the home directory
-OcpiAlteraDir=$(strip $(foreach t,$(or $(OCPI_ALTERA_DIR),/opt/Altera),$(infox TT is $t)\
+OcpiAlteraDir=$(strip $(foreach t,$(or $(OCPI_ALTERA_DIR),$(wildcard ~/altera),$(wildcard /opt/Altera)),$(infox TT is $t)\
 		 $(if $(shell test -d $t && echo 1),$t,\
 		    $(call $(or $1,error), Directory "$t" for OCPI_ALTERA_DIR not found))))
 
@@ -85,6 +85,17 @@ $(if $(OCPI_ALTERA_LAB_TOOLS_DIR),\
                     $(call $(or $1,error), Directory $t/$v has no ISE or LabTools under it)),\
         $(patsubst %/,%,$(dir $d)))))))
 
+# There is no default install place for these kits so we assume a default of "kits"
+# under the basic altera dir, with versions under that directory since kit versions
+# do not track tool versions.
+OcpiAlteraKitsDir=$(strip\
+$(if $(OCPI_ALTERA_KITS_DIR),\
+  $(foreach d,$(OCPI_ALTERA_KITS_DIR),\
+    $(or $(wildcard $d/*),\
+      $(call $(or $1,error),OCPI_ALTERA_KITS_DIR, $d, is missing or has no subdirectories))),\
+  $(foreach t,$(call OcpiAlteraDir,$1),\
+    $(or $(shell test -d $t/kits && echo $t/kits),\
+      $(call $(or $1,error), Directory "$t/kits", the default for OCPI_ALTERA_KITS_DIR, not found)))))
 
 # The trick here is to filter the output and capture the exit code.
 # Note THIS REQUIRES BASH not just POSIX SH due to pipefail option
@@ -118,12 +129,16 @@ DoAltera1=(set -o pipefail; set +e; \
 
 # emit shell assignments - allowing errors etc.
 ifdef ShellIseVars
+  ShellQuartusVars=1
+endif
+ifdef ShellQuartusVars
 
 AlteraCheck=ignore
 all:
 
 $(info OcpiAlteraQuartusDir=$(call OcpiAlteraQuartusDir,$(AlteraCheck));\
        OcpiAlteraProgrammerDir=$(call OcpiAlteraProgrammerDir,$(AlteraCheck));\
+       OcpiAlteraKitsDir=$(call OcpiAlteraKitsDir,$(AlteraCheck));\
        OcpiAlteraLicenseFile=$(call OcpiAlteraLicenseFile,$(AlteraCheck));)
 
 endif

@@ -18,16 +18,18 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-# A script specific to the alst4 platform, with the sgx230 part
+# A script specific to the alst4x platform, with the sgx530 part
 # Args are:
 # 1. The bitstream file to load to flash
 # 2. The serial number of the jtag pod to use
 
 dir=$OCPI_CDK_DIR/scripts
-[ ! -d $dir ] && echo Error: OCPI_CDK_DIR environment setting not valid. && exit 1
+[ "$1" = -v ] && {
+    verbose=-v
+    shift
+}
 if test ! -x $dir/loadFlash_altera; then
   echo Missing script: $dir/loadFlash_altera \(or not executable\).
   exit 1
 fi
-exec $dir/loadFlash_altera stratixIVGX_4sgx530 s4gx530 $2 0x02000000 $1
-
+exec $dir/loadFlash_altera $verbose stratixIVGX_4sgx530 s4gx530 $2 0x02000000 $1

@@ -2,6 +2,7 @@
   <specproperty name='platform' value='ml605'/>
   <specproperty name="nSlots" value='2'/>
   <specproperty name="slotNames" value='fmc_lpc,fmc_hpc'/>
+  <specproperty name="pci_device_id" value='ml605'/>
   <!-- All platform workers must provide these two ports -->
   <metadata master='true'/> <!-- access to container metadata via the platform worker -->
   <timebase master='true'/> <!-- providing a timebase for the time service -->

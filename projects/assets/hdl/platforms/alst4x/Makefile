@@ -17,8 +17,7 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 # The alst4x platform, mostly a clone of the alst4 platform
-Libraries=stratix4
-Cores=pcie_4243_hip_s4gx_gen2_x4_128
+Libraries=stratix4 pcie_4243_hip_s4gx_gen2_x4_128
 ExportFiles=alst4x.qsf alst4x.sdc jtagSupport_alst4x loadFlash_alst4x testbias_alst4x_base.bitz
 Configurations=\
   base $(basename $(notdir $(subst /alst4,/alst4x,$(wildcard ../alst4/alst4_zipper*.xml))))

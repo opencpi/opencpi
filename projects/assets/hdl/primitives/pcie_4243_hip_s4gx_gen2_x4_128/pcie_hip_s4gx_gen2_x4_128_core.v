@@ -215,6 +215,11 @@ module pcie_hip_s4gx_gen2_x4_128_core (
 	txdetectrx3_ext,
 	txelecidle3_ext);
 
+  parameter VENDOR_ID;
+  parameter DEVICE_ID;
+  parameter CLASS_CODE;
+  parameter SUBSYSTEM_VENDOR_ID;
+  parameter SUBSYSTEM_ID;
 
 	input		AvlClk_i;
 	input	[11:0]	CraAddress_i;
@@ -834,12 +839,12 @@ module pcie_hip_s4gx_gen2_x4_128_core (
 		altpcie_hip_pipen1b_inst.enable_coreclk_out_half_rate = "true",
 		altpcie_hip_pipen1b_inst.enable_gen2_core = "true",
 		altpcie_hip_pipen1b_inst.gen2_lane_rate_mode = "true",
-		altpcie_hip_pipen1b_inst.vendor_id = 4334,
-		altpcie_hip_pipen1b_inst.device_id = 16963,
+		altpcie_hip_pipen1b_inst.vendor_id = VENDOR_ID,
+		altpcie_hip_pipen1b_inst.device_id = DEVICE_ID,
 		altpcie_hip_pipen1b_inst.revision_id = 17,
-		altpcie_hip_pipen1b_inst.class_code = 327680,
-		altpcie_hip_pipen1b_inst.subsystem_vendor_id = 4334,
-		altpcie_hip_pipen1b_inst.subsystem_device_id = 7,
+		altpcie_hip_pipen1b_inst.class_code = CLASS_CODE,
+		altpcie_hip_pipen1b_inst.subsystem_vendor_id = SUBSYSTEM_VENDOR_ID,
+		altpcie_hip_pipen1b_inst.subsystem_device_id = SUBSYSTEM_ID,
 		altpcie_hip_pipen1b_inst.port_link_number = 1,
 		altpcie_hip_pipen1b_inst.max_payload_size = 1,
 		altpcie_hip_pipen1b_inst.msi_function_count = 2,

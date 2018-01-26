@@ -23,14 +23,11 @@
 #include <sys/mman.h>
 #include <unistd.h>
 #include <cerrno>
+#include <climits>
 #ifdef OCPI_OS_macos
 #define mmap64 mmap
 #endif
-
-#if 0
-#include "OcpiUtilMisc.h"
-#include "HdlOCCP.h"
-#endif
+#include "OcpiUtilPci.h"
 
 #include "fasttime.h"
 
@@ -40,11 +37,11 @@
 
 // This should be in OCPIOS.
 // This is the linux version (kernel 2.6+).
+namespace OS = OCPI::OS;
+namespace OU = OCPI::Util;
 namespace OCPI {
   namespace HDL {
     namespace PCI {
-      namespace OS = OCPI::OS;
-      namespace OU = OCPI::Util;
 
       class Device
 	: public OCPI::HDL::Device {
@@ -246,113 +243,6 @@ namespace OCPI {
 	  m_pciMemFd = -1;
 	}
       }
-
-      static const char *
-      getPciValue(const char *dev, const char *value, char *buf, unsigned len)
-      {
-	int fd;
-	ssize_t n;
-	// get bars
-	n = snprintf(buf, len, "%s/%s/%s", OCPI_HDL_SYS_PCI_DIR, dev, value);
-	if (n <= 0 || (unsigned)n >= len)
-	  return "buffer violation";
-	fd = ::open(buf, O_RDONLY);
-	if (fd < 0)
-	  return "can't open descriptor file for PCI device";
-	n = read(fd, buf, len - 1); // leave room for the null char
-	close(fd);
-	if (n <= 0)
-	  return "can't read descriptor file for PCI device";
-	buf[n] = 0;
-	return 0;
-      }
-      static const char*
-      getPciNumber(const char *dev, const char *value, char *buf, unsigned len, unsigned long *np)
-      {
-	const char *err = getPciValue(dev, value, buf, len);
-	if (err)
-	  return err;
-	errno = 0;
-	unsigned long long ull = strtoull(buf, NULL, 0);
-	if (ull == ULLONG_MAX && errno == ERANGE)
-	  return "unexpected attribute value for PCI Device";
-	*np = OCPI_UTRUNCATE(unsigned long, ull);
-	return 0;
-      }
-      // See if this looks like an appropriate PCI entry
-      bool
-      probePci(const char *name, unsigned theVendor, unsigned theDevice, unsigned theClass,
-	       unsigned theSubClass, bool verbose, Bar *bars, unsigned &nbars, std::string &error) {
-	unsigned long domain, bus, deviceN, function, vendor, device, classword;
-	const char *err = 0;
-	char buf[512], rbuf[512];
-	if (sscanf(name, "%lx:%lx:%lx.%ld", &domain, &bus, &deviceN, &function) != 4)
-	  err = "bad PCI /sys device name";
-	else if ((err = getPciValue(name, "resource", rbuf, sizeof(rbuf))) ||
-		 (err = getPciNumber(name, "vendor", buf, sizeof(buf), &vendor)) ||
-		 (err = getPciNumber(name, "class", buf, sizeof(buf), &classword)) ||
-		 (err = getPciNumber(name, "device", buf, sizeof(buf), &device)) ||
-		 (err = getPciValue(name, "config", buf, sizeof(buf))))
-	  err = "PCI device attributes not accessible";
-	else {
-	  unsigned long pciClass = classword >> 16, pciSubClass = (classword >> 8) & 0xff;
-	  if (verbose) {
-	    printf("dom %lu bus %lu devN %lu func %lu vendor 0x%lx "
-		   "device 0x%lx class 0x%lx subclass 0x%lx\n",
-		   domain, bus, deviceN, function, vendor, device, pciClass, pciSubClass);
-	    //	    printf("resource = '%s'\n", rbuf);
-	  }
-	  if (vendor == theVendor && device == theDevice &&
-	      pciClass == theClass && pciSubClass == theSubClass) {
-	    // device words match, look at BARs in the "resource" file (rbuf)
-	    char *r = rbuf;
-	    Bar *bar = bars;
-	    for (unsigned i = 0; !err && i < nbars; i++) {
-	      unsigned long long bottom, top, flags;
-	      if (!r || sscanf(r, "%llx %llx %llx\n", &bottom, &top, &flags) != 3) {
-		err = "bad resource/bar file contents";
-		break;
-	      }
-	      r = strchr(r, '\n');
-	      if (r)
-		r++;
-	      if (bottom && bottom != top) {
-		// Got a bar
-		bar->size = top - bottom + 1;
-		bar->io = flags & 1;
-		bar->address = bottom;
-		if (bar->io) {
-		  bar->prefetch = false;
-		  bar->addressSize = 32;
-		} else {
-		  bar->prefetch = (flags & 8) != 0;
-		  if ((flags & 0x6) == 0)
-		    bar->addressSize = 32;
-		  else if ((flags & 0x6) == 4)
-		    bar->addressSize = 64;
-		  else
-		    err = "Invalid address space indication";
-		}
-		if (verbose)
-		  printf("   BAR %d: 0x%llx to 0x%llx (%llu%s %db %s %s)\n",
-			 i, bottom, top, 
-			 (unsigned long long)
-			 (bar->size >= 1024 ? bar->size/1024 : bar->size),
-			 bar->size >= 1024 ? "K" : "",
-			 bar->addressSize, bar->io ? "io":"mem", bar->prefetch ? "pref" : "npf");
-		bar++;
-	      } // end of good bar
-	    } // end of bar loop
-	    if (!err) {
-	      nbars = OCPI_UTRUNCATE(unsigned, bar - bars);
-	      return true;
-	    }
-	  }
-	}
-	if (err)
-	  error = err;
-	return false;
-      }
       unsigned Driver::
       search(const OU::PValue *params, const char **excludes, bool discoveryOnly,
 	     std::string &error) {
@@ -412,13 +302,23 @@ namespace OCPI {
 	    OU::formatString(error, "can't mmap %s for bar1", devName.c_str());
 	  // So fd, bar0, bar1, and pci are good here if error.empty()
 	} else {
-	  Bar bars[MAXBARS];
-	  unsigned nbars = MAXBARS;
-	  if (probePci(name.c_str()+4, OCPI_HDL_PCI_VENDOR_ID, OCPI_HDL_PCI_DEVICE_ID, OCPI_HDL_PCI_CLASS,
-		       OCPI_HDL_PCI_SUBCLASS, false, bars, nbars, error))
+	  OU::Bar bars[OU::MAXBARS];
+	  unsigned nbars = OU::MAXBARS;
+	  const char *cname = name.c_str()+4;
+	  std::string dummy;
+	  
+	  // First look for our registered ID, then fall back to legacy
+	  // If it doesn't match, look for the old values
+	  if (OU::probePci(cname, OCPI_HDL_PCI_VENDOR_ID, UINT_MAX, OCPI_HDL_PCI_CLASS,
+			   OCPI_HDL_PCI_SUBCLASS, false, bars, nbars, error) ||
+	      OU::probePci(cname, OCPI_HDL_PCI_OLD_VENDOR_ID, OCPI_HDL_PCI_OLD_DEVICE_ID,
+			   OCPI_HDL_PCI_OLD_CLASS, OCPI_HDL_PCI_OLD_SUBCLASS, false, bars, nbars,
+			   dummy))
 	    if (nbars != 2 || bars[0].io || bars[0].prefetch || bars[1].io || bars[1].prefetch ||
 		bars[0].addressSize != 32 || bars[0].size != sizeof(OccpSpace))
-	      error = "Found PCI device w/ good vendor/device/class, but bars are wrong; skipping it; use lspci";
+	      error =
+		"Found PCI device w/ good vendor/device/class, but bars are wrong; "
+		"skipping it; use lspci";
 	    else {
 	      pci.bar0 = bars[0].address;
 	      pci.bar1 = bars[1].address;
