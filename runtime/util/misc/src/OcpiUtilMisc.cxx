@@ -862,16 +862,16 @@ getAllProjects(std::string &path) {
   bool isDir;
   std::string prpath;
   // Determine the project registry from either the environment
-  // variable or from CDK/../project_registry
+  // variable or from CDK/../project-registry
   if (prenv) {
     if (!OS::FileSystem::exists(prenv, &isDir) || !isDir)
       return "The OCPI_PROJECT_REGISTRY_DIR environment variable is not a directory";
     prpath = prenv;
   } else {
-    prpath = xenv + std::string("/../project_registry");
+    prpath = xenv + std::string("/../project-registry");
   }
   // If the project registry is does not exist, skip this
-  // Determine all of the files that exist inside project_registry.
+  // Determine all of the files that exist inside project-registry.
   // Add each one to 'path' so that each registered project can be searched.
   if (OS::FileSystem::exists(prpath, &isDir) && isDir)
     for (OS::FileIterator fi(prpath, "*"); !fi.end(); fi.next())

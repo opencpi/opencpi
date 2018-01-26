@@ -57,7 +57,7 @@ namespace OCPI {
 	    throw OU::Error("Error processing metadata from artifact file: %s: %s", a_name, err);
 	}
       };
-	  
+
       class Driver;
 
       typedef std::set<OS::FileSystem::FileId> FileIds; // unordered set cxx11 is better
@@ -91,7 +91,7 @@ namespace OCPI {
 	void doPath(const std::string &a_libName) {
 	  //	  ocpiDebug("Processing library path: %s", libName.c_str());
 	  bool isDir;
-	  OS::FileSystem::FileId file_id; 
+	  OS::FileSystem::FileId file_id;
 	  if (!OS::FileSystem::exists(a_libName, &isDir, NULL, NULL, &file_id))
 	    ocpiInfo("Path name found in OCPI_LIBRARY_PATH, \"%s\", "
 		     "is nonexistent, not a normal file, or a broken link.  It will be ignored",
@@ -113,7 +113,7 @@ namespace OCPI {
 	    } else {
 	      const char *l_name = a_libName.c_str();
 	      size_t len = strlen(l_name), xlen = strlen(".xml");
-	  
+
 	      if (len < xlen || strcasecmp(l_name + len - xlen, ".xml")) {
 		// FIXME: supply library level xml for the artifact
 		// The log will show which files are not any good.
@@ -122,7 +122,7 @@ namespace OCPI {
 		} catch (...) {}
 	      }
 	    }
-	  }
+          }
 	}
       };
 
@@ -161,7 +161,7 @@ namespace OCPI {
 	  }
 	  return n;
 	}
-	
+
 	// Telling the driver to add an artifact is a forced load that does not
 	// come from any other library, but the library can return NULL
 	// if the file is not the type of file supported by this driver.

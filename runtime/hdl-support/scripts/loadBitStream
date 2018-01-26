@@ -64,7 +64,7 @@ if test ! -r $bitfile; then
 fi
 source $OCPI_CDK_DIR/scripts/util.sh
 findInProjectPath jtagSupport_$platform lib/platforms/$platform jtagSupport || {
-  echo Trying to load onto a \"$platform\", but there is no support for loading it \(no executable lib/platforms/$platform/jtagSupport_$platform found in any directory specified by OCPI_PROJECT_PATH or OCPI_CDK_DIR env variables\)
+  echo Trying to load onto a \"$platform\", but there is no support for loading it \(no executable lib/platforms/$platform/jtagSupport_$platform found in any directory specified in the project registry or by the OCPI_PROJECT_PATH or OCPI_CDK_DIR env variables\)
   exit 1
 }
 if test "$esn" = ""; then

@@ -34,6 +34,7 @@
 // Always included first.
 #ifndef __APPLE__
 #define _XOPEN_SOURCE 600
+#define _GNU_SOURCE 1
 #endif
 #include <errno.h>
 #include <limits.h>

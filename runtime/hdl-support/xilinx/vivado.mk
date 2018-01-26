@@ -108,7 +108,7 @@ empty:=
 space:=$(empty) $(empty)
 
 VivadoRearrangePart=$(firstword $1)$(word 3,$1) $(word 2,$1)
-VivadoChoosePart=$(subst $(space),-,$(call VivadoRearrangePart,$(subst -, ,$1)))
+VivadoChoosePart=$(if $1,$(subst $(space),-,$(call VivadoRearrangePart,$(subst -, ,$1))))
 
 ifeq ($(HdlMode),library)
 CoreOrLibName=$(LibName)
@@ -168,7 +168,13 @@ VivadoBadOptions_synth=\
 -verilog_define \
 $(VivadoBadOptions_all)
 
-VivadoSynthesisPart=$(or $(and $(HdlExactPart),$(call VivadoChoosePart,$(HdlExactPart))),$(HdlTargets_$(HdlTarget)))
+VivadoSynthesisPart=$(strip \
+  $(if $(findstring $(HdlMode),platform config container),\
+    $(call VivadoChoosePart,$(HdlPart_$(HdlPlatform))),\
+    $(or \
+      $(call VivadoChoosePart,$(HdlExactPart)),\
+      $(HdlDefaultTarget_$(HdlTarget)),\
+      $(firstword $(HdlTargets_$(HdlTarget))))))
 
 VivadoDefaultOptions_synth=\
 -part $(VivadoSynthesisPart) \
