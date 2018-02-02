@@ -131,6 +131,7 @@ namespace OCPI {
 	nextStringChar() = c;
 	return c;
       }
+      size_t maxStringLength() const;
       bool needsComma() const { return m_vt->needsComma(); };
       bool needsCommaDimension() const { return m_vt->needsCommaDimension(); };
       bool needsCommaElement() const { return m_vt->needsCommaElement(); };

@@ -62,6 +62,16 @@ parseHdl(const char *a_package) {
 const char *Worker::
 finalizeHDL() {
   // This depends on the final property processing based on parameters etc.
+
+  // For HDL, we need the string length for string properties, so we compute it here
+  for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++) {
+    OU::Property &p = **pi;
+    if (p.m_isParameter && p.m_baseType == OA::OCPI_String && p.m_stringLength == 0) {
+      assert(p.m_default);
+      assert(p.m_default->m_vt == &p);
+      p.m_stringLength = p.m_default->maxStringLength();
+    }
+  }
   // Whether a worker or an assembly, we derive the external OCP signals, etc.
   const char *err;
   if ((err = deriveOCP()))

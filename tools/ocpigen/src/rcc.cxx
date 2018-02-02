@@ -207,7 +207,7 @@ rccType(std::string &type, OU::Member &m, unsigned level, size_t &offset, unsign
   int indent = level * 2 + 2;
   if (m.m_isSequence && !topSeq) {
     if (level > predefine || predefine == UINT_MAX-1) {
-      OU::formatAdd(type, "%*s%sstruct {\n", indent, "", cnst ? "const " : "");
+      OU::formatAdd(type, "%*s%sstruct __attribute__ ((__packed__)) {\n", indent, "", cnst ? "const " : "");
       if (m_language != C)
 	OU::formatAdd(type,
 		      "%*s  inline size_t capacity() const { return %zu; }\n"
@@ -504,7 +504,7 @@ emitCppTypesNamespace(FILE *f, std::string &nsName) {
 	  "   */\n",
 	  m_implName);
   fprintf(f,
-	  "  struct Properties {\n"
+	  "  struct __attribute__ ((__packed__)) Properties {\n"
 	  "    Properties() // constructor to value-initialize const members\n"
 	  "      ");
   first = true;
@@ -526,7 +526,7 @@ emitCppTypesNamespace(FILE *f, std::string &nsName) {
     else {
       std::string type;
       rccMember(type, **pi, 2, offset, pad, NULL, true, isLastDummy, false, 0,
-		!(*pi)->m_isVolatile && ((*pi)->m_isWritable || (*pi)->m_isReadable));
+		!(*pi)->m_isVolatile && ((*pi)->m_isWritable || !(*pi)->m_isReadable));
       fputs(type.c_str(), f);
     }
   fprintf(f, "  };\n");
@@ -936,7 +936,7 @@ emitImplRCC() {
 	      " * Property structure for worker %s\n"
 	      " */\n",
 	      m_implName);
-      fprintf(f, "typedef struct {\n");
+      fprintf(f, "typedef struct __attribute__ ((__packed__)) {\n");
       unsigned pad = 0;
       size_t offset = 0;
       bool isLastDummy = false;
@@ -944,7 +944,7 @@ emitImplRCC() {
       for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
 	if (!(*pi)->m_isParameter || (*pi)->m_isReadable)
 	  rccMember(type, **pi, 0, offset, pad, m_implName, true, isLastDummy, false, UINT_MAX-1,
-		    !(*pi)->m_isVolatile && ((*pi)->m_isWritable || (*pi)->m_isReadable));
+		    !(*pi)->m_isVolatile && ((*pi)->m_isWritable || !(*pi)->m_isReadable));
       fprintf(f, "%s} %c%sProperties;\n\n", type.c_str(),
 	      toupper(m_implName[0]), m_implName + 1);
     }
