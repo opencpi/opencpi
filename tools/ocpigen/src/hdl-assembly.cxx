@@ -558,7 +558,7 @@ emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
 	  fprintf(f, "%s => %s", pr->m_name.c_str(),
 		  vhdlValue(!strcasecmp(pr->m_name.c_str(), "ocpi_endian") ?
 			    "ocpi.types" : tpkg.c_str(),
-			    pr->m_name, pv->value, value));
+			    pr->m_name, pv->value, value, false, true));
 	} else {
 	  fprintf(f, "%s", any ? ", " : " #(");
 #if 0
@@ -579,7 +579,7 @@ emitAssyInstance(FILE *f, Instance *i) { // , unsigned nControlInstances) {
 		  pr->m_name.c_str(), bits, (long long)i64);
 #endif
 	  fprintf(f, ".%s(%s)",
-		  pr->m_name.c_str(), verilogValue(pv->value, value));
+		  pr->m_name.c_str(), verilogValue(pv->value, value, true));
 	}
 	any = true;
       }

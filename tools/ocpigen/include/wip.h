@@ -474,7 +474,7 @@ class Worker : public OU::Worker {
     *finalizeHDL(),
     *deriveOCP(),
     *hdlValue(const std::string &name, const OU::Value &v, std::string &value,
-	      bool param = false, Language = NoLanguage),
+	      bool param = false, Language = NoLanguage, bool finalized = false),
     *findParamProperty(const char *name, OU::Property *&prop, size_t &nParam,
 		       bool includeInitial = false),
     *addConfig(ParamConfig &info, bool fromXml),
@@ -571,8 +571,8 @@ extern const char
   *parseList(const char *list, const char * (*doit)(const char *tok, void *arg), void *arg),
   *parseControlOp(const char *op, void *arg),
   *vhdlValue(const char *pkg, const std::string &name, const OU::Value &v, std::string &value,
-	     bool param = false),
-  *verilogValue(const OU::Value &v, std::string &value),
+	     bool param = false, bool finalized = false),
+  *verilogValue(const OU::Value &v, std::string &value, bool finalized = false),
   *rccValue(OU::Value &v, std::string &value),
   *g_platform, *g_device, *load, *g_os, *g_os_version, *g_arch, **libraries, **mappedLibraries,
   *assembly, *attribute, *platformDir,
@@ -587,7 +587,7 @@ extern const char
 extern void
   doPrev(FILE *f, std::string &last, std::string &comment, const char *myComment),
   vhdlType(const OU::Property &dt, std::string &typeDecl, std::string &type,
-	   bool convert = false),
+	   bool convert = false, bool finalized = false),
   emitConstant(FILE *f, const std::string &prefix, const char *name, size_t val, Language lang),
   emitVhdlLibraries(FILE *f),
   emitLastSignal(FILE *f, std::string &last, Language lang, bool end);

@@ -52,7 +52,9 @@ namespace OCPI {
       // Structure info valid when m_baseType is OCPI_Struct
       size_t m_nMembers;         // Length of m_members.
       // String info valid when m_baseType is OCPI_String
-      size_t m_stringLength;     // maximum strlen (null not included, like strlen)
+      // mutable since it may be changed from zero to the longest actual string length
+      // of any string in a value (including arrays/sequences) see Value::maxStringLength()
+      mutable size_t m_stringLength;     // maximum strlen (null not included, like strlen)
       std::string m_stringLengthExpr;
       // Enum info valid when m_baseType is OCPI_Enum
       size_t m_nEnums;

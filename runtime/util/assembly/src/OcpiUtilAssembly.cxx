@@ -395,7 +395,7 @@ namespace OCPI {
 	  return esprintf("Duplicate property \"%s\" in instance", m_name.c_str());
       return setValue(px);
     }
-
+    
     // connect, then optionally, which local port (from) and which dest port (to).
     // external=port, connect=instance, then to or from?
     const char *Assembly::Instance::
@@ -518,7 +518,8 @@ namespace OCPI {
 	// Recurse for <set> elements
 	if (isProperty)
 	  for (ezxml_t sx = ezxml_cchild(px, "set"); sx; sx = ezxml_next(sx))
-	    if ((err = addProperty(name, sx)))
+	    if ((err = OE::checkAttrs(px, "value", "valuefile", "delay", NULL)) ||
+		(err = addProperty(name, sx)))
 	      break;
       } while (0);
       return err ?
@@ -639,7 +640,8 @@ namespace OCPI {
 	const char *name = ezxml_cattr(px, "name");
 	if (!name)
 	  return "missing name attribute in property element";
-	if ((err = addProperty(name, px)))
+	if ((err = OE::checkAttrs(px, "name", "value", "valuefile", "dumpFile", "delay", NULL)) ||
+	    (err = addProperty(name, px)))
 	  return err;
       }
 #endif

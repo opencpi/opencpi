@@ -366,7 +366,7 @@ namespace OCPI {
 	      break;
 	  va_end(ap);
 	  if (!p)
-	    RETURNFAILED(false, "attribute(1)", *a, x->name);
+	    RETURNFAILED(false, "attribute", *a, x->name);
 	}
 	return 0;
       }
@@ -385,7 +385,7 @@ namespace OCPI {
 		goto found;
 	      }
 	  va_end(ap);
-	  RETURNFAILED(true, "attribute(2)", *a, x->name);
+	  RETURNFAILED(true, "attribute", *a, x->name);
 	found:;
 	}
 	return 0;

@@ -37,7 +37,7 @@ entity property_decoder is
         is_big_endian : in bool_t;
         write_enable  : out bool_t;                            -- active-high write pulse
         read_enable   : out bool_t;                            -- active-high read pulse
-        offset_out    : out unsigned(width_for_max(property.bytes_1)-1 downto 0);
+        offset_out    : out unsigned(width_for_max(property.bytes_1+8)-1 downto 0);
 --        index_out     : out unsigned(decode_width-1 downto 0);
         data_out      : out std_logic_vector(31 downto 0));
 end entity property_decoder;
@@ -60,7 +60,8 @@ architecture rtl of property_decoder is
   end element_bytes;
   begin
   my_decode    <= to_bool(offset_in >= property.offset and
-                          offset_in <= property.offset(decode_t'range) + property.bytes_1);
+                          offset_in <= property.offset(decode_t'range) + 
+                          property.bytes_1 + property.seq_hdr);
   my_offset    <= offset_in - property.offset(decode_width-1 downto 0);
 --                  when its(my_decode) else (others => '0');
   byte_offset  <= offset_in(1 downto 0);
