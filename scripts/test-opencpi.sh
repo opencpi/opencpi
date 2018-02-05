@@ -39,4 +39,8 @@ echo ======================= Running Datatype/protocol Tests &&
 tools/ocpidds/target-$OCPI_TOOL_DIR/ocpidds -t 10000 > /dev/null &&
 echo ======================= Running Container Tests &&
 (cd runtime/ctests/target-$OCPI_TOOL_DIR && ${OCPI_TOOL_MODE:+../}../src/run_tests.sh) &&
+echo ======================= Running Application tests in project/assets &&
+(cd projects/assets/applications; make run)
+echo ======================= Running Application tests in project/assets &&
+(cd projects/inactive/applications; make run)
 echo All tests passed.

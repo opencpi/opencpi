@@ -35,15 +35,13 @@ int main(int /* argc */, char **argv) {
     "    <property name='messageSize' value='16'/>"
     "  </instance>"
     "  <instance component='bias' selection='";
-  if (argv[1])
-    hello += argv[1];
+  hello += argv[1] ? argv[1] : "model==\"rcc\"";
   hello +=
     "'>"
     "    <property name='biasValue' value='0x01020304'/>"
     "  </instance>"
     "  <instance component='bias' selection='";
-  if (argv[1] && argv[2])
-    hello += argv[2];
+  hello += argv[1] && argv[2] ? argv[2] : "model==\"rcc\"";
   hello +=
     "'>"
     "    <property name='biasValue' value='0x01010101'/>"
@@ -66,11 +64,10 @@ int main(int /* argc */, char **argv) {
     "</application>";
 
   try {
-    OA::Application app(hello);
-    fprintf(stderr, "Application XML parsed and deployments (containers and implementations) chosen\n");
+    OA::PValue pvs[] = { OA::PVBool("verbose", true), OA::PVBool("dump", 1),
+			 OA::PVBool("uncached", true), OA::PVBool("hex", true), OA::PVEnd } ;
+    OA::Application app(hello, pvs);
     app.initialize();
-    fprintf(stderr, "Application established: containers, workers, connections all created\n");
-    fprintf(stderr, "Communication with the application established\n");
 #if 1
     OA::Property p(app, "file_write.filename");
     p.setStringValue("test.output");
@@ -90,12 +87,8 @@ int main(int /* argc */, char **argv) {
     app.setProperty("file_write", "filename", "test.output");
 #endif
 #endif
-    fprintf(stderr, "Application started/running\n");
     app.wait();
-    fprintf(stderr, "Application finished\n");
-    std::string name, value;
-    for (unsigned n = 0; app.getProperty(n, name, value); n++)
-      fprintf(stderr, "Property %2u: %s = \"%s\"\n", n, name.c_str(), value.c_str());
+    app.finish();
     return 0;
   } catch (std::string &e) {
     fprintf(stderr, "Exception thrown: %s\n", e.c_str());

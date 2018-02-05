@@ -79,7 +79,7 @@ namespace
   {
       OA::PValue pvs[] = { OA::PVBool("verbose", true), OA::PVEnd };
       OA::Application app("<application>"
-			  "  <instance component='ocpi.vsadd' externals='true'/>"
+			  "  <instance component='ocpi.inactive.vsadd' externals='true'/>"
 			  "</application>", pvs);
       app.initialize();
       OA::ExternalPort &xport_in = app.getPort("in");

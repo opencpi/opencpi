@@ -44,8 +44,14 @@ mydir=$(dirname $0)
 if [ -n "$OCPI_CDK_DIR" -a -e "$OCPI_CDK_DIR/scripts/util.sh" ]; then
   source $OCPI_CDK_DIR/scripts/util.sh
   projects=`getProjectPathAndRegistered`
-else
+elif [ -n "$OCPI_PROJECT_PATH" ]; then
   projects=$OCPI_PROJECT_PATH
+elif [ -d projects ]; then
+  # Probably running in a clean source tree
+  projects=$(echo projects/*)
+else
+  echo "Can't find any projects for RCC platforms."
+  exit 1
 fi
 # loop through all options to determine right platform by calling isCurPlatform for each platform
 for j in $(echo $projects | tr : ' '); do

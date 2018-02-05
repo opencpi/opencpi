@@ -171,7 +171,7 @@ rccBaseType(std::string &type, OU::Member &m, unsigned level, size_t &offset, un
       }
       std::string s;
       upperconstant(s, parent, m.m_name.c_str(), "PAD_ = 0x7fffffff");
-      OU::formatAdd(type, "%*s  %s\n%*s}%s", indent, "", s.c_str(), indent, "",
+      OU::formatAdd(type, "%*s  %s\n%*s} __attribute__((__packed__))%s", indent, "", s.c_str(), indent, "",
               predefine == UINT_MAX-1 ? "" : ";\n");
     } else if (level > predefine || predefine == UINT_MAX-1) {
       if (!strcasecmp("ocpi_endian", m.m_name.c_str()))
@@ -526,7 +526,8 @@ emitCppTypesNamespace(FILE *f, std::string &nsName) {
     else {
       std::string type;
       rccMember(type, **pi, 2, offset, pad, NULL, true, isLastDummy, false, 0,
-		!(*pi)->m_isVolatile && ((*pi)->m_isWritable || !(*pi)->m_isReadable));
+		!(*pi)->m_isPadding && !(*pi)->m_isVolatile &&
+		((*pi)->m_isWritable || !(*pi)->m_isReadable));
       fputs(type.c_str(), f);
     }
   fprintf(f, "  };\n");
@@ -944,7 +945,8 @@ emitImplRCC() {
       for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
 	if (!(*pi)->m_isParameter || (*pi)->m_isReadable)
 	  rccMember(type, **pi, 0, offset, pad, m_implName, true, isLastDummy, false, UINT_MAX-1,
-		    !(*pi)->m_isVolatile && ((*pi)->m_isWritable || !(*pi)->m_isReadable));
+		    !(*pi)->m_isPadding && !(*pi)->m_isVolatile &&
+		    ((*pi)->m_isWritable || !(*pi)->m_isReadable));
       fprintf(f, "%s} %c%sProperties;\n\n", type.c_str(),
 	      toupper(m_implName[0]), m_implName + 1);
     }

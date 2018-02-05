@@ -22,8 +22,8 @@ OcpiRunArgs?= $(ARGS)
 
 # Prepare the input data before the app is run
 override OcpiRunBefore+= \
-  g++ -Wall -o target-$(OCPI_TOOL_DIR)/a.out mkTestFile.cxx; \
-  target-$(OCPI_TOOL_DIR)/a.out $(FILE_SIZE) > test.input 2> good.output; $(VG)
+  g++ -Wall -o target-$(OCPI_TOOL_DIR)/a.out mkTestFile.cxx && \
+  target-$(OCPI_TOOL_DIR)/a.out $(FILE_SIZE) > test.input 2> good.output && $(VG)
 
 # Verify after output after the app is run
 override OcpiRunAfter+= ; cmp test.output good.output && echo PASSED
