@@ -21,4 +21,7 @@
 # documented rules.
 # Lines starting with + add to the exports
 # Lines starting with - subtract from the exports
+# Note: This is the "core" project, which expects other projects to use EVERYTHING
+# that is built. Most projects would NOT export everything in this way.
 all
+

@@ -103,11 +103,11 @@ if [ "$1" == __test__ ] ; then
   done
   if false; then
     # set -x
-    export OCPI_REMOTE_TEST_SYSTEMS="192.168.21.111=root=root=/tmp"
+    export OCPI_REMOTE_TEST_SYSTEMS="192.168.xxx.xxx=root=root=/tmp"
     parse_remote_test_systems
     echo Pushing
     foreach_remote_push ../../../releng/jenkins/runtime/mynetsetup_matchstiq-z1.sh
-    # foreach_remote 'printf "192.168.21.235\tembdev006\tembdev006.wb.vsi-corp.com\n" >> /etc/hosts'
+    # foreach_remote 'printf "192.168.xxx.xxx\tmymachine\tmymachine.tld\n" >> /etc/hosts'
     echo Run1:
     foreach_remote hostname
     for h in $remotes; do

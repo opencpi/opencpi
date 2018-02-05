@@ -25,9 +25,4 @@
 +components/util_comps/drs_controller.rcc/target-<target>/libdubri.so lib/util_comps/rcc/<target>/
 # Enable all local bitstreams to be seen in one place for convenience of OCPI_LIBRARY_PATH:
 +hdl/assemblies/*/container-*/target-*/*.bitz lib/hdl/assemblies/
-# Enable other projects to see our devices and platform declarations without being built:
-+hdl/devices/specs/*spec.xml specs/
-+hdl/platforms/*/devices/specs/*spec.xml specs/
-# All components:
-+components/*/specs/*spec.xml specs/
 all

@@ -49,9 +49,9 @@ DirContainingLib=$$(if $$(LibIsInCwd),$$(or $1,.)/,$$(and $$(LibIsInParent),$$(o
 # So, we grep for it here to include if building from the worker level
 #   (if building from the worker level, <library>/Library.mk is included,
 #    but not <library>/Makefile)
-ifneq ($$(LibIsInParent),)
-  $$(eval $$(shell grep "^\s*Package\s*:\?=\s*.*" $$(or $1,.)/../Makefile))
-endif
+$$(foreach p,$$(shell grep "^\s*Package\s*:\?=\s*.*" $$(DirContainingLib)/Makefile),\
+  $$(warning The Package variable can be set in either Project.mk, Library.mk, Platforms.mk or Platform.mk. Setting of Package= in 'Makefile' is deprecated and will not be supported in future releases.)\
+  $$(eval $$p))
 
 ###############################################################################
 # If ParentPackage is unset, assume the parent is the project

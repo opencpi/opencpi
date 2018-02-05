@@ -89,6 +89,7 @@ tests
 +tools/cdk/scripts/ocpidev scripts/
 +tools/cdk/scripts/ocpishow scripts/
 +tools/cdk/scripts/ocpiutil.py scripts/
++tools/cdk/scripts/hdltargets.py scripts/
 +tools/cdk/scripts/ocpidev_bash_complete scripts/
 +tools/cdk/scripts/util.sh scripts/
 +tools/cdk/scripts/testrunprep.sh scripts/

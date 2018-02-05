@@ -255,15 +255,6 @@ ad9361_data_sub.hdl/target-1-zynq/ad9361_data_sub_rv-vivado.out-INFO: [Timing 38
 ad9361_data_sub.hdl/target-1-zynq/ad9361_data_sub_rv-vivado.out-INFO: [Timing 38-35] Done setting XDC timing constraints.
 ad9361_data_sub.hdl/target-1-zynq/ad9361_data_sub_rv-vivado.out-INFO: [Timing 38-78] ReportTimingParams: -max_paths 1 -nworst 1 -delay_type max -sort_by slack.
 ad9361_data_sub.hdl/target-1-zynq/ad9361_data_sub_rv-vivado.out-Copyright 1986-2017 Xilinx, Inc. All Rights Reserved.
-ad9361_data_sub.hdl/target-1-zynq/ad9361_data_sub_rv-vivado.out------------------------------------------------------------------------------------------------
-ad9361_data_sub.hdl/target-1-zynq/ad9361_data_sub_rv-vivado.out-| Tool Version : Vivado v.2017.1 (lin64) Build 1846317 Fri Apr 14 18:54:47 MDT 2017
-ad9361_data_sub.hdl/target-1-zynq/ad9361_data_sub_rv-vivado.out-| Date         : Wed Dec  6 17:42:31 2017
-ad9361_data_sub.hdl/target-1-zynq/ad9361_data_sub_rv-vivado.out-| Host         : embdev007.wb.vsi-corp.com running 64-bit CentOS Linux release 7.2.1511 (Core)
-ad9361_data_sub.hdl/target-1-zynq/ad9361_data_sub_rv-vivado.out-| Command      : report_timing
-ad9361_data_sub.hdl/target-1-zynq/ad9361_data_sub_rv-vivado.out-| Design       : ad9361_data_sub_rv_c1
-ad9361_data_sub.hdl/target-1-zynq/ad9361_data_sub_rv-vivado.out-| Device       : 7z020-clg484
-ad9361_data_sub.hdl/target-1-zynq/ad9361_data_sub_rv-vivado.out-| Speed File   : -1  PRODUCTION 1.11 2014-09-11
-ad9361_data_sub.hdl/target-1-zynq/ad9361_data_sub_rv-vivado.out------------------------------------------------------------------------------------------------
 ad9361_data_sub.hdl/target-1-zynq/ad9361_data_sub_rv-vivado.out-
 ad9361_data_sub.hdl/target-1-zynq/ad9361_data_sub_rv-vivado.out-Timing Report
 ad9361_data_sub.hdl/target-1-zynq/ad9361_data_sub_rv-vivado.out-
@@ -621,15 +612,6 @@ ad9361_data_sub.hdl/target-2-zynq/ad9361_data_sub_rv-vivado.out-INFO: [Timing 38
 ad9361_data_sub.hdl/target-2-zynq/ad9361_data_sub_rv-vivado.out-INFO: [Timing 38-35] Done setting XDC timing constraints.
 ad9361_data_sub.hdl/target-2-zynq/ad9361_data_sub_rv-vivado.out-INFO: [Timing 38-78] ReportTimingParams: -max_paths 1 -nworst 1 -delay_type max -sort_by slack.
 ad9361_data_sub.hdl/target-2-zynq/ad9361_data_sub_rv-vivado.out-Copyright 1986-2017 Xilinx, Inc. All Rights Reserved.
-ad9361_data_sub.hdl/target-2-zynq/ad9361_data_sub_rv-vivado.out------------------------------------------------------------------------------------------------
-ad9361_data_sub.hdl/target-2-zynq/ad9361_data_sub_rv-vivado.out-| Tool Version : Vivado v.2017.1 (lin64) Build 1846317 Fri Apr 14 18:54:47 MDT 2017
-ad9361_data_sub.hdl/target-2-zynq/ad9361_data_sub_rv-vivado.out-| Date         : Wed Dec  6 17:43:02 2017
-ad9361_data_sub.hdl/target-2-zynq/ad9361_data_sub_rv-vivado.out-| Host         : embdev007.wb.vsi-corp.com running 64-bit CentOS Linux release 7.2.1511 (Core)
-ad9361_data_sub.hdl/target-2-zynq/ad9361_data_sub_rv-vivado.out-| Command      : report_timing
-ad9361_data_sub.hdl/target-2-zynq/ad9361_data_sub_rv-vivado.out-| Design       : ad9361_data_sub_rv_c2
-ad9361_data_sub.hdl/target-2-zynq/ad9361_data_sub_rv-vivado.out-| Device       : 7z020-clg484
-ad9361_data_sub.hdl/target-2-zynq/ad9361_data_sub_rv-vivado.out-| Speed File   : -1  PRODUCTION 1.11 2014-09-11
-ad9361_data_sub.hdl/target-2-zynq/ad9361_data_sub_rv-vivado.out------------------------------------------------------------------------------------------------
 ad9361_data_sub.hdl/target-2-zynq/ad9361_data_sub_rv-vivado.out-
 ad9361_data_sub.hdl/target-2-zynq/ad9361_data_sub_rv-vivado.out-Timing Report
 ad9361_data_sub.hdl/target-2-zynq/ad9361_data_sub_rv-vivado.out-
@@ -986,15 +968,6 @@ ad9361_data_sub.hdl/target-3-zynq/ad9361_data_sub_rv-vivado.out-INFO: [Timing 38
 ad9361_data_sub.hdl/target-3-zynq/ad9361_data_sub_rv-vivado.out-INFO: [Timing 38-35] Done setting XDC timing constraints.
 ad9361_data_sub.hdl/target-3-zynq/ad9361_data_sub_rv-vivado.out-INFO: [Timing 38-78] ReportTimingParams: -max_paths 1 -nworst 1 -delay_type max -sort_by slack.
 ad9361_data_sub.hdl/target-3-zynq/ad9361_data_sub_rv-vivado.out-Copyright 1986-2017 Xilinx, Inc. All Rights Reserved.
-ad9361_data_sub.hdl/target-3-zynq/ad9361_data_sub_rv-vivado.out------------------------------------------------------------------------------------------------
-ad9361_data_sub.hdl/target-3-zynq/ad9361_data_sub_rv-vivado.out-| Tool Version : Vivado v.2017.1 (lin64) Build 1846317 Fri Apr 14 18:54:47 MDT 2017
-ad9361_data_sub.hdl/target-3-zynq/ad9361_data_sub_rv-vivado.out-| Date         : Wed Dec  6 17:43:33 2017
-ad9361_data_sub.hdl/target-3-zynq/ad9361_data_sub_rv-vivado.out-| Host         : embdev007.wb.vsi-corp.com running 64-bit CentOS Linux release 7.2.1511 (Core)
-ad9361_data_sub.hdl/target-3-zynq/ad9361_data_sub_rv-vivado.out-| Command      : report_timing
-ad9361_data_sub.hdl/target-3-zynq/ad9361_data_sub_rv-vivado.out-| Design       : ad9361_data_sub_rv_c3
-ad9361_data_sub.hdl/target-3-zynq/ad9361_data_sub_rv-vivado.out-| Device       : 7z020-clg484
-ad9361_data_sub.hdl/target-3-zynq/ad9361_data_sub_rv-vivado.out-| Speed File   : -1  PRODUCTION 1.11 2014-09-11
-ad9361_data_sub.hdl/target-3-zynq/ad9361_data_sub_rv-vivado.out------------------------------------------------------------------------------------------------
 ad9361_data_sub.hdl/target-3-zynq/ad9361_data_sub_rv-vivado.out-
 ad9361_data_sub.hdl/target-3-zynq/ad9361_data_sub_rv-vivado.out-Timing Report
 ad9361_data_sub.hdl/target-3-zynq/ad9361_data_sub_rv-vivado.out-
@@ -1352,15 +1325,6 @@ ad9361_data_sub.hdl/target-4-zynq/ad9361_data_sub_rv-vivado.out-INFO: [Timing 38
 ad9361_data_sub.hdl/target-4-zynq/ad9361_data_sub_rv-vivado.out-INFO: [Timing 38-35] Done setting XDC timing constraints.
 ad9361_data_sub.hdl/target-4-zynq/ad9361_data_sub_rv-vivado.out-INFO: [Timing 38-78] ReportTimingParams: -max_paths 1 -nworst 1 -delay_type max -sort_by slack.
 ad9361_data_sub.hdl/target-4-zynq/ad9361_data_sub_rv-vivado.out-Copyright 1986-2017 Xilinx, Inc. All Rights Reserved.
-ad9361_data_sub.hdl/target-4-zynq/ad9361_data_sub_rv-vivado.out------------------------------------------------------------------------------------------------
-ad9361_data_sub.hdl/target-4-zynq/ad9361_data_sub_rv-vivado.out-| Tool Version : Vivado v.2017.1 (lin64) Build 1846317 Fri Apr 14 18:54:47 MDT 2017
-ad9361_data_sub.hdl/target-4-zynq/ad9361_data_sub_rv-vivado.out-| Date         : Wed Dec  6 17:44:03 2017
-ad9361_data_sub.hdl/target-4-zynq/ad9361_data_sub_rv-vivado.out-| Host         : embdev007.wb.vsi-corp.com running 64-bit CentOS Linux release 7.2.1511 (Core)
-ad9361_data_sub.hdl/target-4-zynq/ad9361_data_sub_rv-vivado.out-| Command      : report_timing
-ad9361_data_sub.hdl/target-4-zynq/ad9361_data_sub_rv-vivado.out-| Design       : ad9361_data_sub_rv_c4
-ad9361_data_sub.hdl/target-4-zynq/ad9361_data_sub_rv-vivado.out-| Device       : 7z020-clg484
-ad9361_data_sub.hdl/target-4-zynq/ad9361_data_sub_rv-vivado.out-| Speed File   : -1  PRODUCTION 1.11 2014-09-11
-ad9361_data_sub.hdl/target-4-zynq/ad9361_data_sub_rv-vivado.out------------------------------------------------------------------------------------------------
 ad9361_data_sub.hdl/target-4-zynq/ad9361_data_sub_rv-vivado.out-
 ad9361_data_sub.hdl/target-4-zynq/ad9361_data_sub_rv-vivado.out-Timing Report
 ad9361_data_sub.hdl/target-4-zynq/ad9361_data_sub_rv-vivado.out-
@@ -1718,15 +1682,6 @@ ad9361_data_sub.hdl/target-5-zynq/ad9361_data_sub_rv-vivado.out-INFO: [Timing 38
 ad9361_data_sub.hdl/target-5-zynq/ad9361_data_sub_rv-vivado.out-INFO: [Timing 38-35] Done setting XDC timing constraints.
 ad9361_data_sub.hdl/target-5-zynq/ad9361_data_sub_rv-vivado.out-INFO: [Timing 38-78] ReportTimingParams: -max_paths 1 -nworst 1 -delay_type max -sort_by slack.
 ad9361_data_sub.hdl/target-5-zynq/ad9361_data_sub_rv-vivado.out-Copyright 1986-2017 Xilinx, Inc. All Rights Reserved.
-ad9361_data_sub.hdl/target-5-zynq/ad9361_data_sub_rv-vivado.out------------------------------------------------------------------------------------------------
-ad9361_data_sub.hdl/target-5-zynq/ad9361_data_sub_rv-vivado.out-| Tool Version : Vivado v.2017.1 (lin64) Build 1846317 Fri Apr 14 18:54:47 MDT 2017
-ad9361_data_sub.hdl/target-5-zynq/ad9361_data_sub_rv-vivado.out-| Date         : Wed Dec  6 17:44:33 2017
-ad9361_data_sub.hdl/target-5-zynq/ad9361_data_sub_rv-vivado.out-| Host         : embdev007.wb.vsi-corp.com running 64-bit CentOS Linux release 7.2.1511 (Core)
-ad9361_data_sub.hdl/target-5-zynq/ad9361_data_sub_rv-vivado.out-| Command      : report_timing
-ad9361_data_sub.hdl/target-5-zynq/ad9361_data_sub_rv-vivado.out-| Design       : ad9361_data_sub_rv_c5
-ad9361_data_sub.hdl/target-5-zynq/ad9361_data_sub_rv-vivado.out-| Device       : 7z020-clg484
-ad9361_data_sub.hdl/target-5-zynq/ad9361_data_sub_rv-vivado.out-| Speed File   : -1  PRODUCTION 1.11 2014-09-11
-ad9361_data_sub.hdl/target-5-zynq/ad9361_data_sub_rv-vivado.out------------------------------------------------------------------------------------------------
 ad9361_data_sub.hdl/target-5-zynq/ad9361_data_sub_rv-vivado.out-
 ad9361_data_sub.hdl/target-5-zynq/ad9361_data_sub_rv-vivado.out-Timing Report
 ad9361_data_sub.hdl/target-5-zynq/ad9361_data_sub_rv-vivado.out-
@@ -2083,15 +2038,6 @@ ad9361_data_sub.hdl/target-6-zynq/ad9361_data_sub_rv-vivado.out-INFO: [Timing 38
 ad9361_data_sub.hdl/target-6-zynq/ad9361_data_sub_rv-vivado.out-INFO: [Timing 38-35] Done setting XDC timing constraints.
 ad9361_data_sub.hdl/target-6-zynq/ad9361_data_sub_rv-vivado.out-INFO: [Timing 38-78] ReportTimingParams: -max_paths 1 -nworst 1 -delay_type max -sort_by slack.
 ad9361_data_sub.hdl/target-6-zynq/ad9361_data_sub_rv-vivado.out-Copyright 1986-2017 Xilinx, Inc. All Rights Reserved.
-ad9361_data_sub.hdl/target-6-zynq/ad9361_data_sub_rv-vivado.out------------------------------------------------------------------------------------------------
-ad9361_data_sub.hdl/target-6-zynq/ad9361_data_sub_rv-vivado.out-| Tool Version : Vivado v.2017.1 (lin64) Build 1846317 Fri Apr 14 18:54:47 MDT 2017
-ad9361_data_sub.hdl/target-6-zynq/ad9361_data_sub_rv-vivado.out-| Date         : Wed Dec  6 17:45:04 2017
-ad9361_data_sub.hdl/target-6-zynq/ad9361_data_sub_rv-vivado.out-| Host         : embdev007.wb.vsi-corp.com running 64-bit CentOS Linux release 7.2.1511 (Core)
-ad9361_data_sub.hdl/target-6-zynq/ad9361_data_sub_rv-vivado.out-| Command      : report_timing
-ad9361_data_sub.hdl/target-6-zynq/ad9361_data_sub_rv-vivado.out-| Design       : ad9361_data_sub_rv_c6
-ad9361_data_sub.hdl/target-6-zynq/ad9361_data_sub_rv-vivado.out-| Device       : 7z020-clg484
-ad9361_data_sub.hdl/target-6-zynq/ad9361_data_sub_rv-vivado.out-| Speed File   : -1  PRODUCTION 1.11 2014-09-11
-ad9361_data_sub.hdl/target-6-zynq/ad9361_data_sub_rv-vivado.out------------------------------------------------------------------------------------------------
 ad9361_data_sub.hdl/target-6-zynq/ad9361_data_sub_rv-vivado.out-
 ad9361_data_sub.hdl/target-6-zynq/ad9361_data_sub_rv-vivado.out-Timing Report
 ad9361_data_sub.hdl/target-6-zynq/ad9361_data_sub_rv-vivado.out-
@@ -2450,15 +2396,6 @@ ad9361_data_sub.hdl/target-7-zynq/ad9361_data_sub_rv-vivado.out-INFO: [Timing 38
 ad9361_data_sub.hdl/target-7-zynq/ad9361_data_sub_rv-vivado.out-INFO: [Timing 38-35] Done setting XDC timing constraints.
 ad9361_data_sub.hdl/target-7-zynq/ad9361_data_sub_rv-vivado.out-INFO: [Timing 38-78] ReportTimingParams: -max_paths 1 -nworst 1 -delay_type max -sort_by slack.
 ad9361_data_sub.hdl/target-7-zynq/ad9361_data_sub_rv-vivado.out-Copyright 1986-2017 Xilinx, Inc. All Rights Reserved.
-ad9361_data_sub.hdl/target-7-zynq/ad9361_data_sub_rv-vivado.out------------------------------------------------------------------------------------------------
-ad9361_data_sub.hdl/target-7-zynq/ad9361_data_sub_rv-vivado.out-| Tool Version : Vivado v.2017.1 (lin64) Build 1846317 Fri Apr 14 18:54:47 MDT 2017
-ad9361_data_sub.hdl/target-7-zynq/ad9361_data_sub_rv-vivado.out-| Date         : Wed Dec  6 17:45:34 2017
-ad9361_data_sub.hdl/target-7-zynq/ad9361_data_sub_rv-vivado.out-| Host         : embdev007.wb.vsi-corp.com running 64-bit CentOS Linux release 7.2.1511 (Core)
-ad9361_data_sub.hdl/target-7-zynq/ad9361_data_sub_rv-vivado.out-| Command      : report_timing
-ad9361_data_sub.hdl/target-7-zynq/ad9361_data_sub_rv-vivado.out-| Design       : ad9361_data_sub_rv_c7
-ad9361_data_sub.hdl/target-7-zynq/ad9361_data_sub_rv-vivado.out-| Device       : 7z020-clg484
-ad9361_data_sub.hdl/target-7-zynq/ad9361_data_sub_rv-vivado.out-| Speed File   : -1  PRODUCTION 1.11 2014-09-11
-ad9361_data_sub.hdl/target-7-zynq/ad9361_data_sub_rv-vivado.out------------------------------------------------------------------------------------------------
 ad9361_data_sub.hdl/target-7-zynq/ad9361_data_sub_rv-vivado.out-
 ad9361_data_sub.hdl/target-7-zynq/ad9361_data_sub_rv-vivado.out-Timing Report
 ad9361_data_sub.hdl/target-7-zynq/ad9361_data_sub_rv-vivado.out-
@@ -2816,15 +2753,6 @@ ad9361_data_sub.hdl/target-zynq/ad9361_data_sub_rv-vivado.out-INFO: [Timing 38-1
 ad9361_data_sub.hdl/target-zynq/ad9361_data_sub_rv-vivado.out-INFO: [Timing 38-35] Done setting XDC timing constraints.
 ad9361_data_sub.hdl/target-zynq/ad9361_data_sub_rv-vivado.out-INFO: [Timing 38-78] ReportTimingParams: -max_paths 1 -nworst 1 -delay_type max -sort_by slack.
 ad9361_data_sub.hdl/target-zynq/ad9361_data_sub_rv-vivado.out-Copyright 1986-2017 Xilinx, Inc. All Rights Reserved.
-ad9361_data_sub.hdl/target-zynq/ad9361_data_sub_rv-vivado.out------------------------------------------------------------------------------------------------
-ad9361_data_sub.hdl/target-zynq/ad9361_data_sub_rv-vivado.out-| Tool Version : Vivado v.2017.1 (lin64) Build 1846317 Fri Apr 14 18:54:47 MDT 2017
-ad9361_data_sub.hdl/target-zynq/ad9361_data_sub_rv-vivado.out-| Date         : Wed Dec  6 17:42:01 2017
-ad9361_data_sub.hdl/target-zynq/ad9361_data_sub_rv-vivado.out-| Host         : embdev007.wb.vsi-corp.com running 64-bit CentOS Linux release 7.2.1511 (Core)
-ad9361_data_sub.hdl/target-zynq/ad9361_data_sub_rv-vivado.out-| Command      : report_timing
-ad9361_data_sub.hdl/target-zynq/ad9361_data_sub_rv-vivado.out-| Design       : ad9361_data_sub_rv
-ad9361_data_sub.hdl/target-zynq/ad9361_data_sub_rv-vivado.out-| Device       : 7z020-clg484
-ad9361_data_sub.hdl/target-zynq/ad9361_data_sub_rv-vivado.out-| Speed File   : -1  PRODUCTION 1.11 2014-09-11
-ad9361_data_sub.hdl/target-zynq/ad9361_data_sub_rv-vivado.out------------------------------------------------------------------------------------------------
 ad9361_data_sub.hdl/target-zynq/ad9361_data_sub_rv-vivado.out-
 ad9361_data_sub.hdl/target-zynq/ad9361_data_sub_rv-vivado.out-Timing Report
 ad9361_data_sub.hdl/target-zynq/ad9361_data_sub_rv-vivado.out-

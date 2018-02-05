@@ -52,19 +52,22 @@ These steps may be repeated to test each available HDL assembly
 ----------------------------------------------------------------------------
 ----------------------------------------------------------------------------
 Zedboard-Based Platform - setup environment
-. /mnt/card/opencpi/mynetsetup.sh {IPADDRESS}
-cd /mnt/ocpiassets/hdl/cards/zipper_i2c.test
-HDL: 'export OCPI_LIBRARY_PATH=$$OCPI_CDK_DIR/../projects/core/exports/lib/components:/mnt/ocpi_baseproject/exports/lib/devices/:/mnt/ocpiassets/exports/lib/devices/'
+. /mnt/card/opencpi/mynetsetup.sh {DEVELOPMENT HOST IPADDRESS}
+
+cd /mnt/ocpi_assets/hdl/cards/zipper_i2c.test
+
+export OCPI_LIBRARY_PATH=$$OCPI_CDK_DIR/../projects/core/exports/lib:$$(pwd):$$(pwd)/../../../exports/lib
 #NOTE: If copy/paste of the above exports, the redundant '$' must be removed.
 ----------------------------------------------------------------------------
 ----------------------------------------------------------------------------
 Execution:
 ----------------------------------------------------------------------------
 Zynq-Based Platform - execute
-HDL: './target-linux-x13_3-arm/testbench'
+HDL: 
+./target-linux-x13_3-arm/testbench
 ----------------------------------------------------------------------------
 Development Computer - verify output data
-'python ./scripts/plotAndFft.py odata/testbench_rx.out complex 3000 1000000 &'
+python ./scripts/plotAndFft.py odata/testbench_rx.out complex 3000 1000000 &
 ----------------------------------------------------------------------------
 endef
 export showhelp

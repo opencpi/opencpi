@@ -18,8 +18,7 @@
 
 ifndef __UTIL_MK__
 __UTIL_MK__=x
-# ARRRRRRRRRRRRGH: the debian shell in make is /bin/sh and the SHELL env var is ignored by
-# make in Debian.
+# The /bin/sh shell in Debian/Ubuntu is explicitly strict/stupid
 override SHELL=/bin/bash
 export AT
 export OCPI_DEBUG_MAKE

@@ -52,7 +52,6 @@ run_delay_tests_1r1t_fmcomms3() {
   ocpirun -d -v -t $APP_RUNTIME_SEC \
     -pad9361_config_proxy=ad9361_init="reference_clk_rate $FMCOMMS3_REF_CLK_RATE,frequency_division_duplex_mode_enable 1,xo_disable_use_ext_refclk_enable 0,two_t_two_r_timing_enable $TWO_R_TWO_T,pp_tx_swap_enable 0,pp_rx_swap_enable 0,rx_data_clock_delay 0,rx_data_delay 5,tx_fb_clock_delay $clkdelay,tx_data_delay $datadelay" \
     -pad9361_config_proxy=en_state_machine_mode=$ENSM_MODE_FDD \
-    -pad9361_config_proxy=rx_sampling_freq_multiplier=1 \
     $@ \
     $APP_XML > /dev/null 2>&1
 

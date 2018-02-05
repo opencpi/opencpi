@@ -20,6 +20,7 @@ $(if $(realpath $(OCPI_CDK_DIR)),,$(error The OCPI_CDK_DIR environment variable 
 Containers= \
 	cnt_0rx_1tx_bypassasm_fmcomms_2_3_lpc_LVDS_ml605 \
 	cnt_0rx_1tx_bypassasm_fmcomms_2_3_lpc_LVDS_zed \
+	cnt_0rx_1tx_bypassasm_matchstiq_z1 \
 	cnt_0rx_1tx_bypassasm_zipper_hpc_ml605 \
 	cnt_0rx_1tx_bypassasm_zipper_hsmc_a_alst4 \
 	cnt_0rx_1tx_bypassasm_zipper_hsmc_b_alst4 \
@@ -28,6 +29,7 @@ Containers= \
 	cnt_1rx_0tx_bypassasm_fmcomms_2_3_hpc_LVDS_ml605 \
 	cnt_1rx_0tx_bypassasm_fmcomms_2_3_lpc_LVDS_ml605 \
 	cnt_1rx_0tx_bypassasm_fmcomms_2_3_lpc_LVDS_zed \
+	cnt_1rx_0tx_bypassasm_matchstiq_z1 \
 	cnt_1rx_0tx_bypassasm_zipper_hpc_ml605 \
 	cnt_1rx_0tx_bypassasm_zipper_hsmc_a_alst4 \
 	cnt_1rx_0tx_bypassasm_zipper_hsmc_b_alst4 \
@@ -35,6 +37,7 @@ Containers= \
 	cnt_1rx_0tx_bypassasm_zipper_lpc_zed \
 	cnt_1rx_1tx_bypassasm_fmcomms_2_3_lpc_LVDS_ml605 \
 	cnt_1rx_1tx_bypassasm_fmcomms_2_3_lpc_LVDS_zed \
+	cnt_1rx_1tx_bypassasm_matchstiq_z1 \
 	cnt_1rx_1tx_bypassasm_zipper_hpc_ml605 \
 	cnt_1rx_1tx_bypassasm_zipper_hsmc_a_alst4 \
 	cnt_1rx_1tx_bypassasm_zipper_hsmc_b_alst4 \

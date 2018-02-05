@@ -20,6 +20,7 @@
 
 #include <limits.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include "HdlPciDriver.h"
 
 #ifndef __cplusplus
@@ -120,10 +121,10 @@ getPci(const char *name, unsigned theVendor, unsigned theDevice, unsigned theCla
 	  bar->addressSize = 64;
 	else
 	  return "Invalid address space indication";
-      }			  
+      }
       if (verbose)
 	printf("   BAR %d: 0x%llx to 0x%llx (%llu%s %db %s %s)\n",
-	       i, bottom, top, 
+	       i, bottom, top,
 	       (unsigned long long)
 	       (bar->size >= 1024 ? bar->size/1024 : bar->size),
 	       bar->size >= 1024 ? "K" : "",
