@@ -60,6 +60,7 @@ using namespace Ad9361_config_proxyWorkerTypes;
 
 #define ENUM_BBPLL_DIVIDER(val, prop)       case val: m_properties.prop = BBPLL_DIVIDER_##val; break;
 #define ENUM_TX_BBF_TUNE_DIVIDER(val, prop) case val: m_properties.prop = TX_BBF_TUNE_DIVIDER_##val; break;
+#define ENUM_RX_BBF_TUNE_DIVIDE( val, prop) case val: m_properties.prop = RX_BBF_TUNE_DIVIDE_##val; break;
 
 #define D7_BITMASK 0x80
 #define D6_BITMASK 0x40
@@ -524,7 +525,7 @@ class Ad9361_config_proxyWorker : public Ad9361_config_proxyWorkerBase {
       uint8_t chan, T), T* param, const char* functionStr) {
 
     for(uint8_t chan=0; chan<AD9361_CONFIG_PROXY_RX_NCHANNELS; chan++) {
-      libad9361_API_print_idk(functionStr, param, chan);
+      libad9361_API_print(functionStr, *param, chan);
 
       RCCResult ret = ad9361_pre_API_call_validation(m_default_init_param);
       if(ret != RCC_OK) return ret;
@@ -869,6 +870,8 @@ class Ad9361_config_proxyWorker : public Ad9361_config_proxyWorkerBase {
     m_properties.ad9361_rf_phy.pdata.use_extclk  = ad9361_phy->pdata->use_extclk;
     m_properties.ad9361_rf_phy.pdata.dcxo_coarse = ad9361_phy->pdata->dcxo_coarse;
     m_properties.ad9361_rf_phy.pdata.dcxo_fine   = ad9361_phy->pdata->dcxo_fine;
+    m_properties.ad9361_rf_phy.pdata.rx1tx1_mode_use_rx_num = ad9361_phy->pdata->rx1tx1_mode_use_rx_num;
+    m_properties.ad9361_rf_phy.pdata.rx1tx1_mode_use_tx_num = ad9361_phy->pdata->rx1tx1_mode_use_tx_num;
     return RCC_OK;
   }
   // notification that en_state_machine_mode property has been written
@@ -902,11 +905,11 @@ class Ad9361_config_proxyWorker : public Ad9361_config_proxyWorkerBase {
                                 &(m_properties.rx_rf_bandwidth));
   }
   // notification that rx_sampling_freq property has been written
-  //RCCResult rx_sampling_freq_written() {
-  //  static bool alreadyWritten = false;
-  //  return LIBAD9361_API_1PARAMP(&ad9361_set_rx_sampling_freq,
-  //                               m_properties.rx_sampling_freq);
-  //}
+  RCCResult rx_sampling_freq_written() {
+    return LIBAD9361_API_1PARAMP(&ad9361_set_rx_sampling_freq,
+                                 m_properties.rx_sampling_freq);
+    return RCC_OK;
+  }
   // notification that rx_sampling_freq property will be read
   RCCResult rx_sampling_freq_read() {
     return LIBAD9361_API_1PARAM(&ad9361_get_rx_sampling_freq,
@@ -924,8 +927,8 @@ class Ad9361_config_proxyWorker : public Ad9361_config_proxyWorkerBase {
   }
   // notification that rx_lo_int_ext property has been written
   RCCResult rx_lo_int_ext_written() {
-    return LIBAD9361_API_1PARAM(&ad9361_set_rx_lo_int_ext,
-                                m_properties.rx_lo_int_ext);
+    return LIBAD9361_API_1PARAMP(&ad9361_set_rx_lo_int_ext,
+                                 m_properties.rx_lo_int_ext);
   }
   // notification that rx_rssi property will be read
   RCCResult rx_rssi_read() {
@@ -1020,8 +1023,8 @@ class Ad9361_config_proxyWorker : public Ad9361_config_proxyWorkerBase {
   }
   // notification that rx_fir_en_dis property has been written
   RCCResult rx_fir_en_dis_written() {
-    return LIBAD9361_API_1PARAM(&ad9361_set_rx_fir_en_dis,
-                                m_properties.rx_fir_en_dis);
+    return LIBAD9361_API_1PARAMP(&ad9361_set_rx_fir_en_dis,
+                                 m_properties.rx_fir_en_dis);
   }
   // notification that rx_fir_en_dis property will be read
   RCCResult rx_fir_en_dis_read() {
@@ -1167,8 +1170,8 @@ class Ad9361_config_proxyWorker : public Ad9361_config_proxyWorkerBase {
   }
   // notification that tx_lo_int_ext property has been written
   RCCResult tx_lo_int_ext_written() {
-    return LIBAD9361_API_1PARAM(&ad9361_set_tx_lo_int_ext,
-                                m_properties.tx_lo_int_ext);
+    return LIBAD9361_API_1PARAMP(&ad9361_set_tx_lo_int_ext,
+                                 m_properties.tx_lo_int_ext);
   }
   // notification that tx_fir_config_write property has been written
   RCCResult tx_fir_config_write_written() {
@@ -1236,8 +1239,8 @@ class Ad9361_config_proxyWorker : public Ad9361_config_proxyWorkerBase {
   }
   // notification that tx_fir_en_dis property has been written
   RCCResult tx_fir_en_dis_written() {
-    return LIBAD9361_API_1PARAM(&ad9361_set_tx_fir_en_dis,
-                                m_properties.tx_fir_en_dis);
+    return LIBAD9361_API_1PARAMP(&ad9361_set_tx_fir_en_dis,
+                                 m_properties.tx_fir_en_dis);
   }
   // notification that tx_fir_en_dis property will be read
   RCCResult tx_fir_en_dis_read() {
@@ -1389,8 +1392,8 @@ class Ad9361_config_proxyWorker : public Ad9361_config_proxyWorkerBase {
   }
   // notification that trx_fir_en_dis property has been written
   RCCResult trx_fir_en_dis_written() {
-    return LIBAD9361_API_1PARAM(&ad9361_set_trx_fir_en_dis,
-                                m_properties.trx_fir_en_dis);
+    return LIBAD9361_API_1PARAMP(&ad9361_set_trx_fir_en_dis,
+                                 m_properties.trx_fir_en_dis);
   }
   // notification that trx_rate_gov property has been written
   RCCResult trx_rate_gov_written() {
@@ -1541,17 +1544,32 @@ class Ad9361_config_proxyWorker : public Ad9361_config_proxyWorkerBase {
     m_properties.bist_tone.mode = (char)(mode & 0xff);
     return RCC_OK;
   }
-  // notification that rx_sampling_freq_multiplier property has been written
-  RCCResult rx_sampling_freq_multiplier_written() {
-    if(m_properties.rx_sampling_freq_multiplier != 1)
-    {
-      return setError("Only supported rx_sampling_freq_multiplier value is 1 for now");
-    }
+  // notification that DATA_CLK_Delay property will be read
+  RCCResult DATA_CLK_Delay_read() {
+    uint8_t Rx_Clock_and_Data_Delay = slave.get_general_rx_clock_data_delay();
+    uint8_t DATA_CLK_Delay_3_0 = (Rx_Clock_and_Data_Delay & (D7_BITMASK | D6_BITMASK | D5_BITMASK | D4_BITMASK)) >> 4;
+    m_properties.DATA_CLK_Delay = DATA_CLK_Delay_3_0;
     return RCC_OK;
   }
-  // notification rx_sampling_freq_multiplier property will be read
-  RCCResult rx_sampling_freq_multiplier_read() {
-    m_properties.rx_sampling_freq_multiplier = 1;
+  // notification that Rx_Data_Delay property will be read
+  RCCResult Rx_Data_Delay_read() {
+    uint8_t Rx_Clock_and_Data_Delay = slave.get_general_rx_clock_data_delay();
+    uint8_t Rx_Data_Delay_3_0 = (Rx_Clock_and_Data_Delay & (D3_BITMASK | D2_BITMASK | D1_BITMASK | D0_BITMASK));
+    m_properties.Rx_Data_Delay = Rx_Data_Delay_3_0;
+    return RCC_OK;
+  }
+  // notification that FB_CLK_Delay property will be read
+  RCCResult FB_CLK_Delay_read() {
+    uint8_t Tx_Clock_and_Data_Delay = slave.get_general_tx_clock_data_delay();
+    uint8_t FB_CLK_Delay_3_0 = (Tx_Clock_and_Data_Delay & (D7_BITMASK | D6_BITMASK | D5_BITMASK | D4_BITMASK)) >> 4;
+    m_properties.FB_CLK_Delay = FB_CLK_Delay_3_0;
+    return RCC_OK;
+  }
+  // notification that Tx_Data_Delay property will be read
+  RCCResult Tx_Data_Delay_read() {
+    uint8_t Tx_Clock_and_Data_Delay = slave.get_general_tx_clock_data_delay();
+    uint8_t Tx_Data_Delay_3_0 = (Tx_Clock_and_Data_Delay & (D3_BITMASK | D2_BITMASK | D1_BITMASK | D0_BITMASK));
+    m_properties.Tx_Data_Delay = Tx_Data_Delay_3_0;
     return RCC_OK;
   }
   // notification that THB3_Enable_and_Interp property will be read
@@ -1569,11 +1587,12 @@ class Ad9361_config_proxyWorker : public Ad9361_config_proxyWorkerBase {
       case        0x01:
         p = THB3_ENABLE_AND_INTERP_INTERPOLATE_BY_2_HALF_BAND_FILTER;
         break;
-      case        0x10:
+      case        0x02:
         p = THB3_ENABLE_AND_INTERP_INTERPOLATE_BY_3_AND_FILTER;
         break;
-      default: // 0x11
-        p = THB3_ENABLE_AND_INTERP_INVALID;  break;
+      default: // 0x03
+        p = THB3_ENABLE_AND_INTERP_INVALID;
+        break;
     }
     return RCC_OK;
   }
@@ -1591,6 +1610,46 @@ class Ad9361_config_proxyWorker : public Ad9361_config_proxyWorkerBase {
     uint8_t reg = slave.get_general_tx_enable_filter_ctrl();
     uint8_t THB1_Enable = (reg & D2_BITMASK) >> 2;
     m_properties.THB1_Enable = (THB1_Enable == 1) ? true : false;
+    return RCC_OK;
+  }
+  // notification that RHB3_Enable_and_Decimation property will be read
+  RCCResult RHB3_Enable_and_Decimation_read() {
+    // see AD9361_Register_Map_Reference_Manual_UG-671.pdf Rev. 0 pg. 4
+    uint8_t reg = slave.get_general_rx_enable_filter_ctrl();
+    uint8_t RHB3_Enable_and_Decimation_1_0 = (reg & (D5_BITMASK | D4_BITMASK)) >> 4;
+    enum RHB3_Enable_and_Decimation& p = m_properties.RHB3_Enable_and_Decimation;
+    // see AD9361_Register_Map_Reference_Manual_UG-671.pdf Rev. 0 pg. 5 Table 4.
+    switch(RHB3_Enable_and_Decimation_1_0)
+    {
+      case        0x00:
+        p = RHB3_ENABLE_AND_DECIMATION_DECIMATE_BY_1_NO_FILTERING;
+        break;
+      case        0x01:
+        p = RHB3_ENABLE_AND_DECIMATION_DECIMATE_BY_2_HALF_BAND_FILTER;
+        break;
+      case        0x02:
+        p = RHB3_ENABLE_AND_DECIMATION_DECIMATE_BY_3_AND_FILTER;
+        break;
+      default: // 0x03
+        p = RHB3_ENABLE_AND_DECIMATION_INVALID;
+        break;
+    }
+    return RCC_OK;
+  }
+  // notification that RHB2_Enable property will be read
+  RCCResult RHB2_Enable_read() {
+    // see AD9361_Register_Map_Reference_Manual_UG-671.pdf Rev. 0 pg. 5
+    uint8_t reg = slave.get_general_rx_enable_filter_ctrl();
+    uint8_t RHB2_Enable = (reg & D3_BITMASK) >> 3;
+    m_properties.RHB2_Enable = (RHB2_Enable == 1) ? true : false;
+    return RCC_OK;
+  }
+  // notification that RHB1_Enable property will be read
+  RCCResult RHB1_Enable_read() {
+    // see AD9361_Register_Map_Reference_Manual_UG-671.pdf Rev. 0 pg. 4
+    uint8_t reg = slave.get_general_rx_enable_filter_ctrl();
+    uint8_t RHB1_Enable = (reg & D2_BITMASK) >> 2;
+    m_properties.RHB1_Enable = (RHB1_Enable == 1) ? true : false;
     return RCC_OK;
   }
   // notification that DAC_Clk_div2 property will be read
@@ -1681,8 +1740,8 @@ class Ad9361_config_proxyWorker : public Ad9361_config_proxyWorkerBase {
     {
       case        0x00: m_properties.BBPLL_Ref_Clock_Scaler = 1.0F;  break;
       case        0x01: m_properties.BBPLL_Ref_Clock_Scaler = 0.5F;  break;
-      case        0x10: m_properties.BBPLL_Ref_Clock_Scaler = 0.25F; break;
-      default: // 0x11
+      case        0x02: m_properties.BBPLL_Ref_Clock_Scaler = 0.25F; break;
+      default: // 0x03
                         m_properties.BBPLL_Ref_Clock_Scaler = 2.0F;  break;
     }
     return RCC_OK;
@@ -1705,7 +1764,7 @@ class Ad9361_config_proxyWorker : public Ad9361_config_proxyWorkerBase {
       // Tx BBF Tune Divider[8]
       {
       uint8_t val_reg_read = slave.get_tx_bbf_tune_mode();
-      uint8_t Tx_BBF_Tune_Divider_8  = (val_reg_read & 0x01);
+      uint8_t Tx_BBF_Tune_Divider_8  = (val_reg_read & D0_BITMASK);
       tmp |= (((uint16_t)Tx_BBF_Tune_Divider_8) << 8);
       }
 
@@ -2274,6 +2333,555 @@ class Ad9361_config_proxyWorker : public Ad9361_config_proxyWorkerBase {
     m_properties.Tx_Secondary_Filter_Capacitor = Capacitor_5_0;
     return RCC_OK;
   }
+  // notification that Rx_BBF_Tune_Divide property will be read
+  RCCResult Rx_BBF_Tune_Divide_read() {
+
+    // see AD9361_Register_Map_Reference_Manual_UG-671.pdf Rev. 0 pg. 59
+
+    uint16_t Rx_BBF_Tune_Divide_8_0;
+    {
+      uint16_t tmp = 0;
+
+      // Rx BBF Tune Divide[7:0]
+      {
+      uint8_t Rx_BBF_Tune_Divide_7_0 = slave.get_rx_bbf_tune_config_divide();
+      tmp |= ((uint16_t)Rx_BBF_Tune_Divide_7_0);
+      }
+
+      // Rx BBF Tune Divide[8]
+      {
+      uint8_t val_reg_read = slave.get_rx_bbf_tune_config_config();
+      uint8_t Rx_BBF_Tune_Divide_8  = (val_reg_read & D0_BITMASK);
+      tmp |= (((uint16_t)Rx_BBF_Tune_Divide_8) << 8);
+      }
+
+      Rx_BBF_Tune_Divide_8_0 = tmp;
+    }
+
+    if(Rx_BBF_Tune_Divide_8_0 == 0)
+    {
+      m_properties.Rx_BBF_Tune_Divide = RX_BBF_TUNE_DIVIDE_INVALID;
+    }
+    else
+    {
+      switch(Rx_BBF_Tune_Divide_8_0)
+      {
+        ENUM_RX_BBF_TUNE_DIVIDE(1,   Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(2,   Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(3,   Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(4,   Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(5,   Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(6,   Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(7,   Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(8,   Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(9,   Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(10,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(11,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(12,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(13,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(14,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(15,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(16,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(17,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(18,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(19,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(20,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(21,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(22,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(23,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(24,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(25,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(26,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(27,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(28,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(29,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(30,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(31,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(32,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(33,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(34,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(35,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(36,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(37,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(38,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(39,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(40,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(41,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(42,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(43,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(44,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(45,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(46,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(47,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(48,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(49,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(50,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(51,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(52,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(53,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(54,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(55,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(56,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(57,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(58,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(59,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(60,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(61,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(62,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(63,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(64,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(65,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(66,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(67,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(68,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(69,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(70,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(71,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(72,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(73,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(74,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(75,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(76,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(77,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(78,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(79,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(80,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(81,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(82,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(83,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(84,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(85,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(86,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(87,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(88,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(89,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(90,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(91,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(92,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(93,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(94,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(95,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(96,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(97,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(98,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(99,  Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(100, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(101, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(102, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(103, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(104, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(105, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(106, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(107, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(108, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(109, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(110, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(111, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(112, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(113, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(114, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(115, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(116, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(117, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(118, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(119, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(120, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(121, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(122, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(123, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(124, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(125, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(126, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(127, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(128, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(129, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(130, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(131, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(132, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(133, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(134, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(135, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(136, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(137, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(138, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(139, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(140, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(141, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(142, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(143, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(144, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(145, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(146, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(147, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(148, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(149, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(150, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(151, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(152, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(153, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(154, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(155, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(156, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(157, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(158, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(159, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(160, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(161, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(162, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(163, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(164, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(165, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(166, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(167, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(168, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(169, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(170, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(171, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(172, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(173, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(174, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(175, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(176, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(177, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(178, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(179, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(180, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(181, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(182, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(183, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(184, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(185, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(186, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(187, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(188, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(189, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(190, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(191, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(192, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(193, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(194, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(195, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(196, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(197, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(198, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(199, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(200, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(201, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(202, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(203, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(204, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(205, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(206, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(207, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(208, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(209, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(210, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(211, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(212, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(213, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(214, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(215, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(216, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(217, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(218, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(219, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(220, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(221, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(222, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(223, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(224, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(225, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(226, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(227, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(228, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(229, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(230, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(231, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(232, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(233, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(234, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(235, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(236, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(237, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(238, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(239, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(240, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(241, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(242, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(243, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(244, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(245, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(246, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(247, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(248, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(249, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(250, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(251, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(252, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(253, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(254, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(255, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(256, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(257, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(258, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(259, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(260, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(261, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(262, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(263, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(264, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(265, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(266, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(267, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(268, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(269, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(270, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(271, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(272, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(273, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(274, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(275, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(276, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(277, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(278, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(279, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(280, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(281, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(282, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(283, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(284, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(285, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(286, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(287, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(288, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(289, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(290, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(291, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(292, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(293, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(294, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(295, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(296, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(297, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(298, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(299, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(300, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(301, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(302, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(303, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(304, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(305, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(306, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(307, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(308, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(309, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(310, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(311, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(312, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(313, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(314, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(315, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(316, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(317, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(318, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(319, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(320, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(321, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(322, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(323, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(324, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(325, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(326, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(327, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(328, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(329, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(330, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(331, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(332, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(333, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(334, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(335, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(336, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(337, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(338, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(339, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(340, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(341, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(342, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(343, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(344, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(345, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(346, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(347, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(348, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(349, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(350, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(351, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(352, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(353, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(354, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(355, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(356, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(357, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(358, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(359, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(360, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(361, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(362, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(363, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(364, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(365, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(366, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(367, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(368, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(369, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(370, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(371, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(372, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(373, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(374, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(375, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(376, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(377, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(378, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(379, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(380, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(381, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(382, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(383, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(384, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(385, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(386, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(387, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(388, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(389, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(390, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(391, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(392, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(393, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(394, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(395, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(396, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(397, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(398, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(399, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(400, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(401, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(402, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(403, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(404, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(405, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(406, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(407, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(408, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(409, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(410, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(411, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(412, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(413, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(414, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(415, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(416, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(417, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(418, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(419, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(420, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(421, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(422, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(423, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(424, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(425, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(426, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(427, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(428, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(429, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(430, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(431, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(432, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(433, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(434, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(435, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(436, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(437, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(438, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(439, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(440, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(441, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(442, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(443, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(444, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(445, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(446, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(447, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(448, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(449, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(450, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(451, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(452, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(453, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(454, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(455, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(456, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(457, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(458, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(459, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(460, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(461, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(462, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(463, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(464, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(465, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(466, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(467, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(468, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(469, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(470, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(471, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(472, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(473, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(474, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(475, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(476, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(477, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(478, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(479, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(480, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(481, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(482, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(483, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(484, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(485, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(486, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(487, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(488, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(489, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(490, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(491, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(492, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(493, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(494, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(495, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(496, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(497, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(498, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(499, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(500, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(501, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(502, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(503, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(504, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(505, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(506, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(507, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(508, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(509, Rx_BBF_Tune_Divide);
+        ENUM_RX_BBF_TUNE_DIVIDE(510, Rx_BBF_Tune_Divide);
+        default: // 511
+          m_properties.Rx_BBF_Tune_Divide = RX_BBF_TUNE_DIVIDE_511; break;
+      }
+    }
+    return RCC_OK;
+  }
   // notification that bb_pll_is_locked property will be read
   RCCResult bb_pll_is_locked_read() {
     m_properties.bb_pll_is_locked = (slave.get_overflow_ch_1() & BBPLL_LOCK) == BBPLL_LOCK;
@@ -2384,15 +2992,15 @@ class Ad9361_config_proxyWorker : public Ad9361_config_proxyWorkerBase {
     // see AD9361_Register_Map_Reference_Manual_UG-671.pdf Rev. 0 pg. 68
     uint8_t Ref_Divide_Config_1 = slave.get_ref_divide_config_1();
     uint8_t Ref_Divide_Config_2 = slave.get_ref_divide_config_2();
-    uint8_t Rx_Ref_Divider_1 = (uint8_t)(Ref_Divide_Config_1 & 0x01);
-    uint8_t Rx_Ref_Divider_0 = (uint8_t)(Ref_Divide_Config_2 & 0x80) >> 7;
-    uint8_t Rx_Ref_Divider_1_0 = (Rx_Ref_Divider_1 << 1) || Rx_Ref_Divider_0;
+    uint8_t Rx_Ref_Divider_1 = (uint8_t)(Ref_Divide_Config_1 & D0_BITMASK);
+    uint8_t Rx_Ref_Divider_0 = (uint8_t)(Ref_Divide_Config_2 & D7_BITMASK) >> 7;
+    uint8_t Rx_Ref_Divider_1_0 = (Rx_Ref_Divider_1 << 1) | Rx_Ref_Divider_0;
     switch(Rx_Ref_Divider_1_0)
     {
       case        0x00: m_properties.Rx_Ref_Divider = 1.0F;  break;
       case        0x01: m_properties.Rx_Ref_Divider = 0.5F;  break;
-      case        0x10: m_properties.Rx_Ref_Divider = 0.25F; break;
-      default: // 0x11
+      case        0x02: m_properties.Rx_Ref_Divider = 0.25F; break;
+      default: // 0x03
                         m_properties.Rx_Ref_Divider = 2.0F;  break;
     }
     return RCC_OK;
@@ -2438,10 +3046,26 @@ class Ad9361_config_proxyWorker : public Ad9361_config_proxyWorkerBase {
     {
       case        0x00: m_properties.Tx_Ref_Divider = 1.0F;  break;
       case        0x01: m_properties.Tx_Ref_Divider = 0.5F;  break;
-      case        0x10: m_properties.Tx_Ref_Divider = 0.25F; break;
-      default: // 0x11
+      case        0x02: m_properties.Tx_Ref_Divider = 0.25F; break;
+      default: // 0x03
                         m_properties.Tx_Ref_Divider = 2.0F;  break;
     }
+    return RCC_OK;
+  }
+  // notification that Tx_Channel_Swap property will be read
+  RCCResult Tx_Channel_Swap_read() {
+    // see AD9361_Register_Map_Reference_Manual_UG-671.pdf Rev. 0 pg. 9
+    uint8_t Parallel_Port_Configuration_1 = slave.get_parallel_port_conf_1();
+    uint8_t Tx_Channel_Swap = (Parallel_Port_Configuration_1 & D5_BITMASK) >> 5;
+    m_properties.Tx_Channel_Swap = (Tx_Channel_Swap == 1);
+    return RCC_OK;
+  }
+  // notification that Rx_Channel_Swap property will be read
+  RCCResult Rx_Channel_Swap_read() {
+    // see AD9361_Register_Map_Reference_Manual_UG-671.pdf Rev. 0 pg. 9
+    uint8_t Parallel_Port_Configuration_1 = slave.get_parallel_port_conf_1();
+    uint8_t Rx_Channel_Swap = (Parallel_Port_Configuration_1 & D4_BITMASK) >> 4;
+    m_properties.Rx_Channel_Swap = (Rx_Channel_Swap == 1);
     return RCC_OK;
   }
   // notification that LVDS property will be read

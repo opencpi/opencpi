@@ -36,7 +36,7 @@ endif
 PROG=$(DIR)/$(APP)
 OUT= > /dev/null
 
-INCS = -I$(OCPI_INC_DIR) -I$(OCPI_CDK_DIR)/../prerequisites/ad9361/include/
+INCS = -I$(OCPI_INC_DIR) -I$(OCPI_PREREQUISITES_DIR)/ad9361/include/
 
 ifdef APP
 $(PROG): $(APP).cxx | $(DIR)

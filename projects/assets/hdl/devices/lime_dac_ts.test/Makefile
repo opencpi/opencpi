@@ -181,19 +181,21 @@ python scripts/generate_hw.py idata/input_data_hw.bin
 ----------------------------------------------------------------------------
 Zynq-Based Platform - setup environment
 ----------------------------------------------------------------------------
-. /mnt/card/opencpi/mynetsetup.sh {IPADDRESS}
-cd /mnt/ocpiassets/hdl/devices/lime_dac_ts.test
-HDL: 
-export OCPI_LIBRARY_PATH=$$OCPI_CDK_DIR/../projects/core/exports/lib:$$(pwd)/../../../exports/lib:$$(pwd)
-#NOTE: If copy/paste of the above exports, the redundant '$' must be removed.
+. /mnt/card/opencpi/mynetsetup.sh {DEVELOPMENT HOST IPADDRESS}
 
+cd /mnt/ocpi_assets/hdl/devices/lime_dac_ts.test
+
+export OCPI_LIBRARY_PATH=$$OCPI_CDK_DIR/../projects/core/exports/lib:$$(pwd):$$(pwd)/../../../exports/lib
+#NOTE: If copy/paste of the above exports, the redundant '$' must be removed.
+----------------------------------------------------------------------------
 ----------------------------------------------------------------------------
 Execution:
 ----------------------------------------------------------------------------
 Zynq-Based Platform - execute
-HDL (Zed/Zipper): ocpirun -v -t 5 app_lime_dac_ts_test_zipper
-HDL (Matchstiq-Z1): ocpirun -v -t 5 app_lime_dac_ts_test_matchstiq_z1
-
+HDL (Matchstiq-Z1):
+ocpirun -v -t 5 app_lime_dac_ts_test_matchstiq_z1
+HDL (Zed/Zipper):
+ocpirun -v -t 5 app_lime_dac_ts_test_zipper
 ----------------------------------------------------------------------------
 Development Computer - verify output data
 'Visually inspect the spectrum on a spectrum analyzer. 1 second off, 1 second on, 1 second off, 1 second on.'

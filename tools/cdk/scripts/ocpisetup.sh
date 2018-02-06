@@ -72,11 +72,6 @@ fi
 export OCPI_BUILD_SHARED_LIBRARIES=$OCPI_DYNAMIC
 
 export PATH=$OCPI_CDK_DIR/bin/$OCPI_TOOL_DIR:$PATH
-if test "$OCPI_LIBRARY_PATH" = ""; then
-  # Default library path for core RCC workers and HDL assemblies
-  source $OCPI_CDK_DIR/scripts/util.sh
-  export OCPI_LIBRARY_PATH=$(getProjectRegistryDir)/ocpi.core/exports/lib/components
-fi
 
 # Initialize target variables, using OCPI_TARGET_PLATFORM if it is set
 source $OCPI_CDK_DIR/scripts/ocpitarget.sh ""

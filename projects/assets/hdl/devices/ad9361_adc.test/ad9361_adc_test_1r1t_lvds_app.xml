@@ -10,7 +10,9 @@
 
   </instance>
 
+  <!-- must be instanced here in app XML as a workaround for AV-3799 -->
   <instance component="ocpi.assets.devices.ad9361_spi"/>
+
   <instance component="ocpi.assets.devices.ad9361_data_sub">
     <!-- this app xml is intended to use only the LVDS mode of the AD9361, so it
          must enforce LVDS artifact matching by setting here all of the

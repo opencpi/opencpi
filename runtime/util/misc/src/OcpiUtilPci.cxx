@@ -24,6 +24,7 @@
 #include <string>
 #include <cerrno>
 #include <climits>
+#include <cstdlib> // strtoull
 #include "OcpiUtilMisc.h"
 #include "OcpiUtilPci.h"
 
@@ -120,7 +121,7 @@ probePci(const char *name, unsigned theVendor, unsigned theDevice, unsigned theC
 	  }
 	  if (verbose)
 	    printf("   BAR %d: 0x%llx to 0x%llx (%llu%s %db %s %s)\n",
-		   i, bottom, top, 
+		   i, bottom, top,
 		   (unsigned long long)
 		   (bar->size >= 1024 ? bar->size/1024 : bar->size),
 		   bar->size >= 1024 ? "K" : "",

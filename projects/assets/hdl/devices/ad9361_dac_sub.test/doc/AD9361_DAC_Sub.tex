@@ -160,7 +160,7 @@ Note that "channel 0" within the context of this worker corresponds to the AD936
 		\rowcolor{blue}
 		devsignal channel & timing &   & Register 0x010 & Register 0x002 & Register 0x004 \\
 		\rowcolor{blue}
-		& diagram  & & Bit D5\footnote{Note that AD9361 register 0x010 Bit D5 is controlled by no-OS's AD9361\_InitParam struct's tx\_channel\_swap\_enable member\cite{adi_ug570} and that the ad9361\_config\_proxy.rcc worker's \texttt{ad9361\_init} property sets that member value\cite{config_proxy_comp_datasheet}.} & Bits [D7 D6]\footnote{Note that AD9361 register 0x002 Bits [D7 D6] are controlled by no-OS's AD9361\_InitParam struct's one\_rx\_one\_tx\_use\_tx\_num member and two\_rx\_two\_tx\_mode\_enable member\cite{adi_ug570} and that the ad9361\_config\_proxy.rcc worker's \texttt{ad9361\_init} property sets these member values\cite{config_proxy_comp_datasheet}.} & Bit D7 \\
+		& diagram  & & Bit D5\footnote{Note that AD9361 register 0x010 Bit D5 is controlled by no-OS's AD9361\_InitParam struct's tx\_channel\_swap\_enable member\cite{adi_ug570} and that the ad9361\_config\_proxy.rcc worker's \texttt{ad9361\_init} property sets that member value\cite{config_proxy_comp_datasheet}.} & Bits [D7 D6]\footnote{Note that AD9361 register 0x002 Bits [D7 D6] are controlled by no-OS's AD9361\_InitParam struct's one\_rx\_one\_tx\_use\_tx\_num member and two\_rx\_two\_tx\_mode\_enable member\cite{adi_ug570} and that the ad9361\_config\_proxy.rcc worker's \texttt{ad9361\_init} property sets these member values\cite{config_proxy_comp_datasheet}.} & Bit D6 \\
 		\rowcolor{blue}
 		& channel & & (channel swap) & (channel enable) & (port select) \\
 		\hline
@@ -482,19 +482,6 @@ report_timing -delay_type min_max
 The following is the output of this report:
 \fontsize{6}{12}\selectfont
 \begin{lstlisting}
-INFO: [Timing 38-91] UpdateTimingParams: Speed grade: -1, Delay Type: min_max.
-INFO: [Timing 38-191] Multithreading enabled for timing update using a maximum of 8 CPUs
-INFO: [Timing 38-78] ReportTimingParams: -max_paths 1 -nworst 1 -delay_type min_max -sort_by slack.
-Copyright 1986-2017 Xilinx, Inc. All Rights Reserved.
------------------------------------------------------------------------------------------------
-| Tool Version : Vivado v.2017.1 (lin64) Build 1846317 Fri Apr 14 18:54:47 MDT 2017
-| Date         : Thu Dec  7 17:19:53 2017
-| Host         : embdev007.wb.vsi-corp.com running 64-bit CentOS Linux release 7.2.1511 (Core)
-| Command      : report_timing -delay_type min_max
-| Design       : ad9361_dac_sub_rv
-| Device       : 7z020-clg484
-| Speed File   : -1  PRODUCTION 1.11 2014-09-11
------------------------------------------------------------------------------------------------
 
 Timing Report
 
@@ -568,23 +555,6 @@ report_timing -delay_type min_max
 \end{lstlisting}
 \fontsize{6}{12}\selectfont
 \begin{lstlisting}[language=bash]
-INFO: [Timing 38-91] UpdateTimingParams: Speed grade: -1, Delay Type: min_max.
-INFO: [Timing 38-191] Multithreading enabled for timing update using a maximum of 8 CPUs
-WARNING: [Timing 38-242] The property HD.CLK_SRC of clock port "dev_data_clk_in[DATA_CLK_P]" is not set. In out-of-context mode, this prevents timing estimation for clock delay/skew
-Resolution: Set the HD.CLK_SRC property of the out-of-context port to the location of the clock buffer instance in the top-level design
-WARNING: [Timing 38-242] The property HD.CLK_SRC of clock port "wci_Clk" is not set. In out-of-context mode, this prevents timing estimation for clock delay/skew
-Resolution: Set the HD.CLK_SRC property of the out-of-context port to the location of the clock buffer instance in the top-level design
-INFO: [Timing 38-78] ReportTimingParams: -max_paths 1 -nworst 1 -delay_type min_max -sort_by slack.
-Copyright 1986-2017 Xilinx, Inc. All Rights Reserved.
------------------------------------------------------------------------------------------------
-| Tool Version : Vivado v.2017.1 (lin64) Build 1846317 Fri Apr 14 18:54:47 MDT 2017
-| Date         : Thu Dec  7 17:20:50 2017
-| Host         : embdev007.wb.vsi-corp.com running 64-bit CentOS Linux release 7.2.1511 (Core)
-| Command      : report_timing -delay_type min_max
-| Design       : ad9361_dac_sub_rv
-| Device       : 7z020-clg484
-| Speed File   : -1  PRODUCTION 1.11 2014-09-11
------------------------------------------------------------------------------------------------
 
 Timing Report
 

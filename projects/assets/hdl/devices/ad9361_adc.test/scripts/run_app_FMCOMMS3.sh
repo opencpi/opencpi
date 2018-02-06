@@ -59,10 +59,9 @@ fi
 
 TX_CHANNEL_SWAP_ENABLE=0
 
-echo "ocpirun -d -v -t $APP_RUNTIME_SEC \
+echo "ocpirun -U -d -v -t $APP_RUNTIME_SEC \
   -pad9361_config_proxy=ad9361_init=\"reference_clk_rate $FMCOMMS3_REF_CLK_RATE,frequency_division_duplex_mode_enable 1,xo_disable_use_ext_refclk_enable 0,two_t_two_r_timing_enable $TWO_R_TWO_T,pp_tx_swap_enable 0,pp_rx_swap_enable 0,tx_channel_swap_enable $TX_CHANNEL_SWAP_ENABLE,rx_channel_swap_enable $RX_CHANNEL_SWAP_ENABLE,delay_rx_data $DELAY_RX_DATA,rx_data_clock_delay $RX_DATA_CLOCK_DELAY,rx_data_delay $RX_DATA_DELAY,tx_fb_clock_delay 7,tx_data_delay 0\" \
   -pad9361_config_proxy=en_state_machine_mode=$ENSM_MODE \
-  -pad9361_config_proxy=rx_sampling_freq_multiplier=1 \
   $P $APP_XML" > $RUNFILE
 
 

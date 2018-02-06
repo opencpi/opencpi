@@ -78,6 +78,8 @@ static std::string stringToColorHash(std::string str) {
 std::map<std::string, StringSet> specToPlatforms;
 // For each platform, which model does it support
 std::map<std::string, std::string> platformToModel;
+// For each worker, add worker specific params
+std::map<std::string, std::map<std::string, std::set<OU::Property *>>> workerSpecificProperties;
 StringSet specs;
 struct Category {
   std::string name;
@@ -118,59 +120,8 @@ struct Category {
     return x;
   }
 } top;
-static void doWorker(OU::Worker &w) {
-  const char *err;
-  //  printf("spec:  %-30s  worker:  %s\n", w.specName().c_str(), w.name().c_str());
-  if (!specs.insert(w.specName()).second)
-    return;
-  ezxml_t root = ezxml_new("block");
-  const char *cp = strrchr(w.specName().c_str(), '.');
-  OX::addChild(root, "name", 1, cp ? cp + 1 : w.specName().c_str());
-  std::string
-    path(w.specName().c_str(), cp - w.specName().c_str()),
-    cat("[OpenCPI]/" + path),
-    key(w.specName()),
-    import("from opencpi import " + path);
-  for (unsigned n = 0; n < key.size(); n++)
-    if (key[n] == '.')
-      key[n] = '_';
-  for (unsigned n = 0; n < path.size(); n++)
-    if (path[n] == '.')
-      path[n] = '/';
-  top.addWorker(path.c_str(), key);
-  OX::addChild(root, "key", 1, key.c_str());
-  OX::addChild(root, "category", 1, cat.c_str());
-  OX::addChild(root, "import", 1, import.c_str());
-  OX::addChild(root, "make", 1, "");
 
-  // Add ocpi package as a partially hidden parameter
-  ezxml_t _px = OX::addChild(root, "param", 1);
-  OX::addChild(_px, "name", 2, "ocpi_spec");
-  OX::addChild(_px, "key", 2, "ocpi_spec");
-  OX::addChild(_px, "value", 2, w.specName().c_str());
-  OX::addChild(_px, "type", 2, "string");
-  OX::addChild(_px, "hide", 2, "part");
-
-  _px = OX::addChild(root, "param", 1);
-  OX::addChild(_px, "name", 2, "Container");
-  OX::addChild(_px, "key", 2, "container");
-  OX::addChild(_px, "value", 2, "auto");
-  OX::addChild(_px, "type", 2, "enum");
-  OX::addChild(_px, "hide", 2, "none");
-
-  ezxml_t _ox = OX::addChild(_px, "option", 3);
-  OX::addChild(_ox, "name", 4, "auto");
-  OX::addChild(_ox, "key", 4, "auto");
-  StringSet &platforms = specToPlatforms[w.specName()];
-  for (StringSetIter it = platforms.begin(); it != platforms.end(); ++it) {
-    _ox = OX::addChild(_px, "option", 3);
-    OX::addChild(_ox, "name", 4, it->c_str());
-    OX::addChild(_ox, "key", 4, it->c_str());
-  }
-
-  unsigned np;
-  OU::Property *p = w.properties(np);
-  for (unsigned n = 0; n < np; n++, p++) {
+static void addProperty(OU::Worker &w, ezxml_t & root, OU::Property *p, __attribute__((unused)) std::string workerName="") {
     ezxml_t px = OX::addChild(root, "param", 1);
     OX::addChild(px, "name", 2, p->pretty());
     OX::addChild(px, "key", 2, p->cname());
@@ -209,8 +160,8 @@ static void doWorker(OU::Worker &w) {
       OX::addChild(px, "value", 2, strval.c_str());
     OX::addChild(px, "type", 2, type);
 
-    if (!p->m_isWritable && !p->m_isInitial) {
-        OX::addChild(px, "hide", 2, "all");
+    if ((!p->m_isWritable && !p->m_isInitial) || p->m_isParameter) {
+        OX::addChild(px, "hide", 2, "none");
         OX::addChild(px, "build_param", 2, "True");
     }
 
@@ -222,7 +173,111 @@ static void doWorker(OU::Worker &w) {
       }
     }
 
+    // Due to the XML schema, this has to be here and not above where
+    // hide/build_param is set
+    if (p->m_isParameter) {
+      OX::addChild(px, "tab", 2, "Parameters");
+    } else if (!p->m_isWritable && !p->m_isInitial) {
+      OX::addChild(px, "tab", 2, "Read Only");
+    }
+
+    if (p->m_isInitial) {
+      OX::addChild(px, "required", 2, "True");
+    }
+}
+
+static void doWorker(OU::Worker &w) {
+  const char *err;
+  //  printf("spec:  %-30s  worker:  %s\n", w.specName().c_str(), w.name().c_str());
+  if (!specs.insert(w.specName()).second)
+    return;
+
+  ezxml_t root = ezxml_new("block");
+  const char *cp = strrchr(w.specName().c_str(), '.');
+  OX::addChild(root, "name", 1, cp ? cp + 1 : w.specName().c_str());
+  std::string
+    path(w.specName().c_str(), cp - w.specName().c_str()),
+    cat("[OpenCPI]/" + path),
+    key(w.specName()),
+    import("import ocpi");
+  for (unsigned n = 0; n < key.size(); n++)
+    if (key[n] == '.')
+      key[n] = '_';
+  for (unsigned n = 0; n < path.size(); n++)
+    if (path[n] == '.')
+      path[n] = '/';
+  top.addWorker(path.c_str(), key);
+  OX::addChild(root, "key", 1, key.c_str());
+  OX::addChild(root, "category", 1, cat.c_str());
+  OX::addChild(root, "import", 1, import.c_str());
+  OX::addChild(root, "make", 1, "");
+  {
+    unsigned np;
+    OU::Property *p = w.properties(np);
+    for (unsigned n = 0; n < np; n++, p++) {
+      if(p->m_isWritable && !p->m_isInitial) {
+        OX::addChild(root, "callback", 1, ("self._ocpi_application_internal_black_box_0.set_property(\"$(id)\", \"" +
+                           p->m_name + "\", str($" + p->m_name + "))").c_str());
+      }
+    }
   }
+  // Add ocpi package as a partially hidden parameter
+  ezxml_t _px = OX::addChild(root, "param", 1);
+  OX::addChild(_px, "name", 2, "ocpi_spec");
+  OX::addChild(_px, "key", 2, "ocpi_spec");
+  OX::addChild(_px, "value", 2, w.specName().c_str());
+  OX::addChild(_px, "type", 2, "string");
+  OX::addChild(_px, "hide", 2, "part");
+
+  _px = OX::addChild(root, "param", 1);
+  OX::addChild(_px, "name", 2, "Container");
+  OX::addChild(_px, "key", 2, "container");
+  OX::addChild(_px, "value", 2, "auto");
+  OX::addChild(_px, "type", 2, "enum");
+  OX::addChild(_px, "hide", 2, "none");
+
+  ezxml_t _ox = OX::addChild(_px, "option", 3);
+  OX::addChild(_ox, "name", 4, "auto");
+  OX::addChild(_ox, "key", 4, "auto");
+  StringSet &platforms = specToPlatforms[w.specName()];
+  for (StringSetIter it = platforms.begin(); it != platforms.end(); ++it) {
+    _ox = OX::addChild(_px, "option", 3);
+    OX::addChild(_ox, "name", 4, it->c_str());
+    OX::addChild(_ox, "key", 4, it->c_str());
+  }
+
+  if (w.slave() != "") {
+    _px = OX::addChild(root, "param", 1);
+    OX::addChild(_px, "name", 2, "Slave");
+    OX::addChild(_px, "key", 2, "slave");
+    OX::addChild(_px, "value", 2, "");
+    OX::addChild(_px, "type", 2, "string");
+    OX::addChild(_px, "hide", 2, "none");
+    OX::addChild(_px, "required", 2, "True");
+  }
+
+  // Add all of the Component specific properties
+  unsigned np;
+  OU::Property *p = w.properties(np);
+  for (unsigned n = 0; n < np; n++, p++) {
+    // Worker specific properties will be added later so skip them
+    // for now so they don't get added twice.
+    if (!p->m_isImpl) {
+      addProperty(w, root, p);
+    }
+  }
+
+  // Add all of the properties specific to a particular worker
+  std::map<std::string, std::set<OU::Property *>>::const_iterator wsp = workerSpecificProperties[w.specName()].begin();
+  while (wsp != workerSpecificProperties[w.specName()].end()) {
+    std::set<OU::Property *>::const_iterator prop = wsp->second.begin();
+    while (prop != wsp->second.end()) {
+      addProperty(w, root, *prop, wsp->first);
+      prop++;
+    }
+    wsp++;
+  }
+
   OU::Port *ports = w.ports(np);
   for (unsigned n = 0; n < np; n++, ports++) {
     OU::Port &port = *ports;
@@ -230,8 +285,12 @@ static void doWorker(OU::Worker &w) {
     OX::addChild(px, "name", 2, port.cname());
     OX::addChild(px, "type", 2, "ocpi");
     OX::addChild(px, "domain", 2, "$platform");
+    if (port.m_isOptional) {
+      OX::addChild(px, "optional", 2, "1");
+    }
     OX::addChild(px, "protocol", 2, port.OU::Protocol::cname());
   }
+
   std::string
     xml = ezxml_toxml(root),
     file;
@@ -266,7 +325,7 @@ static void containerBlock() {
     ezxml_t ox = OX::addChild(px, "option", 2);
     OX::addChild(ox, "name", 1, pi->first.c_str());
     OX::addChild(ox, "key", 1, pi->first.c_str());
-  }    
+  }
 
   px = OX::addChild(root, "param", 1);
   OX::addChild(px, "name", 2, "value");
@@ -286,7 +345,17 @@ static void doWorkerPlatform(OU::Worker &w) {
   assert(w.attributes().platform().length());
   specToPlatforms[w.specName()].insert(w.attributes().platform());
   platformToModel[w.attributes().platform()] = w.model();
+
+  unsigned np;
+  OU::Property *p = w.properties(np);
+  for (unsigned n = 0; n < np; n++, p++) {
+    if (p->m_isImpl) {
+      // TODO. This isn't working.
+      workerSpecificProperties[w.specName()][w.cname()].insert(p);
+    }
+  }
 }
+
 static int
 mymain(const char ** /*ap*/) {
   setenv("OCPI_SYSTEM_CONFIG", "", 1);
@@ -323,6 +392,14 @@ mymain(const char ** /*ap*/) {
       OX::addChild(px, "sink_domain", 2, other->first.c_str());
       OX::addChild(px, "make", 2, "");
     }
+    ezxml_t px = OX::addChild(root, "connection", 1);
+    OX::addChild(px, "source_domain", 2, pi->first.c_str());
+    OX::addChild(px, "sink_domain", 2, "gr_message");
+    OX::addChild(px, "make", 2, "");
+    px = OX::addChild(root, "connection", 1);
+    OX::addChild(px, "source_domain", 2, "gr_message");
+    OX::addChild(px, "sink_domain", 2, pi->first.c_str());
+    OX::addChild(px, "make", 2, "");
     xml += ezxml_toxml(root);
     xml += "\n";
     OU::string2File(xml, file);

@@ -23,16 +23,14 @@
 
 $(if $(realpath $(OCPI_CDK_DIR)),,$(error The OCPI_CDK_DIR environment variable is not set correctly.))
 
+export OCPI_LIBRARY_PATH=lib
+RccOnlyPlatforms+=centos7 xilinx13_3
 APP=lime_tx_proxy_test_app
 
-include setup.mk
+include $(OCPI_CDK_DIR)/include/application.mk
 
 .SILENT: show
 .PHONY: run clean show
-
-# build the testbench executable
-run: all
-	OCPI_LIBRARY_PATH=lib $(VG) $(PROG) $(OUT)
 
 # build the HDL unit test assemblies
 all:
@@ -40,6 +38,7 @@ all:
 
 clean::
 	make -C assemblies clean
+	rm -rf target-*
 
 show:
 	echo "$$showhelp"
@@ -51,10 +50,11 @@ These steps may be repeated to test each available HDL assembly
 ----------------------------------------------------------------------------
 ----------------------------------------------------------------------------
 Zynq-Based Platform - setup environment
-. /mnt/card/opencpi/mynetsetup.sh {IPADDRESS}
-cd /mnt/ocpiassets/hdl/devices/lime_tx_proxy.test
-HDL: 
-export OCPI_LIBRARY_PATH=$$OCPI_CDK_DIR/../projects/core/exports/lib:$$(pwd)/../../../exports/lib:$$(pwd)
+. /mnt/card/opencpi/mynetsetup.sh {DEVELOPMENT HOST IPADDRESS}
+
+cd /mnt/ocpi_assets/hdl/devices/lime_tx_proxy.test
+
+export OCPI_LIBRARY_PATH=$$OCPI_CDK_DIR/../projects/core/exports/lib:$$(pwd):$$(pwd)/../../../exports/lib
 #NOTE: If copy/paste of the above exports, the redundant '$' must be removed.
 ----------------------------------------------------------------------------
 ----------------------------------------------------------------------------

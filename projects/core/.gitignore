@@ -1,8 +1,4 @@
-# Lines starting with '#' are considered comments.
-# Ignore (generated) html files,
-#*.html
-# except foo.html which is maintained by hand.
-#!foo.html
+# Example .gitignore for OpenCPI projects
 # Ignore objects and archives.
 *.rpm
 *.obj
@@ -27,5 +23,8 @@ lib/
 **/doc*/*.lot
 run/
 exports/
-imports/
+imports
 *.pyc
+# Some artifacts
+**/kernel-headers/**/*.cmd
+**/aciapps

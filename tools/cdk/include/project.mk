@@ -240,8 +240,9 @@ clean: cleancomponents cleanapplications cleanrcc cleanhdl cleanexports cleanimp
 # Iterate through symlinks in imports. If the link points to the project registry dir,
 # it is the CDK, or is a broken link, it can be cleaned/removed. If the imports directory
 # is empty after clean, the whole directory can be removed.
+# use $(realpath) rather than $(readlink -e) for portability (vs BSD/Darwin) and speed
 cleanimports:
-	if [ \( -L imports -a "$$(readlink -e imports)" == "$$(readlink -e $(OcpiProjectRegistryDir))" \) \
+	if [ \( -L imports -a "$(realpath imports)" == "$(realpath $(OcpiProjectRegistryDir))" \) \
 	     -o \( -L imports -a ! -e imports \) ]; then \
 	  rm imports; \
 	fi

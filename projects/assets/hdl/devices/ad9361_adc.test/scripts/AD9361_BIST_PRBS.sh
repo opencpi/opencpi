@@ -46,6 +46,14 @@ dogrep() {
   grep "ad9361_config_proxy.rx_sampling_freq " $LOGFILENAME | tail -n +2 | sed "s/[0-9]*://g"
   grep "ad9361_config_proxy.bist_prbs " $LOGFILENAME        | tail -n +2 | sed "s/[0-9]*://g"
   grep "ad9361_config_proxy.ad9361_init " $LOGFILENAME      |              sed "s/[0-9]*://g"
+  grep "ad9361_config_proxy.DATA_CLK_Delay" $LOGFILENAME    | tail -n +2 | sed "s/[0-9]*://g"
+  grep "ad9361_config_proxy.Rx_Data_Delay" $LOGFILENAME     | tail -n +2 | sed "s/[0-9]*://g"
+  grep "ad9361_config_proxy.FB_CLK_Delay" $LOGFILENAME      | tail -n +2 | sed "s/[0-9]*://g"
+  grep "ad9361_config_proxy.Tx_Data_Delay" $LOGFILENAME     | tail -n +2 | sed "s/[0-9]*://g"
+  grep "ad9361_data_sub.DATA_CLK_Delay" $LOGFILENAME        |              sed "s/[0-9]*://g"
+  grep "ad9361_data_sub.RX_Data_Delay" $LOGFILENAME         |              sed "s/[0-9]*://g"
+  grep "ad9361_data_sub.FB_CLK_Delay" $LOGFILENAME          |              sed "s/[0-9]*://g"
+  grep "ad9361_data_sub.TX_Data_Delay" $LOGFILENAME         |              sed "s/[0-9]*://g"
   grep "qadc.overrun " $LOGFILENAME                         | tail -n +2 | sed "s/[0-9]*://g"
   grep "ad9361_adc_sub.r1_samps_dropped" $LOGFILENAME       | tail -n +2 | sed "s/[0-9]*://g"
   grep "ad9361_adc_sub.r2_samps_dropped" $LOGFILENAME       | tail -n +2 | sed "s/[0-9]*://g"
@@ -89,7 +97,7 @@ do
       FILENAME="$PREFIX"_prbs.out
       LOGFILENAME="$PREFIX"_prbs.log
       P="-pad9361_config_proxy=rx_fir_en_dis=$firenable \
-         -pad9361_config_proxy=tx_sampling_freq=$samprate \
+         -pad9361_config_proxy=rx_sampling_freq=$samprate \
          -pad9361_config_proxy=bist_prbs=$BIST_INJ_RX \
          -pfile_write=filename=$FILENAME" \
         runtest
@@ -122,7 +130,7 @@ do
   FILENAME="$PREFIX"_prbs.out
   LOGFILENAME="$PREFIX"_prbs.log
   P="-pad9361_config_proxy=rx_fir_en_dis=$firenable \
-     -pad9361_config_proxy=tx_sampling_freq=$samprate \
+     -pad9361_config_proxy=rx_sampling_freq=$samprate \
      -pad9361_config_proxy=bist_prbs=$BIST_INJ_RX \
      -pfile_write=filename=$FILENAME" \
     runtest

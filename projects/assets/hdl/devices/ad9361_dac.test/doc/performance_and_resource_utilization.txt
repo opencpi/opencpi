@@ -315,15 +315,6 @@ ad9361_dac.hdl/target-zynq/ad9361_dac_rv-vivado.out-WARNING: [Timing 38-242] The
 ad9361_dac.hdl/target-zynq/ad9361_dac_rv-vivado.out-Resolution: Set the HD.CLK_SRC property of the out-of-context port to the location of the clock buffer instance in the top-level design
 ad9361_dac.hdl/target-zynq/ad9361_dac_rv-vivado.out-INFO: [Timing 38-78] ReportTimingParams: -max_paths 1 -nworst 1 -delay_type max -sort_by slack.
 ad9361_dac.hdl/target-zynq/ad9361_dac_rv-vivado.out-Copyright 1986-2017 Xilinx, Inc. All Rights Reserved.
-ad9361_dac.hdl/target-zynq/ad9361_dac_rv-vivado.out------------------------------------------------------------------------------------------------
-ad9361_dac.hdl/target-zynq/ad9361_dac_rv-vivado.out-| Tool Version : Vivado v.2017.1 (lin64) Build 1846317 Fri Apr 14 18:54:47 MDT 2017
-ad9361_dac.hdl/target-zynq/ad9361_dac_rv-vivado.out-| Date         : Thu Dec 14 14:56:40 2017
-ad9361_dac.hdl/target-zynq/ad9361_dac_rv-vivado.out-| Host         : embdev007.wb.vsi-corp.com running 64-bit CentOS Linux release 7.2.1511 (Core)
-ad9361_dac.hdl/target-zynq/ad9361_dac_rv-vivado.out-| Command      : report_timing
-ad9361_dac.hdl/target-zynq/ad9361_dac_rv-vivado.out-| Design       : ad9361_dac_rv
-ad9361_dac.hdl/target-zynq/ad9361_dac_rv-vivado.out-| Device       : 7z020-clg484
-ad9361_dac.hdl/target-zynq/ad9361_dac_rv-vivado.out-| Speed File   : -1  PRODUCTION 1.11 2014-09-11
-ad9361_dac.hdl/target-zynq/ad9361_dac_rv-vivado.out------------------------------------------------------------------------------------------------
 ad9361_dac.hdl/target-zynq/ad9361_dac_rv-vivado.out-
 ad9361_dac.hdl/target-zynq/ad9361_dac_rv-vivado.out-Timing Report
 ad9361_dac.hdl/target-zynq/ad9361_dac_rv-vivado.out-

@@ -1,7 +1,0 @@
-<build>
-  <configuration id='0'>
-    <parameter name='ocpi_debug' value='false'/>
-    <parameter name='ocpi_endian' value='little'/>
-    <parameter name='fifo_depth' value='64'/>
-  </configuration>
-</build>

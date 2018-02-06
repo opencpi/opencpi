@@ -40,7 +40,7 @@
   <!-- RCC Frontend Proxies -->
   <!-- TX Chain -->
   <Instance Component="ocpi.core.tx">
-    <Property Name="sample_rate_min_MHz" Value="0.100"/>
+    <Property Name="TYPE_p" Value="matchstiq_z1"/>
     <Property Name="sample_rate_MHz" Value="0.5"/>
     <Property Name="frequency_MHz" Value="1000"/>
     <Property Name="rf_gain_dB" Value="4"/>

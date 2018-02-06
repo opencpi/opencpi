@@ -19,7 +19,7 @@
 
 
 case $0 in /*) ME=$0 ;; *) ME=$BASH_SOURCE ; [ "$ME" = "" ] && ME=`which $0`;; esac
-DIR=$(dirname $(readlink -f $ME))
+DIR=$(dirname $ME)
 OS=$OCPI_TOOL_OS
 if test "$OS" = ""; then
   OS=`uname -s|tr A-Z a-z`

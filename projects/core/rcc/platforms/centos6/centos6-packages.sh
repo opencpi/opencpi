@@ -20,7 +20,7 @@
 # Install prerequisite packages for Centos6
 echo Installing standard extra packages using "yum"
 sudo yum -y groupinstall "development tools"
-echo Installing packages required: mlocate tcl pax python-devel fakeroot redhat-lsb-core which
-sudo yum -y install mlocate tcl pax python-devel fakeroot redhat-lsb-core which
+echo Installing packages required:
+sudo yum -y install mlocate tcl pax python-devel fakeroot redhat-lsb-core
 echo Installing 32 bit libraries '(really only required for modelsim)'
 sudo yum -y install glibc.i686 libXft.i686 libXext.i686 ncurses-libs.i686

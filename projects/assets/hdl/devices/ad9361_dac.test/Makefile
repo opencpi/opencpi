@@ -33,19 +33,20 @@ include setup.mk
 # build the testbench executable
 run: tests
 
-# build the HDL unit test assemblies
-all:
+build:
 	make -C assemblies
 
-clean::
+# build the HDL unit test assemblies
+all: build
 
-	make -C assemblies clean
+clean::
+	rm -rf 7 xx yy .run*; make -C assemblies clean
 
 show:
 	echo "$$showhelp"
 
 tests:
-	./ad9361_dac_test_app
+	OCPI_LIBRARY_PATH=$(OCPI_LIBRARY_PATH):$(PWD):$(PWD)/../ad9361_config_proxy.rcc/:$(PWD)/../../../../core/components/lib/ ./ad9361_dac_test_app
 
 define showhelp
 ----------------------------------------------------------------------------

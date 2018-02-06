@@ -1,5 +1,0 @@
-<ComponentSpec nocontrol='true'>
-  <!-- Template for simple one-port-in adn one-port-out workers with no control interface -->
-  <DataInterfaceSpec Name="in" Producer="false"/>
-  <DataInterfaceSpec Name="out" Producer="true"/>
-</ComponentSpec>

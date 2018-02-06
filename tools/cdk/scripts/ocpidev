@@ -150,7 +150,7 @@ import ocpiutil; print ocpiutil.register_project(\"$project\");"`
 import sys; sys.path.append(\"$OCPI_CDK_DIR/scripts/\");
 import ocpiutil; print ocpiutil.is_path_in_exported_project(\"$project\");"`
   if [ "$is_exported" == "False" ]; then
-    make -C $project exports 1>&2
+    make -C $project exports 1>&2 || echo Could not export project \"$project\". You may not have write permissions on this project. Proceeding...
   else
      [ -z "$verbose" ] || echo Skipped making exports because this is an exported standalone project. 1>&2
   fi

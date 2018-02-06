@@ -320,10 +320,12 @@ Note also that this worker's usage of no-OS not only makes SPI register accesses
 			\verb+bist_loopback+, \\
 			\verb+bist_prbs+,
 			\verb+bist_tone+, \\
-			\verb+rx_sampling_freq_multiplier+, \\
 			\verb+THB3_Enable_and_Interp+,
 			\verb+THB2_Enable+,
-			\verb+THB1_Enable+,
+			\verb+THB1_Enable+, \\
+			\verb+RHB3_Enable_and_Decimation+,
+			\verb+RHB2_Enable+,
+			\verb+RHB1_Enable+,
 			\verb+DAC_Clk_div2+,
 			\verb+BBPLL_Divider+, \\
 			\verb+Fractional_BB_Frequency_Word+,
@@ -332,6 +334,7 @@ Note also that this worker's usage of no-OS not only makes SPI register accesses
 			\verb+Tx_BBF_Tune_Divider+, \\
 			\verb+Tx_Secondary_Filter_Resistor+,
 			\verb+Tx_Secondary_Filter_Capacitor+, \\
+			\verb+Rx_BBF_Tune_Divide+,
 			\verb+bb_pll_is_locked+,
 			\verb+rx_pll_is_locked+, \\
 			\verb+rx_fastlock_delete+,
@@ -345,6 +348,8 @@ Note also that this worker's usage of no-OS not only makes SPI register accesses
 			\verb+tx_vco_n_integer+,
 			\verb+tx_vco_n_fractional+, \\
 			\verb+Tx_Ref_Divider+,
+			\verb+Tx_Channel_Swap+,
+			\verb+Rx_Channel_Swap+,
 			\verb+LVDS+,
 			\verb+single_port+,
 			\verb+swap_ports+,
@@ -516,7 +521,7 @@ Note also that this worker's usage of no-OS not only makes SPI register accesses
 			\hline
 			\verb+rx_rf_bandwidth+ & ULong & - & Volatile, Writable & Standard & 18e6 & Get/set the RX RF bandwidth. The bandwidth is in Hz.\\
 			\hline
-			\verb+rx_sampling_freq+ & ULong & - & Volatile & Standard & - & Get the RX sampling frequency. The frequency is in Hz. This value should be equivalent to the tx\_sampling\_freq property value multiplied by the value of the rx\_sampling\_rate\_multiplier property. \\
+			\verb+rx_sampling_freq+ & ULong & - & Volatile, Writable & Standard & 30.72e6 & Get the RX sampling frequency. The frequency is in Hz. \\
 			\hline
 			\verb+rx_lo_freq+ & ULongLong & - & Volatile, Writable & Standard & 2.4e9 & Get/set the RX LO frequency. The frequency is in Hz. \\
 			\hline
@@ -602,8 +607,6 @@ Note also that this worker's usage of no-OS not only makes SPI register accesses
 			\hline
 			\verb+bist_tone+ & Struct (see \hyperlink{tab10}{Table 10}) & - & Volatile, Writable & Standard & - & BIST tone. Valid values are either BIST\_DISABLE, BIST\_INJ\_TX, or BIST\_INJ\_RX. \\
 			\hline
-			\verb+rx_sampling_freq_multiplier+ & UChar & - & Volatile, Writable & Standard & 1 & Value values are 1 and 2. 2 is only supported under certain conditions. \\
-			\hline
 			\verb+THB3_Enable_and_Interp+ & Enum & - & Volatile & Interpolate\_ & - &  Note that there are several \\
 			                              &      &   &          & by\_1\_no\_filt        &   & functional that calculate \\
 			                              &      &   &          & ering, Inter           &   & digital filter settings. The \\
@@ -628,7 +631,7 @@ Note also that this worker's usage of no-OS not only makes SPI register accesses
                                  function calculates all Rx and Tx rates.
                                  Setting to true enables the interpolate-by-2
                                  THB2 half-band filter. Setting to false
-                                 bypasses the filter.  The purpose of this
+                                 bypasses the filter. The purpose of this
                                  property is to expose this value as it exists
                                  on the AD9361 IC in order to precisely
                                  calculate the current on-chip (in-situ) nominal
@@ -643,13 +646,61 @@ Note also that this worker's usage of no-OS not only makes SPI register accesses
                                  function calculates all Rx and Tx rates.
                                  Setting to true enables the interpolate-by-2
                                  THB1 half-band filter. Setting to false
-                                 bypasses the filter.  The purpose of this
+                                 bypasses the filter. The purpose of this
                                  property is to expose this value as it exists
                                  on the AD9361 IC in order to precisely
                                  calculate the current on-chip (in-situ) nominal
                                  DAC clock rate (No-OS does not provide a method
                                  for high-precision calculation of the nominal
                                  DAC rate). \\
+			\hline
+			\verb+RHB3_Enable_and_Decimation+ & Enum & - & Volatile & Decimate\_b & - &  Note that there are several \\
+			                              &      &   &          & y\_1\_no\_filter      &   & functional that calculate \\
+			                              &      &   &          & ing, Decim           &   & digital filter settings. The \\
+			                              &      &   &          & ate\_by\_2\_hal    &   &  ad9361\_calculate\_rf\_clock\_chain \\
+			                              &      &   &          & f\_band\_filter   &   &  function calculates all Rx \\
+			                              &      &   &          & , Decimate\_      &   &  and Tx rates. This sets \\
+			                              &      &   &          & by\_3\_and\_fil  &   &  decimation of the first \\
+			                              &      &   &          & ter, Invalid &   &  filter stage after
+                                                the ADC. The purpose of this
+                                                property is to expose this value
+                                                as it exists on the AD9361 IC
+                                                in order to precisely calculate
+                                                the current on-chip (in-situ)
+                                                nominal ADC clock rate (No-OS
+                                                does not provide a method for
+                                                high-precision calculation of
+                                                the nominal ADC rate). \\
+			\hline
+			\verb+RHB2_Enable+ & Bool & - & Volatile & Standard & - & 
+                               Note that there are several
+                                 functions that calculate digital filter
+                                 settings. The ad9361\_calculate\_rf\_clock\_chain
+                                 function calculates all Rx and Tx rates.
+                                 Setting to true enables the decimate-by-2
+                                 RHB2 half-band filter. Setting to false
+                                 bypasses the filter. The purpose of this
+                                 property is to expose this value as it exists
+                                 on the AD9361 IC in order to precisely
+                                 calculate the current on-chip (in-situ) nominal
+                                 ADC clock rate (No-OS does not provide a method
+                                 for high-precision calculation of the nominal
+                                 ADC rate). \\
+			\hline
+			\verb+RHB1_Enable+ & Bool & - & Volatile & Standard & - & 
+                               Note that there are several
+                                 functions that calculate digital filter
+                                 settings. The ad9361\_calculate\_rf\_clock\_chain
+                                 function calculates all Rx and Tx rates.
+                                 Setting to true enables the decimate-by-2
+                                 RHB1 half-band filter. Setting to false
+                                 bypasses the filter. The purpose of this
+                                 property is to expose this value as it exists
+                                 on the AD9361 IC in order to precisely
+                                 calculate the current on-chip (in-situ) nominal
+                                 ADC clock rate (No-OS does not provide a method
+                                 for high-precision calculation of the nominal
+                                 ADC rate). \\
 			\hline
 			\verb+DAC_Clk_div2+ & Bool & - & Volatile & Standard & - & 
                                 The ad9361\_calculate\_rf\_clock\_chain
@@ -678,6 +729,16 @@ Note also that this worker's usage of no-OS not only makes SPI register accesses
 			\hline
 			\verb+Tx_Secondary_Filter_Capacitor+ & UShort & - & Volatile & Standard & - & 
 Secondary Tx filter capacitor, which, along with the secondary Tx Resistor, sets the 3 dB corner frequency of the secondary single-pole Tx RC filter via the equation 1/(2*pi*R*C). Resolution: 1pF/LSB. Total capacitance (C in previous equation) is 12pF + ( \verb+Tx_Secondary_Filter_Capacitor+ *1pF) \\
+			\hline
+			\verb+Rx_BBF_Tune_Divide+ & Enum & - & Volatile & invalid, 1 to 511 & - &
+                                      Rx BBF Tune Divide. The
+                                        tuning algorithm generates a tune clock
+                                        derived from the BBPLL frequency. This
+                                        divider outputs the tune clock, set per
+                                        for following equation. Rx BBF Tune
+                                        Divider[8:0] = ceil(BBPLL Frequency x
+                                        ln(2) / (BBBW x 1.4 x 2 x pi)). The
+                                        range of the divider is 1 to 511. \\
 			\hline
 			\verb+bb_pll_is_locked+ & Bool & - & Volatile & Standard & - & - \\
 			\hline
@@ -729,6 +790,10 @@ Secondary Tx filter capacitor, which, along with the secondary Tx Resistor, sets
                                     method for high-precision calculation of the
                                     nominal LO frequencies). \\
 			\hline
+			\verb+Tx_Channel_Swap+ & Bool & - & Volatile & Standard & - & Setting this to true swaps the positions of Tx1 and Tx2 samples. \\
+			\hline
+			\verb+Rx_Channel_Swap+ & Bool & - & Volatile & Standard & - & Setting this to true swaps the positions of Rx1 and Rx2 samples. \\
+			\hline
 			\verb+LVDS+ & Bool & - & Volatile & Standard & - & Value is true if bitstream monitored by instance of this worker was built to use LVDS mode for Data/clock/frame signals, and false if CMOS mode was used. \\
 			\hline
 			\verb+single_port+ & Bool & - & Volatile & Standard & - & Value is true if bitstream monitored by instance of this worker was built to use single port, and false if dual ports. \\
@@ -748,7 +813,7 @@ Secondary Tx filter capacitor, which, along with the secondary Tx Resistor, sets
 
 	Table \hypertarget{tab1}{1}: Structure declaration for \comp{}.rcc ad9361\_rf\_phy property.\\ \\
 			\begin{scriptsize}
-\begin{tabular}{|p{4.7cm}|p{16.92cm}|} \hline \cellcolor{blue} Name & \cellcolor{blue}Type \\ \hline clk\_ref\_in & \begin{tabular}{|p{1.3cm}|p{0.7cm}|p{13cm}|} \cellcolor{blue} Name & \cellcolor{blue}Type & \cellcolor{blue} Description \\ \hline clk\_ref\_in & ULong & - \\ \hline \end{tabular} \\ \hline pdata & \begin{tabular}{|p{1.3cm}|p{0.7cm}|p{13cm}|} \hline \cellcolor{blue} Name & \cellcolor{blue}Type & \cellcolor{blue} Description \\ \hline rx2tx2 & Bool & When this value is false, the read values from the second index of following properties should be ignored: rx\_gain\_control\_mode, rx\_fir\_config\_read, tx\_fir\_config\_read, and tx\_rssi. When this value is false, the written values to the second index of the following properties will not be applied: rx\_rf\_gain, rx\_gain\_control\_mode, and tx\_attenuation. \\ \hline fdd & Bool & - \\ \hline use\_extclk & Bool & - \\ \hline dcxo\_coarse & ULong & - \\ \hline dcx0\_fine & ULong & - \\ \hline \end{tabular} \\ \hline \end{tabular}
+\begin{tabular}{|p{4.7cm}|p{16.92cm}|} \hline \cellcolor{blue} Name & \cellcolor{blue}Type \\ \hline clk\_ref\_in & \begin{tabular}{|p{3.3cm}|p{0.7cm}|p{11cm}|} \cellcolor{blue} Name & \cellcolor{blue}Type & \cellcolor{blue} Description \\ \hline clk\_ref\_in & ULong & - \\ \hline \end{tabular} \\ \hline pdata & \begin{tabular}{|p{3.3cm}|p{0.7cm}|p{11cm}|} \hline \cellcolor{blue} Name & \cellcolor{blue}Type & \cellcolor{blue} Description \\ \hline rx2tx2 & Bool & When this value is false, the read values from the second index of following properties should be ignored: rx\_gain\_control\_mode, rx\_fir\_config\_read, tx\_fir\_config\_read, and tx\_rssi. When this value is false, the written values to the second index of the following properties will not be applied: rx\_rf\_gain, rx\_gain\_control\_mode, and tx\_attenuation. \\ \hline fdd & Bool & - \\ \hline use\_extclk & Bool & - \\ \hline dcxo\_coarse & ULong & - \\ \hline dcxo\_fine & ULong & - \\ \hline rx1tx1\_mode\_use\_rx\_num & ULong & - \\ \hline rx1tx1\_mode\_use\_tx\_num & ULong & - \\ \hline \end{tabular} \\ \hline \end{tabular}
 	\end{scriptsize}\\ \\ \\
 	Table \hypertarget{tab2}{2}: Structure declaration for \comp{}.rcc ad9361\_init property.\\ \\
 		\begin{scriptsize}
@@ -892,13 +957,17 @@ Secondary Tx filter capacitor, which, along with the secondary Tx Resistor, sets
 			\hline
 			SpecProperty & \verb+bist_tone+ & - & - & - & ReadSync, WriteSync & - & - & - \\
 			\hline
-			SpecProperty & \verb+rx_sampling_freq_multiplier+ & - & - & - & ReadSync, WriteSync & - & - & - \\
-			\hline
 			SpecProperty & \verb+THB3_Enable_and_Interp+ & - & - & - & ReadSync & - & - & - \\
 			\hline
 			SpecProperty & \verb+THB2_Enable+ & - & - & - & ReadSync & - & - & - \\
 			\hline
 			SpecProperty & \verb+THB1_Enable+ & - & - & - & ReadSync & - & - & - \\
+			\hline
+			SpecProperty & \verb+RHB3_Enable_and_Decimation+ & - & - & - & ReadSync & - & - & - \\
+			\hline
+			SpecProperty & \verb+RHB2_Enable+ & - & - & - & ReadSync & - & - & - \\
+			\hline
+			SpecProperty & \verb+RHB1_Enable+ & - & - & - & ReadSync & - & - & - \\
 			\hline
 			SpecProperty & \verb+DAC_Clk_div2+ & - & - & - & ReadSync & - & - & - \\
 			\hline
@@ -915,6 +984,8 @@ Secondary Tx filter capacitor, which, along with the secondary Tx Resistor, sets
 			SpecProperty & \verb+Tx_Secondary_Filter_Resistor+ & - & - & - & ReadSync & - & - & - \\
 			\hline
 			SpecProperty & \verb+Tx_Secondary_Filter_Capacitor+ & - & - & - & ReadSync & - & - & - \\
+			\hline
+			SpecProperty & \verb+Rx_BBF_Tune_Divider+ & - & - & - & ReadSync & - & - & - \\
 			\hline
 			SpecProperty & \verb+bb_pll_is_locked+ & - & - & - & ReadSync  & - & - & - \\
 			\hline
