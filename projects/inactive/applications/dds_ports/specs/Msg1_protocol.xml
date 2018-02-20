@@ -1,0 +1,9 @@
+<!-- THIS FILE WAS GENERATED ON Wed Dec 21 11:02:49 2011 EST -->
+<!-- BASED ON THE FILE: msg1.idl -->
+<!-- YOU PROBABLY SHOULD NOT EDIT IT -->
+<protocol qualifiedName="Msg1">
+  <operation name="Msg1" qualifiedName="Msg1">
+    <argument name="v_sseq" type="String" stringLength="0" sequenceLength="0"/>
+    <argument name="seq_sseq" type="String" stringLength="0" sequenceLength="0"/>
+  </operation>
+</protocol>

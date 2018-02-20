@@ -1,0 +1,80 @@
+#!/bin/sh
+# This file is protected by Copyright. Please refer to the COPYRIGHT file
+# distributed with this source distribution.
+#
+# This file is part of OpenCPI <http://www.opencpi.org>
+#
+# OpenCPI is free software: you can redistribute it and/or modify it under the
+# terms of the GNU Lesser General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your option) any
+# later version.
+#
+# OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+# A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Lesser General Public License along
+# with this program. If not, see <http://www.gnu.org/licenses/>.
+
+function bad {
+  [ -n "$verbose" ] && echo $* 1>&2 && echo Probe for modelsim failed. 1>&2
+  exit 1
+}
+
+[ "$1" = -v ] && {
+  verbose=1
+  shift
+}
+[ "$1" = probe ] && {
+  [ -z "$OCPI_MODELSIM_DIR" ] &&
+    bad The OCPI_MODELSIM_DIR environment variable is not set.
+  [ -z "$OCPI_MODELSIM_LICENSE_FILE" ] &&
+    bad The OCPI_MODELSIM_LICENSE_FILE environment variable is not set.
+  [ -d "$OCPI_MODELSIM_DIR" ] ||
+    bad The OCPI_MODELSIM_DIR directory $OCPI_MODELSIM_DIR does not exist as a directory.
+  [ -x "$OCPI_MODELSIM_DIR/bin/vsim" ] ||
+    bad No modelsim executable found at \"$OCPI_MODELSIM_DIR/bin/vsim\".
+  divert="2>&1"
+  [ -n "$verbose" ] && {
+    echo Attempting to run modelsim/vsim with license file \"$OCPI_MODELSIM_LICENSE_FILE\". 1>&2
+    divert=
+  }
+  LM_LICENSE_FILE=$OCPI_MODELSIM_LICENSE_FILE \
+    eval $OCPI_MODELSIM_DIR/bin/vsim -l /dev/null -c < /dev/null > /dev/null $divert
+  if [ $? = 0 ] ; then
+    [ -n "$verbose" ] && echo Modelsim is available and licensed. 1>&2
+    exit 0
+  fi
+  [ -n "$verbose" ] && echo Modelsim/vsim command failed. 1>&2
+  exit 1  
+}
+if [[ $OCPI_MODELSIM_DIR == "" ]]; then
+   echo "The OCPI_MODELSIM_DIR environment variable is not set, and is required for modelsim executables." 1>&2
+   exit 1
+fi
+if [[ $OCPI_MODELSIM_LICENSE_FILE == "" ]]; then
+   echo "The OCPI_MODELSIM_LICENSE_FILE environment variable is not set, and is required for modelsim executables." 1>&2
+   exit 1
+fi
+#set -evx
+
+echo Filename: $1 1>&2 
+read assyname contname<<EOF
+`echo $1 | sed 's/^.*://' | sed 's/^\(.*\)_modelsim.*$/\1 &/'`
+EOF
+echo Assembly: $assyname  Container: $contname 1>&2
+shift
+export LM_LICENSE_FILE=$OCPI_MODELSIM_LICENSE_FILE
+for i in $*; do echo for $i; plusargs="$plusargs +$i"; done
+#echo plusargs are: $plusargs 1>&2
+echo $OCPI_MODELSIM_DIR/bin/vsim -c -lib $contname -f vsim.args $plusargs $contname.$contname > FFF 1>&2
+exec $OCPI_MODELSIM_DIR/bin/vsim -c -lib $contname -f vsim.args $plusargs $contname.$contname <<EOF
+#archive load vsim.dbar
+dataset list
+dataset info file
+log -r /*
+run 1000ms
+dataset close -all
+quit
+EOF

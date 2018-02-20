@@ -1,0 +1,30 @@
+<!-- Lime ADC worker -->
+<HdlDevice language="vhdl" spec='qadc-spec'>
+  <!-- Other included XML -->
+  <xi:include href='lime-iq-properties.xml'/>
+
+  <!-- Parameters (build properties)-->
+  <Property name='USE_CLK_OUT_p' type='bool' parameter='1' default='1'/>   <!-- Should we use the source synchronous lime clock output? -->
+
+  <!-- Properties -->
+  <Property name='source' type='enum' enums='adc,count,loopback' default='adc' initial='1'/>
+  <Specproperty name='messageSize' default='8192'/>
+  <Specproperty name='overrun' default='0'/>
+
+  <!-- Ports -->
+  <StreamInterface Name="OUT" producer='true' DataWidth="32"/>
+
+  <!-- Clocks -->
+  <Clock name='sample_clk'/>
+
+  <!-- Timeout -->
+  <ControlInterface Timeout="16"/> <!-- Set to default. No raw properties -->
+
+  <!-- Signals --> 
+  <!--Signal names from the Lime data sheet -->
+  <Signal Output="RX_CLK"/>        <!-- FPGA->Lime, sometimes not connected -->
+  <Signal Input="RX_CLK_OUT"/>     <!-- Lime->FPGA, syncd w/ data, maybe not connected -->
+  <Signal Input="RX_IQ_SEL"/>      <!-- Low is I, high is Q (unless configured as opposite) -->
+  <Signal Input="RXD" width="12"/> <!-- ADC data -->
+  <Signal Input="RX_CLK_IN"/>      <!-- A copy of an RX_CLK sent directly to line RX_CLK -->
+</HdlDevice>

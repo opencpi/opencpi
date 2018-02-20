@@ -1,0 +1,30 @@
+The html directory contain some documents ready for viewing.
+The odt//tex//docx directories contains source documents in ODT//LaTeX//docx format.
+Documents created by the ANGRYVIPER team are under /av/.
+
+The "old" directory contains documents that are no longer current, but are available for historical reasons.
+
+The outline of the main documents and the general reading order is listed below:
+
+1. OpenCPI Overview
+2. (AV's) Installation Guide
+    a. (AV's) Embedded Platform Installation Guide
+    b. (AV's) PCIe Device Installation Guide
+3. (AV's) Getting Started Guide
+4. OpenCPI Component Development Guide
+5. OpenCPI RCC Development Guide
+    a. (AV's) RCC Worker Example
+6. OpenCPI HDL Development Guide
+    a. (AV's) HDL Worker Example
+7. (AV's) User Guide
+8. OpenCPI Application Development Guide
+    a. (AV's) FSK App
+    b. (AV's) Receive App
+9. OpenCPI Platform Development Guide
+    a. (AV's) Proxy Worker Example
+    b. (AV's) Matchstiq Platform
+
+Other important reference materials:
+
+1. (AV's) Acronyms and Definitions
+2. (AV's) Component Documents

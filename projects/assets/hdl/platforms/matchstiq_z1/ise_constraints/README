@@ -1,0 +1,9 @@
+To build the matchstiq_z1 platform with ISE instead of Vivado, do the following:
+
+Use the ISE alias part-name in matchstiq_z1.mk
+HdlPart_matchstiq_z1=xc7z020_ise_alias-1-clg484
+
+Replace the ExportFiles line with the following in matchstiq_z1/Makefile to use legacy ISE constraints:
+ExportFiles=ise_constraints/matchstiq_z1.ucf ise_constraints/matchstiq_z1.ut matchstiq_z1.mk 
+
+Now, you can build for HdlTarget=zynq_ise, or HdlPlatform=matchstiq_z1, and ISE will be used instead of Vivado.

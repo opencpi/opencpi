@@ -1,0 +1,48 @@
+#!/bin/sh
+# This file is protected by Copyright. Please refer to the COPYRIGHT file
+# distributed with this source distribution.
+#
+# This file is part of OpenCPI <http://www.opencpi.org>
+#
+# OpenCPI is free software: you can redistribute it and/or modify it under the
+# terms of the GNU Lesser General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your option) any
+# later version.
+#
+# OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+# A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Lesser General Public License along
+# with this program. If not, see <http://www.gnu.org/licenses/>.
+
+
+case $0 in /*) ME=$0 ;; *) ME=$BASH_SOURCE ; [ "$ME" = "" ] && ME=`which $0`;; esac
+DIR=$(dirname $(readlink -f $ME))
+OS=$OCPI_TOOL_OS
+if test "$OS" = ""; then
+  OS=`uname -s|tr A-Z a-z`
+fi
+usage () {
+  echo Usage is: `basename $0` \[ load \| unload \| reload \| status \]
+  exit 1
+}
+if [ $# = 0 -o $# != 1 ] ; then
+  usage
+fi
+SCR=ocpi_${OS}_driver
+SDIR=$DIR
+[ ! -r $SDIR/$SCR ] && SDIR=$DIR/../scripts
+[ ! -r $SDIR/$SCR ] && SDIR=$DIR/../../scripts
+[ ! -r $SDIR/$SCR ] && {
+  echo There is no driver loading/unloading support for this system \(${OS}\).
+  exit 1
+}
+OCPI_BOOTSTRAP=$SDIR/ocpibootstrap.sh; . $OCPI_BOOTSTRAP
+
+if [ $1 = load -o $1 = unload -o $1 = reload -o $1 = status ] ; then
+  exec sh $SDIR/ocpi_${OS}_driver $1
+fi
+
+usage

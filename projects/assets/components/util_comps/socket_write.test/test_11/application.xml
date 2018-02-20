@@ -1,0 +1,67 @@
+<Application Package="local" Done="UUT">
+  <Instance Component="ocpi.core.file_read">
+    <Property Name="fileName" Value="idata/infile.bin"/>
+    <Property Name="messagesInFile" Value="true"/>
+  </Instance>
+
+  <Instance Name="UUT" Component="ocpi.assets.util_comps.socket_write">
+    <Property Name="outSocket" Value='ports {
+      12920,12921,12922,12923,12924,12925,12926,12927,12928,12929,12930,12931,12932,12933,12934,12935,
+      12936,12937,12938,12939,12940,12941,12942,12943,12944,12945,12946,12947,12948,12949,12950,12951,
+      12952,12953,12954,12955,12956,12957,12958,12959,12960,12961,12962,12963,12964,12965,12966,12967,
+      12968,12969,12970,12971,12972,12973,12974,12975,12976,12977,12978,12979,12980,12981,12982,12983,
+      12984,12985,12986,12987,12988,12989,12990,12991,12992,12993,12994,12995,12996,12997,12998,12999,
+      13000,13001,13002,13003,13004,13005,13006,13007,13008,13009,13010,13011,13012,13013,13014,13015,
+      13016,13017,13018,13019,13020,13021,13022,13023,13024,13025,13026,13027,13028,13029,13030,13031,
+      13032,13033,13034,13035,13036,13037,13038,13039,13040,13041,13042,13043,13044,13045,13046,13047,
+      13048,13049,13050,13051,13052,13053,13054,13055,13056,13057,13058,13059,13060,13061,13062,13063,
+      13064,13065,13066,13067,13068,13069,13070,13071,13072,13073,13074,13075,13076,13077,13078,13079,
+      13080,13081,13082,13083,13084,13085,13086,13087,13088,13089,13090,13091,13092,13093,13094,13095,
+      13096,13097,13098,13099,13100,13101,13102,13103,13104,13105,13106,13107,13108,13109,13110,13111,
+      13112,13113,13114,13115,13116,13117,13118,13119,13120,13121,13122,13123,13124,13125,13126,13127,
+      13128,13129,13130,13131,13132,13133,13134,13135,13136,13137,13138,13139,13140,13141,13142,13143,
+      13144,13145,13146,13147,13148,13149,13150,13151,13152,13153,13154,13155,13156,13157,13158,13159,
+      13160,13161,13162,13163,13164,13165,13166,13167,13168,13169,13170,13171,13172,13173,13174,13175 },
+      messagesInStream {
+      true,true,true,true,true,true,true,true,
+      false,false,false,false,false,false,false,false,
+      true,true,true,true,true,true,true,true,
+      false,false,false,false,false,false,false,false,
+      true,true,true,true,true,true,true,true,
+      false,false,false,false,false,false,false,false,
+      true,true,true,true,true,true,true,true,
+      false,false,false,false,false,false,false,false,
+      true,true,true,true,true,true,true,true,
+      false,false,false,false,false,false,false,false,
+      true,true,true,true,true,true,true,true,
+      false,false,false,false,false,false,false,false,
+      true,true,true,true,true,true,true,true,
+      false,false,false,false,false,false,false,false,
+      true,true,true,true,true,true,true,true,
+      false,false,false,false,false,false,false,false,
+      true,true,true,true,true,true,true,true,
+      false,false,false,false,false,false,false,false,
+      true,true,true,true,true,true,true,true,
+      false,false,false,false,false,false,false,false,
+      true,true,true,true,true,true,true,true,
+      false,false,false,false,false,false,false,false,
+      true,true,true,true,true,true,true,true,
+      false,false,false,false,false,false,false,false,
+      true,true,true,true,true,true,true,true,
+      false,false,false,false,false,false,false,false,
+      true,true,true,true,true,true,true,true,
+      false,false,false,false,false,false,false,false,
+      true,true,true,true,true,true,true,true,
+      false,false,false,false,false,false,false,false,
+      true,true,true,true,true,true,true,true,
+      false,false,false,false,false,false,false,true
+      }'/>
+    <Property Name="stopOn" Value='ZLM 244'/>
+    <Property Name="current" dumpFile="UUT.current.dump"/>
+  </Instance>
+
+  <Connection>
+    <Port Instance="file_read" Name="out"/>
+    <Port Instance="UUT" Name="in"/>
+  </Connection>
+</Application>

@@ -1,0 +1,12 @@
+<ComponentSpec>
+  <Properties>
+    <Property Name="ddcStatus" Readable="true"/>
+    <Property Name="ddcCtrl" Readable="true" Writable="true"/>
+  </Properties>
+  <DataInterfaceSpec Name="in" Producer="false">
+    <xi:include href="stream32_protocol.xml"/>
+  </DataInterfaceSpec>
+  <DataInterfaceSpec Name="out" Producer="true">
+    <xi:include href="stream32_protocol.xml"/>
+  </DataInterfaceSpec>
+</ComponentSpec>

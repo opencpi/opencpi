@@ -1,0 +1,135 @@
+% Any changes to this document should be made in both opencpi.git AND ocpiassets
+
+\iffalse
+This file is protected by Copyright. Please refer to the COPYRIGHT file
+distributed with this source distribution.
+
+This file is part of OpenCPI <http://www.opencpi.org>
+
+OpenCPI is free software: you can redistribute it and/or modify it under the
+terms of the GNU Lesser General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License along
+with this program. If not, see <http://www.gnu.org/licenses/>.
+\fi
+
+% This is for inserting into various "Getting Started" Guides
+% First, turn off indenting to avoid all the flushleft
+\newlength{\savedparindentnfs}%
+\setlength{\savedparindentnfs}{\parindent}%
+\setlength{\parindent}{0pt} % Don't indent all paragraphs
+\providecommand{\forceindent}{\leavevmode{\parindent=1em\indent}}%
+
+\subsection{Network Mounting Mode}
+\label{sec:network_mode}
+The NFS server needs to be enabled on the host in order to run the SDR in Network Mode. The following sections are directions on how to do this for both CentOS~6 and CentOS~7 host operating systems.
+\subsubsection{CentOS~6}
+\begin{minipage}{\linewidth}
+From the host, install the necessary tools using yum:
+\begin{verbatim}
+% sudo yum install nfs-utils nfs-utils-lib
+% sudo chkconfig nfs on
+% sudo service rpcbind start
+% sudo service nfs start
+\end{verbatim}
+\end{minipage}
+~\\
+
+\begin{minipage}{\linewidth}
+From the host, add the following lines to the bottom of \texttt{/etc/exports} and change ``XX.XX.XX.XX/MM'' to a valid netmask for the DHCP range that the SDR will be set to for your network (\textit{e.g.} \texttt{192.168.0.0/16}).
+\begin{verbatim}
+% sudo vi /etc/exports
+
+/opt/opencpi XX.XX.XX.XX/MM(rw,sync,no_root_squash,no_subtree_check)
+/home/user/coreProj XX.XX.XX.XX/MM(rw,sync,no_root_squash,no_subtree_check)
+/home/user/assetsProj XX.XX.XX.XX/MM(rw,sync,no_root_squash,no_subtree_check)
+
+% sudo exportfs -av
+\end{verbatim}
+\end{minipage}
+~\\
+
+\begin{minipage}{\linewidth}
+From the host, restart the services that have modified for the changes to take effect:
+\begin{verbatim}
+% sudo service nfs start
+\end{verbatim}
+\end{minipage}
+
+\subsubsection{CentOS~7}
+\begin{minipage}{\linewidth}
+From the host, install the necessary tools using yum:
+\begin{verbatim}
+% sudo yum install nfs-utils nfs-utils-lib
+\end{verbatim}
+\end{minipage}
+~\\
+
+\begin{minipage}{\linewidth}
+From the host, allow NFS past SELINUX:
+\begin{verbatim}
+% sudo setsebool -P nfs_export_all_rw 1
+% sudo setsebool -P use_nfs_home_dirs 1
+\end{verbatim}
+\end{minipage}
+~\\
+
+\begin{minipage}{\linewidth}
+From the host, allow NFS past the firewall:
+\begin{verbatim}
+% sudo firewall-cmd --permanent --zone=public --add-service=nfs
+% sudo firewall-cmd --permanent --zone=public --add-port=2049/udp
+% sudo firewall-cmd --permanent --zone=public --add-service=mountd
+% sudo firewall-cmd --permanent --zone=public --add-service=rpc-bind
+% sudo firewall-cmd --reload
+\end{verbatim}
+\end{minipage}
+~\\
+
+\begin{minipage}{\linewidth}
+Define the export by creating a new file that has the extension ``\texttt{exports}''. If it does not have that extension, it will be ignored.  Add the following lines to that file and replace ``XX.XX.XX.XX/MM'' with a valid netmask for the DHCP range that the SDR will be set to for your network (\textit{e.g.} \texttt{192.168.0.0/16}).
+\begin{verbatim}
+% sudo vi /etc/exports.d/user_ocpi.exports
+
+/opt/opencpi XX.XX.XX.XX/MM(rw,sync,no_root_squash,crossmnt)
+/home/user/coreProj XX.XX.XX.XX/MM(rw,sync,no_root_squash,crossmnt)
+/home/user/assetsProj XX.XX.XX.XX/MM(rw,sync,no_root_squash,crossmnt)
+\end{verbatim}
+\end{minipage}
+~\\
+
+\begin{minipage}{\linewidth}
+If the file system that you are mounting is XFS, then each mount needs to have a unique \texttt{fsid} defined. Instead, use:
+\begin{verbatim}
+% sudo vi /etc/exports.d/user_ocpi.exports
+
+/opt/opencpi XX.XX.XX.XX/MM(rw,sync,no_root_squash,crossmnt,fsid=33)
+/home/user/coreProj XX.XX.XX.XX/MM(rw,sync,no_root_squash,crossmnt,fsid=34)
+/home/user/assetsProj XX.XX.XX.XX/MM(rw,sync,no_root_squash,crossmnt,fsid=35)
+\end{verbatim}
+\end{minipage}
+~\\
+
+\begin{minipage}{\linewidth}
+Restart the services that have modified for the changes to take effect:
+\begin{verbatim}
+% sudo systemctl enable rpcbind
+% sudo systemctl enable nfs-server
+% sudo systemctl enable nfs-lock
+% sudo systemctl enable nfs-idmap
+% sudo systemctl restart rpcbind
+% sudo systemctl restart nfs-server
+% sudo systemctl restart nfs-lock
+% sudo systemctl restart nfs-idmap
+\end{verbatim}
+\end{minipage}
+~\\
+
+* Note: Some of the ``enable'' commands may fail based on your package selection, but should not cause any problems.
+\setlength{\parindent}{\savedparindentnfs}%

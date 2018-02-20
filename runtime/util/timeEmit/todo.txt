@@ -1,0 +1,53 @@
+    2. Will the event information be stored in a persistent memory buffer that one can access after an application crash (or hang)?
+
+No, I am adding the ability to automatically dump the data on exit based on the environment but that does not help with a hang.  I will need to think about a way to do this without a performance hit.
+
+
+
+
+
+ 
+
+To Do:
+
+
+
+Change the examples to use the simple macros where applicable.
+
+Add option to track PID 
+
+Make sure that it is all multi-thread safe
+
+Make sure that time roll-over is handled correctly
+
+We may need to support an event width of "0" for transient events.  I really dont understand this comment and need clarification from Jim.
+
+Provide support for  structs and bounded sequences with the "value" based events.  
+This requires a significant change to the Q since it will require a variable length "payload" per event.
+
+Provide support for "inline" PValue objects.
+
+Add a formatter for "raw" output.
+
+
+
+
+
+
+
+
+
+Done implementing:
+
+Add a method that allows a caller to "stop" the collection of events, both at the class level and globally.
+Add the capability to dump at exit.
+Change the name of the current defined environment variables to be consistent with the name space.
+Provide an environment variable that defines the output format.
+Add a -DCPI_TPMI_SUPPORT=1 switch to compile it in or out
+Make the event emit in the contructor and destructor optional
+Change the namespace to CPI::TIME
+Change the name of the class to CpiTimeEmit instead of CpiTimeAnalyzer
+Eliminate the "Instance" field when the user does not specify it.
+
+
+Tested:

@@ -1,0 +1,34 @@
+All our code should be in the OCPI namespace (some still isn't).  We
+should not use "using namespace" since it means that you are using a
+lower layer, and the maintainer of the lower layer needs to be able to
+introduce names in their namespace without knowing whether it will
+collide with ALL CALLERS.  Perhaps "using std" isn't bad since we know
+what is there, but "std::" is pretty short...
+
+So, in header files use full namespace names.
+Never introduce namespace abbreviations in header files since callers need control of their own
+abbreviations.
+In source files, use abbreviations as convenient.  Typical ones are:
+
+namesoace OS = OCPI::OS;
+namespace OU = OCPI::Util;
+
+In general use prefixes already used for the same things.  Use "grep 'namespace * OCPI::'"
+
+In source files enclose the code in a namespace scope so that code
+isn't littered redundantly with the local namespace.  E.g.
+
+namespace OCPI {
+ namespace DataTransport {
+
+classes and methods in the OCPI::DataTransport namespace.....
+
+}
+}
+
+[Need more rules for how the internal namespaces under OCPI correspond
+to the directory structure.]
+
+
+
+

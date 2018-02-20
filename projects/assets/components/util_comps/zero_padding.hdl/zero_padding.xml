@@ -1,0 +1,8 @@
+<HdlWorker Language="vhdl" Spec="zero_padding-spec">
+
+  <Property Name="MAX_NUM_ZEROS_p" Type="ulong" Default="255" Readable="true" Parameter="true"/>
+
+  <StreamInterface Name="in" DataWidth="IDATA_WIDTH_p"/>
+  <StreamInterface Name="out" DataWidth="ODATA_WIDTH_p"/>
+
+</HdlWorker>

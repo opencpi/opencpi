@@ -1,0 +1,41 @@
+<ComponentSpec>
+     <Property Name="pBool" Type="Bool" Readable="true" Writable="true" default='1'/>
+     <Property Name="p1" Type="Char" Volatile="true" Writable="true"/>
+     <Property Name="pChar" Type="Char" Readable="true" Writable="true" default='\d-2'/>
+     <Property Name="pDouble" Type="Double" Readable="true" Writable="true" default='3'/>
+     <Property Name="pFloat" Type="Float" Readable="true" Writable="true" default='4'/>
+     <Property Name="p3" Type="Float" Volatile="true" Writable="true"/>
+     <Property Name="pShort" Type="Short" Readable="true" Writable="true" default='-5'/>
+     <Property Name="pLong" Type="Long" Readable="true" Writable="true" default='-6'/>
+     <Property Name="p5" Type="Long" Volatile="true" Writable="true"/>
+     <Property Name="pUChar" Type="UChar" Readable="true" Writable="true" default='7'/>
+     <Property Name="pULong" Type="ULong" Readable="true" Writable="true" default='8'/>
+     <Property Name="p7" Type="ULong" Volatile="true" Writable="true"/>
+     <Property Name="pUShort" Type="UShort" Readable="true" Writable="true" default='9'/>
+     <Property Name="pLongLong" Type="LongLong" Writable="true" default='-10'/>
+     <Property Name="p9" Type="LongLong"  Volatile="true" Writable="true"/>
+     <Property Name="pULongLong" Type="ULongLong" Readable="true" Writable="true" default='11'/>
+     <Property Name="pString" Type="String" StringLength="20" Volatile="true" Writable="true" default='12'/>
+     <Property Name="ap0" Type="Bool" Readable="true" Writable="true" arraylength="1"/>
+     <Property Name="ap1" Type="Char" Volatile="true" Writable="true" arraylength="2"/>
+     <Property Name="ap2" Type="Double" Readable="true" Writable="true" arraylength="3"/>
+     <Property Name="ap3" Type="Float" Volatile="true" Writable="true" arraylength="4"/>
+     <Property Name="ap4" Type="Short" Readable="true" Writable="true" arraylength="5"/>
+     <Property Name="ap5" Type="Long" Volatile="true" Writable="true" arraylength="6"/>
+     <Property Name="ap6" Type="UChar" Readable="true" Writable="true" arraylength="7"/>
+     <Property Name="ap7" Type="ULong" Volatile="true" Writable="true" arraylength="8"/>
+     <Property Name="ap8" Type="UShort" Readable="true" Writable="true" arraylength="9" default='5,4,3'/>
+     <Property Name="ap9" Type="LongLong"  Volatile="true" Writable="true" arraylength="10"/>
+     <Property Name="ap10" Type="ULongLong" Readable="true" Writable="true" arraylength="11"/>
+     <Property Name="ap11" Type="String" StringLength="20" Volatile="true" Writable="true" arraylength="12"/>
+     <Property Name="ap12" Type="String" StringLength="20" Readable="true" Writable="true" arraylength="12" default='a,b,c,f,e'/>
+     <Property Name="pp0" Type="Bool" parameter='true' default='0'/>
+  <Properties>
+     <Property Name="pp1" Type="Char" parameter='true' default='1'/>
+     <Property Name="pp2" Type="Double" parameter='true' default='2'/>
+     <Property Name="pp3" Type="Float" parameter='true' default='3'/>
+     <property name='led' type='enum' enums="off,green,red,orange" readable='false' writable='true'/>
+     <property name='ledv' type='enum' enums="off,green,red,orange" volatile='1' writable='true'/>
+     <property name='ledp' type='enum' enums="off,green,red,orange" parameter='1' readable='false' default='red'/>
+  </Properties>
+</ComponentSpec>

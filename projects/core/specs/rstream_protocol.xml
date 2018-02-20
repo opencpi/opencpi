@@ -1,0 +1,10 @@
+<!-- A general real data protocol   -->
+<Protocol>
+
+  <Operation Name="data" >
+    <!-- Variable size frames with 16 bit real data values.  Format:Qs0.15 -->
+      <Argument name="real" type="Short" SequenceLength="4096" />
+  </Operation>
+
+</Protocol>
+

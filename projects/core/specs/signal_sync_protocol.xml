@@ -1,0 +1,15 @@
+<!-- A general I/O sync protocol for a signal processing stream  -->
+
+ <Protocol>
+
+  <!-- zero size frames  indicating a phase discontinuity - i.e. samples not continuous-->
+  <Operation Name="Sync"/>
+
+  <!-- timestamp for next sample - unsigned 64 bits Qu32.32 --> 
+  <Operation Name="Time">
+    <Argument Name="time" Type="ULongLong"/>
+  </Operation>
+
+</Protocol>
+
+

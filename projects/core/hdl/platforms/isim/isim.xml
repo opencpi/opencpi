@@ -1,0 +1,12 @@
+<HdlPlatform Language="VHDL" spec='platform-spec'>
+  <specproperty name='platform' value='isim'/>
+  <property name='sdpDropCount' type='uchar' volatile='1'/>
+  <!-- All platform workers must provide these two ports -->
+  <metadata master='true'/> <!-- access to container metadata via the platform worker -->
+  <timebase master='true'/> <!-- providing a timebase for the time service -->
+  <sdp name='sdp' master='true'/>
+  <!-- Declare and parameterize the time_server device worker for this platform -->
+  <device worker='time_server'>
+    <property name='frequency' value='100e6'/>
+  </device>
+</HdlPlatform>

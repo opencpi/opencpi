@@ -1,0 +1,61 @@
+<Application Package="local" Done="UUT">
+  <Instance Component="ocpi.core.file_read">
+    <Property Name="fileName" Value="idata/infile.bin"/>
+    <Property Name="messagesInFile" Value="true"/>
+  </Instance>
+
+<!-- <Instance Component="ocpi.assets.base_comps.pattern">
+    <property name="control" value='1'/>
+    <property name="metadataCount" value='1'/>
+    <property name="messagesToSend" value='1000000'/>
+    <property name="metadata" value='{16,0}'/>
+    <property name="data" value='0x04030201, 0x08070605, 0x0c0b0a09, 0x100f0e0d,
+                                 0x14131211, 0x18171615, 0x1c1b1a19, 0x201f1e1d,
+                                 0x24232221, 0x28272625, 0x2c2b2a29, 0x302f2e2d,
+                                 0x34333231, 0x38373635, 0x3c3b3a39, 0x403f3e3d'/>
+ </Instance>-->
+
+  <Instance Name="UUT" Component="ocpi.assets.util_comps.file_write_demux">
+    <Property Name="outFile" Value='prefix odata/myoutput_,digits 3,suffix .out,messagesInFile {
+    true,true,true,true,true,true,true,true,
+    false,false,false,false,false,false,false,false,
+    true,true,true,true,true,true,true,true,
+    false,false,false,false,false,false,false,false,
+    true,true,true,true,true,true,true,true,
+    false,false,false,false,false,false,false,false,
+    true,true,true,true,true,true,true,true,
+    false,false,false,false,false,false,false,false,
+    true,true,true,true,true,true,true,true,
+    false,false,false,false,false,false,false,false,
+    true,true,true,true,true,true,true,true,
+    false,false,false,false,false,false,false,false,
+    true,true,true,true,true,true,true,true,
+    false,false,false,false,false,false,false,false,
+    true,true,true,true,true,true,true,true,
+    false,false,false,false,false,false,false,false,
+    true,true,true,true,true,true,true,true,
+    false,false,false,false,false,false,false,false,
+    true,true,true,true,true,true,true,true,
+    false,false,false,false,false,false,false,false,
+    true,true,true,true,true,true,true,true,
+    false,false,false,false,false,false,false,false,
+    true,true,true,true,true,true,true,true,
+    false,false,false,false,false,false,false,false,
+    true,true,true,true,true,true,true,true,
+    false,false,false,false,false,false,false,false,
+    true,true,true,true,true,true,true,true,
+    false,false,false,false,false,false,false,false,
+    true,true,true,true,true,true,true,true,
+    false,false,false,false,false,false,false,false,
+    true,true,true,true,true,true,true,true,
+    false,false,false,false,false,false,false,true
+    }'/>
+    <Property Name="stopOn" Value='ZLM 244'/>
+    <Property Name="current" dumpFile="UUT.current.dump"/>
+  </Instance>
+
+  <Connection>
+    <Port Instance="file_read" Name="out"/>
+    <Port Instance="UUT" Name="in"/>
+  </Connection>
+</Application>

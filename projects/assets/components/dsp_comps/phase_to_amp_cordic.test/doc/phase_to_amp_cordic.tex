@@ -1,0 +1,358 @@
+\documentclass{article}
+\iffalse
+This file is protected by Copyright. Please refer to the COPYRIGHT file
+distributed with this source distribution.
+
+This file is part of OpenCPI <http://www.opencpi.org>
+
+OpenCPI is free software: you can redistribute it and/or modify it under the
+terms of the GNU Lesser General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License along
+with this program. If not, see <http://www.gnu.org/licenses/>.
+\fi
+
+\author{} % Force author to be blank
+%----------------------------------------------------------------------------------------
+% Paper size, orientation and margins
+%----------------------------------------------------------------------------------------
+\usepackage{geometry}
+\geometry{
+	letterpaper,			% paper type
+	portrait,				% text direction
+	left=.75in,				% left margin
+	top=.75in,				% top margin
+	right=.75in,			% right margin
+	bottom=.75in			% bottom margin
+ }
+%----------------------------------------------------------------------------------------
+% Header/Footer
+%----------------------------------------------------------------------------------------
+\usepackage{fancyhdr} \pagestyle{fancy} % required for fancy headers
+\renewcommand{\headrulewidth}{0.5pt}
+\renewcommand{\footrulewidth}{0.5pt}
+\rhead{\small{ANGRYVIPER Team}}
+%----------------------------------------------------------------------------------------
+% Appendix packages
+%----------------------------------------------------------------------------------------
+\usepackage[toc,page]{appendix}
+%----------------------------------------------------------------------------------------
+% Defined Commands & Renamed Commands
+%----------------------------------------------------------------------------------------
+\renewcommand{\contentsname}{Table of Contents}
+\renewcommand{\listfigurename}{List of Figures}
+\renewcommand{\listtablename}{List of Tables}
+\newcommand{\todo}[1]{\textcolor{red}{TODO: #1}\PackageWarning{TODO:}{#1}} % To do notes
+\newcommand{\code}[1]{\texttt{#1}} % For inline code snippet or command line
+%----------------------------------------------------------------------------------------
+% Various pacakges
+%----------------------------------------------------------------------------------------
+\usepackage{hyperref} % for linking urls and lists
+\usepackage{graphicx} % for including pictures by file
+\usepackage{listings} % for coding language styles
+\usepackage{rotating} % for sideways table
+\usepackage{pifont}   % for sideways table
+\usepackage{pdflscape} % for landscape view
+%----------------------------------------------------------------------------------------
+% Table packages
+%----------------------------------------------------------------------------------------
+\usepackage{tabularx} % c=center,l=left,r=right,X=fill
+\usepackage{float}
+\floatstyle{plaintop}
+\usepackage[tableposition=top]{caption}
+\newcolumntype{P}[1]{>{\centering\arraybackslash}p{#1}}
+\newcolumntype{M}[1]{>{\centering\arraybackslash}m{#1}}
+%----------------------------------------------------------------------------------------
+% Block Diagram / FSM Drawings
+%----------------------------------------------------------------------------------------
+\usepackage{tikz}
+\usetikzlibrary{shapes,arrows,fit,positioning}
+\usetikzlibrary{automata} % used for the fsm
+%----------------------------------------------------------------------------------------
+% Colors Used
+%----------------------------------------------------------------------------------------
+\usepackage{colortbl}
+\definecolor{blue}{rgb}{.7,.8,.9}
+\definecolor{ceruleanblue}{rgb}{0.16, 0.32, 0.75}
+\definecolor{drkgreen}{rgb}{0,0.6,0}
+\definecolor{deepmagenta}{rgb}{0.8, 0.0, 0.8}
+\definecolor{cyan}{rgb}{0.0,0.6,0.6}
+\definecolor{maroon}{rgb}{0.5,0,0}
+%----------------------------------------------------------------------------------------
+% Update the docTitle and docVersion per document
+%----------------------------------------------------------------------------------------
+\def\docTitle{Component Data Sheet}
+\def\docVersion{1.2}
+%----------------------------------------------------------------------------------------
+\date{Version \docVersion} % Force date to be blank and override date with version
+\title{\docTitle}
+\lhead{\small{\docTitle}}
+
+\def\comp{phase\_to\_amp\_cordic}
+\def\Comp{Phase to Amplitude CORDIC}
+\graphicspath{ {figures/} }
+\usepackage[justification=centering]{caption}
+
+\begin{document}
+
+\section*{Summary - \Comp}
+\begin{tabular}{|c|M{13.5cm}|}
+	\hline
+	\rowcolor{blue}
+	                  &                                                    \\
+	\hline
+	Name              & \comp                                              \\
+	\hline
+	Worker Type       & Application                                        \\
+	\hline
+	Version           & v\docVersion \\
+	\hline
+	Release Date      & August 2017 \\
+	\hline
+	Component Library & ocpiassets.dsp\_comps                              \\
+	\hline
+	Workers           & \comp.hdl                                          \\
+	\hline
+	Tested Platforms  & xsim, isim, modelsim, alst4, ml605, ZedBoard(PL), Matchstiq-Z1(PL) \\
+	\hline
+\end{tabular}
+
+\section*{Functionality}
+\begin{flushleft}
+	This worker implements a phase to amplitude conversion (PAC). The real 16 bit signed input data is phase accumulated, then fed into a polar-to-rectangular CORDIC. The output of the CORDIC produces a complex waveform. Figure \ref{fig:phase_to_amp_cordic} diagrams the Phase to Amplitude CORDIC.
+
+	\begin{figure}[h]
+		\centering\captionsetup{type=figure}\includegraphics[scale=0.8]{phase_to_amp_cordic_block_diagram}
+		\captionof{figure}{Phase to Amplitude CORDIC Functional Diagram}
+		\label{fig:phase_to_amp_cordic}
+	\end{figure}
+\end{flushleft}
+
+\section*{Worker Implementation Details}
+\subsection*{\comp.hdl}
+\begin{flushleft}
+	The phase to amplitude converter calculates the amplitude for the current phase angle.  This operation is basically the same as calculating the sine or cosine function of its argument.  Two methods are typically used for implementing in hardware, the Coordinate Rotation Digital Computer (CORDIC) algorithm and the ROM lookup table.\medskip
+
+	This worker implements the CORDIC algorithm. The frequency of its complex output is determined by the following equation:
+
+	\begin{equation} \label{eq:output_freq}
+		output\_freq = \frac{phs\_accum}{2^{DATA\_WIDTH}}
+	\end{equation}
+
+	Where \verb+phs_accum+ is the output of the accumulator. \verb+DATA_WIDTH+ is the input/output data width of the CORDIC which has a range of 8 to 16. The input clock frequency is the sample rate of the samples. The amplitude of the complex wave is runtime configurable via the \verb+magnitude+ property.  An \verb+enable+ input is available to either enable (true) or bypass (false) the circuit. In bypass mode, pipe-lining registers are not used, and the real input data is available on the lower 16 bits of the complex output.\medskip
+
+	Build time parameters control the width of the input, output and the number of stages of the CORDIC primitive module. The I/O data widths of the worker itself are set within the OCS and adjusted in the OWD.
+\end{flushleft}
+
+\section*{Block Diagrams}
+\subsection*{Top level}
+\begin{center}
+	\begin{tikzpicture}[% List of styles applied to all, to override specify on a case-by-case
+			every node/.style={
+				align=center,  		% use this so that the "\\" for line break works
+				minimum size=2cm	% creates space above and below text in rectangle
+			},
+			every edge/.style={draw,thick}
+		]
+		\node[rectangle,ultra thick,draw=black,fill=blue](R2){\Comp};
+		\node[rectangle,draw=white,fill=white](R3)[left= of R2]{``in" \\ Signed real samples};
+		\node[rectangle,draw=white,fill=white](R4)[right= of R2]{``out" \\ Signed complex samples};
+		\node[rectangle,draw=white,fill=white](R5)[above= of R2]{\verb+DATA_WIDTH, DATA_EXT+\\ \verb+STAGES,enable,magnitude+\\ \verb+messageSize+};
+		\path[->]
+		(R3)edge []	node [] {} (R2)
+		(R2)edge []	node [] {} (R4)
+		(R2)edge []	node [] {} (R5)
+		(R5)edge []	node [] {} (R2)
+		;
+	\end{tikzpicture}
+	\captionof{figure}{Top Level Block Diagram}
+\end{center}
+
+\newpage
+
+\subsection*{State Machine}
+\begin{flushleft}
+	Only one finite-state machine (FSM) is implemented by this worker. The FSM supports Zero-Length Messages.
+\end{flushleft}
+{\centering\captionsetup{type=figure}\includegraphics[scale=0.45]{phase_to_amp_cordic_zlm_fsm}
+	\captionof{figure}{Zero-Length Message FSM}
+	\label{fig:zlm_fsm}}
+\begin{flushleft}
+        Note: In future releases this finite-state machine will be replaced with a register-delay based mechanism, currently exemplified in the dc offset filter
+\end{flushleft}
+
+\newpage
+
+\section*{Source Dependencies}
+\subsection*{\comp.hdl}
+\begin{itemize}
+	\item ocpiassets/components/dsp\_comps/phase\_to\_amp\_cordic.hdl/phase\_to\_amp\_cordic.vhd
+	\item ocpiassets/hdl/primitives/dsp\_prims/dsp\_prims\_pkg.vhd
+	      \subitem ocpiassets/hdl/primitives/dsp\_prims/cordic/src/cordic\_pr.vhd
+	      \subitem ocpiassets/hdl/primitives/dsp\_prims/cordic/src/cordic.vhd
+	      \subitem ocpiassets/hdl/primitives/dsp\_prims/cordic/src/cordic\_stage.vhd
+	\item ocpiassets/hdl/primitives/misc\_prims/misc\_prims\_pkg.vhd
+	      \subitem ocpiassets/hdl/primitives/misc\_prims/round\_conv/src/round\_conv.vhd
+\end{itemize}
+\begin{landscape}
+
+	\section*{Component Spec Properties}
+	\begin{scriptsize}
+		\begin{tabular}{|p{3cm}|p{1.5cm}|c|c|c|c|c|p{7cm}|}
+			\hline
+			\rowcolor{blue}
+			Name               & Type   & SequenceLength & ArrayDimensions & Accessibility      & Valid Range & Default & Usage                                                               \\
+			\hline
+			\verb+DATA_WIDTH+  & UChar  & -              & -               & Readable           & -           & -       & Input (real) and Output (I/Q) data width                            \\
+			\hline
+			\verb+DATA_EXT+    & UChar  & -              & -               & Readable           & -           & -       & CORDIC requirement: \# of extension bits                            \\
+			\hline
+			\verb+STAGES+      & UChar  & -              & -               & Readable           & -           & -       & Number of CORDIC stages implemented                                 \\
+			\hline
+			\verb+messageSize+ & UShort & -              & -               & Readable, Writable & -           & 8192    & Number of bytes in output message                                   \\
+			\hline
+			\verb+enable+      & Bool   & -              & -               & Readable, Writable & -           & True    & Enable(true) or bypass(false)                                       \\
+			\hline
+			\verb+magnitude+   & UShort & -              & -               & Readable, Writable & -           & 16384   & Magnitude of output \scriptsize\begin{verbatim} * +2^(DATA_WIDTH)-1
+			to -2^(DATA_WIDTH)\end{verbatim}\\
+			\hline
+		\end{tabular}
+	\end{scriptsize}
+
+	\section*{Worker Properties}
+	\subsection*{\comp.hdl}
+	\begin{scriptsize}
+		\begin{tabular}{|p{3cm}|p{2cm}|c|c|c|c|c|p{1cm}|p{6cm}|}
+			\hline
+			\rowcolor{blue}
+			Type         & Name              & Type & SequenceLength & ArrayDimensions & Accessibility & Valid Range & Default & Usage                                    \\
+			\hline
+			SpecProperty & \verb+DATA_WIDTH+ & -    & -              & -               & Parameter     & 8-16        & 16      & Input (real) and Output (I/Q) data width \\
+			\hline
+			SpecProperty & \verb+DATA_EXT+   & -    & -              & -               & Parameter     & 6           & 6       & CORDIC requirement: \# of extension bits \\
+			\hline
+			SpecProperty & \verb+STAGES+     & -    & -              & -               & Parameter     & 8-16        & 12      & Number of CORDIC stages implemented      \\
+			\hline
+		\end{tabular}
+	\end{scriptsize}
+
+	\section*{Component Ports}
+	\begin{scriptsize}
+		\begin{tabular}{|M{2cm}|M{1.5cm}|M{4cm}|c|c|M{9cm}|}
+			\hline
+			\rowcolor{blue}
+			Name & Producer & Protocol           & Optional & Advanced & Usage                  \\
+			\hline
+			in   & false    & rstream\_protocol  & false    & -        & Signed real samples    \\
+			\hline
+			out  & true     & iqstream\_protocol & false    & -        & Signed complex samples \\
+			\hline
+		\end{tabular}
+	\end{scriptsize}
+	\section*{Worker Interfaces}
+	\subsection*{\comp.hdl}
+	\begin{scriptsize}
+		\begin{tabular}{|M{2cm}|M{1.5cm}|M{4cm}|c|M{10cm}|}
+			\hline
+			\rowcolor{blue}
+			Type            & Name & DataWidth & Advanced                & Usage                  \\
+			\hline
+			StreamInterface & in   & 16        & ZeroLengthMessages=true & Signed real samples    \\
+			\hline
+			StreamInterface & out  & 32        & ZeroLengthMessages=true & Signed complex samples \\
+			\hline
+		\end{tabular}
+	\end{scriptsize}
+\end{landscape}
+
+\section*{Control Timing and Signals}
+\begin{flushleft}
+	The Phase to Amplitude CORDIC worker uses the clock from the Control Plane and standard Control Plane signals.\medskip
+
+	There is a startup delay for this worker. Once the input is ready and valid and the output is ready, there is a delay of \verb+STAGES++1 before the first sample is taken. After this initial delay, valid output data is given \verb+STAGES++1 clock cycles after input data is taken.
+
+	\begin{tabular}{|M{4.5cm}|M{1cm}|M{1cm}|M{1.5cm}|M{2cm}|M{1cm}|M{1cm}|M{2.5cm}|}
+		\hline
+		\rowcolor{blue}
+		Latency                      \\
+		\hline
+		\verb+STAGES++1 clock cycles \\
+		\hline
+	\end{tabular}
+\end{flushleft}
+
+\section*{Performance and Resource Utilization}
+\subsection*{\comp.hdl}
+Table entries are a result of building the worker with the following parameter set:
+\begin{itemize}
+	\item \verb+DATA_WIDTH+=16
+	\item \verb+DATA_EXT+=6
+	\item \verb+STAGES+=12
+\end{itemize}
+
+\begin{scriptsize}
+	\begin{tabular}{|c|c|c|c|c|c|}
+		\hline
+		\rowcolor{blue}
+		Device                      & Registers & LUTs & Fmax    & Memory/Special Functions & Design Suite    \\
+		\hline
+		Stratix4 EP4SGX230K-C2-F40  & 1038      & 1354 & N/A & DSP18x18 = 8             & Quartus Prime 15.1 \\
+		\hline
+		Virtex6 XC6VLX240T-1-FF1156 & 979       & 2312 & 165 MHz & DSP48E1 = 4              & ISE 14.7        \\
+		\hline
+		Zynq XC7Z020-1-CLG484       & 1021       & 2281 & 120 MHz & DSP48E1 = 2              & Vivado 2017.1        \\
+		\hline
+		Zynq XC7Z020-1-CLG484       & 979       & 2312 & 162 MHz & DSP48E1 = 4              & ISE 14.7        \\
+		\hline
+	\end{tabular}
+\end{scriptsize}
+\newpage
+
+\section*{Test and Verification}
+This component is tested via the unit test automation feature of the framework.  The component's .test/ contains XML files that describe the combinations of tests.\medskip
+
+Two test cases are employed to verify the Phase to Amplitude CORDIC component:
+
+\begin{enumerate}
+	\item Disabled. The real input data is passed through the worker and made available on lower 16 bits of the complex output.
+	\item Constant output frequency: A python script creates a file containing a constant value. The CORDIC produces a complex output frequency according to the equation \ref{eq:output_freq}.
+\end{enumerate}
+
+The plots below show the input (real) and output data (Q-leg showing all samples, I-leg zoomed into one cycle) for testing a Phase to Amplitude CORDIC having the default parameter set. The input file shows a DC value of 2048, and 16384 real samples.  The output file shows the converted complex waveform having $DC value/2^{DATA\_WIDTH}$=2048/$2^{16}$=0.03125 Hz, and 16384 complex samples.
+
+\begin{figure}[ht]
+	\centering
+	\begin{minipage}{.5\textwidth}
+		\centering\includegraphics[width=1.0\linewidth]{input}
+		\captionof{figure}{Time Domain}
+		\label{fig:input_tdomain}
+	\end{minipage}%
+	\begin{minipage}{.5\textwidth}
+		\centering\includegraphics[width=1.0\linewidth]{input_fft}
+		\captionof{figure}{Frequency Domain}
+		\label{fig:input_fdomain}
+	\end{minipage}
+\end{figure}
+
+\begin{figure}[ht]
+	\centering
+	\begin{minipage}{.5\textwidth}
+		\centering\includegraphics[width=1.0\linewidth]{output}
+		\captionof{figure}{Time Domain}
+		\label{fig:output_tdomain}
+	\end{minipage}%
+	\begin{minipage}{.5\textwidth}
+		\centering\includegraphics[width=1.0\linewidth]{output_fft}
+		\captionof{figure}{Frequency Domain}
+		\label{fig:output_fdomain}
+	\end{minipage}
+\end{figure}
+
+
+\end{document}

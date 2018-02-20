@@ -1,0 +1,82 @@
+# This file is protected by Copyright. Please refer to the COPYRIGHT file
+# distributed with this source distribution.
+#
+# This file is part of OpenCPI <http://www.opencpi.org>
+#
+# OpenCPI is free software: you can redistribute it and/or modify it under the
+# terms of the GNU Lesser General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your option) any
+# later version.
+#
+# OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+# A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Lesser General Public License along
+# with this program. If not, see <http://www.gnu.org/licenses/>.
+
+# For backwards compatibility of external Makefiles, e.g. rcc.
+# This template is used to generate a file to be imported by util.mk.
+# It is populated by the configure script, which captures the user's OCPI_* variables.
+
+# TODO: Support OCPI_TARGET_MODE in the future.
+# TODO: Support OCPI_TOOL_MODE in the future.
+
+ifneq ($(filter clean%,$(MAKECMDGOALS))$(filter distclean%,$(MAKECMDGOALS)),)
+  export NO_AUTOCONFIG_WARNING=1
+endif
+
+ifneq ($(MAKELEVEL),0)
+  export NO_AUTOCONFIG_WARNING=1
+endif
+
+define check_var
+# $$(warning check_var '$1' '$$($1)' '$2')
+ifeq (undefined,$$(origin $1))
+  $1=$2
+  ifeq (1,$(V))
+    $$(warning check_var -- autoconfiguring $1=$$($1))
+  endif
+else
+  ifneq ($$($1),$2)
+    ifeq ($$(NO_AUTOCONFIG_WARNING),)
+      $$(warning $1 was defined (origin: $$(origin $1)) '$$($1)' and does not match the recommended '$2')
+    endif
+  endif
+endif
+# ALWAYS export the variable to sub-make processes
+export $1
+endef
+
+define check_undef
+# $$(warning check_undef '$1' '$$($1)')
+ifneq (undefined,$$(origin $1))
+  ifeq (1,$(V))
+    $$(warning check_undef -- found $1='$$($1)')
+  endif
+else
+  ifeq ($$(NO_AUTOCONFIG_WARNING),)
+    $$(warning $1 was not defined - you might have problems)
+  endif
+endif
+endef
+
+# AV-2090 removed a lot of these:
+$(eval $(call check_var,OCPI_CDK_DIR,@ocpi_cdk_dir@))
+$(eval $(call check_var,OCPI_DEBUG,@ocpi_debug@))
+$(eval $(call check_var,OCPI_ASSERT,@ocpi_debug@))
+$(eval $(call check_var,OCPI_HAVE_OPENCL,0))
+#obsolete with imports: (eval $(call check_var,OCPI_LIBRARY_PATH,@ocpi_cdk_dir@/lib/components))
+$(eval $(call check_var,OCPI_TARGET_PLATFORM,@ocpi_target_platform@))
+$(eval $(call check_var,OCPI_TOOL_DIR,@ocpi_tool_host@))
+$(eval $(call check_var,OCPI_TOOL_HOST,@ocpi_tool_host@))
+$(eval $(call check_var,OCPI_TOOL_OS,@ocpi_tool_os@))
+$(eval $(call check_var,OCPI_TOOL_OS_VERSION,@ocpi_tool_os_version@))
+$(eval $(call check_var,OCPI_TOOL_PLATFORM,@ocpi_tool_platform@))
+ifneq ($(OCPI_TARGET_PLATFORM),@ocpi_tool_platform@)
+$(eval $(call check_undef,OCPI_XILINX_DIR))
+$(eval $(call check_undef,OCPI_XILINX_VERSION))
+endif
+
+export OCPI_AUTOCONFIG_IMPORTED=1

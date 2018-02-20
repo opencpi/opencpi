@@ -1,0 +1,7 @@
+<ComponentSpec>
+  <Properties>
+     <Property Name="startIndex" Volatile="true" Writable="true"/>
+     <Property Name="longProperty" Volatile="true" Writable="true"/>
+  </Properties>
+  <DataInterfaceSpec Name="Data_In_Port"/>
+</ComponentSpec>

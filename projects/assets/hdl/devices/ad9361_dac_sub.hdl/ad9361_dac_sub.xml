@@ -1,0 +1,43 @@
+<HdlDevice language='vhdl'>
+  <ComponentSpec nocontrol="true"/>
+
+  <!-- Parameters -->
+
+  <!-- This parameter property corresponds to the "LVDS Mode" bit 4 in the parallel port configuration 3
+       register at 0x012. -->
+  <Property name='LVDS_p' type='bool' parameter='true' default='false'
+            description='Use LVDS TX data bus interleaving scheme, otherwise use CMOS interleaving scheme.
+                         Default is CMOS.'/>
+  <!-- This parameter property corresponds to the "Half Duplex Mode" bit 3 in the parallel port
+       configuration 3 register 0x12 -->
+  <Property name='HALF_DUPLEX_p' type='bool' parameter='true' default='false'
+            description='Use half duplex mode, otherwise use full duplex mode. Must be false when using LVDS mode.'/> <!-- TODO / FIXME support runtime_dynamic enumeration? -->
+  <!-- This parameter property corresponds to the "Single Port Mode" bit 2 in the parallel port
+       configuration 3 register 0x12 -->
+  <Property name='SINGLE_PORT_p' type='bool' parameter='true' default='false'
+            description='Use single port, otherwise use both (dual) ports.  Default is to use both ports. Must be false when using LVDS mode.'/>
+  <!-- This parameter property corresponds to the "Single Data Rate" bit 5 in the parallel port
+       configuration 3 register 0x12 -->
+  <Property name='DATA_RATE_CONFIG_p' type='enum' enums='SDR,DDR'
+                                      parameter='true'
+                                      default='DDR'
+                                      description='This should have a value of DDR when LVDS_p has a value of true. Either value is acceptable when LVDS_p has a value of false (i.e. CMOS mode is used).'/>
+
+  <!-- Dev Signal Ports -->
+  <devsignal name='dev_cfg_data'     signals='ad9361-cfg-data-signals.xml'    master='true'/>
+  <devsignal name='dev_cfg_data_tx'  signals='ad9361-cfg-data-tx-signals.xml' master='true'/>
+  <devsignal name='dev_data_clk'     signals='ad9361-data-clk-signals.xml'    master='true'/>
+  <devsignal name='dev_data_to_pins' signals='ad9361-data-dac-signals.xml'    master='true'/>
+
+  <devsignal name='dev_data_ch0_in' signals='dac-12-signals.xml'/>
+  <devsignal name='dev_data_ch1_in' optional='true' signals='dac-12-signals.xml'/>
+
+  <!-- Sub-Device Port Connections (Supports) -->
+  <supports worker='ad9361_dac'>
+    <connect port="dev_dac" to="dev_data_ch0_in"/>
+  </supports>
+  <supports worker='ad9361_dac'>
+    <connect port="dev_dac" to="dev_data_ch1_in"/>
+  </supports>
+</HdlDevice>
+

@@ -1,0 +1,10 @@
+<RccWorker language="c++" slave='lime_tx.hdl' spec='rf_tx_proxy-spec' controloperations='initialize, stop'>
+  <specproperty name='lpf_bw_hz' writesync='1'/>
+  <specproperty name='post_lpf_gain_db' writesync='1'/>
+  <specproperty name='pre_mixer_dc_offset_i' writesync='1'/>
+  <specproperty name='pre_mixer_dc_offset_q' writesync='1'/>
+  <specproperty name='center_freq_hz' writesync='1'/>
+  <specproperty name='output_gain_db' writesync='1'/>
+  <specproperty name='noutputs' value='2' />
+  <specproperty name='output_select' writesync='1'/>
+</RccWorker>

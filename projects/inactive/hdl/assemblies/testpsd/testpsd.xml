@@ -1,0 +1,16 @@
+<HdlAssembly>
+  <Instance Worker="splitter2x2.xml" Name="split0" external="in0"/>
+  <Instance Worker="bias.xml" connect='split1' to='in0'/>
+  <Instance Worker="psd.xml" connect='split1' to='in1'/>
+  <Instance Worker="splitter2x2.xml" Name="split1" external='out0'/>
+  <Connection>
+    <port Instance="split0" name="out0"/>
+    <port Instance="bias" name="in"/>
+  </Connection>
+  <Connection>
+    <port Instance="split0" name="out1"/>
+    <port Instance="psd" name="in"/>
+  </Connection>
+</HdlAssembly>
+
+   

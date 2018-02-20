@@ -1,0 +1,10 @@
+<RccWorker language="c++" spec="bias_spec.xml">
+  <!-- Insert any other implementation-specific information here -->
+  <property name='testws' writesync='1' readsync='1' writable='1' readable='1'/>
+  <extension name='testextension'/>
+  <property name='param1' parameter='1' readable='1' default='5'>
+    <extension name='testextension2' mydata="AV-2838"/>
+  </property>
+  <property name='param2' parameter='1' readable='1' arraylength='3' default='6,7,8'/>
+  <specproperty name='biasValue' readable='true'/>
+</RccWorker>

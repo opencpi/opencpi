@@ -1,0 +1,11 @@
+<HdlDevice language='vhdl' spec='rf_tx-spec' FirstRawProperty='dc_regval'>
+  <ControlInterface Timeout='1024'/>
+  <property name='pin_control_p' type='bool' parameter='1'/>
+  <property name='other_present' type='bool' readable='1'/>
+  <xi:include href='lime-properties.xml'/>
+  <!-- shared SPI -->
+  <rawprop name='rawprops' master='true'/>
+  <!-- other than the SPI, the only wired signal relevant to the RF TX is this enable -->
+  <signal output='txen'/>
+  <StreamInterface Name='event_in' optional='1'/>
+</HdlDevice>

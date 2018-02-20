@@ -1,0 +1,8 @@
+<Protocol>
+  <Operation name="txOff"/>
+  <Operation name="txOn"/>
+  <!-- Use the following operation to work around AV-3417-->
+  <Operation name="dummy">
+   <Argument name="nothing" type="bool"/>
+  </Operation>
+</Protocol>

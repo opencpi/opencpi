@@ -1,0 +1,34 @@
+In order to use Xilinx iMPACT with the Platform Cable USB II on the zed platform (when plugged into a CentOS 7 machine), the Xilinx ISE installation must be modified to allow for cable drivers to work properly. The following steps are a subset of those outlined in http://www.xilinx.com/support/answers/29310.html.
+
+Installation of the libusb package
+
+1. Download the libusb 0.1.12 package from:
+http://libusb.sourceforge.net/
+2. Open a shell or terminal console.
+3. Extract the libusb package script and its support files by typing: tar xzvf libusb-0.1.12.tar.gz. This will create a directory named "libusb-0.1.12" in the current directory.
+4. Navigate to the "libusb-0.1.12" directory by typing:
+cd libusb-0.1.12
+5. Run the configure script by typing: ./configure. Running ./configure script without any argument installs the libusb shared libraries to the "/usr/local". Root permission is likely required to be able to write to this directory. If root permission is not available, run the configure script with the --prefix argument.
+./configure --prefix=<install-dir>
+
+where <install_dir> is a directory where the libusb shared libraries will be installed, and this directory can be owned by a regular user.
+
+6. Run the following commands to complete the installation:
+
+make
+make install (can also be run from a root account)
+
+7. Update the LD_LIBRARY_PATH environment variable, if necessary, to point to the libusb shared libraries. If the installation was performed from a root account, make sure that the "/usr/local/bin" directory is included in the LD_LIBRARY_PATH environment variable. If the installation was performed from a regular users account, add the "<install_dir>/bin" to the LD_LIBRARY_PATH environment variable. 
+
+
+Installation of cable enumeration drivers
+
+NOTE: The user will likely require root permissions to perform this installation.
+
+1. Disconnect the cable and close all applications that use the cable.
+2. Log in and open a shell or terminal console.
+3. Navigate to the $Xilinx/bin/lin (for 32-bit version) or $Xilinx/bin/lin64 (for 64-bit version) directory. Note that the $Xilinx variable was set by the previous installation of the 10.1 design tools.
+4. Run the installation script by typing: ./setup_pcusb (you will first need to set the script as executable). This script will likely require root priveledges. You might see some errors executing the script relating to "xusbdfwu.hex" file. These can be ignored.
+5. Reconnect the cable.
+
+

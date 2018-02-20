@@ -1,0 +1,9 @@
+<HdlContainer platform='zed_zipper'>
+  <connection external='out' device='lime_dac'/>
+  <connection device ='lime_adc' interconnect='zynq'/>
+  <device name='lime_spi'>
+    <property name='CLK_FREQ_p' value='50e6'/>
+  </device>
+  <device name="lime_rx"/>
+  <device name="lime_tx"/>
+</HdlContainer>

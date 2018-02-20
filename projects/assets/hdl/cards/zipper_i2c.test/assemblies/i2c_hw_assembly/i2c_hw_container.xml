@@ -1,0 +1,9 @@
+<HdlContainer platform="zed,zed_ise">
+    <!-- RX connections -->
+    <Connection device="lime_adc" port="out" card="lime_zipper_fmc_lpc" interconnect="zynq"/>
+    <!-- I2C bus -->
+    <device name="si5351" card="lime_zipper_fmc_lpc"/>
+    <!-- lime_rx and lime_tx control the lime_spi device for configuring the lime -->
+    <device name="lime_rx" card="lime_zipper_fmc_lpc"/>
+    <device name="lime_tx" card="lime_zipper_fmc_lpc"/>
+</HdlContainer>

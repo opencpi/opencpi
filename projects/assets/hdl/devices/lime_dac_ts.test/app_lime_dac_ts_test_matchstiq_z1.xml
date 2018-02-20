@@ -1,0 +1,61 @@
+<Application Package="ocpi.assets">
+  <!-- HDL Components-->
+  <!-- TX Chain -->
+  <Instance Component="ocpi.assets.devices.rf_tx" Name="rf_tx"/>
+  <Instance Component="ocpi.assets.devices.qdac_ts" Model="hdl">
+    <Property Name="USE_CLK_IN_p" Value="true"/>
+    <Property Name="USE_CTL_CLK_p" Value="false"/>
+    <Property Name="DRIVE_CLK_p" Value="true"/>
+    <Property Name="SECONDS_WIDTH_p" Value="32"/>
+    <Property Name="FRACTION_WIDTH_p" Value="32"/>
+  </Instance>
+  
+  <!-- Command and Control -->
+  <Instance Component="ocpi.assets.devices.si5338"/>
+  <Instance Component="ocpi.assets.devices.tmp100"/>
+  <Instance Component="ocpi.assets.platforms.matchstiq_z1.devices.matchstiq_z1_avr"/>
+  <Instance Component="ocpi.core.devices.time_server">
+    <Property Name="timeNow" Value="0"/>
+  </Instance>
+  <!-- RCC Components-->
+  <!-- TX Chain -->
+  <Instance Component="ocpi.core.file_read">
+    <Property Name="filename" Value="idata/input_data_hw.bin"/>
+    <Property Name="messagesInFile" Value="true"/>
+    <Property Name="messageSize" Value="8192"/>
+  </Instance>
+  
+  <!-- RCC Proxies -->
+  <!-- TX Chain -->
+  <Instance Component="ocpi.assets.devices.rf_tx_proxy" Slave="rf_tx"/>
+  
+  <!-- Command and Control -->
+  <Instance Component="ocpi.core.devices.clock_gen" Slave="si5338"/>
+  <Instance Component="ocpi.assets.platforms.matchstiq_z1.devices.matchstiq_z1_avr_proxy" Slave="matchstiq_z1_avr">
+    <Property Name="warp_voltage" Value="1970"/>
+    <Property Name="led" Value="green"/>
+  </Instance>
+  <Instance Component="ocpi.assets.devices.tmp100_proxy" Slave="tmp100"/>
+  
+  <!-- RCC Frontend Proxies -->
+  <!-- TX Chain -->
+  <Instance Component="ocpi.core.tx">
+    <Property Name="TYPE_p" Value="matchstiq_z1"/>
+    <Property Name="sample_rate_MHz" Value="0.5"/>
+    <Property Name="frequency_MHz" Value="1000"/>
+    <Property Name="rf_gain_dB" Value="4"/>
+    <Property Name="bb_cutoff_frequency_MHz" Value="0.75"/>
+    <Property Name="bb_gain_dB" Value="-14"/>
+  </Instance>
+
+  <!-- Connections -->
+  <!-- TX Chain -->
+  <Connection>
+    <Port Instance="rf_tx" Name="event_in"/>
+    <Port Instance="qdac_ts" Name="event_out"/>
+  </Connection>
+  <Connection>
+    <Port Instance="file_read" Name="out"/>
+    <Port Instance="qdac_ts" Name="in"/>
+  </Connection>
+</Application>

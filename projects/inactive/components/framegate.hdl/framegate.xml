@@ -1,0 +1,18 @@
+<HdlImplementation Name="framegate" Language="Verilog" Pattern="%w%M%0_">
+  <xi:include href="framegate_spec.xml"/>
+  <!-- force byte enables because shep always uses them -->
+  <ControlInterface Sub32BitConfigProperties="true">
+    <Property Name="portStatus" Readable="true"/>
+    <Property Name="wsiSpMesgCount" Readable="true"/>
+    <Property Name="wsiSiMesgCount" Readable="true"/>
+    <Property Name="wsiStBusyCount" Readable="true"/>
+    <Property Name="wsiMpMesgCount" Readable="true"/>
+    <Property Name="wsiMiMesgCount" Readable="true"/>
+    <Property Name="wsiMtBusyCount" Readable="true"/>
+    <Property Name="Op0MesgCnt" Readable="true"/>
+    <Property Name="otherMesgCnt" Readable="true"/>
+    <Property Name="fgCtrlInit" Parameter="true" default='0'/>
+  </ControlInterface>
+  <StreamInterface Name="in" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32"/>
+  <StreamInterface Name="out" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32"/>
+</HdlImplementation>

@@ -1,0 +1,17 @@
+<!-- 
+ Matchstiq-Z1 All Platform Configuration Definition
+-->
+<HdlConfig Language="vhdl">
+  <!-- I2C bus -->
+  <device name="si5338"/>
+  <device name="tmp100"/>
+  <!-- The purpose of this device is unknown, thus there's no supporting proxy -->
+  <!-- <device name="pca9534"/> -->
+  <device name="pca9535"/>
+  <device name="matchstiq_z1_avr"/>
+  <!-- lime_rx and lime_tx control the lime_spi device for configuring the lime -->
+  <device name="lime_rx"/>
+  <device name="lime_tx"/>
+  <!-- GPS -->
+  <device name="gps_uart"/>
+</HdlConfig>

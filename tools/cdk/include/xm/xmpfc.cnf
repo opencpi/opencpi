@@ -1,0 +1,19 @@
+SWITCHES Mvax
+SWITCHES P16512
+SWITCHES P+16384
+SWITCHES CF+128
+SWITCHES Y256
+SWITCHES CM0
+SWITCHES Qh10000
+SWITCHES Qx10000
+SWITCHES Qn10000
+$$
+KEYWORDS
+29 "static int argc = 1;static char* argv [ 1 ] = { \"mainroutine\" }; void mainroutine ( )"
+30 ""
+31 ""
+172 "%_"
+END
+PATHNAMES vax : REPLACE "$ (:) " lower exclude termination /
+END
+grep * Grep

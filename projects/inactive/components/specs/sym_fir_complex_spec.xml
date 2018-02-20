@@ -1,0 +1,32 @@
+<!-- Component spec for a Symmetric Complex FIR bandpass multitap filter  
+    
+When this component receives a "Sync" message it is responsible for performing whatever is 
+required to handle a discontinuity in the input data stream.  All of the control protocol
+being handled at the input must be passed to the output.
+
+-->
+
+<ComponentSpec>
+
+  <Properties>
+    <!-- Bypass filter - if true, no transform  Format: bool -->
+    <Property Name="bypass" type="bool" Readable="true" Writable="true"/>
+    <!-- Gain factor   Format: Qs0.15 -->
+    <Property Name="gain" type="Short" Readable="true" Writable="true"/>
+    <!-- tap values  Format: short[128]   -->
+    <Property Name="taps" type="Short" ArrayLength="128" Readable="true" Writable="true"/>
+    <!-- peakDetect  Format: IQ (16Q,16I) Qs0.15 -->
+    <Property Name="peakDetect" type="Short" Volatile="true" Writable="true"/>
+  </Properties>
+
+  <!-- Input data and control stream -->
+  <DataInterfaceSpec Name="in" Producer="false">
+      <xi:include href="iqstream_with_sync_protocol.xml"/>
+  </DataInterfaceSpec>
+
+  <!-- Output data and control stream -->
+  <DataInterfaceSpec Name="out" Producer="true">
+      <xi:include href="iqstream_with_sync_protocol.xml"/>
+  </DataInterfaceSpec>
+
+</ComponentSpec>

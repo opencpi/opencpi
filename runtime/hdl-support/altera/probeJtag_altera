@@ -1,0 +1,68 @@
+#!/bin/sh
+# This file is protected by Copyright. Please refer to the COPYRIGHT file
+# distributed with this source distribution.
+#
+# This file is part of OpenCPI <http://www.opencpi.org>
+#
+# OpenCPI is free software: you can redistribute it and/or modify it under the
+# terms of the GNU Lesser General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your option) any
+# later version.
+#
+# OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+# A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Lesser General Public License along
+# with this program. If not, see <http://www.gnu.org/licenses/>.
+
+
+# A script for setting up jtag cables for Altera.  Stdout is a list of <port>=<serial>.
+
+if [[ $# == 0 ]]; then
+  echo Usage is: `basename $0` 'all'
+  echo '  'This script scans USB ports for Altera JTAG cables/pods and
+  echo '  'prints which parts are at which positions on each one found.
+  echo '  'Always use the \"all\" argument to scan for all cables.
+  exit 1
+fi
+source $OCPI_CDK_DIR/scripts/util.sh
+setVarsFromMake $OCPI_CDK_DIR/include/hdl/altera.mk ShellIseVars=1 $verbose
+[ -z "$OcpiAlteraProgrammerDir" ] && {
+  echo Error: Could not find the directory for Altera Quartus or programming tools.
+  exit 1
+}
+
+QBIN="$OcpiAlteraProgrammerDir/quartus/bin"
+[ ! -d $QBIN ] && {
+  QBIN="$OcpiAlteraProgrammerDir/qprogrammer/bin"
+  [ ! -d $QBIN ] && {
+    echo Neither $OcpiAlteraProgrammerDir/quartus/bin nor $OcpiAlteraProgrammerDir/qprogrammer/bin exist
+    exit 1
+  }
+}
+if test ! -x "$QBIN"/jtagconfig -o ! -x "$QBIN/quartus_pgm"; then
+  echo With tools bin directory: $QBIN
+  echo "The required Altera executables (jtagconfig, quartus_pgm) are not present." 1>&2
+  exit 1
+fi
+
+IFS=!
+CABLES=`"$QBIN"/jtagconfig | grep '^ *[0-9]*)' | sed 's/^ *[0-9]*) *\(.*\) *$/\1/'|sed 's/ /\\ /g'`
+if test $? != 0 -o "$CABLES" = ""; then
+  echo Unable to find any Altera USB JTAG cables. 1>&2
+  exit 1
+fi
+
+for c in $CABLES; do
+  echo -n Found cable \"$c\" 1>&2
+  SERIAL=`"$QBIN"/jtagconfig --getparam '$c' SerialNumber`
+  if test $? != 0 -o "$SERIAL" = ""; then
+    echo " with no serial number" 1>&2
+    exit 1
+  else
+    echo ' 'with serial number \"$SERIAL\" 1>&2
+  fi
+done
+exit 0

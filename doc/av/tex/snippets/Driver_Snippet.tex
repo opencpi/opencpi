@@ -1,0 +1,38 @@
+% Any changes to this document should be made in both opencpi.git AND ocpiassets
+
+\iffalse
+This file is protected by Copyright. Please refer to the COPYRIGHT file
+distributed with this source distribution.
+
+This file is part of OpenCPI <http://www.opencpi.org>
+
+OpenCPI is free software: you can redistribute it and/or modify it under the
+terms of the GNU Lesser General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License along
+with this program. If not, see <http://www.gnu.org/licenses/>.
+\fi
+
+% This is for inserting into various "Getting Started" Guides
+% First, turn off indenting to avoid all the flushleft
+\newlength{\savedparindentdrvr}%
+\setlength{\savedparindentdrvr}{\parindent}%
+\setlength{\parindent}{0pt} % Don't indent all paragraphs
+\providecommand{\forceindent}{\leavevmode{\parindent=1em\indent}}%
+
+\section{Driver Notes}
+When available, the driver will attempt to make use of the CMA region for direct memory access. In use cases where many memory allocations are made, the user may receive the following kernel message:
+
+\begin{verbatim}
+alloc_contig_range test_pages_isolated([memory start], [memory end]) failed
+\end{verbatim}
+
+This is a kernel warning, but does not indicate that a memory allocation failure occurred, only that the CMA engine could not allocate memory in the first pass. Its default behavior is to make a second pass and if that succeeded the end user should not see any more error messages. An actual allocation failure will generate unambiguous error messages.
+
+\setlength{\parindent}{\savedparindentdrvr}%

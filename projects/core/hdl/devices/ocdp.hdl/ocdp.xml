@@ -1,0 +1,39 @@
+<HdlDevice language='vhdl' rawProperties='true' outer='true'>
+  <ComponentSpec>
+    <property name='nLocalBuffers' readable='true' writable='true'/>
+    <property name='nRemoteBuffers' readable='true' writable='true'/>
+    <property name='localBufferBase' readable='true' writable='true'/>
+    <property name='localMetadataBase' readable='true' writable='true'/>
+    <property name='localBufferSize' readable='true' writable='true'/>
+    <property name='localMetadataSize' readable='true' writable='true'/>
+    <property name='nRemoteDone' writable='true'/>
+    <property name='rsvdregion' padding='true'/>
+    <property name='nReady' readable='true'/>
+    <property name='foodFace' readable='true'/>
+    <property name='debug' readable='true' arraylength='9'/>
+    <property name='memoryBytes' readable='true'/>
+    <property name='remoteBufferBase' readable='true' writable='true'/>
+    <property name='remoteMetadataBase' readable='true' writable='true'/>
+    <property name='remoteBufferSize' readable='true' writable='true'/>
+    <property name='remoteMetadataSize' readable='true' writable='true'/>
+    <property name='remoteFlagBase' readable='true' writable='true'/>
+    <property name='remoteFlagPitch' readable='true' writable='true'/>
+    <property name='control' readable='true' writable='true'/>
+    <property name='flowDiagCount' readable='true'/>
+    <property name='debug1' readable='true'/>
+    <property name='pad' arraylength='3' padding='true'/>
+    <property name='debug2' arraylength='5' readable='true'/>
+    <property name='remoteBufferHi' readable='true' writable='true'/>
+    <property name='remoteMetadataHi' readable='true' writable='true'/>
+    <property name='remoteFlagHi' readable='true' writable='true'/>
+    <property name='startTime' type='ulonglong' readable='true'/>
+    <property name='doneTime' type='ulonglong' readable='true'/>
+    <DataInterfaceSpec Name="data"/>
+  </ComponentSpec>
+  <ControlInterface ControlOperations="initialize" Sub32BitConfigProperties="true"/>
+  <unoc name="client"/>
+  <MessageInterface Name="data" ByteWidth="8" Bidirectional="true" PreciseBurst="true" DataWidth="32"  datavaluewidth="8" maxmessagevalues="16380" MFlagWidth="32"/>
+  <timeinterface secondswidth='32' fractionwidth='32'/>
+  <property name='includePull' type='bool' default='1' parameter='1'/>
+  <property name='includePush' type='bool' default='1' parameter='1'/>
+</HdlDevice>

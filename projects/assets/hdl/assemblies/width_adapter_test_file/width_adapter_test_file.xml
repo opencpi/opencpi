@@ -1,0 +1,29 @@
+<!-- Assembly to test width adapters in simulation -->
+<HdlAssembly>
+  <instance worker='file_read' connect='wsi_width_adapter0'/>
+  <instance worker='wsi_width_adapter' paramconfig='8'  connect='wsi_width_adapter1'/>
+  <instance worker='wsi_width_adapter' connect='wsi_width_adapter2'>
+    <property name='width_in' value='8'/>
+    <property name='width_out' value='16'/>
+  </instance>
+  <instance worker='wsi_width_adapter' paramconfig='6'  connect='wsi_width_adapter3'/>
+  <instance worker='wsi_width_adapter' paramconfig='15' connect='wsi_width_adapter4'/>
+  <instance worker='wsi_width_adapter' paramconfig='18' connect='wsi_width_adapter5'/>
+  <instance worker='wsi_width_adapter' paramconfig='9'  connect='wsi_width_adapter6'/>
+  <instance worker='wsi_width_adapter' paramconfig='4'  connect='wsi_width_adapter7'/>
+  <instance worker='wsi_width_adapter' paramconfig='2'  connect='wsi_width_adapter8'/>
+  <instance worker='wsi_width_adapter' paramconfig='13' connect='wsi_width_adapter9'/>
+  <instance worker='wsi_width_adapter' paramconfig='5'  connect='wsi_width_adapter10'/>
+  <instance worker='wsi_width_adapter' paramconfig='10' connect='wsi_width_adapter11'/>
+  <instance worker='wsi_width_adapter' paramconfig='12' connect='wsi_width_adapter12'/>
+  <instance worker='wsi_width_adapter' paramconfig='3'  connect='wsi_width_adapter13'/>
+  <instance worker='wsi_width_adapter' paramconfig='19' connect='wsi_width_adapter14'/>
+  <instance worker='wsi_width_adapter' paramconfig='14' connect='wsi_width_adapter15'/>
+  <instance worker='wsi_width_adapter' paramconfig='11' connect='wsi_width_adapter16'/>
+  <instance worker='wsi_width_adapter' paramconfig='17' connect='wsi_width_adapter17'/>
+  <instance worker='wsi_width_adapter' paramconfig='7'  connect='wsi_width_adapter18'/>
+  <instance worker='wsi_width_adapter' paramconfig='16' connect='wsi_width_adapter19'/>
+  <instance worker='wsi_width_adapter' paramconfig='1'  connect='bias_vhdl'/>
+  <instance worker='bias_vhdl' connect='file_write'/>
+  <instance worker='file_write'/>
+</HdlAssembly>

@@ -1,0 +1,148 @@
+\iffalse
+This file is protected by Copyright. Please refer to the COPYRIGHT file
+distributed with this source distribution.
+
+This file is part of OpenCPI <http://www.opencpi.org>
+
+OpenCPI is free software: you can redistribute it and/or modify it under the
+terms of the GNU Lesser General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License along
+with this program. If not, see <http://www.gnu.org/licenses/>.
+\fi
+
+%----------------------------------------------------------------------------------------
+% Update the docTitle and docVersion per document
+%----------------------------------------------------------------------------------------
+\def\docTitle{OpenCPI\\ FSK App Getting Started Guide}
+\def\docVersion{1.3}
+%----------------------------------------------------------------------------------------
+\input{../../../../../doc/av/tex/snippets/LaTeX_Header.tex}
+\date{Version \docVersion} % Force date to be blank and override date with version
+\title{\docTitle}
+\lhead{FSK App Getting Started Guide}
+%----------------------------------------------------------------------------------------
+\usepackage[T1]{fontenc} % http://tex.stackexchange.com/a/181119
+\usepackage{graphicx}
+\graphicspath{ {figures/} }
+\usepackage{textcomp}
+\begin{document}
+\maketitle
+%\thispagestyle{fancy}
+\newpage
+
+	\begin{center}
+	\textit{\textbf{Revision History}}
+		\begin{table}[H]
+		\label{table:revisions} % Add "[H]" to force placement of table
+			\begin{tabularx}{\textwidth}{|c|X|l|}
+			\hline
+			\rowcolor{blue}
+			\textbf{Revision} & \textbf{Description of Change} & \textbf{Date} \\
+		    \hline
+		    v1.1 & Initial Release & 3/2017 \\
+		    \hline
+		    v1.2 & Updated for OpenCPI Release 1.2 & 8/2017 \\
+			\hline
+			v1.3 & Updated for OpenCPI Release 1.3 & 1/2018 \\
+			\hline
+			\end{tabularx}
+		\end{table}
+	\end{center}
+
+\newpage
+
+\tableofcontents
+
+\newpage
+
+\section{References}
+
+	This document assumes a basic understanding of the Linux command line (or ``shell'') environment.  The reference(s) in Table 1 can be used as an overview of OpenCPI and may prove useful.
+
+\def\myreferences{
+\hline
+FSK App\footnote{Provides details of the ``FSK App'' reference application} & OpenCPI & \path{FSK_app.pdf}\\
+}
+\input{../../../../../doc/av/tex/snippets/References_Table}
+
+\newpage
+\begin{flushleft}
+\section{Overview}
+This purpose of this document is to provide a compact set of instructions to build, run, and verify the OpenCPI FSK App reference application.
+
+\section{Prerequisites}
+This document assumes that the OpenCPI framework has been installed. The application is supported on all of the OpenCPI platforms, but all of the examples shown here are for the Matchstiq-Z1 platform.
+
+\section{Build the Core Project}
+If the Core Project has not been created yet, follow the instructions in the OpenCPI Getting Started Guide. Once the Core project has been created, the following ocpidev command can be used to build the primitives and workers required by the FSK app. Navigate to the Core project directory and run the command:
+\begin{verbatim}
+ocpidev build --rcc --rcc-platform xilinx13_3 --hdl --hdl-platform matchstiq_z1 --no-assemblies
+\end{verbatim}
+Note: The --no-assemblies argument excludes the creation of executable bitstreams.\\
+This step takes approximately 20 minutes to complete.\\
+
+\section{Build the Assets Project}
+If the Assets Project has not been created yet, follow the instructions in the OpenCPI Getting Started Guide. Once the Assets project has been created, the following ocpidev command can be used to build the primitives and workers required by the FSK app. Navigate to the Core project directory and run the command:
+\begin{verbatim}
+ocpidev build --rcc --rcc-platform xilinx13_3 --hdl --hdl-platform matchstiq_z1 --hdl-assembly fsk_modem
+\end{verbatim}
+This step takes approximately 60 minutes to complete.
+
+\section{Build the FSK Application Executable}
+Next, the executable for the FSK Application must be built. Navigate to the \texttt{applications/FSK} of the Assets project and run the command:
+\begin{verbatim}
+ocpidev build --rcc-platform xilinx13_3
+\end{verbatim}
+If successful, a new directory name \textit{target-linux-x13\_3-arm} will contain the executable.
+
+\section{Running the Application}
+The following steps can also be viewed by navigating to the \texttt{applications/FSK} directory and typing \texttt{make show}. Ensure that the RX and TX ports of the platform are connected together via a coax cable, RF attenuation pads are not necessary for this test.
+\subsection{Setting Up the Execution Platform}
+For embedded platforms (Matchstiq-Z1, Zedboard), connect to the platform via a serial port. Example syntax for establishing a connection can be seen below:
+\begin{verbatim}
+screen /dev/ttyUSB0 115200
+\end{verbatim}
+\subsubsection{Networked Mode}
+Networked Mode is one of two modes typically used for running the application. It involves creating NFS mounts between the Development Platform and the Execution Platform to enable Application deployment. A setup script is used to automate the required steps for this mode. Example syntax for running this script can be seen below:
+\begin{verbatim}
+source /mnt/card/opencpi/mynetsetup.sh <IP Address of Development Host>
+\end{verbatim}
+\subsubsection{Standalone Mode}
+Standalone Mode is the other mode used for running the application. It involves deploying the application using files only on local storage and not over a network connection. Similar to Networked Mode, the setup for Standalone Mode also involves running a setup script. Example syntax for running this script can be seen below:
+\begin{verbatim}
+source /mnt/card/opencpi/mysetup.sh
+\end{verbatim}
+\subsection{Setting OCPI\_LIBRARY\_PATH Environment Variable}
+The OCPI\_LIBRARY\_PATH environment variable is a colon-separated list of files/directories which is searched for executable artifacts during Application Deployment. For proper execution of the FSK App, all of the FSK App artifacts (detailed in the FSK App document) must be included in the \texttt{OCPI\_LIBRARY\_PATH} environment variable. Example syntax of the setting can be seen below:
+\subsubsection{Networked Mode}
+In networked mode, artifact files can be accessed via NFS mounts.
+\begin{verbatim}
+export OCPI_LIBRARY_PATH=/mnt/net/cdk/../projects/core/exports/lib/components/rcc:\
+/mnt/ocpi_assets/applications/FSK/../../hdl/assemblies/fsk_modem:\
+/mnt/ocpi_assets/applications/FSK/../../exports/lib
+\end{verbatim}
+\subsubsection{Standalone Mode}
+In standalone mode, artifact files can be copied to the SD card.
+\begin{verbatim}
+export OCPI_LIBRARY_PATH=/mnt/card/opencpi/artifacts
+\end{verbatim}
+\subsection{Running the Application}
+To run the application, navigate to the \texttt{applications/FSK} directory and run the executable in the target-* directory of your Execution Platform. Example syntax can be seen below.
+\begin{verbatim}
+./target-linux-x13_3-arm/FSK txrx
+\end{verbatim}
+Reference the \textit{FSK\_app.pdf} for executing the various modes (filerw, tx, rx, txrx, bbloopback) of the FSK application. Ensure that OCPI\_LIBRARY\_PATH is configured, as provided, for the respective mode and platform.
+\subsection{View the Results}
+After the application completes, the output can be found in the \texttt{applications/FSK/odata} directory. To view the results on the Development Host, navigate to the \texttt{applications/FSK} directory and execute the command:
+\begin{verbatim}
+eog odata/out_app_fsk_txrx.bin
+\end{verbatim}
+\end{flushleft}
+\end{document}

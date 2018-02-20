@@ -1,0 +1,44 @@
+<ComponentSpec>
+  <Port Name="in" numberofopcodes='256'/>
+  <Port Name="out" numberofopcodes='256' optional='true' producer='true'/>
+
+  <!-- Socket to write to -->
+  <Property name="outSocket" type="Struct" readable="true" writable="true">
+    <Member name='address' type='string' stringLength='16' default='0.0.0.0'/>
+    <Member name='port' type='ushort'/>
+    <Member name='ports' arrayLength="256" type='ushort'/>
+    <Member name='messagesInStream' type='bool' arrayLength="256" default='false'/>
+  </Property>
+
+  <!-- Statistics for each opcode -->
+  <Property name="current" type="Struct" volatile="true">
+    <Member name="Total" type="Struct">
+      <Member name="bytes" type="ULongLong"/>
+      <Member name="messages" type="ULongLong"/>
+    </Member>
+    <Member name="Opcode" type="Struct" arrayLength="256">
+      <Member name="bytes" type="ULongLong"/>
+      <Member name="messages" type="ULongLong"/>
+    </Member>
+  </Property>
+
+  <Property name="stopOn" type="Struct" readable="true" writable="true">
+    <!-- Stop on TOTAL bytes/messages  -->
+    <Member name="Total" type="Struct">
+      <Member name="bytes" type="ULongLong"/>
+      <Member name="messages" type="ULongLong"/>
+    </Member>
+    <!-- Stop on bytes/messages with a certain opcode -->
+    <Member name="Opcode" type="Struct" arrayLength="256">
+      <Member name="bytes" type="ULongLong"/>
+      <Member name="messages" type="ULongLong"/>
+    </Member>
+    <!-- Stop on bytes/messages with any single unspecified opcode -->
+    <Member name="Any" type="Struct">
+      <Member name="bytes" type="ULongLong"/>
+      <Member name="messages" type="ULongLong"/>
+    </Member>
+    <!-- Stop on ZLM for given opcode. To disable, not within 0..255 -->
+    <Member name='ZLM' type='UShort'/>
+  </Property>
+</ComponentSpec>

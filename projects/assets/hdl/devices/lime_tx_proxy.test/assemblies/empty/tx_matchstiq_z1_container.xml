@@ -1,0 +1,8 @@
+<HdlContainer platform="matchstiq_z1">
+    <!-- RX connections -->
+    <Connection device="lime_dac" port="in" interconnect="zynq"/>
+    <!-- I2C bus -->
+    <device name="si5338"/>
+    <!-- lime_tx control the lime_spi device for configuring the lime -->
+    <device name="lime_tx"/>
+</HdlContainer>

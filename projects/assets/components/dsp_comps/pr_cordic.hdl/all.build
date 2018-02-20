@@ -1,0 +1,99 @@
+<build>
+
+  <configuration id='0'>
+    <parameter name='DATA_WIDTH' value='16'/>
+    <parameter name='DATA_EXT' value='2'/>
+    <parameter name='STAGES' value='16'/>
+    <parameter name='ocpi_debug' value='false'/>
+    <parameter name='ocpi_endian' value='little'/>
+  </configuration>
+
+  <configuration id='1'>
+    <parameter name='DATA_WIDTH' value='16'/>
+    <parameter name='DATA_EXT' value='2'/>
+    <parameter name='STAGES' value='18'/>
+    <parameter name='ocpi_debug' value='false'/>
+    <parameter name='ocpi_endian' value='little'/>
+  </configuration>
+
+  <configuration id='2'>
+    <parameter name='DATA_WIDTH' value='16'/>
+    <parameter name='DATA_EXT' value='2'/>
+    <parameter name='STAGES' value='20'/>
+    <parameter name='ocpi_debug' value='false'/>
+    <parameter name='ocpi_endian' value='little'/>
+  </configuration>
+
+  <configuration id='3'>
+    <parameter name='DATA_WIDTH' value='16'/>
+    <parameter name='DATA_EXT' value='2'/>
+    <parameter name='STAGES' value='22'/>
+    <parameter name='ocpi_debug' value='false'/>
+    <parameter name='ocpi_endian' value='little'/>
+  </configuration>
+
+  <configuration id='4'>
+    <parameter name='DATA_WIDTH' value='16'/>
+    <parameter name='DATA_EXT' value='4'/>
+    <parameter name='STAGES' value='16'/>
+    <parameter name='ocpi_debug' value='false'/>
+    <parameter name='ocpi_endian' value='little'/>
+  </configuration>
+
+  <configuration id='5'>
+    <parameter name='DATA_WIDTH' value='16'/>
+    <parameter name='DATA_EXT' value='4'/>
+    <parameter name='STAGES' value='18'/>
+    <parameter name='ocpi_debug' value='false'/>
+    <parameter name='ocpi_endian' value='little'/>
+  </configuration>
+
+  <configuration id='6'>
+    <parameter name='DATA_WIDTH' value='16'/>
+    <parameter name='DATA_EXT' value='4'/>
+    <parameter name='STAGES' value='20'/>
+    <parameter name='ocpi_debug' value='false'/>
+    <parameter name='ocpi_endian' value='little'/>
+  </configuration>
+
+  <configuration id='7'>
+    <parameter name='DATA_WIDTH' value='16'/>
+    <parameter name='DATA_EXT' value='4'/>
+    <parameter name='STAGES' value='22'/>
+    <parameter name='ocpi_debug' value='false'/>
+    <parameter name='ocpi_endian' value='little'/>
+  </configuration>
+
+   <configuration id='8'>
+    <parameter name='DATA_WIDTH' value='16'/>
+    <parameter name='DATA_EXT' value='6'/>
+    <parameter name='STAGES' value='16'/>
+    <parameter name='ocpi_debug' value='false'/>
+    <parameter name='ocpi_endian' value='little'/>
+  </configuration>
+
+  <configuration id='9'>
+    <parameter name='DATA_WIDTH' value='16'/>
+    <parameter name='DATA_EXT' value='6'/>
+    <parameter name='STAGES' value='18'/>
+    <parameter name='ocpi_debug' value='false'/>
+    <parameter name='ocpi_endian' value='little'/>
+  </configuration>
+
+  <configuration id='10'>
+    <parameter name='DATA_WIDTH' value='16'/>
+    <parameter name='DATA_EXT' value='6'/>
+    <parameter name='STAGES' value='20'/>
+    <parameter name='ocpi_debug' value='false'/>
+    <parameter name='ocpi_endian' value='little'/>
+  </configuration>
+
+  <configuration id='11'>
+    <parameter name='DATA_WIDTH' value='16'/>
+    <parameter name='DATA_EXT' value='6'/>
+    <parameter name='STAGES' value='22'/>
+    <parameter name='ocpi_debug' value='false'/>
+    <parameter name='ocpi_endian' value='little'/>
+  </configuration>
+
+</build>

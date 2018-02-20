@@ -1,0 +1,3 @@
+<componentspec>
+  <port name='event_in' protocol='tx_event-prot'/>
+</componentspec>

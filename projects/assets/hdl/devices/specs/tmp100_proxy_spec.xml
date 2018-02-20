@@ -1,0 +1,6 @@
+<!-- 
+ TMP100 Device Worker Proxy OCS
+-->
+<ComponentSpec>
+  <property name="temperature" type="float" volatile="true"/>
+</ComponentSpec>

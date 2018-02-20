@@ -1,0 +1,6 @@
+<tests useHDLFileIo='true'>
+  <input port='in' script='generate.py 32768' messagesize='8192'/>
+  <output port='out' script='verify.py 32768' view='view.sh'/>
+  <property name='ref' value='0x1B26'/>
+  <property name='mu' value='0x144E'/>
+</tests>

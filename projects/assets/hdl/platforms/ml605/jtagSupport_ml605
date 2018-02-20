@@ -1,0 +1,166 @@
+#!/bin/sh --noprofile
+
+# This file is protected by Copyright. Please refer to the COPYRIGHT file
+# distributed with this source distribution.
+#
+# This file is part of OpenCPI <http://www.opencpi.org>
+#
+# OpenCPI is free software: you can redistribute it and/or modify it under the
+# terms of the GNU Lesser General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your option) any
+# later version.
+#
+# OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+# A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Lesser General Public License along
+# with this program. If not, see <http://www.gnu.org/licenses/>.
+
+################################################################################
+# jtag support functions for ml605:
+# Be sure to write error messages to stderr since some funtions return
+# data on stdout
+################################################################################
+source $OCPI_CDK_DIR/scripts/util.sh
+func=$1
+temp=$2
+dir=`dirname $0`
+#echo bitfile=$1 device=$2 part=$3 esn=$4 position=$5 temp=$6
+setVarsFromMake $OCPI_CDK_DIR/include/hdl/xilinx.mk ShellIseVars=1 $verbose
+[ -z "$OcpiXilinxLabToolsDir" ] && {
+  echo Error: Could not find the directory for XILINX LabTools or ISE.
+  exit 1
+}
+source $OcpiXilinxLabToolsDir/../settings64.sh 1>&2
+if test $? != 0; then
+  echo Xilinx tools setup failed. 1>&2
+  exit 1
+fi
+imp="$OcpiXilinxLabToolsDir/bin/lin64/impact"
+if test ! -x $imp; then
+  echo Error: Xilinx impact tool not found at $imp 1>&2
+  exit 1
+fi
+# impact expects to overwrite/create this file.  In the off chance that it exists
+# and is not writable by us, we remove it first.
+# This will still fail if we don't have write permission in the directory,
+# but that is what impact will tell us in that case
+rm -f _impactbatch.log
+if test $? != 0; then
+  echo Cannot remove previous impact log file.  No write permission in current directory. 1>&2
+  exit 1
+fi
+
+function good {
+  rm -f $temps $temp.log
+  exit 0
+}
+function bad {
+  rm -f $temps
+  if test -f $temp.log; then
+     echo Dump of $temp.log:
+     echo "*******************************************************************************"
+     cat $temp.log
+     echo "*******************************************************************************"
+  fi
+  exit 1
+}
+
+################################################################################
+# Now we do individual functions
+################################################################################
+case $func in
+  (cables)
+    $imp -batch > $temp.log <<EOF
+listusbcables
+EOF
+    # impact doesn't have reliable exit codes
+    CABLES=`grep '^port=' < $temp.log | \
+        sed 's/port= *\([^ ]*\) *, *esn= *\([^ ]*\) *$/\1=\2~/'`
+    if test $? != 0 -o "$CABLES" = ""; then
+      echo No Xilinx USB JTAG cables found using the Xilinx \"impact\" tool. 1>&2
+      bad
+    fi
+    echo $CABLES
+    good
+   ;;
+  (unlock)
+    echo "Telling iMPACT to clear all locks. If you are using a cable in another application, things may fail!" 1>&2
+    $imp >> $temp.unlock.log <<EOF
+cleancablelock
+exit
+EOF
+    good
+   ;;
+  (part)
+    port=$3
+    part=$4
+    echo Finding cable position of part \"$part\" on cable at port \"$port\" 1>&2
+    temps=$temp.part
+    for pp in 1 2 3 4 5 6 7 8 9; do
+      [ -n "OCPI_DEBUG_JTAG" ] && echo "Checking part #${pp}..." 1>&2
+      $imp -batch <<EOF 2> $temp.log 1>&2
+setMode -bs
+setCable -p $port
+identify
+readidcode -p $pp
+EOF
+      if test $? = 0; then
+         [ -n "OCPI_DEBUG_JTAG" ] && echo "Device found: See $temp.log.${pp}" 1>&2 && cp $temp.log{,.${pp}}
+         ed $temp.log <<EOF > /dev/null 2>&1
+           $
+           ?IDCODE?+
+           s/^.*Xilinx \([^,]*\),.*\$/\1/p
+           1,-d
+           2,\$d
+           w $temp.part
+EOF
+         if test $? = 0 -a "`cat $temp.part`" == $part; then
+           echo $pp
+           good
+         fi
+       else
+         [ -n "OCPI_DEBUG_JTAG" ] && echo "Bad return. $temp.log.${pp} MIGHT exist." 1>&2 && cp $temp.log{,.${pp}} || :
+         break
+       fi
+    done
+    echo Error: did not find part $part in the jtag chain for cable $port. 1>&2
+    bad
+    ;;
+  (load)
+    port=$3
+    pos=$4
+    bitfile=$5
+    case $bitfile in
+     (*.bit) ;;
+     (*)
+       tempfile=$temp.bit
+       temps+=$tempfile
+       ln -s $tempfile $bitfile
+       bitfile=$tempfile
+       ;;
+    esac
+    $imp -batch <<EOF 2> $temp.log 1>&2
+setMode -bs
+setCable -port $port
+Identify
+assignFile -p $pos -file $bitfile
+Program -p $pos
+exit
+EOF
+    if test $? != 0; then
+      echo -n Error: Xilinx \"impact\" tool failed\; error log says: `grep -i error $temp.log`\; 1>&2
+      bad
+    fi
+    grep -q 'Programmed successfully' < $temp.log
+    if test $? != 0; then
+      echo -n Error: Xilinx \"impact\" tool failed\; log says: `grep -i error $temp.log`\; 1>&2
+      bad
+    fi
+    good
+    ;;
+esac
+echo Unknown JTAG function $func 1>&2
+exit 1

@@ -1,0 +1,44 @@
+<ComponentSpec>
+  <Port Name="in" numberofopcodes='256'/>
+  <Port Name="out" numberofopcodes='256' optional='true' producer='true'/>
+
+  <!-- File name to write to -->
+  <Property name="outFile" type="Struct" readable="true" writable="true">
+    <Member name='prefix' type='string' stringLength='1024'/>
+    <Member name='digits' type='uChar' default='1'/>
+    <Member name='suffix' type='string' stringLength='1024' default='.bin'/>
+    <Member name='messagesInFile' type='bool' arrayLength="256" default='false'/>
+  </Property>
+
+  <!-- Statistics for each opcode -->
+  <Property name="current" type="Struct" volatile="true">
+    <Member name="Total" type="Struct">
+      <Member name="bytes" type="ULongLong"/>
+      <Member name="messages" type="ULongLong"/>
+    </Member>
+    <Member name="Opcode" type="Struct" arrayLength="256">
+      <Member name="bytes" type="ULongLong"/>
+      <Member name="messages" type="ULongLong"/>
+    </Member>
+  </Property>
+
+  <Property name="stopOn" type="Struct" readable="true" writable="true">
+    <!-- Stop on TOTAL bytes/messages  -->
+    <Member name="Total" type="Struct">
+      <Member name="bytes" type="ULongLong"/>
+      <Member name="messages" type="ULongLong"/>
+    </Member>
+    <!-- Stop on bytes/messages with a certain opcode -->
+    <Member name="Opcode" type="Struct" arrayLength="256">
+      <Member name="bytes" type="ULongLong"/>
+      <Member name="messages" type="ULongLong"/>
+    </Member>
+    <!-- Stop on bytes/messages with any single unspecified opcode -->
+    <Member name="Any" type="Struct">
+      <Member name="bytes" type="ULongLong"/>
+      <Member name="messages" type="ULongLong"/>
+    </Member>
+    <!-- Stop on ZLM for given opcode. To disable, not within 0..255 -->
+    <Member name='ZLM' type='UShort'/>
+  </Property>
+</ComponentSpec>

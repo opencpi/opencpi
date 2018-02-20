@@ -1,0 +1,85 @@
+###################################################################################################
+Python Coding Guidelines
+###################################################################################################
+
+Mostly follow PEP 8: https://www.python.org/dev/peps/pep-0008/
+
+Indentation:
+    indent by 4 SPACES
+	continuation lines should line up with parent in a sensible way
+
+Line length:
+    limit to 100 (PEP 8 suggests 80, but explains that 100 is acceptable)
+
+Whitespace:
+    Avoid extra whitespace
+        after parentheses
+        after commas
+        trailing whitespace at end of line
+    Avoid newlines at the end of a file
+    Example of good whitespace:
+        example_variable = foo(bar[0], arg1=5)
+    See PEP 8 for more detail
+
+Comments:
+    Use docstrings for all modules, functions, classes or methods with any significant functionality
+        Provide an actual explanation of what the entity is doing in the docstring
+        def my_function(arg0, arg1, arg2):
+            """
+            This function exists for purpose A, and does operation B
+            on arguments arg0, arg1 and arg2. Use it in circumstances
+            1, 2 and 3, and expect results a, b and c.
+            """
+            ...
+        Note: this allows you to use 'help(my_function)' to see a man-page-style document
+    Use regular comments starting with '#' when explaining details of a function or code block
+
+Naming:
+    Files that will be placed in a user's path should be a single word starting with 'ocpi'
+        they should also include #!/bin/python at the top and omit the '.py' extension
+    Avoid single-character names under all circumstances
+    Avoid two-character names in most circumstances
+    modules:
+        have lower-case names with underscores
+    Classes:
+        CamelCase starting with upper-case character
+    variables_functions_or_methods:
+        all lower-case underscore-separated
+    _globals or GLOBALS:
+        global variables should be prefixed with an underscore
+        it is also acceptable to use ALL_CAPS global variables
+    __private and _protected variables or functions:
+        use two underscores to denote a private entity
+        use a single underscore to denote a protected entity
+
+Unit Testing:
+    Test any python modules in tests/pytests
+    Name them <module>_test.py
+    Maximize code coverage and maintain the tests!
+
+Logging:
+    See ocpiutil.py for information regarding how to enable different levels of logging
+        in your module based on the OCPI_LOG_LEVEL environment variable
+    Reference other python modules to see how they include and use ocpiutil.py's logging
+
+
+Recommendations/Requests:
+    Use a syntax checker like pylint!
+    COMMENT YOUR CODE, and maintain your comments
+    Separate logically modularized code with whitespace or comment characters
+    When in doubt, check PEP 8
+
+Editor Configurations/Plugins:
+    Some of the plugins listed here rely on pylint, so make sure you install this first
+    Vim:
+        The syntastic plugin located at https://github.com/vim-syntastic/syntastic is very
+        convenient for syntax checking in many languages. You can follow the installation
+        instructions there and add the following to your .vimrc:
+            let g:syntastic_python_checkers = ['pylint']
+        You may also choose to add the following so that if you try to quit ':wq', you will not
+        not have to wait for the syntax check before vim quits:
+            let g:syntastic_check_on_wq = 0
+    Eclipse:
+        The PyDev plugin at http://www.pydev.org/ can be used for syntax checking, and can
+        optionally be paired with pylint as explained here:
+        http://www.pydev.org/manual_adv_pylint.html

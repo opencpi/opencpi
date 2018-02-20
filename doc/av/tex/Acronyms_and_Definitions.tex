@@ -1,0 +1,202 @@
+\iffalse
+This file is protected by Copyright. Please refer to the COPYRIGHT file
+distributed with this source distribution.
+
+This file is part of OpenCPI <http://www.opencpi.org>
+
+OpenCPI is free software: you can redistribute it and/or modify it under the
+terms of the GNU Lesser General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License along
+with this program. If not, see <http://www.gnu.org/licenses/>.
+\fi
+%----------------------------------------------------------------------------------------
+% Update the docTitle and docVersion per document
+%----------------------------------------------------------------------------------------
+\def\docTitle{Acronyms and Definitions}
+\def\docVersion{1.2}
+%----------------------------------------------------------------------------------------
+\input{snippets/LaTeX_Header.tex}
+\date{Version \docVersion} % Force date to be blank and override date with version
+\title{\docTitle}
+\lhead{\small{\docTitle}}
+\usepackage{enumitem}
+%----------------------------------------------------------------------------------------
+\begin{document}
+\maketitle
+\thispagestyle{fancy}
+\newpage
+\begin{center}
+  \textit{\textbf{Revision History}}
+  \begin{table}[H]
+    \begin{tabularx}{\textwidth}{|c|X|l|}
+      \hline
+      \rowcolor{blue}
+      \textbf{Revision} & \textbf{Description of Change} & \textbf{Date} \\
+      \hline
+      v1.0 & Initial creation for OpenCPI 1.0 & 2/2016 \\
+      \hline
+      v1.1 & Reorganized and updated for OpenCPI 1.1 & 3/2017 \\
+      \hline
+      v1.2 & Updated for OpenCPI Release 1.2 & 8/2017 \\
+      \hline
+    \end{tabularx}
+  \end{table}
+  \par
+  \textit{\textbf{Document Conventions}}\\
+  ~\\
+  This document uses \textit{italic type} to indicate a keyword that is defined elsewhere, and possibly later, within.
+\end{center}
+\newpage
+\section{Acronyms}
+\begin{description}
+\item[ACI] \textit{Application} Control Interface
+\item[ARM] Advanced RISC Machine
+\item[AV] ANGRYVIPER Team, or ticket number internal to the team, \textit{e.g.} AV-2985
+\item[AXI] Advanced eXtensible Interface
+\item[CBD] \textit{Component}-Based Development
+\item[CDK] \textit{Component Development Kit}
+\item[CPU] Central Processing Unit
+\item[DSP] Digital Signal Processing or Digital Signal Processor
+\item[FPGA] Field Programmable Gate Array
+% \item[GPGPU] General Purpose Graphics Processing Unit
+\item[GPP] General Purpose Processor
+\item[GPU] Graphics Processing Unit
+\item[HDL] \textit{Hardware Description Language}
+% \item[LVM] Logical Volume Manager
+\item[OCL] OpenCL
+\item[OCS] OpenCPI \textit{Component Specification}
+\item[OpenCL] Open Computing Language
+\item[OpenCPI] Open Component Portability Infrastructure
+\item[OPS] OpenCPI \textit{Protocol Specification}
+\item[OSS] Open Source Software
+\item[OWD] OpenCPI \textit{Worker Description}
+\item[PCI] Peripheral Component Interconnect
+\item[PCIe] PCI-Express
+\item[RCC] Resource Constrained C-Language (see \textit{RCC Authoring Model})
+\item[RPM] RPM Package Manager
+\item[VHDL] VHSIC Hardware Description Language
+\item[VM] Virtual Machine
+\item[XML] Extensible Markup Language
+\item[ZLM] \textit{Zero Length Message}
+\end{description}
+\newpage
+\section{Definitions}
+\begin{description}[style=nextline]
+\item[Application]
+In this context of Component-Based Development (CBD), an \textit{application} is a composition or assembly of components that, as a whole, perform some useful function. The term ``application'' can also be an adjective to distinguish functions or code from infrastructure to support the execution of component-based application.
+
+\item[Authoring Model]
+One of several ways of creating \textit{component} implementations in a specific language using a specific API between the component and its execution environment.  Existing models include RCC and HDL. %, and OCL.
+
+\item[AXI (Advanced eXtensible Interface)]
+Industry-standard bus used by ARM processors.
+
+\item[Base Project]
+The \textit{project} containing the default OpenCPI distribution.
+
+\item[Component]
+Interface ``contract'' that is implemented by an OpenCPI \textit{worker}.
+
+\item[Component Development Kit]
+Set of tools, scripts, documents, and libraries used for developing \textit{components} and \textit{workers} in \textit{projects}.
+
+\item[Component Library]
+Collection of \textit{component specifications} and \textit{workers} that can be built, exported, and installed to support \textit{applications}.
+
+\item[Component Specification]
+An XML document that describes both \textit{configuration properties} and zero or more data interfaces (\textit{protocol specifications}) of a \textit{component}, establishing interface requirements for multiple implementations (\textit{workers}) in \textbf{any} authoring model.
+
+\item[Configuration Properties]
+Named values of a \textit{worker} that may be read or written by \textit{control software}. Their values indicate or control aspects of the \textit{worker}'s operation. Reading and writing these property values may or may not have side effects on the operation of the worker. Configuration properties with side effects can be used for custom worker control. Each \textit{worker} may have its own, possibly unique, set of configuration properties. They may include hardware resource such registers, memory, and state.
+
+\item[Containers]
+OpenCPI infrastructure element that ``contains,'' manages, and executes a set of application \textit{workers}. Logically, the container ``surrounds'' the workers, mediating all interactions between the worker and the rest of the system.
+
+\item[Control Operations]
+A fixed set of control operations that every \textit{worker} has. The control aspect is a common control model that allows all workers to be managed without having to customize the management infrastructure software for each worker, while \textit{configuration properties} are used to specialize components.
+
+\item[Control Plane]
+Control and configuration interfaces for runtime \textit{lifecycle} control and configuration of \textit{worker} instances at runtime.
+
+\item[Control Software (AKA Control Application AKA Control Agent)]
+The entity that is exercising control using the ACI. Encompass the various aspects of how \textit{control software}, usually running in a centralized host processing environment, can control \textit{worker} instances at runtime via the \textit{control plane}.
+
+\item[Data Plane]
+Data passing interfaces used for \textit{workers} to consume/produce data from/to other workers in the application (of whatever \textit{authoring model} in whatever \textit{container}).
+
+\item[Hardware Description Language]
+Refers to a specialized language used to program the structure design and operation of digital logic circuits. In OpenCPI, it is an \textit{authoring model} using the VHDL language and is targeted at FPGAs. HDL \textit{workers} should be developed according to the HDL authoring model and which is described in the ``OpenCPI HDL Development Guide.''
+
+\item[HDL Authoring Model]
+\textit{Authoring model} used by the HDL (VHDL-language) \textit{workers}.
+
+\item[Infrastructure]
+Software/gateware is either \textit{application} or infrastructure.
+
+\item[isim]
+The HDL simulator that Xilinx provides with their ISE software.
+
+% \item[Kernel]
+% A function declared in a program and executed on an OpenCL device.
+
+\item[Lifecycle Model]
+The control states each \textit{worker} may be in and \textit{control operations} which generally change the state a worker is in, effecting a state transition.
+
+% \item[OCL Authoring Model]
+% \textit{Authoring model} used by the OpenCL language workers.
+
+\item[PCI (Peripheral Component Interconnect)]
+Industry-standard local computer bus for attaching hardware devices.
+
+\item[Port Readiness]
+Indicates a \textit{worker} has data available, input or output, that the \textit{container} needs to act on. Input ports have available buffers when there is message data present that has not yet been consumed by the worker. Output ports are ready when buffers are available into which they may place new data.
+
+\item[Project]
+Work area in which to develop OpenCPI \textit{components}, \textit{libraries}, \textit{applications}, and other platform- and device-oriented assets.
+
+\item[Protocol Specification]
+One or more XML files that describe the allowable data messages and payloads that may flow between the ports of \textit{components}.
+
+\item[Protocol Summary]
+The set of all summary attributes, whether inferred from the messages specified for the \textit{protocol}, or specified directly as attributes of the protocol. Indicates the basic behavior of a port using a protocol.  Can also be present when messages are specified, and can override the attributes inferred from the message specifications.
+
+\item[RCC Authoring Model]
+\textit{Authoring model} used by the C or C++ language \textit{workers} that execute on general purposes processors (GPPs). The ``Resource Constrained'' prefix indicates the limited set of library calls a worker should use; see the ``OpenCPI RCC Development Guide'' for more information.
+
+\item[Run Condition]
+When a \textit{worker} has a combination of port readiness and/or some amount of time has passed. Determined by the worker's \textit{container}.
+
+\item[Run Method]
+Non-blocking software method that is executed when a \textit{worker}'s \textit{run condition} is satisfied.
+
+\item[Spec file]
+Shorthand notation for \textit{component specification} file.
+
+\item[SpecProperty]
+XML elements that add \textit{worker}-specific attributes to the \textit{configuration properties} already defined in the \textit{component spec}.
+
+\item[Worker]
+Specific implementation of a \textit{component specification} with the source code written according to an \textit{authoring model}.
+
+\item[Worker Description]
+XML file describing the \textit{worker} and references the \textit{component spec} it is implementing.
+
+% \item[Work-Item]
+% One of a collection of parallel executions of a kernel invoked on a device. A work-item is executed by one or more processing elements as part of a work-group executing on a compute unit. A work-item is distinguished from other executions within the collection by its global ID and local ID.
+
+\item[XML]
+Standardized markup language that defines a set of rules for encoding documents in a format which is both human-readable and machine-readable.
+
+\item[XSIM] The HDL simulator that Xilinx provides with their Vivado software.
+
+\item[Zero Length Message]
+Operation element with no argument elements present when a \textit{protocol specification} allows such an operation with no data fields.
+\end{description}
+\end{document}

@@ -1,0 +1,15 @@
+<ComponentSpec>
+  <Properties>
+    <Property Name="height" readable="true" writable="true"/>
+    <Property Name="width" readable="true" writable="true"/>
+    <Property Name="low_thresh" type="double" readable="true" writable="true"/>
+    <Property Name="high_thresh" type="double" readable="true" writable="true"/>
+    <Property Name="images" readable="true"/>
+  </Properties>
+  <DataInterfaceSpec Name="in">
+    <xi:include href="image8_lines.xml"/>
+  </DataInterfaceSpec>
+  <DataInterfaceSpec Name="out" Producer="true">
+    <xi:include href="image8_lines.xml"/>
+  </DataInterfaceSpec>
+</ComponentSpec>

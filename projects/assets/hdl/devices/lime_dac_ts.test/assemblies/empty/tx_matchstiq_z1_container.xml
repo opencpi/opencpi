@@ -1,0 +1,23 @@
+<HdlContainer platform='matchstiq_z1/matchstiq_z1_tx'>
+  <Connection device='lime_tx' port='event_in' otherdevice='lime_dac_ts' otherport='event_out'/>
+  <Connection interconnect='zynq' device='lime_dac_ts' port='in'/>
+  <!-- This is a workaround. It tricks the framework to use the Lime DAC output signals as  -->
+  <!-- signals for the Lime DAC TS -->
+  <Device worker='lime_dac_ts' floating='1'>
+    <Signal name="TX_CLK_IN" platform="lime_adc_rx_clk_out"/>
+    <Signal name="TX_CLK" platform="lime_dac_tx_clk"/>
+    <Signal name="TXD" platform="lime_dac_txd"/>
+    <Signal name="TXD(1)" platform=""/>
+    <Signal name="TXD(2)" platform=""/>
+    <Signal name="TXD(3)" platform=""/>
+    <Signal name="TXD(4)" platform=""/>
+    <Signal name="TXD(5)" platform=""/>
+    <Signal name="TXD(6)" platform=""/>
+    <Signal name="TXD(7)" platform=""/>
+    <Signal name="TXD(8)" platform=""/>
+    <Signal name="TXD(9)" platform=""/>
+    <Signal name="TXD(10)" platform=""/>
+    <Signal name="TXD(11)" platform=""/>
+    <Signal name="TX_IQ_SEL" platform="lime_dac_tx_iq_sel"/>
+  </Device>
+</HdlContainer>

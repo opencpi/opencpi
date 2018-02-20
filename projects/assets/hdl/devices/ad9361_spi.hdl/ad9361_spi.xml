@@ -1,0 +1,32 @@
+<HdlDevice language="vhdl">
+  <ComponentSpec>
+    <!-- Parameters -->
+    <!-- CLK_FREQ_p is control plane clock freq (platform dependent) -->
+    <Property name="CP_CLK_FREQ_HZ_p" type="float" parameter="1" default="100e6" description="Value will determine assumed frequency of the Control Plane (CP) clock. This value is used to calculate the dividor for the SPI clock"/>
+    <Property name="SPI_CLK_FREQ_HZ_p" type="float" parameter="1" default="6.25e6"/> <!-- AD9361's valid SPI CLK rate range is [0 50] MHz, 6.25 MHz was simply chosen to have nice dividor values for 100 MHz and 125MHz control plane clock source -->
+
+    <!-- Properties -->
+    <property name='lastAddr' type='ushort' volatile='1'/>
+    <property name='lastData' type='uchar' volatile='1'/>
+    <property name='resetting' type='bool' volatile='1' description="The read value always indicates the current value of the RESETB pin (note that the RESETB pin is active-low)."/>
+  </ComponentSpec>
+
+  <!-- Raw Property Ports -->
+  <rawprop name='rprops' optional='true'/>
+
+  <!-- Dev Signal Ports -->
+  <devsignal name='dev_force_reset' signals='force-reset-out-signals.xml'/>
+
+  <!-- Sub-Device Port Connections (Supports) -->
+  <supports worker='ad9361_config'>
+    <connect port="rawprops"            to="rprops"/>
+    <connect port="dev_force_spi_reset" to="dev_force_reset"/>
+  </supports>
+
+  <!-- Signals -->
+  <Signal Output="SPI_DI"/>    <!-- Pin J4:  SPI data input -->
+  <Signal Output="SPI_CLK"/>   <!-- Pin J5:  SPI clock -->
+  <Signal Output="SPI_ENB"/>   <!-- Pin K6:  SPI enable, asserted LOW -->
+  <Signal  Input="SPI_DO"/>    <!-- Pin L6:  SPI data output -->
+  <Signal Output="RESETB"/>    <!-- Pin K5:  Chip reset, asserted LOW -->
+</HdlDevice>

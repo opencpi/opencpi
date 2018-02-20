@@ -1,0 +1,4 @@
+<ComponentSpec>
+  <DataInterfaceSpec Name="in" Protocol="TimeStamped_IQ-prot"/>
+  <DataInterfaceSpec Name="out" Producer="true" Protocol="TimeStamped_IQ-prot"/>
+</ComponentSpec>

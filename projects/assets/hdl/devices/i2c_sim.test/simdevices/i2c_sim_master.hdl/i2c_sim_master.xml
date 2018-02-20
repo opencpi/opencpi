@@ -1,0 +1,11 @@
+<HdlDevice language="vhdl" FirstRawProperty="test0">
+  <ComponentSpec>
+    <Property name="test0"    type="uchar" writable="true" volatile="true"/>  <!-- 0-->
+    <Property name="test1"    type="uchar" writable="true" volatile="true"/>  <!-- 1-->
+    <Property name="test2"    type="uchar" writable="true" volatile="true"/>  <!-- 2-->
+    <Property name="test3"    type="uchar" writable="true" volatile="true"/>  <!-- 3-->
+  </ComponentSpec>
+  <ControlInterface Timeout="65536"/>
+  <!--Need these signals to control i2c_opencores -->
+  <Rawprop name="rawprops" master="true"/>
+</HdlDevice>

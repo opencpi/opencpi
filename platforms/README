@@ -1,0 +1,35 @@
+This directory is for OpenCPI runtime platforms, whether development-capable
+platforms or embedded platforms.  The name of each subdirectory is a unique name
+for the platform.  The contents of each directory is a set of platform specific
+files and scripts, and is thus a home for platform specific "stuff".
+
+There are a few standard files that are expected to be in each platform subdirectory:
+
+README:                  describes the platform
+target:                  a one line text file containing the compilation target for the platform.
+                         E.g. for centos6: linux-c6-x86_64.
+<platform>-packages.sh:  a script to download and install packages from the
+                         standard repository for the OS, usually only for development platforms
+<platform>-target.mk:    Makefile settings when building the core of OpenCPI for this platform
+<platform>-check.sh:     a script to verify you are running on this platform.
+
+The other contents of this platforms directory are:
+
+getPlatform.sh: a script to determine what platform we are running on, which
+                uses the <platform>-check.sh scripts to recognize the platform you are running
+
+Thus adding a platform requires at least these steps:
+
+1. Add a directory here with the files mentioned above, and a README file describing it
+2. Ensuring that there is compilation (or cross-compilation) support for the target.
+3. If needed, add a "<platform>-packages.sh" script to the directory.
+4. Add the "target", "<platform>-check.sh" and "<platform>-target.mk" files to the directory.
+5. For building RCC workers, for local/native/host-based compilation, add the file:
+     rcc=<platform>.mk
+   and for RCC worker cross-compilation file, building on <devhost>, add the file:
+     rcc=<devhost>=<platform>.mk
+6. Once getPlatform.sh works on the new platform
+   the following scripts should execute (at the top level):
+     ./scripts/install-prerequisites.sh
+     ./scripts/build-opencpi.sh
+     ./scripts/test-opencpi.sh

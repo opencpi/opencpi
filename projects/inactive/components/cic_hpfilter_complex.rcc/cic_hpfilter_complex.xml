@@ -1,0 +1,5 @@
+<RccImplementation controloperations="start">
+  <xi:include href="cic_hpfilter_complex_spec.xml"/>
+</RccImplementation>
+
+

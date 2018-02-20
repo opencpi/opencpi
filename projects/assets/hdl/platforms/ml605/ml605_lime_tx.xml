@@ -1,0 +1,3 @@
+<HdlConfig Language='vhdl'>
+  <device name='lime_dac' card='lime_zipper_fmc_lpc' slot='fmc_lpc'/>
+</HdlConfig>

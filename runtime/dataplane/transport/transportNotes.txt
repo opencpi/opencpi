@@ -1,0 +1,91 @@
+Here are the OCPI::DataTransport:: entry points fromRCC:
+
+
+::Circuit::addInputPort(OCPI::RDT::Descriptors&, char const*, OCPI::RDT::Descriptors*)
+::Circuit::attach()
+::Circuit::finalize(char const*)
+::Circuit::getOutputPort(int)
+::Circuit::release()
+::Port::advance(::Buffer*, unsigned int)
+::Port::getBufferLength()
+::Port::getNextEmptyOutputBuffer()
+::Port::getNextFullInputBuffer()
+::Port::getPortDescriptor(OCPI::RDT::Descriptors&, OCPI::RDT::Descriptors*)
+::Port::hasEmptyOutputBuffer()
+::Port::hasFullInputBuffer()
+::Port::reset()
+::Port::sendZcopyInputBuffer(::Buffer*, unsigned int)
+::Transport::addLocalEndpoint(char const*)
+::Transport::addRemoteEndpoint(char const*)
+::Transport::createCircuit(OCPI::RDT::Descriptors&)
+::Transport::createInputPort(::Circuit*&, OCPI::RDT::Descriptors&)
+::Transport::dispatch(DataTransfer::EventManager*)
+::Transport::getDefaultEndPoint()
+::Transport::getEndpointFromProtocol(char const*)
+::Transport::getListOfSupportedEndpoints()
+::Transport::getLocalCompatibleEndpoint(char const*)
+::Transport::Transport(::TransportGlobal*, bool)
+::TransportGlobal::TransportGlobal(int, bool)
+Driver keeps a TransportGlobal for with and without events.  Created in probecontainer,
+polled or not, then hands it to the container. I.e., the driver has one of each type
+of transport-global, used across all its containers.
+Then each container passes this into the creation of its own DataTransport object: m_transport
+Major uses are "getEventManager from the "global" (m_transport->m_transportGlobal->getEventManager
+and m_transport->dispatch
+event manager used to set and remove timeouts for workers.
+
+A "transport" object is the container's transport "session".
+
+addLocalEndpoint: finds an xfer driver, get's an xfer ep, get's smbresources for xfer ep, returns that.
+-- called by OcpiRccPort in RDMAPort::connectInputPort, when a worker's output finds out about the "other" input,
+--- and is deciding what type of output endpoint to create based on that.
+-- called by OcpiRccWorker in worker::createPort when a provider (input).
+--- this finds a driver from the protocol or endpoint, gets an xfer ep from that driver (maybe creating it)
+--- also finds SMBResources for the ep, and it not there does createSMBRsecources
+-- argumentis either based on "protocol", or "endpoint" or default from getDefaultEndpoint
+
+addRemoteEndpoint: called by connectExternalInputPort, connecting a known external input to an output
+--- similar to addLocalEndpoint
+
+addLocalCompatibleEndpoint: add a local ep based on a receive remote one.
+
+addLocalEndpointFromProtocol: add a local ep given a protocol
+
+===All above 4 return SMBResources, and all create if needed or use existing
+
+createCircuit
+
+createInputPort
+---From initInputPort, which is called from various places, gives us the dt_port.
+---we also add the circuits... to the app = no more... nothing was being done.
+
+dispatch - just to give it some time in the single threaded case, from the container's thread.
+
+what do ports do with circuits?
+
+initOutputPort: called upon connection, internal or external
+
+does finalize on circuit if it is established, otherwise creates it
+
+initInputPort: called - getinitialprovider, setinitialuser (redundant), connectinternapinput
+ get's dtport if not there, passing circuit to be reused or set
+
+disconnect: 
+ checks circuit for being connected, then if so does "dtport->reset()" then m_circuit->release()
+
+connectExternalInputPort (to an output port)
+ calls initOutputPort() which creates circuit
+ m_circuit->addinputport()...
+
+setOutputFlowControl()
+connectInternalInputPort()
+
+Working in initoutputport:   make sure the port is created inside the circuit code,
+and push the circuit management in a new createOutputPort method.
+Finish eliminating the visibility of circuits in OcpiRccPort.cxx
+
+connectinputport from either:
+-connectinside
+-setinitialproviderinfo
+
+

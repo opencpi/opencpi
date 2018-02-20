@@ -1,0 +1,21 @@
+<!-- This is the spec file (OCS) for: backpressure
+     Add component spec attributes, like "protocol".
+     Add property elements for spec properties.
+     Add port elements for i/o ports -->
+<ComponentSpec>
+
+  <!-- 'true'  : MSB of lfsr-15 drives the 'take'.
+       'false' : use enable_count to set the enable duty-cycle -->
+  <Property Name="enable_select" Type="bool" Readable="true" Writable="true" Default="false"/>
+
+  <!-- Set the duty cycle for 'take'
+       1 - constant, 2 (toggle off/on), 3 (1/on, 2/off), 4 (1/on, 3/off)-->
+  <Property Name="enable_duty_cycle" Type="ushort" Readable="true" Writable="true" Default="1"/>
+
+  <Property Name="IDATA_WIDTH_p" Type="ulong" Default="32" Readable="true" Parameter="true"/>
+  <Property Name="ODATA_WIDTH_p" Type="ulong" Default="32" Readable="true" Parameter="true"/>
+
+  <DataInterfaceSpec Name="in" Producer="false"/>
+  <DataInterfaceSpec Name="out" Producer="true"/>
+
+</ComponentSpec>

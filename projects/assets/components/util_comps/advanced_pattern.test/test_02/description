@@ -1,0 +1,1 @@
+From a value file, send three bytes to every tenth opcode, explicitly request 256-sized

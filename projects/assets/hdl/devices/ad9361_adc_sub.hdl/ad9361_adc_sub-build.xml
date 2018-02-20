@@ -1,0 +1,58 @@
+<build>
+  <configuration id='0'>
+    <parameter name='LVDS_p' value='true'/>
+    <parameter name='SINGLE_PORT_p' value='false'/>
+    <parameter name='HALF_DUPLEX_p' value='false'/>
+    <parameter name='DATA_RATE_CONFIG_p' value='DDR'/>
+  </configuration>
+
+  <!-- TODO / FIXME - enable remaining modes and comment in their configurations here -->
+  <!--configuration id='1'>
+    <parameter name='LVDS_p' value='false'/>
+    <parameter name='SINGLE_PORT_p' value='true'/>
+    <parameter name='HALF_DUPLEX_p' value='true'/>
+    <parameter name='DATA_RATE_CONFIG_p' value='DDR'/>
+  </configuration>
+  <configuration id='2'>
+    <parameter name='LVDS_p' value='false'/>
+    <parameter name='SINGLE_PORT_p' value='true'/>
+    <parameter name='HALF_DUPLEX_p' value='false'/>
+    <parameter name='DATA_RATE_CONFIG_p' value='DDR'/>
+  </configuration>
+  <configuration id='3'>
+    <parameter name='LVDS_p' value='false'/>
+    <parameter name='SINGLE_PORT_p' value='false'/>
+    <parameter name='HALF_DUPLEX_p' value='true'/>
+    <parameter name='DATA_RATE_CONFIG_p' value='DDR'/>
+  </configuration>
+  <configuration id='4'>
+    <parameter name='LVDS_p' value='false'/>
+    <parameter name='SINGLE_PORT_p' value='false'/>
+    <parameter name='HALF_DUPLEX_p' value='false'/>
+    <parameter name='DATA_RATE_CONFIG_p' value='DDR'/>
+  </configuration>
+  <configuration id='5'>
+    <parameter name='LVDS_p' value='false'/>
+    <parameter name='SINGLE_PORT_p' value='true'/>
+    <parameter name='HALF_DUPLEX_p' value='true'/>
+    <parameter name='DATA_RATE_CONFIG_p' value='SDR'/>
+  </configuration>
+  <configuration id='6'>
+    <parameter name='LVDS_p' value='false'/>
+    <parameter name='SINGLE_PORT_p' value='true'/>
+    <parameter name='HALF_DUPLEX_p' value='false'/>
+    <parameter name='DATA_RATE_CONFIG_p' value='SDR'/>
+  </configuration>
+  <configuration id='7'>
+    <parameter name='LVDS_p' value='false'/>
+    <parameter name='SINGLE_PORT_p' value='false'/>
+    <parameter name='HALF_DUPLEX_p' value='true'/>
+    <parameter name='DATA_RATE_CONFIG_p' value='SDR'/>
+  </configuration>
+  <configuration id='8'>
+    <parameter name='LVDS_p' value='false'/>
+    <parameter name='SINGLE_PORT_p' value='false'/>
+    <parameter name='HALF_DUPLEX_p' value='false'/>
+    <parameter name='DATA_RATE_CONFIG_p' value='SDR'/>
+  </configuration>-->
+</build>

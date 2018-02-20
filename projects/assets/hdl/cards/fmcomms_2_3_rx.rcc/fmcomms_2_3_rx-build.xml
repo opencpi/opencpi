@@ -1,0 +1,8 @@
+<build>
+  <configuration id='0'>
+    <parameter name='fmcomms_num' value='2'/>
+  </configuration>
+  <configuration id='1'>
+    <parameter name='fmcomms_num' value='3'/>
+  </configuration>
+</build>

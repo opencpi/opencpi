@@ -1,0 +1,9 @@
+<!-- Example system.xml file that goes into /opt/opencpi.  This one supplies the 
+     correspondence between JTAG pod serial number and PCI slot -->
+<opencpi>
+<container>
+<hdl>
+<device name="0000:05:00.0" esn="000013C1E1F401" position="2"/>
+</hdl>
+</container>
+</opencpi>

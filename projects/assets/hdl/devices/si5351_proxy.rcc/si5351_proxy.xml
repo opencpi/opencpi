@@ -1,0 +1,13 @@
+<RccWorker language='c++' slave='si5351.hdl' controloperations='initialize,start,stop' spec='clock_gen-spec'>
+  <specproperty name='input_hz' readsync='1'/>
+  <specproperty name='nsources' value='2'/>
+  <specproperty name='nchannels' value='8'/>
+  <specproperty name='canDriveLow' value='1'/>
+  <specproperty name='canDriveHigh' value='1'/>
+  <specproperty name='canDriveZ' value='1'/>
+  <specproperty name='canDriveDown' value='1'/>
+  <specproperty name='canDriveInvert' value='1'/>
+  <specproperty name='channels' writesync='1'/>
+</RccWorker>
+
+

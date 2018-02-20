@@ -1,0 +1,9 @@
+<ComponentSpec Name="Producer">
+  <Properties>
+    <Property Name="run2BufferCount" Readable="true" Writable="true"/>
+    <Property Name="buffersProcessed" Volatile="true" Writable="true"/>
+    <Property Name="bytesProcessed" Volatile="true" Writable="true"/>
+    <Property Name="transferMode" Type="Long" Volatile="true" Writable="true"/>
+  </Properties>
+  <DataInterfaceSpec Name="Out" Producer="true"/>
+</ComponentSpec>

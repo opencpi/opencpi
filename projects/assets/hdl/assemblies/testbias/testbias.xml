@@ -1,0 +1,5 @@
+<HdlAssembly>
+  <Instance Worker="bias_vhdl" externals='true'/>
+</HdlAssembly>
+
+   

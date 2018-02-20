@@ -1,0 +1,6 @@
+<HdlAssembly>
+  <Instance Worker="ddc" external="in"/>
+  <external instance="ddc" port='out'/>
+</HdlAssembly>
+
+   

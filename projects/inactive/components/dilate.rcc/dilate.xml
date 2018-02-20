@@ -1,0 +1,6 @@
+<RccImplementation>
+  <xi:include href="dilate_spec.xml"/>
+  <Port Name="in" MinBuffers="3"/>
+</RccImplementation>
+
+

@@ -1,0 +1,26 @@
+<Application package="ocpi.assets">
+  <!-- HDL Components -->
+  <Instance Component="ocpi.assets.devices.rf_rx"/>
+  <Instance Component="ocpi.assets.devices.si5351"/>
+  <Instance Component="ocpi.assets.devices.qadc" Model="hdl"/>
+
+  <!-- RCC Components -->
+  <Instance Component="ocpi.core.file_write">
+    <Property Name="filename" Value="odata/lime_rx_proxy_test_app.out"/>
+  </Instance>
+
+  <!-- RCC Proxies -->
+  <Instance Component="ocpi.assets.devices.rf_rx_proxy" Slave="rf_rx">
+   <Property Name="input_select" Value="3"/>
+   <Property Name="lpf_bw_hz" Value="750000"/>
+   <Property Name="post_lpf_gain_db" Value="21"/>
+  </Instance>
+  <Instance Component="ocpi.core.devices.clock_gen" Slave="si5351"/>
+
+  <!-- Connections -->
+  <Connection>
+    <Port Instance="qadc" Name="out"/>
+    <Port Instance="file_write" Name="in" Buffersize="16352" Buffercount="7"/>
+  </Connection>
+</Application>
+

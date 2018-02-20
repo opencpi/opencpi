@@ -1,0 +1,135 @@
+#!/bin/sh --noprofile
+
+# This file is protected by Copyright. Please refer to the COPYRIGHT file
+# distributed with this source distribution.
+#
+# This file is part of OpenCPI <http://www.opencpi.org>
+#
+# OpenCPI is free software: you can redistribute it and/or modify it under the
+# terms of the GNU Lesser General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your option) any
+# later version.
+#
+# OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+# A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Lesser General Public License along
+# with this program. If not, see <http://www.gnu.org/licenses/>.
+
+################################################################################
+# jtag support functions for alst4: 
+# Be sure to write error messages to stderr since some funtions return
+# data on stdout
+################################################################################
+source $OCPI_CDK_DIR/scripts/util.sh
+setVarsFromMake $OCPI_CDK_DIR/include/hdl/altera.mk ShellIseVars=1 $verbose
+[ -z "$OcpiAlteraProgrammerDir" ] && {
+  echo Error: Could not find the directory for Altera Quartus or programming tools.
+  exit 1
+}
+
+QBIN="$OcpiAlteraProgrammerDir/quartus/bin"
+[ ! -d $QBIN ] && {
+  QBIN="$OcpiAlteraProgrammerDir/qprogrammer/bin"
+  [ ! -d $QBIN ] && {
+    echo Neither $OcpiAlteraProgrammerDir/quartus/bin nor $OcpiAlteraProgrammerDir/qprogrammer/bin exist
+    exit 1
+  }
+}
+
+if test ! -x "$QBIN"/jtagconfig -o ! -x "$QBIN/quartus_pgm"; then
+  echo "The required executables (jtagconfig, quartus_pgm) are not present." 1>&2
+  exit 1
+fi
+func=$1
+temp=$2
+dir=`dirname $0`
+#echo bitfile=$1 device=$2 part=$3 esn=$4 position=$5 temp=$6
+IFS=!
+
+function good {
+  rm -f $temps $temp.log
+  exit 0
+}
+function bad {
+  rm -f $temps
+  if test -f $temp.log; then
+     echo Dump of $temp.log:
+     echo "*******************************************************************************"
+     cat $temp.log
+     echo "*******************************************************************************"
+  fi
+  exit 1
+}
+
+################################################################################
+# Now we do inividual functions
+################################################################################
+case $func in
+  (cables)
+    CABLES=`"$QBIN"/jtagconfig 2> $temp.log | grep '^ *[0-9]*)' | sed 's/^ *[0-9]*) *\(.*\) *$/\1/'|sed 's/ /\\ /g'`
+    if test $? != 0 -o "$CABLES" = ""; then
+      echo Unable to find any Altera USB JTAG cables. 1>&2
+      bad
+    fi
+    for c in $CABLES; do
+      SERIAL=`"$QBIN"/jtagconfig --getparam '$c' SerialNumber 2> $temp.log`
+      if test $? != 0 -o "$SERIAL" = ""; then
+        echo "Cable \"$c\": cannot get serial number." 1>&2
+        bad
+      fi
+      echo $c=$SERIAL~
+      good
+    done
+    ;;
+  (part)
+    port="$3"
+    part="$4"
+    "$QBIN"/jtagconfig > $temp.log 2>&1
+    if test $? != 0; then
+       echo Error finding Altera JTAG configuration. 1>&2
+       bad
+    fi
+    EscPort=`echo $port | sed 's/\(\[\)/\\\\\1/g' | sed 's/\(\]\)/\\\\\1/g'`
+#    echo EscPort: \"$EscPort\"
+#    t=`sed < $temp.log -n '/^'$port')/,+1p' | grep -v '^'$1')' | sed 's/.* \(EP.*\)(.*/\1/' | tr A-Z a-z`
+#    echo xx "/^$EscPort)/,+1p"
+    # Note that we just look for the first part, and DO NOT look for it in a position in the chain
+    t=`sed -n "/^.*) *$EscPort/,+1p" < $temp.log | tail -1 |  sed 's/.* \(EP.*\)(.*/\1/' | tr A-Z a-z`
+ #   echo yy:$t
+    if test "$t" = "$part" -o "$t"k = "$part"; then
+     echo 1
+     good
+    fi
+    echo Error: did not find part $part in the jtag chain for cable $port. 1>&2
+    bad
+    ;;
+  (load)
+    port="$3"
+    pos="$4"
+    bitfile="$5"
+    case $bitfile in
+     (*.sof) ;;
+     (*)
+       tempfile=$temp.sof
+       temps+=$tempfile
+       echo Creating link with the quartus suffix '".sof"': $bitfile '->' $tempfile.
+       ln -s $bitfile $tempfile
+       bitfile=$tempfile
+       ;;
+    esac
+    echo Proceeding to load bitstream from $bitfile...
+    echo doing "$QBIN"/quartus_pgm -m jtag -c "$port" -o "p;$bitfile@$pos" > $temp.log 2>&1
+    "$QBIN"/quartus_pgm -m jtag -c "$port" -o "p;$bitfile@$pos" >> $temp.log 2>&1
+    if test $? != 0; then
+       echo Error loading bitstream using Altera tool quartus_pgm.
+       bad
+    fi
+    good
+    ;;
+esac
+echo Unknown jtag function \"$func\". 1>&2
+bad
+

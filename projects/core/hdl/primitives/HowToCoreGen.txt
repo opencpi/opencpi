@@ -1,0 +1,108 @@
+FIXME: coregen->something more generic, same with NGC, etc.
+
+This note describes the procedure for importing a generated core into
+an opencpi primitive directory to be used as an OpenCPI primitive
+core.  For Xilinx, generated cores typically come from "coregen".
+
+There are a few things to do on the generated core side, and then a
+simple task on the opencpi importing side.  The idea is to leave the
+generated core directory alone with the exception of adding two files
+in the top level to facilitate exporting the core into opencpi.  The
+reason to have these files in the generated core tree as opposed to
+the opencpi primitive core directory is that the core developer should
+maintain them as the core might change, without really knowing
+anything about how opencpi works.  Then on the opencpi side, there is
+just a reference to the generated core directory such that the opencpi
+primitive core directory can be easily "refreshed" from the generated
+core side.
+
+The only thing that is constant over the course of the possible
+evolution on the generated core side is the directory location itself.
+Thus updating the opencpi side from the generated core side is
+trivial.  It is also possible to build the opencpi primitive core in a
+subdirectory of the generated core if the developer wants to operate
+that way.  I.e. OpenCPI "primitive" cores do not have to be built in
+the OpenCPI tree.
+
+Any source files that the author needs to modify (to "patch" the
+generated core), must be present in the generated core
+directory. (perhaps under a "patches" subdirectory, but that is not
+mandatory).
+
+Let's assume the generated core developer has the generated core
+results in the directory /home/joe/AbcCore.  To enable the core to be
+imported into opencpi as a primitive core, the developer needs to:
+
+First of two files: create a file called opencpi-core.mk in
+/home/joe/AbcCore/opencpi-core.mk, containing "make" variable
+assignments (and comments starting with #, and wrapped/continued lines
+ending in \).
+
+1. If the name of the core on the opencpi side is different from the
+   name of its directory (in this case "AbcCore"), then the "Core"
+   variable must be set in opencpi-core.mk (e.g. Core=abc).  2. If the
+   top level module name of the core is NOT the same as the name of
+   the core (the directory name or the name set by the "Core"
+   variable), then the top module name is set by the "Top" variable
+   (e.g. Top=abc_top).  3. If the core is prebuilt/presynthesized into
+   an EDIF/NGC file, then that file is specified using the
+   PreBuiltCore variable (e.g. PreBuiltCore=abc.ngc).  4. Specify
+   source files needed to build or synthesize the core.  A prebuilt
+   core will only have source files for simulation if any.  These
+   files are set using the "SourceFiles" variable
+   (e.g. SourceFiles=abc_top.v abc_inside.v).  These file names are
+   relative to the top level generated core dirctory.
+
+Second of two files: Create a "black box" empty module file containing
+the verilog module definition for the core, in the form (at least for
+Xilinx):
+
+(* box_type="user_black_box" *)
+module my_coreAbc
+  # (<parameters...>) // if there are any parameters
+  (<input, inout, output port defitions);
+  port declarations
+endmodule
+
+The name of this black box module definition file is <top-module-name>_bb.v.
+
+When the core is prebuilt without any verilog or VHDL files (and thus only an
+NGC file), there is usually a verilog file created for simulation that
+can be easily used (copied and trimmed) to create the "black box"
+file.  (VHDL developers can think of this file as containing the VHDL
+component definition of the module).
+
+So if Joe's core is called "filter", the simple case might be that it
+is created in a directory /home/joe/filter, and assuming the top
+module name is also "filter", there must be a filter_bb.v file in
+/home/joe/filter, and an opencpi-core.mk file in /home/joe/filter whose
+contents would be (assuming the source files needed to build the core
+are filter_top.v and filter_innards.v):
+
+SourceFiles=filter_top.v filter_innards.v
+
+If the core was prebuilt and should NOT be built from source, the opencpi-core.mk
+file would contain:
+
+PreBuiltCore=filter.ngc
+
+Finally, to specify which "build targets" are appropriate for the core
+(which parts or part families), the "OnlyTargets" variable is set,
+e.g.:
+
+OnlyTargets=virtex5
+
+or
+
+OnlyTargets=xc6vlx240t
+
+If the core can be built for a variety of targets EXCEPT certain targets that
+should be excluded, then the "ExcludeTargets" variable can be used.
+Any example might be:
+
+OnlyTargets=virtex5
+ExcludeTargets=xc5vsx95t
+
+This would mean the core is suitable for all virtex5 parts except for xc5sx95t.
+
+

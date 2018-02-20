@@ -1,0 +1,119 @@
+<!-- Lime Myriad RF on Zipper FMC HPC
+     This card definition maps the devices' signals to the slot's signals
+     This "card" is actually a daughter card (Myriad_RF) on a Zipper interposer card that can act as FMC or HSMC.
+     This "card" results from the Myriad RF plugged into to the FMC configuration on Zipper
+     There is another "card" that results from the Myriad RC plugged into the HSMC configuration on the Zipper
+
+     In addition to the Lime rx and lime tx devices, this "card" also is able to
+     program the:
+     - SI5351C clockgen chip on zipper: via 2 completely separate SPI-ish output-only pins
+     - ADF4002 PLL chip on zipperf      via a separate chip-select pin, and sharing the SPI_CLK and SPI_SDIO pins with the lime
+     - PE42422 chip on MyriadRF:        via a GPIO2 to select between 2 lime RF outputs for the RF output connector
+     - PE42440 chip on MyriadRF:        via a GPIO0:1 to switch the RF input connector among 3 lime RF inputs
+
+     To enable these other capabilities without messing up the lime device workers, we would need:
+     1. Another "device" that had the properties to control them: GPIO, clockgen SPI, and would mux the shared lime SPI
+
+     Dealing with the digital I/O clocks on the lime:
+     There are two FMC pins for RXCLK and TXCLK digital I/O signals for the lime, but they can be configured in different ways:
+     1. The default is they are outputs of the card as a copy of what is being fed to the lime directly.
+        They are generated from the SI5351C clock gen chip.
+     2. The Zipper can be restrapped so they are inputs to the card and driven by the FPGA to the lime.
+        In this configuration there is no clock input to the FPGA at all.  The digital I/O clock is totally
+        under the control of the FPGA.
+     3. It is theoretically possible to split the clocks so one is input and one is output.
+     This file implements the default.
+-->
+<card type="fmc_hpc">
+                                                 <!-- lime  lime       myriad       myriad  zipper
+                                                       pin  name       name         RF pin  fmc_lpc -->
+  <device worker='lime_adc'>
+    <property name='use_clk_out_p' value='0'/>
+    <property name='use_clk_in_p' value='1'/>
+    <Signal name="rx_clk"     slot=''/>          <!--  17   rx_clk     rxclk           59    NONE - From SI5351 CLK2 to Myriad RF to Lime -->
+    <Signal name="rx_clk_out" slot=''/>          <!--  40   rx_clk_out rx_clk_out    NONE    NONE -->
+    <Signal name='rx_clk_in'  slot='LA02_P'/>    <!--  NONE            rxclk_c       NONE     H07 From SI5351 CLK3 to FMC -->
+    <Signal name="rx_iq_sel"  slot='LA01_P_CC'/> <!--  16   rx_iq_sel  rxiqsel         39     D08 -->
+    <Signal name="rxd(0)"     slot='LA26_N'/>    <!--  15   rxd0       rxd0            43     D27 -->
+    <Signal name="rxd(1)"     slot='LA26_P'/>    <!--  14   rxd1       rxd1            44     D26 -->
+    <Signal name="rxd(2)"     slot='LA23_N'/>    <!--  13   rxd2       rxd2            45     D24 -->
+    <Signal name="rxd(3)"     slot='LA23_P'/>    <!--  10   rxd3       rxd3            46     D23 -->
+    <Signal name="rxd(4)"     slot='LA17_N_CC'/> <!--  11   rxd4       rxd4            49     D21 -->
+    <Signal name="rxd(5)"     slot='LA17_P_CC'/> <!--   8   rxd5       rxd5            50     D20 -->
+    <Signal name="rxd(6)"     slot='LA13_N'/>    <!--   9   rxd6       rxd6            51     D18 -->
+    <Signal name="rxd(7)"     slot='LA13_P'/>    <!--   6   rxd7       rxd7            52     D17 -->
+    <Signal name="rxd(8)"     slot='LA09_N'/>    <!--   5   rxd8       rxd8            53     D15 -->
+    <Signal name="rxd(9)"     slot='LA09_P'/>    <!--   4   rxd9       rxd9            54     D14 -->
+    <Signal name="rxd(10)"    slot='LA05_N'/>    <!--   3   rxd10      rxd10           55     D12 -->
+    <Signal name="rxd(11)"    slot='LA05_P'/>    <!--   2   rxd11      rxd11           56     D11 -->
+  </device>
+
+  <device worker='lime_dac'>
+    <Signal name="tx_clk"    slot=''/>           <!--  19   tx_clk     txclk           60    NONE - From SI5351 CLK4 to Myriad RF to Lime -->
+    <Signal name='tx_clk_in' slot='LA04_N'/>     <!--  NONE            txclk_c       NONE     H11 From SI5351 CLK5 to FMC -->
+    <Signal name="tx_iq_sel" slot='LA29_N'/>     <!--  20   tx_iq_sel  txiqsel         19     G31 -->
+    <Signal name="txd(0)"    slot='LA25_N'/>     <!--  21   txd0       txd0            23     G28 -->
+    <Signal name="txd(1)"    slot='LA25_P'/>     <!--  22   txd1       txd1            24     G27 -->
+    <Signal name="txd(2)"    slot='LA22_N'/>     <!--  23   txd2       txd2            25     G25 -->
+    <Signal name="txd(3)"    slot='LA22_P'/>     <!--  24   txd3       txd3            26     G24 -->
+    <Signal name="txd(4)"    slot='LA20_N'/>     <!--  25   txd4       txd4            29     G22 -->
+    <Signal name="txd(5)"    slot='LA20_P'/>     <!--  26   txd5       txd5            30     G21 -->
+    <Signal name="txd(6)"    slot='LA16_N'/>     <!--  27   txd6       txd6            31     G19 -->
+    <Signal name="txd(7)"    slot='LA16_P'/>     <!--  28   txd7       txd7            32     G18 -->
+    <Signal name="txd(8)"    slot='LA12_N'/>     <!--  29   txd8       txd8            33     G16 -->
+    <Signal name="txd(9)"    slot='LA12_P'/>     <!--  30   txd9       txd9            34     G15 -->
+    <Signal name="txd(10)"   slot='LA08_N'/>     <!--  31   txd10      txd10           35     G13 -->
+    <Signal name="txd(11)"   slot='LA08_P'/>     <!--  32   txd11      txd11           36     G12 -->
+  </device>
+  <device worker='lime_spi'>
+    <Signal name='reset'     slot='LA06_P'/>     <!--  75   reset      reset           66     C10 -->
+    <Signal name='sdo'       slot='LA14_N'/>     <!--  68   sdo        sado(spi_miso)  70     C19 -->
+    <Signal name='sclk'      slot='LA18_P_CC'/>  <!--  70   sclk       saclk(spi_clk)  72     C22 -->
+    <Signal name='sen'       slot='LA14_P'/>     <!--  67   sen        saen(spi_ncs0)  74     C18 -->
+    <Signal name='sdio'      slot='LA18_N_CC'/>  <!--  69   sdio       sadio(spi_mosi) 68     C23 -->
+  </device>
+  <device worker='lime_rx'>
+    <Signal name="rxen"       slot='LA01_N_CC'/> <!--  76   rxen       rxen            80     D09 -->
+  </device>
+  <device worker='lime_tx'>
+    <Signal name="txen"      slot='LA29_P'/>     <!--  66   txen       txen            79     G30 -->
+  </device>
+  <device worker='si5351'>
+    <Signal name='intr'      slot=''/>           <!--  si5351 pin 3 not connected on zipper -->
+    <Signal name='oeb'       slot=''/>           <!--  si5351 pin 7 tied to ground on zipper -->
+  </device>
+  <device worker='zipper_i2c'>
+    <!-- Note that the sda/scl signals are swapped and use the opposite slot signals -->
+    <Signal name='scl'       slot='SDA'/>        <!--                  scl_c                  C31 -->
+    <Signal name='sda'       slot='SCL'/>        <!--                  sda_c                  C30 -->
+  </device>
+  <!-- other non-lime signals available in zipper
+                             slot='DP0_M2C_P'                         MIPI_CLK_C      76     C06 - not connected to anything on lime module. USB chip pin 5 (PC2)
+                             slot='DP0_M2C_N'                         MIPI_DATA_C     78     C07 - not connected on anything on lime module. USB chip pin 26 (PC4)
+                             slot='LA10_N'                            GPIO0_C         65     C15 - GPIO 0:1: 0 broadband, 1 hi band, 3 low band
+                             slot='LA10_P'                            GPIO1_C         67     C14 - 
+                             slot='LA06_N'                            GPIO2_C         69     C11 - tx out select: 0 hi band, 1 broadband
+                             slot='LA27_P'                            GPIO3_C         71     C26 - not connected to lime module - USB chip pin 12 (PD6)
+                             slot='LA19_P'                            SPI_NCS_1_C            H22 - LE pin 14 on ADF4002, shares SPI_CLK and SPI_MOSI with lime module
+                                                                                                   The ADF4002 is used only to discipline the TXCO
+                             slot='LA21_P'                            SPI_NCS_2_C            H25 - pin header P37
+                             slot='LA24_P'                            SPI_NCS_3              H28 - USB serial out - USB chip pin 9 (PD3(TXD1))
+                                                      71   pllclk     CLK_IN          75           Lime PLLCLK can be: 1. MRF X8 input, 2. CLK_IN unbuffered, 3. CLK_IN buffered
+                                                                                                   Zipper CLK_IN can be: 1. TXCO 30.72 buffered, 2. SI5351C output (from 30.72 input)
+      Lime Digital IO Clock Inputs can be:
+      On the MyriadRF:
+        1. From zipper CLK_IN, and driven OUT to the Zipper RXCLK and TXCLK pins
+        2. From zipper RXCLK and TXCLK pins
+      On the Zipper (where RXCLK_C and TXCLK_C connect to FMC), RX and TX separately...
+        1. Generated from the SI5351C
+	     Sent to FMC?
+             Send to MRF?
+        2. Passed through from MRF (RXCLK) to FMC (RXCLK_C)
+
+       So the FMC, for either RX or TX independently:
+        1. Direct connect output to drive lime input
+        2. A copy of a SI5351c generated clock that is also send to the lime
+        3. An unrelated SI5351c generated clock to what is sent to lime (when same clock is send to both lime RX and TX, and one of FMC CLKs)
+  -->
+
+</card>

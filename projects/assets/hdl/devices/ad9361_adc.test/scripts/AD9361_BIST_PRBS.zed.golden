@@ -1,0 +1,362 @@
+FIR enabled      : 0
+Data port config : 1R1T
+sample rate      : 2.083334e6 sps
+runtime          : 1 sec
+PRBS
+Property  ad9361_config_proxy.bb_pll_is_locked = "true"
+Property  ad9361_config_proxy.rx_pll_is_locked = "true"
+Property  ad9361_config_proxy.tx_pll_is_locked = "true"
+Property  ad9361_config_proxy.rx_fir_en_dis = "0"
+Property  ad9361_config_proxy.rx_sampling_freq = "2083333"
+Property  ad9361_config_proxy.bist_prbs = "2"
+Property  ad9361_config_proxy.ad9361_init = "reference_clk_rate 40000000,one_rx_one_tx_mode_use_rx_num 0,one_rx_one_tx_mode_use_tx_num 0,frequency_division_duplex_mode_enable 1,xo_disable_use_ext_refclk_enable 0,two_t_two_r_timing_enable false,pp_tx_swap_enable 0,pp_rx_swap_enable 0,tx_channel_swap_enable 0,rx_channel_swap_enable 0,delay_rx_data 0,rx_data_clock_delay 3,rx_data_delay 0,tx_fb_clock_delay 7,tx_data_delay 0" (cached)
+Property  ad9361_config_proxy.DATA_CLK_Delay = "3"
+Property  ad9361_config_proxy.Rx_Data_Delay = "0"
+Property  ad9361_config_proxy.FB_CLK_Delay = "7"
+Property  ad9361_config_proxy.Tx_Data_Delay = "0"
+Property  ad9361_data_sub.DATA_CLK_Delay = "3" (parameter)
+Property  ad9361_data_sub.RX_Data_Delay = "0" (parameter)
+Property  ad9361_data_sub.FB_CLK_Delay = "7" (parameter)
+Property  ad9361_data_sub.TX_Data_Delay = "0" (parameter)
+Property  qadc.overrun = "false"
+Property  ad9361_adc_sub.r1_samps_dropped = "false"
+Property  ad9361_adc_sub.r2_samps_dropped = "false"
+Property  file_write.bytesWritten = "32768"
+estimated_BER : 0%
+--------------------------------------------------------------------------------
+FIR enabled      : 0
+Data port config : 1R1T
+sample rate      : 25e6 sps
+runtime          : 1 sec
+PRBS
+Property  ad9361_config_proxy.bb_pll_is_locked = "true"
+Property  ad9361_config_proxy.rx_pll_is_locked = "true"
+Property  ad9361_config_proxy.tx_pll_is_locked = "true"
+Property  ad9361_config_proxy.rx_fir_en_dis = "0"
+Property  ad9361_config_proxy.rx_sampling_freq = "25000000"
+Property  ad9361_config_proxy.bist_prbs = "2"
+Property  ad9361_config_proxy.ad9361_init = "reference_clk_rate 40000000,one_rx_one_tx_mode_use_rx_num 0,one_rx_one_tx_mode_use_tx_num 0,frequency_division_duplex_mode_enable 1,xo_disable_use_ext_refclk_enable 0,two_t_two_r_timing_enable false,pp_tx_swap_enable 0,pp_rx_swap_enable 0,tx_channel_swap_enable 0,rx_channel_swap_enable 0,delay_rx_data 0,rx_data_clock_delay 3,rx_data_delay 0,tx_fb_clock_delay 7,tx_data_delay 0" (cached)
+Property  ad9361_config_proxy.DATA_CLK_Delay = "3"
+Property  ad9361_config_proxy.Rx_Data_Delay = "0"
+Property  ad9361_config_proxy.FB_CLK_Delay = "7"
+Property  ad9361_config_proxy.Tx_Data_Delay = "0"
+Property  ad9361_data_sub.DATA_CLK_Delay = "3" (parameter)
+Property  ad9361_data_sub.RX_Data_Delay = "0" (parameter)
+Property  ad9361_data_sub.FB_CLK_Delay = "7" (parameter)
+Property  ad9361_data_sub.TX_Data_Delay = "0" (parameter)
+Property  qadc.overrun = "false"
+Property  ad9361_adc_sub.r1_samps_dropped = "false"
+Property  ad9361_adc_sub.r2_samps_dropped = "false"
+Property  file_write.bytesWritten = "32768"
+estimated_BER : 0%
+--------------------------------------------------------------------------------
+FIR enabled      : 0
+Data port config : 1R1T
+sample rate      : 30e6 sps
+runtime          : 1 sec
+PRBS
+Property  ad9361_config_proxy.bb_pll_is_locked = "true"
+Property  ad9361_config_proxy.rx_pll_is_locked = "true"
+Property  ad9361_config_proxy.tx_pll_is_locked = "true"
+Property  ad9361_config_proxy.rx_fir_en_dis = "0"
+Property  ad9361_config_proxy.rx_sampling_freq = "30000000"
+Property  ad9361_config_proxy.bist_prbs = "2"
+Property  ad9361_config_proxy.ad9361_init = "reference_clk_rate 40000000,one_rx_one_tx_mode_use_rx_num 0,one_rx_one_tx_mode_use_tx_num 0,frequency_division_duplex_mode_enable 1,xo_disable_use_ext_refclk_enable 0,two_t_two_r_timing_enable false,pp_tx_swap_enable 0,pp_rx_swap_enable 0,tx_channel_swap_enable 0,rx_channel_swap_enable 0,delay_rx_data 0,rx_data_clock_delay 3,rx_data_delay 0,tx_fb_clock_delay 7,tx_data_delay 0" (cached)
+Property  ad9361_config_proxy.DATA_CLK_Delay = "3"
+Property  ad9361_config_proxy.Rx_Data_Delay = "0"
+Property  ad9361_config_proxy.FB_CLK_Delay = "7"
+Property  ad9361_config_proxy.Tx_Data_Delay = "0"
+Property  ad9361_data_sub.DATA_CLK_Delay = "3" (parameter)
+Property  ad9361_data_sub.RX_Data_Delay = "0" (parameter)
+Property  ad9361_data_sub.FB_CLK_Delay = "7" (parameter)
+Property  ad9361_data_sub.TX_Data_Delay = "0" (parameter)
+Property  qadc.overrun = "false"
+Property  ad9361_adc_sub.r1_samps_dropped = "false"
+Property  ad9361_adc_sub.r2_samps_dropped = "false"
+Property  file_write.bytesWritten = "32768"
+estimated_BER : 0%
+--------------------------------------------------------------------------------
+FIR enabled      : 0
+Data port config : 1R1T
+sample rate      : 35e6 sps
+runtime          : 1 sec
+PRBS
+Property  ad9361_config_proxy.bb_pll_is_locked = "true"
+Property  ad9361_config_proxy.rx_pll_is_locked = "true"
+Property  ad9361_config_proxy.tx_pll_is_locked = "true"
+Property  ad9361_config_proxy.rx_fir_en_dis = "0"
+Property  ad9361_config_proxy.rx_sampling_freq = "35000000"
+Property  ad9361_config_proxy.bist_prbs = "2"
+Property  ad9361_config_proxy.ad9361_init = "reference_clk_rate 40000000,one_rx_one_tx_mode_use_rx_num 0,one_rx_one_tx_mode_use_tx_num 0,frequency_division_duplex_mode_enable 1,xo_disable_use_ext_refclk_enable 0,two_t_two_r_timing_enable false,pp_tx_swap_enable 0,pp_rx_swap_enable 0,tx_channel_swap_enable 0,rx_channel_swap_enable 0,delay_rx_data 0,rx_data_clock_delay 3,rx_data_delay 0,tx_fb_clock_delay 7,tx_data_delay 0" (cached)
+Property  ad9361_config_proxy.DATA_CLK_Delay = "3"
+Property  ad9361_config_proxy.Rx_Data_Delay = "0"
+Property  ad9361_config_proxy.FB_CLK_Delay = "7"
+Property  ad9361_config_proxy.Tx_Data_Delay = "0"
+Property  ad9361_data_sub.DATA_CLK_Delay = "3" (parameter)
+Property  ad9361_data_sub.RX_Data_Delay = "0" (parameter)
+Property  ad9361_data_sub.FB_CLK_Delay = "7" (parameter)
+Property  ad9361_data_sub.TX_Data_Delay = "0" (parameter)
+Property  qadc.overrun = "false"
+Property  ad9361_adc_sub.r1_samps_dropped = "false"
+Property  ad9361_adc_sub.r2_samps_dropped = "false"
+Property  file_write.bytesWritten = "32768"
+estimated_BER : 0%
+--------------------------------------------------------------------------------
+FIR enabled      : 0
+Data port config : 1R1T
+sample rate      : 40e6 sps
+runtime          : 1 sec
+PRBS
+Property  ad9361_config_proxy.bb_pll_is_locked = "true"
+Property  ad9361_config_proxy.rx_pll_is_locked = "true"
+Property  ad9361_config_proxy.tx_pll_is_locked = "true"
+Property  ad9361_config_proxy.rx_fir_en_dis = "0"
+Property  ad9361_config_proxy.rx_sampling_freq = "40000000"
+Property  ad9361_config_proxy.bist_prbs = "2"
+Property  ad9361_config_proxy.ad9361_init = "reference_clk_rate 40000000,one_rx_one_tx_mode_use_rx_num 0,one_rx_one_tx_mode_use_tx_num 0,frequency_division_duplex_mode_enable 1,xo_disable_use_ext_refclk_enable 0,two_t_two_r_timing_enable false,pp_tx_swap_enable 0,pp_rx_swap_enable 0,tx_channel_swap_enable 0,rx_channel_swap_enable 0,delay_rx_data 0,rx_data_clock_delay 3,rx_data_delay 0,tx_fb_clock_delay 7,tx_data_delay 0" (cached)
+Property  ad9361_config_proxy.DATA_CLK_Delay = "3"
+Property  ad9361_config_proxy.Rx_Data_Delay = "0"
+Property  ad9361_config_proxy.FB_CLK_Delay = "7"
+Property  ad9361_config_proxy.Tx_Data_Delay = "0"
+Property  ad9361_data_sub.DATA_CLK_Delay = "3" (parameter)
+Property  ad9361_data_sub.RX_Data_Delay = "0" (parameter)
+Property  ad9361_data_sub.FB_CLK_Delay = "7" (parameter)
+Property  ad9361_data_sub.TX_Data_Delay = "0" (parameter)
+Property  qadc.overrun = "false"
+Property  ad9361_adc_sub.r1_samps_dropped = "false"
+Property  ad9361_adc_sub.r2_samps_dropped = "false"
+Property  file_write.bytesWritten = "32768"
+estimated_BER : 0%
+--------------------------------------------------------------------------------
+FIR enabled      : 0
+Data port config : 1R1T
+sample rate      : 43767507 sps
+runtime          : 1 sec
+PRBS
+Property  ad9361_config_proxy.bb_pll_is_locked = "true"
+Property  ad9361_config_proxy.rx_pll_is_locked = "true"
+Property  ad9361_config_proxy.tx_pll_is_locked = "true"
+Property  ad9361_config_proxy.rx_fir_en_dis = "0"
+Property  ad9361_config_proxy.rx_sampling_freq = "43767506"
+Property  ad9361_config_proxy.bist_prbs = "2"
+Property  ad9361_config_proxy.ad9361_init = "reference_clk_rate 40000000,one_rx_one_tx_mode_use_rx_num 0,one_rx_one_tx_mode_use_tx_num 0,frequency_division_duplex_mode_enable 1,xo_disable_use_ext_refclk_enable 0,two_t_two_r_timing_enable false,pp_tx_swap_enable 0,pp_rx_swap_enable 0,tx_channel_swap_enable 0,rx_channel_swap_enable 0,delay_rx_data 0,rx_data_clock_delay 3,rx_data_delay 0,tx_fb_clock_delay 7,tx_data_delay 0" (cached)
+Property  ad9361_config_proxy.DATA_CLK_Delay = "3"
+Property  ad9361_config_proxy.Rx_Data_Delay = "0"
+Property  ad9361_config_proxy.FB_CLK_Delay = "7"
+Property  ad9361_config_proxy.Tx_Data_Delay = "0"
+Property  ad9361_data_sub.DATA_CLK_Delay = "3" (parameter)
+Property  ad9361_data_sub.RX_Data_Delay = "0" (parameter)
+Property  ad9361_data_sub.FB_CLK_Delay = "7" (parameter)
+Property  ad9361_data_sub.TX_Data_Delay = "0" (parameter)
+Property  qadc.overrun = "false"
+Property  ad9361_adc_sub.r1_samps_dropped = "false"
+Property  ad9361_adc_sub.r2_samps_dropped = "false"
+Property  file_write.bytesWritten = "32768"
+estimated_BER : 0%
+--------------------------------------------------------------------------------
+FIR enabled      : 0
+Data port config : 1R1T
+sample rate      : 43767507 sps
+runtime          : 10 sec
+additional test for overrun avoidance
+Property  ad9361_config_proxy.bb_pll_is_locked = "true"
+Property  ad9361_config_proxy.rx_pll_is_locked = "true"
+Property  ad9361_config_proxy.tx_pll_is_locked = "true"
+Property  ad9361_config_proxy.rx_fir_en_dis = "0"
+Property  ad9361_config_proxy.rx_sampling_freq = "43767506"
+Property  ad9361_config_proxy.bist_prbs = "2"
+Property  ad9361_config_proxy.ad9361_init = "reference_clk_rate 40000000,one_rx_one_tx_mode_use_rx_num 0,one_rx_one_tx_mode_use_tx_num 0,frequency_division_duplex_mode_enable 1,xo_disable_use_ext_refclk_enable 0,two_t_two_r_timing_enable false,pp_tx_swap_enable 0,pp_rx_swap_enable 0,tx_channel_swap_enable 0,rx_channel_swap_enable 0,delay_rx_data 0,rx_data_clock_delay 3,rx_data_delay 0,tx_fb_clock_delay 7,tx_data_delay 0" (cached)
+Property  ad9361_config_proxy.DATA_CLK_Delay = "3"
+Property  ad9361_config_proxy.Rx_Data_Delay = "0"
+Property  ad9361_config_proxy.FB_CLK_Delay = "7"
+Property  ad9361_config_proxy.Tx_Data_Delay = "0"
+Property  ad9361_data_sub.DATA_CLK_Delay = "3" (parameter)
+Property  ad9361_data_sub.RX_Data_Delay = "0" (parameter)
+Property  ad9361_data_sub.FB_CLK_Delay = "7" (parameter)
+Property  ad9361_data_sub.TX_Data_Delay = "0" (parameter)
+Property  qadc.overrun = "false"
+Property  ad9361_adc_sub.r1_samps_dropped = "false"
+Property  ad9361_adc_sub.r2_samps_dropped = "false"
+Property  file_write.bytesWritten = "32768"
+--------------------------------------------------------------------------------
+FIR enabled      : 0
+Data port config : 2R2T
+sample rate      : 2.083334e6 sps
+runtime          : 1 sec
+PRBS
+Property  ad9361_config_proxy.bb_pll_is_locked = "true"
+Property  ad9361_config_proxy.rx_pll_is_locked = "true"
+Property  ad9361_config_proxy.tx_pll_is_locked = "true"
+Property  ad9361_config_proxy.rx_fir_en_dis = "0"
+Property  ad9361_config_proxy.rx_sampling_freq = "2083333"
+Property  ad9361_config_proxy.bist_prbs = "2"
+Property  ad9361_config_proxy.ad9361_init = "reference_clk_rate 40000000,one_rx_one_tx_mode_use_rx_num 0,one_rx_one_tx_mode_use_tx_num 0,frequency_division_duplex_mode_enable 1,xo_disable_use_ext_refclk_enable 0,two_t_two_r_timing_enable true,pp_tx_swap_enable 0,pp_rx_swap_enable 0,tx_channel_swap_enable 0,rx_channel_swap_enable 0,delay_rx_data 0,rx_data_clock_delay 3,rx_data_delay 0,tx_fb_clock_delay 7,tx_data_delay 0" (cached)
+Property  ad9361_config_proxy.DATA_CLK_Delay = "3"
+Property  ad9361_config_proxy.Rx_Data_Delay = "0"
+Property  ad9361_config_proxy.FB_CLK_Delay = "7"
+Property  ad9361_config_proxy.Tx_Data_Delay = "0"
+Property  ad9361_data_sub.DATA_CLK_Delay = "3" (parameter)
+Property  ad9361_data_sub.RX_Data_Delay = "0" (parameter)
+Property  ad9361_data_sub.FB_CLK_Delay = "7" (parameter)
+Property  ad9361_data_sub.TX_Data_Delay = "0" (parameter)
+Property  qadc.overrun = "false"
+Property  ad9361_adc_sub.r1_samps_dropped = "false"
+Property  ad9361_adc_sub.r2_samps_dropped = "false"
+Property  file_write.bytesWritten = "32768"
+estimated_BER : 0%
+--------------------------------------------------------------------------------
+FIR enabled      : 0
+Data port config : 2R2T
+sample rate      : 25e6 sps
+runtime          : 1 sec
+PRBS
+Property  ad9361_config_proxy.bb_pll_is_locked = "true"
+Property  ad9361_config_proxy.rx_pll_is_locked = "true"
+Property  ad9361_config_proxy.tx_pll_is_locked = "true"
+Property  ad9361_config_proxy.rx_fir_en_dis = "0"
+Property  ad9361_config_proxy.rx_sampling_freq = "25000000"
+Property  ad9361_config_proxy.bist_prbs = "2"
+Property  ad9361_config_proxy.ad9361_init = "reference_clk_rate 40000000,one_rx_one_tx_mode_use_rx_num 0,one_rx_one_tx_mode_use_tx_num 0,frequency_division_duplex_mode_enable 1,xo_disable_use_ext_refclk_enable 0,two_t_two_r_timing_enable true,pp_tx_swap_enable 0,pp_rx_swap_enable 0,tx_channel_swap_enable 0,rx_channel_swap_enable 0,delay_rx_data 0,rx_data_clock_delay 3,rx_data_delay 0,tx_fb_clock_delay 7,tx_data_delay 0" (cached)
+Property  ad9361_config_proxy.DATA_CLK_Delay = "3"
+Property  ad9361_config_proxy.Rx_Data_Delay = "0"
+Property  ad9361_config_proxy.FB_CLK_Delay = "7"
+Property  ad9361_config_proxy.Tx_Data_Delay = "0"
+Property  ad9361_data_sub.DATA_CLK_Delay = "3" (parameter)
+Property  ad9361_data_sub.RX_Data_Delay = "0" (parameter)
+Property  ad9361_data_sub.FB_CLK_Delay = "7" (parameter)
+Property  ad9361_data_sub.TX_Data_Delay = "0" (parameter)
+Property  qadc.overrun = "false"
+Property  ad9361_adc_sub.r1_samps_dropped = "false"
+Property  ad9361_adc_sub.r2_samps_dropped = "false"
+Property  file_write.bytesWritten = "32768"
+estimated_BER : 0%
+--------------------------------------------------------------------------------
+FIR enabled      : 0
+Data port config : 2R2T
+sample rate      : 30e6 sps
+runtime          : 1 sec
+PRBS
+Property  ad9361_config_proxy.bb_pll_is_locked = "true"
+Property  ad9361_config_proxy.rx_pll_is_locked = "true"
+Property  ad9361_config_proxy.tx_pll_is_locked = "true"
+Property  ad9361_config_proxy.rx_fir_en_dis = "0"
+Property  ad9361_config_proxy.rx_sampling_freq = "30000000"
+Property  ad9361_config_proxy.bist_prbs = "2"
+Property  ad9361_config_proxy.ad9361_init = "reference_clk_rate 40000000,one_rx_one_tx_mode_use_rx_num 0,one_rx_one_tx_mode_use_tx_num 0,frequency_division_duplex_mode_enable 1,xo_disable_use_ext_refclk_enable 0,two_t_two_r_timing_enable true,pp_tx_swap_enable 0,pp_rx_swap_enable 0,tx_channel_swap_enable 0,rx_channel_swap_enable 0,delay_rx_data 0,rx_data_clock_delay 3,rx_data_delay 0,tx_fb_clock_delay 7,tx_data_delay 0" (cached)
+Property  ad9361_config_proxy.DATA_CLK_Delay = "3"
+Property  ad9361_config_proxy.Rx_Data_Delay = "0"
+Property  ad9361_config_proxy.FB_CLK_Delay = "7"
+Property  ad9361_config_proxy.Tx_Data_Delay = "0"
+Property  ad9361_data_sub.DATA_CLK_Delay = "3" (parameter)
+Property  ad9361_data_sub.RX_Data_Delay = "0" (parameter)
+Property  ad9361_data_sub.FB_CLK_Delay = "7" (parameter)
+Property  ad9361_data_sub.TX_Data_Delay = "0" (parameter)
+Property  qadc.overrun = "false"
+Property  ad9361_adc_sub.r1_samps_dropped = "false"
+Property  ad9361_adc_sub.r2_samps_dropped = "false"
+Property  file_write.bytesWritten = "32768"
+estimated_BER : 0%
+--------------------------------------------------------------------------------
+FIR enabled      : 0
+Data port config : 2R2T
+sample rate      : 35e6 sps
+runtime          : 1 sec
+PRBS
+Property  ad9361_config_proxy.bb_pll_is_locked = "true"
+Property  ad9361_config_proxy.rx_pll_is_locked = "true"
+Property  ad9361_config_proxy.tx_pll_is_locked = "true"
+Property  ad9361_config_proxy.rx_fir_en_dis = "0"
+Property  ad9361_config_proxy.rx_sampling_freq = "35000000"
+Property  ad9361_config_proxy.bist_prbs = "2"
+Property  ad9361_config_proxy.ad9361_init = "reference_clk_rate 40000000,one_rx_one_tx_mode_use_rx_num 0,one_rx_one_tx_mode_use_tx_num 0,frequency_division_duplex_mode_enable 1,xo_disable_use_ext_refclk_enable 0,two_t_two_r_timing_enable true,pp_tx_swap_enable 0,pp_rx_swap_enable 0,tx_channel_swap_enable 0,rx_channel_swap_enable 0,delay_rx_data 0,rx_data_clock_delay 3,rx_data_delay 0,tx_fb_clock_delay 7,tx_data_delay 0" (cached)
+Property  ad9361_config_proxy.DATA_CLK_Delay = "3"
+Property  ad9361_config_proxy.Rx_Data_Delay = "0"
+Property  ad9361_config_proxy.FB_CLK_Delay = "7"
+Property  ad9361_config_proxy.Tx_Data_Delay = "0"
+Property  ad9361_data_sub.DATA_CLK_Delay = "3" (parameter)
+Property  ad9361_data_sub.RX_Data_Delay = "0" (parameter)
+Property  ad9361_data_sub.FB_CLK_Delay = "7" (parameter)
+Property  ad9361_data_sub.TX_Data_Delay = "0" (parameter)
+Property  qadc.overrun = "false"
+Property  ad9361_adc_sub.r1_samps_dropped = "false"
+Property  ad9361_adc_sub.r2_samps_dropped = "false"
+Property  file_write.bytesWritten = "32768"
+estimated_BER : 0%
+--------------------------------------------------------------------------------
+FIR enabled      : 0
+Data port config : 2R2T
+sample rate      : 40e6 sps
+runtime          : 1 sec
+PRBS
+Property  ad9361_config_proxy.bb_pll_is_locked = "true"
+Property  ad9361_config_proxy.rx_pll_is_locked = "true"
+Property  ad9361_config_proxy.tx_pll_is_locked = "true"
+Property  ad9361_config_proxy.rx_fir_en_dis = "0"
+Property  ad9361_config_proxy.rx_sampling_freq = "40000000"
+Property  ad9361_config_proxy.bist_prbs = "2"
+Property  ad9361_config_proxy.ad9361_init = "reference_clk_rate 40000000,one_rx_one_tx_mode_use_rx_num 0,one_rx_one_tx_mode_use_tx_num 0,frequency_division_duplex_mode_enable 1,xo_disable_use_ext_refclk_enable 0,two_t_two_r_timing_enable true,pp_tx_swap_enable 0,pp_rx_swap_enable 0,tx_channel_swap_enable 0,rx_channel_swap_enable 0,delay_rx_data 0,rx_data_clock_delay 3,rx_data_delay 0,tx_fb_clock_delay 7,tx_data_delay 0" (cached)
+Property  ad9361_config_proxy.DATA_CLK_Delay = "3"
+Property  ad9361_config_proxy.Rx_Data_Delay = "0"
+Property  ad9361_config_proxy.FB_CLK_Delay = "7"
+Property  ad9361_config_proxy.Tx_Data_Delay = "0"
+Property  ad9361_data_sub.DATA_CLK_Delay = "3" (parameter)
+Property  ad9361_data_sub.RX_Data_Delay = "0" (parameter)
+Property  ad9361_data_sub.FB_CLK_Delay = "7" (parameter)
+Property  ad9361_data_sub.TX_Data_Delay = "0" (parameter)
+Property  qadc.overrun = "false"
+Property  ad9361_adc_sub.r1_samps_dropped = "false"
+Property  ad9361_adc_sub.r2_samps_dropped = "false"
+Property  file_write.bytesWritten = "32768"
+estimated_BER : 0%
+--------------------------------------------------------------------------------
+FIR enabled      : 0
+Data port config : 2R2T
+sample rate      : 43767507 sps
+runtime          : 1 sec
+PRBS
+Property  ad9361_config_proxy.bb_pll_is_locked = "true"
+Property  ad9361_config_proxy.rx_pll_is_locked = "true"
+Property  ad9361_config_proxy.tx_pll_is_locked = "true"
+Property  ad9361_config_proxy.rx_fir_en_dis = "0"
+Property  ad9361_config_proxy.rx_sampling_freq = "43767506"
+Property  ad9361_config_proxy.bist_prbs = "2"
+Property  ad9361_config_proxy.ad9361_init = "reference_clk_rate 40000000,one_rx_one_tx_mode_use_rx_num 0,one_rx_one_tx_mode_use_tx_num 0,frequency_division_duplex_mode_enable 1,xo_disable_use_ext_refclk_enable 0,two_t_two_r_timing_enable true,pp_tx_swap_enable 0,pp_rx_swap_enable 0,tx_channel_swap_enable 0,rx_channel_swap_enable 0,delay_rx_data 0,rx_data_clock_delay 3,rx_data_delay 0,tx_fb_clock_delay 7,tx_data_delay 0" (cached)
+Property  ad9361_config_proxy.DATA_CLK_Delay = "3"
+Property  ad9361_config_proxy.Rx_Data_Delay = "0"
+Property  ad9361_config_proxy.FB_CLK_Delay = "7"
+Property  ad9361_config_proxy.Tx_Data_Delay = "0"
+Property  ad9361_data_sub.DATA_CLK_Delay = "3" (parameter)
+Property  ad9361_data_sub.RX_Data_Delay = "0" (parameter)
+Property  ad9361_data_sub.FB_CLK_Delay = "7" (parameter)
+Property  ad9361_data_sub.TX_Data_Delay = "0" (parameter)
+Property  qadc.overrun = "false"
+Property  ad9361_adc_sub.r1_samps_dropped = "false"
+Property  ad9361_adc_sub.r2_samps_dropped = "false"
+Property  file_write.bytesWritten = "32768"
+estimated_BER : 0%
+--------------------------------------------------------------------------------
+FIR enabled      : 0
+Data port config : 2R2T
+sample rate      : 43767507 sps
+runtime          : 10 sec
+additional test for overrun avoidance
+Property  ad9361_config_proxy.bb_pll_is_locked = "true"
+Property  ad9361_config_proxy.rx_pll_is_locked = "true"
+Property  ad9361_config_proxy.tx_pll_is_locked = "true"
+Property  ad9361_config_proxy.rx_fir_en_dis = "0"
+Property  ad9361_config_proxy.rx_sampling_freq = "43767506"
+Property  ad9361_config_proxy.bist_prbs = "2"
+Property  ad9361_config_proxy.ad9361_init = "reference_clk_rate 40000000,one_rx_one_tx_mode_use_rx_num 0,one_rx_one_tx_mode_use_tx_num 0,frequency_division_duplex_mode_enable 1,xo_disable_use_ext_refclk_enable 0,two_t_two_r_timing_enable true,pp_tx_swap_enable 0,pp_rx_swap_enable 0,tx_channel_swap_enable 0,rx_channel_swap_enable 0,delay_rx_data 0,rx_data_clock_delay 3,rx_data_delay 0,tx_fb_clock_delay 7,tx_data_delay 0" (cached)
+Property  ad9361_config_proxy.DATA_CLK_Delay = "3"
+Property  ad9361_config_proxy.Rx_Data_Delay = "0"
+Property  ad9361_config_proxy.FB_CLK_Delay = "7"
+Property  ad9361_config_proxy.Tx_Data_Delay = "0"
+Property  ad9361_data_sub.DATA_CLK_Delay = "3" (parameter)
+Property  ad9361_data_sub.RX_Data_Delay = "0" (parameter)
+Property  ad9361_data_sub.FB_CLK_Delay = "7" (parameter)
+Property  ad9361_data_sub.TX_Data_Delay = "0" (parameter)
+Property  qadc.overrun = "false"
+Property  ad9361_adc_sub.r1_samps_dropped = "false"
+Property  ad9361_adc_sub.r2_samps_dropped = "false"
+Property  file_write.bytesWritten = "32768"
+--------------------------------------------------------------------------------

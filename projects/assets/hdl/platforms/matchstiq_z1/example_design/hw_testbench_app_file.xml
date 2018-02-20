@@ -1,0 +1,42 @@
+<Application>
+  <!-- HDL Components -->
+  <Instance Component='ocpi.assets.devices.rf_rx'>
+    <!-- Used RX VGA2 common mode voltage (rx_vcm) from Epiq Reference Design -->
+    <Property name='rx_vcm' Value='0x36'/>
+  </Instance>
+  <Instance Component="ocpi.assets.devices.qadc" Model="hdl"/>
+  <Instance Component="ocpi.assets.devices.si5338"/>
+  <Instance Component='ocpi.assets.devices.tmp100'/>
+  <Instance Component='ocpi.assets.platforms.matchstiq_z1.devices.matchstiq_z1_avr'/>
+  <Instance Component='ocpi.assets.devices.pca9535'/>
+
+  <!-- RCC Components -->
+  <Instance Component='ocpi.core.file_write'>
+    <Property name='fileName' Value='odata/testbench_rx.out'/>
+  </Instance>
+
+  <!-- RCC Proxies -->
+  <Instance Component='ocpi.assets.devices.rf_rx_proxy' Slave='rf_rx'>
+     <Property name='input_select' Value='2'/>
+     <Property name='center_freq_hz' Value='2.140e9'/>
+     <Property name='post_mixer_dc_offset_i' Value='0x43'/>
+     <Property name='post_mixer_dc_offset_q' Value='0x06'/>
+     <Property name='lpf_bw_hz' Value='.75e6'/>
+     <Property name='post_lpf_gain_db' Value='21'/>
+  </Instance>
+  <Instance Component="ocpi.core.devices.clock_gen" Slave="si5338"/>
+  <Instance Component='ocpi.assets.platforms.matchstiq_z1.devices.matchstiq_z1_avr_proxy' Slave='matchstiq_z1_avr'/>
+  <Instance Component='ocpi.assets.devices.tmp100_proxy' Slave='tmp100'/>
+  <Instance Component='ocpi.assets.platforms.matchstiq_z1.devices.matchstiq_z1_pca9535_proxy' Slave='pca9535'/>
+
+  <!-- RCC Frontend Proxies -->
+  <Instance Component="ocpi.core.rx">
+    <Property Name="TYPE_p" Value="matchstiq_z1"/>
+  </Instance>
+
+  <!-- Connections -->
+  <Connection>
+    <Port Instance="qadc" Name="out"/>
+    <Port Instance="file_write" Name="in"/>
+  </Connection>
+</Application>

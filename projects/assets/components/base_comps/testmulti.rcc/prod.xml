@@ -1,0 +1,4 @@
+<RccImplementation Name="ProducerWorker">
+  <ControlInterface ControlOperations="initialize,start,stop,release,test,afterConfigure,beforeQuery"/>
+  <xi:include href="prod_spec.xml"/>
+</RccImplementation>

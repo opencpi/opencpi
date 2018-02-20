@@ -1,0 +1,55 @@
+This directory contains OpenOffice/LibreOffice documents for OpenCPI.
+They all use the template here named shared/OCPI_ODT.ott, which must be imported
+into LibreOffice before editing any of these odt documents.
+
+After editing a document, the Export PDF function under the file menu should be used
+to place the PDF in the ../pdf directory, and that PDF file should be part of the commit.
+Set "pages and bookmarks" as the initial view.
+
+Also, export as html in ../html using the Writer2xhtml extension.
+Use HTML5 export, and select "put images in a subdirectory".
+
+Similarly, if the template is edited, it should be re-exported into the shared directory.
+
+If any editing of these ODT documents is touched, the template should be imported
+first.
+
+Look at the "diagrams.txt" file if you are adding or editing diagrams in these
+documents. They are currently edited in PowerPoint, and not yet included in the repo.
+
+Some conventions used in editing these ODT documents:
+
+Terms or names meant to be literal names in code or XML files, should be, in the narrative text,
+put in the "code" character style.  Similarly code/xml examples that are paragraphs by them
+selves should use the "code" paragraph style, with lines in that paragraph ending in
+shift-return (line break), *not* separate paragraphs.  Code in table cells should be in the 
+"table code" paragraph style.
+
+When a term or document name is introduced for the first time, use the "first emphasis" character style.  If a term is used afterward, that still should not read as "just a regular word", continue to use this.
+
+If a word or phrase is a hyperlink, underline it.
+
+Body text should use the "body" paragraph style.
+
+Table captions should use the "Table Caption (before)" style and the caption should
+precede the table.
+
+Figure captions should use the "Caption" paragraph style and the caption should follow the table.
+
+In the heading line of a table, use the "table heading" paragraph style.
+In the body of a able use the "table contents" paragraph style.
+When code is in table cells, use the "table code" paragraph style.
+
+For bulleted lists use the "list bullet" or "list bullet2" styles.
+
+When symbols that are case insensitive are put into table entries, capitalize/camel0-case them.
+
+When literal symbols that are case sensitive are in table entries, leave them in their actual case.
+
+In bullet lists, use periods when the bullets are complete sentences, otherwise do not use periods.  All items in the list should be the same in this regard.
+
+Use italics for typical emphasis as in common usage, as in all writing.
+
+Use bold for extra strong emphasis very rarely.
+
+Use bold-italics/"first emphasis" char style for terms used specially in the document, until it truly seems routine and then drop it.

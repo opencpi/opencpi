@@ -1,0 +1,5 @@
+<tests>
+  <property name='biasValue' value='0'/>
+  <input port='in' file='test.input'/>
+  <output port='out' file='test.input'/>
+</tests>

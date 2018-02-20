@@ -1,0 +1,258 @@
+<!--
+  The slot type declaration for Altera HSMC implementation on the Stratix IV development (alst4) board.
+  *****************************************************************************************************************************************
+  This slot type declaration is distinctly different from the regular HSMC spec because the alst4 board's usage of D37_OR_LVDS_CLKIN1p and D39_OR_LVDS_CLKIN1n SEEM TO BE INCOMPATIBLE WITH THE HSMC SPEC due to the restriction of pin directionality
+  See also/contrast with: hdl/cards/specs/hsmc.xml
+  *****************************************************************************************************************************************
+  The following HSMC specification document was referenced:
+    Document Version: 1.7
+    Document Date:    June 2009
+    URL: https://www.altera.com/content/dam/altera-www/global/en_US/pdfs/literature/ds/hsmc_spec.pdf
+  There are really different modes (single-ended and differential), but this slot type was written generically so as to support both.
+  Bidirectional means it is determined elsewhere (by the card).
+  This means fixed/determined by the card.
+  (This disallows dynamically bidirectional signals for a card...)
+  Note that directions are relative to the platform/host/motherboard. Out is *output-to-the-card*
+
+  Recommended viewing: vim with :set cursorline and :set cursorcolumn
+-->
+<SlotType>
+                                                    <!-- Below tables are from HSMC spec                                                                                              -->
+                                                    <!--                                                           --> <!--                                                           -->
+                                                    <!-- Table 4-1. Standard Single-Ended Host Pinout              --> <!-- Table 4-2. Standard Differential Host Pinout              -->
+                                                    <!--                                                           --> <!--                                                           -->
+                                                    <!-- Pin    Function    Function  Pin     Description          --> <!-- Pin    Function    Function  Pin     Description          -->
+                                                    <!-- Number                       Number                       --> <!-- Number                       Number                       -->
+  <signal output='XCVR_TXp7'/>                      <!-- 1      XCVR_TXp7   XCVR_RXp7 2       CMOS (1) (1)         --> <!-- 1      XCVR_TXp7   XCVR_RXp7 2       Transceiver          -->
+  <signal  input='XCVR_RXp7'/> 
+
+  <signal output='XCVR_TXn7'/>                      <!-- 3      XCVR_TXn7   XCVR_RXn7 4       CMOS (1) (1)         --> <!-- 3      XCVR_TXn7   XCVR_RXn7 4       Transceiver          -->
+  <signal  input='XCVR_RXn7'/> 
+
+  <signal output='XCVR_TXp6'/>                      <!-- 5      XCVR_TXp6   XCVR_RXp6 6       CMOS (1) (1)         --> <!-- 5      XCVR_TXp6   XCVR_RXp6 6       Transceiver          -->
+  <signal  input='XCVR_RXp6'/> 
+
+  <signal output='XCVR_TXn6'/>                      <!-- 7      XCVR_TXn6   XCVR_RXn6 8       CMOS (1) (1)         --> <!-- 7      XCVR_TXn6   XCVR_RXn6 8       Transceiver          -->
+  <signal  input='XCVR_RXn6'/> 
+
+  <signal output='XCVR_TXp5'/>                      <!-- 9      XCVR_TXp5   XCVR_RXp5 10      CMOS (1) (1)         --> <!-- 9      XCVR_TXp5   XCVR_RXp5 10      Transceiver          -->
+  <signal  input='XCVR_RXp5'/> 
+
+  <signal output='XCVR_TXn5'/>                      <!-- 11     XCVR_TXn5   XCVR_RXn5 12      CMOS (1) (1)         --> <!-- 11     XCVR_TXn5   XCVR_RXn5 12      Transceiver          -->
+  <signal  input='XCVR_RXn5'/> 
+
+  <signal output='XCVR_TXp4'/>                      <!-- 13     XCVR_TXp4   XCVR_RXp4 14      CMOS (1) (1)         --> <!-- 13     XCVR_TXp4   XCVR_RXp4 14      Transceiver          -->
+  <signal  input='XCVR_RXp4'/>  
+
+  <signal output='XCVR_TXn4'/>                      <!-- 15     XCVR_TXn4   XCVR_RXn4 16      CMOS (1) (1)         --> <!-- 15     XCVR_TXn4   XCVR_RXn4 16      Transceiver          -->
+  <signal  input='XCVR_RXn4'/> 
+
+  <signal output='XCVR_TXp3'/>                      <!-- 17     XCVR_TXp3   XCVR_RXp3 18      CMOS (1) (1)         --> <!-- 17     XCVR_TXp3   XCVR_RXp3 18      Transceiver          -->
+  <signal  input='XCVR_RXp3'/> 
+
+  <signal output='XCVR_TXn3'/>                      <!-- 19     XCVR_TXn3   XCVR_RXn3 20      CMOS (1) (1)         --> <!-- 19     XCVR_TXn3   XCVR_RXn3 20      Transceiver          -->
+  <signal  input='XCVR_RXn3'/> 
+
+  <signal output='XCVR_TXp2'/>                      <!-- 21     XCVR_TXp2   XCVR_RXp2 22      CMOS (1) (1)         --> <!-- 21     XCVR_TXp2   XCVR_RXp2 22      Transceiver          -->
+  <signal  input='XCVR_RXp2'/> 
+
+  <signal output='XCVR_TXn2'/>                      <!-- 23     XCVR_TXn2   XCVR_RXn2 24      CMOS (1) (1)         --> <!-- 23     XCVR_TXn2   XCVR_RXn2 24      Transceiver          -->
+  <signal  input='XCVR_RXn2'/> 
+
+  <signal output='XCVR_TXp1'/>                      <!-- 25     XCVR_TXp1   XCVR_RXp1 26      CMOS (1) (1)         --> <!-- 25     XCVR_TXp1   XCVR_RXp1 26      Transceiver          -->
+  <signal  input='XCVR_RXp1'/> 
+
+  <signal output='XCVR_TXn1'/>                      <!-- 27     XCVR_TXn1   XCVR_RXn1 28      CMOS (1) (1)         --> <!-- 27     XCVR_TXn1   XCVR_RXn1 28      Transceiver          -->
+  <signal  input='XCVR_RXn1'/> 
+
+  <signal output='XCVR_TXp0'/>                      <!-- 29     XCVR_TXp0   XCVR_RXp0 30      CMOS (1) (1)         --> <!-- 29     XCVR_TXp0   XCVR_RXp0 30      Transceiver          -->
+  <signal  input='XCVR_RXp0'/> 
+
+  <signal output='XCVR_TXn0'/>                      <!-- 31     XCVR_TXn0   XCVR_RXn0 32      CMOS (1) (1)         --> <!-- 31     XCVR_TXn0   XCVR_RXn0 32      Transceiver          -->
+  <signal  input='XCVR_RXn0'/> 
+
+  <signal bidirectional='SDA'/>                     <!-- 33     SDA         SCL       34      SMBUS/CMOS           --> <!-- 33     SDA         SCL       34      SMBUS/CMOS           -->
+  <signal output='SCL'/> 
+
+  <signal output='JTAG_TCK'/>                       <!-- 35     JTAG_TCK    JTAG_TMS  36      JTAG/CMOS            --> <!-- 35     JTAG_TCK    JTAG_TMS  36      JTAG/CMOS            -->
+  <signal output='JTAG_TMS'/> 
+
+  <signal output='JTAG_TDO'/>                       <!-- 37     JTAG_TDO    JTAG_TDI  38      JTAG/CMOS            --> <!-- 37     JTAG_TDO    JTAG_TDI  38      JTAG/CMOS            -->
+  <signal  input='JTAG_TDI'/> 
+
+  <signal output='CLKOUT0'/>                        <!-- 39     CLKOUT0     CLKIN0    40      CMOS CLK             --> <!-- 39     CLKOUT0     CLKIN0    40      CMOS CLK             -->
+  <signal  input='CLKIN0'/> 
+
+  <signal bidirectional='D0'/>                      <!-- 41     D0          D1        42      CMOS                 --> <!-- 41     D0          D1        42      CMOS                 -->
+  <signal bidirectional='D1'/> 
+
+  <signal bidirectional='D2'/>                      <!-- 43     D2          D3        44      CMOS                 --> <!-- 43     D2          D3        44      CMOS                 -->
+  <signal bidirectional='D3'/> 
+
+                                                    <!-- 45     3.3 V       12 V      46      Power                --> <!-- 45     3.3 V       12 V      46      Power                -->
+
+  <signal bidirectional='D4_OR_LVDS_TXp0'/>         <!-- 47     D4          D5        48      CMOS                 --> <!-- 47     LVDS_TXp0   LVDS_RXp0 48      CMOS/LVDS            -->
+  <signal bidirectional='D5_OR_LVDS_RXp0'/> 
+
+  <signal bidirectional='D6_OR_LVDS_TXn0'/>         <!-- 49     D6          D7        50      CMOS                 --> <!-- 49     LVDS_TXn0   LVDS_RXn0 50      CMOS/LVDS            -->
+  <signal bidirectional='D7_OR_LVDS_RXn0'/>
+
+                                                    <!-- 51     3.3 V       12 V      52      Power                --> <!-- 51     3.3 V       12 V      52      Power                -->
+
+  <signal bidirectional='D8_OR_LVDS_TXp1'/>         <!-- 53     D8          D9        54      CMOS                 --> <!-- 53     LVDS_TXp1   LVDS_RXp1 54      CMOS/LVDS            -->
+  <signal bidirectional='D9_OR_LVDS_RXp1'/>
+
+  <signal bidirectional='D10_OR_LVDS_TXn1'/>        <!-- 55     D10         D11       56      CMOS                 --> <!-- 55     LVDS_TXn1  LVDS_RXn1 56      CMOS/LVDS            -->
+  <signal bidirectional='D11_OR_LVDS_RXn1'/>
+
+                                                    <!-- 57     3.3 V       12 V      58      Power                --> <!-- 57     3.3 V      12 V      58      Power                -->
+
+  <signal bidirectional='D12_OR_LVDS_TXp2'/>        <!-- 59     D12         D13       60      CMOS                 --> <!-- 59     LVDS_TXp2  LVDS_RXp2 60      CMOS/LVDS            -->
+  <signal bidirectional='D13_OR_LVDS_RXp2'/>
+
+  <signal bidirectional='D14_OR_LVDS_TXn2'/>        <!-- 61     D14         D15       62      CMOS                 --> <!-- 61     LVDS_TXn2  LVDS_RXn2 62      CMOS/LVDS            -->
+  <signal bidirectional='D15_OR_LVDS_RXn2'/>
+
+                                                    <!-- 63     3.3 V       12 V      64      Power                --> <!-- 63     3.3 V      12 V      64      Power                -->
+
+  <signal bidirectional='D16_OR_LVDS_TXp3'/>        <!-- 65     D16         D17       66      CMOS                 --> <!-- 65     LVDS_TXp3  LVDS_RXp3 66      CMOS/LVDS            -->
+  <signal bidirectional='D17_OR_LVDS_RXp3'/>
+
+  <signal bidirectional='D18_OR_LVDS_TXn3'/>        <!-- 67     D18         D19       68      CMOS                 --> <!-- 67     LVDS_TXn3  LVDS_RXn3 68      CMOS/LVDS            -->
+  <signal bidirectional='D19_OR_LVDS_RXn3'/>
+
+                                                    <!-- 69     3.3 V       12 V      70      Power                --> <!-- 69     3.3 V      12 V      70      Power                -->
+
+  <signal bidirectional='D20_OR_LVDS_TXp4'/>        <!-- 71     D20         D21       72      CMOS                 --> <!-- 71     LVDS_TXp4  LVDS_RXp4 72      CMOS/LVDS            -->
+  <signal bidirectional='D21_OR_LVDS_RXp4'/>
+
+  <signal bidirectional='D22_OR_LVDS_TXn4'/>        <!-- 73     D22         D23       74      CMOS                 --> <!-- 73     LVDS_TXn4  LVDS_RXn4 74      CMOS/LVDS            -->
+  <signal bidirectional='D23_OR_LVDS_RXn4'/>
+
+                                                    <!-- 75     3.3 V       12 V      76      Power                --> <!-- 75     3.3 V      12 V      76      Power                -->
+
+  <signal bidirectional='D24_OR_LVDS_TXp5'/>        <!-- 77     D24         D25       78      CMOS                 --> <!-- 77     LVDS_TXp5  LVDS_RXp5 78      CMOS/LVDS            -->
+  <signal bidirectional='D25_OR_LVDS_RXp5'/>
+
+  <signal bidirectional='D26_OR_LVDS_TXn5'/>        <!-- 79     D26         D27       80      CMOS                 --> <!-- 79     LVDS_TXn5  LVDS_RXn5 80      CMOS/LVDS            -->
+  <signal bidirectional='D27_OR_LVDS_RXn5'/>
+
+                                                    <!-- 81     3.3 V       12 V      82      Power                --> <!-- 81     3.3 V      12 V      82      Power                -->
+
+  <signal bidirectional='D28_OR_LVDS_TXp6'/>        <!-- 83     D28         D29       84      CMOS                 --> <!-- 83     LVDS_TXp6  LVDS_RXp6 84      CMOS/LVDS            -->
+  <signal bidirectional='D29_OR_LVDS_RXp6'/>
+
+  <signal bidirectional='D30_OR_LVDS_TXn6'/>        <!-- 85     D30         D31       86      CMOS                 --> <!-- 85     LVDS_TXn6  LVDS_RXn6 86      CMOS/LVDS            -->
+  <signal bidirectional='D31_OR_LVDS_RXn6'/>
+
+                                                    <!-- 87     3.3 V       12 V      88      Power                --> <!-- 87     3.3 V      12 V      88      Power                -->
+
+  <signal bidirectional='D32_OR_LVDS_TXp7'/>        <!-- 89     D32         D33       90      CMOS                 --> <!-- 89     LVDS_TXp7  LVDS_RXp7 90      CMOS/LVDS            -->
+  <signal bidirectional='D33_OR_LVDS_RXp7'/>
+
+  <signal bidirectional='D34_OR_LVDS_TXn7'/>        <!-- 91     D34         D35       92      CMOS                 --> <!-- 91     LVDS_TXn7  LVDS_RXn7 92      CMOS/LVDS            -->
+  <signal bidirectional='D35_OR_LVDS_RXn7'/>
+
+                                                    <!-- 93     3.3 V       12 V      94      Power                --> <!-- 93     3.3 V      12 V      94      Power                -->
+
+  <signal bidirectional='D36_OR_LVDS_CLKOUT1p'/>    <!-- 95     D36         D37       96      LVDS CLKp/CMOS       --> <!-- 95     CLKOUT1p   CLKIN1p   96      LVDS CLKp/CMOS       -->
+
+  <!-- HSMC spec states that pin x aka LVDS_CLKIN1p may be configured as an CMOS input or output from the host perspective, but in the Stratix IV board it is restricted to a dedicated 
+       clock input (see HSMC spec section 3.3.4.5, which states CMOS/LVDS CLK pins, "[when] programmed in single-ended mode on the host FPGA, these signals must support 
+       bidirectional operation") (also see doc "Pin Information for the Stratix IV GX EP4SGX230 Device Version 1.4" for F1517 package, which states AB6 is CLK10p)                   -->
+  <signal input        ='CLKIN1p'/>
+
+  <signal bidirectional='D38_OR_LVDS_CLKOUT1n'/>    <!-- 97     D38         D39       98      LVDS CLKn/CMOS       --> <!-- 97     CLKOUT1n   CLKIN1n   98      LVDS CLKn/CMOS       -->
+
+  <!-- HSMC spec states that pin x aka LVDS_CLKIN1 may be configured as an CMOS input or output from the host perspective, but in the Stratix IV board it is restricted to a dedicated 
+       clock input (see HSMC spec section 3.3.4.5, which states CMOS/LVDS CLK pins, "[when] programmed in single-ended mode on the host FPGA, these signals must support 
+       bidirectional operation") (also see doc "Pin Information for the Stratix IV GX EP4SGX230 Device Version 1.4" for F1517 package, which states AB6 is CLK10p)                   -->
+  <signal input        ='CLKIN1n'/>
+
+                                                    <!-- 99     3.3 V       12 V      100     Power                --> <!-- 99     3.3 V      12 V      100      Power               -->
+
+  <signal bidirectional='D40_OR_LVDS_TXp8'/>        <!-- 101    D40         D41       102     CMOS                 --> <!-- 101    LVDS_TXp8  LVDS_RXp8 102      CMOS/LVDS           -->
+  <signal bidirectional='D41_OR_LVDS_RXp8'/>
+
+  <signal bidirectional='D42_OR_LVDS_TXn8'/>        <!-- 103    D42         D43       104     CMOS                 --> <!-- 103    LVDS_TXn8  LVDS_RXn8 104      CMOS/LVDS           -->
+  <signal bidirectional='D43_OR_LVDS_RXn8'/>
+
+                                                    <!-- 105    3.3 V       12 V      106     Power                --> <!-- 105    3.3 V      12 V      106      Power               -->
+
+  <signal bidirectional='D44_OR_LVDS_TXp9'/>        <!-- 107    D44         D45       108     CMOS                 --> <!-- 107    LVDS_TXp9  LVDS_RXp9 108      CMOS/LVDS           -->
+  <signal bidirectional='D45_OR_LVDS_RXp9'/>
+
+  <signal bidirectional='D46_OR_LVDS_TXn9'/>        <!-- 109    D46         D47       110     CMOS                 --> <!-- 109    LVDS_TXn9  LVDS_RXn9 110      CMOS/LVDS           -->
+  <signal bidirectional='D47_OR_LVDS_RXn9'/>
+
+                                                    <!-- 111    3.3 V       12 V      112     Power                --> <!-- 111    3.3 V      12 V       112     Power               -->
+
+  <signal bidirectional='D48_OR_LVDS_TXp10'/>       <!-- 113    D48         D49       114     CMOS                 --> <!-- 113    LVDS_TXp10 LVDS_RXp10 114     CMOS/LVDS           -->
+  <signal bidirectional='D49_OR_LVDS_RXp10'/>
+
+  <signal bidirectional='D50_OR_LVDS_TXn10'/>       <!-- 115    D50         D51       116     CMOS                 --> <!-- 115    LVDS_TXn10 LVDS_RXn10 116     CMOS/LVDS           -->
+  <signal bidirectional='D51_OR_LVDS_RXn10'/>
+
+                                                    <!-- 117    3.3 V       12 V      118     Power                --> <!-- 117    3.3 V      12 V       118     Power               -->
+
+  <signal bidirectional='D52_OR_LVDS_TXp11'/>       <!-- 119    D52         D53       120     CMOS                 --> <!-- 119    LVDS_TXp11 LVDS_RXp11 120     CMOS/LVDS           -->
+  <signal bidirectional='D53_OR_LVDS_RXp11'/>
+
+  <signal bidirectional='D54_OR_LVDS_TXn11'/>       <!-- 121    D54         D55       122     CMOS                 --> <!-- 121    LVDS_TXn11 LVDS_RXn11 122     CMOS/LVDS           -->
+  <signal bidirectional='D55_OR_LVDS_RXn11'/>
+
+                                                    <!-- 123    3.3 V       12 V      124     Power                --> <!-- 123    3.3 V      12 V       124     Power               -->
+
+  <signal bidirectional='D56_OR_LVDS_TXp12'/>       <!-- 125    D56         D57       126     CMOS                 --> <!-- 125    LVDS_TXp12 LVDS_RXp12 126     CMOS/LVDS           -->
+  <signal bidirectional='D57_OR_LVDS_RXp12'/>
+
+  <signal bidirectional='D58_OR_LVDS_TXn12'/>       <!-- 127    D58         D59       128     CMOS                 --> <!-- 127    LVDS_TXn12 LVDS_RXn12 128     CMOS/LVDS           -->
+  <signal bidirectional='D59_OR_LVDS_RXn12'/>
+
+                                                    <!-- 129    3.3 V       12 V      130     Power                --> <!-- 129    3.3 V      12 V       130     Power               -->
+
+  <signal bidirectional='D60_OR_LVDS_TXp13'/>       <!-- 131    D60         D61       132     CMOS                 --> <!-- 131    LVDS_TXp13 LVDS_RXp13 132     CMOS/LVDS           -->
+  <signal bidirectional='D61_OR_LVDS_RXp13'/>
+
+  <signal bidirectional='D62_OR_LVDS_TXn13'/>       <!-- 133    D62         D63       134     CMOS                 --> <!-- 133    LVDS_TXn13 LVDS_RXn13 134     CMOS/LVDS           -->
+  <signal bidirectional='D63_OR_LVDS_RXn13'/>
+
+                                                    <!-- 135    3.3 V       12 V      136     Power                --> <!-- 135    3.3 V      12 V       136     Power               -->
+
+  <signal bidirectional='D64_OR_LVDS_TXp14'/>       <!-- 137    D64         D65       138     CMOS                 --> <!-- 137    LVDS_TXp14 LVDS_RXp14 138     CMOS/LVDS           -->
+  <signal bidirectional='D65_OR_LVDS_RXp14'/>
+
+  <signal bidirectional='D66_OR_LVDS_TXn14'/>       <!-- 139    D66         D67       140     CMOS                 --> <!-- 139    LVDS_TXn14 LVDS_RXn14 140     CMOS/LVDS           -->
+  <signal bidirectional='D67_OR_LVDS_RXn14'/>
+
+                                                    <!-- 141    3.3 V       12 V      142     Power                --> <!-- 141    3.3 V      12 V       142     Power               -->
+
+  <signal bidirectional='D68_OR_LVDS_TXp15'/>       <!-- 143    D68         D69       144     CMOS                 --> <!-- 143    LVDS_TXp15 LVDS_RXp15 144     CMOS/LVDS           -->
+  <signal bidirectional='D69_OR_LVDS_RXp15'/>
+
+  <signal bidirectional='D70_OR_LVDS_TXn15'/>       <!-- 145    D70         D71       146     CMOS                 --> <!-- 145    LVDS_TXn15 LVDS_RXn15 146     CMOS/LVDS           -->
+  <signal bidirectional='D71_OR_LVDS_RXn15'/>
+
+                                                    <!-- 147    3.3 V       12 V      148     Power                --> <!-- 147    3.3 V      12 V       148     Power               -->
+
+  <signal bidirectional='D72_OR_LVDS_TXp16'/>       <!-- 149    D72         D73       150     CMOS                 --> <!-- 149    LVDS_TXp16 LVDS_RXp16 150     CMOS/LVDS           -->
+  <signal bidirectional='D73_OR_LVDS_RXp16'/>
+
+  <signal bidirectional='D74_OR_LVDS_TXn16'/>       <!-- 151    D74         D75       152     CMOS                 --> <!-- 151    LVDS_TXn16 LVDS_RXn16 152     CMOS/LVDS           -->
+  <signal bidirectional='D75_OR_LVDS_RXn16'/>
+
+                                                    <!-- 153    3.3 V       12 V      154     Power                --> <!-- 153    3.3 V      12 V       154     Power               -->
+
+
+  <signal bidirectional='D76_OR_CLKOUT2p'/>         <!-- 155    D76         D77       156     LVDS CLKp/CMOS       --> <!-- 155    CLKOUT2p   CLKIN2p    156     LVDS CLKp/CMOS      -->
+  <signal bidirectional='D77_OR_CLKIN2p'/> 
+
+  <signal bidirectional='D78_OR_CLOUT2n'/>          <!-- 157    D78         D79       158     LVDS CLKn/CMOS       --> <!-- 157    CLKOUT2n   CLKIN2n    158     LVDS CLKn/CMOS      -->
+  <signal bidirectional='D79_OR_CLKIN2n'/> 
+
+  <signal         input='PSNTn'/>                   <!-- 159    3.3 V       PSNTn(2)  160     Power/PSNTn (2)      --> <!-- 159    3.3 V      PSNTn(1)   160     Power/PSNTn(1)      -->
+</SlotType>
+
+
+
+

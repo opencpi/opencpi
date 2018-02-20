@@ -1,0 +1,13 @@
+<Protocol>
+  <Operation Name="Samples">
+    <Argument Name="LongT" Type="ULong"/>
+    <Argument Name="LongT2" Type="ULong"/>
+    <Argument Name="ULongLongT" Type="ULongLong"/>
+    <Argument Name="CharT" Type="UChar"/>
+  </Operation>
+</Protocol>
+
+
+
+
+

@@ -1,0 +1,47 @@
+--- configure.ac.orig	2015-09-23 12:41:35.000000000 -0400
++++ configure.ac	2015-09-23 12:48:52.000000000 -0400
+@@ -1,4 +1,4 @@
+-AC_INIT([patchelf], m4_esyscmd([printf $(cat ./version)]))
++AC_INIT([patchelf], m4_esyscmd([printf $(cat ./version)${OCPI_PATCHELF_COMMIT_SHORT}-ocpi]))
+ AC_CONFIG_SRCDIR([src/patchelf.cc])
+ AC_CONFIG_AUX_DIR([build-aux])
+ AM_INIT_AUTOMAKE([-Wall -Werror dist-bzip2 foreign color-tests parallel-tests])
+--- src/patchelf.cc.orig	2015-09-23 14:32:37.245849869 -0400
++++ src/patchelf.cc	2015-09-23 14:49:41.719109921 -0400
+@@ -970,6 +970,25 @@
+         return;
+     }
+ 
++    if (soname)
++      debug("current SONAME is '%s'\n", soname);
++
++    if (soname and newSoname == "OCPI") {
++      char *old = strstr(soname, "_s.so");
++      if (old) {
++        do {
++          *old = *(old + 2);
++        } while (*old++);
++        *old = '\0'; // One more NULL (there should now be three at the end: original, copied, and this one stuffed in between)
++        // memcpy(old, ".so\0\0", 5);
++        debug("new SONAME is `%s'\n", soname);
++        changed = true;
++        return;
++      } else {
++        error("Could not find '_s.so' in SONAME!");
++      }
++    }
++
+     /* Zero out the previous SONAME */
+     unsigned int sonameSize = 0;
+     if (soname) {
+@@ -1545,6 +1564,10 @@
+             setSoname = true;
+             newSoname = argv[i];
+         }
++        else if (arg == "--ocpi-fix-soname") {
++            setSoname = true;
++            newSoname = "OCPI";
++        }
+         else if (arg == "--remove-rpath") {
+             removeRPath = true;
+         }

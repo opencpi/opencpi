@@ -1,0 +1,84 @@
+There are (at least) these categories of names that have some degree of standardization.
+There is a distinciton between names visible to non-programmer "users", and coders.
+
+At least briefly, they are captured here.
+
+Source Code file names
+-- C++ 
+   The intention is to move to "*.cc" and "*.hh", but for now it is "*.cxx" and "*.h".
+   These will be shorter, like OmniOrb, and hh makes it clear that the editing mode for the file
+   should be C++, not c.  User visible C++ files (workers) are already .cc etc.
+
+   Generally camel-case to match classes, with the first word being the namespace
+   of the directory of source files (without initial Ocpi), which usually matches the directory
+   name which will be lower case.
+   E.g. the file name ContainerPort.{cxx,cc,h,hh} would be in the directory named "container",
+   and in the namespace OCPI::Container
+
+   When file names do not match classes and namespaces they may just be categories of code,
+   and may be named more flexibly, and since they don't correspond to names of things
+   in the source code, may use hyphens.
+
+-- C++ header files
+   Similar to source code except for API headers.
+   API headers, which will be used by external development are distinguished two ways:
+   1. There must be a Ocpi prefix to the file name reflecting the global namespace.
+   2. The end of the name before the suffix should be Api to unambiguously designate the file
+      as appropriate for export and for API use (and for documentation).
+   Note that OcpiApi.hh is the "master API file" that should generally include all others.
+
+-- main programs
+   <program_name>_main.cxx where program names are usually ocpi<program> in lower case.
+   These names (ocpi<program>) will be thus command names.
+
+-- other file and directory names
+   generally lower case with hyphen separators
+
+XML file names
+   The .xml suffix is used uniformly.
+   Some files use a suffix after a hyphen when the suffix is not part of the name of the 
+   thing being described in the file.  Two common ones are "-spec.xml" and "-prot.xml".
+   Hyphens are used to make it clear that this is a type suffix, and not part of the name.
+   Legacy files sometimes used underscore rather than hyphen.  Use hypen.
+
+worker/platform/configuration/container names (before prefix) in xml
+   lower case with underscore word separators since they are in source code too.
+
+C++ Namespace names
+   All start in the OCPI namespace. (There are exceptions that will go away).
+   If it is an abbreviation (like HDL, etc.) it is all upper case. If not, camelcase.
+
+C++ type/class names
+   Capitalized camelcase.
+
+C++ names: the theory/purspose being you know by looking what it is.
+           the downside is you have to change it in many places if this categorization changes.
+-- globals
+   g_ prefix
+-- statics (not in class)
+   no prefix, initial lower camelcase - i.e. not distinguished from member functions
+-- constants
+   c_ prefix for member data in a class.
+   All upper case for const globals (like MACROS)
+-- Enumeration values
+   Usually all upper case.  Sometimes <UPPER_PREFIX>_<lower>.
+-- MACROS
+   All upper case.
+-- static member data
+   s_ prefix
+-- static member functions
+   initial-lower-camelcase - not distinguished from non-static member functions.
+-- member data
+   m_ prefix
+-- arguments when they must be changed to avoid shadowing
+   a_ prefix
+-- locals when they must be changed to avoid shadowing
+   l_ prefix
+-- member functions
+   initial-lower-camelcase
+-- arguments to functions and methods
+   Usually initial-lower-camelcase, but sometimes with an a_ prefix (analogous to m_ ),
+   to simply avoid shadowing.
+-- local variables
+   Usually initial-lower-camelcase, but sometimes with a l_ prefix (analogous to m_),
+   to simply avoid shadowing.

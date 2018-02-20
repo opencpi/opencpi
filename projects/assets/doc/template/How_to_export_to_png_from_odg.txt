@@ -1,0 +1,14 @@
+How to export to png from odg
+
+0. Open the file in LibreOffice Draw
+1. Save a master copy or a back-up copy.
+2. Select the entire area of the graphic or Select-All if desired.
+3. Hover mouse over a section that has graphic and no text, then Right-Click.
+4. Select "Convert", then "To Bitmap". You will notice that the graphics changes, don't worry.
+5. Repeat Step 1.
+6. Repeat Step 2.
+7. Select "Save Graphic..."
+8. Enter in file name, you don't have to enter the extension
+9. Note the default path auto-populated, change if desired.
+A. Change file format.
+B. Save!

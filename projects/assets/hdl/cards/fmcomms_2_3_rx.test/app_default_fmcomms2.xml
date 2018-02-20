@@ -1,0 +1,27 @@
+<Application>
+
+  <!-- must be instanced here in app XML as a workaround for AV-3799 -->
+  <Instance Component="ocpi.assets.devices.ad9361_spi"/>
+
+  <!-- must be instantiated in this app because ocpi.core.rx requires control
+       plane interface to this worker -->
+  <Instance Component="ocpi.assets.devices.ad9361_data_sub"/>
+
+  <!-- must be instantiated in this app because ocpi.core.rx requires
+       (control plane) slave interface to this worker -->
+  <Instance Component="ocpi.assets.devices.ad9361_adc_sub"/>
+
+  <!-- must be instantiated in this app because ad9361_config_proxy requires
+       (control plane) slave interface to this worker -->
+  <Instance Component="ocpi.assets.devices.ad9361_config"/>
+
+  <!-- must be instantiated in this app because ocpi.core.rx requires control
+       plane interface to this worker -->
+  <Instance Component="ocpi.assets.devices.ad9361_config_proxy" Slave="ad9361_config"/>
+
+  <!-- Unit Under Test -->
+  <Instance Component="ocpi.core.rx">
+    <Property Name="TYPE_p" Value="fmcomms2"/>
+  </Instance> 
+
+</Application>

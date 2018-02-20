@@ -1,0 +1,6 @@
+<RCCImplementation controloperations="start" Spec="baudTracking-spec.xml">
+
+  <Property Name="SPB" Type="UShort" Readable="true" Writable="true" Default="5"/>
+
+</RCCImplementation>
+

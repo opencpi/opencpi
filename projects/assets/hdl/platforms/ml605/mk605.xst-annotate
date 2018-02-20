@@ -1,0 +1,53 @@
+set -xsthdpini fpgaTop.ini
+run
+-ifn fpgaTop.prj
+-ifmt mixed // default
+-ofn fpgaTop
+-ofmt NGC // default
+-p xc6vlx240t-ff1156-1
+-top fpgaTop
+-opt_mode Speed  //default
+-opt_level 2 //NOT DEFAULT: it is 1
+-power NO //default
+-lso fpgaTop.lso
+-keep_hierarchy soft // NOT DEFAULT: it is no
+-netlist_hierarchy rebuilt // NOT DEFAULT:  it is "as_optimied
+-rtlview Yes  // NOT DEFAULT: it is no
+-glob_opt AllClockNets // default
+-read_cores optimize // NOT DEFAULT: default=yes
+-write_timing_constraints NO // DEFAULT
+-cross_clock_analysis NO // default
+-hierarchy_separator / // default
+-bus_delimiter <> // default
+-case maintain // default
+-slice_utilization_ratio 100 // default
+-bram_utilization_ratio 100 // default
+-dsp_utilization_ratio 100 // 100
+-lc off // default
+-reduce_control_sets off // NOT DEFAULT: it is "no"???
+-fsm_extract YES // default
+-fsm_encoding Auto // default
+-safe_implementation No // default
+-fsm_style lut // default
+-ram_extract Yes // default
+-ram_style Auto // default
+-rom_extract Yes // default
+-shreg_extract YES // default
+-rom_style Auto // default
+-auto_bram_packing NO // default
+-resource_sharing YES // default
+-async_to_sync NO // default
+-use_dsp48 auto // default
+-iobuf YES // default
+-max_fanout 100000 // see detailed description!
+-bufg 32 // default is max in device...
+-register_duplication YES // default
+-register_balancing NO // default
+-optimize_primitives NO // default
+-use_clock_enable Auto // default
+-use_sync_set Auto // default
+-use_sync_reset Auto // default
+-iob auto // default
+-equivalent_register_removal YES // default
+-slice_utilization_ratio_maxmargin 5 // NOT DEFAULT: it is 0
+

@@ -1,0 +1,26 @@
+<tests useHDLFileIo='true' Timeout='20'>
+  <case>
+    <input port='in' script='generate.py 1 1' messagesize='8192'/>
+  </case>
+  <case>
+    <input port='in' script='generate.py 2 1' messagesize='8192'/>
+  </case>
+  <case>
+    <input port='in' script='generate.py 3 1' messagesize='8192'/>
+  </case>
+  <case>
+    <input port='in' script='generate.py 8191 1' messagesize='8192'/>
+  </case>
+  <case>
+    <input port='in' script='generate.py 8192 1' messagesize='8192'/>
+  </case>
+  <case>
+    <input port='in' script='generate.py 8193 1' messagesize='8192'/>
+  </case>
+  <case>
+    <input port='in' script='generate.py 2048 16' messagesize='8192'/>
+  </case>
+  <output port='out' script='verify.py 2048' view='view.sh 32'/> <!-- Argument to script is num bytes to view-->
+  <property name='ZLM_WHEN_ONESHOT_DONE_p' values='true'/>
+  <property name='oneshot' values='false,true'/>
+</tests>

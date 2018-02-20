@@ -1,0 +1,104 @@
+<Application Package="ocpi.core">
+  <!-- HDL Components-->
+  <!-- RX Chain -->
+
+  <!-- must be instanced here in app XML as a workaround for AV-3799 -->
+  <Instance Component="ocpi.assets.devices.ad9361_spi"/>
+
+  <!-- must be instantiated in this app because fmcomms2 ocpi.core.rx worker
+       requires control plane interface to this ad9361_data_sub -->
+  <Instance Component="ocpi.assets.devices.ad9361_data_sub">
+    <Property Name="LVDS_p" value="true"/> <!-- FMCOMMS2 must use LVDS mode -->
+  </Instance>
+
+  <!-- must be instantiated in this app because fmcomms2 ocpi.core.rx worker
+       requires control plane interface to this ad9361_adc_sub -->
+  <Instance Component="ocpi.assets.devices.ad9361_adc_sub">
+    <Property Name="LVDS_p" value="true"/> <!-- FMCOMMS2 must use LVDS mode -->
+  </Instance>
+
+  <Instance Component="ocpi.assets.dsp_comps.dc_offset_filter">
+    <Property Name="messageSize" Value="16352"/>
+    <Property Name="bypass" Value="false"/>
+  </Instance>
+  <Instance Component="ocpi.assets.dsp_comps.iq_imbalance_fixer">
+    <Property Name="messageSize" Value="16352"/>
+    <Property Name="enable" Value="true"/>
+    <Property Name="log2_averaging_length" Value="11"/>
+  </Instance>
+  <Instance Component="ocpi.assets.dsp_comps.complex_mixer">
+    <Property Name="NCO_DATA_WIDTH_p" Value="12"/>
+    <Property Name="INPUT_DATA_WIDTH_p" Value="12"/>
+    <Property Name="mag" Value="1024"/>
+    <Property Name="messageSize" Value="16352"/>
+  </Instance>
+  <Instance Component="ocpi.assets.dsp_comps.cic_dec">
+    <Property Name="N" Value="3"/>
+    <Property Name="M" Value="1"/>
+    <Property Name="R" Value="8"/>
+    <Property Name="ACC_WIDTH" Value="25"/>
+    <Property Name="messageSize" Value="16352"/>
+  </Instance>
+  <Instance Component="ocpi.assets.util_comps.timestamper"/>
+  <!-- Command and Control -->
+
+  <!-- must be instantiated in this app because ocpi.core.rx worker requires control
+       plane interface to ad9361_config -->
+  <Instance Component="ocpi.assets.devices.ad9361_config"/>
+
+  <Instance Component="ocpi.core.devices.time_server"/>
+
+  <!-- RCC Components-->
+  <!-- RX Chain -->
+  <Instance Component="file_write">
+    <Property Name="fileName" Value="/var/volatile/rx_app.out"/> 
+  </Instance>
+
+  <!-- RCC Proxies -->
+  <!-- RX Chain -->
+
+  <!-- must be instantiated in this app because ocpi.core rx requires control
+       plane interface to this ad9361_config_proxy -->
+  <Instance Component="ocpi.assets.devices.ad9361_config_proxy" Slave="ad9361_config"/>
+
+  <!-- Command and Control -->
+  
+  <!-- RCC Frontend Proxy -->
+  <!-- RX Chain -->
+  <Instance Component="ocpi.core.rx">
+    <Property Name="TYPE_p" Value="fmcomms2"/>
+  </Instance> 
+
+  <!-- Connections -->
+  <!-- RX Chain -->
+  <Connection>
+    <Port Instance="qadc" Name="out"/>
+    <Port Instance="dc_offset_filter" Name="in"/>
+  </Connection>
+  <Connection>
+    <Port Instance="dc_offset_filter" Name="out"/>
+    <Port Instance="iq_imbalance_fixer" Name="in"/>
+  </Connection>
+  <Connection>
+    <Port Instance="iq_imbalance_fixer" Name="out"/>
+    <Port Instance="complex_mixer" Name="in"/>
+  </Connection>
+  <Connection>
+    <Port Instance="complex_mixer" Name="out"/>
+    <Port Instance="cic_dec" Name="in"/>
+  </Connection>
+  <Connection>
+    <Port Instance="cic_dec" Name="out"/>
+    <Port Instance="timestamper" Name="in"/>
+  </Connection>
+  <Connection>
+    <Port Instance="timestamper" Name="out" Buffercount="2"/>
+    <Port Instance="file_write" Name="in" Buffersize="16352" Buffercount="7"/>
+  </Connection>
+
+  <!-- ad9361_adc.hdl must be instantiated last in app XML to avoid erroneous
+       CDC FIFO overrun -->
+  <Instance Component="ocpi.assets.devices.qadc">
+    <Property Name="messageSize" Value="16352"/>
+  </Instance>
+</Application>

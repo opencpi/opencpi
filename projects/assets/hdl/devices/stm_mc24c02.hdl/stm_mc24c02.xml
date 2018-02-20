@@ -1,0 +1,10 @@
+<!-- STM MC24C02 256x8 I2C EEPROM -->
+<HdlDevice language='vhdl' rawproperties='1'>
+  <ComponentSpec/>
+  <!-- I2C read/write transactions require additional time to complete -->
+  <ControlInterface Timeout='65536'/>
+  <!-- raw property interface to subdevice to share the I2C and controlthe chip select -->
+  <!-- delegating the SCL, SDA, E0/E1/E2 signals to the subdevice -->
+  <rawprop name='rawprops' master='true'/>
+  <property name='memory' type='uchar' arraylength='256' writable='1' readable='1'/>  
+</HdlDevice>

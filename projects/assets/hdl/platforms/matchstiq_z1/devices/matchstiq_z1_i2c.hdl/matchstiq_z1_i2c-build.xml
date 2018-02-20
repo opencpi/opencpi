@@ -1,0 +1,16 @@
+<build>
+  <configuration id='0'>
+    <parameter name='NUSERS_p' value='5'/>
+    <parameter name='SLAVE_ADDRESS_p' value='69,113,72,33,32'/>
+    <parameter name='CLK_FREQ_p' value='1e+08'/>
+    <parameter name='ocpi_debug' value='false'/>
+    <parameter name='ocpi_endian' value='little'/>
+  </configuration>
+  <configuration id='1'>
+    <parameter name='NUSERS_p' value='5'/>
+    <parameter name='SLAVE_ADDRESS_p' value='69,113,72,33,32'/>
+    <parameter name='CLK_FREQ_p' value='5e+07'/>
+    <parameter name='ocpi_debug' value='false'/>
+    <parameter name='ocpi_endian' value='little'/>
+  </configuration>
+</build>

@@ -1,0 +1,5 @@
+<RccWorker language="c++" slave="bias_vhdl.hdl" controloperations='start'>
+  <componentspec/>
+  <property name='proxybias' initial='true'/>
+  <!-- Insert any other implementation-specific information here -->
+</RccWorker>

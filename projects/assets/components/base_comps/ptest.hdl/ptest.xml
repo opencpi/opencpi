@@ -1,0 +1,37 @@
+<HdlWorker language="vhdl" spec="ptest_spec">
+  <!-- Insert any other implementation-specific information here -->
+     <Property Name="pp4" Type="Short" parameter='true' default='4'/>
+     <Property Name="pp5" Type="Long" parameter='true' default='5'/>
+     <Property Name="pp6" Type="UChar" parameter='true' default='6'/>
+     <Property Name="pp7" Type="ULong" parameter='true' default='7'/>
+     <Property Name="pp8" Type="UShort" parameter='true' default='8'/>
+     <Property Name="pp9" Type="LongLong"  parameter='true' default='9'/>
+     <Property Name="pp10" Type="ULongLong" parameter='true' default='10'/>
+     <Property Name="pp11" Type="String" StringLength="20" parameter='true' default='11'/>
+     <!-- <Property Name="psp0" Type="Bool" sequencelength="1" parameter='1' default='1'/> -->
+     <!-- <Property Name="psp1" Type="Char" sequencelength="2" parameter='1' default='1,2'/> -->
+     <!-- <Property Name="psp2" Type="Double" sequencelength="3" parameter='1' default='1,2,3'/> -->
+     <!-- <Property Name="psp3" Type="Float" sequencelength="4" parameter='1' default='1,2,3,4'/> -->
+     <!-- <Property Name="psp4" Type="Short" sequencelength="5" parameter='1' default='1,2,3,4'/> -->
+     <!-- <Property Name="psp5" Type="Long" sequencelength="6" parameter='1' default='1,2,3,4'/> -->
+     <!-- <Property Name="psp6" Type="UChar" sequencelength="7" parameter='1' default='1,2,3,4'/> -->
+     <!-- <Property Name="psp7" Type="ULong" sequencelength="8" parameter='1' default='1,2,3,4'/> -->
+     <!-- <Property Name="psp8" Type="UShort" sequencelength="9" parameter='1' default='1,2,3,4'/> -->
+     <!-- <Property Name="psp9" Type="LongLong"  sequencelength="10" parameter='1' default='1,2,3,4'/> -->
+     <!-- <Property Name="psp10" Type="ULongLong" sequencelength="11" parameter='1' default='1,2,3,4'/> -->
+     <!-- <Property Name="psp11" Type="String" StringLength="20" sequencelength="12" parameter='1' default='1,2,3,4'/> -->
+     <Property Name="pap0" Type="Bool" arraylength="1" parameter='1' default='1'/>
+     <Property Name="pap1" Type="Char" arraylength="2" parameter='1' default='1,2'/>
+     <Property Name="pap2" Type="Double" arraylength="3" parameter='1' default='1,2,3'/>
+     <Property Name="pap3" Type="Float" arraylength="4" parameter='1' default='1,2,3,4'/>
+     <Property Name="pap4" Type="Short" arraylength="5" parameter='1' default='1,2,3,4'/>
+     <Property Name="pap5" Type="Long" arraylength="6" parameter='1' default='1,2,3,4'/>
+     <Property Name="pap6" Type="UChar" arraylength="7" parameter='1' default='1,2,3,4'/>
+     <Property Name="pap7" Type="ULong" arraylength="8" parameter='1' default='1,2,3,4'/>
+     <Property Name="pap8" Type="UShort" arraylength="9" parameter='1' default='1,2,3,4'/>
+     <Property Name="pap9" Type="LongLong"  arraylength="10" parameter='1' default='1,2,3,4'/>
+     <Property Name="pap10" Type="ULongLong" arraylength="pp7" parameter='1' default='1,2,3,4'/>
+     <Property Name="pap11" Type="String" StringLength="7" arraylength="pp7" parameter='1' default='1,2,3,4'/>
+  <property name='romAddr' writable='true'/>
+  <property name='romData' volatile='true'/>
+</HdlWorker>

@@ -1,0 +1,5 @@
+# WARNING: "make clean" uses this list. Do not put files in here that you want to keep!
+*.tar
+*.rpm
+build-rpm*log
+myhostname

@@ -1,0 +1,9 @@
+<signals>
+  <signal output='present'/>
+  <!-- all below signals are intended to exist in the ADC clock domain (which
+       is not necessarily control clock domain) -->
+  <signal input='adc_data_I' width='12'/>
+  <signal input='adc_data_Q' width='12'/>
+  <signal input='adc_clk'/>
+  <signal input='adc_give'/>
+</signals>

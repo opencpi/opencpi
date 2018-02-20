@@ -1,0 +1,4 @@
+<OclWorker scalable='1' spec="vadd_spec.xml">
+  <port name='in0' min='8' modulo='4'/>
+</OclWorker>
+

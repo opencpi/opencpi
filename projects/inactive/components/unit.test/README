@@ -1,0 +1,60 @@
+Generating a unit test for a component using the unitTest.test application for a test harness.
+
+Overview:
+The unitTest application provides a test harness for simple components that consume data on a single input port and produce data on a single output port. The author must provide an input data file that is compatible with the fille_read_msg component which will be used as the input data source to the Unit Under Test (UUT). The author must also provide the "expected" results file that is also compatible with the file_read_msg component.  Note that generating a file_read_msg compatible file is as simple as creating an application that connects your data generator component to a file_write_msg component.  Once you have your UUT source data file and the UUT expected results file, the test can be executed by creating a simple script.
+
+The test harness has the following topology.
+
+					 file_read_msg(expectedDataIn.dat)
+		          					 |
+                 						 V
+     file_read_msg(testDataIn.dat)  -> UUT_component -> comparator_component -> file_write_msg(deltaDataOut.dat)
+                                                             	|
+                                                             	-> file_write_msg(testDataOut.dat)
+
+The topology diagram shows that the unitTest application connects the file reader to the input of the UUT and streams data to it.  The UUT output is streamed to a comparator which compares the UUT output with the expected results file. The comparator will set a property indicating if the test passed or failed and the test harness will return the results back to the test script.  The comparator will also generate a file named testDataOut.dat which is the raw output from the UUT and also a deltaDataOut.dat file with is the actual deviation between the UUT output and the expectedDataIn.dat file.  These two output files are created to aid in debug.
+
+
+Component prerequisites:
+The unitTest  provides a simple test harness for components that use either the rstream_with_sync_protocol.xml or the iqstream_with_sync_protocol.xml interfaces.  Additionally the UUT component must have 1 input and 1 output that conform to the specified protocol.
+
+Writing the run script:
+
+Step 1) Create your test directory in $(OCPI_BASE_DIR)/components
+
+To follow the established naming conventions your test directory name should be component_name.test.  So if you are testing a component named foo the test directory should be named foo.test.
+
+
+Step 2) Copy your test data to your test directory.
+
+The test directory must contain your input and expected test data files, and they must be named the following.
+
+testDataIn.dat
+This is the data that will be passed to the input port of your UUT
+
+expectedDataIn.dat
+This is the file that will be used to compare with your UUT output to determine pass/fail status.
+
+Step 3) Copy a Makefile into your test directory
+Copy the Makefile.template from the unitTest.test directory into your test directory.  There are no modifications required in the Makefile.
+
+
+Step 4) Create your test script
+
+There is a template (example) file in the unitTest.test directory named test.sh.template that provides the basic requiremnents for the test script. You must replace %UUT_NAME% with the name of your component, and must also replace the %UUT_PROPERTIES% with any properties that you want passed to your component.  If your component does not require properties, remove the --utp argument.
+
+If your component generates "real" data the --real argument must be set to true, if your component generates complex data, set it to false.
+
+The --ccmpp argument passes a deviation property to the comparator component and the value is in the form of a Qs0.15 fixed point number.  This value is used as the "error deviation" window that allows the test to pass if the absolute value of your UUT output is within this range when compared value for value with the expected results file.
+
+The --model argument selects the component model for the UUT which can be rcc, hdl or ocl.  The author should not change this in the script, it should be passed in from the command line.
+
+
+Cheating to generate your expected results file.
+The test will fail if either the intput or expected results files are missing.  However you can initially cheat by copying the input file to the expected results file and running the test.  After the test is complete you can copy the testDataOut.dat file to expctedDataIn.dat file once you are convinced that your output is correct.  This provides a basis for regression testing.
+
+
+Running your test:
+To run your test type "./test.sh {rcc,hdl,ocl}
+
+See $(OCPI_BASE_DIR)/components/RUN_README for a more details.

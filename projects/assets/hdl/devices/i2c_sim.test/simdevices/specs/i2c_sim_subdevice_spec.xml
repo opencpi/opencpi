@@ -1,0 +1,8 @@
+<!-- 
+ I2C sim subdevice Worker OCS
+-->
+<ComponentSpec nocontrol="true">
+  <Property name="NUSERS_p" parameter="1" readable="1" default="5"/>
+  <Property name="SLAVE_ADDRESS_p" type="uchar" arraylength="NUSERS_p" parameter="1" readable="1"/>
+  <Property name="CLK_CNT_p" type="ushort" parameter="1" readable="1" default="0x00C7"/>
+</ComponentSpec>

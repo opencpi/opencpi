@@ -1,0 +1,37 @@
+<!-- Lime DAC TimeStamped worker -->
+<HdlDevice language="vhdl" spec='qdac_ts-spec'>
+  <!-- Other included XML -->
+  <xi:include href='lime-iq-properties.xml'/>
+
+  <!-- Properties -->
+  <Property Name="flush" Type="Bool" Writable='true' Default='false'/>
+  <Property Name="missed_event" Type="Bool" Volatile='true'/>
+  <Property Name="FLUSH_DEPTH_p" Type="uchar" Readable='true' Parameter='true' Default='16'/>
+  <Property Name="TX_CLK_INV_p" Type="bool" Readable='true' Parameter='true' Default='true'/>
+  <Property Name="FIFO_DEPTH_p" Type="ulong" Parameter="true" Readable="true" Default="64"/>
+
+  <!-- Ports -->
+  <StreamInterface Name="IN" DataWidth="32" optional='1'/>
+  <StreamInterface Name="event_out" optional='1'/>
+
+  <!-- Clocks -->
+  <Clock Name='sample_clk'/>
+
+  <!-- Timeout -->
+  <ControlInterface Timeout="16"/> <!-- Set to default. No raw properties -->
+
+  <!-- Signals -->
+  <!-- Signal names from the data sheet -->
+  <Signal Output="TX_CLK"/>           <!-- not connected to the lime on some boards!! -->
+  <Signal  Input="TX_CLK_IN"/>        <!-- A copy of a tx_clk sent directly to line rx_clk -->
+  <Signal Output="TX_IQ_SEL"/>        <!-- High means I, Low means Q -->
+  <Signal Output="TXD" width="12"/>
+
+  <!-- Time Client Interface -->
+  <!--<TimeInterface Name="time" SecondsWidth="32" FractionWidth="32" MyClock="TX_CLK_IN"/>-->
+  <Property Name="SECONDS_WIDTH_p"  Type="uchar" Parameter="true" Readable="true" Default="32"/>
+  <Property Name="FRACTION_WIDTH_p" Type="uchar" Parameter="true" Readable="true" Default="32"/>
+  <TimeInterface Name="time" SecondsWidth="SECONDS_WIDTH_p" FractionWidth="FRACTION_WIDTH_p"/>
+
+  <Devsignals Name="dev" Signals="lime_dac_sim-signals" Optional="true" Master="true"/>
+</HdlDevice>

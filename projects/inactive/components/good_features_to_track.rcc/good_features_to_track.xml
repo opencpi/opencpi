@@ -1,0 +1,6 @@
+<RccImplementation>
+  <ControlInterface ControlOperations="start, release"/>
+  <xi:include href="good_features_to_track_spec.xml"/>
+</RccImplementation>
+
+

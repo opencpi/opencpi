@@ -1,0 +1,14 @@
+<!-- 
+ PCA9535 Device Worker OCS
+-->
+<ComponentSpec>
+                                                                                      <!--Device Offset-->
+  <Property name="input_port0"    type="uchar" volatile="true"/>  		      <!-- 0-->
+  <Property name="input_port1"    type="uchar" volatile="true"/>  		      <!-- 1-->
+  <Property name="output_port0"   type="uchar" volatile="true" writable="true"/>      <!-- 2-->
+  <Property name="output_port1"   type="uchar" volatile="true" writable="true"/>      <!-- 3-->
+  <Property name="pol_inv_port0"  type="uchar" volatile="true" writable="true"/>      <!-- 4-->
+  <Property name="pol_inv_port1"  type="uchar" volatile="true" writable="true"/>      <!-- 5-->
+  <Property name="config_port0"   type="uchar" volatile="true" writable="true"/>      <!-- 6-->
+  <Property name="config_port1"   type="uchar" volatile="true" writable="true"/>      <!-- 7-->
+</ComponentSpec>

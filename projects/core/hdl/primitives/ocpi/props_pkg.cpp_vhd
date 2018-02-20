@@ -1,0 +1,234 @@
+/*
+ * This file is protected by Copyright. Please refer to the COPYRIGHT file
+ * distributed with this source distribution.
+ *
+ * This file is part of OpenCPI <http://www.opencpi.org>
+ *
+ * OpenCPI is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option) any
+ * later version.
+ *
+ * OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+ * details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+// This file generates the VHDL definitions for the OpenCPI property and protocol data types.
+// The types are based on the ieee.std_logic and ieee.numeric_std packages.
+// It should be processed into the ocpi library and accessed via ocpi.type.xxx.
+
+library ieee; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;
+--library std;
+--use std.all;
+library ocpi; use ocpi.types.all, ocpi.wci.all, ocpi.util.all;
+package props is
+--
+-- Property storage entities to attach to a wci.decoder
+--
+-- Declarations for various property implementationss
+
+#define WPROP(pretty,which,def,rng,io)\
+$--\
+$-- registered pretty property value, with write pulse\
+$--\
+$component pretty##_property\
+$@@generic(worker : worker_t; property : property_t; default : pretty##_t := def);\
+$@@port (clk          : in std_logic;\
+$@@@@@@@@reset        : in bool_t;\
+$@@@@@@@@is_big_endian: in bool_t;\
+$@@@@@@@@write_enable : in bool_t;\
+$@@@@@@@@data         : in std_logic_vector(rng);\
+$@@@@@@@@value        : out pretty##_t;\
+$@@@@@@@@written      : out bool_t);\
+$end component;
+
+#define RPROP(pretty,which,def,rng,io)\
+$--\
+$-- readback scalar <=32 property\
+$--\
+$component pretty##_read_property\
+$@@generic (worker : worker_t; property : property_t);\
+$@@port (value       : in pretty##_t;\
+$@@@@@@@@is_big_endian: in bool_t;\
+$@@@@@@@@data_out    : out std_logic_vector(31 downto 0));\
+$end component;
+
+#define WPROP_STRING(pretty,which,def,rng,io)\
+$--\
+$-- registered pretty property value, with write pulse\
+$--\
+$component pretty##_property\
+$@@generic(worker : worker_t; property : property_t; default : pretty##_t := def);\
+$@@port (clk          : in std_logic;\
+$@@@@@@@@reset        : in bool_t;\
+$@@@@@@@@is_big_endian: in bool_t;\
+$@@@@@@@@write_enable : in bool_t;\
+$@@@@@@@@data         : in std_logic_vector(rng);\
+$@@@@@@@@value        : out pretty##_t(0 to property.string_length);\
+$@@@@@@@@written      : out bool_t;\
+$@@@@@@@@offset       : in unsigned(width_for_max(property.bytes_1)-1 downto 0));\
+$end component;
+
+#define RPROP_STRING(pretty,which,def,rng,io)\
+$--\
+$-- readback scalar <=32 property\
+$--\
+$component pretty##_read_property\
+$@@generic (worker : worker_t; property : property_t);\
+$@@port (value       : in pretty##_t;\
+$@@@@@@@@is_big_endian: in bool_t;\
+$@@@@@@@@data_out    : out std_logic_vector(31 downto 0);\
+$@@@@@@@@offset      : in unsigned(width_for_max(property.bytes_1)-1 downto 0);\
+$@@@@@@@@read_enable : in bool_t);\
+$end component;
+
+#define WPROP_64(pretty,which,def,rng,io)\
+$--\
+$-- registered pretty property value, with write pulse\
+$--\
+$component pretty##_property\
+$@@generic(worker : worker_t; property : property_t; default : pretty##_t := def);\
+$@@port (clk          : in std_logic;\
+$@@@@@@@@reset        : in bool_t;\
+$@@@@@@@@is_big_endian: in bool_t;\
+$@@@@@@@@write_enable : in bool_t;\
+$@@@@@@@@data         : in std_logic_vector(31 downto 0);\
+$@@@@@@@@value        : out pretty##_t;\
+$@@@@@@@@written      : out bool_t;\
+$@@@@@@@@hi32         : in bool_t);\
+$end component;
+
+#define RPROP_64(pretty,which,def,rng,io)\
+$--\
+$-- readback scalar >32 property\
+$--\
+$component pretty##_read_property\
+$@@generic (worker : worker_t; property : property_t);\
+$@@port (value       : in pretty##_t;\
+$@@@@@@@@is_big_endian: in bool_t;\
+$@@@@@@@@data_out    : out std_logic_vector(31 downto 0);\
+$@@@@@@@@hi32        : in bool_t);\
+$end component;
+
+#define WPROP_ARRAY(pretty,which,def,io)\
+$--\
+$-- registered pretty property array value, with write pulse\
+$--\
+$component pretty##_array_property\
+$@@generic(worker : worker_t; property : property_t; default : pretty##_array_t);\
+$@@port (clk          : in std_logic;\
+$@@@@@@@@reset        : in bool_t;\
+$@@@@@@@@is_big_endian: in bool_t;\
+$@@@@@@@@write_enable : in bool_t;\
+$@@@@@@@@data         : in std_logic_vector(31 downto 0);\
+$@@@@@@@@value        : out pretty##_array_t(0 to property.nitems-1);\
+$@@@@@@@@written      : out bool_t;\
+$@@@@@@@@offset       : in unsigned(width_for_max(property.bytes_1)-1 downto 0);\
+$@@@@@@@@any_written  : out bool_t;\
+$@@@@@@@@nbytes_1     : in byte_offset_t);\
+$end component;
+
+#define RPROP_ARRAY(pretty,which,def,io)\
+$--\
+$-- readback scalar <=32 property array\
+$--\
+$component pretty##_read_array_property\
+$@@generic (worker : worker_t; property : property_t);\
+$@@port (value       : in pretty##_array_t(0 to property.nitems-1);\
+$@@@@@@@@is_big_endian: in bool_t;\
+$@@@@@@@@data_out    : out std_logic_vector(31 downto 0);\
+$@@@@@@@@offset      : in unsigned(width_for_max(property.bytes_1)-1 downto 0);\
+$@@@@@@@@nbytes_1    : in byte_offset_t);\
+$end component;
+
+#define WPROP_64_ARRAY(pretty,which,def,io)\
+$--\
+$-- registered pretty property array value, with write pulse\
+$--\
+$component pretty##_array_property\
+$@@generic(worker : worker_t; property : property_t; default : pretty##_array_t);\
+$@@port (clk          : in std_logic;\
+$@@@@@@@@reset        : in bool_t;\
+$@@@@@@@@is_big_endian: in bool_t;\
+$@@@@@@@@write_enable : in bool_t;\
+$@@@@@@@@data         : in std_logic_vector(31 downto 0);\
+$@@@@@@@@value        : out pretty##_array_t(0 to property.nitems-1);\
+$@@@@@@@@written      : out bool_t;\
+$@@@@@@@@offset       : in unsigned(width_for_max(property.bytes_1)-1 downto 0);\
+$@@@@@@@@any_written  : out bool_t;\
+$@@@@@@@@hi32         : in bool_t);\
+$end component;
+
+#define RPROP_64_ARRAY(pretty,which,def,io)\
+$--\
+$-- readback scalar >32 property array\
+$--\
+$component pretty##_read_array_property\
+$@@generic (worker : worker_t; property : property_t);\
+$@@port (value       : in pretty##_array_t(0 to property.nitems-1);\
+$@@@@@@@@is_big_endian: in bool_t;\
+$@@@@@@@@data_out    : out std_logic_vector(31 downto 0);\
+$@@@@@@@@offset      : in unsigned(width_for_max(property.bytes_1)-1 downto 0);\
+$@@@@@@@@hi32        : in bool_t);\
+$end component;
+
+#define WPROP_STRING_ARRAY(pretty,which,def,io)\
+$--\
+$-- registered pretty property array value, with write pulse\
+$--\
+$component pretty##_array_property\
+$@@generic(worker : worker_t; property : property_t; default : pretty##_array_t);\
+$@@port (clk          : in std_logic;\
+$@@@@@@@@reset        : in bool_t;\
+$@@@@@@@@is_big_endian: in bool_t;\
+$@@@@@@@@write_enable : in bool_t;\
+$@@@@@@@@data         : in std_logic_vector(31 downto 0);\
+$@@@@@@@@value        : out pretty##_array_t(0 to property.nitems-1,\
+$@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ 0 to (property.string_length+4)/4*4-1);\
+$@@@@@@@@written      : out bool_t;\
+$@@@@@@@@any_written  : out bool_t;\
+$@@@@@@@@offset       : in unsigned(width_for_max(property.bytes_1)-1 downto 0));\
+$end component;
+
+#define RPROP_STRING_ARRAY(pretty,which,def,io)\
+$--\
+$-- readback string property array\
+$--\
+$component pretty##_read_array_property\
+$@@generic (worker : worker_t; property : property_t);\
+$@@port@@@ (value@@@ : in@ pretty##_array_t(0 to property.nitems-1,\
+$@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@0 to (property.string_length+4)/4*4-1);\
+$@@@@@@@@@@@is_big_endian: in bool_t;\
+$@@@@@@@@@@@data_out : out std_logic_vector(31 downto 0);\
+$@@@@@@@@@@@offset@@ : in@ unsigned(width_for_max(property.bytes_1)-1 downto 0);\
+$@@@@@@@@@@@read_enable@@ : in@ bool_t);\
+$end component;
+
+#define TYPE(type,def,rng,suff,asuff)\
+  WPROP##suff(type,X,def,rng,)\
+  WPROP##asuff##_ARRAY(type,X,def,)\
+  RPROP##suff(type,X,def,rng,)\
+  RPROP##asuff##_ARRAY(type,X,def,)\
+
+#define TYPEV(type) TYPE(type,(others => '0'),type##_t~range,,)
+#define TYPEV64(type) TYPE(type,(others => '0'),type##_t~range,_64,_64)
+
+TYPE(bool,bfalse,0 downto 0,,)
+TYPEV(char)
+TYPEV64(double)
+TYPEV(float)
+TYPEV(short)
+TYPEV(long)
+TYPEV(uchar)
+TYPEV(ulong)
+TYPEV(ushort)
+TYPEV64(longlong)
+TYPEV64(ulonglong)
+TYPE(string,("00000000","00000000"),31 downto 0,_STRING,_STRING)
+
+end package props;

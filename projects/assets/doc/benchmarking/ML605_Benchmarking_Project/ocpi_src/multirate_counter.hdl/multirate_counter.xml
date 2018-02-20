@@ -1,0 +1,5 @@
+<HdlWorker language="vhdl" spec="multirate_counter_spec.xml">
+  <property name='out_out_give_false' type='ulong' writable='true' volatile='true' initial='true' default='0x00000000'/>
+  <property name='out_in_ready_false' type='ulong' writable='true' volatile='true' initial='true' default='0x00000000'/>
+
+</HdlWorker>

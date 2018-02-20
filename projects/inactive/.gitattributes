@@ -1,0 +1,3 @@
+*.ngc -diff
+*.edf -diff
+*.bit -diff

@@ -1,0 +1,33 @@
+
+<!-- Complex mixer component spec
+     
+This component produces the product of two complex data streams.  When this component
+receives a "Sync" message it must perform the following steps.
+     
+        * Send Sync message to DDS
+        * Throw out all data on DDS input strean until "Sync" message is received.
+-->
+
+<ComponentSpec>
+
+  <!-- input stream that contains both data and sync  -->
+  <DataInterfaceSpec Name="in_if" Producer="false">
+      <xi:include href="iqstream_with_sync_protocol.xml"/>
+  </DataInterfaceSpec>
+
+  <!-- input stream that contains both data and sync  -->
+  <DataInterfaceSpec Name="in_dds" Producer="false">
+      <xi:include href="iqstream_with_sync_protocol.xml"/>
+  </DataInterfaceSpec>
+
+  <!-- output stream that contains both data and sync -->
+  <DataInterfaceSpec Name="out" Producer="true">
+      <xi:include href="iqstream_with_sync_protocol.xml"/>
+  </DataInterfaceSpec>
+
+  <!-- Optional control only stream.  This port is used to tell the DDS to re-sync -->
+  <DataInterfaceSpec Name="out_sync_only" Producer="true" optional="true">
+      <xi:include href="signal_sync_protocol.xml"/>
+  </DataInterfaceSpec>
+
+</ComponentSpec>

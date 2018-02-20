@@ -1,0 +1,26 @@
+The timeDataAnalyzer workbook provides an OCPI application author with the ability to analyze time events generated within the application, workers and OCPI infrastructure in Microsoft Excel.  
+
+The following instructions are provided to get you started.
+
+1) Collect Data:
+After your application runs and exits normally, a raw timing data file will be generated.  Please refer to OpenCPI_Time_Performance.pdf for a detailed understanding on how to enable the timing data collection for your app.
+
+2) Convert Data to Excel format:
+To convert the raw timing data to an Excel compatible comma separated value format, type the following.
+
+timeCvt --in=timeData.raw --out=timeData.csv --format=CSV  --smart
+
+The --smart argument performs additional formatting on the data to make it more user friendly, however you can eliminate the argument and get the raw csv dump that is also compatible with the workbook.
+
+
+3) Open the Workbook
+
+The workbook can be found at  $(OCPI_BASE_DIR)/tools/cdk/excel/timeDataAnalyzer.xlsm
+
+Open the workbook in Microsoft Excel 2010 ro later.  In Excel select TimeData sheet then select the Data tab from the selection ribbon. Now select "Refresh" from the Data toolbar.  A file selection dialog will appear, use this dialog to select the .csv file that you created in step #2.  This will update the data in the TimeData sheet to reflect your time data.
+
+4) Plot a histogram from your data
+
+If you chose to convert your time data with the --smart switch in step #2 then column G will contain organized timing data for the events that were captured.  You can highlight a column of event times from the sheet and type "option + command + p" and the workbook will automatically plot a histogram of the data on the "Histogram" sheet in the workbook.  
+
+

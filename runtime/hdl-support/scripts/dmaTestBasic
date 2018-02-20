@@ -1,0 +1,38 @@
+#!/bin/sh
+# This file is protected by Copyright. Please refer to the COPYRIGHT file
+# distributed with this source distribution.
+#
+# This file is part of OpenCPI <http://www.opencpi.org>
+#
+# OpenCPI is free software: you can redistribute it and/or modify it under the
+# terms of the GNU Lesser General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your option) any
+# later version.
+#
+# OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+# A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Lesser General Public License along
+# with this program. If not, see <http://www.gnu.org/licenses/>.
+
+# dmaTestBasic - a script for dma "sanity" that runs in less than a minute
+
+echo "admin probe: "
+XX=($*)
+LAST=${XX[$#-1]}
+sudo ocpihdl settime -d $LAST
+sudo ocpihdl admin -d $LAST 
+
+#./testDMA "p f m" "3" "0 4112 8176" "100" $*
+#./testDMA "p f m" "3" "0 4096 8192" "100" $*
+#./testDMA "p " "3" "0 16 4096 8192" "1000" $*
+#./testDMA "p m" "3" "0 16 1024 4096 8192" "100" $*
+#./testDMA "p m f" "3" "0 16 1024 2048" "200" $*
+#./testDMA "p m f" "3" "0 4096 8176" "1000" $*
+testDMA "m f" "3" "0 4096 8192" "500" $*
+
+# TODO: Understand system "hiccup" or full stall with 4096 or 8192 and 100+ iterations
+# observed only with m+m
+# seems to happen much less when size is not exactly big 2^n (try +/- 16B)

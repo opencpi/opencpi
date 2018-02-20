@@ -1,0 +1,90 @@
+#!/bin/bash --noprofile
+# This file is protected by Copyright. Please refer to the COPYRIGHT file
+# distributed with this source distribution.
+#
+# This file is part of OpenCPI <http://www.opencpi.org>
+#
+# OpenCPI is free software: you can redistribute it and/or modify it under the
+# terms of the GNU Lesser General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your option) any
+# later version.
+#
+# OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+# A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Lesser General Public License along
+# with this program. If not, see <http://www.gnu.org/licenses/>.
+
+source $OCPI_CDK_DIR/scripts/util.sh
+function bad {
+  [ -n "$verbose" ] && (echo $* ; echo Probe for isim failed.) 1>&2
+  exit 1
+}
+
+function cleanup {
+  [ -n "tmpdir" ] && rm -r -f $tmpdir
+}
+trap cleanup EXIT
+
+[ "$1" = -v ] && {
+  verbose=1
+  shift
+}
+[ "$1" = probe ] && {
+  setVarsFromMake $OCPI_CDK_DIR/include/hdl/xilinx.mk ShellIseVars=1 $verbose
+  [ -z "$OcpiXilinxIseDir" ] && bad Could not find the directory for XILINX ISE.
+  [ -z "$OcpiXilinxLicenseFile" ] && bad Could not find the Xilinx license file.
+  probefile=$(cd $(dirname $0); pwd)/probe.exe.tgz
+  [ -f "$probefile" ] ||
+    bad Missing isim probe support file \"$probefile\".
+  [ -f $OcpiXilinxIseDir/settings64.sh ] ||
+    bad No Xilinx settings file in $OcpiXilinxIseDir.
+  [ -n "$verbose" ] && echo Attempting to run a tiny simulation to test isim. 1>&2
+  tmpdir=`mktemp -d 2>/dev/null || mktemp -d -t 'mytmpdirXXX'` # stackoverflow 30091
+  cd $tmpdir
+  tar xzf $probefile
+  export LM_LICENSE_FILE=$OcpiXilinxLicenseFile
+  source $OcpiXilinxIseDir/settings64.sh $OcpiXilinxIseDir > /dev/null
+  type=$(./probe.exe < /dev/null 2>/dev/null | \
+	 sed -n '/^.*This is a \(.*\) version of ISim.*$/s//\1/p')
+  [ -n "$type" ] && {
+    [ -n "$verbose" ] && echo Found an ISim license of type: $type. 1>&2
+    exit 0
+  }
+  bad Found no ISim license after trying to run a tiny simulation.
+}
+
+setVarsFromMake $OCPI_CDK_DIR/include/hdl/xilinx.mk ShellIseVars=1 $verbose
+[ -z "$OcpiXilinxIseDir" -o -z "$OcpiXilinxLicenseFile" ] && {
+  echo Could not find the directory or license file for XILINX ISE. 1>&2
+  exit 1
+}
+set -e
+# Pass arguments to the settings script to override current args
+echo . $OcpiXilinxIseDir/settings64.sh $OcpiXilinxIseDir 1>&2
+. $OcpiXilinxIseDir/settings64.sh $OcpiXilinxIseDir
+export LM_LICENSE_FILE=$OcpiXilinxLicenseFile
+appname=$1
+shift
+for i in $*; do echo for $i; plusargs="$plusargs -testplusarg $i"; done
+echo plusargs are: $plusargs
+echo doing ./$appname.exe $plusargs
+# The quit is necessary below to dump out the simulation.  Without it, it doesn't happen.
+exename=(./*.exe)
+[ ${#exename[@]} != 1 ] && {
+    echo Ambiguous Isim executable in `pwd`, more than 1 .exe file found. 1>&2
+    exit 1
+}
+[ -x $exename ] || {
+    echo Failed to execute Isim simulation executable: `pwd`/$appname.exe 1>&2
+    exit 1
+}
+exec $exename $plusargs <<EOF
+scope
+show child -r
+wave log -r /
+run 1s
+quit
+EOF

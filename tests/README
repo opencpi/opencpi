@@ -1,0 +1,3 @@
+This directory contains the unit test suite for OpenCPI, implemented using Google Test (gtest).
+It is built from the top level Makefile.
+It is run by executing the ocpitests program built in the target subdirectories here.

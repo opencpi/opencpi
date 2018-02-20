@@ -1,0 +1,4 @@
+<HdlAssembly>
+  <Instance Worker="bias_vhdl" externals='1' connect='file_write'/>
+  <Instance Worker='file_write'/>
+</HdlAssembly>

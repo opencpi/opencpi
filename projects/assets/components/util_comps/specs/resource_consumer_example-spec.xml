@@ -1,0 +1,6 @@
+<ComponentSpec>
+  <Port Name="in" numberofopcodes='256'/>
+  <Port Name="out" numberofopcodes='256' optional='1' producer='1'/>
+  <Property name="id" type="uchar" initial="true" readable="true"/>
+  <Property name='PropString' type='string' stringLength='1024' initial="true" readable="true"/>
+</ComponentSpec>

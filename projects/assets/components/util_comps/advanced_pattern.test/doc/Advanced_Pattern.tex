@@ -1,0 +1,265 @@
+\documentclass{article}
+\iffalse
+This file is protected by Copyright. Please refer to the COPYRIGHT file
+distributed with this source distribution.
+
+This file is part of OpenCPI <http://www.opencpi.org>
+
+OpenCPI is free software: you can redistribute it and/or modify it under the
+terms of the GNU Lesser General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License along
+with this program. If not, see <http://www.gnu.org/licenses/>.
+\fi
+
+\author{} % Force author to be blank
+%----------------------------------------------------------------------------------------
+% Paper size, orientation and margins
+%----------------------------------------------------------------------------------------
+\usepackage{geometry}
+\geometry{
+	letterpaper,			% paper type
+	portrait,				% text direction
+	left=.75in,				% left margin
+	top=.75in,				% top margin
+	right=.75in,			% right margin
+	bottom=.75in			% bottom margin
+ }
+%----------------------------------------------------------------------------------------
+% Header/Footer
+%----------------------------------------------------------------------------------------
+\usepackage{fancyhdr} \pagestyle{fancy} % required for fancy headers
+\renewcommand{\headrulewidth}{0.5pt}
+\renewcommand{\footrulewidth}{0.5pt}
+\rhead{\small{ANGRYVIPER Team}}
+%----------------------------------------------------------------------------------------
+% Appendix packages
+%----------------------------------------------------------------------------------------
+\usepackage[toc,page]{appendix}
+%----------------------------------------------------------------------------------------
+% Defined Commands & Renamed Commands
+%----------------------------------------------------------------------------------------
+\renewcommand{\contentsname}{Table of Contents}
+\renewcommand{\listfigurename}{List of Figures}
+\renewcommand{\listtablename}{List of Tables}
+\newcommand{\todo}[1]{\textcolor{red}{TODO: #1}\PackageWarning{TODO:}{#1}} % To do notes
+\newcommand{\code}[1]{\texttt{#1}} % For inline code snippet or command line
+%----------------------------------------------------------------------------------------
+% Various pacakges
+%----------------------------------------------------------------------------------------
+\usepackage{hyperref} % for linking urls and lists
+\usepackage{graphicx} % for including pictures by file
+\usepackage{listings} % for coding language styles
+\usepackage{rotating} % for sideways table
+\usepackage{pifont}   % for sideways table
+\usepackage{pdflscape} % for landscape view
+%----------------------------------------------------------------------------------------
+% Table packages
+%----------------------------------------------------------------------------------------
+\usepackage{tabularx} % c=center,l=left,r=right,X=fill
+\usepackage{float}
+\floatstyle{plaintop}
+\usepackage[tableposition=top]{caption}
+\newcolumntype{P}[1]{>{\centering\arraybackslash}p{#1}}
+\newcolumntype{M}[1]{>{\centering\arraybackslash}m{#1}}
+%----------------------------------------------------------------------------------------
+% Block Diagram / FSM Drawings
+%----------------------------------------------------------------------------------------
+\usepackage{tikz}
+\usetikzlibrary{shapes,arrows,fit,positioning}
+\usetikzlibrary{automata} % used for the fsm
+%----------------------------------------------------------------------------------------
+% Colors Used
+%----------------------------------------------------------------------------------------
+\usepackage{colortbl}
+\definecolor{blue}{rgb}{.7,.8,.9}
+\definecolor{ceruleanblue}{rgb}{0.16, 0.32, 0.75}
+\definecolor{drkgreen}{rgb}{0,0.6,0}
+\definecolor{deepmagenta}{rgb}{0.8, 0.0, 0.8}
+\definecolor{cyan}{rgb}{0.0,0.6,0.6}
+\definecolor{maroon}{rgb}{0.5,0,0}
+%----------------------------------------------------------------------------------------
+% Update the docTitle and docVersion per document
+%----------------------------------------------------------------------------------------
+\def\docTitle{Component Data Sheet}
+\def\docVersion{1.2}
+%----------------------------------------------------------------------------------------
+\date{Version \docVersion} % Force date to be blank and override date with version
+\title{\docTitle}
+\lhead{\small{\docTitle}}
+
+\def\comp{advanced\_pattern}
+\def\Comp{Advanced Pattern}
+\graphicspath{ {figures/} }
+
+\begin{document}
+
+\section*{Summary - \Comp}
+\begin{tabular}{|c|M{13.5cm}|}
+	\hline
+	\rowcolor{blue}
+	                  &                            \\
+	\hline
+	Name              & \comp                      \\
+	\hline
+	Worker Type       & Application                \\
+	\hline
+	Version           & v\docVersion \\
+	\hline
+	Release Date      & August 2017 \\
+	\hline
+	Component Library & ocpiassets.util\_comps     \\
+	\hline
+	Workers           & \comp.rcc                  \\
+	\hline
+	Tested Platforms  & linux-c7-x86\_64, linux-x13\_3-arm \\
+	\hline
+\end{tabular}
+\section*{Functionality}
+\begin{flushleft}
+	The Advanced Pattern Component provides predefined data to assist in the testing of other Components.\par\medskip
+	The data can be arranged in messages of up to 2048 bytes at a time with each block having a specific opcode. By default, 32 of these messages are available, but that configuration is exposed as a build-time parameter with a default configuration building additional Workers allowing for 64, 128, and 256 messages.
+\end{flushleft}
+
+\section*{Block Diagrams}
+\subsection*{Top level}
+\begin{center}
+	\begin{tikzpicture}[% List of styles applied to all, to override specify on a case-by-case
+			every node/.style={
+				align=center,  		% use this so that the "\\" for line break works
+				minimum size=2cm	% creates space above and below text in rectangle
+			},
+			every edge/.style={draw,thick}
+		]
+		\node[rectangle,ultra thick,draw=black,fill=blue](R2){\Comp};
+		\node[rectangle,draw=white,fill=white](R4)[right= of R2]{``out" \\ Data defined in properties};
+		\node[rectangle,draw=white,fill=white](R5)[above= of R2]{See property table};
+		\path[->]
+		(R2)edge []	node [] {} (R4)
+		(R2)edge []	node [] {} (R5)
+		(R5)edge []	node [] {} (R2)
+		;
+	\end{tikzpicture}
+\end{center}
+
+\section*{Source Dependencies}
+\subsection*{\comp.rcc}
+\begin{itemize}
+	\item ocpiassets/components/util\_comps/advanced\_pattern.rcc/advanced\_pattern.cc
+\end{itemize}
+
+\begin{landscape}
+	\section*{Component Spec Properties}
+	\begin{scriptsize}
+		\begin{minipage}{\textwidth}
+			\renewcommand*\footnoterule{} % Remove separator line from footnote
+			\renewcommand{\thempfootnote}{\arabic{mpfootnote}} % Use Arabic numbers (or can't reuse)
+
+			\begin{tabular}{|p{3cm}|p{1.5cm}|c|c|c|c|c|p{7cm}|}
+				\hline
+				\rowcolor{blue}
+				Name                          & Type      & SequenceLength          & ArrayDimensions & Accessibility     & Valid Range  & Default & Usage                                                                                                                                                                             \\
+				\hline
+				\verb+maxPatternLength+       & ULong     & -                       & -               & Parameter         & Standard     & 32      & Maximum ``\textbf{Pattern}'' sequence length to allow \footnote{Each \textbf{Pattern} entry requires about 2K of RAM.}                                                            \\
+				\hline
+				\verb+Pattern+                & Struct    & \verb+maxPatternLength+ & -               & Initial, Readable & -            & -       & Message to send                                                                                                                                                                   \\
+				\hline
+				\verb+Pattern.Opcode+         & UChar     & -                       & -               & "                 & Standard     & 0       & Opcode metadata to send with this message's data                                                                                                                                  \\
+				\hline
+				\verb+Pattern.Bytes+          & UChar     & 2048                    & -               & "                 & Standard     & 0       & Data to send                                                                                                                                                                      \\
+				\hline
+				\verb+LoopCount+              & ULongLong & -                       & -               & Initial, Readable & Standard     & 1       & How many times to repeat the ``\textbf{Pattern}'' sequence\footnote{0 will continue as long as Worker is running.}                                                                \\
+				\hline
+				\verb+ZLM+                    & UShort    & -                       & -               & Initial, Readable & 0 \ldots 256 & 0       & Opcode for a \textbf{Z}ero \textbf{L}ength \textbf{M}essage with when finished.\footnote{Default is opcode 0; set to invalid opcode 256 if this feature is \textit{not} desired.} \\
+				\hline
+				\verb+current+                & Struct    & -                       & -               & Volatile          & -            & -       & Current statistics for each opcode                                                                                                                                                \\
+				\hline
+				\verb+current.Total+          & Struct    & -                       & -               & "                 & -            & -       & Statistics across \textit{all} opcodes                                                                                                                                            \\
+				\hline
+				\verb+current.Total.bytes+    & ULongLong & -                       & -               & "                 & Standard     & -       & Number of bytes received                                                                                                                                                          \\
+				\hline
+				\verb+current.Total.messages+ & ULongLong & -                       & -               & "                 & Standard     & -       & Number of messages received                                                                                                                                                       \\
+				\hline
+				\verb+current.Opcode+         & Struct    & -                       & 256             & "                 & -            & -       & Statistics for \textit{each} opcode                                                                                                                                               \\
+				\hline
+				\verb+current.Opcode.*+       & Various   & -                       & -               & "                 & -            & Various & Various\footnote{Internal structure equivalent to \texttt{current.Total} and not explicitly shown.}                                                                               \\
+				\hline
+			\end{tabular}
+		\end{minipage}
+	\end{scriptsize}
+	\section*{Worker Properties}
+	There are no implementation-specific properties for this component.
+
+	\section*{Component Ports}
+	\begin{scriptsize}
+		\begin{tabular}{|M{2cm}|M{1.5cm}|M{4cm}|c|c|M{9cm}|}
+			\hline
+			\rowcolor{blue}
+			Name & Producer & Protocol & Optional & Advanced            & Usage                      \\
+			\hline
+			out  & true     & -        & -        & numberofopcodes=256 & Data defined in properties \\
+			\hline
+		\end{tabular}
+	\end{scriptsize}
+
+	\section*{Worker Interfaces}
+	There are no implementation-specific interfaces for this component.
+
+\end{landscape}
+
+\section*{Performance and Resource Utilization}
+\subsubsection*{\comp.rcc}
+\begin{scriptsize}
+	\begin{tabular}{|c|c|c|}
+		\hline
+		\rowcolor{blue}
+		Processor Type                                & Processor Frequency & Run Function Time \\
+		\hline
+		linux-c6-x86\_64 Intel(R) Xeon(R) CPU E5-1607 & 3.00 GHz            & TBD               \\
+		\hline
+		linux-c7-x86\_64 Intel(R) Core(TM) i7-3630QM  & 2.40 GHz            & TBD               \\
+		\hline
+		linux-x13\_3-arm ARMv7 Processor rev 0 (v7l)  & 666 MHz             & TBD               \\
+		\hline
+	\end{tabular}
+\end{scriptsize}
+
+\section*{Test and Verification}
+\subsubsection*{Usage (local/x86)}
+After building the component, the user needs to type \verb+make tests RCC_CONTAINERS=1+ in the \textit{advanced\_pattern.test} directory. Various properties and data flows will be tested to try to cover as many use cases as possible. \\
+
+If the user would like to execute only one test, \verb+TESTS=test_XX+ can be added to the end of the command.
+\subsubsection*{Usage (remote/ARM)}
+Full test environment configuration (\textit{e.g.} NFS mounting, \verb+OCPI_CDK_DIR+, etc.) on the remote GPP is beyond the scope of this document. The test procedures assume that both shells' current working directory is the \textit{advanced\_pattern.test} directory (NFS-mounted on remote) and \verb+ocpirun+ is in the remote's current \verb+PATH+. NFS \textbf{must} be used for the scripts to properly verify the outputs. \\
+
+In the host shell, the user types \verb+make tests IP=xx.xx.xx.xx+. A command that can be copied and then pasted into the remote shell will be displayed. Once the remote shell returns to the bash prompt, pressing ``Enter'' on the host will begin the verification process. \\
+
+Single tests can be performed in the same manner as documented above.
+
+\subsubsection*{Detailed Theory of Operation}
+Each \verb+test_XX+ subdirectory has the following files:
+
+\begin{itemize}{}{}
+	\item \texttt{description} - a one-line description of the test
+	\item \texttt{application.xml} - the OAS XML for the test setup
+	\item \texttt{golden.md5} - (optional) MD5 checksums of golden/expected output
+	\item \texttt{generate.[sh|pl|py]} - (optional) script to generate test data
+	\item \texttt{verify.sh} - (optional) script to verify output(s)
+\end{itemize}
+\begin{flushleft}
+	Data is internally generated and then written to disk using the \verb+file_write_demux+ component. Some OASs have the pattern information embedded within the XML itself, while others use the \texttt{valueFile} option to import a file named \verb+UUT.Pattern.input+. Most OASs dump the ``\texttt{current}" property from the tested component as well as the file writer to files named \verb+UUT.current.dump+ and \verb+fwout.current.dump+ respectively, which are also confirmed to match expected output.
+	\medskip
+
+	If \texttt{generate.sh} does not exist, a default one is created that will run \texttt{generate.pl} and/or \texttt{generate.py} if they exist and are executable. This default script is removed with \verb+make clean+.
+	\medskip
+
+	If \texttt{verify.sh} does not exist, a default one is created that will run \texttt{md5sum} and verify all the checksums listed in \texttt{golden.md5}. This default script is also removed upon \verb+make clean+.
+	\medskip
+\end{flushleft}
+\end{document}

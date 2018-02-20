@@ -1,0 +1,18 @@
+<ComponentSpec Name="Consumer">
+  <Properties>
+    <Property Name="doubleT" Type="Double" Readable="true" Writable="true"/>
+    <Property Name="passfail" Volatile="true" Writable="true"/>
+    <Property Name="run2BufferCount" Readable="true" Writable="true"/>
+    <Property Name="longlongT" Type="LongLong" Readable="true" Writable="true"/>
+    <Property Name="buffersProcessed" Volatile="true" Writable="true"/>
+    <Property Name="droppedBuffers" Volatile="true" Writable="true"/>
+    <Property Name="floatST" Type="Float" SequenceLength="32" Readable="true" Writable="true"/>
+    <Property Name="bytesProcessed" Volatile="true" Writable="true"/>
+    <Property Name="transferMode" Type="ULong" Volatile="true" Writable="true"/>
+    <Property Name="stringST" Type="String" StringLength="49" SequenceLength="256" Readable="true" Writable="true"/>
+    <Property Name="takenBufferIndex" Volatile="true" Writable="true"/>
+    <Property Name="releaseBufferIndex" Volatile="true" Writable="true"/>
+    <Property Name="boolT" Type="Bool" Readable="true" Writable="true"/>
+  </Properties>
+  <DataInterfaceSpec Name="In"/>
+</ComponentSpec>

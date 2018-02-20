@@ -1,0 +1,6 @@
+<HdlContainer only='*sim'>
+   <Device Worker='lime_dac_ts' Floating='1'/>
+   <Connection External="out_to_dac" Device="lime_dac_ts" Port="in"/>
+   <Device Worker='lime_dac_em' Floating='1'/>
+   <Connection External="in_from_dac" Device="lime_dac_em" Port="out"/>
+</HdlContainer>

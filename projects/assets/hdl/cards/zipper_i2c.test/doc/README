@@ -1,0 +1,5 @@
+This is a placeholder for an eventual component datasheet. 
+
+This testbench is very similar to matchstiq_z1_i2c.test. There is formal documentation for this component in ocpi_assets/hdl/platforms/matchstiq_z1/devices/matchstiq_z1_i2c.test
+
+The output clock frequency of the testbench can be observed with an oscilloscope by probing pins 14 and 34 of the header connector J7 of the Zipper.

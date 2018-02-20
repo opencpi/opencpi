@@ -1,0 +1,66 @@
+<hdldevice language="vhdl">
+  <componentspec>
+    <!-- bank 1  -->
+    <property name="clkout0"               type="bool" readable="1" writable="1"                               />
+    <property name="clkin0"                type="bool"                           volatile="1"                  />
+
+    <!-- bank 2  -->
+    <property name="d_0_37_direction_is_out" type="bool"              writable="1" volatile="1" arraylength="38"/>
+    <property name="d_0_37"                  type="bool"              writable="1" volatile="1" arraylength="38"/>
+
+    <!-- bank 3  -->
+    <property name="d_40_79"               type="bool" readable="1" writable="1"              arraylength="40" />
+    <property name="psntn"                 type="bool"                           volatile="1"                  />
+
+  </componentspec>
+
+  <!-- bank 1             -->
+  <signal output="clkout0" />
+  <signal  input="clkin0"  />
+
+  <!-- bank 2             -->
+  <signal  inout="d0" />
+  <signal  inout="d1" />
+  <signal  inout="d2" />
+  <signal  inout="d3" />
+  <signal  inout="d4" />
+  <signal  inout="d5" />
+  <signal  inout="d6" />
+  <signal  inout="d7" />
+  <signal  inout="d8" />
+  <signal  inout="d9" />
+  <signal  inout="d10" />
+  <signal  inout="d11" />
+  <signal  inout="d12" />
+  <signal  inout="d13" />
+  <signal  inout="d14" />
+  <signal  inout="d15" />
+  <signal  inout="d16" />
+  <signal  inout="d17" />
+  <signal  inout="d18" />
+  <signal  inout="d19" />
+  <signal  inout="d20" />
+  <signal  inout="d21" />
+  <signal  inout="d22" />
+  <signal  inout="d23" />
+  <signal  inout="d24" />
+  <signal  inout="d25" />
+  <signal  inout="d26" />
+  <signal  inout="d27" />
+  <signal  inout="d28" />
+  <signal  inout="d29" />
+  <signal  inout="d30" />
+  <signal  inout="d31" />
+  <signal  inout="d32" />
+  <signal  inout="d33" />
+  <signal  inout="d34" />
+  <signal  inout="d35" />
+  <signal  inout="d36"     />
+  <signal  input="d37"     /> <!-- note this is an inPUT, not an inOUT -->
+
+  <!-- bank 3             -->
+  <signal output="d_40_79" width="40"/>
+  <signal  input="psntn"   />
+
+</hdldevice>
+

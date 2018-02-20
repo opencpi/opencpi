@@ -1,0 +1,6 @@
+<Protocol>
+  <Operation Name="Samples">
+    <Argument Name="userId" Type="ULong"/>
+    <Argument Name="u1" Type="ULong"/>
+  </Operation>
+</Protocol>

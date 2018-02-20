@@ -1,0 +1,10 @@
+This device worker is a submodule shared by the lime rx and tx workers.
+It is required when one or both of the lime_rx and lime_tx workers are instanced.
+
+It serves three purposes:
+
+1. To drive the common reset (from either control reset in rawprops ports)
+2. To receive the receive data clock that may be used by the transmit side
+   as a clocking option
+3. To share the single SPI interface for raw property acccess
+

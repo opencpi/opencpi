@@ -1,0 +1,5 @@
+We use ocpiAssert() in runtime code and assert() in tool code.
+ocpiCheck is also used for code that is in an assert but that must
+be executed for correct operation.
+ocpiAssert() allows us to control just what happens on assertion
+violations in some embedded OS environments.

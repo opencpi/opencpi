@@ -1,0 +1,3 @@
+<HdlContainer platform='ml605'>
+<connection external='out' card='lime_zipper_fmc_lpc' device='lime_dac'/>
+</HdlContainer>

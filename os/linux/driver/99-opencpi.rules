@@ -1,0 +1,31 @@
+# This file is protected by Copyright. Please refer to the COPYRIGHT file
+# distributed with this source distribution.
+#
+# This file is part of OpenCPI <http://www.opencpi.org>
+#
+# OpenCPI is free software: you can redistribute it and/or modify it under the
+# terms of the GNU Lesser General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your option) any
+# later version.
+#
+# OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+# A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Lesser General Public License along
+# with this program. If not, see <http://www.gnu.org/licenses/>.
+
+# This file is for udev support when the driver is loaded/unloaded
+# Cope with two kobj/sysfs limitations: no slashes, and 19 character limit	
+# 1. Change e to ether, p to pci.
+# 2. Expand ethernet from 0123456789ab to 01:23:45:67:89:ab
+# 3. Change = to /
+# 4. Enable read/write by all
+# ************ THIS FILE MUST BE CONSISTENT WITH mdev.rules for udev***********
+KERNEL=="ocpi=*", PROGRAM=="/bin/sh -c 'echo %k | \
+                            sed -e s+=p=+=pci=+ \
+			    	-e s+=e=\(..\)\(..\)\(..\)\(..\)\(..\)\(..\)+=e=\1:\2:\3:\4:\5:\6+ \
+                                -e s+=e=+=ether=+ \
+                                -e s+=+/+g'", SYMLINK="%c", MODE="0666"
+# DRIVER=="opencpi" PROGRAM=="echo %k | sed -e s/^0000:00:// -e s/\.0$//", RESULT!="%k", SYMLINK="ocpi/pci/%c"

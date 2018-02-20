@@ -1,0 +1,11 @@
+<RccWorker language="c++" spec="bias_spec.xml" scaling='1' scalable='1'>
+  <!-- Insert any other implementation-specific information here -->
+  <property name='t1' readable='1' readsync='1' readbarrier='1' writebarrier='1' readscalable='Min'/>
+  <port name='in' implname='foo' distribution='hashed' hashfield='data' min='5' modulo='8' max='1' default='0' left='3' right='7' padding='zero' source='3'>
+    <operation name='data'  distribution='hashed' hashfield='data' min='5' modulo='8' max='1' default='0' left='3' right='7' padding='zero' source='3'>
+      <argument name='data' min='5' modulo='8' max='1' default='0' left='3' right='7' padding='zero' source='3'>
+       <dimension min='5' modulo='8' max='1' default='0' left='3' right='7' padding='zero' source='3'/>
+      </argument>
+    </operation>
+  </port>
+</RccWorker>

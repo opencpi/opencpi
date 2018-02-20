@@ -1,0 +1,8 @@
+<HDLImplementation language="vhdl" spec="wsi_32_to_16_spec">
+
+  <!-- 32768 = 2 (# of buffers) * [round(buffersize,16) + 16 (metadata) + 16 (4 flags round up to 16)] -->
+  <!-- round(buffersize,16) = 32768/2 - 16 (metadata) - 16 (4 flags round up to 16))] -->
+  <streaminterface name='in' datawidth='32' maxMessageValues='16352'/>
+  <streaminterface name='out' datawidth='16'/>
+
+</HDLImplementation>

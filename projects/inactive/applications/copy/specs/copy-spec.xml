@@ -1,0 +1,5 @@
+<ComponentSpec>
+  <DataInterfaceSpec Name="in" buffersize='out'/>
+  <!-- <DataInterfaceSpec Name="in"/> -->
+  <DataInterfaceSpec Name="out" protocol='buf-prot' Producer="true"/>
+</ComponentSpec>

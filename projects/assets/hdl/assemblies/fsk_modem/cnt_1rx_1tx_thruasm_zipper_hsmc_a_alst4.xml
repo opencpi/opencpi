@@ -1,0 +1,65 @@
+<!-- filename:             cnt_1rx_1tx_thruasm_zipper_hsmc_a_alst4.xml -->
+<!-- filename description: cnt                                          (this is a container)                              -->
+<!--                           1rx                                      (number of RX channels used)                       -->
+<!--                               1tx                                  (number of TX channels used)                       -->
+<!--                                   thruasm                          (container architecture description)               -->
+<!--                                           zipper_hsmc_a            (frontend and/or slot descriptions, if applicable) -->
+<!--                                                                    (other details, if applicable)                     -->
+<!--                                                         alst4      (platform description, if applicable)              -->
+<!--                                                              .xml                                                     -->
+<!--      CPU                  FPGA                                          -->
+<!--     ______     _________________________________________                -->
+<!--    +      +   +                                         +               -->
+<!--    |      | i |          container               ___    |               -->
+<!--    |      | n |                                 +   +   |               -->
+<!--    |      |*t*|*********************************|dev|   |               -->
+<!--    |      | e |    (3)                    *     +___+   |               -->
+<!--    |      | r |                           *             |               -->
+<!--    |      | c |          ______________   *             |               -->
+<!--    |      | o |         +  assembly   +   *(1)          |               -->
+<!--    |      | n |         |             |   *             |               -->
+<!--    |      | n |   (2)   |             |   *             |               -->
+<!--    |      |*e*|*********|             |****             |               -->
+<!--    |      | c |         |             |                 |               -->
+<!--    |      | t |         |             |                 |               -->
+<!--    +______+   +_________+_____________+_________________+               -->
+<!--                                                                         -->
+<HdlContainer Config="alst4_zipper_hsmc_alst4_port_a_rx_tx" Platform="alst4">
+
+  <!-- (1) external-to-FPGA device (worker) to FPGA assembly connections -->
+  <!--Connection External="<assembly_port_name>"
+                 Port="<device_port_name>"
+                 Device="<device_name>"
+                 Card="<card_name>" (required if card is used)
+                 Slot="<slot_name>" (required if more than one platform slot of the card slot type exists) -->
+  <!-- e.g. <Connection External="in_to_asm_rx_path_from_adc"  Port="out" Device="lime_adc"/> -->
+  <!-- e.g. <Connection External="out_from_asm_tx_path_to_dac" Port="in"  Device="lime_dac"/> -->
+  <Connection External="in_to_asm_rx_path_from_adc"  Port="out" Device="lime_adc" Card="lime_zipper_hsmc_alst4" Slot="hsmc_alst4_a"/>
+  <Connection External="out_from_asm_tx_path_to_dac" Port="in"  Device="lime_dac" Card="lime_zipper_hsmc_alst4" Slot="hsmc_alst4_a"/>
+
+  <!-- (2) FPGA assembly to CPU interconnect connections -->
+  <!--Connection External="<assembly_port_name>"
+                 Interconnect="<interconnect_name, probably zynq or pcie>"/-->
+  <!-- e.g. <Connection External="out_from_asm_rx_path" Interconnect="zynq"/> -->
+  <!-- e.g. <Connection External="in_to_asm_tx_path"    Interconnect="zynq"/> -->
+
+  <!-- TODO / FIXME - to reduce software entropy, change this interconnect
+       connection order to be the same as all other containers once AV-3873 is
+       resolved (consequence of bug AV-3873 is that PCIE interconnect container
+       connections that are in the data flow direction CPU->PCIE->assembly can
+       only be defined ONCE in a container and they must be FIRST before all
+       other interconnect connections) -->
+  <Connection External="in_to_asm_tx_path"    Interconnect="pcie"/>
+
+  <Connection External="out_from_asm_rx_path" Interconnect="pcie"/>
+
+  <!-- (3) external-to-FPGA device (worker) to CPU interconnect connections (bypassing the assembly)-->
+  <!--Connection Device="<device_name>"
+                 Port="<device_port_name>"
+                 Card="<card_name>" (required if card is used)
+                 Slot="<slot_name>" (required if more than one platform slot of the card slot type exists)
+                 Interconnect="<interconnect_name, probably zynq or pcie>"/-->
+  <!-- e.g. <Connection Device="lime_adc" Port="out" Interconnect="pcie"/> -->
+  <!-- e.g. <Connection Device="lime_dac" Port="in"  Interconnect="pcie"/> -->
+
+</HdlContainer>

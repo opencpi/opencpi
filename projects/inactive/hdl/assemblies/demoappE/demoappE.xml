@@ -1,0 +1,60 @@
+<HdlAssembly>
+  <Property Name="hasDebugLogic" Parameter="true" Type="Bool"/>
+  <Instance Worker="sma.xml" Name="sma0"/>
+  <Instance Worker="delay.xml"/>
+  <Instance Worker="sma.xml" Name="sma1"/>
+  <Instance Worker="splitter2x2.xml"/>
+  <Instance Worker="framegate.xml"/>
+  <Instance Worker="psd.xml"/>
+  <!-- adc input to splitter -->
+  <Connection Name="adc" External="consumer">
+    <Attach Instance="splitter2x2" Interface="in1"/>
+  </Connection>
+  <!-- splitter output to delay/w3 -->
+  <Connection>
+    <Attach Instance="splitter2x2" Interface="out0"/>
+    <Attach Instance="delay" Interface="in"/>
+  </Connection>
+  <!-- delay/w3 output to sma1/w4 -->
+  <Connection>
+    <Attach Instance="delay" Interface="out"/>
+    <Attach Instance="sma1" Interface="in"/>
+  </Connection>
+  <!-- sma1/w4 output to dac -->
+  <Connection Name="dac" External="producer">
+    <Attach Instance="sma1" Interface="out"/>
+  </Connection>
+  <!-- sma1/w4 output to DP1 -->
+  <Connection Name="wmiM1" External="producer">
+    <Attach Instance="sma1" Interface="message"/>
+  </Connection>
+  <!-- DONE WITH PATH FROM ADC THROUGH DELAY TO DP1 -->
+  <!-- Now path from ADC through framegate/psd to SMA0/DP0 -->
+  <!-- splitter/w5 output to framegate/w6 -->
+  <Connection>
+    <Attach Instance="splitter2x2" Interface="out1"/>
+    <Attach Instance="framegate" Interface="in"/>
+  </Connection>
+  <!-- framegate/w6 output to psd/w7 -->
+  <Connection>
+    <Attach Instance="framegate" Interface="out"/>
+    <Attach Instance="psd" Interface="in"/>
+  </Connection>
+  <!-- psd/w7 output to sma0/w2 -->
+  <Connection>
+    <Attach Instance="psd" Interface="out"/>
+    <Attach Instance="sma0" Interface="in"/>
+  </Connection>
+  <!-- sma0/w2 output to DP0 -->
+  <Connection Name="wmiM0" External="producer">
+    <Attach Instance="sma0" Interface="message"/>
+  </Connection>
+  <!-- DONE WITH PATH FROM ADC THROUGH framegate and psd TO DP0 -->
+  <!-- Now test loop path from sma0/w2 to splitter/w5 -->
+  <Connection>
+    <Attach Instance="sma0" Interface="out"/>
+    <Attach Instance="splitter2x2" Interface="in0"/>
+  </Connection>
+</HdlAssembly>
+
+   

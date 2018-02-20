@@ -1,0 +1,26 @@
+<HdlAssembly>
+  <Instance Worker="zero_padding">
+    <Property Name="IDATA_WIDTH_p" Value="16"/>
+    <Property Name="ODATA_WIDTH_p" Value="16"/>
+  </Instance>
+  <Instance Worker="fir_real_sse" Name="fir_1">
+    <Property Name="NUM_TAPS_p" Value="64"/>
+  </Instance>
+  <Instance Worker="fir_real_sse" Name="fir_2">
+    <Property Name="NUM_TAPS_p" Value="64"/>
+  </Instance>
+  <Connection Name="in" External="consumer">
+    <Port Instance="zero_padding" Name="in"/>
+  </Connection>
+  <Connection>
+    <Port Instance="zero_padding" Name="out"/>
+    <Port Instance="fir_1" Name="in"/>
+  </Connection>
+  <Connection>
+    <Port Instance="fir_1" Name="out"/>
+    <Port Instance="fir_2" Name="in"/>
+  </Connection>
+  <Connection Name="out" External="producer">
+    <Port Instance="fir_2" Name="out"/>
+  </Connection>
+</HdlAssembly>

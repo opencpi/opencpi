@@ -1,0 +1,3 @@
+<HdlWorker language='vhdl' spec='data_src-spec'>
+  <StreamInterface Name="out" DataWidth="32"/>
+</HdlWorker>

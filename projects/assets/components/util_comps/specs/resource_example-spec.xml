@@ -1,0 +1,5 @@
+<ComponentSpec>
+  <Property name="PropULongLong" type="ULongLong" volatile="true"/>
+  <Property name="PropDouble" type="Double" volatile="true"/>
+  <Property name='PropString' type='string' stringLength='1024' volatile="true"/>
+</ComponentSpec>

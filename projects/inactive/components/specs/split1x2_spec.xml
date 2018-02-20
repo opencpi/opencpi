@@ -1,0 +1,17 @@
+<ComponentSpec>
+  <Properties>
+    <Property Name="n_buffers_a" Volatile="true" Writable="false" Type="ULong"/>
+    <Property Name="n_bytes_a" Volatile="true" Writable="false" Type="ULong"/>
+    <Property Name="n_buffers_b" Volatile="true" Writable="false" Type="ULong"/>
+    <Property Name="n_bytes_b" Volatile="true" Writable="false" Type="ULong"/>
+  </Properties>
+  <DataInterfaceSpec Name="WSIin" Producer="false">
+    <ProtocolSummary DataValueWidth="16" MaxMessageValues="4096" NumberOfOpcodes="256" VariableMessageLength="true" ZeroLengthMessages="true"/>
+  </DataInterfaceSpec>
+  <DataInterfaceSpec Name="WSIoutA" Producer="true">
+    <ProtocolSummary DataValueWidth="16" MaxMessageValues="4096" NumberOfOpcodes="256" VariableMessageLength="true" ZeroLengthMessages="true"/>
+  </DataInterfaceSpec>
+  <DataInterfaceSpec Name="WSIoutB" Producer="true">
+    <ProtocolSummary DataValueWidth="16" MaxMessageValues="4096" NumberOfOpcodes="256" VariableMessageLength="true" ZeroLengthMessages="true"/>
+  </DataInterfaceSpec>
+</ComponentSpec>

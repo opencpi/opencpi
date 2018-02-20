@@ -1,0 +1,732 @@
+<properties>
+  <property name='general_spi_conf'                       type='uchar'  volatile='1' writable='1' description='reg_addr_d0_0x0000   Table 1:  CHIP LEVEL SETUP: SPI Configuration'                            />
+  <property name='general_multichip_sync_and_tx_mon_ctrl' type='uchar'  volatile='1' writable='1' description='reg_addr_d1_0x0001   Table 1:  CHIP LEVEL SETUP: Multichip Sync and Tx Mon Control'            />
+  <property name='general_tx_enable_filter_ctrl'          type='uchar'  volatile='1' writable='1' description='reg_addr_d2_0x0002   Table 1:  CHIP LEVEL SETUP: Tx Enable & Filter Control'                   />
+  <property name='general_rx_enable_filter_ctrl'          type='uchar'  volatile='1' writable='1' description='reg_addr_d3_0x0003   Table 1:  CHIP LEVEL SETUP: Rx Enable & Filter Control'                   />
+  <property name='general_input_select'                   type='uchar'  volatile='1' writable='1' description='reg_addr_d4_0x0004   Table 1:  CHIP LEVEL SETUP: Input Select'                                 />
+  <property name='general_rfpll_dividers'                 type='uchar'  volatile='1' writable='1' description='reg_addr_d5_0x0005   Table 1:  CHIP LEVEL SETUP: RFPLL Dividers'                               />
+  <property name='general_rx_clock_data_delay'            type='uchar'  volatile='1' writable='1' description='reg_addr_d6_0x0006   Table 1:  CHIP LEVEL SETUP: Rx Clock and Data  Delay'                     />
+  <property name='general_tx_clock_data_delay'            type='uchar'  volatile='1' writable='1' description='reg_addr_d7_0x0007   Table 1:  CHIP LEVEL SETUP: Tx Clock and Data Delay'                      />
+  <property name='ocpi_pad_008'                           type='uchar' padding='1' arraylength='1'/>      <!-- reg_addr_d8_0x0008                                                             -->
+  <property name='clock_enable'                           type='uchar'  volatile='1' writable='1' description='reg_addr_d9_0x0009   Table 8:  CLOCK CONTROL: Clock Enable'                     />
+  <property name='clock_bbpll'                            type='uchar'  volatile='1' writable='1' description='reg_addr_d10_0x000a  Table 8:  CLOCK CONTROL: BBPLL'                            />
+  <property name='temp_offset'                            type='uchar'  volatile='1' writable='1' description='reg_addr_d11_0x000b  Table 10: TEMPERATURE SENSOR: Offset'                      />
+  <property name='temp_start_reading'                     type='uchar'  volatile='1' writable='1' description='reg_addr_d12_0x000c  Table 10: TEMPERATURE SENSOR: Start Temp Reading'          />
+  <property name='temp_sense2'                            type='uchar'  volatile='1' writable='1' description='reg_addr_d13_0x000d  Table 10: TEMPERATURE SENSOR: Temp Sense2'                 />
+  <property name='temp_temperature'                       type='uchar'  volatile='1'              description='reg_addr_d14_0x000e  Table 10: TEMPERATURE SENSOR: Temperature'                 />
+  <property name='temp_sensor_config'                     type='uchar'  volatile='1' writable='1' description='reg_addr_d15_0x000f  Table 10: TEMPERATURE SENSOR: Temp Sensor Config'          />
+  <property name='parallel_port_conf_1'                   type='uchar'  volatile='1' writable='1' description='reg_addr_d16_0x0010  Table 11: PARALLEL PORT CONFIGURATION: Parallel Port Configuration 1'     />
+  <property name='parallel_port_conf_2'                   type='uchar'  volatile='1' writable='1' description='reg_addr_d17_0x0011  Table 11: PARALLEL PORT CONFIGURATION: Parallel Port Configuration 2'     />
+  <property name='parallel_port_conf_3'                   type='uchar'  volatile='1' writable='1' description='reg_addr_d18_0x0012  Table 11: PARALLEL PORT CONFIGURATION: Parallel Port Configuration 3'     />
+  <property name='ensm_mode'                              type='uchar'  volatile='1' writable='1' description='reg_addr_d19_0x0013  Table 12: ENABLE STATE MACHINE: ENSM Mode'                              />
+  <property name='ensm_config_1'                          type='uchar'  volatile='1' writable='1' description='reg_addr_d20_0x0014  Table 12: ENABLE STATE MACHINE: ENSM Config 1'                          />
+  <property name='ensm_config_2'                          type='uchar'  volatile='1' writable='1' description='reg_addr_d21_0x0015  Table 12: ENABLE STATE MACHINE: ENSM Config 2'                          />
+  <property name='ensm_calibration_ctrl'                  type='uchar'  volatile='1' writable='1' description='reg_addr_d22_0x0016  Table 12: ENABLE STATE MACHINE: Calibration Control'                    />
+  <property name='ensm_state'                             type='uchar'  volatile='1'              description='reg_addr_d23_0x0017  Table 12: ENABLE STATE MACHINE: State'                                  />
+  <property name='auxdac_1_word'                          type='uchar'  volatile='1' writable='1' description='reg_addr_d24_0x0018  Table 15: AUXDAC: AuxDAC 1 Word'                     />
+  <property name='auxdac_2_word'                          type='uchar'  volatile='1' writable='1' description='reg_addr_d25_0x0019  Table 15: AUXDAC: AuxDAC 2 Word'                     />
+  <property name='auxdac_1_config'                        type='uchar'  volatile='1' writable='1' description='reg_addr_d26_0x001a  Table 15: AUXDAC: AuxDAC 1 Config'                   />
+  <property name='auxdac_2_config'                        type='uchar'  volatile='1' writable='1' description='reg_addr_d27_0x001b  Table 15: AUXDAC: AuxDAC 2 Config'                   />
+  <property name='auxadc_clock_divider'                   type='uchar'  volatile='1' writable='1' description='reg_addr_d28_0x001c  Table 17: AUXILARYADC: AuxADC Clock Divider'              />
+  <property name='auxadc_config'                          type='uchar'  volatile='1' writable='1' description='reg_addr_d29_0x001d  Table 17: AUXILARYADC: Aux ADC Config'                    />
+  <property name='auxadc_word_msb'                        type='uchar'  volatile='1'              description='reg_addr_d30_0x001e  Table 17: AUXILARYADC: AuxADC Word MSB'                   />
+  <property name='auxadc_world_lsb'                       type='uchar'  volatile='1'              description='reg_addr_d31_0x001f  Table 17: AUXILARYADC: AuxADC Word LSB'                   />
+  <property name='misc_auto_gpo'                          type='uchar'  volatile='1' writable='1' description='reg_addr_d32_0x0020  Table 18: GPO, AUXDAC, AGC DELAY, AND SYNTH DELOY CONTROL: Auto GPO'                          />
+  <property name='misc_agc_gain_lock_delay'               type='uchar'  volatile='1' writable='1' description='reg_addr_d33_0x0021  Table 18: GPO, AUXDAC, AGC DELAY, AND SYNTH DELOY CONTROL: AGC Gain Lock Delay'               />
+  <property name='misc_agc_attack_delay'                  type='uchar'  volatile='1' writable='1' description='reg_addr_d34_0x0022  Table 18: GPO, AUXDAC, AGC DELAY, AND SYNTH DELOY CONTROL: AGC Attack Delay'                  />
+  <property name='misc_auxdac_enable_ctrl'                type='uchar'  volatile='1' writable='1' description='reg_addr_d35_0x0023  Table 18: GPO, AUXDAC, AGC DELAY, AND SYNTH DELOY CONTROL: AuxDAC Enable Control'             />
+  <property name='misc_rx_load_synth_delay'               type='uchar'  volatile='1' writable='1' description='reg_addr_d36_0x0024  Table 18: GPO, AUXDAC, AGC DELAY, AND SYNTH DELOY CONTROL: RX Load Synth Delay'               />
+  <property name='misc_tx_load_synth_delay'               type='uchar'  volatile='1' writable='1' description='reg_addr_d37_0x0025  Table 18: GPO, AUXDAC, AGC DELAY, AND SYNTH DELOY CONTROL: TX Load Synth Delay'               />
+  <property name='misc_external_lna_ctrl'                 type='uchar'  volatile='1' writable='1' description='reg_addr_d38_0x0026  Table 18: GPO, AUXDAC, AGC DELAY, AND SYNTH DELOY CONTROL: External LNA control'              />
+  <property name='misc_gpo_force_and_init'                type='uchar'  volatile='1' writable='1' description='reg_addr_d39_0x0027  Table 18: GPO, AUXDAC, AGC DELAY, AND SYNTH DELOY CONTROL: GPO Force and Init'                />
+  <property name='misc_gpo0_rx_delay'                     type='uchar'  volatile='1' writable='1' description='reg_addr_d40_0x0028  Table 18: GPO, AUXDAC, AGC DELAY, AND SYNTH DELOY CONTROL: GPO0 Rx delay'                     />
+  <property name='misc_gpo1_rx_delay'                     type='uchar'  volatile='1' writable='1' description='reg_addr_d41_0x0029  Table 18: GPO, AUXDAC, AGC DELAY, AND SYNTH DELOY CONTROL: GPO1 Rx delay'                     />
+  <property name='misc_gpo2_rx_delay'                     type='uchar'  volatile='1' writable='1' description='reg_addr_d42_0x002a  Table 18: GPO, AUXDAC, AGC DELAY, AND SYNTH DELOY CONTROL: GPO2 Rx delay'                     />
+  <property name='misc_gpo3_rx_delay'                     type='uchar'  volatile='1' writable='1' description='reg_addr_d43_0x002b  Table 18: GPO, AUXDAC, AGC DELAY, AND SYNTH DELOY CONTROL: GPO3 Rx delay'                     />
+  <property name='misc_gpo0_tx_delay'                     type='uchar'  volatile='1' writable='1' description='reg_addr_d44_0x002c  Table 18: GPO, AUXDAC, AGC DELAY, AND SYNTH DELOY CONTROL: GPO0 Tx Delay'                     />
+  <property name='misc_gpo1_tx_delay'                     type='uchar'  volatile='1' writable='1' description='reg_addr_d45_0x002d  Table 18: GPO, AUXDAC, AGC DELAY, AND SYNTH DELOY CONTROL: GPO1 Tx Delay'                     />
+  <property name='misc_gpo2_tx_delay'                     type='uchar'  volatile='1' writable='1' description='reg_addr_d46_0x002e  Table 18: GPO, AUXDAC, AGC DELAY, AND SYNTH DELOY CONTROL: GPO2 Tx Delay'                     />
+  <property name='misc_gpo3_tx_delay'                     type='uchar'  volatile='1' writable='1' description='reg_addr_d47_0x002f  Table 18: GPO, AUXDAC, AGC DELAY, AND SYNTH DELOY CONTROL: GPO3 Tx Delay'                     />
+  <property name='misc_auxdac1_rx_delay'                  type='uchar'  volatile='1' writable='1' description='reg_addr_d48_0x0030  Table 18: GPO, AUXDAC, AGC DELAY, AND SYNTH DELOY CONTROL: AuxDAC1 Rx Delay'                  />
+  <property name='misc_auxdac1_tx_delay'                  type='uchar'  volatile='1' writable='1' description='reg_addr_d49_0x0031  Table 18: GPO, AUXDAC, AGC DELAY, AND SYNTH DELOY CONTROL: AuxDAC1 Tx Delay'                  />
+  <property name='misc_auxdac2_rx_delay'                  type='uchar'  volatile='1' writable='1' description='reg_addr_d50_0x0032  Table 18: GPO, AUXDAC, AGC DELAY, AND SYNTH DELOY CONTROL: AuxDAC2 Rx Delay'                  />
+  <property name='misc_auxdac2_tx_delay'                  type='uchar'  volatile='1' writable='1' description='reg_addr_d51_0x0033  Table 18: GPO, AUXDAC, AGC DELAY, AND SYNTH DELOY CONTROL: AuxDAC2 Tx Delay'                  />
+  <property name='ocpi_pad_034'                           type='uchar' padding='1' arraylength='1'/>      <!-- reg_addr_d52_0x0034                                                              -->
+  <property name='ctrl_output_pointer'                    type='uchar'  volatile='1' writable='1' description='reg_addr_d53_0x0035  Table 19: CONTROL OUTPUT: Control Output Pointer'            />
+  <property name='ctrl_output_enable'                     type='uchar'  volatile='1' writable='1' description='reg_addr_d54_0x0036  Table 19: CONTROL OUTPUT: Control Output Enable'             />
+  <property name='product_id'                             type='uchar'  volatile='1'              description='reg_addr_d55_0x0037  Table 20: PRODUCT ID: Product ID'                        />
+  <property name='ocpi_pad_038'                           type='uchar' padding='1' arraylength='2'/>      <!-- reg_addr_d56_0x0038                                                                      -->
+  <!--                 pad 039                                                                                 reg_addr_d57_0x0039                                                                      -->
+  <property name='reference_clock_cycles'                 type='uchar'  volatile='1' writable='1' description='reg_addr_d58_0x003a  Table 22: REFERENCE CLOCK CYCLES: Reference Clock Cycles'            />
+  <property name='digital_io_digital_io_ctrl'             type='uchar'  volatile='1' writable='1' description='reg_addr_d59_0x003b  Table 23: DIGITAL IO CONTROL: Digital I/O Control'               />
+  <property name='digital_io_lvds_bias_ctrl'              type='uchar'  volatile='1' writable='1' description='reg_addr_d60_0x003c  Table 23: DIGITAL IO CONTROL: LVDS Bias control'                 />
+  <property name='digital_io_lvds_invert_ctrl1'           type='uchar'  volatile='1' writable='1' description='reg_addr_d61_0x003d  Table 23: DIGITAL IO CONTROL: LVDS Invert control1'              />
+  <property name='digital_io_lvds_invert_ctrl2'           type='uchar'  volatile='1' writable='1' description='reg_addr_d62_0x003e  Table 23: DIGITAL IO CONTROL: LVDS Invert control2'              />
+  <property name='bbpll_ctrl_1'                           type='uchar'  volatile='1' writable='1' description='reg_addr_d63_0x003f  Table 25: BBPLL CONTROL: BPLL Control 1'                    />
+  <property name='bbpll_mustbe0x00'                       type='uchar'  volatile='1' writable='1' description='reg_addr_d64_0x0040  Table 25: BBPLL CONTROL: Must be 0'                         />
+  <property name='bbpll_fract_bb_freq_word_1'             type='uchar'  volatile='1' writable='1' description='reg_addr_d65_0x0041  Table 25: BBPLL CONTROL: Fractional BB Freq Word 1'         />
+  <property name='bbpll_fract_bb_freq_word_2'             type='uchar'  volatile='1' writable='1' description='reg_addr_d66_0x0042  Table 25: BBPLL CONTROL: Fractional BB Freq Word 2'         />
+  <property name='bbpll_fract_bb_freq_word_3'             type='uchar'  volatile='1' writable='1' description='reg_addr_d67_0x0043  Table 25: BBPLL CONTROL: Fractional BB Freq Word 3'         />
+  <property name='bbpll_integer_bb_freq_word'             type='uchar'  volatile='1' writable='1' description='reg_addr_d68_0x0044  Table 25: BBPLL CONTROL: Integer BB Freq Word'              />
+  <property name='bbpll_ref_clock_scaler'                 type='uchar'  volatile='1' writable='1' description='reg_addr_d69_0x0045  Table 25: BBPLL CONTROL: Ref Clock Scaler'                  />
+  <property name='bbpll_cp_current'                       type='uchar'  volatile='1' writable='1' description='reg_addr_d70_0x0046  Table 25: BBPLL CONTROL: CP Current'                        />
+  <property name='bbpll_msc_scale'                        type='uchar'  volatile='1' writable='1' description='reg_addr_d71_0x0047  Table 25: BBPLL CONTROL: MSC Scale'                         />
+  <property name='bbpll_loop_filter_1'                    type='uchar'  volatile='1' writable='1' description='reg_addr_d72_0x0048  Table 25: BBPLL CONTROL: Loop Filter 1'                     />
+  <property name='bbpll_loop_filter_2'                    type='uchar'  volatile='1' writable='1' description='reg_addr_d73_0x0049  Table 25: BBPLL CONTROL: Loop Filter 2'                     />
+  <property name='bbpll_loop_filter_3'                    type='uchar'  volatile='1' writable='1' description='reg_addr_d74_0x004a  Table 25: BBPLL CONTROL: Loop Filter 3'                     />
+  <property name='bbpll_vco_ctrl'                         type='uchar'  volatile='1' writable='1' description='reg_addr_d75_0x004b  Table 25: BBPLL CONTROL: VCO Control'                       />
+  <property name='bbpll_mustbe0x86'                       type='uchar'  volatile='1' writable='1' description='reg_addr_d76_0x004c  Table 25: BBPLL CONTROL: Must be_0x86'                      />
+  <property name='bpll_control_2'                         type='uchar'  volatile='1' writable='1' description='reg_addr_d77_0x004d  Table 25: BBPLL CONTROL: BPLL Control 2'                    />
+  <property name='bpll_control_3'                         type='uchar'  volatile='1' writable='1' description='reg_addr_d78_0x004e  Table 25: BBPLL CONTROL: BPLL Control 3'                    />
+  <property name='ocpi_pad_04f'                           type='uchar' padding='1' arraylength='1'/>      <!-- reg_addr_d79_0x004f                                                                   -->
+  <property name='power_down_override_rx_synth'           type='uchar'  volatile='1' writable='1' description='reg_addr_d80_0x0050  Table 26: POWER DOWN OVERRIDE: Rx Synth Power Down Override'      />
+  <property name='power_down_override_tx_synth'           type='uchar'  volatile='1' writable='1' description='reg_addr_d81_0x0051  Table 26: POWER DOWN OVERRIDE: TX Synth Power Down Override'      />
+  <property name='power_down_override_rx_control_0'       type='uchar'  volatile='1' writable='1' description='reg_addr_d82_0x0052  Table 26: POWER DOWN OVERRIDE: Control 0'                         />
+  <property name='power_down_override_mustbe0x00'         type='uchar'  volatile='1' writable='1' description='reg_addr_d83_0x0053  Table 26: POWER DOWN OVERRIDE: Must be 0'                         />
+  <property name='power_down_override_rx1_adc'            type='uchar'  volatile='1' writable='1' description='reg_addr_d84_0x0054  Table 26: POWER DOWN OVERRIDE: Rx1 ADC Power Down Override'       />
+  <property name='power_down_override_rx2_adc'            type='uchar'  volatile='1' writable='1' description='reg_addr_d85_0x0055  Table 26: POWER DOWN OVERRIDE: Rx2 ADC Power Down Override'       />
+  <property name='power_down_override_tx_analog'          type='uchar'  volatile='1' writable='1' description='reg_addr_d86_0x0056  Table 26: POWER DOWN OVERRIDE: Tx Analog Power Down Override 1'   />
+  <property name='power_down_override_analog'             type='uchar'  volatile='1' writable='1' description='reg_addr_d87_0x0057  Table 26: POWER DOWN OVERRIDE: Analog Power Down Override'        />
+  <property name='power_down_override_misc'               type='uchar'  volatile='1' writable='1' description='reg_addr_d88_0x0058  Table 26: POWER DOWN OVERRIDE: Misc Power Down Override'          />
+  <property name='ocpi_pad_059'                           type='uchar' padding='1' arraylength='5'/>      <!-- reg_addr_d89_0x0059                                                        -->
+  <!--                 pad 05a                                                                  2              reg_addr_d90_0x005a                                                        -->
+  <!--                 pad 05b                                                                  3              reg_addr_d91_0x005b                                                        -->
+  <!--                 pad 05c                                                                  4              reg_addr_d92_0x005c                                                        -->
+  <!--                 pad 05d                                                                  5              reg_addr_d93_0x005d                                                        -->
+  <property name='overflow_ch_1'                          type='uchar'  volatile='1'              description='reg_addr_d94_0x005e  Table 27: OVERFLOW: CH 1 Overflow'                     />
+  <property name='overflow_ch_2'                          type='uchar'  volatile='1'              description='reg_addr_d95_0x005f  Table 27: OVERFLOW: CH 2 Overflow'                     />
+  <property name='tx_filter_coef_addr'                    type='uchar'  volatile='1' writable='1' description='reg_addr_d96_0x0060  Table 28: Tx PROGRAMMABLE FIR FILTER: TX Filter Coefficient Address'     />
+  <property name='tx_filter_coef_write_data_1'            type='uchar'  volatile='1' writable='1' description='reg_addr_d97_0x0061  Table 28: Tx PROGRAMMABLE FIR FILTER: TX Filter Coefficient Write Data 1'/>
+  <property name='tx_filter_coef_write_data_2'            type='uchar'  volatile='1' writable='1' description='reg_addr_d98_0x0062  Table 28: Tx PROGRAMMABLE FIR FILTER: TX Filter Coefficient Write Data 2'/>
+  <property name='tx_filter_coef_read_data_1'             type='uchar'  volatile='1'              description='reg_addr_d99_0x0063  Table 28: Tx PROGRAMMABLE FIR FILTER: TX Filter Coefficient Read Data 1' />
+  <property name='tx_filter_coef_read_data_2'             type='uchar'  volatile='1'              description='reg_addr_d100_0x0064 Table 28: Tx PROGRAMMABLE FIR FILTER: TX Filter Coefficient Read Data 2' />
+  <property name='tx_filter_conf'                         type='uchar'  volatile='1' writable='1' description='reg_addr_d101_0x0065 Table 28: Tx PROGRAMMABLE FIR FILTER: TX Filter Configuration'           />
+  <property name='ocpi_pad_066'                           type='uchar' padding='1' arraylength='1'/>      <!-- reg_addr_d102_0x0066                                                        -->
+  <property name='tx_mon_low_gain'                        type='uchar'  volatile='1' writable='1' description='reg_addr_d103_0x0067 Table 29: Tx MONITOR: Tx Mon Low Gain'                  />
+  <property name='tx_mon_high_gain'                       type='uchar'  volatile='1' writable='1' description='reg_addr_d104_0x0068 Table 29: Tx MONITOR: Tx Mon High Gain'                 />
+  <property name='tx_mon_delay_counter'                   type='uchar'  volatile='1' writable='1' description='reg_addr_d105_0x0069 Table 29: Tx MONITOR: Tx Mon Delay Counter'             />
+  <property name='tx_mon_level_thresh'                    type='uchar'  volatile='1' writable='1' description='reg_addr_d106_0x006a Table 29: Tx MONITOR: Tx Level Threshold'               />
+  <property name='tx_mon_rssi1'                           type='uchar'  volatile='1'              description='reg_addr_d107_0x006b Table 29: Tx MONITOR: TX RSSI1'                         />
+  <property name='tx_mon_rssi2'                           type='uchar'  volatile='1'              description='reg_addr_d108_0x006c Table 29: Tx MONITOR: TX RSSI2'                         />
+  <property name='tx_mon_rssi_lsb'                        type='uchar'  volatile='1'              description='reg_addr_d109_0x006d Table 29: Tx MONITOR: TX RSSI LSB'                      />
+  <property name='tx_mon_tpm_mode_enable'                 type='uchar'  volatile='1' writable='1' description='reg_addr_d110_0x006e Table 29: Tx MONITOR: TPM Mode Enable'                  />
+  <property name='tx_mon_temp_gain_coef'                  type='uchar'  volatile='1' writable='1' description='reg_addr_d111_0x006f Table 29: Tx MONITOR: Temp Gain Coefficient'            />
+  <property name='tx_mon_1_config'                        type='uchar'  volatile='1' writable='1' description='reg_addr_d112_0x0070 Table 29: Tx MONITOR: Tx Mon 1 Config'                  />
+  <property name='tx_mon_2_config'                        type='uchar'  volatile='1' writable='1' description='reg_addr_d113_0x0071 Table 29: Tx MONITOR: Tx Mon 2 Config'                  />
+  <property name='ocpi_pad_072'                           type='uchar' padding='1' arraylength='1'/>      <!-- reg_addr_d114_0x0072                                                                              -->
+  <property name='tx_pwr_atten_tx1_atten_0'               type='uchar'  volatile='1' writable='1' description='reg_addr_d115_0x0073 Table 31: Tx POWER CONTROL AND ATTENUATION: Tx1 Atten 0'                      />
+  <property name='tx_pwr_atten_tx1_atten_1'               type='uchar'  volatile='1' writable='1' description='reg_addr_d116_0x0074 Table 31: Tx POWER CONTROL AND ATTENUATION: Tx1 Atten 1'                      />
+  <property name='tx_pwr_atten_tx2_atten_0'               type='uchar'  volatile='1' writable='1' description='reg_addr_d117_0x0075 Table 31: Tx POWER CONTROL AND ATTENUATION: Tx2 Atten 0'                      />
+  <property name='tx_pwr_atten_tx2_atten_1'               type='uchar'  volatile='1' writable='1' description='reg_addr_d118_0x0076 Table 31: Tx POWER CONTROL AND ATTENUATION: Tx2 Atten 1'                      />
+  <property name='tx_pwr_atten_tx_atten_offset'           type='uchar'  volatile='1' writable='1' description='reg_addr_d119_0x0077 Table 31: Tx POWER CONTROL AND ATTENUATION: Tx Atten Offset'                  />
+  <property name='tx_pwr_atten_tx_atten_thresh'           type='uchar'  volatile='1' writable='1' description='reg_addr_d120_0x0078 Table 31: Tx POWER CONTROL AND ATTENUATION: Tx Atten Threshold'               />
+  <property name='tx_pwr_atten_set_tx1_tx2'               type='uchar'  volatile='1' writable='1' description='reg_addr_d121_0x0079 Table 31: Tx POWER CONTROL AND ATTENUATION: Set Tx1/Tx2'                      />
+  <property name='ocpi_pad_07a'                           type='uchar' padding='1' arraylength='2'/>      <!-- reg_addr_d122_0x007a                                                                              -->
+  <!--                 pad 07b                                                                                 reg_addr_d123_0x007b                                                                              -->
+  <property name='tx_pwr_atten_immediate_update'          type='uchar'  volatile='1' writable='1' description='reg_addr_d124_0x007c Table 31: Tx POWER CONTROL AND ATTENUATION: Immediate Update'                 />
+  <property name='ocpi_pad_07d'                           type='uchar' padding='1' arraylength='17'/>     <!-- reg_addr_d125_0x007d                                                                                              -->
+  <!--                 pad 07e                                                                  2  of 17       reg_addr_d126_0x007e                                                                                              -->
+  <!--                 pad 07f                                                                  3  of 17       reg_addr_d127_0x007f                                                                                              -->
+  <!--                 pad 080                                                                  4  of 17       reg_addr_d128_0x0080                                                                                              -->
+  <!--                 pad 081                                                                  5  of 17       reg_addr_d129_0x0081                                                                                              -->
+  <!--                 pad 082                                                                  6  of 17       reg_addr_d130_0x0082                                                                                              -->
+  <!--                 pad 083                                                                  7  of 17       reg_addr_d131_0x0083                                                                                              -->
+  <!--                 pad 084                                                                  8  of 17       reg_addr_d132_0x0084                                                                                              -->
+  <!--                 pad 085                                                                  9  of 17       reg_addr_d133_0x0085                                                                                              -->
+  <!--                 pad 086                                                                  10 of 17       reg_addr_d134_0x0086                                                                                              -->
+  <!--                 pad 087                                                                  11 of 17       reg_addr_d135_0x0087                                                                                              -->
+  <!--                 pad 088                                                                  12 of 17       reg_addr_d136_0x0088                                                                                              -->
+  <!--                 pad 089                                                                  13 of 17       reg_addr_d137_0x0089                                                                                              -->
+  <!--                 pad 08a                                                                  14 of 17       reg_addr_d138_0x008a                                                                                              -->
+  <!--                 pad 08b                                                                  15 of 17       reg_addr_d139_0x008b                                                                                              -->
+  <!--                 pad 08c                                                                  16 of 17       reg_addr_d140_0x008c                                                                                              -->
+  <!--                 pad 08d                                                                  17 of 17       reg_addr_d141_0x008d                                                                                              -->
+  <property name='tx_pgo_phase_corr_tx1_out1'             type='uchar'  volatile='1' writable='1' description='reg_addr_d142_0x008e Table 32: Tx QUADRATURE CALIBRATION, PHASE, GAIN, AND OFFSET CORRECTION: Tx1 Out 1 Phase Corr'/>
+  <property name='tx_pgo_gain_corr_tx1_out1'              type='uchar'  volatile='1' writable='1' description='reg_addr_d143_0x008f Table 32: Tx QUADRATURE CALIBRATION, PHASE, GAIN, AND OFFSET CORRECTION: Tx1 Out 1 Gain Corr' />
+  <property name='tx_pgo_phase_corr_tx2_out1'             type='uchar'  volatile='1' writable='1' description='reg_addr_d144_0x0090 Table 32: Tx QUADRATURE CALIBRATION, PHASE, GAIN, AND OFFSET CORRECTION: Tx2 Out 1 Phase Corr'/>
+  <property name='tx_pgo_gain_corr_tx2_out1'              type='uchar'  volatile='1' writable='1' description='reg_addr_d145_0x0091 Table 32: Tx QUADRATURE CALIBRATION, PHASE, GAIN, AND OFFSET CORRECTION: Tx2 Out 1 Gain Corr' />
+  <property name='tx_pgo_offset_corr_tx1_out1_i'          type='uchar'  volatile='1' writable='1' description='reg_addr_d146_0x0092 Table 32: Tx QUADRATURE CALIBRATION, PHASE, GAIN, AND OFFSET CORRECTION: Tx1 Out 1 Offset I'  />
+  <property name='tx_pgo_offset_corr_tx1_out1_q'          type='uchar'  volatile='1' writable='1' description='reg_addr_d147_0x0093 Table 32: Tx QUADRATURE CALIBRATION, PHASE, GAIN, AND OFFSET CORRECTION: Tx1 Out 1 Offset Q'  />
+  <property name='tx_pgo_offset_corr_tx2_out1_i'          type='uchar'  volatile='1' writable='1' description='reg_addr_d148_0x0094 Table 32: Tx QUADRATURE CALIBRATION, PHASE, GAIN, AND OFFSET CORRECTION: Tx2 Out 1 Offset I'  />
+  <property name='tx_pgo_offset_corr_tx2_out1_q'          type='uchar'  volatile='1' writable='1' description='reg_addr_d149_0x0095 Table 32: Tx QUADRATURE CALIBRATION, PHASE, GAIN, AND OFFSET CORRECTION: Tx2 Out 1 Offset Q'  />
+  <property name='tx_pgo_phase_corr_tx1_out2'             type='uchar'  volatile='1' writable='1' description='reg_addr_d150_0x0096 Table 32: Tx QUADRATURE CALIBRATION, PHASE, GAIN, AND OFFSET CORRECTION: Tx1 Out 2 Phase Corr'/>
+  <property name='tx_pgo_gain_corr_tx1_out2'              type='uchar'  volatile='1' writable='1' description='reg_addr_d151_0x0097 Table 32: Tx QUADRATURE CALIBRATION, PHASE, GAIN, AND OFFSET CORRECTION: Tx1 Out 2 Gain Corr' />
+  <property name='tx_pgo_phase_corr_tx2_out2'             type='uchar'  volatile='1' writable='1' description='reg_addr_d152_0x0098 Table 32: Tx QUADRATURE CALIBRATION, PHASE, GAIN, AND OFFSET CORRECTION: Tx2 Out 2 Phase Corr'/>
+  <property name='tx_pgo_gain_corr_tx2_out2'              type='uchar'  volatile='1' writable='1' description='reg_addr_d153_0x0099 Table 32: Tx QUADRATURE CALIBRATION, PHASE, GAIN, AND OFFSET CORRECTION: Tx2 Out 2 Gain Corr' />
+  <property name='tx_pgo_offset_corr_tx1_out2_i'          type='uchar'  volatile='1' writable='1' description='reg_addr_d154_0x009a Table 32: Tx QUADRATURE CALIBRATION, PHASE, GAIN, AND OFFSET CORRECTION: Tx1 Out 2 Offset I'  />
+  <property name='tx_pgo_offset_corr_tx1_out2_q'          type='uchar'  volatile='1' writable='1' description='reg_addr_d155_0x009b Table 32: Tx QUADRATURE CALIBRATION, PHASE, GAIN, AND OFFSET CORRECTION: Tx1 Out 2 Offset Q'  />
+  <property name='tx_pgo_offset_corr_tx2_out2_i'          type='uchar'  volatile='1' writable='1' description='reg_addr_d156_0x009c Table 32: Tx QUADRATURE CALIBRATION, PHASE, GAIN, AND OFFSET CORRECTION: Tx2 Out 2 Offset I'  />
+  <property name='tx_pgo_offset_corr_tx2_out2_q'          type='uchar'  volatile='1' writable='1' description='reg_addr_d157_0x009d Table 32: Tx QUADRATURE CALIBRATION, PHASE, GAIN, AND OFFSET CORRECTION: Tx2 Out 2 Offset Q'  />
+  <property name='ocpi_pad_09e'                           type='uchar' padding='1' arraylength='1'/>     <!--  reg_addr_d158_0x009e                                                                                              -->
+  <property name='tx_quad_cal_pgo_force_bits'             type='uchar'  volatile='1' writable='1' description='reg_addr_d159_0x009f Table 32: Tx QUADRATURE CALIBRATION, PHASE, GAIN, AND OFFSET CORRECTION: Force Bits'          />
+  <property name='tx_quad_cal_nco_freq_phase_offset'      type='uchar'  volatile='1' writable='1' description='reg_addr_d160_0x00a0 Table 33: Tx QUADRATE CALIBRATION CONFIGURATION: Quad Cal NCO Freq & Phase Offset' />
+  <property name='tx_quad_cal_ctrl'                       type='uchar'  volatile='1' writable='1' description='reg_addr_d161_0x00a1 Table 33: Tx QUADRATE CALIBRATION CONFIGURATION: Quad Cal Control'                 />
+  <property name='tx_quad_cal_kexp_1'                     type='uchar'  volatile='1' writable='1' description='reg_addr_d162_0x00a2 Table 33: Tx QUADRATE CALIBRATION CONFIGURATION: Kexp 1'                           />
+  <property name='tx_quad_cal_kexp_2'                     type='uchar'  volatile='1' writable='1' description='reg_addr_d163_0x00a3 Table 33: Tx QUADRATE CALIBRATION CONFIGURATION: Kexp 2'                           />
+  <property name='tx_quad_cal_settle_count'               type='uchar'  volatile='1' writable='1' description='reg_addr_d164_0x00a4 Table 33: Tx QUADRATE CALIBRATION CONFIGURATION: QUAD Settle count'                />
+  <property name='tx_quad_cal_mag_ftest_thresh'           type='uchar'  volatile='1' writable='1' description='reg_addr_d165_0x00a5 Table 33: Tx QUADRATE CALIBRATION CONFIGURATION: Mag. Ftest Thresh'                />
+  <property name='tx_quad_cal_mag_ftest_thresh_2'         type='uchar'  volatile='1' writable='1' description='reg_addr_d166_0x00a6 Table 33: Tx QUADRATE CALIBRATION CONFIGURATION: Mag. Ftest Thresh 2'              />
+  <property name='tx_quad_cal_status_tx1'                 type='uchar'  volatile='1'              description='reg_addr_d167_0x00a7 Table 33: Tx QUADRATE CALIBRATION CONFIGURATION: Quad cal status Tx1'              />
+  <property name='tx_quad_cal_status_tx2'                 type='uchar'  volatile='1'              description='reg_addr_d168_0x00a8 Table 33: Tx QUADRATE CALIBRATION CONFIGURATION: Quad cal status Tx2'              />
+  <property name='tx_quad_cal_count'                      type='uchar'  volatile='1' writable='1' description='reg_addr_d169_0x00a9 Table 33: Tx QUADRATE CALIBRATION CONFIGURATION: Quad cal Count'                   />
+  <property name='tx_quad_cal_full_lmt_gain'              type='uchar'  volatile='1' writable='1' description='reg_addr_d170_0x00aa Table 33: Tx QUADRATE CALIBRATION CONFIGURATION: Tx Quad Full/LMT Gain'            />
+  <property name='tx_quad_cal_squarer_config'             type='uchar'  volatile='1' writable='1' description='reg_addr_d171_0x00ab Table 33: Tx QUADRATE CALIBRATION CONFIGURATION: Squarer Config'                   />
+  <property name='tx_quad_cal_atten'                      type='uchar'  volatile='1' writable='1' description='reg_addr_d172_0x00ac Table 33: Tx QUADRATE CALIBRATION CONFIGURATION: TX Quad Cal Atten'                />
+  <property name='tx_quad_cal_thresh_accum'               type='uchar'  volatile='1' writable='1' description='reg_addr_d173_0x00ad Table 33: Tx QUADRATE CALIBRATION CONFIGURATION: Thresh Accum'                     />
+  <property name='tx_quad_cal_lpf_gain'                   type='uchar'  volatile='1' writable='1' description='reg_addr_d174_0x00ae Table 33: Tx QUADRATE CALIBRATION CONFIGURATION: Tx Quad LPF Gain'                 />
+  <property name='ocpi_pad_0af'                           type='uchar' padding='1' arraylength='19'/>     <!-- reg_addr_d175_0x00af                                                                          -->
+  <!--                                                                                          2  of 19       reg_addr_d176_0x00b0                                                                          -->
+  <!--                                                                                          3  of 19       reg_addr_d177_0x00b1                                                                          -->
+  <!--                                                                                          4  of 19       reg_addr_d178_0x00b2                                                                          -->
+  <!--                                                                                          5  of 19       reg_addr_d179_0x00b3                                                                          -->
+  <!--                                                                                          6  of 19       reg_addr_d180_0x00b4                                                                          -->
+  <!--                                                                                          7  of 19       reg_addr_d181_0x00b5                                                                          -->
+  <!--                                                                                          8  of 19       reg_addr_d182_0x00b6                                                                          -->
+  <!--                                                                                          9  of 19       reg_addr_d183_0x00b7                                                                          -->
+  <!--                                                                                          10 of 19       reg_addr_d184_0x00b8                                                                          -->
+  <!--                                                                                          11 of 19       reg_addr_d185_0x00b9                                                                          -->
+  <!--                                                                                          12 of 19       reg_addr_d186_0x00ba                                                                          -->
+  <!--                                                                                          13 of 19       reg_addr_d187_0x00bb                                                                          -->
+  <!--                                                                                          14 of 19       reg_addr_d188_0x00bc                                                                          -->
+  <!--                                                                                          15 of 19       reg_addr_d189_0x00bd                                                                          -->
+  <!--                                                                                          16 of 19       reg_addr_d190_0x00be                                                                          -->
+  <!--                                                                                          17 of 19       reg_addr_d191_0x00bf                                                                          -->
+  <!--                                                                                          18 of 19       reg_addr_d192_0x00c0                                                                          -->
+  <!--                                                                                          19 of 19       reg_addr_d193_0x00c1                                                                          -->
+  <property name='tx_bbf_r1'                              type='uchar'  volatile='1' writable='1' description='reg_addr_d194_0x00c2 Table 34: Tx BASEBAND FILTER REGISTERS: Tx BBF R1'                        />
+  <property name='tx_bbf_r2'                              type='uchar'  volatile='1' writable='1' description='reg_addr_d195_0x00c3 Table 34: Tx BASEBAND FILTER REGISTERS: Tx BBF R2'                        />
+  <property name='tx_bbf_r3'                              type='uchar'  volatile='1' writable='1' description='reg_addr_d196_0x00c4 Table 34: Tx BASEBAND FILTER REGISTERS: Tx BBF R3'                        />
+  <property name='tx_bbf_r4'                              type='uchar'  volatile='1' writable='1' description='reg_addr_d197_0x00c5 Table 34: Tx BASEBAND FILTER REGISTERS: Tx BBF R4'                        />
+  <property name='tx_bbf_rp'                              type='uchar'  volatile='1' writable='1' description='reg_addr_d198_0x00c6 Table 34: Tx BASEBAND FILTER REGISTERS: Tx BBF RP'                        />
+  <property name='tx_bbf_c1'                              type='uchar'  volatile='1' writable='1' description='reg_addr_d199_0x00c7 Table 34: Tx BASEBAND FILTER REGISTERS: Tx BBF C1'                        />
+  <property name='tx_bbf_c2'                              type='uchar'  volatile='1' writable='1' description='reg_addr_d200_0x00c8 Table 34: Tx BASEBAND FILTER REGISTERS: Tx BBF C2'                        />
+  <property name='tx_bbf_cp'                              type='uchar'  volatile='1' writable='1' description='reg_addr_d201_0x00c9 Table 34: Tx BASEBAND FILTER REGISTERS: Tx BBF CP'                        />
+  <property name='tx_bbf_tuner_pd'                        type='uchar'  volatile='1' writable='1' description='reg_addr_d202_0x00ca Table 34: Tx BASEBAND FILTER REGISTERS: Tx Tuner PD'                      />
+  <property name='tx_bbf_r2b'                             type='uchar'  volatile='1' writable='1' description='reg_addr_d203_0x00cb Table 34: Tx BASEBAND FILTER REGISTERS: Tx BBF R2b'                       />
+  <property name='ocpi_pad_0cc'                           type='uchar' padding='1' arraylength='4'/>     <!--  reg_addr_d204_0x00cc                                                                           -->
+  <!--                                                                                          2 of 4         reg_addr_d205_0x00cd                                                                           -->
+  <!--                                                                                          3 of 4         reg_addr_d206_0x00ce                                                                           -->
+  <!--                                                                                          4 of 4         reg_addr_d207_0x00cf                                                                           -->
+  <property name='tx_secondf_config0'                     type='uchar'  volatile='1' writable='1' description='reg_addr_d208_0x00d0 Table 35: Tx SECONDARY FILTER REGISTERS: Config0'                          />
+  <property name='tx_secondf_resistor'                    type='uchar'  volatile='1' writable='1' description='reg_addr_d209_0x00d1 Table 35: Tx SECONDARY FILTER REGISTERS: Resistor'                         />
+  <property name='tx_secondf_capacitor'                   type='uchar'  volatile='1' writable='1' description='reg_addr_d210_0x00d2 Table 35: Tx SECONDARY FILTER REGISTERS: Capacitor'                        />
+  <property name='tx_secondf_mustbe0x60'                  type='uchar'  volatile='1' writable='1' description='reg_addr_d211_0x00d3 Table 35: Tx SECONDARY FILTER REGISTERS: Must be 0x60'                     />
+  <property name='ocpi_pad_0d4'                           type='uchar' padding='1' arraylength='2'/>      <!-- reg_addr_d212_0x00d4                                                                        -->
+  <!--                                                                                                         reg_addr_d213_0x00d5                                                                        -->
+  <property name='tx_bbf_tune_divider'                    type='uchar'  volatile='1' writable='1' description='reg_addr_d214_0x00d6 Table 38: Tx BBF TUNER CONFIGURATION: TX BBF Tune Divider'              />
+  <property name='tx_bbf_tune_mode'                       type='uchar'  volatile='1' writable='1' description='reg_addr_d215_0x00d7 Table 38: Tx BBF TUNER CONFIGURATION: TX BBF Tune Mode'                 />
+  <property name='ocpi_pad_0d8'                           type='uchar' padding='1' arraylength='24'/>     <!-- reg_addr_d216_0x00d8                                                                        -->
+  <!--                                                                                          2  of 24       reg_addr_d217_0x00d9                                                                        -->
+  <!--                                                                                          3  of 24       reg_addr_d218_0x00da                                                                        -->
+  <!--                                                                                          4  of 24       reg_addr_d219_0x00db                                                                        -->
+  <!--                                                                                          5  of 24       reg_addr_d220_0x00dc                                                                        -->
+  <!--                                                                                          6  of 24       reg_addr_d221_0x00dd                                                                        -->
+  <!--                                                                                          7  of 24       reg_addr_d222_0x00de                                                                        -->
+  <!--                                                                                          8  of 24       reg_addr_d223_0x00df                                                                        -->
+  <!--                                                                                          9  of 24       reg_addr_d224_0x00e0                                                                        -->
+  <!--                                                                                          10 of 24       reg_addr_d225_0x00e1                                                                        -->
+  <!--                                                                                          11 of 24       reg_addr_d226_0x00e2                                                                        -->
+  <!--                                                                                          12 of 24       reg_addr_d227_0x00e3                                                                        -->
+  <!--                                                                                          13 of 24       reg_addr_d228_0x00e4                                                                        -->
+  <!--                                                                                          14 of 24       reg_addr_d229_0x00e5                                                                        -->
+  <!--                                                                                          15 of 24       reg_addr_d230_0x00e6                                                                        -->
+  <!--                                                                                          16 of 24       reg_addr_d231_0x00e7                                                                        -->
+  <!--                                                                                          17 of 24       reg_addr_d232_0x00e8                                                                        -->
+  <!--                                                                                          18 of 24       reg_addr_d233_0x00e9                                                                        -->
+  <!--                                                                                          19 of 24       reg_addr_d234_0x00ea                                                                        -->
+  <!--                                                                                          20 of 24       reg_addr_d235_0x00eb                                                                        -->
+  <!--                                                                                          21 of 24       reg_addr_d236_0x00ec                                                                        -->
+  <!--                                                                                          22 of 24       reg_addr_d237_0x00ed                                                                        -->
+  <!--                                                                                          23 of 24       reg_addr_d238_0x00ee                                                                        -->
+  <!--                                                                                          24 of 24       reg_addr_d239_0x00ef                                                                        -->
+  <property name='rx_filter_coef_addr'                    type='uchar'  volatile='1' writable='1' description='reg_addr_d240_0x00f0 Table 39: Rx PROGRAMMABLE FIR FILTER: Rx Filter Coeff Addr'             />
+  <property name='rx_filter_coef_write_data_1'            type='uchar'  volatile='1' writable='1' description='reg_addr_d241_0x00f1 Table 39: Rx PROGRAMMABLE FIR FILTER: Rx Filter Coeff Data 1'           />
+  <property name='rx_filter_coef_write_data_2'            type='uchar'  volatile='1' writable='1' description='reg_addr_d242_0x00f2 Table 39: Rx PROGRAMMABLE FIR FILTER: Rx Filter Coeff Data 2'           />
+  <property name='rx_filter_coef_read_data_1'             type='uchar'  volatile='1'              description='reg_addr_d243_0x00f3 Table 39: Rx PROGRAMMABLE FIR FILTER: Rx Filter Coeff Read Data 1'      />
+  <property name='rx_filter_coef_read_data_2'             type='uchar'  volatile='1'              description='reg_addr_d244_0x00f4 Table 39: Rx PROGRAMMABLE FIR FILTER: Rx Filter Coeff Read Data 2'      />
+  <property name='rx_filter_conf'                         type='uchar'  volatile='1' writable='1' description='reg_addr_d245_0x00f5 Table 39: Rx PROGRAMMABLE FIR FILTER: Rx Filter Configuration'          />
+  <property name='rx_filter_gain'                         type='uchar'  volatile='1' writable='1' description='reg_addr_d246_0x00f6 Table 39: Rx PROGRAMMABLE FIR FILTER: Rx Filter Gain'                   />
+  <property name='ocpi_pad_0f7'                           type='uchar' padding='1' arraylength='3'/>      <!-- reg_addr_d247_0x00f7                                                                -->
+  <!--                                                                                                         reg_addr_d248_0x00f8                                                                -->
+  <!--                                                                                                         reg_addr_d249_0x00f9                                                                -->
+  <property name='gain_agc_config_1'                      type='uchar'  volatile='1' writable='1' description='reg_addr_d250_0x00fa Table 42: GAIN CONTROL SETUP: AGC Config1'                      />
+  <property name='gain_agc_config_2'                      type='uchar'  volatile='1' writable='1' description='reg_addr_d251_0x00fb Table 42: GAIN CONTROL SETUP: AGC config2'                      />
+  <property name='gain_agc_config_3'                      type='uchar'  volatile='1' writable='1' description='reg_addr_d252_0x00fc Table 42: GAIN CONTROL SETUP: AGC Config3'                      />
+  <property name='gain_max_lmt_full_gain'                 type='uchar'  volatile='1' writable='1' description='reg_addr_d253_0x00fd Table 42: GAIN CONTROL SETUP: Max LMT/Full Gain'                />
+  <property name='gain_peak_wait_time'                    type='uchar'  volatile='1' writable='1' description='reg_addr_d254_0x00fe Table 42: GAIN CONTROL SETUP: Peak Wait Time'                   />
+  <property name='ocpi_pad_0ff'                           type='uchar' padding='1' arraylength='1'/>      <!-- reg_addr_d255_0x00ff                                                                -->
+  <property name='gain_digital_gain'                      type='uchar'  volatile='1' writable='1' description='reg_addr_d256_0x0100 Table 42: GAIN CONTROL SETUP: Digital Gain'                     />
+  <property name='gain_agc_lock_level'                    type='uchar'  volatile='1' writable='1' description='reg_addr_d257_0x0101 Table 42: GAIN CONTROL SETUP: AGC Lock Level'                   />
+  <property name='ocpi_pad_102'                           type='uchar' padding='1' arraylength='1'/>      <!-- reg_addr_d258_0x0102                                                                -->
+  <property name='gain_gain_stp_config_1'                 type='uchar'  volatile='1' writable='1' description='reg_addr_d259_0x0103 Table 42: GAIN CONTROL SETUP: Gain Step Config 1'               />
+  <property name='gain_adc_small_overload_thresh'         type='uchar'  volatile='1' writable='1' description='reg_addr_d260_0x0104 Table 42: GAIN CONTROL SETUP: ADC Small Overload Threshold'     />
+  <property name='gain_adc_large_overload_thresh'         type='uchar'  volatile='1' writable='1' description='reg_addr_d261_0x0105 Table 42: GAIN CONTROL SETUP: ADC Large Overload Threshold'     />
+  <property name='gain_stp_config_2'                      type='uchar'  volatile='1' writable='1' description='reg_addr_d262_0x0106 Table 42: GAIN CONTROL SETUP: Gain Step Config 2'               />
+  <property name='gain_small_lmt_overload_thresh'         type='uchar'  volatile='1' writable='1' description='reg_addr_d263_0x0107 Table 42: GAIN CONTROL SETUP: Small LMT Overload Threshold'     />
+  <property name='gain_large_lmt_overload_thresh'         type='uchar'  volatile='1' writable='1' description='reg_addr_d264_0x0108 Table 42: GAIN CONTROL SETUP: Large LMT Overload Threshold'     />
+  <property name='gain_rx1_manual_lmt_full_gain'          type='uchar'  volatile='1' writable='1' description='reg_addr_d265_0x0109 Table 42: GAIN CONTROL SETUP: Rx1 Manual LMT/Full Gain'         />
+  <property name='gain_rx1_manual_lpf_gain'               type='uchar'  volatile='1' writable='1' description='reg_addr_d266_0x010a Table 42: GAIN CONTROL SETUP: Rx1 Manual LPF gain'              />
+  <property name='gain_rx1_manual_digitalforced_gain'     type='uchar'  volatile='1' writable='1' description='reg_addr_d267_0x010b Table 42: GAIN CONTROL SETUP: Rx1 Manual Digital/Forced Gain'   />
+  <property name='gain_rx2_manual_lmt_full_gain'          type='uchar'  volatile='1' writable='1' description='reg_addr_d268_0x010c Table 42: GAIN CONTROL SETUP: Rx2 Manual LMT/Full Gain'         />
+  <property name='gain_rx2_manual_lpf_gain'               type='uchar'  volatile='1' writable='1' description='reg_addr_d269_0x010d Table 42: GAIN CONTROL SETUP: Rx2 Manual LPF Gain'              />
+  <property name='gain_rx2_manual_digitalforced_gain'     type='uchar'  volatile='1' writable='1' description='reg_addr_d270_0x010e Table 42: GAIN CONTROL SETUP: Rx2 Manual Digital/Forced Gain'   />
+  <property name='ocpi_pad_10f'                           type='uchar' padding='1' arraylength='1'/>     <!--  reg_addr_d271_0x010f                                                                   -->
+  <property name='fast_agc_config_1'                      type='uchar'  volatile='1' writable='1' description='reg_addr_d272_0x0110 Table 44: FAST ATTACK AGC SETUP: Config 1'                         />
+  <property name='fast_agc_config_2_settling_delay'       type='uchar'  volatile='1' writable='1' description='reg_addr_d273_0x0111 Table 44: FAST ATTACK AGC SETUP: Config 2 & Settling Delay'        />
+  <property name='fast_agc_energy_lost_thresh'            type='uchar'  volatile='1' writable='1' description='reg_addr_d274_0x0112 Table 44: FAST ATTACK AGC SETUP: Energy Lost Threshold'            />
+  <property name='fast_agc_stronger_signal_thresh'        type='uchar'  volatile='1' writable='1' description='reg_addr_d275_0x0113 Table 44: FAST ATTACK AGC SETUP: Stronger Signal Threshold'        />
+  <property name='fast_agc_low_power_thresh'              type='uchar'  volatile='1' writable='1' description='reg_addr_d276_0x0114 Table 44: FAST ATTACK AGC SETUP: Low Power Threshold'              />
+  <property name='fast_agc_strong_signal_freeze'          type='uchar'  volatile='1' writable='1' description='reg_addr_d277_0x0115 Table 44: FAST ATTACK AGC SETUP: Strong Signal Freeze'             />
+  <property name='fast_agc_final_over_range_and_opt_gain' type='uchar'  volatile='1' writable='1' description='reg_addr_d278_0x0116 Table 44: FAST ATTACK AGC SETUP: Final Over Range and Opt Gain'    />
+  <property name='fast_agc_energy_detect_count'           type='uchar'  volatile='1' writable='1' description='reg_addr_d279_0x0117 Table 44: FAST ATTACK AGC SETUP: Energy Detect Count'              />
+  <property name='fast_agc_agcll_upper_limit'             type='uchar'  volatile='1' writable='1' description='reg_addr_d280_0x0118 Table 44: FAST ATTACK AGC SETUP: AGCLL Upper Limit'                />
+  <property name='fast_agc_gain_lock_exit_count'          type='uchar'  volatile='1' writable='1' description='reg_addr_d281_0x0119 Table 44: FAST ATTACK AGC SETUP: Gain Lock Exit Count'             />
+  <property name='fast_agc_initial_lmt_gain_limit'        type='uchar'  volatile='1' writable='1' description='reg_addr_d282_0x011a Table 44: FAST ATTACK AGC SETUP: Initial LMT Gain Limit'           />
+  <property name='fast_agc_increment_time'                type='uchar'  volatile='1' writable='1' description='reg_addr_d283_0x011b Table 44: FAST ATTACK AGC SETUP: Increment Time'                   />
+  <property name='ocpi_pad_11c'                           type='uchar' padding='1' arraylength='4'/>      <!-- reg_addr_d284_0x011c                                                                        -->
+  <!--                                                                                                         reg_addr_d285_0x011d                                                                        -->
+  <!--                                                                                                         reg_addr_d286_0x011e                                                                        -->
+  <!--                                                                                                         reg_addr_d287_0x011f                                                                        -->
+  <property name='slowhybrid_agc_inner_low_thresh'        type='uchar'  volatile='1' writable='1' description='reg_addr_d288_0x0120 Table 45: SLOW ATTACK AND HYBRID AGC: AGC Inner Low Threshold'          />
+  <property name='slowhybrid_agc_lmt_overload_counters'   type='uchar'  volatile='1' writable='1' description='reg_addr_d289_0x0121 Table 45: SLOW ATTACK AND HYBRID AGC: LMT Overload Counters'            />
+  <property name='slowhybrid_agc_adc_overload_counters'   type='uchar'  volatile='1' writable='1' description='reg_addr_d290_0x0122 Table 45: SLOW ATTACK AND HYBRID AGC: ADC Overload Counters'            />
+  <property name='slowhybrid_agc_gain_stp1'               type='uchar'  volatile='1' writable='1' description='reg_addr_d291_0x0123 Table 45: SLOW ATTACK AND HYBRID AGC: Gain Step1'                       />
+  <property name='slowhybrid_agc_gain_update_counter1'    type='uchar'  volatile='1'              description='reg_addr_d292_0x0124 Table 45: SLOW ATTACK AND HYBRID AGC: Gain Update Counter1'             />
+  <property name='slowhybrid_agc_gain_update_counter2'    type='uchar'  volatile='1'              description='reg_addr_d293_0x0125 Table 45: SLOW ATTACK AND HYBRID AGC: Gain Update Counter2'             />
+  <property name='ocpi_pad_126'                           type='uchar' padding='1' arraylength='2'/>      <!-- reg_addr_d294_0x0126                                                                        -->
+  <!--                                                                                                         reg_addr_d295_0x0127                                                                        -->
+  <property name='slowhybrid_agc_digital_sat_counter'     type='uchar'  volatile='1' writable='1' description='reg_addr_d296_0x0128 Table 45: SLOW ATTACK AND HYBRID AGC: Digital Sat Counter'              />
+  <property name='slowhybrid_agc_outer_power_threshs'     type='uchar'  volatile='1' writable='1' description='reg_addr_d297_0x0129 Table 45: SLOW ATTACK AND HYBRID AGC: Outer Power Thresholds'           />
+  <property name='slowhybrid_agc_gain_stp_2'              type='uchar'  volatile='1' writable='1' description='reg_addr_d298_0x012a Table 45: SLOW ATTACK AND HYBRID AGC: Gain Step 2'                      />
+  <property name='ocpi_pad_12b'                           type='uchar' padding='1' arraylength='1'/>      <!-- reg_addr_d299_0x012b                                                                    -->
+  <property name='ext_lna_high_gain'                      type='uchar'  volatile='1' writable='1' description='reg_addr_d300_0x012c Table 46: EXTERNAL LNA GAIN WORD: Ext LNA High Gain'                />
+  <property name='ext_lna_low_gain'                       type='uchar'  volatile='1' writable='1' description='reg_addr_d301_0x012d Table 46: EXTERNAL LNA GAIN WORD: Ext LNA Low Gain'                 />
+  <property name='ocpi_pad_12e'                           type='uchar' padding='1' arraylength='2'/>      <!-- reg_addr_d302_0x012e                                                            -->
+  <!--                                                                                                         reg_addr_d303_0x012f                                                            -->
+  <property name='gain_table'                             type='uchar'  volatile='1' writable='1' description='reg_addr_d304_0x0130 Table 47: AGC GAIN TABLE: Gain Table Address'               />
+  <property name='gain_table_write_data1'                 type='uchar'  volatile='1' writable='1' description='reg_addr_d305_0x0131 Table 47: AGC GAIN TABLE: Gain Table Write Data1'           />
+  <property name='gain_table_write_data2'                 type='uchar'  volatile='1' writable='1' description='reg_addr_d306_0x0132 Table 47: AGC GAIN TABLE: Gain Table Write Data2'           />
+  <property name='gain_table_write_data3'                 type='uchar'  volatile='1' writable='1' description='reg_addr_d307_0x0133 Table 47: AGC GAIN TABLE: Gain Table Write Data 3'          />
+  <property name='gain_table_read_data1'                  type='uchar'  volatile='1'              description='reg_addr_d308_0x0134 Table 47: AGC GAIN TABLE: Gain Table Read Data 1'           />
+  <property name='gain_table_read_data2'                  type='uchar'  volatile='1'              description='reg_addr_d309_0x0135 Table 47: AGC GAIN TABLE: Gain Table Read Data 2'           />
+  <property name='gain_table_read_data3'                  type='uchar'  volatile='1'              description='reg_addr_d310_0x0136 Table 47: AGC GAIN TABLE: Gain Table Read Data 3'           />
+  <property name='gain_table_config'                      type='uchar'  volatile='1' writable='1' description='reg_addr_d311_0x0137 Table 47: AGC GAIN TABLE: Gain Table Config'                />
+  <property name='mixer_subtable'                         type='uchar'  volatile='1' writable='1' description='reg_addr_d312_0x0138 Table 48: MIXER SUBTABLE: Mixer Subtable Address'             />
+  <property name='mixer_subtable_gain_write'              type='uchar'  volatile='1' writable='1' description='reg_addr_d313_0x0139 Table 48: MIXER SUBTABLE: Mixer Subtable Gain Word Write'     />
+  <property name='mixer_subtable_bias_write'              type='uchar'  volatile='1' writable='1' description='reg_addr_d314_0x013a Table 48: MIXER SUBTABLE: Mixer Subtable Bias Word Write'     />
+  <property name='mixer_subtable_ctrl_write'              type='uchar'  volatile='1' writable='1' description='reg_addr_d315_0x013b Table 48: MIXER SUBTABLE: Mixer Subtable Control Word Write'  />
+  <property name='mixer_subtable_gain_read'               type='uchar'  volatile='1'              description='reg_addr_d316_0x013c Table 48: MIXER SUBTABLE: Mixer Subtable Gain Word Read'      />
+  <property name='mixer_subtable_bias_read'               type='uchar'  volatile='1'              description='reg_addr_d317_0x013d Table 48: MIXER SUBTABLE: Mixer Subtable Bias Word Read'      />
+  <property name='mixer_subtable_ctrl_read'               type='uchar'  volatile='1'              description='reg_addr_d318_0x013e Table 48: MIXER SUBTABLE: Mixer Subtable Control Word Read'   />
+  <property name='mixer_subtable_config'                  type='uchar'  volatile='1' writable='1' description='reg_addr_d319_0x013f Table 48: MIXER SUBTABLE: Mixer Subtable Config'              />
+  <property name='calib_gain_table_word'                  type='uchar'  volatile='1' writable='1' description='reg_addr_d320_0x0140 Table 49: CALIBRATION GAIN TABLE: Word_Address'                     />
+  <property name='calib_gain_table_diff_worderror_write'  type='uchar'               writable='1' description='reg_addr_d321_0x0141 Table 49: CALIBRATION GAIN TABLE: Gain Diff Word/Error Write'       />
+  <property name='calib_gain_table_gain_error_read'       type='uchar'  volatile='1'              description='reg_addr_d322_0x0142 Table 49: CALIBRATION GAIN TABLE: Gain Error Read'                  />
+  <property name='calib_gain_table_config'                type='uchar'  volatile='1' writable='1' description='reg_addr_d323_0x0143 Table 49: CALIBRATION GAIN TABLE: Config'                           />
+  <property name='calib_gain_table_lna_diff_read_back'    type='uchar'  volatile='1'              description='reg_addr_d324_0x0144 Table 49: CALIBRATION GAIN TABLE: LNA Gain Diff Read Back'          />
+  <property name='gen_calib_max_mixer_gain_index'         type='uchar'  volatile='1' writable='1' description='reg_addr_d325_0x0145 Table 50: GENERAL CALIBRATION: Max Mixer Calibration Gain Index' />
+  <property name='gen_calib_temp_gain_coef'               type='uchar'  volatile='1' writable='1' description='reg_addr_d326_0x0146 Table 50: GENERAL CALIBRATION: Temp Gain Coefficient'            />
+  <property name='gen_calib_settle_time'                  type='uchar'  volatile='1' writable='1' description='reg_addr_d327_0x0147 Table 50: GENERAL CALIBRATION: Settle Time'                      />
+  <property name='gen_calib_measure_duration'             type='uchar'  volatile='1' writable='1' description='reg_addr_d328_0x0148 Table 50: GENERAL CALIBRATION: Measure Duration'                 />
+  <property name='gen_calib_cal_temp_sensor_word'         type='uchar'  volatile='1' writable='1' description='reg_addr_d329_0x0149 Table 50: GENERAL CALIBRATION: Cal Temp sensor word'             />
+  <property name='ocpi_pad_14a'                           type='uchar' padding='1' arraylength='6'/>      <!-- reg_addr_d330_0x014a                                                                            -->
+  <!--                                                                                          2              reg_addr_d331_0x014b                                                                            -->
+  <!--                                                                                          3              reg_addr_d332_0x014c                                                                            -->
+  <!--                                                                                          4              reg_addr_d333_0x014d                                                                            -->
+  <!--                                                                                          5              reg_addr_d334_0x014e                                                                            -->
+  <!--                                                                                          6              reg_addr_d335_0x014f                                                                            -->
+  <property name='rssi_measure_duration_01'               type='uchar'  volatile='1' writable='1' description='reg_addr_d336_0x0150 Table 51: RSSI MEASUREMENT CONFIGURATION: Measure Duration 0,1'             />
+  <property name='rssi_measure_duration_23'               type='uchar'  volatile='1' writable='1' description='reg_addr_d337_0x0151 Table 51: RSSI MEASUREMENT CONFIGURATION: Measure Duration 2,3'             />
+  <property name='rssi_weight_0'                          type='uchar'  volatile='1' writable='1' description='reg_addr_d338_0x0152 Table 51: RSSI MEASUREMENT CONFIGURATION: RSSI Weight 0'                    />
+  <property name='rssi_weight_1'                          type='uchar'  volatile='1' writable='1' description='reg_addr_d339_0x0153 Table 51: RSSI MEASUREMENT CONFIGURATION: RSSI Weight 1'                    />
+  <property name='rssi_weight_2'                          type='uchar'  volatile='1' writable='1' description='reg_addr_d340_0x0154 Table 51: RSSI MEASUREMENT CONFIGURATION: RSSI Weight 2'                    />
+  <property name='rssi_weight_3'                          type='uchar'  volatile='1' writable='1' description='reg_addr_d341_0x0155 Table 51: RSSI MEASUREMENT CONFIGURATION: RSSI Weight 3'                    />
+  <property name='rssi_delay'                             type='uchar'  volatile='1' writable='1' description='reg_addr_d342_0x0156 Table 51: RSSI MEASUREMENT CONFIGURATION: RSSI delay'                       />
+  <property name='rssi_wait_time'                         type='uchar'  volatile='1' writable='1' description='reg_addr_d343_0x0157 Table 51: RSSI MEASUREMENT CONFIGURATION: RSSI wait time'                   />
+  <property name='rssi_config'                            type='uchar'  volatile='1' writable='1' description='reg_addr_d344_0x0158 Table 51: RSSI MEASUREMENT CONFIGURATION: RSSI Config'                      />
+  <property name='ocpi_pad_159'                           type='uchar' padding='1' arraylength='3'/>      <!-- reg_addr_d345_0x0159                                                                            -->
+  <!--                                                                                                         reg_addr_d346_0x015a                                                                            -->
+  <!--                                                                                                         reg_addr_d347_0x015b                                                                            -->
+  <property name='rssi_dec_power_duration_0'              type='uchar'  volatile='1' writable='1' description='reg_addr_d348_0x015c Table 51: RSSI MEASUREMENT CONFIGURATION: Dec Power Duration'               />
+  <property name='rssi_lna_gain'                          type='uchar'  volatile='1' writable='1' description='reg_addr_d349_0x015d Table 51: RSSI MEASUREMENT CONFIGURATION: LNA Gain'                         />
+  <property name='ocpi_pad_15e'                           type='uchar' padding='1' arraylength='3'/>      <!-- reg_addr_d350_0x015e                                                        -->
+  <!--                                                                                                         reg_addr_d351_0x015f                                                        -->
+  <!--                                                                                                         reg_addr_d352_0x0160                                                        -->
+  <property name='power_ch1_rx_filter_power'              type='uchar'  volatile='1'              description='reg_addr_d353_0x0161 Table 53: POWER WORD: CH1 Rx filter Power'              />
+  <property name='ocpi_pad_162'                           type='uchar' padding='1' arraylength='1'/>      <!-- reg_addr_d354_0x0162                                                        -->
+  <property name='power_ch2_rx_filter_power'              type='uchar'  volatile='1'              description='reg_addr_d355_0x0163 Table 53: POWER WORD: CH2 Rx filter Power'              />
+  <property name='ocpi_pad_164'                           type='uchar' padding='1' arraylength='5'/>      <!-- reg_addr_d356_0x0164                                                                       -->
+  <!--                                                                                          2              reg_addr_d357_0x0165                                                                       -->
+  <!--                                                                                          3              reg_addr_d358_0x0166                                                                       -->
+  <!--                                                                                          4              reg_addr_d359_0x0167                                                                       -->
+  <!--                                                                                          5              reg_addr_d360_0x0168                                                                       -->
+  <property name='calibration_config_1'                   type='uchar'  volatile='1' writable='1' description='reg_addr_d361_0x0169 Table 54: Rx QUADRATURE CALIBRATION: Calibration Config 1'             />
+  <property name='calibration_mustbe0x75'                 type='uchar'  volatile='1' writable='1' description='reg_addr_d362_0x016a Table 54: Rx QUADRATURE CALIBRATION: Must be 0x75'                     />
+  <property name='calibration_mustbe0x95'                 type='uchar'  volatile='1' writable='1' description='reg_addr_d363_0x016b Table 54: Rx QUADRATURE CALIBRATION: Must be 0x95'                     />
+  <property name='ocpi_pad_16c'                           type='uchar' padding='1' arraylength='4'/>      <!-- reg_addr_d364_0x016c                                                                   -->
+  <!--                                                                                          2              reg_addr_d365_0x016d                                                                   -->
+  <!--                                                                                          3              reg_addr_d366_0x016e                                                                   -->
+  <!--                                                                                          4              reg_addr_d367_0x016f                                                                   -->
+  <property name='rx_pgo_phase_corr_rx1_ina'              type='uchar'  volatile='1' writable='1' description='reg_addr_d368_0x0170 Table 55: Rx PHASE AND GAIN CORRECTION: Rx1A Phase Corr'           />
+  <property name='rx_pgo_gain_corr_rx1_ina'               type='uchar'  volatile='1' writable='1' description='reg_addr_d369_0x0171 Table 55: Rx PHASE AND GAIN CORRECTION: Rx1A Gain Corr'            />
+  <property name='rx_pgo_phase_corr_rx2_ina'              type='uchar'  volatile='1' writable='1' description='reg_addr_d370_0x0172 Table 55: Rx PHASE AND GAIN CORRECTION: Rx2A Phase Corr'           />
+  <property name='rx_pgo_gain_corr_rx2_ina'               type='uchar'  volatile='1' writable='1' description='reg_addr_d371_0x0173 Table 55: Rx PHASE AND GAIN CORRECTION: Rx2A Gain Corr'            />
+  <property name='rx_pgo_offset_corr_rx1_ina_q'           type='uchar'  volatile='1' writable='1' description='reg_addr_d372_0x0174 Table 55: Rx PHASE AND GAIN CORRECTION: Rx1A Q Offset'             />
+  <property name='rx_pgo_offset_corr_rx1_ina'             type='uchar'  volatile='1' writable='1' description='reg_addr_d373_0x0175 Table 55: Rx PHASE AND GAIN CORRECTION: Rx1A Offset'               />
+  <property name='rx_pgo_offset_corr_ina'                 type='uchar'  volatile='1' writable='1' description='reg_addr_d374_0x0176 Table 55: Rx PHASE AND GAIN CORRECTION: Input A Offsets'           />
+  <property name='rx_pgo_offset_corr_rx2_ina'             type='uchar'  volatile='1' writable='1' description='reg_addr_d375_0x0177 Table 55: Rx PHASE AND GAIN CORRECTION: Rx2A Offset'               />
+  <property name='rx_pgo_offset_corr_rx2_ina_i'           type='uchar'  volatile='1' writable='1' description='reg_addr_d376_0x0178 Table 55: Rx PHASE AND GAIN CORRECTION: Rx2A I Offset'             />
+  <property name='rx_pgo_phase_corr_rx1_inbc'             type='uchar'  volatile='1' writable='1' description='reg_addr_d377_0x0179 Table 55: Rx PHASE AND GAIN CORRECTION: Rx1B/C Phase Corr'         />
+  <property name='rx_pgo_gain_corr_rx1_inbc'              type='uchar'  volatile='1' writable='1' description='reg_addr_d378_0x017a Table 55: Rx PHASE AND GAIN CORRECTION: Rx1B/C Gain Corr'          />
+  <property name='rx_pgo_phase_corr_rx2_inbc'             type='uchar'  volatile='1' writable='1' description='reg_addr_d379_0x017b Table 55: Rx PHASE AND GAIN CORRECTION: Rx2B/C Phase Corr'         />
+  <property name='rx_pgo_gain_corr_rx2_inbc'              type='uchar'  volatile='1' writable='1' description='reg_addr_d380_0x017c Table 55: Rx PHASE AND GAIN CORRECTION: Rx2B/C Gain Corr'          />
+  <property name='rx_pgo_offset_corr_rx1_inbc_q'          type='uchar'  volatile='1' writable='1' description='reg_addr_d381_0x017d Table 55: Rx PHASE AND GAIN CORRECTION: Rx1B/C Q Offset'           />
+  <property name='rx_pgo_offset_corr_rx1_inbc_i'          type='uchar'  volatile='1' writable='1' description='reg_addr_d382_0x017e Table 55: Rx PHASE AND GAIN CORRECTION: Rx1B/C I Offset'           />
+  <property name='rx_pgo_offset_corr_inpbc'               type='uchar'  volatile='1' writable='1' description='reg_addr_d383_0x017f Table 55: Rx PHASE AND GAIN CORRECTION: Input B/C Offsets'         />
+  <property name='rx_pgo_offset_corr_rx2_inbc'            type='uchar'  volatile='1' writable='1' description='reg_addr_d384_0x0180 Table 55: Rx PHASE AND GAIN CORRECTION: Rx2 B/C Offset'            />
+  <property name='rx_pgo_offset_corr_rx2_inbc_i'          type='uchar'  volatile='1' writable='1' description='reg_addr_d385_0x0181 Table 55: Rx PHASE AND GAIN CORRECTION: Rx2 B/C I Offset'          />
+  <property name='rx_pgo_force_bits'                      type='uchar'  volatile='1' writable='1' description='reg_addr_d386_0x0182 Table 55: Rx PHASE AND GAIN CORRECTION: Force Bits'                />
+  <property name='ocpi_pad_183'                           type='uchar' padding='1' arraylength='2'/>      <!-- reg_addr_d387_0x0183                                                                  -->
+  <!--                                                                                                         reg_addr_d388_0x0184                                                                  -->
+  <property name='rx_dc_offset_wait_count'                type='uchar'  volatile='1' writable='1' description='reg_addr_d389_0x0185 Table 56: Rx DC OFFSET CONTROL: Wait Count'                       />
+  <property name='rx_dc_offset_count'                     type='uchar'  volatile='1' writable='1' description='reg_addr_d390_0x0186 Table 56: Rx DC OFFSET CONTROL: RF DC Offset Count'               />
+  <property name='rx_dc_offset_config_1'                  type='uchar'  volatile='1' writable='1' description='reg_addr_d391_0x0187 Table 56: Rx DC OFFSET CONTROL: RF DC Offset Config 1'            />
+  <property name='rx_dc_offset_atten'                     type='uchar'  volatile='1' writable='1' description='reg_addr_d392_0x0188 Table 56: Rx DC OFFSET CONTROL: RF DC Offset Attenuation'         />
+  <property name='rx_dc_offset_mustbe0x30'                type='uchar'  volatile='1' writable='1' description='reg_addr_d393_0x0189 Table 56: Rx DC OFFSET CONTROL: Must be 0x30'                     />
+  <property name='ocpi_pad_18a'                           type='uchar' padding='1' arraylength='1'/>      <!-- reg_addr_d394_0x018a                                                                  -->
+  <property name='rx_dc_offset_config2'                   type='uchar'  volatile='1' writable='1' description='reg_addr_d395_0x018b Table 56: Rx DC OFFSET CONTROL: DC Offset Config2'                />
+  <property name='rx_dc_offset_rf_cal_gain_index'         type='uchar'  volatile='1' writable='1' description='reg_addr_d396_0x018c Table 56: Rx DC OFFSET CONTROL: RF Cal Gain Index'                />
+  <property name='rx_dc_offset_soi_thresh'                type='uchar'  volatile='1' writable='1' description='reg_addr_d397_0x018d Table 56: Rx DC OFFSET CONTROL: SOI Threshold'                    />
+  <property name='ocpi_pad_18e'                           type='uchar' padding='1' arraylength='2'/>      <!-- reg_addr_d398_0x018e                                                                  -->
+  <!--                                                                                                         reg_addr_d399_0x018f                                                                  -->
+  <property name='rx_dc_offset_bb_shift'                  type='uchar'  volatile='1' writable='1' description='reg_addr_d400_0x0190 Table 56: Rx DC OFFSET CONTROL: BB DC Offset Shift'               />
+  <property name='rx_dc_offset_bb_fast_settle_shift'      type='uchar'  volatile='1' writable='1' description='reg_addr_d401_0x0191 Table 56: Rx DC OFFSET CONTROL: BB DC Offset Fast Settle Shift'   />
+  <property name='rx_dc_offset_bb_fast_settle_dur'        type='uchar'  volatile='1' writable='1' description='reg_addr_d402_0x0192 Table 56: Rx DC OFFSET CONTROL: BB Fast Settle Dur'               />
+  <property name='rx_dc_offset_bb_count'                  type='uchar'  volatile='1' writable='1' description='reg_addr_d403_0x0193 Table 56: Rx DC OFFSET CONTROL: BB DC Offset Count'               />
+  <property name='rx_dc_offset_bb_atten'                  type='uchar'  volatile='1' writable='1' description='reg_addr_d404_0x0194 Table 56: Rx DC OFFSET CONTROL: BB DC Offset Attenuation'         />
+  <property name='ocpi_pad_195'                           type='uchar' padding='1' arraylength='5'/>      <!-- reg_addr_d405_0x0195                                                             -->
+  <!--                                                                                          2              reg_addr_d406_0x0196                                                             -->
+  <!--                                                                                          3              reg_addr_d407_0x0197                                                             -->
+  <!--                                                                                          4              reg_addr_d408_0x0198                                                             -->
+  <!--                                                                                          5              reg_addr_d409_0x0199                                                             -->
+  <property name='rx_bb_dc_offset_rx1_word_i_msb'         type='uchar'  volatile='1'              description='reg_addr_d410_0x019a Table 60: Rx BB DC OFFSET: RX1 BB DC word I MSB'             />
+  <property name='rx_bb_dc_offset_rx1_word_i_lsb'         type='uchar'  volatile='1'              description='reg_addr_d411_0x019b Table 60: Rx BB DC OFFSET: RX1 BB DC word I LSB'             />
+  <property name='rx_bb_dc_offset_rx1_word_q_msb'         type='uchar'  volatile='1'              description='reg_addr_d412_0x019c Table 60: Rx BB DC OFFSET: RX1 BB DC word Q MSB'             />
+  <property name='rx_bb_dc_offset_rx1_word_q_lsb'         type='uchar'  volatile='1'              description='reg_addr_d413_0x019d Table 60: Rx BB DC OFFSET: RX1 BB DC word Q LSB'             />
+  <property name='rx_bb_dc_offset_rx2_word_i_msb'         type='uchar'  volatile='1'              description='reg_addr_d414_0x019e Table 60: Rx BB DC OFFSET: RX2 BB DC word I MSB'             />
+  <property name='rx_bb_dc_offset_rx2_word_i_lsb'         type='uchar'  volatile='1'              description='reg_addr_d415_0x019f Table 60: Rx BB DC OFFSET: RX2 BB DC word I LSB'             />
+  <property name='rx_bb_dc_offset_rx2_word_q_msb'         type='uchar'  volatile='1'              description='reg_addr_d416_0x01a0 Table 60: Rx BB DC OFFSET: RX2 BB DC word Q MSB'             />
+  <property name='rx_bb_dc_offset_rx2_word_q_lsb'         type='uchar'  volatile='1'              description='reg_addr_d417_0x01a1 Table 60: Rx BB DC OFFSET: RX2 BB DC word Q LSB'             />
+  <property name='rx_bb_dc_offset_track_corr_word_i_msb'  type='uchar'  volatile='1'              description='reg_addr_d418_0x01a2 Table 60: Rx BB DC OFFSET: BB Track corr word I MSB'         />
+  <property name='rx_bb_dc_offset_track_corr_word_i_lsb'  type='uchar'  volatile='1'              description='reg_addr_d419_0x01a3 Table 60: Rx BB DC OFFSET: BB Track corr word I LSB'         />
+  <property name='rx_bb_dc_offset_track_corr_word_q_msb'  type='uchar'  volatile='1'              description='reg_addr_d420_0x01a4 Table 60: Rx BB DC OFFSET: BB Track corr word Q MSB'         />
+  <property name='rx_bb_dc_offset_track_corr_word_q_lsb'  type='uchar'  volatile='1'              description='reg_addr_d421_0x01a5 Table 60: Rx BB DC OFFSET: BB Track corr word Q LSB'         />
+  <property name='ocpi_pad_1a6'                           type='uchar' padding='1' arraylength='1'/>      <!-- reg_addr_d422_0x01a6                                                           -->
+  <property name='rssi_readback_rx1_symbol'               type='uchar'  volatile='1'              description='reg_addr_d423_0x01a7 Table 61: RSSI READBACK: Rx1 RSSI Symbol'                  />
+  <property name='rssi_readback_rx1_preamble'             type='uchar'  volatile='1'              description='reg_addr_d424_0x01a8 Table 61: RSSI READBACK: Rx1 RSSI preamble'                />
+  <property name='rssi_readback_rx2_symbol'               type='uchar'  volatile='1'              description='reg_addr_d425_0x01a9 Table 61: RSSI READBACK: Rx2 RSSI symbol'                  />
+  <property name='rssi_readback_rx2_preamble'             type='uchar'  volatile='1'              description='reg_addr_d426_0x01aa Table 61: RSSI READBACK: Rx2 RSSI preamble'                />
+  <property name='rssi_readback_symbol_lsb'               type='uchar'  volatile='1'              description='reg_addr_d427_0x01ab Table 61: RSSI READBACK: Symbol LSB'                       />
+  <property name='rssi_readback_preamble_lsb'             type='uchar'  volatile='1'              description='reg_addr_d428_0x01ac Table 61: RSSI READBACK: Preamble LSB'                     />
+  <property name='ocpi_pad_1ad'                           type='uchar' padding='1' arraylength='46'/>     <!-- reg_addr_d429_0x01ad                                   -->
+  <!--                                                                                          2              reg_addr_d430_0x01ae                                   -->
+  <!--                                                                                          3              reg_addr_d431_0x01af                                   -->
+  <!--                                                                                          4              reg_addr_d432_0x01b0                                   -->
+  <!--                                                                                          5              reg_addr_d433_0x01b1                                   -->
+  <!--                                                                                          6              reg_addr_d434_0x01b2                                   -->
+  <!--                                                                                          7              reg_addr_d435_0x01b3                                   -->
+  <!--                                                                                          8              reg_addr_d436_0x01b4                                   -->
+  <!--                                                                                          9              reg_addr_d437_0x01b5                                   -->
+  <!--                                                                                          10             reg_addr_d438_0x01b6                                   -->
+  <!--                                                                                          11             reg_addr_d439_0x01b7                                   -->
+  <!--                                                                                          12             reg_addr_d440_0x01b8                                   -->
+  <!--                                                                                          13             reg_addr_d441_0x01b9                                   -->
+  <!--                                                                                          14             reg_addr_d442_0x01ba                                   -->
+  <!--                                                                                          15             reg_addr_d443_0x01bb                                   -->
+  <!--                                                                                          16             reg_addr_d444_0x01bc                                   -->
+  <!--                                                                                          17             reg_addr_d445_0x01bd                                   -->
+  <!--                                                                                          18             reg_addr_d446_0x01be                                   -->
+  <!--                                                                                          19             reg_addr_d447_0x01bf                                   -->
+  <!--                                                                                          20             reg_addr_d448_0x01c0                                   -->
+  <!--                                                                                          21             reg_addr_d449_0x01c1                                   -->
+  <!--                                                                                          22             reg_addr_d450_0x01c2                                   -->
+  <!--                                                                                          23             reg_addr_d451_0x01c3                                   -->
+  <!--                                                                                          24             reg_addr_d452_0x01c4                                   -->
+  <!--                                                                                          25             reg_addr_d453_0x01c5                                   -->
+  <!--                                                                                          26             reg_addr_d454_0x01c6                                   -->
+  <!--                                                                                          27             reg_addr_d455_0x01c7                                   -->
+  <!--                                                                                          28             reg_addr_d456_0x01c8                                   -->
+  <!--                                                                                          29             reg_addr_d457_0x01c9                                   -->
+  <!--                                                                                          30             reg_addr_d458_0x01ca                                   -->
+  <!--                                                                                          31             reg_addr_d459_0x01cb                                   -->
+  <!--                                                                                          32             reg_addr_d460_0x01cc                                   -->
+  <!--                                                                                          33             reg_addr_d461_0x01cd                                   -->
+  <!--                                                                                          34             reg_addr_d462_0x01ce                                   -->
+  <!--                                                                                          35             reg_addr_d463_0x01cf                                   -->
+  <!--                                                                                          36             reg_addr_d464_0x01d0                                   -->
+  <!--                                                                                          37             reg_addr_d465_0x01d1                                   -->
+  <!--                                                                                          38             reg_addr_d466_0x01d2                                   -->
+  <!--                                                                                          39             reg_addr_d467_0x01d3                                   -->
+  <!--                                                                                          40             reg_addr_d468_0x01d4                                   -->
+  <!--                                                                                          41             reg_addr_d469_0x01d5                                   -->
+  <!--                                                                                          42             reg_addr_d470_0x01d6                                   -->
+  <!--                                                                                          43             reg_addr_d471_0x01d7                                   -->
+  <!--                                                                                          44             reg_addr_d472_0x01d8                                   -->
+  <!--                                                                                          45             reg_addr_d473_0x01d9                                   -->
+  <!--                                                                                          46             reg_addr_d474_0x01da                                   -->
+  <property name='rx_tia_config'                          type='uchar'  volatile='1' writable='1' description='reg_addr_d475_0x01db Table 62: Rx TIA: Rx TIA Config'                    />
+  <property name='rx_tia_1_c_lsb'                         type='uchar'  volatile='1' writable='1' description='reg_addr_d476_0x01dc Table 62: Rx TIA: TIA1 C LSB'                       />
+  <property name='rx_tia_1_c_msb'                         type='uchar'  volatile='1' writable='1' description='reg_addr_d477_0x01dd Table 62: Rx TIA: TIA1 C MSB'                       />
+  <property name='rx_tia_2_c_lsb'                         type='uchar'  volatile='1' writable='1' description='reg_addr_d478_0x01de Table 62: Rx TIA: TIA2 C LSB'                       />
+  <property name='rx_tia_2_c_msb'                         type='uchar'  volatile='1' writable='1' description='reg_addr_d479_0x01df Table 62: Rx TIA: TIA2 C MSB'                       />
+  <property name='rx_bbf_rx1_r1a'                         type='uchar'  volatile='1' writable='1' description='reg_addr_d480_0x01e0 Table 65: Rx BFF: Rx1 BBF R1A'                      />
+  <property name='rx_bbf_rx2_r1a'                         type='uchar'  volatile='1' writable='1' description='reg_addr_d481_0x01e1 Table 65: Rx BFF: Rx2 BBF R1A'                      />
+  <property name='rx_bff_rx1_tune_ctrl'                   type='uchar'  volatile='1' writable='1' description='reg_addr_d482_0x01e2 Table 65: Rx BFF: Rx1 Tune Control'                 />
+  <property name='rx_bff_rx2_tune_ctrl'                   type='uchar'  volatile='1' writable='1' description='reg_addr_d483_0x01e3 Table 65: Rx BFF: Rx2 Tune Control'                 />
+  <property name='rx_bff_rx1_bbf_r5'                      type='uchar'  volatile='1' writable='1' description='reg_addr_d484_0x01e4 Table 65: Rx BFF: Rx1 BBF R5'                       />
+  <property name='rx_bff_rx2_bbf_r5'                      type='uchar'  volatile='1' writable='1' description='reg_addr_d485_0x01e5 Table 65: Rx BFF: Rx2 BBF R5'                       />
+  <property name='rx_bbf_r2346'                           type='uchar'  volatile='1' writable='1' description='reg_addr_d486_0x01e6 Table 65: Rx BFF: Rx BBF R2346'                     />
+  <property name='rx_bbf_c1_msb'                          type='uchar'  volatile='1' writable='1' description='reg_addr_d487_0x01e7 Table 65: Rx BFF: Rx BBF C1 MSB'                    />
+  <property name='rx_bbf_c1_lsb'                          type='uchar'  volatile='1' writable='1' description='reg_addr_d488_0x01e8 Table 65: Rx BFF: Rx BBF C1 LSB'                    />
+  <property name='rx_bbf_c2_msb'                          type='uchar'  volatile='1' writable='1' description='reg_addr_d489_0x01e9 Table 65: Rx BFF: Rx BBF C2 MSB'                    />
+  <property name='rx_bbf_c2_lsb'                          type='uchar'  volatile='1' writable='1' description='reg_addr_d490_0x01ea Table 65: Rx BFF: Rx BBF C2 LSB'                    />
+  <property name='rx_bbf_c3_msb'                          type='uchar'  volatile='1' writable='1' description='reg_addr_d491_0x01eb Table 65: Rx BFF: Rx BBF C3 MSB'                    />
+  <property name='rx_bbf_c3_lsb'                          type='uchar'  volatile='1' writable='1' description='reg_addr_d492_0x01ec Table 65: Rx BFF: Rx BBF C3 LSB'                    />
+  <property name='rx_bbf_cc1_ctr'                         type='uchar'  volatile='1' writable='1' description='reg_addr_d493_0x01ed Table 65: Rx BFF: Rx BBF CC1 Ctr'                   />
+  <property name='rx_bbf_mustbe0x60'                      type='uchar'  volatile='1' writable='1' description='reg_addr_d494_0x01ee Table 65: Rx BFF: Must be 0x60'                     />
+  <property name='rx_bbf_cc2_ctr'                         type='uchar'  volatile='1' writable='1' description='reg_addr_d495_0x01ef Table 65: Rx BFF: Rx BBF CC2 Ctr'                   />
+  <property name='rx_bbf_pow_rz_byte1'                    type='uchar'  volatile='1' writable='1' description='reg_addr_d496_0x01f0 Table 65: Rx BFF: Rx BBF Pow Rz Byte1'              />
+  <property name='rx_bbf_cc3_ctr'                         type='uchar'  volatile='1' writable='1' description='reg_addr_d497_0x01f1 Table 65: Rx BFF: Rx BBF CC3 Ctr'                   />
+  <property name='rx_bbf_r5_tune'                         type='uchar'  volatile='1' writable='1' description='reg_addr_d498_0x01f2 Table 65: Rx BFF: Rx BBF R5 Tune'                   />
+  <property name='rx_bbf_tune'                            type='uchar'  volatile='1' writable='1' description='reg_addr_d499_0x01f3 Table 65: Rx BFF: Rx BBF Tune'                      />
+  <property name='rx_bff_rx1_bbf_man_gain'                type='uchar'  volatile='1' writable='1' description='reg_addr_d500_0x01f4 Table 65: Rx BFF: Rx1 BBF Man Gain'                 />
+  <property name='rx_bff_rx2_bbf_man_gain'                type='uchar'  volatile='1' writable='1' description='reg_addr_d501_0x01f5 Table 65: Rx BFF: Rx2 BBF Man Gain'                 />
+  <property name='ocpi_pad_1f6'                           type='uchar' padding='1' arraylength='2'/>      <!-- reg_addr_d502_0x01f6                                   -->
+  <!--                                                                                                         reg_addr_d503_0x01f7                                   -->
+  <property name='rx_bbf_tune_config_divide'              type='uchar'  volatile='1' writable='1' description='reg_addr_d504_0x01f8 Table 66: Rx BBF TUNER CONFIGURATION: RX BBF Tune Divide'               />
+  <property name='rx_bbf_tune_config_config'              type='uchar'  volatile='1' writable='1' description='reg_addr_d505_0x01f9 Table 66: Rx BBF TUNER CONFIGURATION: RX BBF Tune Config'               />
+  <property name='rx_bbf_tune_config_mustbe0x01'          type='uchar'  volatile='1' writable='1' description='reg_addr_d506_0x01fa Table 66: Rx BBF TUNER CONFIGURATION: Must be 0x01'                     />
+  <property name='rx_bbf_tune_config_rx_bbbw_mhz'         type='uchar'  volatile='1' writable='1' description='reg_addr_d507_0x01fb Table 66: Rx BBF TUNER CONFIGURATION: Rx BBBW MHz'                      />
+  <property name='rx_bbf_tune_config_rx_bbbw_khz'         type='uchar'  volatile='1' writable='1' description='reg_addr_d508_0x01fc Table 66: Rx BBF TUNER CONFIGURATION: Rx BBBW kHz'                      />
+  <property name='ocpi_pad_1fd'                           type='uchar' padding='1' arraylength='51'/>     <!-- reg_addr_d509_0x01fd                                   -->
+  <!--                                                                                          2              reg_addr_d510_0x01fe                                   -->
+  <!--                                                                                          3              reg_addr_d511_0x01ff                                   -->
+  <!--                                                                                          4              reg_addr_d512_0x0200                                   -->
+  <!--                                                                                          5              reg_addr_d513_0x0201                                   -->
+  <!--                                                                                          6              reg_addr_d514_0x0202                                   -->
+  <!--                                                                                          7              reg_addr_d515_0x0203                                   -->
+  <!--                                                                                          8              reg_addr_d516_0x0204                                   -->
+  <!--                                                                                          9              reg_addr_d517_0x0205                                   -->
+  <!--                                                                                          10             reg_addr_d518_0x0206                                   -->
+  <!--                                                                                          11             reg_addr_d519_0x0207                                   -->
+  <!--                                                                                          12             reg_addr_d520_0x0208                                   -->
+  <!--                                                                                          13             reg_addr_d521_0x0209                                   -->
+  <!--                                                                                          14             reg_addr_d522_0x020a                                   -->
+  <!--                                                                                          15             reg_addr_d523_0x020b                                   -->
+  <!--                                                                                          16             reg_addr_d524_0x020c                                   -->
+  <!--                                                                                          17             reg_addr_d525_0x020d                                   -->
+  <!--                                                                                          18             reg_addr_d526_0x020e                                   -->
+  <!--                                                                                          19             reg_addr_d527_0x020f                                   -->
+  <!--                                                                                          20             reg_addr_d528_0x0210                                   -->
+  <!--                                                                                          21             reg_addr_d529_0x0211                                   -->
+  <!--                                                                                          22             reg_addr_d530_0x0212                                   -->
+  <!--                                                                                          23             reg_addr_d531_0x0213                                   -->
+  <!--                                                                                          24             reg_addr_d532_0x0214                                   -->
+  <!--                                                                                          25             reg_addr_d533_0x0215                                   -->
+  <!--                                                                                          26             reg_addr_d534_0x0216                                   -->
+  <!--                                                                                          27             reg_addr_d535_0x0217                                   -->
+  <!--                                                                                          28             reg_addr_d536_0x0218                                   -->
+  <!--                                                                                          29             reg_addr_d537_0x0219                                   -->
+  <!--                                                                                          30             reg_addr_d538_0x021a                                   -->
+  <!--                                                                                          31             reg_addr_d539_0x021b                                   -->
+  <!--                                                                                          32             reg_addr_d540_0x021c                                   -->
+  <!--                                                                                          33             reg_addr_d541_0x021d                                   -->
+  <!--                                                                                          34             reg_addr_d542_0x021e                                   -->
+  <!--                                                                                          35             reg_addr_d543_0x021f                                   -->
+  <!--                                                                                          36             reg_addr_d544_0x0220                                   -->
+  <!--                                                                                          37             reg_addr_d545_0x0221                                   -->
+  <!--                                                                                          38             reg_addr_d546_0x0222                                   -->
+  <!--                                                                                          39             reg_addr_d547_0x0223                                   -->
+  <!--                                                                                          40             reg_addr_d548_0x0224                                   -->
+  <!--                                                                                          41             reg_addr_d549_0x0225                                   -->
+  <!--                                                                                          42             reg_addr_d550_0x0226                                   -->
+  <!--                                                                                          43             reg_addr_d551_0x0227                                   -->
+  <!--                                                                                          44             reg_addr_d552_0x0228                                   -->
+  <!--                                                                                          45             reg_addr_d553_0x0229                                   -->
+  <!--                                                                                          46             reg_addr_d554_0x022a                                   -->
+  <!--                                                                                          47             reg_addr_d555_0x022b                                   -->
+  <!--                                                                                          48             reg_addr_d556_0x022c                                   -->
+  <!--                                                                                          49             reg_addr_d557_0x022d                                   -->
+  <!--                                                                                          50             reg_addr_d558_0x022e                                   -->
+  <!--                                                                                          51             reg_addr_d559_0x022f                                   -->
+  <property name='rx_synth_disable_vco_cal'               type='uchar'  volatile='1' writable='1' description='reg_addr_d560_0x0230 Table 67: Rx SYNTHESIZER: Disable VCO Cal'                  />
+  <property name='rx_synth_integer_byte_0'                type='uchar'  volatile='1' writable='1' description='reg_addr_d561_0x0231 Table 67: Rx SYNTHESIZER: RX Integer Byte 0'                />
+  <property name='rx_synth_integer_byte_1'                type='uchar'  volatile='1' writable='1' description='reg_addr_d562_0x0232 Table 67: Rx SYNTHESIZER: RX Integer Byte 1'                />
+  <property name='rx_synth_fract_byte_0'                  type='uchar'  volatile='1' writable='1' description='reg_addr_d563_0x0233 Table 67: Rx SYNTHESIZER: RX Fractional Byte 0'             />
+  <property name='rx_synth_fract_byte_1'                  type='uchar'  volatile='1' writable='1' description='reg_addr_d564_0x0234 Table 67: Rx SYNTHESIZER: RX Fractional Byte 1'             />
+  <property name='rx_synth_fract_byte_2'                  type='uchar'  volatile='1' writable='1' description='reg_addr_d565_0x0235 Table 67: Rx SYNTHESIZER: RX Fractional Byte 2'             />
+  <property name='rx_synth_force_alc'                     type='uchar'  volatile='1' writable='1' description='reg_addr_d566_0x0236 Table 67: Rx SYNTHESIZER: RX Force ALC'                     />
+  <property name='rx_synth_force_vco_tune_0'              type='uchar'  volatile='1' writable='1' description='reg_addr_d567_0x0237 Table 67: Rx SYNTHESIZER: RX Force VCO Tune 0'              />
+  <property name='rx_synth_force_vco_tune_1'              type='uchar'  volatile='1' writable='1' description='reg_addr_d568_0x0238 Table 67: Rx SYNTHESIZER: RX Force VCO Tune 1'              />
+  <property name='rx_synth_alc_varactor'                  type='uchar'  volatile='1' writable='1' description='reg_addr_d569_0x0239 Table 67: Rx SYNTHESIZER: RX ALC/Varactor'                  />
+  <property name='rx_synth_vco_output'                    type='uchar'  volatile='1' writable='1' description='reg_addr_d570_0x023a Table 67: Rx SYNTHESIZER: RX VCO Output'                    />
+  <property name='rx_synth_cp_current'                    type='uchar'  volatile='1' writable='1' description='reg_addr_d571_0x023b Table 67: Rx SYNTHESIZER: RX CP Current'                    />
+  <property name='rx_synth_cp_offset'                     type='uchar'  volatile='1' writable='1' description='reg_addr_d572_0x023c Table 67: Rx SYNTHESIZER: RX CP Offset'                     />
+  <property name='rx_synth_cp_config'                     type='uchar'  volatile='1' writable='1' description='reg_addr_d573_0x023d Table 67: Rx SYNTHESIZER: RX CP Config'                     />
+  <property name='rx_synth_loop_filter_1'                 type='uchar'  volatile='1' writable='1' description='reg_addr_d574_0x023e Table 67: Rx SYNTHESIZER: RX Loop Filter 1'                 />
+  <property name='rx_synth_loop_filter_2'                 type='uchar'  volatile='1' writable='1' description='reg_addr_d575_0x023f Table 67: Rx SYNTHESIZER: RX Loop Filter 2'                 />
+  <property name='rx_synth_loop_filter_3'                 type='uchar'  volatile='1' writable='1' description='reg_addr_d576_0x0240 Table 67: Rx SYNTHESIZER: RX Loop Filter 3'                 />
+  <property name='rx_synth_dithercp_cal'                  type='uchar'  volatile='1' writable='1' description='reg_addr_d577_0x0241 Table 67: Rx SYNTHESIZER: RX Dither/CP Cal'                 />
+  <property name='rx_synth_vco_bias_1'                    type='uchar'  volatile='1' writable='1' description='reg_addr_d578_0x0242 Table 67: Rx SYNTHESIZER: RX VCO Bias 1'                    />
+  <property name='rx_synth_mustbe0x0d'                    type='uchar'  volatile='1' writable='1' description='reg_addr_d579_0x0243 Table 67: Rx SYNTHESIZER: Must be 0x0D'                     />
+  <property name='rx_synth_cal_status'                    type='uchar'  volatile='1'              description='reg_addr_d580_0x0244 Table 67: Rx SYNTHESIZER: RX Cal Status'                    />
+  <property name='rx_synth_mustbe0x00'                    type='uchar'  volatile='1' writable='1' description='reg_addr_d581_0x0245 Table 67: Rx SYNTHESIZER: Must be 0x00'                     />
+  <property name='rx_synth_mustbe0x02'                    type='uchar'  volatile='1' writable='1' description='reg_addr_d582_0x0246 Table 67: Rx SYNTHESIZER: Set to 0x02 (Must be 0x02)'       />
+  <property name='rx_synth_cp_ovrg_vco_lock'              type='uchar'  volatile='1'              description='reg_addr_d583_0x0247 Table 67: Rx SYNTHESIZER: RX CP Ovrg/VCO Lock'              />
+  <property name='rx_synth_mustbe0x0b'                    type='uchar'  volatile='1' writable='1' description='reg_addr_d584_0x0248 Table 67: Rx SYNTHESIZER: Set to 0x0B (Must be 0x0B)'       />
+  <property name='rx_synth_vco_cal'                       type='uchar'  volatile='1' writable='1' description='reg_addr_d585_0x0249 Table 67: Rx SYNTHESIZER: RX VCO Cal'                       />
+  <property name='rx_synth_lock_detect_config'            type='uchar'  volatile='1' writable='1' description='reg_addr_d586_0x024a Table 67: Rx SYNTHESIZER: RX Lock Detect Config'            />
+  <property name='rx_synth_mustbe0x17'                    type='uchar'  volatile='1' writable='1' description='reg_addr_d587_0x024b Table 67: Rx SYNTHESIZER: Must be 0x17'                     />
+  <property name='rx_synth_mustbe0x00_also'               type='uchar'  volatile='1' writable='1' description='reg_addr_d588_0x024c Table 67: Rx SYNTHESIZER: Must be 0x00'                     />
+  <property name='rx_synth_mustbe0x00_also_also'          type='uchar'  volatile='1' writable='1' description='reg_addr_d589_0x024d Table 67: Rx SYNTHESIZER: Must be 0x00'                     />
+  <property name='ocpi_pad_24e'                           type='uchar' padding='1' arraylength='2'/>      <!-- reg_addr_d590_0x024e                                                            -->
+  <!--                                                                                                         reg_addr_d591_0x024f                                                            -->
+  <property name='rx_synth_must_be_0x70'                  type='uchar'  volatile='1' writable='1' description='reg_addr_d592_0x0250 Table 67: Rx SYNTHESIZER: Set to 0x70 (Must be 0x70)'       />
+  <property name='rx_synth_vco_varactor_ctrl_1'           type='uchar'  volatile='1' writable='1' description='reg_addr_d593_0x0251 Table 67: Rx SYNTHESIZER: RX VCO Varactor Control 1'        />
+  <property name='ocpi_pad_252'                           type='uchar' padding='1' arraylength='8'/>      <!-- reg_addr_d594_0x0252                                   -->
+  <!--                                                                                          2              reg_addr_d595_0x0253                                   -->
+  <!--                                                                                          3              reg_addr_d596_0x0254                                   -->
+  <!--                                                                                          4              reg_addr_d597_0x0255                                   -->
+  <!--                                                                                          5              reg_addr_d598_0x0256                                   -->
+  <!--                                                                                          6              reg_addr_d599_0x0257                                   -->
+  <!--                                                                                          7              reg_addr_d600_0x0258                                   -->
+  <!--                                                                                          8              reg_addr_d601_0x0259                                   -->
+  <property name='rx_fast_lock_setup'                     type='uchar'  volatile='1' writable='1' description='reg_addr_d602_0x025a Table 71: Rx FAST LOCK: Rx Fast Lock Setup'               />
+  <property name='rx_fast_lock_setup_init_delay'          type='uchar'  volatile='1' writable='1' description='reg_addr_d603_0x025b Table 71: Rx FAST LOCK: Rx Fast Lock Setup Init Delay'    />
+  <property name='rx_fast_lock_program_addr'              type='uchar'  volatile='1' writable='1' description='reg_addr_d604_0x025c Table 71: Rx FAST LOCK: Rx Fast Lock Program Address'     />
+  <property name='rx_fast_lock_program_data'              type='uchar'  volatile='1' writable='1' description='reg_addr_d605_0x025d Table 71: Rx FAST LOCK: Rx Fast Lock Program Data'        />
+  <property name='rx_fast_lock_program_read'              type='uchar'  volatile='1'              description='reg_addr_d606_0x025e Table 71: Rx FAST LOCK: Rx Fast Lock Program Read'        />
+  <property name='rx_fast_lock_program_ctrl'              type='uchar'  volatile='1' writable='1' description='reg_addr_d607_0x025f Table 71: Rx FAST LOCK: Rx Fast Lock Program Control'     />
+  <property name='ocpi_pad_260'                           type='uchar' padding='1' arraylength='1'/>      <!-- reg_addr_d608_0x0260                                   -->
+  <property name='rx_lo_gen_power_mode'                   type='uchar'  volatile='1' writable='1' description='reg_addr_d609_0x0261 Table 72: Rx LO GENERATION: Rx LO Gen Power Mode'             />
+  <property name='ocpi_pad_262'                           type='uchar' padding='1' arraylength='14'/>     <!-- reg_addr_d610_0x0262                                   -->
+  <!--                                                                                          2              reg_addr_d611_0x0263                                   -->
+  <!--                                                                                          3              reg_addr_d612_0x0264                                   -->
+  <!--                                                                                          4              reg_addr_d613_0x0265                                   -->
+  <!--                                                                                          5              reg_addr_d614_0x0266                                   -->
+  <!--                                                                                          6              reg_addr_d615_0x0267                                   -->
+  <!--                                                                                          7              reg_addr_d616_0x0268                                   -->
+  <!--                                                                                          8              reg_addr_d617_0x0269                                   -->
+  <!--                                                                                          9              reg_addr_d618_0x026a                                   -->
+  <!--                                                                                          10             reg_addr_d619_0x026b                                   -->
+  <!--                                                                                          11             reg_addr_d620_0x026c                                   -->
+  <!--                                                                                          12             reg_addr_d621_0x026d                                   -->
+  <!--                                                                                          13             reg_addr_d622_0x026e                                   -->
+  <!--                                                                                          14             reg_addr_d623_0x026f                                   -->
+  <property name='tx_synth_disable_vco_cal'               type='uchar'  volatile='1' writable='1' description='reg_addr_d624_0x0270 Table 73: Tx SYNTHESIZER: Disable VCO Cal'               />
+  <property name='tx_synth_integer_byte_0'                type='uchar'  volatile='1' writable='1' description='reg_addr_d625_0x0271 Table 73: Tx SYNTHESIZER: Integer Byte 0'                />
+  <property name='tx_synth_integer_byte_1'                type='uchar'  volatile='1' writable='1' description='reg_addr_d626_0x0272 Table 73: Tx SYNTHESIZER: Integer Byte 1'                />
+  <property name='tx_synth_fract_byte_0'                  type='uchar'  volatile='1' writable='1' description='reg_addr_d627_0x0273 Table 73: Tx SYNTHESIZER: Fractional Byte 0'             />
+  <property name='tx_synth_fract_byte_1'                  type='uchar'  volatile='1' writable='1' description='reg_addr_d628_0x0274 Table 73: Tx SYNTHESIZER: Fractional Byte 1'             />
+  <property name='tx_synth_fract_byte_2'                  type='uchar'  volatile='1' writable='1' description='reg_addr_d629_0x0275 Table 73: Tx SYNTHESIZER: Fractional Byte 2'             />
+  <property name='tx_synth_force_alc'                     type='uchar'  volatile='1' writable='1' description='reg_addr_d630_0x0276 Table 73: Tx SYNTHESIZER: Force ALC'                     />
+  <property name='tx_synth_force_vco_tune_0'              type='uchar'  volatile='1' writable='1' description='reg_addr_d631_0x0277 Table 73: Tx SYNTHESIZER: Force VCO Tune 0'              />
+  <property name='tx_synth_force_vco_tune_1'              type='uchar'  volatile='1' writable='1' description='reg_addr_d632_0x0278 Table 73: Tx SYNTHESIZER: Force VCO Tune 1'              />
+  <property name='tx_synth_alcvaract_or'                  type='uchar'  volatile='1' writable='1' description='reg_addr_d633_0x0279 Table 73: Tx SYNTHESIZER: ALC/Varactor'                  />
+  <property name='tx_synth_vco_output'                    type='uchar'  volatile='1' writable='1' description='reg_addr_d634_0x027a Table 73: Tx SYNTHESIZER: VCO Output'                    />
+  <property name='tx_synth_cp_current'                    type='uchar'  volatile='1' writable='1' description='reg_addr_d635_0x027b Table 73: Tx SYNTHESIZER: CP Current'                    />
+  <property name='tx_synth_cp_offset'                     type='uchar'  volatile='1' writable='1' description='reg_addr_d636_0x027c Table 73: Tx SYNTHESIZER: CP Offset'                     />
+  <property name='tx_synth_cp_config'                     type='uchar'  volatile='1' writable='1' description='reg_addr_d637_0x027d Table 73: Tx SYNTHESIZER: CP Config'                     />
+  <property name='tx_synth_loop_filter_1'                 type='uchar'  volatile='1' writable='1' description='reg_addr_d638_0x027e Table 73: Tx SYNTHESIZER: Loop Filter 1'                 />
+  <property name='tx_synth_loop_filter_2'                 type='uchar'  volatile='1' writable='1' description='reg_addr_d639_0x027f Table 73: Tx SYNTHESIZER: Loop Filter 2'                 />
+  <property name='tx_synth_loop_filter_3'                 type='uchar'  volatile='1' writable='1' description='reg_addr_d640_0x0280 Table 73: Tx SYNTHESIZER: Loop Filter 3'                 />
+  <property name='tx_synth_dithercp_cal'                  type='uchar'  volatile='1' writable='1' description='reg_addr_d641_0x0281 Table 73: Tx SYNTHESIZER: Dither/CP Cal'                 />
+  <property name='tx_synth_vco_bias_1'                    type='uchar'  volatile='1' writable='1' description='reg_addr_d642_0x0282 Table 73: Tx SYNTHESIZER: VCO Bias 1'                    />
+  <property name='tx_synth_mustbe0x0d'                    type='uchar'  volatile='1' writable='1' description='reg_addr_d643_0x0283 Table 73: Tx SYNTHESIZER: Must be 0x0D'                  />
+  <property name='tx_synth_cal_status'                    type='uchar'  volatile='1'              description='reg_addr_d644_0x0284 Table 73: Tx SYNTHESIZER: Cal Status'                    />
+  <property name='tx_synth_mustbe0x00'                    type='uchar'  volatile='1' writable='1' description='reg_addr_d645_0x0285 Table 73: Tx SYNTHESIZER: Must be 0x00'                  />
+  <property name='tx_synth_mustbe0x02'                    type='uchar'  volatile='1' writable='1' description='reg_addr_d646_0x0286 Table 73: Tx SYNTHESIZER: Set to 0x02 (Must be 0x02)'    />
+  <property name='tx_synth_cp_overrange_vco_lock'         type='uchar'  volatile='1'              description='reg_addr_d647_0x0287 Table 73: Tx SYNTHESIZER: CP Over Range/VCO Lock'        />
+  <property name='tx_synth_mustbe0x0b'                    type='uchar'  volatile='1' writable='1' description='reg_addr_d648_0x0288 Table 73: Tx SYNTHESIZER: Set to 0x0B (Must be 0x0B)'    />
+  <property name='tx_synth_vco_cal'                       type='uchar'  volatile='1' writable='1' description='reg_addr_d649_0x0289 Table 73: Tx SYNTHESIZER: VCO Cal'                       />
+  <property name='tx_synth_lock_detect_config'            type='uchar'  volatile='1' writable='1' description='reg_addr_d650_0x028a Table 73: Tx SYNTEHSIZER: Lock Detect Config'            />
+  <property name='tx_synth_mustbe0x17'                    type='uchar'  volatile='1' writable='1' description='reg_addr_d651_0x028b Table 73: Tx SYNTEHSIZER: Must be 0x17'                  />
+  <property name='tx_synth_mustbe0x00_also'               type='uchar'  volatile='1' writable='1' description='reg_addr_d652_0x028c Table 73: Tx SYNTEHSIZER: Must be 0x00'                  />
+  <property name='tx_synth_mustbe0x00_also_also'          type='uchar'  volatile='1' writable='1' description='reg_addr_d653_0x028d Table 73: Tx SYNTEHSIZER: Must be 0x00'                  />
+  <property name='ocpi_pad_28e'                           type='uchar' padding='1' arraylength='2'/>      <!-- reg_addr_d654_0x028e                                                         -->
+  <!--                                                                                                         reg_addr_d655_0x028f                                                         -->
+  <property name='tx_synth_mustbe0x70'                    type='uchar'  volatile='1' writable='1' description='reg_addr_d656_0x0290 Table 73: Tx SYNTEHSIZER: Set to 0x70 (Must be 0x70)'    />
+  <property name='tx_synth_vco_varactor_ctrl_1'           type='uchar'  volatile='1' writable='1' description='reg_addr_d657_0x0291 Table 73: Tx SYNTEHSIZER: VCO Varactor Control 1'        />
+  <property name='dcxo_coarse_tune'                       type='uchar'  volatile='1' writable='1' description='reg_addr_d658_0x0292 Table 74: DCXO: DCXO Coarse Tune'                 />
+  <property name='dcxo_fine_tune_high'                    type='uchar'  volatile='1' writable='1' description='reg_addr_d659_0x0293 Table 74: DCXO: DCXO Fine Tune2'                  />
+  <property name='dcxo_fine_tune_low'                     type='uchar'  volatile='1' writable='1' description='reg_addr_d660_0x0294 Table 74: DCXO: DCXO Fine Tune1'                  />
+  <property name='ocpi_pad_295'                           type='uchar' padding='1' arraylength='5'/>      <!-- reg_addr_d661_0x0295                                   -->
+  <!--                                                                                          2              reg_addr_d662_0x0296                                   -->
+  <!--                                                                                          3              reg_addr_d663_0x0297                                   -->
+  <!--                                                                                          4              reg_addr_d664_0x0298                                   -->
+  <!--                                                                                          5              reg_addr_d665_0x0299                                   -->
+  <property name='tx_fast_lock_setup'                     type='uchar'  volatile='1' writable='1' description='reg_addr_d666_0x029a Table 65: Tx SYNTH FAST LOCK: Tx Fast Lock Setup'               />
+  <property name='tx_fast_lock_setup_init_delay'          type='uchar'  volatile='1' writable='1' description='reg_addr_d667_0x029b Table 65: Tx SYNTH FAST LOCK: Tx Fast Lock Setup Init Delay'    />
+  <property name='tx_fast_lock_program_addr'              type='uchar'  volatile='1' writable='1' description='reg_addr_d668_0x029c Table 65: Tx SYNTH FAST LOCK: Tx Fast Lock Program Addr'        />
+  <property name='tx_fast_lock_program_data'              type='uchar'  volatile='1' writable='1' description='reg_addr_d669_0x029d Table 65: Tx SYNTH FAST LOCK: Tx Fast Lock Program Data'        />
+  <property name='tx_fast_lock_program_read'              type='uchar'  volatile='1'              description='reg_addr_d670_0x029e Table 65: Tx SYNTH FAST LOCK: Tx Fast Lock Program Read'        />
+  <property name='tx_fast_lock_program_ctrl'              type='uchar'  volatile='1' writable='1' description='reg_addr_d671_0x029f Table 65: Tx SYNTH FAST LOCK: Tx Fast Lock Program Ctrl'        />
+  <property name='ocpi_pad_2a0'                           type='uchar' padding='1' arraylength='1'/>      <!-- reg_addr_d672_0x02a0                                   -->
+  <property name='tx_lo_gen_power_mode'                   type='uchar'  volatile='1' writable='1' description='reg_addr_d673_0x02a1 Table 76: Tx LO GENERATION: Tx LO Gen Power Mode'             />
+  <property name='ocpi_pad_2a2'                           type='uchar' padding='1' arraylength='4'/>      <!-- reg_addr_d674_0x02a2                                   -->
+  <!--                                                                                          2              reg_addr_d675_0x02a3                                   -->
+  <!--                                                                                          3              reg_addr_d676_0x02a4                                   -->
+  <!--                                                                                          4              reg_addr_d677_0x02a5                                   -->
+  <property name='bandgap_mustbe0x0e'                     type='uchar'  volatile='1' writable='1' description='reg_addr_d678_0x02a6 Table 77: MASTER BIAS AND BANDGAP CONFIGURATION: Set to 0x0E (Must be 0x0E)'       />
+  <property name='ocpi_pad_2a7'                           type='uchar' padding='1' arraylength='1'/>      <!-- reg_addr_d679_0x02a7                                                                                   -->
+  <property name='bandgap_mustbe0x0e_also'                type='uchar'  volatile='1' writable='1' description='reg_addr_d680_0x02a8 Table 77: MASTER BIAS AND BANDGAP CONFIGURATION: Set to 0x0E (Must be 0x0E)'       />
+  <property name='ocpi_pad_2a9'                           type='uchar' padding='1' arraylength='2'/>      <!-- reg_addr_d681_0x02a9                                   -->
+  <!--                                                                                                         reg_addr_d682_0x02aa                                   -->
+  <property name='ref_divide_config_1'                    type='uchar'  volatile='1' writable='1' description='reg_addr_d683_0x02ab Table 78: REFERENCE DIVIDER: Ref Divide Config 1'              />
+  <property name='ref_divide_config_2'                    type='uchar'  volatile='1' writable='1' description='reg_addr_d684_0x02ac Table 78: REFERENCE DIVIDER: Ref Divide Config 2'              />
+  <property name='ocpi_pad_2ad'                           type='uchar' padding='1' arraylength='3'/>      <!-- reg_addr_d685_0x02ad                                   -->
+  <!--                                                                                                         reg_addr_d686_0x02ae                                   -->
+  <!--                                                                                                         reg_addr_d687_0x02af                                   -->
+  <property name='gain_readback_gain_rx1'                 type='uchar'  volatile='1'              description='reg_addr_d688_0x02b0 Table 80: Rx GAIN READ BACK: Gain Rx1'                         />
+  <property name='gain_readback_lpf_gain_rx1'             type='uchar'  volatile='1'              description='reg_addr_d689_0x02b1 Table 80: Rx GAIN READ BACK: LPF Gain Rx1'                     />
+  <property name='gain_readback_dig_gain_rx1'             type='uchar'  volatile='1'              description='reg_addr_d690_0x02b2 Table 80: Rx GAIN READ BACK: Dig gain Rx1'                     />
+  <property name='gain_readback_fast_attack_state'        type='uchar'  volatile='1'              description='reg_addr_d691_0x02b3 Table 80: Rx GAIN READ BACK: Fast Attack State'                />
+  <property name='gain_readback_slow_loop_state'          type='uchar'  volatile='1'              description='reg_addr_d692_0x02b4 Table 80: Rx GAIN READ BACK: Slow Loop State'                  />
+  <property name='gain_readback_gain_rx2'                 type='uchar'  volatile='1'              description='reg_addr_d693_0x02b5 Table 80: Rx GAIN READ BACK: Gain Rx2'                         />
+  <property name='gain_readback_lpf_gain_rx2'             type='uchar'  volatile='1'              description='reg_addr_d694_0x02b6 Table 80: Rx GAIN READ BACK: LPF Gain Rx2'                     />
+  <property name='gain_readback_dig_gain_rx2'             type='uchar'  volatile='1'              description='reg_addr_d695_0x02b7 Table 80: Rx GAIN READ BACK: Dig Gain Rx2'                     />
+  <property name='gain_readback_ovrg_sigs_rx1'            type='uchar'  volatile='1'              description='reg_addr_d696_0x02b8 Table 80: Rx GAIN READ BACK: Ovrg Sigs Rx1'                    />
+  <property name='gain_readback_ovrg_sigs_rx2'            type='uchar'  volatile='1'              description='reg_addr_d697_0x02b9 Table 80: Rx GAIN READ BACK: Ovrg Sigs Rx2'                    />
+  <property name='ocpi_pad_2ba'                           type='uchar' padding='1' arraylength='293'/>    <!-- reg_addr_d698_0x02ba                                   -->
+  <!--                                                                                          2              reg_addr_d699_0x02bb                                   -->
+  <!--                                                                                          3              reg_addr_d700_0x02bc                                   -->
+
+  <!--                                                                                          ...            reg_addr_...  ...                                      -->
+
+  <!--                                                                                          292            reg_addr_d989_0x03dd                                   -->
+  <!--                                                                                          293            reg_addr_d990_0x03de                                   -->
+  <property name='ctrl'                                   type='uchar'  volatile='1' writable='1' description='reg_addr_d991_0x03df Table 83: CONTROL: Control'                          />
+  <property name='ocpi_pad_3e0'                           type='uchar' padding='1' arraylength='20'/>     <!-- reg_addr_d992_0x03e0                                   -->
+  <!--                                                                                          2              reg_addr_d993_0x03e1                                   -->
+  <!--                                                                                          3              reg_addr_d994_0x03e2                                   -->
+  <!--                                                                                          4              reg_addr_d995_0x03e3                                   -->
+  <!--                                                                                          5              reg_addr_d996_0x03e4                                   -->
+  <!--                                                                                          6              reg_addr_d997_0x03e5                                   -->
+  <!--                                                                                          7              reg_addr_d998_0x03e6                                   -->
+  <!--                                                                                          8              reg_addr_d999_0x03e7                                   -->
+  <!--                                                                                          9              reg_addr_d1000_0x03e8                                  -->
+  <!--                                                                                          10             reg_addr_d1001_0x03e9                                  -->
+  <!--                                                                                          11             reg_addr_d1002_0x03ea                                  -->
+  <!--                                                                                          12             reg_addr_d1003_0x03eb                                  -->
+  <!--                                                                                          13             reg_addr_d1004_0x03ec                                  -->
+  <!--                                                                                          14             reg_addr_d1005_0x03ed                                  -->
+  <!--                                                                                          15             reg_addr_d1006_0x03ee                                  -->
+  <!--                                                                                          16             reg_addr_d1007_0x03ef                                  -->
+  <!--                                                                                          17             reg_addr_d1008_0x03f0                                  -->
+  <!--                                                                                          18             reg_addr_d1009_0x03f1                                  -->
+  <!--                                                                                          19             reg_addr_d1010_0x03f2                                  -->
+  <!--                                                                                          20             reg_addr_d1011_0x03f3                                  -->
+  <property name='test_bist_config'                       type='uchar'  volatile='1' writable='1' description='reg_addr_d1012_0x03f4 Table 84: DIGITAL TEST: BIST Config'                     />
+  <property name='test_observe_config'                    type='uchar'  volatile='1' writable='1' description='reg_addr_d1013_0x03f5 Table 84: DIGITAL TEST: Observe Config'                  />
+  <property name='test_bist_and_data_port_test_config'    type='uchar'  volatile='1' writable='1' description='reg_addr_d1014_0x03f6 Table 84: DIGITAL TEST: BIST and Data Port Test Config'  />
+</properties>

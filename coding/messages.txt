@@ -1,0 +1,14 @@
+Error and help messages from tools and scripts.
+
+Use double quotes in all user oriented error and help messages.
+Single quotes are ok for contractions, but otherwise don't use single quotes for quoting.
+Quote any user defined names or invalid options in messages (in double quotes) to make clear
+that it is a variable string and not part of the language of the message.
+
+Wrap help messages at the same point as source code:  97 characters per line.
+
+Error messages can be longer and will simply wrap in the window.
+
+
+
+

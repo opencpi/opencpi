@@ -1,0 +1,1077 @@
+\iffalse
+This file is protected by Copyright. Please refer to the COPYRIGHT file
+distributed with this source distribution.
+
+This file is part of OpenCPI <http://www.opencpi.org>
+
+OpenCPI is free software: you can redistribute it and/or modify it under the
+terms of the GNU Lesser General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License along
+with this program. If not, see <http://www.gnu.org/licenses/>.
+\fi
+
+%----------------------------------------------------------------------------------------
+% Update the docTitle and docVersion per document
+%----------------------------------------------------------------------------------------
+\def\docTitle{OpenCPI\\ FSK App Guide}
+\def\docVersion{1.3}
+%----------------------------------------------------------------------------------------
+\input{../../../../../doc/av/tex/snippets/LaTeX_Header.tex}
+\date{Version \docVersion} % Force date to be blank and override date with version
+\title{\docTitle}
+\lhead{FSK App Guide}
+%----------------------------------------------------------------------------------------
+%\usepackage[T1]{fontenc} % http://tex.stackexchange.com/a/181119
+\usepackage{graphicx}
+\graphicspath{ {figures/} }
+\usepackage{textcomp}
+
+\begin{document}
+\maketitle
+%\thispagestyle{fancy}
+\newpage
+	\begin{center}
+	\textit{\textbf{Revision History}}
+		\begin{table}[H]
+		\label{table:revisions} % Add "[H]" to force placement of table
+			\begin{tabularx}{\textwidth}{|c|X|l|}
+			\hline
+			\rowcolor{blue}
+			\textbf{Revision} & \textbf{Description of Change} & \textbf{Date} \\
+		    \hline
+		    v1.1 & Initial Release & 3/2017 \\
+		    \hline
+		    v1.2 & Updated for OpenCPI Release 1.2 & 8/2017 \\
+			\hline
+			v1.3 & Updated for OpenCPI Release 1.3 & 1/2018 \\
+			\hline
+			\end{tabularx}
+		\end{table}
+	\end{center}
+
+\newpage
+\tableofcontents
+\pagebreak
+\section{Document Scope}
+This document describes the OpenCPI FSK demo application. It includes a description of the application, instructions to setup the hardware, build of bitstreams, and execution of the application itself on various platforms.
+
+\section{Supported Hardware Setups}
+This app may be used on the Matchstiq-Z1, Zedboard/Zipper/MyriadRF combination, x86/Stratix IV GX development kit (230 Edition)/Zipper/MyriadRF combination, and the x86/ML605/Zipper/MyriadRF combination. Note, due to the large width of the Zipper card, only one Zipper/MyriadRF may be plugged into the platforms which contain multiple slots. Note also that on x86 host machines with multiple Stratix IV and/or ML605s plugged into PCIe slots, this app will assume that the first found Stratix IV/ML605 has a Zipper/MyriadRF plugged in. The first found Stratix IV/ML605 will be used during execution. While there are means to address this issue, they have not been implemented for the 1.3 release.
+
+\section{Description}
+The FSK App may be run in one of five available modes. The modes are \textit{filerw}, \textit{rx}, \textit{tx}, \textit{txrx}, and \textit{bbloopback}. The \textit{filerw} mode uses file\_read and file\_write workers to process the input using only application workers (platform agnostic) in a purely digital fashion. A block diagram of the FSK App \textit{filerw} mode can be seen in Figure \ref{fig:filerw_mode_block_diagram}.\par\medskip
+	\begin{figure}[ht]
+	 	\centering
+		\includegraphics[scale=.65]{filerw_mode_block_diagram}
+		\caption{FSK App \textit{filerw} mode Block Diagram}
+		\label{fig:filerw_mode_block_diagram}
+	\end{figure}
+\newpage
+\noindent The \textit{rx} mode inputs IQ data from the Lime ADC and processes the FSK signal down to bits that are written to file. A block diagram of the FSK App \textit{rx} mode can be seen in Figure \ref{fig:rx_mode_block_diagram}.\par\medskip
+	\begin{figure}[ht]
+	 	\centering
+		\includegraphics[scale=.65]{rx_mode_block_diagram}
+		\caption{FSK App \textit{rx} mode Block Diagram}
+		\label{fig:rx_mode_block_diagram}
+	\end{figure}
+
+\noindent The \textit{tx} mode inputs a file from disk, modulates the input as a FSK signal, and transmits the input via the Lime DAC. A block diagram of the FSK App \textit{tx} mode can be seen in Figure \ref{fig:tx_mode_block_diagram}.\par\medskip
+	\begin{figure}[ht]
+	 	\centering
+		\includegraphics[scale=.65]{tx_mode_block_diagram}
+		\caption{FSK App \textit{tx} mode Block Diagram}
+		\label{fig:tx_mode_block_diagram}
+	\end{figure}
+
+\noindent The \textit{txrx} mode is the full transceiver mode of the application which combines the functionality of Figures \ref{fig:rx_mode_block_diagram} and \ref{fig:tx_mode_block_diagram} into a single application. This mode transmits input file data as the radio RF TX output and inputs RF RX radio input that is written to file. The \textit{bbloopback} mode utilizes the same HDL assembly and application XML as the \textit{txrx} mode but utilizes a built-in test mode of the Lime transceiver to loopback analog data at baseband.\par\medskip
+
+\section{Building the Application}
+\subsection{Dependencies}
+\noindent The tables below breakdown the workers used within the various platforms and modes of the FSK App. Appendix A shows the exact worker configurations used in the HDL assemblies. See the individual component data sheets for more information and build instructions. Similarly, the HDL platform worker and configurations for the intended radio must be compiled prior to building the various FSK bitstreams.
+\subsection{FSK Mode Configurations}
+\subsubsection{Matchstiq-Z1}
+	\begin{tabular}{|c|c|c|c|c|c|}
+	\hline
+	\rowcolor{blue}
+	Application XML & filerw & rx & tx & txrx & bbloopback \\
+	\hline
+	app\_fsk\_filerw (dependency only, no build required) & x & • & • & • & • \\
+	\hline
+	app\_fsk\_rx\_matchstiq\_z1 (dependency only, no build required) & • & x & • & • & • \\
+	\hline
+	app\_fsk\_tx\_matchstiq\_z1 (dependency only, no build required) & • & • & x & • & • \\
+	\hline
+	app\_fsk\_txrx\_matchstiq\_z1 (dependency only, no build required) & • & • & • & x & x \\
+	\hline
+	\rowcolor{blue}
+	HDL Assemblies & filerw & rx & tx & txrx & bbloopback \\
+	\hline
+	fsk\_filerw & x & • & • & • & • \\
+	\hline
+	dc\_offset\_iq\_imbalance\_mixer\_cic\_dec\_rp\_cordic\_fir\_real & • & x & • & • & • \\
+	\hline
+	mfsk2\_zp16\_fir\_real\_phase\_to\_amp\_cordic\_cic\_int & • & • & x & • & • \\
+	\hline
+	fsk\_modem & • & • & • & x & x \\
+	\hline
+	\rowcolor{blue}
+	RX Path Workers & filerw & rx & tx & txrx & bbloopback \\
+	\hline
+	lime\_adc.hdl & • & x & • & x & x \\
+	\hline
+	dc\_offset\_filter.hdl & • & x & • & x & x \\
+	\hline
+	iq\_imbalance\_fixer.hdl & • & x & • & x & x \\
+	\hline
+	complex\_mixer.hdl & x & x & • & x & x \\
+	\hline
+	cic\_dec.hdl & x & x & • & x & x \\
+	\hline
+	rp\_cordic.hdl & x & x & • & x & x \\
+	\hline
+	fir\_real\_sse.hdl & x & x & • & x & x \\
+	\hline
+	baudTracking.rcc & x & x & • & x & x \\
+	\hline
+	real\_digitizer.rcc & x & x & • & x & x \\
+	\hline
+	file\_write.rcc & x & x & • & x & x \\
+	\hline
+	\rowcolor{blue}
+	TX Path Workers & filerw & rx & tx & txrx & bbloopback \\
+	\hline
+	file\_read.rcc & x & • & x & x & x \\
+	\hline
+	mfsk\_mapper.hdl & x & • & x & x & x \\
+	\hline
+	zero\_pad.hdl & x & • & x & x & x \\
+	\hline
+	fir\_real\_sse.hdl & x & • & x & x & x \\
+	\hline
+	phase\_to\_amp\_cordic.hdl & x & • & x & x & x \\
+	\hline
+	cic\_int.hdl & x & • & x & x & x \\
+	\hline
+	lime\_dac.hdl & • & • & x & x & x \\
+	\hline
+	\rowcolor{blue}
+	Top Level Command and Control & filerw & rx & tx & txrx & bbloopback \\
+	\hline
+	matchstiq\_z1\_rx.rcc & • & x & • & x & x \\
+	\hline
+	matchstiq\_z1\_tx.rcc & • & • & x & x & x \\
+	\hline
+	\rowcolor{blue}
+	SPI Command and Control & filerw & rx & tx & txrx & bbloopback \\
+	\hline
+	lime\_rx\_proxy.rcc & • & x & • & x & x \\
+	\hline
+	lime\_rx.hdl & • & x & • & x & x \\
+	\hline
+	lime\_tx\_proxy.rcc & • & • & x & x & x \\
+	\hline
+	lime\_tx.hdl & • & • & x & x & x \\
+	\hline
+	lime\_spi.hdl & • & x & x & x & x \\
+	\hline
+	\rowcolor{blue}
+	I2C Command and Control & filerw & rx & tx & txrx & bbloopback \\
+	\hline
+	si5338\_proxy.rcc & • & x & x & x & x \\
+	\hline
+	si5338.hdl & • & x & x & x & x \\
+	\hline
+	matchstiq\_z1\_avr\_proxy.rcc & • & x & x & x & x \\
+	\hline
+	matchstiq\_z1\_avr.hdl & • & x & x & x & x \\
+	\hline
+	tmp100\_proxy.rcc & • & x & x & x & x \\
+	\hline
+	tmp100.hdl & • & x & x & x & x \\
+	\hline
+	matchstiq\_z1\_pca9535\_proxy.rcc & • & x & x & x & x \\
+	\hline
+	pca9535.hdl & • & x & x & x & x \\
+	\hline
+	matchstiq\_z1\_i2c.hdl & • & x & x & x & x \\
+	\hline
+	\end{tabular}
+
+\subsection{Zipper-related platforms (Zedboard, Stratix IV, ML605)}
+	\begin{tabular}{|c|c|c|c|c|c|}
+	\hline
+	\rowcolor{blue}
+	Application XML & filerw & rx & tx & txrx & bbloopback \\
+	\hline
+	app\_fsk\_filerw (dependency only, no build required) & x & • & • & • & • \\
+	\hline
+	app\_fsk\_rx\_zipper (dependency only, no build required) & • & x & • & • & • \\
+	\hline
+	app\_fsk\_tx\_zipper (dependency only, no build required) & • & • & x & • & • \\
+	\hline
+	app\_fsk\_txrx\_zipper (dependency only, no build required) & • & • & • & x & x \\
+	\hline
+	\rowcolor{blue}
+	HDL Assemblies & filerw & rx & tx & txrx & bbloopback \\
+	\hline
+	fsk\_filerw & x & • & • & • & • \\
+	\hline
+	dc\_offset\_iq\_imbalance\_mixer\_cic\_dec\_rp\_cordic\_fir\_real & • & x & • & • & • \\
+	\hline
+	mfsk2\_zp16\_fir\_real\_phase\_to\_amp\_cordic\_cic\_int & • & • & x & • & • \\
+	\hline
+	fsk\_modem & • & • & • & x & x \\
+	\hline
+	\rowcolor{blue}
+	RX Path Workers & filerw & rx & tx & txrx & bbloopback \\
+	\hline
+	lime\_adc.hdl & • & x & • & x & x \\
+	\hline
+	dc\_offset\_filter.hdl & • & x & • & x & x \\
+	\hline
+	iq\_imbalance\_fixer.hdl & • & x & • & x & x \\
+	\hline
+	complex\_mixer.hdl & x & x & • & x & x \\
+	\hline
+	cic\_dec.hdl & x & x & • & x & x \\
+	\hline
+	rp\_cordic.hdl & x & x & • & x & x \\
+	\hline
+	fir\_real\_sse.hdl & x & x & • & x & x \\
+	\hline
+	baudTracking.rcc & x & x & • & x & x \\
+	\hline
+	real\_digitizer.rcc & x & x & • & x & x \\
+	\hline
+	file\_write.rcc & x & x & • & x & x \\
+	\hline
+	\rowcolor{blue}
+	TX Path Workers & filerw & rx & tx & txrx & bbloopback \\
+	\hline
+	file\_read.rcc & x & • & x & x & x \\
+	\hline
+	mfsk\_mapper.hdl & x & • & x & x & x \\
+	\hline
+	zero\_pad.hdl & x & • & x & x & x \\
+	\hline
+	fir\_real\_sse.hdl & x & • & x & x & x \\
+	\hline
+	phase\_to\_amp\_cordic.hdl & x & • & x & x & x \\
+	\hline
+	cic\_int.hdl & x & • & x & x & x \\
+	\hline
+	lime\_dac.hdl & • & • & x & x & x \\
+	\hline
+	\rowcolor{blue}
+	Top Level Command and Control & filerw & rx & tx & txrx & bbloopback \\
+	\hline
+	zipper\_rx.rcc & • & x & • & x & x \\
+	\hline
+	zipper\_tx.rcc & • & • & x & x & x \\
+	\hline
+	\rowcolor{blue}
+	SPI Command and Control & filerw & rx & tx & txrx & bbloopback \\
+	\hline
+	lime\_rx\_proxy.rcc & • & x & • & x & x \\
+	\hline
+	lime\_rx.hdl & • & x & • & x & x \\
+	\hline
+	lime\_tx\_proxy.rcc & • & • & x & x & x \\
+	\hline
+	lime\_tx.hdl & • & • & x & x & x \\
+	\hline
+	lime\_spi.hdl & • & x & x & x & x \\
+	\hline
+	\rowcolor{blue}
+	I2C Command and Control & filerw & rx & tx & txrx & bbloopback \\
+	\hline
+	si5351\_proxy.rcc & • & x & x & x & x \\
+	\hline
+	si5351.hdl & • & x & x & x & x \\
+	\hline
+	\end{tabular}
+
+	\newpage
+\subsection{HDL Assembly and HDL Container}
+\noindent The FPGA portion of the application consists of an HDL assembly and the HDL container. The \textit{filerw} mode uses the fsk\_filerw HDL assembly and the appropriate Matchstiq-Z1/Zed-Zipper/Stratix IV/ML605 HDL container. The \textit{rx} mode uses the dc\_offset\_iq\_imbalance\_mixer\_\-cic\_dec\_rp\_cordic\_fir\_real HDL assembly and the appropriate HDL container. The \textit{tx} mode uses the mfsk2\_zp16\_fir\_real\_phase\_to\_amp\_cordic\_cic\_int HDL assembly and the appropriate HDL container. Finally, both \textit{txrx} and \textit{bbloopback} modes use the fsk\_modem HDL assembly and the appropriate HDL container. In each case the HDL assembly instances the signal processing workers while the HDL container connects those workers to the ADC and/or DAC hardware for receiving/transmitting IQ data and to the processor for reading/writing data from/to disk. The HDL container also instances command and control HDL workers required to configure the RF front end.
+\subsection{Performance and Resource Utilization}
+\begin{scriptsize}
+\subsubsection{filerw}
+\begin{tabular}{|P{1.8cm}|c|c|c|c|c|c|}
+\hline
+\rowcolor{blue}
+Platform     & Device              & Registers & LUTs  & Fmax    & Memory/Special Functions & Design Suite       \\
+\hline
+Matchstiq-Z1 & XC7Z020-1-CLG484    & 24350     & 20628 & 100 MHz & DSP48E1 = 139            & Vivado 2017.1      \\
+\hline
+ML605        & XC6VLX240T-1-FF1156 & 29665     & 40054 & 125 MHz & DSP48E1 = 144            & ISE 14.7           \\
+\hline
+Stratix IV   & EP4SGX230K-C2-F40   & 72703     & 51394 & 125 MHz & DSP 18x18 = 284          & Quartus Prime 15.1 \\
+\hline
+Zedboard     & XC7Z020-1-CLG484    & 23987     & 20429 & 100 MHz & DSP48E1 = 139            & Vivado 2017.1      \\
+\hline
+Zedboard     & XC7Z020-1-CLG484    & 28523     & 25731 & 100 MHz & DSP48E1 = 139            & ISE 14.7		     \\
+\hline
+\end{tabular}
+\subsubsection{tx}
+\begin{tabular}{|P{1.8cm}|c|c|c|c|c|c|}
+\hline
+\rowcolor{blue}
+Platform               & Device              & Registers & LUTs  & Fmax    & Memory/Special Functions & Design Suite       \\
+\hline
+Matchstiq-Z1           & XC7Z020-1-CLG484    & 16170     & 14493 & 100 MHz & DSP48E1 = 66             & Vivado 2017.1      \\
+\hline
+ML605 FMC HPC          & XC6VLX240T-1-FF1156 & 17278     & 22395 & 125 MHz & DSP48E1 = 68             & ISE 14.7           \\
+\hline
+ML605 FMC LPC          & XC6VLX240T-1-FF1156 & 17277     & 22582 & 125 MHz & DSP48E1 = 68             & ISE 14.7           \\
+\hline
+Stratix IV HSMC Port A & EP4SGX230K-C2-F40   & 46614     & 31256 & 125 MHz & DSP 18x18 = 136          & Quartus Prime 15.1 \\
+\hline
+Stratix IV HSMC Port B & EP4SGX230K-C2-F40   & 46614     & 31256 & 125 MHz & DSP 18x18 = 136          & Quartus Prime 15.1 \\
+\hline
+Zedboard               & XC7Z020-1-CLG484    & 15628     & 13845 & 100 MHz & DSP48E1 = 66             & Vivado 2017.1      \\
+\hline
+Zedboard               & XC7Z020-1-CLG484    & 10381     & 13521 & 100 MHz & DSP48E1 = 68             & ISE 14.7 		   \\
+\hline
+\end{tabular}
+\subsubsection{rx}
+\begin{tabular}{|P{1.8cm}|c|c|c|c|c|c|}
+\hline
+\rowcolor{blue}
+Platform               & Device              & Registers & LUTs  & Fmax    & Memory/Special Functions & Design Suite       \\
+\hline
+Matchstiq-Z1           & XC7Z020-1-CLG484    & 18894     & 19300 & 100 MHz & DSP48E1 = 85             & Vivado 2017.1      \\
+\hline
+ML605 FMC HPC          & XC6VLX240T-1-FF1156 & 19495     & 25844 & 125 MHz & DSP48E1 = 85             & ISE 14.7           \\
+\hline
+ML605 FMC LPC          & XC6VLX240T-1-FF1156 & 19495     & 25828 & 125 MHz & DSP48E1 = 85             & ISE 14.7           \\
+\hline
+Stratix IV HSMC Port A & EP4SGX230K-C2-F40   & 48961     & 34675 & 125 MHz & DSP 18x18 = 166          & Quartus Prime 15.1 \\
+\hline
+Stratix IV HSMC Port B & EP4SGX230K-C2-F40   & 48961     & 34675 & 125 MHz & DSP 18x18 = 166          & Quartus Prime 15.1 \\
+\hline
+Zedboard               & XC7Z020-1-CLG484    & 18233     & 18459 & 161 MHz & DSP48E1 = 85             & Vivado 2017.1      \\
+\hline
+Zedboard               & XC7Z020-1-CLG484    & 13005     & 17822 & 161 MHz & DSP48E1 = 85             & ISE 14.7	       \\
+\hline
+\end{tabular}
+\subsubsection{txrx/bbloopback}
+\begin{tabular}{|P{1.8cm}|c|c|c|c|c|c|}
+\hline
+\rowcolor{blue}
+Platform               & Device              & Registers & LUTs  & Fmax    & Memory/Special Functions & Design Suite       \\
+\hline
+Matchstiq-Z1           & XC7Z020-1-CLG484    & 26394     & 22975 & 100 MHz & DSP48E1 = 148            & Vivado 2017.1      \\
+\hline
+ML605 FMC HPC          & XC6VLX240T-1-FF1156 & 31945     & 43055 & 125 MHz & DSP48E1 = 153            & ISE 14.7           \\
+\hline
+ML605 FMC LPC          & XC6VLX240T-1-FF1156 & 31955     & 43084 & 125 MHz & DSP48E1 = 153            & ISE 14.7           \\
+\hline
+Stratix IV HSMC Port A & EP4SGX230K-C2-F40   & 75295     & 54933 & 125 MHz & DSP 18x18 = 302          & Quartus Prime 15.1 \\
+\hline
+Stratix IV HSMC Port B & EP4SGX230K-C2-F40   & 75295     & 54933 & 125 MHz & DSP 18x18 = 302          & Quartus Prime 15.1 \\
+\hline
+Zedboard               & XC7Z020-1-CLG484    & 26318     & 23056 & 100 MHz & DSP48E1 = 148            & Vivado 2017.1      \\
+\hline
+Zedboard               & XC7Z020-1-CLG484    & 21582     & 28708 & 100 MHz & DSP48E1 = 153            & ISE 14.7	       \\
+\hline
+\end{tabular}
+\end{scriptsize}
+\subsection{Executable}
+The software portion of the application consists of a C++ program written using the OpenCPI C++ API as well as RCC proxy workers for command and control functionality. The program references the application XML files app\_fsk\_filerw.xml (\textit{filerw} mode), app\_fsk\_rx\_matchstiq\_z1.xml/app\_fsk\_rx\_zipper.xml (\textit{rx} mode), app\_fsk\_tx\_matchstiq\_z1.xml/app\_fsk\_rx\_zipper.xml (\textit{tx} mode), and app\_fsk\_txrx\_matchstiq\_z1.xml/app\_fsk\_txrx\_zipper.xml (\textit{txrx} and \textit{bbloopback} modes). These files contain all of the property settings for the components in each application, except for the configuration of the RF front end proxy. These settings are passed on the command-line to the appropriate frontend proxy workers (matchstiq\_z1\_rx.rcc/zipper\_rx.rcc and matchstiq\_z1\_tx.rcc/zipper\_tx.rcc) and set using the API.\\
+To build for CentOS 6 or 7, run the following command from the FSK directory:\par\medskip
+\texttt{ ocpidev build}\par\medskip
+\noindent To build for the Zedboard or Matchstiq-Z1, run the following command from the FSK directory:\par\medskip 
+\texttt{ ocpidev build --rcc-platform xilinx13\_3 }\par\medskip
+
+\section{Testing the Application}
+\subsection{Input file}
+The input filename for the application is idata/Os.jpeg. It is a JPEG image (see Figure \ref{fig:os_pic}) with data prepended to it. To assist the baud tracking algorithm, there are 240 bytes of an alternating 1-0 pattern. To aid in recovery of the image, the next 2 bytes are the value 0xFACE. The real\_digitizer.rcc worker does not pass data to the file\_write.rcc worker until it has identified the 0xFACE pattern.
+\subsection{Sample test setup}
+The test setup varies per mode of operation. The base test setup includes a hardware platform of choice and appropriate power and USB cables (Matchstiq-Z1 and Zedboard/Zipper use the USB cable to access the terminal via a program such as \textit{screen} or over a USB-over-Ethernet connection; Stratix IV and ML605 require a USB cable for JTAG loading). All other test modes expand upon this base configuration, and may or may not include additional RF cabling or external equipment.\par\medskip
+\noindent The \textit{filerw} mode requires only the base test setup since no transceiver operations are actuated (data passes to and from the FPGA in a ``loopback" fashion). Upon application execution, the expected result is written to odata/out\_app\_fsk\_filerw.bin, which is a transmitted copy of the input file idata/Os.jpeg.\par\medskip
+\noindent The \textit{bbloopback} mode is similar to the \textit{filerw} mode, but data goes beyond the FPGA through the radio's built-in analog baseband loopback, and back into the FPGA. Because the data never reaches the TX/RX connectors, no external RF cabling is required. The expected result is a transmitted copy of the idata/Os.jpeg file as the output odata/out\_app\_fsk\_bbloopback.bin.\par\medskip
+\noindent The next mode is the \textit{rx} mode, which requires the base test setup with an RX antenna, as well as another transmitter (such as another platform running the \textit{tx} mode) in order to broadcast a known FSK signal. Optionally, a spectrum analyzer may be connected to the transmitter to visually verify that the signal being fed into the radio's RX input is an FSK signal at the correct RF frequency and bandwidth. The output is written to the file odata/out\_app\_fsk\_rx.bin.\par\medskip
+\noindent The next mode is the \textit{tx} mode, which requires the base test setup with a TX antenna, as well as some hardware to verify the transmission, such as a spectrum analyzer or an additional radio running in \textit{rx} mode. In this mode the input file idata/Os.jpeg is transmitted out of the RF TX output of the radio.\par\medskip
+\noindent The final mode is the \textit{txrx} mode which, while taking up the most FPGA resources, is the easiest to test. This mode requires a base test setup with either a loopback cable connecting the TX output of the radio to the RX input of the radio, or separate RX/TX antennas if RF usage is desired. An RF splitter can also be used to optionally connect a spectrum analyzer to the RF signal for visual verification. The default values for RF gain assume that an RF splitter is being used.\par\medskip
+\subsection{make show}
+In order to test the application using the various modes mentioned above, \texttt{make show} can be run from the \texttt{applications/FSK} directory. This provides instructions (for Zynq-Based Platforms) for setting \texttt{OCPI\_LIBRARY\_PATH} on the hardware platform and then running the application. Finally, it explains how to verify the output data on the development computer. The following sections provide further insight into these instructions.
+\subsection{Artifacts}
+Before running the application, the location of the required deployable artifacts must be specified in the \texttt{OCPI\_LIBRARY\_PATH} environment variable. Separate artifacts are needed for each RCC worker, and one artifact for the required FPGA image. Furthermore, artifacts differ depending on which mode the application is to be run in. Appendix B includes a list of the artifacts required for each platform and mode.
+\subsection{Arguments to executable}
+There is only one required initial argument to the FSK App executable, which defines the mode of execution. There is an optional initial argument to the FSK App executable that defines whether or not to run in debug mode. The remaining arguments are optional (they all have defaults) and vary depending upon the selected mode of operation. Running the application without any arguments prints the usage instructions. The non-initial optional arguments prompt the user to override the default value(s), and primarily configure the RF front end of the given platform using the matchstiq\_z1\_rx.rcc/zipper\_rx.rcc and matchstiq\_z1\_tx.rcc/zipper\_tx.rcc workers. Additionally, the application may be configured by setting properties in the associated application XML file.\par\medskip
+\noindent The arguments to the executable are summarized in the following table:\\
+\begin{tabular}{|l|l|l|}
+\hline
+\rowcolor{blue}
+Argument & Mode & Description \\
+\hline
+mode & n/a & filerw, rx, tx, txrx, bbloopback\\
+\hline
+debug\_mode & optional - `d' or blank & enables initial and final dump of all properties\\
+\hline
+rx\_sample\_rate & rx, txrx, bbloopback & RX RF sample rate in Msps\\
+\hline
+rx\_rf\_center\_freq & rx, txrx, bbloopback & RX RF tuning frequency in MHz\\
+\hline
+rx\_rf\_bw & rx, txrx, bbloopback & RX RF bandwidth in MHz\\
+\hline
+rx\_rf\_gain & rx, txrx, bbloopback & RX RF gain in dB\\
+\hline
+rx\_bb\_bw & rx, txrx, bbloopback & RX baseband bandwidth in MHz\\
+\hline
+rx\_bb\_gain & rx, txrx, bbloopback & RX baseband gain in dB\\
+\hline
+rx\_if\_center\_freq & rx, txrx, bbloopback & RX IF tuning frequency in MHz. 0 disables IF tuning\\
+\hline
+tx\_sample\_rate & tx, txrx, bbloopback & TX RF sample rate in Msps\\
+\hline
+tx\_rf\_center\_freq & tx, txrx, bbloopback & TX RF tuning frequency in MHz\\
+\hline
+tx\_rf\_gain & tx, txrx, bbloopback & TX RF gain in dB\\
+\hline
+tx\_bb\_bw & tx, txrx, bbloopback & TX baseband bandwidth in MHz\\
+\hline
+tx\_bb\_gain & tx, txrx, bbloopback & TX baseband gain in dB\\
+\hline
+runtime & filerw, rx, tx, txrx, bbloopback & run time of application in seconds\\
+\hline
+\end{tabular}\par\medskip
+\noindent Other properties may also be set in the application XML file. Descriptions of properties may be found in the individual component data sheets.
+
+\pagebreak
+\subsection{Library Path Requirements}
+\noindent Prior to running the application, the environment variable OCPI\_LIBRARY\_PATH must include the following directories:\par\medskip
+	\textbf{Matchstiq-Z1}
+	\begin{itemize}
+		\item ocpi.core component RCC library location
+		\item ocpi.assets bitstream directory location
+		\item ocpi.assets component RCC library location
+		\item ocpi.assets.devices library location
+		\item ocpi.assets.platforms.matchstiq\_z1.devices library location
+	\end{itemize}
+	\textbf{Zedboard with Zipper}
+	\begin{itemize}
+		\item ocpi.core component RCC library location
+		\item ocpi.assets bitstream directory location
+		\item ocpi.assets component RCC library location
+		\item ocpi.assets.devices library location
+	\end{itemize}
+	\textbf{Stratix IV GX230/ML605 with Zipper}
+	\begin{itemize}
+		\item ocpi.assets bitstream directory location
+		\item ocpi.core component RCC library location
+		\item ocpi.assets component RCC library location
+		\item ocpi.assets.devices library location
+	\end{itemize}
+
+\noindent Note that the Stratix IV GX230/Zipper/MyriadRF and ML605/Zipper/MyriadRF hardware setups require the intended slot-specific bitstream's file location to be first in OCPI\_LIBRARY\_PATH. This is necessary because ocpirun's aritifact compatibility test does not currently differentiate between slot-connected device workers for multiple bitstreams that contain the same device worker, in the scenario where what differentiates the bitstreams is the device worker's slot connectivity. Reference the OpenCPI Application Development Guide for more about OCPI\_LIBRARY\_PATH. \par\medskip
+\pagebreak
+
+\noindent Examples of library paths that could be used can be seen below:\\
+
+Note: All example paths are relative to the applications/FSK/ directory.\\
+
+\noindent\textbf{Example Matchstiq-Z1 or Zedboard/Zipper Library Path}\\
+\noindent\textbf{\textit{filerw}}\\
+\verb|OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/../projects/core/exports/lib/components/rcc:\| \\
+\verb|$PWD/../../hdl/assemblies/fsk_filerw:\| \\
+\verb|$PWD/../../exports/lib| \\
+
+\noindent\textbf{\textit{rx}}\\
+\verb|OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/../projects/core/exports/lib/components/rcc:\| \\
+\verb|$PWD/../../hdl/assemblies/dc_offset_iq_imbalance_mixer_cic_dec_rp_cordic_fir_real:\| \\
+\verb|$PWD/../../exports/lib| \\
+
+\noindent\textbf{\textit{tx}}\\
+\verb|OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/../projects/core/exports/lib/components/rcc:\| \\
+\verb|$PWD/../../hdl/assemblies/mfsk2_zp16_fir_real_phase_to_amp_cordic_cic_int:\| \\
+\verb|$PWD/../../exports/lib| \\
+
+\noindent\textbf{\textit{txrx and bbloopback}}\\
+\verb|OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/../projects/core/exports/lib/components/rcc:\| \\
+\verb|$PWD/../../hdl/assemblies/fsk_modem:\| \\
+\verb|$PWD/../../exports/lib| \\
+\pagebreak
+
+\noindent\textbf{Example Stratix IV GX230/Zipper in HSMC A}\\
+\noindent\textbf{\textit{filerw}}\\
+\verb|OCPI_LIBRARY_PATH=$PWD/../../hdl/assemblies/fsk_filerw:\| \\
+\verb|$OCPI_CDK_DIR/../projects/core/exports/lib/components/rcc:\| \\
+\verb|$PWD/../../exports/lib| \\
+
+\noindent\textbf{\textit{rx}}\\
+\verb|OCPI_LIBRARY_PATH=$PWD/../../hdl/assemblies/dc_offset_iq_imbalance_mixer_cic_dec_rp_c\|\\
+\verb|ordic_fir_real/container-dc_offset_iq_imbalance_mixer_cic_dec_rp_cordic_fir_real_\| \\
+\verb|alst4_alst4_zipper_hsmc_alst4_port_a_rx_cnt_1rx_0tx_thruasm_zipper_hsmc_a_alst4:\| \\
+\verb|$OCPI_CDK_DIR/../projects/core/exports/lib/components/rcc:\| \\
+\verb|$PWD/../../exports/lib| \\
+
+\noindent\textbf{\textit{tx}}\\
+\verb|OCPI_LIBRARY_PATH=$PWD/../../hdl/assemblies/mfsk2_zp16_fir_real_phase_to_amp_cordic_c\| \\
+\verb|ic_int/container-mfsk2_zp16_fir_real_phase_to_amp_cordic_cic_int_alst4_alst4_zip\| \\
+\verb|per_hsmc_alst4_port_a_tx_cnt_0rx_1tx_thruasm_zipper_hsmc_a_alst4:\| \\
+\verb|$OCPI_CDK_DIR/../projects/core/exports/lib/components/rcc:\| \\
+\verb|$PWD/../../exports/lib| \\
+
+\noindent\textbf{\textit{txrx/bbloopback}}\\
+\verb|OCPI_LIBRARY_PATH=$PWD/../../hdl/assemblies/fsk_modem/container-fsk_modem_alst4_\| \\
+\verb|alst4_zipper_hsmc_alst4_port_a_rx_tx_cnt_1rx_1tx_thruasm_zipper_hsmc_a_alst4:\| \\
+\verb|$OCPI_CDK_DIR/../projects/core/exports/lib/components/rcc:\| \\
+\verb|$PWD/../../exports/lib| \\
+\par\medskip
+
+\noindent\textbf{Example Stratix IV GX230/Zipper in HSMC B}\\
+\noindent\textbf{\textit{filerw}}\\
+\verb|OCPI_LIBRARY_PATH=$PWD/../../hdl/assemblies/fsk_filerw:\| \\
+\verb|$OCPI_CDK_DIR/../projects/core/exports/lib/components/rcc:\| \\
+\verb|$PWD/../../exports/lib| \\
+
+\noindent\textbf{\textit{rx}}\\
+\verb|OCPI_LIBRARY_PATH=$PWD/../../hdl/assemblies/dc_offset_iq_imbalance_mixer_cic_dec_rp_c\| \\
+\verb|ordic_fir_real/container-dc_offset_iq_imbalance_mixer_cic_dec_rp_cordic_fir_real_\| \\
+\verb|alst4_alst4_zipper_hsmc_alst4_port_b_rx_cnt_1rx_0tx_thruasm_zipper_hsmc_b_alst4:\| \\
+\verb|$OCPI_CDK_DIR/../projects/core/exports/lib/components/rcc:\| \\
+\verb|$PWD/../../exports/lib| \\
+
+\noindent\textbf{\textit{tx}}\\
+\verb|OCPI_LIBRARY_PATH=$PWD/../../hdl/assemblies/mfsk2_zp16_fir_real_phase_to_amp_cordic_c\| \\
+\verb|ic_int/container-mfsk2_zp16_fir_real_phase_to_amp_cordic_cic_int_alst4_alst4_zip\| \\ 
+\verb|per_hsmc_alst4_port_b_tx_cnt_0rx_1tx_thruasm_zipper_hsmc_b_alst4:\ | \\
+\verb|$OCPI_CDK_DIR/../projects/core/exports/lib/components/rcc:\| \\
+\verb|$PWD/../../exports/lib| \\
+
+\noindent\textbf{\textit{txrx/bbloopback}}\\
+\verb|OCPI_LIBRARY_PATH=$PWD/../../hdl/assemblies/fsk_modem/container-fsk_modem_alst4_\| \\
+\verb|alst4_zipper_hsmc_alst4_port_b_rx_tx_cnt_1rx_1tx_thruasm_zipper_hsmc_b_alst4:\| \\
+\verb|$OCPI_CDK_DIR/../projects/core/exports/lib/components/rcc:\| \\
+\verb|$PWD/../../exports/lib| \\
+\par\medskip
+\pagebreak
+
+\noindent\textbf{Example ML605/Zipper in FMC LPC}\\
+\noindent\textbf{\textit{filerw}}\\
+\verb|OCPI_LIBRARY_PATH=$PWD/../../hdl/assemblies/fsk_filerw:\| \\
+\verb|$OCPI_CDK_DIR/../projects/core/exports/lib/components/rcc:\| \\
+\verb|$PWD/../../exports/lib| \\
+
+\noindent\textbf{\textit{rx}}\\
+\verb|OCPI_LIBRARY_PATH=$PWD/../../hdl/assemblies/dc_offset_iq_imbalance_mixer_cic_dec_rp_c\| \\
+\verb|ordic_fir_real/container-dc_offset_iq_imbalance_mixer_cic_dec_rp_cordic_fir_real_\| \\
+\verb|ml605_ml605_zipper_fmc_lpc_rx_cnt_1rx_0tx_thruasm_zipper_lpc_ml605:\| \\
+\verb|$OCPI_CDK_DIR/../projects/core/exports/lib/components/rcc:\| \\
+\verb|$PWD/../../exports/lib| \\
+
+\noindent\textbf{\textit{tx}}\\
+\verb|OCPI_LIBRARY_PATH=$PWD/../../hdl/assemblies/mfsk2_zp16_fir_real_phase_to_amp_cordic_c\| \\
+\verb|ic_int/container-mfsk2_zp16_fir_real_phase_to_amp_cordic_cic_int_ml605_ml605_zip\| \\
+\verb|per_fmc_lpc_tx_cnt_0rx_1tx_thruasm_zipper_lpc_ml605:\| \\
+\verb|$OCPI_CDK_DIR/../projects/core/exports/lib/components/rcc:\| \\
+\verb|$PWD/../../exports/lib| \\
+
+\noindent\textbf{\textit{txrx/bbloopback}}\\
+\verb|OCPI_LIBRARY_PATH=$PWD../../hdl/assemblies/fsk_modem/container-fsk_modem_ml605_\| \\
+\verb|ml605_zipper_fmc_lpc_rx_tx_cnt_1rx_1tx_thruasm_zipper_lpc_ml605:\| \\
+\verb|$OCPI_CDK_DIR/../projects/core/exports/lib/components/rcc:\| \\
+\verb|$PWD/../../exports/lib| \\
+\par\medskip
+
+\noindent\textbf{Example ML605/Zipper in FMC HPC}\\
+\noindent\textbf{\textit{filerw}}\\
+\verb|OCPI_LIBRARY_PATH=$PWD/../../hdl/assemblies/fsk_filerw:\| \\
+\verb|$OCPI_CDK_DIR/../projects/core/exports/lib/components/rcc:\| \\
+\verb|$PWD/../../exports/lib| \\
+
+\noindent\textbf{\textit{rx}}\\
+\verb|OCPI_LIBRARY_PATH=$PWD../../hdl/assemblies/dc_offset_iq_imbalance_mixer_cic_dec_rp_c\| \\
+\verb|ordic_fir_real/container-dc_offset_iq_imbalance_mixer_cic_dec_rp_cordic_fir_real_\| \\
+\verb|ml605_ml605_zipper_fmc_hpc_rx_cnt_1rx_0tx_thruasm_zipper_hpc_ml605:\| \\
+\verb|$OCPI_CDK_DIR/../projects/core/exports/lib/components/rcc:\| \\
+\verb|$PWD/../../exports/lib| \\
+
+\noindent\textbf{\textit{tx}}\\
+\verb|OCPI_LIBRARY_PATH=$PWD/../../hdl/assemblies/mfsk2_zp16_fir_real_phase_to_amp_cordic_c\| \\
+\verb|ic_int/container-mfsk2_zp16_fir_real_phase_to_amp_cordic_cic_int_ml605_ml605_zip\| \\
+\verb|per_fmc_hpc_tx_cnt_0rx_1tx_thruasm_zipper_hpc_ml605:\| \\
+\verb|$OCPI_CDK_DIR/../projects/core/exports/lib/components/rcc:\|\\
+\verb|$PWD/../../exports/lib|\\
+
+\noindent\textbf{\textit{txrx/bbloopback}}\\
+\verb|OCPI_LIBRARY_PATH=../../hdl/assemblies/fsk_modem/container-fsk_modem_ml605_\| \\
+\verb|ml605_zipper_fmc_hpc_rx_tx_cnt_1rx_1tx_thruasm_zipper_hpc_ml605:\| \\
+\verb|$OCPI_CDK_DIR/../projects/core/exports/lib/components/rcc:\| \\
+\verb|$PWD/../../exports/lib| \\
+\pagebreak
+
+\subsection{Expected results}
+\noindent In the case of the \textit{filerw}, \textit{rx}, \textit{txrx}, and \textit{bbloopback} modes, assuming transmission of the idata/Os.jpeg input file, the expected result is a transmitted copy of the JPEG file. A Linux program such as Eye of GNOME (eog) may be used to display the JPEG file. The file is shown in Figure \ref{fig:os_pic}.\par\medskip
+\noindent In the case of the \textit{tx} mode, verification is obtained by viewing the RF spectrum on a spectrum analyzer. An example of the transmitted spectrum may be seen in Figure \ref{fig:tx_spec_an}.\par\medskip
+	\begin{figure}[ht]
+	 	\centering
+	 	\begin{minipage}{.325\textwidth}
+			\centering\includegraphics[width=1.0\linewidth]{Os}
+			\caption{FSK input file}
+			\label{fig:os_pic}
+		\end{minipage}
+	 	\begin{minipage}{.45\textwidth}
+			\centering\includegraphics[width=1.0\linewidth]{tx_spec_an}
+			\caption{Output of FSK App RF transmit}
+			\label{fig:tx_spec_an}
+		\end{minipage}
+	\end{figure}
+\pagebreak
+\subsection{Known limitations}
+\noindent For more information on known limitations when using the Zipper-related platforms (Zedboard, Stratix IV, ML605), see the document Myriad-RF\_1\_Zipper\_Limitations included with this project.
+\section{Appendix A: Worker Parameters}
+	\begin{minipage}[t]{.5\textwidth}
+		\textbf{Matchstiq-Z1}
+	\begin{itemize}
+		\item lime\_adc.hdl
+			\subitem DRIVE\_CLK\_p = false
+			\subitem USE\_CLK\_IN\_p = false
+			\subitem USE\_CTL\_CLK\_p = false
+			\subitem USE\_CLK\_OUT\_p = true
+		\item dc\_offset\_filter.hdl
+			\subitem DATA\_WIDTH\_p = 16
+			\subitem PEAK\_MONITOR\_p = true
+		\item iq\_imbalance\_fixer.hdl
+			\subitem DATA\_WIDTH\_p = 16
+			\subitem ACC\_PREC\_p = 38
+			\subitem PEAK\_MONITOR\_p = true
+		\item complex\_mixer.hdl
+			\subitem CHIPSCOPE\_p = false
+			\subitem NCO\_DATA\_WIDTH\_p = 12
+			\subitem INPUT\_DATA\_WIDTH\_p = 12
+			\subitem CORDIC\_STAGES\_p = 16
+			\subitem PEAK\_MONITOR\_p = true
+		\item cic\_dec.hdl
+			\subitem N = 3
+			\subitem M = 1
+			\subitem R = 16
+			\subitem DIN\_WIDTH = 16
+			\subitem ACC\_WIDTH = 28
+			\subitem DOUT\_WIDTH = 16
+		\item rp\_cordic.hdl
+			\subitem DATA\_WIDTH = 16
+			\subitem DATA\_EXT = 6
+			\subitem STAGES = 16
+		\item fir\_real\_sse.hdl (rx\_fir\_real)
+			\subitem NUM\_TAPS\_p = 64
+			\subitem DATA\_WIDTH\_p = 16
+			\subitem COEFF\_WIDTH\_p = 16
+		\item mfsk\_mapper.hdl
+			\subitem M\_p = 2
+		\item zero\_pad.hdl
+			\subitem DWIDTH\_p = 16
+	\end{itemize}
+	\end{minipage}
+	\begin{minipage}[t]{.5\textwidth}
+		\textbf{ }
+	\begin{itemize}
+		\item fir\_real\_sse.hdl (tx\_fir\_real)
+			\subitem NUM\_TAPS\_p = 64
+			\subitem DATA\_WIDTH\_p = 16
+			\subitem COEFF\_WIDTH\_p = 16
+		\item phase\_to\_amp\_cordic.hdl
+			\subitem DATA\_WIDTH = 16
+			\subitem DATA\_EXT = 6
+			\subitem STAGES = 16
+		\item cic\_int.hdl
+			\subitem N = 3
+			\subitem M = 1
+			\subitem R = 16
+			\subitem DIN\_WIDTH = 16
+			\subitem ACC\_WIDTH = 28
+			\subitem DOUT\_WIDTH = 16
+			\subitem CHIPSCOPE\_p = false
+		\item si5338.hdl
+			\subitem CLKIN\_PRESENT\_p = true
+			\subitem CLKIN\_FREQ\_p = 3.072e7
+			\subitem XTAL\_PRESENT\_p = false
+			\subitem XTAL\_FREQ\_p = 0
+			\subitem OUTPUTS\_PRESENT\_p = true, false
+			\subitem INTR\_CONNECTED\_p = false
+		\item matchstiq\_z1\_i2c.hdl
+			\subitem NUSERS\_p = 5
+			\subitem SLAVE\_ADDRESS\_p = \\0x45, 0x71, 0x48, 0x21, 0x20
+			\subitem CLK\_CNT\_p = 199
+	\end{itemize}
+	\end{minipage}
+\newpage
+	\begin{minipage}[t]{.5\textwidth}
+		\textbf{Zipper-related platforms (Zedboard, Stratix IV, ML605)}
+	\begin{itemize}
+		\item lime\_adc.hdl
+			\subitem DRIVE\_CLK\_p = false
+			\subitem USE\_CLK\_IN\_p = true
+			\subitem USE\_CTL\_CLK\_p = false
+			\subitem USE\_CLK\_OUT\_p = false
+		\item dc\_offset\_filter.hdl
+			\subitem DATA\_WIDTH\_p = 16
+			\subitem PEAK\_MONITOR\_p = true
+		\item iq\_imbalance\_fixer.hdl
+			\subitem DATA\_WIDTH\_p = 16
+			\subitem ACC\_PREC\_p = 38
+			\subitem PEAK\_MONITOR\_p = true
+		\item complex\_mixer.hdl
+			\subitem CHIPSCOPE\_p = false
+			\subitem NCO\_DATA\_WIDTH\_p = 12
+			\subitem INPUT\_DATA\_WIDTH\_p = 12
+			\subitem CORDIC\_STAGES\_p = 16
+			\subitem PEAK\_MONITOR\_p = true
+		\item cic\_dec.hdl
+			\subitem N = 3
+			\subitem M = 1
+			\subitem R = 16
+			\subitem DIN\_WIDTH = 16
+			\subitem ACC\_WIDTH = 28
+			\subitem DOUT\_WIDTH = 16
+		\item rp\_cordic.hdl
+			\subitem DATA\_WIDTH = 16
+			\subitem DATA\_EXT = 6
+			\subitem STAGES = 16
+		\item fir\_real\_sse.hdl (rx\_fir\_real)
+			\subitem NUM\_TAPS\_p = 64
+			\subitem DATA\_WIDTH\_p = 16
+			\subitem COEFF\_WIDTH\_p = 16
+		\item mfsk\_mapper.hdl
+			\subitem M\_p = 2
+		\item zero\_pad.hdl
+			\subitem DWIDTH\_p = 16
+	\end{itemize}
+	\end{minipage}
+	\begin{minipage}[t]{.5\textwidth}
+		\textbf{ }
+	\begin{itemize}
+		\item fir\_real\_sse.hdl (tx\_fir\_real)
+			\subitem NUM\_TAPS\_p = 64
+			\subitem DATA\_WIDTH\_p = 16
+			\subitem COEFF\_WIDTH\_p = 16
+		\item phase\_to\_amp\_cordic.hdl
+			\subitem DATA\_WIDTH = 16
+			\subitem DATA\_EXT = 6
+			\subitem STAGES = 16
+		\item cic\_int.hdl
+			\subitem N = 3
+			\subitem M = 1
+			\subitem R = 16
+			\subitem DIN\_WIDTH = 16
+			\subitem ACC\_WIDTH = 28
+			\subitem DOUT\_WIDTH = 16
+			\subitem CHIPSCOPE\_p = false
+		\item si5351.hdl
+			\subitem CLKIN\_PRESENT = true
+			\subitem CLKIN\_FREQ = 3.072e7
+			\subitem XTAL\_PRESENT = false
+			\subitem XTAL\_FREQ = 0
+			\subitem VC\_PRESENT = false
+			\subitem OUTPUTS\_PRESENT = 0,0,1,1,1,1,0,0
+			\subitem OEB\_MODE = low
+			\subitem INTR\_CONNECTED = false
+		\item zipper\_i2c.hdl
+			\subitem NUSERS\_p = 2
+	\end{itemize}
+	\end{minipage}
+	\pagebreak
+\section{Appendix B: Artifacts}
+\subsection{Matchstiq-Z1}
+	\noindent\textbf{filerw}
+	\begin{itemize}
+	\begin{minipage}[t]{.5\textwidth}
+	\item fsk\_filerw\_matchstiq\_z1\_base.bitz
+	\item target-linux-x13\_3-arm/file\_read\_s.so
+	\item target-linux-x13\_3-arm/Baudtracking\_simple\_s.so
+	\end{minipage}
+	\begin{minipage}[t]{.5\textwidth}
+	\item target-linux-x13\_3-arm/real\_digitizer\_s.so
+	\item target-linux-x13\_3-arm/file\_write\_s.so
+	\end{minipage}
+	\end{itemize}
+
+	\noindent\textbf{rx}
+	\begin{itemize}
+	\item dc\_offset\_iq\_imbalance\_mixer\_cic\_dec\_rp\_cordic\_fir\_real\_matchstiq\_z1\_matchstiq\_z1\_rx\_cnt\_1rx\_0tx\_ \\ thruasm\_matchstiq\_z1.bitz \\ \\
+	\begin{minipage}[t]{.5\textwidth}\item target-linux-x13\_3-arm/Baudtracking\_simple\_s.so
+	\item target-linux-x13\_3-arm/real\_digitizer\_s.so
+	\item target-linux-x13\_3-arm/file\_write\_s.so
+	\item target-linux-x13\_3-arm/matchstiq\_z1\_rx\_s.so
+	\item target-linux-x13\_3-arm/lime\_rx\_proxy\_s.so
+	\end{minipage}
+	\begin{minipage}[t]{.5\textwidth}	\item target-linux-x13\_3-arm/si5338\_proxy\_s.so
+	\item target-linux-x13\_3-arm/matchstiq\_z1\_avr\_proxy\_s.so
+	\item target-linux-x13\_3-arm/tmp100\_proxy\_s.so
+	\item target-linux-x13\_3-arm/matchstiq\_z1\_pca9535\_proxy\_s.so
+	\end{minipage}
+	\end{itemize}
+
+	\noindent\textbf{tx}
+	\begin{itemize}
+	\item
+mfsk2\_zp16\_fir\_real\_phase\_to\_amp\_cordic\_cic\_int\_matchstiq\_z1\_matchstiq\_z1\_tx\_cnt\_0rx\_1tx\_thruasm\_matchstiq\_z1.bitz	\\ \\
+	\begin{minipage}[t]{.5\textwidth}
+	\item target-linux-x13\_3-arm/file\_read\_s.so
+	\item target-linux-x13\_3-arm/matchstiq\_z1\_tx\_s.so
+	\item target-linux-x13\_3-arm/lime\_tx\_proxy\_s.so
+	\item target-linux-x13\_3-arm/si5338\_proxy\_s.so
+	\end{minipage}
+	\begin{minipage}[t]{.5\textwidth}
+	\item target-linux-x13\_3-arm/matchstiq\_z1\_avr\_proxy\_s.so
+	\item target-linux-x13\_3-arm/tmp100\_proxy\_s.so
+	\item target-linux-x13\_3-arm/matchstiq\_z1\_pca9535\_proxy\_s.so
+	\end{minipage}
+	\end{itemize}
+
+	\noindent\textbf{txrx/bbloopback}
+	\begin{itemize}
+	\item fsk\_modem\_matchstiq\_z1\_matchstiq\_z1\_rx\_tx\_cnt\_1rx\_1tx\_thruasm\_matchstiq\_z1.bitz \\ \\
+	\begin{minipage}[t]{.5\textwidth}
+	\item target-linux-x13\_3-arm/file\_read\_s.so
+	\item target-linux-x13\_3-arm/Baudtracking\_simple\_s.so
+	\item target-linux-x13\_3-arm/real\_digitizer\_s.so
+	\item target-linux-x13\_3-arm/file\_write\_s.so
+	\item target-linux-x13\_3-arm/matchstiq\_z1\_rx\_s.so
+	\item target-linux-x13\_3-arm/matchstiq\_z1\_tx\_s.so
+	\end{minipage}
+	\begin{minipage}[t]{.5\textwidth}
+	\item target-linux-x13\_3-arm/lime\_rx\_proxy\_s.so
+	\item target-linux-x13\_3-arm/lime\_tx\_proxy\_s.so
+	\item target-linux-x13\_3-arm/si5338\_proxy\_s.so
+	\item target-linux-x13\_3-arm/matchstiq\_z1\_avr\_proxy\_s.so
+	\item target-linux-x13\_3-arm/tmp100\_proxy\_s.so
+	\item target-linux-x13\_3-arm/matchstiq\_z1\_pca9535\_proxy\_s.so
+	\end{minipage}
+	\end{itemize}
+\subsection{Zedboard/Zipper}
+	\noindent\textbf{filerw (zipper not required)}
+	\begin{itemize}
+	\begin{minipage}[t]{.5\textwidth}
+	\item fsk\_filerw\_zed\_base.bitz
+	\item target-linux-x13\_3-arm/file\_read\_s.so
+	\item target-linux-x13\_3-arm/Baudtracking\_simple\_s.so
+	\end{minipage}
+	\begin{minipage}[t]{.5\textwidth}
+	\item target-linux-x13\_3-arm/real\_digitizer\_s.so
+	\item target-linux-x13\_3-arm/file\_write\_s.so
+	\end{minipage}
+	\end{itemize}
+
+	\noindent\textbf{rx}
+	\begin{itemize}
+	\item dc\_offset\_iq\_imbalance\_mixer\_cic\_dec\_rp\_cordic\_fir\_real\_zed\_base\_cnt\_1rx\_0tx\_thruasm\_zipper\_lpc\_zed.bitz \\ \\
+	\begin{minipage}[t]{.5\textwidth}
+	\item target-linux-x13\_3-arm/Baudtracking\_simple\_s.so
+	\item target-linux-x13\_3-arm/real\_digitizer\_s.so
+	\item target-linux-x13\_3-arm/file\_write\_s.so
+	\end{minipage}
+	\begin{minipage}[t]{.5\textwidth}
+	\item target-linux-x13\_3-arm/zipper\_rx\_s.so
+	\item target-linux-x13\_3-arm/lime\_rx\_proxy\_s.so
+	\item target-linux-x13\_3-arm/si5351\_proxy\_s.so
+	\end{minipage}
+	\end{itemize}
+
+	\noindent\textbf{tx}
+	\begin{itemize}
+	\item mfsk2\_zp16\_fir\_real\_phase\_to\_amp\_cordic\_cic\_int\_zed\_base\_cnt\_0rx\_1tx\_thruasm\_zipper\_lpc\_zed.bitz
+\\ \\
+	\begin{minipage}[t]{.5\textwidth}
+	\item target-linux-x13\_3-arm/file\_read\_s.so
+	\item target-linux-x13\_3-arm/zipper\_tx\_s.so
+	\end{minipage}
+	\begin{minipage}[t]{.5\textwidth}
+	\item target-linux-x13\_3-arm/lime\_tx\_proxy\_s.so
+	\item target-linux-x13\_3-arm/si5351\_proxy\_s.so
+	\end{minipage}
+	\end{itemize}
+
+	\noindent\textbf{txrx/bbloopback}
+	\begin{itemize}
+	\item fsk\_modem\_zed\_base\_cnt\_1rx\_1tx\_thruasm\_zipper\_lpc\_zed.bitz \\ \\
+	\begin{minipage}[t]{.5\textwidth}
+	\item target-linux-x13\_3-arm/file\_read\_s.so
+	\item target-linux-x13\_3-arm/Baudtracking\_simple\_s.so
+	\item target-linux-x13\_3-arm/real\_digitizer\_s.so
+	\item target-linux-x13\_3-arm/file\_write\_s.so
+	\end{minipage}
+	\begin{minipage}[t]{.5\textwidth}
+	\item target-linux-x13\_3-arm/zipper\_rx\_s.so
+	\item target-linux-x13\_3-arm/zipper\_tx\_s.so
+	\item target-linux-x13\_3-arm/lime\_rx\_proxy\_s.so
+	\item target-linux-x13\_3-arm/lime\_tx\_proxy\_s.so
+	\item target-linux-x13\_3-arm/si5351\_proxy\_s.so
+	\end{minipage}
+	\end{itemize}
+\subsection{Stratix IV/Zipper}
+	\noindent\textbf{filerw (zipper not required)}
+	\begin{itemize}
+	\begin{minipage}[t]{.5\textwidth}
+	\item fsk\_filerw\_alst4\_base.bitz
+	\item target-linux-c7-x86\_64/file\_read\_s.so
+	\item target-linux-c7-x86\_64/Baudtracking\_simple\_s.so
+	\end{minipage}
+	\begin{minipage}[t]{.5\textwidth}
+	\item target-linux-c7-x86\_64/real\_digitizer\_s.so
+	\item target-linux-c7-x86\_64/file\_write\_s.so
+	\end{minipage}
+	\end{itemize}
+
+	\noindent\textbf{rx}
+	\begin{itemize}
+	\begin{minipage}[t]{.5\textwidth}
+	\item target-linux-c7-x86\_64/file\_read\_s.so
+	\item target-linux-c7-x86\_64/Baudtracking\_simple\_s.so
+	\item target-linux-c7-x86\_64/real\_digitizer\_s.so
+	\end{minipage}
+	\begin{minipage}[t]{.5\textwidth}
+	\item target-linux-c7-x86\_64/zipper\_rx\_s.so
+	\item target-linux-c7-x86\_64/lime\_rx\_proxy\_s.so
+	\item target-linux-c7-x86\_64/si5351\_proxy\_s.so
+	\end{minipage}
+	\end{itemize}
+	For Zipper plugged into HSMC Port A:
+	\begin{itemize}
+	\item dc\_offset\_iq\_imbalance\_mixer\_cic\_dec\_rp\_cordic\_fir\_real\_alst4\_alst4\_zipper\_hsmc\_alst4\_port\_a\_ \\
+		rx\_cnt\_1rx\_0tx\_thruasm\_zipper\_hsmc\_a\_alst4.bitz
+	\end{itemize}
+	For Zipper plugged into HSMC Port B:
+	\begin{itemize}
+	\item dc\_offset\_iq\_imbalance\_mixer\_cic\_dec\_rp\_cordic\_fir\_real\_alst4\_alst4\_zipper\_hsmc\_alst4\_port\_b\_ \\
+		rx\_cnt\_1rx\_0tx\_thruasm\_zipper\_hsmc\_b\_alst4.bitz		
+	\end{itemize}
+
+	\noindent\textbf{tx}
+	\begin{itemize}
+	\begin{minipage}[t]{.5\textwidth}
+	\item target-linux-c7-x86\_64/file\_read\_s.so
+	\item target-linux-c7-x86\_64/zipper\_tx\_s.so
+	\end{minipage}
+	\begin{minipage}[t]{.5\textwidth}
+	\item target-linux-c7-x86\_64/lime\_tx\_proxy\_s.so
+	\item target-linux-c7-x86\_64/si5351\_proxy\_s.so
+	\end{minipage}
+	\end{itemize}
+	For Zipper plugged into HSMC Port A:
+	\begin{itemize}
+	\item mfsk2\_zp16\_fir\_real\_phase\_to\_amp\_cordic\_cic\_int\_alst4\_alst4\_zipper\_hsmc\_alst4\_port\_a\_\\
+		txcnt\_0rx\_1tx\_thruasm\_zipper\_hsmc\_a\_alst4.bitz
+	\end{itemize}
+	For Zipper plugged into HSMC Port B:
+	\begin{itemize}
+	\item mfsk2\_zp16\_fir\_real\_phase\_to\_amp\_cordic\_cic\_int\_alst4\_alst4\_zipper\_hsmc\_alst4\_port\_b\_\\
+		tx\_cnt\_0rx\_1tx\_thruasm\_zipper\_hsmc\_b\_alst4.bitz 
+	\end{itemize}
+
+	\noindent\textbf{txrx/bbloopback}
+	\begin{itemize}
+	\begin{minipage}[t]{.5\textwidth}
+	\item target-linux-c7-x86\_64/file\_read\_s.so
+	\item target-linux-c7-x86\_64/Baudtracking\_simple\_s.so
+	\item target-linux-c7-x86\_64/real\_digitizer\_s.so
+	\item target-linux-c7-x86\_64/zipper\_rx\_s.so
+	\end{minipage}
+	\begin{minipage}[t]{.5\textwidth}
+	\item target-linux-c7-x86\_64/zipper\_tx\_s.so
+	\item target-linux-c7-x86\_64/lime\_rx\_proxy\_s.so
+	\item target-linux-c7-x86\_64/lime\_tx\_proxy\_s.so
+	\item target-linux-c7-x86\_64/si5351\_proxy\_s.so
+	\end{minipage}
+	\end{itemize}
+	For Zipper plugged into HSMC Port A:
+	\begin{itemize}
+		\item fsk\_modem\_alst4\_alst4\_zipper\_hsmc\_alst4\_port\_a\_rx\_tx\_cnt\_1rx\_1tx\_thruasm\_zipper\_hsmc\_a\_alst4.bitz 
+	\end{itemize}
+	\noindent For Zipper plugged into HSMC Port B:
+	\begin{itemize}
+		\item fsk\_modem\_alst4\_alst4\_zipper\_hsmc\_alst4\_port\_b\_rx\_tx\_cnt\_1rx\_1tx\_thruasm\_zipper\_hsmc\_b\_alst4.bitz
+	\end{itemize}
+\subsection{ML605/Zipper}
+	\noindent\textbf{filerw (zipper not required)}
+	\begin{itemize}
+	\begin{minipage}[t]{.5\textwidth}
+	\item fsk\_filerw\_ml605\_base.bitz
+	\item target-linux-c7-x86\_64/file\_read\_s.so
+	\item target-linux-c7-x86\_64/Baudtracking\_simple\_s.so
+	\end{minipage}
+	\begin{minipage}[t]{.5\textwidth}
+	\item target-linux-c7-x86\_64/real\_digitizer\_s.so
+	\item target-linux-c7-x86\_64/file\_write\_s.so
+	\end{minipage}
+	\end{itemize}
+	
+	\noindent\textbf{rx}
+	\begin{itemize}
+	\begin{minipage}[t]{.5\textwidth}
+	\item target-linux-c7-x86\_64/file\_read\_s.so
+	\item target-linux-c7-x86\_64/Baudtracking\_simple\_s.so
+	\item target-linux-c7-x86\_64/real\_digitizer\_s.so
+	\end{minipage}
+	\begin{minipage}[t]{.5\textwidth}
+	\item target-linux-c7-x86\_64/zipper\_rx\_s.so
+	\item target-linux-c7-x86\_64/lime\_rx\_proxy\_s.so
+	\item target-linux-c7-x86\_64/si5351\_proxy\_s.so
+	\end{minipage}
+	\end{itemize}
+	For Zipper plugged into FMC LPC:
+	\begin{itemize}
+	\item dc\_offset\_iq\_imbalance\_mixer\_cic\_dec\_rp\_cordic\_fir\_real\_ml605\_cfg\_1rx\_0tx\_fmcomms\_2\_3\_lpc\_ \\
+	lvds\_cnt\_1rx\_0tx\_thruasm\_fmcomms\_2\_3\_lpc\_LVDS\_ml605.bitz
+	\end{itemize}
+	\noindent For Zipper plugged into FMC HPC:
+	\begin{itemize}
+	\item dc\_offset\_iq\_imbalance\_mixer\_cic\_dec\_rp\_cordic\_fir\_real\_ml605\_cfg\_1rx\_0tx\_fmcomms\_2\_3\_hpc\_ \\
+	lvds\_cnt\_1rx\_0tx\_thruasm\_fmcomms\_2\_3\_hpc\_LVDS\_ml605.bitz
+	\end{itemize}
+	
+	\noindent\textbf{tx}
+	\begin{itemize}
+	\begin{minipage}[t]{.5\textwidth}
+	\item target-linux-c7-x86\_64/file\_read\_s.so
+	\item target-linux-c7-x86\_64/zipper\_tx\_s.so
+	\end{minipage}
+	\begin{minipage}[t]{.5\textwidth}
+	\item target-linux-c7-x86\_64/lime\_tx\_proxy\_s.so
+	\item target-linux-c7-x86\_64/si5351\_proxy\_s.so
+	\end{minipage}
+	\end{itemize}
+	For Zipper plugged into FMC LPC:
+	\begin{itemize}
+		\item mfsk2\_zp16\_fir\_real\_phase\_to\_amp\_cordic\_cic\_int\_ml605\_ml605\_zipper\_fmc\_lpc\_ \\
+		tx\_cnt\_0rx\_1tx\_thruasm\_zipper\_lpc\_ml605.bitz
+	\end{itemize}
+	\noindent For Zipper plugged into FMC HPC:
+	\begin{itemize}
+		\item mfsk2\_zp16\_fir\_real\_phase\_to\_amp\_cordic\_cic\_int\_ml605\_ml605\_zipper\_fmc\_hpc\_ \\
+		tx\_cnt\_0rx\_1tx\_thruasm\_zipper\_hpc\_ml605.bitz
+	\end{itemize}
+
+	\noindent\textbf{txrx/bbloopback}
+	\begin{itemize}
+	\begin{minipage}[t]{.5\textwidth}
+	\item target-linux-c7-x86\_64/file\_read\_s.so
+	\item target-linux-c7-x86\_64/Baudtracking\_simple\_s.so
+	\item target-linux-c7-x86\_64/real\_digitizer\_s.so
+	\item target-linux-c7-x86\_64/zipper\_rx\_s.so
+	\end{minipage}
+	\begin{minipage}[t]{.5\textwidth}
+	\item target-linux-c7-x86\_64/zipper\_tx\_s.so
+	\item target-linux-c7-x86\_64/lime\_rx\_proxy\_s.so
+	\item target-linux-c7-x86\_64/lime\_tx\_proxy\_s.so
+	\item target-linux-c7-x86\_64/si5351\_proxy\_s.so
+	\end{minipage}
+	\end{itemize}
+	For Zipper plugged into FMC LPC:
+	\begin{itemize}
+		\item fsk\_modem\_ml605\_ml605\_zipper\_fmc\_hpc\_rx\_tx\_cnt\_1rx\_1tx\_thruasm\_zipper\_lpc\_ml605.bitz
+	\end{itemize}
+	\noindent For Zipper plugged into FMC HPC:
+	\begin{itemize}
+		\item fsk\_modem\_ml605\_ml605\_zipper\_fmc\_hpc\_rx\_tx\_cnt\_1rx\_1tx\_thruasm\_zipper\_hpc\_ml605.bitz
+	\end{itemize}
+\end{document}

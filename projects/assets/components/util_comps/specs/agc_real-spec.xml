@@ -1,0 +1,9 @@
+<!-- This is the spec file (OCS) for: agc_real
+     Add component spec attributes, like "protocol".
+     Add property elements for spec properties.
+     Add port elements for i/o ports -->
+<ComponentSpec>
+  <!-- Add property and port elements here -->
+    <Port name="in" producer="false" protocol="rstream_protocol"></Port>
+    <Port name="out" producer="true" protocol="rstream_protocol"></Port>
+</ComponentSpec>

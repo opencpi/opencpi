@@ -1,0 +1,21 @@
+<!-- Component spec for a FSK modulator
+    
+When this component receives a "Sync" message it is responsible for performing whatever is 
+required to handle a discontinuity in the input data stream.  All of the control protocol
+being handled at the input must be passed to the output.
+
+-->
+
+<ComponentSpec>
+
+  <!-- Input data and control stream -->
+  <DataInterfaceSpec Name="in" Producer="false">
+      <xi:include href="rstream_with_sync_protocol.xml"/>
+  </DataInterfaceSpec>
+
+  <!-- Output data and control stream -->
+  <DataInterfaceSpec Name="out" Producer="true">
+      <xi:include href="iqstream_with_sync_protocol.xml"/>
+  </DataInterfaceSpec>
+
+</ComponentSpec>

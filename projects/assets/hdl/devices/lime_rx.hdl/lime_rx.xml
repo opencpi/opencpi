@@ -1,0 +1,9 @@
+<HdlDevice language="vhdl" spec='rf_rx-spec' FirstRawProperty='dc_regval'>
+  <ControlInterface Timeout="1024"/>
+  <property name='other_present' type='bool' readable='1'/>
+  <xi:include href='lime-properties.xml'/>
+  <!-- shared SPI -->
+  <rawprop name='rawprops' master='true'/>
+  <!-- other than the SPI, the only wired signal relevant to the RF RX is this enable -->
+  <signal output='rxen'/>
+</HdlDevice>

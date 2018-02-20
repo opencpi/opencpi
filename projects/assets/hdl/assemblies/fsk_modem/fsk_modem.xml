@@ -1,0 +1,106 @@
+<HdlAssembly>
+
+<!-- TX Chain Connections -->
+  <Instance Worker="mfsk_mapper">
+    <Property Name="M_p" Value="2"/>
+  </Instance>
+  <Instance Worker="zero_pad">
+    <Property Name="DWIDTH_p" Value="16"/>
+  </Instance>
+  <Instance Worker="fir_real_sse" Name="tx_fir_real">
+    <Property Name="DATA_WIDTH_p" Value="16"/>
+    <Property Name="COEFF_WIDTH_p" Value="16"/>
+    <Property Name="NUM_TAPS_p" Value="64"/>
+  </Instance>
+  <Instance Worker="phase_to_amp_cordic">
+    <Property Name="DATA_WIDTH" Value="16"/>
+    <Property Name="DATA_EXT" Value="6"/>
+    <Property Name="STAGES" Value="16"/>
+  </Instance>
+  <Instance Worker="cic_int">
+    <Property Name="N" Value="3"/>
+    <Property Name="M" Value="1"/>
+    <Property Name="R" Value="16"/>
+    <Property Name="ACC_WIDTH" Value="28"/>
+  </Instance>
+
+  <Connection Name="in_to_asm_tx_path" External="consumer">
+    <Port Instance="mfsk_mapper" Name="in"/>
+  </Connection>
+  <Connection>
+    <Port Instance="mfsk_mapper" Name="out"/>
+    <Port Instance="zero_pad" Name="in"/>
+  </Connection>
+  <Connection>
+    <Port Instance="zero_pad" Name="out"/>
+    <Port Instance="tx_fir_real" Name="in"/>
+  </Connection>
+  <Connection>
+    <Port Instance="tx_fir_real" Name="out"/>
+    <Port Instance="phase_to_amp_cordic" Name="in"/>
+  </Connection>
+  <Connection>
+    <Port Instance="phase_to_amp_cordic" Name="out"/>
+    <Port Instance="cic_int" Name="in"/>
+  </Connection>
+  <Connection Name="out_from_asm_tx_path_to_dac" External="producer">
+    <Port Instance="cic_int" Name="out"/>
+  </Connection>
+
+<!-- RX Chain Connections -->
+  <Instance Worker="dc_offset_filter">
+    <Property Name="PEAK_MONITOR_p" Value="true"/>
+  </Instance>
+  <Instance Worker="iq_imbalance_fixer">
+    <Property Name="PEAK_MONITOR_p" Value="true"/>
+  </Instance>
+  <Instance Worker="complex_mixer">
+    <Property Name="NCO_DATA_WIDTH_p" Value="12"/>
+    <Property Name="INPUT_DATA_WIDTH_p" Value="12"/>
+    <Property Name="PEAK_MONITOR_p" Value="true"/>
+  </Instance>
+  <Instance Worker="cic_dec">
+    <Property Name="N" Value="3"/>
+    <Property Name="M" Value="1"/>
+    <Property Name="R" Value="16"/>
+    <Property Name="ACC_WIDTH" Value="28"/>
+  </Instance>
+  <Instance Worker="rp_cordic">
+    <Property Name="DATA_WIDTH" Value="16"/>
+    <Property Name="DATA_EXT" Value="6"/>
+    <Property Name="STAGES" Value="16"/>
+  </Instance>
+  <Instance Worker="fir_real_sse" Name="rx_fir_real">
+    <Property Name="DATA_WIDTH_p" Value="16"/>
+    <Property Name="COEFF_WIDTH_p" Value="16"/>
+    <Property Name="NUM_TAPS_p" Value="64"/>
+  </Instance>
+
+  <Connection Name="in_to_asm_rx_path_from_adc" External="consumer">
+    <Port Instance="dc_offset_filter" Name="in"/>
+  </Connection>
+  <Connection>
+    <Port Instance="dc_offset_filter" Name="out"/>
+    <Port Instance="iq_imbalance_fixer" Name="in"/>
+  </Connection>
+  <Connection>
+    <Port Instance="iq_imbalance_fixer" Name="out"/>
+    <Port Instance="complex_mixer" Name="in"/>
+  </Connection>
+  <Connection>
+    <Port Instance="complex_mixer" Name="out"/>
+    <Port Instance="cic_dec" Name="in"/>
+  </Connection>
+  <Connection>
+    <Port Instance="cic_dec" Name="out"/>
+    <Port Instance="rp_cordic" Name="in"/>
+  </Connection>
+  <Connection>
+    <Port Instance="rp_cordic" Name="out"/>
+    <Port Instance="rx_fir_real" Name="in"/>
+  </Connection>
+  <Connection Name="out_from_asm_rx_path" External="producer">
+    <Port Instance="rx_fir_real" Name="out"/>
+  </Connection>
+
+</HdlAssembly>

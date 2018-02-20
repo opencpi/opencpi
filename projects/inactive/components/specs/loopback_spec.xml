@@ -1,0 +1,18 @@
+<ComponentSpec>
+
+  <Properties>
+    <Property Name="msgsProcessed" Readable="true" Writable="false"/>
+    <Property Name="bytesProcessed" Readable="true" Writable="false"/>
+  </Properties>
+
+  <!-- Input data and control stream -->
+  <DataInterfaceSpec Name="in" Producer="false">
+      <xi:include href="iqstream_with_sync_protocol.xml"/>
+  </DataInterfaceSpec>
+
+  <!-- Output data and control stream -->
+  <DataInterfaceSpec Name="out" Producer="true">
+      <xi:include href="iqstream_with_sync_protocol.xml"/>
+  </DataInterfaceSpec>
+
+</ComponentSpec>

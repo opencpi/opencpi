@@ -1,0 +1,21 @@
+<build>
+
+  <!-- LFSR polynomial: x^12 + x^11 + x^10 + x^4 + 1 -->
+  <configuration id='0'>
+    <parameter name='DATA_BIT_WIDTH_p' value='12'/>
+    <parameter name='LFSR_POLYNOMIAL_p'    value='1,1,1,0,0,0,0,0,1,0,0,0'/> <!-- 1*x^12 + 1*x^11 + 1*x^10 + 0*x^9 + 0*x^8 + 0*x^7 + 0*x^6 + 0*x^5 + 1*x^4 + 0*x^3 + 0*x^2 + 0*x^1 + 1 (last +1 always implied) -->
+    <parameter name='LFSR_SEED_p'          value='1,1,1,1,1,1,1,1,1,1,1,1'/> <!-- should never be all zeros -->
+    <parameter name='ZLM_WHEN_NUM_SAMPLES_REACHED_p' value='true'/>
+    <parameter name='ocpi_debug' value='false'/>
+    <parameter name='ocpi_endian' value='little'/>
+  </configuration>
+  <configuration id='1'>
+    <parameter name='DATA_BIT_WIDTH_p' value='12'/>
+    <parameter name='LFSR_POLYNOMIAL_p'    value='1,1,1,0,0,0,0,0,1,0,0,0'/> <!-- 1*x^12 + 1*x^11 + 1*x^10 + 0*x^9 + 0*x^8 + 0*x^7 + 0*x^6 + 0*x^5 + 1*x^4 + 0*x^3 + 0*x^2 + 0*x^1 + 1 (last +1 always implied) -->
+    <parameter name='LFSR_SEED_p'          value='1,1,1,1,1,1,1,1,1,1,1,1'/> <!-- should never be all zeros -->
+    <parameter name='ZLM_WHEN_NUM_SAMPLES_REACHED_p' value='false'/>
+    <parameter name='ocpi_debug' value='false'/>
+    <parameter name='ocpi_endian' value='little'/>
+  </configuration>
+
+</build>

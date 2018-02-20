@@ -1,0 +1,15 @@
+<Application Package="local" Done="fwout">
+
+  <Instance Component="ocpi.assets.util_comps.advanced_pattern" Name="UUT" Connect="fwout">
+    <Property Name="maxPatternLength" Value="128" dumpFile="UUT.maxPatternLength.dump"/>
+    <Property Name="Pattern" valueFile="UUT.Pattern.input"/>
+    <Property Name="LoopCount" Value="0"/>
+    <Property Name="current" dumpFile="UUT.current.dump"/>
+  </Instance>
+
+  <Instance Component="ocpi.assets.util_comps.file_write_demux" Name="fwout">
+    <Property Name="outFile" Value='prefix odata/output_,digits 3,suffix .out'/>
+    <Property Name="current" dumpFile="fwout.current.dump"/>
+  </Instance>
+
+</Application>

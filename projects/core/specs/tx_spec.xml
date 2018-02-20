@@ -1,0 +1,31 @@
+<ComponentSpec>
+  <property name='rf_gain_dB' type='double' writable='true' readable='true'/>
+  <property name='rf_gain_max_dB' type='double' writable='true' volatile='true'/>
+  <property name='rf_gain_min_dB' type='double' writable='true' volatile='true'/>
+  <property name='rf_gain_step_dB' type='double' writable='true' volatile='true'/>
+  
+  <property name='bb_gain_dB' type='double' writable='true' readable='true'/>
+  <property name='bb_gain_max_dB' type='double' writable='true' volatile='true'/>
+  <property name='bb_gain_min_dB' type='double' writable='true' volatile='true'/>
+  <property name='bb_gain_step_dB' type='double' writable='true' volatile='true'/>
+  
+  <property name='frequency_MHz' type='double' writable='true' readable='true'/>
+  <property name='frequency_max_MHz' type='double' writable='true' volatile='true'/>
+  <property name='frequency_min_MHz' type='double' writable='true' volatile='true'/>
+  <property name='frequency_step_MHz' type='double' writable='true' volatile='true'/>
+  
+  <property name='sample_rate_MHz' type='double' writable='true' readable='true'/>
+  <property name='sample_rate_max_MHz' type='double' writable='true' volatile='true'/>
+  <property name='sample_rate_min_MHz' type='double' writable='true' volatile='true'/>
+  <property name='sample_rate_step_MHz' type='double' writable='true' volatile='true'/>
+  
+  <property name='rf_cutoff_frequency_MHz' type='double' writable='true' readable='true'/>
+  <property name='rf_cutoff_frequency_max_MHz' type='double' writable='true' volatile='true'/>
+  <property name='rf_cutoff_frequency_min_MHz' type='double' writable='true' volatile='true'/>
+  <property name='rf_cutoff_frequency_step_MHz' type='double' writable='true' volatile='true'/>
+  
+  <property name='bb_cutoff_frequency_MHz' type='double' writable='true' readable='true'/>
+  <property name='bb_cutoff_frequency_max_MHz' type='double' writable='true' volatile='true'/>
+  <property name='bb_cutoff_frequency_min_MHz' type='double' writable='true' volatile='true'/>
+  <property name='bb_cutoff_frequency_step_MHz' type='double' writable='true' volatile='true'/>
+</ComponentSpec>

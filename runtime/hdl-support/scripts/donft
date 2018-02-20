@@ -1,0 +1,1 @@
+sudo -E nft 0xde000000 0xdfff0000 0x10000 < nft > foo.out

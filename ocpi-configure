@@ -1,0 +1,74 @@
+#!/bin/bash
+
+# This file is protected by Copyright. Please refer to the COPYRIGHT file
+# distributed with this source distribution.
+#
+# This file is part of OpenCPI <http://www.opencpi.org>
+#
+# OpenCPI is free software: you can redistribute it and/or modify it under the
+# terms of the GNU Lesser General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your option) any
+# later version.
+#
+# OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+# A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Lesser General Public License along
+# with this program. If not, see <http://www.gnu.org/licenses/>.
+
+[ ! -d build-aux ] && echo "No build-aux subdir: building configure script." && ./reconf
+[ configure.ac -nt configure ] && echo "configure.ac updated: building configure script." && ./reconf
+
+[ -e .ocpi_config.wasrunning ] && REBUILD="Previous $0 execution was aborted before completion: $(cat .ocpi_config.wasrunning)"
+
+[ Makefile.am -nt Makefile ] && echo "Makefile out of date: building configure script." && ./reconf && REBUILD="Makefile.am changed"
+
+# Decide configure options, if they need to be run
+[ -z "${REBUILD}" -a configure -nt config.status ] && REBUILD="configure script changed"
+
+rm -f .ocpi_config.diff .ocpi_config.current
+# Check all environmental variables
+if [ -z "${REBUILD}" ]; then
+  if [ ! -e .ocpi_config.envvars ]; then
+    REBUILD=".ocpi_config.envvars is missing"
+  else
+    env | grep OCPI_ | sort > .ocpi_config.current
+    diff -u .ocpi_config.envvars .ocpi_config.current > .ocpi_config.diff
+    [ -s .ocpi_config.diff ] && REBUILD="Environmental variables have changed"
+  fi
+fi
+
+# Check command-line options
+if [ -z "${REBUILD}" ]; then
+  if [ ! -e .ocpi_config.cmdline ]; then
+    REBUILD=".ocpi_config.cmdline is missing"
+  else
+    echo "$@"| xargs -n1 echo | sort > .ocpi_config.current
+    diff .ocpi_config.cmdline .ocpi_config.current > .ocpi_config.diff
+    if [ -s .ocpi_config.diff ]; then
+      REBUILD="Command-line options have changed"
+      # diff -u looks bad with command line options
+      diff -y -W $(tput cols) .ocpi_config.cmdline .ocpi_config.current > .ocpi_config.diff
+    fi
+  fi
+fi
+
+# The diffs above failing should not exit
+set -e
+
+if [ -n "${REBUILD}" ]; then
+  [ -z "${OCPI_CDK_DIR}" ] && export OCPI_CDK_DIR=`pwd`/exports
+  # [ -z "${OCPI_CDK_DIR}" ] && echo ERROR - OCPI_CDK_DIR not set. && exit
+  echo Re-running configure: ${REBUILD}
+  [ -s .ocpi_config.diff ] && cat .ocpi_config.diff || true
+  CMD_LINE="--prefix=${OCPI_CDK_DIR} --exec-prefix=${OCPI_CDK_DIR}"
+  # [ -n "${OCPI_CROSS_HOST}" ] && CMD_LINE+=" --host=${OCPI_CROSS_HOST}"
+  env | grep OCPI_ | sort > .ocpi_config.envvars
+  echo "$@" | xargs -n1 echo | sort > .ocpi_config.cmdline
+  export OCPI_CONFIGURE_IS_RUNNING=1
+  echo ${REBUILD} > .ocpi_config.wasrunning
+  ./configure ${CMD_LINE} "$@"
+  rm -f .ocpi_config.wasrunning .ocpi_config.diff .ocpi_config.current
+fi

@@ -1,0 +1,3 @@
+<Application>
+  <instance component='ocpi.core.nothing'/>
+</Application>

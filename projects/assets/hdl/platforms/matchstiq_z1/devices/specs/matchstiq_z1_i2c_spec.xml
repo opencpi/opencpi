@@ -1,0 +1,10 @@
+<!-- 
+ Matchstiq-Z1 I2C Device Worker OCS
+-->
+<ComponentSpec nocontrol="true">
+  <Property name="NUSERS_p" parameter="1" readable="1" default="5"/>
+  <Property name="SLAVE_ADDRESS_p" type="uchar" arraylength="NUSERS_p" parameter="1" readable="1"/>
+  <!-- CLK_FREQ_p is divided by the desired I2C clock rate, in this case 250kHz, 
+       to produce a clock cycle count value, which is an input to the I2C module -->
+  <Property name="CLK_FREQ_p" type="float" parameter="1" readable="1" default="100e6"/>
+</ComponentSpec>

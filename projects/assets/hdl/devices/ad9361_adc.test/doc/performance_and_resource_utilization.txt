@@ -1,0 +1,486 @@
++ set -x
++ rm -rf performance_and_resource_utilization.txt
++ tee performance_and_resource_utilization.txt
++ grep --color=auto -A 40 -e 'Primitive and Black Box Usage:' -e 'Device utilization summary:' -e 'Partition Merge Status' -e 'Timing constraint: Default period analysis for Clock ' -e '[0-9]. Memory' -e '[0-9]. IO and GT Specific' -e '[0-9]. Specific Feature' -e '[0-9]. Black Boxes' ad9361_adc.hdl/target-stratix4/ad9361_adc_rv-export.out ad9361_adc.hdl/target-stratix4/ad9361_adc_rv-map.out ad9361_adc.hdl/target-stratix4/ad9361_adc_rv-merge.out ad9361_adc.hdl/target-stratix4/ad9361_adc_rv-quartus.out ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out ad9361_adc.hdl/target-stratix4/ad9361_adc_rv.map.summary ad9361_adc.hdl/target-stratix4/ad9361_adc_rv.merge.summary
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out:Primitive and Black Box Usage:
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-------------------------------
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-# BELS                             : 311
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-#      GND                         : 5
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-#      INV                         : 15
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-#      LUT1                        : 31
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-#      LUT2                        : 44
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-#      LUT3                        : 14
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-#      LUT4                        : 12
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-#      LUT5                        : 38
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-#      LUT6                        : 72
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-#      MUXCY                       : 44
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-#      MUXF7                       : 1
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-#      VCC                         : 3
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-#      XORCY                       : 32
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-# FlipFlops/Latches                : 208
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-#      FD                          : 31
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-#      FDC                         : 33
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-#      FDCE                        : 28
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-#      FDE                         : 56
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-#      FDPE                        : 4
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-#      FDR                         : 8
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-#      FDRE                        : 46
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-#      FDS                         : 1
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-#      FDSE                        : 1
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-# RAMS                             : 8
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-#      RAM64M                      : 8
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out:Device utilization summary:
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out----------------------------
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-Selected Device : 6vlx240tff1156-1 
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-Slice Logic Utilization: 
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out- Number of Slice Registers:             208  out of  301440     0%  
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out- Number of Slice LUTs:                  258  out of  150720     0%  
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-    Number used as Logic:               226  out of  150720     0%  
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-    Number used as Memory:               32  out of  58400     0%  
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-       Number used as RAM:               32
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-Slice Logic Distribution: 
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out- Number of LUT Flip Flop pairs used:    381
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-   Number with an unused Flip Flop:     173  out of    381    45%  
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-   Number with an unused LUT:           123  out of    381    32%  
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-   Number of fully used LUT-FF pairs:    85  out of    381    22%  
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-   Number of unique control sets:        22
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-IO Utilization: 
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out- Number of IOs:                         156
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out- Number of bonded IOBs:                   0  out of    600     0%  
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-Specific Feature Utilization:
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out----------------------------
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-Partition Resource Summary:
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out----------------------------
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-  No Partitions were found in this design.
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out----------------------------
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-=========================================================================
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-Timing Report
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-NOTE: THESE TIMING NUMBERS ARE ONLY A SYNTHESIS ESTIMATE.
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-      FOR ACCURATE TIMING INFORMATION PLEASE REFER TO THE TRACE REPORT
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-      GENERATED AFTER PLACE-and-ROUTE.
+--
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out:Timing constraint: Default period analysis for Clock 'ctl_in_Clk'
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-  Clock period: 2.982ns (frequency: 335.373MHz)
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-  Total number of paths / destination ports: 4157 / 260
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out--------------------------------------------------------------------------
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-Delay:               2.982ns (Levels of Logic = 6)
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-  Source:            wci/wci_decode/my_state_r_FSM_FFd3 (FF)
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-  Destination:       worker/fifo/fifo/dGDeqPtr1_0 (FF)
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-  Source Clock:      ctl_in_Clk rising
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-  Destination Clock: ctl_in_Clk rising
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-  Data Path: wci/wci_decode/my_state_r_FSM_FFd3 to worker/fifo/fifo/dGDeqPtr1_0
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-                                Gate     Net
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-    Cell:in->out      fanout   Delay   Delay  Logical Name (Net Name)
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-    ----------------------------------------  ------------
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-     FDS:C->Q              3   0.375   0.505  my_state_r_FSM_FFd3 (my_state_r_FSM_FFd3)
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-     LUT2:I0->O           31   0.068   0.569  my_state_r_is_operating1 (is_operating)
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-     end scope: 'wci/wci_decode:is_operating'
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-     end scope: 'wci:is_operating'
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-     begin scope: 'worker:ctl_in_is_operating'
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-     begin scope: 'worker/fifo:operating'
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-     LUT3:I2->O           27   0.068   0.568  fifo_d_deq1 (fifo_d_deq)
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-     begin scope: 'worker/fifo/fifo:dDEQ'
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-     LUT6:I5->O           16   0.068   0.497  dNotEmptyReg_PWR_36_o_MUX_153_o1 (dNotEmptyReg_PWR_36_o_MUX_153_o)
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-     FDPE:CE                   0.263          dGDeqPtr1_0
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-    ----------------------------------------
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-    Total                      2.982ns (0.842ns logic, 2.140ns route)
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-                                       (28.2% logic, 71.8% route)
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-=========================================================================
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out:Timing constraint: Default period analysis for Clock 'dev_adc_in_adc_clk'
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-  Clock period: 2.707ns (frequency: 369.413MHz)
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-  Total number of paths / destination ports: 202 / 127
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out--------------------------------------------------------------------------
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-Delay:               2.707ns (Levels of Logic = 4)
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-  Source:            worker/fifo/fifo/sDeqPtr_1 (FF)
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-  Destination:       worker/fifo/fifo/sNotFullReg (FF)
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-  Source Clock:      dev_adc_in_adc_clk rising
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-  Destination Clock: dev_adc_in_adc_clk rising
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-  Data Path: worker/fifo/fifo/sDeqPtr_1 to worker/fifo/fifo/sNotFullReg
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-                                Gate     Net
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-    Cell:in->out      fanout   Delay   Delay  Logical Name (Net Name)
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-    ----------------------------------------  ------------
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-     FDC:C->Q              4   0.375   0.798  sDeqPtr_1 (sDeqPtr_1)
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-     LUT6:I0->O            1   0.068   0.417  Mmux_sNextNotFull_sFutureNotFull_MUX_127_o16_SW0_SW0 (N2)
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-     LUT5:I4->O            1   0.068   0.417  Mmux_sNextNotFull_sFutureNotFull_MUX_127_o16_SW0 (N0)
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-     LUT6:I5->O            1   0.068   0.417  Mmux_sNextNotFull_sFutureNotFull_MUX_127_o16 (Mmux_sNextNotFull_sFutureNotFull_MUX_127_o15)
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-     LUT6:I5->O            1   0.068   0.000  Mmux_sNextNotFull_sFutureNotFull_MUX_127_o112 (sNextNotFull_sFutureNotFull_MUX_127_o)
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-     FDC:D                     0.011          sNotFullReg
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-    ----------------------------------------
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-    Total                      2.707ns (0.658ns logic, 2.049ns route)
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-                                       (24.3% logic, 75.7% route)
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-=========================================================================
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-Timing constraint: Default OFFSET IN BEFORE for Clock 'ctl_in_Clk'
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-  Total number of paths / destination ports: 240 / 165
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out--------------------------------------------------------------------------
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-Offset:              2.080ns (Levels of Logic = 5)
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-  Source:            ctl_in_MReset_n (PAD)
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-  Destination:       worker/fifo/samplesInMessage_r_25 (FF)
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-  Destination Clock: ctl_in_Clk rising
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-  Data Path: ctl_in_MReset_n to worker/fifo/samplesInMessage_r_25
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-                                Gate     Net
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-    Cell:in->out      fanout   Delay   Delay  Logical Name (Net Name)
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-    ----------------------------------------  ------------
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-     begin scope: 'wci:inputs_MReset_n'
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-     INV:I->O             39   0.086   0.553  my_reset1_INV_0 (reset)
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-     end scope: 'wci:reset'
+ad9361_adc.hdl/target-virtex6/ad9361_adc_rv-xst.out-     begin scope: 'worker:ctl_in_reset'
+--
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out:2. Memory
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-3. DSP
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out:4. IO and GT Specific
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-5. Clocking
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out:6. Specific Feature
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-7. Primitives
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out:8. Black Boxes
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-9. Instantiated Netlists
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-1. Slice Logic
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out---------------
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-+-------------------------+------+-------+-----------+-------+
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-|        Site Type        | Used | Fixed | Available | Util% |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-+-------------------------+------+-------+-----------+-------+
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| Slice LUTs*             |  133 |     0 |     53200 |  0.25 |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-|   LUT as Logic          |  133 |     0 |     53200 |  0.25 |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-|   LUT as Memory         |    0 |     0 |     17400 |  0.00 |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| Slice Registers         |  188 |     0 |    106400 |  0.18 |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-|   Register as Flip Flop |  188 |     0 |    106400 |  0.18 |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-|   Register as Latch     |    0 |     0 |    106400 |  0.00 |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| F7 Muxes                |    0 |     0 |     26600 |  0.00 |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| F8 Muxes                |    0 |     0 |     13300 |  0.00 |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-+-------------------------+------+-------+-----------+-------+
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-* Warning! The Final LUT count, after physical optimizations and full implementation, is typically lower. Run opt_design after synthesis, if not already completed, for a more realistic count.
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-1.1 Summary of Registers by Type
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out---------------------------------
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-+-------+--------------+-------------+--------------+
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| Total | Clock Enable | Synchronous | Asynchronous |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-+-------+--------------+-------------+--------------+
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| 0     |            _ |           - |            - |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| 0     |            _ |           - |          Set |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| 0     |            _ |           - |        Reset |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| 0     |            _ |         Set |            - |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| 0     |            _ |       Reset |            - |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| 0     |          Yes |           - |            - |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| 4     |          Yes |           - |          Set |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| 63    |          Yes |           - |        Reset |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| 3     |          Yes |         Set |            - |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| 118   |          Yes |       Reset |            - |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-+-------+--------------+-------------+--------------+
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out:2. Memory
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out----------
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-+-------------------+------+-------+-----------+-------+
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-|     Site Type     | Used | Fixed | Available | Util% |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-+-------------------+------+-------+-----------+-------+
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| Block RAM Tile    |  0.5 |     0 |       140 |  0.36 |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-|   RAMB36/FIFO*    |    0 |     0 |       140 |  0.00 |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-|   RAMB18          |    1 |     0 |       280 |  0.36 |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-|     RAMB18E1 only |    1 |       |           |       |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-+-------------------+------+-------+-----------+-------+
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-* Note: Each Block RAM Tile only has one FIFO logic available and therefore can accommodate only one FIFO36E1 or one FIFO18E1. However, if a FIFO18E1 occupies a Block RAM Tile, that tile can still accommodate a RAMB18E1
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-3. DSP
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-------
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-+-----------+------+-------+-----------+-------+
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| Site Type | Used | Fixed | Available | Util% |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-+-----------+------+-------+-----------+-------+
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| DSPs      |    0 |     0 |       220 |  0.00 |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-+-----------+------+-------+-----------+-------+
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out:4. IO and GT Specific
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out----------------------
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-+-----------------------------+------+-------+-----------+-------+
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-|          Site Type          | Used | Fixed | Available | Util% |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-+-----------------------------+------+-------+-----------+-------+
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| Bonded IOB                  |    0 |     0 |       200 |  0.00 |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| Bonded IPADs                |    0 |     0 |         2 |  0.00 |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| Bonded IOPADs               |    0 |     0 |       130 |  0.00 |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| PHY_CONTROL                 |    0 |     0 |         4 |  0.00 |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| PHASER_REF                  |    0 |     0 |         4 |  0.00 |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| OUT_FIFO                    |    0 |     0 |        16 |  0.00 |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| IN_FIFO                     |    0 |     0 |        16 |  0.00 |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| IDELAYCTRL                  |    0 |     0 |         4 |  0.00 |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| IBUFDS                      |    0 |     0 |       192 |  0.00 |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| PHASER_OUT/PHASER_OUT_PHY   |    0 |     0 |        16 |  0.00 |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| PHASER_IN/PHASER_IN_PHY     |    0 |     0 |        16 |  0.00 |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| IDELAYE2/IDELAYE2_FINEDELAY |    0 |     0 |       200 |  0.00 |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| ILOGIC                      |    0 |     0 |       200 |  0.00 |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| OLOGIC                      |    0 |     0 |       200 |  0.00 |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-+-----------------------------+------+-------+-----------+-------+
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-5. Clocking
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out------------
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-+------------+------+-------+-----------+-------+
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-|  Site Type | Used | Fixed | Available | Util% |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-+------------+------+-------+-----------+-------+
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| BUFGCTRL   |    0 |     0 |        32 |  0.00 |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| BUFIO      |    0 |     0 |        16 |  0.00 |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| MMCME2_ADV |    0 |     0 |         4 |  0.00 |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| PLLE2_ADV  |    0 |     0 |         4 |  0.00 |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| BUFMRCE    |    0 |     0 |         8 |  0.00 |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| BUFHCE     |    0 |     0 |        72 |  0.00 |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| BUFR       |    0 |     0 |        16 |  0.00 |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-+------------+------+-------+-----------+-------+
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out:6. Specific Feature
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out--------------------
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-+-------------+------+-------+-----------+-------+
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-|  Site Type  | Used | Fixed | Available | Util% |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-+-------------+------+-------+-----------+-------+
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| BSCANE2     |    0 |     0 |         4 |  0.00 |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| CAPTUREE2   |    0 |     0 |         1 |  0.00 |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| DNA_PORT    |    0 |     0 |         1 |  0.00 |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| EFUSE_USR   |    0 |     0 |         1 |  0.00 |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| FRAME_ECCE2 |    0 |     0 |         1 |  0.00 |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| ICAPE2      |    0 |     0 |         2 |  0.00 |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| STARTUPE2   |    0 |     0 |         1 |  0.00 |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| XADC        |    0 |     0 |         1 |  0.00 |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-+-------------+------+-------+-----------+-------+
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-7. Primitives
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out--------------
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-+----------+------+---------------------+
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| Ref Name | Used | Functional Category |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-+----------+------+---------------------+
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| FDRE     |  118 |        Flop & Latch |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| FDCE     |   63 |        Flop & Latch |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| LUT2     |   43 |                 LUT |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| LUT6     |   38 |                 LUT |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| LUT1     |   36 |                 LUT |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| LUT5     |   21 |                 LUT |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| LUT4     |   12 |                 LUT |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| CARRY4   |   11 |          CarryLogic |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| LUT3     |    8 |                 LUT |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| FDPE     |    4 |        Flop & Latch |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| FDSE     |    3 |        Flop & Latch |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| RAMB18E1 |    1 |        Block Memory |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-+----------+------+---------------------+
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out:8. Black Boxes
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out---------------
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-+----------+------+
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| Ref Name | Used |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-+----------+------+
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-9. Instantiated Netlists
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-------------------------
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-+----------+------+
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-| Ref Name | Used |
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-+----------+------+
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-report_utilization: Time (s): cpu = 00:00:00.03 ; elapsed = 00:00:00.08 . Memory (MB): peak = 1637.230 ; gain = 0.000 ; free physical = 42854 ; free virtual = 91467
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-INFO: [Timing 38-91] UpdateTimingParams: Speed grade: -1, Delay Type: max.
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-INFO: [Timing 38-191] Multithreading enabled for timing update using a maximum of 8 CPUs
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-INFO: [Timing 38-35] Done setting XDC timing constraints.
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-WARNING: [Timing 38-242] The property HD.CLK_SRC of clock port "ctl_in[Clk]" is not set. In out-of-context mode, this prevents timing estimation for clock delay/skew
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-Resolution: Set the HD.CLK_SRC property of the out-of-context port to the location of the clock buffer instance in the top-level design
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-WARNING: [Timing 38-242] The property HD.CLK_SRC of clock port "dev_adc_in[adc_clk]" is not set. In out-of-context mode, this prevents timing estimation for clock delay/skew
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-Resolution: Set the HD.CLK_SRC property of the out-of-context port to the location of the clock buffer instance in the top-level design
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-INFO: [Timing 38-78] ReportTimingParams: -max_paths 1 -nworst 1 -delay_type max -sort_by slack.
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-Copyright 1986-2017 Xilinx, Inc. All Rights Reserved.
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-Timing Report
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-Slack:                    inf
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-  Source:                 wci/messageSize_property/value_reg[7]/C
+ad9361_adc.hdl/target-zynq/ad9361_adc_rv-vivado.out-                            (rising edge-triggered cell FDRE)
+--
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out:Primitive and Black Box Usage:
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-------------------------------
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-# BELS                             : 307
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-#      GND                         : 5
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-#      INV                         : 15
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-#      LUT1                        : 31
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-#      LUT2                        : 44
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-#      LUT3                        : 14
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-#      LUT4                        : 12
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-#      LUT5                        : 38
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-#      LUT6                        : 68
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-#      MUXCY                       : 44
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-#      MUXF7                       : 1
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-#      VCC                         : 3
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-#      XORCY                       : 32
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-# FlipFlops/Latches                : 208
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-#      FD                          : 27
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-#      FDC                         : 33
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-#      FDCE                        : 28
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-#      FDE                         : 56
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-#      FDPE                        : 4
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-#      FDR                         : 8
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-#      FDRE                        : 50
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-#      FDS                         : 1
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-#      FDSE                        : 1
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-# RAMS                             : 8
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-#      RAM64M                      : 8
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out:Device utilization summary:
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out----------------------------
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-Selected Device : 7z020clg484-1 
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-Slice Logic Utilization: 
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out- Number of Slice Registers:             208  out of  106400     0%  
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out- Number of Slice LUTs:                  254  out of  53200     0%  
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-    Number used as Logic:               222  out of  53200     0%  
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-    Number used as Memory:               32  out of  17400     0%  
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-       Number used as RAM:               32
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-Slice Logic Distribution: 
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out- Number of LUT Flip Flop pairs used:    377
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-   Number with an unused Flip Flop:     169  out of    377    44%  
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-   Number with an unused LUT:           123  out of    377    32%  
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-   Number of fully used LUT-FF pairs:    85  out of    377    22%  
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-   Number of unique control sets:        22
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-IO Utilization: 
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out- Number of IOs:                         156
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out- Number of bonded IOBs:                   0  out of    200     0%  
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-Specific Feature Utilization:
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out----------------------------
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-Partition Resource Summary:
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out----------------------------
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-  No Partitions were found in this design.
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out----------------------------
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-=========================================================================
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-Timing Report
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-NOTE: THESE TIMING NUMBERS ARE ONLY A SYNTHESIS ESTIMATE.
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-      FOR ACCURATE TIMING INFORMATION PLEASE REFER TO THE TRACE REPORT
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-      GENERATED AFTER PLACE-and-ROUTE.
+--
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out:Timing constraint: Default period analysis for Clock 'ctl_in_Clk'
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-  Clock period: 2.823ns (frequency: 354.237MHz)
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-  Total number of paths / destination ports: 4159 / 268
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out--------------------------------------------------------------------------
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-Delay:               2.823ns (Levels of Logic = 6)
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-  Source:            wci/wci_decode/my_state_r_FSM_FFd3 (FF)
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-  Destination:       worker/fifo/samplesInMessage_r_21 (FF)
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-  Source Clock:      ctl_in_Clk rising
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-  Destination Clock: ctl_in_Clk rising
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-  Data Path: wci/wci_decode/my_state_r_FSM_FFd3 to worker/fifo/samplesInMessage_r_21
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-                                Gate     Net
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-    Cell:in->out      fanout   Delay   Delay  Logical Name (Net Name)
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-    ----------------------------------------  ------------
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-     FDS:C->Q              3   0.282   0.499  my_state_r_FSM_FFd3 (my_state_r_FSM_FFd3)
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-     LUT2:I0->O           27   0.053   0.564  my_state_r_is_operating1 (is_operating)
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-     end scope: 'wci/wci_decode:is_operating'
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-     end scope: 'wci:is_operating'
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-     begin scope: 'worker:ctl_in_is_operating'
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-     begin scope: 'worker/fifo:operating'
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-     LUT3:I2->O            1   0.053   0.000  reset_samplesInMessage_r[31]_OR_53_o1_lut (reset_samplesInMessage_r[31]_OR_53_o1_lut)
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-     MUXCY:S->O            1   0.291   0.000  reset_samplesInMessage_r[31]_OR_53_o1_cy (wsi_eom_l1)
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-     MUXCY:CI->O          32   0.204   0.552  reset_samplesInMessage_r[31]_OR_53_o1_cy1 (reset_samplesInMessage_r[31]_OR_53_o)
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-     FDRE:R                    0.325          samplesInMessage_r_21
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-    ----------------------------------------
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-    Total                      2.823ns (1.208ns logic, 1.615ns route)
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-                                       (42.8% logic, 57.2% route)
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-=========================================================================
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out:Timing constraint: Default period analysis for Clock 'dev_adc_in_adc_clk'
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-  Clock period: 2.503ns (frequency: 399.521MHz)
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-  Total number of paths / destination ports: 202 / 127
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out--------------------------------------------------------------------------
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-Delay:               2.503ns (Levels of Logic = 4)
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-  Source:            worker/fifo/fifo/sDeqPtr_1 (FF)
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-  Destination:       worker/fifo/fifo/sNotFullReg (FF)
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-  Source Clock:      dev_adc_in_adc_clk rising
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-  Destination Clock: dev_adc_in_adc_clk rising
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-  Data Path: worker/fifo/fifo/sDeqPtr_1 to worker/fifo/fifo/sNotFullReg
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-                                Gate     Net
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-    Cell:in->out      fanout   Delay   Delay  Logical Name (Net Name)
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-    ----------------------------------------  ------------
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-     FDC:C->Q              4   0.282   0.759  sDeqPtr_1 (sDeqPtr_1)
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-     LUT6:I0->O            1   0.053   0.413  Mmux_sNextNotFull_sFutureNotFull_MUX_127_o16_SW0_SW0 (N2)
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-     LUT5:I4->O            1   0.053   0.413  Mmux_sNextNotFull_sFutureNotFull_MUX_127_o16_SW0 (N0)
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-     LUT6:I5->O            1   0.053   0.413  Mmux_sNextNotFull_sFutureNotFull_MUX_127_o16 (Mmux_sNextNotFull_sFutureNotFull_MUX_127_o15)
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-     LUT6:I5->O            1   0.053   0.000  Mmux_sNextNotFull_sFutureNotFull_MUX_127_o112 (sNextNotFull_sFutureNotFull_MUX_127_o)
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-     FDC:D                     0.011          sNotFullReg
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-    ----------------------------------------
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-    Total                      2.503ns (0.505ns logic, 1.998ns route)
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-                                       (20.2% logic, 79.8% route)
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-=========================================================================
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-Timing constraint: Default OFFSET IN BEFORE for Clock 'ctl_in_Clk'
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-  Total number of paths / destination ports: 240 / 165
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out--------------------------------------------------------------------------
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-Offset:              2.044ns (Levels of Logic = 5)
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-  Source:            ctl_in_MReset_n (PAD)
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-  Destination:       worker/fifo/samplesInMessage_r_21 (FF)
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-  Destination Clock: ctl_in_Clk rising
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-  Data Path: ctl_in_MReset_n to worker/fifo/samplesInMessage_r_21
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-                                Gate     Net
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-    Cell:in->out      fanout   Delay   Delay  Logical Name (Net Name)
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-    ----------------------------------------  ------------
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-     begin scope: 'wci:inputs_MReset_n'
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-     INV:I->O             39   0.067   0.553  my_reset1_INV_0 (reset)
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-     end scope: 'wci:reset'
+ad9361_adc.hdl/target-zynq_ise/ad9361_adc_rv-xst.out-     begin scope: 'worker:ctl_in_reset'
+--
+ad9361_adc.hdl/target-stratix4/ad9361_adc_rv.merge.summary:Partition Merge Status : Successful - Tue Dec 12 14:45:20 2017
+ad9361_adc.hdl/target-stratix4/ad9361_adc_rv.merge.summary-Quartus Prime Version : 15.1.0 Build 185 10/21/2015 SJ Standard Edition
+ad9361_adc.hdl/target-stratix4/ad9361_adc_rv.merge.summary-Revision Name : ad9361_adc_rv
+ad9361_adc.hdl/target-stratix4/ad9361_adc_rv.merge.summary-Top-level Entity Name : ad9361_adc_rv
+ad9361_adc.hdl/target-stratix4/ad9361_adc_rv.merge.summary-Family : Stratix IV
+ad9361_adc.hdl/target-stratix4/ad9361_adc_rv.merge.summary-Logic utilization : N/A
+ad9361_adc.hdl/target-stratix4/ad9361_adc_rv.merge.summary-    Combinational ALUTs : 185
+ad9361_adc.hdl/target-stratix4/ad9361_adc_rv.merge.summary-    Memory ALUTs : 0
+ad9361_adc.hdl/target-stratix4/ad9361_adc_rv.merge.summary-    Dedicated logic registers : 187
+ad9361_adc.hdl/target-stratix4/ad9361_adc_rv.merge.summary-Total registers : 187
+ad9361_adc.hdl/target-stratix4/ad9361_adc_rv.merge.summary-Total pins : 156
+ad9361_adc.hdl/target-stratix4/ad9361_adc_rv.merge.summary-Total virtual pins : 0
+ad9361_adc.hdl/target-stratix4/ad9361_adc_rv.merge.summary-Total block memory bits : 1,536
+ad9361_adc.hdl/target-stratix4/ad9361_adc_rv.merge.summary-DSP block 18-bit elements : 0
+ad9361_adc.hdl/target-stratix4/ad9361_adc_rv.merge.summary-Total GXB Receiver Channel PCS : 0
+ad9361_adc.hdl/target-stratix4/ad9361_adc_rv.merge.summary-Total GXB Receiver Channel PMA : 0
+ad9361_adc.hdl/target-stratix4/ad9361_adc_rv.merge.summary-Total GXB Transmitter Channel PCS : 0
+ad9361_adc.hdl/target-stratix4/ad9361_adc_rv.merge.summary-Total GXB Transmitter Channel PMA : 0
+ad9361_adc.hdl/target-stratix4/ad9361_adc_rv.merge.summary-Total PLLs : 0
+ad9361_adc.hdl/target-stratix4/ad9361_adc_rv.merge.summary-Total DLLs : 0

@@ -1,0 +1,18 @@
+<ComponentSpec>
+  <Properties>
+     <Property Name="direction" Type="ULong" Readable="true" Writable="true"/>
+     <Property Name="log2n" Type="ULong" Readable="true" Writable="true"/>
+  </Properties>
+  <DataInterfaceSpec Name="in_real" Producer="false">
+    <ProtocolSummary DataValueWidth="32" MaxMessageValues="32768" NumberOfOpcodes="1" VariableMessageLength="true" ZeroLengthMessages="true"/>
+  </DataInterfaceSpec>
+  <DataInterfaceSpec Name="in_imag" Producer="false">
+    <ProtocolSummary DataValueWidth="32" MaxMessageValues="32768" NumberOfOpcodes="1" VariableMessageLength="true" ZeroLengthMessages="true"/>
+  </DataInterfaceSpec>
+  <DataInterfaceSpec Name="out_real" Producer="true">
+    <ProtocolSummary DataValueWidth="32" MaxMessageValues="32768" NumberOfOpcodes="1" VariableMessageLength="true" ZeroLengthMessages="true"/>
+  </DataInterfaceSpec>
+  <DataInterfaceSpec Name="out_imag" Producer="true">
+    <ProtocolSummary DataValueWidth="32" MaxMessageValues="32768" NumberOfOpcodes="1" VariableMessageLength="true" ZeroLengthMessages="true"/>
+  </DataInterfaceSpec>
+</ComponentSpec>

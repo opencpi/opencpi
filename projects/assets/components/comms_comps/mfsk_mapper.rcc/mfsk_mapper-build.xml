@@ -1,0 +1,12 @@
+<build>
+  <configuration id='0'>
+    <parameter name='M_p' value='2'/>
+    <parameter name='ocpi_debug' value='false'/>
+    <parameter name='ocpi_endian' value='little'/>
+  </configuration>
+  <configuration id='1'>
+    <parameter name='M_p' value='4'/>
+    <parameter name='ocpi_debug' value='false'/>
+    <parameter name='ocpi_endian' value='little'/>
+  </configuration>
+</build>

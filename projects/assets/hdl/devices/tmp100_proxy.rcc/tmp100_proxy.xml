@@ -1,0 +1,6 @@
+<!-- 
+ TMP100 Device Worker Proxy OWD
+-->
+<RccWorker language="c++" slave="tmp100.hdl" spec="tmp100_proxy_spec">
+  <specproperty name="temperature" readsync="true"/>
+</RccWorker>

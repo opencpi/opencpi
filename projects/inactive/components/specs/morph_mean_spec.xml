@@ -1,0 +1,14 @@
+<ComponentSpec>
+  <Properties>
+     <Property Name="window_length" Type="ULong" Readable="true" Writable="true"/>
+  </Properties>
+
+  <DataInterfaceSpec Name="in" Producer="false">
+    <ProtocolSummary DataValueWidth="32" MaxMessageValues="4096" NumberOfOpcodes="256" VariableMessageLength="true" ZeroLengthMessages="true"/>
+  </DataInterfaceSpec>
+
+  <DataInterfaceSpec Name="out" Producer="true">
+    <ProtocolSummary DataValueWidth="32" MaxMessageValues="4096" NumberOfOpcodes="256" VariableMessageLength="true" ZeroLengthMessages="true"/>
+  </DataInterfaceSpec>
+
+</ComponentSpec>

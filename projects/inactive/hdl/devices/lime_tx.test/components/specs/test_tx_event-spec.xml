@@ -1,0 +1,5 @@
+<componentspec>
+  <property name='opcode_bit' type='bool' volatile='true'/>
+  <property name='max_count_value' type='ulong' readable='true' writable='true'/>
+  <port name='event_out' protocol='tx_event-prot' producer='true'/>
+</componentspec>

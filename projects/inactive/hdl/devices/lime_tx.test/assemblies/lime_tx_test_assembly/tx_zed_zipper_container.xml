@@ -1,0 +1,4 @@
+<HdlContainer Platform='zed, zed_ise'>
+  <device name='si5351' card='lime_zipper_fmc_lpc'/>
+  <connection external='out' device='lime_tx' port='event_in' card='lime_zipper_fmc_lpc'/>
+</HdlContainer>

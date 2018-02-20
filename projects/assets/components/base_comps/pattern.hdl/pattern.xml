@@ -1,0 +1,17 @@
+<HdlImplementation Language="verilog"  Pattern="%w%M%0_">
+  <xi:include href="pattern_spec.xml"/>
+  <ControlInterface Sub32BitConfigProperties="true" ControlOperations="initialize"/>
+  <!-- additional implementation-specific properties -->
+  <property name='wsiMstatus'        volatile='true'/>
+  <property name='wsiMpMesgCount'    volatile='true'/>
+  <property name='wsiMiMesgCount'    volatile='true'/>
+  <property name='wsiMtbusyCount'    volatile='true'/>
+  <!-- Force these spec properties to a specific indirect non-contiguous address -->
+  <specProperty name='metadata' indirect='0x40000000'/>
+  <specProperty name='data' indirect='0x80000000'/>
+  <!-- force the most flexible mode, without mentioning protocol -->
+  <StreamInterface Name="out"
+                   PreciseBurst="true" impreciseburst='true'
+                   DataWidth="32" NumberOfOpcodes="256" datavaluewidth='8'
+                   zerolengthmessages='true' maxmessagevalues='16380'/>
+</HdlImplementation>

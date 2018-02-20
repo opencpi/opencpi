@@ -1,0 +1,13 @@
+This branch of OpenCPI is designed to be RPM-based for CentOS 6 and 7.
+To build the RPMs:
+  cd releng
+  make prereq-host
+  make cdk
+
+Type just "make" in releng for more options, e.g. building the RPMs for Zynq-based platforms.
+
+To build in the "classic" fashion, the prerequisites must come from another OpenCPI branch, or the RPMs as noted above. The provided "ocpi-configure" script wraps the "usual" autotools commands like reconf and configure:
+  ./ocpi-configure
+  make -j
+
+To cross-configure, instead of calling "ocpi-configure", you call "cross-configure". To use this script, you must configure the variable OCPI_TARGET_PLATFORM. See the standard documentation for more details.

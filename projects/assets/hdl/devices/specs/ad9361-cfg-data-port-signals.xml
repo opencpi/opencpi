@@ -1,0 +1,4 @@
+<signals>
+  <signal Input="iostandard_is_lvds"/>
+  <signal Input="p0_p1_are_swapped"/>
+</signals>

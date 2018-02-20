@@ -1,0 +1,56 @@
+
+There are a couple of ways to run the fsk_modem application.  The simplest way is to type
+
+make run
+
+This will run the application but does not allow the user to specify any arguments.
+
+To have more control type the following.
+
+export OCPI_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/components
+./fsk_modem
+
+This will run the application and will also allow you to specify command line arguments.  The command line arguments that are available
+to the application are described below.
+
+usage: ./fsk_modem [options]
+  options: 
+    --verbose[=<b>]                 Be verbose
+    --cont[=<b>]                    Produce continuous data (duplicate last buffer for debug)
+    --step[=<b>]                    Step thru data 1 buffer at a time (debug)
+    --policy=<s>                    Worker deployment policy {max,min}
+    --nRCCCont=<i>                  Number of RCC containers to create
+    --M=<i>                         Decimation/Interpolation factor for CIC filters
+    --help                          This message
+
+
+Note also that there are two files in this directory called fir_real_coefs.xml and fir_complex_coefs.xml.  These two files contain the real and complex FIR filter
+coefficients. 
+
+
+
+Timing Analysis support:
+The directory named gtkwave.cfg contains several gtkwave save files.  These files can be used to view specific signals from event timing data captures within this application.  To capture and convert event timing data please refer to OpenCPI_Time_Performance.pdf.  To use any of the gtkwave save file on your timing data, follow these instructions.
+
+1) Convert Data to VCD format:
+To convert the raw timing data to an gtkwave compatible format, type the following.
+
+timeCvt --in=timeData.raw --out=timeData.vcd --format=VCD
+
+
+2) Open gtkwave with a save file
+
+Example with Worker Run State signals in focus
+
+gtkwave -a gtkwave.cfg/WorkerRun.gtkw timeData.vcd
+
+This will bring up the gtkwave browser and insert all of the application workers "run state" timing signals into the display window.
+
+
+
+
+
+
+
+
+

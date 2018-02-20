@@ -1,0 +1,22 @@
+ <!-- A general complex data protocol   -->
+ <Protocol>
+
+  <Operation Name="iq" >
+    <!-- Variable size frames with packed 32 bit I/Q data values (16Q,16I).  Format:Qs0.15 -->
+      <Argument name="data" type="Struct" SequenceLength="2048" >
+        <member name="I" type="Short"/>
+        <member name="Q" type="Short"/>
+      </Argument>
+  </Operation>
+
+  <!-- A general I/O sync protocol for a signal processing stream  -->
+  <!-- zero size frames  indicating a phase discontinuity - i.e. samples not continuous-->
+  <Operation Name="Sync"/>
+
+  <!-- timestamp for next sample - unsigned 64 bits Qu32.32 --> 
+  <Operation Name="Time">
+    <Argument Name="time" Type="ULongLong"/>
+  </Operation>
+
+</Protocol>
+

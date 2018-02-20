@@ -1,0 +1,21 @@
+<ComponentSpec>
+
+  <Properties>
+    <Property Name="passed" type="bool" Volatile="true" Writable="true" />
+    <Property Name="deviation" type="double" Readable="true" Writable="true" />
+    <Property Name="msgsProcessed" Readable="true" Writable="false"/>
+    <Property Name="bytesProcessed" Readable="true" Writable="false"/>
+  </Properties>
+
+  <DataInterfaceSpec Name="in_unit_test" Producer="false" Optional="true">
+      <xi:include href="iqstream_with_sync_protocol.xml"/>
+  </DataInterfaceSpec>
+
+  <DataInterfaceSpec Name="in_expected" Producer="false">
+      <xi:include href="iqstream_with_sync_protocol.xml"/>
+  </DataInterfaceSpec>
+
+  <DataInterfaceSpec Name="out_delta" Producer="true"/>
+  <DataInterfaceSpec Name="out_actual" Producer="true"/>
+
+</ComponentSpec>

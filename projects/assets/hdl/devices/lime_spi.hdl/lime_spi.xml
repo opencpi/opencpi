@@ -1,0 +1,27 @@
+<!-- Lime SPI module is a no-control, no-data module, supporting
+     two raw property ports, one for rx (always 0), and one for tx (always 1),
+     with a shared reset
+     -->
+<HdlDevice language="vhdl">
+  <ComponentSpec nocontrol='true'>
+    <!-- CLK_FREQ_p is divided by the desired SPI clock rate, in this case 3.125 MHz, 
+	 to produce a clock cycle count value, which is an input to the SPI module -->
+    <Property name="CLK_FREQ_p" type="float" parameter="1" readable="1" default="100e6"/>
+  </ComponentSpec>
+  <!-- We have two raw property masters, the rx and tx workers for the xcvr chip -->
+  <rawprop name='rprops' count='2' optional='true'/>
+  <supports worker='lime_tx.hdl'>
+    <connect port="rawprops" to="rprops" index='1'/>
+  </supports>
+  <supports worker='lime_rx'>
+    <connect port="rawprops" to="rprops" index='0'/>
+  </supports>
+  <!-- Signal names from the data sheet, in data sheet order
+       We use the SPI in 4 pin mode, so SDIO is INPUT to the Lime, OUTPUT from the FPGA
+       Signals dedicated to rx or tx are directly used by the rx/tx device workers -->
+  <Signal Output="sen"/>        <!-- Pin 67 Input Serial enable Active LOW -->
+  <Signal  Input="sdo"/>        <!-- Pin 68 Output Serial data output for reading -->
+  <Signal Output="sdio"/>       <!-- Pin 69 Input Serial data input for addr + writing -->
+  <Signal Output="sclk"/>       <!-- Pin 70 Input Serial clock -->
+  <Signal Output="reset"/>      <!-- Pin 75 Shared reset signal. Active LOW -->
+</HdlDevice>

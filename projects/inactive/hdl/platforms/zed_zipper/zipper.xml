@@ -1,0 +1,9 @@
+<!-- Include zipper devices -->
+<HdlConfig>
+  <device name='lime_adc'/>
+  <device name='lime_dac'/>
+  <device name='si5351'/>
+  <device name="lime_rx"/>
+  <device name="lime_tx"/>
+  <!-- <device name='lime_spi'/> automatically included since it supports rx and tx -->
+</HdlConfig>

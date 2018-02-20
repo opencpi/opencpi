@@ -1,0 +1,79 @@
+\iffalse
+This file is protected by Copyright. Please refer to the COPYRIGHT file
+distributed with this source distribution.
+
+This file is part of OpenCPI <http://www.opencpi.org>
+
+OpenCPI is free software: you can redistribute it and/or modify it under the
+terms of the GNU Lesser General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License along
+with this program. If not, see <http://www.gnu.org/licenses/>.
+\fi
+
+% This snippet creates the "References" table labeled "table:references"
+% It creates three columns: Name, Publisher, Link and then inserts default documents
+%
+% To skip these defaults, define macros named
+% refskipgs to skip "Getting Started"
+% refskipig to skip "Installation Guide"
+% refskipac to skip "Acronyms and Definitions"
+% refskipocpiov to skip "OpenCPI Overview"
+%
+% See RPM_Installation_Guide.tex for examples
+%
+% After the defaults, it optionally inserts the "myreferences" macro that
+% you defined elsewhere (you put hlines above all lines)
+%
+% If you want the \caption on the bottom, define "refcapbottom"
+\begin{center}
+\renewcommand*\footnoterule{} % Remove separator line from footnote
+\renewcommand{\thempfootnote}{\arabic{mpfootnote}} % Use Arabic numbers (or can't reuse)
+\begin{minipage}{0.9\textwidth}
+  \begin{table}[H]
+\ifx\refcapbottom\undefined
+  \caption {References}
+  \label{table:references}
+\fi
+  \begin{tabularx}{\textwidth}{|C|c|C|}
+    \hline
+    \rowcolor{blue}
+    \textbf{Title} & \textbf{Published By} & \textbf{Link} \\
+\ifx\refskipgs\undefined
+    \hline
+    Getting Started & ANGRYVIPER Team & \path{Getting_Started.pdf} \\
+\fi
+\ifx\refskipig\undefined
+    \hline
+    Installation Guide & ANGRYVIPER Team & \path{RPM_Installation_Guide.pdf} \\
+\fi
+\ifx\refskipac\undefined
+    \hline
+    Acronyms and Definitions & ANGRYVIPER Team & \path{Acronyms_and_Definitions.pdf} \\
+\fi
+\ifx\refskipocpiov\undefined
+    \hline
+    Overview & OpenCPI &
+% Analytics: https://goo.gl/info/RskxiV
+\url{https://goo.gl/RskxiV} \\
+\fi
+\ifx\myreferences\undefined
+\else
+    \myreferences
+\fi
+    \hline
+  \end{tabularx}
+\ifx\refcapbottom\undefined
+\else
+  \caption {References}
+  \label{table:references}
+\fi
+  \end{table}
+\end{minipage}
+\end{center}

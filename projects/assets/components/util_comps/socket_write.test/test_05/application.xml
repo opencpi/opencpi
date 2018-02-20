@@ -1,0 +1,40 @@
+<Application Package="local" Done="UUT">
+
+ <Instance Component="ocpi.assets.base_comps.pattern">
+    <property name="control" value='1'/>
+    <property name="metadataCount" value='2'/>
+    <property name="messagesToSend" value='125010'/> <!-- Will stop before -->
+    <property name="metadata" value='{8,242},{8,164}'/>
+    <property name="data" value='0x04030201, 0x08070605, 0x0c0b0a09, 0x100f0e0d,
+                                 0x14131211, 0x18171615, 0x1c1b1a19, 0x201f1e1d,
+                                 0x24232221, 0x28272625, 0x2c2b2a29, 0x302f2e2d,
+                                 0x34333231, 0x38373635, 0x3c3b3a39, 0x403f3e3d'/>
+ </Instance>
+
+ <Instance Name="UUT" Component="ocpi.assets.util_comps.socket_write">
+    <Property Name="outSocket" Value='ports {
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,12355,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,12356,0,0,0,0,0,0,0,0,0,0,0,0,0}'/>
+    <Property Name="stopOn" Value='Any {bytes 0,messages 1000}'/>
+    <Property Name="current" dumpFile="UUT.current.dump"/>
+  </Instance>
+
+  <Connection>
+    <Port Instance="pattern" Name="out"/>
+    <Port Instance="UUT" Name="in"/>
+  </Connection>
+</Application>

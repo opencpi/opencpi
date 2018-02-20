@@ -1,0 +1,12 @@
+//module foo {
+typedef sequence <string> seqString;
+
+ struct Msg1
+ {
+
+   sequence <string> v_sseq;
+   seqString seq_sseq;         
+
+ };
+//};
+

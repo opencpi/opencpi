@@ -1,0 +1,51 @@
+Compiling source files has some interesting variations.
+
+The default behavior is that each worker has a file, and that each one produces an output file.
+
+Then there are "SourceFiles" which are random source files.
+There are "WorkerSourceFiles" that are generated from worker names
+Then there are "GeneratedSourceFiles".
+
+Authored = source + worker
+compiled = authored + generated
+
+All make objects.
+
+We have several problems:
+
+1. Sometimes generated files are to be compiled rather than included
+2. Sometimes source files need to be compiled in the right order.
+3. Sometimes there is no such thing as an object file, but only a library that source files get compiled into as a whole.
+
+#1: we can add these to the list of source files sometimes.
+#2: Perhaps the combination of names can be overridden
+#3: Option: compile all sources together
+
+Black Box Files:
+
+Xilinx (at least) needs to find an empty (black box) definition to pull/find a module in a library.
+For verilog this means an empty module definition (which thus simply becomes a declaration).
+For VHDL this means a component declaration in a package.
+
+There are a number of build modes where cores get built that need to be used
+in higher levels of design (i.e. not the top):
+
+1. Primitive core:
+    We expect a foo_bb.v and/or a foo_pkg.vhd.
+    These enable verilog or VHDL callers to instantiate the core, respectively.
+    To enable both langauges to use the core (regardless of the language in which the core is written),
+    you need both of these files, as source files.
+    Note that when the core is built, a library with the same name as the core is
+    also built, which simply contains these files.
+
+2. Worker in a library (component library, devices library)
+   Component libraries create a single "stub" library for all the workers in the library, so there is no
+   need for individual black box libraries per worker.
+   When the "stubs" library for a component library is built, it includes both the verilog and VHDL
+   declarations for all workers in the library.
+
+3. Standalone cores that aren't in a library:
+   Platform workers, platform configurations, application assemblies.
+   All these have automatically generated declaration files (vhdl and verilog) that can be 
+   placed in the black box library.
+    

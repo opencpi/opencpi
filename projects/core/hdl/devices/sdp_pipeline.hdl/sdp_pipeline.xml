@@ -1,0 +1,6 @@
+<HdlDevice language='vhdl' outer='true'>
+  <ComponentSpec nocontrol='true'/>
+  <property name='sdp_width' parameter='true' type='uchar' default='1'/>
+  <sdp name="up"/>
+  <sdp name="down" master='true'/>
+</HdlDevice>

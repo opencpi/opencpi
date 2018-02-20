@@ -1,0 +1,39 @@
+<HdlDevice language="vhdl">
+  <componentspec/>
+  <!-- These two properties must be first -->
+  <property name='timeNow' type='ulonglong' writable='1' volatile='1'/>
+  <!-- Difference between last-written value and timeNow (now - written value),
+       computed and stored when this register was last written
+       Used to compute access round trip time, by software doing:
+       1. Read timeNow
+       2. Write timeDelta
+       3. Read timeDelta
+       The value is the time delta between when Step one occurred at the time service (t0),
+       and when step 2 occurred at the time service (t1). -->
+  <property name='delta' type='ulonglong' writable='1' volatile='1'/>
+  <property name='frequency' type='float' parameter='1' readable='1' default='1e6'/>
+  <!-- Control of time service - writable with readback
+       Bit 31:   clearSticky   - Clear the sticky status bits (ppsLost, gpsIn, ppsIn, timeset)
+       Bit  4:   disableServo  - Suppress discipline of local timebase by CP, PPS, or GPS
+       Bit  3:   disableGPS    - disable updates from GPS
+       Bit  2:   disablePPS    - disable processing PPS inputs
+       Bit  1:0  controlPPSOut - 0: output is timeserver-based PPS (1 HZ)
+                                 1: output is copy of input PPS (with some propagation delay)
+                                 2: output is local reference clock /2 (e.g. 100MHz for 200Mhz)
+				 3: output is disabled (0) -->
+  <property name='control' writable='1' readable='1'/>
+  <!-- Status of time service - readonly, volatile
+       Bit 31:   ppsLost    - An active PPS fell outside the +/- 0.1% (1000 PPM) window
+       Bit 30:   gpsIn      - At least one valid GPS time has updated timeNow
+       Bit 29:   ppsIn      - At least one valie PPS input has aligned timeNow
+       Bit 28:   timeSet    - timeNow has been set from the control plane
+       Bit 27:   ppsOK      - PPS fell within the valid window in the last second
+       Bit 26:   ppsLost    - PPS went missing from the valid window in the last second
+       Bit  7:0: ppsCount   - count of PPS events, rolling 8 bits -->
+  <property name='status' volatile='1'/>
+  <!-- The number of ticks per second of the time service time base -->
+  <property name='tickspersecond' volatile='1'/>
+  <timebase/>
+  <timeservice master='true'/>
+  <!-- Insert any other implementation-specific information here -->
+</HdlDevice>

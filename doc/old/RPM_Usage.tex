@@ -1,0 +1,254 @@
+\documentclass{article}
+\iffalse
+This file is protected by Copyright. Please refer to the COPYRIGHT file
+distributed with this source distribution.
+
+This file is part of OpenCPI <http://www.opencpi.org>
+
+OpenCPI is free software: you can redistribute it and/or modify it under the
+terms of the GNU Lesser General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License along
+with this program. If not, see <http://www.gnu.org/licenses/>.
+\fi
+\usepackage{fancyhdr}
+\usepackage{colortbl}
+\usepackage{scrextend}
+\usepackage{hyperref}
+\setcounter{secnumdepth}{0} % No numbers, but import into TOC anyway
+% \usepackage{listings}
+% \begin{lstlisting}
+\usepackage[margin=.75in]{geometry}
+\usepackage{microtype}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{indentfirst} % Indent all paragraphs
+% \usepackage{graphicx}
+% \usepackage[table,xcdraw]{xcolor}
+\pagestyle{fancy}
+\headheight=23pt
+\fancyhead[L]{OpenCPI RPM Usage}
+% \fancyhead[C]{\todo{CHANGE ME}\textbf{}}
+% \fancyfoot[C]{\todo{CHANGE ME TOO}\textbf{}}
+\fancyfoot[R]{Page \thepage}
+\renewcommand{\headrulewidth}{0pt}
+\definecolor{blue}{rgb}{.5,1,1}
+\usepackage{ifpdf}
+\ifpdf
+\setlength{\pdfpagewidth}{8.5in}
+\setlength{\pdfpageheight}{11in}
+\else
+\fi
+\usepackage{pifont}
+% This block is to make sure there is 3cm min at the bottom of a page before a new section or subsection is allowed to start. Otherwise, next page.
+% Modified from http://tex.stackexchange.com/a/152278
+\usepackage{etoolbox}
+\newskip\mfilskip
+\mfilskip=0pt plus 3cm\relax
+\newcommand{\mfilbreak}{\vspace{\mfilskip}\penalty -200%
+  \ifdim\lastskip<\mfilskip\vspace{-\lastskip}\else\vspace{-\mfilskip}\fi}
+\pretocmd{\section}{\mfilbreak}{}{}
+\pretocmd{\subsection}{\mfilbreak}{}{}
+% end [sub]section pushes
+\usepackage{tabularx}
+% These define tabularx columns "C" and "R" to match "X" but center/right aligned
+\newcolumntype{C}{>{\centering\arraybackslash}X}
+\newcolumntype{R}{>{\raggedleft\arraybackslash}X}
+
+\usepackage{rotating}
+\newcommand{\todo}[1]{\textcolor{red}{TODO: #1}\PackageWarning{TODO:}{#1}}
+% \parindent=20pt
+% \hangindent=0.7cm
+\begin{document}
+
+\tableofcontents
+\vspace{1pc}
+\hrule
+\section{Document Scope}
+This document describes the usage of OpenCPI on an RPM-based Linux distribution (CentOS 6 or 7) and the fundamental differences between the RPM-based workflow and the ``classic'' OpenCPI's.
+
+\section{Overview}
+Historically, all OpenCPI development, for both the core team and the end user, has been within a single directory structure. As the team size and user base expand, this quickly becomes untenable, especially when taking version control systems into account. The previous working area has been broken into three major locations:
+
+\begin{center}
+\begin{tabular}{|c|c|}
+\hline
+\rowcolor{blue}
+Name & Expectation
+\\
+\hline
+CDK & System level; unchanged by end user
+\\
+\hline
+Base Project & System level \textit{or} end-user level
+\\
+\hline
+Project & End-user level
+\\
+\hline
+\end{tabular}
+\end{center}
+
+The CDK and the source to the Base Project are provided by the ANGRYVIPER Team in the form of various RPMs that can be installed by a System Administrator. The CDK is the prebuilt software necessary for all OpenCPI execution (and optionally development) while the second is the HDL assets and infrastructure to support OpenCPI development and execution on FPGAs.  The first is delivered and installed as binaries, while the second is delivered as source, since users will use their own specific FPGA tool version(s) to build it.
+
+\begin{center}
+\begin{tabularx}{\textwidth}{|c|C|}
+\hline
+\rowcolor{blue}
+Name & Contents\\
+\hline
+CDK & Framework, Core RCC Components, Utilities,\linebreak[1] (Optionally) Platform Development Packages (e.g. zed)\\
+\hline
+Base Project & Official RCC and HDL Components, other HDL types (primitives, platforms, etc.),\linebreak[1] examples, source code of core components in CDK\\
+\hline
+Project & User-provided code, framework generated code\\
+\hline
+\end{tabularx}
+\end{center}
+
+\section{Installation}
+
+\subsection{Background}
+See \url{https://www.centos.org/docs/5/html/5.2/Deployment_Guide/s1-yum-useful-commands.html} for useful \texttt{yum} commands (like \texttt{yum localinstall}) and \url{https://www.centos.org/docs/5/html/yum/} for details on installing RPM packages if you are not familiar with standard \texttt{yum/rpm} usage.
+
+\subsection{When to Install}
+All RPMs can be installed with a single call to \texttt{yum} with \verb+yum localinstall *rpm+. It is recommended that the user install these packages \textit{before} additional tools, e.g. ModelSim, because the \texttt{devel} subpackage forces the installation of otherwise-hidden dependencies, e.g. 32-bit X11 libraries for ModelSim.
+
+\subsection{Prerequisite RPMs}
+\todo{Update list. There are more now, some optional AV-2310}\\
+The entire system requires a set of prerequisites, currently provided by three RPMs:
+\begin{center}
+\begin{tabular}{|c|c|c|}
+\hline
+\rowcolor{blue}
+Package & RPM Name & Cross-compiled?
+\\
+\hline
+Google Test & ocpi-prereq-gtest & Yes
+\\
+\hline
+xz & ocpi-prereq-xz & Yes
+\\
+\hline
+patchelf & ocpi-prereq-patchelf & No
+\\
+\hline
+\end{tabular}
+\end{center}
+
+Prerequisite RPMs that are ``cross-compiled'' in the above table have both native (CentOS 6 or 7) versions of the software in addition to a cross-compiled version for the Zynq ARM processor available in a second RPM file. You will notice that these RPMs are prefaced with \texttt{ocpi-prereq} to avoid any conflict with user- or distribution-provided RPMs. These are installed in \verb|/opt/opencpi/prerequisites/<pkgname>/| to avoid any collisions with other packages of the same name, e.g. a vendor-provided copy of \texttt{patchelf}.
+
+\subsubsection{What to Install}
+\todo{Update - size and Liquid AV-2310}\\
+With a total footprint of less than 6MB, for simplicity, it is recommended that all prerequisite RPMs are installed on all systems.
+
+\subsection{Main RPMs}
+\todo{AV-2310}\\
+The ANGRYVIPER team provides four core RPMs, each with a specific usage:
+
+\begin{center}
+\begin{tabularx}{\textwidth}{|R|X|}
+\hline
+\rowcolor{blue}
+File & Description \\ \hline
+\hfill\texttt{opencpi-\newline(VER)-(RELEASE).(DIST).x86\_64.rpm} & Base RPM package; required for any OpenCPI machine\\ \hline
+\hfill\texttt{opencpi-devel-\newline(VER)-(RELEASE).(DIST).x86\_64.rpm} & OpenCPI Development tools and Base Project source\\ \hline
+\hfill\texttt{opencpi-driver-\newline(VER)-(RELEASE).(DIST).noarch.rpm} & OpenCPI kernel driver required to interface to PCIe devices in current machine\\ \hline
+\hfill\texttt{opencpi-platform-zynq-\newline(VER)-(RELEASE).(DIST).noarch.rpm} & Zynq executables (ocpirun, etc.), Zynq RCC core components, Cross-compilation setup files, Zed Platform Development Package\\ \hline
+\end{tabularx}
+\end{center}
+
+\subsubsection{What to Install}
+Deciding which RPMs to install depends on what the machine will be used for:
+
+\begin{center}
+\begin{tabular}{r|c|c|c|c|c|}
+\cline{2-6}
+&\begin{turn}{90}Runtime RCC Host\end{turn}
+&\begin{turn}{90}Runtime HDL host\end{turn}
+&\begin{turn}{90}RCC-Only Development\end{turn}\newline\begin{turn}{90}(x86 RCC exclusive)\end{turn}
+&\begin{turn}{90}RCC/HDL Development\end{turn}\newline\begin{turn}{90}(x86 RCC, non-hybrid FPGA HDL)\end{turn}
+&\begin{turn}{90}RCC/HDL Development\end{turn}\newline\begin{turn}{90}(ARM RCC, ARM/FPGA hybrid HDL)\end{turn}\\\hline
+\multicolumn{1}{|r|}{\texttt{opencpi-...rpm}} & \ding{51} & \ding{51} & \ding{51} & \ding{51} & \ding{51}\\\hline
+\multicolumn{1}{|r|}{\texttt{opencpi-devel...rpm}} & & & \ding{51} & \ding{51} & \ding{51}\\\hline
+\multicolumn{1}{|r|}{\texttt{opencpi-driver...rpm}} & & \ding{51} & & \ding{51} & \ding{51}\\\hline
+\multicolumn{1}{|r|}{\texttt{opencpi-platform-zynq...rpm}} & & & & & \ding{51}\\\hline
+\end{tabular}
+\end{center}
+
+\section{Developer Preparation}
+\subsection{Creating the ``Base Project''}
+With the CDK installed, we can now create the next installation location: the ``Base Project.'' At this point, it must be decided if this Project will be used by a single developer, or shared between multiple users / teams as a globally installed system resource. The latter is recommended for most end users. Included with the CDK is an installation script, \verb+/opt/opencpi/base_project_source/new_base_project.sh+. This script will copy the template Base Project out of \verb+/opt/opencpi/base_project_source+ and into another location. For a global installation, be sure to use \texttt{sudo} to install somewhere global, e.g. \verb+/opt/ocpi_baseproject+. If a single user will use it, then \verb+~/ocpi_baseproject+ is recommended. \textbf{NOTE: The directory name \textit{must} begin with `\texttt{opencpi}' or `\texttt{ocpi}'}.
+
+The RPM installation makes extensive use of the \verb+OCPI_PROJECT_PATH+ variable to import and combine various projects. By running the \verb+/opt/opencpi/base_project_source/new_base_project.sh+ script, the user creates the new Base Project. The location of the Base Project should be included in \verb+OCPI_PROJECT_PATH+ when building the Base Project as well as other projects.
+
+\subsection{Building the Base Project}
+To build the base project, change to its subdirectory (using \texttt{sudo} for all commands, if needed).
+\begin{itemize}
+\item \verb+export OCPI_PROJECT_PATH=$(pwd)+
+\item \verb+(cd components && make rcc)+
+\end{itemize}
+
+To build the HDL, you will have to do a little more setup. See the ``\nameref{sec:EnvVar}'' section below for the various toolset variables. After your environment is configured, \verb+(cd hdl && make hdl HdlPlatform=<platform>)+, where \texttt{<platform>} is the platform you wish this build to target, e.g. \texttt{zed}.
+
+\subsection{Creating a Project Area}
+\begin{sloppypar}The local project area should have the same layout as the Base Project. When the various programs are looking for artifacts, they expect certain directory structures, e.g. HDL primitives are always found in \verb+<path>/hdl/primitives/lib+. The \verb+<path>+ comes from iterating across the paths given in \verb+OCPI_PROJECT_PATH+, as noted above. Your local project area \textit{must} reference the base project.\end{sloppypar}
+
+\todo{Does Jim have a script somewhere for creating a new project area with his changes?}
+
+\todo{Maybe paste in base Makefiles? Use trivial proxy as an example.}
+
+\section{Differences}
+This section describes the differences the end user will encounter when compared to the classic OpenCPI build system.
+
+\subsection{CDK Location}
+The classic OpenCPI working area has a symlink \texttt{ocpi} \ensuremath{\rightarrow} \texttt{tools/cdk/export/}, and this is where the user's \verb+OCPI_CDK_DIR+ points to. With RPMs, the CDK is globally installed in \texttt{/opt/opencpi/cdk/}, and the \verb+OCPI_CDK_DIR+ is automatically set when the user logs into the \texttt{bash} shell. Unlike a classic installation, the end user \textit{cannot write to this location}.
+
+\subsection{Prerequisites}
+\begin{sloppypar}The prerequisites are the same, and are installed to the same location on the machine (\verb+/opt/opencpi/prerequisites/+). However, they are installed using RPMs (\texttt{rpm} or \texttt{yum}). If the machine already had the prerequisites manually installed, they should be removed with ``\verb+sudo rm -rf /opt/opencpi/prerequisites/+'' before attempting to install the new prerequisite RPMs. These RPMs \textit{must} be installed; a previous non-RPM installation is not sufficient.\end{sloppypar}
+
+\subsection{Environmental Variables}
+\label{sec:EnvVar}
+\todo{most of this is obsolete. AV-2310}
+The classic OpenCPI environment uses about thirty variables, usually set with scripts called in the \texttt{env} subdirectory. Since most of the build infrastructure is the same, these variables are pre-set by the RPM installation, but the user can continue to override them if they require it. The variables that the user \textit{might} still concern themselves with include:
+
+\begin{center}
+\begin{tabularx}{\textwidth}{|r|X|}
+\hline
+\rowcolor{blue}
+Variable & Description \\ \hline
+\hfill\verb+OCPI_CDK_DIR+\footnote{\label{env_footnote}These variables are automatically set with shell login once the main RPM has been installed.} & Global CDK location \\ \hline
+\hfill\verb+OCPI_CROSS_HOST+ & Cross-compilation target (e.g. \texttt{arm-xilinx-linux-gnueabi}) \\ \hline
+\hfill\verb+OCPI_CROSS_BUILD_BIN_DIR+\footnote{You can often use the \texttt{locate} command to find the \verb+${OCPI_CROSS_HOST}+-ranlib executable.} & Cross-compilation GCC chain location\newline (e.g. \verb+/opt/Xilinx/14.7/ISE_DS/EDK/gnu/arm/lin/bin/+) \\ \hline
+\hfill\verb+OCPI_PROJECT_PATH+\footref{env_footnote} & A colon-separated list of other projects to include when building the current project. Must always include the ``Base Project'', even when building the Base Project itself. \\ \hline
+\hfill\verb+OCPI_TARGET_KERNEL_DIR+ & Kernel headers directory for driver compilation\newline(e.g. \verb+<path>/platforms/zed/release/kernel-headers+) \\ \hline
+\hfill\verb+OCPI_TARGET_PLATFORM+ & Target platform (e.g. \texttt{xilinx13\_4})\\ \hline
+\hfill\verb+OCPI_TOOL_HOST+\footref{env_footnote} & Host system type (e.g. \verb+linux-c7-x86_64+) \\ \hline
+\hfill\verb+OCPI_TOOL_PLATFORM+ & Tool/host platform (\textit{seldom required}, e.g. \texttt{centos7})\\ \hline
+\hfill\verb+OCPI_{TOOLNAME}_DIR+ & The base installation directory for the \{Altera,ModelSim,Xilinx\} tools\newline (e.g. \texttt{/opt/Xilinx/})\\ \hline
+\hfill\verb+OCPI_{TOOLNAME}_LICENSE_FILE+ & The location of the tool's licensing file or server. The end user should \textbf{not} directly set \verb+LM_LICENSE_FILE+.\\ \hline
+\hfill\verb+OCPI_{TOOLNAME}_VERSION+ & The version of \{Altera,Xilinx\} tools installed (e.g. \texttt{14.7})\\ \hline
+\end{tabularx}
+\end{center}
+
+Any other variables are set to a reasonable default, and a warning is given upon execution indicating what values were chosen. \textbf{After setting the above variables, the user should ``\texttt{source}'' the CDK's \texttt{env/altera.sh} and/or \texttt{env/xilinx.sh} to bring in remaining variables.}
+
+\subsection{Building Native RCC}
+There is effectively no difference in the build process of a project once \verb+OCPI_PROJECT_PATH+ has been properly set to point to the base project.
+
+\subsection{Cross-compiled RCC}
+If the Environmental Variables noted above (especially \verb+OCPI_TARGET_PLATFORM+) are properly configured, there is no difference.
+
+\subsubsection{HDL}
+If the Environmental Variables noted above (especially \verb+OCPI_{VENDOR}_{DIR,VERSION}+) are properly configured, there is no difference.
+
+\todo{Get template}
+\todo{Headers and Footers}
+
+\end{document}

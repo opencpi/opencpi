@@ -1,0 +1,7 @@
+<HdlAssembly>
+  <Instance Worker="bias" external='in' connect='bias1'/>
+  <Instance Worker="bias" connect='bias2'/>
+  <Instance Worker="bias" connect='bias3'/>
+  <Instance Worker="bias" connect='bias4'/>
+  <Instance Worker="bias" external='out'/>
+</HdlAssembly>

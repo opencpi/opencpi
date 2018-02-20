@@ -1,0 +1,8 @@
+#ifndef _HELLO_IDL_
+#define _HELLO_IDL_
+
+interface Hello {
+  oneway void send(in string mesg);
+};
+
+#endif

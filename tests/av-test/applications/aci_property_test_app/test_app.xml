@@ -1,0 +1,3 @@
+<Application>
+    <Instance component="test_worker" name="test_worker"></Instance>
+</Application>

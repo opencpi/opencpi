@@ -1,0 +1,14 @@
+<build>
+  <configuration id='0'>
+    <parameter name='ocpi_debug' value='false'/>
+    <parameter name='ocpi_endian' value='little'/>
+    <parameter name='CP_CLK_FREQ_HZ_p' value='100e6'/>
+    <parameter name='SPI_CLK_FREQ_HZ_p' value='6.25e6'/>
+  </configuration>
+  <configuration id='1'>
+    <parameter name='ocpi_debug' value='false'/>
+    <parameter name='ocpi_endian' value='little'/>
+    <parameter name='CP_CLK_FREQ_HZ_p' value='125e6'/>
+    <parameter name='SPI_CLK_FREQ_HZ_p' value='6.25e6'/>
+  </configuration>
+</build>

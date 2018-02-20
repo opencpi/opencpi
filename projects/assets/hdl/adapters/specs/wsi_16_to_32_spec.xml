@@ -1,0 +1,19 @@
+<!--
+<ComponentSpec>
+  <DataInterfaceSpec Name="in" Producer="false">
+    <xi:include href="stream_protocol.xml"/>
+    <protocolsummary maxMessageValues='2048'/>
+
+  </DataInterfaceSpec>
+  <DataInterfaceSpec Name="out" Producer="true">
+    <xi:include href="stream_protocol.xml"/>
+    <protocolsummary maxMessageValues='2048'/>
+
+  </DataInterfaceSpec>
+</ComponentSpec>
+-->
+ <ComponentSpec nocontrol='true'>
+   <DataInterfaceSpec Name="in" Producer="false"/>
+   <DataInterfaceSpec Name="out" Producer="true" buffersize='in'/>
+ </ComponentSpec>
+

@@ -1,0 +1,4 @@
+<HdlWorker language='vhdl' library='platform'>
+  <ComponentSpec nocontrol='true'/>
+  <metadata name='metadata' myclock='true'/>
+</HdlWorker>

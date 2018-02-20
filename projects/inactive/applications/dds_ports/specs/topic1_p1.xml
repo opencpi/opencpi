@@ -1,0 +1,13 @@
+<Protocol>
+  <Operation Name="Samples">
+    <Argument Name="userId" Type="Long"/>
+    <Argument Name="u1" Type="ULong"/>
+    <Argument Name="long_seq" Type="Long" SequenceSize="128"/>
+    <Argument Name="v_bool" Type="Bool"/>
+    <Argument Name="v_message" Type="String" StringLength="100"/>
+    <Argument Name="v_short" Type="Short"/>
+    <Argument Name="v_longlong" Type="LongLong"/>
+    <Argument Name="v_double" Type="Double"/>
+
+  </Operation>
+</Protocol>

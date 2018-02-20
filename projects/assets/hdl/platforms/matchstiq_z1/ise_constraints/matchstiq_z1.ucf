@@ -1,0 +1,106 @@
+# This file is protected by Copyright. Please refer to the COPYRIGHT file
+# distributed with this source distribution.
+#
+# This file is part of OpenCPI <http://www.opencpi.org>
+#
+# OpenCPI is free software: you can redistribute it and/or modify it under the
+# terms of the GNU Lesser General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your option) any
+# later version.
+#
+# OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+# A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Lesser General Public License along
+# with this program. If not, see <http://www.gnu.org/licenses/>.
+
+############################################################################
+# Clock constraints                                                        #
+############################################################################
+NET "*metadata_out_clk*" TNM_NET = clk_fpga_0;
+TIMESPEC TS_clk_fpga_0 = PERIOD "clk_fpga_0" 100000 KHz;
+
+# GPS interface (matchstiq_z1)
+NET "gps_uart_rx"		LOC = AB12  | IOSTANDARD = LVCMOS25 | PULLUP ; # output from GPS module (NMEA) 
+NET "gps_uart_tx"      		LOC = AA12  | IOSTANDARD = LVCMOS25 ;          # input to GPS module
+
+# Lime SPI interface
+NET "lime_spi_reset"		LOC = V8    | IOSTANDARD = LVCMOS25;
+
+NET "lime_spi_sdo"		LOC = V9    | IOSTANDARD = LVCMOS25;
+NET "lime_spi_sdio"		LOC = W8    | IOSTANDARD = LVCMOS25;
+NET "lime_spi_sen"		LOC = AB10  | IOSTANDARD = LVCMOS25;
+NET "lime_spi_sclk"		LOC = V10   | IOSTANDARD = LVCMOS25;
+
+# i2c interface (matchstiq_z1 - tristate by default)
+NET "matchstiq_z1_i2c_scl"      	LOC = AB19  | IOSTANDARD = LVCMOS25 | PULLUP;
+NET "matchstiq_z1_i2c_sda" 	LOC = AB20  | IOSTANDARD = LVCMOS25 | PULLUP;
+
+############################################################################
+# Differential Clock input from Clock 0 port on Si5338 Clock Generator 
+# These clocks are passed through a IBUFGDS and out to the Lime IC on 
+# the rx_clk_out pin. This clocking scheme matches the Epiq reference 
+# design
+############################################################################
+NET "si5338_clk0a"		LOC = Y18   | DIFF_TERM = TRUE | IOSTANDARD = LVDS_25;
+NET "si5338_clk0b" 		LOC = AA18  | DIFF_TERM = TRUE | IOSTANDARD = LVDS_25;
+
+#Clock output to Lime RX interface
+NET "lime_rx_clk"		LOC = AA16  | IOSTANDARD = LVCMOS25 ;
+#Clock output to pin 3 on the rear debug connector
+NET "clocktest"        	      	LOC = Y10   | IOSTANDARD = LVCMOS25 ;
+
+#Clock input from Lime RX interface. Aligned with rxIn pins
+NET "lime_adc_rx_clk_out" 	LOC = Y9    | IOSTANDARD = LVCMOS25 | PULLUP ;
+NET "lime_adc_rx_clk_out" CLOCK_DEDICATED_ROUTE = FALSE;
+
+#Clock output to Lime TX interface. Derived from rx_clk_in pin
+NET "lime_dac_tx_clk" 	 	LOC = U20   | IOSTANDARD = LVCMOS25 ;
+
+#TX Interface
+NET "lime_dac_tx_iq_sel"	LOC = AA14  | IOSTANDARD = LVCMOS25 ;
+
+NET "lime_dac_txd[0]" 		LOC = Y21   | IOSTANDARD = LVCMOS25 ;
+NET "lime_dac_txd[1]" 		LOC = Y14   | IOSTANDARD = LVCMOS25 ;
+NET "lime_dac_txd[2]" 		LOC = Y20   | IOSTANDARD = LVCMOS25 ;
+NET "lime_dac_txd[3]" 		LOC = AA13  | IOSTANDARD = LVCMOS25 ;
+NET "lime_dac_txd[4]" 		LOC = AB22  | IOSTANDARD = LVCMOS25 ;
+NET "lime_dac_txd[5]" 		LOC = Y13   | IOSTANDARD = LVCMOS25 ;
+NET "lime_dac_txd[6]" 		LOC = AA22  | IOSTANDARD = LVCMOS25 ;
+NET "lime_dac_txd[7]" 		LOC = AB17  | IOSTANDARD = LVCMOS25 ;
+NET "lime_dac_txd[8]" 		LOC = AB21  | IOSTANDARD = LVCMOS25 ;
+NET "lime_dac_txd[9]" 		LOC = AA17  | IOSTANDARD = LVCMOS25 ;
+NET "lime_dac_txd[10]" 		LOC = AA21  | IOSTANDARD = LVCMOS25 ;
+NET "lime_dac_txd[11]" 		LOC = AB16  | IOSTANDARD = LVCMOS25 ;
+
+#RX Interface
+NET "lime_adc_rx_iq_sel"	LOC = V20   | IOSTANDARD = LVCMOS25 ;
+
+NET "lime_adc_rxd[0]" 		LOC = W22   | IOSTANDARD = LVCMOS25 ;
+NET "lime_adc_rxd[1]" 		LOC = T22   | IOSTANDARD = LVCMOS25 ;
+NET "lime_adc_rxd[2]" 		LOC = V22   | IOSTANDARD = LVCMOS25 ;
+NET "lime_adc_rxd[3]" 		LOC = U22   | IOSTANDARD = LVCMOS25 ;
+NET "lime_adc_rxd[4]" 		LOC = W21   | IOSTANDARD = LVCMOS25 ;
+NET "lime_adc_rxd[5]" 		LOC = U17   | IOSTANDARD = LVCMOS25 ;
+NET "lime_adc_rxd[6]" 		LOC = W20   | IOSTANDARD = LVCMOS25 ;
+NET "lime_adc_rxd[7]" 		LOC = V17   | IOSTANDARD = LVCMOS25 ;
+NET "lime_adc_rxd[8]" 		LOC = AA19  | IOSTANDARD = LVCMOS25 ;
+NET "lime_adc_rxd[9]" 		LOC = T21   | IOSTANDARD = LVCMOS25 ; 
+NET "lime_adc_rxd[10]" 		LOC = Y19   | IOSTANDARD = LVCMOS25 ;
+NET "lime_adc_rxd[11]" 		LOC = U21   | IOSTANDARD = LVCMOS25 ;
+
+#1PPS output from GPS module
+NET "gps_1pps_in"		LOC = Y11   | IOSTANDARD = LVCMOS25 | PULLUP ;
+#NET "ext_1pps_in" 		LOC = AB11  | IOSTANDARD = LVCMOS25 | PULLUP ;
+NET "ext_1pps_out" 		LOC = AA11  | IOSTANDARD = LVCMOS25 ;
+NET "gps_fix_ind" 		LOC = V13   | IOSTANDARD = LVCMOS25 ;
+
+#ATLAS LEDs
+NET "atlas_leds[2]"		LOC = "T4"  | IOSTANDARD = "LVCMOS25" | DRIVE = 12;
+NET "atlas_leds[1]"		LOC = "U4"  | IOSTANDARD = "LVCMOS25" | DRIVE = 12;
+NET "atlas_leds[0]"		LOC = "V4"  | IOSTANDARD = "LVCMOS25" | DRIVE = 12;
+
+INST "ftop/pfconfig_i/matchstiq_z1_i" AREA_GROUP = "pblock_matchstiq_z1_i";
+AREA_GROUP "pblock_matchstiq_z1_i" RANGE = SLICE_X26Y88:SLICE_X49Y110;

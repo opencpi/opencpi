@@ -1,0 +1,5 @@
+<ComponentSpec>
+  <Port Name="out" Producer="true" Optional="true"/>
+  <Property Name="numWrites" Type="ulong" Volatile="true"/>
+  <Property Name="maxWrites" Type="ulong" Writable="true" Readable="true"/>
+</ComponentSpec>

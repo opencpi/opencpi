@@ -1,0 +1,18 @@
+  <ComponentSpec>
+    <Properties >
+      <Property Name="reserved0" Readable="true" Writable="false" Type="ULong"/>
+      <Property Name="splitCtrl" Readable="true" Writable="true" Type="ULong"/>
+    </Properties>
+    <DataInterfaceSpec Name="in0" Producer="false">
+      <xi:include href="stream32_protocol.xml"/>
+    </DataInterfaceSpec>
+    <DataInterfaceSpec Name="in1" Producer="false" Optional="true">
+      <xi:include href="stream32_protocol.xml"/>
+    </DataInterfaceSpec>
+    <DataInterfaceSpec Name="out0" Producer="true">
+      <xi:include href="stream32_protocol.xml"/>
+    </DataInterfaceSpec>
+    <DataInterfaceSpec Name="out1" Producer="true" Optional="true">
+      <xi:include href="stream32_protocol.xml"/>
+    </DataInterfaceSpec>
+  </ComponentSpec>

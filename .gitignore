@@ -1,0 +1,76 @@
+# Lines starting with '#' are considered comments.
+# Ignore (generated) html files,
+#*.html
+# except foo.html which is maintained by hand.
+#!foo.html
+.tags*
+TAGS
+# Ignore objects and archives.
+*.obj
+*.lo
+.dirstamp
+*.so
+*.dylib
+*.exe
+*~
+*.d
+!releng/env.d
+*.o
+*.gch
+*/*/*/*/idl/*.cxx
+*/*/*/*/idl/*.h
+*-bin/
+target-*/
+*.deps
+gen/
+**/driver/modules.order
+# temporary, until we rename targets
+*.old
+*.bak
+*.hold
+*.orig
+*.log
+a.out*
+\.\#*
+\#*\#
+.DS_Store
+timeData.raw
+*.pyc
+lib/
+run/
+!/projects/*/rcc/platforms/xilinx*/opencpi-*-release*/**/lib
+!/projects/*/rcc/platforms/xilinx*/opencpi-*-release*/**/*.so
+tools/cdk/export/*
+tools/cdk/include/ctests/*
+my-env.sh
+myzed.sh
+exports
+projects/*/imports
+projects/*/project.xml
+projects/*/specs/package-id
+doc/tex/build
+
+# Autotools (after reconf):
+/aclocal.m4
+/autom4te.cache
+/build-aux
+/configure
+releng/acinclude/libt*.m4
+releng/acinclude/lt*.m4
+/Makefile.in
+
+# Autotools (after configure):
+/av_config.h
+/config.status
+/libtool
+/Makefile
+stamp-h*
+tools/cdk/include/autoconfig_import*.mk
+
+#Autotools (after build):
+.dirstamp
+*.lo
+
+# Our hidden files
+.build_platform
+.ocpi_config.*

@@ -1,0 +1,98 @@
+<build>
+  <configuration id='0'>
+    <parameter name='IDATA_WIDTH_p' value='8'/>
+    <parameter name='ODATA_WIDTH_p' value='8'/>
+    <parameter name='ocpi_debug' value='false'/>
+    <parameter name='ocpi_endian' value='little'/>
+  </configuration>
+  <configuration id='1'>
+    <parameter name='IDATA_WIDTH_p' value='8'/>
+    <parameter name='ODATA_WIDTH_p' value='16'/>
+    <parameter name='ocpi_debug' value='false'/>
+    <parameter name='ocpi_endian' value='little'/>
+  </configuration>
+  <configuration id='2'>
+    <parameter name='IDATA_WIDTH_p' value='8'/>
+    <parameter name='ODATA_WIDTH_p' value='32'/>
+    <parameter name='ocpi_debug' value='false'/>
+    <parameter name='ocpi_endian' value='little'/>
+  </configuration>
+  <configuration id='3'>
+    <parameter name='IDATA_WIDTH_p' value='8'/>
+    <parameter name='ODATA_WIDTH_p' value='64'/>
+    <parameter name='ocpi_debug' value='false'/>
+    <parameter name='ocpi_endian' value='little'/>
+  </configuration>
+  <configuration id='4'>
+    <parameter name='IDATA_WIDTH_p' value='16'/>
+    <parameter name='ODATA_WIDTH_p' value='8'/>
+    <parameter name='ocpi_debug' value='false'/>
+    <parameter name='ocpi_endian' value='little'/>
+  </configuration>
+  <configuration id='5'>
+    <parameter name='IDATA_WIDTH_p' value='16'/>
+    <parameter name='ODATA_WIDTH_p' value='16'/>
+    <parameter name='ocpi_debug' value='false'/>
+    <parameter name='ocpi_endian' value='little'/>
+  </configuration>
+  <configuration id='6'>
+    <parameter name='IDATA_WIDTH_p' value='16'/>
+    <parameter name='ODATA_WIDTH_p' value='32'/>
+    <parameter name='ocpi_debug' value='false'/>
+    <parameter name='ocpi_endian' value='little'/>
+  </configuration>
+  <configuration id='7'>
+    <parameter name='IDATA_WIDTH_p' value='16'/>
+    <parameter name='ODATA_WIDTH_p' value='64'/>
+    <parameter name='ocpi_debug' value='false'/>
+    <parameter name='ocpi_endian' value='little'/>
+  </configuration>
+  <configuration id='8'>
+    <parameter name='IDATA_WIDTH_p' value='32'/>
+    <parameter name='ODATA_WIDTH_p' value='8'/>
+    <parameter name='ocpi_debug' value='false'/>
+    <parameter name='ocpi_endian' value='little'/>
+  </configuration>
+  <configuration id='9'>
+    <parameter name='IDATA_WIDTH_p' value='32'/>
+    <parameter name='ODATA_WIDTH_p' value='16'/>
+    <parameter name='ocpi_debug' value='false'/>
+    <parameter name='ocpi_endian' value='little'/>
+  </configuration>
+  <configuration id='10'>
+    <parameter name='IDATA_WIDTH_p' value='32'/>
+    <parameter name='ODATA_WIDTH_p' value='32'/>
+    <parameter name='ocpi_debug' value='false'/>
+    <parameter name='ocpi_endian' value='little'/>
+  </configuration>
+  <configuration id='11'>
+    <parameter name='IDATA_WIDTH_p' value='32'/>
+    <parameter name='ODATA_WIDTH_p' value='64'/>
+    <parameter name='ocpi_debug' value='false'/>
+    <parameter name='ocpi_endian' value='little'/>
+  </configuration>
+  <configuration id='12'>
+    <parameter name='IDATA_WIDTH_p' value='64'/>
+    <parameter name='ODATA_WIDTH_p' value='8'/>
+    <parameter name='ocpi_debug' value='false'/>
+    <parameter name='ocpi_endian' value='little'/>
+  </configuration>
+  <configuration id='13'>
+    <parameter name='IDATA_WIDTH_p' value='64'/>
+    <parameter name='ODATA_WIDTH_p' value='16'/>
+    <parameter name='ocpi_debug' value='false'/>
+    <parameter name='ocpi_endian' value='little'/>
+  </configuration>
+  <configuration id='14'>
+    <parameter name='IDATA_WIDTH_p' value='64'/>
+    <parameter name='ODATA_WIDTH_p' value='32'/>
+    <parameter name='ocpi_debug' value='false'/>
+    <parameter name='ocpi_endian' value='little'/>
+  </configuration>
+  <configuration id='15'>
+    <parameter name='IDATA_WIDTH_p' value='64'/>
+    <parameter name='ODATA_WIDTH_p' value='64'/>
+    <parameter name='ocpi_debug' value='false'/>
+    <parameter name='ocpi_endian' value='little'/>
+  </configuration>
+</build>

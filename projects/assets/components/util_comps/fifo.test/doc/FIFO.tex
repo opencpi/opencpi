@@ -1,0 +1,538 @@
+\iffalse
+This file is protected by Copyright. Please refer to the COPYRIGHT file
+distributed with this source distribution.
+
+This file is part of OpenCPI <http://www.opencpi.org>
+
+OpenCPI is free software: you can redistribute it and/or modify it under the
+terms of the GNU Lesser General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License along
+with this program. If not, see <http://www.gnu.org/licenses/>.
+\fi
+
+\documentclass{article}
+\author{} % Force author to be blank
+%----------------------------------------------------------------------------------------
+% Paper size, orientation and margins
+%----------------------------------------------------------------------------------------
+\usepackage{geometry}
+\geometry{
+  letterpaper,      % paper type
+  portrait,       % text direction
+  left=.75in,       % left margin
+  top=.75in,        % top margin
+  right=.75in,      % right margin
+  bottom=.75in      % bottom margin
+ }
+%----------------------------------------------------------------------------------------
+% Header/Footer
+%----------------------------------------------------------------------------------------
+\usepackage{fancyhdr} \pagestyle{fancy} % required for fancy headers
+\renewcommand{\headrulewidth}{0.5pt}
+\renewcommand{\footrulewidth}{0.5pt}
+\rhead{\small{ANGRYVIPER Team}}
+%----------------------------------------------------------------------------------------
+% Appendix packages
+%----------------------------------------------------------------------------------------
+\usepackage[toc,page]{appendix}
+%----------------------------------------------------------------------------------------
+% Defined Commands & Renamed Commands
+%----------------------------------------------------------------------------------------
+\renewcommand{\contentsname}{Table of Contents}
+\renewcommand{\listfigurename}{List of Figures}
+\renewcommand{\listtablename}{List of Tables}
+\newcommand{\todo}[1]{\textcolor{red}{TODO: #1}\PackageWarning{TODO:}{#1}} % To do notes
+\newcommand{\code}[1]{\texttt{#1}} % For inline code snippet or command line
+%----------------------------------------------------------------------------------------
+% Various pacakges
+%----------------------------------------------------------------------------------------
+\usepackage{hyperref} % for linking urls and lists
+\usepackage{graphicx} % for including pictures by file
+\usepackage{listings} % for coding language styles
+\usepackage{rotating} % for sideways table
+\usepackage{pifont}   % for sideways table
+\usepackage{pdflscape} % for landscape view
+%----------------------------------------------------------------------------------------
+% Table packages
+%----------------------------------------------------------------------------------------
+\usepackage{tabularx} % c=center,l=left,r=right,X=fill
+\usepackage{float}
+\floatstyle{plaintop}
+\usepackage[tableposition=top]{caption}
+\newcolumntype{P}[1]{>{\centering\arraybackslash}p{#1}}
+\newcolumntype{M}[1]{>{\centering\arraybackslash}m{#1}}
+%----------------------------------------------------------------------------------------
+% Block Diagram / FSM Drawings
+%----------------------------------------------------------------------------------------
+\usepackage{tikz}
+\usetikzlibrary{shapes,arrows,fit,positioning}
+\usetikzlibrary{automata} % used for the fsm
+%----------------------------------------------------------------------------------------
+% Colors Used
+%----------------------------------------------------------------------------------------
+\usepackage{colortbl}
+\definecolor{blue}{rgb}{.7,.8,.9}
+\definecolor{ceruleanblue}{rgb}{0.16, 0.32, 0.75}
+\definecolor{drkgreen}{rgb}{0,0.6,0}
+\definecolor{deepmagenta}{rgb}{0.8, 0.0, 0.8}
+\definecolor{cyan}{rgb}{0.0,0.6,0.6}
+\definecolor{maroon}{rgb}{0.5,0,0}
+%----------------------------------------------------------------------------------------
+% Update the docTitle and docVersion per document
+%----------------------------------------------------------------------------------------
+\def\docTitle{Component Data Sheet}
+\def\docVersion{1.3}
+%----------------------------------------------------------------------------------------
+\date{Version \docVersion} % Force date to be blank and override date with version
+\title{\docTitle}
+\lhead{\small{\docTitle}}
+
+\def\comp{fifo}
+\def\Comp{FIFO}
+\graphicspath{ {figures/} }
+
+\begin{document}
+
+\section*{Summary - \Comp}
+\begin{tabular}{|c|M{13.5cm}|}
+  \hline
+  \rowcolor{blue}
+                    &                                                              \\
+  \hline
+  Name              & \comp                                                        \\
+  \hline
+  Worker Type       & Application                                                  \\
+  \hline
+  Version           & \docVersion                                                 \\
+  \hline
+  Release Date      & August 2017                                               \\
+  \hline
+  Component Library & ocpiassets.util\_comps                                        \\
+  \hline
+  Workers           & \comp.hdl                                                    \\
+  \hline
+  Tested Platforms  & isim \\
+  \hline
+\end{tabular}
+
+\section*{Functionality}
+\begin{flushleft}
+  The FIFO component passes complex signed samples (Q0.15 I, Q0.15 Q) from the input port through a First-In-First-Out (FIFO) buffer and onward to the output port. The depth, in number of complex samples, of the FIFO buffer is parameterized. This component includes a property-driven oneshot mode which, when enabled, allows the first FIFO depth number of samples to be sent to the output port and then disables the output port. After the output port is disabled, the input port still ingests available samples, effectively operating as a data sink. This worker can also be parameterized to send a Zero-Length Message (ZLM) once the output port is disabled.
+\end{flushleft}
+
+\section*{Worker Implementation Details}
+\subsection*{\comp.hdl}
+\begin{flushleft}
+  In keeping with good data flow control practices, backpressure is transferred, when necessary, from the output port to the input port. Backpressure is never transferred when in oneshot mode and after the output port is disabled. Backpressure from the output port and forwardpressure from the input port are both alleviated by the FIFO buffer, with the degree of alleviation being directly proportional to the parameterized depth of the FIFO buffer (\verb+FIFO_DEPTH_p+).\medskip
+  
+  The input port's SOM, EOM, byte\_enable, and valid indicators are passed through the FIFO to the output port when it is enabled. Consequently, ZLMs will be passed through this worker. If operating in oneshot mode and the output port has been disabled, the EOM will be set (i.e. logic value of 1 applied) on the same clock pulse as the last output sample.\medskip
+  
+  The \verb+ZLM_WHEN_ONESHOT_DONE_p+ parameter, when having a value of true, forces the worker to send a single ZLM when in oneshot mode and the output port has been disabled (i.e. when oneshot is 'done'). This is useful for allowing applications which use this worker to terminate once this worker's output port is disabled.
+\end{flushleft}
+
+\section*{Block Diagrams}
+\subsection*{Top level}
+\begin{center}
+  \begin{tikzpicture}[% List of styles applied to all, to override specify on a case-by-case
+      every node/.style={
+        align=center,     % use this so that the "\\" for line break works
+        minimum size=2cm  % creates space above and below text in rectangle
+      },
+      every edge/.style={draw,thick}
+    ]
+    \node[rectangle,ultra thick,draw=black,fill=blue](R2){\Comp};
+    \node[rectangle,draw=white,fill=white](R3)[left= of R2]{``in" \\ Complex signed samples (Q0.15 I, Q0.15 Q)};
+    \node[rectangle,draw=white,fill=white](R4)[right= of R2]{``out" \\ Complex signed samples (Q0.15 I, Q0.15 Q)};
+    \node[rectangle,draw=white,fill=white](R5)[above= of R2]{\verb+FIFO_DEPTH_p,+ \\ \verb+ZLM_WHEN_ONESHOT_DONE_p+};
+    \path[->]
+    (R3)edge [] node [] {} (R2)
+    (R2)edge [] node [] {} (R4)
+    (R2)edge [] node [] {} (R5)
+    (R5)edge [] node [] {} (R2)
+    ;
+  \end{tikzpicture}
+\end{center}
+
+\section*{Source Dependencies}
+\subsection*{\comp.hdl}
+\begin{itemize}
+  \item ocpiassets/components/util\_comps/fifo.hdl/fifo.vhd
+  \item ocpi\_base\_project/hdl/primitives/bsv/bsv\_pkg.vhd
+        \subitem ocpi\_base\_project/hdl/primitives/bsv/imports/SizedFIFO.v
+\end{itemize}
+
+\begin{landscape}
+  \section*{Component Spec Properties}
+  \begin{scriptsize}
+    \begin{tabular}{|p{4cm}|p{1cm}|p{2cm}|p{2cm}|p{2cm}|p{2cm}|p{1cm}|p{5.5cm}|}
+      \hline
+      \rowcolor{blue}
+      Name               & Type   & SequenceLength & ArrayDimensions   & Accessibility       & Valid Range                                                                      & Default & Usage                                                                        \\
+      \hline
+      \verb+FIFO_DEPTH_p+  & ULong  & -              & -                 & Parameter & Standard                                                                              & 1024      & Maximum number of complex samples which the FIFO can hold at any given time. \\
+      \hline
+      \verb+ZLM_WHEN_ONESHOT_DONE_p+        & Bool  & -              & -                 & Readable, Initial            & Standard                                                                         & False       & When true, worker will generate Zero-Length-Message after oneshot was enabled and completed (should be used for simulation 'done' purposes only).                     \\
+      \hline
+    \end{tabular}
+  \end{scriptsize}
+
+  \section*{Worker Properties}
+  \subsection*{\comp.hdl}
+  \begin{scriptsize}
+    \begin{tabular}{|p{3cm}|p{2cm}|p{1cm}|p{2cm}|p{2cm}|p{2cm}|p{2cm}|p{3cm}|p{2cm}|}
+      \hline
+      \rowcolor{blue}
+      Type     & Name                 & Type  & SequenceLength & ArrayDimensions & Accessibility       & Valid Range & Default & Usage                                        \\
+      \hline
+      - & -  & - & -              & -               & - & -        & -      & -\\
+      \hline
+    \end{tabular}
+  \end{scriptsize}
+
+
+  \section*{Component Ports}
+  \begin{scriptsize}
+    \begin{tabular}{|p{2cm}|p{1.5cm}|p{2cm}|p{1.5cm}|p{3.5cm}|p{9.75cm}|}
+      \hline
+      \rowcolor{blue}
+      Name & Producer & Protocol           & Optional & Advanced & Usage                  \\
+      \hline
+      in   & false    & iqstream\_protocol & false    & ZeroLengthMessages=true        & Complex signed samples (Q0.15 I, Q0.15 Q). This port effectively becomes a data sink when oneshot is true and \verb+FIFO_DEPTH_p+ samples have been passed through this port. Note that input Zero-Length Messages will not be counted when using oneshot mode. \\
+      \hline
+      out  & true     & iqstream\_protocol & false    & ZeroLengthMessages=true        & Complex signed samples (Q0.15 I, Q0.15 Q). This port will pass through all samples from the input port, while obeying and transferring backpressure. If oneshot is true and \verb+FIFO\_DEPTH\_p+ samples have been passed through this port, no more data will be passed through this port until a reset occurs. Note that Zero-Length Messages will not be counted when using oneshot mode. \\
+      \hline
+    \end{tabular}
+  \end{scriptsize}
+
+
+
+  \section*{Worker Interfaces}
+  \subsection*{\comp.hdl}
+  \begin{scriptsize}
+    \begin{tabular}{|M{2cm}|M{1.5cm}|c|c|M{14.5cm}|}
+      \hline
+      \rowcolor{blue}
+      Type            & Name & DataWidth & Advanced                & Usage                  \\
+      \hline
+      StreamInterface & in   & 32        & - & - \\
+      \hline
+      StreamInterface & out  & 32        & - & - \\
+      \hline
+    \end{tabular}
+  \end{scriptsize}
+\end{landscape}
+
+\section*{Control Timing and Signals}
+\begin{flushleft}
+  The FIFO worker uses the clock from the Control Plane and standard Control Plane signals.
+\end{flushleft}
+
+\section*{Performance and Resource Utilization}
+\subsubsection*{\comp.hdl}
+Table entries are a result of building the worker with the following parameter sets:\
+
+%fifo.hdl/target-stratix4/fifo.merge.rpt
+\iffalse
++--------------------------------------------------------+
+; Partition Merge Resource Usage Summary                 ;
++-----------------------------------------------+--------+
+; Resource                                      ; Usage  ;
++-----------------------------------------------+--------+
+; Estimated ALUTs Used                          ; 284    ;
+;     -- Combinational ALUTs                    ; 284    ;
+;     -- Memory ALUTs                           ; 0      ;
+;     -- LUT_REGs                               ; 0      ;
+; Dedicated logic registers                     ; 260    ;
+;                                               ;        ;
+; Estimated ALUTs Unavailable                   ; 22     ;
+;     -- Due to unpartnered combinational logic ; 22     ;
+;     -- Due to Memory ALUTs                    ; 0      ;
+;                                               ;        ;
+; Total combinational functions                 ; 284    ;
+; Combinational ALUT usage by number of inputs  ;        ;
+;     -- 7 input functions                      ; 1      ;
+;     -- 6 input functions                      ; 84     ;
+;     -- 5 input functions                      ; 79     ;
+;     -- 4 input functions                      ; 24     ;
+;     -- <=3 input functions                    ; 96     ;
+;                                               ;        ;
+; Combinational ALUTs by mode                   ;        ;
+;     -- normal mode                            ; 225    ;
+;     -- extended LUT mode                      ; 1      ;
+;     -- arithmetic mode                        ; 58     ;
+;     -- shared arithmetic mode                 ; 0      ;
+;                                               ;        ;
+; Estimated ALUT/register pairs used            ; 380    ;
+;                                               ;        ;
+; Total registers                               ; 260    ;
+;     -- Dedicated logic registers              ; 260    ;
+;     -- I/O registers                          ; 0      ;
+;     -- LUT_REGs                               ; 0      ;
+;                                               ;        ;
+;                                               ;        ;
+; I/O pins                                      ; 171    ;
+; Total MLAB memory bits                        ; 0      ;
+; Total block memory bits                       ; 286685 ;
+; DSP block 18-bit elements                     ; 0      ;
+; Maximum fan-out                               ; 295    ;
+; Total fan-out                                 ; 3131   ;
+; Average fan-out                               ; 3.40   ;
++-----------------------------------------------+--------+
+\fi
+
+%fifo.hdl/target-1-stratix4/fifo.merge.rpt
+\iffalse
++--------------------------------------------------------+
+; Partition Merge Resource Usage Summary                 ;
++-----------------------------------------------+--------+
+; Resource                                      ; Usage  ;
++-----------------------------------------------+--------+
+; Estimated ALUTs Used                          ; 283    ;
+;     -- Combinational ALUTs                    ; 283    ;
+;     -- Memory ALUTs                           ; 0      ;
+;     -- LUT_REGs                               ; 0      ;
+; Dedicated logic registers                     ; 260    ;
+;                                               ;        ;
+; Estimated ALUTs Unavailable                   ; 4      ;
+;     -- Due to unpartnered combinational logic ; 4      ;
+;     -- Due to Memory ALUTs                    ; 0      ;
+;                                               ;        ;
+; Total combinational functions                 ; 283    ;
+; Combinational ALUT usage by number of inputs  ;        ;
+;     -- 7 input functions                      ; 1      ;
+;     -- 6 input functions                      ; 66     ;
+;     -- 5 input functions                      ; 90     ;
+;     -- 4 input functions                      ; 29     ;
+;     -- <=3 input functions                    ; 97     ;
+;                                               ;        ;
+; Combinational ALUTs by mode                   ;        ;
+;     -- normal mode                            ; 224    ;
+;     -- extended LUT mode                      ; 1      ;
+;     -- arithmetic mode                        ; 58     ;
+;     -- shared arithmetic mode                 ; 0      ;
+;                                               ;        ;
+; Estimated ALUT/register pairs used            ; 361    ;
+;                                               ;        ;
+; Total registers                               ; 260    ;
+;     -- Dedicated logic registers              ; 260    ;
+;     -- I/O registers                          ; 0      ;
+;     -- LUT_REGs                               ; 0      ;
+;                                               ;        ;
+;                                               ;        ;
+; I/O pins                                      ; 171    ;
+; Total MLAB memory bits                        ; 0      ;
+; Total block memory bits                       ; 286685 ;
+; DSP block 18-bit elements                     ; 0      ;
+; Maximum fan-out                               ; 295    ;
+; Total fan-out                                 ; 3101   ;
+; Average fan-out                               ; 3.37   ;
++-----------------------------------------------+--------+
+\fi
+
+%fifo.hdl/target-virtex6/fifo-xst.out
+\iffalse
+Device utilization summary:
+---------------------------
+
+Selected Device : 6vcx75tff484-2 
+
+
+Slice Logic Utilization: 
+ Number of Slice Registers:             178  out of  93120     0%  
+ Number of Slice LUTs:                 8028  out of  46560    17%  
+    Number used as Logic:              1884  out of  46560     4%  
+    Number used as Memory:             6144  out of  16720    36%  
+       Number used as RAM:             6144
+
+Slice Logic Distribution: 
+ Number of LUT Flip Flop pairs used:   8079
+   Number with an unused Flip Flop:    7901  out of   8079    97%  
+   Number with an unused LUT:            51  out of   8079     0%  
+   Number of fully used LUT-FF pairs:   127  out of   8079     1%  
+   Number of unique control sets:        22
+
+IO Utilization: 
+ Number of IOs:                         171
+ Number of bonded IOBs:                   0  out of    240     0%  
+\fi
+
+%fifo.hdl/target-virtex6/fifo-xst.out
+\iffalse
+Timing Summary:
+---------------
+Speed Grade: -2
+
+   Minimum period: 3.925ns (Maximum Frequency: 254.783MHz)
+   Minimum input arrival time before clock: 2.677ns
+   Maximum output required time after clock: 2.870ns
+   Maximum combinational path delay: 1.928ns
+\fi
+
+%fifo.hdl/target-1-virtex6/fifo-xst.out
+\iffalse
+Device utilization summary:
+---------------------------
+
+Selected Device : 6vcx75tff484-2 
+
+
+Slice Logic Utilization: 
+ Number of Slice Registers:             178  out of  93120     0%  
+ Number of Slice LUTs:                 8018  out of  46560    17%  
+    Number used as Logic:              1874  out of  46560     4%  
+    Number used as Memory:             6144  out of  16720    36%  
+       Number used as RAM:             6144
+
+Slice Logic Distribution: 
+ Number of LUT Flip Flop pairs used:   8069
+   Number with an unused Flip Flop:    7891  out of   8069    97%  
+   Number with an unused LUT:            51  out of   8069     0%  
+   Number of fully used LUT-FF pairs:   127  out of   8069     1%  
+   Number of unique control sets:        22
+
+IO Utilization: 
+ Number of IOs:                         171
+ Number of bonded IOBs:                   0  out of    240     0%  
+\fi
+
+%fifo.hdl/target-1-virtex6/fifo-xst.out
+\iffalse
+Timing Summary:
+---------------
+Speed Grade: -2
+
+   Minimum period: 3.949ns (Maximum Frequency: 253.233MHz)
+   Minimum input arrival time before clock: 2.866ns
+   Maximum output required time after clock: 2.895ns
+   Maximum combinational path delay: 1.928ns
+\fi
+
+%fifo.hdl/target-zynq/fifo-xst.out
+\iffalse
+Device utilization summary:
+---------------------------
+
+Selected Device : 7z010clg400-3 
+
+
+Slice Logic Utilization: 
+ Number of Slice Registers:             178  out of  35200     0%  
+ Number of Slice LUTs:                 8012  out of  17600    45%  
+    Number used as Logic:              1868  out of  17600    10%  
+    Number used as Memory:             6144  out of   6000   102% (*) 
+       Number used as RAM:             6144
+
+Slice Logic Distribution: 
+ Number of LUT Flip Flop pairs used:   8064
+   Number with an unused Flip Flop:    7886  out of   8064    97%  
+   Number with an unused LUT:            52  out of   8064     0%  
+   Number of fully used LUT-FF pairs:   126  out of   8064     1%  
+   Number of unique control sets:        22
+
+IO Utilization: 
+ Number of IOs:                         171
+ Number of bonded IOBs:                   0  out of    100     0%  
+\fi
+
+%fifo.hdl/target-zynq/fifo-xst.out
+\iffalse
+Timing Summary:
+---------------
+Speed Grade: -3
+
+   Minimum period: 3.253ns (Maximum Frequency: 307.390MHz)
+   Minimum input arrival time before clock: 2.237ns
+   Maximum output required time after clock: 2.247ns
+   Maximum combinational path delay: 1.609ns
+\fi
+
+%fifo.hdl/target-1-zynq/fifo-xst.out
+\iffalse
+Device utilization summary:
+---------------------------
+
+Selected Device : 7z010clg400-3 
+
+
+Slice Logic Utilization: 
+ Number of Slice Registers:             178  out of  35200     0%  
+ Number of Slice LUTs:                 8015  out of  17600    45%  
+    Number used as Logic:              1871  out of  17600    10%  
+    Number used as Memory:             6144  out of   6000   102% (*) 
+       Number used as RAM:             6144
+
+Slice Logic Distribution: 
+ Number of LUT Flip Flop pairs used:   8067
+   Number with an unused Flip Flop:    7889  out of   8067    97%  
+   Number with an unused LUT:            52  out of   8067     0%  
+   Number of fully used LUT-FF pairs:   126  out of   8067     1%  
+   Number of unique control sets:        22
+
+IO Utilization: 
+ Number of IOs:                         171
+ Number of bonded IOBs:                   0  out of    100     0%  
+\fi
+
+%fifo.hdl/target-1-zynq/fifo-xst.out
+\iffalse
+Timing Summary:
+---------------
+Speed Grade: -3
+
+   Minimum period: 3.253ns (Maximum Frequency: 307.390MHz)
+   Minimum input arrival time before clock: 2.359ns
+   Maximum output required time after clock: 2.274ns
+   Maximum combinational path delay: 1.609ns
+\fi
+
+\begin{itemize}
+  \item \verb+FIFO_DEPTH_p=8192+
+  \item \verb+ZLM_WHEN_ONESHOT_DONE_p=false+
+\end{itemize}
+\begin{scriptsize}
+  \begin{tabular}{|c|c|c|c|c|c|c|c|}
+    \hline
+    \rowcolor{blue}
+    Device                      & Registers & LUTs & Fmax        & Memory/Special Functions & GCLK & I/O & Design Suite    \\
+    \hline
+    Stratix4 EP4SGX230K-C2-F40  & 260       & 284  & -           & -                        & 1    & 171 &     Quartus 12.1 SP1\\
+    \hline
+    Virtex6 XC6VLX240T-1-FF1156 & 178       & 8028 & 254 MHz     & -                        & 1    & 171 & ISE 14.7        \\
+    \hline
+    Zynq XC7Z020-1-CLG484       & 178       & 8012 & 307 MHz     & -                        & 1    & 171 & ISE 14.7        \\
+    \hline
+  \end{tabular}
+\end{scriptsize}
+\begin{itemize}
+  \item \verb+FIFO_DEPTH_p=8192+
+  \item \verb+ZLM_WHEN_ONESHOT_DONE_p=true+
+\end{itemize}
+\begin{scriptsize}
+  \begin{tabular}{|c|c|c|c|c|c|c|c|}
+    \hline
+    \rowcolor{blue}
+    Device                      & Registers & LUTs & Fmax        & Memory/Special Functions & GCLK & I/O & Design Suite    \\
+    \hline
+    Stratix4 EP4SGX230K-C2-F40  & 260       & 283  & -           & -                        & 1    & 171 &     Quartus 12.1 SP1\\
+    \hline
+    Virtex6 XC6VLX240T-1-FF1156 & 178       & 8018 & 253 MHz     & -                        & 1    & 171 & ISE 14.7        \\
+    \hline
+    Zynq XC7Z020-1-CLG484       & 178       & 8015 & 307 MHz     & -                        & 1    & 171 & ISE 14.7        \\
+    \hline
+  \end{tabular}
+\end{scriptsize}
+
+\section*{Test and Verification}
+\begin{flushleft}
+For verification, multiple test files are generated of varying lengths. Each test file is passed into the input port, and the output of the output port is saved to a file. The output file is compared against the input file to make sure they have the same binary contents and length. For the tests that use oneshot mode, the output file is only compared to the first min(input file size,8192) samples, with 8192 hardcoded to correspond to \verb+FIFO_DEPTH_p+.
+\end{flushleft}
+
+\end{document}
+

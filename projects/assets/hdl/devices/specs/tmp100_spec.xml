@@ -1,0 +1,11 @@
+<!-- 
+ TMP100 Device Worker OCS
+-->
+<ComponentSpec>
+                                                                                    <!--Device Offset-->
+  <Property name="temp_reg" type="ushort" readable="true"/> 	                    <!-- 0x0-->
+  <Property name="config_reg" type="uchar" readable="true" writable="true"/> 	    <!-- 0x1-->
+  <Property name="pad1" type="uchar" padding="true"/> 	                            <!-- 0x1-->
+  <Property name="tlow_reg" type="ushort" readable="true" writable="true"/> 	    <!-- 0x2-->
+  <Property name="thigh_reg" type="ushort" readable="true" writable="true"/> 	    <!-- 0x3-->
+</ComponentSpec>

@@ -1,0 +1,36 @@
+<application package='ocpi.assets'>
+  <instance component='ocpi.assets.devices.si5351'/>
+  <!-- <instance component='ocpi.core.devices.clock_gen' slave='si5351'/> -->
+  <instance component='ocpi.core.devices.clock_gen' slave='si5351'>
+    <property name='channels' value='
+              {output_hz 0,source 0x0,inverted false,spread none,spreadAmount 0,disabled_mode z},
+              {output_hz 0,source 0x0,inverted false,spread none,spreadAmount 0,disabled_mode z},
+              {output_hz 1000e3,source 0x0,inverted false,spread none,spreadAmount 0,disabled_mode z},
+              {output_hz 1000e3,source 0x0,inverted false,spread none,spreadAmount 0,disabled_mode z},
+              {output_hz 0,source 0x0,inverted false,spread none,spreadAmount 0,disabled_mode z},
+              {output_hz 0,source 0x0,inverted false,spread none,spreadAmount 0,disabled_mode z},
+              {output_hz 0,source 0x0,inverted false,spread none,spreadAmount 0,disabled_mode z},
+              {output_hz 0,source 0x0,inverted false,spread none,spreadAmount 0,disabled_mode z}
+              '/>
+  </instance>
+  <instance component='ocpi.assets.devices.rf_rx_proxy' slave='rf_rx'>
+     <property name='input_select' value='2'/>
+     <property name='center_freq_hz' value='2.140e9'/>
+     <property name='post_mixer_dc_offset_i' value='0x43'/>
+     <property name='post_mixer_dc_offset_q' value='0x06'/>
+     <property name='lpf_bw_hz' value='.75e6'/>
+     <property name='post_lpf_gain_db' value='21'/>
+  </instance>
+  <instance component='ocpi.assets.devices.qadc' model='hdl'/>
+  <connection>
+    <port instance='qadc' name='out'/>
+    <port instance='file_write' name='in'/>
+  </connection>
+  <instance component='ocpi.core.file_write'>
+    <property name='fileName' value='odata/testbench_rx.out'/>
+  </instance>
+  <instance component='ocpi.assets.devices.rf_rx'>
+    <!--Per the Myriad RF manual, RX VGA2 common mode voltage (rx_vcm) should be set to 780 mV-->
+    <property name='rx_vcm' value='0x32'/>
+  </instance>
+</application>

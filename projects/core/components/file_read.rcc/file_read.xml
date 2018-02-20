@@ -1,0 +1,15 @@
+<!-- 
+The file reader reads a file and sends data to the "out" port.
+Properties:
+ messagesInFile: indicates that messages, including length and opcode, will be in the file
+ opcode: indicates a fixed opcode to use, defaults to zero
+ messageSize: indicates the size of messages
+ granularity: incidates that the last message will be truncated to be a multiple of this.
+-->
+<RccImplementation controloperations="start,release">
+  <xi:include href="file_read_spec.xml"/>
+  <specproperty name="fileName" readable='true'/>
+  <specproperty name="suppressEOF" readable='true'/>
+  <specproperty name="messageSize" volatile='true'/>
+  <port name='out' buffersize='8k'/>
+</RccImplementation>

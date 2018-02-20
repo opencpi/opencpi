@@ -1,0 +1,22 @@
+So wip needs granularity and value size
+a member has both.
+a structure also has both
+a sequence of structures has both
+a sequence of arguments has both.
+a protocol may have a value size greater than the datawidth, which just means
+the datavalue width is the minimium of the datavalue and the datawidth, and then, e.g. for
+64 bit quantities in a 16 bit data path the granularity is 4.
+probably need a sort of "parent accumulator" struct so members can accumulate in structs,
+and properties can accumulate in payloads or a property sheet,  with the primary difference being that
+arguments are not random access (unless we want to put an offset table in our payloads).
+
+maxalign cum
+min datum cum
+granularity cum
+offset cum
+
+2 levels: member to struct, arg to message (or prop to app props).
+
+maxalign is global for property sheets and message buffers
+but needed for middle level.
+

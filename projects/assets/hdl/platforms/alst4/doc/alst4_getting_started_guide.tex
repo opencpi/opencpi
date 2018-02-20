@@ -1,0 +1,183 @@
+\documentclass{article}
+\iffalse
+This file is protected by Copyright. Please refer to the COPYRIGHT file
+distributed with this source distribution.
+
+This file is part of OpenCPI <http://www.opencpi.org>
+
+OpenCPI is free software: you can redistribute it and/or modify it under the
+terms of the GNU Lesser General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License along
+with this program. If not, see <http://www.gnu.org/licenses/>.
+\fi
+
+% TODO: Version numbers?
+\usepackage{graphicx}
+\graphicspath{ {figures/} }
+\usepackage{fancyhdr}
+\usepackage{colortbl}
+\usepackage[margin=.75in]{geometry}
+\usepackage{hyperref}
+\usepackage{listings}
+\pagestyle{fancy}
+\lhead{Board Support Package Documentation}
+\rhead{ANGRYVIPER Team}
+\renewcommand{\headrulewidth}{0pt}
+\newcommand{\shellcmd}[1]{\texttt{\$ #1\\}}
+\newcommand{\terminaloutput}[1]{\texttt{#1}}
+\definecolor{blue}{rgb}{.5,1,1}
+\definecolor{drkgreen}{rgb}{0,.6,0}
+\begin{document}
+\section*{ALST4 Getting Started Guide}
+\subsection*{Hardware Prerequisites}
+This section describes the hardware prerequisites required for an operational alst4 (Altera Stratix IV) platform using ANGRYVIPER. The optional HSMC Debug Loopback and HSMC Debug Breakout Header cards are only intended for testing purposes. Also note that the slot configurations in Table \ref{table:supported_slots} are limited by what FPGA bitstreams are currently built by ANGRYVIPER and not by what hardware configurations are theoretically possible using ANGRYVIPER.\\ \\
+Hardware prerequisites are as follows.
+\begin{itemize}
+\item A Stratix IV GX230 board, which has undergone an ANGRYVIPER-specific initial one-time hardware setup \cite{alst4_hardware_setup} and is plugged into a PCIE slot of an x86 computer.
+\item Optionally, one of the following HSMC card configurations in Table  \ref{table:supported_slots} may exist
+\end{itemize}
+\begin{center}
+        \begin{table}[!htbp]
+        \centering
+        \caption{ANGRYVIPER-supported Stratix IV hardware HSMC slot configurations}
+        \label{table:supported_slots}
+        \begin{tabular}{c|c|c|}
+                \cline{2-3}
+                & HSMC A slot & HSMC B slot \\ \hline
+                \multicolumn{1}{|c|}{Test loopback A setup} & HSMC Debug Loopback Card & (empty)\\ \hline
+                \multicolumn{1}{|c|}{Test loopback B setup} & (empty) & HSMC Debug Loopback Card \\ \hline
+                \multicolumn{1}{|c|}{Test dual loopback setup} & HSMC Debug Loopback Card & HSMC Debug Loopback Card \\ \hline
+                \multicolumn{1}{|c|}{Test breakout A setup} & HSMC Debug Breakout Header Card & (empty)\\ \hline
+                \multicolumn{1}{|c|}{Test breakout B setup} & (empty) & HSMC Debug Breakout Header Card \\ \hline
+                \multicolumn{1}{|c|}{Zipper A setup} & Modified\cite{zipper_mods} Zipper/MyriadRF & (empty)\\
+                \multicolumn{1}{|c|}{ } & transceiver card & \\ \hline
+                \multicolumn{1}{|c|}{Zipper B setup} & (empty) & Modified\cite{zipper_mods} Zipper/MyriadRF \\
+                \multicolumn{1}{|c|}{ } & & transceiver card \\ \hline
+        \end{tabular}
+        \end{table}
+\end{center}
+
+\subsection*{Software Prerequisites}
+\begin{itemize}
+\item A CentOS 6 or CentOS 7 operating system installed on the x86 computer.
+\item Altera Quartus installed on the x86 computer. For more information refer to \cite{angryviper_fpga_vendor_tool_guide}
+\item ANGRYVIPER framework and prerequisite RPMs installed on the x86 computer. For more information refer to \cite{angryviper_installation_guide}
+\item OpenCPI Base Project compiled for alst4. For more information refer to the "Base Project" section in \cite{angryviper_installation_guide}
+\item ANGRYVIPER assets project compiled for alst4. For more information refer to the "ANGRYVIPER assets" section in \cite{angryviper_installation_guide}
+\end{itemize}
+
+\subsection*{Proof of Operation}
+The following commands may be run in order to verify correct ANGRYVIPER operation on the x86/Stratix IV system.\\ \\
+Existence of alst4 RCC/HDL containers may be verified by running the following command and verifying that similar output is produced.\\
+\noindent\terminaloutput{\$ ocpirun -C\\
+Available containers:\\
+ \#  Model\hspace{6ex} Platform\hspace{3ex}    OS\hspace{5ex}     OS Version\hspace{1ex}  Name\\
+ 0  rcc\hspace{9ex}   x86\_64\hspace{5ex}      linux\hspace{2ex}  c6\hspace{10ex}          rcc0\\
+ 1  hdl\hspace{9ex}   alst4\hspace{29ex}                          PCI:0000:02:00.0
+}\\ \\
+Operation of the RCC container can be verified by running the hello application via the following command and verifying that identical output is produced. Note that the OCPI\_LIBRARY\_PATH environment variable must be setup correctly for your system prior to running this command.\\
+\noindent\terminaloutput{\$ ocpirun -t 1 \$OCPI\_PROJECT\_PATH/examples/xml/hello.xml \\
+Hello, world} \\ \\
+Simultaneous RCC/HDL container operation can be verified by running the testbias application via the following command and verifying that identical output is produced. Note that the OCPI\_LIBRARY\_PATH environment variable must be setup correctly for your system prior to running this command.\\
+\noindent\terminaloutput{ocpirun -d -m bias=hdl testbias.xml \\
+Property  0: file\_read.fileName = "test.input" (cached)\\
+Property  1: file\_read.messagesInFile = "false" (cached)\\
+Property  2: file\_read.opcode = "0" (cached)\\
+Property  3: file\_read.messageSize = "16"\\
+Property  4: file\_read.granularity = "4" (cached)\\
+Property  5: file\_read.repeat = "<unreadable>"\\
+Property  6: file\_read.bytesRead = "0"\\
+Property  7: file\_read.messagesWritten = "0"\\
+Property  8: file\_read.suppressEOF = "false"\\
+Property  9: file\_read.badMessage = "false"\\
+Property 10: file\_read.ocpi\_debug = "false" (parameter)\\
+Property 11: file\_read.ocpi\_endian = "little" (parameter)\\
+Property 12: bias.biasValue = "16909060" (cached)\\
+Property 13: bias.ocpi\_debug = "false" (parameter)\\
+Property 14: bias.ocpi\_endian = "little" (parameter)\\
+Property 15: bias.test64 = "0"\\
+Property 16: file\_write.fileName = "test.output" (cached)\\
+Property 17: file\_write.messagesInFile = "false" (cached)\\
+Property 18: file\_write.bytesWritten = "0"\\
+Property 19: file\_write.messagesWritten = "0"\\
+Property 20: file\_write.stopOnEOF = "true" (cached)\\
+Property 21: file\_write.ocpi\_debug = "false" (parameter)\\
+Property 22: file\_write.ocpi\_endian = "little" (parameter)\\
+Property  3: file\_read.messageSize = "16"\\
+Property  5: file\_read.repeat = "<unreadable>"\\
+Property  6: file\_read.bytesRead = "4000"\\
+Property  7: file\_read.messagesWritten = "251"\\
+Property  8: file\_read.suppressEOF = "false"\\
+Property  9: file\_read.badMessage = "false"\\
+Property 15: bias.test64 = "0"\\
+Property 18: file\_write.bytesWritten = "4000"\\
+Property 19: file\_write.messagesWritten = "250"\\
+\\
+}
+
+\subsection*{Known Issues}
+When loading FPGA bitstreams onto the alst4 FPGA (which can occur when running either \terminaloutput{ocpihdl load} or \terminaloutput{ocpirun}), multiple issues exists with the Altera jtag daemon which may cause the FPGA loading to fail. The following is an example of the terminal output when this failure occurs: \\ \\
+\noindent\terminaloutput{Checking existing loaded bitstream on OpenCPI HDL device "PCI:0000:0b:00.0"... \\
+OpenCPI FPGA at PCI 0000:0b:00.0: bitstream date Wed Oct 19 16:04:45 2016, platf \\
+orm "alst4", part "ep4sgx230k", UUID 482195b4-9637-11e6-8002-d76b7b3cbb11 \\
+Existing loaded bitstream looks ok, proceeding to snapshot the PCI configuration \\
+ (into /tmp/ocpibitstream15980.1). \\
+Scanning for JTAG cables... \\
+Found cable "USB-Blaster [3-11]" to use for device "PCI:0000:0b:00.0" (no serial \\
+number specified). \\
+Error: did not find part ep4sgx230k in the jtag chain for cable USB-Blaster [3-1 \\
+1]. \\
+Look at /tmp/ocpibitstream15980.log for details. \\
+Error: Could not find jtag position for part ep4sgx230k on JTAG cable "USB-Blast \\
+er [3-11]". \\
+OpenCPI FPGA at PCI 0000:0b:00.0: bitstream date Wed Oct 19 16:04:45 2016, platf \\
+Exception thrown: Bitstream loading error (exit code: 1) loading "../../hdl/ass \\
+emblies/dc\_offset\_iq\_imbalance\_mixer\_cic\_dec\_timestamper/container-dc\_offset\_iq\_imba \\
+lance\_mixer\_cic\_dec\_timestamper\_alst4\_base\_alst4\_adc\_hsmc\_port\_b/target-stratix4/dc\_ \\
+offset\_iq\_imbalance\_mixer\_cic\_dec\_timestamper\_alst4\_base\_alst4\_adc\_hsmc\_port\_b.sof.gz \\
+" on HDL device "PCI:0000:0b:00.0" with command: /opt/opencpi/cdk//scripts/loadBi \\
+tStream "../../hdl/assemblies/dc\_offset\_iq\_imbalance\_mixer\_cic\_dec\_timestamper/conta \\iner-dc\_offset\_iq\_imbalance\_mixer\_cic\_dec\_timestamper\_alst4\_base\_alst4\_adc\_hsmc\_port\_b \\
+/target-stratix4/dc\_offset\_iq\_imbalance\_mixer\_cic\_dec\_timestamper\_alst4\_base\_alst4\_adc \\
+\_hsmc\_port\_b.sof.gz" "PCI:0000:0b:00.0" "alst4" "ep4sgx230k" "" "" \\
+\\
+}
+The failure may also manifest as a permissions issue: \\ \\
+\noindent\terminaloutput{Checking existing loaded bitstream on OpenCPI HDL device "PCI:0000:0b:00.0"... \\
+Found cable "USB-Blaster variant [1-1.4]"Error when locking chain - Insufficient \\
+ port permissions \\
+ with no serial number \\
+\\
+}
+The follow commands implement a known remedy for each of the aforementioned errors: \\ \\
+\noindent\terminaloutput{\$ sudo killall jtagd \\
+\$ sudo chmod 755 /sys/kernel/debug/usb/devices \\
+\$ sudo chmod 755 /sys/kernel/debug/usb \\
+\$ sudo chmod 755 /sys/kernel/debug \\
+\$ sudo mount --bind /dev/bus /proc/bus \\
+\$ sudo ln -s /sys/kernel/debug/usb/devices /proc/bus/usb/devices \\
+\$ sudo <quartus\_directory>/bin/jtagd \\
+\$ sudo <quartus\_directory>/bin/jtagconfig}
+
+\pagebreak
+  \begin{thebibliography}{1}
+
+
+  \bibitem{alst4_hardware_setup} ALST4 Hardware Setupe\\
+	 alst4\_hardware\_setup.pdf
+  \bibitem{angryviper_fpga_vendor_tool_guide} ANGRYVIPER FPGA Vendor Tools Guide\\
+	 AngryViper\_FPGA\_Vendor\_Tools\_Guide.pdf
+	   \bibitem{angryviper_installation_guide} ANGRYVIPER Installation Guide\\
+	 AngryViper\_Installation\_Guide.pdf
+	   \bibitem{zipper_mods} Required Modifications for Myriad-RF 1 and Zipper Daughtercards\\
+	 Required\_Modifications\_for\_Myriad-RF\_1\_Zipper\_Daughtercards.pdf
+
+  \end{thebibliography}
+
+\end{document}

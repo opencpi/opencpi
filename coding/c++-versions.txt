@@ -1,0 +1,13 @@
+We currently limit the codebase to what is supported in GNU G++ 4.4, which is partial support
+for C++11, but not nullptr and a number of other things.
+This corresponds to the default compiler for CentOS6, using the -std=c++0x flag.
+Those wanting to port to older systems (e.g. RHEL 5), must install and build newer compilers
+on those systems (or cross-compile) or patch their own code.
+
+The next step will be to use more of C++11 when we stop supporting CentOS6, but that is not
+happening soon.  User code, either RCC C++ workers or ACI applications can use C++11 on
+newer systems, but it may not build or run on older systems such as CentOS6.
+
+
+
+

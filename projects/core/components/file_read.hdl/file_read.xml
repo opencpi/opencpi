@@ -1,0 +1,11 @@
+<HdlImplementation Language="vhdl">
+  <xi:include href="file_read_spec.xml"/>
+  
+  <!-- Current working directory string -->
+  <property name="CWD_MAX_LENGTH" type="ULong" default="256" parameter="true"/>
+  <property name="cwd" type='string' stringlength='CWD_MAX_LENGTH' volatile='true'/>
+
+  <specproperty name="fileName" readable='true'/>
+  <specproperty name="suppressEOF" readable='true'/>
+  <streaminterface name="out" datawidth='32'/>
+</HdlImplementation>

@@ -1,0 +1,3 @@
+<HdlContainer only='zed,zed_ise' config='zed_zipper_fmc_tx'>
+<connection external='out' card='lime_zipper_fmc_lpc' device='lime_dac'/>
+</HdlContainer>

@@ -1,0 +1,69 @@
+<!-- This is the spec file (OCS) for: data_src
+     Add component spec attributes, like "protocol".
+     Add property elements for spec properties.
+     Add port elements for i/o ports -->
+<ComponentSpec>
+
+  <!-- Parameters -->
+  <Property Name="DATA_BIT_WIDTH_p" Type="ushort"
+                                   Parameter="true"
+                                   Default="16"
+                                   Description="Determines the width of the buses for each of the I and Q data generation memory elements - if less than 16, the most significant DATA_BIT_WIDTH_p bits of I and Q on the out port will be filled. Value is expect to be less than or equal to 16."/>
+  <Property Name="LFSR_POLYNOMIAL_p" Type="bool"
+                                     Arraylength="DATA_BIT_WIDTH_p"
+                                     Parameter="true"
+                                     Default="0"
+                                     Description="E.g., a value of 1,1,0,1 would correspond to an LFSR polynomial of x^4 + x^3 + (0*x^2) + x^1 + 1 (+1 is always implied regardless of value)."/>
+  <Property Name="LFSR_SEED_p" Type="bool"
+                               Arraylength="DATA_BIT_WIDTH_p"
+                               Parameter="true"
+                               Default="0"
+                               Description="Out-of-reset value of the Linear Feedback Shift Register (only affects output data in LFSR mode). This value should never be all zeros, which would cause the register to always have a value of all zeros regardless of polynomial value."/>
+  <Property Name="ZLM_WHEN_NUM_SAMPLES_REACHED_p" Type="bool"
+                                   Parameter="true"
+                                   Default="false"
+                                   Description="When value is true and num_samples property value is not -1, worker will generate Zero-Length-Message after num_samples amount of samples have been sent out the output port."/>
+
+  <!-- Initial Properties -->
+  <Property Name="messageSize_bytes" Type="ulong"
+                                     Readable="true"
+                                     Initial="true"
+                                     Default="4096"
+                                     Description="Message size in bytes. When the value of (num_samples * num bytes per sample) is less than this property's value, the value of (num_samples * num bytes per sample) is used as the message size."/>
+
+  <!-- Runtime Properties -->
+  <Property Name="num_samples" Type="long" 
+                               Readable="true"
+                               Writable="true"
+                               Default="-1"
+                               Description="Maximum number of samples which will be sent out of the output port once out of reset. Note that samples are only sent when the enable property has a value of true. When the value of this property is -1, samples will be sent indefinitely (obeying backpressure from the connected worker, of course)."/>
+  <Property Name="fixed_value" Type="bool"
+                               Arraylength="DATA_BIT_WIDTH_p"
+                               Readable="true"
+                               Writable="true"
+                               Default="0x5a5a"
+                               Description="The value of this property will be used for I (and the bit-reversed version of this value will be used for Q) to send to the output port when the mode property's value is 'fixed'."/>
+  <Property Name="mode" Type="enum"
+                        Enums="count,walking,LFSR,fixed"
+                        Readable="true"
+                        Writable="true"
+                        Default="count"
+                        Description="Counter, walking ones, Linear Feedback Shift Register, or fixed value."/>
+  <Property Name="enable" Type="bool"
+                          Readable="true"
+                          Writable="true"
+                          Default="true"
+                          Description="When the worker is not in reset, this property must have a value of true for the data to be sent to the output."/>
+  <Property Name="LFSR_bit_reverse" Type="bool"
+                                    Readable="true"
+                                    Writable="true"
+                                    Default="true"
+                                    Description="Used to determine the LFSR shift direction. When true, the DATA_BIT_WIDTH_p-bits wide LFSR will be reversed for both I and Q."/>
+
+  <!-- Ports -->
+  <!-- Complex signed samples (Q0.15 I, Q0.15 Q). This port generates data while obeying backpressure. This port is disabled when either the enable property has a value of false or when the num_samples property has a value of greater than 0 and num_samples amount of samples have been sent out this port. -->
+  <DataInterfaceSpec Name="out" Producer="true"
+                                Protocol="iqstream_protocol"
+                                ZeroLengthMessages="true"/>
+
+</ComponentSpec>

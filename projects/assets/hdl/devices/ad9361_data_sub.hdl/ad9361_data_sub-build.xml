@@ -1,0 +1,64 @@
+<build>
+  <configuration id='0'>
+    <parameter name='LVDS_p' value='false'/>
+    <parameter name='SINGLE_PORT_p' value='true'/>
+    <parameter name='HALF_DUPLEX_p' value='true'/>
+    <parameter name='SWAP_PORTS_p' value='false'/>
+  </configuration>
+  <configuration id='1'>
+    <parameter name='LVDS_p' value='false'/>
+    <parameter name='SINGLE_PORT_p' value='true'/>
+    <parameter name='HALF_DUPLEX_p' value='true'/>
+    <parameter name='SWAP_PORTS_p' value='true'/>
+  </configuration>
+  <configuration id='2'>
+    <parameter name='LVDS_p' value='false'/>
+    <parameter name='SINGLE_PORT_p' value='true'/>
+    <parameter name='HALF_DUPLEX_p' value='false'/>
+    <parameter name='SWAP_PORTS_p' value='false'/>
+  </configuration>
+  <configuration id='3'>
+    <parameter name='LVDS_p' value='false'/>
+    <parameter name='SINGLE_PORT_p' value='true'/>
+    <parameter name='HALF_DUPLEX_p' value='false'/>
+    <parameter name='SWAP_PORTS_p' value='true'/>
+  </configuration>
+  <configuration id='4'>
+    <parameter name='LVDS_p' value='false'/>
+    <parameter name='SINGLE_PORT_p' value='false'/>
+    <parameter name='HALF_DUPLEX_p' value='true'/>
+    <parameter name='SWAP_PORTS_p' value='false'/>
+  </configuration>
+  <configuration id='5'>
+    <parameter name='LVDS_p' value='false'/>
+    <parameter name='SINGLE_PORT_p' value='false'/>
+    <parameter name='HALF_DUPLEX_p' value='false'/>
+    <parameter name='SWAP_PORTS_p' value='false'/>
+  </configuration>
+  <configuration id='6'>
+    <parameter name='LVDS_p' value='false'/>
+    <parameter name='SINGLE_PORT_p' value='false'/>
+    <parameter name='HALF_DUPLEX_p' value='false'/>
+    <parameter name='SWAP_PORTS_p' value='true'/>
+  </configuration>
+  <configuration id='7'>
+    <parameter name='LVDS_p' value='true'/>
+    <parameter name='SINGLE_PORT_p' value='false'/>
+    <parameter name='HALF_DUPLEX_p' value='false'/>
+    <parameter name='SWAP_PORTS_p' value='false'/>
+    <parameter name='DATA_CLK_Delay' value='2'/>
+    <parameter name='RX_Data_Delay' value='0'/>
+    <parameter name='FB_CLK_Delay' value='7'/>
+    <parameter name='TX_Data_Delay' value='0'/>
+  </configuration>
+  <configuration id='8'>
+    <parameter name='LVDS_p' value='true'/>
+    <parameter name='SINGLE_PORT_p' value='false'/>
+    <parameter name='HALF_DUPLEX_p' value='false'/>
+    <parameter name='SWAP_PORTS_p' value='false'/>
+    <parameter name='DATA_CLK_Delay' value='3'/>
+    <parameter name='RX_Data_Delay' value='0'/>
+    <parameter name='FB_CLK_Delay' value='7'/>
+    <parameter name='TX_Data_Delay' value='0'/>
+  </configuration>
+</build>

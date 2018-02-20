@@ -1,0 +1,68 @@
+<Application>
+  <!-- HDL Components -->
+  <Instance Component='ocpi.assets.devices.rf_rx'>
+    <!--Per the Myriad RF manual, RX VGA2 common mode voltage (rx_vcm) should be set to 780 mV-->
+    <Property Name='rx_vcm' Value='0x32'/>
+  </Instance>
+  <Instance Component='ocpi.assets.devices.si5351'/>
+  <Instance Component="ocpi.assets.devices.qadc">
+   <Property Name="messageSize" Value="16352"/>
+  </Instance>
+  <Instance Component="ocpi.assets.dsp_comps.dc_offset_filter">
+    <Property Name="messageSize" Value="16352"/>
+    <Property Name="bypass" Value="true"/>
+    <Property Name="update" Value="true"/>
+    <Property Name="tc" Value="1"/>
+ </Instance>
+  <Instance Component="ocpi.assets.dsp_comps.iq_imbalance_fixer">
+    <Property Name="messageSize" Value="16352"/>
+    <Property Name="enable" Value="true"/>
+    <Property Name="log2_averaging_length" Value="11"/>
+  </Instance>
+
+  <!-- RCC Components -->
+  <Instance Component="ocpi.core.file_write">
+    <Property Name="fileName" Value="odata/output_file.bin"/>
+  </Instance>
+
+  <!-- RCC Proxies -->
+  <Instance Component='ocpi.assets.devices.rf_rx_proxy' Slave='rf_rx'>
+     <Property Name='input_select' Value='2'/>
+     <Property Name='center_freq_hz' Value='2.140e9'/>
+     <Property Name='post_mixer_dc_offset_i' Value='0x43'/>
+     <Property Name='post_mixer_dc_offset_q' Value='0x06'/>
+     <Property Name='lpf_bw_hz' Value='.75e6'/>
+     <Property Name='post_lpf_gain_db' Value='21'/>
+  </Instance>
+  <Instance Component='ocpi.core.devices.clock_gen' Slave='si5351'>
+    <Property Name='channels' Value='
+              {output_hz 0,source 0x0,inverted false,spread none,spreadAmount 0,disabled_mode z},
+              {output_hz 0,source 0x0,inverted false,spread none,spreadAmount 0,disabled_mode z},
+              {output_hz 1000e3,source 0x0,inverted false,spread none,spreadAmount 0,disabled_mode z},
+              {output_hz 1000e3,source 0x0,inverted false,spread none,spreadAmount 0,disabled_mode z},
+              {output_hz 0,source 0x0,inverted false,spread none,spreadAmount 0,disabled_mode z},
+              {output_hz 0,source 0x0,inverted false,spread none,spreadAmount 0,disabled_mode z},
+              {output_hz 0,source 0x0,inverted false,spread none,spreadAmount 0,disabled_mode z},
+              {output_hz 0,source 0x0,inverted false,spread none,spreadAmount 0,disabled_mode z}
+              '/>
+  </Instance>
+
+  <!-- RCC Frontend Proxy -->
+  <Instance Component="ocpi.core.rx">
+    <Property Name="TYPE_p" Value="zipper"/>
+  </Instance> 
+
+  <!-- Connections -->
+  <Connection>
+    <Port Instance="qadc" Name="out"/>
+    <Port Instance="dc_offset_filter" Name="in"/>
+  </Connection>
+  <Connection>
+    <Port Instance="dc_offset_filter" Name="out"/>
+    <Port Instance="iq_imbalance_fixer" Name="in"/>
+  </Connection>
+  <Connection>
+    <Port Instance="iq_imbalance_fixer" Name="out" buffercount='2'/>
+    <Port Instance="file_write" Name="in" buffersize="16352" buffercount='7'/>
+  </Connection>
+</Application>

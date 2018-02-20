@@ -1,0 +1,19 @@
+# add code at the bottom of the xsputn method to call the
+# overflow method to flush the buffer, and exit the method with the proper return value
+#   0xd0441:	mov    0x0(%rbp),%rax
+#   0xd0445:	mov    $0xffffffff,%esi
+#   0xd044a:	jmpq   0xd0371
+#   0xd0371:	callq  *0x68(%rax)
+#   0xd0374:	jmpq   0xd0424 <_ZN8stlp_std15basic_streambufIcNS_11char_traitsIcEEE6xsputnEPKcl+132>
+
+set {int}0xd0440 = 0x458b48ac
+set {int}0xd0444 = 0xffffbe00
+set {int}0xd0448 = 0x22e9ffff
+set {int}0xd044c = 0x90ffffff
+set {int}0xd0370 = 0x6850ffff
+set {int}0xd0374 = 0x0000abe9
+
+set {int}0xd03f8 = 0x457ef539
+
+
+perhaps overflow must be called differently..

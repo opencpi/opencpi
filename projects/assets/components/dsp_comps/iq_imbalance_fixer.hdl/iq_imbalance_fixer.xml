@@ -1,0 +1,14 @@
+<HdlWorker Language="vhdl" Spec="iq_imbalance_fixer-spec.xml">
+
+  <Property Name="DATA_WIDTH_p" Type="ulong" Parameter="true" Readable="true" Default="16"/>
+
+  <Property Name="ACC_PREC_p" Type="ulong" Parameter="true" Readable="true" Default="34"/>
+
+  <Property Name="PEAK_MONITOR_p" Type="bool" Parameter="true" Readable="true" Default="true"/>
+
+  <Property Name="peak" Type="short" Volatile="true"/>
+
+  <StreamInterface Name="in"  DataWidth="32" ZeroLengthMessages="true"/>
+  <StreamInterface Name="out" DataWidth="32" ZeroLengthMessages="true"/>
+
+</HdlWorker>

@@ -1,0 +1,18 @@
+<!-- The I2C bus support for the fmcomms2/3 boards, allowing either device to be used without the other -->
+<HdlDevice language='vhdl'>
+  <componentspec nocontrol='true'>
+    <property name='CP_CLK_FREQ_p' type='float' parameter='1' readable='1' default='100e6' description="Value will determine assumed frequency of the Control Plane (CP) clock. This value is used to calculate the dividor for the I2C clock"/>
+    <Property name="I2C_CLK_FREQ_p" type='float' parameter='1' readable='1' default='250e3'/>
+    <property name='FMC_GA1' type='bool' parameter='1' readable='1' default='0'/>
+    <property name='FMC_GA0' type='bool' parameter='1' readable='1' default='0'/>
+  </componentspec>
+  <Rawprop name='rprops' count='2' optional='true'/>
+  <Supports worker='ad7291'>
+    <Connect port='rawprops' to='rprops' index='0'/>
+  </Supports>
+  <Supports worker='stm_mc24c02'>
+    <Connect port='rawprops' to='rprops' index='1'/>
+  </Supports>
+  <Signal Inout='SDA'/>
+  <Signal Inout='SCL'/>
+</HdlDevice>

@@ -1,0 +1,50 @@
+<!-- 
+The message generator sends data to the "out" port.
+Properties:
+ messagesInFile: indicates that messages, including length and opcode, will be in the file
+ opcode: indicates a fixed opcode to use, defaults to zero
+ messageSize: indicates the size of messages
+ granularity: incidates that the last message will be truncated to be a multiple of this.
+-->
+<ComponentSpec>
+
+  <port name='out' producer='true' buffersize='8k'/>
+  <!-- The control register: initialized to zero
+       bit 0 is to enable sending of messages - always set to 1 before start.
+       bit 1 is to indicate that there are multpiple message payloads, not one.
+       Future: bit 0 will be nuked soon
+  -->
+  <property name='control'           readable='true' writable='true' default='1'/> 
+
+  <!-- The register that indicates how many metadata records there are.
+       Initialized to 1.
+       i.e. each message emitted uses the next metadata record, and wraps at this count
+       Writing this value resets the actual metadata record pointer to zero too
+       Future: eliminate the write side effect and make the pointe explicit
+       Or make this an "initial" property
+  -->
+  <property name='metadataCount'                 writable='true' default='1'/>
+  <!-- Simple running counter of messages sent. Initialized to 0. -->
+  <property name='messagesSent'      volatile='true' writable='true'/>
+  <!-- Simple running counter of "words" sent. Initialized to 0. -->
+  <property name='dataSent'          volatile='true' writable='true'/>
+  <!-- Counter of messages to send. Initialized to 1. Decrements as then are sent. -->
+  <property name='messagesToSend'    volatile='true' writable='true' default='1'/>
+  <property name='pad0' arraylength='2' padding='true'/>
+  <!-- Status and configurationbits.
+       [31:28]  4’hA (the hex nibble 0xA)
+       27       0
+       26       0
+       25       0 
+       24       0
+      [23:20]   Log2 number of Bytes per Data Word
+      [19:16]   Log2 number of Bytes per Metadata Word
+      [15:8]    Log2 number of Data Words
+       [7:0]    Log2 number of Metadata Words
+  -->
+  <property name='status'            volatile='true'/>
+  <!-- Memory for metadata records. -->
+  <property name='metadata' arraydimensions='4,4' initial='true' readable='true'/>
+  <!-- Memory for data words. -->
+  <property name='data' arraylength='16' initial='true' readable='true'/>
+</ComponentSpec>

@@ -1,0 +1,14 @@
+<!-- This is the spec file (OCS) for: complex_mixer
+     Add component spec attributes, like "protocol".
+     Add property elements for spec properties.
+     Add port elements for i/o ports -->
+<ComponentSpec>
+
+  <Property Name="enable" Type="bool" Readable="true" Writable="true" Default="true"/>
+
+  <Property Name="phs_inc" Type="Short" Readable="true" Writable="true" Default="-4096"/>
+
+  <DataInterfaceSpec Name="in" Producer="false" Protocol="iqstream_protocol.xml"/>
+  <DataInterfaceSpec Name="out" Producer="true" Protocol="iqstream_protocol.xml"/>
+
+</ComponentSpec>

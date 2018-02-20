@@ -1,0 +1,3 @@
+<HdlAssembly>
+  <instance worker='time_gen' externals='1'/>
+</HdlAssembly>
