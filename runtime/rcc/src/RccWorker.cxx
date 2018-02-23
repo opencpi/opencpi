@@ -344,22 +344,24 @@ rccTake(RCCPort *rccPort, RCCBuffer *oldBuffer, RCCBuffer *newBuffer)
      }
    }  
    // Now create and initialize the worker properties
-   if (m_dispatch) {
-     if (m_info.propertySize)
+   if (m_dispatch) { // A C language worker.  The properties are initialized to zero here
+     if (m_info.propertySize) {
        m_context->properties = new char[m_info.propertySize + 4];
+       memset(m_context->properties, 0, sizeof(char)*m_info.propertySize);
+     }
    } else
      try {
        pthread_setspecific(Driver::s_threadKey, this);
        m_user = ((RCCConstruct *)m_entry->dispatch)(m_entry, m_info);
        m_context->properties = m_user->rawProperties(m_info.propertySize);
+       // A C++ worker has properties initialized in the base class constructor so that the
+       // workers actual derived constructor can initialize properties conveniently.
      } catch (std::string &e) {
        throw OU::Error("RCC Worker C++ constructor failed with an unknown exception: %s",
 		       e.c_str());
      } catch (...) {
        throw OU::Error("RCC Worker C++ constructor failed with an unknown exception");
      }
-   if (m_context->properties)
-     memset(m_context->properties, 0, sizeof(char)*m_info.propertySize);
  }
 
  // Called from the generic getPort when the port is not found.
@@ -1184,14 +1186,20 @@ OCPI_CONTROL_OPS
        assert(arg == o.m_nArgs - 1);
        size_t l_maxLength = buf.m_rccBuffer->maxLength;
        if (o.m_nArgs == 1) {
-	 assert(buf.m_rccBuffer->length_ % m.m_elementBytes == 0);
+	 if (buf.m_rccBuffer->length_ % m.m_elementBytes)
+	   throw OU::Error("buffer length %zu is not a multiple of sequence element size %zu",
+			   buf.m_rccBuffer->length_, m.m_elementBytes);
+	 //assert(buf.m_rccBuffer->length_ % m.m_elementBytes == 0);
 	 *a_length = buf.m_rccBuffer->length_ / m.m_elementBytes;
        } else {
 	 *a_length = *(uint32_t *)p;
 	 l_maxLength -= m.m_offset + m.m_align;
 	 p += m.m_align;
        }
-       assert(!m.m_sequenceLength || *a_length <= m.m_sequenceLength);
+       if (m.m_sequenceLength && *a_length > m.m_sequenceLength)
+	 throw OU::Error("Sequence length %zu exceeds maximum for protocol: %zu",
+			 *a_length, m.m_sequenceLength);
+       //assert(!m.m_sequenceLength || *a_length <= m.m_sequenceLength);
        if (capacity)
 	 *capacity = l_maxLength / m.m_elementBytes;
      }
