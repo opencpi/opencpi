@@ -54,7 +54,7 @@ struct PLL {
   double freq(double psclk) { return psclk * fdiv; }
 };
 
-static uint8_t*map(off_t addr, size_t arg_size) {
+static uint8_t *map(off_t addr, size_t arg_size) {
   static int fd = -1;
   if (fd < 0 &&
       (fd = open("/dev/mem", O_RDWR|O_SYNC)) < 0) {
@@ -78,8 +78,6 @@ mymain(const char **argv) {
   fprintf(stderr, "This program is only functional on Zynq/Arm platforms\n");
   return 1;
 #endif
-  if (options.setArgv(argv))
-    return 1;
   std::string cmd = options.argv()[0];
   if (cmd == "test")
     printf("test\n");
@@ -192,11 +190,21 @@ mymain(const char **argv) {
     if (!axi_hp)
       return 1;
     volatile AFI *afi = axi_hp->afi;
+    printf("AXI_HP_ADDR 0x%x axi_hp 0x%p afi 0x%p\n", AXI_HP_ADDR, axi_hp, afi);
+    sleep(10);
     for (unsigned n = 0; n < NAXI_HPS; n++, afi++) {
+#if 1
+      printf("AXI_HP %u: rdctrl: 0x%x rdissue: 0x%x rdqos: 0x%x rdfifo: <unread> rddebug: 0x%x\n",
+	     n, afi->rdchan_ctrl, afi->rdchan_issuingcap, afi->rdqos,
+	     /*afi->rddatafifo_level,*/ afi->rddebug);
+      printf("        : wrctrl: 0x%x wrissue: 0x%x wrqos: 0x%x wrfifo: <unread> wrdebug: 0x%x\n",
+	     afi->wrchan_ctrl, afi->wrchan_issuingcap, afi->wrqos, /*afi->wrdatafifo_level,*/
+	     afi->wrdebug);
+#else
       printf("AXI_HP %u: rdctrl: 0x%x rdissue: 0x%x rdqos: 0x%x rdfifo: 0x%x rddebug: 0x%x\n",
-	     n, afi->rdchan_ctrl, afi->rdchan_issuingcap, afi->rdqos, afi->rddatafifo_level, afi->rddebug);
-      printf("        : wrctrl: 0x%x wrissue: 0x%x wrqos: 0x%x wrfifo: 0x%x wrdebug: 0x%x\n",
-	      afi->wrchan_ctrl, afi->wrchan_issuingcap, afi->wrqos, afi->wrdatafifo_level, afi->wrdebug);
+	     n, afi->rdchan_ctrl, afi->rdchan_issuingcap, afi->rdqos, afi->rddatafifo_level, 0);
+#endif
+      sleep(10);
     }
   }
   return 0;
