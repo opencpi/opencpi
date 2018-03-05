@@ -1,0 +1,33 @@
+#include <stdint.h>
+
+typedef int32_t cl_int;
+cl_int clBuildProgram(){return 0;}
+cl_int clCreateBuffer(){return 0;}
+cl_int clCreateCommandQueue(){return 0;}
+cl_int clCreateContext(){return 0;}
+cl_int clCreateKernel(){return 0;}
+cl_int clCreateKernelsInProgram(){return 0;}
+cl_int clCreateProgramWithBinary(){return 0;}
+cl_int clCreateProgramWithSource(){return 0;}
+cl_int clCreateSubDevices(){return 0;}
+cl_int clEnqueueMapBuffer(){return 0;}
+cl_int clEnqueueNDRangeKernel(){return 0;}
+cl_int clEnqueueTask(){return 0;}
+cl_int clEnqueueUnmapMemObject(){return 0;}
+cl_int clFinish(){return 0;}
+cl_int clFlush(){return 0;}
+cl_int clGetDeviceIDs(){return 0;}
+cl_int clGetDeviceInfo(){return 0;}
+cl_int clGetEventInfo(){return 0;}
+cl_int clGetKernelInfo(){return 0;}
+cl_int clGetKernelWorkGroupInfo(){return 0;}
+cl_int clGetPlatformIDs(){return 0;}
+cl_int clGetPlatformInfo(){return 0;}
+cl_int clGetProgramBuildInfo(){return 0;}
+cl_int clGetProgramInfo(){return 0;}
+cl_int clReleaseCommandQueue(){return 0;}
+cl_int clReleaseContext(){return 0;}
+cl_int clReleaseKernel(){return 0;}
+cl_int clReleaseMemObject(){return 0;}
+cl_int clReleaseProgram(){return 0;}
+cl_int clSetKernelArg(){return 0;}

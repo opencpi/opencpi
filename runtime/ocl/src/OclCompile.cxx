@@ -27,11 +27,12 @@ namespace OCPI {
   namespace OCL {
     
     // Compile the provided, in-memory source files.
-    void compile(size_t nSources, const char **mapped_sources, off_t *sizes,
-		 const char **includes, const char **defines, const char *output,
-		 const char *target, bool /*verbose*/) {
+    void Driver::
+    compile(size_t nSources, const char **mapped_sources, off_t *sizes,
+	    const char **includes, const char **defines, const char *output,
+	    const char *target, bool /*verbose*/) {
       ocpiDebug("OCL Compile %zu sources to target %s", nSources, target);
-      Device &device = OCPI::OCL::Driver::getSingleton().find(target);
+      Device &device = find(target);
       ocpiDebug("OCL Compile for device %s", device.name().c_str());
       cl_program program;
       OCL_RC(program,
@@ -64,7 +65,7 @@ namespace OCPI {
       std::vector<unsigned char> binary(n);
       unsigned char *ucp = &binary[0];
       OCL(clGetProgramInfo(program, CL_PROGRAM_BINARIES, sizeof(ucp), &ucp, 0));
-      int fd = open(output, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+      int fd = ::open(output, O_WRONLY | O_CREAT | O_TRUNC, 0666);
       if (fd < 0 || write(fd, &binary[0], n) != (ssize_t)n || close(fd))
 	throw OU::Error("Error creating or writing output file: %s", output);
     }
