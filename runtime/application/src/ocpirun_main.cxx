@@ -54,9 +54,9 @@
   CMD_OPTION_S(property, p, String, 0, "[<instance-name>]=<property>=<value>\n"\
 	                               "set a property value of a worker instance") \
   CMD_OPTION_S(container,c, String, 0, "[<instance-name>]=<container-name>]\n" \
-	                               "assign instance to a specific container (name or number from -C)") \
+	                               "assign instance to container (name or number from -C)") \
   CMD_OPTION_S(platform, P, String, 0, "[<instance-name>]=<platform-name>\n"\
-	                               "assign instance to any container of this platform type (see output from -C)") \
+	                               "assign instance to any container of this platform type") \
   CMD_OPTION_S(scale,    N, String, 0, "<instance-name>=<crew-size>\n" \
 	                               "set scale factor for scalable worker") \
   CMD_OPTION_S(worker,   w, String, 0, "<instance-name>=<implementation-name>\n" \
@@ -69,45 +69,45 @@
   CMD_OPTION_S(url,      u, String, 0, "<external-name>=<URL>\n" \
 	                               "connect external port to a URL")\
   CMD_OPTION(log_level,  l, ULong,  0, "<log-level>\n" \
-	                               "set log level during execution, overriding OCPI_LOG_LEVEL")\
+	                               "set log level, overriding OCPI_LOG_LEVEL")\
   CMD_OPTION(duration,   t, Long,   0, "<seconds>\n" \
-	                               "time duration (seconds) to run the application if not\n" \
-                                       "done/finished first; exit status is zero in either case\n")\
+	                               "duration (seconds) to run the application if not done\n" \
+                                       "first; exit status is zero in eithercases")\
   CMD_OPTION(timeout,    O, ULong,  0, "<seconds>\n"			\
 	                               "time limit (seconds) to run the application; if not\n" \
                                        "done/finished before that time; an error occurs\n")\
-  CMD_OPTION(list,       C, Bool,   0, "show available containers, even with no application xml file") \
+  CMD_OPTION(list,       C, Bool,   0, "show available containers\n" \
+	                               "can be used with no xml file argument - no execution") \
   CMD_OPTION_S(server,   S, String, 0, "a server to explicitly contact, without UDP discovery") \
   CMD_OPTION(remote,     R, Bool,   0, "discover/include/use remote containers") \
   CMD_OPTION_S(exclude,  X, String, 0, "a container to exclude from usage") \
   CMD_OPTION_S(transport,T, String, 0, "<instance-name>=<port-name>=<transport-name>\n" \
-	                               "set transport of connection at a port\n" \
-	                               "if no port name, then the single output port") \
+                                       "set transport of connection at a port") \
   CMD_OPTION_S(transfer_role,,String,0, "<instance-name>=<port-name>=<transfer-role>\n" \
-	                               "set transport role at a port\n" \
-	                               "if no port name, then the single output port") \
+                                        "set transfer role at a port") \
   CMD_OPTION_S(buffer_count,B,String,0, "<instance-name>=<port-name>=<buffercount>\n" \
-	                               "set buffercount at a port\n" \
-	                               "if no port name, then the single output port") \
+                                        "set buffercount at a port") \
   CMD_OPTION_S(buffer_size, Z, String,0, "<instance-name>=<port-name>=<buffersize>\n" \
-	                               "set buffer size at a port\n" \
-	                               "if no port name, then the single output port") \
-  CMD_OPTION_S(target,   r, String, 0, "a target to use when printing artifacts or specs in path on stdout") \
-  CMD_OPTION(list_artifacts,, Bool, 0, "print artifacts in path on stdout, for targets specified with --target") \
-  CMD_OPTION(list_specs,,     Bool, 0, "print specs in path on stdout, for targets specified with --target") \
+                                         "set buffer size at a port") \
+  CMD_OPTION_S(target,   r, String, 0, "a target when printing artifacts/specs in path") \
+  CMD_OPTION(list_artifacts,, Bool, 0, "print artifacts in path, for specified targets") \
+  CMD_OPTION(list_specs,,     Bool, 0, "print specs in path, for specified targets") \
   CMD_OPTION(uncached,   U, Bool,   0, "dump cached properties uncached, ignoring cache") \
-  CMD_OPTION(deployment, ,  String, 0, "XML file to read deployment from, avoid automatic deployment") \
+  CMD_OPTION(deployment, ,  String, 0, "XML file to read deployment from, to avoid automatic\n" \
+	                               "deployment process") \
   CMD_OPTION(deploy_out, ,  String, 0, "XML file to write deployment to") \
   CMD_OPTION(no_execute, ,  Bool,   0, "Suppress execution, just determine deployment") \
-  CMD_OPTION(library_path,, String, 0, "Search path for executable artifacts, overriding OCPI_LIBRARY_PATH environment") \
-  CMD_OPTION(sim_dir,    ,  String, "simulations", "Directory in which to run simulations")\
+  CMD_OPTION(library_path,, String, 0, "Search path for executable artifacts, overriding\n" \
+	                               "the OCPI_LIBRARY_PATH environment variable") \
+  CMD_OPTION(sim_dir,    ,  String, "simulations", "Directory in which simulations are run\n")\
   CMD_OPTION(dump_platforms,M,Bool, 0, "dump platform and device worker properties") \
   CMD_OPTION(sim_ticks,  ,  ULong,  0, "simulator clock cycles to allow") \
-  CMD_OPTION(artifacts,  A, String, 0, "deprecated: comma-separated targets to print artifacts in path on stdout") \
-  CMD_OPTION(specs,      G, String, 0, "deprecated: comma-separated targets to print specs in path on stdout") \
-  CMD_OPTION(only_platforms,, Bool, 0, "modifies the list command to show only platforms (preliminary")\
+  CMD_OPTION(artifacts,  A, String, 0, "deprecated: comma-separated targets for artifacts") \
+  CMD_OPTION(specs,      G, String, 0, "deprecated: comma-separated targets for specs") \
+  CMD_OPTION(only_platforms,, Bool, 0, "modifies the list command to show only platforms")\
   CMD_OPTION(dump_file,   , String, 0, "dump properties in raw parsable format to this file") \
-  CMD_OPTION(component,   , Bool,   0, "first non-option argument is a component name, not an application")\
+  CMD_OPTION(component,   , Bool,   0, "first non-option argument is a component name,\n" \
+	                               "not an application XML file") \
   CMD_OPTION(seconds,     , Long,   0, "<seconds> -- legacy, use \"duration\" now\n") \
   /**/
 
@@ -290,36 +290,6 @@ static bool setup(const char *arg, ezxml_t &xml, std::string &file,
       OU::formatString(name, "rcc%d", n);
       OA::ContainerManager::find("rcc", name.c_str());
     }
-#if 0
-  if (!options.simulator()) {
-    // If simulators are not mentioned explicitly (with -H), but are mentioned as
-    // platforms for some or all instances, create the container.
-    // Also, since simulators are not really registered yet, we just look for the
-    // trailing "sim" in the name.
-    typedef std::set<const char *, OU::ConstCharComp> Plats;
-    Plats plats;
-    for (const char **plat = options.platform(); plat && *plat; plat++) {
-      const char *eq = strrchr(*plat, '=');
-      eq = eq ? eq + 1 : *plat;
-      size_t len = strlen(eq);
-      if (len > 3 && !strcmp(eq + len - 3, "sim"))
-	plats.insert(eq);
-    }
-    for (Plats::const_iterator it = plats.begin(); it != plats.end(); it++) {
-      std::string name;
-      OU::format(name, "lsim:%s0", *it);
-      OA::ContainerManager::find("hdl", name.c_str(),
-				 simParams.size() ? &simParams[0] : NULL);
-    }
-  } else {
-    unsigned n = 0;
-    for (const char **sims = options.simulator(); *sims; sims++, n++) {
-      std::string name;
-      OU::format(name, "lsim:%s%d", *sims, n);
-      OA::ContainerManager::find("hdl", name.c_str(), simParams.size() ? &simParams[0] : NULL);
-    }
-  }
-#endif
   if (options.list()) {
     (void)OA::ContainerManager::get(0); // force config/discovery
     if (options.only_platforms()) {

@@ -33,7 +33,8 @@ source ./scripts/setup-install.sh \
   --enable-cxx=yes \
   --prefix=$OCPI_PREREQUISITES_INSTALL_DIR/gmp \
   --exec-prefix=$OCPI_PREREQUISITES_INSTALL_DIR/gmp/$OCPI_TARGET_DIR \
-  CFLAGS=-g CXXFLAGS=-g
+  --with-pic=gmp \
+  CFLAGS='-g -fPIC' CXXFLAGS='-g -fPIC'
 make
 make install
 echo ============= gmp for $OCPI_TARGET_PLATFORM built and installed in $OCPI_PREREQUISITES_INSTALL_DIR/gmp/$OCPI_TARGET_DIR
