@@ -78,10 +78,11 @@ namespace OCPI {
     unsigned Assembly::s_count = 0;
 
     const char *Assembly::
-    addInstance(ezxml_t ix, const char **extraInstAttrs, const PValue *params) {
+    addInstance(ezxml_t ix, const char **extraInstAttrs, const PValue *params, bool addXml) {
       unsigned n = (unsigned)m_instances.size();
       Instance *i = new Instance;
       m_instances.push_back(i);
+      i->m_freeXml = addXml;
       return i->parse(ix, *this, n, extraInstAttrs, params);
     }
 
@@ -396,6 +397,8 @@ namespace OCPI {
       return setValue(px);
     }
     
+    Assembly::Instance::Instance() : m_freeXml(false) {}
+    Assembly::Instance::~Instance() { if (m_freeXml) ezxml_free(m_xml); }
     // connect, then optionally, which local port (from) and which dest port (to).
     // external=port, connect=instance, then to or from?
     const char *Assembly::Instance::

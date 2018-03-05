@@ -110,6 +110,9 @@ namespace OCPI {
 	typedef std::list<Port*>::iterator PortsIter;
 	CollocationPolicy m_collocation;
 	ezxml_t m_xml;
+	bool m_freeXml;
+	Instance();
+	~Instance();
 	const char *cname() const { return m_name.c_str(); }
 	const char
 	  *parse(ezxml_t ix, Assembly &a, unsigned ordinal, const char **extraInstAttrs,
@@ -212,7 +215,8 @@ namespace OCPI {
 			const OCPI::Util::PValue *params = NULL);
       ~Assembly();
       const char
-	*addInstance(ezxml_t ix, const char **extraInstAttrs, const PValue *params),
+	*addInstance(ezxml_t ix, const char **extraInstAttrs, const PValue *params,
+		     bool addXml = false),
 	*findInstanceForParam(const char *pName, const char *&assign, unsigned &instn),
 	*checkInstanceParams(const char *pName, const PValue *params, bool checkMapped = false,
 			     bool singleAssignment = false),

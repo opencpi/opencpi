@@ -34,7 +34,8 @@ source ./scripts/setup-install.sh \
   --enable-shared=yes --enable-static --disable-symbol-versions \
   --disable-xz --disable-xzdec --disable-lzmadec --disable-lzmainfo --disable-lzma-links \
   --disable-scripts --disable-doc \
-  CFLAGS=-g CXXFLAGS=-g
+  --with-pic=liblzma \
+  CFLAGS="-g -fPIC" CXXFLAGS="-g -fPIC"
 make
 make install
 echo ============= lzma for $OCPI_TARGET_PLATFORM built and installed in $OCPI_PREREQUISITES_INSTALL_DIR/lzma/$OCPI_TARGET_DIR

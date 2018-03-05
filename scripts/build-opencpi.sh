@@ -26,6 +26,8 @@ if test "$OCPI_CDK_DIR" != ""; then
       exit 1
    fi
    export OCPI_TARGET_PLATFORM=$1
+  else
+   export OCPI_TARGET_PLATFORM=$OCPI_TOOL_PLATFORM
   fi
 else
   export OCPI_TARGET_PLATFORM=$1

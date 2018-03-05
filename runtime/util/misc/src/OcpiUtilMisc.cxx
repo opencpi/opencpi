@@ -723,10 +723,10 @@ getSystemAddr() {
 	}
       }
       if (error.empty() && !set)
-	throw Error("No network interface found to establish a system identify from its MAC address");
+	throw Error("No network interface found to establish a system identity from its MAC address");
     }
     if (error.length())
-      throw Error("Error finding a network interface for establishing a system identify: %s",
+      throw Error("Error finding a network interface for establishing a system identity: %s",
 		  error.c_str());
   }  
   return addr;
