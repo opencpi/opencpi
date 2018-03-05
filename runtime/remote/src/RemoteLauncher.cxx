@@ -31,7 +31,6 @@
 #include "Container.h"
 #include "ContainerApplication.h"
 #include "RemoteLauncher.h"
-#include "RemoteServer.h"
 namespace OA = OCPI::API;
 namespace OC = OCPI::Container;
 namespace OX = OCPI::Util::EzXml;

@@ -24,6 +24,7 @@
 #include <unistd.h>
 #include <cerrno>
 #include <climits>
+#include "ocpi-config.h"
 #ifdef OCPI_OS_macos
 #define mmap64 mmap
 #endif

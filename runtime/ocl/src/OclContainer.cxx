@@ -909,7 +909,6 @@ namespace OCPI {
 	m_oclWorker->kernelLogLevel = Driver::s_logLevel;
 	ocpiDebug("Worker/kernel %s in %s has persistent size of %zu bytes, self %zu bytes",
 		  a_name, art.name().c_str(), m_persistBytes, m_oclWorkerSize);
-	m_defaultRunCondition.initDefault(m_nPorts);
 	// FIXME: how can the worker declare a run condition?
 	// Perhaps with an init? or XML? (might be nice).
 	m_runCondition = &m_defaultRunCondition;

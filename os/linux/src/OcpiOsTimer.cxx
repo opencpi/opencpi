@@ -28,6 +28,7 @@
 #include <cstdlib>
 #include <string>
 
+#include "ocpi-config.h"
 #ifdef OCPI_OS_linux
   #include <sched.h>
   #ifdef OCPI_OS_VERSION_r5

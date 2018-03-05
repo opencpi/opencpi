@@ -20,7 +20,7 @@
 # Install prerequisite packages for Centos7
 echo Installing standard extra packages using "yum"
 sudo yum -y groupinstall "development tools"
-CENTOS7_PKGS="mlocate tcl pax python-devel fakeroot which nfs-utils ocl-icd"
+CENTOS7_PKGS="mlocate tcl pax python-devel fakeroot which nfs-utils ocl-icd python-lxml"
 echo Installing packages required or commonly used: $CENTOS7_PKGS
 sudo yum -y install $CENTOS7_PKGS
 echo Installing 32 bit libraries '(really only required for modelsim and/or quartus)'

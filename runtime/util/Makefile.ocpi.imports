@@ -35,6 +35,8 @@ endif
 ALLINC += $(OCPI_PREREQUISITES_DIR)/gmp/include \
           $(OCPI_PREREQUISITES_DIR)/gmp/$(OCPI_TARGET_DIR)/include \
           $(OCPIOS_EXPORTS) \
+          $(FOREIGN_EXPORTS) \
           $(LOGGER_EXPORTS)
 ALLLIBS += $(LOGGER_LIBS) \
+	$(FOREIGN_LIBS) \
 	$(OCPIOS_LIBS)

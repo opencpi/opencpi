@@ -258,7 +258,7 @@ static bool setup(const char *arg, ezxml_t &xml, std::string &file,
   if (options.deployment())
     OL::Manager::getSingleton().suppressDiscovery();
   if (options.remote())
-    OR::g_enableRemoteDiscovery = true;
+    OA::enableServerDiscovery();
   // Establish simulator-related options to feed them to sims during discovery
   std::vector<OA::PValue> simParams;
   if (options.sim_dir())

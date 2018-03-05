@@ -44,6 +44,7 @@
 #include <vector>
 #include <list>
 
+#include "ocpi-config.h"
 #include "OcpiOsFileSystem.h"
 #include "OcpiUtilDataTypes.h"
 #include "OcpiUtilProtocol.h"

@@ -40,6 +40,7 @@
 #include <unistd.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
+#include "ocpi-config.h"
 #include "OcpiOsAssert.h"
 #include "HostFileMappingServices.h"
 #include "OcpiUtilMisc.h"

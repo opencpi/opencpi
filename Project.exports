@@ -19,6 +19,7 @@
 ################################################################################
 # First, the basic list of "facilities" that can have executables, libraries, and scripts
 os
+runtime/foreign
 runtime/util
 runtime/dataplane/xfer/base xfer
 runtime/dataplane/xfer/drivers/datagram
@@ -60,8 +61,6 @@ tests
 +tools/cdk/default-system.xml
 # The problem with this is that we don't want to export the built stuff?
 +examples
-# SW platforms have no specific exports yet.  Should have Makefile and make var?
-+platforms
 # generic make scripts
 +tools/cdk/include/show.mk include/
 +tools/cdk/include/lib.mk include/
@@ -106,6 +105,9 @@ tests
 +tools/cdk/scripts/genProjMetaData.py scripts/
 +tools/cdk/scripts/genProjMetaData.pyc scripts/
 +tools/cdk/scripts/genProjMetaData.pyo scripts/
++tools/cdk/scripts/getPlatform.sh scripts/
+# This should go away when callers are fixed
++tools/cdk/scripts/getPlatform.sh platforms/
 +tools/cdk/specs/* specs/
 +hdl/devices/specs/lime-iq-properties.xml specs/
 +hdl/devices/specs/dac-properties.xml specs/

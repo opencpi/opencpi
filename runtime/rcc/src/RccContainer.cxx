@@ -32,8 +32,9 @@
  *
  ************************************************************************/
 
-#include "RccContainer.h"
+#include "ocpi-config.h"
 #include "OcpiOsMisc.h"
+#include "RccContainer.h"
 #include "RCC_Worker.h"
 
 namespace OC = OCPI::Container;

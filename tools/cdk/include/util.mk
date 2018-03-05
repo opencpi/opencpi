@@ -996,9 +996,9 @@ OcpiCheckPrereq=$(strip\
 
 define OcpiEnsureToolPlatform
   ifndef OCPI_TOOL_HOST
-    GETPLATFORM=$(OCPI_CDK_DIR)/platforms/getPlatform.sh
-    vars:=$$(shell $$(GETPLATFORM) || echo 1 2 3 4 5 6)
-    ifneq ($$(words $$(vars)),5)
+    GETPLATFORM=$$(OCPI_CDK_DIR)/scripts/getPlatform.sh
+    vars:=$$(shell $$(GETPLATFORM))
+    ifneq ($$(words $$(vars)),6)
       $$(error $$(OcpiThisFile): Could not determine the platform after running $$(GETPLATFORM)).
     endif
     export OCPI_TOOL_OS:=$$(word 1,$$(vars))

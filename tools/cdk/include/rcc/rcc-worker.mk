@@ -81,7 +81,7 @@ ifdef OcpiBuildingACI
     $(call RccPrioritize,MainLinkOptions,$(OcpiLanguage),$(RccTarget),$(RccPlatform))
   override RccLibrariesInternal+=\
     application container library transport xfer util \
-    msg_driver_interface os   
+    msg_driver_interface foreign os   
 else
   RccSpecificLinkOptions=\
     $(call RccPrioritize,DynamicLinkOptions,$(OcpiLanguage),$(RccTarget),$(RccPlatform)) \

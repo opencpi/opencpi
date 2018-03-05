@@ -28,16 +28,11 @@
 namespace OCPI {
   namespace OCL {
 
-
-    void compile(size_t nSources, const char **mapped_sources, off_t *sizes,
-		 const char **includes, const char **defines, const char *output,
-		 const char *target, bool verbose);
-
+    class Driver;
     class Port;
     class Artifact;
     class Application;
     class DeviceContext;
-    class Driver;
     class Device;
     class Container
       : public OCPI::Container::ContainerBase<Driver, Container, Application, Artifact> {
@@ -83,13 +78,16 @@ namespace OCPI {
       // This is the standard driver discovery routine
       unsigned search(const OCPI::API::PValue*, const char** exclude, bool discoveryOnly);
       // This is our special one that does some extra stuff...
-      unsigned search(const OCPI::API::PValue*, const char **exclude, bool discoveryOnly,
+      virtual unsigned search(const OCPI::API::PValue*, const char **exclude, bool discoveryOnly,
 		      const char *type, Device **found, std::set<std::string> *targets);
       // Find a device of this type (for compilers)
-      Device &find(const char *target);
+      virtual Device &find(const char *target);
       OCPI::Container::Container* probeContainer(const char* which, std::string &error,
 						 const OCPI::API::PValue* props);
-      Device *open(const char *name, bool verbose, bool print, std::string &error);
+      virtual Device *open(const char *name, bool verbose, bool print, std::string &error);
+      virtual void compile(size_t nSources, const char **mapped_sources, off_t *sizes,
+			   const char **includes, const char **defines, const char *output,
+			   const char *target, bool verbose);
     };
   }
 }

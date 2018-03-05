@@ -19,6 +19,7 @@
  */
 
 #include <signal.h>
+#include "ocpi-config.h"
 #include "OcpiOsMisc.h"
 #include "OcpiUtilCppMacros.h"
 #include "XferManager.h"

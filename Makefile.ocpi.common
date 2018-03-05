@@ -439,6 +439,7 @@ CONTAINER_EXPORTS = \
 	$(OCPI_BASE_DIR)/runtime/container/include \
 	$(OCPI_BASE_DIR)/runtime/ocl/include \
 	$(OCPI_BASE_DIR)/runtime/remote/include \
+	$(OCPI_BASE_DIR)/runtime/remote-support/include \
 	$(OCPI_BASE_DIR)/runtime/rcc/include
 
 HDL_CONTAINER_EXPORTS = \
@@ -468,6 +469,9 @@ OCL_CONTAINER_LIBS = \
 REM_CONTAINER_LIBS = \
 	$(OCPI_BASE_DIR)/runtime/remote/remote
 
+REM_SUPPORT_LIBS = \
+	$(OCPI_BASE_DIR)/runtime/remote-support/remote-support
+
 ALL_CONTAINER_LIBS = \
         $(REM_CONTAINER_LIBS) \
 	$(RCC_CONTAINER_LIBS) \
@@ -480,7 +484,17 @@ endif
 LOGGER_EXPORTS = $(OCPI_BASE_DIR)/runtime/util/logger/include
 #LOGGER_LIBS = $(OCPI_BASE_DIR)/runtime/local/logger/logger
 
-UTIL_EXPORTS = \
+FOREIGN_EXPORTS = \
+	$(OCPI_BASE_DIR)/runtime/foreign/fasttime/include \
+	$(OCPI_BASE_DIR)/runtime/foreign/uuid/include \
+	$(OCPI_BASE_DIR)/runtime/foreign/zlib/include \
+	$(OCPI_BASE_DIR)/runtime/foreign/md5/include \
+	$(OCPI_BASE_DIR)/runtime/foreign/farmhash/include \
+	$(OCPI_BASE_DIR)/runtime/foreign/pwq/include \
+
+FOREIGN_LIBS = $(OCPI_BASE_DIR)/runtime/foreign/foreign
+
+UTIL_EXPORTS = $(FOREIGN_EXPORTS) \
 	$(OCPI_BASE_DIR)/runtime/util/driver/include \
 	$(OCPI_BASE_DIR)/runtime/util/expressionP/include \
 	$(OCPI_BASE_DIR)/runtime/util/ezxml/include \
@@ -494,21 +508,17 @@ UTIL_EXPORTS = \
 	$(OCPI_BASE_DIR)/runtime/util/streamfs/include \
 	$(OCPI_BASE_DIR)/runtime/util/tcp/include \
 	$(OCPI_BASE_DIR)/runtime/util/timeEmit/include \
-	$(OCPI_BASE_DIR)/runtime/util/uuid/include \
 	$(OCPI_BASE_DIR)/runtime/util/vfs/include \
 	$(OCPI_BASE_DIR)/runtime/util/zipfs/include \
 	$(OCPI_BASE_DIR)/runtime/util/res/include \
 	$(OCPI_BASE_DIR)/runtime/util/list/include \
 	$(OCPI_BASE_DIR)/runtime/util/thread/include \
-	$(OCPI_BASE_DIR)/runtime/util/fasttime/include \
 	$(OCPI_BASE_DIR)/runtime/util/sockets/include \
 	$(OCPI_BASE_DIR)/runtime/util/assembly/include \
-	$(OCPI_BASE_DIR)/runtime/util/zlib/include \
 	$(OCPI_BASE_DIR)/runtime/util/logger/include \
-	$(OCPI_BASE_DIR)/runtime/util/farmhash/include \
-	$(OCPI_BASE_DIR)/runtime/util/pwq/include \
-	$(OCPI_BASE_DIR)/runtime/include 
-UTIL_LIBS = $(OCPI_BASE_DIR)/runtime/util/util
+
+UTIL_LIBS = $(OCPI_BASE_DIR)/runtime/util/util \
+  $(FOREIGN_LIBS)
 
 CDKUTILS_EXPORTS = $(OCPI_BASE_DIR)/tools/cdkutils/include
 CDKUTILS_LIBS = $(OCPI_BASE_DIR)/tools/cdkutils/cdkutils

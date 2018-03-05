@@ -43,10 +43,8 @@ WciPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
     m_worker->m_wciClock = clock;
   }
   if (x &&
-      ((err = OE::checkAttrs(x, GENERIC_IMPL_CONTROL_ATTRS, "ResetWhileSuspended",
-			     "Clock", "MyClock", "Timeout", "Count", "Name", "Pattern",
-			     "master",
-			     (void *)0)) ||
+      ((err = OE::checkAttrs(x, GENERIC_IMPL_CONTROL_ATTRS, "ResetWhileSuspended", "Timeout",
+			     "Count", "Name", "Pattern", "master", (void *)0)) ||
        (err = OE::getNumber(x, "Timeout", &m_timeout, 0, 0)) ||
        (err = OE::getBoolean(x, "ResetWhileSuspended", &m_resetWhileSuspended))))
     return;

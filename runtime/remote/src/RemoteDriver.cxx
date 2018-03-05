@@ -24,8 +24,6 @@
 #include "OcpiUtilValue.h"
 #include "ContainerManager.h"
 #include "RemoteLauncher.h"
-#include "RemoteServer.h"
-#include "RemoteClient.h"
 #include "RemoteDriver.h"
 
 // This is the "driver" for remote containers, which finds them, constructs them, and 
@@ -313,15 +311,12 @@ Worker(Application & app, Artifact *art, const char *a_name, ezxml_t impl, ezxml
 
 // The driver class owns the containers (like all container driver classes)
 // and also owns the clients of those containers.
-
-// class Driver : public OC::DriverBase<Driver, Container, remote>,
-//	       public OU::Parent<Client> {
-  // public:
-  //  static pthread_key_t s_threadKey;
 Driver::Driver() throw() {
   ocpiCheck(pthread_key_create(&s_threadKey, NULL) == 0);
   ocpiDebug("Registering the Remote Container driver");
-  g_probeServer = probeServer;
+  const char *env = getenv("OCPI_ENABLE_REMOTE_DISCOVERY");
+  if ((m_doNotDiscover = env && env[0] == '1' ? false : true))
+    ocpiInfo("Remote container discovery is off");
 }
 // Called either from UDP discovery or explicitly, e.g. from ocpirun
 // If the latter, the "containers" argument will be NULL
@@ -528,13 +523,7 @@ tryIface(std::set<std::string> &servers, OE::Interface &ifc, OE::Address &devAdd
 // whatever containers are local to that server/system
 unsigned Driver::
 search(const OA::PValue* params, const char **exclude, bool discoveryOnly) {
-  const char *env = getenv("OCPI_ENABLE_REMOTE_DISCOVERY");
-  if (!g_enableRemoteDiscovery && (!env || env[0] != '1')) {
-    ocpiInfo("Remote container discovery is off");
-    return 0;
-  }
-  g_enableRemoteDiscovery = true;
-  ocpiInfo("Remote container discovery is on");
+  ocpiInfo("Remote container discovery is on and proceeding");
   std::string error;
   unsigned count = 0;
   OE::IfScanner ifs(error);
@@ -589,12 +578,6 @@ Driver::
   //      if ( m_tpg_no_events ) delete m_tpg_no_events;
   //      if ( m_tpg_events ) delete m_tpg_events;
   ocpiCheck(pthread_key_delete(s_threadKey) == 0);
-}
-
-bool Driver::
-probeServer(const char *server, bool verbose, const char **exclude, bool discovery,
-	    std::string &error) {
-  return Driver::getSingleton().probeServer(server, verbose, exclude, NULL, discovery, error);
 }
 
 pthread_key_t Driver::s_threadKey;

@@ -22,7 +22,7 @@
 #include <pthread.h>
 // This is obviously temporary
 #ifdef __APPLE__
-#include "../../../util/pwq/src/platform.c"
+#include "../../../foreign/pwq/src/platform.c"
 #endif
 #include "OcpiOsAssert.h"
 #include "OcpiUtilCDR.h"

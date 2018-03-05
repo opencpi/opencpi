@@ -19,6 +19,7 @@
  */
 
 #include <unistd.h>
+#include "ocpi-config.h"
 #include "OcpiOsFileSystem.h"
 #include "OcpiOsLoadableModule.h"
 #include "OcpiUtilCppMacros.h"
@@ -84,37 +85,63 @@ namespace OCPI {
       return OS::FileSystem::exists(path.c_str());
     }
 
-    bool ManagerManager::
+    Driver *ManagerManager::
+    findDriver(const char *managerName, const char *driverName) {
+      Manager *m = getManagerManager().findChildByName(managerName);
+      if (!m) {
+	ocpiBad("Manager \"%s\" when finding driver \"%s\"", managerName, driverName);
+	return NULL;
+      }
+      return m->findDriver(driverName);
+    }
+    static const char *getCdk() {
+      static const char *cdk = NULL;
+      if (cdk)
+	return cdk;
+      const char *d = getenv("OCPI_CDK_DIR");
+      if (!d)
+	d = "/opt/opencpi/cdk";
+      bool isDir;
+      if (!OS::FileSystem::exists(d, &isDir) || !isDir)
+	throw OU::Error("OpenCPI not found at \"%s\"", d);
+      return cdk = d;
+    }
+    Driver *ManagerManager::
     loadDriver(const char *managerName, const char *driverName, std::string &err) {
-      std::string libDir;
-      assert(getenv("OCPI_CDK_DIR"));
-      OU::format(libDir, "%s/lib/%s-%s-%s", getenv("OCPI_CDK_DIR"),
+      Driver *driver = findDriver(managerName, driverName);
+      if (driver)
+	return driver;
+      std::string libDir, lib;
+      OU::format(libDir, "%s/lib/%s-%s-%s", getCdk(),
 		 OCPI_CPP_STRINGIFY(OCPI_OS) + strlen("OCPI"),
 		 OCPI_CPP_STRINGIFY(OCPI_OS_VERSION), OCPI_CPP_STRINGIFY(OCPI_ARCH));
-      if (!OS::FileSystem::exists(libDir))
-	return
-	  OU::eformat(err,
-		      "when loading the \"%s\" \"%s\" driver, directory \"%s\" does not exist",
-		      driverName, managerName, libDir.c_str());
       // Search, in order:
       // 1. The driver built like we are built, if modes are available
       // 2. The driver built with modes that is not the way we were built
       // 3. The driver built without modes
-      std::string lib;
-      if (!checkLibPath(lib, libDir, driverName, true, OCPI_DYNAMIC, OCPI_DEBUG) &&
-	  !checkLibPath(lib, libDir, driverName, true, OCPI_DYNAMIC, !OCPI_DEBUG) &&
-	  !checkLibPath(lib, libDir, driverName, false, false, false))
-	return 
-	  OU::eformat(err,
-		      "could not find the \"%s\" \"%s\" driver in directory \"%s\", e.g.: %s",
-		      driverName, managerName, libDir.c_str(), lib.c_str());
-      ocpiInfo("Loading the \"%s\" \"%s\" driver from \"%s\"",
-	       driverName, managerName, lib.c_str());
-      std::string lme;
-      if (!OS::LoadableModule::load(lib.c_str(), true, lme))
-	return OU::eformat(err, "error loading the \"%s\" \"%s\" driver from \"%s\": %s",
-			   driverName, managerName, lib.c_str(), lme.c_str());
-      return false;
+      if (!OS::FileSystem::exists(libDir))
+	OU::format(err, "when loading the \"%s\" \"%s\" driver, directory \"%s\" does not exist",
+		   driverName, managerName, libDir.c_str());
+      else if (!checkLibPath(lib, libDir, driverName, true, OCPI_DYNAMIC, OCPI_DEBUG) &&
+	       !checkLibPath(lib, libDir, driverName, true, OCPI_DYNAMIC, !OCPI_DEBUG) &&
+	       !checkLibPath(lib, libDir, driverName, false, OCPI_DYNAMIC, false) &&
+	       !checkLibPath(lib, libDir, driverName, false, false, false))
+	OU::format(err,
+		   "could not find the \"%s\" \"%s\" driver in directory \"%s\", e.g.: %s",
+		   driverName, managerName, libDir.c_str(), lib.c_str());
+      else {
+	ocpiInfo("Loading the \"%s\" \"%s\" driver from \"%s\"",
+		 driverName, managerName, lib.c_str());
+	std::string lme;
+	if (!OS::LoadableModule::load(lib.c_str(), true, lme))
+	  OU::format(err, "error loading the \"%s\" \"%s\" driver from \"%s\": %s",
+		     driverName, managerName, lib.c_str(), lme.c_str());
+	else if (!(driver = findDriver(managerName, driverName)))
+	  OU::format(err,
+		     "after loading the \"%s\" \"%s\" driver from \"%s\": driver wasn't found",
+		     driverName, managerName, lib.c_str());
+      }
+      return driver;
     }
 
     // This is NOT a static method
@@ -181,8 +208,8 @@ namespace OCPI {
 	      break;
 	    }
 #if 1
-	    if (load)
-	      loadDriver(m->name().c_str(), d->name, err);
+	    if (load && !loadDriver(m->name().c_str(), d->name, err))
+	      break;
 #else
 	    if (!load)
 	      continue;
@@ -280,7 +307,7 @@ namespace OCPI {
 	}
       }
     } staticCleanup;
-    Driver::Driver() : m_config(NULL) {}
+    Driver::Driver() : m_config(NULL), m_doNotDiscover(false) {}
     // Default implementation for a driver is to configure devices that exist
     // at configuration time.
     void Driver::configure(ezxml_t xml) {

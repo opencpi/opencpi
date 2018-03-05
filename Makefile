@@ -16,6 +16,9 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
+ifndef OCPI_CDK_DIR
+export OCPI_CDK_DIR=$(CURDIR)/exports
+endif
 ProjectPrefix=ocpi
 export OCPI_PROJECT_PATH:=\
 $(OCPI_PROJECT_PATH):\
@@ -66,7 +69,7 @@ RDMA_DRIVERS=datagram dma ofed pio socket
 
 #	 runtime/dataplane/rdma_drivers \
 
-PACKAGES += os runtime/util
+PACKAGES += runtime/foreign os runtime/util
 
 PACKAGES += \
 	 runtime/dataplane/xfer/base \
@@ -104,6 +107,7 @@ PACKAGES += tests
 
 #	runtime/control/wci_api
 ALLPACKAGES = \
+	runtime/foreign \
 	os \
 	runtime/util \
 	runtime/dataplane/xfer/base \

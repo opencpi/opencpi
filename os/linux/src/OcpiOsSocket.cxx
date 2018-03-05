@@ -32,6 +32,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <string>
+#include "ocpi-config.h"
 #include "OcpiOsAssert.h"
 #include "OcpiOsSizeCheck.h"
 //#include "OcpiOsDataTypes.h"

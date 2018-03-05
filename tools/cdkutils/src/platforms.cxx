@@ -20,7 +20,8 @@
 
 // Utility functions relating to available platforms.
 
-#include "fnmatch.h"
+#include <fnmatch.h>
+#include "ocpi-config.h"
 #include "OcpiOsFileIterator.h"
 #include "OcpiOsFileSystem.h"
 #include "OcpiUtilCppMacros.h"

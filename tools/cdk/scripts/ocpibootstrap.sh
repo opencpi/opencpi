@@ -72,7 +72,7 @@ if test "$OCPI_TOOL_PLATFORM" = ""; then
     echo Error:  ocpibootstrap.sh cannot find getPlatforms.sh    
     exit 1
   fi
-  read v0 v1 v2 v3 v4 <<EOF
+  read v0 v1 v2 v3 v4 v5 <<EOF
 `${GETPLATFORM}`
 EOF
   if test "$v0" == "" -o $? != 0; then

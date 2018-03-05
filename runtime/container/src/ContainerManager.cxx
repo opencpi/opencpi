@@ -21,13 +21,13 @@
 #include "lzma.h"                   // just for linkage hooks
 #include "zlib.h"                   // just for linkage hooks
 #include "pthread_workqueue.h"      // just for linkage hooks
+#include "ocpi-config.h"
 #include "OcpiOsSocket.h"           // just for linkage hooks
 #include "OcpiOsServerSocket.h"     // just for linkage hooks
 #include "OcpiOsSemaphore.h"        // just for linkage hooks
 #include "OcpiUuid.h"               // just for linkage hooks
 #include "OcpiThread.h"             // just for linkage hooks
 #include "OcpiUtilPci.h"            // just for linkage hooks
-#include "RemoteClient.h"           // just for linkage hooks
 #include "ContainerPort.h"          // just for linkage hooks
 
 #include "ContainerManager.h"
@@ -191,8 +191,6 @@ namespace OCPI {
       // p.applyConnectParams(NULL, NULL);
       ((OCPI::Container::Application*)0)->createWorker(NULL, NULL, NULL, NULL, NULL, NULL);
       pthread_workqueue_create_np(NULL, NULL);
-      std::string sss;
-      OCPI::Remote::useServer(NULL, false, NULL, sss);
       return (intptr_t)&lzma_stream_buffer_decode;
     }
   }
