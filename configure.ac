@@ -20,7 +20,7 @@ dnl If changing version number here, also get minor/patchlevel below:
 AC_INIT([opencpi],[1.3],[discuss@lists.opencpi.org])
 AC_DEFINE([OCPI_VERSION_MAJOR],1,[Major version])
 AC_DEFINE([OCPI_VERSION_MINOR],3,[Minor version])
-AC_DEFINE([OCPI_VERSION_PATCHLEVEL],0,[Patchlevel version])
+AC_DEFINE([OCPI_VERSION_PATCHLEVEL],1,[Patchlevel version])
 
 dnl Bring in tool paths (if applicable)
 dnl next line is a bug that you SHOULD be able to do that with only "--with-cross-dir" AV-1511

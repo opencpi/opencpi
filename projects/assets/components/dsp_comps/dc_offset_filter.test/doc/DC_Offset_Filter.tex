@@ -88,7 +88,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Component Data Sheet}
-\def\docVersion{1.2}
+\def\docVersion{1.3}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
@@ -96,6 +96,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \usepackage[justification=centering]{caption}
 
 \def\comp{dc\_offset\_filter}
+\edef\ecomp{dc_offset_filter}
 \def\Comp{DC Offset Filter}
 \graphicspath{ {figures/} }
 
@@ -113,9 +114,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Version           & v\docVersion \\
 	\hline
-	Release Date      & August 2017 \\
+	Release Date      & February 2018 \\
 	\hline
-	Component Library & ocpiassets.dsp\_comps                              \\
+	Component Library & ocpi.assets.dsp\_comps                              \\
 	\hline
 	Workers           & \comp.hdl                                          \\
 	\hline
@@ -155,7 +156,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 \section*{Theory}
 \begin{flushleft}
-	The filter is based upon Richard G. Lyons' ``Understanding Digital Signal Processing, Third Edition" DC Removal circuit found on Page 761. The text may also be found online here: \href{http://www.embedded.com/design/configurable-systems/4007653/DSP-Tricks-DC-Removal}{DSP-Tricks-DC-Removal}. Lyons' circuit in Figure 13-62d implements the transfer function given in (13-118), which is a 1st-order IIR filter. From Lyons: ``a zero resides at $z=1$ providing infinite attenuation at DC (zero Hz) and a pole at $z=\alpha$ making the magnitude notch at DC very sharp. The closer $\alpha$ is to unity, the narrower the frequency magnitude notch centered at zero Hz."\medskip
+	The filter is based upon Richard G. Lyons' ``Understanding Digital Signal Processing, Third Edition'' DC Removal circuit found on Page 761. The text may also be found online here: \href{http://www.embedded.com/design/configurable-systems/4007653/DSP-Tricks-DC-Removal}{DSP-Tricks-DC-Removal}. Lyons' circuit in Figure 13-62d implements the transfer function given in (13-118), which is a 1st-order IIR filter. From Lyons: ``a zero resides at $z=1$ providing infinite attenuation at DC (zero Hz) and a pole at $z=\alpha$ making the magnitude notch at DC very sharp. The closer $\alpha$ is to unity, the narrower the frequency magnitude notch centered at zero Hz.''\medskip
 
 	Adding a delay element to the output, y, does not change the transfer function. Moving the single delay element following the output adder to two delay elements feeding the output adder also does not change the transfer function.\end{flushleft}
 
@@ -170,8 +171,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 				every edge/.style={draw,thick}
 			]
 			\node[rectangle,ultra thick,draw=black,fill=blue](R2){\Comp};
-			\node[rectangle,draw=white,fill=white](R3)[left= of R2]{``in" \\ Signed complex samples};
-			\node[rectangle,draw=white,fill=white](R4)[right= of R2]{``Port Name" \\ Signed complex samples};
+			\node[rectangle,draw=white,fill=white](R3)[left= of R2]{``in'' \\ Signed complex samples};
+			\node[rectangle,draw=white,fill=white](R4)[right= of R2]{``Port Name'' \\ Signed complex samples};
 			\node[rectangle,draw=white,fill=white](R5)[above= of R2]{\verb+bypass, update, tc+ \\ \verb+messageSize+};
 			\path[->]
 			(R3)edge []	node [] {} (R2)
@@ -183,6 +184,11 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\end{center}
 	\newpage
 
+	\subsection*{State Machine}
+	\begin{flushleft}
+		Only one finite-state machine (FSM) is implemented by this worker. The FSM supports Zero-Length Messages.
+	\end{flushleft}
+	{\centering\captionsetup{type=figure}\includegraphics[scale=0.6]{zlm_fsm}\par\captionof{figure}{Zero-Length Message FSM}\label{fig:zlm_fsm}}
 	\section*{Source Dependencies}
 	\subsection*{\comp.hdl}
 	\begin{itemize}
@@ -265,26 +271,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 	\section*{Performance and Resource Utilization}
 	\subsubsection*{\comp.hdl}
-	Table entries are a result of building the worker with the following parameter set:\
-	\begin{itemize}
-		\item \verb+DATA_WIDTH_p+=16
-		\item \verb+PEAK_MONITOR_p+=true
-	\end{itemize}
-	\scriptsize
-	\begin{tabular}{|c|c|c|c|c|c|}
-		\hline
-		\rowcolor{blue}
-		Device                      & Registers & LUTs & Fmax        & Memory/Special Functions & Design Suite    \\
-		\hline
-		Stratix4 EP4SGX230K-C2-F40  & 374       & 398  & 192 MHz         & DSP 18x18 = 4            & Quartus Prime 15.1 \\
-		\hline
-		Virtex6 XC6VLX240T-1-FF1156 & 362       & 397  & 165.245 MHz & DSP48E1 = 2              & ISE 14.7        \\
-		\hline
-		Zynq XC7Z020-1-CLG484       & 365       & 292  & 125.234 MHz & DSP48E1 = 2              & Vivado 2017.1        \\
-		\hline
-		Zynq XC7Z020-1-CLG484       & 362       & 397  & 167.403 MHz & DSP48E1 = 2              & ISE 14.7        \\
-		\hline
-	\end{tabular}
+	\input{../../\ecomp.hdl/utilization.inc}
 	\section*{Test and Verification}
 	\normalsize
 	Two test cases are implemented to validate the \Comp{} component:

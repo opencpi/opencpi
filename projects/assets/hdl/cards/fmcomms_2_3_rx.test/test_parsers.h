@@ -270,6 +270,29 @@ bool did_pass_test_parsing_rx_rf_gain()
   return true;
 }
 
+bool did_pass_test_parsing_tx_attenuation()
+{
+  // example string: "1000,1000"
+
+  std::string tx_attenuation_str("1000,1000");
+  printf("TEST: parsing string '%s'\n", tx_attenuation_str.c_str());
+
+  ad9361_config_proxy_tx_attenuation_t ad9361_config_proxy_tx_attenuation;
+
+  const char* err = parse(tx_attenuation_str.c_str(), ad9361_config_proxy_tx_attenuation);
+
+  if(err != 0)
+  {
+    printf("ERROR: %s\n", err);
+    return false;
+  }
+
+  TEST_EXPECTED_VAL(ad9361_config_proxy_tx_attenuation[0], (ocpi_ulong_t) 1000);
+  TEST_EXPECTED_VAL(ad9361_config_proxy_tx_attenuation[1], (ocpi_ulong_t) 1000);
+
+  return true;
+}
+
 bool did_pass_test_stringifying_ad9361_init()
 {
   struct ad9361_config_proxy_ad9361_init ad9361_init;
@@ -309,6 +332,7 @@ bool did_pass_test_no_ocpi_app_parsers()
   if(!did_pass_test_parsing_ad9361_init())          { goto failed; }
   if(!did_pass_test_parsing_rx_gain_control_mode()) { goto failed; }
   if(!did_pass_test_parsing_rx_rf_gain())           { goto failed; }
+  if(!did_pass_test_parsing_tx_attenuation())       { goto failed; }
   if(!did_pass_test_stringifying_ad9361_init())     { goto failed; }
  
   return true;

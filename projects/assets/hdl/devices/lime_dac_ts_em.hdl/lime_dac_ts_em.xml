@@ -1,4 +1,4 @@
-<HdlDevice language='vhdl' spec='lime_dac_em-spec.xml' emulate='lime_dac_ts.hdl'>
+<HdlDevice language='vhdl' spec='lime_dac_ts_em-spec.xml' emulate='lime_dac_ts.hdl'>
   <!-- Assumes this is an integer value for the TX clock rate -->
   <Property Name="tx_clk_rate" Type="ulong" Default="40000000" Readable="true" Writable="true"/>
   <Property Name="messageSize" Type="ulong" Readable="true" Writable="true" Default="8192"/>

@@ -315,6 +315,39 @@ private:
     app.setProperty(inst, "rx_fir_en_dis", DISABLE_str.c_str());
   }
 
+  void set_ad9361_init(ad9361_config_proxy_ad9361_init& ad9361_init)
+  {
+    std::string ad9361_init_str = to_string(ad9361_init);
+    OCPI::API::Application& app = getApplication();
+    const char* inst = m_properties.app_inst_name_ad9361_config_proxy;
+
+    // save property values which may change during write to ad9361_init
+
+    OCPI::API::Property p_tx_rf_bandwidth(app, inst, "tx_rf_bandwidth" );
+    OCPI::API::Property p_tx_lo_freq(     app, inst, "tx_lo_freq"      );
+    // we do not set ad9361_config_proxy's tx_sampling_freq because this worker's sample_rate_MHz's value will affect both the ad9361_config_proxy's rx_sampling_freq and tx_sampling_freq properties
+    std::string str_tx_attenuation;
+    app.getProperty(inst, "tx_attenuation", str_tx_attenuation);
+
+    ocpi_ulong_t     tx_rf_bandwidth = p_tx_rf_bandwidth.getULongValue();
+    ocpi_ulonglong_t tx_lo_freq      = p_tx_lo_freq.getULongLongValue();
+    // we do not set ad9361_config_proxy's tx_sampling_freq because this worker's sample_rate_MHz's value will affect both the ad9361_config_proxy's rx_sampling_freq and tx_sampling_freq properties
+    ad9361_config_proxy_tx_attenuation_t tx_attenuation;
+    parse(str_tx_attenuation.c_str(), tx_attenuation); //! @todo TODO/FIXME -  ignoring return value, idk if this is the right thing to do...
+
+    // write ad9361_init
+
+    app.setProperty(inst, "ad9361_init", ad9361_init_str.c_str());
+
+    // re-apply saved properties property values which may have changed during
+    // write to ad9361_init
+    p_tx_rf_bandwidth.setULongValue( tx_rf_bandwidth );
+    p_tx_lo_freq.setULongLongValue(  tx_lo_freq      );
+    // we do not set ad9361_config_proxy's tx_sampling_freq because this worker's sample_rate_MHz's value will affect both the ad9361_config_proxy's rx_sampling_freq and tx_sampling_freq properties
+    std::string tx_attenuation_str = to_string(tx_attenuation);
+    app.setProperty(inst, "tx_attenuation", tx_attenuation_str.c_str());
+  }
+
   /* @brief calc_difference_between_desired_and_in_situ_after_hw_write
    ****************************************************************************/
   const char* calc_difference_between_desired_and_in_situ_after_hw_write(
@@ -1593,17 +1626,15 @@ private:
 
 
     // values are finally applied
-    std::string ad9361_init_str = to_string(ad9361_init);
-
     try
     {
-      OCPI::API::Application& app = getApplication();
-
-      const char* inst = m_properties.app_inst_name_ad9361_config_proxy;
-      app.setProperty(inst, "ad9361_init", ad9361_init_str.c_str());
+      set_ad9361_init(ad9361_init);
 
       // set gain control mode to manual for channel which this worker controls
       
+      OCPI::API::Application& app = getApplication();
+      const char* inst = m_properties.app_inst_name_ad9361_config_proxy;
+
       std::string RF_GAIN_MGC_str = get_RF_GAIN_MGC_str();
       ocpi_uchar_t RF_GAIN_MGC = (ocpi_uchar_t) strtol(RF_GAIN_MGC_str.c_str(), NULL, 0) & 0xff;
 

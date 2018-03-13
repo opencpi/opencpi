@@ -39,7 +39,7 @@ Name:           %{RPM_BASENAME}
 # This seems to happen 2X. Not sure why. Hopefully quick enough not to matter.
 %global OCPI_ALL_VARS_TMP %(mktemp --tmpdir ocpi_rpm_vars.XXX)
 # Before calling ocpitarget.sh, we want to force it into "bootstrap" mode. This will allow you to build an RPM for a
-# platform that you don't have an RPM already installed for BUT have ANY AV RPM installed (e.g. only the base one)
+# platform that you don't have an RPM already installed for BUT have ANY OpenCPI RPM installed (e.g. only the base one)
 %global OCPI_ALL_VARS_CMD %(unset OCPI_CDK_DIR; cd ..; source bootstrap/scripts/ocpitarget.sh %{OCPI_TARGET_PLATFORM} && env | grep OCPI > %{OCPI_ALL_VARS_TMP})
 %global OCPI_CROSS_BUILD_BIN_DIR %(grep OCPI_CROSS_BUILD_BIN_DIR %{OCPI_ALL_VARS_TMP} | cut -f2- -d=)
 %global OCPI_CROSS_HOST %(grep OCPI_CROSS_HOST %{OCPI_ALL_VARS_TMP} | cut -f2- -d=)
@@ -48,7 +48,8 @@ Name:           %{RPM_BASENAME}
 # flag to determine
 %global CORE_RCC %([ -d ../projects/core/rcc/platforms/%{OCPI_TARGET_PLATFORM} ] && echo 1)
 # End of bringing in variables
-%global xilinx_release 13_3
+# Determine Xilinx release:
+%global xilinx_release %(perl -e '"%{OCPI_TARGET_PLATFORM}" =~ /xilinx([\\d_]+)/ && print $1')
 
 Name:           %{RPM_BASENAME}-sw-platform-%{OCPI_TARGET_PLATFORM}
 Requires:       %{RPM_BASENAME}
@@ -106,6 +107,7 @@ Requires:       %{all_prereqs_pf}
 
 # These come from platforms/centos7/centos7-packages.sh - not sure if they really apply...
 Requires:       tcl pax python-devel
+BuildRequires:  tcl pax python-devel
 # Some of the JTAG scripts use old-school "ed":
 BuildRequires:  ed
 Requires:       ed
@@ -437,7 +439,7 @@ ${old_nullglob}
 %{__mkdir_p} %{projregistry}
 %{__mkdir_p} %{projsourcedir}
 
-# Base Project
+# Core Project
 %{__cp} -rf projects/core %{coreprojdir}
 
 # Copy our local/limited base_project contents to the base_project destination

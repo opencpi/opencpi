@@ -92,13 +92,14 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Platform Data Sheet}
-\def\docVersion{1.2}
+\def\docVersion{1.3}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
 \lhead{\small{\docTitle}}
 
 \def\comp{ml605}
+\edef\ecomp{ml605}
 \def\Comp{ML605 Platform}
 \graphicspath{ {figures/} }
 
@@ -116,7 +117,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Version           & v\docVersion \\
 	\hline
-	Release Date      & August 2017 \\
+	Release Date      & February 2018 \\
 	\hline
 	Component Library & ocpi                                        \\
 	\hline
@@ -180,7 +181,7 @@ Because there are no data processing algorithms implemented in this worker, no c
     \gettikzxy{(placeholder)}{\rx}{\ry}
     \myclient.apply(\rx - 40,\ry,C1,\\ metadata);
     \path[<->]($(R2.north) + (-40 pt,0)$) edge [] node [] {} (C1);
-    \myclient.apply(-\rx + 40,\ry,C1, ``pcie" \\ unoc control/data plane );
+    \myclient.apply(-\rx + 40,\ry,C1, ``pcie'' \\ unoc control/data plane );
     \path[<->]($(R2.north) + (40 pt,0)$) edge [] node [] {} (C1);
 
   \end{tikzpicture}
@@ -562,22 +563,12 @@ The following table enumerates the available slots for this platform and the sig
 		\multirow{5}{*}{ml605\_zipper\_fmc\_hpc\_tx} &ml605 & - & - \\ &time\_server & - & - \\ &lime\_dac & lime\_zipper\_fmc\_hpc & fmc\_hpc \\  &si5351 & lime\_zipper\_fmc\_hpc & fmc\_hpc \\ &lime\_tx & lime\_zipper\_fmc\_hpc & fmc\_hpc \\
 		\hline
 	\end{tabular}
-\section*{Control Timing and Signals}
+	\section*{Control Timing and Signals}
 	There are 3 clock domains present in the ml605 platform worker: 250 MHz, 125 MHz, and 200 MHz. The worker ingests an external-to-the FPGA 250 MHz clock. This clock serves as the clock source for the LogiCORE PCIe Integrated Block within the worker. The LogiCORE block divides the 250 MHz clock down to a 125 MHz clock which is subsequently supplied to the control plane as its clock. The worker also feeds a buffered version of the external-to-the-FPGA 200 MHz clock to the timebase port. The timebase port is also supplied with a PPS from the ML605 board's J56 SMA connector. The timebase port also include a PPS output which is fed to the J57 SMA connector.
 \section*{Performance and Resource Utilization}
+In the following Platform Worker Utilization tables, the Worker Build Configuration ``0'' refers to the Platform Worker itself. Named configurations refer to platform configurations (\textit{e.g.} they may include other device workers along with the Platform Worker).\\\\
 
-\begin{scriptsize}
-	\begin{tabular}{|c|c|c|c|c|c|}
-		\hline
-		\rowcolor{blue}
-		Device                      & Registers & LUTs & Fmax    & Memory/Special Functions & Design Suite    \\
-		\hline
-		Virtex6 XC6VLX240T-1-FF1156 & 1305      & 2000 & 342 MHz &  Block RAM only = 8 & ISE 14.7        \\
-		& & & & BUFG/BUFGCTRLs = 7 & \\
-		\hline
-	\end{tabular}
-\end{scriptsize}
-
+\input{../../\ecomp/utilization.inc}
 \section*{Test and Verification}
 \begin{flushleft}
  To be detailed in a future release.

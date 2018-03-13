@@ -100,6 +100,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \lhead{\small{\docTitle}}
 
 \def\comp{ad9361\_config}
+\edef\ecomp{ad9361_config}
 \def\Comp{AD9361 Config}
 \graphicspath{ {figures/} }
 
@@ -167,20 +168,20 @@ The AD9361 register map is realized via a rawprops port whose communication is f
   (R4)edge [] node [] {} (R1)
     ;
     \gettikzxy{(placeholder)}{\rx}{\ry}
-    \myclient.apply(\rx - 120,\ry-250,C1, ``dev\_force\_spi\_reset" \\ dev signal port \texttt{(}see \\ AD9361\_SPI.pdf\texttt{)} );
+    \myclient.apply(\rx - 120,\ry-250,C1, ``dev\_force\_spi\_reset'' \\ dev signal port \texttt{(}see \\ AD9361\_SPI.pdf\texttt{)} );
     \path[->]($(R1.south) + (-120 pt,0)$) edge [] node [] {} (C1);
-    \myclient.apply(\rx,\ry-250,C1, ``rawprops" \\ rawprop \texttt{(}see \\ AD9361\_SPI.pdf\texttt{)} );
+    \myclient.apply(\rx,\ry-250,C1, ``rawprops'' \\ rawprop \texttt{(}see \\ AD9361\_SPI.pdf\texttt{)} );
     \path[->]($(R1.south) + (0,0)$) edge [] node [] {} (C1);
-    \myclient.apply(\rx + 120,\ry-250,C1, ``dev\_cfg\_data\_port" \\ dev signal port \texttt{(}see \\ AD9361\_DATA\_SUB.pdf\texttt{)} );
+    \myclient.apply(\rx + 120,\ry-250,C1, ``dev\_cfg\_data\_port'' \\ dev signal port \texttt{(}see \\ AD9361\_DATA\_SUB.pdf\texttt{)} );
     \path[->]($(R1.south) + (120 pt,0)$) edge [] node [] {} (C1);
 	\fontsize{9.5}{12}\selectfont
-    \myclient.apply(\rx - 190,\ry,C1, ``dev\_cfg\_data\_rx" \\ dev signal port \\ sent from \\ ad9361\_adc\_sub.hdl);
+    \myclient.apply(\rx - 190,\ry,C1, ``dev\_cfg\_data\_rx'' \\ dev signal port \\ sent from \\ ad9361\_adc\_sub.hdl);
     \path[<-]($(R1.north) + (-190 pt,0)$) edge [] node [] {} (C1);
-    \myclient.apply(\rx - 108,\ry,C1, ``dev\_cfg\_data"[0] \\ dev signal port \\ sent to \\ ad9361\_adc\_sub.hdl );
+    \myclient.apply(\rx - 108,\ry,C1, ``dev\_cfg\_data''[0] \\ dev signal port \\ sent to \\ ad9361\_adc\_sub.hdl );
     \path[->]($(R1.north) + (-108 pt,0)$) edge [] node [] {} (C1);
-    \myclient.apply(\rx + 108,\ry,C1, ``dev\_cfg\_data"[1] \\ dev signal port \\ sent to \\ ad9361\_dac\_sub.hdl );
+    \myclient.apply(\rx + 108,\ry,C1, ``dev\_cfg\_data''[1] \\ dev signal port \\ sent to \\ ad9361\_dac\_sub.hdl );
     \path[->]($(R1.north) + (+108 pt,0)$) edge [] node [] {} (C1);
-    \myclient.apply(-\rx + 190,\ry,C1, ``dev\_cfg\_data\_tx" \\ dev signal port \\ sent from \\ ad9361\_dac\_sub.hdl);
+    \myclient.apply(-\rx + 190,\ry,C1, ``dev\_cfg\_data\_tx'' \\ dev signal port \\ sent from \\ ad9361\_dac\_sub.hdl);
     \path[<-]($(R1.north) + (190 pt,0)$) edge [] node [] {} (C1);
   \end{tikzpicture}
 \end{center}
@@ -740,6 +741,7 @@ Delay:               3.037ns (Levels of Logic = 5)
     Total                      3.037ns (0.658ns logic, 2.379ns route)
                                        (21.7% logic, 78.3% route)
 \fi
+%\input{../../\ecomp.hdl/utilization.inc}
 \begin{scriptsize}
 	\begin{tabular}{|M{4.4cm}|M{1.9cm}|M{1.9cm}|M{1.5cm}|M{1.8cm}|M{1.4cm}|}
     \hline

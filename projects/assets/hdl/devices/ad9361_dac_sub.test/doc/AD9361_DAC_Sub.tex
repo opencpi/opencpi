@@ -102,6 +102,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \lhead{\small{\docTitle}}
 
 \def\comp{ad9361\_dac\_sub}
+\edef\ecomp{ad9361_dac_sub}
 \def\Comp{AD9361 DAC Sub}
 \graphicspath{ {figures/} }
 
@@ -211,20 +212,20 @@ Note that "channel 0" within the context of this worker corresponds to the AD936
 	(R4)edge []	node [] {} (R1)
     ;
     \gettikzxy{(placeholder)}{\rx}{\ry}
-    \myclient.apply(\rx - 150,\ry,C1, ``dev\_data\_ch0\_in" \\ dev signal port \\ DAC channel's data bus sent from \\ instance of ad9361\_dac.hdl);
+    \myclient.apply(\rx - 150,\ry,C1, ``dev\_data\_ch0\_in'' \\ dev signal port \\ DAC channel's data bus sent from \\ instance of ad9361\_dac.hdl);
     \path[<->]($(R1.north) + (-150 pt,0)$) edge [] node [] {} (C1);
-    \myclient.apply(-\rx + 150,\ry,C1, ``dev\_data\_ch1\_in" \\ dev signal port \\ DAC channels' data bus sent from \\ instance of ad9361\_dac.hdl);
+    \myclient.apply(-\rx + 150,\ry,C1, ``dev\_data\_ch1\_in'' \\ dev signal port \\ DAC channels' data bus sent from \\ instance of ad9361\_dac.hdl);
     \path[<->]($(R1.north) + (150 pt,0)$) edge [] node [] {} (C1);
     
 	\fontsize{9.5}{12}\selectfont    
     
-    \myclient.apply(\rx - 167.5,\ry-180,C1, ``dev\_cfg\_data" \\ dev signal port \texttt{(}see \\ AD9361\_CONFIG.pdf\texttt{)});
+    \myclient.apply(\rx - 167.5,\ry-180,C1, ``dev\_cfg\_data'' \\ dev signal port \texttt{(}see \\ AD9361\_CONFIG.pdf\texttt{)});
     \path[<->]($(R1.south) + (-167.5 pt,0)$) edge [] node [] {} (C1);
-    \myclient.apply(\rx - 52.5,\ry-180,C1, ``dev\_cfg\_data\_tx" \\ dev signal port \texttt{(}see \\ AD9361\_CONFIG.pdf\texttt{)} );
+    \myclient.apply(\rx - 52.5,\ry-180,C1, ``dev\_cfg\_data\_tx'' \\ dev signal port \texttt{(}see \\ AD9361\_CONFIG.pdf\texttt{)} );
     \path[<-]($(R1.south) + (-52.5 pt,0)$) edge [] node [] {} (C1);
-    \myclient.apply(\rx + 52.5,\ry-180,C1, ``dev\_cfg\_data\_clk" \\ dev signal port \texttt{(}see \\ AD9361\_DATA\_SUB.pdf\texttt{)} );
+    \myclient.apply(\rx + 52.5,\ry-180,C1, ``dev\_cfg\_data\_clk'' \\ dev signal port \texttt{(}see \\ AD9361\_DATA\_SUB.pdf\texttt{)} );
     \path[<-]($(R1.south) + (52.5 pt,0)$) edge [] node [] {} (C1);
-    \myclient.apply(\rx + 167.5,\ry-180,C1, ``dev\_cfg\_data\_to\_pins" \\ dev signal port \texttt{(}see \\ AD9361\_DATA\_SUB.pdf\texttt{)} );
+    \myclient.apply(\rx + 167.5,\ry-180,C1, ``dev\_cfg\_data\_to\_pins'' \\ dev signal port \texttt{(}see \\ AD9361\_DATA\_SUB.pdf\texttt{)} );
     \path[->]($(R1.south) + (167.5 pt,0)$) edge [] node [] {} (C1);
 
   \end{tikzpicture}
@@ -418,7 +419,7 @@ Note that the two channel data made available via dev\_data\_ch0\_in and dev\_da
 \subsubsection*{\comp.hdl}
 Fmax refers to the maximum allowable clock rate for any registered signal paths within a given clock domain for an FPGA design. Fmax in the table below is specific only to this worker and represents the maximum possible Fmax for any OpenCPI bitstream built with this worker included. Note that the Fmax value for a given clock domain for the final bitstream is often worse than the Fmax specific to this worker, even if this worker is the only one included in the bitstream. Note also that the DATA\_CLK\_P devsignal's rate will only ever go as high as 245.76 MHz\cite{adi_ug570}. \\ \\
 Table entries are a result of building the worker with the following parameter property sets:
-
+%\input{../../\ecomp.hdl/utilization.inc}
 \begin{itemize}
 	\item \verb+LVDS_p+=True
 	\item \verb+HALF_DUPLEX_p+=False
@@ -445,7 +446,7 @@ Table entries are a result of building the worker with the following parameter p
 \footnotetext[1]{\label{abc}These measurements were the result of a Vivado timing analysis which was different from the Vivado analysis performed by default for OpenCPI worker builds. For more info see Appendix \ref{appendix}}
 \footnotetext[2]{\label{quartustiming}Quartus does not perform timing analysis at the OpenCPI worker build (i.e. synthesis) stage.}
 \section*{Test and Verification}
-The test outlined in \cite{dac_comp_datasheet} includes validation of this worker's functionality (for LVDS only).
+The test outlined in \cite{dac_comp_datasheet} includes validation of this worker's functionality (for LVDS only). Note that this worker does not successfully operate with the FMCOMMS2/3 card on the ML605 FMC-HPC slot due to an unknown data fidelity issue.
 \pagebreak
 \begin{thebibliography}{1}
 

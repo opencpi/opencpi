@@ -89,13 +89,14 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Component Data Sheet}
-\def\docVersion{1.2}
+\def\docVersion{1.3}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
 \lhead{\small{\docTitle}}
 
 \def\comp{pr\_cordic}
+\edef\ecomp{pr_cordic}
 \def\Comp{Polar to Rectangular CORDIC}
 \graphicspath{ {figures/} }
 
@@ -113,9 +114,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Version           & v\docVersion \\
 	\hline
-	Release Date      & August 2017 \\
+	Release Date      & February 2018 \\
 	\hline
-	Component Library & ocpiassets.dsp\_comps                                        \\
+	Component Library & ocpi.assets.dsp\_comps                                        \\
 	\hline
 	Workers           & \comp.hdl                                                    \\
 	\hline
@@ -174,8 +175,8 @@ CORDIC algorithms are iterative algorithms used to calculate various trigonometr
 			every edge/.style={draw,thick}
 		]
 		\node[rectangle,ultra thick,draw=black,fill=blue](R2){\Comp};
-		\node[rectangle,draw=white,fill=white](R3)[left= of R2]{``in" \\ Signed real magnitude/phase samples};
-		\node[rectangle,draw=white,fill=white](R4)[right= of R2]{``out" \\ Signed complex samples};
+		\node[rectangle,draw=white,fill=white](R3)[left= of R2]{``in'' \\ Signed real magnitude/phase samples};
+		\node[rectangle,draw=white,fill=white](R4)[right= of R2]{``out'' \\ Signed complex samples};
 		\node[rectangle,draw=white,fill=white](R5)[above= of R2]{\verb+DATA_WIDTH+ \\ \verb+DATA_EXT, STAGES+ \\ \verb+messageSize+};
 		\path[->]
 		(R3)edge []	node [] {} (R2)
@@ -191,10 +192,6 @@ CORDIC algorithms are iterative algorithms used to calculate various trigonometr
 		Only one finite-state machine (FSM) is implemented by this worker. The FSM supports Zero-Length Messages.
 	\end{flushleft}
 	{\centering\captionsetup{type=figure}\includegraphics[scale=0.6]{zlm_fsm}\par\captionof{figure}{Zero-Length Message FSM}\label{fig:zlm_fsm}}
-        \begin{flushleft}
-                Note: In future releases this finite-state machine will be replaced with a register-delay based mechanism, currently exemplified in the dc offset filter
-        \end{flushleft}
-
 
 \section*{Source Dependencies}
 \subsection*{\comp.hdl}
@@ -279,29 +276,7 @@ CORDIC algorithms are iterative algorithms used to calculate various trigonometr
 
 \section*{Performance and Resource Utilization}
 \subsubsection*{\comp.hdl}
-	Table entries are a result of building the worker with the following parameter set:\
-	\begin{itemize}
-		\item \verb+DATA_WIDTH+=16
-		\item \verb+DATA_EXT+=6
-		\item \verb+STAGES+=18
-	\end{itemize}
-\begin{scriptsize}
-	\begin{tabular}{|c|c|c|c|c|c|}
-		\hline
-		\rowcolor{blue}
-		Device                      & Registers & LUTs & F$_{max}$   & Memory / Special Functions & Design Suite       \\
-		\hline
-		Stratix4 EP4SGX230K-C2-F40  & 1532      & 2488 & N/A             & DSP18x18 = 12              & Quartus Prime 15.1 \\
-		\hline
-		Virtex6 XC6VLX240T-1-FF1156 & 1471      & 2982 & 145.455 MHz & DSP48E1 = 6                & ISE 14.7           \\
-		\hline
-		Zynq XC7Z020-1-CLG484       & 1418      & 3195 & 120.322 MHz & DSP48E1 = 2                & Vivado 2017.1           \\
-		\hline
-		Zynq XC7Z020-1-CLG484       & 1471      & 2982 & 145.033 MHz & DSP48E1 = 6                & ISE 14.7           \\
-		\hline
-	\end{tabular}
-\end{scriptsize}
-
+\input{../../\ecomp.hdl/utilization.inc}
 \section*{Test and Verification}
 \begin{flushleft}
 	A single test case is implemented to validate the CORDIC Polar-to-Rectangular component. An input file is generated with a constant magnitude of 29760 in bits (31:16) (driven into CORDIC input $x_0$) and two cycles of ramp data centered about zero representing a constant phase in bits (15:0) (driven into CORDIC input $z_0$). The expected outputs are a cosine from $I$ (the CORDIC $x_N$ output) with a magnitude equal to that of $x_0$ and a sine from $Q$ (the CORDIC $y_N$ output) also with a magnitude equal to that of $x_0$. Input magnitude and phase plots may be viewed in Figures \ref{fig:input_magnitude} and \ref{fig:input_phase} below.

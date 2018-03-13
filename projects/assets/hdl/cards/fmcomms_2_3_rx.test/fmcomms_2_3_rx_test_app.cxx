@@ -26,6 +26,7 @@
 #include "test_app_mins.h"      // did_pass_test_ocpi_app_min_values()
 #include "test_app_maxes.h"     // did_pass_test_ocpi_app_max_values()
 #include "test_app_delays.h"    // did_pass_test_ocpi_app_AD9361_...() functions
+#include "test_app_tx_value_corruption.h" // did_pass_test_ocpi_app_tx_value_corruption()
 
 int main(int argc, char **argv)
 {
@@ -58,6 +59,7 @@ int main(int argc, char **argv)
     if(!did_pass_test_ocpi_app_max_values())                        { goto failed; }
     if(!did_pass_test_ocpi_app_AD9361_DATA_CLK_Delay_enforcement()) { goto failed; }
     if(!did_pass_test_ocpi_app_AD9361_Rx_Data_Delay_enforcement())  { goto failed; }
+    if(!did_pass_test_ocpi_app_tx_value_corruption())               { goto failed; }
   }
  
   printf("PASSED\n");

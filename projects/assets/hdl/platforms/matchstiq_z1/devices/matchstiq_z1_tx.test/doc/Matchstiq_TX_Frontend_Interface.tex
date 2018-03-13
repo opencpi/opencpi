@@ -88,13 +88,14 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Component Data Sheet}
-\def\docVersion{1.2}
+\def\docVersion{1.3}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
 \lhead{\small{\docTitle}}
 
 \def\comp{matchstiq\_z1\_tx}
+\edef\ecomp{matchstiq_z1_tx}
 \def\Comp{Matchstiq-Z1 TX}
 \graphicspath{ {figures/} }
 
@@ -112,7 +113,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Version           & v\docVersion \\
 	\hline
-	Release Date      & August 2017 \\
+	Release Date      & February 2018 \\
 	\hline
 	Component Library & ocpi.assets.platforms.matchstiq\_z1.devices \\
 	\hline
@@ -213,7 +214,7 @@ The sampling clock domain originates from  the CLK0 output of a SI5338 clock gen
 			\hline
 			\verb+sample_rate_step_MHz+         & double & -        & -          & Volatile, Writable & -           & 0       & Minimum granularity for changes in sample rate                                                                                              \\
 			\hline
-			\verb+rf_cutoff_frequency_MHz+      & double & -        & -          & Readable, Writable  & -           & 0       & The cutoff frequency for any filtering that is done in the RF stage of the transmitter. Note that this property's value is equal to half of the complex bandwidth of the RF stage filter. There is no RF filtering stage on this transmitter. \\
+			\verb+rf_cutoff_frequency_MHz+      & double & -        & -          & Readable, Writable  & -           & 0       & The effective cutoff frequency, i.e. half of the bandwidth, for all filtering that is done in the RF stage of the transmitter. There is no RF filtering stage on this transmitter. \\
 			\hline
 			\verb+rf_cutoff_frequency_max_MHz+  & double & -        & -          & Volatile, Writable & -           & 0       & Maximum valid value for RF cutoff frequency                                                                                                 \\
 			\hline
@@ -221,7 +222,7 @@ The sampling clock domain originates from  the CLK0 output of a SI5338 clock gen
 			\hline
 			\verb+rf_cutoff_frequency_step_MHz+ & double & -        & -          & Volatile, Writable & -           & 0       & Minimum granularity for changes in RF cutoff frequency                                                                                      \\
 			\hline
-			\verb+bb_cutoff_frequency_MHz+      & double & -        & -          & Readable, Writable  & -           & 0       & The cutoff frequency for any filtering that is done in the baseband stage of the transmitter. Note that this property's value is equal to half of the complex bandwidth of the baseband stage filter.                                               \\
+			\verb+bb_cutoff_frequency_MHz+      & double & -        & -          & Readable, Writable  & -           & 0       & The effective cutoff frequency, i.e. half of the bandwidth, for all filtering that is done in the baseband stage of the transmitter.                                               \\
 			\hline
 			\verb+bb_cutoff_frequency_max_MHz+  & double & -        & -          & Volatile, Writable & -           & 0       & Maximum valid value for baseband cutoff frequency                                                                                           \\
 			\hline
@@ -280,7 +281,7 @@ The sampling clock domain originates from  the CLK0 output of a SI5338 clock gen
 			\hline
 			SpecProperty & \verb+rf_cutoff_frequency_step_MHz+ & -    & -        & -          & -              & -1           & -1      & Minimum granularity for changes in RF cutoff frequency                                        \\
 			\hline
-			SpecProperty & \verb+bb_cutoff_frequency_MHz+      & -    & -        & -          & WriteSync      & 0.125-14     & 10      & The cutoff frequency for any filtering that is done in the baseband stage of the transmitter. \\
+			SpecProperty & \verb+bb_cutoff_frequency_MHz+      & -    & -        & -          & WriteSync      & 0.125-14     & 10      & The effective cutoff frequency, i.e. half of the bandwidth, for all filtering that is done in the baseband stage of the transmitter. \\
 			\hline
 			SpecProperty & \verb+bb_cutoff_frequency_max_MHz+  & -    & -        & -          & -              & 14           & 14      & Maximum valid value for baseband cutoff frequency                                             \\
 			\hline

@@ -89,13 +89,14 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Component Data Sheet}
-\def\docVersion{1.2}
+\def\docVersion{1.3}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
 \lhead{\small{\docTitle}}
 
 \def\comp{lime\_adc}
+\edef\ecomp{lime_adc}
 \def\Comp{Lime ADC}
 \graphicspath{ {figures/} }
 
@@ -113,7 +114,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Version           & v\docVersion \\
 	\hline
-	Release Date      & August 2017 \\
+	Release Date      & February 2018 \\
 	\hline
 	Component Library & ocpi.assets.devices     \\
 	\hline
@@ -177,7 +178,7 @@ The main purpose of this worker is to perform a CDC for a data bus. The decision
 		]
 		\node[rectangle,ultra thick,draw=black,fill=blue](R2){\Comp};
 		\node[rectangle,draw=white,fill=white](R3)[below= of R2]{Signals to/from Lime \\ See signal table};
-		\node[rectangle,draw=white,fill=white](R4)[right= of R2]{``out" \\ Signed complex samples};
+		\node[rectangle,draw=white,fill=white](R4)[right= of R2]{``out'' \\ Signed complex samples};
 		\node[rectangle,draw=white,fill=white](R5)[above= of R2]{\verb+overrun+\\ \verb+messageSize+};
 		\path[->]
 		(R3)edge []	node [] {} (R2)
@@ -298,44 +299,11 @@ The Lime ADC device worker uses the clock from the Control Plane and Control Pla
 
 \section*{Performance and Resource Utilization}
 \subsubsection*{\comp.hdl}
-The following table entries are a result of building the worker for the following (Matchstiq-Z1-related) parameter set. Note that that are two global clocks (GCLKs), one for the control plane clock, and one for the Lime ADC-sourced clock (Fmax is assumed to be worst case for all available clocks)\
-\begin{itemize}
-	\item \verb+USE_CLK_OUT_p+=true
-	\item \verb+USE_CLK_IN_p+=false
-	\item \verb+USE_CTL_CLK_p+=false
-	\item \verb+DRIVE_CLK_p+=false
-\end{itemize}
-\begin{scriptsize}
-	\begin{tabular}{|M{4.5cm}|M{1cm}|M{1cm}|M{1.5cm}|M{2cm}|M{2.5cm}|}
-		\hline
-		\rowcolor{blue}
-		Device                & Registers & LUTs & Fmax    & Memory/Special Functions & Design Suite \\
-		\hline
-		Zynq XC7Z010-3-CLG400 & 271       & 233  & 468 MHz & 3 RAMB36E1               & ISE 14.7     \\
-		\hline
-	\end{tabular}
-\end{scriptsize}\newline
+The table entries for configuration ``0'' are a result of building the worker for the following (Matchstiq-Z1-related) parameter set. Note that that are two global clocks (GCLKs), one for the control plane clock, and one for the Lime ADC-sourced clock (Fmax is assumed to be worst case for all available clocks).\\
 
-Note that the Virtex-6 implementation is specific to the Zipper card's pin locations, which exhibit suboptimal timing due to the Lime ADC's clock pin location on the FPGA. The following table entries are a result of building the worker for the following (Zipper-related) parameter set:
-\begin{itemize}
-	\item \verb+USE_CLK_OUT_p+=false
-	\item \verb+USE_CLK_IN_p+=true
-	\item \verb+USE_CTL_CLK_p+=false
-	\item \verb+DRIVE_CLK_p+=false
-\end{itemize}
-\begin{scriptsize}
-	\begin{tabular}{|M{4.5cm}|M{1cm}|M{1cm}|M{1.5cm}|M{2cm}|M{2.5cm}|}
-		\hline
-		\rowcolor{blue}
-		Device                & Registers & LUTs & Fmax    & Memory/Special Functions & Design Suite \\
-		\hline
-		Stratix IV EP4SGX230K-C2-F40 & -       & -  & - MHz  & - RAMB36E1               & Quartus Prime 15.1     \\
-		\hline
-		Virtex-6 XC6VCX75T-2FF484 & 271       & 261  & 356 MHz  & 3 RAMB36E1               & ISE 14.7     \\
-		\hline
-	\end{tabular}
-\end{scriptsize}
+The Virtex-6 implementation is specific to the Zipper card's pin locations, which exhibit suboptimal timing due to the Lime ADC's clock pin location on the FPGA. Table entries for configuration1 ``1'' are a result of building the worker for the (Zipper-related) parameter set.\\
 
+\input{../../\ecomp.hdl/utilization.inc}
 \section*{Test and Verification}
 \begin{flushleft}
  To be detailed in a future release.

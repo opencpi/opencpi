@@ -44,7 +44,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 		    \hline
 		    v1.1 & Initial Release & 3/2017 \\
 			\hline
-            v1.2 & Updated for ANGRYVIPER Release 1.2 & 8/2017 \\
+            v1.2 & Updated for Release 1.2 & 8/2017 \\
 		    \hline
 			\end{tabularx}
 		\end{table}
@@ -58,17 +58,17 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 \section{References}
 
-	This document assumes a basic understanding of the Linux command line (or ``shell") environment. A working knowledge of ANGRYVIPER is required for understanding what vendor tools are necessary to perform various ANGRYVIPER operations. However, no ANGRYVIPER knowledge is required to perform the toolset installation and configuration herein. The reference(s) in Table \ref{table:references} can be used as an overview of ANGRYVIPER and may prove useful.
+	This document assumes a basic understanding of the Linux command line (or ``shell'') environment. A working knowledge of OpenCPI is required for understanding what vendor tools are necessary to perform various operations. However, no OpenCPI knowledge is required to perform the toolset installation and configuration herein. The reference(s) in Table \ref{table:references} can be used as an overview of OpenCPI and may prove useful.
 \def\refcapbottom{}
 \input{snippets/References_Table}
 
 \begin{flushleft}
 \begin{landscape}
-\section{ANGRYVIPER Vendor Tool Prerequisites}
+\section{OpenCPI Vendor Tool Prerequisites}
 \label{sec:doc_overview}
-One or more third party vendor toolsets are required to perform various ANGRYVIPER operations. Table~\ref{table:tool-support} identifies the various possible vendor tool installation and license requirement combinations. Each combination enumerates the associated functionality that the given combination provides to ANGRYVIPER. ANGRYVIPER supports Xilinx Vivado 2017.1 with Xilinx Vivado (SDK Only) 2013.4 (explained in \ref{sec:viv_intro}). Testing has been done with Vivado 2015.4, but future regression testing will be performed against 2017.1. ANGRYVIPER also supports Xilinx ISE 14.7, Xilinx LabTools 14.7, and Altera Quartus 15.1.
+One or more third party vendor toolsets are required to perform various OpenCPI operations. Table~\ref{table:tool-support} identifies the various possible vendor tool installation and license requirement combinations. Each combination enumerates the associated functionality that the given combination provides to OpenCPI. OpenCPI supports Xilinx Vivado 2017.1 with Xilinx Vivado (SDK Only) 2013.4 (explained in \ref{sec:viv_intro}). Testing has been done with Vivado 2015.4, but future regression testing will be performed against 2017.1. OpenCPI also supports Xilinx ISE 14.7, Xilinx LabTools 14.7, and Altera Quartus 15.1.
 %Commented this out because there may be other Vivado functionality that requires a non-webpack license.
-%Maximum functionality for ANGRYVIPER's currently supported platforms is provided by a WebPACK licensed Xilinx Vivado installation, a non-WebPACK licensed Xilinx ISE installation and a licensed Quartus installation.
+%Maximum functionality for OpenCPI's currently supported platforms is provided by a WebPACK licensed Xilinx Vivado installation, a non-WebPACK licensed Xilinx ISE installation and a licensed Quartus installation.
 
 \begin{center}
 	\renewcommand*\footnoterule{} % Remove separator line from footnote
@@ -98,7 +98,7 @@ One or more third party vendor toolsets are required to perform various ANGRYVIP
 			\hline
 		\end{tabularx}\newline
 
-		\footnotesize{$^1$With ANGRYVIPER installed, no additional software is required to load bitstreams onto Zynq FPGAs, run applications on Zynq-based or x86-only platforms, or build software for x86.}\\
+		\footnotesize{$^1$With OpenCPI installed, no additional software is required to load bitstreams onto Zynq FPGAs, run applications on Zynq-based or x86-only platforms, or build software for x86.}\\
 		\footnotesize{$^2$``Zynq-based'' platform includes both a Zynq's FPGA and ARM PS. The usage of ``Zynq'' or ``Zynq-based'' here does not include Zynq UltraScale devices.}\\
 		\footnotesize{$^3$Building bitstreams with a WebPACK license is limited to certain Zynq parts. Refer to the vendor's documentation for further information.}\\
 	\end{table}
@@ -109,7 +109,7 @@ One or more third party vendor toolsets are required to perform various ANGRYVIP
 \subsection{Xilinx Vivado Installation in CentOS~6/7}
 \label{sec:viv_intro}
 \begin{flushleft}
-In order to use Vivado with ANGRYVIPER, it is required that you install Vivado 2017.1 \textit{and} Vivado 2013.4's SDK. The 2013.4 SDK is necessary because ANGRYVIPER's ``\code{xilinx13\_3}'' software platform requires an SDK with matching glibc/glibc++ versions. An SDK meeting this requirement can be found explicitly in either ISE 14.7 or Vivado 2013.4 SDK. For more information on this requirement you can reference the README for the \code{xilinx13\_3} software platform. This is located in the CDK (\textit{e.g.}: \path{/opt/opencpi/cdk/platforms/xilinx13_3}).
+In order to use Vivado with OpenCPI, it is required that you install Vivado 2017.1 \textit{and} Vivado 2013.4's SDK. The 2013.4 SDK is necessary because OpenCPI's ``\code{xilinx13\_3}'' software platform requires an SDK with matching glibc/glibc++ versions. An SDK meeting this requirement can be found explicitly in either ISE 14.7 or Vivado 2013.4 SDK. For more information on this requirement you can reference the README for the \code{xilinx13\_3} software platform. This is located in the CDK (\textit{e.g.}: \path{/opt/opencpi/cdk/platforms/xilinx13_3}).
 \subsubsection{Xilinx Vivado 2017.1 Installation in CentOS~6/7}
 \label{sec:viv}
 \begin{enumerate}
@@ -119,12 +119,14 @@ In order to use Vivado with ANGRYVIPER, it is required that you install Vivado 2
 	\centerline{\includegraphics[scale=0.6]{figures/xilinx_vivado_2017_download}}
 	\caption{Xilinx Vivado 2017.1 Download}
 \end{figure}
+\item If installing Xilinx tools in a permission-restricted directory, you may need to change the umask temporarily:\newline
+\code{\% sudo su -}\newline
+\code{\% umask 0002}
 \item Extract the tarball:\newline
 \code{\% tar -xf Xilinx\_Vivado\_SDK\_2017.1\_0415\_1.tar.gz}
 \item Enter the resulting directory and run the installer:\newline
 \code{\% cd Xilinx\_Vivado\_SDK\_2017.1\_0415\_1}\newline
 \code{\% ./xsetup}\newline
-Execution of this file will likely require root privileges (i.e. \code{sudo}).
 \pagebreak
 \item Run through the installation process. Refer to the images below when applicable.
 \begin{figure}[H]
@@ -143,10 +145,11 @@ Take note of the installation directory chosen (e.g. \code{/opt/Xilinx}) as well
 	\caption{Xilinx Vivado Install Location}
 \end{figure}
 \end{enumerate}
-\subsubsection{ANGRYVIPER Considerations}
+% TODO: Make this next section a snippet because it is copypasted a lot
+\subsubsection{OpenCPI Considerations}
 \begin{enumerate}
-\item Note that sourcing the ``\verb+<Vivado-install-dir>/Vivado/<Vivado-version>/settings64.sh+'' script will interfere with ANGRYVIPER's environment setup. Accordingly, it is recommended to always source these scripts and execute any follow-on commands in a \textit{separate terminal}.
-\item To use ANGRYVIPER with any Xilinx Vivado installation, it is required to set the following environment variables before running ANGRYVIPER commands. Note that each of the following \code{export} statements is only necessary under the following conditions:
+\item Note that sourcing the ``\verb+<Vivado-install-dir>/Vivado/<Vivado-version>/settings64.sh+'' script will interfere with OpenCPI's environment setup. Accordingly, it is recommended to always source these scripts and execute any follow-on commands in a \textit{separate terminal}.
+\item To use OpenCPI with any Xilinx Vivado installation, it is required to set the following environment variables before running OpenCPI commands. Note that each of the following \code{export} statements is only necessary under the following conditions:
 \begin{itemize}
 \item When using a non-default installation location (i.e. anything other than \path{/opt/Xilinx})
 \item When Vivado \textit{and} ISE are both being used and are installed in different locations
@@ -157,7 +160,7 @@ Take note of the installation directory chosen (e.g. \code{/opt/Xilinx}) as well
 \subitem \code{\% export OCPI\_XILINX\_VIVADO\_VERSION=<Vivado-version>}
 
 \end{enumerate}
-If ANGRYVIPER has been installed prior to the Vivado installation, and it is desired to make the aforementioned environment variables set automatically upon login for all users, the variables should be added in \code{/opt/opencpi/cdk/env.d/xilinx.sh}. Logging out and logging back into the user account will apply said variables.
+If OpenCPI has been installed prior to the Vivado installation, and it is desired to make the aforementioned environment variables set automatically upon login for all users, the variables should be added in \code{/opt/opencpi/cdk/env.d/xilinx.sh}. Logging out and logging back into the user account will apply said variables.
 \subsubsection{Xilinx Vivado 2013.4 SDK Only Installation in CentOS~6/7}
 \label{sec:viv_sdk}
 \begin{enumerate}
@@ -168,12 +171,14 @@ If ANGRYVIPER has been installed prior to the Vivado installation, and it is des
 	\centerline{\includegraphics[scale=0.4]{figures/xilinx_vivado_sdk_download}}
 	\caption{Xilinx Vivado 2013.4 SDK Download}
 \end{figure}
+\item If installing Xilinx tools in a permission-restricted directory, you may need to change the umask temporarily:\newline
+\code{\% sudo su -}\newline
+\code{\% umask 0002}
 \item Extract the tarball:\newline
 \code{\% tar -xf Xilinx\_SDK\_2013.4\_1210\_1.tar}
 \item Enter the resulting directory and run the installer:\newline
 \code{\% cd Xilinx\_SDK\_2013.4\_1210\_1}\newline
 \code{\% ./xsetup}\newline
-Execution of this file will likely require root privileges (i.e. \code{sudo}).
 \pagebreak
 \item Run through the installation process. Refer to the images below when applicable.
 \begin{figure}[H]
@@ -204,12 +209,14 @@ Take note of the installation directory chosen (e.g. \code{/opt/Xilinx}) as well
 	\centerline{\includegraphics[scale=0.4]{figures/xilinx_ise_download}}
 	\caption{Xilinx ISE Download}
 \end{figure}
+\item If installing Xilinx tools in a permission-restricted directory, you may need to change the umask temporarily:\newline
+\code{\% sudo su -}\newline
+\code{\% umask 0002}
 \item Extract the tarball:\newline
 \code{\% tar -xf Xilinx\_ISE\_DS\_14.7\_1015\_1.tar}
 \item Enter the resulting directory and run the installer:\newline
 \code{\% cd Xilinx\_ISE\_DS\_14.7\_1015\_1}\newline
 \code{\% ./xsetup}\newline
-Execution of this file will likely require root privileges (i.e. \code{sudo}).
 \pagebreak
 \item Run through the installation process. Refer to the images below when applicable. Note that the checkbox for cable drivers is left unchecked. Cable driver installation, if necessary, should be handled after this installation is complete. See section \ref{sec:cable} for more information.
 \begin{figure}[H]
@@ -230,11 +237,11 @@ Take note of the installation directory chosen (e.g. \code{/opt/Xilinx}) as well
 \end{enumerate}
 
 
-\subsubsection{ANGRYVIPER Considerations}
+\subsubsection{OpenCPI Considerations}
 \label{sec:iseav}
 \begin{enumerate}
-\item Note that sourcing the ``\verb+<ISE-install-dir>/<version>/LabTools/settings64.sh+'' or ``\verb+<ISE-install-dir>/<version>/LabTools/settings32.sh+'' scripts will interfere with ANGRYVIPER's environment setup. Accordingly, it is recommended to always source these scripts and execute any follow-on commands in a \textit{separate terminal}.
-\item To use ANGRYVIPER with any Xilinx ISE or LabTools installation,  it is required to set the following environment variables before running ANGRYVIPER commands. Note that each of the following \code{export} statements are only necessary when the non-default installation location (i.e. anything other than \path{/opt/Xilinx}) or non-default version (i.e. anything other than \path{14.7}) of the tools were used.
+\item Note that sourcing the ``\verb+<ISE-install-dir>/<version>/LabTools/settings64.sh+'' or ``\verb+<ISE-install-dir>/<version>/LabTools/settings32.sh+'' scripts will interfere with OpenCPI's environment setup. Accordingly, it is recommended to always source these scripts and execute any follow-on commands in a \textit{separate terminal}.
+\item To use OpenCPI with any Xilinx ISE or LabTools installation,  it is required to set the following environment variables before running OpenCPI commands. Note that each of the following \code{export} statements are only necessary when the non-default installation location (i.e. anything other than \path{/opt/Xilinx}) or non-default version (i.e. anything other than \path{14.7}) of the tools were used.
 \subitem If only one of Xilinx ISE or Xilinx LabTools is installed,
 \subsubitem \code{\% export OCPI\_XILINX\_DIR=<ISE-or-LabTools-install-dir>}
 \subsubitem \code{\% export OCPI\_XILINX\_VERSION=<ISE-or-LabTools-version>}
@@ -250,7 +257,7 @@ Take note of the installation directory chosen (e.g. \code{/opt/Xilinx}) as well
 \subsubitem \code{\% export OCPI\_XILINX\_VERSION=<ISE-version>}
 \end{enumerate}
 
-If ANGRYVIPER has been installed prior to the ISE installation, and it is desired to make the aforementioned environment variables set automatically upon login for all users, the variables should be added in \code{/opt/opencpi/cdk/env.d/xilinx.sh}. Logging out and logging back into the user account will apply said variables.
+If OpenCPI has been installed prior to the ISE installation, and it is desired to make the aforementioned environment variables set automatically upon login for all users, the variables should be added in \code{/opt/opencpi/cdk/env.d/xilinx.sh}. Logging out and logging back into the user account will apply said variables.
 \end{flushleft}
 
 \subsection{Xilinx LabTools 14.7 Installation in CentOS~6/7}
@@ -263,12 +270,14 @@ If ANGRYVIPER has been installed prior to the ISE installation, and it is desire
 	\centerline{\includegraphics[scale=0.4]{figures/xilinx_labtools_download}}
 	\caption{Xilinx LabTools Download}
 \end{figure}
+\item If installing Xilinx tools in a permission-restricted directory, you may need to change the umask temporarily:\newline
+\code{\% sudo su -}\newline
+\code{\% umask 0002}
 \item Extract the tarball:\newline
 \code{\% tar -xf Xilinx\_LabTools\_14.7\_1015\_1.tar}
 \item Enter the resulting directory and run the installer:\newline
 \code{\% cd Xilinx\_LabTools\_14.7\_1015\_1}\newline
 \code{\% ./xsetup}\newline
-Execution of this file will likely require root privileges (i.e. \code{sudo}).
 \pagebreak
 \item Run through the installation process. Refer to the images below when applicable. Note that the checkbox for cable drivers is left unchecked. Cable driver installation, if necessary, should be handled after this installation is complete. See section \ref{sec:cable} for more information.
 \begin{figure}[H]
@@ -287,10 +296,10 @@ Take note of the installation directory chosen (e.g. \code{/opt/Xilinx}) as well
 \end{figure}
 \end{enumerate}
 
-\subsubsection{ANGRYVIPER Considerations}
+\subsubsection{OpenCPI Considerations}
 \begin{enumerate}
-\item Note that sourcing the ``\verb+<LabTools-install-dir>/<version>/LabTools/settings64.sh+'' or ``\verb+<LabTools-install-dir>/<version>/LabTools/settings32.sh+'' scripts will interfere with ANGRYVIPER's environment setup. Accordingly, it is recommended to always source these scripts and execute any follow-on commands in a \textit{separate terminal}.
-\item To use ANGRYVIPER with any Xilinx ISE or LabTools installation, it is required to set the environment variables according to Section \ref{sec:iseav} before running ANGRYVIPER commands.
+\item Note that sourcing the ``\verb+<LabTools-install-dir>/<version>/LabTools/settings64.sh+'' or ``\verb+<LabTools-install-dir>/<version>/LabTools/settings32.sh+'' scripts will interfere with OpenCPI's environment setup. Accordingly, it is recommended to always source these scripts and execute any follow-on commands in a \textit{separate terminal}.
+\item To use OpenCPI with any Xilinx ISE or LabTools installation, it is required to set the environment variables according to Section \ref{sec:iseav} before running OpenCPI commands.
 \end{enumerate}
 
 \end{flushleft}
@@ -317,7 +326,7 @@ A license, either WebPACK or non-WebPACK, is required for Xilinx Vivado and Xili
 \end{figure}
 \end{enumerate}
 
-For use of Xilinx tools separate from ANGRYVIPER, you will need to enable the license through the Xilinx tools.\newline
+For use of Xilinx tools separate from OpenCPI, you will need to enable the license through the Xilinx tools.\newline
 
 For Vivado, follow these steps:
 \begin{enumerate}
@@ -350,10 +359,10 @@ For ISE, follow these steps:
 If using a Xilinx node-locked license under CentOS~7, see \href{https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/7/html/Networking_Guide/sec-Disabling_Consistent_Network_Device_Naming.html}{the Red Hat Networking Guide} to revert to the
 \texttt{eth\textit{N}} naming convention.
 
-\subsubsection{ANGRYVIPER Considerations}
+\subsubsection{OpenCPI Considerations}
 \begin{enumerate}
-\item Note that sourcing the ``\verb+settings64.sh+'' or ``\verb+settings32.sh+'' scripts will interfere with ANGRYVIPER's environment setup. Accordingly, it is recommended to always source these scripts and execute any follow-on commands in a \textit{separate terminal}.
-\item To enable a license for use through ANGRYVIPER, the following is required:
+\item Note that sourcing the ``\verb+settings64.sh+'' or ``\verb+settings32.sh+'' scripts will interfere with OpenCPI's environment setup. Accordingly, it is recommended to always source these scripts and execute any follow-on commands in a \textit{separate terminal}.
+\item To enable a license for use through OpenCPI, the following is required:
 
 	\begin{itemize}
 		\item Add \verb+export OCPI_XILINX_LICENSE_FILE=<PATH_TO_LIC>+ to \verb+/opt/opencpi/cdk/env.d/xilinx.sh+. Note that this can instead point to a license server \verb+<port>@<server.ip.addr>+. If using a floating license server, it is possible to set \verb+OCPI_XILINX_LICENSE_FILE+ to the license server in addition to setting \\\verb+export XILINXD_LICENSE_FILE=<PATH_TO_LOCAL_LIC>+. This will allow use of a local license, e.g. a local WebPACK license, by default and the served floating license when WebPACK license is not sufficient.\footnote{See Xilinx ``\href{https://www.xilinx.com/support/answers/42507.html}{AR\# 42507: What are the search order and locations...}'' and ``\href{https://www.xilinx.com/support/answers/44024.html}{AR\# 44024: If a feature is licensed in multiple locations...}''}
@@ -442,9 +451,9 @@ To verify successful cable driver installation, you can run the following:\\
 \code{. ./settings64.sh} \\
 \code{cd ~} \\
 \code{echo listusbcables | LD\_LIBRARY\_PATH=\$LIBUSB\_INSTALL\_DIR:\$LD\_LIBRARY\_PATH impact -batch} \\
-If the cable driver is successfully installed, "\code{Using libusb.}" will be included in the text printed to the screen.
+If the cable driver is successfully installed, ``\code{Using libusb.}'' will be included in the text printed to the screen.
 %
-%This section assumes you have completed the cable driver installation and you have ANGRYVIPER installed.
+%This section assumes you have completed the cable driver installation and you have OpenCPI installed.
 %
 %To verify successful cable driver installation, you can run the following:\newline\newline \code{/opt/opencpi/cdk/scripts/probeJtag}\newline\newline This script uses \code{impact} and enumerates the JTAG device chain. On success, it will print information such as the USB port, device serial number, and target part:
 % \begin{figure}[H]
@@ -452,7 +461,7 @@ If the cable driver is successfully installed, "\code{Using libusb.}" will be in
 %	\caption{Successful probeJtag}
 %\end{figure}
 %
-%If you have an ANGRYVIPER bitstream ready to be deployed onto your target platform, you can follow these steps to test bitstream loading:
+%If you have an OpenCPI bitstream ready to be deployed onto your target platform, you can follow these steps to test bitstream loading:
 %\begin{enumerate}
 %\item Set OCPI\_PROJECT\_PATH to the project containing the platform of interest. For example, to load bitstreams to the ML605, you will need to run:\\
 %\code{export OCPI\_PROJECT\_PATH=\$OCPI\_PROJECT\_PATH:<path-to-baseproject>}
@@ -471,25 +480,26 @@ If the cable driver is successfully installed, "\code{Using libusb.}" will be in
 \subsection{Altera Quartus Prime 15.1 Installation in CentOS~7}
 \begin{flushleft}
 \begin{enumerate}
-\item Download the Quartus Prime 15.1 installation files from Altera's download site: \url{https://www.altera.com/downloads/download-center.html}. A \verb+myAltera+ account will be required. This first page is the download-center home page. Select the \verb+Download+ button next to ``Quartus Prime sofware Standard edition" as shown in Figure \ref{fig:altera_download_center}.
+\item Download the Quartus Prime 15.1 installation files from Altera's download site: \url{https://www.altera.com/downloads/download-center.html}. A \verb+myAltera+ account will be required. This first page is the download-center home page. Select the \verb+Download+ button next to ``Quartus Prime software Standard edition'' as shown in Figure \ref{fig:altera_download_center}.
 \begin{figure}[ht]
 	\centerline{\includegraphics[scale=0.4]{figures/altera_download_center}}
 	\caption{Altera Download Homepage}
 	\label{fig:altera_download_center}
 \end{figure}
-\item From the ``Quartus Prime sofware Standard edition" page, select \verb+15.1+ from the drop-down box next to ``Select release" as shown in Figure \ref{fig:altera_download_15_1}.
+\item From the ``Quartus Prime software Standard edition'' page, select \verb+15.1+ from the drop-down box next to ``Select release'' as shown in Figure \ref{fig:altera_download_15_1}.
 \item Select the \verb+Complete Download+ version which downloads the file \verb+Quartus-15.1.0.185-linux-complete.tar+. Click the arrow pointing downward to begin the download as shown in Figure \ref{fig:altera_download_15_1}. Note that the tarball is $\sim$24GB. Ensure that the installation system has enough disk space and correct file write permissions.\pagebreak
 \begin{figure}[ht]
 	\centerline{\includegraphics[scale=0.4]{figures/altera_download_15_1}}
 	\caption{Altera Quartus Prime Standard Edition 15.1 Download}
 	\label{fig:altera_download_15_1}
 \end{figure}
+\item If installing Altera tools in a permission-restricted directory, you may need to change the umask temporarily:\newline
+\code{\% sudo su -}\newline
+\code{\% umask 0002}
 \item Extract the tarball:\newline
-\code{\% tar xvf Quartus-15.1.0.185-linux-complete.tar}\newline
-Depending upon permissions of the current directory, execution of this command will likely require root privileges (i.e. \code{sudo}).
+\code{\% tar xvf Quartus-15.1.0.185-linux-complete.tar}
 \item Run the installer:\newline
 \code{\% ./setup.sh}\newline
-Execution of this file will likely require root privileges (i.e. \code{sudo}).
 \pagebreak
 \item Run through the installation process. Refer to the images here when needed:
 \begin{figure}[H]
@@ -521,17 +531,17 @@ Take note of the installation directory chosen (e.g. \code{/opt/altera}) as well
 \end{enumerate}
 
 
-\subsubsection{ANGRYVIPER Considerations}
-If ANGRYVIPER has been installed prior to the Quartus installation, it is required to set the following environment variables before running ANGRYVIPER commands. Note that \texttt{<altera-version>} should be replaced with the appropriate Altera version (e.g. \code{15.1}), and \texttt{<altera-install-dir>} should be replaced with the installation directory (i.e. \path{/opt/altera}). Note also that each of the following \code{export} statements are only necessary when the non-default installation location (i.e. anything other that \path{/opt/altera} or non-default version (i.e. anything other than \path{14.7}) of the tools were used.\newline
+\subsubsection{OpenCPI Considerations}
+If OpenCPI has been installed prior to the Quartus installation, it is required to set the following environment variables before running OpenCPI commands. Note that \texttt{<altera-version>} should be replaced with the appropriate Altera version (e.g. \code{15.1}), and \texttt{<altera-install-dir>} should be replaced with the installation directory (i.e. \path{/opt/altera}). Note also that each of the following \code{export} statements are only necessary when the non-default installation location (i.e. anything other that \path{/opt/altera} or non-default version (i.e. anything other than \path{14.7}) of the tools were used.\newline
 \code{\% export OCPI\_ALTERA\_DIR=<altera-install-dir>}\newline
 \code{\% export OCPI\_ALTERA\_VERSION=<altera-version>}\newline
 \code{\% export OCPI\_ALTERA\_LICENSE\_FILE=<path\_to\_license\_file>}
 
-If ANGRYVIPER has been installed prior to the Quartus installation, and it is desired to make the environment variables set automatically upon login for all users, the variables should be added in \path{/opt/opencpi/cdk/env.d/altera.sh}. Logging out and logging back into the user account will apply said variables.
+If OpenCPI has been installed prior to the Quartus installation, and it is desired to make the environment variables set automatically upon login for all users, the variables should be added in \path{/opt/opencpi/cdk/env.d/altera.sh}. Logging out and logging back into the user account will apply said variables.
 
 \subsection{Licensing Notes}
 % AV-3316
-If the user runs the Quartus software in its native GUI mode outside of ANGRYVIPER, a license file configuration \textit{might} be stored in the variable \path{LICENSE_FILE} within \path{~user/.altera.quartus/quartus2.ini}; this setting overrides the \code{OCPI\_ALTERA\_LICENSE\_FILE} noted above and may cause confusion.
+If the user runs the Quartus software in its native GUI mode outside of OpenCPI, a license file configuration \textit{might} be stored in the variable \path{LICENSE_FILE} within \path{~user/.altera.quartus/quartus2.ini}; this setting overrides the \code{OCPI\_ALTERA\_LICENSE\_FILE} noted above and may cause confusion.
 
 \end{flushleft}
 

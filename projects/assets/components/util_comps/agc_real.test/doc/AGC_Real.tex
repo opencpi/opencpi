@@ -88,13 +88,14 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Component Data Sheet}
-\def\docVersion{1.2}
+\def\docVersion{1.3}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
 \lhead{\small{\docTitle}}
 
 \def\comp{agc\_real}
+\edef\ecomp{agc_real}
 \def\Comp{AGC Real}
 \graphicspath{ {figures/} }
 
@@ -112,9 +113,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Version           & v\docVersion \\
 	\hline
-	Release Date      & August 2017 \\
+	Release Date      & February 2018 \\
 	\hline
-	Component Library & ocpiassets.util\_comps                                        \\
+	Component Library & ocpi.assets.util\_comps                                        \\
 	\hline
 	Workers           & \comp.hdl                                                    \\
 	\hline
@@ -143,7 +144,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 \section*{Theory}
 \begin{flushleft}
-	The circuit is based upon Richard G. Lyons' ``Understanding Digital Signal Processing, Third Edition" Automatic Gain Control (AGC) circuit found on Page 783. The text may also be found online here: \href{http://www.embedded.com/design/other/4214571/A-simple-way-to-add-AGC-to-your-communications-receiver-design-}{DSP-Tricks-A simple way to add AGC to your communications receiver design}. Lyons' circuit in Figure 13-76a implements the AGC function with a feedback loop on y(n) that consists of a magnitude operation to remove the sign, a comparator against the reference level ``ref", a multiplier that uses ``mu" to control the amplitude of the feedback signal (and thus the response time), and finally an accumulator. This implementation uses a peak detector in place of Lyons' simple magnitude operation. From Lyons: ``The process is a nonlinear, time-varying, signal-dependent feedback system. As such, it's highly resistant to normal time-domain or z-domain analysis. This is why AGC analysis is empirical rather than mathematical ..."
+	The circuit is based upon Richard G. Lyons' ``Understanding Digital Signal Processing, Third Edition'' Automatic Gain Control (AGC) circuit found on Page 783. The text may also be found online here: \href{http://www.embedded.com/design/other/4214571/A-simple-way-to-add-AGC-to-your-communications-receiver-design-}{DSP-Tricks-A simple way to add AGC to your communications receiver design}. Lyons' circuit in Figure 13-76a implements the AGC function with a feedback loop on y(n) that consists of a magnitude operation to remove the sign, a comparator against the reference level ``ref'', a multiplier that uses ``mu'' to control the amplitude of the feedback signal (and thus the response time), and finally an accumulator. This implementation uses a peak detector in place of Lyons' simple magnitude operation. From Lyons: ``The process is a nonlinear, time-varying, signal-dependent feedback system. As such, it's highly resistant to normal time-domain or z-domain analysis. This is why AGC analysis is empirical rather than mathematical ...''
 \end{flushleft}
 
 \section*{Block Diagrams}
@@ -157,8 +158,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 			every edge/.style={draw,thick}
 		]
 		\node[rectangle,ultra thick,draw=black,fill=blue](R2){\Comp};
-		\node[rectangle,draw=white,fill=white](R3)[left= of R2]{``in" \\ Signed real samples};
-		\node[rectangle,draw=white,fill=white](R4)[right= of R2]{``out" \\ Signed real samples};
+		\node[rectangle,draw=white,fill=white](R3)[left= of R2]{``in'' \\ Signed real samples};
+		\node[rectangle,draw=white,fill=white](R4)[right= of R2]{``out'' \\ Signed real samples};
 		\node[rectangle,draw=white,fill=white](R5)[above= of R2]{hold, ref, mu, messageSize};
 		\path[->]
 		(R3)edge []	node [] {} (R2)
@@ -174,9 +175,6 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	Only one finite-state machine (FSM) is implemented by this worker. The FSM supports Zero-Length Messages.
 \end{flushleft}
 {\centering\captionsetup{type=figure}\includegraphics[scale=0.7]{zlm_fsm}\par\captionof{figure}{Zero-Length Message FSM}\label{fig:zlm_fsm}}
-\begin{flushleft}
-        Note: In future releases this finite-state machine will be replaced with a register-delay based mechanism, currently exemplified in the dc offset filter
-\end{flushleft}
 \newpage
 
 \section*{Source Dependencies}
@@ -251,28 +249,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 \section*{Performance and Resource Utilization}
 \subsubsection*{\comp.hdl}
-Table entries are a result of building the worker with the following parameter set:\
-\begin{itemize}
-	\item \verb+DATA_WIDTH_p+=16
-	\item \verb+AVG_WINDOW_p+=16
-\end{itemize}
-\begin{scriptsize}
-	\begin{tabular}{|c|c|c|c|c|c|}
-		\hline
-		\rowcolor{blue}
-		Device                      & Registers & LUTs & Fmax        & Memory/Special Functions & Design Suite       \\
-		\hline
-		Stratix4 EP4SGX230K-C2-F40  & 697       & 352  & N/A            & DSP 18x18 = 6            & Quartus Prime 15.1 \\
-		\hline
-		Virtex6 XC6VLX240T-1-FF1156 & 390       & 429  & 171.910 MHz & DSP48E1 = 3              & ISE 14.7           \\
-		\hline
-		Zynq XC7Z020-1-CLG484       & 375       & 411  & 168.918 MHz & DSP48E1 = 3              & Vivado 2017.1           \\
-		\hline
-		Zynq XC7Z020-1-CLG484       & 390       & 429  & 168.180 MHz & DSP48E1 = 3              & ISE 14.7           \\
-		\hline
-	\end{tabular}
-\end{scriptsize}
-
+\input{../../\ecomp.hdl/utilization.inc}
 \section*{Test and Verification}
 \begin{flushleft}
 	A single test case is implemented to validate the AGC Real component. An input file is generated with a single tone at Fs/16 Hz, where Fs = 100 Hz, but applies 20\% of the maximum amplitude to the first quarter of the file, 90\% maximum amplitude to the second quarter of the file, 20\% maximum amplitude to the third quarter of the file, and 30\% maximum amplitude to the fourth quarter of the file. The real waveform is then scaled to fixed-point signed 16-bit integers. Time and frequency domain plots may be viewed in Figures \ref{fig:in_time_tone} and \ref{fig:in_freq_tone} below, respectively.

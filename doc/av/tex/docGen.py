@@ -75,7 +75,7 @@ def genAccess (prop):
       writeableStr = prop.get("writable")
 
    if type(volStr) is str:
-      readStr = "Volitile"
+      readStr = "Volatile"
    elif type(readableStr) is str:
       readStr = "Readable"
    else:

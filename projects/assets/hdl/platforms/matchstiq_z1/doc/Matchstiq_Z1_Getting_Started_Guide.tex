@@ -20,8 +20,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 %----------------------------------------------------------------------------------------
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
-\def\docTitle{ANGRYVIPER\\ Matchstiq-Z1 Getting Started Guide}
-\def\docVersion{1.2}
+\def\docTitle{OpenCPI\\ Matchstiq-Z1 Getting Started Guide}
+\def\docVersion{1.3}
 %----------------------------------------------------------------------------------------
 \input{../../../../../../doc/av/tex/snippets/LaTeX_Header.tex}
 \date{Version \docVersion} % Force date to be blank and override date with version
@@ -48,7 +48,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 		    \hline
             v1.1 & Initial Release & 3/2017 \\
             \hline
-            v1.2 & Updated for ANGRYVIPER Release 1.2 & 8/2017 \\
+            v1.2 & Updated for OpenCPI Release 1.2 & 8/2017 \\
+            \hline
+            v1.3 & Updated for OpenCPI Release 1.3 & 2/2018 \\
             \hline
 			\end{tabularx}
 		\end{table}
@@ -62,14 +64,14 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 \section{References}
 
-	This document assumes a basic understanding of the Linux command line (or ``shell'') environment.  The reference(s) in Table 1 can be used as an overview of ANGRYVIPER and may prove useful.
+	This document assumes a basic understanding of the Linux command line (or ``shell'') environment.  The reference(s) in Table 1 can be used as an overview of OpenCPI and may prove useful.
 
 \def\refcapbottom{}
 \input{../../../../../../doc/av/tex/snippets/References_Table}
 
 \newpage
 \section{Overview}
-This purpose of this document is to allow the user to install ANGRYVIPER on the Matchstiq-Z1 SDR.  The software platform on the Matchstiq is the same as the software platform for the ZedBoard. This means several of the files that are used to create the Matchstiq-Z1 SD card come from the ZedBoard SD card.
+This purpose of this document is to allow the user to install OpenCPI on the Matchstiq-Z1 SDR.  The software platform on the Matchstiq is the same as the software platform for the ZedBoard. This means several of the files that are used to create the Matchstiq-Z1 SD card come from the ZedBoard SD card.
 \section{Prerequisites}
 \begin{flushleft}
 This guide assumes that the following RPMs are installed:  \\
@@ -81,21 +83,28 @@ This guide assumes that the following RPMs are installed:  \\
 			\rowcolor{blue}
 			\textbf{RPM Name} & \textbf{Description} \\
 			\hline
-			All prerequisite RPMs & These packages have ANGRYVIPER-specific patches and are provided as RPMs. This packaging ensures they will not conflict with other installed copies by using a nonstandard installation location of \path{/opt/opencpi/prerequisites}. \\
-		    \hline
-		    angryviper-1.2.0-*.el7.centos.x86\_64 & Base installation RPM includes the runtime portion of the Component Development Kit (CDK), scripts for creating the user's workspace, and limited documentation. \\
-		    \hline
-		    angryviper-devel-*.el7.centos.x86\_64 & Additional header files and scripts for developing new assets as HDL and/or RCC. \\
-		    \hline
-		    angryviper-sw-platform-xilinx13\_3-*.el7.centos.noarch & Additional files necessary to build the framework targeting the xilinx13\_3 software platform. \\
-		    \hline
-		    angryviper-hw-platform-zed-*.el7.centos.noarch & Additional files necessary to build the framework targeting specific hardware platforms. Automatically requires the zed sw-platform package. \\
-		    \hline
+			All prerequisite RPMs & These packages have OpenCPI-specific patches and are provided as RPMs. This packaging ensures they will not conflict with other installed copies by using a nonstandard installation location of \path{/opt/opencpi/prerequisites}. \\
+				\hline
+				\small{\code{opencpi-*.x86\_64.rpm}} &
+								Base installation RPM includes the runtime portion of the Component Development Kit (CDK), scripts for creating the user's workspace, limited documentation, and a read-only \code{ocpi.core} Project containing framework essential components, workers, platforms, etc. \\
+				\hline
+				\small{\code{opencpi-devel-*.x86\_64.rpm}} &
+				Additional header files and scripts for developing new assets as HDL and/or RCC. \\
+				\hline
+				\small{\code{opencpi-hw-platform-zed-*.noarch.rpm}} &
+				Additional files necessary to build the framework targeting specific hardware platforms. Automatically requires the zed sw-platform package. \\
+				\hline
+				\small{\code{opencpi-project-assets*.noarch.rpm}} &
+				The \texttt{ocpi.assets} Project, which contains the remaining supported OpenCPI resources, e.g. additional Platform Support, Workers, Demo Applications, etc. \\
+				\hline
+				\small{\code{opencpi-sw-platform-xilinx13\_3-*.noarch.rpm}} &
+				Additional files necessary to build the framework targeting the xilinx13\_3 software platform. \\
+				\hline
 			\end{tabularx}
 \end{table}
-This guide assumes that the Core and Assets projects have user copies and have been registered. Creating user copies of projects is done by using the new\_projet\_source script as described in the Getting Started Guide.  registering projects is done by running the command \code{ocpidev register project} at the top level of the project.   \\ \bigskip
+This guide assumes that the Core and Assets projects have user copies and have been registered. Creating user copies of projects is done by using the new\_project\_source script as described in the Getting Started Guide.  registering projects is done by running the command \code{ocpidev register project} at the top level of the project.   \\ \bigskip
 
-The SDR that is expected to be used is the Epiq Matchstiq-Z1 (ensure you are using the Z1 version).  A USB to Ethernet adapter will need to be plugged in to the front panel micro-USB port.  The SDR gets an IP Address by using DHCP.  It is a requirement if operating in network mode (discussed later) that the USB to Ethernet adapter is connected to a network that uses DHCP. \\ \bigskip
+The SDR that is expected to be used is the Epiq Matchstiq-Z1 (ensure you are using the Z1 version).  A USB to Ethernet adapter will need to be plugged in to the front panel micro-USB port.  The SDR gets an IP Address by using DHCP.  It is a requirement if operating in network mode (discussed later) that the USB to Ethernet adapter is connected to a network that uses DHCP\footnote{Static IP addresses are possible but have not been integrated with the OpenCPI startup procedure at this time.}. \\ \bigskip
 
 There is a micro-USB serial port on the back of the SDR; to expose this port, the two screws in the back plate need to be removed.  A Male micro-USB cable will need to be plugged into this port to access the serial connection.  On some versions of the Matchstiq-Z1, \textit{this connector can be very fragile}, \textbf{so be careful}.\\ \bigskip
 
@@ -114,7 +123,7 @@ On the front panel of the SDR, there are three labeled SMB (50 Ohm) connectors. 
 \end{flushleft}
 
 \section{Script Setup}
-There are two modes for running applications on any embedded radio: network mode and standalone mode.  Network mode is when the development system hosts the ANGRYVIPER tree as an NFS server to the Matchstiq-Z1 as an NFS client.  This configuration provides easy and dynamic access to all of ANGRYVIPER, and presumably any components and applications.  Standalone mode is when all the artifacts are located on the SDR's local storage (\textit{e.g.} SD card) and no network connection is required.  This is a better \textit{deployment} mode, and is better for situations where a network connection is not possible or practical.  Network mode is generally preferred when it is possible because it makes the development process easier than standalone mode.
+There are two modes for running applications on any embedded radio: network mode and standalone mode.  Network mode is when the development system hosts the OpenCPI tree as an NFS server to the Matchstiq-Z1 as an NFS client.  This configuration provides easy and dynamic access to all of OpenCPI, and presumably any components and applications.  Standalone mode is when all the artifacts are located on the SDR's local storage (\textit{e.g.} SD card) and no network connection is required.  This is a better \textit{deployment} mode, and is better for situations where a network connection is not possible or practical.  Network mode is generally preferred when it is possible because it makes the development process easier than standalone mode.
 
 \begin{flushleft}
 For each mode, there are separate startup scripts that are run on the SDR. These scripts will need to be modified for each user's specific setup and file structure.  There are starting points for these scripts that are provided by the framework.  For networked mode the script is located at \path{/opt/opencpi/boot_support/zed/OpenCPI-SD-zed/opencpi/default_mynetsetup.sh}.  For standalone mode, the script is located at \path{/opt/opencpi/boot_support/zed/OpenCPI-SD-zed/opencpi/default_mysetup.sh}.  These scripts need to be renamed to \texttt{mynetsetup.sh} and \texttt{mysetup.sh} before they are copied over to the SD card in Section \ref{sec:HW_Setup}. \\ \bigskip
@@ -144,7 +153,7 @@ mount -t nfs -o udp,nolock,soft,intr $1:/home/user/ocpiAssets /mnt/ocpi_assets
 \end{enumerate}
 \begin{flushleft}
 \label{sec:buildNow}
-\textit{For Standalone Mode}, all ANGRYVIPER artifacts required to run any applications on the SDR need to be copied onto the SD card.  So, you must build these artifacts earlier when operating in Standalone Mode. Perform the steps in Section \ref{sec:buildverify}  now. The artifacts created will be copied over to the SD card in Section \ref{sec:HW_Setup}. In general, you will want to copy any required \texttt{.so} (RCC workers), \texttt{.bit.gz} (hdl assemblies), and application XMLs or executables into the ATLAS partition of the SD card.
+\textit{For Standalone Mode}, all OpenCPI artifacts required to run any applications on the SDR need to be copied onto the SD card.  So, you must build these artifacts earlier when operating in Standalone Mode. Perform the steps in Section \ref{sec:buildverify}  now. The artifacts created will be copied over to the SD card in Section \ref{sec:HW_Setup}. In general, you will want to copy any required \texttt{.so} (RCC workers), \texttt{.bit.gz} (hdl assemblies), and application XMLs or executables into the ATLAS partition of the SD card.
 \end{flushleft}
 \section{Hardware and SD Card Setup}
 \label{sec:HW_Setup}
@@ -239,7 +248,7 @@ The SD card file structure should be as follows when these steps have been compl
 \subsection*{No changes required for ``SDHOME'' partition}
 All the files in this partition can be ignored. If space for files is required for your application, they can be deleted.
 \subsection*{Serial setup}
-By default, the USB to serial adapter will connect as read-only unless \texttt{udev} rules are added to have the device connect as read write.  Copy the file from the assets project \path{hdl/platforms/matchstiq_z1/97-matchstiq_z1.rules} to \path{/etc/udev/rules.d/}.  This will cause the USB to Serial adapter to connect as \texttt{/dev/matchstiq\_z1\_0} with read and write permissions for all users.  To connect to the serial port use the command ``\texttt{screen /dev/matchstiq\_z1\_0 115200}''.
+By default, the USB to serial adapter will connect as read-only unless \texttt{udev} rules are added to have the device connect as read write.  Copy the file from the Assets Project \path{hdl/platforms/matchstiq_z1/97-matchstiq_z1.rules} to \path{/etc/udev/rules.d/}.  This will cause the USB to Serial adapter to connect as \texttt{/dev/matchstiq\_z1\_0} with read and write permissions for all users.  To connect to the serial port use the command ``\texttt{screen /dev/matchstiq\_z1\_0 115200}''.
 \subsection*{Update U-Boot variables}
 \begin{enumerate}
 \item Remove power from the Matchstiq-Z1 unit.
@@ -304,7 +313,7 @@ Environment size: 1283/131068 bytes
 \input{../../../../../../doc/av/tex/snippets/NFS_Setup_Snippet.tex}
 %
 \subsubsection*{Power cycle the Matchstiq-Z1}
-Make sure the USB to Ethernet adapter is plugged into the front panel. The SDR should now boot a valid ANGRYVIPER environment.  The user name and password for the SDR are both ``root''.  A successful boot up screen will look as follows:
+Make sure the USB to Ethernet adapter is plugged into the front panel. The SDR should now boot a valid OpenCPI environment.  The user name and password for the SDR are both ``root''.  A successful boot up screen will look as follows:
 
 \begin{figure}[ht]
 	\centerline{\includegraphics[scale=0.5]{Matchstiq_Z1_login}}
@@ -313,11 +322,11 @@ Make sure the USB to Ethernet adapter is plugged into the front panel. The SDR s
 \end{figure}
 \subsubsection*{Using the Matchstiq-Z1 in Network Mode}
 \begin{flushleft}
-Every time the SDR is rebooted, the user is required to run the \texttt{mynetsetup.sh} script, which configures the system for ANGRYVIPER with support for network/NFS mode\footnote{This script calls the \texttt{zynq\_net\_setup.sh} script, which is not user-modifiable.}. The user passes the network address of the development system in as the only argument to \texttt{mynetsetup.sh}.
+Every time the SDR is rebooted, the user is required to run the \texttt{mynetsetup.sh} script, which configures the system for OpenCPI with support for network/NFS mode\footnote{This script calls the \texttt{zynq\_net\_setup.sh} script, which is not user-modifiable.}. The user passes the network address of the development system in as the only argument to \texttt{mynetsetup.sh}.
 \end{flushleft}
 \begin{flushleft}
 After the SDR is booted, the first thing that needs to be done is to source the \texttt{mynetsetup.sh} script with\\
-\leavevmode{\parindent=3em\indent}\code{. /mnt/card/opencpi/mynetsetup.sh XX.XX.XX.XX}\\
+\leavevmode{\parindent=3em\indent}\code{source /mnt/card/opencpi/mynetsetup.sh XX.XX.XX.XX}\\
 and changing XX.XX.XX.XX to the IP address of the NFS host (your development machine, \textit{e.g.} 192.168.1.10). A successful run is shown in Figure~\ref{fig:netsetup}.
 \end{flushleft}
 
@@ -331,7 +340,7 @@ and changing XX.XX.XX.XX to the IP address of the NFS host (your development mac
 All artifacts for any applications or tests that need to be located on the SD card must be on the ATLAS partition in the \texttt{opencpi/artifacts} folder.  All of the helper utilities such as \texttt{ocpirun} and \texttt{ocpihdl} are already located on the SD card and do not need to be copied over to the SDR platform.
 
 \subsubsection*{Power cycle the Matchstiq-Z1}
-The SDR should now boot a valid ANGRYVIPER environment.  The user name and password for the SDR are both ``root''.  A successful boot up screen will look as follows:
+The SDR should now boot a valid OpenCPI environment.  The user name and password for the SDR are both ``root''.  A successful boot up screen will look as follows:
 
 \begin{figure}[ht]
 	\centerline{\includegraphics[scale=0.5]{Matchstiq_Z1_login}}
@@ -341,11 +350,11 @@ The SDR should now boot a valid ANGRYVIPER environment.  The user name and passw
 
 \subsubsection*{Using the Matchstiq-Z1 in Standalone Mode}
 \begin{flushleft}
-Every time the SDR is rebooted, the user is required to run the \texttt{mysetup.sh}, which configures the system for ANGRYVIPER\footnote{This script calls the \texttt{zynq\_setup.sh} script, which is not user-modifiable.}. Any time that a new version of ANGRYVIPER is released, the SD card will need to be recreated in order to update the artifacts and the executables that are stored on the SD card.
+Every time the SDR is rebooted, the user is required to run the \texttt{mysetup.sh}, which configures the system for OpenCPI\footnote{This script calls the \texttt{zynq\_setup.sh} script, which is not user-modifiable.}. Any time that a new version of OpenCPI is released, the SD card will need to be recreated in order to update the artifacts and the executables that are stored on the SD card.
 \end{flushleft}
 \begin{flushleft}
 After the SDR is booted, the first thing that needs to be done is to source the \texttt{mysetup.sh} script with\\
-\leavevmode{\parindent=3em\indent}\code{. /root/opencpi/mysetup.sh}\\
+\leavevmode{\parindent=3em\indent}\code{source /mnt/card/opencpi/mysetup.sh}\\
 A successful run of this will be as follows:
 \end{flushleft}
 
@@ -361,11 +370,11 @@ The installation can be verified by running an application that uses both RCC an
 \label{sec:buildverify}
 If operating in Standalone Mode, these steps should have been performed earlier. (See \ref{sec:buildNow}.)
 \\ \\
-First the Core project needs to be built for the matchstiq\_z1 platform.  This is performed at the top level of the Core project running the command \code{ ocpidev build -\--hdl-platforms matchstiq\_z1}.  This will take about  45 minutes to complete.    
+First the Core project needs to be built for the matchstiq\_z1 platform.  This is performed at the top level of the Core project running the command \code{ ocpidev build -\--hdl-platform matchstiq\_z1}.  This will take about  45 minutes to complete.    
 \\ \\
 Then the matchstiq\_z1 platform needs to be built this is located in the Assets project.  To build this at the top level of the Assets project run the command \code{ocpidev build hdl platforms -\--hdl-platform matchstiq\_z1}.  This will take about 45 minutes to complete.
 \\ \\
-There is an existing assembly in the assets project that is the bias worker with its inputs and outputs connected to software.  This assembly needs to be built for ``matchstiq\_z1'' platform. It is located in \path{<Assets_Project>/hdl/assemblies/testbias/}.  At the top level of the project run the following command: ``\texttt{ocpidev build hdl assembly testbias -\--hdl-platform matchstiq\_z1}''.  This should take about 15 minutes to complete. You can confirm that it succeeded by locating the \texttt{*.bit.gz} file in \path{container-testbias_matchstiq_z1_base/target-matchstiq_z1/}.\\
+There is an existing assembly in the Assets Project that is the bias worker with its inputs and outputs connected to software.  This assembly needs to be built for ``matchstiq\_z1'' platform. It is located in \path{<Assets_Project>/hdl/assemblies/testbias/}.  At the top level of the project run the following command: ``\texttt{ocpidev build hdl assembly testbias -\--hdl-platform matchstiq\_z1}''.  This should take about 15 minutes to complete. You can confirm that it succeeded by locating the \texttt{*.bit.gz} file in \path{container-testbias_matchstiq_z1_base/target-matchstiq_z1/}.\\
 
 \subsection{Running Network Mode}
 The default setup script should already set the \texttt{OCPI\_LIBRARY\_PATH} variable to point to the RCC workers that are required to execute the application, but it needs to be updated to point to the assembly that was built.  After running the \texttt{mynetsetup.sh} script, navigate to  \texttt{/mnt/ocpi\_assets/applications}. Update the \texttt{OCPI\_LIBRARY\_PATH} variable using the following command: \\ ``\texttt{export OCPI\_LIBRARY\_PATH=\$OCPI\_LIBRARY\_PATH:/mnt/ocpi\_assets/hdl/assemblies/}''
@@ -429,8 +438,10 @@ To view the output file, run the following command: ``\code{hexdump test.output 
 ~\\
 
 \begin{appendices}
+\section{Intermittent Errors}
+Some tests have had ``Segmentation Faults'' or ``Alignment Errors'' in certain scenarios on the Z1. This seems to happen when both USB ports are used to simultaneously transmit a large amount of data, \textit{e.g.} high log-level output to a USB serial console as well as NFS-mounted output files over a USB-to-Ethernet adapter. The default test setup avoids triggering this by limiting output that is fed to the user, but users should be aware of this issue if non-default test scenarios are attempted. If \texttt{ssh} is used to have all data routed through the USB-to-Ethernet adapter, this failure mode is avoided.
 \section{Using ISE instead of Vivado with the Matchstiq-Z1}
-It is recommended that you use the default toolset (Xilinx Vivado) to build Matchstiq-Z1 bitstreams with ANGRYVIPER. However, if you wish to use ISE instead, reference the README file in \path{<ocpiassets>/hdl/platforms/matchstiq_z1/}, and perform the following steps:
+It is recommended that you use the default toolset (Xilinx Vivado) to build Matchstiq-Z1 bitstreams with OpenCPI. However, if you wish to use ISE instead, reference the README file in \path{<ocpiassets>/hdl/platforms/matchstiq_z1/}, and perform the following steps:
 \begin{enumerate}
 \item{Modify the target part in \path{<ocpiassets>/hdl/platforms/matchstiq_z1/matchstiq_z1.mk} to use the ISE alias:
 \subitem \code{HdlPart\_matchstiq\_z1=xc7z\_ise\_alias\_020-1-clg484}}
@@ -438,6 +449,7 @@ It is recommended that you use the default toolset (Xilinx Vivado) to build Matc
 \subitem \code{ExportFiles=ise\_constraints/matchstiq\_z1.ucf ise\_constraints/matchstiq\_z1.ut matchstiq\_z1.mk}}
 \end{enumerate}
 % Bring in the kernel message snippet
+\section{Driver Notes}
 \input{../../../../../../doc/av/tex/snippets/Driver_Snippet.tex}
 %
 

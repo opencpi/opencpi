@@ -17,7 +17,7 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 $(if $(realpath $(OCPI_CDK_DIR)),,$(error The OCPI_CDK_DIR environment variable is not set correctly.))
-Containers=lime_dac_ts_sim_container
+Containers=lime_dac_ts_modelsim_container lime_dac_ts_xsim_container lime_dac_ts_isim_container
 DefaultContainers=
 Libraries+=misc_prims util_prims dsp_prims comms_prims
 include $(OCPI_CDK_DIR)/include/hdl/hdl-assembly.mk

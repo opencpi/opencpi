@@ -109,11 +109,11 @@
   
   <!-- RCC Frontend Proxies -->
   <!-- TX Chain -->
-  <!-- RX Chain -->
-  <Instance Component="ocpi.core.rx">
+  <Instance Component="ocpi.core.tx">
     <Property Name="TYPE_p" Value="fmcomms2"/>
   </Instance>
-  <Instance Component="ocpi.core.tx">
+  <!-- RX Chain -->
+  <Instance Component="ocpi.core.rx">
     <Property Name="TYPE_p" Value="fmcomms2"/>
   </Instance>
   

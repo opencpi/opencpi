@@ -37,6 +37,9 @@ ad9361_config_proxy:
 fmcomms_2_3_rx:
 	make -C ../fmcomms_2_3_rx.rcc
 
+fmcomms_2_3_tx:
+	make -C ../fmcomms_2_3_tx.rcc
+
 # custom make target which runs software-only tests (which run much faster than
 # the full software + hardware test), obviously this is a subset of the full
 # test which should be run for this worker (full test would be ./$(PROG) )
@@ -46,7 +49,7 @@ runswonly: buildswonly
 # mimicking targets defined in OpenCPI_Component_Development.pdf Section 13.9
 
 # "The make command is used with the following goals to invoke the phases:"
-build: buildswonly ad9361_config_proxy fmcomms_2_3_rx
+build: buildswonly ad9361_config_proxy fmcomms_2_3_rx fmcomms_2_3_tx
 	make -C assemblies Containers='cnt_1rx_0tx_bypassasm_fmcomms_2_3_lpc_LVDS_ml605 cnt_1rx_0tx_bypassasm_fmcomms_2_3_lpc_LVDS_zed' # only supporting ML605 LPC slot for now
 
 run: verify
@@ -64,7 +67,7 @@ runonprepare: run
 runonly: run
 
 verify: build
-	OCPI_LIBRARY_PATH=$(OCPI_LIBRARY_PATH):../../devices/ad9361_config_proxy.rcc/:../fmcomms_2_3_rx.rcc/:./assemblies/empty/container-empty_ml605_cfg_1rx_0tx_fmcomms_2_3_lpc_lvds_cnt_1rx_0tx_bypassasm_fmcomms_2_3_lpc_LVDS_ml605/:./assemblies/empty/container-empty_zed_cfg_1rx_0tx_fmcomms_2_3_lpc_lvds_cnt_1rx_0tx_bypassasm_fmcomms_2_3_lpc_LVDS_zed/ ./$(PROG)
+	OCPI_LIBRARY_PATH=$(OCPI_LIBRARY_PATH):../../devices/ad9361_config_proxy.rcc/:../fmcomms_2_3_rx.rcc/:../fmcomms_2_3_tx.rcc/:./assemblies/empty/container-empty_ml605_cfg_1rx_0tx_fmcomms_2_3_lpc_lvds_cnt_1rx_0tx_bypassasm_fmcomms_2_3_lpc_LVDS_ml605/:./assemblies/empty/container-empty_zed_cfg_1rx_0tx_fmcomms_2_3_lpc_lvds_cnt_1rx_0tx_bypassasm_fmcomms_2_3_lpc_LVDS_zed/ ./$(PROG)
 
 view:
 

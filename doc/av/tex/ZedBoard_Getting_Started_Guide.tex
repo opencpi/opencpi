@@ -21,7 +21,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{ZedBoard Getting Started Guide}
-\def\docVersion{1.2}
+\def\docVersion{1.3}
 %----------------------------------------------------------------------------------------
 \input{snippets/LaTeX_Header.tex}
 \date{Version \docVersion} % Force date to be blank and override date with version
@@ -47,7 +47,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 		    \hline
 		    v1.1 & Initial Release & 3/2017 \\
             \hline
-            v1.2 & Updated for ANGRYVIPER Release 1.2 & 8/2017 \\
+            v1.2 & Updated for OpenCPI Release 1.2 & 8/2017 \\
+            \hline
+            v1.3 & Updated for OpenCPI Release 1.3 & 2/2018 \\
             \hline
 			\end{tabularx}
 		\end{table}
@@ -60,14 +62,14 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \newpage
 
 \section{References}
-	This document assumes a basic understanding of the Linux command line (or ``shell'') environment.  The reference(s) in Table 1 can be used as an overview of ANGRYVIPER and may prove useful.
+	This document assumes a basic understanding of the Linux command line (or ``shell'') environment.  The reference(s) in Table 1 can be used as an overview of OpenCPI and may prove useful.
 \def\refskipocpiov{}
 \def\refcapbottom{}
 \input{snippets/References_Table}
 
 \newpage
 \section{Overview}
-This purpose of this document is to allow the user to install ANGRYVIPER on the ZedBoard Development Board.
+This purpose of this document is to allow the user to install OpenCPI on the ZedBoard Development Board.
 \section{Prerequisites}
 \begin{flushleft}
 This guide assumes that the following RPMs are installed:  \\
@@ -79,21 +81,28 @@ This guide assumes that the following RPMs are installed:  \\
 			\rowcolor{blue}
 			\textbf{RPM Name} & \textbf{Description} \\
 			\hline
-			All prerequsite RPMs & These packages have ANGRYVIPER-specific patches and are provided as RPMs. This packaging ensures they will not conflict with other installed copies by using a nonstandard installation location of \path{/opt/opencpi/prerequisites}. \\
-		    \hline
-		    angryviper-1.2.0-*.el7.centos.x86\_64 & Base installation RPM includes the runtime portion of the Component Development Kit (CDK), scripts for creating the user's workspace, and limited documentation. \\
-		    \hline
-		    angryviper-devel-*.el7.centos.x86\_64 & Additional header files and scripts for developing new assets as HDL and/or RCC. \\
-		    \hline
-		    angryviper-sw-platform-xilinx13\_3-*.el7.centos.noarch & Additional files necessary to build the framework targeting the xilinx13\_3 software platform. \\
-		    \hline
-		    angryviper-hw-platform-zed-*.el7.centos.noarch & Additional files necessary to build the framework targeting specific hardware platforms. Automatically requires the zed sw-platform package. \\
-		    \hline
+			All prerequisite RPMs & These packages have OpenCPI-specific patches and are provided as RPMs. This packaging ensures they will not conflict with other installed copies by using a nonstandard installation location of \path{/opt/opencpi/prerequisites}. \\
+				\hline
+				\small{\code{opencpi-*.x86\_64.rpm}} &
+								Base installation RPM includes the runtime portion of the Component Development Kit (CDK), scripts for creating the user's workspace, limited documentation, and a read-only \code{ocpi.core} Project containing framework essential components, workers, platforms, etc. \\
+				\hline
+				\small{\code{opencpi-devel-*.x86\_64.rpm}} &
+				Additional header files and scripts for developing new assets as HDL and/or RCC. \\
+				\hline
+				\small{\code{opencpi-hw-platform-zed-*.noarch.rpm}} &
+				Additional files necessary to build the framework targeting specific hardware platforms. Automatically requires the zed sw-platform package. \\
+				\hline
+				\small{\code{opencpi-project-assets*.noarch.rpm}} &
+				The \texttt{ocpi.assets} Project, which contains the remaining supported OpenCPI resources, e.g. additional Platform Support, Workers, Demo Applications, etc. \\
+				\hline
+				\small{\code{opencpi-sw-platform-xilinx13\_3-*.noarch.rpm}} &
+				Additional files necessary to build the framework targeting the xilinx13\_3 software platform. \\
+				\hline
 			\end{tabularx}
 \end{table}
-This guide assumes that the Core and Assets projects have user copies and have been registered. Creating user copies of projects is done by using the new\_projet\_source script as described in the Getting Started Guide.  registering projects is done by running the command \code{ocpidev register project} at the top level of the project.   \\ \bigskip
+This guide assumes that the Core and Assets projects have user copies and have been registered. Creating user copies of projects is done by using the new\_project\_source script as described in the Getting Started Guide.  registering projects is done by running the command \code{ocpidev register project} at the top level of the project.   \\ \bigskip
 
-The development board that is expected to be used is Digilent's ZedBoard. ANGRYVIPER has been tested on ZedBoard Rev. C and Rev. D. Each has separate limitations (described in Myriad-RF\_1\_Zipper\_Limitations.pdf). An Ethernet cable will need to be be plugged in to the Ethernet port on the board.  The ZedBoard gets an IP Address by using DHCP.  It is a requirement if operating in network mode (discussed later) that the Ethernet cable is connected to a network that uses DHCP. \\ \bigskip
+The development board that is expected to be used is Digilent's ZedBoard. OpenCPI has been tested on ZedBoard Rev. C and Rev. D. Each has separate limitations (described in Myriad-RF\_1\_Zipper\_Limitations.pdf). An Ethernet cable will need to be be plugged in to the Ethernet port on the board.  The ZedBoard gets an IP Address by using DHCP.  It is a requirement if operating in network mode (discussed later) that the Ethernet cable is connected to a network that uses DHCP\footnote{Static IP addresses are possible but have not been integrated with the OpenCPI startup procedure at this time.}.  \\ \bigskip
 
 There is a micro-USB serial port on the back of the ZedBoard labeled UART. A Male micro-USB cable will need to be plugged into this port to access the serial connection.
 \begin{figure}[ht]
@@ -108,7 +117,7 @@ There is a micro-USB serial port on the back of the ZedBoard labeled UART. A Mal
 \end{figure}
 
 \newpage
-On one side of the development board, there is a FMC LPC slot. Optionally, this can be used to connect plug-in modules. ANGRYVIPER has been tested with Lime Microsystems' Zipper card with the MyriadRF-1, Analog devices FMCOMMS2, and Analog devices FMCOMMS3 connected to the ZedBoard.\\   \bigskip
+On one side of the development board, there is a FMC LPC slot. Optionally, this can be used to connect plug-in modules. OpenCPI has been tested with Lime Microsystems' Zipper card with the MyriadRF-1, Analog devices FMCOMMS2, and Analog devices FMCOMMS3 connected to the ZedBoard.\\   \bigskip
 
 Below the FMC LPC slot (underneath the board), is the SD card slot you will be using throughout this guide.
 \begin{figure}[ht]
@@ -124,20 +133,24 @@ Below the FMC LPC slot (underneath the board), is the SD card slot you will be u
 \end{flushleft}
 
 \section{Script Setup}
-There are two modes for running applications on any embedded radio or development board: network mode and standalone mode.  Network mode is when the development system hosts the ANGRYVIPER tree as an NFS server to the ZedBoard as an NFS client.  This configuration provides easy and dynamic access to all of ANGRYVIPER, and presumably any components and applications.  Standalone mode is when all the artifacts are located on the board's local storage (\textit{e.g.} SD card) and no network connection is required.  This is a better \textit{deployment} mode, and is better for situations where a network connection is not possible or practical.  Network mode is generally preferred when it is possible because it makes the development process easier than standalone mode.
+There are two modes for running applications on any embedded radio or development board: network mode and standalone mode.  Network mode is when the development system hosts the OpenCPI tree as an NFS server to the ZedBoard as an NFS client.  This configuration provides easy and dynamic access to all of OpenCPI, and presumably any components and applications.  Standalone mode is when all the artifacts are located on the board's local storage (\textit{e.g.} SD card) and no network connection is required.  This is a better \textit{deployment} mode, and is better for situations where a network connection is not possible or practical.  Network mode is generally preferred when it is possible because it makes the development process easier than standalone mode.
 
 \begin{flushleft}
 For each mode, there are separate startup scripts that are run on the board. These scripts will need to be modified for each user's specific setup and file structure.  There are starting points for these scripts that are provided by the framework.  For networked mode the script is located at \path{/opt/opencpi/boot_support/zed/OpenCPI-SD-zed/opencpi/default_mynetsetup.sh}.  For standalone mode, the script is located at \path{/opt/opencpi/boot_support/OpenCPI-SD-zed/opencpi/default_mysetup.sh}.  These scripts need to be renamed to \texttt{mynetsetup.sh} and \texttt{mysetup.sh} before they are copied over to the SD card in Section \ref{sec:HW_Setup}. \\ \bigskip
 
+\subsection{Setup for Either Mode}
+\texttt{If Linux system time is not required to be accurate, you can skip this step.} \\
+\medskip \medskip
 \textit{For either usage mode}, the following settings that are passed by \texttt{mynetsetup.sh/mysetup.sh} to the \texttt{zynq\_net\_setup.sh/zynq\_setup.sh} scripts \textit{might} need to be modified:
 \end{flushleft}
 
 \begin{itemize}
- \item The system to be used as a time server. Defaulted to ``time.nist.gov''. Change this if you have a local time sever that supports RFC-868.
+ \item The system to be used as a time server. Defaulted to ``time.nist.gov''. Change this if you have a local time server that supports RFC-868.
  \item The current timezone description. Defaulted to ``EST5EDT,M3.2.0,M11.1.0''.  Change this if required for the local timezone. See \texttt{man tzset} on the host PC for more information.
- \item If you do not have a time server, or cannot connect to a time server, you will need to manually set the time at start up.  Use the date command to manually set the Linux system time. See \texttt{man date} on the host PC for more information.  If Linux system time is not required to be accurate, you can skip this step.
+ \item If you do not have a time server, or cannot connect to a time server, you will need to manually set the time at start up.  Use the \code{date} command to manually set the Linux system time. See \texttt{man date} on the host PC for more information.
  \end{itemize}
 
+\subsection{Setup for Network Mode}
 \begin{flushleft}
 \textit{When using Network Mode}, the following modifications are required:
 \end{flushleft}
@@ -154,7 +167,8 @@ mount -t nfs -o udp,nolock,soft,intr $1:/home/user/ocpiAssets /mnt/ocpi_assets
 \end{enumerate}
 
 \label{sec:buildNow}
-\textit{For Standalone Mode}, all ANGRYVIPER artifacts required to run any applications on the ZedBoard need to be copied onto the SD card.  So, you must build these artifacts earlier when operating in Standalone Mode. Perform the steps in Section \ref{sec:buildverify}  now. The artifacts created will be copied over to the SD card in Section \ref{sec:HW_Setup}. In general, you will want to copy any required \texttt{.so} (RCC workers), \texttt{.bit.gz} (hdl assemblies), and application XMLs or executables onto the SD card.
+\subsection{Setup for Standalone Mode}
+\textit{For Standalone Mode}, all OpenCPI artifacts required to run any applications on the ZedBoard need to be copied onto the SD card.  So, you must build these artifacts earlier when operating in Standalone Mode. Perform the steps in Section \ref{sec:buildverify}  now. The artifacts created will be copied over to the SD card in Section \ref{sec:HW_Setup}. In general, you will want to copy any required \texttt{.so} (RCC workers), \texttt{.bit.gz} (hdl assemblies), and application XMLs or executables onto the SD card.
 
 \subsection{Multiple ZedBoards on the same network}
 If you plan to have multiple ZedBoards on one network, you will need to make a change to the zynq startup scripts. This is necessary because by default the ZedBoards will all have the same MAC address. To resolve this, uncomment the following lines in the zynq\_net\_setup.sh and zynq\_setup.sh scripts:
@@ -243,11 +257,12 @@ The SD card file structure should be as follows when these steps have been compl
 
 \subsection*{Serial setup}
 By default, the USB to serial adapter will connect as read-only unless \texttt{udev} rules are added to have the device connect as read write.  Copy the file from the rpm install \path{/opt/opencpi/boot_support/zed/udev.rules/98-zedboard.rules} to \path{/etc/udev/rules.d/}.  This will cause the USB to Serial adapter to connect as \texttt{/dev/zed0} with read and write permissions for all users.  To connect to the serial port, use the command ``\texttt{screen /dev/zed0 115200}''.
+\newpage
 \subsection*{Boot the ZedBoard from the SD card}
 \begin{enumerate}
 \item Remove power from the ZedBoard unit.
 \item Ensure jumpers are configured correctly
-\subitem To boot from the SD card, jumpers J10, J9, and J8 need to be set to 1, 1, and 0 respectively.
+\subitem To boot from the SD card, jumpers JP10, JP9, and JP8 need to be set to 3.3V, 3.3V, and GND respectively as shown below.
 \begin{figure}[ht]
 	\centerline{\includegraphics[scale=0.15]{zed_top}}
 	\caption{Top View of the ZedBoard with J10, J9, J8 Set}
@@ -267,7 +282,7 @@ By default, the USB to serial adapter will connect as read-only unless \texttt{u
 %
 
 \subsubsection*{Power cycle the ZedBoard}
-Make sure the USB cable is plugged into the UART micro-USB port. The ZedBoard should now boot a valid ANGRYVIPER environment.  The user name and password for the development board are both ``root''.  A successful boot up screen will look as follows:
+Make sure the USB cable is plugged into the UART micro-USB port and connected to the network if applicable . The ZedBoard should now boot a valid OpenCPI environment.  The user name and password for the development board are both ``root''.  A successful boot up screen will look as follows:
 
 \begin{figure}[H]
 	\centerline{\includegraphics[scale=0.5]{zed_boot}}
@@ -276,12 +291,12 @@ Make sure the USB cable is plugged into the UART micro-USB port. The ZedBoard sh
 \end{figure}
 \subsubsection*{Using the ZedBoard in Network Mode}
 \begin{flushleft}
-Every time the development board is rebooted, the user is required to run the \texttt{mynetsetup.sh}, which configures the system for ANGRYVIPER with support for network/NFS mode\footnote{This script calls the \texttt{zynq\_net\_setup.sh} script, which is not user-modifiable.}. The user passes the network address of the development system in as the only argument to \texttt{mynetsetup.sh}.
+Every time the development board is rebooted, the user is required to run the \texttt{mynetsetup.sh}, which configures the system for OpenCPI with support for network/NFS mode\footnote{This script calls the \texttt{zynq\_net\_setup.sh} script, which is not user-modifiable.}. The user passes the network address of the development system in as the only argument to \texttt{mynetsetup.sh}.
 \end{flushleft}
 \begin{flushleft}
 \newpage
 After the development board is booted, the first thing that needs to be done is to source the \texttt{mynetsetup.sh} script with\\
-\leavevmode{\parindent=3em\indent}\code{. /mnt/card/mynetsetup.sh XX.XX.XX.XX}\\
+\leavevmode{\parindent=3em\indent}\code{source /mnt/card/mynetsetup.sh XX.XX.XX.XX}\\
 and changing XX.XX.XX.XX to the IP address of the NFS host (your development machine, \textit{e.g.} 192.168.1.10). A successful run is shown in Figure~\ref{fig:netsetup}.
 \end{flushleft}
 \begin{figure}[H]
@@ -294,7 +309,7 @@ and changing XX.XX.XX.XX to the IP address of the NFS host (your development mac
 All artifacts for any applications or tests that need to be located on the SD card must be in the \texttt{opencpi/artifacts} folder.  All of the helper utilities such as \texttt{ocpirun} and \texttt{ocpihdl} are already located on the SD card and do not need to be copied over to the ZedBoard platform.
 
 \subsubsection*{Power cycle the ZedBoard}
-The ZedBoard should now boot a valid ANGRYVIPER environment.  The user name and password for the development board are both ``root''.  A successful boot up screen will look as follows:
+The ZedBoard should now boot a valid OpenCPI environment.  The user name and password for the development board are both ``root''.  A successful boot up screen will look as follows:
 \begin{figure}[H]
 	\centerline{\includegraphics[scale=0.5]{zed_boot}}
 	\caption{Successful Boot}
@@ -303,11 +318,11 @@ The ZedBoard should now boot a valid ANGRYVIPER environment.  The user name and 
 \newpage
 \subsubsection*{Using the ZedBoard in Standalone Mode}
 \begin{flushleft}
-Every time the development board is rebooted, the user is required to run the \texttt{mysetup.sh}, which configures the system for ANGRYVIPER\footnote{This script calls the \texttt{zynq\_setup.sh} script, which is not user-modifiable.}. Any time that a new version of ANGRYVIPER is released, the SD card will need to be recreated in order to update the artifacts and the executables that are stored on the SD card.
+Every time the development board is rebooted, the user is required to run the \texttt{mysetup.sh}, which configures the system for OpenCPI\footnote{This script calls the \texttt{zynq\_setup.sh} script, which is not user-modifiable.}. Any time that a new version of OpenCPI is released, the SD card will need to be recreated in order to update the artifacts and the executables that are stored on the SD card.
 \end{flushleft}
 \begin{flushleft}
 After the development board is booted, the first thing that needs to be done is to source the \texttt{mysetup.sh} script with\\
-\leavevmode{\parindent=3em\indent}\code{. /root/opencpi/mysetup.sh}\\
+\leavevmode{\parindent=3em\indent}\code{source /mnt/card/opencpi/mysetup.sh}\\
 A successful run of this will be as follows:
 \end{flushleft}
 
@@ -331,8 +346,10 @@ Then the Zed platform needs to be built this is located in the Assets project.  
 There is an existing assembly in the assets project that is the bias worker with its inputs and outputs connected to software.  This assembly needs to be built for ``zed'' platform. It is located in \path{<Assets_Project>/hdl/assemblies/testbias/}.  At the top level of the project run the following command: ``\texttt{ocpidev build hdl assembly testbias -\--hdl-platform zed}''.  This should take about 15 minutes to complete. You can confirm that it succeeded by locating the \texttt{*.bit.gz} file in \path{container-testbias_zed_base/target-zed/}.\\
 \newpage
 \subsection{Running Network Mode}
-The default setup script should already set the \texttt{OCPI\_LIBRARY\_PATH} variable to point to the RCC workers that are required to execute the application, but it needs to be updated to point to the assembly that was built.  After running the \texttt{mynetsetup.sh} script, navigate to  \texttt{/mnt/ocpi\_coreproject/applications}. Update the \texttt{OCPI\_LIBRARY\_PATH} variable using the following command: \\ ``\texttt{export OCPI\_LIBRARY\_PATH=\$OCPI\_LIBRARY\_PATH:/mnt/ocpi\_coreproject/hdl/assemblies/}''
-In order to run the application, use the following command: ``\texttt{ocpirun -v -t 1 -d -m bias=hdl bias.xml}'' The output should be as follows:
+The default setup script should already set the \texttt{OCPI\_LIBRARY\_PATH} variable to point to the RCC workers that are required to execute the application, but it needs to be updated to point to the assembly that was built.  After running the \texttt{mynetsetup.sh} script, navigate to  \texttt{/mnt/ocpi\_core/applications}. Update the \texttt{OCPI\_LIBRARY\_PATH} variable using the following command: \\
+\texttt{export OCPI\_LIBRARY\_PATH=\$OCPI\_LIBRARY\_PATH:/mnt/ocpi\_assets/hdl/assemblies/}\\
+
+\flushleft In order to run the application, use the following command: ``\texttt{ocpirun -v -t 1 -d -m bias=hdl bias.xml}'' The output should be as follows:
 \begin{figure}[H]
 	\centerline{\includegraphics[scale=0.5]{zed_net_bias}}
 	\caption{Successful Network Mode Execution}
@@ -360,7 +377,8 @@ To view the output file, run the following command: ``\code{hexdump test.output 
 \newpage
 \subsection{Running Standalone Mode}
 \begin{flushleft}
-The default setup script should already set the \texttt{OCPI\_LIBRARY\_PATH} variable to all the required locations for the framework to execute the application.  All three of the artifacts that are located on the SD card are mounted at \texttt{/mnt/card/opencpi/artifacts}.  After running \texttt{mysetup.sh}, navigate to \texttt{/mnt/card/opencpi/xml}.  In order to run the application, use the following command: ``\texttt{ocpirun -v -t 1 -d -m bias=hdl bias.xml}'' The output should be as follows:
+The default setup script should already set the \texttt{OCPI\_LIBRARY\_PATH} variable to all the required locations for the framework to execute the application.  All three of the artifacts that are located on the SD card are mounted at \texttt{/mnt/card/opencpi/artifacts}.  After running \texttt{mysetup.sh}, navigate to \texttt{/mnt/card/opencpi/xml}.\\
+	In order to run the application, use the following command: ``\texttt{ocpirun -v -t 1 -d -m bias=hdl bias.xml}'' The output should be as follows:
 \end{flushleft}
 \begin{figure}[H]
 	\centerline{\includegraphics[scale=0.5]{zed_bias}}
@@ -389,8 +407,9 @@ To view the output file, run the following command: ``\code{hexdump test.output 
 
 \begin{appendices}
 \section{Using ISE instead of Vivado with the ZedBoard}
-It is recommended that you use the default toolset (Xilinx Vivado) to build ZedBoard bitstreams with ANGRYVIPER. However, if you wish to use ISE instead, you can use the \code{zed\_ise} platform and \code{zynq\_ise} target. So, instead of ``\code{ocpidev build -\--hdl-platform zed}'', run ``\code{ocpidev build -\--hdl-platform zed\_ise}''. Instead of ``\code{ocpidev build hdl platform zed}'', run ``\code{ocpidev build hdl platform zed\_ise}''.  Instead of ``\code{ocpidev build hdl assembly testbias -\--hdl-platform zed}'', run ``\code{ocpidev build hdl assembly testbias -\--hdl-platform zed\_ise}''. Additionally, you will have to copy the \code{system.xml} file located in \path{<Assets_Project>/hdl/platforms/zed_ise/sd_card/} to the \code{opencpi} directory of the SD card.
+It is recommended that you use the default toolset (Xilinx Vivado) to build ZedBoard bitstreams with OpenCPI. However, if you wish to use ISE instead, you can use the \code{zed\_ise} platform and \code{zynq\_ise} target. So, instead of ``\code{ocpidev build -\--hdl-platform zed}'', run ``\code{ocpidev build -\--hdl-platform zed\_ise}''. Additionally, you will have to copy the \code{system.xml} file located in \path{<Assets_Project>/hdl/platforms/zed_ise/sd_card/} to the \code{opencpi} directory of the SD card.
 % Bring in kernel message snippet
+\section{Driver Notes}
 \input{snippets/Driver_Snippet.tex}
 %
 \end{appendices}

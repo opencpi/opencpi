@@ -37,7 +37,7 @@ bool did_pass_test_ocpi_app_default_value_rf_gain_dB()
       app.initialize();
       app.start();
       app.stop();
-      did_pass = did_pass_test_expected_value_rf_gain_dB(app, 0., (ocpi_ulong_t) 0);
+      did_pass = did_pass_test_expected_value_rf_gain_dB(app, -1., (ocpi_ulong_t) 1000);
       if(!did_pass) { return false; }
     }
     
@@ -46,7 +46,7 @@ bool did_pass_test_ocpi_app_default_value_rf_gain_dB()
       app.initialize();
       app.start();
       app.stop();
-      did_pass = did_pass_test_expected_value_rf_gain_dB(app, 0., (ocpi_ulong_t) 0);
+      did_pass = did_pass_test_expected_value_rf_gain_dB(app, -1., (ocpi_ulong_t) 1000);
       if(!did_pass) { return false; }
     }
   }

@@ -61,7 +61,7 @@ ifeq "$(GIT_VERSION)" ''
   endif
   RELEASE_TAG=_$(shell printf %05d $(shell expr `date -u +"%s"` / 360 - 4172750))
   # When bumping this, don't miss configure.ac as well (AV-3433)
-  RPM_VERSION:=1.3.0
+  RPM_VERSION:=1.3.1
 else
   # This is a specific version branch
   RELEASE_TAG=%{nil}
@@ -140,6 +140,13 @@ cleancheck:
 	echo Please run \"make -j distclean\" at the top level and try again.; \
 	exit 99; \
 	fi
+ifneq "$(strip $(PROJ_FOUND))" ''
+	echo "Found partially built or exported projects."
+	git clean -ndx ../projects
+	echo "Recommended solution (will remove files listed above):"
+	echo 'git clean -fdx ../projects'
+	exit 99
+endif
 ifneq "$(strip $(SO_FOUND))" ''
 	echo "Found shared objects in the following directories:"
 	echo "$(SO_FOUND)"
@@ -169,13 +176,6 @@ ifneq "$(strip $(GEN_FOUND))" ''
 	echo "Please remove them before attempting to build an RPM."
 	echo "Recommended solution:"
 	echo 'for a in $(GEN_FOUND); do rm -rf $${a}/gen/; done'
-	exit 99
-endif
-ifneq "$(strip $(PROJ_FOUND))" ''
-	echo "Found partially built or exported projects."
-	git clean -ndx ../projects
-	echo "Recommended solution (will remove files listed above):"
-	echo 'git clean -fdx ../projects'
 	exit 99
 endif
 ifneq "$(OCPI_CDK_DIR)" ""
@@ -229,10 +229,10 @@ buildtar-%: phony_explicit cleanrpmbuild
 	  --warning=no-file-removed || :
 	@# Append the tarball with the assets applications directory needed for SD cards. The rest of assets is excluded.
 	$(AT)tar -C $(TDIR) -rhf $(TAR_BASE).tar ./$(TAR_BASE)/projects/assets/applications || :
-	$(AT)# Append any real directory named "ocpi", e.g. hdl/primitives/ocpi but not top-level ocpi link to tools/cdk/export
+	@# Append any real directory named "ocpi", e.g. hdl/primitives/ocpi but not top-level ocpi link to tools/cdk/export
 	$(AT)(cd $(TDIR) && find -L . -name ocpi -not -xtype l 2>/dev/null) | xargs -r tar -C $(TDIR) -rhf $(TAR_BASE).tar
 	$(AT)cp $(TAR_BASE).tar ~/rpmbuild/SOURCES
-	$(AT)# Note, we don't rm -rf and accidentally nuke the checkout!
+	@# Note, we don't rm -rf and accidentally nuke the checkout!
 	$(AT)rm $(TDIR)/$(TAR_BASE)
 	$(AT)rmdir $(TDIR)
 

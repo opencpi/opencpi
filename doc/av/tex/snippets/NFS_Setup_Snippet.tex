@@ -1,5 +1,3 @@
-% Any changes to this document should be made in both opencpi.git AND ocpiassets
-
 \iffalse
 This file is protected by Copyright. Please refer to the COPYRIGHT file
 distributed with this source distribution.
@@ -65,9 +63,8 @@ From the host, restart the services that have modified for the changes to take e
 \subsubsection{CentOS~7}
 \begin{minipage}{\linewidth}
 From the host, install the necessary tools using yum:
-\begin{verbatim}
-% sudo yum install nfs-utils nfs-utils-lib
-\end{verbatim}
+
+\verb+% sudo yum install nfs-utils+ \footnote{nfs-utils-lib was rolled into nfs-utils starting with Centos 7.2, if using eariler versions of Centos 7 nfs-utils-lib will need to be installed}
 \end{minipage}
 ~\\
 

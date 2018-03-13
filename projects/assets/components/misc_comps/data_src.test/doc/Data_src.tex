@@ -98,6 +98,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \lhead{\small{\docTitle}}
 
 \def\comp{temp}
+\edef\ecomp{temp}
 % do not delete this line, it is used by the auto gen script to insert latex code
 \def\comp{data\_src}
 %GEN_COMPLC_NAME
@@ -123,7 +124,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Release Date      & June 2017 \\
 	\hline
-	Component Library & ocpiassets.misc\_comps \\
+	Component Library & ocpi.assets.misc\_comps \\
 	\hline
 	Workers           & \comp.hdl \\
 	\hline
@@ -162,7 +163,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
       every edge/.style={draw,thick}
     ]
     \node[rectangle,ultra thick,draw=black,fill=blue](R2){\Comp};
-    \node[rectangle,draw=white,fill=white](R4)[right= of R2]{``out" \\ Complex signed samples (Q0.15 I, Q0.15 Q)};
+    \node[rectangle,draw=white,fill=white](R4)[right= of R2]{``out'' \\ Complex signed samples (Q0.15 I, Q0.15 Q)};
     \node[rectangle,draw=white,fill=white](R5)[above= of R2]{\verb+DATA_BIT_WIDTH_p,+ \\ \verb+LFSR_POLYNOMIAL_p,+ \\ \verb+LFSR_SEED_p,+ \\ \verb+ZLM_WHEN_NUM_SAMPLES_REACHED_p+};
     \path[->]
     (R2)edge [] node [] {} (R4)
@@ -270,8 +271,7 @@ StreamInterface & out & 32 & - & -\\
 
 \section*{Performance and Resource Utilization}
 \subsubsection*{\comp.hdl}
-Table entries are a result of building the worker with the following parameter sets:\
-
+\input{../../\ecomp.hdl/utilization.inc}
 %data_src.hdl/target-stratix4/data_src.merge.rpt
 \iffalse
 +-------------------------------------------------------+

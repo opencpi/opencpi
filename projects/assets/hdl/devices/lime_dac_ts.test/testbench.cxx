@@ -98,8 +98,8 @@ int main(int argc, char **argv) {
     printf("App initialized.\n");
     // here is where a runtime property is set, but could also happen after
     // start following some amount of time but before stop
-    app.setProperty("lime_dac_em", "tx_clk_rate", clk_rate.c_str());
-    app.setProperty("lime_dac_em", "numOutputSamples", num_output_samples.c_str());
+    app.setProperty("lime_dac_ts_em", "tx_clk_rate", clk_rate.c_str());
+    app.setProperty("lime_dac_ts_em", "numOutputSamples", num_output_samples.c_str());
 
     // dump all inital properties following initalization but before start
     std::string name, value;

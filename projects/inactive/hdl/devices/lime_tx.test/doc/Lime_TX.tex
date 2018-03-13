@@ -146,9 +146,9 @@ The Lime LMS6002D register map is realized via a rawprops port whose communicati
 		]
 		\node[rectangle,ultra thick,draw=black,fill=blue](R2){\Comp};
 		\node[rectangle,draw=white,fill=white](R3)[below= of R2]{Signals to/from Lime \\ See signal table};
-		\node[rectangle,draw=white,fill=white](R4)[left= of R2]{``event\_in" \\ TX on/off events};
+		\node[rectangle,draw=white,fill=white](R4)[left= of R2]{``event\_in'' \\ TX on/off events};
 		\node[rectangle,draw=white,fill=white](R5)[above= of R2]{\verb+pin_control_p+\\\verb+other_present+\\\verb+Lime LMS6002D Register Map+};
-		\node[rectangle,draw=white,fill=white](R6)[right= of R2]{``raw\_props" \\ Raw property interface to SPI subdevice};
+		\node[rectangle,draw=white,fill=white](R6)[right= of R2]{``raw\_props'' \\ Raw property interface to SPI subdevice};
 		\path[->]
 		(R3)edge []	node [] {} (R2)
 		(R4)edge []	node [] {} (R2)

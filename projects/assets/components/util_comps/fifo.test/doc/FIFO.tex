@@ -95,6 +95,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \lhead{\small{\docTitle}}
 
 \def\comp{fifo}
+\edef\ecomp{fifo}
 \def\Comp{FIFO}
 \graphicspath{ {figures/} }
 
@@ -112,9 +113,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
   \hline
   Version           & \docVersion                                                 \\
   \hline
-  Release Date      & August 2017                                               \\
+  Release Date      & February 2018                                               \\
   \hline
-  Component Library & ocpiassets.util\_comps                                        \\
+  Component Library & ocpi.assets.util\_comps                                        \\
   \hline
   Workers           & \comp.hdl                                                    \\
   \hline
@@ -148,8 +149,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
       every edge/.style={draw,thick}
     ]
     \node[rectangle,ultra thick,draw=black,fill=blue](R2){\Comp};
-    \node[rectangle,draw=white,fill=white](R3)[left= of R2]{``in" \\ Complex signed samples (Q0.15 I, Q0.15 Q)};
-    \node[rectangle,draw=white,fill=white](R4)[right= of R2]{``out" \\ Complex signed samples (Q0.15 I, Q0.15 Q)};
+    \node[rectangle,draw=white,fill=white](R3)[left= of R2]{``in'' \\ Complex signed samples (Q0.15 I, Q0.15 Q)};
+    \node[rectangle,draw=white,fill=white](R4)[right= of R2]{``out'' \\ Complex signed samples (Q0.15 I, Q0.15 Q)};
     \node[rectangle,draw=white,fill=white](R5)[above= of R2]{\verb+FIFO_DEPTH_p,+ \\ \verb+ZLM_WHEN_ONESHOT_DONE_p+};
     \path[->]
     (R3)edge [] node [] {} (R2)
@@ -236,8 +237,6 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 \section*{Performance and Resource Utilization}
 \subsubsection*{\comp.hdl}
-Table entries are a result of building the worker with the following parameter sets:\
-
 %fifo.hdl/target-stratix4/fifo.merge.rpt
 \iffalse
 +--------------------------------------------------------+
@@ -492,42 +491,7 @@ Speed Grade: -3
    Maximum combinational path delay: 1.609ns
 \fi
 
-\begin{itemize}
-  \item \verb+FIFO_DEPTH_p=8192+
-  \item \verb+ZLM_WHEN_ONESHOT_DONE_p=false+
-\end{itemize}
-\begin{scriptsize}
-  \begin{tabular}{|c|c|c|c|c|c|c|c|}
-    \hline
-    \rowcolor{blue}
-    Device                      & Registers & LUTs & Fmax        & Memory/Special Functions & GCLK & I/O & Design Suite    \\
-    \hline
-    Stratix4 EP4SGX230K-C2-F40  & 260       & 284  & -           & -                        & 1    & 171 &     Quartus 12.1 SP1\\
-    \hline
-    Virtex6 XC6VLX240T-1-FF1156 & 178       & 8028 & 254 MHz     & -                        & 1    & 171 & ISE 14.7        \\
-    \hline
-    Zynq XC7Z020-1-CLG484       & 178       & 8012 & 307 MHz     & -                        & 1    & 171 & ISE 14.7        \\
-    \hline
-  \end{tabular}
-\end{scriptsize}
-\begin{itemize}
-  \item \verb+FIFO_DEPTH_p=8192+
-  \item \verb+ZLM_WHEN_ONESHOT_DONE_p=true+
-\end{itemize}
-\begin{scriptsize}
-  \begin{tabular}{|c|c|c|c|c|c|c|c|}
-    \hline
-    \rowcolor{blue}
-    Device                      & Registers & LUTs & Fmax        & Memory/Special Functions & GCLK & I/O & Design Suite    \\
-    \hline
-    Stratix4 EP4SGX230K-C2-F40  & 260       & 283  & -           & -                        & 1    & 171 &     Quartus 12.1 SP1\\
-    \hline
-    Virtex6 XC6VLX240T-1-FF1156 & 178       & 8018 & 253 MHz     & -                        & 1    & 171 & ISE 14.7        \\
-    \hline
-    Zynq XC7Z020-1-CLG484       & 178       & 8015 & 307 MHz     & -                        & 1    & 171 & ISE 14.7        \\
-    \hline
-  \end{tabular}
-\end{scriptsize}
+\input{../../\ecomp.hdl/utilization.inc}
 
 \section*{Test and Verification}
 \begin{flushleft}
@@ -535,4 +499,3 @@ For verification, multiple test files are generated of varying lengths. Each tes
 \end{flushleft}
 
 \end{document}
-

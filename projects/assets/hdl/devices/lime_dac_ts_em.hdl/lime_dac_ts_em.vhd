@@ -19,7 +19,7 @@
 library IEEE, ocpi;
 use IEEE.std_logic_1164.all, IEEE.numeric_std.all, ocpi.types.all, ocpi.wci.all;
 library util; use util.util.all;
-architecture rtl of lime_dac_em_worker is
+architecture rtl of lime_dac_ts_em_worker is
 
   signal adc_give        : std_logic;
   signal som             : std_logic;

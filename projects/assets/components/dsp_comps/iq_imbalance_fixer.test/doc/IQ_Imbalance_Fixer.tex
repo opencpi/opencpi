@@ -88,13 +88,14 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Component Data Sheet}
-\def\docVersion{1.2}
+\def\docVersion{1.3}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
 \lhead{\small{\docTitle}}
 
 \def\comp{iq\_imbalance\_fixer}
+\edef\ecomp{iq_imbalance_fixer}
 \def\Comp{IQ Imbalance Fixer}
 \graphicspath{ {figures/} }
 \usepackage[justification=centering]{caption}
@@ -113,9 +114,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Version           & v\docVersion \\
 	\hline
-	Release Date      & August 2017 \\
+	Release Date      & February 2018 \\
 	\hline
-	Component Library & ocpiassets.dsp\_comps                                        \\
+	Component Library & ocpi.assets.dsp\_comps                                        \\
 	\hline
 	Workers           & \comp.hdl                                                    \\
 	\hline
@@ -159,8 +160,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 				every edge/.style={draw,thick}
 			]
 			\node[rectangle,ultra thick,draw=black,fill=blue](R2){\Comp};
-			\node[rectangle,draw=white,fill=white](R3)[left= of R2]{``in" \\ Signed complex samples};
-			\node[rectangle,draw=white,fill=white](R4)[right= of R2]{``out" \\ Signed complex samples};
+			\node[rectangle,draw=white,fill=white](R3)[left= of R2]{``in'' \\ Signed complex samples};
+			\node[rectangle,draw=white,fill=white](R4)[right= of R2]{``out'' \\ Signed complex samples};
 			\node[rectangle,draw=white,fill=white](R5)[above= of R2]{\verb+enable, update, log2_averaging_length+\\ \verb+neg_log2_loop_gain, peak, messageSize+};
 			\path[->]
 			(R3)edge []	node [] {} (R2)
@@ -176,10 +177,6 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 		Only one finite-state machine (FSM) is implemented by this worker. The FSM supports Zero-Length Messages.
 	\end{flushleft}
 	{\centering\captionsetup{type=figure}\includegraphics[scale=0.6]{zlm_fsm}\par\captionof{figure}{Zero-Length Message FSM}\label{fig:zlm_fsm}}
-        \begin{flushleft}
-                Note: In future releases this finite-state machine will be replaced with a register-delay based mechanism, currently exemplified in the dc offset filter
-        \end{flushleft}
-
 	\newpage
 
 	\section*{Source Dependencies}
@@ -270,30 +267,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 	\section*{Performance and Resource Utilization}
 	\subsubsection*{\comp.hdl}
-	Table entries are a result of building the worker with the following parameter set:\
-	\begin{itemize}
-		\item \verb+DATA_WIDTH_p+=16
-		\item \verb+ACC_PREC_p+=34
-		\item \verb+PEAK_MONITOR_p+=true
-	\end{itemize}
-	\begin{scriptsize}
-
-		\begin{tabular}{|c|c|c|c|c|c|}
-			\hline
-			\rowcolor{blue}
-			Device                      & Registers & LUTs & Fmax        & Memory/Special Functions & Design Suite    \\
-			\hline
-			Stratix4 EP4SGX230K-C2-F40  & 950       & 1156 &            N/A & DSP 18x18 = 14           & Quartus Prime 15.1 \\
-			\hline
-			Virtex6 XC6VLX240T-1-FF1156 & 721       & 1477 & 163.827 MHz & DSP48E1 = 7              & ISE 14.7        \\
-			\hline
-			Zynq XC7Z020-1-CLG484       & 720       & 1089 & 125.109 MHz & DSP48E1 = 7              & Vivado 2017.1        \\
-			\hline
-			Zynq XC7Z020-1-CLG484       & 721       & 1506 & 161.577 MHz & DSP48E1 = 7              & ISE 14.7        \\
-			\hline
-		\end{tabular}
-	\end{scriptsize}
-
+\input{../../\ecomp.hdl/utilization.inc}
 	\section*{Test and Verification}
 	\begin{flushleft}
 	A single test case is implemented to validate the IQ Imbalance Fixer component. An input file is generated consisting of a waveform with tones at 5 Hz, 13 Hz, and 27 Hz, and creates a spectral image by both adding different gain to I and Q rails and also adding an additional 10 degrees of phase to the sine portion of the complex signal. The result is the addition of spectral image tones at -5 Hz, -13 Hz, and -27 Hz. The complex waveform is then scaled to fixed-point signed 16-bit integers, with a maximum amplitude of 31000 to avoid roll-over.\medskip

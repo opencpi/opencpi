@@ -88,13 +88,14 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Component Data Sheet}
-\def\docVersion{1.2}
+\def\docVersion{1.3}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
 \lhead{\small{\docTitle}}
 
 \def\comp{lime\_dac}
+\edef\ecomp{lime_dac}
 \def\Comp{Lime DAC}
 \graphicspath{ {figures/} }
 
@@ -112,7 +113,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Version           & v\docVersion \\
 	\hline
-	Release Date      & August 2017 \\
+	Release Date      & February 2018 \\
 	\hline
 	Component Library & ocpi.assets.devices     \\
 	\hline
@@ -174,7 +175,7 @@ The main purpose of this worker is to perform a CDC for a data bus. The decision
 		]
 		\node[rectangle,ultra thick,draw=black,fill=blue](R2){\Comp};
 		\node[rectangle,draw=white,fill=white](R3)[below= of R2]{Signals to/from Lime \\ See signal table};
-		\node[rectangle,draw=white,fill=white](R4)[left= of R2]{``in" \\ Signed complex samples};
+		\node[rectangle,draw=white,fill=white](R4)[left= of R2]{``in'' \\ Signed complex samples};
 		\node[rectangle,draw=white,fill=white](R5)[above= of R2]{\verb+underrun+};
 		\path[->]
 		(R3)edge []	node [] {} (R2)
@@ -283,25 +284,7 @@ The main purpose of this worker is to perform a CDC for a data bus. The decision
 
 		\section*{Performance and Resource Utilization}
 		\subsubsection*{\comp.hdl}
-		Table entries are a result of building the worker for the following parameter set:\
-		\begin{itemize}
-		\item \verb+USE_CLK_IN_p+=true
-		\item \verb+USE_CTL_CLK_p+=false
-		\item \verb+DRIVE_CLK_p+=true
-		\end{itemize}
-		\begin{scriptsize}
-		\begin{tabular}{|M{4.5cm}|M{1cm}|M{1cm}|M{1.5cm}|M{2cm}|M{2.5cm}|}
-		\hline
-		\rowcolor{blue}
-		Device                & Registers & LUTs & Fmax    & Memory/Special Functions & Design Suite \\
-		\hline
-		Zynq XC7Z020-1-CLG484 & 164       & 304  & 410 MHz & 8 RAM64M                 & ISE 14.7     \\
-		\hline
-		Virtex-6 6vcx75tff484-2 & 170       & 319  & 444 MHz & 8 RAM64M                 & ISE 14.7     \\
-		\hline
-	\end{tabular}
-	\end{scriptsize}
-
+\input{../../\ecomp.hdl/utilization.inc}
 	\section*{Test and Verification}
 	\begin{flushleft}
 	 To be detailed in a future release.

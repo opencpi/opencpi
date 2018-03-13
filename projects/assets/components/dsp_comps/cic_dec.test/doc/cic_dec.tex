@@ -88,13 +88,14 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Component Data Sheet}
-\def\docVersion{1.2}
+\def\docVersion{1.3}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
 \lhead{\small{\docTitle}}
 
 \def\comp{cic\_dec}
+\edef\ecomp{cic_dec}
 \def\Comp{CIC Decimator}
 \graphicspath{ {figures/} }
 
@@ -112,9 +113,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Version           & v\docVersion \\
 	\hline
-	Release Date      & August 2017 \\
+	Release Date      & February 2018 \\
 	\hline
-	Component Library & ocpiassets.dsp\_comps                              \\
+	Component Library & ocpi.assets.dsp\_comps                              \\
 	\hline
 	Workers           & \comp.hdl                                          \\
 	\hline
@@ -171,8 +172,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 			every edge/.style={draw,thick}
 		]
 		\node[rectangle,ultra thick,draw=black,fill=blue](R2){\Comp};
-		\node[rectangle,draw=white,fill=white](R3)[left= of R2]{``in" \\ Signed complex samples};
-		\node[rectangle,draw=white,fill=white](R4)[right= of R2]{``out" \\ Signed complex samples \\ decimated by \verb+R+};
+		\node[rectangle,draw=white,fill=white](R3)[left= of R2]{``in'' \\ Signed complex samples};
+		\node[rectangle,draw=white,fill=white](R4)[right= of R2]{``out'' \\ Signed complex samples \\ decimated by \verb+R+};
 		\node[rectangle,draw=white,fill=white](R5)[above= of R2]{\verb+N,M,R,ACC_WIDTH+ \\ \verb+DIN_WIDTH,DOUT_WIDTH+ \\ \verb+messageSize+};
 		\path[->]
 		(R3)edge []	node [] {} (R2)
@@ -293,30 +294,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 \section*{Performance and Resource Utilization}
 \subsection*{\comp.hdl}
-Table entries are a result of building the worker with the following parameter set:
-\begin{itemize}
-	\item \verb+N+=3
-	\item \verb+M+=1
-	\item \verb+R+=4
-	\item \verb+ACC_WIDTH+=22
-\end{itemize}
-
-\begin{scriptsize}
-	\begin{tabular}{|c|c|c|c|c|c|}
-		\hline
-		\rowcolor{blue}
-		Device                      & Registers & LUTs & Fmax    & Memory/Special Functions & Design Suite    \\
-		\hline
-		Stratix4 EP4SGX230K-C2-F40  & 632       & 459  & N/A       & N/A                      & Quartus Prime 15.1 \\
-		\hline
-		Virtex6 XC6VLX240T-1-FF1156 & 629       & 553  & 338 MHz & N/A                      & ISE 14.7        \\
-		\hline
-		Zynq XC7Z020-1-CLG484       & 630       & 415  & 228 MHz & N/A                      & Vivado 2017.1       \\
-		\hline
-		Zynq XC7Z020-1-CLG484       & 629       & 549  & 363 MHz & N/A                      & ISE 14.7        \\
-		\hline
-	\end{tabular}
-\end{scriptsize}
+\input{../../\ecomp.hdl/utilization.inc}
 \newpage
 \section*{Test and Verification}
 Two test cases are implemented to validate the CIC Decimator component:

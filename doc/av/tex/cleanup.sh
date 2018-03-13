@@ -46,3 +46,7 @@ done
 # Other cleanup
 echo "If you were to run 'git clean -fx':"
 git clean -nx
+
+# Bad closing quotes:
+echo "Mismatched quotes:"
+git grep -I  '``.*?"'

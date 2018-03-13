@@ -39,8 +39,10 @@ done
 
 You should probably add any directories under ~/texmf/scripts to your PATH variable.
 
-To build a PDF from sources, run:
+To build a single PDF from sources, run:
 $ rubber --pdf <filename>.tex
+
+To build multiples, see the "generator" subdirectory.
 
 To spell check your edits, run:
 aspell list < filename.tex | sort | uniq -c | less

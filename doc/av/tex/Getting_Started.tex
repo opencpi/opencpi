@@ -20,7 +20,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Getting Started Guide}
-\def\docVersion{1.2}
+\def\docVersion{1.3}
 %----------------------------------------------------------------------------------------
 \input{snippets/LaTeX_Header.tex}
 \setlength{\parindent}{0pt} % Don't indent all paragraphs
@@ -36,7 +36,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 ~\\
 }
 \usepackage{listings}
-
+\usepackage{xcolor}
+\usepackage{textcomp}
 \begin{document}
 \maketitle
 \thispagestyle{fancy}
@@ -56,6 +57,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
                         v1.1 & Updated for OpenCPI Release 1.1 & 3/2017 \\
 			            \hline
                         v1.2 & Updated for OpenCPI Release 1.2 & 8/2017 \\
+                        \hline
+                        v1.3 & Updated for OpenCPI Release 1.3 & 2/2018 \\
                         \hline
                         \end{tabularx}
                 \end{table}
@@ -108,31 +111,36 @@ Open Component Portability Infrastructure (OpenCPI) is a series of tools and run
 Assets and applications developed using OpenCPI are meant to simplify complex integration and improve code portability of heterogeneous solutions. OpenCPI extends component-based architectures into GPPs and FPGAs to decrease development costs and time to market through code portability, reuse, and ease of integration.
 
 \subsection{Projects Overview}
-Historically, all OpenCPI development, for both the core team and the end user, has been within a single directory structure. As the team size and user base expand, this quickly becomes untenable, especially when taking version control systems into account. The previous working area has been broken into several locations. \\ 
+Historically, all OpenCPI development, for both the core team and the end user, has been within a single directory structure. As the team size and user base expand, this quickly becomes untenable, especially when taking version control systems into account. The previous working area has been broken into several locations. \\
 
-The CDK and the source to the Core and Assets Project are provided by the ANGRYVIPER Team in the form of various RPMs that can be installed by a System Administrator. A version of the Core Project is prebuilt software necessary for all OpenCPI execution (and optionally development).  In order to exersize any of the FPGA platforms, the user must have thier own copy of the Core project since users will use their own specific FPGA tool version(s) to build it.
+The CDK and the source for the Core and Assets Projects are provided by the ANGRYVIPER Team in the form of various RPMs that can be installed by a System Administrator. A version of the Core Project is provided containing prebuilt software necessary for all OpenCPI execution (and optionally development).  In order to exercise any of the supported FPGA platforms, a user must have a writable copy of the Core project in order to build HDL using his/her own specific FPGA tool version(s).
 
 \begin{center}
+\begin{table}[h]
+\caption{Project Types}
+%\captionof{table}{\text{Project Types}}
 \begin{tabularx}{\textwidth}{|c|C|C|}
 \hline
 \rowcolor{blue}
-Name & Contents & Expectation\\
+Name & Contents & Expectation/Usage\\
 \hline
-CDK & Framework, Utilities & End-user level; built, not modified
+CDK & Framework, Utilities & End-user will use, not modified
 \\
 \hline
-BSP Project & HDL/RCC Platforms, HDL Cards/Slots, etc.  & End-user level; built, not modified
+Core Project & Minimal Components, Primitives, RCC Platforms, HDL Simulator Platforms & End-user will build, not modify
 \\
 \hline
-Core Project & Minimal RCC and HDL Components, HDL Primatives, RCC Platforms, and HDL Simulator Platforms & End-user level; built, not modified
+Assets Project & Applications, Components, Primitives, Platforms, Cards/Slots, Devices, Assemblies  & End-user will build, run, maybe modify
 \\
 \hline
-Assets Project & RCC and HDL Components, HDL Primatives, HDL Platforms, HDL Cards/Slots, etc.  & End-user level; built, maybe modified
+BSP Project & Platforms, Cards/Slots, Devices, etc.  & End-user will build, not modify
 \\
 \hline
-Project & User-provided code, framework generated code & End-user level; built, modified\\
+User Project & User-provided Components, Applications, etc. & End-user will build, run, modify
+\\
 \hline
 \end{tabularx}
+\end{table}
 \end{center}
 
 \newpage
@@ -184,7 +192,7 @@ The benefit here is a flexible and transparent methodology for moving data of di
 This section will walk through building the Base Project and all the fundamental steps of creating, building, running, and testing a simple application containing HDL workers. In the \textit{OpenCPI Component Development Guide}, the \verb+ocpidev+ command line tool is discussed in detail, but this example will serve as an introduction to using the \verb+ocpidev+ command line tool.
 
 \subsection{Installation of OpenCPI}
-The most direct method for installation of the OpenCPI framework and IDE are through the use of the AV release artifact RPMs. The use of the RPMs allows for a normalized installation process with the inclusion of all dependencies required. A detailed installation process can be found in the \textit{RPM Installation Guide}.
+The most direct method for installation of the OpenCPI framework and IDE is through the use of the OpenCPI RPMs. The RPMs allows for a normalized installation process with the inclusion of all dependencies required. A detailed installation process can be found in the \textit{RPM Installation Guide}.
 
 \begin{center}
 \framebox{\parbox{0.8\linewidth}{\centering The remainder of this document assumes the RPMs have been installed. The user's environmental variables must also be configured to build with the Xilinx Vivado software.}}
@@ -195,7 +203,7 @@ Various environmental variables are used to control OpenCPI. When installed, the
 
 	\begin{center}
 		\begin{table}[H]
-		\caption {Commonly Used Variables}
+		\caption {Commonly Used Variables}\label{tab:env}
 		\label{table:variables}
 			\begin{tabularx}{\textwidth}{|c|X|}
 \hline
@@ -211,7 +219,10 @@ The set of locations (or projects) used to find runtime artifacts. \textit{Every
 The amount of logging output by the runtime system. The default is zero (\textbf{0}), indicating no logging output. The maximum logging is \textbf{20}. Commonly useful startup and diagnostic information (\textit{e.g.} artifact discovery feedback) is provided at log level \textbf{8}. Unusual events are logged at level \textbf{4}.\\
 \hline
 \verb+OCPI_PROJECT_PATH+ &
-The set of projects used to find various artifacts and support infrastructure \textit{during build time}. This colon-separated list is legacy (but still supported) and replaced by the project registry (detailed below).\\
+The set of projects used to find various artifacts and support infrastructure \textit{during build time}. This colon-separated list is legacy (but still supported) and largely replaced by the project registry (detailed below).\\
+\hline
+\verb+OCPI_PROJECT_REGISTRY_DIR+ &
+Override the default location of the project registry. If this is not set, the default project registry is OCPI\_CDK\_DIR/../project-registry.\\
 \hline
 \verb+OCPI_SYSTEM_CONFIG+ &
 The runtime system XML configuration file. Default is \path{/opt/opencpi/system.xml} with a fallback to \path{/opt/opencpi/cdk/default-system.xml}.\\
@@ -220,58 +231,73 @@ The runtime system XML configuration file. Default is \path{/opt/opencpi/system.
 		\end{table}
 	\end{center}
 \subsection{Project Registry}
-A project registry is a directory that contains references to projects in a development environment. By registering a project, a user is publishing his project so it can be referenced/searched by any user or project using that same project registry. The default project registry is located at OCPI\_CDK\_DIR/../project-registry. \\
+A project registry is a directory that contains references to projects in a development environment. By registering a project, a user is publishing his project so it can be referenced/searched by any user or project using that same project registry. The default project registry is explained in the OCPI\_PROJECT\_REGISTRY\_DIR row of in table \ref{tab:env}. \\
 
-To add a project to the default project registry, the user needs to be in the \code{opencpi} user group.  This is described in detail the \textit{RPM Installation Guide}.  The command "\verb+ocpidev register project+" is used to register a project into the registry but this is done automaticly when the fisrt copy of a project is created but for subsequent copies an \code{unregister} command will need to be run to remove the first copy from the registry.  
+To add a project to the default project registry, a user needs to be in the \code{opencpi} user group.  This is described in detail the \textit{RPM Installation Guide}.  The \verb+ocpidev register project+ command is used to register a project. This is done automatically when the first copies of the core and assets projects are created. For user-provided projects (or new copies/overrides of the core/assets projects), the \code{register} command can be used. \code{unregister} can be used to remove an existing project from the registry. \footnote{Note that \code{unregister} does not remove your project, it just delists it from the registry}
+
+The project registry can also be set on a per-project basis using \code{ocpidev set registry <registry-location>}. See \code{ocpidev --help set} for more information.
 
 \subsection{Create and Build the Core and Assets Project}
 \subsubsection{Create Core}
-With the \texttt{angryviper-devel} rpm installed, a Core Project can be created. It is recommended to have each user have their own copy of the Core Project. Included with the CDK is an installation script, \path{/opt/opencpi/projects/new_project_source} . This script will copy the template core Project out of \path{/opt/opencpi/projects/core} and into another location. The script takes two parameters the project being copied and the destination folder, \verb+~/ocpi_baseproject+ is the recommended location.\\
+With the \texttt{opencpi-devel} rpm installed, a \texttt{core} project can be created. It is recommended that each user has his/her own copy of the \texttt{core} project. Included with the CDK is an installation script, \path{/opt/opencpi/projects/new_project_source} . This script will copy the read-only \texttt{core} project out of \path{/opt/opencpi/projects/core} and into another location. The script takes two parameters: the project being copied and the destination folder, \verb+~/ocpi_coreproject+ is the recommended location. Before running this script, make sure the user is a member of the \code{opencpi} group as explained in the \textit{RPM Installation Guide}.\\
 
-\verb+% /opt/opencpi/projects/new_project_source core <path>/<name>+
+\verb+% /opt/opencpi/projects/new_project_source core <path>/<name>+\\
+
+This command may produce a handful of warnings. It is likely that these warnings can be ignored. If the command actually outputs an Error, it is likely because the user is not a member of the \code{opencpi} group.
 
 \subsubsection{Create Assets}
-With the \texttt{opencpi-assets} RPM present, a copy of the \texttt{ocpiassets} workspace can be installed. It is recommended to have each user have their own copy of \texttt{ocpiassets}. Included with the CDK is an installation script, \path{/opt/opencpi/projects/new_project_source} . This script will copy the template core Project out of \path{/opt/opencpi/projects/core} and into another location. The script takes two parameters the project being copied and the destination folder, \verb+~/ocpiassets+ is the recommended location.\\
+With the \texttt{opencpi-project-assets} RPM present, a copy of the \texttt{assets} project can be installed. It is recommended that each user has his/her own copy of \texttt{assets}. Included with the CDK is an installation script, \path{/opt/opencpi/projects/new_project_source} . This script will copy the template \texttt{assets} project out of \path{/opt/opencpi/projects/assets} and into another location. The script takes two parameters the project being copied and the destination folder, \verb+~/ocpi_assetsproject+ is the recommended location.\\
 
 \verb+% /opt/opencpi/projects/new_project_source assets <path>/<name>+
 
+\subsubsection{Display Installed Projects}
+To confirm which projects are installed and where they live, the command \texttt{ocpidev show projects --table} can be used.
 \subsubsection{Building Projects}
 \label{subsubsec:buildworkers}
-In this step, the Project's contents will be built, but before completing the remaining steps, the environment must be set as described in the \textit{RPM Installation Guide}.\\ 
+In this step, the Project's contents will be built. Before completing the remaining steps, the environment must be set up as described in the \textit{RPM Installation Guide}.\\
 
-To build a Project, first pick the corresponding \textit{Platform Name} desired to be built. The available options are listed in Table~\ref{table:hdlworkers}.
+To build a project, first pick the desired \textit{Platform} to build for. The available options are listed in Table~\ref{table:hdlworkers}.
 
 	\begin{center}
 		\renewcommand*\footnoterule{} % Remove separator line from footnote
 		\renewcommand{\thempfootnote}{\arabic{mpfootnote}} % Use Arabic numbers (or can't reuse)
-		\begin{minipage}{.6\textwidth}
+		\begin{minipage}{.623\textwidth}
 		\begin{table}[H]
-		\caption {Supported Platforms}
+		\caption {Supported Platforms}\label{tab:plats}
 		\label{table:hdlworkers} % Add "[H]" to force placement of table
-			\begin{tabularx}{\textwidth}{|l|X|}
+			\begin{tabularx}{\textwidth}{|l|l|l|}
 			\hline
 			\rowcolor{blue}
-			\textbf{Simulator Vendor} & \textbf{Platform Name} \\
+			\textbf{Simulator Vendor} & \textbf{Platform Name} & \textbf{Project}\\
 
 			\hline
-			ModelSim DE 10.6a/10.4c & \code{modelsim} \\
+			ModelSim DE 10.6a/10.4c & \code{modelsim} & \code{ocpi.core}\\
 			\hline
-			Xilinx Vivado 2017.1 & \code{xsim}\\
+			Xilinx Vivado 2017.1 & \code{xsim} & \code{ocpi.core}\\
 			\hline
-			Xilinx ISE 14.7 & \code{isim}\\
+			Xilinx ISE 14.7 & \code{isim} & \code{ocpi.core}\\
 			\hline
 			\rowcolor{blue}
-			\textbf{Hardware Platform} & \textbf{Platform Name} \\
+			\textbf{Hardware Platform} & \textbf{Platform Name} & \textbf{Project}\\
 			\hline
-			Epiq Solutions Matchstiq-Z1 & \code{matchstiq\_z1}\footnote{Reference the Matchstiq-Z1 Getting Started Guide to build for \code{matchstiq\_z1}}\\
+			Epiq Solutions Matchstiq-Z1 & \code{matchstiq\_z1}\footnote{Reference the Matchstiq-Z1 Getting Started Guide to build for \code{matchstiq\_z1}} & \code{ocpi.assets}\\
 			\hline
-			Avnet ZedBoard & \code{zed} \\
+			Avnet ZedBoard & \code{zed}\footnote{Reference the Zedboard Getting Started Guide to build for \code{zedboard}} & \code{ocpi.assets}\\
 			\hline
-			Avnet ZedBoard (ISE mode) & \code{zed\_ise}\footnote{Use Xilinx ISE tools to build for this platform} \\
+			Avnet ZedBoard (ISE mode) & \code{zed\_ise}\footnote{Use Xilinx ISE tools to build for this platform} & \code{ocpi.assets}\\
 			\hline
-			Altera Stratix IV GX & \code{alst4} \\
+			Altera Stratix IV GX & \code{alst4} & \code{ocpi.assets}\\
 			\hline
-			Xilinx ML605 (Virtex-6) & \code{ml605} \\
+			Xilinx ML605 (Virtex-6) & \code{ml605} & \code{ocpi.assets}\\
+			\hline
+			\rowcolor{blue}
+			\textbf{Software Platform} & \textbf{Platform Name} & \textbf{Project}\\
+			\hline
+			Centos6 & \code{centos6} & \code{ocpi.core}\\
+			\hline
+			Centos7 & \code{centos7} & \code{ocpi.core}\\
+			\hline
+			Xilinx Linux (2013 3rd Quarter) & \code{xilinx13\_3}\footnote{RCC platform asociated with the zedboard and matchstiq\_z1 platforms} & \code{ocpi.core}\\
 			\hline
 % AV-2881 - Removing picoflexor because it is a SW platform in a HW context
 %			DRS Picoflexor T6A:S1 & \code{picoflexor}\footnote{reference the Picoflexor Getting Started Guide to build for \code{picoflexor} \\\indent{\indent{(Picoflexor support is \textit{RCC only} at this time)}}}\\
@@ -281,34 +307,43 @@ To build a Project, first pick the corresponding \textit{Platform Name} desired 
 		\end{minipage}
 	\end{center}
 
-Use the following \verb+ocpidev+ command to build the HDL Workers for the desired platform using the information from Table~\ref{table:hdlworkers}.\\
+\subsubsection{Build Core Project}
+This section presents a handful of commands that can be used to build for various platforms. To complete this Guide using the \code{xsim} simulator, use the build command in the box at the end of this section. \\
 
-\code{\% ocpidev build --build-hdl --build-hdl-platform <platform name> --build-no-assemblies} \\
+Note that all build commands in this Guide can optionally be performed using the ANGRYVIPER IDE instead of ``\code{ocpidev build}''.\\
 
-The above build commands for RCC and HDL workers can be combined into a single \texttt{ocpidev} call, \textit{e.g.}:\\
+To build the RCC workers, go to the \texttt{core} project and run:\\ \\
+\# If user will later target the Zedboard or Matchstiq-Z1:\\
+\code{\% ocpidev build -\--rcc -\--rcc-platform xilinx13\_3 }\\
 
-\code{\% ocpidev build --build-hdl-rcc-platform modelsim --build-hdl-rcc-platform xsim --build-hdl-rcc-platform isim --build-hdl-rcc-platform zed --build-hdl-platform modelsim --build-hdl-platform xsim --build-hdl-platform isim --build-hdl-platform zed --build-no-assemblies} \\
+\# If user will later target the Zedboard and/or Centos7:\\
+\code{\% ocpidev build -\--rcc -\--rcc-platform xilinx13\_3 -\--rcc-platform centos7}\\
 
-The last thing this command does is build the project's applications. So, you can be sure it succeeded if the last few sections of output are "\texttt{Building <application>}" (\textit{e.g.} for \texttt{hello\_xml} and \texttt{bias2\_xml}).\\
+The \texttt{--rcc-platform} option specifies the RCC platform to the build for.\\
 
-In the commands listed above, ``--build-no-assemblies'' is an optional variable assignment that prevents the project's assemblies from being built. Adding it here will save considerable build time. You will not need the Base Project's assemblies during this guide.
+Use the following \verb+ocpidev+ command to build the project for the desired platform using the information from Table~\ref{table:hdlworkers}.\\
+
+\code{\% ocpidev build --rcc-platform <platform name> --hdl-platform <platform name>} \\
+
+Building for multiple platforms can be combined into a single \texttt{ocpidev} call, \textit{e.g.}:\\
+
+\code{\% ocpidev build --hdl-platform modelsim --hdl-platform xsim --hdl-platform isim --rcc-platform centos7 --rcc-platform xilinx13\_3} \\
+
+In the \texttt{core} project, the last operation this command performs is to build the project's \texttt{hdl platforms}. You can be sure it succeeded if the last few sections of output are ``\texttt{=======Building platform xsim}''.\\
 \begin{center}
-\framebox{\parbox{0.8\linewidth}{\centering For the example in Section~\ref{sec:basic_example}, you \textit{must} build for \texttt{xsim} at a minimum. This takes approximately 15 minutes.\newline
+\framebox{\parbox{0.8\linewidth}{\centering For the example in Section~\ref{sec:basic_example}, you \textit{must} build for \texttt{xsim} at a minimum. This takes approximately 10 minutes:\newline
+
+\code{ocpidev build --hdl-platform xsim} \newline
 
 \footnotesize{\textit{Note: }If you have ISE installed instead of Vivado, you can follow this guide using \code{isim} instead of \code{xsim}}
 }}
 \end{center}
 
 
-\subsection{Install and Build \texttt{ocpiassets}}
+\subsubsection{Build Assets Project}
+Refer to table \ref{tab:plats} to determine whether the platform being built for lives in the \code{ocpi.assets} project. If so, follow the same building procedures documented in Section~\ref{subsubsec:buildworkers} for the same platforms. The last assets built in the \texttt{assets} project are \texttt{applications}. You can be sure it succeeded if the last few sections of output include ``\texttt{========Building apps cic\_int\_dc\_offset\_iq\_imbalance\_mixer\_cic\_dec}''.\\
 
-\subsubsection{Install}
-With the \texttt{opencpi-assets} RPM present, a copy of the \texttt{ocpi.assets} workspace can be installed. It is recommended to have each user have their own copy of \texttt{ocpi.assets}. Included within the RPM is an installation script, \path{/opt/opencpi/ocpiassets_source/new_ocpiassets_copy.sh}. This script will extract \texttt{ocpiassets} out of \path{/opt/opencpi/ocpiassets_source} and into another location. The destination folder name is the sole parameter to the script, and \verb+~/ocpiassets+ is the recommended location.\\
-
-\verb+% /opt/opencpi/ocpiassets_source/new_ocpiassets_copy.sh <path>/<name>+
-
-\subsubsection{Build}
-Follow the same building procedures documented in Section~\ref{subsubsec:buildworkers}. Be sure to have both the Base Project and \texttt{ocpiassets} in your \verb+OCPI_PROJECT_PATH+.
+If the \code{xsim} platform is being used, the \code{ocpi.assets} project does \textit{not} need to be built at this time.\\
 
 \newpage
 \section{Basic Example Application}
@@ -321,27 +356,35 @@ This simple application will contain three HDL Workers: \verb+ramp+, \verb+squar
         \caption{Block diagram of simple HDL application with three user-defined workers, a \code{FileRead}, and a \code{FileWrite}.}
         \label{fig:simple_app_diagram}
 \end{figure}
-For testing and simulation purposes, both the OpenCPI \verb+FileRead+ and \verb+FileWrite+ workers will be used to read input data from, and write output data to, a file on the system.\newline
+For testing and simulation purposes, the OpenCPI \verb+file_read+ and \verb+file_write+ workers will be used to read input data from, and write output data to, files on the system.\newline
 
-The basic format of an \verb+ocpidev+ command is ``\verb+ocpidev [options] <verb> <noun> <name>+''. For this demonstration, these \verb+ocpidev+ command line \verb+nouns+ will be used: \verb+project+, \verb+library+, \verb+spec+, \verb+worker+, \verb+hdl assembly+, and \verb+application+.\newline
+The basic format of an \verb+ocpidev+ command is ``\verb+ocpidev [options] <verb> <noun> <name>+''. For this demonstration, the following \verb+nouns+ will be used: \verb+project+, \verb+library+, \verb+spec+, \verb+worker+, \verb+hdl assembly+, and \verb+application+.\newline
 
-The full list of \verb+ocpidev+ command line nouns and options can be found in the \textit{OpenCPI Component Development Guide} or using its online help by running it with no arguments.
+The full list of \verb+ocpidev+ verbs, nouns and options can be explored via \code{ocpidev --help}, \code{ocpidev --help <verb>}, or the \textit{OpenCPI Component Development Guide}.
 
 \subsection{Create a Project}
 Choose the name ``DemoProject'' for this project. To create the ``DemoProject'' project use the following \verb+ocpidev+ command:\\
 
 \forceindent\verb+% ocpidev create project --register DemoProject+\\
 
+The project that was just created should have also been registered. This assumes the default registry is being used \textit{and} the user is a member of the \code{opencpi} group (as explained in the \textit{RPM Installation Guide}. The project registration can be done separately using the following \verb+ocpidev+ command from within the project:\\
+
+\forceindent\forceindent\verb+% ocpidev register project+\\
+
 Observe the directory structure created, as well as the files.\\
+
 \bstart
 \begin{verbatim}
 $ tree --charset ascii DemoProject
-DemoProject
+|-- exports
+|   |-- imports -> ../imports
+|   `-- project-package-id
+|-- imports -> /opt/opencpi/project-registry
 |-- Makefile
 |-- Project.exports
-`-- Project.mk
-
-0 directories, 3 files
+|-- Project.mk
+`-- project.xml
+3 directories, 5 files
 \end{verbatim}
 \bend
 Change directories into ``DemoProject''.
@@ -357,18 +400,25 @@ Observe the directory structure created, as well as the files:
 DemoProject
 |-- components
 |   |-- lib
-|   |   |-- package-name
+|   |   |-- package-id
 |   |   `-- workers
+|   |-- Library.mk
 |   `-- Makefile
+|-- exports
+|   |-- imports -> ../imports
+|   `-- project-package-id
+|-- imports -> /opt/opencpi/project-registry
 |-- Makefile
 |-- Project.exports
-`-- Project.mk
+|-- Project.mk
+`-- project.xml
+
 \end{verbatim}
 \bend
 For more advanced projects, one or more libraries would be placed within the \verb+components+ directory. This usage is highly recommended and explained in the \textit{OpenCPI Component Development Guide}.
 
 \subsection{Create Components}
-\textit{Components} are black boxes that dictate what properties and interfaces are implemented. An implementation of a \textit{component} is referred to as a \textit{worker}, which is discussed in the next section. \textit{Components} are defined by an OpenCPI Component Specification (OCS). The OCS is commonly referred to as the \textit{spec file} or \textit{spec}. Each \textit{spec} includes the details that are to be \textbf{consistent among different authoring models}; meaning that if there were various implementations of a \textit{component}, \textit{e.g.} a software (RCC) worker and an HDL worker, both \textit{workers} expect the same input and both should have the same output regardless of which architecture the worker runs on.\newline
+\textit{Components} are black boxes that dictate what properties and interfaces are implemented. A single implementation of a \textit{component} is referred to as a \textit{worker}, which is discussed in the next section. \textit{Components} are defined by an OpenCPI Component Specification (OCS). The OCS is commonly referred to as the \textit{spec file} or \textit{spec}. Each \textit{spec} includes the details that are to be \textbf{consistent among different authoring models}; meaning that if there are various implementations of a single \textit{component}, \textit{e.g.} a software (RCC) worker and an HDL worker, both \textit{workers} expect the same input and both should have the same output regardless of which architecture the worker runs on.\newline
 
 This application requires three \textit{components}, so three \textit{specs} will be generated. To create the three template \textit{specs} use the following \verb+ocpidev+ commands:\\
 
@@ -382,16 +432,22 @@ This application requires three \textit{components}, so three \textit{specs} wil
 DemoProject
 |-- components
 |   |-- lib
-|   |   |-- package-name
+|   |   |-- package-id
 |   |   `-- workers
+|   |-- Library.mk
 |   |-- Makefile
 |   `-- specs
 |       |-- ander-spec.xml
 |       |-- ramp-spec.xml
 |       `-- square-spec.xml
+|-- exports
+|   |-- imports -> ../imports
+|   `-- project-package-id
+|-- imports -> /opt/opencpi/project-registry
 |-- Makefile
 |-- Project.exports
-`-- Project.mk
+|-- Project.mk
+`-- project
 \end{verbatim}
 \bend
 Notice that three \textit{spec} templates were generated. Also note that \textit{spec files} can be easily identified by their \verb+-spec+ postfix\footnote{Some older spec files use \texttt{\_spec} as well.}. In between the \verb+ComponentSpec+ XML tags, the \textit{component} properties and interfaces need to be defined. \textbf{Every component interface (or \textit{port}) must define the direction and format of the messages they will send or receive.} This formatting is known as the \textit{protocol}, and for this example, we will use \texttt{rstream}, which is a stream of up to 4096 16-bit samples per message.
@@ -436,14 +492,14 @@ To create the \textit{HDL Workers}, use the following \verb+ocpidev+ commands:\\
 
 \forceindent\verb+% ocpidev create worker ander.hdl+\\
 
-Notice that the creation of the \verb+ramp+, \verb+square+, and \verb+ander+ \textit{HDL Workers} generated a \verb+.hdl+ directory for each. Each of the \verb+.hdl+ directories contain that \textit{worker}'s \textit{OpenCPI Worker Description} (OWD), which can be identified by the following format: \verb+worker_name.xml+. The OWD is where that \textit{worker's}, or that specific \textit{component's} implementation, specific properties and port protocols are defined. The definitions in the OWD are specific to each worker and may override a small set of attributes in the OCS from the OWD. Later the OWD will be edited for each \textit{worker}.\newline
+Notice that the creation of the \verb+ramp+, \verb+square+, and \verb+ander+ \textit{HDL Workers} generated a \verb+.hdl+ directory for each. Each of the \verb+.hdl+ directories contain that \textit{worker}'s \textit{OpenCPI Worker Description} (OWD), which can be identified by the following format: \verb+worker_name.xml+. The OWD is where that \textit{worker's} specific properties and port protocols are defined. The definitions in the OWD are specific to each individual worker and may override a set of attributes defined in the OCS. Later the OWD will be edited for each \textit{worker}.\newline
 
 Observe that in each of the \verb+.hdl+ directories there is also the \textit{skeleton file} or \textit{wrapper} in the language that was specified. In this case, the \verb+worker_name.vhd+ is the \textit{skeleton file} for the language option VHDL. Later, the \textit{skeleton file} will be edited for each \textit{worker}.\newline
 
 The \verb+gen+ directory contains other important code that is generated from the framework and will not need to be edited. For more details see the \textit{OpenCPI Component Guide}.\\
 
 \bstart
-Your workspace now looks something like this:
+The project should now look similar to the following:
 \begin{verbatim}
 DemoProject/
 |-- components
@@ -451,22 +507,36 @@ DemoProject/
 |   |   |-- ander.vhd
 |   |   |-- ander.xml
 |   |   |-- gen
-|   |   |   |-- ander*
+|   |   |   |-- ander-build.xml
+|   |   |   |-- ander-defs.vhd
+|   |   |   |-- ander-defs.vhd.deps
+|   |   |   |-- ander-impl.vhd
+|   |   |   |-- ander-impl.vhd.deps
+|   |   |   |-- ander.mk
+|   |   |   |-- ander-skel.vhd
+|   |   |   `-- ander-skel.vhd.deps
 |   |   `-- Makefile
 |   |-- lib
 |   |   |-- hdl
-|   |   |   |-- ander.build -> ../../ander.hdl/gen/ander.build
+|   |   |   |-- ander-build.xml -> ../../ander.hdl/gen/ander-build.xml
 |   |   |   |-- ander.xml -> ../../ander.hdl/ander.xml
-|   |   |   |-- ramp.build -> ../../ramp.hdl/gen/ramp.build
+|   |   |   |-- ramp-build.xml -> ../../ramp.hdl/gen/ramp-build.xml
 |   |   |   |-- ramp.xml -> ../../ramp.hdl/ramp.xml
-|   |   |   |-- square.build -> ../../square.hdl/gen/square.build
+|   |   |   |-- square-build.xml -> ../../square.hdl/gen/square-build.xml
 |   |   |   `-- square.xml -> ../../square.hdl/square.xml
-|   |   |-- package-name
+|   |   |-- package-id
 |   |   `-- workers
-|   |-- Makefile
+...
 |   |-- ramp.hdl
 |   |   |-- gen
-|   |   |   |-- ramp*
+|   |   |   |-- ramp-build.xml
+|   |   |   |-- ramp-defs.vhd
+|   |   |   |-- ramp-defs.vhd.deps
+|   |   |   |-- ramp-impl.vhd
+|   |   |   |-- ramp-impl.vhd.deps
+|   |   |   |-- ramp.mk
+|   |   |   |-- ramp-skel.vhd
+|   |   |   `-- ramp-skel.vhd.deps
 |   |   |-- Makefile
 |   |   |-- ramp.vhd
 |   |   `-- ramp.xml
@@ -476,13 +546,18 @@ DemoProject/
 |   |   `-- square-spec.xml
 |   `-- square.hdl
 |       |-- gen
-|       |   |-- square*
+|       |   |-- square-build.xml
+|       |   |-- square-defs.vhd
+|       |   |-- square-defs.vhd.deps
+|       |   |-- square-impl.vhd
+|       |   |-- square-impl.vhd.deps
+|       |   |-- square.mk
+|       |   |-- square-skel.vhd
+|       |   `-- square-skel.vhd.deps
 |       |-- Makefile
 |       |-- square.vhd
 |       `-- square.xml
-|-- Makefile
-|-- Project.exports
-`-- Project.mk
+...
 \end{verbatim}
 \bend
 \bstart
@@ -497,6 +572,7 @@ DemoProject/
 |   |-- ander.hdl
 |   |   |-- ander.xml
 |   |   `-- Makefile
+|   |-- Library.mk
 |   |-- Makefile
 |   |-- ramp.hdl
 |   |   |-- Makefile
@@ -510,13 +586,15 @@ DemoProject/
 |       `-- square.xml
 |-- Makefile
 |-- Project.exports
-`-- Project.mk
+|-- Project.mk
+`-- project.xml
 
-5 directories, 13 files
+
+5 directories, 15 files
 \end{verbatim}
 \bend
 
-Now the OWD files for each \textit{worker} will be updated. This will provide implementation-specific information for the interfaces that were abstractly defined at the \textit{component} level above in the OCS.\\
+Now the OWD files for each \textit{worker} will be updated. This will provide implementation-specific information for the interfaces that were abstractly defined at the \textit{component} level in the OCS.\\
 \bstart
 For the \verb+ramp+ \textit{worker}, insert the following in between the \verb+HdlWorker+ XML tags (in \path{components/ramp.hdl/ramp.xml}):
 
@@ -556,16 +634,16 @@ At this point, if you did the ``\texttt{ocpidev clean}'' example above, you need
 % From here on, we can't force ALL the source to stick to a single page. Instead, we force the signal listings to stay together and suggest that the intro sentence of the next should stay adjacent by weakly suggesting a pagebreak right before it.
 \bstart
 For the \verb+ramp.vhd+ \textit{skeleton file} (\path{components/ramp.hdl/ramp.vhd}), insert the following \textit{before} the ``begin'':
-
-\begin{lstlisting}[language=vhdl]
+\begin{lstlisting}[language=vhdl, columns=fullflexible, breaklines=true, prebreak=\textbackslash, basicstyle=\ttfamily, showstringspaces=false, upquote=true]
   signal idata_vld : bool_t;
   signal odata_vld : bool_t;
   signal buff_data : std_logic_vector(15 downto 0);
 \end{lstlisting}
 \bend
 \pagebreak[1]
-Then insert the following \textit{after} the ``begin'':
-\begin{lstlisting}[language=vhdl]
+Replace the content between \code{begin} and \code{end rtl;} with the following:
+
+\begin{lstlisting}[language=vhdl, columns=fullflexible, breaklines=true, prebreak=\textbackslash, basicstyle=\ttfamily, showstringspaces=false, upquote=true]
   -----------------------------------------------------------------------------
   -- Valid Input (when up/downstream Workers ready and upstream is valid
   -----------------------------------------------------------------------------
@@ -608,17 +686,18 @@ Then insert the following \textit{after} the ``begin'':
 
 \bstart
 For the \verb+square.vhd+ \textit{skeleton file} (\path{components/square.hdl/square.vhd}), insert the following \textit{before} the ``begin'':
-\begin{lstlisting}[language=vhdl]
-  signal msg_cnt   : unsigned(15 downto 0);
-  signal cnt       : unsigned(15 downto 0);
-  signal odata_vld : bool_t;
+\begin{lstlisting}[language=vhdl, columns=fullflexible, breaklines=true, prebreak=\textbackslash, basicstyle=\ttfamily, showstringspaces=false, upquote=true]
+  signal msg_cnt          : unsigned(15 downto 0);
+  signal cnt              : unsigned(15 downto 0);
+  signal odata_vld        : bool_t;
   signal missed_odata_vld : bool_t := '0';
   signal max_sample_cnt   : unsigned(15 downto 0);
 \end{lstlisting}
 \bend
 \pagebreak[1]
-Then insert the following \textit{after} the ``begin'':
-\begin{lstlisting}[language=vhdl]
+Replace the content between \code{begin} and \code{end rtl;} with the following:
+
+\begin{lstlisting}[language=vhdl, columns=fullflexible, breaklines=true, prebreak=\textbackslash, basicstyle=\ttfamily, showstringspaces=false, upquote=true]
   -----------------------------------------------------------------------------
   -- Simple counter to trigger the square pulse ON and OFF
   -----------------------------------------------------------------------------
@@ -707,14 +786,15 @@ Then insert the following \textit{after} the ``begin'':
 \end{lstlisting}
 \bstart
 For the \verb+ander.vhd+ \textit{skeleton file}  (\path{components/ander.hdl/ander.vhd}), insert the following \textit{before} the ``begin'':
-\begin{lstlisting}[language=vhdl]
+
+\begin{lstlisting}[language=vhdl, columns=fullflexible, breaklines=true, prebreak=\textbackslash, basicstyle=\ttfamily, showstringspaces=false, upquote=true]
   signal idata_vld : bool_t;
   signal odata_vld : bool_t;
 \end{lstlisting}
 \bend
 \pagebreak[1]
-Then insert the following \textit{after} the ``begin'':
-\begin{lstlisting}[language=vhdl]
+Replace the content between \code{begin} and \code{end rtl;} with the following:
+\begin{lstlisting}[language=vhdl, columns=fullflexible, breaklines=true, prebreak=\textbackslash, basicstyle=\ttfamily, showstringspaces=false, upquote=true]
   -----------------------------------------------------------------------------
   -- Take (when both upstream Workers and downstream Worker ready)
   -----------------------------------------------------------------------------
@@ -802,8 +882,11 @@ Navigate to the \verb+demo_assembly+ directory and replace \verb+demo_assembly.x
 </HdlAssembly>
 \end{lstlisting}
 ~\\
-Now the assembly for the application is complete.
+Now the assembly for this application is complete. To build the HDL assembly, run the following command:\\
 
+\forceindent\verb+% ocpidev build --hdl-platform xsim+\\
+
+This will take a couple of minutes to run. You can confirm that it succeeded by locating the \texttt{*.bitz} file in \path{hdl/assemblies/demo_assembly/container-demo_assembly_xsim_base/target-xsim/}.\\
 \subsection{Create an Application}
 One of the simplest ways to make an application is to use the \verb+-X+ option of \verb+ocpidev+. This flag will create a simple \textit{OpenCPI Application Specification} (OAS) in the \verb+applications+ directory. In this case, it will also create the \verb+applications+ directory, since it does not yet exist. For the example, choose the name \verb+DemoApp+ for the name of the application. Run the following \verb+ocpidev+ command from the \verb+DemoProject+ directory to generate the application:\\
 
@@ -819,9 +902,9 @@ DemoProject
 ...
 \end{verbatim}
 
-There are two things to keep in mind while using this demo application. One is that the property \verb+filename+ in the components \verb+FileRead+ and \verb+FileWrite+. The \verb+fileName+ \verb+Value+ defines where the \verb+FileRead+ component will look for input data into the application and where the \verb+FileWrite+ component will write the output data out of the application. \newline
+There are two things to keep in mind while using this demo application. One is that the property \verb+filename+ in the components \verb+file_read+ and \verb+file_write+. The \verb+fileName+ \verb+Value+ defines where the \verb+file_read+ component will look for input data into the application and where the \verb+file_write+ component will write the output data out of the application. \newline
 \bstart
-Navigate to the application directory and create the two directories mentioned in the \verb+FileRead+ and \verb+FileWrite+ component instance:\\
+Navigate to the application directory and create the two directories mentioned in the \verb+file_read+ and \verb+file_write+ component instance:\\
 
 \forceindent\verb+% mkdir idata odata+\\
 \bend
@@ -829,13 +912,13 @@ Navigate to the application directory and create the two directories mentioned i
 In order to complete the OAS, replace \path{applications/DemoApp.xml} with this XML:
 \begin{lstlisting}[language=xml]
 <Application>
-  <Instance Component="ocpi.file_read" Connect="ramp">
+  <Instance Component="ocpi.core.file_read" Connect="ramp">
     <Property Name="fileName" Value="idata/input_file.bin"/>
   </Instance>
-  <Instance Component="local.ramp"/>
-  <Instance Component="local.square"/>
-  <Instance Component="local.ander" Connect="file_write"/>
-  <Instance Component="ocpi.file_write">
+  <Instance Component="local.DemoProject.ramp"/>
+  <Instance Component="local.DemoProject.square"/>
+  <Instance Component="local.DemoProject.ander" Connect="file_write"/>
+  <Instance Component="ocpi.core.file_write">
     <Property Name="fileName" Value="odata/output_file.bin"/>
   </Instance>
   <Connection>
@@ -849,16 +932,11 @@ In order to complete the OAS, replace \path{applications/DemoApp.xml} with this 
 </Application>
 \end{lstlisting}
 \bend
-Now that the application and assembly are complete, the application can be generated. From \verb+DemoProject+ again run the following command:\\
-
-\forceindent\verb+% ocpidev build --hdl-platform xsim+\\
-
-This will take approximately 15 minutes. You can confirm that it succeeded by locating the \texttt{*.bitz} file in \path{hdl/assemblies/demo_assembly/container-demo_assembly_xsim_base/target-xsim/}.\\
 
 In order to simulate the application, input data needs to be generated to drive the application. The next section will focus on generating input data for this application.
 
 \subsection{Generate Input Data}
-The \verb+FileRead+ component will search the \verb+idata+ directory for \verb+input_file.bin+ to drive the application. For this example, a simple \verb+Python+ script is provided to generate the expected input. This application is very simple and the \verb+ramp+ component could generate data internally, but in order to have a more complete example, the \verb+ramp+ \textit{worker} was designed to depend on externally generated data. \newline
+The \verb+file_read+ component will search the \verb+idata+ directory for \verb+input_file.bin+ to drive the application. For this example, a simple \verb+Python+ script is provided to generate the expected input. This application is very simple and the \verb+ramp+ component could generate data internally, but in order to have a more complete example, the \verb+ramp+ \textit{worker} was designed to depend on externally generated data. \newline
 
 Create a file \verb+generate_input.py+ in the \path{applications/idata} directory and insert the following \verb+Python+ code into the file.
 \begin{lstlisting}[language=python]
@@ -890,11 +968,14 @@ The first argument into the script is the output file. The second argument is th
 To run the simulation, navigate to the \verb+applications+ directory and run the following commands:\\
 
 %Shouldn't need to add "this project" - AV-2420
-\forceindent\verb+% export OCPI_LIBRARY_PATH=<your base project>:$(pwd)/../+\\
+\forceindent\verb+# OCPI_LIBRARY_PATH provides a list of locations for the framework to search for built+\\
+\forceindent\verb+# RCC and HDL artifacts. For this example, \code{make}'s default OCPI_LIBRARY_PATH is+\\
+\forceindent\verb+# sufficient, so the variable can be unset.+\\
+\forceindent\verb+% unset OCPI_LIBRARY_PATH+   \\
 \forceindent\verb+% make run OcpiRunArgs="-d -t 1"+\\
 \bend
 The simulation will run for one second of runtime (``-t 1'') and write the output to a file in \verb+odata/output_file.bin+.
-This make command uses ocpirun to run the application. For more details on ocpirun and running applications, see the \textit{OpenCPI Application Development Guide}.
+This \code{make} command uses \code{ocpirun} to run the application. For more details on \code{ocpirun} and running applications, see the \textit{OpenCPI Application Development Guide}.
 
 \subsection{Examine the Output}
 To observe the output, another \verb+Python+ script is provided which will demultiplex and plot the data.\\

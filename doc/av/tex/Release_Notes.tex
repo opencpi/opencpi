@@ -20,7 +20,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Release Notes}
-\def\docVersion{1.3.0}
+\def\docVersion{1.3.1}
 %----------------------------------------------------------------------------------------
 \input{snippets/LaTeX_Header.tex}
 \setlength{\parindent}{0pt} % Don't indent all paragraphs
@@ -51,6 +51,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 			\hline
 			v1.3.0 & Updates for 1.3 release & 1/2018 \\
 			\hline
+			v1.3.1 & Updates for 1.3.1 release & 3/2018 \\
+			\hline
 			\end{tabularx}
 		\end{table}
 	\end{center}
@@ -63,12 +65,42 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \section*{Overview}
 This document contains corrections, changes, and enhancements made to OpenCPI since the previous release. It can never encapsulate \textit{every} change or bug fix, but attempts to assist previous users in getting up and running as swiftly as possible. \textit{It is highly recommended that the user review the entire document and not only the section concerning the latest release.}
 
+\iffalse
+\section{Release XXX}
+\subsection{Enhancements}
+\subsection{Changes and Notes}
+\subsection{Major Known Deficiencies}
+\fi
+
+\section{Release 1.3.1}
+\subsection{Enhancements}
+\begin{itemize}
+\item All documentation has now been updated to cover 1.3 capabilities and features
+\item Bugfixes and enhancements for AD9361
+\item Workarounds for bug noted in Section~\ref{bug:3783}
+\item USB Blaster \code{udev} rules fixed
+\item \code{ocpizynq} tool fixed
+\end{itemize}
+
+\subsection{Changes and Notes}
+None to report.
+\subsection{Major Known Deficiencies}
+\begin{itemize}
+\item \textit{Note}: no other deficiencies from Section~\ref{sec:13_bugs} have been mitigated and all remain.
+\end{itemize}
+\subsubsection{PCI Platforms Can Only Transmit Using One Channel} % AV-3783
+\label{bug:3783}
+
+The current implementation of the PCI-e Specification (ALST4 and ML605 platforms) only allows DMA transaction from the host to the platform on the \textit{first External Port defined in the Assembly or Container XML}. This means the \textit{input} to any Assembly/Container should be listed first. See
+\path{projects/assets/hdl/assemblies/empty/cnt_1rx_1tx_bypassasm_fmcomms_2_3_hpc_LVDS_ml605.xml}
+as an example. \textit{This does not affect any Zynq-based platforms.} This problem was found late within the 1.3 release cycle and should be addressed with the next major release.
+
 \section{Release 1.3}
 \subsection{Enhancements}
 
 \subsubsection{OSS Release} % AV-2575 and many other tickets
 \label{sec:13_oss}
-ANGRYVIPER Team's build of OpenCPI is now available on GitHub under the OpenCPI Organization. The first release is in a git branch, but full integration is planned in the future. This includes all of the previously-proprietary ``ocpiassets / Assets'' Project, including the BSP for Epiq Solutions' Matchstiq Z1.
+ANGRYVIPER Team's build of OpenCPI is now available on GitHub under the OpenCPI Organization. The first release is in a git branch, but full integration is planned in the future. This includes all of the previously-proprietary ``ocpiassets / Assets'' Project, including the Board Support Package (BSP) for Epiq Solutions' Matchstiq Z1.
 
 \subsubsection{Python and GNU Radio Integration (Technology Preview)} % AV-3699
 There are now SWIG bindings available to allow a top-level Python script to use the ACI to manipulate an Application in the same manner as from C++\footnote{This integration is only available on CentOS 7 platforms.}. One use case is a GNU Radio block that allows GNU Radio Companion to handle the entire lifecycle of an OpenCPI Application. This block can handle data flows of complex I/Q streams or any primitive data type (\textit{e.g.} floats or bytes) in and out of the Application. A reference implementation of this block is provided in OpenCPI's fork of GNU Radio Companion.\\
@@ -122,6 +154,16 @@ The ``\code{ocpidev}'' command has been improved in various ways, including:
 \item Project Registry (\ref{sec:13_proj_registry}) manipulations
 \end{itemize}
 
+\subsubsection{RCC Platforms}
+\label{sec:13_rcc_platforms}
+With the new Project Registry (cf. \ref{sec:13_proj_registry}), RCC Platforms can now be defined exclusively within a Project outside of the CDK / Core Project. An example of this can be seen in the \code{inactive} project under \path{rcc/platforms/macos10_13}. This improvement allows BSPs to be self-contained within a Project.
+
+\subsubsection{Remote Containers (Technology Preview)}
+The full-OSS OpenCPI code base has imported previously-written code that allows Remote Containers. This code has not yet been evaluated by the ANGRYVIPER Team.
+
+\subsubsection{OpenCL Containers (Technology Preview)}
+The full-OSS OpenCPI code base has imported previously-written code that allows OpenCL (``OCL model'') Containers on CPUs and GPUs. This code has not yet been evaluated by the ANGRYVIPER Team.
+
 \subsection{Changes and Notes}
 This section describes items that may cause users of previous versions to modify their code, build system, etc.
 
@@ -146,11 +188,12 @@ There is a provided utility script (\path{/opt/opencpi/cdk/scripts/upgradeApp_v1
 
 This change also removes the \path{/opt/opencpi/base_project_source/new_base_project.sh} script found in earlier releases; its equivalent is now \path{/opt/opencpi/projects/new_project_source}, which uses the same arguments as noted in the \textit{Getting Started Guide}.
 
+\subsubsection{Upgrade Notes} % AV-3240
+% The RPMs are designed to allow direct upgrading to newer versions. However, if previous versions of some of the prerequisite RPMs are \textit{uninstalled}, some empty directories may remain, blocking the installation of the current RPMs.
+If you have previous versions of the RPM-based OpenCPI RPMs installed, they must all be manually removed, including the prerequisites. \textbf{There is no automatic upgrade path.} Manually performing \code{sudo rm -rf /opt/opencpi/prerequisities} after uninstalling \textbf{all} previous RPMs \textit{may} also be needed.
+
 \subsubsection{Prerequisite RPMs Built With Newer Language Standards} % AV-2670, AV-2601
 All prerequisites are now built with the C++11 or the C98 standard implemented. This will increase interoperability and avoid ambiguous situations, \textit{e.g.} the size of a \code{bool} variable.
-
-\subsubsection{Upgrade Notes} % AV-3240
-The RPMs are designed to allow direct upgrading to newer versions. However, if previous versions of some of the prerequisite RPMs are \textit{uninstalled}, some empty directories may remain, blocking the installation of the current RPMs. Manually performing \code{sudo rm -rf /opt/opencpi/prerequisities} after uninstalling \textbf{all} \code{ocpi-rereq-*} RPMs \textit{may} be needed.
 
 \subsubsection{Legacy Platform Names Continue to be Deprecated} % AV-2983
 The legacy suffix ``\code{\_pf}'' for simulator platforms, \textit{e.g.} \code{isim\_pf}, is not supported when running unit tests. Unit tests were introduced after the suffix was deprecated, so the effect on end users should be minimal.
@@ -161,7 +204,11 @@ A bug in Release 1.2 required the variable to be set ``deep'', \textit{e.g.} \pa
 \subsubsection{ocpidev and Requesting RCC Platform To Match HDL Platform} % AV-3457
 When building Projects with \code{ocpidev}, the user can tell the build system to automatically select the proper RCC Platform when given an HDL Platform. This option is \code{--rcc-hdl-platform} with a mnemonic of ``build \textit{this} RCC Platform for \textit{that} HDL Platform.'' Previous Releases had the flags backwards (``\code{--build-hdl-rcc-platform}''). This is incorrect and has been deprecated.
 
+\subsubsection{zero\_padding Component in \texttt{ocpi.assets} deprecated}
+In the FSK reference application, \path{zero_padding.hdl} was replaced by two new Workers, \path{zero_pad.hdl} and \path{mfsk_mapper.hdl}. The change was made because \path{zero_padding.hdl} performed two functions: binary FSK mapping and inserting zeros between symbols. Whenever possible, functions should be separated into their own Components for increased flexibility and reuse. The \path{zero_padding} Component will be removed in Release 2.0.
+
 \subsection{Major Known Deficiencies}
+\label{sec:13_bugs}
 
 \subsubsection{Previously Documented Deficiencies}
 The following deficiencies are still present in 1.3:

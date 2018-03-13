@@ -6,23 +6,20 @@ The "old" directory contains documents that are no longer current, but are avail
 
 The outline of the main documents and the general reading order is listed below:
 
-1. OpenCPI Overview
+1. (AV's) Overview
 2. (AV's) Installation Guide
-    a. (AV's) Embedded Platform Installation Guide
-    b. (AV's) PCIe Device Installation Guide
 3. (AV's) Getting Started Guide
-4. OpenCPI Component Development Guide
-5. OpenCPI RCC Development Guide
-    a. (AV's) RCC Worker Example
-6. OpenCPI HDL Development Guide
-    a. (AV's) HDL Worker Example
-7. (AV's) User Guide
-8. OpenCPI Application Development Guide
-    a. (AV's) FSK App
-    b. (AV's) Receive App
+4. (AV's) Platform specific Getting started guides (see below)
+   a. (AV's) Matchstiq Getting Started Guide
+   b. (AV's) Zedboard Getting Started Guide
+5. OpenCPI Application Development Guide      (reference)
+    a. (AV's) FSK App Getting Started Guide
+    b. (AV's) FSK App
+    c. (AV's) RX App
+6. OpenCPI Component Development Guide        (reference)
+7. OpenCPI RCC Development Guide              (reference)
+8. OpenCPI HDL Development Guide              (reference)
 9. OpenCPI Platform Development Guide
-    a. (AV's) Proxy Worker Example
-    b. (AV's) Matchstiq Platform
 
 Other important reference materials:
 

@@ -44,7 +44,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 		    \hline
 		    v1.1 & Initial Release & 3/2017 \\
 		    \hline
-		    v1.2 & Updated for ANGRYVIPER Release 1.2 & 8/2017 \\
+		    v1.2 & Updated for Release 1.2 & 8/2017 \\
 		    \hline
 			\end{tabularx}
 		\end{table}
@@ -58,12 +58,12 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 \section{References}
 
-	This document assumes a basic understanding of the Linux command line (or ``shell'') environment. It requires a working knowledge of ANGRYVIPER and the OCPI ACI.  The reference(s) in Table \ref{table:references} can be used as an overview of ANGRYVIPER and may prove useful.
+	This document assumes a basic understanding of the Linux command line (or ``shell'') environment. It requires a working knowledge of OpenCPI and the OCPI ACI.  The reference(s) in Table \ref{table:references} can be used as an overview of OpenCPI and may prove useful.
 
 \input{snippets/References_Table}
 \newpage
 \section{Overview}
-In ANGRYVIPER, it is the intention that an application developer won't need to care or know about the Radio Interface(RF) interfaces.  Without the ability for generic RF interfaces, applications can not be seamlessly moved from one ANGRYVIPER-supported platform to another ANGRYVIPER-supported platform.  This document describes the generic RF interface components that have been developed as part of the ANGRYVIPER release.  \\ \\
+In OpenCPI, it is the intention that an application developer won't need to care or know about the Radio Interface(RF) interfaces.  Without the ability for generic RF interfaces, applications can not be seamlessly moved from one OpenCPI-supported platform to another OpenCPI-supported platform.  This document describes the generic RF interface components that have been developed as part of the OpenCPI release.  \\ \\
 These interface components are not intended to cover all features of all receivers and transmitters.  They are intended to have the minimum amount of functionality that all receivers and transmitters will have.  Any extra functionality on a receiver or transmitter can be added at the worker implementation level. \\ \\
 Each of the RF interfaces will be setting the properties of several other workers referred to as slaves.  In some cases these slaves will also have their own slaves as well.  Any application that uses one of the RF Interfaces needs to also include all of the required slaves and slaves of any of the slaves' slaves.  A block diagram of this relationship is as follows:
 
@@ -139,7 +139,7 @@ The properties that are described in these spec files can be observed in the fol
 		\end{longtable}
 \newpage
 \section{Creating an Application using RF Interfaces}
-As stated earlier, an application that uses an RF Interface Worker needs to also have any of the slave workers and slave of slave workers also declared in the application XML.  This may cause a different application XML per platform to declare the different dependencies per platform.  This is a limitation of the framework and will likely be fixed in a future release.  An example of how this will work is in both of the ANGRYVIPER Reference applications: \\ \\
+As stated earlier, an application that uses an RF Interface Worker needs to also have any of the slave workers and slave of slave workers also declared in the application XML.  This may cause a different application XML per platform to declare the different dependencies per platform.  This is a limitation of the framework and will likely be fixed in a future release.  An example of how this will work is in both of the ANGRYVIPER Team's Reference applications: \\ \\
    \begin{tabular}{|p{2cm}|p{7cm}|}
       \hline
       FSK app & ocpiassets/applications/FSK \\
@@ -186,7 +186,7 @@ There are two ways that application developers can control the RF interface work
 
 \newpage
 \subsection{Application Control Interface Example}
-The second way that an application developers can control the RF interface workers is via a C++ program that uses the Application Control Interface library which is provided with the ANGRYVIPER framework.  This is required when the application user needs to interact with the application to change properties or if the properties of the workers need to change during a run of the application.
+The second way that an application developers can control the RF interface workers is via a C++ program that uses the Application Control Interface library which is provided with the OpenCPI framework.  This is required when the application user needs to interact with the application to change properties or if the properties of the workers need to change during a run of the application.
 
 \begin{verbatim}
   ...

@@ -95,6 +95,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \lhead{\small{\docTitle}}
 
 \def\comp{zero\_pad}
+\edef\ecomp{zero_pad}
 \def\Comp{Zero Pad}
 \graphicspath{ {figures/} }
 
@@ -112,9 +113,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Version           & v1.3                  \\
 	\hline
-	Release Date      & August 2017           \\
+	Release Date      & February 2018           \\
 	\hline
-	Component Library & ocpiassets.util\_comps \\
+	Component Library & ocpi.assets.util\_comps \\
 	\hline
 	Workers           & \comp.hdl              \\
 	\hline
@@ -147,8 +148,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 			every edge/.style={draw,thick}
 		]
 		\node[rectangle,ultra thick,draw=black,fill=blue](R2){\Comp};
-		\node[rectangle,draw=white,fill=white](R3)[left= of R2]{``in" \\ Qm.n signed samples};
-		\node[rectangle,draw=white,fill=white](R4)[right= of R2]{``out" \\ Qm.n signed samples};
+		\node[rectangle,draw=white,fill=white](R3)[left= of R2]{``in'' \\ Qm.n signed samples};
+		\node[rectangle,draw=white,fill=white](R4)[right= of R2]{``out'' \\ Qm.n signed samples};
 		\node[rectangle,draw=white,fill=white](R5)[above= of R2]{\verb+num_zeros+\\\verb+DWIDTH_p+};
 		\path[->]
 		(R3)edge []	node [] {} (R2)
@@ -222,27 +223,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 \section*{Performance and Resource Utilization}
 \subsubsection*{\comp.hdl}
-Table entries are a result of building the worker with the following parameter sets:\
-\begin{itemize}
-  \item \verb+DWIDTH_p=2+
-\end{itemize}
-\begin{scriptsize}
-	\begin{tabular}{|c|c|c|c|c|c|c|c|}
-    \hline
-    \rowcolor{blue}
-    Device                    	& Registers & LUTs & Fmax    	& Memory/Special Functions 	& Design Suite \\
-    \hline
-	Zynq XC7Z020-1-CLG484     	& 154       & 157  & -			& 							& Vivado 2017.1\\
-	\hline
-	Zynq XC7Z020-1-CLG484     	& 151		& 215  & 312 MHz  	& 							& ISE 14.7     \\
-	\hline
-	Virtex-6 XC6VCX75T-2FF484 	& 151       & 217  & 292 MHz  	&  							& ISE 14.7     \\
-	\hline
-	Stratix4 EP4SGX230K-C2-F40 	& 155       & 189  & -			& 							& Quartus 15.1 \\
-	\hline
-	\end{tabular}
-\end{scriptsize}
-
+\input{../../\ecomp.hdl/utilization.inc}
 \section*{Test and Verification}
 \begin{flushleft}
 	Data widths of 8/16/32/64 are supported and fully tested on both RCC and HDL worker implementations. These widths combinations are tested with \verb+num_zeros+ equal to 0, 7, 8, 38, 127, and 255.\medskip

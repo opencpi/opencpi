@@ -246,7 +246,7 @@ private:
     ocpi_ulonglong_t rx_lo_freq      = p_rx_lo_freq.getULongLongValue();
     // we do not set ad9361_config_proxy's rx_sampling_freq because this worker's sample_rate_MHz's value will affect both the ad9361_config_proxy's tx_sampling_freq and rx_sampling_freq properties
     ad9361_config_proxy_rx_rf_gain_t rx_rf_gain;
-    parse(str_rx_rf_gain.c_str(), rx_rf_gain); //! @todo TODO/FIXME -  ignoring return value, idk if this is the right thing to to...
+    parse(str_rx_rf_gain.c_str(), rx_rf_gain); //! @todo TODO/FIXME -  ignoring return value, idk if this is the right thing to do...
 
     // write ad9361_init
 

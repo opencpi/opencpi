@@ -37,16 +37,16 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \begin{document}
 \section*{ALST4 Getting Started Guide}
 \subsection*{Hardware Prerequisites}
-This section describes the hardware prerequisites required for an operational alst4 (Altera Stratix IV) platform using ANGRYVIPER. The optional HSMC Debug Loopback and HSMC Debug Breakout Header cards are only intended for testing purposes. Also note that the slot configurations in Table \ref{table:supported_slots} are limited by what FPGA bitstreams are currently built by ANGRYVIPER and not by what hardware configurations are theoretically possible using ANGRYVIPER.\\ \\
+This section describes the hardware prerequisites required for an operational alst4 (Altera Stratix IV) platform using OpenCPI. The optional HSMC Debug Loopback and HSMC Debug Breakout Header cards are only intended for testing purposes. Also note that the slot configurations in Table \ref{table:supported_slots} are limited by what FPGA bitstreams are currently built by OpenCPI and not by what hardware configurations are theoretically possible using OpenCPI.\\ \\
 Hardware prerequisites are as follows.
 \begin{itemize}
-\item A Stratix IV GX230 board, which has undergone an ANGRYVIPER-specific initial one-time hardware setup \cite{alst4_hardware_setup} and is plugged into a PCIE slot of an x86 computer.
+\item A Stratix IV GX230 board, which has undergone an OpenCPI-specific initial one-time hardware setup \cite{alst4_hardware_setup} and is plugged into a PCIE slot of an x86 computer.
 \item Optionally, one of the following HSMC card configurations in Table  \ref{table:supported_slots} may exist
 \end{itemize}
 \begin{center}
         \begin{table}[!htbp]
         \centering
-        \caption{ANGRYVIPER-supported Stratix IV hardware HSMC slot configurations}
+        \caption{OpenCPI-supported Stratix IV hardware HSMC slot configurations}
         \label{table:supported_slots}
         \begin{tabular}{c|c|c|}
                 \cline{2-3}
@@ -67,14 +67,19 @@ Hardware prerequisites are as follows.
 \subsection*{Software Prerequisites}
 \begin{itemize}
 \item A CentOS 6 or CentOS 7 operating system installed on the x86 computer.
-\item Altera Quartus installed on the x86 computer. For more information refer to \cite{angryviper_fpga_vendor_tool_guide}
-\item ANGRYVIPER framework and prerequisite RPMs installed on the x86 computer. For more information refer to \cite{angryviper_installation_guide}
-\item OpenCPI Base Project compiled for alst4. For more information refer to the "Base Project" section in \cite{angryviper_installation_guide}
-\item ANGRYVIPER assets project compiled for alst4. For more information refer to the "ANGRYVIPER assets" section in \cite{angryviper_installation_guide}
+\item Altera Quartus installed on the x86 computer. For more information refer to \cite{fpga_vendor_tool_guide}
+\item OpenCPI framework and prerequisite RPMs installed on the x86 computer. For more information refer to \cite{rpm_installation_guide}
+\item OpenCPI Core Project compiled for alst4. For more information refer to the "Core Project" section in \cite{Opencpi_getting_started_guide}
+\item OpenCPI assets project compiled for alst4. For more information refer to the "OpenCPI assets" section in \cite{Opencpi_getting_started_guide}
 \end{itemize}
 
+\input{../../../../../../doc/av/tex/snippets/memmap.tex } 
+
+\section*{Driver Notes}
+\input{../../../../../../doc/av/tex/snippets/Driver_Snippet.tex } 
+
 \subsection*{Proof of Operation}
-The following commands may be run in order to verify correct ANGRYVIPER operation on the x86/Stratix IV system.\\ \\
+The following commands may be run in order to verify correct OpenCPI operation on the x86/Stratix IV system.\\ \\
 Existence of alst4 RCC/HDL containers may be verified by running the following command and verifying that similar output is produced.\\
 \noindent\terminaloutput{\$ ocpirun -C\\
 Available containers:\\
@@ -123,6 +128,7 @@ Property 19: file\_write.messagesWritten = "250"\\
 }
 
 \subsection*{Known Issues}
+\subsubsection*{JTAG Daemon}
 When loading FPGA bitstreams onto the alst4 FPGA (which can occur when running either \terminaloutput{ocpihdl load} or \terminaloutput{ocpirun}), multiple issues exists with the Altera jtag daemon which may cause the FPGA loading to fail. The following is an example of the terminal output when this failure occurs: \\ \\
 \noindent\terminaloutput{Checking existing loaded bitstream on OpenCPI HDL device "PCI:0000:0b:00.0"... \\
 OpenCPI FPGA at PCI 0000:0b:00.0: bitstream date Wed Oct 19 16:04:45 2016, platf \\
@@ -165,16 +171,29 @@ The follow commands implement a known remedy for each of the aforementioned erro
 \$ sudo <quartus\_directory>/bin/jtagd \\
 \$ sudo <quartus\_directory>/bin/jtagconfig}
 
+\subsubsection*{Single Port of Data from CPU to FPGA} % AV-3783
+\label{bug:3783}
+The current implementations of the PCI-e Specification on the this platform only correctly implements data flow from the CPU to the FPGA under certain configurations which must be met when defining new Assemblies:
+\begin{itemize}
+\item At most a single data port with CPU-to-FPGA data flow. Port connection must also be one of:
+\begin{enumerate}
+\item defined in a single-worker Assembly XML using the worker ``\texttt{Externals='true'}'' attribute/value and the DefaultContainer used (DefaultContainer not defined in Assembly Makefile), or
+\item the first External Assembly Connection defined in the Assembly XML and the DefaultContainer used, or
+\item the first Interconnect Container Connection defined in a Container XML (Default Container must be disabled via ``\texttt{DefaultContainer=}'' in the Assembly Makefile).
+\end{enumerate}
+\end{itemize}
+Note that this applies to the TX/DAC data path connections for bitstreams with transceiver transmit data flow from a CPU (e.g. RCC worker to FPGA TX/DAC data path). See \path{projects/assets/hdl/assemblies/empty/cnt_1rx_1tx_bypassasm_fmcomms_2_3_lpc_LVDS_ml605.xml} as an example.
+
 \pagebreak
   \begin{thebibliography}{1}
 
 
   \bibitem{alst4_hardware_setup} ALST4 Hardware Setupe\\
 	 alst4\_hardware\_setup.pdf
-  \bibitem{angryviper_fpga_vendor_tool_guide} ANGRYVIPER FPGA Vendor Tools Guide\\
-	 AngryViper\_FPGA\_Vendor\_Tools\_Guide.pdf
-	   \bibitem{angryviper_installation_guide} ANGRYVIPER Installation Guide\\
-	 AngryViper\_Installation\_Guide.pdf
+  \bibitem{fpga_vendor_tool_guide} FPGA Vendor Tools Guide\\
+	 OpenCPI\_FPGA\_Vendor\_Tools\_Guide.pdf
+	   \bibitem{rpm_installation_guide} OpenCPI RPM Installation Guide\\
+	 RPM\_Installation\_Guide.pdf
 	   \bibitem{zipper_mods} Required Modifications for Myriad-RF 1 and Zipper Daughtercards\\
 	 Required\_Modifications\_for\_Myriad-RF\_1\_Zipper\_Daughtercards.pdf
 
