@@ -17,10 +17,15 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 ProjectPrefix=ocpi
+ifdef fooo
 export OCPI_PROJECT_PATH:=\
 $(OCPI_PROJECT_PATH):\
 $(and $(OcpiProjectRegistryDir),$(subst $(Space),:,$(wildcard $(OcpiProjectRegistryDir)/*)):)\
 $(OCPI_CDK_DIR)/../projects/core
+endif
+ifndef OCPI_CDK_DIR
+  OCPI_CDK_DIR:=$(CURDIR)/exports
+endif
 # Fake being a project until we can be a real one
 ifneq (,)
 include $(OCPI_CDK_DIR)/include/project.mk

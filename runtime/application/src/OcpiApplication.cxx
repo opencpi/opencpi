@@ -135,7 +135,7 @@ namespace OCPI {
 
     /*
      * We made choices during the feasibility analysis, but here we want to add some policy.
-     * The default allocation will bias toward collocation, so this is basically to 
+     * The default allocation will bias toward collocation, so this is basically to
      * spread things out.
      * Since exclusive/bitstream allocations are not really adjustable, we just deal with the
      * others.
@@ -284,7 +284,7 @@ namespace OCPI {
 	isMaster = false;
       }
       if (sImpl) { // the relationship exists, either way.  We are on the latter instance.
-	
+
 	std::string slaveWkrName;
 	OU::format(slaveWkrName, "%s.%s", sImpl->cname(), sImpl->model().c_str());
 	size_t dashIdx =  slaveWkrName.rfind('-');
@@ -537,7 +537,7 @@ namespace OCPI {
       for (unsigned n = 0; n < m_nInstances; n++, i++) {
 	if (i->m_deployment.m_scale == 1) {
 	  const OL::Implementation &li = *i->m_deployment.m_impls[0];
-	  ocpiDebug(" Instance %2u: Container: %u Instance %s%s%s in %s", 
+	  ocpiDebug(" Instance %2u: Container: %u Instance %s%s%s in %s",
 		    n, i->m_deployment.m_containers[0],
 		    li.m_metadataImpl.cname(),
 		    li.m_staticInstance ? "/" : "",
@@ -645,7 +645,7 @@ namespace OCPI {
       else {
 	Instance &i = m_instances[instNum];
 	for (unsigned m = 0; m < i.m_nCandidates; m++) {
-	  OL::Candidate &c = li.m_candidates[m];	  
+	  OL::Candidate &c = li.m_candidates[m];
 	  ocpiDebug("doInstance %u %u %u", instNum, score, m);
 	  if (connectionsOk(c, instNum)) {
 	    ocpiDebug("doInstance connections ok");
@@ -917,7 +917,7 @@ namespace OCPI {
 	  for (unsigned n = 0; n < m_nInstances; n++, i++)
 	    if (i->m_bestDeployment.m_scale > 1) {
 	      fprintf(stderr,
-		      "  Instance %2u %s (spec %s) on %s containers:\n", 
+		      "  Instance %2u %s (spec %s) on %s containers:\n",
 		      n, m_assembly.instance(n).name().c_str(),
 		      m_assembly.instance(n).specName().c_str(),
 		      OC::Container::nthContainer(i->m_bestDeployment.m_containers[0]).
@@ -947,7 +947,7 @@ namespace OCPI {
 	      char tbuf[30];
 	      ctime_r(&bd, tbuf);
 	      fprintf(stderr,
-		      "  Instance %2u %s (spec %s) on %s container %u: %s, using %s%s%s in %s dated %s", 
+		      "  Instance %2u %s (spec %s) on %s container %u: %s, using %s%s%s in %s dated %s",
 		      n, m_assembly.instance(n).name().c_str(),
 		      m_assembly.instance(n).specName().c_str(),
 		      c.m_model.c_str(), c.ordinal(), c.name().c_str(),
@@ -1024,7 +1024,7 @@ namespace OCPI {
       // side will it be talking to.  In most cases you talk to everyone on the other side.
       // Basically we need a function which returns which on the other side we will talk
       // to.  We'll use a map.
-      // Pass 1: figure out how many member connections we will have, and 
+      // Pass 1: figure out how many member connections we will have, and
       // negotiate the buffer size.
       size_t nMemberConnections = 0;
       for (OU::Assembly::ConnectionsIter ci = m_assembly.m_connections.begin();
@@ -1050,7 +1050,7 @@ namespace OCPI {
 	      nMemberConnections += i->m_bestDeployment.m_scale * i->m_bestDeployment.m_scale;
 	    p++, nn++; // always skip one after an internal since that's the other half.
 	  }
-      }     
+      }
       // Pass 2: make the array and fill it in, also negotiate buffer sizes and transports
       m_launchConnections.resize(nMemberConnections);
       OC::Launcher::Connection *lc = &m_launchConnections[0];
@@ -1076,7 +1076,7 @@ namespace OCPI {
 	    iOut = i;
 	    pOut = p;
 	    outScale = i->m_crew.m_size;
-	  }	    
+	  }
 	}
 	OU::Assembly::External *e = NULL;
 	const OU::PValue *eParams = NULL;
@@ -1132,10 +1132,10 @@ namespace OCPI {
 		  setLaunchPort(lc->m_out, p+1, NULL, (p+1)->m_name, NULL, mOut, NULL, scale,
 				nOut);
 		  setLaunchTransport(*lc, NULL, NULL, NULL);
-		  ocpiDebug("Internal connection %p on %s/%s-%s %u/%u", lc, 
+		  ocpiDebug("Internal connection %p on %s/%s-%s %u/%u", lc,
 			    firstImpl.cname(), p->name().c_str(), (p+1)->name().c_str(),
 			    nIn, nOut);
-		}	    
+		}
 	      }
 	    }
 	    p++, nn++; // always skip one after an internal since that's the other half.
@@ -1153,7 +1153,7 @@ namespace OCPI {
 	p.m_container = p.m_member->m_container;
       else if (p.m_name) { // external port
 	p.m_container = &OC::Container::baseContainer();
-	p.m_containerApp = 
+	p.m_containerApp =
 	  m_containerApps[getUsedContainer(p.m_container->ordinal())];
       }
       if (p.m_container)
@@ -1359,7 +1359,7 @@ namespace OCPI {
 	if (m_verbose)
 	  fprintf(stderr, "Setting delayed property values while application is running.\n");
 	OU::Assembly::Delay now = 0;
-	for (auto it = m_delayedPropertyValues.begin(); 
+	for (auto it = m_delayedPropertyValues.begin();
 	     it != m_delayedPropertyValues.end(); ++it) {
 	  if (it->first > now) {
 	    usleep(it->first - now);
@@ -1468,7 +1468,7 @@ namespace OCPI {
     }
 #if 0 // no point?
     ExternalPort &ApplicationI::getPort(unsigned index, std::string & name) {
-      
+
       if (!m_launched)
 	throw OU::Error("GetPort cannot be called until the application is initialized.");
       if (index >= m_externals.size())
@@ -1593,7 +1593,7 @@ namespace OCPI {
       Property &p = findProperty(worker_inst_name, prop_name);
       std::string dummy;
       m_launchMembers[m_instances[p.m_instance].m_firstMember].m_worker->
-	getProperty(p.m_property, dummy, value, NULL, hex);	 
+	getProperty(p.m_property, dummy, value, NULL, hex);
     }
 
     void ApplicationI::
