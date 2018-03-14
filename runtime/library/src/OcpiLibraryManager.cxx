@@ -193,7 +193,7 @@ namespace OCPI {
     void Manager::configure(ezxml_t x) {
       ezxml_t lib = NULL;
       if (x) {
-	for (lib = ezxml_cchild(x, "library"); lib; lib = ezxml_next(lib)) {
+	for (lib = ezxml_cchild(x, "library"); lib; lib = ezxml_cnext(lib)) {
 	  const char *name = ezxml_cattr(lib, "name");
 	  if (!name)
 	    throw ApiError("Missing 'name' attribute for 'library' in system configuration", NULL);
@@ -483,19 +483,19 @@ namespace OCPI {
       typedef InstanceMap::iterator InstanceIter;
       InstanceMap instances; // record static instances for connection tracking
       unsigned n = 0;
-      for (ezxml_t w = ezxml_cchild(m_xml, "worker"); w; w = ezxml_next(w), metaImpl++, n++) {
+      for (ezxml_t w = ezxml_cchild(m_xml, "worker"); w; w = ezxml_cnext(w), metaImpl++, n++) {
 	metaImpl->m_ordinal = n;
 	const char *err = metaImpl->parse(w, this);
 	if (err)
 	  throw OU::Error("Error processing implementation metadata for %s: %s",
 			  name().c_str(), err);
 	bool haveInstances = false;
-	for (ezxml_t i = ezxml_cchild(m_xml, "instance"); i; i = ezxml_next(i))
+	for (ezxml_t i = ezxml_cchild(m_xml, "instance"); i; i = ezxml_cnext(i))
 	  if (!strcasecmp(metaImpl->cname(), ezxml_cattr(i, "worker"))) {
 	    haveInstances = true;
 	    instances[ezxml_cattr(i, "name")] = addImplementation(*metaImpl, i);
 	  }
-	for (ezxml_t i = ezxml_cchild(m_xml, "io"); i; i = ezxml_next(i))
+	for (ezxml_t i = ezxml_cchild(m_xml, "io"); i; i = ezxml_cnext(i))
 	  if (!strcasecmp(metaImpl->cname(), ezxml_cattr(i, "worker"))) {
 	    haveInstances = true;
 	    instances[ezxml_cattr(i, "name")] = addImplementation(*metaImpl, i);
@@ -505,7 +505,7 @@ namespace OCPI {
       }
       // Record connectivity in the artifact: what is external, and what is
       // internal, and if internal, who is connected to whom
-      for (ezxml_t conn = ezxml_child(m_xml, "connection"); conn; conn = ezxml_next(conn)) {
+      for (ezxml_t conn = ezxml_child(m_xml, "connection"); conn; conn = ezxml_cnext(conn)) {
         const char
           *fromX = ezxml_attr(conn,"from"), // instance with user port
           *toX = ezxml_attr(conn,"to"),     // instance with provider port

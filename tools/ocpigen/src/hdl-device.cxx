@@ -56,7 +56,7 @@ HdlDevice(ezxml_t xml, const char *file, const char *parentFile, Worker *parent,
   // for platform configurations and containers, but we do a bit of error checking here
   // We need to compute the ordinal for each device type we support
   std::map<std::string, unsigned> countPerSupportedWorkerType;
-  for (ezxml_t spx = ezxml_cchild(m_xml, "supports"); spx; spx = ezxml_next(spx)) {
+  for (ezxml_t spx = ezxml_cchild(m_xml, "supports"); spx; spx = ezxml_cnext(spx)) {
     std::string worker;
     if ((err = OE::checkAttrs(spx, "worker", NULL)) ||
 	(err = OE::checkElements(spx, "connect", NULL)) ||
@@ -75,7 +75,7 @@ HdlDevice(ezxml_t xml, const char *file, const char *parentFile, Worker *parent,
     m_supports.back().m_ordinal = pair.first->second;
     if ((err = m_supports.back().parse(spx, *this)))
       return;
-    for (ezxml_t cx = ezxml_cchild(spx, "connect"); cx; cx = ezxml_next(cx)) {
+    for (ezxml_t cx = ezxml_cchild(spx, "connect"); cx; cx = ezxml_cnext(cx)) {
       std::string l_port, to;
       size_t index;
       bool idxFound = false;
@@ -213,7 +213,7 @@ parse(ezxml_t xml, Board &b, SlotType *stype) {
   m_deviceType.m_instancePVs.resize(OE::countChildren(xml, "Property"));
   if (m_deviceType.m_instancePVs.size()) {
     OU::Assembly::Property *pv = &m_deviceType.m_instancePVs[0];
-    for (ezxml_t px = ezxml_cchild(xml, "Property"); px; px = ezxml_next(px), pv++) {
+    for (ezxml_t px = ezxml_cchild(xml, "Property"); px; px = ezxml_cnext(px), pv++) {
       std::string value;
       if ((err = OE::checkAttrs(px, "name", "value", "valuefile", NULL)) ||
 	  (err = OE::getRequiredString(px, pv->m_name, "name", "property")))
@@ -253,7 +253,7 @@ parse(ezxml_t xml, Board &b, SlotType *stype) {
     pair.first->second++;
   }
   // Now we parse the mapping between device-type signals and board signals
-  for (ezxml_t xs = ezxml_cchild(xml, "Signal"); xs; xs = ezxml_next(xs)) {
+  for (ezxml_t xs = ezxml_cchild(xml, "Signal"); xs; xs = ezxml_cnext(xs)) {
     std::string name, base;
     size_t index;
     bool hasIndex;
@@ -403,12 +403,12 @@ addFloatingDevice(ezxml_t xs, const char *parentFile, Worker *parent, std::strin
 const char *Board::
 parseDevices(ezxml_t xml, SlotType *stype, const char *parentFile, Worker *parent) {
   // These devices are declaring that they are part of the board.
-  for (ezxml_t xs = ezxml_cchild(xml, "Device"); xs; xs = ezxml_next(xs)) {
+  for (ezxml_t xs = ezxml_cchild(xml, "Device"); xs; xs = ezxml_cnext(xs)) {
     const char *worker = ezxml_cattr(xs, "worker");
     bool single = true;
     bool seenMe = false;
     unsigned n = 0; // ordinal of devices of same type in this platform/card
-    for (ezxml_t x = ezxml_cchild(xml, "Device"); x; x = ezxml_next(x)) {
+    for (ezxml_t x = ezxml_cchild(xml, "Device"); x; x = ezxml_cnext(x)) {
       const char *w = ezxml_cattr(x, "worker");
       if (x == xs)
 	seenMe = true;
@@ -507,7 +507,7 @@ parse(ezxml_t spx, Worker &w) {
       (err = OE::checkElements(spx, "connect", (void*)0)) ||
       (err = OE::getRequiredString(spx, worker, "worker")))
     return err;
-  for (ezxml_t cx = ezxml_cchild(spx, "connect"); cx; cx = ezxml_next(cx)) {
+  for (ezxml_t cx = ezxml_cchild(spx, "connect"); cx; cx = ezxml_cnext(cx)) {
     m_connections.push_back(SupportConnection());
     if ((err = m_connections.back().parse(cx, w, *this)))
       return err;
@@ -520,7 +520,7 @@ parse(ezxml_t spx, Worker &w) {
 const char *Worker::
 parseInstance(Worker &parent, Instance &i, ezxml_t x) {
   const char *err;
-  for (ezxml_t sx = ezxml_cchild(x, "signal"); sx; sx = ezxml_next(sx)) {
+  for (ezxml_t sx = ezxml_cchild(x, "signal"); sx; sx = ezxml_cnext(sx)) {
     std::string l_name, base, external;
     size_t index;
     bool hasIndex;

@@ -38,7 +38,7 @@ Card(ezxml_t xml, const char *name, SlotType &a_type, const char *parentFile, Wo
   // mapped, and removing those that are not present on the card
   for (SignalsIter si = m_type.m_signals.begin(); si != m_type.m_signals.end(); si++) {
     std::string slot, card;
-    for (ezxml_t xs = ezxml_cchild(xml, "Signal"); xs; xs = ezxml_next(xs)) {
+    for (ezxml_t xs = ezxml_cchild(xml, "Signal"); xs; xs = ezxml_cnext(xs)) {
       if ((err = OE::getRequiredString(xs, slot, "slot")) ||
 	  (err = OE::getRequiredString(xs, card, "card")))
 	return;
@@ -53,7 +53,7 @@ Card(ezxml_t xml, const char *name, SlotType &a_type, const char *parentFile, Wo
   }
 #if 0
   // process non-default signals: slot=pfsig, platform=dddd
-  for (ezxml_t xs = ezxml_cchild(xml, "Signal"); xs; xs = ezxml_next(xs)) {
+  for (ezxml_t xs = ezxml_cchild(xml, "Signal"); xs; xs = ezxml_cnext(xs)) {
     std::string slot, card;
     if ((err = OE::getRequiredString(xs, slot, "slot")) ||
 	(err = OE::getRequiredString(xs, card, "card")))

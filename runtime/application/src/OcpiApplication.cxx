@@ -796,7 +796,7 @@ namespace OCPI {
       for (unsigned n = 0; n < m_nInstances; n++, i++) {
 	ezxml_t xi;
 	const char *iname = m_assembly.instance(n).name().c_str();
-	for (xi = ezxml_cchild(xml, "instance"); xi; xi = ezxml_next(xi)) {
+	for (xi = ezxml_cchild(xml, "instance"); xi; xi = ezxml_cnext(xi)) {
 	  const char *l_name = ezxml_cattr(xi, "name");
 	  if (!l_name)
 	    throw OU::Error("Missing \"name\" attribute for instance in deployment file \"%s\"",

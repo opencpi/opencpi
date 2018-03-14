@@ -102,7 +102,7 @@ namespace OCPI {
       // Second pass - decode all information
       Property *prop = m_properties;
       ezxml_t x;
-      for (x = ezxml_cchild(xml, "property"); x; x = ezxml_next(x), prop++)
+      for (x = ezxml_cchild(xml, "property"); x; x = ezxml_cnext(x), prop++)
         if ((err = prop->parse(x, (unsigned)(prop - m_properties))))
           return esprintf("Invalid xml property description: %s", err);
       prop = m_properties;
@@ -119,7 +119,7 @@ namespace OCPI {
       // First pass to establish names and xml and ordinals
       Port *p = m_ports;
       unsigned n = 0;
-      for (x = ezxml_cchild(xml, "port"); x; x = ezxml_next(x), p++, n++)
+      for (x = ezxml_cchild(xml, "port"); x; x = ezxml_cnext(x), p++, n++)
         if ((err = p->preParse(*this, x, n)))
           return esprintf("Invalid xml port description(1): %s", err);
       // Second pass to do most of the parsing
@@ -140,10 +140,10 @@ namespace OCPI {
 	  hasOutput = true;
       m_isSource = hasOutput && !hasInput;
       Memory* m = m_memories;
-      for (x = ezxml_cchild(xml, "memory"); x; x = ezxml_next(x), m++ )
+      for (x = ezxml_cchild(xml, "memory"); x; x = ezxml_cnext(x), m++ )
         if ((err = m->parse(x)))
           return esprintf("Invalid xml local memory description: %s", err);
-      for (x = ezxml_cchild(xml, "scaling"); x; x = ezxml_next(x)) {
+      for (x = ezxml_cchild(xml, "scaling"); x; x = ezxml_cnext(x)) {
 	std::string l_name;
 	OE::getOptionalString(x, l_name, "name");
 	Port::Scaling s;

@@ -330,7 +330,7 @@ parse(ezxml_t cx, const ParamConfigs &configs) { // , bool includeInitial) {
   // Note that this resize when including initial props, will overallocate, e.g. volatiles.
   params.resize(//includeInitial ? m_worker.m_ctl.properties.size() : 
 		m_worker.m_ctl.nParameters);
-  for (ezxml_t px = ezxml_cchild(cx, "parameter"); px; px = ezxml_next(px)) {
+  for (ezxml_t px = ezxml_cchild(cx, "parameter"); px; px = ezxml_cnext(px)) {
     if ((err = OE::checkAttrs(px, PARAM_ATTRS, NULL)))
       return err;
     std::string name;
@@ -801,7 +801,7 @@ emitToolParameters() {
     return err;
   ParamConfig info(*this);                          // Current config for generating them
   info.params.resize(m_ctl.nParameters);
-  for (ezxml_t px = ezxml_cchild(x, "parameter"); px; px = ezxml_next(px)) {
+  for (ezxml_t px = ezxml_cchild(x, "parameter"); px; px = ezxml_cnext(px)) {
     std::string l_name;
     bool hasValues;
     OU::Property *p;
