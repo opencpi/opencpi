@@ -37,7 +37,7 @@ fi
 if test $OCPI_TOOL_PLATFORM = $OCPI_TARGET_PLATFORM; then
   echo ================================================================================
   echo Installing the standard packages for $OCPI_TOOL_PLATFORM.
-  platforms/$OCPI_TOOL_PLATFORM/$OCPI_TOOL_PLATFORM-packages.sh
+  projects/core/rcc/platforms/$OCPI_TOOL_PLATFORM/$OCPI_TOOL_PLATFORM-packages.sh
   echo ================================================================================
   echo All basic prerequisites are installed in the system.
   echo ================================================================================
