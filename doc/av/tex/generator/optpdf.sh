@@ -36,25 +36,26 @@ fi
 
 file=$1
 filebase=$(basename $file .pdf)
+prettyname=$(echo ${filebase} | tr _ ' ')
 optfile=/tmp/$$-${filebase}_opt.pdf
 gs -sDEVICE=pdfwrite -dPDFSETTINGS=/prepress -dCompatibilityLevel=1.4 -dNOPAUSE -dQUIET -dBATCH \
-        -sOutputFile=${optfile} ${file} <(sed -e "s/@TITLE@/$(echo ${filebase} | tr _ ' ')/" ${MYLOC}/pdfmarks)
+        -sOutputFile=${optfile} ${file} <(sed -e "s/@TITLE@/${prettyname}/" ${MYLOC}/pdfmarks)
 if [ $? == '0' ]; then
     optsize=$(stat -c "%s" ${optfile})
     orgsize=$(stat -c "%s" ${file})
     if [ "${optsize}" -eq 0 ]; then
-        echo "No output!  Keeping original"
+        echo "${prettyname}: No output! Keeping original."
         rm -f ${optfile}
         exit 1
     fi
     if [ ${optsize} -ge ${orgsize} ]; then
-        echo "Didn't make it smaller! Keeping original"
+        echo "${prettyname}: Didn't make it any smaller. Keeping original."
         rm -f ${optfile}
         exit 1
     fi
     bytesSaved=$(expr $orgsize - $optsize)
     percent=$(expr $optsize '*' 100 / $orgsize)
-    echo Saving $bytesSaved bytes \(now ${percent}% of old\)
+    echo "${prettyname}: Saving $bytesSaved bytes (now ${percent}% of old)"
     rm ${file}
     mv ${optfile} ${file}
 fi
