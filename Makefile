@@ -24,7 +24,7 @@ $(and $(OcpiProjectRegistryDir),$(subst $(Space),:,$(wildcard $(OcpiProjectRegis
 $(OCPI_CDK_DIR)/../projects/core
 endif
 ifndef OCPI_CDK_DIR
-  OCPI_CDK_DIR:=$(CURDIR)/exports
+  export OCPI_CDK_DIR:=$(CURDIR)/exports
 endif
 # Fake being a project until we can be a real one
 ifneq (,)
