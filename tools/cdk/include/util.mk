@@ -496,16 +496,16 @@ OcpiXmlComponentLibraries=$(infox HXC)\
 
 # Return a colon separated default OCPI_LIBRARY_PATH. It contains arg1 (or .), the core project's exports,
 # the current project's libraries underneath 'components', and the current project's hdl/assemblies
-OcpiGetDefaultLibraryPath=$(and $1,$(error UNEXPECTED))$(infox OGDLP)$(strip \
+OcpiGetDefaultLibraryPath=$(infox OGDLP)$(strip \
   $(or $1,.):$(OcpiProjectRegistryDir)/ocpi.core/exports:$(subst $(Space),:,$(strip \
     $(if $(call OcpiAbsPathToContainingProject,$1),\
-      $(if $(filter libraries,$(call OcpiGetDirType,$(call OcpiAbsPathToContainingProject,$1)/components)),\
+      $(if $(filter libraries,$(call OcpiGetDirType,$(call OcpiAbsPathToContainingProject)/components)),\
         $(wildcard $(call OcpiAbsPathToContainingProject,$1)/components/*/lib),\
         $(wildcard $(call OcpiAbsPathToContainingProject,$1)/components/lib))\
       $(call OcpiAbsPathToContainingProject,$1)/hdl/assemblies))))
 
 # Export the library path as the default
-OcpiSetDefaultLibraryPath=$(and $1,$(error UNEXPECTED))$(eval export OCPI_LIBRARY_PATH=$(call OcpiGetDefaultLibraryPath,$1))
+OcpiSetDefaultLibraryPath=$(eval export OCPI_LIBRARY_PATH=$(call OcpiGetDefaultLibraryPath))
 
 # Collect the projects in path from the different sources.
 # OCPI_PROJECT_PATH comes first and is able to shadow the others.
