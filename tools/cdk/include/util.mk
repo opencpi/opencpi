@@ -524,7 +524,7 @@ OcpiGetProjectPath=$(strip \
 # explicitly or implicitly depended on by the current project).
 # For example, available platforms can be determined based on all known projects.
 # Warning is suppressed during RPM builds
-OcpiGetExtendedProjectPath=$(strip $(OcpiGetProjectPath) $(info OGPP:$(OcpiGetProjectPath))\
+OcpiGetExtendedProjectPath=$(strip $(OcpiGetProjectPath) \
                              $(foreach p,$(OcpiGetImportsNotInDependencies),\
                                $(or $(call OcpiExists,$p/exports),$(call OcpiExists,$p),$(RPM_BUILD_ROOT),\
                                  $(info Warning: The path $p in Project Path does not exist.))))
@@ -553,7 +553,7 @@ OcpiGetRccPlatformPaths=$(strip \
 # Search for a given platform ($1) in the list of 'rcc/platform' directories found
 # by OcpiGetRccPlatformPaths.
 OcpiGetRccPlatformDir=$(strip $(firstword \
-		        $(foreach p,$(OcpiGetRccPlatformPaths),$(info OGRPP:$p)\
+		        $(foreach p,$(OcpiGetRccPlatformPaths),\
                           $(call OcpiExists,$p/$1))))
 
 ##################################################################################
