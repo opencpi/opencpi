@@ -24,8 +24,8 @@ ocpixml=$(type -p ocpixml)
 [ -z ${ocpixml} ] && ocpixml=${OCPI_CDK_DIR}/bin/${OCPI_TOOL_DIR}/ocpixml
 [ -x ${ocpixml} ] || echo "Could not find ocpixml!"
 
-patchelf=$OCPI_PREREQUISITES_INSTALL_DIR/patchelf/bin/patchelf
-[ -x ${patchelf} ] || patchelf=$OCPI_PREREQUISITES_INSTALL_DIR/patchelf/$OCPI_TOOL_DIR/bin/patchelf
+patchelf=$OCPI_PREREQUISITES_DIR/patchelf/bin/patchelf
+[ -x ${patchelf} ] || patchelf=$OCPI_PREREQUISITES_DIR/patchelf/$OCPI_TOOL_DIR/bin/patchelf
 [ -x ${patchelf} ] || echo "Could not find patchelf executable!"
 
 if test "$#" = 0; then

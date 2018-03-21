@@ -27,7 +27,7 @@ isCurPlatform()
 {
   vars=($(sh $1-check.sh $HostSystem $HostProcessor))
   if test ${#vars[@]} = 3; then
-    [ -n "$1" ] && echo Target is ${vars[0]}-${vars[1]}-${vars[2]}. 1>&2
+    # [ -n "$1" ] && echo Target is ${vars[0]}-${vars[1]}-${vars[2]}. 1>&2
     echo ${vars[@]}  ${vars[0]}-${vars[1]}-${vars[2]} $p
     exit 0
   fi
@@ -54,8 +54,10 @@ else
   exit 1
 fi
 # loop through all options to determine right platform by calling isCurPlatform for each platform
+# Find the rcc platforms at the top level of the project (like a source project) or under lib
+# in the project (exports).  FIXME:  should the export of rcc platforms be above lib?
 for j in $(echo $projects | tr : ' '); do
-  for i in $j/rcc/platforms/*; do
+  for i in $j/rcc/platforms/* $j/lib/rcc/platforms/*; do
     if test -d $i; then
       p=$(basename $i)
       if test -f $i/$p-check.sh; then

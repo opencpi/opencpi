@@ -40,20 +40,21 @@ fi
 echo ================================================================================
 echo We are running in `pwd` where the git clone of opencpi has been placed.
 echo ================================================================================
-echo Now we will '"make"' the OpenCPI framework libraries and utilities for $OCPI_TARGET_PLATFORM
+echo Now we will build the OpenCPI framework libraries and utilities for $OCPI_TARGET_PLATFORM
 make
 echo ================================================================================
-echo Now we will '"make"' the built-in RCC '(software)' components for $OCPI_TARGET_PLATFORM
+echo Now we will build the built-in RCC '(software)' components for $OCPI_TARGET_PLATFORM
 make -C projects/core rcc
 make -C projects/assets rcc
 make -C projects/inactive rcc
 echo ================================================================================
-echo Now we will '"make"' the built-in OCL '(GPU)' components for the available OCL platforms
+echo Now we will build the built-in OCL '(GPU)' components for the available OCL platforms
 make -C projects/core ocl
 make -C projects/assets ocl
 make -C projects/inactive ocl
 echo ================================================================================
-echo Now we will '"make"' the examples for $OCPI_TARGET_PLATFORM
+echo Now we will build the tests and examples for $OCPI_TARGET_PLATFORM
+make -C projects/core test
 make -C projects/assets applications
 make -C projects/inactive applications
 echo ================================================================================

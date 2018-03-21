@@ -87,8 +87,10 @@ namespace OCPI {
     bool ManagerManager::
     loadDriver(const char *managerName, const char *driverName, std::string &err) {
       std::string libDir;
-      assert(getenv("OCPI_CDK_DIR"));
-      OU::format(libDir, "%s/lib/%s-%s-%s", getenv("OCPI_CDK_DIR"),
+      const char *cdk = getenv("OCPI_CDK_DIR");
+      if (!cdk || !cdk[0])
+	return OU::eformat(err, "OCPI_CDK_DIR environment variable is not set");
+      OU::format(libDir, "%s/lib/%s-%s-%s", cdk,
 		 OCPI_CPP_STRINGIFY(OCPI_OS) + strlen("OCPI"),
 		 OCPI_CPP_STRINGIFY(OCPI_OS_VERSION), OCPI_CPP_STRINGIFY(OCPI_ARCH));
       if (!OS::FileSystem::exists(libDir))
@@ -131,8 +133,12 @@ namespace OCPI {
       if (!file) {
 	configFile = "/opt/opencpi/system.xml";
 	if (!OS::FileSystem::exists(configFile)) {
-	  assert(getenv("OCPI_CDK_DIR"));
-	  OU::format(configFile, "%s/default-system.xml", getenv("OCPI_CDK_DIR"));
+	  const char *cdk = getenv("OCPI_CDK_DIR");
+	  if (!cdk || !cdk[0])
+	    throw OU::Error("OCPI_CDK_DIR environment variable not set");
+	  OU::format(configFile, "%s/../system.xml", cdk);
+	  if (!OS::FileSystem::exists(configFile))
+	    OU::format(configFile, "%s/default-system.xml", cdk);
 	}
       } else
 	configFile = file;

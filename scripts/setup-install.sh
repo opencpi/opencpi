@@ -1,4 +1,3 @@
-#!/bin/sh
 # This file is protected by Copyright. Please refer to the COPYRIGHT file
 # distributed with this source distribution.
 #
@@ -43,30 +42,17 @@ if test "$OCPI_TARGET_PLATFORM" != "$OCPI_TOOL_PLATFORM" -a "$cross" != "1"; the
  echo We do not crossbuild $package for non-development environments so skipping building it.
  exit 0
 fi
-
+source scripts/setup-prereq-dirs.sh
 echo ====== Starting installation of package \"$package\" for platform \"$platform\".
+echo ========= It will be downloaded/built in $OCPI_PREREQUISITES_BUILD_DIR/$package
+echo ========= It will be installed in $OCPI_PREREQUISITES_INSTALL_DIR/$package/$OCPI_TARGET_DIR
 set -e
-if test -z "$OCPI_PREREQUISITES_INSTALL_DIR"; then
-  if test -n "$OCPI_PREREQUISITES_DIR"; then
-    export OCPI_PREREQUISITES_INSTALL_DIR=$OCPI_PREREQUISITES_DIR
-  else
-    export OCPI_PREREQUISITES_INSTALL_DIR=/opt/opencpi/prerequisites
-  fi
-  pdir="$(dirname $OCPI_PREREQUISITES_INSTALL_DIR)"
-  if test ! -d $pdir; then
-    echo "Error: $pdir does not exist and must be created first."
-    echo "       With appropriate permissions, ideally not root-only."
-    exit 1
-  fi
-fi
-if test "$OCPI_PREREQUISITES_BUILD_DIR" = ""; then
-  export OCPI_PREREQUISITES_BUILD_DIR=$OCPI_PREREQUISITES_INSTALL_DIR
-fi
-mkdir -p $OCPI_PREREQUISITES_BUILD_DIR
-mkdir -p $OCPI_PREREQUISITES_INSTALL_DIR
+# Create and enter the directory where we will download and build
 cd $OCPI_PREREQUISITES_BUILD_DIR
 mkdir -p $package
 cd $package
+# Create the directory where the package will be installed
+mkdir -p $OCPI_PREREQUISITES_INSTALL_DIR/$package/$OCPI_TARGET_DIR
 # If a download file is provided...
 if [ -n "$url" ]; then
   if [[ "$url" == *.git ]]; then
@@ -135,5 +121,16 @@ else
   LD=c++
   AR=ar
 fi
-mkdir -p $OCPI_PREREQUISITES_INSTALL_DIR/$package/$OCPI_TARGET_DIR
 echo ====== Building package \"$package\" for platform \"$platform\" in `pwd`.
+
+# Make a relative link from the install dir to the build dir
+# args are the two args to ln (to from)
+# replace the link if it exists
+function relative_link {
+  local from=$2
+  [ -d $2 ] || from=$(dirname $2)
+ # [ -d $1 ] && echo Bad relative symlink to a directory: $1 && exit 1
+  local to=$(python -c "import os.path; print os.path.relpath('$(dirname $1)', '$from')")
+  [ -d $2 -a -L $2/$(basename $1) ] && rm $2/$(basename $1)
+  ln -s -f $to/$(basename $1) $2
+}

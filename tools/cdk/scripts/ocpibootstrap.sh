@@ -66,13 +66,25 @@ if [ "$OCPI_CDK_DIR" = "" -o ! -d "$OCPI_CDK_DIR" ]; then # and any other sanity
     exit 1
   fi
 fi
+# Initialize prerequisites
+# THIS IS THE BASH VERSION OF WHAT IS IN util.mk
+# This is where it should be used.
+[ -z "$OCPI_PREREQUISITES_DIR" ] && {
+  if [ -n "$OCPI_CDK_DIR" ]; then
+    export OCPI_PREREQUISITES_DIR=$(dirname $OCPI_CDK_DIR)/prerequisites
+  else
+    export OCPI_PREREQUISITES_DIR=/opt/opencpi/prerequisites
+  fi
+  [ -d $OCPI_PREREQUISITES_DIR ] ||
+    echo "Warning: $OCPI_PREREQUISITES_DIR does not exist yet."
+}
 if test "$OCPI_TOOL_PLATFORM" = ""; then
   GETPLATFORM=$OCPI_CDK_DIR/platforms/getPlatform.sh
   if test ! -f $OCPI_CDK_DIR/platforms/getPlatform.sh; then
     echo Error:  ocpibootstrap.sh cannot find getPlatforms.sh    
     exit 1
   fi
-  read v0 v1 v2 v3 v4 <<EOF
+  read v0 v1 v2 v3 v4 v5 <<EOF
 `${GETPLATFORM}`
 EOF
   if test "$v0" == "" -o $? != 0; then

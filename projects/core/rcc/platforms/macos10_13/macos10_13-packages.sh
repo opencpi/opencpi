@@ -18,4 +18,7 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 echo There are no platform-specific prerequisites to install for MacOS.
+echo But a current xcode installation is assumed.
+echo Other prerequisites will probably be based on the macports package manager in the future.
+
 

@@ -83,7 +83,7 @@ OCPI_DRIVERS=hdl rcc ocl pio dma socket remote ofed
 ifeq ($(OCPI_BUILD_SHARED_LIBRARIES),1)
   MAIN_LDFLAGS+= \
     $(foreach l,$(PREQLIBS), \
-      -Xlinker -rpath -Xlinker $(OCPI_PREREQUISITES_INSTALL_DIR)/$l/$(OCPI_TARGET_DIR)/lib)
+      -Xlinker -rpath -Xlinker $(OCPI_PREREQUISITES_DIR)/$l/$(OCPI_TARGET_DIR)/lib)
 endif
 
 # The library search for the executables have to deal with three different scenarios
@@ -244,7 +244,7 @@ LIBDEP=$(foreach l,$(notdir $1),$(infox l is $l)\
                              $(OCPI_OUT_DIR)),$(infox x is $x)\
                  $(foreach z,$d$x/libocpi_$n.$s,$(infox ZZZ $l->$z:($(OCPI_OUT_DIR)))$z))))))
 
-PREQDEP=$(foreach d,$(OCPI_PREREQUISITES_INSTALL_DIR)/$1/$(OCPI_TARGET_DIR)/lib,$(infox d is $d)\
+PREQDEP=$(foreach d,$(OCPI_PREREQUISITES_DIR)/$1/$(OCPI_TARGET_DIR)/lib,$(infox d is $d)\
 	   $(foreach s,$(if $(filter 0,$(OCPI_BUILD_SHARED_LIBRARIES)),a,$(SO)),\
 	     $(foreach l,$d/lib$1.$s,$(infox PREQDEP: $1 -> $l)$l)))
  

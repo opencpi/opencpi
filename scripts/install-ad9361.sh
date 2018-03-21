@@ -76,11 +76,11 @@ $AR -rs libad9361.a ${SRCNAMES[@]/%/.o}
 ################################################################################
 # 3. Install the deliverables:  OPS file, headers and library
 ################################################################################
-mkdir -p $OCPI_PREREQUISITES_INSTALL_DIR/ad9361/$OCPI_TARGET_DIR
-ln -f -s `pwd` $OCPI_PREREQUISITES_INSTALL_DIR/ad9361/$OCPI_TARGET_DIR/lib
+mkdir -p $OCPI_PREREQUISITES_INSTALL_DIR/ad9361/$OCPI_TARGET_DIR/lib
+relative_link `pwd`/libad9361.a $OCPI_PREREQUISITES_INSTALL_DIR/ad9361/$OCPI_TARGET_DIR/lib
 mkdir -p $OCPI_PREREQUISITES_INSTALL_DIR/ad9361/include
 for i in ${INCS[@]}; do
-  ln -f -s `pwd`/$dir/$i.h $OCPI_PREREQUISITES_INSTALL_DIR/ad9361/include/$i.h
+  relative_link `pwd`/$dir/$i.h $OCPI_PREREQUISITES_INSTALL_DIR/ad9361/include/$i.h
 done
 echo ============= ad9361 library for $OCPI_TARGET_PLATFORM built and installed
 else

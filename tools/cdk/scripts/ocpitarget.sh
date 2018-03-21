@@ -82,4 +82,4 @@ fi
 if [ -z "${OCPI_TARGET_ARCH}" ]; then
   echo "Some variables may be unset. Are you sure a platform '${OCPI_TARGET_PLATFORM}' exists?"
 fi
-echo OCPI_PROJECT_PATH is $OCPI_PROJECT_PATH
+# mostly obsolete now anyway: echo OCPI_PROJECT_PATH is $OCPI_PROJECT_PATH

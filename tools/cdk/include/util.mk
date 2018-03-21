@@ -30,8 +30,17 @@ ifneq (1,$(OCPI_AUTOCONFIG_IMPORTED))
 -include $(OCPI_CDK_DIR)/include/autoconfig_import.mk
 endif
 
+# THIS IS THE make VERSION OF WHAT IS IN ocpibootstrap.sh
 ifndef OCPI_PREREQUISITES_DIR
-  export OCPI_PREREQUISITES_DIR=/opt/opencpi/prerequisites
+  ifneq ($(and $(OCPI_CDK_DIR),$(wildcard $(OCPI_CDK_DIR)/../prerequisites)),)
+    export OCPI_PREREQUISITES_DIR:=$(abspath $(OCPI_CDK_DIR)/../prerequisites)
+  else
+    export OCPI_PREREQUISITES_DIR:=/opt/opencpi/prerequisites
+  endif
+endif
+#FIXME  this registration should be somewhere else nicer
+ifndef OCPI_PREREQUISITES_LIBS
+  export OCPI_PREREQUISITES_LIBS:=lzma gmp
 endif
 
 OCPI_DEBUG_MAKE=
@@ -429,10 +438,6 @@ RmRv=$(if $(filter %_rv,$1),$(patsubst %_rv,%,$1),$1)
 
 OcpiAdjustLibraries=$(call Unique,$(foreach l,$1,$(if $(findstring /,$l),$(call AdjustRelative,$l),$l)))
 
-ifndef OCPI_PREREQUISITES_INSTALL_DIR
-  export OCPI_PREREQUISITES_INSTALL_DIR:=$(OCPI_PREREQUISITES_DIR)
-endif
-
 ################################################################################
 # This works when wildcard doesn't.
 # (Note: make's wildcard function caches results so can't probe something that
@@ -491,7 +496,7 @@ OcpiXmlComponentLibraries=$(infox HXC)\
 
 # Return a colon separated default OCPI_LIBRARY_PATH. It contains arg1 (or .), the core project's exports,
 # the current project's libraries underneath 'components', and the current project's hdl/assemblies
-OcpiGetDefaultLibraryPath=$(infox OGDLP)$(strip \
+OcpiGetDefaultLibraryPath=$(and $1,$(error UNEXPECTED))$(infox OGDLP)$(strip \
   $(or $1,.):$(OcpiProjectRegistryDir)/ocpi.core/exports:$(subst $(Space),:,$(strip \
     $(if $(call OcpiAbsPathToContainingProject,$1),\
       $(if $(filter libraries,$(call OcpiGetDirType,$(call OcpiAbsPathToContainingProject,$1)/components)),\
@@ -500,7 +505,7 @@ OcpiGetDefaultLibraryPath=$(infox OGDLP)$(strip \
       $(call OcpiAbsPathToContainingProject,$1)/hdl/assemblies))))
 
 # Export the library path as the default
-OcpiSetDefaultLibraryPath=$(eval export OCPI_LIBRARY_PATH=$(call OcpiGetDefaultLibraryPath,$1))
+OcpiSetDefaultLibraryPath=$(and $1,$(error UNEXPECTED))$(eval export OCPI_LIBRARY_PATH=$(call OcpiGetDefaultLibraryPath,$1))
 
 # Collect the projects in path from the different sources.
 # OCPI_PROJECT_PATH comes first and is able to shadow the others.
@@ -579,7 +584,7 @@ OcpiGetImportsNotInDependencies=$(strip \
 # If inside a project, try to use its imports.
 OcpiProjectRegistryDir=$(strip \
   $(or \
-    $(and $(OCPI_PROJECT_DIR),$(call OcpiExists,$(call OcpiImportsDirForContainingProject,.))),\
+    $(and $(OCPI_PROJECT_DIR),$(call OcpiExists,$(call OcpiImportsDirForContainingProject,$1))),\
     $(strip $(OCPI_PROJECT_REGISTRY_DIR)),\
     $(if $(strip $(OCPI_CDK_DIR)),\
       $(OCPI_CDK_DIR)/../project-registry,\
@@ -593,7 +598,10 @@ OcpiImportsDirForContainingProject=$(strip $(foreach p,$(call OcpiAbsPathToConta
 # Do no include the current project if it is found in imports.
 # $(call OcpiGetProjectImports)
 OcpiGetProjectImports=$(strip \
-  $(foreach p,$(foreach i,$(call OcpiImportsDirForContainingProject,.),$(wildcard $i/*)),\
+  $(foreach p,$(foreach i,$(if $(filter clean%,$(MAKECMDGOALS)),\
+                            $(OcpiProjectRegistryDir),\
+                            $(call OcpiImportsDirForContainingProject,.)),\
+	        $(wildcard $i/*)),\
     $(if $(filter $(realpath $p),$(realpath $(OcpiAbsPathToContainingProject))),\
       ,\
       $p )))
@@ -618,7 +626,9 @@ OcpiIsPathCdk=$(strip \
 # the requested import by checking the 'realpath' of each import against $2
 # $(call OcpiGetProjectInImports,<origin-path>,<destination-project>)
 OcpiGetProjectInImports=$(strip \
-  $(foreach i,$(call OcpiImportsDirForContainingProject,$1),\
+  $(foreach i,$(if $(filter clean%,$(MAKECMDGOALS)),\
+                $(call OcpiProjectRegistryDir,$1),\
+                $(call OcpiImportsDirForContainingProject,$1)),\
     $(or \
       $(if $(filter $2,$(notdir $2)),\
         $(call OcpiExists,$i/$2)),\
@@ -984,7 +994,7 @@ OcpiFindSubdirs=$(strip \
   $(foreach a,$(wildcard */Makefile),\
     $(shell grep -q '^[ 	]*include[ 	]*.*/include/$1.mk' $a && echo $(patsubst %/,%,$(dir $a)))))
 
-OcpiHavePrereq=$(realpath $(OCPI_PREREQUISITES_INSTALL_DIR)/$1)
+OcpiHavePrereq=$(realpath $(OCPI_PREREQUISITES_DIR)/$1)
 OcpiPrereqDir=$(call OcpiHavePrereq,$1)
 OcpiCheckPrereq=$(strip\
    $(if $(realpath $(OCPI_PREREQUISITES_DIR)/$1),,\

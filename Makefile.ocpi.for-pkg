@@ -143,7 +143,7 @@ DOSHLIB= \
 $(UNIXSHLIB): $(OBJECTS)
 	$(AT)$(DOSHLIB)
 
-PatchElf=$(OCPI_PREREQUISITES_INSTALL_DIR)/patchelf/$(OCPI_TOOL_DIR)/bin/patchelf
+PatchElf=$(OCPI_PREREQUISITES_DIR)/patchelf/$(OCPI_TOOL_DIR)/bin/patchelf
 $(UNIXSHLIB_S): $(UNIXSHLIB)
 	$(AT)echo Creating $@ for use with statically linked executables.
 	$(AT)$(DOSHLIB)
@@ -154,7 +154,7 @@ $(UNIXSHLIB_S): $(UNIXSHLIB)
        	         $(foreach l,$(ALLLIBS), --remove-needed libocpi_$(notdir $l).$(SO)) \
 	         $(foreach l,$(PREQLIBS), \
 	         $(foreach x,\
-	           $(wildcard $(OCPI_PREREQUISITES_INSTALL_DIR)/$l/$(OCPI_TOOL_DIR)/lib/lib$l.*), \
+	           $(wildcard $(OCPI_PREREQUISITES_DIR)/$l/$(OCPI_TOOL_DIR)/lib/lib$l.*), \
 	        --remove-needed $(notdir $x))) \
 	      $@; \
             fi

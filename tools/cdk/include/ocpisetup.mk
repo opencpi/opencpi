@@ -148,24 +148,6 @@ else
 endif
 
 ################################################################################
-# Set up Prerequisites
-ifndef OCPI_PREREQUISITES_DIR
-  export OCPI_PREREQUISITES_DIR:=/opt/opencpi/prerequisites
-endif
-
-#FIXME  this registration should be somewhere else.
-ifndef OCPI_PREREQUISITES_LIBS
-  export OCPI_PREREQUISITES_LIBS:=lzma gmp
-endif
-
-# FIXME is this necessary?
-ifndef OCPI_PREREQUISITES_INSTALL_DIR
-  export OCPI_PREREQUISITES_INSTALL_DIR:=$(OCPI_PREREQUISITES_DIR)
-endif
-ifndef OCPI_PATCHELF_DIR
-  export OCPI_PATCHELF_DIR=$(OCPI_PREREQUISITES_DIR)/patchelf
-endif
-################################################################################
 # Figure out if we should have OPENCL support
 ifeq ($(origin OCPI_HAVE_OPENCL),undefined)
   ifeq ($(OCPI_TARGET_HOST),$(OCPI_TOOL_HOST))
