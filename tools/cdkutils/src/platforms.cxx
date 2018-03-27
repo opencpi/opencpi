@@ -92,6 +92,10 @@ doHdlPlatform(std::string &place) {
 
 const char *
 getCdkDir(std::string &cdk) {
+  // This will actually throw an exception
+  cdk = OU::getCdk();
+  return NULL;
+#if 0
   const char *env = getenv("OCPI_CDK_DIR");
   bool isDir;
   if (env && OF::exists(env, &isDir) && isDir) {
@@ -100,6 +104,7 @@ getCdkDir(std::string &cdk) {
     return NULL;
   }
   return "OCPI_CDK_DIR not set, does not exist, or is not a directory";
+#endif
 }
 
 const char *
@@ -125,6 +130,7 @@ getRccPlatforms(const StringSet *&platforms) {
   std::string dir;
   if ((err = getCdkDir(dir)))
     return err;
+  // THIS IS BROKEN FIND OUT WHO NEEDS THIS AND FIX IT TO LOOK IN PROJECTS for rcc/platforms
   dir += "/platforms";
   for (OS::FileIterator it(dir, "*"); !it.end(); it.next())
     if (it.isDirectory()) {
