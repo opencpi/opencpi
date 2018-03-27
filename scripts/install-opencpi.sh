@@ -18,6 +18,7 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 set -e
-./scripts/install-prerequisites.sh
-./scripts/build-opencpi.sh
-./scripts/test-opencpi.sh
+./scripts/install-packages.sh $1
+./scripts/install-prerequisites.sh $1
+./scripts/build-opencpi.sh $1
+./scripts/test-opencpi.sh $1

@@ -17,20 +17,19 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-OCPI_PATCHELF_VERSION=0.9
-dir=patchelf-$OCPI_PATCHELF_VERSION
-source ./scripts/setup-install.sh \
+version=0.9
+dir=patchelf-$version
+[ -z "$OCPI_CDK_DIR" ] && echo Environment variable OCPI_CDK_DIR not set && exit 1
+source $OCPI_CDK_DIR/scripts/setup-install.sh \
        "$1" \
        patchelf \
+       "ELF file patching utility" \
        $dir.tar.gz \
        http://nixos.org/releases/patchelf/$dir \
        $dir \
        0
-
 ../configure  \
   --prefix=$OCPI_PREREQUISITES_INSTALL_DIR/patchelf \
   --exec-prefix=$OCPI_PREREQUISITES_INSTALL_DIR/patchelf/$OCPI_TARGET_DIR \
   CFLAGS=-g CXXFLAGS=-g
-make
-make install
-echo ============= patchelf for $OCPI_TARGET_PLATFORM built and installed in $OCPI_PREREQUISITES_INSTALL_DIR/patchelf/$OCPI_TARGET_DIR
+make && make install

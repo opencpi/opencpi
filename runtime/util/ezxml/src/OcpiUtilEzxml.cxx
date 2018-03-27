@@ -624,14 +624,14 @@ namespace OCPI {
       ezxml_t
       findChildWithAttr(ezxml_t x, const char *cName, const char *aName,
 			const char *value) {
-	for (ezxml_t c = ezxml_cchild(x, cName); c; c = ezxml_next(c))
+	for (ezxml_t c = ezxml_cchild(x, cName); c; c = ezxml_cnext(c))
 	  if (hasAttrEq(c, aName, value))
 	    return c;
 	return 0;
       }
       unsigned countChildren(ezxml_t x, const char*cName) {
 	unsigned n = 0;
-	for (ezxml_t c = ezxml_cchild(x, cName); c; c = ezxml_next(c))
+	for (ezxml_t c = ezxml_cchild(x, cName); c; c = ezxml_cnext(c))
 	  n++;
 	return n;
       }

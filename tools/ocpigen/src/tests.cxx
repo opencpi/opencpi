@@ -660,7 +660,7 @@ namespace {
 	}
 	if (!found)
 	  return OU::esprintf("Property name \"%s\" not a worker or test property", name.c_str());
-	for (ezxml_t sx = ezxml_cchild(px, "set"); sx; sx = ezxml_next(sx))
+	for (ezxml_t sx = ezxml_cchild(px, "set"); sx; sx = ezxml_cnext(sx))
 	  if ((err = parseDelay(sx, *found->m_param)))
 	    return err;
       }

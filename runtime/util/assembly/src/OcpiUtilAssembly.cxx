@@ -136,7 +136,7 @@ namespace OCPI {
       OE::getOptionalString(ax, m_package, "package");
       if (m_package.empty())
 	m_package = "local";
-      for (ezxml_t ix = ezxml_cchild(ax, "Instance"); ix; ix = ezxml_next(ix))
+      for (ezxml_t ix = ezxml_cchild(ax, "Instance"); ix; ix = ezxml_cnext(ix))
 	if ((err = addInstance(ix, extraInstAttrs, params)))
 	  return err;
       const char *done = ezxml_cattr(ax, "done");
@@ -151,11 +151,11 @@ namespace OCPI {
       // Not likely, but the instance level stuff may be shared someday
       m_mappedProperties.resize(OE::countChildren(ax, "property"));
       MappedProperty *p = &m_mappedProperties[0];
-      for (ezxml_t px = ezxml_cchild(ax, "property"); px; px = ezxml_next(px), p++)
+      for (ezxml_t px = ezxml_cchild(ax, "property"); px; px = ezxml_cnext(px), p++)
 	if ((err = p->parse(px, *this)))
 	  return err;
       n = 0;
-      for (ezxml_t cx = ezxml_cchild(ax, "Connection"); cx; cx = ezxml_next(cx)) {
+      for (ezxml_t cx = ezxml_cchild(ax, "Connection"); cx; cx = ezxml_cnext(cx)) {
 	Connection tmp;
 	m_connections.push_back(tmp);
 	if ((err = m_connections.back().parse(cx, *this, n, params)))
@@ -163,11 +163,11 @@ namespace OCPI {
       }
       // Add top level externals that simply define single port external connections
       // name defaults from port.
-      for (ezxml_t ex = ezxml_cchild(ax, "External"); ex; ex = ezxml_next(ex))
+      for (ezxml_t ex = ezxml_cchild(ax, "External"); ex; ex = ezxml_cnext(ex))
 	if ((err = addExternalConnection(ex, params)))
 	  return err;
       n = 0;
-      for (ezxml_t ix = ezxml_cchild(ax, "Instance"); ix; ix = ezxml_next(ix), n++)
+      for (ezxml_t ix = ezxml_cchild(ax, "Instance"); ix; ix = ezxml_cnext(ix), n++)
 	if ((err = m_instances[n]->parseConnection(ix, *this, params)))
 	  return err;
       // Check instance parameters that don't name instances properly
@@ -520,7 +520,7 @@ namespace OCPI {
 	}
 	// Recurse for <set> elements
 	if (isProperty)
-	  for (ezxml_t sx = ezxml_cchild(px, "set"); sx; sx = ezxml_next(sx))
+	  for (ezxml_t sx = ezxml_cchild(px, "set"); sx; sx = ezxml_cnext(sx))
 	    if ((err = OE::checkAttrs(px, "value", "valuefile", "delay", NULL)) ||
 		(err = addProperty(name, sx)))
 	      break;
@@ -601,7 +601,7 @@ namespace OCPI {
       if (!OE::getOptionalString(ix, m_name, "name")) {
       // default is component%u unless there is only one, in which case it is "component".
 	unsigned me = 0, n = 0;
-	for (ezxml_t x = ezxml_cchild(a.xml(), "instance"); x; x = ezxml_next(x)) {
+	for (ezxml_t x = ezxml_cchild(a.xml(), "instance"); x; x = ezxml_cnext(x)) {
 	  std::string base;
 	  const char
 	    *c = ezxml_cattr(x, "component"),
@@ -635,11 +635,11 @@ namespace OCPI {
 #if 0
       m_properties.resize(OE::countChildren(ix, "property"));
       Property *p = &m_properties[0];
-      for (ezxml_t px = ezxml_cchild(ix, "property"); px; px = ezxml_next(px), p++)
+      for (ezxml_t px = ezxml_cchild(ix, "property"); px; px = ezxml_cnext(px), p++)
 	if ((err = p->parse(px, &m_properties[0])))
 	  return err;
 #else
-      for (ezxml_t px = ezxml_cchild(ix, "property"); px; px = ezxml_next(px)) {
+      for (ezxml_t px = ezxml_cchild(ix, "property"); px; px = ezxml_cnext(px)) {
 	const char *name = ezxml_cattr(px, "name");
 	if (!name)
 	  return "missing name attribute in property element";
@@ -689,7 +689,7 @@ namespace OCPI {
 	  return err;
       }
       unsigned nExt = 0; // for name ordinals when unnamed
-      for (ezxml_t x = ezxml_cchild(cx, "external"); x; x = ezxml_next(x), nExt++) {
+      for (ezxml_t x = ezxml_cchild(cx, "external"); x; x = ezxml_cnext(x), nExt++) {
 	External tmp;
 	m_externals.push_back(tmp);
 	if ((err = m_externals.back().parse(x, "ext%u", nExt, m_parameters)))
@@ -698,7 +698,7 @@ namespace OCPI {
       if (OE::countChildren(cx, "port") < 1)
 	return "no ports found under connection";
       Port *other = NULL;
-      for (ezxml_t x = ezxml_cchild(cx, "port"); x; x = ezxml_next(x)) {
+      for (ezxml_t x = ezxml_cchild(cx, "port"); x; x = ezxml_cnext(x)) {
 	Port tmp;
 	m_ports.push_back(tmp);
 	Port &p = m_ports.back();

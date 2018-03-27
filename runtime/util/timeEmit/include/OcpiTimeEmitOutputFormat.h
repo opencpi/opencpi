@@ -203,7 +203,7 @@ namespace OCPI {
 	    return d1.id < d2.id;
 	  }
 	void parseDescriptors() {
-	  for (ezxml_t x = ezxml_cchild(m_desc_xml, "Class"); x; x = ezxml_next(x)) {
+	  for (ezxml_t x = ezxml_cchild(m_desc_xml, "Class"); x; x = ezxml_cnext(x)) {
 	    Event e;
 #ifndef NDEBUG
 	    std::cout << ezxml_cattr(x,"id") << " " << ezxml_cattr(x,"description") <<  std::endl;
@@ -233,7 +233,7 @@ namespace OCPI {
 	    return o1.id < o2.id;
 	  }
 	void parseOwners() {
-	  for (ezxml_t x = ezxml_cchild(m_owner_xml, "Owner"); x; x = ezxml_next(x)) {
+	  for (ezxml_t x = ezxml_cchild(m_owner_xml, "Owner"); x; x = ezxml_cnext(x)) {
 	    Event e;
 #ifndef NDEBUG
 	    std::cout << ezxml_cattr(x,"id") << " " << ezxml_cattr(x,"name") << ezxml_cattr(x,"parent") << 
@@ -253,7 +253,7 @@ namespace OCPI {
 	  }
 	std::vector<Event> m_events;
 	void  parseEvents() {
-	  for (ezxml_t x = ezxml_cchild(m_event_xml, "Event"); x; x = ezxml_next(x)) {
+	  for (ezxml_t x = ezxml_cchild(m_event_xml, "Event"); x; x = ezxml_cnext(x)) {
 	    Event e;
 
 #ifndef NDEBUG

@@ -18,7 +18,7 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 # Install prerequisite packages for Centos7
-echo Installing standard extra packages using "yum"
+echo Installing standard extra packages using "sudo yum"
 sudo yum -y groupinstall "development tools"
 CENTOS7_PKGS="mlocate tcl pax python-devel fakeroot which nfs-utils ocl-icd python-lxml libusb-devel"
 echo Installing packages required or commonly used: $CENTOS7_PKGS

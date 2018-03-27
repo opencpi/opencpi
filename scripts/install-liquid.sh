@@ -24,9 +24,11 @@
 set -e
 OCPI_LIQUID_VERSION=v1.3.1
 dir=liquid-dsp
-source ./scripts/setup-install.sh \
+[ -z "$OCPI_CDK_DIR" ] && echo Environment variable OCPI_CDK_DIR not set && exit 1
+source $OCPI_CDK_DIR/scripts/setup-install.sh \
        "$1" \
        liquid \
+       "DSP Math Library" \
        $OCPI_LIQUID_VERSION \
        https://github.com/jgaeddert/liquid-dsp.git \
        $dir \
@@ -45,11 +47,11 @@ fi
 #./src/fec/gentab/reverse_byte_gentab \
 #./src/utility/gentab/count_ones_gentab \
 #"
-[ $OCPI_TOOL_PLATFORM != $OCPI_TARGET_PLATFORM -a ! -f $OCPI_PREREQUISITES_INSTALL_DIR/liquid/$OCPI_TOOL_DIR/bin/reverse_byte_gentab ] && {
-  echo It appears that you have not built the liquid library for $OCPI_TOOL_PLATFORM yet.
-  echo This is required before trying to build this library for $OCPI_TARGET_PLATFORM, on $OCPI_TOOL_PLATFORM.
-  exit 1
-}
+# [ $OCPI_TOOL_PLATFORM != $OCPI_TARGET_PLATFORM -a ! -f $OCPI_PREREQUISITES_INSTALL_DIR/liquid/$OCPI_TOOL_DIR/bin/reverse_byte_gentab ] && {
+#   echo It appears that you have not built the liquid library for $OCPI_TOOL_PLATFORM yet.
+#   echo This is required before trying to build this library for $OCPI_TARGET_PLATFORM, on $OCPI_TOOL_PLATFORM.
+#   exit 1
+# }
 (echo Performing '"./bootstrap.sh"' on git repo; cd ..; ./bootstrap.sh)
 base=$(basename `pwd`)
 echo Copying git repo for building in `pwd`

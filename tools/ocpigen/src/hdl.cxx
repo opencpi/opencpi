@@ -217,7 +217,7 @@ parseHdlImpl(const char *a_package) {
       m_needsEndian = true;
   }
   // Now we do clocks before interfaces since they may refer to clocks
-  for (ezxml_t xc = ezxml_cchild(m_xml, "Clock"); xc; xc = ezxml_next(xc)) {
+  for (ezxml_t xc = ezxml_cchild(m_xml, "Clock"); xc; xc = ezxml_cnext(xc)) {
     if ((err = OE::checkAttrs(xc, "Name", "Signal", "Home", (void*)0)))
       return err;
     Clock *c = addClock();
@@ -251,10 +251,10 @@ parseHdlImpl(const char *a_package) {
   // Prepare to process data plane port implementation info
   // Now lets look at the implementation-specific data interface info
   DataPort *sp;
-  for (ezxml_t s = ezxml_cchild(m_xml, "StreamInterface"); s; s = ezxml_next(s))
+  for (ezxml_t s = ezxml_cchild(m_xml, "StreamInterface"); s; s = ezxml_cnext(s))
     if ((err = checkDataPort(s, sp)) || !createDataPort<WsiPort>(*this, s, sp, -1, err))
     return err;
-  for (ezxml_t m = ezxml_cchild(m_xml, "MessageInterface"); m; m = ezxml_next(m))
+  for (ezxml_t m = ezxml_cchild(m_xml, "MessageInterface"); m; m = ezxml_cnext(m))
     if ((err = checkDataPort(m, sp)) || !createDataPort<WmiPort>(*this, m, sp, -1, err))
     return err;
   // Final passes over all data ports for defaulting and checking
@@ -462,7 +462,7 @@ parseSignals(ezxml_t xml, const std::string &parent, Signals &signals, SigMap &s
       return err;
   }
   // process ad hoc signals
-  for (ezxml_t xs = ezxml_cchild(xml, "Signal"); !err && xs; xs = ezxml_next(xs)) {
+  for (ezxml_t xs = ezxml_cchild(xml, "Signal"); !err && xs; xs = ezxml_cnext(xs)) {
     Signal *s = new Signal;
     if (!(err = s->parse(xs, w)))  {
       if (sigmap.find(s->m_name.c_str()) == sigmap.end()) {

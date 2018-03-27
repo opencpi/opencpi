@@ -708,14 +708,14 @@ namespace OCPI {
     Member::
     parseMembers(ezxml_t mems, size_t &nMembers, Member *&members, bool a_isFixed,
 		 const char *tag, const char *hasDefault, const IdentResolver *resolver) {
-      for (ezxml_t m = ezxml_cchild(mems, tag); m ; m = ezxml_next(m))
+      for (ezxml_t m = ezxml_cchild(mems, tag); m ; m = ezxml_cnext(m))
 	nMembers++;
       if (nMembers) {
 	std::set<const char *, ConstCharComp> names, abbrevs;
 	Member *m = new Member[nMembers];
 	members = m;
 	const char *err = NULL;
-	for (ezxml_t mx = ezxml_cchild(mems, tag); mx ; mx = ezxml_next(mx), m++) {
+	for (ezxml_t mx = ezxml_cchild(mems, tag); mx ; mx = ezxml_cnext(mx), m++) {
 	  if ((err = OE::checkAttrs(mx, OCPI_UTIL_MEMBER_ATTRS,
 				    hasDefault ? hasDefault : NULL, NULL)) ||
 	      (err = m->parse(mx, a_isFixed, true, hasDefault, "member", (unsigned)(m - members),

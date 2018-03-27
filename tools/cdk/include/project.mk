@@ -42,7 +42,8 @@ endif
 ifeq ($(filter imports projectpackage,$(MAKECMDGOALS)),)
   doimports=$(shell $(MAKE) imports)
   ifeq ($(wildcard imports),)
-    $(info Imports are not set up for this project.  Doing it now. $(doimports))
+    $(info Imports are not set up for this project.  Doing it now.)
+    $(info $(doimports))
   else
     # If the imports already exist, we still want to make sure they are up to date
     $(infox Updating imports. $(doimports))
@@ -52,7 +53,8 @@ endif
 ifeq ($(wildcard exports)$(filter projectpackage,$(MAKECMDGOALS)),)
   doexports=$(shell $(OCPI_CDK_DIR)/scripts/makeProjectExports.sh - $(ProjectPackage) xxx)
   ifeq ($(filter clean%,$(MAKECMDGOALS)),)
-    $(info Exports are not set up for this project.  Doing it now. $(doexports))
+    $(info Exports are not set up for this project.  Doing it now.)
+    $(info $(doexports))
   else
     # we are assuming that exports are not required for any clean goal.
     # $(nuthin $(doexports))

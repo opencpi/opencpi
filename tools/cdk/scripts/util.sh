@@ -67,8 +67,8 @@ function setVarsFromMake {
     [ -n "$3" ] && echo The '"make"' command is not available. 2>&1
     return 1
   }
-  eval $(eval make -n -r -s -f $1 $2 \
-	 ${quiet:+2>/dev/null} | grep '^[a-zA-Z_][a-zA-Z_]*=')
+  sets=`set -o pipefail; make -n -r -s -f $1 $2 ${quiet:+2>/dev/null} \
+        | grep '^[a-zA-Z_][a-zA-Z_]*='` && eval $sets
 }
 
 function isPresent {
@@ -154,20 +154,19 @@ function ocpiGetToolPlatform {
 # echo the tool dir, setting OCPI_TOOL_DIR as a side effect
 function ocpiGetToolDir {
   [ -n "$OCPI_TOOL_DIR" ] || {
-    GETPLATFORM=$OCPI_CDK_DIR/platforms/getPlatform.sh
-    if test ! -f $OCPI_CDK_DIR/platforms/getPlatform.sh; then
-      echo Error:  cannot find $OCPI_CDK_DIR/platforms/getPlatforms.sh 1>&2
+    GETPLATFORM=$OCPI_CDK_DIR/scripts/getPlatform.sh
+    if test ! -f $OCPI_CDK_DIR/scripts/getPlatform.sh; then
+      echo Error:  cannot find $OCPI_CDK_DIR/scripts/getPlatforms.sh 1>&2
       exit 1
     fi
-    read v0 v1 v2 v3 v4 <<-EOF
-	`${GETPLATFORM}`
-	EOF
-    if test "$v0" == "" -o $? != 0; then
+    read v0 v1 v2 v3 v4 v5 <<< `${GETPLATFORM}`
+    if test "$v5" == "" -o $? != 0; then
       echo Error:  Failed to determine runtime platform. 1>&2
       exit 1
     fi
     # We always set this as a side-effect
     export OCPI_TOOL_PLATFORM=$v4
+    export OCPI_TOOL_PLATFORM_DIR=$v5
     # Determine OCPI_TOOL_MODE if it is not set already
     # It can be set to null to suppress these modes, and just use whatever has been
     # built without modes.

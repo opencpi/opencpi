@@ -19,16 +19,14 @@
 
 # This script determines the runtime platform and target variables
 # The four variables are: OS OSVersion Processor Platform
-# If a platform is added, this script should be updated to recognize it
 # If it returns nothing (""), that is an error
-# It depends on being located in the directory where platforms live
 
 isCurPlatform()
 {
+  [ -f $1-check.sh ] || return
   vars=($(sh $1-check.sh $HostSystem $HostProcessor))
   if test ${#vars[@]} = 3; then
-    [ -n "$1" ] && echo Target is ${vars[0]}-${vars[1]}-${vars[2]}. 1>&2
-    echo ${vars[@]}  ${vars[0]}-${vars[1]}-${vars[2]} $p $(dirname $1)
+    echo ${vars[@]}  ${vars[0]}-${vars[1]}-${vars[2]} $(basename $1) $(dirname $1)
     exit 0
   fi
 }
@@ -36,42 +34,60 @@ isCurPlatform()
 # These are universally available so far so we do this once and pass then to all probes.
 HostSystem=`uname -s | tr A-Z a-z`
 HostProcessor=`uname -m | tr A-Z a-z`
-# Each recognizable platform has a script <platform>-check.sh
-# If there is a file platform-list, then we look for them in that order.
-# Otherwise, we just look in alphabetical order
-mydir=$(dirname $0)
 
+# Collect all known projects. Append with the default read-only core project
+# in case this is a limited runtime-only system with no project registry
 if [ -n "$OCPI_CDK_DIR" -a -e "$OCPI_CDK_DIR/scripts/util.sh" ]; then
   source $OCPI_CDK_DIR/scripts/util.sh
-  projects=`getProjectPathAndRegistered`
+  projects="`getProjectPathAndRegistered`"
 elif [ -n "$OCPI_PROJECT_PATH" ]; then
-  projects=$OCPI_PROJECT_PATH
+  # If the CDK is not set or util.sh does not exist, fall back on OCPI_PROJECT_PATH
+  projects="${OCPI_PROJECT_PATH//:/ }"
 elif [ -d projects ]; then
-  # Probably running in a clean source tree
-  projects=$(echo projects/*)
+  # Probably running in a clean source tree.  Find projects and absolutize pathnames
+  projects="$(for p in projects/*; do echo `pwd`/$p; done)"
+fi
+# Make sure that we look in the core project IN ANY CASE
+if [ -n "$OCPI_CDK_DIR" ]; then
+  [ -d $OCPI_CDK_DIR/../projects/core ] && projects="$projects $OCPI_CDK_DIR/../projects/core"
 else
-  echo "Can't find any projects for RCC platforms."
+  [ -d /opt/opencpi/projects/core ] && projects="$projects /opt/opencpi/projects/core"
+fi
+if [ -z "$projects" ]; then
+  echo "Error:  Cannot find any projects for RCC platforms." >&2
   exit 1
 fi
-# loop through all options to determine right platform by calling isCurPlatform for each platform
-for j in $(echo $projects | tr : ' '); do
-  for i in $j/rcc/platforms/*; do
-    if test -d $i; then
-      p=$(basename $i)
-      if test -f $i/$p-check.sh; then
-        isCurPlatform $i/$p
-      fi
-    fi
-  done
-done
-for i in $mydir/*; do
-  if test -d $i; then
-    p=$(basename $i)
-    if test -f $i/$p-check.sh; then
-      isCurPlatform $i/$p
-    fi
+# loop through all projects to find the platform
+shopt -s nullglob
+for j in $projects; do
+  # First, assume this is an exported project and check lib/rcc...
+  # Next, assume this is a source project that is exported and check exports/lib/rcc,
+  # Finally, just search the source rcc/platforms...
+  if test -d $j/lib/rcc/platforms; then
+    platforms_dir=$j/lib/rcc/platforms
+  elif test -d $j/exports/lib/rcc/platforms; then
+    platforms_dir=$j/exports/lib/rcc/platforms
+  else
+    platforms_dir=$j/rcc/platforms
   fi
-done
+  if [ -n "$1" ]; then # looking for a specific platform (not the current one)
+    d=$platforms_dir/rcc/platforms/$1
+    if [ -d $d -a -f $d/target ]; then
+      target=$(< $d/target)
+      vars=($(echo $target | tr - ' '))
+      [ ${#vars[@]} = 3 ] || {
+        echo "Error:  Platform file $d/target is invalid and cannot be used." >&2
+	exit 1
+      }
+      echo ${vars[@]} $target $1 $d
+      exit 0
+    fi
+  else # not looking for a particular platform, but looking for the one we're running on
+    for i in $platforms_dir/*; do
+      test -d $i -a -f $i/target && isCurPlatform $i/$(basename $i)
+    done # done with platforms in this project's rcc/platforms directory
+  fi
+done # done with the project
 
-echo Cannot determine platform we are running on.  1>&2
+echo Cannot determine platform we are running on.  >&2
 exit 1

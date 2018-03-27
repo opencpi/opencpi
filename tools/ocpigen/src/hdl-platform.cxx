@@ -53,10 +53,10 @@ HdlPlatform(ezxml_t xml, const char *xfile, Worker *parent, const char *&err)
       (err = parseDevices(xml, NULL, xfile, this)))
     return;
   unsigned n = 0;
-  for (ezxml_t xs = ezxml_cchild(xml, "slot"); xs; xs = ezxml_next(xs), n++) {
+  for (ezxml_t xs = ezxml_cchild(xml, "slot"); xs; xs = ezxml_cnext(xs), n++) {
     const char *type = ezxml_cattr(xs, "type");
     unsigned ordinal = 0, count = 0;
-    for (ezxml_t x = ezxml_cchild(xml, "slot"); x; x = ezxml_next(x)) {
+    for (ezxml_t x = ezxml_cchild(xml, "slot"); x; x = ezxml_cnext(x)) {
       const char *otype = ezxml_cattr(x, "type");
       if (!strcasecmp(type, otype)) {
 	if (x == xs)

@@ -20,23 +20,19 @@ ifndef OCPI_CDK_DIR
 export OCPI_CDK_DIR=$(CURDIR)/exports
 endif
 ProjectPrefix=ocpi
-export OCPI_PROJECT_PATH:=\
-$(OCPI_PROJECT_PATH):\
-$(and $(OcpiProjectRegistryDir),$(subst $(Space),:,$(wildcard $(OcpiProjectRegistryDir)/*)):)\
-$(OCPI_CDK_DIR)/../projects/core
-# Fake being a project until we can be a real one
-ifneq (,)
-include $(OCPI_CDK_DIR)/include/project.mk
+ifndef OCPI_CDK_DIR
+  export OCPI_CDK_DIR:=$(CURDIR)/cdk
 endif
 
 ifeq ($(wildcard exports),)
   ifeq ($(filter clean%,$(MAKECMDGOALS)),)
     $(info Exports have never been set up for this tree  Doing it now.)
   endif
-  $(info $(shell ./scripts/makeExportLinks.sh - $(ProjectPrefix)_ xxx))
+  $(info $(shell ./scripts/makeExportLinks.sh - $(ProjectPrefix)_ - xxx))
 endif
+ifeq ($(filter clean%,$(MAKECMDGOALS)),)
 include exports/include/ocpisetup.mk
-
+endif
 # defaults
 ifndef OCPI_BASE_DIR
 export OCPI_BASE_DIR := .
@@ -54,6 +50,7 @@ ifneq ($(OCPI_TOOL_PLATFORM),$(OCPI_TARGET_PLATFORM))
     $(error Cannot build for $(OCPI_TARGET_PLATFORM), cannot find "ocpigen" for $(OCPI_TOOL_PLATFORM))
   endif
 endif
+
 #
 # ----------------------------------------------------------------------
 # Build up a list of $(PACKAGES) to build.  This list is carefully

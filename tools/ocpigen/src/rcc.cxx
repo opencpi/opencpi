@@ -1192,7 +1192,7 @@ parseRccImpl(const char *a_package) {
       (err = OE::getBoolean(m_xml, "Threaded", &m_isThreaded)))
     return err;
   // Parse data port implementation metadata: maxlength, minbuffers.
-  for (ezxml_t x = ezxml_cchild(m_xml, "Port"); x; x = ezxml_next(x)) {
+  for (ezxml_t x = ezxml_cchild(m_xml, "Port"); x; x = ezxml_cnext(x)) {
     const char *internal = ezxml_cattr(x, "internal");
     if (internal) {
       const char

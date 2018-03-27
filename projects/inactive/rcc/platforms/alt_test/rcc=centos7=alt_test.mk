@@ -16,4 +16,15 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-# Empty project settings
+# This file is not version-specific and just relies on its name for OS version
+OcpiThisFile:=$(lastword $(MAKEFILE_LIST))
+my_bin_dir:=$(OCPI_PREREQUISITES_DIR)/gcc_linaro_arm_gnueabihf/$(OCPI_TOOL_DIR)/bin
+my_cross_host:=arm-linux-gnueabihf
+file:=$(basename $(notdir $(OcpiThisFile)))
+my_host:=$(RccTarget_$(word 2,$(subst =, ,$(subst rcc=,,$(file)))))
+Gc_$(my_host):=$(my_bin_dir)/$(my_cross_host)-gcc -std=c99
+Gc_LINK_$(my_host):=$(Gc_$(my_host))
+Gc++_$(my_host):=$(my_bin_dir)/$(my_cross_host)-g++ -std=c++0x
+Gc++_LINK_$(my_host):=$(Gc++_$(my_host))
+Gc++_MAIN_LIBS_$(my_host)=rt dl pthread
+Gc++_MAIN_FLAGS_$(my_host)=-Xlinker --export-dynamic

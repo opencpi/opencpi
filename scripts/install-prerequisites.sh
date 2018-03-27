@@ -17,47 +17,53 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
+#############################################################################################
+# This script builds and installs any prerequisite software packages required by OpenCPI
+# These are packages that are not generally/easily available for all platforms from
+# network-based package repositories.
 set -e
 # Ensure exports
-source ./scripts/core-init.sh
+source ./scripts/init-opencpi.sh
 # Ensure CDK and TOOL variables
-OCPI_BOOTSTRAP=`pwd`/exports/scripts/ocpibootstrap.sh; source $OCPI_BOOTSTRAP
+OCPI_BOOTSTRAP=`pwd`/cdk/scripts/ocpibootstrap.sh; source $OCPI_BOOTSTRAP
 # Ensure TARGET variables
-source tools/cdk/scripts/ocpitarget.sh "$1"
+source $OCPI_CDK_DIR/scripts/ocpitarget.sh "$1"
+source $OCPI_CDK_DIR/scripts/setup-prereq-dirs.sh
+echo Building/installing prerequisites for the $OCPI_TARGET_PLATFORM platform, now running on $OCPI_TOOL_PLATFORM.
+echo Building prerequisites in $OCPI_PREREQUISITES_BUILD_DIR.
+echo Installing them in $OCPI_PREREQUISITES_INSTALL_DIR.
+target_pref=$OCPI_TARGET_PLATFORM_DIR/$OCPI_TARGET_PLATFORM
+prereqs=
+if test -f $target_pref-prerequisites; then
+  prereqs=$(< $target_pref-prerequisites)
+fi
+if [ -n "$prereqs" ]; then
+  echo -------------------------------------------------------------------------------------------
+  echo "Before building/installing common OpenCPI prerequisites, there are \"$OCPI_TARGET_PLATFORM\"-specific ones ($prereqs)"
+  # First build the target-specific script for the TOOL platform
 
-echo Installing all prerequisites for platform: $OCPI_TARGET_PLATFORM
-if test -d /opt/opencpi; then
-  echo The /opt/opencpi directory is already created.
-else
-  echo We will create /opt/opencpi and make it read/write for everyone
-  sudo mkdir -p /opt/opencpi
-  sudo chmod a+rwx /opt/opencpi
-  mkdir -p /opt/opencpi/prerequisites
+  for p in $prereqs; do
+    read preq tool <<<$(echo $p | tr : ' ')
+    if [ -z "$tool" -o "$tool" = $OCPI_TOOL_PLATFORM ]; then
+      echo --- Building/installing the \"$OCPI_TARGET_PLATFORM\"-specific prerequisite $preq for executing on $OCPI_TOOL_PLATFORM.
+      (d=$OCPI_TARGET_PLATFORM_DIR &&
+       for e in $(env | grep OCPI_TARGET_|sed 's/=.*//'); do unset $e; done &&
+        $d/install-$preq.sh $OCPI_TOOL_PLATFORM)
+    fi
+    if [ -z "$tools" ]; then
+      echo --- Building/installing \"$OCPI_TARGET_PLATFORM\"-specific prerequisites for executing on $OCPI_TARGET_PLATFORM.
+      $OCPI_TARGET_PLATFORM_DIR/install-$preq.sh $OCPI_TARGET_PLATFORM
+    fi
+  done
 fi
-if test $OCPI_TOOL_PLATFORM = $OCPI_TARGET_PLATFORM; then
-  echo ================================================================================
-  echo Installing the standard packages for $OCPI_TOOL_PLATFORM.
-  platforms/$OCPI_TOOL_PLATFORM/$OCPI_TOOL_PLATFORM-packages.sh
-  echo ================================================================================
-  echo All basic prerequisites are installed in the system.
-  echo ================================================================================
-  echo Installing the patchelf utility under /opt/opencpi/prerequisites
-  scripts/install-patchelf.sh
-fi
-echo ================================================================================
-echo We are running in `pwd` where the git clone of opencpi has been placed.
-echo Next, before building OpenCPI, we will install some prerequisites in /opt/opencpi.
-echo ================================================================================
-echo Installing Google test '(gtest)' under /opt/opencpi/prerequisites
-scripts/install-gtest.sh
-echo ================================================================================
-echo Installing the LZMA compression library '(lzma)' under /opt/opencpi/prerequisites
-scripts/install-lzma.sh
-echo ================================================================================
-echo Installing the GMP numeric library '(gmp)' under /opt/opencpi/prerequisites
-scripts/install-gmp.sh
-echo ================================================================================
-echo Installing the ad9361 library under /opt/opencpi/prerequisites
-scripts/install-ad9361.sh
-echo ================================================================================
-echo All OpenCPI prerequisites have been installed.
+for p in $OCPI_PREREQUISITES; do
+  echo -------------------------------------------------------------------------------------------
+  script=scripts/install-$p.sh
+  if [ -x $script ] ; then
+    $script $1
+  else
+    echo "The installation script for the $p ($script) is missing or not executable." >&2
+  fi
+done
+echo -------------------------------------------------------------------------------------------
+echo All these OpenCPI prerequisites have been successfully installed for $OCPI_TARGET_PLATFORM: $OCPI_PREREQUISITES

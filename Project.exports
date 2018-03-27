@@ -54,6 +54,8 @@ tests
 -runtime/dataplane main
 -runtime/ctests
 +|runtime/ctests/target-<target>/test_[^.]* bin/<target>/ctests/
+# In dynamic mode when this library is not statically linked
++|runtime/ctests/target-<target>/libocpi_ctests.(so|dylib) bin/<target>/ctests/
 -tests library
 -runtime/dataplane/xfer/tests library
 ################################################################################
@@ -79,6 +81,14 @@ tests
 +tools/cdk/include/aci.mk include/
 # CDK scripts we need
 +scripts/clean-env.sh scripts/
++tools/cdk/scripts/opencpi-setup.sh
++tools/cdk/scripts/setup-install.sh scripts/
++tools/cdk/scripts/setup-prereq-dirs.sh scripts/
++tools/cdk/scripts/getPlatform.sh scripts/
+# Put this script where the executables are exported to run there
++runtime/ctests/src/run_tests.sh bin/<target>/ctests/
+# Allow installations to run this, but not documented yet
++scripts/test-opencpi.sh scripts/
 +tools/cdk/scripts/makeStaticWorker scripts/
 +tools/cdk/scripts/ocpidriver scripts/
 +tools/cdk/scripts/ocpisetup.sh scripts/
