@@ -1610,7 +1610,7 @@ emitImplHDL(bool wrap) {
 	    "-- Port based  ==| \\ | and the <worker>_worker entity, both in this file,   |   =| \\ Port based\n"
 	    "-- on the WSI  ==| / | both in the \"work\" library.                          |   =| / on the WSI\n"
 	    "-- OCP Profile   |/  | Package and entity declarations are in this          |    |/  OCP Profile\n"
-	    "--               O   | <worker>_impl.vhd file. Architecture is in your      |    |\n"
+	    "--               |   | <worker>_impl.vhd file. Architecture is in your      |    |\n"
 	    "--               O   |  <worker>.vhd file                                   |    O\n"
 	    "--               C   |                                                      |    C\n"
 	    "--               P   +------------------------------------------------------+    P\n"

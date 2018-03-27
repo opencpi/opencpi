@@ -2086,8 +2086,9 @@ createCases(const char **platforms, const char */*package*/, const char */*outDi
     }
   };
   std::string path;
-  OU::format(path, "../lib/rcc:../lib/ocl:gen/assemblies:%s/lib/components/rcc",
-	     getenv("OCPI_CDK_DIR"));
+  OU::format(path, "../lib/rcc:../lib/ocl:gen/assemblies:"
+	     "%s/project-registry/ocpi.core/components/rcc",
+	     OU::getOpenCPI().c_str());
   setenv("OCPI_LIBRARY_PATH", path.c_str(), true);
   ocpiInfo("Initializing OCPI_LIBRARY_PATH to \"%s\"", path.c_str());
   verbose = a_verbose;

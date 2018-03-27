@@ -94,25 +94,13 @@ namespace OCPI {
       }
       return m->findDriver(driverName);
     }
-    static const char *getCdk() {
-      static const char *cdk = NULL;
-      if (cdk)
-	return cdk;
-      const char *d = getenv("OCPI_CDK_DIR");
-      if (!d)
-	d = "/opt/opencpi/cdk";
-      bool isDir;
-      if (!OS::FileSystem::exists(d, &isDir) || !isDir)
-	throw OU::Error("OpenCPI not found at \"%s\"", d);
-      return cdk = d;
-    }
     Driver *ManagerManager::
     loadDriver(const char *managerName, const char *driverName, std::string &err) {
       Driver *driver = findDriver(managerName, driverName);
       if (driver)
 	return driver;
       std::string libDir, lib;
-      OU::format(libDir, "%s/lib/%s-%s-%s", getCdk(),
+      OU::format(libDir, "%s/lib/%s-%s-%s", OU::getCdk().c_str(),
 		 OCPI_CPP_STRINGIFY(OCPI_OS) + strlen("OCPI"),
 		 OCPI_CPP_STRINGIFY(OCPI_OS_VERSION), OCPI_CPP_STRINGIFY(OCPI_ARCH));
       // Search, in order:
@@ -156,10 +144,9 @@ namespace OCPI {
       if (!file)
 	file = getenv("OCPI_SYSTEM_CONFIG");
       if (!file) {
-	configFile = "/opt/opencpi/system.xml";
+	OU::format(configFile, "%s/system.xml", OU::getOpenCPI().c_str());
 	if (!OS::FileSystem::exists(configFile)) {
-	  assert(getenv("OCPI_CDK_DIR"));
-	  OU::format(configFile, "%s/default-system.xml", getenv("OCPI_CDK_DIR"));
+	  OU::format(configFile, "%s/default-system.xml", OU::getCdk().c_str());
 	}
       } else
 	configFile = file;
@@ -207,44 +194,8 @@ namespace OCPI {
 	      err = e;
 	      break;
 	    }
-#if 1
 	    if (load && !loadDriver(m->name().c_str(), d->name, err))
 	      break;
-#else
-	    if (!load)
-	      continue;
-	    std::string libDir;
-	    assert(getenv("OCPI_CDK_DIR"));
-	    OU::format(libDir, "%s/lib/%s-%s-%s", getenv("OCPI_CDK_DIR"),
-		       OCPI_CPP_STRINGIFY(OCPI_OS) + strlen("OCPI"),
-		       OCPI_CPP_STRINGIFY(OCPI_OS_VERSION), OCPI_CPP_STRINGIFY(OCPI_ARCH));
-	    if (!OS::FileSystem::exists(libDir)) {
-	      OU::format(err, "when loading the \"%s\" \"%s\" driver, directory \"%s\" does not exist",
-			 d->name, m->name().c_str(), libDir.c_str());
-	      break;
-	    }
-	    // Search, in order:
-	    // 1. The driver built like we are built, if modes are available
-	    // 2. The driver built with modes that is not the way we were built
-	    // 3. The driver built without modes
-	    std::string lib;
-	    if (!checkLibPath(lib, libDir, ezxml_name(d), true, OCPI_DYNAMIC, OCPI_DEBUG) &&
-		!checkLibPath(lib, libDir, ezxml_name(d), true, OCPI_DYNAMIC, !OCPI_DEBUG) &&
-		!checkLibPath(lib, libDir, ezxml_name(d), false, false, false)) {
-	      OU::format(err,
-			 "could not find the \"%s\" \"%s\" driver in directory \"%s\", e.g.: %s",
-			 d->name, m->name().c_str(), libDir.c_str(), lib.c_str());
-	      break;
-	    }
-	    ocpiInfo("Loading the \"%s\" \"%s\" driver from \"%s\"",
-		     d->name, m->name().c_str(), lib.c_str());
-	    std::string lme;
-	    if (!OS::LoadableModule::load(lib.c_str(), true, lme)) {
-	      OU::format(err, "error loading the \"%s\" \"%s\" driver from \"%s\": %s",
-			 d->name, m->name().c_str(), lib.c_str(), lme.c_str());
-	      break;
-	    }
-#endif
 	  }
 	}
       }

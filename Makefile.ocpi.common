@@ -415,7 +415,8 @@ DATA_TRANSFER_EXPORTS = \
 	$(OCPI_BASE_DIR)/runtime/dataplane/xfer/base/include \
 
 MSG_TRANSPORT_EXPORTS = \
-	$(OCPI_BASE_DIR)/runtime/dataplane/msg_driver_interface/include/
+	$(OCPI_BASE_DIR)/runtime/dataplane/msg_driver_interface/include \
+	$(OCPI_BASE_DIR)/runtime/dataplane/msg_driver_interface/client_server/include
 
 DATA_TRANSFER_LIBS = \
    $(OCPI_BASE_DIR)/runtime/dataplane/xfer/base/xfer \
@@ -428,7 +429,6 @@ MSG_TRANSPORT_LIBS = $(OCPI_BASE_DIR)/runtime/dataplane/msg_driver_interface/msg
 
 DATA_TRANSPORT_EXPORTS = \
 	$(OCPI_BASE_DIR)/runtime/dataplane/transport/interface/include \
-	$(OCPI_BASE_DIR)/runtime/dataplane/transport/client_server/include \
 	$(OCPI_BASE_DIR)/runtime/dataplane/transport/impl/include \
 	$(OCPI_BASE_DIR)/runtime/dataplane/transport/ddnp/include
 
