@@ -32,7 +32,7 @@ if test "$OCPI_CDK_DIR" != ""; then
 else
   export OCPI_TARGET_PLATFORM=$1
   # Initialize access to the core tree's export directory
-  source scripts/core-init.sh
+  source scripts/init-opencpi.sh
   # Initialize access to CDK
   OCPI_BOOTSTRAP=`pwd`/exports/scripts/ocpibootstrap.sh; source $OCPI_BOOTSTRAP
   [ -z "$OCPI_TARGET_PLATFORM" ] && export OCPI_TARGET_PLATFORM=$OCPI_TOOL_PLATFORM

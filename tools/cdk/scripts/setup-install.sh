@@ -27,26 +27,52 @@
 set +o posix
 platform=$1
 package=$2
-file=$3
-url=$4
-directory=$5
-cross=$6
-# ensure exports
-source ./scripts/core-init.sh
-# setup CDK and OCPI_TOOL_*
-OCPI_BOOTSTRAP=`pwd`/exports/scripts/ocpibootstrap.sh; source $OCPI_BOOTSTRAP
-# setup OCPI_TARGET_*
-source tools/cdk/scripts/ocpitarget.sh "$platform"
+description=$3
+file=$4
+url=$5
+directory=$6
+cross=$7
+if [ -z "$OCPI_CDK_DIR" ]; then
+  echo "The environment (specifically OCPI_CDK_DIR) is not set up."
+  echo "You probably need to do \"source <whereever-the-cdk-is>/opencpi-setup.sh\"."
+  echo "If the source tree has never been used yet, you need to first run:"
+  echo "   \"./scripts/init-opencpi.sh\" at the top level of the source directory."
+  echo "This is done automatically by scripts like install-packages.sh, install-prequisites.sh or build-opencpi.sh"
+  exit 1
+elif [ ! -f $OCPI_CDK_DIR/opencpi-setup.sh ]; then
+  echo "The environment OCPI_CDK_DIR variable does not point to a valid location."  
+  exit 1
+fi
+caller_dir=$(dirname ${BASH_SOURCE[${#BASH_SOURCE[*]}-1]})
+# echo Caller of setup-install.sh is $caller_dir
+set -e
+source $OCPI_CDK_DIR/scripts/ocpitarget.sh "$platform"
 platform=$OCPI_TARGET_PLATFORM
 if test "$OCPI_TARGET_PLATFORM" != "$OCPI_TOOL_PLATFORM" -a "$cross" != "1"; then
- echo We do not crossbuild $package for non-development environments so skipping building it.
+ echo ====== We will not crossbuild $package for non-development environments thus are skipping it.
  exit 0
 fi
-source scripts/setup-prereq-dirs.sh
-echo ====== Starting installation of package \"$package\" for platform \"$platform\".
+if test "$OCPI_TARGET_PLATFORM" != "$OCPI_TOOL_PLATFORM" -a -n "$OCPI_CROSS_BUILD_BIN_DIR"; then
+  if test ! -d "$OCPI_CROSS_BUILD_BIN_DIR"; then
+    echo The cross-compilation tools for building $OCPI_TARGET_PLATFORM on $OCPI_TOOL_PLATFORM are missing.
+    exit 1
+  fi
+fi	
+source $OCPI_CDK_DIR/scripts/setup-prereq-dirs.sh
+function install_done {
+  if [ $? = 0 ]; then
+    echo "====== Finished building & installing the $description \"$package\" for platform \"$OCPI_TARGET_PLATFORM\""
+    echo "====== The installation is in $OCPI_PREREQUISITES_INSTALL_DIR/$package"
+    echo "====== The platform-specific parts are in $OCPI_PREREQUISITES_INSTALL_DIR/$package/$OCPI_TARGET_DIR"
+  else
+    echo ====== Build/install of $package prerequisite failed.
+  fi
+  trap - EXIT
+}
+trap install_done EXIT
+echo ====== Starting installation of the $description \"$package\" for platform \"$platform\".
 echo ========= It will be downloaded/built in $OCPI_PREREQUISITES_BUILD_DIR/$package
 echo ========= It will be installed in $OCPI_PREREQUISITES_INSTALL_DIR/$package/$OCPI_TARGET_DIR
-set -e
 # Create and enter the directory where we will download and build
 cd $OCPI_PREREQUISITES_BUILD_DIR
 mkdir -p $package
@@ -77,6 +103,10 @@ if [ -n "$url" ]; then
     if [ -f "$file" ]; then
       echo The distribution file for $package, $file, exists and is being '(re)'used.
       echo Remove `pwd`/$file if you want to download it again.
+    elif [ -f "$caller_dir/$file" ]; then
+      echo "The distribution file for $package, $file, exists in the script's directory ($caller_dir) and is being (re)used."
+      echo Remove $caller_dir/$file if you want to download it.
+      file="$caller_dir/$file"
     else
       echo Downloading the distribution file: $file
       curl -O -L $url/$file

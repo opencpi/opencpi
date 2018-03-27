@@ -37,9 +37,11 @@ OCPI_AD9361_CURRENT_2016_R2_GIT_COMMIT_ID=e9f8fe509cc0e3685cdca47998979f287be4c3
 OCPI_AD9361_VERSION=$OCPI_AD9361_CURRENT_2016_R2_GIT_COMMIT_ID
 here=$(pwd)/scripts
 if [ -z "${RPM_BUILD_ROOT}" ]; then
-source ./scripts/setup-install.sh \
+[ -z "$OCPI_CDK_DIR" ] && echo Environment variable OCPI_CDK_DIR not set && exit 1
+source $OCPI_CDK_DIR/scripts/setup-install.sh \
        "$1" \
        ad9361 \
+       "ADI ad9361 Convenience Library" \
        $OCPI_AD9361_VERSION \
        https://github.com/analogdevicesinc/no-OS.git \
        no-OS \
@@ -82,7 +84,6 @@ mkdir -p $OCPI_PREREQUISITES_INSTALL_DIR/ad9361/include
 for i in ${INCS[@]}; do
   relative_link `pwd`/$dir/$i.h $OCPI_PREREQUISITES_INSTALL_DIR/ad9361/include/$i.h
 done
-echo ============= ad9361 library for $OCPI_TARGET_PLATFORM built and installed
 else
 # RPM Building
 echo RPM CC: -fPIC -I. -I$dir/platform_generic -I$dir $DEFS -c ${SRCS[@]/#/$dir\/}

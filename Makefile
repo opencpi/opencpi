@@ -25,10 +25,11 @@ ifeq ($(wildcard exports),)
   ifeq ($(filter clean%,$(MAKECMDGOALS)),)
     $(info Exports have never been set up for this tree  Doing it now.)
   endif
-  $(info $(shell ./scripts/makeExportLinks.sh - $(ProjectPrefix)_ xxx))
+  $(info $(shell ./scripts/makeExportLinks.sh - $(ProjectPrefix)_ - xxx))
 endif
+ifeq ($(filter clean%,$(MAKECMDGOALS)),)
 include exports/include/ocpisetup.mk
-
+endif
 # defaults
 ifndef OCPI_BASE_DIR
 export OCPI_BASE_DIR := .
@@ -46,6 +47,7 @@ ifneq ($(OCPI_TOOL_PLATFORM),$(OCPI_TARGET_PLATFORM))
     $(error Cannot build for $(OCPI_TARGET_PLATFORM), cannot find "ocpigen" for $(OCPI_TOOL_PLATFORM))
   endif
 endif
+
 #
 # ----------------------------------------------------------------------
 # Build up a list of $(PACKAGES) to build.  This list is carefully

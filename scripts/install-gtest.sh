@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash --noprofile
 # This file is protected by Copyright. Please refer to the COPYRIGHT file
 # distributed with this source distribution.
 #
@@ -18,14 +18,15 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 OCPI_GTEST_VERSION=1.7.0
-source ./scripts/setup-install.sh \
+[ -z "$OCPI_CDK_DIR" ] && echo Environment variable OCPI_CDK_DIR not set && exit 1
+source $OCPI_CDK_DIR/scripts/setup-install.sh \
        "$1" \
        gtest \
+       "Google C++ Test Library" \
        release-$OCPI_GTEST_VERSION.zip \
        https://github.com/google/googletest/archive \
        googletest-release-$OCPI_GTEST_VERSION \
        1
-
 $CXX -fPIC -I../include -I.. -c ../src/gtest-all.cc
 $AR -rs libgtest.a gtest-all.o
 dname=libgtest.$OCPI_TARGET_DYNAMIC_SUFFIX
@@ -37,4 +38,3 @@ mkdir -p $ldir
 relative_link `pwd`/libgtest.a $ldir
 relative_link `pwd`/$dname $ldir
 relative_link `cd ..;pwd`/include $OCPI_PREREQUISITES_INSTALL_DIR/gtest
-echo ============= gtest for $OCPI_TARGET_PLATFORM built and installed

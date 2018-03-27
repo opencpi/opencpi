@@ -83,7 +83,9 @@ tests
 # CDK scripts we need
 +scripts/clean-env.sh scripts/
 +tools/cdk/scripts/opencpi-setup.sh
-+platforms/getPlatform.sh scripts/
++tools/cdk/scripts/setup-install.sh scripts/
++tools/cdk/scripts/setup-prereq-dirs.sh scripts/
++tools/cdk/scripts/getPlatform.sh scripts/
 # Put this script where the executables are exported to run there
 +runtime/ctests/src/run_tests.sh bin/<target>/ctests/
 # Allow installations to run this, but not documented yet

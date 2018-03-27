@@ -40,9 +40,13 @@ ifndef OCPI_PREREQUISITES_DIR
 endif
 #FIXME  this registration should be somewhere else nicer
 ifndef OCPI_PREREQUISITES_LIBS
+  # Libraries used with ACI and our executables
   export OCPI_PREREQUISITES_LIBS:=lzma gmp
 endif
-
+ifndef OCPI_PREREQUISITES
+  # All prerequisites we need to build and use
+  export OCPI_PREREQUISITES:=$(OCPI_PREREQUISITES_LIBS) gtest patchelf ad9361
+endif
 OCPI_DEBUG_MAKE=
 ifneq (,)
 define OcpiDoInclude
@@ -1007,9 +1011,9 @@ OcpiCheckPrereq=$(strip\
 
 define OcpiEnsureToolPlatform
   ifndef OCPI_TOOL_HOST
-    GETPLATFORM=$(OCPI_CDK_DIR)/platforms/getPlatform.sh
-    vars:=$$(shell $$(GETPLATFORM) || echo 1 2 3 4 5 6)
-    ifneq ($$(words $$(vars)),5)
+    GETPLATFORM=$(OCPI_CDK_DIR)/scripts/getPlatform.sh
+    vars:=$$(shell $$(GETPLATFORM))
+    ifneq ($$(words $$(vars)),6)
       $$(error $$(OcpiThisFile): Could not determine the platform after running $$(GETPLATFORM)).
     endif
     export OCPI_TOOL_OS:=$$(word 1,$$(vars))
@@ -1017,6 +1021,7 @@ define OcpiEnsureToolPlatform
     export OCPI_TOOL_ARCH:=$$(word 3,$$(vars))
     export OCPI_TOOL_HOST:=$$(word 4,$$(vars))
     export OCPI_TOOL_PLATFORM:=$$(word 5,$$(vars))
+    export OCPI_TOOL_PLATFORM_DIR:=$$(word 6,$$(vars))
   endif
   # Determine OCPI_TOOL_MODE if it is not set already
   # It can be set to null to suppress these modes, and just use whatever has been
