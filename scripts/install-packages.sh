@@ -24,7 +24,7 @@
 
 set -e
 # Ensure exports (or cdk) exists and has scripts
-source ./scripts/core-init.sh
+source ./scripts/init-opencpi.sh
 # Ensure CDK and TOOL variables
 OCPI_BOOTSTRAP=`pwd`/cdk/scripts/ocpibootstrap.sh; source $OCPI_BOOTSTRAP
 # Ensure TARGET variables
@@ -36,8 +36,8 @@ else
   script=$OCPI_TARGET_PLATFORM_DIR/$OCPI_TOOL_PLATFORM=$OCPI_TARGET_PLATFORM-packages.sh
 fi
 if [ ! -f $script ]; then
-  echo Since there is no $OCPI_TARGET_PLATFORM-packages.sh script for $OCPI_TARGET_PLATFORM, no packages will be installed.
-  exit 1    
+  echo "Since there is no $OCPI_TARGET_PLATFORM-packages.sh script for $OCPI_TARGET_PLATFORM, no packages will be installed."
+  exit 0
 fi
 echo "Installing the packages for building $OCPI_TARGET_PLATFORM (when running on $OCPI_TOOL_PLATFORM)..."
 $script

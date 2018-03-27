@@ -23,6 +23,11 @@ if test "$OCPI_CDK_DIR" != ""; then
   echo Since OCPI_CDK_DIR is set, we will use the existing environment.
   echo Use \"unset OCPI_CDK_DIR\" to cause this script to initialize the environment for OpenCPI.
   OCPI_BOOTSTRAP=$OCPI_CDK_DIR/scripts/ocpibootstrap.sh
+  . $OCPI_BOOTSTRAP
+  if test -n "$1" -a "$1" != $OCPI_TOOL_PLATFORM; then
+    echo Skipping testing since we are cross-building for $1 on $OCPI_TOOL_PLATFORM.
+    exit 0
+  fi      
 else
   # We're being run in an uninitialized environment
   if test ! -d scripts; then
@@ -30,8 +35,8 @@ else
     exit 1
   fi
   OCPI_BOOTSTRAP=`pwd`/exports/scripts/ocpibootstrap.sh
+  . $OCPI_BOOTSTRAP
 fi
-. $OCPI_BOOTSTRAP
 test $? = 0 || exit 1; 
 source $OCPI_CDK_DIR/scripts/util.sh
 [ "$OCPI_TOOL_OS" != macos ] && {
