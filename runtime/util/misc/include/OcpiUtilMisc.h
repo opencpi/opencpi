@@ -454,6 +454,10 @@ namespace OCPI {
       // or present in the project path.
       // return error-message string on error
       const char *getAllProjects(std::string &path);
+      // Return the OpenCPI installation dir or throw;
+      const std::string &getOpenCPI();
+      // Return the CDK's dir or throw;
+      const std::string &getCdk();
       // A convenience template for singletons possibly created at static construction
       // time (moved from OcpiDriverManager)
       template <class S> class Singleton {

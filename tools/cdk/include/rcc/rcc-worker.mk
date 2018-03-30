@@ -74,7 +74,8 @@ ArtifactFile=$(BinaryFile)
 # Artifacts are target-specific since they contain things about the binary
 ArtifactXmlFile=$(call WkrTargetDir,$1,$2)/$(word 1,$(Workers))_assy-art.xml
 ToolSeparateObjects:=yes 
-OcpiLibDir=$(OCPI_CDK_DIR)/lib/$$(RccTarget)$(and $(OCPI_TARGET_MODE),/$(OCPI_TARGET_MODE))
+OcpiLibDir=$(OCPI_CDK_DIR)/lib/$(RccTarget)$(and $(OCPI_TARGET_MODE),/$(OCPI_TARGET_MODE))
+OcpiIsDynamic=$(if $(wildcard $(OcpiLibDir)/libocpi_application$(SOEXT_$(call RccOs,))),1,0)
 # Add the libraries we know a worker might reference.
 ifdef OcpiBuildingACI
   RccSpecificLinkOptions=\
@@ -90,7 +91,7 @@ else
 endif
 
 ifeq ($(OCPI_USE_TARGET_MODES),1)
-  export OCPI_TARGET_MODE:=$(if $(filter 1,$(OCPI_DYNAMIC)),d,s)$(if $(filter 1,$(OCPI_DEBUG)),d,o)
+  export OCPI_TARGET_MODE:=$(if $(filter 1,$(OcpiIsDynamic)),d,s)$(if $(filter 1,$(OCPI_DEBUG)),d,o)
 endif
 Comma=,
 RccLibDir=$(OCPI_CDK_DIR)/lib/$(RccTarget)$(and $(OCPI_TARGET_MODE),/d$(if $(filter 1,$(OCPI_DEBUG)),d,o))
@@ -108,7 +109,7 @@ $(foreach l,$(RccLibrariesInternal) $(Libraries),\
        $(or $(wildcard $p$(AREXT_$(call RccOs,))),\
             $(and $(wildcard $p$(SOEXT_$(call RccOs,))),-L $(dir $l)$(RccTarget) -l $(notdir $l)),\
             $(error No RCC library found for $l, tried $p$(AREXT_$(call RccOs,)) and $p$(SOEXT_$(call RccOs,))))), \
-    $(if $(filter 1,$(OCPI_DYNAMIC)),\
+    $(if $(filter 1,$(OcpiIsDynamic)),\
        -l ocpi_$l,\
        $(and $(OcpiBuildingACI),$(RccLibDir)/libocpi_$l$(AREXT_$(call RccOs,)))))) \
   -L $(RccLibDir) \
@@ -122,27 +123,22 @@ $(foreach l,$(RccLibrariesInternal) $(Libraries),\
     && cp $(OCPI_PREREQUISITES_DIR)/$l/$(RccTarget)/lib/lib$l$(SOEXT_$(call RccOs,)) $(@D))
 
 # $1 is target, $2 is configuration
-RccStaticName=$(WkrBinaryName)_s$(BF)
-RccStaticPath=$(call WkrTargetDir,$1,$2)/$(RccStaticName)
+RccStaticName=$(WkrBinaryName)_s$(SOEXT_$(call RccOs,$1))
+RccStaticPath=$(call WkrTargetDir,$1,$2)/$(call RccStaticName,$1)
 define RccWkrBinary
   $$(infox RccWkrBinary:$1:$2:$$(call RccOs,))
-  ifeq ($$(call RccOs,$1),linux)
-    $$(call RccStaticPath,$1,$2): $$(call WkrBinary,$1,$2)
-	$(AT)$(OCPI_CDK_DIR)/scripts/makeStaticWorker $$< \
-	  $$(foreach l,$$(RccLibrariesInternal),libocpi_$$l$$(call BF,$1))
-
-    all: $$(call RccStaticPath,$1,$2)
-  endif
+  $$(call RccStaticPath,$1,$2): $$(call WkrBinary,$1,$2)
+	$(AT)$(OCPI_CDK_DIR)/scripts/makeStaticWorker.sh $$(call RccOs,$1) $$< $$@ \
+		  $$(foreach l,$$(RccLibrariesInternal),libocpi_$$l$$(call BF,$1))
+  all: $$(call RccStaticPath,$1,$2)
 endef
 
 define RccWkrBinaryLink
   $$(infox RccWkrBinaryLink:$1:$2:$3:$4:$5 name:$$(call RccStaticName,$1,$4):$(LibDir)/$1/$5_s$$(call BF,$1))
-  ifeq ($$(call RccOs,$1),linux)
-    $(LibDir)/$1/$5_s$$(call BF,$1): $$(call RccStaticPath,$1,$4) | $(LibDir)/$1
+  $(LibDir)/$1/$5_s$$(call BF,$1): $$(call RccStaticPath,$1,$4) | $(LibDir)/$1
 	$(AT)echo Exporting worker binary for static executables: $$@ '->' $$<
 	$(AT)$$(call MakeSymLink2,$$<,$$(dir $$@),$$(notdir $$@))
-    BinLibLinks+=$(LibDir)/$1/$5_s$$(call BF,$1)
-  endif
+  BinLibLinks+=$(LibDir)/$1/$5_s$$(call BF,$1)
 endef
 
 

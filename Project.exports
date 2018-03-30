@@ -87,9 +87,10 @@ tests
 +tools/cdk/scripts/getPlatform.sh scripts/
 # Put this script where the executables are exported to run there
 +runtime/ctests/src/run_tests.sh bin/<target>/ctests/
++runtime/ctests/src/run_tests.sh scripts/
 # Allow installations to run this, but not documented yet
 +scripts/test-opencpi.sh scripts/
-+tools/cdk/scripts/makeStaticWorker scripts/
++tools/cdk/scripts/makeStaticWorker.sh scripts/
 +tools/cdk/scripts/ocpidriver scripts/
 +tools/cdk/scripts/ocpisetup.sh scripts/
 +tools/cdk/scripts/ocpibootstrap.sh scripts/

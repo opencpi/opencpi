@@ -17,7 +17,11 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 ALLINC += $(OCPIOS_EXPORTS) \
+ $(DATA_TRANSFER_EXPORTS) \
+ $(DATA_TRANSPORT_EXPORTS) \
  $(UTIL_EXPORTS) 
 
 ALLLIBS += $(OCPIOS_LIBS) \
+ $(DATA_TRANSPORT_LIBS) \
+ $(DATA_TRANSFER_LIBS) \
  $(UTIL_LIBS)

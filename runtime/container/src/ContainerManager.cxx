@@ -29,6 +29,8 @@
 #include "OcpiThread.h"             // just for linkage hooks
 #include "OcpiUtilPci.h"            // just for linkage hooks
 #include "ContainerPort.h"          // just for linkage hooks
+#include "OcpiContainerRunConditionApi.h"
+#include "XferAccess.h"
 
 #include "ContainerManager.h"
 #include "ContainerLauncher.h"
@@ -172,6 +174,9 @@ namespace OCPI {
    */
   namespace Container {
     intptr_t dumb1() {
+      ((DataTransfer::Access *)dumb1)->closeAccess();
+      ((OA::RunCondition *)dumb1)->setPortMasks((OA::OcpiPortMask *)NULL);
+      ((Container*)dumb1)->run();
       ((DataTransfer::XferServices*)dumb1)->DataTransfer::XferServices::send(0, NULL, 0);
       ((OCPI::Util::Thread*)dumb1)->join();
       OCPI::Util::Uuid uuid;

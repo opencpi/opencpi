@@ -38,7 +38,9 @@ echo "========= Outputs from these tests will be in: $DIR"
 # if the script lives in the source tree, we are running where the executables are
 # otherwise assume this script is in the same directory as the executables are,
 # and change to that directory
-[ $(basename $(dirname $0)) = src ] || cd "$(dirname $0)"
+cd $OCPI_CDK_DIR/bin/$OCPI_TOOL_DIR/ctests
+
+#[ $(basename $(dirname $0)) = src ] || cd "$(dirname $0)"
 
 failed=
 set -o pipefail

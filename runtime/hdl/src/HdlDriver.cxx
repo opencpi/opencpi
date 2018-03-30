@@ -180,6 +180,15 @@ namespace OCPI {
       // Configure the device
       return dev.configure(config, err);
     }
+    void Driver::initAdmin(OccpAdminRegisters &admin, const char *platform, HdlUUID &hdlUuid,
+			   OU::UuidString *uuidString) {
+      Device::initAdmin(admin, platform, hdlUuid, uuidString);
+    }
+    DirectWorker *Driver::
+    createDirectWorker(Device &dev, const Access &cAccess, Access &wAccess, ezxml_t impl,
+		       ezxml_t inst, const char *idx, unsigned timeout) {
+      return new DirectWorker(dev, cAccess, wAccess, impl, inst, idx, timeout);
+    }
 
     OC::RegisterContainerDriver<Driver> driver;
   }

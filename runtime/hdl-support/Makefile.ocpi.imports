@@ -32,7 +32,6 @@ ALLINC += . \
 
 
 ALLLIBS += \
-	$(HDL_CONTAINER_LIBS) \
         $(CONTAINER_LIBS) \
         $(LIBRARY_LIBS) \
 	$(DATA_TRANSPORT_LIBS) \

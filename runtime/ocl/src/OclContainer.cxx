@@ -25,7 +25,7 @@
 #include <climits>
 #include <sys/mman.h>
 #include <regex.h>
-#include "RCC_Worker.h" // for run conditions only
+#include "OcpiContainerRunConditionApi.h"
 #include "OCL_Worker.h"
 #include "OclContainer.h"
 #include "OclDevice.h"
@@ -267,7 +267,7 @@ namespace OCPI {
       std::string s;
       OU::formatAddV(s, fmt, ap);
       va_end(ap);
-      OU::formatAdd(s, ": OpenCL error: %s [%d]", ocl_strerror(errnum), errnum);
+      OU::formatAdd(s, ": OpenCL error: %s [%d/0x%x]", ocl_strerror(errnum), errnum, errnum);
       throw OU::Error("Ocl Error: %s", s.c_str());
     }
 
@@ -834,11 +834,11 @@ namespace OCPI {
       uint8_t        *m_oclWorkerBytes;
       size_t          m_oclWorkerSize;
       OCLPort        *m_oclPorts;
-      OCPI::RCC::RunCondition  m_defaultRunCondition;
-      OCPI::RCC::RunCondition  m_myRunCondition;
-      OCPI::RCC::RunCondition *m_runCondition;
+      OA::RunCondition  m_defaultRunCondition;
+      OA::RunCondition  m_myRunCondition;
+      OA::RunCondition *m_runCondition;
       Kernel                  &m_kernel;
-      OCPI::OCL::Container    &m_container;
+      Container               &m_container;
       bool                     m_isEnabled;
       cl_kernel                m_clKernel;
       OCPI::OS::Timer          m_runTimer;

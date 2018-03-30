@@ -30,7 +30,7 @@
 #include "XferEndPoint.h"
 #include "OcpiRDTInterface.h"
 #include "HdlWciControl.h"
-#include "HdlAccess.h"
+#include "XferAccess.h"
 
 namespace OCPI {
   namespace HDL {
@@ -120,7 +120,7 @@ namespace OCPI {
       // to do any finalization
       // Return true on error
       virtual bool configure(ezxml_t config, std::string &err);
-      void print();
+      virtual void print();
     };
   }
 }

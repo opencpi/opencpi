@@ -111,8 +111,11 @@ namespace OCPI {
       for (Worker *w = firstWorker(); w; w = w->nextWorker())
 	if ((isMaster && w->slave() &&
 	     ((isSlave && w->hasMaster()) || (!isSlave && !w->hasMaster()))) ||
-	    (!isMaster && !w->slave()))
-	w->stop();
+	    (!isMaster && !w->slave())) {
+	  ocpiInfo("Stopping worker: %s in container %s from %s/%s", w->name().c_str(),
+		   container().name().c_str(), w->implTag().c_str(), w->instTag().c_str());
+	  w->stop();
+	}
     }
     // If not master, then we ignore slave, so there are three cases
     void Application::

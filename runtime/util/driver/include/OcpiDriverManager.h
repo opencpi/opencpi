@@ -155,8 +155,8 @@ namespace OCPI {
 	return firstDriver();
       }
     public:
-      Driver *findDriver(const char *name) {
-	return Parent<DerivedDriver>::findChildByName(name);
+      Driver *findDriver(const char *a_name) {
+	return Parent<DerivedDriver>::findChildByName(a_name);
       }
       unsigned discover(const OCPI::Util::PValue *params) {
 	parent().configureOnce();

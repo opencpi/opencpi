@@ -233,10 +233,20 @@ bad(const char *fmt, ...) {
   throw e;
 }
 
+static void setupDriver() {
+  if (driver)
+    return;
+  // Now we explicitly load the remote container driver
+  std::string err;
+  OCPI::Driver::Driver *d = OCPI::Driver::ManagerManager::loadDriver("container", "hdl", err);
+  if (!d)
+    bad("error loading HDL driver: %s", err.c_str());
+  driver = static_cast<OH::Driver *>(d);
+}
 static void setupDevice(bool discovery) {
   if (!device)
     bad("a device option is required with this command");
-  driver = &OCPI::HDL::Driver::getSingleton();
+  setupDriver();
   if (!(dev = driver->open(device, discovery, false, NULL, error)))
     bad("error opening device %s", device);
   cAccess = &dev->cAccess();
@@ -414,7 +424,7 @@ static void search(const char **) {
     vals[n++] = OA::PVEnd;
 #endif
 
-    OCPI::HDL::Driver::getSingleton().search(vals, NULL, true);
+    driver->search(vals, NULL, true);
 }
 static void probe(const char **) {
   dev->print();
@@ -439,8 +449,9 @@ static void emulate(const char **) {
       static char cadmin[sizeof(OH::OccpSpace)];
       memset(cadmin, 0, sizeof(cadmin));
       OU::UuidString uuid;
-      OH::Device::initAdmin(*(OH::OccpAdminRegisters *)cadmin, "emulator",
-			    *(OH::HdlUUID *)(cadmin + offsetof(OH::OccpSpace, config)), &uuid);
+      setupDriver();
+      driver->initAdmin(*(OH::OccpAdminRegisters *)cadmin, "emulator",
+			*(OH::HdlUUID *)(cadmin + offsetof(OH::OccpSpace, config)), &uuid);
       HE::EtherControlHeader &ech_out =  *(HE::EtherControlHeader *)(sFrame.payload);
       bool haveTag = false;
       OE::Address to;
@@ -1339,7 +1350,9 @@ receiveData(const char **/*ap*/) {
 #define GBE_WORKER 9
 #define GEN_WORKER 5
 static void
-receiveRDMA(const char **ap) {
+receiveRDMA(const char **/*ap*/) {
+  bad("receiveRDMA is not functional.");
+#if 0
   if (!*ap)
     setupDevice(false);
   std::string file;
@@ -1569,6 +1582,7 @@ receiveRDMA(const char **ap) {
   }
   printf("Received 10 RDMA buffers\n");
   port.reset();
+#endif
 }
 // Send an RDMA stream using a datagram transport
 static void
@@ -1712,6 +1726,7 @@ getxml(const char **ap) {
     bad("error writing xml file '%s' size %zu", ap[0], xml.size());
 }
 
+#if 0
 // We create a worker class that does not have to be part of anything else.
 class Worker : public OC::Worker, public OH::WciControl {
   std::string m_name, m_wName;
@@ -1835,7 +1850,7 @@ public:
   void read(size_t, size_t, void *) {}
   void write(size_t, size_t, const void *) {}
 };
-
+#endif
 static ezxml_t
 getmeta() {
   static std::vector<char> xml;
@@ -1882,17 +1897,19 @@ struct Arg {
     ezxml_t impl = OX::findChildWithAttr(top, "worker", "name", wkr);
     if (!impl)
       bad("Can't find worker '%s' for instance '%s'", iname, wkr);
-    Worker *w = NULL;
+    OH::DirectWorker *w = NULL;
     if (!idx) {
       if (control || status || value || prop)
 	bad("Can't do control/status/get/put on workers with no control interface");
     } else {
-      w = new Worker(impl, inst, idx);
+      w = driver->createDirectWorker(*dev, *cAccess, wAccess, impl, inst, idx, timeout);
+      worker = w->index();
       if (control)
 	w->control(prop);
-      else if (status)
+      else if (status) {
 	w->status();
-      else if (value) {
+	wdump(NULL);
+      } else if (value) {
 	// Setting a property
 	w->setProperty(prop, value);
 	printf("Setting the %s property to '%s' on instance '%s'\n",
@@ -2037,8 +2054,7 @@ load(const char **ap) {
     bad("a device option is required with this command");
   if (!ap[0])
     bad("No input filename specified for loading");
-  
-  driver = &OCPI::HDL::Driver::getSingleton();
+  setupDriver();
   if (!(dev = driver->open(device, false, true, NULL, error)))
     bad("error opening device %s", device);
   if (dev->load(ap[0], error))

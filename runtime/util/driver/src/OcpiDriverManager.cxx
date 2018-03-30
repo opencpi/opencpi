@@ -148,15 +148,7 @@ namespace OCPI {
 	if (!OS::FileSystem::exists(configFile)) {
 	  OU::format(configFile, "%s/../system.xml", OU::getCdk().c_str());
 	  if (!OS::FileSystem::exists(configFile))
-	  OU::format(configFile, "%s/default-system.xml", OU::getCdk().c_str());
-=======
-	  const char *cdk = getenv("OCPI_CDK_DIR");
-	  if (!cdk || !cdk[0])
-	    throw OU::Error("OCPI_CDK_DIR environment variable not set");
-	  OU::format(configFile, "%s/../system.xml", cdk);
-	  if (!OS::FileSystem::exists(configFile))
-	    OU::format(configFile, "%s/default-system.xml", cdk);
->>>>>>> origin/master
+	    OU::format(configFile, "%s/default-system.xml", OU::getCdk().c_str());
 	}
       } else
 	configFile = file;

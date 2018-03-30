@@ -142,6 +142,7 @@ namespace OCPI {
 	  // Now we look in the path environment variable
 	  // FIXME: canonicalize the names before dup matching? (i.e. realpath)??
 	  const char *path = getenv("OCPI_LIBRARY_PATH");
+	  ocpiDebug("ComponentLibrary search with OCPI_LIBRARY_PATH: %s", path);
 	  if (path) {
 	    ocpiDebug("OCPI_LIBRARY_PATH is %s", path);
 	    char *cp = strdup(path), *last;

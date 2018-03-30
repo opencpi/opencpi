@@ -49,7 +49,7 @@ $bin/ocpitests &&
 echo ======================= Running Datatype/protocol Tests &&
 $bin/ocpidds -t 10000 > /dev/null &&
 echo ======================= Running Container Tests &&
-$bin/ctests/run_tests.sh &&
+$OCPI_CDK_DIR/scripts/run_tests.sh &&
 echo ======================= Running unit tests in project/core &&
 make -C $OCPI_CDK_DIR/../projects/core runtest &&
 echo ======================= Running Application tests in project/assets &&

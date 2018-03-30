@@ -20,3 +20,7 @@ for v in $(env | egrep ^OCPI | sort | cut -f1 -d=); do
   # echo Clearing $v
   unset $v
 done
+if egrep -i -q '(ocpi|opencpi)' <<< "$PATH"; then
+  echo Warning:  There may still be OpenCPI elements in the PATH environment variable:
+  echo PATH=$PATH
+fi
