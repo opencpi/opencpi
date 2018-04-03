@@ -94,41 +94,64 @@ namespace OCPI {
       }
       return m->findDriver(driverName);
     }
+    // Function for compatibility etc.
+    static bool
+    checkDriver(const char *driverName, std::string &libDir, std::string &lib) {
+      // Search, in order:
+      // 1. The driver built like we are built, if modes are available
+      // 2. The driver built with modes that is not the way we were built
+      // 3. The driver built without modes
+      return
+	!checkLibPath(lib, libDir, driverName, true, OCPI_DYNAMIC, OCPI_DEBUG) &&
+	!checkLibPath(lib, libDir, driverName, true, OCPI_DYNAMIC, !OCPI_DEBUG) &&
+	!checkLibPath(lib, libDir, driverName, false, OCPI_DYNAMIC, false) &&
+	!checkLibPath(lib, libDir, driverName, false, false, false);
+    }
+
     Driver *ManagerManager::
     loadDriver(const char *managerName, const char *driverName, std::string &err) {
       Driver *driver = findDriver(managerName, driverName);
       if (driver)
 	return driver;
       std::string libDir, lib;
-      OU::format(libDir, "%s/lib/%s-%s-%s", OU::getCdk().c_str(),
-		 OCPI_CPP_STRINGIFY(OCPI_OS) + strlen("OCPI"),
-		 OCPI_CPP_STRINGIFY(OCPI_OS_VERSION), OCPI_CPP_STRINGIFY(OCPI_ARCH));
-      // Search, in order:
-      // 1. The driver built like we are built, if modes are available
-      // 2. The driver built with modes that is not the way we were built
-      // 3. The driver built without modes
-      if (!OS::FileSystem::exists(libDir))
-	OU::format(err, "when loading the \"%s\" \"%s\" driver, directory \"%s\" does not exist",
-		   driverName, managerName, libDir.c_str());
-      else if (!checkLibPath(lib, libDir, driverName, true, OCPI_DYNAMIC, OCPI_DEBUG) &&
-	       !checkLibPath(lib, libDir, driverName, true, OCPI_DYNAMIC, !OCPI_DEBUG) &&
-	       !checkLibPath(lib, libDir, driverName, false, OCPI_DYNAMIC, false) &&
-	       !checkLibPath(lib, libDir, driverName, false, false, false))
-	OU::format(err,
-		   "could not find the \"%s\" \"%s\" driver in directory \"%s\", e.g.: %s",
-		   driverName, managerName, libDir.c_str(), lib.c_str());
+      OU::format(libDir, "%s/%s%s%s%s/lib", OU::getCdk().c_str(),
+		 OCPI_CPP_STRINGIFY(OCPI_PLATFORM),
+		 !OCPI_DEBUG || OCPI_DYNAMIC ? "-" : "",
+		 OCPI_DYNAMIC ? "d" : "",
+		 OCPI_DEBUG ? "" : "o");
+      bool bad;
+      if (OS::FileSystem::exists(libDir))
+	bad = checkDriver(driverName, libDir, lib);
       else {
-	ocpiInfo("Loading the \"%s\" \"%s\" driver from \"%s\"",
-		 driverName, managerName, lib.c_str());
-	std::string lme;
-	if (!OS::LoadableModule::load(lib.c_str(), true, lme))
-	  OU::format(err, "error loading the \"%s\" \"%s\" driver from \"%s\": %s",
-		     driverName, managerName, lib.c_str(), lme.c_str());
-	else if (!(driver = findDriver(managerName, driverName)))
-	  OU::format(err,
-		     "after loading the \"%s\" \"%s\" driver from \"%s\": driver wasn't found",
-		     driverName, managerName, lib.c_str());
+	std::string libDir2;
+	OU::format(libDir2, "%s/lib/%s-%s-%s", OU::getCdk().c_str(),
+		   OCPI_CPP_STRINGIFY(OCPI_OS) + strlen("OCPI"),
+		   OCPI_CPP_STRINGIFY(OCPI_OS_VERSION), OCPI_CPP_STRINGIFY(OCPI_ARCH));
+	if (!OS::FileSystem::exists(libDir2)) {
+	  OU::eformat(err,
+		      "when loading the \"%s\" \"%s\" driver, directory \"%s\" does not exist",
+		      driverName, managerName, libDir.c_str());
+	  return NULL;
+	}
+	libDir = libDir2;
+	bad = checkDriver(driverName, libDir, lib);
       }
+      if (bad) {
+	OU::eformat(err,
+		    "when loading the \"%s\" \"%s\" driver, no driver file was found in \"%s\"",
+		    driverName, managerName, libDir.c_str());
+	return NULL;
+      }	
+      ocpiInfo("Loading the \"%s\" \"%s\" driver from \"%s\"",
+	       driverName, managerName, lib.c_str());
+      std::string lme;
+      if (!OS::LoadableModule::load(lib.c_str(), true, lme))
+	OU::format(err, "error loading the \"%s\" \"%s\" driver from \"%s\": %s",
+		   driverName, managerName, lib.c_str(), lme.c_str());
+      else if (!(driver = findDriver(managerName, driverName)))
+	OU::format(err,
+		   "after loading the \"%s\" \"%s\" driver from \"%s\": driver wasn't found",
+		   driverName, managerName, lib.c_str());
       return driver;
     }
 

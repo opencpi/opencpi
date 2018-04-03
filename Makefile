@@ -17,199 +17,66 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 ifndef OCPI_CDK_DIR
-export OCPI_CDK_DIR=$(CURDIR)/exports
-endif
-ProjectPrefix=ocpi
-ifndef OCPI_CDK_DIR
   export OCPI_CDK_DIR:=$(CURDIR)/cdk
 endif
 
 ifeq ($(wildcard exports),)
-  ifeq ($(filter clean%,$(MAKECMDGOALS)),)
+  ifeq ($(filter clean% distclean%,$(MAKECMDGOALS)),)
     $(info Exports have never been set up for this tree  Doing it now.)
-  endif
-  $(info $(shell ./scripts/makeExportLinks.sh - $(ProjectPrefix)_ - xxx))
-endif
-ifeq ($(filter clean%,$(MAKECMDGOALS)),)
-include exports/include/ocpisetup.mk
-endif
-# defaults
-ifndef OCPI_BASE_DIR
-export OCPI_BASE_DIR := .
-endif
-OCPI_ABS_DIR := $(shell pwd|sed 's/ /\\ /g')
-CLIENT_IDL_ONLY := 1
-LD_LIBRARY_PATH := $(LD_LIBRARY_PATH):$(OCPI_ABS_DIR)/lib
-export LD_LIBRARY_PATH
-export CLIENT_IDL_ONLY
-export OCPI_BASE_DIR
-include MakeVars.ocpi
-ifneq ($(OCPI_TOOL_PLATFORM),$(OCPI_TARGET_PLATFORM))
-  ifneq ($(shell test -x exports/bin/$(OCPI_TOOL_DIR)/ocpigen; echo $$?),0)
-    $(info To build for $(OCPI_TARGET_PLATFORM), you must first build for $(OCPI_TOOL_PLATFORM))
-    $(error Cannot build for $(OCPI_TARGET_PLATFORM), cannot find "ocpigen" for $(OCPI_TOOL_PLATFORM))
+    $(info $(shell ./scripts/makeExportLinks.sh - -))
   endif
 endif
 
-#
-# ----------------------------------------------------------------------
-# Build up a list of $(PACKAGES) to build.  This list is carefully
-# ordered according to package dependencies.
-# ----------------------------------------------------------------------
-#
-
-#
-# Basic packages.
-#
-
-RDMA_DRIVERS=datagram dma ofed pio socket
-
-#	 runtime/dataplane/rdma_drivers \
-
-PACKAGES += runtime/foreign os runtime/util
-
-PACKAGES += \
-	 runtime/dataplane/xfer/base \
-	 runtime/dataplane/xfer/tests \
-	 $(foreach d,$(RDMA_DRIVERS),runtime/dataplane/xfer/drivers/$d) \
-	 runtime/dataplane/transport \
-	 runtime/dataplane/msg_driver_interface \
-	 runtime/dataplane/msg_drivers \
-	 runtime/library \
-	 runtime/container \
-	 runtime/remote \
-	 runtime/remote-support \
-	 runtime/rcc \
-	 runtime/ocl \
-	 runtime/ocl-support \
-	 runtime/hdl \
-         runtime/application \
-	 runtime/hdl-support \
-	 runtime/ctests
-
-PACKAGES += tools/cdkutils
-PACKAGES += tools/ocpigen
-PACKAGES += tools/ocpisca
-#PACKAGES += tools/ocpirh
-PACKAGES += tools/ocpigr
-PACKAGES += tools/ocpidds
-#PACKAGES += tools/astyle
-PACKAGES += tests
-
-#
-# ----------------------------------------------------------------------
-# A list of all packages for make clean.  Sorted alphabetically.
-# ----------------------------------------------------------------------
-#
-
-#	runtime/control/wci_api
-ALLPACKAGES = \
-	runtime/foreign \
-	os \
-	runtime/util \
-	runtime/dataplane/xfer/base \
-	runtime/dataplane/xfer/tests \
-	runtime/dataplane/xfer/drivers \
-	runtime/dataplane/transport \
-	runtime/dataplane/msg_driver_interface \
-	runtime/dataplane/msg_drivers \
-	runtime/library \
-	runtime/container \
-	runtime/remote \
-	runtime/remote-support \
-	runtime/rcc \
-	runtime/ocl \
-	runtime/ocl-support \
-	runtime/ctests \
-	runtime/hdl \
-	runtime/hdl-support \
-        runtime/application \
-	tools/cdkutils \
-	tools/ocpigen \
-	tools/ocpisca \
-	tools/ocpigr \
-	tools/ocpidds \
-	tests \
-
-#	tools/ocpirh \
-#	tools/astyle \
-
-#
-# ----------------------------------------------------------------------
-# Rules.
-# ----------------------------------------------------------------------
-#
-
-all: packages exports
-.PHONY: exports
-
+include $(OCPI_CDK_DIR)/include/util.mk
+$(eval $(OcpiEnsureToolPlatform))
+RccPlatforms:=$(strip $(or $(strip $(RccPlatforms) $(RccPlatform) $(Platforms) $(Platform)),\
+	                   $(OCPI_TOOL_PLATFORM)))
+DoExports=for p in $(RccPlatforms); do ./scripts/makeExportLinks.sh $$p; done
+# Get macros and rcc platform/target processing
+include $(OCPI_CDK_DIR)/include/rcc/rcc-make.mk
+.PHONY: exports framework projects driver
+all: framework exports
 
 exports:
-	$(AT)./scripts/makeExportLinks.sh $(OCPI_TARGET_DIR) $(ProjectPrefix)_
+	$(AT)$(DoExports)
 
-.PHONY: hdl hdlcomps hdlapps hdlclean
-hdlcomps:
-	$(MAKE) -C hdl components
+framework:
+	$(AT)$(MAKE) -C build/autotools install Platforms="$(RccPlatforms)"
+	$(AT)$(DoExports)
 
-hdlapps: hdlcomps hdl
-	$(MAKE) -C hdl assemblies
+cleanframework:
+	$(AT)$(MAKE) -C build/autotools build Platforms="$(RccPlatforms)" clean
 
-hdl:
-	$(MAKE) -C hdl
+# A convenience to run various goals on all the projects that are here
+Projects=core assets
+ProjectGoals=cleanhdl cleanrcc cleanocl rcc ocl hdl applications run runtest hdlprimitives \
+             components cleancomponents
+DoProjects=$(foreach p,$(Projects),echo Performing $1 on project $p;$(MAKE) -C projects/$p $1 &&) :
+.PHONY: $(ProjectGoals)
+$(ProjectGoals):
+	$(AT)$(call DoProjects,$@)
 
-hdlbase:
-	$(MAKE) -C hdl base
+projects:
+	$(AT)$(call DoProjects,)
 
-hdlportable:
-	$(MAKE) -C hdl portable
-
-cleanhdl:
-	$(MAKE) -C projects/core cleanhdl && $(MAKE) -C projects/assets cleanhdl
-
-#	$(MAKE) -C components cleanhdl this happens in the hdl subdir (using ../components)
+cleanprojects:
+	$(AT)$(call DoProjects,clean)
 
 rcc ocl hdl: exports
 
-rcc:
-	make -C projects/core/components rcc && make -C projects/assets/components rcc
-
-
-cleanrcc:
-	make -C projects/core/components cleanrcc && make -C projects/assets/components rcc
-
-ocl:
-	make -C projects/core/components ocl && make -C projects/assets/components ocl
-
-cleanocl:
-	make -C projects/core/components cleanocl && make -C projects/assets/components cleanocl
-
-.PHONY : examples
-examples: exports
-	$(MAKE) -C projects/assets/applications
-
-cleanexamples:
-	make -C projects/assets/applications clean
-
-runexamples:
-	make -C projects/assets/applications run
-
-runtests:
-	make -C tests run
-
-cleancomponents:
-	make -C projects/core/components clean && make -C projects/assets/components clean
-
-.PHONY: prims
-hdlprimitives: exports
-	$(MAKE) -C hdl primitives
-
 driver:
-	$(AT)set -e; if test -d os/$(OCPI_TARGET_OS)/driver; then \
-	  $(MAKE) -C os/$(OCPI_TARGET_OS)/driver; \
-	  $(MAKE) exports; \
-	else \
-	  echo No driver for the OS '"'$(OCPI_TARGET_OS)'"', so none built. ; \
-	fi
+	$(AT)set -e;\
+	     $(foreach p,$(RccPlatforms),$(info P0:$p)\
+	       $(foreach t,$(RccTarget_$p),$(info T0:$t)\
+	         $(foreach o,$(call RccOs,$t),$(info O0:$o)\
+	           if test -d os/$o/driver; then \
+	             (source $(OCPI_CDK_DIR)/scripts/ocpitarget.sh $p$(info PPP:$p); \
+		      env | grep OCPI; \
+		      $(MAKE) -C os/$o/driver); \
+	           else \
+	             echo No driver for the OS '"'$o'"', so none built. ; \
+	           fi;))) \
+	     $(DoExports) \
 
 cleandriver:
 	$(AT)$(and $(wildcard os/$(OCPI_TARGET_OS)/driver),$(MAKE) -C os/$(OCPI_TARGET_OS)/driver topclean)
@@ -219,19 +86,8 @@ cleandrivers:
 
 .PHONY: packages tar diff diff.q test $(PACKAGES)
 
-everything: packages rcc hdl ocl
-compile build: $(PACKAGES)
-packages: $(PACKAGES)
-
-$(PACKAGES):
-	$(AT)if test -f $@/Makefile.ocpi ; then \
-		$(MAKE) $(call DescendMake,$@) -f Makefile.ocpi ; \
-	else \
-		$(MAKE) $(call DescendMake,$@) -f $(call AdjustRelative,$@,)/Makefile.ocpi.for-pkg ; \
-	fi
-
-clean: cleancomponents cleanexamples
-	$(AT)rm -r -f lib
+clean: cleancomponents cleanapplications
+	$(AT)$(MAKE) -C build/autotools clean
 	$(AT)$(foreach p,$(ALLPACKAGES),\
 		if test -f $p/Makefile.ocpi ; then \
 			$(MAKE) --no-print-directory $(call DescendMake,$p) -f Makefile.ocpi $@ ; \
@@ -258,18 +114,6 @@ cleaneverything: distclean cleandrivers
 	-find . -depth -name 'gen' -exec rm -r '{}' ';'
 	-find . -depth -name "lib" -a ! -path "*export*" -a ! -path "*/platforms/*" -a -type d -a -exec rm -r "{}" ";"
 	$(AT)rm -r -f exports
-
-tar:
-	tar cvf ocpi.tar Makefile MakeVars.ocpi Makefile.ocpi.for-* scripts platforms $(ALLPACKAGES)
-	gzip -9 ocpi.tar
-
-#
-# Shallow package dependencies.
-#
-
-runtime/dataplane/tests: \
-	runtime/rcc runtime/dataplane/transport \
-	runtime/dataplane/xfer
 
 export_cdk:
 	mydate=`date +%G%m%d%H%M%S`; \

@@ -50,6 +50,7 @@ OCPI_PROPERTY_DATA_TYPES
 
 const char *g_platform = 0, *g_device = 0, *load = 0, *g_os = 0, *g_os_version = 0, *g_arch = 0,
   *assembly = 0, *attribute, *platformDir;
+bool g_dynamic = false;
 
 Clock *Worker::
 addClock() {

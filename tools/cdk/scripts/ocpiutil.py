@@ -183,8 +183,8 @@ def export_libraries():
     for lib_dir in get_subdirs_of_type("library"):
         logging.debug("Library found at \"" + lib_dir + "\", runnning \"make speclinks\" there.")
         proc = subprocess.Popen(["make", "-C", lib_dir, "speclinks"],
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE)
+                                stdout=subprocess.PIPE)
+#                                stderr=subprocess.PIPE)
         proc.communicate()  # Don't care about the outputs
         if proc.returncode != 0:
             logging.warning("""Failed to export libraries in project at "{0}". Check your permissions for this project.""".format(os.getcwd()))

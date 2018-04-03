@@ -24,7 +24,7 @@ OCPI_XILINX_VIVADO_SDK_VERSION:=2013.4
 zynq_bin_dir:=$(OcpiXilinxEdkDir)/gnu/arm/lin/bin
 zynq_cross_host:=arm-xilinx-linux-gnueabi
 file:=$(basename $(notdir $(OcpiThisFile)))
-zynq_host:=$(RccTarget_$(word 2,$(subst =, ,$(subst rcc=,,$(file)))))
+zynq_host:=xilinx13_3
 Gc_$(zynq_host):=$(zynq_bin_dir)/$(zynq_cross_host)-gcc -std=c99
 Gc_LINK_$(zynq_host):=$(Gc_$(zynq_host))
 Gc++_$(zynq_host):=$(zynq_bin_dir)/$(zynq_cross_host)-g++ -std=c++0x

@@ -50,12 +50,11 @@ tests
 ################################################################################
 # exclusions, sometimes only applying to categories
 -runtime/util main
-+runtime/util/target-<target>/ocpixml bin/<target>/
 -runtime/dataplane main
 -runtime/ctests
-+|runtime/ctests/target-<target>/test_[^.]* bin/<target>/ctests/
+#+|runtime/ctests/target-<target>/test_[^.]* bin/<target>/ctests/
 # In dynamic mode when this library is not statically linked
-+|runtime/ctests/target-<target>/libocpi_ctests.(so|dylib) bin/<target>/ctests/
+#+|runtime/ctests/target-<target>/libocpi_ctests.(so|dylib) bin/<target>/ctests/
 -tests library
 -runtime/dataplane/xfer/tests library
 ################################################################################
@@ -85,8 +84,8 @@ tests
 +tools/cdk/scripts/setup-install.sh scripts/
 +tools/cdk/scripts/setup-prereq-dirs.sh scripts/
 +tools/cdk/scripts/getPlatform.sh scripts/
-# Put this script where the executables are exported to run there
-+runtime/ctests/src/run_tests.sh bin/<target>/ctests/
+# Put this script where the executables are exported to run there - needed?
++runtime/ctests/src/run_tests.sh <target>/bin/ctests/
 +runtime/ctests/src/run_tests.sh scripts/
 # Allow installations to run this, but not documented yet
 +scripts/test-opencpi.sh scripts/
@@ -111,21 +110,18 @@ tests
 +scripts/makeExportLinks.sh scripts/
 +tools/cdk/scripts/maybeExport.sh scripts/
 # user level scripts made available in the bin directory
-+tools/cdk/scripts/ocpidev bin/<target>/
-+tools/cdk/scripts/ocpidriver bin/<target>/
++tools/cdk/scripts/ocpidev <target>/bin/
++tools/cdk/scripts/ocpidriver <target>/bin/
 +tools/cdk/scripts/genProjMetaData.py scripts/
 +tools/cdk/scripts/genProjMetaData.pyc scripts/
 +tools/cdk/scripts/genProjMetaData.pyo scripts/
-+tools/cdk/scripts/getPlatform.sh scripts/
-# This should go away when callers are fixed
-+tools/cdk/scripts/getPlatform.sh platforms/
 +tools/cdk/specs/* specs/
 +hdl/devices/specs/lime-iq-properties.xml specs/
 +hdl/devices/specs/dac-properties.xml specs/
 # linux driver
-+os/linux/driver/99-opencpi.rules lib/<target>/
-+os/linux/driver/mdev-opencpi.rules lib/<target>/
-+os/linux/driver/target-<target>/opencpi*.ko lib/<target>/
++os/linux/driver/99-opencpi.rules <target>/lib/
++os/linux/driver/mdev-opencpi.rules <target>/lib/
++os/linux/driver/target-<target>/opencpi*.ko <target>/lib/
 +os/linux/driver/ocpi_linux_driver scripts/
 ################################################################################
 # RCC related exclusions and additions
@@ -148,9 +144,11 @@ tests
 # These are to allow them carefully for RCC workers that access other workers in the app
 # They are currently redundant with the top level include, but they are here so we can
 # Ultimately control visibility for workers
+# Expose API headers to the ACI - this is mostly automated *Api.h
++runtime/application/include/OcpiApi.h include/aci/OcpiApi.hh
+# These are horrible, but until we get multiple slaves, we need them
 +runtime/application/include/OcpiApi.h include/rcc/OcpiApi.hh
 +runtime/application/include/OcpiApi.h include/rcc/OcpiApi.h
-+runtime/application/include/OcpiApi.h include/aci/OcpiApi.hh
 +os/interfaces/include/OcpiOsDebugApi.h include/rcc/OcpiOsDebugApi.hh
 +runtime/application/include/OcpiApplicationApi.h include/rcc/
 +runtime/container/include/OcpiContainerApi.h include/rcc/
@@ -160,6 +158,7 @@ tests
 +runtime/util/property/include/OcpiUtilPropertyApi.h include/rcc/
 +runtime/util/misc/include/OcpiUtilExceptionApi.h include/rcc/
 +runtime/library/include/OcpiLibraryApi.h include/rcc/
+# End of undocumented temporary stuff until multi-slaves
 ################################################################################
 # HDL related exclusions and additions
 # test executables to suppress
@@ -179,24 +178,24 @@ tests
 +runtime/hdl-support/xilinx/getESNfromUSB_xilinx scripts/
 +runtime/hdl-support/xilinx/xilinx.mk include/hdl/
 +runtime/hdl-support/xilinx/vivado* include/hdl/
-+runtime/hdl-support/scripts/loadFlash bin/<target>/
-+runtime/hdl-support/scripts/probeJtag bin/<target>/
-+runtime/hdl-support/scripts/ocpiview bin/<target>/
++runtime/hdl-support/scripts/loadFlash <target>/bin/
++runtime/hdl-support/scripts/probeJtag <target>/bin/
++runtime/hdl-support/scripts/ocpiview <target>/bin/
 # Enable all local bitstreams to be seen in one place for convenience of OCPI_LIBRARY_PATH
 +hdl/assemblies/*/container-*/target-*/*.bitz lib/hdl/assemblies/
 # for backward compatibility of system.xml files
-+runtime/dataplane/xfer/drivers/socket/target-<target>/libocpi_socket.* lib/<target>/libocpi_sockets<suffix>
-+runtime/dataplane/xfer/drivers/socket/target-<target>/libocpi_socket_s.* lib/<target>/libocpi_sockets_s<suffix>
++runtime/dataplane/xfer/drivers/socket/target-<target>/libocpi_socket.* <target>/lib/libocpi_sockets<suffix>
++runtime/dataplane/xfer/drivers/socket/target-<target>/libocpi_socket_s.* <target>/lib/libocpi_sockets_s<suffix>
 ################################################################################
 # SCA/RH related additions.
-+tools/ocpirh/ocpirh_export.sh bin/<target>/ocpirh_export
-+tools/ocpirh/target-<target>/ocpirh_proxy bin/<target>/
++tools/ocpirh/ocpirh_export.sh <target>/bin/ocpirh_export
++tools/ocpirh/target-<target>/ocpirh_proxy <target>/bin/
 ################################################################################
 # GNU Radio related additions.
-+tools/ocpigr/target-<target>/ocpigr bin/<target>/
++tools/ocpigr/target-<target>/ocpigr <target>/bin/
 ################################################################################
 # Kernel module and main license files
-+LICENSE.txt lib/<target>/
++LICENSE.txt <target>/lib/
 +LICENSE.txt
 +COPYRIGHT
 ################################################################################

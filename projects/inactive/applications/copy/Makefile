@@ -18,7 +18,7 @@
 
 OcpiApp=copy
 
-PROG=target-$(OCPI_TOOL_DIR)/$(OcpiApp)
+PROG=$(call AciDir,$(OCPI_TOOL_PLATFORM))/$(OcpiApp)
 override OcpiRunAfter+= < $(PROG) > test.output ;
 override OcpiRunAfter+= ls -l $(PROG) test.output ; \
                cmp $(PROG) test.output

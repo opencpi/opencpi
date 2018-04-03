@@ -61,8 +61,8 @@ endif # The end of processing this file once - ifndef OCPISETUP_MK
 CC = gcc
 CXX = c++
 LD = c++
-export OcpiDynamicSuffix=so
-export OcpiDynamicFlags=-shared
+export OcpiDynamicLibrarySuffix=.so
+export OcpiDynamicLibraryFlags=-shared
 ifndef OCPI_TARGET_CXXFLAGS
   export OCPI_TARGET_CXXFLAGS=-g -pipe -Wall -Wextra -D__STDC_LIMIT_MACROS -D__STDC_FORMAT_MACROS -Wfloat-equal -fno-strict-aliasing -Wconversion -Wno-sign-conversion -std=c++0x -Wshadow
 endif
@@ -86,8 +86,14 @@ include $(OCPI_CDK_DIR)/include/util.mk
 # behavior with no environment requirements at all.
 # Setting just OCPI_TARGET_PLATFORM will do cross builds
 $(eval $(OcpiEnsureToolPlatform))
-ifndef OCPI_TARGET_PLATFORM
+ifdef OCPI_TARGET_PLATFORM
+  ifndef OCPI_TARGET_DIR
+    $(warning No OCPI_TARGET_DIR set when OCPI_TARGET_PLATFORM is set. Setting it to $(OCPI_TARGET_PLATFORM), with no debug/optimize options)
+    export OCPI_TARGET_DIR:=$(OCPI_TARGET_PLATFORM)
+  endif
+else
   export OCPI_TARGET_PLATFORM:=$(OCPI_TOOL_PLATFORM)
+  export OCPI_TARGET_DIR:=$(OCPI_TOOL_DIR)
 endif
 ifndef OCPI_TARGET_PLATFORM_DIR
   export OCPI_TARGET_PLATFORM_DIR:=$(call OcpiGetRccPlatformDir,$(OCPI_TARGET_PLATFORM))
@@ -98,13 +104,13 @@ ifeq ($(wildcard $f),)
 else
  include $f
 endif
-ifndef OCPI_TARGET_HOST
+ifndef OCPI_TARGET_OS
   f=$(OCPI_TARGET_PLATFORM_DIR)/target
   ifeq ($(wildcard $f),)
     $(error OCPI_TARGET_PLATFORM is $(OCPI_TARGET_PLATFORM).  File $f is missing.)
   endif
   t:=$(shell cat $f)
-  export OCPI_TARGET_HOST:=$t
+#  export OCPI_TARGET_HOST:=$t
   t:=$(subst -, ,$t)
   export OCPI_TARGET_OS:=$(word 1,$t)
   export OCPI_TARGET_OS_VERSION:=$(word 2,$t)
@@ -142,13 +148,13 @@ else
  ifdef OCPI_USE_TARGET_MODES
    export OCPI_TARGET_MODE:=$(if $(filter 1,$(OCPI_DYNAMIC)),d,s)$(if $(filter 1,$(OCPI_DEBUG)),d,o)
  endif
- export OCPI_TARGET_DIR=$(OCPI_TARGET_HOST)$(and $(OCPI_TARGET_MODE),/$(OCPI_TARGET_MODE))
+ export OCPI_TARGET_DIR=$(OCPI_TARGET_PLATFORM)$(and $(OCPI_TARGET_MODE),/$(OCPI_TARGET_MODE))
 endif
 
 ################################################################################
 # Figure out if we should have OPENCL support
 ifeq ($(origin OCPI_HAVE_OPENCL),undefined)
-  ifeq ($(OCPI_TARGET_HOST),$(OCPI_TOOL_HOST))
+  ifeq ($(OCPI_TARGET_PLATFORM),$(OCPI_TOOL_PLATFORM))
     OCPI_HAVE_OPENCL:=$(if $(realpath $(OCPI_BIN_DIR)/ocpiocltest),$(shell $(OCPI_BIN_DIR)/ocpiocltest test && echo 1),)
   endif
 endif
@@ -156,8 +162,8 @@ endif
 # From here down is specifically for user makefiles
 ################################################################################
 # Set up directory pointers for user makefiles
-export OCPI_LIB_DIR:=$(OCPI_CDK_DIR)/lib/$(OCPI_TARGET_DIR)
-export OCPI_BIN_DIR:=$(OCPI_CDK_DIR)/bin/$(OCPI_TARGET_DIR)
+export OCPI_LIB_DIR:=$(OCPI_CDK_DIR)/$(OCPI_TARGET_DIR)/lib
+export OCPI_BIN_DIR:=$(OCPI_CDK_DIR)/$(OCPI_TARGET_DIR)/bin
 export OCPI_INC_DIR:=$(OCPI_CDK_DIR)/include/aci
 
 # Which libraries should be made available to user executables?
@@ -169,7 +175,7 @@ ifneq ($(OCPI_DYNAMIC),1)
 export OCPI_LD_FLAGS=\
   -L"$(OCPI_LIB_DIR)" $(OCPI_API_LIBS:%=-locpi_%) $(OCPI_EXTRA_LIBS:%=-l%) \
   $(foreach l,$(OCPI_PREREQUISITES_LIBS),\
-    $(OCPI_PREREQUISITES_DIR)/$l/$(OCPI_TARGET_HOST)/lib/lib$l.$(ARSUFFIX))
+    $(OCPI_PREREQUISITES_DIR)/$l/$(OCPI_TARGET_PLATFORM)/lib/lib$l.$(ARSUFFIX))
 else
 # This is appropriate for dynamic linking using dynamic libraries
 # It creates an executable that will execute in the developmen environment,
@@ -185,7 +191,7 @@ endif
 export OCPI_LD_FLAGS=\
   -L"$(OCPI_LIB_DIR)" $(OCPI_API_LIBS:%=-locpi_%) $(OCPI_EXTRA_LIBS:%=-l%) \
   $(foreach l,$(OCPI_PREREQUISITES_LIBS),\
-    $(OCPI_TARGET_PREREQUISITES_DIR)/$l/$(OCPI_TARGET_DIR)/lib/lib$l.$(OcpiDynamicSuffix)) \
+    $(OCPI_TARGET_PREREQUISITES_DIR)/$l/$(OCPI_TARGET_DIR)/lib/lib$l$(OcpiDynamicLibrarySuffix)) \
   -Xlinker -rpath -Xlinker $(OCPI_TARGET_CDK_DIR)/lib/$(OCPI_TARGET_DIR) \
   -Xlinker -rpath -Xlinker $(OCPI_TARGET_PREREQUISITES_DIR)/lib/$(OCPI_TARGET_DIR) \
 
@@ -206,18 +212,23 @@ target-$(OCPI_TARGET_DIR):
 # This will export shell variables to replace the original platform-target.sh scripts:
 ifdef ShellTargetVars
 
+# We (re)export the tool vars here in case we actually bootstrapped them here
+$(info OCPI_TOOL_OS=$(OCPI_TOOL_OS);export OCPI_TOOL_OS;)
+$(info OCPI_TOOL_OS_VERSION=$(TOOL_OS_VERSION);export TOOL_OS_VERSION;)
+$(info OCPI_TOOL_ARCH=$(OCPI_TOOL_ARCH);export OCPI_TOOL_ARCH;)
+$(info OCPI_TOOL_PLATFORM=$(OCPI_TOOL_PLATFORM);export OCPI_TOOL_PLATFORM;)
+$(info OCPI_TOOL_PLATFORM_DIR=$(TOOL_PLATFORM_DIR);export TOOL_PLATFORM_DIR;)
 $(info OCPI_TARGET_OS=$(OCPI_TARGET_OS);export OCPI_TARGET_OS;)
 $(info OCPI_TARGET_OS_VERSION=$(OCPI_TARGET_OS_VERSION);export OCPI_TARGET_OS_VERSION;)
 $(info OCPI_TARGET_ARCH=$(OCPI_TARGET_ARCH);export OCPI_TARGET_ARCH;)
-$(info OCPI_TARGET_HOST=$(OCPI_TARGET_HOST);export OCPI_TARGET_HOST;)
 $(info OCPI_TARGET_DIR=$(OCPI_TARGET_DIR);export OCPI_TARGET_DIR;)
 $(info OCPI_TARGET_MODE=$(OCPI_TARGET_MODE);export OCPI_TARGET_MODE;)
 $(info OCPI_TARGET_PLATFORM=$(OCPI_TARGET_PLATFORM);export OCPI_TARGET_PLATFORM;)
 $(info OCPI_TARGET_PLATFORM_DIR=$(OCPI_TARGET_PLATFORM_DIR);export OCPI_TARGET_PLATFORM_DIR;)
 $(info OCPI_CROSS_BUILD_BIN_DIR=$(OCPI_CROSS_BUILD_BIN_DIR);export OCPI_CROSS_BUILD_BIN_DIR;)
 $(info OCPI_CROSS_HOST=$(OCPI_CROSS_HOST);export OCPI_CROSS_HOST;)
-$(info OCPI_TARGET_DYNAMIC_SUFFIX=$(OcpiDynamicSuffix);export OCPI_TARGET_DYNAMIC_SUFFIX;)
-$(info OCPI_TARGET_DYNAMIC_FLAGS="$(OcpiDynamicFlags)";export OCPI_TARGET_DYNAMIC_FLAGS;)
+$(info OCPI_TARGET_DYNAMIC_SUFFIX=$(OcpiDynamicLibrarySuffix);export OCPI_TARGET_DYNAMIC_SUFFIX;)
+$(info OCPI_TARGET_DYNAMIC_FLAGS="$(OcpiDynamicLibraryFlags)";export OCPI_TARGET_DYNAMIC_FLAGS;)
 $(info OCPI_PREREQUISITES_DIR=$(OCPI_PREREQUISITES_DIR);export OCPI_PREREQUISITES_DIR;)
 $(info OCPI_PREREQUISITES="$(OCPI_PREREQUISITES)";export OCPI_PREREQUISITES;)
 

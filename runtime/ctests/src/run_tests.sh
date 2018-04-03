@@ -38,7 +38,7 @@ echo "========= Outputs from these tests will be in: $DIR"
 # if the script lives in the source tree, we are running where the executables are
 # otherwise assume this script is in the same directory as the executables are,
 # and change to that directory
-cd $OCPI_CDK_DIR/bin/$OCPI_TOOL_DIR/ctests
+cd $OCPI_CDK_DIR/$OCPI_TOOL_DIR/bin/ctests
 
 #[ $(basename $(dirname $0)) = src ] || cd "$(dirname $0)"
 
@@ -64,7 +64,12 @@ function doit {
 if test $# = 1 ; then
   doit $1
 else
-for i in `ls -d test* | grep -v '_main' | grep -v '\.'` ; do
+tests=`ls -d test* | grep -v '_main' | grep -v '\.'`
+[ -z "$tests" ] && {
+  echo Error:  ctests appear to be missing from `pwd`
+  exit 1
+}
+for i in $tests; do
   echo "Running $i..."
   doit $i
 done

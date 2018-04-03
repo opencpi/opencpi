@@ -45,9 +45,9 @@ $(call OcpiDbgVar,RccIncludeDirsInternal)
 RccIncludeDirsActual=$(RccIncludeDirsInternal)\
  $(if $(OcpiBuildingACI),. include,../include gen) \
  $(OCPI_CDK_DIR)/include/$(if $(OcpiBuildingACI),aci,rcc) \
- $(call OcpiGetRccPlatformDir,$(RccPlatform))/include \
+ $(call OcpiGetRccPlatformDir,$(RccRealPlatform))/include \
  $(foreach l,$(RccPrereqLibs),\
-   $(OCPI_PREREQUISITES_DIR)/$l/$(RccTarget)/include\
+   $(OCPI_PREREQUISITES_DIR)/$l/$(RccRealPlatform)/include\
    $(OCPI_PREREQUISITES_DIR)/$l/include)
 
 BF=$(BF_$(call RccOs,$1))
@@ -67,15 +67,15 @@ RccCompileOptions_linux=$(RccCompileOptions) -fPIC
 BF_macos=.dylib
 SOEXT_macos=.dylib
 AREXT_macos=.a
-RccMainLinkOptions_macos=$(RccLinkOptions) -Xlinker -rpath -Xlinker $(OCPI_CDK_DIR)/lib/$(RccTarget)
+RccMainLinkOptions_macos=$(RccLinkOptions) -Xlinker -rpath -Xlinker $(OCPI_CDK_DIR)/$(RccPlatform)/lib
 RccLinkOptions_macos=$(RccLinkOptions) -dynamiclib -Xlinker -undefined -Xlinker dynamic_lookup
 DispatchSourceFile=$(call WkrTargetDir,$1,$2)/$(CwdName)_dispatch.c
 ArtifactFile=$(BinaryFile)
 # Artifacts are target-specific since they contain things about the binary
 ArtifactXmlFile=$(call WkrTargetDir,$1,$2)/$(word 1,$(Workers))_assy-art.xml
 ToolSeparateObjects:=yes 
-OcpiLibDir=$(OCPI_CDK_DIR)/lib/$(RccTarget)$(and $(OCPI_TARGET_MODE),/$(OCPI_TARGET_MODE))
-OcpiIsDynamic=$(if $(wildcard $(OcpiLibDir)/libocpi_application$(SOEXT_$(call RccOs,))),1,0)
+OcpiLibDir=$(OCPI_CDK_DIR)/$(RccPlatform)/lib
+OcpiIsDynamic=$(if $(findstring d,$(word 2,$(subst -, ,$1))),1,0)
 # Add the libraries we know a worker might reference.
 ifdef OcpiBuildingACI
   RccSpecificLinkOptions=\
@@ -90,13 +90,10 @@ else
   override RccLibrariesInternal+=rcc application os
 endif
 
-ifeq ($(OCPI_USE_TARGET_MODES),1)
-  export OCPI_TARGET_MODE:=$(if $(filter 1,$(OcpiIsDynamic)),d,s)$(if $(filter 1,$(OCPI_DEBUG)),d,o)
-endif
 Comma=,
-RccLibDir=$(OCPI_CDK_DIR)/lib/$(RccTarget)$(and $(OCPI_TARGET_MODE),/d$(if $(filter 1,$(OCPI_DEBUG)),d,o))
-LinkBinary=$(G$(OcpiLanguage)_LINK_$(RccTarget)) \
-$(G$(OcpiLanguage)_MAIN_FLAGS_$(RccTarget)) \
+RccLibDir=$(OCPI_CDK_DIR)/$(RccPlatform)/lib
+LinkBinary=$(G$(OcpiLanguage)_LINK_$(RccRealPlatform)) \
+$(G$(OcpiLanguage)_MAIN_FLAGS_$(RccRealPlatform)) \
 $(RccSpecificLinkOptions) \
 $(call RccPrioritize,ExtraLinkOptions,$(OcpiLanguage),$(RccTarget),$(RccPlatform)) \
 -o $@ $1 \
@@ -105,40 +102,47 @@ $(call RccPrioritize,CustomLibs,$(OcpiLanguage),$(RccTarget),$(RccPlatform)) \
 $(call RccPrioritize,LocalLibs,$(OcpiLanguage),$(RccTarget),$(RccPlatform)) \
 $(foreach l,$(RccLibrariesInternal) $(Libraries),\
   $(if $(findstring /,$l),\
-    $(foreach p,$(dir $l)$(RccTarget)/lib$(notdir $l),\
+    $(foreach p,$(dir $l)$(RccPlatform)/lib$(notdir $l),\
        $(or $(wildcard $p$(AREXT_$(call RccOs,))),\
-            $(and $(wildcard $p$(SOEXT_$(call RccOs,))),-L $(dir $l)$(RccTarget) -l $(notdir $l)),\
+            $(and $(wildcard $p$(SOEXT_$(call RccOs,))),-L $(dir $l)$(RccPlatform) -l $(notdir $l)),\
             $(error No RCC library found for $l, tried $p$(AREXT_$(call RccOs,)) and $p$(SOEXT_$(call RccOs,))))), \
-    $(if $(filter 1,$(OcpiIsDynamic)),\
+    $(if $(filter 1,$(call OcpiIsDynamic,$(RccPlatform))),\
        -l ocpi_$l,\
        $(and $(OcpiBuildingACI),$(RccLibDir)/libocpi_$l$(AREXT_$(call RccOs,)))))) \
   -L $(RccLibDir) \
   $(foreach l,$(RccStaticPrereqLibs),\
-    $(OCPI_PREREQUISITES_DIR)/$l/$(RccTarget)/lib/lib$l.a) \
+    $(OCPI_PREREQUISITES_DIR)/$l/$(RccRealPlatform)/lib/lib$l.a) \
   $(and $(RccDynamicPrereqLibs),-Wl$(Comma)-rpath -Wl$(Comma)'$$ORIGIN') \
   $(foreach l,$(RccDynamicPrereqLibs),\
-    $(OCPI_PREREQUISITES_DIR)/$l/$(RccTarget)/lib/lib$l$(SOEXT_$(call RccOs,))) \
-  $(and $(OcpiBuildingACI),$(G$(OcpiLanguage)_MAIN_LIBS_$(RccTarget):%=-l%)) \
+    $(OCPI_PREREQUISITES_DIR)/$l/$(RccRealPlatform)/lib/lib$l$(SOEXT_$(call RccOs,))) \
+  $(and $(OcpiBuildingACI),$(G$(OcpiLanguage)_MAIN_LIBS_$(RccRealPlatform):%=-l%)) \
+  $(if $(filter 1,$(call OcpiIsDynamic,$(RccPlatform))),,\
+     && $(OCPI_CDK_DIR)/scripts/makeStaticWorker.sh $(call RccOs,) $@ \
+	  $(foreach l,$(RccLibrariesInternal),libocpi_$l$(call BF,$(call RccOs,)))) \
   $(foreach l,$(RccDynamicPrereqLibs),\
-    && cp $(OCPI_PREREQUISITES_DIR)/$l/$(RccTarget)/lib/lib$l$(SOEXT_$(call RccOs,)) $(@D))
+    && cp $(OCPI_PREREQUISITES_DIR)/$l/$(RccRealPlatform)/lib/lib$l$(SOEXT_$(call RccOs,)) $(@D))
 
 # $1 is target, $2 is configuration
 RccStaticName=$(WkrBinaryName)_s$(SOEXT_$(call RccOs,$1))
 RccStaticPath=$(call WkrTargetDir,$1,$2)/$(call RccStaticName,$1)
 define RccWkrBinary
-  $$(infox RccWkrBinary:$1:$2:$$(call RccOs,))
-  $$(call RccStaticPath,$1,$2): $$(call WkrBinary,$1,$2)
-	$(AT)$(OCPI_CDK_DIR)/scripts/makeStaticWorker.sh $$(call RccOs,$1) $$< $$@ \
-		  $$(foreach l,$$(RccLibrariesInternal),libocpi_$$l$$(call BF,$1))
-  all: $$(call RccStaticPath,$1,$2)
+
+#  $$(infox RccWkrBinary:$1:$2:$$(call RccOs,))
+#  $$(call RccStaticPath,$1,$2): $$(call WkrBinary,$1,$2)
+#	$(AT)$(OCPI_CDK_DIR)/scripts/makeStaticWorker.sh $$(call RccOs,$1) $$< $$@ \
+#		  $$(foreach l,$$(RccLibrariesInternal),libocpi_$$l$$(call BF,$1))
+#  all: $$(call RccStaticPath,$1,$2)
+
 endef
 
 define RccWkrBinaryLink
-  $$(infox RccWkrBinaryLink:$1:$2:$3:$4:$5 name:$$(call RccStaticName,$1,$4):$(LibDir)/$1/$5_s$$(call BF,$1))
-  $(LibDir)/$1/$5_s$$(call BF,$1): $$(call RccStaticPath,$1,$4) | $(LibDir)/$1
-	$(AT)echo Exporting worker binary for static executables: $$@ '->' $$<
-	$(AT)$$(call MakeSymLink2,$$<,$$(dir $$@),$$(notdir $$@))
-  BinLibLinks+=$(LibDir)/$1/$5_s$$(call BF,$1)
+
+#  $$(infox RccWkrBinaryLink:$1:$2:$3:$4:$5 name:$$(call RccStaticName,$1,$4):$(LibDir)/$1/$5_s$$(call BF,$1))
+#  $(LibDir)/$1/$5_s$$(call BF,$1): $$(call RccStaticPath,$1,$4) | $(LibDir)/$1
+#	$(AT)echo Exporting worker binary for static executables: $$@ '->' $$<
+#	$(AT)$$(call MakeSymLink2,$$<,$$(dir $$@),$$(notdir $$@))
+#  BinLibLinks+=$(LibDir)/$1/$5_s$$(call BF,$1)
+
 endef
 
 
@@ -190,12 +194,12 @@ RccFinalCompileOptions=\
   $(call RccPrioritize,CompileOptions,$1,$2,$3) \
   $(call RccPrioritize,ExtraCompileOptions,$1,$2,$3) \
 
-Compile_c=$$(call OcpiFixPathArgs,\
-  $$(Gc_$$(RccTarget)) -MMD -MP -MF $$@.deps -c \
+Compile_c=$$(infox CCC:$$(RccRealPlatform):$$(Gc_$$(RccRealPlatform)))$$(call OcpiFixPathArgs,\
+  $$(Gc_$$(RccRealPlatform)) -MMD -MP -MF $$@.deps -c \
   $$(call RccFinalCompileOptions,C,$$(RccTarget),$$(RccPlatform)) \
   $$(RccIncludeDirsActual:%=-I%) -o $$@ $$(RccParams) $$<)
 Compile_cc=$$(call OcpiFixPathArgs,\
-  $$(Gc++_$$(RccTarget)) -MMD -MP -MF $$@.deps -c \
+  $$(Gc++_$$(RccRealPlatform)) -MMD -MP -MF $$@.deps -c \
   $$(call RccFinalCompileOptions,CC,$$(RccTarget),$$(RccPlatform)) \
   $$(RccIncludeDirsActual:%=-I%) -o $$@ $$(RccParams) $$<)
 Compile_cpp=$(Compile_cc)
@@ -250,7 +254,8 @@ $(call ArtifactXmlFile,$1,$2): $(call RccAssemblyFile,$1,$2) $$(ObjectFiles_$1_$
 	     -O $(call RccOs,$1) \
              -V $(call RccOsVersion,$1) \
              -H $(call RccArch,$1) \
-	     -P $3 \
+	     -P $(call RccRealPlatforms,$3) \
+	     -Z $(call OcpiIsDynamic,$3) \
 	     -D $(call WkrTargetDir,$1,$2) $(XmlIncludeDirsInternal:%=-I%) -A $(RccAssemblyFile))
 
 endef

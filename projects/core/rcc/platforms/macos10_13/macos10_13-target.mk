@@ -24,7 +24,7 @@ OcpiRequiredCXXFlags:=-Werror=unknown-warning-option $(OcpiRequiredCXXFlags)
 OcpiLibraryPathEnv=DYLD_LIBRARY_PATH
 OcpiRpathOrigin=@executable_path
 OcpiDynamicLibrarySuffix:=.dylib
-OcpiDynamicLibraryFlags=
+OcpiDynamicLibraryFlags=-dynamiclib
 OcpiDriverFlags=-Wl,-flat_namespace -Wl,-dylib
 OcpiDynamicProgramLdflags=-shared -no-undefined -Wl,-rpath,@executable_path
 OcpiOpenclLib=/System/Library/Frameworks/OpenCL.framework/Versions/A/OpenCL

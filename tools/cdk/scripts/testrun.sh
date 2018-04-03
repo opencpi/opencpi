@@ -88,7 +88,7 @@ function docase {
     lockrcc=
     [ "$OCPI_ENABLE_REMOTE_DISCOVERY" = 1 ] && lockrcc="-c=rcc0 -c$component="
     cmd=('OCPI_LIBRARY_PATH=../../../lib/rcc:../../../lib/ocl:../../gen/assemblies:$OCPI_CDK_DIR/../projects/core/exports/lib/components/rcc' \
-             '$OCPI_CDK_DIR/bin/$OCPI_TOOL_DIR/'ocpirun -d -v -m$component=$1 -w$component=$2 \
+             '$OCPI_CDK_DIR/$OCPI_TOOL_DIR/bin/'ocpirun -d -v -m$component=$1 -w$component=$2 \
 	         $lockrcc -P$component=$platform \
 	         --sim-dir=$3.$4.$2.$1.simulation $timearg \
 		 --dump-file=$3.$4.$2.$1.props $outputs ../../gen/applications/$3.$4.xml)

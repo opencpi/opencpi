@@ -38,13 +38,15 @@ if [ -n "$OCPI_TARGET_PLATFORM" ]; then
     echo Error:  ocpitarget.sh called with no target when OCPI_TARGET_PLATFORM already set to \"$OCPI_TARGET_PLATFORM\".
     exit 1
   fi
-else
+elif [ -n "$1" ] ; then
   # OCPI_TARGET_PLATFORM reflects the argument which might be empty
-  export OCPI_TARGET_PLATFORM=$1
+  plat=(${1//-/ })
+  export OCPI_TARGET_PLATFORM=$plat
+  export OCPI_TARGET_DIR=$1  
 fi
-
+echo OCPITARGET.SH:$OCPI_TARGET_PLATFORM:$OCPI_TARGET_DIR
 # Ensure we are really starting fresh for this target
-unset `env | grep OCPI_TARGET | grep -v OCPI_TARGET_PLATFORM | sed 's/=.*//'`
+unset `env | grep OCPI_TARGET | egrep -v 'OCPI_TARGET_(PLATFORM|DIR)' | sed 's/=.*//'`
 
 source $OCPI_CDK_DIR/scripts/util.sh
 # Remove this until we figure out why it is here.

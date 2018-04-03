@@ -17,9 +17,9 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 # The default definitions for native RCC compilation
-Gc_$(OCPI_TOOL_HOST)=gcc -std=c99
-Gc++_$(OCPI_TOOL_HOST)=g++ -std=c++0x
-Gc_LINK_$(OCPI_TOOL_HOST)=gcc
-Gc++_LINK_$(OCPI_TOOL_HOST)=g++
-Gc++_MAIN_LIBS_$(OCPI_TOOL_HOST)=rt dl pthread
-Gc++_MAIN_FLAGS_$(OCPI_TOOL_HOST)=-Xlinker --export-dynamic
+Gc_$(OCPI_TOOL_PLATFORM)=gcc -std=c99
+Gc++_$(OCPI_TOOL_PLATFORM)=g++ -std=c++0x
+Gc_LINK_$(OCPI_TOOL_PLATFORM)=gcc
+Gc++_LINK_$(OCPI_TOOL_PLATFORM)=g++
+Gc++_MAIN_LIBS_$(OCPI_TOOL_PLATFORM)=rt dl pthread
+Gc++_MAIN_FLAGS_$(OCPI_TOOL_PLATFORM)=-Xlinker --export-dynamic

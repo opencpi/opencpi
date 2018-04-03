@@ -38,25 +38,24 @@ OS=$1
 shift
 IN=$1
 shift
-OUT=$1
-shift
 if [ $OS = linux ]; then
   patchelf=$OCPI_PREREQUISITES_DIR/patchelf/bin/patchelf
   [ -x ${patchelf} ] || patchelf=$OCPI_PREREQUISITES_DIR/patchelf/$OCPI_TOOL_DIR/bin/patchelf
   [ -x ${patchelf} ] || echo "Could not find patchelf executable!"
 fi
 
-T1=/tmp/makeStaticWorker$$.1
-T2=/tmp/makeStaticWorker$$.2
+#T1=/tmp/makeStaticWorker$$.1
+#T2=/tmp/makeStaticWorker$$.2
 set -e
-$ocpixml get $IN > $T1
-$ocpixml strip $IN $T2
+# $ocpixml get $IN > $T1
+#$ocpixml strip $IN $T2
 X=1
-if ! grep '<artifact.*dynamic=.1' $T1 > /dev/null; then
-  echo The file \"$1\" does not contain XML from an RCC worker.
-elif file $T2 | grep ELF > /dev/null; then
+#if ! grep '<artifact.*dynamic=.1' $T1 > /dev/null; then
+#  echo The file \"$1\" does not contain XML from an RCC worker.
+#el
+if file $IN | grep ELF > /dev/null; then
   for i in $*; do PARGS="$PARGS --remove-needed $i"; done
-  ${patchelf} $PARGS $T2
+  ${patchelf} $PARGS $IN
   X=0
 elif test $OS = macos; then
   # The patchelf is unnecessary on MacOS since it does not have the DT_NEEDED entries anyway
@@ -64,10 +63,10 @@ elif test $OS = macos; then
 else
   echo "Input file $1 is non-existent or not readable or not a suitable (ELF) file."
 fi
-if test $X = 0; then
-  sed "s/\(<artifact.*dynamic='\)./\10/" $T1 | $ocpixml add $T2 -
-  cp $T2 $OUT
-  chmod a+x $OUT
-fi
-rm -f $T1 $T2
+#if test $X = 0; then
+  #sed "s/\(<artifact.*dynamic='\)./\10/" $T1 | $ocpixml add $T2 -
+  # $ocpixml add $T2 $T1
+  #cp $T2 $IN
+#fi
+#rm -f $T1 $T2
 exit $X

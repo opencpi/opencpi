@@ -24,7 +24,8 @@ if test "$OCPI_CDK_DIR" != ""; then
   echo Use \"unset OCPI_CDK_DIR\" to cause this script to initialize the environment for OpenCPI.
   OCPI_BOOTSTRAP=$OCPI_CDK_DIR/scripts/ocpibootstrap.sh
   . $OCPI_BOOTSTRAP
-  if test -n "$1" -a "$1" != $OCPI_TOOL_PLATFORM; then
+  env|grep OCPI
+  if test -n "$1" -a "$1" != $OCPI_TOOL_DIR; then
     echo Skipping testing since we are cross-building for $1 on $OCPI_TOOL_PLATFORM.
     exit 0
   fi      
@@ -43,8 +44,8 @@ source $OCPI_CDK_DIR/scripts/util.sh
   echo ======================= Loading the OpenCPI Linux Kernel driver. &&
     $OCPI_CDK_DIR/scripts/ocpidriver load
 }
-bin=$OCPI_CDK_DIR/bin/$OCPI_TOOL_DIR
-echo ======================= Running Unit Tests &&
+bin=$OCPI_CDK_DIR/$OCPI_TOOL_DIR/bin
+echo ======================= Running Unit Tests in $bin &&
 $bin/ocpitests &&
 echo ======================= Running Datatype/protocol Tests &&
 $bin/ocpidds -t 10000 > /dev/null &&

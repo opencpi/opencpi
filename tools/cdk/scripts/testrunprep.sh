@@ -35,7 +35,7 @@ function getRemote {
 }
 
 mkdir -p run
-ToolsDir=$OCPI_CDK_DIR/bin/$OCPI_TOOL_DIR
+ToolsDir=$OCPI_CDK_DIR/$OCPI_TOOL_DIR/bin
 echo 'Probing for available local platforms:'
 localplatforms=(`$ToolsDir/ocpirun -C --only-platforms`)
 echo '  Local platforms are: '${localplatforms[@]}

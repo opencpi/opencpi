@@ -29,7 +29,7 @@ source $OCPI_CDK_DIR/scripts/setup-install.sh \
        1
 $CXX -fPIC -I../include -I.. -c ../src/gtest-all.cc
 $AR -rs libgtest.a gtest-all.o
-dname=libgtest.$OCPI_TARGET_DYNAMIC_SUFFIX
+dname=libgtest$OCPI_TARGET_DYNAMIC_SUFFIX
 ldir=$OCPI_PREREQUISITES_INSTALL_DIR/gtest/$OCPI_TARGET_DIR/lib
 iname=$ldir/$dname
 [ "$OCPI_TARGET_OS" = macos ] && install_name="-install_name $iname"

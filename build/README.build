@@ -1,0 +1,22 @@
+This directory is for the build machinery for building the OpenCPI framework libraries and
+executables.
+
+We try to separate concerns of:
+
+1. The description of our software and platforms that does not say how it is built.
+2. The build mechanisms used to actually build it.
+
+Furthermore we want to enable multiple instances of #2 (e.g. autotools, cmake, scons)
+so that it is relatively easy to change and evolve.
+
+The files in this directory are of type #1:
+
+README - this file
+places - a list of framework source directories and their attributes, one per line
+         see the comments in that file for its format and syntax
+platform-defaults.mk - default compilation settings for all targeted platforms
+(this may move out to tools/cdk/include)
+
+In addition to these files are directories containing build mechanisms, the first being
+"autotools".
+

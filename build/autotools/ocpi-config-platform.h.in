@@ -1,0 +1,6 @@
+/* A template for the definitions where the macro name is config-specific */
+
+#define OCPI_PLATFORM_@OcpiPlatform@ 1
+#define OCPI_OS_@OcpiPlatformOs@ 1
+#define OCPI_OS_VERSION_@OcpiPlatformOsVersion@ 1
+#define OCPI_ARCH_@OcpiPlatformArch@ 1

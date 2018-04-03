@@ -32,7 +32,7 @@ PLOT?=0
 PLATFORM=none
 APP=testbench
 
-include setup.mk
+include $(OCPI_CDK_DIR)/include/application.mk
 
 # build the testbench executable
 run: all

@@ -23,7 +23,7 @@
 #include <cstdio> // needed for fgetc, feof, ferror, etc.
 #include <cerrno> // needed for errno
 #include <vector>
-#include "OcpiApi.h"
+#include "OcpiApi.hh"
 #include "util.h" // for GETBIT, ...
 
 //#define DISABLE_LOG // uncomment to remove logging code

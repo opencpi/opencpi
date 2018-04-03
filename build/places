@@ -1,0 +1,81 @@
+# This file specifies what gets built and how, in a way independent of the particular
+# "build system" being used.
+
+# The source tree follows these rules
+# - all source files are expected to be built as part of the library where they live
+# - all source files depend on headers of the place they are in, and places occuring earlier
+# - all programs have a main/top file with the suffix _main
+# - all programs depend on the library of the place they are in, statically, and earlier libs
+# - all programs and libraries can use all prereq libraries
+
+# The syntax of describing places is one line per place, with blank lines and # comments ok
+
+# Specifying places: (source subtrees)
+# Places are specified one per line, with directory pathname followed by options
+# Default behavior is:
+# - library name is basename of pathname (with ocpi_ prefix)
+# - resulting library is an exported runtime library, installed in "lib"
+# - resulting library is "our" code subject to strict warnings etc.
+# - resulting library should be available to later libraries and programs (lines after it)
+# - any programs found are exported to "bin"
+
+# Options are to change the default behavior:
+# -l <name>: the library name is not the basename of the directory, but this name
+# -n: library is not installed, and is only static, used for programs in the same place
+# -f: library is "foreign", built with less strict options since its not our code
+# -d <dir>: the installation subdirectory for programs, default is no subdirectory
+# -D <XX=YY>: value is cpp definition for use when building the library
+# -v: library is a driver/plug-in
+# -I <dir>: value is other dir ro look for headers
+# -t: library and programs are "tools" not "runtime" and thus depend on subset of runtime libs
+#     and will not be built for cross-compiled targets      
+# -x <pattern>: source files to ignore
+# -s: library members have static constructors and are not necessarily referenced
+#     This causes programs to be build with the place's object files, not its library
+# -T <program>: a top-level program, overriding the -d <dir> default for other programs
+
+# There are several "special" lines:
+# 1. "prerequisites" which is a list of the prerequisite libraries
+# 2. "end-of-runtime-for-tools", which marks the end of the runtime libraries usable by tools
+
+# We know, when building:
+# 1. The platform we are building (default is the current build machine)
+# 2. Whether it is a development platform or a runtime-only platform (default is development)
+# 3. Whether it is cross compiled or not (default is not cross compiled)
+prerequisites gmp lzma gtest
+runtime/foreign -f -x .*/pwq/kern/.* -x .*/pwq/src/.*/.* -x .*/uuid/src/.*/.*
+os -x .*/driver/.* -x .*/winnt/.*
+runtime/util -d utils -T ocpixml
+end-of-runtime-for-tools
+
+runtime/dataplane/xfer/base -l xfer
+runtime/dataplane/xfer/tests -n -d xfer_tests -l xfer_tests
+runtime/dataplane/xfer/drivers/datagram -v
+runtime/dataplane/xfer/drivers/dma -v
+runtime/dataplane/xfer/drivers/ofed -v
+runtime/dataplane/xfer/drivers/pio -v
+runtime/dataplane/xfer/drivers/socket -v
+runtime/dataplane/transport
+runtime/dataplane/msg_driver_interface
+runtime/dataplane/msg_drivers
+runtime/library
+runtime/container
+runtime/remote -v
+# remote-support is not -n since ocpirun/ACI needs it
+runtime/remote-support -I runtime/remote/include
+runtime/rcc -v
+runtime/ocl -v -I runtime/ocl/include/CL 
+runtime/ocl-support -n -I runtime/ocl/include -I runtime/ocl/include/CL
+runtime/hdl -v
+runtime/application
+runtime/hdl-support -n -I runtime/hdl/include
+runtime/ctests -n -d ctests -I runtime/rcc/include
+tests -n -s
+tools/cdkutils -t
+# ocpigen use some runtime libraries that are higher up the stack
+tools/ocpigen -n -t -I tools/cdkutils/include -I runtime/hdl/include -I runtime/library/include -I runtime/ocl/include -L cdkutils -L library
+# ocpisca uses runtime so is not really a "tool" as far as builds go
+tools/ocpisca
+tools/ocpirh
+tools/ocpigr -t  -I tools/cdkutils/include -I runtime/library/include -L cdkutils -L library
+tools/ocpidds -t -I tools/cdkutils/include -L cdkutils

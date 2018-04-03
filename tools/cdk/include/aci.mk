@@ -69,6 +69,7 @@ define DoBuildAci
     $$(eval $$(call DoAciSource,$1,$$s,cc)))
   $$(eval $$(call DoAciSource,$1,$2,cc,$(basename $2)))
   $(call AciExe,$1,$2): RccTarget=$(RccTarget_$1)
+  $(call AciExe,$1,$2): RccPlatform=$1
   $(call AciExe,$1,$2): | $(call AciDir,$1)
   $(call AciExe,$1,$2): $$(for s,$(SourceFiles) $2,$$(call AciObj,$1,$$s))
 	$(AT)echo Creating executable for $(OcpiApp) running on platform $1 from $$^
@@ -79,6 +80,6 @@ endef
 $(foreach p,$(RccPlatforms),$(foreach a,$(OcpiAppsCC),$(infox App=$a Platform=$p)$(eval $(call DoBuildAci,$p,$a))))
 
 aciapps:
-	touch aciapps
+	$(AT)touch aciapps
 clean::
 	$(AT)rm -r -f target-* *~ aciapps

@@ -97,11 +97,21 @@ else
 #  $(info OCPI_ALL_RCC_PLATFORMS is $(OCPI_ALL_RCC_PLATFORMS))
 #  $(info OCPI_ALL_RCC_TARGETS is $(OCPI_ALL_RCC_TARGETS))
 endif
+RccRealPlatforms=$(infox GETREAL:$1)$(foreach p,$1,$(word 1,$(subst -, ,$p)))
+RccRealPlatform=$(strip $(infox RRP:$(RccPlatform))\
+                $(foreach p,$(call RccRealPlatforms,$(RccPlatform)),$(infox RRPr:$p)$p))
+# Transfer build options to target from platform
+# $(call RccPlatformTarget,<platform>,<target>)
+RccPlatformTarget=$(infox RPT:$1:$2)$2$(foreach b,$(word 2,$(subst -, ,$1)),$(and $b,-$b))
 ifdef RccPlatforms
   # FIXME: this logic is copied in ocl-make.mk
-  override RccPlatforms:=$(filter-out $(ExcludePlatforms) $(RccExcludePlatforms),$(RccPlatforms))
+  override RccPlatforms:=$(filter-out $(ExcludePlatforms) $(ExcludePlatforms:%=%_%)\
+                                      $(RccExcludePlatforms) $(RccExcludePlatforms:%=%_%),\
+                                      $(RccPlatforms))
   ifneq ($(OnlyPlatforms)$(RccOnlyPlatforms),)
-    override RccPlatforms:=$(filter $(OnlyPlatforms) $(RccOnlyPlatforms),$(RccPlatforms))
+    override RccPlatforms:=$(filter $(OnlyPlatforms) $(OnlyPlatforms:%=%_%) \
+                                    $(RccOnlyPlatforms) $(RccOnlyPlatforms:%=%_%),\
+                                    $(RccPlatforms))
   endif
   # We cannot perform this check since we may be inheriting changes made in a higher
   # level Makefile.  If the user tries this, it is simply ignored.
@@ -110,13 +120,13 @@ ifdef RccPlatforms
   # endif
   RccTargets:=
   RccFound:=
-  $(foreach p,$(RccPlatforms),\
-    $(foreach d, $(call OcpiGetRccPlatformDir,$p),\
-      $(foreach f,$d/target,\
-         $(if $(wildcard $f),\
-           $(foreach t,$(shell echo $$(< $f)),\
+  $(foreach p,$(RccPlatforms),$(infox RCP:$p)\
+    $(foreach d,$(call OcpiGetRccPlatformDir,$(call RccRealPlatforms,$p)),\
+      $(foreach f,$d/target,$(infox DD:$d/target)\
+         $(if $(wildcard $f),$(infox FF:$f)\
+           $(foreach t,$(call RccPlatformTarget,$p,$(shell echo $$(< $f))),$(infox TT:$t)\
                $(eval RccTargets+=$t)\
-               $(eval RccTarget_$p:=$t)\
+               $(eval RccTarget_$p:=$t)$(infox RccTarget_$p:=$t:::$(RccTarget_$p))\
                $(eval RccFound+=$p))))))\
   $(foreach p,$(RccPlatforms),\
     $(if $(findstring $p,$(RccFound)),,\
@@ -153,16 +163,16 @@ override RccPlatform:=
 #
 ifeq ($(filter clean cleanrcc,$(MAKECMDGOALS)),)
 # include all the rcc compilation files for all target platforms
-$(foreach p,$(RccPlatforms), \
-  $(foreach t,$(RccTarget_$p),\
+$(foreach x,$(RccPlatforms),$(infox FRRP:$x:RccTarget_$x:$(RccTarget_$x))\
+  $(foreach t,$(RccTarget_$x),\
     $(eval files:=)\
     $(eval cross:=)\
-    $(foreach d, $(call OcpiGetRccPlatformDir,$p),\
-      $(foreach m,$(if $(findstring $(OCPI_TOOL_PLATFORM),$p),rcc=$p,rcc=$(OCPI_TOOL_PLATFORM)=$p) \
-                  $(if $(findstring $(OCPI_TOOL_HOST),$t),$t,$(OCPI_TOOL_HOST)=$t),\
-        $(eval files:=$(files) $(or $(wildcard $(OCPI_CDK_DIR)/include/rcc/$m.mk),\
-                                    $(wildcard $d/$m.mk)))\
+    $(eval p:=$(call RccRealPlatforms,$x))\
+    $(foreach d,$(call OcpiGetRccPlatformDir,$p),\
+      $(foreach m,$(if $(findstring $(OCPI_TOOL_PLATFORM),$p),rcc=$p,rcc=$(OCPI_TOOL_PLATFORM)=$p),\
+        $(eval files:=$(files) $(wildcard $d/$m.mk))\
         $(and $(findstring =,$(subst rcc=,,$m)),$(eval cross:=1)))\
+      $(infox FILES:$(files))\
       $(foreach n,$(words $(files)),\
          $(if $(filter 0,$n),\
 	    $(if $(cross),\

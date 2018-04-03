@@ -25,7 +25,8 @@ $(if $(realpath $(OCPI_CDK_DIR)),,$(error The OCPI_CDK_DIR environment variable 
 
 APP=calculate_AD9361_BIST_PRBS_RX_BER
 
-include setup.mk
+include $(OCPI_CDK_DIR)/include/application.mk
+#setup.mk
 
 .SILENT: show
 .PHONY: run clean show

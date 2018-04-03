@@ -90,7 +90,7 @@ MyTargetDir?=target-$(OCPI_TARGET_DIR)
 MyIncs?= \
          -I$(realpath $(MyDir)/../../../runtime/hdl/include) \
          -I$(realpath $(MyDir)/../../interfaces/include)
-MyLib:=$(realpath $(OCPI_CDK_DIR)/lib/$(OCPI_TARGET_DIR))
+MyLib:=$(realpath $(OCPI_CDK_DIR)/$(OCPI_TARGET_DIR)/lib)
 $(infox x:$(MyTargetDir) $(MyDir))
 ifneq ($(MAKECMDGOALS),topclean)
   ifeq ($(strip $(MyLib)),)

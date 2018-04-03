@@ -186,8 +186,6 @@ define WkrDoTargetConfig
     $$(call WkrBinary,$1,$2): $(CapModel)Target=$1
     $$(call WkrBinary,$1,$2): $(CapModel)Platform=$$(call WkrGetPlatform,$1)
 
-    # Note the use of ls -o -g -l below is to not be affected by
-    # user and group names with spaces.
     $$(call WkrBinary,$1,$2): $$$$(ObjectFiles_$1_$2) $$(call ArtifactXmlFile,$1,$2) $$$$($(CapModel)LinkDependencies_$$$$($(CapModel)Target)) \
                             | $$(call WkrTargetDir,$1,$2)
 	$(AT)echo Linking final artifact file \"$$@\" and adding metadata to it...

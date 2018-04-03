@@ -39,7 +39,7 @@ if [ -z "$OCPI_CDK_DIR" ]; then
   echo "   \"./scripts/init-opencpi.sh\" at the top level of the source directory."
   echo "This is done automatically by scripts like install-packages.sh, install-prequisites.sh or build-opencpi.sh"
   exit 1
-elif [ ! -f $OCPI_CDK_DIR/opencpi-setup.sh ]; then
+elif [ ! -f $OCPI_CDK_DIR/scripts/ocpitarget.sh ]; then
   echo "The environment OCPI_CDK_DIR variable does not point to a valid location."  
   exit 1
 fi

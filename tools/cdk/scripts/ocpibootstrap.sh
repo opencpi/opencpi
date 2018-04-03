@@ -100,32 +100,5 @@ if test "$OCPI_TOOL_PLATFORM" = ""; then
 fi
 # Determine OCPI_TOOL_MODE if it is not set already
 # It can be set to null to suppress these modes, and just use whatever has been
-# built without modes.
-if test "$OCPI_USE_TOOL_MODES" = "1"; then
-  if test "$OCPI_TOOL_MODE" = ""; then
-    # OCPI_TOOL_MODE not set at all, just look for one
-    for i in sd so dd do; do
-      if test -x "$OCPI_CDK_DIR/$OCPI_TOOL_HOST/$i/ocpirun"; then
-        export OCPI_TOOL_MODE=$i
-        echo "Choosing tool mode "$i" since there are tool executables for it."
-        break
-      fi
-    done
-  fi
-  if test "$OCPI_TOOL_MODE" = ""; then
-    if test ! -x "$OCPI_CDK_DIR/bin/$OCPI_TOOL_HOST/ocpirun"; then
-      echo "Could not find any OpenCPI executables in $OCPI_CDK_DIR/$OCPI_TOOL_HOST/*"
-      if test "$OCPI_DEBUG" = 1; then do=d; else do=o; fi
-      if test "$OCPI_DYNAMIC" = 1; then sd=d; else sd=s; fi
-      export OCPI_TOOL_MODE=$sd$do
-      echo "Hopefully you are building OpenCPI from scratch.  Tool mode will be \"$OCPI_TOOL_MODE\"".
-    else
-      export OCPI_TOOL_MODE=
-    fi
-  fi
-fi
-if test "$OCPI_TOOL_MODE" = ""; then
-  export OCPI_TOOL_DIR=$OCPI_TOOL_HOST
-else
-  export OCPI_TOOL_DIR=$OCPI_TOOL_HOST/$OCPI_TOOL_MODE    	  
-fi
+[ -z "$OCPI_TOOL_DIR" ] && export OCPI_TOOL_DIR=$OCPI_TOOL_PLATFORM
+return 0
