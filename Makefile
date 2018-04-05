@@ -115,14 +115,15 @@ opencpi-cdk-latest.tgz tar:
 # The silly "rpmarch" determination is exporting RPM_ARCH that is available inside rpmbuild
 .PHONY: rpm
 rpm: exports
-	$(AT)which -s rpmbuild || (echo Cannot build an RPM: rpmbuild is not available; exit 1)
-	$(AT)echo Creating an RPM file from the current CDK for platforms: $(RccPlatforms)
+	$(AT)command -v rpmbuild >/dev/null 2>&1 || \
+               (echo Cannot build an RPM: rpmbuild is not available; exit 1)
+	$(AT)echo "Creating an RPM file from the current CDK for platform(s):" $(RccPlatforms)
 	$(AT)OCPI_RCC_PLATFORMS="$(RccPlatforms)" \
 	     rpmbuild --quiet -bb --define "_rpmdir $(CURDIR)" build/cdk.spec
 	$(AT)rpmarch=$$(rpmbuild --showrc | grep '^install arch' | (read -a a;echo $${a[3]})) &&\
 	     rpm=`ls -t $$rpmarch/*.rpm | head -1` && \
-	     mv -f $rpm . && rm -r -f $$rpmarch && \
-	     echo Created RPM file: $(basename $$rpm)
+	     mv -f $$rpm . && rm -r -f $$rpmarch && \
+	     echo Created RPM file: $$(basename $$rpm)
 
 # Convenience here in the Makefile.
 # This forces the rebuild each time, although the downloads are cached.
@@ -131,8 +132,8 @@ prerequisites:
 ##########################################################################################
 # Goals that are about projects
 # A convenience to run various goals on all the projects that are here
-Projects=$(notdir $(wildcard projects/*))
-$(info Projects:$(Projects):$(wildcard projects/*))
+# Unfortunately, we need to know the order here.
+Projects=core assets inactive
 ProjectGoals=cleanhdl cleanrcc cleanocl rcc ocl hdl applications run runtest hdlprimitives \
              components cleancomponents test
 # These are not done in parallel since we do not know the dependencies
