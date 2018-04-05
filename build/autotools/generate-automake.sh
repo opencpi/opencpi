@@ -77,7 +77,8 @@ function print_lib_names {
 	  fi;;
       -l*|\$*|-L*);;
       *_stubs|*_d|*_s) s='$(ocpi_build_dir)/'$s.la;;
-      *)       s='$(ocpi_build_dir)/'$s$namesuffix.la;;
+      *.*|*@) s='$(ocpi_build_dir)/'$s;;
+      *)   s='$(ocpi_build_dir)/'$s$namesuffix.la;;
     esac
     printf ' \\\n  '"$s"
   done
@@ -91,20 +92,22 @@ function print_lib_names {
 function print_libs {
   type=$1; shift; suff=$1; shift; lib=$1; shift
   [ -n "$verbose" ] && echo printing libraries for type:$type suffix:$suff libs:$* >&2
-  echo if ocpi_is_dynamic
-  print_lib_names $lib $suff "" $*
-  echo else
-  # We are building statically.  If we are a driver we can reference symbols in
-  # dynamic libraries.  Otherwise if we are a program, use static libs.
-  # If we are in static mode
-  if [ $type = program ] ; then
-    print_lib_names $lib $suff _s $*
-  elif [ $type = swig ] ; then
-    print_lib_names $lib $suff _d $*
-  else
-    print_lib_names $lib $suff "" $*
-  fi
-  echo endif
+  case $type in
+   normal|driver)
+    print_lib_names $lib $suff "" $*;;
+   program)
+     echo if ocpi_is_dynamic
+     print_lib_names $lib $suff "" $*
+     echo else
+     print_lib_names $lib $suff _s $*
+     echo endif;;
+   swig)
+     echo if ocpi_is_dynamic
+     print_lib_names $lib $suff "" $* $dynamic_prereqs
+     echo else
+     print_lib_names $lib $suff _d $* $static_prereqs
+     echo endif;;
+  esac
 }
 
 # create a library
@@ -205,7 +208,8 @@ while read path opts; do
   echo '# For location: '$path
   includes=" `find -H $path $exclude -type d -a -name include` $xincludes" 
   includes="$(for i in $includes; do echo @srcdir@/$i; done)"
-  sources=`find -H $path $exclude -not -name "*_main.c*" -a -not -name "*_[sS]tubs.c*" -a \( -name "*.cxx" -o -name "*.cc" -o -name "*.c" \)`
+  sources=`find -H $path $exclude -not -name "*_main.c*" -a -not -name "*_[sS]tubs.c*" -a \
+                         \( -name "*.cxx" -o -name "*.cc" -o -name "*.c" \)`
   stubs=`find -H $path $exclude -name "*_[sS]tubs.c" -o -name "*_[sS]tubs.cxx"`
   swig=`find -H $path $exclude -path "*/src/*.i"`
   programs=`find -H $path $exclude -name "*_main.cxx"`
@@ -221,7 +225,8 @@ while read path opts; do
   [ -n "$stubs" ] && {
      [ -n "$verbose" ] && echo For $path stubs are \"$stubs\"  >&2
      # Have to force the prefix here to force libtool to NOT create a static library.
-     do_library stubs ${lname}_stubs "$stubs" "" "-rpath \$(prefix) @libtool_dynamic_library_flags@ @OcpiDynamicLibraryFlags@" "" noinst
+     do_library stubs ${lname}_stubs "$stubs" "" "-rpath \$(prefix) \
+                @libtool_dynamic_library_flags@ @OcpiDynamicLibraryFlags@" "" noinst
      ldadd+=' libocpi_'${lname}_stubs
   }
   [ -n "$sources" -a -z "$useobjs" ] && {
@@ -240,7 +245,8 @@ while read path opts; do
     #    Even in dynamic mode we need the static library when locally linking executables.
     if [ $ltype = normal -o $ltype = noinst ]; then
       [ -z "$programs" ] && echo if "!ocpi_is_dynamic"
-      do_library static ${lname}_s "$sources" "-prefer-non-pic" "@libtool_static_library_flags@ @OcpiStaticLibraryFlags@" "" $dest
+      do_library static ${lname}_s "$sources" "-prefer-non-pic" "@libtool_static_library_flags@\
+                 @OcpiStaticLibraryFlags@" "" $dest
       [ -z "$programs" ] && echo endif
     fi
     # 2. Make the STATIC PIC library if normal
@@ -253,28 +259,25 @@ while read path opts; do
     #    If in static mode overall, we still use this for error checking
     if [ $ltype != noinst ]; then
       # Force the extension in case libtool messes with it, which happens on darwin
-      do_library $ltype $lname "$sources" "-prefer-pic" "-shrext @OcpiDynamicLibrarySuffix@ $ldflags" "$ldadd \$(ocpi_dynamic_prereqs)" $dest
+      do_library $ltype $lname "$sources" "-prefer-pic" "-shrext @OcpiDynamicLibrarySuffix@ \
+                 $ldflags" "$ldadd \$(ocpi_dynamic_prereqs)" $dest
     fi
     # 4. Build a SWIG library one way or the other
     if [ -n "$swig" ]; then
 	base=$(basename $swig .i)
 	wrap="$(dirname $swig)/${base}_wrap.cxx"
 	swigs="$swigs $base"
-	ldflags="-module -export-dynamic -shrext @OcpiDynamicLibrarySuffix@ @libtool_dynamic_library_flags@ @OcpiDynamicLibraryFlags@"
+	ldflags="-module -export-dynamic -shrext @OcpiDynamicLibrarySuffix@ \
+                 @libtool_dynamic_library_flags@ @OcpiDynamicLibraryFlags@"
 	ldflags+=" -lpython@PYTHON_VERSION@ $ocpi_prereq_ldflags"
-	# This forces the rpath.  libtool does it right if the prereq has a libtool library,
-	# but does not put in the rpath it the prereq just has a .so and no .la
-#	for p in $ocpi_prereq_libs; do
-#	    ldflags+=" -Wl,-rpath -Wl,$(dirname $p)"
-#	done
 	ldadd="libocpi_${lname} $ldadd"
 	echo "if !ocpi_is_cross"
-	echo "if ocpi_is_dynamic"
-	do_library "swig" $base $wrap "" "$ldflags" "$ldadd $dynamic_prereqs" $dest
-	echo else
-	do_library "swig" $base $wrap "-prefer-pic" "$ldflags" \
-		   "$(for l in $ldadd; do echo ${l}_d; done) $dynamic_prereqs" $dest
-	echo endif
+#	echo "if ocpi_is_dynamic"
+#	do_library "swig" $base $wrap "" "$ldflags" "$ldadd $dynamic_prereqs" $dest
+#	echo else
+	do_library "swig" $base $wrap "-prefer-pic" "$ldflags" "$ldadd" $dest
+#		   "$(for l in $ldadd; do echo ${l}_d; done) $static_prereqs" $dest
+#	echo endif
 	echo endif
     fi
   }
@@ -287,7 +290,6 @@ while read path opts; do
         echo ${directory}_PROGRAMS=
         echo ${directory}dir = '$(bindir)/'$directory
       fi
-#      echo ${directory}dir += '$(bindir)/'$directory
     else
       directory=bin
     fi
@@ -310,7 +312,6 @@ while read path opts; do
 	fi    
       done
       echo "${dir}_PROGRAMS += \$(ocpi_build_dir)/$pname"
-#      printf ' \\\n  $(ocpi_build_dir)/'$(basename ${p%%_main.*})
     done
     echo
     for p in $programs; do
@@ -322,7 +323,8 @@ while read path opts; do
       echo
       do_flags __ocpi_build_dir__${pname} "" program
       printf "__ocpi_build_dir__${pname}_LDFLAGS = $ldflags $ocpi_prereq_ldflags\n"
-      print_libs program @ocpi_library_suffix@ __ocpi_build_dir__${pname}_LDADD $libs $ldadd '$(ocpi_program_prereqs)'
+      print_libs program @ocpi_library_suffix@ __ocpi_build_dir__${pname}_LDADD $libs $ldadd \
+		 '$(ocpi_program_prereqs)'
     done
   }
   [ -n "$sources" -a "$dest" != "noinst" -a -z "$driver" ] &&

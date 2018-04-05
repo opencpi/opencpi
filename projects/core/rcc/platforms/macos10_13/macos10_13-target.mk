@@ -28,6 +28,7 @@ OcpiDynamicLibraryFlags=-dynamiclib
 OcpiDriverFlags=-Wl,-flat_namespace -Wl,-dylib
 OcpiDynamicProgramLdflags=-shared -no-undefined -Wl,-rpath,@executable_path
 OcpiOpenclLib=/System/Library/Frameworks/OpenCL.framework/Versions/A/OpenCL
+OcpiCanRemoveNeeded:=0
 # -install_name @rpath/$(notdir $@)
 OcpiExtraLibs:=
 export OCPI_OCL_LIBS=-locpi_ocl -framework OpenCL

@@ -46,15 +46,15 @@ function fix_static_driver {
 	r !otool -l $1
 	g/LC_LOAD_DYLIB/.+2s/^ *name *\(.*\) (offset.*$/\1/p
 	EOF`
-    for l in $libs; do
-      if [[ $l = *libocpi_* ]]; then
-        install_name_tool -change $l /usr/lib/libc++.1.dylib $1
-      fi
-      for p in $2; do
-        [[ $l = */lib$p.* ]] && 
-          install_name_tool -change $l /usr/lib/libc++.1.dylib $1
-      done
-    done
+    # for l in $libs; do
+    #   if [[ $l = *libocpi_* ]]; then
+    #     install_name_tool -change $l /usr/lib/libc++.1.dylib $1
+    #   fi
+    #   for p in $2; do
+    #     [[ $l = */lib$p.* ]] && 
+    #       install_name_tool -change $l /usr/lib/libc++.1.dylib $1
+    #   done
+    # done
     install_name_tool -id $newfile $1
     install_name_tool -add_rpath @executable_path/../lib $1
   else
@@ -106,7 +106,6 @@ function fix_dynamic {
     done
     # Change all the libraries we depend on to go through rpath
     libs=`otool -L $1 | tail +2 | grep /staging/ | sed 's=^[	 ]*/staging/lib/\([^ 	]*\).*$=\1='`
-    echo For $1:prereq:$libs
     for l in $libs; do
       base=$(basename $l)
       if install_name_tool -change "$prereq_inst/$l" @rpath/$base $1; then
@@ -157,6 +156,9 @@ else
     # See if its a swig library. If so just leave it alone in this static case
     for s in $5; do
       [ _$s = "$me" ] && continue 2
+    done
+    for p in $prereqs; do
+      relative_link $prereq_inst/$p/$target/lib/lib$p.a lib
     done
     # Its not a driver, and not a swig and we're doing a static install.  Remove it.
     echo Removing $i since it was only used for error checking.

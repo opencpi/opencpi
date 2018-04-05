@@ -27,12 +27,11 @@ if test "$#" = 0; then
   echo Typically this means:  foo.so as input creates foo_s.so
   exit 1
 fi
-
 # This gets around some of the RPM-based limitations
 # OCPI_CDK_DIR/../bin/ may not (yet) be in PATH.
 ocpixml=$(type -p ocpixml)
-[ -z ${ocpixml} ] && ocpixml=${OCPI_CDK_DIR}/bin/${OCPI_TOOL_DIR}/ocpixml
-[ -x ${ocpixml} ] || echo "Could not find ocpixml!"
+[ -z ${ocpixml} ] && ocpixml=${OCPI_CDK_DIR}/${OCPI_TOOL_DIR}/bin/ocpixml
+[ ! -x ${ocpixml} ] && echo "Could not find ocpixml!" && exit 1
 
 OS=$1
 shift
