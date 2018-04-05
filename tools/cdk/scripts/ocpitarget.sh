@@ -46,7 +46,7 @@ elif [ -n "$1" ] ; then
 fi
 echo OCPITARGET.SH:$OCPI_TARGET_PLATFORM:$OCPI_TARGET_DIR
 # Ensure we are really starting fresh for this target
-unset `env | grep OCPI_TARGET | egrep -v 'OCPI_TARGET_(PLATFORM|DIR)' | sed 's/=.*//'`
+unset `env | grep OCPI_TARGET | egrep -v 'OCPI_TARGET_(PLATFORM|DIR|KERNEL_DIR)' | sed 's/=.*//'`
 
 source $OCPI_CDK_DIR/scripts/util.sh
 # Remove this until we figure out why it is here.

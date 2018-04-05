@@ -1,4 +1,23 @@
-# Do per-platform goals in the target directory for a specific platform and  build options
+# This file is protected by Copyright. Please refer to the COPYRIGHT file
+# distributed with this source distribution.
+#
+# This file is part of OpenCPI <http://www.opencpi.org>
+#
+# OpenCPI is free software: you can redistribute it and/or modify it under the
+# terms of the GNU Lesser General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your option) any
+# later version.
+#
+# OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+# A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Lesser General Public License along
+# with this program. If not, see <http://www.gnu.org/licenses/>.
+
+################################################################################################
+# Do per-platform goals in the target directory for a specific platform and build options
 # It is assumed to be called as a sub-make with the currently running platform already
 # established using the (exported) OcpiThisPlatform* variables.
 # It expects the Platform variable to be set on the command line
@@ -60,11 +79,11 @@ platform-variables.sh: \
 
 configure: Makefile
 
-Makefile: ../generated/configure platform-variables.sh ../do-platform.mk ../generated/Makefile.in
+Makefile: ../gen/configure platform-variables.sh ../do-platform.mk ../gen/Makefile.in
 	$(AT) echo Configuring for platform $(Platform) in $(basename $(CURDIR)).
-	$(AT) build=$$(../generated/build-aux/config.guess); \
+	$(AT) build=$$(../gen/build-aux/config.guess); \
               [ -n "$$build" ] || exit 1; \
-              ../generated/configure --build=$$build --enable-silent-rules \
+              ../gen/configure --build=$$build --enable-silent-rules \
 	        $(and $(OcpiPlatformDynamic),--enable-dynamic=yes) \
 	        $(and $(OcpiPlatformOptimize),--enable-debug=no) \
 	        prerequisite_dir=$(or $(PrerequisitesDir),../../../prerequisites) \

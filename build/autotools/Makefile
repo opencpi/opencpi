@@ -1,3 +1,22 @@
+# This file is protected by Copyright. Please refer to the COPYRIGHT file
+# distributed with this source distribution.
+#
+# This file is part of OpenCPI <http://www.opencpi.org>
+#
+# OpenCPI is free software: you can redistribute it and/or modify it under the
+# terms of the GNU Lesser General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your option) any
+# later version.
+#
+# OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+# A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Lesser General Public License along
+# with this program. If not, see <http://www.gnu.org/licenses/>.
+
+################################################################################################
 # This Makefile is used narrowly for the autotools-based reconf/configure/build process.
 # It shows the explicit dependencies for the bootstrapping process
 # The only dependencies it does not track are additions to the local/ and imported/ directories.
@@ -17,7 +36,7 @@
 #      -- The generate-automake.sh script that generates the Makefile.am file
 #      -- The configure.ac script
 #    It also depends on the imported autoconf macros in the imports subdirectory
-#    All results are in the "generated" subdirectory.
+#    All results are in the "gen" subdirectory.
 #
 # 2. configuration for a platform:
 #    It is a wrapper around the typical autotools "configure"
@@ -102,38 +121,36 @@ help:
 
 show: help
 
-MAKEFILE_AM=generated/Makefile.am
-MAKEFILE_IN=generated/Makefile.in
-OPTIONAL_WARNINGS=generated/optional-warnings.m4
+MAKEFILE_AM=gen/Makefile.am
+MAKEFILE_IN=gen/Makefile.in
+OPTIONAL_WARNINGS=gen/optional-warnings.m4
 
-$(MAKEFILE_IN) generated/configure: \
+$(MAKEFILE_IN) gen/configure: \
              $(OPTIONAL_WARNINGS) $(wildcard imports/*.m4) configure.ac $(MAKEFILE_AM) \
-             | generated
-	$(AT) echo Running the autotools reconfiguration tool in the generated/ directory
-	$(AT) cd generated && autoreconf -v -i # no -s so it works across systems
+             | gen
+	$(AT) echo Running the autotools reconfiguration tool in the gen/ directory
+	$(AT) cd gen && autoreconf -v -i # no -s so it works across systems
 	$(AT) touch $@ # sometimes autoreconf tries to be clever
 
-preconfigure bootstrap: generated/configure $(MAKEFILE_IN)
+preconfigure bootstrap: gen/configure $(MAKEFILE_IN)
 
 # I wish this was not required so early...
-$(OPTIONAL_WARNINGS): ../platform-defaults.mk | generated
+$(OPTIONAL_WARNINGS): ../platform-defaults.mk | gen
 	$(AT) ($(foreach v,$(OcpiAllOptionalWarningsVars), echo "define([$v],[$($v)])";)) > $@
 
-$(MAKEFILE_AM): ../places generate-automake.sh | generated
+$(MAKEFILE_AM): ../places generate-automake.sh | gen
 	$(AT) echo Generating the Makefile.am file.
-	$(AT) cd generated && \
-	      ../generate-automake.sh $(Verbose) < ../../places > $(@F)
+	$(AT) cd gen && ../generate-automake.sh $(Verbose) < ../../places > $(@F)
 
-generated:
-	$(AT) mkdir -p generated && cd generated && \
-	      mkdir -p acinclude && \
+gen:
+	$(AT) mkdir -p gen && cd gen && mkdir -p acinclude && \
 	      (cd acinclude && shopt -s nullglob && ln -f -s ../../imported/*.m4 .) && \
 	      ln -f -s ../{configure.ac,ocpi-config-platform.h.in} . && \
 	      for i in tools tests runtime os; do ln -f -s ../../../$$i $$i; done
 
 cleanpreconfigure:
 	$(AT) echo Removing the generated directory and all platform-agnostic files.
-	$(AT) rm -r -f generated
+	$(AT) rm -r -f gen
 
 cleanplatforms:
 	$(AT) echo Cleaning all platforms and their configurations

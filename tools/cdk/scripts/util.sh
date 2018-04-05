@@ -67,8 +67,8 @@ function setVarsFromMake {
     [ -n "$3" ] && echo The '"make"' command is not available. 2>&1
     return 1
   }
-  sets=`set -o pipefail; make -n -r -s -f $1 $2 ${quiet:+2>/dev/null} \
-        | grep '^[a-zA-Z_][a-zA-Z_]*='` && eval $sets
+  eval $(eval make -n -r -s -f $1 $2 \
+ 	 ${quiet:+2>/dev/null} | grep '^[a-zA-Z_][a-zA-Z_]*=')
 }
 
 function isPresent {

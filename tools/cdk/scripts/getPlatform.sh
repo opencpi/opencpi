@@ -71,7 +71,7 @@ for j in $projects; do
     platforms_dir=$j/rcc/platforms
   fi
   if [ -n "$1" ]; then # looking for a specific platform (not the current one)
-    d=$platforms_dir/rcc/platforms/$1
+    d=$platforms_dir/$1
     if [ -d $d -a -f $d/target ]; then
       target=$(< $d/target)
       vars=($(echo $target | tr - ' '))

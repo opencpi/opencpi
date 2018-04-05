@@ -78,6 +78,10 @@ tests
 +tools/cdk/include/applications.mk include/
 +tools/cdk/include/application.mk include/
 +tools/cdk/include/aci.mk include/
+# Export the common stuff for zynq platforms
++platforms/zynq/zynq_setup.sh platforms/zynq/
++platforms/zynq/zynq_net_setup.sh platforms/zynq/
++platforms/zynq/zynq_system.xml platforms/zynq/
 # CDK scripts we need
 +scripts/clean-env.sh scripts/
 +tools/cdk/scripts/opencpi-setup.sh
