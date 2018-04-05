@@ -124,21 +124,27 @@ rpm: exports
 	     mv -f $rpm . && rm -r -f $$rpmarch && \
 	     echo Created RPM file: $(basename $$rpm)
 
+# Convenience here in the Makefile.
+# This forces the rebuild each time, although the downloads are cached.
+prerequisites:
+	$(AT)./scripts/install-prerequisites.sh
 ##########################################################################################
 # Goals that are about projects
 # A convenience to run various goals on all the projects that are here
-Projects=$(dirname $(wildcard projects/*))
+Projects=$(notdir $(wildcard projects/*))
+$(info Projects:$(Projects):$(wildcard projects/*))
 ProjectGoals=cleanhdl cleanrcc cleanocl rcc ocl hdl applications run runtest hdlprimitives \
              components cleancomponents test
 # These are not done in parallel since we do not know the dependencies
-DoProjects=$(foreach p,$(Projects),\
-             echo Performing $1 on project $p;$(MAKE) -C projects/$p $1 &&) :
+DoProjects=set -e; $(foreach p,$(Projects),\
+                     echo Performing $1 on project $p && \
+                     $(MAKE) -C projects/$p $(if $(filter build,$1),,$1) &&) :
 .PHONY: $(ProjectGoals)
 $(ProjectGoals):
 	$(AT)$(call DoProjects,$@)
 
 projects:
-	$(AT)$(call DoProjects,)
+	$(AT)$(call DoProjects,build)
 
 cleanprojects:
 	$(AT)$(call DoProjects,clean)

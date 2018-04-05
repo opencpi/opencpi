@@ -44,7 +44,6 @@ elif [ -n "$1" ] ; then
   export OCPI_TARGET_PLATFORM=$plat
   export OCPI_TARGET_DIR=$1  
 fi
-echo OCPITARGET.SH:$OCPI_TARGET_PLATFORM:$OCPI_TARGET_DIR
 # Ensure we are really starting fresh for this target
 unset `env | grep OCPI_TARGET | egrep -v 'OCPI_TARGET_(PLATFORM|DIR|KERNEL_DIR)' | sed 's/=.*//'`
 

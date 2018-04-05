@@ -1021,6 +1021,7 @@ define OcpiEnsureToolPlatform
     export OCPI_TOOL_ARCH:=$$(word 3,$$(vars))
     export OCPI_TOOL_PLATFORM:=$$(word 5,$$(vars))
     export OCPI_TOOL_PLATFORM_DIR:=$$(word 6,$$(vars))
+    export OCPI_TOOL_DIR:=$$(OCPI_TOOL_PLATFORM)
   endif
 endef
 # First arg is a list of exported variables/patterns that must be present.
