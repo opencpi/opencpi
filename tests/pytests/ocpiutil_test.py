@@ -79,7 +79,7 @@ if OCPI_LOG_LEVEL and int(OCPI_LOG_LEVEL) > 8:
     SET_X=" set -x; "
     OCPIDEV_CMD = OCPIDEV_PATH + " -v"
 else:
-    SET_X=" set -x;"
+    SET_X=""
     OCPIDEV_CMD = OCPIDEV_PATH
 # Initialize ocpiutil's logging settings which switch
 # based on OCPI_LOG_LEVEL
@@ -148,7 +148,7 @@ class TestPathFunctions(unittest.TestCase):
         ocpidev_command += OCPIDEV_CMD + " -d " + PROJECT0 + " create -l mylibrary test myspec&& "
         ocpidev_command += OCPIDEV_CMD + " -d " + PROJECT0 + \
                            " create -l mylibrary worker myworker0.rcc -S myspec-spec.xml&& "
-        ocpidev_command += "ocpidev -d " + PROJECT0 + \
+        ocpidev_command += OCPIDEV_CMD + " -d " + PROJECT0 + \
                            " create -l mylibrary worker myworker1.hdl -S myspec-spec.xml&& "
         ocpidev_command += OCPIDEV_CMD + " -d " + PROJECT0 + " create hdl primitive core mycore&& "
         ocpidev_command += OCPIDEV_CMD + " -d " + PROJECT0 + " create hdl primitive library mylib&& "
@@ -180,7 +180,8 @@ class TestPathFunctions(unittest.TestCase):
         # Copy the exported pj8 to a new dir, but omit the imports
         ocpidev_command += "mkdir mypj8_exported&&"
         ocpidev_command += "rm mypj8/exports/imports&& "
-        ocpidev_command += "cp -rfL mypj8/exports/* mypj8_exported 2>/dev/null&& "
+        # Note use -R, not -r, for POSIX/BSD portability
+        ocpidev_command += "cp -RfL mypj8/exports/* mypj8_exported && "
         # Rebuild pj8's imports
         ocpidev_command += "make imports -C mypj8&& "
         # Get imports by setting registry for the new exported non-source project

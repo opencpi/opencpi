@@ -205,6 +205,12 @@ function ocpiGetToolOS {
   return 0
 }
 
+# do readlink -e, but more portably
+# There are 100 ways to do this....
+function ocpiReadLinkE {
+  [ -f $1 -o -d $1 ] && python -c 'import os; print os.path.realpath("'$1'")'
+}
+
 OcpiEcho=/bin/echo
 
 if [ "$1" == __test__ ] ; then

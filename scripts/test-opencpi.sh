@@ -17,38 +17,16 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
+##########################################################################################
 # Run all the go-no-go tests we have
-set -e
-if test "$OCPI_CDK_DIR" != ""; then
-  echo Since OCPI_CDK_DIR is set, we will use the existing environment.
-  echo Use \"unset OCPI_CDK_DIR\" to cause this script to initialize the environment for OpenCPI.
-  OCPI_BOOTSTRAP=$OCPI_CDK_DIR/scripts/ocpibootstrap.sh
-  . $OCPI_BOOTSTRAP
-  env|grep OCPI
-  if test -n "$1" -a "$1" != $OCPI_TOOL_DIR; then
-    echo Skipping testing since we are cross-building for $1 on $OCPI_TOOL_PLATFORM.
-    exit 0
-  fi      
-else
-  # We're being run in an uninitialized environment
-  if test ! -d scripts; then
-    echo It appears that this script is not being run at the top level of OpenCPI.
-    exit 1
-  fi
-  OCPI_BOOTSTRAP=`pwd`/exports/scripts/ocpibootstrap.sh
-  . $OCPI_BOOTSTRAP
-fi
-test $? = 0 || exit 1; 
-source $OCPI_CDK_DIR/scripts/util.sh
-[ "$OCPI_TOOL_OS" != macos ] && {
-  echo ======================= Loading the OpenCPI Linux Kernel driver. &&
-    $OCPI_CDK_DIR/scripts/ocpidriver load
-}
+source $OCPI_CDK_DIR/scripts/ocpitarget.sh $1
 bin=$OCPI_CDK_DIR/$OCPI_TOOL_DIR/bin
 echo ======================= Running Unit Tests in $bin &&
 $bin/ocpitests &&
 echo ======================= Running Datatype/protocol Tests &&
 $bin/ocpidds -t 10000 > /dev/null &&
+echo ======================= Running Python Tests in tests/pytests &&
+(cd tests/pytests && git clean -dfx . && ./run_pytests.sh) &&
 echo ======================= Running Container Tests &&
 $OCPI_CDK_DIR/scripts/run_tests.sh &&
 echo ======================= Running unit tests in project/core &&
@@ -57,4 +35,13 @@ echo ======================= Running Application tests in project/assets &&
 make -C $OCPI_CDK_DIR/../projects/assets/applications run &&
 echo ======================= Running Application tests in project/assets &&
 make -C $OCPI_CDK_DIR/../projects/inactive/applications run &&
+[ "$OCPI_TOOL_OS" != macos ] && {
+  echo ======================= Loading the OpenCPI Linux Kernel driver. &&
+    $OCPI_CDK_DIR/scripts/ocpidriver load
+}
 echo All tests passed.
+exit 0
+
+#    stepsForParallel[stepName] = transformAVTestsStep(os)
+#    stepsForParallel[stepName] = transformRCCExampleStep(os)
+#    stepsForParallel[stepName] = transformOcpiDevTestsStep(os)

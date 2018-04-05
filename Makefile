@@ -17,12 +17,15 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 ##########################################################################################
-ifndef OCPI_CDK_DIR
-  export OCPI_CDK_DIR:=$(CURDIR)/cdk
-endif
-
-ifeq ($(wildcard exports),)
-  ifeq ($(filter show help clean% distclean%,$(MAKECMDGOALS)),)
+ifneq ($(filter show help clean% distclean%,$(MAKECMDGOALS)),)
+  ifndef OCPI_CDK_DIR
+    export OCPI_CDK_DIR:=$(CURDIR)/bootstrap
+  endif
+else
+  ifndef OCPI_CDK_DIR
+    export OCPI_CDK_DIR:=$(CURDIR)/cdk
+  endif
+  ifeq ($(wildcard exports),)
     $(info Exports have never been set up for this tree  Doing it now.)
     $(info $(shell ./scripts/makeExportLinks.sh - -))
   endif
@@ -34,12 +37,13 @@ RccPlatforms:=$(call Unique,\
                 $(or $(strip $(RccPlatforms) $(RccPlatform) $(Platforms) $(Platform)),\
 	             $(OCPI_TOOL_PLATFORM)))
 DoExports=for p in $(RccPlatforms); do ./scripts/makeExportLinks.sh $$p; done
+DoTests=for p in $(RccPlatforms); do ./scripts/test-opencpi.sh $$p; done
 # Get macros and rcc platform/target processing
 include $(OCPI_CDK_DIR)/include/rcc/rcc-make.mk
 
 ##########################################################################################
 # Goals that are not about projects
-.PHONY: exports      framework      projects      driver \
+.PHONY: exports      framework      projects      driver      testframework \
         cleanexports cleanframework cleanprojects cleandriver clean
 all framework:
 	$(AT)$(MAKE) -C build/autotools install Platforms="$(RccPlatforms)"
@@ -47,6 +51,9 @@ all framework:
 
 cleanframework:
 	$(AT)$(MAKE) -C build/autotools clean Platforms="$(RccPlatforms)"
+
+testframework:
+	$(AT)$(DoTests)
 
 exports:
 	$(AT)$(DoExports)
@@ -85,11 +92,12 @@ cleandriver:
 clean: cleanframework cleanprojects
 
 # Super clean, but not git clean, based on our patterns, not sub-make cleaning
-cleaneverything distclean: clean cleandrivers
+cleaneverything distclean: clean cleandriver
 	$(AT)rm -r -f exports
-	$(AT)find . -depth \( \
-             -name '*~' -name '*.dSym' -o timeData.raw -o 'target-*' -o -name gen -o \
-	     \( ! -path "*/rcc/platforms/*" -a -type d \)  \
+	$(AT)find . -depth -a ! -name .git -a \( \
+             -name '*~' -o -name '*.dSym' -o -name timeData.raw -o -name 'target-*' -o \
+             -name gen -o \
+	     \( -name lib -a -type d -a ! -path "*/rcc/platforms/*" \)  \
              \) -exec rm -r {} \;
 
 ##########################################################################################

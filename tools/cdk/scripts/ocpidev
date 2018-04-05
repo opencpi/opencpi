@@ -336,8 +336,8 @@ function do_registry {
       registry_to_delete=$1
     fi
     if [ -e "$registry_to_delete" ]; then
-      if [ "$(readlink -e $registry_to_delete)" == "$(readlink -e $OCPI_CDK_DIR/../project-registry)" \
-           -o "$(readlink -e $registry_to_delete)" == "/opt/opencpi/project-registry" ] ; then
+      if [ "$(ocpiReadLinkE $registry_to_delete)" == "$(ocpiReadLinkE $OCPI_CDK_DIR/../project-registry)" \
+           -o "$(ocpiReadLinkE $registry_to_delete)" == "/opt/opencpi/project-registry" ] ; then
         bad cannot delete the default project registry \"$registry_to_delete\"
       fi
       ask delete the project registry at \"$registry_to_delete\"
@@ -1915,6 +1915,12 @@ function takeval {
   eval $1=\'${argv[1]}\'
   # eval echo ARGV:$1:\$\{$1\}
   myshift
+}
+
+# This is here because we are not including util.sh?
+# check with Chris/Dave as to why util.sh is not included here?
+function ocpiReadLinkE {
+  [ -f $1 -o -d $1 ] && python -c 'import os; print os.path.realpath("'$1'")'
 }
 
 set -e
