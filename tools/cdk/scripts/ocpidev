@@ -317,6 +317,12 @@ function ask {
   return 0
 }
 
+# This is here because we are not including util.sh?
+# check with Chris/Dave as to why util.sh is not included here?
+function ocpiReadLinkE {
+  [ -f $1 -o -d $1 ] && python -c 'import os; print os.path.realpath("'$1'")'
+}
+
 function do_registry {
   if [ "$verb" == create ]; then
     if [ -z "$1" ]; then
@@ -417,7 +423,7 @@ function do_project {
     fi
     # Normally we build imports outside of any do_* function because
     # we always want to build imports when building. For project, we
-    # do this here because 
+    # do this here because
     make -C $subdir/$1 imports
     make -C $subdir/$1 ${cleanTarget:+$cleanTarget} ${buildRcc:+rcc} ${buildHdl:+hdl} \
             ${buildNoAssemblies:+Assemblies=} \
@@ -436,6 +442,9 @@ function do_project {
   noexist $1
   mkdir $1
   cd $1
+  if [ -z "$packagename" ]; then
+    packagename=$1
+  fi
   cat <<EOF > Project.exports
 # This file specifies aspects of this project that are made available to users,
 # by adding or subtracting from what is automatically exported based on the
@@ -1782,127 +1791,354 @@ EOF
   [ -z "$verbose" ] || echo The HDL assembly \"$assy\" has been created in ${topdir}hdl/assemblies/$assy/$assy.xml
 }
 
-function help {
-  cat <<"EOF" >&2
-The ocpidev command performs developer functions on/in projects for OpenCPI.
-Usage is: ocpidev [options] <verb> [<noun> [<name> [<args>*]]]
-Verbs are: create, delete, build, clean, register, unregister, set, unset or show
-Nouns are: project, registry application, spec, protocol, test, library, worker, or hdl <noun>
-After hdl, nouns are: assembly, card, slot, device, platform, or primitive <noun>
-After hdl primitive, nouns are: library or core
-Most commands may have a <name> argument.  Some have additional required or optional arguments.
-All the "delete" commands prompt for confirmation without the -f option (like rm).
-"(un)register" is used with the noun "project" to add/remove a project to the installation registry.
-"(un)set" is used with the noun "registry" to set the registry used by the current project.
-**For details on "show" run "ocpidev show --help"
-Options are single letters after a single hyphen, or hyphenated words after two hyphens.
-Single letter options are lower case for general options and upper case for creation options
-Options with * may occur multiple times
-  -v                 Be verbose, describing what is happening in more detail
-  -f                 Force without asking, analogious to the "-f" option in the "rm" command
-                     The delete and unregister verbs may ask for confirmation without this.
-  -d <directory>     A directory in which to perform the function, e.g. used rather than changing
-                     into a project directory.
-  -s                 Operate ocpidev in standalone mode (i.e. outside a project).
- == options when creating or deleting specs or protocols ==
-  -p                 Put specs/protocols at project level, not in a library's \"specs\" directory
- == options when creating specs ==
-  -t                 Create a test skeleton also when creating a spec:  <component>.test
-  -n                 This spec has no lifecycle/configuration interface (no properties).
-                     It can still have parameter properties, but not runtime properties.
- == when creating or deleting specs, protocols, or workers ==
-  -l <library>       The component library to add the asset to, when there is more than one.
-                     This applies to specs, protocols, properties, workers.
-                     Such libraries live in the components/ directory of the project.
- == when creating or deleting specs, protocols, workers or devices ==
-  -h <hdl-library>   A library underneath hdl/ to add assets to.  Default is "devices".
-                     Valid <hdl-library> options are "devices", "cards" and "adapters".
- == when creating projects ==
-  -D <project>       *Another project that this project depends on (format: package.name)
+function help_create {
+  cat <<EOF | $pager
+
+usage: ocpidev [options] create|delete <noun> <name>
+
+'ocpidev create|delete' will create/delete OpenCPI assets of type specified by the noun(s) provided.
+
+Choices:
+  <noun>: project, registry, application, spec, protocol, test, library,
+          worker, <model> <<model>_noun>
+
+  <model>: hdl
+  <hdl_noun>: assembly, card, slot, device, platform, primitive <hdl_primitive_noun>
+  <hdl_primitive_noun>: library, core
+
+---------------------------------------------------------------------------------------------------
+Options for the create|delete verbs:
+ == create project ==
+  -D <project>       *Another project that this project depends on (use package-ID, e.g. ocpi.core)
+                      (adds to "ProjectDependencies" in Project.mk)
   --register         Install this project in the project registry (e.g. for all users to access)
- == when creating projects or libraries ==
-  -N <pkg-name>      The package name, defaults to directory name
-  -F <pkg-prefix>    The package prefix, defaults to 'local' for projects.
-                     For a library, defaults to package of parent
-  -K <package>       The package name, defaults to pkg-name.pkg-prefix
- == when creating workers or devices (device workers) ==
-  -S <spec>          The spec to use when it is not <worker>[-_]spec
-  -P <platform>      The HDL platform for creating device workers or proxies that are specific
-                     to that platform.
+
+ == create project|library ==
+  -N <pkg-name>      Package name (default: directory name)
+  -F <pkg-prefix>    Package prefix (default: 'local' for projects, package-ID of parent otherwise)
+                     Defaults to package of parent for libraries
+  -K <package>       Package name (default: pkg-name.pkg-prefix. Overrides -N and -F)
+
+ == create|delete application ==
+  -X                 Indicates that the application is simply an XML file, not a directory
+  -x                 For use only without -X.  The application's directory has an
+                     application XML file rather then the default (an ACI file e.g. <app>.cc)
+
+ == create|delete spec|protocol ==
+  -p                 Place specs/protocols at project level, not in a library's \"specs\" directory
+
+ == create spec ==
+  -t                 When creating a spec, also create a test skeleton: <component>.test
+  -n                 This spec has no lifecycle/configuration interface (no runtime properties)
+
+ == create|delete spec|protocol|worker|{hdl device} ==
+  -l <library>       Component library to add the asset to {when there is more than one library}
+  -h <hdl-library>   For BSPs: A library underneath hdl/ to add assets to.  Default is "devices"
+                               Valid <hdl-library> options are "devices", "cards" and "adapters"
+
+ == create worker|{hdl device} ==
+  -S <spec>          The component spec that this worker implements (default is <worker>[-_]spec)
   -L <language>      Specify the language when creating a worker
   -V <slave>         Specify the slave worker when creating a proxy worker
   -E <emulates>      Specify the device (worker) when creating an emulator worker
+  -P <platform>      Create this worker in the devices library underneath the specified platform
   -W <worker>        *A worker to include (adds to "Workers" variable in worker Makefile)
-                     Use <worker>:<spec> if spec name is different from worker name
+                      Use <worker>:<spec> if spec name is different from worker name
   -R <rcc-static>    *Add an RCC static prerequisite library dependency to an RCC worker
-                     (adds to "RccStaticPrereqLibs" in Makefile)
+                      (adds to "RccStaticPrereqLibs" in Makefile)
   -r <rcc-dynamic>   *Add an RCC dynamic prerequisite library dependency to an RCC worker
-                     (adds to "RccDynamicPrereqLibs" in Makefile)
- == when creating platforms ==
+                      (adds to "RccDynamicPrereqLibs" in Makefile)
+
+ == create worker|{hdl device|primitive|platform} ==
+  -O <other>         *Other source files to include (adds to "SourceFiles" in Makefile)
+  -C <core>          *Core to be included by this asset (adds to "Cores" in Makefile)
+
+ == create project|library|worker|{hdl device|platform} ==
+  -A <xml-include>   *A directory to search for XML files (adds to "XmlIncludeDirs" in Makefile)
+  -I <include>       *A directory to search for language include files (e.g. C/C++ or Verilog)
+                      (Adds to "IncludeDirs" in Makefile)
+  -y <comp-library>  *Specify a component library to search for workers/devices/specs that this
+                      asset references (adds to "ComponentLibraries" in Makefile)
+  -Y <library>       *Specify a primitive library that this asset depends on
+                      (adds to "Libraries" in Makefile)
+
+ == create worker|{hdl device|primitive|platform|assemblies} ==
+  -T <target>        *Specify one of the build-targets to limit this asset to
+                      (adds to "OnlyTargets" in Makefile)
+  -Z <target>        *Exclude a build-target for this asset (add to "ExcludeTargets" in Makefile)
+  -G <platform>      *Specify one of the build-platforms to limit this asset to
+                      (adds to "OnlyPlatforms" in Makefile)
+  -Q <platform>      *Exclude a build-platform for this asset
+                      (adds to "ExcludePlatforms" in Makefile)
+  -U <supports>      *A device (worker) supported by the subdevice being created
+
+ == create hdl primitive core ==
+  -M <top-module>    Top level module name (default is name of the core) (sets "Top" in Makefile)
+  -B <core>          Specify a prebuilt (not source) core (ie. *.ngc or *.edf file)
+                     (sets "PreBuiltCore" in Makefile)
+
+ == create hdl primitive library ==
+  -H                 Primitive does not depend on any libraries (sets "HdlNoLibraries" in Makefile)
+  -J                 Do not elaborate this HDL library (sets "HdlNoElaboration" in Makefile)
+                     (limited tool support)
+
+ == create hdl platform ==
   -g <hdl-part>      Specify the part (die-speed-package, e.g. xc7z020-1-clg484) for platform.
                      This sets the HdlPart_<platform> variable in <platform>.mk
   -q <time-freq>     Specify the time server frequency for this platform (i.e. "100e6").
                      If specified, this may need to be modified later in the platform OWD.
-  -u                 Do not use SDP. This legacy option should be used
-                     when creating platforms that do not use SDP.
- == when creating workers, devices, primitives, or platforms ==
-  -O <other>         *Other source files to include (adds to "SourceFiles" in Makefile)
-  -C <core>          *Core to be included by this asset (adds to "Cores" in Makefile)
- == when creating workers, devices, platforms, libraries, or projects ==
-  -A <xml-include>   *A directory to search for XML files (adds to "XmlIncludeDirs" in Makefile)
-  -I <include>       *A directory to search for language include files (e.g. C/C++ or Verilog)
-                     (Adds to "IncludeDirs" in Makefile)
-  -y <comp-library>  *Specify a component library to search for workers/devices/specs that this
-                     asset references (adds to "ComponentLibraries" in Makefile)
-  -Y <library>       *Specify a primitive library that this asset depends on
-                     (adds to "Libraries" in Makefile).
- == when creating workers, devices, primitives, platforms, or assemblies ==
-  -T <target>        *Specify one of the only allowed build-targets for this asset.
-                     (adds to "OnlyTargets" in Makefile)
-  -Z <target>        *Exclude a build-target for this asset (add to "ExcludeTargets" in Makefile)
-  -G <platform>      *Specify one of the only allowed build-platforms for this asset.
-                     (adds to "OnlyPlatforms" in Makefile)
-  -Q <platform>      *Exclude a build-platform for this asset
-                     (adds to "ExcludePlatforms" in Makefile)
-  -U <supports>      *A device (worker) supported by the subdevice being created
- == when creating primitive cores ==
-  -M <top-module>    For HDL primitive cores, the top level module name for the core when it is
-                     different from the name of the core (sets "Top" in Makefile)
-  -B <core>          Specify a prebuilt (not source) core when creating an HDL primitive core
-                     (ie. *.ngc file) (sets "PreBuiltCore" in Makefile)
- == when creating primitive libraries ==
-  -H                 This primitive does not depend on any libraries (sets "HdlNoLibraries" in Makefile)
-  -J                 Do not elaborate this HDL library (sets "HdlNoElaboration" in Makefile)
- == when creating and deleting applications ==
-  -X                 Indicates that the application is simply an XML file, not a directory
-  -x                 For use only without -X.  The application's directory have an
-                     application XML file rather then the default of an ACI file (<app>.cc).
- == when building assets ==
-  --clean            Clean the build with the rest of the settings specified
-		     Also works as a verb instead of build i.e.(ocpidev clean)
-  --rcc              Build rcc workers, when building at the project or library level.
-  --hdl              Build hdl workers, when building at the project or library level.
-  --worker <worker>  *Add a worker to be specificially built and don't build any other workers.
-  --no-assemblies    Do not build assemblies, when building at the project level.
-  --hdl-assembly <assembly>
-                     *Add an assembly to be specificially built and don't build any other
-                     assemblies.
-  --hdl-target <target>
-                     *Add an HDL target to be specifically built and don't build for any other
-		     targets.
-  --hdl-platform <platform>
-                     *Add an HDL platform to be built and don't build for any other platforms.
-  --rcc-platform <platform>
-                     *Add an RCC platform to be built and don't build for any other platforms.
-  --hdl-rcc-platform <hdl-platform>
-                     *Add an RCC platform to be built based on the HDL platform specified.  E.g.
-                     "zed" (an HDL platform) means "xilinx13_3", the associated RCC platform.
-  --ok-if-missing    Do not error if target library is missing (only applies to library noun).
-EOF
-  exit 1
+  -u                 Do not use SDP (legacy option for creating platforms that do not use SDP)
 
+Create examples:
+  ocpidev create project my-project
+    (creates a project with name 'my-project'. This project's package-ID (and therefore its
+     registry ID) will be 'local.my-project')
+
+  ocpidev create project my-project -F my.organization
+    (creates a project with PackagePrefix 'my.organization' and name 'my-project'.
+     This project's package-ID (and therefore its registry ID) will be 'my.organization.my-project')
+
+  ocpidev -d ~/workspace create registry my-registry
+    (creates a project-registry ~/workspace/my-registry. Note that a new registry will not have a
+     a core project registered, so the next thing to do is locate and register a core project.
+     Finally, 'ocpidev set registry ~/workspace/my-registry' can be used from within a project to
+     tell that project to use the new registry. None of this is necessary if using the default
+     project-registry)
+
+  ocpidev create library components
+    (create the default 'components' library for the project. If a name other than
+     'components' is provided, it will be created underneath the 'components' directory)
+
+  ocpidev create spec mycomp
+    (create a component spec with name 'mycomp'. It will be placed in the default location,
+     which is components/specs. Provide '-l <library-name>' if there are sub-libraries
+     underneath 'components')
+
+  ocpidev create worker myworker.hdl -S mycomp-spec
+    (create an HDL worker named myworker that implements the 'mycomp' spec. If the worker
+     was instead named 'mycomp.hdl', the '-S mycomp-spec' argument can be omitted because the
+     default spec is <worker-name>-spec.xml)
+
+For a complete list of options and further documentation of ocpidev, please reference the
+OpenCPI Component Development Guide.
+EOF
+exit 1
+}
+
+function help_build {
+  cat <<EOF | $pager
+
+usage: ocpidev [options] build|clean [<noun> [<name>]]
+
+'ocpidev build|clean' will compile/clean the OpenCPI asset specified by the noun(s) provided.
+If no nouns are provided, ocpidev will build/clean the current directory/asset.
+
+Choices:
+  <noun>: project, application, test, library, worker, <model> <<model>_noun>
+
+  <model>: hdl
+  <hdl_noun>: assembly, device, platform, primitive <hdl_primitive_noun>
+  <hdl_primitive_noun>: library, core
+
+---------------------------------------------------------------------------------------------------
+Options for the build|clean verbs:
+  --ok-if-missing    Do not error if target library is missing (only applies to library noun)
+  --rcc              Build rcc workers (when building at the project or library level)
+  --hdl              Build hdl workers/assets (when building at the project or library level)
+  --worker <worker>  *Add a worker to be specificially built and don't build any other workers
+  --no-assemblies    Do not build assemblies (when building at the project level)
+  --hdl-assembly <assembly>
+                     *Add an individual assembly to be built instead of building all assemblies
+  --hdl-target <target>
+                     *Add an individual HDL target to build for
+  --hdl-platform <platform>
+                     *Add an individual HDL platform to build for
+  --rcc-platform <platform>
+                     *Add an individual RCC platform to build for
+  --hdl-rcc-platform <hdl-platform>
+                     *Add an individual RCC platform to build for based on the provided HDL platform
+                      E.g. "zed" (HDL platform) evaluates to "xilinx13_3" (RCC platform)
+Options with * may occur multiple times
+
+Build examples:
+  ocpidev build --hdl-platform zed --rcc-platform xilinx13_3
+    (build the current asset/directory and those underneath it for the 'zed' HDL platform and
+     'xilinx13_3' RCC platform)
+
+  ocpidev build project assets --hdl-platform zed --rcc-platform xilinx13_3
+    (builds the assets project for the 'zed' HDL platform and 'xilinx13_3' RCC platform.
+     Omit the name 'assets' if inside the project)
+
+  ocpidev -l dsp_comps build worker complex_mixer.hdl --hdl-platform zed --rcc-platform xilinx13_3
+    (inside the assets project, builds the complex_mixer.hdl worker in the dsp_comps library
+     for the 'zed' HDL platform and 'xilinx13_3' RCC platform. The '-l dsp_comps' can be omitted
+     if operating in a project with only a single top-level 'components' library)
+
+  ocpidev build library dsp_comps --hdl-platform zed --rcc-platform xilinx13_3
+    (inside the assets project, builds the dsp_comps library located at components/dsp_comps
+     for the 'zed' HDL platform and 'xilinx13_3' RCC platform. Note that the library NOUN
+     differs from the '-l' OPTION in that the noun is used when building the library itself,
+     and the option is used when building an asset inside the library)
+
+  ocpidev build library dsp_comps  --worker complex_mixer.hdl --worker cic_dec.hdl --hdl-platform zed
+    (inside the assets project, build the dsp_comps library, but limit the build to the
+     complex_mixer.hdl and cic_dec.hdl workers. Note that the --worker OPTION differs from the
+     worker NOUN in that the noun is used to build a single worker, while the --worker option is
+     used when building a LIBRARY to limit the build to an individual worker (or a list of workers
+     if --worker is specified multiple times). If building a library without the --worker option,
+     all workers will be built)
+
+Clean examples:
+  ocpidev clean
+    (cleans the current asset/directory and those underneath it)
+
+  ocpidev clean project assets
+    (cleans the assets project. Omit the name 'assets' if inside the project)
+
+  ocpidev -l dsp_comps clean worker fir_real_sse.hdl
+    (inside the assets project, this will clean the fir_real_sse.hdl worker in the
+     dsp_comps library)
+
+  ocpidev clean library dsp_comps
+    (inside the assets project, this will clean the dsp_comps library
+     located at components/dsp_comps)
+
+For a complete list of options and further documentation of ocpidev, please reference the
+OpenCPI Component Development Guide.
+EOF
+}
+
+function help_reg {
+  cat <<EOF | $pager
+
+usage: ocpidev [options] [un]register project [<name>]
+
+'[un]register' is used with the noun "project" to add/remove a project to the project-registry.
+
+Omitting the <name> argument will assume that the [un]register command should be executed for the
+current project.
+
+Examples:
+  ocpidev register project assets
+    (register the assets project. From inside the assets project, the name 'assets' can be omitted)
+
+  ocpidev unregister project assets
+    (unregister the assets project. From inside the assets project, the name 'assets' can be
+     omitted.)
+
+  ocpidev unregister project ocpi.assets
+    (unregister the project currently registered under the package-ID 'ocpi.assets'.
+     You do not need to be in the same directory as that project to issue this command)
+
+For a complete list of options and further documentation of ocpidev, please reference the
+OpenCPI Component Development Guide.
+EOF
+}
+
+function help_set {
+  cat <<EOF | $pager
+
+usage: ocpidev [options] [un]set registry [<name>]
+
+'[un]set' is used with the noun "registry" to [un]set the registry used by the current project.
+
+'ocpidev set registry' with no [<name>] argument will set the current project to use the default
+project-registry.
+
+'ocpidev unset registry' does not require a [<name>] argument. This command removes any link from
+this project to a project-registry. The next time this project is built, the default registry will
+be assumed.
+
+Defaults:
+  The default registry is determined as follows:
+    OCPI_PROJECT_REGISTRY_DIR environment variable if set
+    Otherwise: OCPI_CDK_DIR/../project-registry
+
+  To change the default project-registry, set the OCPI_PROJECT_REGISTRY_DIR environment variable.
+
+Examples:
+  ocpidev set registry
+    (set the current project's registry to the default)
+
+  ocpidev -d ~/workspace set registry my-registry
+    (set the current project's registry to the directory called my-registry located at ~/workspace/)
+
+  ocpidev unset registry
+    (unset the current project's registry link. Next time this project is built, the default
+     registry will be used)
+
+Notes:
+  The 'set' verb is useful after creating a new project-registry. For example, a user might want
+  to create his/her own sandbox environment using a new project-registry. To do this, a user would
+  create a new registry using 'ocpidev create registry <new-registry>', and then point the current
+  project to that registry by running 'ocpidev set registry <new-registry>' from with the project.
+  The user would also need to register a core project into that new registry.
+
+  To change the default project-registry, set the OCPI_PROJECT_REGISTRY_DIR environment variable.
+
+For a complete list of options and further documentation of ocpidev, please reference the
+OpenCPI Component Development Guide.
+EOF
+}
+
+function help {
+  if [ -n "$PAGER" ]; then
+    pager=$PAGER
+  else
+    pager="less -esX"
+  fi
+  if [[   "$verb" == create   || "$verb" == delete     ]]; then
+    help_create
+  elif [[ "$verb" == build    || "$verb" == clean      ]]; then
+    help_build
+  elif [[ "$verb" == register || "$verb" == unregister ]]; then
+    help_reg
+  elif [[ "$verb" == set      || "$verb" == unset      ]]; then
+    help_set
+  else
+    cat <<EOF | $pager
+
+The ocpidev command performs developer functions on/in projects for OpenCPI.
+---------------------------------------------------------------------------------------------------
+usage: ocpidev [options] <verb> [<noun> [<name>]]
+
+Choices:
+  <verb>: create, delete, build, clean, [un]register, [un]set, show
+  <noun>: project, registry, application, spec, protocol, test, library,
+          worker, <model> <<model>_noun>
+
+  <model>: hdl
+  <hdl_noun>: assembly, card, slot, device, platform, primitive <hdl_primitive_noun>
+  <hdl_primitive_noun>: library, core
+
+Verb descriptions:
+  create         Create an OpenCPI asset for development
+  delete         Delete an OpenCPI asset
+  build          Compile an OpenCPI asset for the [optionally] specified platforms
+  clean          Clean an OpenCPI asset
+  [un]register   (Un)register a project so that other projects can(not) access its assets
+  [un]set        (Un)set a project's registry to control which project-registry it references when
+                 searching for assets
+  show           Print listings or details of OpenCPI assets on the current system
+
+'ocpidev --help <verb>' will show a help screen for the specified verb
+
+---------------------------------------------------------------------------------------------------
+Common options (apply to all verb/noun combinations):
+  --help             Print the ocpidev help screen. Each verb also has its own help screen
+  -v                 Be verbose, describing what is happening in more detail
+  -f                 Force without asking. delete and unregister ask for confirmation without this
+  -d <directory>     A directory in which to perform the function, e.g. instead of using 'cd' first
+
+For a complete list of options and further documentation of ocpidev, please reference the
+OpenCPI Component Development Guide.
+EOF
+  fi
 # Hidden to avoid clutter. Only intended for advanced users:
-#   nouns properties, signals
+#   nouns:properties, signals
+# Unsupported:
+#   -s                 Operate ocpidev in standalone mode (i.e. outside a project)
+  exit 1
 }
 
 function myshift {
@@ -1915,12 +2151,6 @@ function takeval {
   eval $1=\'${argv[1]}\'
   # eval echo ARGV:$1:\$\{$1\}
   myshift
-}
-
-# This is here because we are not including util.sh?
-# check with Chris/Dave as to why util.sh is not included here?
-function ocpiReadLinkE {
-  [ -f $1 -o -d $1 ] && python -c 'import os; print os.path.realpath("'$1'")'
 }
 
 set -e
@@ -2029,7 +2259,7 @@ while [[ "${argv[0]}" != "" ]] ; do
       (--build-hdl-platform|--hdl-platform) takeval hdlplat; hdlplats="${hdlplats[@]} $hdlplat";;
       (--build-rcc-platform|--rcc-platform) takeval swplat; swplats="${swplats[@]} $swplat";;
       (--build-rcc-hdl-platform|--rcc-hdl-platform) takeval hwswplat; hwswplats="${hwswplats[@]} $hwswplat";;
-      # AV_API_DEPRECATED 2.0 (AV-3457, specific search string)
+      # OCPI_API_DEPRECATED 2.0 (AV-3457, specific search string)
       (--build-hdl-rcc-platform|--hdl-rcc-platform) warn "${argv[0]} is deprecated: use --rcc-hdl-platform to specify RCC platform using HDL name"; takeval hwswplat; hwswplats="${hwswplats[@]} $hwswplat";;
       (--create-build-files) OCPI_CREATE_BUILD_FILES=1;;
       (--ok-if-missing) missingOK=1;;
@@ -2128,7 +2358,7 @@ else
   topdir=
 fi
 [ -z $verb ] && bad missing verb, nothing to do
-[ -z "$noun" -a "$verb" != build ] && bad the \"$verb\" command must be followed by the type of asset
+[ -z "$noun" -a "$verb" != build ] && help
 # option testing dependent on noun and verb
 [ -z "$args" -a "$noun" != primitives -a "$noun" != assemblies  -a "$noun" != applications  -a "$noun" != platforms -a "$verb" != build -a "$verb" != register -a "$verb" != unregister  -a "$verb" != set -a "$verb" != unset -a \( "$verb" != delete -a "$noun" != registry \) ] && bad there must be a name argument after: $verb $hdl$noun
 # force

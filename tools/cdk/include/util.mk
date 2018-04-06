@@ -239,7 +239,7 @@ $(GeneratedDir): | $(OutDir)
 	$(AT)mkdir $@
 
 # Make all target dirs
-TargetDir=$(OutDir)target-$($(CapModel)Target)
+TargetDir=$(OutDir)target-$(or $($(CapModel)TargetDir),$($(CapModel)Target))
 #$(AT)echo Creating target directory: $@
 $(OutDir)target-%: | $(OutDir)
 	$(AT)mkdir $@
@@ -432,7 +432,7 @@ OcpiDefaultOWD=$(if $(call OcpiDefaultSpec,$1),,$(error No default spec found fo
 
 # Function to generate target dir from target: $(call WkrTargetDir,target,config)
 # FIXME: shouldn't really be named "Wkr"
-WkrTargetDir=$(OutDir)target$(if $(filter 0,$2),,-$2)-$1
+WkrTargetDir=$(OutDir)target$(if $(filter 0,$2),,-$2)-$(or $(call $(CapModel)WkrTargetDir,$1),$1)
 
 Comma:=,
 ParamMsg=$(and $(ParamConfigurations), $(strip \
@@ -544,7 +544,7 @@ OcpiGetRccPlatformPaths=$(strip \
                           $(foreach p,$(or $(OCPI_PROJECT_DIR),\
                                         $(wildcard $(OcpiProjectRegistryDir)/*)),\
                             $(call OcpiExists,$p/rcc/platforms))\
-                          $(foreach p,$(OcpiGetExtendedProjectPath),\
+                          $(foreach p,$(OcpiGetExtendedProjectPath),$(infox PPP:$p)\
                           $(if $(filter-out $(realpath $(OCPI_PROJECT_DIR)),\
                                             $(realpath $(call OcpiAbsPathToContainingProject,$p))),\
                             $(or $(if $(call OcpiIsPathCdk,$p),\
@@ -1076,6 +1076,9 @@ OcpiPrereqLibs=lzma gmp
 OcpiCheckVars=$(and $($1),$(error The "$1" variable is set in both the Makefile and the *-build.xml file.))
 
 OcpiBuildFile=$(or $(call OcpiExists,$(Worker).build),$(call OcpiExists,$(Worker)-build.xml))
+
+# Something to insert into $(shell) as first argument
+OcpiExportVars=$(foreach v,$(filter OCPI_%,$(.VARIABLES)),export $v='$($v)';)
 
 # What to do early in each top level Makefile to process build files.
 ParamShell=\

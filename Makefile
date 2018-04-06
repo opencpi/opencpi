@@ -52,6 +52,8 @@ all framework:
 cleanframework:
 	$(AT)$(MAKE) -C build/autotools clean Platforms="$(RccPlatforms)"
 
+# This still relies on the projects being built, and runs lots of things,
+# but does not run unit tests in the non-core projects
 testframework:
 	$(AT)$(DoTests)
 

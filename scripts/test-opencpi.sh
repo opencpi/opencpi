@@ -19,31 +19,32 @@
 
 ##########################################################################################
 # Run all the go-no-go tests we have
+
+[ -z "$OCPI_CDK_DIR" -a -L cdk ] && source `pwd`/cdk/opencpi-setup.sh -
 source $OCPI_CDK_DIR/scripts/ocpitarget.sh $1
 bin=$OCPI_CDK_DIR/$OCPI_TOOL_DIR/bin
-echo ======================= Running Unit Tests in $bin &&
-$bin/gtests/ocpitests &&
-echo ======================= Running Datatype/protocol Tests &&
-$bin/ocpidds -t 10000 > /dev/null &&
-echo ======================= Running Container Tests &&
-$OCPI_CDK_DIR/scripts/run_tests.sh &&
-echo ======================= Running unit tests in project/core &&
-make -C $OCPI_CDK_DIR/../projects/core runtest &&
-echo ======================= Running Application tests in project/assets &&
-make -C $OCPI_CDK_DIR/../projects/assets/applications run &&
-echo ======================= Running Application tests in project/assets &&
-make -C $OCPI_CDK_DIR/../projects/inactive/applications run &&
-echo ======================= Running Python/ocpidev Tests in tests/pytests &&
-(cd tests/pytests && git clean -dfx . && ./run_pytests.sh) &&
-echo ======================= Running av_test application &&
-(cd tests/av-test && git clean -dfx . && ./run_avtests.sh) &&
+set -e
+echo ======================= Running Unit Tests in $bin
+$bin/gtests/ocpitests
+echo ======================= Running Datatype/protocol Tests
+$bin/ocpidds -t 10000 > /dev/null
+echo ======================= Running Container Tests
+$OCPI_CDK_DIR/scripts/run_tests.sh
+echo ======================= Running unit tests in project/core
+make -C $OCPI_CDK_DIR/../projects/core runtest
+echo ======================= Running Application tests in project/assets
+make -C $OCPI_CDK_DIR/../projects/assets/applications run
+echo ======================= Running Application tests in project/inactive
+make -C $OCPI_CDK_DIR/../projects/inactive/applications run
+echo ======================= Running Python/ocpidev Tests in tests/pytests
+(cd $OCPI_CDK_DIR/../tests/pytests && git clean -dfx . && ./run_pytests.sh)
+echo ======================= Running av_test application
+(cd $OCPI_CDK_DIR/../tests/av-test && ./run_avtests.sh)
+echo ======================= Running ocpidev tests
+(cd $OCPI_CDK_DIR/../tests/ocpidev_test && rm -r -f test_project && ./test-ocpidev.sh)
 echo All tests passed.
 [ "$OCPI_TOOL_OS" != macos ] && {
   echo ======================= Loading the OpenCPI Linux Kernel driver. &&
     $OCPI_CDK_DIR/scripts/ocpidriver load
 }
 exit 0
-
-#    stepsForParallel[stepName] = transformAVTestsStep(os)
-#    stepsForParallel[stepName] = transformRCCExampleStep(os)
-#    stepsForParallel[stepName] = transformOcpiDevTestsStep(os)

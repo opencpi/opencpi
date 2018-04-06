@@ -61,6 +61,8 @@ ocpi_me=$BASH_SOURCE
 	 --reset or -r:     reset any previous OpenCPI environment before setting up a new one
 	 --clean or -c:     unset all OpenCPI environment variables and nothing more.
 	 --list or -l:      list current settings - will not setup
+	 --verbose or -v:   be verbose about what is happening
+	 -                  use this option when using no other options
 	Note that neither --dynamic nor --optimized affect what is built.  Just what is used.
 EOF
   return 1
@@ -186,3 +188,4 @@ ocpi_comp=$OCPI_CDK_DIR/scripts/ocpidev_bash_complete
   echo "Below are all OCPI_* environment variables now set:" >&2
   env | grep OCPI >&2
 }
+return 0

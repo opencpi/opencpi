@@ -40,7 +40,7 @@ endif
 
 # imports need to be created before ocpisetup.mk no matter what
 ifeq ($(filter imports projectpackage,$(MAKECMDGOALS)),)
-  doimports=$(shell $(MAKE) imports)
+  doimports=$(shell $(OcpiExportVars) $(MAKE) imports NoExports=1)
   ifeq ($(wildcard imports),)
     $(info Imports are not set up for this project.  Doing it now.)
     $(info $(doimports))
@@ -50,11 +50,11 @@ ifeq ($(filter imports projectpackage,$(MAKECMDGOALS)),)
   endif
 endif
 
-ifeq ($(wildcard exports)$(filter projectpackage,$(MAKECMDGOALS)),)
-  doexports=$(shell $(OCPI_CDK_DIR)/scripts/makeProjectExports.sh - $(ProjectPackage) xxx)
+ifeq ($(NoExports)$(wildcard exports)$(filter projectpackage,$(MAKECMDGOALS)),)
+  doexports=$(OcpiExportVars) $(OCPI_CDK_DIR)/scripts/makeProjectExports.sh - $(ProjectPackage) xxx
   ifeq ($(filter clean%,$(MAKECMDGOALS)),)
     $(info Exports are not set up for this project.  Doing it now.)
-    $(info $(doexports))
+    $(info $(shell $(doexports)))
   else
     # we are assuming that exports are not required for any clean goal.
     # $(nuthin $(doexports))

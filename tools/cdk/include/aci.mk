@@ -44,7 +44,7 @@ else
   RccStaticPrereqLibs+=$(OcpiPrereqLibs)
 endif
 include $(OCPI_CDK_DIR)/include/rcc/rcc-worker.mk
-AciDir=target-$(RccTarget_$1)
+AciDir=target-$1
 AciObj=$(call AciDir,$1)/$(basename $(notdir $2))$(OBJ)
 AciExe=$(call AciDir,$1)/$(basename $2)
 # Build a source file

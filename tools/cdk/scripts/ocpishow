@@ -24,23 +24,38 @@ import subprocess
 import os
 import sys
 import json
+import types
+import pydoc
 from lxml import etree as ET
 import ocpiutil
-from hdltargets import HdlToolSet, HdlTarget, HdlPlatform
+from hdltargets import HdlTarget, HdlPlatform
 
 subParserNouns = ["hdl", "rcc"]
 plainNouns = ["registry", "projects", "workers", "components", "platforms", "targets"]
-flatNouns = plainNouns
 nounsList = plainNouns + subParserNouns
 subnouns = {}
 subnouns['hdl'] = ["targets", "platforms"]
 subnouns['rcc'] = ["targets", "platforms"]
-
 def parseCLVars():
-    description="Utility for showing the project registry, any " + \
-                "available projects (registered or in path), workers, " + \
-                "components, HDL/RCC Platforms and Targets available at built time."
+    description = "Utility for showing the project registry, any " + \
+                  "available projects (registered or in path), workers, " + \
+                  "components, HDL/RCC Platforms and Targets available at built time."
     parser = argparse.ArgumentParser(description=description)
+    # Print help screen and usage to pager. Code block adapted and inlined from from:
+    # https://github.com/fmenabe/python-clg/blob/master/LICENSE#L6
+    #     under MIT license
+    parser.print_help = types.MethodType(lambda self, _=None: pydoc.pager("\n" +
+                                                                          self.format_help()),
+                                         parser)
+    parser.print_usage = types.MethodType(lambda self, _=None: pydoc.pager("\n" +
+                                                                           self.format_usage()),
+                                          parser)
+    # This displays the error AND help screen when there is a usage error or no arguments provided
+    parser.error = types.MethodType(
+        lambda self, error_message: (
+            pydoc.pager(error_message + "\n\n" + self.format_help()),
+            exit(1)
+            ), parser)
 
     parser.add_argument("noun", type=str, help="This is either the noun to show or the " +
                         "authoring model to operate on. If choosing an authoring model " +

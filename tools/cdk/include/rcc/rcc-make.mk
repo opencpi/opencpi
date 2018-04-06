@@ -100,6 +100,10 @@ endif
 RccRealPlatforms=$(infox GETREAL:$1)$(foreach p,$1,$(word 1,$(subst -, ,$p)))
 RccRealPlatform=$(strip $(infox RRP:$(RccPlatform))\
                 $(foreach p,$(call RccRealPlatforms,$(RccPlatform)),$(infox RRPr:$p)$p))
+RccTargetDir=$(or $(RccPlatform),$(error RccTargetDir with no platform))
+RccWkrTargetDir=$(strip $(if $(filter $1,$(RccTarget_$(RccPlatform))),$(RccPlatform),\
+	                     $(or $(call WkrGetPlatform,$1),\
+		                  $(error RccWkrTargetDir called with $1, no platform))))
 # Transfer build options to target from platform
 # $(call RccPlatformTarget,<platform>,<target>)
 RccPlatformTarget=$(infox RPT:$1:$2)$2$(foreach b,$(word 2,$(subst -, ,$1)),$(and $b,-$b))
@@ -130,7 +134,7 @@ ifdef RccPlatforms
                $(eval RccFound+=$p))))))\
   $(foreach p,$(RccPlatforms),\
     $(if $(findstring $p,$(RccFound)),,\
-      $(error RccPlatform $p is unknown, $f does not exist)))
+      $(error RccPlatform $p is unknown, */rcc/platform/$(call RccRealPlatforms,$p)/target not found in any project)))
 else
   # Derive a platform from each target (somewhat expensive, but we have shortcuts)
   # This can be deprecated or accelerated as it makes sense
