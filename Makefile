@@ -154,6 +154,7 @@ $(ProjectGoals):
 
 projects:
 	$(AT)$(call DoProjects,build)
+	$(AT)$(call DoProjects,test)
 
 cleanprojects:
 	$(AT)$(call DoProjects,clean)

@@ -1,0 +1,655 @@
+<!-- The purpose of this RCC worker is to validate the compiled memory offsets
+     for various property data types according the the rules specified in 
+     OpenCPI_Component_Development.pdf - Section 7.3. Note that compiled memory
+     offsets are only calculated for the following property types:
+       * bool
+       * char
+       * uchar
+       * short
+       * ushort
+       * long
+       * ulong
+       * longlong
+       * ulonglong
+       * structs of primitive types
+       * arrays of structs of primitive types
+     and not
+       * floats
+       * doubles
+       * structs with widest member being 4 or 8 bytes
+       * structs of structs (of ...)
+       * structs of arrays (of ...)
+       * structs of sequences (of ...)
+       * multidimensional arrays
+       * sequences
+       * multidimensional sequences
+       * sequence of arrays (see OpenCPI_Component_Development.pdf - Section
+         5.3.6)
+     This worker implements multiple "tests". Each "test" is implemented as a
+     group of properties:
+       1. an alignment property of type ulonglong (which is 8 bytes long),
+          followed by
+       2. one or more properties of type char whose purpose is to provide 
+          test-specific padding in order to observe alignment for that test
+          followed by
+       3. one or more properties with the name:
+          <test_description>_prop<extra_info>.
+     A memory offset for each <test_description>_prop<extra_info> property is
+     calculated and printed to stdout during runtime, with the printouts in the
+     format: offset_<test_description>_prop<extra_info>=<value>. -->
+<RccWorker language='c++' >
+  <ComponentSpec/>
+
+  <!-- OpenCPI_Component_Development.pdf - Section 7.3 -
+       "Every numeric type is aligned for its size.",
+       the following properties verify that the
+       bool, char, and uchar types are all
+       1-byte aligned-->
+
+  <property name='bool_test_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='bool_test_pad0'  type='char' writable='1'/>
+  <property name='bool_test_prop1' type='bool' writable='1'/>
+  <property name='bool_test_prop2' type='bool' writable='1'/>
+  <property name='bool_test_prop3' type='bool' writable='1'/>
+  <property name='bool_test_prop4' type='bool' writable='1'/>
+  <property name='bool_test_prop5' type='bool' writable='1'/>
+  <property name='bool_test_prop6' type='bool' writable='1'/>
+  <property name='bool_test_prop7' type='bool' writable='1'/>
+
+  <property name='char_test_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='char_test_pad0'  type='char' writable='1'/>
+  <property name='char_test_prop1' type='char' writable='1'/>
+  <property name='char_test_prop2' type='char' writable='1'/>
+  <property name='char_test_prop3' type='char' writable='1'/>
+  <property name='char_test_prop4' type='char' writable='1'/>
+  <property name='char_test_prop5' type='char' writable='1'/>
+  <property name='char_test_prop6' type='char' writable='1'/>
+  <property name='char_test_prop7' type='char' writable='1'/>
+
+  <property name='uchar_test_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='uchar_test_pad0'  type='char' writable='1'/>
+  <property name='uchar_test_prop1' type='uchar' writable='1'/>
+  <property name='uchar_test_prop2' type='uchar' writable='1'/>
+  <property name='uchar_test_prop3' type='uchar' writable='1'/>
+  <property name='uchar_test_prop4' type='uchar' writable='1'/>
+  <property name='uchar_test_prop5' type='uchar' writable='1'/>
+  <property name='uchar_test_prop6' type='uchar' writable='1'/>
+  <property name='uchar_test_prop7' type='uchar' writable='1'/>
+
+  <!-- OpenCPI_Component_Development.pdf - Section 7.3 -
+       "Every numeric type is aligned for its size.",
+       the following properties verify that the
+       short and ushort types are all
+       2-byte aligned-->
+
+  <property name='short_test_0_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='short_test_0_pad0' type='char' writable='1'/> <!-- offset 0 -->
+  <property name='short_test_0_pad1' type='char' writable='1'/>
+  <property name='short_test_0_prop' type='short' writable='1'/> <!-- should occupy offset 2-3 -->
+
+  <property name='short_test_1_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='short_test_1_pad0' type='char' writable='1'/> <!-- offset 0 -->
+  <!-- framework should add padding here -->
+  <property name='short_test_1_prop' type='short' writable='1'/> <!-- should occupy offset 2-3 -->
+
+  <property name='ushort_test_0_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='ushort_test_0_pad0' type='char' writable='1'/> <!-- offset 0 -->
+  <property name='ushort_test_0_pad1' type='char' writable='1'/>
+  <property name='ushort_test_0_prop' type='ushort' writable='1'/> <!-- should occupy offset 2-3 -->
+
+  <property name='ushort_test_1_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='ushort_test_1_pad0' type='char' writable='1'/> <!-- offset 0 -->
+  <!-- framework should add padding here -->
+  <property name='ushort_test_1_prop' type='ushort' writable='1'/> <!-- should occupy offset 2-3 -->
+
+  <!-- OpenCPI_Component_Development.pdf - Section 7.3 -
+       "Every numeric type is aligned for its size.",
+       the following properties verify that the
+       long and ulong types are all
+       4-byte aligned-->
+
+  <property name='long_test_0_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='long_test_0_pad0'  type='char' writable='1'/> <!-- offset 0 -->
+  <property name='long_test_0_pad1'  type='char' writable='1'/>
+  <property name='long_test_0_pad2'  type='char' writable='1'/>
+  <property name='long_test_0_pad3'  type='char' writable='1'/>
+  <property name='long_test_0_prop'  type='long' writable='1'/> <!-- should occupy offset 4-7 -->
+
+  <property name='long_test_1_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='long_test_1_pad0'  type='char' writable='1'/> <!-- offset 0 -->
+  <property name='long_test_1_pad1'  type='char' writable='1'/>
+  <property name='long_test_1_pad2'  type='char' writable='1'/>
+  <!-- framework should add padding here -->
+  <property name='long_test_1_prop'  type='long' writable='1'/> <!-- should occupy offset 4-7 -->
+
+  <property name='long_test_2_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='long_test_2_pad0'  type='char' writable='1'/> <!-- offset 0 -->
+  <property name='long_test_2_pad1'  type='char' writable='1'/>
+  <!-- framework should add padding here -->
+  <!-- framework should add padding here -->
+  <property name='long_test_2_prop'  type='long' writable='1'/> <!-- should occupy offset 4-7 -->
+
+  <property name='long_test_3_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='long_test_3_pad0'  type='char' writable='1'/> <!-- offset 0 -->
+  <!-- framework should add padding here -->
+  <!-- framework should add padding here -->
+  <!-- framework should add padding here -->
+  <property name='long_test_3_prop'  type='long' writable='1'/> <!-- should occupy offset 4-7 -->
+
+  <property name='ulong_test_0_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='ulong_test_0_pad0'  type='char' writable='1'/> <!-- offset 0 -->
+  <property name='ulong_test_0_pad1'  type='char' writable='1'/>
+  <property name='ulong_test_0_pad2'  type='char' writable='1'/>
+  <property name='ulong_test_0_pad3'  type='char' writable='1'/>
+  <property name='ulong_test_0_prop'  type='ulong' writable='1'/> <!-- should occupy offset 4-7 -->
+
+  <property name='ulong_test_1_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='ulong_test_1_pad0'  type='char' writable='1'/> <!-- offset 0 -->
+  <property name='ulong_test_1_pad1'  type='char' writable='1'/>
+  <property name='ulong_test_1_pad2'  type='char' writable='1'/>
+  <!-- framework should add padding here -->
+  <property name='ulong_test_1_prop'  type='ulong' writable='1'/> <!-- should occupy offset 4-7 -->
+
+  <property name='ulong_test_2_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='ulong_test_2_pad0'  type='char' writable='1'/> <!-- offset 0 -->
+  <property name='ulong_test_2_pad1'  type='char' writable='1'/>
+  <!-- framework should add padding here -->
+  <!-- framework should add padding here -->
+  <property name='ulong_test_2_prop'  type='ulong' writable='1'/> <!-- should occupy offset 4-7 -->
+
+  <property name='ulong_test_3_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='ulong_test_3_pad0'  type='char' writable='1'/> <!-- offset 0 -->
+  <!-- framework should add padding here -->
+  <!-- framework should add padding here -->
+  <!-- framework should add padding here -->
+  <property name='ulong_test_3_prop'  type='ulong' writable='1'/> <!-- should occupy offset 4-7 -->
+
+  <!-- OpenCPI_Component_Development.pdf - Section 7.3 -
+       "Every numeric type is aligned for its size.",
+       the following properties verify that the
+       longlong and ulonglong types are all
+       8-byte aligned-->
+
+  <property name='longlong_test_0_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='longlong_test_0_pad0'  type='char' writable='1'/> <!-- offset 0 -->
+  <property name='longlong_test_0_pad1'  type='char' writable='1'/>
+  <property name='longlong_test_0_pad2'  type='char' writable='1'/>
+  <property name='longlong_test_0_pad3'  type='char' writable='1'/>
+  <property name='longlong_test_0_pad4'  type='char' writable='1'/>
+  <property name='longlong_test_0_pad5'  type='char' writable='1'/>
+  <property name='longlong_test_0_pad6'  type='char' writable='1'/>
+  <property name='longlong_test_0_pad7'  type='char' writable='1'/>
+  <property name='longlong_test_0_prop'  type='longlong' writable='1'/> <!-- should occupy offset 8-15 -->
+
+  <property name='longlong_test_1_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='longlong_test_1_pad0'  type='char' writable='1'/> <!-- offset 0 -->
+  <property name='longlong_test_1_pad1'  type='char' writable='1'/>
+  <property name='longlong_test_1_pad2'  type='char' writable='1'/>
+  <property name='longlong_test_1_pad3'  type='char' writable='1'/>
+  <property name='longlong_test_1_pad4'  type='char' writable='1'/>
+  <property name='longlong_test_1_pad5'  type='char' writable='1'/>
+  <property name='longlong_test_1_pad6'  type='char' writable='1'/>
+  <!-- framework should add padding here -->
+  <property name='longlong_test_1_prop'  type='longlong' writable='1'/> <!-- should occupy offset 8-15 -->
+
+  <property name='longlong_test_2_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='longlong_test_2_pad0'  type='char' writable='1'/> <!-- offset 0 -->
+  <property name='longlong_test_2_pad1'  type='char' writable='1'/>
+  <property name='longlong_test_2_pad2'  type='char' writable='1'/>
+  <property name='longlong_test_2_pad3'  type='char' writable='1'/>
+  <property name='longlong_test_2_pad4'  type='char' writable='1'/>
+  <property name='longlong_test_2_pad5'  type='char' writable='1'/>
+  <!-- framework should add padding here -->
+  <!-- framework should add padding here -->
+  <property name='longlong_test_2_prop'  type='longlong' writable='1'/> <!-- should occupy offset 8-15 -->
+
+  <property name='longlong_test_3_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='longlong_test_3_pad0'  type='char' writable='1'/> <!-- offset 0 -->
+  <property name='longlong_test_3_pad1'  type='char' writable='1'/>
+  <property name='longlong_test_3_pad2'  type='char' writable='1'/>
+  <property name='longlong_test_3_pad3'  type='char' writable='1'/>
+  <property name='longlong_test_3_pad4'  type='char' writable='1'/>
+  <!-- framework should add padding here -->
+  <!-- framework should add padding here -->
+  <!-- framework should add padding here -->
+  <property name='longlong_test_3_prop'  type='longlong' writable='1'/> <!-- should occupy offset 8-15 -->
+
+  <property name='longlong_test_4_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='longlong_test_4_pad0'  type='char' writable='1'/> <!-- offset 0 -->
+  <property name='longlong_test_4_pad1'  type='char' writable='1'/>
+  <property name='longlong_test_4_pad2'  type='char' writable='1'/>
+  <property name='longlong_test_4_pad3'  type='char' writable='1'/>
+  <!-- framework should add padding here -->
+  <!-- framework should add padding here -->
+  <!-- framework should add padding here -->
+  <!-- framework should add padding here -->
+  <property name='longlong_test_4_prop'  type='longlong' writable='1'/> <!-- should occupy offset 8-15 -->
+
+  <property name='longlong_test_5_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='longlong_test_5_pad0'  type='char' writable='1'/> <!-- offset 0 -->
+  <property name='longlong_test_5_pad1'  type='char' writable='1'/>
+  <property name='longlong_test_5_pad2'  type='char' writable='1'/>
+  <!-- framework should add padding here -->
+  <!-- framework should add padding here -->
+  <!-- framework should add padding here -->
+  <!-- framework should add padding here -->
+  <!-- framework should add padding here -->
+  <property name='longlong_test_5_prop'  type='longlong' writable='1'/> <!-- should occupy offset 8-15 -->
+
+  <property name='longlong_test_6_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='longlong_test_6_pad0'  type='char' writable='1'/> <!-- offset 0 -->
+  <property name='longlong_test_6_pad1'  type='char' writable='1'/>
+  <!-- framework should add padding here -->
+  <!-- framework should add padding here -->
+  <!-- framework should add padding here -->
+  <!-- framework should add padding here -->
+  <!-- framework should add padding here -->
+  <!-- framework should add padding here -->
+  <property name='longlong_test_6_prop'  type='longlong' writable='1'/> <!-- should occupy offset 8-15 -->
+
+  <property name='longlong_test_7_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='longlong_test_7_pad0'  type='char' writable='1'/> <!-- offset 0 -->
+  <!-- framework should add padding here -->
+  <!-- framework should add padding here -->
+  <!-- framework should add padding here -->
+  <!-- framework should add padding here -->
+  <!-- framework should add padding here -->
+  <!-- framework should add padding here -->
+  <!-- framework should add padding here -->
+  <property name='longlong_test_7_prop'  type='longlong' writable='1'/> <!-- should occupy offset 8-15 -->
+
+  <property name='ulonglong_test_0_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='ulonglong_test_0_pad0'  type='char' writable='1'/> <!-- offset 0 -->
+  <property name='ulonglong_test_0_pad1'  type='char' writable='1'/>
+  <property name='ulonglong_test_0_pad2'  type='char' writable='1'/>
+  <property name='ulonglong_test_0_pad3'  type='char' writable='1'/>
+  <property name='ulonglong_test_0_pad4'  type='char' writable='1'/>
+  <property name='ulonglong_test_0_pad5'  type='char' writable='1'/>
+  <property name='ulonglong_test_0_pad6'  type='char' writable='1'/>
+  <property name='ulonglong_test_0_pad7'  type='char' writable='1'/>
+  <property name='ulonglong_test_0_prop'  type='ulonglong' writable='1'/> <!-- should occupy offset 8-15 -->
+
+  <property name='ulonglong_test_1_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='ulonglong_test_1_pad0'  type='char' writable='1'/> <!-- offset 0 -->
+  <property name='ulonglong_test_1_pad1'  type='char' writable='1'/>
+  <property name='ulonglong_test_1_pad2'  type='char' writable='1'/>
+  <property name='ulonglong_test_1_pad3'  type='char' writable='1'/>
+  <property name='ulonglong_test_1_pad4'  type='char' writable='1'/>
+  <property name='ulonglong_test_1_pad5'  type='char' writable='1'/>
+  <property name='ulonglong_test_1_pad6'  type='char' writable='1'/>
+  <!-- framework should add padding here -->
+  <property name='ulonglong_test_1_prop'  type='ulonglong' writable='1'/> <!-- should occupy offset 8-15 -->
+
+  <property name='ulonglong_test_2_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='ulonglong_test_2_pad0'  type='char' writable='1'/> <!-- offset 0 -->
+  <property name='ulonglong_test_2_pad1'  type='char' writable='1'/>
+  <property name='ulonglong_test_2_pad2'  type='char' writable='1'/>
+  <property name='ulonglong_test_2_pad3'  type='char' writable='1'/>
+  <property name='ulonglong_test_2_pad4'  type='char' writable='1'/>
+  <property name='ulonglong_test_2_pad5'  type='char' writable='1'/>
+  <!-- framework should add padding here -->
+  <!-- framework should add padding here -->
+  <property name='ulonglong_test_2_prop'  type='ulonglong' writable='1'/> <!-- should occupy offset 8-15 -->
+
+  <property name='ulonglong_test_3_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='ulonglong_test_3_pad0'  type='char' writable='1'/> <!-- offset 0 -->
+  <property name='ulonglong_test_3_pad1'  type='char' writable='1'/>
+  <property name='ulonglong_test_3_pad2'  type='char' writable='1'/>
+  <property name='ulonglong_test_3_pad3'  type='char' writable='1'/>
+  <property name='ulonglong_test_3_pad4'  type='char' writable='1'/>
+  <!-- framework should add padding here -->
+  <!-- framework should add padding here -->
+  <!-- framework should add padding here -->
+  <property name='ulonglong_test_3_prop'  type='ulonglong' writable='1'/> <!-- should occupy offset 8-15 -->
+
+  <property name='ulonglong_test_4_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='ulonglong_test_4_pad0'  type='char' writable='1'/> <!-- offset 0 -->
+  <property name='ulonglong_test_4_pad1'  type='char' writable='1'/>
+  <property name='ulonglong_test_4_pad2'  type='char' writable='1'/>
+  <property name='ulonglong_test_4_pad3'  type='char' writable='1'/>
+  <!-- framework should add padding here -->
+  <!-- framework should add padding here -->
+  <!-- framework should add padding here -->
+  <!-- framework should add padding here -->
+  <property name='ulonglong_test_4_prop'  type='ulonglong' writable='1'/> <!-- should occupy offset 8-15 -->
+
+  <property name='ulonglong_test_5_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='ulonglong_test_5_pad0'  type='char' writable='1'/> <!-- offset 0 -->
+  <property name='ulonglong_test_5_pad1'  type='char' writable='1'/>
+  <property name='ulonglong_test_5_pad2'  type='char' writable='1'/>
+  <!-- framework should add padding here -->
+  <!-- framework should add padding here -->
+  <!-- framework should add padding here -->
+  <!-- framework should add padding here -->
+  <!-- framework should add padding here -->
+  <property name='ulonglong_test_5_prop'  type='ulonglong' writable='1'/> <!-- should occupy offset 8-15 -->
+
+  <property name='ulonglong_test_6_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='ulonglong_test_6_pad0'  type='char' writable='1'/> <!-- offset 0 -->
+  <property name='ulonglong_test_6_pad1'  type='char' writable='1'/>
+  <!-- framework should add padding here -->
+  <!-- framework should add padding here -->
+  <!-- framework should add padding here -->
+  <!-- framework should add padding here -->
+  <!-- framework should add padding here -->
+  <!-- framework should add padding here -->
+  <property name='ulonglong_test_6_prop'  type='ulonglong' writable='1'/> <!-- should occupy offset 8-15 -->
+
+  <property name='ulonglong_test_7_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='ulonglong_test_7_pad0'  type='char' writable='1'/> <!-- offset 0 -->
+  <!-- framework should add padding here -->
+  <!-- framework should add padding here -->
+  <!-- framework should add padding here -->
+  <!-- framework should add padding here -->
+  <!-- framework should add padding here -->
+  <!-- framework should add padding here -->
+  <!-- framework should add padding here -->
+  <property name='ulonglong_test_7_prop'  type='ulonglong' writable='1'/> <!-- should occupy offset 8-15 -->
+
+  <!-- OpenCPI_Component_Development.pdf - Section 7.3 -
+       "Structure types are aligned according to the largest alignment
+       requirement of any of its members.",
+       "Every numeric type is aligned for its size.",
+       the following properties verify a few examples of
+       structs with maximum member widths of 1 byte are all
+       1-byte aligned-->
+
+  <property name='struct_largest_1_test_0_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='struct_largest_1_test_0_pad0'  type='char' writable='1'/> <!-- offset 0 -->
+  <property name='struct_largest_1_test_0_pad1'  type='char' writable='1'/>
+  <property name='struct_largest_1_test_0_pad2'  type='char' writable='1'/>
+  <property name='struct_largest_1_test_0_pad3'  type='char' writable='1'/>
+  <property name='struct_largest_1_test_0_prop'  type='struct' writable='1'> <!-- should start at offset 4 -->
+    <member name='member_bool' type='bool' default='0'/>                     <!-- should start at offset 4 -->
+  </property>
+  <property name='struct_largest_1_test_0_pad5'  type='char' writable='1'/>
+  <property name='struct_largest_1_test_0_pad6'  type='char' writable='1'/>
+  <property name='struct_largest_1_test_0_pad7'  type='char' writable='1'/>
+
+  <property name='struct_largest_1_test_1_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='struct_largest_1_test_1_pad0'  type='char' writable='1'/> <!-- offset 0 -->
+  <property name='struct_largest_1_test_1_pad1'  type='char' writable='1'/>
+  <property name='struct_largest_1_test_1_pad2'  type='char' writable='1'/>
+  <property name='struct_largest_1_test_1_prop'  type='struct' writable='1'> <!-- should start at offset 3 -->
+    <member name='member_bool' type='bool' default='0'/>                     <!-- should start at offset 3 -->
+  </property>
+  <property name='struct_largest_1_test_1_pad4'  type='char' writable='1'/>
+  <property name='struct_largest_1_test_1_pad5'  type='char' writable='1'/>
+  <property name='struct_largest_1_test_1_pad6'  type='char' writable='1'/>
+  <property name='struct_largest_1_test_1_pad7'  type='char' writable='1'/>
+
+  <property name='struct_largest_1_test_2_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='struct_largest_1_test_2_pad0'  type='char' writable='1'/> <!-- offset 0 -->
+  <property name='struct_largest_1_test_2_pad1'  type='char' writable='1'/>
+  <property name='struct_largest_1_test_2_prop'  type='struct' writable='1'> <!-- should start at offset 2 -->
+    <member name='member_bool' type='bool' default='0'/>                     <!-- should start at offset 2 -->
+  </property>
+  <property name='struct_largest_1_test_2_pad3'  type='char' writable='1'/>
+  <property name='struct_largest_1_test_2_pad4'  type='char' writable='1'/>
+  <property name='struct_largest_1_test_2_pad5'  type='char' writable='1'/>
+  <property name='struct_largest_1_test_2_pad6'  type='char' writable='1'/>
+  <property name='struct_largest_1_test_2_pad7'  type='char' writable='1'/>
+
+  <property name='struct_largest_1_test_3_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='struct_largest_1_test_3_pad0'  type='char' writable='1'/> <!-- offset 0 -->
+  <property name='struct_largest_1_test_3_prop'  type='struct' writable='1'> <!-- should start at offset 1 -->
+    <member name='member_bool' type='bool' default='0'/>                     <!-- should start at offset 1 -->
+  </property>
+  <property name='struct_largest_1_test_3_pad2'  type='char' writable='1'/>
+  <property name='struct_largest_1_test_3_pad3'  type='char' writable='1'/>
+  <property name='struct_largest_1_test_3_pad4'  type='char' writable='1'/>
+  <property name='struct_largest_1_test_3_pad5'  type='char' writable='1'/>
+  <property name='struct_largest_1_test_3_pad6'  type='char' writable='1'/>
+  <property name='struct_largest_1_test_3_pad7'  type='char' writable='1'/>
+
+  <property name='struct_largest_1_test_4_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='struct_largest_1_test_4_pad0'  type='char' writable='1'/> <!-- offset 0 -->
+  <property name='struct_largest_1_test_4_pad1'  type='char' writable='1'/>
+  <property name='struct_largest_1_test_4_pad2'  type='char' writable='1'/>
+  <property name='struct_largest_1_test_4_pad3'  type='char' writable='1'/>
+  <property name='struct_largest_1_test_4_prop'  type='struct' writable='1'> <!-- should start at offset 4 -->
+    <member name='member_bool' type='bool' default='0'/>                     <!-- should start at offset 4 -->
+    <member name='member_char' type='char' default='0'/>                     <!-- should start at offset 5 -->
+  </property>
+  <property name='struct_largest_1_test_4_pad6'  type='char' writable='1'/>
+  <property name='struct_largest_1_test_4_pad7'  type='char' writable='1'/>
+
+  <property name='struct_largest_1_test_5_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='struct_largest_1_test_5_pad0'  type='char' writable='1'/> <!-- offset 0 -->
+  <property name='struct_largest_1_test_5_pad1'  type='char' writable='1'/>
+  <property name='struct_largest_1_test_5_pad2'  type='char' writable='1'/>
+  <property name='struct_largest_1_test_5_prop'  type='struct' writable='1'>  <!-- should start at offset 3 -->
+    <member name='member_bool' type='bool' default='0'/>                      <!-- should start at offset 3 -->
+    <member name='member_char' type='char' default='0'/>                      <!-- should start at offset 4 -->
+  </property>
+  <property name='struct_largest_1_test_5_pad5'  type='char' writable='1'/>
+  <property name='struct_largest_1_test_5_pad6'  type='char' writable='1'/>
+  <property name='struct_largest_1_test_5_pad7'  type='char' writable='1'/>
+
+  <property name='struct_largest_1_test_6_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='struct_largest_1_test_6_pad0'  type='char' writable='1'/> <!-- offset 0 -->
+  <property name='struct_largest_1_test_6_pad1'  type='char' writable='1'/>
+  <property name='struct_largest_1_test_6_prop'  type='struct' writable='1'>  <!-- should start at offset 2 -->
+    <member name='member_bool' type='bool' default='0'/>                      <!-- should start at offset 2 -->
+    <member name='member_char' type='char' default='0'/>                      <!-- should start at offset 3 -->
+  </property>
+  <property name='struct_largest_1_test_6_pad4'  type='char' writable='1'/>
+  <property name='struct_largest_1_test_6_pad5'  type='char' writable='1'/>
+  <property name='struct_largest_1_test_6_pad6'  type='char' writable='1'/>
+  <property name='struct_largest_1_test_6_pad7'  type='char' writable='1'/>
+
+  <property name='struct_largest_1_test_7_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='struct_largest_1_test_7_pad0'  type='char' writable='1'/> <!-- offset 0 -->
+  <property name='struct_largest_1_test_7_prop'  type='struct' writable='1'>  <!-- should start at offset 1 -->
+    <member name='member_bool' type='bool' default='0'/>                      <!-- should start at offset 1 -->
+    <member name='member_char' type='char' default='0'/>                      <!-- should start at offset 2 -->
+  </property>
+  <property name='struct_largest_1_test_7_pad3'  type='char' writable='1'/>
+  <property name='struct_largest_1_test_7_pad4'  type='char' writable='1'/>
+  <property name='struct_largest_1_test_7_pad5'  type='char' writable='1'/>
+  <property name='struct_largest_1_test_7_pad6'  type='char' writable='1'/>
+  <property name='struct_largest_1_test_7_pad7'  type='char' writable='1'/>
+
+  <property name='struct_largest_1_test_8_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='struct_largest_1_test_8_pad0'  type='char' writable='1'/> <!-- offset 0 -->
+  <property name='struct_largest_1_test_8_pad1'  type='char' writable='1'/>
+  <property name='struct_largest_1_test_8_pad2'  type='char' writable='1'/>
+  <property name='struct_largest_1_test_8_pad3'  type='char' writable='1'/>
+  <property name='struct_largest_1_test_8_prop'  type='struct' writable='1'> <!-- should start at offset 4 -->
+    <member name='member_bool' type='bool' default='0'/>                     <!-- should start at offset 4 -->
+    <member name='member_char' type='char' default='0'/>                     <!-- should start at offset 5 -->
+    <member name='member_uchar' type='uchar' default='0'/>                    <!-- should start at offset 6 -->
+  </property>
+  <property name='struct_largest_1_test_8_pad7'  type='char' writable='1'/>
+
+  <property name='struct_largest_1_test_9_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='struct_largest_1_test_9_pad0'  type='char' writable='1'/> <!-- offset 0 -->
+  <property name='struct_largest_1_test_9_pad1'  type='char' writable='1'/>
+  <property name='struct_largest_1_test_9_pad2'  type='char' writable='1'/>
+  <property name='struct_largest_1_test_9_prop'  type='struct' writable='1'>  <!-- should start at offset 3 -->
+    <member name='member_bool' type='bool' default='0'/>                      <!-- should start at offset 3 -->
+    <member name='member_char' type='char' default='0'/>                      <!-- should start at offset 4 -->
+    <member name='member_uchar' type='uchar' default='0'/>                    <!-- should start at offset 5 -->
+  </property>
+  <property name='struct_largest_1_test_9_pad6'  type='char' writable='1'/>
+  <property name='struct_largest_1_test_9_pad7'  type='char' writable='1'/>
+
+  <property name='struct_largest_1_test_10_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='struct_largest_1_test_10_pad0'  type='char' writable='1'/> <!-- offset 0 -->
+  <property name='struct_largest_1_test_10_pad1'  type='char' writable='1'/>
+  <property name='struct_largest_1_test_10_prop'  type='struct' writable='1'> <!-- should start at offset 2 -->
+    <member name='member_bool' type='bool' default='0'/>                      <!-- should start at offset 2 -->
+    <member name='member_char' type='char' default='0'/>                      <!-- should start at offset 3 -->
+    <member name='member_uchar' type='uchar' default='0'/>                    <!-- should start at offset 4 -->
+  </property>
+  <property name='struct_largest_1_test_10_pad5'  type='char' writable='1'/>
+  <property name='struct_largest_1_test_10_pad6'  type='char' writable='1'/>
+  <property name='struct_largest_1_test_10_pad7'  type='char' writable='1'/>
+
+  <property name='struct_largest_1_test_11_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='struct_largest_1_test_11_pad0'  type='char' writable='1'/> <!-- offset 0 -->
+  <property name='struct_largest_1_test_11_prop'  type='struct' writable='1'> <!-- should start at offset 1 -->
+    <member name='member_bool' type='bool' default='0'/>                      <!-- should start at offset 1 -->
+    <member name='member_char' type='char' default='0'/>                      <!-- should start at offset 2 -->
+    <member name='member_uchar' type='uchar' default='0'/>                    <!-- should start at offset 3 -->
+  </property>
+  <property name='struct_largest_1_test_11_pad4'  type='char' writable='1'/>
+  <property name='struct_largest_1_test_11_pad5'  type='char' writable='1'/>
+  <property name='struct_largest_1_test_11_pad6'  type='char' writable='1'/>
+  <property name='struct_largest_1_test_11_pad7'  type='char' writable='1'/>
+
+  <!-- OpenCPI_Component_Development.pdf - Section 7.3 -
+       "Structure types are aligned according to the largest alignment
+       requirement of any of its members.",
+       "Every numeric type is aligned for its size.",
+       the following properties verify a few examples of
+       structs with maximum member widths of 2 bytes are all
+       2-byte aligned-->
+
+  <property name='struct_largest_2_test_0_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='struct_largest_2_test_0_pad0'  type='char' writable='1'/> <!-- offset 0 -->
+  <property name='struct_largest_2_test_0_pad1'  type='char' writable='1'/>
+  <property name='struct_largest_2_test_0_prop'  type='struct' writable='1'> <!-- should start at offset 2 -->
+    <member name='member_short' type='short' default='0'/>                    <!-- should occupy offset 2-3 -->
+  </property>
+
+  <property name='struct_largest_2_test_1_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='struct_largest_2_test_1_pad0'  type='char' writable='1'/> <!-- offset 0 -->
+  <!-- framework should add padding here -->
+  <property name='struct_largest_2_test_1_prop'  type='struct' writable='1'> <!-- should start at offset 2 -->
+    <member name='member_short' type='short' default='0'/>                    <!-- should occupy offset 2-3 -->
+  </property>
+
+  <property name='struct_largest_2_test_2_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='struct_largest_2_test_2_pad0'  type='char' writable='1'/> <!-- offset 0 -->
+  <property name='struct_largest_2_test_2_pad1'  type='char' writable='1'/>
+  <property name='struct_largest_2_test_2_prop'  type='struct' writable='1'> <!-- should start at offset 2 -->
+    <member name='member_short' type='short' default='0'/>                    <!-- should occupy offset 2-3 -->
+    <member name='member_ushort' type='ushort' default='0'/>                  <!-- should occupy offset 4-5 -->
+  </property>
+  <property name='struct_largest_2_test_2_pad6'  type='char' writable='1'/>
+  <property name='struct_largest_2_test_2_pad7'  type='char' writable='1'/>
+
+  <property name='struct_largest_2_test_3_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='struct_largest_2_test_3_pad0'  type='char' writable='1'/> <!-- offset 0 -->
+  <!-- framework should add padding here -->
+  <property name='struct_largest_2_test_3_prop'  type='struct' writable='1'>  <!-- should start at offset 2 -->
+    <member name='member_short' type='short' default='0'/>                     <!-- should occupy offset 2-3 -->
+    <member name='member_ushort' type='ushort' default='0'/>                   <!-- should occupy offset 4-5 -->
+  </property>
+  <property name='struct_largest_2_test_3_pad6'  type='char' writable='1'/>
+  <property name='struct_largest_2_test_3_pad7'  type='char' writable='1'/>
+
+  <property name='struct_largest_2_test_4_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='struct_largest_2_test_4_pad0'  type='char' writable='1'/> <!-- offset 0 -->
+  <property name='struct_largest_2_test_4_pad1'  type='char' writable='1'/>
+  <property name='struct_largest_2_test_4_prop'  type='struct' writable='1'> <!-- should start at offset 2 -->
+    <member name='member_bool' type='bool' default='0'/>                      <!-- should occupy offset 2 -->
+    <!-- framework should add padding here -->
+    <member name='member_short' type='short' default='0'/>                    <!-- should occupy offset 4-5 -->
+    <member name='member_ushort' type='ushort' default='0'/>                  <!-- should occupy offset 6-7 -->
+  </property>
+
+  <property name='struct_largest_2_test_5_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='struct_largest_2_test_5_pad0'  type='char' writable='1'/> <!-- offset 0 -->
+  <!-- framework should add padding here -->
+  <property name='struct_largest_2_test_5_prop'  type='struct' writable='1'> <!-- should start at offset 2 -->
+    <member name='member_bool' type='bool' default='0'/>                      <!-- should occupy offset 2 -->
+    <!-- framework should add padding here -->
+    <member name='member_short' type='short' default='0'/>                    <!-- should occupy offset 4-5 -->
+    <member name='member_ushort' type='ushort' default='0'/>                  <!-- should occupy offset 6-7 -->
+  </property>
+
+  <property name='struct_largest_2_test_6_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='struct_largest_2_test_6_pad0'  type='char' writable='1'/> <!-- offset 0 -->
+  <property name='struct_largest_2_test_6_pad1'  type='char' writable='1'/>
+  <property name='struct_largest_2_test_6_prop'  type='struct' writable='1'> <!-- should start at offset 2 -->
+    <member name='member_short' type='short' default='0'/>                    <!-- should occupy offset 2-3 -->
+    <member name='member_ushort' type='ushort' default='0'/>                  <!-- should occupy offset 4-5 -->
+    <member name='member_bool' type='bool' default='0'/>                      <!-- should occupy offset 6 -->
+  </property>
+  <property name='struct_largest_2_test_6_prop_after'  type='char' writable='1'/> <!-- should occupy offset 7 -->
+
+  <property name='struct_largest_2_test_7_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='struct_largest_2_test_7_pad0'  type='char' writable='1'/> <!-- offset 0 -->
+  <!-- framework should add padding here -->
+  <property name='struct_largest_2_test_7_prop'  type='struct' writable='1'> <!-- should start at offset 2 -->
+    <member name='member_short' type='short' default='0'/>                    <!-- should occupy offset 2-3 -->
+    <member name='member_ushort' type='ushort' default='0'/>                  <!-- should occupy offset 4-5 -->
+    <member name='member_bool' type='bool' default='0'/>                      <!-- should occupy offset 6 -->
+  </property>
+  <property name='struct_largest_2_test_7_prop_after'  type='char' writable='1'/> <!-- should occupy offset 7 -->
+
+  <property name='struct_array_largest_2_test_0_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='struct_array_largest_2_test_0_pad0'  type='char' writable='1'/> <!-- offset 0 -->
+  <property name='struct_array_largest_2_test_0_pad1'  type='char' writable='1'/>
+  <property name='struct_array_largest_2_test_0_prop'  arraylength='2' type='struct' writable='1'> <!-- should start at offset 2 -->
+    <member name='member_short' type='short' default='0'/>                    <!-- should occupy offset 2-3, 4-5 -->
+  </property>
+
+  <property name='struct_array_largest_2_test_1_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='struct_array_largest_2_test_1_pad0'  type='char' writable='1'/> <!-- offset 0 -->
+  <!-- framework should add padding here -->
+  <property name='struct_array_largest_2_test_1_prop'  arraylength='2' type='struct' writable='1'> <!-- should start at offset 2 -->
+    <member name='member_short' type='short' default='0'/>                    <!-- should occupy offset 2-3, 4-5 -->
+  </property>
+
+  <property name='struct_array_largest_2_test_2_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='struct_array_largest_2_test_2_pad0'  type='char' writable='1'/> <!-- offset 0 -->
+  <property name='struct_array_largest_2_test_2_pad1'  type='char' writable='1'/>
+  <property name='struct_array_largest_2_test_2_prop'  arraylength='2' type='struct' writable='1'> <!-- should start at offset 2 -->
+    <member name='member_short' type='short' default='0'/>                    <!-- should occupy offset 2-3, 6-7 -->
+    <member name='member_ushort' type='ushort' default='0'/>                  <!-- should occupy offset 4-5, 8-9 -->
+  </property>
+
+  <property name='struct_array_largest_2_test_3_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='struct_array_largest_2_test_3_pad0'  type='char' writable='1'/> <!-- offset 0 -->
+  <!-- framework should add padding here -->
+  <property name='struct_array_largest_2_test_3_prop'  arraylength='2' type='struct' writable='1'>  <!-- should start at offset 2 -->
+    <member name='member_short' type='short' default='0'/>                     <!-- should occupy offset 2-3, 6-7 -->
+    <member name='member_ushort' type='ushort' default='0'/>                   <!-- should occupy offset 4-5, 8-9 -->
+  </property>
+  <property name='struct_array_largest_2_test_3_pad6'  type='char' writable='1'/>
+  <property name='struct_array_largest_2_test_3_pad7'  type='char' writable='1'/>
+
+  <property name='struct_array_largest_2_test_4_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='struct_array_largest_2_test_4_pad0'  type='char' writable='1'/> <!-- offset 0 -->
+  <property name='struct_array_largest_2_test_4_pad1'  type='char' writable='1'/>
+  <property name='struct_array_largest_2_test_4_prop'  arraylength='2' type='struct' writable='1'> <!-- should start at offset 2 -->
+    <member name='member_bool' type='bool' default='0'/>                      <!-- should occupy offset 2, 8 -->
+    <!-- framework should add padding here -->
+    <member name='member_short' type='short' default='0'/>                    <!-- should occupy offset 4-5, 10-11 -->
+    <member name='member_ushort' type='ushort' default='0'/>                  <!-- should occupy offset 6-7, 12-13 -->
+  </property>
+
+  <property name='struct_array_largest_2_test_5_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='struct_array_largest_2_test_5_pad0'  type='char' writable='1'/> <!-- offset 0 -->
+  <!-- framework should add padding here -->
+  <property name='struct_array_largest_2_test_5_prop'  arraylength='2' type='struct' writable='1'> <!-- should start at offset 2 -->
+    <member name='member_bool' type='bool' default='0'/>                      <!-- should occupy offset 2, 8 -->
+    <!-- framework should add padding here -->
+    <member name='member_short' type='short' default='0'/>                    <!-- should occupy offset 4-5, 10-11 -->
+    <member name='member_ushort' type='ushort' default='0'/>                  <!-- should occupy offset 6-7, 12-13 -->
+  </property>
+
+  <property name='struct_array_largest_2_test_6_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='struct_array_largest_2_test_6_pad0'  type='char' writable='1'/> <!-- offset 0 -->
+  <property name='struct_array_largest_2_test_6_pad1'  type='char' writable='1'/>
+  <property name='struct_array_largest_2_test_6_prop'  arraylength='2' type='struct' writable='1'> <!-- should start at offset 2, 8 -->
+    <member name='member_short' type='short' default='0'/>                    <!-- should occupy offset 2-3, 8-9 -->
+    <member name='member_ushort' type='ushort' default='0'/>                  <!-- should occupy offset 4-5, 10-11 -->
+    <member name='member_bool' type='bool' default='0'/>                      <!-- should occupy offset 6, 12 -->
+    <!-- framework should add padding here ONLY because it's an array -->
+  </property>
+
+  <property name='struct_array_largest_2_test_7_alignment_pad' type='ulonglong' writable='1'/>
+  <property name='struct_array_largest_2_test_7_pad0'  type='char' writable='1'/> <!-- offset 0 -->
+  <!-- framework should add padding here -->
+  <property name='struct_array_largest_2_test_7_prop'  arraylength='2' type='struct' writable='1'> <!-- should start at offset 2, 8 -->
+    <member name='member_short' type='short' default='0'/>                    <!-- should occupy offset 2-3, 8-9 -->
+    <member name='member_ushort' type='ushort' default='0'/>                  <!-- should occupy offset 4-5, 10-11 -->
+    <member name='member_bool' type='bool' default='0'/>                      <!-- should occupy offset 6, 12 -->
+    <!-- framework should add padding here ONLY because it's an array -->
+  </property>
+
+</RccWorker>

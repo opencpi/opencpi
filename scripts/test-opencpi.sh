@@ -22,11 +22,9 @@
 source $OCPI_CDK_DIR/scripts/ocpitarget.sh $1
 bin=$OCPI_CDK_DIR/$OCPI_TOOL_DIR/bin
 echo ======================= Running Unit Tests in $bin &&
-$bin/ocpitests &&
+$bin/gtests/ocpitests &&
 echo ======================= Running Datatype/protocol Tests &&
 $bin/ocpidds -t 10000 > /dev/null &&
-echo ======================= Running Python Tests in tests/pytests &&
-(cd tests/pytests && git clean -dfx . && ./run_pytests.sh) &&
 echo ======================= Running Container Tests &&
 $OCPI_CDK_DIR/scripts/run_tests.sh &&
 echo ======================= Running unit tests in project/core &&
@@ -35,11 +33,15 @@ echo ======================= Running Application tests in project/assets &&
 make -C $OCPI_CDK_DIR/../projects/assets/applications run &&
 echo ======================= Running Application tests in project/assets &&
 make -C $OCPI_CDK_DIR/../projects/inactive/applications run &&
+echo ======================= Running Python/ocpidev Tests in tests/pytests &&
+(cd tests/pytests && git clean -dfx . && ./run_pytests.sh) &&
+echo ======================= Running av_test application &&
+(cd tests/av-test && git clean -dfx . && ./run_avtests.sh) &&
+echo All tests passed.
 [ "$OCPI_TOOL_OS" != macos ] && {
   echo ======================= Loading the OpenCPI Linux Kernel driver. &&
     $OCPI_CDK_DIR/scripts/ocpidriver load
 }
-echo All tests passed.
 exit 0
 
 #    stepsForParallel[stepName] = transformAVTestsStep(os)
