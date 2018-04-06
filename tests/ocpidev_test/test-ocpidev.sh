@@ -58,13 +58,14 @@ function bad {
 # devices in hdl/cards or hdl/platforms/*/devices may use 
 # spec files or workers from hdl/devices. Therefore,
 # we include directories in the search path for specs.
+OCPIDEV=$OCPI_CDK_DIR/$OCPI_TOOL_DIR/bin/ocpidev
 function do_ocpidev {
   if [ "$QUIET" == 1 ] ; then
-    XmlIncludeDirs=$xmldirs ocpidev $V $@ &> /dev/null
+    XmlIncludeDirs=$xmldirs $OCPIDEV $V $@ #&> /dev/null
   else
     echo "Calling: ocpidev $V $@"
     echo "         With: XmlIncludeDirs=$xmldirs" 
-    XmlIncludeDirs=$xmldirs ocpidev $V $@
+    XmlIncludeDirs=$xmldirs $OCPIDEV $V $@
   fi
 
 }
@@ -204,7 +205,7 @@ for app in ${applications[@]} ; do
 done
 
 echo "============OCPIDEVTEST:'show'ing HDL Platforms"
-shownplats=`ocpidev show hdl platforms`
+shownplats=`$OCPIDEV show hdl platforms`
 echo "\"ocpidev show hdl platforms\" returned $shownplats"
 for p in ${platnames[@]}; do
   echo "Confirming that \"$p\" is in the list [$shownplats]"
@@ -243,8 +244,10 @@ if [ -z "$NO_BUILD" ] ; then
   do_ocpidev clean worker comp1.rcc -l dsp_comps --build-rcc-platform $RCC_PLATFORM
   do_ocpidev clean worker comp1.rcc -l dsp_comps --rcc-platform $RCC_PLATFORM
   echo "============OCPIDEVTEST:Building test rcc"
-  do_ocpidev build library dsp_comps --build-rcc-platform $RCC_PLATFORM --build-hdl-platform $HDL_PLATFORM
-  do_ocpidev build library dsp_comps --rcc-platform $RCC_PLATFORM --hdl-platform $HDL_PLATFORM
+  RCC=--rcc
+  [ $OCPI_TOOL_OS = linux ] && RCC=
+  do_ocpidev build library dsp_comps $RCC --build-rcc-platform $RCC_PLATFORM --build-hdl-platform $HDL_PLATFORM
+  do_ocpidev build library dsp_comps $RCC --rcc-platform $RCC_PLATFORM --hdl-platform $HDL_PLATFORM
   do_ocpidev build test comp1.test -l dsp_comps --build-rcc-platform $RCC_PLATFORM
   do_ocpidev build test comp1.test -l dsp_comps --rcc-platform $RCC_PLATFORM
   do_ocpidev clean test comp1.test -l dsp_comps --build-rcc-platform $RCC_PLATFORM
@@ -252,8 +255,8 @@ if [ -z "$NO_BUILD" ] ; then
   do_ocpidev clean library dsp_comps --build-rcc
   do_ocpidev clean library dsp_comps --rcc
   echo "============OCPIDEVTEST:Building tests rcc"
-  do_ocpidev build project . --build-rcc-platform $RCC_PLATFORM --build-hdl-platform $HDL_PLATFORM
-  do_ocpidev build project . --rcc-platform $RCC_PLATFORM --hdl-platform $HDL_PLATFORM
+  do_ocpidev build project . $RCC --build-rcc-platform $RCC_PLATFORM --build-hdl-platform $HDL_PLATFORM
+  do_ocpidev build project . $RCC --rcc-platform $RCC_PLATFORM --hdl-platform $HDL_PLATFORM
   do_ocpidev build test --build-rcc-platform $RCC_PLATFORM
   do_ocpidev build test --rcc-platform $RCC_PLATFORM
   echo "============OCPIDEVTEST:Building tests rcc clean"
@@ -264,6 +267,7 @@ if [ -z "$NO_BUILD" ] ; then
   #do_ocpidev build hdl platform isim_0 
   #echo "============OCPIDEVTEST:Building platforms "
   #do_ocpidev build hdl platforms
+  if [ $OCPI_TOOL_OS = linux ]; then
   echo "============OCPIDEVTEST:Building primitive "
   do_ocpidev build hdl primitive library comms_comps --build-hdl-platform $HDL_PLATFORM
   do_ocpidev build hdl primitive library comms_comps --hdl-platform $HDL_PLATFORM
@@ -313,7 +317,7 @@ if [ -z "$NO_BUILD" ] ; then
   echo "============OCPIDEVTEST:Building project HSP/HP"
   do_ocpidev build project . --build-hdl-rcc-platform $HDL_PLATFORM --build-hdl-platform $HDL_PLATFORM
   do_ocpidev build project . --hdl-rcc-platform $HDL_PLATFORM --hdl-platform $HDL_PLATFORM 
-  
+  fi  
   if [ "$ONLY_CREATE_BUILD" == 1 ] ; then
     echo "Exiting before project deletion."
     exit 0

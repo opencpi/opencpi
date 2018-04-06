@@ -2163,7 +2163,7 @@ argv=($*)
 original_argv=($*)
 while [[ "${argv[0]}" != "" ]] ; do
   if [[ "${argv[0]}" == show ]] ; then
-    ocpishow_options=`sed 's/\(^\| \)show\( \|$\)/\1\2/' <<< "${original_argv[@]}"`
+    ocpishow_options=`sed -E 's/(^| )show( |$)//' <<< "${original_argv[@]}"`
     $OCPI_CDK_DIR/scripts/ocpishow $ocpishow_options
     exit $?
   elif [[ -n "$verb" && -n "$help_screen" ]]; then
