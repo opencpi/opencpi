@@ -55,7 +55,7 @@ else
     export OCPI_TOOL_PLATFORM
     export OCPI_TOOL_HOST
     # There is no multimode support when running standalone
-    export OCPI_TOOL_DIR=\$OCPI_TOOL_HOST
+    export OCPI_TOOL_DIR=\$OCPI_TOOL_PLATFORM
     export OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/artifacts
     export PATH=$OCPI_CDK_DIR/bin:\$PATH
     # This is only for explicitly-linked driver libraries.  Fixed someday.

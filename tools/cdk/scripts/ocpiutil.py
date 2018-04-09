@@ -181,7 +181,7 @@ def export_libraries():
     This will allow specs to be exported before workers in a library are built.
     """
     for lib_dir in get_subdirs_of_type("library"):
-        logging.debug("Library found at \"" + lib_dir + "\", runnning \"make speclinks\" there.")
+        logging.warning("Library found at \"" + lib_dir + "\", runnning \"make speclinks\" there.")
         proc = subprocess.Popen(["make", "-C", lib_dir, "speclinks"],
                                 stdout=subprocess.PIPE)
 #                                stderr=subprocess.PIPE)

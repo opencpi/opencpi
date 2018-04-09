@@ -146,10 +146,14 @@ fi
 if [ "$1" = "-v" -o "$OCPI_EXPORTS_VERBOSE" = 1 ]; then
   verbose=yes
   [ "$1" = "-v" ] && shift
-  [ -n "$verbose" ] && echo Setting verbose mode.
 fi
+[ -n "$1" -a -n "$verbose" ] && echo Exporting for platform: $1
 set -e
 mkdir -p exports
+[ -n "$1" -a -d exports/$1 ] && {
+  [ -n "$verbose" ] && echo Exports for platform $1 exist, replacing them.
+  rm -r -f exports/$1
+}
 while read path opts; do
   case "$path" in
     \#|""|end-of-runtime-for-tools) continue;;

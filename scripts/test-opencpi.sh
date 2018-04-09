@@ -24,14 +24,29 @@
 source $OCPI_CDK_DIR/scripts/ocpitarget.sh $1
 bin=$OCPI_CDK_DIR/$OCPI_TOOL_DIR/bin
 set -e
-echo ======================= Running Unit Tests in $bin
+echo ======================= Running OS Unit Tests in $bin
 $bin/gtests/ocpitests
 echo ======================= Running Datatype/protocol Tests
 $bin/ocpidds -t 10000 > /dev/null
 echo ======================= Running Container Tests
 $OCPI_CDK_DIR/scripts/run_tests.sh
+##########################################################################################
+# After this we are depending on the core project being built for the targeted platform
+echo ======================= Running python swig test
+OCPI_LIBRARY_PATH=projects/core/exports/lib/components \
+PYTHONPATH=$OCPI_CDK_DIR/$OCPI_TOOL_DIR/lib \
+python<<EOF
+import sys;import dl
+old=sys.getdlopenflags();
+sys.setdlopenflags(old|dl.RTLD_GLOBAL)
+import OcpiApi as OA
+sys.setdlopenflags(old)
+app=OA.Application("projects/assets/applications/bias.xml")
+EOF
 echo ======================= Running unit tests in project/core
 make -C $OCPI_CDK_DIR/../projects/core runtest
+##########################################################################################
+# After this we are depending on the other projects being built for the targeted platform
 echo ======================= Running Application tests in project/assets
 make -C $OCPI_CDK_DIR/../projects/assets/applications run
 echo ======================= Running Application tests in project/inactive
@@ -41,7 +56,11 @@ echo ======================= Running Python/ocpidev Tests in tests/pytests
 echo ======================= Running av_test application
 (cd $OCPI_CDK_DIR/../tests/av-test && ./run_avtests.sh)
 echo ======================= Running ocpidev tests
-(cd $OCPI_CDK_DIR/../tests/ocpidev_test && rm -r -f test_project && ./test-ocpidev.sh)
+# These tests might do HDL building
+hplats=($HdlPlatform $HdlPlatforms)
+(unset HdlPlatforms; unset HdlPlatforms; \
+ cd $OCPI_CDK_DIR/../tests/ocpidev_test && rm -r -f test_project && \
+     HDL_PLATFORM=$hplats ./test-ocpidev.sh)
 echo All tests passed.
 [ "$OCPI_TOOL_OS" != macos ] && {
   echo ======================= Loading the OpenCPI Linux Kernel driver. &&

@@ -58,6 +58,8 @@
 
 # The sorry state of POSIX/BSD/LINUX/MACOS command compatibility
 extended=$(if [ `uname -s` = Darwin ]; then echo -E .; else echo . -regextype posix-extended; fi)
+[ -z "$OCPI_CDK_DIR" -o ! -d "$OCPI_CDK_DIR" ] && echo "Error: OCPI_CDK_DIR environment setting not valid: '${OCPI_CDK_DIR}'" && exit 1
+source $OCPI_CDK_DIR/scripts/util.sh
 
 # match_pattern: Find the files that match the pattern:
 #  - use default bash glob, and also
@@ -478,11 +480,29 @@ for a in $additions; do
   done
   set -f
 done
+set +f
+# This is speclinks for all libraries without recursing into python, then make, then python,
+# and requiring imports to exist to find platforms we aren't using etc. etc. etc. 
+# This script is really a "leaf" script that should not be recursing back into all the
+# other make machinery.
 
+shopt -s nullglob
+for l in components components/*; do
+  case $(ocpiDirType $l) in
+      lib|library)
+	  for x in $l/specs/*.xml; do
+	      b=$(basename $x)
+	      [ -e $l/lib/$b ] || {
+		  mkdir -p $l/lib
+		  ln -s ../specs/$b $l/lib
+	      }
+	  done;;
+  esac
+done
 # export the specs for each of the libraries
-python -c "import sys; sys.path.append(\"$OCPI_CDK_DIR/scripts/\");\
-           import ocpiutil; ocpiutil.export_libraries()" >&2
-exit $?
+#python -c "import sys; sys.path.append(\"$OCPI_CDK_DIR/scripts/\");\
+#           import ocpiutil; ocpiutil.export_libraries()" >&2
+exit 0
 notes:
 assets:
  bitstream executables are exported

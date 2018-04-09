@@ -267,8 +267,9 @@ while read path opts; do
 	base=$(basename $swig .i)
 	wrap="$(dirname $swig)/${base}_wrap.cxx"
 	swigs="$swigs $base"
+	# It appears that libtool ignores -export-dynamic
 	ldflags="-module -export-dynamic -shrext @OcpiDynamicLibrarySuffix@ \
-                 @libtool_dynamic_library_flags@ @OcpiDynamicLibraryFlags@"
+                 @libtool_dynamic_library_flags@ @ocpi_swig_flags@"
 	ldflags+=" -lpython@PYTHON_VERSION@ $ocpi_prereq_ldflags"
 	ldadd="libocpi_${lname} $ldadd"
 	echo "if !ocpi_is_cross"

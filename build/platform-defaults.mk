@@ -8,8 +8,9 @@ __PLATFORM_DEFAULTS_MK__:=1
 # The list of all variables defaulted and settable by platforms
 OcpiAllPlatformVars:=\
   OcpiLibraryPathEnv OcpiRpathOrigin \
-  OcpiStaticLibrarySuffix OcpiStaticLibraryFlags OcpiStaticProgramFlags \
-  OcpiDynamicLibrarySuffix OcpiDynamicLibraryFlags OcpiDynamicProgramFlags OcpiDriverFlags\
+  OcpiStaticLibrarySuffix OcpiStaticLibraryFlags OcpiStaticProgramFlags OcpiStaticSwigFlags \
+  OcpiDynamicLibrarySuffix OcpiDynamicLibraryFlags OcpiDynamicProgramFlags OcpiDynamicSwigFlags \
+  OcpiDriverFlags\
   OcpiAsNeeded OcpiExtraLibs OcpiOclLibs OcpiCrossCompile \
   OcpiCFlags OcpiCC OcpiCxxFlags OcpiCXX OcpiLd OcpiSWIG OcpiKernelDir \
   OcpiDebugOnFlags OcpiDebugOffFlags \
@@ -32,6 +33,9 @@ OcpiStaticLibraryFlags:=
 OcpiDynamicLibrarySuffix:=.so
 OcpiDynamicLibraryFlags:=-shared -Xlinker --no-undefined -Xlinker -soname=$(@F)
 OcpiDynamicProgramFlags:=
+OcpiStaticSwigFlags:=-Xlinker -export-dynamic
+#OcpiStaticSwigFlags:=-Xlinker --version-script=test.syms
+OcpiDynamicSwigFlags:=
 OcpiDriverFlags=$(OcpiDynamicLibraryFlags)
 OcpiAsNeeded:=-Xlinker --no-as-needed
 OcpiExtraLibs:=rt dl pthread

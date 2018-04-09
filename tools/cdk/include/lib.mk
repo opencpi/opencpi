@@ -219,7 +219,7 @@ rcc: speclinks $(RccImplementations)
 test: speclinks $(TestImplementations)
 
 checkocl:
-	$(AT)if ! test -x $(OCPI_CDK_DIR)/bin/$(OCPI_TOOL_HOST)/ocpiocltest || ! $(OCPI_CDK_DIR)/bin/$(OCPI_TOOL_HOST)/ocpiocltest test; then echo Error: OpenCL is not available; exit 1; fi
+	$(AT)if ! test -x $(ToolsDir)/ocpiocltest || ! $(ToolsDir)/ocpiocltest test; then echo Error: OpenCL is not available; exit 1; fi
 
 ifeq ($(OCPI_HAVE_OPENCL),1)
 ocl: checkocl speclinks $(OclImplementations)

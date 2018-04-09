@@ -37,12 +37,13 @@ namespace OCPI {
     const char *hdl = "hdl";
 
     OCPI::HDL::Device *Driver::
-    open(const char *which, bool discovery, bool forLoad, const OA::PValue *params,
+    open(const char *name, bool discovery, bool forLoad, const OA::PValue *params,
 	 std::string &err) {
       parent().parent().configureOnce();
       lock();
       // FIXME: obviously this should be registered and dispatched nicely..
       bool pci = false, ether = false, sim = false, bus = false, lsim = false;
+      const char *which = name;
       if (!strncasecmp("PCI:", which, 4)) {
 	pci = true;
 	which += 4;
@@ -66,6 +67,10 @@ namespace OCPI {
 	  ether = true;
 	else
 	  pci = true;
+      }
+      if (!which[0]) {
+	OU::format(err, "Missing device name after prefix \"%s\"", name);
+	return NULL;
       }
       Device *dev =
 	pci ? PCI::Driver::open(which, params, err) : 

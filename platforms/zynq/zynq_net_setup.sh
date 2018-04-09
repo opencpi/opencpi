@@ -62,7 +62,7 @@ else
     fi
     export OCPI_TOOL_PLATFORM
     export OCPI_TOOL_HOST
-    export OCPI_TOOL_DIR=\$OCPI_TOOL_HOST\${OCPI_TOOL_MODE:+/$OCPI_TOOL_MODE}
+    export OCPI_TOOL_DIR=\$OCPI_TOOL_PLATFORM
     export OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/../projects/core/exports/lib/components/rcc/\$OCPI_TOOL_DIR
     export PATH=$OCPI_CDK_DIR/bin/\$OCPI_TOOL_DIR:\$PATH
     # This is only for explicitly-linked driver libraries.  Fixed someday.

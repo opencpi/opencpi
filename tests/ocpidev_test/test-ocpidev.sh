@@ -25,14 +25,24 @@ case "$OCPI_LOG_LEVEL" in
   (0|*) QUIET=1; echo "Valid Log Levels are 0-19. Using default=0";;
 esac
 
+OCPIBIN=$OCPI_CDK_DIR/$OCPI_TOOL_DIR/bin
+OCPIDEV=$OCPIBIN/ocpidev
+OCPIRUN=$OCPIBIN/ocpirun
+# The caller needs to set the HDL platform if we are using it at all since they know
+# which tools are installed.
 if [ -z "$HDL_PLATFORM" ] ; then
   HDL_PLATFORM=isim_pf
   HDL_TARGET=isim
-  RCC_PLATFORM=$OCPI_TOOL_PLATFORM
+  if ! $OCPIRUN -l10 -v -C --only-platforms | grep '[^a-zA-Z]isim$'; then
+    HDL_NO_BUILD=1
+    RCC=--rcc
+  fi
 fi
+# default the RCC platform to the one we are running on
+[ -z "$RCC_PLATFORM" ] && RCC_PLATFORM=$OCPI_TOOL_PLATFORM
 # strip trailing _pf from platform name
 HDL_PLATFORM=${HDL_PLATFORM/%_pf/}
-
+echo HDL_PLATFORM:$HDL_PLATFORM RCC_PLATFORM:$RCC_PLATFORM HDL_NO_BUILD=$HDL_NO_BUILD RCC=$RCC
 # This is the number of identical assets to create in EVERY library 
 # including devices, platform/*/devices
 if [ -z "$OCPI_NUM_ASSETS" ] ; then
@@ -58,7 +68,6 @@ function bad {
 # devices in hdl/cards or hdl/platforms/*/devices may use 
 # spec files or workers from hdl/devices. Therefore,
 # we include directories in the search path for specs.
-OCPIDEV=$OCPI_CDK_DIR/$OCPI_TOOL_DIR/bin/ocpidev
 function do_ocpidev {
   if [ "$QUIET" == 1 ] ; then
     XmlIncludeDirs=$xmldirs $OCPIDEV $V $@ #&> /dev/null
@@ -104,7 +113,7 @@ for lib in ${complibs[@]} ; do
   done
 done
 
-echo "========Creating platforms"
+echo "========Creating HDL platforms"
 platnames=(alst4_0 matchstiq_z1_0 ml605_0 picoflexor_0 zed_0)
 for plat in ${platnames[@]} ; do
   do_ocpidev create hdl platform $plat -g $HDL_PLATFORM -q 200e6
@@ -244,8 +253,6 @@ if [ -z "$NO_BUILD" ] ; then
   do_ocpidev clean worker comp1.rcc -l dsp_comps --build-rcc-platform $RCC_PLATFORM
   do_ocpidev clean worker comp1.rcc -l dsp_comps --rcc-platform $RCC_PLATFORM
   echo "============OCPIDEVTEST:Building test rcc"
-  RCC=--rcc
-  [ $OCPI_TOOL_OS = linux ] && RCC=
   do_ocpidev build library dsp_comps $RCC --build-rcc-platform $RCC_PLATFORM --build-hdl-platform $HDL_PLATFORM
   do_ocpidev build library dsp_comps $RCC --rcc-platform $RCC_PLATFORM --hdl-platform $HDL_PLATFORM
   do_ocpidev build test comp1.test -l dsp_comps --build-rcc-platform $RCC_PLATFORM
@@ -267,7 +274,7 @@ if [ -z "$NO_BUILD" ] ; then
   #do_ocpidev build hdl platform isim_0 
   #echo "============OCPIDEVTEST:Building platforms "
   #do_ocpidev build hdl platforms
-  if [ $OCPI_TOOL_OS = linux ]; then
+if [ -z "$HDL_NO_BUILD" ]; then
   echo "============OCPIDEVTEST:Building primitive "
   do_ocpidev build hdl primitive library comms_comps --build-hdl-platform $HDL_PLATFORM
   do_ocpidev build hdl primitive library comms_comps --hdl-platform $HDL_PLATFORM
@@ -279,8 +286,8 @@ if [ -z "$NO_BUILD" ] ; then
   do_ocpidev clean hdl primitives --build-hdl-platform $HDL_PLATFORM
   do_ocpidev clean hdl primitives --hdl-platform $HDL_PLATFORM
   echo "============OCPIDEVTEST:Building project no assys1 "
-  do_ocpidev build project . --build-hdl-platform $HDL_PLATFORM --build-no-assemblies
-  do_ocpidev build project . --hdl-platform $HDL_PLATFORM --no-assemblies
+  do_ocpidev build project . $RCC --build-hdl-platform $HDL_PLATFORM --build-no-assemblies
+  do_ocpidev build project . $RCC --hdl-platform $HDL_PLATFORM --no-assemblies
   echo "============OCPIDEVTEST:Building test hdl"
   do_ocpidev build test comp1.test -l dsp_comps --build-hdl-platform $HDL_PLATFORM
   do_ocpidev build test comp1.test -l dsp_comps --hdl-platform $HDL_PLATFORM
@@ -302,28 +309,29 @@ if [ -z "$NO_BUILD" ] ; then
   do_ocpidev build hdl primitives --hdl-platform $HDL_TARGET
   do_ocpidev clean hdl primitives --build-hdl-platform $HDL_TARGET
   do_ocpidev clean hdl primitives --hdl-platform $HDL_TARGET
+fi
   echo "============OCPIDEVTEST:Building project no assys2 "
-  do_ocpidev build project . --build-hdl-platform $HDL_PLATFORM --build-no-assemblies
-  do_ocpidev build project . --hdl-platform $HDL_PLATFORM --no-assemblies
+  do_ocpidev build project . $RCC --build-hdl-platform $HDL_PLATFORM --build-no-assemblies
+  do_ocpidev build project . $RCC --hdl-platform $HDL_PLATFORM --no-assemblies
+if [ -z "$HDL_NO_BUILD" ]; then
   echo "============OCPIDEVTEST:Building assy "
   do_ocpidev build hdl assemblies --build-hdl-platform $HDL_PLATFORM
   do_ocpidev build hdl assemblies --hdl-platform $HDL_PLATFORM
+fi
   echo "============OCPIDEVTEST:Clean "
   do_ocpidev clean  
   echo "============OCPIDEVTEST:Building project HP"
-  do_ocpidev build project . --build-hdl-platform $HDL_PLATFORM
-  do_ocpidev build project . --hdl-platform $HDL_PLATFORM
+  do_ocpidev -v build project . $RCC --build-hdl-platform $HDL_PLATFORM
+  do_ocpidev -v build project . $RCC --hdl-platform $HDL_PLATFORM
   do_ocpidev clean   
   echo "============OCPIDEVTEST:Building project HSP/HP"
-  do_ocpidev build project . --build-hdl-rcc-platform $HDL_PLATFORM --build-hdl-platform $HDL_PLATFORM
-  do_ocpidev build project . --hdl-rcc-platform $HDL_PLATFORM --hdl-platform $HDL_PLATFORM 
+  do_ocpidev build project . $RCC --build-hdl-rcc-platform $HDL_PLATFORM --build-hdl-platform $HDL_PLATFORM
+  do_ocpidev build project . $RCC --hdl-rcc-platform $HDL_PLATFORM --hdl-platform $HDL_PLATFORM 
   fi  
   if [ "$ONLY_CREATE_BUILD" == 1 ] ; then
     echo "Exiting before project deletion."
     exit 0
   fi
-fi
-
 
 function confirm_empty {
   echo "Should be empty of any assets (ie except Makefile, dirs):"

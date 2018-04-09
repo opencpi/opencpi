@@ -75,6 +75,7 @@ if test $enable_dynamic = yes ; then
    ocpi_library_suffix="$OcpiDynamicLibrarySuffix"
    ocpi_library_flags="$OcpiDynamicLibraryFlags"
    ocpi_program_flags="$OcpiDynamicProgramFlags"
+   ocpi_swig_flags="$OcpiDynamicSwigFlags"
    ocpi_dynamic=1
 else	
    libtool_library_flags="$libtool_static_library_flags"
@@ -82,6 +83,7 @@ else
    ocpi_library_suffix="$OcpiStaticLibrarySuffix"
    ocpi_library_flags="$OcpiStaticLibraryFlags"
    ocpi_program_flags="$OcpiStaticProgramFlags"
+   ocpi_swig_flags="$OcpiStaticSwigFlags"
    ocpi_dynamic=0
 fi
 libtool_library_flags+=" -no-undefined"
@@ -138,6 +140,7 @@ AC_SUBST([ocpi_dynamic])
 AC_SUBST([ocpi_library_suffix])
 AC_SUBST([ocpi_library_flags])
 AC_SUBST([ocpi_program_flags])
+AC_SUBST([ocpi_swig_flags])
 AC_SUBST([OcpiSWIG])
 AC_SUBST([PYTHON_VERSION])
 # These are needed in ocpi-config.h and ocpi-platform-config.h

@@ -423,7 +423,7 @@ static void search(const char **) {
       vals[n++] = OA::PVString("interface", interface);
     vals[n++] = OA::PVEnd;
 #endif
-
+    setupDriver();
     driver->search(vals, NULL, true);
 }
 static void probe(const char **) {

@@ -155,7 +155,7 @@ endif
 # Figure out if we should have OPENCL support
 ifeq ($(origin OCPI_HAVE_OPENCL),undefined)
   ifeq ($(OCPI_TARGET_PLATFORM),$(OCPI_TOOL_PLATFORM))
-    OCPI_HAVE_OPENCL:=$(if $(realpath $(OCPI_BIN_DIR)/ocpiocltest),$(shell $(OCPI_BIN_DIR)/ocpiocltest test && echo 1),)
+    OCPI_HAVE_OPENCL:=$(if $(realpath $(ToolsDir)/ocpiocltest),$(shell $(ToolsDir)/ocpiocltest test && echo 1),)
   endif
 endif
 ################################################################################

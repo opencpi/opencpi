@@ -45,9 +45,9 @@ endif
 # We use the "internal" versions of variables to allow subsidiary makefiles to
 # simply set those variables again
 ifeq ($(origin Assemblies),undefined)
-  $(warning No 'Assemblies' set - building ALL. Set 'Assemblies=' to disable.)
+#  $(warning No 'Assemblies' set - building ALL. Set 'Assemblies=' to disable.)
   ifndef ExcludeAssemblies
-    $(warning No 'ExcludeAssemblies' set - building ALL. Set 'ExcludeAssemblies' to a list of assemblies NOT to build by default.)
+#    $(warning No 'ExcludeAssemblies' set - building ALL. Set 'ExcludeAssemblies' to a list of assemblies NOT to build by default.)
   endif
   Assemblies:=$(shell for i in *; do if test -d $$i; then echo $$i; fi; done)
 endif

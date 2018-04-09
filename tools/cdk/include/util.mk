@@ -239,7 +239,7 @@ $(GeneratedDir): | $(OutDir)
 	$(AT)mkdir $@
 
 # Make all target dirs
-TargetDir=$(OutDir)target-$(or $($(CapModel)TargetDir),$($(CapModel)Target))
+TargetDir=$(OutDir)target-$(or $(and $(CapModel),$($(CapModel)TargetDir)),$($(CapModel)Target))
 #$(AT)echo Creating target directory: $@
 $(OutDir)target-%: | $(OutDir)
 	$(AT)mkdir $@
@@ -602,7 +602,7 @@ OcpiImportsDirForContainingProject=$(strip $(foreach p,$(call OcpiAbsPathToConta
 # Return the list of projects that are imported by the project containing.
 # Do no include the current project if it is found in imports.
 # $(call OcpiGetProjectImports)
-OcpiGetProjectImports=$(strip \
+OcpiGetProjectImports=$(strip\
   $(foreach p,$(foreach i,$(if $(filter clean%,$(MAKECMDGOALS)),\
                             $(OcpiProjectRegistryDir),\
                             $(call OcpiImportsDirForContainingProject,.)),\
@@ -1079,6 +1079,14 @@ OcpiBuildFile=$(or $(call OcpiExists,$(Worker).build),$(call OcpiExists,$(Worker
 
 # Something to insert into $(shell) as first argument
 OcpiExportVars=$(foreach v,$(filter OCPI_%,$(.VARIABLES)),export $v='$($v)';)
+
+# Easy help message in Makefiles:
+# Typical usage:
+# define help
+# this is the help message with variables like $(something)
+# endef
+# $(OcpiHelp)
+OcpiHelp=help:;@:$(and $(filter help,$(MAKECMDGOALS)),$(info $(help)))
 
 # What to do early in each top level Makefile to process build files.
 ParamShell=\

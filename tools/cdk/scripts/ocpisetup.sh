@@ -71,7 +71,7 @@ if test "$OCPI_DYNAMIC" = ""; then
 fi
 export OCPI_BUILD_SHARED_LIBRARIES=$OCPI_DYNAMIC
 
-export PATH=$OCPI_CDK_DIR/bin/$OCPI_TOOL_DIR:$PATH
+export PATH=$OCPI_CDK_DIR/$OCPI_TOOL_DIR/bin:$PATH
 
 # Initialize target variables, using OCPI_TARGET_PLATFORM if it is set
 source $OCPI_CDK_DIR/scripts/ocpitarget.sh ""

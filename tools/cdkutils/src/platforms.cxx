@@ -276,9 +276,17 @@ getOclPlatforms(const StringSet *&platforms) {
   std::string ocpiocl;
   if ((err = getCdkDir(ocpiocl)))
     return err;
+#if 0
   OU::formatAdd(ocpiocl, "/bin/%s-%s-%s/ocpiocl",
 		OCPI_CPP_STRINGIFY(OCPI_OS) + strlen("OCPI"),
 		OCPI_CPP_STRINGIFY(OCPI_OS_VERSION), OCPI_CPP_STRINGIFY(OCPI_ARCH));
+#else
+  OU::formatAdd(ocpiocl, "/%s%s%s%s/bin/ocpiocl",
+		OCPI_CPP_STRINGIFY(OCPI_PLATFORM),
+		!OCPI_DEBUG || OCPI_DYNAMIC ? "-" : "",
+		OCPI_DYNAMIC ? "d" : "",
+		OCPI_DEBUG ? "" : "o");
+#endif
   std::string cmd;
   OU::format(cmd, "%stest test && %s targets", ocpiocl.c_str(), ocpiocl.c_str());
   FILE *out;
