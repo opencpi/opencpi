@@ -128,6 +128,8 @@ begin
 
   -----------------------------------------------------------------------------
   -- Zero-Length Message FSM
+  -- the zlm_fsm is being depreciated, instead see dc_offset_filter.vhd
+  -- for recommended mechanism for dealing with primitive latency
   -----------------------------------------------------------------------------
 
   zlm_fsm : process (ctl_in.clk)

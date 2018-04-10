@@ -192,6 +192,10 @@ CORDIC algorithms are iterative algorithms used to calculate various trigonometr
 		Only one finite-state machine (FSM) is implemented by this worker. The FSM supports Zero-Length Messages.
 	\end{flushleft}
 	{\centering\captionsetup{type=figure}\includegraphics[scale=0.6]{zlm_fsm}\par\captionof{figure}{Zero-Length Message FSM}\label{fig:zlm_fsm}}
+        \begin{flushleft}
+                Note: In future releases this finite-state machine will be replaced with a register-delay based mechanism, currently exemplified in the dc offset filter
+        \end{flushleft}
+
 
 \section*{Source Dependencies}
 \subsection*{\comp.hdl}
