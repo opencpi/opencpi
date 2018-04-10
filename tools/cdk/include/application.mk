@@ -58,7 +58,7 @@ ifdef OcpiAppCC
 else ifneq ($(wildcard $(OcpiApp).xml),)
   ifndef OcpiAppNoRun
     ifndef OcpiRunXML
-      OcpiRunXML=$(OcpiRunBefore) $(OCPI_CDK_DIR)/$(OCPI_TOOL_DIR)/bin/ocpirun $(OcpiRunArgs) $1 \
+      OcpiRunXML=$(OcpiRunBefore) $(OCPI_CDK_DIR)/$(OCPI_TARGET_DIR)/bin/ocpirun $(OcpiRunArgs) $1 \
                  $(OcpiRunAfter)
     endif
     run: all

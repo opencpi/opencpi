@@ -25,9 +25,10 @@ ImplXmlFiles:=$(foreach w,$(Workers),$(or $(Worker_$w_xml),$(Worker).xml))
 $(call OcpiDbgVar,ImplXmlFiles)
 
 # Get the (a) platform for this target if it is present.
-WkrGetPlatform=$(strip \
+WkrGetPlatform=$(strip $(infox WGP:$1)\
   $(foreach v,$(filter $(CapModel)Target_%,$(.VARIABLES)),\
-    $(and $(filter $1,$(value $v)),$(v:$(CapModel)Target_%=%))))
+    $(or $(and $(filter $1,$(value $v)),$(v:$(CapModel)Target_%=%)),\
+       $(error No platform found for $(UCModel) target $1))))
 
 -include $(GeneratedDir)/*.deps
 
@@ -301,7 +302,7 @@ endef
 # These links are to binaries
 ifndef HdlSkip
   $(call OcpiDbgVar,WkrExportNames)
-  $(foreach t,$($(CapModel)Targets),$(infox $(call DoLinks,$t))$(eval $(call DoLinks,$t)))
+  $(foreach t,$($(CapModel)Targets),$(infox $(call DoLinks,$t))$(eval $(call DoLinks,$(call WkrGetPlatform,$t))))
 endif
 
 # The generated build file is done as the makefile is read, so we can use

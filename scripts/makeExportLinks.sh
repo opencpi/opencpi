@@ -272,3 +272,8 @@ for a in $additions; do
   done
   set -f
 done
+# Force precompilation of python files right here
+for f in `find exports -name "*.py"`; do
+ python -m compileall $f
+ python -O -m compileall $f
+done

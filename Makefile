@@ -33,9 +33,11 @@ endif
 
 include $(OCPI_CDK_DIR)/include/util.mk
 $(eval $(OcpiEnsureToolPlatform))
+override \
 RccPlatforms:=$(call Unique,\
                 $(or $(strip $(RccPlatforms) $(RccPlatform) $(Platforms) $(Platform)),\
 	             $(OCPI_TOOL_PLATFORM)))
+export RccPlatforms
 DoExports=for p in $(RccPlatforms); do ./scripts/makeExportLinks.sh $$p; done
 DoTests=for p in $(RccPlatforms); do ./scripts/test-opencpi.sh $$p; done
 # Get macros and rcc platform/target processing
@@ -105,9 +107,9 @@ cleaneverything distclean: clean cleandriver
 	$(AT)for p in projects/*; do make -C $p cleaneverything; done
 
 ##########################################################################################
-# Goals that are about exporting the CDK, both tarball and rpm
+# Goals, variables and macros that are about exporting the CDK, whether tarball, rpm, etc.
 
-# Perform platform filtering (for tarball and rpm)
+##### Perform platform filtering (for tarball and rpm)
 # Set variables to exclude platforms that are not specified, supporting tar, find, and cp
 # Use environment so that they are available in any scripts or tools
 # Assume exclusions relative to being in the CDK dir
@@ -124,6 +126,45 @@ $(foreach p,$(notdir $(patsubst %/,%,$(dir $(wildcard cdk/*/bin)))),\
     $(eval OCPI_EXCLUDE_FOR_FIND+=-a ! -path ./$p/\*) \
     $(eval OCPI_EXCLUDE_FOR_CP:=$$(OCPI_EXCLUDE_FOR_CP)|^$p$$$$)))
 endef
+##### Set variables that affect the naming of the release packages
+# The general package naming scheme is:
+# <base>[-sw-platform-<platform>]-<version>-<release>[_<tag>][_J<job>][_<branch>][<dist>]
+# where:
+# <base> is our core package name
+# <platform> is a cross target when we are releasing packages per platform
+# <version> is our normaly versioning scheme v1.2.3
+# <release> is a label that defaults to "snapshot" if not overridden with OcpiRelease
+# These are only applied if not a specific versioned release
+# <tag> is a sequence number/timestamp within a release cycle (when not a specific release)
+# <job> is a jenkins job reference
+# <commit> is a git branch reference
+base=opencpi
+# cross: value is the target platform or null if not cross
+# arg 1 is a single platform
+cross=$(strip $(foreach r,$(call RccRealPlatforms,$1),\
+        $(if $(filter $(call RccRealPlatform,$(OCPI_TOOL_PLATFORM)),$r),,$r)))
+name=$(base)$(and $(call cross,$1),-sw-platform-$(call cross,$1))
+release=$(or $(OcpiRelease),snapshot)
+# This changes every 6 minutes which is enough for updated releases (snapshots).
+# It is rebased after a release so it is relative within its release cycle
+# FIXME:automate this...
+timestamp:=_$(shell printf %05d $(shell expr `date -u +"%s"` / 360 - 4172750))
+##### Set variables based on what git can tell us
+# Get the git branch and clean it up from various prefixes and suffixes tacked on
+# If somebody checks in between Jenkins builds, it will sometimes get "develop^2~37" etc,
+# The BitBucket prefix of something like "bugfix--" is also stripped if present.
+git_branch :=$(notdir $(shell git name-rev --name-only HEAD | \
+                              perl -pe 's/[~^\d]*$$//' | perl -pe 's/^.*?--//'))
+git_version:=$(shell echo $(branch) | perl -ne '/^v[\.\d]+$$/ && print')
+git_hash   :=$(shell h=`(git tag --points-at HEAD | grep github | head -n1) 2>/dev/null`;\
+                     [ -z "$$h" ] && h=`git rev-list --max-count=1 HEAD`; echo $$h)
+git_tag    :=$(if $(git_version),\
+               $(if $(BUILD_NUMBER),_J$(BUILD_NUMBER))\
+               $(if $(filter-out undefined develop,$(git_branch)),_$(subst -,_,$(git_branch))))
+##### Set final variables that depend on git variables
+# FIXME: automate this explicitly elsewhere
+version:=$(or $(git_version),1.3.0)
+tag:=$(and $(git_version),$(timestamp))
 
 check_export: exports
 	@echo Preparing to export for platforms: $(RccPlatforms)$(filterPlatforms)
@@ -154,22 +195,31 @@ opencpi-cdk-latest.tgz tar: check_export
 	     ls -l opencpi-cdk-latest.tgz
 
 # Create a relocatable RPM from what is exported for the given platforms
-# The silly "rpmarch" determination is exporting RPM_ARCH that is available inside rpmbuild
+# Feed in the various naming components
+# redefine _rpmdir and _build_name_fmt to simply output the RPMs here
 .PHONY: rpm
+first_real_platform:=$(word 1,$(RccPlatforms))
 rpm: check_export
 	$(AT)! command -v rpmbuild >/dev/null 2>&1 && \
-	     echo "Cannot build an RPM: rpmbuild (rpm-build package) is not available." && exit 1 || :
+	     echo "Error: Cannot build an RPM: rpmbuild (rpm-build package) is not available." && exit 1 || :
 	$(AT)[ $(words $(call Unique,$(call RccRealPlatforms,$(RccPlatforms)))) != 1 ] && \
-	     echo Cannot build an RPM for more than one platform at a time. && exit 1 || :
-	$(AT)
-	$(AT)echo "Creating an RPM file from the current CDK for platform(s):" $(RccPlatforms)
-	$(AT)rpmbuild --quiet -bb --define "_rpmdir $(CURDIR)" \
-                      --define="RPM_RELEASE $(subst -,_,$(word 1,$(RccPlatforms)))" \
-                      build/cdk.spec
-	$(AT)rpmarch=$$(rpmbuild --showrc | grep '^install arch' | (read -a a;echo $${a[3]})) &&\
-	     rpm=`ls -t $$rpmarch/*.rpm | head -1` && \
-	     mv -f $$rpm . && rm -r -f $$rpmarch && \
-	     echo Created RPM file: $$(basename $$rpm) && ls -l $$(basename $$rpm)
+	     echo Error: Cannot build an RPM for more than one platform at a time. && exit 1 || :
+	$(AT)echo "Creating an RPM file from the current built CDK for platform(s):" $(RccPlatforms)
+	$(AT)$(eval first:=$(word 1,$(RccPlatforms))) \
+	     source $(OCPI_CDK_DIR)/scripts/ocpitarget.sh $(first) &&\
+	     echo $$OCPI_CROSS_BUILD_BIN_DIR/$$OCPI_CROSS_HOST &&\
+	     rpmbuild $(if $(RpmVerbose),-vv,--quiet) -bb\
+		      --define="RPM_BASENAME    $(base)"\
+		      --define="RPM_NAME        $(call name,$(first))"\
+		      --define="RPM_RELEASE     $(release)$(tag)$(commit)"\
+		      --define="RPM_VERSION     $(version)" \
+		      --define="RPM_HASH        $(git_hash)" \
+		      $(foreach c,$(call cross,$(first)),\
+		        --define="RPM_CROSS $c") \
+		      --define "_rpmdir $(CURDIR)"\
+		      --define "_build_name_fmt %%{NAME}-%%{VERSION}-%%{RELEASE}.%%{ARCH}.rpm"\
+		      build/cdk.spec
+	$(AT)rpm=`ls -1t *.rpm|head -1` && echo Created RPM file: $$rpm && ls -l $$rpm
 
 # Convenience here in the Makefile.
 # This forces the rebuild each time, although the downloads are cached.  It is not
@@ -256,3 +306,4 @@ Variables that only affect project building can also be used, like HdlPlatforms.
 endef
 $(OcpiHelp)
 
+ 

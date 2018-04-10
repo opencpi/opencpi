@@ -1136,6 +1136,7 @@ MakeRawParams= \
      echo "</parameter>";) \
    echo "</parameters>")
 
+# A single quote ' to balance the one above when some editors/colorizers get confused.
 # This must be done early to allow the make file fragment that is generated from the -build.xml
 # file to be processed as if it was a user-written Makefile, before most other processing
 define OcpiProcessBuildFiles

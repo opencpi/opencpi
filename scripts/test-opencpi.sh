@@ -22,7 +22,7 @@
 
 [ -z "$OCPI_CDK_DIR" -a -L cdk ] && source `pwd`/cdk/opencpi-setup.sh -
 source $OCPI_CDK_DIR/scripts/ocpitarget.sh $1
-bin=$OCPI_CDK_DIR/$OCPI_TOOL_DIR/bin
+bin=$OCPI_CDK_DIR/$OCPI_TARGET_DIR/bin
 set -e
 echo ======================= Running OS Unit Tests in $bin
 $bin/gtests/ocpitests

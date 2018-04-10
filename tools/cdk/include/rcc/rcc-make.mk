@@ -33,7 +33,7 @@ ifeq ($(OCPI_PROJECT_DIR),)
 endif
 endif
 
-RccOs=$(word 1,$(subst -, ,$(or $1,$(RccTarget))))
+RccOs=$(word 1,$(subst -, ,$(or $(RccTarget_$1),$1,$(RccTarget))))
 RccOsVersion=$(word 2,$(subst -, ,$1))
 RccArch=$(word 3,$(subst -, ,$1))
 
@@ -101,9 +101,11 @@ RccRealPlatforms=$(infox GETREAL:$1)$(foreach p,$1,$(word 1,$(subst -, ,$p)))
 RccRealPlatform=$(strip $(infox RRP:$(RccPlatform))\
                 $(foreach p,$(call RccRealPlatforms,$(RccPlatform)),$(infox RRPr:$p)$p))
 RccTargetDir=$(or $(RccPlatform),$(error RccTargetDir with no platform))
-RccWkrTargetDir=$(strip $(if $(filter $1,$(RccTarget_$(RccPlatform))),$(RccPlatform),\
-	                     $(or $(call WkrGetPlatform,$1),\
-		                  $(error RccWkrTargetDir called with $1, no platform))))
+RccWkrTargetDir=$(strip $(or $(filter $1,$(RccPlatform)),\
+			     $(and $(RccTarget_$1),$1),\
+                             $(if $(filter $1,$(RccTarget_$(RccPlatform))),$(RccPlatform),\
+	                          $(or $(call WkrGetPlatform,$1),\
+		                       $(error RccWkrTargetDir called with $1, no platform)))))
 # Transfer build options to target from platform
 # $(call RccPlatformTarget,<platform>,<target>)
 RccPlatformTarget=$(infox RPT:$1:$2)$2$(foreach b,$(word 2,$(subst -, ,$1)),$(and $b,-$b))
