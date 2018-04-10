@@ -42,17 +42,17 @@ Containers= \
 	cnt_1rx_1tx_bypassasm_zipper_hsmc_a_alst4 \
 	cnt_1rx_1tx_bypassasm_zipper_hsmc_b_alst4 \
 	cnt_1rx_1tx_bypassasm_zipper_lpc_ml605 \
-	cnt_1rx_1tx_bypassasm_zipper_lpc_zed
+	cnt_1rx_1tx_bypassasm_zipper_lpc_zed \
+	cnt_2rx_2tx_bypassasm_fmcomms_2_3_lpc_LVDS_zed
 # ML605/FMCOMMS3-FMC_HPC combo is currently known to have TX data fidelity issues
 #	cnt_0rx_1tx_bypassasm_fmcomms_2_3_hpc_LVDS_ml605 \
 #	cnt_1rx_1tx_bypassasm_fmcomms_2_3_hpc_LVDS_ml605 \
 #	cnt_2rx_2tx_bypassasm_fmcomms_2_3_hpc_LVDS_ml605 \
-# commented out becuase of bug AV-3783
+# commented out because of bug AV-3783
 #	cnt_2rx_2tx_bypassasm_fmcomms_2_3_lpc_LVDS_ml605 \
-#	cnt_2rx_2tx_bypassasm_fmcomms_2_3_lpc_LVDS_zed \
 
 #DefaultContainers=
 ExcludePlatforms=isim modelsim xsim
-Libraries+=misc_prims util_prims dsp_prims comms_prims
+#Libraries+=misc_prims util_prims dsp_prims comms_prims
 include $(OCPI_CDK_DIR)/include/hdl/hdl-assembly.mk
 

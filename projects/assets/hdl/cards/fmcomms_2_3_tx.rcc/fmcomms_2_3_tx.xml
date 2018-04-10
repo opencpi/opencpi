@@ -61,7 +61,7 @@
   <SpecProperty Name="rf_gain_dB" Volatile="true"
                                   ReadSync="true"
                                   WriteSync="true"
-                                  Default="-1"/>
+                                  Default="-1"/> <!-- note this is note NOT_SUPPORTED_p, -1 is a perfectly valid value -->
   <SpecProperty Name="bb_gain_dB" WriteSync="true"
                                   Default="NOT_SUPPORTED_p"/> <!-- TODO / FIXME - remove Writable from OCS for this property and remove WriteSync from the OWD for this property, the only reason we need WriteSync here is to ensure any write to this property of a value other than NOT_SUPPORTED_p causes a failure. -->
   <SpecProperty Name="frequency_MHz" Volatile="true"

@@ -86,18 +86,20 @@ include $(OCPI_CDK_DIR)/include/util.mk
 # behavior with no environment requirements at all.
 # Setting just OCPI_TARGET_PLATFORM will do cross builds
 $(eval $(OcpiEnsureToolPlatform))
-p:=$(call OcpiGetRccPlatformDir,$(OCPI_TARGET_PLATFORM)))
-f:=$p/$(OCPI_TOOL_PLATFORM)-tool.mk
+ifndef OCPI_TARGET_PLATFORM
+  export OCPI_TARGET_PLATFORM:=$(OCPI_TOOL_PLATFORM)
+endif
+ifndef OCPI_TARGET_PLATFORM_DIR
+  export OCPI_TARGET_PLATFORM_DIR:=$(call OcpiGetRccPlatformDir,$(OCPI_TARGET_PLATFORM))
+endif
+f:=$(OCPI_TARGET_PLATFORM_DIR)/$(OCPI_TOOL_PLATFORM)-tool.mk
 ifeq ($(wildcard $f),)
 #   $(warning There is no tool setup file ($f) for platform $(OCPI_TOOL_PLATFORM).  This may be ok.)
 else
  include $f
 endif
-ifndef OCPI_TARGET_PLATFORM
-  export OCPI_TARGET_PLATFORM:=$(OCPI_TOOL_PLATFORM)
-endif
 ifndef OCPI_TARGET_HOST
-  f=$(call OcpiGetRccPlatformDir,$(OCPI_TARGET_PLATFORM))/target
+  f=$(OCPI_TARGET_PLATFORM_DIR)/target
   ifeq ($(wildcard $f),)
     $(error OCPI_TARGET_PLATFORM is $(OCPI_TARGET_PLATFORM).  File $f is missing.)
   endif
@@ -107,16 +109,12 @@ ifndef OCPI_TARGET_HOST
   export OCPI_TARGET_OS:=$(word 1,$t)
   export OCPI_TARGET_OS_VERSION:=$(word 2,$t)
   export OCPI_TARGET_ARCH:=$(word 3,$t)
-  $(infox OCPI_TARGET_HOST:$(OCPI_TARGET_HOST))
-  $(infox OCPI_TARGET_OS:$(OCPI_TARGET_OS))
-  $(infox OCPI_TARGET_OS_VERSION:$(OCPI_TARGET_OS_VERSION))
-  $(infox OCPI_TARGET_ARCH:$(OCPI_TARGET_ARCH))
 endif
 
 ################################################################################
 # Run the target-specific make setup script
 # Note that this script has access to OCPI_TOOL_xxx if the settings vary by tool host
-f=$(call OcpiGetRccPlatformDir,$(OCPI_TARGET_PLATFORM))/$(OCPI_TARGET_PLATFORM)-target.mk
+f=$(OCPI_TARGET_PLATFORM_DIR)/$(OCPI_TARGET_PLATFORM)-target.mk
 ifeq ($(wildcard $f),)
   $(error There is no target setup file ($f) for platform $(OCPI_TARGET_PLATFORM).)
 else
@@ -147,24 +145,6 @@ else
  export OCPI_TARGET_DIR=$(OCPI_TARGET_HOST)$(and $(OCPI_TARGET_MODE),/$(OCPI_TARGET_MODE))
 endif
 
-################################################################################
-# Set up Prerequisites
-ifndef OCPI_PREREQUISITES_DIR
-  export OCPI_PREREQUISITES_DIR:=/opt/opencpi/prerequisites
-endif
-
-#FIXME  this registration should be somewhere else.
-ifndef OCPI_PREREQUISITES_LIBS
-  export OCPI_PREREQUISITES_LIBS:=lzma gmp
-endif
-
-# FIXME is this necessary?
-ifndef OCPI_PREREQUISITES_INSTALL_DIR
-  export OCPI_PREREQUISITES_INSTALL_DIR:=$(OCPI_PREREQUISITES_DIR)
-endif
-ifndef OCPI_PATCHELF_DIR
-  export OCPI_PATCHELF_DIR=$(OCPI_PREREQUISITES_DIR)/patchelf
-endif
 ################################################################################
 # Figure out if we should have OPENCL support
 ifeq ($(origin OCPI_HAVE_OPENCL),undefined)
@@ -232,10 +212,15 @@ $(info OCPI_TARGET_ARCH=$(OCPI_TARGET_ARCH);export OCPI_TARGET_ARCH;)
 $(info OCPI_TARGET_HOST=$(OCPI_TARGET_HOST);export OCPI_TARGET_HOST;)
 $(info OCPI_TARGET_DIR=$(OCPI_TARGET_DIR);export OCPI_TARGET_DIR;)
 $(info OCPI_TARGET_MODE=$(OCPI_TARGET_MODE);export OCPI_TARGET_MODE;)
+$(info OCPI_TARGET_PLATFORM=$(OCPI_TARGET_PLATFORM);export OCPI_TARGET_PLATFORM;)
+$(info OCPI_TARGET_PLATFORM_DIR=$(OCPI_TARGET_PLATFORM_DIR);export OCPI_TARGET_PLATFORM_DIR;)
 $(info OCPI_CROSS_BUILD_BIN_DIR=$(OCPI_CROSS_BUILD_BIN_DIR);export OCPI_CROSS_BUILD_BIN_DIR;)
 $(info OCPI_CROSS_HOST=$(OCPI_CROSS_HOST);export OCPI_CROSS_HOST;)
 $(info OCPI_TARGET_DYNAMIC_SUFFIX=$(OcpiDynamicSuffix);export OCPI_TARGET_DYNAMIC_SUFFIX;)
 $(info OCPI_TARGET_DYNAMIC_FLAGS="$(OcpiDynamicFlags)";export OCPI_TARGET_DYNAMIC_FLAGS;)
+$(info OCPI_PREREQUISITES_DIR=$(OCPI_PREREQUISITES_DIR);export OCPI_PREREQUISITES_DIR;)
+$(info OCPI_PREREQUISITES="$(OCPI_PREREQUISITES)";export OCPI_PREREQUISITES;)
+
 ifdef OCPI_TARGET_CFLAGS
 $(info OCPI_TARGET_CFLAGS="$(OCPI_TARGET_CFLAGS)";export OCPI_TARGET_CFLAGS;)
 endif
@@ -244,3 +229,4 @@ $(info OCPI_TARGET_CXXFLAGS="$(OCPI_TARGET_CXXFLAGS)";export OCPI_TARGET_CXXFLAG
 endif
 
 endif
+$(warning OCPI_TARGET_DIR:$(OCPI_TARGET_DIR))

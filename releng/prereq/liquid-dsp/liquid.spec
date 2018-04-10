@@ -39,7 +39,7 @@ AutoReqProv:    no
 %define debug_package %{nil}
 %endif
 Version:        %{OCPI_BUNDLED_VERSION}
-Release:        2%{?dist}
+Release:        3%{?dist}
 Packager:       ANGRYVIPER team <discuss@lists.opencpi.org>
 Summary:        RPM build of liquid dsp for OpenCPI
 
@@ -105,9 +105,10 @@ rm -rf $RPM_BUILD_ROOT
 PATH=%{OCPI_CROSS_DIR}:$PATH %make_install
 %endif
 
-# Put in arm_cs alias for arm
-%if "%{OCPI_CROSS_PREFIX}" == "arm-xilinx-linux-gnueabi"
-%{__ln_s} -f %{_ocpi_liquid_dir}/%{OCPI_TARGET_HOST} %{buildroot}/%{_ocpi_liquid_dir}/linux-zynq-arm_cs
+# Make arm_cs and 13_4 versions if arm
+%if "x%{?OCPI_TARGET_HOST}" == "xlinux-x13_3-arm"
+ln -sf %{_prefix} %{buildroot}/%{_prefix}/../linux-x13_4-arm
+ln -sf %{_prefix} %{buildroot}/%{_prefix}/../linux-zynq-arm_cs
 %endif
 
 # Have "include" dir be top-level and provided only by native version
@@ -150,11 +151,14 @@ fi
 %dir %{_ocpi_liquid_dir}
 %{_ocpi_liquid_dir}/include/liquid/liquid.h
 %endif
-%if "%{OCPI_CROSS_PREFIX}" == "arm-xilinx-linux-gnueabi"
+%if "x%{?OCPI_TARGET_HOST}" == "xlinux-x13_3-arm"
+%{_prefix}/../linux-x13_4-arm
 %{_prefix}/../linux-zynq-arm_cs
 %endif
 
 %changelog
+* Mon Feb 26 2018 - 1.3.1-3
+- AV: Add Xilinx 13_4 alias
 * Wed Feb  7 2018 - 1.3.1-2
 - AV: Rename RPMs
 * Mon Aug  7 2017 - 1.2.0-8

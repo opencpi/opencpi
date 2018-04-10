@@ -231,9 +231,12 @@ namespace OCPI {
       OU::Property &prop = findProperty(pname);
       OU::ValueType &vt = prop;
       OU::Value v(vt); // FIXME storage when not scalar
+      std::string value_orig(value);
       const char *err = v.parse(value);
       if (err)
-        throw OU::ApiError("Error parsing property value:\"", value, "\"", NULL);
+        throw OU::ApiError("Received the following error when parsing worker "
+                           "property \"", pname, "\" value of \"",
+                           value_orig.c_str(), "\": \"", err, "\"", NULL);
       setPropertyValue(prop, v);
     }
     void Worker::

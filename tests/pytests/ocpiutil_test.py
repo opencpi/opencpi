@@ -237,7 +237,7 @@ class TestPathFunctions(unittest.TestCase):
         #       and also where registry does not
         all_pjs = [pj for pj in ocpiutil.get_all_projects() if not re.search(r".*/ocpi\.core$", pj)]
         pj_paths = [os.path.realpath('.') + '/project-registry/'
-                    + pj for pj in PROJECT_PACKAGES.values()]
+                    + pj for pj in list(PROJECT_PACKAGES.values())]
         golden_all_pjs = pj_paths + [os.path.realpath('.') + '/project-registry/ocpi.cdk']
         logging.info("Verifying that get_all_projects correctly collects CDK, Project path, " +
                      "and registry contents: " + str(golden_all_pjs))
@@ -305,7 +305,7 @@ class TestPathFunctions(unittest.TestCase):
         each directory in PROJECT0 is recognized by the correct dirtype.
         """
         logging.info("===========================\nTesting 'get_dirtype'")
-        for path, dirtype in PROJECT0_DIRTYPES.items():
+        for path, dirtype in list(PROJECT0_DIRTYPES.items()):
             logging.info("\nDirtype for path '" + path + "' should be: " + dirtype + "\n")
             self.assertEqual(ocpiutil.get_dirtype(PROJECT0 + "/" + path), dirtype)
         logging.info("---------------------------")
@@ -318,7 +318,7 @@ class TestPathFunctions(unittest.TestCase):
         with the given type should be returned.
         """
         logging.info("===========================\nTesting 'get_subdirs_of_type'")
-        for path, dirtype in PROJECT0_DIRTYPES.items():
+        for path, dirtype in list(PROJECT0_DIRTYPES.items()):
             expected_path = PROJECT0 + "/" + path
             logging.info("\nSubdirs of type '" + dirtype +
                          "' should contain path: " + expected_path)
@@ -340,7 +340,7 @@ class TestPathFunctions(unittest.TestCase):
         logging.info("All paths corresponding to project-assets " +
                      "show up as True for in-project.")
         logging.info("---------------------------")
-        for path, _ in PROJECT0_DIRTYPES.items():
+        for path, _ in list(PROJECT0_DIRTYPES.items()):
             self.assertTrue(ocpiutil.is_path_in_project(PROJECT0 + "/" + path))
         self.assertTrue(ocpiutil.is_path_in_project(PROJECT0))
         logging.info("Invalid paths and directories outside projects " +
@@ -365,13 +365,13 @@ class TestPathFunctions(unittest.TestCase):
         Verify that each is correct from different CWDs.
         """
         logging.info("===========================\nTesting 'get_project_package'")
-        for proj, pkg in PROJECT_PACKAGES.items():
+        for proj, pkg in list(PROJECT_PACKAGES.items()):
             logging.info("Project \"" + proj + "\" should have full-package: " + pkg)
             self.assertEqual(ocpiutil.get_project_package(proj), pkg)
         logging.info("---------------------------")
         logging.info("Rerunning full-package name tests from " +
                      "within subdirs in each project.")
-        for proj, pkg in PROJECT_PACKAGES.items():
+        for proj, pkg in list(PROJECT_PACKAGES.items()):
             with ocpiutil.cd(proj):
                 logging.info("Project \"" + proj + "\" should have full-package: " + pkg)
                 self.assertEqual(ocpiutil.get_project_package(), pkg)
@@ -398,7 +398,7 @@ class TestPathFunctions(unittest.TestCase):
         logging.info("===========================\n" +
                      "Testing 'does_project_with_package_exist'")
         # TODO: test case where registry does not exist, should return false
-        for proj, pkg in PROJECT_PACKAGES.items():
+        for proj, pkg in list(PROJECT_PACKAGES.items()):
             logging.info("A project (\"" + proj + "\") with package \"" +
                          pkg + "\" should exist.")
             self.assertTrue(ocpiutil.does_project_with_package_exist(package=pkg))
@@ -495,7 +495,7 @@ class TestPathFunctions(unittest.TestCase):
         # TODO: test unreg case where user tries to unregister a project, but the registered
         #       project with that package is actually a different project
         gprd = ocpiutil.get_project_registry_dir()[1]
-        for proj, pkg in PROJECT_PACKAGES.items():
+        for proj, pkg in list(PROJECT_PACKAGES.items()):
             logging.info("Unregistering and re-registering project \"" + proj +
                          "\" with package \"" + pkg + "\"")
             self.assertTrue(ocpiutil.unregister_project(proj))
@@ -562,7 +562,7 @@ class TestPathFunctions(unittest.TestCase):
         the calculated path from the project top matches the known correct path.
         """
         logging.info("===========================\nTesting 'get_path_from_project_top'")
-        for path, _ in PROJECT0_DIRTYPES.items():
+        for path, _ in list(PROJECT0_DIRTYPES.items()):
             full_path = DIR_PATH + PROJECT0 + "/" + path
             logging.info("\nPath to '" + full_path +
                          "' from project top should be: " + path)

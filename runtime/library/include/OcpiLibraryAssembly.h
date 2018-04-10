@@ -104,7 +104,7 @@ namespace OCPI {
       
       const char *getPortAssignment(const char *pName, const char *assign, unsigned &instn,
 				    unsigned &portn, const OCPI::Util::Port *&port,
-				    const char *&value);
+				    const char *&value, bool removeExternal = false);
     private:
       void addInstance(const OCPI::Util::PValue *params);
       const char *addFileIoInstances(const OCPI::Util::PValue *params);

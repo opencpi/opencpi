@@ -19,14 +19,13 @@
 
 
 MIN_COVERAGE=80 #%
-
 rm -f .coverage
 # Run each test and collect coverage info
 set -e
-if [ -z "$(type -p coverage 2> /dev/null)" ]; then
-  pyrun_command="python"
+if [ -z "$(type -p coverage3 2> /dev/null)" ]; then
+  pyrun_command="python3"
 else
-  pyrun_command="coverage -x"
+  pyrun_command="coverage3 run"
 fi
 for i in *_test.py; do
   echo "Running: $pyrun_command $i"
@@ -47,3 +46,4 @@ else
   coverage -r --omit "*_test.py" ||\
     sh -c "echo FAIL: coverage less than \"$MIN_COVERAGE\"% ; exit 1"
 fi
+

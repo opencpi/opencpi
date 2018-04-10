@@ -78,8 +78,9 @@ end record worker_t;
 type property_t is record
   data_width : natural; -- data width of datum in bits, but 32 for strings
   offset : unsigned(31 downto 0);    -- offset in property space in bytes
-  bytes_1,              -- total bytes in this property minus 1
+  bytes_1,              -- total bytes in this property minus 1, excluding seq header
   string_length,        -- bytes (excluding null) for string values
+  seq_hdr,              -- bytes in sequence header
   nitems                -- nitems array
     : natural;          -- with of a single item
   writable, readable, volatile, debug : boolean;
@@ -265,7 +266,7 @@ type wci_s2m_array_t is array(natural range <>) of wci_s2m_t;
         is_big_endian : in bool_t;
         write_enable  : out bool_t;                            -- active-high write pulse
         read_enable   : out bool_t;                            -- active-high read pulse
-        offset_out    : out unsigned(width_for_max(property.bytes_1)-1 downto 0); -- 
+        offset_out    : out unsigned(width_for_max(property.bytes_1+8)-1 downto 0); -- 
 --        index_out     : out unsigned(decode_width-1 downto 0); --
         data_out      : out std_logic_vector(31 downto 0)); --
   end component property_decoder;

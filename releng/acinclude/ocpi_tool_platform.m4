@@ -26,7 +26,7 @@ AC_DEFUN([OCPI_OCPI_TOOL_PLATFORM],
                 AS_IF([test "x${OCPI_TOOL_PLATFORM}" != "x"],
                       [ocpi_cv_ocpi_tool_platform=${OCPI_TOOL_PLATFORM}],
                       [
-                        ocpi_cv_ocpi_tool_platform=$(./platforms/getPlatform.sh | cut -f5 -d" ")
+                        ocpi_cv_ocpi_tool_platform=$(./bootstrap/scripts/getPlatform.sh | cut -f5 -d" ")
                         AC_MSG_WARN(OCPI_TOOL_PLATFORM was not specified. The value has been evaluated from the environment:)
                       ])
 	        )

@@ -72,7 +72,13 @@ using namespace Ad9361_config_proxyWorkerTypes;
 #define D0_BITMASK 0x01
 
 class Ad9361_config_proxyWorker : public Ad9361_config_proxyWorkerBase {
-
+  RunCondition m_aRunCondition;
+public:
+  Ad9361_config_proxyWorker() : m_aRunCondition(RCC_NO_PORTS) {
+    //Run function should never be called
+    setRunCondition(&m_aRunCondition);
+  }
+private:
   // note that RX_FAST_LOCK_CONFIG_WORD_NUM is in fact applicable to both
   // RX and TX faslock configs
   typedef struct fastlock_profile_s {
@@ -1103,7 +1109,7 @@ class Ad9361_config_proxyWorker : public Ad9361_config_proxyWorkerBase {
     fastlock_profile_t profile_to_load;
     std::vector<fastlock_profile_t>::iterator it =
         find_worker_fastlock_profile(
-            m_properties.rx_fastlock_save.worker_profile_id,
+            m_properties.rx_fastlock_load.worker_profile_id,
             m_rx_fastlock_profiles);
     if(it == m_rx_fastlock_profiles.end())
     {
@@ -3135,7 +3141,7 @@ class Ad9361_config_proxyWorker : public Ad9361_config_proxyWorkerBase {
     return RCC_OK;
   }
   RCCResult run(bool /*timedout*/) {
-    return RCC_ADVANCE;
+    return RCC_DONE;
   }
 };
 

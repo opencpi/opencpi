@@ -325,7 +325,7 @@ emitPropertyAttributeConstants(FILE *f, Language lang) {
 	      hdlComment(lang));
       first = false;
     }
-    if (pr.m_baseType == OA::OCPI_String && pr.m_stringLengthExpr.length())
+    if (pr.m_baseType == OA::OCPI_String)
       emitConstant(f, pr.m_name, "string_length", pr.m_stringLength, lang);
     if (pr.m_isSequence && pr.m_sequenceLengthExpr.length())
       emitConstant(f, pr.m_name, "sequence_length", pr.m_sequenceLength, lang);
@@ -455,7 +455,7 @@ emitSkelSignals(FILE *f) {
       return;
     for (PropertiesIter pi = m_worker->m_ctl.properties.begin();
 	 pi != m_worker->m_ctl.properties.end(); pi++)
-      if ((*pi)->m_isVolatile) {
+      if ((*pi)->m_isVolatile || ((*pi)->m_isReadable && !(*pi)->m_isWritable)) {
 	const OU::Property &pr = **pi;
 	if (pr.m_isSequence)
 	  fprintf(f,

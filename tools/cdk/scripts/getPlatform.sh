@@ -19,15 +19,14 @@
 
 # This script determines the runtime platform and target variables
 # The four variables are: OS OSVersion Processor Platform
-# If a platform is added, this script should be updated to recognize it
 # If it returns nothing (""), that is an error
-# It depends on being located in the directory where platforms live
 
 isCurPlatform()
 {
+  [ -f $1-check.sh ] || return
   vars=($(sh $1-check.sh $HostSystem $HostProcessor))
   if test ${#vars[@]} = 3; then
-    echo ${vars[@]}  ${vars[0]}-${vars[1]}-${vars[2]} $p
+    echo ${vars[@]}  ${vars[0]}-${vars[1]}-${vars[2]} $(basename $1) $(dirname $1)
     exit 0
   fi
 }
@@ -43,22 +42,25 @@ if [ -n "$OCPI_CDK_DIR" -a -e "$OCPI_CDK_DIR/scripts/util.sh" ]; then
   projects="`getProjectPathAndRegistered`"
 elif [ -n "$OCPI_PROJECT_PATH" ]; then
   # If the CDK is not set or util.sh does not exist, fall back on OCPI_PROJECT_PATH
-  projects=$OCPI_PROJECT_PATH
+  projects="${OCPI_PROJECT_PATH//:/ }"
 elif [ -d projects ]; then
-  # Probably running in a clean source tree
-  projects=$(echo projects/*)
+  # Probably running in a clean source tree.  Find projects and absolutize pathnames
+  projects="$(for p in projects/*; do echo `pwd`/$p; done)"
 fi
-
+# Make sure that we look in the core project IN ANY CASE
 if [ -n "$OCPI_CDK_DIR" ]; then
-  projects="$projects:$OCPI_CDK_DIR/../projects/core"
+  [ -d $OCPI_CDK_DIR/../projects/core ] && projects="$projects $OCPI_CDK_DIR/../projects/core"
 else
-  projects="$projects:/opt/opencpi/projects/core"
+  [ -d /opt/opencpi/projects/core ] && projects="$projects /opt/opencpi/projects/core"
 fi
-
-# loop through all projects to determine right platform by calling isCurPlatform for each platform
+if [ -z "$projects" ]; then
+  echo "Error:  Cannot find any projects for RCC platforms." >&2
+  exit 1
+fi
+# loop through all projects to find the platform
 shopt -s nullglob
-for j in $(echo $projects | tr : ' '); do
-  # First, assume this is an exported project check lib/rcc...
+for j in $projects; do
+  # First, assume this is an exported project and check lib/rcc...
   # Next, assume this is a source project that is exported and check exports/lib/rcc,
   # Finally, just search the source rcc/platforms...
   if test -d $j/lib/rcc/platforms; then
@@ -68,17 +70,24 @@ for j in $(echo $projects | tr : ' '); do
   else
     platforms_dir=$j/rcc/platforms
   fi
-  for i in $platforms_dir/*; do
-    # For each existing platform directory, if the *-check.sh script exists,
-    # call isCurPlatform to run that *-check.sh script and determine the platform/target
-    if test -d $i; then
-      p=$(basename $i)
-      if test -f $i/$p-check.sh; then
-        isCurPlatform $i/$p
-      fi
+  if [ -n "$1" ]; then # looking for a specific platform (not the current one)
+    d=$platforms_dir/rcc/platforms/$1
+    if [ -d $d -a -f $d/target ]; then
+      target=$(< $d/target)
+      vars=($(echo $target | tr - ' '))
+      [ ${#vars[@]} = 3 ] || {
+        echo "Error:  Platform file $d/target is invalid and cannot be used." >&2
+	exit 1
+      }
+      echo ${vars[@]} $target $1 $d
+      exit 0
     fi
-  done
-done
+  else # not looking for a particular platform, but looking for the one we're running on
+    for i in $platforms_dir/*; do
+      test -d $i -a -f $i/target && isCurPlatform $i/$(basename $i)
+    done # done with platforms in this project's rcc/platforms directory
+  fi
+done # done with the project
 
-echo Cannot determine platform we are running on.  1>&2
+echo Cannot determine platform we are running on.  >&2
 exit 1

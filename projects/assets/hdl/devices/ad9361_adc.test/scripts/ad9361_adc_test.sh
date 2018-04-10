@@ -72,7 +72,7 @@ if [ ! -f $APP_XML ]; then
 fi
 
 echo "Running PRBS Built-In-Self-Test across range of sample rates for 1R1T LVDS mode"
-OCPI_LIBRARY_PATH=$OCPI_LIBRARY_PATH:./assemblies/:$OCPI_PROJECT_PATH ./scripts/AD9361_BIST_PRBS.sh $APP_XML 2>&1 | tee odata/AD9361_BIST_PRBS.log
+OCPI_LIBRARY_PATH=$OCPI_LIBRARY_PATH:./assemblies/ ./scripts/AD9361_BIST_PRBS.sh $APP_XML 2>&1 | tee odata/AD9361_BIST_PRBS.log
 if [ "$?" !=  "0" ]; then
   echo "TEST FAILED"
   exit 1

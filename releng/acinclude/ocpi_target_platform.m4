@@ -26,7 +26,7 @@ AC_DEFUN([OCPI_OCPI_TARGET_PLATFORM],
       if test "x${OCPI_TARGET_PLATFORM}" != "x"; then
         ocpi_cv_ocpi_target_platform=${OCPI_TARGET_PLATFORM}
       else
-        ocpi_cv_ocpi_target_platform=$(./platforms/getPlatform.sh | cut -f5 -d" ")
+        ocpi_cv_ocpi_target_platform=$(./bootstrap/scripts/getPlatform.sh | cut -f5 -d" ")
         AC_MSG_WARN(OCPI_TARGET_PLATFORM was not specified and set to OCPI_TOOL_PLATFORM:)
       fi
     )

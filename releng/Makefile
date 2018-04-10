@@ -38,14 +38,20 @@ endif
 # (Strictly "v" followed only by numbers or '.' with NO suffix)
 # This does not work on Jenkins because detached HEAD: GIT_BRANCH:=$(shell git symbolic-ref --short -q HEAD)
 # GIT_BRANCH:=$(shell git ls-remote --heads origin | grep $(shell git rev-parse HEAD) | cut -d / -f 3 | sort | tail -1)
-# Note: If somebody checks in between Jenkins builds, it will sometimes get "develop^2" etc,
+# Note: If somebody checks in between Jenkins builds, it will sometimes get "develop^2~37" etc,
 # so anything like that is stripped.
-GIT_BRANCH:=$(notdir $(shell git name-rev --name-only HEAD | perl -pe 's/[~^]+\d*$$//'))
+# The BitBucket prefix of something like "bugfix--" is also stripped if present.
+GIT_BRANCH:=$(notdir $(shell git name-rev --name-only HEAD | perl -pe 's/[~^\d]*$$//' | perl -pe 's/^.*?--//'))
 GIT_VERSION:=$(shell echo $(GIT_BRANCH) | perl -ne '/^v[\.\d]+$$/ && print')
 # For testing:
 # GIT_VERSION:=$(shell echo v1.2.0 | perl -ne '/^v[\.\d]+$$/ && print')
 RPM_RELEASE?=snapshot
-COMMIT_HASH=$(shell git rev-list --max-count=1 HEAD)
+# If there is a tag saying it was exported to github, e.g. "1.3.0_github_1414ef3" use that instead
+# Note: This command fails on CentOS6 but no worries
+COMMIT_HASH=$(shell git tag --points-at HEAD | grep github | head -n1 2>/dev/null)
+ifeq "$(COMMIT_HASH)" ''
+  COMMIT_HASH=$(shell git rev-list --max-count=1 HEAD)
+endif
 
 # FYI - "COMMIT_TAG" doesn't actually have commit hash any more, but wanted to minimize changes in specfiles
 COMMIT_TAG=%{nil}
@@ -59,9 +65,11 @@ ifeq "$(GIT_VERSION)" ''
       COMMIT_TAG+=_$(shell echo $(GIT_BRANCH)|tr - _)
     endif
   endif
+  # Generate an increasing number for version comparisons (since git hashes aren't)
+  # Number of 6-minute increments since release in 5 digits (rolls over >1/yr)
   RELEASE_TAG=_$(shell printf %05d $(shell expr `date -u +"%s"` / 360 - 4172750))
   # When bumping this, don't miss configure.ac as well (AV-3433)
-  RPM_VERSION:=1.3.1
+  RPM_VERSION:=1.3.0
 else
   # This is a specific version branch
   RELEASE_TAG=%{nil}
@@ -259,8 +267,8 @@ cdk: cleancheck libmyhostname buildtar-base
 	--define="RPM_BASENAME ${RPM_BASENAME}" \
 	--define="RPM_RELEASE $(RPM_RELEASE)" \
 	--define="RPM_VERSION ${RPM_VERSION}" \
-	--define="OCPI_TARGET_HOST $(shell OCPI_CDK_DIR= OCPI_PROJECT_PATH=$$(pwd)/../projects/core ../platforms/getPlatform.sh 2>/dev/null | cut -f4 -d" ")" \
-	--define="OCPI_TARGET_PLATFORM $(shell OCPI_CDK_DIR= OCPI_PROJECT_PATH=$$(pwd)/../projects/core ../platforms/getPlatform.sh 2>/dev/null | cut -f5 -d" ")" \
+	--define="OCPI_TARGET_HOST $(shell OCPI_CDK_DIR= OCPI_PROJECT_PATH=$$(pwd)/../projects/core ../bootstrap/scripts/getPlatform.sh 2>/dev/null | cut -f4 -d" ")" \
+	--define="OCPI_TARGET_PLATFORM $(shell OCPI_CDK_DIR= OCPI_PROJECT_PATH=$$(pwd)/../projects/core ../bootstrap/scripts/getPlatform.sh 2>/dev/null | cut -f5 -d" ")" \
 	2>&1 | tee build-rpm.log
 	cp -v ~/rpmbuild/RPMS/*/$(RPM_BASENAME)-* .
 	mkdir $(TDIR)
@@ -284,7 +292,8 @@ cdk-all: cdk cdk-zynq cdk-pico $(JASSETS)
 
 # The keyword "autofound" will allow the platform-specific Makefiles receive an unset OCPI_TARGET_KERNEL_DIR
 cdk-zynq: OCPI_TARGET_PLATFORM=xilinx13_3
-cdk-zynq: export OCPI_PROJECT_REGISTRY_DIR=$(shell pwd)/../project-registry
+# No!  The project registry should default from the OCPI_CDK_DIR
+#cdk-zynq: export OCPI_PROJECT_REGISTRY_DIR=$(shell pwd)/../project-registry
 cdk-zynq: OCPI_TARGET_KERNEL_DIR="unknown"
 cdk-zynq: TAR_EXCLUDES= --exclude="*platforms/*/git/*"
 cdk-zynq: cdk-cross-zynq

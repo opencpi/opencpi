@@ -174,7 +174,7 @@
   <property name='rx_bbdc_track_en_dis'                  type='uchar'     volatile='1' writable='1' default='DISABLE' description='Get/set the status of the RX BasebandDC Tracking. The status is one of the parameter values ENABLE or DISABLE.'/>
 
   <property name='rx_quad_track_en_dis'                  type='uchar'     volatile='1' writable='1' default='DISABLE' description='Get/set the status of the RX Quadrate Tracking. The status is one of the parameter values ENABLE or DISABLE.'/>
-  <property name='rx_rf_port_input'                      type='ulong'     volatile='1' writable='1' default='A_BALANCED' description='Get/set the RX RF input port.'/>
+  <property name='rx_rf_port_input'                      type='ulong'     volatile='1' writable='1' default='A_BALANCED' description='Get/set the RX RF input port. Accepted values: one of the parameter values A_BALANCED, B_BALANCED, C_BALANCED, A_N, A_P, B_N, B_P, C_N, C_P, TX_MON1, TX_MON_2, TX_MON1_2. '/>
   <property name='rx_fastlock_store'                     type='ulong'                  writable='1'             description='Store RX fastlock profile. Writing a value will initiate the process of creating an RX fast lock profile and store it in the AD9361 in the RX profile index indicated by the value written.'/>
   <property name='rx_fastlock_recall'                    type='ulong'                  writable='1'             description='Recall specified RX fastlock profile. Writing a value will initiate the process of applying an RX fast lock profile that was previously stored inside the AD9361. The written value indicates the index of the RX profile to be applied.'/>
   <property name='rx_fastlock_load'                      type='struct'                 writable='1'            >

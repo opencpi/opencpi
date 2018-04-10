@@ -31,6 +31,7 @@
 %global         coreprojdir %{projsourcedir}/core
 # These are the core prereqs: devel subpackage always needs and we always need for building:
 %global         all_prereqs    ocpi-prereq-ad9361 ocpi-prereq-gmp ocpi-prereq-gtest ocpi-prereq-patchelf ocpi-prereq-xz
+%global         _python_bytecompile_errors_terminate_build 0
 
 %if !%{OCPI_CROSS}
 Name:           %{RPM_BASENAME}
@@ -40,7 +41,7 @@ Name:           %{RPM_BASENAME}
 %global OCPI_ALL_VARS_TMP %(mktemp --tmpdir ocpi_rpm_vars.XXX)
 # Before calling ocpitarget.sh, we want to force it into "bootstrap" mode. This will allow you to build an RPM for a
 # platform that you don't have an RPM already installed for BUT have ANY OpenCPI RPM installed (e.g. only the base one)
-%global OCPI_ALL_VARS_CMD %(unset OCPI_CDK_DIR; cd ..; source bootstrap/scripts/ocpitarget.sh %{OCPI_TARGET_PLATFORM} && env | grep OCPI > %{OCPI_ALL_VARS_TMP})
+%global OCPI_ALL_VARS_CMD %(export OCPI_CDK_DIR=`pwd`/../bootstrap; source $OCPI_CDK_DIR/scripts/ocpitarget.sh %{OCPI_TARGET_PLATFORM} && env | grep OCPI > %{OCPI_ALL_VARS_TMP})
 %global OCPI_CROSS_BUILD_BIN_DIR %(grep OCPI_CROSS_BUILD_BIN_DIR %{OCPI_ALL_VARS_TMP} | cut -f2- -d=)
 %global OCPI_CROSS_HOST %(grep OCPI_CROSS_HOST %{OCPI_ALL_VARS_TMP} | cut -f2- -d=)
 %global OCPI_TARGET_HOST %(grep OCPI_TARGET_HOST %{OCPI_ALL_VARS_TMP} | cut -f2- -d=)
@@ -86,6 +87,9 @@ BuildRequires:  %{all_prereqs}
 # The end user can do "sudo yum install /lib/ld-linux.so.2" to get it. The Xilinx gcc tool chain is 32-bit only.
 BuildRequires:  ld-linux.so.2
 Requires:       perl time
+# AV-3053 libusb.so is required to communicate with Xilinx programming dongle
+# For some reason, that is only in the libusb-devel package in both C6 and C7
+Requires:       libusb-devel
 Requires(pre):  perl shadow-utils
 Requires(post,postun): findutils coreutils
 %if %{OCPI_CROSS}
@@ -96,11 +100,7 @@ Requires(post,postun): findutils coreutils
 %if x%{?prereq_arch} == x
 %{error:Cannot determine prereq architecture needed!}
 %endif
-%if %{OCPI_TARGET_PLATFORM} == "pico_t6a"
-Requires:       ocpi-prereq-build_support-inode64
-BuildRequires:  ocpi-prereq-build_support-inode64
-%endif
-%global         all_prereqs_pf ocpi-prereq-ad9361-platform-%{prereq_arch} ocpi-prereq-gmp-platform-%{prereq_arch} ocpi-prereq-gtest-platform-%{prereq_arch} ocpi-prereq-xz-platform-%{prereq_arch}
+%global         all_prereqs_pf ocpi-prereq-ad9361-platform-%{prereq_arch} ocpi-prereq-gmp-platform-%{prereq_arch} ocpi-prereq-gtest-platform-%{prereq_arch} ocpi-prereq-xz-platform-%{prereq_arch} ocpi-prereq-build_support-inode64
 BuildRequires:  %{all_prereqs_pf}
 Requires:       %{all_prereqs_pf}
 %endif
@@ -116,10 +116,9 @@ Requires:       ed
 BuildRequires:  gcc-c++ rpm-build fakeroot
 #Optional but preferred (AV-2071) BuildRequires:  valgrind-devel
 
-# For XML dependency stuff (AV-2684):
-BuildRequires:  python-lxml
-
+# SWIG is C7 only:
 %if "0%{?dist}" != "0.el6"
+%global with_swig 1
 # For SWIG interfaces (AV-3699)
 BuildRequires:  swig
 %endif
@@ -175,11 +174,12 @@ Requires:   ld-linux.so.2
 # Used by a lot of testbenches, etc (AV-1261, AV-1299):
 Requires:   numpy scipy python-matplotlib
 # For XML dependency stuff (AV-2684):
-Requires:   python-lxml
+# Requires:   python-lxml
 # For bash completion (AV-2398)
 # (Optional) Requires:  bash-completion
-# For ocpishow and others (AV-3548)
-Requires:   python-argparse
+# For ocpishow and others framework run python
+BuildRequires:   python34
+Requires:        python34
 
 # Used by the core project extract script:
 Requires:   xz
@@ -226,7 +226,7 @@ Release ID: %{COMMIT_HASH}
 # End of hardware platforms
 
 %if !%{OCPI_CROSS}
-%if "0%{?dist}" != "0.el6"
+%if 0%{?with_swig}
 # Interface packages
 %package interface-python
 Requires:    %{name} = %{version}-%{release}
@@ -247,8 +247,8 @@ Release ID: %{COMMIT_HASH}
 %endif
 
 # host_platform=linux-c7-x86_64 host_platform_short=centos7
-%global host_platform %(OCPI_CDK_DIR= OCPI_PROJECT_PATH=$OCPI_PROJECT_PATH:$(pwd)/../projects/core ../platforms/getPlatform.sh 2>/dev/null | cut -f4 -d" ")
-%global host_platform_short %(OCPI_CDK_DIR= OCPI_PROJECT_PATH=$OCPI_PROJECT_PATH:$(pwd)/../projects/core ../platforms/getPlatform.sh 2>/dev/null | cut -f5 -d" ")
+%global host_platform %(export OCPI_CDK_DIR=$(pwd)/../bootstrap; OCPI_PROJECT_PATH=$OCPI_PROJECT_PATH:$(pwd)/../projects/core $OCPI_CDK_DIR/scripts/getPlatform.sh 2>/dev/null | cut -f4 -d" ")
+%global host_platform_short %(export OCPI_CDK_DIR=$(pwd)/../bootstrap; OCPI_PROJECT_PATH=$OCPI_PROJECT_PATH:$(pwd)/../projects/core $OCPI_CDK_DIR/scripts/getPlatform.sh 2>/dev/null | cut -f5 -d" ")
 %global _hardened_build 1
 
 # Restore XML that had been saved out.
@@ -277,7 +277,6 @@ Release ID: %{COMMIT_HASH}
 %setup -q -n %{RPM_BASENAME}-%{version}
 
 %build
-[ -d projects/core/rcc/platforms/%{OCPI_TARGET_PLATFORM} ]&& echo 1
 # Export variables needed for "make" calls
 export OCPI_CDK_DIR=%{buildroot}%{_prefix}
 # This also exists in acinclude/ocpi_import_platforms and is pulling in all existing
@@ -287,6 +286,7 @@ export OCPI_PROJECT_PATH=$OCPI_PROJECT_PATH:$(find projects -type d  | grep rcc/
 export OCPI_XILINX_VERSION=14.7
 export OCPI_TARGET_PLATFORM=%{OCPI_TARGET_PLATFORM}
 %endif
+set -x
 # build the core framework
 ./reconf
 # export OCPI_CONFIGURE_IS_RUNNING=1
@@ -403,6 +403,8 @@ for exe in %{buildroot}/%{_bindir}/%{OCPI_TARGET_HOST}/*; do
   bn=$(basename ${exe})
   %{__ln_s} -f %{_bindir}/%{OCPI_TARGET_HOST}/${bn} %{buildroot}/usr/bin/
 done
+# For compat reasons, getPlatform used to be in /platforms/
+%{__ln_s} -f %{_prefix}/scripts/getPlatform.sh %{buildroot}%{_prefix}/platforms/
 
 # Put our .so files into path
 %{__mkdir_p} %{buildroot}/etc/ld.so.conf.d
@@ -446,7 +448,7 @@ ${old_nullglob}
 # This is for legacy support only
 %{__mv} releng/projects/* %{projsourcedir}
 
-%if "0%{?dist}" != "0.el6"
+%if 0%{?with_swig}
 # Move SWIG stuff out
 %{__mkdir_p} %{buildroot}/%{python_sitearch}
 %{__cp} --target-directory=%{buildroot}/%{python_sitearch} target-cdk-staging/lib/%{host_platform}/_OcpiApi.so
@@ -454,7 +456,7 @@ ${old_nullglob}
 # Workaround which tells the build to skip passing this file into find-debuginfo.sh and stripping out debug symbols
 # Restored in swig_arch_cleanup
 %{__chmod} 644 %{buildroot}/%{python_sitearch}/_OcpiApi.so
-%endif # Not C6
+%endif # No SWIG
 set -x
 # End of non-cross-compiled
 %endif
@@ -511,16 +513,13 @@ fi
 # This only needs to be done in cross-compiled env because "make clean"
 # is run on ALL components below if not cross.
 set +x
-for comp in `make -sC projects/core/components showrcc 2>/dev/null`; do
+for comp in `make --no-print-directory -sC projects/core/components showrcc 2>/dev/null`; do
   echo Cleaning ${comp}...
   make -sC projects/core/components/${comp} clean
 done
 
 set -x
 %endif
-
-# This is needed by the HDL
-echo ocpi > %{buildroot}/%{_libdir}/package-id
 
 # Remove the non-static versions of the workers (AV-629)
 # Want to do this before makeSD is called
@@ -623,6 +622,7 @@ done
 
 # Store off any artifact data (AV-960)
 ./releng/save_xml.sh
+#/usr/lib/rpm/brp-python-bytecompile python3
 
 # If cross-compiled, can't create debug packages, but need to remove absolute paths
 # from the compiled components (AV-960)
@@ -744,14 +744,12 @@ make %{?_smp_mflags} check
 %dir %{_bindir}
 %dir %{_libdir}
 %dir %{_libdir}/%{OCPI_TARGET_HOST}
-%{_libdir}/package-id
 %config %{_prefix}/env
 # For security reasons, these should be root owned:
 %attr(755,root,root) %{_prefix}/env/rpm_cdk.sh
 %attr(755,root,root) %dir %config(noreplace) %{_prefix}/env.d
 %attr(644,root,root) %{_prefix}/env.d/*.sh.example
 %dir %{_prefix}/platforms
-%attr(%{gexec_perm},opencpi,opencpi) %{_prefix}/platforms/getPlatform.sh
 %{projsourcedir_final}/core/rcc/platforms/centos*
 #%dir %{_prefix}/specs
 %dir %{_prefix}/scripts
@@ -763,6 +761,9 @@ make %{?_smp_mflags} check
 %doc %{_prefix}/LICENSE.txt
 %{_libdir}/%{OCPI_TARGET_HOST}/*.so
 # Explicitly list scripts (AV-500)
+# Symlink:
+%{_prefix}/platforms/getPlatform.sh
+%attr(%{gexec_perm},opencpi,opencpi) %{_prefix}/scripts/getPlatform.sh
 %attr(%{gexec_perm},opencpi,opencpi) %{_prefix}/scripts/findJtagByESN_xilinx
 %attr(%{gexec_perm},opencpi,opencpi) %{_prefix}/scripts/getESNfromUSB_xilinx
 %attr(%{gexec_perm},opencpi,opencpi) %{_prefix}/scripts/loadBitStream
@@ -848,10 +849,6 @@ make %{?_smp_mflags} check
 #%doc %{this_platform}/doc/Picoflexor_T6A_Notes.pdf
 %attr(%{gexec_perm},opencpi,opencpi) %{_bindir}/%{OCPI_TARGET_HOST}/ocpizynq
 
-# CMH do we need these now hat the sd card is built ?
-#%config(noreplace) %{this_platform}/system.xml
-#                                     %{this_platform}/mynetsetup.sh
-#                                     %{this_platform}/mysetup.sh
 %attr(644,root,root) %{_prefix}/env.d/platform_pico_t6a.sh.example
 %endif
 # End of cross-compiled
@@ -927,6 +924,7 @@ make %{?_smp_mflags} check
 %attr(%{gexec_perm},opencpi,opencpi) %{_prefix}/scripts/maybeExport.sh
 %attr(%{gexec_perm},opencpi,opencpi) %{_prefix}/scripts/ocpidev
 %attr(%{gexec_perm},opencpi,opencpi) %{_prefix}/scripts/ocpiutil.py*
+%attr(%{gexec_perm},opencpi,opencpi) %{_prefix}/scripts/__pycache__/*
 %attr(%{gexec_perm},opencpi,opencpi) %{_prefix}/scripts/upgradeApp_v1_3.py*
 %attr(%{gexec_perm},opencpi,opencpi) %{_prefix}/scripts/hdltargets.py*
 %attr(%{gexec_perm},opencpi,opencpi) %{_prefix}/scripts/ocpishow
@@ -953,7 +951,7 @@ make %{?_smp_mflags} check
 %endif
 
 %if !%{OCPI_CROSS}
-%if "0%{?dist}" != "0.el6"
+%if 0%{?with_swig}
 %files interface-python
 %{python_sitearch}
 # Since there's nowhere better to put the GNU Radio binding tool

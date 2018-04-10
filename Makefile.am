@@ -129,9 +129,9 @@ export OCPI_PROJECT_PATH:=$(OCPI_PROJECT_PATH):$(subst $(Space),:,$(wildcard $(O
 @AUTOGUARD@  endif
 @AUTOGUARD@  $(info $(shell ./scripts/makeExportLinks.sh - $(ProjectPrefix)_ ocpi.cdk xxx))
 @AUTOGUARD@include exports/include/ocpisetup.mk
-@AUTOGUARD@PlatformDir=$(call OcpiGetRccPlatformDir,$(OCPI_TARGET_PLATFORM))
-@AUTOGUARD@    $(info $(shell mkdir -p $(PlatformDir)/include))
-@AUTOGUARD@    $(info $(shell cp av_config.h $(PlatformDir)/include/ || :))
+@AUTOGUARD@PlatformDir=$(infox OCPI_PROJECT_DIR:$(OCPI_CDK_DIR):$(OCPI_PROJECT_DIR):$(OCPI_PROJECT_REGISTRY_DIR):$(OcpiProjectRegistryDir))$(call OcpiGetRccPlatformDir,$(OCPI_TARGET_PLATFORM))
+@AUTOGUARD@    $(info Making $(PlatformDir)/include: $(shell mkdir -p $(PlatformDir)/include))
+@AUTOGUARD@    $(info Copying av_config.h to $(PlatformDir)/include: $(shell cp av_config.h $(PlatformDir)/include/ || :))
 @AUTOGUARD@endif
 .PHONY: everything exports export_cdk
 
@@ -237,7 +237,7 @@ install-exec-hook: $(install_exec_hook_swig)
 	  rm -rf *.la; \
 	  for lib in $(DRIVER_SO_FILES); do \
 	    echo "Fixing internal name for $${lib} => $${lib/_s./.}"; \
-      $(PATCHELF) --ocpi-fix-soname $${lib}; \
+      echo $(PATCHELF) --ocpi-fix-soname $${lib}; \
     done
 	@echo "Checking for SONEEDED of dynamic drivers:"
 	$(AM_V_at)cd $(DESTDIR)$(bindir) && \
@@ -407,7 +407,6 @@ __ocpi_build_dir__libocpi_util_1p_la_SOURCES = \
 			runtime/util/ezxml/src/OcpiXmlEmbedded.cxx \
 			runtime/util/assembly/src/OcpiUtilAssembly.cxx \
 			runtime/util/driver/src/OcpiDriverManager.cxx \
-			runtime/util/farmhash/src/farmhash.cxx \
 			runtime/util/fasttime/src/calibration.cxx \
 			runtime/util/fasttime/src/fasttime.cxx \
 			runtime/util/filefs/src/OcpiUtilFileFs.cxx \
@@ -518,6 +517,7 @@ incpath += \
 
 __ocpi_build_dir__libocpi_util_3p_la_SOURCES = \
 			runtime/util/ezxml/src/ezxml.c \
+			runtime/util/farmhash/src/farmhash.cxx \
 			runtime/util/md5/src/md5.c \
 			runtime/util/uuid/src/OcpiUuid.cxx \
 			runtime/util/uuid/src/uuid.c \
@@ -789,22 +789,22 @@ incpath += tools/cdkutils/include
 # Q: Why do we put many of the same headers in both /include/ and /include/rcc?
 # A: "We need to control what the rcc workers can include/see. The top level include is for main programs etc.. I could even imagine having a "aci" subdir next to "rcc", to make it even clearer." (AV-1460)
 
-##> tools/cdk/ocpidds/bin
+##> tools/ocpidds
 bin_PROGRAMS += $(ocpi_build_dir)/ocpidds
 
-__ocpi_build_dir__ocpidds_SOURCES = tools/cdk/ocpidds/bin/src/ocpidds_main.cxx
+__ocpi_build_dir__ocpidds_SOURCES = tools/ocpidds/src/ocpidds_main.cxx
 __ocpi_build_dir__ocpidds_LDFLAGS = $(mybin_ldflags)
 
-##> tools/cdk/ocpidds/ocpidds
+##> tools/ocpidds
 lib_ocpi_ocpidds = $(ocpi_build_dir)/libocpi_ocpidds.la
 
 __ocpi_build_dir__libocpi_ocpidds_la_SOURCES = \
-			tools/cdk/ocpidds/ocpidds/src/dataTypeTest.cxx \
-			tools/cdk/ocpidds/ocpidds/src/ocpidds.cxx
+			tools/ocpidds/src/dataTypeTest.cxx \
+			tools/ocpidds/src/ocpidds.cxx
 
 __ocpi_build_dir__libocpi_ocpidds_la_LDFLAGS = -static
 
-incpath += tools/cdk/ocpidds/ocpidds/include
+incpath += tools/ocpidds/include
 
 ##> tools/cdk/ocpixml
 bin_PROGRAMS += $(ocpi_build_dir)/ocpixml

@@ -74,9 +74,11 @@ namespace OCPI {
     // Process an assignment for a specific port or a specific instance, or just an external
     // port of the assembly.
     // assign arg now points to:  <instance>=<port>=<value> or <externalport>=<value>
+    // If the removeExternal is true, remove any external port connection since the caller
+    // will replace it.
     const char *Assembly::
     getPortAssignment(const char *pName, const char *assign, unsigned &instn, unsigned &portn,
-		      const OU::Port *&port, const char *&value) {
+		      const OU::Port *&port, const char *&value, bool removeExternal) {
       unsigned neqs = 0;
       const char *eq = strchr(assign, '?'); // points past instance or external port
       for (const char *cp = assign; *cp && (!eq || cp < eq); cp++)
@@ -84,11 +86,11 @@ namespace OCPI {
 	  neqs++;
       std::string pname;
       eq = strchr(assign, '='); // points past instance or external port
+      OU::Assembly::ConnectionsIter ci = m_connections.end();
       if (neqs == 1) { // find an external port with this name
 	pname.assign(assign, eq - assign);
 	const OU::Assembly::Port *ap = NULL;
-	for (OU::Assembly::ConnectionsIter ci = m_connections.begin(); ci != m_connections.end();
-	     ci++) {
+	for (ci = m_connections.begin(); ci != m_connections.end(); ci++) {
 	  const OU::Assembly::Connection &c = *ci;
 	  if (c.m_externals.size() &&
 	      !strcasecmp(pname.c_str(), c.m_externals.front().m_name.c_str())) {
@@ -107,6 +109,15 @@ namespace OCPI {
 	  return err;
 	eq = strchr(iassign, '=');
 	pname.assign(iassign, eq - iassign);
+	// There might be an external connection on this port that has to be removed...
+	if (removeExternal)
+	  for (ci = m_connections.begin(); ci != m_connections.end(); ci++) {
+	    const OU::Assembly::Connection &c = *ci;
+	    const OU::Assembly::Port *ap = &c.m_ports.front();
+	    if (c.m_externals.size() && ap->m_instance == instn &&
+		!strcasecmp(ap->m_name.c_str(), pname.c_str()))
+		  break;
+	  }
       } else
 	return OU::esprintf("Parameter assignment for \"%s\", \"%s\" is invalid.  Format is:"
 			    "<instance>=<port>=<filename> of <external-port>=<filename>", 
@@ -118,6 +129,8 @@ namespace OCPI {
 	  value = eq + 1;
 	  portn = nn;
 	  port = p;
+	  if (removeExternal && ci != m_connections.end())
+	      m_connections.erase(ci);
 	  return NULL;
 	}
       return OU::esprintf("Port \"%s\" not found for instance in \"%s\" parameter assignment: %s",
@@ -132,7 +145,7 @@ namespace OCPI {
 	const char *value, *err;
 	unsigned instn, portn;
 	const OU::Port *port;
-	if ((err = getPortAssignment("file", assign, instn, portn, port, value)))
+	if ((err = getPortAssignment("file", assign, instn, portn, port, value, true)))
 	  return err;
 	bool reading = port->m_provider;
 	// create a file read/write instance connected to the specified instance and port
@@ -163,8 +176,10 @@ namespace OCPI {
 	  } while (*p++);
 	} else
 	  ezxml_set_attr_d(fpx, "value", value);
-	ocpiInfo("adding file I/O component: %s", ezxml_toxml(inst));
-	if ((err = OU::Assembly::addInstance(inst, NULL, NULL)) ||
+	char *x = ezxml_toxml(inst);
+	ocpiInfo("adding file I/O component: %s", x);
+	free(x);
+	if ((err = OU::Assembly::addInstance(inst, NULL, NULL, true)) ||
 	    (err = utilInstance(nUtilInstances() - 1).parseConnection(inst, *this, params)))
 	  return err;
 	addInstance(params);

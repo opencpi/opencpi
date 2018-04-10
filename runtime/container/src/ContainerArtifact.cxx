@@ -58,7 +58,7 @@ namespace OCPI {
     static ezxml_t findChildWithAttr(ezxml_t x, const char *cName, const char *aName,
                                      const char *value)
     {
-      for (ezxml_t c = ezxml_child(x, cName); c; c = ezxml_next(c))
+      for (ezxml_t c = ezxml_child(x, cName); c; c = ezxml_cnext(c))
         if (hasAttrEq(c, aName, value))
           return c;
       return 0;

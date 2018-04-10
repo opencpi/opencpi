@@ -76,9 +76,9 @@ Each of the RF interfaces will be setting the properties of several other worker
 Each setting has a max, min, and step value associated with it.  Where the max is the highest possible value, min is the lowest possible value, and step is the minimum granularity for changes of the associated setting.  These associated properties are available to be used by application developers for reading back information about the functionality of the interface during runtime.  Both receive and transmit use different spec files but have the same property sets. The component specification file locations are as follows: \\ \\
    \begin{tabular}{|p{2cm}|p{7cm}|}
       \hline
-      Receive & ocpiassets/hdl/devices/specs/rx\_spec.xml \\
+      Receive & core/specs/rx\_spec.xml \\
       \hline
-      Transmit & ocpiassets/hdl/devices/specs/tx\_spec.xml  \\
+      Transmit & core/specs/tx\_spec.xml  \\
       \hline
    \end{tabular}
    \\ \medskip \\
@@ -142,9 +142,9 @@ The properties that are described in these spec files can be observed in the fol
 As stated earlier, an application that uses an RF Interface Worker needs to also have any of the slave workers and slave of slave workers also declared in the application XML.  This may cause a different application XML per platform to declare the different dependencies per platform.  This is a limitation of the framework and will likely be fixed in a future release.  An example of how this will work is in both of the ANGRYVIPER Team's Reference applications: \\ \\
    \begin{tabular}{|p{2cm}|p{7cm}|}
       \hline
-      FSK app & ocpiassets/applications/FSK \\
+      FSK app & assets/applications/FSK \\
       \hline
-      RX app & ocpiassets/applications/rx\_app  \\
+      RX app & assets/applications/rx\_app  \\
       \hline
    \end{tabular}
    \\
@@ -154,7 +154,7 @@ There are two ways that application developers can control the RF interface work
 
 \begin{verbatim}
 <Application>
-  <Instance component='ocpiassets.devices.rx'>
+  <Instance component='ocpi.core.devices.rx'>
     <Property Name="bb_gain_dB"              Value="-5"/>
     <Property Name="rf_gain_dB"              Value="10"/>
     <Property Name="frequency_MHz"           Value="2400"/>
@@ -162,7 +162,7 @@ There are two ways that application developers can control the RF interface work
     <Property Name="bb_cutoff_frequency_MHz" Value="2.5"/>
     <Property Name="rf_cutoff_frequency_MHz" Value="2.5"/>
   </Instance>
-  <Instance component='ocpiassets.devices.tx'>
+  <Instance component='ocpi.core.devices.tx'>
     <Property Name="bb_gain_dB"              Value="-5"/>
     <Property Name="rf_gain_dB"              Value="10"/>
     <Property Name="frequency_MHz"           Value="2400"/>
@@ -237,9 +237,9 @@ The framework also has the ability to call functions in the worker code before o
 \end{verbatim}The following workers are good examples of how to create RF Interface workers:  \\ \\
    \begin{tabular}{|p{2cm}|p{10cm}|}
       \hline
-      matchstiq\_rx & ocpiassets/hdl/platforms/matchstiq/devices/matchstiq\_rx.rcc/ \\
+      matchstiq\_rx & assets/hdl/platforms/matchstiq/devices/matchstiq\_rx.rcc/ \\
       \hline
-      matchstiq\_tx & ocpiassets/hdl/platforms/matchstiq/devices/matchstiq\_tx.rcc/  \\
+      matchstiq\_tx & assets/hdl/platforms/matchstiq/devices/matchstiq\_tx.rcc/  \\
       \hline
    \end{tabular}
 

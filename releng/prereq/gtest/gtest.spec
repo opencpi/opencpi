@@ -36,7 +36,7 @@ AutoReqProv:    no
 %define debug_package %{nil}
 %endif
 Version:        %{OCPI_BUNDLED_VERSION}
-Release:        2%{?dist}
+Release:        3%{?dist}
 Packager:       ANGRYVIPER team <discuss@lists.opencpi.org>
 Summary:        RPM build of gtest for OpenCPI
 
@@ -98,6 +98,10 @@ rm -rf %{buildroot}/%{prefix}/{include,bin}
 echo "Renaming picoflexor"
 mv -v %{buildroot}/%{prefix}/linux*arm %{buildroot}/%{prefix}/%{OCPI_TARGET_HOST}
 %endif
+# Make 13_4 version if arm
+%if "x%{?OCPI_TARGET_HOST}" == "xlinux-x13_3-arm"
+ln -sf %{_prefix}/%{OCPI_TARGET_HOST} %{buildroot}/%{_prefix}/linux-x13_4-arm
+%endif
 %endif
 # TODO: Fix this?
 find %{buildroot} -type f -name "*.la" -delete
@@ -131,8 +135,13 @@ fi
 %{_exec_prefix}/bin/aclocal/gtest.m4
 %{_prefix}/include/gtest/
 %endif
+%if "x%{?OCPI_TARGET_HOST}" == "xlinux-x13_3-arm"
+%{_prefix}/linux-x13_4-arm
+%endif
 
 %changelog
+* Mon Feb 26 2018 - 1.8.0-3
+- AV: Add Xilinx 13_4 alias
 * Wed Feb  7 2018 - 1.8.0-2
 - AV: Rename RPMs
 * Fri Oct 13 2017 - 1.8.0-1

@@ -565,6 +565,13 @@ emitPortSignals(FILE *f, Attachments &atts, Language /*lang*/, const char *inden
     }
     OU::format(mName, c.m_masterName.c_str(), "");
     OU::format(sName, c.m_slaveName.c_str(), "");
+#if 0 // busted until m_count=0 indicates non-array ports properly
+    // If the instance port is an array but the other is not, index the instance port
+    if ((m_count > 1 || !m_countExpr.empty()) && otherAt->m_instPort.m_port->m_count <= 1) {
+      in += "(0)";
+      out += "(0)";
+    }
+#endif
   } else
     mName = sName = "open";
   InstancePort *other;

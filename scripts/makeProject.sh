@@ -780,7 +780,7 @@ ${complibs[@]/#/-y } \
     }
 
     # This section is now obsolete (AV-2913)
-    # ocpidev automatically adds ComponentLibraries=devices to the makefile of an emulator 
+    # ocpidev automatically adds ComponentLibraries=devices to the makefile of an emulator
     # because they need to access the core\'s hdl/devices/specs/emulator-spec.xml
     # if [ -n "$emulate" -a -z "$comlibs" ] ; then
     #   complibs=(devices)
@@ -927,7 +927,7 @@ for x in $from/$xmldir/* ; do
     app=$(basename $x .xml)
     [ "$QUIET" == 1 ] || echo "====Creating application $app"
     do_ocpidev create application -X $app
-    [ -r $x ] || bad wierd unreadable app
+    [ -r $x ] || bad weird unreadable app
     [ -r applications/$app.xml ] || bad not established app
     [ "$SKELETON" == 1 ] || cp $x applications
   fi
@@ -935,7 +935,7 @@ done
 
 [ "$SKELETON" == 1 ] || [ "$OCPI_BASE" != 1 ] || cp $from/$xmldir/test.input* applications 2> /dev/null || true
 [ "$SKELETON" == 1 ] || [ "$OCPI_BASE" != 1 ] || cp $from/$xmldir/run.sh applications 2> /dev/null || true
-#Some baseproj apps (wsi_width_adapter_test) rely on python scripts in examples 
+#Some baseproj apps (wsi_width_adapter_test) rely on python scripts in examples
 [ "$SKELETON" == 1 ] || [ "$OCPI_BASE" != 1 ] || cp $from/$xmldir/*.py applications 2> /dev/null || true
 
 

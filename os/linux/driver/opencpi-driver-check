@@ -37,8 +37,8 @@ kernel_ver=$(uname -r)
 if [ -z "${OCPI_CDK_DIR}" ]; then
   export OCPI_CDK_DIR=/opt/opencpi/cdk
 fi
-if [ -x ${OCPI_CDK_DIR}/platforms/getPlatform.sh ]; then
-  export OCPI_TOOL_DIR=$(${OCPI_CDK_DIR}/platforms/getPlatform.sh | cut -f4 -d" ")
+if [ -x ${OCPI_CDK_DIR}/scripts/getPlatform.sh ]; then
+  export OCPI_TOOL_DIR=$(${OCPI_CDK_DIR}/scripts/getPlatform.sh | cut -f4 -d" ")
 else
   # Less reliable method if CDK not installed yet
   export OCPI_TOOL_DIR=linux-c$(rpm -q opencpi-driver --qf="%{release}" | perl -ne '/el(\d+)/ && print $1')-x86_64

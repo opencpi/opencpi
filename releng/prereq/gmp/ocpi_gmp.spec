@@ -48,7 +48,7 @@ AutoReqProv:    no
 %define __strip %{OCPI_CROSS_DIR}/%{OCPI_CROSS_PREFIX}-strip
 %define debug_package %{nil}
 %endif
-Release:        6%{?dist}
+Release:        7%{?dist}
 Packager:       ANGRYVIPER team <discuss@lists.opencpi.org>
 Summary:        RPM build of the GNU arbitrary precision library for OpenCPI
 Group:          System Environment/Libraries
@@ -156,8 +156,9 @@ install -m644 %{SOURCE3} %{buildroot}/%{_includedir}/gmp-mparam.h
 rm -rf %{buildroot}%{_includedir}/gmp{,xx,-mparam}.h
 %endif
 
-# Make arm_cs version if arm (for picoflexor)
+# Make arm_cs and 13_4 versions if arm
 %if "x%{?OCPI_TARGET_HOST}" == "xlinux-x13_3-arm"
+ln -sf %{_prefix}/%{OCPI_TARGET_HOST} %{buildroot}/%{_prefix}/linux-x13_4-arm
 ln -sf %{_prefix}/%{OCPI_TARGET_HOST} %{buildroot}/%{_prefix}/linux-zynq-arm_cs
 %endif
 
@@ -198,10 +199,13 @@ fi
 %{_libdir}/libgmpxx.a
 %{_libdir}/libgmp*.so*
 %if "x%{?OCPI_TARGET_HOST}" == "xlinux-x13_3-arm"
+%{_prefix}/linux-x13_4-arm
 %{_prefix}/linux-zynq-arm_cs
 %endif
 
 %changelog
+* Mon Feb 26 2018 - 6.1.2-7
+- AV: Add Xilinx 13_4 alias
 * Wed Feb  7 2018 - 6.1.2-6
 - AV: Rename RPMs
 * Thu Jan 18 2018 - 6.1.2-5

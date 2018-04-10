@@ -4,9 +4,9 @@
      Add port elements for i/o ports -->
 <ComponentSpec>
 
-  <Property Name="N" Type="uchar" Readable="true"/>
-  <Property Name="M" Type="uchar" Readable="true"/>
-  <Property Name="R" Type="ushort" Readable="true"/>
+  <Property Name="N" Type="uchar" Readable="true" Description="Number of Stages"/>
+  <Property Name="M" Type="uchar" Readable="true" Description="Differential Delay"/>
+  <Property Name="R" Type="ushort" Readable="true" Description="Interpolation Factor"/>
   <Property Name="DIN_WIDTH" Type="uchar" Readable="true"/>
   <Property Name="ACC_WIDTH" Type="uchar" Readable="true"/>
   <Property Name="DOUT_WIDTH" Type="uchar" Readable="true"/>

@@ -127,7 +127,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Release Date      & Aug 2017         \\
 	\hline
-	Component Library & ocpi.devices     \\
+	Component Library & ocpi.assets.devices     \\
 	\hline
 	Workers           & \comp.rcc        \\
 	\hline
@@ -544,7 +544,7 @@ Note also that this worker's usage of no-OS not only makes SPI register accesses
 			\hline
 			\verb+rx_quad_track_en_dis+ & UChar & - & Volatile, Writable & Standard & \verb+DISABLE+ & Get/set the status of the RX Quadrate Tracking. The status is one of the parameter values ENABLE or DISABLE. \\
 			\hline
-			\verb+rx_rf_port_input+ & ULong & - & Volatile, Writable & Standard & \verb+A_BALANCED+ & Get/set the RX RF input port. \\
+			\verb+rx_rf_port_input+ & ULong & - & Volatile, Writable & Standard & \verb+A_BALANCED+ & Get/set the RX RF input port. Accepted values: one of the parameter values \verb+A_BALANCED+, \verb+B_BALANCED+, \verb+C_BALANCED+, \verb+A_N+, \verb+A_P+, \verb+B_N+, \verb+B_P+, \verb+C_N+, \verb+C_P+, \verb+TX_MON1+, \verb+TX_MON_2+, \verb+TX_MON1_2+. \\
 			\hline
 			\verb+rx_fastlock_store+ & ULong & - & Writable & Standard & - & Store RX fastlock profile. Writing a value will initiate the process of creating an RX fast lock profile and store it in the AD9361 in the RX profile index indicated by the value written. \\
 			\hline

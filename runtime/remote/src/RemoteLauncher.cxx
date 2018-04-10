@@ -387,9 +387,9 @@ work(Launcher::Members &instances, Launcher::Connections &connections) {
   } else {
     receive();
     assert(!strcasecmp(OX::ezxml_tag(m_rx),"launching"));
-    for (ezxml_t ax = ezxml_child(m_rx, "artifact"); ax; ax = ezxml_next(ax))
+    for (ezxml_t ax = ezxml_child(m_rx, "artifact"); ax; ax = ezxml_cnext(ax))
       loadArtifact(ax); // Just push the bytes down the pipe, getting a response for each.
-    for (ezxml_t cx = ezxml_child(m_rx, "connection"); cx; cx = ezxml_next(cx))
+    for (ezxml_t cx = ezxml_child(m_rx, "connection"); cx; cx = ezxml_cnext(cx))
       updateConnection(cx);
     m_more = ezxml_cattr(m_rx, "done") == NULL;
     if (!m_more) {

@@ -97,6 +97,14 @@ else
 #  $(info OCPI_ALL_RCC_PLATFORMS is $(OCPI_ALL_RCC_PLATFORMS))
 #  $(info OCPI_ALL_RCC_TARGETS is $(OCPI_ALL_RCC_TARGETS))
 endif
+# AV-4112 Relate a platform to its target
+$(foreach p,$(RccAllPlatforms),\
+  $(foreach d, $(call OcpiGetRccPlatformDir,$p),\
+    $(foreach f,$d/target,\
+      $(if $(wildcard $f),\
+        $(foreach t,$(shell echo $$(< $f)),\
+          $(eval RccTargetAux_$p:=$t))))))
+
 ifdef RccPlatforms
   # FIXME: this logic is copied in ocl-make.mk
   override RccPlatforms:=$(filter-out $(ExcludePlatforms) $(RccExcludePlatforms),$(RccPlatforms))
@@ -182,6 +190,6 @@ $(info RccAllPlatforms="$(sort $(RccAllPlatforms))";\
        RccAllTargets="$(sort $(RccAllTargets))";\
        RccTargets="$(sort $(RccTargets))";\
        $(foreach p,$(sort $(RccAllPlatforms)),\
-         $(if $(RccTarget_$p),RccTarget_$p="$(RccTarget_$p)";)))
+         $(if $(RccTargetAux_$p),RccTargetAux_$p="$(RccTargetAux_$p)";)))
 endif
 #$(foreach t,$(RccTopTargets),$(or $(RccTargets_$t),$t))";\

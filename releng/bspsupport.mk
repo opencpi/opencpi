@@ -57,7 +57,7 @@ RPM_TARGETS=$(foreach pkg, $(PACKAGES), $(pkg)_rpm)
 CLEAN_TARGETS=$(foreach pkg, $(PACKAGES), $(pkg)_clean)
 GIT_TARGETS=$(foreach pkg, $(PACKAGES), $(pkg)_gitcheck)
 GIT_BRANCHES=$(foreach pkg, $(PACKAGES), $(pkg)_gitbranch)
-export GIT_BRANCH:=$(notdir $(shell git name-rev --name-only HEAD))
+export GIT_BRANCH:=$(notdir $(shell git name-rev --name-only HEAD | perl -pe 's/[~^\d]*$$//'))
 
 .PHONY: $(RPM_TARGETS) $(CLEAN_TARGETS) $(GIT_TARGETS) $(GIT_BRANCHES)
 .SILENT: $(RPM_TARGETS) $(CLEAN_TARGETS) $(GIT_TARGETS) $(GIT_BRANCHES) $(PACKAGES) clean cleanrpmbuild
@@ -126,10 +126,14 @@ DEFAULT_GITBRANCH?=develop
 $(GIT_BRANCHES): PKG=$(@:_gitbranch=)
 $(GIT_BRANCHES):
 	echo "====================== $(PKG) ======================"
-	echo "Pulling... (OK if fails)"
-	cd $(PKG) && git pull || : # Always get latest from repo
-	cd $(PKG) && git checkout $(DEFAULT_GITBRANCH) 2>/dev/null # Always reset first
-	cd $(PKG) && git checkout $(GIT_BRANCH) 2>/dev/null || : # Try to check out
+	echo "Synchronizing repo information..."
+	cd $(PKG) && git fetch --all
+	echo "Switching to $(DEFAULT_GITBRANCH)..."
+	cd $(PKG) && git checkout $(DEFAULT_GITBRANCH) # Always reset first
+	echo "Trying to switch to $(GIT_BRANCH)... (OK if fails)"
+	cd $(PKG) && git checkout $(GIT_BRANCH) || : # Try to check out
+	echo "Pulling latest code..."
+	cd $(PKG) && git pull
 	echo "Currently working in AV branch '$(GIT_BRANCH)' and using '`cd $(PKG);git name-rev --name-only HEAD`' for $(PKG) branch."
 
 .PHONY: distclean_warning distclean_nowarning

@@ -382,50 +382,6 @@ The steps herein are a slightly modified subset of those outlined in \url{https:
 \end{enumerate}
 
 \subsubsection{ISE}
-\begin{flushleft}
-Refer to \ref{sec:doc_overview} to determine if cable driver installation is required. Xilinx ISE does not officially support cable driver installation in CentOS. The steps herein are a slightly modified subset of those outlined in \url{http://www.xilinx.com/support/answers/29310.html}. \newline
-\end{flushleft}
-\textbf{Installation of libusb prerequisites}
-\begin{enumerate}
-\item Make sure libudev-devel is installed. If not, run ``\code{sudo yum install libudev-devel}''.
-\end{enumerate}
-\textbf{Installation of the libusb package}
-\begin{enumerate}
-\item Download the libusb 0.1.12 package from \url{http://libusb.info/}
-
-Make sure this is version 0.1.12. You will probably need to navigate to the legacy libusb:
-\subitem Downloads, Other Releases, Parent folder, libusb-0.1 (LEGACY), 0.1.12
-\item Open a shell or terminal console.
-\item Extract the libusb package script and its support files by typing: \code{tar -xf libusb-0.1.12.tar.gz}. This will create a directory named ``\code{libusb-0.1.12}'' in the current directory.
-\item Navigate to the ``\code{libusb-0.1.12}'' directory by typing: \\
-\code{\% cd libusb-0.1.12}
-\item Run the configure script by typing: \code{./configure}. Running the \code{./configure} script without any argument installs the libusb shared libraries to the ``\code{/usr/local}''. Root permission is likely required to be able to write to this directory. If root permission is not available, run the configure script with the \code{--prefix} argument. \\
-\code{\% ./configure --prefix=<install-dir>}
-
-where \code{<install-dir>} is a directory where the libusb shared libraries will be installed, and this directory can be owned by a regular user.
-
-\item Run the following commands to complete the installation (will likely need root permission here as well):
-
-\code{\% make} \\
-\code{\% make install}
-
-\item Update the \code{LD\_LIBRARY\_PATH} environment variable, if necessary, to point to the libusb shared libraries. If the installation was performed from a root account, make sure that the ``\code{/usr/local/lib}'' directory is included in the \code{LD\_LIBRARY\_PATH} environment variable. If the installation was performed from a regular user's account, add the ``\code{<install\_dir>/lib}'' to the \code{LD\_LIBRARY\_PATH} environment variable. The directory may instead be ``\code{/usr/local/lib}'' or ``\code{<install\_dir>/lib}'' (whichever contains the libusb 0.1 .so/.a files).
-
-\end{enumerate}
-\textbf{Installation of cable enumeration drivers} \\
-NOTE: The user will likely require root permissions to perform this installation.
-
-\begin{enumerate}
-\item Disconnect the cable and close all applications that use the cable.
-\item Log in and open a shell or terminal console.
-\item Navigate to the \code{<XILINX\_DIR>/bin/lin} (for 32-bit version) or \code{<XILINX\_DIR>/bin/lin64} (for 64-bit version) directory. Note that the \code{<XILINX\_DIR>} variable should be set to your Xilinx installation directory (i.e. \code{/opt/Xilinx/14.7/ISE\_DS/ISE}).
-\begin{flushleft}
-If you have installed Xilinx LabTools instead of ISE, you will need to navigate to:\\
-\code{<XILINX\_DIR>/bin/lin64/install\_script/install\_drivers/linux\_drivers/pcusb} (for LabTools, \code{XILINX\_DIR} might be \code{/opt/Xilinx/14.7/LabTools/LabTools})
-\end{flushleft}
-\item Run the installation script by typing: \code{./setup\_pcusb} (you might first need to set the script as executable). This script will likely require root privileges. You might see some errors executing the script relating to ``\code{xusbdfwu.hex}'' file. These can be ignored.
-\item Reconnect the cable.
-\end{enumerate}
 \textbf{Verifying udev rules}
 \begin{enumerate}
 \item Run the following command : \code{ls -al /etc/udev/rules.d}
@@ -446,11 +402,10 @@ TODO
 \textbf{ISE}
 \begin{flushleft}
 To verify successful cable driver installation, you can run the following:\\
-\code{export LIBUSB\_INSTALL\_DIR=/usr/local/lib/} \\
 \code{cd /opt/Xilinx/14.7/ISE\_DS} \\
 \code{. ./settings64.sh} \\
 \code{cd ~} \\
-\code{echo listusbcables | LD\_LIBRARY\_PATH=\$LIBUSB\_INSTALL\_DIR:\$LD\_LIBRARY\_PATH impact -batch} \\
+\code{echo listusbcables | impact -batch} \\
 If the cable driver is successfully installed, ``\code{Using libusb.}'' will be included in the text printed to the screen.
 %
 %This section assumes you have completed the cable driver installation and you have OpenCPI installed.

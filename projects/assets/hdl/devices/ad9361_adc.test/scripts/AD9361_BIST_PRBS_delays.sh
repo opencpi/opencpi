@@ -73,7 +73,7 @@ run_delay_tests_1r1t_fmcomms3() {
       rm -rf $FILENAME
     fi
 
-    OCPI_LIBRARY_PATH=$OCPI_LIBRARY_PATH:./assemblies/:$OCPI_PROJECT_PATH P="-pfile_write=filename=$FILENAME $@" RX_DATA_CLOCK_DELAY=$clkdelay RX_DATA_DELAY=$datadelay ./scripts/run_app_FMCOMMS3.sh $APP_XML $APP_RUNTIME_SEC $twortwot > $LOGFILENAME 2>&1
+    OCPI_LIBRARY_PATH=$OCPI_LIBRARY_PATH:./assemblies/ P="-pfile_write=filename=$FILENAME $@" RX_DATA_CLOCK_DELAY=$clkdelay RX_DATA_DELAY=$datadelay ./scripts/run_app_FMCOMMS3.sh $APP_XML $APP_RUNTIME_SEC $twortwot > $LOGFILENAME 2>&1
 
     if [ ! -f $FILENAME ]; then
       printf "error"

@@ -330,7 +330,7 @@ parse(ezxml_t cx, const ParamConfigs &configs) { // , bool includeInitial) {
   // Note that this resize when including initial props, will overallocate, e.g. volatiles.
   params.resize(//includeInitial ? m_worker.m_ctl.properties.size() : 
 		m_worker.m_ctl.nParameters);
-  for (ezxml_t px = ezxml_cchild(cx, "parameter"); px; px = ezxml_next(px)) {
+  for (ezxml_t px = ezxml_cchild(cx, "parameter"); px; px = ezxml_cnext(px)) {
     if ((err = OE::checkAttrs(px, PARAM_ATTRS, NULL)))
       return err;
     std::string name;
@@ -476,14 +476,20 @@ writeConstants(FILE *gf, Language lang) {
     const OU::Property &pr = *p.m_param;
     std::string value;
     if (lang == VHDL) {
+      if (pr.m_baseType == OA::OCPI_String && pr.m_stringLength == 0) {
+	// This string parameter has no string length since it will be set based on the
+	// actual (possibly computed) value.
+	assert(p.m_value.m_vt == &pr);
+	pr.m_stringLength = p.m_value.maxStringLength();
+      }
       std::string typeDecl, type;
-      vhdlType(pr, typeDecl, type);
-      m_worker.hdlValue(pr.m_name, p.m_value, value, false, VHDL);
+      vhdlType(pr, typeDecl, type, false, true); // true for asserting all constants are known
+      m_worker.hdlValue(pr.m_name, p.m_value, value, false, VHDL, true); // ditto
       fprintf(gf, "  constant %s : %s := %s;\n",
 	      p.m_param->m_name.c_str(), type.c_str(), value.c_str());
     } else
       fprintf(gf, "  parameter [%zu:0] %s  = %s;\n", rawBitWidth(pr)-1, pr.m_name.c_str(),
-	      verilogValue(p.m_value, value));
+	      verilogValue(p.m_value, value, true));
   }
   // This is static (not a port method) since it is needed when there are parameters with
   // no control interface.
@@ -795,7 +801,7 @@ emitToolParameters() {
     return err;
   ParamConfig info(*this);                          // Current config for generating them
   info.params.resize(m_ctl.nParameters);
-  for (ezxml_t px = ezxml_cchild(x, "parameter"); px; px = ezxml_next(px)) {
+  for (ezxml_t px = ezxml_cchild(x, "parameter"); px; px = ezxml_cnext(px)) {
     std::string l_name;
     bool hasValues;
     OU::Property *p;

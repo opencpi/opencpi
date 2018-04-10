@@ -355,7 +355,7 @@ Setting up the environment when installing from RPM requires root privileges. Na
  	\item \verb+xilinx.sh.example+
 \end{itemize}
 
-Every time a new shell is opened, all \verb+*.sh+ files in \verb+/opt/opencpi/cdk/env.d+ are executed, and all \verb+*.sh.example+ files in \verb+/opt/opencpi/cdk/env.d+ are \textit{ignored}. To enable a script for execution, the name of the script must be changed so that the \verb+.example+ suffix is removed. A simple demonstration is below:\\
+Every time a new \code{bash}\footnote{Some problems have been reported when the user's shell is set to \path{/bin/sh} and not \path{/bin/bash}.} shell is opened, all \verb+*.sh+ files in \verb+/opt/opencpi/cdk/env.d+ are executed, and all \verb+*.sh.example+ files in \verb+/opt/opencpi/cdk/env.d+ are \textit{ignored}. To enable a script for execution, the name of the script must be changed so that the \verb+.example+ suffix is removed. A simple demonstration is below:\\
 
 \verb+ % sudo cp altera.sh.example altera.sh+\\
 

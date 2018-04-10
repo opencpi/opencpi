@@ -181,6 +181,7 @@ other_regexs = (
 bad_paths = (
     '/.git/',
     '/chipscope/',
+    '/docs/IDE_Guide_Shots/',  # IDE
     '/fixed_float',
     '/gen/',
     '/kernel-headers',

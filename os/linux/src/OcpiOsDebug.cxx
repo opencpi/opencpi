@@ -98,7 +98,7 @@ namespace OCPI {
 	return false;
       if (logLevel == UINT_MAX) {
 	const char *e = getenv("OCPI_LOG_LEVEL");
-	logLevel = e ? atoi(e) : OCPI_LOG_WIERD;
+	logLevel = e ? atoi(e) : OCPI_LOG_WEIRD;
       }
       return n <= logLevel;
     }

@@ -18,68 +18,37 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-# Extract the target-related variables set in the make context for use in the shell context
+################################################################################################
+# Extract the target-related variables from the make context for use in the shell context.
 # This file must be sourced since its purpose is to change the environment
 # This is rarely needed since these variables are almost always used in the "make" context,
-# where the initialization is done using the ocpisetup.mk script.
+# where the initialization is done using ocpisetup.mk.
 # A single argument is required which will become OCPI_TARGET_PLATFORM.
 # If the single argument is empty, and OCPI_TARGET_PLATFORM is already set, it is used.
-# If the single argument is empty and OCPI_TARGET_PLATFORM is not set, OCPI_TOOL_PLATFORM is used.
-
-# If the CDK does not (yet) exist, it will use a bootstrap directory, if found (AV-2088)
-if [ ! -f ${OCPI_CDK_DIR}/platforms/getPlatform.sh ]; then
-  # echo "CDK not (yet) exported."
-  if [ -d bootstrap/platforms ]; then
-    # echo "Bootstrap found. Fixing OCPI_CDK_DIR (was ${OCPI_CDK_DIR})."
-    export ORIG_CDK=${OCPI_CDK_DIR}
-    export OCPI_CDK_DIR=$(pwd)/bootstrap
-  else
-    echo "No CDK nor bootstrap directory found."
-    return 1
-  fi
-fi
-
-if [ -z "$1" ]; then
-  # Support legacy use of setting OCPI_TARGET_HOST, before platforms could be in projects
-  if test "$OCPI_TARGET_PLATFORM" = ""; then
-    if test "$OCPI_TARGET_HOST" != ""; then
-      # For compatibility if  OCPI_TARGET_PLATFORM not set.
-      for i in $OCPI_CDK_DIR/platforms/*; do
-       if test -f $i/target -a "$(< $i/target)" = "$OCPI_TARGET_HOST"; then
-         export OCPI_TARGET_PLATFORM=$(basename $i)
-         break
-       fi
-      done
-      if test "$OCPI_TARGET_PLATFORM" = ""; then
-        echo The value of $OCPI_TARGET_HOST does not match any known platform.
-        return 1
-      fi
-      echo 'Warning: The OCPI_TARGET_HOST environment variable was found set: it is deprecated; use OCPI_TARGET_PLATFORM instead, when cross-building.'
+# If the single argument is empty and OCPI_TARGET_PLATFORM is not set, ocpisetup.mk will set
+# it as OCPI_TOOL_PLATFORM.
+# Just some extra error checking
+if [ -n "$OCPI_TARGET_PLATFORM" ]; then
+  if [ -n "$1" ]; then
+    if  [ "$1" != $OCPI_TARGET_PLATFORM ]; then
+      echo Error:  ocpitarget.sh called with \"$1\" when OCPI_TARGET_PLATFORM already set to \"$OCPI_TARGET_PLATFORM\".
+      exit 1
     fi
-  fi
-  # End of legacy support for setting OCPI_TARGET_HOST
-  if [ -z "$OCPI_TARGET_PLATFORM" ]; then
-    [ -z "$OCPI_TOOL_PLATFORM" ] && {
-       echo "Internal error: environment not set in ocpitarget.sh"
-       return 1
-    }
-    export OCPI_TARGET_PLATFORM=$OCPI_TOOL_PLATFORM
+  elif [ $OCPI_TARGET_PLATFORM != $OCPI_TOOL_PLATFORM ]; then
+    echo Error:  ocpitarget.sh called with no target when OCPI_TARGET_PLATFORM already set to \"$OCPI_TARGET_PLATFORM\".
+    exit 1
   fi
 else
+  # OCPI_TARGET_PLATFORM reflects the argument which might be empty
   export OCPI_TARGET_PLATFORM=$1
-fi 
+fi
 
 # Ensure we are really starting fresh for this target
 unset `env | grep OCPI_TARGET | grep -v OCPI_TARGET_PLATFORM | sed 's/=.*//'`
 
 source $OCPI_CDK_DIR/scripts/util.sh
-OCPI_PROJECT_PATH=`getProjectPathAndRegistered` \
-  setVarsFromMake $OCPI_CDK_DIR/include/ocpisetup.mk ShellTargetVars=1
-if [ -n "${ORIG_CDK}" ]; then
-  export OCPI_CDK_DIR=${ORIG_CDK}
-  unset ORIG_CDK
-fi
-if [ -z "${OCPI_TARGET_ARCH}" ]; then
-  echo "Some variables may be unset. Are you sure a platform '${OCPI_TARGET_PLATFORM}' exists?"
-fi
-echo OCPI_PROJECT_PATH is $OCPI_PROJECT_PATH
+# Remove this until we figure out why it is here.
+# platform searches already look in the right places...
+#OCPI_PROJECT_PATH=`getProjectPathAndRegistered` \
+#
+setVarsFromMake $OCPI_CDK_DIR/include/ocpisetup.mk ShellTargetVars=1 -v

@@ -51,8 +51,8 @@ function foreach_remote () {
     if [ -n "$rsshversion" ]; then
       sshversion="-"$rsshversion
     fi
-    pwfile=$(mktemp -p . -t ocpi_remote_pwfile_XXXXX)
-    logfile=$(mktemp -p . -t ocpi_remote_logfile_XXXXX)
+    pwfile=$(mktemp ./ocpi_remote_pwfile_XXXXXX)
+    logfile=$(mktemp ./ocpi_remote_logfile_XXXXXX)
     chmod 700 $pwfile
     chmod 600 $logfile
     export ${h}_result=$logfile
@@ -80,7 +80,7 @@ function foreach_remote_push () {
       sshversion="-"$rsshversion
     fi
     if [ -n "$2" ]; then rdir=$2; fi
-    pwfile=$(mktemp -p . -t ocpi_remote_pwfile_XXXXX)
+    pwfile=$(mktemp ./ocpi_remote_pwfile_XXXXXX)
     chmod 700 $pwfile
     echo echo $rpasswd > $pwfile
     SSH_ASKPASS=$pwfile $OCPI_CDK_DIR/scripts/setsid.py scp $sshversion\

@@ -104,7 +104,17 @@ getCdkDir(std::string &cdk) {
 const char *
 getPrereqDir(std::string &dir) {
   const char *env = getenv("OCPI_PREREQUISITES_DIR");
-  dir = env ? env : "/opt/opencpi/prerequisites";
+  if (env)
+    dir = env;
+  else {
+    std::string cdk;
+    const char *err = getCdkDir(cdk);
+    if (err)
+      return err;
+    dir = cdk + "/../prerequisites";
+    if (!OF::exists(dir))
+      dir = "/opt/opencpi/prerequisites";
+  }
   bool isDir;
   if (OF::exists(dir, &isDir) && isDir) {
     ocpiDebug("OCPI_PREREQUISITES_DIR: %s", env);

@@ -387,7 +387,7 @@ parseImplControl(ezxml_t &xctl, const char */*firstRaw*/) { // FIXME: nuke the s
     m_scaling.m_max = 0;
   // FIXME: have an expression validator
   OE::getOptionalString(m_xml, m_validScaling, "validScaling");
-  for (ezxml_t x = ezxml_cchild(m_xml, "scaling"); x; x = ezxml_next(x)) {
+  for (ezxml_t x = ezxml_cchild(m_xml, "scaling"); x; x = ezxml_cnext(x)) {
     std::string l_name;
     OE::getOptionalString(x, l_name, "name");
     if (findProperty(l_name.c_str()))
@@ -428,7 +428,7 @@ finalizeProperties() {
   const char *Worker::
 parseImplLocalMemory() {
   const char* err;
-  for (ezxml_t x = ezxml_cchild(m_xml, "LocalMemory"); x; x = ezxml_next(x)) {
+  for (ezxml_t x = ezxml_cchild(m_xml, "LocalMemory"); x; x = ezxml_cnext(x)) {
     LocalMemory* m = new LocalMemory();
     m_localMemories.push_back(m);
     if ((err = OE::checkAttrs(x, "Name", "SizeofLocalMemory", (void*)0)) )
@@ -622,12 +622,12 @@ parseSpec(const char *a_package) {
   if (ezxml_cchild(spec, "DataInterfaceSpec") && ezxml_cchild(spec, "Port"))
     return "Cannot use both 'datainterfacespec' and 'port' elements in the same spec";
   // First pass to establish ports with names
-  for (ezxml_t x = ezxml_cchild(spec, "DataInterfaceSpec"); x; x = ezxml_next(x)) {
+  for (ezxml_t x = ezxml_cchild(spec, "DataInterfaceSpec"); x; x = ezxml_cnext(x)) {
     new DataPort(*this, x, -1, err);
     if (err)
       return err;
   }
-  for (ezxml_t x = ezxml_cchild(spec, "Port"); x; x = ezxml_next(x)) {
+  for (ezxml_t x = ezxml_cchild(spec, "Port"); x; x = ezxml_cnext(x)) {
     new DataPort(*this, x, -1, err);
     if (err)
       return err;
@@ -649,7 +649,7 @@ initImplPorts(ezxml_t xml, const char *element, PortCreate &a_create) {
     nTotal = OE::countChildren(xml, element),
     ordinal = 0;
   // Clocks depend on port names, so get those names in first pass(non-control ports)
-  for (ezxml_t x = ezxml_cchild(xml, element); x; x = ezxml_next(x), ordinal++) {
+  for (ezxml_t x = ezxml_cchild(xml, element); x; x = ezxml_cnext(x), ordinal++) {
 #if 0
 
     if (!ezxml_cattr(x, "name")) {

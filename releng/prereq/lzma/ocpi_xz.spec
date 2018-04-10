@@ -42,7 +42,7 @@ AutoReqProv:    no
 %define __strip %{OCPI_CROSS_DIR}/%{OCPI_CROSS_PREFIX}-strip
 %define debug_package %{nil}
 %endif
-Release:        2%{?dist}
+Release:        3%{?dist}
 Packager:       ANGRYVIPER team <discuss@lists.opencpi.org>
 Summary:        RPM build of the package that was once lzma, now xz for OpenCPI
 Group:          Development/Tools
@@ -105,8 +105,9 @@ PATH=%{OCPI_CROSS_DIR}:$PATH %make_install
 rm -rf %{buildroot}%{_incdir}
 %endif
 
-# Make arm_cs version if arm (for picoflexor)
+# Make arm_cs and 13_4 versions if arm
 %if "x%{?OCPI_TARGET_HOST}" == "xlinux-x13_3-arm"
+ln -sf %{_prefix}/%{OCPI_TARGET_HOST} %{buildroot}/%{_prefix}/linux-x13_4-arm
 ln -sf %{_prefix}/%{OCPI_TARGET_HOST} %{buildroot}/%{_prefix}/linux-zynq-arm_cs
 %endif
 
@@ -145,10 +146,13 @@ fi
 %{_incdir}/lzma
 %endif
 %if "x%{?OCPI_TARGET_HOST}" == "xlinux-x13_3-arm"
+%{_prefix}/linux-x13_4-arm
 %{_prefix}/linux-zynq-arm_cs
 %endif
 
 %changelog
+* Mon Feb 26 2018 - 5.2.3-3
+- AV: Add Xilinx 13_4 alias
 * Wed Feb  7 2018 - 5.2.3-2
 - AV: Rename RPMs
 * Wed Oct 11 2017 - 5.2.3-1

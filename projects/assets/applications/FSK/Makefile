@@ -81,17 +81,23 @@ Development Computer - generate test ACI executable and filter coefficients
 ----------------------------------------------------------------------------
 Zynq-Based Platform - setup environment
 . /mnt/card/opencpi/mynetsetup.sh {DEVELOPMENT HOST IPADDRESS}
+
 cd /mnt/ocpi_assets/applications/FSK
 
-HDL ('common'):
-export OCPI_LIBRARY_PATH=$$OCPI_CDK_DIR/../projects/core/exports/lib/components/rcc:$$(pwd)/../../exports/lib
+HDL ('common' export) :
+export OCPI_LIBRARY_PATH=$$OCPI_CDK_DIR/../projects/core/exports/lib/components/rcc
 
 Pick one of the following, depending upon the test to be executed:
-Test 1: export OCPI_LIBRARY_PATH=$$OCPI_LIBRARY_PATH:$$(pwd)/../../hdl/assemblies/fsk_filerw
-Test 2: export OCPI_LIBRARY_PATH=$$OCPI_LIBRARY_PATH:$$(pwd)/../../hdl/assemblies/dc_offset_iq_imbalance_mixer_cic_dec_rp_cordic_fir_real
-Test 3: export OCPI_LIBRARY_PATH=$$OCPI_LIBRARY_PATH:$$(pwd)/../../hdl/assemblies/mfsk2_zp16_fir_real_phase_to_amp_cordic_cic_int
-Test 4: export OCPI_LIBRARY_PATH=$$OCPI_LIBRARY_PATH:$$(pwd)/../../hdl/assemblies/fsk_modem
-Test 5: export OCPI_LIBRARY_PATH=$$OCPI_LIBRARY_PATH:$$(pwd)/../../hdl/assemblies/fsk_modem
+Test 1:
+export OCPI_LIBRARY_PATH=$$OCPI_LIBRARY_PATH:$$(pwd)/../../hdl/assemblies/fsk_filerw:$$(pwd)/../../exports/lib
+Test 2:
+export OCPI_LIBRARY_PATH=$$OCPI_LIBRARY_PATH:$$(pwd)/../../hdl/assemblies/dc_offset_iq_imbalance_mixer_cic_dec_rp_cordic_fir_real:$$(pwd)/../../exports/lib
+Test 3:
+export OCPI_LIBRARY_PATH=$$OCPI_LIBRARY_PATH:$$(pwd)/../../hdl/assemblies/mfsk2_zp16_fir_real_phase_to_amp_cordic_cic_int:$$(pwd)/../../exports/lib
+Test 4:
+export OCPI_LIBRARY_PATH=$$OCPI_LIBRARY_PATH:$$(pwd)/../../hdl/assemblies/fsk_modem:$$(pwd)/../../exports/lib
+Test 5:
+export OCPI_LIBRARY_PATH=$$OCPI_LIBRARY_PATH:$$(pwd)/../../hdl/assemblies/fsk_modem:$$(pwd)/../../exports/lib
 
 #NOTE: If copy/paste of the above exports, the redundant '$' must be removed.
 ----------------------------------------------------------------------------
@@ -114,6 +120,3 @@ Test 5: eog odata/out_app_fsk_bbloopback.bin &
 ----------------------------------------------------------------------------
 endef
 export showhelp
-
-
-

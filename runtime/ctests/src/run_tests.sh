@@ -26,7 +26,11 @@ source $OCPI_CDK_DIR/scripts/util.sh
 # Add core AND the default installed projects/core project so that
 # core's artifacts can be found on a remote system via the default
 # installed location
-export OCPI_LIBRARY_PATH=$(getProjectRegistryDir)/ocpi.core/exports/lib/components/rcc:$OCPI_CDK_DIR/../projects/core/exports/lib/components/rcc
+core1=$(getProjectRegistryDir)/ocpi.core
+[ -d $core1/exports ] && core1+=/exports
+core2=$OCPI_CDK_DIR/../projects/core
+[ -d $core2/exports ] && core2+=/exports
+export OCPI_LIBRARY_PATH=$core1/lib/components/rcc:$core2/lib/components/rcc
 
 # export OCPI_LOG_LEVEL=11
 # Allow caller to force location (e.g. Jenkins)

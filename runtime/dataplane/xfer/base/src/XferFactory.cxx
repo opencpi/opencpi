@@ -122,7 +122,7 @@ getNode( ezxml_t tn, const char* name )
     if ( node->name && (strcmp( node->name, name) == 0 ) ) {
       return node;
     }
-    node = ezxml_next( node );
+    node = ezxml_cnext( node );
   }
   if ( tn ) {
     if(tn->child)if((node=getNode(tn->child,name)))return node;

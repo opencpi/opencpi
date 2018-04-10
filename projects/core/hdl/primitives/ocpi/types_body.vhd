@@ -111,21 +111,24 @@ function To_boolean(b : bool_t) return boolean is begin return its(b); end to_bo
 function from_bool_array(ba : bool_array_t;
                          offset, nbytes_1, byte_offset : unsigned;
                          is_big_endian : boolean) return dword_t is
-  variable my_offset : unsigned(offset'range) := offset;
+  variable my_offset : unsigned(offset'range);
   variable my_byte_offset : unsigned(byte_offset'range) := byte_offset;
-  variable my_nbytes_1 : unsigned(nbytes_1'range) := nbytes_1;
+  variable my_nbytes_1 : unsigned(nbytes_1'range);
   variable last_index  : unsigned(offset'range);
   variable last_offset : unsigned(byte_offset'range);
   variable v : std_logic_vector(0 to 3) := (others => '0');
 begin
-  if my_offset >= ba'right then
+  if offset >= ba'right then
     my_offset := (others => '0');
+  else
+    my_offset := offset;
   end if;
-  if my_nbytes_1 >= ba'right then
+  if nbytes_1 >= ba'right then
     my_nbytes_1 := (others => '0');
-  end if;
-  if my_nbytes_1 > (3 - byte_offset)  then
+  elsif nbytes_1 > (3 - byte_offset)  then
     my_nbytes_1 := (others => '0');
+  else
+    my_nbytes_1 := nbytes_1;
   end if;
 --  report "from_bool1" &
 --    " offset " & integer'image(to_integer(offset)) &

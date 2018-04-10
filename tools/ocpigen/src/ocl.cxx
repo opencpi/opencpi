@@ -520,7 +520,7 @@ parseOcl() {
     return err;
   // Parse data port implementation metadata: maxlength, minbuffers.
   DataPort *sp;
-  for (ezxml_t x = ezxml_cchild(m_xml, "Port"); x; x = ezxml_next(x))
+  for (ezxml_t x = ezxml_cchild(m_xml, "Port"); x; x = ezxml_cnext(x))
     if ((err = checkDataPort(x, sp)) || !createDataPort<OclPort>(*this, x, sp, -1, err))
       return err;
   for (unsigned i = 0; i < m_ports.size(); i++)

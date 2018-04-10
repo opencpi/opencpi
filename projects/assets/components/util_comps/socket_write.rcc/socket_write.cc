@@ -168,6 +168,7 @@ public:
       workers.emplace_back(static_cast<SocketWriter *>(NULL));
 #endif
     // Tell framework to call us every 100ms even if no incoming data (to clear out completed buffers avoiding deadlock)
+    // Bug? AV-4109 - we should optionally do output port here
     m_RunCondition.setPortMasks(1<<SOCKET_WRITE_IN, RCC_NO_PORTS);
     m_RunCondition.enableTimeout(10 * 1000); // 10ms
     setRunCondition(&m_RunCondition);

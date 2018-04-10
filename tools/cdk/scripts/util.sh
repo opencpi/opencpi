@@ -25,10 +25,10 @@
 # Otherwise, this is likely a runtime-only evironment, and the registry should
 # be determined based solely on the environment and defaults.
 function getProjectRegistryDir {
-  if [ -n "$OCPI_CDK_DIR" -a -n "$(which python 2> /dev/null)" -a -r $OCPI_CDK_DIR/scripts/ocpiutil.py ]; then
-    python -c "\
+  if [ -n "$OCPI_CDK_DIR" -a -n "$(command -v python3 2> /dev/null)" -a -r $OCPI_CDK_DIR/scripts/ocpiutil.py ]; then
+    python3 -c "\
 import sys; sys.path.append(\"$OCPI_CDK_DIR/scripts/\");
-import ocpiutil; print ocpiutil.get_project_registry_dir()[1];"
+import ocpiutil; print (ocpiutil.get_project_registry_dir()[1]);"
   elif [ -n "$OCPI_PROJECT_REGISTRY_DIR" ]; then
     echo $OCPI_PROJECT_REGISTRY_DIR
   elif [ -n "$OCPI_CDK_DIR" ]; then
@@ -76,7 +76,7 @@ function setVarsFromMake {
     return 1
   }
   eval $(eval make -n -r -s -f $1 $2 \
-	 ${quiet:+2>/dev/null} | grep '^[a-zA-Z_][a-zA-Z_]*=')
+              ${quiet:+2>/dev/null} | grep '^[a-zA-Z_][a-zA-Z_]*=')
 }
 
 function isPresent {
@@ -162,20 +162,19 @@ function ocpiGetToolPlatform {
 # echo the tool dir, setting OCPI_TOOL_DIR as a side effect
 function ocpiGetToolDir {
   [ -n "$OCPI_TOOL_DIR" ] || {
-    GETPLATFORM=$OCPI_CDK_DIR/platforms/getPlatform.sh
-    if test ! -f $OCPI_CDK_DIR/platforms/getPlatform.sh; then
-      echo Error:  cannot find $OCPI_CDK_DIR/platforms/getPlatforms.sh 1>&2
+    GETPLATFORM=$OCPI_CDK_DIR/scripts/getPlatform.sh
+    if test ! -f $OCPI_CDK_DIR/scripts/getPlatform.sh; then
+      echo Error:  cannot find $OCPI_CDK_DIR/scripts/getPlatforms.sh 1>&2
       exit 1
     fi
-    read v0 v1 v2 v3 v4 <<-EOF
-	`${GETPLATFORM}`
-	EOF
-    if test "$v0" == "" -o $? != 0; then
+    read v0 v1 v2 v3 v4 v5 <<< `${GETPLATFORM}`
+    if test "$v5" == "" -o $? != 0; then
       echo Error:  Failed to determine runtime platform. 1>&2
       exit 1
     fi
     # We always set this as a side-effect
     export OCPI_TOOL_PLATFORM=$v4
+    export OCPI_TOOL_PLATFORM_DIR=$v5
     # Determine OCPI_TOOL_MODE if it is not set already
     # It can be set to null to suppress these modes, and just use whatever has been
     # built without modes.

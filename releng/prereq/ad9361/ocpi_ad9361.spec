@@ -21,7 +21,7 @@ AutoReqProv:    no
 %endif
 # Version: %{OCPI_AD9361_VERSION}.%(date +%y%m%d)
 Version: snapshot.%(date +%y%m%d)
-Release: 3.%{OCPI_AD9361_COMMIT_SHORT}%{?dist}
+Release: 4.%{OCPI_AD9361_COMMIT_SHORT}%{?dist}
 Packager: ANGRYVIPER team <discuss@lists.opencpi.org>
 Summary: RPM build of the AD9361 driver libraries for OpenCPI
 License: GPL
@@ -97,8 +97,9 @@ egrep '^INC' RPM_Commands.txt | while read -r line; do
 done
 %endif
 
-# Make arm_cs version if arm (for picoflexor) (AV-3581)
+# Make arm_cs and 13_4 versions if arm
 %if "x%{?OCPI_TARGET_HOST}" == "xlinux-x13_3-arm"
+ln -sf %{_prefix}/%{OCPI_TARGET_HOST} %{buildroot}/%{_prefix}/linux-x13_4-arm
 ln -sf %{_prefix}/%{OCPI_TARGET_HOST} %{buildroot}/%{_prefix}/linux-zynq-arm_cs
 %endif
 
@@ -116,10 +117,13 @@ fi
 %files
 %{_prefix}
 %if "x%{?OCPI_TARGET_HOST}" == "xlinux-x13_3-arm"
+%{_prefix}/linux-x13_4-arm
 %{_prefix}/linux-zynq-arm_cs
 %endif
 
 %changelog
+* Mon Feb 26 2018 - snapshot.YYMMDD-4
+- AV: Add Xilinx 13_4 alias
 * Wed Feb  7 2018 - snapshot.YYMMDD-3
 - AV: Rename RPMs
 * Thu Nov 16 2017 - snapshot.YYMMDD-2

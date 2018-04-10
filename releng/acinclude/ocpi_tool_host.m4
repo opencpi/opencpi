@@ -27,7 +27,7 @@ AC_DEFUN([OCPI_OCPI_TOOL_HOST],
                 AS_IF([test "x${OCPI_TOOL_HOST}" != "x"],
                       [ocpi_cv_ocpi_tool_host=${OCPI_TOOL_HOST}],
                       [
-                        ocpi_cv_ocpi_tool_host=$(./platforms/getPlatform.sh | cut -f4 -d" ")
+                        ocpi_cv_ocpi_tool_host=$(./bootstrap/scripts/getPlatform.sh | cut -f4 -d" ")
 		        AC_MSG_WARN(OCPI_TOOL_HOST was not specified. The value has been evaluated from the environment:)
                       ])
 	        )

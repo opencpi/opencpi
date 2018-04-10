@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # This file is protected by Copyright. Please refer to the COPYRIGHT file
 # distributed with this source distribution.
 #
@@ -26,7 +26,7 @@ import sys
 import json
 import types
 import pydoc
-from lxml import etree as ET
+from xml.etree import ElementTree as ET
 import ocpiutil
 from hdltargets import HdlTarget, HdlPlatform
 
@@ -103,25 +103,28 @@ def do_rccplatforms(options):
       rccPlatforms = rccDict["RccAllPlatforms"]
       rccTargets   = rccDict["RccAllTargets"]
     except TypeError:
-        print "No RCC platforms found. Make sure the core project is registered or in your OCPI_PROJECT_PATH."
+        print("No RCC platforms found. Make sure the core project is registered or in your OCPI_PROJECT_PATH.")
         return
     if options.table:
         rows = [["Platform", "Target"]]
         rows += [["---------", "---------"]]
         # Collect the information for each platform into a "row" list
-        for platform, target in sorted(zip(rccPlatforms, rccTargets)):
+        for platform in sorted(rccPlatforms):
+            # Assuming there is only one target per platform with [0]
+            target = rccDict["RccTargetAux_" + platform][0]
             platformRow = [platform, target]
             rows.append(platformRow)
         # Format the list of rows into a table and print
         ocpiutil.print_table(rows)
     elif options.json:
         platformDict = {}
-        for platform, target in sorted(zip(rccPlatforms, rccTargets)):
+        for platform in sorted(rccPlatforms):
+            target = rccDict["RccTargetAux_" + platform][0]
             platformDict[platform] = {"target": target}
         json.dump(platformDict, sys.stdout)
-        print
+        print()
     else:
-        print ocpiutil.python_list_to_bash(sorted(rccDict["RccAllPlatforms"]))
+        print(ocpiutil.python_list_to_bash(sorted(rccDict["RccAllPlatforms"])))
 
 def do_rcctargets(options):
     """
@@ -135,9 +138,9 @@ def do_rcctargets(options):
     else:
         rccDict = ocpiutil.get_make_vars_rcc_targets()
         try:
-          print ocpiutil.python_list_to_bash(sorted(rccDict["RccAllTargets"]))
+          print(ocpiutil.python_list_to_bash(sorted(rccDict["RccAllTargets"])))
         except TypeError:
-            print "No RCC targets found. Make sure the core project is registered or in your OCPI_PROJECT_PATH."
+            print("No RCC targets found. Make sure the core project is registered or in your OCPI_PROJECT_PATH.")
             return
 
 
@@ -164,8 +167,8 @@ def do_hdlplatforms(options):
             rows.append(platformRow)
         # Format the list of rows into a table and print
         ocpiutil.print_table(rows)
-        print "* An asterisk indicates that the platform has not been built yet.\n" + \
-              "  Assemblies and tests cannot be built until the platform is built."
+        print("* An asterisk indicates that the platform has not been built yet.\n" + \
+              "  Assemblies and tests cannot be built until the platform is built.")
     elif options.json:
         # Dump the json containing each platform's attributes
         platformDict = {}
@@ -177,9 +180,9 @@ def do_hdlplatforms(options):
                                            "tool": target.toolset.title,
                                            "built": platform.built}
         json.dump(platformDict, sys.stdout)
-        print
+        print()
     else:
-        print ocpiutil.python_list_to_bash(sorted(platforms))
+        print(ocpiutil.python_list_to_bash(sorted(platforms)))
 
 def do_hdltargets(options):
     """
@@ -209,38 +212,38 @@ def do_hdltargets(options):
                                            "tool": target.toolset.title}
             vendorDict[vendor] = targetDict
         json.dump(vendorDict, sys.stdout)
-        print
+        print()
     else:
-        print ocpiutil.python_list_to_bash(sorted([str(tgt) for tgt in HdlTarget.all()]))
+        print(ocpiutil.python_list_to_bash(sorted([str(tgt) for tgt in HdlTarget.all()])))
 
 def do_platforms(options):
     """
     Print out platforms for all authoring models
     """
     if not options.json:
-        print "RCC:"
+        print("RCC:")
     else:
-        print "{"
-        print "\"rcc\":"
+        print("{")
+        print("\"rcc\":")
     do_rccplatforms(options)
     if not options.json:
-        print "HDL:"
+        print("HDL:")
     else:
-        print ","
-        print "\"hdl\":"
+        print(",")
+        print("\"hdl\":")
     do_hdlplatforms(options)
     if options.json:
-        print "}"
+        print("}")
 
 def do_targets(options):
     """
     Print out targets for all authoring models
     """
     if not options.json:
-        print "RCC:"
+        print("RCC:")
     do_rcctargets(options)
     if not options.json:
-        print "HDL:"
+        print("HDL:")
     do_hdltargets(options)
 
 def do_workers(options):
@@ -254,7 +257,7 @@ def do_workers(options):
         subprocess.check_output([os.environ['OCPI_CDK_DIR']+"/scripts/genProjMetaData.py", mdFile])
         mdFile = mdFile + "/project.xml"
         workList = workList + get_tags(mdFile, "worker")
-    print "Workers: " + workList
+    print("Workers: " + workList)
 
 def rchop(thestring, ending):
     if thestring.endswith(ending):
@@ -281,7 +284,7 @@ def do_components(options):
         subprocess.check_output([os.environ['OCPI_CDK_DIR']+"/scripts/genProjMetaData.py", mdFile])
         mdFile = mdFile + "/project.xml"
         compList = compList + get_tags(mdFile, "spec")
-    print "Components: " + compList
+    print("Components: " + compList)
 
 def do_registry(options):
     """
@@ -345,7 +348,7 @@ def do_projects(options, only_registry=False):
         # include those as well
         if not only_registry:
             proj_list += [proj for proj in projects_from_env]
-        print ocpiutil.python_list_to_bash(sorted(proj_list))
+        print(ocpiutil.python_list_to_bash(sorted(proj_list)))
     else:
         # Collect a dictionary mapping registered project link to its contents
         projects_dict = {}
@@ -374,9 +377,9 @@ def do_projects(options, only_registry=False):
         if options.table:
             # Print out a table listing project IDs, projects' realpaths, and whether they exist
             if reg_exists:
-                print "Project registry is located at: " + reg_dir
+                print("Project registry is located at: " + reg_dir)
             else:
-                print "There is no project registry, or it does not exist."
+                print("There is no project registry, or it does not exist.")
 
             # Table header
             row_1 = ["Project Package-ID/Link", "Path to Project", "Valid/Exists"]
@@ -389,7 +392,7 @@ def do_projects(options, only_registry=False):
             rows = [row_1, row_2]
 
             # Generate rows of the table. Only add the registered column if only_registry is False
-            for link, dest in projects_dict.iteritems():
+            for link, dest in projects_dict.items():
                 row_n = [link, dest["real_path"], dest["exists"]]
                 if not only_registry:
                     row_n.append(dest["registered"])
@@ -403,7 +406,7 @@ def do_projects(options, only_registry=False):
                 project_reg_dict["registry_location"] = reg_dir
             project_reg_dict["projects"] = projects_dict
             json.dump(project_reg_dict, sys.stdout)
-            print
+            print()
 
 # main
 (args, noun) = parseCLVars()
@@ -419,7 +422,7 @@ action = {"registry":     do_registry,
           "rccplatforms": do_rccplatforms,
           "rcctargets":   do_rcctargets}
 if args.verbose:
-    print "ocpishow is processing noun \"" + str(noun) + "\" with options \"" + str(args) + "\""
+    print("ocpishow is processing noun \"" + str(noun) + "\" with options \"" + str(args) + "\"")
 with ocpiutil.cd(args.dir):
     # call the correct noun function
     action[noun](args)

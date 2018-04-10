@@ -77,7 +77,7 @@ fi
 
 if [ "$DO_PRBS" == "1" ]; then
   echo "Running PRBS Built-In-Self-Test across range of sample rates for LVDS mode"
-  OCPI_LIBRARY_PATH=$OCPI_LIBRARY_PATH:./assemblies/:$OCPI_PROJECT_PATH ./scripts/AD9361_BIST_PRBS.sh $APP_XML 2>&1 | tee odata/AD9361_BIST_PRBS.log
+  OCPI_LIBRARY_PATH=$OCPI_LIBRARY_PATH:./assemblies/ ./scripts/AD9361_BIST_PRBS.sh $APP_XML 2>&1 | tee odata/AD9361_BIST_PRBS.log
   if [ "$?" !=  "0" ]; then
     cat odata/AD9361_BIST_PRBS.log
     echo "TEST FAILED"
@@ -147,7 +147,7 @@ else
 fi
 
 echo "Running loopback Built-In-Self-Test across range of sample rates for LVDS mode"
-OCPI_LIBRARY_PATH=$OCPI_LIBRARY_PATH:./assemblies/:$OCPI_PROJECT_PATH ./scripts/AD9361_BIST_loopback.sh $APP_XML 2>&1 | tee odata/AD9361_BIST_loopback.log
+OCPI_LIBRARY_PATH=$OCPI_LIBRARY_PATH:./assemblies/ ./scripts/AD9361_BIST_loopback.sh $APP_XML 2>&1 | tee odata/AD9361_BIST_loopback.log
 if [ "$?" !=  "0" ]; then
   cat odata/AD9361_BIST_loopback.log
   echo "TEST FAILED"

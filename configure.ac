@@ -20,7 +20,7 @@ dnl If changing version number here, also get minor/patchlevel below:
 AC_INIT([opencpi],[1.3],[discuss@lists.opencpi.org])
 AC_DEFINE([OCPI_VERSION_MAJOR],1,[Major version])
 AC_DEFINE([OCPI_VERSION_MINOR],3,[Minor version])
-AC_DEFINE([OCPI_VERSION_PATCHLEVEL],1,[Patchlevel version])
+AC_DEFINE([OCPI_VERSION_PATCHLEVEL],0,[Patchlevel version])
 
 dnl Bring in tool paths (if applicable)
 dnl next line is a bug that you SHOULD be able to do that with only "--with-cross-dir" AV-1511
@@ -101,7 +101,10 @@ m4_version_prereq([2.64],[
   AX_CHECK_COMPILE_FLAG([-Wnull-dereference],[COMMON_CFLAGS+=" -Wnull-dereference";STRICT_FLAGS+=" -Werror=null-dereference"])
   AX_CHECK_COMPILE_FLAG([-Wunused-result],[COMMON_CFLAGS+=" -Wunused-result";STRICT_FLAGS+=" -Werror=unused-result"])
   AX_CHECK_COMPILE_FLAG([-Wunused-but-set-variable],[COMMON_CFLAGS+=" -Wunused-but-set-variable";STRICT_FLAGS+=" -Werror=unused-but-set-variable"])
+  AX_CHECK_COMPILE_FLAG([-fsanitize=undefined],[STRICT_FLAGS+=" -fsanitize=undefined"])
 ],[true])
+
+dnl AX_CHECK_COMPILE_FLAG([-fsanitize=thread],[COMMON_CFLAGS+=" -pie -fsanitize=thread"])
 
 AS_VAR_IF([OCPI_TARGET_CFLAGS],,[OCPI_TARGET_CFLAGS="$COMMON_CFLAGS -std=c99"])
 AS_VAR_IF([OCPI_TARGET_CXXFLAGS],,[OCPI_TARGET_CXXFLAGS="$COMMON_CFLAGS -std=c++0x"])
@@ -196,6 +199,12 @@ AC_C_INLINE
 AS_VAR_IF([ac_cv_c_inline],[no],AC_MSG_ERROR([Compiler does not support inline?]))
 AC_C_RESTRICT
 AC_STRUCT_TIMEZONE
+dnl ensure bool is one byte (AV-810)
+AC_LANG_PUSH(C++)
+AC_CHECK_SIZEOF([bool])
+AS_VAR_IF([ac_cv_sizeof_bool],[1],,AC_MSG_ERROR([sizeof(bool) is $ac_cv_sizeof_bool and not 1]))
+AC_LANG_POP(C++)
+
 dnl explicitly check it's not in compatible mode
 AC_CHECK_MEMBERS([struct tm.tm_zone],,AC_MSG_ERROR([Could not find required timezone structure.]))
 AC_CHECK_TYPES([ptrdiff_t,off_t,pid_t,size_t,ssize_t,int8_t,int16_t,int32_t,int64_t,uint8_t,uint16_t,uint32_t,uint64_t],[],AC_MSG_ERROR([Could not find required type.]))

@@ -480,7 +480,7 @@ for a in $additions; do
 done
 
 # export the specs for each of the libraries
-python -c "import sys; sys.path.append(\"$OCPI_CDK_DIR/scripts/\");\
+python3 -c "import sys; sys.path.append(\"$OCPI_CDK_DIR/scripts/\");\
            import ocpiutil; ocpiutil.export_libraries()"
 
 exit 0

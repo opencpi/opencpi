@@ -42,6 +42,13 @@ using namespace OCPI::RCC; // for easy access to RCC data types and constants
 using namespace Si5351_proxyWorkerTypes;
 
 class Si5351_proxyWorker : public Si5351_proxyWorkerBase {
+  RunCondition m_aRunCondition;
+public:
+  Si5351_proxyWorker() : m_aRunCondition(RCC_NO_PORTS) {
+    //Run function should never be called
+    setRunCondition(&m_aRunCondition);
+  }
+private:
   static const unsigned nPLLs = SI5351_PROXY_NSOURCES;
   static const unsigned nChannels = SI5351_PROXY_NCHANNELS;
   Channels savedChannels[nChannels]; // to see which channels have changed.
@@ -78,7 +85,7 @@ class Si5351_proxyWorker : public Si5351_proxyWorkerBase {
 
   RCCResult run(bool /*timedout*/) {
     // This proxy doesn't do anything except respond to property writes.
-    return RCC_OK;
+    return RCC_DONE;
   }
 
   // notification that input_hz property will be read

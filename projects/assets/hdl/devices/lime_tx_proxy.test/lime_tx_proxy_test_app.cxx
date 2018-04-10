@@ -217,7 +217,7 @@ int main(int argc, char **argv)
   	}
 
       // Si5338:CLKIN (i.e. Si5338:CH0 = Rx clock to Lime transceiver) = 2 x sample_rate x 1 MHz
-      ClkInStr = to_string(2 * sample_rate * 1e6).c_str();
+      ClkInStr = to_string((long double)(2 * sample_rate * 1e6)).c_str();
 
       // Only required to set CH0 of the Clock Synthesis device
       clock_gen_config <<
@@ -270,7 +270,7 @@ int main(int argc, char **argv)
       	}
 
       // Si5351:CLKIN (i.e. Si5351:CH4 & 5 = Tx clock to Lime transceiver & FPGA) = 2 x sample_rate x 1 MHz
-      txClkInStr = to_string(2 * sample_rate * 1e6).c_str();
+      txClkInStr = to_string((long double)(2 * sample_rate * 1e6)).c_str();
 
       // CH 4&5 tx CH 2&3 rx
       clock_gen_config <<

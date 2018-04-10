@@ -15,6 +15,8 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
+
+import readline
 """
 This module a collection of OpenCPI utility functions.
 
@@ -39,6 +41,7 @@ import subprocess
 from glob import glob
 import logging
 from contextlib import contextmanager
+from functools import reduce
 
 # Use python3's input name
 try:
@@ -92,38 +95,39 @@ def set_vars_from_make(mk_file, mk_arg="", verbose=None):
     | Return a dictionary of variable names mapped to values from make
     -------------------------------------------------------------------------------
     """
-    fnull = open(os.devnull, 'w')
-    make_exists = subprocess.Popen(["which", "make"],\
-                  stdout=subprocess.PIPE, stderr=fnull).communicate()[0]
-    if make_exists is None or make_exists == "":
-        if verbose != None and verbose != "":
-            logging.error("The '\"make\"' command is not available.")
-        return 1
+    with open(os.devnull, 'w') as fnull:
+        make_exists = subprocess.Popen(["which", "make"],\
+                      stdout=subprocess.PIPE, stderr=fnull).communicate()[0]
+        if make_exists is None or make_exists == "":
+            if verbose != None and verbose != "":
+                logging.error("The '\"make\"' command is not available.")
+            return 1
 
-    make_cmd = "make -n -r -s -f " + mk_file + " " + mk_arg
-    # If verbose is unset, redirect 'make' stderr to /dev/null
-    if verbose is None or verbose == "":
-        mk_output = subprocess.Popen(make_cmd.split(),
-                                     stdout=subprocess.PIPE, stderr=fnull).communicate()[0]
-    else:
-        mk_output = subprocess.Popen(make_cmd.split(), stdout=subprocess.PIPE).communicate()[0]
-    try:
-        grep_str = re.search(r'(^|\n)[a-zA-Z_][a-zA-Z_]*=.*', mk_output.strip()).group()
-    except AttributeError:
-        logging.warning("No variables are set from \"" + mk_file + "\"")
-        return None
-
-    assignment_strs = [x.strip() for x in grep_str.split(';') if len(x.strip()) > 0]
-    make_vars = {}
-    for var_assignment in assignment_strs:
-        var_name, var_val = var_assignment.split('=')
-        # If the value is an empty string or just matching quotes, assign [] as the value
-        if var_val == "\"\"" or var_val == "\'\'" or var_val == "":
-            assignment_value = []
+        make_cmd = "make -n -r -s -f " + mk_file + " " + mk_arg
+        # If verbose is unset, redirect 'make' stderr to /dev/null
+        if verbose is None or verbose == "":
+            mk_output = subprocess.Popen(make_cmd.split(),
+                                         stdout=subprocess.PIPE, stderr=fnull).communicate()[0]
         else:
-            assignment_value = var_val.strip('"').strip().split(' ')
-        make_vars[var_name] = assignment_value
-    return make_vars
+            mk_output = subprocess.Popen(make_cmd.split(), stdout=subprocess.PIPE).communicate()[0]
+        try:
+        #print (str(mk_output))
+            grep_str = re.search(r'(^|\n)[a-zA-Z_][a-zA-Z_]*=.*', str(mk_output.strip(),'utf-8')).group()
+        except AttributeError:
+            logging.warning("No variables are set from \"" + mk_file + "\"")
+            return None
+
+        assignment_strs = [x.strip() for x in grep_str.split(';') if len(x.strip()) > 0]
+        make_vars = {}
+        for var_assignment in assignment_strs:
+            var_name, var_val = var_assignment.split('=')
+            # If the value is an empty string or just matching quotes, assign [] as the value
+            if var_val == "\"\"" or var_val == "\'\'" or var_val == "":
+                assignment_value = []
+            else:
+                assignment_value = var_val.strip('"').strip().split(' ')
+            make_vars[var_name] = assignment_value
+        return make_vars
 
 ###############################################################################
 # Utility functions for extracting variables and information from
@@ -151,9 +155,10 @@ def get_dirtype(directory="."):
     """
     match = None
     if os.path.isfile(directory + "/Makefile"):
-        for line in open(directory + "/Makefile"):
-            result = re.match(r"^\s*include\s*.*OCPI_CDK_DIR.*/include/(hdl/)?(.*)\.mk.*", line)
-            match = result.group(2) if result != None else match
+        with open(directory + "/Makefile") as mk_file:
+            for line in mk_file:
+                result = re.match(r"^\s*include\s*.*OCPI_CDK_DIR.*/include/(hdl/)?(.*)\.mk.*", line)
+                match = result.group(2) if result != None else match
     if match is None:
         if os.path.isfile(directory + "/project-package-id"):
             return "project"
@@ -807,12 +812,12 @@ def match_regex(target_file, regex):
     >>> match_regex(os.path.realpath(__file__), "#.*This text right.*\((.*)ns\)!!!!.*")
     '2.000'
     """
-    if isinstance(regex, basestring):
+    if isinstance(regex, str):
         regex = re.compile(regex)
     elif not isinstance(regex, type(re.compile(''))):
         raise ValueError("Error: regular expression invalid")
     matches = [re.findall(regex, line) for line in open(target_file)]
-    matches = filter(lambda m: m != [] and m != None, matches)
+    matches = [m for m in matches if m != [] and m != None]
     if len(matches) > 0 and len(matches[0]) > 0:
         match = matches[0][0]
         if isinstance(match, tuple):
@@ -833,9 +838,9 @@ def normalize_column_lengths(lists):
     >>> list1, list2 = normalize_column_lengths([["15 chr long str",\
                                                   "this is a longgg string"],\
                                                  ["< 15", "pretty short"]])
-    >>> print str(list1)
+    >>> print (str(list1))
     ['15 chr long str', 'this is a longgg string']
-    >>> print str(list2)
+    >>> print (str(list2))
     ['< 15           ', 'pretty short           ']
     """
     lists = [[str(elem) for elem in lst] for lst in lists]
@@ -863,12 +868,12 @@ def print_table(rows, col_delim='|', row_delim=None, surr_cols_delim='|', surr_r
     max_row_len = len(max(row_strs, key=len))
     if row_delim:
         row_line = row_delim * max_row_len
-    print surr_rows_delim * max_row_len
+    print(surr_rows_delim * max_row_len)
     for line in row_strs:
-        print line
+        print(line)
         if row_delim:
-            print row_line
-    print surr_rows_delim * max_row_len
+            print(row_line)
+    print(surr_rows_delim * max_row_len)
 
 ###############################################################################
 # Functions to ease filesystem navigation
@@ -891,9 +896,9 @@ def cd(target):
 ###############################################################################
 def get_ok(prompt=""):
     """Prompt the user to say okay"""
-    print prompt,
+    print(prompt, end=' ')
     while True:
-        ok = input(" [y/n]? ")
+        ok = eval(input(" [y/n]? "))
         if ok.lower() in ('y', 'yes', 'ok'):
             return True
         if ok.lower() in ('', 'n', 'no', 'nope'):

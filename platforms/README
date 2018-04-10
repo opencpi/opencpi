@@ -1,35 +1,43 @@
-This directory is for OpenCPI runtime platforms, whether development-capable
-platforms or embedded platforms.  The name of each subdirectory is a unique name
+This directory (in any project) is for OpenCPI runtime platforms, whether development-capable
+platforms or embedded runtime-only platforms.  The name of each subdirectory is a unique name
 for the platform.  The contents of each directory is a set of platform specific
-files and scripts, and is thus a home for platform specific "stuff".
+files and scripts, and is thus the home for platform specific "stuff".
 
 There are a few standard files that are expected to be in each platform subdirectory:
 
-README:                  describes the platform
-target:                  a one line text file containing the compilation target for the platform.
-                         E.g. for centos6: linux-c6-x86_64.
-<platform>-packages.sh:  a script to download and install packages from the
-                         standard repository for the OS, usually only for development platforms
-<platform>-target.mk:    Makefile settings when building the core of OpenCPI for this platform
-<platform>-check.sh:     a script to verify you are running on this platform.
-
-The other contents of this platforms directory are:
-
-getPlatform.sh: a script to determine what platform we are running on, which
-                uses the <platform>-check.sh scripts to recognize the platform you are running
+README:                    describes the platform
+target:                    a one line file containing the compilation target for the platform.
+                           E.g. for centos6: linux-c6-x86_64.
+<platform>-prerequisites:  A one line list of platform-specific prerequisites to install,
+                           E.g. tool chains.
+<platform>-packages.sh:    an optional script to download and install packages from the
+                           standard repository for the OS, only for development platforms
+<platform>-target.mk:      Makefile settings for building the OpenCPI framework for this platform
+<platform>-check.sh:       A script to verify you are running on this platform for dev platforms
+                           Only for development platforms
+rcc=<dev-platform>=<platform>.mk:
+                           Settings for cross-building from dev-platform to platform
+rcc=<platform>.mk:         Settings for self hosted building on development platforms.
 
 Thus adding a platform requires at least these steps:
 
 1. Add a directory here with the files mentioned above, and a README file describing it
 2. Ensuring that there is compilation (or cross-compilation) support for the target.
-3. If needed, add a "<platform>-packages.sh" script to the directory.
-4. Add the "target", "<platform>-check.sh" and "<platform>-target.mk" files to the directory.
-5. For building RCC workers, for local/native/host-based compilation, add the file:
+   Perhaps creating a tool chain installation script here.
+3. If needed for a development platform, add a "<platform>-packages.sh" script to the directory.
+4. For a development platform add the "<platform>-check.sh" script.
+5. Add the "target" and "<platform>-target.mk" files to the directory.
+6. For building RCC workers, for local/native/host-based compilation, add the file:
      rcc=<platform>.mk
    and for RCC worker cross-compilation file, building on <devhost>, add the file:
      rcc=<devhost>=<platform>.mk
-6. Once getPlatform.sh works on the new platform
+7. Once getPlatform.sh works on the the development platform
    the following scripts should execute (at the top level):
-     ./scripts/install-prerequisites.sh
-     ./scripts/build-opencpi.sh
-     ./scripts/test-opencpi.sh
+     ./scripts/install-packages.sh <platform>
+     ./scripts/install-prerequisites.sh <platform>
+     ./scripts/build-opencpi.sh <platform>
+     ./scripts/test-opencpi.sh <platform>
+   All these scripts take an optional <platform> argument.
+   The test-opencpi.sh will not run on cross-platforms.
+   The scripts/install-opencpi.sh runs all 4 scripts, and also takes a platform argument.
+ 

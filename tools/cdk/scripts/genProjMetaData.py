@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # This file is protected by Copyright. Please refer to the COPYRIGHT file
 # distributed with this source distribution.
 #
@@ -19,7 +19,7 @@
 
 # TODO: integegrate more inline with ocpirun -A o get information instead of metadata file
 
-from lxml import etree as ET
+from xml.etree import ElementTree as ET
 import os
 import sys
 import subprocess
@@ -116,7 +116,7 @@ def checkBuiltAssy (assyName, workerDir):
             #print "filename is " + fileName
     #print "platfroms" + str(platforms)
     #print "containers" + str(containers)
-    retVal = zip(platforms, containers)
+    retVal = list(zip(platforms, containers))
     return retVal
 
 def checkBuiltWorker (workerDir):
@@ -138,7 +138,7 @@ def checkBuiltWorker (workerDir):
             else:
                 targets.append(fileName[2])
                 configs.append("0")
-    retVal = zip(targets, configs)
+    retVal = list(zip(targets, configs))
     return retVal
 
 def addWorkers(curRoot, workers, dirName):
@@ -154,8 +154,8 @@ def addWorkers(curRoot, workers, dirName):
             for targetStr, configStr in built:
                 target = ET.SubElement(worker, "built")
                 target.set('target', targetStr)
-		target.set('configID', configStr)
-            # plat = getWorkerPlatforms(dirName + "/" + a, a)
+                target.set('configID', configStr)
+        # plat = getWorkerPlatforms(dirName + "/" + a, a)
         elif(a.endswith(".test") and (a not in ["lib","specs","gen","doc","include"])):
             test = ET.SubElement(testsET, "test")
             test.set('name', a)
@@ -231,8 +231,23 @@ def getProjDir(myDir, force ):
                 return currentDir
         currentDir = currentDir + "/../"
         loopNum = loopNum + 1
-    print "Not in a Project Directory, Check the directory passed to the script"
+    print("Not in a Project Directory, Check the directory passed to the script")
     sys.exit(0)
+    
+def indent(elem, level=0):
+    i = "\n" + level*"  "
+    if len(elem):
+        if not elem.text or not elem.text.strip():
+            elem.text = i + "  "
+        if not elem.tail or not elem.tail.strip():
+            elem.tail = i
+        for elem in elem:
+            indent(elem, level+1)
+        if not elem.tail or not elem.tail.strip():
+            elem.tail = i
+    else:
+        if level and (not elem.tail or not elem.tail.strip()):
+            elem.tail = i
 
 # main
 if len(sys.argv) < 2 :
@@ -257,7 +272,7 @@ if (isStale(mydir, force)):
         projectName = strings[splitLen -1]
 
     root = ET.Element("project", {"name" : projectName})
-
+    
     comps = ET.SubElement(root, "components")
     hdl = ET.SubElement(root, "hdl")
     assys = ET.SubElement(hdl, "assemblies")
@@ -296,7 +311,7 @@ if (isStale(mydir, force)):
                 # this is a devices directory under a platform
                 dirSplit = dirName.split('/')
                 platName = [];
-                index = range(0, len(dirSplit)-1)
+                index = list(range(0, len(dirSplit)-1))
                 for i, sub in zip(index, dirSplit):
                     if (sub == "platforms"):
                         platName = dirSplit[i+1]
@@ -319,9 +334,11 @@ if (isStale(mydir, force)):
         if (retVal[0]):
             addWorkers(retVal[1], subdirList, dirName)
 
-    print "Updating project metadata..."
-    myFile = open(mydir+"/project.xml", 'w')
-    myFile.write(ET.tostring(root,pretty_print=True))
+    print("Updating project metadata...")
+    #myFile = open(mydir+"/project.xml", 'w')
+    indent(root) 
+    tree = ET.ElementTree(root)
+    tree.write(mydir+"/project.xml")
 else:
     print("metadata is not stale, not regenerating")
 sys.exit(0)

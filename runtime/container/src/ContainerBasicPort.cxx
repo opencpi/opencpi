@@ -134,11 +134,15 @@ namespace OCPI {
       if (m_backward) {
 	// If we are being forwarded-to, we need to break this chain, while
 	// the other side is not in the middle of forwarding to us.
+	assert(m_backward->m_forward == this);
 	OU::SelfAutoMutex guard(m_backward);
 	m_backward->m_forward = NULL;
+	m_backward = NULL; // just to be clean
       } else if (m_forward) {
+	assert(m_forward->m_backward == this);
 	OU::SelfAutoMutex guard(m_forward);
 	m_forward->m_backward = NULL;
+	m_forward = NULL; // just to be clean
       }
       if (m_dtPort)
 	m_dtPort->reset();
@@ -1061,6 +1065,8 @@ namespace OCPI {
 
     void BasicPort::
     forward2shim(BasicPort &shim) {
+      assert(!m_forward);
+      assert(!shim.m_backward);
       shim.m_backward = this;
       m_forward = &shim;
       m_bufferSize = shim.m_bufferSize;

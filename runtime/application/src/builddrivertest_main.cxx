@@ -37,7 +37,7 @@ bool doTestDrivers() {
   assert(NULL != dlopen(".libs/libocpi_ofed_stub.so", RTLD_NOW | RTLD_GLOBAL)); // for the ofed stuff
   assert(getenv("OCPI_CDK_DIR"));
   std::string ocpiocl;
-  OU::format(ocpiocl, "%s/bin/%s-%s-%s/ocpiocl test", getenv("OCPI_CDK_DIR"),
+  OU::format(ocpiocl, "%s/bin/%s-%s-%s/ocpiocltest test", getenv("OCPI_CDK_DIR"),
 	     OCPI_CPP_STRINGIFY(OCPI_OS) + strlen("OCPI"),
 	     OCPI_CPP_STRINGIFY(OCPI_OS_VERSION), OCPI_CPP_STRINGIFY(OCPI_ARCH));
   // The list will always have an extra space at the end thanks to the Makefile.

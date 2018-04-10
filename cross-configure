@@ -37,7 +37,7 @@ need OCPI_TARGET_PLATFORM
 # Before calling ocpitarget.sh, we want to force it into "bootstrap" mode. This will allow you to build an RPM for a
 # platform that you don't have an RPM already installed for BUT have ANY RPM installed (e.g. only the base one)
 export ORIG_OCPI_CDK=${OCPI_CDK_DIR}
-unset OCPI_CDK_DIR
+export OCPI_CDK_DIR=`pwd`/bootstrap
 source tools/cdk/scripts/ocpitarget.sh ${OCPI_TARGET_PLATFORM}
 export OCPI_CDK_DIR=${ORIG_OCPI_CDK}
 

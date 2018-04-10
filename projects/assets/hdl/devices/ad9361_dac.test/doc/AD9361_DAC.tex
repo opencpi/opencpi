@@ -122,7 +122,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Release Date      & Aug 2017         \\
 	\hline
-	Component Library & ocpi.devices     \\
+	Component Library & ocpi.assets.devices     \\
 	\hline
 	Workers           & \comp.hdl        \\
 	\hline
@@ -303,13 +303,13 @@ The following command builds for Zedboard deployment:
 OCPI_TARGET_PLATFORM=xilinx13_3 ocpidev build --hdl-platform zed
 \end{lstlisting}
 \subsection*{Execution Instructions}
-When executing on an x86/ML605 machine, the \texttt{LD\_LIBRARY\_PATH} environment variable must be prepended with the location of the libusb install directory which was determined when performing the AngryViper Xilinx ISE installation instructions\cite{vendor_tools_install} (most likely location is /usr/local/lib/). If it does not matter which ML605 FMC slot is tested, the ML605 test should be executed by running the following command. Using this command, it is possible for either ML605 FMC slot to be used for AD9361 tests at runtime.
+If it does not matter which ML605 FMC slot is tested, the ML605 test should be executed by running the following command. Using this command, it is possible for either ML605 FMC slot to be used for AD9361 tests at runtime.
 \begin{lstlisting}
-LD_LIBRARY_PATH=<libusb-install-location>:$LD_LIBRARY_PATH make tests
+make tests
 \end{lstlisting}
 To test the ML605 for a specific FMCOMMS2/3 FMC slot location, the \texttt{OCPI\_LIBRARY\_PATH} environment variable must be prepended with the location of the FPGA bitstream for the desired FMC LPC/HPC slot. The command is as follows:
 \begin{lstlisting}
-LD_LIBRARY_PATH=<libusb-install-location>:$LD_LIBRARY_PATH OCPI_LIBRARY_PATH=<path-to-bitstream>:$OCPI_LIBRARY_PATH make tests
+OCPI_LIBRARY_PATH=<path-to-bitstream>:$OCPI_LIBRARY_PATH make tests
 \end{lstlisting}
 To run on the Zedboard, the built \comp{}.test directory must either be mounted from the development machine to the Zedboard, or copied to the Zedboard. From within the \comp{}.test directory, the follow command executes the test natively on the Zedboard:
 \begin{lstlisting}

@@ -61,9 +61,6 @@ export OCPI_TARGET_HOST=$(< ../$OCPI_TARGET_PLATFORM/target)
 # This one might be overridden if we want an SD from a particular build mode
 export OCPI_TARGET_DIR=$OCPI_TARGET_HOST
 export HDL_PLATFORM=${2:-zed}
-if [ -z "$OCPI_PROJECT_REGISTRY_DIR" ]; then
-  OCPI_PROJECT_REGISTRY_DIR=$OCPI_CDK_DIR/../project-registry
-fi
 source $OCPI_CDK_DIR/scripts/util.sh
 echo Software platform is $OCPI_TARGET_PLATFORM, and hardware platform is $HDL_PLATFORM.
 if test -z $RPM_BUILD_ROOT; then
@@ -74,7 +71,7 @@ if test -z $RPM_BUILD_ROOT; then
   EXAMPLES_ROOTDIR=$(getProjectRegistryDir)/ocpi.core
   if test "$OCPI_LIBRARY_PATH" = ""; then
     # Put all rcc components, and available bitstreams for the platform.
-    export OCPI_LIBRARY_PATH=$(getProjectRegistryDir)/ocpi.core/exports/lib/components:$OCPI_CDK_DIR/lib/platforms/$HDL_PLATFORM
+    export OCPI_LIBRARY_PATH=$(getProjectRegistryDir)/ocpi.core/exports/lib/components
   fi
 else
   echo RPM Build detected - faking directory structure
@@ -82,7 +79,7 @@ else
   # Cannot just use CDK/lib and CDK/bin because the driver stuff isn't pushed there
   # EXAMPLES_ROOTDIR set externally
   # This is using a "path" variable assuming it has no colons in it!
-  export OCPI_LIBRARY_PATH=$(getProjectRegistryDir)/ocpi.core/exports/lib/components:${OCPI_HDL_PLATFORM_PATH}/${OCPI_TARGET_PLATFORM}/
+  export OCPI_LIBRARY_PATH=${RPM_BUILD_ROOT}/opt/opencpi/projects/core/components
 fi
 BIN_DIR=${OCPI_CDK_DIR}/bin/${OCPI_TARGET_DIR}
 KERNEL_LIB_DIR=$OCPI_CDK_DIR/lib/${OCPI_TARGET_DIR}
