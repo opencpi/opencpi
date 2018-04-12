@@ -132,12 +132,13 @@ endef
 # where:
 # <base> is our core package name
 # <platform> is a cross target when we are releasing packages per platform
-# <version> is our normaly versioning scheme v1.2.3
+# <version> is our normally versioning scheme v1.2.3
 # <release> is a label that defaults to "snapshot" if not overridden with OcpiRelease
-# These are only applied if not a specific versioned release
+# These are only applied if not a specific versioned release:
 # <tag> is a sequence number/timestamp within a release cycle (when not a specific release)
 # <job> is a jenkins job reference
-# <commit> is a git branch reference
+# <branch> is a git branch reference
+# <dist> for RPM, e.g. el.
 base=opencpi
 # cross: value is the target platform or null if not cross
 # arg 1 is a single platform
@@ -224,8 +225,9 @@ rpm: check_export
 # Convenience here in the Makefile.
 # This forces the rebuild each time, although the downloads are cached.  It is not
 # a "make" dependency of building the framework.
+.PHONY: prerequisites
 prerequisites:
-	$(AT)for p in $(RccRealPlatforms,$(RccPlatforms)); do\
+	$(AT)for p in $(call RccRealPlatforms,$(RccPlatforms)); do\
                 ./scripts/install-prerequisites.sh $$p;\
              done
 ##########################################################################################

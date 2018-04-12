@@ -156,7 +156,7 @@ mkdir -p exports
 }
 while read path opts; do
   case "$path" in
-    \#|""|end-of-runtime-for-tools) continue;;
+    \#*|""|end-of-runtime-for-tools) continue;;
     prerequisites)
       for p in $opts ; do
 	shopt -s nullglob
@@ -273,7 +273,8 @@ for a in $additions; do
   set -f
 done
 # Force precompilation of python files right here
-for f in `find exports -name "*.py"`; do
- python -m compileall $f
- python -O -m compileall $f
+dirs=
+for d in `find exports -name "*.py"|sed 's=/[^/]*$=='|sort -u`; do
+ python -m compileall $d
+ python -O -m compileall $d
 done

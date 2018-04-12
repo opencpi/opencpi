@@ -24,12 +24,6 @@ SourceSuffix:=$($(CapModel)SourceSuffix)
 ImplXmlFiles:=$(foreach w,$(Workers),$(or $(Worker_$w_xml),$(Worker).xml))
 $(call OcpiDbgVar,ImplXmlFiles)
 
-# Get the (a) platform for this target if it is present.
-WkrGetPlatform=$(strip $(infox WGP:$1)\
-  $(foreach v,$(filter $(CapModel)Target_%,$(.VARIABLES)),\
-    $(or $(and $(filter $1,$(value $v)),$(v:$(CapModel)Target_%=%)),\
-       $(error No platform found for $(UCModel) target $1))))
-
 -include $(GeneratedDir)/*.deps
 
 # Only workers need the implementation "header" file and the skeleton
@@ -162,7 +156,7 @@ define WkrWorkerDep
 
   $$(call WkrObject,$1,$2,$3): TargetDir=$$(call WkrTargetDir,$2,$3)
   $$(call WkrObject,$1,$2,$3): $(CapModel)Target=$2
-  $$(call WkrObject,$1,$2,$3): $(CapModel)Platform=$$(call WkrGetPlatform,$2)
+  $$(call WkrObject,$1,$2,$3): $(CapModel)Platform=$$(call $(CapModel)GetPlatform,$2)
   $$(call WkrObject,$1,$2,$3): Worker=$1
   $$(call WkrObject,$1,$2,$3): \
      $$(call ImplHeaderFile,$1) \
@@ -185,7 +179,7 @@ define WkrDoTargetConfig
     $$(call OcpiDbgVar,CompiledSourceFiles)
     $$(foreach s,$$(CompiledSourceFiles),$$(eval $$(call WkrMakeObject,$$s,$1,$2)))
     $$(call WkrBinary,$1,$2): $(CapModel)Target=$1
-    $$(call WkrBinary,$1,$2): $(CapModel)Platform=$$(call WkrGetPlatform,$1)
+    $$(call WkrBinary,$1,$2): $(CapModel)Platform=$$(call $$(CapModel)GetPlatform,$1)
 
     $$(call WkrBinary,$1,$2): $$$$(ObjectFiles_$1_$2) $$(call ArtifactXmlFile,$1,$2) $$$$($(CapModel)LinkDependencies_$$$$($(CapModel)Target)) \
                             | $$(call WkrTargetDir,$1,$2)
@@ -225,7 +219,7 @@ ifndef WkrExportNames
 WkrExportNames+=$(WkrBinaryName)$(BF)
 endif
 
-# If we LibDir is unset, but the parent directory is a library
+# If LibDir is unset, but the parent directory is a library
 # and we are currently building a worker (rcc, ocl, hdl),
 # set libdir to ../lib/$(Model)
 ShouldSetLibDir=$(strip \
@@ -302,7 +296,7 @@ endef
 # These links are to binaries
 ifndef HdlSkip
   $(call OcpiDbgVar,WkrExportNames)
-  $(foreach t,$($(CapModel)Targets),$(infox $(call DoLinks,$t))$(eval $(call DoLinks,$(call WkrGetPlatform,$t))))
+  $(foreach t,$($(CapModel)Targets),$(infox $(call DoLinks,$t))$(eval $(call DoLinks,$(call $(CapModel)TargetDirTail,$t))))
 endif
 
 # The generated build file is done as the makefile is read, so we can use

@@ -66,7 +66,7 @@ HdlTargets_virtex6:=xc6vlx240t
 HdlTargets_spartan6:=xc6slx45
 HdlTargets_spartan3adsp:=xc3sd3400a
 HdlTargets_zynq_ise:=xc7z020_ise_alias
-HdlTargets_zynq:=xc7z020
+HdlTargets_zynq:=xc7z020 xc7z045
 HdlDefaultTarget_zynq:=xc7z020
 
 HdlTargets_altera:=stratix4 stratix5 # altera-sim

@@ -432,7 +432,10 @@ OcpiDefaultOWD=$(if $(call OcpiDefaultSpec,$1),,$(error No default spec found fo
 
 # Function to generate target dir from target: $(call WkrTargetDir,target,config)
 # FIXME: shouldn't really be named "Wkr"
-WkrTargetDir=$(OutDir)target$(if $(filter 0,$2),,-$2)-$(or $(call $(CapModel)WkrTargetDir,$1),$1)
+WkrTargetDir=$(if $1,,$(error NULL))$(strip \
+              $(foreach d,\
+                $(OutDir)target$(if $(filter 0,$2),,-$2)-$(or $(call $(CapModel)TargetDirTail,$1),$1),\
+                $d))
 
 Comma:=,
 ParamMsg=$(and $(ParamConfigurations), $(strip \

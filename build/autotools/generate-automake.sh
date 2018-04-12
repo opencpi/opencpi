@@ -1,4 +1,23 @@
 #!/bin/bash
+# This file is protected by Copyright. Please refer to the COPYRIGHT file
+# distributed with this source distribution.
+#
+# This file is part of OpenCPI <http://www.opencpi.org>
+#
+# OpenCPI is free software: you can redistribute it and/or modify it under the
+# terms of the GNU Lesser General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your option) any
+# later version.
+#
+# OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+# A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Lesser General Public License along
+# with this program. If not, see <http://www.gnu.org/licenses/>.
+
+##########################################################################################
 # This script generates the Makefile.am by processing input descriptions of "places" in the
 # code tree.  Places are code sub-trees that are built resulting in 0 or 1 libraries and 0 or
 # more programs.  Places have attributes.
@@ -26,7 +45,7 @@ python_PYTHON=
 # both can be trivially used using PYTHONPATH
 pythondir=$(libdir)
 # It doesn't appear that autoconf macros actually gives us the proper runtime prefix
-PYTHON_INCLUDES=$(shell @PYTHON@ -c "import sys; print sys.prefix")/include/python@PYTHON_VERSION@
+PYTHON_INCLUDES=$(shell echo `@PYTHON@ -c "import sys;print(sys.prefix)"`/include/python@PYTHON_VERSION@*)
 # Avoid automake limitations by defining a variable used later
 ocpi_extra_libs=$(patsubst %,-l%,@OcpiExtraLibs@)
 
@@ -48,7 +67,7 @@ function bad {
 # args are: 1. amname 2. extra C/CXX flags 3. type
 function do_flags {
     printf "${1}_CPPFLAGS = @common_cppflags@"
-    [ -z "$foreign" ] && printf " @strict_cppflags@"
+    [ -z "$foreign" -a "$3" != swig ] && printf " @strict_cppflags@"
     incs="$ocpi_incs_ordered $ocpi_prereq_incs"
     [ -n "$tools" ] && incs="$ocpi_incs_for_tools $ocpi_prereq_incs"
     [ "$3" = stubs ] && incs=
@@ -58,9 +77,9 @@ function do_flags {
 	printf ' \\\n  -I%s' $i
     done
     printf '\n'"${1}_CFLAGS = $2 @common_cflags@"
-    [ -z "$foreign" ] && printf " @strict_cflags@"
+    [ -z "$foreign" -a "$3" != swig ] && printf " @strict_cflags@"
     printf '\n'"${1}_CXXFLAGS = $2 @common_cxxflags@"
-    [ -z "$foreign" ] && printf " @strict_cxxflags@"
+    [ -z "$foreign" -a "$3" != swig ] && printf " @strict_cxxflags@"
     echo
 }
 
@@ -138,7 +157,7 @@ function do_library {
     printf "${7}_LTLIBRARIES += \$(ocpi_build_dir)/_$2.la\n"
     printf "${amname}_CPPFLAGS+=-I\$(PYTHON_INCLUDES)\\n"
     printf "\$(ocpi_build_dir)/$3: $swig\\n"
-    printf "\\t\$(AT)@OcpiSWIG@ -c++ -python -outdir \$(@D) -o \$@ "
+    printf "\\t\$(AT)@OcpiSWIG@ -classic -c++ -python -outdir \$(@D) -o \$@ "
     printf "\$(${amname}_CPPFLAGS) \$<\\n"
     printf "python_PYTHON+=$(dirname $swig)/$2.py\\n"
   else
@@ -150,7 +169,7 @@ function do_library {
 
 while read path opts; do
   case "$path" in
-      \#|"")
+      \#*|"")
 	  continue;;
       prerequisites)
 	  for p in $opts; do

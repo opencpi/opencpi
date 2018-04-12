@@ -160,7 +160,8 @@ TestTargets:=$(call Unique,$(HdlPlatforms) $(HdlTargets) $(RccTargets))
 GoWorker=-C $1 -f $(or $(realpath $1/Makefile),$(OCPI_CDK_DIR)/include/worker.mk)
 BuildImplementation=$(infox BI:$1:$2:$(call HdlLibrariesCommand):$(call GoWorker,$2)::)\
     set -e; \
-    t="$(or $($(call Capitalize,$1)Target),$($(call Capitalize,$(1))Targets))"; \
+    t="$(foreach t,$(or $($(call Capitalize,$1)Target),$($(call Capitalize,$1)Targets)),\
+         $(call $(call Capitalize,$1)TargetDirTail,$t))";\
     $(ECHO) =============Building $(call ToUpper,$(1)) implementation $(2) for target'(s)': $$t; \
     $(MyMake) $(call GoWorker,$2) OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) \
 	       LibDir=$(call AdjustRelative,$(LibDir)/$(1)) \

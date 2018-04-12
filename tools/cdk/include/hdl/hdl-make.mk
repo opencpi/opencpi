@@ -189,6 +189,14 @@ $(foreach gp,$(firstword $(subst -, ,$(HdlPart_$1))),\
    $(call OcpiDbg,HdlGetPart($1)->$(gp))$(gp)))
 
 
+# model-specific getting a platform for a target
+# which is inherently problematic for HDL...
+HdlGetPlatform=$(or $(HdlPlatform),$(error Getting platform for HDL target $1 is ambiguous))
+# The model-specific determination of the "tail end" of the target directory,
+# after the prefix (target), and build configuration.
+# The argument is a TARGET
+HdlTargetDirTail=$(infox HTDT:$1)$(foreach t,$(or $1,$(HdlTarget)),$(infox HTDTr:$t)$t)
+
 ################################################################################
 # The generic hdl compile that depends on HdlToolCompile
 HdlName=$(or $(Core),$(LibName))

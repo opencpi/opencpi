@@ -97,15 +97,26 @@ else
 #  $(info OCPI_ALL_RCC_PLATFORMS is $(OCPI_ALL_RCC_PLATFORMS))
 #  $(info OCPI_ALL_RCC_TARGETS is $(OCPI_ALL_RCC_TARGETS))
 endif
+# This must be called with a list of platforms
 RccRealPlatforms=$(infox GETREAL:$1)$(foreach p,$1,$(word 1,$(subst -, ,$p)))
+# This operates on the target-specific variable assignment of RccPlatform
 RccRealPlatform=$(strip $(infox RRP:$(RccPlatform))\
                 $(foreach p,$(call RccRealPlatforms,$(RccPlatform)),$(infox RRPr:$p)$p))
-RccTargetDir=$(or $(RccPlatform),$(error RccTargetDir with no platform))
-RccWkrTargetDir=$(strip $(or $(filter $1,$(RccPlatform)),\
-			     $(and $(RccTarget_$1),$1),\
-                             $(if $(filter $1,$(RccTarget_$(RccPlatform))),$(RccPlatform),\
-	                          $(or $(call WkrGetPlatform,$1),\
-		                       $(error RccWkrTargetDir called with $1, no platform)))))
+# Find the platform that has the argument as a platform
+RccGetPlatform=$(strip\
+  $(or $(foreach v,$(filter RccTarget_%,$(.VARIABLES)),$(infox VV:$v:$($v))\
+         $(foreach p,$(v:RccTarget_%=%),\
+           $(and $(filter $p,$(RccAllPlatforms)),$(filter $1,$(value $v)),\
+	    $(infox RGPr:$1:$v:$p:$(value $v))$p))),\
+	$($(or $2,error) Cannot find an RCC platform for the target: $1)))
+# The model-specific determination of the "tail end" of the target directory,
+# after the prefix (target), and build configuration.
+# The argument is a TARGET
+RccTargetDirTail=$(strip\
+  $(or $(and $(RccTarget_$1),$1),\
+       $(and $(filter $1,$(RccTarget_$(RccPlatform))),$(RccPlatform)),\
+       $(call RccGetPlatform,$1,error)))
+
 # Transfer build options to target from platform
 # $(call RccPlatformTarget,<platform>,<target>)
 RccPlatformTarget=$(infox RPT:$1:$2)$2$(foreach b,$(word 2,$(subst -, ,$1)),$(and $b,-$b))

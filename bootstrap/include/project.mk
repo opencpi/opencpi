@@ -1,1 +1,0 @@
-../../tools/cdk/include/project.mk

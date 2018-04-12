@@ -117,7 +117,7 @@ m4_version_prereq([2.64],[
 				       strict_cxxflags+=" [-Werror=]ocpi_w"])])
   CFLAGS=
   CXXFLAGS=
-])
+],[true])
 # These are needed in the Makefile.am
 AC_SUBST([OcpiDynamicLibrarySuffix])
 AC_SUBST([OcpiStaticLibrarySuffix])
@@ -169,10 +169,12 @@ AM_INIT_AUTOMAKE([-Wall -Wno-portability foreign subdir-objects no-dist no-insta
 AM_CONDITIONAL([ocpi_is_dynamic],[test $enable_dynamic = yes])
 AM_CONDITIONAL([ocpi_is_cross],[test x"$OcpiCrossCompile" != x])
 AM_CONDITIONAL([ocpi_can_remove_needed],[test x"$OcpiCanRemoveNeeded" = x1])
-# The following checks the version and sets PYTHON, PYTHON_VERSION which we use
+# The following checks the version and sets PYTHON and PYTHON_VERSION which we use.
 # Unfortunately it does not provide the sys.prefix() from the running python.
 # It sets PYTHON_PREFIX to the install location, not the current location.
-AM_PATH_PYTHON([2.7])
+# So we find PYTHON_PREFIX when the makefiles are executed $(shell....)
+# It is python 2.6 since that is what centos6 has.
+AM_PATH_PYTHON([2.6])
 LT_INIT([dlopen])
 AC_SUBST([LIBTOOL_DEPS])
 dnl
