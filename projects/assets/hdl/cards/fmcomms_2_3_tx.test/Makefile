@@ -25,7 +25,8 @@ $(if $(realpath $(OCPI_CDK_DIR)),,$(error The OCPI_CDK_DIR environment variable 
 
 APP=fmcomms_2_3_tx_test_app
 RccOnlyPlatforms+=centos6 centos7 xilinx13_3
-include setup.mk
+IncludeDirs=../fmcomms_2_3_tx.rcc/include
+include $(OCPI_CDK_DIR)/include/application.mk
 
 all: build
 
