@@ -40,7 +40,7 @@ OcpiApp:=$(CwdName)
 endif
 
 # The existence of a C++ app file determines if this is an ACI app
-OcpiAppCC:=$(strip $(foreach s,cc cxx cpp,$(wildcard $(OcpiApp).$s)))
+OcpiAppCC:=$(strip $(foreach s,cc cxx cpp,$(wildcard $(OcpiApp).$s $(OcpiApps).$s)))
 ifdef OcpiAppCC
   OcpiApps:=$(OcpiApp) $(OcpiApps)
   include $(OCPI_CDK_DIR)/include/aci.mk
