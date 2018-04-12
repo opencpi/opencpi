@@ -1,0 +1,10 @@
+<!-- This is the spec file (OCS) for: IQ_Time_Demux
+     Add component spec attributes, like "protocol".
+     Add property elements for spec properties.
+     Add port elements for i/o ports -->
+<ComponentSpec>
+  <!-- Add property and port elements here -->
+    <Port name="in" protocol="TimeStamped_IQ-prot"></Port>
+    <Port name="out" producer="true" protocol="iqstream_protocol"></Port>
+    <Property type="bool" name="printTime" default="false" writable="true"></Property>
+</ComponentSpec>

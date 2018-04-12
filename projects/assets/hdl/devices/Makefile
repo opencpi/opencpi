@@ -46,7 +46,7 @@ Workers = \
 	flash.hdl \
 	gps_uart.hdl \
 	lime_adc.hdl \
-	lime_dac_em.hdl \
+	lime_dac_ts_em.hdl \
 	lime_dac.hdl \
 	lime_dac_ts.hdl \
 	lime_rx.hdl \

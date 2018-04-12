@@ -1,0 +1,18 @@
+<!-- 
+ Matchstiq-Z1 AVR Device Worker OCS
+-->
+<ComponentSpec>
+  <!--AVR Microcontroller - Slave Address 0x45 -->                                  <!--Device Offset-->
+  <!-- Per John at Epiq: Note: "The only read-able registers are the firmware version register and serial number register."-->
+  <Property name="TCVCXO_WARP_REG" type="ushort" writable="true"/> 	             <!-- 0x0-->
+  <Property name="DUAL_LED_REG" type="ushort" writable="true"/> 	             <!-- 0x1-->
+  <Property name="REF_CLOCK_SOURCE_REG" type="ushort" writable="true"/> 	     <!-- 0x2-->
+  <Property name="RF_STEP_ATTEN_REG" type="ushort" writable="true"/> 	             <!-- 0x3-->
+  <Property name="pad0"         type="ushort" padding="true" arraylength="12"/>      <!-- 0x4-0x0F-->
+  <Property name="FW_VERSION_REG" type="ushort" padding="true"/> 	             <!-- 0x10-->
+  <Property name="RF_SERIAL_NUM" type="ushort" padding="true"/> 	             <!-- 0x11-->
+  <Property name="HW_VERSION_REG" type="ushort" padding="true"/>                     <!-- 0x12-->
+  <Property name="MS_SERIAL_NUM" type="ushort" volatile="true"/>                     <!-- 0x13-->
+  <Property name="MS_SERIAL_NUM_UPDATE_LOW" type="ushort" padding="true"/>           <!-- 0x14-->
+  <Property name="MS_SERIAL_NUM_UPDATE_HIGH" type="ushort" padding="true"/>          <!-- 0x15-->
+</ComponentSpec>

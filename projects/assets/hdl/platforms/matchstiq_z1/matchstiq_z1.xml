@@ -1,0 +1,63 @@
+<!-- Matchstiq-Z1 Platform Worker -->
+<HdlPlatform Language="VHDL" spec="platform-spec">
+  <specproperty name='platform' value='matchstiq_z1'/>
+  <!-- All platform workers must provide these two ports -->
+  <metadata master="true"/>
+  <timebase master="true"/>
+  <!-- This platform worker provides a control plane -->
+  <cpmaster master="true"/>
+  <!-- Declare and parameterize the time_server device worker for this platform -->
+  <device worker="time_server">
+    <property name="frequency" value="100e6"/>
+  </device>
+  <sdp name="zynq" master='true' count='4'/>
+  <!-- Properties -->
+  <property name='useGP1' type='bool' parameter='1' default='false'/>
+  <property name="axi_error" type="bool" arraylength='4' volatile='true'/>
+  <property name="sdpDropCount" type='uchar' volatile='true'/>
+  <property name="debug_state" type="Ulonglong" arraylength='4' volatile='true' debug='false'/>
+  <property name="debug_state1" type="Ulonglong" arraylength='4' volatile='true' debug='false'/>
+  <property name="debug_state2" type="Ulonglong" arraylength='4' volatile='true' debug='false'/>
+  <!-- Supported Device Workers -->
+  <device worker="lime_adc"> <!-- Uses RX_CLK_OUT from Lime --> 
+    <property name="USE_CLK_OUT_p" value="1"/>
+    <property name="USE_CLK_IN_p" value="0"/>
+    <property name="USE_CTL_CLK_p" value="0"/>
+    <property name="DRIVE_CLK_p" value="0"/>
+    <signal name="RX_CLK" platform=""/>
+    <signal name="RX_CLK_IN" platform=""/>
+  </device>
+  <device worker="lime_dac"> <!-- Uses RX_CLK_OUT from Lime -->
+    <property name="USE_CLK_IN_p" value="1"/>
+    <property name="USE_CTL_CLK_p" value="0"/>
+    <signal name="TX_CLK_IN" platform="lime_adc_rx_clk_out"/>
+  </device>
+  <device worker="lime_spi"/>
+  <device worker="lime_rx"> <!-- RXEN not connected to FPGA -->
+    <signal name="rxen" platform=""/>
+  </device>
+  <device worker="lime_tx"/>
+  <device worker="gps_uart"/>
+  <!-- I2C bus -->
+  <device worker="si5338">
+    <property name="CLKIN_PRESENT_p" value="1"/>
+    <property name="CLKIN_FREQ_p" value="30.72e6"/>
+  </device>
+  <device worker="matchstiq_z1_avr"/>
+  <device worker="pca9534"/>
+  <device worker="pca9535"/>
+  <device worker="tmp100"/>
+  <device worker="matchstiq_z1_i2c"/>
+  <!-- Clocking signals -->
+  <signal input="SI5338_CLK0A"/>
+  <signal input="SI5338_CLK0B"/>
+  <signal output="LIME_RX_CLK"/> <!-- Goes to RX_CLK to Lime -->
+  <signal output="clocktest"/> <!-- Pin 3 on the rear debug connector -->
+  <!-- 1 PPS -->
+  <signal input="GPS_1PPS_IN"/> <!-- 1 PPS output from GPS module -->
+  <signal input="GPS_FIX_IND"/> <!-- Fix indication output from GPS module -->
+  <signal output="EXT_1PPS_OUT"/> <!-- 1 PPS output from FPGA to ???-->
+  <!-- LEDs on ATLAS module-->
+  <signal output="ATLAS_LEDS" width="3"/>
+</HdlPlatform>
+

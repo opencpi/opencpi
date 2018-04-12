@@ -1,0 +1,5 @@
+<tests useHDLFileIo='true'>
+  <input port='in' script='generate.py 2048' messagesize='8192'/>
+  <output port='out' script='verify.py 2048' view='view.sh'/>
+  <property name='num_zeros' values='0,7,127,255'/>
+</tests>

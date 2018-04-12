@@ -1,0 +1,20 @@
+<HdlAssembly>
+  <Connection Name="in_to_asm_rx_path_from_adc" External="consumer">
+    <Port Instance="dc_offset_filter" Name="in"/>
+  </Connection>
+  <Instance Worker="dc_offset_filter" Connect="iq_imbalance_fixer">
+    <Property Name="PEAK_MONITOR_p" Value="true"/>
+  </Instance>
+  <Instance Worker="iq_imbalance_fixer" Connect="cic_dec">
+    <Property Name="PEAK_MONITOR_p" Value="true"/>
+  </Instance>
+  <Instance Worker="cic_dec">
+    <Property Name="N" Value="3"/>
+    <Property Name="M" Value="1"/>
+    <Property Name="R" Value="8"/>
+    <Property Name="ACC_WIDTH" Value="25"/>
+  </Instance>
+  <Connection Name="out_from_asm_rx_path" External="producer">
+    <Port Instance="cic_dec" Name="out"/>
+  </Connection>
+</HdlAssembly>

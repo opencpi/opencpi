@@ -1,0 +1,16 @@
+<!-- 
+ Matchstiq-Z1 PCA9535 Device Worker Proxy OCS
+-->
+<RccWorker language="c++" slave="pca9535.hdl" spec="matchstiq_z1_pca9535_proxy_spec">
+  <!--This property is encoded: -->
+  <!-- 0 = unfiltered -->
+  <!-- 1 = 300  to 700  MHz -->
+  <!-- 2 = 625  to 1080 MHz -->
+  <!-- 3 = 1000 to 2100 MHz -->
+  <!-- 4 = 1700 to 2500 MHz -->
+  <!-- 5 = 2200 to 3800 MHz -->
+  <property name="filter_bandwidth" type="ushort" readable="true" writable="true" writesync="1"/>
+  <!--Only Inputs 2 and 3 are connected on the Matchstiq-Z1 -->
+  <property name="lime_rx_input" type="ushort" readable="true" writable="true" writesync="1"/>
+  <property name="frontLNA_enable" type="bool" readable="true" writable="true" writesync="1"/>
+</RccWorker>

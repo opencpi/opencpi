@@ -1,0 +1,4 @@
+<HdlWorker language='vhdl' spec='fifo-spec'>
+  <StreamInterface Name="in"  DataWidth="32"/>
+  <StreamInterface Name="out" DataWidth="32"/>
+</HdlWorker>

@@ -1,0 +1,38 @@
+<Application Package="local" Done="UUT">
+
+ <Instance Component="ocpi.assets.base_comps.pattern">
+    <property name="control" value='3'/>
+    <property name="metadataCount" value='4'/>
+    <property name="messagesToSend" value='4'/>
+    <property name="metadata" value='{4,200},{4,201},{4,203},{0,3}'/>
+    <property name="data" value='0x04030201'/>
+ </Instance>
+
+  <Instance Name="UUT" Component="ocpi.assets.util_comps.socket_write">
+    <Property Name="outSocket" Value='ports {
+    0,0,0,12348,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,12349,12350,0,12351,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}'/>
+    <Property Name="stopOn" Value='ZLM 3'/>
+    <Property Name="current" dumpFile="UUT.current.dump"/>
+  </Instance>
+
+  <Connection>
+    <Port Instance="pattern" Name="out"/>
+    <Port Instance="UUT" Name="in"/>
+  </Connection>
+
+</Application>

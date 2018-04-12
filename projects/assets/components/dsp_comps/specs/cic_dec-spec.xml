@@ -1,0 +1,18 @@
+<!-- This is the spec file (OCS) for: cic_dec
+     Add component spec attributes, like "protocol".
+     Add property elements for spec properties.
+     Add port elements for i/o ports -->
+<ComponentSpec>
+
+  <Property Name="N" Type="uchar" Readable="true"/>
+  <Property Name="M" Type="uchar" Readable="true"/>
+  <Property Name="R" Type="ushort" Readable="true"/>
+  <Property Name="DIN_WIDTH" Type="uchar" Readable="true"/>
+  <Property Name="ACC_WIDTH" Type="uchar" Readable="true"/>
+  <Property Name="DOUT_WIDTH" Type="uchar" Readable="true"/>
+  <Property Name="messageSize" Type="ushort" Readable="true" Writable="true" Default="8192"/>
+
+  <DataInterfaceSpec Name="in" Producer="false" Protocol="iqstream_protocol.xml"/>
+  <DataInterfaceSpec Name="out" Producer="true" Protocol="iqstream_protocol.xml"/>
+
+</ComponentSpec>

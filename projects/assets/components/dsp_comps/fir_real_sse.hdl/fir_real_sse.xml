@@ -1,0 +1,9 @@
+<HdlWorker Language="vhdl" Spec="fir_real_sse-spec.xml" FirstRawProperty="taps">
+
+  <Property Name="DATA_WIDTH_p" Type="ulong" Parameter="true" Readable="true" Default="16"/>
+  <Property Name="COEFF_WIDTH_p" Type="ulong" Parameter="true" Readable="true" Default="16"/>
+
+  <StreamInterface Name="in"  DataWidth="16" ZeroLengthMessages="true"/>
+  <StreamInterface Name="out" DataWidth="16" ZeroLengthMessages="true"/>
+
+</HdlWorker>

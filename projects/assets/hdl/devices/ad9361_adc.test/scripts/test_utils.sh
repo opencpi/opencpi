@@ -45,7 +45,23 @@ runtest() {
   echo $TEST_ID
   for try in $(seq 0 $MAX_NUM_APP_RETRIES); do
     rmfiles
-    ./scripts/run_app_FMCOMMS3.sh $APP_XML $APP_RUNTIME_SEC $twortwot > $LOGFILENAME 2>&1
+
+    RX_DATA_CLOCK_DELAY=0
+    FOUND_PLATFORMS=$(./target-$OCPI_TOOL_DIR/get_comma_separated_ocpi_platforms)
+    if [ "$FOUND_PLATFORMS" == "zed" ]; then
+      RX_DATA_CLOCK_DELAY=3
+    elif [ "$FOUND_PLATFORMS" == "zed_ise" ]; then
+      RX_DATA_CLOCK_DELAY=2
+    elif [ "$FOUND_PLATFORMS" == "ml605" ]; then
+      RX_DATA_CLOCK_DELAY=2
+    else
+      printf "platform found which is not supported: "
+      echo $FOUND_PLATFORM
+      echo "TEST FAILED"
+      exit 1
+    fi
+
+    RX_DATA_DELAY=$RX_DATA_DELAY RX_DATA_CLOCK_DELAY=$RX_DATA_CLOCK_DELAY ./scripts/run_app_FMCOMMS3.sh $APP_XML $APP_RUNTIME_SEC $twortwot > $LOGFILENAME 2>&1
     if [ -f $FILENAME ]; then
       break
     fi

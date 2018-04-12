@@ -44,13 +44,19 @@ TIMESPEC "TS_FMC_LA00_CC_P" = PERIOD "FMC_LA00_CC_P" 4.294 ns HIGH 50%;
 # t_DDRx_min = 0.25
 # t_DDRx_max = 1.25
 #
-# ----- assumed no-OS init_param settings (values chosen specifically to meet static timing):
-# rx_data_clock_delay = 2
-# rx_data_delay       = 0
+# ----- assumed ad9361_data_sub.hdl parameter property/no-OS init_param settings
+# ----- (values chosen specifically to meet static timing):
+# ------------------------------------------------------------------------------
+# | ad9361_data_sub.hdl | no-OS init_param member | value | delay(ns)          |
+# | parameter property  |                         |       |                    |
+# ------------------------------------------------------------------------------
+# | DATA_CLK_Delay      | rx_data_clock_delay     | 2     | 0.6                |
+# | Rx_Data_Delay       | rx_data_delay           | 0     | 0.0                |
+# ------------------------------------------------------------------------------
 #
 # ----- calculations
 # ad9361_adc_sub.hdl samples on falling edge, so calculation is:
-# OFFSET (typical) = (period/2) + avg(min delay,max delay) = (4.294/2) + avg(-tDDRx_min,-tDDRx_max) + (rx_data_clock_delay-rx_data_delay)*0.3 = (4.294/2) + (-0.75) + 2*0.3 = 1.997 ns
+# OFFSET (typical) = (period/2) + avg(min delay,max delay) = (4.294/2) + avg(-tDDRx_min,-tDDRx_max) + (DATA_CLK_Delay-Rx_Data_Delay)*0.3 = (4.294/2) + (-0.75) + 2*0.3 = 1.997 ns
 INST "FMC_LA01_CC_P" TNM_NET = "FMC_LA01_CC_P";
 TIMEGRP "FMC_LA01_CC_P" OFFSET = IN 1.997 ns VALID 4.294 ns BEFORE "FMC_LA00_CC_P" FALLING;
 
@@ -60,12 +66,18 @@ TIMEGRP "FMC_LA01_CC_P" OFFSET = IN 1.997 ns VALID 4.294 ns BEFORE "FMC_LA00_CC_
 # t_DDRx_min = 0.25
 # t_DDRx_max = 1.25
 #
-# ----- assumed no-OS init_param settings (values chosen specifically to meet static timing):
-# rx_data_clock_delay = 2
-# rx_data_delay       = 0
+# ----- assumed ad9361_data_sub.hdl parameter property/no-OS init_param settings
+# ----- (values chosen specifically to meet static timing):
+# ------------------------------------------------------------------------------
+# | ad9361_data_sub.hdl | no-OS init_param member | value | delay(ns)          |
+# | parameter property  |                         |       |                    |
+# ------------------------------------------------------------------------------
+# | DATA_CLK_Delay      | rx_data_clock_delay     | 2     | 0.6                |
+# | Rx_Data_Delay       | rx_data_delay           | 0     | 0.0                |
+# ------------------------------------------------------------------------------
 #
 # ----- calculations
-# OFFSET (typical) = avg(min delay,max delay) = avg(-t_DDRx_min,-t_DDRx_max) + (rx_data_clock_delay-rx_data_delay)*0.3 = -0.15
+# OFFSET (typical) = avg(min delay,max delay) = avg(-t_DDRx_min,-t_DDRx_max) + (DATA_CLK_Delay-Rx_Data_Delay)*0.3 = -0.15
 INST "FMC_LA02_P" TNM_NET = "FMC_LA02_P";
 TIMEGRP "FMC_LA02_P" OFFSET = IN -0.15 ns VALID 2.047 ns BEFORE "FMC_LA00_CC_P" RISING;
 TIMEGRP "FMC_LA02_P" OFFSET = IN -0.15 ns VALID 2.047 ns BEFORE "FMC_LA00_CC_P" FALLING; # not in ADI's UG570 but it is implied

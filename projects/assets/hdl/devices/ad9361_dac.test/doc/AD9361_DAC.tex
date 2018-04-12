@@ -38,7 +38,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \renewcommand{\headrulewidth}{0.5pt}
 \renewcommand{\footrulewidth}{0.5pt}
 \newcommand{\terminaloutput}[1]{\texttt{#1}}
-\rhead{\small{Project ANGRYVIPER}}
+\rhead{\small{ANGRYVIPER Team}}
 %----------------------------------------------------------------------------------------
 % Appendix packages
 %----------------------------------------------------------------------------------------
@@ -102,6 +102,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \def\DevSignal{DevSignal}
 
 \def\comp{ad9361\_dac}
+\edef\ecomp{ad9361_dac}
 \def\Comp{AD9361 DAC}
 \graphicspath{ {figures/} }
 
@@ -121,7 +122,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Release Date      & Aug 2017         \\
 	\hline
-	Component Library & ocpi.devices     \\
+	Component Library & ocpi.assets.devices     \\
 	\hline
 	Workers           & \comp.hdl        \\
 	\hline
@@ -147,7 +148,7 @@ The \comp{}.hdl worker ingests signed Q0.15 I/Q samples from its input port, rou
 		]
 		\node[rectangle,ultra thick,draw=black,fill=blue,minimum width=5 cm](R2){Parameter Properties: \verb+fifo_depth+ \\ \\ \Comp \\};
 		\node[rectangle,draw=white,fill=white](R3)[below= of R2]{"dev\_adc" devsignal port\\ DAC data bus (see AD9361\_DAC\_Sub.pdf)};
-		\node[rectangle,draw=white,fill=white](R4)[left= of R2]{``in" StreamInterface \\ Complex signed samples (Q0.15 I, Q0.15 Q)};
+		\node[rectangle,draw=white,fill=white](R4)[left= of R2]{``in'' StreamInterface \\ Complex signed samples (Q0.15 I, Q0.15 Q)};
 		\node[rectangle,draw=white,fill=white](R5)[above= of R2]{Non-parameter Properties:\\\verb+underrun+};
 		\path[->]
 		(R3)edge []	node [] {} (R2)
@@ -256,6 +257,7 @@ Backpressure is transferred from the \devsignal{}'s dac\_clk clock to the input 
 \subsubsection*{\comp.hdl}
 Fmax refers to the maximum allowable clock rate for any registered signal paths within a given clock domain for an FPGA design. Fmax in the table below is specific only to this worker and represents the maximum possible Fmax for any OpenCPI bitstream built with this worker included. Note that the Fmax value for a given clock domain for the final bitstream is often worse than the Fmax specific to this worker, even if this worker is the only one included in the bitstream. Note also that the dev\_dac's dac\_clk clock rate will only ever go as high as half of the AD9361's DATA\_CLK\_P rate, or half of 245.76 MHz\cite{adi_ug570} which is 122.88 MHz. \\ \\
 Table entries are a result of building the woker with the following parameter property sets:
+%\input{../../\ecomp.hdl/utilization.inc}
 \begin{itemize}
 	\item \verb+fifo_depth+=64
 \end{itemize}
@@ -301,17 +303,17 @@ The following command builds for Zedboard deployment:
 OCPI_TARGET_PLATFORM=xilinx13_3 ocpidev build --hdl-platform zed
 \end{lstlisting}
 \subsection*{Execution Instructions}
-When executing on an x86/ML605 machine, the \texttt{LD\_LIBRARY\_PATH} environment variable must be prepended with the location of the libusb install directory which was determined when performing the AngryViper Xilinx ISE installation instructions\cite{vendor_tools_install} (most likely location is /usr/local/lib/). If it does not matter which ML605 FMC slot is tested, the ML605 test should be executed by running the following command. Using this command, it is possible for either ML605 FMC slot to be used for AD9361 tests at runtime.
+If it does not matter which ML605 FMC slot is tested, the ML605 test should be executed by running the following command. Using this command, it is possible for either ML605 FMC slot to be used for AD9361 tests at runtime.
 \begin{lstlisting}
-LD_LIBRARY_PATH=<libusb-install-location>:$LD_LIBRARY_PATH make tests
+make tests
 \end{lstlisting}
 To test the ML605 for a specific FMCOMMS2/3 FMC slot location, the \texttt{OCPI\_LIBRARY\_PATH} environment variable must be prepended with the location of the FPGA bitstream for the desired FMC LPC/HPC slot. The command is as follows:
 \begin{lstlisting}
-LD_LIBRARY_PATH=<libusb-install-location>:$LD_LIBRARY_PATH OCPI_LIBRARY_PATH=<path-to-bitstream>:$OCPI_LIBRARY_PATH make tests
+OCPI_LIBRARY_PATH=<path-to-bitstream>:$OCPI_LIBRARY_PATH make tests
 \end{lstlisting}
 To run on the Zedboard, the built \comp{}.test directory must either be mounted from the development machine to the Zedboard, or copied to the Zedboard. From within the \comp{}.test directory, the follow command executes the test natively on the Zedboard:
 \begin{lstlisting}
-./ad9361_dac_test_app
+OCPI_LIBRARY_PATH=$OCPI_LIBRARY_PATH:<path-to-ocpi.core-project/exports/lib/>:<path-to-ocpi.assets-project/exports/lib> ./ad9361_dac_test_app
 \end{lstlisting}
 Upon completion of a successful test, PASSED is printed to the screen and a value of 0 is returned. Upon failure, FAILED is printed to the screen and a non-zero value is returned.
 \subsection*{Troubleshooting}

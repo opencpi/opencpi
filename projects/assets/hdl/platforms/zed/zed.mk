@@ -17,4 +17,4 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 HdlPart_zed=xc7z020-1-clg484
-HdlRccPlatform_zed=xilinx13_4
+HdlRccPlatform_zed=xilinx13_3

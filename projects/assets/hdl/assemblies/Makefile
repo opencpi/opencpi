@@ -25,5 +25,6 @@ $(if $(realpath $(OCPI_CDK_DIR)),,\
 
 # Otherwise all assemblies will be built
 # Alternatively, you can set ExcludeAssemblies to list the ones you want to exclude
+ExcludeAssemblies=patternbias
 
 include $(OCPI_CDK_DIR)/include/hdl/hdl-assemblies.mk

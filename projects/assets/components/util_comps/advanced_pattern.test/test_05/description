@@ -1,0 +1,1 @@
+From a value file, send 2048 bytes to every fiftieth opcode (in hex) three times, ZLM on 1

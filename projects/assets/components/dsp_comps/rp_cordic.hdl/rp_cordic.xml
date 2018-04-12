@@ -1,0 +1,12 @@
+<HdlWorker Language="vhdl" Spec="rp_cordic-spec.xml">
+
+  <SpecProperty Name="DATA_WIDTH" Parameter="true" Default="16"/>
+  <SpecProperty Name="DATA_EXT" Parameter="true" Default="6"/>
+  <SpecProperty Name="STAGES" Parameter="true" Default="16"/>
+
+  <Property Name="magnitude" Type="short" Volatile="true"/>
+
+  <StreamInterface Name="in"  DataWidth="32" ZeroLengthMessages="true"/>
+  <StreamInterface Name="out" DataWidth="16" ZeroLengthMessages="true"/>
+
+</HdlWorker>

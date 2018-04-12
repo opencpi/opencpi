@@ -1,0 +1,87 @@
+<Application Package="ocpi.core">
+  <!-- HDL Components-->
+  <!-- RX Chain -->
+  <Instance Component="ocpi.assets.devices.rf_rx"/>
+  <Instance Component="ocpi.assets.devices.qadc" model="hdl">
+    <Property Name="messageSize" Value="16352"/>
+  </Instance>
+  <Instance Component="ocpi.assets.dsp_comps.dc_offset_filter">
+    <Property Name="messageSize" Value="16352"/>
+    <Property Name="bypass" Value="false"/>
+  </Instance>
+  <Instance Component="ocpi.assets.dsp_comps.iq_imbalance_fixer">
+    <Property Name="messageSize" Value="16352"/>
+    <Property Name="enable" Value="true"/>
+    <Property Name="log2_averaging_length" Value="11"/>
+  </Instance>
+  <Instance Component="ocpi.assets.dsp_comps.complex_mixer">
+    <Property Name="NCO_DATA_WIDTH_p" Value="12"/>
+    <Property Name="INPUT_DATA_WIDTH_p" Value="12"/>
+    <Property Name="mag" Value="1024"/>
+    <Property Name="messageSize" Value="16352"/>
+  </Instance>
+  <Instance Component="ocpi.assets.dsp_comps.cic_dec">
+    <Property Name="N" Value="3"/>
+    <Property Name="M" Value="1"/>
+    <Property Name="R" Value="8"/>
+    <Property Name="ACC_WIDTH" Value="25"/>
+    <Property Name="messageSize" Value="16352"/>
+  </Instance>
+  <Instance Component="ocpi.assets.util_comps.timestamper"/>
+  <!-- Command and Control -->
+  <Instance Component="ocpi.assets.devices.si5338"/>
+  <Instance Component="ocpi.assets.devices.tmp100"/>
+  <Instance Component="ocpi.assets.platforms.matchstiq_z1.devices.matchstiq_z1_avr"/>
+  <Instance Component="ocpi.assets.devices.pca9535"/>
+  <Instance Component="ocpi.core.devices.time_server"/>
+
+  <!-- RCC Components-->
+  <!-- RX Chain -->
+  <Instance Component="file_write">
+    <Property Name="fileName" Value="/var/volatile/rx_app.out"/> 
+  </Instance>
+
+  <!-- RCC Proxies -->
+  <!-- RX Chain -->
+  <Instance Component="ocpi.assets.devices.rf_rx_proxy" Slave="rf_rx"/>
+  <!-- Command and Control -->
+  <Instance Component="ocpi.core.devices.clock_gen" Slave="si5338"/>
+  <Instance Component="ocpi.assets.platforms.matchstiq_z1.devices.matchstiq_z1_avr_proxy" Slave="matchstiq_z1_avr">
+    <Property Name="led" Value="green"/>
+  </Instance> 
+  <Instance Component="ocpi.assets.devices.tmp100_proxy" Slave="tmp100"/>
+  <Instance Component="ocpi.assets.platforms.matchstiq_z1.devices.matchstiq_z1_pca9535_proxy" Slave="pca9535"/>
+  
+  <!-- RCC Frontend Proxy -->
+  <!-- RX Chain -->
+  <Instance Component="ocpi.core.rx">
+    <Property Name="TYPE_p" Value="matchstiq_z1"/>
+  </Instance> 
+
+  <!-- Connections -->
+  <!-- RX Chain -->
+  <Connection>
+    <Port Instance="qadc" Name="out"/>
+    <Port Instance="dc_offset_filter" Name="in"/>
+  </Connection>
+  <Connection>
+    <Port Instance="dc_offset_filter" Name="out"/>
+    <Port Instance="iq_imbalance_fixer" Name="in"/>
+  </Connection>
+  <Connection>
+    <Port Instance="iq_imbalance_fixer" Name="out"/>
+    <Port Instance="complex_mixer" Name="in"/>
+  </Connection>
+  <Connection>
+    <Port Instance="complex_mixer" Name="out"/>
+    <Port Instance="cic_dec" Name="in"/>
+  </Connection>
+  <Connection>
+    <Port Instance="cic_dec" Name="out"/>
+    <Port Instance="timestamper" Name="in"/>
+  </Connection>
+  <Connection>
+    <Port Instance="timestamper" Name="out" Buffercount="2"/>
+    <Port Instance="file_write" Name="in" Buffersize="16352" Buffercount="7"/>
+  </Connection>
+</Application>

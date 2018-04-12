@@ -16,12 +16,12 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-if [ -z "$OCPI_TOOL_DIR" ]; then
-  echo OCPI_TOOL_DIR env variable must be specified before running BIST_PRBS_rates.sh
+if [ -z "$OCPI_TOOL_HOST" ]; then
+  echo OCPI_TOOL_HOST env variable must be specified before running BIST_PRBS_rates.sh
   exit 1
 fi
-if [ ! -d target-$OCPI_TOOL_DIR ]; then
-  echo "OCPI_TOOL_DIR env variable set incorrectly (target-$OCPI_TOOL_DIR does not exist)"
+if [ ! -d target-$OCPI_TOOL_HOST ]; then
+  echo "OCPI_TOOL_HOST env variable set incorrectly (target-$OCPI_TOOL_HOST does not exist)"
   exit 1
 fi
 
@@ -73,7 +73,7 @@ run_delay_tests_1r1t_fmcomms3() {
       rm -rf $FILENAME
     fi
 
-    OCPI_LIBRARY_PATH=$OCPI_LIBRARY_PATH:./assemblies/:$OCPI_PROJECT_PATH P="-pfile_write=filename=$FILENAME" RX_DATA_CLOCK_DELAY=$clkdelay RX_DATA_DELAY=$datadelay ./scripts/run_app_FMCOMMS3.sh $APP_XML $APP_RUNTIME_SEC $twortwot > $LOGFILENAME 2>&1
+    OCPI_LIBRARY_PATH=$OCPI_LIBRARY_PATH:./assemblies/ P="-pfile_write=filename=$FILENAME $@" RX_DATA_CLOCK_DELAY=$clkdelay RX_DATA_DELAY=$datadelay ./scripts/run_app_FMCOMMS3.sh $APP_XML $APP_RUNTIME_SEC $twortwot > $LOGFILENAME 2>&1
 
     if [ ! -f $FILENAME ]; then
       printf "error"
@@ -81,7 +81,7 @@ run_delay_tests_1r1t_fmcomms3() {
       if [ ! -d odata/delays ]; then
         mkdir odata/delays
       fi
-      ./target-$OCPI_TOOL_DIR/calculate_AD9361_BIST_PRBS_RX_BER $FILENAME | grep BER | tr -d "estimated_BER : " | tr -d "%" | tr -d "\n" | tee odata/delays/ber_clkdel"$clkdelay"_datadel"$datadelay".log
+      ./target-$OCPI_TOOL_HOST/calculate_AD9361_BIST_PRBS_RX_BER $FILENAME | grep BER | tr -d "estimated_BER : " | tr -d "%" | tr -d "\n" | tee odata/delays/ber_clkdel"$clkdelay"_datadel"$datadelay".log
     fi
     printf "\t"
 

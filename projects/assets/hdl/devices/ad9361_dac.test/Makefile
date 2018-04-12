@@ -23,10 +23,11 @@
 
 $(if $(realpath $(OCPI_CDK_DIR)),,$(error The OCPI_CDK_DIR environment variable is not set correctly.))
 
-APP=calculate_AD9361_BIST_PRBS_RX_BER
+OcpiApps=calculate_AD9361_BIST_PRBS_RX_BER \
+         get_comma_separated_ocpi_platforms \
+         get_at_least_one_platform_is_available
 
 include $(OCPI_CDK_DIR)/include/application.mk
-#setup.mk
 
 .SILENT: show
 .PHONY: run clean show

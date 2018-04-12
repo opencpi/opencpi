@@ -1,0 +1,4 @@
+<ComponentSpec>
+  <!-- Add property and port elements here -->
+  <Port name="out" producer="true" protocol="iqstream_protocol"></Port>
+</ComponentSpec>

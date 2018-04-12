@@ -1,0 +1,25 @@
+<ComponentSpec>
+  <Port Name="out" numberofopcodes='256' Producer="true">
+  </Port>
+
+  <!-- Playback pattern -->
+  <Property name="maxPatternLength" type="ULong" parameter="true" default="32"/>
+  <Property name="Pattern" type="Struct" readable="true" initial="true" sequenceLength="maxPatternLength">
+    <Member name='Opcode' type='uChar' default='0'/>
+    <Member name='Bytes' type='uChar' default='0' sequenceLength="2048"/>
+  </Property>
+  <Property name='LoopCount' type='ULongLong' readable="true" initial="true" default='1'/>
+  <Property name='ZLM' type='UShort' readable="true" initial="true" default='0'/>
+
+  <!-- Statistics for each opcode -->
+  <Property name="current" type="Struct" volatile="true">
+    <Member name="Total" type="Struct">
+      <Member name="bytes" type="ULongLong"/>
+      <Member name="messages" type="ULongLong"/>
+    </Member>
+    <Member name="Opcode" type="Struct" arrayLength="256">
+      <Member name="bytes" type="ULongLong"/>
+      <Member name="messages" type="ULongLong"/>
+    </Member>
+  </Property>
+</ComponentSpec>

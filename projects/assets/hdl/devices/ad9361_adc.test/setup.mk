@@ -25,11 +25,13 @@ ifeq ($(filter clean%,$(MAKECMDGOALS)),)
 endif
 DIR=target-$(OCPI_TARGET_DIR)
 PROG=$(DIR)/$(APP)
+PROG2=$(DIR)/$(APP2)
+PROG3=$(DIR)/$(APP3)
 OUT= > /dev/null
 
 INCS = -I$(OCPI_INC_DIR) -I$(OCPI_PREREQUISITES_DIR)/ad9361/include/  -I$(OCPI_CDK_DIR)/platforms/$(OCPI_TARGET_PLATFORM)/include/
 
-all: $(PROG)
+all: $(PROG) $(PROG2) $(PROG3)
 
 $(DIR):
 	mkdir -p $(DIR)
@@ -37,7 +39,19 @@ $(DIR):
 ifdef APP
 $(PROG): $(APP).cxx | $(DIR)
 	$(AT)echo Building $@...
-	$(AT)$(CXX) -g -std=c++11 -Wall $(OCPI_EXPORT_DYNAMIC) -o $@ $(INCS) $^ $(OCPI_LD_FLAGS)
+	$(AT)$(CXX) -g -std=c++0x -Wall $(OCPI_EXPORT_DYNAMIC) -o $@ $(INCS) $^ $(OCPI_LD_FLAGS)
+endif
+
+ifdef APP2
+$(PROG2): $(APP2).cxx | $(DIR)
+	$(AT)echo Building $@...
+	$(AT)$(CXX) -g -std=c++0x -Wall $(OCPI_EXPORT_DYNAMIC) -o $@ $(INCS) $^ $(OCPI_LD_FLAGS)
+endif
+
+ifdef APP3
+$(PROG3): $(APP3).cxx | $(DIR)
+	$(AT)echo Building $@...
+	$(AT)$(CXX) -g -std=c++0x -Wall $(OCPI_EXPORT_DYNAMIC) -o $@ $(INCS) $^ $(OCPI_LD_FLAGS)
 endif
 
 clean::

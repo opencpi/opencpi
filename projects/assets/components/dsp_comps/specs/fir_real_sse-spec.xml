@@ -1,0 +1,20 @@
+<!-- This is the spec file (OCS) for: fir_real_sse
+     Add component spec attributes, like "protocol".
+     Add property elements for spec properties.
+     Add port elements for i/o ports -->
+<ComponentSpec>
+
+  <Property Name="NUM_TAPS_p" Type="ulong" Parameter="true" Readable="true" Default="16"/>
+
+  <!-- Peak Detect Value -->
+  <Property Name="peak" Type="short" Volatile="true"/>
+
+  <Property Name="messageSize" Type="ushort" Default="8192" Readable="true" Writable="true"/>
+
+  <!-- tap values  Format: short[NUM_TAPS_p] -->
+  <Property Name="taps" Type="short" ArrayLength="NUM_TAPS_p" Writable="true" Readable='true'/>
+
+  <DataInterfaceSpec Name="in" Producer="false" Protocol="rstream_protocol.xml"/>
+  <DataInterfaceSpec Name="out" Producer="true" Protocol="rstream_protocol.xml"/>
+
+</ComponentSpec>

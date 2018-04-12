@@ -1,0 +1,23 @@
+<!-- 
+ Matchstiq-Z1 I2C Device Worker OWD
+-->
+<HdlDevice language="vhdl" spec="matchstiq_z1_i2c_spec">
+  <Rawprop name="rprops" count="NUSERS_p" optional="true"/>
+  <Supports worker="matchstiq_z1_avr">
+    <Connect port="rawprops" to="rprops" index="0"/>
+  </Supports>
+  <Supports worker="si5338">
+    <Connect port="rawprops" to="rprops" index="1"/>
+  </Supports>
+  <Supports worker="tmp100">
+    <Connect port="rawprops" to="rprops" index="2"/>
+  </Supports>
+  <Supports worker="pca9534">
+    <Connect port="rawprops" to="rprops" index="3"/>
+  </Supports>
+  <Supports worker="pca9535">
+    <Connect port="rawprops" to="rprops" index="4"/>
+  </Supports>
+  <Signal Inout="SDA"/>
+  <Signal Inout="SCL"/>
+</HdlDevice>

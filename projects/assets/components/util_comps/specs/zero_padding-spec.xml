@@ -1,0 +1,16 @@
+<!-- This is the spec file (OCS) for: zero_padding
+     Add component spec attributes, like "protocol".
+     Add property elements for spec properties.
+     Add port elements for i/o ports -->
+<ComponentSpec>
+
+  <Property Name="IDATA_WIDTH_p" Type="ulong" Default="32" Readable="true" Parameter="true"/>
+  <Property Name="ODATA_WIDTH_p" Type="ulong" Default="32" Readable="true" Parameter="true"/>
+
+  <Property Name="num_zeros" Type="ushort" Readable="true" Writable="true"/>
+  <Property Name="messageSize" Type="ushort" Default="8192" Readable="true" Writable="true"/>
+
+  <DataInterfaceSpec Name="in" Producer="false"/>
+  <DataInterfaceSpec Name="out" Producer="true"/>
+
+</ComponentSpec>

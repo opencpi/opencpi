@@ -34,6 +34,13 @@ using namespace Lime_tx_proxyWorkerTypes;
 using namespace OCPI::Lime;
 
 class Lime_tx_proxyWorker : public Lime_tx_proxyWorkerBase {
+  RunCondition m_aRunCondition;
+public:
+  Lime_tx_proxyWorker() : m_aRunCondition(RCC_NO_PORTS) {
+    //Run function should never be called
+    setRunCondition(&m_aRunCondition);
+  }
+private:
   // notification that lpf_bw_hz property has been written
   RCCResult lpf_bw_hz_written() {
     uint8_t val;
@@ -101,9 +108,19 @@ class Lime_tx_proxyWorker : public Lime_tx_proxyWorkerBase {
     slave.set_tx_pa_en((slave.get_tx_pa_en() & 0xE7) | (m_properties.output_select << 3));
     return RCC_OK;
   }
-  RCCResult initialize() {
+  // enable required for both initialize and start
+  RCCResult enable() {
     slave.set_top_ctl0(slave.get_top_ctl0() | (1 << 3));
     slave.set_clk_ctl(slave.get_clk_ctl() | (1));
+    return RCC_OK;
+  }
+  RCCResult initialize() {
+    enable();
+    return RCC_OK;
+  }
+  RCCResult start() {
+    if(isSuspended()) //Prevents duplication of initialize
+      enable();
     return RCC_OK;
   }
   RCCResult stop() {

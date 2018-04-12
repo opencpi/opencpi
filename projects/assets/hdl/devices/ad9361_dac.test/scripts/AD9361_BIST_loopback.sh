@@ -75,7 +75,24 @@ domd5sum() {
 #firenables=( $DISABLE $ENABLE )
 firenables=( $DISABLE )
 twortwots=( 0 1 ) # force using 2R2T timing diagram regardless of number of enabled channels
-samprates=( $AD9361_MIN_ADC_RATE 25e6 30e6 35e6 40e6 45e6 50e6 55e6 $AD9361_MAX_ADC_RATE )
+
+FOUND_PLATFORMS=$(./target-$OCPI_TOOL_DIR/get_comma_separated_ocpi_platforms)
+if [ "$FOUND_PLATFORMS" == "zed" ]; then
+    # DATA_CLK_P rate rounded via floor = floor(1/5.712 ns) ~= 175.070028 MHz
+    # for LVDS, max samp rate = DATA_CLK_P rate / 4         ~=  43.767507 Msps complex
+  samprates=( $AD9361_MIN_ADC_RATE 25e6 30e6 35e6 40e6 43767507 )
+elif [ "$FOUND_PLATFORMS" == "zed_ise" ]; then
+  # DATA_CLK_P rate rounded via floor = floor(1/4.294 ns) ~= 232.883092 MHz
+  # for LVDS, max samp rate = DATA_CLK_P rate / 4         ~=  58.220773 Msps complex
+  samprates=( $AD9361_MIN_ADC_RATE 25e6 30e6 35e6 40e6 45e6 50e6 55e6 58220773 )
+elif [ "$FOUND_PLATFORMS" == "ml605" ]; then
+  samprates=( $AD9361_MIN_ADC_RATE 25e6 30e6 35e6 40e6 45e6 50e6 55e6 $AD9361_MAX_ADC_RATE )
+else
+  printf "platform found which is not supported: "
+  echo $FOUND_PLATFORM
+  echo "TEST FAILED"
+  exit 1
+fi
 
 if [ ! -d odata ]; then
   mkdir odata

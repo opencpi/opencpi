@@ -1,0 +1,113 @@
+<Application>
+  <Instance Component="ocpi.assets.devices.si5338"/>
+  <Instance Component="ocpi.core.devices.clock_gen" Slave="si5338"/>
+  <Instance Component="ocpi.assets.platforms.matchstiq_z1.devices.matchstiq_z1_avr"/>
+  <Instance Component="ocpi.assets.platforms.matchstiq_z1.devices.matchstiq_z1_avr_proxy" Slave="matchstiq_z1_avr">
+    <Property Name="warp_voltage" Value="1970"/>
+    <Property Name="led" Value="green"/>
+  </Instance>
+  <Instance Component="ocpi.assets.devices.tmp100"/>
+  <Instance Component="ocpi.assets.devices.tmp100_proxy" Slave="tmp100"/>
+  <Instance Component="ocpi.assets.devices.pca9535"/>
+  <Instance Component="ocpi.assets.platforms.matchstiq_z1.devices.matchstiq_z1_pca9535_proxy" Slave="pca9535"/>
+
+  <!-- TX Chain -->
+  <Instance Component="ocpi.assets.devices.rf_tx_proxy" Slave="rf_tx"/>
+  <Instance Component="ocpi.assets.devices.rf_tx"/>
+  <Instance Component="ocpi.assets.devices.qdac" Model="hdl"/>
+  <Instance Component="ocpi.core.file_read">
+    <Property Name="fileName" Value="idata/input_file.bin"/>
+    <Property Name="messagesInFile" Value="false"/>
+    <Property Name="opcode" Value="1"/>
+    <Property Name="messageSize" Value="2048"/>
+    <Property Name="granularity" Value="1"/>
+    <!-- <Property Name="repeat" Value="1"/> -->
+  </Instance>
+  <Instance Component="ocpi.assets.dsp_comps.cic_int">
+    <Property Name="N" Value="3"/>
+    <Property Name="M" Value="1"/>
+    <Property Name="R" Value="16"/>
+    <Property Name="ACC_WIDTH" Value="28"/>
+  </Instance>
+
+  <Connection>
+    <Port Instance="file_read" Name="out"/>
+    <Port Instance="cic_int" Name="in"/>
+  </Connection>
+  <Connection>
+    <Port Instance="cic_int" Name="out"/>
+    <Port Instance="qdac" Name="in"/>
+  </Connection>
+
+  <!-- RX Chain -->
+  <Instance Component="ocpi.assets.devices.rf_rx_proxy" Slave="rf_rx"/>
+  <Instance Component="ocpi.assets.devices.rf_rx"/>
+  <Instance Component="ocpi.assets.devices.qadc" Model="hdl">
+    <Property Name="messageSize" Value="8192"/>
+  </Instance>
+  <Instance Component="ocpi.assets.dsp_comps.dc_offset_filter">
+    <Property Name="messageSize" Value="8192"/>
+    <Property Name="bypass" Value="false"/>
+  </Instance>
+  <Instance Component="ocpi.assets.dsp_comps.iq_imbalance_fixer">
+    <Property Name="messageSize" Value="8192"/>
+    <Property Name="enable" Value="true"/>
+    <Property Name="log2_averaging_length" Value="11"/>
+  </Instance>
+  <Instance Component="ocpi.assets.dsp_comps.complex_mixer">
+    <Property Name="NCO_DATA_WIDTH_p" Value="12"/>
+    <Property Name="INPUT_DATA_WIDTH_p" Value="12"/>
+    <Property Name="mag" Value="1024"/>
+    <Property Name="phs_init" Value="0"/>
+    <Property Name="phs_inc" Value="0x7C1"/>
+  </Instance>
+  <Instance Component="ocpi.assets.dsp_comps.cic_dec">
+    <Property Name="N" Value="3"/>
+    <Property Name="M" Value="1"/>
+    <Property Name="R" Value="16"/>
+    <Property Name="ACC_WIDTH" Value="28"/>
+  </Instance>
+  <Instance Component="ocpi.core.file_write">
+    <Property Name="fileName" Value="odata/out_app_cic_int_dc_offset_iq_imbalance_mixer_cic_dec_txrx.bin"/>
+    <Property Name="messagesInFile" Value="false"/>
+  </Instance> 
+
+  <Instance Component="ocpi.core.rx">
+    <Property Name="TYPE_p" Value="matchstiq_z1"/>
+    <Property Name="sample_rate_MHz" Value="33"/>
+    <Property Name="frequency_MHz" Value="999"/>
+    <Property Name="rf_cutoff_frequency_MHz" Value="400"/>
+    <Property Name="rf_gain_dB" Value="6"/>
+    <Property Name="bb_cutoff_frequency_MHz" Value="5"/>
+    <Property Name="bb_gain_dB" Value="30"/>
+  </Instance>
+  <Instance Component="ocpi.core.tx">
+    <Property Name="TYPE_p" Value="matchstiq_z1"/>
+    <Property Name="sample_rate_MHz" Value="33"/>
+    <Property Name="frequency_MHz" Value="1000"/>
+    <Property Name="rf_gain_dB" Value="4"/>
+    <Property Name="bb_cutoff_frequency_MHz" Value="5"/>
+    <Property Name="bb_gain_dB" Value="-4"/>
+  </Instance>
+
+  <Connection>
+    <Port Instance="qadc" Name="out"/>
+    <Port Instance="dc_offset_filter" Name="in"/>
+  </Connection>
+  <Connection>
+    <Port Instance="dc_offset_filter" Name="out"/>
+    <Port Instance="iq_imbalance_fixer" Name="in"/>
+  </Connection>
+  <Connection>
+    <Port Instance="iq_imbalance_fixer" Name="out"/>
+    <Port Instance="complex_mixer" Name="in"/>
+  </Connection>
+  <Connection>
+    <Port Instance="complex_mixer" Name="out"/>
+    <Port Instance="cic_dec" Name="in"/>
+  </Connection>
+  <Connection>
+    <Port Instance="cic_dec" Name="out"/>
+    <Port Instance="file_write" Name="in" Buffersize="16352" Buffercount="4"/>
+  </Connection>
+</Application>

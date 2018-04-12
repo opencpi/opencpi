@@ -1,0 +1,7 @@
+<tests useHDLFileIo='true'>
+  <input port='in' script='generate.py 32767' messagesize='8192'/>
+  <output port='out' script='verify.py 32767' view='view.sh'/>
+  <property name='R' values='2048,8191,8192' exclude='*sim'/>
+  <property name='TARGET_FREQ' test='true' values='0,1'/>
+  <property name='VIVADO_ILA_p' values='0'/>
+</tests>

@@ -1,0 +1,256 @@
+<!-- When instantiated within an OpenCPI application, this worker must be
+     instantiated alongside the ad9361_config_proxy.rcc worker (which
+     implements the ad9361_config_proxy OCS). If the application overrides
+     the ad9361_config_proxy instance name to something other than
+     ad9361_config_proxy, this worker's app_inst_name_ad9361_config_proxy
+     property should be set to the instance name. -->
+<RccWorker language='c++' spec='tx_spec'>
+
+  <!-- OCS Parameters -->
+
+  <!-- OWD Parameters -->
+
+  <Property Name="fmcomms_num" Type="ushort" Parameter="true" Default="3" Description="Valid values are 2 or 3."/>
+  <Property Name="TYPE_p" Type="enum" Enums="fmcomms2,fmcomms3" Parameter="true" Default="fmcomms_num == 2 ? fmcomms2 : fmcomms3" Description="The purpose of this property is to provide the option for an application XML to specifiy this property in order to enforce use of a parameterized build for a particular frontend type."/>
+
+  <Property Name="NOT_SUPPORTED_p" Type="double" Parameter="true" Default="-1" Description="This value, when assigned to a frontend property, e.g. rf_gain_dB, indicates that the frontend setting corresponding to said property is not supported by the frontend hardware controlled by this worker."/>
+
+  <!-- AD9361_Reference_Manual_UG-570.pdf "BBBW is half the complex bandwidth
+       and coerced between 20 MHz to 0.625 MHz" - for No-OS's enforcement of
+       this fact, see No-OS ad9361_tx_bb_analog_filter_calib() -->
+  <Property Name="AD9361_TX_BBBW_NO_OS_MAX_MHZ_p" Type="double" Parameter="true" Default="20"/>
+  <Property Name="AD9361_TX_BBBW_NO_OS_MIN_MHZ_p" Type="double" Parameter="true" Default="0.625"/>
+
+  <Property Name="AD9361_TX_ATTENUATION_MAX_MILLIDB_P" Type="double" Parameter="true" Default="89.750"/>
+  <Property Name="AD9361_TX_ATTENUATION_MIN_MILLIDB_P" Type="double" Parameter="true" Default="0"/>
+
+  <Property Name="RF_GAIN_MAX_DB_p"      Type="double" Parameter="true" Default="-AD9361_TX_ATTENUATION_MIN_MILLIDB_P"/>
+  <Property Name="RF_GAIN_MIN_DB_p"      Type="double" Parameter="true" Default="-AD9361_TX_ATTENUATION_MAX_MILLIDB_P"/>
+  <Property Name="RF_GAIN_STEP_DB_p"     Type="double" Parameter="true" Default="0.250"/>
+  <Property Name="BB_GAIN_MAX_DB_p"      Type="double" Parameter="true" Default="NOT_SUPPORTED_p"/>
+  <Property Name="BB_GAIN_MIN_DB_p"      Type="double" Parameter="true" Default="NOT_SUPPORTED_p"/>
+  <Property Name="BB_GAIN_STEP_DB_p"     Type="double" Parameter="true" Default="NOT_SUPPORTED_p"/>
+  <Property Name="FREQUENCY_MAX_MHZ_p"   Type="double" Parameter="true" Default="fmcomms_num == 2 ? 2500 : 6000"/>
+  <Property Name="FREQUENCY_MIN_MHZ_p"   Type="double" Parameter="true" Default="fmcomms_num == 2 ? 2400 : 70"/>
+  <Property Name="SAMPLE_RATE_MAX_MHZ_p" Type="double" Parameter="true" Default="61.44"/>
+  <!--Property Name="SAMPLE_RATE_MIN_MHZ_p" Type="double" Parameter="true" Default="2.083334"/--> <!-- TODO / FIXME framework removes precision and uses 2.08334-->
+  <Property Name="SAMPLE_RATE_MIN_MHZ_p" Type="double" Parameter="true" Default="2.08334"/>
+
+  <Property Name="RF_CUTOFF_FREQUENCY_MAX_MHZ_p"  Type="double" Parameter="true" Default="NOT_SUPPORTED_p"/>
+  <Property Name="RF_CUTOFF_FREQUENCY_MIN_MHZ_p"  Type="double" Parameter="true" Default="NOT_SUPPORTED_p"/>
+  <Property Name="RF_CUTOFF_FREQUENCY_STEP_MHZ_p" Type="double" Parameter="true" Default="NOT_SUPPORTED_p"/>
+
+  <Property Name="BB_CUTOFF_FREQUENCY_MAX_MHZ_p" Type="double"
+                                                 Parameter="true"
+                                                 Default="AD9361_TX_BBBW_NO_OS_MAX_MHZ_p * 1.6"
+                                                 Description="The minimum configurable cutoff frequency in MHz of the FMCOMMS2/3's AD9361's third-order Butterworth Tx anti-imaging filter. The Tx filter is normally calibrated to 1.6x the BBBW. For more information, see AD9361_Reference_Manual_UG-570.pdf p. 10."/>
+  <Property Name="BB_CUTOFF_FREQUENCY_MIN_MHZ_p" Type="double"
+                                                 Parameter="true"
+                                                 Default="AD9361_TX_BBBW_NO_OS_MIN_MHZ_p * 1.6"
+                                                 Description="The maximum configurable cutoff frequency in MHz of the FMCOMMS2/3's AD9361's third-order Butterworth Tx anti-imaging filter. The Tx filter is normally calibrated to 1.6x the BBBW. For more information, see AD9361_Reference_Manual_UG-570.pdf p. 10."/>
+
+  <!-- OCS Properties -->
+
+  <!-- When a write to the property occurs, this property's written value is
+       applied to hardware. When a read of this property occurs, the read value
+       is the in-situ value (actual value which is currently assigned in
+       hardware, which may be slightly different than a previously written value
+       due to rounding  that occurs when assigning hardware register values
+       and/or No-OS API rounding that must occur before hardware register
+       rounding occurs). -->
+  <SpecProperty Name="rf_gain_dB" Volatile="true"
+                                  ReadSync="true"
+                                  WriteSync="true"
+                                  Default="-1"/> <!-- note this is note NOT_SUPPORTED_p, -1 is a perfectly valid value -->
+  <SpecProperty Name="bb_gain_dB" WriteSync="true"
+                                  Default="NOT_SUPPORTED_p"/> <!-- TODO / FIXME - remove Writable from OCS for this property and remove WriteSync from the OWD for this property, the only reason we need WriteSync here is to ensure any write to this property of a value other than NOT_SUPPORTED_p causes a failure. -->
+  <SpecProperty Name="frequency_MHz" Volatile="true"
+                                     ReadSync="true"
+                                     WriteSync="true"
+                                     Default="2400"/>
+  <SpecProperty Name="sample_rate_MHz" Volatile="true"
+                                       ReadSync="true"
+                                       WriteSync="true"
+                                       Default="30.72"/>
+  <SpecProperty Name="rf_cutoff_frequency_MHz" WriteSync="true"
+                                               Default="NOT_SUPPORTED_p"/> <!-- TODO / FIXME - remove Writable from OCS for this property and remove WriteSync from the OWD for this property, the only reason we need WriteSync here is to ensure any write to this property of a value other than NOT_SUPPORTED_p causes a failure. -->
+
+  <!-- The cutoff frequency in MHz of the FMCOMMS2/3's AD9361's third-order
+       Butterworth Tx anti-imaging filter. The Tx filter is located just after
+       the DAC in the Tx signal path and is normally calibrated to 0.8x the
+       desired complex bandwidth of the Butterworth filter. For more
+       information, see AD9361_Reference_Manual_UG-570.pdf p. 10. Example:
+        _________________________________________________________
+       | Standard | Sample | Desired   | Desired   | Butterworth |
+       |          | Rate   | baseband  | baseband  | filter      |
+       |          | (Msps) | analog    | analog    | cutoff      |
+       |          |        | filter    | filter    | frequency   |
+       |          |        | passband  | passband  | (MHz)       |
+       |          |        | complex   | bandwidth |             |
+       |          |        | bandwidth | (MHz)     |             |
+       |          |        | (MHz)     |           |             |
+       |__________|________|___________|___________|_____________|
+       | LTE 10   | 15.36  | 10        | 5         | 8           |
+       | LTE 20   | 30.72  | 20        | 10        | 16          |
+       |__________|________|___________|___________|_____________|
+  -->
+  <SpecProperty Name="bb_cutoff_frequency_MHz" Volatile="true"
+                                               ReadSync="true"
+                                               WriteSync="true"
+                                               Default="18"/>
+ 
+  <SpecProperty Name="rf_gain_max_dB" Default="RF_GAIN_MAX_DB_p"
+                                      WriteSync="true"/>  <!-- TODO / FIXME - remove Writable from OCS for this property and remove WriteSync from the OWD for this property, the only reason we need WriteSync here is to ensure any write to this property causes a failure. -->
+  <SpecProperty Name="rf_gain_min_dB" Default="RF_GAIN_MIN_DB_p"
+                                      WriteSync="true"/>  <!-- TODO / FIXME - remove Writable from OCS for this property and remove WriteSync from the OWD for this property, the only reason we need WriteSync here is to ensure any write to this property causes a failure. -->
+
+  <!-- We do declare a default value for TX rf_gain step size here because TX
+       rf_gain step is always a fixed value for FMCOMMS2/3's AD9361 -->
+  <!-- Indicates the precision which will be used to evaluate the value written
+       to this worker's rf_gain_dB property
+       before that value is applied to hardware. -->
+  <SpecProperty Name="rf_gain_step_dB" Default="RF_GAIN_STEP_DB_p"
+                                       WriteSync="true"/>  <!-- TODO / FIXME - remove Writable from OCS for this property and remove WriteSync from the OWD for this property, the only reason we need WriteSync here is to ensure any write to this property causes a failure. -->
+  
+  <!-- TX bb_gain_dB is not supported on the FMCOMMS2/3's AD9361 -->
+  <SpecProperty Name="bb_gain_max_dB" Default="BB_GAIN_MAX_DB_p"
+                                      WriteSync="true"/> <!-- TODO / FIXME - remove Writable from OCS for this property and remove WriteSync from the OWD for this property, the only reason we need WriteSync here is to ensure any write to this property of a value other than the default causes a failure. -->
+  <SpecProperty Name="bb_gain_min_dB" Default="BB_GAIN_MIN_DB_p"
+                                      WriteSync="true"/> <!-- TODO / FIXME - remove Writable from OCS for this property and remove WriteSync from the OWD for this property, the only reason we need WriteSync here is to ensure any write to this property of a value other than the default causes a failure. -->
+  <SpecProperty Name="bb_gain_step_dB" Default="BB_GAIN_STEP_DB_p"
+                                       WriteSync="true"/> <!-- TODO / FIXME - remove Writable from OCS for this property and remove WriteSync from the OWD for this property, the only reason we need WriteSync here is to ensure any write to this property of a value other than the default causes a failure. -->
+  
+  <!-- We do declare a default value TX RF LO frequency min/max here because
+       they are always a fixed value for FMCOMMS2/3's AD9361 -->
+  <SpecProperty Name="frequency_max_MHz" Default="FREQUENCY_MAX_MHZ_p"
+                                         WriteSync="true"/>  <!-- TODO / FIXME - remove Writable from OCS for this property and remove WriteSync from the OWD for this property, the only reason we need WriteSync here is to ensure any write to this property causes a failure. -->
+  <SpecProperty Name="frequency_min_MHz" Default="FREQUENCY_MIN_MHZ_p"
+                                         WriteSync="true"/>  <!-- TODO / FIXME - remove Writable from OCS for this property and remove WriteSync from the OWD for this property, the only reason we need WriteSync here is to ensure any write to this property causes a failure. -->
+
+  <!-- We do NOT declare a default value for TX RF LO frequency step size
+       because its value is runtime dynamic on FMCOMMS2/3's AD9361 -->
+  <!-- Indicates the precision which will be used to evaluate the value written
+       to this worker's frequency_MHz property
+       before that value is applied to hardware. For example if the step is 2,
+       the value written is rounded to the nearest multiple of 2 in order to
+       be applied to hardware. A value of -1 indicates that the step size does
+       not apply, i.e. there is no possible value other than that which is
+       currently configured. The precision in this case is determined by the
+       precision of underlying AD9361 PLL registers.
+       Note that the AD9361 TX RF LO step size is specific to the REFCLK
+       frequency and the desired LO frequency:
+           ___________________________________________________________
+                                        |  step size
+            Desired TX RF LO frequency  | (assuming REFCLK is 40e6 Hz)
+           _____________________________|_____________________________
+                  3GHz TO      6GHz     | 40e6*2/8,388,593/2   ~= 4.768Hz
+                1.5GHz TO      3GHz     | 40e6*2/8,388,593/4   ~= 2.384Hz
+                750MHz TO    1.5GHz     | 40e6*2/8,388,593/8   ~= 1.192Hz
+                375MHz TO    750MHz     | 40e6*2/8,388,593/16  ~= 0.596Hz (No-OS min step is 1 Hz)
+              187.5MHz TO    375MHz     | 40e6*2/8,388,593/32  ~= 0.298Hz (No-OS min step is 1 Hz)
+              93.75MHz TO  187.5MHz     | 40e6*2/8,388,593/64  ~= 0.149Hz (No-OS min step is 1 Hz)
+             46.875MHz TO 93.750MHz     | 40e6*2/8,388,593/128 ~= 0.075Hz (No-OS min step is 1 Hz)
+           _____________________________|_____________________________
+       It is important to note that the AD9361 datasheet specifies on p1. that
+       the "maximum local oscillator (LO) step size" is 2.4 Hz. Further
+       reading into the datasheet reveals that this value of 2.4 Hz is
+       specific to an LO frequency of 2.4 GHz and a reference clock rate of 40
+       MHz. On FMCOMMS2/3, a crystal clock source is used whose frequency is 40
+       MHz, and as long as there is no external-to-the-FMCOMMS2/3 clock which
+       drives the TP102 test point on the FMCOMMS2/3 PCB, it is a safe
+       assumption that the reference clock rate matches that of the crystal.
+       However, it is important to note that both RX and TX RF LO step sizes
+       are in fact dependent upon the currently configured LO frequency. A
+       correct interpretation of this would be "The closest achievable
+       frequency_MHz values above or below the current frequency_MHz are the
+       current value +/- frequency_step_MHz away." -->
+  <SpecProperty Name="frequency_step_MHz" ReadSync="true"
+                                          WriteSync="true"/>  <!-- TODO / FIXME - remove Writable from OCS for this property and remove WriteSync from the OWD for this property, the only reason we need WriteSync here is to ensure any write to this property causes a failure. -->
+  
+  <SpecProperty Name="sample_rate_max_MHz" Default="SAMPLE_RATE_MAX_MHZ_p"
+                                           WriteSync="true"/>  <!-- TODO / FIXME - remove Writable from OCS for this property and remove WriteSync from the OWD for this property, the only reason we need WriteSync here is to ensure any write to this property causes a failure. -->
+  <SpecProperty Name="sample_rate_min_MHz" Default="SAMPLE_RATE_MIN_MHZ_p"
+                                           WriteSync="true"/>  <!-- TODO / FIXME - remove Writable from OCS for this property and remove WriteSync from the OWD for this property, the only reason we need WriteSync here is to ensure any write to this property causes a failure. -->
+
+  <!-- Indicates the precision which will be used to evaluate the value written
+       to this worker's sample_rate_MHz property
+       before that value is applied to hardware. For example if the step is 2,
+       the value written is rounded to the nearest multiple of 2 in order to
+       be applied to hardware. The precision in this case is determined by the
+       precision of the ad9361_config_proxy.rcc worker's
+       tx_sampling_freq property. -->
+  <SpecProperty Name="sample_rate_step_MHz" ReadSync="true"
+                                            WriteSync="true"/>  <!-- TODO / FIXME - remove Writable from OCS for this property and remove WriteSync from the OWD for this property, the only reason we need WriteSync here is to ensure any write to this property causes a failure. -->
+  
+  <SpecProperty Name="rf_cutoff_frequency_max_MHz" Default="RF_CUTOFF_FREQUENCY_MAX_MHZ_p"
+                                                   WriteSync="true"/> <!-- TODO / FIXME - remove Writable from OCS for this property and remove WriteSync from the OWD for this property, the only reason we need WriteSync here is to ensure any write to this property of a value other than the default causes a failure. -->
+  <SpecProperty Name="rf_cutoff_frequency_min_MHz" Default="RF_CUTOFF_FREQUENCY_MIN_MHZ_p"
+                                                   WriteSync="true"/> <!-- TODO / FIXME - remove Writable from OCS for this property and remove WriteSync from the OWD for this property, the only reason we need WriteSync here is to ensure any write to this property of a value other than the default causes a failure. -->
+  <SpecProperty Name="rf_cutoff_frequency_step_MHz" Default="RF_CUTOFF_FREQUENCY_STEP_MHZ_p"
+                                                    WriteSync="true"/> <!-- TODO / FIXME - remove Writable from OCS for this property and remove WriteSync from the OWD for this property, the only reason we need WriteSync here is to ensure any write to this property of a value other than the default causes a failure. -->
+ 
+  <SpecProperty Name="bb_cutoff_frequency_max_MHz" Default="BB_CUTOFF_FREQUENCY_MAX_MHZ_p"
+                                                   WriteSync="true"/>  <!-- TODO / FIXME - remove Writable from OCS for this property and remove WriteSync from the OWD for this property, the only reason we need WriteSync here is to ensure any write to this property causes a failure. -->
+  <SpecProperty Name="bb_cutoff_frequency_min_MHz" Default="BB_CUTOFF_FREQUENCY_MIN_MHZ_p"
+                                                   WriteSync="true"/>  <!-- TODO / FIXME - remove Writable from OCS for this property and remove WriteSync from the OWD for this property, the only reason we need WriteSync here is to ensure any write to this property causes a failure. -->
+
+  <!-- We do NOT declare a default value for TX BB cutoff frequency step size
+       because its value is runtime dynamic on FMCOMMS2/3's AD9361 -->
+  <!-- Indicates the precision which will be used to evaluate the value written
+       to this worker's bb_cutoff_frequency_MHz property
+       before that value is applied to hardware. For example if the step is 2,
+       the value written is rounded to the nearest multiple of 2 in order to
+       be applied to hardware. The precision in this case is determined by the
+       precision of the ad9361_config_proxy.rcc worker's
+       tx_rf_bandwidth property. -->
+  <SpecProperty Name="bb_cutoff_frequency_step_MHz" ReadSync="true"
+                                                    WriteSync="true"/>  <!-- TODO / FIXME - remove Writable from OCS for this property and remove WriteSync from the OWD for this property, the only reason we need WriteSync here is to ensure any write to this property causes a failure. -->
+
+  <!-- OWD Properties -->
+
+  <!-- WriteSync required to allow for other props to wait until this prop's value is written -->
+  <Property Name="app_inst_name_ad9361_config_proxy" Type="string"
+                                                     StringLength="128"
+                                                     Initial="true"
+                                                     Readable="true"
+                                                     WriteSync="true"
+                                                     Default="ad9361_config_proxy"
+                                                     Description="Value must match the name of the ad9361_config_proxy application instance."/>
+
+  <!-- WriteSync required to allow for other props to wait until this prop's value is written -->
+  <Property Name="app_inst_name_ad9361_data_sub" Type="string"
+                                                 StringLength="128"
+                                                 Initial="true"
+                                                 Readable="true"
+                                                 WriteSync="true"
+                                                 Default="ad9361_data_sub"
+                                                 Description="Value must match the name of the ad9361_data_sub application instance."/>
+
+  <Property Name="enable_log_info" Type="bool" Initial="true" Readable="true" Default="false"/>
+  <Property Name="enable_log_debug" Type="bool" Initial="true" Readable="true" Default="false"/>
+  <Property Name="enable_log_trace" Type="bool" Initial="true" Readable="true" Default="false"/>
+
+  <Property Name="config" Type="struct"
+                          Initial="true"
+                          Volatile="true"
+                          ReadSync="true"
+                          WriteSync="true"
+                          Default="reference_clk_rate_Hz 40e6,duplex_mode FDD,are_using_REF_CLK_SMA false,SMA_channel TX1A">
+    <Member Name="reference_clk_rate_Hz" Type="double"
+                                         Description="Schematic crystal Y101 frequency"/>
+    <Member Name="duplex_mode"           Type="enum"
+                                         Enums="TDD,FDD"/>
+    <Member Name="are_using_REF_CLK_SMA" Type="bool"/>
+    <Member Name="SMA_channel"           Type="enum"
+                                         Enums="TX1A,TX2A"
+                                         Description="Indicates which SMA connector on the FMCOMMS2/3 PCB that the TX data stream controlled by an instance of this worker corresponds to."/>
+  </Property>
+  <Property Name="LO_source" Type="enum"
+                             Enums="internal,external"
+                             Readable="true"
+                             Writable="true"
+                             WriteSync="true"
+                             Default="internal"
+                             Description="The value 'external' should only be used if an external-to-the-FMCOMMS2/3 clock drives the TP102 test point on the FMCOMMS2/3 PCB."/>
+
+</RccWorker>

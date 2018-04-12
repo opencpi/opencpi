@@ -38,7 +38,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \renewcommand{\headrulewidth}{0.5pt}
 \renewcommand{\footrulewidth}{0.5pt}
 \newcommand{\terminaloutput}[1]{\texttt{#1}}
-\rhead{\small{Project ANGRYVIPER}}
+\rhead{\small{ANGRYVIPER Team}}
 %----------------------------------------------------------------------------------------
 % Appendix packages
 %----------------------------------------------------------------------------------------
@@ -101,6 +101,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \lhead{\small{\docTitle}}
 
 \def\comp{ad9361\_adc\_sub}
+\edef\ecomp{ad9361_adc_sub}
 \def\Comp{AD9361 ADC SUB}
 \graphicspath{ {figures/} }
 
@@ -120,7 +121,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Release Date      & Aug 2017         \\
 	\hline
-	Component Library & ocpi.devices     \\
+	Component Library & ocpi.assets.devices     \\
 	\hline
 	Workers           & \comp.hdl        \\
 	\hline
@@ -285,20 +286,20 @@ Data is sent out the \verb+dev_data_ch0_out+ and \verb+dev_data_ch1_out+ devsign
 	(R4)edge []	node [] {} (R1)
     ;
     \gettikzxy{(placeholder)}{\rx}{\ry}
-    \myclient.apply(\rx - 150,\ry,C1, ``dev\_data\_ch0\_out" \\ dev signal port \\ ADC channel's data bus sent to \\ instance of ad9361\_adc.hdl);
+    \myclient.apply(\rx - 150,\ry,C1, ``dev\_data\_ch0\_out'' \\ dev signal port \\ ADC channel's data bus sent to \\ instance of ad9361\_adc.hdl);
     \path[<->]($(R1.north) + (-150 pt,0)$) edge [] node [] {} (C1);
-    \myclient.apply(-\rx + 150,\ry,C1, ``dev\_data\_ch1\_out" \\ {(optional)} dev signal port \\ ADC channels' data bus sent to \\ instance of ad9361\_adc.hdl);
+    \myclient.apply(-\rx + 150,\ry,C1, ``dev\_data\_ch1\_out'' \\ {(optional)} dev signal port \\ ADC channels' data bus sent to \\ instance of ad9361\_adc.hdl);
     \path[<->]($(R1.north) + (150 pt,0)$) edge [] node [] {} (C1);
 
     \fontsize{9.5}{12}\selectfont
         
-    \myclient.apply(\rx - 167.5,\ry-180,C1, ``dev\_cfg\_data" \\ dev signal port \texttt{(}see \\ AD9361\_CONFIG.pdf\texttt{)});
+    \myclient.apply(\rx - 167.5,\ry-180,C1, ``dev\_cfg\_data'' \\ dev signal port \texttt{(}see \\ AD9361\_CONFIG.pdf\texttt{)});
     \path[<->]($(R1.south) + (-167.5 pt,0)$) edge [] node [] {} (C1);
-    \myclient.apply(\rx - 52.5,\ry-180,C1, ``dev\_cfg\_data\_rx" \\ dev signal port \texttt{(}see \\ AD9361\_CONFIG.pdf\texttt{)} );
+    \myclient.apply(\rx - 52.5,\ry-180,C1, ``dev\_cfg\_data\_rx'' \\ dev signal port \texttt{(}see \\ AD9361\_CONFIG.pdf\texttt{)} );
     \path[<->]($(R1.south) + (-52.5 pt,0)$) edge [] node [] {} (C1);
-    \myclient.apply(\rx+52.5,\ry-180,C1, ``dev\_cfg\_data\_clk" \\ dev signal port \texttt{(}see \\ AD9361\_DATA\_SUB.pdf\texttt{)} );
+    \myclient.apply(\rx+52.5,\ry-180,C1, ``dev\_cfg\_data\_clk'' \\ dev signal port \texttt{(}see \\ AD9361\_DATA\_SUB.pdf\texttt{)} );
     \path[<->]($(R1.south) + (52.5pt,0)$) edge [] node [] {} (C1);
-    \myclient.apply(\rx + 167.5,\ry-180,C1, ``dev\_data\_from\_pins" \\ dev signal port \texttt{(}see \\ AD9361\_DATA\_SUB.pdf\texttt{)} );
+    \myclient.apply(\rx + 167.5,\ry-180,C1, ``dev\_data\_from\_pins'' \\ dev signal port \texttt{(}see \\ AD9361\_DATA\_SUB.pdf\texttt{)} );
     \path[<->]($(R1.south) + (167.5 pt,0)$) edge [] node [] {} (C1);
 
   \end{tikzpicture}
@@ -463,23 +464,31 @@ The \Comp{} subdevice worker contains two clock domains: the clock from the Cont
 \subsection*{Multichannel Phase Coherency}
 Note that the aforementioned 6 cycle/4 cycle latency results on the multichannel data being output the devsignal ports in a clock-aligned, phase coherent fashion. However, just because the each channel's devsignal data is phase-aligned at the output of the \comp{}.hdl worker's devsignals, that does not mean that the data is phase-aligned once each channel is ingested inside an instance of an ad9361\_adc.hdl device worker because each ad9361\_adc.hdl instance handles its data as an independent, uniquely flow-controlled data path.
 
+\pagebreak
 \section*{Performance and Resource Utilization}
-\subsubsection*{\comp.hdl}
-Fmax refers to the maximum allowable clock rate for any registered signal paths within a given clock domain for an FPGA design. Fmax in the table below is specific only to this worker and represents the maximum possible Fmax for any OpenCPI bitstream built with this worker included. Note that the Fmax value for a given clock domain for the final bitstream is often worse than the Fmax specific to this worker, even if this worker is the only one included in the bitstream. Note also that the DATA\_CLK\_P devsignal's rate will only ever go as high as 245.76 MHz\cite{adi_ug570}. \\ \\
-Table entries are a result of building the worker with the following parameter property sets:
+\noindent
+The FPGA resource utilization and Fmax are included for this worker. Fmax refers to the maximum allowable clock rate for any registered signal paths within a given clock domain for an FPGA design. Fmax in the table below is specific only to this worker and represents the maximum possible Fmax for any OpenCPI bitstream built with this worker included. Note that the Fmax value for a given clock domain for the final bitstream is often worse than the Fmax specific to this worker, even if this worker is the only one included in the bitstream. It's important to note that the full range of possible operating conditions for the AD9361 is not guaranteed to operate without error, e.g. maximum achievable RX sample rates in certain LVDS modes are less than AD9361 LVDS mode-maximum of 245.76 MHz\cite{adi_ug570}. For more information, see Tables \ref{tablebitstreamfmax}, \ref{tablemaxsamprate}, and \ref{tableber}.
 
+\subsubsection*{\comp.hdl - LVDS configuration}
+
+The parameterized build configuration for this worker which corresponds to the AD9361 LVDS mode is represented by the following parameter property values:
+%\input{../../\ecomp.hdl/utilization.inc}
 \begin{itemize}
 	\item \verb+LVDS_p+=True
 	\item \verb+HALF_DUPLEX_p+=False
 	\item \verb+SINGLE_PORT_p+=False
 	\item \verb+DATA_RATE_CONFIG_p+=DDR
 \end{itemize}
+
+\noindent Table entries are specific to the worker build configuration with the aforementioned parameter property set. Note that dev\_data\_clk is the worker source code name for the signal which is ultimately driven by, and has the same clock rate of, the AD9361 DATA\_CLK pin pair. \\
+
 % see performance_and_resource_utilization.txt
-\begin{scriptsize}
-	\begin{tabular}{|M{4.4cm}|M{1.9cm}|M{1.9cm}|M{1.5cm}|M{1.8cm}|M{1.7cm}|M{1.4cm}|}
+\noindent\begin{scriptsize}
+	\begin{longtable}{|M{4.4cm}|M{1.9cm}|M{1.9cm}|M{1.5cm}|M{1.8cm}|M{1.7cm}|M{1.4cm}|}
+		\caption{\comp{}.hdl LVDS Configuration Performance and Resource Utilization.} \\
 		\hline
 		\rowcolor{blue}
-    Device                                 & Registers (typical) & LUTS (typical) & \multicolumn{2}{c|}{Fmax (typical)}  & Memory/ Special Functions & Design Suite \\
+    Device                                 & Registers (typical) & LUTS (typical) & \multicolumn{2}{c|}{Worker Fmax (typical)}  & Memory/ Special Functions & Design Suite \\
 		\hline
     \rowcolor{blue}
 		                                       &           &      & control plane clock & dev\_data\_clk clock &           &          \\
@@ -492,10 +501,172 @@ Table entries are a result of building the worker with the following parameter p
 		\hline
 		Stratix IV EP4SGX230K-C2-F40 & (unsupported) & (unsupported) & \ref{quartustiming}  & \ref{quartustiming} & (unsupported)              & Quartus Prime 15.1 \\
 		\hline
-	\end{tabular}
+	\end{longtable}
 \end{scriptsize}
 \footnotetext[1]{\label{abc}These measurements were the result of a Vivado timing analysis which was different from the Vivado analysis performed by default for OpenCPI worker builds. For more info see Appendix \ref{appendix}}
 \footnotetext[2]{\label{quartustiming}Quartus does not perform timing analysis at the OpenCPI worker build (i.e. synthesis) stage.}
+
+\pagebreak
+\noindent A notable example of the aforementioned potential discrepancy between worker Fmax and bitstream Fmax for a given clock domain is the maximum achievable AD9361 RX data clock rate for Zynq 7020 speed grade 1 bitstreams containing this worker. The bitstream Fmax in this case is significantly lower than the worker netlist Fmax of 418MHz on a Zynq 7020 speed grade 1. The timing analysis for the ad9361\_adc\_sub netlist is not capable of taking into account the paths from the internal-to-the-AD9361 registers which produce the RX data to the ad9361\_adc\_sub worker's DDR register inputs. The Fmax discrepancy in this case results from these external-to-the-ad9361\_adc\_sub paths being the limiting factor for the max bistream RX data clock rate. In order to perform a timing analysis which does include these paths, and therefore takes into account all paths which may limit the maximum achievable RX data clock rate, a timing analysis must be done 1) on a netlist/bitstream which includes the rest of the path from the DDR input from the FPGA pad (i.e. it includes the ad9361\_data\_sub worker) and 2) which includes delay/offset constraints which contain the information about the range of possible clock/data skews from the internal-to-the-AD9361 register which produced the RX data to the FPGA pad (i.e. constraints are used which include the AD9361 datasheet-specified $t_{DDRX}$ and $t_{DDDV}$ min/max values). \\
+
+\noindent Table \ref{tablebitstreamfmax} includes the known theoretical limitations at the bitstream level (as opposed to ad9361\_adc\_sub level) for the AD9361 DATA\_CLK clock rate for various hardware/software configurations. For convenience, Table \ref{tablemaxsamprate} converts the AD9361 DATA\_CLK rate limitations into their consequential RX sample rate limitations. Table \ref{tableber} contains the experimental verification results for RX sample rate limitations.\\
+\begin{scriptsize}
+	\begin{longtable}{|c|l|c|c|c|c|l|}
+		\caption{Theoretical bitstream clock period limitations for dev\_data\_clk (AD9361 DATA\_CLK) clock domain.}
+    \label{tablebitstreamfmax} \\
+		\hline
+		\rowcolor{blue}
+    Parameter & \multicolumn{1}{|c|}{Conditions} & Min & Typ & Max & Unit & \multicolumn{1}{|c|}{Notes} \\
+		\hline
+    \multirow{27}{*}{\parbox{2cm}{min dev\_data\_clk (AD9361 DATA\_CLK) clock period}} & \parbox{4.5 cm}{Zedboard w/ FMC voltage 2.5V, \\ FMCOMMS2/3} & & & & & \\
+                          &                                      &                                & &                                &                      & \\
+                          & \multirow{1}{*}{\parbox{5.8 cm}{\hspace*{2mm} Vivado 2017.1 Design Suite}} & & & & & \\
+                          & \multirow{1}{*}{\parbox{5.8 cm}{\hspace*{6mm} AD9361 DATA\_CLK duty cycle=50\% \textsuperscript{\ref{notfullrange}} }} & & & & & \\
+                          & \multirow{1}{*}{\parbox{5.8 cm}{\hspace*{9mm} AD9361 LVDS Mode=1}} & & & & & \\
+                          & \multirow{2}{*}{\parbox{5.8 cm}{\hspace*{12mm}AD9361 DATA\_CLK Delay=2, \\\hspace*{12mm}AD9361 Rx Data Delay=0}} & \multirow{2}{*}{5.712 \textsuperscript{\ref{lessthanmaxsamprate}}} & & \multirow{2}{*}{5.712 \textsuperscript{\ref{lessthanmaxsamprate}}} & \multirow{2}{*}{ns} &
+\multirow{2}{*}{\parbox{3.8cm}{(approx 175.070028011 MHz), \\ guaranteed by FPGA timing analysis}}
+\\
+                          &                                      &                                & &                                &                      & \\
+                          &                                      &                                & &                                &                      & \\
+                          & \multirow{1}{*}{\parbox{5.8 cm}{\hspace*{2mm} ISE 14.7 Design Suite}} & & & & & \\
+                          & \multirow{1}{*}{\parbox{5.8 cm}{\hspace*{6mm} AD9361 DATA\_CLK duty cycle=50\% \textsuperscript{\ref{notfullrange}} }} & & & & & \\
+                          & \multirow{1}{*}{\parbox{5.8 cm}{\hspace*{9mm} AD9361 LVDS Mode=1}} & & & & & \\
+                          & \multirow{4}{*}{\parbox{5.8 cm}{\hspace*{12mm}AD9361 DATA\_CLK Delay=3, \\\hspace*{12mm}AD9361 Rx Data Delay=0, \\ \hspace*{12mm}AD9361 $t_{DDRX}=0.75 ns$ \textsuperscript{\ref{notfullrange}}, \\ \hspace*{12mm}AD9361 $t_{DDDV}=0.75ns$ \textsuperscript{\ref{notfullrange}} }} & \multirow{4}{*}{4.294 \textsuperscript{\ref{lessthanmaxsamprate}}} & & \multirow{4}{*}{4.294 \textsuperscript{\ref{lessthanmaxsamprate}}} & \multirow{4}{*}{ns} &
+\multirow{4}{*}{\parbox{3.8cm}{(approx 232.883092687 MHz), \\ guaranteed by FPGA timing analysis}}
+\\
+                          &                                      &                                & &                                &                      & \\
+                          &                                      &                                & &                                &                      & \\
+                          &                                      &                                & &                                &                      & \\
+                          &                                      &                                & &                                &                      & \\
+                          & \parbox{5.8 cm}{ML605, \\one FMCOMMS2/3 in either slot} & & & & & \\
+                          &                                      &                                & &                                &                      & \\
+                          & \multirow{1}{*}{\parbox{5.8 cm}{\hspace*{2mm} ISE 14.7 Design Suite}} & & & & & \\
+                          & \multirow{1}{*}{\parbox{5.8 cm}{\hspace*{6mm} AD9361 DATA\_CLK duty cycle=50\% \textsuperscript{\ref{notfullrange}} }} & & & & & \\
+                          & \multirow{1}{*}{\parbox{5.8 cm}{\hspace*{9mm} AD9361 LVDS Mode=1}} & & & & & \\
+                          & \multirow{4}{*}{\parbox{5.8 cm}{\hspace*{12mm}AD9361 DATA\_CLK Delay=2, \\\hspace*{12mm}AD9361 Rx Data Delay=0, \\ \hspace*{12mm}AD9361 $t_{DDRX}=0.75 ns$ \textsuperscript{\ref{notfullrange}}, \\ \hspace*{12mm}AD9361 $t_{DDDV}=0.75ns$ \textsuperscript{\ref{notfullrange}} }} & & \multirow{4}{*}{3.545} & & \multirow{4}{*}{ns} &
+\multirow{4}{*}{\parbox{3.8cm}{(approx 282 MHz), \\ guaranteed by FPGA timing analysis}}
+\\
+                          &                                      &                                & &                                &                      & \\
+                          &                                      &                                & &                                &                      & \\
+                          &                                      &                                & &                                &                      & \\
+		\hline
+	\end{longtable}
+\end{scriptsize}
+\footnotetext[1]{\label{lessthanmaxsamprate}Note this is more than the minimum AD9361 LVDS DATA\_CLK Clock Period of 4.069 ns, i.e. not all possible AD9361 LVDS clock rates can be accounted for.}
+\footnotetext[2]{\label{notfullrange}Note that a) this condition is driven by the limitations of the capabilities of Xilinx constraints, and b) the range of value(s) for this condition does not cover the full range of possible values for AD9361 for the given mode.}
+\pagebreak
+\begin{scriptsize}
+	\begin{longtable}{|c|l|c|c|c|c|l|}
+		\caption{Theoretical bitstream limits for AD9361 RX sample rates per antenna port / channel.}
+    \label{tablemaxsamprate} \\
+		\hline
+		\rowcolor{blue}
+    Parameter & \multicolumn{1}{|c|}{Conditions} & Min & Typ & Max & Unit & \multicolumn{1}{|c|}{Notes} \\
+		\hline
+    \multirow{58}{*}{\parbox{1.7cm}{bitstream minimum supported RX sample period for a given AD9361 antenna port / channel}} & \parbox{4.5cm}{Zedboard w/ FMC voltage jumper \\ setting 2.5V, FMCOMMS2/3} & & & & & \\
+                          &                                      &                                & &                                &                      & \\
+                          & \parbox{6.7 cm}{\hspace*{3mm}Vivado 2017.1 Design Suite bitstream \\\hspace*{6mm}AD9361 LVDS Mode=1 \\ \hspace*{9mm}AD9361 DATA\_CLK Delay=2, \\\hspace*{9mm}AD9361 Rx Data Delay=0 } & & & & & \\
+                          & \multirow{2}{*}{\parbox{6.7 cm}{\hspace*{12mm}AD9361 1R1T mode, \\ \hspace*{12mm}AD9361 2R2T Timing = 0}} & & & & & \\
+                          &                                      &                                & &                                &                      & \\
+                          & \multirow{5}{*}{\parbox{6.7cm}{\hspace*{15mm}full range of FPGA voltages/temperatures,\\ \hspace*{15mm}AD9361 DATA\_CLK duty cycle=50\% \textsuperscript{\ref{notfullrange}} }} & \multirow{5}{*}{11.424}  & & \multirow{5}{*}{11.424} & \multirow{5}{*}{ns} & \multirow{5}{*}{\parbox{3.0cm}{(approx 87.535014005 Msps complex per RX channel), \\ guaranteed by FPGA timing analysis}} \\
+                          &                                      &                                & &                                &                      & \\
+                          &                                      &                                & &                                &                      & \\
+                          &                                      &                                & &                                &                      & \\
+                          &                                      &                                & &                                &                      & \\
+                          & \multirow{2}{*}{\parbox{6.7 cm}{\hspace*{12mm}AD9361 2R1T mode or 2R2T mode or \\ \hspace*{12mm}AD9361 2R2T Timing = 1}} & & & & & \\
+                          &                                      &                                & &                                &                      & \\
+                          & \multirow{5}{*}{\parbox{6.7cm}{\hspace*{15mm}full range of FPGA voltages/temperatures,\\ \hspace*{15mm}AD9361 DATA\_CLK duty cycle=50\% \textsuperscript{\ref{notfullrange}} }} & \multirow{5}{*}{22.848 \textsuperscript{\ref{lessthanmaxsamprate2}}}  & & \multirow{5}{*}{22.848 \textsuperscript{\ref{lessthanmaxsamprate2}}} & \multirow{5}{*}{ns} & \multirow{5}{*}{\parbox{3.0cm}{(approx 43.767507002 Msps complex \textsuperscript{\ref{lessthanmaxsamprate2}} per RX channel), \\ guaranteed by FPGA timing analysis}} \\
+                          &                                      &                                & &                                &                      & \\
+                          &                                      &                                & &                                &                      & \\
+                          &                                      &                                & &                                &                      & \\
+                          &                                      &                                & &                                &                      & \\
+                          & \parbox{6.7 cm}{\hspace*{3mm}ISE 14.7 Design Suite bitstream \\\hspace*{6mm}AD9361 LVDS Mode=1 \\\hspace*{9mm}AD9361 DATA\_CLK Delay=3, \\\hspace*{9mm}AD9361 Rx Data Delay=0} & & & & & \\
+                          & \multirow{2}{*}{\parbox{6.7 cm}{\hspace*{12mm}AD9361 1R1T mode, \\ \hspace*{12mm}AD9361 2R2T Timing = 0}} & & & & & \\
+                          &                                      &                                & &                                &                      & \\
+                          & \multirow{5}{*}{\parbox{6.7cm}{\hspace*{15mm}full range of FPGA voltages/temperatures,\\ \hspace*{15mm}AD9361 DATA\_CLK duty cycle=50\% \textsuperscript{\ref{notfullrange}}, \\ \hspace*{15mm}AD9361 $t_{DDRX}=0.75 ns$ \textsuperscript{\ref{notfullrange}}, \\ \hspace*{15mm}AD9361 $t_{DDDV}=0.75ns$ \textsuperscript{\ref{notfullrange}} }} & \multirow{5}{*}{8.588}  & & \multirow{5}{*}{8.588} & \multirow{5}{*}{ns} & \multirow{5}{*}{\parbox{3.0cm}{(approx 116.441546343 Msps complex per RX channel), \\ guaranteed by FPGA timing analysis}} \\
+                          &                                      &                                & &                                &                      & \\
+                          &                                      &                                & &                                &                      & \\
+                          &                                      &                                & &                                &                      & \\
+                          &                                      &                                & &                                &                      & \\
+                          & \multirow{2}{*}{\parbox{6.7 cm}{\hspace*{12mm}AD9361 2R1T mode or 2R2T mode or \\ \hspace*{12mm}AD9361 2R2T Timing = 1}} & & & & & \\
+                          &                                      &                                & &                                &                      & \\
+                          & \multirow{5}{*}{\parbox{6.7cm}{\hspace*{15mm}full range of FPGA voltages/temperatures,\\ \hspace*{15mm}AD9361 DATA\_CLK duty cycle=50\% \textsuperscript{\ref{notfullrange}}, \\ \hspace*{15mm}AD9361 $t_{DDRX}=0.75 ns$ \textsuperscript{\ref{notfullrange}}, \\ \hspace*{15mm}AD9361 $t_{DDDV}=0.75ns$ \textsuperscript{\ref{notfullrange}} }} & \multirow{5}{*}{17.176 \textsuperscript{\ref{lessthanmaxsamprate2}}}  & & \multirow{5}{*}{17.176 \textsuperscript{\ref{lessthanmaxsamprate2}}} & \multirow{5}{*}{ns} & \multirow{5}{*}{\parbox{3.0cm}{(approx 58.220773171 Msps complex \textsuperscript{\ref{lessthanmaxsamprate2}} per RX channel), \\ guaranteed by FPGA timing anaylysis}} \\
+                          &                                      &                                & &                                &                      & \\
+                          &                                      &                                & &                                &                      & \\
+                          &                                      &                                & &                                &                      & \\
+                          &                                      &                                & &                                &                      & \\
+    \cline{2-7}
+                          & \parbox{6.7cm}{ML605, \\ one FMCOMMS2/3 in either slot} & & & & & \\
+                          &                                      &                                & &                                &                      & \\
+                          & \parbox{6.7 cm}{\hspace*{3mm}AD9361 LVDS Mode=1 \\\hspace*{6mm}AD9361 DATA\_CLK Delay=2, \\\hspace*{6mm}AD9361 Rx Data Delay=0} & & & & & \\
+                          & \multirow{2}{*}{\parbox{6.7 cm}{\hspace*{9mm}AD9361 1R1T mode, \\ \hspace*{9mm}AD9361 2R2T Timing = 0}} & & & & & \\
+                          &                                      &                                & &                                &                      & \\
+                          & \multirow{5}{*}{\parbox{6.7cm}{\hspace*{12mm}full range of FPGA voltages/temperatures,\\ \hspace*{12mm}AD9361 DATA\_CLK duty cycle=50\% \textsuperscript{\ref{notfullrange}}, \\ \hspace*{12mm}AD9361 $t_{DDRX}=0.75 ns$ \textsuperscript{\ref{notfullrange}}, \\ \hspace*{12mm}AD9361 $t_{DDDV}=0.75ns$ \textsuperscript{\ref{notfullrange}} }} & & \multirow{5}{*}{7.090} & & \multirow{5}{*}{ns} & \multirow{5}{*}{\parbox{3.0cm}{(approx 141.043723554 Msps complex per RX channel), \\ guaranteed by FPGA timing anaylysis}} \\
+                          &                                      &                                & &                                &                      & \\
+                          &                                      &                                & &                                &                      & \\
+                          &                                      &                                & &                                &                      & \\
+                          &                                      &                                & &                                &                      & \\
+                          & \multirow{2}{*}{\parbox{6.7 cm}{\hspace*{9mm}AD9361 2R1T mode or 2R2T mode or \\ \hspace*{9mm}AD9361 2R2T Timing = 1}} & & & & & \\
+                          &                                      &                                & &                                &                      & \\
+                          & \multirow{5}{*}{\parbox{6.7cm}{\hspace*{12mm}full range of FPGA voltages/temperatures,\\ \hspace*{12mm}AD9361 DATA\_CLK duty cycle=50\% \textsuperscript{\ref{notfullrange}}, \\ \hspace*{12mm}AD9361 $t_{DDRX}=0.75 ns$ \textsuperscript{\ref{notfullrange}}, \\ \hspace*{12mm}AD9361 $t_{DDDV}=0.75ns$ \textsuperscript{\ref{notfullrange}} }} & & \multirow{5}{*}{14.180} & & \multirow{5}{*}{ns} & \multirow{5}{*}{\parbox{3.0cm}{(approx 70.521861777 Msps complex per RX channel), \\ guaranteed by FPGA timing anaylysis}} \\
+                          &                                      &                                & &                                &                      & \\
+                          &                                      &                                & &                                &                      & \\
+                          &                                      &                                & &                                &                      & \\
+                          &                                      &                                & &                                &                      & \\
+		\hline
+	\end{longtable}
+\end{scriptsize}
+\footnotetext[1]{\label{lessthanmaxsamprate2}Note this value corresponds to less than the maximum possible AD9361 sample rate per AD9361 antenna port/channel for the given mode.}
+\footnotetext[2]{\label{notfullrange}Note that a) this condition is driven by the limitations of the capabilities of Xilinx constraints, and b) the range of value(s) for this condition does not cover the full range of possible values for AD9361 for the given mode.}
+\pagebreak
+\begin{scriptsize}
+	\begin{longtable}{|c|l|c|c|c|c|l|}
+		\caption{Experimentally verified RX bit error rates.}
+    \label{tableber} \\
+		\hline
+		\rowcolor{blue}
+    Parameter & \multicolumn{1}{|c|}{Conditions} & Min & Typ & Max & Unit & \multicolumn{1}{|c|}{Notes} \\
+		\hline
+    \multirow{42}{*}{\parbox{1.7cm}{RX bit error rate}} & \parbox{4.5cm}{Zedboard w/ FMC voltage jumper \\ setting 2.5V, FMCOMMS2/3} & & & & & \multirow{42}{*}{AD9361 PRBS test} \\
+                          &                                      &                                & &                                &                      & \\
+                          & \parbox{9.5 cm}{\hspace*{3mm}Vivado 2017.1 Design Suite bitstream \\\hspace*{6mm}AD9361 LVDS Mode=1 \\ \hspace*{9mm}AD9361 DATA\_CLK Delay=2, \\\hspace*{9mm}AD9361 Rx Data Delay=0 } & & & & & \\
+                          & \multirow{2}{*}{\parbox{9.5 cm}{\hspace*{12mm}AD9361 1R1T mode, \\ \hspace*{12mm}AD9361 2R2T Timing = 0}} & & & & & \\
+                          &                                      &                                & &                                &                      & \\
+                          &                                      &                                & &                                &                      & \\
+                          & \multirow{2}{*}{\parbox{9.5cm}{\hspace*{15mm}room temperature, \\ \hspace*{15mm}RX sample rate=61.44 Msps complex (approx, nominal)}} & \multirow{2}{*}{0} & \multirow{2}{*}{0} & & \multirow{2}{*}{\%} & \\
+                          &                                      &                                & &                                &                      & \\
+                          &                                      &                                & &                                &                      & \\
+                          & \multirow{2}{*}{\parbox{9.5 cm}{\hspace*{12mm}AD9361 1R1T mode, \\ \hspace*{12mm}AD9361 2R2T Timing = 1}} & & & & & \\
+                          &                                      &                                & &                                &                      & \\
+                          &                                      &                                & &                                &                      & \\
+                          & \multirow{2}{*}{\parbox{9.5cm}{\hspace*{15mm}room temperature, \\ \hspace*{15mm}RX sample rate=43.767507 Msps complex \textsuperscript{\ref{lessthanmaxsamprate3}} (approx, nominal)}} & \multirow{2}{*}{0} & \multirow{2}{*}{0} & & \multirow{2}{*}{\%} & \multirow{2}{*}{} \\
+                          &                                      &                                & &                                &                      & \\
+                          &                                      &                                & &                                &                      & \\
+                          & \parbox{9.5 cm}{\hspace*{3mm}ISE 14.7 Design Suite bitstream \\\hspace*{6mm}AD9361 LVDS Mode=1 \\\hspace*{9mm}AD9361 DATA\_CLK Delay=3, \\\hspace*{9mm}AD9361 Rx Data Delay=0} & & & & & \\
+                          & \multirow{2}{*}{\parbox{9.5 cm}{\hspace*{12mm}AD9361 1R1T mode, \\ \hspace*{12mm}AD9361 2R2T Timing = 0}} & & & & & \\
+                          &                                      &                                & &                                &                      & \\
+                          &                                      &                                & &                                &                      & \\
+                          & \multirow{2}{*}{\parbox{9.5cm}{\hspace*{15mm}room temperature, \\ \hspace*{15mm}RX sample rate=61.44 Msps complex (approx, nominal)}} & \multirow{2}{*}{0} & \multirow{2}{*}{0} & & \multirow{2}{*}{\%} & \\
+                          &                                      &                                & &                                &                      & \\
+                          &                                      &                                & &                                &                      & \\
+                          & \multirow{2}{*}{\parbox{9.5 cm}{\hspace*{12mm}AD9361 1R1T mode, \\ \hspace*{12mm}AD9361 2R2T Timing = 1}} & & & & & \\
+                          &                                      &                                & &                                &                      & \\
+                          &                                      &                                & &                                &                      & \\
+                          & \multirow{2}{*}{\parbox{9.5cm}{\hspace*{15mm}room temperature, \\ \hspace*{15mm}RX sample rate=58.220773 Msps complex \textsuperscript{\ref{lessthanmaxsamprate3}} (approx, nominal)}} & \multirow{2}{*}{0} & \multirow{2}{*}{0} & & \multirow{2}{*}{\%} & \multirow{2}{*}{} \\
+                          &                                      &                                & &                                &                      & \\
+    \cline{2-6}
+                          & \parbox{9.5cm}{ML605 in CentOS7 x86 machine PCIe slot, \\ one FMCOMMS2/3 in either slot} & & & & & \\
+                          &                                      &                                & &                                &                      & \\
+                          & \parbox{9.5 cm}{\hspace*{3mm}AD9361 LVDS Mode=1 \\\hspace*{6mm}AD9361 DATA\_CLK Delay=2, \\\hspace*{6mm}AD9361 Rx Data Delay=0} & & & & & \\
+                          & \multirow{1}{*}{\parbox{9.5 cm}{\hspace*{9mm}AD9361 1R1T mode}} & & & & & \\
+                          &                                      &                                & &                                &                      & \\
+                          & \multirow{2}{*}{\parbox{9.5cm}{\hspace*{12mm}room temperature, \\ \hspace*{12mm}RX sample rate=61.44 Msps complex (approx, nominal)}} & \multirow{2}{*}{0} & \multirow{2}{*}{0} & & \multirow{2}{*}{\%} & \\
+                          &                                      &                                & &                                &                      & \\
+		\hline
+	\end{longtable}
+\end{scriptsize}
+\footnotetext[1]{\label{lessthanmaxsamprate3}Note this value corresponds to less than the maximum possible AD9361 sample rate per AD9361 antenna port/channel for the given mode.}
+
 \pagebreak
 \section*{Test and Verification}
 The test outlined in \cite{adc_comp_datasheet} includes validation of this worker's functionality (for LVDS only).

@@ -25,8 +25,7 @@ $(if $(realpath $(OCPI_CDK_DIR)),,$(error The OCPI_CDK_DIR environment variable 
 
 APP=testbench
 
-include $(OCPI_CDK_DIR)/include/application.mk
-#setup.mk
+include setup.mk
 
 .SILENT: show
 .PHONY: run clean show

@@ -24,7 +24,10 @@ ImportCoreDirs=\
   $(OCPI_HDL_IMPORTS_DIR)/coregen/temac_v6 \
   $(OCPI_HDL_IMPORTS_DIR)/coregen/pcie_4243_trn_v6_gtx_x4_250 \
   $(OCPI_HDL_IMPORTS_DIR)/coregen/pcie_4243_hip_s4gx_gen2_x4_128
-PrimitiveLibraries=\
+PrimitiveLibraries=comms_prims \
+                   misc_prims \
+                   util_prims \
+                   dsp_prims \
                    temac_v6 \
                    pcie_4243_trn_v6_gtx_x4_250 \
                    pcie_4243_hip_s4gx_gen2_x4_128 \

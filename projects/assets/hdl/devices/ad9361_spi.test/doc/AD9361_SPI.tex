@@ -38,7 +38,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \renewcommand{\headrulewidth}{0.5pt}
 \renewcommand{\footrulewidth}{0.5pt}
 \newcommand{\terminaloutput}[1]{\texttt{#1}}
-\rhead{\small{Project ANGRYVIPER}}
+\rhead{\small{ANGRYVIPER Team}}
 %----------------------------------------------------------------------------------------
 % Appendix packages
 %----------------------------------------------------------------------------------------
@@ -105,6 +105,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \def\DevSignal{DevSignal}
 
 \def\comp{ad9361\_spi}
+\edef\ecomp{ad9361_spi}
 \def\Comp{AD9361 SPI}
 \graphicspath{ {figures/} }
 
@@ -124,7 +125,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Release Date      & Aug 2017         \\
 	\hline
-	Component Library & ocpi.devices     \\
+	Component Library & ocpi.assets.devices     \\
 	\hline
 	Workers           & \comp.hdl        \\
 	\hline
@@ -166,9 +167,9 @@ The \comp{}.hdl subdevice worker is intend for use in platforms/cards where a SP
     \gettikzxy{(R4)}{\rx}{\ry}
     \node[rectangle,draw=white,fill=white] at (\rx-50,\ry) (C1) {Non-parameter Properties:\\ \verb+lastAddr+ \\ \verb+lastData+ \\ \verb+resetting+};
     \path[<-]($(R1.north) + (-50 pt,0)$) edge [] node [] {} (C1);
-    \myclient.apply(\rx + 160,\ry,C1, ``rprops" \\ rawprop port \\ sent from \\ ad9361\_config.hdl);
+    \myclient.apply(\rx + 160,\ry,C1, ``rprops'' \\ rawprop port \\ sent from \\ ad9361\_config.hdl);
     \path[<-]($(R1.north) + (160 pt,0)$) edge [] node [] {} (C1);
-     \myclient.apply(\rx + 70,\ry,C1, ``dev\_force\_reset" \\ \devsignal{} port \\ sent from \\ ad9361\_config.hdl);
+     \myclient.apply(\rx + 70,\ry,C1, ``dev\_force\_reset'' \\ \devsignal{} port \\ sent from \\ ad9361\_config.hdl);
     \path[<-]($(R1.north) + (70 pt,0)$) edge [] node [] {} (C1);
      \myclient.apply(\rx ,\ry - 150,C1, Signals:\\ SPI\_DI, SPI\_CLK, SPI\_ENB, SPI\_DO, RESETB );
     \path[<->]($(R1.south) + (0, 0 pt)$) edge [] node [] {} (C1);
@@ -630,6 +631,7 @@ Total GXB Transmitter Channel PMA : 0
 Total PLLs : 0
 Total DLLs : 0
 \fi
+%\input{../../\ecomp.hdl/utilization.inc}
 \begin{scriptsize}
 	\begin{tabular}{|M{4.5cm}|M{1.5cm}|M{1.5cm}|M{2.94cm}|M{2cm}|M{2.5cm}|}
 		\hline

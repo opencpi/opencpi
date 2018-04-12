@@ -51,4 +51,14 @@
     <parameter name='FB_CLK_Delay' value='7'/>
     <parameter name='TX_Data_Delay' value='0'/>
   </configuration>
+  <configuration id='8'>
+    <parameter name='LVDS_p' value='true'/>
+    <parameter name='SINGLE_PORT_p' value='false'/>
+    <parameter name='HALF_DUPLEX_p' value='false'/>
+    <parameter name='SWAP_PORTS_p' value='false'/>
+    <parameter name='DATA_CLK_Delay' value='3'/>
+    <parameter name='RX_Data_Delay' value='0'/>
+    <parameter name='FB_CLK_Delay' value='7'/>
+    <parameter name='TX_Data_Delay' value='0'/>
+  </configuration>
 </build>

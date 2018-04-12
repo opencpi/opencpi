@@ -1,0 +1,6 @@
+<tests useHDLFileIo='true'>
+  <input port='in' script='generate.py 32768' messagesize='8192'/>
+  <output port='out' script='verify.py 32768' view='view.sh'/>
+  <property name='tc' values='121'/>
+  <property name='bypass' values='0,1'/>
+</tests>

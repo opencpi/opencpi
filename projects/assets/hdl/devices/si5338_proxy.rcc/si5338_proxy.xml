@@ -1,4 +1,4 @@
-<RccWorker language='c++' slave='si5338.hdl' controloperations='initialize,start,stop' spec='clock_gen-spec'>
+<RccWorker language='c++' slave='si5338.hdl' controloperations='start' spec='clock_gen-spec'>
   <specproperty name='input_hz' readsync='1'/>
   <specproperty name='channels' writesync='1'/>
   <specproperty name='nsources' value='6'/>

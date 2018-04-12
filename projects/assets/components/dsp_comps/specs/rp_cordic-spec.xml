@@ -1,0 +1,21 @@
+<!-- This is the spec file (OCS) for: rp_cordic
+     Add component spec attributes, like "protocol".
+     Add property elements for spec properties.
+     Add port elements for i/o ports -->
+<ComponentSpec>
+
+  <Property Name="DATA_WIDTH" Type="uchar" Readable="true"/>
+
+  <Property Name="DATA_EXT" Type="uchar" Readable="true"/>
+
+  <Property Name="STAGES" Type="uchar" Readable="true"/>
+
+  <Property Name="messageSize" Type="ushort" Readable="true" Writable="true" Default="8192"/>
+
+  <Property Name="enable" Type="bool" Readable="true" Writable="true" Default="true"/>
+
+
+ <DataInterfaceSpec Name="in" Producer="false" Protocol="iqstream_protocol.xml"/>
+ <DataInterfaceSpec Name="out" Producer="true" Protocol="rstream_protocol.xml"/>
+
+</ComponentSpec>

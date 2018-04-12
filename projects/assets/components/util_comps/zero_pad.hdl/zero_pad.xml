@@ -1,0 +1,6 @@
+<HdlWorker Language="vhdl" Spec="zero_pad-spec">
+
+  <StreamInterface Name="in" DataWidth="DWIDTH_p"/>
+  <StreamInterface Name="out" DataWidth="DWIDTH_p"/>
+
+</HdlWorker>
