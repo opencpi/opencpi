@@ -79,7 +79,7 @@ if OCPI_LOG_LEVEL and int(OCPI_LOG_LEVEL) > 8:
     SET_X=" set -x; "
     OCPIDEV_CMD = OCPIDEV_PATH + " -v"
 else:
-    SET_X=""
+    SET_X=" "
     OCPIDEV_CMD = OCPIDEV_PATH
 # Initialize ocpiutil's logging settings which switch
 # based on OCPI_LOG_LEVEL
@@ -124,7 +124,7 @@ class TestPathFunctions(unittest.TestCase):
     if sys.version_info[0] < 2 or (sys.version_info[0] == 2 and sys.version_info[1] < 7):
         def setUp(self):
             logging.debug("Using 'setUp' wrapper function because python <= 2.6 does not " +
-                           "support 'setUpClass'")
+                          "support 'setUpClass'")
             self.setUpClass()
         def tearDown(self):
             logging.debug("Using 'tearDown' wrapper function because python <= 2.6 does not " +
@@ -136,60 +136,60 @@ class TestPathFunctions(unittest.TestCase):
         logging.info("...")
         # Set the registry, (export the variable in bash), register core in the new location
         os.environ['OCPI_PROJECT_REGISTRY_DIR'] = os.path.realpath('./project-registry')
-        ocpidev_command = "set -o pipefail&&rm -r -f project-registry&& " + SET_X
-        ocpidev_command += OCPIDEV_CMD + " create registry project-registry&& "
+        ocpidev_command = "set -e; set -o pipefail && rm -r -f project-registry; " + SET_X
+        ocpidev_command += OCPIDEV_CMD + " create registry project-registry; "
         ocpidev_command += "export OCPI_PROJECT_REGISTRY_DIR=" + \
-                           os.path.realpath('./project-registry') + " && "
+                           os.path.realpath('./project-registry') + " ; "
         # Create PROJECT0 and fill it with assets of many types
-        ocpidev_command += OCPIDEV_CMD + " -d " + ORIGINAL_REGISTRY + " register project ocpi.core&& "
-        ocpidev_command += OCPIDEV_CMD + " --register create project " + PROJECT0 + "&& "
-        ocpidev_command += OCPIDEV_CMD + " -d " + PROJECT0 + " create library mylibrary&& "
-        ocpidev_command += OCPIDEV_CMD + " -d " + PROJECT0 + " create -l mylibrary spec myspec&& "
-        ocpidev_command += OCPIDEV_CMD + " -d " + PROJECT0 + " create -l mylibrary test myspec&& "
+        ocpidev_command += OCPIDEV_CMD + " -d " + ORIGINAL_REGISTRY + " register project ocpi.core; "
+        ocpidev_command += OCPIDEV_CMD + " --register create project " + PROJECT0 + "; "
+        ocpidev_command += OCPIDEV_CMD + " -d " + PROJECT0 + " create library mylibrary; "
+        ocpidev_command += OCPIDEV_CMD + " -d " + PROJECT0 + " create -l mylibrary spec myspec; "
+        ocpidev_command += OCPIDEV_CMD + " -d " + PROJECT0 + " create -l mylibrary test myspec; "
         ocpidev_command += OCPIDEV_CMD + " -d " + PROJECT0 + \
-                           " create -l mylibrary worker myworker0.rcc -S myspec-spec.xml&& "
+                           " create -l mylibrary worker myworker0.rcc -S myspec-spec.xml; "
         ocpidev_command += OCPIDEV_CMD + " -d " + PROJECT0 + \
-                           " create -l mylibrary worker myworker1.hdl -S myspec-spec.xml&& "
-        ocpidev_command += OCPIDEV_CMD + " -d " + PROJECT0 + " create hdl primitive core mycore&& "
-        ocpidev_command += OCPIDEV_CMD + " -d " + PROJECT0 + " create hdl primitive library mylib&& "
-        ocpidev_command += OCPIDEV_CMD + " -d " + PROJECT0 + " create hdl platform myplat&& "
-        ocpidev_command += OCPIDEV_CMD + " -d " + PROJECT0 + " create hdl assembly myassemb&& "
-        ocpidev_command += OCPIDEV_CMD + " -d " + PROJECT0 + " create application myapp&& "
+                           " create -l mylibrary worker myworker1.hdl -S myspec-spec.xml; "
+        ocpidev_command += OCPIDEV_CMD + " -d " + PROJECT0 + " create hdl primitive core mycore; "
+        ocpidev_command += OCPIDEV_CMD + " -d " + PROJECT0 + " create hdl primitive library mylib; "
+        ocpidev_command += OCPIDEV_CMD + " -d " + PROJECT0 + " create hdl platform myplat; "
+        ocpidev_command += OCPIDEV_CMD + " -d " + PROJECT0 + " create hdl assembly myassemb; "
+        ocpidev_command += OCPIDEV_CMD + " -d " + PROJECT0 + " create application myapp; "
         # Create a handful of proje " + OCPIDEV_VERBOSE + "cts with different names and packages
-        ocpidev_command += OCPIDEV_CMD + " --register -K pkg0               create project mypj0&& "
-        ocpidev_command += OCPIDEV_CMD + " --register -K pkg1   -N whocares create project mypj1&& "
-        ocpidev_command += OCPIDEV_CMD + " --register -F pref0              create project mypj2&& "
-        ocpidev_command += OCPIDEV_CMD + " --register -F pref1  -N myname0  create project mypj3&& "
-        ocpidev_command += OCPIDEV_CMD + " --register -F pref2. -N myname1  create project mypj4&& "
-        ocpidev_command += OCPIDEV_CMD + " --register           -N myname2  create project mypj5&& "
-        ocpidev_command += OCPIDEV_CMD + " --register -K pkg2   -N wc -F wc create project mypj6&& "
-        ocpidev_command += OCPIDEV_CMD + " --register                       create project mypj7&& "
-        ocpidev_command += OCPIDEV_CMD + "            -F prefexports -N nm8 create project mypj8&& "
+        ocpidev_command += OCPIDEV_CMD + " --register -K pkg0               create project mypj0; "
+        ocpidev_command += OCPIDEV_CMD + " --register -K pkg1   -N whocares create project mypj1; "
+        ocpidev_command += OCPIDEV_CMD + " --register -F pref0              create project mypj2; "
+        ocpidev_command += OCPIDEV_CMD + " --register -F pref1  -N myname0  create project mypj3; "
+        ocpidev_command += OCPIDEV_CMD + " --register -F pref2. -N myname1  create project mypj4; "
+        ocpidev_command += OCPIDEV_CMD + " --register           -N myname2  create project mypj5; "
+        ocpidev_command += OCPIDEV_CMD + " --register -K pkg2   -N wc -F wc create project mypj6; "
+        ocpidev_command += OCPIDEV_CMD + " --register                       create project mypj7; "
+        ocpidev_command += OCPIDEV_CMD + "            -F prefexports -N nm8 create project mypj8; "
         # Create a components library in each
-        ocpidev_command += OCPIDEV_CMD + " -d mypj0 create library components&& "
-        ocpidev_command += OCPIDEV_CMD + " -d mypj1 create library components&& "
-        ocpidev_command += OCPIDEV_CMD + " -d mypj2 create library components&& "
-        ocpidev_command += OCPIDEV_CMD + " -d mypj3 create library components&& "
-        ocpidev_command += OCPIDEV_CMD + " -d mypj4 create library components&& "
-        ocpidev_command += OCPIDEV_CMD + " -d mypj5 create library components&& "
-        ocpidev_command += OCPIDEV_CMD + " -d mypj6 create library components&& "
-        ocpidev_command += OCPIDEV_CMD + " -d mypj7 create library components&& "
-        ocpidev_command += OCPIDEV_CMD + " -d mypj8 create library components&& "
+        ocpidev_command += OCPIDEV_CMD + " -d mypj0 create library components; "
+        ocpidev_command += OCPIDEV_CMD + " -d mypj1 create library components; "
+        ocpidev_command += OCPIDEV_CMD + " -d mypj2 create library components; "
+        ocpidev_command += OCPIDEV_CMD + " -d mypj3 create library components; "
+        ocpidev_command += OCPIDEV_CMD + " -d mypj4 create library components; "
+        ocpidev_command += OCPIDEV_CMD + " -d mypj5 create library components; "
+        ocpidev_command += OCPIDEV_CMD + " -d mypj6 create library components; "
+        ocpidev_command += OCPIDEV_CMD + " -d mypj7 create library components; "
+        ocpidev_command += OCPIDEV_CMD + " -d mypj8 create library components; "
         # Export mypj8
-        ocpidev_command += "make exports -C mypj8&&"
+        ocpidev_command += "make exports -C mypj8;"
         # Copy the exported pj8 to a new dir, but omit the imports
-        ocpidev_command += "mkdir mypj8_exported&&"
-        ocpidev_command += "rm mypj8/exports/imports&& "
+        ocpidev_command += "mkdir mypj8_exported;"
+        ocpidev_command += "rm mypj8/exports/imports; "
         # Note use -R, not -r, for POSIX/BSD portability
-        ocpidev_command += "cp -RfL mypj8/exports/* mypj8_exported && "
+        ocpidev_command += "cp -RfL mypj8/exports/* mypj8_exported 2>/dev/null; "
         # Rebuild pj8's imports
-        ocpidev_command += "make imports -C mypj8&& "
+        ocpidev_command += "make imports -C mypj8; "
         # Get imports by setting registry for the new exported non-source project
-        ocpidev_command += OCPIDEV_CMD + " -v -d mypj8_exported set registry&& "
+        ocpidev_command += OCPIDEV_CMD + " -d mypj8_exported set registry; "
         # Register the exported project
-        ocpidev_command += OCPIDEV_CMD + " -v register project mypj8_exported "
+        ocpidev_command += OCPIDEV_CMD + " register project mypj8_exported; "
 
-        logging.debug("OCPIDEV CMD: '" + ocpidev_command.replace('&&', '&&\n') + "';")
+        logging.debug("OCPIDEV CMD: '" + ocpidev_command.replace('; ', ';\n') + "';")
         process = subprocess.Popen(ocpidev_command, shell=True)
         results = process.communicate()
         if results[1] or process.returncode != 0:
@@ -238,7 +238,7 @@ class TestPathFunctions(unittest.TestCase):
         #       and also where registry does not
         all_pjs = [pj for pj in ocpiutil.get_all_projects() if not re.search(r".*/ocpi\.core$", pj)]
         pj_paths = [os.path.realpath('.') + '/project-registry/'
-                    + pj for pj in PROJECT_PACKAGES.values()]
+                    + pj for pj in list(PROJECT_PACKAGES.values())]
         golden_all_pjs = pj_paths + [os.path.realpath('.') + '/project-registry/ocpi.cdk']
         logging.info("Verifying that get_all_projects correctly collects CDK, Project path, " +
                      "and registry contents: " + str(golden_all_pjs))
@@ -306,7 +306,7 @@ class TestPathFunctions(unittest.TestCase):
         each directory in PROJECT0 is recognized by the correct dirtype.
         """
         logging.info("===========================\nTesting 'get_dirtype'")
-        for path, dirtype in PROJECT0_DIRTYPES.items():
+        for path, dirtype in list(PROJECT0_DIRTYPES.items()):
             logging.info("\nDirtype for path '" + path + "' should be: " + dirtype + "\n")
             self.assertEqual(ocpiutil.get_dirtype(PROJECT0 + "/" + path), dirtype)
         logging.info("---------------------------")
@@ -319,7 +319,7 @@ class TestPathFunctions(unittest.TestCase):
         with the given type should be returned.
         """
         logging.info("===========================\nTesting 'get_subdirs_of_type'")
-        for path, dirtype in PROJECT0_DIRTYPES.items():
+        for path, dirtype in list(PROJECT0_DIRTYPES.items()):
             expected_path = PROJECT0 + "/" + path
             logging.info("\nSubdirs of type '" + dirtype +
                          "' should contain path: " + expected_path)
@@ -341,7 +341,7 @@ class TestPathFunctions(unittest.TestCase):
         logging.info("All paths corresponding to project-assets " +
                      "show up as True for in-project.")
         logging.info("---------------------------")
-        for path, _ in PROJECT0_DIRTYPES.items():
+        for path, _ in list(PROJECT0_DIRTYPES.items()):
             self.assertTrue(ocpiutil.is_path_in_project(PROJECT0 + "/" + path))
         self.assertTrue(ocpiutil.is_path_in_project(PROJECT0))
         logging.info("Invalid paths and directories outside projects " +
@@ -366,13 +366,13 @@ class TestPathFunctions(unittest.TestCase):
         Verify that each is correct from different CWDs.
         """
         logging.info("===========================\nTesting 'get_project_package'")
-        for proj, pkg in PROJECT_PACKAGES.items():
+        for proj, pkg in list(PROJECT_PACKAGES.items()):
             logging.info("Project \"" + proj + "\" should have full-package: " + pkg)
             self.assertEqual(ocpiutil.get_project_package(proj), pkg)
         logging.info("---------------------------")
         logging.info("Rerunning full-package name tests from " +
                      "within subdirs in each project.")
-        for proj, pkg in PROJECT_PACKAGES.items():
+        for proj, pkg in list(PROJECT_PACKAGES.items()):
             with ocpiutil.cd(proj):
                 logging.info("Project \"" + proj + "\" should have full-package: " + pkg)
                 self.assertEqual(ocpiutil.get_project_package(), pkg)
@@ -399,7 +399,7 @@ class TestPathFunctions(unittest.TestCase):
         logging.info("===========================\n" +
                      "Testing 'does_project_with_package_exist'")
         # TODO: test case where registry does not exist, should return false
-        for proj, pkg in PROJECT_PACKAGES.items():
+        for proj, pkg in list(PROJECT_PACKAGES.items()):
             logging.info("A project (\"" + proj + "\") with package \"" +
                          pkg + "\" should exist.")
             self.assertTrue(ocpiutil.does_project_with_package_exist(package=pkg))
@@ -496,7 +496,7 @@ class TestPathFunctions(unittest.TestCase):
         # TODO: test unreg case where user tries to unregister a project, but the registered
         #       project with that package is actually a different project
         gprd = ocpiutil.get_project_registry_dir()[1]
-        for proj, pkg in PROJECT_PACKAGES.items():
+        for proj, pkg in list(PROJECT_PACKAGES.items()):
             logging.info("Unregistering and re-registering project \"" + proj +
                          "\" with package \"" + pkg + "\"")
             self.assertTrue(ocpiutil.unregister_project(proj))
@@ -563,7 +563,7 @@ class TestPathFunctions(unittest.TestCase):
         the calculated path from the project top matches the known correct path.
         """
         logging.info("===========================\nTesting 'get_path_from_project_top'")
-        for path, _ in PROJECT0_DIRTYPES.items():
+        for path, _ in list(PROJECT0_DIRTYPES.items()):
             full_path = DIR_PATH + PROJECT0 + "/" + path
             logging.info("\nPath to '" + full_path +
                          "' from project top should be: " + path)

@@ -67,7 +67,6 @@ function check_components {
     compdir=components
   fi
   [ -d "$compdir" ] || bad the \"components\" library does not exist
-  save=$dirtype
   get_dirtype $compdir
   case "$dirtype" in
     (library|lib)
@@ -117,17 +116,17 @@ function check_dirtype {
 }
 # Determine the path to the current project's top level
 function get_project_top {
-  project_top=`python -c "\
+  project_top=`python3 -c "\
 import sys; sys.path.append(\"$OCPI_CDK_DIR/scripts/\");
-import ocpiutil; print ocpiutil.get_path_to_project_top();"`
+import ocpiutil; print (ocpiutil.get_path_to_project_top());"`
   [ "$project_top" != None ] || bad failure to find project containing path \"`pwd`\"
   echo $project_top
 }
 # Determine the package-id of the current project
 function get_project_package {
-  project_pkg=`python -c "\
+  project_pkg=`python3 -c "\
 import sys; sys.path.append(\"$OCPI_CDK_DIR/scripts/\");
-import ocpiutil; print ocpiutil.get_project_package();"`
+import ocpiutil; print (ocpiutil.get_project_package());"`
   [ "$project_pkg" != None ] || bad failure to find project package for path \"`pwd`\"
   echo $project_pkg
 }
@@ -139,16 +138,16 @@ function register_project {
   else
     project="."
   fi
-  reg_success=`python -c "\
+  reg_success=`python3 -c "\
 import sys; sys.path.append(\"$OCPI_CDK_DIR/scripts/\");
-import ocpiutil; print ocpiutil.register_project(\"$project\");"`
+import ocpiutil; print (ocpiutil.register_project(\"$project\"));"`
   echo $reg_success
 
   # We want to export a project on register, but only if it is not
   # an exported project itself
-  is_exported=`python -c "\
+  is_exported=`python3 -c "\
 import sys; sys.path.append(\"$OCPI_CDK_DIR/scripts/\");
-import ocpiutil; print ocpiutil.is_path_in_exported_project(\"$project\");"`
+import ocpiutil; print (ocpiutil.is_path_in_exported_project(\"$project\"));"`
   if [ "$is_exported" == "False" ]; then
     make -C $project exports 1>&2 || echo Could not export project \"$project\". You may not have write permissions on this project. Proceeding...
   else
@@ -164,9 +163,9 @@ function unregister_project {
   else
     project="."
   fi
-  unreg_success=`python -c "\
+  unreg_success=`python3 -c "\
 import sys; sys.path.append(\"$OCPI_CDK_DIR/scripts/\");
-import ocpiutil; print ocpiutil.unregister_project(\"$project\");"`
+import ocpiutil; print (ocpiutil.unregister_project(\"$project\"));"`
   echo $unreg_success
 }
 
@@ -180,7 +179,7 @@ import ocpiutil; print ocpiutil.unregister_project(\"$project\");"`
 # being operated on.
 function get_subdir {
   case "$noun" in
-    (worker|device|spec|protocol|properties|signals|test|card|slot) libasset=1;;
+    (worker|device|spec|component|protocol|properties|signals|test|card|slot) libasset=1;;
     (library|assembly|assemblies|platform|platforms|primitive|primitives|application|applications|project|registry) libasset=;;
     (*) bad invalid noun \"$noun\";;
   esac
@@ -317,12 +316,6 @@ function ask {
   return 0
 }
 
-# This is here because we are not including util.sh?
-# check with Chris/Dave as to why util.sh is not included here?
-function ocpiReadLinkE {
-  [ -f $1 -o -d $1 ] && python -c 'import os; print os.path.realpath("'$1'")'
-}
-
 function do_registry {
   if [ "$verb" == create ]; then
     if [ -z "$1" ]; then
@@ -342,8 +335,8 @@ function do_registry {
       registry_to_delete=$1
     fi
     if [ -e "$registry_to_delete" ]; then
-      if [ "$(ocpiReadLinkE $registry_to_delete)" == "$(ocpiReadLinkE $OCPI_CDK_DIR/../project-registry)" \
-           -o "$(ocpiReadLinkE $registry_to_delete)" == "/opt/opencpi/project-registry" ] ; then
+      if [ "$(readlink -e $registry_to_delete)" == "$(readlink -e $OCPI_CDK_DIR/../project-registry)" \
+           -o "$(readlink -e $registry_to_delete)" == "/opt/opencpi/project-registry" ] ; then
         bad cannot delete the default project registry \"$registry_to_delete\"
       fi
       ask delete the project registry at \"$registry_to_delete\"
@@ -352,17 +345,17 @@ function do_registry {
       bad registry to delete \(\"$registry_to_delete\"\) does not exist
     fi
   elif [ "$verb" == set ]; then
-    setreg_success=`python -c "\
+    setreg_success=`python3 -c "\
 import sys; sys.path.append(\"$OCPI_CDK_DIR/scripts/\");
-import ocpiutil; print ocpiutil.set_project_registry(\"$1\");"`
+import ocpiutil; print (ocpiutil.set_project_registry(\"$1\"));"`
     if [ "$setreg_success" != "True" ]; then
       # Error is printed in python
       exit 1
     fi
   elif [ "$verb" == unset ]; then
-    unsetreg_success=`python -c "\
+    unsetreg_success=`python3 -c "\
 import sys; sys.path.append(\"$OCPI_CDK_DIR/scripts/\");
-import ocpiutil; print ocpiutil.unset_project_registry();"`
+import ocpiutil; print (ocpiutil.unset_project_registry());"`
     if [ "$unsetreg_success" != "True" ]; then
       # Error is printed in python
       exit 1
@@ -409,6 +402,12 @@ function do_project {
     rm -r -f $1
     [ -z "$verbose" ] || echo The project \"$1\" in the directory \"$directory\" has been deleted.
     return 0
+  elif [ "$verb" == refresh ]; then
+    gpmd=$OCPI_CDK_DIR/scripts/genProjMetaData.py
+       if [ -x $gpmd ] ; then
+         $gpmd $(pwd)
+       fi
+       return 0
   elif [ "$verb" == build ]; then
     if [ -z "$buildRcc" -a -z "$buildHdl" -a -n "$buildClean" ]; then
       cleanTarget="clean"
@@ -431,7 +430,8 @@ function do_project {
             ${hdlplats:+HdlPlatforms=" ${hdlplats[@]}"} \
             ${hdltargets:+HdlTargets=" ${hdltargets[@]}"} \
             ${swplats:+RccPlatforms=" ${swplats[@]}"} \
-            ${hwswplats:+RccHdlPlatforms="${hwswplats[@]}"}
+            ${hwswplats:+RccHdlPlatforms="${hwswplats[@]}"} \
+            $OCPI_MAKE_OPTS
     return 0
   fi
   [ -n "$dirtype" ] &&
@@ -560,7 +560,9 @@ function do_applications {
     (*) bad this command can only be issued in a project directory or an applications directory;;
   esac
   if [ "$verb" == build ]; then
-    make -C $subdir ${buildClean:+clean} ${swplats:+RccPlatforms=" ${swplats[@]}"}
+    make -C $subdir ${buildClean:+clean} ${swplats:+RccPlatforms=" ${swplats[@]}"} \
+      ${hwswplats:+RccHdlPlatforms=" ${hwswplats[@]}"} \
+      $OCPI_MAKE_OPTS
     return 0
   fi
 }
@@ -582,7 +584,9 @@ function do_application {
   esac
   adir=$subdir$1
   if [ "$verb" == build ]; then
-    make -C $subdir$1 ${buildClean:+clean} ${swplats:+RccPlatforms=" ${swplats[@]}"}
+    make -C $subdir$1 ${buildClean:+clean} ${swplats:+RccPlatforms=" ${swplats[@]}"} \
+      ${hwswplats:+RccHdlPlatforms=" ${hwswplats[@]}"} \
+      $OCPI_MAKE_OPTS
     return 0
   fi
   if [ "$verb" == delete ]; then
@@ -645,9 +649,9 @@ EOF
 
   cat <<-EOF > $subdir$appdir/$app.xml
 	<!-- The $1 application xml file -->
-	<application>
-	  <instance component='ocpi.core.nothing'/>
-	</application>
+	<Application>
+	  <Instance Component='ocpi.core.nothing' Name='nothing'/>
+	</Application>
 	EOF
   if [ -z "$xmlapp" -a -z "$xmldirapp" ] ; then
     cat <<EOF > $subdir$appdir/$app.cc
@@ -747,14 +751,14 @@ function do_protocol_or_spec {
      Add <operation> elements for message types.
      Add protocol summary attributes if necessary to override attributes
      inferred from operations/messages -->
-<protocol> <!-- add protocol summary attributes here if necessary -->
+<Protocol> <!-- add protocol summary attributes here if necessary -->
   <!-- Add operation elements here -->
-</protocol>
+</Protocol>
 EOF
     ;;
     (spec)
       if [ -n "$nocontrol" ] ; then
-        nocontrolstr=" nocontrol='true' "
+        nocontrolstr=" NoControl='true' "
       fi
       cat <<EOF > $subdir/$file
 <!-- This is the spec file (OCS) for: $1
@@ -797,17 +801,22 @@ EOF
       cat <<EOF > $subdir/$file
 <!-- This is the card definition file for cards of type: $1
      Add <signal> elements for each signal in the slot -->
-<card>
+<Card>
   <!-- Add device elements here, with signal mappings to slot signals -->
-</card>
+</Card>
 EOF
       ;;
   esac
+  # If the parent directory is a library, update its links to specs to include this new one
+  get_dirtype $subdir/..
+  if [ "$dirtype" == library ]; then
+    make speclinks -C $subdir/..
+  fi
   if [ -n "$verbose" ]; then
-    if [ -z "$library" ]; then
-      echo A new $2, \"$1\", has been created at the project level in $subdir/$file
+    if [ "$dirtype" == library ]; then
+      echo A new $2, \"$1\", has been created in library \"$(basename `realpath $subdir/..`)\" in $subdir/$file
     else
-      echo A new $2, \"$1\", has been created in library \"$library\" in $subdir/$file
+      echo A new $2, \"$1\", has been created at the project level in $subdir/$file
     fi
   fi
   if [ -n "$createtest" ] ; then
@@ -890,7 +899,15 @@ function do_library {
       ;;
     (libraries)
       [ -z "$platform" ] || bad cannot specify a platform from within a libraries collection.
+
       subdir=$1
+      ;;
+    (library)
+      if [ "$(basename $subdir)" == "components" ] ; then
+        bad this project already has a components library, you cannot create another library.
+      else
+        bad this command can only be issued in a project directory or a components directory
+      fi
       ;;
     (*) bad this command can only be issued in a project directory or a components directory
   esac
@@ -930,10 +947,16 @@ function do_library {
             ${hdltargets:+HdlTargets=" ${hdltargets[@]}"} \
             ${swplats:+RccPlatforms=" ${swplats[@]}"} \
             ${workerList:+Workers=" ${workerList[@]}"} \
-            ${hwswplats:+RccHdlPlatforms=" ${hwswplats[@]}"}
+            ${hwswplats:+RccHdlPlatforms=" ${hwswplats[@]}"} \
+            $OCPI_MAKE_OPTS
     return 0
   fi
   [ -e "$subdir" ] && bad the library \"$1\" \(directory $subdir/\) already exists
+  get_dirtype .
+  if [ "$dirtype" == "libraries" -a  "$(basename $(pwd))" == "components" -a "$subdir" == "components" ]; then
+    bad a sub library named components is not supported, try another library name
+  fi
+
   if [ -d "$libbase" ] ; then
     get_dirtype $libbase
     case "$dirtype" in
@@ -1039,7 +1062,8 @@ function do_worker {
             ${hdlplats:+HdlPlatforms=" ${hdlplats[@]}"} \
             ${hdltargets:+HdlTargets=" ${hdltargets[@]}"} \
             ${swplats:+RccPlatforms=" ${swplats[@]}"} \
-            ${hwswplats:+RccHdlPlatforms=" ${hwswplats[@]}"}
+            ${hwswplats:+RccHdlPlatforms=" ${hwswplats[@]}"} \
+            $OCPI_MAKE_OPTS
     return 0
   fi
   words=(${1//./ })
@@ -1121,7 +1145,7 @@ function do_worker {
     if [ -n "${includes}${others}${cores}${rccstatprereqs}${rccdynprereqs}${targets}${extargets}${onlyplats}${explats}${liblibs}" ]; then
       cat <<-EOF  | sed '/^ *$/d' > $libdir/$1/${name}-build.xml
 	<!-- The build file for worker $1, specifying how to build it -->
-	<build
+	<Build
 	${includes:+  IncludeDirs='${includes[@]}'}
 	${others:+  SourceFiles='${others[@]}'}
 	${cores:+  Cores='${cores[@]}'}
@@ -1135,7 +1159,7 @@ function do_worker {
 	  >
 	  <!-- Add any specific parameter settings using <parameter> elements -->
 	  <!-- Add any specific build configurations using <configuration> elements -->
-	</build>
+	</Build>
 	EOF
     fi
   else
@@ -1161,9 +1185,9 @@ fi
 for s in "${supported[@]}" ; do
   s=${s/%.hdl/}
   supportselem=(${supportselem[@]} "
-  <supports worker=\"$s\" >
-     <!-- <connect port=\"rawprops\" to=\"rprops\" index='0'/> -->
-  </supports>
+  <Supports Worker=\"$s\" >
+     <!-- <Connect Port=\"rawprops\" To=\"rprops\" Index='0'/> -->
+  </Supports>
 ")
 done
 
@@ -1259,7 +1283,8 @@ function do_test {
     make -C $testdir ${buildClean:+clean}\
          ${hdlplats:+HdlPlatforms=" ${hdlplats[@]}"} \
          ${swplats:+RccPlatforms=" ${swplats[@]}"} \
-         ${hwswplats:+RccHdlPlatforms=" ${hwswplats[@]}"}
+         ${hwswplats:+RccHdlPlatforms=" ${hwswplats[@]}"} \
+         $OCPI_MAKE_OPTS
 
   elif [ "$verb" == delete ] ; then
     echo "Deleting test dir: $testdir"
@@ -1289,15 +1314,15 @@ EOF
     #   create <comp>-test.xml:
     cat <<EOF > $testdir/$testname-test.xml
 <!-- This is the test xml for testing component "$testname" -->
-<tests useHDLFileIo='true'>
+<Tests UseHDLFileIo='true'>
   <!-- Here are typical examples of generating for an input port and verifying results
        at an output port
-  <input port='in' script='generate.py'/>
-  <output port='out' script='verify.py' view='view.sh'/>
+  <Input Port='in' Script='generate.py'/>
+  <Output Port='out' Script='verify.py' View='view.sh'/>
   -->
   <!-- Set properties here.
-       Use test='true' to create a test-exclusive property. -->
-</tests>
+       Use Test='true' to create a test-exclusive property. -->
+</Tests>
 EOF
     #   create generate.py: #!/usr/bin/env python
     cat <<EOF > $testdir/generate.py
@@ -1342,7 +1367,8 @@ function do_hdl_platforms {
     # missingOK; "make hdlprimitives" returns success even if no hdl/primitives present.
     make $make_target ${buildClean:+-C hdl/platforms} \
          ${hdlplats:+HdlPlatforms=" ${hdlplats[@]}"} \
-         ${hdltargets:+HdlTargets=" ${hdltargets[@]}"}
+         ${hdltargets:+HdlTargets=" ${hdltargets[@]}"} \
+         $OCPI_MAKE_OPTS
     return 0;
   fi
   bad The only verb available for platforms is build. Did you mean platform
@@ -1360,7 +1386,8 @@ function do_hdl_platform {
   esac
   pdir=$subdir$1
   if [ "$verb" ==  build ]; then
-    make -C $pdir ${buildClean:+clean}
+    make -C $pdir ${buildClean:+clean} \
+      $OCPI_MAKE_OPTS
     return 0;
   fi
   if [ "$verb" == delete ]; then
@@ -1417,22 +1444,22 @@ EOF
     timefreq=100e6
   fi
   if [ -z "$nosdp" ] ; then
-    sdpxml="<sdp name='sdp' master='true'/>"
+    sdpxml="<SDP Name='sdp' Master='true'/>"
   else
     sdpxml=
   fi
   cat<<EOF > $subdir/$1/$1.xml
 <!-- This file defines the $1 HDL platform -->
-<HdlPlatform Language="VHDL" spec="platform-spec">
-  <specproperty name='platform' value='$1'/>
+<HdlPlatform Language="VHDL" Spec="platform-spec">
+  <SpecProperty Name='platform' Value='$1'/>
   <!-- These next two lines must be present in all platforms -->
-  <metadata master="true"/>
-  <timebase master="true"/>
+  <MetaData Master="true"/>
+  <TimeBase Master="true"/>
   $sdpxml
   <!-- Set your time server frequency -->
-  <device worker='time_server'>
-    <property name='frequency' value='$timefreq'/>
-  </device>
+  <Device Worker='time_server'>
+    <Property Name='frequency' Value='$timefreq'/>
+  </Device>
   <!-- Put any additional platform-specific properties here using <Property> -->
   <!-- Put any built-in (always present) devices here using <device> -->
   <!-- Put any card slots here using <slot> -->
@@ -1524,7 +1551,8 @@ function do_primitives {
     # missingOK; "make hdlprimitives" returns success even if no hdl/primitives present.
     make $make_target ${buildClean:+-C hdl/primitives} \
                  ${hdlplats:+HdlPlatforms=" ${hdlplats[@]}"} \
-                 ${hdltargets:+HdlTargets=" ${hdltargets[@]}"}
+                 ${hdltargets:+HdlTargets=" ${hdltargets[@]}"} \
+                 $OCPI_MAKE_OPTS
     return 0
   fi
   bad The only verb available for primitives is build. Did you mean primitive
@@ -1546,7 +1574,8 @@ function do_primitive {
   if [ "$verb" == build ]; then
     make -C $dir ${buildClean:+clean} \
             ${hdlplats:+HdlPlatforms=" ${hdlplats[@]}"} \
-            ${hdltargets:+HdlTargets=" ${hdltargets[@]}"}
+            ${hdltargets:+HdlTargets=" ${hdltargets[@]}"} \
+            $OCPI_MAKE_OPTS
     return 0
   fi
   if [ "$verb" == delete ]; then
@@ -1672,7 +1701,8 @@ function do_assemblies {
     else
       make_target=hdlassemblies
     fi
-    make $make_target ${buildClean:+-C hdl/assemblies} ${hdlplats:+HdlPlatforms=" ${hdlplats[@]}"}
+    make $make_target ${buildClean:+-C hdl/assemblies} ${hdlplats:+HdlPlatforms=" ${hdlplats[@]}"} \
+      $OCPI_MAKE_OPTS
     return 0
   fi
   bad The only verb available for primitives is build. Did you mean assembly
@@ -1701,7 +1731,8 @@ function do_build_here {
        ${hdlplats:+HdlPlatforms=" ${hdlplats[@]}"} \
        ${hdltargets:+HdlTargets=" ${hdltargets[@]}"} \
        ${swplats:+RccPlatforms=" ${swplats[@]}"} \
-       ${hwswplats:+RccHdlPlatforms=" ${hwswplats[@]}"}
+       ${hwswplats:+RccHdlPlatforms=" ${hwswplats[@]}"} \
+       $OCPI_MAKE_OPTS
 }
 
 # Create an hdl assembly
@@ -1719,7 +1750,8 @@ function do_assembly {
   esac
   adir=$subdir$1
   if [ "$verb" == build ]; then
-    make -C $subdir/$1 ${buildClean:+clean} ${hdlplats:+HdlPlatforms=" ${hdlplats[@]}"}
+    make -C $subdir/$1 ${buildClean:+clean} ${hdlplats:+HdlPlatforms=" ${hdlplats[@]}"} \
+      $OCPI_MAKE_OPTS
     return 0
   fi
   if [ "$verb" == delete ]; then
@@ -1785,7 +1817,7 @@ EOF
 <!-- The $1 HDL assembly xml file -->
 <HdlAssembly>
   <!-- Remove this instance and replace it with real ones -->
-  <instance worker='nothing'/>
+  <Instance Worker='nothing'/>
 </HdlAssembly>
 EOF
   [ -z "$verbose" ] || echo The HDL assembly \"$assy\" has been created in ${topdir}hdl/assemblies/$assy/$assy.xml
@@ -1811,27 +1843,29 @@ Options for the create|delete verbs:
  == create project ==
   -D <project>       *Another project that this project depends on (use package-ID, e.g. ocpi.core)
                       (adds to "ProjectDependencies" in Project.mk)
-  --register         Install this project in the project registry (e.g. for all users to access)
+  --register         Register the project in the project registry
+                      (for other projects to optionally depend on)
 
  == create project|library ==
-  -N <pkg-name>      Package name (default: directory name)
+  -N <pkg-name>      Package name (default: name arg in 'ocpidev create project <name>' command)
   -F <pkg-prefix>    Package prefix (default: 'local' for projects, package-ID of parent otherwise)
-                     Defaults to package of parent for libraries
-  -K <package>       Package name (default: pkg-name.pkg-prefix. Overrides -N and -F)
+                     Defaults to package-ID of parent for libraries.
+  -K <package-ID>    Package-ID (default: pkg-prefix.pkg-name. Overrides -N and -F if set)
 
  == create|delete application ==
   -X                 Indicates that the application is simply an XML file, not a directory
   -x                 For use only without -X.  The application's directory has an
                      application XML file rather then the default (an ACI file e.g. <app>.cc)
 
- == create|delete spec|protocol ==
+ == create|delete component|protocol ==
   -p                 Place specs/protocols at project level, not in a library's \"specs\" directory
 
- == create spec ==
-  -t                 When creating a spec, also create a test skeleton: <component>.test
+ == create component ==
+  -t                 When creating a spec, also create a test skeleton: <component>.test.
+                     This is invalid if '-p' is specified
   -n                 This spec has no lifecycle/configuration interface (no runtime properties)
 
- == create|delete spec|protocol|worker|{hdl device} ==
+ == create|delete component|protocol|worker|{hdl device} ==
   -l <library>       Component library to add the asset to {when there is more than one library}
   -h <hdl-library>   For BSPs: A library underneath hdl/ to add assets to.  Default is "devices"
                                Valid <hdl-library> options are "devices", "cards" and "adapters"
@@ -1892,18 +1926,18 @@ Options for the create|delete verbs:
 Create examples:
   ocpidev create project my-project
     (creates a project with name 'my-project'. This project's package-ID (and therefore its
-     registry ID) will be 'local.my-project')
+     name in the registry) will be 'local.my-project')
 
   ocpidev create project my-project -F my.organization
     (creates a project with PackagePrefix 'my.organization' and name 'my-project'.
      This project's package-ID (and therefore its registry ID) will be 'my.organization.my-project')
 
   ocpidev -d ~/workspace create registry my-registry
-    (creates a project-registry ~/workspace/my-registry. Note that a new registry will not have a
-     a core project registered, so the next thing to do is locate and register a core project.
-     Finally, 'ocpidev set registry ~/workspace/my-registry' can be used from within a project to
-     tell that project to use the new registry. None of this is necessary if using the default
-     project-registry)
+    (creates a project-registry ~/workspace/my-registry with the CDK installed. Note that a new
+     registry will not have a core project registered, so the next thing to do is locate and
+     register a core project. Finally, 'ocpidev set registry ~/workspace/my-registry' can be used
+     from within a project to tell that project to use the new registry. None of this is necessary
+     if using the default project-registry)
 
   ocpidev create library components
     (create the default 'components' library for the project. If a name other than
@@ -1942,21 +1976,20 @@ Choices:
 
 ---------------------------------------------------------------------------------------------------
 Options for the build|clean verbs:
-  --ok-if-missing    Do not error if target library is missing (only applies to library noun)
   --rcc              Build rcc workers (when building at the project or library level)
   --hdl              Build hdl workers/assets (when building at the project or library level)
   --worker <worker>  *Add a worker to be specificially built and don't build any other workers
-  --no-assemblies    Do not build assemblies (when building at the project level)
+  --no-assemblies    Do not build HDL assemblies (when building at the project level)
   --hdl-assembly <assembly>
-                     *Add an individual assembly to be built instead of building all assemblies
+                     *Add an assembly to be built instead of building all assemblies
   --hdl-target <target>
-                     *Add an individual HDL target to build for
+                     *Add an HDL target to build for
   --hdl-platform <platform>
-                     *Add an individual HDL platform to build for
+                     *Add an HDL platform to build for
   --rcc-platform <platform>
-                     *Add an individual RCC platform to build for
+                     *Add an RCC platform to build for (default: host RCC platform)
   --hdl-rcc-platform <hdl-platform>
-                     *Add an individual RCC platform to build for based on the provided HDL platform
+                     *Add an RCC platform to build for based on the provided HDL platform
                       E.g. "zed" (HDL platform) evaluates to "xilinx13_3" (RCC platform)
 Options with * may occur multiple times
 
@@ -2013,7 +2046,7 @@ function help_reg {
 
 usage: ocpidev [options] [un]register project [<name>]
 
-'[un]register' is used with the noun "project" to add/remove a project to the project-registry.
+'[un]register' is used with the noun "project" to [un]register a project in the project-registry.
 
 Omitting the <name> argument will assume that the [un]register command should be executed for the
 current project.
@@ -2042,26 +2075,30 @@ usage: ocpidev [options] [un]set registry [<name>]
 
 '[un]set' is used with the noun "registry" to [un]set the registry used by the current project.
 
-'ocpidev set registry' with no [<name>] argument will set the current project to use the default
-project-registry.
+'ocpidev set registry' with no <name> argument will set the current project to use the default
+project-registry as determined from your environment.
 
-'ocpidev unset registry' does not require a [<name>] argument. This command removes any link from
+'ocpidev set registry' with a <name> argument will set the current project to use the registry
+indicated by <name>. <name> should be a path to a valid project registry.
+
+'ocpidev unset registry' does not require a <name> argument. This command removes any link from
 this project to a project-registry. The next time this project is built, the default registry will
-be assumed.
+be assumed as determined from the environment.
 
 Defaults:
   The default registry is determined as follows:
     OCPI_PROJECT_REGISTRY_DIR environment variable if set
     Otherwise: OCPI_CDK_DIR/../project-registry
 
-  To change the default project-registry, set the OCPI_PROJECT_REGISTRY_DIR environment variable.
+  To change your environment's default project-registry, set the OCPI_PROJECT_REGISTRY_DIR
+  environment variable.
 
 Examples:
   ocpidev set registry
     (set the current project's registry to the default)
 
-  ocpidev -d ~/workspace set registry my-registry
-    (set the current project's registry to the directory called my-registry located at ~/workspace/)
+  ocpidev set registry ~/workspace/my-registry
+    (set the current project's registry to the directory at ~/workspace/my-registry)
 
   ocpidev unset registry
     (unset the current project's registry link. Next time this project is built, the default
@@ -2072,9 +2109,30 @@ Notes:
   to create his/her own sandbox environment using a new project-registry. To do this, a user would
   create a new registry using 'ocpidev create registry <new-registry>', and then point the current
   project to that registry by running 'ocpidev set registry <new-registry>' from with the project.
-  The user would also need to register a core project into that new registry.
+  The user would also need to create and register a core project into that new registry.
 
   To change the default project-registry, set the OCPI_PROJECT_REGISTRY_DIR environment variable.
+
+For a complete list of options and further documentation of ocpidev, please reference the
+OpenCPI Component Development Guide.
+EOF
+}
+
+function help_refresh {
+  cat <<EOF | $pager
+
+usage: ocpidev [options] refresh project
+
+'refresh' is used with the noun "project" to generate metadata about a project to be used by other framework tools.
+
+Examples:
+  ocpidev refresh project
+    (refresh current project's metadata file(s))
+
+
+Notes:
+  The 'refresh' verb is useful if an asset is created outside of ocpidev and the metadata gets
+  out of sync with wats in the actual project.
 
 For a complete list of options and further documentation of ocpidev, please reference the
 OpenCPI Component Development Guide.
@@ -2095,6 +2153,8 @@ function help {
     help_reg
   elif [[ "$verb" == set      || "$verb" == unset      ]]; then
     help_set
+  elif [[ "$verb" == refresh                           ]]; then
+    help_refresh
   else
     cat <<EOF | $pager
 
@@ -2103,8 +2163,8 @@ The ocpidev command performs developer functions on/in projects for OpenCPI.
 usage: ocpidev [options] <verb> [<noun> [<name>]]
 
 Choices:
-  <verb>: create, delete, build, clean, [un]register, [un]set, show
-  <noun>: project, registry, application, spec, protocol, test, library,
+  <verb>: create, delete, build, clean, [un]register, [un]set, show, refresh
+  <noun>: project, registry, application, component, protocol, test, library,
           worker, <model> <<model>_noun>
 
   <model>: hdl
@@ -2116,19 +2176,19 @@ Verb descriptions:
   delete         Delete an OpenCPI asset
   build          Compile an OpenCPI asset for the [optionally] specified platforms
   clean          Clean an OpenCPI asset
-  [un]register   (Un)register a project so that other projects can(not) access its assets
+  [un]register   (Un)register a project so that other projects can(not) depend on its assets
   [un]set        (Un)set a project's registry to control which project-registry it references when
                  searching for assets
-  show           Print listings or details of OpenCPI assets on the current system
+  show           Print listings or details of OpenCPI assets in projects in the current registry
 
-'ocpidev --help <verb>' will show a help screen for the specified verb
+'ocpidev --help <verb>' will show help for the specified verb
 
 ---------------------------------------------------------------------------------------------------
-Common options (apply to all verb/noun combinations):
+Common options (apply to all verb/ combinations):
   --help             Print the ocpidev help screen. Each verb also has its own help screen
   -v                 Be verbose, describing what is happening in more detail
   -f                 Force without asking. delete and unregister ask for confirmation without this
-  -d <directory>     A directory in which to perform the function, e.g. instead of using 'cd' first
+  -d <directory>     A directory in which to perform the function, e.g. 'cd' to a directory first
 
 For a complete list of options and further documentation of ocpidev, please reference the
 OpenCPI Component Development Guide.
@@ -2163,7 +2223,7 @@ argv=($*)
 original_argv=($*)
 while [[ "${argv[0]}" != "" ]] ; do
   if [[ "${argv[0]}" == show ]] ; then
-    ocpishow_options=`sed -E 's/(^| )show( |$)//' <<< "${original_argv[@]}"`
+    ocpishow_options=`sed 's/\(^\| \)show\( \|$\)/\1\2/' <<< "${original_argv[@]}"`
     $OCPI_CDK_DIR/scripts/ocpishow $ocpishow_options
     exit $?
   elif [[ -n "$verb" && -n "$help_screen" ]]; then
@@ -2282,6 +2342,7 @@ while [[ "${argv[0]}" != "" ]] ; do
       (set) verb="set";;
       (unset) verb="unset";;
       (show) verb=show;;
+      (refresh) verb=refresh;;
       ("") bad missing command name;;
       (*) bad there is no command named \"${argv[0]}\";;
     esac
@@ -2357,10 +2418,13 @@ else
   directory=$(pwd)
   topdir=
 fi
+if [ "$noun" == "component" ]; then 
+  noun=spec
+fi 
 [ -z $verb ] && bad missing verb, nothing to do
 [ -z "$noun" -a "$verb" != build ] && help
 # option testing dependent on noun and verb
-[ -z "$args" -a "$noun" != primitives -a "$noun" != assemblies  -a "$noun" != applications  -a "$noun" != platforms -a "$verb" != build -a "$verb" != register -a "$verb" != unregister  -a "$verb" != set -a "$verb" != unset -a \( "$verb" != delete -a "$noun" != registry \) ] && bad there must be a name argument after: $verb $hdl$noun
+[ -z "$args" -a "$noun" != primitives -a "$noun" != assemblies  -a "$noun" != applications  -a "$noun" != platforms -a "$verb" != build -a "$verb" != register -a "$verb" != unregister -a "$verb" != refresh -a "$verb" != set -a "$verb" != unset -a \( "$verb" != delete -a "$noun" != registry \) ] && bad there must be a name argument after: $verb $hdl$noun
 # force
 [ -n "$force" -a "$verb" != delete -a "$verb" != unregister ] &&
   bad the -f '(force)' option is only valid when deleting an asset
