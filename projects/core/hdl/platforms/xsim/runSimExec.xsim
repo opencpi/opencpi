@@ -60,7 +60,7 @@ set -e
 export LM_LICENSE_FILE=$OcpiXilinxVivadoLicenseFile
 set -vx
 appname=$1
-echo Filename: $1 1>&2 
+echo Filename: $1 1>&2
 read assyname contname<<EOF
 `echo $1 | sed 's/^.*://' | sed 's/^\(.*\)_xsim.*$/\1 &/'`
 EOF
@@ -71,11 +71,11 @@ echo plusargs are: $plusargs 1>&2
 echo doing xsim -tl $plusargs $appname 1>&2
 # Here we create run.tcl which is sourced as part of the tcl command 'xsim'
 # Only the 'xsim' tcl command's results are stored in the WDB, so these need
-# to be sourced as part of the 'xsim' tcl command for the run information 
+# to be sourced as part of the 'xsim' tcl command for the run information
 # to truly be saved.
-echo "report_scopes 
-report_objects 
-log_wave -r / 
+echo "report_scopes
+report_objects
+log_wave -r /
 run 1s" > run.tcl
 
 # Here we create view.tcl which will be sourced by ocpiview to open
@@ -85,7 +85,7 @@ run 1s" > run.tcl
 echo "open_wave_database xsim.wdb" > view.tcl
 # We want to pass the WDB output file and tcl source to the TCL xsim
 # command, not the xsim executable
-# -onerror quit -onfinish quit 
+# -onerror quit -onfinish quit
 exec xsim $contname <<EOF
 xsim -verbose $plusargs {$contname} -wdb xsim.wdb -tclbatch run.tcl
 puts [current_time]
