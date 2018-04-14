@@ -1,0 +1,1 @@
+../../../../runtime/hdl-support/altera/altera.mk

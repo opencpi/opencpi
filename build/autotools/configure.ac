@@ -115,9 +115,10 @@ m4_version_prereq([2.64],[
                [AX_CHECK_COMPILE_FLAG([[-W]ocpi_w],
                                       [common_cxxflags+=" [-W]ocpi_w";
 				       strict_cxxflags+=" [-Werror=]ocpi_w"])])
+],[
   CFLAGS=
   CXXFLAGS=
-],[true])
+])
 # These are needed in the Makefile.am
 AC_SUBST([OcpiDynamicLibrarySuffix])
 AC_SUBST([OcpiStaticLibrarySuffix])

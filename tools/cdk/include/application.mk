@@ -27,7 +27,7 @@ $(OcpiIncludeProject)
 ifeq ($(filter clean%,$(MAKECMDGOALS)),)
  $(eval $(OcpiEnsureToolPlatform))
   ifndef OCPI_LIBRARY_PATH
-    $(OcpiSetDefaultLibraryPath)
+    $(call OcpiSetDefaultLibraryPath)
   endif
 endif
 
@@ -58,7 +58,7 @@ ifdef OcpiAppCC
 else ifneq ($(wildcard $(OcpiApp).xml),)
   ifndef OcpiAppNoRun
     ifndef OcpiRunXML
-      OcpiRunXML=$(OcpiRunBefore) $(OCPI_CDK_DIR)/$(OCPI_TARGET_DIR)/bin/ocpirun $(OcpiRunArgs) $1 \
+      OcpiRunXML=$(OcpiRunBefore) $(OCPI_CDK_DIR)/$(OCPI_TOOL_DIR)/bin/ocpirun $(OcpiRunArgs) $1 \
                  $(OcpiRunAfter)
     endif
     run: all

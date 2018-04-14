@@ -42,7 +42,7 @@ fi
 [ -z "$RCC_PLATFORM" ] && RCC_PLATFORM=$OCPI_TOOL_PLATFORM
 # strip trailing _pf from platform name
 HDL_PLATFORM=${HDL_PLATFORM/%_pf/}
-echo HDL_PLATFORM:$HDL_PLATFORM RCC_PLATFORM:$RCC_PLATFORM HDL_NO_BUILD=$HDL_NO_BUILD RCC=$RCC
+#echo HDL_PLATFORM:$HDL_PLATFORM RCC_PLATFORM:$RCC_PLATFORM HDL_NO_BUILD=$HDL_NO_BUILD RCC=$RCC
 # This is the number of identical assets to create in EVERY library 
 # including devices, platform/*/devices
 if [ -z "$OCPI_NUM_ASSETS" ] ; then

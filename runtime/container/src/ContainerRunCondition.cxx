@@ -36,7 +36,7 @@ initMasks(va_list ap) {
   OcpiPortMask m;
   for (n = 2; (m = va_arg(ap, OcpiPortMask)); n++)
     ;
-  if (n < sizeof(m_myMasks)/sizeof(OcpiPortMask))
+  if (n >= sizeof(m_myMasks)/sizeof(OcpiPortMask))
     m_portMasks = m_allocated = new OcpiPortMask[n];
   else
     m_portMasks = m_myMasks;

@@ -37,13 +37,13 @@ for i in *_test.py; do
     OCPI_CDK_DIR=$(pwd) $pyrun_command $doctest -v
   fi
 done
-if [ "$pyrun_command" == "python" ]; then
+if [ "$pyrun_command" == "python3" ]; then
   echo "Skipping coverage report because the coverage command does not exist"
 else
   # TODO: Classic mode for coverage (needed by CentOS6) does not support
   # the '--fail-under=$MIN_COVERAGE' option. Add this option conditionally
   # depending on version, or parse the output for the coverage value.
-  coverage -r --omit "*_test.py" ||\
+  coverage3 run --omit "*_test.py" ||\
     sh -c "echo FAIL: coverage less than \"$MIN_COVERAGE\"% ; exit 1"
 fi
 

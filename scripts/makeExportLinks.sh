@@ -93,7 +93,7 @@ function make_relative_link {
       # echo Symbolic link already correct from $2 to $1.
       return 0
     else
-      echo Symbolic link wrong from $2 to $1 wrong \(was $L\), replacing it.
+      echo "Symbolic link wrong from $2 to $1 (via $link) (was $L), replacing it."
       rm $2
     fi
   elif [ -e $2 ]; then
@@ -150,10 +150,12 @@ fi
 [ -n "$1" -a -n "$verbose" ] && echo Exporting for platform: $1
 set -e
 mkdir -p exports
-[ -n "$1" -a -d exports/$1 ] && {
-  [ -n "$verbose" ] && echo Exports for platform $1 exist, replacing them.
-  rm -r -f exports/$1
-}
+# We do not re-do links so that mod dates are preserved.
+# Someday we could remove target links that are "legacy".
+#[ -n "$1" -a -d exports/$1 ] && {
+#  [ -n "$verbose" ] && echo Exports for platform $1 exist, replacing them.
+#  rm -r -f exports/$1
+#}
 while read path opts; do
   case "$path" in
     \#*|""|end-of-runtime-for-tools) continue;;
@@ -263,7 +265,7 @@ for a in $additions; do
       suff=$(echo $base | sed -n '/\./s/.*\(\.[^.]*\)$/\1/p')
       dir=${dir//<suffix>/$suff}
     fi
-    make_relative_link $src $dir$after
+    make_filtered_link $src $dir$after
   else
     if [ "$2" == "" ]; then
       echo Warning: link source $src does not '(yet?)' exist.
@@ -275,6 +277,6 @@ done
 # Force precompilation of python files right here
 dirs=
 for d in `find exports -name "*.py"|sed 's=/[^/]*$=='|sort -u`; do
- python -m compileall $d
- python -O -m compileall $d
+ python3 -m compileall -q $d
+ python3 -O -m compileall -q $d
 done

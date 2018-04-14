@@ -244,13 +244,13 @@ clean: cleancomponents cleanapplications cleanrcc cleanhdl cleanexports cleanimp
 # is empty after clean, the whole directory can be removed.
 # use $(realpath) rather than $(readlink -e) for portability (vs BSD/Darwin) and speed
 cleanimports:
-	if [ \( -L imports -a "$(realpath imports)" == "$(realpath $(OcpiProjectRegistryDir))" \) \
+	if [ \( -L imports -a "$(realpath imports)" == "$(realpath $(OcpiGlobalDefaultProjectRegistryDir))" \) \
 	     -o \( -L imports -a ! -e imports \) ]; then \
 	  rm imports; \
 	fi
 
 cleanexports:
-	rm -r -f exports
+	rm -r -f exports artifacts
 
 cleaneverything: clean
 	find . -name '*~' -exec rm {} \;

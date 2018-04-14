@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-
+##########################################################################################
 # Populate the exports tree at the top level of this project with links to this
 # project's assets, allowing them to be used by other projects.
 #
@@ -224,7 +224,7 @@ assets=$(test -f $exports && grep -v '^[ 	]*[-+#]' $exports | grep -v '^[ 	]*$' 
 [ -n "$verbose" ] && echo Assets: $assets
 # parse/error-check asset "nouns" accumulating then into variables named by the type of asset.
 # These are not yet supported:  hdl_assemblies
-nouns=(hdl_primitives hdl_platforms hdl_libraries rcc_platforms libraries specs)
+nouns=(hdl_primitives hdl_platforms hdl_libraries rcc_platforms libraries specs artifacts)
 for n in ${nouns[*]}; do eval declare -a $n; done
 allrequested=
 for a in $assets; do
@@ -352,6 +352,9 @@ for a in $assets; do
 		  noun=specs
 		  needname=specs
 	      fi;;
+	  artifacts)
+	      artifacts="$(shopt -s nullglob; for i in artifacts/*; do [ -f $i ] && echo $(basename $i) || :; done)"
+	      noun=artifacts;;
       esac
       args=(${args[*]})
   done
@@ -441,6 +444,12 @@ done
 [ -n "$verbose" -a -n "${specs}" ] && echo Processing top-level specs
 for s in ${specs[*]}; do
     make_filtered_link specs/$s exports/specs/$s spec
+done
+###################################################################################
+# Export artifacts at top level
+[ -n "$verbose" -a -n "$artifacts" ] && echo Processing the artifacts
+for s in ${artifacts[*]}; do
+    make_filtered_link artifacts/$s exports/artifacts/$s artifact
 done
 ###################################################################################
 # Leftover assets not handled yet:

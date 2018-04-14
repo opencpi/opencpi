@@ -503,13 +503,9 @@ OcpiXmlComponentLibraries=$(infox HXC)\
 
 # Return a colon separated default OCPI_LIBRARY_PATH. It contains arg1 (or .), the core project's exports,
 # the current project's libraries underneath 'components', and the current project's hdl/assemblies
-OcpiGetDefaultLibraryPath=$(infox OGDLP)$(strip \
-  $(or $1,.):$(OcpiProjectRegistryDir)/ocpi.core/exports:$(subst $(Space),:,$(strip \
-    $(if $(call OcpiAbsPathToContainingProject,$1),\
-      $(if $(filter libraries,$(call OcpiGetDirType,$(call OcpiAbsPathToContainingProject)/components)),\
-        $(wildcard $(call OcpiAbsPathToContainingProject,$1)/components/*/lib),\
-        $(wildcard $(call OcpiAbsPathToContainingProject,$1)/components/lib))\
-      $(call OcpiAbsPathToContainingProject,$1)/hdl/assemblies))))
+OcpiGetDefaultLibraryPath=$(info OGDLP:$1:)$(strip \
+  $(and $1,$1:)$(foreach p,$(call OcpiAbsPathToContainingProject,$1),$p/artifacts)$(strip\
+  $(subst $(Space),,$(foreach p,$(OcpiGetProjectPath),:$p/artifacts))))
 
 # Export the library path as the default
 OcpiSetDefaultLibraryPath=$(eval export OCPI_LIBRARY_PATH=$(call OcpiGetDefaultLibraryPath))
@@ -1090,6 +1086,25 @@ OcpiExportVars=$(foreach v,$(filter OCPI_%,$(.VARIABLES)),export $v='$($v)';)
 # endef
 # $(OcpiHelp)
 OcpiHelp=help:;@:$(and $(filter help,$(MAKECMDGOALS)),$(info $(help)))
+
+OcpiDirName=$(patsubst %/,%,$(dir $1))
+# Prepare an artifact, given its local filename.
+# Put a link in the project's artifacts dir, using a UUID to keep the name.
+# Also make a dummy link to record that a link already exists.
+# Real Link 1 is <uuid>-<basename> ==> relative path of real artifact
+# Dummy Link is <relative-path-with-hyphens>==><uuid>
+$(call OcpiPrepareArtifact,<artifact-file-input>,<output-file-to-modify>)
+OcpiPrepareArtifact=\
+  $(ToolsDir)/ocpixml add $2 $1 \
+  $(and $(OCPI_PROJECT_DIR), &&\
+    adir=$(OCPI_PROJECT_DIR)/artifacts &&\
+    name="$(subst .,-,$(subst /,-,$(call FindRelative,$(OCPI_PROJECT_DIR),$(CURDIR)/$(call OcpiDirName,$2))))" &&\
+    [ -L $$adir/$$name ] || { \
+      uuid=`sed -n '/artifact uuid/s/^.*artifact uuid="\([^"]*\)".*$$/\1/p' $1` &&\
+      mkdir -p $(OCPI_PROJECT_DIR)/artifacts &&\
+      ln -s $$uuid $$adir/$$name &&\
+      $(call MakeSymLink2,$2,$(OCPI_PROJECT_DIR)/artifacts,$${uuid}:$(notdir $2)))  \
+    }
 
 # What to do early in each top level Makefile to process build files.
 ParamShell=\

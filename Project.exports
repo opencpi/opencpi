@@ -117,8 +117,8 @@ tests
 +tools/cdk/scripts/ocpidev <target>/bin/
 +tools/cdk/scripts/ocpidriver <target>/bin/
 +tools/cdk/scripts/genProjMetaData.py scripts/
-+tools/cdk/scripts/genProjMetaData.pyc scripts/
-+tools/cdk/scripts/genProjMetaData.pyo scripts/
+#+tools/cdk/scripts/genProjMetaData.pyc scripts/
+#+tools/cdk/scripts/genProjMetaData.pyo scripts/
 +tools/cdk/specs/* specs/
 +hdl/devices/specs/lime-iq-properties.xml specs/
 +hdl/devices/specs/dac-properties.xml specs/
@@ -142,6 +142,10 @@ tests
 +runtime/ocl/include/OCL_Worker.h include/ocl/
 # We export everything in tools/cdk/include/hdl, although we could be more careful...
 +tools/cdk/include/hdl/* include/hdl/
+# These three are links for bootstrapping purposes
+-tools/cdk/include/hdl/altera.mk
+-tools/cdk/include/hdl/xilinx.mk
+-tools/cdk/include/hdl/vivado.mk
 # These should be in a common-to-zynq-platforms dir in "platforms"...
 # +tools/cdk/include/rcc/linux-c6-x86_64=linux-zynq-arm.mk include/rcc/
 # +tools/cdk/include/rcc/linux-c7-x86_64=linux-zynq-arm.mk include/rcc/
