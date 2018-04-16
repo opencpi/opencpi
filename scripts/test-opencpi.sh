@@ -49,9 +49,11 @@ for t in $TESTS; do
       OCPI_LIBRARY_PATH=projects/core/exports/lib/components \
 		       PYTHONPATH=$OCPI_CDK_DIR/$OCPI_TOOL_DIR/lib \
 		       python<<-EOF
-	import sys;import dl
+	import sys
 	old=sys.getdlopenflags();
-	sys.setdlopenflags(old|dl.RTLD_GLOBAL)
+	if sys.platform != 'darwin':
+	   import dl
+	   sys.setdlopenflags(old|dl.RTLD_GLOBAL)
 	import OcpiApi as OA
 	sys.setdlopenflags(old)
 	app=OA.Application("projects/assets/applications/bias.xml")

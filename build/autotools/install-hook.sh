@@ -75,7 +75,7 @@ function fix_static_driver {
     #   done
     # done
     install_name_tool -id $newfile $1
-    install_name_tool -add_rpath @executable_path/../lib $1
+    install_name_tool -add_rpath @loader_path/../lib $1
   else
     local remove=
     for n in $($PATCHELF --print-needed $1); do
@@ -104,8 +104,8 @@ function relative_link {
 function fix_dynamic {
   if [ -n "$is_mac" ]; then
     # allow for both bin next to lib, and executables in bin subdirs
-    install_name_tool -add_rpath @executable_path/../lib $1
-    install_name_tool -add_rpath @executable_path/../../lib $1
+    install_name_tool -add_rpath @loader_path/../lib $1
+    install_name_tool -add_rpath @loader_path/../../lib $1
     base=$(basename $1)
     #echo BASE:$base PI:${prereq_inst} DIR:$(dirname $1)
     if [[ $base == lib* ]]; then

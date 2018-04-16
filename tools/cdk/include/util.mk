@@ -503,7 +503,7 @@ OcpiXmlComponentLibraries=$(infox HXC)\
 
 # Return a colon separated default OCPI_LIBRARY_PATH. It contains arg1 (or .), the core project's exports,
 # the current project's libraries underneath 'components', and the current project's hdl/assemblies
-OcpiGetDefaultLibraryPath=$(info OGDLP:$1:)$(strip \
+OcpiGetDefaultLibraryPath=$(infox OGDLP:$1:)$(strip \
   $(and $1,$1:)$(foreach p,$(call OcpiAbsPathToContainingProject,$1),$p/artifacts)$(strip\
   $(subst $(Space),,$(foreach p,$(OcpiGetProjectPath),:$p/artifacts))))
 
