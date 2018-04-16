@@ -1,0 +1,16 @@
+This directory contains three OpenCPI "Projects". The descriptions below are from a high-level view.
+
+core - This contains the minimum Project needed to experience OpenCPI, e.g. bias.test. It contains:
+  * Components and Workers such as file_read and file_write as well as Framework internals
+  * RCC (GPP) Platforms such as centos7 and xilinx13_3 (used by most Zynq-based systems)
+  * HDL Simulation Platforms such as modelsim and xsim
+
+assets - This is the main library Project provided by the OpenCPI maintainers, containing:
+  * Example Applications, e.g. FSK modulation
+  * Components and Workers partitioned into various libraries by type, e.g. dsp_comps
+  * HDL Platforms such as Epiq's Matchstiq Z1 and Altera's Stratix 4 Development Board (ALST4)
+
+inactive - This Project is the "catch-all" for anything not in the above Projects. This would include Platforms
+that are not officially supported (e.g. fedora25 or ML555), Components that have not been fully vetted or are
+being retired, etc. Inclusion within this Project is neither an indication that something should be avoided nor
+that it is being promoted.
