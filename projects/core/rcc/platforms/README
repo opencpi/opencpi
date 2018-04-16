@@ -40,4 +40,3 @@ Thus adding a platform requires at least these steps:
    All these scripts take an optional <platform> argument.
    The test-opencpi.sh will not run on cross-platforms.
    The scripts/install-opencpi.sh runs all 4 scripts, and also takes a platform argument.
- 
