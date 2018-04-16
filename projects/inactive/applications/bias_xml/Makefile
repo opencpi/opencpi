@@ -23,7 +23,7 @@ OcpiRunArgs?= $(ARGS)
 
 # Prepare the input data before the app is run
 override OcpiRunBefore+= \
-  $(call AciDir,$(OCPI_TOOL_PLATFORM))/mkTestFile $(FILE_SIZE) > test.input 2> good.output; $(VG)
+  target-$(OCPI_TOOL_DIR)/mkTestFile $(FILE_SIZE) > test.input 2> good.output; $(VG)
 
 # Verify after output after the app is run
 override OcpiRunAfter+= && cmp test.output good.output && echo PASSED
