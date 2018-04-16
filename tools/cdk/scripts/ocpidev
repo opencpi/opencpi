@@ -67,7 +67,6 @@ function check_components {
     compdir=components
   fi
   [ -d "$compdir" ] || bad the \"components\" library does not exist
-  save=$dirtype
   get_dirtype $compdir
   case "$dirtype" in
     (library|lib)
@@ -808,11 +807,16 @@ EOF
 EOF
       ;;
   esac
+  # If the parent directory is a library, update its links to specs to include this new one
+  get_dirtype $subdir/..
+  if [ "$dirtype" == library ]; then
+    make speclinks -C $subdir/..
+  fi
   if [ -n "$verbose" ]; then
-    if [ -z "$library" ]; then
-      echo A new $2, \"$1\", has been created at the project level in $subdir/$file
+    if [ "$dirtype" == library ]; then
+      echo A new $2, \"$1\", has been created in library \"$(basename `realpath $subdir/..`)\" in $subdir/$file
     else
-      echo A new $2, \"$1\", has been created in library \"$library\" in $subdir/$file
+      echo A new $2, \"$1\", has been created at the project level in $subdir/$file
     fi
   fi
   if [ -n "$createtest" ] ; then

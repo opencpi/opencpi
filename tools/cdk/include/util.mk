@@ -584,16 +584,27 @@ OcpiGetImportsNotInDependencies=$(strip \
 # Functions for collecting paths to/through/from the top level of a project
 # and potentially through a project's 'imports' directory
 ###################################################################################
-# This is the 'project registry' where symlinks
-# exist to any projects created on a system.
-# If inside a project, try to use its imports.
-OcpiProjectRegistryDir=$(strip \
+# This is the global default 'project registry'
+# where symlinks exist to any projects created
+# on a system. Unlike OcpiProjectRegistryDir,
+# this function does not consider the current
+# project's 'imports' link:
+# OCPI_PROJECT_REGISTRY_DIR or CDK/../project-registry
+OcpiGlobalDefaultProjectRegistryDir=$(strip \
   $(or \
-    $(and $(OCPI_PROJECT_DIR),$(call OcpiExists,$(call OcpiImportsDirForContainingProject,$1))),\
     $(strip $(OCPI_PROJECT_REGISTRY_DIR)),\
     $(if $(strip $(OCPI_CDK_DIR)),\
       $(OCPI_CDK_DIR)/../project-registry,\
       $(error Error: OCPI_CDK_DIR is unset))))
+
+# This is the 'project registry' where symlinks
+# exist to any projects created on a system.
+# If inside a project, try to use its imports:
+# Local 'imports' or OCPI_PROJECT_REGISTRY_DIR or CDK/../project-registry
+OcpiProjectRegistryDir=$(strip \
+  $(or \
+    $(and $(OCPI_PROJECT_DIR),$(call OcpiExists,$(call OcpiImportsDirForContainingProject,$1))),\
+    $(OcpiGlobalDefaultProjectRegistryDir)))
 
 # Return the path to the 'imports' directory for the project containing $1
 # $(call OcpiImportsDirForContainingProject,.)

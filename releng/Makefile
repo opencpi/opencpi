@@ -44,7 +44,7 @@ endif
 GIT_BRANCH:=$(notdir $(shell git name-rev --name-only HEAD | perl -pe 's/[~^\d]*$$//' | perl -pe 's/^.*?--//'))
 GIT_VERSION:=$(shell echo $(GIT_BRANCH) | perl -ne '/^v[\.\d]+$$/ && print')
 # For testing:
-# GIT_VERSION:=$(shell echo v1.2.0 | perl -ne '/^v[\.\d]+$$/ && print')
+# GIT_VERSION:=$(shell echo v1.4.0 | perl -ne '/^v[\.\d]+$$/ && print')
 RPM_RELEASE?=snapshot
 # If there is a tag saying it was exported to github, e.g. "1.3.0_github_1414ef3" use that instead
 # Note: This command fails on CentOS6 but no worries
@@ -67,9 +67,9 @@ ifeq "$(GIT_VERSION)" ''
   endif
   # Generate an increasing number for version comparisons (since git hashes aren't)
   # Number of 6-minute increments since release in 5 digits (rolls over >1/yr)
-  RELEASE_TAG=_$(shell printf %05d $(shell expr `date -u +"%s"` / 360 - 4172750))
+  RELEASE_TAG=_$(shell printf %05d $(shell expr `date -u +"%s"` / 360 - 4231562))
   # When bumping this, don't miss configure.ac as well (AV-3433)
-  RPM_VERSION:=1.3.0
+  RPM_VERSION:=1.4.0
 else
   # This is a specific version branch
   RELEASE_TAG=%{nil}
@@ -109,7 +109,7 @@ help:
 	echo "                         - The Pico packages ALSO require prereq-zynq to be built!"
 	echo ""
 	echo " assets                - Bundle assets for distribution"
-	echo " bsp-*                 - Bundle BSP XXX for distribution"
+	echo " bsp-XXX               - Bundle BSP XXX for distribution"
 	echo ""
 	echo " clean                 - Remove generated files from this directory"
 	echo " cleanrpmbuild         - Cleans ~/rpmbuild/ (runs EVERY BUILD for consistency)"
@@ -244,11 +244,16 @@ buildtar-%: phony_explicit cleanrpmbuild
 	$(AT)rm $(TDIR)/$(TAR_BASE)
 	$(AT)rmdir $(TDIR)
 
-.PHONY: cdk cdk-all cdk-zynq cdk-pico phony_explicit prereq-host prereq-zynq prereq-pico
+.PHONY: cdk cdk-all cdk-zynq cdk-pico phony_explicit prereq-host prereq-zynq prereq-pico core
 
 phony_explicit:
 
-.SILENT: cdk cdk-all cdk-zynq cdk-pico prereq-host prereq-zynq prereq-pico
+.SILENT: cdk cdk-all cdk-zynq cdk-pico prereq-host prereq-zynq prereq-pico core
+
+# Compromise for AV-3968:
+core:
+	echo "The Core Project is part of the CDK RPM; use 'make cdk' to generate that RPM or 'make help' for more."
+	exit 99
 
 #cdk: export OCPI_PROJECT_PATH=$(shell pwd)/../projects/core
 # Some tools are temporarily needed for the HOST to cross-compile components

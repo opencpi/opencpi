@@ -243,7 +243,7 @@ clean: cleancomponents cleanapplications cleanrcc cleanhdl cleanexports cleanimp
 # it is the CDK, or is a broken link, it can be cleaned/removed. If the imports directory
 # is empty after clean, the whole directory can be removed.
 cleanimports:
-	if [ \( -L imports -a "$(realpath imports)" == "$(realpath $(OcpiProjectRegistryDir))" \) \
+	if [ \( -L imports -a "$(realpath imports)" == "$(realpath $(OcpiGlobalDefaultProjectRegistryDir))" \) \
 	     -o \( -L imports -a ! -e imports \) ]; then \
 	  rm imports; \
 	fi

@@ -403,8 +403,6 @@ for exe in %{buildroot}/%{_bindir}/%{OCPI_TARGET_HOST}/*; do
   bn=$(basename ${exe})
   %{__ln_s} -f %{_bindir}/%{OCPI_TARGET_HOST}/${bn} %{buildroot}/usr/bin/
 done
-# For compat reasons, getPlatform used to be in /platforms/
-%{__ln_s} -f %{_prefix}/scripts/getPlatform.sh %{buildroot}%{_prefix}/platforms/
 
 # Put our .so files into path
 %{__mkdir_p} %{buildroot}/etc/ld.so.conf.d
@@ -761,8 +759,6 @@ make %{?_smp_mflags} check
 %doc %{_prefix}/LICENSE.txt
 %{_libdir}/%{OCPI_TARGET_HOST}/*.so
 # Explicitly list scripts (AV-500)
-# Symlink:
-%{_prefix}/platforms/getPlatform.sh
 %attr(%{gexec_perm},opencpi,opencpi) %{_prefix}/scripts/getPlatform.sh
 %attr(%{gexec_perm},opencpi,opencpi) %{_prefix}/scripts/findJtagByESN_xilinx
 %attr(%{gexec_perm},opencpi,opencpi) %{_prefix}/scripts/getESNfromUSB_xilinx

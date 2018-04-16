@@ -25,6 +25,15 @@
 # to a specfic output location an index.html will be generated listing
 # all of the PDFs in the same output location.
 
+## Enables color variables BOLD, RED, and RESET
+enable_color() {
+  if [ -n "$(command -v tput)" ]; then
+    export BOLD=$(tput bold)
+    export RED=$(tput setaf 1)
+    export RESET=$(tput sgr0)
+  fi
+}
+
 ###
 # Add a new section to the table in index.html
 # Globals:
@@ -117,10 +126,9 @@ create_index() {
 ###
 generate_pdfs() {
     shopt -s nullglob
-    TPUT=$(command -v tput)
-    [ -n "${TPUT}" ] && export BOLD=$(tput bold) && export ENDBOLD=$(tput sgr0)
+    enable_color
 
-    echo "${BOLD}Building PDFs from '${REPO_PATH}' with results in '${OUTPUT_PATH}'${ENDBOLD}"
+    echo "${BOLD}Building PDFs from '${REPO_PATH}' with results in '${OUTPUT_PATH}'${RESET}"
 
     # Set up output area
     mkdir -p ${OUTPUT_PATH}/{,assets,core}/logs
@@ -141,7 +149,7 @@ generate_pdfs() {
     dirs_to_search+=($(find ${REPO_PATH}/projects/assets -type d -name docs))
 
     for d in ${dirs_to_search[*]}; do
-        echo "${BOLD}Directory: $d${ENDBOLD}"
+        echo "${BOLD}Directory: $d${RESET}"
         cd $d
         if expr match $d '.*assets' > /dev/null; then
             prefix=assets
@@ -157,23 +165,29 @@ generate_pdfs() {
         for ext in *docx *pptx *odt *fodt *odp *fodp; do
             # Get the name of the file without the file extension
             ofile=${ext%.*}
-            echo "${BOLD}office: $d/$ext${ENDBOLD}"
+            echo "${BOLD}office: $d/$ext${RESET}"
             unoconv -vvv -f pdf $ext >> ${log_dir}/${ofile}.log 2>&1
             # If the pdf was created then try to shrink it
             if [ -f $ofile.pdf ]; then
                 echo "Original $(stat -c "%s" ${ofile}.pdf) bytes"
                 while ${MYLOC}/optpdf.sh ${ofile}.pdf;do :;done
                 mv ${ofile}.pdf ${OUTPUT_PATH}/${prefix}/
+            else
+              echo "${BOLD}${RED}Error creating $ofile.pdf${RESET}"
+              echo "Error creating $ofile.pdf ($d)" >> ${OUTPUT_PATH}/errors.log
             fi
         done
         for tex in *tex; do
             ofile=$(basename -s .tex $tex)
-            echo "${BOLD}LaTeX: $d/$tex${ENDBOLD}"
+            echo "${BOLD}LaTeX: $d/$tex${RESET}"
             rubber -d $tex
             # If the pdf was created then try to shrink it
             if [ -f $ofile.pdf ]; then
                 echo "Original $(stat -c "%s" ${ofile}.pdf) bytes"
                 while ${MYLOC}/optpdf.sh ${ofile}.pdf;do :;done
+            else
+              echo "${BOLD}${RED}Error creating $ofile.pdf${RESET}"
+              echo "Error creating $ofile.pdf ($d)" >> ${OUTPUT_PATH}/errors.log
             fi
 
             mv ${ofile}.log ${log_dir}/${ofile}.log 2>&1
@@ -199,13 +213,7 @@ generate_pdfs() {
 #   Ends script with success or failure depending on $1 presence
 ###
 show_help() {
-    TPUT=$(command -v tput)
-    if [ -n "${TPUT}" ]; then
-      export BOLD=$(tput bold)
-      export RED=$(tput setaf 1)
-      export RESET=$(tput sgr0)
-    fi
-
+    enable_color
     [ -n "$1" ]  && printf "\n${RED}ERROR: %s\n\n${RESET}" "$1"
     cat <<EOF >&2
 ${BOLD}This genDocumentation script creates PDFs for OpenCPI.
@@ -249,7 +257,7 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
-# Do not try to access paramaters to the script past this
+# Do not try to access parameters to the script past this
 
 [ ! -r ${REPO_PATH} ] && show_help "\"${REPO_PATH}\" not readable by $USER. Consider using a different repo path."
 
@@ -267,3 +275,15 @@ BSPS+=($(find ${REPO_PATH}/projects/bsps/ -mindepth 1 -maxdepth 1 \
 
 generate_pdfs
 create_index > ${OUTPUT_PATH}/${index_file}
+
+# If errors...
+if [ -f ${OUTPUT_PATH}/errors.log ]; then
+  # Fail if it's not a "special" file
+  if [ -n "$(grep -v _header ${OUTPUT_PATH}/errors.log | grep -v _footer | grep -v _template)" ]; then
+    echo "Errors were detected!"
+    cat ${OUTPUT_PATH}/errors.log
+    exit 2
+  fi
+  # Must be only special files
+  rm -f ${OUTPUT_PATH}/errors.log
+fi

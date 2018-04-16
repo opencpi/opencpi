@@ -22,7 +22,6 @@ export OCPI_TOOL_HOST=@OCPI_TOOL_HOST@
 if [ -z "$OCPI_PROJECT_REGISTRY_DIR" ]; then
   OCPI_PROJECT_REGISTRY_DIR=$OCPI_CDK_DIR/../project-registry
 fi
-export OCPI_LIBRARY_PATH=$OCPI_PROJECT_REGISTRY_DIR/ocpi.core/exports/lib/components/rcc
 # Import any user configuration files
 for i in /opt/opencpi/cdk/env.d/*.sh ; do
   if [ -r "$i" ]; then

@@ -131,6 +131,10 @@ _ocpidev()
     elif [[ ${verb} == unregister && ${prev} == project ]]; then
       projs=`ocpidev show registry 2>/dev/null`
       COMPREPLY=( $(compgen -W "${projs}" -- ${cur}) )
+      return 0
+    # if current word is in the verb slot
+    elif [[ ${verb} == ${cur} ]] ; then
+      COMPREPLY=( $(compgen -W "${verbs}" ${cur}) )
       # AV-3871 added this to do completion for words that only have one option
       # If COMPREPLY is size 1 we know what word is to be completed
       if [ ${#COMPREPLY[@]} -eq 1 ] ; then
@@ -140,11 +144,6 @@ _ocpidev()
           COMPREPLY="${COMPREPLY} registry"
         fi
       fi
-      return 0
-    # if current word is in the verb slot
-    elif [[ ${verb} == ${cur} ]] ; then
-      COMPREPLY=( $(compgen -W "${verbs}" ${cur}) )
-      
       return 0
     # if current word is in the first noun slot
     elif [[ ${noun1} == ${cur} ]] ; then

@@ -17,9 +17,9 @@ dnl You should have received a copy of the GNU Lesser General Public License
 dnl along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 dnl If changing version number here, also get minor/patchlevel below:
-AC_INIT([opencpi],[1.3],[discuss@lists.opencpi.org])
+AC_INIT([opencpi],[1.4],[discuss@lists.opencpi.org])
 AC_DEFINE([OCPI_VERSION_MAJOR],1,[Major version])
-AC_DEFINE([OCPI_VERSION_MINOR],3,[Minor version])
+AC_DEFINE([OCPI_VERSION_MINOR],4,[Minor version])
 AC_DEFINE([OCPI_VERSION_PATCHLEVEL],0,[Patchlevel version])
 
 dnl Bring in tool paths (if applicable)

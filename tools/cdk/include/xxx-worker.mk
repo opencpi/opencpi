@@ -281,7 +281,7 @@ define DoLink
     endif
   endif
   ifneq ($$(filter $$(call OcpiGetDirType,$$(DirContainingLib)),library),)
-    $$(if $$(call DoShell,make -C $$(DirContainingLib) workersfile,Value),$$(warning $$(Value)))
+    $$(if $$(call DoShell,make -C $$(DirContainingLib) workersfile speclinks,Value),$$(warning $$(Value)))
   endif
 endef
 
