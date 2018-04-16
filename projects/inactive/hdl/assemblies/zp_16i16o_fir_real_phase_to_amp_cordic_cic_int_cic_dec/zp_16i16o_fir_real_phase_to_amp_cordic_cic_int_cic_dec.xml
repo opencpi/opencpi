@@ -1,0 +1,48 @@
+<HdlAssembly>
+  <Instance Worker="zero_padding">
+    <Property Name="IDATA_WIDTH_p" Value="16"/>
+    <Property Name="ODATA_WIDTH_p" Value="16"/>
+  </Instance>
+  <Instance Worker="fir_real_sse">
+    <Property Name="NUM_TAPS_p" Value="64"/>
+  </Instance>
+  <Instance Worker="phase_to_amp_cordic">
+    <Property Name="DATA_WIDTH" Value="16"/>
+    <Property Name="DATA_EXT" Value="6"/>
+    <Property Name="STAGES" Value="16"/>
+  </Instance>
+  <Instance Worker="cic_int">
+    <Property Name="N" Value="4"/>
+    <Property Name="M" Value="1"/>
+    <Property Name="R" Value="2048"/>
+    <Property Name="ACC_WIDTH" Value="60"/>
+  </Instance>
+  <Instance Worker="cic_dec">
+    <Property Name="N" Value="4"/>
+    <Property Name="M" Value="1"/>
+    <Property Name="R" Value="2048"/>
+    <Property Name="ACC_WIDTH" Value="60"/>
+  </Instance>
+  <Connection Name="in" External="consumer">
+    <Port Instance="zero_padding" Name="in"/>
+  </Connection>
+  <Connection>
+    <Port Instance="zero_padding" Name="out"/>
+    <Port Instance="fir_real_sse" Name="in"/>
+  </Connection>
+  <Connection>
+    <Port Instance="fir_real_sse" Name="out"/>
+    <Port Instance="phase_to_amp_cordic" Name="in"/>
+  </Connection>
+  <Connection>
+    <Port Instance="phase_to_amp_cordic" Name="out"/>
+    <Port Instance="cic_int" Name="in"/>
+  </Connection>
+  <Connection>
+    <Port Instance="cic_int" Name="out"/>
+    <Port Instance="cic_dec" Name="in"/>
+  </Connection>
+  <Connection Name="out" External="producer">
+    <Port Instance="cic_dec" Name="out"/>
+  </Connection>
+</HdlAssembly>

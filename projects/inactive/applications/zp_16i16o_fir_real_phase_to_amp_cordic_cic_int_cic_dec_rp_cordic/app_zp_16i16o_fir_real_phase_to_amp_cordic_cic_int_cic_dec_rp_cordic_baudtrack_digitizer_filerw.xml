@@ -1,0 +1,53 @@
+<Application Package='ocpi.assets' Done="file_write">
+  <Instance Component="ocpi.core.file_read" Connect="zero_padding">
+    <Property Name="fileName" Value="../FSK/idata/Os.jpeg"/>
+    <Property Name="messagesInFile" Value="false"/>
+    <Property Name="opcode" Value="1"/>
+    <Property Name="messageSize" Value="8192"/>
+    <Property Name="granularity" Value="1"/>
+<!--    <Property Name="repeat" Value="1"/> -->
+  </Instance>
+  <Instance Component="ocpi.assets.util_comps.zero_padding" Connect="fir_real_sse">
+    <Property Name="num_zeros" Value="49"/>
+  </Instance>
+  <Instance Component="ocpi.assets.dsp_comps.fir_real_sse" Connect="phase_to_amp_cordic">
+    <Property Name="taps" ValueFile="idata/tx_rrcos_taps.dat"/>
+  </Instance>
+  <Instance Component="ocpi.assets.dsp_comps.phase_to_amp_cordic" Connect="cic_int">
+    <Property Name="magnitude" Value="20000"/>
+    <Property Name="DATA_WIDTH" Value="16"/>
+    <Property Name="DATA_EXT" Value="6"/>
+    <Property Name="STAGES" Value="16"/>
+  </Instance>
+  <Instance Component="ocpi.assets.dsp_comps.cic_int" Connect="cic_dec">
+    <Property Name="N" Value="4"/>
+    <Property Name="M" Value="1"/>
+    <Property Name="R" Value="2048"/>
+    <Property Name="ACC_WIDTH" Value="60"/>
+  </Instance>
+  <Instance Component="ocpi.assets.dsp_comps.cic_dec" Connect="rp_cordic">
+    <Property Name="N" Value="4"/>
+    <Property Name="M" Value="1"/>
+    <Property Name="R" Value="2048"/>
+    <Property Name="ACC_WIDTH" Value="60"/>
+  </Instance>
+  <Instance Component="ocpi.assets.dsp_comps.rp_cordic" Connect="baudTracking">
+    <Property Name="DATA_WIDTH" Value="16"/>
+    <Property Name="DATA_EXT" Value="6"/>
+    <Property Name="STAGES" Value="16"/>
+  </Instance>
+  <Instance Component="ocpi.assets.dsp_comps.baudTracking" Connect="real_digitizer">
+    <Property name="bypass" value="false"/>
+    <Property name="SPB" value="50"/>
+    <Property name="BaudAvrCount" value="10"/>
+  </Instance>
+  <Instance Component="ocpi.assets.dsp_comps.real_digitizer"/>
+  <Instance Component="ocpi.core.file_write">
+    <Property Name="fileName" Value="odata/out_app_zp_16i16o_fir_real_phase_to_amp_cordic_cic_int_cic_dec_rp_cordic_baudtrack_digitizer_filerw.bin"/>
+    <Property Name="messagesInFile" Value="false"/>
+  </Instance>
+  <Connection>
+    <Port Instance="real_digitizer" Name="out"/>
+    <Port Instance="file_write" Name="in" BufferSize="16352"/>
+  </Connection>
+</Application>

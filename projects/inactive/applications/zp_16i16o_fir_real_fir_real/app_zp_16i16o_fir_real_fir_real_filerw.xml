@@ -1,0 +1,27 @@
+<Application Package='ocpi.assets' Done="file_write">
+  <Instance Component="ocpi.core.file_read" Connect="zero_padding">
+    <Property Name="fileName" Value="../FSK/idata/Os.jpeg"/>
+    <Property Name="messagesInFile" Value="false"/>
+    <Property Name="opcode" Value="1"/>
+    <Property Name="messageSize" Value="8192"/>
+    <Property Name="granularity" Value="1"/>
+<!--    <Property Name="repeat" Value="1"/> -->
+  </Instance>
+  <Instance Component="ocpi.assets.util_comps.zero_padding" Connect="fir_1">
+    <Property Name="num_zeros" Value="49"/>
+  </Instance>
+  <Instance Component="ocpi.assets.dsp_comps.fir_real_sse" Name="fir_1" Connect="fir_2">
+    <Property Name="taps" ValueFile="idata/tx_rrcos_taps.dat"/>
+  </Instance>
+  <Instance Component="ocpi.assets.dsp_comps.fir_real_sse" Name="fir_2">
+    <Property Name="taps" ValueFile="idata/rx_rrcos_taps.dat"/>
+  </Instance>
+  <Instance Component="ocpi.core.file_write">
+    <Property Name="fileName" Value="odata/out_app_zp_16i16o_fir_real_fir_real_filerw.bin"/>
+    <Property Name="messagesInFile" Value="false"/>
+  </Instance>
+  <Connection>
+    <Port Instance="fir_2" Name="out"/>
+    <Port Instance="file_write" Name="in" BufferSize="16352"/>
+  </Connection>
+</Application>
