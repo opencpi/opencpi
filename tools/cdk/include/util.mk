@@ -543,7 +543,7 @@ OcpiGetRccPlatformPaths=$(strip \
                           $(foreach p,$(or $(OCPI_PROJECT_DIR),\
                                         $(wildcard $(OcpiProjectRegistryDir)/*)),\
                             $(call OcpiExists,$p/rcc/platforms))\
-                          $(foreach p,$(OcpiGetExtendedProjectPath),$(infox PPP:$p)\
+                          $(foreach p,$(OcpiGetExtendedProjectPath),\
                           $(if $(filter-out $(realpath $(OCPI_PROJECT_DIR)),\
                                             $(realpath $(call OcpiAbsPathToContainingProject,$p))),\
                             $(or $(if $(call OcpiIsPathCdk,$p),\
@@ -555,7 +555,7 @@ OcpiGetRccPlatformPaths=$(strip \
 
 # Search for a given platform ($1) in the list of 'rcc/platform' directories found
 # by OcpiGetRccPlatformPaths.
-OcpiGetRccPlatformDir= $(infox OGRPD:$1)$(strip $(firstword \
+OcpiGetRccPlatformDir=$(strip $(firstword \
 		        $(foreach p,$(OcpiGetRccPlatformPaths),\
                           $(call OcpiExists,$p/$1))))
 
@@ -583,16 +583,27 @@ OcpiGetImportsNotInDependencies=$(strip \
 # Functions for collecting paths to/through/from the top level of a project
 # and potentially through a project's 'imports' directory
 ###################################################################################
-# This is the 'project registry' where symlinks
-# exist to any projects created on a system.
-# If inside a project, try to use its imports.
-OcpiProjectRegistryDir=$(strip \
+# This is the global default 'project registry'
+# where symlinks exist to any projects created
+# on a system. Unlike OcpiProjectRegistryDir,
+# this function does not consider the current
+# project's 'imports' link:
+# OCPI_PROJECT_REGISTRY_DIR or CDK/../project-registry
+OcpiGlobalDefaultProjectRegistryDir=$(strip \
   $(or \
-    $(and $(OCPI_PROJECT_DIR),$(call OcpiExists,$(call OcpiImportsDirForContainingProject,$1))),\
     $(strip $(OCPI_PROJECT_REGISTRY_DIR)),\
     $(if $(strip $(OCPI_CDK_DIR)),\
       $(OCPI_CDK_DIR)/../project-registry,\
       $(error Error: OCPI_CDK_DIR is unset))))
+
+# This is the 'project registry' where symlinks
+# exist to any projects created on a system.
+# If inside a project, try to use its imports:
+# Local 'imports' or OCPI_PROJECT_REGISTRY_DIR or CDK/../project-registry
+OcpiProjectRegistryDir=$(strip \
+  $(or \
+    $(and $(OCPI_PROJECT_DIR),$(call OcpiExists,$(call OcpiImportsDirForContainingProject,$1))),\
+    $(OcpiGlobalDefaultProjectRegistryDir)))
 
 # Return the path to the 'imports' directory for the project containing $1
 # $(call OcpiImportsDirForContainingProject,.)
@@ -601,7 +612,7 @@ OcpiImportsDirForContainingProject=$(strip $(foreach p,$(call OcpiAbsPathToConta
 # Return the list of projects that are imported by the project containing.
 # Do no include the current project if it is found in imports.
 # $(call OcpiGetProjectImports)
-OcpiGetProjectImports=$(strip\
+OcpiGetProjectImports=$(strip \
   $(foreach p,$(foreach i,$(if $(filter clean%,$(MAKECMDGOALS)),\
                             $(OcpiProjectRegistryDir),\
                             $(call OcpiImportsDirForContainingProject,.)),\
@@ -808,15 +819,14 @@ define OcpiSetProject
       override ProjectPackage:=$$(Package)
     else
       ifeq ($$(PackagePrefix),)
-        override PackagePrefix:=local
+        export PackagePrefix:=local
       endif
       ifeq ($$(PackageName),)
-        override PackageName:=$$(notdir $$(call OcpiAbsDir,$1))
+        export PackageName:=$$(notdir $$(call OcpiAbsDir,$1))
       endif
       override ProjectPackage:=$$(if $$(PackagePrefix),$$(patsubst %.,%,$$(PackagePrefix)).)$$(PackageName)
     endif
   endif
-
   # Restore the Package* variables in case they were set at the command line
   # for a library or in a library 'Makefile'
   Package:=$$(PackageSaved)

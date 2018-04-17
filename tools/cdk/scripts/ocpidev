@@ -23,7 +23,7 @@
 # FIXME: add option to copy "other" files when creating worker
 
 [ -z "$OCPI_CDK_DIR" -o ! -d "$OCPI_CDK_DIR" ] && echo "Error: OCPI_CDK_DIR environment setting not valid: '${OCPI_CDK_DIR}'" && exit 1
-
+source $OCPI_CDK_DIR/scripts/util.sh
 # Database of models, languages and suffixes, redundant with util.mk
 Models=(rcc hdl ocl)
 Language_rcc=c++
@@ -335,8 +335,8 @@ function do_registry {
       registry_to_delete=$1
     fi
     if [ -e "$registry_to_delete" ]; then
-      if [ "$(readlink -e $registry_to_delete)" == "$(readlink -e $OCPI_CDK_DIR/../project-registry)" \
-           -o "$(readlink -e $registry_to_delete)" == "/opt/opencpi/project-registry" ] ; then
+      if [ "$(ocpiReadLinkE $registry_to_delete)" == "$(ocpiReadLinkE $OCPI_CDK_DIR/../project-registry)" \
+           -o "$(ocpiReadLinkE $registry_to_delete)" == "/opt/opencpi/project-registry" ] ; then
         bad cannot delete the default project registry \"$registry_to_delete\"
       fi
       ask delete the project registry at \"$registry_to_delete\"
@@ -2223,7 +2223,7 @@ argv=($*)
 original_argv=($*)
 while [[ "${argv[0]}" != "" ]] ; do
   if [[ "${argv[0]}" == show ]] ; then
-    ocpishow_options=`sed 's/\(^\| \)show\( \|$\)/\1\2/' <<< "${original_argv[@]}"`
+    ocpishow_options=`sed -E 's/(^| )show( |$)//' <<< "${original_argv[@]}"`
     $OCPI_CDK_DIR/scripts/ocpishow $ocpishow_options
     exit $?
   elif [[ -n "$verb" && -n "$help_screen" ]]; then

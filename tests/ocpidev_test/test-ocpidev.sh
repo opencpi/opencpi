@@ -33,7 +33,7 @@ OCPIRUN=$OCPIBIN/ocpirun
 if [ -z "$HDL_PLATFORM" ] ; then
   HDL_PLATFORM=isim_pf
   HDL_TARGET=isim
-  if ! $OCPIRUN -l10 -v -C --only-platforms | grep '[^a-zA-Z]isim$'; then
+  if ! $OCPIRUN -v -C --only-platforms | grep '[^a-zA-Z]isim$'; then
     HDL_NO_BUILD=1
     RCC=--rcc
   fi

@@ -78,8 +78,10 @@ for t in $TESTS; do
       (cd $OCPI_CDK_DIR/../tests/av-test && ./run_avtests.sh);;
     ocpidev)
       echo ======================= Running ocpidev tests
+      (cd $OCPI_CDK_DIR/../tests/ocpidev && ./run-dropin-tests.sh)
       # These tests might do HDL building
       hplats=($HdlPlatform $HdlPlatforms)
+      echo ======================= Running ocpidev_test tests
       (unset HdlPlatforms; unset HdlPlatforms; \
        cd $OCPI_CDK_DIR/../tests/ocpidev_test && rm -r -f test_project && \
          HDL_PLATFORM=$hplats ./test-ocpidev.sh);;
