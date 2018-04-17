@@ -111,7 +111,7 @@ def do_rccplatforms(options):
         # Collect the information for each platform into a "row" list
         for platform in sorted(rccPlatforms):
             # Assuming there is only one target per platform with [0]
-            target = rccDict["RccTargetAux_" + platform][0]
+            target = rccDict["RccTarget_" + platform][0]
             platformRow = [platform, target]
             rows.append(platformRow)
         # Format the list of rows into a table and print

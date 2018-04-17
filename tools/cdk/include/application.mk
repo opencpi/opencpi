@@ -40,9 +40,9 @@ OcpiApp:=$(CwdName)
 endif
 
 # The existence of a C++ app file determines if this is an ACI app
-OcpiAppCC:=$(strip $(foreach s,cc cxx cpp,$(wildcard $(OcpiApp).$s $(OcpiApps).$s)))
+OcpiAppCC:=$(strip $(foreach s,cc cxx cpp,$(call Unique,$(wildcard $(OcpiApp).$s $(OcpiApps).$s))))
 ifdef OcpiAppCC
-  OcpiApps:=$(OcpiApp) $(OcpiApps)
+  OcpiApps:=$(call Unique,$(OcpiApp) $(OcpiApps))
   include $(OCPI_CDK_DIR)/include/aci.mk
   # If we are running in this Makefile, then we are running the TOOL_PLATFORM
   ifndef OcpiRunCC

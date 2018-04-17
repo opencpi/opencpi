@@ -63,9 +63,9 @@ _ocpidev()
     noun3="${COMP_WORDS[i]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
     # valid verbs
-    verbs="build delete create report clean register unregister set unset show"
+    verbs="build delete create report clean register unregister set unset show refresh"
     # valid nouns in first slot
-    nouns1="project registry application spec protocol test library worker hdl"
+    nouns1="project registry application component protocol test library worker hdl"
     # valid nouns in second slot
     nouns2="assembly card slot device platform platforms targets primitive primitives"
     # valid nouns in third slot
@@ -84,13 +84,13 @@ _ocpidev()
       nouns3=""
       #valid options not having to do with build
     fi
-    opts="-v -f -d -s -p -t -n -l -h -F -D -K -N -S -P -L -V -E -W -R -r -g -q -u -I -A -O -C -Y -y \
+    opts="--help -v -f -d -s -p -t -n -l -h -F -D -K -N -S -P -L -V -E -W -R -r -g -q -u -I -A -O -C -Y -y \
 	-T -Z -G -Q -U -M -B -H -J -X -x"
     # for project noun, add the --register option
     if [[ ${noun1} == project ]]; then
       opts="${opts} --register"
     fi
-    if [[ ${verb} == *register ]]; then
+    if [[ ${verb} == *register  || ${verb} == refresh ]]; then
       nouns1="project"
       nouns2=""
       nouns3=""
@@ -135,6 +135,15 @@ _ocpidev()
     # if current word is in the verb slot
     elif [[ ${verb} == ${cur} ]] ; then
       COMPREPLY=( $(compgen -W "${verbs}" ${cur}) )
+      # AV-3871 added this to do completion for words that only have one option
+      # If COMPREPLY is size 1 we know what word is to be completed
+      if [ ${#COMPREPLY[@]} -eq 1 ] ; then
+        if [[ ${COMPREPLY} == register || ${COMPREPLY} == unregister ]] ; then
+          COMPREPLY="${COMPREPLY} project"
+        elif [[ ${COMPREPLY} == set || ${COMPREPLY} == unset ]] ; then
+          COMPREPLY="${COMPREPLY} registry"
+        fi
+      fi
       return 0
     # if current word is in the first noun slot
     elif [[ ${noun1} == ${cur} ]] ; then

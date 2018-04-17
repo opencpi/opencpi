@@ -241,9 +241,9 @@ $(call ArtifactXmlFile,$1,$2): $(call RccAssemblyFile,$1,$2) $$(ObjectFiles_$1_$
 endef
 
 ifndef OcpiBuildingACI
-$(foreach p,\
-  $(RccPlatforms),$(foreach c,$(ParamConfigurations),\
-     $(eval $(call DoRccArtifactFile,$(RccTarget_$p),$c,$p))))
+$(foreach p,$(RccPlatforms),\
+  $(foreach c,$(ParamConfigurations),\
+    $(eval $(call DoRccArtifactFile,$(RccTarget_$p),$c,$p))))
 endif
 
 # ShowVar(varname)

@@ -99,6 +99,5 @@ if test "$OCPI_TOOL_PLATFORM" = ""; then
   export OCPI_TOOL_PLATFORM_DIR=$v5
 fi
 # Determine OCPI_TOOL_MODE if it is not set already
-# It can be set to null to suppress these modes, and just use whatever has been
 [ -z "$OCPI_TOOL_DIR" ] && export OCPI_TOOL_DIR=$OCPI_TOOL_PLATFORM
 return 0

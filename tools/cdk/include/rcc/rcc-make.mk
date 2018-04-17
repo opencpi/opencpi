@@ -81,22 +81,34 @@ endif
 $(call OcpiDbgVar,RccPlatforms)
 $(call OcpiDbgVar,RccTargets)
 
+RccAllPlatforms:=
+RccAllTargets:=
+RccAddPlatform=\
+    $(eval RccAllPlatforms=$(strip $(RccAllPlatforms) $1))\
+    $(eval RccAllTargets=$(strip $(RccAllTargets) $2))\
+    $(eval RccTarget_$1:=$2)\
+    $(eval RccPlatformDir_$1:=$3)
+
 ifdef OCPI_ALL_RCC_PLATFORMS
   RccAllPlatforms:=$(OCPI_ALL_RCC_PLATFORMS)
   RccAllTargets:=$(OCPI_ALL_RCC_TARGETS)
+  $(foreach p,$(OCPI_RCC_PLATFORM_TARGETS),\
+    $(eval RccTarget_$(word 1,$(subst =, ,$p)):=$(word 2,$(subst =, ,$p))))
 else
   $(foreach d,$(OcpiGetRccPlatformPaths),\
     $(foreach p,$(wildcard $d/*),\
-      $(and $(wildcard $p/$(notdir $p)-target.mk),\
-        $(eval RccAllPlatforms:=$(RccAllPlatforms) $(notdir $p))) \
-      $(and $(wildcard $p/target),\
-        $(eval RccAllTargets:=$(RccAllTargets) $(shell cat $p/target)))))
+      $(and $(wildcard $p/$(notdir $p)-target.mk),$(wildcard $p/target),\
+        $(call RccAddPlatform,$(notdir $p),$(shell cat $p/target),$p))))
   RccAllTargets:=$(call Unique,$(RccAllTargets))
   export OCPI_ALL_RCC_PLATFORMS:=$(RccAllPlatforms)
   export OCPI_ALL_RCC_TARGETS:=$(RccAllTargets)
+  export OCPI_RCC_PLATFORM_TARGETS:=$(foreach p,$(RccAllPlatforms),$p=$(RccTarget_$p))
 #  $(info OCPI_ALL_RCC_PLATFORMS is $(OCPI_ALL_RCC_PLATFORMS))
 #  $(info OCPI_ALL_RCC_TARGETS is $(OCPI_ALL_RCC_TARGETS))
 endif
+$(call OcpiDbgVar,RccAllPlatforms)
+$(call OcpiDbgVar,RccAllTargets)
+$(foreach p,$(RccAllPlatforms),$(call OcpiDbgVar,RccTarget_$p))
 # This must be called with a list of platforms
 RccRealPlatforms=$(infox GETREAL:$1)$(foreach p,$1,$(word 1,$(subst -, ,$p)))
 # This operates on the target-specific variable assignment of RccPlatform
@@ -119,9 +131,9 @@ RccTargetDirTail=$(strip\
 
 # Transfer build options to target from platform
 # $(call RccPlatformTarget,<platform>,<target>)
-RccPlatformTarget=$(infox RPT:$1:$2)$2$(foreach b,$(word 2,$(subst -, ,$1)),$(and $b,-$b))
+RccPlatformTarget=$2$(foreach b,$(word 2,$(subst -, ,$1)),$(and $b,-$b))
 ifdef RccPlatforms
-  # We are filtering thingsplatforms that might have build options, but we filter based on the real platforms
+  # We filter platforms that might have build options, but we filter based on the real platforms
   override RccPlatforms:=$(strip\
     $(foreach p,$(RccPlatforms),\
       $(if $(filter $(call RccRealPlatforms,$p),$(ExcludePlatforms) $(RccExcludePlatforms)),,$p)))
@@ -130,24 +142,13 @@ ifdef RccPlatforms
       $(foreach p,$(RccPlatforms),\
         $(if $(filter $(call RccRealPlatforms,$p),$(OnlyPlatforms) $(RccOnlyPlatforms)),$p,)))
   endif
-  # We cannot perform this check since we may be inheriting changes made in a higher
-  # level Makefile.  If the user tries this, it is simply ignored.
-  # ifdef RccTargets
-  #   $(error You cannot set both RccTarget(s) and RccPlatform(s))
-  # endif
   RccTargets:=
-  RccFound:=
   $(foreach p,$(RccPlatforms),\
-    $(foreach d,$(call OcpiGetRccPlatformDir,$(call RccRealPlatforms,$p)),\
-      $(foreach f,$d/target,\
-         $(if $(wildcard $f),\
-           $(foreach t,$(call RccPlatformTarget,$p,$(shell echo $$(< $f))),\
-               $(eval RccTargets+=$t)\
-               $(eval RccTarget_$p:=$t)\
-               $(eval RccFound+=$p))))))\
-  $(foreach p,$(RccPlatforms),\
-    $(if $(findstring $p,$(RccFound)),,\
-      $(error RccPlatform $p is unknown, */rcc/platform/$(call RccRealPlatforms,$p)/target not found in any project)))
+    $(foreach r,$(call RccRealPlatforms,$p),\
+      $(if $(filter $r,$(RccAllPlatforms)),,\
+        $(error RccPlatform $r is unknown, it is not found in any registered project))\
+      $(eval RccTarget_$p:=$(call RccPlatformTarget,$p,$(RccTarget_$r)))\
+      $(eval RccTargets=$(strip $(RccTargets) $(RccTarget_$p)))))
 else
   # Derive a platform from each target (somewhat expensive, but we have shortcuts)
   # This can be deprecated or accelerated as it makes sense
@@ -155,18 +156,14 @@ else
   # (A single wildcard then does it)
   # We could also cache this
   RccPlatforms:=
-  RccFound:=\
-  $(foreach d,$(OcpiGetRccPlatformPaths),\
-    $(foreach f,$(wildcard $d/*/target),\
-      $(foreach p,$(notdir $(patsubst %/,%,$(dir $f))),\
-        $(foreach t,$(shell echo $$(< $f)),\
-          $(if $(findstring $t,$(RccTargets)),\
-            $(eval RccTarget_$p:=$t)\
-            $(eval RccPlatforms+=$p)\
-            $(eval RccFound+=$t))))))\
   $(foreach t,$(RccTargets),\
-     $(if $(findstring $t,$(RccFound)),,\
-        $(error The RccTarget $t is not the target for any software platform (in $(OCPI_CDK_DIR) or $(OCPI_PROJECT_PATH)))))
+    $(eval RccFound:=)\
+    $(foreach p,$(RccAllPlatforms),\
+      $(if $(filter $t,$(RccTarget_$p)),\
+        $(eval RccPlatforms+=$p)\
+        $(eval RccFound+=$t)))\
+    $(if $(RccFound),,\
+      $(error The RccTarget "$t" is not the target for any software platform in any registered project)))
 endif
 
 $(call OcpiDbgVar,RccPlatforms)

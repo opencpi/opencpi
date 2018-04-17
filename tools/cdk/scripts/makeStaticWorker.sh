@@ -17,14 +17,14 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
+################################################################################################
 if test "$#" = 0; then
-  echo This script takes a dynamic RCC worker artifact as input and creates one
-  echo suitable for being dynamicly loaded into a statically linked executable.
-  echo Usage is:  makeStaticWorker infile [lib1...]
-  echo The first argument is the input file and the rest of the arguments are the names
-  echo of the needed ocpi libraries will not be required of the output. The output is a file
-  echo whose name is the same as the input with a _s suffix added BEFORE the file extension.
-  echo Typically this means:  foo.so as input creates foo_s.so
+  echo This script modifies a dynamic RCC worker artifact to be suitable for being dynamicly
+  echo loaded into a statically linked executable.
+  echo Usage is:  makeStaticWorker OS infile [lib1...]
+  echo The first argument is the OS, the second is the input file and the rest of the arguments
+  echo are the names of the needed ocpi libraries that will not be required at runtime.
+  echo The input file is modified in place.
   exit 1
 fi
 # This gets around some of the RPM-based limitations
@@ -32,7 +32,6 @@ fi
 ocpixml=$(type -p ocpixml)
 [ -z ${ocpixml} ] && ocpixml=${OCPI_CDK_DIR}/${OCPI_TOOL_DIR}/bin/ocpixml
 [ ! -x ${ocpixml} ] && echo "Could not find ocpixml!" && exit 1
-
 OS=$1
 shift
 IN=$1
@@ -42,16 +41,8 @@ if [ $OS = linux ]; then
   [ -x ${patchelf} ] || patchelf=$OCPI_PREREQUISITES_DIR/patchelf/$OCPI_TOOL_DIR/bin/patchelf
   [ -x ${patchelf} ] || echo "Could not find patchelf executable!"
 fi
-
-#T1=/tmp/makeStaticWorker$$.1
-#T2=/tmp/makeStaticWorker$$.2
 set -e
-# $ocpixml get $IN > $T1
-#$ocpixml strip $IN $T2
 X=1
-#if ! grep '<artifact.*dynamic=.1' $T1 > /dev/null; then
-#  echo The file \"$1\" does not contain XML from an RCC worker.
-#el
 if file $IN | grep ELF > /dev/null; then
   for i in $*; do PARGS="$PARGS --remove-needed $i"; done
   ${patchelf} $PARGS $IN
@@ -62,10 +53,4 @@ elif test $OS = macos; then
 else
   echo "Input file $1 is non-existent or not readable or not a suitable (ELF) file."
 fi
-#if test $X = 0; then
-  #sed "s/\(<artifact.*dynamic='\)./\10/" $T1 | $ocpixml add $T2 -
-  # $ocpixml add $T2 $T1
-  #cp $T2 $IN
-#fi
-#rm -f $T1 $T2
 exit $X
