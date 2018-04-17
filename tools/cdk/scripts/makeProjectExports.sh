@@ -493,7 +493,9 @@ set +f
 # This is speclinks for all libraries without recursing into python, then make, then python,
 # and requiring imports to exist to find platforms we aren't using etc. etc. etc. 
 # This script is really a "leaf" script that should not be recursing back into all the
-# other make machinery.
+# other make machinery.  If necessary before the python rewrite, we could have a
+# shared implementation some other way that avoided all the recursion.
+# Or change the python to do this and not use "make".
 
 shopt -s nullglob
 for l in components components/*; do
