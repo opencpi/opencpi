@@ -125,26 +125,6 @@ $(foreach l,$(RccLibrariesInternal) $(Libraries),\
 # $1 is target, $2 is configuration
 RccStaticName=$(WkrBinaryName)_s$(SOEXT_$(call RccOs,$1))
 RccStaticPath=$(call WkrTargetDir,$1,$2)/$(call RccStaticName,$1)
-define RccWkrBinary
-
-#  $$(infox RccWkrBinary:$1:$2:$$(call RccOs,))
-#  $$(call RccStaticPath,$1,$2): $$(call WkrBinary,$1,$2)
-#	$(AT)$(OCPI_CDK_DIR)/scripts/makeStaticWorker.sh $$(call RccOs,$1) $$< $$@ \
-#		  $$(foreach l,$$(RccLibrariesInternal),libocpi_$$l$$(call BF,$1))
-#  all: $$(call RccStaticPath,$1,$2)
-
-endef
-
-define RccWkrBinaryLink
-
-#  $$(infox RccWkrBinaryLink:$1:$2:$3:$4:$5 name:$$(call RccStaticName,$1,$4):$(LibDir)/$1/$5_s$$(call BF,$1))
-#  $(LibDir)/$1/$5_s$$(call BF,$1): $$(call RccStaticPath,$1,$4) | $(LibDir)/$1
-#	$(AT)echo Exporting worker binary for static executables: $$@ '->' $$<
-#	$(AT)$$(call MakeSymLink2,$$<,$$(dir $$@),$$(notdir $$@))
-#  BinLibLinks+=$(LibDir)/$1/$5_s$$(call BF,$1)
-
-endef
-
 
 CompilerWarnings= -Wall -Wextra
 CompilerDebugFlags=-g
@@ -194,7 +174,7 @@ RccFinalCompileOptions=\
   $(call RccPrioritize,CompileOptions,$1,$2,$3) \
   $(call RccPrioritize,ExtraCompileOptions,$1,$2,$3) \
 
-Compile_c=$$(infox CCC:$$(RccRealPlatform):$$(Gc_$$(RccRealPlatform)))$$(call OcpiFixPathArgs,\
+Compile_c=$$(call OcpiFixPathArgs,\
   $$(Gc_$$(RccRealPlatform)) -MMD -MP -MF $$@.deps -c \
   $$(call RccFinalCompileOptions,C,$$(RccTarget),$$(RccPlatform)) \
   $$(RccIncludeDirsActual:%=-I%) -o $$@ $$(RccParams) $$<)

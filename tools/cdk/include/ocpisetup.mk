@@ -129,7 +129,7 @@ else
 endif
 
 ################################################################################
-# Set up OCPI_TARGET_DIR, perhaps using target modes
+# Set up OCPI_TARGET_DIR
 ifdef OCPI_DYNAMIC
  override OCPI_BUILD_SHARED_LIBRARIES:=$(OCPI_DYNAMIC)
 else
@@ -145,10 +145,7 @@ export OCPI_DYNAMIC
 ifdef OCPI_TARGET_DIR
   # $(warning OCPI_TARGET_DIR is unexpectedly set.)
 else
- ifdef OCPI_USE_TARGET_MODES
-   export OCPI_TARGET_MODE:=$(if $(filter 1,$(OCPI_DYNAMIC)),d,s)$(if $(filter 1,$(OCPI_DEBUG)),d,o)
- endif
- export OCPI_TARGET_DIR=$(OCPI_TARGET_PLATFORM)$(and $(OCPI_TARGET_MODE),/$(OCPI_TARGET_MODE))
+ export OCPI_TARGET_DIR=$(OCPI_TARGET_PLATFORM)
 endif
 
 ################################################################################
@@ -222,7 +219,6 @@ $(info OCPI_TARGET_OS=$(OCPI_TARGET_OS);export OCPI_TARGET_OS;)
 $(info OCPI_TARGET_OS_VERSION=$(OCPI_TARGET_OS_VERSION);export OCPI_TARGET_OS_VERSION;)
 $(info OCPI_TARGET_ARCH=$(OCPI_TARGET_ARCH);export OCPI_TARGET_ARCH;)
 $(info OCPI_TARGET_DIR=$(OCPI_TARGET_DIR);export OCPI_TARGET_DIR;)
-$(info OCPI_TARGET_MODE=$(OCPI_TARGET_MODE);export OCPI_TARGET_MODE;)
 $(info OCPI_TARGET_PLATFORM=$(OCPI_TARGET_PLATFORM);export OCPI_TARGET_PLATFORM;)
 $(info OCPI_TARGET_PLATFORM_DIR=$(OCPI_TARGET_PLATFORM_DIR);export OCPI_TARGET_PLATFORM_DIR;)
 $(info OCPI_CROSS_BUILD_BIN_DIR=$(OCPI_CROSS_BUILD_BIN_DIR);export OCPI_CROSS_BUILD_BIN_DIR;)

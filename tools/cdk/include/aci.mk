@@ -74,7 +74,6 @@ define DoBuildAci
   $(call AciExe,$1,$2): $$(for s,$(SourceFiles) $2,$$(call AciObj,$1,$$s))
 	$(AT)echo Creating executable for $(OcpiApp) running on platform $1 from $$^
 	$(AT)$$(call LinkBinary,$$^)
-  # Does this need to be variable or is "all" always right?
   aciapps: $(call AciExe,$1,$2)
 endef
 $(foreach p,$(RccPlatforms),$(foreach a,$(OcpiAppsCC),$(infox App=$a Platform=$p)$(eval $(call DoBuildAci,$p,$a))))

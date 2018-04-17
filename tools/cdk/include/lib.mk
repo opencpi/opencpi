@@ -55,8 +55,17 @@ ifeq ($(origin Implementations),undefined)
 Implementations=$(foreach m,$(Models),$(wildcard *.$m))
 endif
 ifeq ($(filter clean%,$(MAKECMDGOALS)),)
-$(shell mkdir -p lib; (for i in $(filter-out %.test, $(Implementations)); do echo $$i; done) > lib/workers);
+$(shell mkdir -p lib; \
+        workers_content="$(filter-out %.test, $(Implementations))"; \
+        if [[ ! -e $(LibDir)/workers || "$$workers_content" != "$$(cat lib/workers)" ]]; then \
+          echo $$workers_content > lib/workers; \
+        fi)
 endif
+# We define this empty make rule so that workers can generate the "workers" file
+# by calling "make workersfile -C ../". Doing so will trigger the code block above
+# which is executed for all make rules except clean%
+workersfile:
+
 # we need to factor the model-specifics our of here...
 XmImplementations=$(filter %.xm,$(Implementations))
 RccImplementations=$(filter %.rcc,$(Implementations))
@@ -83,8 +92,8 @@ override GenDir=$(OutDir)gen
 override XmlIncludeDirs+=$(XmlIncludeDirsInternal)
 
 # Utility to show what WOULD be built (e.g. for packaging)
-.PHONY:  showxm showrcc showhdl showocl showtest showassy showall
-.SILENT: showxm showrcc showhdl showocl showtest showassy showall
+.PHONY:  showxm showrcc showhdl showocl showtest showassy showall workersfile
+.SILENT: showxm showrcc showhdl showocl showtest showassy showall workersfile
 showxm:
 	echo $(XmImplementations)
 

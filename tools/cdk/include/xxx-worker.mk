@@ -227,8 +227,11 @@ ShouldSetLibDir=$(strip \
                   $(and $(filter $(Model),hdl),\
 	                $(filter $(HdlMode),worker)))),\
     true))
-ifndef LibDir
-  ifneq ($(ShouldSetLibDir),)
+ifneq ($(ShouldSetLibDir),)
+  ifndef DirContainingLib
+    DirContainingLib=../
+  endif
+  ifndef LibDir
     LibDir=../lib/$(Model)
   endif
 endif
@@ -269,7 +272,9 @@ define DoLink
                                   $(LibDir)/$1),$5)
     endif
   endif
-
+  ifneq ($$(filter $$(call OcpiGetDirType,$$(DirContainingLib)),library),)
+    $$(if $$(call DoShell,make -C $$(DirContainingLib) workersfile speclinks,Value),$$(warning $$(Value)))
+  endif
 endef
 
 # Do the links for the various binaries of the worker, for a given param configuration
