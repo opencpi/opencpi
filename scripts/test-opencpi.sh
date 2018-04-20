@@ -21,7 +21,7 @@
 # Run all the go-no-go tests we have
 
 [ -z "$OCPI_CDK_DIR" -a -L cdk ] && source `pwd`/cdk/opencpi-setup.sh -
-alltests="os datatype container swig unit assets inactive python av ocpidev driver"
+alltests="os datatype load-drivers container swig unit assets inactive python av ocpidev driver"
 [ "$1" = --help ] && {
     echo Available tests are: $alltests
     echo 'Uses TESTS="a b c" ./scripts/test-opencpi.sh [<platform>]'
@@ -85,10 +85,16 @@ for t in $TESTS; do
       (unset HdlPlatforms; unset HdlPlatforms; \
        cd $OCPI_CDK_DIR/../tests/ocpidev_test && rm -r -f test_project && \
          HDL_PLATFORM=$hplats ./test-ocpidev.sh);;
+    load-drivers)
+      echo ======================= Loading all the OpenCPI plugins/drivers.
+      $bin/cxxtests/load-drivers x;;
     driver)
       [ "$OCPI_TOOL_OS" != macos ] &&
         echo ======================= Loading the OpenCPI Linux Kernel driver. &&
         $OCPI_CDK_DIR/scripts/ocpidriver load;;
+    *)
+      echo Error: the test \"$t\" is not a valid/known test.
+      exit 1;;
   esac
 done
 echo All tests passed.

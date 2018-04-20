@@ -280,3 +280,7 @@ for d in `find exports -name "*.py"|sed 's=/[^/]*$=='|sort -u`; do
  python3 -m compileall -q $d
  python3 -O -m compileall -q $d
 done
+# Ensure driver list is exported
+[ "$1" == - ] ||
+  make_relative_link build/autotools/target-$1/staging/lib/driver-list \
+                     exports/$1/lib/driver-list
