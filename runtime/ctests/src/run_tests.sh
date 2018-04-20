@@ -33,7 +33,10 @@ core2=$OCPI_CDK_DIR/../projects/core
 export OCPI_LIBRARY_PATH=$core1/lib/components/rcc:$core2/lib/components/rcc
 
 # export OCPI_LOG_LEVEL=11
-export DIR=$(mktemp -d -t ocpi_ctests.XXXXX)
+# Allow caller to force location (e.g. Jenkins)
+if [ -z "${DIR}" ]; then
+  export DIR=$(mktemp -d -t ocpi_ctests.XXXXX)
+fi
 echo "========= Outputs from these tests will be in: $DIR"
 # if the script lives in the source tree, we are running where the executables are
 # otherwise assume this script is in the same directory as the executables are,

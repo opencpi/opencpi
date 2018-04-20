@@ -253,7 +253,7 @@ typedef struct {
   OCPI::RCC::Port *containerPort;
   OCPI::API::ExternalBuffer *portBuffer;
 #else
-  void *id_, *id1_; 
+  void *id_, *id1_;
 #endif
 } RCCBuffer;
 
@@ -504,7 +504,7 @@ typedef struct {
    RCCUserTask();
    virtual void run() = 0;
    //   void done() const { return m_done; }
-   void spawn(); 
+   void spawn();
  private:
    Worker & m_worker;
  };

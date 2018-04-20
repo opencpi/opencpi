@@ -858,6 +858,7 @@ namespace OCPI {
 	ezxml_set_txt_d(x, text.c_str());
 	return cx;
       }
+
       // Remove indentation common to all non-blank lines, to allow the text of an element to be
       // nicely indented in an XML file.  Strip leading and trailing blank lines.
       // Strip trailing newlines so a newline can be added uniformly.

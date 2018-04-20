@@ -72,6 +72,17 @@ namespace OCPI {
     }
 
     bool Container::supportsImplementation(OU::Worker &i) {
+      static std::string *opencpiVersion = NULL; // no static constructor
+      static bool allowVersionMismatch = false;
+      if (!opencpiVersion) {
+	opencpiVersion = new std::string;
+	OU::format(*opencpiVersion, "%u.%u", OCPI_VERSION_MAJOR, OCPI_VERSION_MINOR);
+	const char *env = getenv("OCPI_ALLOW_VERSION_MISMATCH");
+	allowVersionMismatch = env && env[0] == '1';
+	ocpiInfo("Artifact version checking is %sin effect.%s",
+                allowVersionMismatch ? "NOT " : "",
+                allowVersionMismatch ? "" : " Set OCPI_ALLOW_VERSION_MISMATCH to 1 to allow.");
+      }
       bool ok =
 	m_model == i.model() &&
 	m_os == i.attributes().m_os &&
@@ -85,9 +96,19 @@ namespace OCPI {
 	 (i.attributes().m_platform.length() && m_platform == i.attributes().m_platform) ||
 	 (i.attributes().m_platform.empty() && m_arch == i.attributes().m_arch)) &&
 	m_dynamic == i.attributes().m_dynamic;
-      ocpiInfo("vs. container %s (%u) model %s os %s version %s arch %s platform %s dynamic %u ==> %s",
-		name().c_str(), m_ordinal, m_model.c_str(), m_os.c_str(), m_osVersion.c_str(),
-	       m_arch.c_str(), m_platform.c_str(), m_dynamic, ok ? "accepted" : "rejected");
+      // Checking OpenCPI version is not part of the "ok" above because we can override with
+      // the environment and want to warn.
+      if (ok && !allowVersionMismatch &&
+	  !(ok = *opencpiVersion == i.attributes().opencpiVersion()))
+	ocpiBad("Rejected '%s' ONLY because of artifact version mismatch "
+		"('%s' vs. expected '%s')%s",
+		i.cname(), i.attributes().opencpiVersion().c_str(), opencpiVersion->c_str(),
+		OCPI::OS::logWillLog(OCPI_LOG_INFO) ? "" : " (try increasing log level)");
+      ocpiInfo("vs. container %s (%u) model %s os %s version %s arch %s platform %s dynamic %u "
+	       "opencpi version %s ==> %s",
+	       name().c_str(), m_ordinal, m_model.c_str(), m_os.c_str(), m_osVersion.c_str(),
+	       m_arch.c_str(), m_platform.c_str(), m_dynamic, opencpiVersion->c_str(),
+	       ok ? "accepted" : "rejected");
       return ok;
     }
 

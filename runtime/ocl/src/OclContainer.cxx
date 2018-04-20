@@ -1562,8 +1562,8 @@ namespace OCPI {
 	    ocpiAssert(p->checkReady() >= m_minReady);
 	    for (unsigned r = 0; r < m_minReady; r++) {
 	      OC::ExternalBuffer *b = p->isProvider() ? p->getFullBuffer() : p->getEmptyBuffer();
-	      if (!b)
-		p->debug(n);
+	      //if (!b)
+	      //p->debug(n);
 	      assert(b);
 	      // Buffer was being read or written by the CPU, and now should be switch to the GPU
 	      p->unmapBuffers(b->offset(), p->bufferStride());

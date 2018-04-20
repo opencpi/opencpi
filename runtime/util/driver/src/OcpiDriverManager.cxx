@@ -141,7 +141,7 @@ namespace OCPI {
 		    "when loading the \"%s\" \"%s\" driver, no driver file was found in \"%s\"",
 		    driverName, managerName, libDir.c_str());
 	return NULL;
-      }	
+      }
       ocpiInfo("Loading the \"%s\" \"%s\" driver from \"%s\"",
 	       driverName, managerName, lib.c_str());
       std::string lme;
@@ -159,7 +159,7 @@ namespace OCPI {
     void ManagerManager::configureOnce(const char *file, const OCPI::Util::PValue *params) {
       if (m_configured)
 	return;
-      OCPI::Util::AutoMutex guard(m_mutex); 
+      OCPI::Util::AutoMutex guard(m_mutex);
       if (m_configured)
 	return;
       m_configured = true;
@@ -178,7 +178,7 @@ namespace OCPI {
       std::string err;
       if (configFile.empty())
 	ocpiInfo("Skipping XML system configuration due to explicitly empty config file name");
-      else {	
+      else {
 	ocpiInfo("Processing XML system configuration file: \"%s\"", configFile.c_str());
 	if (OS::FileSystem::exists(configFile)) {
 	  const char *e = OX::ezxml_parse_file(configFile.c_str(), m_xml);

@@ -30,9 +30,9 @@
  *   which specifies the derived class of devices it supports.
  *
  *   This all relies on the OCPI::Util::Parent/Child templates.
- *     
+ *
  * Revision History: 
- * 
+ *
  *    Author: Jim Kulp
  *    Date: 2/2011
  *    Revision Detail: Created
@@ -81,7 +81,7 @@ namespace OCPI {
       static void configError(ezxml_t x, const char *fmt,...);
       // Global suppression of discovery
       static void suppressDiscovery();
-      // Find a specific driver, returning NULL if not present or loadeda
+      // Find a specific driver, returning NULL if not present or loaded
       static Driver *findDriver(const char *managerName, const char *drvrName);
       // Load a specific driver
       static Driver *loadDriver(const char *managerName, const char *drvrName, std::string &err);
@@ -192,7 +192,7 @@ namespace OCPI {
       DriverType(const char *a_name, DriBase &d)
 	: Child<DriMgr,DriBase>(DriMgr::getSingleton(), d, a_name)
       {
-	ocpiInfo("Registering/constructing %s driver: %s", 
+	ocpiInfo("Registering/constructing %s driver: %s",
 		 Child<DriMgr,DriBase>::parent().name().c_str(), a_name);
       }
     public:
@@ -228,16 +228,16 @@ namespace OCPI {
     // The template class that concrete drivers should inherit from, with the
     // template parameters being:
     // 1. the derived driver manager class (e.g. Container::Manager)
-    // 2. the derived driver base class inherited by the concrete driver 
+    // 2. the derived driver base class inherited by the concrete driver
     //    (e.g. Container::Driver)
-    // 3. the concrete device class for this concrete driver inheriting this 
+    // 3. the concrete device class for this concrete driver inheriting this
     //    template  (e.g.RCC::Container)
     //    this is the class of device that the concrete driver knows how to handle
     template <class Man, class DriBase, class ConcDri, class Dev, const char *&name>
     class DriverBase
       : public Parent<Dev>,
         public OCPI::Util::Singleton<ConcDri>,
-	public DriBase { // destroy this class BEFORE children 
+	public DriBase { // destroy this class BEFORE children
     public:
       // to access a specific driver
       inline static ConcDri &getDriver() {

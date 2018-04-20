@@ -233,7 +233,8 @@ namespace OCPI {
       OU::Value v(vt); // FIXME storage when not scalar
       const char *err = v.parse(value);
       if (err)
-        throw OU::ApiError("Error parsing property value:\"", value, "\"", NULL);
+        throw OU::Error("When parsing worker property \"%s\" with value \"%s\":  %s",
+			pname, value, err);
       setPropertyValue(prop, v);
     }
     void Worker::

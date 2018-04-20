@@ -17,37 +17,6 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 ################################################################################
-# First, the basic list of "facilities" that can have executables, libraries, and scripts
-os
-runtime/foreign
-runtime/util
-runtime/dataplane/xfer/base xfer
-runtime/dataplane/xfer/drivers/datagram
-runtime/dataplane/xfer/drivers/dma
-runtime/dataplane/xfer/drivers/ofed
-runtime/dataplane/xfer/drivers/pio
-runtime/dataplane/xfer/drivers/socket
-runtime/dataplane/xfer/tests
-runtime/dataplane/transport
-runtime/dataplane/msg_driver_interface
-runtime/dataplane/msg_drivers
-runtime/library
-runtime/container
-runtime/hdl
-runtime/hdl-support
-runtime/ocl
-runtime/ocl-support
-runtime/rcc
-runtime/remote
-runtime/remote-support
-runtime/ctests
-runtime/application
-tools/cdkutils
-tools/ocpigen
-tools/ocpisca
-tools/ocpidds
-tests
-################################################################################
 # exclusions, sometimes only applying to categories
 -runtime/util main
 -runtime/dataplane main

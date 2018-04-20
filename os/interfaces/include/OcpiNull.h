@@ -40,8 +40,8 @@ So, to make a long story short, if __cplusplus is > 199711, nullptr should be de
 Note: This is only needed in the non-autoconf tree. The autoconf tree autodetects.
 */
 
-#include "angryviper.h"
-#ifndef HAVE_NULLPTR
+#include "ocpi-config.h"
+#ifndef OCPI_HAVE_NULLPTR
 #ifndef __APPLE__
 #if __cplusplus <= 199711
 

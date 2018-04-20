@@ -18,9 +18,24 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-/* A template for the definitions where the macro name is config-specific */
+// A template for the definitions where the macro name is config-specific
+// This file will not be included more than once since it is protected by the guard
+// in ocpi-config.h
 
 #define OCPI_PLATFORM_@OcpiPlatform@ 1
 #define OCPI_OS_@OcpiPlatformOs@ 1
 #define OCPI_OS_VERSION_@OcpiPlatformOsVersion@ 1
 #define OCPI_ARCH_@OcpiPlatformArch@ 1
+
+// These should be determined by autoconf, but are fixed with GCC for now.
+// Other attributes to consider...
+// https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html
+#define OCPI_NORETURN __attribute__((noreturn))
+#define OCPI_USED     __attribute__((used))
+#define OCPI_UNUSED   __attribute__((unused))
+// clang and GCC above 4.5 allow custom messages
+#if defined(clang) || __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 5)
+  #define OCPI_API_DEPRECATED(ver, msg) __attribute__((deprecated(msg " (Removal expected in version " ver ")")))
+#else
+  #define OCPI_API_DEPRECATED(ver, msg) __attribute__((deprecated))
+#endif

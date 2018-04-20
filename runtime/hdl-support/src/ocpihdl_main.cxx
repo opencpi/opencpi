@@ -506,7 +506,7 @@ static void emulate(const char **) {
 			   ops[woffset/sizeof(uint32_t)]);
 		    ecrr.data = htonl(OCCP_SUCCESS_RESULT);
 		  } else
-		    printf("Worker %2zd register read: %s\n", wkr, 
+		    printf("Worker %2zd register read: %s\n", wkr,
 			   woffset == offsetof(OH::OccpWorkerRegisters, control) ? "control" :
 			   woffset == offsetof(OH::OccpWorkerRegisters, window) ? "window" :
 			   woffset == offsetof(OH::OccpWorkerRegisters, clearError) ? "clearError" :
@@ -596,7 +596,7 @@ static void emulate(const char **) {
       OU::format(error, "interface %s is %s and %s", interface,
 		 eif.up ? "up" : "down",
 		 eif.connected ? "connected" : "not connected");
-  }	  
+  }
   if (error.size())
     bad("Error getting interface %s", interface ? interface : "that is up and connected");
 }
@@ -638,10 +638,10 @@ testdma(const char **) {
 	 dmaMeg, dmaBase, dmaBase + dmaSize);
   int pageSize = getpagesize();
   if (dmaBase & (pageSize - 1))
-    bad("DMA memory starting address 0x%" PRIx64 " does not start on a page boundary, %u (0x%x)", 
+    bad("DMA memory starting address 0x%" PRIx64 " does not start on a page boundary, %u (0x%x)",
 	dmaBase, pageSize, pageSize);
   if (dmaSize & (pageSize -1))
-    bad("DMA memory size %" PRIu64 " (0x%" PRIx64 ") does not start on a page boundary, %u (0x%x)", 
+    bad("DMA memory size %" PRIu64 " (0x%" PRIx64 ") does not start on a page boundary, %u (0x%x)",
 	dmaSize, dmaSize, pageSize, pageSize);
   if ((fd = open("/dev/mem", O_RDWR|O_SYNC)) < 0 ||
 	     (cpuBase = (uint8_t*)mmap(NULL, dmaMeg * 1024 * 1024,
@@ -678,7 +678,7 @@ admin(const char **) {
 
   epochtime = (time_t)cAccess->get32Register(birthday, OH::OccpAdminRegisters);
 
-  etime = gmtime(&epochtime); 
+  etime = gmtime(&epochtime);
   //printf("%lld%lld\n", (long long)x, (long long)y);
   printf("OCCP Admin Space\n");
   u.uint = cAccess->get64Register(magic, OH::OccpAdminRegisters);
@@ -713,7 +713,7 @@ admin(const char **) {
   uint32_t gpsTimeLS = (uint32_t)(gpsTime >> 32);
   uint32_t gpsTimeMS = (uint32_t)(gpsTime & 0xffffffffll);
   time_t gpsNow = gpsTimeMS;
-  ntime = gmtime(&gpsNow); 
+  ntime = gmtime(&gpsNow);
   uint64_t deltaTime = cAccess->get64Register(timeDelta, OH::OccpAdminRegisters);
   uint32_t deltaTimeLS = (uint32_t)(deltaTime >> 32);
   uint32_t deltaTimeMS = (uint32_t)(deltaTime & 0xffffffffll);
@@ -731,7 +731,7 @@ admin(const char **) {
   printf(" numDPMemReg:  0x%08x (%u)\n", i, i);
   uint32_t regions[OCCP_MAX_REGIONS];
   cAccess->getRegisterBytes(regions, regions, OH::OccpAdminRegisters, 8, false);
-  if (i < 16) 
+  if (i < 16)
     for (k=0; k<i; k++)
       printf("    DP%2d:      0x%08x\n", k, regions[k]);
 
@@ -906,7 +906,7 @@ unbram(const char **ap) {
   check = 0;
 #else
   int zr;
-  z_stream zs;  
+  z_stream zs;
   zs.zalloc = zalloc;
   zs.zfree = zfree;
   zs.data_type = Z_TEXT;
@@ -969,7 +969,7 @@ uuid(const char **ap) {
   if (fclose(ofp))
     bad("Could close output file '%s'. No space?", ap[0]);
 }
-  
+
 static void
 reset(const char **) {
   // FIXME:  need to copy PCI config.
@@ -1073,16 +1073,16 @@ wadmin(const char **ap) {
 static void
 settime(const char **) {
   struct timeval tv;
-  gettimeofday(&tv, NULL); 
+  gettimeofday(&tv, NULL);
   uint32_t fraction = (uint32_t)
     ((((uint64_t)tv.tv_usec * 1000 * (1ull << 32) ) + 500000000ull) / 1000000000ull);
   // Write 64 bit value
   // When it goes on the PCIe wire, it will be "endianized".
   // On intel, first DW will be LSB.  On PPC, first DW will be MSB.
-  
+
 #define FPGA_IS_OPPOSITE_ENDIAN_FROM_CPU() 1
 
-  cAccess->set64Register(time, OH::OccpAdminRegisters, 
+  cAccess->set64Register(time, OH::OccpAdminRegisters,
 #if FPGA_IS_OPPOSITE_ENDIAN_FROM_CPU()
 			((uint64_t)fraction << 32) | tv.tv_sec
 #else
@@ -1090,7 +1090,7 @@ settime(const char **) {
 #endif
 			);
 }
-typedef unsigned long long ull; 
+typedef unsigned long long ull;
 static inline int64_t ticks2ns(uint64_t ticks) {
   return ((ticks) * 1000000000ull + (1ull << 31))/ (1ull << 32);
 }
@@ -1109,14 +1109,14 @@ deltatime(const char **) {
   unsigned n;
   int32_t delta[100];
   int64_t sum = 0;
-  
+
   for (n = 0; n < 100; n++) {
     uint64_t time = cAccess->get64Register(time, OH::OccpAdminRegisters);
     cAccess->set64Register(timeDelta, OH::OccpAdminRegisters, time);
     delta[n] = (int32_t)swap32(cAccess->get64Register(timeDelta, OH::OccpAdminRegisters));
   }
   qsort(delta, 100, sizeof(int32_t), compu32);
-  
+
   for (n = 0; n < 90; n++)
     sum += delta[n];
   sum = (sum + 45) / 90;
@@ -1169,7 +1169,7 @@ wdump(const char **) {
   printf(" Control:    0x%08x %s;  timeout value is %u\n", i,
 	 i & OCCP_WORKER_CONTROL_ENABLE ?
 	 "enabled (reset not asserted)" : "not enabled (reset asserted)",
-	 1 << OCCP_WORKER_CONTROL_TIMEOUT(i)); 
+	 1 << OCCP_WORKER_CONTROL_TIMEOUT(i));
   printf(" ConfigAddr: 0x%08x\n", wAccess.get32Register(lastConfig, OH::OccpWorkerRegisters));
   printf(" PageWindow: 0x%08x\n", wAccess.get32Register(window, OH::OccpWorkerRegisters));
 }
@@ -1183,7 +1183,7 @@ wwreset(OH::Access &w) {
 static void
 wreset(const char **) {
   uint32_t i = wwreset(wAccess);
-  printf("Worker %zu on device %s: reset asserted, was %s\n", 
+  printf("Worker %zu on device %s: reset asserted, was %s\n",
 	 worker, device, (i & OCCP_WORKER_CONTROL_ENABLE) ? "deasserted" : "already asserted");
 }
 static int
@@ -1195,14 +1195,14 @@ wwunreset(OH::Access &w) {
 static void
 wunreset(const char **) {
   uint32_t i = wwunreset(wAccess);
-  printf("Worker %zu on device %s: reset deasserted, was %s\n", 
+  printf("Worker %zu on device %s: reset deasserted, was %s\n",
 	 worker, device, (i & OCCP_WORKER_CONTROL_ENABLE) ? "already deasserted" : "asserted");
 }
 
 #define WOP(name) offsetof(OH::OccpWorkerRegisters, name)
 static uint32_t
 wwop(OH::Access &w, const char *op) {
-  for (unsigned i = 0; ops[i]; i++) 
+  for (unsigned i = 0; ops[i]; i++)
     if (!strcasecmp(ops[i], op)) {
       ocpiDebug("Worker control op: %s, %u offset %zx", op, i,
 		offsetof(OH::OccpWorkerRegisters, initialize) + i * sizeof(uint32_t));
@@ -1211,7 +1211,7 @@ wwop(OH::Access &w, const char *op) {
     }
   bad("Unknown control operation: `%s'", op);
   return 0;
-}      
+}
 
 static void
 wop(const char **ap) {
@@ -1226,8 +1226,8 @@ wop(const char **ap) {
 	   r == OCCP_ERROR_RESULT ? "error" :
 	   r == OCCP_TIMEOUT_RESULT ? "timeout" :
 	   r == OCCP_RESET_RESULT ? "reset" :
-	   r == OCCP_SUCCESS_RESULT ? "success" : 
-	   r == OCCP_BUSY_RESULT ? "busy" : 
+	   r == OCCP_SUCCESS_RESULT ? "success" :
+	   r == OCCP_BUSY_RESULT ? "busy" :
 	   r == OCCP_FATAL_RESULT  ? "fatal" : "unknown",
 	   r);
 }
@@ -1361,7 +1361,7 @@ receiveRDMA(const char **/*ap*/) {
   if (endpoint.empty())
     endpoint = "ocpi-ether-rdma";
 #if 0
-  OU::PValue params[2] = { 
+  OU::PValue params[2] = {
     OA::PVString("remote", endpoint.c_str()),
     OA::PVEnd
   };
@@ -1428,7 +1428,7 @@ receiveRDMA(const char **/*ap*/) {
       bad("Reading file for RDMA output descriptor");
     // Now we have the output descriptor for the remote output port
   } else {
-    // The output port is a hardware port.  We need to program the hardware 
+    // The output port is a hardware port.  We need to program the hardware
     // as well as produce/synthesize the output descriptor for the remote hardware port.
     // 1. Get acccessors to all workers with control and configuration accessors for each.
     cAccess->offsetRegisters(edpAccess, (intptr_t)(&((OH::OccpSpace*)0)->worker[EDP_WORKER]));
@@ -1461,7 +1461,7 @@ receiveRDMA(const char **/*ap*/) {
     theOutputDesc.desc.dataBufferSize = 4096;
     theOutputDesc.desc.metaDataBaseAddr = 4096 * theOutputDesc.desc.nBuffers;
     theOutputDesc.desc.metaDataPitch = sizeof(OH::OcdpMetadata);
-    theOutputDesc.desc.fullFlagBaseAddr = 
+    theOutputDesc.desc.fullFlagBaseAddr =
       theOutputDesc.desc.metaDataBaseAddr + theOutputDesc.desc.metaDataPitch * theOutputDesc.desc.nBuffers;
     theOutputDesc.desc.fullFlagSize = 4;
     theOutputDesc.desc.fullFlagPitch = 4;
@@ -1536,7 +1536,7 @@ receiveRDMA(const char **/*ap*/) {
     // Program the local part of the output side - how data is placed in local buffers
     edpConfAccess.set32Register(nLocalBuffers, OH::OcdpProperties, theOutputDesc.desc.nBuffers);
     edpConfAccess.set32Register(localBufferSize, OH::OcdpProperties, theOutputDesc.desc.dataBufferPitch);
-    edpConfAccess.set32Register(localBufferBase, OH::OcdpProperties, 
+    edpConfAccess.set32Register(localBufferBase, OH::OcdpProperties,
 				(uint32_t)theOutputDesc.desc.dataBufferBaseAddr);
     edpConfAccess.set32Register(localMetadataBase, OH::OcdpProperties,
 				(uint32_t)theOutputDesc.desc.metaDataBaseAddr);
@@ -1731,7 +1731,7 @@ getxml(const char **ap) {
 class Worker : public OC::Worker, public OH::WciControl {
   std::string m_name, m_wName;
 public:
-  Worker(ezxml_t impl, ezxml_t inst, const char *idx) 
+  Worker(ezxml_t impl, ezxml_t inst, const char *idx)
     : OC::Worker(NULL, impl, inst, NULL, false, 0, 1, NULL),
       OH::WciControl(*dev, impl, inst, properties(), false),
       m_name(ezxml_cattr(inst, "name")),
@@ -1803,7 +1803,7 @@ public:
       }
     } else {
       unsigned i;
-      for (i = 0; ops[i]; i++) 
+      for (i = 0; ops[i]; i++)
 	if (!strcasecmp(ops[i], op)) {
 	  ignored = controlOp((OU::Worker::ControlOperation)i);
 	  break;
@@ -1832,7 +1832,7 @@ public:
     ocpiAssert("This method is not expected to ever be called" == 0);
     return *(OC::Port*)this;
   }
-  OC::Port &createOutputPort(OU::PortOrdinal, size_t, size_t, 
+  OC::Port &createOutputPort(OU::PortOrdinal, size_t, size_t,
 			     const OU::PValue*)
     throw (OU::EmbeddedException)
   {

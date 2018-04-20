@@ -458,7 +458,7 @@ doComponent(TaggedComponent &tc) throw(std::string) {
     }
     break;
   default:
-    ocpiWierd("Unknown/ignored IOR tag: %d", tc.tag);
+    ocpiWeird("Unknown/ignored IOR tag: %d", tc.tag);
   }
 }
 
@@ -948,6 +948,6 @@ encode () const
 	corbaloc = ior.corbaloc();
       }
     }
-    
+
   }
 }

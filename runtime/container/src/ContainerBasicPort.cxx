@@ -279,7 +279,7 @@ namespace OCPI {
     unpackPortDesc(const std::string &data, OR::Descriptors &desc) throw () {
       OU::CDR::Decoder unpacker (data);
 
-      try { 
+      try {
 	bool bo;
 	unpacker.getBoolean (bo);
 	unpacker.byteorder (bo);
@@ -594,7 +594,7 @@ namespace OCPI {
       if (m_dtPort &&
 	  (m_dtLastBuffer->m_dtBuffer =
 	   m_dtPort->getNextEmptyOutputBuffer(m_dtLastBuffer->m_dtData, length))) {
-	m_dtLastBuffer->m_hdr.m_length = OCPI_UTRUNCATE(uint32_t, length);	
+	m_dtLastBuffer->m_hdr.m_length = OCPI_UTRUNCATE(uint32_t, length);
 	return m_dtLastBuffer;
       }
       return NULL;
@@ -813,7 +813,7 @@ namespace OCPI {
 	    m_zcTail = NULL;
 	}
 	pthread_spin_unlock(&m_zcLock);
-      }      
+      }
       return l_next;
     }
     // This buffer is the head->next, we are the single reader
@@ -886,7 +886,7 @@ namespace OCPI {
 	}
       } else if (m_dtPort) {
 	size_t length;
-	
+
 	if (!m_dtLastBuffer)
 	  m_dtLastBuffer = new ExternalBuffer(*this, NULL, 0);
 	if (!m_dtLastBuffer->m_dtBuffer &&
@@ -1181,7 +1181,7 @@ namespace OCPI {
 	assert(!isProvider());
 	assert(other);
 	rv = startConnect(other, feedback, done);
-      } else  
+      } else
 	rv = m_dtPort->finalize(other, getData().data, &feedback, done);
       if (done)
 	portIsConnected();

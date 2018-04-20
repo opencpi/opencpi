@@ -22,6 +22,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <set>
+#include "ocpi-config.h"
 #include "OcpiOsAssert.h"
 #include "OcpiOsFileIterator.h"
 #include "OcpiOsFileSystem.h"

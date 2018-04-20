@@ -701,10 +701,11 @@ namespace OCPI {
 	  m_curMap = 0;        // to accumulate containers suitable for this candidate
 	  m_curContainers = 0; // to count suitable containers for this candidate
 	  OU::Worker &w = cs[m].impl->m_metadataImpl;
-	  ocpiInfo("Checking implementation %s model %s os %s version %s arch %s platform %s dynamic %u",
+	  ocpiInfo("Checking implementation %s model %s os %s version %s arch %s platform %s dynamic %u opencpi version %s",
 		   w.cname(), w.model().c_str(), w.attributes().m_os.c_str(),
-		   w.attributes().m_osVersion.c_str(), w.attributes().m_arch.c_str(),
-		   w.attributes().m_platform.c_str(), w.attributes().m_dynamic);
+		   w.attributes().m_osVersion.c_str(), w.attributes().arch().c_str(),
+		   w.attributes().platform().c_str(), w.attributes().m_dynamic,
+		   w.attributes().opencpiVersion().c_str());
 	  (void)OC::Manager::findContainers(*this, w,
 					    container.empty() ? NULL : container.c_str());
 	  i->m_feasibleContainers[m] = m_curMap;
@@ -732,13 +733,14 @@ namespace OCPI {
 	    for (unsigned m = 0; m < i->m_nCandidates; m++) {
 	      const OL::Implementation &lImpl = *cs[m].impl;
 	      OU::Worker &mImpl = lImpl.m_metadataImpl;
-	      fprintf(stderr, "  Name: %s, Model: %s, Arch: %s, Platform: %s%s%s, File: %s\n",
+	      fprintf(stderr, "  Name: %s, Model: %s, Arch: %s, Platform: %s%s%s, OpenCPI Version: %s, File: %s\n",
 		      mImpl.cname(),
 		      mImpl.model().c_str(),
 		      lImpl.m_artifact.arch().c_str(),
 		      lImpl.m_artifact.platform().c_str(),
 		      lImpl.m_staticInstance ? ", Artifact instance: " : "",
 		      lImpl.m_staticInstance ? ezxml_cattr(lImpl.m_staticInstance, "name") : "",
+		      mImpl.attributes().opencpiVersion().c_str(),
 		      lImpl.m_artifact.name().c_str());
 	    }
 	  }

@@ -63,6 +63,7 @@
 # 3. Whether it is cross compiled or not (default is not cross compiled)
 prerequisites gmp lzma gtest
 runtime/foreign -f -x .*/pwq/kern/.* -x .*/pwq/src/.*/.* -x .*/uuid/src/.*/.*
+# From old Makefiles:c and c++: for linux: -D_XOPEN_SOURCE=600 -D_FILE_OFFSET_BITS=64
 os -x .*/driver/.* -x .*/winnt/.*
 runtime/util -d utils -T ocpixml
 end-of-runtime-for-tools
@@ -89,7 +90,7 @@ runtime/hdl -v
 runtime/application
 runtime/hdl-support -n -I runtime/hdl/include
 runtime/ctests -n -d ctests -I runtime/rcc/include
-tests/gtests -d gtests -n -s
+tests/c++tests -d cxxtests -n -s
 tools/cdkutils -t
 # ocpigen use some runtime libraries that are higher up the stack
 tools/ocpigen -n -t -I tools/cdkutils/include -I runtime/hdl/include -I runtime/library/include -I runtime/ocl/include -L cdkutils -L library

@@ -254,14 +254,14 @@ typedef int pthread_spinlock_t;
       // put/send a particular buffer, PERHAPS FROM ANOTHER PORT
       void put(OCPI::API::ExternalBuffer &b, size_t len, uint8_t op, bool end, size_t direct);
       void put(OCPI::API::ExternalBuffer &b);
-      void debug(unsigned n) {
-	(void)n;//	return 5 / (n - 1);
 #if 0
+      int debug(unsigned n) {
+	return 5 / (n - 1);
 	ocpiDebug("ASSERT: %u %p %p %p %u\n",
 		  n, this, m_forward, m_forward->m_next2write,
 		  m_forward->m_next2write->m_full);
-#endif
       }
+#endif
     };
   }
 }

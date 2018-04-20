@@ -184,4 +184,5 @@ else
     rm $i
   done
 fi
+echo $4 > lib/driver-list
 exit 0
