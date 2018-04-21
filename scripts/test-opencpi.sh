@@ -21,7 +21,7 @@
 # Run all the go-no-go tests we have
 
 [ -z "$OCPI_CDK_DIR" -a -L cdk ] && source `pwd`/cdk/opencpi-setup.sh -
-alltests="os datatype load-drivers container swig unit assets inactive python av ocpidev driver"
+alltests="os datatype load-drivers container swig core assets inactive python av ocpidev driver"
 [ "$1" = --help ] && {
     echo Available tests are: $alltests
     echo 'Uses TESTS="a b c" ./scripts/test-opencpi.sh [<platform>]'
@@ -35,7 +35,7 @@ for t in $TESTS; do
   case $t in
     os)
       echo ======================= Running OS Unit Tests in $bin
-      $VG $bin/gtests/ocpitests;;
+      $VG $bin/cxxtests/ocpitests;;
     datatype)
       echo ======================= Running Datatype/protocol Tests
       $VG $bin/ocpidds -t 10000 > /dev/null;;
@@ -46,7 +46,7 @@ for t in $TESTS; do
     # After this we are depending on the core project being built for the targeted platform
     swig)
       echo ======================= Running python swig test
-      OCPI_LIBRARY_PATH=projects/core/exports/lib/components \
+      OCPI_LIBRARY_PATH=projects/core/exports/artifacts \
 		       PYTHONPATH=$OCPI_CDK_DIR/$OCPI_TOOL_DIR/lib \
 		       python<<-EOF
 	import sys

@@ -28,6 +28,7 @@
 
 #include "lzma.h"
 #include "zlib.h"
+#include "ocpi-config.h"
 #include "OcpiOsMisc.h"
 #include "OcpiUuid.h"
 #include "OcpiUtilMisc.h"
@@ -220,7 +221,7 @@ static void exitbad(const char *e) {
   exit(1);
 }
 
-//OCPI_NORETURN
+OCPI_NORETURN
 static void
 bad(const char *fmt, ...) {
   va_list ap;
