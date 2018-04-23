@@ -90,21 +90,11 @@ doHdlPlatform(std::string &place) {
 }
 }
 
-const char *
+static const char *
 getCdkDir(std::string &cdk) {
   // This will actually throw an exception
   cdk = OU::getCdk();
   return NULL;
-#if 0
-  const char *env = getenv("OCPI_CDK_DIR");
-  bool isDir;
-  if (env && OF::exists(env, &isDir) && isDir) {
-    cdk = env;
-    ocpiInfo("OCPI_CDK_DIR: %s", env);
-    return NULL;
-  }
-  return "OCPI_CDK_DIR not set, does not exist, or is not a directory";
-#endif
 }
 
 const char *
@@ -276,17 +266,11 @@ getOclPlatforms(const StringSet *&platforms) {
   std::string ocpiocl;
   if ((err = getCdkDir(ocpiocl)))
     return err;
-#if 0
-  OU::formatAdd(ocpiocl, "/bin/%s-%s-%s/ocpiocl",
-		OCPI_CPP_STRINGIFY(OCPI_OS) + strlen("OCPI"),
-		OCPI_CPP_STRINGIFY(OCPI_OS_VERSION), OCPI_CPP_STRINGIFY(OCPI_ARCH));
-#else
   OU::formatAdd(ocpiocl, "/%s%s%s%s/bin/ocpiocl",
 		OCPI_CPP_STRINGIFY(OCPI_PLATFORM),
 		!OCPI_DEBUG || OCPI_DYNAMIC ? "-" : "",
 		OCPI_DYNAMIC ? "d" : "",
 		OCPI_DEBUG ? "" : "o");
-#endif
   std::string cmd;
   OU::format(cmd, "%stest test && %s targets", ocpiocl.c_str(), ocpiocl.c_str());
   FILE *out;

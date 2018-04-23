@@ -28,6 +28,7 @@
 #include <cstdlib>
 #include <string>
 
+#include "ocpi-config.h"
 #ifdef OCPI_OS_linux
   #include <sched.h>
   #ifdef OCPI_OS_VERSION_r5
@@ -41,7 +42,6 @@
   typedef uint64_t cpu_set_t;
 #endif
 
-#include "av_team.h"
 #include "OcpiOsTimer.h"
 #include "OcpiOsSizeCheck.h"
 #include "OcpiOsAssert.h"

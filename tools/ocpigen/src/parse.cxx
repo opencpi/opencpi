@@ -31,6 +31,7 @@
 #include "OcpiUtilMisc.h"
 #include "OcpiUtilEzxml.h"
 #include "OcpiUtilAssembly.h"
+#include "OcpiUtilCppMacros.h"
 #include "wip.h"
 #include "hdl.h"
 #include "rcc.h"
@@ -180,7 +181,7 @@ const char *Worker::
 addProperty(ezxml_t prop, bool includeImpl, bool anyIsBad)
 {
   OU::Property *p = new OU::Property;
-  
+
   const char *err =
     p->parse(prop, includeImpl, (unsigned)(m_ctl.ordinal++), this);
   // Now that have parsed the property "in a vacuum", do two context-sensitive things:
@@ -651,7 +652,7 @@ initImplPorts(ezxml_t xml, const char *element, PortCreate &a_create) {
   // Clocks depend on port names, so get those names in first pass(non-control ports)
   for (ezxml_t x = ezxml_cchild(xml, element); x; x = ezxml_cnext(x), ordinal++) {
 #if 0
-    
+
     if (!ezxml_cattr(x, "name")) {
       std::string name = prefix;
       if (nTotal != 1)
@@ -672,7 +673,7 @@ const char *Worker::
 getNumber(ezxml_t x, const char *attr, size_t *np, bool *found, size_t defaultValue,
 	  bool setDefault) const {
   assert(np);
-  const char 
+  const char
     *err = NULL,
     *v = ezxml_cattr(x, attr);
   if (v) {
@@ -806,7 +807,7 @@ create(const char *file, const std::string &parentFile, const char *package, con
     w = HdlDevice::create(xml, xfile, NULL, parent, instancePVs, err);
   } else if (!strcasecmp("RccAssembly", name))
     w = RccAssembly::create(xml, xfile, err);
-  else if ((w = new Worker(xml, xfile, parentFile, Worker::Application, parent, instancePVs, 
+  else if ((w = new Worker(xml, xfile, parentFile, Worker::Application, parent, instancePVs,
 			   err)) && !err) {
     if (!strcasecmp("RccImplementation", name) || !strcasecmp("RccWorker", name))
       err = w->parseRcc(package);
@@ -1127,7 +1128,7 @@ Parsed(ezxml_t xml,        // The xml for this entity
 #endif
 
 Clock::
-Clock() 
+Clock()
   : port(NULL), assembly(false), ordinal(0) {
 }
 
@@ -1158,6 +1159,8 @@ emitArtXML(const char *wksFile) {
   OU::uuid2string(uuid, uuid_string);
   fprintf(f,
 	  "<artifact uuid=\"%s\"", uuid_string.uuid);
+  fprintf(f, " opencpiVersion=\"" OCPI_CPP_STRINGIFY(OCPI_VERSION_MAJOR) "."
+	  OCPI_CPP_STRINGIFY(OCPI_VERSION_MINOR) "\"");
   if (g_os)         fprintf(f, " os=\"%s\"",        g_os);
   if (g_os_version) fprintf(f, " osVersion=\"%s\"", g_os_version);
   if (g_platform)   fprintf(f, " platform=\"%s\"",  g_platform);
