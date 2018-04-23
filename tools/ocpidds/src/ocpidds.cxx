@@ -440,7 +440,7 @@ idl2ifr(const char *const *argv, char *&repo)
 	      break;
 	    } else
 	      size += strlen(*ap) * 2 + 3;
-	  }
+          }
 	} else {
 	  err = "invalid flag argument - not D, U, or I";
 	  break;

@@ -27,6 +27,7 @@
 #include <assert.h>
 #include <strings.h>
 #include <ctype.h>
+#include "ocpi-config.h"
 #include "OcpiOsFileSystem.h"
 #include "OcpiUtilMisc.h"
 #include "OcpiUtilEzxml.h"
