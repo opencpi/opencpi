@@ -72,11 +72,13 @@ namespace OCPI {
     }
 
     bool Container::supportsImplementation(OU::Worker &i) {
-      static std::string *opencpiVersion = NULL; // no static constructor
+      static const char *opencpiVersion;
       static bool allowVersionMismatch = false;
+
       if (!opencpiVersion) {
-	opencpiVersion = new std::string;
-	OU::format(*opencpiVersion, "%u.%u", OCPI_VERSION_MAJOR, OCPI_VERSION_MINOR);
+	opencpiVersion = 
+	  OCPI_CPP_STRINGIFY(OCPI_VERSION_MAJOR) "." OCPI_CPP_STRINGIFY(OCPI_VERSION_MINOR);
+	ocpiInfo("OpenCPI version is: %s", opencpiVersion);
 	const char *env = getenv("OCPI_ALLOW_VERSION_MISMATCH");
 	allowVersionMismatch = env && env[0] == '1';
 	ocpiInfo("Artifact version checking is %sin effect.%s",
@@ -99,15 +101,15 @@ namespace OCPI {
       // Checking OpenCPI version is not part of the "ok" above because we can override with
       // the environment and want to warn.
       if (ok && !allowVersionMismatch &&
-	  !(ok = *opencpiVersion == i.attributes().opencpiVersion()))
+	  !(ok = opencpiVersion == i.attributes().opencpiVersion()))
 	ocpiBad("Rejected '%s' ONLY because of artifact version mismatch "
 		"('%s' vs. expected '%s')%s",
-		i.cname(), i.attributes().opencpiVersion().c_str(), opencpiVersion->c_str(),
+		i.cname(), i.attributes().opencpiVersion().c_str(), opencpiVersion,
 		OCPI::OS::logWillLog(OCPI_LOG_INFO) ? "" : " (try increasing log level)");
       ocpiInfo("vs. container %s (%u) model %s os %s version %s arch %s platform %s dynamic %u "
 	       "opencpi version %s ==> %s",
 	       name().c_str(), m_ordinal, m_model.c_str(), m_os.c_str(), m_osVersion.c_str(),
-	       m_arch.c_str(), m_platform.c_str(), m_dynamic, opencpiVersion->c_str(),
+	       m_arch.c_str(), m_platform.c_str(), m_dynamic, opencpiVersion,
 	       ok ? "accepted" : "rejected");
       return ok;
     }

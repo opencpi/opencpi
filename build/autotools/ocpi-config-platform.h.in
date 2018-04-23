@@ -39,3 +39,7 @@
 #else
   #define OCPI_API_DEPRECATED(ver, msg) __attribute__((deprecated))
 #endif
+// These undefine stupid autoconf macros when cross-compiling:
+// FIXME: double check with build2 and Aaron
+//#undef malloc
+//#undef realloc

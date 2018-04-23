@@ -939,7 +939,7 @@ namespace OCPI {
 	b.m_port.releaseBuffer(b);         // release from its true port
       else if (m_next2release) {
 	assert(&b.m_port == this);
-	ocpiAssert(&b == m_next2release);
+	ocpiAssert(&b == m_next2release); // want trace; having random problems on Jenkins
 	assert(b.m_busy);
 	b.m_full = false;
 	b.m_busy = false;
