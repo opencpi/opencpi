@@ -261,6 +261,7 @@ namespace OCPI {
       OCPI::Time::Emit::shutdown();
       delete mm;
     }
+    OCPI_NORETURN
     static void exitbad(const char *e) {
       // We are in a very primitive mode here. No error checking.
       static const char msg[] = "\n*********During shutdown********\n";

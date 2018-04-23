@@ -31,7 +31,7 @@ AC_INIT([opencpi],[1.3],[AV-Support@BIA-Boeing.com])
 dnl This version is what comes with centos6, which is as far back as we want to go.
 AC_PREREQ([2.63])
 AC_DEFINE([VERSION_MAJOR],1,[Major version])
-AC_DEFINE([VERSION_MINOR],3,[Minor version])
+AC_DEFINE([VERSION_MINOR],4,[Minor version])
 AC_DEFINE([VERSION_PATCHLEVEL],0,[Patchlevel version])
 dnl Note that this is renamed by AX_PREFIX_CONFIG below
 AC_CONFIG_HEADERS([config.h])
@@ -176,8 +176,6 @@ AM_CONDITIONAL([ocpi_can_remove_needed],[test x"$OcpiCanRemoveNeeded" = x1])
 # So we find PYTHON_PREFIX when the makefiles are executed $(shell....)
 # It is python 2.6 since that is what centos6 has.
 AM_PATH_PYTHON([2.6])
-LT_INIT([dlopen])
-AC_SUBST([LIBTOOL_DEPS])
 dnl
 dnl ================================================================================
 dnl 5. Enable generation of ocpi-config.h
@@ -199,6 +197,15 @@ dnl    Possibly by running test programs
 dnl ================================================================================
 AX_C___ATTRIBUTE__
 AS_VAR_IF([ax_cv___attribute__],[yes],,AC_MSG_ERROR([Compiler does not support attributes?]))
+dnl Check for nullptr now that C++ standard is set in CXXFLAGS
+AX_CHECK_NULLPTR
+dnl Check for working std::chrono (AV-1567)
+OCPI_CHECK_CHRONO
+dnl Check for best monotonic clock type(prefer CLOCK_MONOTONIC_RAW
+OCPI_CLOCK_TYPES
+dnl LT_INIT must be called after configuration tests due to AC_LANG_SOURCE
+LT_INIT([dlopen])
+AC_SUBST([LIBTOOL_DEPS])
 dnl ================================================================================
 dnl 7. Produce output
 dnl ================================================================================

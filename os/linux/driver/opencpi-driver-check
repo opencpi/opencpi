@@ -1,0 +1,116 @@
+#!/usr/bin/env bash
+
+# This file is protected by Copyright. Please refer to the COPYRIGHT file
+# distributed with this source distribution.
+#
+# This file is part of OpenCPI <http://www.opencpi.org>
+#
+# OpenCPI is free software: you can redistribute it and/or modify it under the
+# terms of the GNU Lesser General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your option) any
+# later version.
+#
+# OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+# A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Lesser General Public License along
+# with this program. If not, see <http://www.gnu.org/licenses/>.
+
+# This script confirms that the OpenCPI drivers are available on this machine.
+# If they are, it will load them.
+# If they are not, it will build and then load them.
+#
+
+# chkconfig: 235 19 8
+# description: This pseudo-service recompiles the OpenCPI drivers
+
+# Don't let CentOS 7 intercept
+SYSTEMCTL_SKIP_REDIRECT=1
+source /etc/rc.d/init.d/functions
+
+driver=opencpi
+kernel_ver=$(uname -r)
+
+# Set variables needed for ocpi_linux_driver (especially if CDK not around)
+if [ -z "${OCPI_CDK_DIR}" ]; then
+  export OCPI_CDK_DIR=/opt/opencpi/cdk
+fi
+if [ -x ${OCPI_CDK_DIR}/scripts/getPlatform.sh ]; then
+  export OCPI_TOOL_DIR=$(${OCPI_CDK_DIR}/scripts/getPlatform.sh | cut -f4 -d" ")
+else
+  # Less reliable method if CDK not installed yet
+  export OCPI_TOOL_DIR=linux-c$(rpm -q opencpi-driver --qf="%{release}" | perl -ne '/el(\d+)/ && print $1')-x86_64
+fi
+if [ -z "${OCPI_TARGET_PLATFORM}" ]; then
+  #export OCPI_TARGET_PLATFORM=centos`expr substr ${OCPI_TOOL_DIR#linux-c} 1 1`
+  export OCPI_TARGET_PLATFORM=DONTCARE
+fi
+
+case "$1" in
+  start)
+    dont_just_check=0
+    # Fall thru
+    ;&
+  check)
+    # This is not a standard target but checks that the kernel-devel package is installed that matches this kernel
+    # we don't call "rpm" because the "verify" script calls us and that would hang! (AV-2407)
+    if [ ! -e /lib/modules/${kernel_ver}/build/Makefile ]; then
+      echo "WARNING: Could not find kernel source tree! Run 'sudo yum install -y kernel-devel-${kernel_ver}; sudo $0 start' to build driver"
+      exit 1;
+    fi
+    [ -z "${dont_just_check}" ] && exit 0;
+    echo -n "Loading OpenCPI driver:"
+    cd /opt/opencpi/driver
+    cd ${kernel_ver} 2> /dev/null
+    ../ocpi_linux_driver load x >/tmp/last_opencpi_driver_load.log 2>&1
+    if [ $? -ne 0 ]; then
+      warning
+      echo
+    else
+      success
+      echo
+      exit 0
+    fi
+    # Need to rebuild
+    echo -n "Building OpenCPI kernel driver: "
+    mkdir -p /opt/opencpi/driver/${kernel_ver}/work
+    cp --target-directory=/opt/opencpi/driver/${kernel_ver} *.rules Makefile *.c
+    cd /opt/opencpi/driver/${kernel_ver}
+    # Won't detect KERNEL_DIR if combined clean and modules targets
+    make clean MyLib=work MyTargetDir=work AT='' V=1 > build.log 2>&1
+    make modules modules_install MyIncs=-I/opt/opencpi/driver MyLib=work MyTargetDir=work AT='' V=1 OCPI_TARGET_HOST=${OCPI_TOOL_DIR} >> build.log 2>&1
+    mv work/*.ko .
+    rmdir work
+    # Make sure world-readable (AV-1760)
+    chmod -Rv a+rX . >> build.log 2>&1
+    ../ocpi_linux_driver reload x >> build.log 2>&1
+    RES=$?
+    cd - >/dev/null
+    if [ $RES -ne 0 ]; then
+      failure
+      echo
+      exit $RES
+    else
+      success
+      echo
+      exit 0
+    fi
+    ;;
+  stop|status|reload)
+    # Pass to OSS handler
+    cd /opt/opencpi/driver
+    cd ${kernel_ver} 2> /dev/null
+    /opt/opencpi/driver/ocpi_linux_driver $1
+    exit 0
+    ;;
+  condstart|condrestart|restart)
+    # Nothing to do (but fail)
+    echo "Unused command!"
+    # Fall thru
+    ;&
+  *)
+    echo "Usage: $0 {start|stop|status|check|reload} Errors on: {condstart|condrestart|restart}"
+    exit 1
+esac

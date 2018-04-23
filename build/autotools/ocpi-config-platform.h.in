@@ -18,18 +18,38 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-// A template for the definitions where the macro name is config-specific
-// This file will not be included more than once since it is protected by the guard
-// in ocpi-config.h
+/**********************************************************************************************
+ * This file serves two purposes:
+ *
+ * 1. The place where config-specific macros whose NAMES depend on autoconf variables are set
+ *    Thus it is a "template" file for autoconf with the suffix ".in".
+ *
+ * 2. The place for compiler-sensitive definitions that are NOT determined by autoconf.
+ *
+ * This file is included by ocpi-config.h (which is what source files include), and it is
+ * protected by the guard in ocpi-config.h.  That file is generated in the conventional way
+ * by autoconf.
+ *
+ * ocpi-config.h is included by source files who need to be aware of the "configuration",
+ * whether that configuration is autotools generated or ad hoc with compiler version ifdefs etc.
+ * This file is never included directly
+ */
 
+/**********************************************************************************************
+ * The config macros whose NAMES are config-specific
+*/
 #define OCPI_PLATFORM_@OcpiPlatform@ 1
 #define OCPI_OS_@OcpiPlatformOs@ 1
 #define OCPI_OS_VERSION_@OcpiPlatformOsVersion@ 1
 #define OCPI_ARCH_@OcpiPlatformArch@ 1
 
-// These should be determined by autoconf, but are fixed with GCC for now.
-// Other attributes to consider...
-// https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html
+/**********************************************************************************************
+ * All the non-autoconf, compiler-sensitive definitions are here so that if we figure out
+ * how to auto-detect more of them, nothing else changes.
+ * These should be determined by autoconf, but are fixed with GCC for now.
+ * Other attributes to consider...
+ * https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html
+ */
 #define OCPI_NORETURN __attribute__((noreturn))
 #define OCPI_USED     __attribute__((used))
 #define OCPI_UNUSED   __attribute__((unused))
@@ -39,6 +59,55 @@
 #else
   #define OCPI_API_DEPRECATED(ver, msg) __attribute__((deprecated))
 #endif
+/**********************************************************************************************
+ * For older C++ that does not support nullptr
+ * From stackoverflow.com, by Yaroslav, on Aug 22 '12 at 15:22
+ * http://stackoverflow.com/a/12076387
+ */
+#ifndef OCPI_HAVE_NULLPTR
+#if __cplusplus <= 199711
+
+namespace ocpi_nullptr
+{
+    //based on SC22/WG21/N2431 = J16/07-0301
+    struct nullptr_t
+    {
+        template<typename any> operator any * () const
+    {
+        return 0;
+    }
+    template<class any, typename T> operator T any:: * () const
+    {
+        return 0;
+    }
+
+#ifdef _MSC_VER
+    struct pad {};
+    pad __[sizeof(void*)/sizeof(pad)];
+#else
+    char __[sizeof(void*)];
+#endif
+private:
+    //  nullptr_t();// {}
+    //  nullptr_t(const nullptr_t&);
+    //  void operator = (const nullptr_t&);
+    void operator &() const;
+    template<typename any> void operator +(any) const
+    {
+        /*I Love MSVC 2005!*/
+    }
+    template<typename any> void operator -(any) const
+    {
+        /*I Love MSVC 2005!*/
+    }
+    };
+static const nullptr_t __nullptr = {};
+}
+
+#define nullptr ocpi_nullptr::__nullptr
+
+#endif // if __cplusplus <= 199711
+#endif // if not OCPI_HAVE_NULLPTR
 // These undefine stupid autoconf macros when cross-compiling:
 // FIXME: double check with build2 and Aaron
 //#undef malloc

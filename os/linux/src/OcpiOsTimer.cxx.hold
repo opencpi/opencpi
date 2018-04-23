@@ -18,6 +18,9 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <OcpiOsTimer.h>
+#include <OcpiOsSizeCheck.h>
+#include <OcpiOsAssert.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -27,60 +30,24 @@
 #include <cstdio>
 #include <cstdlib>
 #include <string>
-
-#ifdef OCPI_OS_linux
-  #include <sched.h>
-  #ifdef OCPI_OS_VERSION_r5
-    #ifndef __x86_64__
-      #error No support for RHEL5 on non-64-bit machines
-    #endif
-    #include <asm/vsyscall.h>
-  #endif
-#else
-  #include <sys/time.h> // for gettimeofday
-  typedef uint64_t cpu_set_t;
-#endif
-
-#include "av_team.h"
-#include "OcpiOsTimer.h"
-#include "OcpiOsSizeCheck.h"
-#include "OcpiOsAssert.h"
-
-#ifndef OCPI_CLOCK_TYPE
-  #ifdef CLOCK_MONOTONIC_RAW
-    #define OCPI_CLOCK_TYPE CLOCK_MONOTONIC_RAW
-  #else
-    #define OCPI_CLOCK_TYPE CLOCK_MONOTONIC
-  #endif
-#endif
+//#ifdef __x86_64__ || __i386__ parsecpuid 1
 
 namespace OCPI {
   namespace OS {
 
 Time Time::now() {
+  Time t;
 #ifdef __APPLE__
   struct timeval tv;
   gettimeofday(&tv, NULL);
-  return Time((uint32_t)tv.tv_sec, tv.tv_usec * 1000);
+  t.set((uint32_t)tv.tv_sec, tv.tv_usec * 1000);
 #else
   struct timespec ts;
   ocpiCheck(clock_gettime (OCPI_CLOCK_TYPE, &ts) == 0);
-  return Time((uint32_t)ts.tv_sec, (uint32_t)ts.tv_nsec);
+  t.set((uint32_t)ts.tv_sec, (uint32_t)ts.tv_nsec);
 #endif
+  return t;
 }
-
-#ifdef OCPI_USE_CHRONO
-using chono_clock_type = std::chrono::steady_clock; // high_resolution_clock;
-typedef struct  {
-  chono_clock_type::time_point tp;
-} TimerTickInfo;
-#else
-typedef struct  {
-  uint32_t lower, upper;
-  uint64_t accumulatedCounter; // move to chono_clock_type::duration if everything moves to C++11
-} TimerTickInfo;
-#endif
-
 /*
  * ----------------------------------------------------------------------
  * Frequency of the high-resolution timestamp counter, in Hz.
@@ -89,11 +56,26 @@ typedef struct  {
  * in /proc/cpuinfo (e.g., "timebase period : 24000 psecs", indicating
  * a frequency of 41.6 MHz).
  *
- * On Linux/x86, we use C++11's chrono library so don't use this.
+ * On Linux/x86, this is initialized from the "CPU MHz" value in
+ * /proc/cpuinfo (e.g., cpu MHz : 2593.753).  Documentation indicates
+ * that the tick count becomes skewed if the CPU frequency changes.
+ * Wikipedia adds, "recent Intel processors include a constant rate TSC
+ * (identified by the constant_tsc flag in Linux's /proc/cpuinfo).  With
+ * these processors the TSC reads at the processors maximum rate
+ * regardless of the actual CPU running rate."
+ *
+ * If neither value is found, this value is set to 0, and the Timer
+ * implementation falls back to POSIX clock_gettime().
+ *
+ * We only look for the first occurence of either string.  This assumes
+ * that, if there is more than one processor, the timer frequency is
+ * identical for all.
  * ----------------------------------------------------------------------
  */
+#define cpuid(func,ax,bx,cx,dx)\
+        __asm__ __volatile__ ("cpuid":\
+        "=a" (ax), "=b" (bx), "=c" (cx), "=d" (dx) : "a" (func));
 
-#ifndef OCPI_USE_CHRONO
 namespace {
   class CounterFreq {
   public:
@@ -131,6 +113,9 @@ CounterFreq::CounterFreq ()
   close (fd);
 
   std::string valueread(tmp);
+
+  //std::cout << valueread << std::endl;
+
 
   if (nread < 0) {
     return;
@@ -205,6 +190,61 @@ CounterFreq::CounterFreq ()
      * All other (unexpected) values for timebase: fall through.
      */
   }
+
+  /*
+   * We only use the "cpu MHz" value on x86.
+   */
+
+#if defined (__x86_64__) || defined (__i386__)
+
+  //parse cpuid for tsc_invariant
+  int ax,bx,cx,dx;
+  cpuid(0x80000007,ax,bx,cx,dx)
+  //if tsc_invariant not present return - present in edx 0x80000007 bit 8
+  if (!dx&0x8) {
+      return;
+  }
+  size_t pointer;
+  // TODO: changed to find model name and TSC invariant clock speed extracted
+  if ((pointer = valueread.find("model name",0))) {
+
+    // Position ptr at the beginning of the value
+    size_t start = valueread.find("@",pointer);
+
+    //go past the @ and the space
+    start+=2;
+    size_t end   = valueread.find("GHz",pointer);
+    float multi = 1e9;
+    if (end == std::string::npos){
+      end = valueread.find("MHz",pointer);
+      multi = 1e6;
+      if (end == std::string::npos)
+        return;
+    }
+
+    //find the substring that holds the speed bound by the @ sign and either
+    //GHz or MHz
+    std::string substring(valueread,start,end-(start));
+
+    //convert the string to a float value
+    float speed=(float) std::atof(substring.c_str());
+
+    //this is enables the high resolution timer
+    m_useHighResTimer = true;
+    //this sets the tsc_invariant clock speed
+    m_counterFreq = (uint64_t)(speed*multi);
+    return;
+  }
+
+#endif
+
+
+  /* this is only valid for the x86 cpu
+   * Did not find anything useful in /proc/cpuinfo.  Tell the Timer
+   * implementation to fall back to clock_gettime().
+   */
+
+  m_useHighResTimer = false;
 }
 
 inline
@@ -220,8 +260,6 @@ CounterFreq::operator uint64_t () const
   return m_counterFreq;
 }
 
-#endif
-
 /*
  * ----------------------------------------------------------------------
  * Read timer register.
@@ -231,12 +269,32 @@ CounterFreq::operator uint64_t () const
 #if defined ( __GNUC__ ) && defined ( _ARCH_PPC )
   #define TBU( t ) __asm volatile ( "mfspr %0,269" : "=r" ( t ) )
   #define TBL( t ) __asm volatile ( "mfspr %0,268" : "=r" ( t ) )
-#elif defined(OCPI_USE_CHRONO)
-  // There are no macros needed. But we don't want a "no arch" warning either.
+
 #elif defined ( __x86_64__ ) || defined ( __i386__ )
-  #define TBU( t ) tb_upper_tmp = tb_upper;
-  #define TBL( t ) __asm__ __volatile__ ( "rdtsc" : "=a" ( tb_lower ), \
-                                                    "=d" ( tb_upper ) );
+
+  // unused in x86, but needed for loop constructs
+  #define TBU( t ) tb_upper_tmp = t;
+  // See Intel's "ia-32-ia-64-benchmark-code-execution-paper.pdf"
+  // How to Benchmark Code Execution Timers on Intel IA-32 and IA-64 Instruction Set
+  // Architectures White Paper
+  // or http://stackoverflow.com/a/14214220
+  #define TBL( t ) __asm__ __volatile__ ("CPUID\n\t" \
+                                         "RDTSC\n\t" \
+                                         "mov %%edx, %0\n\t" \
+                                         "mov %%eax, %1\n\t" \
+                                         : "=r"(tb_upper), "=r"(tb_lower) \
+                                         : \
+                                         : "%rax","%rbx","%rcx","%rdx");
+
+  #define eTBL( lo, hi, cpu ) __asm__ __volatile__ ("RDTSCP\n\t" \
+                                                    "mov %%edx, %0\n\t" \
+                                                    "mov %%eax, %1\n\t" \
+                                                    "mov %%ecx, %2\n\t" \
+                                                    "CPUID\n\t" \
+                                                    : "=r"(hi), "=r"(lo), "=r"(cpu) \
+                                                    : \
+                                                    : "%rax","%rbx","%rcx","%rdx");
+
 #elif defined (__vxWorks__) // vxWorks Diab and Green Hills inline assembler format
   #define TBU( t ) tm_move_from_tbr_upper ( t )
   #define TBL( t ) tm_move_from_tbr_lower ( t )
@@ -268,37 +326,70 @@ asm void tm_move_from_tbr_lower ( unsigned int time_val )
  * Timer implementation.
  * ----------------------------------------------------------------------
  */
+
+namespace {
+  struct TimerClockInfo {
+    Time startTime;
+    ElapsedTime accumulatedTime;
+  };
+
+  struct TimerTickInfo {
+    uint32_t lower, upper;
+    uint16_t accumulatedCounter;
+  };
+
+  struct TimerData {
+    bool running;
+
+    TimerClockInfo tci;
+    TimerTickInfo tti;
+  };
+}
+
 Timer::
-Timer (bool start_now)
+Timer (bool start)
   throw ()
-  : running(false)
 {
-  init(start_now);
+
+  init(start);
 }
 Timer::
-Timer(uint32_t seconds_in, uint32_t nanoseconds_in)  throw()
-  : expiration(seconds_in, nanoseconds_in), running(false) {
+Timer(uint32_t seconds, uint32_t nanoseconds)  throw()
+  : expiration(seconds, nanoseconds){
   init(true);
 }
 Timer::
-Timer(Time time) throw()
-  : expiration(time), running(false) {
+Timer(Time time)  throw()
+  : expiration(time) {
   init(time != 0);
 }
-void Timer::init(bool start_now) {
-  ocpiAssert ((compileTimeSizeCheck<sizeof (m_opaque), sizeof (TimerTickInfo)> ()));
-  ocpiAssert (sizeof (m_opaque) >= sizeof (TimerTickInfo));
-  TimerTickInfo &tti = *(TimerTickInfo *)m_opaque;
+void Timer::init(bool start) {
+  tti.accumulatedCounter = tti.upper = tti.lower = 0;
   tci.accumulatedTime.set(0);
-  if (start_now) {
-    start();
-  } else { // not start
-#ifdef OCPI_USE_CHRONO
-    // Initialize using a placement new
-    new (&tti.tp) chono_clock_type::time_point();
+  if ((running = start)) { // Intentionally setting "running"
+    if (useHighResTimer()) {
+      register volatile unsigned int tb_lower, tb_upper = 0, tb_upper_tmp;
+
+#if defined ( __x86_64__ ) || defined ( __i386__ )
+      (void) tb_upper_tmp; // Stop unused warnings
+      register volatile unsigned int cpu;
+      eTBL( tb_lower, tb_upper, cpu ); // Macro modifies tb_upper and tb_lower atomically
 #else
-    tti.accumulatedCounter = tti.upper = tti.lower = 0;
+      do {
+        TBU( tb_upper );
+        TBL( tb_lower );
+        TBU( tb_upper_tmp );
+        }
+      while ( tb_upper != tb_upper_tmp );
 #endif
+
+      tti.lower = tb_lower;
+      tti.upper = tb_upper;
+    }
+    else
+    {
+      tci.startTime = Time::now();
+    }
   }
 }
 
@@ -306,40 +397,53 @@ Timer::
 ~Timer ()
   throw ()
 {
-  // chono_clock_type::time_point has no destructor to manually call (used placement new)
 }
 
 void
 Timer::
 start ()
   throw ()
-{
+{ 
   ocpiAssert (!running);
-
+  
   running = true;
-  TimerTickInfo &tti = *(TimerTickInfo *)m_opaque;
-#ifdef OCPI_USE_CHRONO
-  using namespace std::chrono;
-  tti.tp = chono_clock_type::now();
-  // To allow restarts, we subtract tci.accumulatedTime from now() to be the new effective start time
-  // Need [base-10 value] of [ticksPerSecond count] so duration_cast
-  if (0 != tci.accumulatedTime.bits())
-    tti.tp -= duration_cast<nanoseconds>( tci.accumulatedTime.get_duration() );
-#else // not Chrono
   if (useHighResTimer()) {
+    cpu_set_t mask;
+    const size_t len = sizeof(mask);
+// TODO: org_mask_valid flag - start() gets called multiple times w/out matching stop()
+    // Store off original affinity
+    pid_t pid_id = getpid();
+    if (sched_getaffinity(pid_id, len, &org_mask) < 0) {
+      perror("sched_getaffinity");
+      ocpiAssert (-1);
+    }
+
+    // Pin this process to the CPU we are currently on (OP-436)
+    const int cpu_id = sched_getcpu();
+    mask=org_mask;
+    CPU_ZERO(&mask);                     // clears the cpuset
+    CPU_SET(cpu_id, &mask);              // set only this CPU
+    int err = sched_setaffinity(pid_id, len, &mask);
+    if (0 != err)
+      ocpiDebug("sched_setaffinity (%d): operation failed!", __LINE__);
+    ocpiDebug("sched_setaffinity (%d): operation okay!", __LINE__);
+
     register volatile unsigned int tb_lower, tb_upper = 0, tb_upper_tmp;
+
     do {
       TBU( tb_upper );
       TBL( tb_lower );
       TBU( tb_upper_tmp );
-      }
+    }
     while ( tb_upper != tb_upper_tmp );
+
     tti.lower = tb_lower;
     tti.upper = tb_upper;
-  } else {
+  }
+  else
+  {
     tci.startTime = Time::now();
   }
-#endif
 }
 
 ElapsedTime
@@ -348,6 +452,14 @@ stop ()
   throw ()
 {
   ElapsedTime et = getElapsed();
+  if (useHighResTimer()) {
+    // Reset CPU affinity
+    int err = sched_setaffinity(getpid(), sizeof(org_mask), &org_mask);
+    if (0 != err)
+      ocpiDebug("sched_setaffinity (%d): operation failed!", __LINE__);
+    ocpiDebug("sched_setaffinity (%d): operation okay!", __LINE__);
+
+  }
   running = false;
   return et;
 }
@@ -357,10 +469,8 @@ Timer::
 reset ()
   throw ()
 {
-  running = false;
   init(false);
 }
-
 void
 Timer::
 restart ()
@@ -383,25 +493,41 @@ Timer::
 getElapsed ()
   throw ()
 {
-  // updates and returns tci.accumulatedTime
   if (running) {
-    TimerTickInfo &tti = *(TimerTickInfo *)m_opaque;
-#ifdef OCPI_USE_CHRONO
-    tci.accumulatedTime.set_elapsed(tti.tp);
-#else
     if (useHighResTimer()) {
       register volatile unsigned int tb_lower, tb_upper = 0, tb_upper_tmp;
+
+#if defined ( __x86_64__ ) || defined ( __i386__ )
+      (void) tb_upper_tmp; // Stop unused warnings
+      register volatile unsigned int cpu;
+      eTBL( tb_lower, tb_upper, cpu ); // Macro modifies tb_upper and tb_lower atomically
+#else
       do {
         TBU( tb_upper );
         TBL( tb_lower );
         TBU( tb_upper_tmp );
         }
       while ( tb_upper != tb_upper_tmp );
+#endif
 
       const unsigned long long t2 = (((unsigned long long) tb_upper)  << 32) | tb_lower;
       const unsigned long long t1 = (((unsigned long long) tti.upper) << 32) | tti.lower;
+#if 0
+      if (not (t2 > t1)) {
+        cpu_set_t tempo;
+        pid_t pid_id = getpid();
+        const size_t len = sizeof(tempo);
+        sched_getaffinity(pid_id, len, &tempo);
+        const int cpu_id = sched_getcpu();
 
+        ocpiDebug("Crashing: CPU_ID=%d", cpu_id );
+        ocpiDebug("getaffinity: defines %d CPUs (vs. %d), this CPU: %d", CPU_COUNT(&tempo), CPU_COUNT(&org_mask), CPU_ISSET(cpu_id, &tempo) );
+        ocpiDebug("t2=%llu (%u+%u), t1=%llu (%u+%u)", t2, tb_upper, tb_lower, t1, tti.upper, tti.lower );
+
+      }
+#endif
       ocpiAssert (t2 > t1);
+
       tti.accumulatedCounter += t2 - t1;
       tti.lower = tb_lower;
       tti.upper = tb_upper;
@@ -410,7 +536,8 @@ getElapsed ()
       tci.accumulatedTime.set((uint32_t)(tti.accumulatedCounter / g_counterFreq),
                               (uint32_t)(((tti.accumulatedCounter % g_counterFreq) *
                                           1000000000ull) / g_counterFreq));
-    } else {
+    }
+    else {
       Time stopTime = Time::now();
 
       ocpiAssert (stopTime >= tci.startTime);
@@ -418,7 +545,6 @@ getElapsed ()
       tci.accumulatedTime += stopTime - tci.startTime;
       tci.startTime = stopTime;
     }
-#endif // chrono
   }
   return tci.accumulatedTime;
 }
@@ -428,17 +554,14 @@ getRemaining() throw() {
   return expiration - getElapsed();
 }
 
+
 void
 Timer::
 getValue (ElapsedTime & timer)
   throw ()
 {
   ocpiAssert(!running);
-  TimerTickInfo &tti = *(TimerTickInfo *)m_opaque;
 
-#ifdef OCPI_USE_CHRONO
-  timer.set_elapsed(tti.tp);
-#else
   if (useHighResTimer()) {
     ocpiAssert (g_counterFreq != 0);
     // FIXME: perhaps better accuracy dealing with ocpi ticks directly
@@ -447,7 +570,6 @@ getValue (ElapsedTime & timer)
                          g_counterFreq));
   } else
     timer = tci.accumulatedTime;
-#endif
 }
 
 void
@@ -455,18 +577,10 @@ Timer::
 getPrecision (ElapsedTime & prec)
   throw ()
 {
-#ifdef OCPI_USE_CHRONO
-  using namespace std::chrono;
-  // Put 1 count into the clock and then ask how long it was
-  chono_clock_type::duration dur(1);
-  auto sec = duration_cast<seconds>(dur);
-  dur -= sec;
-  auto nsec = duration_cast<nanoseconds>(dur);
-  prec.set(static_cast<uint32_t>(sec.count()), static_cast<uint32_t>(nsec.count()));
-  static_assert(chono_clock_type::is_steady, "chono_clock_type::is_steady is false!");
-#else
   if (useHighResTimer()) {
     ocpiAssert (g_counterFreq != 0);
+
+
     Time::TimeVal r = (Time::ticksPerSecond + g_counterFreq/2)/g_counterFreq;
     prec.set(r ? r : 1);
   } else {
@@ -478,8 +592,6 @@ getPrecision (ElapsedTime & prec)
     prec.set((uint32_t)res.tv_sec, (uint32_t)res.tv_nsec);
 #endif
   }
-#endif
 }
-
-  } // OCPI::OS
-} // OCPI
+  }
+}

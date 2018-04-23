@@ -144,9 +144,13 @@ $(MAKEFILE_AM): ../places generate-automake.sh | gen
 	$(AT) echo Generating the Makefile.am file.
 	$(AT) cd gen && ../generate-automake.sh $(Verbose) < ../../places > $(@F)
 
-gen:
+# Create a "autoconf sandbox" where everything is where it is expected to be, and
+# which is entirely disposable.  This is where we allow authored files and generated files
+# to me all mixed together the way autoconf likes things to be.
+gen: imported-macros our-macros
 	$(AT) mkdir -p gen && cd gen && mkdir -p acinclude && \
-	      (cd acinclude && shopt -s nullglob && ln -f -s ../../imported/*.m4 .) && \
+	      (cd acinclude && shopt -s nullglob && \
+	       ln -f -s ../../{our,imported}-macros/*.m4 .) && \
 	      ln -f -s ../{configure.ac,ocpi-config-platform.h.in} . && \
 	      for i in tools tests runtime os; do ln -f -s ../../../$$i $$i; done
 
@@ -170,7 +174,7 @@ define DoPlatform
 
 target-$1:
 	mkdir target-$1
-configure_$1: preconfigure do-platform.mk | target-$1
+configure_$1: preconfigure do-platform.mk ocpi-config-platform.h.in | target-$1
 	$(AT)$(MAKE) $(MKARGS) configure
 build_$1: configure_$1
 	$(AT)$(MAKE) $(MKARGS) build
