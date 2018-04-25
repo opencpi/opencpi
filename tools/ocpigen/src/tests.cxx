@@ -2034,9 +2034,9 @@ createCases(const char **platforms, const char */*package*/, const char */*outDi
       ocpiInfo("For platform %s, considering worker %s.%s from %s platform %s dynamic %u",
 	       m_platform.c_str(), i.m_metadataImpl.cname(), i.m_metadataImpl.model().c_str(),
 	       i.m_artifact.name().c_str(), i.m_artifact.platform().c_str(),
-	       i.m_artifact.m_dynamic);
+	       i.m_artifact.dynamic());
       if (i.m_artifact.platform() == m_platform && i.m_metadataImpl.model() == m_model &&
-	  i.m_artifact.m_dynamic == m_dynamic) {
+	  i.m_artifact.dynamic() == m_dynamic) {
 	unsigned sn = 0;
 	for (ezxml_t cx = ezxml_cchild(m_xml, "case"); cx; cx = ezxml_cnext(cx)) {
 	  unsigned n = 0;
@@ -2085,14 +2085,15 @@ createCases(const char **platforms, const char */*package*/, const char */*outDi
       return false;
     }
   };
-  std::string path;
-  OU::format(path,
-	     "../lib/rcc:../lib/ocl:gen/assemblies:%s/project-registry/ocpi.core/artifacts",
-	     OU::getOpenCPI().c_str());
+  const char *err;
+  std::string registry, path;
+  if ((err = OU::getProjectRegistry(registry)))
+    return err;
+  OU::format(path, "../lib/rcc:../lib/ocl:gen/assemblies:%s/ocpi.core/artifacts",
+	     registry.c_str());
   setenv("OCPI_LIBRARY_PATH", path.c_str(), true);
   ocpiInfo("Initializing OCPI_LIBRARY_PATH to \"%s\"", path.c_str());
   verbose = a_verbose;
-  const char *err;
   ezxml_t xml;
   if ((err = OE::ezxml_parse_file("gen/cases.xml", xml)))
     return err;

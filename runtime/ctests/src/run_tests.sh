@@ -67,7 +67,7 @@ function doit {
 if test $# = 1 ; then
   doit $1
 else
-tests=`ls -d test* | grep -v '_main' | grep -v '\.'`
+tests=`for i in test*; do [ -f $i -a -x $i ] && echo $i; done`
 [ -z "$tests" ] && {
   echo Error:  ctests appear to be missing from `pwd`
   exit 1

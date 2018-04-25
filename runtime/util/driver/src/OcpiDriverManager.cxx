@@ -114,29 +114,25 @@ namespace OCPI {
       if (driver)
 	return driver;
       std::string libDir, lib;
-      OU::format(libDir, "%s/%s%s%s%s/lib", OU::getCdk().c_str(),
+      OU::format(libDir, "%s/%s%s%s%s/lib", OU::getCDK().c_str(),
 		 OCPI_CPP_STRINGIFY(OCPI_PLATFORM),
 		 !OCPI_DEBUG || OCPI_DYNAMIC ? "-" : "",
 		 OCPI_DYNAMIC ? "d" : "",
 		 OCPI_DEBUG ? "" : "o");
-      bool bad;
-      if (OS::FileSystem::exists(libDir))
-	bad = checkDriver(driverName, libDir, lib);
-      else {
-	std::string libDir2;
-	OU::format(libDir2, "%s/lib/%s-%s-%s", OU::getCdk().c_str(),
+      if (!OS::FileSystem::exists(libDir)) { // try the pre-1.4 library name FIXME: nuke this?
+	std::string oldLibDir;
+	OU::format(oldLibDir, "%s/lib/%s-%s-%s", OU::getCDK().c_str(),
 		   OCPI_CPP_STRINGIFY(OCPI_OS) + strlen("OCPI"),
 		   OCPI_CPP_STRINGIFY(OCPI_OS_VERSION), OCPI_CPP_STRINGIFY(OCPI_ARCH));
-	if (!OS::FileSystem::exists(libDir2)) {
+	if (!OS::FileSystem::exists(oldLibDir)) {
 	  OU::eformat(err,
 		      "when loading the \"%s\" \"%s\" driver, directory \"%s\" does not exist",
 		      driverName, managerName, libDir.c_str());
 	  return NULL;
 	}
-	libDir = libDir2;
-	bad = checkDriver(driverName, libDir, lib);
+	libDir = oldLibDir;
       }
-      if (bad) {
+      if (checkDriver(driverName, libDir, lib)) {
 	OU::eformat(err,
 		    "when loading the \"%s\" \"%s\" driver, no driver file was found in \"%s\"",
 		    driverName, managerName, libDir.c_str());
@@ -169,9 +165,9 @@ namespace OCPI {
       if (!file) {
 	OU::format(configFile, "%s/system.xml", OU::getOpenCPI().c_str());
 	if (!OS::FileSystem::exists(configFile)) {
-	  OU::format(configFile, "%s/../system.xml", OU::getCdk().c_str());
+	  OU::format(configFile, "%s/../system.xml", OU::getCDK().c_str());
 	  if (!OS::FileSystem::exists(configFile))
-	    OU::format(configFile, "%s/default-system.xml", OU::getCdk().c_str());
+	    OU::format(configFile, "%s/default-system.xml", OU::getCDK().c_str());
 	}
       } else
 	configFile = file;

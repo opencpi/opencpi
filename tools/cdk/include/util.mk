@@ -432,7 +432,7 @@ OcpiDefaultOWD=$(if $(call OcpiDefaultSpec,$1),,$(error No default spec found fo
 
 # Function to generate target dir from target: $(call WkrTargetDir,target,config)
 # FIXME: shouldn't really be named "Wkr"
-WkrTargetDir=$(if $1,,$(error NULL))$(strip \
+WkrTargetDir=$(if $1,,$(error Internal error: WkrTargetDir called without a target))$(strip \
               $(foreach d,\
                 $(OutDir)target$(if $(filter 0,$2),,-$2)-$(or $(call $(CapModel)TargetDirTail,$1),$1),\
                 $d))
@@ -501,8 +501,10 @@ OcpiXmlComponentLibraries=$(infox HXC)\
   $(infox OcpiXmlComponentLibraries returned: $(OcpiTempDirs))\
   $(OcpiTempDirs)
 
-# Return a colon separated default OCPI_LIBRARY_PATH. It contains arg1 (or .), the core project's exports,
-# the current project's libraries underneath 'components', and the current project's hdl/assemblies
+# Return a colon separated default OCPI_LIBRARY_PATH. It contains:
+# 1. arg1 if present
+# 2. the core project's artifacts
+# 3. the artifacts exported from the projects in the project path (its dependencies)
 OcpiGetDefaultLibraryPath=$(infox OGDLP:$1:)$(strip \
   $(and $1,$1:)$(foreach p,$(call OcpiAbsPathToContainingProject,$1),$p/artifacts)$(strip\
   $(subst $(Space),,$(foreach p,$(OcpiGetProjectPath),:$p/artifacts))))
@@ -1098,17 +1100,39 @@ OcpiExportVars=$(foreach v,$(filter OCPI_%,$(.VARIABLES)),export $v='$($v)';)
 OcpiHelp=help:;@:$(and $(filter help,$(MAKECMDGOALS)),$(info $(help)))
 
 OcpiDirName=$(patsubst %/,%,$(dir $1))
-# Prepare an artifact, given its local filename.
-# Put a link in the project's artifacts dir, using a UUID to keep the name.
-# Also make a dummy link to record that a link already exists.
-# Real Link 1 is <uuid>-<basename> ==> relative path of real artifact
-# Dummy Link is <relative-path-with-hyphens>==><uuid>
-$(call OcpiPrepareArtifact,<artifact-file-input>,<output-file-to-modify>)
+# Prepare an artifact in the project.
+# First, add the artifact xml (from the file in $2) to the binary file ($1) IN PLACE.
+#  Next, if we are in a project, ensure there is a symlink in the artifacts/ directory at the
+#  project's top level.
+#  We actually use two symlinks in the artifacts/ directory per artifact, for several reasons.
+#  The first link is a functional (not dead) link to the artifact that is a relative link within
+#    the project.  The name of this link is <uuid>:<basename-of-artifact>.
+#    The name is of bounded length, which is required by some tools, notably modelsim.
+#    The uuid ensures uniqueness even when artifacts from different projects are ultimately
+#    combined into one directory - i.e. it allows for that.
+#    Example: 06bcdc80-4803-11e8-97d5-a7ad40a16f1f:bias_0_modelsim_base.tar.gz
+#  The second link is a dead link (the target does not point to a real file).  Its name is:
+#    <project-relative-pathname-with-slashes-and-periods-replaced-with-hypens>
+#    Its target is <uuid>, which does not exist as a file.
+#    This link does not have bounded length (since it is a fully navigable name with multiple
+#    directory levels etc.
+#    If serves several purposes:
+#      - It annotates the first uuid-based functional links by showing the relative pathname
+#        that they in fact point it.  "ls -l" allows you to know where the first links point.
+#      - It serves as a placeholder to show that a symlink already exists to the pathname,
+#        and thus does not need to be created or modified - without reading the link.
+#      - It is a dead link so that an unbounded pathname is never used as an artifact that will
+#        break some tools.
+#      - It is a dead so that the artifact searching machinery efficiently avoids it
+#  Note that the first time these links are created, the UUID used for the links comes from
+#  the artifact, but later, when the links are reused, the UUID in the links is not changed
+#  because there is no value in changing it.
+# $(call OcpiPrepareArtifact,<artifact-file-input>,<output-file-to-modify>)
 OcpiPrepareArtifact=\
   $(ToolsDir)/ocpixml add $2 $1 \
   $(and $(OCPI_PROJECT_DIR), &&\
     adir=$(OCPI_PROJECT_DIR)/artifacts &&\
-    name="$(subst .,-,$(subst /,-,$(call FindRelative,$(OCPI_PROJECT_DIR),$(CURDIR)/$(call OcpiDirName,$2))))" &&\
+    name="$(subst .,-,$(subst /,-,$(call FindRelative,$(OCPI_PROJECT_DIR),$(CURDIR)/$(call OcpiDirName,$2))-$(notdir $2)))" &&\
     [ -L $$adir/$$name ] || { \
       uuid=`sed -n '/artifact uuid/s/^.*artifact uuid="\([^"]*\)".*$$/\1/p' $1` &&\
       mkdir -p $(OCPI_PROJECT_DIR)/artifacts &&\

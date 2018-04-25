@@ -91,7 +91,7 @@ static std::string name, error, endpoint;
 static OH::Driver *driver;
 static OH::Device *dev;
 static OH::Access *cAccess, *dAccess, wAccess, confAccess;
-static size_t worker;
+static size_t workerIdx;
 static const unsigned
   WORKER = 1,
   DEVICE = 2,
@@ -234,21 +234,21 @@ bad(const char *fmt, ...) {
   throw e;
 }
 
-static void setupDriver() {
-  if (driver)
-    return;
-  // Now we explicitly load the remote container driver
-  std::string err;
-  OCPI::Driver::Driver *d = OCPI::Driver::ManagerManager::loadDriver("container", "hdl", err);
-  if (!d)
-    bad("error loading HDL driver: %s", err.c_str());
-  driver = static_cast<OH::Driver *>(d);
+static OH::Driver &getDriver() {
+  if (!driver) {
+    // Now we explicitly load the remote container driver
+    std::string err;
+    OCPI::Driver::Driver *d = OCPI::Driver::ManagerManager::loadDriver("container", "hdl", err);
+    if (!d)
+      bad("error loading HDL driver: %s", err.c_str());
+    driver = static_cast<OH::Driver *>(d);
+  }
+  return *driver;
 }
 static void setupDevice(bool discovery) {
   if (!device)
     bad("a device option is required with this command");
-  setupDriver();
-  if (!(dev = driver->open(device, discovery, false, NULL, error)))
+  if (!(dev = getDriver().open(device, discovery, false, NULL, error)))
     bad("error opening device %s", device);
   cAccess = &dev->cAccess();
   dAccess = &dev->dAccess();
@@ -389,13 +389,13 @@ main(int argc, const char **argv)
       const char *cp = *argv++;
       char *ep;
       do {
-	worker = strtoul(cp, &ep, 10);
-	if (worker > OCCP_MAX_WORKERS)
+	workerIdx = strtoul(cp, &ep, 10);
+	if (workerIdx > OCCP_MAX_WORKERS)
 	  bad("Worker number `%s' invalid", cp);
 	if (*ep)
 	  ep++;
-	cAccess->offsetRegisters(wAccess, (intptr_t)(&((OH::OccpSpace*)0)->worker[worker]));
-	cAccess->offsetRegisters(confAccess, (intptr_t)(&((OH::OccpSpace*)0)->config[worker]));
+	cAccess->offsetRegisters(wAccess, (intptr_t)(&((OH::OccpSpace*)0)->worker[workerIdx]));
+	cAccess->offsetRegisters(confAccess, (intptr_t)(&((OH::OccpSpace*)0)->config[workerIdx]));
 	exact->func(argv);
       } while (*(cp = ep));
     } else
@@ -424,8 +424,7 @@ static void search(const char **) {
       vals[n++] = OA::PVString("interface", interface);
     vals[n++] = OA::PVEnd;
 #endif
-    setupDriver();
-    driver->search(vals, NULL, true);
+    getDriver().search(vals, NULL, true);
 }
 static void probe(const char **) {
   dev->print();
@@ -450,8 +449,7 @@ static void emulate(const char **) {
       static char cadmin[sizeof(OH::OccpSpace)];
       memset(cadmin, 0, sizeof(cadmin));
       OU::UuidString uuid;
-      setupDriver();
-      driver->initAdmin(*(OH::OccpAdminRegisters *)cadmin, "emulator",
+      getDriver().initAdmin(*(OH::OccpAdminRegisters *)cadmin, "emulator",
 			*(OH::HdlUUID *)(cadmin + offsetof(OH::OccpSpace, config)), &uuid);
       HE::EtherControlHeader &ech_out =  *(HE::EtherControlHeader *)(sFrame.payload);
       bool haveTag = false;
@@ -1131,7 +1129,7 @@ deltatime(const char **) {
 }
 static void
 wdump(const char **) {
-  printf("Worker %zu on device %s\n", worker, device);
+  printf("Worker %zu on device %s\n", workerIdx, device);
   uint32_t i = wAccess.get32Register(status, OH::OccpWorkerRegisters);
   printf(" Status:     0x%08x", i);
   if (i & OCCP_STATUS_CONTROL_ERROR)
@@ -1185,7 +1183,7 @@ static void
 wreset(const char **) {
   uint32_t i = wwreset(wAccess);
   printf("Worker %zu on device %s: reset asserted, was %s\n",
-	 worker, device, (i & OCCP_WORKER_CONTROL_ENABLE) ? "deasserted" : "already asserted");
+	 workerIdx, device, (i & OCCP_WORKER_CONTROL_ENABLE) ? "deasserted" : "already asserted");
 }
 static int
 wwunreset(OH::Access &w) {
@@ -1197,7 +1195,8 @@ static void
 wunreset(const char **) {
   uint32_t i = wwunreset(wAccess);
   printf("Worker %zu on device %s: reset deasserted, was %s\n",
-	 worker, device, (i & OCCP_WORKER_CONTROL_ENABLE) ? "already deasserted" : "asserted");
+	 workerIdx, device,
+	 (i & OCCP_WORKER_CONTROL_ENABLE) ? "already deasserted" : "asserted");
 }
 
 #define WOP(name) offsetof(OH::OccpWorkerRegisters, name)
@@ -1223,7 +1222,7 @@ wop(const char **ap) {
     printf("0x%" PRIx32 "\n", r);
   else
     printf("Worker %zu on device %s: the '%s' control operation was performed with result '%s' (0x%x)\n",
-	   worker, device, *ap,
+	   workerIdx, device, *ap,
 	   r == OCCP_ERROR_RESULT ? "error" :
 	   r == OCCP_TIMEOUT_RESULT ? "timeout" :
 	   r == OCCP_RESET_RESULT ? "reset" :
@@ -1238,7 +1237,7 @@ wwctl(const char **ap) {
   uint32_t i = (uint32_t)atoi_any(*ap++, 0);
   wAccess.set32Register(control, OH::OccpWorkerRegisters, i);
   printf("Worker %zu on device %s: writing control register value: 0x%x\n",
-	 worker, device, i);
+	 workerIdx, device, i);
 }
 static void
 wclear(const char **) {
@@ -1246,14 +1245,14 @@ wclear(const char **) {
   wAccess.set32Register(control, OH::OccpWorkerRegisters,
 			i | OCCP_CONTROL_CLEAR_ATTENTION | OCCP_CONTROL_CLEAR_ERRORS);
   printf("Worker %zu on device %s: clearing errors from status register\n",
-	 worker, device);
+	 workerIdx, device);
 }
 static void
 wwpage(const char **ap) {
   uint32_t i = (uint32_t)atoi_any(*ap++, 0);
   wAccess.set32Register(window, OH::OccpWorkerRegisters, i);
   printf("Worker %zu on device %s: setting window register to 0x%x (%u)\n",
-	 worker, device, i, i);
+	 workerIdx, device, i, i);
 }
 static void
 wread(const char **ap) {
@@ -1262,7 +1261,7 @@ wread(const char **ap) {
   unsigned n = *ap ? (unsigned)atoi_any(*ap, 0) : 1;
   if (!parseable)
     printf("Worker %zu on device %s: read config offset 0x%x size %u count %u\n",
-	   worker, device, off, size, n);
+	   workerIdx, device, off, size, n);
 
   for (; n--; off += size) {
     uint64_t i = 0;
@@ -1300,7 +1299,7 @@ wwrite(const char **ap) {
     confAccess.set64RegisterOffset(off, val); break;
   }
   printf("Worker %zu on device %s: wrote config offset 0x%x size %u: value is 0x%" PRIx64 "(%" PRIu64 ")\n",
-	 worker, device, off, size, val, val);
+	 workerIdx, device, off, size, val, val);
 }
 static OE::Socket *getSock() {
   OE::Interface i(interface, error);
@@ -1745,8 +1744,8 @@ public:
     // errors from the worker itself, but it doesn't remember whether the
     // previous control operation failed for other reasons (FIXME: the OCCP should
     // capture this information).  We do our best here by first bypassing the software.
-    worker = atoi(idx);
-    cAccess->offsetRegisters(wAccess, (intptr_t)(&((OH::OccpSpace*)0)->worker[worker]));
+    workerIdx = atoi(idx);
+    cAccess->offsetRegisters(wAccess, (intptr_t)(&((OH::OccpSpace*)0)->worker[workerIdx]));
     uint32_t
       l_control = wAccess.get32Register(control, OH::OccpWorkerRegisters),
       l_status =  wAccess.get32Register(status, OH::OccpWorkerRegisters);
@@ -1894,17 +1893,17 @@ struct Arg {
     const char
       *iname = ezxml_attr(inst, "name"),
       *idx = ezxml_attr(inst, "occpIndex"),
-      *wkr = ezxml_attr(inst, "worker");
-    ezxml_t impl = OX::findChildWithAttr(top, "worker", "name", wkr);
+      *wname = ezxml_attr(inst, "worker");
+    ezxml_t impl = OX::findChildWithAttr(top, "worker", "name", wname);
     if (!impl)
-      bad("Can't find worker '%s' for instance '%s'", iname, wkr);
+      bad("Can't find worker '%s' for instance '%s'", iname, wname);
     OH::DirectWorker *w = NULL;
     if (!idx) {
       if (control || status || value || prop)
 	bad("Can't do control/status/get/put on workers with no control interface");
     } else {
       w = driver->createDirectWorker(*dev, *cAccess, wAccess, impl, inst, idx, timeout);
-      worker = w->index();
+      workerIdx = w->index();
       if (control)
 	w->control(prop);
       else if (status) {
@@ -1923,7 +1922,7 @@ struct Arg {
     printf("  Instance %s of %s worker %s (spec %s)",
 	   iname, strcasecmp(inst->name, "instance") ? inst->name :
 	   idx && !strcmp(idx, "0") ? "platform" : "normal",
-	   wkr, wkr ? ezxml_cattr(impl, "specname") : "<none>");
+	   wname, wname ? ezxml_cattr(impl, "specname") : "<none>");
     if (idx)
       printf(" with index %s", idx);
     printf("\n");
@@ -2055,8 +2054,7 @@ load(const char **ap) {
     bad("a device option is required with this command");
   if (!ap[0])
     bad("No input filename specified for loading");
-  setupDriver();
-  if (!(dev = driver->open(device, false, true, NULL, error)))
+  if (!(dev = getDriver().open(device, false, true, NULL, error)))
     bad("error opening device %s", device);
   if (dev->load(ap[0], error))
     bad("error loading device %s", device);

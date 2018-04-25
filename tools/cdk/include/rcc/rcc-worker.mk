@@ -122,10 +122,6 @@ $(foreach l,$(RccLibrariesInternal) $(Libraries),\
   $(foreach l,$(RccDynamicPrereqLibs),\
     && cp $(OCPI_PREREQUISITES_DIR)/$l/$(RccRealPlatform)/lib/lib$l$(SOEXT_$(call RccOs,)) $(@D))
 
-# $1 is target, $2 is configuration
-RccStaticName=$(WkrBinaryName)_s$(SOEXT_$(call RccOs,$1))
-RccStaticPath=$(call WkrTargetDir,$1,$2)/$(call RccStaticName,$1)
-
 CompilerWarnings= -Wall -Wextra
 CompilerDebugFlags=-g
 CompilerOptimizeFlags=-O -DNDEBUG=1

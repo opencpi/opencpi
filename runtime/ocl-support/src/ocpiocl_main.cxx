@@ -56,6 +56,10 @@ namespace OCL = OCPI::OCL;
 namespace OA = OCPI::API;
 namespace OD = OCPI::Driver;
 
+// FIXME:  this assumes that the environment and or configuration will be set to the default
+// location.  This is "pending" while we figure out the difference between a default place
+// for the OpenCL ICD, vs an actual runtime implementation library.
+// For now we will assume it is a configuration value in ocpi-config.h
 const char *defaultLib = OCPI_CPP_STRINGIFY(OCPI_OPENCL_LIB);
 
 static int mymain(const char **ap) {

@@ -197,7 +197,7 @@ namespace OCPI {
 	  int aslen =
 	    asprintf(&command,
 		     "%s/scripts/loadBitStream \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\"",
-		     OU::getCdk().c_str(), fileName, name().c_str(), m_platform.c_str(),
+		     OU::getCDK().c_str(), fileName, name().c_str(), m_platform.c_str(),
 		     m_part.c_str(), m_esn.c_str(), m_position.c_str());
           ocpiAssert(aslen > 0);
 	  ocpiInfo("Executing command to load bit stream for device %s: \"%s\"\n",

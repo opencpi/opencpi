@@ -72,7 +72,7 @@ namespace OCPI {
     }
 
     bool Container::supportsImplementation(OU::Worker &i) {
-      static const char *opencpiVersion;
+      static const char *opencpiVersion; // AV-2453
       static bool allowVersionMismatch = false;
 
       if (!opencpiVersion) {
@@ -87,17 +87,17 @@ namespace OCPI {
       }
       bool ok =
 	m_model == i.model() &&
-	m_os == i.attributes().m_os &&
-	m_osVersion == i.attributes().m_osVersion &&
+	m_os == i.attributes().os() &&
+	m_osVersion == i.attributes().osVersion() &&
 	// if all three are present and match, on rcc, platform does not need to match.
 	// this eases the transition to software platforms having proper names
 	((m_model == "rcc" &&
-	  m_os.length() && m_os == i.attributes().m_os &&
-	  m_osVersion.length() && m_osVersion == i.attributes().m_osVersion &&
-	  m_arch.length() && m_arch == i.attributes().m_arch) ||
-	 (i.attributes().m_platform.length() && m_platform == i.attributes().m_platform) ||
-	 (i.attributes().m_platform.empty() && m_arch == i.attributes().m_arch)) &&
-	m_dynamic == i.attributes().m_dynamic;
+	  m_os.length() && m_os == i.attributes().os() &&
+	  m_osVersion.length() && m_osVersion == i.attributes().osVersion() &&
+	  m_arch.length() && m_arch == i.attributes().arch()) ||
+	 (i.attributes().platform().length() && m_platform == i.attributes().platform()) ||
+	 (i.attributes().platform().empty() && m_arch == i.attributes().arch())) &&
+	m_dynamic == i.attributes().dynamic();
       // Checking OpenCPI version is not part of the "ok" above because we can override with
       // the environment and want to warn.
       if (ok && !allowVersionMismatch &&

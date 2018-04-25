@@ -90,11 +90,24 @@ doHdlPlatform(std::string &place) {
 }
 }
 
+// The (localized) price of multiple error reporting models...
+// FIXME: change OU::getCDK to use return strings or at least have an inner function that does.
 static const char *
 getCdkDir(std::string &cdk) {
-  // This will actually throw an exception
-  cdk = OU::getCdk();
-  return NULL;
+  std::string err;
+  try {
+    cdk = OU::getCDK();
+  } catch (std::string &e) {
+    err = e;
+  } catch (const char *e) {
+    err = e;
+  } catch (std::exception &e) {
+    err = e.what();
+  } catch (...) {
+    err = "Unexpected exception";
+  }
+  return err.empty() ? NULL :
+    OU::esprintf("Error finding CDK: %s", err.c_str());
 }
 
 const char *

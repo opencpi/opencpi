@@ -18,10 +18,11 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 set -e
-
 # Run all test scripts in dropin-tests/
 cd dropin-tests/
 for t in ./*.sh; do
   echo ==========Running ocpidev dropin test: $t==============
-  ./$t || echo ERROR:  TEST FAILED
+  if ! ./$t; then
+    echo ERROR:  TEST FAILED && exit 1
+  fi
 done

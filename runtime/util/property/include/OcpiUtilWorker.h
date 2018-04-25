@@ -75,7 +75,7 @@ namespace OCPI {
     // Attributes of an artifact and/or implementation
     // Generally shared by all the implementations in an artifact
     class Attributes {
-    public:
+    protected:
       std::string
 	m_uuid,
 	m_os, m_osVersion, m_arch,
@@ -84,10 +84,14 @@ namespace OCPI {
 	m_opencpiVersion,
 	m_runtime, m_runtimeVersion;
       bool m_dynamic;
+    public:
       inline const std::string &uuid() const { return m_uuid; }
-      inline const std::string &platform() const { return m_platform; }
+      inline const std::string &os() const { return m_os; }
+      inline const std::string &osVersion() const { return m_osVersion; }
       inline const std::string &arch() const { return m_arch; }
+      inline const std::string &platform() const { return m_platform; }
       inline const std::string &opencpiVersion() const { return m_opencpiVersion; }
+      inline bool dynamic() const { return m_dynamic; }
     protected:
       // Parse from target string
       void parse(const char *pString);

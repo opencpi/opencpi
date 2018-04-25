@@ -3,23 +3,19 @@
 
 #ifndef __CONTAINER_RUN_CONDITION_API_H__
 #define __CONTAINER_RUN_CONDITION_API_H__
-
+#ifndef __cplusplus
 #include <stdint.h>
-#include <stdarg.h>
-#include <stdlib.h>
-
-#ifdef __cplusplus
-namespace OCPI { namespace API {
-#endif
+// These two typedefs are redundant with the C++ ones below, but not in a namespace.
 typedef uint32_t OcpiPortMask;
 typedef uint8_t OcpiBoolean;
-#ifndef __cplusplus
-#define OCPI_ALL_PORTS (~(OcpiPortMask)0)
-#define OCPI_NO_PORTS ((OcpiPortMask)0)
+#define OCPI_ALL_PORTS (~(OcpiPortMask)0) // macro here, const in C++
+#define OCPI_NO_PORTS ((OcpiPortMask)0)   // macro here, const in C++
 #else
-const OcpiPortMask OCPI_ALL_PORTS = (~(OcpiPortMask)0);
-const OcpiPortMask OCPI_NO_PORTS = ((OcpiPortMask)0);
-}}
+#include <cstdint>
+#include <cstdarg>
+#include <cstdlib>
+#include "OcpiConfigApi.h" // for OCPI_API_DEPRECATED
+
 namespace OCPI {
   namespace OCL {
     class Worker;
@@ -32,6 +28,11 @@ namespace OCPI {
   }
 }
 namespace OCPI { namespace API {
+// These two typedefs are redundant with the C ones above
+typedef uint32_t OcpiPortMask;
+typedef uint8_t OcpiBoolean;
+const OcpiPortMask OCPI_ALL_PORTS = (~(OcpiPortMask)0);
+const OcpiPortMask OCPI_NO_PORTS = ((OcpiPortMask)0);
 class RunCondition {
   friend class OCPI::RCC::Worker;
   friend class OCPI::OCL::Worker;
@@ -56,7 +57,17 @@ class RunCondition {
   RunCondition(OcpiPortMask*, uint32_t usecs = 0, bool timeout = false);
   ~RunCondition();
   // backward compatibility for undocumented method
-  inline void initDefault(unsigned /*nPorts*/) {}
+  // this was never intended to be used directly by users, but some did anyway, so we try and
+  // preserve it until 2.0.  It has no effect unless the supplied nPorts is in fact less than
+  // the actual number of ports of the worker.
+  inline void initDefault(unsigned nPorts)
+    OCPI_API_DEPRECATED("2.0", "Default constructor now defaults to all ports. Use constructor call with proper port mask if you need non-default.")
+  {
+    m_myMasks[0] = (OcpiPortMask)~(-1 << nPorts);
+    m_myMasks[1] = 0;
+    m_portMasks = nPorts ? m_myMasks : NULL;
+    m_allMasks = m_myMasks[0];
+  }    
   // Support initializing from older C-langage run conditions (internal)
   inline void setRunCondition(OcpiPortMask *portMasks, OcpiBoolean timeout, uint32_t usecs) {
     m_portMasks = portMasks;
@@ -76,7 +87,7 @@ class RunCondition {
   void setPortMasks(OcpiPortMask first, ...);
   void setPortMasks(OcpiPortMask *);
  private:
-  void initMasks(va_list ap);
+  void initMasks(OcpiPortMask first, va_list ap);
   void setMasks(OcpiPortMask first, va_list ap);
   void activate(OCPI::OS::Timer &tmr, unsigned nPorts);
   // Return true if should run based on non-port info

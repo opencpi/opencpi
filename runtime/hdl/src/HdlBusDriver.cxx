@@ -31,7 +31,6 @@
 #include <sys/mman.h>
 #include "zlib.h"
 #include "ocpi-config.h"
-#include "OcpiOsFileSystem.h"
 #include "HdlZynq.h"
 #include "HdlBusDriver.h"
 #ifdef OCPI_OS_macos

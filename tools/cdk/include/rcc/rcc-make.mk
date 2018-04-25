@@ -83,6 +83,7 @@ $(call OcpiDbgVar,RccTargets)
 
 RccAllPlatforms:=
 RccAllTargets:=
+# Add the platform $1 and its target $2 and directory $3 to our database
 RccAddPlatform=\
     $(eval RccAllPlatforms=$(strip $(RccAllPlatforms) $1))\
     $(eval RccAllTargets=$(strip $(RccAllTargets) $2))\
@@ -90,11 +91,13 @@ RccAddPlatform=\
     $(eval RccPlatformDir_$1:=$3)
 
 ifdef OCPI_ALL_RCC_PLATFORMS
+  # If the environment already has our database, import it into make variables
   RccAllPlatforms:=$(OCPI_ALL_RCC_PLATFORMS)
   RccAllTargets:=$(OCPI_ALL_RCC_TARGETS)
   $(foreach p,$(OCPI_RCC_PLATFORM_TARGETS),\
     $(eval RccTarget_$(word 1,$(subst =, ,$p)):=$(word 2,$(subst =, ,$p))))
 else
+  # If the environment does not have our database, create it by searching in registered projects
   $(foreach d,$(OcpiGetRccPlatformPaths),\
     $(foreach p,$(wildcard $d/*),\
       $(and $(wildcard $p/$(notdir $p)-target.mk),$(wildcard $p/target),\
@@ -110,11 +113,17 @@ $(call OcpiDbgVar,RccAllPlatforms)
 $(call OcpiDbgVar,RccAllTargets)
 $(foreach p,$(RccAllPlatforms),$(call OcpiDbgVar,RccTarget_$p))
 # This must be called with a list of platforms
+# It converts "platforms that might have build options" to "platforms"
+# I.e. strips off the build options from the input list
 RccRealPlatforms=$(infox GETREAL:$1)$(foreach p,$1,$(word 1,$(subst -, ,$p)))
 # This operates on the target-specific variable assignment of RccPlatform
+# And strips off the build options if present
 RccRealPlatform=$(strip $(infox RRP:$(RccPlatform))\
                 $(foreach p,$(call RccRealPlatforms,$(RccPlatform)),$(infox RRPr:$p)$p))
-# Find the platform that has the argument as a platform
+# Find the platform that has the argument as a target
+# Look through all RccTarget_% variables (where the value or RccTarget_<platform> is the target
+# of the <platform>) to find one that maps a platform to the target in $1.  Return <platform>
+# This relies on the 1:1 mapping of rcc platforms and targets
 RccGetPlatform=$(strip\
   $(or $(foreach v,$(filter RccTarget_%,$(.VARIABLES)),$(infox VV:$v:$($v))\
          $(foreach p,$(v:RccTarget_%=%),\
@@ -123,7 +132,7 @@ RccGetPlatform=$(strip\
 	$($(or $2,error) Cannot find an RCC platform for the target: $1)))
 # The model-specific determination of the "tail end" of the target directory,
 # after the prefix (target), and build configuration.
-# The argument is a TARGET
+# The argument is a TARGET, more or less for legacy reasons now.
 RccTargetDirTail=$(strip\
   $(or $(and $(RccTarget_$1),$1),\
        $(and $(filter $1,$(RccTarget_$(RccPlatform))),$(RccPlatform)),\
@@ -133,16 +142,21 @@ RccTargetDirTail=$(strip\
 # $(call RccPlatformTarget,<platform>,<target>)
 RccPlatformTarget=$2$(foreach b,$(word 2,$(subst -, ,$1)),$(and $b,-$b))
 ifdef RccPlatforms
-  # We filter platforms that might have build options, but we filter based on the real platforms
+  # Exclude any platform whose real platform matches one in the exluded platform lists
   override RccPlatforms:=$(strip\
     $(foreach p,$(RccPlatforms),\
       $(if $(filter $(call RccRealPlatforms,$p),$(ExcludePlatforms) $(RccExcludePlatforms)),,$p)))
+  # If (Rcc)OnlyPlatforms is specified, retain only platforms whose real platform is in the list
   ifneq ($(OnlyPlatforms)$(RccOnlyPlatforms),)
     override RccPlatforms:=$(strip\
       $(foreach p,$(RccPlatforms),\
         $(if $(filter $(call RccRealPlatforms,$p),$(OnlyPlatforms) $(RccOnlyPlatforms)),$p,)))
   endif
   RccTargets:=
+  # Set the target (RccTarget_<platform>) for each platform specified, retaining
+  # build options here on both sides.  If there are no build options for a platform this
+  # essentially rewrites the RccTarget_<platform> variable that is already set from
+  # RccAllPlatforms.  All create the RccTargets list too.
   $(foreach p,$(RccPlatforms),\
     $(foreach r,$(call RccRealPlatforms,$p),\
       $(if $(filter $r,$(RccAllPlatforms)),,\

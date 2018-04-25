@@ -163,9 +163,13 @@ namespace OCPI {
 	unsigned found  = 0;
 	ocpiInfo("Performing discovery for all %s drivers", name().c_str());
 	if (!m_doNotDiscover)
-	  for (DerivedDriver *dd = firstDriver(); dd; dd = dd->nextDriver())
+	  for (DerivedDriver *dd = firstDriver(); dd; dd = dd->nextDriver()) {
 	    if (dd->shouldDiscover())
 	      dd->search(params, NULL, false);
+	    else
+	      ocpiDebug("Discovery for %s driver %s suppressed",
+			name().c_str(), dd->name().c_str());
+	  }
 	return found;
       }
     };

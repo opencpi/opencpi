@@ -199,7 +199,7 @@ while read path opts; do
   done
   programs=`find -H $path $exclude -name "*_main.cxx"|sed 's=.*src/\(.*\)_main.c.*$=\1='`
   swig=`find -H $path $exclude -path "*/src/*.i"`
-  api_incs=`find -H $path $exclude -path "*/include/*Api.h*"`
+  api_incs=`find -H $path $exclude \( -path "*/include/*Api.h" -o -path "*/include/*Api.hh" \)`
   # echo LIB:$library PATH:$path PROGRAMS:$programs DIRECTORY:$directory
   for p in $programs; do
     dir=$directory

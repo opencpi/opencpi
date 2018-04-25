@@ -33,7 +33,7 @@ static int
 mymain(const char **) {
   OCPI::Container::Manager::getSingleton().suppressDiscovery();
   std::string path, list, name;
-  OU::format(path, "%s/%s/lib", OU::getCdk().c_str(), OCPI_CPP_STRINGIFY(OCPI_PLATFORM));
+  OU::format(path, "%s/%s/lib", OU::getCDK().c_str(), OCPI_CPP_STRINGIFY(OCPI_PLATFORM));
   name = (path + "/driver-list").c_str();
   const char *err;
   if ((err = (OU::file2String(list, name.c_str()))))

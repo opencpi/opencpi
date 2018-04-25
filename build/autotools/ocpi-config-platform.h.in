@@ -53,12 +53,6 @@
 #define OCPI_NORETURN __attribute__((noreturn))
 #define OCPI_USED     __attribute__((used))
 #define OCPI_UNUSED   __attribute__((unused))
-// clang and GCC above 4.5 allow custom messages
-#if defined(clang) || __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 5)
-  #define OCPI_API_DEPRECATED(ver, msg) __attribute__((deprecated(msg " (Removal expected in version " ver ")")))
-#else
-  #define OCPI_API_DEPRECATED(ver, msg) __attribute__((deprecated))
-#endif
 /**********************************************************************************************
  * For older C++ that does not support nullptr
  * From stackoverflow.com, by Yaroslav, on Aug 22 '12 at 15:22

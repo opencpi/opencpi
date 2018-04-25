@@ -163,10 +163,10 @@ namespace OCPI {
 	val.setString(m_model);
 	return NULL;
       } else if (!strcasecmp(sym, "platform") && m_attributes) {
-	val.setString(m_attributes->m_platform);
+	val.setString(m_attributes->platform());
 	return NULL;
       } else if (!strcasecmp(sym, "os") && m_attributes) {
-	val.setString(m_attributes->m_os);
+	val.setString(m_attributes->os());
 	return NULL;
       }
       Property *p = m_properties;
@@ -210,7 +210,6 @@ namespace OCPI {
       // Before 1.3, the attribute was "av_version" but then "ocpi_version"
       if ((cp = ezxml_cattr(x, "av_version"))) m_opencpiVersion = cp;
       if ((cp = ezxml_cattr(x, "ocpi_version"))) m_opencpiVersion = cp;
-      // Make it consistent with all the other attributes PLEASE
       if ((cp = ezxml_cattr(x, "opencpiVersion"))) m_opencpiVersion = cp;
       if ((cp = ezxml_cattr(x, "uuid"))) m_uuid = cp;
       OE::getBoolean(x, "dynamic", &m_dynamic);

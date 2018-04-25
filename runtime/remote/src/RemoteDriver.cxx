@@ -316,7 +316,7 @@ Driver::Driver() throw() {
   ocpiDebug("Registering the Remote Container driver");
   const char *env = getenv("OCPI_ENABLE_REMOTE_DISCOVERY");
   if ((m_doNotDiscover = env && env[0] == '1' ? false : true))
-    ocpiInfo("Remote container discovery is off");
+    ocpiInfo("Remote container discovery is off.  Use OCPI::API::enableServerDiscovery() or the OCPI_ENABLE_REMOTE_DISCOVERY variable described in the Application Guide.");
 }
 // Called either from UDP discovery or explicitly, e.g. from ocpirun
 // If the latter, the "containers" argument will be NULL

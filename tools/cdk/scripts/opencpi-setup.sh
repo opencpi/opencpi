@@ -94,7 +94,7 @@ done
     }
   }
   [ -n "$ocpi_verbose" ] && echo Unsetting all OpenCPI environment variables.
-  for ocpi_v in $(env | egrep ^OCPI_ | sort | cut -f1 -d=); do
+  for ocpi_v in $(env | egrep '^OCPI_(PREREQUISITES|TARGET|TOOL|CDK|ROOT)_' | sort | cut -f1 -d=); do
     unset $ocpi_v
   done
   return 0

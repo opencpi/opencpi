@@ -24,7 +24,7 @@ if test "$#" = 0; then
   echo Usage is:  makeStaticWorker OS infile [lib1...]
   echo The first argument is the OS, the second is the input file and the rest of the arguments
   echo are the names of the needed ocpi libraries that will not be required at runtime.
-  echo The input file is modified in place.
+  echo The input file is MODIFIED IN PLACE.
   exit 1
 fi
 # This gets around some of the RPM-based limitations
@@ -43,11 +43,11 @@ if [ $OS = linux ]; then
 fi
 set -e
 X=1
-if file $IN | grep ELF > /dev/null; then
+if file $IN | grep -q ELF; then
   for i in $*; do PARGS="$PARGS --remove-needed $i"; done
   ${patchelf} $PARGS $IN
   X=0
-elif test $OS = macos; then
+elif [ $OS = macos ]; then
   # The patchelf is unnecessary on MacOS since it does not have the DT_NEEDED entries anyway
   X=0    
 else

@@ -20,9 +20,13 @@
 ##########################################################################################
 # Run all the go-no-go tests we have
 
-[ -z "$OCPI_CDK_DIR" -a -L cdk ] && source `pwd`/cdk/opencpi-setup.sh -
 alltests="os datatype load-drivers container swig core assets inactive python av ocpidev driver"
-[ "$1" = --help ] && {
+[ "$1" = --showtests ] && {
+    echo $alltests
+    exit 0
+}
+[ -L cdk ] && source `pwd`/cdk/opencpi-setup.sh -r 
+[ "$1" = --help -o "$1" = -h ] && {
     echo Available tests are: $alltests
     echo 'Uses TESTS="a b c" ./scripts/test-opencpi.sh [<platform>]'
     exit 1

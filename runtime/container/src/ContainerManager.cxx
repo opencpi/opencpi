@@ -173,19 +173,20 @@ namespace OCPI {
    * framework infrastructure, forcing them to be statically linked here:
    */
   namespace Container {
-    intptr_t dumb1() {
-      ((DataTransfer::Access *)dumb1)->closeAccess();
-      ((OA::RunCondition *)dumb1)->setPortMasks((OA::OcpiPortMask *)NULL);
-      ((Container*)dumb1)->run();
-      ((DataTransfer::XferServices*)dumb1)->DataTransfer::XferServices::send(0, NULL, 0);
-      ((OCPI::Util::Thread*)dumb1)->join();
+    intptr_t linkme() {
+      ((DataTransfer::Access *)linkme)->closeAccess();
+      ((OA::RunCondition *)linkme)->setPortMasks((OA::OcpiPortMask *)NULL);
+      ((Container*)linkme)->run();
+      ((DataTransfer::XferServices*)linkme)->DataTransfer::XferServices::send(0, NULL, 0);
+      ((OCPI::Util::Thread*)linkme)->join();
       OCPI::Util::Uuid uuid;
       OCPI::Util::UuidString us;
       OCPI::Util::uuid2string(uuid, us);
       std::string str;
       OCPI::Util::searchPath(NULL, NULL, str, NULL, NULL);
+      (void)OCPI::Util::getCDK();
       size_t dum2;
-      (void)((BasicPort*)dumb1)->BasicPort::getOperationInfo(0, dum2);
+      (void)((BasicPort*)linkme)->BasicPort::getOperationInfo(0, dum2);
       unsigned dum3;
       (void)OCPI::Util::probePci(NULL, 0, 0, 0, 0, 0, NULL, dum3, str);
       // Msg::XferFactoryManager::getFactoryManager();

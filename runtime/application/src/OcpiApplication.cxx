@@ -702,9 +702,9 @@ namespace OCPI {
 	  m_curContainers = 0; // to count suitable containers for this candidate
 	  OU::Worker &w = cs[m].impl->m_metadataImpl;
 	  ocpiInfo("Checking implementation %s model %s os %s version %s arch %s platform %s dynamic %u opencpi version %s",
-		   w.cname(), w.model().c_str(), w.attributes().m_os.c_str(),
-		   w.attributes().m_osVersion.c_str(), w.attributes().arch().c_str(),
-		   w.attributes().platform().c_str(), w.attributes().m_dynamic,
+		   w.cname(), w.model().c_str(), w.attributes().os().c_str(),
+		   w.attributes().osVersion().c_str(), w.attributes().arch().c_str(),
+		   w.attributes().platform().c_str(), w.attributes().dynamic(),
 		   w.attributes().opencpiVersion().c_str());
 	  (void)OC::Manager::findContainers(*this, w,
 					    container.empty() ? NULL : container.c_str());

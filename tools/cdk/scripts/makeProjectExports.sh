@@ -510,9 +510,6 @@ for l in components components/*; do
 	  done;;
   esac
 done
-# export the specs for each of the libraries
-#python -c "import sys; sys.path.append(\"$OCPI_CDK_DIR/scripts/\");\
-#           import ocpiutil; ocpiutil.export_libraries()" >&2
 exit 0
 notes:
 assets:

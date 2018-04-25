@@ -15,7 +15,7 @@ RunCondition(OcpiPortMask pm, ...) :
   m_timeout(false), m_usecs(0), m_allocated(NULL), m_allMasks(0) {
   va_list ap;
   va_start(ap, pm);
-  initMasks(ap);
+  initMasks(pm, ap);
   va_end(ap);
   va_start(ap, pm);
   setMasks(pm, ap);
@@ -31,10 +31,10 @@ RunCondition::
   delete [] m_allocated;
 }
 void RunCondition::
-initMasks(va_list ap) {
+initMasks(OcpiPortMask first, va_list ap) {
+  OcpiPortMask m = first;
   unsigned n;
-  OcpiPortMask m;
-  for (n = 2; (m = va_arg(ap, OcpiPortMask)); n++)
+  for (n = 2; m && (m = va_arg(ap, OcpiPortMask)); n++)
     ;
   if (n >= sizeof(m_myMasks)/sizeof(OcpiPortMask))
     m_portMasks = m_allocated = new OcpiPortMask[n];
@@ -49,8 +49,8 @@ setMasks(OcpiPortMask first, va_list ap) {
   do {
     *pms++ = m;
     m_allMasks |= m;
-  } while ((m = va_arg(ap, OcpiPortMask)));
-  *pms++ = 0;
+  } while (m && (m = va_arg(ap, OcpiPortMask)));
+  *pms++ = 0; // ok since we always reserve 2
 }
 void RunCondition::
 setPortMasks(OcpiPortMask pm, ...) {
@@ -59,7 +59,7 @@ setPortMasks(OcpiPortMask pm, ...) {
   m_allMasks = 0;
   va_list ap;
   va_start(ap, pm);
-  initMasks(ap);
+  initMasks(pm, ap);
   va_end(ap);
   va_start(ap, pm);
   setMasks(pm, ap);

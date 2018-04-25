@@ -51,7 +51,7 @@ namespace
     OS::sleep(1);
     t.stop( );
     OS::ElapsedTime e = t.getElapsed();
-    EXPECT_NE ( e, 0 );
+    EXPECT_NE(e, 0u);
   }
 
 

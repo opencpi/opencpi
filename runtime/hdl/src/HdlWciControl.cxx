@@ -72,9 +72,11 @@ namespace OCPI {
       //      m_wName = m_instName ? m_instName : "<unknown>";
       if (m_hasControl) {
 	setControlMask(getControlMask() | 1 << OU::Worker::OpStart);
+	// Find the log base 2 of the m_timeout value since that is what is specified in
+	// the hardware control register.
+	// FIXME: maybe use logTimeout = OU::ceilLog2(m_timeout).
 	unsigned logTimeout = 31;
-	for (size_t u = 1 << logTimeout; !(u & m_timeout);
-	     u >>= 1, logTimeout--)
+	for (size_t u = 1 << logTimeout; !(u & m_timeout); u >>= 1, logTimeout--)
 	  ;
 	ocpiDebug("Timeout for %s is %zu log is %u\n", m_implName, m_timeout, logTimeout);
 	// Get access to registers and properties.  The "this" is for our Access
@@ -416,8 +418,10 @@ namespace OCPI {
       // errors from the worker itself, but it doesn't remember whether the
       // previous control operation failed for other reasons (FIXME: the OCCP should
       // capture this information).  We do our best here by first bypassing the software.
+
+      // check the presumed-correct XML just to avoid bad accesses to the control plane.
       if ((m_occpIndex = strtoul(idx, NULL, 10)) > OCCP_MAX_WORKERS)
-	throw OU::Error("Worker number `%s' invalid", idx);
+	throw OU::Error("Internal artifact XML problem: worker number `%s' invalid", idx);
       cAccess.offsetRegisters(m_wAccess, (intptr_t)(&((OccpSpace*)0)->worker[m_occpIndex]));
       uint32_t
 	l_control = m_wAccess.get32Register(control, OccpWorkerRegisters),

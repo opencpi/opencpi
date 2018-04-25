@@ -102,6 +102,7 @@
 # After more cleanup we may be able to default to everything
 +runtime/rcc/include/RCC_Worker.h include/rcc/
 +runtime/container/include/OcpiContainerRunConditionApi.h include/rcc/
++os/interfaces/include/OcpiConfigApi.h include/rcc/
 +tools/cdk/include/rcc/rcc-make.mk include/rcc/
 +tools/cdk/include/rcc/rcc-worker.mk include/rcc/
 +tools/cdk/include/rcc/default.mk include/rcc/

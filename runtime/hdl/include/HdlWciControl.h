@@ -188,16 +188,18 @@ OCPI_DATA_TYPES
       unsigned getStringSequenceProperty(const OCPI::API::Property &, char * *,
 					 size_t ,char*, size_t) const;
     };
-    // This is a dummy worker for accesssing workers outside the perview of executing
-    // applications - used by ocpihdl etc.
+    // This is a dummy worker for accesssing workers outside the purview of executing
+    // applications.  It is used by ocpihdl when it wants to talk to HDL workers based on
+    // the artifact XML embedded in the bitstream, which is the result of the whole bitstream
+    // build process, not user-authored.  Many of the methods don't do anything.
     struct DirectWorker : public OCPI::Container::Worker, public WciControl {
       std::string m_name, m_wName;
       Access &m_wAccess;
       unsigned m_timeout;
       DirectWorker(Device &dev, const Access &cAccess, Access &wAccess, ezxml_t impl,
 		   ezxml_t inst, const char *idx, unsigned timeout);
-      virtual void control(const char *op); // virtual due to driver access
-      virtual void status(); // virtual due to driver access
+      virtual void control(const char *op); // virtual due to driver access, custom in this class
+      virtual void status();                // virtual due to driver access, custom in this class
       OCPI::Container::Port *findPort(const char *);
       const std::string &name() const;
       void

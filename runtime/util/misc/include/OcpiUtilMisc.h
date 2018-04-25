@@ -450,6 +450,8 @@ namespace OCPI {
       // return true on error
       bool searchPath(const char *path, const char *item, std::string &result,
 		      const char *preferredSuffix = NULL, std::vector<std::string> *all = NULL);
+      // set path to be the current project registry.  Return an error string or NULL.
+      const char *getProjectRegistry(std::string &path);
       // return, via "path", a ":" separated list of all projects registered
       // or present in the project path.
       // return error-message string on error
@@ -457,7 +459,7 @@ namespace OCPI {
       // Return the OpenCPI installation dir or throw;
       const std::string &getOpenCPI();
       // Return the CDK's dir or throw;
-      const std::string &getCdk();
+      const std::string &getCDK();
       // A convenience template for singletons possibly created at static construction
       // time (moved from OcpiDriverManager)
       template <class S> class Singleton {
