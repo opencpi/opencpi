@@ -90,7 +90,8 @@ ifndef Platforms
     override Platforms:=$(OcpiThisPlatform) # maybe look in env later
   endif
 endif
-include ../platform-defaults.mk
+PlatformDefaults=../../bootstrap/include/platform-defaults.mk
+include $(PlatformDefaults)
 
 ################################################################################
 # Platform agnostic goals
@@ -128,8 +129,8 @@ OPTIONAL_WARNINGS=gen/optional-warnings.m4
 # The ACLOCAL override is because centos6/2.63 autoreconf does not look in acinclude, and does not
 # pass -Iacinclude into aclocal.
 $(MAKEFILE_IN) gen/configure: \
-             $(OPTIONAL_WARNINGS) $(wildcard imports/*.m4) configure.ac $(MAKEFILE_AM) \
-             | gen
+             $(OPTIONAL_WARNINGS) $(wildcard imported-macros/*.m4 our-macros/*.m4) configure.ac \
+             $(MAKEFILE_AM) | gen
 	$(AT) echo Running the autotools reconfiguration tool in the gen/ directory
 	$(AT) cd gen && ACLOCAL="aclocal -Iacinclude" autoreconf -v -i # no -s so it works across systems
 	$(AT) touch $@ # sometimes autoreconf tries to be clever
@@ -137,7 +138,7 @@ $(MAKEFILE_IN) gen/configure: \
 preconfigure bootstrap: gen/configure $(MAKEFILE_IN)
 
 # I wish this was not required so early...
-$(OPTIONAL_WARNINGS): ../platform-defaults.mk | gen
+$(OPTIONAL_WARNINGS): $(PlatformDefaults) | gen
 	$(AT) ($(foreach v,$(OcpiAllOptionalWarningsVars), echo "define([$v],[$($v)])";)) > $@
 
 $(MAKEFILE_AM): ../places generate-automake.sh | gen
@@ -147,7 +148,7 @@ $(MAKEFILE_AM): ../places generate-automake.sh | gen
 # Create a "autoconf sandbox" where everything is where it is expected to be, and
 # which is entirely disposable.  This is where we allow authored files and generated files
 # to me all mixed together the way autoconf likes things to be.
-gen: imported-macros our-macros
+gen: imported-macros/* our-macros/*
 	$(AT) mkdir -p gen && cd gen && mkdir -p acinclude && \
 	      (cd acinclude && shopt -s nullglob && \
 	       ln -f -s ../../{our,imported}-macros/*.m4 .) && \

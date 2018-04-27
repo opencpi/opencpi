@@ -18,6 +18,14 @@
 
 ThisMake := $(lastword $(MAKEFILE_LIST))
 
+# top level Makefile provides this
+# This sets up the OcpiPlatformXXX make variables and also legacy OCPI_TARGET_* env variables
+include $(OCPI_CDK_DIR)/include/setup-target-platform.mk
+# Set the global make variables that the kernel Makefiles want to see set in global variables
+CC=$(OcpiCrossCompile)$(OcpiCC)
+CXX=$(OcpiCrossCompile)$(OcpiCXX)
+LD=$(OcpiCrossCompile)$(OcpiLD)
+
 .PHONY: all
 # RPM-based options:
 -include $(OCPI_CDK_DIR)/include/autoconfig_import-$(OCPI_TARGET_PLATFORM).mk
@@ -57,15 +65,15 @@ ifdef OCPI_TARGET_KERNEL_DIR
   ifeq ($(wildcard $(KERNELDIR)),)
     $(error OCPI_TARGET_KERNEL_DIR indicates '$(OCPI_TARGET_KERNEL_DIR)', which does not exist)
   endif
-  ifdef OCPI_CROSS_BUILD_BIN_DIR
-    override CROSS_COMPILE:=$(OCPI_CROSS_BUILD_BIN_DIR)/$(OCPI_CROSS_HOST)-
+  ifdef OcpiCrossCompile
+    override CROSS_COMPILE:=$(OcpiCrossCompile)
     override ARCH:=$(OCPI_TARGET_ARCH)
     export CROSS_COMPILE
     export ARCH
   endif
   $(info OCPI_TARGET_KERNEL_DIR was specified, we are now using: KERNELDIR=$(KERNELDIR) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE))
 else
-  ifdef OCPI_CROSS_BUILD_BIN_DIR
+  ifdef OcpiCrossCompile
    $(error OCPI_CROSS_BUILD_BIN_DIR is set, but OCPI_TARGET_KERNEL_DIR is not set, which is not supported.)
   endif
   # Assume the source tree is where the running kernel was built

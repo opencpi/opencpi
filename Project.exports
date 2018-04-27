@@ -47,6 +47,8 @@
 +tools/cdk/include/applications.mk include/
 +tools/cdk/include/application.mk include/
 +tools/cdk/include/aci.mk include/
++tools/cdk/include/setup-target-platform.mk include/
++tools/cdk/include/platform-defaults.mk include/
 # Export the common stuff for zynq platforms
 +platforms/zynq/zynq_setup.sh platforms/zynq/
 +platforms/zynq/zynq_net_setup.sh platforms/zynq/
@@ -103,6 +105,7 @@
 +runtime/rcc/include/RCC_Worker.h include/rcc/
 +runtime/container/include/OcpiContainerRunConditionApi.h include/rcc/
 +os/interfaces/include/OcpiConfigApi.h include/rcc/
++tools/cdk/include/rcc/rcc-targets.mk include/rcc/
 +tools/cdk/include/rcc/rcc-make.mk include/rcc/
 +tools/cdk/include/rcc/rcc-worker.mk include/rcc/
 +tools/cdk/include/rcc/default.mk include/rcc/

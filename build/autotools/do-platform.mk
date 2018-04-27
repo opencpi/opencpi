@@ -28,7 +28,7 @@ AT=@
 # unexpected
 all:
 	$(AT)exit 1
-
+OcpiRelativeTop=../../..
 # Gather target information if we're not cleaning
 ifeq ($(filter clean%,$(MAKECMDGOALS)),)
   # separate the build options from the platform.
@@ -41,26 +41,26 @@ ifeq ($(filter clean%,$(MAKECMDGOALS)),)
   else
     # Cross Compilation is indicated
     $(info Cross compiling on "$(OcpiThisPlatform)" for targetting "$(OcpiPlatform)")
-    $(if $(wildcard ../../../exports/$(OcpiToolDir)/bin/ocpigen),,\
+    $(if $(wildcard $(OcpiRelativeTop)/exports/$(OcpiToolDir)/bin/ocpigen),,\
       $(error $(CURDIR)Cannot cross-build for "$(Platform)" when the running platform, \
         "$(OcpiThisPlatform)" is not built))
     # This usage of getPlatform.sh is finding the directory of a specified platform,
     # *not* figuring out what platform we are running on.
-    OcpiPlatformArgs:=$(shell cd ../../.. && \
+    OcpiPlatformArgs:=$(shell cd $(OcpiRelativeTop) && \
                         ./bootstrap/scripts/getPlatform.sh $(OcpiPlatform) 2> /dev/tty)
     $(if $(filter 6,$(words $(OcpiPlatformArgs))),,\
       $(error Cannot find platform $(OcpiPlatform) for cross-building))
   endif
 
-  OcpiPlatformDir:=$(word 6,$(OcpiPlatformArgs))
   OcpiPlatformOs:=$(word 1,$(OcpiPlatformArgs))
   OcpiPlatformOsVersion:=$(word 2,$(OcpiPlatformArgs))
   OcpiPlatformArch:=$(word 3,$(OcpiPlatformArgs))
+  # words 4 and 5 are redundant
   OcpiPlatformDir:=$(word 6,$(OcpiPlatformArgs))
   $(info Target platform "$(OcpiPlatform)" exists and appears valid.)
 
-  include ../../platform-defaults.mk
-  include $(OcpiPlatformDir)/$(OcpiPlatform)-target.mk
+  include $(OcpiRelativeTop)/bootstrap/include/platform-defaults.mk
+  include $(OcpiPlatformDir)/$(OcpiPlatform).mk
   # Do stuff for backward compatibility until we can clean up all the target files
   ifneq ($(OcpiPlatform),$(OcpiThisPlatform))
     $(if $(or $(OCPI_CROSS_COMPILE),$(and $(OCPI_CROSS_BUILD_BIN_DIR),$(OCPI_CROSS_HOST))),,\
@@ -73,7 +73,7 @@ ifeq ($(filter clean%,$(MAKECMDGOALS)),)
 endif
 
 platform-variables.sh: \
-           ../../platform-defaults.mk $(OcpiPlatformDir)/$(OcpiPlatform)-target.mk \
+           $(OcpiRelativeTop)/bootstrap/include/platform-defaults.mk $(OcpiPlatformDir)/$(OcpiPlatform)-target.mk \
            ../do-platform.mk
 	$(AT)($(foreach v,$(OcpiAllPlatformVars), echo $v=\"$($v)\";)) > platform-variables.sh
 
@@ -86,7 +86,7 @@ Makefile: ../gen/configure platform-variables.sh ../do-platform.mk ../gen/Makefi
               ../gen/configure --build=$$build --enable-silent-rules \
 	        $(and $(OcpiPlatformDynamic),--enable-dynamic=yes) \
 	        $(and $(OcpiPlatformOptimize),--enable-debug=no) \
-	        prerequisite_dir=$(or $(PrerequisitesDir),../../../prerequisites) \
+	        prerequisite_dir=$(or $(PrerequisitesDir),$(OcpiRelativeTop)/prerequisites) \
                 $(and $(OcpiCrossCompile),\
                    --host=$(OcpiPlatformArch)-none-$(OcpiPlatformOs)) \
 	        CC=$(OcpiCrossCompile)$(OcpiCC) \

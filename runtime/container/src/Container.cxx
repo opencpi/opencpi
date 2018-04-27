@@ -102,9 +102,10 @@ namespace OCPI {
       // the environment and want to warn.
       if (ok && !allowVersionMismatch &&
 	  !(ok = opencpiVersion == i.attributes().opencpiVersion()))
-	ocpiBad("Rejected '%s' ONLY because of artifact version mismatch "
+	ocpiBad("Rejected '%s' for platform %s ONLY because of artifact version mismatch "
 		"('%s' vs. expected '%s')%s",
-		i.cname(), i.attributes().opencpiVersion().c_str(), opencpiVersion,
+		i.cname(), i.attributes().platform().c_str(),
+		i.attributes().opencpiVersion().c_str(), opencpiVersion,
 		OCPI::OS::logWillLog(OCPI_LOG_INFO) ? "" : " (try increasing log level)");
       ocpiInfo("vs. container %s (%u) model %s os %s version %s arch %s platform %s dynamic %u "
 	       "opencpi version %s ==> %s",

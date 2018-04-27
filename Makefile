@@ -26,11 +26,12 @@ else
     export OCPI_CDK_DIR:=$(CURDIR)/cdk
   endif
   ifeq ($(wildcard exports),)
-    $(info Exports have never been set up for this tree  Doing it now.)
-    $(info $(shell ./scripts/makeExportLinks.sh - -))
+    include $(OCPI_CDK_DIR)/include/util.mk
+    $(info Exports have never been set up here.  Doing it now for platform-independent items.)
+    $(and $(call DoShell,./scripts/makeExportLinks.sh - -,Error),\
+	$(error $(Error)))
   endif
 endif
-
 include $(OCPI_CDK_DIR)/include/util.mk
 $(eval $(OcpiEnsureToolPlatform))
 override \
@@ -41,7 +42,7 @@ export RccPlatforms
 DoExports=for p in $(RccPlatforms); do ./scripts/makeExportLinks.sh $$p; done
 DoTests=for p in $(RccPlatforms); do ./scripts/test-opencpi.sh $$p; done
 # Get macros and rcc platform/target processing
-include $(OCPI_CDK_DIR)/include/rcc/rcc-make.mk
+include $(OCPI_CDK_DIR)/include/rcc/rcc-targets.mk
 
 ##########################################################################################
 # Goals that are not about projects
@@ -72,9 +73,8 @@ driver:
 	       $(foreach t,$(RccTarget_$p),\
 	         $(foreach o,$(call RccOs,$t),\
 	           if test -d os/$o/driver; then \
-	             echo Building the $o kernel driver for $(call RccRealPlatform,$p); \
-	             (source $(OCPI_CDK_DIR)/scripts/ocpitarget.sh $p; \
-		      $(MAKE) -C os/$o/driver); \
+	             echo Building the $o kernel driver for $(call RccRealPlatforms,$p); \
+	             $(MAKE) -C os/$o/driver OcpiPlatform=$p; \
 	           else \
 	             echo There is no kernel driver for the OS '"'$o'"', so none built. ; \
 	           fi;))) \
@@ -87,8 +87,7 @@ cleandriver:
 	         $(foreach o,$(call RccOs,$t),\
 	           if test -d os/$o/driver; then \
 	             echo Cleaning the $o kernel driver for $(call RccRealPlatform,$p); \
-	             (source $(OCPI_CDK_DIR)/scripts/ocpitarget.sh $p; \
-		      $(MAKE) -C os/$o/driver topclean); \
+		     $(MAKE) -C os/$o/driver OcpiPlatform=$p topclean; \
 	           else \
 	             echo There is no kernel driver for the OS '"'$o'"', so none cleaned. ; \
 	           fi;))) \

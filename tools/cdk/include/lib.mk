@@ -44,7 +44,7 @@ HdlInstallDir=lib
 include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
 $(eval $(HdlPreprocessTargets))
 $(infox HP2:$(HdlPlatform) HPs:$(HdlPlatforms) HT:$(HdlTarget) HTs:$(HdlTargets):$(CURDIR))
-include $(OCPI_CDK_DIR)/include/rcc/rcc-make.mk
+include $(OCPI_CDK_DIR)/include/rcc/rcc-targets.mk
 ifeq ($(OCPI_HAVE_OPENCL),1)
   include $(OCPI_CDK_DIR)/include/ocl/ocl-make.mk
 endif

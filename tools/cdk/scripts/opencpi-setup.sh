@@ -117,12 +117,9 @@ done
     return 1
   }
   [ -n "$ocpi_verbose" ] && echo Clearing all OpenCPI environment variables before setting anything >&2
-  for ocpi_v in $(env | egrep ^OCPI | sort | cut -f1 -d=); do
-    # echo Clearing $v
+  for ocpi_v in $(env | egrep '^OCPI_(PREREQUISITES|TARGET|TOOL|CDK|ROOT)_' | sort | cut -f1 -d=); do  
     unset $ocpi_v
   done
-  
-
 }
 # Make the file name of this script absolute if it isn't already
 [[ "$ocpi_me" = /* ]] || ocpi_me=`pwd`/$ocpi_me

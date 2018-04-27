@@ -31,6 +31,7 @@ RccImplSuffix=$(if $(filter c++,$(OcpiLanguage)),-worker.hh,_Worker.h)
 RccSkelSuffix=-skel$(RccSourceSuffix)
 OBJ:=.o
 RccPrereqLibs=$(RccStaticPrereqLibs) $(RccDynamicPrereqLibs)
+RccLanguage=$(call ToUpper,$(OcpiLanguage))
 # This allows component library level RCC libraries to be fed down to workers,
 # via RccLibrariesInternal, while allowing the worker itself to have more libraries
 # via setting Libraries or RccLibraries.
@@ -49,6 +50,13 @@ RccIncludeDirsActual=$(RccIncludeDirsInternal)\
  $(foreach l,$(RccPrereqLibs),\
    $(OCPI_PREREQUISITES_DIR)/$l/$(RccRealPlatform)/include\
    $(OCPI_PREREQUISITES_DIR)/$l/include)
+
+# Allow either platforms or targets for now
+# Unfortunately these are called sometimes with target assignment of RccTarget and
+# sometimes not.
+RccOs=$(or $(OcpiPlatformOs_$1),$(word 1,$(subst -, ,$(or $1,$(RccTarget),$(error Internal)))))
+RccOsVersion=$(or $(OcpiPlatformOsVersion_$1),$(word 2,$(subst -, ,$1)))
+RccArch=$(or $(OcpiPlatformArch_$1),$(word 3,$(subst -, ,$1)))
 
 BF=$(BF_$(call RccOs,$1))
 # This is for backward compatibility
@@ -92,30 +100,33 @@ endif
 
 Comma=,
 RccLibDir=$(OCPI_CDK_DIR)/$(RccPlatform)/lib
-LinkBinary=$(G$(OcpiLanguage)_LINK_$(RccRealPlatform)) \
-$(G$(OcpiLanguage)_MAIN_FLAGS_$(RccRealPlatform)) \
-$(RccSpecificLinkOptions) \
-$(call RccPrioritize,ExtraLinkOptions,$(OcpiLanguage),$(RccTarget),$(RccPlatform)) \
--o $@ $1 \
-$(AEPLibraries) \
-$(call RccPrioritize,CustomLibs,$(OcpiLanguage),$(RccTarget),$(RccPlatform)) \
-$(call RccPrioritize,LocalLibs,$(OcpiLanguage),$(RccTarget),$(RccPlatform)) \
-$(foreach l,$(RccLibrariesInternal) $(Libraries),\
-  $(if $(findstring /,$l),\
-    $(foreach p,$(dir $l)$(RccPlatform)/lib$(notdir $l),\
-       $(or $(wildcard $p$(AREXT_$(call RccOs,))),\
-            $(and $(wildcard $p$(SOEXT_$(call RccOs,))),-L $(dir $l)$(RccPlatform) -l $(notdir $l)),\
-            $(error No RCC library found for $l, tried $p$(AREXT_$(call RccOs,)) and $p$(SOEXT_$(call RccOs,))))), \
-    $(if $(filter 1,$(call OcpiIsDynamic,$(RccPlatform))),\
-       -l ocpi_$l,\
-       $(and $(OcpiBuildingACI),$(RccLibDir)/libocpi_$l$(AREXT_$(call RccOs,)))))) \
+RccDynamic=$(filter 1,$(call OcpiIsDynamic,$(RccPlatform)))
+LinkBinary=\
+  $(Ocpi$(if $(filter c++,$(OcpiLanguage)),CXX,C)LD_$(RccRealPlatform)) \
+  $(and $(OcpiBuildingACI),\
+    $(Ocpi$(if $(RccDynamic),Dynamic,Static)ProgramFlags_$(RccRealPlatform)))\
+  $(RccSpecificLinkOptions) \
+  $(call RccPrioritize,ExtraLinkOptions,$(OcpiLanguage),$(RccTarget),$(RccPlatform)) \
+  -o $@ $1 \
+  $(AEPLibraries) \
+  $(call RccPrioritize,CustomLibs,$(OcpiLanguage),$(RccTarget),$(RccPlatform)) \
+  $(call RccPrioritize,LocalLibs,$(OcpiLanguage),$(RccTarget),$(RccPlatform)) \
+  $(foreach l,$(RccLibrariesInternal) $(Libraries),\
+    $(if $(findstring /,$l),\
+      $(foreach p,$(dir $l)$(RccPlatform)/lib$(notdir $l),\
+         $(or $(wildcard $p$(AREXT_$(call RccOs,))),\
+              $(and $(wildcard $p$(SOEXT_$(call RccOs,))),-L $(dir $l)$(RccPlatform) -l $(notdir $l)),\
+              $(error No RCC library found for $l, tried $p$(AREXT_$(call RccOs,)) and $p$(SOEXT_$(call RccOs,))))), \
+      $(if $(filter 1,$(call OcpiIsDynamic,$(RccPlatform))),\
+         -l ocpi_$l,\
+         $(and $(OcpiBuildingACI),$(RccLibDir)/libocpi_$l$(AREXT_$(call RccOs,)))))) \
   -L $(RccLibDir) \
   $(foreach l,$(RccStaticPrereqLibs),\
     $(OCPI_PREREQUISITES_DIR)/$l/$(RccRealPlatform)/lib/lib$l.a) \
   $(and $(RccDynamicPrereqLibs),-Wl$(Comma)-rpath -Wl$(Comma)'$$ORIGIN') \
   $(foreach l,$(RccDynamicPrereqLibs),\
     $(OCPI_PREREQUISITES_DIR)/$l/$(RccRealPlatform)/lib/lib$l$(SOEXT_$(call RccOs,))) \
-  $(and $(OcpiBuildingACI),$(G$(OcpiLanguage)_MAIN_LIBS_$(RccRealPlatform):%=-l%)) \
+  $(and $(OcpiBuildingACI),$(OcpiExtraLibs_$(RccRealPlatform):%=-l%)) \
   $(if $(filter 1,$(call OcpiIsDynamic,$(RccPlatform))),,\
      && $(OCPI_CDK_DIR)/scripts/makeStaticWorker.sh $(call RccOs,) $@ \
 	  $(foreach l,$(RccLibrariesInternal),libocpi_$l$(call BF,$(call RccOs,)))) \
@@ -170,12 +181,15 @@ RccFinalCompileOptions=\
   $(call RccPrioritize,CompileOptions,$1,$2,$3) \
   $(call RccPrioritize,ExtraCompileOptions,$1,$2,$3) \
 
+#$(foreach v,$(OcpiAllPlatformVars),$(info $v_$(word 1,$(RccPlatforms)):$($v_$(word 1,$(RccPlatforms)))))
+RccCC=$(OcpiCC_$1) $(OcpiCFlags_$1) $(OcpiRequiredCFlags_$1)
+RccCXX=$(OcpiCXX_$1) $(OcpiCXXFlags_$1) $(OcpiRequiredCXXFlags_$1)
 Compile_c=$$(call OcpiFixPathArgs,\
-  $$(Gc_$$(RccRealPlatform)) -MMD -MP -MF $$@.deps -c \
+  $$(call RccCC,$$(RccRealPlatform)) -MMD -MP -MF $$@.deps -c \
   $$(call RccFinalCompileOptions,C,$$(RccTarget),$$(RccPlatform)) \
   $$(RccIncludeDirsActual:%=-I%) -o $$@ $$(RccParams) $$<)
 Compile_cc=$$(call OcpiFixPathArgs,\
-  $$(Gc++_$$(RccRealPlatform)) -MMD -MP -MF $$@.deps -c \
+  $$(call RccCXX,$$(RccRealPlatform)) -MMD -MP -MF $$@.deps -c \
   $$(call RccFinalCompileOptions,CC,$$(RccTarget),$$(RccPlatform)) \
   $$(RccIncludeDirsActual:%=-I%) -o $$@ $$(RccParams) $$<)
 Compile_cpp=$(Compile_cc)

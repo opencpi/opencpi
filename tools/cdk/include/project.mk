@@ -42,8 +42,7 @@ endif
 ifeq ($(filter imports projectpackage,$(MAKECMDGOALS)),)
   doimports=$(shell $(OcpiExportVars) $(MAKE) imports NoExports=1)
   ifeq ($(wildcard imports),)
-    $(info Imports are not set up for this project.  Doing it now.)
-    $(info $(doimports))
+    $(info Imports are not set up for this project.  Doing it now. $(doimports))
   else
     # If the imports already exist, we still want to make sure they are up to date
     $(infox Updating imports. $(doimports))
@@ -51,10 +50,9 @@ ifeq ($(filter imports projectpackage,$(MAKECMDGOALS)),)
 endif
 
 ifeq ($(NoExports)$(wildcard exports)$(filter projectpackage,$(MAKECMDGOALS)),)
-  doexports=$(OcpiExportVars) $(OCPI_CDK_DIR)/scripts/makeProjectExports.sh - $(ProjectPackage) xxx
+  doexports=$(shell $(OcpiExportVars) $(OCPI_CDK_DIR)/scripts/makeProjectExports.sh - $(ProjectPackage) xxx)
   ifeq ($(filter clean%,$(MAKECMDGOALS)),)
-    $(info Exports are not set up for this project.  Doing it now.)
-    $(info $(shell $(doexports)))
+    $(info Exports are not set up for this project.  Doing it now. $(doexports))
   else
     # we are assuming that exports are not required for any clean goal.
     # $(nuthin $(doexports))
@@ -62,9 +60,9 @@ ifeq ($(NoExports)$(wildcard exports)$(filter projectpackage,$(MAKECMDGOALS)),)
 endif
 
 # Do not want to import ocpisetup.mk if all we are doing is exporting project variables to python/bash
-ifeq ($(filter imports exports cleanimports cleanexports projectpackage,$(MAKECMDGOALS)),)
-  include $(OCPI_CDK_DIR)/include/ocpisetup.mk
-endif
+#ifeq ($(filter imports exports cleanimports cleanexports projectpackage,$(MAKECMDGOALS)),)
+#  include $(OCPI_CDK_DIR)/include/ocpisetup.mk
+#endif
 
 ifeq (@,$(AT))
   .SILENT: clean imports exports components hdlprimitives hdlcomponents hdldevices hdladapters hdlcards hdlplatforms hdlassemblies cleanhdl rcc cleanrcc ocl cleanocl applications run cleancomponents cleanapplications cleanimports cleanexports cleaneverything $(OcpiTestGoals)

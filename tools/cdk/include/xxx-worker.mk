@@ -66,7 +66,8 @@ clean:: cleanfirst
 	$(AT)rm -r -f $(GeneratedDir) \
              $(if $(filter all,$($(CapModel)Targets)),\
                   $(call WkrTargetDirWild,*),\
-                  $(foreach t,$(CleanTargets) $($(CapModel)Targets),$(call WkrTargetDirWild,$t)))
+                  $(foreach t,$($(CapModel)Targets),\
+                    $(call WkrTargetDirWild,$(call $(CapModel)TargetDirTail,$t))))
 
 ################################################################################
 # source files that are target-independent
@@ -215,7 +216,7 @@ endif
 # Export support - what we put into the (export) library above us
 
 ifndef WkrExportNames
-WkrExportNames+=$(WkrBinaryName)$(BF)
+WkrExportNames+=$(WkrBinaryName)$(call BF,$1)
 endif
 
 # If LibDir is unset, but the parent directory is a library
@@ -285,7 +286,7 @@ define DoLinks
   $(foreach c,$(ParamConfigurations),\
     $(foreach n,$(call WkrExportNames,$1),\
      $(foreach b,$(basename $(notdir $n)),\
-       $(foreach r,$(call RmRv,$b)$(if $(filter 0,$c),,_c$c),
+       $(foreach r,$(call RmRv,$b)$(if $(filter 0,$c),,_c$c),\
          $(foreach l,$b$(if $(filter 0,$c),,_c$c),\
            $(infox LLL:$c:$n:$b:$r:$l:$1:$(HdlToolSet_$1))\
            $(call DoLink,$1,$(strip\
@@ -294,13 +295,12 @@ define DoLinks
                                $(notdir $n),$r)),$(strip\
                      $(if $(HdlToolRealCore_$(HdlToolSet_$1)),$l,$r)$(suffix $n)),$c,$r))))))
   $$(call OcpiDbgVar,WkrExportNames,In Dolinks )
-
 endef
 
 # These links are to binaries
 ifndef HdlSkip
   $(call OcpiDbgVar,WkrExportNames)
-  $(foreach t,$($(CapModel)Targets),$(infox $(call DoLinks,$t))$(eval $(call DoLinks,$(call $(CapModel)TargetDirTail,$t))))
+  $(foreach t,$($(CapModel)Targets),$(infox $(call zDoLinks,$t))$(eval $(call DoLinks,$(call $(CapModel)TargetDirTail,$t))))
 endif
 
 # The generated build file is done as the makefile is read, so we can use

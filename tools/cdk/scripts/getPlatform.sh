@@ -42,8 +42,10 @@ if [ -n "$OCPI_CDK_DIR" -a -e "$OCPI_CDK_DIR/scripts/util.sh" ]; then
   projects="`getProjectPathAndRegistered`"
 elif [ -n "$OCPI_PROJECT_PATH" ]; then
   # If the CDK is not set or util.sh does not exist, fall back on OCPI_PROJECT_PATH
+  echo Unexpected internal error: OCPI_CDK_DIR IS NOT SET1 >&2 && exit 1
   projects="${OCPI_PROJECT_PATH//:/ }"
 elif [ -d projects ]; then
+  echo Unexpected internal error: OCPI_CDK_DIR IS NOT SET2 >&2 && exit 1
   # Probably running in a clean source tree.  Find projects and absolutize pathnames
   projects="$(for p in projects/*; do echo `pwd`/$p; done)"
 fi
@@ -51,6 +53,7 @@ fi
 if [ -n "$OCPI_CDK_DIR" ]; then
   [ -d $OCPI_CDK_DIR/../projects/core ] && projects="$projects $OCPI_CDK_DIR/../projects/core"
 else
+  echo Unexpected internal error: OCPI_CDK_DIR IS NOT SET3 >&2 && exit 1
   [ -d /opt/opencpi/projects/core ] && projects="$projects /opt/opencpi/projects/core"
 fi
 if [ -z "$projects" ]; then
@@ -72,14 +75,16 @@ for j in $projects; do
   fi
   if [ -n "$1" ]; then # looking for a specific platform (not the current one)
     d=$platforms_dir/$1
-    if [ -d $d -a -f $d/target ]; then
-      target=$(< $d/target)
-      vars=($(echo $target | tr - ' '))
-      [ ${#vars[@]} = 3 ] || {
-        echo "Error:  Platform file $d/target is invalid and cannot be used." >&2
+    if [ -d $d -a -f $d/$1.mk ]; then
+      vars=($(egrep '^ *OcpiPlatform(Os|Arch|OsVersion) *:= *' $d/$1.mk |
+              sed 's/OcpiPlaform\([^ :=]*\) *:= *\([^a-zA-Z0-9_]*\/\1 \2/'|sort))
+      [ ${#vars[@]} = 6 ] || {
+        echo "Error:  Platform file $d/$1.mk is invalid and cannot be used." >&2
+        echo "Error:  OcpiPlatform* variables not valid." >&2
 	exit 1
-      }
-      echo ${vars[@]} $target $1 $d
+      }      
+      echo got ${vars[1]} ${vars[2]} ${vars[0]} ${vars[1]}-${vars[2]}-${vars[0]} $1 $d > /dev/tty
+      echo ${vars[1]} ${vars[2]} ${vars[0]} ${vars[1]}-${vars[2]}-${vars[0]} $1 $d
       exit 0
     fi
   else # not looking for a particular platform, but looking for the one we're running on

@@ -47,6 +47,7 @@ include $(OCPI_CDK_DIR)/include/rcc/rcc-worker.mk
 AciDir=target-$1
 AciObj=$(call AciDir,$1)/$(basename $(notdir $2))$(OBJ)
 AciExe=$(call AciDir,$1)/$(basename $2)
+
 # Build a source file
 # $(call DoAciSource,<platform>,<sourcefile>,<language>,<app>)
 define DoAciSource
@@ -61,6 +62,24 @@ define DoAciSource
     $(call AciExe,$1,$4): $(call AciObj,$1,$2)
   endif
 endef
+# This is for dependencies of the executable on libraries
+AciLib=$(foreach l,\
+         $(if $(filter 1,$(call OcpiIsDynamic,$2)),$(strip\
+           $(wildcard $1$(SOEXT_$(call RccOs,$2)))),$(strip\
+           $(or $(wildcard $1$(AREXT_$(call RccOs,$2))),$(strip\
+             $(wildcard $1$(SOEXT_$(call RccOs,$2))))))),$(infox ALr:$1:$2:$l)$l)
+
+AciLibs=$(foreach l,$(RccLibrariesInternal) $(Libraries),\
+         $(if $(findstring /,$l),\
+           $(foreach p,$(dir $l)$1/lib$(notdir $l),\
+             $(or $(call AciLib,$p,$1),\
+               $(error No ACI library found for $l, tried $(strip\
+                 $(if $(filter 1,$(call OcpiIsDynamic,$1))),\
+                    $p$(SOEXT_$(call RccOs,$1)),\
+                    $p$(AREXT_$(call RccOs,$1)) and $p$(SOEXT_$(call RccOs,$1)))))),\
+	   $(or $(call AciLib,$(OCPI_CDK_DIR)/$1/lib/libocpi_$l,$1))))
+
+# Build the executables
 # $(call DoBuildAci,<platform>,<appfile>)
 define DoBuildAci
   $$(foreach s,$$(filter %.c,$(SourceFiles)),\
@@ -70,6 +89,7 @@ define DoBuildAci
   $$(eval $$(call DoAciSource,$1,$2,cc,$(basename $2)))
   $(call AciExe,$1,$2): RccTarget=$(RccTarget_$1)
   $(call AciExe,$1,$2): RccPlatform=$1
+  $(call AciExe,$1,$2): $$(call AciLibs,$1)
   $(call AciExe,$1,$2): | $(call AciDir,$1)
   $(call AciExe,$1,$2): $$(for s,$(SourceFiles) $2,$$(call AciObj,$1,$$s))
 	$(AT)echo Creating executable for \"$(basename $(notdir $2))\" running on platform $1 from $$^

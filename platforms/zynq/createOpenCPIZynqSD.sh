@@ -134,7 +134,7 @@ cp -L ${KERNEL_LIB_DIR}/mdev-opencpi.rules $sd/opencpi/lib/${OCPI_TARGET_PLATFOR
 for b in run hdl zynq serve xml; do
   cp -L $BIN_DIR/ocpi$b $sd/opencpi/bin
   # Ensure the deployed files are stripped - if we debug we'll be looking at dev-sys executables
-  test -z $RPM_BUILD_ROOT && $OCPI_CROSS_BUILD_BIN_DIR/$OCPI_CROSS_HOST-strip $sd/opencpi/bin/ocpi$b
+  test -z $RPM_BUILD_ROOT && ${OCPI_TARGET_CROSS_COMPILE}strip $sd/opencpi/bin/ocpi$b
 done
 # we use rdate for now... : cp ../ntpclient $sd/opencpi/bin
 # copy driver libraries to the subdirectory so that OCPI_CDK_DIR will

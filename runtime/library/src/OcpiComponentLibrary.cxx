@@ -94,7 +94,7 @@ namespace OCPI {
 	  bool isDir;
 	  OS::FileSystem::FileId file_id;
 	  if (!OS::FileSystem::exists(a_libName, &isDir, NULL, NULL, &file_id))
-	    ocpiInfo("Path name found in OCPI_LIBRARY_PATH, \"%s\", "
+	    ocpiDebug("Path name found in OCPI_LIBRARY_PATH, \"%s\", "
 		     "is nonexistent, not a normal file, or a broken link.  It will be ignored",
 		     a_libName.c_str());
 	  else if (m_fileIds.insert(file_id).second) {

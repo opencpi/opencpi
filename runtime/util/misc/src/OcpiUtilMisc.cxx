@@ -1020,6 +1020,7 @@ getCDK() {
     l_cdk = abs;
     free(abs);
     s_cdk = l_cdk;
+    ocpiInfo("OpenCPI CDK location is: %s", s_cdk.c_str());
   }
   return s_cdk;
 }
