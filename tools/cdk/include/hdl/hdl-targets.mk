@@ -69,12 +69,22 @@ HdlTargets_zynq_ise:=xc7z020_ise_alias
 HdlTargets_zynq:=xc7z020 xc7z045
 HdlDefaultTarget_zynq:=xc7z020
 
-HdlTargets_altera:=stratix4 stratix5 # altera-sim
+HdlTargets_altera:=arria10soc_std stratix4 stratix5 # altera-sim
+HdlDefaultTarget_stratix4:=AUTO
+HdlDefaultTarget_stratix5:=AUTO
+# Quartus Pro (and maybe newer versions of standard) does not
+# support the 'AUTO' part for arria10 because you cannot reuse
+# synthesized partitions from different devices.
+# We must enforce one exact part per target for Quartus Pro
+# (and maybe newer/17+ versions of standard).
+HdlDefaultTarget_arria10soc_std:=10AS066N3F40E2SG_std_alias
+
+
 # The "k", when present indicates the transceiver count (k = 36)
 # But in many places it is left off..
 HdlTargets_stratix4:=ep4sgx230k ep4sgx530k ep4sgx360
 HdlTargets_stratix5:=ep5sgsmd8k2
-#Testing: HdlTargets_test1=test2
+HdlTargets_arria10soc_std:=10AS066N3F40E2SG_std_alias
 
 HdlSimTools=isim icarus verilator ghdl xsim modelsim
 
@@ -93,6 +103,24 @@ HdlToolSet_verilator:=verilator
 HdlToolSet_icarus:=icarus
 HdlToolSet_stratix4:=quartus
 HdlToolSet_stratix5:=quartus
+HdlToolSet_arria10soc_std:=quartus
+
+# Call the tool-specific function to get the full part incase the
+# tool needs to rearrange the different part elements
+# If the tool does not define this function, return part as-is
+# Arg1 is the full/exact part number
+HdlFullPart=$(or $(call HdlFullPart_$(HdlToolSet),$1),$1)
+# In the platform and post-platform stages, get the part from the <platform>.mk
+# In other stages, use the HdlExactPart if set, or the Default part if set,
+# or the first part for this target
+# Arg1 can be optionally set instead of determining the part here.
+HdlChoosePart=$(strip \
+  $(if $(findstring $(HdlMode),platform config container),\
+    $(call HdlFullPart,$(HdlPart_$(HdlPlatform))),\
+    $(or \
+      $(and $(HdlExactPart),$(call HdlFullPart,$(HdlExactPart))),\
+      $(HdlDefaultTarget_$(HdlTarget)),\
+      $(firstword $(HdlTargets_$(HdlTarget))))))
 
 # Make the initial definition as a simply-expanded variable
 HdlAllPlatforms:=
@@ -182,11 +210,11 @@ $(info HdlTopTargets="$(HdlTopTargets)";\
          $(foreach t,$(HdlTargets_$f),\
            $(if $(HdlTargets_$t),HdlTargets_$t="$(HdlTargets_$t)";)))\
        $(foreach t,$(call Unique,\
-         $(foreach f,$(HdlAllTargets),$(if $(HdlToolSet_$f),$(HdlToolSet_$f) ))),\
-	   $(eval __ONLY_TOOL_VARS__:=true)\
-	   $(eval include $(OCPI_CDK_DIR)/include/hdl/$t.mk)\
-	   HdlToolName_$t="$(or $(HdlToolName_$t),$t)";)\
+                     $(foreach f,$(HdlAllTargets),$(if $(HdlToolSet_$f),$(HdlToolSet_$f) ))),\
+         $(eval __ONLY_TOOL_VARS__:=true)\
+         $(eval include $(OCPI_CDK_DIR)/include/hdl/$t.mk)\
+         HdlToolName_$t="$(or $(HdlToolName_$t),$t)";)\
        $(foreach p,$(HdlAllPlatforms),\
-	 HdlFamily_$(HdlPart_$p)=$(call HdlGetFamily,$(HdlPart_$p));))
+         HdlFamily_$(HdlPart_$p)=$(call HdlGetFamily,$(HdlPart_$p));))
 endif
 endif

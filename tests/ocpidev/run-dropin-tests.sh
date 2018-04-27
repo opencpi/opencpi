@@ -1,3 +1,4 @@
+#!/bin/sh
 # This file is protected by Copyright. Please refer to the COPYRIGHT file
 # distributed with this source distribution.
 #
@@ -16,6 +17,10 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-ExcludeTargets=arria10soc_std
+set -e
 
-include $(OCPI_CDK_DIR)/include/worker.mk
+# Run all test scripts in dropin-tests/
+cd dropin-tests/
+for t in ./*; do
+  ./$t
+done

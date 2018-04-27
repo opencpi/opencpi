@@ -1410,7 +1410,7 @@ OCPI_CONTROL_OPS
      RCCPortMask m;
      for (n = 2; (m = va_arg(ap, RCCPortMask)); n++)
 	;
-     if (n < sizeof(m_myMasks)/sizeof(RCCPortMask))
+     if (n >= sizeof(m_myMasks)/sizeof(RCCPortMask))
        m_portMasks = m_allocated = new RCCPortMask[n];
      else
        m_portMasks = m_myMasks;

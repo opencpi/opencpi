@@ -1,43 +1,9 @@
 In order to manually build the latex documentation in this folder, various dependencies are required to be installed.
 
 Run:
-$ sudo yum install -y texlive-latex rubber
+$ sudo yum install -y texlive-latex rubber ghostscript
 For CentOS 7, the packages needed are:
 $ sudo yum install -y texlive-latex-bin texlive-texconfig-bin texlive-metafont-bin texlive-cm texlive-pdftex-def texlive-ifluatex texlive-zapfding texlive-helvetic texlive-times texlive-symbol texlive-titlesec texlive-multirow texlive-dvips texlive-fancyhdr texlive-collection-fontsrecommended texlive-microtype texlive-rotating texlive-placeins texlive-appendix
-If you have strange problems, you MIGHT have to do:
-$ sudo rm -rf /var/lib/texmf/
-
-Non-RPM packages:
-PLEASE try to keep this list minimal. To see if an RPM package for your .sty file exists, use
-repoquery --whatprovides "*/yourfile.sty"
-
-If it is available as a full installer package, add it to the first list.
-If it is ONLY a single .sty file with no installer, add it to the second list.
-
-To install required packages:
-==SCR==
-cd ~
-set -e
-mkdir -p texmf
-TDS="datatool glossaries mfirstuc xfor"
-STY="substr"
-for tds in ${TDS}; do
-  wget -nv http://mirrors.ctan.org/install/macros/latex/contrib/${tds}.tds.zip
-  unzip -q ${tds}.tds.zip -d texmf
-  rm ${tds}.tds.zip
-done
-for sty in ${STY} ; do
-  wget -nv http://mirrors.ctan.org/macros/latex/contrib/${sty}/${sty}.sty
-  mkdir -p texmf/tex/latex/${sty}
-  mv ${sty}.sty texmf/tex/latex/${sty}
-done
-texhash ~/texmf
-for chk in ${TDS} ${STY}; do
-  kpsewhich ${chk}.sty || echo "${chk} could not be found"
-done
-==SCR==
-
-You should probably add any directories under ~/texmf/scripts to your PATH variable.
 
 To build a single PDF from sources, run:
 $ rubber --pdf <filename>.tex
@@ -50,5 +16,4 @@ aspell list < filename.tex | sort | uniq -c | less
 
 Notes:
 Please only add to the "sudo yum" files and do not modify the prefix; those lines are parsed by a script elsewhere.
-Same for the SCR flags.
 If you change them in any way, please contact the Jenkins administrator so the Docker container can be updated.

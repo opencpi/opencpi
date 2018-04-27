@@ -108,7 +108,7 @@ empty:=
 space:=$(empty) $(empty)
 
 VivadoRearrangePart=$(firstword $1)$(word 3,$1) $(word 2,$1)
-VivadoChoosePart=$(if $1,$(subst $(space),-,$(call VivadoRearrangePart,$(subst -, ,$1))))
+HdlFullPart_vivado=$(if $1,$(subst $(space),-,$(call VivadoRearrangePart,$(subst -, ,$1))))
 
 ifeq ($(HdlMode),library)
 CoreOrLibName=$(LibName)
@@ -168,16 +168,8 @@ VivadoBadOptions_synth=\
 -verilog_define \
 $(VivadoBadOptions_all)
 
-VivadoSynthesisPart=$(strip \
-  $(if $(findstring $(HdlMode),platform config container),\
-    $(call VivadoChoosePart,$(HdlPart_$(HdlPlatform))),\
-    $(or \
-      $(call VivadoChoosePart,$(HdlExactPart)),\
-      $(HdlDefaultTarget_$(HdlTarget)),\
-      $(firstword $(HdlTargets_$(HdlTarget))))))
-
 VivadoDefaultOptions_synth=\
--part $(VivadoSynthesisPart) \
+-part $(HdlChoosePart) \
 $(VivadoDefaultOptions_synth_$(HdlMode))
 
 
@@ -541,7 +533,7 @@ HdlToolCompile=\
     artifact='$(notdir $@)' \
     hdl_mode='$(HdlMode)' \
     top_mod='$(Top)' \
-    synth_part='$(VivadoSynthesisPart)' \
+    synth_part='$(HdlChoosePart)' \
     synth_opts='$(call VivadoOptions,synth)' \
     edif_opts='$(VivadoEdifOptions)';)
 
@@ -676,7 +668,7 @@ $(call OptName,$1,$3): $(call SynthName,$1,$3) $(call VivadoConstraints,$5)
 	$(AT)$(call DoVivado,vivado-impl.tcl,$1,-tclargs \
 		stage=opt \
 		target_file=$(notdir $(call OptName,$1,$3)) \
-		part=$(call VivadoChoosePart,$(HdlPart_$5)) \
+		part=$(HdlChoosePart) \
 		edif_file=$(notdir $(call SynthName,$1,$3)) \
 		constraints='$(foreach u,$(call VivadoConstraints,$5),$(call AdjustRelative,$u))' \
 		impl_opts='$(call VivadoOptions,opt)' \
@@ -689,7 +681,7 @@ $(call PlaceName,$1,$3): $(call OptName,$1,$3)
 		stage=place \
 		target_file=$(notdir $(call PlaceName,$1,$3)) \
 		checkpoint=$(notdir $(call OptName,$1,$3)) \
-		part=$(call VivadoChoosePart,$(HdlPart_$5)) \
+		part=$(HdlChoosePart) \
 		impl_opts='$(call VivadoOptions,place)' \
 		post_place_opt=$(if $(VivadoPostPlaceOpt),true,false) \
 		phys_opt_opts='$(call VivadoOptions,post_place_phys_opt)' \
@@ -702,7 +694,7 @@ $(call RouteName,$1,$3): $(call PlaceName,$1,$3)
 		stage=route \
 		target_file=$(notdir $(call RouteName,$1,$3)) \
 		checkpoint=$(notdir $(call PlaceName,$1,$3)) \
-		part=$(call VivadoChoosePart,$(HdlPart_$5)) \
+		part=$(HdlChoosePart) \
 		impl_opts='$(call VivadoOptions,route)' \
 		post_route_opt=$(if $(VivadoPostRouteOpt),true,false) \
 		phys_opt_opts='$(call VivadoOptions,post_route_phys_opt)' \
@@ -715,7 +707,7 @@ $(call TimingName,$1,$3): $(call RouteName,$1,$3)
 		stage=timing \
 		target_file=$(notdir $(call TimingName,$1,$3)) \
 		checkpoint=$(notdir $(call RouteName,$1,$3)) \
-		part=$(call VivadoChoosePart,$(HdlPart_$5)) \
+		part=$(HdlChoosePart) \
                 impl_opts='$(call VivadoOptions,timing)' \
 		,timing)
 
@@ -725,7 +717,7 @@ $(call BitName,$1,$3,$6): $(call RouteName,$1,$3) $(call TimingName,$1,$3) $(wil
 		stage=bit \
 		target_file=$(notdir $(call BitName,$1,$3,$6)) \
 		checkpoint=$(notdir $(call RouteName,$1,$3)) \
-		part=$(call VivadoChoosePart,$(HdlPart_$5)) \
+		part=$(HdlChoosePart) \
 		constraints='$(wildcard $(HdlPlatformDir_$5)/*_bit.xdc)' \
                 impl_opts='$(call VivadoOptions,bit)' \
 		,bit)

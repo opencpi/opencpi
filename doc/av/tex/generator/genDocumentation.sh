@@ -18,19 +18,24 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 # Generate PDFs from all tex, odt files
-# When run by jenkins this script will generate all PDFs using
-# makepdf.sh and then makepdf.sh will call optpdf.sh to shrink the size
-# of the files.  All three of these .sh files should be located in
-# the same directory. Finally after the PDFs are generated and moved
-# to a specfic output location an index.html will be generated listing
-# all of the PDFs in the same output location.
+# This script will generate all PDFs using makepdf.sh and then makepdf.sh will call optpdf.sh to shrink
+# the size of the files. All three of these .sh files should be located in the same directory. Finally,
+# after the PDFs are generated and moved to a specfic output location, an index.html will be generated
+# listing all of the PDFs in the same output location.
+
+# If run under Jenkins, it will use sudo for OpenOffice - see
+# https://github.com/dagwieers/unoconv/issues/359 and Jenkins_Job1.groovy
+# This is needed here instead of the Jenkins job because sudo only allows certain whitelisted commands,
+# and "unoconv" is one. The arbitrary location that this script is checked out to is not.
+
+[ -n "${JENKINS_HOME}" ] && export PDF_SUDO=sudo
 
 ## Enables color variables BOLD, RED, and RESET
 enable_color() {
   if [ -n "$(command -v tput)" ]; then
-    export BOLD=$(tput bold)
-    export RED=$(tput setaf 1)
-    export RESET=$(tput sgr0)
+    export BOLD=$(tput bold 2>/dev/null)
+    export RED=$(tput setaf 1 2>/dev/null)
+    export RESET=$(tput sgr0 2>/dev/null)
   fi
 }
 
@@ -45,28 +50,18 @@ enable_color() {
 #       The locations of the PDFs to be added
 #       to the table
 # Returns:
-#   An html table of documents to standard output
+#   An HTML list of documents to standard output (with header)
 ###
-add_new_table_section() {
+add_new_list() {
     # If directory is empty do not create an entry for it
     if compgen -o filenames -G $2/'*.pdf' > /dev/null; then
-        count=0
-        tableCols=3
-        echo "<tr><th colspan=\"${tableCols}\">$1</th></tr>"
+        # Header and start list
+        printf '<h3 style="text-align: center">%s</h3>\n<ul class="collist">\n' "$1"
         for pdf in $2/*.pdf; do
             file_name=$(basename -s .pdf $pdf)
-            if [ $count -eq 0 ]; then
-                echo "<tr>"
-            fi
-            echo '<td><a href="'${pdf}'">'$(echo ${file_name} | tr '_' ' ')'</a></td>'
-            count=$(((${count} + 1) % ${tableCols}))
-            if [ $count -eq 0 ]; then
-                echo "</tr>"
-            fi
+            printf '<li><a href="%s">%s</a></li>\n' "${pdf}" "$(echo ${file_name} | tr '_' ' ')"
         done
-        if [ $count -ne 0 ]; then
-            echo "</tr>"
-        fi
+        echo "</ul>"
     fi
 }
 
@@ -93,12 +88,12 @@ create_index() {
     # Bring in start of index.html
     cat ${MYLOC}/listing_header.html
 
-    add_new_table_section "AV Team Main Documentation" "${av_pdf_loc}"
-    add_new_table_section "Assets Project Documentation" "${asset_pdf_loc}"
-    add_new_table_section "Core Project Documentation" "${core_pdf_loc}"
+    add_new_list "AV Team Main Documentation" "${av_pdf_loc}"
+    add_new_list "Assets Project Documentation" "${asset_pdf_loc}"
+    add_new_list "Core Project Documentation" "${core_pdf_loc}"
 
     for d in ${BSPS[*]}; do
-        add_new_table_section "${d^} BSP Documentation" "./bsp_$d"
+        add_new_list "${d^} BSP Documentation" "./bsp_$d"
     done
 
     # Bring in ending of index.html
@@ -137,16 +132,14 @@ generate_pdfs() {
     done
 
     # Get around unoconv bug ( https://github.com/dagwieers/unoconv/issues/241 )
-    cd /tmp; unoconv -vvv -f pdf /dev/null >/dev/null 2>&1 || :
+    cd /tmp; ${PDF_SUDO} unoconv -vvv -f pdf /dev/null >/dev/null 2>&1 || :
 
     dirs_to_search=()
     dirs_to_search+=("${REPO_PATH}/doc/av/tex")
     dirs_to_search+=("${REPO_PATH}/doc/odt")
-    dirs_to_search+=($(find ${REPO_PATH}/projects/assets -type d -name doc))
+    dirs_to_search+=($(find ${REPO_PATH}/projects/assets -type d \( -name doc -o -name docs \)))
     dirs_to_search+=($(find ${REPO_PATH}/projects/bsps -type d -name doc))
     dirs_to_search+=($(find ${REPO_PATH}/projects/core -type d -name doc))
-    # The benchmarking files are not in a doc dir but are in a docs dir
-    dirs_to_search+=($(find ${REPO_PATH}/projects/assets -type d -name docs))
 
     for d in ${dirs_to_search[*]}; do
         echo "${BOLD}Directory: $d${RESET}"
@@ -162,11 +155,15 @@ generate_pdfs() {
 
         log_dir=${OUTPUT_PATH}/${prefix}/logs
 
+        # Once upon a time, we allowed custom scripts to build PDFs.
+        # If that code is ever needed again, see Jenkins Job 1 before 6a64d20.
+        # AV-3987, AV-4085
+
         for ext in *docx *pptx *odt *fodt *odp *fodp; do
             # Get the name of the file without the file extension
             ofile=${ext%.*}
             echo "${BOLD}office: $d/$ext${RESET}"
-            unoconv -vvv -f pdf $ext >> ${log_dir}/${ofile}.log 2>&1
+            ${PDF_SUDO} unoconv -vvv -f pdf $ext >> ${log_dir}/${ofile}.log 2>&1
             # If the pdf was created then try to shrink it
             if [ -f $ofile.pdf ]; then
                 echo "Original $(stat -c "%s" ${ofile}.pdf) bytes"
@@ -177,10 +174,17 @@ generate_pdfs() {
               echo "Error creating $ofile.pdf ($d)" >> ${OUTPUT_PATH}/errors.log
             fi
         done
-        for tex in *tex; do
-            ofile=$(basename -s .tex $tex)
+        # There are a few places where it is doc/XXX/*.tex so captures both, removing XXX
+        for tex in *tex */*tex; do
+            echo $tex | grep -iq '^snippets/' && continue # Skip snippets
+            echo $tex | grep -iq '_header' && continue # Skip headers
+            echo $tex | grep -iq '_footer' && continue # Skip footers
+            echo $tex | grep -iq '_template' && continue # Skip templates
             echo "${BOLD}LaTeX: $d/$tex${RESET}"
-            rubber -d $tex
+            # Jump into subdir if present (note: $tex is no longer valid - use ofile.tex)
+            expr match $tex '.*/' >/dev/null && cd "$(dirname $tex)"
+            ofile=$(basename -s .tex $tex)
+            rubber -d $ofile.tex
             # If the pdf was created then try to shrink it
             if [ -f $ofile.pdf ]; then
                 echo "Original $(stat -c "%s" ${ofile}.pdf) bytes"
@@ -189,16 +193,13 @@ generate_pdfs() {
               echo "${BOLD}${RED}Error creating $ofile.pdf${RESET}"
               echo "Error creating $ofile.pdf ($d)" >> ${OUTPUT_PATH}/errors.log
             fi
-
             mv ${ofile}.log ${log_dir}/${ofile}.log 2>&1
-
-            rubber-info --boxes $tex >> ${log_dir}/${ofile}_boxes.log 2>&1
-            rubber-info --check $tex >> ${log_dir}/${ofile}_warnings.log 2>&1
-            rubber-info --warnings $tex >> ${log_dir}/${ofile}_warnings.log 2>&1
-
+            rubber-info --boxes $ofile.tex >> ${log_dir}/${ofile}_boxes.log 2>&1
+            rubber-info --check $ofile.tex >> ${log_dir}/${ofile}_warnings.log 2>&1
+            rubber-info --warnings $ofile.tex >> ${log_dir}/${ofile}_warnings.log 2>&1
             rm -f ${ofile}.{aux,out,log,lof,lot,toc,dvi,synctex.gz}
-
             mv ${ofile}.pdf ${OUTPUT_PATH}/${prefix}/
+            expr match ${tex} '.*/' >/dev/null && cd ..
         done
     done
 }
@@ -214,7 +215,7 @@ generate_pdfs() {
 ###
 show_help() {
     enable_color
-    [ -n "$1" ]  && printf "\n${RED}ERROR: %s\n\n${RESET}" "$1"
+    [ -n "$1" ] && printf "\n${RED}ERROR: %s\n\n${RESET}" "$1"
     cat <<EOF >&2
 ${BOLD}This genDocumentation script creates PDFs for OpenCPI.
 Usage is: $0 [-h] [-r] [-o]
@@ -233,7 +234,7 @@ export MYLOC=$(readlink -e "$(dirname $0)")
 
 # Defaults:
 REPO_PATH="$(readlink -e .)"
-OUTPUT_PATH="${REPO_PATH}/pdf/"
+OUTPUT_PATH="${REPO_PATH}/pdfs/"
 index_file="index.html"
 
 while [[ $# -gt 0 ]]; do
@@ -259,11 +260,15 @@ while [[ $# -gt 0 ]]; do
 done
 # Do not try to access parameters to the script past this
 
+# Failures
 [ ! -r ${REPO_PATH} ] && show_help "\"${REPO_PATH}\" not readable by $USER. Consider using a different repo path."
-
 [ ! -d "${REPO_PATH}/doc/av" ] && show_help "\"${REPO_PATH}\" doesn't seem to be correct. Could not find doc/av/."
-
 [ -d "${OUTPUT_PATH}" ] && show_help "\"${OUTPUT_PATH}\" already exists"
+
+# Warnings
+[ -z "$(command -v rubber)" ] && printf "\nThe 'rubber' command was not found - will not be able to convert LaTeX => PDF!\n\n"
+[ -z "$(command -v gs)" ] && printf "\nThe 'gs' command was not found - will not be able to optimize PDF!\n\n"
+[ -z "$(command -v unoconv)" ] && printf "\nThe 'unoconv' command was not found - will not be able to convert Open/LibreOffice => PDF!\n\n"
 
 mkdir -p ${OUTPUT_PATH} > /dev/null 2>&1
 touch ${OUTPUT_PATH}/${index_file} > /dev/null 2>&1
@@ -278,12 +283,7 @@ create_index > ${OUTPUT_PATH}/${index_file}
 
 # If errors...
 if [ -f ${OUTPUT_PATH}/errors.log ]; then
-  # Fail if it's not a "special" file
-  if [ -n "$(grep -v _header ${OUTPUT_PATH}/errors.log | grep -v _footer | grep -v _template)" ]; then
-    echo "Errors were detected!"
-    cat ${OUTPUT_PATH}/errors.log
-    exit 2
-  fi
-  # Must be only special files
-  rm -f ${OUTPUT_PATH}/errors.log
+  echo "Errors were detected! errors.log:"
+  cat ${OUTPUT_PATH}/errors.log
+  exit 2
 fi

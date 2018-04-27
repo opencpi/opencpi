@@ -288,7 +288,7 @@ The main RPMs each have specific usage. Table~\ref{table:mainrpm} outlines what 
 \rowcolor{blue}\textbf{Main RPMs} & \textbf{Description} \\
 \hline
 \small{\code{angryviper-ide-*.x86\_64.rpm}} &
-The ANGRYVIPER IDE (Eclipse with plugins). See Appendix D for an alternative method to set up the IDE using an existing Eclipse installation. \\
+The ANGRYVIPER IDE (Eclipse with plugins). See Appendix~\ref{App:IDE_plugin} for an alternative method to set up the IDE using an existing Eclipse installation. \\
 \hline
 \small{\code{opencpi-*.x86\_64.rpm}} &
 				Base installation RPM includes the runtime portion of the Component Development Kit (CDK), scripts for creating the user's workspace, limited documentation, and a read-only \code{ocpi.core} Project containing framework essential components, workers, platforms, etc. \\
@@ -653,20 +653,19 @@ To cross-build for a target RCC platform, instead of calling \path{ocpi-configur
 
 \newpage
 \section{Appendix - Add the ANGRYVIPER IDE to Eclipse using the Plugin}
+\label{App:IDE_plugin}
+The ANGRYVIPER IDE is constructed using the Eclipse Neon release and a plugin developed by the ANGRYVIPER team. Since the entire IDE is too large to be placed on GitHub, the following instructions may be used to obtain the IDE by downloading Eclipse and installing the plugin as an Eclipse drop-in.
 
-\label{IDE:create_by_dropin}
-The ANGRYVIPER IDE is constructed using the Eclipse Neon release and a plugin developed by the ANGRYVIPER team. Since the entire IDE is to large to be placed on GitHub, the following instructions may be used to obtain the IDE by downloading Eclipse and installing the plugin as an Eclipse drop-in. \\
-
-\subsection{How to Construct the ANGRYVIPER IDE}
-\label{subsec:construct_ide}
-Use these steps to set up the IDE:
-
+\subsubsection*{Download Plugin JAR}
 \begin{enumerate}
 \item Obtain the latest ANGRYVIPER plugin jar file
-\subitem (Process TBD)
-% \subitem https://www.eclipse.org/neon/
+\subitem \verb+wget https://opencpi.github.io/ide/av.proj.ide.plugin_1.3.jar+
+\end{enumerate}
+
+\subsection{Eclipse (Neon Release)}
+\begin{enumerate}
 \item Download the Eclipse Neon IDE for C/C++ Developers
-\subitem URL: https://www.eclipse.org/neon/ 
+\subitem URL: https://www.eclipse.org/neon/
 \item Install Eclipse by extracting the archive in the desired location
 \item Start Eclipse
 \subitem Go into the folder where it was installed and click/run \path{eclipse}
@@ -678,11 +677,10 @@ Click the ``Install'' button.  Sapphire and its dependencies will be installed.
 \item Eclipse now has the ANGRYVIPER IDE functionality.
 \end{enumerate}
 
-\subsection{The Eclipse Oxygen Release}
-\label{subsec:eclipse_oxygen}
-At this time, the ANGRYVIPER Team has not been able to 100\% verify using the plugin in Oxygen release. Eclipse Oxygen changed an API that caused problems for Sapphire, and Sapphire 9.1.1 has been released to correct the issue. \\
+\subsection{Eclipse (Oxygen Release)}
+The process to construct the IDE is the same as described above using the Oxygen release for C/C++ Developers. \\
 
-The process to construct the IDE is the same as described above using the Oxygen release IDE for C/C++ Developers. The unknown part of the process is whether or not the Eclipse Marketplace will have the new version of Sapphire. If it does not, it can be installed manually as follows:
+\textit{Note}: At this time, the ANGRYVIPER Team has not been able to 100\% verify using the plugin in Oxygen release. Eclipse Oxygen changed an API that caused problems for Sapphire, and Sapphire 9.1.1 has been released to correct the issue. The unknown part of the process is whether or not the Eclipse Marketplace will have the new version of Sapphire. If it does not, it can be installed manually as follows:
 \begin{enumerate}
 \item In Eclipse, navigate to ``Help $\rightarrow$ Install New Software''.
 \item Add the Sapphire 9.1.1 repository

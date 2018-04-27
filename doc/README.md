@@ -11,15 +11,15 @@ Recommended Reading Order
 
 The outline of the main documents and the general reading order is listed below:
 1. (AV's) [Overview of OpenCPI](http://opencpi.github.io/Overview.pdf)
-2. (AV's) [Installation Guide](http://opencpi.github.io/RPM_Installation_Guide.pdf)
+2. (AV's) [YUM/RPM Installation Guide](http://opencpi.github.io/RPM_Installation_Guide.pdf)
 3. (AV's) [Getting Started Guide](http://opencpi.github.io/Getting_Started.pdf)
 4. (AV's) Platform-specific Getting Started Guides
-   a. (AV's) [Matchstiq Getting Started Guide](http://opencpi.github.io/assets/Matchstiq_Z1_Getting_Started_Guide.pdf)
-   b. (AV's) [ZedBoard Getting Started Guide](http://opencpi.github.io/ZedBoard_Getting_Started_Guide.pdf)
+   - (AV's) [Matchstiq Getting Started Guide](http://opencpi.github.io/assets/Matchstiq_Z1_Getting_Started_Guide.pdf)
+   - (AV's) [ZedBoard Getting Started Guide](http://opencpi.github.io/ZedBoard_Getting_Started_Guide.pdf)
 5. [OpenCPI Application Development Guide](http://opencpi.github.io/OpenCPI_Application_Development.pdf) (reference)
-    a. (AV's) [FSK App Getting Started Guide](http://opencpi.github.io/assets/FSK_App_Getting_Started_Guide.pdf)
-    b. (AV's) [FSK App](http://opencpi.github.io/assets/FSK_app.pdf)
-    c. (AV's) [RX App](http://opencpi.github.io/assets/RX_app.pdf)
+   - (AV's) [FSK App Getting Started Guide](http://opencpi.github.io/assets/FSK_App_Getting_Started_Guide.pdf)
+   - (AV's) [FSK App](http://opencpi.github.io/assets/FSK_app.pdf)
+   - (AV's) [RX App](http://opencpi.github.io/assets/RX_app.pdf)
 6. [OpenCPI Component Development Guide](http://opencpi.github.io/OpenCPI_Component_Development.pdf) (reference)
 7. [OpenCPI RCC Development Guide](http://opencpi.github.io/OpenCPI_RCC_Development.pdf) (reference)
 8. [OpenCPI HDL Development Guide](http://opencpi.github.io/OpenCPI_HDL_Development.pdf) (reference)

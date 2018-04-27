@@ -77,8 +77,8 @@ HdlToolNeedsSourceList_quartus=yes
 #
 HdlToolLibRef=$(or $3,$(call HdlGetFamily,$2))
 
-# This is because it seems that Quartus cannot support entities and architectures in 
-# separate files, so we have to combine them 
+# This is because it seems that Quartus cannot support entities and architectures in
+# separate files, so we have to combine them
 QuartusVHDLWorker=$(and $(findstring worker,$(HdlMode)),$(findstring VHDL,$(HdlLanguage)))
 ifdef QuartusVHDLWorkerx
 QuartusCombine=$(OutDir)target-$(HdlTarget)/$(Worker)-combine.vhd
@@ -91,10 +91,17 @@ endif
 
 # Libraries can be built for specific targets, which just is for syntax checking
 # Note that a library can be designed for a specific target
+# The stratix families can use the device AUTO choose option
 QuartusFamily_stratix4:=Stratix IV
 QuartusFamily_stratix5:=Stratix V
+QuartusFamily_arria10soc_std:=Arria 10
+
 QuartusMakePart1=$(firstword $1)$(word 3,$1)$(word 2,$1)
-QuartusMakePart=$(call QuartusMakePart1,$(subst -, ,$1))
+# Strip out _std_alias if present (e.g. if there is a Pro version of this part as well)
+QuartusMakePart=$(call QuartusMakePart1,$(subst -, ,$(subst _std_alias,,$1)))
+# Defining HdlFullPart below allos HdlChoosePart to use Quartus' custom functions
+# for performing string opertations on Parts/Devices
+HdlFullPart_quartus=$(call ToUpper,$(call QuartusMakePart,$1))
 
 # Make the file that lists the files in order when we are building a library
 QuartusMakeExport= \
@@ -105,20 +112,17 @@ QuartusMakeExport= \
    ) > $(LibName)-sources.mk;)
 
 QuartusMakeFamily=$(QuartusFamily_$(call HdlGetFamily,$1))
-QuartusMakeDevice=$(strip $(if $(findstring $(HdlMode),platform config container),\
-                     $(foreach x,$(call ToUpper,$(call QuartusMakePart,$(HdlPart_$1))),$(xxinfo GOT:$x)$x),\
-		     $(xxinfo GOTZ:AUTO:$(HdlMode))AUTO))
 
-# arg 1 is hdltarget arg2 is platform
-QuartusMakeDevices=$(infox QMD:$1:$2)\
-  echo set_global_assignment -name FAMILY '\"'$(QuartusFamily_$(call HdlGetFamily,$1))'\"'; \
-  echo set_global_assignment -name DEVICE \
-      $(strip $(if $(findstring $(HdlMode),platform config container),\
-                  $(foreach x,$(call ToUpper,$(call QuartusMakePart,$(HdlPart_$2))),$(infox GOT:$x)$x),\
-$(if $(HdlExactPart),$(call ToUpper,$(call QuartusMakePart,$(HdlExactPart))),AUTO)));
-
-#		  $(infox GOTZ:AUTO:$(HdlMode))AUTO));
-
+# Assign the FAMILY if it has been set.
+# Use HdlChoosePart to set the DEVICE, but if the part is NONE, we do not set the device at all.
+#   Note: this is done because certain families (Arria 10) do not support the AUTO device
+#         construct. Instead, you can just set the FAMILY, and AUTO is implicit.
+# arg 1 is HdlTarget
+QuartusMakeDevices=$(infox QMD:$1)\
+  $(and $(call QuartusMakeFamily,$1),\
+    echo set_global_assignment -name FAMILY '\"'$(call QuartusMakeFamily,$1)'\"'; )\
+  $(if $(filter-out NONE,$(HdlChoosePart)),\
+    echo set_global_assignment -name DEVICE $(subst _std_alias,,$(HdlChoosePart)); )
 
 # The constraint file(s) to use, first/only arg is platform
 HdlConstraintsSuffix_quartus=.qsf
@@ -128,7 +132,7 @@ QuartusConstraints=$(or $(HdlConstraints),$(QuartusConstraints_default))
 # Make the settings file
 # Note that the local source files use notdir names and search paths while the
 # remote libraries use pathnames so that you can have files with the same names.
-# FIXME: use of "sed" below is slow - perhaps use .cN rather than _cN? 
+# FIXME: use of "sed" below is slow - perhaps use .cN rather than _cN?
 #
 # We check to see if a core is in 'Cores' before trying to add the
 # worker source files (e.g. those underneath gen). The cores listed
@@ -141,7 +145,7 @@ QuartusMakeQsf=\
  $(X From here we generate qsf file contents, e.g. "settings") \
  (\
   echo '\#' Common assignments whether a library or a core; \
-  $(call QuartusMakeDevices,$(HdlTarget),$(HdlPlatform)) \
+  $(call QuartusMakeDevices,$(HdlTarget)) \
   echo set_global_assignment -name TOP_LEVEL_ENTITY $(or $(Top),$(Core)); \
   \
   $(and $(SubCores_$(HdlTarget)),echo '\#' Import QXP file for each core;) \
@@ -208,7 +212,7 @@ HdlToolCompile=\
   $(if $(findstring $(HdlMode),library),\
     $(call DoAltera,quartus_map,--analysis_and_elaboration --write_settings_files=off $(Core),$(Core),map)); \
 
-# When making a library, quartus still wants a "top" since we can't precompile 
+# When making a library, quartus still wants a "top" since we can't precompile
 # separately from synthesis (e.g. it can't do what vlogcomp can with isim)
 # Need to be conditional on libraries
 ifeq ($(HdlMode),library)
@@ -260,8 +264,7 @@ $1/$3.sof: $$(call QuartusConstraints,$5)
 	$(AT)cd $1 && \
 	rm -r -f db incremental_db *-top.* && \
 	(echo \# Common assignments whether a library or a core; \
-	 echo set_global_assignment -name FAMILY '"'$$(call QuartusMakeFamily,$(HdlPart_$5))'"'; \
-	 echo set_global_assignment -name DEVICE $$(call QuartusMakeDevice,$5); \
+	$$(call QuartusMakeDevices,$(HdlPart_$5)) \
 	 echo set_global_assignment -name TOP_LEVEL_ENTITY $3; \
 	 echo set_global_assignment -name QXP_FILE '"'$3.qxp'"'; \
 	 echo set_global_assignment -name SDC_FILE '"'$(HdlPlatformDir_$5)/$5.sdc'"'; \
