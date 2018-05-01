@@ -24,6 +24,12 @@
 # OCPI_CDK_DIR and friends will all be set properly.
 # The goal here to have *no* environment setup requirement for a user app on the
 # development system with default settings.
+ifndef oldstuff
+ifndef OCPI_TARGET_PLATFORM
+  export OCPI_TARGET_PLATFORM=$(OCPI_TOOL_PLATFORM)
+endif
+include $(OCPI_CDK_DIR)/include/setup-target-platform.mk
+else
 ifndef OCPISETUP_MK
 export OCPISETUP_MK:=1
 OcpiThisFile=$(lastword $(MAKEFILE_LIST))
@@ -56,21 +62,6 @@ endif # The end of processing this file once - ifndef OCPISETUP_MK
 ################################################################################
 # OCPI_CDK_DIR has been established and verified.
 # Now complete the other aspects of environment setup.
-
-# Defaults for target tools
-CC = gcc
-CXX = c++
-LD = c++
-export OcpiDynamicLibrarySuffix=.so
-export OcpiDynamicLibraryFlags=-shared
-ifndef OCPI_TARGET_CXXFLAGS
-  export OCPI_TARGET_CXXFLAGS=-g -pipe -Wall -Wextra -D__STDC_LIMIT_MACROS -D__STDC_FORMAT_MACROS -Wfloat-equal -fno-strict-aliasing -Wconversion -Wno-sign-conversion -std=c++0x -Wshadow
-endif
-ifndef OCPI_TARGET_CFLAGS
-  export OCPI_TARGET_CFLAGS=-g -pipe -Wall -Wextra -D__STDC_LIMIT_MACROS -D__STDC_FORMAT_MACROS -Wfloat-equal -fno-strict-aliasing -Wconversion -Wno-sign-conversion -std=c99
-endif
-CXXFLAGS=$(OCPI_TARGET_CXXFLAGS)
-ARSUFFIX=a
 
 # RPM-based options:
 -include $(OCPI_CDK_DIR)/include/autoconfig_import-$(OCPI_TARGET_PLATFORM).mk
@@ -235,4 +226,5 @@ ifdef OCPI_TARGET_CXXFLAGS
 $(info OCPI_TARGET_CXXFLAGS="$(OCPI_TARGET_CXXFLAGS)";export OCPI_TARGET_CXXFLAGS;)
 endif
 
+endif
 endif

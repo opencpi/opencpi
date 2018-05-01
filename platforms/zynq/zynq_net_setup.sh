@@ -54,14 +54,12 @@ else
     echo Executing $PROFILE_FILE
     export OCPI_CDK_DIR=$OCPI_CDK_DIR
     if test -f /etc/opencpi-release; then
-      read OCPI_TOOL_PLATFORM OCPI_TOOL_HOST x < /etc/opencpi-release
+      read OCPI_TOOL_PLATFORM x < /etc/opencpi-release
     else
       echo No /etc/opencpi-release - assuming ZedBoard hardware
       OCPI_TOOL_PLATFORM=zed
-      OCPI_TOOL_HOST=linux-x13_4-arm
     fi
     export OCPI_TOOL_PLATFORM
-    export OCPI_TOOL_HOST
     export OCPI_TOOL_DIR=\$OCPI_TOOL_PLATFORM
     export OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/../projects/core/exports/lib/components/rcc/\$OCPI_TOOL_DIR
     export PATH=$OCPI_CDK_DIR/bin/\$OCPI_TOOL_DIR:\$PATH

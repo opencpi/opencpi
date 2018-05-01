@@ -489,7 +489,7 @@ OcpiXmlComponentLibraries=$(infox HXC)\
 # 1. arg1 if present
 # 2. the core project's artifacts
 # 3. the artifacts exported from the projects in the project path (its dependencies)
-OcpiGetDefaultLibraryPath=$(infox OGDLP:$1:)$(foreach p,$(strip \
+OcpiGetDefaultLibraryPath=$(foreach p,$(strip \
   $(and $1,$1:)$(foreach p,$(call OcpiAbsPathToContainingProject,$1),$p/artifacts)$(strip\
   $(subst $(Space),,$(foreach p,$(OcpiGetProjectPath),:$p/artifacts)))),$(infox OGDLPr:$p)$p)
 
@@ -509,14 +509,19 @@ OcpiGetProjectPath=$(strip \
                        $(or $(call OcpiExists,$p/exports),$(call OcpiExists,$p),$(RPM_BUILD_ROOT),\
                          $(info Warning: The path $p in Project Path does not exist.))))
 
-# There are certain cases where we will want all projects that are 'registered' (not just the ones
+# There are certain cases where we will want all projects that are 'registered'
+# (not just the ones
 # explicitly or implicitly depended on by the current project).
 # For example, available platforms can be determined based on all known projects.
 # Warning is suppressed during RPM builds
-OcpiGetExtendedProjectPath=$(strip $(OcpiGetProjectPath) \
-                             $(foreach p,$(OcpiGetImportsNotInDependencies),\
-                               $(or $(call OcpiExists,$p/exports),$(call OcpiExists,$p),$(RPM_BUILD_ROOT),\
-                                 $(info Warning: The path $p in Project Path does not exist.))))
+# This may be called from outside of a project
+OcpiGetExtendedProjectPath=$(strip\
+  $(if $(OCPI_PROJECT_DIR),\
+    $(OcpiGetProjectPath) \
+    $(foreach p,$(OcpiGetImportsNotInDependencies),\
+      $(or $(call OcpiExists,$p/exports),$(call OcpiExists,$p),$(RPM_BUILD_ROOT),\
+           $(info Warning: The path $p in Project Path does not exist.))),\
+    $(subst :, ,$(OCPI_PROJECT_PATH)) $(wildcard $(OcpiGlobalDefaultProjectRegistryDir)/*/exports)))
 
 # Loop through all imported projects and check for 'exports' and then try to find
 # rcc/platforms. Return a list of paths to 'rcc/platforms' directories found in each

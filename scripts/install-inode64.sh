@@ -1,4 +1,4 @@
-#!/bin/bash --noprofile
+#!/bin/bash
 # This file is protected by Copyright. Please refer to the COPYRIGHT file
 # distributed with this source distribution.
 #
@@ -17,26 +17,25 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-OCPI_GTEST_VERSION=1.7.0
+# https://www.tcm.phy.cam.ac.uk/sw/inode64.c
 [ -z "$OCPI_CDK_DIR" ] && echo Environment variable OCPI_CDK_DIR not set && exit 1
 source $OCPI_CDK_DIR/scripts/setup-install.sh \
        "$1" \
-       gtest \
-       "Google C++ Test Library" \
-       release-$OCPI_GTEST_VERSION.zip \
-       https://github.com/google/googletest/archive \
-       googletest-release-$OCPI_GTEST_VERSION \
-       1
-$CXX -fPIC -I../include -I.. -c ../src/gtest-all.cc
-$AR -rs libgtest.a gtest-all.o
-dname=libgtest$OCPI_TARGET_DYNAMIC_SUFFIX
-ldir=$OCPI_PREREQUISITES_INSTALL_DIR/gtest/$OCPI_TARGET_DIR/lib
-iname=$ldir/$dname
-[ "$OCPI_TARGET_OS" = macos ] && install_name="-install_name $iname"
-libs=($OCPI_TARGET_EXTRA_LIBS)
-$CXX $OCPI_TARGET_DYNAMIC_FLAGS -o $dname gtest-all.o ${libs[@]/#/-l}
-mkdir -p $ldir
-relative_link libgtest.a $ldir
-relative_link $dname $ldir
-cd ..
-relative_link include $OCPI_PREREQUISITES_INSTALL_DIR/gtest
+       inode64 \
+       "fix for 32 bit binaries running on 64-bit-inode file systems" \
+       inode64.c \
+       https://www.tcm.phy.cam.ac.uk/sw \
+       . \
+       0
+# Extract the version script from the comment
+ed -s ../inode64.c <<-EOF
+	/^GLIBC/
+	ka
+	/^};/
+	'a,.w vers
+	EOF
+# These are from the comments in the source file
+gcc -c -fPIC -m32 ../inode64.c
+ld -shared -melf_i386 --version-script vers -o inode64.so inode64.o
+relative_link inode64.so $OCPI_PREREQUISITES_INSTALL_DIR/inode64/$OCPI_TARGET_PLATFORM/lib
+

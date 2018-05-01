@@ -51,7 +51,7 @@ for t in $TESTS; do
     swig)
       echo ======================= Running python swig test
       OCPI_LIBRARY_PATH=projects/core/exports/artifacts \
-		       PYTHONPATH=$OCPI_CDK_DIR/$OCPI_TOOL_DIR/lib \
+		       PYTHONPATH=$OCPI_CDK_DIR/$OCPI_TARGET_DIR/lib \
 		       python<<-EOF
 	import sys
 	old=sys.getdlopenflags();

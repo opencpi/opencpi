@@ -51,39 +51,19 @@ RccIncludeDirsActual=$(RccIncludeDirsInternal)\
    $(OCPI_PREREQUISITES_DIR)/$l/$(RccRealPlatform)/include\
    $(OCPI_PREREQUISITES_DIR)/$l/include)
 
-# Allow either platforms or targets for now
-# Unfortunately these are called sometimes with target assignment of RccTarget and
-# sometimes not.
-RccOs=$(or $(OcpiPlatformOs_$1),$(word 1,$(subst -, ,$(or $1,$(RccTarget),$(error Internal)))))
-RccOsVersion=$(or $(OcpiPlatformOsVersion_$1),$(word 2,$(subst -, ,$1)))
-RccArch=$(or $(OcpiPlatformArch_$1),$(word 3,$(subst -, ,$1)))
-
-BF=$(BF_$(call RccOs,$1))
+# FIXME: change this variable name someday (used by xxx-worker.mk)
+BF=$(OcpiDynamicLibrarySuffix_$(RccPlatform))
+RccLinkOptions=$(OcpiRccLDFlags_$(RccPlatform))
 # This is for backward compatibility
-RccLinkOptions=$(SharedLibLinkOptions)
-RccCompileWarnings=-Wall
-ifneq ($(OCPI_DEBUG),0)
-RccLinkOptions+= -g
+ifdef SharedLibLinkOptions
+  RccLinkOptions=$(SharedLibLinkOptions)
 endif
-# Linux values
-BF_linux=.so
-SOEXT_linux=.so
-AREXT_linux=.a
-RccLinkOptions_linux=$(RccLinkOptions) -shared
-RccCompileOptions_linux=$(RccCompileOptions) -fPIC
-# macos values
-BF_macos=.dylib
-SOEXT_macos=.dylib
-AREXT_macos=.a
-RccMainLinkOptions_macos=$(RccLinkOptions) -Xlinker -rpath -Xlinker $(OCPI_CDK_DIR)/$(RccPlatform)/lib
-RccLinkOptions_macos=$(RccLinkOptions) -dynamiclib -Xlinker -undefined -Xlinker dynamic_lookup
 DispatchSourceFile=$(call WkrTargetDir,$1,$2)/$(CwdName)_dispatch.c
 ArtifactFile=$(BinaryFile)
 # Artifacts are target-specific since they contain things about the binary
 ArtifactXmlFile=$(call WkrTargetDir,$1,$2)/$(word 1,$(Workers))_assy-art.xml
 ToolSeparateObjects:=yes 
 OcpiLibDir=$(OCPI_CDK_DIR)/$(RccPlatform)/lib
-OcpiIsDynamic=$(if $(findstring d,$(word 2,$(subst -, ,$1))),1,0)
 # Add the libraries we know a worker might reference.
 ifdef OcpiBuildingACI
   RccSpecificLinkOptions=\
@@ -100,9 +80,29 @@ endif
 
 Comma=,
 RccLibDir=$(OCPI_CDK_DIR)/$(RccPlatform)/lib
+# These two are 0 and 1 to be passed as values to ocpigen etc.
+OcpiIsDynamic=$(if $(findstring d,$(word 2,$(subst -, ,$1))),1,0)
+OcpiIsOptimized=$(if $(findstring o,$(word 2,$(subst -, ,$1)))$(filter 0,$(OCPI_DEBUG)),1,0)
 RccDynamic=$(filter 1,$(call OcpiIsDynamic,$(RccPlatform)))
+RccOptimized=$(filter 1,$(call OcpiIsOptimized,$(RccPlatform)))
+RccCC=$(OcpiCrossCompile_$1)$(OcpiCC_$1) $(OcpiCFlags_$1) $(OcpiRequiredCFlags_$1)
+RccCXX=$(OcpiCrossCompile_$1)$(OcpiCXX_$1) $(OcpiCXXFlags_$1) $(OcpiRequiredCXXFlags_$1)
+RccLD=$(OcpiCrossCompile_$1)$(Ocpi$(if $(filter c++,$(OcpiLanguage)),CXX,C)LD_$1)
+RccCompileWarnings=$(OcpiRccWarnings_$(RccPlatform))
+RccSuffix=$(OcpiDynamicLibrarySuffix_$(RccPlatform))
+RccStaticSuffix=$(OcpiStaticLibrarySuffix_$(RccPlatform))
+RccMainLinkOptions=$(strip\
+  $(if $(RccDynamic),\
+    $(OcpiDynamicProgramFlags_$(RccPlatform)),\
+    $(OcpiStaticProgramFlags_$(RccPlatform))))
+RccCompileOptions=$(strip\
+  -fPIC \
+  $(if $(RccOptimized),\
+     $(OcpiOptimizeOnFlags_$(RccPlatform)),\
+     $(OcpiOptimizeOffFlags_$(RccPlatform))))
+
 LinkBinary=\
-  $(Ocpi$(if $(filter c++,$(OcpiLanguage)),CXX,C)LD_$(RccRealPlatform)) \
+  $(call RccLD,$(RccRealPlatform)) \
   $(and $(OcpiBuildingACI),\
     $(Ocpi$(if $(RccDynamic),Dynamic,Static)ProgramFlags_$(RccRealPlatform)))\
   $(RccSpecificLinkOptions) \
@@ -114,33 +114,25 @@ LinkBinary=\
   $(foreach l,$(RccLibrariesInternal) $(Libraries),\
     $(if $(findstring /,$l),\
       $(foreach p,$(dir $l)$(RccPlatform)/lib$(notdir $l),\
-         $(or $(wildcard $p$(AREXT_$(call RccOs,))),\
-              $(and $(wildcard $p$(SOEXT_$(call RccOs,))),-L $(dir $l)$(RccPlatform) -l $(notdir $l)),\
-              $(error No RCC library found for $l, tried $p$(AREXT_$(call RccOs,)) and $p$(SOEXT_$(call RccOs,))))), \
-      $(if $(filter 1,$(call OcpiIsDynamic,$(RccPlatform))),\
+         $(or $(wildcard $p$(RccStaticSuffix)),\
+              $(and $(wildcard $p$(RccSuffix)),-L $(dir $l)$(RccPlatform) -l $(notdir $l)),\
+              $(error No RCC library found for $l, tried $p$(RccStaticSuffix) and $p$(RccSuffix)))), \
+      $(if $(RccDynamic),\
          -l ocpi_$l,\
-         $(and $(OcpiBuildingACI),$(RccLibDir)/libocpi_$l$(AREXT_$(call RccOs,)))))) \
+         $(and $(OcpiBuildingACI),$(RccLibDir)/libocpi_$l$(RccStaticSuffix))))) \
   -L $(RccLibDir) \
   $(foreach l,$(RccStaticPrereqLibs),\
     $(OCPI_PREREQUISITES_DIR)/$l/$(RccRealPlatform)/lib/lib$l.a) \
   $(and $(RccDynamicPrereqLibs),-Wl$(Comma)-rpath -Wl$(Comma)'$$ORIGIN') \
   $(foreach l,$(RccDynamicPrereqLibs),\
-    $(OCPI_PREREQUISITES_DIR)/$l/$(RccRealPlatform)/lib/lib$l$(SOEXT_$(call RccOs,))) \
+    $(OCPI_PREREQUISITES_DIR)/$l/$(RccRealPlatform)/lib/lib$l$(RccSuffix)) \
   $(and $(OcpiBuildingACI),$(OcpiExtraLibs_$(RccRealPlatform):%=-l%)) \
-  $(if $(filter 1,$(call OcpiIsDynamic,$(RccPlatform))),,\
+  $(if $(RccDynamic),,\
      && $(OCPI_CDK_DIR)/scripts/makeStaticWorker.sh $(call RccOs,) $@ \
-	  $(foreach l,$(RccLibrariesInternal),libocpi_$l$(call BF,$(call RccOs,)))) \
+	  $(foreach l,$(RccLibrariesInternal),libocpi_$l$(RccSuffix))) \
   $(foreach l,$(RccDynamicPrereqLibs),\
-    && cp $(OCPI_PREREQUISITES_DIR)/$l/$(RccRealPlatform)/lib/lib$l$(SOEXT_$(call RccOs,)) $(@D))
+    && cp $(OCPI_PREREQUISITES_DIR)/$l/$(RccRealPlatform)/lib/lib$l$(RccSuffix) $(@D))
 
-CompilerWarnings= -Wall -Wextra
-CompilerDebugFlags=-g
-CompilerOptimizeFlags=-O -DNDEBUG=1
-ifeq ($(OCPI_DEBUG),1)
-RccCompileOptions=$(CompilerDebugFlags)
-else
-RccCompileOptions=$(CompilerOptimizeFlags)
-endif
 $(foreach v,$(filter ExtraCompilerOptionsCC_%,$(.VARIABLES)),\
   $(foreach t,$(v:ExtraCompilerOptionsCC_%=%),\
     $(foreach p,$(RccPlatforms),\
@@ -182,8 +174,6 @@ RccFinalCompileOptions=\
   $(call RccPrioritize,ExtraCompileOptions,$1,$2,$3) \
 
 #$(foreach v,$(OcpiAllPlatformVars),$(info $v_$(word 1,$(RccPlatforms)):$($v_$(word 1,$(RccPlatforms)))))
-RccCC=$(OcpiCC_$1) $(OcpiCFlags_$1) $(OcpiRequiredCFlags_$1)
-RccCXX=$(OcpiCXX_$1) $(OcpiCXXFlags_$1) $(OcpiRequiredCXXFlags_$1)
 Compile_c=$$(call OcpiFixPathArgs,\
   $$(call RccCC,$$(RccRealPlatform)) -MMD -MP -MF $$@.deps -c \
   $$(call RccFinalCompileOptions,C,$$(RccTarget),$$(RccPlatform)) \

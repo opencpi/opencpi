@@ -1,4 +1,3 @@
-#!/bin/bash --noprofile
 # This file is protected by Copyright. Please refer to the COPYRIGHT file
 # distributed with this source distribution.
 #
@@ -17,26 +16,22 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-OCPI_GTEST_VERSION=1.7.0
+##########################################################################################
+version=7.2.1-2017.11
+minor=`sed 's/\([0-9]*\.[0-9]*\)\.[0-9]*\(-.*$\)/\1\2/' <<<$version`
+dir=gcc-linaro-$version-x86_64_arm-linux-gnueabihf
+me=gcc-linaro-arm-gnueabihf # could be from ${0} etc.
 [ -z "$OCPI_CDK_DIR" ] && echo Environment variable OCPI_CDK_DIR not set && exit 1
 source $OCPI_CDK_DIR/scripts/setup-install.sh \
        "$1" \
-       gtest \
-       "Google C++ Test Library" \
-       release-$OCPI_GTEST_VERSION.zip \
-       https://github.com/google/googletest/archive \
-       googletest-release-$OCPI_GTEST_VERSION \
-       1
-$CXX -fPIC -I../include -I.. -c ../src/gtest-all.cc
-$AR -rs libgtest.a gtest-all.o
-dname=libgtest$OCPI_TARGET_DYNAMIC_SUFFIX
-ldir=$OCPI_PREREQUISITES_INSTALL_DIR/gtest/$OCPI_TARGET_DIR/lib
-iname=$ldir/$dname
-[ "$OCPI_TARGET_OS" = macos ] && install_name="-install_name $iname"
-libs=($OCPI_TARGET_EXTRA_LIBS)
-$CXX $OCPI_TARGET_DYNAMIC_FLAGS -o $dname gtest-all.o ${libs[@]/#/-l}
-mkdir -p $ldir
-relative_link libgtest.a $ldir
-relative_link $dname $ldir
+       $me \
+       "Tool chain for Altera SoC" \
+       $dir.tar.xz \
+       https://releases.linaro.org/components/toolchain/binaries/$minor/arm-linux-gnueabihf \
+       $dir \
+       0
+dest=$OCPI_PREREQUISITES_INSTALL_DIR/$me
+# Don't need a build dir since this is a binary distribution.
 cd ..
-relative_link include $OCPI_PREREQUISITES_INSTALL_DIR/gtest
+# The tool chain finds ancillary files ok so all we need is bin.
+relative_link bin $dest/$OCPI_TARGET_DIR

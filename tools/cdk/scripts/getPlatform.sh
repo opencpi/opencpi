@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash --noprofile
 # This file is protected by Copyright. Please refer to the COPYRIGHT file
 # distributed with this source distribution.
 #
@@ -17,6 +17,7 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
+##########################################################################################
 # This script determines the runtime platform and target variables
 # The four variables are: OS OSVersion Processor Platform
 # If it returns nothing (""), that is an error
@@ -40,6 +41,7 @@ HostProcessor=`uname -m | tr A-Z a-z`
 if [ -n "$OCPI_CDK_DIR" -a -e "$OCPI_CDK_DIR/scripts/util.sh" ]; then
   source $OCPI_CDK_DIR/scripts/util.sh
   projects="`getProjectPathAndRegistered`"
+  [ -d $OCPI_CDK_DIR/../projects/core ] && projects="$projects $OCPI_CDK_DIR/../projects/core"
 elif [ -n "$OCPI_PROJECT_PATH" ]; then
   # If the CDK is not set or util.sh does not exist, fall back on OCPI_PROJECT_PATH
   echo Unexpected internal error: OCPI_CDK_DIR IS NOT SET1 >&2 && exit 1
@@ -49,15 +51,8 @@ elif [ -d projects ]; then
   # Probably running in a clean source tree.  Find projects and absolutize pathnames
   projects="$(for p in projects/*; do echo `pwd`/$p; done)"
 fi
-# Make sure that we look in the core project IN ANY CASE
-if [ -n "$OCPI_CDK_DIR" ]; then
-  [ -d $OCPI_CDK_DIR/../projects/core ] && projects="$projects $OCPI_CDK_DIR/../projects/core"
-else
-  echo Unexpected internal error: OCPI_CDK_DIR IS NOT SET3 >&2 && exit 1
-  [ -d /opt/opencpi/projects/core ] && projects="$projects /opt/opencpi/projects/core"
-fi
 if [ -z "$projects" ]; then
-  echo "Error:  Cannot find any projects for RCC platforms." >&2
+  echo "Unexpected error:  Cannot find any projects for RCC platforms." >&2
   exit 1
 fi
 # loop through all projects to find the platform
@@ -76,20 +71,19 @@ for j in $projects; do
   if [ -n "$1" ]; then # looking for a specific platform (not the current one)
     d=$platforms_dir/$1
     if [ -d $d -a -f $d/$1.mk ]; then
-      vars=($(egrep '^ *OcpiPlatform(Os|Arch|OsVersion) *:= *' $d/$1.mk |
-              sed 's/OcpiPlaform\([^ :=]*\) *:= *\([^a-zA-Z0-9_]*\/\1 \2/'|sort))
+      vars=($(egrep '^ *OcpiPlatform(Os|Arch|OsVersion) *:*= *' $d/$1.mk |
+              sed 's/OcpiPlatform\([^ :=]*\) *:*= *\([^a-zA-Z0-9_]*\)/\1 \2/'|sort))
       [ ${#vars[@]} = 6 ] || {
-        echo "Error:  Platform file $d/$1.mk is invalid and cannot be used." >&2
-        echo "Error:  OcpiPlatform* variables not valid." >&2
+        echo "Error:  Platform file $d/$1.mk is invalid and cannot be used.${vars[*]}" >&2
+        echo "Error:  OcpiPlatform(Os|OsVersion|Arch) variables are not valid." >&2
 	exit 1
       }      
-      echo got ${vars[1]} ${vars[2]} ${vars[0]} ${vars[1]}-${vars[2]}-${vars[0]} $1 $d > /dev/tty
       echo ${vars[1]} ${vars[2]} ${vars[0]} ${vars[1]}-${vars[2]}-${vars[0]} $1 $d
       exit 0
     fi
   else # not looking for a particular platform, but looking for the one we're running on
     for i in $platforms_dir/*; do
-      test -d $i -a -f $i/target && isCurPlatform $i/$(basename $i)
+      test -d $i -a -f $i/$(basename $i).mk && isCurPlatform $i/$(basename $i)
     done # done with platforms in this project's rcc/platforms directory
   fi
 done # done with the project

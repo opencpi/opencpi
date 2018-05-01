@@ -21,29 +21,31 @@
 # Install prerequisite packages for Centos7
 #
 # First, for git cloning in the minimum centos7 CD image, installing git brings:
-CENTOS7_PKGS="perl rsync libgnome-keyring perl-Git"
+PKGS="perl rsync libgnome-keyring perl-Git"
 # Second, for the basic build/test (make prerequisites, make framework, make projects, test):
 #    for framework and prereq build:
-CENTOS7_PKGS+=" autoconf automake libtool gcc-c++ ed which"
+PKGS+=" autoconf automake libtool gcc-c++ ed which"
 #    for prerequisite downloading and building:
-CENTOS7_PKGS+=" unzip patch"
+PKGS+=" unzip patch"
 #    for python and swig:
-CENTOS7_PKGS+=" python swig python-devel python-lxml"
+PKGS+=" python swig python-devel python-lxml"
 #    for driver: kernel-devel
-CENTOS7_PKGS+=" kernel-devel"
+PKGS+=" kernel-devel"
 #    for "make rpm":
-CENTOS7_PKGS+=" rpm-build"
+PKGS+=" rpm-build"
 #    for building init root file systems for embedded systems
-CENTOS7_PKGS+=" fakeroot"
+PKGS+=" fakeroot"
 #    for JTAG loading of FPGA bitstreams
-CENTOS7_PKGS+=" libusb-devel"
+PKGS+=" libusb-devel"
 #    for general configuration/installation flexibility
-CENTOS7_PKGS+=" nfs-utils"
+PKGS+=" nfs-utils"
 #    for OpenCL support (the switch for different actual drivers that are not installed here)
-CENTOS7_PKGS+=" ocl-icd"
+PKGS+=" ocl-icd"
 #    for various 32-bit software tools we end up using (e.g. modelsim)
-CENTOS7_PKGS+=" glibc.i686 libXft.i686 libXext.i686 ncurses-libs.i686 libXdmcp.i686"
-
-echo Installing standard extra packages using "sudo yum"
-echo Installing packages required or commonly used: $CENTOS7_PKGS
-sudo yum -y install $CENTOS7_PKGS
+PKGS+=" glibc.i686 libXft.i686 libXext.i686 ncurses-libs.i686 libXdmcp.i686"
+#    for various testing scripts
+PKGS+=" python-numpy"
+[ "$1" = list ] && echo $PKGS && exit 0
+echo Installing standard extra packages using: sudo yum
+echo Installing these packages required or commonly used: $PKGS
+sudo yum -y install $PKGS

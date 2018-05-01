@@ -17,22 +17,10 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-usage () {
-  echo Usage is: `basename $0` \[ load \| unload \| reload \| status \]
-  exit 1
-}
-[ $# = 0 -o $# != 1 ] && usage
-case $1 in -h|--help|load|unload|reload|status);; *) usage;; esac
-[ -z "$OCPI_CDK_DIR" -o ! -d "$OCPI_CDK_DIR/scripts" ] && {
-  echo This $(basename $0) script requires OCPI_CDK_DIR to be valid and it is not.
-  exit 1
-}
-OCPI_BOOTSTRAP=$OCPI_CDK_DIR/scripts/ocpibootstrap.sh; . $OCPI_BOOTSTRAP
-SCR=$OCPI_CDK_DIR/scripts/ocpi_${OCPI_TOOL_OS}_driver
-[ ! -r $SCR ] && {
-  echo There is no driver loading/unloading support for this system \(${OS}\).
-  exit 1
-}
-# does not require execute permission in $SCR
-exec sh $SCR $1
-
+# Install prerequisite packages for Linux Mint 18
+echo Installing standard extra packages using "sudo apt"
+MINT18_PKGS="build-essential autoconf automake binutils bison flex gettext libtool make patch pkg-config mlocate tcl pax python-dev fakeroot nfs-common ocl-icd-dev libusb-dev"
+echo Installing packages required or commonly used: $MINT18_PKGS
+sudo apt install $MINT18_PKGS -y
+echo Installing 32 bit libraries '(really only required for modelsim and/or quartus)'
+sudo apt install libc6-i386 libxft2:i386 libxext6:i386 lib32ncurses5 libxdmcp6:i386 -y

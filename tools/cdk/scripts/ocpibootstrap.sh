@@ -70,7 +70,7 @@ if [ "$OCPI_CDK_DIR" = "" -o ! -d "$OCPI_CDK_DIR" ]; then # and any other sanity
     exit 1
   fi
 fi
-source $(OCPI_CDK_DIR)/opencpi-setup.sh -r
+source $OCPI_CDK_DIR/opencpi-setup.sh -r
 return 0
 # Initialize PREREQUISITES variables
 # THIS IS THE SHELL VERSION OF WHAT IS IN util.mk

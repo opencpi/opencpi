@@ -76,8 +76,12 @@ function setVarsFromMake {
     [ -n "$3" ] && echo The '"make"' command is not available. 2>&1
     return 1
   }
-  eval $(eval make -n -r -s -f $1 $2 \
-              ${quiet:+2>/dev/null} | grep '^[a-zA-Z_][a-zA-Z_]*=')
+  local vars
+  vars=$(set -o pipefail;\
+         eval make -n -r -s -f $1 $2 ${quiet:+2>/dev/null} | \
+	 grep '^[a-zA-Z_][a-zA-Z_]*=')
+  [ $? != 0 ] && return 1
+  eval $vars
 }
 
 function isPresent {
@@ -202,6 +206,7 @@ function ocpiDirType {
       [ $rc = 0 ] && echo $type
   }
 }
+
 
 OcpiEcho=/bin/echo
 

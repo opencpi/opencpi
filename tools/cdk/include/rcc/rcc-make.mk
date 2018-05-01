@@ -113,6 +113,7 @@ ifdef RccPlatforms
         $(if $(filter $(call RccRealPlatforms,$p),$(OnlyPlatforms) $(RccOnlyPlatforms)),$p,)))
   endif
   RccTargets:=
+  $(call OcpiDbgVar,RccTargets)
   # Set the target (RccTarget_<platform>) for each platform specified, retaining
   # build options here on both sides.  If there are no build options for a platform this
   # essentially rewrites the RccTarget_<platform> variable that is already set from
@@ -121,8 +122,11 @@ ifdef RccPlatforms
     $(foreach r,$(call RccRealPlatforms,$p),\
       $(if $(filter $r,$(RccAllPlatforms)),,\
         $(error RccPlatform $r is unknown, it is not found in any registered project))\
-      $(eval RccTarget_$p:=$(call RccPlatformTarget,$p,$(RccTarget_$r)))\
-      $(eval RccTargets=$(strip $(RccTargets) $(RccTarget_$p)))))
+      $(foreach t,$(call RccPlatformTarget,$p,$(RccTarget_$r)),\
+        $(eval RccTarget_$p:=$t)\
+        $(eval RccTargets=$(strip $(RccTargets) $t)))))
+  $(call OcpiDbgVar,RccPlatforms)
+  $(call OcpiDbgVar,RccTargets)
 else
   # Derive a platform from each target (somewhat expensive, but we have shortcuts)
   # This can be deprecated or accelerated as it makes sense
@@ -163,6 +167,13 @@ define RccSetPlatformVariables
       $$(eval $$v_$1:=$$($$v)))
   endif
 endef
+
+# Allow either platforms or targets for now
+# Unfortunately these are called sometimes with target assignment of RccTarget and
+# sometimes not.
+RccOs=$(or $(OcpiPlatformOs_$1),$(word 1,$(subst -, ,$(or $1,$(RccTarget),$(error Internal)))))
+RccOsVersion=$(or $(OcpiPlatformOsVersion_$1),$(word 2,$(subst -, ,$1)))
+RccArch=$(or $(OcpiPlatformArch_$1),$(word 3,$(subst -, ,$1)))
 
 # Read in all the tool sets indicated by the targets
 ifeq ($(filter clean cleanrcc,$(MAKECMDGOALS)),)

@@ -303,6 +303,8 @@ namespace OCPI {
 			    bool write) const {
 #if !defined(NDEBUG) || defined(OCPI_API_CHECK_PROPERTIES)
         checkTypeAlways(m, ctype, n, write);
+#else
+        (void)m;(void)ctype;(void)n;(void)write;
 #endif
       }
       const OCPI::Util::Member &descend(AccessList &list, size_t &offset) const;

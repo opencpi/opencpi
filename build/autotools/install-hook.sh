@@ -152,7 +152,6 @@ echo Removing libtool libraries, leaving only the required \"real\" libraries.
 rm lib/*.la
 if [ $2 = 1 ]; then
   echo Processing the libraries and executables for a dynamic configuration 1>&2
-  echo removing in `pwd` lib/*_s.a
   rm lib/*_s.a
   # change the rpath of all dynamic libraries and executables to be relocatable
   for i in lib/*$1 `find bin -type f`; do # look for all dynamic libraries we created

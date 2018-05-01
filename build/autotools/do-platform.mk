@@ -61,19 +61,15 @@ ifeq ($(filter clean%,$(MAKECMDGOALS)),)
 
   include $(OcpiRelativeTop)/bootstrap/include/platform-defaults.mk
   include $(OcpiPlatformDir)/$(OcpiPlatform).mk
-  # Do stuff for backward compatibility until we can clean up all the target files
   ifneq ($(OcpiPlatform),$(OcpiThisPlatform))
-    $(if $(or $(OCPI_CROSS_COMPILE),$(and $(OCPI_CROSS_BUILD_BIN_DIR),$(OCPI_CROSS_HOST))),,\
-      $(info The platform file $(OcpiPlatform)-target.mk does not set OCPI_CROSS_BUILD_BIN_DIR) \
+    ifndef OcpiCrossCompile
       $(error The platform $(OcpiPlatform) does not appear to support cross compilation))
-    $(if $(OCPI_CROSS_COMPILE),,\
-      $(eval OCPI_CROSS_COMPILE:=$(OCPI_CROSS_BUILD_BIN_DIR)/$(OCPI_CROSS_HOST)-))
-    OcpiCrossCompile:=$(OCPI_CROSS_COMPILE)
+    endif
   endif
 endif
 
 platform-variables.sh: \
-           $(OcpiRelativeTop)/bootstrap/include/platform-defaults.mk $(OcpiPlatformDir)/$(OcpiPlatform)-target.mk \
+           $(OcpiRelativeTop)/bootstrap/include/platform-defaults.mk $(OcpiPlatformDir)/$(OcpiPlatform).mk \
            ../do-platform.mk
 	$(AT)($(foreach v,$(OcpiAllPlatformVars), echo $v=\"$($v)\";)) > platform-variables.sh
 
@@ -83,26 +79,32 @@ Makefile: ../gen/configure platform-variables.sh ../do-platform.mk ../gen/Makefi
 	$(AT) echo Configuring for platform $(Platform) in $(basename $(CURDIR)).
 	$(AT) build=$$(../gen/build-aux/config.guess); \
               [ -n "$$build" ] || exit 1; \
+	      $(and $(OcpiCrossCompile),\
+	        PATH=$(patsubst %/,%,$(dir $(OcpiCrossCompile))):$$PATH;) \
               ../gen/configure --build=$$build --enable-silent-rules \
 	        $(and $(OcpiPlatformDynamic),--enable-dynamic=yes) \
 	        $(and $(OcpiPlatformOptimize),--enable-debug=no) \
 	        prerequisite_dir=$(or $(PrerequisitesDir),$(OcpiRelativeTop)/prerequisites) \
                 $(and $(OcpiCrossCompile),\
-                   --host=$(OcpiPlatformArch)-none-$(OcpiPlatformOs)) \
+                   --host=$(patsubst %-,%,$(notdir $(OcpiCrossCompile))))
 	        CC=$(OcpiCrossCompile)$(OcpiCC) \
 	        CXX=$(OcpiCrossCompile)$(OcpiCXX) \
 	        LD=$(OcpiCrossCompile)$(OcpiLD) \
 	        AR=$(OcpiCrossCompile)$(OcpiAR) \
 	        STRIP=$(OcpiCrossCompile)$(OcpiSTRIP) 
 
+# OcpiPlatformArch)-none-$(OcpiPlatformOs)
+
 build:
 	$(AT) echo Building platform $(Platform) in $(basename $(CURDIR)).
-	$(AT) $(MAKE)
+	$(AT) $(and $(OcpiCrossCompile),\
+	        PATH=$(patsubst %/,%,$(dir $(OcpiCrossCompile))):$$PATH;) $(MAKE)
 
 install:
 	$(AT) echo Installing for platform $(OcpiPlatform) into $(TargetDir)/staging
 	$(AT) rm -r -f staging
-	$(AT) $(MAKE) install
+	$(AT) $(and $(OcpiCrossCompile),\
+	        PATH=$(patsubst %/,%,$(dir $(OcpiCrossCompile))):$$PATH;) $(MAKE) install
 
 clean:
 	$(AT) make clean

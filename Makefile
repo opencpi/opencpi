@@ -42,7 +42,7 @@ export RccPlatforms
 DoExports=for p in $(RccPlatforms); do ./scripts/makeExportLinks.sh $$p; done
 DoTests=for p in $(RccPlatforms); do ./scripts/test-opencpi.sh $$p; done
 # Get macros and rcc platform/target processing
-include $(OCPI_CDK_DIR)/include/rcc/rcc-targets.mk
+include $(OCPI_CDK_DIR)/include/rcc/rcc-make.mk
 
 ##########################################################################################
 # Goals that are not about projects
@@ -74,7 +74,7 @@ driver:
 	         $(foreach o,$(call RccOs,$t),\
 	           if test -d os/$o/driver; then \
 	             echo Building the $o kernel driver for $(call RccRealPlatforms,$p); \
-	             $(MAKE) -C os/$o/driver OcpiPlatform=$p; \
+	             $(MAKE) -C os/$o/driver AT=$(AT) OcpiPlatform=$p;\
 	           else \
 	             echo There is no kernel driver for the OS '"'$o'"', so none built. ; \
 	           fi;))) \
@@ -229,6 +229,14 @@ prerequisites:
 	$(AT)for p in $(call RccRealPlatforms,$(RccPlatforms)); do\
                 ./scripts/install-prerequisites.sh $$p;\
              done
+# This is the only place this list exists for the moment.
+# clearly each project should have a list of prerequisites.
+.PHONY: project-prerequisites
+project-prerequisites:
+	$(AT)for p in $(call RccRealPlatforms,$(RccPlatforms)); do\
+                ./scripts/install-ad9361.sh $$p;\
+                ./scripts/install-liquid.sh $$p;\
+             done
 ##########################################################################################
 # Goals that are about projects
 # A convenience to run various goals on all the projects that are here
@@ -306,5 +314,3 @@ These various project-related goals simply perform the goal in all projects:
 Variables that only affect project building can also be used, like HdlPlatforms.
 endef
 $(OcpiHelp)
-
- 

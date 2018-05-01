@@ -92,7 +92,7 @@ define DoBuildAci
   $(call AciExe,$1,$2): $$(call AciLibs,$1)
   $(call AciExe,$1,$2): | $(call AciDir,$1)
   $(call AciExe,$1,$2): $$(for s,$(SourceFiles) $2,$$(call AciObj,$1,$$s))
-	$(AT)echo Creating executable for \"$(basename $(notdir $2))\" running on platform $1 from $$^
+	$(AT)echo Creating executable for \"$(basename $(notdir $2))\" running on platform $1 from $$<
 	$(AT)$$(call LinkBinary,$$^)
   aciapps: $(call AciExe,$1,$2)
 endef

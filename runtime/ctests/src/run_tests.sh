@@ -19,7 +19,7 @@
 
 # quick way to run all tests
 # First ensure CDK and TOOL_xxx vars
-OCPI_BOOTSTRAP=$OCPI_CDK_DIR/scripts/ocpibootstrap.sh; . $OCPI_BOOTSTRAP
+#OCPI_BOOTSTRAP=$OCPI_CDK_DIR/scripts/ocpibootstrap.sh; . $OCPI_BOOTSTRAP
 export OCPI_SMB_SIZE=3000000
 
 source $OCPI_CDK_DIR/scripts/util.sh
@@ -30,7 +30,7 @@ core1=$(getProjectRegistryDir)/ocpi.core
 [ -d $core1/exports ] && core1+=/exports
 core2=$OCPI_CDK_DIR/../projects/core
 [ -d $core2/exports ] && core2+=/exports
-export OCPI_LIBRARY_PATH=$core1/lib/components/rcc:$core2/lib/components/rcc
+export OCPI_LIBRARY_PATH=$core1/artifacts:$core2/artifacts
 
 # export OCPI_LOG_LEVEL=11
 # Allow caller to force location (e.g. Jenkins)

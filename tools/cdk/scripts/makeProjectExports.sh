@@ -291,7 +291,7 @@ for a in $assets; do
 	      else
 		  [ -n "$allrcc" ] && {
 		      for p in $allrcc; do
-			  warn=`checkfiles rcc/platforms/$p target '$f-target.mk'`
+			  warn=`checkfiles rcc/platforms/$p '$f.mk'`
 			  if [ -n "$warn" ]; then
 			      echo Warning:  cannot export RCC platform $p: $warn
 			  else

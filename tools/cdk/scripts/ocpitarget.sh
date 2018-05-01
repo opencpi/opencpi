@@ -19,6 +19,20 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 ################################################################################################
+# Set up the SHELL environment to build for a single target platform.
+# Usage is not RCC workers, not ACI programs, and not framework libraries or executables,
+# but it is still used by:
+# - Building and cleaning drivers
+# - Creating RPMs
+# - createOpenCPIZynqSD
+# - gdbForZynq
+# - install-packages
+# - install-prerequisites
+# - test-opencpi.sh
+# - setup-install
+# - ocpirh_export.sh
+#
+# So we are basically setting the OCPI_TARGET* environment variables
 # Extract the target-related variables from the make context for use in the shell context.
 # This file must be sourced since its purpose is to change the environment
 # This is rarely needed since these variables are almost always used in the "make" context,
@@ -43,12 +57,11 @@ elif [ -n "$1" ] ; then
   plat=(${1//-/ })
   export OCPI_TARGET_PLATFORM=$plat
   export OCPI_TARGET_DIR=$1  
+else
+  export OCPI_TARGET_PLATFORM=$OCPI_TOOL_PLATFORM
+  export OCPI_TARGET_DIR=$OCPI_TOOL_DIR  
 fi
 # Ensure we are really starting fresh for this target
 unset `env | grep OCPI_TARGET | egrep -v 'OCPI_TARGET_(PLATFORM|DIR|KERNEL_DIR)' | sed 's/=.*//'`
 source $OCPI_CDK_DIR/scripts/util.sh
-# Remove this until we figure out why it is here.
-# platform searches already look in the right places...
-#OCPI_PROJECT_PATH=`getProjectPathAndRegistered` \
-#
-setVarsFromMake $OCPI_CDK_DIR/include/ocpisetup.mk ShellTargetVars=1 -v
+setVarsFromMake $OCPI_CDK_DIR/include/setup-target-platform.mk ShellTargetVars=1 -v

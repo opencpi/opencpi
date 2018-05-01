@@ -16,14 +16,22 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
+##########################################################################################
+# This sourced file supports installation of prerequisite software packages in a
+# roughlyt standardized way.  The actual installation scripts that source this script for
+# setup perform the actual compilation, but this script manages downloading, cloning, etc.
+# and target platform setup, etc.
 # Arguments to this source'd file are:
 # $1 is the target platform (required, but can be "")
 # $2 the name of the prerequisite
-# $3 the download file
-# $4 the download directory url
-# $5 the local directory resulting from unpacking the file
-# $6 set to enable cross compilation
+# $3 a description of the prerequisite
+# $4 the download file
+# $5 the download directory url, or pathname if no colon
+# $6 the local directory resulting from unpacking the file, or "." if there is no directory
+# $7 set to 1 to enable cross compilation (for runtime software on cross-compiled platforms)
 
+scriptfile=${BASH_SOURCE[1]}
+scriptdir=$(dirname $scriptfile)
 set +o posix
 platform=$1
 package=$2
@@ -32,6 +40,7 @@ file=$4
 url=$5
 directory=$6
 cross=$7
+
 if [ -z "$OCPI_CDK_DIR" ]; then
   echo "The environment (specifically OCPI_CDK_DIR) is not set up."
   echo "You probably need to do \"source <whereever-the-cdk-is>/opencpi-setup.sh\"."
@@ -60,18 +69,21 @@ if test "$OCPI_TARGET_PLATFORM" != "$OCPI_TOOL_PLATFORM" -a -n "$OCPI_CROSS_BUIL
 fi	
 source $OCPI_CDK_DIR/scripts/setup-prereq-dirs.sh
 function install_done {
-  if [ $? = 0 ]; then
+  RC=$?
+  trap - EXIT
+  if [ -z "$OcpiSetup" -a $RC = 0 ]; then
     echo "====== Finished building & installing the $description \"$package\" for platform \"$OCPI_TARGET_PLATFORM\""
     echo "====== The installation is in $OCPI_PREREQUISITES_INSTALL_DIR/$package"
     echo "====== The platform-specific parts are in $OCPI_PREREQUISITES_INSTALL_DIR/$package/$OCPI_TARGET_DIR"
   else
     echo ====== Build/install of $package prerequisite failed.
+    exit 1
   fi
-  trap - EXIT
 }
+OcpiSetup=1
 trap install_done EXIT
 echo ====== Starting installation of the $description \"$package\" for platform \"$platform\".
-echo ========= It will be downloaded/built in $OCPI_PREREQUISITES_BUILD_DIR/$package
+echo ========= It will be downloaded/copied/cloned and built in $OCPI_PREREQUISITES_BUILD_DIR/$package
 echo ========= It will be installed in $OCPI_PREREQUISITES_INSTALL_DIR/$package/$OCPI_TARGET_DIR
 # Create and enter the directory where we will download and build
 cd $OCPI_PREREQUISITES_BUILD_DIR
@@ -108,10 +120,17 @@ if [ -n "$url" ]; then
       echo Remove $caller_dir/$file if you want to download it.
       file="$caller_dir/$file"
     else
-      echo Downloading the distribution file: $file
-      curl -O -L $url/$file
-      echo Download complete.  Removing any existing build directories.
-      rm -r -f $directory
+      if [[ "$url" == [a-zA-Z]*:* ]]; then
+        echo Downloading the distribution file: $file
+        curl -O -L $url/$file
+        echo Download complete.  Removing any existing build directories.
+      else
+        echo Copying the distribution file from $url/$file
+        [[ $url == /* ]] || url=$scriptdir/$url
+        cp $url/$file .
+        echo Copy from $url/$file complete.  Removing any existing build directories.
+      fi
+      [ "$directory" != . ] && rm -r -f $directory
     fi
     if test -d $directory; then
       echo The distribution directory $directory exists, using it for this target:'  '$platform.
@@ -119,6 +138,7 @@ if [ -n "$url" ]; then
       echo Unpacking download file $file into $directory.
       case $file in
       (*.tar.gz) tar xzf $file;;
+      (*.tar) tar xf $file;;
       (*.tar.xz) tar -x --xz -f $file;;
       (*.zip) unzip $file;;
       (*) echo Unknown suffix in $file.  Cannot unpack it.; exit 1
@@ -134,17 +154,22 @@ fi
 mkdir -p ocpi-build-$OCPI_TARGET_DIR
 cd ocpi-build-$OCPI_TARGET_DIR
 if test "$OCPI_TARGET_PLATFORM" != "$OCPI_TOOL_PLATFORM"; then
-  if test -z "$OCPI_CROSS_BUILD_BIN_DIR" -o -z "$OCPI_CROSS_HOST"; then
-      echo "Missing cross compilation variables (OCPI_CROSS_BUILD_BIN_DIR or OCPI_CROSS_HOST)."
+  if test -z "$OCPI_TARGET_CROSS_COMPILE"; then
+      echo "Missing cross compilation variable (OCPI_TARGET_CROSS_COMPILE)."
       exit 1
   fi
   # This is for configure scripts that want to use --host
-  PATH=$OCPI_CROSS_BUILD_BIN_DIR:$PATH
+  if [[ "$OCPI_TARGET_CROSS_COMPILE" == *- ]] ; then
+      export OCPI_CROSS_HOST=$(basename ${OCPI_TARGET_CROSS_COMPILE%-})
+      PATH=$(dirname $OCPI_TARGET_CROSS_COMPILE):$PATH
+  else
+      PATH=$OCPI_TARGET_CROSS_COMPILE:$PATH
+  fi
   # This is for raw scripts that just need to know where the tools are
-  CC=$OCPI_CROSS_BUILD_BIN_DIR/$OCPI_CROSS_HOST-gcc
-  CXX=$OCPI_CROSS_BUILD_BIN_DIR/$OCPI_CROSS_HOST-c++
-  LD=$OCPI_CROSS_BUILD_BIN_DIR/$OCPI_CROSS_HOST-c++
-  AR=$OCPI_CROSS_BUILD_BIN_DIR/$OCPI_CROSS_HOST-ar
+  CC=${OCPI_TARGET_CROSS_COMPILE}gcc
+  CXX=${OCPI_TARGET_CROSS_COMPILE}c++
+  LD=${OCPI_TARGET_CROSS_COMPILE}c++
+  AR=${OCPI_TARGET_CROSS_COMPILE}ar
 else
   CC=gcc
   CXX=c++
@@ -156,11 +181,18 @@ echo ====== Building package \"$package\" for platform \"$platform\" in `pwd`.
 # Make a relative link from the install dir to the build dir
 # args are the two args to ln (to from)
 # replace the link if it exists
+# if the "from" is already an existing directory, put the link in it
 function relative_link {
-  local from=$2
-  [ -d $2 ] || from=$(dirname $2)
- # [ -d $1 ] && echo Bad relative symlink to a directory: $1 && exit 1
-  local to=$(python -c "import os.path; print os.path.relpath('$(dirname $1)', '$from')")
-  [ -d $2 -a -L $2/$(basename $1) ] && rm $2/$(basename $1)
-  ln -s -f $to/$(basename $1) $2
+  local base=$(basename $1) from=$2 to=$1
+  [[ $to == /* ]] || to=`pwd`/$1
+  if [ -d $2 ] ; then
+    [ -L $2/$base ] && rm $2/$base
+  else
+    from=$(dirname $2)
+    mkdir -p $from
+  fi
+  to=$(python -c "import os.path; print os.path.relpath('$(dirname $to)', '$from')")
+  ln -s -f $to/$base $2/$base
 }
+OcpiSetup=
+

@@ -84,7 +84,7 @@ endif
 # Make sure the platform's containing project is searched.
 # It may not be in the project dependencies, but it may depend
 # on devices in the current project's hdl/devices library.
-export OCPI_PROJECT_PATH:=$(call OcpiAbsPathToContainingProject,$(HdlPlatformDir_$(HdlPlatform))):$(OCPI_PROJECT_PATH)
+export OCPI_PROJECT_PATH:=$(call OcpiAbsPathToContainingProject,$(HdlPlatformDir_$(HdlPlatform)))$(and $(OCPI_PROJECT_PATH),:$(OCPI_PROJECT_PATH))
 
 OcpiLanguage:=vhdl
 override HdlLibraries+=sdp axi platform

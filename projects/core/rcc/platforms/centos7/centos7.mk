@@ -1,4 +1,3 @@
-#!/bin/sh
 # This file is protected by Copyright. Please refer to the COPYRIGHT file
 # distributed with this source distribution.
 #
@@ -17,22 +16,12 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-usage () {
-  echo Usage is: `basename $0` \[ load \| unload \| reload \| status \]
-  exit 1
-}
-[ $# = 0 -o $# != 1 ] && usage
-case $1 in -h|--help|load|unload|reload|status);; *) usage;; esac
-[ -z "$OCPI_CDK_DIR" -o ! -d "$OCPI_CDK_DIR/scripts" ] && {
-  echo This $(basename $0) script requires OCPI_CDK_DIR to be valid and it is not.
-  exit 1
-}
-OCPI_BOOTSTRAP=$OCPI_CDK_DIR/scripts/ocpibootstrap.sh; . $OCPI_BOOTSTRAP
-SCR=$OCPI_CDK_DIR/scripts/ocpi_${OCPI_TOOL_OS}_driver
-[ ! -r $SCR ] && {
-  echo There is no driver loading/unloading support for this system \(${OS}\).
-  exit 1
-}
-# does not require execute permission in $SCR
-exec sh $SCR $1
+# settings when targeting this platform, overriding the generic linux defaults
+
+# we have nothing that overrides centos6 defaults
+OcpiPlatformOs=linux
+OcpiPlatformOsVersion=c7
+OcpiPlatformArch=x86_64
+
+
 

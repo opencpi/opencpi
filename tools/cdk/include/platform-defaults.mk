@@ -39,20 +39,22 @@ __PLATFORM_DEFAULTS_MK__:=1
 # The list of all variables defaulted and settable by platforms
 # The value of this variable should not be changed lightly since it may affect all platforms.
 # Each variable has a comment with the default values below.
+# In case insensitive alphabetical order
 OcpiAllPlatformVars:=\
-  OcpiLibraryPathEnv OcpiRpathOrigin \
-  OcpiStaticLibrarySuffix OcpiStaticLibraryFlags OcpiStaticProgramFlags OcpiStaticSwigFlags \
-  OcpiDynamicLibrarySuffix OcpiDynamicLibraryFlags OcpiDynamicProgramFlags OcpiDynamicSwigFlags \
-  OcpiDriverFlags\
-  OcpiAsNeeded OcpiExtraLibs OcpiOclLibs OcpiCrossCompile \
-  OcpiCFlags OcpiCC OcpiCXXFlags OcpiCXX OcpiCLD OcpiCXXLD OcpiAR OcpiSTRIP OcpiSWIG \
-  OcpiKernelDir \
-  OcpiDebugOnFlags OcpiDebugOffFlags \
-  OcpiRequiredCPPFlags OcpiRequiredCFlags OcpiRequiredCXXFlags \
-  OcpiOptionalCWarnings OcpiOptionalCXXWarnings OcpiUnknownWarningsError \
-  OcpiStrictCFlags OcpiStrictCXXFlags \
-  OcpiPlatformOs OcpiPlatformOsVersion OcpiPlatformArch \
-  OcpiPlatformDir OcpiPlatform OcpiCanRemoveNeeded
+  OcpiAR OcpiAsNeeded OcpiCanRemoveNeeded \
+  OcpiCC OcpiCFlags OcpiCLD OcpiCrossCompile OcpiCXX OcpiCXXFlags OcpiCXXLD \
+  OcpiDebugOffFlags OcpiDebugOnFlags OcpiDriverFlags \
+  OcpiDynamicCompilerFlags OcpiDynamicLibraryFlags OcpiDynamicLibrarySuffix \
+  OcpiDynamicProgramFlags OcpiDynamicSwigFlags \
+  OcpiExtraLibs OcpiKernelDir \
+  OcpiLibraryPathEnv OcpiOclLibs OcpiOptionalCWarnings OcpiOptionalCXXWarnings \
+  OcpiPlatform OcpiPlatformArch OcpiPlatformDir OcpiPlatformOs OcpiPlatformOsVersion \
+  OcpiPlatformPrerequisites \
+  OcpiRccCXXFlags  OcpiRccLDFlags \
+  OcpiRequiredCFlags OcpiRequiredCPPFlags OcpiRequiredCXXFlags OcpiRpathOrigin \
+  OcpiStaticLibraryFlags OcpiStaticLibrarySuffix OcpiStaticProgramFlags OcpiStaticSwigFlags \
+  OcpiStrictCFlags OcpiStrictCXXFlags OcpiSTRIP OcpiSWIG \
+  OcpiUnknownWarningsError \
 
 # The list of variables containing optional warnings needed early (for autoreconf).
 OcpiAllOptionalWarningsVars:=OcpiOptionalCWarnings OcpiOptionalCXXWarnings
@@ -71,9 +73,10 @@ OcpiStaticLibrarySuffix:=.a
 OcpiStaticProgramFlags:=-Xlinker -export-dynamic
 # flags when linking a static library
 OcpiStaticLibraryFlags:=
+OcpiDynamicCompilerFlags:=-fPIC
 OcpiDynamicLibrarySuffix:=.so
 # linker flags when creating a dynamic library
-OcpiDynamicLibraryFlags:=-shared -Xlinker --no-undefined -Xlinker -soname=$(@F)
+OcpiDynamicLibraryFlags:=-shared -Xlinker --no-undefined
 # linker flags when creating an executable linked with dynamic libraries
 OcpiDynamicProgramFlags:=
 # linker flags when creating a swig library linked against static libraries: FIXME: needed?
@@ -117,8 +120,11 @@ OcpiSTRIP:=strip
 # Where linux kernel headers should be found for out-of-tree building of OpenCPI kernel driver
 OcpiKernelDir=$(OcpiPlatformDir)/kernel-headers
 # Other than -g, there is no need to force optimization off
-OcpiDebugOnFlags:=
-OcpiDebugOffFlags:=-O2
+OcpiOptimizedOffFlags:=
+# FIXME: discuss whether we need to specifically offer independent assert control
+# FIXME: discuss whether we should universally make the default to be debug (yes)
+# This is biased for best optimizations (bipolar)
+OcpiOptimizeOnFlags:=-O2 -NDEBUG=1
 # For all code:
 # We require these or their equivalent be supported.  If not its an error
 # They should not be overridden or reset by a platform, except perhaps to change the syntax
@@ -140,6 +146,9 @@ OcpiStrictCFlags:=-Wconversion -Werror=parentheses -Werror=unused-parameter -Wer
 	          -Werror=write-strings -Werror=reorder -Werror=extra -Werror=comment \
                   -Werror=format -Werror=init-self -Wsign-conversion
 OcpiStrictCXXFlags:=$(OcpiStrictCFlags)
+# What we want to burden users with by default
+OcpiRccCXXFlags:=-Wall -Wextra
+OcpiRccLDFlags:=-g -shared
 # Set this to the option that cause unknown warnings to be errors
 # The default is that unknown warnings are expected to be warned
 OcpiUnknownWarningsError:=
@@ -148,4 +157,5 @@ OcpiKernelDir:=
 OcpiPlatformOs:=linux
 OcpiPlatformArch:=x86_64
 OcpiPlatformOsVersion:=
+OcpiPlatformPrerequisites:=
 endif

@@ -25,19 +25,6 @@ include $(OCPI_CDK_DIR)/include/util.mk
 # IncludeProject so that platforms in current project are discovered
 $(OcpiIncludeProject)
 
-# The block below needs to happen prior to the HdlTargets:= assignments for
-# extracting HdlTarget info from this makefile
-ifdef ShellHdlTargetsVars
-# When collecting a list of HDL targets/platforms, you do not need to be inside a project.
-# So, collect all projects in the Project Registry Dir into the project path for searching.
-# If inside a project, the registry should be searched automatically via the project's imports.
-ifeq ($(OCPI_PROJECT_DIR),)
-  export OCPI_PROJECT_PATH:=$(OCPI_PROJECT_PATH):$(subst $(Space),:,$(wildcard $(OcpiProjectRegistryDir)/*))
-endif
-# hdl-make is needed for HdlGetFamily to determine HdlFamily_*
-include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
-endif
-
 # This file is the database of hdl targets and associated tools
 # It is a "leaf file" that is used in several places.
 
@@ -103,6 +90,14 @@ override OCPI_HDL_PLATFORM_PATH:=$(subst $(Space),:,$(call Unique,\
   $(foreach p,$(OcpiGetExtendedProjectPath),$(call OcpiExists,$p/lib/platforms))))
 export OCPI_HDL_PLATFORM_PATH
 $(call OcpiDbgVar,OCPI_HDL_PLATFORM_PATH)
+################################################################################
+# These functions are here because this file is leaf and used when callers
+# only want to know the facts about targets, without pulling in any other
+# aspects of the HDL building machinery.
+# Otherwise various HDL utilities are in hdl-make.mk which this file does not
+# depend on.
+################################################################################
+HdlError:=error
 # Add a platform to the database.
 # Arg 1: The directory where the *.mk file is
 # Arg 2: The name of the platform
@@ -144,6 +139,47 @@ HdlDoPlatformsDir=\
       $(foreach p,$(notdir $d),\
         $(if $(wildcard $d/$p.mk)$(wildcard $d/lib/hdl/$p.mk)$(wildcard $d/hdl/$p.mk),\
           $(call HdlDoPlatform,$d)))))
+
+################################################################################
+# $(call HdlGetTargetFromPart,hdl-part)
+# Return the target name from a hyphenated partname
+HdlGetTargetFromPart=$(firstword $(subst -, ,$1))
+
+################################################################################
+# $(call HdlGetFamily,hdl-target,[multi-ok?])
+# Return the family name associated with the target(usually a part)
+# If the target IS a family, just return it.
+# If it is a top level target with no family, return itself
+# If it is a top level target with one family, return that family
+# Otherwise return the family of the supplied part
+# If the second argument is present, it is ok to return multiple families
+# (The second argument should not contain spaces)
+
+# StringEq=$(if $(subst x$1,,x$2)$(subst x$2,,x$1),,x)
+HdlGetFamily=$(eval m1=$(subst $(Space),___,$1))$(strip \
+  $(if $(HdlGetFamily_cached<$(m1)__$2>),,\
+    $(call OcpiDbg,HdlGetFamily($1,$2) cache miss)$(eval export HdlGetFamily_cached<$(m1)__$2>=$(call HdlGetFamily_core,$1,$2)))\
+  $(infox HdlGetFamily($1,$2)->$(HdlGetFamily_cached<$(m1)__$2>))$(HdlGetFamily_cached<$(m1)__$2>))
+
+HdlGetFamily_core=$(call OcpiDbg,Entering HdlGetFamily_core($1,$2))$(strip \
+  $(foreach gf,\
+     $(or $(findstring $(1),$(HdlAllFamilies)),$(strip \
+          $(if $(findstring $(1),all), \
+	      $(if $(2),$(HdlAllFamilies),\
+		   $(call $(HdlError),$(strip \
+	                  HdlFamily is ambiguous for '$(1)'))))),$(strip \
+          $(and $(findstring $(1),$(HdlTopTargets)),$(strip \
+	        $(if $(and $(if $(2),,x),$(word 2,$(HdlTargets_$(1)))),\
+                   $(call $(HdlError),$(strip \
+	             HdlFamily is ambiguous for '$(1)'. Choices are '$(HdlTargets_$(1))')),\
+	           $(or $(HdlTargets_$(1)),$(1)))))),$(strip \
+	  $(foreach f,$(HdlAllFamilies),\
+	     $(and $(filter $(call HdlGetTargetFromPart,$1),$(HdlTargets_$f)),$f))),$(strip \
+	  $(and $(filter $1,$(HdlAllPlatforms)), \
+	        $(call HdlGetFamily_core,$(call HdlGetTargetFromPart,$(HdlPart_$1))))),\
+	  $(call $(HdlError),$(strip \
+	     The build target '$1' is not a family or a part in any family))),\
+     $(gf)))
 
 $(call OcpiDbgVar,HdlAllPlatforms)
 $(call OcpiDbgVar,OCPI_HDL_PLATFORM_PATH)

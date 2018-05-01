@@ -16,15 +16,15 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
+##########################################################################################
 ThisMake := $(lastword $(MAKEFILE_LIST))
 
-# top level Makefile provides this
 # This sets up the OcpiPlatformXXX make variables and also legacy OCPI_TARGET_* env variables
 include $(OCPI_CDK_DIR)/include/setup-target-platform.mk
 # Set the global make variables that the kernel Makefiles want to see set in global variables
 CC=$(OcpiCrossCompile)$(OcpiCC)
 CXX=$(OcpiCrossCompile)$(OcpiCXX)
-LD=$(OcpiCrossCompile)$(OcpiLD)
+LD=$(OcpiCrossCompile)ld
 
 .PHONY: all
 # RPM-based options:

@@ -62,12 +62,13 @@ ocpi_me=$BASH_SOURCE
 	 --clean or -c:     unset all OpenCPI environment variables and nothing more.
 	 --list or -l:      list current settings - will not setup
 	 --verbose or -v:   be verbose about what is happening
+	 --ensure or -e:    leave things alone if they are already set up
 	 -                  use this option when using no other options
 	Note that neither --dynamic nor --optimized affect what is built.  Just what is used.
 EOF
   return 1
 }
-ocpi_dynamic= ocpi_optimized= ocpi_reset= ocpi_verbose= ocpi_clean= ocpi_list=
+ocpi_dynamic= ocpi_optimized= ocpi_reset= ocpi_verbose= ocpi_clean= ocpi_list= ocpi_ensure=
 ocpi_options=($*)
 while [ -n "$ocpi_options" ] ; do
   case $ocpi_options in
@@ -77,6 +78,7 @@ while [ -n "$ocpi_options" ] ; do
     -v|--verbose) ocpi_verbose=1;;
     -c|--clean) ocpi_clean=1;;
     -l|--list) ocpi_list=1;;
+    -e|--ensure) ocpi_ensure=1;;
     -);; # perhaps the single required variable
     *)
       echo Unknown option \"$options\" when sourcing the $ocpi_name file. >&2
@@ -107,6 +109,15 @@ done
 }
 
 [ -n "$OCPI_CDK_DIR" ] && {
+  [ -n "$ocpi_ensure" ] && {
+    # The environment appears already setup so we can leave things as they are, but check for
+    # a half-baked setup and complain
+    [ -z "$OCPI_PREREQUISITES_DIR" -o -z "$OCPI_TOOL_OS" ] && {
+      echo Error: The environment is partially set up, which is bad.  Perhaps use --reset. >&2
+      return 1
+    }
+    return 0;
+  }
   [ -z "$ocpi_reset" -a -z "$ocpi_clean" ] && {
     cat<<-EOF >&2
 	Warning:  The OpenCPI $ocpi_name file should be sourced when OCPI_CDK_DIR is not set.
@@ -169,6 +180,7 @@ ocpi_comp=$OCPI_CDK_DIR/scripts/ocpidev_bash_complete
 	PATH now set to $PATH
 	Now determining where prerequisite software is installed.
 	EOF
+# This is (temporarily) redundant with ocpibootstrap.sh
 [ -z "$OCPI_PREREQUISITES_DIR" ] && {
   if [ -n "$OCPI_CDK_DIR" -a -d "$OCPI_CDK_DIR/../prerequisites" ]; then
     export OCPI_PREREQUISITES_DIR=$(cd $OCPI_CDK_DIR/../prerequisites; pwd)

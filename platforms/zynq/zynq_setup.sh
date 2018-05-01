@@ -46,14 +46,12 @@ else
     echo Executing $HOME/.profile.
     export OCPI_CDK_DIR=$OCPI_CDK_DIR
     if test -f /etc/opencpi-release; then
-      read OCPI_TOOL_PLATFORM OCPI_TOOL_HOST x < /etc/opencpi-release
+      read OCPI_TOOL_PLATFORM x < /etc/opencpi-release
     else
       echo No /etc/opencpi-release - assuming ZedBoard hardware
       OCPI_TOOL_PLATFORM=zed
-      OCPI_TOOL_HOST=linux-x13_4-arm
     fi
     export OCPI_TOOL_PLATFORM
-    export OCPI_TOOL_HOST
     # There is no multimode support when running standalone
     export OCPI_TOOL_DIR=\$OCPI_TOOL_PLATFORM
     export OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/artifacts
