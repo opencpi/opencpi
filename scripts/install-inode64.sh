@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash --noprofile
 # This file is protected by Copyright. Please refer to the COPYRIGHT file
 # distributed with this source distribution.
 #
@@ -27,6 +27,9 @@ source $OCPI_CDK_DIR/scripts/setup-install.sh \
        https://www.tcm.phy.cam.ac.uk/sw \
        . \
        0
+# Only build/use this for centos for now
+[[ "$OCPI_TARGET_OS" != linux || "$OCPI_TARGET_OS_VERSION" != c* ]] &&
+    echo The inode64 package will not be built for $OCPI_TARGET_OS. && exit 0
 # Extract the version script from the comment
 ed -s ../inode64.c <<-EOF
 	/^GLIBC/

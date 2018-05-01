@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash --noprofile
 # This file is protected by Copyright. Please refer to the COPYRIGHT file
 # distributed with this source distribution.
 #
@@ -35,6 +35,9 @@ topprereqs=$(sed -n 's/^ *prerequisites *\(.*\) *$/\1/p' build/places)
   echo Cannot get prerequisites from the build/places files.
   exit 1
 }
+# These are not libraries for the framework
+# FIXME: put these into "places", but in a different category (not libraries)
+topprereqs+=" patchelf inode64"
 echo Building/installing prerequisites for the $OCPI_TARGET_PLATFORM platform, now running on $OCPI_TOOL_PLATFORM.
 echo Building prerequisites in $OCPI_PREREQUISITES_BUILD_DIR.
 echo Installing them in $OCPI_PREREQUISITES_INSTALL_DIR.

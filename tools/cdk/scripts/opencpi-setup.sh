@@ -188,7 +188,7 @@ ocpi_comp=$OCPI_CDK_DIR/scripts/ocpidev_bash_complete
     export OCPI_PREREQUISITES_DIR=/opt/opencpi/prerequisites
   fi
   if [ ! -d $OCPI_PREREQUISITES_DIR ]; then
-    echo "$ocpi_name:  $OCPI_PREREQUISITES_DIR does not.  The installation/build of OpenCPI is incomplete."
+    echo "$ocpi_name:  $OCPI_PREREQUISITES_DIR does not exist.  The installation/build of OpenCPI is incomplete."
     return 1
   fi
 }

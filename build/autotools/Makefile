@@ -64,6 +64,7 @@
 # The worst case is when registered projects have rcc platforms of course
 PLATFORM_AGNOSTIC:=cleanplatforms preconfigure bootstrap cleanbootstrap cleaneverything distclean
 PLATFORM_SPECIFIC:=configure build clean cleanconfigure install
+override SHELL=/bin/bash
 .PHONY: $(PLATFORM_AGNOSTIC) $(PLATFORM_SPECIFIC) show help
 .DELETE_ON_ERROR:
 export AT=@
@@ -71,11 +72,12 @@ ifeq ($V,1)
   Verbose=-v
   $(info VERBOSE:$(Verbose))
 endif
+export OCPI_CDK_DIR=$(CURDIR)/../../bootstrap
 #####################################################################################
 # Determine our platform (once) if we're not cleaning, so each sub-make can assume it
 #####################################################################################
-ifeq ($(filter help clean% distclean%,$(MAKECMDGOALS)),)
-  OcpiThisPlatformArgs:=$(shell cd ../.. && ./bootstrap/scripts/getPlatform.sh 2> /dev/null)
+ifeq ($(filter help clean% distclean% preconfigure bootstrap,$(MAKECMDGOALS)),)
+  OcpiThisPlatformArgs:=$(shell OCPI_CDK_DIR=$(OCPI_CDK_DIR) $(OCPI_CDK_DIR)/scripts/getPlatform.sh 2> /dev/null)
   $(if $(filter 6,$(words $(OcpiThisPlatformArgs))),,\
     $(error Cannot determine platform we are running on.))
   OcpiThisPlatform:=$(word 5,$(OcpiThisPlatformArgs))

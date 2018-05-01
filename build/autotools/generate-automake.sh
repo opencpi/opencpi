@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash --noprofile
 # This file is protected by Copyright. Please refer to the COPYRIGHT file
 # distributed with this source distribution.
 #
@@ -37,8 +37,8 @@ bindir=${exec_prefix}/bin
 libdir=${exec_prefix}/lib
 ocpi_build_dir = .
 # automake insists on these initializations even though bash and make do not
-lib_LTLIBRARIES=
 noinst_LTLIBRARIES=
+lib_LTLIBRARIES=
 bin_PROGRAMS=
 python_PYTHON=
 # Cause swig python outputs to be in the same place as the shared libraries so they
