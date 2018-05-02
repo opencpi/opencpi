@@ -17,26 +17,14 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
+##########################################################################################
+# Build the framework and the projects
+
+# Ensure CDK and TOOL variables
+source ./cdk/opencpi-setup.sh -e
+# Ensure TARGET variables
+source $OCPI_CDK_DIR/scripts/ocpitarget.sh "$1"
 set -e
-if test "$OCPI_CDK_DIR" != ""; then
-  echo Since OCPI_CDK_DIR is set, we will use the existing environment.
-  if test "$1" != ""; then
-   if test -n "$OCPI_TARGET_PLATFORM" -a "$1" != "$OCPI_TARGET_PLATFORM"; then
-      echo Error: supplied platform $1 is different from the environment: $OCPI_TARGET_PLATFORM
-      exit 1
-   fi
-   export OCPI_TARGET_PLATFORM=$1
-  else
-   export OCPI_TARGET_PLATFORM=$OCPI_TOOL_PLATFORM
-  fi
-else
-  export OCPI_TARGET_PLATFORM=$1
-  # Initialize access to the core tree's export directory
-  source scripts/init-opencpi.sh
-  # Initialize access to CDK
-  OCPI_BOOTSTRAP=`pwd`/exports/scripts/ocpibootstrap.sh; source $OCPI_BOOTSTRAP
-  [ -z "$OCPI_TARGET_PLATFORM" ] && export OCPI_TARGET_PLATFORM=$OCPI_TOOL_PLATFORM
-fi
 echo ================================================================================
 echo We are running in `pwd` where the git clone of opencpi has been placed.
 echo ================================================================================

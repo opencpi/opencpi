@@ -25,7 +25,7 @@
 isCurPlatform()
 {
   [ -f $1-check.sh ] || return
-  vars=($(sh $1-check.sh $HostSystem $HostProcessor))
+  vars=($(bash $1-check.sh $HostSystem $HostProcessor))
   if test ${#vars[@]} = 3; then
     echo ${vars[@]}  ${vars[0]}-${vars[1]}-${vars[2]} $(basename $1) $(dirname $1)
     exit 0

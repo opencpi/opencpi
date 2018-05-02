@@ -244,8 +244,10 @@ while read path opts; do
   [ -n "$stubs" ] && {
      [ -n "$verbose" ] && echo For $path stubs are \"$stubs\"  >&2
      # Have to force the prefix here to force libtool to NOT create a static library.
+     # Note that stubs are not noinst since they are needed in the staging area when
+     # the wonderful libtool "relink" happens.  We don't export them.
      do_library stubs ${lname}_stubs "$stubs" "" "-rpath \$(prefix) \
-                @libtool_dynamic_library_flags@ @OcpiDynamicLibraryFlags@" "" noinst
+                @libtool_dynamic_library_flags@ @OcpiDynamicLibraryFlags@" "" lib
      ldadd+=' libocpi_'${lname}_stubs
   }
   [ -n "$sources" -a -z "$useobjs" ] && {

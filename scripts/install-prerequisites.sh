@@ -38,6 +38,8 @@ topprereqs=$(sed -n 's/^ *prerequisites *\(.*\) *$/\1/p' build/places)
 # These are not libraries for the framework
 # FIXME: put these into "places", but in a different category (not libraries)
 topprereqs+=" patchelf inode64"
+# FIXME: move the project prerequisites somehow into projects
+topprereqs+=" ad9361 liquid"
 echo Building/installing prerequisites for the $OCPI_TARGET_PLATFORM platform, now running on $OCPI_TOOL_PLATFORM.
 echo Building prerequisites in $OCPI_PREREQUISITES_BUILD_DIR.
 echo Installing them in $OCPI_PREREQUISITES_INSTALL_DIR.

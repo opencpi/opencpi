@@ -40,5 +40,5 @@ if [ ! -f $script ]; then
   exit 0
 fi
 echo "Installing the packages for building $OCPI_TARGET_PLATFORM (when running on $OCPI_TOOL_PLATFORM)..."
-$script
+bash $script
 echo All required standard repository packages are now installed for building $OCPI_TARGET_PLATFORM.
