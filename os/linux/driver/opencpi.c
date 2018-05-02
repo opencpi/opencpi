@@ -687,12 +687,14 @@ static int opencpi_vma_fault
   if (block && block->type == ocpi_kernel) {
     unsigned long offset = vmf->pgoff << PAGE_SHIFT;
     struct page *pageptr = virt_to_page(offset);
-    log_debug("vma_fault vma %p addr %p pfn %lx\n",
 #if LINUX_VERSION_CODE > KERNEL_VERSION(4, 10, 0)
+    log_debug("vma_fault vma %p addr %lx pfn %lx\n",
 	      vmf->vma, vmf->address,
 #elif LINUX_VERSION_CODE == KERNEL_VERSION(4, 10, 0)
+    log_debug("vma_fault vma %p addr %lx pfn %lx\n",
 	      vma, vmf->address,
 #else
+    log_debug("vma_fault vma %p addr %p pfn %lx\n",
 	      vma, vmf->virtual_address,
 #endif
 	      vmf->pgoff);
@@ -1368,11 +1370,11 @@ net_release(struct socket *sock) {
     write_unlock_bh(&opencpi_sklist_lock);
     skb_queue_purge(&sk->sk_receive_queue);
     release_sock(sk);
-+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0)
-+    log_debug("socket %p count %d\n", sock, refcount_read(&sk->sk_refcnt));
-+#else
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0)
+    log_debug("socket %p count %d\n", sock, refcount_read(&sk->sk_refcnt));
+#else
     log_debug("socket %p count %d\n", sock, atomic_read(&sk->sk_refcnt));
-+#endif
+#endif
     sock_put(sk); // decrement ref count from sock_init_data
   }
   return 0;
