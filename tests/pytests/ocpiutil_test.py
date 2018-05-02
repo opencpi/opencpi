@@ -242,7 +242,7 @@ class TestPathFunctions(unittest.TestCase):
         golden_all_pjs = pj_paths + [os.path.realpath('.') + '/project-registry/ocpi.cdk']
         project_path = os.environ.get('OCPI_PROJECT_PATH')
         if project_path:
-           golden_app_pjs += project_path.split(':')
+           golden_all_pjs += project_path.split(':')
         logging.info("Verifying that get_all_projects correctly collects CDK, Project path, " +
                      "and registry contents: " + str(golden_all_pjs))
         self.assertEqual(set(all_pjs), set(golden_all_pjs))
