@@ -190,7 +190,7 @@ class TestPathFunctions(unittest.TestCase):
         ocpidev_command += OCPIDEV_CMD + " register project mypj8_exported; "
 
         logging.debug("OCPIDEV CMD: '" + ocpidev_command.replace('; ', ';\n') + "';")
-        process = subprocess.Popen(ocpidev_command, shell=True)
+        process = subprocess.Popen(ocpidev_command, shell=True, executable='/bin/bash')
         results = process.communicate()
         if results[1] or process.returncode != 0:
             logging.error("'ocpidev create project' failed in ocpiutil test\n" +
@@ -240,6 +240,9 @@ class TestPathFunctions(unittest.TestCase):
         pj_paths = [os.path.realpath('.') + '/project-registry/'
                     + pj for pj in list(PROJECT_PACKAGES.values())]
         golden_all_pjs = pj_paths + [os.path.realpath('.') + '/project-registry/ocpi.cdk']
+        project_path = os.environ.get('OCPI_PROJECT_PATH')
+        if project_path:
+           golden_app_pjs += project_path.split(':')
         logging.info("Verifying that get_all_projects correctly collects CDK, Project path, " +
                      "and registry contents: " + str(golden_all_pjs))
         self.assertEqual(set(all_pjs), set(golden_all_pjs))

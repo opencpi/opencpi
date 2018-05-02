@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash --noprofile
 # This file is protected by Copyright. Please refer to the COPYRIGHT file
 # distributed with this source distribution.
 #
@@ -56,8 +56,8 @@ for t in $TESTS; do
 	import sys
 	old=sys.getdlopenflags();
 	if sys.platform != 'darwin':
-	   import dl
-	   sys.setdlopenflags(old|dl.RTLD_GLOBAL)
+	   import ctypes
+	   sys.setdlopenflags(old|ctypes.RTLD_GLOBAL)
 	import OcpiApi as OA
 	sys.setdlopenflags(old)
 	app=OA.Application("projects/assets/applications/bias.xml")

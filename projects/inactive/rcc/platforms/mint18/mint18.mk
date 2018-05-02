@@ -20,4 +20,3 @@
 OcpiPlatformOs=linux
 OcpiPlatformOsVersion=m18
 OcpiPlatformArch=x86_64
-

@@ -20,5 +20,3 @@ include ../../../../core/rcc/platforms/xilinx13_3.mk
 OcpiPlatformOs=linux
 OcpiPlatformOsVersion=x13_4
 OcpiPlatformArch=arm
-
-

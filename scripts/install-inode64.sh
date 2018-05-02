@@ -29,7 +29,7 @@ source $OCPI_CDK_DIR/scripts/setup-install.sh \
        0
 # Only build/use this for centos for now
 [[ "$OCPI_TARGET_OS" != linux || "$OCPI_TARGET_OS_VERSION" != c* ]] &&
-    echo The inode64 package will not be built for $OCPI_TARGET_OS. && exit 0
+    echo The inode64 package is only built for CentOS, not $OCPI_TARGET_OS. && exit 0
 # Extract the version script from the comment
 ed -s ../inode64.c <<-EOF
 	/^GLIBC/
