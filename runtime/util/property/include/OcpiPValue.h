@@ -55,6 +55,7 @@ namespace OCPI {
       findAssign(const PValue *p, const char *name, const char *var, std::string &value),
       findAssignNext(const PValue *p, const char *name, const char *var, const char *&val,
 		     unsigned &next);
+      const PValue *find(const PValue *p, const char *name);
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) \
     typedef OCPI::API::PV##pretty PV##pretty;
   OCPI_PROPERTY_DATA_TYPES

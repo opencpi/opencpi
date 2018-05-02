@@ -259,10 +259,11 @@ static bool setup(const char *arg, ezxml_t &xml, std::string &file,
     OL::Manager::getSingleton().suppressDiscovery();
   if (options.remote())
     OA::enableServerDiscovery();
+#if 0
   // Establish simulator-related options to feed them to sims during discovery
   std::vector<OA::PValue> simParams;
   if (options.sim_dir())
-    addParam("directory", options.sim_dir(), simParams);
+    addParam("simDir", options.sim_dir(), simParams);
   if (options.sim_ticks())
     simParams.push_back(OA::PVULong("simTicks", options.sim_ticks()));
   if (options.verbose())
@@ -272,7 +273,9 @@ static bool setup(const char *arg, ezxml_t &xml, std::string &file,
   if (simParams.size())
     simParams.push_back(OA::PVEnd);
   // force config before looking for servers
+  // this also provides the simparams for simulation containers
   OCPI::Driver::ManagerManager::getManagerManager().configureOnce(NULL, &simParams[0]);
+#endif
   // server arguments and server environment variables are all used, no shadowing
   size_t dumb;
   for (const char **ap = options.server(dumb); ap && *ap; ap++)
@@ -342,6 +345,10 @@ static int mymain(const char **ap) {
     params.push_back(OA::PVString("dumpFile", options.dump_file()));
   if (options.dump_platforms())
     params.push_back(OA::PVBool("dumpPlatforms", true));
+  if (options.sim_dir())
+    params.push_back(OA::PVString("simDir", options.sim_dir()));
+  if (options.sim_ticks())
+    params.push_back(OA::PVULong("simTicks", options.sim_ticks()));
   {
   size_t n;
   addParams("worker", options.worker(n), params);

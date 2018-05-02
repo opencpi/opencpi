@@ -99,7 +99,7 @@ namespace OCPI {
     };
 
     PVULong PVEnd(0,0);
-    static const PValue *
+    const PValue *
     find(const PValue* p, const char* name) {
       if (p)
 	for (; p->name; p++)

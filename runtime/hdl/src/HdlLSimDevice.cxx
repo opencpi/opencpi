@@ -1211,7 +1211,7 @@ open(const char *name, const OA::PValue *params, std::string &err) {
   const char *dir = "simulations";
   // Backward compatibility for old default of "simtest".
   // If you don't mention it, and simtest exists, use it
-  if (!OU::findString(params, "directory", dir)) {
+  if (!OU::findString(params, "simDir", dir)) {
     bool isDir;
     if (OS::FileSystem::exists("simtest", &isDir) && isDir)
       dir = "simtest";
