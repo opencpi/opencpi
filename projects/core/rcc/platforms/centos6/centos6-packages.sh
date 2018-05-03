@@ -54,5 +54,5 @@ EPEL_PKGS+=" python34-numpy"
 [ "$1" = list ] && echo $PKGS $EPEL_PKGS && exit 0
 sudo yum -y install $PKGS
 # Now those that depend on epel
-sudo yum -i install $EPEL_PKGS
+sudo yum -y install $EPEL_PKGS
 
