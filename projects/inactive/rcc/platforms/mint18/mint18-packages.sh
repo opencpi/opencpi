@@ -44,9 +44,5 @@ PKGS+=" swig python-dev"
 #PKGS+=" glibc.i686 libXft.i686 libXext.i686 ncurses-libs.i686 libXdmcp.i686"
 #    for various testing scripts
 PKGS+=" python-numpy python3 python3-numpy"
+[ "$1" = list ] && echo $PKGS && exit 0
 sudo apt install $PKGS -y
-
-
-#MINT18_PKGS="build-essential autoconf automake binutils bison flex gettext libtool make patch pkg-config mlocate tcl pax python-dev fakeroot nfs-common ocl-icd-dev libusb-dev"
-#echo Installing 32 bit libraries '(really only required for modelsim and/or quartus)'
-#sudo apt install libc6-i386 libxft2:i386 libxext6:i386 lib32ncurses5 libxdmcp6:i386 -y
