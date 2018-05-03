@@ -41,5 +41,8 @@ ed -s ../inode64.c <<-EOF
 # These are from the comments in the source file
 gcc -c -fPIC -m32 ../inode64.c
 ld -shared -melf_i386 --version-script vers -o inode64.so inode64.o
+# FIXME: This mkdir should be unnecessary, but the contract of relative link is vague
+# it should just take a third arg if the link name is different, and do the mkdir -p
+mkdir -p $OCPI_PREREQUISITES_INSTALL_DIR/inode64/$OCPI_TARGET_PLATFORM/lib
 relative_link inode64.so $OCPI_PREREQUISITES_INSTALL_DIR/inode64/$OCPI_TARGET_PLATFORM/lib
 
