@@ -274,13 +274,13 @@ for a in $additions; do
   done
   set -f
 done
-# Force precompilation of python files right here
+# After this are only exports done when targets exist
+[ "$1" = - ] && exit 0
+# Ensure driver list is exported
+make_relative_link build/autotools/target-$1/staging/lib/driver-list exports/$1/lib/driver-list
+# Force precompilation of python files right here, but only if we are doing a target
 dirs=
 for d in `find exports -name "*.py"|sed 's=/[^/]*$=='|sort -u`; do
  python3 -m compileall -q $d
  python3 -O -m compileall -q $d
 done
-# Ensure driver list is exported
-[ "$1" == - ] ||
-  make_relative_link build/autotools/target-$1/staging/lib/driver-list \
-                     exports/$1/lib/driver-list
