@@ -22,14 +22,22 @@
 # The four variables are: OS OSVersion Processor Platform
 # If it returns nothing (""), that is an error
 
-isCurPlatform()
-{
-  [ -f $1-check.sh ] || return
-  vars=($(bash $1-check.sh $HostSystem $HostProcessor))
-  if test ${#vars[@]} = 3; then
-    echo ${vars[@]}  ${vars[0]}-${vars[1]}-${vars[2]} $(basename $1) $(dirname $1)
-    exit 0
-  fi
+# Given the directory of the platform we want to return
+returnPlatform() {
+  local d=$1 p=$(basename $1)
+  local vars=($(egrep '^ *OcpiPlatform(Os|Arch|OsVersion) *:*= *' $d/$p.mk |
+              sed 's/OcpiPlatform\([^ :=]*\) *:*= *\([^a-zA-Z0-9_]*\)/\1 \2/'|sort))
+  [ ${#vars[@]} = 6 ] || {
+    echo "Error:  Platform file $d/$p.mk is invalid and cannot be used.${vars[*]}" >&2
+    echo "Error:  OcpiPlatform(Os|OsVersion|Arch) variables are not valid." >&2
+    exit 1
+  }      
+  echo ${vars[3]} ${vars[5]} ${vars[1]} ${vars[3]}-${vars[5]}-${vars[1]} $p $d
+  exit 0
+}
+isCurPlatform() {
+  [ -f $1-check.sh ] && bash $1-check.sh $HostSystem $HostProcessor > /dev/null && return 0
+  return 1
 }
 
 # These are universally available so far so we do this once and pass then to all probes.
@@ -70,23 +78,18 @@ for j in $projects; do
   fi
   if [ -n "$1" ]; then # looking for a specific platform (not the current one)
     d=$platforms_dir/$1
-    if [ -d $d -a -f $d/$1.mk ]; then
-      vars=($(egrep '^ *OcpiPlatform(Os|Arch|OsVersion) *:*= *' $d/$1.mk |
-              sed 's/OcpiPlatform\([^ :=]*\) *:*= *\([^a-zA-Z0-9_]*\)/\1 \2/'|sort))
-      [ ${#vars[@]} = 6 ] || {
-        echo "Error:  Platform file $d/$1.mk is invalid and cannot be used.${vars[*]}" >&2
-        echo "Error:  OcpiPlatform(Os|OsVersion|Arch) variables are not valid." >&2
-	exit 1
-      }      
-      echo ${vars[1]} ${vars[2]} ${vars[0]} ${vars[1]}-${vars[2]}-${vars[0]} $1 $d
-      exit 0
-    fi
+    [ -d $d -a -f $d/$1.mk ] && returnPlatform $d
   else # not looking for a particular platform, but looking for the one we're running on
     for i in $platforms_dir/*; do
-      test -d $i -a -f $i/$(basename $i).mk && isCurPlatform $i/$(basename $i)
+      test -d $i -a -f $i/$(basename $i).mk &&
+        isCurPlatform $i/$(basename $i) && returnPlatform $i
     done # done with platforms in this project's rcc/platforms directory
   fi
 done # done with the project
 
-echo Cannot determine platform we are running on.  >&2
+if [ -n "$1" ]; then
+  echo Cannot find a platform named $1. >&2
+else
+  echo Cannot determine platform we are running on.  >&2
+fi
 exit 1

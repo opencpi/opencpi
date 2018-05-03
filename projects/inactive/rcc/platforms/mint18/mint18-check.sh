@@ -17,5 +17,4 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-grep -sq "RELEASE=18" /etc/linuxmint/info && echo $1 m18 $2 && exit 0
-exit 1
+grep -sq "RELEASE=18" /etc/linuxmint/info

@@ -27,6 +27,10 @@ ifeq (0,$(call boost_static_finder,arm-none-linux-gnueabi,0))
 $(warning Could not find boost static libraries for pico_t6a; disabling that platform.)
 RccExcludePlatforms+=pico_t6a
 endif
+ifeq (0,$(call boost_static_finder,^/usr/lib,0))
+$(warning Could not find boost static libraries for centos6; disabling that platform. If running on CentOS6, ensure mlocate and boost-static RPMs installed.)
+RccExcludePlatforms+=centos6
+endif
 
 # We can use ASIO in standalone mode starting with gcc 4.7 (AV-2003)
 # Yes, this is ugly and messy, to support CentOS 6 (4.4 with local boost) and Picoflexor t6a (4.4 with DRS-provided libboost)

@@ -19,9 +19,6 @@
 
 if test $1 = darwin && which -s sw_vers; then
   vers=`sw_vers -productVersion | sed 's/^\([0-9][0-9]*\.[0-9][0-9]*\).*/\1/' | tr . _`
-  if test macos$vers = $(basename $(dirname $0)); then
-     echo macos $vers $2
-     exit 0
-  fi
+  test macos$vers = $(basename $(dirname $0)) && exit 0
 fi
 exit 1
