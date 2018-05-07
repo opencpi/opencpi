@@ -18,15 +18,17 @@
 
 ##########################################################################################
 # This sourced file supports installation of prerequisite software packages in a
-# roughlyt standardized way.  The actual installation scripts that source this script for
+# roughly standardized way.  The actual installation scripts that source this script for
 # setup perform the actual compilation, but this script manages downloading, cloning, etc.
-# and target platform setup, etc.
-# Arguments to this source'd file are:
-# $1 is the target platform (required, but can be "")
+# and target platform setup, etc.  It also offers one helper function: relative_link
+# It is documented in the platform development guide
+
+# Arguments to this sourced file are:
+# $1 is the target platform (required argument, but can be "" for the currently running one)
 # $2 the name of the prerequisite
 # $3 a description of the prerequisite
-# $4 the download file
-# $5 the download directory url, or pathname if no colon
+# $4 the download directory url, or pathname if no colon, or git repo if *.git
+# $5 the download file or git repo tag or branch
 # $6 the local directory resulting from unpacking the file, or "." if there is no directory
 # $7 set to 1 to enable cross compilation (for runtime software on cross-compiled platforms)
 
@@ -36,8 +38,8 @@ set +o posix
 platform=$1
 package=$2
 description=$3
-file=$4
-url=$5
+url=$4
+file=$5
 directory=$6
 cross=$7
 
@@ -179,20 +181,19 @@ fi
 echo ====== Building package \"$package\" for platform \"$platform\" in `pwd`.
 
 # Make a relative link from the install dir to the build dir
-# args are the two args to ln (to from)
+# args are the two args to ln (to-file from-dir)
 # replace the link if it exists
-# if the "from" is already an existing directory, put the link in it
 function relative_link {
-  local base=$(basename $1) from=$2 to=$1
-  [[ $to == /* ]] || to=`pwd`/$1
-  if [ -d $2 ] ; then
-    [ -L $2/$base ] && rm $2/$base
-  else
-    from=$(dirname $2)
-    mkdir -p $from
-  fi
+  local base=$(basename $1) to=$1 from=$2 link=$3
+  [ -z "$link" ] && link=$base
+  [[ $to == /* ]] || to=`pwd`/$to
+  mkdir -p $from
+  [ -L $from/$link ] && rm $from/$link
   to=$(python -c "import os.path; print os.path.relpath('$(dirname $to)', '$from')")
-  ln -s -f $to/$base $2/$base
+  ln -s -f $to/$base $from/$link
 }
 OcpiSetup=
-
+# The convenience variables that take care of nearly all cases.
+install_dir=$OCPI_PREREQUISITES_INSTALL_DIR/$package
+install_exec_dir=$OCPI_PREREQUISITES_INSTALL_DIR/$package/$OCPI_TARGET_DIR
+cross_host=$OCPI_CROSS_HOST

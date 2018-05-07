@@ -36,8 +36,9 @@ include $(OCPI_CDK_DIR)/include/util.mk
 $(eval $(OcpiEnsureToolPlatform))
 override \
 RccPlatforms:=$(call Unique,\
-                $(or $(strip $(RccPlatforms) $(RccPlatform) $(Platforms) $(Platform)),\
-	             $(OCPI_TOOL_PLATFORM)))
+                $(or $(strip $(RccPlatforms) $(RccPlatform) $(Platforms) $(Platform)),$(strip\
+                     $(OCPI_TARGET_PLATFORM)),$(strip\
+	             $(OCPI_TOOL_PLATFORM))))
 export RccPlatforms
 DoExports=for p in $(RccPlatforms); do ./scripts/makeExportLinks.sh $$p; done
 DoTests=for p in $(RccPlatforms); do ./scripts/test-opencpi.sh $$p; done

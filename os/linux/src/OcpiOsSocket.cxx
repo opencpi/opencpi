@@ -135,7 +135,7 @@ connect(const std::string & remoteHost, uint16_t remotePort, bool udp) throw (st
         e = "host has no address";
         break;
       default:
-        e = "gethostbyname() failed";
+        e = "gethostbyname() failed0";
       }
       s += e;
       throw s;

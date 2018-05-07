@@ -20,18 +20,17 @@
 version=6.1.2
 dir=gmp-$version
 [ -z "$OCPI_CDK_DIR" ] && echo Environment variable OCPI_CDK_DIR not set && exit 1
-source $OCPI_CDK_DIR/scripts/setup-install.sh \
+source $OCPI_CDK_DIR/scripts/setup-prerequisite.sh \
        "$1" \
        gmp \
        "Extended Precision Numeric library" \
-       $dir.tar.xz \
        https://ftp.gnu.org/gnu/gmp \
+       $dir.tar.xz \
        $dir \
        1
 ../configure  \
-  ${OCPI_CROSS_HOST+--host=${OCPI_CROSS_HOST}} \
+  ${cross_host+--host=$cross_host} \
   --enable-fat=yes --enable-cxx=yes --with-pic=gmp \
-  --prefix=$OCPI_PREREQUISITES_INSTALL_DIR/gmp \
-  --exec-prefix=$OCPI_PREREQUISITES_INSTALL_DIR/gmp/$OCPI_TARGET_DIR \
+  --prefix=$install_dir --exec-prefix=$install_exec_dir \
   CFLAGS='-g -fPIC' CXXFLAGS='-g -fPIC'
 make && make install

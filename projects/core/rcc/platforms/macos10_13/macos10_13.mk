@@ -22,8 +22,8 @@
 #   include/platform-defaults.mk file.
 # See that file for a description of valid variables and their defaults.
 
-OcpiRequiredCFlags=$(patsubst -frecord-gcc-switches,,$(OcpiRequiredCFlags))
-OcpiRequiredCXXFlags=$(patsubst -frecord-gcc-switches,,$(OcpiRequiredCXXFlags))
+OcpiRequiredCFlags:=$(patsubst -frecord-gcc-switches,,$(OcpiRequiredCFlags))
+OcpiRequiredCXXFlags:=$(patsubst -frecord-gcc-switches,,$(OcpiRequiredCXXFlags))
 OcpiRequiredCFlags+=-Werror=unknown-warning-option
 OcpiRequiredCXXFlags+=-Werror=unknown-warning-option
 OcpiLibraryPathEnv=DYLD_LIBRARY_PATH

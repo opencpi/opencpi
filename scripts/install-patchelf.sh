@@ -20,16 +20,14 @@
 version=0.9
 dir=patchelf-$version
 [ -z "$OCPI_CDK_DIR" ] && echo Environment variable OCPI_CDK_DIR not set && exit 1
-source $OCPI_CDK_DIR/scripts/setup-install.sh \
+source $OCPI_CDK_DIR/scripts/setup-prerequisite.sh \
        "$1" \
        patchelf \
        "ELF file patching utility" \
-       $dir.tar.gz \
        http://nixos.org/releases/patchelf/$dir \
+       $dir.tar.gz \
        $dir \
        0
-../configure  \
-  --prefix=$OCPI_PREREQUISITES_INSTALL_DIR/patchelf \
-  --exec-prefix=$OCPI_PREREQUISITES_INSTALL_DIR/patchelf/$OCPI_TARGET_DIR \
+../configure  --prefix=$install_dir --exec-prefix=$install_exec_dir \
   CFLAGS=-g CXXFLAGS=-g
 make && make install

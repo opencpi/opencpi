@@ -20,18 +20,17 @@
 OCPI_LZMA_VERSION=5.2.2
 dir=xz-$OCPI_LZMA_VERSION
 [ -z "$OCPI_CDK_DIR" ] && echo Environment variable OCPI_CDK_DIR not set && exit 1
-source $OCPI_CDK_DIR/scripts/setup-install.sh \
+source $OCPI_CDK_DIR/scripts/setup-prerequisite.sh \
        "$1" \
        lzma \
        "LZMA compression library" \
-       $dir.tar.gz \
        https://github.com/xz-mirror/xz/releases/download/v$OCPI_LZMA_VERSION \
+       $dir.tar.gz \
        $dir \
        1
 ../configure  \
-  ${OCPI_CROSS_HOST+--host=${OCPI_CROSS_HOST}} \
-  --prefix=$OCPI_PREREQUISITES_INSTALL_DIR/lzma \
-  --exec-prefix=$OCPI_PREREQUISITES_INSTALL_DIR/lzma/$OCPI_TARGET_DIR \
+  ${cross_host+--host=$cross_host} \
+  --prefix=$install_dir --exec-prefix=$install_exec_dir \
   --enable-shared=yes --enable-static --disable-symbol-versions \
   --disable-xz --disable-xzdec --disable-lzmadec --disable-lzmainfo --disable-lzma-links \
   --disable-scripts --disable-doc \

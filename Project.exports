@@ -56,7 +56,7 @@
 # CDK scripts we need
 +scripts/clean-env.sh scripts/
 +tools/cdk/scripts/opencpi-setup.sh
-+tools/cdk/scripts/setup-install.sh scripts/
++tools/cdk/scripts/setup-prerequisite.sh scripts/
 +tools/cdk/scripts/setup-prereq-dirs.sh scripts/
 +tools/cdk/scripts/getPlatform.sh scripts/
 # Put this script where the executables are exported to run there - needed?

@@ -38,12 +38,12 @@ OCPI_AD9361_VERSION=$OCPI_AD9361_CURRENT_2016_R2_GIT_COMMIT_ID
 here=$(pwd)/scripts
 if [ -z "${RPM_BUILD_ROOT}" ]; then
 [ -z "$OCPI_CDK_DIR" ] && echo Environment variable OCPI_CDK_DIR not set && exit 1
-source $OCPI_CDK_DIR/scripts/setup-install.sh \
+source $OCPI_CDK_DIR/scripts/setup-prerequisite.sh \
        "$1" \
        ad9361 \
        "ADI ad9361 Convenience Library" \
-       $OCPI_AD9361_VERSION \
        https://github.com/analogdevicesinc/no-OS.git \
+       $OCPI_AD9361_VERSION \
        no-OS \
        1
 else
@@ -78,11 +78,9 @@ $AR -rs libad9361.a ${SRCNAMES[@]/%/.o}
 ################################################################################
 # 3. Install the deliverables:  OPS file, headers and library
 ################################################################################
-mkdir -p $OCPI_PREREQUISITES_INSTALL_DIR/ad9361/$OCPI_TARGET_DIR/lib
-relative_link libad9361.a $OCPI_PREREQUISITES_INSTALL_DIR/ad9361/$OCPI_TARGET_DIR/lib
-mkdir -p $OCPI_PREREQUISITES_INSTALL_DIR/ad9361/include
+relative_link libad9361.a $install_exec_dir/lib
 for i in ${INCS[@]}; do
-  relative_link $dir/$i.h $OCPI_PREREQUISITES_INSTALL_DIR/ad9361/include
+  relative_link $dir/$i.h $install_dir/include
 done
 else
 # RPM Building

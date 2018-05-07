@@ -17,70 +17,36 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-# For cross compiling we assume:
-# 1. the cross tools are in the path
-# 2. OCPI_TARGET_DIR is set properly (our target scheme, not the gnu target scheme)
-# 3. OCPI_CROSS_HOST is the gnu cross target
-set -e
-OCPI_LIQUID_VERSION=v1.3.1
+liquid_version=v1.3.1
 dir=liquid-dsp
 [ -z "$OCPI_CDK_DIR" ] && echo Environment variable OCPI_CDK_DIR not set && exit 1
-source $OCPI_CDK_DIR/scripts/setup-install.sh \
+source $OCPI_CDK_DIR/scripts/setup-prerequisite.sh \
        "$1" \
        liquid \
        "DSP Math Library" \
-       $OCPI_LIQUID_VERSION \
        https://github.com/jgaeddert/liquid-dsp.git \
+       $liquid_version \
        $dir \
        1
-SHARED=yes
-SEDINPLACE="sed --in-place"
-if test "$OCPI_TARGET_OS" = macos; then
- crossConfig="CC=cc CXX=c++"
- SEDINPLACE='sed -i'
-elif test "$OCPI_CROSS_HOST" != ""; then
- export PATH=$OCPI_CROSS_BUILD_BIN_DIR:$PATH
- crossConfig="CC=$OCPI_CROSS_HOST-gcc CXX=$OCPI_CROSS_HOST-g++ --host=$OCPI_CROSS_HOST"
-# SHARED=no
-fi
-#generators="\
-#./src/fec/gentab/reverse_byte_gentab \
-#./src/utility/gentab/count_ones_gentab \
-#"
-# [ $OCPI_TOOL_PLATFORM != $OCPI_TARGET_PLATFORM -a ! -f $OCPI_PREREQUISITES_INSTALL_DIR/liquid/$OCPI_TOOL_DIR/bin/reverse_byte_gentab ] && {
-#   echo It appears that you have not built the liquid library for $OCPI_TOOL_PLATFORM yet.
-#   echo This is required before trying to build this library for $OCPI_TARGET_PLATFORM, on $OCPI_TOOL_PLATFORM.
-#   exit 1
-# }
-(echo Performing '"./bootstrap.sh"' on git repo; cd ..; ./bootstrap.sh)
+
+echo Performing '"./bootstrap.sh"' on git repo
+(cd ..; ./bootstrap.sh)
 base=$(basename `pwd`)
 echo Copying git repo for building in `pwd`
 (cd ..; cp -R $(ls . | grep -v ocpi-build-) $base)
-[ $OCPI_TOOL_PLATFORM != $OCPI_TARGET_PLATFORM ] && {
-  for g in $generators; do
-   cp $OCPI_PREREQUISITES_INSTALL_DIR/liquid/$OCPI_TOOL_DIR/bin/$(basename $g) $(dirname $g)
-  done
-}
 # patches to ./configure to not run afoul of macos stronger error checking
-$SEDINPLACE -e 's/char malloc, realloc, free, memset,/char malloc(), realloc(), free(), memset(),/' ./configure
-$SEDINPLACE -e 's/char sinf, cosf, expf, cargf, cexpf, crealf, cimagf,/char sinf(), cosf(), expf(), cargf(), cexpf(), crealf(), cimagf(),/' ./configure
-$SEDINPLACE -e '/rpl_malloc/d' ./configure
-$SEDINPLACE -e '/rpl_realloc/d' ./configure
+ed configure <<-EOF
+	g/char malloc, realloc, free, memset,/s//char malloc(), realloc(), free(), memset(),/
+	g/char sinf, cosf, expf, cargf, cexpf, crealf, cimagf,/s//char sinf(), cosf(), expf(), cargf(), cexpf(), crealf(), cimagf(),/
+	g/rpl_malloc/d
+	g/rpl_realloc/d
+	w
+EOF
 ./configure  \
-  $crossConfig \
-  --prefix=$OCPI_PREREQUISITES_INSTALL_DIR/liquid \
-  --exec-prefix=$OCPI_PREREQUISITES_INSTALL_DIR/liquid/$OCPI_TARGET_DIR \
-  --includedir=$OCPI_PREREQUISITES_INSTALL_DIR/liquid/include \
+  ${cross_host+--host=$cross_host} \
+  --prefix=$install_dir --exec-prefix=$install_exec_dir \
+  --includedir=$install_dir/include \
   CFLAGS=-g CXXFLAGS=-g
 make
 make install
-# the recommendations from liquidsdr.org is to use #include "liquid/liquid.h" code per Aaron
-# mv $OCPI_PREREQUISITES_INSTALL_DIR/liquid/include/liquid/* $OCPI_PREREQUISITES_INSTALL_DIR/liquid/include
-# rmdir $OCPI_PREREQUISITES_INSTALL_DIR/liquid/include/liquid
-[ $OCPI_TOOL_PLATFORM = $OCPI_TARGET_PLATFORM ] && {
-  mkdir -p $OCPI_PREREQUISITES_INSTALL_DIR/liquid/$OCPI_TARGET_DIR/bin
-  for g in $generators; do
-    cp $g $OCPI_PREREQUISITES_INSTALL_DIR/liquid/$OCPI_TARGET_DIR/bin
-  done
-}
 exit 0

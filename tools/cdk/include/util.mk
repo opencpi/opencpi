@@ -1246,7 +1246,7 @@ define OcpiSetPlatformVariables
     $$(foreach v,$$(filter Ocpi% OCPI%,$$(.VARIABLES)),\
        $$(if $$(strip $$(filter $$v,OcpiPlatformPrevars $$(OcpiPlatformPrevars))\
 		      $$(filter $$v,$$(OcpiAllPlatformVars))),,\
-          $$(warning Software platform file $$(OcpiPlatformDir)/$$(OcpiPlatform).mk has $$(strip\
+          $$(warning Software platform file $$(OcpiPlatformDir)/$1.mk has $$(strip\
                    illegal variable: $$v))))
     $$(foreach v,$$(OcpiAllPlatformVars),\
       $$(eval $$v_$1:=$$($$v)))

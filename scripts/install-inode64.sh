@@ -19,12 +19,12 @@
 
 # https://www.tcm.phy.cam.ac.uk/sw/inode64.c
 [ -z "$OCPI_CDK_DIR" ] && echo Environment variable OCPI_CDK_DIR not set && exit 1
-source $OCPI_CDK_DIR/scripts/setup-install.sh \
+source $OCPI_CDK_DIR/scripts/setup-prerequisite.sh \
        "$1" \
        inode64 \
        "fix for 32 bit binaries running on 64-bit-inode file systems" \
-       inode64.c \
        https://www.tcm.phy.cam.ac.uk/sw \
+       inode64.c \
        . \
        0
 # Only build/use this for centos for now
@@ -41,8 +41,5 @@ ed -s ../inode64.c <<-EOF
 # These are from the comments in the source file
 gcc -c -fPIC -m32 ../inode64.c
 ld -shared -melf_i386 --version-script vers -o inode64.so inode64.o
-# FIXME: This mkdir should be unnecessary, but the contract of relative link is vague
-# it should just take a third arg if the link name is different, and do the mkdir -p
-mkdir -p $OCPI_PREREQUISITES_INSTALL_DIR/inode64/$OCPI_TARGET_PLATFORM/lib
-relative_link inode64.so $OCPI_PREREQUISITES_INSTALL_DIR/inode64/$OCPI_TARGET_PLATFORM/lib
+relative_link inode64.so $install_exec_dir/lib
 
