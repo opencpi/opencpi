@@ -58,7 +58,7 @@ prereqs=$6
 prereq_inst=$7
 pwd
 case $prereq_inst in /*);;*)prereq_inst=$(cd ../$prereq_inst; pwd);; esac
-PATCHELF=$prereq_inst/patchelf/$3/bin/patchelf
+PATCHELF=$prereq_inst/patchelf/$OCPI_TOOL_DIR/bin/patchelf
 
 # arg 1: driver file arg2: prereqs arg3: dynamic suffix
 function fix_static_driver {

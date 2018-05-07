@@ -209,7 +209,7 @@ namespace {
     if (verbose)
       fprintf(stderr, "Spec is \"%s\" in file \"%s\"\n",
 	      a_specName.c_str(), specFile.c_str());
-      return NULL;
+    return NULL;
   }
 
   typedef std::pair<ParamConfig*,Worker*> WorkerConfig;

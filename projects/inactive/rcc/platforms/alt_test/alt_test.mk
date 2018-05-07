@@ -24,6 +24,7 @@
 
 OcpiCrossCompile=$(OCPI_PREREQUISITES_DIR)/linaro-arm-gnueabihf/$(OCPI_TOOL_DIR)/bin/arm-linux-gnueabihf-
 OcpiStaticProgramFlags=-rdynamic
+OcpiCXXFlags+=-Wno-implicit-fallthrough
 OcpiPlatformOs=linux
 OcpiPlatformOsVersion=a4
 OcpiPlatformArch=armhf

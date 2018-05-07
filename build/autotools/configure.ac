@@ -44,6 +44,7 @@ dnl ============================================================================
 dnl 1. Import the OpenCPI platform variable values and set libtool variables
 dnl    all for substitutions in Makefile.am, ocpi-config.h, or ocpi-platform-config.h
 dnl    CamelCase Variables starting with "Ocpi" passed to us via platform-variables.sh
+dnl    Put together compilation flags
 dnl ============================================================================================
 # Import OpenCPI platform variables.  The "./" is necessary to avoid path problems on some OSes.
 # These variables are not used when processing configure.ac->configure.in->configure
@@ -56,7 +57,7 @@ libtool_dynamic_program_flags="-shared -avoid-version"
 libtool_static_library_flags="-all-static -static"
 libtool_dynamic_library_flags="-shared -avoid-version"
 # -module alone is not enough to surpress creating the static library WTF?
-libtool_driver_library_flags="-shared -avoid-version"
+libtool_plugin_library_flags="-shared -avoid-version"
 # Get the two options that determine actual compiler flags etc.
 # Arg 3 to AC_ARG_ENABLE being blank means it does more for you - defines and sets the variable
 AC_ARG_ENABLE([debug],
@@ -129,7 +130,7 @@ AC_SUBST([OcpiPluginFlags])
 AC_SUBST([OcpiExtraLibs])
 AC_SUBST([libtool_static_library_flags])
 AC_SUBST([libtool_dynamic_library_flags])
-AC_SUBST([libtool_driver_library_flags])
+AC_SUBST([libtool_plugin_library_flags])
 AC_SUBST([libtool_library_flags])
 AC_SUBST([libtool_program_flags])
 AC_SUBST([common_cppflags])
@@ -162,7 +163,7 @@ AS_VAR_IF(LN_S,["ln -s"],,AC_MSG_ERROR([Inadequate symbolic link support]))
 AC_PROG_CXX
 dnl If Swig was not specified by the platform variables, find it.
 AC_PATH_PROG([OcpiSWIG],[swig],AC_MSG_ERROR([Required program 'swig' not found.]))
-dnl AC_USE_SYSTEM_EXTENSIONS
+dnl AC_USE_SYSTEM_EXTENSIONS # this was used in the past but is obsolete/unneeded now
 
 dnl ============================================================================================
 dnl 3. Enable automake to do Makefile.am->Makefile.in and autoconf to do Makefile.in->Makefile
@@ -179,7 +180,7 @@ AM_CONDITIONAL([ocpi_can_remove_needed],[test x"$OcpiCanRemoveNeeded" = x1])
 AM_PATH_PYTHON([2.6])
 dnl
 dnl ================================================================================
-dnl 5. Enable generation of ocpi-config.h
+dnl 4. Enable generation of ocpi-config.h
 dnl ================================================================================
 dnl let autoheader do the right thing for defines with constant names
 AC_DEFINE_UNQUOTED([DEBUG], $ocpi_debug, [OpenCPI debug compilation mode])
@@ -193,7 +194,7 @@ AC_DEFINE_UNQUOTED([OPENCL_LIB], $OcpiOclLibs, [OpenCL libraries if installed/av
 dnl autoheader cannot handle defines with platform-specific names so they go into a separate file
 AH_BOTTOM([#include "ocpi-config-platform.h"])
 dnl ================================================================================
-dnl 6. Determines some system attributes and puts them into a generated header file
+dnl 5. Determines some system attributes and puts them into a generated header file
 dnl    Possibly by running test programs
 dnl ================================================================================
 AX_C___ATTRIBUTE__

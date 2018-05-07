@@ -163,7 +163,7 @@ join( bool block, OCPI::OS::Semaphore & sem ) {
     return true;
   if (!block)
     return false;
-    pthread_workqueue_additem_np(m_workqueues[LOW_PRI_Q], wait_join, (void*)&sem, NULL, NULL);    
+  pthread_workqueue_additem_np(m_workqueues[LOW_PRI_Q], wait_join, (void*)&sem, NULL, NULL);    
 
   ocpiDebug("IN Con join about to wait for sem");
   sem.wait();
