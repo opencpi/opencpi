@@ -17,7 +17,7 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 ################################################################################
-# This file sets up the environment variables for a target platform.
+# This internal file sets up the environment variables for one target platform.
 # It either called by ocpitarget.sh to help it set up a shell environment, or
 # included in Make environments that need this setup.
 # The OcpiPlatform variable is set before including it to indicate which platform to build
@@ -28,33 +28,12 @@ ifndef OcpiPlatform
   ifdef OCPI_TARGET_PLATFORM
     OcpiPlatform:=$(OCPI_TARGET_PLATFORM)
   else
-    $(error the file $(lastword $(MAKEFILE_LIST)) included without OcpiPlatform or OCPI_TARGET_PLATFORM set))
+    $(error Internal error: this file included without OcpiPlatform or OCPI_TARGET_PLATFORM set)
   endif
 endif
 # This may be already included
 include $(OCPI_CDK_DIR)/include/util.mk
-# separate the build options from the platform.
-OcpiPlatformArgs:=$(shell cd ../../.. && \
-                    $(OCPI_CDK_DIR)/scripts/getPlatform.sh $(OcpiPlatform) 2> /dev/tty)
-$(if $(filter 6,$(words $(OcpiPlatformArgs))),,\
-    $(error Cannot find platform $(OcpiPlatform) for cross-building))
-OcpiPlatformOs:=$(word 1,$(OcpiPlatformArgs))
-OcpiPlatformOsVersion:=$(word 2,$(OcpiPlatformArgs))
-OcpiPlatformArch:=$(word 3,$(OcpiPlatformArgs))
-# words 4 and 5 are redundant
-OcpiPlatformDir:=$(word 6,$(OcpiPlatformArgs))
-# This can be called more than once to reset back to defaults (needed ?)
-include $(OCPI_CDK_DIR)/include/platform-defaults.mk
-ifneq ($(wildcard $(OcpiPlatformDir)/$(OcpiPlatform).mk),)
-  OcpiPlatformPrevars:=$(.VARIABLES)
-  include $(OcpiPlatformDir)/$(OcpiPlatform).mk
-  $(foreach v,$(filter Ocpi% OCPI%,$(.VARIABLES)),\
-    $(if $(strip $(filter $v,OcpiPlatformPrevars $(OcpiPlatformPrevars))\
-		 $(filter $v,$(OcpiAllPlatformVars))),,\
-       $(error Software platform definition file $(OcpiPlatformDir)/$(OcpiPlatform).mk has illegal variable: $v)))
-else
-  $(error Missing $(OcpiPlatformDir)/$(OcpiPlatform).mk file)
-endif
+$(eval $(call OcpiSetPlatformVariables,$(OcpiPlatform)))
 # We switch to environment variables when moving these values from the make world to bash world
 # FIXME: Do we need to do this?
 # FIXME: Do we need to export them in the make environment?

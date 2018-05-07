@@ -1227,4 +1227,30 @@ endif # if not cleaning
 
 endef # OcpiProcessBuildFiles
 
+# This function reads the platform's target definition file <platform>.mk, against the defaults,
+# and assigns the platform-specific variables
+define OcpiSetPlatformVariables
+  ifndef OcpiPlatformDir_$1 # avoid all the work if its already done
+    # reset default variables for the platform.
+    include $(OCPI_CDK_DIR)/include/platform-defaults.mk
+    OcpiPlatformDir_$1:=$$(or $$(call OcpiGetRccPlatformDir,$1),\
+                          $$(error Unknown RCC/Software platform: $1))
+    OcpiPlatformFile_$1:=$$(wildcard $$(OcpiPlatformDir_$1)/$1.mk)
+    ifeq ($$(wildcard $$(OcpiPlatformFile_$1)),)
+      $$(error The RCC/Software Platform file $$(OcpiPlatformFile_$1) is missing.)
+    endif
+    OcpiPlatformDir:=$$(OcpiPlatformDir_$1)
+    OcpiPlatformFile:=$$(OcpiPlatformFile_$1)
+    OcpiPlatformPrevars:=$$(.VARIABLES)
+    include $$(OcpiPlatformFile_$1)
+    $$(foreach v,$$(filter Ocpi% OCPI%,$$(.VARIABLES)),\
+       $$(if $$(strip $$(filter $$v,OcpiPlatformPrevars $$(OcpiPlatformPrevars))\
+		      $$(filter $$v,$$(OcpiAllPlatformVars))),,\
+          $$(warning Software platform file $$(OcpiPlatformDir)/$$(OcpiPlatform).mk has $$(strip\
+                   illegal variable: $$v))))
+    $$(foreach v,$$(OcpiAllPlatformVars),\
+      $$(eval $$v_$1:=$$($$v)))
+  endif
+endef
+
 endif # ifndef __UTIL_MK__

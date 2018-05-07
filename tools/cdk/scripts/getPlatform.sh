@@ -19,7 +19,8 @@
 
 ##########################################################################################
 # This script determines the runtime platform and target variables
-# The four variables are: OS OSVersion Processor Platform
+# The fivesix variables are: OS OSVersion Processor Triple Platform PlatformDir
+# The triple (os-osversion-processor) is redundant and legacy.
 # If it returns nothing (""), that is an error
 
 # Given the directory of the platform we want to return

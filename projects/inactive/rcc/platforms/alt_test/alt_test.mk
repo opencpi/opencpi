@@ -16,7 +16,12 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-# Setup to build this target
+##########################################################################################
+# This file defines the alt_test software platform.
+# It sets platform variables as necessary to override the defaults in the file:
+#   include/platform-defaults.mk file.
+# See that file for a description of valid variables and their defaults.
+
 OcpiCrossCompile=$(OCPI_PREREQUISITES_DIR)/linaro_arm_gnueabihf/$(OCPI_TOOL_DIR)/bin/arm-linux-gnueabihf-
 OcpiStaticProgramFlags=-rdynamic
 OcpiPlatformOs=linux

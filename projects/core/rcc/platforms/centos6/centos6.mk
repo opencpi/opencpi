@@ -16,7 +16,12 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-# Since the baseline defaults are derived from centos6.mk, this file is empty.
+##########################################################################################
+# This file defines the CentOS6 software platform.
+# It sets platform variables as necessary to override the defaults in the file:
+#   include/platform-defaults.mk file.
+# See that file for a description of valid variables and their defaults.
+
 OcpiPlatformOs=linux
 OcpiPlatformOsVersion=c6
 OcpiPlatformArch=x86_64

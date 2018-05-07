@@ -18,6 +18,7 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 ################################################################################################
+# THIS SCRIPT CANNOT USE BASH SINCE IT IS USED IN EMBEDDED ENVIRONMENTS
 # This script does a few things to help bootstrap the environment.
 # It is sourced by other scripts with an explicit pathname, not via a search path.
 # It does setup work useful for runtime, but not everything for development time.

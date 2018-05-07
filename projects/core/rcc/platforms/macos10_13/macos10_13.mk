@@ -16,22 +16,30 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-# Settings when targeting this platform
-OcpiRequiredCFlags:=$(patsubst -frecord-gcc-switches,,$(OcpiRequiredCFlags))
-OcpiRequiredCXXFlags:=$(patsubst -frecord-gcc-switches,,$(OcpiRequiredCXXFlags))
-OcpiRequiredCFlags:=-Werror=unknown-warning-option $(OcpiRequiredCFlags)
-OcpiRequiredCXXFlags:=-Werror=unknown-warning-option $(OcpiRequiredCXXFlags)
+##########################################################################################
+# This file defines the macos10_13 software platform.
+# It sets platform variables as necessary to override the defaults in the file:
+#   include/platform-defaults.mk file.
+# See that file for a description of valid variables and their defaults.
+
+OcpiRequiredCFlags=$(patsubst -frecord-gcc-switches,,$(OcpiRequiredCFlags))
+OcpiRequiredCXXFlags=$(patsubst -frecord-gcc-switches,,$(OcpiRequiredCXXFlags))
+OcpiRequiredCFlags+=-Werror=unknown-warning-option
+OcpiRequiredCXXFlags+=-Werror=unknown-warning-option
 OcpiLibraryPathEnv=DYLD_LIBRARY_PATH
 OcpiRpathOrigin=@executable_path
 OcpiDynamicLibrarySuffix=.dylib
 OcpiDynamicLibraryFlags=-dynamiclib
-OcpiDriverFlags=-Wl,-flat_namespace -Wl,-dylib
+OcpiPluginFlags=-Wl,-flat_namespace -Wl,-dylib
 OcpiDynamicProgramFlags=-shared -no-undefined -Wl,-rpath,@executable_path
 OcpiRccLDFlags:=-g -dynamiclib -Xlinker -undefined -Xlinker dynamic_lookup
 #OcpiOpenclLib=/System/Library/Frameworks/OpenCL.framework/Versions/A/OpenCL
 OcpiStaticSwigFlags=
 OcpiCanRemoveNeeded=0
 # -install_name @rpath/$(notdir $@)
+# MacOS uses CLANG/LLVM
+OcpiCXX=c++
+OcpiCXXLD=c++
 OcpiExtraLibs=
 #export OCPI_OCL_LIBS=-locpi_ocl -framework OpenCL
 OcpiAsNeeded=

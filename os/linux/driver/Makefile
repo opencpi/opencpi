@@ -20,6 +20,8 @@
 ThisMake := $(lastword $(MAKEFILE_LIST))
 
 # This sets up the OcpiPlatformXXX make variables and also legacy OCPI_TARGET_* env variables
+# FIXME: we could just call OcpiSetPlatformVariables and change the old env vars to
+# platform variables
 include $(OCPI_CDK_DIR)/include/setup-target-platform.mk
 # Set the global make variables that the kernel Makefiles want to see set in global variables
 CC=$(OcpiCrossCompile)$(OcpiCC)

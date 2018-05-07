@@ -255,7 +255,7 @@ while read path opts; do
       ldflags="@libtool_static_library_flags@"
       ltype=noinst
     elif [ -n "$driver" ]; then
-      ldflags="@libtool_driver_library_flags@ @OcpiDriverFlags@"
+      ldflags="@libtool_driver_library_flags@ @OcpiPluginFlags@"
       ltype=driver
       drivers="$drivers $library"
     else

@@ -18,10 +18,11 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 ##########################################################################################
-# Install prerequisite packages for Centos7
+# Install required and available packages for Centos7
 #
 # First, for git cloning in the minimum centos7 CD image, installing git brings:
-PKGS="perl rsync libgnome-keyring perl-Git"
+#PKGS="perl rsync libgnome-keyring perl-Git"
+PKGS=
 # Second, for the basic build/test (make prerequisites, make framework, make projects, test):
 #    for framework and prereq build:
 PKGS+=" autoconf automake libtool gcc-c++ ed which"
@@ -29,7 +30,7 @@ PKGS+=" autoconf automake libtool gcc-c++ ed which"
 PKGS+=" unzip patch"
 #    for python and swig:
 PKGS+=" python swig python-devel python-lxml"
-#    for driver: kernel-devel
+#    for kernel driver: kernel-devel
 PKGS+=" kernel-devel"
 #    for "make rpm":
 PKGS+=" rpm-build"
@@ -43,9 +44,14 @@ PKGS+=" nfs-utils"
 PKGS+=" ocl-icd"
 #    for various 32-bit software tools we end up using (e.g. modelsim)
 PKGS+=" glibc.i686 libXft.i686 libXext.i686 ncurses-libs.i686 libXdmcp.i686"
+#    for the inode64 prerequisite
+PKGS+=" glibc-devel.i686"
 #    for various testing scripts
-PKGS+=" python-numpy"
-[ "$1" = list ] && echo $PKGS && exit 0
-echo Installing standard extra packages using: sudo yum
-echo Installing these packages required or commonly used: $PKGS
+PKGS+=" numpy"
+PKGS+=" epel-release"
+#    for various testing scripts
+EPEL_PKGS+=" python34-numpy"
+[ "$1" = list ] && echo $PKGS && echo $EPEL_PKGS && exit 0
 sudo yum -y install $PKGS
+# Now those that depend on epel
+sudo yum -y install $EPEL_PKGS

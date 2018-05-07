@@ -17,8 +17,7 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-if test $1 = darwin && which -s sw_vers; then
-  vers=`sw_vers -productVersion | sed 's/^\([0-9][0-9]*\.[0-9][0-9]*\).*/\1/' | tr . _`
-  test macos$vers = $(basename $(dirname $0)) && exit 0
-fi
-exit 1
+[ "$(uname -s)" = Darwin ] && which -s sw_vers &&
+    vers=`sw_vers -productVersion |
+          sed 's/^\([0-9][0-9]*\.[0-9][0-9]*\).*/\1/' | tr . _` &&
+    [ macos$vers = $(basename $(dirname $0)) ]

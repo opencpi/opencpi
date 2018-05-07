@@ -18,23 +18,59 @@
 
 ##########################################################################################
 # This file provides defaults and documentation for platform-specific build variables.
-# Any platform can override these except that the "required" flags should only be
-# "translated" if needed, not removed.
+#
+# Any platform can override these variables except that the "*required*" flags indicate desirable
+# functionality that should be invoked.  So if one of the required flags is not valid,
+# replace it with an equivalent that performs the nearest available function.
+# i.e.
+# OcpiRequiredCFlags=$(patsubst <bad-flag>,<good-flag>,$(OcpiRequiredCFlags))
+#
 # The defaults are basically what CentOS6 wants, so everything other platform definition
 # is essentially empty except to the extent that it deviates from the CentOS6 baseline.
 # This file might be read more than once to RESET all the variables to their defaults.
 #
 # Some conventions:
 #  - a boolean variable is 1 for true, otherwise false.
-#  - linker related flags assume the use of the compiler command for linking
+#  - linker related flags generally assume the use of the compiler command for linking
 #    i.e. they would typically need a -Xlinker or -Wl, etc.
+#    This is as opposed to directly using the underlying linker, e.g. using ld directly
 #  - these variables are "immediate/simply-expanded" make variables,
 #    not "deferred/recursively-expanded" make variables
 #  - Variable names are camelcase to make it crystal clear they are not environment variables
 #    I.e. if we DO want environment variables we use all upper case
 
-ifndef __PLATFORM_DEFAULTS_MK__
-__PLATFORM_DEFAULTS_MK__:=1
+# There is no guard on this file.  It is included repeatedly to set the variables to default
+# values.
+
+# Every platform MUST set at least these three variables, even if their values are the default.
+#    OcpiPlatformOs=<e.g. linux>
+#    OcpiPlatformOsVersion=<e.g. c6>
+#    OcpiPlatformArch=<e.g. x86_64>
+
+# Compilation modes:
+# There are two aspects to compilation: strict or not, and dynamic or not.
+# Strict is used for OpenCPI's own code.  Not strict is used for imported or prerequisite code.
+# Strict mostly applies to warnings, and making some warnings into errors, but other options
+# might apply in terms of code checking.
+# Dynamic means suitable for dynamically loaded code, which we use for:
+# 1. RCC workers
+# 2. Plugins
+# 3. Libraries that are not plugins only when the whole framework build mode is dynamic
+
+# Library types:
+# When libraries are created, they are fundamentally of these types:
+# 1. Normal framework libraries, static or dynamic depending the overall framework build mode
+# 2. Plugins that are always dynamic
+# 3. Stubs that are used temporarily during the build process to check for undefined symbols
+#    in libraries that are accessing external libraries that may or may not be present.
+# 4. SWIG libraries that will link against all the normal libraries static or dynamic,
+#    depending on the overall framework build mode.  AND when it links against normal libraries
+#    when the overall framework mode is static, it links against special versions of those
+#    static libraries which are built using the dynamic compilation mode because the final
+#    resulting SWIG library is in fact a dynamic library.
+
+# When the framework build mode is static, executables are statically linked in such a way
+# that symbols in the executable are accessible from dynamically loaded plugins and RCC workers.
 
 # The list of all variables defaulted and settable by platforms
 # The value of this variable should not be changed lightly since it may affect all platforms.
@@ -43,13 +79,13 @@ __PLATFORM_DEFAULTS_MK__:=1
 OcpiAllPlatformVars:=\
   OcpiAR OcpiAsNeeded OcpiCanRemoveNeeded \
   OcpiCC OcpiCFlags OcpiCLD OcpiCrossCompile OcpiCXX OcpiCXXFlags OcpiCXXLD \
-  OcpiDebugOffFlags OcpiDebugOnFlags OcpiDriverFlags \
+  OcpiDebugOffFlags OcpiDebugOnFlags OcpiDependencyFlags \
   OcpiDynamicCompilerFlags OcpiDynamicLibraryFlags OcpiDynamicLibrarySuffix \
   OcpiDynamicProgramFlags OcpiDynamicSwigFlags \
   OcpiExtraLibs OcpiKernelDir \
   OcpiLibraryPathEnv OcpiOclLibs OcpiOptionalCWarnings OcpiOptionalCXXWarnings \
   OcpiPlatform OcpiPlatformArch OcpiPlatformDir OcpiPlatformOs OcpiPlatformOsVersion \
-  OcpiPlatformPrerequisites \
+  OcpiPlatformPrerequisites OcpiPluginFlags \
   OcpiRccCXXFlags  OcpiRccLDFlags \
   OcpiRequiredCFlags OcpiRequiredCPPFlags OcpiRequiredCXXFlags OcpiRpathOrigin \
   OcpiStaticLibraryFlags OcpiStaticLibrarySuffix OcpiStaticProgramFlags OcpiStaticSwigFlags \
@@ -85,7 +121,7 @@ OcpiStaticSwigFlags:=-Xlinker -export-dynamic
 OcpiDynamicSwigFlags:=
 # linker flags when creating a driver/plugin library
 # Note this is NOT an immediate variable
-OcpiDriverFlags=$(OcpiDynamicLibraryFlags)
+OcpiPluginFlags=$(OcpiDynamicLibraryFlags)
 # When linking against dynamic libraries, these options indicate that libraries on the
 # linker command line that are not referenced should not be "needed" by the resulting
 # executable or dynamic library
@@ -111,14 +147,20 @@ OcpiCXXFlags:=-g -pipe
 # typical "make"
 # The commands used to build for this platform
 OcpiCC:=gcc
-OcpiCXX:=c++
+OcpiCXX:=g++
 # These are the linker commands to use, per language
 OcpiCLD:=gcc
-OcpiCXXLD:=c++
+OcpiCXXLD:=g++
 OcpiAR:=ar
 OcpiSTRIP:=strip
 # Where linux kernel headers should be found for out-of-tree building of OpenCPI kernel driver
-OcpiKernelDir=$(OcpiPlatformDir)/kernel-headers
+# When not set, it is found in the default/standard place for a development system
+OcpiKernelDir:=
+# These flags are followed directly by the name of the dependency file, roughly like -o
+# MMD is for user headers, not ones included with <>.
+# MP is to create phone targets for each such file so that it is not an error if it is deleted.
+# MF is to indicate the actual file to write dependencies to
+OcpiDependencyFlags:=-MMD -MP -MF$(Space)
 # Other than -g, there is no need to force optimization off
 OcpiOptimizedOffFlags:=
 # FIXME: discuss whether we need to specifically offer independent assert control
@@ -126,9 +168,11 @@ OcpiOptimizedOffFlags:=
 # This is biased for best optimizations (bipolar)
 OcpiOptimizeOnFlags:=-O2 -NDEBUG=1
 # For all code:
-# We require these or their equivalent be supported.  If not its an error
+# We require these or their equivalent be supported.  If not its nearly an error
+# I.e. there may be problems since code may well depend on it.
 # They should not be overridden or reset by a platform, except perhaps to change the syntax
 # when some equivalent name or syntax is used.
+# The warnings could be removed (e.g. using filter-out) if they are truly not supported.
 OcpiRequiredCPPFlags:= -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS
 OcpiRequiredCFlags:= -Wall -Wfloat-equal -Wextra -fno-strict-aliasing -Wformat -Wuninitialized \
                      -Winit-self -Wshadow -frecord-gcc-switches -fstack-protector \
@@ -149,13 +193,17 @@ OcpiStrictCXXFlags:=$(OcpiStrictCFlags)
 # What we want to burden users with by default
 OcpiRccCXXFlags:=-Wall -Wextra
 OcpiRccLDFlags:=-g -shared
-# Set this to the option that cause unknown warnings to be errors
-# The default is that unknown warnings are expected to be warned
+# Set this to the option that causes unknown warnings options to be errors
+# The default (gcc) always causes errors with unknown warning options,
+# but some compilers only warn unless you give another option (e.g. clang).
 OcpiUnknownWarningsError:=
 # Either relative to where the platform is defined in its directory, or absolute
-OcpiKernelDir:=
 OcpiPlatformOs:=linux
 OcpiPlatformArch:=x86_64
+# Defining platform versions is discussed in the platform development guide.
+# Normally a single letter for the linux distribution, followed immediately by the major version
+# e.g. c6 for CentOS6, r5 for RHEL5, u16, for ubuntu 16 etc.
 OcpiPlatformOsVersion:=
+# This is a list of platform-specific prerequisite packages required for this platform.
+# for each one there must be an install-<foo>.sh script in the platform's directory.
 OcpiPlatformPrerequisites:=
-endif

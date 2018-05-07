@@ -18,9 +18,8 @@
 
 ##########################################################################################
 # This file preprocesses the RccPlatform(s) and RccTarget(s) variables, defines common
-# RCC-related definitions not specific to "workers", and
-# Reads in the software platform definition files for all platforms, setting the
-# platform-specific variables.
+# RCC-related definitions not specific to "workers", and ensures that all the platform
+# variables are set for the requested platforms.
 # Thus this file has significant side-effects
 ifndef RCC_MAKE_MK
 RCC_MAKE_MK:=xxx
@@ -151,23 +150,6 @@ $(call OcpiDbgVar,RccTargets)
 override RccTarget:=
 override RccPlatform:=
 
-# This function reads the platform's target definition file <platform>.mk, against the defaults,
-# and assigns the platform-specific variables
-define RccSetPlatformVariables
-  ifndef OcpiPlatformDir_$1 # avoid all the work if its already done
-    # reset default variable for the platform.
-    include $(OCPI_CDK_DIR)/include/platform-defaults.mk
-    OcpiPlatformDir_$1:=$(or $(call OcpiGetRccPlatformDir,$1),$(error Unknown RCC platform: $1))
-    OcpiPlatformFile_$1:=$$(wildcard $$(OcpiPlatformDir_$1)/$1.mk)
-    ifeq ($$(wildcard $$(OcpiPlatformFile_$1)),)
-      $$(error The RCC Platform file $$(OcpiPlatformFile_$1) is missing.)
-    endif
-    include $$(OcpiPlatformFile_$1)
-    $$(foreach v,$$(OcpiAllPlatformVars),\
-      $$(eval $$v_$1:=$$($$v)))
-  endif
-endef
-
 # Allow either platforms or targets for now
 # Unfortunately these are called sometimes with target assignment of RccTarget and
 # sometimes not.
@@ -175,9 +157,9 @@ RccOs=$(or $(OcpiPlatformOs_$1),$(word 1,$(subst -, ,$(or $1,$(RccTarget),$(erro
 RccOsVersion=$(or $(OcpiPlatformOsVersion_$1),$(word 2,$(subst -, ,$1)))
 RccArch=$(or $(OcpiPlatformArch_$1),$(word 3,$(subst -, ,$1)))
 
-# Read in all the tool sets indicated by the targets
+# Read in all the tool sets for the platforms we are building
 ifeq ($(filter clean cleanrcc,$(MAKECMDGOALS)),)
   $(foreach x,$(RccPlatforms),\
-      $(eval $(call RccSetPlatformVariables,$(call RccRealPlatforms,$x))))
+      $(eval $(call OcpiSetPlatformVariables,$(call RccRealPlatforms,$x))))
 endif
 endif # guard for whole file

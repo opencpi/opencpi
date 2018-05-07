@@ -18,7 +18,7 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 ##########################################################################################
-# Install prerequisite packages for Centos6
+# Install required and available packages for Centos6
 #
 # First, for git cloning in the minimum centos7 CD image, installing git brings:
 #PKGS="perl rsync libgnome-keyring perl-Git"
@@ -30,7 +30,7 @@ PKGS+=" autoconf automake libtool gcc-c++ ed which"
 PKGS+=" unzip patch"
 #    for python and swig:
 PKGS+=" python swig python-devel python-lxml"
-#    for driver: kernel-devel
+#    for kernel driver: kernel-devel
 PKGS+=" kernel-devel"
 #    for "make rpm":
 PKGS+=" rpm-build"
@@ -41,6 +41,7 @@ PKGS+=" libusb-devel"
 #    for general configuration/installation flexibility
 PKGS+=" nfs-utils"
 #    for OpenCL support (the switch for different actual drivers that are not installed here)
+#    Not available for centos6 on the standard repo or epel
 #PKGS+=" ocl-icd"
 #    for various 32-bit software tools we end up using (e.g. modelsim)
 PKGS+=" glibc.i686 libXft.i686 libXext.i686 ncurses-libs.i686 libXdmcp.i686"
@@ -50,9 +51,9 @@ PKGS+=" glibc-devel.i686"
 PKGS+=" numpy"
 #    for python3
 PKGS+=" epel-release"
+#    for various testing scripts
 EPEL_PKGS+=" python34-numpy"
-[ "$1" = list ] && echo $PKGS $EPEL_PKGS && exit 0
+[ "$1" = list ] && echo $PKGS && echo $EPEL_PKGS && exit 0
 sudo yum -y install $PKGS
 # Now those that depend on epel
 sudo yum -y install $EPEL_PKGS
-

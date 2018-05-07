@@ -16,19 +16,20 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-###########################################################################################
-# This file initializes the database of possible RCC Platforms, and their target triples
+##################################################################################################
+# This file initializes the database of possible RCC Platforms, including os/os_version/arch info.
 # This file is directly included when that info is needed.
-# It does NOT read the target definition files for the details of the platform, but only
-# the "target" file containing the platform's "target triple"
+# It does NOT read/include the software platform definition files for the details of the platform,
+# but only teases out the os/os_version/arch aspects.
 # It should be considered a leaf, light file, but it does depend on the project context
-# since the set of available platforms is based on registered projects.
+# since the set of available platforms is based on registered projects or OCPI_PROJECT_PATH.
 # If it is not called in a project context, then the default registry is used.
 #
 # It does not call rcc-make or rcc-worker, they call it.
 #
 # This file will pull RCC platform information from the environment if is already set,
-# avoiding any file system interaction
+# avoiding any file system interaction/overhead.
+# Setting ShellRccTargetsVars=1 causes it to dump the database to standard output
 
 ifndef RccAllPlatforms
 ifdef OCPI_ALL_RCC_PLATFORMS

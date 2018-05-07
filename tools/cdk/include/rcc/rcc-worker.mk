@@ -52,6 +52,7 @@ RccIncludeDirsActual=$(RccIncludeDirsInternal)\
    $(OCPI_PREREQUISITES_DIR)/$l/include)
 
 # FIXME: change this variable name someday (used by xxx-worker.mk)
+# This variable is the BINARY FILE suffix, used across all authoring models.
 BF=$(OcpiDynamicLibrarySuffix_$(RccPlatform))
 RccLinkOptions=$(OcpiRccLDFlags_$(RccPlatform))
 # This is for backward compatibility
@@ -96,7 +97,7 @@ RccMainLinkOptions=$(strip\
     $(OcpiDynamicProgramFlags_$(RccPlatform)),\
     $(OcpiStaticProgramFlags_$(RccPlatform))))
 RccCompileOptions=$(strip\
-  -fPIC \
+  $(OcpiDynamicCompilerFlags_$(RccPlatform))\
   $(if $(RccOptimized),\
      $(OcpiOptimizeOnFlags_$(RccPlatform)),\
      $(OcpiOptimizeOffFlags_$(RccPlatform))))
@@ -175,7 +176,7 @@ RccFinalCompileOptions=\
 
 #$(foreach v,$(OcpiAllPlatformVars),$(info $v_$(word 1,$(RccPlatforms)):$($v_$(word 1,$(RccPlatforms)))))
 Compile_c=$$(call OcpiFixPathArgs,\
-  $$(call RccCC,$$(RccRealPlatform)) -MMD -MP -MF $$@.deps -c \
+  $$(call RccCC,$$(RccRealPlatform)) $$(OcpiDependencyFlags_$$(RccPlatform))$$@.deps -c \
   $$(call RccFinalCompileOptions,C,$$(RccTarget),$$(RccPlatform)) \
   $$(RccIncludeDirsActual:%=-I%) -o $$@ $$(RccParams) $$<)
 Compile_cc=$$(call OcpiFixPathArgs,\

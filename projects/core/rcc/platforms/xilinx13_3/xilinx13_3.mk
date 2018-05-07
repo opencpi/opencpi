@@ -16,10 +16,15 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-# Setup to build this target
+##########################################################################################
+# This file defines the xilinx13_3 software platform.
+# It sets platform variables as necessary to override the defaults in the file:
+#   include/platform-defaults.mk file.
+# See that file for a description of valid variables and their defaults.
+
 include $(OCPI_CDK_DIR)/include/hdl/xilinx.mk
 # Here we require Vivado SDK version 2013.4 for platform xilinx13_3
-OCPI_XILINX_VIVADO_SDK_VERSION:=2013.4
+# make this conditional on vivado being here... OCPI_XILINX_VIVADO_SDK_VERSION:=2013.4
 f:=$(OcpiXilinxEdkDir)/gnu/arm/lin/bin
 ifeq ($(wildcard $f),)
   $(error When setting up to build for zynq for $(OCPI_TARGET_PLATFORM), cannot find $f. Perhaps the EDK was not installed\
