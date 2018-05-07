@@ -35,11 +35,7 @@ OcpiCrossCompile=$f/arm-xilinx-linux-gnueabi-
 OcpiCFlags+=-mfpu=neon-fp16 -mfloat-abi=softfp -march=armv7-a -mtune=cortex-a9
 OcpiCXXFlags+=-mfpu=neon-fp16 -mfloat-abi=softfp -march=armv7-a -mtune=cortex-a9
 OcpiStaticProgramFlags=-rdynamic
-# Ask Aaron when/why this override is used
-ifdef OCPI_TARGET_KERNEL_DIR
-  OcpiKernelDir=$(OCPI_TARGET_KERNEL_DIR)
-else
-  OcpiKernelDir=release/kernel-headers
+OcpiKernelDir=release/kernel-headers
 endif
 OcpiPlatformOs=linux
 OcpiPlatformOsVersion=x13_3

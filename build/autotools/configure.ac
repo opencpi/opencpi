@@ -100,7 +100,7 @@ fi
 common_cppflags="$OcpiRequiredCPPFlags"
 common_cflags="$OcpiRequiredCFlags $OcpiCFlags $ocpi_debug_flags"
 strict_cflags="$OcpiStrictCFlags"
-common_cxxflags="$OcpiRequiredCXXFlags $OcpiCxxFlags $ocpi_debug_flags"
+common_cxxflags="$OcpiRequiredCXXFlags $OcpiCXXFlags $ocpi_debug_flags"
 strict_cxxflags="$OcpiStrictCXXFlags"
 # add to the c/cxx flags based on testing support for optional warnings
 m4_version_prereq([2.64],[

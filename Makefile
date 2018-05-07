@@ -28,8 +28,7 @@ else
   ifeq ($(wildcard exports),)
     include $(OCPI_CDK_DIR)/include/util.mk
     $(info Exports have never been set up here.  Doing it now for platform-independent items.)
-    $(and $(call DoShell,./scripts/makeExportLinks.sh - -,Error),\
-	$(error $(Error)))
+    $(and $(call DoShell,./scripts/makeExportLinks.sh - -,Error),$(error $(Error)))
   endif
 endif
 include $(OCPI_CDK_DIR)/include/util.mk
@@ -47,7 +46,7 @@ include $(OCPI_CDK_DIR)/include/rcc/rcc-make.mk
 
 ##########################################################################################
 # Goals that are not about projects
-.PHONY: exports      framework      projects      driver      testframework \
+.PHONY: exports      framework      driver      testframework \
         cleanexports cleanframework cleanprojects cleandriver clean
 all framework:
 	$(AT)$(MAKE) -C build/autotools install Platforms="$(RccPlatforms)"
@@ -225,19 +224,13 @@ rpm: check_export
 # Convenience here in the Makefile.
 # This forces the rebuild each time, although the downloads are cached.  It is not
 # a "make" dependency of building the framework.
-.PHONY: prerequisites
+.PHONY: prerequisites cleanprerequisites
 prerequisites:
 	$(AT)for p in $(call RccRealPlatforms,$(RccPlatforms)); do\
                 ./scripts/install-prerequisites.sh $$p;\
              done
-# This is the only place this list exists for the moment.
-# clearly each project should have a list of prerequisites.
-.PHONY: project-prerequisites
-project-prerequisites:
-	$(AT)for p in $(call RccRealPlatforms,$(RccPlatforms)); do\
-                ./scripts/install-ad9361.sh $$p;\
-                ./scripts/install-liquid.sh $$p;\
-             done
+cleanprerequisites:
+	$(AT)rm -r -f prerequisites-build prerequisites
 ##########################################################################################
 # Goals that are about projects
 # A convenience to run various goals on all the projects that are here
@@ -253,6 +246,7 @@ DoProjects=set -e; $(foreach p,$(Projects),\
 $(ProjectGoals):
 	$(AT)$(call DoProjects,$@)
 
+.PHONY: projects
 projects:
 	$(AT)$(call DoProjects,build)
 	$(AT)$(call DoProjects,test)
@@ -273,15 +267,14 @@ The valid goals that accept platforms (using RccPlatform(s) or Platforms(s)) are
      cleanframework     - Clean the specific platforms
      exports            - Redo exports, including for indicated platforms
                         - This is cumulative;  previous exports are not removed
-                        - This does not export projects
+                        - This does not export projects or do exports for projects
      driver             - Build the driver(s) for the platform(s)
      testframework      - Test the framework, requires the projects be built
                         - Runs component unit tests in core project, but not in others
-                        - Clean the driver(s) for the platform(s)
      cleandriver        - Clean the driver(s) for the platform(s)
-     tar                - Create the tarball for the current cdk exports
+     tar                - Create the tarball for the current cdk exports (exported platforms)
      rpm                - Create the binary/relocatable CDK RPM for the platforms
-   Make goals for projects:
+   Make goals for projects: (be selective using Projects=...)
      projects           - Build the projects for the platforms
      cleanprojects      - Clean all projects
      exportprojects     - Export all projects
@@ -292,13 +285,14 @@ The valid goals that accept platforms (using RccPlatform(s) or Platforms(s)) are
                         - ignores the Platform and Projects variables
      prerequisites      - Forces a (re)build of the prerequisites for the specified platforms.
                         - Downloads will be downloaded if they are not present already.
+     cleanprerequisites - Clean out all built, downloaded prerequisites.
 
 Variables that are useful for most goals:
 
 Platforms/Platform/RccPlatforms/RccPlatform: all specify software platforms
   -- Useful for goals:  framework(default), exports, cleanframework, projects, exportprojects,
-                        driver, cleandriver, tar, rpm
-  -- These platforms can have build options/letters after a hyphen: d=dynamic, o=optimized 
+                        driver, cleandriver, prerequisites, tar, rpm
+  -- Platforms can have build options/letters after a hyphen: d=dynamic, o=optimized 
      <platform>:    default static, debug build
      <platform>-d:  dynamic library, debug build
      <platform>-o:  static library, optimized build

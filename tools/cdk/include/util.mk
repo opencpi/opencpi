@@ -1243,7 +1243,7 @@ define OcpiSetPlatformVariables
     OcpiPlatformFile:=$$(OcpiPlatformFile_$1)
     OcpiPlatformPrevars:=$$(.VARIABLES)
     include $$(OcpiPlatformFile_$1)
-    $$(foreach v,$$(filter Ocpi% OCPI%,$$(.VARIABLES)),\
+    $$(foreach v,$$(filter-out OcpiXilinx%,$$(filter Ocpi% OCPI%,$$(.VARIABLES))),\
        $$(if $$(strip $$(filter $$v,OcpiPlatformPrevars $$(OcpiPlatformPrevars))\
 		      $$(filter $$v,$$(OcpiAllPlatformVars))),,\
           $$(warning Software platform file $$(OcpiPlatformDir)/$1.mk has $$(strip\

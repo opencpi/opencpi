@@ -28,6 +28,27 @@
 # one line per source directory, and generates a Makefile.am file, on standard output,
 # that implements the required build rules using libtool and automake
 
+# Libraries are of 5 types, and they are each handled differently.
+# How each type of library gets built depends on whether we are in static or dynamic mode.
+
+# normal runtime: static mode:  build 2 ways: static and static+pic
+#                 dynamic mode:  build 2 ways, static+pic, and dynamic
+# plugin/driver:  always build only for dynamic library
+# stub:           always build only for dynamic library
+# swig:           static mode:  build a dynamic lib using static+pic versions of the normal libs
+#                 dynamic mode: build a dynamic lib using dynamic versions of the normal libs
+# tool:           static mode: static
+#                 dynamic mode: dynamic
+
+# Executables are of 3 types:
+
+# Normal executables that end up in "<platform>/bin
+# Executables that end up in a subdirectory of "<platform>/bin"
+# Not really used, or only usable deep inside this build tree
+
+# Header files from earlier places are made available to later places.
+# Tool libraries only access runtime libraries up to the end-of-runtime-tools marker in "places".
+
 # Boilerplate contents of Makefile.am
 cat <<'EOF'
 # DESTDIR must be absolute even though we would prefer it not to be.

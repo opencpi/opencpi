@@ -32,7 +32,7 @@
  *
  * ocpi-config.h is included by source files who need to be aware of the "configuration",
  * whether that configuration is autotools generated or ad hoc with compiler version ifdefs etc.
- * This file is never included directly
+ * This file is never included directly.
  */
 
 /**********************************************************************************************

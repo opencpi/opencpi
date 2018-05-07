@@ -19,8 +19,11 @@
 
 ##########################################################################################
 # This script is run in the automake install-data-hook.
+# It cannot run in the install-exec-hook since that is to early.
 # It is cleaner to write it in a bash script than in a make recipe.
-# It is run in the "$DESTDIR/$prefix"
+# It is run in the "$DESTDIR/$prefix" directory
+# It is passed in a bunch of information so that it is not dependent on or dragging in any
+# other configuration information.
 # Args are:
 # 1: dynamic suffix (including period)
 # 2: ocpi_dynamic (0 or 1)
@@ -30,16 +33,15 @@
 # 6: prereqs
 # 7: prereqs dir
 # Environment variables are:
-# V for automake 0 for quiet, 1 for verbos
-# PATCHELF tool for ELF-based platforms
+# V for automake 0 for quiet, 1 for verbose
 #
 # We use this hook to "post process" the installation staging directory $(DESTDIR) and do things
 # that libtool cannot do due to its broad historical portability mandates (being nice here)
 # The actions taken are:
-# 0. Remove libtool relics, leaving only real libraries
+# 0. Remove libtool relics, leaving only real libraries that we need
 # 1. On static builds:
-#    -- remove DT_NEEDEDs from driver libraries that reference our libs or prereqs
-#    -- remove dynamic libraries that were only built for error checking.
+#    -- remove DT_NEEDEDs from plugin/driver libraries that reference our libs or prereqs
+#    -- remove dynamic libraries that were only built for error checking (e.g. stubs).
 #    The only dynamic libraries left are:
 #    - driver libraries with no DT_NEEDED entries
 #    - swig libraries with no-DT_NEEDED except for dynamic prereqs
@@ -47,7 +49,8 @@
 #    -- change DT_NEEDEDs to not be absolute
 #    -- use rpath $ORIGIN/../lib (or mac equivalent)
 
-# We need a function to deal with MACOS
+# For now we have "linux with ELF" and "mac" modes so its easy enough switch here,
+# but there may be a more comprehensive solution it we get more variations.
 
 is_mac=$(uname -s | grep Darwin)
 target=$3

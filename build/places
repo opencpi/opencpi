@@ -25,36 +25,37 @@
 # - all source files depend on headers of the place they are in, and places occuring earlier
 # - all programs have a main/top file with the suffix _main
 # - all programs depend on the library of the place they are in, statically, and earlier libs
-# - all programs and libraries can use all prereq libraries
+# - all programs and libraries can use all runtime prereq libraries
 
 # The syntax of describing places is one line per place, with blank lines and # comments ok
 
 # Specifying places: (source subtrees)
 # Places are specified one per line, with directory pathname followed by options
-# Default behavior is:
+# Default behavior for a place is:
 # - library name is basename of pathname (with ocpi_ prefix)
-# - resulting library is an exported runtime library, installed in "lib"
-# - resulting library is "our" code subject to strict warnings etc.
+# - resulting library is an exported runtime library, installed in "<platform>/lib"
+# - resulting library is OpenCPI code subject to strict warnings etc.
 # - resulting library should be available to later libraries and programs (lines after it)
-# - any programs found are exported to "bin"
+# - any programs found are exported to "<platform>/bin"
 
-# Options are to change the default behavior:
+# Options (after source tree pathname) are to change the default behavior:
 # -l <name>: the library name is not the basename of the directory, but this name
 # -n: library is not installed, and is only static, used for programs in the same place
-# -f: library is "foreign", built with less strict options since its not our code
-# -d <dir>: the installation subdirectory for programs, default is no subdirectory
+# -f: library is "foreign", built with less strict options since its not OpenCPI code
+# -d <dir>: installation subdirectory for programs (under <platform>/bin), default is none
 # -D <XX=YY>: value is cpp definition for use when building the library
-# -v: library is a driver/plug-in
-# -I <dir>: value is other dir ro look for headers
-# -t: library and programs are "tools" not "runtime" and thus depend on subset of runtime libs
-#     and will not be built for cross-compiled targets      
-# -x <pattern>: source files to ignore
+# -v: library is a driver/plugin
+# -I <dir>: value is other dir to look for headers, relative to top of source tree
+# -t: library and programs are "tools" not "runtime" and thus depend on subset of runtime libs,
+#     will not be built for cross-compiled targets, and not used by runtime programs
+# -x <pattern>: source files to ignore in the place
 # -s: library members have static constructors and are not necessarily referenced
 #     This causes programs to be build with the place's object files, not its library
-# -T <program>: a top-level program, overriding the -d <dir> default for other programs
+# -T <program>: a top-level program, overriding the -d <dir> default for programs in the place
+# -L <library>: access a library that would not normally be accessible from tools
 
 # There are several "special" lines:
-# 1. "prerequisites" which is a list of the prerequisite libraries
+# 1. "prerequisites" which is a list of the *runtime* prerequisite libraries
 # 2. "end-of-runtime-for-tools", which marks the end of the runtime libraries usable by tools
 
 # We know, when building:
@@ -62,6 +63,7 @@
 # 2. Whether it is a development platform or a runtime-only platform (default is development)
 # 3. Whether it is cross compiled or not (default is not cross compiled)
 prerequisites gmp lzma gtest
+# There is lots of leftover/unbuilt stuff in the foreign directories
 runtime/foreign -f -x .*/pwq/kern/.* -x .*/pwq/src/.*/.* -x .*/uuid/src/.*/.*
 # From old Makefiles:c and c++: for linux: -D_XOPEN_SOURCE=600 -D_FILE_OFFSET_BITS=64
 os -x .*/driver/.* -x .*/winnt/.*

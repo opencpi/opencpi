@@ -20,7 +20,7 @@
 version=7.2.1-2017.11
 minor=`sed 's/\([0-9]*\.[0-9]*\)\.[0-9]*\(-.*$\)/\1\2/' <<<$version`
 dir=gcc-linaro-$version-x86_64_arm-linux-gnueabihf
-me=gcc-linaro-arm-gnueabihf # could be from ${0} etc.
+me=linaro-arm-gnueabihf # could be from ${0} etc.
 [ -z "$OCPI_CDK_DIR" ] && echo Environment variable OCPI_CDK_DIR not set && exit 1
 source $OCPI_CDK_DIR/scripts/setup-prerequisite.sh \
        "$1" \

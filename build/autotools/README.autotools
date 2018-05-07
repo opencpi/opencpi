@@ -8,16 +8,17 @@ In particular it leverages three things from autotools:
 The authored/manually created and maintained contents of this directory are:
 ----------------------------------------------------------------------------
 
-imported/    - Files (autoconf macros) manually imported from elsewhere, see imported/README
-
-Makefile     - a top level Makefile that drives the autotools configuration and build process,
-               which is not the result of running autotools, but which runs autotools.
-	       The per-platform generated Makefiles are in platform-specific directories.
-               For platform-specific steps, takes a list of platforms.
+imported-macros/ - Files (autoconf macros) manually imported from elsewhere, see the README there
+our-macros/      - Autoconf macros that are part of and created for OpenCPI
+Makefile         - a top level Makefile that drives the autotools configuration and build process,
+                   which is not the result of running autotools (it is not generated), but which
+		   runs autotools. The per-platform generated Makefiles are in platform-specific
+		   directories: target-<platform>.
+                   For platform-specific goals, takes a list of platforms in Platforms=
              
-do-platform.mk - an internal Makefile to do platform specific steps for a single platform.
+do-platform.mk   - an internal Makefile to do platform specific steps for a single platform.
 
-configure.ac - the authored (not generated) top level autoconf script for this system
+configure.ac     - the authored (not generated) top level autoconf script for the framework build
 
 ocpi-config-platform.h.in - the template for the platform-specific generated header file
                             which is in addition to the generated ocpi-config.h, 
@@ -27,14 +28,12 @@ generate-automake.sh      - the script for generating the automake Makefile.am t
                             for all the per-platform generated Makefiles.
 			    The input is in the build-system-agnostic file ../places
 
-ocpi-config-platform.h.in - the template for the ocpi-config-platform.h file created during
-                            platform-specific configuration
-
-install-data-hook.sh      - the script run during the autotools "make install" phase to fixup
+install-hook.sh           - the script run during the autotools "make install" phase to fixup
                             the library references from executables and dynamic libraries.
 
-Note several authored files are used from the directory above this.  Such files are not
-here since they are build-system-agnostic.  E.g. "places" and "platform-defaults.mk".
+The "places" and the various platform definition files are used here, but located in the
+directory above this.  Such files are not here since they are build-system-agnostic.
+E.g. "places" and "platform-defaults.mk".
 
 The automatically generated/created contents of this directory are:
 -------------------------------------------------------------------
@@ -51,7 +50,7 @@ The autotools-based configuration process
 
 This process is set up to be driven by the top level "make", thus the "user interface"
 is currently just using "make" with various goals and variables.  A syntactic sugar-coating
-could easily make it a CLI script with options and verbs.
+could easily make it a CLI script with options and verbs, but it wouldn't add much value.
 
 Starting from a clean tree the steps (and make goals) are:
 
@@ -63,12 +62,11 @@ This goal is very similar to what many autotools projects implement with a scrip
 covers to do the bulk of the typical autotools setup work prior to platform-specific
 configuration.  It is executed by typing "make preconfigure".
 
-This process creates and populates a subdirectory called "generated", whose entire contents
-is always automatically generated.  The generated/ directory's contents look a lot like
+This process creates and populates a subdirectory called "gen", whose entire contents
+is always automatically generated.  The gen/ directory's contents look a lot like
 a native "autotools" project, with its mix of "authored" files and "generated" files.
 It is designed and structured for "out-of-source-tree" or "VPATH mode" builds as described
-in the autotools documentation.  It is not called "gen" to avoid some automatic cleaning of
-directories called gen/.  It contains symbolic links to authored files to make them appear
+in the autotools documentation.  It contains symbolic links to authored files to make them appear
 in this "autotools work area directory" while retaining the ability to nuke this directory.
 
 In addition to simply populating this configuration work area prior to calling autoreconf,
@@ -76,18 +74,20 @@ a script is run to generate the Makefile.am file from a build-system-agnostic li
 description file in ../places.  See comments in that file for its syntax and semantics.
 
 This step is platform agnostic.  It is done once, before any platforms are contemplated
-or configured for building.  It "prepares for subsequent platform-specific configuration".
+or configured for building.  It "prepares for subsequent platform-specific configuration/build".
 
 Inputs:
-  ../places - describes source tree, processed by generate-automake.sh script
-  ../platform-defaults.mk - processed for (at least) the optional-warnings.m4 file
+  ../places    - describes source tree, processed by generate-automake.sh script
+  $OCPI_CDK_DIR/include/platform-defaults.mk
+               - processed for (at least) creating the optional-warnings.m4 file
   configure.ac - processed by autoreconf
-  imports/* - various not-built-in-to-autoconf autoconf macros
+  imported-macros/* - various not-built-in-to-autoconf but imported-from-elsewhere autoconf macros
+  our-macros/* - OpenCPI autoconf macros used.
 Intermediate Files: (generated and then used here)
-  generated/optional-warnings.m4 - to allow autoconf to know about optional compiler warnings
-  generated/Makefile.am - from generate-automake and used by autoreconf to make Makefile.in
+  gen/optional-warnings.m4 - to allow autoconf to know about optional compiler warnings
+  gen/Makefile.am          - from generate-automake.sh and used by autoreconf to make Makefile.in
 Outputs: (used by later steps, all in the generated/ subdirectory)
-  configure - used as the configure script for platform-specific configuration
+  configure   - used as the configure script for platform-specific configuration
   Makefile.in - the template for platform-specific Makefiles, output from automake.
   config.h.in - the autoconf-generated template for the platform-specific ocpi-config.h file
   various internally and automatically populated autotools files and directories -
@@ -102,11 +102,12 @@ project using "VPATH mode" or "VPATH builds".  It creates a platform-specific su
 target-<platform> in which the configuration and building happens for that platform.
 See section "16.3 Compiling For Multiple Architectures" in the autoconf manual.
 
-This (and other platform-specific) goal allows you to set the "Platforms" variable on the make
-command line.  If it is not set, the currently running platform is implied.  If the variable is
-set, it can be used to specify a cross-compiled platform.  In any case there must be an OpenCPI
-RCC platform definition for the platform.  Non-cross-compiled and cross-compiled platforms may
-be mixed.  Each "platform" may have a build-options suffix for non-default build options.
+This goal (and other platform-specific ones) allows you to set the "Platforms" variable on the
+make command line.  If it is not set, the currently running platform is implied.  If the
+variable is set, it can be used to specify a cross-compiled platform.  In any case there must
+be an OpenCPI RCC platform definition for the platform.  Non-cross-compiled and cross-compiled
+platforms may be mixed.  Each "platform" may have a build-options suffix for non-default build
+options.
 
 Configuring for cross compilation software platforms is no different except that
 some configuration tests that require executing on the platform are not performed.
@@ -116,18 +117,19 @@ This step:
 1. creates the target-<platform> build-and-configure directory for the targeted platform
 2. retrieves platform-specific build information from OpenCPI (whether natively building
    or cross-building)
-3. calls ../generated/configure script with the appropriate arguments.
+3. calls ../gen/configure script with the appropriate arguments.
 
 Step #2 creates a file of simple shell platform-related variable assignments that it then
 used by "configure" to finish its job.
 
 Inputs:
-  ../generated/configure     - the autotools configuration script use to configure platforms
-  ../generated/config.h.in   - generated template for the platform-specific ocpi-config.h file
-  ../generated/Makefile.in   - the template for the platform-specific Makefile
-  ../../platform-defaults.mk - the default values for platform-specific compile/link variables
-  */projects/*/rcc/platforms/<platform>/<platform>-target.mk
-                             - the platform's compile/build variables as a project asset
+  ../gen/configure     - the autotools configuration script use to configure platforms
+  ../gen/config.h.in   - generated template for the platform-specific ocpi-config.h file
+  ../gen/Makefile.in   - the template for the platform-specific Makefile
+  $OCPI_CDK_DIR/include/platform-defaults.mk
+                       - the default values for platform-specific compile/link variables
+  */projects/*/rcc/platforms/<platform>/<platform>.mk
+                       - the platform's compile/build variables as a project asset
   various internally and automatically populated autotools files and directories in ../generated
                 autom4te.cache, build-aux, aclocal.m4, acinclude  
 
@@ -154,6 +156,7 @@ We do these things that are somewhat at odds with the "spirit" of autotools, on 
 
 1. We depend on the existence of gnumake, not any arbitrary "make" from the 1970s.
 2. We do not intentionally support environment variables at any point in this process.
+   But "configure" when cross compiling requires the cross-tool directory to be in the PATH
 3. We do not intentionally support arbitrary arguments to "configure".
    We support "configure" being used for our specific purposes (including for RPMs)
 4. We depend on an initial setup file (in rcc/platforms) for any platform, although if it is
@@ -165,7 +168,8 @@ We do these things that are somewhat at odds with the "spirit" of autotools, on 
 This step uses the term "install" in the autotools sense, and simply post processes the
 build artifacts (executables and libraries) into the "staging/" subdirectory under the
 target-<platform>/ directory.  The contents of the staging/ directory are essentially the
-selected exportable artifacts from the build process.
+selected exportable artifacts from the build process, with a few exceptions.
+Note that this staging directory is NOT the framework exports directory.
 
 Post processing is done mostly to de-absolutize the library references and to remove
 unneeded and unwanted dynamic library references from executables and libraries as appropriate.
@@ -175,11 +179,11 @@ one thing to create the exportable content in the staging/ directory.
 
 The "lib" subdirectory of the staging/ directory contains three things:
 - static and dynamic libraries
-- python files (.c,.pyc,.pyo) for SWIG libraries
+- python files (.py,.pyc,.pyo) for SWIG libraries
 - symbolic links to prerequisite libraries.
 
 Inputs:
- - all the build libraries and executables in their autotools-native locations (.libs etc.).
- - the install-data-hook.sh file run by the typical automake/libtool "make install"
+ - all the built libraries and executables in their autotools-native locations (.libs etc.).
+ - the install-hook.sh file run by the typical automake/libtool "make install"
 Outputs:
  - the staging subdirectory

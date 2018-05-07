@@ -22,7 +22,7 @@
 #   include/platform-defaults.mk file.
 # See that file for a description of valid variables and their defaults.
 
-OcpiCrossCompile=$(OCPI_PREREQUISITES_DIR)/linaro_arm_gnueabihf/$(OCPI_TOOL_DIR)/bin/arm-linux-gnueabihf-
+OcpiCrossCompile=$(OCPI_PREREQUISITES_DIR)/linaro-arm-gnueabihf/$(OCPI_TOOL_DIR)/bin/arm-linux-gnueabihf-
 OcpiStaticProgramFlags=-rdynamic
 OcpiPlatformOs=linux
 OcpiPlatformOsVersion=a4
