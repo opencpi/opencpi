@@ -25,7 +25,9 @@
 PKGS=
 # Second, for the basic build/test (make prerequisites, make framework, make projects, test):
 #    for framework and prereq build:
-PKGS+=" make autoconf automake libtool gcc-c++ glibc-static ed which"
+PKGS+=" make autoconf automake libtool gcc-c++  ed which"
+#    for solving the "cannot find a compiler" problem
+PKGS+=" glibc-static glibc-devel binutils"
 #    for prerequisite downloading and building:
 PKGS+=" unzip patch"
 #    for python and swig:
