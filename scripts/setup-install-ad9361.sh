@@ -16,28 +16,6 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-ifndef OCPI_CDK_DIR
-OCPI_CDK_DIR=$(realpath ../../exports)
-endif
-
-ifeq ($(filter clean%,$(MAKECMDGOALS)),)
-  include $(OCPI_CDK_DIR)/include/ocpisetup.mk
-endif
-DIR=target-$(OCPI_TARGET_DIR)
-PROG=$(DIR)/$(APP)
-OUT= > /dev/null
-
-INCS = -I$(OCPI_INC_DIR) -I$(OCPI_CDK_DIR)/platforms/$(OCPI_TARGET_PLATFORM)/include/ -I../fmcomms_2_3_rx.rcc/include/
-
-$(DIR):
-	mkdir -p $(DIR)
-
-ifdef APP
-$(PROG): $(APP).cxx | $(DIR)
-	$(AT)echo Building $@...
-	$(AT)$(CXX) $(OCPI_TARGET_CXXFLAGS) -g -Wall $(OCPI_EXPORT_DYNAMIC) -o $@ $(INCS) $^ $(OCPI_LD_FLAGS)
-endif
-
-clean::
-	$(AT)rm -r -f lib target-* *.*~
-
+# As of 23 Apr 2018, 2017_R1 points to 06bfc76060d5b9767ae9aad7bf40e3648474ebb7
+OCPI_AD9361_CURRENT_2017_R1_GIT_COMMIT_ID=06bfc76060d5b9767ae9aad7bf40e3648474ebb7
+OCPI_AD9361_VERSION=$OCPI_AD9361_CURRENT_2017_R1_GIT_COMMIT_ID

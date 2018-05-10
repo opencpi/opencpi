@@ -73,3 +73,80 @@ diff -rupN util.h util.h
  
  struct axiadc_state {
  	struct ad9361_rf_phy	*phy;
+--- ad9361_api.c	2018-04-25 13:56:11.274971361 -0400
++++ ad9361_api.c	2018-04-25 13:55:56.120217540 -0400
+@@ -1994,3 +1994,65 @@ int32_t ad9361_get_temperature(struct ad
+ 
+ 	return 0;
+ }
++
++/**
++ * Free all memory allocations which occurred during runtime. This should be
++ * called at the end of every application which uses this library.
++ */
++void ad9361_free(struct ad9361_rf_phy *phy)
++{
++  if(phy != 0) {
++    // free allocations that occured in register_clocks()
++    free(phy->clk_data.clks);
++    free(phy->clks[TX_REFCLK]);
++    free(phy->clks[RX_REFCLK]);
++    free(phy->clks[BB_REFCLK]);
++    free(phy->clks[BBPLL_CLK]);
++    free(phy->clks[ADC_CLK]);
++    free(phy->clks[R2_CLK]);
++    free(phy->clks[R1_CLK]);
++    free(phy->clks[CLKRF_CLK]);
++    free(phy->clks[RX_SAMPL_CLK]);
++    free(phy->clks[DAC_CLK]);
++    free(phy->clks[T2_CLK]);
++    free(phy->clks[T1_CLK]);
++    free(phy->clks[CLKTF_CLK]);
++    free(phy->clks[TX_SAMPL_CLK]);
++    free(phy->clks[RX_RFPLL_INT]);
++    free(phy->clks[TX_RFPLL_INT]);
++    free(phy->clks[RX_RFPLL_DUMMY]);
++    free(phy->clks[TX_RFPLL_DUMMY]);
++    free(phy->clks[RX_RFPLL]);
++    free(phy->clks[TX_RFPLL]);
++    free(phy->ref_clk_scale[TX_REFCLK]);
++    free(phy->ref_clk_scale[RX_REFCLK]);
++    free(phy->ref_clk_scale[BB_REFCLK]);
++    free(phy->ref_clk_scale[BBPLL_CLK]);
++    free(phy->ref_clk_scale[ADC_CLK]);
++    free(phy->ref_clk_scale[R2_CLK]);
++    free(phy->ref_clk_scale[R1_CLK]);
++    free(phy->ref_clk_scale[CLKRF_CLK]);
++    free(phy->ref_clk_scale[RX_SAMPL_CLK]);
++    free(phy->ref_clk_scale[DAC_CLK]);
++    free(phy->ref_clk_scale[T2_CLK]);
++    free(phy->ref_clk_scale[T1_CLK]);
++    free(phy->ref_clk_scale[CLKTF_CLK]);
++    free(phy->ref_clk_scale[TX_SAMPL_CLK]);
++    free(phy->ref_clk_scale[RX_RFPLL_INT]);
++    free(phy->ref_clk_scale[TX_RFPLL_INT]);
++    free(phy->ref_clk_scale[RX_RFPLL_DUMMY]);
++    free(phy->ref_clk_scale[TX_RFPLL_DUMMY]);
++    free(phy->ref_clk_scale[RX_RFPLL]);
++    free(phy->ref_clk_scale[TX_RFPLL]);
++
++    // free allocations that occured in ad9361_init()
++    free(phy->spi);
++#ifndef AXI_ADC_NOT_PRESENT
++    free(phy->adc_conv);
++    free(phy->adc_state);
++#endif
++    free(phy->clk_refin);
++    free(phy->pdata);
++  }
++  free(phy);
++}
+--- ad9361_api.h	2018-04-25 13:55:49.621322276 -0400
++++ ad9361_api.h	2018-04-25 13:55:45.666385584 -0400
+@@ -489,4 +489,6 @@ int32_t ad9361_do_dcxo_tune_fine(struct
+ /* Get the temperature. */
+ int32_t ad9361_get_temperature(struct ad9361_rf_phy *phy,
+ 							   int32_t *temp);
++/* Free all memory allocations which occurred during runtime */
++void ad9361_free(struct ad9361_rf_phy *phy);
+ #endif

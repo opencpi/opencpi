@@ -45,8 +45,8 @@ From the host, add the following lines to the bottom of \texttt{/etc/exports} an
 % sudo vi /etc/exports
 
 /opt/opencpi XX.XX.XX.XX/MM(rw,sync,no_root_squash,no_subtree_check)
-/home/user/coreProj XX.XX.XX.XX/MM(rw,sync,no_root_squash,no_subtree_check)
-/home/user/assetsProj XX.XX.XX.XX/MM(rw,sync,no_root_squash,no_subtree_check)
+<host core project location> XX.XX.XX.XX/MM(rw,sync,no_root_squash,no_subtree_check)
+<host assets project location> XX.XX.XX.XX/MM(rw,sync,no_root_squash,no_subtree_check)
 
 % sudo exportfs -av
 \end{verbatim}

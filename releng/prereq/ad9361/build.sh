@@ -1,9 +1,10 @@
 #!/bin/sh
 set -e
-# As of 13 Oct 2017, 2016_R2 points to e9f8fe509cc0e3685cdca47998979f287be4c360 (AV-3478)
-OCPI_AD9361_CURRENT_2016_R2_GIT_COMMIT_ID=e9f8fe509cc0e3685cdca47998979f287be4c360
-OCPI_AD9361_VERSION=$OCPI_AD9361_CURRENT_2016_R2_GIT_COMMIT_ID
-# was master
+. ../../../scripts/setup-install-ad9361.sh
+if [ -z "$OCPI_AD9361_VERSION" ]; then
+    echo Error: setup-install-ad9361.sh did not specify OCPI_AD9361_VERSION
+    exit 99
+fi
 
 # set these for prereq_utils:
 SPECFILE=ocpi_ad9361.spec
@@ -19,7 +20,8 @@ SUBDIR=ad9361-gitrepo
 TARBALL=ad9361-bundled.tar
 rm -rf ${TARBALL}
 
-prereq_init_git ${SUBDIR} https://github.com/analogdevicesinc/no-OS.git ${OCPI_BUNDLED_VERSION}
+#prereq_init_git ${SUBDIR} https://github.com/analogdevicesinc/no-OS.git ${OCPI_BUNDLED_VERSION}
+prereq_init_git ${SUBDIR} ssh://git@git.udev.bia-boeing.com:7999/mirror/ad-no-os.git ${OCPI_BUNDLED_VERSION}
 
 cp ../../../scripts/ad9361.patch ../../../scripts/install-ad9361.sh ${SUBDIR}
 rm -f ad9361

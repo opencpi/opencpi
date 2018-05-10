@@ -462,8 +462,36 @@ When a write to the property occurs, this property's written value is
 	\end{tabular}
 \end{scriptsize}
 
-% no unit test for this component yet
-%\section*{Test and Verification}
+\section*{Test and Verification}
+This test verifies the command/control operation of the RX radio parameters represented by the \comp{} spec. Data fidelity is not verified within this test.
+\subsection*{Hardware Configuration}
+The \Comp{} unit test requires an FMCOMMS2 or FMCOMMS3 card and an ML605 or Zedboard.
+\subsection*{Build Instructions}
+The fmcomms\_2\_3\_rx.test directory contains the fmcomms\_2\_3\_rx.rcc unit test. The test can be built on a development machine from within this directory by running the following command to build for ML605 deployment:
+\lstset{language=bash, columns=flexible, breaklines=true, prebreak=\textbackslash, basicstyle=\ttfamily, showstringspaces=false,upquote=true, aboveskip=\baselineskip, belowskip=\baselineskip}
+\begin{lstlisting}
+ocpidev build --hdl-platform ml605
+\end{lstlisting}
+The following command builds for Zedboard deployment:
+\begin{lstlisting}
+ocpidev build --rcc-platform xilinx13_3 --hdl-platform zed
+\end{lstlisting}
+\subsection*{Execution Instructions}
+If it does not matter which ML605 FMC slot is tested, the ML605 test should be executed by running the following command. Using this command, it is possible for either ML605 FMC slot to be used for tests at runtime.
+The ML605 test should be executed by running the following command.
+\begin{lstlisting}
+make run
+\end{lstlisting}
+To test the ML605 for a specific FMCOMMS2/3 FMC slot location, the \texttt{OCPI\_LIBRARY\_PATH} environment variable must be prepended with the location of the FPGA bitstream for the desired FMC LPC/HPC slot. The command is as follows:
+\begin{lstlisting}
+OCPI_LIBRARY_PATH=<path-to-bitstream>:$OCPI_LIBRARY_PATH make run
+\end{lstlisting}
+To run on the Zedboard, the built fmcomms\_2\_3\_rx.test directory must either be mounted from the development machine to the Zedboard, or copied to the Zedboard. From within the fmcomms\_2\_3\_rx.test directory, the follow command executes the test natively on the Zedboard:
+\begin{lstlisting}
+./run/runtest.sh verify
+\end{lstlisting}
+Upon completion of a successful test, PASSED is printed to the screen and a value of 0 is returned. Upon failure, FAILED is printed to the screen and a non-zero value is returned.
+
 
 
  \begin{thebibliography}{1}

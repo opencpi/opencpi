@@ -216,7 +216,7 @@ class RunCondition {
   void setPortMasks(RCCPortMask first, ...);
   void setPortMasks(RCCPortMask *);
  private:
-  void initMasks(va_list ap);
+  void initMasks(RCCPortMask first, va_list ap);
   void setMasks(RCCPortMask first, va_list ap);
   void activate(OCPI::OS::Timer &tmr, unsigned nPorts);
   // Return true if should run based on non-port info

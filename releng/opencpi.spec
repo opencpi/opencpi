@@ -116,7 +116,6 @@ Requires:       ed
 BuildRequires:  gcc-c++ rpm-build fakeroot
 #Optional but preferred (AV-2071) BuildRequires:  valgrind-devel
 
-# SWIG is C7 only:
 %if "0%{?dist}" != "0.el6"
 %global with_swig 1
 # For SWIG interfaces (AV-3699)
@@ -674,12 +673,10 @@ popd
 unset XZ_OPT
 
 # AV-1160 (again)
-# Specifically symlink ocpidev and ocpishow. CentOS 7 already has them.
+# Specifically symlink ocpidev. CentOS 7 already has them.
 # CentOS 6 needs this or it these files will be duplicated in bin instead of symlinked.
 %{__rm} -f %{buildroot}/%{_bindir}/%{OCPI_TARGET_HOST}/ocpidev
-%{__rm} -f %{buildroot}/%{_bindir}/%{OCPI_TARGET_HOST}/ocpishow
 %{__ln_s} -f ../../scripts/ocpidev %{buildroot}/%{_bindir}/%{OCPI_TARGET_HOST}/ocpidev
-%{__ln_s} -f ../../scripts/ocpishow %{buildroot}/%{_bindir}/%{OCPI_TARGET_HOST}/ocpishow
 
 %clean
 %{__rm} -rf --preserve-root %{buildroot}
@@ -894,7 +891,6 @@ make %{?_smp_mflags} check
 %attr(%{gexec_perm},opencpi,opencpi) %{_bindir}/%{OCPI_TARGET_HOST}/ocfrp_check
 %attr(%{gexec_perm},opencpi,opencpi) %{_bindir}/%{OCPI_TARGET_HOST}/ocpidds
                                      %{_bindir}/%{OCPI_TARGET_HOST}/ocpidev
-                                     %{_bindir}/%{OCPI_TARGET_HOST}/ocpishow
 %attr(%{gexec_perm},opencpi,opencpi) %{_bindir}/%{OCPI_TARGET_HOST}/ocpigen
                                      %{_bindir}/%{OCPI_TARGET_HOST}/ocpiview
 %attr(%{gexec_perm},opencpi,opencpi) %{_bindir}/%{OCPI_TARGET_HOST}/xfer_tests/*
@@ -924,6 +920,8 @@ make %{?_smp_mflags} check
 %attr(%{gexec_perm},opencpi,opencpi) %{_prefix}/scripts/upgradeApp_v1_3.py*
 %attr(%{gexec_perm},opencpi,opencpi) %{_prefix}/scripts/hdltargets.py*
 %attr(%{gexec_perm},opencpi,opencpi) %{_prefix}/scripts/ocpishow
+%attr(%{gexec_perm},opencpi,opencpi) %{_prefix}/scripts/ocpidev_run.py*
+%attr(%{gexec_perm},opencpi,opencpi) %{_prefix}/scripts/ocpiassets.py*
 %attr(%{gexec_perm},opencpi,opencpi) %{_prefix}/scripts/ocpidev_bash_complete
 %attr(%{gexec_perm},opencpi,opencpi) %{_prefix}/scripts/ocpitarget.sh
 %attr(%{gexec_perm},opencpi,opencpi) %{_prefix}/scripts/ocpiview

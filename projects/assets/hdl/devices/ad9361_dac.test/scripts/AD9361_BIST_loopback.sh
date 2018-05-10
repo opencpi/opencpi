@@ -77,7 +77,12 @@ firenables=( $DISABLE )
 twortwots=( 0 1 ) # force using 2R2T timing diagram regardless of number of enabled channels
 
 FOUND_PLATFORMS=$(./target-$OCPI_TOOL_DIR/get_comma_separated_ocpi_platforms)
-if [ "$FOUND_PLATFORMS" == "zed" ]; then
+AT_LEAST_ONE_ML605_AVAILABLE=$(./target-$OCPI_TOOL_DIR/get_at_least_one_platform_is_available ml605)
+if [ "$FOUND_PLATFORMS" == "" ]; then
+  echo ERROR: no platforms found! check ocpirun -C
+  echo "TEST FAILED"
+  exit 1
+elif [ "$FOUND_PLATFORMS" == "zed" ]; then
     # DATA_CLK_P rate rounded via floor = floor(1/5.712 ns) ~= 175.070028 MHz
     # for LVDS, max samp rate = DATA_CLK_P rate / 4         ~=  43.767507 Msps complex
   samprates=( $AD9361_MIN_ADC_RATE 25e6 30e6 35e6 40e6 43767507 )
@@ -85,11 +90,11 @@ elif [ "$FOUND_PLATFORMS" == "zed_ise" ]; then
   # DATA_CLK_P rate rounded via floor = floor(1/4.294 ns) ~= 232.883092 MHz
   # for LVDS, max samp rate = DATA_CLK_P rate / 4         ~=  58.220773 Msps complex
   samprates=( $AD9361_MIN_ADC_RATE 25e6 30e6 35e6 40e6 45e6 50e6 55e6 58220773 )
-elif [ "$FOUND_PLATFORMS" == "ml605" ]; then
+elif [ "$AT_LEAST_ONE_ML605_AVAILABLE" == "true" ]; then
   samprates=( $AD9361_MIN_ADC_RATE 25e6 30e6 35e6 40e6 45e6 50e6 55e6 $AD9361_MAX_ADC_RATE )
 else
   printf "platform found which is not supported: "
-  echo $FOUND_PLATFORM
+  echo $FOUND_PLATFORMS
   echo "TEST FAILED"
   exit 1
 fi

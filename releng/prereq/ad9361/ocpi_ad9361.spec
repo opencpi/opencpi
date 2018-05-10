@@ -47,7 +47,8 @@ mv install-ad9361.sh buildtmp
 mkdir -p buildtmp/scripts/
 mv ad9361.patch buildtmp/scripts/
 cd buildtmp
-./install-ad9361.sh  |  grep "RPM " | cut -f2- -d' ' > RPM_Commands.txt
+set -o pipefail; ./install-ad9361.sh | tee install-ad9361.log
+cat install-ad9361.log |  grep "RPM " | cut -f2- -d' ' > RPM_Commands.txt
 
 %build
 %if "x%{?OCPI_CROSS_PREFIX}" == "x"

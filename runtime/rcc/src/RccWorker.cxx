@@ -1389,7 +1389,7 @@ OCPI_CONTROL_OPS
      m_timeout(false), m_usecs(0), m_allocated(NULL), m_allMasks(0) {
      va_list ap;
      va_start(ap, pm);
-     initMasks(ap);
+     initMasks(pm, ap);
      va_end(ap);
      va_start(ap, pm);
      setMasks(pm, ap);
@@ -1405,10 +1405,10 @@ OCPI_CONTROL_OPS
      delete [] m_allocated;
    }
    void RunCondition::
-   initMasks(va_list ap) {
-     unsigned n;
-     RCCPortMask m;
-     for (n = 2; (m = va_arg(ap, RCCPortMask)); n++)
+   initMasks(RCCPortMask first, va_list ap) {
+     RCCPortMask m = first;
+     unsigned n = 2;
+     for (; m && (m = va_arg(ap, RCCPortMask)); n++)
 	;
      if (n >= sizeof(m_myMasks)/sizeof(RCCPortMask))
        m_portMasks = m_allocated = new RCCPortMask[n];
@@ -1423,7 +1423,7 @@ OCPI_CONTROL_OPS
      do {
        *pms++ = m;
        m_allMasks |= m;
-     } while ((m = va_arg(ap, RCCPortMask)));
+     } while (m && (m = va_arg(ap, RCCPortMask)));
      *pms++ = 0;
    }
    void RunCondition::
@@ -1433,7 +1433,7 @@ OCPI_CONTROL_OPS
      m_allMasks = 0;
      va_list ap;
      va_start(ap, pm);
-     initMasks(ap);
+     initMasks(pm, ap);
      va_end(ap);
      va_start(ap, pm);
      setMasks(pm, ap);

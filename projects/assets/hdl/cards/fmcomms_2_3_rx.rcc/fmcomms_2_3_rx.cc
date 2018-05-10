@@ -52,6 +52,8 @@
 #include "writers_ad9361_bb_rx_adc.h" // set_AD9361_CLKRF_FREQ_Hz()
 #include "writers_ad9361_bb_rx_filters_analog.h" // set_AD9361_rx_rf_bandwidth()
 
+namespace OA = OCPI::API;
+
 // it is possible for this worker to assign the AD9361 to one of the RXB or RXC ports, none of which are connctedwhich would result in an invalid settings
 // it is possible for the AD9361 to have the setting assigned where one of the
 // RXB or RXC ports are used instead of the RXA ports, and none of the B or C
@@ -315,40 +317,133 @@ private:
     app.setProperty(inst, "rx_fir_en_dis", DISABLE_str.c_str());
   }
 
-  void set_ad9361_init(ad9361_config_proxy_ad9361_init& ad9361_init)
-  {
-    std::string ad9361_init_str = to_string(ad9361_init);
+  /*! @brief Get value from worker array property read. This is just a
+   *         convenience function to reduce lines of code.
+   *  @param[in] w            application's worker instance name of the worker
+   *                          whose property is to be accessed
+   *  @param[in] p            property name
+   *  @param[in] array_idx    index of array
+   ****************************************************************************/
+  template<typename T>
+  T get_prop_val(const std::string& w, const std::string& p, size_t array_idx) {
+
+    OA::AccessList list({array_idx});
+    return getApplication().getPropertyValue<T>(w, p, list);
+  }
+
+  /*! @brief Set worker array property value for a single array index. This is
+   *         just a convenience function to reduce lines of code
+   *  @param[in] w            application's worker instance name of the worker
+   *                          whose property is to be accessed
+   *  @param[in] p            property name
+   *  @param[in] val          value to assign
+   *  @param[in] array_idx    index of array
+   ****************************************************************************/
+  template<typename T>
+  void set_prop_val(const std::string& w, const std::string& p, size_t array_idx,
+                    T val) {
+    OA::AccessList list({array_idx});
+    getApplication().setPropertyValue<T>(w, p, val, list);
+  }
+
+  /*! @brief Get a single channel's tx_attenuation in mdB from the AD9361. Note
+   *         that this uses the No-OS API call to retrieve the value, which
+   *         returns the theoretical value based on register settings.
+   *  @param[in] chan         channel forwarded onto No-OS call (0 or 1)
+   ****************************************************************************/
+  int32_t get_tx_attenuation_mdB(size_t chan) {
+
+    const char* inst = m_properties.app_inst_name_ad9361_config_proxy;
+    return get_prop_val<int32_t>(inst, "tx_attenuation", chan);
+  }
+
+  /*! @brief Get the nominal tx_rf_bandwidth in Hz from the AD9361. Note that
+   *         this uses the No-OS API call to retrieve the value.
+   ****************************************************************************/
+  uint32_t get_tx_rf_bandwidth_Hz() {
+
+    const char* inst = m_properties.app_inst_name_ad9361_config_proxy;
+    return getApplication().getPropertyValue<uint32_t>(inst, "tx_rf_bandwidth");
+  }
+
+  /*! @brief Get nominal tx_lo_freq in Hz from the AD9361. Note this is the
+   *         No-OS API call with nominal (integer) precision, which is less
+   *         precise than get_AD9361_Tx_RFPLL_LO_freq_Hz().
+   ****************************************************************************/
+  uint64_t get_tx_lo_freq_Hz() {
+
+    const char* inst = m_properties.app_inst_name_ad9361_config_proxy;
+    return getApplication().getPropertyValue<uint64_t>(inst, "tx_lo_freq");
+  }
+
+  /*! @brief Set a single channel's tx_attenuation in mdB on the AD9361.
+   *  @param[in] chan               channel forwarded onto No-OS call (0 or 1)
+   *  @param[in] tx_attenuation_mdB attenuation
+   ****************************************************************************/
+  void set_tx_attenuation_mdB(size_t chan, int32_t tx_attenuation_mdB) {
+
+    const char* inst = m_properties.app_inst_name_ad9361_config_proxy;
+    set_prop_val(inst, "tx_attenuation", chan, tx_attenuation_mdB);
+  }
+
+  /*! @brief Set tx_rf_bandwidth in Hz on the AD9361.
+   ****************************************************************************/
+  void set_tx_rf_bandwidth_Hz(uint32_t tx_rf_bandwidth_Hz) {
+
     OCPI::API::Application& app = getApplication();
     const char* inst = m_properties.app_inst_name_ad9361_config_proxy;
+    app.setPropertyValue<uint32_t>(inst, "tx_rf_bandwidth", tx_rf_bandwidth_Hz);
+  }
+
+  /*! @brief Set tx_lo_freq in Hz on the AD9361.
+   ****************************************************************************/
+  void set_tx_lo_freq_Hz(uint64_t tx_lo_freq_Hz) {
+
+    OCPI::API::Application& app = getApplication();
+    const char* inst = m_properties.app_inst_name_ad9361_config_proxy;
+    app.setPropertyValue<uint64_t>(inst, "tx_lo_freq", tx_lo_freq_Hz);
+  }
+
+  void set_ad9361_init(ad9361_config_proxy_ad9361_init& ad9361_init) {
+
+    const size_t chan = 0;
 
     // save property values which may change during write to ad9361_init
 
-    OCPI::API::Property p_tx_rf_bandwidth(app, inst, "tx_rf_bandwidth" );
-    OCPI::API::Property p_tx_lo_freq(     app, inst, "tx_lo_freq"      );
-    // we do not set ad9361_config_proxy's tx_sampling_freq because this worker's sample_rate_MHz's value will affect both the ad9361_config_proxy's rx_sampling_freq and tx_sampling_freq properties
-    std::string str_tx_attenuation;
-    app.getProperty(inst, "tx_attenuation", str_tx_attenuation);
+    /// @TODO/FIXME - chan==0 assumes 1R1T
+    const int32_t tx_attenuation_mdB = get_tx_attenuation_mdB(chan);
 
-    ocpi_ulong_t     tx_rf_bandwidth = p_tx_rf_bandwidth.getULongValue();
-    ocpi_ulonglong_t tx_lo_freq      = p_tx_lo_freq.getULongLongValue();
-    // we do not set ad9361_config_proxy's tx_sampling_freq because this worker's sample_rate_MHz's value will affect both the ad9361_config_proxy's rx_sampling_freq and tx_sampling_freq properties
-    ad9361_config_proxy_tx_attenuation_t tx_attenuation;
-    parse(str_tx_attenuation.c_str(), tx_attenuation); //! @todo TODO/FIXME -  ignoring return value, idk if this is the right thing to do...
+    const uint32_t tx_rf_bandwidth_Hz = get_tx_rf_bandwidth_Hz();
+    const uint64_t tx_lo_freq_Hz      = get_tx_lo_freq_Hz();
 
     // write ad9361_init
-
-    app.setProperty(inst, "ad9361_init", ad9361_init_str.c_str());
+    {
+      const char* inst = m_properties.app_inst_name_ad9361_config_proxy;
+      std::string ad9361_init_str = to_string(ad9361_init);
+      getApplication().setProperty(inst, "ad9361_init",ad9361_init_str.c_str());
+    }
 
     // re-apply saved properties property values which may have changed during
     // write to ad9361_init
-    p_tx_rf_bandwidth.setULongValue( tx_rf_bandwidth );
-    p_tx_lo_freq.setULongLongValue(  tx_lo_freq      );
-    // we do not set ad9361_config_proxy's tx_sampling_freq because this worker's sample_rate_MHz's value will affect both the ad9361_config_proxy's rx_sampling_freq and tx_sampling_freq properties
-    std::string tx_attenuation_str = to_string(tx_attenuation);
-    app.setProperty(inst, "tx_attenuation", tx_attenuation_str.c_str());
+
+    /// @TODO/FIXME - chan==0 assumes 1R1T
+    if(not(get_tx_attenuation_mdB(chan) == tx_attenuation_mdB)) {
+      set_tx_attenuation_mdB(chan, tx_attenuation_mdB);
+    }
+
+    if(not(get_tx_rf_bandwidth_Hz() == tx_rf_bandwidth_Hz)) {
+      set_tx_rf_bandwidth_Hz(tx_rf_bandwidth_Hz);
+    }
+    if(not(get_tx_lo_freq_Hz() == tx_lo_freq_Hz)) {
+      set_tx_lo_freq_Hz(tx_lo_freq_Hz);
+    }
+
+    // we do not set ad9361_config_proxy's tx_sampling_freq because this
+    // worker's sample_rate_MHz's value will affect both the
+    // ad9361_config_proxy's rx_sampling_freq and tx_sampling_freq properties
   }
 
-  /* @brief calc_difference_between_desired_and_in_situ_after_hw_write
+  /*! @brief calc_difference_between_desired_and_in_situ_after_hw_write
    ****************************************************************************/
   const char* calc_difference_between_desired_and_in_situ_after_hw_write(
       const std::string& prop,

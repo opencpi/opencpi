@@ -17,7 +17,9 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-
+# remove any leftover results from last run
+make clean
+ocpidev -d ../av-test build --hdl-platform isim
 MIN_COVERAGE=80 #%
 rm -f .coverage
 # Run each test and collect coverage info
@@ -25,7 +27,7 @@ set -e
 if [ -z "$(type -p coverage3 2> /dev/null)" ]; then
   pyrun_command="python3"
 else
-  pyrun_command="coverage3 run"
+  pyrun_command="coverage3 run --append"
 fi
 for i in *_test.py; do
   echo "Running: $pyrun_command $i"
@@ -40,10 +42,8 @@ done
 if [ "$pyrun_command" == "python" ]; then
   echo "Skipping coverage report because the coverage command does not exist"
 else
-  # TODO: Classic mode for coverage (needed by CentOS6) does not support
-  # the '--fail-under=$MIN_COVERAGE' option. Add this option conditionally
-  # depending on version, or parse the output for the coverage value.
-  coverage -r --omit "*_test.py" ||\
+  # TODO: add a minimum coverage threshold
+  coverage3 report --omit "*_test.py" ||\
     sh -c "echo FAIL: coverage less than \"$MIN_COVERAGE\"% ; exit 1"
 fi
 

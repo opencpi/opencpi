@@ -31,13 +31,15 @@
 ################################################################################
 # 1. Download/clone and setup directories in the prereq area
 ################################################################################
-#OCPI_AD9361_VERSION=master
-# As of 13 Oct 2017, 2016_R2 points to e9f8fe509cc0e3685cdca47998979f287be4c360 (AV-3478)
-OCPI_AD9361_CURRENT_2016_R2_GIT_COMMIT_ID=e9f8fe509cc0e3685cdca47998979f287be4c360
-OCPI_AD9361_VERSION=$OCPI_AD9361_CURRENT_2016_R2_GIT_COMMIT_ID
+
 here=$(pwd)/scripts
 if [ -z "${RPM_BUILD_ROOT}" ]; then
 [ -z "$OCPI_CDK_DIR" ] && echo Environment variable OCPI_CDK_DIR not set && exit 1
+. scripts/setup-install-ad9361.sh
+if [ -z "$OCPI_AD9361_VERSION" ]; then
+    echo Error: setup-install-ad9361.sh did not specify OCPI_AD9361_VERSION
+    exit 1
+fi
 source $OCPI_CDK_DIR/scripts/setup-install.sh \
        "$1" \
        ad9361 \
@@ -60,7 +62,15 @@ cp -r ../ad9361/sw/* .
 ################################################################################
 echo Patching API headers
 dir=.
+set +e
 patch -p0 < $here/ad9361.patch
+if [ "$?" != "0" ]; then
+  echo "*******************************************************" > /dev/stderr
+  echo "ERROR: patch applied by ad9361.patch failed!!" > /dev/stderr
+  echo "*******************************************************" > /dev/stderr
+  exit 1
+fi
+set -e
 
 #################################################################################
 # 3. Compile code into the library

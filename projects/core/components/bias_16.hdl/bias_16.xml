@@ -1,4 +1,4 @@
-<HDLImplementation language="vhdl">
+<HdlWorker language="vhdl">
 <ComponentSpec Name="bias16">
   <Property Name="biasValue" Initial="true" readable='true'/>
   <DataInterfaceSpec Name="in" protocol='iqstream_protocol'/>
@@ -7,4 +7,4 @@
   <StreamInterface Name="in" ImpreciseBurst="true" DataWidth="32" numberofopcodes='256'/>
   <StreamInterface Name="out" ImpreciseBurst="true" DataWidth="32" numberofopcodes='256'/>
   <property name='test64' writable='true' readable='true' type='ulonglong'/>
-</HDLImplementation>
+</HdlWorker>

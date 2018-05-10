@@ -227,6 +227,8 @@ buildtar-%: phony_explicit cleanrpmbuild
 	  --exclude="exports" \
 	  --exclude="projects/core/exports" \
 	  --exclude="projects/core/imports" \
+	  --exclude="tests/*/exports" \
+	  --exclude="tests/*/imports" \
 	  --exclude="projects/assets" \
 	  --exclude="projects/bsps" \
 	  --exclude="projects/inactive" \

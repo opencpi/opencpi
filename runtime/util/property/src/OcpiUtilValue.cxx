@@ -449,6 +449,7 @@ namespace OCPI {
     // Parse the elements of the structure.  This is like the data-type-specific methods.
     const char *Value::
     parseStruct(const char *unparsed, const char *stop, StructValue &sv) {
+      static char cstrerr[256];
       sv = m_structNext;
       m_structNext += m_vt->m_nMembers;
       size_t member = 0;
@@ -474,8 +475,28 @@ namespace OCPI {
 	    if (!strncmp(mName, start, len) && isspace(start[len]))
 	      break;
 	  }
-	  if (n >= m_vt->m_nMembers)
-	    return "unknown member name in struct value";
+	  if (n >= m_vt->m_nMembers) {
+	    std::string err("struct member name \"");
+	    const char* endofname = start;
+	    while (!isspace(*endofname) && endofname != end)
+	      endofname++;
+	    std::string name(start, endofname-start);
+	    err += name + "\" did not match any of the expected member names (";
+	    bool first = true;
+	    for (size_t ii = 0; ii < m_vt->m_nMembers; ii++) {
+	      if(!first)
+	        err += ", ";
+	      first=false;
+	      err += "\"" + m_vt->m_members[ii].m_name + "\"";
+	    }
+	    err += ")";
+	    if (*start == '{') {
+	      err += ", note that opening curly braces are only used for structs when they occur within an array or sequence";
+	    }
+	    strncpy(cstrerr, err.c_str(), std::min(err.size(),sizeof(cstrerr)));
+	    cstrerr[sizeof(cstrerr)-1] = '\0'; // just in case
+	    return cstrerr;
+	  }
 	  if (sv[n])
 	    return "duplicate member name in struct value";
 	  start += len;
@@ -834,7 +855,7 @@ namespace OCPI {
 	err = "Unexpected illegal type in parsing value";
       }
       return err ?
-	esprintf("in value \"%.*s\" (%zu): %s", (int)(end-start), start, end-start, err) : NULL;
+	esprintf("in value \"%.*s\" (length of prop value is %zu chars): %s", (int)(end-start), start, end-start, err) : NULL;
     }
 
 Unparser::

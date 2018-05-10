@@ -109,7 +109,7 @@ const char* get_AD9361_rx_gain_min_dB(
   }
   if(f <= 4e9) // see ad9361.c ad9361_gt_tableindex()
   {
-    val = -4; // see ad9361.c ad9361_init_gain_tables()
+    val = -3; // see ad9361.c ad9361_init_gain_tables()
     return 0;
   }
   // 4e9 < Rx_RFPLL_freq_Hz <= 6e9 // see ad9361.c ad9361_gt_tableindex()

@@ -137,7 +137,7 @@
     <member name='tx_data_delay'                         type='ulong' description="Delay in multiples of 0.3 ns to add to the TX data bus and TX_FRAME_P pins inside the AD9361 in order to account for their setup/hold requirements. Valid range is [0 15]. This value should be calculated using the setup/hold requiremed values and the reported skews in the FPGA bitstream timing report for the FB_CLK_P, TX data bus, and TX_FRAME_P pins."/>
   </property>
   <property name='en_state_machine_mode'                 type='ulong'     volatile='1' writable='1' default='ENSM_MODE_ALERT' description='Get/set the Enable State Machine (ENSM) mode. Value should be set using one of the ENSM_MODE_ parameters.'/>
-  <property name='rx_rf_gain'            arraylength='rx_nchannels' type='long'      volatile='1' writable='1' default='0,0'  description="Get/set the receive RF gain for the selected channel. The gain is in dB. Note that the written value to the second index of this property will not be applied when this worker's ad9361_rf_phy.pdata.rx2tx2 property member is false."/>
+  <property name='rx_rf_gain'            arraylength='rx_nchannels' type='long'      volatile='1' writable='1'                description="Get/set the receive RF gain for the selected channel. The gain is in dB. Note that the written value to the second index of this property will not be applied when this worker's ad9361_rf_phy.pdata.rx2tx2 property member is false."/>
   <property name='rx_rf_bandwidth'                       type='ulong'     volatile='1' writable='1' default='18e6'            description='Get/set the RX RF bandwidth. The bandwidth is in Hz.'/>
   <property name='rx_sampling_freq'                      type='ulong'     volatile='1' writable='1'                           description='Get/set the RX sampling frequency. The frequency is in Hz.'/>
   <property name='rx_lo_freq'                            type='ulonglong' volatile='1' writable='1' default='2.4e9'           description='Get/set the RX LO frequency. The frequency is in Hz.'/>
@@ -252,7 +252,7 @@
   </property>
   <property name='do_dcxo_tune_coarse'                   type='ulong'                  writable='1' description='Do DCXO coarse tuning.'/>
   <property name='do_dcxo_tune_fine'                     type='ulong'                  writable='1' description='Do DCXO fine tuning.'/>
-  <property name='temperature'                           type='long'      volatile='1'              description='Get the temperature.'/>
+  <property name='temperature'                           type='long'      volatile='1'              description='Get the temperature in millidegrees C .'/>
 
   <!--****** PROPERTIES CORRESPONDING TO libad9361 "ADVANCED" API (ad9361.h) *****-->
 

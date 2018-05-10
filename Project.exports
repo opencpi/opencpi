@@ -102,6 +102,8 @@ tests
 +tools/cdk/scripts/ocpitarget.sh scripts/
 +tools/cdk/scripts/ocpidev scripts/
 +tools/cdk/scripts/ocpishow scripts/
++tools/cdk/scripts/ocpidev_run.py scripts/
++tools/cdk/scripts/ocpiassets.py scripts/
 +tools/cdk/scripts/ocpiutil.py scripts/
 +tools/cdk/scripts/upgradeApp_v1_3.py scripts/
 +tools/cdk/scripts/hdltargets.py scripts/
@@ -119,7 +121,6 @@ tests
 +tools/cdk/scripts/maybeExport.sh scripts/
 # user level scripts made available in the bin directory
 +tools/cdk/scripts/ocpidev bin/<target>/
-+tools/cdk/scripts/ocpishow bin/<target>/
 
 +tools/cdk/scripts/ocpidriver bin/<target>/
 +tools/cdk/scripts/genProjMetaData.py scripts/

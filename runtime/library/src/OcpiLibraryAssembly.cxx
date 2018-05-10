@@ -484,7 +484,7 @@ namespace OCPI {
 	OU::Value aValue; // FIXME - save this and use it later
 	const char *err = uProp.parseValue(apValue, aValue, NULL, &i.m_metadataImpl);
 	if (err) {
-	  ocpiInfo("Rejected: the value \"%s\" for the \"%s\" property, \"%s\", was invalid: %s",
+	  ocpiInfo("Rejected: the value \"%s\" for the %s property \"%s\", was invalid: %s",
 		   apValue, uProp.m_isImpl ? "implementation" : "spec", apName, err);
 	  return false;
 	}

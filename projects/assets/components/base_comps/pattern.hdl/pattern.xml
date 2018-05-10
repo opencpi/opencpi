@@ -1,4 +1,4 @@
-<HdlImplementation Language="verilog"  Pattern="%w%M%0_">
+<HdlWorker Language="verilog"  Pattern="%w%M%0_">
   <xi:include href="pattern_spec.xml"/>
   <ControlInterface Sub32BitConfigProperties="true" ControlOperations="initialize"/>
   <!-- additional implementation-specific properties -->
@@ -14,4 +14,4 @@
                    PreciseBurst="true" impreciseburst='true'
                    DataWidth="32" NumberOfOpcodes="256" datavaluewidth='8'
                    zerolengthmessages='true' maxmessagevalues='16380'/>
-</HdlImplementation>
+</HdlWorker>

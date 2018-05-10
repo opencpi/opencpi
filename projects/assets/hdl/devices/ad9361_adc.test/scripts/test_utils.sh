@@ -48,15 +48,20 @@ runtest() {
 
     RX_DATA_CLOCK_DELAY=0
     FOUND_PLATFORMS=$(./target-$OCPI_TOOL_DIR/get_comma_separated_ocpi_platforms)
-    if [ "$FOUND_PLATFORMS" == "zed" ]; then
+    AT_LEAST_ONE_ML605_AVAILABLE=$(./target-$OCPI_TOOL_DIR/get_at_least_one_platform_is_available ml605)
+    if [ "$FOUND_PLATFORMS" == "" ]; then
+      echo ERROR: no platforms found! check ocpirun -C
+      echo "TEST FAILED"
+      exit 1
+    elif [ "$FOUND_PLATFORMS" == "zed" ]; then
       RX_DATA_CLOCK_DELAY=3
     elif [ "$FOUND_PLATFORMS" == "zed_ise" ]; then
       RX_DATA_CLOCK_DELAY=2
-    elif [ "$FOUND_PLATFORMS" == "ml605" ]; then
+    elif [ "$AT_LEAST_ONE_ML605_AVAILABLE" == "true" ]; then
       RX_DATA_CLOCK_DELAY=2
     else
       printf "platform found which is not supported: "
-      echo $FOUND_PLATFORM
+      echo $FOUND_PLATFORMS
       echo "TEST FAILED"
       exit 1
     fi

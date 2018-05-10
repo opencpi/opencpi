@@ -16,30 +16,52 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-# This file is used to build the Application Control Interface api testbench,
-# calls make on the underlying unit test hdl assemblies, and is used to test the
-# respective component. This file handles hardware workers and has been tested on
-# the zed platform.
-
 $(if $(realpath $(OCPI_CDK_DIR)),,$(error The OCPI_CDK_DIR environment variable is not set correctly.))
 
-APP=ad9361_config_proxy_test_app
+OcpiAppNoRun=1
+OcpiApp=ad9361_config_proxy_test_app
 
-include setup.mk
+include $(OCPI_CDK_DIR)/include/application.mk
 
-.SILENT: show
-.PHONY: run clean show
+asm:
+	make -C assemblies Containers='cnt_1rx_0tx_bypassasm_fmcomms_2_3_lpc_LVDS_ml605 cnt_1rx_0tx_bypassasm_fmcomms_2_3_lpc_LVDS_zed'
 
-# build the testbench executable
-run: tests
+# Map global goals to local goals
+test: build
+runtests: run
+tests: build
+verifytest: verify
+all: build
+runonlytest: runonly
+runtest: run
 
-show:
-	echo "$$showhelp"
+# mimicking targets defined in OpenCPI_Component_Development.pdf Section 13.9
 
-tests: $(PROG)
+# "The make command is used with the following goals to invoke the phases:"
+build: asm
 
-define showhelp
-----------------------------------------------------------------------------
-----------------------------------------------------------------------------
-endef
-export showhelp
+run: prepare
+	$(AT)./run/runtests.sh run verify $(and $(View),view)
+
+# "The following goals control the process at a finer granularity:"
+
+generate:
+
+prepare:
+
+runnoprepare:
+	$(AT)./run/runtests.sh run
+
+runonly: prepare runnoprepare
+
+verify: build
+	$(AT)./run/runtests.sh verify $(and $(View),view)
+
+view:
+	$(AT)./run/runtests.sh view
+
+cleanrun:
+
+cleansim:
+	$(AT)rm -r -f run/*/*.simulation
+
