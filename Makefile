@@ -148,7 +148,7 @@ release=$(or $(OcpiRelease),snapshot)
 # This changes every 6 minutes which is enough for updated releases (snapshots).
 # It is rebased after a release so it is relative within its release cycle
 # FIXME:automate this...
-timestamp:=_$(shell printf %05d $(shell expr `date -u +"%s"` / 360 - 4172750))
+timestamp:=_$(shell printf %05d $(shell expr `date -u +"%s"` / 360 - 4231562))
 ##### Set variables based on what git can tell us
 # Get the git branch and clean it up from various prefixes and suffixes tacked on
 # If somebody checks in between Jenkins builds, it will sometimes get "develop^2~37" etc,
@@ -163,7 +163,7 @@ git_tag    :=$(if $(git_version),\
                $(if $(filter-out undefined develop,$(git_branch)),_$(subst -,_,$(git_branch))))
 ##### Set final variables that depend on git variables
 # FIXME: automate this explicitly elsewhere
-version:=$(or $(git_version),1.3.0)
+version:=$(or $(git_version),1.4.0)
 tag:=$(and $(git_version),$(timestamp))
 
 check_export: exports

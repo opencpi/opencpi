@@ -50,4 +50,3 @@ echo Finally, we will built the OpenCPI kernel device driver for $OCPI_TARGET_PL
 make driver
 echo ================================================================================
 echo OpenCPI has been built for $OCPI_TARGET_PLATFORM, with software components, examples and kernel driver
-trap - ERR

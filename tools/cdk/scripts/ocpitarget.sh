@@ -61,6 +61,21 @@ else
   export OCPI_TARGET_PLATFORM=$OCPI_TOOL_PLATFORM
   export OCPI_TARGET_DIR=$OCPI_TOOL_DIR  
 fi
+# In bootstrap/early mode we just need to know the target platform's directory, not all
+# the details, and we don't want to rely on "make"
+[ -n "$2" ] && {
+  if [ $OCPI_TARGET_PLATFORM = $OCPI_TOOL_PLATFORM ]; then
+    export OCPI_TARGET_PLATFORM_DIR=$OCPI_TOOL_PLATFORM_DIR
+  else    
+    read v0 v1 v2 v3 v4 v5 <<< `$OCPI_CDK_DIR/scripts/getPlatform.sh $OCPI_TARGET_PLATFORM`
+    [ -d $v5 ] || {
+      echo Error:  Cannot find the platform directory for platform $OCPI_TARGET_PLATFORM
+      exit 1
+    }
+    export OCPI_TARGET_PLATFORM_DIR=$v5
+  fi
+  return 0
+}
 # Ensure we are really starting fresh for this target
 unset `env | grep OCPI_TARGET | egrep -v 'OCPI_TARGET_(PLATFORM|DIR|KERNEL_DIR)' | sed 's/=.*//'`
 source $OCPI_CDK_DIR/scripts/util.sh

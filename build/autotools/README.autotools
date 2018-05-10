@@ -55,7 +55,7 @@ could easily make it a CLI script with options and verbs, but it wouldn't add mu
 Starting from a clean tree the steps (and make goals) are:
 
 1. preconfigure: (platform agnostic)
-=================================
+====================================
 
 This goal is very similar to what many autotools projects implement with a script called
 "bootstrap.sh" or "reconf".  It in fact calls the autotools "autoreconf" command under the
@@ -157,7 +157,7 @@ We do these things that are somewhat at odds with the "spirit" of autotools, on 
 1. We depend on the existence of gnumake, not any arbitrary "make" from the 1970s.
 2. We do not intentionally support environment variables at any point in this process.
    But "configure" when cross compiling requires the cross-tool directory to be in the PATH
-3. We do not intentionally support arbitrary arguments to "configure".
+3. We do not intentionally support arbitrary arguments to "configure" (like --sysroot or whatever)
    We support "configure" being used for our specific purposes (including for RPMs)
 4. We depend on an initial setup file (in rcc/platforms) for any platform, although if it is
    linux, it inherits default content that is usually sufficient.

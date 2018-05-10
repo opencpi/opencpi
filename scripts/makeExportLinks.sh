@@ -114,7 +114,7 @@ function make_relative_link {
 # $3 is the type of object
 # exclusions can be filtered by source or target
 function make_filtered_link {
-#  echo MAKE_FILTERED:$*
+  # echo MAKE_FILTERED:$*
   local e;
   local -a edirs
   for e in $exclusions; do
@@ -136,7 +136,7 @@ function make_filtered_link {
 if test "$*" = ""; then
   echo "Usage is: makeExportLinks.sh <target> <hyphen-if-not-exists-ok>"
   echo "This script takes two arguments:"
-  echo "  <target> in the form of <platform><build-options>, e.g. lcentos7-d"
+  echo "  <target> in the form of <platform><build-options>, e.g. centos7-d"
   echo "    It is commonly used with the value of the OCPI_TARGET_DIR environment variable."
   echo 'This script is typically used internally by "make exports"'
   echo 'It is designed to be run repeatedly, making links to whatever exists.'
@@ -234,9 +234,9 @@ while read path opts; do
 done < build/places
 set -f
 [ -n "$verbose" ] && echo Collecting exclusions
-exclusions=$(test -f Project.exports && grep '^[ 	]*-' Project.exports | sed 's/^[ 	]*-[ 	]*\([^ 	#]*\)[ 	]*\([^ 	#]*\).*$/\1:\2/') || true
+exclusions=$(test -f Project.exports && egrep '^[[:space:]]*\-' Project.exports | sed 's/^[ 	]*-[ 	]*\([^ 	#]*\)[ 	]*\([^ 	#]*\).*$/\1:\2/') || true
 [ -n "$verbose" ] && echo Collecting additions
-additions=$(test -f Project.exports && grep '^[ 	]*+' Project.exports | sed 's/^[ 	]*+[ 	]*\([^ 	#]*\)[ 	]*\([^ 	#]*\).*$/\1:\2/') || true
+additions=$(test -f Project.exports && egrep '^[[:space:]]*\+' Project.exports | sed 's/^[ 	]*+[ 	]*\([^ 	#]*\)[ 	]*\([^ 	#]*\).*$/\1:\2/') || true
 set +f
 #if [ -d imports ]; then
 #  make_filtered_link imports exports/imports main

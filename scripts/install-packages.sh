@@ -27,8 +27,9 @@ set -e
 source ./scripts/init-opencpi.sh
 # Ensure CDK and TOOL variables
 OCPI_BOOTSTRAP=`pwd`/cdk/scripts/ocpibootstrap.sh; source $OCPI_BOOTSTRAP
-# Ensure TARGET variables
-source cdk/scripts/ocpitarget.sh "$1"
+# Ensure TARGET variables, calling with the second argument to just ask for the minimum
+# knowledge of the target platform, not all its variables (which requires "make").
+source cdk/scripts/ocpitarget.sh "$1" -
 echo We will now globally install any packages from package repositories for the $OCPI_TARGET_PLATFORM platform.
 if test "$OCPI_TOOL_PLATFORM" = "$OCPI_TARGET_PLATFORM"; then
   script=$OCPI_TOOL_PLATFORM_DIR/$OCPI_TOOL_PLATFORM-packages.sh

@@ -19,7 +19,7 @@
 
 ##########################################################################################
 # This script is run in the automake install-data-hook.
-# It cannot run in the install-exec-hook since that is to early.
+# It cannot run in the install-exec-hook since that is too early.
 # It is cleaner to write it in a bash script than in a make recipe.
 # It is run in the "$DESTDIR/$prefix" directory
 # It is passed in a bunch of information so that it is not dependent on or dragging in any
@@ -28,10 +28,11 @@
 # 1: dynamic suffix (including period)
 # 2: ocpi_dynamic (0 or 1)
 # 3: platform target string
-# 4: drivers
-# 5: swigs
-# 6: prereqs
-# 7: prereqs dir
+# 4: host platform
+# 5: drivers
+# 6: swigs
+# 7: prereqs
+# 8: prereqs dir
 # Environment variables are:
 # V for automake 0 for quiet, 1 for verbose
 #
@@ -53,14 +54,18 @@
 # but there may be a more comprehensive solution it we get more variations.
 
 is_mac=$(uname -s | grep Darwin)
+dynsuff=$1
+dynamic=$2
 target=$3
-prereqs=$6
-prereq_inst=$7
-pwd
+host=$4
+drivers=$5
+swigs=$6
+prereqs=$7
+prereq_inst=$8
 case $prereq_inst in /*);;*)prereq_inst=$(cd ../$prereq_inst; pwd);; esac
-PATCHELF=$prereq_inst/patchelf/$OCPI_TOOL_DIR/bin/patchelf
+PATCHELF=$prereq_inst/patchelf/$host/bin/patchelf
 
-# arg 1: driver file arg2: prereqs arg3: dynamic suffix
+# arg 1: driver file, arg 2: prereqs, arg3: dynamic suffix
 function fix_static_driver {
   local newfile=$(basename $1 $3)_s$3
   if [ -n "$is_mac" ]; then
@@ -80,14 +85,16 @@ function fix_static_driver {
     install_name_tool -id $newfile $1
     install_name_tool -add_rpath @loader_path/../lib $1
   else
-    local remove=
+      # Note that for prerequisites, they may have version suffixes, so we don't actually know
+      # what the entire "needed" actually is
+    local -a remove
     for n in $($PATCHELF --print-needed $1); do
-      [[ $n = libocpi_* ]] && remove+=" --remove-needed $n"
+      [[ $n = libocpi_* ]] && remove+=($n)
       for p in $2; do
-        [[ $n = lib$p.* ]]  && remove+=" --remove-needed $n"
+        [[ $n = lib$p.* ]]  && remove+=($n)
       done
     done
-    [ -n "$remove" ] && $PATCHELF $remove $1
+    $PATCHELF --remove-rpath ${remove[@]/#/--remove-needed } $1
   fi
   echo Renaming driver library $1 adding a _s$3 suffix.
   mv $1 $(dirname $1)/$newfile
@@ -153,29 +160,29 @@ function fix_dynamic {
 echo Running install-exec-hook.  Args are: $*
 echo Removing libtool libraries, leaving only the required \"real\" libraries.
 rm lib/*.la
-if [ $2 = 1 ]; then
+if [ $dynamic = 1 ]; then
   echo Processing the libraries and executables for a dynamic configuration 1>&2
   rm lib/*_s.a
   # change the rpath of all dynamic libraries and executables to be relocatable
-  for i in lib/*$1 `find bin -type f`; do # look for all dynamic libraries we created
+  for i in lib/*$dynsuff `find bin -type f`; do # look for all dynamic libraries we created
     fix_dynamic $i
   done
 else
-  echo Processing the libraries and executables for a static configuration $1 1>&2
+  echo Processing the libraries and executables for a static configuration 1>&2
   for l in lib/*_s.a; do mv $l ${l/_s.a/.a}; done
   for i in lib/*$1; do # look for all dynamic libraries we created
-    me=$(basename $i $1 | sed 's/^libocpi_//')
+    me=$(basename $i $dynsuff | sed 's/^libocpi_//')
     found=
     # See if its a driver library. If so Remove DT_NEEDED and rename to _s
-    for d in $4; do
+    for d in $drivers; do
       [ "$d" = "$me" ] && {
         echo Removing OpenCPI DT_NEEDED entries from driver library: $d
-	fix_static_driver $i "$6" $1
+	fix_static_driver $i "$prereqs" $1
 	continue 2
       }
     done
     # See if its a swig library. If so just leave it alone in this static case
-    for s in $5; do
+    for s in $swigs; do
       [ _$s = "$me" ] && continue 2
     done
     for p in $prereqs; do
@@ -186,5 +193,5 @@ else
     rm $i
   done
 fi
-echo $4 > lib/driver-list
+echo $drivers > lib/driver-list
 exit 0

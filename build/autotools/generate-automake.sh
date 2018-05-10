@@ -74,8 +74,8 @@ ocpi_extra_libs=$(patsubst %,-l%,@OcpiExtraLibs@)
 # We use the install-data-hook because, if you can believe it, binaries in subdirectories
 # are installed in the data phase. WTF?
 install-data-hook:
-	$(AT)cd staging; V=$V ../../install-hook.sh \
-	     @OcpiDynamicLibrarySuffix@  @ocpi_dynamic@ @OcpiPlatform@  \
+	$(AM_V_at)cd staging; V=$V ../../install-hook.sh \
+	     @OcpiDynamicLibrarySuffix@  @ocpi_dynamic@ @OcpiPlatform@  $(OcpiThisPlatform) \
 	     "$(ocpi_drivers)" "$(ocpi_swigs)" "$(ocpi_prereqs)" "@prerequisite_dir@"
 EOF
 
@@ -86,15 +86,14 @@ function bad {
 
 # output the compilation flags, used for libraries and programs
 # args are: 1. amname 2. extra C/CXX flags 3. type
+# the "includes" variable is a global that is used here.
 function do_flags {
     printf "${1}_CPPFLAGS = @common_cppflags@"
     [ -z "$foreign" -a "$3" != swig ] && printf " @strict_cppflags@"
     incs="$ocpi_incs_ordered $ocpi_prereq_incs"
     [ -n "$tools" ] && incs="$ocpi_incs_for_tools $ocpi_prereq_incs"
     [ "$3" = stubs ] && incs=
-#    local d
-    for i in $includes $incs; do
-#	case $i in /*)d=;; *) d=@srcdir@/;; esac
+    for i in $includes $incs; do # includes is global
 	printf ' \\\n  -I%s' $i
     done
     printf '\n'"${1}_CFLAGS = $2 @common_cflags@"
@@ -104,8 +103,12 @@ function do_flags {
     echo
 }
 
-# print the names of the libraries we depend on.
-# args are 1. libvarname 2. suffix 3: name_suffix  4:+ libs
+# This function takes a list of libraries that the (library or executable) depends on, and puts
+# them out as dependencies for automake (on the right side of the assignment)
+# It deals with them differently depending on how they are named and whether it is a library or
+# an executable that is depending on them.
+# args are 1. automake-lib-or-pgm-varname 2. suffix 3: name_suffix  4:+ libs-we-are-depending-on
+# name_suffix is before the extension (like _s or _d)
 function print_lib_names {
   printf "$1 ="; shift; suff=$1; shift; namesuffix=$1; shift
   for s in $*; do
@@ -130,7 +133,7 @@ function print_lib_names {
 # for libraries, static: use nothing, dynamic: use -L and -l
 # Args are: 1. type 2. suffix for prereqs for programs 3. libvarname 4:+ libraries
 function print_libs {
-  type=$1; shift; suff=$1; shift; lib=$1; shift
+  lib=$1; shift; type=$1; shift; suff=$1; shift
   [ -n "$verbose" ] && echo printing libraries for type:$type suffix:$suff libs:$* >&2
   case $type in
    normal|driver)
@@ -170,7 +173,7 @@ function do_library {
   if [ -n "$6" ]; then
     [ $1 = driver ] && printf "if ocpi_can_remove_needed\n"
     if [ "$1" != stubs -a $1 != static -a $1 != static-pic ]; then
-      print_libs $1 @OcpiDynamicLibrarySuffix@ ${amname}_LIBADD $6
+      print_libs ${amname}_LIBADD $1 @OcpiDynamicLibrarySuffix@  $6
     fi
     [ $1 = driver ] && printf "endif\n"
   fi
@@ -246,13 +249,13 @@ while read path opts; do
   done
   echo '################################################################################'
   echo '# For location: '$path
-  includes=" `find -H $path $exclude -type d -a -name include` $xincludes" 
+  includes=" $(find -H $path $exclude -type d -a -name include) $xincludes" 
   includes="$(for i in $includes; do echo @srcdir@/$i; done)"
-  sources=`find -H $path $exclude -not -name "*_main.c*" -a -not -name "*_[sS]tubs.c*" -a \
-                         \( -name "*.cxx" -o -name "*.cc" -o -name "*.c" \)`
-  stubs=`find -H $path $exclude -name "*_[sS]tubs.c" -o -name "*_[sS]tubs.cxx"`
-  swig=`find -H $path $exclude -path "*/src/*.i"`
-  programs=`find -H $path $exclude -name "*_main.cxx"`
+  sources=$(find -H $path $exclude -not -name "*_main.c*" -a -not -name "*_[sS]tubs.c*" -a \
+                         \( -name "*.cxx" -o -name "*.cc" -o -name "*.c" \))
+  stubs=$(find -H $path $exclude -name "*_[sS]tubs.c" -o -name "*_[sS]tubs.cxx")
+  swig=$(find -H $path $exclude -path "*/src/*.i")
+  programs=$(find -H $path $exclude -name "*_main.cxx")
   [ -n "$verbose" ] && echo for $path sources are \"$sources\"  >&2
   lname=${library//-/_}
   ldadd=$libs
@@ -368,7 +371,7 @@ while read path opts; do
       echo
       do_flags __ocpi_build_dir__${pname} "" program
       printf "__ocpi_build_dir__${pname}_LDFLAGS = $ldflags $ocpi_prereq_ldflags\n"
-      print_libs program @ocpi_library_suffix@ __ocpi_build_dir__${pname}_LDADD $libs $ldadd \
+      print_libs __ocpi_build_dir__${pname}_LDADD program @ocpi_library_suffix@ $libs $ldadd \
 		 '$(ocpi_program_prereqs)'
     done
   }

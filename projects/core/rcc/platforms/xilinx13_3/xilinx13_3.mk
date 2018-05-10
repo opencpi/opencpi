@@ -24,19 +24,18 @@
 
 include $(OCPI_CDK_DIR)/include/hdl/xilinx.mk
 # Here we require Vivado SDK version 2013.4 for platform xilinx13_3
-# make this conditional on vivado being here... OCPI_XILINX_VIVADO_SDK_VERSION:=2013.4
-f:=$(OcpiXilinxEdkDir)/gnu/arm/lin/bin
-ifeq ($(wildcard $f),)
-  $(error When setting up to build for zynq for $(OCPI_TARGET_PLATFORM), cannot find $f. Perhaps the EDK was not installed\
+OCPI_XILINX_VIVADO_SDK_VERSION:=2013.4
+tooldir:=$(OcpiXilinxEdkDir)/gnu/arm/lin/bin
+ifeq ($(wildcard $(tooldir)),)
+  $(error When setting up to build for zynq for $(OCPI_TARGET_PLATFORM), cannot find $(tooldir). Perhaps the EDK was not installed\
           when Xilinx tools were installed? The non-default Xilinx environment settings were: \
           $(foreach v,$(filter OCPI_XILINX%,$(.VARIABLES)), $v=$($v)))
 endif
-OcpiCrossCompile=$f/arm-xilinx-linux-gnueabi-
+OcpiCrossCompile=$(tooldir)/arm-xilinx-linux-gnueabi-
 OcpiCFlags+=-mfpu=neon-fp16 -mfloat-abi=softfp -march=armv7-a -mtune=cortex-a9
 OcpiCXXFlags+=-mfpu=neon-fp16 -mfloat-abi=softfp -march=armv7-a -mtune=cortex-a9
 OcpiStaticProgramFlags=-rdynamic
 OcpiKernelDir=release/kernel-headers
-endif
 OcpiPlatformOs=linux
 OcpiPlatformOsVersion=x13_3
 OcpiPlatformArch=arm

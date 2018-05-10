@@ -29,11 +29,19 @@ source $OCPI_CDK_DIR/scripts/setup-prerequisite.sh \
        $dir \
        1
 
-echo Performing '"./bootstrap.sh"' on git repo
-(cd ..; ./bootstrap.sh)
-base=$(basename `pwd`)
+# since this package does not use automake, it is not prepared for vpath mode
+# (using ../configure from a build directory), so we have to snapshow the code for each platform
 echo Copying git repo for building in `pwd`
+base=$(basename `pwd`)
 (cd ..; cp -R $(ls . | grep -v ocpi-build-) $base)
+# Even though configure.ac contains AC_CONFIG_MACRO_DIR, for at least the autoconf on centos6
+# (autoconf version 2.63), this does not work so the -Iscripts is required below.
+ed bootstrap.sh <<-EOF
+	/^ *aclocal/s/\$/ -Iscripts/
+	w
+EOF
+echo Performing '"./bootstrap.sh"'
+./bootstrap.sh
 # patches to ./configure to not run afoul of macos stronger error checking
 ed configure <<-EOF
 	g/char malloc, realloc, free, memset,/s//char malloc(), realloc(), free(), memset(),/
@@ -42,11 +50,11 @@ ed configure <<-EOF
 	g/rpl_realloc/d
 	w
 EOF
+echo Performing '"./configure"'
 ./configure  \
-  ${cross_host+--host=$cross_host} \
+  ${cross_host:+--host=$cross_host} \
   --prefix=$install_dir --exec-prefix=$install_exec_dir \
   --includedir=$install_dir/include \
   CFLAGS=-g CXXFLAGS=-g
 make
 make install
-exit 0

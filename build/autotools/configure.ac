@@ -27,7 +27,7 @@ dnl ============================================================================
 dnl 0. Set constants for the software, and autoconf (not auto-discovered values)
 dnl ================================================================================
 dnl If changing version number here, also get minor/patchlevel below:
-AC_INIT([opencpi],[1.3],[AV-Support@BIA-Boeing.com])
+AC_INIT([opencpi],[1.4.0],[discuss@lists.opencpi.org])
 dnl This version is what comes with centos6, which is as far back as we want to go.
 AC_PREREQ([2.63])
 AC_DEFINE([VERSION_MAJOR],1,[Major version])
@@ -39,6 +39,7 @@ dnl Define the fixed prefix for the macros and the file name
 AX_PREFIX_CONFIG_H(ocpi-config.h,OCPI,config.h)
 AC_CONFIG_MACRO_DIR([acinclude])
 AC_CONFIG_AUX_DIR([build-aux])
+dnl This is a pathname that must be present so you know you are executing in the right place.
 AC_CONFIG_SRCDIR([runtime/rcc/src/RccContainer.cxx])
 dnl ============================================================================================
 dnl 1. Import the OpenCPI platform variable values and set libtool variables
@@ -48,6 +49,8 @@ dnl    Put together compilation flags
 dnl ============================================================================================
 # Import OpenCPI platform variables.  The "./" is necessary to avoid path problems on some OSes.
 # These variables are not used when processing configure.ac->configure.in->configure
+# This "source" command is issued when the generated "configure" script is executed, which is
+# is from the "target-<platform>" directory.
 source ./platform-variables.sh
 # Import OpenCPI optional warnings variables USED WHEN autoreconf is processing configure.ac
 m4_include(optional-warnings.m4)
@@ -107,45 +110,33 @@ strict_cxxflags="$OcpiStrictCXXFlags"
 m4_version_prereq([2.64],[
   CFLAGS="$OcpiUnknownWarningsError"
   CXXFLAGS="$OcpiUnknownWarningsError"
-  AC_LANG([C])
+  AC_LANG_PUSH(C)
   m4_foreach_w([ocpi_w],OcpiOptionalCWarnings,
                [AX_CHECK_COMPILE_FLAG([-W]ocpi_w,
                                       [common_cflags+=" [-W]ocpi_w";
 				       strict_cflags+=" [-Werror=]ocpi_w"])])
-  AC_LANG([C++])
+  AC_LANG_POP(C)
+  AC_LANG_PUSH(C++)
   m4_foreach_w([ocpi_w],OcpiOptionalCXXWarnings,
                [AX_CHECK_COMPILE_FLAG([[-W]ocpi_w],
                                       [common_cxxflags+=" [-W]ocpi_w";
 				       strict_cxxflags+=" [-Werror=]ocpi_w"])])
+  AC_LANG_POP(C++)
 ],[
   CFLAGS=
   CXXFLAGS=
 ])
 # These are needed in the Makefile.am
-AC_SUBST([OcpiDynamicLibrarySuffix])
-AC_SUBST([OcpiStaticLibrarySuffix])
-AC_SUBST([OcpiDynamicLibraryFlags])
-AC_SUBST([OcpiStaticLibraryFlags])
-AC_SUBST([OcpiPluginFlags])
-AC_SUBST([OcpiExtraLibs])
-AC_SUBST([libtool_static_library_flags])
-AC_SUBST([libtool_dynamic_library_flags])
-AC_SUBST([libtool_plugin_library_flags])
-AC_SUBST([libtool_library_flags])
-AC_SUBST([libtool_program_flags])
-AC_SUBST([common_cppflags])
-AC_SUBST([common_cflags])
-AC_SUBST([common_cxxflags])
-AC_SUBST([strict_cppflags])
-AC_SUBST([strict_cflags])
-AC_SUBST([strict_cxxflags])
-AC_SUBST([ocpi_dynamic])
-AC_SUBST([ocpi_library_suffix])
-AC_SUBST([ocpi_library_flags])
-AC_SUBST([ocpi_program_flags])
-AC_SUBST([ocpi_swig_flags])
-AC_SUBST([OcpiSWIG])
-AC_SUBST([PYTHON_VERSION])
+m4_foreach_w([ocpi_var],[
+  OcpiDynamicLibrarySuffix OcpiStaticLibrarySuffix OcpiDynamicLibraryFlags OcpiStaticLibraryFlags
+  OcpiPluginFlags OcpiExtraLibs
+  libtool_static_library_flags libtool_dynamic_library_flags libtool_plugin_library_flags
+  libtool_library_flags libtool_program_flags
+  common_cppflags common_cflags common_cxxflags strict_cppflags strict_cflags strict_cxxflags
+  ocpi_dynamic ocpi_library_suffix ocpi_library_flags ocpi_program_flags ocpi_swig_flags OcpiSWIG
+  PYTHON_VERSION
+], [AC_SUBST(ocpi_var)])
+
 # These are needed in ocpi-config.h and ocpi-platform-config.h
 # These come from the platform definition itself
 AC_SUBST([OcpiPlatform])
@@ -159,7 +150,6 @@ dnl ============================================================================
 AC_PROG_SED
 AC_PROG_GREP
 AC_PROG_LN_S
-AS_VAR_IF(LN_S,["ln -s"],,AC_MSG_ERROR([Inadequate symbolic link support]))
 AC_PROG_CXX
 dnl If Swig was not specified by the platform variables, find it.
 AC_PATH_PROG([OcpiSWIG],[swig],AC_MSG_ERROR([Required program 'swig' not found.]))
@@ -213,4 +203,5 @@ dnl 7. Produce output
 dnl ================================================================================
 AC_CONFIG_FILES([Makefile ocpi-config-platform.h])
 AC_OUTPUT
-
+AS_IF([test -n "$OcpiCrossCompile"],
+      [AS_BOX([Configured to cross-compile for platform: $OcpiPlatform])])
