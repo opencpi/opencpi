@@ -29,7 +29,7 @@ source $OCPI_CDK_DIR/scripts/setup-prerequisite.sh \
        $dir \
        1
 ../configure  \
-  ${cross_host+--host=$cross_host} \
+  ${cross_host:+--host=$cross_host} \
   --enable-fat=yes --enable-cxx=yes --with-pic=gmp \
   --prefix=$install_dir --exec-prefix=$install_exec_dir \
   CFLAGS='-g -fPIC' CXXFLAGS='-g -fPIC'

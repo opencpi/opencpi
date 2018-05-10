@@ -81,9 +81,29 @@ else
   # Assume the source tree is where the running kernel was built
   # You should set KERNELDIR in the environment if it's elsewhere
   ifeq ($(filter clean topclean,$(MAKECMDGOALS)),)
-    KERNELDIR ?= /lib/modules/$(shell uname -r)/build
-    ifeq ($(wildcard $(KERNELDIR)),)
-      $(error Cannot figure out where the KERNELDIR should be (tried $(KERNELDIR)).)
+    OcpiKernelRelease:=$(shell uname -r)
+    # this command should be platform-specific (e.g. different for debian etc.)
+    OcpiKernelHeadersVersion:=$(shell rpm -q --qf=%{version}-%{release}.%{arch} kernel-headers)
+    $(info --- The running kernel is release: $(OcpiKernelRelease))
+    $(info --- The current kernel-headers package is version: $(OcpiKernelHeadersVersion))
+    ifdef KERNELDIR
+      $(info --- The requested kernel header location (via KERNELDIR) is: $(KERNELDIR))
+      ifeq ($(wildcard $(KERNELDIR)),)
+        $(error The requested kernel header location ($(KERNELDIR)) is not found)
+      endif
+    else
+      KERNELDIR=/lib/modules/$(OcpiKernelRelease)/build
+      ifeq ($(wildcard $(KERNELDIR)),)
+        try1:=$(KERNELDIR)
+        KERNELDIR=/lib/modules/$(OcpiKernelHeadersVersion)/build
+        ifneq ($(wildcard $(KERNELDIR)),)
+          $(info --- Using the kernel headers version at: $(KERNELDIR))
+        else
+          $(error Cannot find a kernel headers directory.  Tried $(try1) and $(KERNELDIR).)
+        endif
+      else
+        $(info --- Using the kernel release at: $(KERNELDIR))
+      endif
     endif
     $(info No OCPI_TARGET_KERNEL_DIR specified, so using: KERNELDIR=$(KERNELDIR))
   endif
