@@ -99,7 +99,8 @@ else
         ifneq ($(wildcard $(KERNELDIR)),)
           $(info --- Using the kernel headers version at: $(KERNELDIR))
         else
-          $(error Cannot find a kernel headers directory.  Tried $(try1) and $(KERNELDIR).)
+          $(shell ls -l /lib/modules > /dev/tty 2>&1 )
+          $(error Cannot find a kernel headers directory.  Tried $(try1) and $(KERNELDIR))
         endif
       else
         $(info --- Using the kernel release at: $(KERNELDIR))
