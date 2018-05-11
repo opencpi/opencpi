@@ -98,10 +98,14 @@ for t in $TESTS; do
       echo ======================= Loading all the OpenCPI plugins/drivers.
       $bin/cxxtests/load-drivers x;;
     driver)
-      env
-      [ "$OCPI_TOOL_OS" != macos ] &&
+      if [ "$OCPI_TOOL_OS" != linux ]; then
+        echo ======================= Skipping loading the OpenCPI kernel driver:  not running linux.
+      elif [ -e /.dockerenv ] ; then
+        echo ======================= Skipping loading the OpenCPI kernel driver:  running in a docket container.
+      else
         echo ======================= Loading the OpenCPI Linux Kernel driver. &&
-        $OCPI_CDK_DIR/scripts/ocpidriver load;;
+            $OCPI_CDK_DIR/scripts/ocpidriver load
+      fi;;
     *)
       echo Error: the test \"$t\" is not a valid/known test.
       exit 1;;

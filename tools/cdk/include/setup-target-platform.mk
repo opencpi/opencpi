@@ -35,8 +35,8 @@ endif
 include $(OCPI_CDK_DIR)/include/util.mk
 $(eval $(call OcpiSetPlatformVariables,$(OcpiPlatform)))
 # We switch to environment variables when moving these values from the make world to bash world
-# FIXME: Do we need to do this?
-# FIXME: Do we need to export them in the make environment?
+# FIXME: Do we need to do this?  Could it just be variables, not exported?
+# FIXME:  could we simply use the camelcase platform variables?
 export OCPI_TARGET_PLATFORM:=$(OcpiPlatform)
 export OCPI_TARGET_DIR:=$(OcpiPlatform)
 export OCPI_TARGET_OS:=$(OcpiPlatformOs)
@@ -54,6 +54,8 @@ ifndef OCPI_TARGET_KERNEL_DIR
 endif
 # This will export shell variables to replace the original platform-target.sh scripts:
 ifdef ShellTargetVars
+$(foreach v,$(OcpiAllPlatformVars),$(info $v="$($v)";))
+# These are "legacy" to some extent
 $(foreach v,\
   OS OS_VERSION ARCH DIR PLATFORM PLATFORM_DIR KERNEL_DIR CROSS_COMPILE PREREQUISITES \
   DYNAMIC_FLAGS DYNAMIC_SUFFIX EXTRA_LIBS,\

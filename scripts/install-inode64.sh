@@ -28,8 +28,8 @@ source $OCPI_CDK_DIR/scripts/setup-prerequisite.sh \
        . \
        0
 # Only build/use this for centos for now
-[[ "$OCPI_TARGET_OS" != linux || "$OCPI_TARGET_OS_VERSION" != c* ]] &&
-  echo The inode64 package is not built for $OCPI_TARGET_PLATFORM, only CentOS*. Skipping it. &&
+[[ "$OcpiPlatformOs" != linux || "$OcpiPlatformOsVersion" != c* ]] &&
+  echo The inode64 package is not built for $OcpiPlatform, only CentOS*. Skipping it. &&
     exit 0
 # Extract the version script from the comment
 ed -s ../inode64.c <<-EOF
@@ -41,5 +41,5 @@ ed -s ../inode64.c <<-EOF
 # These are from the comments in the source file
 gcc -c -fPIC -m32 ../inode64.c
 ld -shared -melf_i386 --version-script vers -o inode64.so inode64.o
-relative_link inode64.so $install_exec_dir/lib
+relative_link inode64.so $OcpiInstallExecDir/lib
 

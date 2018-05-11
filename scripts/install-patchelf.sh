@@ -28,6 +28,6 @@ source $OCPI_CDK_DIR/scripts/setup-prerequisite.sh \
        $dir.tar.gz \
        $dir \
        0
-../configure  --prefix=$install_dir --exec-prefix=$install_exec_dir \
+../configure  --prefix=$OcpiInstallDir --exec-prefix=$OcpiInstallExecDir \
   CFLAGS=-g CXXFLAGS=-g
 make && make install

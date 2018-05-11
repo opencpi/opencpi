@@ -17,8 +17,8 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-OCPI_LZMA_VERSION=5.2.2
-dir=xz-$OCPI_LZMA_VERSION
+lzma_version=5.2.2
+dir=xz-$lzma_version
 [ -z "$OCPI_CDK_DIR" ] && echo Environment variable OCPI_CDK_DIR not set && exit 1
 source $OCPI_CDK_DIR/scripts/setup-prerequisite.sh \
        "$1" \
@@ -28,13 +28,12 @@ source $OCPI_CDK_DIR/scripts/setup-prerequisite.sh \
        $dir.tar.gz \
        $dir \
        1
-../configure  \
-  ${cross_host+--host=$cross_host} \
-  --prefix=$install_dir --exec-prefix=$install_exec_dir \
+../configure  ${OcpiCrossHost:+--host=$OcpiCrossHost} \
+  --prefix=$OcpiInstallDir --exec-prefix=$OcpiInstallExecDir \
   --enable-shared=yes --enable-static --disable-symbol-versions \
   --disable-xz --disable-xzdec --disable-lzmadec --disable-lzmainfo --disable-lzma-links \
   --disable-scripts --disable-doc \
   --with-pic=liblzma \
-  CFLAGS="-g -fPIC" CXXFLAGS="-g -fPIC"
+  CFLAGS="-g -fPIC" CXXFLAGS="-g -fPIC" # why doesn't with-pic to this?
 make
 make install

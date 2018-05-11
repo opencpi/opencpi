@@ -28,9 +28,9 @@ source $OCPI_CDK_DIR/scripts/setup-prerequisite.sh \
        $dir.tar.xz \
        $dir \
        1
-../configure  \
-  ${cross_host:+--host=$cross_host} \
-  --enable-fat=yes --enable-cxx=yes --with-pic=gmp \
-  --prefix=$install_dir --exec-prefix=$install_exec_dir \
-  CFLAGS='-g -fPIC' CXXFLAGS='-g -fPIC'
+../configure ${OpciCrossHost:+--host=$OcpiCrossHost} \
+  --prefix=$OcpiInstallDir --exec-prefix=$OcpiInstallExecDir \
+  --enable-fat=yes --enable-cxx=yes --with-pic
+#=gmp \
+#  CFLAGS='-g -fPIC' CXXFLAGS='-g -fPIC' # why doesn't --with-pic do this?
 make && make install

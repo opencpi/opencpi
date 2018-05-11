@@ -194,6 +194,6 @@ function relative_link {
 }
 OcpiSetup=
 # The convenience variables that take care of nearly all cases.
-install_dir=$OCPI_PREREQUISITES_INSTALL_DIR/$package
-install_exec_dir=$OCPI_PREREQUISITES_INSTALL_DIR/$package/$OCPI_TARGET_DIR
-cross_host=$OCPI_CROSS_HOST
+OcpiInstallDir=$OCPI_PREREQUISITES_INSTALL_DIR/$package
+OcpiInstallExecDir=$OCPI_PREREQUISITES_INSTALL_DIR/$package/$OCPI_TARGET_DIR
+OcpiCrossHost=$OCPI_CROSS_HOST

@@ -18,7 +18,6 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 liquid_version=v1.3.1
-dir=liquid-dsp
 [ -z "$OCPI_CDK_DIR" ] && echo Environment variable OCPI_CDK_DIR not set && exit 1
 source $OCPI_CDK_DIR/scripts/setup-prerequisite.sh \
        "$1" \
@@ -26,12 +25,12 @@ source $OCPI_CDK_DIR/scripts/setup-prerequisite.sh \
        "DSP Math Library" \
        https://github.com/jgaeddert/liquid-dsp.git \
        $liquid_version \
-       $dir \
+       liquid-dsp \
        1
 
 # since this package does not use automake, it is not prepared for vpath mode
 # (using ../configure from a build directory), so we have to snapshow the code for each platform
-echo Copying git repo for building in `pwd`
+echo Copying git repo checkout contents for building in `pwd`
 base=$(basename `pwd`)
 (cd ..; cp -R $(ls . | grep -v ocpi-build-) $base)
 # Even though configure.ac contains AC_CONFIG_MACRO_DIR, for at least the autoconf on centos6
@@ -51,10 +50,9 @@ ed configure <<-EOF
 	w
 EOF
 echo Performing '"./configure"'
-./configure  \
-  ${cross_host:+--host=$cross_host} \
-  --prefix=$install_dir --exec-prefix=$install_exec_dir \
-  --includedir=$install_dir/include \
+./configure ${OcpiCrossHost:+--host=$OcpiCrossHost} \
+  --prefix=$OcpiInstallDir --exec-prefix=$OcpiInstallExecDir \
+  --includedir=$OcpiInstallDir/include \
   CFLAGS=-g CXXFLAGS=-g
 make
 make install
