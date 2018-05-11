@@ -24,7 +24,7 @@ source $OCPI_CDK_DIR/scripts/setup-prerequisite.sh \
        "$1" \
        lzma \
        "LZMA compression library" \
-       https://github.com/xz-mirror/xz/releases/download/v$OCPI_LZMA_VERSION \
+       https://github.com/xz-mirror/xz/releases/download/v$lzma_version \
        $dir.tar.gz \
        $dir \
        1
