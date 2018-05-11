@@ -22,10 +22,13 @@
 #
 # First, for git cloning in the minimum centos7 CD image, installing git brings:
 #PKGS="perl rsync libgnome-keyring perl-Git"
-PKGS=
+# While some manual installations require git manually installed before this,
+# in other scenarios (bare docker containers), the git clone happens outside the container
+# and thus we need to explicitly ask for git
+PKGS=git
 # Second, for the basic build/test (make prerequisites, make framework, make projects, test):
 #    for framework and prereq build:
-PKGS+=" autoconf automake libtool gcc-c++ ed which"
+PKGS+=" make autoconf automake libtool gcc-c++ ed which"
 #    for prerequisite downloading and building:
 PKGS+=" unzip patch"
 #    for python and swig:
