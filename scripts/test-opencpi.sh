@@ -20,7 +20,12 @@
 ##########################################################################################
 # Run all the go-no-go tests we have
 
-alltests="os datatype load-drivers container swig core assets inactive python av ocpidev driver"
+# This are in order.
+# Run three categories of tests in this order:
+# 1. Framework tests that do not deal with projects at all.
+# 2. Tests that might test project tools, but not using the builtin projects
+# 3. Tests using the built-in projects
+alltests="os datatype load-drivers container swig python driver av ocpidev core assets inactive"
 [ "$1" = --showtests ] && {
     echo $alltests
     exit 0
@@ -93,6 +98,7 @@ for t in $TESTS; do
       echo ======================= Loading all the OpenCPI plugins/drivers.
       $bin/cxxtests/load-drivers x;;
     driver)
+      env
       [ "$OCPI_TOOL_OS" != macos ] &&
         echo ======================= Loading the OpenCPI Linux Kernel driver. &&
         $OCPI_CDK_DIR/scripts/ocpidriver load;;

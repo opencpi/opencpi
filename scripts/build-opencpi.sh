@@ -31,6 +31,9 @@ echo ===========================================================================
 echo Now we will build the OpenCPI framework libraries and utilities for $OCPI_TARGET_PLATFORM
 make
 echo ================================================================================
+echo Next, we will built the OpenCPI kernel device driver for $OCPI_TARGET_PLATFORM
+make driver
+echo ================================================================================
 echo Now we will build the built-in RCC '(software)' components for $OCPI_TARGET_PLATFORM
 make -C projects/core rcc
 make -C projects/assets rcc
@@ -45,8 +48,5 @@ echo Now we will build the tests and examples for $OCPI_TARGET_PLATFORM
 make -C projects/core test
 make -C projects/assets applications
 make -C projects/inactive applications
-echo ================================================================================
-echo Finally, we will built the OpenCPI kernel device driver for $OCPI_TARGET_PLATFORM
-make driver
 echo ================================================================================
 echo OpenCPI has been built for $OCPI_TARGET_PLATFORM, with software components, examples and kernel driver

@@ -17,6 +17,11 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
+# Just check if it looks like we are in the source tree.
+[ -d runtime -a -d build -a -d scripts -a -d tools ] || {
+  echo "Error:  this script ($0) is not being run from the top level of the OpenCPI source tree."
+  exit 1
+}
 set -e
 ./scripts/install-packages.sh $1
 ./scripts/install-prerequisites.sh $1
