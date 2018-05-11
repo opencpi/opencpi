@@ -92,10 +92,10 @@ else
         $(error The requested kernel header location ($(KERNELDIR)) is not found)
       endif
     else
-      KERNELDIR=/lib/modules/$(OcpiKernelRelease)/build
+      KERNELDIR=/usr/src/kernels/$(OcpiKernelRelease)
       ifeq ($(wildcard $(KERNELDIR)),)
         try1:=$(KERNELDIR)
-        KERNELDIR=/lib/modules/$(OcpiKernelHeadersVersion)/build
+        KERNELDIR=/usr/src/kernels/$(OcpiKernelHeadersVersion)
         ifneq ($(wildcard $(KERNELDIR)),)
           $(info --- Using the kernel headers version at: $(KERNELDIR))
         else
