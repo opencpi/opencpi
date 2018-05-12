@@ -28,7 +28,7 @@ source $OCPI_CDK_DIR/scripts/setup-prerequisite.sh \
        $dir.tar.xz \
        $dir \
        1
-../configure ${OpciCrossHost:+--host=$OcpiCrossHost} \
+../configure ${OcpiCrossHost:+--host=$OcpiCrossHost} \
   --prefix=$OcpiInstallDir --exec-prefix=$OcpiInstallExecDir \
   --enable-fat=yes --enable-cxx=yes --with-pic
 #=gmp \

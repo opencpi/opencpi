@@ -28,7 +28,7 @@
 PKGS=git
 # Second, for the basic build/test (make prerequisites, make framework, make projects, test):
 #    for framework and prereq build:
-PKGS+=" make autoconf automake libtool gcc-c++  ed which"
+PKGS+=" make autoconf automake libtool gcc-c++ ed which"
 #    for solving the "cannot find a compiler" problem because gcc-c++ is not really complete
 PKGS+=" glibc-static glibc-devel binutils"
 #    for prerequisite downloading and building:

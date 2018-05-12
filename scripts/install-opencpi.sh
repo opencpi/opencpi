@@ -23,6 +23,20 @@
   exit 1
 }
 set -e
+# We do some bootstrapping here (that is also done in the scripts we call), in order to know
+# whether the platform we are building
+
+# Ensure exports (or cdk) exists and has scripts
+source ./scripts/init-opencpi.sh
+# Ensure CDK and TOOL variables
+OCPI_BOOTSTRAP=`pwd`/cdk/scripts/ocpibootstrap.sh; source $OCPI_BOOTSTRAP
+if test "$OCPI_TOOL_PLATFORM" != "$1"; then
+  ./scripts/install-packages.sh $OCPI_TOOL_PLATFORM
+  # This should check if a successful prereq install has been done
+  ./scripts/install-prerequisites.sh $OCPI_TOOL_PLATFORM
+fi
+# Allow this to build for platforms defined in the inactive project
+[ -z "$OCPI_PROJECT_PATH" ] && export OCPI_PROJECT_PATH=`pwd`/projects/inactive
 ./scripts/install-packages.sh $1
 ./scripts/install-prerequisites.sh $1
 ./scripts/build-opencpi.sh $1

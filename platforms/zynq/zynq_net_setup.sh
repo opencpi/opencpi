@@ -50,7 +50,7 @@ else
   fi
   export OCPI_CDK_DIR=/mnt/net/$3
   cat <<EOF > $PROFILE_FILE
-  if test -e /mnt/net/cdk; then
+  if test -e /mnt/net/$3; then
     echo Executing $PROFILE_FILE
     export OCPI_CDK_DIR=$OCPI_CDK_DIR
     if test -f /etc/opencpi-release; then
@@ -60,9 +60,10 @@ else
       OCPI_TOOL_PLATFORM=zed
     fi
     export OCPI_TOOL_PLATFORM
+    export OCPI_TOOL_OS=linux
     export OCPI_TOOL_DIR=\$OCPI_TOOL_PLATFORM
-    export OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/../projects/core/exports/lib/components/rcc/\$OCPI_TOOL_DIR
-    export PATH=$OCPI_CDK_DIR/bin/\$OCPI_TOOL_DIR:\$PATH
+    export OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/../projects/core/exports/artifacts
+    export PATH=$OCPI_CDK_DIR/\$OCPI_TOOL_DIR/bin:\$PATH
     # This is only for explicitly-linked driver libraries.  Fixed someday.
     export LD_LIBRARY_PATH=$OCPI_CDK_DIR/lib/$OCPI_TOOL_DIR:\$LD_LIBRARY_PATH
     ocpidriver load
