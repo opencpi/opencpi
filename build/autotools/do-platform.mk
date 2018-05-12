@@ -29,6 +29,7 @@ all:
 	$(AT)echo Unexpected default goal in internal Makefile do-platform.mk
 	$(AT)exit 1
 OcpiRelativeTop=../../..
+OcpiPrerequisitesDir:=$(or $(PrerequisitesDir),$(OcpiRelativeTop)/prerequisites)
 # Gather target information if we're not cleaning
 ifeq ($(filter clean%,$(MAKECMDGOALS)),)
   # separate the build options from the platform.
@@ -41,9 +42,9 @@ ifeq ($(filter clean%,$(MAKECMDGOALS)),)
   else
     # Cross Compilation is indicated
     $(info Cross compiling on "$(OcpiThisPlatform)" for target platform: "$(OcpiPlatform)")
-    $(if $(wildcard $(OcpiRelativeTop)/exports/$(OcpiToolDir)/bin/ocpigen),,\
-      $(error $(CURDIR)Cannot cross-build for "$(Platform)" when the running platform, \
-        "$(OcpiThisPlatform)" is not built))
+    $(if $(wildcard $(OcpiPrerequisitesDir)/patchelf/$(OcpiToolDir)/bin/patchelf),,\
+      $(error Cannot cross-build for "$(Platform)" when the running platform, \
+        "$(OcpiThisPlatform)", has not had prerequisites built))
     # This usage of getPlatform.sh is finding the directory of a specified platform,
     # *not* figuring out what platform we are running on.
     OcpiPlatformArgs:=$(shell cd $(OcpiRelativeTop) && \
@@ -84,7 +85,7 @@ Makefile: ../gen/configure platform-variables.sh ../do-platform.mk ../gen/Makefi
               ../gen/configure --build=$$build --enable-silent-rules \
 	        $(and $(OcpiPlatformDynamic),--enable-dynamic=yes) \
 	        $(and $(OcpiPlatformOptimize),--enable-debug=no) \
-	        prerequisite_dir=$(or $(PrerequisitesDir),$(OcpiRelativeTop)/prerequisites) \
+	        prerequisite_dir=$(OcpiPrerequisitesDir) \
                 $(and $(OcpiCrossCompile),\
                    --host=$(patsubst %-,%,$(notdir $(OcpiCrossCompile)))) \
 	        CC=$(OcpiCrossCompile)$(OcpiCC) \
