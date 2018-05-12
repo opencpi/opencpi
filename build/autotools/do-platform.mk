@@ -48,7 +48,7 @@ ifeq ($(filter clean%,$(MAKECMDGOALS)),)
     # This usage of getPlatform.sh is finding the directory of a specified platform,
     # *not* figuring out what platform we are running on.
     OcpiPlatformArgs:=$(shell cd $(OcpiRelativeTop) && \
-                        ./bootstrap/scripts/getPlatform.sh $(OcpiPlatform) 2> /dev/tty)
+                        ./bootstrap/scripts/getPlatform.sh $(OcpiPlatform))
     $(if $(filter 6,$(words $(OcpiPlatformArgs))),,\
       $(error Cannot find platform $(OcpiPlatform) for cross-building))
   endif
