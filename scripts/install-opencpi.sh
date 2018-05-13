@@ -30,14 +30,20 @@ set -e
 source ./scripts/init-opencpi.sh
 # Ensure CDK and TOOL variables
 OCPI_BOOTSTRAP=`pwd`/cdk/scripts/ocpibootstrap.sh; source $OCPI_BOOTSTRAP
-if test "$OCPI_TOOL_PLATFORM" != "$1"; then
+if test -n "$1" -a "$OCPI_TOOL_PLATFORM" != "$1"; then
   ./scripts/install-packages.sh $OCPI_TOOL_PLATFORM
   # This should check if a successful prereq install has been done
+  # It should also just to "host" prerequisites, not "runtime" or "project" prerequisites
   ./scripts/install-prerequisites.sh $OCPI_TOOL_PLATFORM
 fi
 # Allow this to build for platforms defined in the inactive project
 [ -z "$OCPI_PROJECT_PATH" ] && export OCPI_PROJECT_PATH=`pwd`/projects/inactive
 ./scripts/install-packages.sh $1
 ./scripts/install-prerequisites.sh $1
+# To build the framework (really just projects), the host platform must be built
+if test -n "$1" -a "$OCPI_TOOL_PLATFORM" != "$1"; then
+  # build the framework for the tool host, but not projects
+  ./scripts/build-opencpi.sh "" -
+fi
 ./scripts/build-opencpi.sh $1
 ./scripts/test-opencpi.sh $1

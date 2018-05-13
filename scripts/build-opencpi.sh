@@ -30,6 +30,7 @@ echo We are running in `pwd` where the git clone of opencpi has been placed.
 echo ================================================================================
 echo Now we will build the OpenCPI framework libraries and utilities for $OCPI_TARGET_PLATFORM
 make
+[ -n "$2" ] && exit 0
 echo ================================================================================
 echo Next, we will built the OpenCPI kernel device driver for $OCPI_TARGET_PLATFORM
 make driver
