@@ -94,10 +94,11 @@ Makefile: ../gen/configure platform-variables.sh ../do-platform.mk ../gen/Makefi
 	        AR=$(OcpiCrossCompile)$(OcpiAR) \
 	        STRIP=$(OcpiCrossCompile)$(OcpiSTRIP) 
 
+Jobs=5
 build:
 	$(AT) echo Building platform $(Platform) in $(basename $(CURDIR)).
 	$(AT) $(and $(OcpiCrossCompile),\
-	        PATH=$(patsubst %/,%,$(dir $(OcpiCrossCompile))):$$PATH;) $(MAKE)
+	        PATH=$(patsubst %/,%,$(dir $(OcpiCrossCompile))):$$PATH;) $(MAKE) -j$(Jobs)
 
 install:
 	$(AT) echo Installing for platform $(OcpiPlatform) into $(TargetDir)/staging

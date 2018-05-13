@@ -16,12 +16,16 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
+##########################################################################################
+# This file is for running on embedded systems where there is no make, python, etc.
 set -e -x
 OPTS=$1
 BIAS=$2
 BIAS0=$3
 DURATION=$4
 CMP=" && cmp test.input test.output"
+OCPI_LIBRARY_PATH=$OCPI_LIBRARY_PATH:$OCPI_CDK_DIR/../projects/assets/artifacts
+echo OCPI_LIBRARY_PATH===$OCPI_LIBRARY_PATH
 $VG ocpirun -v -d $OPTS $BIAS $FR $FW bias
 $VG ocpirun -v -d -pbias=biasValue=0 $OPTS $BIAS $FR $FW bias $CMP
 $VG ocpirun -v -d $OPTS $FR $FW copy $CMP

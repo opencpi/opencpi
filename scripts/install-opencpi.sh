@@ -46,4 +46,8 @@ if test -n "$1" -a "$OCPI_TOOL_PLATFORM" != "$1"; then
   ./scripts/build-opencpi.sh "" -
 fi
 ./scripts/build-opencpi.sh $1
-./scripts/test-opencpi.sh $1
+if test -n "$1" -a "$OCPI_TOOL_PLATFORM" != "$1"; then
+  echo When building/installing for cross-compiled platform $1, we are skipping tests.
+else
+  ./scripts/test-opencpi.sh $1
+fi

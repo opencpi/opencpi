@@ -22,6 +22,7 @@
 # These are packages that are not generally/easily available for all platforms from
 # network-based package repositories.
 set -e
+[ "$1" = -f ] && force=1 && shift
 # Ensure exports
 source ./scripts/init-opencpi.sh
 # Ensure CDK and TOOL variables
@@ -40,6 +41,18 @@ topprereqs=$(sed -n 's/^ *prerequisites *\(.*\) *$/\1/p' build/places)
 topprereqs+=" patchelf inode64"
 # FIXME: move the project prerequisites somehow into projects
 topprereqs+=" ad9361 liquid"
+timestamp=$OCPI_PREREQUISITES_INSTALL_DIR/built-timestamp-$OCPI_TARGET_PLATFORM
+if [ -f $timestamp ]; then
+  echo It appears that prerequisites were successfully built on $(< $timestamp).
+  if [ -n "$force" ]; then
+    echo "Since the -f option (force) was supplied, we will rebuild anyway."
+    rm $timestamp
+  else
+    echo "So we will skip building prerequisites for platform: $OCPI_TARGET_PLATFORM."
+    echo "Use the -f option to force rebuilding prerequisite."
+    exit 0
+  fi
+fi
 echo Building/installing prerequisites for the $OCPI_TARGET_PLATFORM platform, now running on $OCPI_TOOL_PLATFORM.
 echo Building prerequisites in $OCPI_PREREQUISITES_BUILD_DIR.
 echo Installing them in $OCPI_PREREQUISITES_INSTALL_DIR.
@@ -76,3 +89,5 @@ for p in $topprereqs; do
 done
 echo -------------------------------------------------------------------------------------------
 echo All these OpenCPI prerequisites have been successfully installed for $OCPI_TARGET_PLATFORM: $top_prereqs
+# Record that this was successfully built.  Very poor man's "make".
+date > $timestamp

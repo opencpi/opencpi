@@ -26,18 +26,25 @@
 # 2. Tests that might test project tools, but not using the builtin projects
 # 3. Tests using the built-in projects
 alltests="os datatype load-drivers container swig python driver av ocpidev core assets inactive"
-[ "$1" = --showtests ] && {
-    echo $alltests
-    exit 0
-}
-[ -L cdk ] && source `pwd`/cdk/opencpi-setup.sh -r 
-[ "$1" = --help -o "$1" = -h ] && {
+case "$1" in
+  --showtests)
+    echo $alltests && exit 0;;
+  --help|-h) 
     echo Available tests are: $alltests
     echo 'Uses TESTS="a b c" ./scripts/test-opencpi.sh [<platform>]'
-    exit 1
-}
+    exit 1;;
+esac
+if ! which make; then
+  echo ========= Running only runtime tests '(no development tool tests)'
+  runtime=1
+  alltests="os datatype load-drivers container driver assets" # core assets inactive
+fi
+# Note the -e is so, especially in embedded environments, we do not deal with getPlatform.sh etc.
+[ -L cdk ] && source `pwd`/cdk/opencpi-setup.sh -e 
 source $OCPI_CDK_DIR/scripts/ocpitarget.sh $1
 bin=$OCPI_CDK_DIR/$OCPI_TARGET_DIR/bin
+[ -n "$1" -a "$1" != $OCPI_TOOL_PLATFORM ] &&
+    
 set -e
 [ -z "$TESTS" ] && TESTS="$alltests"
 for t in $TESTS; do
@@ -75,7 +82,11 @@ for t in $TESTS; do
     # After this we are depending on the other projects being built for the targeted platform
     assets)
       echo ======================= Running Application tests in project/assets
-      make -C $OCPI_CDK_DIR/../projects/assets/applications run;;
+      if [ -z $runtime ] ; then
+        make -C $OCPI_CDK_DIR/../projects/assets/applications run
+      else
+        (cd $OCPI_CDK_DIR/../projects/assets/applications; ./run.sh)
+      fi;;
     inactive)
       echo ======================= Running Application tests in project/inactive
       make -C $OCPI_CDK_DIR/../projects/inactive/applications run;;
@@ -104,6 +115,8 @@ for t in $TESTS; do
         echo ======================= Skipping loading the OpenCPI kernel driver:  running in a docket container.
       else
         echo ======================= Loading the OpenCPI Linux Kernel driver. &&
+            $OCPI_CDK_DIR/scripts/ocpidriver status
+            $OCPI_CDK_DIR/scripts/ocpidriver unload
             $OCPI_CDK_DIR/scripts/ocpidriver load
       fi;;
     *)

@@ -46,5 +46,6 @@ mymain(const char **) {
       ocpiBad("Trying to load driver %s from %s", ti.token(), name.c_str());
       new OCPI::OS::LoadableModule(name);
     }
+  ocpiBad("All drivers succesfully loaded except (ofed and ocl)");
   return 0;
 }
