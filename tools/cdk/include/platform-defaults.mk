@@ -82,7 +82,7 @@ OcpiAllPlatformVars:=\
   OcpiDebugOffFlags OcpiDebugOnFlags OcpiDependencyFlags \
   OcpiDynamicCompilerFlags OcpiDynamicLibraryFlags OcpiDynamicLibrarySuffix \
   OcpiDynamicProgramFlags OcpiDynamicSwigFlags \
-  OcpiExtraLibs OcpiKernelDir \
+  OcpiExtraLibs OcpiKernelDir OcpiLD \
   OcpiLibraryPathEnv OcpiOclLibs OcpiOptionalCWarnings OcpiOptionalCXXWarnings \
   OcpiPlatform OcpiPlatformArch OcpiPlatformDir OcpiPlatformOs OcpiPlatformOsVersion \
   OcpiPlatformPrerequisites OcpiPluginFlags \
@@ -152,6 +152,7 @@ OcpiCXX:=g++
 OcpiCLD:=gcc
 OcpiCXXLD:=g++
 OcpiAR:=ar
+OcpiLD:=ld
 OcpiSTRIP:=strip
 # Where linux kernel headers should be found for out-of-tree building of OpenCPI kernel driver
 # When not set, it is found in the default/standard place for a development system

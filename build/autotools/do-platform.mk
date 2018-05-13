@@ -90,7 +90,7 @@ Makefile: ../gen/configure platform-variables.sh ../do-platform.mk ../gen/Makefi
                    --host=$(patsubst %-,%,$(notdir $(OcpiCrossCompile)))) \
 	        CC=$(OcpiCrossCompile)$(OcpiCC) \
 	        CXX=$(OcpiCrossCompile)$(OcpiCXX) \
-	        LD=$(OcpiCrossCompile)$(OcpiCXXLD) \
+	        LD=$(OcpiCrossCompile)$(OcpiLD) \
 	        AR=$(OcpiCrossCompile)$(OcpiAR) \
 	        STRIP=$(OcpiCrossCompile)$(OcpiSTRIP) 
 
