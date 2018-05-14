@@ -40,15 +40,9 @@ base=$(basename `pwd`)
 echo Performing '"./bootstrap.sh"'
 # Even though configure.ac contains AC_CONFIG_MACRO_DIR, for at least the autoconf on centos6
 # (autoconf version 2.63), this does not work so the -Iscripts is required below.
+# Presumably they changed things "for the better", but broke centos6.
 ACLOCAL="aclocal -Iscripts" ./bootstrap.sh
-# patches to ./configure to not run afoul of macos stronger error checking
-ed configure <<-EOF
-	g/char malloc, realloc, free, memset,/s//char malloc(), realloc(), free(), memset(),/
-	g/char sinf, cosf, expf, cargf, cexpf, crealf, cimagf,/s//char sinf(), cosf(), expf(), cargf(), cexpf(), crealf(), cimagf(),/
-	g/rpl_malloc/d
-	g/rpl_realloc/d
-	w
-EOF
+
 echo Performing '"./configure"'
 ./configure ${OcpiCrossHost:+--host=$OcpiCrossHost} \
   --prefix=$OcpiInstallDir --exec-prefix=$OcpiInstallExecDir \

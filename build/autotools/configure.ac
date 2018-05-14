@@ -194,7 +194,8 @@ AX_CHECK_NULLPTR
 dnl Check for working std::chrono (AV-1567)
 OCPI_CHECK_CHRONO
 dnl Check for best monotonic clock type(prefer CLOCK_MONOTONIC_RAW
-OCPI_CLOCK_TYPES
+dnl This is turned off since it does not solve the problem for cross-compilation anyway.
+dnl OCPI_CLOCK_TYPES
 dnl LT_INIT must be called after configuration tests due to AC_LANG_SOURCE
 LT_INIT([dlopen])
 AC_SUBST([LIBTOOL_DEPS])

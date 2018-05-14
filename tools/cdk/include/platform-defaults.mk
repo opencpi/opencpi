@@ -156,6 +156,7 @@ OcpiLD:=ld
 OcpiSTRIP:=strip
 # Where linux kernel headers should be found for out-of-tree building of OpenCPI kernel driver
 # When not set, it is found in the default/standard place for a development system
+# Either relative to where the platform is defined in its directory, or absolute
 OcpiKernelDir:=
 # These flags are followed directly by the name of the dependency file, roughly like -o
 # MMD is for user headers, not ones included with <>.
@@ -198,7 +199,8 @@ OcpiRccLDFlags:=-g -shared
 # The default (gcc) always causes errors with unknown warning options,
 # but some compilers only warn unless you give another option (e.g. clang).
 OcpiUnknownWarningsError:=
-# Either relative to where the platform is defined in its directory, or absolute
+# These next three are REQUIRED to be set in every platform definition file.
+# These default variables are just "for example"
 OcpiPlatformOs:=linux
 OcpiPlatformArch:=x86_64
 # Defining platform versions is discussed in the platform development guide.
@@ -207,4 +209,12 @@ OcpiPlatformArch:=x86_64
 OcpiPlatformOsVersion:=
 # This is a list of platform-specific prerequisite packages required for this platform.
 # for each one there must be an install-<foo>.sh script in the platform's directory.
+# They are normally just toolchains
 OcpiPlatformPrerequisites:=
+# This specifies the name/id of the preferred clock id for the POSIX clock_gettime function.
+# It is the first argument.  The default is the "preferred" value.
+# We generally fall back to CLOCK_MONOTONIC if CLOCK_MONOTONIC_RAW is not supported.
+# In particular CLOCK_MONOTONIC_RAW is broken in centos6.  I.e. the symbol is defined but the
+# functionality is broken.  Hence we need to specify a default, which is NOT in fact the default
+# for centos6
+OcpiGetTimeClockId:=CLOCK_MONOTONIC_RAW
