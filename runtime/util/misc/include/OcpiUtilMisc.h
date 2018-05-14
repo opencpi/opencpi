@@ -358,7 +358,8 @@ namespace OCPI {
 
       // Simple wrapper for strsep, allowing empty tokens if desired.
       // When empty tokens not allowed, consecutive delimiters are simply consumed
-      // Usage is: for (OU::TokenIter li(input); li.token(), li.next()) { use li.token(); }
+      // Usage is:
+      //    for (OU::TokenIter li(input); li.token(); li.next()) { use li.token(); }
       class TokenIter {
 	char *m_copy, *m_ptr;
 	const char *m_token, *m_delims;

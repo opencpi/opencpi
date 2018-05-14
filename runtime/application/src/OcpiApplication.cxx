@@ -44,15 +44,37 @@ namespace OCPI {
       static const char *forDiscovery[] = {
 	OCPI_DISCOVERY_PARAMETERS, OCPI_DISCOVERY_ONLY_PARAMETERS, NULL
       };
-      std::vector<OA::PValue> discoveryParams;
+      OU::PValueList discoveryParams;
       for (const char **dp = forDiscovery; *dp; ++dp) {
 	const PValue *p = OU::find(params, *dp);
 	if (p)
-	  discoveryParams.push_back(*p);
+	  discoveryParams.add(*p);
       }
-      discoveryParams.push_back(OA::PVEnd);
       OCPI::Driver::ManagerManager::getManagerManager().configureOnce(NULL,
 								      &discoveryParams[0]);
+      bool verbose = false;
+      OU::findBool(params, "verbose", verbose);
+      if (verbose) {
+	OA::Container *c;
+	for (unsigned n = 0; (c = OA::ContainerManager::get(n)); n++)
+	  fprintf(stderr, "%s%u: %s [model: %s os: %s platform: %s]",
+		  n ? ", " : "Available containers are:  ", n,
+		  c->name().c_str(), c->model().c_str(), c->os().c_str(), c->platform().c_str());
+	fprintf(stderr, "\n");
+      }
+      // server arguments and server environment variables are all used, no shadowing
+      char *saddr = getenv("OCPI_SERVER_ADDRESS");
+      if (saddr)
+	OA::useServer(saddr, verbose);
+      if ((saddr = getenv("OCPI_SERVER_ADDRESSES")))
+	for (OU::TokenIter li(saddr); li.token(); li.next())
+	  OA::useServer(li.token(), verbose);
+      for (const PValue *p = params; p->name; ++p)
+	if (!strcasecmp(p->name, "server")) {
+	  if (p->type != OCPI_String)
+	    throw OU::Error("Value of \"server\" parameter is not a string");
+	  OA::useServer(p->vString, verbose);
+	}
       return *new OL::Assembly(appXml, name, params);
     }
     // Deal with a deployment file referencing an app file

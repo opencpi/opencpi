@@ -43,8 +43,12 @@ createWorker(Launcher::Member &i) {
 					       i.m_hasMaster,
 					       i.m_member, i.m_crew ? i.m_crew->m_size : 1);
   // Now we need to set the initial properties - either from instance or from defaults
-  for (unsigned p = 0; p < i.m_crew->m_propValues.size(); p++)
+  for (unsigned p = 0; p < i.m_crew->m_propValues.size(); p++) {
+    ocpiDebug("Setting the initial specified value of property '%s' of instance '%s'",
+	      i.m_impl->m_metadataImpl.properties()[i.m_crew->m_propOrdinals[p]].cname(),
+	      i.m_name.c_str());
     i.m_worker->setProperty(i.m_crew->m_propOrdinals[p], i.m_crew->m_propValues[p]);
+  }
   unsigned nProps = i.m_impl->m_metadataImpl.nProperties();
   OU::Property *prop = i.m_impl->m_metadataImpl.properties();
   for (unsigned nn = 0; nn < nProps; nn++, prop++)

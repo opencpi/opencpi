@@ -553,7 +553,7 @@ namespace OCPI {
 		transport.id = it.id;
 		transport.optionsIn |= (1 << OR::MandatedRole);
 		transport.optionsOut |= (1 << OR::MandatedRole);
-		ocpiInfo("Choosing transport %s/%s for connection with roles %s(0x%x)->%s(0x%x)",
+		ocpiInfo("Choosing transport %s id \"%s\" for connection with roles %s(0x%x)->%s(0x%x)",
 			 it.transport.c_str(), it.id.c_str(), roleNames[transport.roleOut],
 			 transport.optionsOut, roleNames[transport.roleIn], transport.optionsIn);
 		return;
