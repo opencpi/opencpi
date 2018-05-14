@@ -154,11 +154,12 @@ function download_git {
   return 1
 }
 function unpack {
-  [ "$directory" != . ] && rm -r -f $directory
   [ -r $file ] || {
     echo After download/copy, the expected file $file does exist.
     return 1
   }
+  [ "$directory" = . ] && return 0
+  rm -r -f $directory
   echo Unpacking download file $file into $directory.
   case $file in
     (*.tar.gz) tar xzf $file;;
@@ -369,4 +370,3 @@ OcpiSetup=
 OcpiInstallDir=$OCPI_PREREQUISITES_INSTALL_DIR/$package
 OcpiInstallExecDir=$OCPI_PREREQUISITES_INSTALL_DIR/$package/$OCPI_TARGET_DIR
 OcpiCrossHost=$OCPI_CROSS_HOST
-echo PWD:`pwd`
