@@ -47,7 +47,7 @@ The flow of these scripts is:
   inputs:     the xilinx git repo directory from step 1
   outputs:    console/stdout chronological list of events/commits/tags to the kernel repo
   result:     allows user to determine appropriate tag and release name for step 3.
-  
+
 3. createLinuxKernelHeaders.sh <rel-name> <repo-tag> <work-dir>
   arguments:  release name, usually <YY>_<Q> according to Xilinx release convention YYYY.Q
               repo tag in xilinx repo associated with their release, usually: xilinx-v<YYYY>.<Q>

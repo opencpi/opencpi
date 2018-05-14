@@ -52,6 +52,7 @@ else
       OCPI_TOOL_PLATFORM=zed
     fi
     export OCPI_TOOL_PLATFORM
+    export OCPI_TOOL_OS=linux
     # There is no multimode support when running standalone
     export OCPI_TOOL_DIR=\$OCPI_TOOL_PLATFORM
     export OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/artifacts
