@@ -32,8 +32,14 @@ echo Now we will build the OpenCPI framework libraries and utilities for $OCPI_T
 make
 [ -n "$2" ] && exit 0
 echo ================================================================================
-echo Next, we will built the OpenCPI kernel device driver for $OCPI_TARGET_PLATFORM
-make driver
+if [ -n "$OcpiCrossCompile" -a -z "$OcpiKernelDir" ]; then
+  echo This cross-compiled platform does not indicate where kernel headers are found.
+  echo I.e. the OcpiKernelDir variable is not set in the software platform definition.
+  echo Thus building the OpenCPI kernel device driver for $OCPI_TARGET_PLATFORM is skipped.
+else
+  echo Next, we will built the OpenCPI kernel device driver for $OCPI_TARGET_PLATFORM
+  make driver
+fi
 echo ================================================================================
 echo Now we will build the built-in RCC '(software)' components for $OCPI_TARGET_PLATFORM
 make -C projects/core rcc

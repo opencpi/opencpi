@@ -33,14 +33,14 @@ source $OCPI_CDK_DIR/scripts/setup-prerequisite.sh \
 echo Copying git repo checkout contents for building in `pwd`
 base=$(basename `pwd`)
 (cd ..; cp -R $(ls . | grep -v ocpi-build-) $base)
+#ed bootstrap.sh <<-EOF
+#	/^ *aclocal/s/\$/ -Iscripts/
+#	w
+#EOF
+echo Performing '"./bootstrap.sh"'
 # Even though configure.ac contains AC_CONFIG_MACRO_DIR, for at least the autoconf on centos6
 # (autoconf version 2.63), this does not work so the -Iscripts is required below.
-ed bootstrap.sh <<-EOF
-	/^ *aclocal/s/\$/ -Iscripts/
-	w
-EOF
-echo Performing '"./bootstrap.sh"'
-./bootstrap.sh
+ACLOCAL="aclocal -Iscripts" ./bootstrap.sh
 # patches to ./configure to not run afoul of macos stronger error checking
 ed configure <<-EOF
 	g/char malloc, realloc, free, memset,/s//char malloc(), realloc(), free(), memset(),/

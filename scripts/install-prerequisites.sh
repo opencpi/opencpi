@@ -43,13 +43,13 @@ topprereqs+=" patchelf inode64"
 topprereqs+=" ad9361 liquid"
 timestamp=$OCPI_PREREQUISITES_INSTALL_DIR/built-timestamp-$OCPI_TARGET_PLATFORM
 if [ -f $timestamp ]; then
-  echo It appears that prerequisites were successfully built on $(< $timestamp).
+  echo It appears that prerequisites were successfully built for $OCPI_TARGET_PLATFORM on $(< $timestamp).
   if [ -n "$force" ]; then
     echo "Since the -f option (force) was supplied, we will rebuild anyway."
     rm $timestamp
   else
     echo "So we will skip building prerequisites for platform: $OCPI_TARGET_PLATFORM."
-    echo "Use the -f option to force rebuilding prerequisite."
+    echo "Use the -f option to $0 to force rebuilding prerequisite."
     exit 0
   fi
 fi
@@ -69,10 +69,11 @@ if [ -n "$OCPI_TARGET_PREREQUISITES" ]; then
       [ -x $script ] || (echo No executable installation script found in $script. && exit 1)
       (for e in $(env | grep OCPI_TARGET_|sed 's/=.*//'); do unset $e; done &&
         $script $OCPI_TOOL_PLATFORM)
-    fi
-    if [ -z "$tools" ]; then
-      echo --- Building/installing $OCPI_TARGET_PLATFORM-specific prerequisites for executing on $OCPI_TARGET_PLATFORM.
-      $OCPI_TARGET_PLATFORM_DIR/install-$preq.sh $OCPI_TARGET_PLATFORM
+    else
+      echo --- The prerequisite $preq is only built for executing on $tool.
+      echo --- Building prequisites for $OCPI_TARGET_PLATFORM can only be done on $tool.
+      echo --- Building prerequisites for $OCPI_TARGET_PLATFORM has failed.
+      exit 1
     fi
   done
 fi
@@ -88,6 +89,6 @@ for p in $topprereqs; do
   fi
 done
 echo -------------------------------------------------------------------------------------------
-echo All these OpenCPI prerequisites have been successfully installed for $OCPI_TARGET_PLATFORM: $top_prereqs
+echo All these OpenCPI prerequisites have been successfully installed for $OCPI_TARGET_PLATFORM: $topprereqs
 # Record that this was successfully built.  Very poor man's "make".
 date > $timestamp

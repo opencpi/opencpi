@@ -33,4 +33,4 @@ source $OCPI_CDK_DIR/scripts/setup-prerequisite.sh \
 # Don't need a build dir since this is a binary distribution.
 cd ..
 # The tool chain finds ancillary files ok so all we need is bin.
-relative_link bin $install_exec_dir
+relative_link bin $OcpiInstallExecDir

@@ -28,5 +28,5 @@ OcpiCXXFlags+=-Wno-implicit-fallthrough
 OcpiPlatformOs=linux
 OcpiPlatformOsVersion=a4
 OcpiPlatformArch=armhf
-OcpiPlatformPrerequisites=linaro-arm-gnueabihf
+OcpiPlatformPrerequisites=linaro-arm-gnueabihf:centos7
 

@@ -112,7 +112,7 @@ for t in $TESTS; do
       if [ "$OCPI_TOOL_OS" != linux ]; then
         echo ======================= Skipping loading the OpenCPI kernel driver:  not running linux.
       elif [ -e /.dockerenv ] ; then
-        echo ======================= Skipping loading the OpenCPI kernel driver:  running in a docket container.
+        echo ======================= Skipping loading the OpenCPI kernel driver:  running in a docker container.
       else
         echo ======================= Loading the OpenCPI Linux Kernel driver. &&
             $OCPI_CDK_DIR/scripts/ocpidriver status
