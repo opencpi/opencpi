@@ -53,6 +53,9 @@ PKGS+=" glibc.i686 libXft.i686 libXext.i686 ncurses-libs.i686 libXdmcp.i686"
 PKGS+=" glibc-devel.i686"
 #    for various testing scripts
 PKGS+=" numpy"
+#    for various building scripts for timing commands
+PKGS+=" time"
+#    enable other packages in the epel repo
 PKGS+=" epel-release"
 #    for various testing scripts
 EPEL_PKGS+=" python34-numpy"
