@@ -38,6 +38,9 @@ if test -n "$1" -a "$OCPI_TOOL_PLATFORM" != "$1"; then
 fi
 # Allow this to build for platforms defined in the inactive project
 [ -z "$OCPI_PROJECT_PATH" ] && export OCPI_PROJECT_PATH=`pwd`/projects/inactive
+for i in bsps/*; do
+  [-d $i/rcc/platforms ] && OCPI_PROJECT_PATH=$OCPI_PROJECT_PATH:`pwd`/$i
+done
 ./scripts/install-packages.sh $1
 ./scripts/install-prerequisites.sh $1
 # To build the framework (really just projects), the host platform must be built

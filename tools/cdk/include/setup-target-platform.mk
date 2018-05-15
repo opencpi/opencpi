@@ -50,7 +50,7 @@ export OCPI_TARGET_DYNAMIC_SUFFIX:=$(OcpiDynamicLibrarySuffix)
 export OCPI_TARGET_EXTRA_LIBS:=$(OcpiExtraLibs)
 ifndef OCPI_TARGET_KERNEL_DIR
   export OCPI_TARGET_KERNEL_DIR:=$(strip \
-    $(foreach d,$(OcpiKernelDir),$(if $(filter /%,$d),$d,$(OcpiPlatformDir)/$d)))
+    $(foreach d,$(OcpiKernelDir),$(if $(filter /%,$d),$d,$(abspath $(OcpiPlatformDir)/$d))))
 endif
 # This will export shell variables to replace the original platform-target.sh scripts:
 ifdef ShellTargetVars
