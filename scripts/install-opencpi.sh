@@ -51,7 +51,7 @@ if test -n "$platform" -a "$OCPI_TOOL_PLATFORM" != "$platform"; then
   ./scripts/build-opencpi.sh "" -
 fi
 # Any arguments after the first are variable assignments for make, like HdlPlatforms...
-$* ./scripts/build-opencpi.sh $platform
+eval $* ./scripts/build-opencpi.sh $platform
 if test -n "$platform" -a "$OCPI_TOOL_PLATFORM" != "$platform"; then
   echo When building/installing for cross-compiled platform $platform, we are skipping tests.
 else
