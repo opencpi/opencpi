@@ -54,6 +54,8 @@ PKGS+=" glibc.i686 libXft.i686 libXext.i686 ncurses-libs.i686 libXdmcp.i686"
 PKGS+=" glibc-devel.i686"
 #    for various testing scripts
 PKGS+=" numpy"
+#    for various building scripts for timing commands
+PKGS+=" time"
 #    for epel is for python3, ca-certificates is for epel mirrors etc.
 PKGS+=" epel-release ca-certificates"
 #    for various testing scripts
