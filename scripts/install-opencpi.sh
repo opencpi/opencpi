@@ -30,7 +30,9 @@ set -e
 source ./scripts/init-opencpi.sh
 # Ensure CDK and TOOL variables
 OCPI_BOOTSTRAP=`pwd`/cdk/scripts/ocpibootstrap.sh; source $OCPI_BOOTSTRAP
-if test -n "$1" -a "$OCPI_TOOL_PLATFORM" != "$1"; then
+platform=$1
+shift
+if test -n "$platform" -a "$OCPI_TOOL_PLATFORM" != "$platform"; then
   ./scripts/install-packages.sh $OCPI_TOOL_PLATFORM
   # This should check if a successful prereq install has been done
   # It should also just to "host" prerequisites, not "runtime" or "project" prerequisites
@@ -41,16 +43,17 @@ fi
 for i in projects/bsps/*; do
   [ -d $i/rcc/platforms ] && OCPI_PROJECT_PATH=$OCPI_PROJECT_PATH:`pwd`/$i
 done
-./scripts/install-packages.sh $1
-./scripts/install-prerequisites.sh $1
+./scripts/install-packages.sh $platform
+./scripts/install-prerequisites.sh $platform
 # To build the framework (really just projects), the host platform must be built
-if test -n "$1" -a "$OCPI_TOOL_PLATFORM" != "$1"; then
-  # build the framework for the tool host, but not projects
+if test -n "$platform" -a "$OCPI_TOOL_PLATFORM" != "$platform"; then
+  # build the framework for the tool host, but not projects, 
   ./scripts/build-opencpi.sh "" -
 fi
-./scripts/build-opencpi.sh $1
-if test -n "$1" -a "$OCPI_TOOL_PLATFORM" != "$1"; then
-  echo When building/installing for cross-compiled platform $1, we are skipping tests.
+# Any arguments after the first are variable assignments for make, like HdlPlatforms...
+$* ./scripts/build-opencpi.sh $platform
+if test -n "$platform" -a "$OCPI_TOOL_PLATFORM" != "$platform"; then
+  echo When building/installing for cross-compiled platform $platform, we are skipping tests.
 else
-  ./scripts/test-opencpi.sh $1
+  ./scripts/test-opencpi.sh $platform
 fi

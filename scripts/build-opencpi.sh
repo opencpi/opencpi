@@ -50,6 +50,13 @@ echo Now we will build the built-in OCL '(GPU)' components for the available OCL
 make -C projects/core ocl
 make -C projects/assets ocl
 make -C projects/inactive ocl
+[ -n "$HdlPlatforms" -o -n "$HdlPlatform" ] && {
+  echo ================================================================================
+  echo "Since HdlPlatform(s) are specified, we will build the built-in HDL components for: $HdlPlatform $HdlPlatforms"
+  make -C projects/core hdl
+  make -C projects/assets hdl
+  make -C projects/inactive hdl
+}
 echo ================================================================================
 echo Now we will build the tests and examples for $OCPI_TARGET_PLATFORM
 make -C projects/core test
