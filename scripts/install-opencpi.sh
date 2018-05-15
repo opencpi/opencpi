@@ -36,10 +36,10 @@ if test -n "$1" -a "$OCPI_TOOL_PLATFORM" != "$1"; then
   # It should also just to "host" prerequisites, not "runtime" or "project" prerequisites
   ./scripts/install-prerequisites.sh $OCPI_TOOL_PLATFORM
 fi
-# Allow this to build for platforms defined in the inactive project
+# Allow this to build for platforms defined in the inactive project or in bsps
 [ -z "$OCPI_PROJECT_PATH" ] && export OCPI_PROJECT_PATH=`pwd`/projects/inactive
-for i in bsps/*; do
-  [-d $i/rcc/platforms ] && OCPI_PROJECT_PATH=$OCPI_PROJECT_PATH:`pwd`/$i
+for i in projects/bsps/*; do
+  [ -d $i/rcc/platforms ] && OCPI_PROJECT_PATH=$OCPI_PROJECT_PATH:`pwd`/$i
 done
 ./scripts/install-packages.sh $1
 ./scripts/install-prerequisites.sh $1

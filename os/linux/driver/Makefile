@@ -78,9 +78,12 @@ else
   ifdef OcpiCrossCompile
    $(error OCPI_CROSS_BUILD_BIN_DIR is set, but OCPI_TARGET_KERNEL_DIR is not set, which is not supported.)
   endif
-  # Assume the source tree is where the running kernel was built
-  # You should set KERNELDIR in the environment if it's elsewhere
+
   ifeq ($(filter clean topclean,$(MAKECMDGOALS)),)
+    # Find the kernel headers - they can be found:
+    #  1. Specified KERNELDIR (always chosen if given)
+    #  2. /usr/src/kernels/(uname -r)
+    #  3. /usr/src/kernels/(specific RPM-specified location based on the kernel-headers package)
     OcpiKernelRelease:=$(shell uname -r)
     # this command should be platform-specific (e.g. different for debian etc.)
     OcpiKernelHeadersVersion:=$(shell rpm -q --qf=%{version}-%{release}.%{arch} kernel-headers)
