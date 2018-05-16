@@ -26,28 +26,33 @@ code portability of real-time systems
      middleware framework that simplifies programming of heterogeneous
      processing applications requiring, in a system or across a tech refresh,
      a mix of processing and interconnect technologies.
-%{?RPM_HASH:ReleaseID: ${RPM_HASH}}
 %else
 ##########################################################################################
 # Cross build package
 AutoReqProv: no  # This must preceed the %description.  Go figure.
-%global      __strip ${OCPI_CROSS_BUILD_BIN_DIR}/${OCPI_CROSS_HOST}-strip
+%global      __strip ${OCPI_CROSS_COMPILE}-strip
 BuildArch:   noarch
 #Requires(pre,postun): %{RPM_BASENAME}
 Obsoletes:   %{RPM_BASENAME}-platform-%{RPM_CROSS}
 %description
 This package contains the OpenCPI static libraries for cross-compiling
 for the %{OCPI_TARGET_PLATFORM} target platform, along with core components.
-%{?RPM_HASH:ReleaseID: ${RPM_HASH}}
 %endif
 
+%{?RPM_HASH:ReleaseID: %{RPM_HASH}}
+
+# suppress generic post processing that is done for all packagers, like
+# python bytecompile, stripping, etc.
+# This does not suppress things like check-buildroot
+%global __os_install_post %{nil}
 %install
-cd $OCPI_CDK_DIR
+cd $OCPI_CDK_DIR # We are entering the exports tree
 # Create the list of files for the %files section below, and copy the same files to BUILD_ROOT
-eval find -L . -type f $OCPI_EXCLUDE_FOR_FIND | sed "s=^\./=%%{prefix}/=" > $RPM_BUILD_DIR/files
-mkdir -p $RPM_BUILD_ROOT/%{prefix}
+eval find -L . -type f $OCPI_EXCLUDE_FOR_FIND | sed "s=^\./=%%{prefix}/=" > %{_builddir}/files
+mkdir -p %{buildroot}/%{prefix}
 # Copy through the export links into the build root.
-cp -R -L $(ls -d1 *| egrep -v /$OCPI_EXCLUDE_FOR_CP) $RPM_BUILD_ROOT/%{prefix}
-find $RPM_BUILD_ROOT/%{prefix} -type d | sed "s=^$RPM_BUILD_ROOT/=%dir /=" >>$RPM_BUILD_DIR/files
+set -vx
+cp -R -L $(ls -d1 *| egrep -v /$OCPI_EXCLUDE_FOR_CP) %{buildroot}/%{prefix}
+(cd %{buildroot}/%{prefix}; find . -type d | sed "s=^\.=%dir %%{prefix}=") >>%{_builddir}/files
 
 %files -f files

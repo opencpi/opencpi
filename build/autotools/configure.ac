@@ -181,6 +181,8 @@ AC_DEFINE_UNQUOTED([OS_VERSION], $OcpiPlatformOsVersion, [OpenCPI OS Version, e.
 AC_DEFINE_UNQUOTED([ARCH], $OcpiPlatformArch, [OpenCPI CPU Architecture/compiler, e.g. x86_64])
 AC_DEFINE_UNQUOTED([PLATFORM], $OcpiPlatform, [OpenCPI platform])
 AC_DEFINE_UNQUOTED([OPENCL_LIB], $OcpiOclLibs, [OpenCL libraries if installed/available])
+AC_DEFINE_UNQUOTED([GETTIME_CLOCK_TYPE], $OcpiGetTimeClockId,
+                   [CLOCK_MONOTONIC or CLOCK_MONOTONIC_RAW if system supports it])
 dnl autoheader cannot handle defines with platform-specific names so they go into a separate file
 AH_BOTTOM([#include "ocpi-config-platform.h"])
 dnl ================================================================================

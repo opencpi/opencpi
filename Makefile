@@ -26,7 +26,7 @@ else
     export OCPI_CDK_DIR:=$(CURDIR)/cdk
   endif
   ifeq ($(wildcard exports),)
-    include $(OCPI_CDK_DIR)/include/util.mk
+    include $(CURDIR)/bootstrap/include/util.mk
     $(info Exports have never been set up here.  Doing it now for platform-independent items.)
     $(and $(call DoShell,./scripts/makeExportLinks.sh - -,Error),$(error $(Error)))
   endif
@@ -142,7 +142,7 @@ base=opencpi
 # cross: value is the target platform or null if not cross
 # arg 1 is a single platform
 cross=$(strip $(foreach r,$(call RccRealPlatforms,$1),\
-        $(if $(filter $(call RccRealPlatform,$(OCPI_TOOL_PLATFORM)),$r),,$r)))
+        $(if $(filter $(call RccRealPlatforms,$(OCPI_TOOL_PLATFORM)),$r),,$r)))
 name=$(base)$(and $(call cross,$1),-sw-platform-$(call cross,$1))
 release=$(or $(OcpiRelease),snapshot)
 # This changes every 6 minutes which is enough for updated releases (snapshots).
@@ -207,7 +207,6 @@ rpm: check_export
 	$(AT)echo "Creating an RPM file from the current built CDK for platform(s):" $(RccPlatforms)
 	$(AT)$(eval first:=$(word 1,$(RccPlatforms))) \
 	     source $(OCPI_CDK_DIR)/scripts/ocpitarget.sh $(first) &&\
-	     echo $$OCPI_CROSS_BUILD_BIN_DIR/$$OCPI_CROSS_HOST &&\
 	     rpmbuild $(if $(RpmVerbose),-vv,--quiet) -bb\
 		      --define="RPM_BASENAME    $(base)"\
 		      --define="RPM_NAME        $(call name,$(first))"\

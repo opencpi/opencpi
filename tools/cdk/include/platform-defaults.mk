@@ -82,7 +82,7 @@ OcpiAllPlatformVars:=\
   OcpiDebugOffFlags OcpiDebugOnFlags OcpiDependencyFlags \
   OcpiDynamicCompilerFlags OcpiDynamicLibraryFlags OcpiDynamicLibrarySuffix \
   OcpiDynamicProgramFlags OcpiDynamicSwigFlags \
-  OcpiExtraLibs OcpiKernelDir OcpiLD \
+  OcpiExtraLibs OcpiGetTimeClockId OcpiKernelDir OcpiLD \
   OcpiLibraryPathEnv OcpiOclLibs OcpiOptionalCWarnings OcpiOptionalCXXWarnings \
   OcpiPlatform OcpiPlatformArch OcpiPlatformDir OcpiPlatformOs OcpiPlatformOsVersion \
   OcpiPlatformPrerequisites OcpiPluginFlags \
@@ -198,7 +198,7 @@ OcpiRccLDFlags:=-g -shared
 # Set this to the option that causes unknown warnings options to be errors
 # The default (gcc) always causes errors with unknown warning options,
 # but some compilers only warn unless you give another option (e.g. clang).
-OcpiUnknownWarningsError:=
+,OcpiUnknownWarningsError:=
 # These next three are REQUIRED to be set in every platform definition file.
 # These default variables are just "for example"
 OcpiPlatformOs:=linux

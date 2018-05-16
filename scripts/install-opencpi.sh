@@ -31,7 +31,7 @@ source ./scripts/init-opencpi.sh
 # Ensure CDK and TOOL variables
 OCPI_BOOTSTRAP=`pwd`/cdk/scripts/ocpibootstrap.sh; source $OCPI_BOOTSTRAP
 platform=$1
-shift
+[ -n "$1" ] && shift
 if test -n "$platform" -a "$OCPI_TOOL_PLATFORM" != "$platform"; then
   ./scripts/install-packages.sh $OCPI_TOOL_PLATFORM
   # This should check if a successful prereq install has been done
