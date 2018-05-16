@@ -60,7 +60,9 @@ ocpi_build_dir = .
 # automake insists on these initializations even though bash and make do not
 noinst_LTLIBRARIES=
 lib_LTLIBRARIES=
-bin_PROGRAMS=
+# These variables must be predeclared like this
+#bin_PROGRAMS=
+#internal_PROGRAMS=
 python_PYTHON=
 # Cause swig python outputs to be in the same place as the shared libraries so they
 # both can be trivially used using PYTHONPATH
@@ -188,6 +190,13 @@ function do_library {
     printf "\n${7}_LTLIBRARIES += \$(ocpi_build_dir)/libocpi_$2.la\n"
   fi
 }
+function maybe_add_directory {
+  if [[ "$directories" != *:$1* ]]; then
+    directories="$directories:$1"
+    echo ${1}_PROGRAMS=
+    [ $1 = bin ] || echo ${1}dir = '$(bindir)/'$1
+  fi
+}
 
 [ "$1" = -v ] && verbose=1
 
@@ -241,6 +250,7 @@ while read path opts; do
           -I) xincludes="$xincludes ${options[1]}"; unset options[1];;
           -x) exclude="$exclude -not -regex ${options[1]} -a"; unset options[1];;
 	  -T) tops="$tops ${options[1]}"; unset options[1];;
+          -r) ;; # not used here, only in exports
           -*) bad Invalid option: $options;;
           *)  bad Unexpected value in options: $options;;
       esac
@@ -315,7 +325,9 @@ while read path opts; do
 	wrap="$(dirname $swig)/${base}_wrap.cxx"
 	swigs="$swigs $base"
 	# It appears that libtool ignores -export-dynamic
-	ldflags="-module -export-dynamic -shrext @OcpiDynamicLibrarySuffix@ \
+#	ldflags="-module -export-dynamic -shrext @OcpiDynamicLibrarySuffix@ 
+	# Even on a mac, the swig suffix is always .so...
+	ldflags="-module -export-dynamic -shrext .so \
                  @libtool_dynamic_library_flags@ @ocpi_swig_flags@"
 	ldflags+=" -lpython@PYTHON_VERSION@ $ocpi_prereq_ldflags"
 	ldadd="libocpi_${lname} $ldadd"
@@ -332,15 +344,8 @@ while read path opts; do
   [ -n "$includes" -a  -z "$driver" ] && ocpi_incs_ordered="$includes $ocpi_incs_ordered"
   [ -n "$programs" ] && {
     [ -n "$verbose" ] && echo For $path programs are \"$programs\"  >&2
-    if [ -n "$directory" ] ; then
-      if [[ "$directory" != *:${directories}* ]]; then
-        directories="$directories:$directory"
-        echo ${directory}_PROGRAMS=
-        echo ${directory}dir = '$(bindir)/'$directory
-      fi
-    else
-      directory=bin
-    fi
+    [ -z "$directory" ] && directory=bin
+    maybe_add_directory $directory
     ldflags="@libtool_program_flags@ @ocpi_program_flags@"
     [ -n "$sources" -a -z "$useobjs" ] && {
 	# Use the local library statically if it is not getting installed.
@@ -355,6 +360,7 @@ while read path opts; do
       dir=$directory
       for t in $tops; do
         if [ $t = $pname ]; then
+	  maybe_add_directory bin
           dir=bin
           break
 	fi    

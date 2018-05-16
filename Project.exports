@@ -17,20 +17,34 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 ################################################################################
+#
+# THIS IS NOT A PROJECT EXPORTS FILE EVEN THOUGH IT IS SIMILAR
+# There are implicit links based on "places", with rules described below.
+# + lines means additions to cdk development package
+# = lines means additions to cdk runtime and development packages
+# - lines means remove links implied by other rules
+#
+# The "places" rules are about framework headers, libraries, and programs.
+# In general, programs go in bin, libraries and swigs go in lib, API headers go into include/aci
+#
+# For runtime, only driver/plugin libraries go in lib, (and later, dynamic libraries)
+# For runtime, tool programs are not exported.
+# For programs, they can specify a subdirectory of bin.  If that subdirectory is "internal",
+# they are not exported at all.
+#
+# There are other "final" actions that happen during this export:
+# - compile python programs and scripts
+
 # exclusions, sometimes only applying to categories
--runtime/util main
--runtime/dataplane main
--runtime/ctests
+#-runtime/util main
+#-runtime/dataplane main
+#-runtime/ctests
 #+|runtime/ctests/target-<target>/test_[^.]* bin/<target>/ctests/
 # In dynamic mode when this library is not statically linked
 #+|runtime/ctests/target-<target>/libocpi_ctests.(so|dylib) bin/<target>/ctests/
 -tests library
 -runtime/dataplane/xfer/tests library
-################################################################################
-# inclusions that are not automatically derived from facilities
-+tools/cdk/default-system.xml
-# The problem with this is that we don't want to export the built stuff?
-+examples
+=tools/cdk/default-system.xml
 # generic make scripts
 +tools/cdk/include/show.mk include/
 +tools/cdk/include/lib.mk include/
@@ -49,7 +63,7 @@
 +tools/cdk/include/aci.mk include/
 +tools/cdk/include/setup-target-platform.mk include/
 +tools/cdk/include/platform-defaults.mk include/
-# Export the common stuff for zynq platforms
+# Export the common stuff for zynq platforms for runtime only
 +platforms/zynq/zynq_setup.sh platforms/zynq/
 +platforms/zynq/zynq_net_setup.sh platforms/zynq/
 +platforms/zynq/zynq_system.xml platforms/zynq/
@@ -60,22 +74,24 @@
 +tools/cdk/scripts/setup-prereq-dirs.sh scripts/
 +tools/cdk/scripts/getPlatform.sh scripts/
 # Put this script where the executables are exported to run there - needed?
-+runtime/ctests/src/run_tests.sh <target>/bin/ctests/
+=runtime/ctests/src/run_tests.sh <target>/bin/ctests/
 +runtime/ctests/src/run_tests.sh scripts/
 # Allow installations to run this, but not documented yet
-+scripts/test-opencpi.sh scripts/
+# It will run only runtime env tests if that's where it is
+# Perhaps migrate this to bin with a new name at some point
+=scripts/test-opencpi.sh scripts/
 +tools/cdk/scripts/makeStaticWorker.sh scripts/
-+tools/cdk/scripts/ocpidriver scripts/
-+tools/cdk/scripts/ocpisetup.sh scripts/
-+tools/cdk/scripts/ocpibootstrap.sh scripts/
-+tools/cdk/scripts/ocpisudo scripts/
+=tools/cdk/scripts/ocpidriver scripts/
+=tools/cdk/scripts/ocpisetup.sh scripts/
+=tools/cdk/scripts/ocpibootstrap.sh scripts/
+=tools/cdk/scripts/ocpisudo scripts/
 +tools/cdk/scripts/ocpitarget.sh scripts/
 +tools/cdk/scripts/ocpidev scripts/
 +tools/cdk/scripts/ocpishow scripts/
 +tools/cdk/scripts/ocpiutil.py scripts/
 +tools/cdk/scripts/hdltargets.py scripts/
 +tools/cdk/scripts/ocpidev_bash_complete scripts/
-+tools/cdk/scripts/util.sh scripts/
+=tools/cdk/scripts/util.sh scripts/
 +tools/cdk/scripts/testrunprep.sh scripts/
 +tools/cdk/scripts/testrunremote.sh scripts/
 +tools/cdk/scripts/testrun.sh scripts/
@@ -97,7 +113,7 @@
 +os/linux/driver/99-opencpi.rules <target>/lib/
 +os/linux/driver/mdev-opencpi.rules <target>/lib/
 +os/linux/driver/target-<target>/opencpi*.ko <target>/lib/
-+os/linux/driver/ocpi_linux_driver scripts/
+=os/linux/driver/ocpi_linux_driver scripts/
 ################################################################################
 # RCC related exclusions and additions
 # We don't want everything so we are selective here.  was: +tools/cdk/include/rcc include/rcc
@@ -115,7 +131,7 @@
 +runtime/ocl/include/OCL_Worker.h include/ocl/
 # We export everything in tools/cdk/include/hdl, although we could be more careful...
 +tools/cdk/include/hdl/* include/hdl/
-# These three are links for bootstrapping purposes
+# These three are links for bootstrapping purposes only
 -tools/cdk/include/hdl/altera.mk
 -tools/cdk/include/hdl/xilinx.mk
 -tools/cdk/include/hdl/vivado.mk
@@ -150,17 +166,18 @@
 -runtime/hdl-support/scripts/donft
 -runtime/hdl-support/scripts/dmaTestBasic
 # base vendor-specific scripts not in a platform and not in hdl-support
-+runtime/hdl-support/altera/altera.mk include/hdl/
-+runtime/hdl-support/altera/loadFlash_altera scripts/
-+runtime/hdl-support/altera/probeJtag_altera scripts/
-+runtime/hdl-support/xilinx/loadFlash_xilinx scripts/
-+runtime/hdl-support/xilinx/probeJtag_xilinx scripts/
-+runtime/hdl-support/xilinx/findJtagByESN_xilinx scripts/
-+runtime/hdl-support/xilinx/getESNfromUSB_xilinx scripts/
-+runtime/hdl-support/xilinx/xilinx.mk include/hdl/
-+runtime/hdl-support/xilinx/vivado* include/hdl/
-+runtime/hdl-support/scripts/loadFlash <target>/bin/
-+runtime/hdl-support/scripts/probeJtag <target>/bin/
+=runtime/hdl-support/altera/altera.mk include/hdl/
+=runtime/hdl-support/altera/loadFlash_altera scripts/
+=runtime/hdl-support/altera/probeJtag_altera scripts/
+=runtime/hdl-support/xilinx/loadFlash_xilinx scripts/
+=runtime/hdl-support/xilinx/probeJtag_xilinx scripts/
+=runtime/hdl-support/xilinx/findJtagByESN_xilinx scripts/
+=runtime/hdl-support/xilinx/getESNfromUSB_xilinx scripts/
+=runtime/hdl-support/scripts/loadBitStream scripts/
+=runtime/hdl-support/xilinx/xilinx.mk include/hdl/
+=runtime/hdl-support/xilinx/vivado* include/hdl/
+=runtime/hdl-support/scripts/loadFlash <target>/bin/
+=runtime/hdl-support/scripts/probeJtag <target>/bin/
 +runtime/hdl-support/scripts/ocpiview <target>/bin/
 # Enable all local bitstreams to be seen in one place for convenience of OCPI_LIBRARY_PATH
 +hdl/assemblies/*/container-*/target-*/*.bitz lib/hdl/assemblies/
@@ -176,9 +193,9 @@
 +tools/ocpigr/target-<target>/ocpigr <target>/bin/
 ################################################################################
 # Kernel module and main license files
-+LICENSE.txt <target>/lib/
-+LICENSE.txt
-+COPYRIGHT
+#+LICENSE.txt <target>/lib/
+=LICENSE.txt
+=COPYRIGHT
 ################################################################################
 # automake related exclusions and additions
 # --- discuss with Aaron

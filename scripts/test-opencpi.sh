@@ -25,7 +25,12 @@
 # 1. Framework tests that do not deal with projects at all.
 # 2. Tests that might test project tools, but not using the builtin projects
 # 3. Tests using the built-in projects
-alltests="os datatype load-drivers container swig python driver av ocpidev core assets inactive"
+minimal_tests="os datatype load-drivers container driver"
+network_tests="assets"
+dev_tests="swig python av ocpidev core inactive"
+alltests="$minimal_tests $network_tests $dev_tests"
+tests="$minimal_tests"
+# runtime/standalone tests we can run
 case "$1" in
   --showtests)
     echo $alltests && exit 0;;
@@ -34,10 +39,15 @@ case "$1" in
     echo 'Uses TESTS="a b c" ./scripts/test-opencpi.sh [<platform>]'
     exit 1;;
 esac
-if ! which make; then
-  echo ========= Running only runtime tests '(no development tool tests)'
-  runtime=1
-  alltests="os datatype load-drivers container driver assets" # core assets inactive
+if [ -d projects/core/exports ]; then
+  echo ========= Running network-based runtime tests since \"projects/core/exports\" is available
+  tests="$tests $network_tests"
+fi
+runtime=1
+if which -s make; then
+  echo ========= Running development system tests since \"make\" is available
+  tests="$tests $dev_tests"   
+  runtime=
 fi
 # Note the -e is so, especially in embedded environments, we do not deal with getPlatform.sh etc.
 [ -L cdk ] && source `pwd`/cdk/opencpi-setup.sh -e 
@@ -46,7 +56,8 @@ bin=$OCPI_CDK_DIR/$OCPI_TARGET_DIR/bin
 [ -n "$1" -a "$1" != $OCPI_TOOL_PLATFORM ] &&
     
 set -e
-[ -z "$TESTS" ] && TESTS="$alltests"
+[ -z "$TESTS" ] && TESTS="$tests"
+echo ======================= Running these tests: $TESTS
 for t in $TESTS; do
   set -e # required inside a for;do;done to enable this case/esac to fail
   case $t in
@@ -58,7 +69,7 @@ for t in $TESTS; do
       $VG $bin/ocpidds -t 10000 > /dev/null;;
     container)
       echo ======================= Running Container Tests
-      ./runtime/ctests/src/run_tests.sh;;
+      $bin/ctests/run_tests.sh;;
     ##########################################################################################
     # After this we are depending on the core project being built for the targeted platform
     swig)
@@ -125,5 +136,4 @@ for t in $TESTS; do
       exit 1;;
   esac
 done
-echo All tests passed.
-exit 0
+echo ======================= All tests passed.

@@ -53,6 +53,7 @@
 #     This causes programs to be build with the place's object files, not its library
 # -T <program>: a top-level program, overriding the -d <dir> default for programs in the place
 # -L <library>: access a library that would not normally be accessible from tools
+# -r force programs into the runtime package that are normally considered tools
 
 # There are several "special" lines:
 # 1. "prerequisites" which is a list of the *runtime* prerequisite libraries
@@ -67,18 +68,18 @@ prerequisites gmp lzma gtest
 runtime/foreign -f -x .*/pwq/kern/.* -x .*/pwq/src/.*/.* -x .*/uuid/src/.*/.*
 # From old Makefiles:c and c++: for linux: -D_XOPEN_SOURCE=600 -D_FILE_OFFSET_BITS=64
 os -x .*/driver/.* -x .*/winnt/.*
-runtime/util -d utils -T ocpixml
+runtime/util -d internal -T ocpixml
 end-of-runtime-for-tools
 
 runtime/dataplane/xfer/base -l xfer
-runtime/dataplane/xfer/tests -n -d xfer_tests -l xfer_tests
+runtime/dataplane/xfer/tests -n -d internal -l xfer_tests
 runtime/dataplane/xfer/drivers/datagram -v
 runtime/dataplane/xfer/drivers/dma -v
 runtime/dataplane/xfer/drivers/ofed -v
 runtime/dataplane/xfer/drivers/pio -v
 runtime/dataplane/xfer/drivers/socket -v
 runtime/dataplane/transport
-runtime/dataplane/msg_driver_interface
+runtime/dataplane/msg_driver_interface -d internal
 runtime/dataplane/msg_drivers
 runtime/library
 runtime/container
@@ -97,7 +98,8 @@ tools/cdkutils -t
 # ocpigen use some runtime libraries that are higher up the stack
 tools/ocpigen -n -t -I tools/cdkutils/include -I runtime/hdl/include -I runtime/library/include -I runtime/ocl/include -L cdkutils -L library
 # ocpisca uses runtime so is not really a "tool" as far as builds go
+# but it is actually a tool so it won't be part of the runtime package
 tools/ocpisca
 tools/ocpirh
 tools/ocpigr -t  -I tools/cdkutils/include -I runtime/library/include -L cdkutils -L library
-tools/ocpidds -t -I tools/cdkutils/include -L cdkutils
+tools/ocpidds -r -t -I tools/cdkutils/include -L cdkutils

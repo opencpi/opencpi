@@ -24,7 +24,7 @@ BIAS=$2
 BIAS0=$3
 DURATION=$4
 CMP=" && cmp test.input test.output"
-OCPI_LIBRARY_PATH=$OCPI_LIBRARY_PATH:$OCPI_CDK_DIR/../projects/assets/artifacts
+export OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/../projects/assets/artifacts:$OCPI_CDK_DIR/../projects/core/artifacts
 echo OCPI_LIBRARY_PATH===$OCPI_LIBRARY_PATH
 $VG ocpirun -v -d $OPTS $BIAS $FR $FW bias
 $VG ocpirun -v -d -pbias=biasValue=0 $OPTS $BIAS $FR $FW bias $CMP
