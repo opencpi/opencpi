@@ -69,7 +69,7 @@ namespace OCPI {
       if ((saddr = getenv("OCPI_SERVER_ADDRESSES")))
 	for (OU::TokenIter li(saddr); li.token(); li.next())
 	  OA::useServer(li.token(), verbose);
-      for (const PValue *p = params; p->name; ++p)
+      for (const PValue *p = params; p && p->name; ++p)
 	if (!strcasecmp(p->name, "server")) {
 	  if (p->type != OCPI_String)
 	    throw OU::Error("Value of \"server\" parameter is not a string");

@@ -48,6 +48,7 @@ bin=$OCPI_CDK_DIR/$OCPI_TARGET_DIR/bin
 set -e
 [ -z "$TESTS" ] && TESTS="$alltests"
 for t in $TESTS; do
+  set -e # required inside a for;do;done to enable this case/esac to fail
   case $t in
     os)
       echo ======================= Running OS Unit Tests in $bin
@@ -66,7 +67,7 @@ for t in $TESTS; do
 		       PYTHONPATH=$OCPI_CDK_DIR/$OCPI_TARGET_DIR/lib \
 		       python<<-EOF
 	import sys
-	old=sys.getdlopenflags();
+	old=sys.getdlopenflags()
 	if sys.platform != 'darwin':
 	   import ctypes
 	   sys.setdlopenflags(old|ctypes.RTLD_GLOBAL)
