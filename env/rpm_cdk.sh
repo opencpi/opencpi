@@ -1,3 +1,4 @@
+#!/bin/sh
 # This file is protected by Copyright. Please refer to the COPYRIGHT file
 # distributed with this source distribution.
 #
@@ -16,7 +17,14 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-for v in $(env | egrep ^OCPI | sort | cut -f1 -d=); do
-  # echo Clearing $v
-  unset $v
+export OCPI_CDK_DIR=/opt/opencpi/cdk
+export OCPI_TOOL_HOST=@OCPI_TOOL_HOST@
+if [ -z "$OCPI_PROJECT_REGISTRY_DIR" ]; then
+  OCPI_PROJECT_REGISTRY_DIR=$OCPI_CDK_DIR/../project-registry
+fi
+# Import any user configuration files
+for i in /opt/opencpi/cdk/env.d/*.sh ; do
+  if [ -r "$i" ]; then
+    . "$i"
+  fi
 done

@@ -41,7 +41,7 @@
 ocpi_name=opencpi-setup.sh
 ocpi_me=$BASH_SOURCE
 [ -z "$BASH_VERSION" -o -z "$ocpi_me" ] && {
-  echo Error:  You can only use the $ocpi_name script with the bash shell. >&2
+  echo Error:  You can only use the $ocpi_name script with the bash shell.$0 >&2
   return 1
 }
 [ "$ocpi_me" == $0 ] && {
@@ -140,33 +140,62 @@ ocpi_dir=`dirname $ocpi_me`
     return 1
 }
 ocpi_cdk_dir=$(cd $ocpi_dir && pwd)
-ocpi_gp=$ocpi_cdk_dir/scripts/getPlatform.sh
-if [ ! -f $ocpi_gp -o ! -x $ocpi_gp ]; then
-    echo $ocpi_name: cannot run the internal getPlatforms.sh script at $ocpi_gp. >&2
-    return 1
-fi
 [ "$ocpi_verbose" = 1 ] && cat <<-EOF >&2
 	This $ocpi_name script is located at:
 	  $ocpi_me
-	OCPI_CDK_DIR is now set to be $OCPI_CDK_DIR.
+	OCPI_CDK_DIR is being set to be $ocpi_cdk_dir.
 	Determining the OpenCPI platform we are running on...
 	EOF
 export OCPI_CDK_DIR=$ocpi_cdk_dir
-read v0 v1 v2 v3 v4 v5 <<< `$ocpi_gp`
-if [ "$v4" == "" -o $? != 0 ]; then
+ocpi_gp=$ocpi_cdk_dir/scripts/getPlatform.sh
+if [ ! -f $ocpi_gp ]; then
+  # Poor mans get-platform in a runtime installation, that also sets TARGET variables
+  for p in $OCPI_CDK_DIR/*; do
+    ocpi_check=$p/$(basename $p)-check.sh
+    [ -e $ocpi_check ] && bash $ocpi_check && {
+       source $p/$(basename $p)-init.sh
+       break
+    }
+  done
+  [ -z "$OCPI_TOOL_PLATFORM" ] && {
+    echo "Cannot determine the runtime platform from $OCPI_CDK_DIR/*/*-check.sh" >&2
+    return 1
+  }
+else
+  [ -x $ocpi_gp ] || {
+    echo $ocpi_name: cannot run the internal getPlatforms.sh script at $ocpi_gp. >&2
+    return 1
+  }
+  read v0 v1 v2 v3 v4 v5 <<< `$ocpi_gp`
+  if [ "$v4" == "" -o $? != 0 ]; then
     echo $ocpi_name: failed to determine runtime platform. >&2
     unset OCPI_CDK_DIR
     return 1
+  fi
+  export OCPI_TOOL_OS=$v0
+  export OCPI_TOOL_OS_VERSION=$v1
+  export OCPI_TOOL_ARCH=$v2
+  export OCPI_TOOL_PLATFORM=$v4
+  export OCPI_TOOL_PLATFORM_DIR=$v5
+  export OCPI_TOOL_DIR=$OCPI_TOOL_PLATFORM
+  [ -n "$ocpi_dynamic" -o -n "$ocpi_optimized" ] && OCPI_TOOL_DIR+=-
+  [ -n "$ocpi_dynamic" ] && OCPI_TOOL_DIR+=d
+  [ -n "$ocpi_optimized" ] && OCPI_TOOL_DIR+=o
+  # This is (temporarily) redundant with ocpibootstrap.sh
+  [ -z "$OCPI_PREREQUISITES_DIR" ] && {
+    if [ -n "$OCPI_CDK_DIR" -a -d "$OCPI_CDK_DIR/../prerequisites" ]; then
+      export OCPI_PREREQUISITES_DIR=$(cd $OCPI_CDK_DIR/../prerequisites; pwd)
+    else
+      export OCPI_PREREQUISITES_DIR=/opt/opencpi/prerequisites
+    fi
+    if [ ! -d $OCPI_PREREQUISITES_DIR ]; then
+      echo "$ocpi_name:  $OCPI_PREREQUISITES_DIR does not exist.  The installation/build of OpenCPI is incomplete."
+      return 1
+    fi
+  }
+  [ "$ocpi_verbose" = 1 ] &&
+    echo "Software prerequisites are located at $OCPI_PREREQUISITES_DIR" >&2
 fi
-export OCPI_TOOL_OS=$v0
-export OCPI_TOOL_OS_VERSION=$v1
-export OCPI_TOOL_ARCH=$v2
-export OCPI_TOOL_PLATFORM=$v4
-export OCPI_TOOL_PLATFORM_DIR=$v5
-export OCPI_TOOL_DIR=$OCPI_TOOL_PLATFORM
-[ -n "$ocpi_dynamic" -o -n "$ocpi_optimized" ] && OCPI_TOOL_DIR+=-
-[ -n "$ocpi_dynamic" ] && OCPI_TOOL_DIR+=d
-[ -n "$ocpi_optimized" ] && OCPI_TOOL_DIR+=o
 
 # Clean out any previous instances in the path
 ocpi_cleaned=$(echo "$PATH" | sed "s=$OCPI_CDK_DIR/[^:/]*/bin[^:]*:==g")
@@ -175,25 +204,12 @@ export PATH="$OCPI_CDK_DIR/$OCPI_TOOL_DIR/bin:$ocpi_cleaned"
 ocpi_comp=$OCPI_CDK_DIR/scripts/ocpidev_bash_complete
 [ -f $ocpi_comp ] && source $ocpi_comp
 [ "$ocpi_verbose" = 1 ] && cat <<-EOF >&2
-	The OpenCPI platform we are running on is "$v4" (placed in OCPI_TOOL_PLATFORM).
-	The OpenCPI target directory set for this environment is \"$OCPI_TOOL_DIR\".
+	The OpenCPI platform we are running on is "$OCPI_TOOL_PLATFORM" (placed in OCPI_TOOL_PLATFORM).
+	The OpenCPI target directory set for this environment is "$OCPI_TOOL_DIR".
 	PATH now set to $PATH
 	Now determining where prerequisite software is installed.
 	EOF
-# This is (temporarily) redundant with ocpibootstrap.sh
-[ -z "$OCPI_PREREQUISITES_DIR" ] && {
-  if [ -n "$OCPI_CDK_DIR" -a -d "$OCPI_CDK_DIR/../prerequisites" ]; then
-    export OCPI_PREREQUISITES_DIR=$(cd $OCPI_CDK_DIR/../prerequisites; pwd)
-  else
-    export OCPI_PREREQUISITES_DIR=/opt/opencpi/prerequisites
-  fi
-  if [ ! -d $OCPI_PREREQUISITES_DIR ]; then
-    echo "$ocpi_name:  $OCPI_PREREQUISITES_DIR does not exist.  The installation/build of OpenCPI is incomplete."
-    return 1
-  fi
-}
 [ "$ocpi_verbose" = 1 ] && {
-  echo "Software prerequisites are located at $OCPI_PREREQUISITES_DIR" >&2
   echo "Below are all OCPI_* environment variables now set:" >&2
   env | grep OCPI >&2
 }

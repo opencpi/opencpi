@@ -46,13 +46,16 @@ for the %{OCPI_TARGET_PLATFORM} target platform, along with core components.
 # This does not suppress things like check-buildroot
 %global __os_install_post %{nil}
 %install
-cd $OCPI_CDK_DIR # We are entering the exports tree
+echo CURDIR:%{RPM_OPENCPI} > /dev/tty
+cd %{RPM_OPENCPI} # We are entering the exports tree
+echo NOW:`pwd` > /dev/tty
+
 # Create the list of files for the %files section below, and copy the same files to BUILD_ROOT
-eval find -L . -type f $OCPI_EXCLUDE_FOR_FIND | sed "s=^\./=%%{prefix}/=" > %{_builddir}/files
+eval find -L cdk -type f $OCPI_EXCLUDE_FOR_FIND | sed "s=^\./=%%{prefix}/=" > %{_builddir}/files
 mkdir -p %{buildroot}/%{prefix}
 # Copy through the export links into the build root.
 set -vx
-cp -R -L $(ls -d1 *| egrep -v /$OCPI_EXCLUDE_FOR_CP) %{buildroot}/%{prefix}
+cp -R -L $(ls -d1 cdk/* | egrep -v /$OCPI_EXCLUDE_FOR_CP) %{buildroot}/%{prefix}
 (cd %{buildroot}/%{prefix}; find . -type d | sed "s=^\.=%dir %%{prefix}=") >>%{_builddir}/files
 
 %files -f files

@@ -212,6 +212,7 @@ while read path opts; do
 	      ocpi_prereq_incs+=" @prerequisite_dir@/$p/include"
 	      ocpi_prereq_libs+=" $dir/lib/lib$p"
 	      #ocpi_prereq_ldflags+=" -Wl,-rpath -Wl,$dir/lib"
+	      # LATER dynamic_prereqs+=" -L$dir/lib -locpi_$p"
 	      dynamic_prereqs+=" -L$dir/lib -l$p"
 	      static_prereqs+=" $dir/lib/lib${p}@OcpiStaticLibrarySuffix@"
 	  done

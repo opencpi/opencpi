@@ -43,18 +43,27 @@ if [ -d projects/core/exports ]; then
   echo ========= Running network-based runtime tests since \"projects/core/exports\" is available
   tests="$tests $network_tests"
 fi
-runtime=1
-if which -s make; then
-  echo ========= Running development system tests since \"make\" is available
-  tests="$tests $dev_tests"   
-  runtime=
-fi
 # Note the -e is so, especially in embedded environments, we do not deal with getPlatform.sh etc.
 [ -L cdk ] && source `pwd`/cdk/opencpi-setup.sh -e 
-source $OCPI_CDK_DIR/scripts/ocpitarget.sh $1
+# Note "which -s" not available on busybox
+if which make > /dev/null && [ -d $OCPI_CDK_DIR/../project-registry ] ; then
+  echo ========= Running development system tests since \"make\" and project-registry is available.
+  tests="$tests $dev_tests"   
+  runtime=
+  source $OCPI_CDK_DIR/scripts/ocpitarget.sh $1
+else
+  echo ========= Running only runtime tests since \"make\" or project-registry is not available.
+  runtime=1
+  [ -n "$1" -a "$1" != $OCPI_TOOL_PLATFORM ] && {
+      echo "Cannot run tests on a different targeted platform ($1) than we are running on."
+      exit 1
+  }
+  # Set just enough target variables to run runtime tests
+  export OCPI_TARGET_PLATFORM=$OCPI_TOOL_PLATFORM
+  export OCPI_TARGET_OS=$OCPI_TOOL_OS
+  export OCPI_TARGET_DIR=$OCPI_TOOL_DIR
+fi
 bin=$OCPI_CDK_DIR/$OCPI_TARGET_DIR/bin
-[ -n "$1" -a "$1" != $OCPI_TOOL_PLATFORM ] &&
-    
 set -e
 [ -z "$TESTS" ] && TESTS="$tests"
 echo ======================= Running these tests: $TESTS
@@ -66,7 +75,7 @@ for t in $TESTS; do
       $VG $bin/cxxtests/ocpitests;;
     datatype)
       echo ======================= Running Datatype/protocol Tests
-      $VG $bin/ocpidds -t 10000 > /dev/null;;
+      $VG $bin/cxxtests/ocpidds -t 10000 > /dev/null;;
     container)
       echo ======================= Running Container Tests
       $bin/ctests/run_tests.sh;;
@@ -74,9 +83,9 @@ for t in $TESTS; do
     # After this we are depending on the core project being built for the targeted platform
     swig)
       echo ======================= Running python swig test
-      OCPI_LIBRARY_PATH=projects/core/exports/artifacts \
+      OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/../projects/core/exports/artifacts \
 		       PYTHONPATH=$OCPI_CDK_DIR/$OCPI_TARGET_DIR/lib \
-		       python<<-EOF
+		       python - $OCPI_CDK_DIR/../projects/assets/applications/bias.xml <<-EOF
 	import sys
 	old=sys.getdlopenflags()
 	if sys.platform != 'darwin':
@@ -84,7 +93,7 @@ for t in $TESTS; do
 	   sys.setdlopenflags(old|ctypes.RTLD_GLOBAL)
 	import OcpiApi as OA
 	sys.setdlopenflags(old)
-	app=OA.Application("projects/assets/applications/bias.xml")
+	app=OA.Application(sys.argv[1])
 	EOF
       ;;
     core)

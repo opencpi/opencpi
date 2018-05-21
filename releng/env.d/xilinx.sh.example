@@ -1,0 +1,27 @@
+## If the Xilinx ISE tools were not installed in /opt/Xilinx/, then uncomment 
+## and define the location in OCPI_XILINX_DIR. If you are not using 14.7,
+## then specify which version to use in OCPI_XILINX_VERSION
+##example: Xilinx ISE is located in /data/Xilinx/14.7
+##
+##export OCPI_XILINX_DIR=/data/Xilinx
+##export OCPI_XILINX_VERSION=14.7
+##
+## The same applies to Vivado. If Vivado was not installed in /opt/Xilinx,
+## then uncomment and define the location in OCPI_XILINX_VIVADO_DIR. If you
+## have multiple versions of Vivado installed, and do not want to use the
+## most recent version, set OCPI_XILINX_VIVADO_VERSION
+##example: Xilinx Vivado is located in /data/Xilinx/2017.1
+##
+##export OCPI_XILINX_VIVADO_DIR=/data/Xilinx
+##export OCPI_XILINX_VIVADO_VERSION=2017.1
+
+#export OCPI_XILINX_DIR=
+#export OCPI_XILINX_VERSION=
+
+#export OCPI_XILINX_VIVADO_DIR
+#export OCPI_XILINX_VIVADO_VERSION=
+
+## Set the location of the license file/server (matching Xilinx's LM_LICENSE_FILE documentation)
+
+export OCPI_XILINX_LICENSE_FILE=/opt/Xilinx/Xilinx.lic
+

@@ -60,7 +60,12 @@ url=$4
 file=$5
 directory=$6
 cross=$7
-
+# base is used when considering alternative local download sources
+if [[ "$url" == *.git ]]; then
+  base=$(basename $url)
+else
+  base=$file
+fi
 if [ -z "$OCPI_CDK_DIR" ]; then
   echo "The environment (specifically OCPI_CDK_DIR) is not set up."
   echo "You probably need to do \"source <wherever-the-cdk-is>/opencpi-setup.sh\"."
@@ -94,6 +99,19 @@ function install_done {
   RC=$?
   trap - EXIT
   if [ -z "$OcpiSetup" -a $RC = 0 ]; then
+    shopt -s nullglob
+    # Here we remap libraries so we can use them dynamically in our own publicly exposed
+    # library (ld.so.conf.d) with no namespace collisions in globally installed versions
+    # for l in $OCPI_PREREQUISITES_INSTALL_DIR/$package/$OCPI_TARGET_DIR/lib/lib$package*.*; do
+    #   set -vx
+    #   local lsuff=${l##*/lib}
+    #   local base=$(basename $l)
+    #   local link=$(dirname $l)/libocpi_$lsuff
+    #   [ -L $link -a $(readlink $link) = $base ] && continue;
+    #   rm -f $link
+    #   echo "Linking $link -> $base."
+    #   ln -s $base $link
+    # done
     echo "====== Finished building & installing the $description \"$package\" for platform \"$OCPI_TARGET_PLATFORM\""
     echo "====== The installation is in $OCPI_PREREQUISITES_INSTALL_DIR/$package"
     echo "====== The platform-specific parts are in $OCPI_PREREQUISITES_INSTALL_DIR/$package/$OCPI_TARGET_DIR"
@@ -105,6 +123,7 @@ function install_done {
 # args are global: (url, directory, file) except
 # $1 is the download path type
 # $2 is the local download url/path
+# $3 is the alternative local download repo
 function download_git {
   case $1 in
     cache)  # if it is already here, try to use it.
@@ -122,33 +141,46 @@ function download_git {
         return 0
       };;
     local)
-      local myurl=$2/$(basename $url)
-      printf "Trying to clone the git repo for $package locally from:  $myurl"
+      local myurl=$2/$3
+      echo "Trying to clone the git repo for $package locally from:  $myurl"
+      rm -r -f $directory.bak
+      [ -d $directory ] && mv $directory{,.bak}
       if git clone $myurl; then
         echo The git clone succeeded from $myurl.
         if [ -d $directory ] ; then
-          return 0
+          cd $directory
+          git checkout $file && rm -r -f ../$directory.bak && return 0
+	  cd ..
+          echo The git checkout failed.
         else  
           echo The directory $directory was not created when the git repo was cloned from $myurl.
           echo This is considered a failure.
         fi
       else
         echo The git clone failed from $myurl
-      fi;;
+      fi
+      rm -r -f $directory # in case of partial clone
+      [ -d $directory.bak ] && mv $directory{.bak,}
+      ;;
     internet)
       echo Downloading/cloning the distribution/repo for $package: $url
+      rm -r -f $directory.bak
+      [ -d $directory ] && mv $directory{,.bak}
       if git clone $url; then
         echo Download/clone complete.
         if [ -d $directory ]; then
           cd $directory
-          git checkout $file && return 0
+          git checkout $file && rm -r -f $directory.bak && return 0
           echo The git checkout failed.
         else
           echo The directory $directory was not created when git repo cloned from $url.
         fi
       else
         echo The git clone failed from $url.
-      fi;;
+      fi
+      rm -r -f $directory # in case of partial clone
+      [ -d $directory.bak ] && mv $directory{.bak,}
+      ;;
     *) echo UNEXPECTED internal error && exit 1;;
   esac
   return 1
@@ -203,15 +235,16 @@ function download_url {
         return
       };;
     local)
-      echo Trying to downloading the distribution file locally from:  $2/$file
-      echo Download command is: curl -O -L $2/$file
+      echo Trying to downloading the distribution file locally from:  $2/$3
+      echo Download command is: curl -O -L $2/$3
       if curl -O -L $2/$file; then
-        echo Download completed successfully from $2/$file
-	if [ -r $file ] ; then
+        echo Download completed successfully from $2/$3
+	if [ -r $3 ] ; then
+	  [ "$3" != $file ] && mv -f $3 $file
           unpack
 	  return
         else
-          echo The file $file was not created after the download.
+          echo The file $3 was not created after the download.
 	  echo This is considered a failure.
         fi
       else
@@ -241,9 +274,10 @@ function download_path {
       download_url cache
       return;;
     local)
-      echo Trying to copy the distribution file locally from:  $2/$file
-      cp $2/$file . && {
-        echo Copy completed successfully from $2/$file.
+      echo Trying to copy the distribution file locally from:  $2/$3
+      cp $2/$3 . && {
+        echo Copy completed successfully from $2/$3.
+	[ "$3" != $file ] && mv -f $3 $file
         unpack
 	return
       }
@@ -263,6 +297,16 @@ function download_path {
   esac
   return 1
 }
+function download_local {
+  if [[ "$url" == *.git ]]; then # try local locations for git clone
+    download_git local $1 $2 && return 0
+  elif [[ "$p" == [a-zA-Z]*://* ]]; then # a real URL, not a path
+    download_url local $1 $2 && return 0
+  else
+    download_path local $1 $2 && return 0
+  fi
+  return 1
+}
 # Function to get the downloaded info (source file, tarball, or git repo)
 function do_download {
   local download_path=(${OCPI_PREREQUISITES_DOWNLOAD_PATH/:/ })
@@ -279,18 +323,18 @@ function do_download {
 	  download_path cache && return 0
         fi;;
       local)
-        [ -z "$OCPI_PREREQUISITE_LOCAL_SERVER" -a -z "$OCPI_PREREQUISITE_LOCAL_PATHNAME" ] && {
+        [ -z "$OCPI_PREREQUISITES_LOCAL_SERVER" -a -z "$OCPI_PREREQUISITES_LOCAL_PATHNAME" ] && {
           echo No local server or pathname is supplied, so no local server or pathname used.
 	  continue
         }
-	for p in "$OCPI_PREREQUISITE_LOCAL_PATHNAME" "$OCPI_PREREQUISITE_LOCAL_SERVER"; do
-          if [[ "$url" == *.git ]]; then # try local locations for git clone
-            download_git local $p && return 0
-	  elif [[ "$p" == [a-zA-Z]*://* ]]; then # a real URL, not a path
-            download_url local $p && return 0
-	  else
-            download_path local $p && return 0
-	  fi
+	for p in "$OCPI_PREREQUISITES_LOCAL_PATHNAME" "$OCPI_PREREQUISITES_LOCAL_SERVER"; do
+          local lfile=$(eval echo "\$OCPI_PREREQUISITES_LOCAL_FILE_$package")
+	  if [ -n "$lfile" ]; then
+	    download_local $p $lfile && return 0
+          else
+            download_local $p $package-$base && return 0
+            download_local $p $base && return 0
+          fi
 	done;;
       internet)
         if [[ "$url" == *.git ]]; then

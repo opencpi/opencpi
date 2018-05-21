@@ -185,9 +185,10 @@ else
     for s in $swigs; do
       [ _$s = "$me" ] && continue 2
     done
-    for p in $prereqs; do
-      relative_link $prereq_inst/$p/$target/lib/lib$p.a lib
-    done
+    # At some point this may be needed but probably not here in any case
+    # for p in $prereqs; do
+    #   relative_link $prereq_inst/$p/$target/lib/lib$p.a lib
+    # done
     # Its not a driver, and not a swig and we're doing a static install.  Remove it.
     echo Removing $i since it was only used for error checking.
     rm $i

@@ -139,9 +139,9 @@ function make_filtered_link {
     # echo EXBOTH1=${both[0]}:${both[1]}:$3:$1:$2
     edirs=(${both[0]/\// })
     if [ ${edirs[0]} = exports ]; then
-       if match_filter ${both[0]} $2; then echo Filtered: $2; return; fi
+       if match_filter ${both[0]} $2; then echo Filtered: $2 >&2; return; fi
     else
-       if match_filter ${both[0]} $1; then echo Filtered: $1; return; fi
+       if match_filter ${both[0]} $1; then echo Filtered: $1 >&2; return; fi
     fi
   done
   # No exclusions matched.  Make the directory for the link
@@ -158,23 +158,22 @@ function do_addition {
   # for src in $rawsrc; do
   targets=$(match_pattern "$rawsrc")
   for src in $targets; do
-  if [ -e $src ]; then
-    dir=${both[1]//<target>/$target}
-    base=$(basename $src)
-    after=
-    if [[ ${both[1]} =~ /$ || ${both[1]} == "" ]]; then
-      after=$base
+    if [ -e $src ]; then
+      dir=${both[1]//<target>/$target}
+      base=$(basename $src)
+      after=
+      if [[ ${both[1]} =~ /$ || ${both[1]} == "" ]]; then
+        after=$base
+      else
+        # export link has a file name, perhaps replace the suffix
+        suff=$(echo $base | sed -n '/\./s/.*\(\.[^.]*\)$/\1/p')
+        dir=${dir//<suffix>/$suff}
+      fi
+      make_filtered_link $src exports/$dir$after
+      [ -n "$2" ] && make_filtered_link $src exports/runtime/$dir$after
     else
-      # export link has a file name, perhaps replace the suffix
-      suff=$(echo $base | sed -n '/\./s/.*\(\.[^.]*\)$/\1/p')
-      dir=${dir//<suffix>/$suff}
+      [ -z "$bootstrap" ] && echo Warning: link source $src does not '(yet?)' exist.
     fi
-    make_filtered_link $src exports/$dir$after
-    [ -n "$2" ] && make_filtered_link $src exports/runtime/$dir$after
-
-  else
-    [ -z "$bootstrap" ] && echo Warning: link source $src does not '(yet?)' exist.
-  fi
   done
   set -f
 }
@@ -187,6 +186,13 @@ mkdir -p exports
 #  [ -n "$verbose" ] && echo Exports for platform $1 exist, replacing them.
 #  rm -r -f exports/$1
 #}
+set -f
+[ -n "$verbose" ] && echo Collecting exclusions
+exclusions=$(test -f Project.exports && egrep '^[[:space:]]*\-' Project.exports | sed 's/^[ 	]*-[ 	]*\([^ 	#]*\)[ 	]*\([^ 	#]*\).*$/\1:\2/') || true
+[ -n "$verbose" ] && echo Collecting additions
+additions=$(test -f Project.exports && egrep '^[[:space:]]*\+' Project.exports | sed 's/^[ 	]*+[ 	]*\([^ 	#]*\)[ 	]*\([^ 	#]*\).*$/\1:\2/') || true
+runtimes=$(test -f Project.exports && egrep '^[[:space:]]*\=' Project.exports | sed 's/^[ 	]*=[ 	]*\([^ 	#]*\)[ 	]*\([^ 	#]*\).*$/\1:\2/') || true
+set +f
 while read path opts; do
   case "$path" in
     \#*|""|end-of-runtime-for-tools) continue;;
@@ -194,7 +200,10 @@ while read path opts; do
       for p in $opts ; do
 	shopt -s nullglob
         for l in build/autotools/target-$target/staging/lib/lib$p.*; do
-          make_filtered_link $l exports/$target/lib/$(basename $l)
+          printf ""
+          #  make_filtered_link $l exports/$target/lib/$(basename $l)
+          # lsuff=${l##*/lib}
+          # make_filtered_link $l exports/$target/lib/libocpi_$lsuff
         done
 	shopt -u nullglob
       done
@@ -232,6 +241,7 @@ while read path opts; do
   programs=`find -H $path $exclude -name "*_main.cxx"|sed 's=.*src/\(.*\)_main.c.*$=\1='`
   swig=`find -H $path $exclude -path "*/src/*.i"`
   api_incs=`find -H $path $exclude \( -path "*/include/*Api.h" -o -path "*/include/*Api.hh" \)`
+  [ -n "$driver" ] && drivers+=" $(basename $path)"
   # echo LIB:$library PATH:$path PROGRAMS:$programs DIRECTORY:$directory
   for p in $programs; do
     dir=$directory
@@ -272,13 +282,6 @@ while read path opts; do
       done
   }
 done < build/places
-set -f
-[ -n "$verbose" ] && echo Collecting exclusions
-exclusions=$(test -f Project.exports && egrep '^[[:space:]]*\-' Project.exports | sed 's/^[ 	]*-[ 	]*\([^ 	#]*\)[ 	]*\([^ 	#]*\).*$/\1:\2/') || true
-[ -n "$verbose" ] && echo Collecting additions
-additions=$(test -f Project.exports && egrep '^[[:space:]]*\+' Project.exports | sed 's/^[ 	]*+[ 	]*\([^ 	#]*\)[ 	]*\([^ 	#]*\).*$/\1:\2/') || true
-runtimes=$(test -f Project.exports && egrep '^[[:space:]]*\=' Project.exports | sed 's/^[ 	]*=[ 	]*\([^ 	#]*\)[ 	]*\([^ 	#]*\).*$/\1:\2/') || true
-set +f
 #if [ -d imports ]; then
 #  make_filtered_link imports exports/imports main
 #fi
@@ -294,9 +297,31 @@ for a in $runtimes; do
 done
 # After this are only exports done when targets exist
 [ "$1" = - ] && exit 0
+set +f
+# Put the check file into the runtime platform dir
+check=$OCPI_TOOL_PLATFORM_DIR/$OCPI_TOOL_PLATFORM-check.sh
+[ -r "$check" ] && {
+  to=$(python -c "import os.path; print os.path.relpath('"$check"', '.')")
+  make_relative_link $to exports/runtime/$OCPI_TOOL_PLATFORM/$(basename $check)
+  cat <<-EOF > exports/runtime/$OCPI_TOOL_PLATFORM/$OCPI_TOOL_PLATFORM-init.sh
+	# This is the minimal setup required for runtime
+	export OCPI_TOOL_PLATFORM=$OCPI_TOOL_PLATFORM
+	export OCPI_TOOL_OS=$OCPI_TOOL_OS
+	export OCPI_TOOL_DIR=$OCPI_TOOL_PLATFORM
+EOF
+}
+# Put the minimal set of artifacts to support the built-in runtime tests
+# And any apps that rely on software components in the core project
+mkdir -p exports/runtime/$OCPI_TOOL_PLATFORM/artifacts
+for a in projects/core/artifacts/*; do
+  link=`readlink -n $a`
+  [[ $link == */target-*${target}/* ]] &&
+    make_relative_link $a exports/runtime/$OCPI_TOOL_PLATFORM/artifacts/$(basename $a)
+done
+  
 # Ensure driver list is exported
-make_relative_link build/autotools/target-$1/staging/lib/driver-list exports/$1/lib/driver-list
-make_relative_link build/autotools/target-$1/staging/lib/driver-list exports/runtime/$1/lib/driver-list
+echo $drivers>exports/runtime/$1/lib/driver-list
+echo $drivers>exports/$1/lib/driver-list
 # Force precompilation of python files right here, but only if we are doing a target
 dirs=
 for d in `find exports -name "*.py"|sed 's=/[^/]*$=='|sort -u`; do

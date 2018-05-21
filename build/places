@@ -99,7 +99,9 @@ tools/cdkutils -t
 tools/ocpigen -n -t -I tools/cdkutils/include -I runtime/hdl/include -I runtime/library/include -I runtime/ocl/include -L cdkutils -L library
 # ocpisca uses runtime so is not really a "tool" as far as builds go
 # but it is actually a tool so it won't be part of the runtime package
-tools/ocpisca
+# we stash it in "internal" and let the exports file put it into the devel
+# test: -n to see if this works
+tools/ocpisca -n -d internal
 tools/ocpirh
 tools/ocpigr -t  -I tools/cdkutils/include -I runtime/library/include -L cdkutils -L library
-tools/ocpidds -r -t -I tools/cdkutils/include -L cdkutils
+tools/ocpidds -d cxxtests -n -r -t -I tools/cdkutils/include -L cdkutils

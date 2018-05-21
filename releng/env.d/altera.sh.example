@@ -1,0 +1,10 @@
+## Define the Altera tools installation location and version.
+## Ex: "/opt/Altera" and "12.1"
+
+export OCPI_ALTERA_DIR=
+export OCPI_ALTERA_VERSION=
+
+## Set the location of the license file/server (matching Altera's LM_LICENSE_FILE documentation)
+
+export OCPI_ALTERA_LICENSE_FILE=
+

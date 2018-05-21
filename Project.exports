@@ -45,6 +45,17 @@
 -tests library
 -runtime/dataplane/xfer/tests library
 =tools/cdk/default-system.xml
+# More or less obsolete env scripts, left in for compatibility, put in runtime just to match
+# up with 1.3.1
+=env/altera.sh env/
+=env/clean-env.sh env/
+=env/finish.sh env/
+=env/start.sh env/
+=env/xilinx.sh env/
+# This is what is run from /etc/profile.d/opencpi.sh from RPMs.
+# We need to rationalize this with opencpi-setup.sh
+=env/rpm_cdk.sh env/
+=releng/env.d env.d
 # generic make scripts
 +tools/cdk/include/show.mk include/
 +tools/cdk/include/lib.mk include/
@@ -64,9 +75,9 @@
 +tools/cdk/include/setup-target-platform.mk include/
 +tools/cdk/include/platform-defaults.mk include/
 # Export the common stuff for zynq platforms for runtime only
-+platforms/zynq/zynq_setup.sh platforms/zynq/
-+platforms/zynq/zynq_net_setup.sh platforms/zynq/
-+platforms/zynq/zynq_system.xml platforms/zynq/
+=platforms/zynq/zynq_setup.sh platforms/zynq/
+=platforms/zynq/zynq_net_setup.sh platforms/zynq/
+=platforms/zynq/zynq_system.xml platforms/zynq/
 # CDK scripts we need
 +scripts/clean-env.sh scripts/
 +tools/cdk/scripts/opencpi-setup.sh
@@ -75,11 +86,17 @@
 +tools/cdk/scripts/getPlatform.sh scripts/
 # Put this script where the executables are exported to run there - needed?
 =runtime/ctests/src/run_tests.sh <target>/bin/ctests/
-+runtime/ctests/src/run_tests.sh scripts/
+#+runtime/ctests/src/run_tests.sh scripts/
+# this is built like runtime, but needs to be exported for development
+# so it is "place" in the internal dir to avoid runtime, and exported explicitly for devel
+# we are removing it from the distribution entirely before deciding about the RH stuff
+#+build/autotools/target-<target>/staging/bin/internal/ocpisca <target>/bin/
 # Allow installations to run this, but not documented yet
 # It will run only runtime env tests if that's where it is
 # Perhaps migrate this to bin with a new name at some point
-=scripts/test-opencpi.sh scripts/
+
+=scripts/test-opencpi.sh <target>/bin/ocpitest
+=scripts/test-opencpi.sh <target>/bin/test-opencpi-rpm
 +tools/cdk/scripts/makeStaticWorker.sh scripts/
 =tools/cdk/scripts/ocpidriver scripts/
 =tools/cdk/scripts/ocpisetup.sh scripts/
@@ -89,6 +106,7 @@
 +tools/cdk/scripts/ocpidev scripts/
 +tools/cdk/scripts/ocpishow scripts/
 +tools/cdk/scripts/ocpiutil.py scripts/
++tools/cdk/scripts/upgradeApp_v1_3.py scripts/
 +tools/cdk/scripts/hdltargets.py scripts/
 +tools/cdk/scripts/ocpidev_bash_complete scripts/
 =tools/cdk/scripts/util.sh scripts/
@@ -98,11 +116,11 @@
 +tools/cdk/scripts/testutil.sh scripts/
 +tools/cdk/scripts/setsid.py scripts/
 +tools/cdk/scripts/makeProjectExports.sh scripts/
-+scripts/makeExportLinks.sh scripts/
+#+scripts/makeExportLinks.sh scripts/
 +tools/cdk/scripts/maybeExport.sh scripts/
 # user level scripts made available in the bin directory
 +tools/cdk/scripts/ocpidev <target>/bin/
-+tools/cdk/scripts/ocpidriver <target>/bin/
+=tools/cdk/scripts/ocpidriver <target>/bin/
 +tools/cdk/scripts/genProjMetaData.py scripts/
 #+tools/cdk/scripts/genProjMetaData.pyc scripts/
 #+tools/cdk/scripts/genProjMetaData.pyo scripts/
@@ -169,6 +187,7 @@
 =runtime/hdl-support/altera/altera.mk include/hdl/
 =runtime/hdl-support/altera/loadFlash_altera scripts/
 =runtime/hdl-support/altera/probeJtag_altera scripts/
+=runtime/hdl-support/altera/51-opencpi-usbblaster.rules udev-rules/
 =runtime/hdl-support/xilinx/loadFlash_xilinx scripts/
 =runtime/hdl-support/xilinx/probeJtag_xilinx scripts/
 =runtime/hdl-support/xilinx/findJtagByESN_xilinx scripts/
@@ -186,8 +205,8 @@
 +runtime/dataplane/xfer/drivers/socket/target-<target>/libocpi_socket_s.* <target>/lib/libocpi_sockets_s<suffix>
 ################################################################################
 # SCA/RH related additions.
-+tools/ocpirh/ocpirh_export.sh <target>/bin/ocpirh_export
-+tools/ocpirh/target-<target>/ocpirh_proxy <target>/bin/
+#+tools/ocpirh/ocpirh_export.sh <target>/bin/ocpirh_export
+#+tools/ocpirh/target-<target>/ocpirh_proxy <target>/bin/
 ################################################################################
 # GNU Radio related additions.
 +tools/ocpigr/target-<target>/ocpigr <target>/bin/
