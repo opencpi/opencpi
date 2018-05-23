@@ -128,9 +128,9 @@
 +hdl/devices/specs/lime-iq-properties.xml specs/
 +hdl/devices/specs/dac-properties.xml specs/
 # linux driver
-+os/linux/driver/99-opencpi.rules <target>/lib/
-+os/linux/driver/mdev-opencpi.rules <target>/lib/
-+os/linux/driver/target-<target>/opencpi*.ko <target>/lib/
+=os/linux/driver/99-opencpi.rules <target>/lib/
+=os/linux/driver/mdev-opencpi.rules <target>/lib/
+=os/linux/driver/target-<target>/opencpi*.ko <target>/lib/
 =os/linux/driver/ocpi_linux_driver scripts/
 ################################################################################
 # RCC related exclusions and additions

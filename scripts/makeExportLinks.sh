@@ -139,9 +139,9 @@ function make_filtered_link {
     # echo EXBOTH1=${both[0]}:${both[1]}:$3:$1:$2
     edirs=(${both[0]/\// })
     if [ ${edirs[0]} = exports ]; then
-       if match_filter ${both[0]} $2; then echo Filtered: $2 >&2; return; fi
+       if match_filter ${both[0]} $2; then [ -n "$verbose" ] && echo Filtered: $2 >&2 || : ; return; fi
     else
-       if match_filter ${both[0]} $1; then echo Filtered: $1 >&2; return; fi
+       if match_filter ${both[0]} $1; then [ -n "$verbose" ] && echo Filtered: $1 >&2 || : ; return; fi
     fi
   done
   # No exclusions matched.  Make the directory for the link
@@ -312,8 +312,10 @@ EOF
 }
 # Put the minimal set of artifacts to support the built-in runtime tests
 # And any apps that rely on software components in the core project
-mkdir -p exports/runtime/$OCPI_TOOL_PLATFORM/artifacts
-for a in projects/core/artifacts/*; do
+rm -r -f exports/runtime/$OCPI_TOOL_PLATFORM/artifacts
+mkdir exports/runtime/$OCPI_TOOL_PLATFORM/artifacts
+for a in projects/core/artifacts/*:*.*; do
+  [ -f $a ] || continue
   link=`readlink -n $a`
   [[ $link == */target-*${target}/* ]] &&
     make_relative_link $a exports/runtime/$OCPI_TOOL_PLATFORM/artifacts/$(basename $a)

@@ -106,29 +106,7 @@ cleaneverything distclean: clean cleandriver
 	$(AT)for p in projects/*; do make -C $p cleaneverything; done
 
 ##########################################################################################
-# Goals, variables and macros that are about exporting the CDK, whether tarball, rpm, etc.
-
-
-
-
-##### Perform platform filtering (for tarball and rpm)
-# Set variables to exclude platforms that are not specified, supporting tar, find, and cp
-# Use environment so that they are available in any scripts or tools
-# Assume exclusions relative to being in the CDK dir
-export OCPI_EXCLUDED_PLATFORMS:=
-export OCPI_EXCLUDE_FOR_TAR:=
-export OCPI_EXCLUDE_FOR_FIND:=
-export OCPI_EXCLUDE_FOR_CP:=^/$$
-# Build the platform exclusion lists for various tools
-# Executed only after exports are established
-define filterPlatforms
-$(foreach p,$(notdir $(patsubst %/,%,$(dir $(wildcard cdk/*/bin)))),\
-  $(if $(filter $p,$(RccPlatforms)),,\
-    $(eval OCPI_EXCLUDED_PLATFORMS+=$p)\
-    $(eval OCPI_EXCLUDE_FOR_TAR+=--exclude "cdk/$p" --exclude "cdk/$p/*") \
-    $(eval OCPI_EXCLUDE_FOR_FIND+=-a ! -path cdk/$p/\*) \
-    $(eval OCPI_EXCLUDE_FOR_CP:=$$(OCPI_EXCLUDE_FOR_CP)|^cdk/$p$$$$)))
-endef
+# Goals, variables and macros that are about packaging the CDK, whether tarball, rpm, etc.
 ##### Set variables that affect the naming of the release packages
 # The general package naming scheme is:
 # <base>[-sw-platform-<platform>]-<version>-<release>[_<tag>][_J<job>][_<branch>][<dist>]
@@ -166,49 +144,42 @@ git_tag    :=$(if $(git_version),\
                $(if $(BUILD_NUMBER),_J$(BUILD_NUMBER))\
                $(if $(filter-out undefined develop,$(git_branch)),_$(subst -,_,$(git_branch))))
 ##### Set final variables that depend on git variables
-# This could be nicer, but at least it gets it from the true source
+# This could be nicer, but at least it gets it from the true source, which should be places
 version:=$(or $(git_version),$(strip\
               $(shell sed -n 's/.*AC_INIT.\[opencpi\],\[\([0-9.]*\)\].*$$/\1/p' \
                       build/autotools/configure.ac)))
 tag:=$(and $(git_version),$(timestamp))
-Exports?=all
-.PHONY: prepare_export
-prepare_export: exports
-	@echo Preparing to export for platforms: $(RccPlatforms)$(filterPlatforms) >&2
-	$(AT)./scripts/prepare-package-export.sh "$(Export)" "$(RccPlatforms)" "$(RccAllPlatforms)"
-@echo Export mode is: $
-	$(AT)cd cdk; bad=0; \
-	 for l in `find . -follow -type l`; do bad=1; echo Dead exports link found: $$l; done;\
-	 exit $$bad
+#$(info NAME:$(name) TAG:$(tag) VERSION:$(version) GIT_TAG:$(git_tag) GIT_HASH:$(git_hash) BRANCH:$(git_branch))
+package_name=$(name)-$(version)$(foreach p,$(RccPlatforms),-$p)
+Package=runtime
+Prepare=./packaging/prepare-packaging-list.sh $(Package) "$(RccPlatforms)" $(call cross,$(word 1,$(RccPlatforms)))
 
-test_export: prepare_export
-	@echo OCPI_EXCLUDED_PLATFORMS: ==$$OCPI_EXCLUDED_PLATFORMS==
-	@echo OCPI_EXCLUDE_FOR_TAR: ==$$OCPI_EXCLUDE_FOR_TAR==
-	@echo OCPI_EXCLUDE_FOR_FIND: ==$$OCPI_EXCLUDE_FOR_FIND==
-	@echo OCPI_EXCLUDE_FOR_CP: ==$$OCPI_EXCLUDE_FOR_CP==
-	$(AT)set -vx;rm -r -f tmpexport; mkdir tmpexport && \
-	 echo cp -R -L $$(ls -d1 cdk/*| egrep -v "$$OCPI_EXCLUDE_FOR_CP") tmpexport
-	$(AT)set -vx; eval tar -v -z -h -c -f tmpexport/tar.tgz $$OCPI_EXCLUDE_FOR_TAR cdk
-	$(AT)set -vx; eval find -L cdk -type f $$OCPI_EXCLUDE_FOR_FIND
+.PHONY: test_packaging
+test_packaging: exports
+	$(AT)$(Prepare)
 
 # Make a tarball of exports
+# We convert the "Prepare" output mappings into tar command transformations
 .PHONY: tar
-opencpi-cdk-latest.tgz tar: prepare_export
-	$(AT)set -e; mydate=`date +%G%m%d%H%M%S`;\
-	     file=opencpi-cdk-$$mydate.tgz; \
+tar: exports
+	$(AT)set -e; file=$(package_name).tgz; \
+	     args=$$($(Prepare) |\
+                     while read source dest; do\
+	               [ -n "$$dest" ] && { \
+                         printf " --xform=s@^$$source\$$@$$dest/$$(basename $$source)@"; \
+                         printf " --xform=s@^$$source/@$$dest/$$(basename $$source)/@"; \
+	               } || : ; \
+	               printf " $$source"; \
+	            done); \
 	     echo Creating tar export file: $$file; \
-	     eval tar -z -h -f $$file -c $$OCPI_EXCLUDE_FOR_TAR -C cdk .; \
-	     rm -f opencpi-cdk-latest.tgz; \
-	     ln -s $$file opencpi-cdk-latest.tgz; \
-	     ls -l $$file; \
-	     ls -l opencpi-cdk-latest.tgz
+	     tar -z -h -f $$file -c $$args
 
 # Create a relocatable RPM from what is exported for the given platforms
 # Feed in the various naming components
 # redefine _rpmdir and _build_name_fmt to simply output the RPMs here
 .PHONY: rpm rpm_runtime rpm_devel
 first_real_platform:=$(word 1,$(RccPlatforms))
-rpm rpm_runtime rpm_devel: prepare_export
+rpm rpm_runtime rpm_devel: exports
 	$(AT)! command -v rpmbuild >/dev/null 2>&1 && \
 	     echo "Error: Cannot build an RPM: rpmbuild (rpm-build package) is not available." && exit 1 || :
 	$(AT)[ $(words $(call Unique,$(call RccRealPlatforms,$(RccPlatforms)))) != 1 ] && \
@@ -222,12 +193,13 @@ rpm rpm_runtime rpm_devel: prepare_export
 		      --define="RPM_RELEASE     $(release)$(tag)$(commit)"\
 		      --define="RPM_VERSION     $(version)" \
 		      --define="RPM_HASH        $(git_hash)" \
+		      --define="RPM_PLATFORM    $(first)" \
 		      --define="RPM_OPENCPI     $(CURDIR)" \
 		      $(foreach c,$(call cross,$(first)),\
 		        --define="RPM_CROSS $c") \
 		      --define "_rpmdir $(CURDIR)"\
 		      --define "_build_name_fmt %%{NAME}-%%{VERSION}-%%{RELEASE}.%%{ARCH}.rpm"\
-		      build/cdk.spec
+		      packaging/cdk.spec
 	$(AT)rpm=`ls -1t *.rpm|head -1` && echo Created RPM file: $$rpm && ls -l $$rpm
 
 # Convenience here in the Makefile.

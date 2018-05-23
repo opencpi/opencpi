@@ -1,3 +1,4 @@
+#!/bin/bash --noprofile
 # This file is protected by Copyright. Please refer to the COPYRIGHT file
 # distributed with this source distribution.
 #
@@ -35,7 +36,9 @@
 
 type=$1
 platforms=$2
-allplatforms=$3
+cross=$3
+allplatforms="$OCPI_ALL_RCC_PLATFORMS"
+set -e
 
 function found_in {
   local look=$1
@@ -54,7 +57,16 @@ function skip_platform {
 }
 
 shopt -s nullglob
-# FIXME: this is redundant with install/prerequisites and places
+for l in `find cdk -follow -type l`; do
+  bad=1
+  echo Dead exports link found: $l
+done
+for l in `find -H . -name "-*"`; do
+  bad=1
+  echo Found files starting with hyphen
+done
+[ -n "$bad" ] && exit 1
+# FIXME: this list is redundant with "install-prerequisites.sh" and "places"
 # This list could potentially be platform-specific
 # and then there are platform-specific prereqs
 prereqs="gmp lzma gtest patchelf inode64 ad9361 liquid"
@@ -80,8 +92,11 @@ case $type in
       done
     done;;
   devel)
+    [ -n "$cross" ] && prefix=/$platform/lib
     for f in cdk/*; do
       ( [ $f = cdk/runtime ] || skip_platform $f ) && continue
+      # If its not platform specific, it won't be in the cross-platform devel
+      [ -n "$cross" -a $f != cdk/$platforms ] && continue
       base=$(basename $f)
       diff <(cd cdk/runtime; [ -e $base ] && find -H $base) \
            <(cd cdk; find -H $base -name runtime -prune -o ! -type d -print) \
@@ -91,14 +106,13 @@ case $type in
       for d in prerequisites/$p/*; do
         skip_platform $d && continue;
 	if is_platform $d; then
-	  [ -d $d/bin ] && find $d/bin ! -type d
+	  [ -z "$cross" -a -d $d/bin ] && find $d/bin ! -type d
 	  [ -d $d/include ] && find $d/include ! -type d
           [ -d $d/lib ] && find $d/lib -name "*.a"
-        elif [[ $d == */include ]]; then
+        elif [ -z "$cross" ] && [[ $d == */include ]]; then
           echo $d
         fi
       done
     done;;
-    
   *) echo Unknown export type;;
 esac
