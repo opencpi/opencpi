@@ -34,6 +34,7 @@
 # each line is of the form
 # <source-path> [<dest-path>]
 
+[ "$1" = -v ] && verbose=1 && shift
 type=$1
 platforms=$2
 cross=$3
@@ -55,6 +56,37 @@ function skip_platform {
   local base=$(basename $1)
   is_platform $1 && ! found_in $(basename $1) $platforms
 }
+
+# emit the dir name if the tree is clean, otherwise emit each cached item here and recurse on
+# directories.  Basically this is: git ls-files but don't descend when all contents are cached
+function emit_project_dir {
+    set -o pipefail
+    # if find $1 -type f -a \! \( -path "*/target-*/*" -o \
+    #                             -path "*/gen/*" -o \
+    #                             -path "*/container-*/*" -o \
+    #                             -path "*/config-*/*" -o \
+    # 			        \( -path "*/lib/*" -a \! -path "*/rcc/platforms/*" \) \) |sort|
+    if find $1 -type f | sort | diff - <(git ls-files $1 | sort ) > /dev/null ; then
+      [ -n "$verbose" ] && echo Dir at $1 is the same >&2
+      echo $1
+    else
+      [ -n "$verbose" ] && echo Dir at $1 is different, descending >&2
+      for i in `ls -a $1`; do
+	[ $i = . -o $i = .. ] && continue
+	if [ -d $1/$i ]; then
+	  [ `git ls-files $1/$i|wc -c` = 0 ] || emit_project_dir $1/$i  
+        else
+	  git ls-files $1/$i
+	fi  
+      done
+   fi
+}
+
+[ $1 = test ] && {
+  emit_project_dir $2  
+  exit $?
+}
+
 
 shopt -s nullglob
 for l in `find cdk -follow -type l`; do
@@ -113,6 +145,11 @@ case $type in
           echo $d
         fi
       done
-    done;;
+    done
+    # emit project stuff that are git repo items
+    emit_project_dir project-registry
+    emit_project_dir projects/core
+    emit_project_dir projects/assets
+    ;;
   *) echo Unknown export type;;
 esac

@@ -72,6 +72,7 @@ for p in runtime devel; do
     cp -R -L $source %{buildroot}%{prefix0}/${dest:-$source}
   done > %{_builddir}/$p-files
 done
+##########################################################################################
 # Enable the globally-installed files, trying to symlink them to their "real" copies if possible
 # 1. Tell ld.so to look in our lib dir when looking for dynamic libraries
 #    Really only needed with a dynamic library installation

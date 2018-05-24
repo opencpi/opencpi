@@ -106,17 +106,17 @@ OcpiLibraryPathEnv:=LD_LIBRARY_PATH
 OcpiRpathOrigin:=$${ORIGIN}
 OcpiStaticLibrarySuffix:=.a
 # linker flags when linking a static executable
-OcpiStaticProgramFlags:=-Xlinker -export-dynamic
+OcpiStaticProgramFlags:=-Xlinker -export-dynamic -Wl,-z,relro -Wl,-z,now
 # flags when linking a static library
 OcpiStaticLibraryFlags:=
 OcpiDynamicCompilerFlags:=-fPIC
 OcpiDynamicLibrarySuffix:=.so
 # linker flags when creating a dynamic library
-OcpiDynamicLibraryFlags:=-shared -Xlinker --no-undefined
+OcpiDynamicLibraryFlags:=-shared -Xlinker --no-undefined -Wl,-z,relro -Wl,-z,now
 # linker flags when creating an executable linked with dynamic libraries
-OcpiDynamicProgramFlags:=
+OcpiDynamicProgramFlags:= -Wl,-z,relro -Wl,-z,now
 # linker flags when creating a swig library linked against static libraries: FIXME: needed?
-OcpiStaticSwigFlags:=-Xlinker -export-dynamic
+OcpiStaticSwigFlags:=-Xlinker -export-dynamic -Wl,-z,relro -Wl,-z,now
 # linker flags when creating a swig library linked against dynamic libraries
 OcpiDynamicSwigFlags:=
 # linker flags when creating a driver/plugin library
@@ -142,8 +142,8 @@ OcpiCrossCompile:=
 # similar to other make or autotools variables etc.
 # These default -g flags are not intended to suppress optimization, just keep sym info around
 # See DebugOn/Off flags below
-OcpiCFlags:=-g -pipe
-OcpiCXXFlags:=-g -pipe
+OcpiCFlags:=-g -pipe -Wp,-D_FORTIFY_SOURCE=2
+OcpiCXXFlags:=-g -pipe -Wp,-D_FORTIFY_SOURCE=2
 # typical "make"
 # The commands used to build for this platform
 OcpiCC:=gcc
@@ -177,8 +177,8 @@ OcpiOptimizeOnFlags:=-O2 -NDEBUG=1
 # The warnings could be removed (e.g. using filter-out) if they are truly not supported.
 OcpiRequiredCPPFlags:= -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS
 OcpiRequiredCFlags:= -Wall -Wfloat-equal -Wextra -fno-strict-aliasing -Wformat -Wuninitialized \
-                     -Winit-self -Wshadow -frecord-gcc-switches -fstack-protector \
-                     -Wno-conversion -Wno-sign-conversion -std=c99
+                     -Winit-self -Wshadow -grecord-gcc-switches -fstack-protector \
+                     -Wno-conversion -Wno-sign-conversion -std=c99 --param=ssp-buffer-size=4
 OcpiRequiredCXXFlags:=$(filter-out -std%,$(OcpiRequiredCFlags)) -std=c++0x
 # For all code:
 # We prefer these warnings or their equivalent be supported.  It is not an error if they are not.
