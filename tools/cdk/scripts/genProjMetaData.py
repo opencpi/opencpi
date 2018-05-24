@@ -275,19 +275,23 @@ if (isStale(mydir, force)):
     
     comps = ET.SubElement(root, "components")
     hdl = ET.SubElement(root, "hdl")
+    rcc = ET.SubElement(root, "rcc")
     assys = ET.SubElement(hdl, "assemblies")
     prims = ET.SubElement(hdl, "primitives")
 
     for dirName, subdirList, fileList in os.walk(mydir):
-        if "exports" in dirName:
+        if "exports" in dirName or "imports" in dirName:
             continue
         elif dirName.endswith("/components"):
             addLibs(comps, subdirList)
         elif dirName.endswith("/applications"):
             apps = ET.SubElement(root, "applications")
             addApplications(apps, subdirList)
-        elif dirName.endswith("/platforms"):
+        elif dirName.endswith("/hdl/platforms"):
             platforms = ET.SubElement(hdl, "platforms")
+            addPlatforms(platforms, subdirList, dirName)
+        elif dirName.endswith("/rcc/platforms"):
+            platforms = ET.SubElement(rcc, "platforms")
             addPlatforms(platforms, subdirList, dirName)
 
         elif dirName.endswith("/cards"):

@@ -18,7 +18,7 @@
 import unittest
 import sys
 import os
-sys.path.insert(0, os.path.realpath('../../tools/cdk/scripts/'))
+sys.path.insert(0, os.path.realpath(os.getenv('OCPI_CDK_DIR') + '/scripts/'))
 import ocpiutil
 import ocpiassets
 

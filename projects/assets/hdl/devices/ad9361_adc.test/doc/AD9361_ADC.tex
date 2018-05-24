@@ -295,13 +295,20 @@ The following command builds for Zedboard deployment:
 ocpidev build --rcc-platform xilinx13_3 --hdl-platform zed
 \end{lstlisting}
 \subsection*{Execution Instructions}
-If it does not matter which ML605 FMC slot is tested, the ML605 test should be executed by running the following command. Using this command, it is possible for either ML605 FMC slot to be used for AD9361 tests at runtime.
+If it does not matter which ML605 FMC slot is tested, the ML605 test should be executed by running the following commands. Using these commands, it is possible for either ML605 FMC slot to be used for AD9361 tests at runtime. Note that for this particular unit test, the ocpidev calls occur from the projects/assets/hdl/devices/ directory.
 \begin{lstlisting}
-make run
+cd projects/assets/hdl/devices/
+ocpidev run test ad9361_adc.test
 \end{lstlisting}
 To test the ML605 for a specific FMCOMMS2/3 FMC slot location, the \texttt{OCPI\_LIBRARY\_PATH} environment variable must be prepended with the location of the FPGA bitstream for the desired FMC LPC/HPC slot. The command is as follows:
 \begin{lstlisting}
-OCPI_LIBRARY_PATH=<path-to-bitstream>:$OCPI_LIBRARY_PATH make run
+cd projects/assets/hdl/devices/
+OCPI_LIBRARY_PATH=<path-to-bitstream>:$OCPI_LIBRARY_PATH ocpidev run test ad9361_adc.test
+\end{lstlisting}
+for example, to enforce the FMC LPC slot of the ML605:
+\begin{lstlisting}
+cd projects/assets/hdl/devices/
+OCPI_LIBRARY_PATH=$(find $PWD/ad9361_adc.test/ | grep lpc | grep bitz):$OCPI_LIBRARY_PATH ocpidev run test ad9361_adc.test
 \end{lstlisting}
 To run on the Zedboard, the built \comp{}.test directory must either be mounted from the development machine to the Zedboard, or copied to the Zedboard. From within the \comp{}.test directory, the follow command executes the test natively on the Zedboard:
 \begin{lstlisting}
@@ -329,7 +336,7 @@ FPGA\_Vendor\_Tools\_Installation\_Guide.pdf
 \section{Appendix 1 - AD9361 ADC Data Fidelity / Delay Setting Verification}
 \subsection{FMCOMMS3 on ML605 FMC-LPC slot}
 A custom script was run to report bit error rate vs. on-AD9361 RX data-clock delay settings. The following confirms both the ability of the ML605/FMCOMMS3 to have 100\% data fidelity up to the maximum data rate and the experimental range of valid delay settings. Each entry in the table below represents bit error rate in percent.
-\lstset{language=bash, columns=flexible, prebreak=\textbackslash, basicstyle=\ttfamily, showstringspaces=false,upquote=true, aboveskip=\baselineskip, belowskip=\baselineskip}
+\lstset{language=bash, columns=flexible, breaklines=true, prebreak=\textbackslash, basicstyle=\ttfamily, showstringspaces=false,upquote=true, aboveskip=\baselineskip, belowskip=\baselineskip}
 \begin{lstlisting}[basicstyle=\scriptsize]
 FIR enabled      : 0
 Data port config : 1R1T

@@ -89,7 +89,7 @@ def configure_logging(level=None, output_fd=sys.stderr):
     return rootlogger
 
 ###############################################################################
-# Utility functions for extracting variables and information from and calling 
+# Utility functions for extracting variables and information from and calling
 # Makefiles
 ###############################################################################
 
@@ -151,14 +151,35 @@ def set_vars_from_make(mk_file, mk_arg="", verbose=None):
                 logging.error("The '\"make\"' command is not available.")
             return 1
 
-        make_cmd = "make -n -r -s -f " + mk_file + " " + mk_arg
+        #If mk_file is a "Makefile" then we use the -C option on the directory containing 
+        #the makefile else (is a .mk) use the -f option on the file
+        if (mk_file.endswith("/Makefile")):
+            make_cmd = "make -n -r -s -C " + os.path.dirname(mk_file) + " " + mk_arg
+        else:
+            make_cmd = "make -n -r -s -f " + mk_file + " " + mk_arg
+
+        logging.debug("Calling make via:" + str(make_cmd.split()))
         # If verbose is unset, redirect 'make' stderr to /dev/null
         if verbose is None or verbose == "":
-            mk_output = subprocess.Popen(make_cmd.split(),
-                                         stdout=subprocess.PIPE, stderr=fnull).communicate()[0]
+            child = subprocess.Popen(make_cmd.split(), stderr=fnull, stdout=subprocess.PIPE)
+            child.wait()
+            mk_output = child.stdout.read()
+            if (child.returncode != 0):
+                child.stdout.close()
+                raise OCPIException("make command: " + make_cmd + "\n returned an error: " +
+                                    str(mk_output))
+            child.stdout.close()
         else:
-            logging.debug("Calling make via:" + str(make_cmd.split()))
-            mk_output = subprocess.Popen(make_cmd.split(), stdout=subprocess.PIPE).communicate()[0]
+            child = subprocess.Popen(make_cmd.split(), stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+            child.wait()
+            mk_output = child.stdout.read()
+            if (child.returncode != 0):
+                child.stdout.close()
+                child.stderr.close()
+                raise OCPIException("make command: " + make_cmd + "\n returned an error: " +
+                                    str(mk_output))
+            child.stdout.close()
+            child.stderr.close()
         logging.debug("Output from make in set_vars_from_make: " + str(mk_output))
         try:
             grep_str = re.search(r'(^|\n)[a-zA-Z_][a-zA-Z_]*=.*',

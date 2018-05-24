@@ -19,11 +19,14 @@
 
 # remove any leftover results from last run
 make clean
-ocpidev -d ../av-test build --hdl-platform isim
+if [ -z "$HDL_PLATFORM" ] ; then
+  HDL_PLATFORM=xsim
+fi
+set -e
+ocpidev -d ../av-test build --hdl-platform $HDL_PLATFORM
 MIN_COVERAGE=80 #%
 rm -f .coverage
 # Run each test and collect coverage info
-set -e
 if [ -z "$(type -p coverage3 2> /dev/null)" ]; then
   pyrun_command="python3"
 else
@@ -39,11 +42,10 @@ for i in *_test.py; do
     OCPI_CDK_DIR=$(pwd) $pyrun_command $doctest -v
   fi
 done
-if [ "$pyrun_command" == "python" ]; then
+if [ "$pyrun_command" == "python3" ]; then
   echo "Skipping coverage report because the coverage command does not exist"
 else
   # TODO: add a minimum coverage threshold
   coverage3 report --omit "*_test.py" ||\
     sh -c "echo FAIL: coverage less than \"$MIN_COVERAGE\"% ; exit 1"
 fi
-

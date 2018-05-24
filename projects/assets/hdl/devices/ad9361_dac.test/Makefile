@@ -28,6 +28,12 @@ RccOnlyPlatforms+=centos7 xilinx13_3 # we only include tested rcc platforms
 
 include $(OCPI_CDK_DIR)/include/application.mk
 
+# this is necessary to allow 'ocpidev run' to correctly run the unit test (without this
+# line you can still run the test but must use make, e.g. 'make run')
+ifneq (,)
+include $(OCPI_CDK_DIR)/include/test.mk
+endif
+
 asm:
 	make -C assemblies
 

@@ -17,20 +17,28 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
+if [ -z "$HDL_PLATFORM" ] ; then
+  HDL_PLATFORM=xsim
+fi
 set -e
-OCPIDEV="coverage3 run --append ../../../tools/cdk/scripts/ocpidev_run.py -d ../../av-test"
-OCPIDEV="../../../tools/cdk/scripts/ocpidev run -d ../../av-test"
-HDL_PLAT=isim
 
-ocpidev build -d ../../av-test --hdl-platform $HDL_PLAT
+fail() {
+  echo "Did not receive an error running this test: this command should not work"
+  exit 1
+}
+
+# OCPIDEV="coverage3 run --append ../../../tools/cdk/scripts/ocpidev_run.py -d ../../av-test"
+OCPIDEV="${OCPI_CDK_DIR}/scripts/ocpidev run -d ../../av-test"
+
+${OCPI_CDK_DIR}/scripts/ocpidev build -d ../../av-test --hdl-platform $HDL_PLATFORM
 echo "Running Test 1"
-$OCPIDEV 
+$OCPIDEV
 echo "Running Test 2"
 $OCPIDEV tests
 echo "Running Test 3"
 $OCPIDEV project --junk
 echo "Running Test 4"
-$OCPIDEV applications 
+$OCPIDEV applications
 echo "Running Test 5"
 $OCPIDEV application aci_property_test_app
 echo "Running Test 6"
@@ -60,32 +68,19 @@ $OCPIDEV test test_worker --mode clean_sim
 echo "Running Test 17"
 $OCPIDEV test test_worker --mode clean_run
 echo "Running Test 18"
-$OCPIDEV test test_worker.test --hdl-platform $HDL_PLAT 
+$OCPIDEV test test_worker.test --hdl-platform $HDL_PLATFORM
 echo "Running Test 19"
 $OCPIDEV test test_worker --mode clean_all
-$OCPIDEV test test_worker.test --only-platform $HDL_PLAT
+$OCPIDEV test test_worker.test --only-platform $HDL_PLATFORM
 echo "Running Test 20"
 $OCPIDEV test test_worker --mode clean_all
-$OCPIDEV test test_worker.test --exclude-platform $HDL_PLAT
+$OCPIDEV test test_worker.test --exclude-platform $HDL_PLATFORM
 # need to add things we expect to fail to this test as well
-set +e 
+set +e
 echo "Running Test 21: Expecting Error"
-$OCPIDEV junk test_worker.test
-if [ $? == 0 ]; then
-  echo "Did not recive an error running this test this command should not work"
-  exit 1
-fi 
+$OCPIDEV junk test_worker.test && fail
 echo "Running Test 22: Expecting Error"
-$OCPIDEV test test_worker -l components/dsp_comps 
-if [ $? == 0 ]; then
-  echo "Did not recive an error running this test this command should not work"
-  exit 1
-fi 
+$OCPIDEV test test_worker -l components/dsp_comps && fail
 echo "Running Test 23: Expecting Error"
-$OCPIDEV test -l components/dsp_comps 
-if [ $? == 0 ]; then
-  echo "Did not recive an error running this test this command should not work"
-  exit 1
-fi 
+$OCPIDEV test -l components/dsp_comps && fail
 echo "Tests Passed!"
-

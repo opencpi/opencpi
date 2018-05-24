@@ -18,7 +18,7 @@
 import unittest
 import sys
 import os
-sys.path.insert(0, os.path.realpath('../../tools/cdk/scripts/'))
+sys.path.insert(0, os.path.realpath(os.getenv('OCPI_CDK_DIR') + '/scripts/'))
 import ocpiutil
 import ocpiassets
 
@@ -31,7 +31,7 @@ class TestsTest(unittest.TestCase):
         """
         create a Test in an invalid directory and an exception is thrown
         """
-        self.assertRaises(ocpiutil.OCPIException, 
+        self.assertRaises(ocpiutil.OCPIException,
                           ocpiassets.AssetFactory.factory,
                           self.asset_type,
                           "/dev")

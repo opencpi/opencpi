@@ -30,19 +30,33 @@ MODES = ["gen_build", "prep_run_verify", "clean_all", "gen", "prep", "run", "pre
 
 def parse_cl_vars():
     """
-    Construct the argparse object and parse all the command line arguments into a dictionary to 
+    Construct the argparse object and parse all the command line arguments into a dictionary to
     return
     """
     description = ("Utility for running component unit-tests and simple applications \n" +
-                  "component unit-tests have 5 phases: \n" +
-                  "Generate- generate testing artifacts after finding the spec and the workers\n" +
-                  "Build- building HDL bitstream/executable artifacts for testing\n" +
-                  "Prepare-  examine available built workers and available platforms, creating " +
-                  "execution scripts to use them all for executing feasible tests.\n" +
-                  "Run-execute tests for all workers, configurations, test cases and platforms\n" +
-                  "Verify- verify results from the execution of tests on workers and platforms\n")
+                  "Component unit-tests have 5 phases: \n" +
+                  "    Generate- generate testing artifacts after finding the spec and the " +
+                  "workers\n" +
+                  "    Build- building HDL bitstream/executable artifacts for testing\n" +
+                  "    Prepare-  examine available built workers and available platforms, " +
+                  "creating execution scripts to use them all for executing feasible tests.\n" +
+                  "    Run-execute tests for all workers, configurations, test cases and " +
+                  "platforms\n"
+                  "    Verify- verify results from the execution of tests on workers and " +
+                  "platforms\n" +
+                  "Usage Examples: \n" +
+                  "run a single application: \n" +
+                  "    ocpidev run application <app_name> \n"
+                  "run all applications in a project: \n" +
+                  "    ocpidev run applications \n"
+                  "run a single test: \n" +
+                  "    ocpidev run -l <library_dir> test <test_name> \n"
+                  "run all tests in a library: \n" +
+                  "    ocpidev run library <library_name> \n"
+                  "run generate and build stages of a single test: \n" +
+                  "    ocpidev run -l <library_dir>  --mode gen_build test <test_name>\n")
 
-    parser = argparse.ArgumentParser(description=description, 
+    parser = argparse.ArgumentParser(description=description,
                                      formatter_class=argparse.RawTextHelpFormatter)
     parser.print_help = types.MethodType(lambda self,
                                                 _=None: pydoc.pager("\n" + self.format_help()),
@@ -117,26 +131,28 @@ def parse_cl_vars():
 
 def get_directory(args, name, lib):
     """
-    Determine the correct directory for the asset that should be run given the cmd line arguments 
+    Determine the correct directory for the asset that should be run given the cmd line arguments
     passed in
     """
-    if (lib == name):
+    if lib == name:
         lib = ""
     dir_type = ocpiutil.get_dirtype()
     ret_val = os.path.realpath('.')
     if args['noun'] == "applications":
             ret_val = ocpiutil.get_path_to_project_top() + "/applications"
-    elif args['noun'] in ["test", "library"]:
+    elif args['noun'] in ["test", "library"] and name and name != os.path.basename(os.path.realpath('.')):
         ret_val = os.path.realpath('.') + "/" + lib + "/" + name
         if args['noun'] == "test" and not ret_val.endswith(".test"):
             ret_val = ret_val + ".test"
+    elif args['noun'] in ["test", "library"]:
+        ret_val = os.path.realpath('.')
     elif args['noun'] == "application":
         ret_val = os.path.realpath('.') + "/applications/" + name
     return ret_val
 
 def set_init_values(args, dir_type):
     """
-    Determine which contents of library and project objects need to be initialized and set the 
+    Determine which contents of library and project objects need to be initialized and set the
     corresponding kwargs values
     """
     if args['noun'] == "library":
@@ -151,7 +167,7 @@ def set_init_values(args, dir_type):
         #TODO add libraries here and libraries collection to allow call in a libraries directory
         if dir_type in ["library", "project"]:
             args['noun'] = dir_type
-        else: 
+        else:
             raise ocpiutil.OCPIException("Use of tests noun in an invalid directory type: \"" +
                                          dir_type + "\". Valid types are library and project")
 
@@ -170,8 +186,8 @@ def main():
                 if dir_type in [n for n in NOUNS if n != "tests"]:
                     args['noun'] = dir_type
                 else:
-                    raise ocpiutil.OCPIException("Invalid directory type \"" + dir_type + "\" " +
-                                                 "Valid directory types are: " + 
+                    raise ocpiutil.OCPIException("Invalid directory type \"" + str(dir_type) +
+                                                 "\" Valid directory types are: " +
                                                  ", ".join([n for n in NOUNS if n != "tests"]))
             set_init_values(args, dir_type)
             lib = args.get("lib", "")
@@ -187,8 +203,8 @@ def main():
                     lib = ""
                 # pylint:enable=bad-continuation
             directory = get_directory(args, name, lib)
-            ocpiutil.logging.debug("creating asset as the following \nname: " + name + "\n" +
-                                   "directory: " + name + "\nargs: " + str(args))
+            ocpiutil.logging.debug("creating asset as the following \nname: " + str(name) + "\n" +
+                                   "directory: " + str(directory) + "\nargs: " + str(args))
             my_asset = ocpiassets.AssetFactory.factory(args['noun'], directory, name, **args)
             #TODO make sure return value is working right always returning zero ?
 

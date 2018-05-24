@@ -108,6 +108,10 @@ Requires:       %{all_prereqs_pf}
 # These come from platforms/centos7/centos7-packages.sh - not sure if they really apply...
 Requires:       tcl pax python-devel
 BuildRequires:  tcl pax python-devel
+# For ocpishow and others framework run python
+BuildRequires:   python34
+Requires:        python34
+
 # Some of the JTAG scripts use old-school "ed":
 BuildRequires:  ed
 Requires:       ed
@@ -116,6 +120,7 @@ Requires:       ed
 BuildRequires:  gcc-c++ rpm-build fakeroot
 #Optional but preferred (AV-2071) BuildRequires:  valgrind-devel
 
+# SWIG is C7 only:
 %if "0%{?dist}" != "0.el6"
 %global with_swig 1
 # For SWIG interfaces (AV-3699)
@@ -176,9 +181,6 @@ Requires:   numpy scipy python-matplotlib
 # Requires:   python-lxml
 # For bash completion (AV-2398)
 # (Optional) Requires:  bash-completion
-# For ocpishow and others framework run python
-BuildRequires:   python34
-Requires:        python34
 
 # Used by the core project extract script:
 Requires:   xz
@@ -662,11 +664,15 @@ find %{coreprojdir}/components/lib/rcc/ \( -name '*.build' -o -name '*-build.xml
 # Compress the coreprojdir the same way assets is done
 %{__rm} -rf %{coreprojdir}/imports
 # Manually register project for correct name and relative link
-pushd %{projregistry}
+cd %{projregistry}
 %{__ln_s} -f ../projects/$(basename %{coreprojdir}) ocpi.core
 # Also manually register the CDK. This link is static and the user should not change it
 %{__ln_s} -f ../cdk ocpi.cdk
-popd
+cd -
+# Set the core project's registry link
+cd %{coreprojdir}
+%{__ln_s} -f ../../project-registry imports
+cd -
 %endif
 
 # Stop some spamming from the debuginfo generation
@@ -730,6 +736,7 @@ make %{?_smp_mflags} check
 %if !%{OCPI_CROSS}
 %{projsourcedir_final}/core/.project
 %{projsourcedir_final}/core/specs
+%{projsourcedir_final}/core/imports
 %{projsourcedir_final}/core/exports
 %{projsourcedir_final}/core/components/lib/package-id
 %{projsourcedir_final}/core/Makefile

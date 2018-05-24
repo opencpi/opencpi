@@ -27,7 +27,7 @@ import sys
 import re
 import subprocess
 import logging
-sys.path.insert(0, os.path.realpath('../../tools/cdk/scripts/'))
+sys.path.insert(0, os.path.realpath(os.getenv('OCPI_CDK_DIR') + '/scripts/'))
 import ocpiutil
 from ocpiassets import *
 
@@ -71,16 +71,15 @@ PROJECT_PACKAGES = {
 
 OCPI_LOG_LEVEL = os.environ.get('OCPI_LOG_LEVEL')
 OCPI_CDK_DIR = os.environ.get('OCPI_CDK_DIR')
-OCPI_TOOL_HOST = os.environ.get('OCPI_TOOL_HOST')
 
 # Determine path to ocpidev based on CDK so that we avoid accidentally
 # using the one installed by RPMs
-OCPIDEV_PATH = OCPI_CDK_DIR + "/bin/" + OCPI_TOOL_HOST + "/ocpidev"
+OCPIDEV_PATH = OCPI_CDK_DIR + "/scripts/ocpidev"
 if OCPI_LOG_LEVEL and int(OCPI_LOG_LEVEL) > 8:
-    SET_X=" set -x; "
+    SET_X = " set -x; "
     OCPIDEV_CMD = OCPIDEV_PATH + " -v"
 else:
-    SET_X=" "
+    SET_X = " "
     OCPIDEV_CMD = OCPIDEV_PATH
 # Initialize ocpiutil's logging settings which switch
 # based on OCPI_LOG_LEVEL
@@ -127,7 +126,8 @@ class TestPathFunctions(unittest.TestCase):
         ocpidev_command += "export OCPI_PROJECT_REGISTRY_DIR=" + \
                            os.path.realpath('./project-registry') + " ; "
         # Create PROJECT0 and fill it with assets of many types
-        ocpidev_command += "ln -s ../../../projects/core project-registry/ocpi.core; "
+        ocpidev_command += "ln -s " + OCPI_CDK_DIR + \
+                           "/../project-registry/ocpi.core project-registry/ocpi.core; "
         ocpidev_command += OCPIDEV_CMD + " --register create project " + PROJECT0 + "; "
         ocpidev_command += OCPIDEV_CMD + " -d " + PROJECT0 + " create library mylibrary; "
         ocpidev_command += OCPIDEV_CMD + " -d " + PROJECT0 + " create -l mylibrary spec myspec; "
@@ -259,14 +259,18 @@ class TestPathFunctions(unittest.TestCase):
         self.assertEqual(reg_dir, os.environ.get('OCPI_CDK_DIR') + "/../project-registry")
         logging.info("Verify that the default registry is correct when the env var is unset.")
         self.assertEqual(reg_dir, Registry.get_default_registry_dir())
-        orig_cdk = os.environ['OCPI_CDK_DIR']
-        del os.environ['OCPI_CDK_DIR']
-        reg_dir = Registry.get_registry_dir()
-        self.assertEqual(reg_dir, "/opt/opencpi/project-registry")
-        logging.info("Verify that the default registry is correct when no env vars are set.")
-        self.assertEqual(reg_dir, Registry.get_default_registry_dir())
+        if os.path.isdir("/opt/opencpi/project-registry"):
+            orig_cdk = os.environ['OCPI_CDK_DIR']
+            del os.environ['OCPI_CDK_DIR']
+            reg_dir = Registry.get_registry_dir()
+            self.assertEqual(reg_dir, "/opt/opencpi/project-registry")
+            logging.info("Verify that the default registry is correct when no env vars are set.")
+            self.assertEqual(reg_dir, Registry.get_default_registry_dir())
+            os.environ['OCPI_CDK_DIR'] = orig_cdk
+        else:
+            logging.warning("Skipping default registry check because " +
+                            "/opt/opencpi/project-registry does not exist")
 
-        os.environ['OCPI_CDK_DIR'] = orig_cdk
         os.environ['OCPI_PROJECT_REGISTRY_DIR'] = orig_gprd
 
     def test_get_dirtype(self):
@@ -362,7 +366,7 @@ class TestPathFunctions(unittest.TestCase):
 
     def test_pj_with_pkg_exist(self):
         """
-        Verify that each known package is recognized as existing from differenct CWDs.
+        Verify that each known package is recognized as existing from different CWDs.
         Invalid ones of course should result in False for 'project with pkg DNE'
         """
         logging.info("===========================\n" +
@@ -423,11 +427,15 @@ class TestPathFunctions(unittest.TestCase):
             self.assertFalse(os.path.exists("imports"))
 
             logging.info("Make sure you can set a project's registry to a given directory.")
-            proj.set_registry("../../../project-registry")
-            self.assertEqual(os.path.realpath("../../../project-registry"),
-                             os.path.realpath(os.readlink("imports")))
-            proj.unset_registry()
-            self.assertFalse(os.path.exists("imports"))
+            if os.path.isdir("../../../project-registry"):
+                proj.set_registry("../../../project-registry")
+                self.assertEqual(os.path.realpath("../../../project-registry"),
+                                 os.path.realpath(os.readlink("imports")))
+                proj.unset_registry()
+                self.assertFalse(os.path.exists("imports"))
+            else:
+                logging.warning("Skipping this registry test because ../../../project-registry " +
+                                "does not exist (not run from repo?).")
 
             logging.info("Make sure you cannot set a project's registry to a non-dir file. " +
                          "Expect an ERROR:")

@@ -32,7 +32,7 @@
 
 ## Enables color variables BOLD, RED, and RESET
 enable_color() {
-  if [ -n "$(command -v tput)" ]; then
+  if [ -n "$(command -v tput)" -a -n "${TERM}" ]; then
     export BOLD=$(tput bold 2>/dev/null)
     export RED=$(tput setaf 1 2>/dev/null)
     export RESET=$(tput sgr0 2>/dev/null)

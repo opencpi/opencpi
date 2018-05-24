@@ -18,6 +18,11 @@
 
 $(if $(realpath $(OCPI_CDK_DIR)),,$(error The OCPI_CDK_DIR environment variable is not set correctly.))
 
+# if never, this statement exists so that the directory evaluates as a test directory for ocpidev
+ifneq (,)
+  include $(OCPI_CDK_DIR)/include/test.mk
+endif
+
 # Custom code is included in test_XX/localinclude.mk
 # There, for example, you can set SIM_TIME or PRE_HOOK.
 # PRE_HOOK / POST_HOOK should end / start with "&&"

@@ -48,7 +48,7 @@ GIT_VERSION:=$(shell echo $(GIT_BRANCH) | perl -ne '/^v[\.\d]+$$/ && print')
 RPM_RELEASE?=snapshot
 # If there is a tag saying it was exported to github, e.g. "1.3.0_github_1414ef3" use that instead
 # Note: This command fails on CentOS6 but no worries
-COMMIT_HASH=$(shell git tag --points-at HEAD | grep github | head -n1 2>/dev/null)
+COMMIT_HASH=$(shell git tag --points-at HEAD 2>/dev/null | grep github | head -n1)
 ifeq "$(COMMIT_HASH)" ''
   COMMIT_HASH=$(shell git rev-list --max-count=1 HEAD)
 endif

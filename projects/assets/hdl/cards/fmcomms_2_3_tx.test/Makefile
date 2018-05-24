@@ -27,6 +27,13 @@ RccOnlyPlatforms+=centos7 xilinx13_3 # we only include tested rcc platforms
 
 include $(OCPI_CDK_DIR)/include/application.mk
 
+# this is necessary to allow 'ocpidev run' to correctly run the unit test (without this
+# line you can still run the test but must use make, e.g. 'make run')
+ifneq (,)
+include $(OCPI_CDK_DIR)/include/test.mk
+endif
+
+# !!!!!!!!!!!!!!! if the below make -C line changes to add HPC, be sure to update ocpidev run commands in the component data sheet
 asm:
 	make -C assemblies Containers='cnt_1rx_1tx_bypassasm_fmcomms_2_3_lpc_LVDS_ml605 cnt_1rx_1tx_bypassasm_fmcomms_2_3_lpc_LVDS_zed' # only supporting ML605 LPC slot for now
 

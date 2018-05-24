@@ -23,6 +23,10 @@
 # fix was to 'make speclinks -C ../' when building a worker.
 set -e
 
+if [ -z "$HDL_PLATFORM" ] ; then
+  HDL_PLATFORM=xsim
+fi
+
 ocpidev create project test
 cd test
 ocpidev create library components
@@ -45,13 +49,13 @@ echo -n '<HdlAssembly>
      <Port Instance="workerTwo" Name="in"/>
   </Connection>
 </HdlAssembly>' > hdl/assemblies/testAssembly/testAssembly.xml
-(cd components/workerOne.hdl && ocpidev build --hdl-platform xsim)
-(cd components/workerTwo.hdl && ocpidev build --hdl-platform xsim)
+(cd components/workerOne.hdl && ocpidev build --hdl-platform $HDL_PLATFORM)
+(cd components/workerTwo.hdl && ocpidev build --hdl-platform $HDL_PLATFORM)
 
 # When AV-4130 was encountered, this line is necessary in order to make things work:
 #make exports
 
-(cd hdl/assemblies/testAssembly && ocpidev build --hdl-platform xsim)
+(cd hdl/assemblies/testAssembly && ocpidev build --hdl-platform $HDL_PLATFORM)
 
 cd ../;
 ocpidev delete -f project test/

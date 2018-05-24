@@ -133,10 +133,10 @@ class Asset(metaclass=ABCMeta):
         """
         initializes Asset member data valid kwargs handled at this level are:
         verbose (T/F) - be verbose with output
-        name - Optional argument that specifies the name of the asset if not set defaults to the 
+        name - Optional argument that specifies the name of the asset if not set defaults to the
                basename of the directory argument
-        directory - The location on the file system of the asset that is being constructed. 
-                    both relative and global file paths are valid.  
+        directory - The location on the file system of the asset that is being constructed.
+                    both relative and global file paths are valid.
         """
         if not name:
             self.name = os.path.basename(directory)
@@ -148,12 +148,12 @@ class Asset(metaclass=ABCMeta):
     @classmethod
     def get_valid_settings(cls):
         """
-        Recursive class method that gathers all the valid settings static lists of the current 
+        Recursive class method that gathers all the valid settings static lists of the current
         class's base classes and combines them into a single set to return to the caller
         """
         ret_val = cls.valid_settings
 
-        for base_class in cls.__bases__ :
+        for base_class in cls.__bases__:
             # prevents you from continuing up the class hierarchy to "object"
             if callable(getattr(base_class, "get_valid_settings", None)):
                 ret_val += base_class.get_valid_settings()
@@ -176,13 +176,17 @@ class Asset(metaclass=ABCMeta):
         return settings_list
 
     @staticmethod
-    def check_dirtype(type, directory):
+    def check_dirtype(dirtype, directory):
         """
         checks that the directory passed in is of the type passed in and if not an exception is
         thrown
         """
-        if ocpiutil.get_dirtype(directory) != type:
-            raise ocpiutil.OCPIException("Tried creating a " + type + " in invalid directory " +
+        if not os.path.isdir(directory):
+            raise ocpiutil.OCPIException("Tried creating a " + dirtype + " in a directory that " +
+                                         "doesn't exist. " + directory)
+
+        if ocpiutil.get_dirtype(directory) != dirtype:
+            raise ocpiutil.OCPIException("Tried creating a " + dirtype + " in invalid directory " +
                                          "type: " +  str(ocpiutil.get_dirtype(directory)) +
                                          " in directory: " + directory)
 
@@ -440,21 +444,20 @@ class Library(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset):
         if kwargs.get("init_tests", False):
             self.test_list = []
             logging.debug("Library constructor creating Library Objects")
-            for test_name, test_directory in self.get_valid_tests().items():
-                self.test_list.append(AssetFactory.factory("test", test_directory,
-                                                           test_name, **kwargs))
+            for test_directory in self.get_valid_tests():
+                self.test_list.append(AssetFactory.factory("test", test_directory, **kwargs))
 
     def get_valid_tests(self):
         """
         Probes make in order to determine the list of active tests in the library
         """
-        ret_val = {}
+        ret_val = []
         ocpiutil.logging.debug("getting valid tests from: " + self.directory + "/Makefile")
         make_tests = ocpiutil.set_vars_from_make(self.directory + "/Makefile",
                                                  "ShellTestVars=1 showtests", True)["Tests"]
 
         for name in make_tests:
-            ret_val[re.sub('\.test$', '', name)] = self.directory + "/" + name
+            ret_val.append(self.directory + "/" + name)
         return ret_val
 
     def run(self):
@@ -693,22 +696,26 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
         #self.current_project = ocpiutil.get_path_to_project_top() == self.directory
         self.__registry = None
 
+        # flag to determine if a project is exported
+        # __is_exported is set to true in set_package_id() if this is a non-source exported project
+        self.__is_exported = False
         # Determine the package-ID for this project and set self.package_id
         self.set_package_id()
+        if not self.__is_exported:
+            # make sure the imports link exists for this project
+            self.initialize_registry_link()
 
         if kwargs.get("init_libs", False) is True:
             self.lib_list = []
             logging.debug("Project constructor creating Library Objects")
-            for lib_name, lib_directory in self.get_valid_libaries().items():
-                self.lib_list.append(AssetFactory.factory("library", lib_directory,
-                                                          lib_name, **kwargs))
+            for lib_directory in self.get_valid_libaries():
+                self.lib_list.append(AssetFactory.factory("library", lib_directory,  **kwargs))
 
         if kwargs.get("init_apps", False) is True:
             self.apps_list = []
             logging.debug("Project constructor creating Applications Objects")
-            for app_name, app_directory in self.get_valid_apps().items():
-                self.apps_list.append(AssetFactory.factory("applications", app_directory,
-                                                           app_name, **kwargs))
+            for app_directory in self.get_valid_apps():
+                self.apps_list.append(AssetFactory.factory("applications", app_directory, **kwargs))
 
     def __eq__(self, other):
         """
@@ -729,15 +736,15 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
         # If the project-package-id file exists, set package-id to its contents
         if os.path.isfile(self.directory + "/project-package-id"):
             with open(self.directory + "/project-package-id", "r") as package_id_file:
+                self.__is_exported = True
                 project_package = package_id_file.read().strip()
                 logging.debug("Read Project-ID '" + project_package + "' from file: " +
                               self.directory + "/project-package-id")
 
         # Otherwise, ask Makefile at the project top for the ProjectPackage
         if project_package is None or project_package == "":
-            project_vars = ocpiutil.set_vars_from_make("Makefile",
-                                                       "projectpackage -C " + self.directory +
-                                                       " ShellProjectVars=1",
+            project_vars = ocpiutil.set_vars_from_make(self.directory + "/Makefile",
+                                                       "projectpackage ShellProjectVars=1",
                                                        "verbose")
             if not project_vars is None and 'ProjectPackage' in project_vars and \
                len(project_vars['ProjectPackage']) > 0:
@@ -753,20 +760,18 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
         Gets a list of all directories of type applications in the project and puts that
         applications directory and the basename of that directory into a dictionary to return
         """
-        return {os.path.basename(apps_dir):apps_dir
-                for apps_dir in ocpiutil.get_subdirs_of_type("applications", self.directory)}
+        return ocpiutil.get_subdirs_of_type("applications", self.directory)
 
     def get_valid_libaries(self):
         """
         Gets a list of all directories of type library in the project and puts that
         library directory and the basename of that directory into a dictionary to return
         """
-        return {os.path.basename(apps_dir):apps_dir
-                for apps_dir in ocpiutil.get_subdirs_of_type("library", self.directory)}
+        return ocpiutil.get_subdirs_of_type("library", self.directory)
 
     def run(self):
         """
-        Runs the Project with the settings specified in the object Throws an exception if no 
+        Runs the Project with the settings specified in the object Throws an exception if no
         applications or libraries are initialized using the init_apps or init_libs variables at
         initialization time
         """
@@ -793,12 +798,12 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
 
     def show(self, **kwargs):
         """
-        This method prints out information about the project based on the options passed in as 
+        This method prints out information about the project based on the options passed in as
         kwargs
         valid kwargs handled by this method are:
             json (T/F) - Instructs the method whether to output information in json format or
                          human readable format
-            tests (T/F) - Instructs the method whether print out the tests that that exist in 
+            tests (T/F) - Instructs the method whether print out the tests that that exist in
                           this project
         """
 
@@ -812,17 +817,17 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
                     valid_tests = lib.get_valid_tests()
                     if  valid_tests:
                         print("Library: " + lib.directory)
-                    for key, value in valid_tests.items():
-                        print("    Test: " + key)
+                    for test_dir in valid_tests:
+                        print("    Test: " + os.path.basename(test_dir.rstrip('/')))
             else:
                 '''
                 JSON format:
                 {project:{
                   name: proj_name
-                  directory: proj_directory 
+                  directory: proj_directory
                   libraries:{
                     lib_name:{
-                      name: lib_name 
+                      name: lib_name
                       directory:lib_directory
                       tests:{
                         test_name : test_directory
@@ -841,7 +846,8 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
                         lib_dict = {}
                         lib_dict["name"] = lib.name
                         lib_dict["directory"] = lib.directory
-                        lib_dict["tests"] = valid_tests
+                        lib_dict["tests"] = {os.path.basename(test.rstrip('/')):test
+                                             for test in valid_tests}
                         libraries_dict[lib.name] = lib_dict
 
                 project_dict["name"] = self.name
@@ -850,6 +856,19 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
                 json_dict["project"] = project_dict
                 json.dump(json_dict, sys.stdout)
                 print()
+
+    def initialize_registry_link(self):
+        """
+        If the imports link for the project does not exist, set it to the default project registry.
+        Basically, make sure the imports link exists for this project.
+        """
+        imports_link = self.directory + "/imports"
+        if os.path.exists(imports_link):
+            logging.info("Imports link exists for project " + self.directory +
+                         ". No registry initialization needed")
+        else:
+            # Get the default project registry set by the environment state
+            self.set_registry(Registry.get_default_registry_dir())
 
     def set_registry(self, registry_path=None):
         """
@@ -864,7 +883,7 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
             # Get the default project registry set by the environment state
             registry_path = Registry.get_default_registry_dir()
 
-        self.__registry = AssetFactory.factory("registry", registry_path)
+        #self.__registry = AssetFactory.factory("registry", registry_path)
         # TODO: pull this relative link functionality into a helper function
         # Try to make the path relative. This helps with environments involving mounted directories
         # Find the path that is common to the registry and project-top
@@ -872,21 +891,28 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
         # If the two paths contain no common directory except root,
         #     use the path as-is
         # Otherwise, use the relative path from project to registry_path
+        # actual_registry_path is the actual path that can be checked for existence of the registry
+        #     it is either an absolute path or a relative path
         if common_prefix == '/' or common_prefix == '':
             rel_registry_path = os.path.normpath(registry_path)
+            actual_registry_path = rel_registry_path
         else:
             rel_registry_path = os.path.relpath(os.path.normpath(registry_path), self.directory)
+            actual_registry_path = self.directory + "/" + rel_registry_path
         # Registry must exist and must be a directory
-        if os.path.isdir(rel_registry_path):
+        if os.path.isdir(actual_registry_path):
             imports_link = self.directory + "/imports"
             # If it exists and IS NOT a link, tell the user to manually remove it.
             # If 'imports' exists and is a link, remove the link.
-            if os.path.exists(imports_link):
+            if os.path.exists(imports_link) or os.path.islink(imports_link):
                 if not os.path.islink(imports_link):
                     raise ocpiutil.OCPIException("The 'imports' for the current project ('" +
                                                  imports_link + "') is not a symbolic link. " +
                                                  "\nMove or remove this file and retry setting " +
                                                  "the project registry.")
+                elif os.path.realpath(actual_registry_path) == os.path.realpath(imports_link):
+                    # Imports already point to this registry
+                    return
                 else:
                     os.unlink(imports_link)
             # ln -s registry_path imports_link
@@ -901,8 +927,10 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
                                              imports_link + "'.\nMake sure you have correct "+
                                              "permissions in this project.")
         else:
-            raise ocpiutil.OCPIException("Failure to set project registry to '" + registry_path +
-                                         "'." + "'.\nPath does not exist or is not a directory.")
+            raise ocpiutil.OCPIException("Failure to set project registry to: '" + registry_path +
+                                         "'.  Tried to use relative path: " + rel_registry_path +
+                                         " in project: " + self.directory + "'.\nPath does not " +
+                                         "exist or is not a directory.")
         if not os.path.isdir(registry_path + "/ocpi.cdk"):
             logging.warning("There is no CDK registered in '" + registry_path + "'. Make sure to " +
                             "register the CDK before moving on.\nNext time, consider using " +

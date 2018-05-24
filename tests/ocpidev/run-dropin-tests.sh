@@ -21,6 +21,7 @@ set -e
 
 # Run all test scripts in dropin-tests/
 cd dropin-tests/
-for t in ./*; do
+for t in $(find -maxdepth 1 -type f -executable); do
+  echo "===DROP=IN=TESTS=== Running drop-in: ${t#./}" 1>&2
   ./$t
 done

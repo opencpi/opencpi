@@ -23,6 +23,12 @@ OcpiApp=ad9361_config_proxy_test_app
 
 include $(OCPI_CDK_DIR)/include/application.mk
 
+# this is necessary to allow 'ocpidev run' to correctly run the unit test (without this
+# line you can still run the test but must use make, e.g. 'make run')
+ifneq (,)
+include $(OCPI_CDK_DIR)/include/test.mk
+endif
+
 asm:
 	make -C assemblies Containers='cnt_1rx_0tx_bypassasm_fmcomms_2_3_lpc_LVDS_ml605 cnt_1rx_0tx_bypassasm_fmcomms_2_3_lpc_LVDS_zed'
 
