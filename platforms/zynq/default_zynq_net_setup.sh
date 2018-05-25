@@ -58,7 +58,6 @@ alias ll='ls -lt'
 export OCPI_DEFAULT_HDL_DEVICE=pl:0
 # The system config file sets the default SMB size
 export OCPI_SYSTEM_CONFIG=/mnt/card/opencpi/system.xml
-export OCPI_SUPPRESS_HDL_NETWORK_DISCOVERY=1
 # Get ready to run some test xml-based applications
 PS1='% '
 # add any commands to be run every time this script is run

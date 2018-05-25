@@ -76,6 +76,7 @@
 # The value of this variable should not be changed lightly since it may affect all platforms.
 # Each variable has a comment with the default values below.
 # In case insensitive alphabetical order
+OcpiComma:=,
 OcpiAllPlatformVars:=\
   OcpiAR OcpiAsNeeded OcpiCanRemoveNeeded \
   OcpiCC OcpiCFlags OcpiCLD OcpiCrossCompile OcpiCXX OcpiCXXFlags OcpiCXXLD \
@@ -121,7 +122,7 @@ OcpiStaticSwigFlags:=-Xlinker -export-dynamic -Wl,-z,relro -Wl,-z,now
 OcpiDynamicSwigFlags:=
 # linker flags when creating a driver/plugin library
 # Note this is NOT an immediate variable
-OcpiPluginFlags=$(OcpiDynamicLibraryFlags)
+OcpiPluginFlags:=$(filter-out -Wl$(OcpiComma)-z$(OcpiComma)now,$(OcpiDynamicLibraryFlags))
 # When linking against dynamic libraries, these options indicate that libraries on the
 # linker command line that are not referenced should not be "needed" by the resulting
 # executable or dynamic library
@@ -142,8 +143,8 @@ OcpiCrossCompile:=
 # similar to other make or autotools variables etc.
 # These default -g flags are not intended to suppress optimization, just keep sym info around
 # See DebugOn/Off flags below
-OcpiCFlags:=-g -pipe -Wp,-D_FORTIFY_SOURCE=2
-OcpiCXXFlags:=-g -pipe -Wp,-D_FORTIFY_SOURCE=2
+OcpiCFlags:=-g -pipe
+OcpiCXXFlags:=-g -pipe
 # typical "make"
 # The commands used to build for this platform
 OcpiCC:=gcc
@@ -167,8 +168,13 @@ OcpiDependencyFlags:=-MMD -MP -MF$(Space)
 OcpiOptimizedOffFlags:=
 # FIXME: discuss whether we need to specifically offer independent assert control
 # FIXME: discuss whether we should universally make the default to be debug (yes)
+# FIXME: is there a need for C vs. C++ here?
+# FIXME: is any level of FORTIFY_SOURCE allowed in debug mode?
+# FIXME: does this work any differently in clang or macos?
 # This is biased for best optimizations (bipolar)
-OcpiOptimizeOnFlags:=-O2 -NDEBUG=1
+# Note that FORTIFY_SOURCE is only active with optimization and a warning is issued if
+# it is set without optimization (go figure).
+OcpiOptimizeOnFlags:=-O2 -NDEBUG=1 -Wp,-D_FORTIFY_SOURCE=2
 # For all code:
 # We require these or their equivalent be supported.  If not its nearly an error
 # I.e. there may be problems since code may well depend on it.

@@ -1,0 +1,7 @@
+This directory is for reusable files and scripts that are used by multiple platforms.
+It is not for any particular platform since they are all in project directories.
+
+The first example here is the zynq directory that holds scripts useful to multiple
+platforms based on the Xilinx Zynq SoC architecture.
+
+ 

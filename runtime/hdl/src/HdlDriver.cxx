@@ -130,6 +130,11 @@ namespace OCPI {
       OU::SelfAutoMutex x(this); // protect m_params etc.
       unsigned count = 0;
       m_params = params;
+      // Note that the default here is to DO discovery, i.e. to disablediscovery
+      // the variable must be set and set to 0
+      const char *env;
+      if ((env = getenv("OCPI_ENABLE_HDL_DISCOVERY")) && env[0] == '0')
+	return 0;
       std::string error;
       count += Zynq::Driver::search(params, exclude, discoveryOnly, error);
       if (error.size()) {

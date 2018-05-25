@@ -55,5 +55,5 @@ eval $* ./scripts/build-opencpi.sh $platform
 if test -n "$platform" -a "$OCPI_TOOL_PLATFORM" != "$platform"; then
   echo When building/installing for cross-compiled platform $platform, we are skipping tests.
 else
-  ./scripts/test-opencpi.sh $platform
+  eval $* ./scripts/test-opencpi.sh $platform
 fi

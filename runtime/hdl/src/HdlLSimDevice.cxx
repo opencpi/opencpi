@@ -1129,6 +1129,11 @@ getSims(std::vector<std::string> &sims) {
 unsigned Driver::
 search(const OU::PValue *params, const char **excludes, bool discoveryOnly, std::string &error) {
   error.clear();
+  const char *env;
+  // Note that the default here is to DO discovery, i.e. to disablediscovery
+  // the variable must be set and set to 0
+  if ((env = getenv("OCPI_ENABLE_HDL_SIMULATOR_DISCOVERY")) && env[0] == '0')
+    return 0;
   ocpiInfo("Searching for local HDL simulators.");
   bool verbose = false;
   OU::findBool(params, "verbose", verbose);
