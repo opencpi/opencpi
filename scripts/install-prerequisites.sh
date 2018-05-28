@@ -30,17 +30,17 @@ source ./cdk/opencpi-setup.sh -e
 # Ensure TARGET variables
 source $OCPI_CDK_DIR/scripts/ocpitarget.sh "$1"
 source $OCPI_CDK_DIR/scripts/setup-prereq-dirs.sh
-# Get the prerequisites list
-topprereqs=$(sed -n 's/^ *prerequisites *\(.*\) *$/\1/p' build/places)
-[ -n "$topprereqs" ] || {
-  echo Cannot get prerequisites from the build/places files.
-  exit 1
+# arg is where a directory of prerequisite directories might be found
+function add_prereq_dirs {
+  shopt -s nullglob
+  for p in $1/prerequisites/*; do
+    [[ -d $p && $p != *.hold && -x $p/install-$(basename $p).sh ]] && topprereqs+=" $p"
+  done
 }
-# These are not libraries for the framework
-# FIXME: put these into "places", but in a different category (not libraries)
-topprereqs+=" patchelf inode64"
-# FIXME: move the project prerequisites somehow into projects
-topprereqs+=" ad9361 liquid"
+add_prereq_dirs build
+for p in project-registry/*; do
+  add_prereq_dirs $p
+done
 timestamp=$OCPI_PREREQUISITES_INSTALL_DIR/built-timestamp-$OCPI_TARGET_PLATFORM
 if [ -f $timestamp ]; then
   echo It appears that prerequisites were successfully built for $OCPI_TARGET_PLATFORM on $(< $timestamp).
@@ -81,7 +81,7 @@ echo ---------------------------------------------------------------------------
 echo "Now installing the generic (for all platforms) prerequisites for $OCPI_TARGET_PLATFORM."
 for p in $topprereqs; do
   echo -------------------------------------------------------------------------------------------
-  script=scripts/install-$p.sh
+  script=$p/install-$(basename $p).sh
   if [ -x $script ] ; then
     $script $1
   else
@@ -89,6 +89,9 @@ for p in $topprereqs; do
   fi
 done
 echo -------------------------------------------------------------------------------------------
-echo All these OpenCPI prerequisites have been successfully installed for $OCPI_TARGET_PLATFORM: $topprereqs
+echo All these OpenCPI prerequisites have been successfully installed for $OCPI_TARGET_PLATFORM:
+printf "    "
+for p in $topprereqs; do printf " "$(basename $p); done
+echo
 # Record that this was successfully built.  Very poor man's "make".
 date > $timestamp

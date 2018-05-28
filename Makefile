@@ -208,7 +208,7 @@ rpm rpm_runtime rpm_devel: exports
 .PHONY: prerequisites cleanprerequisites
 prerequisites:
 	$(AT)for p in $(call RccRealPlatforms,$(RccPlatforms)); do\
-                ./scripts/install-prerequisites.sh $$p;\
+                ./scripts/install-prerequisites.sh $(and $(filter 1,$(Force)),-f) $$p;\
              done
 cleanprerequisites:
 	$(AT)rm -r -f prerequisites-build prerequisites

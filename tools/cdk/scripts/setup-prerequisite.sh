@@ -52,6 +52,7 @@
 
 scriptfile=${BASH_SOURCE[1]}
 scriptdir=$(dirname $scriptfile)
+[[ scriptdir == /* ]] || scriptdir=`pwd`/$scriptdir
 set +o posix
 platform=$1
 package=$2
@@ -356,7 +357,7 @@ function do_download {
 
 OcpiSetup=1
 trap install_done EXIT
-echo ====== Starting installation of the $description \"$package\" for platform \"$platform\".
+echo ====== Starting build and installation of the prerequisite $description \"$package\" for platform \"$platform\".
 echo ========= It will be downloaded/copied/cloned and built in $OCPI_PREREQUISITES_BUILD_DIR/$package
 echo ========= It will be installed in $OCPI_PREREQUISITES_INSTALL_DIR/$package/$OCPI_TARGET_DIR
 # Create and enter the directory where we will download and build
@@ -395,7 +396,7 @@ else
   LD=$OcpiCXXLD
   AR=$OcpiAR
 fi
-echo ====== Building package \"$package\" for platform \"$platform\" in `pwd`.
+echo ====== Building prerequisite package \"$package\" for platform \"$platform\" in `pwd`.
 
 # Make a relative link from the install dir to the build dir
 # args are the two args to ln (to-file from-dir)
@@ -414,3 +415,4 @@ OcpiSetup=
 OcpiInstallDir=$OCPI_PREREQUISITES_INSTALL_DIR/$package
 OcpiInstallExecDir=$OCPI_PREREQUISITES_INSTALL_DIR/$package/$OCPI_TARGET_DIR
 OcpiCrossHost=$OCPI_CROSS_HOST
+OcpiThisPrerequisiteDir=$scriptdir
