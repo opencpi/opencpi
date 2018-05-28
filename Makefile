@@ -25,6 +25,11 @@ else
   ifndef OCPI_CDK_DIR
     export OCPI_CDK_DIR:=$(CURDIR)/cdk
   endif
+  # Note that if we are running this makefile, we are in a source tree, thus we force a local
+  # prerequisites dir if it is not set.
+  ifndef OCPI_PREREQUISITES_DIR
+    export OCPI_PREREQUISITES_DIR=$(CURDIR)/prerequisites
+  endif
   ifeq ($(wildcard exports),)
     include $(CURDIR)/bootstrap/include/util.mk
     $(info Exports have never been set up here.  Doing it now for platform-independent items.)
@@ -202,9 +207,11 @@ rpm rpm_runtime rpm_devel: exports
 		      packaging/cdk.spec
 	$(AT)rpm=`ls -1t *.rpm|head -1` && echo Created RPM file: $$rpm && ls -l $$rpm
 
-# Convenience here in the Makefile.
-# This forces the rebuild each time, although the downloads are cached.  It is not
-# a "make" dependency of building the framework.
+##########################################################################################
+# Goals that are about prerequisites
+# Here in the Makefile to enable install-prerequisites.sh for multiple platforms
+# Use Force=1 to rebuild even if it appears it was all done before.
+# There is currently no dependency on prerequisites from building the framework.
 .PHONY: prerequisites cleanprerequisites
 prerequisites:
 	$(AT)for p in $(call RccRealPlatforms,$(RccPlatforms)); do\
