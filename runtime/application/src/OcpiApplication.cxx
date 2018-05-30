@@ -1265,10 +1265,12 @@ namespace OCPI {
 	    // For the assembly instance's slaves, which are in a random order
 	    for (unsigned s = 0; s < ui.m_slaves.size(); ++s) {
 	      std::string slaveWkrName;
-	      unsigned n = findSlave(m_instances[ui.m_slaves[s]].m_bestDeployment.m_impls[0]->m_metadataImpl,
-				     mImpl, slaveWkrName);
-	      assert(n != UINT_MAX);
-	      li->m_slaves[n] = &m_launchMembers[m_instances[ui.m_slaves[n]].m_firstMember];
+	      OU::Worker &sImpl =
+		m_instances[ui.m_slaves[s]].m_bestDeployment.m_impls[0]->m_metadataImpl;
+	      unsigned x = findSlave(sImpl, mImpl, slaveWkrName);
+	      assert(x != UINT_MAX); // error checks are already done
+	      assert(!li->m_slaves[x]);
+	      li->m_slaves[x] = &m_launchMembers[m_instances[ui.m_slaves[s]].m_firstMember];
 	    }
 	  }
 	  li->m_member = m;

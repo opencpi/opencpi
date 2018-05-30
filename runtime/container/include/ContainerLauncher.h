@@ -32,6 +32,7 @@
 #include "OcpiLibraryManager.h"
 #include "OcpiRDTInterface.h"
 #include "OcpiContainerApi.h"
+#include "ContainerWorker.h"
 
 namespace OCPI {
   namespace Container {
