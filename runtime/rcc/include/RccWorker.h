@@ -72,8 +72,8 @@ namespace OCPI {
       inline RCCWorker &context() const { return *m_context; }
 
       Worker(Application & app, Artifact *art, const char *name, ezxml_t impl, ezxml_t inst,
-	     OCPI::Container::Worker *slave, bool hasMaster, size_t member, size_t crewSize,
-	     const OCPI::Util::PValue *wParams);
+	     const OCPI::Container::Workers &slaves, bool hasMaster, size_t member,
+	     size_t crewSize, const OCPI::Util::PValue *wParams);
       OCPI::Container::Port& createPort(const OCPI::Util::Port&, const OCPI::Util::PValue *props);
       void controlOperation(OCPI::Util::Worker::ControlOperation);
 
@@ -178,7 +178,7 @@ namespace OCPI {
       // Mutable since this is a side effect of clearing the worker-set error when reported
       mutable char     *m_errorString;         // error string set via "setError"
     protected:
-      OCPI::Container::Worker &getSlave();
+      OCPI::Container::Worker &getSlave(unsigned i);
       RCCPort &portInit() { return m_context->ports[m_portInit++]; }
       inline uint8_t * getPropertyVaddr() const { return  (uint8_t*)m_context->properties; }
 

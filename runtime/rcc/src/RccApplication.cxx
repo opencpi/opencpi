@@ -132,11 +132,11 @@ Application::
 
 OC::Worker & Application::
 createWorker(OC::Artifact *art, const char *appInstName, ezxml_t impl, ezxml_t inst,
-	     OC::Worker *slave, bool hasMaster, size_t member, size_t crewSize,
+	     const OC::Workers &slaves, bool hasMaster, size_t member, size_t crewSize,
 	     const OCPI::Util::PValue *wParams) {
   OU::SelfAutoMutex guard(&container());
   return *new Worker(*this, art ? static_cast<Artifact*>(art) : NULL,
-		     appInstName ? appInstName : "unnamed-worker", impl, inst, slave, hasMaster,
+		     appInstName ? appInstName : "unnamed-worker", impl, inst, slaves, hasMaster,
 		     member, crewSize, wParams);
 }
 

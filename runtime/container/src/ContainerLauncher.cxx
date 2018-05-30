@@ -39,7 +39,7 @@ createWorker(Launcher::Member &i) {
 					       i.m_name.c_str(),
 					       i.m_impl->m_metadataImpl.m_xml,
 					       i.m_impl->m_staticInstance,
-					       i.m_slave ? i.m_slave->m_worker : NULL,
+					       i.m_slaveWorkers,
 					       i.m_hasMaster,
 					       i.m_member, i.m_crew ? i.m_crew->m_size : 1);
   // Now we need to set the initial properties - either from instance or from defaults
@@ -79,8 +79,14 @@ launch(Launcher::Members &instances, Launcher::Connections &connections) {
   i = &instances[0];
   for (unsigned n = 0; n < instances.size(); n++, i++)
     if (&i->m_container->launcher() == this && !i->m_hasMaster) {
-      if (i->m_slave && !i->m_slave->m_worker)
-	m_more = true; // instance is local, but its slave is remote
+      bool needSlave = false;
+      for (unsigned nn = 0; nn < i->m_slaves.size(); ++nn)
+	if (!(i->m_slaveWorkers[nn] = i->m_slaves[nn]->m_worker)) {
+	  needSlave = true;
+	  break;
+	}
+      if (needSlave)
+	m_more = true; // instance is local, but a slave is remote
       else
 	createWorker(*i);
     }
@@ -117,7 +123,13 @@ work(Launcher::Members &instances, Launcher::Connections &connections) {
   Launcher::Member *i = &instances[0];
   for (unsigned n = 0; n < instances.size(); n++, i++)
     if (&i->m_container->launcher() == this && !i->m_hasMaster && !i->m_worker) {
-      if (i->m_slave && !i->m_slave->m_worker)
+      bool needSlave = false;
+      for (unsigned nn = 0; nn < i->m_slaves.size(); ++nn)
+	if (!(i->m_slaveWorkers[nn] = i->m_slaves[nn]->m_worker)) {
+	  needSlave = true;
+	  break;
+	}
+      if (needSlave)
 	m_more = true; // instance is local, but its slave is remote
       else
 	createWorker(*i);
@@ -151,7 +163,7 @@ work(Launcher::Members &instances, Launcher::Connections &connections) {
 Launcher::Member::
 Member()
   : m_containerApp(NULL), m_container(NULL), m_impl(NULL), m_hasMaster(false),
-    m_doneInstance(false), m_slave(NULL), m_worker(NULL), m_member(0), m_crew(NULL) {
+    m_doneInstance(false), m_worker(NULL), m_member(0), m_crew(NULL) {
 }
 Launcher::Crew::
 Crew()

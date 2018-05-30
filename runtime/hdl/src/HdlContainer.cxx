@@ -268,7 +268,7 @@ namespace OCPI {
 	: OC::ApplicationBase<Container, Application, Worker>(con, *this, a_name, props)
       {}
       OC::Worker & createWorker(OC::Artifact *art, const char *appInstName, ezxml_t impl,
-				ezxml_t inst, OC::Worker *slave, bool hasMaster,
+				ezxml_t inst, const OC::Workers &slaves, bool hasMaster,
 			        size_t member, size_t crewSize, const OU::PValue *wParams);
     };
 
@@ -284,10 +284,10 @@ namespace OCPI {
       friend class ExternalPort;
       Container &m_container;
       Worker(Application &app, OC::Artifact *art, const char *a_name, ezxml_t implXml,
-	     ezxml_t instXml, OC::Worker *a_slave, bool a_hasMaster, size_t a_member,
+	     ezxml_t instXml, const OC::Workers &a_slaves, bool a_hasMaster, size_t a_member,
 	     size_t a_crewSize, const OA::PValue* execParams) :
         OC::WorkerBase<Application, Worker, Port>(app, *this, art, a_name, implXml, instXml,
-						  a_slave, a_hasMaster, a_member, a_crewSize,
+						  a_slaves, a_hasMaster, a_member, a_crewSize,
 						  execParams),
         WciControl(app.parent().hdlDevice(), implXml, instXml, properties()),
         m_container(app.parent())
@@ -378,10 +378,10 @@ OCPI_DATA_TYPES
     };
     OC::Worker & Application::
     createWorker(OC::Artifact *art, const char *appInstName, ezxml_t impl, ezxml_t inst,
-		 OC::Worker *slave, bool hasMaster, size_t member, size_t crewSize,
+		 const OC::Workers &slaves, bool hasMaster, size_t member, size_t crewSize,
 		 const OCPI::Util::PValue *wParams) {
-      assert(!slave);
-      return *new Worker(*this, art, appInstName, impl, inst, slave, hasMaster, member, crewSize,
+      assert(slaves.empty());
+      return *new Worker(*this, art, appInstName, impl, inst, slaves, hasMaster, member, crewSize,
 			 wParams);
     }
     // This port class really has two cases: externally connected ports and

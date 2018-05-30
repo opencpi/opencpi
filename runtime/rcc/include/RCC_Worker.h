@@ -567,7 +567,7 @@ typedef struct {
  class RCCUserSlave {
  protected:
    OCPI::API::Worker &m_worker;
-   RCCUserSlave();
+   RCCUserSlave(unsigned n = 0);
    //   virtual ~RCCUserSlave();
  public:
    inline void start() { m_worker.start(); }

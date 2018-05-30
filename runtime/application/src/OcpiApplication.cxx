@@ -19,6 +19,7 @@
  */
 
 #include <unistd.h>
+#include <climits>
 #include "OcpiOsFileSystem.h"
 #include "OcpiContainerApi.h"
 #include "OcpiOsMisc.h"
@@ -193,7 +194,7 @@ namespace OCPI {
     policyMap(Instance *i, CMap &bestMap) {
       // Proxies can only operate in the base container.
       // FIXME:  allow proxies to be in any container collocate with the base container.
-      if (i->m_bestDeployment.m_impls[0]->m_metadataImpl.slave().length()) {
+      if (i->m_bestDeployment.m_impls[0]->m_metadataImpl.slaves().size()) {
 	i->m_usedContainer = getUsedContainer(OC::Container::baseContainer().ordinal());
 	return;
       }
@@ -272,6 +273,36 @@ namespace OCPI {
       }
     }
 
+    static unsigned
+    findSlave(OU::Worker &sImpl, OU::Worker &mImpl, std::string &slaveWkrName) {
+      OU::format(slaveWkrName, "%s.%s", sImpl.cname(), sImpl.model().c_str());
+      size_t dashIdx =  slaveWkrName.rfind('-');
+      if (dashIdx != std::string::npos) // if worker has configuration suffix, remove it
+	slaveWkrName.erase(dashIdx, slaveWkrName.rfind('.') - dashIdx);
+      // Is this a valid slave for this master
+      for (unsigned n = 0; n < mImpl.slaves().size(); ++n)
+	if (!strcasecmp(mImpl.slaves()[n], slaveWkrName.c_str()))
+	  return n;
+      return UINT_MAX;
+    }
+
+    static bool
+    checkSlave(OU::Worker &sImpl, OU::Worker &mImpl, bool isMaster, const std::string &reject) {
+      std::string slaveWkrName;
+      if (findSlave(sImpl, mImpl, slaveWkrName) != UINT_MAX)
+	return true;
+      // FIXME: make impl namespace part of this. implnames should really be qualified.
+      std::string goodSlaves;
+      for (unsigned n = 0; n < mImpl.slaves().size(); ++n)
+	OU::formatAdd(goodSlaves, "%s%s", n ? " " : "", mImpl.slaves()[n]);
+      if (isMaster)
+	ocpiInfo("%s since none of its indicated slave workers (%s) match the slave instance's worker \"%s\"",
+		 reject.c_str(), goodSlaves.c_str(), slaveWkrName.c_str());
+      else
+	ocpiInfo("%s since it doesn't match any slaves (%s) indicated by the master instance \"%s\"",
+		 reject.c_str(), goodSlaves.c_str(), mImpl.cname());
+      return false;
+    }
     // Check whether this candidate can be used relative to previous
     // choices for instances it is connected to
     bool ApplicationI::
@@ -316,36 +347,17 @@ namespace OCPI {
       // Check for master/slave correctness
       // Note that we know that the impl for a master indicates a slave since this
       // can be checked by the library layer.
-      OU::Worker *mImpl = NULL, *sImpl = NULL;
-      bool isMaster;
-      if (ui.m_hasSlave && ui.m_slave < instNum) {
-	mImpl = &c.impl->m_metadataImpl;
-	sImpl = &m_instances[ui.m_slave].m_deployment.m_impl->m_metadataImpl;
-	isMaster = true;
-      } else if (ui.m_hasMaster && ui.m_master < instNum) {
-	sImpl = &c.impl->m_metadataImpl;
-	mImpl = &m_instances[ui.m_master].m_deployment.m_impl->m_metadataImpl;
-	isMaster = false;
-      }
-      if (sImpl) { // the relationship exists, either way.  We are on the latter instance.
-
-	std::string slaveWkrName;
-	OU::format(slaveWkrName, "%s.%s", sImpl->cname(), sImpl->model().c_str());
-	size_t dashIdx =  slaveWkrName.rfind('-');
-	if (dashIdx != std::string::npos) // if worker has configuration suffix, remove it
-	  slaveWkrName.erase(dashIdx, slaveWkrName.rfind('.') - dashIdx);
-	if (strcasecmp(mImpl->slave().c_str(), slaveWkrName.c_str())) {
-	  // FIXME: make impl namespace part of this. implnames should really be qualified.
-	  if (isMaster)
-	    ocpiInfo("%s since its indicated slave worker \"%s\" doesn't match slave instance's worker \"%s\"",
-		     reject.c_str(), mImpl->slave().c_str(), slaveWkrName.c_str());
-	  else
-	    ocpiInfo("%s since it doesn't match the worker \"%s\" indicated by the master instance",
-		     reject.c_str(), mImpl->slave().c_str());
-
-	  return false;
-	}
-      }
+      if (ui.m_slaves.size()) {
+	for (unsigned n = 0; n < ui.m_slaves.size(); ++n)
+	  if (ui.m_slaves[n] < instNum &&
+	      !checkSlave(m_instances[ui.m_slaves[n]].m_deployment.m_impl->m_metadataImpl,
+			  c.impl->m_metadataImpl, true, reject))
+	      return false;
+      } else if (ui.m_hasMaster && ui.m_master < instNum &&
+		 !checkSlave(c.impl->m_metadataImpl,
+			     m_instances[ui.m_master].m_deployment.m_impl->m_metadataImpl, false,
+			     reject))
+	return false;
       return true;
     }
 
@@ -1243,9 +1255,22 @@ namespace OCPI {
 	  assert(!ui.m_hasMaster || i->m_bestDeployment.m_scale == 1);
 	  if ((unsigned)m_assembly.m_doneInstance == n)
 	    li->m_doneInstance = true;
-	  assert(!ui.m_hasSlave || i->m_bestDeployment.m_scale == 1);
-	  if (ui.m_hasSlave)
-	    li->m_slave = &m_launchMembers[m_instances[ui.m_slave].m_firstMember];
+	  // We do not support scalable proxies.  checked elsewhere
+	  assert(ui.m_slaves.empty() || i->m_bestDeployment.m_scale == 1);
+	  // Initialize the slaves in the order declared by the proxy
+	  OU::Worker &mImpl = li->m_impl->m_metadataImpl;
+	  if (mImpl.slaves().size()) {
+	    li->m_slaves.resize(mImpl.slaves().size());
+	    li->m_slaveWorkers.resize(mImpl.slaves().size());
+	    // For the assembly instance's slaves, which are in a random order
+	    for (unsigned s = 0; s < ui.m_slaves.size(); ++s) {
+	      std::string slaveWkrName;
+	      unsigned n = findSlave(m_instances[ui.m_slaves[s]].m_bestDeployment.m_impls[0]->m_metadataImpl,
+				     mImpl, slaveWkrName);
+	      assert(n != UINT_MAX);
+	      li->m_slaves[n] = &m_launchMembers[m_instances[ui.m_slaves[n]].m_firstMember];
+	    }
+	  }
 	  li->m_member = m;
 	  i->m_crew.m_size = i->m_bestDeployment.m_scale;
 	  li->m_crew = &i->m_crew;

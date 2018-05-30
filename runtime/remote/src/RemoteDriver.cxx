@@ -78,7 +78,7 @@ class Worker
   unsigned m_remoteInstance;
   Launcher &m_launcher;
   Worker(Application & app, Artifact *art, const char *name, ezxml_t impl, ezxml_t inst,
-	 OC::Worker */*slave*/, bool hasMaster, size_t member, size_t crewSize,
+	 const OC::Workers &/*slaves*/, bool hasMaster, size_t member, size_t crewSize,
 	 const OU::PValue *wParams, unsigned remoteInstance);
   virtual ~Worker() {}
   OC::Port &createPort(const OU::Port&, const OU::PValue */*params*/) {
@@ -186,13 +186,13 @@ class Application
   }
   OC::Worker &
   createWorker(OC::Artifact *art, const char *appInstName, ezxml_t impl, ezxml_t inst,
-	       OC::Worker *slave, bool hasMaster, size_t member, size_t crewSize,
+	       const OC::Workers &slaves, bool hasMaster, size_t member, size_t crewSize,
 	       const OU::PValue *wParams) {
     uint32_t remoteInstance;
     if (!OU::findULong(wParams, "remoteInstance", remoteInstance))
       throw OU::Error("Remote ContainerApplication expects remoteInstance parameter");
     return *new Worker(*this, art ? static_cast<Artifact*>(art) : NULL,
-		       appInstName ? appInstName : "unnamed-worker", impl, inst, slave,
+		       appInstName ? appInstName : "unnamed-worker", impl, inst, slaves,
 		       hasMaster, member, crewSize, wParams, remoteInstance);
   }
 };
@@ -292,9 +292,9 @@ public:
 
 Worker::
 Worker(Application & app, Artifact *art, const char *a_name, ezxml_t impl, ezxml_t inst,
-       OC::Worker *a_slave, bool a_hasMaster, size_t a_member, size_t a_crewSize,
+       const OC::Workers &a_slaves, bool a_hasMaster, size_t a_member, size_t a_crewSize,
        const OU::PValue *wParams, unsigned remoteInstance)
-  : OC::WorkerBase<Application,Worker,Port>(app, *this, art, a_name, impl, inst, a_slave,
+  : OC::WorkerBase<Application,Worker,Port>(app, *this, art, a_name, impl, inst, a_slaves,
 					    a_hasMaster, a_member, a_crewSize, wParams),
     m_remoteInstance(remoteInstance),
     m_launcher(*static_cast<Launcher *>(&app.parent().launcher())) {

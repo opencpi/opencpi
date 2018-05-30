@@ -75,7 +75,8 @@ namespace OCPI {
 	std::vector<OCPI::Util::Value> m_propValues;   // Array of property values to set
 	std::vector<unsigned> m_propOrdinals;          // Array of property ordinals
 	bool m_hasMaster, m_doneInstance;
-	Member *m_slave;
+	std::vector<Member *> m_slaves;
+	Workers m_slaveWorkers;
 	Worker *m_worker;
 	size_t m_member;
 	Crew *m_crew;

@@ -83,7 +83,18 @@ namespace OCPI {
 	return err;
       if (!OE::getOptionalString(xml, m_specName, "specName"))
 	m_specName = m_name;
-      OE::getOptionalString(xml, m_slave, "slave");
+      const char *slave = ezxml_cattr(xml, "slave");
+      if (slave) {
+	if (ezxml_cchild(xml, "slave"))
+	  return esprintf("cannot have slave elements when you have a slave attribute");
+	m_slaves.push_back(slave);
+      } else      
+	for (ezxml_t cx = ezxml_cchild(xml, "slave"); cx; cx = ezxml_cnext(cx)) {
+	  const char *w = ezxml_cattr(cx, "worker");
+	  if (!w)
+	    return esprintf("Missing \"worker\" attribute for \"slave\" element");
+	  m_slaves.push_back(w);
+	}
       if ((m_nProperties = OE::countChildren(xml, "property")))
 	m_properties = new Property[m_nProperties];
       if ((m_nPorts = OE::countChildren(xml, "port")))

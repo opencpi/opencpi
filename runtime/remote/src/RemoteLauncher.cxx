@@ -105,14 +105,14 @@ emitCrew(const OCPI::Container::Launcher::Crew &crew) {
 // FIXME: someday allow for instance parameters?
 void Launcher::
 emitMember(const char *a_name, unsigned contN, unsigned artN, unsigned crewN,
-	   const Launcher::Member &i, int slave) {
+	   const Launcher::Member &i, const char *slaves) {
   OU::formatAdd(m_request,
 		"  <member name='%s' container='%u' artifact='%u' crew='%u' worker='%s'",
 		a_name, contN, artN, crewN, i.m_impl->m_metadataImpl.specName().c_str());
   if (i.m_impl->m_staticInstance)
     OU::formatAdd(m_request, " static='%s'", ezxml_cattr(i.m_impl->m_staticInstance, "name"));
-  if (slave >= 0)
-    OU::formatAdd(m_request, " slave='%u'", slave);
+  if (slaves && slaves[0])
+    OU::formatAdd(m_request, " slaves='%s'", slaves);
   if (i.m_doneInstance)
     m_request += " done='1'";
    if (i.m_crew->m_size != 1)
@@ -323,9 +323,12 @@ launch(Launcher::Members &instances, Launcher::Connections &connections) {
 	crews[&c] = crewN = nCrews++;
       } else
 	crewN = (*crewi).second;
-      emitMember(i->m_name.c_str(), contN, artN, crewN, *i,
-		 i->m_slave && &i->m_slave->m_container->launcher() == this ?
-		 m_instanceMap[i->m_slave - &instances[0]] : -1);
+      std::string slaves;
+      if (i->m_slaves.size())
+	for (unsigned n = 0; n < i->m_slaves.size(); ++n)
+	  OU::formatAdd(slaves, "%s%u", n ? " " : "",
+			m_instanceMap[i->m_slaves[n] - &instances[0]]);
+      emitMember(i->m_name.c_str(), contN, artN, crewN, *i, slaves.c_str());
     }
   m_artifacts.resize(nArtifacts);
   unsigned nConnections = 0;
@@ -401,7 +404,7 @@ work(Launcher::Members &instances, Launcher::Connections &connections) {
 	    &i->m_containerApp->createWorker(i->m_impl->m_artifact, i->m_name.c_str(),
 					     i->m_impl->m_metadataImpl.m_xml,
 					     i->m_impl->m_staticInstance,
-					     i->m_slave ? i->m_slave->m_worker : NULL,
+					     i->m_slaveWorkers,
 					     i->m_hasMaster,
 					     i->m_member, i->m_crew ? i->m_crew->m_size : 1,
 					     pv);

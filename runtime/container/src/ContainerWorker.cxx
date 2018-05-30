@@ -45,12 +45,13 @@ namespace OCPI {
       }
     }
 
+    const Workers NoWorkers;
     Worker::
-    Worker(Artifact *art, ezxml_t impl, ezxml_t inst, Worker *a_slave, bool a_hasMaster,
+    Worker(Artifact *art, ezxml_t impl, ezxml_t inst, const Workers &a_slaves, bool a_hasMaster,
 	   size_t a_member, size_t a_crewSize, const OA::PValue *) 
       : OU::Worker::Worker(),
 	m_artifact(art), m_xml(impl), m_instXml(inst), m_workerMutex(true),
-	m_controlOpPending(false), m_slave(a_slave), m_hasMaster(a_hasMaster),
+	m_controlOpPending(false), m_slaves(a_slaves), m_hasMaster(a_hasMaster),
         m_member(a_member), m_crewSize(a_crewSize), m_connectedPorts(0), m_optionalPorts(0) {
       if (impl) {
 	const char *err = parse(impl);

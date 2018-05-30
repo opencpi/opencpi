@@ -405,7 +405,7 @@ namespace OCPI {
 	0};
     DirectWorker::DirectWorker(Device &dev, const Access &cAccess, Access &wAccess, ezxml_t impl,
 			       ezxml_t inst, const char *idx, unsigned timeout) 
-    : OC::Worker(NULL, impl, inst, NULL, false, 0, 1, NULL),
+      : OC::Worker(NULL, impl, inst, OC::NoWorkers, false, 0, 1, NULL),
       WciControl(dev, impl, inst, properties(), false),
       m_name(ezxml_cattr(inst, "name")),
       m_wName(ezxml_cattr(impl, "name")),

@@ -399,6 +399,21 @@ namespace OCPI {
     
     Assembly::Instance::Instance() : m_freeXml(false) {}
     Assembly::Instance::~Instance() { if (m_freeXml) ezxml_free(m_xml); }
+    const char *Assembly::Instance::
+    checkSlave(Assembly &a, const char *name) {
+      unsigned n;
+      const char *err = a.getInstance(name, n);
+      if (err)
+	return err;
+      Instance &slave = *a.m_instances[n];
+      if (slave.m_hasMaster)
+	  return esprintf("Instance %s is slave to multiple proxies", slave.m_name.c_str());
+      m_slaves.emplace_back(n);
+      slave.m_hasMaster = true;
+      slave.m_master = m_ordinal;
+      return NULL;
+    }
+
     // connect, then optionally, which local port (from) and which dest port (to).
     // external=port, connect=instance, then to or from?
     const char *Assembly::Instance::
@@ -421,7 +436,22 @@ namespace OCPI {
       if ((e = ezxml_cattr(ix, "external")) &&
 	  (err = a.addExternalConnection(m_ordinal, e, params)))
 	return err;
-      if ((s = ezxml_cattr(ix, "slave"))){
+#if 1
+      const char *slave = ezxml_cattr(ix, "slave");
+      if (slave) {
+	if (ezxml_cchild(ix, "slave"))
+	  return esprintf("cannot have slave elements when you have a slave attribute");
+	if ((err = checkSlave(a, slave)))
+	  return err;
+      } else      
+	for (ezxml_t cx = ezxml_cchild(ix, "slave"); cx; cx = ezxml_cnext(cx)) {
+	  if (!(slave = ezxml_cattr(cx, "name")))
+	    return esprintf("Missing \"name\" attribute for \"slave\" element");
+	  if ((err = checkSlave(a, slave)))
+	    return err;
+	}
+#else
+      if ((s = ezxml_cattr(ix, "slave"))) {
 	if ((err = a.getInstance(s, m_slave)))
 	  return err;
 	else {
@@ -436,6 +466,7 @@ namespace OCPI {
 	  }
 	}
       }
+#endif
       return NULL;
     }
 
@@ -562,7 +593,7 @@ namespace OCPI {
     parse(ezxml_t ix, Assembly &a, unsigned ordinal, const char **extraInstAttrs,
 	  const PValue *params) {
       m_ordinal = ordinal;
-      m_hasSlave = false;
+      //      m_hasSlave = false;
       m_hasMaster = false;
       const char *err;
       static const char *instAttrs[] =

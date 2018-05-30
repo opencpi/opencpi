@@ -34,9 +34,9 @@ namespace OCPI {
 
 Worker::
 Worker(Application & app, Artifact *art, const char *a_name, ezxml_t impl, ezxml_t inst,
-       OC::Worker *a_slave, bool a_hasMaster, size_t a_member, size_t a_crewSize,
+       const OC::Workers &a_slaves, bool a_hasMaster, size_t a_member, size_t a_crewSize,
        const OU::PValue *wParams)
-  : OC::WorkerBase<Application,Worker,Port>(app, *this, art, a_name, impl, inst, a_slave,
+  : OC::WorkerBase<Application,Worker,Port>(app, *this, art, a_name, impl, inst, a_slaves,
 					    a_hasMaster, a_member, a_crewSize, wParams),
     OCPI::Time::Emit(&parent().parent(), "Worker", a_name), 
     m_entry(art ? art->getDispatch(ezxml_cattr(impl, "name")) : NULL), m_user(NULL),
@@ -121,10 +121,10 @@ setError(const char *fmt, va_list ap) {
 }
 
 OC::Worker &Worker::
-getSlave() {
-  if (!slave())
+getSlave(unsigned n) {
+  if (slaves().empty() || n >= slaves().size())
     throw OU::Error("No slave has been set for worker '%s'", name().c_str());
-  return *slave();
+  return *slaves()[n];
 }
 
 Worker::
@@ -1371,8 +1371,8 @@ OCPI_CONTROL_OPS
 
 
    RCCUserSlave::
-   RCCUserSlave()
-     : m_worker(((OCPI::RCC::Worker *)pthread_getspecific(Driver::s_threadKey))->getSlave())
+   RCCUserSlave(unsigned n)
+     : m_worker(((OCPI::RCC::Worker *)pthread_getspecific(Driver::s_threadKey))->getSlave(n))
    {
    }
 #if 0

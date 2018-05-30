@@ -246,7 +246,7 @@ static void doWorker(OU::Worker &w) {
     OX::addChild(_ox, "key", 4, it->c_str());
   }
 
-  if (w.slave() != "") {
+  if (!w.slaves().empty()) {
     _px = OX::addChild(root, "param", 1);
     OX::addChild(_px, "name", 2, "Slave");
     OX::addChild(_px, "key", 2, "slave");

@@ -119,8 +119,8 @@ namespace OCPI {
 	m_specName,
 	m_name,
 	m_model,
-	m_package,
-	m_slave; // the model.impl name of a slave
+	m_package;
+      std::vector<const char *> m_slaves; // the model.impl name of a slave, in the m_xml
       Attributes *m_attributes; // not a reference due to these being in arrays
       Port *m_ports;
       Memory *m_memories;
@@ -147,7 +147,7 @@ namespace OCPI {
       inline const std::string &specName() const { return m_specName; }
       //      inline const std::string &name() const { return m_name; }
       inline const char *cname() const { return m_name.c_str(); }
-      inline const std::string &slave() const { return m_slave; }
+      inline const std::vector<const char *> &slaves() const { return m_slaves; }
       inline const Attributes &attributes() const { return *m_attributes; }
       inline bool isSource() const { return m_isSource; }
       const char *parse(ezxml_t xml, Attributes *attr = NULL);

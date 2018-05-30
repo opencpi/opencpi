@@ -103,6 +103,9 @@ namespace OCPI {
       virtual void controlOperation(OCPI::Util::Worker::ControlOperation) = 0;
     };
     typedef uint32_t PortMask;
+    class Worker;
+    typedef std::vector<Worker *> Workers;
+    extern const Workers NoWorkers;
     class Worker
       : public OCPI::Util::Worker, public OCPI::API::Worker, virtual public Controllable,
 	virtual public WorkerControl
@@ -119,7 +122,7 @@ namespace OCPI {
       OCPI::OS::Mutex m_workerMutex;
       OCPI::OS::Mutex m_controlMutex; //since sched_yield is incompatible with SCHED_OTHER
       bool m_controlOpPending;
-      Worker *m_slave;
+      const Workers &m_slaves;
       bool m_hasMaster;
       size_t m_member, m_crewSize;
       PortMask m_connectedPorts, m_optionalPorts; // spcm?
@@ -141,10 +144,10 @@ namespace OCPI {
       inline ezxml_t myXml() const { return m_xml; }
       inline ezxml_t myInstXml() const { return m_instXml; }
       inline bool hasMaster() const { return m_hasMaster; }
-      inline Worker *slave() const { return m_slave; }
+      inline const Workers &slaves() const { return m_slaves; }
       inline size_t member() const { return m_member; }
       inline size_t crewSize() const { return m_crewSize; }
-      Worker(Artifact *art, ezxml_t impl, ezxml_t inst, Worker *slave, bool hasMaster,
+      Worker(Artifact *art, ezxml_t impl, ezxml_t inst, const Workers &slaves, bool hasMaster,
 	     size_t member, size_t crewSize, const OCPI::Util::PValue *params = NULL);
       OCPI::API::PropertyInfo &setupProperty(const char *name,
 					     volatile uint8_t *&m_writeVaddr,
