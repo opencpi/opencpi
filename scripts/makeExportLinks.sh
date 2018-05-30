@@ -113,12 +113,17 @@ function make_relative_link {
     fi
   elif [ -e $2 ]; then
     if [ -d $2 ]; then
-      echo Link $2 already exists, as a directory.
-    else
-      echo Link $2 already exists, as a regular file.
+      echo Link $2 already exists, as a directory. >&2
+      echo '   ' when trying to link to $1 >&2
+      exit 1
     fi
-    echo '   ' when trying to link to $1
-    exit 1
+    echo Link $2 already exists, as a regular file. >&2
+    echo '   ' when trying to link to $1 >&2
+    # Perhaps the tree has been de-linked (symlinks followed)
+    # if contents are the same, reinstate the symlink
+    cmp -s $1 $2 || exit 1
+    echo '   ' but contents are the same.  Link is recreated. >&2
+    rm $2
   fi
   mkdir -p $(dirname $2)
   # echo ln -s $link $2
