@@ -45,7 +45,7 @@ ifndef OcpiRunXML
   OcpiRunXML=$(strip \
     $(call OcpiUse,Before,$1) \
     $(if $(or $2,$(OCPI_LIBRARY_PATH)),,OCPI_LIBRARY_PATH=$(call OcpiGetDefaultLibraryPath)) \
-    $(if $2,ocpirun,$(OCPI_CDK_DIR)/$(OCPI_TARGET_DIR)/bin/ocpirun) \
+    $(if $2,ocpirun,$(OCPI_CDK_DIR)/$(OCPI_TOOL_DIR)/bin/ocpirun) \
     $(call OcpiUse,Args,$1) \
     $1 \
     $(call OcpiUse,After,$1))
