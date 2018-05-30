@@ -28,3 +28,5 @@ OcpiPlatformArch=x86_64
 # CLOCK_MONOTONIC_RAW, the preferred value, is broken on centos6.  The values returned
 # by clock_gettime with CLOCK_MONOTONIC_RAW are garbage.
 OcpiGetTimeClockId=CLOCK_MONOTONIC
+OcpiRequiredCFlags:=$(patsubst -grecord-gcc-switches,-frecord-gcc-switches,$(OcpiRequiredCFlags))
+OcpiRequiredCXXFlags:=$(patsubst -grecord-gcc-switches,-frecord-gcc-switches,$(OcpiRequiredCXXFlags))
