@@ -27,7 +27,8 @@ ifeq ($(wildcard exports),)
   endif
   $(info $(shell ./scripts/makeExportLinks.sh - $(ProjectPrefix)_ - xxx))
 endif
-ifeq ($(filter clean%,$(MAKECMDGOALS)),)
+ifneq ($(filter-out clean%,$(MAKECMDGOALS))$(filter cleandriver%,$(MAKECMDGOALS)),)
+$(info HEREE)
 include exports/include/ocpisetup.mk
 endif
 # defaults
@@ -207,6 +208,7 @@ driver:
 	  echo No driver for the OS '"'$(OCPI_TARGET_OS)'"', so none built. ; \
 	fi
 
+.PHONY: cleandriver
 cleandriver:
 	$(AT)$(and $(wildcard os/$(OCPI_TARGET_OS)/driver),$(MAKE) -C os/$(OCPI_TARGET_OS)/driver topclean)
 
