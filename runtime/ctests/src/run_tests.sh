@@ -46,7 +46,7 @@ echo "========= Outputs from these tests will be in: $DIR"
 # if the script lives in the source tree, we are running where the executables are
 # otherwise assume this script is in the same directory as the executables are,
 # and change to that directory
-cd $OCPI_CDK_DIR/$OCPI_TARGET_DIR/bin/ctests
+cd $OCPI_CDK_DIR/${OCPI_TARGET_DIR:-$OCPI_TOOL_DIR}/bin/ctests
 
 #[ $(basename $(dirname $0)) = src ] || cd "$(dirname $0)"
 
