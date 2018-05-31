@@ -83,12 +83,13 @@ RccRealPlatform=$(strip $(infox RRP:$(RccPlatform))\
 # Look through all RccTarget_% variables (where the value or RccTarget_<platform> is the target
 # of the <platform>) to find one that maps a platform to the target in $1.  Return <platform>
 # This relies on the 1:1 mapping of rcc platforms and targets
-RccGetPlatform=$(strip\
-  $(or $(foreach v,$(filter RccTarget_%,$(.VARIABLES)),$(infox VV:$v:$($v))\
+RccGetPlatform=$(strip $(infox RGP:$1:$2:)\
+  $(or $(filter $1,$(RccAllPlatforms)),\
+       $(foreach v,$(filter RccTarget_%,$(.VARIABLES)),$(infox VV:$v:$($v))\
          $(foreach p,$(v:RccTarget_%=%),\
            $(and $(filter $p,$(RccAllPlatforms)),$(filter $1,$(value $v)),\
-	    $(infox RGPr:$1:$v:$p:$(value $v))$p))),\
-	$($(or $2,error) Cannot find an RCC platform for the target: $1)))
+	         $(infox RGPr:$1:$v:$p:$(value $v))$p))),\
+       $($(or $2,error) Cannot find an RCC platform for the target: $1)))
 # The model-specific determination of the "tail end" of the target directory,
 # after the prefix (target), and build configuration.
 # The argument is a TARGET, more or less for legacy reasons now.

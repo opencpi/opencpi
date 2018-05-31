@@ -190,7 +190,7 @@ build_$1: configure_$1
 install_$1: build_$1 # necessary?
 	$(AT)$(MAKE) $(MKARGS) install
 clean_$1: # necessary?
-	$(AT)$(MAKE) $(MKARGS) clean
+	$(AT)[ ! -d target-$1 ] || $(MAKE) $(MKARGS) clean
 
 .PHONY: configure_$1 build_$1 install_$1 clean_$1
 configure: configure_$1
