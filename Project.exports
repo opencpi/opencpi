@@ -80,7 +80,10 @@
 =platforms/zynq/zynq_system.xml platforms/zynq/
 # CDK scripts we need
 +scripts/clean-env.sh scripts/
-+tools/cdk/scripts/opencpi-setup.sh
+# This is runtime although this one script deals with initialization issues
+# for development time tool.  An acceptable "runtime bloat" to keep this gnarly bootstrapping
+# stuff in one place.
+=tools/cdk/scripts/opencpi-setup.sh
 +tools/cdk/scripts/setup-prerequisite.sh scripts/
 +tools/cdk/scripts/setup-prereq-dirs.sh scripts/
 +tools/cdk/scripts/getPlatform.sh scripts/
