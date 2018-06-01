@@ -147,7 +147,7 @@ case $type in
       done
     done
     # emit project stuff that are git repo items
-    emit_project_dir project-registry
+    git ls-files project-registry
     emit_project_dir projects/core
     emit_project_dir projects/assets
     ;;

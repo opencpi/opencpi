@@ -57,6 +57,7 @@ rm -r -f %{buildroot}%{prefix0}
 mkdir -p %{buildroot}%{prefix0}
 # The prepare script outputs source/dest appropriate for cp -R
 prepare=%{RPM_OPENCPI}/packaging/prepare-packaging-list.sh
+registry=
 for p in runtime devel; do
   cp /dev/null %{_builddir}/$p-files
   $prepare $p %{RPM_PLATFORM} | while read source dest; do
@@ -67,9 +68,17 @@ for p in runtime devel; do
       xform=
       mkdir -p %{buildroot}%{prefix0}/$(dirname $source)
     fi
-    (find -L $source -type f | sed $xform -e "s=^=%%{prefix0}/=";
-     find -L $source -type d | sed $xform -e "s=^=%dir %%{prefix0}/=") >> %{_builddir}/$p-files
-    cp -R -L $source %{buildroot}%{prefix0}/${dest:-$source}
+    # nasty special case when a link should remain a link.
+    if [ $(dirname $source) = project-registry ]; then
+     (echo $source | sed "s=^=%%{prefix0}/=";
+      [ -z "$registry" ] && echo project-registry | sed "s=^=%dir %%{prefix0}/=" || :) >> %{_builddir}/$p-files
+      registry=1
+      cp -R $source %{buildroot}%{prefix0}/${dest:-$source}
+    else
+      (find -L $source -type f | sed $xform -e "s=^=%%{prefix0}/=";
+       find -L $source -type d | sed $xform -e "s=^=%dir %%{prefix0}/=") >> %{_builddir}/$p-files
+      cp -R -L $source %{buildroot}%{prefix0}/${dest:-$source}
+    fi
   done > %{_builddir}/$p-files
 done
 ##########################################################################################
