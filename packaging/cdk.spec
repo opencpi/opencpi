@@ -104,6 +104,7 @@ echo "%%attr(644,root,root)" %%{prefix1}/udev/rules.d/\*.rules >> %{_builddir}/r
 ##########################################################################################
 # The development (sub) package, that adds to what is installed after the runtime package.
 %package devel
+AutoReqProv: no
 Requires:   %{name} = %{version}-%{release}
 Requires(pre,postun): %{name} = %{version}-%{release}
 Summary:    The OpenCPI development package
