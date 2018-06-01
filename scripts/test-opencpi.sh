@@ -35,38 +35,65 @@ case "$1" in
   --showtests)
     echo $alltests && exit 0;;
   --help|-h) 
+    echo This script runs various built-in tests.
     echo Available tests are: $alltests
-    echo 'Uses TESTS="a b c" ./scripts/test-opencpi.sh [<platform>]'
+    echo 'Usage is: ocpitest [--showtests | --help ] [<platform> [ <test> ... ]]'
     exit 1;;
+  -*)
+    echo Unknown option: $1
+    exit 1;;  
 esac
-if [ -d projects/core/exports ]; then
-  echo ========= Running network-based runtime tests since \"projects/core/exports\" is available
-  tests="$tests $network_tests"
-fi
+platform=$1
+shift
+the_tests="$*"
 # Note the -e is so, especially in embedded environments, we do not deal with getPlatform.sh etc.
 [ -L cdk ] && source `pwd`/cdk/opencpi-setup.sh -e 
-# Note "which -s" not available on busybox
-if which make > /dev/null && [ -d $OCPI_CDK_DIR/../project-registry ] ; then
-  echo ========= Running development system tests since \"make\" and project-registry is available.
-  tests="$tests $dev_tests"   
-  runtime=
-  source $OCPI_CDK_DIR/scripts/ocpitarget.sh $1
+[ -z "$OCPI_CDK_DIR" ] && echo No OpenCPI CDK available && exit 1
+if [ -n "$the_tests" ]; then
+  tests="$the_tests"
 else
-  echo ========= Running only runtime tests since \"make\" or project-registry is not available.
-  runtime=1
-  [ -n "$1" -a "$1" != $OCPI_TOOL_PLATFORM ] && {
-      echo "Cannot run tests on a different targeted platform ($1) than we are running on."
+  if [ -d $OCPI_CDK_DIR/../project-registry/ocpi.assets/exports ]; then
+    echo ========= Running project-based tests since \"projects/core/exports\" is available
+    tests="$tests $network_tests"
+  fi
+  # Note "which -s" not available on busybox
+  if which make > /dev/null && [ -d $OCPI_CDK_DIR/../project-registry ] ; then
+    echo ========= Running dev system tests since \"make\" and project-registry is available.
+    tests="$tests $dev_tests"   
+    runtime=
+    source $OCPI_CDK_DIR/scripts/ocpitarget.sh $platform
+  else
+    echo ========= Running only runtime tests since \"make\" or project-registry is not available.
+    runtime=1
+    [ -n "$platform" -a "$platform" != $OCPI_TOOL_PLATFORM ] && {
+      echo "Cannot run tests on a different targeted platform ($platform) than we are running on."
       exit 1
-  }
+    }
+  fi
+fi
+[ -z "$OCPI_TARGET_PLATFORM" ] && {
   # Set just enough target variables to run runtime tests
   export OCPI_TARGET_PLATFORM=$OCPI_TOOL_PLATFORM
   export OCPI_TARGET_OS=$OCPI_TOOL_OS
   export OCPI_TARGET_DIR=$OCPI_TOOL_DIR
-fi
+}
 bin=$OCPI_CDK_DIR/$OCPI_TARGET_DIR/bin
 set -e
 [ -z "$TESTS" ] && TESTS="$tests"
 echo ======================= Running these tests: $TESTS
+# Arg 1 is the directory under tests/ to go
+function framework_test {
+  local dir=$OCPI_CDK_DIR/../tests/$1
+  [ -d $dir ] || {
+    dir=tests/$1 
+    [ -d tests/$1 ] || {
+      echo The framework tests in tests/$1 is not present >&2
+      exit 1
+    }
+  }
+  cd $dir
+}
+
 for t in $TESTS; do
   set -e # required inside a for;do;done to enable this case/esac to fail
   case $t in
@@ -113,18 +140,18 @@ for t in $TESTS; do
       make -C $OCPI_CDK_DIR/../projects/inactive/applications run;;
     python)
       echo ======================= Running Python utility tests in tests/pytests
-      (cd $OCPI_CDK_DIR/../tests/pytests && git clean -dfx . && ./run_pytests.sh);;
+      (framework_test pytests && git clean -dfx . && ./run_pytests.sh);;
     av)
       echo ======================= Running av_tests
-      (cd $OCPI_CDK_DIR/../tests/av-test && ./run_avtests.sh);;
+      (framework_test av-test && ./run_avtests.sh);;
     ocpidev)
       echo ======================= Running ocpidev tests
-      (cd $OCPI_CDK_DIR/../tests/ocpidev && ./run-dropin-tests.sh)
+      (framework_test /ocpidev && ./run-dropin-tests.sh)
       # These tests might do HDL building
       hplats=($HdlPlatform $HdlPlatforms)
       echo ======================= Running ocpidev_test tests
       (unset HdlPlatforms; unset HdlPlatforms; \
-       cd $OCPI_CDK_DIR/../tests/ocpidev_test && rm -r -f test_project && \
+       framework_test ocpidev_test && rm -r -f test_project && \
          HDL_PLATFORM=$hplats ./test-ocpidev.sh);;
     load-drivers)
       echo ======================= Loading all the OpenCPI plugins/drivers.
