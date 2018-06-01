@@ -17,7 +17,11 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-
+# Be careful with deletions
+[ $(basename $0) = run_pytests.sh -a $(basename `pwd`) = pytests ] && {
+    echo Removing directories from previous tests
+    for d in ./*; do [ -d $d ] && rm -r -f $d; done
+}
 MIN_COVERAGE=80 #%
 rm -f .coverage
 # Run each test and collect coverage info

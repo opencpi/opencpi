@@ -140,13 +140,13 @@ for t in $TESTS; do
       make -C $OCPI_CDK_DIR/../projects/inactive/applications run;;
     python)
       echo ======================= Running Python utility tests in tests/pytests
-      (framework_test pytests && git clean -dfx . && ./run_pytests.sh);;
+      (framework_test pytests && ./run_pytests.sh);;
     av)
       echo ======================= Running av_tests
       (framework_test av-test && ./run_avtests.sh);;
     ocpidev)
       echo ======================= Running ocpidev tests
-      (framework_test /ocpidev && ./run-dropin-tests.sh)
+      (framework_test ocpidev && ./run-dropin-tests.sh)
       # These tests might do HDL building
       hplats=($HdlPlatform $HdlPlatforms)
       echo ======================= Running ocpidev_test tests
