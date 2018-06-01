@@ -489,9 +489,11 @@ OcpiXmlComponentLibraries=$(infox HXC)\
 # 1. arg1 if present
 # 2. the core project's artifacts
 # 3. the artifacts exported from the projects in the project path (its dependencies)
+# 4. the global core rcc artifacts in the runtime package for the host
 OcpiGetDefaultLibraryPath=$(foreach p,$(strip \
-  $(and $1,$1:)$(foreach p,$(call OcpiAbsPathToContainingProject,$1),$p/artifacts)$(strip\
-  $(subst $(Space),,$(foreach p,$(OcpiGetProjectPath),:$p/artifacts)))),$(infox OGDLPr:$p)$p)
+  $(and $1,$1:)$(foreach p,$(call OcpiAbsPathToContainingProject,$1),$p/artifacts$)$(strip\
+  $(subst $(Space),,$(foreach p,$(OcpiGetProjectPath),:$p/artifacts)\
+                    :$(OCPI_CDK_DIR)/$(OCPI_TOOL_DIR)/artifacts))),$(infox OGDLPr:$p)$p)
 
 # Export the library path as the default
 OcpiSetDefaultLibraryPath=$(eval export OCPI_LIBRARY_PATH=$(call OcpiGetDefaultLibraryPath))

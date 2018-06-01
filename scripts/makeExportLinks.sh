@@ -322,8 +322,10 @@ mkdir exports/runtime/$OCPI_TOOL_PLATFORM/artifacts
 for a in projects/core/artifacts/*:*.*; do
   [ -f $a ] || continue
   link=`readlink -n $a`
-  [[ $link == */target-*${target}/* ]] &&
+  [[ $link == */target-*${target}/* ]] && {
     make_relative_link $a exports/runtime/$OCPI_TOOL_PLATFORM/artifacts/$(basename $a)
+    make_relative_link $a exports/$OCPI_TOOL_PLATFORM/artifacts/$(basename $a)
+  }
 done
   
 # Ensure driver list is exported

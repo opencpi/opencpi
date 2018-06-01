@@ -21,7 +21,7 @@ $(if $(realpath $(OCPI_CDK_DIR)),,\
 
 include $(OCPI_CDK_DIR)/include/util.mk
 
-override OcpiRunArgs+= -v -t 2
+override OcpiRunArgs+= -t 2
 
 # To restrict the applications that are built or run, you can set the Applications
 # variable to the specific list of which ones you want to build and run, e.g.:
