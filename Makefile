@@ -106,9 +106,10 @@ cleaneverything distclean: clean cleandriver
 	$(AT)find . -depth -a ! -name .git -a \( \
              -name '*~' -o -name '*.dSym' -o -name timeData.raw -o -name 'target-*' -o \
              -name "*.lo" -o -name "*.o" -o -name gen -o \
-	     \( -name lib -a -type d -a ! -path "*/rcc/platforms/*" \)  \
+	     \( -name lib -a -type d -a \
+	       ! -path "*/rcc/platforms/*" -a ! -path "./prerequisites*" \)  \
              \) -exec rm -r {} \;
-	$(AT)for p in projects/*; do [ -d $$p ] && make -C $$p cleaneverything; done
+	$(AT)for p in projects/*; do [ -d $$p ] && make -C $$p cleaneverything || :; done
 
 ##########################################################################################
 # Goals, variables and macros that are about packaging the CDK, whether tarball, rpm, etc.
