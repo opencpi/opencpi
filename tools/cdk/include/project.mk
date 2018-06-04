@@ -38,7 +38,7 @@ ifeq ($(HdlPlatform)$(HdlPlatforms),)
   endif
 endif
 
-# imports need to be created before ocpisetup.mk no matter what
+# imports need to be created before exports and other stuff
 ifeq ($(filter imports projectpackage,$(MAKECMDGOALS)),)
   doimports=$(shell $(OcpiExportVars) $(MAKE) imports NoExports=1)
   ifeq ($(wildcard imports),)
@@ -58,11 +58,6 @@ ifeq ($(NoExports)$(wildcard exports)$(filter projectpackage,$(MAKECMDGOALS)),)
     # $(nuthin $(doexports))
   endif
 endif
-
-# Do not want to import ocpisetup.mk if all we are doing is exporting project variables to python/bash
-#ifeq ($(filter imports exports cleanimports cleanexports projectpackage,$(MAKECMDGOALS)),)
-#  include $(OCPI_CDK_DIR)/include/ocpisetup.mk
-#endif
 
 ifeq (@,$(AT))
   .SILENT: clean imports exports components hdlprimitives hdlcomponents hdldevices hdladapters hdlcards hdlplatforms hdlassemblies cleanhdl rcc cleanrcc ocl cleanocl applications run cleancomponents cleanapplications cleanimports cleanexports cleaneverything $(OcpiTestGoals)

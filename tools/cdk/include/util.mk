@@ -24,11 +24,12 @@ export OCPI_DEBUG_MAKE
 AT=@
 
 # RPM-based options:
--include $(OCPI_CDK_DIR)/include/autoconfig_import-$(OCPI_TARGET_PLATFORM).mk
-ifneq (1,$(OCPI_AUTOCONFIG_IMPORTED))
--include $(OCPI_CDK_DIR)/include/autoconfig_import.mk
-endif
-
+# Removing these since they cause all kinds of problems, but should discuss further...
+# to see whether they still are relevant
+#-include $(OCPI_CDK_DIR)/include/autoconfig_import-$(OCPI_TARGET_PLATFORM).mk
+#ifneq (1,$(OCPI_AUTOCONFIG_IMPORTED))
+#-include $(OCPI_CDK_DIR)/include/autoconfig_import.mk
+#endif
 # THIS IS THE make VERSION OF WHAT IS IN ocpibootstrap.sh
 ifndef OCPI_PREREQUISITES_DIR
   ifneq ($(and $(OCPI_CDK_DIR),$(wildcard $(OCPI_CDK_DIR)/../prerequisites)),)
