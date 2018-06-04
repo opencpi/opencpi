@@ -31,6 +31,7 @@ dev_tests="swig python av ocpidev core inactive"
 alltests="$minimal_tests $network_tests $dev_tests"
 tests="$minimal_tests"
 # runtime/standalone tests we can run
+platform=
 case "$1" in
   --showtests)
     echo $alltests && exit 0;;
@@ -39,12 +40,12 @@ case "$1" in
     echo Available tests are: $alltests
     echo 'Usage is: ocpitest [--showtests | --help ] [<platform> [ <test> ... ]]'
     exit 1;;
+  --platform)
+    platform=$2; shift; shift;;
   -*)
     echo Unknown option: $1
     exit 1;;  
 esac
-platform=$1
-shift
 the_tests="$*"
 # Note the -e is so, especially in embedded environments, we do not deal with getPlatform.sh etc.
 [ -L cdk ] && source `pwd`/cdk/opencpi-setup.sh -e 

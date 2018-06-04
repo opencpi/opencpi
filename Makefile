@@ -52,7 +52,7 @@ include $(OCPI_CDK_DIR)/include/rcc/rcc-make.mk
 ##########################################################################################
 # Goals that are not about projects
 .PHONY: exports      framework      driver      testframework \
-        cleanexports cleanframework cleanprojects cleandriver clean
+        cleanexports cleanframework cleanprojects cleandriver clean distclean cleaneverything
 all framework:
 	$(AT)$(MAKE) -C build/autotools install Platforms="$(RccPlatforms)"
 	$(AT)$(DoExports)
@@ -105,10 +105,10 @@ cleaneverything distclean: clean cleandriver
 	$(AT)rm -r -f exports
 	$(AT)find . -depth -a ! -name .git -a \( \
              -name '*~' -o -name '*.dSym' -o -name timeData.raw -o -name 'target-*' -o \
-             -name gen -o \
+             -name "*.lo" -o -name "*.o" -o -name gen -o \
 	     \( -name lib -a -type d -a ! -path "*/rcc/platforms/*" \)  \
              \) -exec rm -r {} \;
-	$(AT)for p in projects/*; do make -C $p cleaneverything; done
+	$(AT)for p in projects/*; do [ -d $$p ] && make -C $$p cleaneverything; done
 
 ##########################################################################################
 # Goals, variables and macros that are about packaging the CDK, whether tarball, rpm, etc.
