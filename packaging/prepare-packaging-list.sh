@@ -54,7 +54,11 @@ function is_platform {
 
 function skip_platform {
   local base=$(basename $1)
-  is_platform $1 && ! found_in $(basename $1) $platforms
+  if [ -n "$cross" ]; then
+    ! is_platform $1 || ! found_in $base $platforms
+  else
+    is_platform $1 && ! found_in $base $platforms
+  fi
 }
 
 # emit the dir name if the tree is clean, otherwise emit each cached item here and recurse on

@@ -43,15 +43,15 @@ fi
 for i in projects/bsps/*; do
   [ -d $i/rcc/platforms ] && OCPI_PROJECT_PATH=$OCPI_PROJECT_PATH:`pwd`/$i
 done
-./scripts/install-packages.sh $platform
-./scripts/install-prerequisites.sh $platform
+./build/install-packages.sh $platform
+./build/install-prerequisites.sh $platform
 # To build the framework (really just projects), the host platform must be built
 if test -n "$platform" -a "$OCPI_TOOL_PLATFORM" != "$platform"; then
   # build the framework for the tool host, but not projects, 
-  ./scripts/build-opencpi.sh "" -
+  ./build/build-opencpi.sh "" -
 fi
 # Any arguments after the first are variable assignments for make, like HdlPlatforms...
-eval $* ./scripts/build-opencpi.sh $platform
+eval $* ./build/build-opencpi.sh $platform
 if test -n "$platform" -a "$OCPI_TOOL_PLATFORM" != "$platform"; then
   echo When building/installing for cross-compiled platform $platform, we are skipping tests.
 else
