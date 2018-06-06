@@ -11,7 +11,7 @@ Installation
 #### YUM / RPM
 This is for CentOS 6 or 7 systems:
  - `sudo yum install yum-utils`
- - `sudo yum-config-manager --enable --add-repo=http://opencpi.github.io/repo/opencpi-v1.3.1.repo`
+ - `sudo yum-config-manager --add-repo=http://opencpi.github.io/repo/opencpi-v1.3.1.repo`
  - `sudo yum install 'opencpi-*' 'ocpi-prereq-*'`
 
 For additional information, consult the [YUM/RPM Installation Guide][rpminstall].
