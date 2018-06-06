@@ -113,6 +113,9 @@ done
   echo %%{prefix1}/udev/rules.d/51-opencpi-usbblaster.rules >> %{_builddir}/runtime-files
   #echo "%%{prefix1}/udev/rules.d/\*.rules >> %{_builddir}/runtime-files
   echo %%dir %%{prefix0} >> %{_builddir}/runtime-files
+  # A very special case that will go away at some point
+  cp releng/projects/new_project_source %{buildroot}%{prefix0}/projects
+  echo %%{prefix0}/projects/new_project_source >> %{_builddir}/devel-files
 %endif
 
 %files -f runtime-files

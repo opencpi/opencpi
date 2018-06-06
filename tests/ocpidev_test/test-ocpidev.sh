@@ -144,7 +144,11 @@ for lib in ${devlibs[@]} ; do
     Workers+=" $c"_sub.hdl
     do_ocpidev create worker "$c"_proxy.rcc -h $lib -V "$c".hdl -S "$c"-spec
     Workers+=" $c"_proxy.rcc
-    do_ocpidev create hdl device "$c"_em.hdl $libopt -E "$c".hdl 
+    # This one file is copied so that this entire set of tests can run without depending
+    # on built or exported projects - i.e. these tests can run in a virgin RPM installation
+    [ -f specs/emulator-spec.xml ] ||
+	cp $OCPI_CDK_DIR/../projects/core/specs/emulator-spec.xml specs
+    do_ocpidev -v create hdl device "$c"_em.hdl $libopt -E "$c".hdl 
     Workers+=" $c"_em.hdl
   done
   # update the makefile beacuse order matters 

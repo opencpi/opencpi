@@ -173,4 +173,4 @@ for t in $TESTS; do
       exit 1;;
   esac
 done
-echo ======================= All tests passed.
+echo ======================= All tests passed: $TESTS
