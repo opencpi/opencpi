@@ -156,7 +156,7 @@ version:=$(or $(git_version),$(strip\
                       build/autotools/configure.ac)))
 tag:=$(and $(git_version),$(timestamp))
 #$(info NAME:$(name) TAG:$(tag) VERSION:$(version) GIT_TAG:$(git_tag) GIT_HASH:$(git_hash) BRANCH:$(git_branch))
-package_name=$(name)-$(version)$(foreach p,$(RccPlatforms),-$p)
+package_name=$(name)$(if $(filter runtime,$(Package)),,-devel)-$(version)$(foreach p,$(RccPlatforms),-$p)
 Package=runtime
 Prepare=./packaging/prepare-packaging-list.sh $(Package) "$(RccPlatforms)" $(call cross,$(word 1,$(RccPlatforms)))
 
@@ -165,20 +165,29 @@ test_packaging: exports
 	$(AT)$(Prepare)
 
 # Make a tarball of exports
-# We convert the "Prepare" output mappings into tar command transformations
+# We convert the "Prepare" output mappings suitable for cp -R, into tar command transformations
 .PHONY: tar
 tar: exports
-	$(AT)set -e; file=$(package_name).tgz; \
-	     args=$$($(Prepare) |\
-                     while read source dest; do\
-	               [ -n "$$dest" ] && { \
-                         printf " --xform=s@^$$source\$$@$$dest/$$(basename $$source)@"; \
-                         printf " --xform=s@^$$source/@$$dest/$$(basename $$source)/@"; \
-	               } || : ; \
-	               printf " $$source"; \
-	            done); \
-	     echo Creating tar export file: $$file; \
-	     tar -z -h -f $$file -c $$args
+	$(AT)set -e; file=$(package_name).tar; \
+	     echo Determining tar export file contents for $(Package) package: $$file.gz; \
+	     (echo "tar -h -f $$file -c \\";\
+	      $(Prepare) |\
+	        ( while read source dest; do\
+	          if [ -n "$$dest" ]; then \
+	            [ -d "$$source" ] && \
+	              echo ' --xform="s@^'$$source/@$$dest/$$(basename $$source)/'@" \'; \
+	            echo '  --xform="s@^'$$source\\\$$@$$dest/$$(basename $$source)'@" \'; \
+	          fi; \
+	          if [ $$(dirname $$source) = project-registry ]; then \
+	            symlinks="$$symlinks $$source"; \
+	          else \
+	            echo " $$source \\"; \
+	          fi; \
+	          done ; echo; \
+	          echo "tar --append -f $$file $$symlinks") \
+	     ) > temp; \
+	     echo Creating tar export file: $$file.gz; \
+	     sh temp && rm -f $$file.gz && gzip $$file
 
 # Create a relocatable RPM from what is exported for the given platforms
 # Feed in the various naming components
