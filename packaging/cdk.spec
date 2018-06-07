@@ -213,6 +213,7 @@ if [ "$RPM_INSTALL_PREFIX1" = %{prefix1} ] ; then
   chown -R root:root $RPM_INSTALL_PREFIX0/cdk/env.d
   chown root:root $RPM_INSTALL_PREFIX0/cdk/env/rpm_cdk.sh
   chmod 775 $RPM_INSTALL_PREFIX0/project-registry
-  # This is to enable the import link which is bogus
+  # This is to enable the import links which is BOGUS
   chmod 775 $RPM_INSTALL_PREFIX0/projects/core
+  chmod 775 $RPM_INSTALL_PREFIX0/projects/assets
 fi
