@@ -202,6 +202,9 @@ rpm rpm_runtime rpm_devel: exports
 	$(AT)echo "Creating an RPM file from the current built CDK for platform(s):" $(RccPlatforms)
 	$(AT)$(eval first:=$(word 1,$(RccPlatforms))) \
 	     source $(OCPI_CDK_DIR)/scripts/ocpitarget.sh $(first) &&\
+	     p=$$OCPI_TARGET_PLATFORM_DIR/$(first)-packages.sh &&\
+              ( [ -f $$p ] && \
+                $$p list | head -1 | xargs -n 1 | sed 's/^/Requires:/' || :)>devel-requires && \
 	     rpmbuild $(if $(RpmVerbose),-vv,--quiet) -bb\
 		      --define="RPM_BASENAME    $(base)"\
 		      --define="RPM_NAME        $(call name,$(first))"\

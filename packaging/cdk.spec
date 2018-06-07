@@ -123,6 +123,7 @@ done
 ##########################################################################################
 # The development (sub) package, that adds to what is installed after the runtime package.
 %package devel
+%include devel-requires
 AutoReqProv: no
 Requires:   %{name} = %{version}-%{release}
 Requires(pre,postun): %{name} = %{version}-%{release}
