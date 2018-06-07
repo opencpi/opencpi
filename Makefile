@@ -103,7 +103,7 @@ clean: cleanframework cleanprojects
 # Super clean, but not git clean, based on our patterns, not sub-make cleaning
 cleaneverything distclean: clean cleandriver
 	$(AT)rm -r -f exports
-	$(AT)find . -depth -a ! -name .git -a \( \
+	$(AT)find . -depth -a ! -name .git  -a ! -path "./prerequisites*" -a \( \
              -name '*~' -o -name '*.dSym' -o -name timeData.raw -o -name 'target-*' -o \
              -name "*.lo" -o -name "*.o" -o -name gen -o \
 	     \( -name lib -a -type d -a \
@@ -169,7 +169,7 @@ test_packaging: exports
 .PHONY: tar
 tar: exports
 	$(AT)set -e; file=$(package_name).tar; \
-	     echo Determining tar export file contents for $(Package) package: $$file.gz; \
+	     echo Determining tar export file contents for the $(Package) package: $$file.gz; \
 	     (echo "tar -h -f $$file -c \\";\
 	      $(Prepare) |\
 	        ( while read source dest; do\
