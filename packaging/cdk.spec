@@ -185,8 +185,8 @@ ln -s -f $RPM_INSTALL_PREFIX0/cdk/udev-rules/51-opencpi-usbblaster.rules \
 
 # Since these are all symlinks we are actually changing ownership of the underlying file
 if [ "$RPM_INSTALL_PREFIX1" = %{prefix1} ] ; then
-  chown -R root:root %{prefix0}/cdk/env.d
-  chown root:root %{prefix0}/cdk/env/rpm_cdk.sh
+  chown -R root:root $RPM_INSTALL_PREFIX0/cdk/env.d
+  chown root:root $RPM_INSTALL_PREFIX0/cdk/env/rpm_cdk.sh
 fi
 
 # restore initial
@@ -204,4 +204,16 @@ rm -r -f -v $RPM_INSTALL_PREFIX0
 # The files have been installed, but we must change them now.
 ln -s -f $RPM_INSTALL_PREFIX0/cdk/scripts/ocpidev_bash_complete \
          $RPM_INSTALL_PREFIX1/bash_completion.d/opencpi_complete.bash
+if [ "$RPM_INSTALL_PREFIX1" = %{prefix1} ] ; then
+  # We could be surgical about this but it won't likely help anything.
+  # We are touching runtime files and doing what has already been done before.
+  # It might change the "last status change" date, but that shouldn't matter
+  # FIXME: only change what is not already correct
+  chown -R opencpi:opencpi $RPM_INSTALL_PREFIX0
+  chown -R root:root $RPM_INSTALL_PREFIX0/cdk/env.d
+  chown root:root $RPM_INSTALL_PREFIX0/cdk/env/rpm_cdk.sh
+fi
+
+
+
 
