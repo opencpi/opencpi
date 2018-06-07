@@ -212,8 +212,5 @@ if [ "$RPM_INSTALL_PREFIX1" = %{prefix1} ] ; then
   chown -R opencpi:opencpi $RPM_INSTALL_PREFIX0
   chown -R root:root $RPM_INSTALL_PREFIX0/cdk/env.d
   chown root:root $RPM_INSTALL_PREFIX0/cdk/env/rpm_cdk.sh
+  chmod 775 $RPM_INSTALL_PREFIX0/project-registry
 fi
-
-
-
-
