@@ -32,9 +32,9 @@ if [ -d $OCPI_CDK_DIR/../project-registry ]; then
   core2=$OCPI_CDK_DIR/../projects/core
   [ -d $core2/exports ] && core2+=/exports
   export OCPI_LIBRARY_PATH=$core1/artifacts:$core2/artifacts
-else
-  export OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/$OCPI_TOOL_DIR/artifacts
 fi
+# add the runtime artifacts as a last resort.
+export OCPI_LIBRARY_PATH=${OCPI_LIBRARY_PATH:+$OCPI_LIBRARY_PATH:}$OCPI_CDK_DIR/$OCPI_TOOL_DIR/artifacts
 
 
 # export OCPI_LOG_LEVEL=11
