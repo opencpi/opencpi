@@ -49,9 +49,9 @@ PKGS+=" nfs-utils"
 #    Not available for centos6 on the standard repo or epel
 #PKGS+=" ocl-icd"
 #    for various 32-bit software tools we end up using (e.g. modelsim)
-PKGS+=" glibc.i686 libXft.i686 libXext.i686 ncurses-libs.i686 libXdmcp.i686"
+PKGS32=" glibc.i686 libXft.i686 libXext.i686 ncurses-libs.i686 libXdmcp.i686"
 #    for the inode64 prerequisite
-PKGS+=" glibc-devel.i686"
+PKGS32+=" glibc-devel.i686"
 #    for various testing scripts
 PKGS+=" numpy"
 #    for various building scripts for timing commands
@@ -60,7 +60,11 @@ PKGS+=" time"
 PKGS+=" epel-release ca-certificates"
 #    for various testing scripts
 EPEL_PKGS+=" python34-numpy"
-[ "$1" = list ] && echo $PKGS && echo $EPEL_PKGS && exit 0
+# Note that only the first output line is used for RPM Requires since RPM can't handle
+# the cross-architecture or repo-dependent extras
+[ "$1" = list ] && echo $PKGS && echo $PKGS32 && echo $EPEL_PKGS && exit 0
 sudo yum -y install $PKGS
+# Now do the 32 bit ones
+sudo yum -y install $PKGS32
 # Now those that depend on epel
 sudo yum -y install $EPEL_PKGS
