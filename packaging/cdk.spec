@@ -99,7 +99,7 @@ done
   # 2. Enable a global login .profile script by dropping ours into the directory that is used
   #    globally for all bash login scripts.  This drop-in is a symlink.
   %{__mkdir_p} %{buildroot}%{prefix1}/profile.d
-  %{__ln_s} -f %{prefix0}/env/rpm_cdk.sh %{buildroot}%{prefix1}/profile.d/opencpi.sh
+  %{__ln_s} -f %{prefix0}/cdk/env/rpm_cdk.sh %{buildroot}%{prefix1}/profile.d/opencpi.sh
   echo %%{prefix1}/profile.d/opencpi.sh >> %{_builddir}/runtime-files
   # 3. Enable bash completion of our comments by dropping a completion script into a directory that
   #    is used when interactive bash scripts startup.  Only for the devel package.
