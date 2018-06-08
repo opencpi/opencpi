@@ -44,12 +44,12 @@ PKGS+=" fakeroot"
 #    for JTAG loading of FPGA bitstreams
 PKGS+=" libusb-devel"
 #    for general configuration/installation flexibility
-PKGS+=" nfs-utils"
+PKGS32=" nfs-utils"
 #    for OpenCL support (the switch for different actual drivers that are not installed here)
 #    Not available for centos6 on the standard repo or epel
-#PKGS+=" ocl-icd"
+#PKGS32+=" ocl-icd"
 #    for various 32-bit software tools we end up using (e.g. modelsim)
-PKGS32=" glibc.i686 libXft.i686 libXext.i686 ncurses-libs.i686 libXdmcp.i686"
+PKGS32+=" glibc.i686 libXft.i686 libXext.i686 ncurses-libs.i686 libXdmcp.i686"
 #    for the inode64 prerequisite
 PKGS32+=" glibc-devel.i686"
 #    for various testing scripts

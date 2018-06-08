@@ -109,6 +109,7 @@
   CMD_OPTION(component,   , Bool,   0, "first non-option argument is a component name,\n" \
 	                               "not an application XML file") \
   CMD_OPTION(seconds,     , Long,   0, "<seconds> -- legacy, use \"duration\" now\n") \
+  CMD_OPTION(version,     , Bool,   0, "print the OpenCPI release version") \
   /**/
 
 //  CMD_OPTION_S(simulator, H,String, 0, "Create a container with this HDL simulator")
@@ -292,6 +293,10 @@ static bool setup(const char *arg, ezxml_t &xml, std::string &file,
 static int mymain(const char **ap) {
   OU::PValueList params;
 
+  if (options.version()) {
+    printf("OpenCPI version is " OCPI_PACKAGE_VERSION "\n");
+    return 0;
+  }
   if (options.library_path()) {
     std::string env("OCPI_LIBRARY_PATH=");
     env += options.library_path();

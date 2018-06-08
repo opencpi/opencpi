@@ -146,10 +146,10 @@ for t in $TESTS; do
       echo ======================= Running av_tests
       (framework_test av-test && ./run_avtests.sh);;
     ocpidev)
-      echo ======================= Running ocpidev tests
-      (framework_test ocpidev && ./run-dropin-tests.sh)
       # These tests might do HDL building
       hplats=($HdlPlatform $HdlPlatforms)
+      echo ======================= Running ocpidev tests
+      (framework_test ocpidev && HDL_TEST_PLATFORM=$hplats ./run-dropin-tests.sh)
       echo ======================= Running ocpidev_test tests
       (unset HdlPlatforms; unset HdlPlatforms; \
        framework_test ocpidev_test && rm -r -f test_project && \

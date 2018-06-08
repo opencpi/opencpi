@@ -115,17 +115,21 @@ cleaneverything distclean: clean cleandriver
 # Goals, variables and macros that are about packaging the CDK, whether tarball, rpm, etc.
 ##### Set variables that affect the naming of the release packages
 # The general package naming scheme is:
-# <base>[-sw-platform-<platform>]-<version>-<release>[_<tag>][_J<job>][_<branch>][<dist>]
+# <base>[-sw-platform][-<platform>]-<version>[-<release>][_<tag>][_J<job>][_<branch>][<dist>]
 # where:
-# <base> is our core package name
-# <platform> is a cross target when we are releasing packages per platform
-# <version> is our normally versioning scheme v1.2.3
+# <base> is our core package name: opencpi
+# [-sw-platform] is omitted for development platforms
+# [-<platform>] is the OpenCPI platform being distributed
+#   Omitted in RPMs for dev platforms since it is redundant with the RPM suffix (e.g. el7.x86_64)
+# <version> is our normally versioning scheme 1.2.3
 # <release> is a label that defaults to "snapshot" if not overridden with OcpiRelease
+#          Omitted for an actual official release
 # These are only applied if not a specific versioned release:
 # <tag> is a sequence number/timestamp within a release cycle (when not a specific release)
-# <job> is a jenkins job reference
-# <branch> is a git branch reference
-# <dist> for RPM, e.g. el.
+# <job> is a jenkins job reference if this process is run under Jenkins
+# <branch> is a git branch reference if not "develop" or "undefined"
+# <dist> added by RPM building, e.g. el7.x86_64
+# And the appropriate suffix is added:  .rpm, or .tar.gz
 base=opencpi
 # cross: value is the target platform or null if not cross
 # arg 1 is a single platform
@@ -142,22 +146,28 @@ timestamp:=_$(shell printf %05d $(shell expr `date -u +"%s"` / 360 - 4231562))
 # If somebody checks in between Jenkins builds, it will sometimes get "develop^2~37" etc,
 # The BitBucket prefix of something like "bugfix--" is also stripped if present.
 git_branch :=$(notdir $(shell git name-rev --name-only HEAD | \
-                              perl -pe 's/[~^\d]*$$//' | perl -pe 's/^.*?--//'))
-git_version:=$(shell echo $(branch) | perl -ne '/^v[\.\d]+$$/ && print')
+                              perl -pe 's/~[^\d]*$$//' | perl -pe 's/^.*?--//'))
+git_version:=$(shell echo $(git_branch) | perl -ne '/^v[\.\d]+$$/ && print')
 git_hash   :=$(shell h=`(git tag --points-at HEAD | grep github | head -n1) 2>/dev/null`;\
                      [ -z "$$h" ] && h=`git rev-list --max-count=1 HEAD`; echo $$h)
-git_tag    :=$(if $(git_version),\
-               $(if $(BUILD_NUMBER),_J$(BUILD_NUMBER))\
-               $(if $(filter-out undefined develop,$(git_branch)),_$(subst -,_,$(git_branch))))
+git_tag    :=$(if $(git_version),,$(strip\
+               $(if $(BUILD_NUMBER),_J$(BUILD_NUMBER)))$(strip\
+               $(if $(filter-out undefined develop,$(git_branch)),_$(subst -,_,$(git_branch)))))
 ##### Set final variables that depend on git variables
 # This could be nicer, but at least it gets it from the true source, which should be places
 version:=$(or $(git_version),$(strip\
               $(shell sed -n 's/.*AC_INIT.\[opencpi\],\[\([0-9.]*\)\].*$$/\1/p' \
                       build/autotools/configure.ac)))
-tag:=$(and $(git_version),$(timestamp))
-#$(info NAME:$(name) TAG:$(tag) VERSION:$(version) GIT_TAG:$(git_tag) GIT_HASH:$(git_hash) BRANCH:$(git_branch))
-package_name=$(name)$(if $(filter runtime,$(Package)),,-devel)-$(version)$(foreach p,$(RccPlatforms),-$p)
+tag:=$(if $(git_version),,$(timestamp))
+#$(info GIT_VERSION:$(git_version): GIT_TAG:$(git_tag): GIT_HASH:$(git_hash): GIT_BRANCH:$(git_branch):)
+#$(info NAME:$(name): TAG:$(tag): VERSION:$(version): RELEASE:$(release): PACKAGE:$(Package):)
 Package=runtime
+# This name applies generically, but is not used for RPMs since there are other issues about
+# being as "normal" as possible in the RPM context.  See the args passed to rpmbuild
+package_name=$(name)$(if $(filter runtime,$(Package)),,-$(Package))$(strip\
+                    $(foreach p,$(RccPlatforms),-$p))$(strip\
+	            -$(version)$(if $(git_version),,-)$(release)$(tag)$(git_tag))
+#$(info PACKAGE_NAME:$(package_name):)
 Prepare=./packaging/prepare-packaging-list.sh $(Package) "$(RccPlatforms)" $(call cross,$(word 1,$(RccPlatforms)))
 
 .PHONY: test_packaging
@@ -194,12 +204,16 @@ tar: exports
 # redefine _rpmdir and _build_name_fmt to simply output the RPMs here
 .PHONY: rpm rpm_runtime rpm_devel
 first_real_platform:=$(word 1,$(RccPlatforms))
+ifneq ($(and $(filter rpm,$(MAKECMDGOALS)),$(filter command line,$(origin Package))),)
+  $(error You cannot specify a Package when creating RPMs, they are all created together)
+endif
 rpm rpm_runtime rpm_devel: exports
 	$(AT)! command -v rpmbuild >/dev/null 2>&1 && \
-	     echo "Error: Cannot build an RPM: rpmbuild (rpm-build package) is not available." && exit 1 || :
+	  echo "Error: Cannot build an RPM: rpmbuild (rpm-build package) is not available." && \
+	  exit 1 || :
 	$(AT)[ $(words $(call Unique,$(call RccRealPlatforms,$(RccPlatforms)))) != 1 ] && \
 	     echo Error: Cannot build an RPM for more than one platform at a time. && exit 1 || :
-	$(AT)echo "Creating an RPM file from the current built CDK for platform(s):" $(RccPlatforms)
+	$(AT)echo "Creating an RPM file for platform:" $(first_real_platform)
 	$(AT)$(eval first:=$(word 1,$(RccPlatforms))) \
 	     source $(OCPI_CDK_DIR)/scripts/ocpitarget.sh $(first) &&\
 	     p=$$OCPI_TARGET_PLATFORM_DIR/$(first)-packages.sh &&\
@@ -208,7 +222,7 @@ rpm rpm_runtime rpm_devel: exports
 	     rpmbuild $(if $(RpmVerbose),-vv,--quiet) -bb\
 		      --define="RPM_BASENAME    $(base)"\
 		      --define="RPM_NAME        $(call name,$(first))"\
-		      --define="RPM_RELEASE     $(release)$(tag)$(commit)"\
+		      --define="RPM_RELEASE     $(release)$(tag)$(git_tag)"\
 		      --define="RPM_VERSION     $(version)" \
 		      --define="RPM_HASH        $(git_hash)" \
 		      --define="RPM_PLATFORM    $(first)" \
