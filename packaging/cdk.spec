@@ -1,4 +1,24 @@
-# Apparently rpmbuild does not do this for you? just %{prefix}
+# This file is protected by Copyright. Please refer to the COPYRIGHT file
+# distributed with this source distribution.
+#
+# This file is part of OpenCPI <http://www.opencpi.org>
+#
+# OpenCPI is free software: you can redistribute it and/or modify it under the
+# terms of the GNU Lesser General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your option) any
+# later version.
+#
+# OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+# A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Lesser General Public License along
+# with this program. If not, see <http://www.gnu.org/licenses/>.
+
+##########################################################################################
+# The RPM spec for the runtime and devel packages
+# The runtime is the primary/main package, and devel is a subpackage which depends on runtime
 Name:        %{RPM_NAME}
 Version:     %{RPM_VERSION}
 Release:     %{RPM_RELEASE}%{?dist}
@@ -53,66 +73,47 @@ for the %{RPM_PLATFORM} target platform, along with core components.
 %install
 cd %{RPM_OPENCPI}
 set -e
-rm -r -f %{buildroot}%{prefix0}
-mkdir -p %{buildroot}%{prefix0}
-# The prepare script outputs source/dest appropriate for cp -R
-# We convert that into what is needed for the RPM file list
-prepare=%{RPM_OPENCPI}/packaging/prepare-packaging-list.sh
+rm -r -f $buildroot$prefix
+# Copy the needed files to buildroot, and create the files lists in builddir
 for p in runtime devel; do
-  $prepare $p %{RPM_PLATFORM} %{?RPM_CROSS:1} | while read source dest; do
-    if [ -n  "$dest" ]; then
-      xform="-e s=^$(dirname $source)/=$dest/="
-      mkdir -p %{buildroot}%{prefix0}/$dest
-    else
-      xform=
-      mkdir -p %{buildroot}%{prefix0}/$(dirname $source)
-    fi
-    # nasty special case when a link should remain a link.
-    if [ $(dirname $source) = project-registry ]; then
-      echo $source
-      cp -R $source %{buildroot}%{prefix0}/${dest:-$source}
-    else
-      # echo SOURCE:$source DEST:$dest > /dev/tty
-      find -L $source -type f | sed $xform -e s/foo/foo/
-      cp -R -L $source %{buildroot}%{prefix0}/${dest:-$source}
-    fi
-  done | \
-  while read file; do
-    dir=$(dirname $file)
-    while [ $dir != . ] ; do
-      [ -z "%{?RPM_CROSS:1}" -o $(basename $dir) = "%{RPM_CROSS}" ] && echo "%%dir %%{prefix0}/$dir"
-      dir=$(dirname $dir)
-    done
-    echo "%%{prefix0}/$file"
-  done | sort -u > %{_builddir}/$p-files
+  ./packaging/prepare-rpm-files.sh $p %{RPM_PLATFORM} "%{?RPM_CROSS:1}" \
+                                   %{buildroot} %{prefix0} %{_builddir}
 done
+
 %if !0%{?RPM_CROSS:1}
   ##########################################################################################
-  # Enable the globally-installed files, trying to symlink them to their "real" copies if possible
+  # Enable globally-installed /etc files, symlink them to their "real" copies if possible
+
   # 1. Tell ld.so to look in our lib dir when looking for dynamic libraries
   #    Really only needed with a dynamic library installation
   #    But we always have this directory (due to plugins and swigs), so it probably does no harm
-  #    We could make it conditional for a slight optimization
-  %{__mkdir_p} %{buildroot}%{prefix1}/ld.so.conf.d
-  echo %{prefix0}/%{RPM_PLATFORM}/lib > %{buildroot}%{prefix1}/ld.so.conf.d/opencpi.conf
-  echo %%{prefix1}/ld.so.conf.d/opencpi.conf >> %{_builddir}/runtime-files
+  #    We could make it conditional for a slight performance optimization
+  #    Since prefix0 is relocatable, we re-do the file contents %postun
+  dir=ld.so.conf.d file=opencpi.conf
+  %{__mkdir_p} %{buildroot}%{prefix1}/$dir
+  echo %{prefix0}/%{RPM_PLATFORM}/lib > %{buildroot}%{prefix1}/$dir/$file
+  echo %%{prefix1}/$dir/$file >> %{_builddir}/runtime-files
+
   # 2. Enable a global login .profile script by dropping ours into the directory that is used
   #    globally for all bash login scripts.  This drop-in is a symlink.
-  %{__mkdir_p} %{buildroot}%{prefix1}/profile.d
-  %{__ln_s} -f %{prefix0}/cdk/env/rpm_cdk.sh %{buildroot}%{prefix1}/profile.d/opencpi.sh
-  echo %%{prefix1}/profile.d/opencpi.sh >> %{_builddir}/runtime-files
-  # 3. Enable bash completion of our comments by dropping a completion script into a directory that
+  dir=profile.d file=opencpi.sh
+  %{__mkdir_p} %{buildroot}%{prefix1}/$dir
+  %{__ln_s} -f %{prefix0}/cdk/env/rpm_cdk.sh %{buildroot}%{prefix1}/$dir/$file
+  echo %%{prefix1}/$dir/$file >> %{_builddir}/runtime-files
+
+  # 3. Enable bash completion of our commands by dropping a script into a directory that
   #    is used when interactive bash scripts startup.  Only for the devel package.
-  %{__mkdir_p} %{buildroot}%{prefix1}/bash_completion.d
-  %{__ln_s} -f %{prefix0}/scripts/ocpidev_bash_complete \
-               %{buildroot}%{prefix1}/bash_completion.d/opencpi_complete.bash
-  echo %%{prefix1}/bash_completion.d/opencpi_complete.bash >> %{_builddir}/devel-files
-  # 4. Add our udev-rules into the drop-in directry for udev rules
-  %{__mkdir_p} %{buildroot}%{prefix1}/udev/rules.d/
-  %{__ln_s} -f %{prefix0}/udev-rules/51-opencpi-usbblaster.rules %{buildroot}%{prefix1}/udev/rules.d/
-  echo %%{prefix1}/udev/rules.d/51-opencpi-usbblaster.rules >> %{_builddir}/runtime-files
-  #echo "%%{prefix1}/udev/rules.d/\*.rules >> %{_builddir}/runtime-files
-  echo %%dir %%{prefix0} >> %{_builddir}/runtime-files
+  dir=bash_completion.d file=opencpi_complete.bash
+  %{__mkdir_p} %{buildroot}%{prefix1}/$dir
+  %{__ln_s} -f %{prefix0}/scripts/ocpidev_bash_complete %{buildroot}%{prefix1}/$dir/$file
+  echo %%{prefix1}/$dir/$file >> %{_builddir}/devel-files
+
+  # 4. Add our udev-rules into the drop-in directry for udev rules, using symlinks
+  dir=udev/rules.d file=51-opencpi-usbblaster.rules
+  %{__mkdir_p} %{buildroot}%{prefix1}/$dir
+  %{__ln_s} -f %{prefix0}/udev-rules/$file %{buildroot}%{prefix1}/$dir
+  echo %%{prefix1}/$dir/$file >> %{_builddir}/runtime-files
+
   # A very special case that will go away at some point
   cp releng/projects/new_project_source %{buildroot}%{prefix0}/projects
   echo %%{prefix0}/projects/new_project_source >> %{_builddir}/devel-files
@@ -123,7 +124,7 @@ done
 ##########################################################################################
 # The development (sub) package, that adds to what is installed after the runtime package.
 %package devel
-%include devel-requires
+%include %{RPM_OPENCPI}/packaging/target-%{RPM_PLATFORM}/devel-requires
 AutoReqProv: no
 Requires:   %{name} = %{version}-%{release}
 Requires(pre,postun): %{name} = %{version}-%{release}
@@ -175,11 +176,12 @@ if [ "$RPM_INSTALL_PREFIX1" = %{prefix1} ] ; then
   chown -R opencpi:opencpi $RPM_INSTALL_PREFIX0
 fi
 
-# We need to relocate all the global files that point to other global files.
+# We need to relocate all the global files that point to other global files
 # The files have been installed, but we must change them now.
 
 # Relocate the global files that point to other files to respect relocations
-echo $RPM_INSTALL_PREFIX0/cdk/%{RPM_PLATFORM}/lib > $RPM_INSTALL_PREFIX1/ld.so.conf.d/opencpi.conf
+echo $RPM_INSTALL_PREFIX0/cdk/%{RPM_PLATFORM}/lib \
+      > $RPM_INSTALL_PREFIX1/ld.so.conf.d/opencpi.conf
 ln -s -f $RPM_INSTALL_PREFIX0/cdk/env/rpm_cdk.sh $RPM_INSTALL_PREFIX1/profile.d/opencpi.sh
 ln -s -f $RPM_INSTALL_PREFIX0/cdk/udev-rules/51-opencpi-usbblaster.rules \
          $RPM_INSTALL_PREFIX1/udev/rules.d/
@@ -188,6 +190,7 @@ ln -s -f $RPM_INSTALL_PREFIX0/cdk/udev-rules/51-opencpi-usbblaster.rules \
 if [ "$RPM_INSTALL_PREFIX1" = %{prefix1} ] ; then
   chown -R root:root $RPM_INSTALL_PREFIX0/cdk/env.d
   chown root:root $RPM_INSTALL_PREFIX0/cdk/env/rpm_cdk.sh
+  chown root:root $RPM_INSTALL_PREFIX0/cdk/opencpi-setup.sh
 fi
 
 # restore initial
@@ -207,14 +210,16 @@ ln -s -f $RPM_INSTALL_PREFIX0/cdk/scripts/ocpidev_bash_complete \
          $RPM_INSTALL_PREFIX1/bash_completion.d/opencpi_complete.bash
 if [ "$RPM_INSTALL_PREFIX1" = %{prefix1} ] ; then
   # We could be surgical about this but it won't likely help anything.
-  # We are touching runtime files and doing what has already been done before.
+  # We are (re)touching runtime files and doing what has already been done before.
   # It might change the "last status change" date, but that shouldn't matter
   # FIXME: only change what is not already correct
   chown -R opencpi:opencpi $RPM_INSTALL_PREFIX0
   chown -R root:root $RPM_INSTALL_PREFIX0/cdk/env.d
   chown root:root $RPM_INSTALL_PREFIX0/cdk/env/rpm_cdk.sh
+  chown root:root $RPM_INSTALL_PREFIX0/cdk/opencpi-setup.sh
+  # This allows users in the opencpi group to register/unregister projects
   chmod 775 $RPM_INSTALL_PREFIX0/project-registry
-  # This is to enable the import links which is BOGUS
+  # This is to enable the creationg of import links which is BOGUS and will be fixed
   chmod 775 $RPM_INSTALL_PREFIX0/projects/core
   chmod 775 $RPM_INSTALL_PREFIX0/projects/assets
 fi

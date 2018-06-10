@@ -168,7 +168,7 @@ package_name=$(name)$(if $(filter runtime,$(Package)),,-$(Package))$(strip\
                     $(foreach p,$(RccPlatforms),-$p))$(strip\
 	            -$(version)$(if $(git_version),,-)$(release)$(tag)$(git_tag))
 #$(info PACKAGE_NAME:$(package_name):)
-Prepare=./packaging/prepare-packaging-list.sh $(Package) "$(RccPlatforms)" $(call cross,$(word 1,$(RccPlatforms)))
+Prepare=./packaging/prepare-package-list.sh $(Package) "$(RccPlatforms)" $(call cross,$(word 1,$(RccPlatforms)))
 
 .PHONY: test_packaging
 test_packaging: exports
@@ -176,9 +176,10 @@ test_packaging: exports
 
 # Make a tarball of exports
 # We convert the "Prepare" output mappings suitable for cp -R, into tar command transformations
+# This should be moved into the packaging subdir...
 .PHONY: tar
 tar: exports
-	$(AT)set -e; file=$(package_name).tar; \
+	$(AT)set -e; file=$(package_name).tar temp=$(mktemp -t tarcmdXXXX); \
 	     echo Determining tar export file contents for the $(Package) package: $$file.gz; \
 	     (echo "tar -h -f $$file -c \\";\
 	      $(Prepare) |\
@@ -188,37 +189,40 @@ tar: exports
 	              echo ' --xform="s@^'$$source/@$$dest/$$(basename $$source)/'@" \'; \
 	            echo '  --xform="s@^'$$source\\\$$@$$dest/$$(basename $$source)'@" \'; \
 	          fi; \
-	          if [ $$(dirname $$source) = project-registry ]; then \
-	            symlinks="$$symlinks $$source"; \
+	          if [[ $$source == *@ ]]; then \
+	            symlinks="$$symlinks $${source/@}"; \
 	          else \
 	            echo " $$source \\"; \
 	          fi; \
 	          done ; echo; \
 	          echo "tar --append -f $$file $$symlinks") \
-	     ) > temp; \
+	     ) > $$temp; \
 	     echo Creating tar export file: $$file.gz; \
-	     sh temp && rm -f $$file.gz && gzip $$file
+	     sh $$temp && rm -f $$file.gz $$temp && gzip $$file
 
 # Create a relocatable RPM from what is exported for the given platforms
 # Feed in the various naming components
 # redefine _rpmdir and _build_name_fmt to simply output the RPMs here
+# This should be moved to the packaging subdir...
 .PHONY: rpm rpm_runtime rpm_devel
 first_real_platform:=$(word 1,$(RccPlatforms))
 ifneq ($(and $(filter rpm,$(MAKECMDGOALS)),$(filter command line,$(origin Package))),)
   $(error You cannot specify a Package when creating RPMs, they are all created together)
 endif
-rpm rpm_runtime rpm_devel: exports
+rpm: exports
 	$(AT)! command -v rpmbuild >/dev/null 2>&1 && \
 	  echo "Error: Cannot build an RPM: rpmbuild (rpm-build package) is not available." && \
 	  exit 1 || :
 	$(AT)[ $(words $(call Unique,$(call RccRealPlatforms,$(RccPlatforms)))) != 1 ] && \
 	     echo Error: Cannot build an RPM for more than one platform at a time. && exit 1 || :
-	$(AT)echo "Creating an RPM file for platform:" $(first_real_platform)
+	$(AT)echo "Creating RPM file(s) for platform:" $(first_real_platform)
+	$(AT)echo "  For the $(if $(filter driver,$(Package)),driver package,runtime and devel packages)."
 	$(AT)$(eval first:=$(word 1,$(RccPlatforms))) \
-	     source $(OCPI_CDK_DIR)/scripts/ocpitarget.sh $(first) &&\
+	     target=packaging/target-$(first) && mkdir -p $$target && \
+	     source $(OCPI_CDK_DIR)/scripts/ocpitarget.sh $(first) && \
 	     p=$$OCPI_TARGET_PLATFORM_DIR/$(first)-packages.sh &&\
-              ( [ -f $$p ] && \
-                $$p list | head -1 | xargs -n 1 | sed 's/^/Requires:/' || :)>devel-requires && \
+             ( [ -f $$p ] && $$p list | head -1 | xargs -n 1 | sed 's/^/Requires:/' || : \
+             ) > $$target/devel-requires && \
 	     rpmbuild $(if $(RpmVerbose),-vv,--quiet) -bb\
 		      --define="RPM_BASENAME    $(base)"\
 		      --define="RPM_NAME        $(call name,$(first))"\
@@ -229,10 +233,10 @@ rpm rpm_runtime rpm_devel: exports
 		      --define="RPM_OPENCPI     $(CURDIR)" \
 		      $(foreach c,$(call cross,$(first)),\
 		        --define="RPM_CROSS $c") \
-		      --define "_rpmdir $(CURDIR)"\
+		      --define "_rpmdir $(CURDIR)/packaging/target-$(first)"\
 		      --define "_build_name_fmt %%{NAME}-%%{VERSION}-%%{RELEASE}.%%{ARCH}.rpm"\
-		      packaging/cdk.spec
-	$(AT)rpm=`ls -1t *.rpm|head -1` && echo Created RPM file: $$rpm && ls -l $$rpm
+		      packaging/$(if $(filter driver,$(Package)),driver,cdk).spec && \
+	     echo "Created RPM file(s) in $$target:" && ls -l $$target
 
 ##########################################################################################
 # Goals that are about prerequisites

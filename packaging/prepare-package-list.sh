@@ -65,11 +65,6 @@ function skip_platform {
 # directories.  Basically this is: git ls-files but don't descend when all contents are cached
 function emit_project_dir {
     set -o pipefail
-    # if find $1 -type f -a \! \( -path "*/target-*/*" -o \
-    #                             -path "*/gen/*" -o \
-    #                             -path "*/container-*/*" -o \
-    #                             -path "*/config-*/*" -o \
-    # 			        \( -path "*/lib/*" -a \! -path "*/rcc/platforms/*" \) \) |sort|
     if find $1 -type f | sort | diff - <(git ls-files $1 | sort ) > /dev/null ; then
       [ -n "$verbose" ] && echo Dir at $1 is the same >&2
       echo $1
@@ -151,9 +146,20 @@ case $type in
       done
     done
     # emit project stuff that are git repo items
-    git ls-files project-registry
+    git ls-files project-registry | sed 's/$/@/'
     emit_project_dir projects/core
     emit_project_dir projects/assets
+    ;;
+  driver)
+    # this is NOT copying exports for now.
+    (
+     git ls-files os/linux/driver
+     # this could be read by looking at depenedencies some day
+     for f in runtime/hdl/include/Hdl{NetDefs,OCCP,PciDriver}.h \
+             os/interfaces/include/KernelDriver.h COPYRIGHT LICENSE.txt; do
+       echo $f
+      done
+    ) | sed 's/$/ driver/'
     ;;
   *) echo Unknown export type;;
 esac

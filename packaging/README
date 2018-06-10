@@ -1,0 +1,38 @@
+This directory contains files relating to packaging OpenCPI for distribution.
+If the OpenCPI source tree is downloaded, and built, and used in place, there is no
+"distribution" and nothing in this directory will be used.
+
+Since different target operating systems use different packaging systems, this directory
+has some files that are generic - meaning used independent of which OS or packaging system
+is used to make distributions for a given OS.
+
+Of course the primary distribution system used for OpenCPI is RPM/YUM, which is used by CentOS,
+RedHat, Fedora etc.
+
+When we use the term "package" here, it is as RPM uses the term - which is an independently
+installable package of files.   We currently have these packages for software platforms
+
+runtime
+devel
+driver
+
+So when we "create a distribution package for softare platform <platform>", we are creating
+one of those packages, and creating the type of package appropriate for that platform.
+Development packages for embedded platforms are prepared for the type of development host being
+used.
+
+The generic files here are:
+
+prepare-package-list.sh:
+   a script to generate the files that should be included in for a specified package
+
+For RPM building we have:
+   cdk.spec - the RPM spec file for creating the OpenCPI runtime and devel packages
+   driver.spec - the RPM spec file for creating the OpenCPI driver package
+   prepare-rpm-files.sh - a script used in the RPM spec files that essentially translates the
+      generic output of the prepare-package-list.sh script into what the rpmbuild process needs,
+      which is to have a list of files and directories, and make a private copy of all files.
+
+   These may be moved to a subdirectory
+
+For each platform, distribution files will be placed in the target-<platform> subdirectory
