@@ -21,7 +21,7 @@
 # scripting around it so that it is built on the system it is install on (for the running
 # kernel at the of installation) *AND* is automatically rebuilt whenever the kernel on the
 # installed system is upgraded.
-Name:      %{RPM_NAME}
+Name:      %{RPM_NAME}-driver
 Version:   %{RPM_VERSION}
 Release:   %{RPM_RELEASE}%{?dist}
 BuildArch: noarch
@@ -52,13 +52,10 @@ startup script that will rebuild the driver as needed.
 
 %{?RPM_HASH:ReleaseID: %{RPM_HASH}}
 
-%prep
-%setup -q -n %{RPM_BASENAME}-%{version}
-
 %install
 cd %{RPM_OPENCPI}
 set -e
-rm -r -f $buildroot$prefix
+rm -r -f %{buildroot}%{prefix0}
 ./packaging/prepare-rpm-files.sh driver %{RPM_PLATFORM} "%{?RPM_CROSS:1}" \
 				 %{buildroot} %{prefix0} %{_builddir}
 
@@ -66,12 +63,12 @@ rm -r -f $buildroot$prefix
 %{__mkdir_p} %{buildroot}/%{prefix1}
 # This will be re-done at installation if relocated
 %{__ln_s} -f %{prefix0}/driver/opencpi-driver-check %{buildroot}/%{prefix1}/opencpi-driver-check
-echo %%{prefix1}/opencpi-driver-check >> driver-files
+echo %%{prefix1}/opencpi-driver-check >> %{_builddir}/driver-files
 
 %files -f driver-files
-%doc %{_prefix0}/README
-%doc %{_prefix0}/COPYRIGHT
-%doc %{_prefix0}/LICENSE.txt
+#%doc %{_prefix0}/README
+#%doc %{_prefix0}/COPYRIGHT
+#%doc %{_prefix0}/LICENSE.txt
 
 %pretrans
 # Check if the driver is currently loaded/running
@@ -112,12 +109,12 @@ getent passwd opencpi >/dev/null || \
 # SELinux fixes (not sure if actually needed)
 chcon system_u:object_r:initrc_exec_t:s0 %{_initddir}/opencpi-driver-check || :
 chcon -h system_u:object_r:initrc_exec_t:s0 %{_initddir}/opencpi-driver-check || :
-rm -rf %{_prefix}/`uname -r` 2>/dev/null || :
-%{_prefix}/opencpi-driver-check start || :
+rm -rf %{prefix0}/`uname -r` 2>/dev/null || :
+%{prefix0}/opencpi-driver-check start || :
 touch /tmp/opencpi_driver_just_installed
 
 %preun
-%{_prefix}/opencpi-driver-check stop || :
+%{prefix0}/opencpi-driver-check stop || :
 if [ -n "`lsmod | grep opencpi`" ]; then
   echo ERROR: Cannot uninstall driver RPM until the current driver is no longer in use.
   exit 1
@@ -131,7 +128,7 @@ fi
 %postun
 # 0 means totally uninstalled (not an update)
 if [ "$1" == "0" ]; then
-  rm -rf %{_prefix}/ || :
+  rm -rf %{prefix0}/driver || :
 fi
 
 %triggerin -- kernel

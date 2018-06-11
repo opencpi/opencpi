@@ -206,9 +206,9 @@ tar: exports
 # This should be moved to the packaging subdir...
 .PHONY: rpm rpm_runtime rpm_devel
 first_real_platform:=$(word 1,$(RccPlatforms))
-ifneq ($(and $(filter rpm,$(MAKECMDGOALS)),$(filter command line,$(origin Package))),)
-  $(error You cannot specify a Package when creating RPMs, they are all created together)
-endif
+#ifneq ($(and $(filter rpm,$(MAKECMDGOALS)),$(origin Package,command line),$(filter runtime devel,$(Package))),)
+#  $(error You cannot specify a Package when creating RPMs, they are all created together)
+#endif
 rpm: exports
 	$(AT)! command -v rpmbuild >/dev/null 2>&1 && \
 	  echo "Error: Cannot build an RPM: rpmbuild (rpm-build package) is not available." && \

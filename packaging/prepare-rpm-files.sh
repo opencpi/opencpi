@@ -30,10 +30,17 @@ prefix=$5
 builddir=$6
 mkdir -p $buildroot$prefix
 ./packaging/prepare-package-list.sh $package $platform $cross | while read source dest; do
-  if [ -n  "$dest" ]; then
-    xform="-e s=^$(dirname $source)/=$dest/=" destdir=$dest
+  xform= destdir=$(dirname $source)
+  if [ -n "$dest" ]; then
+    if [ $destdir = . ]; then
+      xform="-e s=^=$dest/="
+      destdir=
+    else
+      xform="-e s=^$destdir/=$dest/="
+      destdir=$dest
+    fi
   else
-    xform=                                    destdir=$(dirname $source) dest=${source/@}
+    dest=${source/@}
   fi
   mkdir -p ${buildroot}${prefix}/$destdir
   if [[ $source == *@ ]]; then
