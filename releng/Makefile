@@ -62,7 +62,9 @@ ifeq "$(GIT_VERSION)" ''
   endif
   ifneq "$(GIT_BRANCH)" "undefined"
     ifneq "$(GIT_BRANCH)" "develop"
-      COMMIT_TAG+=_$(shell echo $(GIT_BRANCH)|tr - _)
+      # COMMIT_TAG is used in *.spec files for RPM release tag.
+      # Any non alphanumeric (or .) strings converted to single _
+      COMMIT_TAG+=_$(shell echo $(GIT_BRANCH) | sed -e 's/[^A-Za-z0-9.]\+/_/g')
     endif
   endif
   # Generate an increasing number for version comparisons (since git hashes aren't)

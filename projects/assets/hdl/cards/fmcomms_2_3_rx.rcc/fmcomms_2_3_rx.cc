@@ -1274,7 +1274,7 @@ private:
     const char* err = get_min_allowed_val(prop, val);
     if(err != 0) { return setError(err); }
 
-    m_properties.rf_gain_max_dB = val;
+    m_properties.rf_gain_min_dB = val;
 
     return RCC_OK;
   }

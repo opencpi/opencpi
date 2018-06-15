@@ -479,7 +479,7 @@ EOF
 # The PackageName, PackagePrefix and Package variables can optionally be set here:
 # PackageName defaults to the name of the directory
 # PackagePrefix defaults to local
-# Package defaults to PackageName.PackagePrefix
+# Package defaults to PackagePrefix.PackageName
 ${packagename:+PackageName=$packagename}
 ${packageprefix:+PackagePrefix=$packageprefix}
 ${package:+Package=$package}
@@ -878,7 +878,7 @@ EOF
 # The PackageName, PackagePrefix and Package variables can optionally be set here:
 # PackageName defaults to the name of the directory
 # PackagePrefix defaults to package of parent (project)
-# Package defaults to PackageName.PackagePrefix
+# Package defaults to PackagePrefix.PackageName
 ${packagename:+PackageName=$packagename}
 ${packageprefix:+PackagePrefix=$packageprefix}
 ${package:+Package=$package}
@@ -1884,7 +1884,7 @@ Options for the create|delete verbs:
                      This is invalid if '-p' is specified
   -n                 This spec has no lifecycle/configuration interface (no runtime properties)
 
- == create|delete component|protocol|worker|{hdl device} ==
+ == create|delete component|protocol|test|worker|{hdl device} ==
   -l <library>       Component library to add the asset to {when there is more than one library}
   -h <hdl-library>   For BSPs: A library underneath hdl/ to add assets to.  Default is "devices"
                                Valid <hdl-library> options are "devices", "cards" and "adapters"
@@ -1965,7 +1965,12 @@ Create examples:
   ocpidev create spec mycomp
     (create a component spec with name 'mycomp'. It will be placed in the default location,
      which is components/specs. Provide '-l <library-name>' if there are sub-libraries
-     underneath 'components')
+     underneath 'components'. Use the -t option to generate a component unit test as well)
+
+  ocpidev create test mycomp
+    (create a component unit test for component spec 'mycomp'. It will be placed in the default
+     location, which is components/mycomp.test. Provide '-l <library-name>' if there are
+     sub-libraries underneath 'components')
 
   ocpidev create worker myworker.hdl -S mycomp-spec
     (create an HDL worker named myworker that implements the 'mycomp' spec. If the worker

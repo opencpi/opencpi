@@ -211,10 +211,14 @@ def isStale (myDir, force):
     retVal = True
     find_output = ""
     if (force == False):
-        find_output = subprocess.Popen(['find', myDir, "-name", "*.xml", '-newer', myDir + "/project.xml", "-quit"], stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()[0]
+        if os.path.isfile(myDir + "/project.xml"):
+            find_output = subprocess.Popen(['find', myDir, "-name", "*.xml", 
+                                           '-newer', myDir + "/project.xml", "-quit"], 
+                                           stdout=subprocess.PIPE, 
+                                           stderr=subprocess.PIPE).communicate()[0]
 
-    if (find_output != ""):
-        retVal = False
+            if (find_output != ""):
+                retVal = False
 
     return retVal
 

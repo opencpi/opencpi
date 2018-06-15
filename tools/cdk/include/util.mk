@@ -880,12 +880,12 @@ OcpiGetDirTypeX=$(strip $(infox GDT1:$1)\
   $(or \
     $(and $(wildcard $1/Makefile),\
       $(foreach d,$(shell sed -n \
-                  's=^[ 	]*include[ 	]*.*OCPI_CDK_DIR.*/include/\(.*\).mk$$=\1=p' \
+                  's=^[ 	]*include[ 	]*.*OCPI_CDK_DIR.*/include/\(.*\)\.mk[ 	]*$$=\1=p' \
                   $1/Makefile | tail -1),\
       $(infox OGT1: found type: $d ($1))$(notdir $d))) \
     ,$(and $(wildcard $1/Makefile.am),\
       $(foreach d,$(shell sed -n \
-                  's=^[ 	]*@AUTOGUARD@[ 	]*include[ 	]*.*OCPI_CDK_DIR.*/include/\(.*\).mk$$=\1=p' \
+                  's=^[ 	]*@AUTOGUARD@[ 	]*include[ 	]*.*OCPI_CDK_DIR.*/include/\(.*\)\.mk[ 	]*$$=\1=p' \
                   $1/Makefile.am | tail -1),\
       $(warning Found what I think is a $d in "$1", but it is not fully configured and may not work as expected.)$(notdir $d))) \
     ,$(and $(filter $(realpath $1),$(realpath $(OCPI_CDK_DIR))),project)\
