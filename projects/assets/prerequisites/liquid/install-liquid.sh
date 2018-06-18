@@ -50,3 +50,5 @@ echo Performing '"./configure"'
   CFLAGS=-g CXXFLAGS=-g
 make
 make install
+rm -r -f $OcpiInstallExecDir/bin
+echo rm -r -f $OcpiInstallExecDir/bin

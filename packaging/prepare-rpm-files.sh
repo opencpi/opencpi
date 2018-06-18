@@ -28,37 +28,54 @@ cross=$3
 buildroot=$4
 prefix=$5
 builddir=$6
+[ -z "${builddir}" ] && echo "Don't run this by hand." && exit 1
 mkdir -p $buildroot$prefix
+[ $package = devel ] && set -vx
 ./packaging/prepare-package-list.sh $package $platform $cross | while read source dest; do
-  xform= destdir=$(dirname $source)
+  if [[ $source == */ ]] ; then
+    [ -z "$dest" ] && dest=${source/%\/}
+    echo %dir %{prefix0}/$dest
+    mkdir -p ${buildroot}${prefix}/$dest
+    continue;
+  fi
+  xform=''
+  destdir=$(dirname $source)
   if [ -n "$dest" ]; then
     if [ $destdir = . ]; then
-      xform="-e s=^=$dest/="
+      xform="-e s=^=%{prefix0}/$dest/="
       destdir=
     else
-      xform="-e s=^$destdir/=$dest/="
+      xform="-e s=^$destdir/=%{prefix0}/$dest/="
       destdir=$dest
     fi
   else
+    xform="-e s=^=%{prefix0}/="
     dest=${source/@}
   fi
+  #if [ -n "$dest" ]; then  # echo "DEBUG: source=${source} dest=${dest}" > /dev/stderr
   mkdir -p ${buildroot}${prefix}/$destdir
+  # If source needs to stay a link
   if [[ $source == *@ ]]; then
     source=${source/@}
-    echo $source
+    find $source ! -type d | sed $xform -e s/foo/foo/
     cp -R $source ${buildroot}${prefix}/$dest
   else
     find -L $source -type f | sed $xform -e s/foo/foo/
     cp -R -L $source ${buildroot}${prefix}/$dest
   fi
-done | while read file; do
-  # Emit %dir lines for any directory found anywhere, then make them uniq with sort -u
-  dir=$(dirname $file)
-  while [ $dir != . ] ; do
-    # FIXME check why this CROSS thing is actually needed anyway.
-    [ -z "$cross" -o $(basename $dir) = "$platform" ] &&
-    echo "%dir %{prefix0}/$dir"
-    dir=$(dirname $dir)
-  done
-  echo "%{prefix0}/$file"
+# done | while read file; do
+#   # Emit %dir lines for any directory found anywhere, then make them uniq with sort -u
+#   # Skip any directories within kernel-headers (saves 4 minutes)
+#   if [[ "${file}" != */kernel-headers* ]]; then
+#     dir=$(dirname $file)
+#     while [ $dir != . ] ; do
+#       # FIXME check why this CROSS thing is actually needed anyway.
+#       [ -z "$cross" -o "$(basename $dir)" = "$platform" ] &&
+#       echo "%dir %{prefix0}/$dir"
+#       dir=$(dirname $dir)
+#     done
+#   fi
+#   # Allow pre-compiled python2 cache files
+#   [[ "${file}" == *.py ]] && file+='*'
+#   echo "%{prefix0}/$file"
 done | sort -u > $builddir/$package-files

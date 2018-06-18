@@ -18,28 +18,38 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 ##########################################################################################
-# This script prepares for one of the export combinations for some platforms
-# It contains the rules for the combinations
+# This script produces a contents list for one of the distribution packages
+# It contains the rules for the contents in each one.
+# The output is processed by various packaging systems, including rpm and tar
 #
 # The choices are:
-# all exports
-# runtime exports
-# devel exports (all minus runtime)
+# all:     everything in exports and everything in projects in the git repo
+# runtime: minimal runtime (plus some tests) for the platform(s)
+# devel:   development configuration minus runtime
 #
 # Basically we generate a set of directories and files for export that are
 # minimal for the export type.
-# The inputs are the type of export (arg1), platforms (arg2) and all platforms (arg3)
-#
+
+# The inputs are the type of export (arg1), platforms (arg2), and cross (arg3)
+# The third arg is just an empty/non-type boolean indicator
+
 # The result is a set of directories and files, one per line.
 # each line is of the form
 # <source-path> [<dest-path>]
+
+# Much like the "ls -F" command:
+# If there is a @ at the end, it indicates a symlink that should REMAIN linked in destination
+# If there is a / at the end, it indicates a directory that should be owned by the package
+# I.e. the "devel" package might have files in directories that are owned by the runtime package.
 
 [ "$1" = -v ] && verbose=1 && shift
 type=$1
 platforms=$2
 cross=$3
-allplatforms="$OCPI_ALL_RCC_PLATFORMS"
+[ -z "${platforms}" ] && echo "Don't run this by hand." && exit 1
 set -e
+shopt -s dotglob
+shopt -s nullglob
 
 function found_in {
   local look=$1
@@ -50,7 +60,7 @@ function found_in {
 
 function is_platform {
   [ -d $1/lib -o -d $1/bin ]
-}    
+}
 
 function skip_platform {
   local base=$(basename $1)
@@ -61,33 +71,38 @@ function skip_platform {
   fi
 }
 
+function any_repo {
+  git ls-files --error-unmatch $1 > /dev/null 2>&1
+}
 # emit the dir name if the tree is clean, otherwise emit each cached item here and recurse on
 # directories.  Basically this is: git ls-files but don't descend when all contents are cached
 function emit_project_dir {
-    set -o pipefail
-    if find $1 -type f | sort | diff - <(git ls-files $1 | sort ) > /dev/null ; then
-      [ -n "$verbose" ] && echo Dir at $1 is the same >&2
-      echo $1
-    else
-      [ -n "$verbose" ] && echo Dir at $1 is different, descending >&2
-      for i in `ls -a $1`; do
-	[ $i = . -o $i = .. ] && continue
-	if [ -d $1/$i ]; then
-	  [ `git ls-files $1/$i|wc -c` = 0 ] || emit_project_dir $1/$i  
-        else
-	  git ls-files $1/$i
-	fi  
-      done
-   fi
+  set -o pipefail
+  any_repo $1 || return 1
+  if diff -q <(find $1 -type f | sort) <(git ls-files $1 | sort) >/dev/null; then
+    [ -n "$verbose" ] && echo Dir at $1 is the same >&2
+    echo $1@
+  else
+    [ -n "$verbose" ] && echo Dir at $1 is different, descending >&2
+    found=
+    for i in $1/*; do
+      any_repo $i || continue
+      if [ -d $i -a ! -L $i ]; then
+        emit_project_dir $i && found=1
+      else
+        echo $i@
+        found=1  
+      fi
+    done
+    [ -n "$found" ] && echo $1/
+  fi
 }
 
 [ $1 = test ] && {
-  emit_project_dir $2  
+  emit_project_dir $2
   exit $?
 }
 
-
-shopt -s nullglob
 for l in `find cdk -follow -type l`; do
   bad=1
   echo Dead exports link found: $l
@@ -97,6 +112,7 @@ for l in `find -H . -name "-*"`; do
   echo Found files starting with hyphen
 done
 [ -n "$bad" ] && exit 1
+
 # FIXME: this list is redundant with "install-prerequisites.sh" and "places"
 # This list could potentially be platform-specific
 # and then there are platform-specific prereqs
@@ -112,43 +128,69 @@ case $type in
       done
     done;;
   runtime)
-    # Runtime is: cdk/runtime, and prereq dynamic librariesP
     for f in cdk/runtime/*; do
-      skip_platform $f || echo $f cdk
+      skip_platform $f && continue
+      echo $f cdk
+      [ -d $f ] && (cd cdk/runtime;
+                    find $(basename $f) -type d -exec echo cdk/runtime/{}/ cdk/{} \; )
     done
+    # runtime prereqs are only shared libraries
+    found1=
     for p in $prereqs; do
+      found=
+      # We explicitly only look for shared libraries in a platform's lib directory
+      # Prerequisite libraries in runtime are currently *solely* needed when RCC
+      # workers have asked to use them.  When we are delivering a dynamic runtime
+      # they will be in OUR lib directory.
       for d in prerequisites/$p/*; do
-        skip_platform $d ||
-	  find $d -name "*.so" -o -name "*.so.*" -o -name "*.dylib"
+        (skip_platform $d || ! is_platform $d || [ ! -d $d/lib ] ) && continue
+	libs=$(echo $d/lib/*.{so,so.*,dylib})
+        [ -n "$libs" ] && {
+	  echo $libs | xargs -n 1 echo
+	  echo $d/lib/
+	  echo $d/
+          found=1
+          found1=1
+        }
       done
-    done;;
+      [ -n "$found" ] && echo prerequisites/$p/
+    done
+    [ -n "$found1" ] && echo prerequisites/
+    ;;
   devel)
-    [ -n "$cross" ] && prefix=/$platform/lib
     for f in cdk/*; do
       ( [ $f = cdk/runtime ] || skip_platform $f ) && continue
       # If its not platform specific, it won't be in the cross-platform devel
       [ -n "$cross" -a $f != cdk/$platforms ] && continue
-      base=$(basename $f)
-      diff <(cd cdk/runtime; [ -e $base ] && find -H $base) \
-           <(cd cdk; find -H $base -name runtime -prune -o ! -type d -print) \
-           | sed -n 's/^> *\(.*\)$/cdk\/\1/p'
+      (cd cdk; find -H $(basename $f)) | while read path; do
+	 [ -e cdk/runtime/$path ] || echo cdk/$path$([ -d cdk/$path ] && echo /)
+      done
     done
     for p in $prereqs; do
       for d in prerequisites/$p/*; do
         skip_platform $d && continue;
-	if is_platform $d; then
-	  [ -z "$cross" -a -d $d/bin ] && find $d/bin ! -type d
-	  [ -d $d/include ] && find $d/include ! -type d
-          [ -d $d/lib ] && find $d/lib -name "*.a"
+        if is_platform $d; then
+          [ -z "$cross" -a -d $d/bin ] && find $d/bin ! -type d &&
+	    find $d/bin -type d -exec echo {}/ \;
+          [ -d $d/include ] && find $d/include ! -type d &&
+            find $d/include -type d -exec echo {}/ \;
+          [ -d $d/lib ] && find $d/lib -name "*.a" && 
+	    [ -z "$(echo $d/lib/*.{so,so.*,dylib})" ] &&
+            find $d/lib -type d -exec echo {}/ \;
         elif [ -z "$cross" ] && [[ $d == */include ]]; then
-          echo $d
+	  echo $d
+          echo $d/
         fi
       done
     done
-    # emit project stuff that are git repo items
-    git ls-files project-registry | sed 's/$/@/'
-    emit_project_dir projects/core
-    emit_project_dir projects/assets
+    if [ -z "${cross}" ]; then
+      # emit project stuff that are git repo items
+      git ls-files project-registry | sed 's/$/@/'
+      echo project-registry/
+      echo projects/
+      emit_project_dir projects/core
+      emit_project_dir projects/assets
+    fi
     ;;
   driver)
     # this is NOT copying exports for now.
@@ -160,6 +202,7 @@ case $type in
        echo $f
       done
     ) | sed 's/$/ driver/'
+    echo driver/ driver
     ;;
-  *) echo Unknown export type;;
+  *) echo "Unknown export type";;
 esac

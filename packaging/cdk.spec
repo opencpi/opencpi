@@ -27,7 +27,7 @@ Group:       Applications/Engineering
 License:     LGPLv3+
 %global      prefix0 /opt/opencpi
 Prefix:      %{prefix0}
-# Aparently rpmbuild does not do this for you, only RPM_INSTALL_DIR0/1/2 etc.
+# Apparently rpmbuild does not do this for you, only RPM_INSTALL_DIR0/1/2 etc.
 %global      prefix1 /etc
 Prefix:      %{prefix1}
 Vendor:      ANGRYVIPER Team
@@ -35,7 +35,7 @@ Packager:    ANGRYVIPER team <discuss@lists.opencpi.org>
 %if !0%{?RPM_CROSS:1}
 ##########################################################################################
 # Native/development host package
-%description 
+%description
 Open Component Portability Infrastructure (OpenCPI)
 
 An open source software (OSS) framework to simplify complexity and enable
@@ -69,6 +69,8 @@ for the %{RPM_PLATFORM} target platform, along with core components.
 
 # suppress generic post processing that is done for all packagers, like python bytecompile,
 # stripping, etc. This does not suppress things like check-buildroot
+# %%global __os_install_post %{nil}
+%global _python_bytecompile_errors_terminate_build 0
 %global __os_install_post %{nil}
 %install
 cd %{RPM_OPENCPI}
@@ -137,6 +139,12 @@ This package ensures that all requirements for OpenCPI development are
 installed. It also provides a useful development utilities.
 %{?RPM_HASH:ReleaseID: %{RPM_HASH}}
 
+%if !0%{?RPM_CROSS:1}
+# If not cross-compiled, the devel packages replace the old prereq packages
+Obsoletes: ocpi-prereq-ad9361 ocpi-prereq-gmp ocpi-prereq-gtest ocpi-prereq-patchelf ocpi-prereq-xz
+Provides: ocpi-prereq-ad9361 ocpi-prereq-gmp ocpi-prereq-gtest ocpi-prereq-patchelf ocpi-prereq-xz
+%endif
+
 %files devel -f devel-files
 
 %pre
@@ -160,7 +168,6 @@ fi
 
 
 %post
-
 # Since we want to make the global installation aspects optional, we deal with the opencpi
 # user and group optionally after all the files are installed
 

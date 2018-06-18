@@ -51,7 +51,7 @@ include $(OCPI_CDK_DIR)/include/rcc/rcc-make.mk
 
 ##########################################################################################
 # Goals that are not about projects
-.PHONY: exports      framework      driver      testframework \
+.PHONY: exports      framework      driver      testframework cleanpackaging \
         cleanexports cleanframework cleanprojects cleandriver clean distclean cleaneverything
 all framework:
 	$(AT)$(MAKE) -C build/autotools install Platforms="$(RccPlatforms)"
@@ -101,7 +101,7 @@ cleandriver:
 clean: cleanframework cleanprojects
 
 # Super clean, but not git clean, based on our patterns, not sub-make cleaning
-cleaneverything distclean: clean cleandriver
+cleaneverything distclean: clean cleandriver cleanpackaging
 	$(AT)rm -r -f exports
 	$(AT)find . -depth -a ! -name .git  -a ! -path "./prerequisites*" -a \( \
              -name '*~' -o -name '*.dSym' -o -name timeData.raw -o -name 'target-*' -o \
@@ -237,6 +237,10 @@ rpm: exports
 		      --define "_build_name_fmt %%{NAME}-%%{VERSION}-%%{RELEASE}.%%{ARCH}.rpm"\
 		      packaging/$(if $(filter driver,$(Package)),driver,cdk).spec && \
 	     echo "Created RPM file(s) in $$target:" && ls -l $$target
+
+cleanpackaging:
+	$(AT)rm -r -f packaging/target-*
+
 
 ##########################################################################################
 # Goals that are about prerequisites
