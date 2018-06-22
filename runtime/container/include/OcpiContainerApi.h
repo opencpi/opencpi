@@ -177,6 +177,7 @@ namespace OCPI {
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)                  \
       virtual void get##pretty##Parameter(unsigned ordinal, char *, size_t length, \
 					  unsigned idx) const = 0; \
+      virtual void set##pretty##PropertyOrd(unsigned ordinal, run val, unsigned idx) const = 0; \
       virtual void							\
       get##pretty##PropertyOrd(unsigned ord, char *, size_t length, unsigned idx) const = 0;
 
@@ -254,7 +255,9 @@ namespace OCPI {
         *find(const char *model, const char *which = NULL, const PValue *props = NULL),
 	*find(const PValue *list),
 	*get(unsigned n);
-      static void shutdown();
+      static void
+	list(bool onlyPlatforms),
+	shutdown();
     };
     class Application; // forward reference for applications that span containers.
     // Structure to capture indexing arrays and sequences and navigating to struct members

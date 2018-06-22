@@ -62,7 +62,7 @@ case "$1" in
     fi
     [ -z "${dont_just_check}" ] && exit 0;
     echo -n "Loading OpenCPI driver:"
-    cd /opt/opencpi/driver
+    cd ${OCPI_CDK_DIR}/../driver
     cd ${kernel_ver} 2> /dev/null
     ../ocpi_linux_driver load x >/tmp/last_opencpi_driver_load.log 2>&1
     if [ $? -ne 0 ]; then
@@ -75,12 +75,12 @@ case "$1" in
     fi
     # Need to rebuild
     echo -n "Building OpenCPI kernel driver: "
-    mkdir -p /opt/opencpi/driver/${kernel_ver}/work
-    cp --target-directory=/opt/opencpi/driver/${kernel_ver} *.rules Makefile *.c
-    cd /opt/opencpi/driver/${kernel_ver}
+    mkdir -p ${OCPI_CDK_DIR}/../driver/${kernel_ver}/work
+    cp --target-directory=${OCPI_CDK_DIR}/../driver/${kernel_ver} *.rules Makefile *.c
+    cd ${OCPI_CDK_DIR}/../driver/${kernel_ver}
     # Won't detect KERNEL_DIR if combined clean and modules targets
     make clean MyLib=work MyTargetDir=work AT='' V=1 > build.log 2>&1
-    make modules modules_install MyIncs=-I/opt/opencpi/driver MyLib=work MyTargetDir=work AT='' V=1 OCPI_TARGET_HOST=${OCPI_TOOL_DIR} >> build.log 2>&1
+    make modules modules_install MyIncs=-I${OCPI_CDK_DIR}/../driver MyLib=work MyTargetDir=work AT='' V=1 OCPI_TARGET_HOST=${OCPI_TOOL_DIR} >> build.log 2>&1
     mv work/*.ko .
     rmdir work
     # Make sure world-readable (AV-1760)
@@ -100,9 +100,9 @@ case "$1" in
     ;;
   stop|status|reload)
     # Pass to OSS handler
-    cd /opt/opencpi/driver
+    cd ${OCPI_CDK_DIR}/../driver
     cd ${kernel_ver} 2> /dev/null
-    /opt/opencpi/driver/ocpi_linux_driver $1
+    ${OCPI_CDK_DIR}/../driver/ocpi_linux_driver $1
     exit 0
     ;;
   condstart|condrestart|restart)

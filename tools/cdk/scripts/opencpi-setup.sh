@@ -17,14 +17,38 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 ###############################################################################################
-# This file is meant to be *sourced* to set up the environment for OpenCPI on development hosts
+# This file is meant to be *sourced* to set up the environment for OpenCPI
 # in the typical way that such scripts are called from the user's .profile.
-# It is not intended to be used in RPM installations since that is done globally.
-#
-# It not meant to be *executed* as a shell script.
+# It not meant to be *executed* as a shell script, only sourced.
 # It is sourced by its name in the top level of the desired CDK installation
-# (possibly /opt/opencpi/cdk)
+# (possibly /opt/opencpi/cdk).  If may be sourced using a relative pathname.
+
+# Thus its location implies where OpenCPI is installed.
+# This means that it should only be run (sourced) in its "exported" location, not in its
+# location inside the source tree.
 # The CDK is where this is sourced from (its dirname) and so OCPI_CDK_DIR is set accordingly.
+
+# There are several different scenarios where this script will run:
+
+# 1. From the global bash /etc/profile.d entry created when the RPM or equivalent is installed.
+#    This means that this script is called for login shells, with the "-" argument, which means
+#    it will complain if it finds anything in the environment, which it should not.
+
+# 2. When a user specifically sources this file in one of their bash login files.
+#    This would be when the user is operating either without a global OpenCPI installation (thus
+#    no /etc/profile.d files are present or invoked) *or* wants to override such settings and
+#    indicate a different CDK or different options.  Executing this script in the user's
+#    login script (.bash_profile or .bash_login or .profile) will do this.
+#    Note that if it wants to override any global settings, it can use the "-r" option, whereas
+#    if a global installation would be unexpected, it can use "-" which will complain if any
+#    global login settings are found.
+
+# 3. Manually when the OpenCPI environment should be established or changed for a particular
+#    shell.  In this case a variety of the options may be used.
+
+# When sourced on a development platform, the platform is dynamically determined.
+# When sourced in an embedded runtime environment the platform is known and set in the
+# environment before this script would be run (e.g. on an SD card in a small embedded platform).
 
 # It modifies the environment in these ways:
 # 1. setting OCPI_CDK_DIR environment variable to an absolute pathname - dirname of this script
@@ -41,7 +65,7 @@
 ocpi_name=opencpi-setup.sh
 ocpi_me=$BASH_SOURCE
 [ -z "$BASH_VERSION" -o -z "$ocpi_me" ] && {
-  echo Error:  You can only use the $ocpi_name script with the bash shell.$0 >&2
+  echo Error:  You can only use the $ocpi_name script with the bash shell. >&2
   return 1
 }
 [ "$ocpi_me" == $0 ] && {
@@ -60,7 +84,7 @@ ocpi_me=$BASH_SOURCE
 	 --help or -h:      print this message
 	 --reset or -r:     reset any previous OpenCPI environment before setting up a new one
 	 --clean or -c:     unset all OpenCPI environment variables and nothing more.
-	 --list or -l:      list current settings - will not setup
+	 --list or -l:      list current settings - will not setup or modify any settings
 	 --verbose or -v:   be verbose about what is happening
 	 --ensure or -e:    leave things alone if they are already set up
 	 -                  use this option when using no other options
@@ -96,7 +120,8 @@ done
     }
   }
   [ -n "$ocpi_verbose" ] && echo Unsetting all OpenCPI environment variables.
-  for ocpi_v in $(env | egrep '^OCPI_(PREREQUISITES|TARGET|TOOL|CDK|ROOT)_' | sort | cut -f1 -d=); do
+  for ocpi_v in $(env | egrep '^OCPI_(PREREQUISITES|TARGET|TOOL|CDK|ROOT)_' | sort | cut -f1 -d=)
+  do
     unset $ocpi_v
   done
   return 0
@@ -112,7 +137,7 @@ done
   [ -n "$ocpi_ensure" ] && {
     # The environment appears already setup so we can leave things as they are, but check for
     # a half-baked setup and complain
-    [ -z "$OCPI_PREREQUISITES_DIR" -o -z "$OCPI_TOOL_OS" ] && {
+    [ -z "$OCPI_PREREQUISITES_DIR" -o -z "$OCPI_TOOL_OS" -o -z "$OCPI_TOOL_DIR"] && {
       echo Error: The environment is partially set up, which is bad.  Perhaps use --reset. >&2
       return 1
     }
@@ -120,24 +145,28 @@ done
   }
   [ -z "$ocpi_reset" -a -z "$ocpi_clean" ] && {
     cat<<-EOF >&2
-	Warning:  The OpenCPI $ocpi_name file should be sourced when OCPI_CDK_DIR is not set.
+	Warning:  The OpenCPI $ocpi_name file should be sourced when OCPI_CDK_DIR is not set,
+	          when not cleaning or resetting it.
 	          OCPI_CDK_DIR was already set to: $OCPI_CDK_DIR, so nothing is changed.
 	          Use the --reset argument to reset OpenCPI environment variables before setup
 	          Use the --clean argument to unset all OpenCPI environment variables and return
 	EOF
     return 1
   }
-  [ -n "$ocpi_verbose" ] && echo Clearing all OpenCPI environment variables before setting anything >&2
-  for ocpi_v in $(env | egrep '^OCPI_(PREREQUISITES|TARGET|TOOL|CDK|ROOT)_' | sort | cut -f1 -d=); do  
+  [ -n "$ocpi_verbose" ] &&
+      echo Clearing all OpenCPI environment variables before setting anything >&2
+  for ocpi_v in $(env | egrep '^OCPI_(PREREQUISITES|TARGET|TOOL|CDK|ROOT)_' | sort | cut -f1 -d=)
+  do  
     unset $ocpi_v
   done
 }
 # Make the file name of this script absolute if it isn't already
+# But leave it user friendly (don't to readlink etc.)
 [[ "$ocpi_me" = /* ]] || ocpi_me=`pwd`/$ocpi_me
 ocpi_dir=`dirname $ocpi_me`
 [ -d $ocpi_dir -a -x $ocpi_dir ] || {
-    echo $ocpi_name:' ' Unexpected error:' ' directory $ocpi_dir not a directory or inaccessible. >&2
-    return 1
+  echo $ocpi_name:' ' Unexpected error:' ' directory $ocpi_dir not a directory or inaccessible. >&2
+  return 1
 }
 ocpi_cdk_dir=$(cd $ocpi_dir && pwd)
 [ "$ocpi_verbose" = 1 ] && cat <<-EOF >&2

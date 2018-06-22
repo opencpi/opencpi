@@ -46,7 +46,7 @@
 type=$1
 platforms=$2
 cross=$3
-[ -z "${platforms}" ] && echo "Don't run this by hand." && exit 1
+[ -z "${platforms}" ] && echo "Don't run this by hand.">&2 && exit 1
 set -e
 shopt -s dotglob
 shopt -s nullglob
@@ -82,6 +82,7 @@ function emit_project_dir {
   if diff -q <(find $1 -type f | sort) <(git ls-files $1 | sort) >/dev/null; then
     [ -n "$verbose" ] && echo Dir at $1 is the same >&2
     echo $1@
+    find $1 -type d | sed 's/$/\//'
   else
     [ -n "$verbose" ] && echo Dir at $1 is different, descending >&2
     found=
@@ -105,11 +106,11 @@ function emit_project_dir {
 
 for l in `find cdk -follow -type l`; do
   bad=1
-  echo Dead exports link found: $l
+  echo Dead exports link found: $l >&2
 done
 for l in `find -H . -name "-*"`; do
   bad=1
-  echo Found files starting with hyphen
+  echo Found files starting with hyphen >&2
 done
 [ -n "$bad" ] && exit 1
 
@@ -128,34 +129,35 @@ case $type in
       done
     done;;
   runtime)
+    echo cdk/
     for f in cdk/runtime/*; do
       skip_platform $f && continue
       echo $f cdk
       [ -d $f ] && (cd cdk/runtime;
                     find $(basename $f) -type d -exec echo cdk/runtime/{}/ cdk/{} \; )
     done
-    # runtime prereqs are only shared libraries
-    found1=
-    for p in $prereqs; do
-      found=
-      # We explicitly only look for shared libraries in a platform's lib directory
-      # Prerequisite libraries in runtime are currently *solely* needed when RCC
-      # workers have asked to use them.  When we are delivering a dynamic runtime
-      # they will be in OUR lib directory.
-      for d in prerequisites/$p/*; do
-        (skip_platform $d || ! is_platform $d || [ ! -d $d/lib ] ) && continue
-	libs=$(echo $d/lib/*.{so,so.*,dylib})
-        [ -n "$libs" ] && {
-	  echo $libs | xargs -n 1 echo
-	  echo $d/lib/
-	  echo $d/
-          found=1
-          found1=1
-        }
-      done
-      [ -n "$found" ] && echo prerequisites/$p/
-    done
-    [ -n "$found1" ] && echo prerequisites/
+    # # runtime prereqs are only shared libraries
+    # found1=
+    # for p in $prereqs; do
+    #   found=
+    #   # We explicitly only look for shared libraries in a platform's lib directory
+    #   # Prerequisite libraries in runtime are currently *solely* needed when RCC
+    #   # workers have asked to use them.  When we are delivering a dynamic runtime
+    #   # they will be in OUR lib directory.
+    #   for d in prerequisites/$p/*; do
+    #     (skip_platform $d || ! is_platform $d || [ ! -d $d/lib ] ) && continue
+    # 	libs=$(echo $d/lib/*.{so,so.*,dylib})
+    #     [ -n "$libs" ] && {
+    # 	  echo $libs | xargs -n 1 echo
+    # 	  echo $d/lib/
+    # 	  echo $d/
+    #       found=1
+    #       found1=1
+    #     }
+    #   done
+    #   [ -n "$found" ] && echo prerequisites/$p/
+    # done
+    # [ -n "$found1" ] && echo prerequisites/
     ;;
   devel)
     for f in cdk/*; do
@@ -167,21 +169,32 @@ case $type in
       done
     done
     for p in $prereqs; do
-      for d in prerequisites/$p/*; do
+      found=
+      dynamiclibs=
+      pdir=prerequisites/$p
+      for d in $pdir/*; do
         skip_platform $d && continue;
         if is_platform $d; then
+          dynamiclibs=`echo $d/lib/*.{so,so.*,dylib}`
+	  staticlibs=`echo $d/lib/*.a`
+	  pfound=
           [ -z "$cross" -a -d $d/bin ] && find $d/bin ! -type d &&
-	    find $d/bin -type d -exec echo {}/ \;
+	    find $d/bin -type d -exec echo {}/ \; && pfound=1
           [ -d $d/include ] && find $d/include ! -type d &&
-            find $d/include -type d -exec echo {}/ \;
-          [ -d $d/lib ] && find $d/lib -name "*.a" && 
-	    [ -z "$(echo $d/lib/*.{so,so.*,dylib})" ] &&
-            find $d/lib -type d -exec echo {}/ \;
+            find $d/include -type d -exec echo {}/ \; && pfound=1
+	  [ -n "$staticlibs" ] && pfound=1 && {
+            for i in $staticlibs; do echo $i; done
+            [ -z "$dynamiclibs" ] && find $d/lib -type d -exec echo {}/ \;
+          }
+          [ -z "$dynamiclibs" -a -n "$pfound" ] && echo $d/
+	  [ -n "$pfound" ] && found=1
         elif [ -z "$cross" ] && [[ $d == */include ]]; then
+	  found=1
 	  echo $d
-          echo $d/
+          find $d -type d -exec echo {}/ \;
         fi
       done
+      [ -z "$dynamiclibs" -a -n "$found" ] && echo $pdir/
     done
     if [ -z "${cross}" ]; then
       # emit project stuff that are git repo items
@@ -204,5 +217,5 @@ case $type in
     ) | sed 's/$/ driver/'
     echo driver/ driver
     ;;
-  *) echo "Unknown export type";;
+  *) echo "Unknown export type" >&2;;
 esac

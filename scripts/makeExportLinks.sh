@@ -54,7 +54,9 @@ fi
 [ -n "$1" -a -n "$verbose" ] && echo Exporting for platform: $1
 target=$1
 bootstrap=$2
-[ -z "$1" ] && target=$OCPI_TOOL_DIR
+[ -z "$target" ] && target=$OCPI_TOOL_DIR
+export OCPI_CDK_DIR=`pwd`/bootstrap
+[ $target = - ] || source $OCPI_CDK_DIR/scripts/ocpitarget.sh 
 
 # match_pattern: Find the files that match the pattern:
 #  - use default bash glob, and also
@@ -182,6 +184,10 @@ function do_addition {
   done
   set -f
 }
+function bad {
+    echo Error: $* 1>&2
+    exit 1
+}
 
 set -e
 mkdir -p exports
@@ -200,19 +206,7 @@ runtimes=$(test -f Project.exports && egrep '^[[:space:]]*\=' Project.exports | 
 set +f
 while read path opts; do
   case "$path" in
-    \#*|""|end-of-runtime-for-tools) continue;;
-    prerequisites)
-      for p in $opts ; do
-	shopt -s nullglob
-        for l in build/autotools/target-$target/staging/lib/lib$p.*; do
-          printf ""
-          #  make_filtered_link $l exports/$target/lib/$(basename $l)
-          # lsuff=${l##*/lib}
-          # make_filtered_link $l exports/$target/lib/libocpi_$lsuff
-        done
-	shopt -u nullglob
-      done
-      continue;;
+    \#*|""|end-of-runtime-for-tools|prerequisites) continue;;
   esac
   directory= library=$(basename $path) dest=lib options=($opts) foreign= tools= driver= useobjs=
   library=${library//-/_}
@@ -287,9 +281,6 @@ while read path opts; do
       done
   }
 done < build/places
-#if [ -d imports ]; then
-#  make_filtered_link imports exports/imports main
-#fi
 
 # Add the ad-hoc export links
 set -f
@@ -304,33 +295,55 @@ done
 [ "$1" = - ] && exit 0
 set +f
 # Put the check file into the runtime platform dir
-check=$OCPI_TOOL_PLATFORM_DIR/$OCPI_TOOL_PLATFORM-check.sh
+# FIXME: make sure if/whether this is really required and why
+check=$target/${OCPI_TARGET_PLATFORM}-check.sh
 [ -r "$check" ] && {
   to=$(python -c "import os.path; print os.path.relpath('"$check"', '.')")
-  make_relative_link $to exports/runtime/$OCPI_TOOL_PLATFORM/$(basename $check)
-  cat <<-EOF > exports/runtime/$OCPI_TOOL_PLATFORM/$OCPI_TOOL_PLATFORM-init.sh
+  make_relative_link $to exports/runtime/$target/$(basename $check)
+  cat <<-EOF > exports/runtime/$target/${OCPI_TARGET_PLATFORM}-init.sh
 	# This is the minimal setup required for runtime
-	export OCPI_TOOL_PLATFORM=$OCPI_TOOL_PLATFORM
-	export OCPI_TOOL_OS=$OCPI_TOOL_OS
-	export OCPI_TOOL_DIR=$OCPI_TOOL_PLATFORM
-EOF
+	export OCPI_TOOL_PLATFORM=$OCPI_TARGET_PLATFORM
+	export OCPI_TOOL_OS=$OCPI_TARGET_OS
+	export OCPI_TOOL_DIR=$target
+	EOF
 }
-# Put the minimal set of artifacts to support the built-in runtime tests
-# And any apps that rely on software components in the core project
-rm -r -f exports/runtime/$OCPI_TOOL_PLATFORM/artifacts
-mkdir exports/runtime/$OCPI_TOOL_PLATFORM/artifacts
+# Put the minimal set of artifacts to support the built-in runtime tests or
+# any apps that rely on software components in the core project
+rm -r -f exports/runtime/$target/artifacts exports/$target/artifacts
+mkdir exports/runtime/$target/artifacts exports/$target/artifacts
 for a in projects/core/artifacts/*:*.*; do
   [ -f $a ] || continue
   link=`readlink -n $a`
   [[ $link == */target-*${target}/* ]] && {
-    make_relative_link $a exports/runtime/$OCPI_TOOL_PLATFORM/artifacts/$(basename $a)
-    make_relative_link $a exports/$OCPI_TOOL_PLATFORM/artifacts/$(basename $a)
+    make_relative_link $a exports/runtime/$target/artifacts/$(basename $a)
+    make_relative_link $a exports/$target/artifacts/$(basename $a)
   }
 done
   
 # Ensure driver list is exported
 echo $drivers>exports/runtime/$1/lib/driver-list
 echo $drivers>exports/$1/lib/driver-list
+
+# Enable prerequisite libraries to be found/exported in our lib directory
+function liblink {
+  local base=$(basename $1)
+  if [[ -L $l && $(readlink $1) != */* ]]; then
+    cp -R -P $1 $2/$target/lib/$base
+  else
+    make_relative_link $1 $2/$target/lib/$base
+  fi
+}
+shopt -s nullglob
+for p in prerequisites/*; do
+  for l in $p/$target/lib/*; do
+    liblink $l exports
+    if [[ $l == *.so || $l == *.so.* || $l == *.dylib ]]; then
+       liblink $l exports/runtime
+    fi
+  done
+done
+shopt -u nullglob
+
 # Force precompilation of python files right here, but only if we are doing a target
 dirs=
 for d in `find exports -name "*.py"|sed 's=/[^/]*$=='|sort -u`; do

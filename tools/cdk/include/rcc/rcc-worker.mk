@@ -126,17 +126,14 @@ LinkBinary=\
          -l ocpi_$l,\
          $(and $(OcpiBuildingACI),$(RccLibDir)/libocpi_$l$(RccStaticSuffix))))) \
   -L $(RccLibDir) \
-  $(foreach l,$(RccStaticPrereqLibs),\
-    $(OCPI_PREREQUISITES_DIR)/$l/$(RccRealPlatform)/lib/lib$l.a) \
+  $(foreach l,$(RccStaticPrereqLibs),$(RccLibDir)/lib$l$(RccStaticSuffix)) \
   $(and $(RccDynamicPrereqLibs),-Wl$(Comma)-rpath -Wl$(Comma)'$$ORIGIN') \
-  $(foreach l,$(RccDynamicPrereqLibs),\
-    $(OCPI_PREREQUISITES_DIR)/$l/$(RccRealPlatform)/lib/lib$l$(RccSuffix)) \
+  $(foreach l,$(RccDynamicPrereqLibs),$(RccLibDir)/lib$l$(RccSuffix)) \
   $(and $(OcpiBuildingACI),$(OcpiExtraLibs_$(RccRealPlatform):%=-l%)) \
   $(if $(RccDynamic),,\
      && $(OCPI_CDK_DIR)/scripts/makeStaticWorker.sh $(call RccOs,) $@ \
 	  $(foreach l,$(RccLibrariesInternal),libocpi_$l$(RccSuffix))) \
-  $(foreach l,$(RccDynamicPrereqLibs),\
-    && cp $(OCPI_PREREQUISITES_DIR)/$l/$(RccRealPlatform)/lib/lib$l$(RccSuffix) $(@D))
+  $(foreach l,$(RccDynamicPrereqLibs), && cp $(RccLibDir)/lib$l$(RccSuffix) $(@D))
 
 $(foreach v,$(filter ExtraCompilerOptionsCC_%,$(.VARIABLES)),\
   $(foreach t,$(v:ExtraCompilerOptionsCC_%=%),\

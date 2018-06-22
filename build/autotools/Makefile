@@ -25,10 +25,11 @@
 # It does rely on autoreconf knowing autotools dependencies
 #
 # There are three phases to this build/configure process
-# The first (and its clean goal) is platform agnostic)
+# The first and its clean goal are platform agnostic
 # After the first, the Platform(s) variable indicates platforms and build options
+# The default is the current platform of course.
 #
-# 1. reconf/preconfigure which creates a configurable platform-agnostic package:
+# 1. preconfigure goal, which creates a configurable platform-agnostic package:
 #    It is a wrapper around the typical autotools "autoreconf"
 #    It is invoked by "make preconfigure" and cleaned by "make cleanpreconfigure"
 #    It is NOT platform-specific - it prepares the tree to build for all platforms
@@ -36,14 +37,14 @@
 #      -- The "places" file describing OpenCPI source directories
 #      -- The generate-automake.sh script that generates the Makefile.am file
 #      -- The configure.ac script
-#    It also depends on the imported autoconf macros in the imported-macros and our-macros
+#    It also depends on the autoconf macros in the imported-macros and our-macros
 #    subdirectories.  All results are in the "gen" subdirectory.
 #
 # 2. configuration for a platform:
 #    It is a wrapper around the typical autotools "configure"
 #    It is invoked by "make configure [Platform[s]=<platform>...]", cleaned by "cleanconfigure"
 #    It defaults to the currently running platform with default build options
-#    It imports platform information from OpenCPI <platform>.mk files
+#    It imports platform information from OpenCPI <platform>.mk files from projects/rcc/platforms
 #    It runs configure in "VPATH" mode to keep build trees separate from source trees
 #
 # 3. build for a platform
@@ -55,14 +56,15 @@
 # 4. install for a platform
 #    It is a convenience for "go into the platform's build dir and 'make install' there"
 #    This is just a local "finalize what you built" step and doesn't install anything elsewhere
-#    The results are in the target-<platform>/staging
+#    The results are in the target-<platform>/staging directory.
 
 # The results of the per-platform configure process are entirely in directories
 # named: target-<platform> (including build option suffix)
 
 # For predictability for now we force OCPI_CDK_DIR to be the ../../bootstrap directory since this
 # will make it very clear what is needed for the framework to build from scratch
-# The worst case is when registered projects have rcc platforms of course
+# We depend on access to the project that has the RCC platform we are building, either as a
+# registered project or in OCPI_PROJECT_PATH.
 
 # We try hard to not rely on all the scripts in the CDK, at the expense of a little
 # redundancy in platform handling, but this keeps the dependencies manageable.

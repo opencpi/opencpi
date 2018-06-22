@@ -158,8 +158,8 @@ for t in $TESTS; do
       echo ======================= Loading all the OpenCPI plugins/drivers.
       $bin/cxxtests/load-drivers x;;
     driver)
-      if [ "$OCPI_TOOL_OS" != linux ]; then
-        echo ======================= Skipping loading the OpenCPI kernel driver:  not running linux.
+      if [ -e $OCPI_CDK_DIR/scripts/ocpi_${OCPI_TOOL_OS}_driver ]; then
+        echo ======================= Skipping loading the OpenCPI kernel driver:  not supported.
       elif [ -e /.dockerenv ] ; then
         echo ======================= Skipping loading the OpenCPI kernel driver:  running in a docker container.
       else

@@ -32,9 +32,10 @@ Prefix:      %{prefix0}
 Prefix:      %{prefix1}
 Vendor:      ANGRYVIPER Team
 Packager:    ANGRYVIPER team <discuss@lists.opencpi.org>
-%if !0%{?RPM_CROSS:1}
+%if !%{RPM_CROSS}
 ##########################################################################################
 # Native/development host package
+%include %{RPM_OPENCPI}/packaging/target-%{RPM_PLATFORM}/runtime-requires
 %description
 Open Component Portability Infrastructure (OpenCPI)
 
@@ -51,38 +52,40 @@ code portability of real-time systems
      middleware framework that simplifies programming of heterogeneous
      processing applications requiring, in a system or across a tech refresh,
      a mix of processing and interconnect technologies.
+
+%{?RPM_HASH:ReleaseID: %{RPM_HASH}}
 %else
 ##########################################################################################
 # Cross build package
 AutoReqProv: no  # This must preceed the %description.  Go figure.
-%global      __strip ${OCPI_CROSS_COMPILE}-strip
+%define      __strip %{RPM_CROSS_COMPILE}strip
 BuildArch:   noarch
-%define _binaries_in_noarch_packages_terminate_build 0
+%define      _binaries_in_noarch_packages_terminate_build 0
 #Requires(pre,postun): %{RPM_BASENAME}
-Obsoletes:   %{RPM_BASENAME}-platform-%{RPM_CROSS}
+Obsoletes:   %{RPM_BASENAME}-platform-%{RPM_PLATFORM}
 %description
 This package contains the OpenCPI static libraries for cross-compiling
 for the %{RPM_PLATFORM} target platform, along with core components.
-%endif
 
 %{?RPM_HASH:ReleaseID: %{RPM_HASH}}
-
-# suppress generic post processing that is done for all packagers, like python bytecompile,
-# stripping, etc. This does not suppress things like check-buildroot
-# %%global __os_install_post %{nil}
-%global _python_bytecompile_errors_terminate_build 0
-%global __os_install_post %{nil}
+%endif
+#%global _python_bytecompile_errors_terminate_build 0
+# suppress post processing that bytecompiles python for two reasons:
+# 1. We're doing it in general for all distributions so its already done
+# 2. We use non-system-default-version python and potentially mixed versions
+%global __python NO_PYTHON_BYTE_COMPILATION
 %install
-cd %{RPM_OPENCPI}
 set -e
-rm -r -f $buildroot$prefix
+cd %{RPM_OPENCPI}
+# This avoids any aliasing from previous runs
+rm -r -f %{buildroot}%{prefix0} %{buildroot}%{prefix1}
 # Copy the needed files to buildroot, and create the files lists in builddir
 for p in runtime devel; do
-  ./packaging/prepare-rpm-files.sh $p %{RPM_PLATFORM} "%{?RPM_CROSS:1}" \
-                                   %{buildroot} %{prefix0} %{_builddir}
+  ./packaging/prepare-rpm-files.sh \
+    $p %{RPM_PLATFORM} %{RPM_CROSS} %{buildroot} %{prefix0} %{_builddir}
 done
 
-%if !0%{?RPM_CROSS:1}
+%if !%{RPM_CROSS}
   ##########################################################################################
   # Enable globally-installed /etc files, symlink them to their "real" copies if possible
 
@@ -93,7 +96,7 @@ done
   #    Since prefix0 is relocatable, we re-do the file contents %postun
   dir=ld.so.conf.d file=opencpi.conf
   %{__mkdir_p} %{buildroot}%{prefix1}/$dir
-  echo %{prefix0}/%{RPM_PLATFORM}/lib > %{buildroot}%{prefix1}/$dir/$file
+  echo %{prefix0}/cdk/%{RPM_PLATFORM}/lib > %{buildroot}%{prefix1}/$dir/$file
   echo %%{prefix1}/$dir/$file >> %{_builddir}/runtime-files
 
   # 2. Enable a global login .profile script by dropping ours into the directory that is used
@@ -107,7 +110,7 @@ done
   #    is used when interactive bash scripts startup.  Only for the devel package.
   dir=bash_completion.d file=opencpi_complete.bash
   %{__mkdir_p} %{buildroot}%{prefix1}/$dir
-  %{__ln_s} -f %{prefix0}/scripts/ocpidev_bash_complete %{buildroot}%{prefix1}/$dir/$file
+  %{__ln_s} -f %{prefix0}/cdk/scripts/ocpidev_bash_complete %{buildroot}%{prefix1}/$dir/$file
   echo %%{prefix1}/$dir/$file >> %{_builddir}/devel-files
 
   # 4. Add our udev-rules into the drop-in directry for udev rules, using symlinks
@@ -122,7 +125,16 @@ done
 %endif
 
 %files -f runtime-files
-
+%defattr(-,opencpi,opencpi,-)
+# These are now in prepare-rpm-files to avoid duplicate file warnings...
+# %if !%{RPM_CROSS}
+#   # For security reasons, these should be root owned:
+#   %attr(755,root,root) %{prefix0}/cdk/env/rpm_cdk.sh
+#   %attr(755,root,root) %dir %config(noreplace) %{prefix0}/cdk/env.d
+#   %attr(644,root,root) %{prefix0}/cdk/env.d/*.sh.example
+#   %attr(644,root,root) %{prefix0}/cdk/opencpi-setup.sh
+# %endif
+%dir %{prefix0}
 ##########################################################################################
 # The development (sub) package, that adds to what is installed after the runtime package.
 %package devel
@@ -139,19 +151,29 @@ This package ensures that all requirements for OpenCPI development are
 installed. It also provides a useful development utilities.
 %{?RPM_HASH:ReleaseID: %{RPM_HASH}}
 
-%if !0%{?RPM_CROSS:1}
+%if !%{RPM_CROSS}
 # If not cross-compiled, the devel packages replace the old prereq packages
 Obsoletes: ocpi-prereq-ad9361 ocpi-prereq-gmp ocpi-prereq-gtest ocpi-prereq-patchelf ocpi-prereq-xz
 Provides: ocpi-prereq-ad9361 ocpi-prereq-gmp ocpi-prereq-gtest ocpi-prereq-patchelf ocpi-prereq-xz
 %endif
 
 %files devel -f devel-files
+%defattr(-,opencpi,opencpi,-)
+
+##########################################################################################
+# The debug package
+%if %{RPM_CROSS}
+%define debug_package %{nil}
+%else
+%undefine _missing_build_ids_terminate_build    
+%debug_package
+%endif
 
 %pre
 # This is exact copy from opencpi-driver.spec; if changed, change there as well.
 # Check if somebody is installing on the wrong platform (AV-721)
 # Starting with 1.2, we ship the EL7 version for both EL6 and EL7 when it comes to platforms
-%if !0%{?RPM_CROSS:1}
+%if !%{RPM_CROSS}
 if [ -n "%{dist}" ]; then
   PKG_VER=`echo %{dist} | perl -ne '/el(\d)/ && print $1'`
   THIS_VER=`perl -ne '/release (\d)/ && print $1' /etc/redhat-release`
@@ -165,68 +187,120 @@ if [ -n "%{dist}" ]; then
   fi
 fi
 %endif
-
-
-%post
-# Since we want to make the global installation aspects optional, we deal with the opencpi
-# user and group optionally after all the files are installed
-
-# Deal with the opencpi user and group if we are installing into /etc
-if [ "$RPM_INSTALL_PREFIX1" = %{prefix1} ] ; then
+if [ "$RPM_INSTALL_PREFIX1" = %{prefix1} -a "$RPM_INSTALL_PREFIX0" = %{prefix0} ]; then
   # Recipe from https://fedoraproject.org/wiki/Packaging:UsersAndGroups
   # -M is don't create home dir, -r is system account, -s is shell
   # -c is comment, -n is don't create group, -g is group name/id
   getent group opencpi >/dev/null || groupadd -r opencpi
   getent passwd opencpi >/dev/null || \
-      useradd -M -r -s /sbin/nologin \
+    useradd -M -r -s /sbin/nologin \
       -c "OpenCPI System Account" -n -g opencpi opencpi > /dev/null
-  chown -R opencpi:opencpi $RPM_INSTALL_PREFIX0
+else
+  # We are in relocated mode.
+  if [ "$RPM_INSTALL_PREFIX1" = %{prefix1} -o "$RPM_INSTALL_PREFIX0" = %{prefix0} ]; then
+     cat<<-EOF
+	This OpenCPI installation is partially relocated, which is not supported.
+	The %{prefix0} directory is relocated to $RPM_INSTALL_PREFIX0
+	The %{prefix1} directory is relocated to $RPM_INSTALL_PREFIX1
+	Either relocate both or neither
+EOF
+     exit 1
+  fi
+  cat<<-EOF
+	This OpenCPI installation is relocated.
+	The %{prefix0} directory is relocated to $RPM_INSTALL_PREFIX0
+	The %{prefix1} directory is relocated to $RPM_INSTALL_PREFIX1
+	The warnings about the "opencpi" user and group not existing can be ignored.
+	EOF
 fi
-
-# We need to relocate all the global files that point to other global files
-# The files have been installed, but we must change them now.
-
-# Relocate the global files that point to other files to respect relocations
-echo $RPM_INSTALL_PREFIX0/cdk/%{RPM_PLATFORM}/lib \
-      > $RPM_INSTALL_PREFIX1/ld.so.conf.d/opencpi.conf
-ln -s -f $RPM_INSTALL_PREFIX0/cdk/env/rpm_cdk.sh $RPM_INSTALL_PREFIX1/profile.d/opencpi.sh
-ln -s -f $RPM_INSTALL_PREFIX0/cdk/udev-rules/51-opencpi-usbblaster.rules \
-         $RPM_INSTALL_PREFIX1/udev/rules.d/
-
-# Since these are all symlinks we are actually changing ownership of the underlying file
-if [ "$RPM_INSTALL_PREFIX1" = %{prefix1} ] ; then
-  chown -R root:root $RPM_INSTALL_PREFIX0/cdk/env.d
-  chown root:root $RPM_INSTALL_PREFIX0/cdk/env/rpm_cdk.sh
-  chown root:root $RPM_INSTALL_PREFIX0/cdk/opencpi-setup.sh
+%post
+if [ "$RPM_INSTALL_PREFIX1" != %{prefix1} -o "$RPM_INSTALL_PREFIX0" != %{prefix0} ]; then
+  echo This installation is relocated, so warnings about the \"opencpi\" user and group not existing can be ignored.
+  echo The user and group IDs of all files will be set to the login user and group.
 fi
+%if !%{RPM_CROSS}
+  # We need to relocate all the global files that point to other global files
+  # The files have been installed, but we must change them now.
 
-# restore initial
-%preun
-# I tried this to see if it allowed directories to be removed by it didn;t
-#if [ "$RPM_INSTALL_PREFIX1" = %{prefix1} ] ; then
-  # chown -R root:root $RPM_INSTALL_PREFIX0
-#fi
+  # Relocate the global files that point to other files to respect relocations
+  link=$RPM_INSTALL_PREFIX0/cdk/%{RPM_PLATFORM}/lib
+  [ $(< $RPM_INSTALL_PREFIX1/ld.so.conf.d/opencpi.conf) != $link ] &&
+    echo $link > $RPM_INSTALL_PREFIX1/ld.so.conf.d/opencpi.conf || :
+  link=$RPM_INSTALL_PREFIX0/cdk/env/rpm_cdk.sh
+  [ $(readlink $RPM_INSTALL_PREFIX1/profile.d/opencpi.sh) != $link ] &&
+    ln -s -f $link $RPM_INSTALL_PREFIX1/profile.d/opencpi.sh || :
+  link=$RPM_INSTALL_PREFIX0/udev-rules/51-opencpi-usbblaster.rules
+  [ $(readlink $RPM_INSTALL_PREFIX1/udev/rules.d/51-opencpi-usbblaster.rules) != $link ] &&
+    ln -s -f $link $RPM_INSTALL_PREFIX1/udev/rules.d/ || :
+%endif
+
+[ "$RPM_INSTALL_PREFIX1" != %{prefix1} -o "$RPM_INSTALL_PREFIX0" != %{prefix0} ] && {
+  user=`logname`
+  group=`eval stat --format=%G ~$user`
+  echo USER: $user GROUP: $group
+  chown -R $user $RPM_INSTALL_PREFIX0 $RPM_INSTALL_PREFIX1
+  chgrp -R $group $RPM_INSTALL_PREFIX0 $RPM_INSTALL_PREFIX1
+} || :
 %postun
-echo I AM MANUALLY REMOVING $RPM_INSTALL_PREFIX0
-rm -r -f -v $RPM_INSTALL_PREFIX0
-
-%post devel
-# We need to relocate all the global files that point to other global files.
-# The files have been installed, but we must change them now.
-ln -s -f $RPM_INSTALL_PREFIX0/cdk/scripts/ocpidev_bash_complete \
-         $RPM_INSTALL_PREFIX1/bash_completion.d/opencpi_complete.bash
-if [ "$RPM_INSTALL_PREFIX1" = %{prefix1} ] ; then
-  # We could be surgical about this but it won't likely help anything.
-  # We are (re)touching runtime files and doing what has already been done before.
-  # It might change the "last status change" date, but that shouldn't matter
-  # FIXME: only change what is not already correct
-  chown -R opencpi:opencpi $RPM_INSTALL_PREFIX0
-  chown -R root:root $RPM_INSTALL_PREFIX0/cdk/env.d
-  chown root:root $RPM_INSTALL_PREFIX0/cdk/env/rpm_cdk.sh
-  chown root:root $RPM_INSTALL_PREFIX0/cdk/opencpi-setup.sh
-  # This allows users in the opencpi group to register/unregister projects
-  chmod 775 $RPM_INSTALL_PREFIX0/project-registry
-  # This is to enable the creationg of import links which is BOGUS and will be fixed
-  chmod 775 $RPM_INSTALL_PREFIX0/projects/core
-  chmod 775 $RPM_INSTALL_PREFIX0/projects/assets
+if [ "$RPM_INSTALL_PREFIX1" != %{prefix1} -o "$RPM_INSTALL_PREFIX0" != %{prefix0} ]; then
+   cat <<-EOF
+	The OpenCPI installation being removed was relocated.
+	The %{prefix0} directory was relocated to $RPM_INSTALL_PREFIX0
+	The %{prefix1} directory was relocated to $RPM_INSTALL_PREFIX1
+	While in a global installation the %{prefix1} directory would not be removed,
+	in this relocated installation $RPM_INSTALL_PREFIX1 will be removed.
+	EOF
+   owner=`stat --format=%U $RPM_INSTALL_PREFIX1`   
+   if [ -z "$owner" -o "$owner" = root -o "$owner" = opencpi ]; then
+     echo Owner of $RPM_INSTALL_PREFIX1 is \"$owner\".  It is not being deleted.
+   else
+     rm -r -f $RPM_INSTALL_PREFIX1
+   fi
 fi
+
+%pre devel
+prefixes=(`rpm -q --qf '[%{INSTPREFIXES}\n]' opencpi`)
+if [ -z "${prefixes[0]}" -o -z "${prefixes[1]}" -o \
+     "${prefixes[0]}" != "$RPM_INSTALL_PREFIX0" -o \
+     "${prefixes[1]}" != "$RPM_INSTALL_PREFIX1" ]; then
+   cat <<-EOF
+	The pre-existing OpenCPI runtime installation was relocated differently than is specified
+	for this opencpi-devel package installation, which is not allowed.
+	The existing runtime installation has:
+	    %{prefix0} relocated to ${prefixes[0]}
+	    %{prefix1} relocated to ${prefixes[1]}
+	while this installation is requested to be:
+	    %{prefix0} relocated to $RPM_INSTALL_PREFIX0
+	    %{prefix1} relocated to $RPM_INSTALL_PREFIX1
+	EOF
+   exit 1
+fi
+if [ "$RPM_INSTALL_PREFIX1" != %{prefix1} -o "$RPM_INSTALL_PREFIX0" != %{prefix0} ]; then
+  cat<<-EOF
+	This OpenCPI development installation is relocated consistent with the runtime install.
+	The %{prefix0} directory is relocated to $RPM_INSTALL_PREFIX0
+	The %{prefix1} directory is relocated to $RPM_INSTALL_PREFIX1
+	The warnings about the opencpi user and group not existing can be ignored.
+	EOF
+fi
+%post devel
+if [ "$RPM_INSTALL_PREFIX1" != %{prefix1} -o "$RPM_INSTALL_PREFIX0" != %{prefix0} ]; then
+  echo This installation is relocated, so warnings about the \"opencpi\" user and group not existing can be ignored.
+  echo The user and group IDs of all files will be set to the login user and group.
+fi
+%if !%{RPM_CROSS}
+  # We need to relocate all the global files that point to other global files.
+  # The files have been installed, but we must change them now.
+  link=$RPM_INSTALL_PREFIX0/cdk/scripts/ocpidev_bash_complete
+  [ $(readlink $RPM_INSTALL_PREFIX1/bash_completion.d/opencpi_complete.bash) != $link ] &&
+    ln -s -f $link $RPM_INSTALL_PREFIX1/bash_completion.d/opencpi_complete.bash || :
+%endif
+[ "$RPM_INSTALL_PREFIX1" != %{prefix1} -o "$RPM_INSTALL_PREFIX0" != %{prefix0} ] && {
+  user=`logname`
+  group=`eval stat --format=%G ~$user`
+  echo USER: $user GROUP: $group
+  chown -R $user $RPM_INSTALL_PREFIX0 $RPM_INSTALL_PREFIX1
+  chgrp -R $group $RPM_INSTALL_PREFIX0 $RPM_INSTALL_PREFIX1
+} || :
+
+%clean

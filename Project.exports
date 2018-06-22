@@ -75,9 +75,10 @@
 +tools/cdk/include/setup-target-platform.mk include/
 +tools/cdk/include/platform-defaults.mk include/
 # Export the common stuff for zynq platforms for runtime only
-=platforms/zynq/zynq_setup.sh platforms/zynq/
-=platforms/zynq/zynq_net_setup.sh platforms/zynq/
-=platforms/zynq/zynq_system.xml platforms/zynq/
+=platforms/zynq/*setup.sh
+=platforms/zynq/README*
+=platforms/zynq/zynq_system.xml
+=platforms/zynq/formatOpenCPIZynqSD.sh
 # CDK scripts we need
 +scripts/clean-env.sh scripts/
 # This is runtime although this one script deals with initialization issues
@@ -107,6 +108,7 @@
 =tools/cdk/scripts/ocpisudo scripts/
 +tools/cdk/scripts/ocpitarget.sh scripts/
 +tools/cdk/scripts/ocpidev scripts/
++tools/cdk/scripts/ocpidev_run.py scripts/
 +tools/cdk/scripts/ocpishow scripts/
 +tools/cdk/scripts/ocpiutil.py scripts/
 +tools/cdk/scripts/upgradeApp_v1_3.py scripts/

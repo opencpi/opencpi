@@ -18,19 +18,21 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 ##########################################################################################
-# This script, executed within an RPM spec file, uses the generic prepare-package-list script
-# to do two things for the rpmbuild process:
-# 1. create the list of files for the package and put it into <package>-files
-# 2. copy the files into %{buildroot}%{prefix}
+# This script, executed within an RPM spec file, uses the generic prepare-package-list script,
+# and does two things for the rpmbuild process, in the rpmbuild %install context
+# 1. create the list of files and directories for the package and put it into <package>-files,
+#    converting the generic file/dir list into an RPM file/dir list
+# 2. copy the files into %{buildroot}%{prefix} for RPM packaging
 package=$1
 platform=$2
-cross=$3
+cross=
+[ "$3" = 1 ] && cross=1 
 buildroot=$4
 prefix=$5
 builddir=$6
 [ -z "${builddir}" ] && echo "Don't run this by hand." && exit 1
 mkdir -p $buildroot$prefix
-[ $package = devel ] && set -vx
+set -o pipefail
 ./packaging/prepare-package-list.sh $package $platform $cross | while read source dest; do
   if [[ $source == */ ]] ; then
     [ -z "$dest" ] && dest=${source/%\/}
@@ -38,44 +40,47 @@ mkdir -p $buildroot$prefix
     mkdir -p ${buildroot}${prefix}/$dest
     continue;
   fi
-  xform=''
+  xform=s/1/1/
   destdir=$(dirname $source)
   if [ -n "$dest" ]; then
     if [ $destdir = . ]; then
-      xform="-e s=^=%{prefix0}/$dest/="
+      xform="s=^=%{prefix0}/$dest/="
       destdir=
     else
-      xform="-e s=^$destdir/=%{prefix0}/$dest/="
+      xform="s=^$destdir/=%{prefix0}/$dest/="
       destdir=$dest
     fi
   else
-    xform="-e s=^=%{prefix0}/="
+    xform="s=^=%{prefix0}/="
     dest=${source/@}
   fi
-  #if [ -n "$dest" ]; then  # echo "DEBUG: source=${source} dest=${dest}" > /dev/stderr
   mkdir -p ${buildroot}${prefix}/$destdir
   # If source needs to stay a link
   if [[ $source == *@ ]]; then
     source=${source/@}
-    find $source ! -type d | sed $xform -e s/foo/foo/
+    find $source ! -type d | sed $xform
     cp -R $source ${buildroot}${prefix}/$dest
   else
-    find -L $source -type f | sed $xform -e s/foo/foo/
+    find -L $source -type f | sed $xform
     cp -R -L $source ${buildroot}${prefix}/$dest
+    # Normally we are simply doing a deep copy here, but there is an exception:
+    # We need to preserve symlinks that are in the same directory (i.e. for alternative names)
+    # So we do a post-pass to fix this.
+    for l in `find $source -type l`; do
+      [[ $(readlink $l) != */* ]] && {
+        subdir=
+	[ -d $source ] && subdir=/$(echo $l | sed s=$(dirname $source)==)
+	cp -R -P $l ${buildroot}${prefix}/$destdir$subdir
+      }
+    done
   fi
-# done | while read file; do
-#   # Emit %dir lines for any directory found anywhere, then make them uniq with sort -u
-#   # Skip any directories within kernel-headers (saves 4 minutes)
-#   if [[ "${file}" != */kernel-headers* ]]; then
-#     dir=$(dirname $file)
-#     while [ $dir != . ] ; do
-#       # FIXME check why this CROSS thing is actually needed anyway.
-#       [ -z "$cross" -o "$(basename $dir)" = "$platform" ] &&
-#       echo "%dir %{prefix0}/$dir"
-#       dir=$(dirname $dir)
-#     done
-#   fi
-#   # Allow pre-compiled python2 cache files
-#   [[ "${file}" == *.py ]] && file+='*'
-#   echo "%{prefix0}/$file"
-done | sort -u > $builddir/$package-files
+done | sort -u |
+  # Add the necessary permissions here on the exceptional files (for security)
+  # These are nicer in the spec file, but this suppresses the warnings.  A tradeoff.
+  # These files will only be present for dev platforms
+  sed \
+    -e 's=%{prefix0}/cdk/env/rpm_cdk.sh$=%attr(755,root,root) &=' \
+    -e 's=%{prefix0}/cdk/env.d$=%attr(755,root,root) %config(noreplace) &=' \
+    -e 's=%{prefix0}/cdk/env.d/.*\.sh\.example$=%attr(644,root,root) &=' \
+    -e 's=%{prefix0}/cdk/opencpi-setup.sh$= %attr(644,root,root) &=' \
+  > $builddir/$package-files

@@ -255,7 +255,7 @@ static bool setup(const char *arg, ezxml_t &xml, std::string &file,
     OL::Manager::getSingleton().suppressDiscovery();
   if (options.remote())
     OA::enableServerDiscovery();
-  OA::Container *c;
+  //  OA::Container *c;
   if (options.processors())
     for (unsigned n = 1; n < options.processors(); n++) {
       std::string name;
@@ -271,6 +271,9 @@ static bool setup(const char *arg, ezxml_t &xml, std::string &file,
 	  throw OU::Error("Value of \"server\" parameter is not a string");
 	OA::useServer(p->vString, options.verbose());
       }
+#if 1
+    OA::ContainerManager::list(options.only_platforms());
+#else
     if (options.only_platforms()) {
       std::set<std::string> plats;
       for (unsigned n = 0; (c = OA::ContainerManager::get(n)); n++)
@@ -286,6 +289,7 @@ static bool setup(const char *arg, ezxml_t &xml, std::string &file,
 	       c->osVersion().c_str(), c->arch().c_str(), c->name().c_str());
     }
     fflush(stdout);
+#endif
   }
   return false;
 }

@@ -136,7 +136,7 @@ base=opencpi
 cross=$(strip $(foreach r,$(call RccRealPlatforms,$1),\
         $(if $(filter $(call RccRealPlatforms,$(OCPI_TOOL_PLATFORM)),$r),,$r)))
 name=$(base)$(and $(call cross,$1),-sw-platform-$(call cross,$1))
-release=$(or $(OcpiRelease),snapshot)
+release=$(or $(OcpiRelease),snapshot)$(tag)$(git_tag)
 # This changes every 6 minutes which is enough for updated releases (snapshots).
 # It is rebased after a release so it is relative within its release cycle
 # FIXME:automate this...
@@ -166,7 +166,7 @@ Package=runtime
 # being as "normal" as possible in the RPM context.  See the args passed to rpmbuild
 package_name=$(name)$(if $(filter runtime,$(Package)),,-$(Package))$(strip\
                     $(foreach p,$(RccPlatforms),-$p))$(strip\
-	            -$(version)$(if $(git_version),,-)$(release)$(tag)$(git_tag))
+	            -$(version)$(if $(git_version),,-)$(release))
 #$(info PACKAGE_NAME:$(package_name):)
 Prepare=./packaging/prepare-package-list.sh $(Package) "$(RccPlatforms)" $(call cross,$(word 1,$(RccPlatforms)))
 
@@ -200,43 +200,14 @@ tar: exports
 	     echo Creating tar export file: $$file.gz; \
 	     sh $$temp && rm -f $$file.gz $$temp && gzip $$file
 
-# Create a relocatable RPM from what is exported for the given platforms
-# Feed in the various naming components
-# redefine _rpmdir and _build_name_fmt to simply output the RPMs here
-# This should be moved to the packaging subdir...
 .PHONY: rpm rpm_runtime rpm_devel
-first_real_platform:=$(word 1,$(RccPlatforms))
-#ifneq ($(and $(filter rpm,$(MAKECMDGOALS)),$(origin Package,command line),$(filter runtime devel,$(Package))),)
-#  $(error You cannot specify a Package when creating RPMs, they are all created together)
-#endif
+real_platforms:=$(call Unique,$(call RccRealPlatforms,$(RccPlatforms)))
 rpm: exports
-	$(AT)! command -v rpmbuild >/dev/null 2>&1 && \
-	  echo "Error: Cannot build an RPM: rpmbuild (rpm-build package) is not available." && \
-	  exit 1 || :
-	$(AT)[ $(words $(call Unique,$(call RccRealPlatforms,$(RccPlatforms)))) != 1 ] && \
+	$(AT)[ $(words $(real_platforms)) != 1 ] && \
 	     echo Error: Cannot build an RPM for more than one platform at a time. && exit 1 || :
-	$(AT)echo "Creating RPM file(s) for platform:" $(first_real_platform)
-	$(AT)echo "  For the $(if $(filter driver,$(Package)),driver package,runtime and devel packages)."
-	$(AT)$(eval first:=$(word 1,$(RccPlatforms))) \
-	     target=packaging/target-$(first) && mkdir -p $$target && \
-	     source $(OCPI_CDK_DIR)/scripts/ocpitarget.sh $(first) && \
-	     p=$$OCPI_TARGET_PLATFORM_DIR/$(first)-packages.sh &&\
-             ( [ -f $$p ] && $$p list | head -1 | xargs -n 1 | sed 's/^/Requires:/' || : \
-             ) > $$target/devel-requires && \
-	     rpmbuild $(if $(RpmVerbose),-vv,--quiet) -bb\
-		      --define="RPM_BASENAME    $(base)"\
-		      --define="RPM_NAME        $(call name,$(first))"\
-		      --define="RPM_RELEASE     $(release)$(tag)$(git_tag)"\
-		      --define="RPM_VERSION     $(version)" \
-		      --define="RPM_HASH        $(git_hash)" \
-		      --define="RPM_PLATFORM    $(first)" \
-		      --define="RPM_OPENCPI     $(CURDIR)" \
-		      $(foreach c,$(call cross,$(first)),\
-		        --define="RPM_CROSS $c") \
-		      --define "_rpmdir $(CURDIR)/packaging/target-$(first)"\
-		      --define "_build_name_fmt %%{NAME}-%%{VERSION}-%%{RELEASE}.%%{ARCH}.rpm"\
-		      packaging/$(if $(filter driver,$(Package)),driver,cdk).spec && \
-	     echo "Created RPM file(s) in $$target:" && ls -l $$target
+	$(AT)./packaging/make-sw-rpms.sh $(and $(RpmVerbose),-v) \
+          $(real_platforms) "$(call cross,$(real_platforms))" \
+	   $(Package) $(base) $(call name,$(real_platforms)) $(release) $(version) $(git_hash)
 
 cleanpackaging:
 	$(AT)rm -r -f packaging/target-*
