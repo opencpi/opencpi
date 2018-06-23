@@ -146,6 +146,12 @@ This package ensures that all requirements for OpenCPI development are
 installed. It also provides a useful development utilities.
 %{?RPM_HASH:ReleaseID: %{RPM_HASH}}
 
+%if !%{RPM_CROSS}
+# If not cross-compiled, the devel packages replace the old prereq packages
+Obsoletes: ocpi-prereq-ad9361 ocpi-prereq-gmp ocpi-prereq-gtest ocpi-prereq-patchelf ocpi-prereq-xz
+Provides: ocpi-prereq-ad9361 ocpi-prereq-gmp ocpi-prereq-gtest ocpi-prereq-patchelf ocpi-prereq-xz
+%endif
+
 %files devel -f devel-files
 %defattr(-,opencpi,opencpi,-)
 
