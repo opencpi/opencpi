@@ -134,30 +134,8 @@ case $type in
       skip_platform $f && continue
       echo $f cdk
       [ -d $f ] && (cd cdk/runtime;
-                    find $(basename $f) -type d -exec echo cdk/runtime/{}/ cdk/{} \; )
+                    find $(basename $f) -type d -exec echo cdk/runtime/{}/ cdk/{} \; ) || :
     done
-    # # runtime prereqs are only shared libraries
-    # found1=
-    # for p in $prereqs; do
-    #   found=
-    #   # We explicitly only look for shared libraries in a platform's lib directory
-    #   # Prerequisite libraries in runtime are currently *solely* needed when RCC
-    #   # workers have asked to use them.  When we are delivering a dynamic runtime
-    #   # they will be in OUR lib directory.
-    #   for d in prerequisites/$p/*; do
-    #     (skip_platform $d || ! is_platform $d || [ ! -d $d/lib ] ) && continue
-    # 	libs=$(echo $d/lib/*.{so,so.*,dylib})
-    #     [ -n "$libs" ] && {
-    # 	  echo $libs | xargs -n 1 echo
-    # 	  echo $d/lib/
-    # 	  echo $d/
-    #       found=1
-    #       found1=1
-    #     }
-    #   done
-    #   [ -n "$found" ] && echo prerequisites/$p/
-    # done
-    # [ -n "$found1" ] && echo prerequisites/
     ;;
   devel)
     for f in cdk/*; do

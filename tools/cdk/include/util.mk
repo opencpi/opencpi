@@ -873,12 +873,12 @@ OcpiGetDirTypeX=$(strip $(infox GDT1:$1)\
   $(or \
     $(and $(wildcard $1/Makefile),\
       $(foreach d,$(shell sed -n \
-                  's=^[ 	]*include[ 	]*.*OCPI_CDK_DIR.*/include/\(.*\).mk$$=\1=p' \
+                  's=^[ 	]*include[ 	]*.*OCPI_CDK_DIR.*/include/\(.*\)\.mk[ 	]*$$=\1=p' \
                   $1/Makefile | tail -1),\
       $(infox OGT1: found type: $d ($1))$(notdir $d))) \
     ,$(and $(wildcard $1/Makefile.am),\
       $(foreach d,$(shell sed -n \
-                  's=^[ 	]*@AUTOGUARD@[ 	]*include[ 	]*.*OCPI_CDK_DIR.*/include/\(.*\).mk$$=\1=p' \
+                  's=^[ 	]*@AUTOGUARD@[ 	]*include[ 	]*.*OCPI_CDK_DIR.*/include/\(.*\)\.mk[ 	]*$$=\1=p' \
                   $1/Makefile.am | tail -1),\
       $(warning Found what I think is a $d in "$1", but it is not fully configured and may not work as expected.)$(notdir $d))) \
     ,$(and $(filter $(realpath $1),$(realpath $(OCPI_CDK_DIR))),project)\
@@ -1121,6 +1121,8 @@ OcpiDirName=$(patsubst %/,%,$(dir $1))
 #  because there is no value in changing it.
 # $(call OcpiPrepareArtifact,<artifact-file-input>,<output-file-to-modify>)
 OcpiPrepareArtifact=\
+  $(info OCPIPREPAREARTIFACE:$(Package):$(ParentPackage):$(Worker).$(Model):$1.$2.$3.$4) \
+  $(info OCPIPREPAREARTIFACE1:$(ParentPackage).$(Worker).$(Model).$3.$4) \
   $(ToolsDir)/ocpixml add $2 $1 \
   $(and $(OCPI_PROJECT_DIR), &&\
     adir=$(OCPI_PROJECT_DIR)/artifacts &&\

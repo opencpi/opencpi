@@ -108,8 +108,8 @@
 =tools/cdk/scripts/ocpisudo scripts/
 +tools/cdk/scripts/ocpitarget.sh scripts/
 +tools/cdk/scripts/ocpidev scripts/
-+tools/cdk/scripts/ocpidev_run.py scripts/
 +tools/cdk/scripts/ocpishow scripts/
++tools/cdk/scripts/ocpidev_run.py scripts/
 +tools/cdk/scripts/ocpiutil.py scripts/
 +tools/cdk/scripts/upgradeApp_v1_3.py scripts/
 +tools/cdk/scripts/hdltargets.py scripts/

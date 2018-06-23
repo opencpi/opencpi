@@ -286,7 +286,7 @@ Variables that are useful for most goals:
 Platforms/Platform/RccPlatforms/RccPlatform: all specify software platforms
   -- Useful for goals:  framework(default), exports, cleanframework, projects, exportprojects,
                         driver, cleandriver, prerequisites, tar, rpm
-  -- Platforms can have build options/letters after a hyphen: d=dynamic, o=optimized 
+  -- Platforms can have build options/letters after a hyphen: d=dynamic, o=optimized
      <platform>:    default static, debug build
      <platform>-d:  dynamic library, debug build
      <platform>-o:  static library, optimized build

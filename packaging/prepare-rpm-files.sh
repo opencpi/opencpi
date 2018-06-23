@@ -71,7 +71,7 @@ set -o pipefail
         subdir=
 	[ -d $source ] && subdir=/$(echo $l | sed s=$(dirname $source)==)
 	cp -R -P $l ${buildroot}${prefix}/$destdir$subdir
-      }
+      } || :
     done
   fi
 done | sort -u |

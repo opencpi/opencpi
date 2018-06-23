@@ -35,6 +35,9 @@ Packager:    ANGRYVIPER team <discuss@lists.opencpi.org>
 %if !%{RPM_CROSS}
 ##########################################################################################
 # Native/development host package
+# Replaces the old prereq packages
+Conflicts: ocpi-prereq-ad9361 ocpi-prereq-gmp ocpi-prereq-gtest ocpi-prereq-patchelf ocpi-prereq-xz
+
 %include %{RPM_OPENCPI}/packaging/target-%{RPM_PLATFORM}/runtime-requires
 %description
 Open Component Portability Infrastructure (OpenCPI)
@@ -61,7 +64,8 @@ AutoReqProv: no  # This must preceed the %description.  Go figure.
 %define      __strip %{RPM_CROSS_COMPILE}strip
 BuildArch:   noarch
 %define      _binaries_in_noarch_packages_terminate_build 0
-#Requires(pre,postun): %{RPM_BASENAME}
+Requires:    %{name} = %{version}-%{release}
+Requires(pre,postun): %{name} = %{version}-%{release}
 Obsoletes:   %{RPM_BASENAME}-platform-%{RPM_PLATFORM}
 %description
 This package contains the OpenCPI static libraries for cross-compiling
@@ -69,7 +73,6 @@ for the %{RPM_PLATFORM} target platform, along with core components.
 
 %{?RPM_HASH:ReleaseID: %{RPM_HASH}}
 %endif
-#%global _python_bytecompile_errors_terminate_build 0
 # suppress post processing that bytecompiles python for two reasons:
 # 1. We're doing it in general for all distributions so its already done
 # 2. We use non-system-default-version python and potentially mixed versions
@@ -126,14 +129,6 @@ done
 
 %files -f runtime-files
 %defattr(-,opencpi,opencpi,-)
-# These are now in prepare-rpm-files to avoid duplicate file warnings...
-# %if !%{RPM_CROSS}
-#   # For security reasons, these should be root owned:
-#   %attr(755,root,root) %{prefix0}/cdk/env/rpm_cdk.sh
-#   %attr(755,root,root) %dir %config(noreplace) %{prefix0}/cdk/env.d
-#   %attr(644,root,root) %{prefix0}/cdk/env.d/*.sh.example
-#   %attr(644,root,root) %{prefix0}/cdk/opencpi-setup.sh
-# %endif
 %dir %{prefix0}
 ##########################################################################################
 # The development (sub) package, that adds to what is installed after the runtime package.
@@ -150,12 +145,6 @@ Prefix:     %{prefix1}
 This package ensures that all requirements for OpenCPI development are
 installed. It also provides a useful development utilities.
 %{?RPM_HASH:ReleaseID: %{RPM_HASH}}
-
-%if !%{RPM_CROSS}
-# If not cross-compiled, the devel packages replace the old prereq packages
-Obsoletes: ocpi-prereq-ad9361 ocpi-prereq-gmp ocpi-prereq-gtest ocpi-prereq-patchelf ocpi-prereq-xz
-Provides: ocpi-prereq-ad9361 ocpi-prereq-gmp ocpi-prereq-gtest ocpi-prereq-patchelf ocpi-prereq-xz
-%endif
 
 %files devel -f devel-files
 %defattr(-,opencpi,opencpi,-)

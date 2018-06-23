@@ -137,7 +137,7 @@ done
   [ -n "$ocpi_ensure" ] && {
     # The environment appears already setup so we can leave things as they are, but check for
     # a half-baked setup and complain
-    [ -z "$OCPI_PREREQUISITES_DIR" -o -z "$OCPI_TOOL_OS" -o -z "$OCPI_TOOL_DIR"] && {
+    [ -z "$OCPI_PREREQUISITES_DIR" -o -z "$OCPI_TOOL_OS" -o -z "$OCPI_TOOL_DIR" ] && {
       echo Error: The environment is partially set up, which is bad.  Perhaps use --reset. >&2
       return 1
     }
