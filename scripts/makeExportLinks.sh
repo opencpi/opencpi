@@ -296,7 +296,7 @@ done
 set +f
 # Put the check file into the runtime platform dir
 # FIXME: make sure if/whether this is really required and why
-check=$target/${OCPI_TARGET_PLATFORM}-check.sh
+check=$OCPI_TARGET_PLATFORM_DIR/${OCPI_TARGET_PLATFORM}-check.sh
 [ -r "$check" ] && {
   to=$(python -c "import os.path; print os.path.relpath('"$check"', '.')")
   make_relative_link $to exports/runtime/$target/$(basename $check)
