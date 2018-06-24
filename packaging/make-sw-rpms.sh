@@ -69,10 +69,14 @@ else
 fi
 echo "Creating RPM file(s) in $target for $msg for the $platform platform."
 mkdir -p $target
-echo PWD:`pwd` > /dev/tty
-set -vx
 source $OCPI_CDK_DIR/../build/prerequisites/myhostname/myhostname.sh
-env $MYHOSTNAME_SPOOF rpmbuild $verbose -ba\
+# Run rpmbuild, passing in all the generic package naming information and running it
+# with the host name spoofing to avoid embedding internal server names in the rpm file.
+# Note that later versions of rpmbuild actually have a specific feature to do this easily
+# using --define _buildhost, but this happened after centos7.
+# We redirect the output directories to avoid anything going into ~/rpmbuild, and
+# to put the rpm files directory into the packaging/target-<platform> directory
+env $MYHOSTNAME_SPOOF rpmbuild $verbose -bb\
   --define="RPM_BASENAME       $base"\
   --define="RPM_NAME           $name"\
   --define="RPM_RELEASE        $release"\
@@ -81,7 +85,8 @@ env $MYHOSTNAME_SPOOF rpmbuild $verbose -ba\
   --define="RPM_PLATFORM       $platform" \
   --define="RPM_OPENCPI        $PWD" \
   --define="RPM_CROSS          $cross" \
-  $([ -n "$OCPI_TARGET_CROSS_COMPILE" ] && echo --define=\"RPM_CROSS_COMPILE  $OCPI_TARGET_CROSS_COMPILE\")\
+  $([ -n "$OCPI_TARGET_CROSS_COMPILE" ] && \
+      echo --define=\"RPM_CROSS_COMPILE  $OCPI_TARGET_CROSS_COMPILE\")\
   --define="_topdir            $PWD/$target"\
   --define="_rpmdir            $PWD/$target"\
   --define="_build_name_fmt    %%{NAME}-%%{VERSION}-%%{RELEASE}.%%{ARCH}.rpm"\

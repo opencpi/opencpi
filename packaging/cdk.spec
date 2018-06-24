@@ -77,6 +77,8 @@ for the %{RPM_PLATFORM} target platform, along with core components.
 # 1. We're doing it in general for all distributions so its already done
 # 2. We use non-system-default-version python and potentially mixed versions
 %global __python NO_PYTHON_BYTE_COMPILATION
+##########################################################################################
+# install for both runtime and devel ############################
 %install
 set -e
 cd %{RPM_OPENCPI}
@@ -127,9 +129,12 @@ done
   echo %%{prefix0}/projects/new_project_source >> %{_builddir}/devel-files
 %endif
 
+##########################################################################################
+# files for runtime
 %files -f runtime-files
 %defattr(-,opencpi,opencpi,-)
 %dir %{prefix0}
+
 ##########################################################################################
 # The development (sub) package, that adds to what is installed after the runtime package.
 %package devel
@@ -147,40 +152,58 @@ installed. It also provides a useful development utilities.
 %{?RPM_HASH:ReleaseID: %{RPM_HASH}}
 
 %if !%{RPM_CROSS}
-# If not cross-compiled, the devel packages replace the old prereq packages
-Obsoletes: ocpi-prereq-ad9361 ocpi-prereq-gmp ocpi-prereq-gtest ocpi-prereq-patchelf ocpi-prereq-xz
-Provides: ocpi-prereq-ad9361 ocpi-prereq-gmp ocpi-prereq-gtest ocpi-prereq-patchelf ocpi-prereq-xz
+  # If not cross-compiled, the devel packages replace the old prereq packages
+  Obsoletes: ocpi-prereq-ad9361 ocpi-prereq-gmp ocpi-prereq-gtest ocpi-prereq-patchelf
+  Obsoletes: ocpi-prereq-xz
+  Provides: ocpi-prereq-ad9361 ocpi-prereq-gmp ocpi-prereq-gtest ocpi-prereq-patchelf
+  Provides: ocpi-prereq-xz
 %endif
 
+##########################################################################################
+# files for devel
 %files devel -f devel-files
 %defattr(-,opencpi,opencpi,-)
 
 ##########################################################################################
-# The debug package
+# The debug subpackage - only added for dev platforms
 %if %{RPM_CROSS}
-%define debug_package %{nil}
+  %define debug_package %{nil}
 %else
-%undefine _missing_build_ids_terminate_build    
-%debug_package
+  # Suppress errors, usually from rcc cross platforms that leak in here
+  %undefine _missing_build_ids_terminate_build
+  # Restore the artifact xml that was stripped by os_install_post
+  # Use global vs define so it is immediately evaluated
+  %global __os_install_post \
+    %{__os_install_post} \
+    set -vx \
+    oxml=%{RPM_OPENCPI}/cdk/%{RPM_PLATFORM}/bin/ocpixml \
+    for a in %{RPM_OPENCPI}/cdk/%{RPM_PLATFORM}/artifacts/*; do \
+      r=%{buildroot}%{prefix0}/cdk/%{RPM_PLATFORM}/artifacts/$(basename $a) \
+      ! $oxml check $r && $oxml check $a && $oxml get $a | $oxml add $r - \
+    done \
+    %{nil}
+  %debug_package
 %endif
 
+##########################################################################################
+# The preinstall scriptlet for runtime
 %pre
 # This is exact copy from opencpi-driver.spec; if changed, change there as well.
 # Check if somebody is installing on the wrong platform (AV-721)
 # Starting with 1.2, we ship the EL7 version for both EL6 and EL7 when it comes to platforms
 %if !%{RPM_CROSS}
-if [ -n "%{dist}" ]; then
-  PKG_VER=`echo %{dist} | perl -ne '/el(\d)/ && print $1'`
-  THIS_VER=`perl -ne '/release (\d)/ && print $1' /etc/redhat-release`
-  if [ -n "${PKG_VER}" -a -n "${THIS_VER}" ]; then
-    if [ ${PKG_VER} -ne ${THIS_VER} ]; then
-      for i in `seq 20`; do echo ""; done
-      echo "WARNING: This RPM is for CentOS${PKG_VER}, but you seem to be running CentOS${THIS_VER}"
-      echo "You might want to uninstall these RPMs immediately and get the CentOS${THIS_VER} version."
-      for i in `seq 5`; do echo ""; done
+  if [ -n "%{dist}" ]; then
+    PKG_VER=`echo %{dist} | perl -ne '/el(\d)/ && print $1'`
+    THIS_VER=`perl -ne '/release (\d)/ && print $1' /etc/redhat-release`
+    if [ -n "${PKG_VER}" -a -n "${THIS_VER}" ]; then
+      if [ ${PKG_VER} -ne ${THIS_VER} ]; then
+        for i in `seq 20`; do echo ""; done
+          echo "WARNING: This RPM is for CentOS${PKG_VER}, but you seem to be running CentOS${THIS_VER}"
+          echo "You might want to uninstall these RPMs immediately and get the CentOS${THIS_VER} version."
+        for i in `seq 5`; do echo ""; done
+      fi
     fi
   fi
-fi
 %endif
 if [ "$RPM_INSTALL_PREFIX1" = %{prefix1} -a "$RPM_INSTALL_PREFIX0" = %{prefix0} ]; then
   # Recipe from https://fedoraproject.org/wiki/Packaging:UsersAndGroups
@@ -208,6 +231,8 @@ EOF
 	The warnings about the "opencpi" user and group not existing can be ignored.
 	EOF
 fi
+##########################################################################################
+# The postinstall scriptlet for runtime
 %post
 if [ "$RPM_INSTALL_PREFIX1" != %{prefix1} -o "$RPM_INSTALL_PREFIX0" != %{prefix0} ]; then
   echo This installation is relocated, so warnings about the \"opencpi\" user and group not existing can be ignored.
@@ -236,6 +261,8 @@ fi
   chown -R $user $RPM_INSTALL_PREFIX0 $RPM_INSTALL_PREFIX1
   chgrp -R $group $RPM_INSTALL_PREFIX0 $RPM_INSTALL_PREFIX1
 } || :
+##########################################################################################
+# The postuninstall scriptlet for runtime
 %postun
 if [ "$RPM_INSTALL_PREFIX1" != %{prefix1} -o "$RPM_INSTALL_PREFIX0" != %{prefix0} ]; then
    cat <<-EOF
@@ -245,14 +272,15 @@ if [ "$RPM_INSTALL_PREFIX1" != %{prefix1} -o "$RPM_INSTALL_PREFIX0" != %{prefix0
 	While in a global installation the %{prefix1} directory would not be removed,
 	in this relocated installation $RPM_INSTALL_PREFIX1 will be removed.
 	EOF
-   owner=`stat --format=%U $RPM_INSTALL_PREFIX1`   
+   owner=`stat --format=%U $RPM_INSTALL_PREFIX1`
    if [ -z "$owner" -o "$owner" = root -o "$owner" = opencpi ]; then
      echo Owner of $RPM_INSTALL_PREFIX1 is \"$owner\".  It is not being deleted.
    else
      rm -r -f $RPM_INSTALL_PREFIX1
    fi
 fi
-
+##########################################################################################
+# The preinstall scriptlet for devel
 %pre devel
 prefixes=(`rpm -q --qf '[%{INSTPREFIXES}\n]' opencpi`)
 if [ -z "${prefixes[0]}" -o -z "${prefixes[1]}" -o \
@@ -278,6 +306,8 @@ if [ "$RPM_INSTALL_PREFIX1" != %{prefix1} -o "$RPM_INSTALL_PREFIX0" != %{prefix0
 	The warnings about the opencpi user and group not existing can be ignored.
 	EOF
 fi
+##########################################################################################
+# The postinstall scriptlet for devel
 %post devel
 if [ "$RPM_INSTALL_PREFIX1" != %{prefix1} -o "$RPM_INSTALL_PREFIX0" != %{prefix0} ]; then
   echo This installation is relocated, so warnings about the \"opencpi\" user and group not existing can be ignored.
@@ -298,4 +328,6 @@ fi
   chgrp -R $group $RPM_INSTALL_PREFIX0 $RPM_INSTALL_PREFIX1
 } || :
 
+##########################################################################################
+# Suppress cleaning so we can easily look - cleanpackaging does it all at a higher level
 %clean
