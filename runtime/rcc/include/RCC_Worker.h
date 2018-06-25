@@ -167,64 +167,6 @@ typedef struct {
   uint32_t     usecs;
 } RCCRunCondition;
 
-#if 0
-#ifdef __cplusplus
-class RunCondition {
-  friend class OCPI::RCC::Worker;
-  friend class OCPI::OCL::Worker;
- public:
-  RCCPortMask *m_portMasks;  // the masks used for checking
-  RCCBoolean   m_timeout;    // is timeout enabled?
-  uint32_t     m_usecs;      // usecs of timeout, zero is valid
- private:
-  RCCPortMask  m_myMasks[3]; // non-allocated masks used almost all the time
-  RCCPortMask *m_allocated;  // NULL or allocated
-  bool         m_hasRun;     // Have we run since being activated?
- protected:
-  RCCPortMask  m_allMasks;   // summary of all masks in the list
- public:
-  // Constructors
-  // Default constructor: no timeout, all ports must be ready
-  RunCondition();
-  // This allows a zero-terminated list of masks to be provided in the argument list.
-  // No timeout is enabled.  A very common case.  If given one arg == 0, then never runs
-  RunCondition(RCCPortMask first, ...);
-  // This allows the specification of a mask array (which can be nullptr) and a timeout.
-  RunCondition(RCCPortMask*, uint32_t usecs = 0, bool timeout = false);
-  ~RunCondition();
-  // backward compatibility for undocumented method
-  inline void initDefault(unsigned /*nPorts*/) {}
-  // Support older C-langage run conditions
-  inline void setRunCondition(const RCCRunCondition &crc) {
-    m_portMasks = crc.portMasks;
-    m_timeout = crc.timeout;
-    m_usecs = crc.usecs;
-    m_allMasks = 0;
-    for (RCCPortMask *pm = m_portMasks; *pm; pm++)
-      m_allMasks |= *pm;
-  }
-  // Disable the timeout, without changing its value
-  inline void disableTimeout() { m_timeout = false; }
-  // Enable the timeout, setting its value
-  inline void enableTimeout(uint32_t usecs) { m_timeout = true; m_usecs = usecs; }
-  // Enable the timeout, without changing its value
-  inline void enableTimeout() { m_timeout = true; }
-  inline void setTimeout(uint32_t usecs) { m_usecs = usecs; }
-  void setPortMasks(RCCPortMask first, ...);
-  void setPortMasks(RCCPortMask *);
- private:
-  void initMasks(va_list ap);
-  void setMasks(RCCPortMask first, va_list ap);
-  void activate(OCPI::OS::Timer &tmr, unsigned nPorts);
-  // Return true if should run based on non-port info
-  // Set timedout if we are running due to timeout.
-  // Set hasRun
-  // Set bail if should NOT run based on non-port info
- protected:
-  bool shouldRun(OCPI::OS::Timer &tmr, bool &timedout, bool &bail);
-};
-#endif
-#endif
 typedef RCCResult RCCMethod(RCCWorker *_this);
 typedef RCCResult RCCRunMethod(RCCWorker *_this,
 			       RCCBoolean timedout,

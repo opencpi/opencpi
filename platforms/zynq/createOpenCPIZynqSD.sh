@@ -64,21 +64,7 @@ export OCPI_TARGET_PLATFORM=${3:-$(basename $(pwd))}
 # Someday provide the option to select the build mode
 export OCPI_TARGET_DIR=$OCPI_TARGET_PLATFORM
 export HDL_PLATFORM=${2:-zed}
-export HDL_PLATFORM_DIR=
-[ -z "$OCPI_PROJECT_REGISTRY_DIR" ] &&
-  export OCPI_PROJECT_REGISTRY_DIR=$OCPI_CDK_DIR/../project-registry
-projects="`getProjectPathAndRegistered`"
-for p in $projects; do
- dir=$p/hdl/platforms/$HDL_PLATFORM
- [ -d $dir ] && HDL_PLATFORM_DIR=$dir && break
-done
-[ -z "$HDL_PLATFORM_DIR" ] && {
-  echo Cannot find a directory for the HDL platform: $HDL_PLATFORM
-  echo Looked in these project locations: $projects  
-  exit 1
-}
-echo The HDL platform $HDL_PLATFORM found at $HDL_PLATFORM_DIR
-
+source $OCPI_CDK_DIR/scripts/util.sh
 echo Software platform is $OCPI_TARGET_PLATFORM, and hardware platform is $HDL_PLATFORM.
 if test -z $RPM_BUILD_ROOT; then
   # We assume a built tree for the tool platform - check for exports etc.?
@@ -91,6 +77,8 @@ else
   OCPI_CDK_DIR=${RPM_BUILD_ROOT}/opt/opencpi/cdk
   # Cannot just use CDK/lib and CDK/bin because the driver stuff isn't pushed there
   # EXAMPLES_ROOTDIR set externally
+  # This is using a "path" variable assuming it has no colons in it!
+  export OCPI_LIBRARY_PATH=${RPM_BUILD_ROOT}/opt/opencpi/projects/core/artifacts
 fi
 if test "$OCPI_LIBRARY_PATH" = ""; then
   # Put all artifacts in the core project, as well as any pre-built bitstreams in the hdl

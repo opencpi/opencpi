@@ -76,7 +76,6 @@
 #warning Could not use C++11 library for timers - using OCPI_GETTIME_CLOCK_TYPE
 #endif
 #endif
-#include "OcpiOsDataTypes.h"
 
 namespace OCPI {
   namespace OS {

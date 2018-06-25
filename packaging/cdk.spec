@@ -32,13 +32,12 @@ Prefix:      %{prefix0}
 Prefix:      %{prefix1}
 Vendor:      ANGRYVIPER Team
 Packager:    ANGRYVIPER team <discuss@lists.opencpi.org>
+%include %{RPM_OPENCPI}/packaging/target-%{RPM_PLATFORM}/runtime-requires
 %if !%{RPM_CROSS}
 ##########################################################################################
 # Native/development host package
 # Replaces the old prereq packages
 Conflicts: ocpi-prereq-ad9361 ocpi-prereq-gmp ocpi-prereq-gtest ocpi-prereq-patchelf ocpi-prereq-xz
-
-%include %{RPM_OPENCPI}/packaging/target-%{RPM_PLATFORM}/runtime-requires
 %description
 Open Component Portability Infrastructure (OpenCPI)
 
@@ -175,7 +174,6 @@ installed. It also provides a useful development utilities.
   # Use global vs define so it is immediately evaluated
   %global __os_install_post \
     %{__os_install_post} \
-    set -vx \
     oxml=%{RPM_OPENCPI}/cdk/%{RPM_PLATFORM}/bin/ocpixml \
     for a in %{RPM_OPENCPI}/cdk/%{RPM_PLATFORM}/artifacts/*; do \
       r=%{buildroot}%{prefix0}/cdk/%{RPM_PLATFORM}/artifacts/$(basename $a) \

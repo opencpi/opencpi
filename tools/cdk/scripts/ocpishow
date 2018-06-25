@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-# TODO: integegrate more inline with ocpirun -A o get information instead of metadata file
+# TODO: integrate more inline with ocpirun -A to get information instead of metadata file
 
 import argparse
 import subprocess
@@ -28,10 +28,12 @@ import types
 import pydoc
 from xml.etree import ElementTree as ET
 import ocpiutil
+import ocpiassets
 from hdltargets import HdlTarget, HdlPlatform
+from ocpiassets import Registry
 
 subParserNouns = ["hdl", "rcc"]
-plainNouns = ["registry", "projects", "workers", "components", "platforms", "targets"]
+plainNouns = ["registry", "projects", "workers", "components", "platforms", "targets", "tests"]
 nounsList = plainNouns + subParserNouns
 subnouns = {}
 subnouns['hdl'] = ["targets", "platforms"]
@@ -259,6 +261,13 @@ def do_workers(options):
         workList = workList + get_tags(mdFile, "worker")
     print("Workers: " + workList)
 
+def do_tests(options):
+    #TODO this may not be the right way to do this long term
+    my_asset = ocpiassets.AssetFactory.factory("project",
+                                               ocpiutil.get_path_to_project_top(),
+                                               init_libs=True)
+    my_asset.show(tests=True, json=options.json)
+
 def rchop(thestring, ending):
     if thestring.endswith(ending):
         return thestring[:-len(ending)]
@@ -327,9 +336,13 @@ def do_projects(options, only_registry=False):
     }
     """
     # Get projects from registry
-    reg_exists, reg_dir = ocpiutil.get_project_registry_dir()
-    if reg_exists:
+    try:
+        reg_dir = Registry.get_registry_dir()
         projects = os.listdir(reg_dir)
+        reg_exists = True
+    except ocpiutil.OCPIException as err:
+        print(err)
+        reg_exists = False
 
     # If we care about projects from other sources (e.g. OCPI_PROJECT_PATH),
     # collect those too
@@ -408,21 +421,26 @@ def do_projects(options, only_registry=False):
             json.dump(project_reg_dict, sys.stdout)
             print()
 
-# main
-(args, noun) = parseCLVars()
+def main():
+    (args, noun) = parseCLVars()
 
-action = {"registry":     do_registry,
-          "projects":     do_projects,
-          "components":   do_components,
-          "workers":      do_workers,
-          "platforms":    do_platforms,
-          "targets":      do_targets,
-          "hdlplatforms": do_hdlplatforms,
-          "hdltargets":   do_hdltargets,
-          "rccplatforms": do_rccplatforms,
-          "rcctargets":   do_rcctargets}
-if args.verbose:
-    print("ocpishow is processing noun \"" + str(noun) + "\" with options \"" + str(args) + "\"")
-with ocpiutil.cd(args.dir):
-    # call the correct noun function
-    action[noun](args)
+    action = {"registry":     do_registry,
+              "projects":     do_projects,
+              "components":   do_components,
+              "workers":      do_workers,
+              "tests":        do_tests,
+              "platforms":    do_platforms,
+              "targets":      do_targets,
+              "hdlplatforms": do_hdlplatforms,
+              "hdltargets":   do_hdltargets,
+              "rccplatforms": do_rccplatforms,
+              "rcctargets":   do_rcctargets}
+    if args.verbose:
+        #TODO use ocpilogging module
+        print("ocpishow is processing noun \"" + str(noun) + "\" with options \"" + str(args) + "\"")
+    with ocpiutil.cd(args.dir):
+        # call the correct noun function
+        action[noun](args)
+
+if __name__ == '__main__':
+    main()

@@ -27,6 +27,7 @@ else
        exit 0
   }
   echo Available simulators are: ${sims[*]}, using $sims.
+  export HDL_TEST_PLATFORM=$sims
 fi
 echo Using sim platform: $sims
 

@@ -181,6 +181,7 @@ other_regexs = (
 bad_paths = (
     '/.git/',
     '/chipscope/',
+    '/docs/IDE_Guide_Shots/',  # IDE
     '/fixed_float',
     '/gen/',
     '/kernel-headers',
@@ -200,10 +201,12 @@ bad_path_globs = (
     '*/package-name',
     '*/package-id',
     '*/*.sh.example',
+    '*/snippets/*',
     '*.test/test*/description',
     '*.test/test*/portmap',
     '*.test/test*/*.input',
     '*.test/test*/golden*',
+    '*/utilization.inc',  # LaTeX include files for utilization
 )
 
 

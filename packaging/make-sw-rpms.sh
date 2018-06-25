@@ -58,6 +58,7 @@ else
   # derive RPM Requires: from package script for the platform, for runtime and devel
   p=$OCPI_TARGET_PLATFORM_DIR/${platform}-packages.sh
   touch $target/runtime-requires $target/devel-requires
+  touch $target/runtime-requires $target/runtime-requires
   [ -f $p ] && {
     # first line is runtime
     $p list | head -1 | xargs -n 1 | sed 's/^/Requires:/' > $target/runtime-requires

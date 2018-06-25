@@ -24,6 +24,7 @@
 
 [ -z "$OCPI_CDK_DIR" -o ! -d "$OCPI_CDK_DIR" ] && echo "Error: OCPI_CDK_DIR environment setting not valid: '${OCPI_CDK_DIR}'" && exit 1
 source $OCPI_CDK_DIR/scripts/util.sh
+
 # Database of models, languages and suffixes, redundant with util.mk
 Models=(rcc hdl ocl)
 Language_rcc=c++
@@ -116,43 +117,58 @@ function check_dirtype {
 }
 # Determine the path to the current project's top level
 function get_project_top {
+  # TODO get project, project.dir
   project_top=`python3 -c "\
 import sys; sys.path.append(\"$OCPI_CDK_DIR/scripts/\");
-import ocpiutil; print (ocpiutil.get_path_to_project_top());"`
+import ocpiutil; print(ocpiutil.get_path_to_project_top());"`
   [ "$project_top" != None ] || bad failure to find project containing path \"`pwd`\"
   echo $project_top
 }
 # Determine the package-id of the current project
 function get_project_package {
+  # TODO get project, project.package_id
   project_pkg=`python3 -c "\
 import sys; sys.path.append(\"$OCPI_CDK_DIR/scripts/\");
-import ocpiutil; print (ocpiutil.get_project_package());"`
+import Asset; print(Asset.Project(directory=\".\").package);"`
   [ "$project_pkg" != None ] || bad failure to find project package for path \"`pwd`\"
   echo $project_pkg
 }
 # Create the link to a project in the installation registry (OCPI_PROJECT_REGISTRY_DIR)
 # based on the project's package name
+function py_try_return_bool {
+  python3 -c "\
+import sys; sys.path.append(\"$OCPI_CDK_DIR/scripts/\");
+import logging;
+import ocpiutil;
+ocpiutil.configure_logging()
+try:
+    $1
+    print(True)
+except ocpiutil.OCPIException as err:
+    logging.error(err);"
+}
+
 function register_project {
   if [ -n "$1" ]; then
     project="$1"
   else
     project="."
   fi
-  reg_success=`python3 -c "\
-import sys; sys.path.append(\"$OCPI_CDK_DIR/scripts/\");
-import ocpiutil; print (ocpiutil.register_project(\"$project\"));"`
-  echo $reg_success
-
+  local rv=$(py_try_return_bool "
+    from ocpiassets import AssetFactory, Registry;
+    AssetFactory.factory(\"registry\", Registry.get_registry_dir(\"$project\")).add(\"$project\")")
+  [ "$rv" != True ] && return
   # We want to export a project on register, but only if it is not
   # an exported project itself
   is_exported=`python3 -c "\
 import sys; sys.path.append(\"$OCPI_CDK_DIR/scripts/\");
-import ocpiutil; print (ocpiutil.is_path_in_exported_project(\"$project\"));"`
+import ocpiutil; print(ocpiutil.is_path_in_exported_project(\"$project\"));"`
   if [ "$is_exported" == "False" ]; then
-    make -C $project exports 1>&2 || echo Could not export project \"$project\". You may not have write permissions on this project. Proceeding...
+    make -C $project exports >&2 || echo Could not export project \"$project\". You may not have write permissions on this project. Proceeding...>&2
   else
      [ -z "$verbose" ] || echo Skipped making exports because this is an exported standalone project. 1>&2
   fi
+  echo True
 }
 # Remove the link to a project in the installation registry which should be named
 # based on the project's package name. If a project does not exist with as
@@ -163,10 +179,15 @@ function unregister_project {
   else
     project="."
   fi
-  unreg_success=`python3 -c "\
-import sys; sys.path.append(\"$OCPI_CDK_DIR/scripts/\");
-import ocpiutil; print (ocpiutil.unregister_project(\"$project\"));"`
-  echo $unreg_success
+  py_try_return_bool "
+    from ocpiassets import AssetFactory, Registry;
+    import os;
+    if os.path.exists(\"$project\"):
+        # Create registry instance from project dir, and remove project by its dir
+        AssetFactory.factory(\"registry\", Registry.get_registry_dir(\"$project\")).remove(directory=\"$project\")
+    else:
+        # Create registry instance from current dir, and remove project by its package-ID
+        AssetFactory.factory(\"registry\", Registry.get_registry_dir(\"$project\")).remove(\"$project\")"
 }
 
 
@@ -326,7 +347,7 @@ function do_registry {
     else
       [ -z "$verbose" ] || echo The project registry \"$1\" has been created
       mkdir $1
-      ln -s $OCPI_CDK_DIR $1/ocpi.cdk
+#      ln -s $OCPI_CDK_DIR $1/ocpi.cdk
     fi
   elif [ "$verb" == delete ]; then
     if [ -z "$1" ]; then
@@ -345,17 +366,17 @@ function do_registry {
       bad registry to delete \(\"$registry_to_delete\"\) does not exist
     fi
   elif [ "$verb" == set ]; then
-    setreg_success=`python3 -c "\
-import sys; sys.path.append(\"$OCPI_CDK_DIR/scripts/\");
-import ocpiutil; print (ocpiutil.set_project_registry(\"$1\"));"`
+  setreg_success=`py_try_return_bool "
+    import ocpiassets;
+    ocpiassets.AssetFactory.factory(\"project\", \".\").set_registry(\"$1\")"`
     if [ "$setreg_success" != "True" ]; then
       # Error is printed in python
       exit 1
     fi
   elif [ "$verb" == unset ]; then
-    unsetreg_success=`python3 -c "\
-import sys; sys.path.append(\"$OCPI_CDK_DIR/scripts/\");
-import ocpiutil; print (ocpiutil.unset_project_registry());"`
+    unsetreg_success=`py_try_return_bool "
+    import ocpiassets;
+    ocpiassets.AssetFactory.factory(\"project\", \".\").unset_registry()"`
     if [ "$unsetreg_success" != "True" ]; then
       # Error is printed in python
       exit 1
@@ -460,7 +481,7 @@ EOF
 # The PackageName, PackagePrefix and Package variables can optionally be set here:
 # PackageName defaults to the name of the directory
 # PackagePrefix defaults to local
-# Package defaults to PackageName.PackagePrefix
+# Package defaults to PackagePrefix.PackageName
 ${packagename:+PackageName=$packagename}
 ${packageprefix:+PackagePrefix=$packageprefix}
 ${package:+Package=$package}
@@ -859,7 +880,7 @@ EOF
 # The PackageName, PackagePrefix and Package variables can optionally be set here:
 # PackageName defaults to the name of the directory
 # PackagePrefix defaults to package of parent (project)
-# Package defaults to PackageName.PackagePrefix
+# Package defaults to PackagePrefix.PackageName
 ${packagename:+PackageName=$packagename}
 ${packageprefix:+PackagePrefix=$packageprefix}
 ${package:+Package=$package}
@@ -2223,9 +2244,12 @@ argv=($*)
 original_argv=($*)
 while [[ "${argv[0]}" != "" ]] ; do
   if [[ "${argv[0]}" == show ]] ; then
-    # Be careful to use portable features of sed
-    ocpishow_options=`sed -E 's/(^| )show( |$)//' <<< "${original_argv[@]}"`
+    ocpishow_options=`sed 's/\(^\| \)show\( \|$\)/\1\2/' <<< "${original_argv[@]}"`
     $OCPI_CDK_DIR/scripts/ocpishow $ocpishow_options
+    exit $?
+  elif [[ "${argv[0]}" == run ]] ; then
+    ocpidev_run_options=`sed 's/\(^\| \)run\( \|$\)/\1\2/' <<< "${original_argv[@]}"`
+    $OCPI_CDK_DIR/scripts/ocpidev_run.py $ocpidev_run_options
     exit $?
   elif [[ -n "$verb" && -n "$help_screen" ]]; then
     help

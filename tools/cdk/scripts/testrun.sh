@@ -29,7 +29,7 @@
 source $OCPI_CDK_DIR/scripts/util.sh
 ocpiGetToolPlatform
 tput=tput
-[ -z "$(which tput)" ] && tput=true 
+[ -z "$(command -v tput)" ] && tput=true
 spec=$1; shift
 component=${spec##*.}
 platform=$1; shift
@@ -47,7 +47,7 @@ ports=($*)
     # We are: only running, and running locally, and the platform is remote,
     # run all the cases remotely
     ./runremote.sh TestVerbose=$TestVerbose TestTimeout=$TestTimeout Cases="\"$Cases\"" \
-		   ./run.sh run remote
+                   ./run.sh run remote
     exit $?
 }
 # docase <model> <worker> <case> <subcase> <timeout> <duration>
@@ -64,9 +64,9 @@ function docase {
   [ -n "$header" ] || {
     header=1
     $OcpiEcho -n "Performing test cases for $spec on platform "
-    $tput setaf 4
+    $tput setaf 4 2>/dev/null
     $OcpiEcho -n $platform
-    $tput sgr0
+    $tput sgr0 2>/dev/null
     echo ".  Functions are: $run $verify $view"
   } 1>&2
   r=0
@@ -94,68 +94,69 @@ function docase {
 		 --dump-file=$3.$4.$2.$1.props $outputs ../../gen/applications/$3.$4.xml)
     [ -z "$remote" ] && rm -f -r $3.$4.$2.$1.*
     set -o pipefail
+    # This breaks under sudo! AV-4234
     if [ "$TestVerbose" = 1 ]; then
-	out=/dev/stdout
+        out=/dev/stdout
     else
-	out=/dev/null
+        out=/dev/null
     fi
     setStartTime
     if [ -z "$remote" -a -x runremote.sh ]; then
-	# We are local, running interleaved run/verify and platform is remote
-	# Remote execution is simply ocpirun
-	./runremote.sh \
-	    "TestVerbose=$TestVerbose TestTimeout=$TestTimeout Cases=$3.$4 ./run.sh run remote" \
-	    2>&1 | tee $3.$4.$2.$1.remote_log > $out
+        # We are local, running interleaved run/verify and platform is remote
+        # Remote execution is simply ocpirun
+        ./runremote.sh \
+            "TestVerbose=$TestVerbose TestTimeout=$TestTimeout Cases=$3.$4 ./run.sh run remote" \
+            2>&1 | tee $3.$4.$2.$1.remote_log > $out
     elif [ -z "$remote" ]; then
- 	(echo ${cmd[@]}; eval time env ${cmd[@]}) 2>&1 | tee $3.$4.$2.$1.log > $out
+        (echo ${cmd[@]}; eval time env ${cmd[@]}) 2>&1 | tee $3.$4.$2.$1.log > $out
     elif [ "$TestVerbose" = 1 ]; then
- 	(echo ${cmd[@]}; eval time env ${cmd[@]}) 2>&1 | tee $3.$4.$2.$1.log
+        (echo ${cmd[@]}; eval time env ${cmd[@]}) 2>&1 | tee $3.$4.$2.$1.log
     else
- 	(echo ${cmd[@]}; eval time env ${cmd[@]}) > $3.$4.$2.$1.log 2>&1 
+        (echo ${cmd[@]}; eval time env ${cmd[@]}) > $3.$4.$2.$1.log 2>&1
     fi
     r=$?
     set +o pipefail
     if [ $r = 0 ]; then
-      $tput setaf 2
+      $tput setaf 2 2>/dev/null
        echo '    'Execution succeeded, time was $(getElapsedTime).
-      $tput sgr0
+      $tput sgr0 2>/dev/null
     else
-      $tput setaf 1
+      $tput setaf 1 2>/dev/null
       if (( r > 128 )); then
         # Fail immediately if execution stopped on a signal
         let s=r-128
         echo '    'Execution FAILED due to signal $s\; log is in run/$platform/$3.$4.$2.$1.log 1>&2
-        $tput sgr0
+        $tput sgr0 2>/dev/null
         [ $s = 2 ] && exit $r
       else
         echo '    'Execution FAILED\($r\) - see log in run/$platform/$3.$4.$2.$1.log 1>&2
-        $tput sgr0
+        $tput sgr0 2>/dev/null
       fi
       [ "$TestAccumulateErrors" != 1 ] && exit $r
       failed=1
       return 0
     fi
   }
-  [ -z "$view" -a -z "$verify" ] || 
+  [ -z "$view" -a -z "$verify" ] ||
     if [ "$r" = 0 ]; then
       if [ -f $3.$4.$2.$1.props ]; then
         ../../gen/applications/verify_$3.sh $2.$1 $4 $view $verify
-	r=$?
+        r=$?
         [ -n "$verify" -a $r = 0 -a "$KeepSimulations" != 1 ] && rm -r -f $3.$4.$2.$1.simulation
-	if (( r > 128 )); then
-	  let s=r-128
-	  echo Verification exited with signal $s. 1>&2 
+        if (( r > 128 )); then
+          let s=r-128
+          echo Verification exited with signal $s. 1>&2
           [ $s = 2 ] && exit $r
         fi
-	[ $r = 0 ] && return 0
-	failed=1
+        [ $r = 0 ] && return 0
+        failed=1
         [ "$TestAccumulateErrors" = 1 ] && return 0
         exit 1
       else
-        $tput setaf 1
-        echo '    'Verification for $3.$4:  FAILED.  No execution using $2.$1 on platform $platform. 1>&2 
-        $tput sgr0
-	failed=1
+        $tput setaf 1 2>/dev/null
+        echo '    'Verification for $3.$4:  FAILED.  No execution using $2.$1 on platform $platform. 1>&2
+        $tput sgr0 2>/dev/null
+        failed=1
         [ "$TestAccumulateErrors" = 1 ] && return 0
         exit 1
       fi

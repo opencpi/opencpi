@@ -43,12 +43,8 @@ if [ -z "${DIR}" ]; then
   export DIR=$(mktemp -d -t ocpi_ctests.XXXXX)
 fi
 echo "========= Outputs from these tests will be in: $DIR"
-# if the script lives in the source tree, we are running where the executables are
-# otherwise assume this script is in the same directory as the executables are,
-# and change to that directory
+# Where ever this script lives, or what the pwd is, go to where the tests are.
 cd $OCPI_CDK_DIR/${OCPI_TARGET_DIR:-$OCPI_TOOL_DIR}/bin/ctests
-
-#[ $(basename $(dirname $0)) = src ] || cd "$(dirname $0)"
 
 failed=
 set -o pipefail

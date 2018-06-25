@@ -110,6 +110,7 @@
 +tools/cdk/scripts/ocpidev scripts/
 +tools/cdk/scripts/ocpishow scripts/
 +tools/cdk/scripts/ocpidev_run.py scripts/
++tools/cdk/scripts/ocpiassets.py scripts/
 +tools/cdk/scripts/ocpiutil.py scripts/
 +tools/cdk/scripts/upgradeApp_v1_3.py scripts/
 +tools/cdk/scripts/hdltargets.py scripts/
@@ -120,6 +121,8 @@
 +tools/cdk/scripts/testrun.sh scripts/
 +tools/cdk/scripts/testutil.sh scripts/
 +tools/cdk/scripts/setsid.py scripts/
++tools/cdk/scripts/freeze_project.sh scripts/
++tools/cdk/scripts/thaw_project.sh scripts/
 +tools/cdk/scripts/makeProjectExports.sh scripts/
 #+scripts/makeExportLinks.sh scripts/
 +tools/cdk/scripts/maybeExport.sh scripts/
@@ -222,11 +225,10 @@
 =COPYRIGHT
 ################################################################################
 # automake related exclusions and additions
-# --- discuss with Aaron
 #+tools/cdk/include/autoconfig_import.mk include/
 # Until wildcards are supported, the cross-compiled platforms:
 #+tools/cdk/include/autoconfig_import-zed.mk include/
 #+tools/cdk/include/autoconfig_import-pico_t6a.mk include/
 # Macros and configuration wrapper:
-#+runtime/application/include/angryviper.h include/aci/
-#+runtime/application/include/angryviper.h include/rcc/
+#+runtime/application/include/av_team.h include/aci/
+#+runtime/application/include/av_team.h include/rcc/

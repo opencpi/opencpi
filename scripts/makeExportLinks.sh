@@ -123,7 +123,7 @@ function make_relative_link {
     echo '   ' when trying to link to $1 >&2
     # Perhaps the tree has been de-linked (symlinks followed)
     # if contents are the same, reinstate the symlink
-    cmp -s $1 $2 || exit 1
+    cmp -s $1 $2 || diff -u $1 $2 || exit 1
     echo '   ' but contents are the same.  Link is recreated. >&2
     rm $2
   fi
@@ -222,7 +222,7 @@ while read path opts; do
       -v) driver=1;;
       -s) useobjs=1;;
       -L) lib=${options[1]}; unset options[1]
-	  case $lib in 
+	  case $lib in
 	      /*|@*|*/*);;
 	      *) lib=libocpi_$lib;;
 	  esac
@@ -248,7 +248,7 @@ while read path opts; do
       if [ "$t" = $p ]; then
         dir=
         break
-      fi    
+      fi
     done
     file=build/autotools/target-$target/staging/bin/$dir$p
     [ -x $file -a "$dir" != internal/ ] && {
@@ -319,7 +319,7 @@ for a in projects/core/artifacts/*:*.*; do
     make_relative_link $a exports/$target/artifacts/$(basename $a)
   }
 done
-  
+
 # Ensure driver list is exported
 echo $drivers>exports/runtime/$1/lib/driver-list
 echo $drivers>exports/$1/lib/driver-list

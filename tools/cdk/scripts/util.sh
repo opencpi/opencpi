@@ -29,7 +29,7 @@ function getProjectRegistryDir {
   if [ -n "$OCPI_CDK_DIR" -a -n "$(command -v python3 2> /dev/null)" -a -r $OCPI_CDK_DIR/scripts/ocpiutil.py ]; then
     python3 -c "\
 import sys; sys.path.insert(0,\"$OCPI_CDK_DIR/scripts/\");
-import ocpiutil; print (ocpiutil.get_project_registry_dir()[1]);"
+import ocpiassets; print (ocpiassets.Registry.get_registry_dir());"
   elif [ -n "$OCPI_PROJECT_REGISTRY_DIR" ]; then
     echo $OCPI_PROJECT_REGISTRY_DIR
   elif [ -n "$OCPI_CDK_DIR" ]; then

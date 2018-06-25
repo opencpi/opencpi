@@ -52,7 +52,7 @@
 
 scriptfile=${BASH_SOURCE[1]}
 scriptdir=$(dirname $scriptfile)
-[[ scriptdir == /* ]] || scriptdir=`pwd`/$scriptdir
+[[ $scriptdir == /* ]] || scriptdir=`pwd`/$scriptdir
 set +o posix
 platform=$1
 package=$2
