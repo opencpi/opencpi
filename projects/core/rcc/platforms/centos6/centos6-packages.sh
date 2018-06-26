@@ -67,11 +67,11 @@ PKGS_D+=(epel-release ca-certificates)
 #    -- for rpm-required, we need a file-in-this-package too
 PKGS_D+=(glibc.i686=/lib/ld-linux.so.2
 	ncurses-libs.i686=/lib/libncurses.so.5
-	libXft.i686=/lib/libXft.so.2
-	libXext.i686=/lib/libXext.so.6
-	libXdmcp.i686=/lib/libXdmcp.so.6) # AV-3645
+	libXft.i686=/usr/lib/libXft.so.2
+	libXext.i686=/usr/lib/libXext.so.6)
+#	libXdmcp.i686=/lib/libXdmcp.so.6) # AV-3645
 #    for bash completion - a noarch package  (AV-2398)
-PKGS_D+=(bash-completion=/etc/profile.d/bash_completion.sh)
+# in epel for centos6 - see below PKGS_D+=(bash-completion=/etc/profile.d/bash_completion.sh)
 ##########################################################################################
 # S. yum-installed and but not rpm-required - conveniences or required for source environment
 # While some manual installations require git manually installed before this,
@@ -97,7 +97,9 @@ PKGS_S+=(glibc-devel.i686)
 #    for devel.  For RPM installations we somehow rely on the user pre-installing epel
 #
 #    for various testing scripts
-PKGS_E+=" python34-numpy"
+PKGS_E+=(python34-numpy)
+#    for bash completion - a noarch package  (AV-2398)
+PKGS_E+=(bash-completion=/etc/profile.d/bash_completion.sh)
 
 # functions to deal with arrays with <pkg>=<file> syntax
 function rpkgs {

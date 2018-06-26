@@ -24,6 +24,7 @@ import os
 import sys
 import subprocess
 import hdltargets
+import ocpiutil
 
 def addLibs(curRoot, libs):
     allWorkersLocal = False
@@ -211,10 +212,14 @@ def isStale (myDir, force):
     retVal = True
     find_output = ""
     if (force == False):
-        find_output = subprocess.Popen(['find', myDir, "-name", "*.xml", '-newer', myDir + "/project.xml", "-quit"], stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()[0]
+        if os.path.isfile(myDir + "/project.xml"):
+            find_output = subprocess.Popen(['find', myDir, "-name", "*.xml", 
+                                           '-newer', myDir + "/project.xml", "-quit"], 
+                                           stdout=subprocess.PIPE, 
+                                           stderr=subprocess.PIPE).communicate()[0]
 
-    if (find_output != ""):
-        retVal = False
+            if (find_output != ""):
+                retVal = False
 
     return retVal
 
@@ -271,8 +276,9 @@ if (isStale(mydir, force)):
     else:
         projectName = strings[splitLen -1]
 
-    root = ET.Element("project", {"name" : projectName})
-    
+    full_proj_name = ocpiutil.get_project_package(mydir)
+    root = ET.Element("project", {"name" : full_proj_name})
+
     comps = ET.SubElement(root, "components")
     hdl = ET.SubElement(root, "hdl")
     rcc = ET.SubElement(root, "rcc")

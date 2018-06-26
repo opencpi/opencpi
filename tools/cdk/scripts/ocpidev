@@ -497,11 +497,15 @@ $CheckCDK
 include \$(OCPI_CDK_DIR)/include/project.mk
 EOF
 
+package_id=`python3 -c "\
+import sys; sys.path.append(\"$OCPI_CDK_DIR/scripts/\");
+import ocpiutil; print(ocpiutil.get_project_package());"`
+
 # Create IDE .project file (AV-1247)
   cat << EOF > .project
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-  <name>$1</name>
+  <name>$package_id</name>
   <comment></comment>
   <projects></projects>
   <buildSpec></buildSpec>
@@ -1886,7 +1890,7 @@ Options for the create|delete verbs:
                      This is invalid if '-p' is specified
   -n                 This spec has no lifecycle/configuration interface (no runtime properties)
 
- == create|delete component|protocol|worker|{hdl device} ==
+ == create|delete component|protocol|test|worker|{hdl device} ==
   -l <library>       Component library to add the asset to {when there is more than one library}
   -h <hdl-library>   For BSPs: A library underneath hdl/ to add assets to.  Default is "devices"
                                Valid <hdl-library> options are "devices", "cards" and "adapters"
@@ -1967,7 +1971,12 @@ Create examples:
   ocpidev create spec mycomp
     (create a component spec with name 'mycomp'. It will be placed in the default location,
      which is components/specs. Provide '-l <library-name>' if there are sub-libraries
-     underneath 'components')
+     underneath 'components'. Use the -t option to generate a component unit test as well)
+
+  ocpidev create test mycomp
+    (create a component unit test for component spec 'mycomp'. It will be placed in the default
+     location, which is components/mycomp.test. Provide '-l <library-name>' if there are
+     sub-libraries underneath 'components')
 
   ocpidev create worker myworker.hdl -S mycomp-spec
     (create an HDL worker named myworker that implements the 'mycomp' spec. If the worker

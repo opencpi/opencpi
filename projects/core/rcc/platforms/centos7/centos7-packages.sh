@@ -68,8 +68,8 @@ PKGS_D+=(epel-release)
 PKGS_D+=(glibc.i686=/lib/ld-linux.so.2
 	ncurses-libs.i686=/lib/libncurses.so.5
 	libXft.i686=/lib/libXft.so.2
-	libXext.i686=/lib/libXext.so.6
-	libXdmcp.i686=/lib/libXdmcp.so.6) # AV-3645
+	libXext.i686=/lib/libXext.so.6)
+# docker container missing this	libXdmcp.i686=/lib/libXdmcp.so.6) # AV-3645
 #    for bash completion - a noarch package  (AV-2398)
 PKGS_D+=(bash-completion=/etc/profile.d/bash_completion.sh)
 ##########################################################################################
@@ -97,7 +97,7 @@ PKGS_S+=(glibc-devel.i686)
 #    for devel.  For RPM installations we somehow rely on the user pre-installing epel
 #
 #    for various testing scripts
-PKGS_E+=" python34-numpy"
+PKGS_E+=(python34-numpy)
 
 # functions to deal with arrays with <pkg>=<file> syntax
 function rpkgs {

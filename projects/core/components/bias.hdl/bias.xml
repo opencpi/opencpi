@@ -1,4 +1,4 @@
-<HdlImplementation Name="bias" Language="Verilog" Pattern="%w%M%0_">
+<HdlWorker Name="bias" Language="Verilog" Pattern="%w%M%0_">
   <xi:include href="bias_spec.xml"/>
   <specproperty name='biasValue' readable='true'/>
   <ControlInterface SizeOfConfigSpace="4g" Sub32BitConfigProperties="true" ControlOperations="initialize" Timeout="444"/>
@@ -6,6 +6,6 @@
       Name="in" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32"
       NumberOfOpcodes="256"/>
   <StreamInterface Name="out" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32" NumberOfOpcodes="256"/>
-</HdlImplementation>
+</HdlWorker>
 
 
