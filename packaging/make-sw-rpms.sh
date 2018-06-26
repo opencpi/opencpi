@@ -65,7 +65,7 @@ else
     # second line is devel
     $p list | head -2 | tail -1 | xargs -n 1 | sed 's/^/Requires:/' > $target/devel-requires
     # last line is devel too (after epel)
-    $p list | tail -1 | xargs -n 1 | sed 's/^/Requires:/' >> $target/devel-requires
+    $p list | tail -1 | xargs -n 1 | sed 's/^[a-zA-Z/]/Requires:&/' >> $target/devel-requires
   }
 fi
 echo "Creating RPM file(s) in $target for $msg for the $platform platform."
@@ -86,8 +86,7 @@ env $MYHOSTNAME_SPOOF rpmbuild $verbose -bb\
   --define="RPM_PLATFORM       $platform" \
   --define="RPM_OPENCPI        $PWD" \
   --define="RPM_CROSS          $cross" \
-  $([ -n "$OCPI_TARGET_CROSS_COMPILE" ] && \
-      echo --define=\"RPM_CROSS_COMPILE  $OCPI_TARGET_CROSS_COMPILE\")\
+  --define="RPM_CROSS_COMPILE  ${OCPI_TARGET_CROSS_COMPILE:--}" \
   --define="_topdir            $PWD/$target"\
   --define="_rpmdir            $PWD/$target"\
   --define="_build_name_fmt    %%{NAME}-%%{VERSION}-%%{RELEASE}.%%{ARCH}.rpm"\

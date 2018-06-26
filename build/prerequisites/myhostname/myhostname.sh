@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-myhostnamelib=$OCPI_PREREQUISITES_DIR/myhostname/$OCPI_TOOL_DIR/lib/libmyhostname.so
+myhostnamelib="$OCPI_PREREQUISITES_DIR/myhostname/$OCPI_TOOL_DIR/lib/\${LIB}myhostname.so"
 MYHOSTNAME_SPOOF=LD_PRELOAD="$myhostnamelib${LD_PRELOAD:+:}$LD_PRELOAD"
 MYHOSTNAME_MNAME=$(uname -m)
 if [ -n "$NODE_NAME" ]; then

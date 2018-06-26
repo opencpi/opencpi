@@ -150,9 +150,12 @@ git_branch :=$(notdir $(shell git name-rev --name-only HEAD | \
 git_version:=$(shell echo $(git_branch) | perl -ne '/^v[\.\d]+$$/ && print')
 git_hash   :=$(shell h=`(git tag --points-at HEAD | grep github | head -n1) 2>/dev/null`;\
                      [ -z "$$h" ] && h=`git rev-list --max-count=1 HEAD`; echo $$h)
+# git_tag is used in *.spec files for RPM release tag.
+# Any non alphanumeric (or .) strings converted to single _
 git_tag    :=$(if $(git_version),,$(strip\
                $(if $(BUILD_NUMBER),_J$(BUILD_NUMBER)))$(strip\
-               $(if $(filter-out undefined develop,$(git_branch)),_$(subst -,_,$(git_branch)))))
+               $(if $(filter-out undefined develop,$(git_branch)),\
+                    _$(shell echo $(git_branch) | sed -e 's/[^A-Za-z0-9.]\+/_/g'))))
 ##### Set final variables that depend on git variables
 # This could be nicer, but at least it gets it from the true source, which should be places
 version:=$(or $(git_version),$(strip\

@@ -1119,20 +1119,21 @@ OcpiDirName=$(patsubst %/,%,$(dir $1))
 #  Note that the first time these links are created, the UUID used for the links comes from
 #  the artifact, but later, when the links are reused, the UUID in the links is not changed
 #  because there is no value in changing it.
-# $(call OcpiPrepareArtifact,<artifact-file-input>,<output-file-to-modify>)
+# $(call OcpiPrepareArtifact,
+#    <artifact-file-input>,<output-file-to-modify>,<packageparent>,<config>,<platform>)
+# old name based on xml uuid not used anymore since we rely on package ids
+#    $(comment uuid=`sed -n '/artifact uuid/s/^.*artifact uuid="\([^"]*\)".*$$/\1/p' $1` &&)
 OcpiPrepareArtifact=\
-  $(info OCPIPREPAREARTIFACE:$(Package):$(ParentPackage):$(Worker).$(Model):$1.$2.$3.$4) \
-  $(info OCPIPREPAREARTIFACE1:$(ParentPackage).$(Worker).$(Model).$3.$4) \
   $(ToolsDir)/ocpixml add $2 $1 \
   $(and $(OCPI_PROJECT_DIR), &&\
     adir=$(OCPI_PROJECT_DIR)/artifacts &&\
     name="$(subst .,-,$(subst /,-,$(call FindRelative,$(OCPI_PROJECT_DIR),$(CURDIR)/$(call OcpiDirName,$2))-$(notdir $2)))" &&\
     [ -L $$adir/$$name ] || { \
-      uuid=`sed -n '/artifact uuid/s/^.*artifact uuid="\([^"]*\)".*$$/\1/p' $1` &&\
+      uuid=$3.$(Worker).$(Model).$4.$5 &&\
       mkdir -p $(OCPI_PROJECT_DIR)/artifacts &&\
       ln -s $$uuid $$adir/$$name &&\
-      $(call MakeSymLink2,$2,$(OCPI_PROJECT_DIR)/artifacts,$${uuid}:$(notdir $2)))  \
-    }
+      $(call MakeSymLink2,$2,$(OCPI_PROJECT_DIR)/artifacts,$${uuid}$(suffix $2)) \
+    })
 
 # What to do early in each top level Makefile to process build files.
 ParamShell=\

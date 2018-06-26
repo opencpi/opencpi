@@ -311,7 +311,7 @@ check=$OCPI_TARGET_PLATFORM_DIR/${OCPI_TARGET_PLATFORM}-check.sh
 # any apps that rely on software components in the core project
 rm -r -f exports/runtime/$target/artifacts exports/$target/artifacts
 mkdir exports/runtime/$target/artifacts exports/$target/artifacts
-for a in projects/core/artifacts/*:*.*; do
+for a in projects/core/artifacts/ocpi.core.*; do
   [ -f $a ] || continue
   link=`readlink -n $a`
   [[ $link == */target-*${target}/* ]] && {

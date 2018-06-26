@@ -30,5 +30,10 @@ source $OCPI_CDK_DIR/scripts/setup-prerequisite.sh \
 [[ "$OcpiPlatformOs" != linux || "$OcpiPlatformOsVersion" != c* ]] &&
   echo The myhostname package is not built for $OcpiPlatform, only CentOS*. Skipping it. &&
   exit 0
-gcc -Wall -fPIC -shared ../myhostname.c -o libmyhostname.so
+# This is quite linux x86-specific.  LD_PRELOAD has one way to use a library in a hierarchy
+# of processes that are a mix of 64 and 32 bit executables, by using ${LIB} in the string
+# expanded as lib64 for x86_64 and lib for x86_32.
+gcc -Wall -fPIC -shared ../myhostname.c -o lib64myhostname.so
+gcc -Wall -m32 -fPIC -shared ../myhostname.c -o libmyhostname.so
+relative_link lib64myhostname.so $OcpiInstallExecDir/lib
 relative_link libmyhostname.so $OcpiInstallExecDir/lib

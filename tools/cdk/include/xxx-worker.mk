@@ -187,7 +187,8 @@ define WkrDoTargetConfig
 	$(AT)echo Linking final artifact file \"$$@\" and adding metadata to it...
 	$(AT)$$(call LinkBinary,$$(ObjectFiles_$1_$2) $$(OtherLibraries))
 	$(AT)$$(and $$(call ArtifactXmlFile,$1,$2),\
-	       $$(call OcpiPrepareArtifact,$$(call ArtifactXmlFile,$1,$2),$$@))
+	       $$(call OcpiPrepareArtifact,$$(call ArtifactXmlFile,$1,$2),$$@,$$(strip\
+               $$(ParentPackage)),$2,$$(call $$(CapModel)GetPlatform,$1)))
     # Make sure we actually make the final binary for this target
     $$(call OcpiDbg,Before all: 1:$1 2:$2 RccTarget:$$(RccTarget). WkrBinary is "$$(call WkrBinary,$1,$2)")
     $$(eval $$(call $(CapModel)WkrBinary,$1,$2))

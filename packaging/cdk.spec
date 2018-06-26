@@ -250,6 +250,9 @@ fi
   link=$RPM_INSTALL_PREFIX0/udev-rules/51-opencpi-usbblaster.rules
   [ $(readlink $RPM_INSTALL_PREFIX1/udev/rules.d/51-opencpi-usbblaster.rules) != $link ] &&
     ln -s -f $link $RPM_INSTALL_PREFIX1/udev/rules.d/ || :
+  # if not relocated, tell dynamic loader to find the (perhaps) new location
+  [ "$RPM_INSTALL_PREFIX1" = %{prefix1} -a "$RPM_INSTALL_PREFIX0" = %{prefix0} ] &&
+      /sbin/ldconfig
 %endif
 
 [ "$RPM_INSTALL_PREFIX1" != %{prefix1} -o "$RPM_INSTALL_PREFIX0" != %{prefix0} ] && {
@@ -262,20 +265,25 @@ fi
 ##########################################################################################
 # The postuninstall scriptlet for runtime
 %postun
-if [ "$RPM_INSTALL_PREFIX1" != %{prefix1} -o "$RPM_INSTALL_PREFIX0" != %{prefix0} ]; then
-   cat <<-EOF
+# Nothing to do on upgrade
+[ "$1" = 1 ] && exit 0
+# if not relocated, tell dynamic loader to forget our lib dir
+[ "$RPM_INSTALL_PREFIX1" = %{prefix1} -a "$RPM_INSTALL_PREFIX0" = %{prefix0} ] &&
+  /sbin/ldconfig
+else
+  cat <<-EOF
 	The OpenCPI installation being removed was relocated.
 	The %{prefix0} directory was relocated to $RPM_INSTALL_PREFIX0
 	The %{prefix1} directory was relocated to $RPM_INSTALL_PREFIX1
 	While in a global installation the %{prefix1} directory would not be removed,
 	in this relocated installation $RPM_INSTALL_PREFIX1 will be removed.
 	EOF
-   owner=`stat --format=%U $RPM_INSTALL_PREFIX1`
-   if [ -z "$owner" -o "$owner" = root -o "$owner" = opencpi ]; then
-     echo Owner of $RPM_INSTALL_PREFIX1 is \"$owner\".  It is not being deleted.
-   else
-     rm -r -f $RPM_INSTALL_PREFIX1
-   fi
+  owner=`stat --format=%U $RPM_INSTALL_PREFIX1`
+  if [ -z "$owner" -o "$owner" = root -o "$owner" = opencpi ]; then
+    echo Owner of $RPM_INSTALL_PREFIX1 is \"$owner\".  It is not being deleted.
+  else
+    rm -r -f $RPM_INSTALL_PREFIX1
+  fi
 fi
 ##########################################################################################
 # The preinstall scriptlet for devel
