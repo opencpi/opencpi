@@ -1,4 +1,4 @@
-<HdlImplementation Name="delay" Language="Verilog" Pattern="%w%M%0_">
+<HdlWorker Name="delay" Language="Verilog" Pattern="%w%M%0_">
   <xi:include href="delay_spec.xml"/>
   <ControlInterface SizeOfConfigSpace="4g" Sub32BitConfigProperties="true" ControlOperations="start,initialize" Timeout="444" Pattern="%w%M%0_">
     <Property Name="mesgWtCount" Readable="true" Writable="false" Type="ULong"/>
@@ -33,6 +33,6 @@
   <StreamInterface Name="in" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32"/>
   <StreamInterface Name="out" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32"/>
   <MemoryInterface DataWidth="128" ByteWidth="8" MemoryWords="4g" MaxBurstLength="4k-1" PreciseBurst="true" WriteDataFlowControl="true" master='true'/>
-</HdlImplementation>
+</HdlWorker>
 
 

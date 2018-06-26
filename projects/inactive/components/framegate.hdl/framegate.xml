@@ -1,4 +1,4 @@
-<HdlImplementation Name="framegate" Language="Verilog" Pattern="%w%M%0_">
+<HdlWorker Name="framegate" Language="Verilog" Pattern="%w%M%0_">
   <xi:include href="framegate_spec.xml"/>
   <!-- force byte enables because shep always uses them -->
   <ControlInterface Sub32BitConfigProperties="true">
@@ -15,4 +15,4 @@
   </ControlInterface>
   <StreamInterface Name="in" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32"/>
   <StreamInterface Name="out" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32"/>
-</HdlImplementation>
+</HdlWorker>
