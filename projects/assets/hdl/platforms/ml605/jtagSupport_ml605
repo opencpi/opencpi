@@ -73,6 +73,11 @@ function bad {
 ################################################################################
 case $func in
   (cables)
+    TEST_FILE=/etc/udev/rules.d/xusbdfwu.rules
+    if test ! -f $TEST_FILE; then
+      echo Could not find UDEV rules file necessary for ML605 JTAG-over-USB usage: $TEST_FILE. Please rerun the Xilinx ISE cable driver setup process described in FPGA_Vendor_Tools_Installation_Guide.pdf 1>&2
+      exit 1 # don't use bad because we don't want to dump the log
+    fi
     $imp -batch > $temp.log <<EOF
 listusbcables
 EOF

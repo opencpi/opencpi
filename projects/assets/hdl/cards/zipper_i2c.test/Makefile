@@ -27,6 +27,11 @@ APP=testbench
 
 include $(OCPI_CDK_DIR)/include/application.mk
 
+# if never, this statement exists so that the directory evaluates as a test directory for ocpidev
+ifneq(,)
+  include $(OCPI_CDK_DIR)/include/test.mk
+endif
+
 .SILENT: show
 .PHONY: run clean show
 

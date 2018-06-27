@@ -300,20 +300,17 @@ ocpidev build --hdl-platform ml605
 \end{lstlisting}
 The following command builds for Zedboard deployment:
 \begin{lstlisting}
-OCPI_TARGET_PLATFORM=xilinx13_3 ocpidev build --hdl-platform zed
+ocpidev build --rcc-platform xilinx13_3 --hdl-platform zed
 \end{lstlisting}
 \subsection*{Execution Instructions}
-If it does not matter which ML605 FMC slot is tested, the ML605 test should be executed by running the following command. Using this command, it is possible for either ML605 FMC slot to be used for AD9361 tests at runtime.
+The ML605 test is executed by running the following commands. Note that for this particular unit test, the ocpidev call occurs from the projects/assets/hdl/devices/ directory.
 \begin{lstlisting}
-make tests
-\end{lstlisting}
-To test the ML605 for a specific FMCOMMS2/3 FMC slot location, the \texttt{OCPI\_LIBRARY\_PATH} environment variable must be prepended with the location of the FPGA bitstream for the desired FMC LPC/HPC slot. The command is as follows:
-\begin{lstlisting}
-OCPI_LIBRARY_PATH=<path-to-bitstream>:$OCPI_LIBRARY_PATH make tests
+cd projects/assets/hdl/devices/
+ocpidev run test ad9361_dac.test
 \end{lstlisting}
 To run on the Zedboard, the built \comp{}.test directory must either be mounted from the development machine to the Zedboard, or copied to the Zedboard. From within the \comp{}.test directory, the follow command executes the test natively on the Zedboard:
 \begin{lstlisting}
-OCPI_LIBRARY_PATH=$OCPI_LIBRARY_PATH:<path-to-ocpi.core-project/exports/lib/>:<path-to-ocpi.assets-project/exports/lib> ./ad9361_dac_test_app
+OCPI_LIBRARY_PATH=$OCPI_LIBRARY_PATH:<path-to-ocpi.core-project/exports/lib/>:<path-to-ocpi.assets-project/exports/lib> ./run/runtests.sh verify
 \end{lstlisting}
 Upon completion of a successful test, PASSED is printed to the screen and a value of 0 is returned. Upon failure, FAILED is printed to the screen and a non-zero value is returned.
 \subsection*{Troubleshooting}

@@ -462,8 +462,39 @@ When a write to the property occurs, this property's written value is
 	\end{tabular}
 \end{scriptsize}
 
-% no unit test for this component yet
-%\section*{Test and Verification}
+\section*{Test and Verification}
+This test verifies the hardware command/control operation of the RX radio parameters represented by the \comp{} spec. Data fidelity is not verified within this test.
+\subsection*{Hardware Configuration}
+The \Comp{} unit test requires one of the following hardware combinations. Note that the ML605 FMC-HPC slot is not currently supported with FMCOMMS2/FMCOMMS3.
+\begin{itemize}
+\item Zedboard with and FMCOMMS2 card
+\item Zedboard with and FMCOMMS3 card
+\item ML605 with and FMCOMMS2 card in the FMC-LPC slot
+\item ML605 with and FMCOMMS3 card in the FMC-LPC slot
+\end{itemize}
+
+\subsection*{Build Instructions}
+The fmcomms\_2\_3\_rx.test directory contains the fmcomms\_2\_3\_rx.rcc unit test. The test can be built on a development machine from within this directory by running the following command to build for ML605 deployment:
+\lstset{language=bash, columns=flexible, breaklines=true, prebreak=\textbackslash, basicstyle=\ttfamily, showstringspaces=false,upquote=true, aboveskip=\baselineskip, belowskip=\baselineskip}
+\begin{lstlisting}
+ocpidev build --hdl-platform ml605
+\end{lstlisting}
+The following command builds for Zedboard deployment:
+\begin{lstlisting}
+ocpidev build --rcc-platform xilinx13_3 --hdl-platform zed
+\end{lstlisting}
+\subsection*{Execution Instructions}
+The ML605 test is executed by running the following commands. Note that for this particular unit test, the ocpidev call occurs from the projects/assets/hdl/cards/ directory.
+\begin{lstlisting}
+cd projects/assets/hdl/cards/
+ocpidev run test fmcomms_2_3_rx.test
+\end{lstlisting}
+To run on the Zedboard, the built fmcomms\_2\_3\_rx.test directory must either be mounted from the development machine to the Zedboard, or copied to the Zedboard. From within the fmcomms\_2\_3\_rx.test directory, the follow command executes the test natively on the Zedboard:
+\begin{lstlisting}
+./run/runtest.sh verify
+\end{lstlisting}
+Upon completion of a successful test, PASSED is printed to the screen and a value of 0 is returned. Upon failure, FAILED is printed to the screen and a non-zero value is returned.
+
 
 
  \begin{thebibliography}{1}

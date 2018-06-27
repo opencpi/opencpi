@@ -95,6 +95,7 @@ begin
                    else std_logic_vector(resize(signed(nco_out_i), 16)) & std_logic_vector(resize(signed(nco_out_q), 16));
 
   -- Since ZeroLengthMessages=true for the output WSI, this signal must be controlled
+  -- (revisit once AV-4200 is resolved)
   out_out.byte_enable <= (others => '1');
 
   -----------------------------------------------------------------------------
