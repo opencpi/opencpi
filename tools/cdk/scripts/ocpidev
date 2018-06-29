@@ -495,11 +495,15 @@ $CheckCDK
 include \$(OCPI_CDK_DIR)/include/project.mk
 EOF
 
+package_id=`python3 -c "\
+import sys; sys.path.append(\"$OCPI_CDK_DIR/scripts/\");
+import ocpiutil; print(ocpiutil.get_project_package());"`
+
 # Create IDE .project file (AV-1247)
   cat << EOF > .project
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-  <name>$1</name>
+  <name>$package_id</name>
   <comment></comment>
   <projects></projects>
   <buildSpec></buildSpec>

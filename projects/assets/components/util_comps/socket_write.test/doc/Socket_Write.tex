@@ -208,7 +208,7 @@ See the enclosed \verb+README+ file for more information, including how to add n
     \renewcommand*\footnoterule{} % Remove separator line from footnote
     \renewcommand{\thempfootnote}{\arabic{mpfootnote}} % Use Arabic numbers (or can't reuse)
   \begin{scriptsize}
-    \begin{tabular}{|p{3cm}|p{1.5cm}|c|c|c|c|c|p{7cm}|}
+    \begin{tabular}{|p{3.2cm}|p{1.5cm}|c|c|c|c|c|p{7cm}|}
       \hline
       \rowcolor{blue}
       Name                          & Type      & SequenceLength & ArrayDimensions & Accessibility      & Valid Range & Default       & Usage \\
@@ -216,6 +216,8 @@ See the enclosed \verb+README+ file for more information, including how to add n
       \verb+outSocket+\footnote{This structure is only read at Component START to configure.} & Struct & - & - & Writable, Readable & - & - & TCP socket(s) to use for listening \\
       \hline
       \verb+outSocket.address+      & String    & 16             & -               & "                  & -           & \verb+0.0.0.0+ & Address/interface to use for port\footnote{The default listens on all interfaces.}, \textit{e.g.} \verb+127.0.0.1+ \\
+      \hline
+      \verb+outSocket.expectedClients+      & UShort    & -             & -               & "                  & Standard           & 0 & Number of clients required to be connected before \verb+run()+ method will proceed.\footnote{Probably useful only for testing and may incorrectly inhibit data flow.} \\
       \hline
       \verb+outSocket.port+         & UShort    & -              & -               & "                  & 1025 - 65535 & -            & Output port to use if all data should remain combined \footnote{ICANN reserves up to 49151.} \footnote{Attempting to use a port that is used by another process will cause a fatal error.} \\
       \hline

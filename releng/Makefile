@@ -41,7 +41,7 @@ endif
 # Note: If somebody checks in between Jenkins builds, it will sometimes get "develop^2~37" etc,
 # so anything like that is stripped.
 # The BitBucket prefix of something like "bugfix--" is also stripped if present.
-GIT_BRANCH:=$(notdir $(shell git name-rev --name-only HEAD | perl -pe 's/[~^\d]*$$//' | perl -pe 's/^.*?--//'))
+GIT_BRANCH:=$(notdir $(shell git name-rev --name-only HEAD | perl -pe 's/[~^][~^\d]*$$//' | perl -pe 's/^.*?--//'))
 GIT_VERSION:=$(shell echo $(GIT_BRANCH) | perl -ne '/^v[\.\d]+$$/ && print')
 # For testing:
 # GIT_VERSION:=$(shell echo v1.4.0 | perl -ne '/^v[\.\d]+$$/ && print')
@@ -101,6 +101,7 @@ help:
 	echo " cdk-pico              - The CDK RPMs (cross-compiled for Picoflexor SW)"
 	echo " cdk-all               - The CDK RPMs (all CDKs built)"
 	echo ""
+	echo " doc                   - The documentation RPM"
 	echo " driver                - The driver RPM (for RHEL hosts only)"
 	echo ""
 	echo " prereq                - All prereq RPMs for ALL platforms (opposite of cdk vs cdk-all!)"
@@ -389,6 +390,23 @@ driver: cleanrpmbuild libmyhostname
 	--define="RPM_RELEASE $(RPM_RELEASE)" \
 	--define="RPM_VERSION ${RPM_VERSION}"
 	cp -v ~/rpmbuild/RPMS/*/$(RPM_DRIVERNAME)-* .
+
+# AV-4267
+# The _topdir was because the jenkins user didn't have a home in Docker containers, but that might not be the case any more
+.PHONY: doc
+.SILENT: doc
+doc: libmyhostname
+	rm -rf $(CURDIR)/rpmbuild-doc-tmpdir
+	$(SPOOF_HOSTNAME) rpmbuild -ba opencpi-doc.spec \
+	--define="COMMIT_HASH $(COMMIT_HASH)" \
+	--define="COMMIT_TAG $(shell echo "$(COMMIT_TAG)" | tr -d ' ')" \
+	--define="RELEASE_TAG $(RELEASE_TAG)" \
+	--define="RPM_BASENAME ${RPM_BASENAME}" \
+	--define="RPM_RELEASE $(RPM_RELEASE)" \
+	--define="RPM_VERSION ${RPM_VERSION}" \
+	--define="SRC_BASE $(CURDIR)/../" \
+	--define="_topdir $(CURDIR)/rpmbuild-doc-tmpdir"
+	cp -v $(CURDIR)/rpmbuild-doc-tmpdir/RPMS/noarch/$(RPM_BASENAME)-doc-* .
 
 # AV-2469
 .PHONY: assets

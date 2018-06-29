@@ -24,6 +24,7 @@ import os
 import sys
 import subprocess
 import hdltargets
+import ocpiutil
 
 def addLibs(curRoot, libs):
     allWorkersLocal = False
@@ -275,8 +276,9 @@ if (isStale(mydir, force)):
     else:
         projectName = strings[splitLen -1]
 
-    root = ET.Element("project", {"name" : projectName})
-    
+    full_proj_name = ocpiutil.get_project_package(mydir)
+    root = ET.Element("project", {"name" : full_proj_name})
+
     comps = ET.SubElement(root, "components")
     hdl = ET.SubElement(root, "hdl")
     rcc = ET.SubElement(root, "rcc")

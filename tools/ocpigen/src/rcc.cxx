@@ -344,7 +344,7 @@ struct C_Unparser : public OU::Unparser {
       s += "}";
     return r;
   }
-  bool 
+  bool
   unparseBool(std::string &s, bool val, bool) const {
     s += val ? "1" : "0";
     return !val;
@@ -373,7 +373,7 @@ struct C_Unparser : public OU::Unparser {
 
 struct CC_Unparser : public C_Unparser {
   CC_Unparser(const Worker &w, const OU::Member &mem) : C_Unparser(w, mem) {}
-  bool 
+  bool
   unparseBool(std::string &s, bool val, bool) const {
     s += val ? "true" : "false";
     return !val;
@@ -410,12 +410,12 @@ rccPropValue(OU::Property &p, std::string &value) {
     return rccValue(*p.m_default, value, p);
   // Generate a default value
   switch(p.m_baseType) {
-  case OA::OCPI_Bool: 
-  case OA::OCPI_Char: 
-  case OA::OCPI_Double: 
+  case OA::OCPI_Bool:
+  case OA::OCPI_Char:
+  case OA::OCPI_Double:
   case OA::OCPI_Float:
   case OA::OCPI_Short:
-  case OA::OCPI_Long: 
+  case OA::OCPI_Long:
   case OA::OCPI_UChar:
   case OA::OCPI_Enum:
   case OA::OCPI_ULong:
@@ -565,7 +565,7 @@ emitRccArgTypes(FILE *f, bool &first) {
               OU::Protocol::cname(), aprefix.c_str());
       for (unsigned nn = 0; nn < nOperations(); o++) {
         std::string s;
-        camel(s, o->cname());   
+        camel(s, o->cname());
         fprintf(f,"    %s%s_OPERATION%s\n", aprefix.c_str(), s.c_str(),
                 ++nn == nOperations() ? "" : ",");
       }
@@ -801,11 +801,11 @@ emitImplRCC() {
                     "      return %sm_worker.get%s%s(%u%s%s);\n"
                     "    }\n",
                     type.c_str(), p.m_name.c_str(), dims.c_str(), cast.c_str(), pretty.c_str(),
-                    p.m_isParameter ? "Parameter" : "PropertyOrd", p.m_ordinal, comma, 
+                    p.m_isParameter ? "Parameter" : "PropertyOrd", p.m_ordinal, comma,
                     offset.c_str());
         }
         if (p.m_isWritable) {
-          fprintf(f, 
+          fprintf(f,
                   "    inline void set_%s(%s%s%s val) {\n",
                   p.m_name.c_str(), dims.c_str(), comma, type.c_str());
           if (p.m_arrayRank) {
@@ -831,7 +831,7 @@ emitImplRCC() {
                   "#endif\n"
                   "    }\n");
           if (p.m_baseType == OA::OCPI_String)
-            fprintf(f, 
+            fprintf(f,
                     "    inline void set_%s(%s%sconst std::string &val) {\n"
                     "      m_worker.setStringPropertyOrd(%u, val.c_str()%s%s);\n"
                     "    }\n",
@@ -859,7 +859,7 @@ emitImplRCC() {
           notifiers = true;
           if ((**pi).m_writeSync) {
             if (!writeNotifiers)
-              fprintf(f, 
+              fprintf(f,
                       "  static Notification s_write_notifiers[];\n"
                       "  void propertyWritten(unsigned ordinal) {\n"
                       "    Notification n = s_write_notifiers[ordinal];\n"
@@ -871,7 +871,7 @@ emitImplRCC() {
           }
           if ((**pi).m_readSync) {
             if (!readNotifiers)
-              fprintf(f, 
+              fprintf(f,
                       "  static Notification s_read_notifiers[];\n"
                       "  void propertyRead(unsigned ordinal) {\n"
                       "    Notification n = s_read_notifiers[ordinal];\n"
@@ -1374,7 +1374,7 @@ emitRccCppImpl(FILE *f) {
         OU::Member *m = o->args();
         for (unsigned n = 0; n < o->nArgs(); m++) {
           std::string a;
-          camel(a, m->m_name.c_str());  
+          camel(a, m->m_name.c_str());
           fprintf(f, "           m_%sArg(*this)%s", a.c_str(), ++n == o->nArgs() ? "" : ", ");
         }
         fprintf(f,
@@ -1386,7 +1386,7 @@ emitRccCppImpl(FILE *f) {
         m = o->args();
         for (unsigned n = 0; n < o->nArgs(); m++) {
           std::string a;
-          camel(a, m->m_name.c_str());  
+          camel(a, m->m_name.c_str());
           fprintf(f, "           m_%sArg(*this)%s", a.c_str(), ++n == o->nArgs() ? "" : ", ");
         }
         fprintf(f,
@@ -1403,7 +1403,7 @@ emitRccCppImpl(FILE *f) {
         fprintf(f, "       enum { \n" );
         for (unsigned n = 0; n < o->nArgs(); n++, m++) {
           std::string a;
-          camel(a, m->m_name.c_str() ); 
+          camel(a, m->m_name.c_str() );
           fprintf(f,"         %s_ARG%s\n",  a.c_str(), n == o->nArgs() - 1 ? "" : ",");
         }
         fprintf(f, "       }; \n" );
@@ -1412,9 +1412,9 @@ emitRccCppImpl(FILE *f) {
         m = o->args();
         for (unsigned n = 0; n < o->nArgs(); n++, m++) { // TODO: Why void * when we know the type?
           std::string a;
-          camel(a, m->m_name.c_str() ); 
+          camel(a, m->m_name.c_str() );
           std::string p;
-          camel(p, cname() );   
+          camel(p, cname() );
           std::string on;
           camel(on, worker().m_implName, "WorkerTypes::", OU::Protocol::cname(),
                 o->cname());
@@ -1465,8 +1465,8 @@ emitRccCppImpl(FILE *f) {
                                     OU::Protocol::cname(), o->cname(),
                                     m->cname());
               fprintf(f,
-                      "         inline void resize(size_t size) {\n"
-                      "           setArgSize(size);\n"
+                      "         inline void resize(size_t a_size) {\n"
+                      "           setArgSize(a_size);\n"
                       "         }\n");
             }
           }
@@ -1496,15 +1496,15 @@ emitRccCppImpl(FILE *f) {
                       m_isProducer ? "" : "const ", a.c_str());
         }
         // End args
-        fprintf(f, 
+        fprintf(f,
                 "    } m_%sOp;\n"
                 "    // Conversion operators\n"
                 "    inline operator %sOp &() { m_%sOp.setBuffer(this); return m_%sOp; }\n"
-                "    // Factories, used to take messages\n" 
+                "    // Factories, used to take messages\n"
                 "    inline %sOp* take(%sOp &rhs) const {\n"
                 "      %sOp *so = new %sOp(rhs);\n"
                 "      return so;\n"
-                "    }\n", 
+                "    }\n",
                 s.c_str(), s.c_str(), s.c_str(), s.c_str(), s.c_str(), s.c_str(), s.c_str(),
                 s.c_str());
       // End Op class

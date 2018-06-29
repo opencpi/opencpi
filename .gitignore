@@ -74,4 +74,3 @@ tools/cdk/include/autoconfig_import*.mk
 # Our hidden files
 .build_platform
 .ocpi_config.*
-/projects/core/hdl/primitives/bsv/.gitignore

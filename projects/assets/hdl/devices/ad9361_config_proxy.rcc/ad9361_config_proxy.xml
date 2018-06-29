@@ -1,3 +1,16 @@
+<!--  ___________________________________________________________________    -->
+<!-- +                                                                   +   -->
+<!-- |                       ad9361_config_proxy.rcc                     |   -->
+<!-- +___________________________________________________________________+   -->
+<!--   ^                                                                     -->
+<!--   |  slave                                                              -->
+<!--   |  interface                                                          -->
+<!--   |                                                                     -->
+<!--  _V_______________________                                              -->
+<!-- +                         +                                             -->
+<!-- | ad9361_config.hdl       |                                             -->
+<!-- +_________________________+                                             -->
+<!--                                                                         -->
 <rccworker language="c++" slave='ad9361_config.hdl' spec='ad9361_config_proxy-spec' controloperations='initialize'>
 
   <!--**** PROPERTIES CORRESPONDING TO libad9361 "STANDARD" API (ad9361_api.h)****-->
