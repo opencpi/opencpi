@@ -83,7 +83,7 @@ export OCPI_CDK_DIR=$(CURDIR)/../../bootstrap
 #####################################################################################
 # Determine our platform (once) if we're not cleaning, so each sub-make can assume it
 #####################################################################################
-ifeq ($(filter help clean% distclean% preconfigure,$(MAKECMDGOALS)),)
+ifeq ($(filter help cleanpreconfigure cleaneverything distclean% preconfigure,$(MAKECMDGOALS)),)
   OcpiThisPlatformArgs:=$(shell OCPI_CDK_DIR=$(OCPI_CDK_DIR) $(OCPI_CDK_DIR)/scripts/getPlatform.sh 2> /dev/null)
   $(if $(filter 6,$(words $(OcpiThisPlatformArgs))),,\
     $(error Cannot determine platform we are running on.))
@@ -182,7 +182,6 @@ $(PLATFORM_SPECIFIC): do-platform.mk
 # A macro to do a platform, called for specified platforms
 MKARGS= -r -f ../do-platform.mk -C target-$1 Platform=$1
 define DoPlatform
-
 target-$1:
 	mkdir -p target-$1
 configure_$1: preconfigure do-platform.mk ocpi-config-platform.h.in | target-$1
@@ -201,6 +200,5 @@ install: install_$1
 clean: clean_$1
 
 endef
-
 # Delegate all platform-specific goals to the submake so we iterate here
 $(foreach p,$(Platforms),$(eval $(call DoPlatform,$p)))

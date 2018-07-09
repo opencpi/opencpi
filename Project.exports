@@ -74,11 +74,6 @@
 +tools/cdk/include/aci.mk include/
 +tools/cdk/include/setup-target-platform.mk include/
 +tools/cdk/include/platform-defaults.mk include/
-# Export the common stuff for zynq platforms for runtime only
-=platforms/zynq/*setup.sh
-=platforms/zynq/README*
-=platforms/zynq/zynq_system.xml
-=platforms/zynq/formatOpenCPIZynqSD.sh
 # CDK scripts we need
 +scripts/clean-env.sh scripts/
 # This is runtime although this one script deals with initialization issues

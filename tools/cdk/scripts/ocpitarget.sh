@@ -68,7 +68,7 @@ fi
     export OCPI_TARGET_PLATFORM_DIR=$OCPI_TOOL_PLATFORM_DIR
   else    
     read v0 v1 v2 v3 v4 v5 <<< `$OCPI_CDK_DIR/scripts/getPlatform.sh $OCPI_TARGET_PLATFORM`
-    [ -d $v5 ] || {
+    [ -d "$v5" ] || {
       echo Error:  Cannot find the platform directory for platform $OCPI_TARGET_PLATFORM
       exit 1
     }

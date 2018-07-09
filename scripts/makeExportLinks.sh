@@ -102,8 +102,12 @@ function match_filter {
 function make_relative_link {
   # echo make_relative_link $1 $2
   # Figure out what the relative prefix should be
-  up=$(echo $2 | sed 's-[^/]*$--' | sed 's-[^/]*/-../-g')
-  link=${up}$1
+  local up
+#  [[ $1 =~ ^/ ]] || up=$(echo $2 | sed 's-[^/]*$--' | sed 's-[^/]*/-../-g')
+#  link=${up}$1
+  link=$(python -c "import os.path; print os.path.relpath('$(dirname $1)','$(dirname $2)')")/
+  link+=$(basename $1)
+  # echo make_relative_link $1 $2 up:$up link:$link > /dev/tty
   if [ -L $2 ]; then
     L=$(ls -l $2|sed 's/^.*-> *//')
     if [ "$L" = "$link" ]; then
@@ -142,7 +146,8 @@ function make_filtered_link {
   for e in $exclusions; do
     declare -a both=($(echo $e | tr : ' '))
     # echo EXBOTH=${both[0]}:${both[1]}:$3:$1:$2
-    [ "${both[1]}" != "" -a "${both[1]}" != "$3" ] && continue
+    [ -z "${both[1]}" ] && bad UNEXPECTED EMPTY LINK TYPE
+    [ "${both[1]}" != "-" -a "${both[1]}" != "$3" ] && continue
     # echo EXBOTH1=${both[0]}:${both[1]}:$3:$1:$2
     edirs=(${both[0]/\// })
     if [ ${edirs[0]} = exports ]; then
@@ -158,26 +163,43 @@ function make_filtered_link {
 # process an addition ($1), and $2 is non-blank for runtime
 function do_addition {
   declare -a both=($(echo $1 | tr : ' '))
-  [[ $1 == *\<target\>* && $target == - ]] && continue
+  [ "$target" = - ] && case $1 in
+      *\<target\>*|*\<platform\>*|*\<platform_dir\>*) return;;
+  esac
   rawsrc=${both[0]//<target>/$target}
+  rawsrc=${rawsrc//<platform>/$OPCI_TARGET_PLATFROM}
+  rawsrc=${rawsrc/#<platform_dir>/$OCPI_TARGET_PLATFORM_DIR}
+  exp=${both[1]}
+  [ -z "$exp" ] && bad unexpected empty second field
+  exp=${exp//<target>/$target}
   set +f
-  # old way letting shell default glob do the work:
-  # for src in $rawsrc; do
   targets=$(match_pattern "$rawsrc")
   for src in $targets; do
+    # echo do_addition $1 $2 SRC:$src > /dev/tty
     if [ -e $src ]; then
-      dir=${both[1]//<target>/$target}
-      base=$(basename $src)
-      after=
-      if [[ ${both[1]} =~ /$ || ${both[1]} == "" ]]; then
-        after=$base
-      else
-        # export link has a file name, perhaps replace the suffix
-        suff=$(echo $base | sed -n '/\./s/.*\(\.[^.]*\)$/\1/p')
-        dir=${dir//<suffix>/$suff}
+      # figure out the directory for the export
+      local dir=
+      local srctmp=$src
+      if [ -n "${both[2]}" ]; then  # a platform-specific export
+        # dir=$target/
+	srctmp=${src=#$OCPI_TARGET_PLATFORM_DIR/=}
       fi
-      make_filtered_link $src exports/$dir$after
-      [ -n "$2" ] && make_filtered_link $src exports/runtime/$dir$after
+      if [[ $exp = - ]]; then
+        : # [[ $srctmp == */* ]] && dir+=$(dirname $srctmp)/
+      elif [[ $exp =~ /$ ]]; then
+        dir+=$exp
+      else
+        dir+=$(dirname $exp)/
+      fi
+      # figure out the basename of the export
+      local base=$(basename $src)
+      local suff=$(echo $base | sed -n '/\./s/.*\(\.[^.]*\)$/\1/p')
+      [[ $exp != - && ! $exp =~ /$ ]] && base=$(basename $exp)
+      base=${base//<suffix>/$suff}
+      # echo For $1 $2
+      # echo dir=$dir base=$base
+      make_filtered_link $src exports/$dir$base
+      [ -n "$2" ] && make_filtered_link $src exports/runtime/$dir$base
     else
       [ -z "$bootstrap" ] && echo Warning: link source $src does not '(yet?)' exist.
     fi
@@ -188,7 +210,24 @@ function bad {
     echo Error: $* 1>&2
     exit 1
 }
-
+# This function reads an exports file for a certain type of entry and adds entries to the
+# requested variable ($1)
+# Args are:
+# 1. variable name to set with the entries found
+# 2. leading character to look for
+# 3. file name to read
+# 4. a flag indicating platform-specific entries
+function readExport {
+  local entries=($(egrep '^[[:space:]]*\'$2 $3 |
+                   sed 's/^[ 	]*'$2'[ 	]*\([^ 	#]*\)[ 	]*\([^ 	#]*\).*$/\1:\2/'))
+  echo For "$1($3:$4) got ${#entries[@]} entries"
+  # make sure there is a second field
+  entries=(${entries[@]/%:/:-})
+  # add a third field for platform-specifics
+  [ -n "$4" ] && entries=(${entries[@]/%/:-})
+  eval $1+=\" ${entries[@]}\"
+  eval echo \$1 is now:\${$1}:
+}
 set -e
 mkdir -p exports
 # We do not re-do links so that mod dates are preserved.
@@ -198,11 +237,20 @@ mkdir -p exports
 #  rm -r -f exports/$1
 #}
 set -f
+[ -f Project.exports ] || bad No Project.exports file found for framework.
+platform_exports=$OCPI_TARGET_PLATFORM_DIR/$OCPI_TARGET_PLATFORM.exports
+[ -f $platform_exports ] || platform_exports=
 [ -n "$verbose" ] && echo Collecting exclusions
-exclusions=$(test -f Project.exports && egrep '^[[:space:]]*\-' Project.exports | sed 's/^[ 	]*-[ 	]*\([^ 	#]*\)[ 	]*\([^ 	#]*\).*$/\1:\2/') || true
-[ -n "$verbose" ] && echo Collecting additions
-additions=$(test -f Project.exports && egrep '^[[:space:]]*\+' Project.exports | sed 's/^[ 	]*+[ 	]*\([^ 	#]*\)[ 	]*\([^ 	#]*\).*$/\1:\2/') || true
-runtimes=$(test -f Project.exports && egrep '^[[:space:]]*\=' Project.exports | sed 's/^[ 	]*=[ 	]*\([^ 	#]*\)[ 	]*\([^ 	#]*\).*$/\1:\2/') || true
+readExport exclusions - Project.exports
+[ -n "$verbose" ] && echo Collecting additions and runtimes
+readExport additions + Project.exports
+readExport runtimes = Project.exports
+[ -n "$platform_exports" ] && {
+  echo Using extra exports file for platform $OCPI_TARGET_PLATFORM: $platform_exports
+  readExport additions + $platform_exports -
+  readExport runtimes = $platform_exports -
+  readExport exclusions - $platform_exports -
+}
 set +f
 while read path opts; do
   case "$path" in
@@ -345,8 +393,10 @@ done
 shopt -u nullglob
 
 # Force precompilation of python files right here, but only if we are doing a target
+py=python3
+command -v python3 > /dev/null || py=/opt/local/bin/python3
 dirs=
 for d in `find exports -name "*.py"|sed 's=/[^/]*$=='|sort -u`; do
- python3 -m compileall -q $d
- python3 -O -m compileall -q $d
+ $py -m compileall -q $d
+ $py -O -m compileall -q $d
 done

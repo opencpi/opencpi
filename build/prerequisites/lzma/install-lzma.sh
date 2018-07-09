@@ -41,3 +41,4 @@ make install
 rm -r -f $OcpiInstallExecDir/bin
 # this is not needed in our sandbox
 rm -r -f $OcpiInstallExecDir/lib/pkgconfig
+rm -f $OcpiInstallExecDir/lib/*.la

@@ -50,6 +50,8 @@ the_tests="$*"
 # Note the -e is so, especially in embedded environments, we do not deal with getPlatform.sh etc.
 [ -L cdk ] && source `pwd`/cdk/opencpi-setup.sh -e 
 [ -z "$OCPI_CDK_DIR" ] && echo No OpenCPI CDK available && exit 1
+runtime=1
+which make > /dev/null && [ -d $OCPI_CDK_DIR/../project-registry ] && runtime=
 if [ -n "$the_tests" ]; then
   tests="$the_tests"
 else
@@ -58,14 +60,12 @@ else
     tests="$tests $network_tests"
   fi
   # Note "which -s" not available on busybox
-  if which make > /dev/null && [ -d $OCPI_CDK_DIR/../project-registry ] ; then
+  if [ -z "$runtime" ] ;  then
     echo ========= Running dev system tests since \"make\" and project-registry is available.
     tests="$tests $dev_tests"   
-    runtime=
     source $OCPI_CDK_DIR/scripts/ocpitarget.sh $platform
   else
     echo ========= Running only runtime tests since \"make\" or project-registry is not available.
-    runtime=1
     [ -n "$platform" -a "$platform" != $OCPI_TOOL_PLATFORM ] && {
       echo "Cannot run tests on a different targeted platform ($platform) than we are running on."
       exit 1
@@ -131,7 +131,7 @@ for t in $TESTS; do
     # After this we are depending on the other projects being built for the targeted platform
     assets)
       echo ======================= Running Application tests in project/assets
-      if [ -z $runtime ] ; then
+      if [ -z "$runtime" ] ; then
         make -C $OCPI_CDK_DIR/../projects/assets/applications run
       else
         (cd $OCPI_CDK_DIR/../projects/assets/applications; ./run.sh)

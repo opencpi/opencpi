@@ -29,9 +29,6 @@ if test "$OCPI_CDK_DIR" = ""; then
      echo You must supply the IP address of the OpenCPI server machine as an argument to this script.
      break
   fi
-  export OCPI_TOOL_MODE=
-  export OCPI_TARGET_MODE=
-
   # Uncomment this section and change the MAC address for an environment with multiple
   # ZedBoards on one network (only needed for xilinx13_3)
   # ifconfig eth0 down
@@ -66,6 +63,6 @@ PS1='% '
 # Print the available containers as a sanity check
 echo Discovering available containers...
 ocpirun -C
-# Since we are sourcing this script we can't use "exit", do "done" is for "break"
+# Since we are sourcing this script we can't use "exit", so "done" is for "break" from "for"
 done
 trap - ERR

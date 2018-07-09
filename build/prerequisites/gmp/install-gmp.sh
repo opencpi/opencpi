@@ -34,3 +34,4 @@ source $OCPI_CDK_DIR/scripts/setup-prerequisite.sh \
 #=gmp \
 #  CFLAGS='-g -fPIC' CXXFLAGS='-g -fPIC' # why doesn't --with-pic do this?
 make && make install
+rm -f $OcpiInstallExecDir/lib/*.la
