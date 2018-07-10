@@ -1,0 +1,16 @@
+# Add generic zynq files to this zynq platform.
+# These files will be used for both the runtime package as well as the initial/default contents
+# of the hardware platform's SD card.  The hardware platform's script for its SD card can
+# remove files as well as add files.
+
+# Both the default setup files for users and the underlying ones, for the runtime and SD card
+=platforms/zynq/*setup.sh <target>/
+# no system.xml, let the hardware platform specify that
+# any value in having the zynq-generic one lying around anyway?
+# =platforms/zynq/zynq_system.xml <target>/zynq/
+# Put the platform's READMEs onto the runtime
+=<platform_dir>/README* <target>/
+# Put the generic READMEs onto the development package under zynq
++platforms/zynq/README* <target>/zynq/
+# For the development package add this script for formatting SD cards
++platforms/zynq/formatOpenCPIZynqSD.sh <target>/zynq/
