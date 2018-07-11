@@ -39,8 +39,8 @@ This script takes three arguments to run:
 2. the HDL platform name to use associated with the software platform you are enabling.
 3. the Zynq software platform to use (which defaults to the name of the CWD)
 
-Don't forget to copy zynq/user_zynq_setup.sh to mysetup.sh and customize mysetup.sh before
-doing this.  Also, copy zynq/user_zynq_net_setup.sh to mynetsetup.sh and customize
+Don't forget to copy zynq/default_mysetup.sh to mysetup.sh and customize mysetup.sh before
+doing this.  Also, copy zynq/default_mynetsetup.sh to mynetsetup.sh and customize
 mynetsetup.sh before doing this.
 
 Also, artifacts for the SD card are found based on the OCPI_LIBRARY_PATH environment variable,

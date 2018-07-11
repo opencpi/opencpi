@@ -1170,7 +1170,7 @@ search(const OU::PValue *params, const char **excludes, bool discoveryOnly, std:
       }
 
       std::string cmd;
-      OU::format(cmd, "sh %s/runSimExec.%s %s probe", sims[n].c_str(), name,
+      OU::format(cmd, "bash %s/runSimExec.%s %s probe", sims[n].c_str(), name,
 		 OS::logGetLevel() >= 8 ? "-v" : "");
       ocpiInfo("Checking whether the %s simulator is available and licensed", name);
       //  FIXME: make this more of a utility

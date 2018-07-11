@@ -220,7 +220,7 @@ function bad {
 function readExport {
   local entries=($(egrep '^[[:space:]]*\'$2 $3 |
                    sed 's/^[ 	]*'$2'[ 	]*\([^ 	#]*\)[ 	]*\([^ 	#]*\).*$/\1:\2/'))
-  echo For "$1($3:$4) got ${#entries[@]} entries"
+  # echo For "$1($3:$4) got ${#entries[@]} entries"
   # make sure there is a second field
   entries=(${entries[@]/%:/:-})
   # add a third field for platform-specifics

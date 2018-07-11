@@ -66,6 +66,9 @@ PKGS_D+=(epel-release ca-certificates)
 #    for various 32-bit software tools we end up supporting (e.g. modelsim) in devel (AV-567)
 #    -- for rpm-required, we need a file-in-this-package too
 PKGS_D+=(glibc.i686=/lib/ld-linux.so.2
+        # This must be here to be sure libgcc.x86_64 stays in sync with libgcc.i686
+        libgcc
+        libgcc.i686=/lib/libgcc_s.so.1
 	ncurses-libs.i686=/lib/libncurses.so.5
 	libXft.i686=/usr/lib/libXft.so.2
 	libXext.i686=/usr/lib/libXext.so.6)

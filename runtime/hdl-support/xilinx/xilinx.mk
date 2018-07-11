@@ -17,6 +17,7 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 ifndef _XILINX_MK
+export SHELL=/bin/bash
 _XILINX_MK=1
 # Functions to retrieve and default pathnames for Xilinx tools
 # FIXME: it may be worth caching these singular values
