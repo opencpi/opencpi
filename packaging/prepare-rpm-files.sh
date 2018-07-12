@@ -83,4 +83,5 @@ done | sort -u |
     -e 's=%{prefix0}/cdk/env.d$=%attr(755,root,root) %config(noreplace) &=' \
     -e 's=%{prefix0}/cdk/env.d/.*\.sh\.example$=%attr(644,root,root) &=' \
     -e 's=%{prefix0}/cdk/opencpi-setup.sh$= %attr(644,root,root) &=' \
+    -e 's=%{prefix0}/project-registry$= %attr(775,opencpi,opencpi) &=' \
   > $builddir/$package-files
