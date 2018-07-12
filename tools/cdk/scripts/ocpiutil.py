@@ -153,9 +153,9 @@ def set_vars_from_make(mk_file, mk_arg="", verbose=None):
                 logging.error("The '\"make\"' command is not available.")
             return 1
 
-        #If mk_file is a "Makefile" then we use the -C option on the directory containing 
-        #the makefile else (is a .mk) use the -f option on the file
-        if (mk_file.endswith("/Makefile")):
+        # If mk_file is a "Makefile" then we use the -C option on the directory containing
+        # the makefile else (is a .mk) use the -f option on the file
+        if mk_file.endswith("/Makefile"):
             make_cmd = "make -n -r -s -C " + os.path.dirname(mk_file) + " " + mk_arg
         else:
             make_cmd = "make -n -r -s -f " + mk_file + " " + mk_arg
@@ -166,7 +166,7 @@ def set_vars_from_make(mk_file, mk_arg="", verbose=None):
             child = subprocess.Popen(make_cmd.split(), stderr=fnull, stdout=subprocess.PIPE)
             child.wait()
             mk_output = child.stdout.read()
-            if (child.returncode != 0):
+            if child.returncode != 0:
                 child.stdout.close()
                 raise OCPIException("make command: " + make_cmd + "\n returned an error: " +
                                     str(mk_output))
@@ -175,7 +175,7 @@ def set_vars_from_make(mk_file, mk_arg="", verbose=None):
             child = subprocess.Popen(make_cmd.split(), stderr=subprocess.PIPE, stdout=subprocess.PIPE)
             child.wait()
             mk_output = child.stdout.read()
-            if (child.returncode != 0):
+            if child.returncode != 0:
                 child.stdout.close()
                 child.stderr.close()
                 raise OCPIException("make command: " + make_cmd + "\n returned an error: " +

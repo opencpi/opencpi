@@ -38,10 +38,6 @@ ifneq (,)
   include $(OCPI_CDK_DIR)/include/test.mk
 endif
 
-# build the testbench executable
-run: all
-	OCPI_LIBRARY_PATH=lib $(VG) $(PROG) $(OUT)
-
 # build the HDL unit test assemblies
 all:
 	$(MAKE) -C assemblies
@@ -59,7 +55,7 @@ RCC_CONTAINERS?=$(shell echo "$(CONTAINERS)" | grep -c rcc)
 ML605_CONTAINERS?=$(shell echo "$(CONTAINERS)" | grep -c ml605)
 ALST4_CONTAINERS?=$(shell echo "$(CONTAINERS)" | grep -c alst4)
 ISIM_CONTAINERS?=$(shell echo "$(CONTAINERS)" | grep -c isim)
-XSIM_CONTAINERS?=$(shell echo "$(CONTAINERS)" | grep -c modelsim)
+XSIM_CONTAINERS?=$(shell echo "$(CONTAINERS)" | grep -c xsim)
 MODELSIM_CONTAINERS?=$(shell echo "$(CONTAINERS)" | grep -c modelsim)
 endif
 
@@ -67,6 +63,13 @@ export CONTAINERS RCC_CONTAINERS ML605_CONTAINERS ALST4_CONTAINERS ISIM_CONTAINE
 
 .SILENT: tests lime_dac_ts show
 .PHONY: tests lime_dac_ts test all run clean show
+
+# Work with "ocpidev run":
+run: all tests
+ifeq ($(ISIM_CONTAINERS)$(MODELSIM_CONTAINERS)$(XSIM_CONTAINERS),000)
+	@echo "No simulators were found!"
+	@false
+endif
 
 tests:
 ifneq ($(ISIM_CONTAINERS),0)
@@ -142,7 +145,7 @@ endif
 
 test: lime_dac_ts
 
-EXECUTION_STRING=./$(PROG) $(OAS) $(CLK_RATE) $(P) $(FLUSH) $(NUM_OUTPUT_SAMPLES)
+EXECUTION_STRING=$(VG) ./$(PROG) $(OAS) $(CLK_RATE) $(P) $(FLUSH) $(NUM_OUTPUT_SAMPLES)
 
 # TODO: Move to Makefile native so can fail properly
 

@@ -20,12 +20,15 @@
 from __future__ import print_function
 import socket
 import errno
+import os
 import time
+import signal
 import sys
 
 def do_pull(port, filename, addr='localhost', timeout=60):
-  print("busy_loop_socket: port={0}, filename={1}, addr={2}, timeout={3}".format(port, filename, addr, timeout))
+  print("busy_loop_socket:{0}: port={1}, filename={2}, addr={3}, timeout={4}".format(os.getpid(), port, filename, addr, timeout))
   sys.stdout.flush()
+  total_bytes = 0
   start_time = time.time()
   with open(filename, "wb") as ofile:
     while True:
@@ -40,14 +43,19 @@ def do_pull(port, filename, addr='localhost', timeout=60):
         else:
           raise e
       if time.time() - start_time >= int(timeout):
-        print("busy_loop_socket: {}:{} timed out ({}s)".format(addr,port,timeout), file=sys.stderr)
+        print("busy_loop_socket:{0}: {1}:{2} timed out ({3}s)".format(os.getpid(), addr, port, timeout), file=sys.stderr)
         return False
-    print("busy_loop_socket: {}:{} connected ({}s)".format(addr,port,time.time() - start_time))
+    print("busy_loop_socket:{0}: {1}:{2} connected ({3:0.5}s)".format(os.getpid(), addr, port, time.time() - start_time))
     while True:
-      data = sock.recv(8192) # 8K chunks
+      data = sock.recv(8192)  # 8K chunks
+      total_bytes += len(data)
       if not data: break
       ofile.write(data)
     sock.close()
+    fmt = '{3}'
+    if sys.version_info >= (2, 7):
+      fmt = '{3:,}'  # Pretty commas
+    print(("busy_loop_socket:{0}: {1}:{2} finished with "+fmt+" bytes ({4:0.5}s)").format(os.getpid(), addr, port, total_bytes, time.time() - start_time))
     return True
 
 def usage():
@@ -71,5 +79,11 @@ if __name__ == "__main__":
     addr = sys.argv[3]
   if len(sys.argv) >= 5:
     timeout = int(sys.argv[4])
-  # The "not" below is because 0 == success in Unix
-  sys.exit(not do_pull(port=port, filename=filename, addr=addr, timeout=timeout))
+  signal.signal(signal.SIGHUP, signal.SIG_IGN)  # If our caller (Makefile) exits, continue flushing
+  ret = False
+  try:
+    ret = do_pull(port=port, filename=filename, addr=addr, timeout=timeout)
+  except:
+    print("busy_loop_socket:{0}: {1}:{2} error: {3}".format(os.getpid(), addr, port, sys.exc_info()[0]), file=sys.stderr)
+    raise
+  sys.exit(not ret)  # The "not" is because 0 == success in Unix

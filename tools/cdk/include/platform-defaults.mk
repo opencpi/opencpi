@@ -183,7 +183,7 @@ OcpiOptimizeOnFlags:=-O2 -NDEBUG=1 -Wp,-D_FORTIFY_SOURCE=2
 # The warnings could be removed (e.g. using filter-out) if they are truly not supported.
 OcpiRequiredCPPFlags:= -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS
 OcpiRequiredCFlags:= -Wall -Wfloat-equal -Wextra -fno-strict-aliasing -Wformat -Wuninitialized \
-                     -Winit-self -Wshadow -grecord-gcc-switches -fstack-protector \
+                     -Winit-self -grecord-gcc-switches -fstack-protector \
                      -Wno-conversion -Wno-sign-conversion -std=c99 --param=ssp-buffer-size=4
 OcpiRequiredCXXFlags:=$(filter-out -std%,$(OcpiRequiredCFlags)) -std=c++0x
 # For all code:
@@ -195,8 +195,8 @@ OcpiOptionalCXXWarnings:=$(OcpiOptionalCWarnings)
 # For "native" OpenCPI code (as opposed to imported code):
 # We prefer to ADD these or their equivalent.  It is not an error if they are not supported.
 OcpiStrictCFlags:=-Wconversion -Werror=parentheses -Werror=unused-parameter -Werror=empty-body \
-	          -Werror=write-strings -Werror=reorder -Werror=extra -Werror=comment \
-                  -Werror=format -Werror=init-self -Wsign-conversion
+                  -Werror=write-strings -Werror=reorder -Werror=extra -Werror=comment \
+                  -Werror=format -Werror=init-self -Wsign-conversion -Wshadow
 OcpiStrictCXXFlags:=$(OcpiStrictCFlags)
 # What we want to burden users with by default
 OcpiRccCXXFlags:=-Wall -Wextra

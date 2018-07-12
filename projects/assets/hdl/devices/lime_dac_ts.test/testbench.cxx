@@ -30,11 +30,15 @@
  * which indicates DONE.
  */
 
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
 #include <unistd.h>
+#include <iostream>
+#include <algorithm>
 #include "OcpiApi.h"
+
+void bad(const char *str) {
+    std::cerr << str << std::endl;
+    exit(1);
+}
 
 namespace OA = OCPI::API;
 
@@ -42,38 +46,25 @@ int main(int argc, char **argv) {
   try {
     std::string appName, appNameXml, workerModel, clk_rate, flush, num_output_samples;
 
-    if (argc < 2) {
-      printf("Program needs an OAS argument.\n");
-      return 1;
-    }
-    else if (argc < 3) {
-      printf("Program needs a CLK_RATE argument.\n");
-      return 1;
-    }
-    else if (argc < 4) {
-      printf("Program needs a PLATFORM argument.\n");
-      return 1;
-    }
-    else if (argc < 5) {
-      printf("Program needs a FLUSH argument.\n");
-      return 1;
-    }
-    else if (argc < 6) {
-      printf("Program needs a NUM_OUTPUT_SAMPLES argument.\n");
-      return 1;
-    }
+    if (argc < 2)
+      bad("Program needs an OAS argument.");
+    else if (argc < 3)
+      bad("Program needs a CLK_RATE argument.");
+    else if (argc < 4)
+      bad("Program needs a PLATFORM argument.");
+    else if (argc < 5)
+      bad("Program needs a FLUSH argument.");
+    else if (argc < 6)
+      bad("Program needs a NUM_OUTPUT_SAMPLES argument.");
 
-    // since appName is defined as an unknown string length above make it the
-    // size of the input argument and convert to lower case text
-    appName.resize(strlen(argv[1]));
-    for(unsigned int i = 0; i < strlen(argv[1]); i++) {
-      appName[i] = tolower(argv[1][i]);
-    }
+    // appName is input argument and convert to lower case text
+    appName = argv[1];
+    std::transform(appName.begin(), appName.end(), appName.begin(), ::tolower);
 
-    //printf("appName=%s\n",appName.c_str());
+    // printf("appName=%s\n",appName.c_str());
 
     appNameXml = appName + ".xml";
-    printf("appNameXml=%s\n",appNameXml.c_str());
+    // printf("appNameXml=%s\n",appNameXml.c_str());
 
     clk_rate = argv[2];
     flush = argv[4];

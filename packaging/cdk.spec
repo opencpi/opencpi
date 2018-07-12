@@ -289,9 +289,10 @@ fi
 # The preinstall scriptlet for devel
 %pre devel
 prefixes=(`rpm -q --qf '[%{INSTPREFIXES}\n]' opencpi`)
-if [ -z "${prefixes[0]}" -o -z "${prefixes[1]}" -o \
+# This comparison against "package" happens on centos6...
+if [ -n "${prefixes[0]}" -a -n "${prefixes[1]}" -a "${prefixes[0]}" != package -a \( \
      "${prefixes[0]}" != "$RPM_INSTALL_PREFIX0" -o \
-     "${prefixes[1]}" != "$RPM_INSTALL_PREFIX1" ]; then
+     "${prefixes[1]}" != "$RPM_INSTALL_PREFIX1" \) ]; then
    cat <<-EOF
 	The pre-existing OpenCPI runtime installation was relocated differently than is specified
 	for this opencpi-devel package installation, which is not allowed.

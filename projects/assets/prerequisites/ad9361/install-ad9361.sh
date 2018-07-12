@@ -34,7 +34,6 @@
 # As of 23 Apr 2018, 2017_R1 points to 06bfc76060d5b9767ae9aad7bf40e3648474ebb7
 OCPI_AD9361_CURRENT_2017_R1_GIT_COMMIT_ID=06bfc76060d5b9767ae9aad7bf40e3648474ebb7
 OCPI_AD9361_VERSION=$OCPI_AD9361_CURRENT_2017_R1_GIT_COMMIT_ID
-if [ -z "${RPM_BUILD_ROOT}" ]; then
 [ -z "$OCPI_CDK_DIR" ] && echo Environment variable OCPI_CDK_DIR not set && exit 1
 source $OCPI_CDK_DIR/scripts/setup-prerequisite.sh \
        "$1" \
@@ -44,12 +43,6 @@ source $OCPI_CDK_DIR/scripts/setup-prerequisite.sh \
        $OCPI_AD9361_VERSION \
        no-OS \
        1
-else
-# RPM building
-set -e
-OCPI_PREREQUISITES_INSTALL_DIR=.
-fi
-# End of no-RPM
 cp -r ../ad9361/sw/* .
 
 ################################################################################
@@ -73,23 +66,14 @@ DEFS=-DAXI_ADC_NOT_PRESENT
 SRCNAMES=(ad9361 ad9361_api ad9361_conv util)
 SRCS=(${SRCNAMES[@]/%/.c})
 INCS=(ad9361_api ad9361 config)
-if [ -z "${RPM_BUILD_ROOT}" ]; then
 echo $CC -std=c99 -fPIC -I. -I$dir/platform_generic -I$dir $DEFS -c ${SRCS[@]/#/$dir\/}
 $CC -std=c99 -fPIC -I. -I$dir/platform_generic -I$dir $DEFS -c ${SRCS[@]/#/$dir\/}
 $AR -rs libad9361.a ${SRCNAMES[@]/%/.o}
 
 ################################################################################
-# 3. Install the deliverables:  OPS file, headers and library
+# 4. Install the deliverables:  OPS file, headers and library
 ################################################################################
 relative_link libad9361.a $OcpiInstallExecDir/lib
 for i in ${INCS[@]}; do
   relative_link $dir/$i.h $OcpiInstallDir/include
 done
-else
-# RPM Building
-echo RPM CC: -fPIC -I. -I$dir/platform_generic -I$dir $DEFS -c ${SRCS[@]/#/$dir\/}
-echo RPM AR: -rs libad9361.a ${SRCNAMES[@]/%/.o}
-for i in ${INCS[@]}; do
-  echo RPM INC: `pwd`/$dir/$i.h
-done
-fi

@@ -226,7 +226,7 @@ function readExport {
   # add a third field for platform-specifics
   [ -n "$4" ] && entries=(${entries[@]/%/:-})
   eval $1+=\" ${entries[@]}\"
-  eval echo \$1 is now:\${$1}:
+  # eval echo \$1 is now:\${$1}:
 }
 set -e
 mkdir -p exports

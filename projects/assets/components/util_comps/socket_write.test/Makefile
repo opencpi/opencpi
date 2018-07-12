@@ -49,7 +49,7 @@ space:=
 space+=
 SUPPORT_PATH:=$(subst $(space),:,$(foreach worker, $(RCCWORKER) advanced_pattern.rcc file_write_demux.rcc,$(wildcard $(shell pwd)/../../$(worker)/target-*)))
 SUPPORT_PATH_REMOTE:=export OCPI_LIBRARY_PATH=\$${OCPI_CDK_DIR}/../project-registry/ocpi.core/exports/lib/components/rcc:../../lib/rcc:../../../../exports/lib
-EXPORT_PATH := export OCPI_LIBRARY_PATH=:$(OCPI_LIBRARY_PATH):../../lib/rcc:../../../../exports/lib:$(SUPPORT_PATH) && set -o pipefail && $(PRE_HOOK)
+EXPORT_PATH := export OCPI_LIBRARY_PATH=:$(OCPI_LIBRARY_PATH):\${OCPI_CDK_DIR}/../project-registry/ocpi.core/exports/lib/components/rcc:../../lib/rcc:../../../../exports/lib:$(SUPPORT_PATH) && set -o pipefail && $(PRE_HOOK)
 
 ifneq (,$(filter verify,$(MAKECMDGOALS)))
 export NO_AUTOCONFIG_WARNING=1
@@ -62,8 +62,40 @@ RCC_CONTAINERS?=$(shell echo "$(CONTAINERS)" | grep -c rcc)
 DEBUG=-d -v
 DEBUG+=-l 8
 
-.SILENT: tests test verify testgen testrun testverify clean verify generate.sh verify.sh launchlisteners checklisteners killall
-.PHONY: tests test verify testgen testrun testverify clean verify launchlisteners checklisteners killall
+.SILENT: all tests test verify testgen testgen_wrapper testrun testrun_wrapper testverify testverify_wrapper clean generate.sh verify.sh launchlisteners checklisteners killall runtest runtests run verifytest generate build prepare
+.PHONY: all tests test verify testgen testgen_wrapper testrun testrun_wrapper testverify testverify_wrapper clean launchlisteners checklisteners killall runtest runtests run verifytest generate build prepare
+
+# Map to "standard" targets:
+all: build
+test: build
+# Conflict -- tests: build
+runtest: run
+runtests: run
+run: testrun_wrapper verify
+verifytest: verify
+verify: testverify_wrapper
+generate: testgen_wrapper
+build: testgen_wrapper
+prepare: testgen_wrapper
+
+testgen_wrapper:
+	$(foreach tst, $(TESTS), echo -n "Generating $(tst): " && \
+	  $(MAKE) -f ../Makefile -sC $(tst) testgen && \
+	  ) true
+
+testrun_wrapper:
+ifneq (,$(IP))
+	@echo "wrapper not written to handle remote!"
+	@false
+endif
+	$(foreach tst, $(TESTS), echo "Running $(tst): " && \
+	  $(MAKE) -f ../Makefile -sC $(tst) testrun OCPI_HDL_SIMULATORS= && \
+	  ) true
+
+testverify_wrapper:
+	$(foreach tst, $(TESTS), echo "Verifying $(tst): " && \
+	  $(MAKE) -f ../Makefile -sC $(tst) testverify && \
+	  ) true
 
 TESTS?=$(sort $(wildcard test_[0-9]*))
 
@@ -143,8 +175,13 @@ else
 	read -p "Press Enter when ocpirun is finished: " x
 endif
 
+# If the listeners are still flushing their data, verification will fail.
+# So we make sure that "python" is not running in this directory.
+# If called by "ocpidev" then python is running one directory above so OK.
 testverify:
-	./verify.sh > verify.log 2>&1
+	rm -f verify.log
+	while [ -n "`lsof -Fc +d . | grep cpython`" ]; do echo "(Waiting for listeners to exit)" >> verify.log ; sleep 1; done
+	./verify.sh >> verify.log 2>&1
 
 else
 testgen:
@@ -163,7 +200,7 @@ ifneq (,$(IP))
 	  $(MAKE) -f ../Makefile -sC $(tst) testverify && \
 	  ) true
 else
-#sleep 2 added bcause python was not cleaning up listeners fast enough on some systems
+#sleep 2 added because python was not cleaning up listeners fast enough on some systems
 ifneq ($(RCC_CONTAINERS),0)
 	$(foreach tst, $(TESTS), echo -n "Executing ${tst}: " && \
 	  $(MAKE) -f ../Makefile -sC $(tst) testgen && \

@@ -503,6 +503,36 @@ class Registry(Asset):
             self.__projects[pid] = AssetFactory.factory("project", proj) if os.path.exists(proj) \
                                    else None
 
+    def contains(self, package_id=None, directory=None):
+        """
+        Given a project's package-ID or directory, determine if the project is present
+        in this registry.
+        """
+        # If neither package_id nor directory are provided, exception
+        if package_id is None:
+            if directory is None:
+                raise ocpiutil.OCPIException("Could determine whether project exists because " +
+                                             "the package_id and directory provided were both " +
+                                             "None.\nProvide one or both of these arguments.")
+            # Project's package-ID is determined from its directory if not provided
+            package_id = ocpiutil.get_project_package(directory)
+            if package_id is None:
+                raise ocpiutil.OCPIException("Could not determine package-ID of project located " +
+                                             "at \"" + directory + "\".\nDouble check this " +
+                                             "configurations.")
+
+        # If the project is registered here by package-ID, return True.
+        # If not, or if a different project is registered here with that pacakge-ID, return False
+        if package_id in self.__projects:
+            if (directory is not None and
+                os.path.realpath(directory) != self.__projects[package_id].directory):
+                logging.warning("Registry at \"" + self.directory + "\" contains a project with " +
+                                "package-ID \"" + package_id + "\", but it is not the same " +
+                                "project as \"" + directory + "\".")
+                return False
+            return True
+        return False
+
     def add(self, directory="."):
         """
         Given a project, get its package-ID, create the corresponding link in the project registry,
@@ -701,10 +731,9 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
         self.__is_exported = False
         # Determine the package-ID for this project and set self.package_id
         self.set_package_id()
-        if not self.__is_exported:
-            # make sure the imports link exists for this project
-            self.initialize_registry_link()
 
+        # NOTE: imports link to registry is NOT initialized in this constructor.
+        #       Neither is the __registry Registry object.
         if kwargs.get("init_libs", False) is True:
             self.lib_list = []
             logging.debug("Project constructor creating Library Objects")
@@ -882,8 +911,16 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
         if registry_path is None or registry_path == "":
             # Get the default project registry set by the environment state
             registry_path = Registry.get_default_registry_dir()
+        reg = self.registry()
+        # If we are about to set a new registry, and this project is registered in the current one,
+        # raise an exception; user needs to unregister the project first.
+        if ((os.path.realpath(reg.directory) != os.path.realpath(registry_path)) and
+            reg.contains(directory=self.directory)):
+            raise ocpiutil.OCPIException("Before (un)setting the registry for the project at \"" +
+                                         self.directory + "\", you must unregister the project.\n" +
+                                         "This can be done by running 'ocpidev unregister project" +
+                                         " " + self.package_id + "'.")
 
-        #self.__registry = AssetFactory.factory("registry", registry_path)
         # TODO: pull this relative link functionality into a helper function
         # Try to make the path relative. This helps with environments involving mounted directories
         # Find the path that is common to the registry and project-top
@@ -905,16 +942,11 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
             # If it exists and IS NOT a link, tell the user to manually remove it.
             # If 'imports' exists and is a link, remove the link.
             if os.path.exists(imports_link) or os.path.islink(imports_link):
-                if not os.path.islink(imports_link):
-                    raise ocpiutil.OCPIException("The 'imports' for the current project ('" +
-                                                 imports_link + "') is not a symbolic link. " +
-                                                 "\nMove or remove this file and retry setting " +
-                                                 "the project registry.")
-                elif os.path.realpath(actual_registry_path) == os.path.realpath(imports_link):
+                if os.path.realpath(actual_registry_path) == os.path.realpath(imports_link):
                     # Imports already point to this registry
                     return
                 else:
-                    os.unlink(imports_link)
+                    self.unset_registry()
             # ln -s registry_path imports_link
             try:
                 os.symlink(rel_registry_path, imports_link)
@@ -944,14 +976,14 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
         """
         # If the 'imports' link exists at the project-top, and it is a link, remove it.
         # If it is not a link, let the user remove it manually.
-        try:
-            reg = self.registry()
-            reg.remove(directory=self.directory)
-            logging.warning("Removed project \"" + self.directory + "\" from its" +
-                            "registry located at \"" + reg.directory + "\" before unbinding " +
-                            " it from that registry.")
-        except ocpiutil.OCPIException:
-            pass
+        reg = self.registry()
+        # If we are about to unset the, but this project is registered in the current one,
+        # raise an exception; user needs to unregister the project first.
+        if reg.contains(directory=self.directory):
+            raise ocpiutil.OCPIException("Before (un)setting the registry for the project at \"" +
+                                         self.directory + "\", you must unregister the project.\n" +
+                                         "This can be done by running 'ocpidev unregister project" +
+                                         " " + self.package_id + "'.")
 
         imports_link = self.directory + "/imports"
         if os.path.islink(imports_link):

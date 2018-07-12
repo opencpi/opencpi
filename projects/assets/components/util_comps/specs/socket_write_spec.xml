@@ -5,6 +5,7 @@
   <!-- Socket to write to -->
   <Property name="outSocket" type="Struct" readable="true" writable="true">
     <Member name='address' type='string' stringLength='16' default='0.0.0.0'/>
+    <Member name='expectedClients' type='ushort' default='0'/>
     <Member name='port' type='ushort'/>
     <Member name='ports' arrayLength="256" type='ushort'/>
     <Member name='messagesInStream' type='bool' arrayLength="256" default='false'/>
