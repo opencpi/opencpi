@@ -18,5 +18,25 @@
 
 # The modelsim platform.
 HdlLibraries+=sdp
-ExportFiles=runSimExec.modelsim
+ExportFiles=runSimExec.modelsim probe.tgz
 include $(OCPI_CDK_DIR)/include/hdl/hdl-platform.mk
+ifneq ($(findstring modelsim,$(HdlPlatforms)),)
+probe.tgz:
+	$(AT)echo Creating the tiny modelsim project for probing that modelsim is installed and licensed.
+	$(AT)echo Output is in target-modelsim/probe.out
+	$(AT)mkdir -p target-modelsim
+	$(AT)(rm -r -f tmp && mkdir -p tmp && cd tmp && \
+	  export LM_LICENSE_FILE=$(OCPI_MODELSIM_LICENSE_FILE) && \
+	  echo 'module probe(); endmodule' > probe.v && \
+	  $(OCPI_MODELSIM_DIR)/bin/vlib work && \
+	  $(OCPI_MODELSIM_DIR)/bin/vlog -work work probe.v && \
+	  tar czf ../probex.tgz work && \
+	  $(OCPI_MODELSIM_DIR)/bin/vsim -c work.probe && \
+	  rm -f -r probe.v work && \
+	  mv ../probe{x,}.tgz) > target-modelsim/probe.out 2>&1
+
+all: probe.tgz
+
+clean::
+	rm -r -f tmp
+endif
