@@ -323,7 +323,7 @@ Driver::Driver() throw() {
 bool Driver::
 probeServer(const char *server, bool verbose, const char **exclude, char *containers,
 	    bool discovery, std::string &error) {
-  ocpiDebug("probing remote container server: %s", server);
+  ocpiInfo("probing remote container server: %s", server);
   error.clear();
   OS::Socket *sock = NULL;
   uint16_t port;

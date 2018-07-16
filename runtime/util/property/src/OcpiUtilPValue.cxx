@@ -97,6 +97,8 @@ namespace OCPI {
       PVBool("emulated"),
       PVString("property"),
       PVString("worker"),
+      PVString("server"),
+      PVString("container"),
       PVEnd
     };
 

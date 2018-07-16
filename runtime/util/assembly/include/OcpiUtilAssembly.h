@@ -62,7 +62,7 @@ namespace OCPI {
         std::string m_name;
         std::string m_instPropName; // non-empty for top level
         unsigned m_instance;        // if m_instPropName is nonempty this is valid
-        const char *parse(ezxml_t x, Assembly &a);
+        const char *parse(ezxml_t x, Assembly &a, const PValue *params);
       };
       typedef std::vector<MappedProperty> MappedProperties;
       typedef uint32_t Delay;

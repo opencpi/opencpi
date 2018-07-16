@@ -366,6 +366,7 @@ namespace OCPI {
 	bool m_allowEmpty;
       public:
         TokenIter(const char *list, const char *delims = ", \t\n", bool allowEmpty = false);
+        TokenIter(const std::string &list, const char *delims = ", \t\n", bool allowEmpty = false);
 	~TokenIter();
 	inline const char *token() const { return m_token; }
 	void next();

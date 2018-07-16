@@ -63,19 +63,7 @@ namespace OCPI {
 		  c->name().c_str(), c->model().c_str(), c->os().c_str(), c->platform().c_str());
 	fprintf(stderr, "\n");
       }
-      // server arguments and server environment variables are all used, no shadowing
-      char *saddr = getenv("OCPI_SERVER_ADDRESS");
-      if (saddr)
-	OA::useServer(saddr, verbose);
-      if ((saddr = getenv("OCPI_SERVER_ADDRESSES")))
-	for (OU::TokenIter li(saddr); li.token(); li.next())
-	  OA::useServer(li.token(), verbose);
-      for (const PValue *p = params; p && p->name; ++p)
-	if (!strcasecmp(p->name, "server")) {
-	  if (p->type != OCPI_String)
-	    throw OU::Error("Value of \"server\" parameter is not a string");
-	  OA::useServer(p->vString, verbose);
-	}
+      OA::useServers(NULL, params, verbose);
       return *new OL::Assembly(appXml, name, params);
     }
     // Deal with a deployment file referencing an app file
@@ -1064,6 +1052,8 @@ namespace OCPI {
 		 lc.m_out.m_name,
 		 lc.m_in.m_member ? lc.m_in.m_member->m_name.c_str() : "<external>",
 		 lc.m_in.m_name);
+	ocpiDebug("Input container: %s, output container: %s",
+		  lc.m_in.m_container->name().c_str(), lc.m_out.m_container->name().c_str());
 	OC::BasicPort::
 	  determineTransport(lc.m_in.m_container->transports(),
 			     lc.m_out.m_container->transports(),
@@ -1673,7 +1663,7 @@ namespace OCPI {
     setProperty(const char * worker_inst_name, const char * prop_name, const char *value) {
       Property &p = findProperty(worker_inst_name, prop_name);
       m_launchMembers[m_instances[p.m_instance].m_firstMember].m_worker->
-	setProperty(prop_name, value);
+	setProperty(p.m_property, value);
     }
 
     void ApplicationI::

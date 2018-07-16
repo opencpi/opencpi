@@ -19,11 +19,14 @@
 # If there is a "mynetsetup.sh" script in this directory it will run it after the
 # other setup items, and arrange for it to be run in any login scripts later
 # e.g. ssh logins
-if test $# != 5; then
-  echo You must supply 5 arguments to this script.
-  echo Usage is: zynq_net_setup.sh '<nfs-ip-address> <nfs-share-name> <opencpi-dir> <time-server> <timezone>'
+if test -z  "$5"; then
+  echo You must supply at least 5 arguments to this script.
+  echo Usage is: zynq_net_setup.sh '<nfs-ip-address> <nfs-share-name> <opencpi-dir> <time-server> <timezone> [<hdl-platform>]'
   echo A good example timezone is: EST5EDT,M3.2.0,M11.1.0
 else
+  if test -n "$6"; then
+     echo OCPI_HDL_PLATFORM set to $6.
+  fi
   if ifconfig | grep -v 127.0.0.1 | grep 'inet addr:' > /dev/null; then
      echo An IP address was detected.
   else
@@ -32,6 +35,8 @@ else
   fi
   echo Setting the time from time server: $4
   rdate $4
+  # Tell the kernel to make fake 32 bit inodes when 64 nodes come from the NFS server
+  echo N > /sys/module/nfs/parameters/enable_ino64
   # Mount the opencpi development system as an NFS server, onto /mnt/net
   mount -t nfs -o udp,nolock,soft,intr $1:$2 /mnt/net
   # Make sure the hostname is in the host table
@@ -63,9 +68,18 @@ else
     export OCPI_TOOL_OS=linux
     export OCPI_TOOL_DIR=\$OCPI_TOOL_PLATFORM
     export OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/../projects/core/exports/artifacts
+    if test -r /mnt/card/opencpi/system.xml; then
+      export OCPI_SYSTEM_CONFIG=/mnt/card/opencpi/system.xml
+    elif test -n "$OCPI_HDL_PLATFORM" -a -r $OCPI_CDK_DIR/$OCPI_HDL_PLATFORM/system.xml; then
+      export OCPI_SYSTEM_CONFIG=$OCPI_CDK_DIR/$OCPI_HDL_PLATFORM/system.xml
+    elif test -r $OCPI_CDK_DIR/\$OCPI_TOOL_PLATFORM/system.xml; then
+      export OCPI_SYSTEM_CONFIG=$OCPI_CDK_DIR/\$OCPI_TOOL_PLATFORM/system.xml
+    else
+      export OCPI_SYSTEM_CONFIG=$OCPI_CDK_DIR/default-system.xml
+    fi
     export PATH=$OCPI_CDK_DIR/\$OCPI_TOOL_DIR/bin:\$PATH
-    # This is only for explicitly-linked driver libraries.  Fixed someday.
-    export LD_LIBRARY_PATH=$OCPI_CDK_DIR/lib/$OCPI_TOOL_DIR:\$LD_LIBRARY_PATH
+    # This is only for ACI executables in special cases...
+    export LD_LIBRARY_PATH=$OCPI_CDK_DIR/$OCPI_TOOL_DIR/lib:\$LD_LIBRARY_PATH
     ocpidriver load
     export TZ=$5
     echo OpenCPI ready for zynq.

@@ -662,6 +662,13 @@ TokenIter(const char *list, const char *delims, bool allowEmpty)
     next();
 }
 TokenIter::
+TokenIter(const std::string &list, const char *delims, bool allowEmpty)
+  : m_copy(strdup(list.c_str())), m_ptr(m_copy), m_token(NULL), m_delims(delims),
+    m_allowEmpty(allowEmpty) {
+  if (!list.empty())
+    next();
+}
+TokenIter::
 ~TokenIter() {
   free(m_copy);
 }

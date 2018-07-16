@@ -50,15 +50,15 @@ if test "$OCPI_CDK_DIR" = ""; then
 
   break # this script will be rerun recursively by setup.sh
 fi
+# Below this (until "done") is optional user customizations
 alias ll='ls -lt'
 # Tell the ocpihdl utility to always assume the FPGA device is the zynq PL.
 export OCPI_DEFAULT_HDL_DEVICE=pl:0
-# The system config file sets the default SMB size
-export OCPI_SYSTEM_CONFIG=/mnt/card/opencpi/system.xml
+# Only override this file if it is customized beyond what is the default for the platform
+# export OCPI_SYSTEM_CONFIG=/mnt/card/opencpi/system.xml
 # Get ready to run some test xml-based applications
 PS1='% '
 # add any commands to be run every time this script is run
-
 
 # Print the available containers as a sanity check
 echo Discovering available containers...

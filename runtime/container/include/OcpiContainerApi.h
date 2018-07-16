@@ -401,6 +401,8 @@ namespace OCPI {
 #undef OCPI_DATA_TYPE
     };
     // ACI functions for using servers
+    void useServers(const char *server = NULL, const PValue *params = NULL,
+		    bool verbose = false);
     void useServer(const char *server, bool verbose = false);
     void enableServerDiscovery();
     bool isServerSupportAvailable();

@@ -181,7 +181,7 @@ Compile_c=$$(call OcpiFixPathArgs,\
   $$(call RccFinalCompileOptions,C,$$(RccTarget),$$(RccPlatform)) \
   $$(RccIncludeDirsActual:%=-I%) -o $$@ $$(RccParams) $$<)
 Compile_cc=$$(call OcpiFixPathArgs,\
-  $$(call RccCXX,$$(RccRealPlatform)) -MMD -MP -MF $$@.deps -c \
+  $$(call RccCXX,$$(RccRealPlatform)) $$(OcpiDependencyFlags_$$(RccPlatform))$$@.deps -c \
   $$(call RccFinalCompileOptions,CC,$$(RccTarget),$$(RccPlatform)) \
   $$(RccIncludeDirsActual:%=-I%) -o $$@ $$(RccParams) $$<)
 Compile_cpp=$(Compile_cc)

@@ -152,7 +152,7 @@ namespace OCPI {
       m_mappedProperties.resize(OE::countChildren(ax, "property"));
       MappedProperty *p = &m_mappedProperties[0];
       for (ezxml_t px = ezxml_cchild(ax, "property"); px; px = ezxml_cnext(px), p++)
-        if ((err = p->parse(px, *this)))
+        if ((err = p->parse(px, *this, params)))
           return err;
       n = 0;
       for (ezxml_t cx = ezxml_cchild(ax, "Connection"); cx; cx = ezxml_cnext(cx)) {
@@ -366,7 +366,7 @@ namespace OCPI {
     }
 
     const char *Assembly::MappedProperty::
-    parse(ezxml_t px, Assembly &a) {
+    parse(ezxml_t px, Assembly &a, const PValue *params) {
       const char *err;
       std::string instance;
 
@@ -381,8 +381,16 @@ namespace OCPI {
           return esprintf("Duplicate mapped property: %s", m_name.c_str());
       const char *cp = ezxml_cattr(px, "property");
       m_instPropName = cp ? cp : m_name.c_str();
-      //      if (ezxml_cattr(px, "value") || ezxml_cattr(px, "valueFile") || ezxml_cattr(px, "dumpFile"))
-      return a.m_instances[m_instance]->addProperty(m_instPropName.c_str(), px);
+      if ((err = a.m_instances[m_instance]->addProperty(m_instPropName.c_str(), px)))
+	return err;
+      // Add any top-level property assignment in params for this mapped property
+      const char *propAssign;
+      for (unsigned n = 0; findAssignNext(params, "property", m_name.c_str(), propAssign, n); ) {
+	std::string assign = m_instPropName + "=" + propAssign;
+	if ((err = a.m_instances[m_instance]->setProperty(assign.c_str())))
+	  return err;
+      }
+      return NULL;
     }
 
     const char *Assembly::Property::

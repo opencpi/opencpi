@@ -4,7 +4,8 @@
 # remove files as well as add files.
 
 # Both the default setup files for users and the underlying ones, for the runtime and SD card
-=platforms/zynq/*setup.sh <target>/
+=platforms/zynq/zynq_*setup.sh <target>/
+=platforms/zynq/default_my*setup.sh <target>/
 # no system.xml, let the hardware platform specify that
 # any value in having the zynq-generic one lying around anyway?
 # =platforms/zynq/zynq_system.xml <target>/zynq/
@@ -14,3 +15,5 @@
 +platforms/zynq/README* <target>/zynq/
 # For the development package add this script for formatting SD cards
 +platforms/zynq/formatOpenCPIZynqSD.sh <target>/zynq/
+# Use the default zynq system.xml
+=platforms/zynq/zynq_system.xml <target>/system.xml
