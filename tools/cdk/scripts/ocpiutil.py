@@ -15,8 +15,6 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
-
-import readline
 """
 This module a collection of OpenCPI utility functions.
 
@@ -821,7 +819,7 @@ def get_ok(prompt=""):
     """Prompt the user to say okay"""
     print(prompt, end=' ')
     while True:
-        ok = eval(input(" [y/n]? "))
+        ok = input(" [y/n]? ")
         if ok.lower() in ('y', 'yes', 'ok'):
             return True
         if ok.lower() in ('', 'n', 'no', 'nope'):

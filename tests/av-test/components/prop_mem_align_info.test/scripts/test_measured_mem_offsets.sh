@@ -22,8 +22,10 @@ if [ -z $1 ]; then
   exit 1
 fi
 
-MEASUREMENT_FILE=$1
+MEASUREMENT_FILE=$1_stripped.out
 EXPECTED_FILE=expected.out
+# Remove any "OCPI" debug lines that may have been added if log levels are too high
+grep -v 'OCPI(' $1 > $MEASUREMENT_FILE
 
 if [ -f $EXPECTED_FILE ]; then
   rm -rf $EXPECTED_FILE
@@ -33,7 +35,7 @@ fi
 # Each "test" is implemented as a group of prop_mem_align_info.rcc properties:
 #   1. an alignment property of type ulonglong (which is 8 bytes long),
 #      followed by
-#   2. one or more properties of type char whose purpose is to provide 
+#   2. one or more properties of type char whose purpose is to provide
 #      test-specific padding in order to observe alignment for that test,
 #      followed by
 #   3. one or more properties with a name:
@@ -446,4 +448,3 @@ fi
 echo "--------------------------------------------------------------------------------"
 
 exit $DIFF_EXIT
-

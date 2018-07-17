@@ -45,7 +45,7 @@ RccPlatforms:=$(call Unique,\
 	             $(OCPI_TOOL_PLATFORM))))
 export RccPlatforms
 DoExports=for p in $(RccPlatforms); do ./scripts/makeExportLinks.sh $$p; done
-DoTests=for p in $(RccPlatforms); do ./scripts/test-opencpi.sh $$p; done
+DoTests=for p in $(RccPlatforms); do ./scripts/test-opencpi.sh --platform $$p; done
 # Get macros and rcc platform/target processing, as well as all platforms
 include $(OCPI_CDK_DIR)/include/rcc/rcc-make.mk
 

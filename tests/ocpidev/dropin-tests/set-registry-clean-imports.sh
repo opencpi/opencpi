@@ -22,7 +22,7 @@
 # This confirms that a manually set set registry will only
 # only be removed by 'make clean' if it matches the current
 # global default. Otherwise it should remain untouched.
-set -e
+set -ex
 
 proj="set-reg-clean"
 reg="$proj-project-registry"

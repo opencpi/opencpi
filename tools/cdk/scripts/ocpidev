@@ -137,15 +137,16 @@ import Asset; print(Asset.Project(directory=\".\").package);"`
 # based on the project's package name
 function py_try_return_bool {
   python3 -c "\
-import sys; sys.path.append(\"$OCPI_CDK_DIR/scripts/\");
-import logging;
-import ocpiutil;
+import sys; sys.path.append(\"$OCPI_CDK_DIR/scripts/\")
+import logging
+import ocpiutil
 ocpiutil.configure_logging()
 try:
     $1
-    print(True)
+    sys.exit(0)
 except ocpiutil.OCPIException as err:
-    logging.error(err);"
+    logging.error(err)
+    sys.exit(1)"
 }
 
 function register_project {
@@ -154,21 +155,20 @@ function register_project {
   else
     project="."
   fi
-  local rv=$(py_try_return_bool "
+  py_try_return_bool "
     from ocpiassets import AssetFactory, Registry;
-    AssetFactory.factory(\"registry\", Registry.get_registry_dir(\"$project\")).add(\"$project\")")
-  [ "$rv" != True ] && return
+    AssetFactory.factory(\"registry\", Registry.get_registry_dir(\"$project\")).add(\"$project\")" || return
+
   # We want to export a project on register, but only if it is not
   # an exported project itself
   is_exported=`python3 -c "\
 import sys; sys.path.append(\"$OCPI_CDK_DIR/scripts/\");
 import ocpiutil; print(ocpiutil.is_path_in_exported_project(\"$project\"));"`
   if [ "$is_exported" == "False" ]; then
-    make -C $project exports >&2 || echo Could not export project \"$project\". You may not have write permissions on this project. Proceeding...>&2
+    make -C $project exports 1>&2 || echo Could not export project \"$project\". You may not have write permissions on this project. Proceeding...
   else
      [ -z "$verbose" ] || echo Skipped making exports because this is an exported standalone project. 1>&2
   fi
-  echo True
 }
 # Remove the link to a project in the installation registry which should be named
 # based on the project's package name. If a project does not exist with as
@@ -188,6 +188,31 @@ function unregister_project {
     else:
         # Create registry instance from current dir, and remove project by its package-ID
         AssetFactory.factory(\"registry\", Registry.get_registry_dir(\"$project\")).remove(\"$project\")"
+}
+
+function delete_project {
+
+  if [ -n "$1" ]; then
+    project="$1"
+  else
+    project="."
+  fi
+
+  if [ -n "$force" ]; then
+    py_force=True
+  else
+    py_force=False
+  fi
+  py_try_return_bool "
+    from ocpiassets import AssetFactory, Project, Registry;
+    import os;
+    if (os.path.exists(\"$project\")) and (os.path.isdir(\"$project\")):
+        my_proj = AssetFactory.factory(\"project\", \"$project\")
+        my_proj.delete($py_force)
+    else:
+        my_reg = AssetFactory.factory(\"registry\", Registry.get_registry_dir(\".\"))
+        my_proj = my_reg.get_project(\"$project\")
+        my_proj.delete($py_force)"
 }
 
 
@@ -366,18 +391,14 @@ function do_registry {
       bad registry to delete \(\"$registry_to_delete\"\) does not exist
     fi
   elif [ "$verb" == set ]; then
-  setreg_success=`py_try_return_bool "
-    import ocpiassets;
-    ocpiassets.AssetFactory.factory(\"project\", \".\").set_registry(\"$1\")"`
-    if [ "$setreg_success" != "True" ]; then
+    py_cmd="import ocpiassets; ocpiassets.AssetFactory.factory(\"project\", \".\").set_registry(\"$1\")"
+    if [ $(py_try_return_bool "$py_cmd"; echo $?) -eq 1 ]; then
       # Error is printed in python
       exit 1
     fi
   elif [ "$verb" == unset ]; then
-    unsetreg_success=`py_try_return_bool "
-    import ocpiassets;
-    ocpiassets.AssetFactory.factory(\"project\", \".\").unset_registry()"`
-    if [ "$unsetreg_success" != "True" ]; then
+    py_cmd="import ocpiassets; ocpiassets.AssetFactory.factory(\"project\", \".\").unset_registry()"
+    if [ $(py_try_return_bool "$py_cmd"; echo $?) -eq 1 ]; then
       # Error is printed in python
       exit 1
     fi
@@ -389,11 +410,9 @@ function do_registry {
 function do_project {
   set -e
   if [ "$verb" == register ]; then
-    reg_success=`register_project $1`
-    if [ "$reg_success" != "True" ]; then
+    if [ $(register_project $1 1> /dev/null; echo $?) -eq 1 ]; then
       # Error message printed from python
       exit 1
-      #bad failure to register project \"$1\": \(error message: \"$reg_success\"\)
     fi
     [ -z "$verbose" ] || echo "Successfully registered project \"$1\" in project registry."
     return 0
@@ -401,28 +420,15 @@ function do_project {
     pj_title=\"$1\"
     [ -n "$1" ] || pj_title=current
     ask unregister the $pj_title project/package from the registered projects registry
-    unreg_success=`unregister_project $1`
-    if [ "$unreg_success" != "True" ]; then
+    if [ $(unregister_project $1 1> /dev/null; echo $?) -eq 1 ]; then
       # Error message printed from python
       exit 1
-      #bad failure to unregister project \"$1\": \(error message: \"$unreg_success\"\)
     fi
     [ -z "$verbose" ] || echo "Successfully unregistered project \"$1\" in project registry."
     return 0
   elif [ "$verb" == delete ]; then
-    [ -e "$1" ] || bad the project \"$1\" does not exist
-    [ -d "$1" ] || bad the project \"$1\" does not appear to be a directory
-    get_dirtype $1
-    [ -z "$dirtype" ] && bad the directory \"$directory\", is not project directory, no correct Makefile found
-    [ "$dirtype" != project ] && bad the directory \"$directory\" appears to be a \"$dirtype\" rather than a project
-    ask delete the \"$1\" project in the directory \"$directory\"
-    unreg_success=$(unregister_project $1 2> /dev/null)
-    if [ "$unreg_success" != "True" ]; then
-      [ -z "$verbose" ] || echo "Skipping 'unregister'. Project \"$1\" is not registered. Continuing with deletion."
-    fi
-    rm -r -f $1
-    [ -z "$verbose" ] || echo The project \"$1\" in the directory \"$directory\" has been deleted.
-    return 0
+    delete_project $1
+    return $?
   elif [ "$verb" == refresh ]; then
     gpmd=$OCPI_CDK_DIR/scripts/genProjMetaData.py
        if [ -x $gpmd ] ; then
@@ -555,9 +561,7 @@ EOF
 
   if [ -n "$register_enable" ]; then
     # Register a link to the project in the project registry
-    reg_success=`register_project`
-    if [ "$reg_success" != "True" ]; then
-      [ -z "$verbose" ] || echo "Register project \"$1\" failed with python results: $reg_success"
+    if [ $(register_project 1> /dev/null; echo $?) -eq 1 ]; then
       if [ -n "$keep" ]; then
         echo The project directory has been created, but not registered \(which may be fine\).
         echo If the project must be registered, resolve the conflict and run:
@@ -2253,11 +2257,15 @@ argv=($*)
 original_argv=($*)
 while [[ "${argv[0]}" != "" ]] ; do
   if [[ "${argv[0]}" == show ]] ; then
-    ocpishow_options=`sed 's/\(^\| \)show\( \|$\)/\1\2/' <<< "${original_argv[@]}"`
+    # This is portable while the below is not
+    ocpishow_options=`sed -E 's/(^| )show( |$)//' <<< "${original_argv[@]}"`
+    # ocpishow_options=`sed 's/\(^\| \)show\( \|$\)/\1\2/' <<< "${original_argv[@]}"`
     $OCPI_CDK_DIR/scripts/ocpishow $ocpishow_options
     exit $?
   elif [[ "${argv[0]}" == run ]] ; then
-    ocpidev_run_options=`sed 's/\(^\| \)run\( \|$\)/\1\2/' <<< "${original_argv[@]}"`
+    # This is portable while the below is not
+    ocpidev_run_options=`sed -E 's/(^| )run( |$)//' <<< "${original_argv[@]}"`
+    #ocpidev_run_options=`sed 's/\(^\| \)run\( \|$\)/\1\2/' <<< "${original_argv[@]}"`
     $OCPI_CDK_DIR/scripts/ocpidev_run.py $ocpidev_run_options
     exit $?
   elif [[ -n "$verb" && -n "$help_screen" ]]; then
@@ -2452,9 +2460,9 @@ else
   directory=$(pwd)
   topdir=
 fi
-if [ "$noun" == "component" ]; then 
+if [ "$noun" == "component" ]; then
   noun=spec
-fi 
+fi
 [ -z $verb ] && bad missing verb, nothing to do
 [ -z "$noun" -a "$verb" != build ] && help
 # option testing dependent on noun and verb

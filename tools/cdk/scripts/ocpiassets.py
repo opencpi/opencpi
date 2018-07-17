@@ -37,6 +37,7 @@ import ocpiutil
 import re
 import json
 import sys
+import shutil
 
 class AssetFactory():
     """
@@ -189,6 +190,18 @@ class Asset(metaclass=ABCMeta):
             raise ocpiutil.OCPIException("Tried creating a " + dirtype + " in invalid directory " +
                                          "type: " +  str(ocpiutil.get_dirtype(directory)) +
                                          " in directory: " + directory)
+    #@abstractmethod
+    def delete(self, force=False):
+        """
+        Remove the Asset from disk.  Any additional cleanup on a per asset basis can be done in
+        the child implementations of this function
+        """
+        if not force:
+            prompt = ("removing " + ocpiutil.get_dirtype(self.directory) + " at directory: " +
+                     self.directory)
+            force = ocpiutil.get_ok(prompt)
+        if force:
+            shutil.rmtree(self.directory)
 
 class BuildableAsset(Asset):
     """
@@ -540,8 +553,9 @@ class Registry(Asset):
         If a project with the same package-ID already exists in the registry, fail.
         """
         if not ocpiutil.is_path_in_project(directory):
-            raise ocpiutil.OCPIException("Failure to register project. Directory \"" + directory +
-                                         "\" is not in a project.")
+            raise ocpiutil.OCPIException("Failure to register project:  \"" + directory +
+                                         "\" in location: " + os.getcwd() + "is not in a " +
+                                         "project or doesn't exist.")
 
         project = AssetFactory.factory("project", directory)
         pid = project.package_id
@@ -594,7 +608,7 @@ class Registry(Asset):
             raise ocpiutil.OCPIException("Could not unregister project with package-ID \"" +
                                          package_id + "\" because the project is not in the " +
                                          "registry.\n Run 'ocpidev show registry --table' for " +
-                                         "information about the currently registered projects.")
+                                         "information about the currently registered projects.\n" )
 
         project_link = self.__projects[package_id].directory
         if directory is not None and os.path.realpath(directory) != project_link:
@@ -650,6 +664,15 @@ class Registry(Asset):
                                          "(un)register projects in " +
                                          "/opt/opencpi/project-registry, you need to be a " +
                                          "member of the opencpi group.")
+
+    def get_project(self, package_id):
+        """
+        Return the project with the specified package-id that is registered in this registry
+        """
+        if package_id not in self.__projects:
+            raise ocpiutil.OCPIException("\"" + package_id + "\" is not a valid package-id or " +
+                                         "project directory")
+        return self.__projects[package_id]
 
     @staticmethod
     def get_default_registry_dir():
@@ -754,6 +777,19 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
         # them in the Asset constructor
         return other is not None and \
                 os.path.realpath(self.directory) == os.path.realpath(other.directory)
+
+    def delete(self, force=False):
+        """
+        Remove the project from the registry if it is registered anywhere and remove the project 
+        from disk
+        """
+        try:
+            self.registry().remove(package_id=self.package_id)
+        except ocpiutil.OCPIException as ex:
+            # do nothing it's ok if the unregistering fails
+            pass
+        super().delete(force)
+
     def set_package_id(self):
         """
         Get the Package Name of the project containing 'self.directory'.
@@ -921,6 +957,7 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
                                          "This can be done by running 'ocpidev unregister project" +
                                          " " + self.package_id + "'.")
 
+        #self.__registry = AssetFactory.factory("registry", registry_path)
         # TODO: pull this relative link functionality into a helper function
         # Try to make the path relative. This helps with environments involving mounted directories
         # Find the path that is common to the registry and project-top

@@ -210,35 +210,28 @@ def addPrimitives (root, primitives, dirName):
 
 def isStale (myDir, force):
     retVal = True
-    find_output = ""
+    # removed the functionality of this function to always return true because the find command 
+    # was taking longer to run then the regenerating of the metadata itself.  also the command
+    # stopped returning a string into find_output.  this could likely be fixed and optimized to 
+    # fix these problems but not worth the time required right now
+    '''find_output = ""
+    print ("ndsaijofnsdkl;sdafnkl;dsfankldsfankldsfanklafsd")
     if (force == False):
         if os.path.isfile(myDir + "/project.xml"):
-            find_output = subprocess.Popen(['find', myDir, "-name", "*.xml", 
-                                           '-newer', myDir + "/project.xml", "-quit"], 
-                                           stdout=subprocess.PIPE, 
-                                           stderr=subprocess.PIPE).communicate()[0]
-
-            if (find_output != ""):
+            print ("running find command: " + 'find ' + myDir + " -name" + " \"*.xml\"" +
+                   ' -newer '+ myDir + "/project.xml")
+            find_output = subprocess.Popen(['find', myDir, "-name", "\"*.xml\"",
+                                           '-newer', myDir + "/project.xml"],
+                                           stdout=subprocess.PIPE).communicate()[0]
+            print(find_output)
+            if find_output != b'':
                 retVal = False
+                print ("is stale")
+        else: 
+            print ("metadata file does not exist yet")'''
 
     return retVal
 
-def getProjDir(myDir, force ):
-    currentDir = myDir
-    if (force == True):
-        return currentDir
-    loopNum = 0;
-    while (loopNum < 10):
-        if (os.path.isfile(currentDir + "/Makefile")):
-            with open(currentDir + "/Makefile", 'r') as myfile:
-                data=myfile.read().replace('\n', '')
-            if (data.find("include $(OCPI_CDK_DIR)/include/project.mk") > -1) :
-                return currentDir
-        currentDir = currentDir + "/../"
-        loopNum = loopNum + 1
-    print("Not in a Project Directory, Check the directory passed to the script")
-    sys.exit(0)
-    
 def indent(elem, level=0):
     i = "\n" + level*"  "
     if len(elem):
@@ -265,7 +258,7 @@ else:
     force = False
 
 mydir = sys.argv[1]
-mydir = getProjDir(mydir, force)
+mydir = ocpiutil.get_path_to_project_top(mydir)
 
 if (isStale(mydir, force)):
     # Get the project name, add it as an attribute in the project element.

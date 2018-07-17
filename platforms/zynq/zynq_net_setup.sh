@@ -68,15 +68,26 @@ else
     export OCPI_TOOL_OS=linux
     export OCPI_TOOL_DIR=\$OCPI_TOOL_PLATFORM
     export OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/../projects/core/exports/artifacts
+    # Priorities for finding system.xml:
+    # 1. If is it on the local system it is considered customized for this system - use it.
     if test -r /mnt/card/opencpi/system.xml; then
-      export OCPI_SYSTEM_CONFIG=/mnt/card/opencpi/system.xml
+      OCPI_SYSTEM_CONFIG=/mnt/card/opencpi/system.xml
+    # 2. If is it at the top level of the mounted CDK, it is considered customized for all the
+    #    systems that use this CDK installation (not shipped/installed by the CDK)
+    elif test -r $OCPI_CDK_DIR/system.xml; then
+      OCPI_SYSTEM_CONFIG=$OCPI_CDK_DIR/system.xml
+    # 3. If there is one for this HDL platform, it is considered more specific than one that is
+    #    specific to the RCC platform, so it should be used in preference to the RCC platform one.
     elif test -n "$OCPI_HDL_PLATFORM" -a -r $OCPI_CDK_DIR/$OCPI_HDL_PLATFORM/system.xml; then
-      export OCPI_SYSTEM_CONFIG=$OCPI_CDK_DIR/$OCPI_HDL_PLATFORM/system.xml
+      OCPI_SYSTEM_CONFIG=$OCPI_CDK_DIR/$OCPI_HDL_PLATFORM/system.xml
+    # 4. If there is one for this RCC platform, it is more specific than the default one.
     elif test -r $OCPI_CDK_DIR/\$OCPI_TOOL_PLATFORM/system.xml; then
-      export OCPI_SYSTEM_CONFIG=$OCPI_CDK_DIR/\$OCPI_TOOL_PLATFORM/system.xml
+      OCPI_SYSTEM_CONFIG=$OCPI_CDK_DIR/\$OCPI_TOOL_PLATFORM/system.xml
+    # 5. Finally use the default one that is very generic.
     else
-      export OCPI_SYSTEM_CONFIG=$OCPI_CDK_DIR/default-system.xml
+      OCPI_SYSTEM_CONFIG=$OCPI_CDK_DIR/default-system.xml
     fi
+    export OCPI_SYSTEM_CONFIG
     export PATH=$OCPI_CDK_DIR/\$OCPI_TOOL_DIR/bin:\$PATH
     # This is only for ACI executables in special cases...
     export LD_LIBRARY_PATH=$OCPI_CDK_DIR/$OCPI_TOOL_DIR/lib:\$LD_LIBRARY_PATH
