@@ -75,19 +75,34 @@ ocpi_me=$BASH_SOURCE
 	EOF
     exit 1 # note exit and not return since we are not being sourced
 }
+case "$ocpi_me" in
+    */*);;
+    *)
+      cat <<-EOF >&2
+	Error: This OpenCPI $ocpi_name file can only be sourced as a pathname with slashes.
+	       If it is in your current directory, use: "source ./$ocpi_me <options>".
+	EOF
+      return 1
+    ;;
+esac
 [ "$1" = --help -o "$1" = -h -o -z "$1" ] && {
   cat <<-EOF >&2
 	This script modifies the OpenCPI environment variable settings and the PATH variable.
 	Options to this $ocpi_name file when *sourced* are:
-	 --dynamic or -d:   enable the currently running tools platform to use dynamic linking
-	 --optimized or -O: enable the currently running tools platform to use optimized code
 	 --help or -h:      print this message
 	 --reset or -r:     reset any previous OpenCPI environment before setting up a new one
 	 --clean or -c:     unset all OpenCPI environment variables and nothing more.
 	 --list or -l:      list current settings - will not setup or modify any settings
 	 --verbose or -v:   be verbose about what is happening
-	 --ensure or -e:    leave things alone if they are already set up
-	 -                  use this option when using no other options
+	 --ensure or -e:    do nothing if OpenCPI is already set up, otherwise like --set
+	 --set or -s:       setup the environment for OpenCPI when it is not yet set up
+	 --dynamic or -d:   enable the currently running tools platform to use dynamic linking
+	 --optimized or -O: enable the currently running tools platform to use optimized code
+	When --set or --reset is used, the OpenCPI CDK location is inferred from the location
+	of this file, where sourced.  E.g. issueing the command "source a/b/c/opencpi-setup.sh -s"
+	will setup the CDK as found in a/b/c.
+	When in the root directory of the OpenCPI source tree, the typical usage is:
+	   source cdk/opencpi-setup.sh -s
 	Note that neither --dynamic nor --optimized affect what is built.  Just what is used.
 EOF
   return 1
@@ -103,7 +118,7 @@ while [ -n "$ocpi_options" ] ; do
     -c|--clean) ocpi_clean=1;;
     -l|--list) ocpi_list=1;;
     -e|--ensure) ocpi_ensure=1;;
-    -);; # perhaps the single required variable
+    -|-s|--set);; # perhaps the single required variable
     *)
       echo Unknown option \"$options\" when sourcing the $ocpi_name file. >&2
       return 1;;

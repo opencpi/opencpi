@@ -23,6 +23,14 @@
 # This script does not prepare for execution (except our own tools).
 # If the bash does not have extdebug/BASH_ARGV support, there is no
 # way for this script to know where it lives.  Hence it requires its first arg to be that.
+cat <<EOF >&2
+This ocpisetup.sh script is obsolete and deprecated.
+Use the opencpi-setup.sh script, which is sourced where it lives in the top level CDK directory.
+E.g.:  source <where-the-cdk-is>/opencpi-setup.sh
+If using a clean/virgin unbuilt source tree, and in that directory,
+use "./scripts/init-opencpi.sh" first (not sourced) or "make exports"
+then use: "source cdk/opencpi-setup.sh <options>"
+EOF
 _MYNAME=ocpisetup.sh
 if test $# == 0; then
   if test `basename $0` == $_MYNAME; then
