@@ -136,7 +136,7 @@ base=opencpi
 cross=$(strip $(foreach r,$(call RccRealPlatforms,$1),\
         $(if $(filter $(call RccRealPlatforms,$(OCPI_TOOL_PLATFORM)),$r),,$r)))
 name=$(base)$(and $(call cross,$1),-sw-platform-$(call cross,$1))
-release=$(or $(OcpiRelease),snapshot)$(tag)$(git_tag)
+release=$(or $(OcpiRelease),$(Release),snapshot)$(tag)$(git_tag)
 # This changes every 6 minutes which is enough for updated releases (snapshots).
 # It is rebased after a release so it is relative within its release cycle
 # FIXME:automate this...
@@ -158,7 +158,7 @@ git_tag    :=$(if $(git_version),,$(strip\
                     _$(shell echo $(git_branch) | sed -e 's/[^A-Za-z0-9.]\+/_/g'))))
 ##### Set final variables that depend on git variables
 # This could be nicer, but at least it gets it from the true source, which should be places
-version:=$(or $(git_version),$(strip\
+version:=$(or $(Version),$(git_version),$(strip\
               $(shell sed -n 's/.*AC_INIT.\[opencpi\],\[\([0-9.]*\)\].*$$/\1/p' \
                       build/autotools/configure.ac)))
 tag:=$(if $(git_version),,$(timestamp))
