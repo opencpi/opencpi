@@ -22,6 +22,7 @@
 # established using the (exported) OcpiThisPlatform* variables.
 # It expects the Platform variable to be set on the command line
 .DELETE_ON_ERROR:
+.NOTPARALLEL:
 .PHONY: configure build clean cleanconfigure install
 
 # unexpected

@@ -1047,11 +1047,12 @@ namespace OCPI {
 	  lc.m_in.m_container != lc.m_out.m_container &&
 	  (!lc.m_in.m_container->portsInProcess() ||
 	   !lc.m_out.m_container->portsInProcess())) {
-	ocpiInfo("Negotiating connection from instance %s port %s to instance %s port %s",
+	ocpiInfo("Negotiating connection from instance %s port %s to instance %s port %s "
+		 "(buffer size is %zu/0x%zx)",
 		 lc.m_out.m_member ? lc.m_out.m_member->m_name.c_str() : "<external>",
 		 lc.m_out.m_name,
 		 lc.m_in.m_member ? lc.m_in.m_member->m_name.c_str() : "<external>",
-		 lc.m_in.m_name);
+		 lc.m_in.m_name, lc.m_bufferSize, lc.m_bufferSize);
 	ocpiDebug("Input container: %s, output container: %s",
 		  lc.m_in.m_container->name().c_str(), lc.m_out.m_container->name().c_str());
 	OC::BasicPort::

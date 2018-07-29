@@ -74,6 +74,7 @@ PLATFORM_SPECIFIC:=configure build clean cleanconfigure install
 override SHELL=/bin/bash
 .PHONY: $(PLATFORM_AGNOSTIC) $(PLATFORM_SPECIFIC) show help
 .DELETE_ON_ERROR:
+.NOTPARALLEL:
 export AT=@
 ifeq ($V,1)
   Verbose=-v

@@ -113,15 +113,9 @@ for t in $TESTS; do
       echo ======================= Running python swig test
       OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/../projects/core/exports/artifacts \
 		       PYTHONPATH=$OCPI_CDK_DIR/$OCPI_TARGET_DIR/lib \
-		       python - $OCPI_CDK_DIR/../projects/assets/applications/bias.xml <<-EOF
-	import sys
-	old=sys.getdlopenflags()
-	if sys.platform != 'darwin':
-	   import ctypes
-	   sys.setdlopenflags(old|ctypes.RTLD_GLOBAL)
-	import OcpiApi as OA
-	sys.setdlopenflags(old)
-	app=OA.Application(sys.argv[1])
+		       python <<-EOF
+	import opencpi.aci as OA
+	app=OA.Application("$OCPI_CDK_DIR/../projects/assets/applications/bias.xml")
 	EOF
       ;;
     core)

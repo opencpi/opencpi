@@ -152,8 +152,12 @@ namespace OCPI {
     // This is for the derived class's destructor to call
     void Container::shutdown() {
       stop();
-      if (m_thread)
+      if (m_thread) {
+	this->unlock();
+	// Allow the container's thread to recognize being disabled
 	m_thread->join();
+	this->lock();
+      }
     }
     Container::~Container() {
       m_enabled = false;

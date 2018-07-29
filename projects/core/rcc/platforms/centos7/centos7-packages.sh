@@ -66,9 +66,10 @@ PKGS_D+=(epel-release)
 #    for various 32-bit software tools we end up supporting (e.g. modelsim) in devel (AV-567)
 #    -- for rpm-required, we need a file-in-this-package too
 PKGS_D+=(glibc.i686=/lib/ld-linux.so.2
-	ncurses-libs.i686=/lib/libncurses.so.5
-	libXft.i686=/lib/libXft.so.2
-	libXext.i686=/lib/libXext.so.6)
+         redhat-lsb-core.i686=/lib/ld-lsb.so.3
+	 ncurses-libs.i686=/lib/libncurses.so.5
+	 libXft.i686=/lib/libXft.so.2
+	 libXext.i686=/lib/libXext.so.6)
 # docker container missing this	libXdmcp.i686=/lib/libXdmcp.so.6) # AV-3645
 #    for bash completion - a noarch package  (AV-2398)
 PKGS_D+=(bash-completion=/etc/profile.d/bash_completion.sh)

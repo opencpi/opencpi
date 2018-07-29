@@ -136,6 +136,10 @@
 =os/linux/driver/target-<target>/opencpi*.ko <target>/lib/
 =os/linux/driver/ocpi_linux_driver scripts/
 ################################################################################
+# Python related exclusions and additions
+# It is runtime for systems that have python, but non-python platforms can exclude it
+=runtime/python/opencpi/__init__.py <target>/lib/opencpi/
+################################################################################
 # RCC related exclusions and additions
 # We don't want everything so we are selective here.  was: +tools/cdk/include/rcc include/rcc
 # After more cleanup we may be able to default to everything
@@ -224,6 +228,3 @@
 # Until wildcards are supported, the cross-compiled platforms:
 #+tools/cdk/include/autoconfig_import-zed.mk include/
 #+tools/cdk/include/autoconfig_import-pico_t6a.mk include/
-# Macros and configuration wrapper:
-#+runtime/application/include/av_team.h include/aci/
-#+runtime/application/include/av_team.h include/rcc/

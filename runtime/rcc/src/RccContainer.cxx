@@ -134,8 +134,8 @@ Container::
 {
   // Lock our mutex.  It will be unlocked.
   TRACE( "OCPI::RCC::Container::~Container()");
-  OC::Container::shutdown();
   this->lock();
+  OC::Container::shutdown();
   // We need to shut down the apps and workers since they
   // depend on artifacts and transport.
   OU::Parent<Application>::deleteChildren();

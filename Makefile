@@ -79,7 +79,7 @@ driver:
 	         $(foreach o,$(call RccOs,$t),\
 	           if test -d os/$o/driver; then \
 	             echo Building the $o kernel driver for $(call RccRealPlatforms,$p); \
-	             $(MAKE) -C os/$o/driver AT=$(AT) OcpiPlatform=$p;\
+	             $(MAKE) -C os/$o/driver AT=$(AT) OCPI_TARGET_PLATFORM=$p;\
 	           else \
 	             echo There is no kernel driver for the OS '"'$o'"', so none built. ; \
 	           fi;))) \
@@ -136,7 +136,7 @@ base=opencpi
 cross=$(strip $(foreach r,$(call RccRealPlatforms,$1),\
         $(if $(filter $(call RccRealPlatforms,$(OCPI_TOOL_PLATFORM)),$r),,$r)))
 name=$(base)$(and $(call cross,$1),-sw-platform-$(call cross,$1))
-release=$(or $(OcpiRelease),$(Release),snapshot)$(tag)$(git_tag)
+release=$(or $(OcpiRelease),$(Release),snapshot$(tag)$(git_tag))
 # This changes every 6 minutes which is enough for updated releases (snapshots).
 # It is rebased after a release so it is relative within its release cycle
 # FIXME:automate this...

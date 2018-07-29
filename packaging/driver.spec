@@ -35,7 +35,7 @@ Group:     System Environment/Kernel
 
 License:   LGPLv3+
 Vendor:    ANGRYVIPER Team
-Packager:  ANGRYVIPER team <discuss@lists.opencpi.org>
+Packager:  ANGRYVIPER Team <discuss@lists.opencpi.org>
 
 # BuildRoot is deprecated, but maybe this was for OLD rpmbuild in centos6?
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
@@ -107,14 +107,14 @@ getent passwd opencpi >/dev/null || \
 # Adding will automatically turn on:
 /sbin/chkconfig --add opencpi-driver-check
 # SELinux fixes (not sure if actually needed)
-chcon system_u:object_r:initrc_exec_t:s0 %{_initddir}/opencpi-driver-check || :
-chcon -h system_u:object_r:initrc_exec_t:s0 %{_initddir}/opencpi-driver-check || :
+chcon system_u:object_r:initrc_exec_t:s0 %{prefix1}/opencpi-driver-check || :
+chcon -h system_u:object_r:initrc_exec_t:s0 %{prefix1}/opencpi-driver-check || :
 rm -rf %{prefix0}/`uname -r` 2>/dev/null || :
-%{prefix0}/opencpi-driver-check start || :
+%{prefix1}/opencpi-driver-check start || :
 touch /tmp/opencpi_driver_just_installed
 
 %preun
-%{prefix0}/opencpi-driver-check stop || :
+%{prefix1}/opencpi-driver-check stop || :
 if [ -n "`lsmod | grep opencpi`" ]; then
   echo ERROR: Cannot uninstall driver RPM until the current driver is no longer in use.
   exit 1
@@ -136,11 +136,11 @@ if [ -e /tmp/opencpi_driver_just_installed ]; then
   rm /tmp/opencpi_driver_just_installed
 else
   echo New kernel detected - OpenCPI drivers should be rebuilt on next reboot.
-  echo If they do not, manually run "sudo %{_initddir}/opencpi-driver-check start"
+  echo If they do not, manually run "sudo %{prefix1}/opencpi-driver-check start"
 fi
 
 %verifyscript
 # AV-2407
 set -e
->&2 %{_initddir}/opencpi-driver-check check
->&2 %{_initddir}/opencpi-driver-check status
+>&2 %{prefix1}/opencpi-driver-check check
+>&2 %{prefix1}/opencpi-driver-check status

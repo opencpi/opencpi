@@ -187,7 +187,7 @@ case $type in
     # this is NOT copying exports for now.
     (
      git ls-files os/linux/driver
-     # this could be read by looking at depenedencies some day
+     # this could be read by looking at dependencies some day
      for f in runtime/hdl/include/Hdl{NetDefs,OCCP,PciDriver}.h \
              os/interfaces/include/KernelDriver.h COPYRIGHT LICENSE.txt; do
        echo $f

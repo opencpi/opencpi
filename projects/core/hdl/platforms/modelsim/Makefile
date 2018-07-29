@@ -21,6 +21,8 @@ HdlLibraries+=sdp
 ExportFiles=runSimExec.modelsim probe.tgz
 include $(OCPI_CDK_DIR)/include/hdl/hdl-platform.mk
 ifneq ($(findstring modelsim,$(HdlPlatforms)),)
+# FIXME: integrate this with modelsim.mk
+ModelsimExec=LD_PRELOAD=$(OCPI_PREREQUISITES_DIR)/inode64/$(OCPI_TOOL_DIR)/lib/inode64.so $(OCPI_MODELSIM_DIR)/linuxpe/$1
 probe.tgz:
 	$(AT)echo Creating the tiny modelsim project for probing that modelsim is installed and licensed.
 	$(AT)echo Output is in target-modelsim/probe.out
@@ -28,10 +30,10 @@ probe.tgz:
 	$(AT)(rm -r -f tmp && mkdir -p tmp && cd tmp && \
 	  export LM_LICENSE_FILE=$(OCPI_MODELSIM_LICENSE_FILE) && \
 	  echo 'module probe(); endmodule' > probe.v && \
-	  $(OCPI_MODELSIM_DIR)/bin/vlib work && \
-	  $(OCPI_MODELSIM_DIR)/bin/vlog -work work probe.v && \
+	  $(call ModelsimExec,vlib) work && \
+	  $(call ModelsimExec,vlog) -work work probe.v && \
 	  tar czf ../probex.tgz work && \
-	  $(OCPI_MODELSIM_DIR)/bin/vsim -c work.probe && \
+	  $(call ModelsimExec,vsim) -c work.probe </dev/null && \
 	  rm -f -r probe.v work && \
 	  mv ../probe{x,}.tgz) > target-modelsim/probe.out 2>&1
 

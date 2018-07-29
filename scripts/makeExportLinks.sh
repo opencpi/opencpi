@@ -316,10 +316,10 @@ while read path opts; do
   [ -n "$swig" ] && {
     base=$(basename $swig .i)
     for f in build/autotools/target-$target/staging/lib/{,_}$base.* ; do
-        make_filtered_link $f exports/$target/lib/$(basename $f)
+        make_filtered_link $f exports/$target/lib/opencpi/$(basename $f)
         # swig would be runtime on systems with python and users' ACI programs that used it
         [ -z "$tools" ] &&
-          make_filtered_link $f exports/runtime/$target/lib/$(basename $f)
+          make_filtered_link $f exports/runtime/$target/lib/opencpi/$(basename $f)
     done
   }
   shopt -u nullglob

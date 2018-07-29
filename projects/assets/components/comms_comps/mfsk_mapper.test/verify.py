@@ -62,7 +62,7 @@ if len(odata) != number_of_symbols_in_input_file:
     print('Length odata = ', len(odata), 'while expected length is = ', number_of_symbols_in_input_file)
     sys.exit(1)
 
-for i in xrange(0,len(odata)):
+for i in range(0,len(odata)):
     if odata[i] != numpy.mod(i,m_p):
         print('FAILED at sample:', i, 'with value:', format(odata[i], '#X'))
         sys.exit(1)

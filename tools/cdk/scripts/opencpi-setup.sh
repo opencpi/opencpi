@@ -54,6 +54,7 @@
 # 1. setting OCPI_CDK_DIR environment variable to an absolute pathname - dirname of this script
 # 2. setting the OCPI_TOOL_* environment variables as a cache of this platform determination
 # 3. adding the binaries directory for the running platform to the PATH environment variable
+# 4. adding the lib directory for the running platform to the PYTHONPATH environment variable
 # 4. setting the OCPI_PREREQUISITES_DIR environment variable
 #    either $OCPI_CDK_DIR/../prerequisites if present or /opt/opencpi/prerequisites
 # 5. enable bash command line completion for OpenCPI commands with completion
@@ -87,7 +88,7 @@ case "$ocpi_me" in
 esac
 [ "$1" = --help -o "$1" = -h -o -z "$1" ] && {
   cat <<-EOF >&2
-	This script modifies the OpenCPI environment variable settings and the PATH variable.
+	This script modifies the OpenCPI environment variables and the PATH/PYTHONPATH variables.
 	Options to this $ocpi_name file when *sourced* are:
 	 --help or -h:      print this message
 	 --reset or -r:     reset any previous OpenCPI environment before setting up a new one
@@ -133,6 +134,11 @@ done
       [ -n "$ocpi_verbose" ] && echo Removing OpenCPI bin directory from PATH.
       PATH="$ocpi_cleaned"
     }
+    ocpi_cleaned=$(echo "$PYTHONPATH" | sed "s=$OCPI_CDK_DIR/[^:/]*/lib[^:]*:==g")
+    [ "$ocpi_cleaned" != "$PYTHONPATH" ] && {
+      [ -n "$ocpi_verbose" ] && echo Removing OpenCPI lib directory from PYTHONPATH.
+      PYTHONPATH="$ocpi_cleaned"
+    }
   }
   [ -n "$ocpi_verbose" ] && echo Unsetting all OpenCPI environment variables.
   for ocpi_v in $(env | egrep '^OCPI_(PREREQUISITES|TARGET|TOOL|CDK|ROOT)_' | sort | cut -f1 -d=)
@@ -142,9 +148,10 @@ done
   return 0
 }
 [ -n "$ocpi_list" ] && {
-  [ -n "$ocpi_verbose" ] && echo Listing OpenCPI environment and the PATH variable.
+  [ -n "$ocpi_verbose" ] && echo Listing OpenCPI environment and the PATH variables.
   env | grep OCPI >&2
   env | grep '^PATH='
+  env | grep '^PYTHONPATH='
   return 0
 }
 
@@ -245,12 +252,16 @@ fi
 ocpi_cleaned=$(echo "$PATH" | sed "s=$OCPI_CDK_DIR/[^:/]*/bin[^:]*:==g")
 [ -n "$ocpi_verbose" -a "$PATH" != "$ocpi_cleaned" ] && echo Removing OpenCPI bin directory from PATH >&2
 export PATH="$OCPI_CDK_DIR/$OCPI_TOOL_DIR/bin:$ocpi_cleaned"
+ocpi_cleaned=$(echo "$PYTHONPATH" | sed "s=$OCPI_CDK_DIR/[^:/]*/lib[^:]*:==g")
+[ -n "$ocpi_verbose" -a "$PYTHONPATH" != "$ocpi_cleaned" ] && echo Removing OpenCPI lib directory from PYTHONPATH >&2
+export PYTHONPATH="$OCPI_CDK_DIR/$OCPI_TOOL_DIR/lib:$ocpi_cleaned"
 ocpi_comp=$OCPI_CDK_DIR/scripts/ocpidev_bash_complete
 [ -f $ocpi_comp ] && source $ocpi_comp
 [ "$ocpi_verbose" = 1 ] && cat <<-EOF >&2
 	The OpenCPI platform we are running on is "$OCPI_TOOL_PLATFORM" (placed in OCPI_TOOL_PLATFORM).
 	The OpenCPI target directory set for this environment is "$OCPI_TOOL_DIR".
 	PATH now set to $PATH
+	PYTHONPATH now set to $PYTHONPATH
 	Now determining where prerequisite software is installed.
 	EOF
 [ "$ocpi_verbose" = 1 ] && {

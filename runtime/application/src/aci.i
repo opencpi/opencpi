@@ -17,7 +17,9 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-%module "OcpiApi"
+
+// This module will be a submodule under the opencpi package
+%module "aci"
 %include <exception.i>
 %include <std_string.i>
 %include <cstring.i>

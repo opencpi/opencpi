@@ -31,7 +31,7 @@ Prefix:      %{prefix0}
 %global      prefix1 /etc
 Prefix:      %{prefix1}
 Vendor:      ANGRYVIPER Team
-Packager:    ANGRYVIPER team <discuss@lists.opencpi.org>
+Packager:    ANGRYVIPER Team <discuss@lists.opencpi.org>
 %include %{RPM_OPENCPI}/packaging/target-%{RPM_PLATFORM}/runtime-requires
 %if !%{RPM_CROSS}
 ##########################################################################################
@@ -98,11 +98,13 @@ done
   #    But we always have this directory (due to plugins and swigs), so it probably does no harm
   #    We could make it conditional for a slight performance optimization
   #    Since prefix0 is relocatable, we re-do the file contents %postun
+# we are disabling this until we sort out dynamic libraries
+%if 0
   dir=ld.so.conf.d file=opencpi.conf
   %{__mkdir_p} %{buildroot}%{prefix1}/$dir
   echo %{prefix0}/cdk/%{RPM_PLATFORM}/lib > %{buildroot}%{prefix1}/$dir/$file
   echo %%{prefix1}/$dir/$file >> %{_builddir}/runtime-files
-
+%endif
   # 2. Enable a global login .profile script by dropping ours into the directory that is used
   #    globally for all bash login scripts.  This drop-in is a symlink.
   dir=profile.d file=opencpi.sh
@@ -241,9 +243,12 @@ fi
   # The files have been installed, but we must change them now.
 
   # Relocate the global files that point to other files to respect relocations
+#this is disabled until we sort out dynamic libraries
+%if 0
   link=$RPM_INSTALL_PREFIX0/cdk/%{RPM_PLATFORM}/lib
   [ $(< $RPM_INSTALL_PREFIX1/ld.so.conf.d/opencpi.conf) != $link ] &&
     echo $link > $RPM_INSTALL_PREFIX1/ld.so.conf.d/opencpi.conf || :
+%endif
   link=$RPM_INSTALL_PREFIX0/cdk/env/rpm_cdk.sh
   [ $(readlink $RPM_INSTALL_PREFIX1/profile.d/opencpi.sh) != $link ] &&
     ln -s -f $link $RPM_INSTALL_PREFIX1/profile.d/opencpi.sh || :
@@ -252,7 +257,7 @@ fi
     ln -s -f $link $RPM_INSTALL_PREFIX1/udev/rules.d/ || :
   # if not relocated, tell dynamic loader to find the (perhaps) new location
   [ "$RPM_INSTALL_PREFIX1" = %{prefix1} -a "$RPM_INSTALL_PREFIX0" = %{prefix0} ] &&
-      /sbin/ldconfig
+      ( : || /sbin/ldconfig)  # not enabled until we sort out dynamic libraries
 %endif
 
 [ "$RPM_INSTALL_PREFIX1" != %{prefix1} -o "$RPM_INSTALL_PREFIX0" != %{prefix0} ] && {
@@ -268,8 +273,8 @@ fi
 # Nothing to do on upgrade
 [ "$1" = 1 ] && exit 0
 # if not relocated, tell dynamic loader to forget our lib dir
-[ "$RPM_INSTALL_PREFIX1" = %{prefix1} -a "$RPM_INSTALL_PREFIX0" = %{prefix0} ] &&
-  /sbin/ldconfig
+if [ "$RPM_INSTALL_PREFIX1" = %{prefix1} -a "$RPM_INSTALL_PREFIX0" = %{prefix0} ]; then
+  : || /sbin/ldconfig # not enabled until we sort out dynamic libraries
 else
   cat <<-EOF
 	The OpenCPI installation being removed was relocated.
