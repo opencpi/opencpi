@@ -36,6 +36,8 @@
 
 ##########################################################################################
 # R. yum-installed and rpm-required for runtime - minimal
+#    linux basics for general runtime scripts
+PKGS_R+=(util-linux coreutils ed findutils)
 #    for JTAG loading of FPGA bitstreams
 #    AV-3053 libusb.so is required to communicate with Xilinx programming dongle
 #    For some reason, that is only in the libusb-devel package in both C6 and C7
@@ -50,7 +52,7 @@ PKGS_R+=(python)
 #    for ACI and worker builds (and to support our project workers using autotools :-( )
 PKGS_D+=(make autoconf automake libtool gcc-c++)
 #    for our development scripts
-PKGS_D+=(ed which)
+PKGS_D+=(which)
 #    for development and solving the "/lib/cpp failed the sanity check" a long shot
 PKGS_D+=(glibc-static glibc-devel binutils)
 #    for various building scripts for timing commands
@@ -66,13 +68,14 @@ PKGS_D+=(epel-release ca-certificates)
 #    for various 32-bit software tools we end up supporting (e.g. modelsim) in devel (AV-567)
 #    -- for rpm-required, we need a file-in-this-package too
 PKGS_D+=(glibc.i686=/lib/ld-linux.so.2
-        # This must be here to be sure libgcc.x86_64 stays in sync with libgcc.i686
-        libgcc
-        libgcc.i686=/lib/libgcc_s.so.1
-	ncurses-libs.i686=/lib/libncurses.so.5
-	libXft.i686=/usr/lib/libXft.so.2
-	libXext.i686=/usr/lib/libXext.so.6)
-#	libXdmcp.i686=/lib/libXdmcp.so.6) # AV-3645
+         # This must be here to be sure libgcc.x86_64 stays in sync with libgcc.i686
+         libgcc
+         libgcc.i686=/lib/libgcc_s.so.1
+         redhat-lsb-core.i686=/usr/lib/ld-lsb.so.3
+         ncurses-libs.i686=/usr/lib/libncurses.so.5
+         libXft.i686=/usr/lib/libXft.so.2
+         libXext.i686=/usr/lib/libXext.so.6)
+# docker container missing this	libXdmcp.i686=/lib/libXdmcp.so.6) # AV-3645
 #    for bash completion - a noarch package  (AV-2398)
 # in epel for centos6 - see below PKGS_D+=(bash-completion=/etc/profile.d/bash_completion.sh)
 ##########################################################################################

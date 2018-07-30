@@ -65,7 +65,7 @@ case "$1" in
     fi
     [ -z "${dont_just_check}" ] && exit 0;
     echo -n "Loading OpenCPI driver:"
-    set -vx
+    # set -vx
     cd $OCPI_DRIVER_DIR
     ./ocpi_linux_driver load x >/tmp/last_opencpi_driver_load.log 2>&1
     if [ $? -ne 0 ]; then

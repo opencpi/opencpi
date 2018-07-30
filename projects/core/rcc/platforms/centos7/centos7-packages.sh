@@ -36,6 +36,8 @@
 
 ##########################################################################################
 # R. yum-installed and rpm-required for runtime - minimal
+#    linux basics for general runtime scripts
+PKGS_R+=(util-linux coreutils ed findutils)
 #    for JTAG loading of FPGA bitstreams
 #    AV-3053 libusb.so is required to communicate with Xilinx programming dongle
 #    For some reason, that is only in the libusb-devel package in both C6 and C7
@@ -50,7 +52,7 @@ PKGS_R+=(python)
 #    for ACI and worker builds (and to support our project workers using autotools :-( )
 PKGS_D+=(make autoconf automake libtool gcc-c++)
 #    for our development scripts
-PKGS_D+=(ed which)
+PKGS_D+=(which)
 #    for development and solving the "/lib/cpp failed the sanity check" a long shot
 PKGS_D+=(glibc-static glibc-devel binutils)
 #    for various building scripts for timing commands
@@ -67,9 +69,9 @@ PKGS_D+=(epel-release)
 #    -- for rpm-required, we need a file-in-this-package too
 PKGS_D+=(glibc.i686=/lib/ld-linux.so.2
          redhat-lsb-core.i686=/lib/ld-lsb.so.3
-	 ncurses-libs.i686=/lib/libncurses.so.5
-	 libXft.i686=/lib/libXft.so.2
-	 libXext.i686=/lib/libXext.so.6)
+         ncurses-libs.i686=/lib/libncurses.so.5
+         libXft.i686=/lib/libXft.so.2
+         libXext.i686=/lib/libXext.so.6)
 # docker container missing this	libXdmcp.i686=/lib/libXdmcp.so.6) # AV-3645
 #    for bash completion - a noarch package  (AV-2398)
 PKGS_D+=(bash-completion=/etc/profile.d/bash_completion.sh)

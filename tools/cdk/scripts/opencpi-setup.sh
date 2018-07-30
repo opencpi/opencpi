@@ -55,9 +55,9 @@
 # 2. setting the OCPI_TOOL_* environment variables as a cache of this platform determination
 # 3. adding the binaries directory for the running platform to the PATH environment variable
 # 4. adding the lib directory for the running platform to the PYTHONPATH environment variable
-# 4. setting the OCPI_PREREQUISITES_DIR environment variable
+# 5. setting the OCPI_PREREQUISITES_DIR environment variable
 #    either $OCPI_CDK_DIR/../prerequisites if present or /opt/opencpi/prerequisites
-# 5. enable bash command line completion for OpenCPI commands with completion
+# 6. enable bash command line completion for OpenCPI commands with completion
 #
 # It internally sets shell variables starting with "ocpi_"
 # It insists on bash.  Someday someone can write it for csh.
@@ -178,7 +178,7 @@ done
   [ -n "$ocpi_verbose" ] &&
       echo Clearing all OpenCPI environment variables before setting anything >&2
   for ocpi_v in $(env | egrep '^OCPI_(PREREQUISITES|TARGET|TOOL|CDK|ROOT)_' | sort | cut -f1 -d=)
-  do  
+  do
     unset $ocpi_v
   done
 }
