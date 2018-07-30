@@ -37,7 +37,7 @@
 ##########################################################################################
 # R. yum-installed and rpm-required for runtime - minimal
 #    linux basics for general runtime scripts
-PKGS_R+=(util-linux coreutils ed findutils)
+PKGS_R+=(util-linux coreutils ed findutils sudo initscripts)
 #    for JTAG loading of FPGA bitstreams
 #    AV-3053 libusb.so is required to communicate with Xilinx programming dongle
 #    For some reason, that is only in the libusb-devel package in both C6 and C7

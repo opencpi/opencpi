@@ -202,9 +202,9 @@ installed. It also provides a useful development utilities.
     if [ -n "${PKG_VER}" -a -n "${THIS_VER}" ]; then
       if [ ${PKG_VER} -ne ${THIS_VER} ]; then
         for i in `seq 20`; do echo ""; done
-          echo "WARNING: This RPM is for CentOS${PKG_VER}, but you seem to be running CentOS${THIS_VER}"
-          echo "You might want to uninstall these RPMs immediately and get the CentOS${THIS_VER} version."
-        for i in `seq 5`; do echo ""; done
+          echo "WARNING: This RPM is for CentOS${PKG_VER}, but you seem to be running CentOS${THIS_VER}" >&2
+          echo "You might want to uninstall these RPMs immediately and get the CentOS${THIS_VER} version." >&2
+        for i in `seq 5`; do echo "" >&2; done
       fi
     fi
   fi
@@ -239,8 +239,8 @@ fi
 # The postinstall scriptlet for runtime
 %post
 if [ "$RPM_INSTALL_PREFIX1" != %{prefix1} -o "$RPM_INSTALL_PREFIX0" != %{prefix0} ]; then
-  echo This installation is relocated, so warnings about the \"opencpi\" user and group not existing can be ignored.
-  echo The user and group IDs of all files will be set to the login user and group.
+  echo This installation is relocated, so warnings about the \"opencpi\" user and group not existing can be ignored. >&2
+  echo The user and group IDs of all files will be set to the login user and group. >&2
 fi
 %if !%{RPM_CROSS}
   # We need to relocate all the global files that point to other global files
@@ -267,7 +267,7 @@ fi
 [ "$RPM_INSTALL_PREFIX1" != %{prefix1} -o "$RPM_INSTALL_PREFIX0" != %{prefix0} ] && {
   user=`logname`
   group=`eval stat --format=%G ~$user`
-  echo USER: $user GROUP: $group
+  # echo USER: $user GROUP: $group
   chown -R $user $RPM_INSTALL_PREFIX0 $RPM_INSTALL_PREFIX1
   chgrp -R $group $RPM_INSTALL_PREFIX0 $RPM_INSTALL_PREFIX1
 } || :
@@ -289,7 +289,7 @@ else
 	EOF
   owner=`stat --format=%U $RPM_INSTALL_PREFIX1`
   if [ -z "$owner" -o "$owner" = root -o "$owner" = opencpi ]; then
-    echo Owner of $RPM_INSTALL_PREFIX1 is \"$owner\".  It is not being deleted.
+    echo Owner of $RPM_INSTALL_PREFIX1 is \"$owner\".  It is not being deleted. >&2
   else
     rm -r -f $RPM_INSTALL_PREFIX1
   fi
@@ -326,8 +326,8 @@ fi
 # The postinstall scriptlet for devel
 %post devel
 if [ "$RPM_INSTALL_PREFIX1" != %{prefix1} -o "$RPM_INSTALL_PREFIX0" != %{prefix0} ]; then
-  echo This installation is relocated, so warnings about the \"opencpi\" user and group not existing can be ignored.
-  echo The user and group IDs of all files will be set to the login user and group.
+  echo This installation is relocated, so warnings about the \"opencpi\" user and group not existing can be ignored. >&2
+  echo The user and group IDs of all files will be set to the login user and group. >&2
 fi
 %if !%{RPM_CROSS}
   # We need to relocate all the global files that point to other global files.
@@ -339,7 +339,7 @@ fi
 [ "$RPM_INSTALL_PREFIX1" != %{prefix1} -o "$RPM_INSTALL_PREFIX0" != %{prefix0} ] && {
   user=`logname`
   group=`eval stat --format=%G ~$user`
-  echo USER: $user GROUP: $group
+  # echo USER: $user GROUP: $group
   chown -R $user $RPM_INSTALL_PREFIX0 $RPM_INSTALL_PREFIX1
   chgrp -R $group $RPM_INSTALL_PREFIX0 $RPM_INSTALL_PREFIX1
 } || :

@@ -79,6 +79,7 @@ done | sort -u |
   # These are nicer in the spec file, but this suppresses the warnings.  A tradeoff.
   # These files will only be present for dev platforms
   sed \
+    -e 's=%{prefix0}/cdk/udev-rules/.*\.rules$=%attr(644,root,root) &=' \
     -e 's=%{prefix0}/cdk/env/rpm_cdk.sh$=%attr(755,root,root) &=' \
     -e 's=%{prefix0}/cdk/env.d$=%attr(755,root,root) %config(noreplace) &=' \
     -e 's=%{prefix0}/cdk/env.d/.*\.sh\.example$=%attr(644,root,root) &=' \

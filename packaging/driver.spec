@@ -73,7 +73,7 @@ echo %%{prefix1}/opencpi-driver-check >> %{_builddir}/driver-files
 %pretrans
 # Check if the driver is currently loaded/running
 if [ -n "$(lsmod | grep opencpi | grep -v ' 0')" ]; then
-  echo ERROR: Cannot install or upgrade driver RPM until the current driver is no longer in use.
+  echo ERROR: Cannot install or upgrade driver RPM until the current driver is no longer in use. >&2
   exit 1
 fi
 
@@ -86,9 +86,9 @@ if [ -n "%{dist}" ]; then
   if [ -n "${PKG_VER}" -a -n "${THIS_VER}" ]; then
     if [ ${PKG_VER} -ne ${THIS_VER} ]; then
       for i in `seq 20`; do echo ""; done
-      echo "WARNING: This RPM is for CentOS${PKG_VER}, but you seem to be running CentOS${THIS_VER}"
-      echo "You might want to uninstall these RPMs immediately and get the CentOS${THIS_VER} version."
-      for i in `seq 5`; do echo ""; done
+      echo "WARNING: This RPM is for CentOS${PKG_VER}, but you seem to be running CentOS${THIS_VER}" >&2
+      echo "You might want to uninstall these RPMs immediately and get the CentOS${THIS_VER} version." >&2
+      for i in `seq 5`; do echo "" >&2; done
     fi
   fi
 fi
