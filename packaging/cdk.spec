@@ -114,7 +114,7 @@ done
   dir=profile.d file=opencpi.sh
   %{__mkdir_p} %{buildroot}%{prefix1}/$dir
   %{__ln_s} -f %{prefix0}/cdk/env/rpm_cdk.sh %{buildroot}%{prefix1}/$dir/$file
-  echo "%%attr(644,root,root,-)" %%{prefix1}/$dir/$file >> %{_builddir}/runtime-files
+  echo "%%attr(644,root,root)" %%{prefix1}/$dir/$file >> %{_builddir}/runtime-files
 
   # 3. Enable bash completion of our commands by dropping a script into a directory that
   #    is used when interactive bash scripts startup.  Only for the devel package.
@@ -127,7 +127,7 @@ done
   dir=udev/rules.d file=51-opencpi-usbblaster.rules
   %{__mkdir_p} %{buildroot}%{prefix1}/$dir
   %{__ln_s} -f %{prefix0}/udev-rules/$file %{buildroot}%{prefix1}/$dir
-  echo "%%attr(644,root,root,-)" %%{prefix1}/$dir/$file >> %{_builddir}/runtime-files
+  echo "%%attr(644,root,root)" %%{prefix1}/$dir/$file >> %{_builddir}/runtime-files
 
   # A very special case that will go away at some point
   cp releng/projects/new_project_source %{buildroot}%{prefix0}/projects
