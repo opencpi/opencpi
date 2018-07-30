@@ -109,7 +109,7 @@ getent passwd opencpi >/dev/null || \
 # SELinux fixes (not sure if actually needed)
 chcon system_u:object_r:initrc_exec_t:s0 %{prefix1}/opencpi-driver-check || :
 chcon -h system_u:object_r:initrc_exec_t:s0 %{prefix1}/opencpi-driver-check || :
-rm -rf %{prefix0}/`uname -r` 2>/dev/null || :
+rm -rf %{prefix0}/driver/`uname -r` 2>/dev/null || :
 %{prefix1}/opencpi-driver-check start || :
 touch /tmp/opencpi_driver_just_installed
 
