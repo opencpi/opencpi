@@ -44,8 +44,6 @@ PKGS_R+=(util-linux coreutils ed findutils sudo initscripts)
 PKGS_R+=(libusb-devel)
 #    for bitstream manipulation at least
 PKGS_R+=(unzip)
-#    for python and swig testing
-PKGS_R+=(python)
 
 ##########################################################################################
 # D. yum-installed and rpm-required for devel (when users are doing their development).
@@ -60,7 +58,7 @@ PKGS_D+=(time)
 #    for various project testing scripts - to allow users to use python2 - (we migrate to 3)
 #    -- (AV-1261, AV-1299): still python 2 or just for users?
 #    -- note that we also need python3 but that is from epel - below in $#4
-PKGS_D+=(python-matplotlib scipy numpy)
+PKGS_D+=(python python-matplotlib scipy numpy)
 #    for building init root file systems for embedded systems (enabled in devel?)
 PKGS_D+=(fakeroot)
 #    enable other packages in the epel repo, some required for devel (e.g. python34)
@@ -71,8 +69,8 @@ PKGS_D+=(glibc.i686=/lib/ld-linux.so.2
          # This must be here to be sure libgcc.x86_64 stays in sync with libgcc.i686
          libgcc
          libgcc.i686=/lib/libgcc_s.so.1
-         redhat-lsb-core.i686=/usr/lib/ld-lsb.so.3
-         ncurses-libs.i686=/usr/lib/libncurses.so.5
+         redhat-lsb-core.i686=/lib/ld-lsb.so.3
+         ncurses-libs.i686=/lib/libncurses.so.5
          libXft.i686=/usr/lib/libXft.so.2
          libXext.i686=/usr/lib/libXext.so.6)
 # docker container missing this	libXdmcp.i686=/lib/libXdmcp.so.6) # AV-3645
@@ -116,6 +114,7 @@ function ypkgs {
 }
 # The list for RPMs: first line
 [ "$1" = list ] && rpkgs PKGS_R && rpkgs PKGS_D && rpkgs PKGS_S && rpkgs PKGS_E && exit 0
+[ "$1" = yumlist ] && ypkgs PKGS_R && ypkgs PKGS_D && ypkgs PKGS_S && ypkgs PKGS_E && exit 0
 sudo yum -y install $(ypkgs PKGS_R) $(ypkgs PKGS_D) $(ypkgs PKGS_S)
 # Now those that depend on epel, e.g.
 sudo yum -y install $(ypkgs PKGS_E)

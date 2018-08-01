@@ -65,6 +65,8 @@
 # You can give an optional "-v" argument to get it to be verbose.
 ocpi_name=opencpi-setup.sh
 ocpi_me=$BASH_SOURCE
+# The egrep of the beginning of variables to clean out, e.g. derived rather than user specified
+ocpi_cleaned="OCPI_(PREREQUISITES_DIR|TARGET_|TOOL_|CDK_|ROOT_)"
 [ -z "$BASH_VERSION" -o -z "$ocpi_me" ] && {
   echo Error:  You can only use the $ocpi_name script with the bash shell. >&2
   return 1
@@ -141,7 +143,7 @@ done
     }
   }
   [ -n "$ocpi_verbose" ] && echo Unsetting all OpenCPI environment variables.
-  for ocpi_v in $(env | egrep '^OCPI_(PREREQUISITES|TARGET|TOOL|CDK|ROOT)_' | sort | cut -f1 -d=)
+  for ocpi_v in $(env | egrep "^$ocpi_cleaned" | sort | cut -f1 -d=)
   do
     unset $ocpi_v
   done
@@ -177,7 +179,7 @@ done
   }
   [ -n "$ocpi_verbose" ] &&
       echo Clearing all OpenCPI environment variables before setting anything >&2
-  for ocpi_v in $(env | egrep '^OCPI_(PREREQUISITES|TARGET|TOOL|CDK|ROOT)_' | sort | cut -f1 -d=)
+  for ocpi_v in $(env | egrep "^$ocpi_cleaned" | sort | cut -f1 -d=)
   do
     unset $ocpi_v
   done

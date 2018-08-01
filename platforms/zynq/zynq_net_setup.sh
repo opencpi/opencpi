@@ -36,7 +36,8 @@ else
   echo Setting the time from time server: $4
   rdate $4
   # Tell the kernel to make fake 32 bit inodes when 64 nodes come from the NFS server
-  echo N > /sys/module/nfs/parameters/enable_ino64
+  # This may change for 64 bit zynqs
+  echo 0 > /sys/module/nfs/parameters/enable_ino64
   # Mount the opencpi development system as an NFS server, onto /mnt/net
   mount -t nfs -o udp,nolock,soft,intr $1:$2 /mnt/net
   # Make sure the hostname is in the host table

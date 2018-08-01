@@ -280,18 +280,18 @@ fi
 if [ "$RPM_INSTALL_PREFIX1" = %{prefix1} -a "$RPM_INSTALL_PREFIX0" = %{prefix0} ]; then
   : || /sbin/ldconfig # not enabled until we sort out dynamic libraries
 else
-  cat <<-EOF
+  cat <<-EOF >&2
 	The OpenCPI installation being removed was relocated.
 	The %{prefix0} directory was relocated to $RPM_INSTALL_PREFIX0
 	The %{prefix1} directory was relocated to $RPM_INSTALL_PREFIX1
 	While in a global installation the %{prefix1} directory would not be removed,
-	in this relocated installation $RPM_INSTALL_PREFIX1 will be removed.
+	in this relocated installation $RPM_INSTALL_PREFIX1 will be removed if empty.
 	EOF
   owner=`stat --format=%U $RPM_INSTALL_PREFIX1`
   if [ -z "$owner" -o "$owner" = root -o "$owner" = opencpi ]; then
     echo Owner of $RPM_INSTALL_PREFIX1 is \"$owner\".  It is not being deleted. >&2
   else
-    rm -r -f $RPM_INSTALL_PREFIX1
+    rmdir $RPM_INSTALL_PREFIX1 || :
   fi
 fi
 ##########################################################################################
@@ -302,7 +302,7 @@ prefixes=(`rpm -q --qf '[%{INSTPREFIXES}\n]' opencpi`)
 if [ -n "${prefixes[0]}" -a -n "${prefixes[1]}" -a "${prefixes[0]}" != package -a \( \
      "${prefixes[0]}" != "$RPM_INSTALL_PREFIX0" -o \
      "${prefixes[1]}" != "$RPM_INSTALL_PREFIX1" \) ]; then
-   cat <<-EOF
+   cat <<-EOF >&2
 	The pre-existing OpenCPI runtime installation was relocated differently than is specified
 	for this opencpi-devel package installation, which is not allowed.
 	The existing runtime installation has:

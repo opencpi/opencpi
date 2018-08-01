@@ -18,7 +18,7 @@
 
 ################################################################################################
 # Set up the prereq install and build directories.
-# This file is sourced either from install-prerequisites.sh or setup-install.sh
+# This file is sourced either from install-prerequisites.sh or setup-prerequisite.sh
 [ -z "$OCPI_PREREQUISITES_INSTALL_DIR" ] &&
     export OCPI_PREREQUISITES_INSTALL_DIR=$OCPI_PREREQUISITES_DIR
 [ -z "$OCPI_PREREQUISITES_BUILD_DIR" ] && {
