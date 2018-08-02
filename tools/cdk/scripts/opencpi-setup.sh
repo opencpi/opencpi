@@ -66,7 +66,7 @@
 ocpi_name=opencpi-setup.sh
 ocpi_me=$BASH_SOURCE
 # The egrep of the beginning of variables to clean out, e.g. derived rather than user specified
-ocpi_cleaned="OCPI_(PREREQUISITES_DIR|TARGET_|TOOL_|CDK_|ROOT_)"
+ocpi_cleaned_vars="OCPI_(PREREQUISITES_DIR|TARGET_|TOOL_|CDK_|ROOT_)"
 [ -z "$BASH_VERSION" -o -z "$ocpi_me" ] && {
   echo Error:  You can only use the $ocpi_name script with the bash shell. >&2
   return 1
@@ -123,7 +123,7 @@ while [ -n "$ocpi_options" ] ; do
     -e|--ensure) ocpi_ensure=1;;
     -|-s|--set);; # perhaps the single required variable
     *)
-      echo Unknown option \"$options\" when sourcing the $ocpi_name file. >&2
+      echo Unknown option \"$ocpi_options\" when sourcing the $ocpi_name file. Try --help. >&2
       return 1;;
   esac
   unset ocpi_options[0]
@@ -136,14 +136,15 @@ done
       [ -n "$ocpi_verbose" ] && echo Removing OpenCPI bin directory from PATH.
       PATH="$ocpi_cleaned"
     }
-    ocpi_cleaned=$(echo "$PYTHONPATH" | sed "s=$OCPI_CDK_DIR/[^:/]*/lib[^:]*:==g")
+    # Note we might be the only thing in this path, with no colon
+    ocpi_cleaned=$(echo "$PYTHONPATH" | sed "s=$OCPI_CDK_DIR/[^:/]*/lib[^:]*:*==g")
     [ "$ocpi_cleaned" != "$PYTHONPATH" ] && {
       [ -n "$ocpi_verbose" ] && echo Removing OpenCPI lib directory from PYTHONPATH.
       PYTHONPATH="$ocpi_cleaned"
     }
   }
   [ -n "$ocpi_verbose" ] && echo Unsetting all OpenCPI environment variables.
-  for ocpi_v in $(env | egrep "^$ocpi_cleaned" | sort | cut -f1 -d=)
+  for ocpi_v in $(env | egrep "^$ocpi_cleaned_vars" | sort | cut -f1 -d=)
   do
     unset $ocpi_v
   done
@@ -179,7 +180,7 @@ done
   }
   [ -n "$ocpi_verbose" ] &&
       echo Clearing all OpenCPI environment variables before setting anything >&2
-  for ocpi_v in $(env | egrep "^$ocpi_cleaned" | sort | cut -f1 -d=)
+  for ocpi_v in $(env | egrep "^$ocpi_cleaned_vars" | sort | cut -f1 -d=)
   do
     unset $ocpi_v
   done
@@ -254,9 +255,9 @@ fi
 ocpi_cleaned=$(echo "$PATH" | sed "s=$OCPI_CDK_DIR/[^:/]*/bin[^:]*:==g")
 [ -n "$ocpi_verbose" -a "$PATH" != "$ocpi_cleaned" ] && echo Removing OpenCPI bin directory from PATH >&2
 export PATH="$OCPI_CDK_DIR/$OCPI_TOOL_DIR/bin:$ocpi_cleaned"
-ocpi_cleaned=$(echo "$PYTHONPATH" | sed "s=$OCPI_CDK_DIR/[^:/]*/lib[^:]*:==g")
+ocpi_cleaned=$(echo "$PYTHONPATH" | sed "s=$OCPI_CDK_DIR/[^:/]*/lib[^:]*:*==g")
 [ -n "$ocpi_verbose" -a "$PYTHONPATH" != "$ocpi_cleaned" ] && echo Removing OpenCPI lib directory from PYTHONPATH >&2
-export PYTHONPATH="$OCPI_CDK_DIR/$OCPI_TOOL_DIR/lib:$ocpi_cleaned"
+export PYTHONPATH="$OCPI_CDK_DIR/$OCPI_TOOL_DIR/lib${ocpi_cleaned:+:}$ocpi_cleaned"
 ocpi_comp=$OCPI_CDK_DIR/scripts/ocpidev_bash_complete
 [ -f $ocpi_comp ] && source $ocpi_comp
 [ "$ocpi_verbose" = 1 ] && cat <<-EOF >&2

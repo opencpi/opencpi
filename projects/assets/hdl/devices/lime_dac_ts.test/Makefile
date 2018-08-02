@@ -65,8 +65,8 @@ export CONTAINERS RCC_CONTAINERS ML605_CONTAINERS ALST4_CONTAINERS ISIM_CONTAINE
 # Work with "ocpidev run":
 run: all tests
 ifeq ($(ISIM_CONTAINERS)$(MODELSIM_CONTAINERS)$(XSIM_CONTAINERS),000)
-	@echo "No simulators were found!"
-	@false
+	@echo "No simulators were found! No tests were run."
+	@true
 endif
 
 runtest tests:
