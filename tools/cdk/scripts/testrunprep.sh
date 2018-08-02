@@ -38,6 +38,10 @@ mkdir -p run
 ToolsDir=$OCPI_CDK_DIR/$OCPI_TOOL_DIR/bin
 echo 'Probing for available local platforms:'
 localplatforms=(`$ToolsDir/ocpirun -C --only-platforms`)
+if [ -z "${localplatforms[0]}" ]; then
+  echo 'No local platforms found! Assuming something very bad happened and aborting.'
+  exit 1
+fi
 echo '  Local platforms are: '${localplatforms[@]}
 # TODO use testutil.sh to parse
 if [ -n "${OCPI_REMOTE_TEST_SYSTEMS}" ]; then

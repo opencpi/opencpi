@@ -110,6 +110,10 @@ esac
 EOF
   return 1
 }
+
+# Guard against somebody sourcing us with nullglob set (otherwise "unset ocpi_options[0]" could be blank below)
+if shopt -q nullglob; then echo 'Note: Turning off nullglob; was active!'; shopt -u nullglob; fi
+
 ocpi_dynamic= ocpi_optimized= ocpi_reset= ocpi_verbose= ocpi_clean= ocpi_list= ocpi_ensure=
 ocpi_options=($*)
 while [ -n "$ocpi_options" ] ; do
