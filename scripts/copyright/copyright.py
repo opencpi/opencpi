@@ -197,6 +197,7 @@ bad_paths = (
     '/xilinx-zynq-binary-release-',
 )
 bad_path_globs = (
+    '*/idata/*',  # Unit test data source
     '*/MANIFEST.MF',  # Java packaging
     '*/package-name',
     '*/package-id',

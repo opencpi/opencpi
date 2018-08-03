@@ -64,6 +64,14 @@ extended=$(if [ `uname -s` = Darwin ]; then echo -E .; else echo . -regextype po
 #  - avoids looking at ./exports/
 #  - consolidate files that are hard or soft linked into single (first in inode sort order) file
 #  - following links so that patterns can match against the link path
+
+function warn_check { 
+  local arg=$1
+  if [ -n "$verbose" ]; then 
+    echo $arg 
+  fi
+}
+
 function match_pattern {
   local arg=$1
   if [[ $arg == \|* ]]; then
@@ -272,7 +280,7 @@ for a in $assets; do
 	      [ "$model" != hdl ] && bad \"$arg\" only supported for HDL model
 	      all=`topdirs $model/$arg "hdl/hdl-(core|library|lib)"`
 	      if [ -z "$all" ]; then
-		  echo Warning:  cannot export $model $arg since none exist
+		  warn_check "Warning:  cannot export $model $arg since none exist" 
 	      else
 		  eval ${model}_$arg=\(${all[*]}\)
 	      fi;;
@@ -285,13 +293,13 @@ for a in $assets; do
 		      allrcc=`topdirs rcc/platforms`;;
 	      esac
 	      if [ -z "$allrcc$allhdl" ]; then
-		  echo Warning:  cannot export ${model}${model+ }platforms since none exist.
+		  warn_check "Warning:  cannot export ${model}${model+ }platforms since none exist."
 	      else
 		  [ -n "$allrcc" ] && {
 		      for p in $allrcc; do
 			  warn=`checkfiles rcc/platforms/$p target '$f-target.mk'`
 			  if [ -n "$warn" ]; then
-			      echo Warning:  cannot export RCC platform $p: $warn
+			      warn_check "Warning:  cannot export RCC platform $p: $warn"
 			  else
 			      rcc_platforms+=($p)
 			  fi
@@ -301,7 +309,7 @@ for a in $assets; do
 		      for p in $allhdl; do
 			  warn=`checkfiles hdl/platforms/$p Makefile '$f.mk'`
 			  if [ -n "$warn" ]; then
-			      echo Warning:  cannot export HDL platform $p: $warn
+			      warn_check "Warning:  cannot export HDL platform $p: $warn"
 			  else
 			      hdl_platforms+=($p)
 			  fi
@@ -344,7 +352,7 @@ for a in $assets; do
 		  if [ -d specs ]; then
 		      specs+=(`shopt -s nullglob; for i in specs/*.xml specs/package-id; do [ -f $i ] && echo $(basename $i); done`)
 		  else
-		      [ -n "$allrequested" ] || echo Warning:  cannot export specs since no specs exist in this project.
+		      [ -n "$allrequested" ] || warn_check "Warning:  cannot export specs since no specs exist in this project."
 		  fi
 	      else
 		  noun=specs

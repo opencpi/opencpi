@@ -62,39 +62,35 @@ OcpiAlteraLabToolsDirFromEnv=$(strip \
   $(or $(and $(filter pro,$1),$(OCPI_ALTERA_PRO_LAB_TOOLS_DIR)),\
       $(OCPI_ALTERA_LAB_TOOLS_DIR)))
 
-# If Intel eventually decides that _pro is only for PRO, we might want this:
-#OcpiAlteraDefaultDirs=$(strip \
-  $(and $(filter pro,$1),\
-    $(wildcard ~/intelFPGA_pro) \
-    $(wildcard /opt/intelFPGA_pro) )\
-  $(wildcard ~/intelFPGA) \
-  $(wildcard /opt/intelFPGA) \
-  $(wildcard ~/altera) \
-  $(wildcard /opt/Altera))
-
 # The default during installation is sometimes in the home directory
 # If OCPI_ALTERA_DIR is set, just use that.
 # If version is set, check each possible location for the corresponding version.
 # If version is not set, just return whichever default location exists.
-OcpiAlteraDir=$(strip \
+# Locations to check:
+#   Check ~/intelFPGA_pro and /opt/intelFPGA_pro first if arg2=pro, intelFPGA first if not
+#   Check ~/altera and /opt/Altera next
+#   Use the first one found (hence "firstword")
+OcpiAlteraDir=$(strip $(firstword \
   $(foreach t,$(or $(call OcpiAlteraDirFromEnv,$2),\
                    $(foreach v,$(call OcpiAlteraVersionFromEnv,$2),\
                      $(firstword \
-                       $(foreach d,$(wildcard ~/intelFPGA_pro) \
-                                   $(wildcard /opt/intelFPGA_pro) \
-                                   $(wildcard ~/intelFPGA) \
-                                   $(wildcard /opt/intelFPGA) \
+                       $(foreach d,$(if $(filter pro,$2),\
+		                     $(wildcard ~/intelFPGA_pro) \
+                                     $(wildcard /opt/intelFPGA_pro) ,\
+                                     $(wildcard ~/intelFPGA) \
+                                     $(wildcard /opt/intelFPGA)) \
                                    $(wildcard ~/altera) \
                                    $(wildcard /opt/Altera),\
                          $(and $(wildcard $d/$v),$d)))),\
-                   $(or $(wildcard ~/intelFPGA_pro) \
-                        $(wildcard /opt/intelFPGA_pro) \
-                        $(wildcard ~/intelFPGA) \
-                        $(wildcard /opt/intelFPGA) \
+                   $(or $(if $(filter pro,$2),\
+		          $(wildcard ~/intelFPGA_pro) \
+                          $(wildcard /opt/intelFPGA_pro) ,\
+                          $(wildcard ~/intelFPGA) \
+                          $(wildcard /opt/intelFPGA)) \
                         $(wildcard ~/altera) \
                         $(wildcard /opt/Altera))),$(infox TT is $t)\
     $(if $(shell test -d $t && echo 1),$t,\
-      $(call $(or $1,error), Directory "$t" for OCPI_ALTERA_DIR (or OCPI_ALTERA_PRO_DIR) not found))))
+      $(call $(or $1,error), Directory "$t" for OCPI_ALTERA_DIR (or OCPI_ALTERA_PRO_DIR) not found)))))
 
 # the license file can be either:
 # - an absolute path (which can contain @ or :)
@@ -163,9 +159,10 @@ $(if $(call OcpiAlteraKitsDirFromEnv,$2),\
     $(or $(shell test -d $t/kits && echo $t/kits),\
       $(call $(or $1,error), Directory "$t/kits", the default for OCPI_ALTERA_KITS_DIR, not found)))))
 
-# These functions accept 6 arguments
+# These functions accept 7 arguments
 # Arg5: is this quartus pro? if so this should be set to "pro"
 # Arg6: should the --64bit arg be omitted? If so, this should be set to no64
+# Arg7: subdirectory underneath TargetDir where output files are produced - generally left empty
 # The trick here is to filter the output and capture the exit code.
 # Note THIS REQUIRES BASH not just POSIX SH due to pipefail option
 DoAltera=(set -o pipefail; set +e; \
@@ -178,7 +175,7 @@ DoAltera=(set -o pipefail; set +e; \
            tail -1 $3-$4.out | tee x1 | tr -d \\\n | tee x2; \
            $(ECHO) -n ' at ' && date +%T ; \
          else \
-           $(ECHO)  $1: failed with status \$$ST \(see results in $(TargetDir)/$3-$4.out\); \
+           $(ECHO)  $1: failed with status \$$ST \(see results in $(TargetDir)$(and $7,/$7)/$3-$4.out\); \
          fi; \
          exit \$$ST)
 
@@ -192,7 +189,7 @@ DoAltera1=(set -o pipefail; set +e; \
            tail -1 $3-$4.out | tee x1 | tr -d \\\n | tee x2; \
            $(ECHO) -n ' at ' && date +%T ; \
          else \
-           $(ECHO)  $1: failed with status $$$ST \(see results in $(TargetDir)/$3-$4.out\); \
+           $(ECHO)  $1: failed with status $$$ST \(see results in $(TargetDir)$(and $7,/$7)/$3-$4.out\); \
          fi; \
          exit $$$$ST)
 

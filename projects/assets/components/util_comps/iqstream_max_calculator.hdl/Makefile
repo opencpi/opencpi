@@ -16,19 +16,5 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-# This is the util_comps library
-
-Tests = \
-	advanced_pattern.test \
-	agc_real.test \
-	fifo.test \
-	file_write_demux.test \
-	socket_write.test \
-	timestamper.test \
-	zero_padding.test \
-	zero_pad.test
-
-# All workers created here will be built automatically
-# If you want to limit the workers that actually get built, set the Workers= variable
-
-include $(OCPI_CDK_DIR)/include/library.mk
+# This is the Makefile for worker iqstream_max_calculator.hdl
+include $(OCPI_CDK_DIR)/include/worker.mk

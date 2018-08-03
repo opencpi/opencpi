@@ -37,6 +37,7 @@ import ocpiutil
 import re
 import json
 import sys
+import shutil
 
 class AssetFactory():
     """
@@ -189,6 +190,18 @@ class Asset(metaclass=ABCMeta):
             raise ocpiutil.OCPIException("Tried creating a " + dirtype + " in invalid directory " +
                                          "type: " +  str(ocpiutil.get_dirtype(directory)) +
                                          " in directory: " + directory)
+    #@abstractmethod
+    def delete(self, force=False):
+        """
+        Remove the Asset from disk.  Any additional cleanup on a per asset basis can be done in
+        the child implementations of this function
+        """
+        if not force:
+            prompt = ("removing " + ocpiutil.get_dirtype(self.directory) + " at directory: " +
+                     self.directory)
+            force = ocpiutil.get_ok(prompt)
+        if force:
+            shutil.rmtree(self.directory)
 
 class BuildableAsset(Asset):
     """
@@ -446,6 +459,13 @@ class Library(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset):
             logging.debug("Library constructor creating Library Objects")
             for test_directory in self.get_valid_tests():
                 self.test_list.append(AssetFactory.factory("test", test_directory, **kwargs))
+        self.package_id = Library.get_package_id(self.directory)
+
+    @staticmethod
+    def get_package_id(dir='.'):
+        lib_vars = ocpiutil.set_vars_from_make(dir + "/Makefile",
+                                                 "ShellTestVars=1 showpackage", True)
+        return "".join(lib_vars['Package'])
 
     def get_valid_tests(self):
         """
@@ -503,6 +523,36 @@ class Registry(Asset):
             self.__projects[pid] = AssetFactory.factory("project", proj) if os.path.exists(proj) \
                                    else None
 
+    def contains(self, package_id=None, directory=None):
+        """
+        Given a project's package-ID or directory, determine if the project is present
+        in this registry.
+        """
+        # If neither package_id nor directory are provided, exception
+        if package_id is None:
+            if directory is None:
+                raise ocpiutil.OCPIException("Could determine whether project exists because " +
+                                             "the package_id and directory provided were both " +
+                                             "None.\nProvide one or both of these arguments.")
+            # Project's package-ID is determined from its directory if not provided
+            package_id = ocpiutil.get_project_package(directory)
+            if package_id is None:
+                raise ocpiutil.OCPIException("Could not determine package-ID of project located " +
+                                             "at \"" + directory + "\".\nDouble check this " +
+                                             "configurations.")
+
+        # If the project is registered here by package-ID, return True.
+        # If not, or if a different project is registered here with that pacakge-ID, return False
+        if package_id in self.__projects:
+            if (directory is not None and
+                os.path.realpath(directory) != self.__projects[package_id].directory):
+                logging.warning("Registry at \"" + self.directory + "\" contains a project with " +
+                                "package-ID \"" + package_id + "\", but it is not the same " +
+                                "project as \"" + directory + "\".")
+                return False
+            return True
+        return False
+
     def add(self, directory="."):
         """
         Given a project, get its package-ID, create the corresponding link in the project registry,
@@ -510,8 +560,9 @@ class Registry(Asset):
         If a project with the same package-ID already exists in the registry, fail.
         """
         if not ocpiutil.is_path_in_project(directory):
-            raise ocpiutil.OCPIException("Failure to register project. Directory \"" + directory +
-                                         "\" is not in a project.")
+            raise ocpiutil.OCPIException("Failure to register project:  \"" + directory +
+                                         "\" in location: " + os.getcwd() + "is not in a " +
+                                         "project or doesn't exist.")
 
         project = AssetFactory.factory("project", directory)
         pid = project.package_id
@@ -564,7 +615,7 @@ class Registry(Asset):
             raise ocpiutil.OCPIException("Could not unregister project with package-ID \"" +
                                          package_id + "\" because the project is not in the " +
                                          "registry.\n Run 'ocpidev show registry --table' for " +
-                                         "information about the currently registered projects.")
+                                         "information about the currently registered projects.\n" )
 
         project_link = self.__projects[package_id].directory
         if directory is not None and os.path.realpath(directory) != project_link:
@@ -620,6 +671,15 @@ class Registry(Asset):
                                          "(un)register projects in " +
                                          "/opt/opencpi/project-registry, you need to be a " +
                                          "member of the opencpi group.")
+
+    def get_project(self, package_id):
+        """
+        Return the project with the specified package-id that is registered in this registry
+        """
+        if package_id not in self.__projects:
+            raise ocpiutil.OCPIException("\"" + package_id + "\" is not a valid package-id or " +
+                                         "project directory")
+        return self.__projects[package_id]
 
     @staticmethod
     def get_default_registry_dir():
@@ -697,18 +757,18 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
         self.__registry = None
 
         # flag to determine if a project is exported
-        # __is_exported is set to true in set_package_id() if this is a non-source exported project
+        # __is_exported is set to true in __init_package_id() if this is a non-source exported 
+        # project
         self.__is_exported = False
         # Determine the package-ID for this project and set self.package_id
-        self.set_package_id()
-        if not self.__is_exported:
-            # make sure the imports link exists for this project
-            self.initialize_registry_link()
+        self.__init_package_id()
 
+        # NOTE: imports link to registry is NOT initialized in this constructor.
+        #       Neither is the __registry Registry object.
         if kwargs.get("init_libs", False) is True:
             self.lib_list = []
             logging.debug("Project constructor creating Library Objects")
-            for lib_directory in self.get_valid_libaries():
+            for lib_directory in self.get_valid_libraries():
                 self.lib_list.append(AssetFactory.factory("library", lib_directory,  **kwargs))
 
         if kwargs.get("init_apps", False) is True:
@@ -725,7 +785,20 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
         # them in the Asset constructor
         return other is not None and \
                 os.path.realpath(self.directory) == os.path.realpath(other.directory)
-    def set_package_id(self):
+
+    def delete(self, force=False):
+        """
+        Remove the project from the registry if it is registered anywhere and remove the project 
+        from disk
+        """
+        try:
+            self.registry().remove(package_id=self.package_id)
+        except ocpiutil.OCPIException as ex:
+            # do nothing it's ok if the unregistering fails
+            pass
+        super().delete(force)
+
+    def __init_package_id(self):
         """
         Get the Package Name of the project containing 'self.directory'.
         """
@@ -762,7 +835,7 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
         """
         return ocpiutil.get_subdirs_of_type("applications", self.directory)
 
-    def get_valid_libaries(self):
+    def get_valid_libraries(self):
         """
         Gets a list of all directories of type library in the project and puts that
         library directory and the basename of that directory into a dictionary to return
@@ -796,6 +869,85 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
         """
         raise NotImplementedError("Project.build() is not implemented")
 
+    def show_tests(self, **kwargs):
+        if self.lib_list is None:
+            raise ocpiutil.OCPIException("For a Project to show tests \"init_libs\" "
+                                         "must be set to True when the object is constructed")
+
+        if not kwargs.get("json", False):
+            for lib in self.lib_list:
+                valid_tests = lib.get_valid_tests()
+                if  valid_tests:
+                    print("Library: " + lib.directory)
+                for test_dir in valid_tests:
+                    print("    Test: " + os.path.basename(test_dir.rstrip('/')))
+        else:
+            '''
+            JSON format:
+            {project:{
+              name: proj_name
+              directory: proj_directory
+              libraries:{
+                lib_name:{
+                  name: lib_name
+                  directory:lib_directory
+                  tests:{
+                    test_name : test_directory
+                    ...
+                  }
+                }
+              }
+            }
+            '''
+            json_dict = {}
+            project_dict = {}
+            libraries_dict = {}
+            for lib in self.lib_list:
+                valid_tests = lib.get_valid_tests()
+                if  valid_tests:
+                    lib_dict = {}
+                    lib_package = lib.package_id
+                    lib_dict["package"] = lib_package
+                    lib_dict["directory"] = lib.directory
+                    lib_dict["tests"] = {os.path.basename(test.rstrip('/')):test
+                                         for test in valid_tests}
+                    libraries_dict[lib_package] = lib_dict
+            project_vars = ocpiutil.set_vars_from_make(self.directory + "/Makefile",
+                                                   "projectdeps ShellProjectVars=1",
+                                                   "verbose")
+            project_dict["dependencies"] = project_vars['ProjectDependencies']
+            project_dict["directory"] = self.directory
+            project_dict["libraries"] = libraries_dict
+            project_dict["package"] = self.package_id
+            json_dict["project"] = project_dict
+            json.dump(json_dict, sys.stdout)
+            print()
+
+    def show_libraries(self, **kwargs):
+        if not kwargs.get("json", False):
+            for lib_directory in self.get_valid_libraries():
+                print("Library: " + lib_directory)
+        else:
+            json_dict = {}
+            project_dict = {}
+            libraries_dict = {}
+            for lib_directory in self.get_valid_libraries():
+                lib_dict = {}
+                lib_package = Library.get_package_id(lib_directory)
+                lib_dict["package"] = lib_package
+                lib_dict["directory"] = lib_directory
+                libraries_dict[lib_package] = lib_dict
+            project_vars = ocpiutil.set_vars_from_make(self.directory + "/Makefile",
+                                                   "projectdeps ShellProjectVars=1",
+                                                   "verbose")
+            project_dict["dependencies"] = project_vars['ProjectDependencies']
+            project_dict["directory"] = self.directory
+            project_dict["libraries"] = libraries_dict
+            project_dict["package"] = self.package_id
+            json_dict["project"] = project_dict
+            json.dump(json_dict, sys.stdout)
+            print()
+
     def show(self, **kwargs):
         """
         This method prints out information about the project based on the options passed in as
@@ -808,51 +960,85 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
         """
 
         if kwargs.get("tests", False):
-            if self.lib_list is None:
-                raise ocpiutil.OCPIException("For a Project to show tests \"init_libs\" "
-                                             "must be set to True when the object is constructed")
-
+            self.show_tests(**kwargs)
+        elif kwargs.get("libraries", False):
+            self.show_libraries(**kwargs)
+        elif not kwargs.get("verbose", False):
+            project_vars = ocpiutil.set_vars_from_make(self.directory + "/Makefile",
+                                                   "projectdeps ShellProjectVars=1",
+                                                   "verbose")
             if not kwargs.get("json", False):
+                print ("Project Directory: " + self.directory)
+                print ("Project Package: " + self.package_id)
+                print ("Project Dependencies: " + ", ".join(project_vars['ProjectDependencies']))
+            else:
+                json_dict = {'project': {'directory': self.directory,
+                                         'package': self.package_id,
+                                         'dependencies': project_vars['ProjectDependencies']}}
+                json.dump(json_dict, sys.stdout)
+                print()
+        else:
+            if self.lib_list is None:
+                raise ocpiutil.OCPIException("For a Project to show verbosely \"init_libs\" "
+                                             "must be set to True when the object is constructed")
+            if not kwargs.get("json", False):
+                project_vars = ocpiutil.set_vars_from_make(self.directory + "/Makefile",
+                                                   "projectdeps ShellProjectVars=1",
+                                                   "verbose")
+                print ("Project Directory: " + self.directory)
+                print ("Project Package: " + self.package_id)
+                print ("Project Dependencies: " + ", ".join(project_vars['ProjectDependencies']))
+                # this will likely change when we have more to show under libraries but for now 
+                # all we have is tests
+                prim_dir = self.directory + "/hdl/primitives"
+                if os.path.isdir(prim_dir):
+                    print("  HDL Primitives: " + prim_dir)
+                    prims = [dir for dir in os.listdir(prim_dir)
+                            if not os.path.isfile(os.path.join(prim_dir, dir))]
+                    prims = [x for x in prims if x != "lib"]
+                    for prim in prims:
+                        print ("    Primitive: " + prim)
                 for lib in self.lib_list:
+                    print("  Library: " + lib.directory)
                     valid_tests = lib.get_valid_tests()
-                    if  valid_tests:
-                        print("Library: " + lib.directory)
                     for test_dir in valid_tests:
                         print("    Test: " + os.path.basename(test_dir.rstrip('/')))
             else:
-                '''
-                JSON format:
-                {project:{
-                  name: proj_name
-                  directory: proj_directory
-                  libraries:{
-                    lib_name:{
-                      name: lib_name
-                      directory:lib_directory
-                      tests:{
-                        test_name : test_directory
-                        ...
-                      }
-                    }
-                  }
-                }
-                '''
                 json_dict = {}
                 project_dict = {}
                 libraries_dict = {}
                 for lib in self.lib_list:
+                    lib_dict = {}
+                    lib_package = lib.package_id
+                    lib_dict["package"] = lib_package
+                    lib_dict["directory"] = lib.directory
                     valid_tests = lib.get_valid_tests()
                     if  valid_tests:
-                        lib_dict = {}
-                        lib_dict["name"] = lib.name
-                        lib_dict["directory"] = lib.directory
                         lib_dict["tests"] = {os.path.basename(test.rstrip('/')):test
                                              for test in valid_tests}
-                        libraries_dict[lib.name] = lib_dict
-
-                project_dict["name"] = self.name
+                    libraries_dict[lib_package] = lib_dict
+                prim_dir = self.directory + "/hdl/primitives"
+                print (prim_dir)
+                if os.path.isdir(prim_dir):
+                    prims_dict = {}
+                    prims = [dir for dir in os.listdir(prim_dir)
+                            if not os.path.isfile(os.path.join(prim_dir, dir))]
+                    prims = [x for x in prims if x != "lib"]
+                    print (prims)
+                    #TODO remove lib
+                    prim_vars = ocpiutil.set_vars_from_make(prim_dir + "/Makefile",
+                                                            "ShellTestVars=1 showpackage")
+                    prim_pkg = "".join(prim_vars['Package'])
+                    for prim in prims:
+                        prims_dict[prim] = prim_dir + "/" + prim
+                    project_dict["primatives"] = prims_dict
+                project_vars = ocpiutil.set_vars_from_make(self.directory + "/Makefile",
+                                                       "projectdeps ShellProjectVars=1",
+                                                       "verbose")
+                project_dict["dependencies"] = project_vars['ProjectDependencies']
                 project_dict["directory"] = self.directory
                 project_dict["libraries"] = libraries_dict
+                project_dict["package"] = self.package_id
                 json_dict["project"] = project_dict
                 json.dump(json_dict, sys.stdout)
                 print()
@@ -882,6 +1068,15 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
         if registry_path is None or registry_path == "":
             # Get the default project registry set by the environment state
             registry_path = Registry.get_default_registry_dir()
+        reg = self.registry()
+        # If we are about to set a new registry, and this project is registered in the current one,
+        # raise an exception; user needs to unregister the project first.
+        if ((os.path.realpath(reg.directory) != os.path.realpath(registry_path)) and
+            reg.contains(directory=self.directory)):
+            raise ocpiutil.OCPIException("Before (un)setting the registry for the project at \"" +
+                                         self.directory + "\", you must unregister the project.\n" +
+                                         "This can be done by running 'ocpidev unregister project" +
+                                         " " + self.package_id + "'.")
 
         #self.__registry = AssetFactory.factory("registry", registry_path)
         # TODO: pull this relative link functionality into a helper function
@@ -905,16 +1100,11 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
             # If it exists and IS NOT a link, tell the user to manually remove it.
             # If 'imports' exists and is a link, remove the link.
             if os.path.exists(imports_link) or os.path.islink(imports_link):
-                if not os.path.islink(imports_link):
-                    raise ocpiutil.OCPIException("The 'imports' for the current project ('" +
-                                                 imports_link + "') is not a symbolic link. " +
-                                                 "\nMove or remove this file and retry setting " +
-                                                 "the project registry.")
-                elif os.path.realpath(actual_registry_path) == os.path.realpath(imports_link):
+                if os.path.realpath(actual_registry_path) == os.path.realpath(imports_link):
                     # Imports already point to this registry
                     return
                 else:
-                    os.unlink(imports_link)
+                    self.unset_registry()
             # ln -s registry_path imports_link
             try:
                 os.symlink(rel_registry_path, imports_link)
@@ -944,14 +1134,14 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
         """
         # If the 'imports' link exists at the project-top, and it is a link, remove it.
         # If it is not a link, let the user remove it manually.
-        try:
-            reg = self.registry()
-            reg.remove(directory=self.directory)
-            logging.warning("Removed project \"" + self.directory + "\" from its" +
-                            "registry located at \"" + reg.directory + "\" before unbinding " +
-                            " it from that registry.")
-        except ocpiutil.OCPIException:
-            pass
+        reg = self.registry()
+        # If we are about to unset the, but this project is registered in the current one,
+        # raise an exception; user needs to unregister the project first.
+        if reg.contains(directory=self.directory):
+            raise ocpiutil.OCPIException("Before (un)setting the registry for the project at \"" +
+                                         self.directory + "\", you must unregister the project.\n" +
+                                         "This can be done by running 'ocpidev unregister project" +
+                                         " " + self.package_id + "'.")
 
         imports_link = self.directory + "/imports"
         if os.path.islink(imports_link):

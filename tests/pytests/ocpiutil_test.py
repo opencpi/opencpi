@@ -423,20 +423,35 @@ class TestPathFunctions(unittest.TestCase):
             proj.set_registry()
             self.assertEqual(os.path.realpath("../project-registry"),
                              os.path.realpath(os.readlink("imports")))
+            # Cannot set/unset the registry for a project when it is registered
+            self.assertRaises(ocpiutil.OCPIException, proj.set_registry, "../../../project-registry")
+            self.assertRaises(ocpiutil.OCPIException, proj.unset_registry)
+            self.assertTrue(os.path.exists("imports"))
+
+            reg = AssetFactory.factory("registry", Registry.get_registry_dir("."))
+            # Remove the project from the registry and proceed with unsetting
+            reg.remove(package_id=proj.package_id)
             proj.unset_registry()
             self.assertFalse(os.path.exists("imports"))
+            reg.add(directory=proj.directory)
 
             logging.info("Make sure you can set a project's registry to a given directory.")
             if os.path.isdir("../../../project-registry"):
+                # Cannot set/unset the registry for a project when it is registered
+                self.assertRaises(ocpiutil.OCPIException, proj.set_registry, "../../../project-registry")
+                # Remove the project from the registry and proceed with (un)setting
+                reg.remove(package_id=proj.package_id)
                 proj.set_registry("../../../project-registry")
                 self.assertEqual(os.path.realpath("../../../project-registry"),
                                  os.path.realpath(os.readlink("imports")))
                 proj.unset_registry()
                 self.assertFalse(os.path.exists("imports"))
+                reg.add(directory=proj.directory)
             else:
                 logging.warning("Skipping this registry test because ../../../project-registry " +
                                 "does not exist (not run from repo?).")
 
+            reg.remove(package_id=proj.package_id)
             logging.info("Make sure you cannot set a project's registry to a non-dir file. " +
                          "Expect an ERROR:")
             self.assertRaises(ocpiutil.OCPIException, proj.set_registry, "Project.mk")
@@ -457,6 +472,7 @@ class TestPathFunctions(unittest.TestCase):
 
             # Reset project registry to default
             proj.set_registry()
+            reg.add(directory=proj.directory)
 
 
     def test_reg_unreg_project(self):

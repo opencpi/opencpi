@@ -228,8 +228,9 @@ Integrate the debug core into the worker, generate the required files and procee
 					\caption{Xilinx Vivado 2017.1 Debug Cores Schematic}
 			\end{figure}
 		\item Enter the Tcl Console, and overwrite the netlist created by the `make' system in the ``target-zynq'' directory:
-			\subitem \code{> write\_edif -force complex\_mixer.edf}
+			\subitem \code{> write\_edif -security\_mode all -force complex\_mixer.edf}
 			\subitem \textit{Note:} ``-force'' tells the write\_edif command to overwrite the file if it already exists.
+			\subitem \textit{Note:} ``-security\_mode all'' ensures that partially encrypted designs will still result in a single EDIF file.
 		\item In the Tcl Console, generate the *.ltx file containing the debug probe information:
 			\subitem \code{> write\_debug\_probes complex\_mixer.ltx}
 		\item Build an HDL assembly containing this worker

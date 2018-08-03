@@ -30,6 +30,7 @@ Applications=bias.xml \
              copy.xml \
              file-bias-capture.xml \
              hello.xml \
+             iqstream_max_calculator_test \
              nothing.xml \
              pattern-bias-file.xml \
              pattern.xml \

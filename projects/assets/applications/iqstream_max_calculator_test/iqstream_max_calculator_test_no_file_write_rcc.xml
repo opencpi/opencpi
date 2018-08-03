@@ -1,0 +1,6 @@
+<application>
+  <Instance Component="ocpi.core.file_read" Connect="iqstream_max_calculator">
+    <Property Name="messagesInFile" value="true"/>
+  </Instance>
+  <Instance Component="ocpi.assets.util_comps.iqstream_max_calculator" Model="rcc"/>
+</application>

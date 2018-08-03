@@ -16,19 +16,16 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-# This is the util_comps library
+import matplotlib.pyplot as plt
+import numpy as np
+import sys
 
-Tests = \
-	advanced_pattern.test \
-	agc_real.test \
-	fifo.test \
-	file_write_demux.test \
-	socket_write.test \
-	timestamper.test \
-	zero_padding.test \
-	zero_pad.test
-
-# All workers created here will be built automatically
-# If you want to limit the workers that actually get built, set the Workers= variable
-
-include $(OCPI_CDK_DIR)/include/library.mk
+x, y = np.loadtxt(sys.argv[1], delimiter=',', skiprows=2, unpack=True)
+if type(x) is np.ndarray:
+    plt.stem(x,y)
+    plt.xlabel('RF Tune Freq (MHz)')
+    plt.ylabel('Failure?')
+    plt.title('RX App\nFailures vs. RF Tune Freq')
+    plt.show()
+else:
+    print "Not enough data to plot"

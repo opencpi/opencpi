@@ -151,9 +151,9 @@ def set_vars_from_make(mk_file, mk_arg="", verbose=None):
                 logging.error("The '\"make\"' command is not available.")
             return 1
 
-        #If mk_file is a "Makefile" then we use the -C option on the directory containing 
-        #the makefile else (is a .mk) use the -f option on the file
-        if (mk_file.endswith("/Makefile")):
+        # If mk_file is a "Makefile" then we use the -C option on the directory containing
+        # the makefile else (is a .mk) use the -f option on the file
+        if mk_file.endswith("/Makefile"):
             make_cmd = "make -n -r -s -C " + os.path.dirname(mk_file) + " " + mk_arg
         else:
             make_cmd = "make -n -r -s -f " + mk_file + " " + mk_arg
@@ -164,7 +164,7 @@ def set_vars_from_make(mk_file, mk_arg="", verbose=None):
             child = subprocess.Popen(make_cmd.split(), stderr=fnull, stdout=subprocess.PIPE)
             child.wait()
             mk_output = child.stdout.read()
-            if (child.returncode != 0):
+            if child.returncode != 0:
                 child.stdout.close()
                 raise OCPIException("make command: " + make_cmd + "\n returned an error: " +
                                     str(mk_output))
@@ -173,7 +173,7 @@ def set_vars_from_make(mk_file, mk_arg="", verbose=None):
             child = subprocess.Popen(make_cmd.split(), stderr=subprocess.PIPE, stdout=subprocess.PIPE)
             child.wait()
             mk_output = child.stdout.read()
-            if (child.returncode != 0):
+            if child.returncode != 0:
                 child.stdout.close()
                 child.stderr.close()
                 raise OCPIException("make command: " + make_cmd + "\n returned an error: " +
@@ -256,10 +256,10 @@ def export_libraries():
         proc = subprocess.Popen(["make", "-C", lib_dir, "speclinks"],
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE)
-        proc.communicate()  # Don't care about the outputs
+        my_out = proc.communicate() 
         if proc.returncode != 0:
-            logging.warning("""Failed to export libraries in project at "{0}".
-                               Check your permissions for this project.""".format(os.getcwd()))
+          logging.warning("Failed to export library at " + lib_dir + " because of error : \n" + 
+                          str(my_out[1]))
 
 ###############################################################################
 # Utility functions for determining paths to/from the top level of a project
@@ -819,7 +819,7 @@ def get_ok(prompt=""):
     """Prompt the user to say okay"""
     print(prompt, end=' ')
     while True:
-        ok = eval(input(" [y/n]? "))
+        ok = input(" [y/n]? ")
         if ok.lower() in ('y', 'yes', 'ok'):
             return True
         if ok.lower() in ('', 'n', 'no', 'nope'):

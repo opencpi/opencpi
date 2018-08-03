@@ -45,11 +45,10 @@ endif
 # All other targets are some level underneath these
 # The levels are: top, family, part, speed
 
-#Testing: HdlTopTargets=xilinx altera verilator icarus
-HdlTopTargets:=xilinx altera modelsim # icarus altera # verilator # altera
-
+###############################################################################
+# Notes regarding HdlTargets:
+#
 # The HdlDefaultTarget_<family> is the one used for core building (primitives, workers...).
-# TODO: HdlDefaultTarget_<family> is only supported by Vivado at this time.
 # If the default is unset, the first part in a family is the one used for core building.
 # Usually the default should be the smallest so that you ensure each worker will fit
 # on the smaller parts. If you want to ensure that worker-synthesis uses as many
@@ -60,16 +59,43 @@ HdlTopTargets:=xilinx altera modelsim # icarus altera # verilator # altera
 # can be mapped to a part here and therefore a family as well.
 # E.g. in zed.mk, HdlPart_zed=xc7z020-1-clg484, which maps to xc7z020, which
 # maps to the 'zynq' family with a default target of xc7z020 for building pre-platform cores.
+###############################################################################
+
+# Vendors
+HdlTopTargets:=xilinx altera modelsim # icarus # verilator
+
+###############################################################################
+# Xilinx targets
+###############################################################################
 HdlTargets_xilinx:=isim virtex5 virtex6 spartan3adsp spartan6 zynq_ise zynq xsim
+
 HdlTargets_virtex5:=xc5vtx240t xc5vlx50t xc5vsx95t xc5vlx330t xc5vlx110t
 HdlTargets_virtex6:=xc6vlx240t
+
 HdlTargets_spartan6:=xc6slx45
 HdlTargets_spartan3adsp:=xc3sd3400a
-HdlTargets_zynq_ise:=xc7z020_ise_alias
-HdlTargets_zynq:=xc7z020 xc7z045
-HdlDefaultTarget_zynq:=xc7z020
 
+# Zynq targets - supported by both ISE and Vivado
+HdlTargets_zynq:=xc7z007s xc7z012s xc7z014s xc7z010 xc7z015 xc7z020 xc7z030 xc7z035 xc7z045 xc7z100
+# If building for zynq and no target is specified, default to the xc7z020
+HdlDefaultTarget_zynq:=xc7z020
+# Parts for zynq in ISE are the same as Vivado but with _ise_alias appended for internal differentiation
+HdlTargets_zynq_ise:=$(foreach tgt,$(HdlTargets_zynq),$(tgt)_ise_alias)
+# The line below is not needed because for ISE we just hand the tools the word "zynq" when
+# compiling any zynq parts unless given an HdlExactPart
+#HdlDefaultTarget_zynq_ise:=xc7z020_ise_alias
+
+###############################################################################
+# Altera targets
+###############################################################################
 HdlTargets_altera:=arria10soc_std stratix4 stratix5 # altera-sim
+
+# The "k", when present indicates the transceiver count (k = 36)
+# But in many places it is left off..
+HdlTargets_stratix4:=ep4sgx230k ep4sgx530k ep4sgx360
+HdlTargets_stratix5:=ep5sgsmd8k2
+HdlTargets_arria10soc_std:=10AS066N3F40E2SG_std_alias
+
 HdlDefaultTarget_stratix4:=AUTO
 HdlDefaultTarget_stratix5:=AUTO
 # Quartus Pro (and maybe newer versions of standard) does not
@@ -79,12 +105,7 @@ HdlDefaultTarget_stratix5:=AUTO
 # (and maybe newer/17+ versions of standard).
 HdlDefaultTarget_arria10soc_std:=10AS066N3F40E2SG_std_alias
 
-
-# The "k", when present indicates the transceiver count (k = 36)
-# But in many places it is left off..
-HdlTargets_stratix4:=ep4sgx230k ep4sgx530k ep4sgx360
-HdlTargets_stratix5:=ep5sgsmd8k2
-HdlTargets_arria10soc_std:=10AS066N3F40E2SG_std_alias
+###############################################################################
 
 HdlSimTools=isim icarus verilator ghdl xsim modelsim
 
