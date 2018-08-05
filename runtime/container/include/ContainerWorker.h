@@ -177,7 +177,7 @@ namespace OCPI {
 				    bool add = false, bool uncached = false);
       bool getProperty(unsigned ordinal, std::string &name, std::string &value,
 		       bool *unreadablep = NULL, bool hex = false, bool *cachedp = NULL,
-		       bool uncached = false);
+		       bool uncached = false, bool *hiddenp = NULL);
       bool hasImplTag(const char *tag);
       bool hasInstTag(const char *tag);
       typedef unsigned Ordinal;

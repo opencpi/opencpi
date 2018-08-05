@@ -236,6 +236,16 @@ parseProtocol() {
   return NULL;
 }
 
+const char *DataPort::
+addProperty(const char *name, bool debug, bool parameter, OA::BaseType type, size_t value) {
+  std::string property;
+  OU::format(property, "<property name='ocpi_%s_%s' parameter='%u' debug='%u' type='%s'"
+	     " value='%zu'/>",
+	     name, cname(), parameter ? 1 : 0, debug ? 1 : 0, OU::baseTypeNames[type],
+	     value);
+  return worker().addProperty(property.c_str(), true);
+}
+
 // After the specific port types have parsed everything
 // and also *AGAIN* after all expressions are resolved when instanced in an assembly
 const char *DataPort::
@@ -264,6 +274,22 @@ finalize() {
   // Either the granule is smaller than or not a multiple of data path width
   if (granuleWidth < m_dataWidth || (m_dataWidth && granuleWidth % m_dataWidth))
     worker().m_needsEndian = true;
+  const char *err;
+  // Now that we know everything about the port, we add properties specific to the port
+  // Th trickiest part is deciding whether they should be parameter or not.
+  if ((err = addProperty("max_opcode", true, true, OA::OCPI_UChar, m_nOpcodes)) ||
+      (err = addProperty("max_bytes", false, false, OA::OCPI_ULong)) ||
+      (err = addProperty("insert_eom", false, true, OA::OCPI_Boolean)) ||
+      (err = addProperty("messages", false, false, OA::OCPI_ULong)) ||
+      (err = addProperty("state", true, false, OA::OCPI_Enum)) ||
+      (err = addProperty("between", true, false, OA::OCPI_ULong)) ||
+      (err = addProperty("idle", true, false, OA::OCPI_ULong)) ||
+      (err = addProperty("data", true, false, OA::OCPI_ULong)) ||
+      (err = addProperty("blocked", true, false, OA::OCPI_ULong)) ||
+      (err = addProperty("opcode", true, false, OA::OCPI_ULong)) ||
+      (err = addProperty("length", true, false, OA::OCPI_ULong)))
+    return err;
+  // Now we add any per-port properties.
   return NULL;
 }
 

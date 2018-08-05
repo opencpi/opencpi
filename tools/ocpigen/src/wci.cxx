@@ -195,7 +195,9 @@ void WciPort::
 emitImplSignals(FILE *f) {
   Control &ctl = m_worker->m_ctl;
   // Record for property-related inputs to the worker - writable values and strobes, readable strobes
+#if 0
   if (ctl.nonRawWritables || ctl.nonRawReadables || ctl.rawProperties)
+#endif
     fprintf(f, "  signal props_to_worker   : worker_props_in_t;\n");
   if (ctl.nonRawReadbacks || ctl.rawReadables)
     fprintf(f, "  signal props_from_worker : worker_props_out_t;\n");
@@ -264,7 +266,10 @@ emitWorkerEntitySignals(FILE *f, std::string &last, unsigned maxPropName) {
 	  (int)maxPropName, typeNameIn.c_str(), typeNameIn.c_str(),
 	  (int)maxPropName, typeNameOut.c_str(), typeNameOut.c_str());
   last = ";\n";
-  if (w.m_ctl.writables || w.m_ctl.readbacks || w.m_ctl.rawProperties) {
+#if 0
+  if (w.m_ctl.writables || w.m_ctl.readbacks || w.m_ctl.rawProperties)
+#endif
+    {
     fprintf(f, 
 	    "%s"
 	    "    -- Input values and strobes for this worker's writable properties\n"
@@ -373,7 +378,8 @@ emitRecordSignal(FILE *f, std::string &last, const char *aprefix, bool inRecord,
     OcpPort::emitRecordSignal(f, last, aprefix, inRecord, inPackage, inWorker, NULL,
 			      inWorker ? "(done=>btrue, others=>bfalse)" : NULL);
     if (inWorker) {
-      if (w.m_ctl.writables || w.m_ctl.readbacks || w.m_ctl.rawProperties) {
+      //      if (w.m_ctl.writables || w.m_ctl.readbacks || w.m_ctl.rawProperties) 
+      {
 	emitLastSignal(f, last, VHDL, false);
 	OU::format(last,
 		   "\n"

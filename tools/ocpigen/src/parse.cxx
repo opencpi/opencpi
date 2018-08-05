@@ -826,8 +826,9 @@ create(const char *file, const std::string &parentFile, const char *package, con
   }
   if (!err &&
       !(err = w->setParamConfig(instancePVs, paramConfig)) &&
-      !(err = w->finalizeProperties()) &&
+      // Resolving expressions finalizes data ports, which may add built-in properties for ports
       !(err = w->resolveExpressions(*w)) &&
+      !(err = w->finalizeProperties()) &&
       w->m_model == HdlModel)
     err = w->finalizeHDL();
   if (err) {

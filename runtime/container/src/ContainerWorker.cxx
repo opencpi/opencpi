@@ -330,7 +330,8 @@ namespace OCPI {
       v.unparse(value, NULL, add, hex);
     }
     bool Worker::getProperty(unsigned ordinal, std::string &a_name, std::string &value,
-			     bool *unreadablep, bool hex, bool *cachedp, bool uncached) {
+			     bool *unreadablep, bool hex, bool *cachedp, bool uncached,
+			     bool *hiddenp) {
       unsigned nProps;
       OU::Property *props = properties(nProps);
       if (ordinal >= nProps)
@@ -353,6 +354,8 @@ namespace OCPI {
 	return true;
       } else
 	throw OU::Error("Property number %u '%s' is unreadable", ordinal, p.m_name.c_str());
+      if (hiddenp)
+	*hiddenp = p.m_isHidden;
       if (p.m_isParameter) {
 	p.m_default->unparse(value, NULL, false, hex);
 	return true;

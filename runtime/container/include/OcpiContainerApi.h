@@ -165,7 +165,8 @@ namespace OCPI {
       virtual void setProperties(const PValue *props) =  0;
       virtual bool getProperty(unsigned ordinal, std::string &name, std::string &value,
 			       bool *unreadablep = NULL, bool hex = false,
-			       bool *cachedp = NULL, bool uncached = false) = 0;
+			       bool *cachedp = NULL, bool uncached = false, bool *hiddenp = NULL)
+	                      = 0;
 #undef OCPI_DATA_TYPE
 #undef OCPI_DATA_TYPE_S
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		\

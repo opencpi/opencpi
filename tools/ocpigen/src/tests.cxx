@@ -1639,10 +1639,11 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
       } else if (wFirst == wci->second) {
 	if (found->m_isImpl && strncasecmp("ocpi_", found->cname(), 5))
 	  globals.params[pn].m_worker = wFirst;
-      } else {
-	assert(!strncasecmp("ocpi_", found->cname(), 5) ||
-	       (!p.m_param->m_isImpl && !found->m_isImpl));
-      }
+      } else if (strncasecmp("ocpi_", found->cname(), 5) &&
+		 (p.m_param->m_isImpl || found->m_isImpl))
+	return OU::esprintf("The implementation-specific property \"%s\" was found in more "
+			    "than one worker:  \"%s\" and \"%s\"",
+			    found->cname(), wFirst->cname(), wci->second->cname());
       Param &gp = globals.params[pn];
       if (!gp.m_param)
 	gp.m_param = p.m_param;

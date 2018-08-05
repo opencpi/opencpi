@@ -58,12 +58,16 @@ class DataPort : public OcpPort, public OCPI::Util::Port {
   bool isDataOptional() const { return m_isOptional; } // call isData first
   bool isDataBidirectional() const { return m_isBidirectional; } // call isData first
   bool isOptional() const { return m_isOptional; }
-  const char *parse();
-  const char *parseProtocolChild(ezxml_t op);
-  const char *parseProtocol();
-  const char *finalize();
-  const char *fixDataConnectionRole(OCPI::Util::Assembly::Role &role);
-  const char *resolveExpressions(OCPI::Util::IdentResolver &ir);
+  const char
+    *parse(),
+    *parseProtocolChild(ezxml_t op),
+    *parseProtocol(),
+    *finalize(),
+    *addProperty(const char *name, bool debug, bool parameter, OCPI::API::BaseType type,
+		 size_t value = 0),
+    *addProperty(),
+    *fixDataConnectionRole(OCPI::Util::Assembly::Role &role),
+    *resolveExpressions(OCPI::Util::IdentResolver &ir);
   void initRole(OCPI::Util::Assembly::Role &role);
   void emitOpcodes(FILE *f, const char *pName, Language lang);
   void emitPortDescription(FILE *f, Language lang) const;

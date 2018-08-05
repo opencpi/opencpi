@@ -538,6 +538,10 @@ emitXmlWorker(FILE *f) {
     prop->printAttrs(out, "property", 1, prop->m_isParameter); // suppress default values for parameters
     if (prop->m_isImpl)
       out += " isImpl='1'";
+    if (prop->m_isDebug)
+      out += " debug='1'";
+    if (prop->m_isHidden)
+      out += " hidden='1'";
     if (prop->m_isVolatile)
       out += " volatile='1'";
     else if (prop->m_isReadable)

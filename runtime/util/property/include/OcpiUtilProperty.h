@@ -63,6 +63,7 @@ namespace OCPI {
       // Caller needs these to decide to do beforeQuery/afterConfigure
       bool
 	m_isDebug,         // Should only be included when debug parameter is true
+	m_isHidden,        // Should not be dumped by default
 	m_isParameter,     // For compile-time parameter
 	m_isSub32,
 	m_isImpl,          // is an impl property, not a spec property

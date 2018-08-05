@@ -924,6 +924,7 @@ namespace OCPI {
 	m_currConn = OC::Manager::s_nContainers - 1;
 	m_bestScore = 0;
 	m_hex = false;
+	m_hidden = false;
 	m_uncached = false;
 	m_launched = false;
 	m_verbose = false;
@@ -936,6 +937,7 @@ namespace OCPI {
 	  m_dumpFile = dumpFile;
 	OU::findBool(params, "dumpPlatforms", m_dumpPlatforms);
 	OU::findBool(params, "hex", m_hex);
+	OU::findBool(params, "hidden", m_hidden);
 	OU::findBool(params, "uncached", m_uncached);
 	// Initializations for externals may add instances to the assembly
 	initExternals(params);
@@ -1373,19 +1375,21 @@ namespace OCPI {
 		"Communication with the application established\n");
     }
     void ApplicationI::
-    dumpProperties(bool printParameters, bool printCached, const char *context) const
-    {
+    dumpProperties(bool printParameters, bool printCached, const char *context) const {
       std::string l_name, value;
-      bool isParameter, isCached;
+      bool isParameter, isCached, isHidden;
       if (m_verbose)
 	fprintf(stderr, "Dump of all %s%sproperty values:\n",
 		context ? context : "", context ? " " : "");
       for (unsigned n = 0;
-	   getProperty(n, l_name, value, m_hex, &isParameter, &isCached, m_uncached); n++)
+	   getProperty(n, l_name, value, m_hex, &isParameter, &isCached, m_uncached, &isHidden);
+	   n++)
 	if ((printParameters || !isParameter) &&
+	    (m_hidden || !isHidden) &&
 	    (printCached || !isCached))
-	  fprintf(stderr, "Property %2u: %s = \"%s\"%s\n", n, l_name.c_str(), value.c_str(),
-		  isParameter ? " (parameter)" : (isCached ? " (cached)" : ""));
+	  fprintf(stderr, "Property %2u: %s = \"%s\"%s%s\n", n, l_name.c_str(), value.c_str(),
+		  isParameter ? " (parameter)" : (isCached ? " (cached)" : ""),
+		  isHidden ? " (hidden)" : "");
     }
     void ApplicationI::
     startMasterSlave(bool isMaster, bool isSlave, bool isSource) {
@@ -1502,7 +1506,7 @@ namespace OCPI {
       if (m_dumpFile.size()) {
 	std::string l_name, value, dump;
 	for (unsigned n = 0;
-	     getProperty(n, l_name, value, m_hex, NULL, NULL, m_uncached); n++) {
+	     getProperty(n, l_name, value, m_hex, NULL, NULL, m_uncached, NULL); n++) {
 	  for (unsigned i = 0; i < l_name.size(); i++)
 	    if (l_name[i] == '.')
 	      l_name[i] = ' ';
@@ -1624,7 +1628,8 @@ namespace OCPI {
     }
 
     bool ApplicationI::getProperty(unsigned ordinal, std::string &a_name, std::string &value,
-				   bool hex, bool *parp, bool *cachedp, bool uncached) const {
+				   bool hex, bool *parp, bool *cachedp, bool uncached,
+				   bool *hiddenp) const {
       if (ordinal >= m_nProperties)
 	return false;
       Property &p = m_properties[ordinal];
@@ -1632,7 +1637,7 @@ namespace OCPI {
       OC::Worker &w = *m_launchMembers[m_instances[p.m_instance].m_firstMember].m_worker;
       bool unreadable;
       std::string dummy;
-      w.getProperty(p.m_property, dummy, value, &unreadable, hex, cachedp, uncached);
+      w.getProperty(p.m_property, dummy, value, &unreadable, hex, cachedp, uncached, hiddenp);
       if (unreadable)
 	value = "<unreadable>";
       if (parp)
@@ -1844,8 +1849,10 @@ namespace OCPI {
     }
 #endif
     bool Application::getProperty(unsigned ordinal, std::string &a_name, std::string &value,
-				  bool hex, bool *parp, bool *cachedp, bool uncached) {
-      return m_application.getProperty(ordinal, a_name, value, hex, parp, cachedp, uncached);
+				  bool hex, bool *parp, bool *cachedp, bool uncached,
+				  bool *hiddenp) {
+      return m_application.getProperty(ordinal, a_name, value, hex, parp, cachedp, uncached,
+				       hiddenp);
     }
 
     void Application::

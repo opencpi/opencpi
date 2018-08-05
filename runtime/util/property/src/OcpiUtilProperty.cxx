@@ -33,7 +33,7 @@
   "Readable", "Writable", "Volatile", "Initial", "Padding", "Parameter"
 
 #define PROPERTY_ATTRIBUTES \
-  OCPI_UTIL_MEMBER_ATTRS, ACCESS_ATTRIBUTES, "IsTest", "Default"
+  OCPI_UTIL_MEMBER_ATTRS, ACCESS_ATTRIBUTES, "IsTest", "Default", "Hidden"
 
 #define IMPL_ATTRIBUTES \
   ACCESS_ATTRIBUTES, \
@@ -61,10 +61,10 @@ namespace OCPI {
     namespace OE = EzXml;
     namespace OA = OCPI::API;
     Property::Property()
-      : m_smallest(0), m_granularity(0), m_isDebug(false), m_isParameter(false),
-	m_isSub32(false), m_isImpl(false), m_isPadding(false), m_isTest(false), m_dataOffset(0),
-	m_paramOrdinal(0), m_hasValue(false), m_readBarrier(false), m_writeBarrier(false),
-	m_reduction(None) {
+      : m_smallest(0), m_granularity(0), m_isDebug(false), m_isHidden(false),
+	m_isParameter(false), m_isSub32(false), m_isImpl(false), m_isPadding(false),
+	m_isTest(false), m_dataOffset(0), m_paramOrdinal(0), m_hasValue(false),
+	m_readBarrier(false), m_writeBarrier(false), m_reduction(None) {
     }
     Property::~Property() {
     }
@@ -203,6 +203,7 @@ namespace OCPI {
 	  (err = OE::getBoolean(prop, "WriteError", &m_writeError)) ||
 	  (err = OE::getBoolean(prop, "IsTest", &m_isTest)) ||
 	  (err = OE::getBoolean(prop, "Debug", &m_isDebug)) ||
+	  (err = OE::getBoolean(prop, "Hidden", &m_isHidden)) ||
 	  // FIXME: consider allowing this only for HDL somehow.
 	  (err = OE::getNumber(prop, "Indirect", &m_indirectAddr, &m_isIndirect, 0, true)))
 	return err;
@@ -257,4 +258,3 @@ namespace OCPI {
     }
   }
 }
-
