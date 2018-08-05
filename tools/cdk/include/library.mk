@@ -41,5 +41,7 @@ generate:
 	
 ifdef ShellTestVars
 showtests:
-$(info Tests="$(TestImplementations)";)
+	$(info Tests="$(TestImplementations)";)
+showpackage:
+	$(info Package="$(Package)";)
 endif

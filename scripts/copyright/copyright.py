@@ -144,6 +144,7 @@ extensions['skip'] = ('asm',  # Future? Don't think we have any of our own now.
                       'prefs',
                       'props',
                       'properties',  # Java
+                      'pyc',  # Pre-compiled python1/2
                       'rpm',
                       'tar',
                       'vsd', 'vsdx',
@@ -180,7 +181,9 @@ other_regexs = (
 )
 bad_paths = (
     '/.git/',
+    '/build/autotools/imported-macros/',
     '/chipscope/',
+    '/doc/av/internal/',
     '/docs/IDE_Guide_Shots/',  # IDE
     '/fixed_float',
     '/gen/',
@@ -191,15 +194,17 @@ bad_paths = (
     '/releng/jenkins/',
     '/releng/oss_release/',
     '/releng/prereq/',
-    '/runtime/util/',
+    '/runtime/foreign/',
     '/target-',
     '/vm_support/',
     '/xilinx-zynq-binary-release-',
 )
 bad_path_globs = (
+    '*/idata/*',  # Unit test data source
     '*/MANIFEST.MF',  # Java packaging
     '*/package-name',
     '*/package-id',
+    '*/__pycache__/*',
     '*/*.sh.example',
     '*/snippets/*',
     '*.test/test*/description',

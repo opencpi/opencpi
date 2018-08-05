@@ -17,11 +17,11 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 #This script tests the FSK app for the following permutations of sample rate and RF frequency:
-sample_rate_min=5
+sample_rate_min=36
 sample_rate_increment=1
-frequency_min=999
-frequency_max=999
-frequency_increment=0
+frequency_min=233
+frequency_max=2988
+frequency_increment=1
 #Analog parameters which remain fixed
 rx_rf_gain_dB=6
 rx_bb_cutoff_frequency_MHz=5
@@ -31,6 +31,13 @@ tx_bb_cutoff_frequency_MHz=5
 tx_bb_gain_dB=-4
 #Number of allowed failures per test
 number_of_allowed_failures=5
+#Ensure increment is not 0
+sample_rate_increment_eq_zero=$(awk -vn1="$sample_rate_increment" -vn2="0" 'BEGIN{print (n1<=n2)?1:0 }')
+frequency_increment_eq_zero=$(awk -vn1="$frequency_increment" -vn2="0" 'BEGIN{print (n1<=n2)?1:0 }')
+if [ $sample_rate_increment_eq_zero -eq 1 ] || [ $frequency_increment_eq_zero -eq 1 ] ; then
+    echo "Increments must be greater than 0"
+    exit
+fi
 if [ $# -eq 0 ] ; then
     echo "No arguments supplied. Syntax is sh `basename $0` <platform>"
 else
@@ -55,27 +62,41 @@ else
 	echo "$1 is not a valid platform"
 	exit -1
     fi
+    sample_rate=$sample_rate_min
+    #max_sample_rate_exceeded=`echo $sample_rate'>'$sample_rate_max | bc -l`
+    max_sample_rate_exceeded=$(awk -vn1="$sample_rate" -vn2="$sample_rate_max" 'BEGIN{print (n1>n2)?1:0 }')
+    frequency=$frequency_min
+    #max_frequency_exceeded=`$frequency'>'$frequency_max | bc -l`
+    max_frequency_exceeded=$(awk -vn1="$frequency" -vn2="$frequency_max" 'BEGIN{print (n1>n2)?1:0 }')
+    failures=0
     total_tests=0
     total_failures=0
     #Remove header from input file
     `dd bs=1 skip=242 count=8912 if=idata/Os.jpeg of=odata/goldenOs.jpeg &> /dev/null`
-    for sample_rate in $(eval echo "{$sample_rate_min..$sample_rate_max..$sample_rate_increment}")
-    do
+    #for sample_rate in $(eval echo "{$sample_rate_min..$sample_rate_max..$sample_rate_increment}")
+    #do
+    while [ $max_sample_rate_exceeded -eq 0 ] && [ $failures -lt $number_of_allowed_failures ]; do
 	echo "Testing $sample_rate MS/s"
 	#1,000,000*2^16=65536000000
-	phs_inc=$((65536000000 / (sample_rate * 1000000)))
-	t=$((20 - (sample_rate / 2)))
-	for frequency in $(eval echo "{$frequency_min..$frequency_max..$frequency_increment}")
-	do
+	#phs_inc=$((65536000000 / (sample_rate * 1000000)))
+	phs_inc=`dc $sample_rate 1000000 mul p`
+	phs_inc=`dc 65536000000 $phs_inc div p`
+	#t=$((20 - (sample_rate / 2)))
+	t=`dc $sample_rate 2 div p`
+	t=`dc 20 $t sub p`
+	#for frequency in $(eval echo "{$frequency_min..$frequency_max..$frequency_increment}")
+	#do
+	while [ $max_frequency_exceeded -eq 0 ] && [ $failures -lt $number_of_allowed_failures ]; do
 	    failures=0
 	    success=0
-	    echo "Testing frequency TX: $((frequency+1)) RX: $frequency"
+	    tx_frequency=`dc $frequency 1 add p`
+	    echo "Testing frequency TX: $tx_frequency RX: $frequency"
 	    while [ $failures -lt $number_of_allowed_failures ] && [ $success -eq 0 ]
 	    do
 		((total_tests++))
 		#echo "Success = $success"
 		ocpirun \
-		    -t $t\
+		    -t $t \
 		    -pcomplex_mixer=phs_inc=$phs_inc \
 		    -prx=sample_rate_MHz=$sample_rate \
 		    -prx=frequency_MHz=$frequency \
@@ -84,7 +105,7 @@ else
 		    -prx=bb_cutoff_frequency_MHz=$rx_bb_cutoff_frequency_MHz \
 		    -prx=bb_gain_dB=$rx_bb_gain_dB \
 		    -ptx=sample_rate_MHz=$sample_rate \
-		    -ptx=frequency_MHz=$((frequency+1)) \
+		    -ptx=frequency_MHz=$tx_frequency \
 		    -ptx=rf_gain_dB=$tx_rf_gain_dB \
 		    -ptx=bb_cutoff_frequency_MHz=$tx_bb_cutoff_frequency_MHz \
 		    -ptx=bb_gain_dB=$tx_bb_gain_dB \
@@ -111,12 +132,22 @@ else
 		#ls -l odata
 		#echo "Success"
 		success=1
+		#frequency=`echo $frequency+$frequency_increment | bc -l`
+		frequency=`dc $frequency $frequency_increment add p`
+		#max_frequency_exceeded=`echo $frequency'>'$frequency_max | bc -l`
+		max_frequency_exceeded=$(awk -vn1="$frequency" -vn2="$frequency_max" 'BEGIN{print (n1>n2)?1:0 }')
 	    done
 	    if [ $failures -eq $number_of_allowed_failures ]; then
 		echo "Error: Test condition Sample Rate: $sample_rate, Frequency: $frequency failed $number_of_allowed_failures times. Aborting test"
 		exit
 	    fi
 	done
+	#sample_rate=`echo $sample_rate+$sample_rate_increment | bc -l`
+	sample_rate=`dc $sample_rate $sample_rate_increment add p`
+	#max_sample_rate_exceeded=`echo $sample_rate'>'$sample_rate_max | bc -l`
+	max_sample_rate_exceeded=$(awk -vn1="$sample_rate" -vn2="$sample_rate_max" 'BEGIN{print (n1>n2)?1:0 }')
+	frequency=$frequency_min
+	max_frequency_exceeded=$(awk -vn1="$frequency" -vn2="$frequency_max" 'BEGIN{print (n1>n2)?1:0 }')
     done
     echo "Total Failures: $total_failures"
     echo "Total Tests: $total_tests"

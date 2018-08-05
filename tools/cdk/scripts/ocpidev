@@ -165,7 +165,7 @@ function register_project {
 import sys; sys.path.append(\"$OCPI_CDK_DIR/scripts/\");
 import ocpiutil; print(ocpiutil.is_path_in_exported_project(\"$project\"));"`
   if [ "$is_exported" == "False" ]; then
-    make -C $project exports 1>&2 || echo Could not export project \"$project\". You may not have write permissions on this project. Proceeding...
+    make -C $project ${verbose:+AT=} exports 1>&2 || echo Could not export project \"$project\". You may not have write permissions on this project. Proceeding...
   else
      [ -z "$verbose" ] || echo Skipped making exports because this is an exported standalone project. 1>&2
   fi
@@ -297,7 +297,11 @@ function get_subdir {
           bad must choose a platform \(-P\) when operating from the platforms directory.
         fi
         ;;
-      (*) bad cannot operate within directory of type \"$dirtype\". If you are in the hdl/ directory, try returning to the top level of your project. ;;
+      (*) if [ -z "$dirtype" ] ; then
+            bad cannot operate within unknown directory type.  Try returning to the top level of your project.
+          else 
+            bad cannot operate within directory of type \"$dirtype\". Try returning to the top level of your project.
+          fi ;;
     esac
     [ -d "$subdir" -o "$verb" != create ] || { if [ "$autocreate" == 1 ] ; then make_library $subdir $subdir ; fi }
     [ -d "$subdir" ] || bad the library for '"'$library'"' '('$subdir')' does not exist
@@ -450,8 +454,8 @@ function do_project {
     # Normally we build imports outside of any do_* function because
     # we always want to build imports when building. For project, we
     # do this here because
-    make -C $subdir/$1 imports
-    make -C $subdir/$1 ${cleanTarget:+$cleanTarget} ${buildRcc:+rcc} ${buildHdl:+hdl} \
+    make -C $subdir/$1 ${verbose:+AT=} imports
+    make -C $subdir/$1 ${verbose:+AT=} ${cleanTarget:+$cleanTarget} ${buildRcc:+rcc} ${buildHdl:+hdl} \
             ${buildNoAssemblies:+Assemblies=} \
             ${assys:+Assemblies=" ${assys[@]}"} \
             ${hdlplats:+HdlPlatforms=" ${hdlplats[@]}"} \
@@ -589,7 +593,7 @@ function do_applications {
     (*) bad this command can only be issued in a project directory or an applications directory;;
   esac
   if [ "$verb" == build ]; then
-    make -C $subdir ${buildClean:+clean} ${swplats:+RccPlatforms=" ${swplats[@]}"} \
+    make -C $subdir ${verbose:+AT=} ${buildClean:+clean} ${swplats:+RccPlatforms=" ${swplats[@]}"} \
       ${hwswplats:+RccHdlPlatforms=" ${hwswplats[@]}"} \
       $OCPI_MAKE_OPTS
     return 0
@@ -613,7 +617,7 @@ function do_application {
   esac
   adir=$subdir$1
   if [ "$verb" == build ]; then
-    make -C $subdir$1 ${buildClean:+clean} ${swplats:+RccPlatforms=" ${swplats[@]}"} \
+    make -C $subdir$1 ${verbose:+AT=} ${buildClean:+clean} ${swplats:+RccPlatforms=" ${swplats[@]}"} \
       ${hwswplats:+RccHdlPlatforms=" ${hwswplats[@]}"} \
       $OCPI_MAKE_OPTS
     return 0
@@ -971,12 +975,12 @@ function do_library {
       buildHdl=""
       cleanTarget+=" cleanhdl"
     fi
-    make -C $subdir ${cleanTarget:+$cleanTarget}  ${buildRcc:+rcc} ${buildHdl:+hdl} \
-            ${hdlplats:+HdlPlatforms=" ${hdlplats[@]}"} \
-            ${hdltargets:+HdlTargets=" ${hdltargets[@]}"} \
-            ${swplats:+RccPlatforms=" ${swplats[@]}"} \
-            ${workerList:+Workers=" ${workerList[@]}"} \
-            ${hwswplats:+RccHdlPlatforms=" ${hwswplats[@]}"} \
+    make -C $subdir ${verbose:+AT=} ${cleanTarget:+$cleanTarget} ${verbose:+AT=} ${buildRcc:+rcc} ${buildHdl:+hdl}\
+            ${hdlplats:+HdlPlatforms=" ${hdlplats[@]}"}\
+            ${hdltargets:+HdlTargets=" ${hdltargets[@]}"}\
+            ${swplats:+RccPlatforms=" ${swplats[@]}"}\
+            ${workerList:+Workers=" ${workerList[@]}"}\
+            ${hwswplats:+RccHdlPlatforms=" ${hwswplats[@]}"}\
             $OCPI_MAKE_OPTS
     return 0
   fi
@@ -1087,7 +1091,7 @@ function do_worker {
     return 0
   fi
   if [ "$verb" == build ]; then
-    make -C $subdir/$1 ${buildClean:+clean} \
+    make -C $subdir/$1 ${verbose:+AT=} ${buildClean:+clean} \
             ${hdlplats:+HdlPlatforms=" ${hdlplats[@]}"} \
             ${hdltargets:+HdlTargets=" ${hdltargets[@]}"} \
             ${swplats:+RccPlatforms=" ${swplats[@]}"} \
@@ -1309,7 +1313,7 @@ function do_test {
   #   if it does, delete it and its contents
   #     warn first/ask for confirmation
   if [ "$verb" == build ] ; then
-    make -C $testdir ${buildClean:+clean}\
+    make -C $testdir  ${verbose:+AT=} ${buildClean:+clean}\
          ${hdlplats:+HdlPlatforms=" ${hdlplats[@]}"} \
          ${swplats:+RccPlatforms=" ${swplats[@]}"} \
          ${hwswplats:+RccHdlPlatforms=" ${hwswplats[@]}"} \
@@ -1415,7 +1419,7 @@ function do_hdl_platform {
   esac
   pdir=$subdir$1
   if [ "$verb" ==  build ]; then
-    make -C $pdir ${buildClean:+clean} \
+    make -C $pdir ${verbose:+AT=} ${buildClean:+clean} \
       $OCPI_MAKE_OPTS
     return 0;
   fi
@@ -1601,7 +1605,7 @@ function do_primitive {
     (*) bad this command can only be executed in a project or hdl/primitives directory;;
   esac
   if [ "$verb" == build ]; then
-    make -C $dir ${buildClean:+clean} \
+    make -C $dir ${verbose:+AT=} ${buildClean:+clean} \
             ${hdlplats:+HdlPlatforms=" ${hdlplats[@]}"} \
             ${hdltargets:+HdlTargets=" ${hdltargets[@]}"} \
             $OCPI_MAKE_OPTS
@@ -1779,7 +1783,7 @@ function do_assembly {
   esac
   adir=$subdir$1
   if [ "$verb" == build ]; then
-    make -C $subdir/$1 ${buildClean:+clean} ${hdlplats:+HdlPlatforms=" ${hdlplats[@]}"} \
+    make -C $subdir/$1 ${verbose:+AT=} ${buildClean:+clean} ${hdlplats:+HdlPlatforms=" ${hdlplats[@]}"} \
       $OCPI_MAKE_OPTS
     return 0
   fi

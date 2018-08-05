@@ -24,7 +24,7 @@
 # ImportCoreDirs
 
 include $(OCPI_CDK_DIR)/include/util.mk
-$(OcpiIncludeProject)
+$(OcpiIncludeAssetAndParent)
 # Default the PrimitiveLibraries and PrimitiveCores variables
 ifeq ($(origin PrimitiveLibraries),undefined)
   PrimitiveLibraries:=$(foreach d,$(wildcard */Makefile),$(infox d:$d)\
@@ -98,3 +98,7 @@ $(Cores):
 $(ImportCores):
 	$(AT)echo ============== For imported core $@:
 	$(MakeCoreOrLib)
+ifdef ShellTestVars
+showpackage:
+	$(info Package="$(Package)";)
+endif

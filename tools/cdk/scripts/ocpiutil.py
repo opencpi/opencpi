@@ -202,12 +202,12 @@ def set_vars_from_make(mk_file, mk_arg="", verbose=None):
 
 def get_make_vars_rcc_targets():
     """
-    Get make variables from rcc-targets.mk
+    Get make variables from rcc-target.mk
     Dictionary key examples are:
         RccAllPlatforms, RccPlatforms, RccAllTargets, RccTargets
     """
     return set_vars_from_make(os.environ["OCPI_CDK_DIR"] +
-                              "/include/rcc/rcc-targets.mk",
+                              "/include/rcc/rcc-target.mk",
                               "ShellRccTargetsVars=1", "verbose")
 
 ###############################################################################
@@ -256,10 +256,10 @@ def export_libraries():
         proc = subprocess.Popen(["make", "-C", lib_dir, "speclinks"],
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE)
-        proc.communicate()  # Don't care about the outputs
+        my_out = proc.communicate() 
         if proc.returncode != 0:
-            logging.warning("""Failed to export libraries in project at "{0}".
-                               Check your permissions for this project.""".format(os.getcwd()))
+          logging.warning("Failed to export library at " + lib_dir + " because of error : \n" + 
+                          str(my_out[1]))
 
 ###############################################################################
 # Utility functions for determining paths to/from the top level of a project

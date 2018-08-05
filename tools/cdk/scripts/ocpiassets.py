@@ -459,6 +459,13 @@ class Library(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset):
             logging.debug("Library constructor creating Library Objects")
             for test_directory in self.get_valid_tests():
                 self.test_list.append(AssetFactory.factory("test", test_directory, **kwargs))
+        self.package_id = Library.get_package_id(self.directory)
+
+    @staticmethod
+    def get_package_id(dir='.'):
+        lib_vars = ocpiutil.set_vars_from_make(dir + "/Makefile",
+                                                 "ShellTestVars=1 showpackage", True)
+        return "".join(lib_vars['Package'])
 
     def get_valid_tests(self):
         """
@@ -750,17 +757,18 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
         self.__registry = None
 
         # flag to determine if a project is exported
-        # __is_exported is set to true in set_package_id() if this is a non-source exported project
+        # __is_exported is set to true in __init_package_id() if this is a non-source exported 
+        # project
         self.__is_exported = False
         # Determine the package-ID for this project and set self.package_id
-        self.set_package_id()
+        self.__init_package_id()
 
         # NOTE: imports link to registry is NOT initialized in this constructor.
         #       Neither is the __registry Registry object.
         if kwargs.get("init_libs", False) is True:
             self.lib_list = []
             logging.debug("Project constructor creating Library Objects")
-            for lib_directory in self.get_valid_libaries():
+            for lib_directory in self.get_valid_libraries():
                 self.lib_list.append(AssetFactory.factory("library", lib_directory,  **kwargs))
 
         if kwargs.get("init_apps", False) is True:
@@ -790,7 +798,7 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
             pass
         super().delete(force)
 
-    def set_package_id(self):
+    def __init_package_id(self):
         """
         Get the Package Name of the project containing 'self.directory'.
         """
@@ -827,7 +835,7 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
         """
         return ocpiutil.get_subdirs_of_type("applications", self.directory)
 
-    def get_valid_libaries(self):
+    def get_valid_libraries(self):
         """
         Gets a list of all directories of type library in the project and puts that
         library directory and the basename of that directory into a dictionary to return
@@ -861,6 +869,85 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
         """
         raise NotImplementedError("Project.build() is not implemented")
 
+    def show_tests(self, **kwargs):
+        if self.lib_list is None:
+            raise ocpiutil.OCPIException("For a Project to show tests \"init_libs\" "
+                                         "must be set to True when the object is constructed")
+
+        if not kwargs.get("json", False):
+            for lib in self.lib_list:
+                valid_tests = lib.get_valid_tests()
+                if  valid_tests:
+                    print("Library: " + lib.directory)
+                for test_dir in valid_tests:
+                    print("    Test: " + os.path.basename(test_dir.rstrip('/')))
+        else:
+            '''
+            JSON format:
+            {project:{
+              name: proj_name
+              directory: proj_directory
+              libraries:{
+                lib_name:{
+                  name: lib_name
+                  directory:lib_directory
+                  tests:{
+                    test_name : test_directory
+                    ...
+                  }
+                }
+              }
+            }
+            '''
+            json_dict = {}
+            project_dict = {}
+            libraries_dict = {}
+            for lib in self.lib_list:
+                valid_tests = lib.get_valid_tests()
+                if  valid_tests:
+                    lib_dict = {}
+                    lib_package = lib.package_id
+                    lib_dict["package"] = lib_package
+                    lib_dict["directory"] = lib.directory
+                    lib_dict["tests"] = {os.path.basename(test.rstrip('/')):test
+                                         for test in valid_tests}
+                    libraries_dict[lib_package] = lib_dict
+            project_vars = ocpiutil.set_vars_from_make(self.directory + "/Makefile",
+                                                   "projectdeps ShellProjectVars=1",
+                                                   "verbose")
+            project_dict["dependencies"] = project_vars['ProjectDependencies']
+            project_dict["directory"] = self.directory
+            project_dict["libraries"] = libraries_dict
+            project_dict["package"] = self.package_id
+            json_dict["project"] = project_dict
+            json.dump(json_dict, sys.stdout)
+            print()
+
+    def show_libraries(self, **kwargs):
+        if not kwargs.get("json", False):
+            for lib_directory in self.get_valid_libraries():
+                print("Library: " + lib_directory)
+        else:
+            json_dict = {}
+            project_dict = {}
+            libraries_dict = {}
+            for lib_directory in self.get_valid_libraries():
+                lib_dict = {}
+                lib_package = Library.get_package_id(lib_directory)
+                lib_dict["package"] = lib_package
+                lib_dict["directory"] = lib_directory
+                libraries_dict[lib_package] = lib_dict
+            project_vars = ocpiutil.set_vars_from_make(self.directory + "/Makefile",
+                                                   "projectdeps ShellProjectVars=1",
+                                                   "verbose")
+            project_dict["dependencies"] = project_vars['ProjectDependencies']
+            project_dict["directory"] = self.directory
+            project_dict["libraries"] = libraries_dict
+            project_dict["package"] = self.package_id
+            json_dict["project"] = project_dict
+            json.dump(json_dict, sys.stdout)
+            print()
+
     def show(self, **kwargs):
         """
         This method prints out information about the project based on the options passed in as
@@ -873,51 +960,85 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
         """
 
         if kwargs.get("tests", False):
-            if self.lib_list is None:
-                raise ocpiutil.OCPIException("For a Project to show tests \"init_libs\" "
-                                             "must be set to True when the object is constructed")
-
+            self.show_tests(**kwargs)
+        elif kwargs.get("libraries", False):
+            self.show_libraries(**kwargs)
+        elif not kwargs.get("verbose", False):
+            project_vars = ocpiutil.set_vars_from_make(self.directory + "/Makefile",
+                                                   "projectdeps ShellProjectVars=1",
+                                                   "verbose")
             if not kwargs.get("json", False):
+                print ("Project Directory: " + self.directory)
+                print ("Project Package: " + self.package_id)
+                print ("Project Dependencies: " + ", ".join(project_vars['ProjectDependencies']))
+            else:
+                json_dict = {'project': {'directory': self.directory,
+                                         'package': self.package_id,
+                                         'dependencies': project_vars['ProjectDependencies']}}
+                json.dump(json_dict, sys.stdout)
+                print()
+        else:
+            if self.lib_list is None:
+                raise ocpiutil.OCPIException("For a Project to show verbosely \"init_libs\" "
+                                             "must be set to True when the object is constructed")
+            if not kwargs.get("json", False):
+                project_vars = ocpiutil.set_vars_from_make(self.directory + "/Makefile",
+                                                   "projectdeps ShellProjectVars=1",
+                                                   "verbose")
+                print ("Project Directory: " + self.directory)
+                print ("Project Package: " + self.package_id)
+                print ("Project Dependencies: " + ", ".join(project_vars['ProjectDependencies']))
+                # this will likely change when we have more to show under libraries but for now 
+                # all we have is tests
+                prim_dir = self.directory + "/hdl/primitives"
+                if os.path.isdir(prim_dir):
+                    print("  HDL Primitives: " + prim_dir)
+                    prims = [dir for dir in os.listdir(prim_dir)
+                            if not os.path.isfile(os.path.join(prim_dir, dir))]
+                    prims = [x for x in prims if x != "lib"]
+                    for prim in prims:
+                        print ("    Primitive: " + prim)
                 for lib in self.lib_list:
+                    print("  Library: " + lib.directory)
                     valid_tests = lib.get_valid_tests()
-                    if  valid_tests:
-                        print("Library: " + lib.directory)
                     for test_dir in valid_tests:
                         print("    Test: " + os.path.basename(test_dir.rstrip('/')))
             else:
-                '''
-                JSON format:
-                {project:{
-                  name: proj_name
-                  directory: proj_directory
-                  libraries:{
-                    lib_name:{
-                      name: lib_name
-                      directory:lib_directory
-                      tests:{
-                        test_name : test_directory
-                        ...
-                      }
-                    }
-                  }
-                }
-                '''
                 json_dict = {}
                 project_dict = {}
                 libraries_dict = {}
                 for lib in self.lib_list:
+                    lib_dict = {}
+                    lib_package = lib.package_id
+                    lib_dict["package"] = lib_package
+                    lib_dict["directory"] = lib.directory
                     valid_tests = lib.get_valid_tests()
                     if  valid_tests:
-                        lib_dict = {}
-                        lib_dict["name"] = lib.name
-                        lib_dict["directory"] = lib.directory
                         lib_dict["tests"] = {os.path.basename(test.rstrip('/')):test
                                              for test in valid_tests}
-                        libraries_dict[lib.name] = lib_dict
-
-                project_dict["name"] = self.name
+                    libraries_dict[lib_package] = lib_dict
+                prim_dir = self.directory + "/hdl/primitives"
+                print (prim_dir)
+                if os.path.isdir(prim_dir):
+                    prims_dict = {}
+                    prims = [dir for dir in os.listdir(prim_dir)
+                            if not os.path.isfile(os.path.join(prim_dir, dir))]
+                    prims = [x for x in prims if x != "lib"]
+                    print (prims)
+                    #TODO remove lib
+                    prim_vars = ocpiutil.set_vars_from_make(prim_dir + "/Makefile",
+                                                            "ShellTestVars=1 showpackage")
+                    prim_pkg = "".join(prim_vars['Package'])
+                    for prim in prims:
+                        prims_dict[prim] = prim_dir + "/" + prim
+                    project_dict["primatives"] = prims_dict
+                project_vars = ocpiutil.set_vars_from_make(self.directory + "/Makefile",
+                                                       "projectdeps ShellProjectVars=1",
+                                                       "verbose")
+                project_dict["dependencies"] = project_vars['ProjectDependencies']
                 project_dict["directory"] = self.directory
                 project_dict["libraries"] = libraries_dict
+                project_dict["package"] = self.package_id
                 json_dict["project"] = project_dict
                 json.dump(json_dict, sys.stdout)
                 print()

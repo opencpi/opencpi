@@ -36,6 +36,8 @@ namespace OCPI {
   namespace Util {
     namespace EzXml {
 
+// Note: Before AV-2913, AV used a std::set<> to hold valid attributes/elements/etc. See git revision before this line was added for that code.
+
       namespace OU = OCPI::Util;
       Doc::
       Doc ()
@@ -324,7 +326,7 @@ namespace OCPI {
 	    all_opts.insert(p);
         for (auto it = all_opts.begin(); it != all_opts.end(); ++it)
           opts.append(*it).append(" ");
-        return esprintf("Invalid %s \"%s\", in a \"%s\" element.  Valid %ss are: %s",
+        return esprintf("Invalid %s \"%s\", in a \"%s\" element. Valid %ss are: %s",
 			type, what, parent, type, opts.c_str());
       }
 

@@ -18,6 +18,6 @@
 
 ifneq (,$(IP))
 $(warning Note the command line is not just the test number changing!)
+endif
 # ARM slows down a lot...
 SIM_TIME := 60
-endif

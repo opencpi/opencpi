@@ -38,11 +38,12 @@ ifeq ($(HdlPlatform)$(HdlPlatforms),)
   endif
 endif
 
-# imports need to be created before exports and other stuff
+# imports need to be created before exports etc.
 ifeq ($(filter imports projectpackage,$(MAKECMDGOALS)),)
   doimports=$(shell $(OcpiExportVars) $(MAKE) imports NoExports=1)
   ifeq ($(wildcard imports),)
-    $(info Imports are not set up for this project.  Doing it now. $(doimports))
+    $(info Setting up imports)
+    $(info $(doimports))
   else
     # If the imports already exist, we still want to make sure they are up to date
     $(infox Updating imports. $(doimports))
@@ -52,7 +53,8 @@ endif
 ifeq ($(NoExports)$(wildcard exports)$(filter projectpackage,$(MAKECMDGOALS)),)
   doexports=$(shell $(OcpiExportVars) $(OCPI_CDK_DIR)/scripts/makeProjectExports.sh - $(ProjectPackage) xxx)
   ifeq ($(filter clean%,$(MAKECMDGOALS)),)
-    $(info Exports are not set up for this project.  Doing it now. $(doexports))
+    $(info Setting up exports)
+    $(info $(doexports))
   else
     # we are assuming that exports are not required for any clean goal.
     # $(nuthin $(doexports))
@@ -254,5 +256,8 @@ cleaneverything: clean
 
 ifdef ShellProjectVars
 projectpackage:
-$(info ProjectPackage="$(ProjectPackage)";)
+	$(info ProjectPackage="$(ProjectPackage)";)
+projectdeps:
+	$(info ProjectDependencies="$(ProjectDependencies)";)
 endif
+

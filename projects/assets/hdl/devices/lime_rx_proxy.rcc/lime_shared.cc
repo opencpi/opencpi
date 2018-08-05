@@ -21,6 +21,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <assert.h>
+#include <unistd.h>
 #include "lime_shared.h"
 namespace OCPI {
   namespace Lime {
@@ -75,7 +76,12 @@ namespace OCPI {
       //Set VCO Cap to 31
       vcocap=31;
       writeVcoCap(tx_rx,vcocap);
-    
+      //Put 20 us sleep to address frequency tuning issues (AV-4083)
+      //The reasoning behind this can be found in Lime Microsystems FAQ document
+      //http://www.limemicro.com/wp-content/uploads/2015/04/FAQ_v1.0r13.pdf
+      //Q: 5.3 What is the receiver and transmitter PLL lock time?
+      //A: Maximum PLL lock time is 20us. 
+      usleep(20);
       //Read Vtune and use to decide next step
       vtune=readVtune(tx_rx)>>6;
       //printf("Initial Condition: VcoCap is %x, Vtune is %x\n", vcocap, vtune);
@@ -88,6 +94,7 @@ namespace OCPI {
 	    {
 	      vcocap--;
 	      writeVcoCap(tx_rx,vcocap);
+	      usleep(20);
 	      vtune=readVtune(tx_rx)>>6;
 	      //printf("VcoCap is %x, Vtune is %x\n", vcocap, vtune);
 	    }
@@ -97,12 +104,15 @@ namespace OCPI {
 	  //Set VCO Cap to 31
 	  vcocap=31;
 	  writeVcoCap(tx_rx,vcocap);
-
+	  usleep(20);
+	  vtune=readVtune(tx_rx)>>6;
+	  
 	  //Increment vcocap until vtune = 1
 	  while(vtune != 1 and vcocap < 63)
 	    {
 	      vcocap++;
 	      writeVcoCap(tx_rx,vcocap);
+	      usleep(20);
 	      vtune=readVtune(tx_rx)>>6;
 	      //printf("VcoCap is %x, Vtune is %x\n", vcocap, vtune);
 	    }
@@ -115,6 +125,7 @@ namespace OCPI {
 	    {
 	      vcocap--;
 	      writeVcoCap(tx_rx,vcocap);
+	      usleep(20);
 	      vtune=readVtune(tx_rx)>>6;
 	      //printf("VcoCap is %x, Vtune is %x\n", vcocap, vtune);
 	    }
@@ -126,6 +137,7 @@ namespace OCPI {
 	    {
 	      vcocap--;
 	      writeVcoCap(tx_rx,vcocap);
+	      usleep(20);
 	      vtune=readVtune(tx_rx)>>6;
 	      //printf("VcoCap is %x, Vtune is %x\n", vcocap, vtune);
 	    }
@@ -138,6 +150,7 @@ namespace OCPI {
 	    {
 	      vcocap++;
 	      writeVcoCap(tx_rx,vcocap);
+	      usleep(20);
 	      vtune=readVtune(tx_rx)>>6;
 	      //printf("VcoCap is %x, Vtune is %x\n", vcocap, vtune);
 	    }
@@ -149,6 +162,7 @@ namespace OCPI {
 	    {
 	      vcocap++;
 	      writeVcoCap(tx_rx,vcocap);
+	      usleep(20);
 	      vtune=readVtune(tx_rx)>>6;
 	      //printf("VcoCap is %x, Vtune is %x\n", vcocap, vtune);
 	    }

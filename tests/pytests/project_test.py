@@ -18,6 +18,7 @@
 import unittest
 import sys
 import os
+import subprocess
 sys.path.insert(0, os.path.realpath(os.getenv('OCPI_CDK_DIR') + '/scripts/'))
 import ocpiutil
 import ocpiassets
@@ -66,6 +67,19 @@ class ProjectTest(unittest.TestCase):
                                                   init_libs=True)
         assert my_asset.run() == 0
         ocpiassets.AssetFactory.remove(instance=my_asset)
+
+class DeleteProjectTest(unittest.TestCase):
+    asset_type = "project"
+    @classmethod
+    def setUpClass(cls):
+        ocpidev_command = "ocpidev create project mypj0_del"
+        process = subprocess.Popen(ocpidev_command, shell=True)
+        results = process.communicate()
+
+
+    def test_del(self):
+        my_asset = ocpiassets.AssetFactory.factory(self.asset_type, "mypj0_del")
+        my_asset.delete(True)
 
 if __name__ == '__main__':
     unittest.main()

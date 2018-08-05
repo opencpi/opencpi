@@ -39,8 +39,8 @@ define OcpiCreatePackageId
 
 ###############################################################################
 # Determine where the 'lib' directory is relative to the current location
-LibIsInCwd=$$(filter lib library %-platform %-platforms,$$(call OcpiGetDirType,$$(or $1,./)))
-LibIsInParent=$$(filter lib library %-platform %-platforms,$$(call OcpiGetDirType,$$(or $1,.)/../))
+LibIsInCwd=$$(filter lib library %-platform %-platforms %-primitives,$$(call OcpiGetDirType,$$(or $1,./)))
+LibIsInParent=$$(filter lib library %-platform %-platforms %-primitives,$$(call OcpiGetDirType,$$(or $1,.)/../))
 
 # Determine the directory containing the 'lib' directory to place package-id
 DirContainingLib=$$(if $$(LibIsInCwd),$$(or $1,.)/,$$(and $$(LibIsInParent),$$(or $1,.)/../))

@@ -1249,7 +1249,8 @@ define OcpiSetPlatformVariables
     OcpiPlatformFile:=$$(OcpiPlatformFile_$1)
     OcpiPlatformPrevars:=$$(.VARIABLES)
     include $$(OcpiPlatformFile_$1)
-    $$(foreach v,$$(filter-out OcpiXilinx%,$$(filter Ocpi% OCPI%,$$(.VARIABLES))),\
+    AllowedVars=OcpiAltera% OcpiXilinx% OCPI_ALTERA_VERSION OCPI_XILINX_VIVADO_SDK_VERSION
+    $$(foreach v,$$(filter-out $$(AllowedVars),$$(filter Ocpi% OCPI%,$$(.VARIABLES))),\
        $$(if $$(strip $$(filter $$v,OcpiPlatformPrevars $$(OcpiPlatformPrevars))\
 		      $$(filter $$v,$$(OcpiAllPlatformVars))),,\
           $$(warning Software platform file $$(OcpiPlatformDir)/$1.mk has $$(strip\

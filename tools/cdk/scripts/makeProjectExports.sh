@@ -17,6 +17,7 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
+
 ##########################################################################################
 # Populate the exports tree at the top level of this project with links to this
 # project's assets, allowing them to be used by other projects.
@@ -66,6 +67,12 @@ source $OCPI_CDK_DIR/scripts/util.sh
 #  - avoids looking at ./exports/
 #  - consolidate files that are hard or soft linked into single (first in inode sort order) file
 #  - following links so that patterns can match against the link path
+function warn_check { 
+  local arg=$1
+  if [ -n "$verbose" ]; then 
+    echo $arg 
+  fi
+}
 function match_pattern {
   local arg=$1
   if [[ $arg == \|* ]]; then
@@ -274,7 +281,7 @@ for a in $assets; do
 	      [ "$model" != hdl ] && bad \"$arg\" only supported for HDL model
 	      all=`topdirs $model/$arg "hdl/hdl-(core|library|lib)"`
 	      if [ -z "$all" ]; then
-		  echo Warning:  cannot export $model $arg since none exist
+		  warn_check "Warning:  cannot export $model $arg since none exist" 
 	      else
 		  eval ${model}_$arg=\(${all[*]}\)
 	      fi;;
@@ -287,13 +294,13 @@ for a in $assets; do
 		      allrcc=`topdirs rcc/platforms`;;
 	      esac
 	      if [ -z "$allrcc$allhdl" ]; then
-		  echo Warning:  cannot export ${model}${model+ }platforms since none exist.
+		  warn_check "Warning:  cannot export ${model}${model+ }platforms since none exist."
 	      else
 		  [ -n "$allrcc" ] && {
 		      for p in $allrcc; do
 			  warn=`checkfiles rcc/platforms/$p '$f.mk'`
 			  if [ -n "$warn" ]; then
-			      echo Warning:  cannot export RCC platform $p: $warn
+			      warn_check "Warning:  cannot export RCC platform $p: $warn"
 			  else
 			      rcc_platforms+=($p)
 			  fi
@@ -303,7 +310,7 @@ for a in $assets; do
 		      for p in $allhdl; do
 			  warn=`checkfiles hdl/platforms/$p Makefile '$f.mk'`
 			  if [ -n "$warn" ]; then
-			      echo Warning:  cannot export HDL platform $p: $warn
+			      warn_check "Warning:  cannot export HDL platform $p: $warn"
 			  else
 			      hdl_platforms+=($p)
 			  fi
@@ -346,7 +353,7 @@ for a in $assets; do
 		  if [ -d specs ]; then
 		      specs+=(`shopt -s nullglob; for i in specs/*.xml specs/package-id; do [ -f $i ] && echo $(basename $i); done`)
 		  else
-		      [ -n "$allrequested" ] || echo Warning:  cannot export specs since no specs exist in this project.
+		      [ -n "$allrequested" ] || warn_check "Warning:  cannot export specs since no specs exist in this project."
 		  fi
 	      else
 		  noun=specs
@@ -497,19 +504,10 @@ set +f
 # shared implementation some other way that avoided all the recursion.
 # Or change the python to do this and not use "make".
 
-shopt -s nullglob
-for l in components components/*; do
-  case $(ocpiDirType $l) in
-      lib|library)
-	  for x in $l/specs/*.xml; do
-	      b=$(basename $x)
-	      [ -e $l/lib/$b ] || {
-		  mkdir -p $l/lib
-		  ln -s ../specs/$b $l/lib
-	      }
-	  done;;
-  esac
-done
+# export the specs for each of the libraries
+python3 -c "import sys; sys.path.append(\"$OCPI_CDK_DIR/scripts/\");\
+           import ocpiutil; ocpiutil.export_libraries()"
+
 exit 0
 notes:
 assets:

@@ -52,6 +52,8 @@ def addSpecs(curRoot, curDir):
     for dirName, subdirList, fileList in os.walk(curDir):
         if (dirName.endswith("/specs")):
             for a in fileList:
+                if a == "package-id":
+                    continue
                 worker = ET.SubElement(curRoot, "spec")
                 worker.set('name', a)
 
@@ -162,12 +164,13 @@ def addWorkers(curRoot, workers, dirName):
             test.set('name', a)
 
 def dirIsLib(dirName, comps):
-    for name in comps.findall("library"):
-        if (dirName.endswith(name.get("name"))):
-            return (True, name)
+    if comps:
+        for name in comps.findall("library"):
+            if (dirName.endswith(name.get("name"))):
+                return (True, name)
     return (False, [])
 
-def addApplications (root, apps):
+def addApplications (root, apps, dirName):
     for a in apps:
         built = checkBuiltApp(a, dirName + '/' + a)
         app = ET.SubElement(root, "application")
@@ -215,7 +218,6 @@ def isStale (myDir, force):
     # stopped returning a string into find_output.  this could likely be fixed and optimized to 
     # fix these problems but not worth the time required right now
     '''find_output = ""
-    print ("ndsaijofnsdkl;sdafnkl;dsfankldsfankldsfanklafsd")
     if (force == False):
         if os.path.isfile(myDir + "/project.xml"):
             print ("running find command: " + 'find ' + myDir + " -name" + " \"*.xml\"" +
@@ -272,20 +274,29 @@ if (isStale(mydir, force)):
     full_proj_name = ocpiutil.get_project_package(mydir)
     root = ET.Element("project", {"name" : full_proj_name})
 
-    comps = ET.SubElement(root, "components")
     hdl = ET.SubElement(root, "hdl")
     rcc = ET.SubElement(root, "rcc")
     assys = ET.SubElement(hdl, "assemblies")
     prims = ET.SubElement(hdl, "primitives")
+
+    if os.path.isdir(mydir + "/specs"):
+        top_specs = ET.SubElement(root, "specs")
+        addSpecs(top_specs, mydir)
+    comps = None
+    if os.path.isdir(mydir + "/components"):
+        comps = ET.SubElement(root, "components")
+
+    if os.path.isdir(mydir + "/applications"):
+        apps = ET.SubElement(root, "applications")
+        sub_dirs = onlyfiles = [dir for dir in os.listdir(mydir + "/applications") 
+                                if not os.path.isfile(os.path.join(mydir + "/applications", dir))]
+        addApplications(apps, sub_dirs, mydir + "/applications")
 
     for dirName, subdirList, fileList in os.walk(mydir):
         if "exports" in dirName or "imports" in dirName:
             continue
         elif dirName.endswith("/components"):
             addLibs(comps, subdirList)
-        elif dirName.endswith("/applications"):
-            apps = ET.SubElement(root, "applications")
-            addApplications(apps, subdirList)
         elif dirName.endswith("/hdl/platforms"):
             platforms = ET.SubElement(hdl, "platforms")
             addPlatforms(platforms, subdirList, dirName)
@@ -338,7 +349,6 @@ if (isStale(mydir, force)):
             addWorkers(retVal[1], subdirList, dirName)
 
     print("Updating project metadata...")
-    #myFile = open(mydir+"/project.xml", 'w')
     indent(root) 
     tree = ET.ElementTree(root)
     tree.write(mydir+"/project.xml")
