@@ -27,13 +27,14 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \usepackage[justification=centering]{caption}
 \pagestyle{fancy}
 \lhead{Zipper/Myriad-RF 1 Daughtercards}
-\rhead{Project ANGRYVIPER}
+\rhead{ANGRYVIPER Team}
 \definecolor{drkgreen}{rgb}{0,.6,0}
 \renewcommand{\headrulewidth}{0pt}
 \definecolor{blue}{rgb}{.7,.8,.9}
 \begin{document}
+\textbf{Important Note: The Zipper Carrier Card is no longer being produced by the manufacturer. The card is Open Source so you are able to fabricate one yourself.}
 \section*{Required Modifications for Myriad-RF 1 and Zipper Daughtercards}
-To support ANGRYVIPER RF applications on the Zedboard (zed), Xilinx Virtex6 (ml605), and Altera Stratix 4 (alst4) development kits, 2 daughtercards are required:\par
+To support OpenCPI RF applications on the Zedboard (zed), Xilinx Virtex6 (ml605), and Altera Stratix 4 (alst4) development kits, 2 daughtercards are required:\par
 	\begin{itemize}
 	\item[1)] Myriad-RF 1 board
 	\item[2)] Zipper FMC/HSMC carrier card for Myriad-RF 1
@@ -54,7 +55,7 @@ To support ANGRYVIPER RF applications on the Zedboard (zed), Xilinx Virtex6 (ml6
 \noindent The Myriad-RF 1 is a transmit/receive digital-to-RF module based on the Lime Microsystems LMS6002D transceiver IC. The Zipper carrier card provides an adapter for the Myriad-RF 1 ADC/DAC interface to both FMC and HSMC connectors. Both daughtercards are commercially available from DigiKey. For additional information on the daughtercards as of October 2016, see the Reference Documentation section of this document and Table~\ref{tab:version_info}.
 
 \section*{Purpose of this Document}
-Before using the daughtercards with ANGRYVIPER on the zed, ml605 and alst4 platforms, a number of hardware modifications are required. The below sections describe the modifications in detail for Version 1 Revision 1 (v1 r1) of Myriad-RF 1 and Version 2 Revision 1 or 3 (v2 r1 or v2 r3) of the Zipper carrier card. The schematic for any other revision should be verified prior to making these changes.
+Before using the daughtercards with OpenCPI on the zed, ml605 and alst4 platforms, a number of hardware modifications are required. The below sections describe the modifications in detail for Version 1 Revision 1 (v1 r1) of Myriad-RF 1 and Version 2 Revision 1 or 3 (v2 r1 or v2 r3) of the Zipper carrier card. The schematic for any other revision should be verified prior to making these changes.
 		\begin{table}[h]
 			\scriptsize
 			\begin{center}
@@ -92,7 +93,7 @@ On the Zipper, SW1 is a manual slider switch that powers on to the Zipper and My
 
 \normalsize
 \subsection*{Zipper: Modify voltage divider to set FMC/HSMC IO voltage to 2.5 V}
-The input-output (IO) voltage on the Zipper carrier card FMC and HSMC connectors is configurable. A study of the supported ANGRYVIPER platforms was conducted to determine if there was a common I/O voltage that could be used for the FMC/HSMC interfaces. Table \ref{table:io_voltages} lists the supported IO voltages of the ANGRYVIPER platforms. Given this information, 2.5 V is the logical choice because all the platforms support this IO voltage.\par\smallskip
+The input-output (IO) voltage on the Zipper carrier card FMC and HSMC connectors is configurable. A study of the supported OpenCPI platforms was conducted to determine if there was a common I/O voltage that could be used for the FMC/HSMC interfaces. Table \ref{table:io_voltages} lists the supported IO voltages of the OpenCPI platforms. Given this information, 2.5 V is the logical choice because all the platforms support this IO voltage.\par\smallskip
 		\begin{table}[h]
 			\begin{center}
 				\scriptsize
@@ -108,7 +109,7 @@ The input-output (IO) voltage on the Zipper carrier card FMC and HSMC connectors
     			alst4 & HSMC & 2.5 V\\
     			\hline
    				\end{tabular}
-   				\captionof{table}{ANGRYVIPER Platform IO Voltages}
+   				\captionof{table}{OpenCPI Platform IO Voltages}
 				\label{table:io_voltages}
 		  	\end{center}
    		\end{table}
@@ -133,8 +134,8 @@ The input-output (IO) voltage on the Zipper carrier card FMC and HSMC connectors
 \subsection*{Zipper: Connect I2C, SPI, and GPIO buses to FMC/HSMC connectors}
 \small
 The default mode of operation for control of the Zipper and Myriad-RF 1 is via USB (J6) on the Zipper carrier card. The USB port connects to a microcontroller (U15)  which implements the I2C, SPI, and GPIO buses.\par\medskip
-\noindent The ANGRYVIPER mode of operation controls the Zipper and Myriad-RF 1 through HDL device workers on the FPGA and RCC proxy workers, all of which are located on the ANGRYVIPER enabled platform. Therefore, hardware modifications are made to the Zipper to reroute the I2C, SPI and GPIO signals from the microcontroller to the FMC/HSMC connectors which interface to the FPGA. Note: The Zipper has a PLL Frequency Synthesizer (ADF4002) which is currently not supported by AV and these modifications do not support access to the SPI interface of this device.\par\medskip
-\noindent The layout of the Zipper carrier card has traces for both USB and FMC/HSMC control with 0 ohm resistors that can be placed or removed depending on which interface is being used. Figures \ref{fig:zipper_microcontroller} and Figures \ref{fig:zipper_layout2} and Table \ref{table:resistors_to_replace} specify which resistors need to be removed and which ones need to be placed to use the Zipper carrier card on ANGRYVIPER platforms.\par\bigskip
+\noindent The OpenCPI mode of operation controls the Zipper and Myriad-RF 1 through HDL device workers on the FPGA and RCC proxy workers, all of which are located on the OpenCPI enabled platform. Therefore, hardware modifications are made to the Zipper to reroute the I2C, SPI and GPIO signals from the microcontroller to the FMC/HSMC connectors which interface to the FPGA. Note: The Zipper has a PLL Frequency Synthesizer (ADF4002) which is currently not supported by AV and these modifications do not support access to the SPI interface of this device.\par\medskip
+\noindent The layout of the Zipper carrier card has traces for both USB and FMC/HSMC control with 0 ohm resistors that can be placed or removed depending on which interface is being used. Figures \ref{fig:zipper_microcontroller} and Figures \ref{fig:zipper_layout2} and Table \ref{table:resistors_to_replace} specify which resistors need to be removed and which ones need to be placed to use the Zipper carrier card on OpenCPI platforms.\par\bigskip
 	\scriptsize
 	\begin{table}[h]
 	\begin{center}

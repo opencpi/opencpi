@@ -38,7 +38,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \renewcommand{\headrulewidth}{0.5pt}
 \renewcommand{\footrulewidth}{0.5pt}
 \newcommand{\terminaloutput}[1]{\texttt{#1}}
-\rhead{\small{Project ANGRYVIPER}}
+\rhead{\small{ANGRYVIPER Team}}
 %----------------------------------------------------------------------------------------
 % Appendix packages
 %----------------------------------------------------------------------------------------
@@ -107,13 +107,14 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \def\DevSignal{DevSignal}
 
 \def\comp{ad9361\_config\_proxy}
+\edef\ecomp{ad9361_config_proxy}
 \def\Comp{AD9361 Config Proxy}
 \graphicspath{ {figures/} }
 
 \begin{document}
 
 \section*{Summary - \Comp}
-\begin{tabular}{|c|M{13.5cm}|}
+\begin{tabular}{|c|M{13.85cm}|}
 	\hline
 	\rowcolor{blue}
 	                  &                  \\
@@ -126,18 +127,36 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Release Date      & Aug 2017         \\
 	\hline
-	Component Library & ocpi.devices     \\
+	Component Library & ocpi.assets.devices     \\
 	\hline
 	Workers           & \comp.rcc        \\
 	\hline
 	Tested Platforms  & Zedboard (Xilinx Linux release xilinx-v14.7\cite{xilinx_linux}), CentOS 7 (via ML605/FMCOMMS3 for FMC LPC slot) \\
 	\hline
 \end{tabular}
+
+	\begin{center}
+	\textit{\textbf{Revision History}}
+		\begin{table}[H]
+		\label{table:revisions} % Add "[H]" to force placement of table
+			\begin{tabularx}{\textwidth}{|c|X|l|}
+			\hline
+			\rowcolor{blue}
+			\textbf{Revision} & \textbf{Description of Change} & \textbf{Date} \\
+		    \hline
+		    v1.3 & Initial Release & Aug 2017 \\
+		    \hline
+        pre-v1.4 & Worker updated to latest No-OS 2017\_R1 release - rx\_rf\_gain default values removed from OCS as they conflicted with the default startup RX gain mode which is non-manual & Apr 2018 \\
+		    \hline
+			\end{tabularx}
+		\end{table}
+	\end{center}
+
 \section*{Functionality}
 	The \Comp{} device worker proxy is a software wrapper for Analog Device's No-OS software library\cite{no_os}. No-OS provides command and control of the AD9361 IC\cite{ad9361} via a high-level API which ultimately controls SPI writes to the AD9361 register set. In order to provide functionality analogous to the No-OS API, this worker provides a one-to-one mapping between the No-OS function calls and worker properties.
 \section*{Worker Implementation Details}
 \subsection*{\comp.rcc}
-The version of No-OS used was GitHub commit e9f8fe509cc0e3685cdca47998979f287be4c360\cite{no_os_e9f8fe509cc0e3685cdca47998979f287be4c360}, which was the latest update to the Analog Devices-recommended 2016 R2 release at the time of development. \\ \\
+The version of No-OS used was GitHub commit 06bfc76060d5b9767ae9aad7bf40e3648474ebb7\cite{no_os_06bfc76060d5b9767ae9aad7bf40e3648474ebb7}, which was the latest update to the Analog Devices-recommended 2017\_R1 release at the time of development. \\ \\
 No-OS features "platform layers" which are .c/.h files which implement hardware-specific SPI register accesses within generic API calls. No-OS includes several platform layers which are all specific to the Analog Devices HDL design\cite{adi_hdl_github}. In order to use No-OS with OpenCPI, a new platform layer was added within the \comp{}.rcc code which provided OpenCPI-specific functionality for SPI accesses via slave device property read/writes. This new platform layer was implemented via the ad9361\_platform.cc, ad9361\_platform.h, and parameter.h files. \\
 \noindent \begin{sloppypar}
 \noindent This worker implements every No-OS API call as a property, with the matching ad9361\_get...()/ad9361\_set...() API calls collapsed into a single volatile and writable \comp{}.rcc property. Each property's type(s)/data structure(s) map directly to the type(s)/data structure(s) passed as argument(s) to that property's analogous No-OS function. The only exception to this methodology are:
@@ -517,7 +536,7 @@ Note also that this worker's usage of no-OS not only makes SPI register accesses
 			\hline   
 			\verb+en_state_machine_mode+ & ULong & - & Volatile, Writable & Standard & \verb+ENSM_MODE_ALERT+ & Get/set the Enable State Machine (ENSM) mode. Value should be set using one of the ENSM\_MODE\_ parameters.\\
 			\hline
-			\verb+rx_rf_gain+ & Long & \verb+rx_nchannels+ & Volatile, Writable & Standard & 0,0 & Get/set the receive RF gain for the selected channel. The gain is in dB. Note that the written value to the second index of this property will not be applied when this worker's ad9361\_rf\_phy.pdata.rx2tx2 property member is false.\\
+			\verb+rx_rf_gain+ & Long & \verb+rx_nchannels+ & Volatile, Writable & Standard & - & Get/set the receive RF gain for the selected channel. The gain is in dB. Note that the written value to the second index of this property will not be applied when this worker's ad9361\_rf\_phy.pdata.rx2tx2 property member is false.\\
 			\hline
 			\verb+rx_rf_bandwidth+ & ULong & - & Volatile, Writable & Standard & 18e6 & Get/set the RX RF bandwidth. The bandwidth is in Hz.\\
 			\hline
@@ -543,7 +562,7 @@ Note also that this worker's usage of no-OS not only makes SPI register accesses
 			\hline
 			\verb+rx_quad_track_en_dis+ & UChar & - & Volatile, Writable & Standard & \verb+DISABLE+ & Get/set the status of the RX Quadrate Tracking. The status is one of the parameter values ENABLE or DISABLE. \\
 			\hline
-			\verb+rx_rf_port_input+ & ULong & - & Volatile, Writable & Standard & \verb+A_BALANCED+ & Get/set the RX RF input port. \\
+			\verb+rx_rf_port_input+ & ULong & - & Volatile, Writable & Standard & \verb+A_BALANCED+ & Get/set the RX RF input port. Accepted values: one of the parameter values \verb+A_BALANCED+, \verb+B_BALANCED+, \verb+C_BALANCED+, \verb+A_N+, \verb+A_P+, \verb+B_N+, \verb+B_P+, \verb+C_N+, \verb+C_P+, \verb+TX_MON1+, \verb+TX_MON_2+, \verb+TX_MON1_2+. \\
 			\hline
 			\verb+rx_fastlock_store+ & ULong & - & Writable & Standard & - & Store RX fastlock profile. Writing a value will initiate the process of creating an RX fast lock profile and store it in the AD9361 in the RX profile index indicated by the value written. \\
 			\hline
@@ -599,7 +618,7 @@ Note also that this worker's usage of no-OS not only makes SPI register accesses
 			\hline
 			\verb+do_dcxo_tune_fine+ & ULong & - & Writable & Standard & - & Do DCXO fine tuning. \\
 			\hline
-			\verb+temperature+ & Long & - & Volatile & Standard & - & Get the temperature. \\
+			\verb+temperature+ & Long & - & Volatile & Standard & - & Get the temperature in millidegrees C. \\
 			\hline
 			\verb+bist_loopback+ & Long & - & Volatile, Writable & Standard & - & BIST loopback mode. Valid values are 0 (disables loopback), 1 (loopback AD9361 internal TX-RX), or 2 (loopback (FPGA internal RX-.TX). While a value of 2 is handled by no-os, it is not expected to work with OpenCPI's AD9361 device workers \\
 			\hline
@@ -1081,8 +1100,8 @@ The test outlined in \cite{dac_comp_datasheet} includes validation of a subset o
 
 \begin{thebibliography}{1}
 
-\bibitem{no_os_e9f8fe509cc0e3685cdca47998979f287be4c360} no-OS/ad9361\_api.h at e9f8fe509cc0e3685cdca47998979f287be4c360 analogdevicesinc/no-OS GitHub\\
-\url{https://github.com/analogdevicesinc/no-OS/blob/e9f8fe509cc0e3685cdca47998979f287be4c360/ad9361/sw/ad9361_api.h}
+\bibitem{no_os_06bfc76060d5b9767ae9aad7bf40e3648474ebb7} analogdevicesinc/no-OS@06bfc76 GitHub\\
+\url{https://github.com/analogdevicesinc/no-OS/commit/06bfc76060d5b9767ae9aad7bf40e3648474ebb7}
 \bibitem{no_os} AD9361 No-OS Software [Analog Devices Wiki]\\
 \url{https://wiki.analog.com/resources/eval/user-guides/ad-fmcomms2-ebz/software/no-os-functions}
 \bibitem{adi_hdl_github} GitHub - analogdevicesinc/hdl: HDL libraries and projects \\

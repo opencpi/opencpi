@@ -30,7 +30,7 @@
 #include <unistd.h>
 #include <sys/mman.h>
 #include "zlib.h"
-#include "OcpiOsFileSystem.h"
+#include "ocpi-config.h"
 #include "HdlZynq.h"
 #include "HdlBusDriver.h"
 #ifdef OCPI_OS_macos

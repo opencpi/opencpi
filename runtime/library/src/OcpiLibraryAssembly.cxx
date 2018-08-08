@@ -505,7 +505,7 @@ namespace OCPI {
 		    apName, apValue, pStr.c_str());
 	}
       }
-      if (m_utilInstance.m_hasSlave && i.m_metadataImpl.slave().empty()) {
+      if (m_utilInstance.m_slaves.size() && i.m_metadataImpl.slaves().empty()) {
 	ocpiInfo("Rejected because instance is a proxy, but implementation isn't");
 	return false;
       }
@@ -575,7 +575,7 @@ namespace OCPI {
 	score += bump;
       }
 #endif
-      if (m_utilInstance.m_hasSlave && i.m_metadataImpl.slave().empty()) {
+      if (m_utilInstance.slaves().size() && i.m_metadataImpl.slaves().empty()) {
 	ocpiInfo("Rejected because instance is a proxy, but implementation isn't");
 	return false;
       }

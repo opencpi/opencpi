@@ -31,3 +31,5 @@ export OCPI_LIBRARY_PATH=lib
 Implementations = copy.rcc
 include $(OCPI_CDK_DIR)/include/application.mk
 include $(OCPI_CDK_DIR)/include/lib.mk
+clean::
+	rm -f test.output

@@ -1,0 +1,18 @@
+<!-- 
+ Matchstiq-Z1 AVR Device Proxy Worker OWD
+-->
+<RccWorker language="c++" slave="matchstiq_z1_avr.hdl" spec="matchstiq_z1_avr_proxy_spec">
+  <!--This property is encoded: -->
+  <!-- 0 = off -->
+  <!-- 1 = green -->
+  <!-- 2 = red -->
+  <!-- 3 = orange --> 
+  <property name="led" type="enum" enums="off,green,red,orange" readable="false" writable="true" writesync="1"/>
+
+  <!-- Valid attentuation values are 0.0 to 31.5 dB in 0.5 dB steps -->
+  <property name="attenuation" type="float" readable="false" writable="true" writesync="1"/>
+  
+  <property name="warp_voltage" type="ushort" readable="false" writable="true" writesync="1"/>
+  <property name="serial_num" type="ushort" volatile="true" readsync="1"/>
+
+</RccWorker>

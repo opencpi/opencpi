@@ -22,12 +22,7 @@
 # chip or attached to a chip.
 
 Tests = \
-	ad9361_adc.test \
-	ad9361_dac.test \
-	lime_dac_ts.test \
-	lime_rx_proxy.test \
-	lime_tx_proxy.test \
-	i2c_sim.test
+	lime_dac_ts.test 
 
 # Build Ordering Rules:
 # 1) Subdevices that support other devices must occur AFTER the devices they support.
@@ -46,7 +41,7 @@ Workers = \
 	flash.hdl \
 	gps_uart.hdl \
 	lime_adc.hdl \
-	lime_dac_em.hdl \
+	lime_dac_ts_em.hdl \
 	lime_dac.hdl \
 	lime_dac_ts.hdl \
 	lime_rx.hdl \

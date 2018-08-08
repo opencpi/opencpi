@@ -16,7 +16,7 @@
          worker which corresponds to parameter property values which are
          required for the RX/TX clock/data paths for the zed/fmcomms2/3 setup/hold
          requirements -->
-    <property name='DATA_CLK_Delay' value='2'/>
+    <property name='DATA_CLK_Delay' value='3'/>
     <property name='RX_Data_Delay'  value='0'/>
     <property name='FB_CLK_Delay'   value='7'/>
     <property name='TX_Data_Delay'  value='0'/>

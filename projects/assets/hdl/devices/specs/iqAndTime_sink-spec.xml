@@ -1,0 +1,4 @@
+<ComponentSpec>
+    <!--<Port producer="true" protocol="TimeStamped_IQ-prot" name="in"></Port> -->
+     <Port protocol="TimeStamped_IQ-prot" name="in"></Port>
+</ComponentSpec>

@@ -1,0 +1,121 @@
+<Application Package='ocpi.assets' Done="file_write">
+  <!-- HDL Components-->
+  <!-- TX Chain -->
+  <Instance Component="ocpi.assets.comms_comps.mfsk_mapper">
+    <Property Name="symbols" Value="-32768,32767"/>
+  </Instance>
+  <Instance Component="ocpi.assets.util_comps.zero_pad">
+    <Property Name="num_zeros" Value="38"/>
+  </Instance>
+  <Instance Component="ocpi.assets.dsp_comps.fir_real_sse" Name="tx_fir_real">
+    <Property Name="taps" ValueFile="idata/tx_rrcos_taps.dat"/>
+  </Instance>
+  <Instance Component="ocpi.assets.dsp_comps.phase_to_amp_cordic">
+    <Property Name="magnitude" Value="20000"/>
+    <Property Name="DATA_WIDTH" Value="16"/>
+    <Property Name="DATA_EXT" Value="6"/>
+    <Property Name="STAGES" Value="16"/>
+  </Instance>
+  <Instance Component="ocpi.assets.dsp_comps.cic_int">
+    <Property Name="N" Value="3"/>
+    <Property Name="M" Value="1"/>
+    <Property Name="R" Value="16"/>
+    <Property Name="ACC_WIDTH" Value="28"/>
+  </Instance>
+  <!-- RX Chain -->
+  <Instance Component="ocpi.assets.dsp_comps.complex_mixer">
+    <Property Name="NCO_DATA_WIDTH_p" Value="12"/>
+    <Property Name="INPUT_DATA_WIDTH_p" Value="12"/>
+    <Property Name="enable" Value="false"/>
+    <Property Name="mag" Value="1024"/>
+    <Property Name="phs_init" Value="0"/>
+    <Property Name="phs_inc" Value="0x10AA"/>
+  </Instance>
+  <Instance Component="ocpi.assets.dsp_comps.cic_dec">
+    <Property Name="N" Value="3"/>
+    <Property Name="M" Value="1"/>
+    <Property Name="R" Value="16"/>
+    <Property Name="ACC_WIDTH" Value="28"/>
+  </Instance>
+  <Instance Component="ocpi.assets.dsp_comps.rp_cordic">
+    <Property Name="DATA_WIDTH" Value="16"/>
+    <Property Name="DATA_EXT" Value="6"/>
+    <Property Name="STAGES" Value="16"/>
+  </Instance>
+  <Instance Component="ocpi.assets.dsp_comps.fir_real_sse" Name="rx_fir_real">
+    <Property Name="taps" ValueFile="idata/rx_rrcos_taps.dat"/>
+  </Instance>
+  
+  <!-- RCC Components-->
+  <!-- TX Chain -->
+  <Instance Component="ocpi.core.file_read">
+    <Property Name="fileName" Value="idata/Os.jpeg"/>
+    <Property Name="messagesInFile" Value="false"/>
+    <Property Name="opcode" Value="1"/>
+    <Property Name="messageSize" Value="8192"/>
+    <Property Name="granularity" Value="1"/>
+  </Instance>
+  <!-- RX Chain -->
+  <Instance Component="ocpi.assets.dsp_comps.baudTracking">
+    <Property name="bypass" value="false"/>
+    <Property name="SPB" value="39"/>
+    <Property name="BaudAvrCount" value="10"/>
+  </Instance>
+  <Instance Component="ocpi.assets.dsp_comps.real_digitizer"/>
+  <Instance Component="ocpi.core.file_write">
+    <Property Name="fileName" Value="odata/out_app_fsk_filerw.bin"/>
+    <Property Name="messagesInFile" Value="false"/>
+  </Instance>
+
+  <!-- Connections -->
+  <!-- TX Chain -->
+  <Connection>
+    <Port Instance="file_read" Name="out"/>
+    <Port Instance="mfsk_mapper" Name="in"/>
+  </Connection>
+  <Connection>
+    <Port Instance="mfsk_mapper" Name="out"/>
+    <Port Instance="zero_pad" Name="in"/>
+  </Connection>
+  <Connection>
+    <Port Instance="zero_pad" Name="out"/>
+    <Port Instance="tx_fir_real" Name="in"/>
+  </Connection>
+  <Connection>
+    <Port Instance="tx_fir_real" Name="out"/>
+    <Port Instance="phase_to_amp_cordic" Name="in"/>
+  </Connection>
+  <Connection>
+    <Port Instance="phase_to_amp_cordic" Name="out"/>
+    <Port Instance="cic_int" Name="in"/>
+  </Connection>
+  <!-- RX Chain -->
+  <Connection>
+    <Port Instance="cic_int" Name="out"/>
+    <Port Instance="complex_mixer" Name="in"/>
+  </Connection>
+  <Connection>
+    <Port Instance="complex_mixer" Name="out"/>
+    <Port Instance="cic_dec" Name="in"/>
+  </Connection>
+  <Connection>
+    <Port Instance="cic_dec" Name="out"/>
+    <Port Instance="rp_cordic" Name="in"/>
+  </Connection>
+  <Connection>
+    <Port Instance="rp_cordic" Name="out"/>
+    <Port Instance="rx_fir_real" Name="in"/>
+  </Connection>
+  <Connection>
+    <Port Instance="rx_fir_real" Name="out"/>
+    <Port Instance="baudTracking" Name="in" Buffersize="16352" Buffercount='4'/>
+  </Connection>
+  <Connection>
+    <Port Instance="baudTracking" Name="out"/>
+    <Port Instance="real_digitizer" Name="in"/>
+  </Connection>
+  <Connection>
+    <Port Instance="real_digitizer" Name="out"/>
+    <Port Instance="file_write" Name="in"/>
+  </Connection>
+</Application>

@@ -24,6 +24,7 @@
 #include <unistd.h>
 #include <cerrno>
 #include <climits>
+#include "ocpi-config.h"
 #ifdef OCPI_OS_macos
 #define mmap64 mmap
 #endif
@@ -192,13 +193,12 @@ namespace OCPI {
 	bool load(const char *fileName, std::string &error) {
 	  error.clear();
 	  // FIXME: there should be a utility to run a script in this way
-	  char *command, *base = getenv("OCPI_CDK_DIR");
-	  if (!base)
-	    return OU::eformat(error, "OCPI_CDK_DIR environment variable not set");
-	  int aslen = asprintf(&command,
-		   "%s/scripts/loadBitStream \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\"",
-		   base, fileName, name().c_str(), m_platform.c_str(), m_part.c_str(),
-		   m_esn.c_str(), m_position.c_str());
+	  char *command;
+	  int aslen =
+	    asprintf(&command,
+		     "%s/scripts/loadBitStream \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\"",
+		     OU::getCDK().c_str(), fileName, name().c_str(), m_platform.c_str(),
+		     m_part.c_str(), m_esn.c_str(), m_position.c_str());
           ocpiAssert(aslen > 0);
 	  ocpiInfo("Executing command to load bit stream for device %s: \"%s\"\n",
 		   fileName, command);

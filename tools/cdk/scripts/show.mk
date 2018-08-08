@@ -18,7 +18,7 @@
 
 #include $(OCPI_CDK_DIR)/include/util.mk
 include $(OCPI_CDK_DIR)/include/hdl/hdl-targets.mk
-include $(OCPI_CDK_DIR)/include/rcc/rcc-make.mk
+include $(OCPI_CDK_DIR)/include/rcc/rcc-targets.mk
 
 .PHONY: rccPlatform hdlPlatform hdlTarget all
 .SILENT: rccPlatform hdlPlatform hdlTarget all

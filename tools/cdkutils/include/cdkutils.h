@@ -52,7 +52,6 @@ extern void
 
 extern const char
   *expandEnv(const char *in, std::string &out),
-  *getCdkDir(std::string &cdk), // FIXME: put in runtime?
   *getPrereqDir(std::string &dir),
   *getPlatforms(const char *attr, OrderedStringSet &platforms, Model m = NoModel, bool onlyValidPlatforms = true),
   *getHdlPrimitive(const char *prim, const char *type, OrderedStringSet &prims),

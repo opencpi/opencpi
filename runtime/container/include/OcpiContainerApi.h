@@ -177,6 +177,7 @@ namespace OCPI {
 #define OCPI_DATA_TYPE_S(sca,corba,letter,bits,run,pretty,store)                  \
       virtual void get##pretty##Parameter(unsigned ordinal, char *, size_t length, \
 					  unsigned idx) const = 0; \
+      virtual void set##pretty##PropertyOrd(unsigned ordinal, run val, unsigned idx) const = 0; \
       virtual void							\
       get##pretty##PropertyOrd(unsigned ord, char *, size_t length, unsigned idx) const = 0;
 
@@ -254,7 +255,9 @@ namespace OCPI {
         *find(const char *model, const char *which = NULL, const PValue *props = NULL),
 	*find(const PValue *list),
 	*get(unsigned n);
-      static void shutdown();
+      static void
+	list(bool onlyPlatforms),
+	shutdown();
     };
     class Application; // forward reference for applications that span containers.
     // Structure to capture indexing arrays and sequences and navigating to struct members
@@ -303,6 +306,8 @@ namespace OCPI {
 			    bool write) const {
 #if !defined(NDEBUG) || defined(OCPI_API_CHECK_PROPERTIES)
         checkTypeAlways(m, ctype, n, write);
+#else
+        (void)m;(void)ctype;(void)n;(void)write;
 #endif
       }
       const OCPI::Util::Member &descend(AccessList &list, size_t &offset) const;
@@ -396,7 +401,9 @@ namespace OCPI {
 #undef OCPI_DATA_TYPE
     };
     // ACI functions for using servers
-    void useServer(const char *server, bool verbose);
+    void useServers(const char *server = NULL, const PValue *params = NULL,
+		    bool verbose = false);
+    void useServer(const char *server, bool verbose = false);
     void enableServerDiscovery();
     bool isServerSupportAvailable();
   }

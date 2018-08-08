@@ -38,7 +38,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \renewcommand{\headrulewidth}{0.5pt}
 \renewcommand{\footrulewidth}{0.5pt}
 \newcommand{\terminaloutput}[1]{\texttt{#1}}
-\rhead{\small{Project ANGRYVIPER}}
+\rhead{\small{ANGRYVIPER Team}}
 %----------------------------------------------------------------------------------------
 % Appendix packages
 %----------------------------------------------------------------------------------------
@@ -101,6 +101,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \lhead{\small{\docTitle}}
 
 \def\comp{ad9361\_data\_sub}
+\edef\ecomp{ad9361_data_sub}
 \def\Comp{AD9361 Data Sub}
 \graphicspath{ {figures/} }
 
@@ -120,7 +121,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Release Date      & Aug 2017         \\
 	\hline
-	Component Library & ocpi.devices     \\
+	Component Library & ocpi.assets.devices     \\
 	\hline
 	Workers           & \comp.hdl        \\
 	\hline
@@ -182,15 +183,15 @@ Note that the half duplex data interface formats allow for AD9361 P0/P1 port rou
     \path[->]
     ;
     \gettikzxy{(placeholder)}{\rx}{\ry}
-    \myclient.apply(\rx - 200,\ry,C1, ``dev\_data\_clk" \\ dev signal port \\ DATA\_CLK\_P \\ sent to \\ ad9361\_adc\_sub.hdl);
+    \myclient.apply(\rx - 200,\ry,C1, ``dev\_data\_clk'' \\ dev signal port \\ DATA\_CLK\_P \\ sent to \\ ad9361\_adc\_sub.hdl);
     \path[->]($(R1.north) + (-200 pt,0)$) edge [] node [] {} (C1);
-    \myclient.apply(\rx - 100,\ry,C1, ``dev\_data\_adc" \\ dev signal port \\ ADC data bus \\ sent to \\ ad9361\_adc\_sub.hdl);
+    \myclient.apply(\rx - 100,\ry,C1, ``dev\_data\_adc'' \\ dev signal port \\ ADC data bus \\ sent to \\ ad9361\_adc\_sub.hdl);
     \path[->]($(R1.north) + (-100 pt,0)$) edge [] node [] {} (C1);
-    \myclient.apply(\rx     ,\ry,C1, ``dev\_cfg\_data\_port" \\ dev signal port \\ config info \\ sent to \\ ad9361\_config.hdl);
+    \myclient.apply(\rx     ,\ry,C1, ``dev\_cfg\_data\_port'' \\ dev signal port \\ config info \\ sent to \\ ad9361\_config.hdl);
     \path[->]($(R1.north) + (0   pt,0)$) edge [] node [] {} (C1);
-    \myclient.apply(\rx + 100,\ry,C1, ``dev\_data\_clk" \\ dev signal port \\ DATA\_CLK\_P \\ sent to \\ ad9361\_dac\_sub.hdl);
+    \myclient.apply(\rx + 100,\ry,C1, ``dev\_data\_clk'' \\ dev signal port \\ DATA\_CLK\_P \\ sent to \\ ad9361\_dac\_sub.hdl);
     \path[->]($(R1.north) + (100 pt,0)$) edge [] node [] {} (C1);
-    \myclient.apply(-\rx + 200,\ry,C1, ``dev\_data\_dac" \\ dev signal port \\ DAC data bus \\ sent from \\ ad9361\_dac\_sub.hdl);
+    \myclient.apply(-\rx + 200,\ry,C1, ``dev\_data\_dac'' \\ dev signal port \\ DAC data bus \\ sent from \\ ad9361\_dac\_sub.hdl);
     \path[<-]($(R1.north) + (200 pt,0)$) edge [] node [] {} (C1);
 
     \myclient.apply(\rx,\ry-170,C1, Signals: \\ DATA\_CLK\_P, DATA\_CLK\_N, RX\_FRAME\_P, RX\_FRAME\_N, FB\_CLK\_P, FB\_CLK\_N, \\ TX\_FRAME\_P, TX\_FRAME\_N, TXNRX, ENABLE, \\ P0\_D\_11\_6[5:0], P0\_D\_5\_0[5:0], P1\_D\_11\_6[5:0], P0\_D\_5\_0[5:0] );
@@ -429,6 +430,7 @@ Because this worker does not include a control plane and serves purely as an IC 
 \section*{Performance and Resource Utilization}
 \subsubsection*{\comp.hdl}
 Because every possible parameter property combination of this worker has no control plane and no registered data paths, no registers or LUTS are used and the Fmax measurement does not exist. \\
+%\input{../../\ecomp.hdl/utilization.inc}
 % see performance_and_resource_utilization.txt
 \begin{scriptsize}
 	\begin{tabular}{|M{4.5cm}|M{2cm}|M{2cm}|M{1.94cm}|M{2cm}|M{2.5cm}|}

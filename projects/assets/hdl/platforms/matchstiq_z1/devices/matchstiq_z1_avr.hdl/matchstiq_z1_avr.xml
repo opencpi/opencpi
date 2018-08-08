@@ -1,0 +1,6 @@
+<HdlDevice language="vhdl" FirstRawProperty="TCVCXO_WARP_REG" spec="matchstiq_z1_avr_spec">
+  <!-- I2C read/write transactions require additional time to complete -->
+  <ControlInterface Timeout="131072"/>
+  <!--Need these signals to control i2c_opencores -->
+  <Rawprop name="rawprops" master="true"/>
+</HdlDevice>

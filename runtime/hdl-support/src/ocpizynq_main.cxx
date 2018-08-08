@@ -32,6 +32,7 @@
 #include <unistd.h>
 #include <sys/mman.h>
 #include <time.h>
+#include "ocpi-config.h"
 #include "OcpiUtilMisc.h"
 #include "CmdOption.h"
 #include "HdlZynq.h"
@@ -73,12 +74,12 @@ static uint8_t *map(off_t addr, size_t arg_size) {
 }
 
 int
-mymain(const char **/*argv*/) {
+mymain(const char **argv) {
 #if !defined(OCPI_ARCH_arm) && !defined(OCPI_ARCH_arm_cs)
   fprintf(stderr, "This program is only functional on Zynq/Arm platforms\n");
   return 1;
 #endif
-  std::string cmd = options.argv()[0];
+  std::string cmd = argv[0]; // ensured valid by caller
   if (cmd == "test")
     printf("test\n");
   else if (cmd == "clocks") {
@@ -113,7 +114,7 @@ mymain(const char **/*argv*/) {
       arm("ARM", slcr->arm_pll_ctrl, slcr->arm_pll_cfg),
       ddr("DDR", slcr->ddr_pll_ctrl, slcr->ddr_pll_cfg),
       io("IO", slcr->io_pll_ctrl, slcr->io_pll_cfg),
-      &pll = ((ctrl & 0x30) >> 4) == 2 ? ddr : 
+      &pll = ((ctrl & 0x30) >> 4) == 2 ? ddr :
              ((ctrl & 0x30) >> 4) == 3 ? io : arm;
     uint32_t divisor = (ctrl >> 8) & 0x3f;
     double pssclk = (freq * divisor) / pll.fdiv;
@@ -146,9 +147,9 @@ mymain(const char **/*argv*/) {
     for (unsigned n = 0; n < NFCLKS; n++, fp++) {
       volatile FCLK f = *(FCLK*)fp;
       //    printf("%u %p %08x %08x %08x %08x\n", n, fp,
-      //	   f.clk_ctrl, fp->thr_ctrl, fp->thr_count, fp->thr_sta); 
+      //	   f.clk_ctrl, fp->thr_ctrl, fp->thr_count, fp->thr_sta);
       PLL &fpll =
-	((f.clk_ctrl & 0x30) >> 4) == 2 ? arm : 
+	((f.clk_ctrl & 0x30) >> 4) == 2 ? arm :
 	((f.clk_ctrl & 0x30) >> 4) == 3 ? ddr : io;
       uint32_t
 	divisor0 = (f.clk_ctrl >> 8) & 0x3f,

@@ -282,7 +282,7 @@ inline void OCPI::Time::Emit::emitT( OCPI::Time::Emit::EventId id,
 				    EventTriggerRole role)
 {        
 
-  int size = sizeof(uint64_t);
+  uint32_t size = sizeof(uint64_t);
   AUTO_MUTEX( m_mutex ); 
   if ( role != NoTrigger ) 
     processTrigger(role); 

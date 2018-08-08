@@ -43,15 +43,60 @@ int main()
     app.stop();
     printf("App stopped.\n");
 
-    std::string value;
-    app.getProperty("ad9361_config_proxy", "temperature", value);
-    std::cout << "AD9361 temperature is: " << value << "\n";
+    ///@TODO / FIXME - test all No-OS API calls, not just ad9361_get_temperature()
 
-    app.getProperty("ad9361_config_proxy", "temperature", value);
-    std::cout << "AD9361 temperature is: " << value << "\n";
+    OA::Long value;
+    OCPI::API::Property p(app, "ad9361_config_proxy", "temperature");
 
-    app.getProperty("ad9361_config_proxy", "temperature", value);
-    std::cout << "AD9361 temperature is: " << value << "\n";
+    value = p.getLongValue();
+    std::cout << "AD9361 temperature is: " << ((double)value/1000.) << " degrees C\n";
+    value = p.getLongValue();
+    std::cout << "AD9361 temperature is: " << ((double)value/1000.) << " degrees C\n";
+    value = p.getLongValue();
+    std::cout << "AD9361 temperature is: " << ((double)value/1000.) << " degrees C\n";
+
+    {
+      std::string value;
+
+      value.clear();
+      app.getProperty("ad9361_config_proxy", "RF_GAIN_FASTATTACK_AGC", value);
+      app.setProperty("ad9361_config_proxy", "rx_gain_control_mode", value.c_str());
+      // expecting failure, you can't set the gain in an auto mode
+      try {
+        app.setProperty("ad9361_config_proxy", "rx_rf_gain", "20,20");
+        return EXIT_FAILURE;
+      }
+      catch(...) {
+      }
+
+      value.clear();
+      app.getProperty("ad9361_config_proxy", "RF_GAIN_SLOWATTACK_AGC", value);
+      app.setProperty("ad9361_config_proxy", "rx_gain_control_mode", value.c_str());
+      // expecting failure, you can't set the gain in an auto mode
+      try {
+        app.setProperty("ad9361_config_proxy", "rx_rf_gain", "20,20");
+        return EXIT_FAILURE;
+      }
+      catch(...) {
+      }
+
+      value.clear();
+      app.getProperty("ad9361_config_proxy", "RF_GAIN_HYBRID_AGC", value);
+      app.setProperty("ad9361_config_proxy", "rx_gain_control_mode", value.c_str());
+      // expecting failure, you can't set the gain in an auto mode
+      try {
+        app.setProperty("ad9361_config_proxy", "rx_rf_gain", "20,20");
+        return EXIT_FAILURE;
+      }
+      catch(...) {
+      }
+
+      value.clear();
+      app.getProperty("ad9361_config_proxy", "RF_GAIN_MGC", value);
+      app.setProperty("ad9361_config_proxy", "rx_gain_control_mode", value.c_str());
+      // expecting success
+      app.setProperty("ad9361_config_proxy", "rx_rf_gain", "20,20");
+    }
 
     // dump all final property values
     if (debug_mode) {

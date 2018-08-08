@@ -16,6 +16,7 @@ TAGS
 *.d
 !releng/env.d
 *.o
+*.gch
 */*/*/*/idl/*.cxx
 */*/*/*/idl/*.h
 *-bin/
@@ -72,4 +73,4 @@ tools/cdk/include/autoconfig_import*.mk
 
 # Our hidden files
 .build_platform
-.avconfig.*
+.ocpi_config.*

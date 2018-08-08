@@ -17,16 +17,13 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 OcpiApp=biasFile
-
+OcpiApps=mkTestFile
 OcpiRunArgs?= $(ARGS)
 
-# Prepare the input data before the app is run
 override OcpiRunBefore+= \
-  g++ -Wall -o target-$(OCPI_TOOL_DIR)/a.out mkTestFile.cxx && \
-  target-$(OCPI_TOOL_DIR)/a.out $(FILE_SIZE) > test.input 2> good.output && $(VG)
-
+  target-$(OCPI_TOOL_DIR)/mkTestFile $(FILE_SIZE) > test.input 2> good.output && $(VG)
 # Verify after output after the app is run
-override OcpiRunAfter+= ; cmp test.output good.output && echo PASSED
+override OcpiRunAfter+= && cmp test.output good.output && echo PASSED
 
 include $(OCPI_CDK_DIR)/include/application.mk
 

@@ -114,7 +114,7 @@ bool
 #undef ocpiAssert
 #endif
 
-#define ocpiWierd(...) ocpiLog(OCPI_LOG_WIERD, __VA_ARGS__)
+#define ocpiWeird(...) ocpiLog(OCPI_LOG_WEIRD, __VA_ARGS__)
 #define ocpiInfo(...) ocpiLog(OCPI_LOG_INFO, __VA_ARGS__)
 #define ocpiBad(...) ocpiLog(OCPI_LOG_BAD, __VA_ARGS__)
 #if defined(NDEBUG)

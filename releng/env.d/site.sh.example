@@ -1,0 +1,7 @@
+## Any variables which are desired to be overridden or executed globally should be set here.
+
+## For example, you may wish to have all your licenses defined in one location:
+
+# export OCPI_ALTERA_LICENSE_FILE=1234@10.10.10.10
+# export OCPI_MODELSIM_LICENSE_FILE=1234@10.10.10.10
+# export OCPI_XILINX_LICENSE_FILE=1234@10.10.10.10

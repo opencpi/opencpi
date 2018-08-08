@@ -1,0 +1,288 @@
+\documentclass{article}
+\iffalse
+This file is protected by Copyright. Please refer to the COPYRIGHT file
+distributed with this source distribution.
+
+This file is part of OpenCPI <http://www.opencpi.org>
+
+OpenCPI is free software: you can redistribute it and/or modify it under the
+terms of the GNU Lesser General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License along
+with this program. If not, see <http://www.gnu.org/licenses/>.
+\fi
+\author{} % Force author to be blank
+%----------------------------------------------------------------------------------------
+% Paper size, orientation and margins
+%----------------------------------------------------------------------------------------
+\usepackage{geometry}
+\geometry{
+	letterpaper,			% paper type
+	portrait,				% text direction
+	left=.75in,				% left margin
+	top=.75in,				% top margin
+	right=.75in,			% right margin
+	bottom=.75in			% bottom margin
+ }
+%----------------------------------------------------------------------------------------
+% Header/Footer
+%----------------------------------------------------------------------------------------
+\usepackage{fancyhdr} \pagestyle{fancy} % required for fancy headers
+\renewcommand{\headrulewidth}{0.5pt}
+\renewcommand{\footrulewidth}{0.5pt}
+\rhead{\small{ANGRYVIPER Team}}
+%----------------------------------------------------------------------------------------
+% Appendix packages
+%----------------------------------------------------------------------------------------
+\usepackage[toc,page]{appendix}
+%----------------------------------------------------------------------------------------
+% Defined Commands & Renamed Commands
+%----------------------------------------------------------------------------------------
+\renewcommand{\contentsname}{Table of Contents}
+\renewcommand{\listfigurename}{List of Figures}
+\renewcommand{\listtablename}{List of Tables}
+\newcommand{\todo}[1]{\textcolor{red}{TODO: #1}\PackageWarning{TODO:}{#1}} % To do notes
+\newcommand{\code}[1]{\texttt{#1}} % For inline code snippet or command line
+%----------------------------------------------------------------------------------------
+% Various pacakges
+%----------------------------------------------------------------------------------------
+\usepackage{hyperref} % for linking urls and lists
+\usepackage{graphicx} % for including pictures by file
+\usepackage{listings} % for coding language styles
+\usepackage{rotating} % for sideways table
+\usepackage{pifont}   % for sideways table
+\usepackage{pdflscape} % for landscape view
+%----------------------------------------------------------------------------------------
+% Table packages
+%----------------------------------------------------------------------------------------
+\usepackage{tabularx} % c=center,l=left,r=right,X=fill
+\usepackage{float}
+\floatstyle{plaintop}
+\usepackage[tableposition=top]{caption}
+\newcolumntype{P}[1]{>{\centering\arraybackslash}p{#1}}
+\newcolumntype{M}[1]{>{\centering\arraybackslash}m{#1}}
+%----------------------------------------------------------------------------------------
+% Block Diagram / FSM Drawings
+%----------------------------------------------------------------------------------------
+\usepackage{tikz}
+\usetikzlibrary{shapes,arrows,fit,positioning}
+\usetikzlibrary{automata} % used for the fsm
+%----------------------------------------------------------------------------------------
+% Colors Used
+%----------------------------------------------------------------------------------------
+\usepackage{colortbl}
+\definecolor{blue}{rgb}{.7,.8,.9}
+\definecolor{ceruleanblue}{rgb}{0.16, 0.32, 0.75}
+\definecolor{drkgreen}{rgb}{0,0.6,0}
+\definecolor{deepmagenta}{rgb}{0.8, 0.0, 0.8}
+\definecolor{cyan}{rgb}{0.0,0.6,0.6}
+\definecolor{maroon}{rgb}{0.5,0,0}
+%----------------------------------------------------------------------------------------
+% Update the docTitle and docVersion per document
+%----------------------------------------------------------------------------------------
+\def\docTitle{Component Data Sheet}
+\def\docVersion{1.3}
+%----------------------------------------------------------------------------------------
+\date{Version \docVersion} % Force date to be blank and override date with version
+\title{\docTitle}
+\lhead{\small{\docTitle}}
+
+\def\comp{file\_write}
+\def\Comp{File\ Write }
+\graphicspath{ {figures/} }
+
+\begin{document}
+
+\section*{Summary - \Comp}
+\begin{tabular}{|c|M{13.5cm}|}
+	\hline
+	\rowcolor{blue}
+	                  &                                                                                \\
+	\hline
+	Name              & \comp                                                                          \\
+	\hline
+	Worker Type       & Application                                                                    \\
+	\hline
+	Version           &  v\docVersion \\
+	\hline
+	Release Date      &  Febuary 2018 \\
+	\hline
+	Component Library &   ocpi.core\\
+	\hline
+	Workers           &  file\_write.rcc file\_write.hdl\\
+	\hline
+	Tested Platforms  &  isim, xsim, modelsim, xilinx13\_3, centos6, centos7\\
+	\hline
+\end{tabular}
+
+\section*{Functionality}
+\begin{flushleft}
+The File\_Write component writes application data to a file. It is normally used by
+specifying an instance of the File\_Write component, and connecting its input port to an
+output port of the component produces the data. The name of the file to be written is
+specified in a property.
+This component has one input port whose name is in, which carries the messages to
+be written to the file. There is no protocol associated with the file, enabling it to be
+agnostic as to the protocol of the file data and the connected output port.
+\subsection*{Operating Modes}
+\subsubsection*{Data Streaming Mode}
+In data streaming mode, the contents of the file becomes the payloads of the stream of
+messages arriving at the input port. No message lengths or opcodes are recorded in
+the output file.
+\subsubsection*{Messaging Mode}
+In messaging mode, the contents of the output file is written as a sequence of defined
+messages, with an 8-byte header in the file itself preceding the data for each message
+written to the file. This header contains the length and opcode of the message, with the
+data contents of the message following the header. The length can be zero, meaning
+that a header will be written but no data will follow the header in the file.\\
+\medskip \medskip 
+\input{snippets/messaging_snippet.tex} 
+\subsection*{No Protocol}
+The port on the component has no protocol specified in order to support interfacing with any protocol.  This means that the data file that is created is formatted to match the protocol of the output port of the connected worker. 
+\subsection*{End of File Handling}
+When the File\_Write component receives a zero-length message, it will interpret it as
+the end of data if the \textit{stopOnEOF} property is true (the default). In this case it will
+declare itself ``done”, and not write any further messages to the file (and not write the
+zero-length message to the file either). If \textit{stopOnEOF} is false, and it is in messaging mode, it will write the zero-length message to the file like any other message (with a
+header, but with no data).
+\input{snippets/ZLM_snippet.tex}       
+\end{flushleft}
+
+\section*{Worker Implementation Details}
+\subsection*{\comp.hdl}
+\begin{flushleft}
+This worker will only run on simulator platforms.  This includes isim, xsim, and modelsim and will not run on or be built for any other hardware platforms.  This is because it conatins code that cannot be realized into RTL.  
+\end{flushleft}
+\subsection*{\comp.rcc}
+\begin{flushleft}
+This worker in implemented in the C language version of the RCC model.  Most new workers are implemented in the C++ language version of the RCC model.
+\end{flushleft}
+
+\section*{Source Dependencies}
+\subsection*{\comp.rcc}
+\begin{itemize}
+\item file\_write.c
+\item file\_write.h 
+\end{itemize}
+\subsection*{\comp.hdl}
+\begin{itemize}
+\item file\_write.vhd
+\end{itemize}
+
+
+\begin{landscape}
+	\section*{Component Spec Properties}
+	\begin{scriptsize}
+\begin{tabular}{|p{2cm}|p{1.5cm}|c|c|c|p{1.5cm}|p{1cm}|p{7cm}|}
+\hline
+\rowcolor{blue}
+Name                 & Type   & SequenceLength & ArrayDimensions & Accessibility       & Valid Range & Default & Usage
+\\
+\hline
+fileName & string  length:1024& - & - & Initial & -  &- & The name of the file that is written to disk from the input port. 
+\\
+\hline
+messagesInFile & bool  & - & - & Readable, Initial & -  &false & The flag that is used to turn on and off message mode. See section on Message Mode.
+\\
+\hline
+bytesWritten & uLongLong  & - & - & Volatile & -  &- & The number of bytes written to file.  Useful for debugging data flow issues.   
+\\
+\hline
+messagesWritten & uLongLong  & - & - & Volatile & -  &- & The number of messages written to file.  Useful for debugging data flow issues.
+\\
+\hline
+stopOnEOF & bool  & - & - & Initial & -  &true & The flag used to enable or disable the zero length message that puts the component into the done state.  
+\\
+\hline
+\end{tabular}
+	\end{scriptsize}
+
+	\section*{Worker Properties}
+	\subsection*{\comp.hdl}
+	\begin{scriptsize}
+    \begin{tabular}{|p{2cm}|p{2.75cm}|p{3.5cm}|p{2cm}|p{2cm}|p{2.25cm}|p{1.5cm}|p{1cm}|p{4cm}|}
+			\hline
+			\rowcolor{blue}
+			Type     & Name                      & Type  & SequenceLength & ArrayDimensions & Accessibility       & Valid Range & Default & Usage                                      \\
+			\hline
+			Spec Property & fileName & string  & - & - & Readable & -  &- & added Readable
+            \\
+            \hline
+            Property & CWD\_MAX\_LENGTH & ulong  & - & - & Paramater & -  & 256 & parameter for max string length for the cwd property
+            \\
+            \hline
+            Property & cwd & string length:CWD\_MAX\_LENGTH & - & - & Volatile & -  &- & the current working directory of the application (this is required for the hdl version of this worker and cannot be detiermined automaticly) 
+            \\
+            \hline
+    \end{tabular}
+	\end{scriptsize}
+	
+	\subsection*{\comp.rcc}
+	\begin{scriptsize}
+    \begin{tabular}{|p{2cm}|p{2.75cm}|p{3.5cm}|p{2cm}|p{2cm}|p{2.25cm}|p{1.5cm}|p{1cm}|p{4cm}|}
+			\hline
+			\rowcolor{blue}
+			Type     & Name                      & Type  & SequenceLength & ArrayDimensions & Accessibility       & Valid Range & Default & Usage                                      \\
+			\hline
+			Spec Property & fileName & string  & - & - & Readable & -  &- & added Readable \\
+			\hline
+			Spec Property & suppressEOF & string  & - & - & Readable & -  &- & added Readable \\
+			\hline
+			Spec Property & messageSize & string  & - & - & Readable & -  &- & added Volatile \\
+			\hline
+			
+    \end{tabular}
+	\end{scriptsize}
+
+	\section*{Component Ports}
+	\begin{scriptsize}
+\begin{tabular}{|M{2cm}|M{1.5cm}|M{4cm}|c|c|M{9cm}|}
+\hline
+\rowcolor{blue}
+Name & Producer & Protocol & Optional & Advanced & Usage
+\\
+\hline
+in & False & None& False & - & -\\
+\hline
+\end{tabular}
+	\end{scriptsize}
+
+	\section*{Worker Interfaces}
+	\subsection*{\comp.hdl}
+	\begin{scriptsize}
+\begin{tabular}{|M{2cm}|M{1.5cm}|M{4cm}|c|M{12cm}|}
+\hline
+\rowcolor{blue}
+Type & Name & DataWidth & Advanced & Usage
+\\
+\hline
+StreamInterface & in & 32 & - & -\\
+\hline
+\end{tabular}
+	\end{scriptsize}
+	
+	\subsection*{\comp.rcc}
+	\begin{scriptsize}
+\begin{tabular}{|M{2cm}|M{1.5cm}|M{4cm}|c|M{12cm}|}
+\hline
+\rowcolor{blue}
+Type & Name & DataWidth & Advanced & Usage
+\\
+\hline
+Port & in & - & buffersize=8k & -\\
+\hline
+\end{tabular}
+	\end{scriptsize}
+\end{landscape}
+
+\section*{Test and Verification}
+\begin{flushleft}
+All test benches use this worker as part of the verification process. A unit-test does not exist for this component.
+\end{flushleft}
+\end{document}

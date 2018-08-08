@@ -38,11 +38,11 @@ ifeq ($(HdlPlatform)$(HdlPlatforms),)
   endif
 endif
 
-# imports need to be created before ocpisetup.mk no matter what
+# imports need to be created before exports etc.
 ifeq ($(filter imports projectpackage,$(MAKECMDGOALS)),)
-  doimports=$(shell $(MAKE) imports)
+  doimports=$(shell $(OcpiExportVars) $(MAKE) imports NoExports=1)
   ifeq ($(wildcard imports),)
-    $(info Imports are not set up for this project.  Doing it now.)
+    $(info Setting up imports)
     $(info $(doimports))
   else
     # If the imports already exist, we still want to make sure they are up to date
@@ -50,20 +50,15 @@ ifeq ($(filter imports projectpackage,$(MAKECMDGOALS)),)
   endif
 endif
 
-ifeq ($(wildcard exports)$(filter projectpackage,$(MAKECMDGOALS)),)
-  doexports=$(shell $(OCPI_CDK_DIR)/scripts/makeProjectExports.sh - $(ProjectPackage) xxx)
+ifeq ($(NoExports)$(wildcard exports)$(filter projectpackage,$(MAKECMDGOALS)),)
+  doexports=$(shell $(OcpiExportVars) $(OCPI_CDK_DIR)/scripts/makeProjectExports.sh - $(ProjectPackage) xxx)
   ifeq ($(filter clean%,$(MAKECMDGOALS)),)
-    $(info Exports are not set up for this project.  Doing it now.)
+    $(info Setting up exports)
     $(info $(doexports))
   else
     # we are assuming that exports are not required for any clean goal.
     # $(nuthin $(doexports))
   endif
-endif
-
-# Do not want to import ocpisetup.mk if all we are doing is exporting project variables to python/bash
-ifeq ($(filter imports exports cleanimports cleanexports projectpackage,$(MAKECMDGOALS)),)
-  include $(OCPI_CDK_DIR)/include/ocpisetup.mk
 endif
 
 ifeq (@,$(AT))
@@ -244,22 +239,25 @@ clean: cleancomponents cleanapplications cleanrcc cleanhdl cleanexports cleanimp
 # is empty after clean, the whole directory can be removed.
 # use $(realpath) rather than $(readlink -e) for portability (vs BSD/Darwin) and speed
 cleanimports:
-	if [ \( -L imports -a "$(realpath imports)" == "$(realpath $(OcpiProjectRegistryDir))" \) \
+	if [ \( -L imports -a "$(realpath imports)" == "$(realpath $(OcpiGlobalDefaultProjectRegistryDir))" \) \
 	     -o \( -L imports -a ! -e imports \) ]; then \
 	  rm imports; \
 	fi
 
 cleanexports:
-	rm -r -f exports
+	rm -r -f exports artifacts
 
 cleaneverything: clean
 	find . -name '*~' -exec rm {} \;
 	find . -depth -name '*.dSym' -exec rm -r {} \;
 	find . -depth -name gen -exec rm -r -f {} \;
 	find . -depth -name 'target-*' -exec rm -r -f {} \;
-	find . -depth -name lib -exec rm -r -f {} \;
+	find . -depth -name lib -a -type d -a ! -path "*/rcc/platforms/*" -exec  rm -r -f {} \;
 
 ifdef ShellProjectVars
 projectpackage:
-$(info ProjectPackage="$(ProjectPackage)";)
+	$(info ProjectPackage="$(ProjectPackage)";)
+projectdeps:
+	$(info ProjectDependencies="$(ProjectDependencies)";)
 endif
+

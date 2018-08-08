@@ -1,0 +1,13 @@
+<!-- This is the spec file (OCS) for: real_digitizer
+     Add component spec attributes, like "protocol".
+     Add property elements for spec properties.
+     Add port elements for i/o ports -->
+<ComponentSpec>
+
+  <Property Name='need_sync' Type='Bool' Readable='true' Default='true' Initial='true'/>
+
+  <DataInterfaceSpec Name="in" Producer="false" Protocol="rstream_protocol.xml"/>
+  <DataInterfaceSpec Name="out" Producer="true" Protocol="rstream_protocol.xml"/>
+
+</ComponentSpec>
+

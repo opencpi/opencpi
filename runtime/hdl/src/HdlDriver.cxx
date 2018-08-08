@@ -37,12 +37,13 @@ namespace OCPI {
     const char *hdl = "hdl";
 
     OCPI::HDL::Device *Driver::
-    open(const char *which, bool discovery, bool forLoad, const OA::PValue *params,
+    open(const char *name, bool discovery, bool forLoad, const OA::PValue *params,
 	 std::string &err) {
       parent().parent().configureOnce();
       lock();
       // FIXME: obviously this should be registered and dispatched nicely..
       bool pci = false, ether = false, sim = false, bus = false, lsim = false;
+      const char *which = name;
       if (!strncasecmp("PCI:", which, 4)) {
 	pci = true;
 	which += 4;
@@ -66,6 +67,10 @@ namespace OCPI {
 	  ether = true;
 	else
 	  pci = true;
+      }
+      if (!which[0]) {
+	OU::format(err, "Missing device name after prefix \"%s\"", name);
+	return NULL;
       }
       Device *dev =
 	pci ? PCI::Driver::open(which, params, err) : 
@@ -125,6 +130,11 @@ namespace OCPI {
       OU::SelfAutoMutex x(this); // protect m_params etc.
       unsigned count = 0;
       m_params = params;
+      // Note that the default here is to DO discovery, i.e. to disablediscovery
+      // the variable must be set and set to 0
+      const char *env;
+      if ((env = getenv("OCPI_ENABLE_HDL_DISCOVERY")) && env[0] == '0')
+	return 0;
       std::string error;
       count += Zynq::Driver::search(params, exclude, discoveryOnly, error);
       if (error.size()) {
@@ -179,6 +189,15 @@ namespace OCPI {
 	config = getDeviceConfig(l_name + 4);
       // Configure the device
       return dev.configure(config, err);
+    }
+    void Driver::initAdmin(OccpAdminRegisters &admin, const char *platform, HdlUUID &hdlUuid,
+			   OU::UuidString *uuidString) {
+      Device::initAdmin(admin, platform, hdlUuid, uuidString);
+    }
+    DirectWorker *Driver::
+    createDirectWorker(Device &dev, const Access &cAccess, Access &wAccess, ezxml_t impl,
+		       ezxml_t inst, const char *idx, unsigned timeout) {
+      return new DirectWorker(dev, cAccess, wAccess, impl, inst, idx, timeout);
     }
 
     OC::RegisterContainerDriver<Driver> driver;

@@ -33,6 +33,7 @@
 
 #include <stdio.h>
 #include <stddef.h>
+#include "OcpiContainerRunConditionApi.h"
 #ifdef __cplusplus
 
 #include "OcpiContainerApi.h" // For proxy slaves
@@ -125,10 +126,16 @@ typedef enum {
 } RCCEndian;
 #ifdef __cplusplus
 class RCCUserPort;
-typedef bool RCCBoolean;
-
+typedef OCPI::API::OcpiBoolean RCCBoolean;
+typedef OCPI::API::OcpiPortMask RCCPortMask;
+typedef OCPI::API::RunCondition RunCondition;
+const OCPI::API::OcpiPortMask RCC_ALL_PORTS = OCPI::API::OCPI_ALL_PORTS;
+const OCPI::API::OcpiPortMask RCC_NO_PORTS = OCPI::API::OCPI_NO_PORTS;
 #else
-typedef uint8_t   RCCBoolean;
+typedef OcpiBoolean  RCCBoolean;
+typedef OcpiPortMask RCCPortMask;
+#define RCC_ALL_PORTS OCPI_ALL_PORTS
+#define RCC_NO_PORTS OCPI_NO_PORTS
 #endif
 typedef void      *RCCBufferId;
 typedef float     RCCFloat;
@@ -141,8 +148,6 @@ typedef uint64_t  RCCTime;
 #define RCC_NO_EXCEPTION (0)
 #define RCC_SYSTEM_EXCEPTION (1)
 #define RCC_NO_ORDINAL ((RCCOrdinal)(-1))
-#define RCC_ALL_PORTS (~(RCCPortMask)0)
-#define RCC_NO_PORTS ((RCCPortMask)0)
 
 typedef enum {
   RCC_OK,
@@ -153,7 +158,6 @@ typedef enum {
   RCC_ADVANCE_DONE
 } RCCResult;
 
-typedef uint32_t RCCPortMask;
 typedef struct RCCWorker RCCWorker;
 typedef struct RCCPort RCCPort;
 
@@ -163,62 +167,6 @@ typedef struct {
   uint32_t     usecs;
 } RCCRunCondition;
 
-#ifdef __cplusplus
-class RunCondition {
-  friend class OCPI::RCC::Worker;
-  friend class OCPI::OCL::Worker;
- public:
-  RCCPortMask *m_portMasks;  // the masks used for checking
-  RCCBoolean   m_timeout;    // is timeout enabled?
-  uint32_t     m_usecs;      // usecs of timeout, zero is valid
- private:
-  RCCPortMask  m_myMasks[3]; // non-allocated masks used almost all the time
-  RCCPortMask *m_allocated;  // NULL or allocated
-  bool         m_hasRun;     // Have we run since being activated?
- protected:
-  RCCPortMask  m_allMasks;   // summary of all masks in the list
- public:
-  // Constructors
-  // Default constructor: no timeout, all ports must be ready
-  RunCondition();
-  // This allows a zero-terminated list of masks to be provided in the argument list.
-  // No timeout is enabled.  A very common case.  If given one arg == 0, then never runs
-  RunCondition(RCCPortMask first, ...);
-  // This allows the specification of a mask array (which can be nullptr) and a timeout.
-  RunCondition(RCCPortMask*, uint32_t usecs = 0, bool timeout = false);
-  ~RunCondition();
-  // backward compatibility for undocumented method
-  inline void initDefault(unsigned /*nPorts*/) {}
-  // Support older C-langage run conditions
-  inline void setRunCondition(const RCCRunCondition &crc) {
-    m_portMasks = crc.portMasks;
-    m_timeout = crc.timeout;
-    m_usecs = crc.usecs;
-    m_allMasks = 0;
-    for (RCCPortMask *pm = m_portMasks; *pm; pm++)
-      m_allMasks |= *pm;
-  }
-  // Disable the timeout, without changing its value
-  inline void disableTimeout() { m_timeout = false; }
-  // Enable the timeout, setting its value
-  inline void enableTimeout(uint32_t usecs) { m_timeout = true; m_usecs = usecs; }
-  // Enable the timeout, without changing its value
-  inline void enableTimeout() { m_timeout = true; }
-  inline void setTimeout(uint32_t usecs) { m_usecs = usecs; }
-  void setPortMasks(RCCPortMask first, ...);
-  void setPortMasks(RCCPortMask *);
- private:
-  void initMasks(va_list ap);
-  void setMasks(RCCPortMask first, va_list ap);
-  void activate(OCPI::OS::Timer &tmr, unsigned nPorts);
-  // Return true if should run based on non-port info
-  // Set timedout if we are running due to timeout.
-  // Set hasRun
-  // Set bail if should NOT run based on non-port info
- protected:
-  bool shouldRun(OCPI::OS::Timer &tmr, bool &timedout, bool &bail);
-};
-#endif
 typedef RCCResult RCCMethod(RCCWorker *_this);
 typedef RCCResult RCCRunMethod(RCCWorker *_this,
 			       RCCBoolean timedout,
@@ -247,7 +195,7 @@ typedef struct {
   OCPI::RCC::Port *containerPort;
   OCPI::API::ExternalBuffer *portBuffer;
 #else
-  void *id_, *id1_; 
+  void *id_, *id1_;
 #endif
 } RCCBuffer;
 
@@ -498,7 +446,7 @@ typedef struct {
    RCCUserTask();
    virtual void run() = 0;
    //   void done() const { return m_done; }
-   void spawn(); 
+   void spawn();
  private:
    Worker & m_worker;
  };
@@ -561,7 +509,7 @@ typedef struct {
  class RCCUserSlave {
  protected:
    OCPI::API::Worker &m_worker;
-   RCCUserSlave();
+   RCCUserSlave(unsigned n = 0);
    //   virtual ~RCCUserSlave();
  public:
    inline void start() { m_worker.start(); }

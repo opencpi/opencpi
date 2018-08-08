@@ -209,7 +209,7 @@ namespace {
     if (verbose)
       fprintf(stderr, "Spec is \"%s\" in file \"%s\"\n",
 	      a_specName.c_str(), specFile.c_str());
-      return NULL;
+    return NULL;
   }
 
   typedef std::pair<ParamConfig*,Worker*> WorkerConfig;
@@ -1218,16 +1218,16 @@ namespace {
 			      io.m_file[0] == '/' ? "" : "../../", io.m_file.c_str());
 	      OU::formatAdd(verify,
 			    "  r=$?\n"
-			    "  tput bold\n"
+			    "  tput bold 2>/dev/null\n"
 			    "  if [ $r = 0 ] ; then \n"
-			    "    tput setaf 2\n"
+			    "    tput setaf 2 2>/dev/null\n"
 			    "    echo '    Verification for port %s: PASSED'\n"
 			    "  else\n"
-			    "    tput setaf 1\n"
+			    "    tput setaf 1 2>/dev/null\n"
 			    "    echo '    Verification for port %s: FAILED'\n"
 			    "    failed=1\n"
 			    "  fi\n"
-			    "  tput sgr0\n"
+			    "  tput sgr0 2>/dev/null\n"
 			    "  [ $r = 0 ] || exitval=1\n"
 			    "}\n", io.m_port->pname(), io.m_port->pname());
 	    } else
@@ -1639,10 +1639,11 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
       } else if (wFirst == wci->second) {
 	if (found->m_isImpl && strncasecmp("ocpi_", found->cname(), 5))
 	  globals.params[pn].m_worker = wFirst;
-      } else {
-	assert(!strncasecmp("ocpi_", found->cname(), 5) ||
-	       (!p.m_param->m_isImpl && !found->m_isImpl));
-      }
+      } else if (strncasecmp("ocpi_", found->cname(), 5) &&
+		 (p.m_param->m_isImpl || found->m_isImpl))
+	return OU::esprintf("The implementation-specific property \"%s\" was found in more "
+			    "than one worker:  \"%s\" and \"%s\"",
+			    found->cname(), wFirst->cname(), wci->second->cname());
       Param &gp = globals.params[pn];
       if (!gp.m_param)
 	gp.m_param = p.m_param;
@@ -2034,9 +2035,9 @@ createCases(const char **platforms, const char */*package*/, const char */*outDi
       ocpiInfo("For platform %s, considering worker %s.%s from %s platform %s dynamic %u",
 	       m_platform.c_str(), i.m_metadataImpl.cname(), i.m_metadataImpl.model().c_str(),
 	       i.m_artifact.name().c_str(), i.m_artifact.platform().c_str(),
-	       i.m_artifact.m_dynamic);
+	       i.m_artifact.dynamic());
       if (i.m_artifact.platform() == m_platform && i.m_metadataImpl.model() == m_model &&
-	  i.m_artifact.m_dynamic == m_dynamic) {
+	  i.m_artifact.dynamic() == m_dynamic) {
 	unsigned sn = 0;
 	for (ezxml_t cx = ezxml_cchild(m_xml, "case"); cx; cx = ezxml_cnext(cx)) {
 	  unsigned n = 0;
@@ -2085,13 +2086,15 @@ createCases(const char **platforms, const char */*package*/, const char */*outDi
       return false;
     }
   };
-  std::string path;
-  OU::format(path, "../lib/rcc:../lib/ocl:gen/assemblies:%s/lib/components/rcc",
-	     getenv("OCPI_CDK_DIR"));
+  const char *err;
+  std::string registry, path;
+  if ((err = OU::getProjectRegistry(registry)))
+    return err;
+  OU::format(path, "../lib/rcc:../lib/ocl:gen/assemblies:%s/ocpi.core/artifacts",
+	     registry.c_str());
   setenv("OCPI_LIBRARY_PATH", path.c_str(), true);
   ocpiInfo("Initializing OCPI_LIBRARY_PATH to \"%s\"", path.c_str());
   verbose = a_verbose;
-  const char *err;
   ezxml_t xml;
   if ((err = OE::ezxml_parse_file("gen/cases.xml", xml)))
     return err;

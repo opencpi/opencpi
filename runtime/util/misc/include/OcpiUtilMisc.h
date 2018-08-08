@@ -358,13 +358,15 @@ namespace OCPI {
 
       // Simple wrapper for strsep, allowing empty tokens if desired.
       // When empty tokens not allowed, consecutive delimiters are simply consumed
-      // Usage is: for (OU::TokenIter li(input); li.token(), li.next()) { use li.token(); }
+      // Usage is:
+      //    for (OU::TokenIter li(input); li.token(); li.next()) { use li.token(); }
       class TokenIter {
 	char *m_copy, *m_ptr;
 	const char *m_token, *m_delims;
 	bool m_allowEmpty;
       public:
-        TokenIter(const char *list, const char *delims = ", \t", bool allowEmpty = false);
+        TokenIter(const char *list, const char *delims = ", \t\n", bool allowEmpty = false);
+        TokenIter(const std::string &list, const char *delims = ", \t\n", bool allowEmpty = false);
 	~TokenIter();
 	inline const char *token() const { return m_token; }
 	void next();
@@ -450,10 +452,16 @@ namespace OCPI {
       // return true on error
       bool searchPath(const char *path, const char *item, std::string &result,
 		      const char *preferredSuffix = NULL, std::vector<std::string> *all = NULL);
+      // set path to be the current project registry.  Return an error string or NULL.
+      const char *getProjectRegistry(std::string &path);
       // return, via "path", a ":" separated list of all projects registered
       // or present in the project path.
       // return error-message string on error
       const char *getAllProjects(std::string &path);
+      // Return the OpenCPI installation dir or throw;
+      const std::string &getOpenCPI();
+      // Return the CDK's dir or throw;
+      const std::string &getCDK();
       // A convenience template for singletons possibly created at static construction
       // time (moved from OcpiDriverManager)
       template <class S> class Singleton {

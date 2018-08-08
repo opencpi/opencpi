@@ -189,7 +189,7 @@ $(call OcpiDbgVar,HdlActualTargets)
 HdlCoreBBInstallDir=$(call HdlCoreInstallDir,$(word 1,$(HdlCores)))_bb
 # Install the black box library
 $(HdlCoreBBInstallDir):
-	$(AT)mkdir $@
+	$(AT)mkdir -p $@
 
 install_bb: | $(HdlCoreBBInstallDir)
 	$(AT)for f in $(HdlFamilies); do \

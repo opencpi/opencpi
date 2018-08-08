@@ -1,0 +1,26 @@
+<Application Package="ocpi.assets">
+  <!-- HDL Components -->
+  <Instance Component="ocpi.assets.devices.si5338"/>
+  <Instance Component="ocpi.assets.devices.rf_tx"/>
+  <Instance Component="ocpi.assets.devices.qdac" Model="hdl"/>
+
+  <!-- RCC Components -->
+  <Instance Component="ocpi.core.file_read">
+    <Property Name="fileName" Value="/dev/urandom"/>
+  </Instance>
+
+  <!-- RCC Proxies -->
+  <Instance Component="ocpi.core.devices.clock_gen" Slave="si5338"/>
+  <Instance Component="ocpi.assets.devices.rf_tx_proxy" Slave="rf_tx"/>
+
+  <!-- RCC Frontend Proxies -->
+  <Instance Component="ocpi.core.tx">
+    <Property Name="sample_rate_min_MHz" Value="0.100"/>
+  </Instance>
+
+  <!-- Connections -->
+  <Connection>
+    <Port Instance="qdac" Name="in"/>
+    <Port Instance="file_read" Name="out"/>
+  </Connection>
+</Application>

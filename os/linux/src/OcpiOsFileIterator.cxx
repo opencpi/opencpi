@@ -343,9 +343,11 @@ OCPI::OS::FileIterator::next ()
       case 2:
 	if (buf[1] != '.')
 	  break;
+	// fallthrough
       case 1:
 	if (buf[0] != '.')
 	  break;
+	// fallthrough
       case 0:
       case -1:
 	ocpiDebug("Skipping symlink at '%s': that is . or .. or a problem", nativeName.c_str());

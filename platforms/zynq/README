@@ -23,11 +23,12 @@ compilation tools and runtime libraries for C and C++.
 We define something called an OpenCPI Zynq release, which is of course based on a Xilinx release
 of three things:  the EDK, the binary Linux release, and the kernel sources.  Xilinx defines
 releases based on calendar year and quarter (e.g. 2013.4), and ideally all three items from
-Xilinx should be at the same release.  
-NOTE: AngryViper only supports version xilinx13_3 release due to FSBL compatibility with the
-matchstiq_z1(located in the ocpiassets project).  The FSBL that is flashed onto the matchstiq_z1
-only works with a certain version of the Xilinx linux release and this would need to be changed
-in order to change the Linux version.   
+Xilinx should be at the same release.
+
+NOTE: The ANGRYVIPER Team only supports the xilinx13_3 release due to FSBL compatibility with the
+matchstiq_z1 (located in the ocpi.assets project).  The FSBL that is flashed onto the matchstiq_z1
+only works with a certain version of the Xilinx Linux release and this would need to be changed
+in order to update the Linux version.
 
 To fit with the various ways OpenCPI defines software platform versioning, we translate the
 Xilinx release tags like YYYY.Q into YY_Q as a sort of major release identifier.
@@ -47,7 +48,7 @@ The flow of these scripts is:
   inputs:     the xilinx git repo directory from step 1
   outputs:    console/stdout chronological list of events/commits/tags to the kernel repo
   result:     allows user to determine appropriate tag and release name for step 3.
-  
+
 3. createLinuxKernelHeaders.sh <rel-name> <repo-tag> <work-dir>
   arguments:  release name, usually <YY>_<Q> according to Xilinx release convention YYYY.Q
               repo tag in xilinx repo associated with their release, usually: xilinx-v<YYYY>.<Q>
@@ -76,7 +77,7 @@ The flow of these scripts is:
   results:    The Xilinx Binary release's root file system image can be patched adopted and
               patched for the OpenCPI Zynq release.
 
-5. createLinuxRootFS.sh <rel-name>
+5. createLinuxRootFS.sh <rel-name> <work-dir>
    arguments: release name, same as step above
    inputs:    the output from step 4: the downloaded xilinx binary zynq release
               the output from step 3: the kernel headers package with captured other files

@@ -22,6 +22,7 @@
 #include "OcpiOsMisc.h"
 #include "OcpiUtilValue.h"
 #include "OcpiUtilMisc.h"
+#define OCPI_OPTIONS_NO_MAIN 1
 #include "CmdOption.h"
 
 // Limitations:

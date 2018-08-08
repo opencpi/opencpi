@@ -11,7 +11,7 @@
     <property name='SECONDS_WIDTH_p' value='32'/>
     <property name='FRACTION_WIDTH_p' value='32'/>
   </instance>
-  <instance component='ocpi.unsupported.devices.lime_dac_em' connect='file_write'>
+  <instance component='ocpi.assets.devices.lime_dac_ts_em' connect='file_write'>
     <property name='messageSize' value='128'/>
   </instance>
   <instance component='ocpi.core.file_write'>

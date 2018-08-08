@@ -1,0 +1,76 @@
+# This file is protected by Copyright. Please refer to the COPYRIGHT file
+# distributed with this source distribution.
+#
+# This file is part of OpenCPI <http://www.opencpi.org>
+#
+# OpenCPI is free software: you can redistribute it and/or modify it under the
+# terms of the GNU Lesser General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your option) any
+# later version.
+#
+# OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+# A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Lesser General Public License along
+# with this program. If not, see <http://www.gnu.org/licenses/>.
+
+$(if $(realpath $(OCPI_CDK_DIR)),,\$(error The OCPI_CDK_DIR environment variable is not set correctly.))
+# This is the application Makefile for the "cic_int_dc_offset_iq_imbalance_mixer_cic_dec" application
+# If there is cic_int_dc_offset_iq_imbalance_mixer_cic_dec.cc (or cic_int_dc_offset_iq_imbalance_mixer_cic_dec.cxx) file, it will be assumed to be a C++ main program to build and run
+# If there is a cic_int_dc_offset_iq_imbalance_mixer_cic_dec.xml file, it will be assumed to be an XML app that can be run with ocpirun.
+# The RunArgs variable can be set to a standard set of arguments to use when executing either.
+
+include $(OCPI_CDK_DIR)/include/application.mk
+
+.SILENT: show
+.PHONY: show
+
+all: tap_gen
+
+# build the unit test input data
+tap_gen:
+	$(eval TARGET_FREQ=100000)
+	$(eval SAMPLE_FREQ=1000000)
+	$(eval INPUT_DATA_AMPLITUDE=1024)
+	$(eval NUM_CYCLES=16)
+	python ./scripts/test_sinewave.py -g idata/input_file.bin $(TARGET_FREQ) $(SAMPLE_FREQ) $(INPUT_DATA_AMPLITUDE) $(NUM_CYCLES)
+
+clean::
+	rm -rf idata/* odata/*
+
+show:
+	echo "$$showhelp"
+
+define showhelp
+----------------------------------------------------------------------------
+Instructions for setup/execution on remote platforms '(i.e. Matchstiq, Zedboard)'
+These steps may be repeated to test each available HDL assembly
+----------------------------------------------------------------------------
+----------------------------------------------------------------------------
+Setup:
+----------------------------------------------------------------------------
+Development Computer - generate input data
+'make'
+----------------------------------------------------------------------------
+Zynq-Based Platform - setup environment
+. /mnt/card/opencpi/mynetsetup.sh {DEVELOPMENT HOST IPADDRESS}
+
+cd /mnt/ocpi_assets/applications/empty_rxtx_zed_zipper_card
+
+export OCPI_LIBRARY_PATH=$$OCPI_CDK_DIR/../projects/core/exports/lib/components:$$(pwd)/../../hdl/assemblies:/mnt/ocpi_core/hdl/devices/lib/rcc:$$(pwd)/../../exports/lib
+#NOTE: If copy/paste of the above exports, the redundant '$' must be removed.
+----------------------------------------------------------------------------
+----------------------------------------------------------------------------
+Execution:
+----------------------------------------------------------------------------
+Zynq-Based Platform - execute
+HDL: 
+ocpirun -v -d -t 1 app_empty_rxtx_zed_zipper_card
+----------------------------------------------------------------------------
+Development Computer - verify output data
+python ./scripts/plotAndFft.py odata/out_app_empty_rxtx_zed_zipper_card.bin complex 131072 1000000 &
+----------------------------------------------------------------------------
+endef
+export showhelp

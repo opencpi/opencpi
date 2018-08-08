@@ -1,0 +1,18 @@
+<HdlWorker Language="vhdl" Spec="cic_dec-spec.xml">
+
+  <SpecProperty Name="N" Parameter="true" Default="3"/>
+
+  <SpecProperty Name="M" Parameter="true" Default="1"/>
+
+  <SpecProperty Name="R" Parameter="true" Default="4"/>
+
+  <SpecProperty Name="DIN_WIDTH" Parameter="true"  Default="16"/>
+
+  <SpecProperty Name="ACC_WIDTH" Parameter="true" Default="22"/>
+
+  <SpecProperty Name="DOUT_WIDTH" Parameter="true" Default="16"/>
+
+  <StreamInterface Name="in"  DataWidth="32" ZeroLengthMessages="true"/>
+  <StreamInterface Name="out" DataWidth="32" ZeroLengthMessages="true"/>
+
+</HdlWorker>

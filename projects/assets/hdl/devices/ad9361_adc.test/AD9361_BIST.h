@@ -61,7 +61,11 @@ inline int read_iqstream_sample_from_file(FILE*& fd, uint16_t& I, uint16_t& Q,
   {
     if((fd == NULL) || (ferror(fd)))
     {
+#if 0 // EBADFD is not portable, not POSIX
+      return EBADFD;
+#else
       return EBADF;
+#endif
     }
     c = fgetc(fd);
     if(feof(fd))

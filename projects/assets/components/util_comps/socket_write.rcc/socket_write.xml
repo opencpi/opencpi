@@ -1,0 +1,4 @@
+<RccWorker language='c++' controlOperations="start,stop" spec='socket_write_spec'>
+  <!-- The RunCondition only cleans up every 10ms (so 100X a second). This allows more bulk cleanup. -->
+  <Port Name="in" MinBufferCount="10"/>
+</RccWorker>

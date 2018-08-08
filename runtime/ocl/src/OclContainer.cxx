@@ -25,7 +25,7 @@
 #include <climits>
 #include <sys/mman.h>
 #include <regex.h>
-#include "RCC_Worker.h" // for run conditions only
+#include "OcpiContainerRunConditionApi.h"
 #include "OCL_Worker.h"
 #include "OclContainer.h"
 #include "OclDevice.h"
@@ -267,7 +267,7 @@ namespace OCPI {
       std::string s;
       OU::formatAddV(s, fmt, ap);
       va_end(ap);
-      OU::formatAdd(s, ": OpenCL error: %s [%d]", ocl_strerror(errnum), errnum);
+      OU::formatAdd(s, ": OpenCL error: %s [%d/0x%x]", ocl_strerror(errnum), errnum, errnum);
       throw OU::Error("Ocl Error: %s", s.c_str());
     }
 
@@ -548,8 +548,8 @@ namespace OCPI {
 	OCL(clReleaseProgram(m_program));
       }
     protected:
-      OC::Worker &createWorker(Application &, const char* appInstName, ezxml_t impl,
-			       ezxml_t inst, OC::Worker *slave, bool hasMaster, size_t member,
+      OC::Worker &createWorker(Application &, const char* appInstName, ezxml_t impl, ezxml_t inst,
+			       const OC::Workers &slaves, bool hasMaster, size_t member,
 			       size_t crewSize, const OU::PValue* wParams, int que);
 
       cl_program &program() { return m_program; }
@@ -778,15 +778,15 @@ namespace OCPI {
 
       OC::Worker &
       createWorker(OC::Artifact* artifact, const char* appInstName, ezxml_t impl, ezxml_t inst,
-		   OC::Worker *slave, bool hasMaster, size_t member, size_t crewSize,
+		   const OC::Workers &slaves, bool hasMaster, size_t member, size_t crewSize,
 		   const OU::PValue* params) {
-	assert(!slave);
+	assert(slaves.empty());
 	assert(artifact);
 	Artifact &art = static_cast<Artifact&>(*artifact);
 
 	int nq = static_cast<Container&>(container()).device().nextQOrd();
 
-	return art.createWorker(*this, appInstName, impl, inst, slave, hasMaster, member,
+	return art.createWorker(*this, appInstName, impl, inst, slaves, hasMaster, member,
 				crewSize, params, nq);
       }
 
@@ -834,11 +834,11 @@ namespace OCPI {
       uint8_t        *m_oclWorkerBytes;
       size_t          m_oclWorkerSize;
       OCLPort        *m_oclPorts;
-      OCPI::RCC::RunCondition  m_defaultRunCondition;
-      OCPI::RCC::RunCondition  m_myRunCondition;
-      OCPI::RCC::RunCondition *m_runCondition;
+      OA::RunCondition  m_defaultRunCondition;
+      OA::RunCondition  m_myRunCondition;
+      OA::RunCondition *m_runCondition;
       Kernel                  &m_kernel;
-      OCPI::OCL::Container    &m_container;
+      Container               &m_container;
       bool                     m_isEnabled;
       cl_kernel                m_clKernel;
       OCPI::OS::Timer          m_runTimer;
@@ -853,10 +853,10 @@ namespace OCPI {
 
 
       Worker(Application &app, Artifact &art, Kernel &k, const char *a_name, ezxml_t implXml,
-	     ezxml_t instXml, OC::Worker *a_slave, bool a_hasMaster, size_t a_member,
+	     ezxml_t instXml, const OC::Workers &a_slaves, bool a_hasMaster, size_t a_member,
 	     size_t a_crewSize, const OA::PValue* params, uint32_t que )
 	  : OC::WorkerBase<Application, Worker, Port>(app, *this, &art, a_name, implXml, instXml,
-						      a_slave, a_hasMaster, a_member, a_crewSize,
+						      a_slaves, a_hasMaster, a_member, a_crewSize,
 						      params),
 	    OCPI::Time::Emit(&parent().parent(), "Worker", a_name), m_kernel(k),
 	    m_container(app.parent()), m_isEnabled(false), m_clKernel(NULL), m_que(que),
@@ -909,7 +909,6 @@ namespace OCPI {
 	m_oclWorker->kernelLogLevel = Driver::s_logLevel;
 	ocpiDebug("Worker/kernel %s in %s has persistent size of %zu bytes, self %zu bytes",
 		  a_name, art.name().c_str(), m_persistBytes, m_oclWorkerSize);
-	m_defaultRunCondition.initDefault(m_nPorts);
 	// FIXME: how can the worker declare a run condition?
 	// Perhaps with an init? or XML? (might be nice).
 	m_runCondition = &m_defaultRunCondition;
@@ -1170,7 +1169,7 @@ namespace OCPI {
 
     OC::Worker& Artifact::
     createWorker(Application &app, const char* appInstName, ezxml_t impl, ezxml_t inst,
-		 OC::Worker *slave, bool hasMaster, size_t member, size_t crewSize,
+		 const OC::Workers &slaves, bool hasMaster, size_t member, size_t crewSize,
 		 const OU::PValue* wParams, int que) {
       const char *kname = ezxml_cattr(impl, "name");
       assert(kname);
@@ -1180,7 +1179,7 @@ namespace OCPI {
       for (unsigned n = 0; n < m_kernels.size(); n++) {
 	if (m_kernels[n].m_name == kstr) {
 	  Worker * w = 
-	    new Worker(app, *this, m_kernels[n], appInstName, impl, inst, slave, hasMaster,
+	    new Worker(app, *this, m_kernels[n], appInstName, impl, inst, slaves, hasMaster,
 		       member, crewSize, wParams, que);
 	  return *w;
 	}
@@ -1563,8 +1562,8 @@ namespace OCPI {
 	    ocpiAssert(p->checkReady() >= m_minReady);
 	    for (unsigned r = 0; r < m_minReady; r++) {
 	      OC::ExternalBuffer *b = p->isProvider() ? p->getFullBuffer() : p->getEmptyBuffer();
-	      if (!b)
-		p->debug(n);
+	      //if (!b)
+	      //p->debug(n);
 	      assert(b);
 	      // Buffer was being read or written by the CPU, and now should be switch to the GPU
 	      p->unmapBuffers(b->offset(), p->bufferStride());

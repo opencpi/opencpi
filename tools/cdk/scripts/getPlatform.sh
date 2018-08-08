@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash --noprofile
 # This file is protected by Copyright. Please refer to the COPYRIGHT file
 # distributed with this source distribution.
 #
@@ -17,18 +17,28 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
+##########################################################################################
 # This script determines the runtime platform and target variables
-# The four variables are: OS OSVersion Processor Platform
+# The six variables are: OS OSVersion Processor Triple Platform PlatformDir
+# The triple (os-osversion-processor) is redundant and legacy.
 # If it returns nothing (""), that is an error
 
-isCurPlatform()
-{
-  [ -f $1-check.sh ] || return
-  vars=($(sh $1-check.sh $HostSystem $HostProcessor))
-  if test ${#vars[@]} = 3; then
-    echo ${vars[@]}  ${vars[0]}-${vars[1]}-${vars[2]} $(basename $1) $(dirname $1)
-    exit 0
-  fi
+# Given the directory of the platform we want to return
+returnPlatform() {
+  local d=$1 p=$(basename $1)
+  local vars=($(egrep '^ *OcpiPlatform(Os|Arch|OsVersion) *:*= *' $d/$p.mk |
+              sed 's/OcpiPlatform\([^ :=]*\) *:*= *\([^a-zA-Z0-9_]*\)/\1 \2/'|sort))
+  [ ${#vars[@]} = 6 ] || {
+    echo "Error:  Platform file $d/$p.mk is invalid and cannot be used.${vars[*]}" >&2
+    echo "Error:  OcpiPlatform(Os|OsVersion|Arch) variables are not valid." >&2
+    exit 1
+  }
+  echo ${vars[3]} ${vars[5]} ${vars[1]} ${vars[3]}-${vars[5]}-${vars[1]} $p $d
+  exit 0
+}
+isCurPlatform() {
+  [ -f $1-check.sh ] && bash $1-check.sh $HostSystem $HostProcessor > /dev/null && return 0
+  return 1
 }
 
 # These are universally available so far so we do this once and pass then to all probes.
@@ -40,21 +50,18 @@ HostProcessor=`uname -m | tr A-Z a-z`
 if [ -n "$OCPI_CDK_DIR" -a -e "$OCPI_CDK_DIR/scripts/util.sh" ]; then
   source $OCPI_CDK_DIR/scripts/util.sh
   projects="`getProjectPathAndRegistered`"
+  [ -d $OCPI_CDK_DIR/../projects/core ] && projects="$projects $OCPI_CDK_DIR/../projects/core"
 elif [ -n "$OCPI_PROJECT_PATH" ]; then
   # If the CDK is not set or util.sh does not exist, fall back on OCPI_PROJECT_PATH
+  echo Unexpected internal error: OCPI_CDK_DIR IS NOT SET1 >&2 && exit 1
   projects="${OCPI_PROJECT_PATH//:/ }"
 elif [ -d projects ]; then
+  echo Unexpected internal error: OCPI_CDK_DIR IS NOT SET2 >&2 && exit 1
   # Probably running in a clean source tree.  Find projects and absolutize pathnames
   projects="$(for p in projects/*; do echo `pwd`/$p; done)"
 fi
-# Make sure that we look in the core project IN ANY CASE
-if [ -n "$OCPI_CDK_DIR" ]; then
-  [ -d $OCPI_CDK_DIR/../projects/core ] && projects="$projects $OCPI_CDK_DIR/../projects/core"
-else
-  [ -d /opt/opencpi/projects/core ] && projects="$projects /opt/opencpi/projects/core"
-fi
 if [ -z "$projects" ]; then
-  echo "Error:  Cannot find any projects for RCC platforms." >&2
+  echo "Unexpected error:  Cannot find any projects for RCC platforms." >&2
   exit 1
 fi
 # loop through all projects to find the platform
@@ -71,23 +78,19 @@ for j in $projects; do
     platforms_dir=$j/rcc/platforms
   fi
   if [ -n "$1" ]; then # looking for a specific platform (not the current one)
-    d=$platforms_dir/rcc/platforms/$1
-    if [ -d $d -a -f $d/target ]; then
-      target=$(< $d/target)
-      vars=($(echo $target | tr - ' '))
-      [ ${#vars[@]} = 3 ] || {
-        echo "Error:  Platform file $d/target is invalid and cannot be used." >&2
-	exit 1
-      }
-      echo ${vars[@]} $target $1 $d
-      exit 0
-    fi
+    d=$platforms_dir/$1
+    [ -d $d -a -f $d/$1.mk ] && returnPlatform $d
   else # not looking for a particular platform, but looking for the one we're running on
     for i in $platforms_dir/*; do
-      test -d $i -a -f $i/target && isCurPlatform $i/$(basename $i)
+      test -d $i -a -f $i/$(basename $i).mk &&
+        isCurPlatform $i/$(basename $i) && returnPlatform $i
     done # done with platforms in this project's rcc/platforms directory
   fi
 done # done with the project
 
-echo Cannot determine platform we are running on.  >&2
+if [ -n "$1" ]; then
+  echo Cannot find a platform named $1. >&2
+else
+  echo Cannot determine platform we are running on.  >&2
+fi
 exit 1

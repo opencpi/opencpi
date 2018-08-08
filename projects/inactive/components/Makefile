@@ -26,4 +26,6 @@
 # Any variable definitions that should apply for each individual worker/test
 # in this library belong in Library.mk
 
+# These tests all need to be converted to ACI applications.
+Tests=
 include $(OCPI_CDK_DIR)/include/library.mk

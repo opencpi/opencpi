@@ -37,7 +37,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \usepackage{fancyhdr} \pagestyle{fancy} % required for fancy headers
 \renewcommand{\headrulewidth}{0.5pt}
 \renewcommand{\footrulewidth}{0.5pt}
-\rhead{\small{Project ANGRYVIPER}}
+\rhead{\small{ANGRYVIPER Team}}
 %----------------------------------------------------------------------------------------
 % Appendix packages
 %----------------------------------------------------------------------------------------
@@ -88,13 +88,14 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Component Data Sheet}
-\def\docVersion{1.2}
+\def\docVersion{1.3}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
 \lhead{\small{\docTitle}}
 
 \def\comp{si5338}
+\edef\ecomp{si5338}
 \def\Comp{SI5338}
 \graphicspath{ {figures/} }
 
@@ -112,9 +113,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Version           & v\docVersion \\
 	\hline
-	Release Date      & August 2017 \\
+	Release Date      & February 2018 \\
 	\hline
-	Component Library & ocpiassets.devices                     \\
+	Component Library & ocpi.assets.devices                     \\
 	\hline
 	Workers           & \comp.hdl                              \\
 	\hline
@@ -123,7 +124,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \end{tabular}
 
 \section*{Worker Implementation Details}
-The \Comp{} device worker uses the raw property interface to expose the features and hardware registers of the \Comp{} IC to the ANGRYVIPER framework.
+The \Comp{} device worker uses the raw property interface to expose the features and hardware registers of the \Comp{} IC to the OpenCPI framework.
 
 \section*{Block Diagrams}
 \subsection*{Top level}
@@ -190,31 +191,7 @@ The \Comp{} HDL device worker uses the clock from the Control Plane and standard
 
 \section*{Performance and Resource Utilization}
 \subsubsection*{\comp.hdl}
-Table entries are a result of building the worker for the following parameter set:\
-\begin{itemize}
-	\item \verb+CLKIN_PRESENT_p+=1
-	\item \verb+CLKIN_FREQ_p+=30.72e6
-	\item \verb+XTAL_PRESENT_p+=0
-	\item \verb+XTAL_FREQ_p+=0
-	\item \verb+OUTPUTS_PRESENT_p+=1,0,0,0
-	\item \verb+INTR_CONNECTED_p+=0
-\end{itemize}
-\begin{scriptsize}
-	\begin{tabular}{|M{4.5cm}|M{1cm}|M{1cm}|M{1.5cm}|M{2cm}|M{2cm}|}
-		\hline
-		\rowcolor{blue}
-		Device                      & Registers & LUTs & Fmax	& Memory/Special Functions 	& Design Suite    	\\
-		\hline
-		Stratix4 EP4SGX230K-C2-F40  & 62        & 106  & MHz 	& N/A                    	& Quartus 15.1 	\\
-		\hline
-		Virtex6 XC6VLX240T-1-FF1156 & 56        & 112  & 501 MHz& N/A                       & ISE 14.7        	\\
-		\hline
-		Zynq XC7Z020-1-CLG484       & 59       	& 77  & 350 MHz& N/A                      	& Vivado 2017.1        	\\
-		\hline
-		Zynq XC7Z020-1-CLG484       & 56       	& 112  & 644 MHz& N/A                      	& ISE 14.7        	\\
-		\hline
-	\end{tabular}
-\end{scriptsize}
+\input{../../\ecomp.hdl/utilization.inc}
 
 \section*{Test and Verification}
 There is no unit test for this device worker. The test and verification of this worker is covered in the Matchstiq I2C device worker. See the component datasheet of this worker for more details.

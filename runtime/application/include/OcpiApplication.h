@@ -37,6 +37,10 @@
 #include "ContainerLauncher.h"
 #include "OcpiApplicationApi.h"
 
+// These are application PValue parameters that should ALSO be given to discovery.
+#define OCPI_DISCOVERY_PARAMETERS "verbose"
+// These are pvalue parameters that should ONLY be given to discovery.
+#define OCPI_DISCOVERY_ONLY_PARAMETERS "simDir", "simTicks"
 namespace OCPI {
   namespace Container {
     class Launcher;
@@ -210,8 +214,8 @@ namespace OCPI {
     public:
       explicit ApplicationI(OCPI::API::Application &app, const char *file,
 			    const OCPI::API::PValue *params = NULL);
-      explicit ApplicationI(OCPI::API::Application &app, const std::string &string,
-			    const OCPI::API::PValue *params = NULL);
+      //      explicit ApplicationI(OCPI::API::Application &app, const std::string &string,
+      //			    const OCPI::API::PValue *params = NULL);
       explicit ApplicationI(OCPI::API::Application &app, ezxml_t xml, const char *name,
 			    const OCPI::API::PValue *params = NULL);
       explicit ApplicationI(OCPI::API::Application &app, OCPI::Library::Assembly &,

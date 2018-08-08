@@ -1,0 +1,10 @@
+<HdlWorker Language="vhdl" Spec="pr_cordic-spec.xml">
+
+  <SpecProperty Name="DATA_WIDTH" Parameter="true" Default="16"/>
+  <SpecProperty Name="DATA_EXT" Parameter="true" Default="16"/>
+  <SpecProperty Name="STAGES" Parameter="true" Default="16"/>
+
+  <StreamInterface Name="in"  DataWidth="32" ZeroLengthMessages="true"/>
+  <StreamInterface Name="out" DataWidth="32" ZeroLengthMessages="true"/>
+
+</HdlWorker>

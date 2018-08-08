@@ -45,16 +45,14 @@ namespace OCPI {
       tryIface(std::set<std::string> &servers, OCPI::OS::Ether::Interface &ifc,
 	       OCPI::OS::Ether::Address &devAddr, const char **exclude, bool discovery,
 	       bool verbose, std::string &error);
-      bool
-      probeServer(const char *server, bool /*verbose*/, const char **exclude, char *containers,
-		  bool discoveryOnly, std::string &error);
     public:
+      // This is virtual because it is called in a driver and this means there is no undefined
+      // reference at the call site.
+      virtual bool
+      probeServer(const char *server, bool verbose, const char **exclude, char *containers,
+		  bool discoveryOnly, std::string &error);
       unsigned
       search(const OCPI::API::PValue* props, const char **exclude, bool discoveryOnly);
-      // This is the API hook for adding servers, which calls the driver method above
-      static bool
-      probeServer(const char *server, bool verbose, const char **exclude, bool discovery,
-		  std::string &error);
     };
   }
 }

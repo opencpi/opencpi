@@ -84,7 +84,7 @@ endif
 # Make sure the platform's containing project is searched.
 # It may not be in the project dependencies, but it may depend
 # on devices in the current project's hdl/devices library.
-export OCPI_PROJECT_PATH:=$(call OcpiAbsPathToContainingProject,$(HdlPlatformDir_$(HdlPlatform))):$(OCPI_PROJECT_PATH)
+export OCPI_PROJECT_PATH:=$(call OcpiAbsPathToContainingProject,$(HdlPlatformDir_$(HdlPlatform)))$(and $(OCPI_PROJECT_PATH),:$(OCPI_PROJECT_PATH))
 
 OcpiLanguage:=vhdl
 override HdlLibraries+=sdp axi platform
@@ -146,7 +146,8 @@ ifneq ($(MAKECMDGOALS),clean)
         $(call HdlContBitZName,$1): $(call HdlContBitName,$1)
 	   $(AT)echo Making compressed bit file: $$@ from $$< and $(call ArtifactXmlName,$1)
 	   $(AT)gzip -c $(call HdlContBitName,$1) > $$@
-	   $(AT)$(ToolsDir)/ocpixml add $$@ $(call ArtifactXmlName,$1)
+	   $(AT)$$(call OcpiPrepareArtifact,$(call ArtifactXmlName,$1),$$@,$(strip\
+                   $(or $(ParentPackage),$(ProjectPackage))),0,$(Platform))
 
         $(call HdlContBitZ,$1): | $(call HdlContBitZName,$1)
 	    $(AT)ln -s $(notdir $(call HdlContBitZName,$1)) $$@

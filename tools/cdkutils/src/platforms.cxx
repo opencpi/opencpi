@@ -20,7 +20,8 @@
 
 // Utility functions relating to available platforms.
 
-#include "fnmatch.h"
+#include <fnmatch.h>
+#include "ocpi-config.h"
 #include "OcpiOsFileIterator.h"
 #include "OcpiOsFileSystem.h"
 #include "OcpiUtilCppMacros.h"
@@ -89,16 +90,24 @@ doHdlPlatform(std::string &place) {
 }
 }
 
-const char *
+// The (localized) price of multiple error reporting models...
+// FIXME: change OU::getCDK to use return strings or at least have an inner function that does.
+static const char *
 getCdkDir(std::string &cdk) {
-  const char *env = getenv("OCPI_CDK_DIR");
-  bool isDir;
-  if (env && OF::exists(env, &isDir) && isDir) {
-    cdk = env;
-    ocpiInfo("OCPI_CDK_DIR: %s", env);
-    return NULL;
+  std::string err;
+  try {
+    cdk = OU::getCDK();
+  } catch (std::string &e) {
+    err = e;
+  } catch (const char *e) {
+    err = e;
+  } catch (std::exception &e) {
+    err = e.what();
+  } catch (...) {
+    err = "Unexpected exception";
   }
-  return "OCPI_CDK_DIR not set, does not exist, or is not a directory";
+  return err.empty() ? NULL :
+    OU::esprintf("Error finding CDK: %s", err.c_str());
 }
 
 const char *
@@ -134,6 +143,7 @@ getRccPlatforms(const StringSet *&platforms) {
   std::string dir;
   if ((err = getCdkDir(dir)))
     return err;
+  // THIS IS BROKEN FIND OUT WHO NEEDS THIS AND FIX IT TO LOOK IN PROJECTS for rcc/platforms
   dir += "/platforms";
   for (OS::FileIterator it(dir, "*"); !it.end(); it.next())
     if (it.isDirectory()) {
@@ -269,9 +279,11 @@ getOclPlatforms(const StringSet *&platforms) {
   std::string ocpiocl;
   if ((err = getCdkDir(ocpiocl)))
     return err;
-  OU::formatAdd(ocpiocl, "/bin/%s-%s-%s/ocpiocl",
-		OCPI_CPP_STRINGIFY(OCPI_OS) + strlen("OCPI"),
-		OCPI_CPP_STRINGIFY(OCPI_OS_VERSION), OCPI_CPP_STRINGIFY(OCPI_ARCH));
+  OU::formatAdd(ocpiocl, "/%s%s%s%s/bin/ocpiocl",
+		OCPI_CPP_STRINGIFY(OCPI_PLATFORM),
+		!OCPI_DEBUG || OCPI_DYNAMIC ? "-" : "",
+		OCPI_DYNAMIC ? "d" : "",
+		OCPI_DEBUG ? "" : "o");
   std::string cmd;
   OU::format(cmd, "%stest test && %s targets", ocpiocl.c_str(), ocpiocl.c_str());
   FILE *out;

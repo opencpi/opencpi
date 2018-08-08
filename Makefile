@@ -16,274 +16,293 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-ProjectPrefix=ocpi
-ifndef OCPI_CDK_DIR
-  export OCPI_CDK_DIR:=$(CURDIR)/cdk
-endif
-
-ifeq ($(wildcard exports),)
-  ifeq ($(filter clean%,$(MAKECMDGOALS)),)
-    $(info Exports have never been set up for this tree  Doing it now.)
+##########################################################################################
+ifneq ($(filter show help clean% distclean%,$(MAKECMDGOALS)),)
+  ifndef OCPI_CDK_DIR
+    export OCPI_CDK_DIR:=$(CURDIR)/bootstrap
   endif
-  $(info $(shell ./scripts/makeExportLinks.sh - $(ProjectPrefix)_ - xxx))
-endif
-ifneq ($(filter-out clean%,$(MAKECMDGOALS))$(filter cleandriver%,$(MAKECMDGOALS)),)
-$(info HEREE)
-include exports/include/ocpisetup.mk
-endif
-# defaults
-ifndef OCPI_BASE_DIR
-export OCPI_BASE_DIR := .
-endif
-OCPI_ABS_DIR := $(shell pwd|sed 's/ /\\ /g')
-CLIENT_IDL_ONLY := 1
-LD_LIBRARY_PATH := $(LD_LIBRARY_PATH):$(OCPI_ABS_DIR)/lib
-export LD_LIBRARY_PATH
-export CLIENT_IDL_ONLY
-export OCPI_BASE_DIR
-include MakeVars.ocpi
-ifneq ($(OCPI_TOOL_PLATFORM),$(OCPI_TARGET_PLATFORM))
-  ifneq ($(shell test -x exports/bin/$(OCPI_TOOL_DIR)/ocpigen; echo $$?),0)
-    $(info To build for $(OCPI_TARGET_PLATFORM), you must first build for $(OCPI_TOOL_PLATFORM))
-    $(error Cannot build for $(OCPI_TARGET_PLATFORM), cannot find "ocpigen" for $(OCPI_TOOL_PLATFORM))
+else
+  ifndef OCPI_CDK_DIR
+    export OCPI_CDK_DIR:=$(CURDIR)/cdk
+  endif
+  # Note that if we are running this makefile, we are in a source tree, thus we force a local
+  # prerequisites dir if it is not set.
+  ifndef OCPI_PREREQUISITES_DIR
+    export OCPI_PREREQUISITES_DIR=$(CURDIR)/prerequisites
+  endif
+  ifeq ($(wildcard exports),)
+    include $(CURDIR)/bootstrap/include/util.mk
+    $(info Exports have never been set up here.  Doing it now for platform-independent items.)
+    $(and $(call DoShell,./scripts/makeExportLinks.sh - -,Error),$(error $(Error)))
   endif
 endif
+include $(OCPI_CDK_DIR)/include/util.mk
+$(eval $(OcpiEnsureToolPlatform))
+override \
+RccPlatforms:=$(call Unique,\
+                $(or $(strip $(RccPlatforms) $(RccPlatform) $(Platforms) $(Platform)),$(strip\
+                     $(OCPI_TARGET_PLATFORM)),$(strip\
+	             $(OCPI_TOOL_PLATFORM))))
+export RccPlatforms
+DoExports=for p in $(RccPlatforms); do ./scripts/makeExportLinks.sh $$p; done
+DoTests=for p in $(RccPlatforms); do ./scripts/test-opencpi.sh --platform $$p; done
+# Get macros and rcc platform/target processing, as well as all platforms
+include $(OCPI_CDK_DIR)/include/rcc/rcc-make.mk
 
-#
-# ----------------------------------------------------------------------
-# Build up a list of $(PACKAGES) to build.  This list is carefully
-# ordered according to package dependencies.
-# ----------------------------------------------------------------------
-#
+##########################################################################################
+# Goals that are not about projects
+.PHONY: exports      framework      driver      testframework cleanpackaging \
+        cleanexports cleanframework cleanprojects cleandriver clean distclean cleaneverything
+all framework:
+	$(AT)$(MAKE) -C build/autotools install Platforms="$(RccPlatforms)"
+	$(AT)$(DoExports)
 
-#
-# Basic packages.
-#
+cleanframework:
+	$(AT)$(MAKE) -C build/autotools clean Platforms="$(RccPlatforms)"
 
-RDMA_DRIVERS=datagram dma ofed pio socket
-
-#	 runtime/dataplane/rdma_drivers \
-
-PACKAGES += os runtime/util
-
-PACKAGES += \
-	 runtime/dataplane/xfer/base \
-	 runtime/dataplane/xfer/tests \
-	 $(foreach d,$(RDMA_DRIVERS),runtime/dataplane/xfer/drivers/$d) \
-	 runtime/dataplane/transport \
-	 runtime/dataplane/msg_driver_interface \
-	 runtime/dataplane/msg_drivers \
-	 runtime/library \
-	 runtime/container \
-	 runtime/remote \
-	 runtime/remote-support \
-	 runtime/rcc \
-	 runtime/ocl \
-	 runtime/ocl-support \
-	 runtime/hdl \
-         runtime/application \
-	 runtime/hdl-support \
-	 runtime/ctests
-
-PACKAGES += tools/cdkutils
-PACKAGES += tools/ocpigen
-PACKAGES += tools/ocpisca
-#PACKAGES += tools/ocpirh
-PACKAGES += tools/ocpigr
-PACKAGES += tools/ocpidds
-#PACKAGES += tools/astyle
-PACKAGES += tests
-
-#
-# ----------------------------------------------------------------------
-# A list of all packages for make clean.  Sorted alphabetically.
-# ----------------------------------------------------------------------
-#
-
-#	runtime/control/wci_api
-ALLPACKAGES = \
-	os \
-	runtime/util \
-	runtime/dataplane/xfer/base \
-	runtime/dataplane/xfer/tests \
-	runtime/dataplane/xfer/drivers \
-	runtime/dataplane/transport \
-	runtime/dataplane/msg_driver_interface \
-	runtime/dataplane/msg_drivers \
-	runtime/library \
-	runtime/container \
-	runtime/remote \
-	runtime/remote-support \
-	runtime/rcc \
-	runtime/ocl \
-	runtime/ocl-support \
-	runtime/ctests \
-	runtime/hdl \
-	runtime/hdl-support \
-        runtime/application \
-	tools/cdkutils \
-	tools/ocpigen \
-	tools/ocpisca \
-	tools/ocpigr \
-	tools/ocpidds \
-	tests \
-
-#	tools/ocpirh \
-#	tools/astyle \
-
-#
-# ----------------------------------------------------------------------
-# Rules.
-# ----------------------------------------------------------------------
-#
-
-all: packages exports
-.PHONY: exports
-
+# This still relies on the projects being built, and runs lots of things,
+# but does not run unit tests in the non-core projects
+testframework:
+	$(AT)$(DoTests)
 
 exports:
-	$(AT)./scripts/makeExportLinks.sh $(OCPI_TARGET_DIR) $(ProjectPrefix)_
-
-.PHONY: hdl hdlcomps hdlapps hdlclean
-hdlcomps:
-	$(MAKE) -C hdl components
-
-hdlapps: hdlcomps hdl
-	$(MAKE) -C hdl assemblies
-
-hdl:
-	$(MAKE) -C hdl
-
-hdlbase:
-	$(MAKE) -C hdl base
-
-hdlportable:
-	$(MAKE) -C hdl portable
-
-cleanhdl:
-	$(MAKE) -C projects/core cleanhdl && $(MAKE) -C projects/assets cleanhdl
-
-#	$(MAKE) -C components cleanhdl this happens in the hdl subdir (using ../components)
-
-rcc ocl hdl: exports
-
-rcc:
-	make -C projects/core/components rcc && make -C projects/assets/components rcc
-
-
-cleanrcc:
-	make -C projects/core/components cleanrcc && make -C projects/assets/components rcc
-
-ocl:
-	make -C projects/core/components ocl && make -C projects/assets/components ocl
-
-cleanocl:
-	make -C projects/core/components cleanocl && make -C projects/assets/components cleanocl
-
-.PHONY : examples
-examples: exports
-	$(MAKE) -C projects/assets/applications
-
-cleanexamples:
-	make -C projects/assets/applications clean
-
-runexamples:
-	make -C projects/assets/applications run
-
-runtests:
-	make -C tests run
-
-cleancomponents:
-	make -C projects/core/components clean && make -C projects/assets/components clean
-
-.PHONY: prims
-hdlprimitives: exports
-	$(MAKE) -C hdl primitives
-
-driver:
-	$(AT)set -e; if test -d os/$(OCPI_TARGET_OS)/driver; then \
-	  $(MAKE) -C os/$(OCPI_TARGET_OS)/driver; \
-	  $(MAKE) exports; \
-	else \
-	  echo No driver for the OS '"'$(OCPI_TARGET_OS)'"', so none built. ; \
-	fi
-
-.PHONY: cleandriver
-cleandriver:
-	$(AT)$(and $(wildcard os/$(OCPI_TARGET_OS)/driver),$(MAKE) -C os/$(OCPI_TARGET_OS)/driver topclean)
-
-cleandrivers:
-	for d in os/*/driver; do $(MAKE) -C $$d topclean; done
-
-.PHONY: packages tar diff diff.q test $(PACKAGES)
-
-everything: packages rcc hdl ocl
-compile build: $(PACKAGES)
-packages: $(PACKAGES)
-
-$(PACKAGES):
-	$(AT)if test -f $@/Makefile.ocpi ; then \
-		$(MAKE) $(call DescendMake,$@) -f Makefile.ocpi ; \
-	else \
-		$(MAKE) $(call DescendMake,$@) -f $(call AdjustRelative,$@,)/Makefile.ocpi.for-pkg ; \
-	fi
-
-clean: cleancomponents cleanexamples
-	$(AT)rm -r -f lib
-	$(AT)$(foreach p,$(ALLPACKAGES),\
-		if test -f $p/Makefile.ocpi ; then \
-			$(MAKE) --no-print-directory $(call DescendMake,$p) -f Makefile.ocpi $@ ; \
-		else \
-			$(MAKE) --no-print-directory $(call DescendMake,$p) -f $(call AdjustRelative,$p,)/Makefile.ocpi.for-pkg $@ ; \
-		fi ; \
-	)
-	$(AT)make -C projects/core clean && make -C projects/assets clean
-	$(AT)rm -r -f exports
+	$(AT)echo Updating exports for platforms: $(RccPlatforms) >&2
+	$(AT)$(DoExports)
 
 cleanexports:
 	$(AT)rm -r -f exports
 
-distclean: clean
-	find . -name '*~' -exec rm {} \;
-	find . -depth -name '*.dSym' -exec rm -r {} \;
-	-rm -f diff diff.q
-	-rm -f *.exe *.obj *.o *.ilk *.sbr *.suo *.sln *.pdb *.bsc *~
-	-rm -r -f lib
+driver:
+	$(AT)set -e;\
+	     $(foreach p,$(RccPlatforms),\
+	       $(foreach t,$(RccTarget_$p),\
+	         $(foreach o,$(call RccOs,$t),\
+	           if test -d os/$o/driver; then \
+	             echo Building the $o kernel driver for $(call RccRealPlatforms,$p); \
+	             $(MAKE) -C os/$o/driver AT=$(AT) OCPI_TARGET_PLATFORM=$p;\
+	           else \
+	             echo There is no kernel driver for the OS '"'$o'"', so none built. ; \
+	           fi;))) \
+	     $(DoExports) \
 
-cleaneverything: distclean cleandrivers
-	-find . -depth -name 'timeData.raw' -exec rm -f '{}' ';'
-	-find . -depth -name 'target-*' -exec rm -r '{}' ';'
-	-find . -depth -name 'gen' -exec rm -r '{}' ';'
-	-find . -depth -name "lib" -a ! -path "*export*" -a ! -path "*/platforms/*" -a -type d -a -exec rm -r "{}" ";"
+cleandriver:
+	$(AT)set -e;\
+	     $(foreach p,$(RccPlatforms),\
+	       $(foreach t,$(RccTarget_$p),\
+	         $(foreach o,$(call RccOs,$t),\
+	           if test -d os/$o/driver; then \
+	             echo Cleaning the $o kernel driver for $(call RccRealPlatform,$p); \
+		     $(MAKE) -C os/$o/driver OcpiPlatform=$p topclean; \
+	           else \
+	             echo There is no kernel driver for the OS '"'$o'"', so none cleaned. ; \
+	           fi;))) \
+
+# Clean that respects platforms
+clean: cleanframework cleanprojects
+
+# Super clean, but not git clean, based on our patterns, not sub-make cleaning
+cleaneverything distclean: clean cleandriver cleanpackaging
 	$(AT)rm -r -f exports
+	$(AT)find . -depth -a ! -name .git  -a ! -path "./prerequisites*" -a \( \
+             -name '*~' -o -name '*.dSym' -o -name timeData.raw -o -name 'target-*' -o \
+             -name "*.lo" -o -name "*.o" -o -name gen -o \
+	     \( -name lib -a -type d -a \
+	       ! -path "*/rcc/platforms/*" -a ! -path "./prerequisites*" \)  \
+             \) -exec rm -r {} \;
+	$(AT)for p in projects/*; do [ -d $$p ] && make -C $$p cleaneverything || :; done
 
-tar:
-	tar cvf ocpi.tar Makefile MakeVars.ocpi Makefile.ocpi.for-* scripts platforms $(ALLPACKAGES)
-	gzip -9 ocpi.tar
+##########################################################################################
+# Goals, variables and macros that are about packaging the CDK, whether tarball, rpm, etc.
+##### Set variables that affect the naming of the release packages
+# The general package naming scheme is:
+# <base>[-sw-platform][-<platform>]-<version>[-<release>][_<tag>][_J<job>][_<branch>][<dist>]
+# where:
+# <base> is our core package name: opencpi
+# [-sw-platform] is omitted for development platforms
+# [-<platform>] is the OpenCPI platform being distributed
+#   Omitted in RPMs for dev platforms since it is redundant with the RPM suffix (e.g. el7.x86_64)
+# <version> is our normally versioning scheme 1.2.3
+# <release> is a label that defaults to "snapshot" if not overridden with OcpiRelease
+#          Omitted for an actual official release
+# These are only applied if not a specific versioned release:
+# <tag> is a sequence number/timestamp within a release cycle (when not a specific release)
+# <job> is a jenkins job reference if this process is run under Jenkins
+# <branch> is a git branch reference if not "develop" or "undefined"
+# <dist> added by RPM building, e.g. el7.x86_64
+# And the appropriate suffix is added:  .rpm, or .tar.gz
+base=opencpi
+# cross: value is the target platform or null if not cross
+# arg 1 is a single platform
+cross=$(strip $(foreach r,$(call RccRealPlatforms,$1),\
+        $(if $(filter $(call RccRealPlatforms,$(OCPI_TOOL_PLATFORM)),$r),,$r)))
+name=$(base)$(and $(call cross,$1),-sw-platform-$(call cross,$1))
+release=$(or $(OcpiRelease),$(Release),snapshot$(tag)$(git_tag))
+# This changes every 6 minutes which is enough for updated releases (snapshots).
+# It is rebased after a release so it is relative within its release cycle
+# FIXME:automate this...
+timestamp:=_$(shell printf %05d $(shell expr `date -u +"%s"` / 360 - 4231562))
+##### Set variables based on what git can tell us
+# Get the git branch and clean it up from various prefixes and suffixes tacked on
+# If somebody checks in between Jenkins builds, it will sometimes get "develop^2~37" etc,
+# The BitBucket prefix of something like "bugfix--" is also stripped if present.
+git_branch :=$(notdir $(shell git name-rev --name-only HEAD | \
+                              perl -pe 's/~[^\d]*$$//' | perl -pe 's/^.*?--//'))
+git_version:=$(shell echo $(git_branch) | perl -ne '/^v[\.\d]+$$/ && print')
+git_hash   :=$(shell h=`(git tag --points-at HEAD | grep github | head -n1) 2>/dev/null`;\
+                     [ -z "$$h" ] && h=`git rev-list --max-count=1 HEAD`; echo $$h)
+# git_tag is used in *.spec files for RPM release tag.
+# Any non alphanumeric (or .) strings converted to single _
+git_tag    :=$(if $(git_version),,$(strip\
+               $(if $(BUILD_NUMBER),_J$(BUILD_NUMBER)))$(strip\
+               $(if $(filter-out undefined develop,$(git_branch)),\
+                    _$(shell echo $(git_branch) | sed -e 's/[^A-Za-z0-9.]\+/_/g'))))
+##### Set final variables that depend on git variables
+# This could be nicer, but at least it gets it from the true source, which should be places
+version:=$(or $(Version),$(git_version),$(strip\
+              $(shell sed -n 's/.*AC_INIT.\[opencpi\],\[\([0-9.]*\)\].*$$/\1/p' \
+                      build/autotools/configure.ac)))
+tag:=$(if $(git_version),,$(timestamp))
+#$(info GIT_VERSION:$(git_version): GIT_TAG:$(git_tag): GIT_HASH:$(git_hash): GIT_BRANCH:$(git_branch):)
+#$(info NAME:$(name): TAG:$(tag): VERSION:$(version): RELEASE:$(release): PACKAGE:$(Package):)
+Package=runtime
+# This name applies generically, but is not used for RPMs since there are other issues about
+# being as "normal" as possible in the RPM context.  See the args passed to rpmbuild
+package_name=$(name)$(if $(filter runtime,$(Package)),,-$(Package))$(strip\
+                    $(foreach p,$(RccPlatforms),-$p))$(strip\
+	            -$(version)$(if $(git_version),,-)$(release))
+#$(info PACKAGE_NAME:$(package_name):)
+Prepare=./packaging/prepare-package-list.sh $(Package) "$(RccPlatforms)" $(call cross,$(word 1,$(RccPlatforms)))
 
-#
-# Shallow package dependencies.
-#
+.PHONY: test_packaging
+test_packaging: exports
+	$(AT)$(Prepare)
 
-runtime/dataplane/tests: \
-	runtime/rcc runtime/dataplane/transport \
-	runtime/dataplane/xfer
+# Make a tarball of exports
+# We convert the "Prepare" output mappings suitable for cp -R, into tar command transformations
+# This should be moved into the packaging subdir...
+.PHONY: tar
+tar: exports
+	$(AT)set -e; file=$(package_name).tar temp=$(mktemp -t tarcmdXXXX); \
+	     echo Determining tar export file contents for the $(Package) package: $$file.gz; \
+	     (echo "tar -h -f $$file -c \\";\
+	      $(Prepare) |\
+	        ( while read source dest; do\
+	          if [ -n "$$dest" ]; then \
+	            [ -d "$$source" ] && \
+	              echo ' --xform="s@^'$$source/@$$dest/$$(basename $$source)/'@" \'; \
+	            echo '  --xform="s@^'$$source\\\$$@$$dest/$$(basename $$source)'@" \'; \
+	          fi; \
+	          if [[ $$source == *@ ]]; then \
+	            symlinks="$$symlinks $${source/@}"; \
+	          else \
+	            echo " $$source \\"; \
+	          fi; \
+	          done ; echo; \
+	          echo "tar --append -f $$file $$symlinks") \
+	     ) > $$temp; \
+	     echo Creating tar export file: $$file.gz; \
+	     sh $$temp && rm -f $$file.gz $$temp && gzip $$file
 
-export_cdk:
-	mydate=`date +%G%m%d%H%M%S`; \
-	file=opencpi-cdk-$$mydate.tgz; \
-	(cd exports; find . -follow -type l) > $$file.exclude; \
-	if [ -s $$file.exclude ] ; then \
-	  echo ==== These symlinks are broken for this export: ; \
-	  cat $$file.exclude ; \
-	  echo ==== End of broken symlinks; \
-	fi; \
-	echo Creating export file: $$file; \
-	tar -z -h -f $$file -c -X $$file.exclude -C exports .
+.PHONY: rpm rpm_runtime rpm_devel
+real_platforms:=$(call Unique,$(call RccRealPlatforms,$(RccPlatforms)))
+rpm: exports
+	$(AT)[ $(words $(real_platforms)) != 1 ] && \
+	     echo Error: Cannot build an RPM for more than one platform at a time. && exit 1 || :
+	$(AT)./packaging/make-sw-rpms.sh $(and $(RpmVerbose),-v) \
+          $(real_platforms) "$(call cross,$(real_platforms))" \
+	   $(Package) $(base) $(call name,$(real_platforms)) $(release) $(version) $(git_hash)
+
+cleanpackaging:
+	$(AT)rm -r -f packaging/target-*
 
 
-etags: 
-    ETAGS=etags ; \
-    rm TAGS \
-    find . -name '*.cpp' -o -name '*.h' -o -name '*.c' -print0 \
-    | xargs $(ETAGS) --extra=+q --fields=+fksaiS --c++-kinds=+px --append
+##########################################################################################
+# Goals that are about prerequisites
+# Here in the Makefile to enable install-prerequisites.sh for multiple platforms
+# Use Force=1 to rebuild even if it appears it was all done before.
+# There is currently no dependency on prerequisites from building the framework.
+.PHONY: prerequisites cleanprerequisites
+prerequisites:
+	$(AT)for p in $(call RccRealPlatforms,$(RccPlatforms)); do\
+                ./scripts/install-prerequisites.sh $(and $(filter 1,$(Force)),-f) $$p;\
+             done
+cleanprerequisites:
+	$(AT)rm -r -f prerequisites-build prerequisites
+##########################################################################################
+# Goals that are about projects
+# A convenience to run various goals on all the projects that are here
+# Unfortunately, we need to know the order here.
+Projects=core assets inactive
+ProjectGoals=cleanhdl cleanrcc cleanocl rcc ocl hdl applications run runtest hdlprimitives \
+             components cleancomponents test
+# These are not done in parallel since we do not know the dependencies
+DoProjects=set -e; $(foreach p,$(Projects),\
+                     echo Performing $1 on project $p && \
+                     $(MAKE) -C projects/$p $(if $(filter build,$1),,$1) &&) :
+.PHONY: $(ProjectGoals)
+$(ProjectGoals):
+	$(AT)$(call DoProjects,$@)
+
+.PHONY: projects
+projects:
+	$(AT)$(call DoProjects,build)
+	$(AT)$(call DoProjects,test)
+
+cleanprojects:
+	$(AT)$(call DoProjects,clean)
+
+rcc ocl hdl: exports
+
+##########################################################################################
+# Help
+define help
+This top-level Makefile builds and/or tests the framework and built-in projects ($(Projects))
+
+The valid goals that accept platforms (using RccPlatform(s) or Platforms(s)) are:
+   Make goals for framework (core of Opencpi):
+     framework(default) - Build the framework for platfors and export them
+     cleanframework     - Clean the specific platforms
+     exports            - Redo exports, including for indicated platforms
+                        - This is cumulative;  previous exports are not removed
+                        - This does not export projects or do exports for projects
+     driver             - Build the driver(s) for the platform(s)
+     testframework      - Test the framework, requires the projects be built
+                        - Runs component unit tests in core project, but not in others
+     cleandriver        - Clean the driver(s) for the platform(s)
+     tar                - Create the tarball for the current cdk exports (exported platforms)
+     rpm                - Create the binary/relocatable CDK RPM for the platforms
+   Make goals for projects: (be selective using Projects=...)
+     projects           - Build the projects for the platforms
+     cleanprojects      - Clean all projects
+     exportprojects     - Export all projects
+   Other goals:
+     clean              - clean framework and projects, respecting Platforms and Projects
+     cleaneverything    - Clean as much as we can (framework and projects) without git cleaning
+                        - also distclean does this for historical/compatible reasons
+                        - ignores the Platform and Projects variables
+     prerequisites      - Forces a (re)build of the prerequisites for the specified platforms.
+                        - Downloads will be downloaded if they are not present already.
+     cleanprerequisites - Clean out all built, downloaded prerequisites.
+
+Variables that are useful for most goals:
+
+Platforms/Platform/RccPlatforms/RccPlatform: all specify software platforms
+  -- Useful for goals:  framework(default), exports, cleanframework, projects, exportprojects,
+                        driver, cleandriver, prerequisites, tar, rpm
+  -- Platforms can have build options/letters after a hyphen: d=dynamic, o=optimized
+     <platform>:    default static, debug build
+     <platform>-d:  dynamic library, debug build
+     <platform>-o:  static library, optimized build
+     <platform>-do: dynamic library, optimized build
+
+Projects: specify projects (default is: $(Projects))
+  -- Useful for goals:  projects, cleanprojects, exportprojects, testprojects
+
+The projects for project-related goals use the Projects variable.
+The default is all the built-in projects (including inactive) in order: $(Projects)
+These various project-related goals simply perform the goal in all projects:
+   rcc ocl hdl applications test run runtest hdlprimitives components
+   cleanhdl cleanrcc cleanocl
+Variables that only affect project building can also be used, like HdlPlatforms.
+endef
+$(OcpiHelp)

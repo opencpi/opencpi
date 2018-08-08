@@ -474,8 +474,20 @@ namespace OCPI {
 	    if (!strncmp(mName, start, len) && isspace(start[len]))
 	      break;
 	  }
-	  if (n >= m_vt->m_nMembers)
-	    return "unknown member name in struct value";
+	  if (n >= m_vt->m_nMembers) {
+	    std::string err("struct member name \"");
+	    const char *endOfName = start;
+	    while (!isspace(*endOfName) && endOfName != end)
+	      endOfName++;
+	    err.append(start,  endOfName - start);
+	    err += "\" did not match any of the expected member names (";
+	    for (size_t ii = 0; ii < m_vt->m_nMembers; ii++)
+	      formatAdd(err, "%s\"%s\"", ii ? ", " : "", m_vt->m_members[ii].cname());
+	    err += ")";
+	    return esprintf("%s%s", err.c_str(), *start == '{' ?
+			    ", note that opening curly braces are only used for structs when "
+			    "they occur within an array or sequence or struct" : "");
+	  }
 	  if (sv[n])
 	    return "duplicate member name in struct value";
 	  start += len;
@@ -834,7 +846,7 @@ namespace OCPI {
 	err = "Unexpected illegal type in parsing value";
       }
       return err ?
-	esprintf("in value \"%.*s\" (%zu): %s", (int)(end-start), start, end-start, err) : NULL;
+	esprintf("in value \"%.*s\" (length of prop value is %zu chars): %s", (int)(end-start), start, end-start, err) : NULL;
     }
 
 Unparser::

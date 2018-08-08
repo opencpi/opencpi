@@ -18,14 +18,15 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <OcpiUtilVfsIterator.h>
-#include <OcpiUtilZipFs.h>
-#include <OcpiUtilFileFs.h>
-#include <OcpiOsFileSystem.h>
 #include <iostream>
 #include <iomanip>
 #include <string>
 #include <memory>
+#include "ocpi-config.h"
+#include "OcpiUtilVfsIterator.h"
+#include "OcpiUtilZipFs.h"
+#include "OcpiUtilFileFs.h"
+#include "OcpiOsFileSystem.h"
 
 #if defined(OCPI_OS_VERSION_r5)
   #define unique_ptr auto_ptr

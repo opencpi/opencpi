@@ -29,7 +29,7 @@ namespace OA = OCPI::API;
 int
 main(int, char **) {
   try {
-    OA::PValue pvs[] = { OA::PVString("model", "=rcc"), OA::PVEnd };
+    OA::PValue pvs[] = { OA::PVString("model", "=rcc"), OA::PVBool("verbose", true), OA::PVEnd };
     OA::Application app("<application>"
 			"  <instance component='local.copy' externals='true'>"
 			"    <property name='ocpi_debug' value='0'/>"

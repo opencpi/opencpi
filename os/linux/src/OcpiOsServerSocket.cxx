@@ -33,6 +33,7 @@
 #include <string>
 #include <cstring>
 
+#include "ocpi-config.h"
 #include "OcpiOsAssert.h"
 #include "OcpiOsSocket.h"
 #include "OcpiOsServerSocket.h"

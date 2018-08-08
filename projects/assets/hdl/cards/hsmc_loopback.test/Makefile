@@ -23,6 +23,10 @@ include setup.mk
 .SILENT: show
 .PHONY: clean show
 
+ifneq (,)
+  include $(OCPI_CDK_DIR)/include/test.mk
+endif
+
 # build the HDL unit test assemblies
 all:
 	make -C assemblies

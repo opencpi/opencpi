@@ -25,6 +25,7 @@
 #include <sys/stat.h>
 #include <climits>
 #include <set>
+#include "ocpi-config.h"
 #include "OcpiUtilException.h"
 #include "OcpiLibraryManager.h"
 #include "LibrarySimple.h"
@@ -41,7 +42,8 @@ namespace OE = OCPI::Util::EzXml;
 namespace OCPI {
   namespace Library {
     const char *library = "library";
-    const char **complib = &CompLib::component;
+    // This is intended to force this "driver" to be statically linked into this library
+    const char **complib OCPI_USED = &CompLib::component;
     static OCPI::Driver::Registration<Manager> lm;
     // The Library Driver Manager class
     Manager::Manager() {
@@ -449,7 +451,7 @@ namespace OCPI {
 	  //	  const char *model = ezxml_cattr(wi->second->m_worker, "model");
 	  if (caps.m_model != wi->second->m_metadataImpl.model())
 	    continue;
-	  // Now we will test the selection criteria 
+	  // Now we will test the selection criteria
 	  return !selectCriteria || satisfiesSelection(selectCriteria, &score, wi->second->m_metadataImpl);
 	}
       }
@@ -462,7 +464,7 @@ namespace OCPI {
       // Record in the globalmapping
       Manager::getSingleton().addImplementation(*impl);
       ocpiDebug("Added implementation in artifact \"%s\" spec \"%s\" name \"%s\" inst \"%s\"",
-		name().c_str(), metaImpl.specName().c_str(), metaImpl.cname(), 
+		name().c_str(), metaImpl.specName().c_str(), metaImpl.cname(),
 		staticInstance ? ezxml_cattr(staticInstance, "name") : "no-instance-name");
 
       return impl;
@@ -553,7 +555,7 @@ namespace OCPI {
 	      }
 	    }
       }
-      
+
     }
     void Artifact::
     printSpecs(std::set<const char *, OCPI::Util::ConstCharComp> &specs) const {
@@ -573,6 +575,6 @@ namespace OCPI {
     getPath() {
       return OCPI::Library::Manager::getSingleton().getPath();
     }
-    
+
   }
 }

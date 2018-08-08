@@ -1,0 +1,1 @@
+python tests are run by using the run_pytests.sh script.  This script runs any python unit test with the name *_test.py.  To add a new unit test just add the file (my test name)_test.py  

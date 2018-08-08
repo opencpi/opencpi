@@ -1,0 +1,8 @@
+<HdlWorker language="vhdl" spec="timestamper-spec">
+  <SpecProperty Name="enable" Readable="true"/>
+
+  <StreamInterface Name="in" Producer="false" DataWidth="32" NumberOfOpcodes="256"/>
+  <StreamInterface Name="out" Producer="true" DataWidth="32" NumberOfOpcodes="256"/>
+
+  <TimeInterface Name="time" SecondsWidth="32" FractionWidth="32"/>
+</HdlWorker>

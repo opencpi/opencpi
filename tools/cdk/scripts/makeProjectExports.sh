@@ -18,6 +18,7 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 
+##########################################################################################
 # Populate the exports tree at the top level of this project with links to this
 # project's assets, allowing them to be used by other projects.
 #
@@ -58,12 +59,20 @@
 
 # The sorry state of POSIX/BSD/LINUX/MACOS command compatibility
 extended=$(if [ `uname -s` = Darwin ]; then echo -E .; else echo . -regextype posix-extended; fi)
+[ -z "$OCPI_CDK_DIR" -o ! -d "$OCPI_CDK_DIR" ] && echo "Error: OCPI_CDK_DIR environment setting not valid: '${OCPI_CDK_DIR}'" && exit 1
+source $OCPI_CDK_DIR/scripts/util.sh
 
 # match_pattern: Find the files that match the pattern:
 #  - use default bash glob, and also
 #  - avoids looking at ./exports/
 #  - consolidate files that are hard or soft linked into single (first in inode sort order) file
 #  - following links so that patterns can match against the link path
+function warn_check { 
+  local arg=$1
+  if [ -n "$verbose" ]; then 
+    echo $arg 
+  fi
+}
 function match_pattern {
   local arg=$1
   if [[ $arg == \|* ]]; then
@@ -222,7 +231,7 @@ assets=$(test -f $exports && grep -v '^[ 	]*[-+#]' $exports | grep -v '^[ 	]*$' 
 [ -n "$verbose" ] && echo Assets: $assets
 # parse/error-check asset "nouns" accumulating then into variables named by the type of asset.
 # These are not yet supported:  hdl_assemblies
-nouns=(hdl_primitives hdl_platforms hdl_libraries rcc_platforms libraries specs)
+nouns=(hdl_primitives hdl_platforms hdl_libraries rcc_platforms libraries specs artifacts)
 for n in ${nouns[*]}; do eval declare -a $n; done
 allrequested=
 for a in $assets; do
@@ -272,7 +281,7 @@ for a in $assets; do
 	      [ "$model" != hdl ] && bad \"$arg\" only supported for HDL model
 	      all=`topdirs $model/$arg "hdl/hdl-(core|library|lib)"`
 	      if [ -z "$all" ]; then
-		  echo Warning:  cannot export $model $arg since none exist
+		  warn_check "Warning:  cannot export $model $arg since none exist" 
 	      else
 		  eval ${model}_$arg=\(${all[*]}\)
 	      fi;;
@@ -285,13 +294,13 @@ for a in $assets; do
 		      allrcc=`topdirs rcc/platforms`;;
 	      esac
 	      if [ -z "$allrcc$allhdl" ]; then
-		  echo Warning:  cannot export ${model}${model+ }platforms since none exist.
+		  warn_check "Warning:  cannot export ${model}${model+ }platforms since none exist."
 	      else
 		  [ -n "$allrcc" ] && {
 		      for p in $allrcc; do
-			  warn=`checkfiles rcc/platforms/$p target '$f-target.mk'`
+			  warn=`checkfiles rcc/platforms/$p '$f.mk'`
 			  if [ -n "$warn" ]; then
-			      echo Warning:  cannot export RCC platform $p: $warn
+			      warn_check "Warning:  cannot export RCC platform $p: $warn"
 			  else
 			      rcc_platforms+=($p)
 			  fi
@@ -301,7 +310,7 @@ for a in $assets; do
 		      for p in $allhdl; do
 			  warn=`checkfiles hdl/platforms/$p Makefile '$f.mk'`
 			  if [ -n "$warn" ]; then
-			      echo Warning:  cannot export HDL platform $p: $warn
+			      warn_check "Warning:  cannot export HDL platform $p: $warn"
 			  else
 			      hdl_platforms+=($p)
 			  fi
@@ -344,12 +353,15 @@ for a in $assets; do
 		  if [ -d specs ]; then
 		      specs+=(`shopt -s nullglob; for i in specs/*.xml specs/package-id; do [ -f $i ] && echo $(basename $i); done`)
 		  else
-		      [ -n "$allrequested" ] || echo Warning:  cannot export specs since no specs exist in this project.
+		      [ -n "$allrequested" ] || warn_check "Warning:  cannot export specs since no specs exist in this project."
 		  fi
 	      else
 		  noun=specs
 		  needname=specs
 	      fi;;
+	  artifacts)
+	      artifacts="$(shopt -s nullglob; for i in artifacts/*; do [ -f $i ] && echo $(basename $i) || :; done)"
+	      noun=artifacts;;
       esac
       args=(${args[*]})
   done
@@ -395,7 +407,7 @@ done
 [ -n "$verbose" -a -n "$rcc_platforms" ] && echo Processing rcc platforms
 for p in ${rcc_platforms[*]}; do
   d=rcc/platforms/$p
-  [ -f $d/target -a -f $d/$p-target.mk ] || bad RCC platform $p not exported due to missing files in $d
+  [ -f $d/$p.mk -o -f $d/$p-target.mk ] || bad RCC platform $p not exported due to missing files in $d
   make_filtered_link $d exports/lib/rcc/platforms/$p rcc-platform
 done
 
@@ -441,6 +453,12 @@ for s in ${specs[*]}; do
     make_filtered_link specs/$s exports/specs/$s spec
 done
 ###################################################################################
+# Export artifacts at top level
+[ -n "$verbose" -a -n "$artifacts" ] && echo Processing the artifacts
+for s in ${artifacts[*]}; do
+    make_filtered_link artifacts/$s exports/artifacts/$s artifact
+done
+###################################################################################
 # Leftover assets not handled yet:
 #
 
@@ -478,9 +496,16 @@ for a in $additions; do
   done
   set -f
 done
+set +f
+# This is speclinks for all libraries without recursing into python, then make, then python,
+# and requiring imports to exist to find platforms we aren't using etc. etc. etc. 
+# This script is really a "leaf" script that should not be recursing back into all the
+# other make machinery.  If necessary before the python rewrite, we could have a
+# shared implementation some other way that avoided all the recursion.
+# Or change the python to do this and not use "make".
 
 # export the specs for each of the libraries
-python -c "import sys; sys.path.append(\"$OCPI_CDK_DIR/scripts/\");\
+python3 -c "import sys; sys.path.append(\"$OCPI_CDK_DIR/scripts/\");\
            import ocpiutil; ocpiutil.export_libraries()"
 
 exit 0

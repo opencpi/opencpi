@@ -303,7 +303,7 @@ namespace OCPI {
 		OU::baseTypeNames[OCPI_String], OU::baseTypeNames[m_info.m_baseType]);
       if (m.m_baseType != OCPI_String)
 	throwError("getting a string value from a non-string property");
-      std::vector<char> s(stringBufferLength());
+      std::vector<char> s(m.m_stringLength + 1);
       getStringValue(&m, offset, &s[0], s.size());
       return &s[0];
     }

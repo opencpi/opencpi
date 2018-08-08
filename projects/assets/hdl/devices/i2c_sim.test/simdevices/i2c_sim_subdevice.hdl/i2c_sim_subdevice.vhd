@@ -36,7 +36,9 @@ architecture rtl of i2c_sim_subdevice_worker is
   signal   number_of_bytes : std_logic_vector(2 downto 0);
   signal   index           : integer range 0 to to_integer(NUSERS_p)-1;
   signal   slave_addr      : std_logic_vector(6 downto 0);
+  signal byte_enable : std_logic_vector(raw_in.raw.byte_enable'range);  -- for modelsim
 begin
+  byte_enable <= raw_in.raw.byte_enable;
   number_of_bytes <= std_logic_vector(to_unsigned(count_ones(raw_in.raw.byte_enable), number_of_bytes'length));
   addr            <= std_logic_vector(raw_in.raw.address(addr'range));
   slave_addr      <= std_logic_vector(SLAVE_ADDRESS_P(index)(6 downto 0));
@@ -44,7 +46,7 @@ begin
   --Input byte enable decode
   be_input : process (raw_in.raw.byte_enable, raw_in.raw.data)
   begin
-    case raw_in.raw.byte_enable is
+    case byte_enable is
       when "0011" => wdata <= x"0000"&raw_in.raw.data(15 downto 0);
       when "0110" => wdata <= x"0000"&raw_in.raw.data(23 downto 8);
       when "1100" => wdata <= x"0000"&raw_in.raw.data(31 downto 16);
@@ -61,7 +63,7 @@ begin
   --Output byte enable encoding
   be_output : process (raw_in.raw.byte_enable, rdata)
   begin
-    case raw_in.raw.byte_enable(3 downto 0) is
+    case byte_enable is
       when "0011" => raw_out.raw.data <= x"0000"&rdata(31 downto 16);
       when "0110" => raw_out.raw.data <= x"00"&rdata(31 downto 16)&x"00";
       when "1100" => raw_out.raw.data <= rdata(31 downto 16)&x"0000";

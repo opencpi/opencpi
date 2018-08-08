@@ -2,4 +2,4 @@
 *.edf -diff
 *.bit -diff
 doc/html/** -diff
-releng/jenkins/jenkins_backups/** -diff
+**/config.json !merge

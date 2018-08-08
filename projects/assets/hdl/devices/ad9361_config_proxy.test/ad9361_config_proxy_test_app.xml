@@ -1,4 +1,8 @@
 <Application>
+
+  <!-- must be instanced here in app XML as a workaround for AV-3799 -->
+  <Instance Component="ocpi.assets.devices.ad9361_spi"/>
+
   <Instance Component="ocpi.assets.devices.ad9361_config"/>
   <Instance Component="ocpi.assets.devices.ad9361_config_proxy" Slave="ad9361_config"/>
 </Application>

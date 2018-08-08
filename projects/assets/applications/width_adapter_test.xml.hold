@@ -1,0 +1,91 @@
+<application package='ocpi.core' done='file_write'>
+  <instance component='file_read' connect='wsi_width_adapter0'>
+    <property name='filename' value='test.input.width_adapter_test'/>
+    <property name='messagesInFile' value='true'/>
+  </instance>
+  <instance component='wsi_width_adapter' connect='wsi_width_adapter1'>
+    <property name='width_in' value='32'/>
+    <property name='width_out' value='8'/>
+  </instance>
+  <instance component='wsi_width_adapter' connect='wsi_width_adapter2'>
+    <property name='width_in' value='8'/>
+    <property name='width_out' value='16'/>
+  </instance>
+  <instance component='wsi_width_adapter' connect='wsi_width_adapter3'>
+    <property name='width_in' value='16'/>
+    <property name='width_out' value='64'/>
+  </instance>
+  <instance component='wsi_width_adapter' connect='wsi_width_adapter4'>
+    <property name='width_in' value='64'/>
+    <property name='width_out' value='128'/>
+  </instance>
+  <instance component='wsi_width_adapter' connect='wsi_width_adapter5'>
+    <property name='width_in' value='128'/>
+    <property name='width_out' value='32'/>
+  </instance>
+  <instance component='wsi_width_adapter' connect='wsi_width_adapter6'>
+    <property name='width_in' value='32'/>
+    <property name='width_out' value='16'/>
+  </instance>
+  <instance component='wsi_width_adapter' connect='wsi_width_adapter7'>
+    <property name='width_in' value='16'/>
+    <property name='width_out' value='8'/>
+  </instance>
+  <instance component='wsi_width_adapter' connect='wsi_width_adapter8'>
+    <property name='width_in' value='8'/>
+    <property name='width_out' value='64'/>
+  </instance>
+  <instance component='wsi_width_adapter' connect='wsi_width_adapter9'>
+    <property name='width_in' value='64'/>
+    <property name='width_out' value='16'/>
+  </instance>
+  <instance component='wsi_width_adapter' connect='wsi_width_adapter10'>
+    <property name='width_in' value='16'/>
+    <property name='width_out' value='32'/>
+  </instance>
+  <instance component='wsi_width_adapter' connect='wsi_width_adapter11'>
+    <property name='width_in' value='32'/>
+    <property name='width_out' value='64'/>
+  </instance>
+  <instance component='wsi_width_adapter' connect='wsi_width_adapter12'>
+    <property name='width_in' value='64'/>
+    <property name='width_out' value='8'/>
+  </instance>
+  <instance component='wsi_width_adapter' connect='wsi_width_adapter13'>
+    <property name='width_in' value='8'/>
+    <property name='width_out' value='128'/>
+  </instance>
+  <instance component='wsi_width_adapter' connect='wsi_width_adapter14'>
+    <property name='width_in' value='128'/>
+    <property name='width_out' value='64'/>
+  </instance>
+  <instance component='wsi_width_adapter' connect='wsi_width_adapter15'>
+    <property name='width_in' value='64'/>
+    <property name='width_out' value='32'/>
+  </instance>
+  <instance component='wsi_width_adapter' connect='wsi_width_adapter16'>
+    <property name='width_in' value='32'/>
+    <property name='width_out' value='128'/>
+  </instance>
+  <instance component='wsi_width_adapter' connect='wsi_width_adapter17'>
+    <property name='width_in' value='128'/>
+    <property name='width_out' value='16'/>
+  </instance>
+  <instance component='wsi_width_adapter' connect='wsi_width_adapter18'>
+    <property name='width_in' value='16'/>
+    <property name='width_out' value='128'/>
+  </instance>
+  <instance component='wsi_width_adapter' connect='wsi_width_adapter19'>
+    <property name='width_in' value='128'/>
+    <property name='width_out' value='8'/>
+  </instance>
+  <instance component='wsi_width_adapter' connect='bias'>
+    <property name='width_in' value='8'/>
+    <property name='width_out' value='32'/>
+  </instance>
+  <instance component='bias' connect='file_write'/>
+  <instance component='file_write'>
+    <property name='filename' value='test.output'/>
+    <property name='messagesInFile' value='true'/>
+  </instance>
+</application>

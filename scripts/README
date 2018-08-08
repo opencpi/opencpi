@@ -1,19 +1,35 @@
 These scripts are those that are run at the top level of the opencpi source tree that are not
 part of the CDK.  They are generally used for installing software or initializing the environment
-when building the core software.
+when building the core software in the source tree.
 
-I.e. scripts that are never exported in the CDK and thus not needed by users
-(only core OpenCPI maintainers) are also here.
+I.e. scripts are here that are never exported in the CDK and thus not needed by users
+(only core OpenCPI maintainers or developers of new software platforms)
 
-The particular script install-prerequisites.sh installs all the external packages opencpi
-depends on, including those installed by "sudo yum install", and also those that require running
-the specific scripts here (e.g. scripts/install-gmp.sh) that download, configure, patch, build,
-and install (in /opt/opencpi/prerequisites).
+Many of these scripts are here for historical reasons, since build-oriented scripts have been
+moved to the build/ subdirectory and packaging-oriented scripts have moved to the
+packaging/ directory.
 
-When ./scripts/install_prerequisites.sh is called with no arguments, it installs packages for
-host platform you are running on.  If you want installations for multiple development platforms
-(e.g. centos6 and centos7), you need to run the script in each environment.
-To make installations for cross-built (usually embedded) platforms, you can provide the name of
-the platform as an argument to the script (or set OCPI_TARGET_PLATFORM in your environment).
+At this time these scripts are still used:
+  init-opencpi.sh: initialize the environment in the source tree when it is virgin
+  install-opencpi.sh: do everything at once in a source tree, see below
+  makeExportLinks.sh: populate the exports directory to define what is in the CDK
+  test-opencpi.sh: run all or some tests
 
-Some installation scripts here are optional, and not invoked by install-prerequisites.sh.
+The top-level script, install-opencpi.sh does the the following things, with its optional
+first argument being the software platform to build for.
+
+-- install required external package-repository software packages for the platform
+---- using the install-packages.sh script
+-- download/build OpenCPI prerequisite packages (for its own use, including cross-compiled)
+---- using the install-prerequisites.sh script
+-- build the OpenCPI framework libraries and executable
+-- build the software aspects of the built-in projects
+---- both using the build-opencpi.sh script
+-- (on development platforms) run a set of tests that test various aspects of opencpi
+---- using the test-opencpi.sh script
+
+The install-opencpi.sh script without arguments does its job for the currently running platform.
+With its first argument set to a software platform name, it builds for that platform.
+If that is not the currently running platform, it is essentially doing its work for
+a cross-compiled (probably embedded) platform, in which case the final test step is not
+performed.

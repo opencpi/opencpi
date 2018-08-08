@@ -49,7 +49,15 @@
                  Interconnect="<interconnect_name, probably zynq or pcie>"/-->
   <!-- e.g. <Connection Device="lime_adc" Port="out" Interconnect="pcie"/> -->
   <!-- e.g. <Connection Device="lime_dac" Port="in"  Interconnect="pcie"/> -->
-  <Connection Device="lime_adc" Port="out" Card="lime_zipper_fmc_hpc" Slot="fmc_hpc" Interconnect="pcie"/>
+
+  <!-- TODO / FIXME - to reduce software entropy, change this interconnect
+       connection order to be the same as all other containers once AV-3873 is
+       resolved (consequence of bug AV-3873 is that PCIE interconnect container
+       connections that are in the data flow direction CPU->PCIE->assembly can
+       only be defined ONCE in a container and they must be FIRST before all
+       other interconnect connections) -->
   <Connection Device="lime_dac" Port="in"  Card="lime_zipper_fmc_hpc" Slot="fmc_hpc" Interconnect="pcie"/>
+
+  <Connection Device="lime_adc" Port="out" Card="lime_zipper_fmc_hpc" Slot="fmc_hpc" Interconnect="pcie"/>
 
 </HdlContainer>

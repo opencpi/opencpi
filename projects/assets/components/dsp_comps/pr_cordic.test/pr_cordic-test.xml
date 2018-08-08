@@ -1,0 +1,8 @@
+<tests useHDLFileIo='true'>
+  <input port='in' script='generate.py 0' messagesize='8192'/>
+  <output port='out' script='verify.py' view='view.sh'/>
+  <property name='FREQUENCY_CONTROL_WORD' test='true' value='1'/>
+  <property name='MAG' test='true' value='29760'/>
+  <property name='NUM_OF_CYCLES' test='true' value='2'/>
+  <property name='NUM_SAMPLES' test='true' value='129023'/>
+</tests>

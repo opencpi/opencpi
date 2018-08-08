@@ -1,0 +1,34 @@
+<!-- This is the spec file (OCS) for: fifo
+     Add component spec attributes, like "protocol".
+     Add property elements for spec properties.
+     Add port elements for i/o ports -->
+<ComponentSpec>
+
+  <!-- Parameters -->
+  <Property Name="FIFO_DEPTH_p" Type="ulong"
+                                Parameter="true"
+                                Default="1024"
+                                Description="Maximum number of complex samples which the FIFO can hold at any given time."/>
+  <Property Name="ZLM_WHEN_ONESHOT_DONE_p" Type="bool"
+                                           Parameter="true"
+                                           Default="false"
+                                           Description="When true, worker will generate Zero-Length-Message after oneshot was enabled and completed."/>
+
+  <!-- Properties -->
+  <Property Name="oneshot" Type="bool"
+                           Readable="true"
+                           Initial="true"
+                           Default="false"
+                           Description="If false, the FIFO operates normally, i.e. it allows data to flow from adc_in to adc_passthrough_out and transfers backpressure accordingly. If true, the functionality is as follows. The FIFO receives data from adc_in and holds it until the FIFO is full. One the FIFO is full, data is pulled from the FIFO and sent out the adc_passthrough_out port, all the while data is pulled from adc_in but unused, effectively making the adc_in port a data sink. Note that a control plane reset will always reset the FIFO and start this operation over."/>
+
+  <!-- Ports -->
+  <!-- Complex signed samples (Q0.15 I, Q0.15 Q). This port effectively becomes a data sink when oneshot is true and FIFO_DEPTH_p samples have been passed through this port. Note that input Zero-Length Messages will not be counted when using oneshot mode. -->
+  <DataInterfaceSpec Name="in" Producer="false"
+                               Protocol="iqstream_protocol"
+                               ZeroLengthMessages="true"/>
+  <!-- Complex signed samples (Q0.15 I, Q0.15 Q). This port will pass through all samples from the input port, enforcing backpressure. If oneshot is true and FIFO_DEPTH_p samples have been passed through this port, no more data will be passed through this port until a reset occurs. Note that Zero-Length Messages will not be counted when using oneshot mode. -->
+  <DataInterfaceSpec Name="out" Producer="true"
+                                Protocol="iqstream_protocol"
+                                ZeroLengthMessages="true"/>
+
+</ComponentSpec>

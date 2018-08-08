@@ -1,0 +1,3 @@
+<RccWorker language='c++' spec='complex_mixer-spec' controlOperations="initialize,release">
+
+</RccWorker>

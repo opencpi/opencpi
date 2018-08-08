@@ -1,0 +1,12 @@
+<!-- This is the spec file (OCS) for: timestamper
+     Add component spec attributes, like "protocol".
+     Add property elements for spec properties.
+     Add port elements for i/o ports -->
+<ComponentSpec>
+
+  <Property Name="enable" Type="bool" Writable="true" Default="true"/>
+
+  <Port Name="in" Producer="false" Protocol="iqstream_protocol.xml"/>
+  <Port Name="out" Producer="true" Protocol="iqstream_with_sync_protocol.xml"/>
+
+</ComponentSpec>

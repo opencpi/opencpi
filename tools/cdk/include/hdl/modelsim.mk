@@ -70,6 +70,8 @@ ModelsimFiles=\
 $(call OcpiDbgVar,ModelsimFiles)
 
 
+ModelsimExec=LD_PRELOAD=$(OCPI_PREREQUISITES_DIR)/inode64/$(OCPI_TOOL_DIR)/lib/inode64.so $(OCPI_MODELSIM_DIR)/linuxpe/$1
+
 ModelsimVlogLibs=
 
 # FIXME: make . in the include path for primitives as well as workers
@@ -93,11 +95,11 @@ HdlToolCompile=\
    ) > modelsim.ini ; \
    export LM_LICENSE_FILE=$(OCPI_MODELSIM_LICENSE_FILE); \
    rm -r -f $(WorkLib); \
-   $(if $(filter work,$(LibName)),,$(OCPI_MODELSIM_DIR)/bin/vlib $(WorkLib) &&) \
+   $(if $(filter work,$(LibName)),,$(call ModelsimExec,vlib) $(WorkLib) &&) \
    $(and $(filter %.v,$(ModelsimFiles)),\
-    $(OCPI_MODELSIM_DIR)/bin/vlog $(ModelSimVlogIncs) $(VlogLibs) $(ModelsimArgs) $(filter %.v, $(ModelsimFiles)) ;) \
+    $(call ModelsimExec,vlog) $(ModelSimVlogIncs) $(VlogLibs) $(ModelsimArgs) $(filter %.v, $(ModelsimFiles)) ;) \
    $(and $(filter %.vhd,$(ModelsimFiles)),\
-    $(OCPI_MODELSIM_DIR)/bin/vcom -preserve $(if $(HdlNoSimElaboration),,$(ignore -bindAtCompile)) -error 1253 $(ModelsimArgs) $(filter %.vhd,$(ModelsimFiles)))
+    $(call ModelsimExec,vcom) -preserve $(if $(HdlNoSimElaboration),,$(ignore -bindAtCompile)) -error 1253 $(ModelsimArgs) $(filter %.vhd,$(ModelsimFiles)))
 
 # Since there is not a singular output, make's builtin deletion will not work
 HdlToolPost=\
@@ -118,7 +120,7 @@ $1/$3.tar:
 	     echo -L $3 $$$$(grep = modelsim.ini | grep -v others= | sed 's/=.*//' | sed 's/^/-L /') > vsim.args && \
 	     export LM_LICENSE_FILE=$(OCPI_MODELSIM_LICENSE_FILE) && \
 	     echo 'log -r /*; archive write vsim.dbar -wlf vsim.wlf -include_src ; quit' | \
-	     $(OCPI_MODELSIM_DIR)/bin/vsim -c $3.$3 -modelsimini modelsim.ini \
+	     $(call ModelsimExec,vsim) -c $3.$3 -modelsimini modelsim.ini \
 	       -f vsim.args && \
              echo vsim exited successfully, now creating archive: $$@ && \
              tar -cf $$(notdir $$@) -h vsim.dbar vsim.args metadatarom.dat \

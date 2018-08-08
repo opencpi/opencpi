@@ -1,3 +1,4 @@
+ ./doc/av/tex/generator/pdfmarks
  ./platforms/zynq/ntpclient
  ./projects/assets/components/dsp_comps/complex_mixer.hdl/vivado_ila/vivado_ila.dcp
  ./projects/assets/components/util_comps/socket_write.rcc/asio/configure.ac
@@ -32,6 +33,7 @@
  ./projects/inactive/hdl/platforms/zed_zipper/devices/zipper_i2c.hdl/timescale.v
  ./projects/inactive/hdl/platforms/zed_zipper/zed_zipper.ut
  ./projects/inactive/hdl/primitives/virtex5/Ethernet_v5.v
+ ./projects/inactive/rcc/platforms/alt_test/alt_test-prerequisites
  ./releng/acinclude/pkg.m4
  ./runtime/application/notes
  ./runtime/hdl-support/scripts/donft

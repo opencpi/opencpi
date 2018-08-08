@@ -1,3 +1,5 @@
+<!-- ***** THIS CONTAINER WILL NOT WORK UNTIL bug AV-3873 is resolved ***** -->
+
 <!-- filename:             cnt_2rx_2tx_bypassasm_fmcomms_2_3_lpc_LVDS_ml605.xml -->
 <!-- filename description: cnt                                                   (this is a container)                              -->
 <!--                           2rx                                               (number of RX channels used)                       -->
@@ -49,6 +51,13 @@
                  Interconnect="<interconnect_name, probably zynq or pcie>"/-->
   <!-- e.g. <Connection Device="lime_adc" Port="out" Interconnect="pcie"/> -->
   <!-- e.g. <Connection Device="lime_dac" Port="in"  Interconnect="pcie"/> -->
+
+  <!-- ***** below connections WILL NOT WORK -
+       consequence of bug AV-3873 is that PCIE interconnect container
+       connections that are in the data flow direction CPU->PCIE->assembly can
+       only be defined ONCE in a container and they must be FIRST before all
+       other interconnect connections ***** -->
+  <Connection Device="ad9361_adc0" Port="out" Card="fmcomms_2_3_hpc" Slot="fmc_hpc" Interconnect="pcie"/>
   <Connection Device="ad9361_adc0" Port="out" Card="fmcomms_2_3_lpc" Slot="fmc_lpc" Interconnect="pcie"/>
   <Connection Device="ad9361_adc1" Port="out" Card="fmcomms_2_3_lpc" Slot="fmc_lpc" Interconnect="pcie"/>
   <Connection Device="ad9361_dac0" Port="in"  Card="fmcomms_2_3_lpc" Slot="fmc_lpc" Interconnect="pcie"/>

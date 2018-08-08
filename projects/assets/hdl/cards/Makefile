@@ -21,25 +21,10 @@
 # are device specific - each worker controls some piece of hardware on a
 # chip or attached to a chip.
 
-XXTests = \
-	fmcomms_2_3_rx.test \
-	fmcomms_2_3_tx.test \
-	hsmc_debug_header_breakout.test \
-	hsmc_loopback.test \
-	zipper_i2c.test
+# setting Tests variable to empty disables all tests
+Tests =
 
-# Build Ordering Rules:
-# 1) Subdevices that support other devices must occur AFTER the devices they support.
-# 2) Similarly, Emulators must occur after the devices they emulate.
-XXWorkers = \
-	fmcomms_2_3_i2c.hdl \
-	fmcomms_2_3_rx.rcc \
-	fmcomms_2_3_tx.rcc \
-	hsmc_debug_header_breakout.hdl \
-	hsmc_loopback.hdl \
-	zipper_i2c.hdl \
-	zipper_rx.rcc \
-	zipper_tx.rcc
-
+# not setting Workers variable causes all workers to build
+#Workers =
 
 include $(OCPI_CDK_DIR)/include/library.mk

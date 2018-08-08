@@ -24,7 +24,10 @@
 #include <unistd.h>
 #include <sys/mman.h>
 #include <cstring>
+#include "ocpi-config.h"
+#include "OcpiUtilCppMacros.h"
 #include "OcpiOsLoadableModule.h"
+#include "OcpiDriverManager.h"
 #include "OclContainer.h"
 
 namespace OU =  OCPI::Util;
@@ -49,15 +52,15 @@ namespace OU =  OCPI::Util;
 #include "CmdOption.h"
 
 namespace OC = OCPI::Container;
+namespace OCL = OCPI::OCL;
 namespace OA = OCPI::API;
+namespace OD = OCPI::Driver;
 
-const char *defaultLib =
-#ifdef OCPI_OS_macos
-  "/System/Library/Frameworks/OpenCL.framework/Versions/A/OpenCL"
-#else
- "libOpenCL.so.1"
-#endif
-  ;
+// FIXME:  this assumes that the environment and or configuration will be set to the default
+// location.  This is "pending" while we figure out the difference between a default place
+// for the OpenCL ICD, vs an actual runtime implementation library.
+// For now we will assume it is a configuration value in ocpi-config.h
+const char *defaultLib = OCPI_CPP_STRINGIFY(OCPI_OPENCL_LIB);
 
 static int mymain(const char **ap) {
   OCPI::OS::logSetLevel(options.loglevel());
@@ -72,12 +75,12 @@ static int mymain(const char **ap) {
   }
   if (!*ap)
     return 0;
-  std::string error;  
-#if 0
-  // Explicitly load the OCL driver here so it is not statically linked.
-  if (OCPI::Driver::ManagerManager::loadDriver("container", "ocl", error))
-    options.bad("Error loading the OCL container driver: %s", error.c_str());
-#endif
+  // Now we explicitly load the remote container driver
+  std::string err;
+  OD::Driver *d = OD::ManagerManager::loadDriver("container", "ocl", err);
+  if (!d)
+    options.bad("Error during loading of OCL container driver: %s", err.c_str());
+  OCL::Driver &driver = *static_cast<OCL::Driver*>(d);
   if (!strcasecmp(*ap, "search")) {
     OA::PVarray vals(5);
     unsigned n = 0;
@@ -85,12 +88,11 @@ static int mymain(const char **ap) {
     if (options.verbose())
       vals[n++] = OA::PVBool("verbose", true);
     vals[n++] = OA::PVEnd;
-    OCPI::OCL::Driver::getSingleton().search(vals, NULL, true);
+    driver.search(vals, NULL, true);
   } else if(!strcasecmp(*ap, "probe")) {
     if (!*++ap)
       options.bad("Missing device name argument to probe");
-    std::string err;
-    if (!OCPI::OCL::Driver::getSingleton().open(*ap, options.verbose(), true, err))
+    if (!driver.open(*ap, options.verbose(), true, err))
       options.bad("Error during probe for \"%s\": %s", *ap, err.c_str());
   } else if(!strcasecmp(*ap, "compile")) {
     if (!options.target())
@@ -125,11 +127,11 @@ static int mymain(const char **ap) {
       ocpiDebug("Mapped OCL input file has: '%s' has length %zu %d/%d", mapped[n*2],
 		(size_t)sizes[n*2], mapped[n*2][sizes[n*2]], mapped[n*2+1][sizes[n*2+1]]);
     }
-    OCPI::OCL::compile(numSources*2, &mapped[0], &sizes[0], includes, defines,
-		       options.output(), options.target(), options.verbose());
+    driver.compile(numSources*2, &mapped[0], &sizes[0], includes, defines, options.output(),
+		   options.target(), options.verbose());
   } else if(!strcasecmp(*ap, "targets")) {
     std::set<std::string> targets;
-    OCPI::OCL::Driver::getSingleton().search(NULL, NULL, false, NULL, NULL, &targets);
+    driver.search(NULL, NULL, false, NULL, NULL, &targets);
     for (std::set<std::string>::const_iterator ti = targets.begin(); ti != targets.end(); ti++)
       printf("%s%s", ti == targets.begin() ? "" : " ", (*ti).c_str());
     printf("\n");

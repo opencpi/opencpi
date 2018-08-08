@@ -109,6 +109,7 @@
   CMD_OPTION(component,   , Bool,   0, "first non-option argument is a component name,\n" \
 	                               "not an application XML file") \
   CMD_OPTION(seconds,     , Long,   0, "<seconds> -- legacy, use \"duration\" now\n") \
+  CMD_OPTION(version,     , Bool,   0, "print the OpenCPI release version") \
   /**/
 
 //  CMD_OPTION_S(simulator, H,String, 0, "Create a container with this HDL simulator")
@@ -125,19 +126,13 @@ namespace OC = OCPI::Container;
 namespace OR = OCPI::Remote;
 namespace OE = OCPI::Util::EzXml;
 
-static void addParam(const char *name, const char *value, std::vector<OA::PValue> &params) {
-  params.push_back(OA::PVString(name, value));
-}
-
-static void addParams(const char *name, const char **ap, std::vector<OA::PValue> &params) {
+static void addParams(const char *name, const char **ap, OU::PValueList &params) {
+  const char *err;
   while (ap && *ap)
-    addParam(name, *ap++, params);
+    if ((err = params.add(name, *ap++)))
+      throw OU::Error("Parameter error: %s", err);
 }
 
-static const char *doServer(const char *server, void *) {
-  static std::string error;
-  return OR::useServer(server, options.verbose(), NULL, error) ? error.c_str() : NULL;
-}
 static void doTarget(const char *a_target, bool specs) {
   static std::string error;
   OL::Capabilities caps;
@@ -171,14 +166,15 @@ static void doTarget(const char *a_target, bool specs) {
 
 // Return true on error
 static bool setup(const char *arg, ezxml_t &xml, std::string &file,
-		  std::vector<OA::PValue> &params, std::string &error) {
+		  OU::PValueList &params, std::string &error) {
   const char *e = NULL;
   if (arg) {
     if (options.artifacts() || options.list_artifacts() || options.specs() ||
 	options.list_specs())
       return
 	OU::eformat(error,
-		    "can't request printing artifacts or specs and also specify an xml file (%s)", arg);
+		    "can't request printing artifacts or specs and also specify an xml file (%s)",
+		    arg);
     if (options.component()) {
       static char *copy;
       asprintf(&copy,
@@ -200,7 +196,7 @@ static bool setup(const char *arg, ezxml_t &xml, std::string &file,
       // is a deployment file option if there isn't already
       if (!options.deployment()) {
 	OL::Manager::getSingleton().suppressDiscovery();
-	addParam("deployment", strdup(file.c_str()), params);
+	params.addString("deployment", file.c_str());
       }
       file.clear();
       OE::getOptionalString(xml, file, "application");
@@ -257,33 +253,11 @@ static bool setup(const char *arg, ezxml_t &xml, std::string &file,
   }
   if (options.deployment())
     OL::Manager::getSingleton().suppressDiscovery();
-  if (options.remote())
-    OR::g_enableRemoteDiscovery = true;
-  // Establish simulator-related options to feed them to sims during discovery
-  std::vector<OA::PValue> simParams;
-  if (options.sim_dir())
-    addParam("directory", options.sim_dir(), simParams);
-  if (options.sim_ticks())
-    simParams.push_back(OA::PVULong("simTicks", options.sim_ticks()));
-  if (options.verbose())
-    simParams.push_back(OA::PVBool("verbose", true));
-  if (options.dump())
-    simParams.push_back(OA::PVBool("dump", true));
-  if (simParams.size())
-    simParams.push_back(OA::PVEnd);
-  // force config before looking for servers
-  OCPI::Driver::ManagerManager::getManagerManager().configureOnce(NULL, &simParams[0]);
-  // server arguments and server environment variables are all used, no shadowing
-  size_t dumb;
-  for (const char **ap = options.server(dumb); ap && *ap; ap++)
-    if ((e = doServer(*ap, NULL)))
-      return OU::eformat(error, "when using server \"%s\": %s", *ap, e);
-  char *saddr = getenv("OCPI_SERVER_ADDRESSES");
-  if (!saddr)
-    saddr = getenv("OCPI_SERVER_ADDRESS");
-  if (saddr && (e = OU::parseList(saddr, doServer)))
-    return OU::eformat(error, "when using servers: %s", e);
-  OA::Container *c;
+  if (options.remote()) {
+    (void)OA::ContainerManager::get(0); // force config/discovery
+    OA::enableServerDiscovery();
+  }
+  //  OA::Container *c;
   if (options.processors())
     for (unsigned n = 1; n < options.processors(); n++) {
       std::string name;
@@ -292,34 +266,19 @@ static bool setup(const char *arg, ezxml_t &xml, std::string &file,
     }
   if (options.list()) {
     (void)OA::ContainerManager::get(0); // force config/discovery
-    if (options.only_platforms()) {
-      std::set<std::string> plats;
-      for (unsigned n = 0; (c = OA::ContainerManager::get(n)); n++)
-	plats.insert(c->model() + "-" + (c->dynamic() ? "1" : "0") + "-" + c->platform());
-      for (std::set<std::string>::const_iterator i = plats.begin(); i != plats.end(); ++i)
-	printf("%s\n", i->c_str());
-    } else {
-      printf("Available containers:\n"
-	     " #  Model Platform       OS     OS-Version  Arch     Name\n");
-      for (unsigned n = 0; (c = OA::ContainerManager::get(n)); n++)
-	printf("%2u  %-5s %-14s %-6s %-11s %-8s %s\n",
-	       n,  c->model().c_str(), c->platform().c_str(), c->os().c_str(),
-	       c->osVersion().c_str(), c->arch().c_str(), c->name().c_str());
-    }
-    fflush(stdout);
-  } else if (options.verbose()) {
-    for (unsigned n = 0; (c = OA::ContainerManager::get(n)); n++)
-      fprintf(stderr, "%s%u: %s [model: %s os: %s platform: %s]",
-	      n ? ", " : "Available containers are:  ", n,
-	      c->name().c_str(), c->model().c_str(), c->os().c_str(), c->platform().c_str());
-    fprintf(stderr, "\n");
+    OA::useServers(NULL, params, options.verbose());
+    OA::ContainerManager::list(options.only_platforms());
   }
   return false;
 }
 
 static int mymain(const char **ap) {
-  std::vector<OA::PValue> params;
+  OU::PValueList params;
 
+  if (options.version()) {
+    printf("OpenCPI version is " OCPI_PACKAGE_VERSION "\n");
+    return 0;
+  }
   if (options.library_path()) {
     std::string env("OCPI_LIBRARY_PATH=");
     env += options.library_path();
@@ -331,18 +290,21 @@ static int mymain(const char **ap) {
   if (!*ap && !options.list() && !options.artifacts())
     return options.usage();
   if (options.verbose())
-    params.push_back(OA::PVBool("verbose", true));
+    params.addBool("verbose", true);
   if (options.uncached())
-    params.push_back(OA::PVBool("uncached", true));
+    params.addBool("uncached", true);
   if (options.hex())
-    params.push_back(OA::PVBool("hex", true));
+    params.addBool("hex", true);
   if (options.dump())
-    params.push_back(OA::PVBool("dump", true));
+    params.addBool("dump", true);
   if (options.dump_file())
-    params.push_back(OA::PVString("dumpFile", options.dump_file()));
+    params.addString("dumpFile", options.dump_file());
   if (options.dump_platforms())
-    params.push_back(OA::PVBool("dumpPlatforms", true));
-  {
+    params.addBool("dumpPlatforms", true);
+  if (options.sim_dir())
+    params.addString("simDir", options.sim_dir());
+  if (options.sim_ticks())
+    params.addULong("simTicks", options.sim_ticks());
   size_t n;
   addParams("worker", options.worker(n), params);
   addParams("selection", options.selection(n), params);
@@ -358,25 +320,22 @@ static int mymain(const char **ap) {
   addParams("bufferCount", options.buffer_count(n), params);
   addParams("bufferSize", options.buffer_size(n), params);
   addParams("scale", options.scale(n), params);
-  }
+  addParams("server", options.server(n), params);
   if (options.deployment())
-    addParam("deployment", options.deployment(), params);
-
+    params.addString("deployment", options.deployment());
   std::string file;  // the file that the application XML came from
   ezxml_t xml = NULL;
   std::string error;
   if (setup(*ap, xml, file, params, error))
     throw OU::Error("Error: %s", error.c_str());
   if (xml) try {
-      if (params.size())
-	params.push_back(OA::PVEnd);
       std::string name;
       OU::baseName(file.c_str(), name);
 
-      OA::ApplicationX app(xml, name.c_str(), params.size() ? &params[0] : NULL);
+      OA::ApplicationX app(xml, name.c_str(), params);
       if (options.verbose())
 	fprintf(stderr,
-		"Application XML parsed and deployments (containers and implementations) chosen\n");
+		"Application XML parsed and deployments (containers and artifacts) chosen\n");
       if (options.deploy_out()) {
 	std::string dfile;
 	if (*options.deploy_out())

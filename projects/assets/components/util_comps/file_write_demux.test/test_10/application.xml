@@ -1,0 +1,18 @@
+<Application Package="local" Done="UUT">
+  <Instance Component="ocpi.core.file_read">
+    <Property Name="fileName" Value="idata/infile.bin"/>
+    <Property Name="messagesInFile" Value="true"/>
+    <Property Name="opCode" Value="255"/> <!-- Put extra EOF ZLM into 255 -->
+  </Instance>
+
+  <Instance Name="UUT" Component="ocpi.assets.util_comps.file_write_demux">
+    <Property Name="outFile" Value='prefix odata/myoutput_,digits 0,suffix .out'/>
+    <Property Name="stopOn" Value='ZLM 1024'/>
+    <Property Name="current" dumpFile="UUT.current.dump"/>
+  </Instance>
+
+  <Connection>
+    <Port Instance="file_read" Name="out"/>
+    <Port Instance="UUT" Name="in"/>
+  </Connection>
+</Application>

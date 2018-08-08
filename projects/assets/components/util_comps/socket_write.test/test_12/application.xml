@@ -1,0 +1,30 @@
+<Application Package="local" Done="Sink">
+
+ <Instance Component="ocpi.assets.base_comps.pattern">
+    <property name="control" value='3'/>
+    <property name="metadataCount" value='2'/>
+    <property name="messagesToSend" value='2'/>
+    <property name="metadata" value='{4,5},{0,5},{0,5},{0,5}'/>
+    <property name="data" value='0x04030201' />,
+ </Instance>
+
+  <Instance Name="UUT" Component="ocpi.assets.util_comps.socket_write">
+    <Property Name="outSocket" Value='expectedClients 1, port 12345'/>
+  </Instance>
+
+  <Instance Name="Sink" Component="ocpi.assets.util_comps.file_write_demux">
+    <Property Name="outFile" Value='prefix odata/output_,digits 2,suffix _fw.out'/>
+    <Property Name="stopOn" Value='ZLM 5'/>
+  </Instance>
+
+  <Connection>
+    <Port Instance="pattern" Name="out"/>
+    <Port Instance="UUT" Name="in"/>
+  </Connection>
+
+  <Connection>
+    <Port Instance="UUT" Name="out"/>
+    <Port Instance="Sink" Name="in"/>
+  </Connection>
+
+</Application>

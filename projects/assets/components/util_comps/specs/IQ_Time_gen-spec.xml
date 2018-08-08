@@ -1,0 +1,6 @@
+<ComponentSpec>
+  <!-- Add property and port elements here -->
+    <Port name="in" protocol="iqstream_protocol"></Port>
+    <Port name="out" protocol="TimeStamped_IQ-prot" producer="true"></Port>
+    <Property name="interval" type="longLong" default="0" writable="true"></Property>
+</ComponentSpec>

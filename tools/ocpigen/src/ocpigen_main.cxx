@@ -95,6 +95,7 @@ add to tree.
   CMD_OPTION  (pfdir,     F,    String, NULL, "The directory where the current platform lives") \
   CMD_OPTION  (gentest,   T,    Bool,   NULL, "Generate unit testing files, assemblies, apps")  \
   CMD_OPTION  (gencases,  C,    Bool,   NULL, "Figure out which test cases to run on which platforms") \
+  CMD_OPTION  (dynamic,   Z,    Bool,   NULL, "Whether the artifact should be dynamic") \  
 
 #define OCPI_OPTION
 #define OCPI_OPTIONS_NO_MAIN
@@ -219,6 +220,9 @@ main(int argc, const char **argv) {
 	break;
       case 'P':
 	g_platform = *++ap;
+	break;
+      case 'Z':
+	g_dynamic = (*++ap)[0] == '1';
 	break;
       case 'O':
 	g_os = *++ap;

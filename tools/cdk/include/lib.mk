@@ -44,7 +44,7 @@ HdlInstallDir=lib
 include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
 $(eval $(HdlPreprocessTargets))
 $(infox HP2:$(HdlPlatform) HPs:$(HdlPlatforms) HT:$(HdlTarget) HTs:$(HdlTargets):$(CURDIR))
-include $(OCPI_CDK_DIR)/include/rcc/rcc-make.mk
+include $(OCPI_CDK_DIR)/include/rcc/rcc-targets.mk
 ifeq ($(OCPI_HAVE_OPENCL),1)
   include $(OCPI_CDK_DIR)/include/ocl/ocl-make.mk
 endif
@@ -55,8 +55,17 @@ ifeq ($(origin Implementations),undefined)
 Implementations=$(foreach m,$(Models),$(wildcard *.$m))
 endif
 ifeq ($(filter clean%,$(MAKECMDGOALS)),)
-$(shell mkdir -p lib; (for i in $(filter-out %.test, $(Implementations)); do echo $$i; done) > lib/workers);
+$(shell mkdir -p lib; \
+        workers_content="$(filter-out %.test, $(Implementations))"; \
+        if [[ ! -e $(LibDir)/workers || "$$workers_content" != "$$(cat lib/workers)" ]]; then \
+          echo $$workers_content > lib/workers; \
+        fi)
 endif
+# We define this empty make rule so that workers can generate the "workers" file
+# by calling "make workersfile -C ../". Doing so will trigger the code block above
+# which is executed for all make rules except clean%
+workersfile:
+
 # we need to factor the model-specifics our of here...
 XmImplementations=$(filter %.xm,$(Implementations))
 RccImplementations=$(filter %.rcc,$(Implementations))
@@ -83,8 +92,8 @@ override GenDir=$(OutDir)gen
 override XmlIncludeDirs+=$(XmlIncludeDirsInternal)
 
 # Utility to show what WOULD be built (e.g. for packaging)
-.PHONY:  showxm showrcc showhdl showocl showtest showassy showall
-.SILENT: showxm showrcc showhdl showocl showtest showassy showall
+.PHONY:  showxm showrcc showhdl showocl showtest showassy showall workersfile
+.SILENT: showxm showrcc showhdl showocl showtest showassy showall workersfile
 showxm:
 	echo $(XmImplementations)
 
@@ -160,7 +169,8 @@ TestTargets:=$(call Unique,$(HdlPlatforms) $(HdlTargets) $(RccTargets))
 GoWorker=-C $1 -f $(or $(realpath $1/Makefile),$(OCPI_CDK_DIR)/include/worker.mk)
 BuildImplementation=$(infox BI:$1:$2:$(call HdlLibrariesCommand):$(call GoWorker,$2)::)\
     set -e; \
-    t="$(or $($(call Capitalize,$1)Target),$($(call Capitalize,$(1))Targets))"; \
+    t="$(foreach t,$(or $($(call Capitalize,$1)Target),$($(call Capitalize,$1)Targets)),\
+         $(call $(call Capitalize,$1)TargetDirTail,$t))";\
     $(ECHO) =============Building $(call ToUpper,$(1)) implementation $(2) for target'(s)': $$t; \
     $(MyMake) $(call GoWorker,$2) OCPI_CDK_DIR=$(call AdjustRelative,$(OCPI_CDK_DIR)) \
 	       LibDir=$(call AdjustRelative,$(LibDir)/$(1)) \
@@ -219,7 +229,7 @@ rcc: speclinks $(RccImplementations)
 test: speclinks $(TestImplementations)
 
 checkocl:
-	$(AT)if ! test -x $(OCPI_CDK_DIR)/bin/$(OCPI_TOOL_HOST)/ocpiocltest || ! $(OCPI_CDK_DIR)/bin/$(OCPI_TOOL_HOST)/ocpiocltest test; then echo Error: OpenCL is not available; exit 1; fi
+	$(AT)if ! test -x $(ToolsDir)/ocpiocltest || ! $(ToolsDir)/ocpiocltest test; then echo Error: OpenCL is not available; exit 1; fi
 
 ifeq ($(OCPI_HAVE_OPENCL),1)
 ocl: checkocl speclinks $(OclImplementations)

@@ -21,14 +21,16 @@
 #include "lzma.h"                   // just for linkage hooks
 #include "zlib.h"                   // just for linkage hooks
 #include "pthread_workqueue.h"      // just for linkage hooks
+#include "ocpi-config.h"
 #include "OcpiOsSocket.h"           // just for linkage hooks
 #include "OcpiOsServerSocket.h"     // just for linkage hooks
 #include "OcpiOsSemaphore.h"        // just for linkage hooks
 #include "OcpiUuid.h"               // just for linkage hooks
 #include "OcpiThread.h"             // just for linkage hooks
 #include "OcpiUtilPci.h"            // just for linkage hooks
-#include "RemoteClient.h"           // just for linkage hooks
 #include "ContainerPort.h"          // just for linkage hooks
+#include "OcpiContainerRunConditionApi.h"
+#include "XferAccess.h"
 
 #include "ContainerManager.h"
 #include "ContainerLauncher.h"
@@ -163,6 +165,29 @@ namespace OCPI {
 	n >= OCPI::Container::Manager::s_nContainers ? NULL : 
 	&OCPI::Container::Container::nthContainer(n);
     }
+    // List the containers available
+    void ContainerManager::
+    list(bool onlyPlatforms) {
+      Container *c;
+      if (onlyPlatforms) {
+	std::set<std::string> plats;
+	for (unsigned n = 0; (c = ContainerManager::get(n)); n++)
+	  plats.insert(c->model() + "-" + (c->dynamic() ? "1" : "0") + "-" + c->platform());
+	for (std::set<std::string>::const_iterator i = plats.begin(); i != plats.end(); ++i)
+	  printf("%s\n", i->c_str());
+      } else {
+	printf("Available containers:\n"
+	       " #  Model Platform       OS     OS-Version  Arch     Name\n");
+	for (unsigned n = 0; (c = ContainerManager::get(n)); n++)
+	  printf("%2u  %-5s %-14s %-6s %-11s %-8s %s\n",
+		 n,  c->model().c_str(), c->platform().c_str(), c->os().c_str(),
+		 c->osVersion().c_str(), c->arch().c_str(), c->name().c_str());
+      }
+      fflush(stdout);
+    }
+
+
+
   }
   /*
    * This ensures the following functions are linked into the final ocpirun/ACI executables when
@@ -171,16 +196,20 @@ namespace OCPI {
    * framework infrastructure, forcing them to be statically linked here:
    */
   namespace Container {
-    intptr_t dumb1() {
-      ((DataTransfer::XferServices*)dumb1)->DataTransfer::XferServices::send(0, NULL, 0);
-      ((OCPI::Util::Thread*)dumb1)->join();
+    intptr_t linkme() {
+      ((DataTransfer::Access *)linkme)->closeAccess();
+      ((OA::RunCondition *)linkme)->setPortMasks((OA::OcpiPortMask *)NULL);
+      ((Container*)linkme)->run();
+      ((DataTransfer::XferServices*)linkme)->DataTransfer::XferServices::send(0, NULL, 0);
+      ((OCPI::Util::Thread*)linkme)->join();
       OCPI::Util::Uuid uuid;
       OCPI::Util::UuidString us;
       OCPI::Util::uuid2string(uuid, us);
       std::string str;
       OCPI::Util::searchPath(NULL, NULL, str, NULL, NULL);
+      (void)OCPI::Util::getCDK();
       size_t dum2;
-      (void)((BasicPort*)dumb1)->BasicPort::getOperationInfo(0, dum2);
+      (void)((BasicPort*)linkme)->BasicPort::getOperationInfo(0, dum2);
       unsigned dum3;
       (void)OCPI::Util::probePci(NULL, 0, 0, 0, 0, 0, NULL, dum3, str);
       // Msg::XferFactoryManager::getFactoryManager();
@@ -191,8 +220,6 @@ namespace OCPI {
       // p.applyConnectParams(NULL, NULL);
       ((OCPI::Container::Application*)0)->createWorker(NULL, NULL, NULL, NULL, NULL, NULL);
       pthread_workqueue_create_np(NULL, NULL);
-      std::string sss;
-      OCPI::Remote::useServer(NULL, false, NULL, sss);
       return (intptr_t)&lzma_stream_buffer_decode;
     }
   }

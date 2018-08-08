@@ -26,7 +26,7 @@
 
 //bool hdlAssy = false;
 
-// This is an HDL file, and perhaps an assembly or a platform
+// This is an HDL file, and perhaps an assembly or a platform or a container
 const char *Worker::
 parseHdl(const char *a_package) {
   const char *err;

@@ -1,0 +1,3 @@
+This directory is a sparse, hand-made exports tree used in some bootstrapping scenarios
+in a virgin source tree.  The links that are here are the minimum necessary for such
+bootstrapping purposes.

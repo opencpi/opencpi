@@ -1,0 +1,81 @@
+<Application>
+  <!-- HDL Components -->
+  <Instance Component="ocpi.assets.devices.rf_rx"/>
+  <Instance Component="ocpi.assets.devices.si5351"/>
+  <Instance Component="ocpi.core.devices.time_server"/>
+  <Instance Component="ocpi.assets.devices.qadc" model="hdl">
+    <property Name="messageSize" Value="16352"/>
+  </Instance>
+  <Instance Component="ocpi.assets.dsp_comps.dc_offset_filter">
+    <property Name="messageSize" Value="16352"/>
+    <property Name="bypass" Value="false"/>
+  </Instance>
+  <Instance Component="ocpi.assets.dsp_comps.iq_imbalance_fixer">
+    <property Name="messageSize" Value="16352"/>
+    <property Name="enable" Value="true"/>
+    <property Name="log2_averaging_length" Value="11"/>
+  </Instance>
+  <Instance Component="ocpi.assets.dsp_comps.complex_mixer">
+    <property Name="NCO_DATA_WIDTH_p" Value="12"/>
+    <property Name="INPUT_DATA_WIDTH_p" Value="12"/>
+    <property Name="mag" Value="2048"/>
+    <property Name="messageSize" Value="16352"/>
+    <property Name="phs_inc" Value="0x10AA"/>
+  </Instance>
+  <Instance Component="ocpi.assets.dsp_comps.cic_dec">
+    <property Name="N" Value="3"/>
+    <property Name="M" Value="1"/>
+    <property Name="R" Value="8"/>
+    <property Name="ACC_WIDTH" Value="25"/>
+    <property Name="messageSize" Value="16352"/>
+  </Instance>
+
+  <!-- RCC Components -->
+  <Instance Component="ocpi.core.file_write">
+    <property Name="fileName" Value="odata/output_file.bin"/>
+  </Instance>
+
+  <!-- RCC Proxies -->
+  <Instance Component='ocpi.assets.devices.rf_rx_proxy' Slave='rf_rx'>
+     <property Name='input_select' Value='3'/>
+     <property Name='center_freq_hz' Value='2.140e9'/>
+     <property Name='post_mixer_dc_offset_i' Value='0x43'/>
+     <property Name='post_mixer_dc_offset_q' Value='0x06'/>
+     <property Name='lpf_bw_hz' Value='1.25e6'/>
+     <property Name='post_lpf_gain_db' Value='30'/>
+  </Instance>
+  <Instance Component='ocpi.core.devices.clock_gen' Slave='si5351'>
+    <property Name='channels' Value='
+              {output_hz 0,source 0x0,inverted false,spread none,spreadAmount 0,disabled_mode z},
+              {output_hz 0,source 0x0,inverted false,spread none,spreadAmount 0,disabled_mode z},
+              {output_hz 30.72e6,source 0x0,inverted false,spread none,spreadAmount 0,disabled_mode z},
+              {output_hz 30.72e6,source 0x0,inverted false,spread none,spreadAmount 0,disabled_mode z},
+              {output_hz 0,source 0x0,inverted false,spread none,spreadAmount 0,disabled_mode z},
+              {output_hz 0,source 0x0,inverted false,spread none,spreadAmount 0,disabled_mode z},
+              {output_hz 0,source 0x0,inverted false,spread none,spreadAmount 0,disabled_mode z},
+              {output_hz 0,source 0x0,inverted false,spread none,spreadAmount 0,disabled_mode z}
+              '/>
+  </Instance>
+
+  <!-- Connections -->
+  <Connection>
+    <Port Instance="qadc" Name="out"/>
+    <Port Instance="dc_offset_filter" Name="in"/>
+  </Connection>
+  <Connection>
+    <Port Instance="dc_offset_filter" Name="out"/>
+    <Port Instance="iq_imbalance_fixer" Name="in"/>
+  </Connection>
+  <Connection>
+    <Port Instance="iq_imbalance_fixer" Name="out"/>
+    <Port Instance="complex_mixer" Name="in"/>
+  </Connection>
+  <Connection>
+    <Port Instance="complex_mixer" Name="out"/>
+    <Port Instance="cic_dec" Name="in"/>
+  </Connection>
+  <Connection>
+    <Port Instance="cic_dec" Name="out"/>
+    <Port Instance="file_write" Name="in" buffersize="16352" buffercount='7'/>
+  </Connection>
+</Application>

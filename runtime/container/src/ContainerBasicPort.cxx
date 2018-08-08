@@ -22,7 +22,7 @@
 #include <pthread.h>
 // This is obviously temporary
 #ifdef __APPLE__
-#include "../../../util/pwq/src/platform.c"
+#include "../../../foreign/pwq/src/platform.c"
 #endif
 #include "OcpiOsAssert.h"
 #include "OcpiUtilCDR.h"
@@ -279,7 +279,7 @@ namespace OCPI {
     unpackPortDesc(const std::string &data, OR::Descriptors &desc) throw () {
       OU::CDR::Decoder unpacker (data);
 
-      try { 
+      try {
 	bool bo;
 	unpacker.getBoolean (bo);
 	unpacker.byteorder (bo);
@@ -507,8 +507,11 @@ namespace OCPI {
 	sConn = sIn;
       } else
 	sConn = sOut;
+      ocpiDebug("Looking for transport (%zu in, %zu out) for connection: %s",
+		in.size(), out.size(), sConn.c_str());
       for (unsigned ni = 0; ni < in.size(); ni++) {
 	const Transport &it = in[ni];
+	ocpiDebug("Considering input transport %s", it.transport.c_str());
 	if (sConn.length() && strcasecmp(sConn.c_str(), it.transport.c_str()))
 	  ocpiInfo("Rejecting input transport %s since %s was specified for the connection",
 		   it.transport.c_str(), sConn.c_str());
@@ -519,6 +522,7 @@ namespace OCPI {
 	  // fall through - an acceptable possible input
 	  for (unsigned no = 0; no < out.size(); no++) {
 	    const Transport &ot = out[no];
+	    ocpiDebug("Considering output transport %s", ot.transport.c_str());
 	    if (strcasecmp(it.transport.c_str(), ot.transport.c_str()))
 	      ;
 	    else if (strcasecmp(it.id.c_str(), ot.id.c_str()))
@@ -553,7 +557,7 @@ namespace OCPI {
 		transport.id = it.id;
 		transport.optionsIn |= (1 << OR::MandatedRole);
 		transport.optionsOut |= (1 << OR::MandatedRole);
-		ocpiInfo("Choosing transport %s/%s for connection with roles %s(0x%x)->%s(0x%x)",
+		ocpiInfo("Choosing transport %s id \"%s\" for connection with roles %s(0x%x)->%s(0x%x)",
 			 it.transport.c_str(), it.id.c_str(), roleNames[transport.roleOut],
 			 transport.optionsOut, roleNames[transport.roleIn], transport.optionsIn);
 		return;
@@ -594,7 +598,7 @@ namespace OCPI {
       if (m_dtPort &&
 	  (m_dtLastBuffer->m_dtBuffer =
 	   m_dtPort->getNextEmptyOutputBuffer(m_dtLastBuffer->m_dtData, length))) {
-	m_dtLastBuffer->m_hdr.m_length = OCPI_UTRUNCATE(uint32_t, length);	
+	m_dtLastBuffer->m_hdr.m_length = OCPI_UTRUNCATE(uint32_t, length);
 	return m_dtLastBuffer;
       }
       return NULL;
@@ -813,7 +817,7 @@ namespace OCPI {
 	    m_zcTail = NULL;
 	}
 	pthread_spin_unlock(&m_zcLock);
-      }      
+      }
       return l_next;
     }
     // This buffer is the head->next, we are the single reader
@@ -886,7 +890,7 @@ namespace OCPI {
 	}
       } else if (m_dtPort) {
 	size_t length;
-	
+
 	if (!m_dtLastBuffer)
 	  m_dtLastBuffer = new ExternalBuffer(*this, NULL, 0);
 	if (!m_dtLastBuffer->m_dtBuffer &&
@@ -939,7 +943,7 @@ namespace OCPI {
 	b.m_port.releaseBuffer(b);         // release from its true port
       else if (m_next2release) {
 	assert(&b.m_port == this);
-	assert(&b == m_next2release);
+	ocpiAssert(&b == m_next2release); // want trace; having random problems on Jenkins
 	assert(b.m_busy);
 	b.m_full = false;
 	b.m_busy = false;
@@ -1181,7 +1185,7 @@ namespace OCPI {
 	assert(!isProvider());
 	assert(other);
 	rv = startConnect(other, feedback, done);
-      } else  
+      } else
 	rv = m_dtPort->finalize(other, getData().data, &feedback, done);
       if (done)
 	portIsConnected();
@@ -1218,4 +1222,3 @@ namespace OCPI {
     }
   } // end of namespace Container
 } // end of namespace OCPI
-

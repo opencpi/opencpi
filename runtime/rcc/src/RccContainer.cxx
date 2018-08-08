@@ -32,8 +32,9 @@
  *
  ************************************************************************/
 
-#include "RccContainer.h"
+#include "ocpi-config.h"
 #include "OcpiOsMisc.h"
+#include "RccContainer.h"
 #include "RCC_Worker.h"
 
 namespace OC = OCPI::Container;
@@ -133,8 +134,8 @@ Container::
 {
   // Lock our mutex.  It will be unlocked.
   TRACE( "OCPI::RCC::Container::~Container()");
-  OC::Container::shutdown();
   this->lock();
+  OC::Container::shutdown();
   // We need to shut down the apps and workers since they
   // depend on artifacts and transport.
   OU::Parent<Application>::deleteChildren();
@@ -162,7 +163,7 @@ join( bool block, OCPI::OS::Semaphore & sem ) {
     return true;
   if (!block)
     return false;
-    pthread_workqueue_additem_np(m_workqueues[LOW_PRI_Q], wait_join, (void*)&sem, NULL, NULL);    
+  pthread_workqueue_additem_np(m_workqueues[LOW_PRI_Q], wait_join, (void*)&sem, NULL, NULL);    
 
   ocpiDebug("IN Con join about to wait for sem");
   sem.wait();

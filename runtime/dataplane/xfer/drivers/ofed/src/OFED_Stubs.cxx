@@ -18,8 +18,9 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-// This file is a "stubs" file that becomes a .so that ANGRYVIPER executables are linked against. At runtime, it is
-// not present, but other libraries handled by the OFED infrastructure should handle the calls. (I assume.)
+// This file is a "stubs" file that becomes a .so that OpenCPI executables are linked against.
+// At runtime, it is not present, but other libraries in the OFED infrastructure should
+// handle the calls.
 
 #include <stdexcept>
 #include "verbs.h"

@@ -19,6 +19,7 @@
  */
 
 #include <signal.h>
+#include "ocpi-config.h"
 #include "OcpiOsMisc.h"
 #include "OcpiUtilCppMacros.h"
 #include "XferManager.h"
@@ -71,22 +72,46 @@ namespace OCPI {
     }
 
     bool Container::supportsImplementation(OU::Worker &i) {
+      static const char *opencpiVersion; // AV-2453
+      static bool allowVersionMismatch = false;
+
+      if (!opencpiVersion) {
+	opencpiVersion = 
+	  OCPI_CPP_STRINGIFY(OCPI_VERSION_MAJOR) "." OCPI_CPP_STRINGIFY(OCPI_VERSION_MINOR);
+	ocpiInfo("OpenCPI version is: %s", opencpiVersion);
+	const char *env = getenv("OCPI_ALLOW_VERSION_MISMATCH");
+	allowVersionMismatch = env && env[0] == '1';
+	ocpiInfo("Artifact version checking is %sin effect.%s",
+                allowVersionMismatch ? "NOT " : "",
+                allowVersionMismatch ? "" : " Set OCPI_ALLOW_VERSION_MISMATCH to 1 to allow.");
+      }
       bool ok =
 	m_model == i.model() &&
-	m_os == i.attributes().m_os &&
-	m_osVersion == i.attributes().m_osVersion &&
+	m_os == i.attributes().os() &&
+	m_osVersion == i.attributes().osVersion() &&
 	// if all three are present and match, on rcc, platform does not need to match.
 	// this eases the transition to software platforms having proper names
 	((m_model == "rcc" &&
-	  m_os.length() && m_os == i.attributes().m_os &&
-	  m_osVersion.length() && m_osVersion == i.attributes().m_osVersion &&
-	  m_arch.length() && m_arch == i.attributes().m_arch) ||
-	 (i.attributes().m_platform.length() && m_platform == i.attributes().m_platform) ||
-	 (i.attributes().m_platform.empty() && m_arch == i.attributes().m_arch)) &&
-	m_dynamic == i.attributes().m_dynamic;
-      ocpiInfo("vs. container %s (%u) model %s os %s version %s arch %s platform %s dynamic %u ==> %s",
-		name().c_str(), m_ordinal, m_model.c_str(), m_os.c_str(), m_osVersion.c_str(),
-	       m_arch.c_str(), m_platform.c_str(), m_dynamic, ok ? "accepted" : "rejected");
+	  m_os.length() && m_os == i.attributes().os() &&
+	  m_osVersion.length() && m_osVersion == i.attributes().osVersion() &&
+	  m_arch.length() && m_arch == i.attributes().arch()) ||
+	 (i.attributes().platform().length() && m_platform == i.attributes().platform()) ||
+	 (i.attributes().platform().empty() && m_arch == i.attributes().arch())) &&
+	m_dynamic == i.attributes().dynamic();
+      // Checking OpenCPI version is not part of the "ok" above because we can override with
+      // the environment and want to warn.
+      if (ok && !allowVersionMismatch &&
+	  !(ok = opencpiVersion == i.attributes().opencpiVersion()))
+	ocpiBad("Rejected '%s' for platform %s ONLY because of artifact version mismatch "
+		"('%s' vs. expected '%s')%s",
+		i.cname(), i.attributes().platform().c_str(),
+		i.attributes().opencpiVersion().c_str(), opencpiVersion,
+		OCPI::OS::logWillLog(OCPI_LOG_INFO) ? "" : " (try increasing log level)");
+      ocpiInfo("vs. container %s (%u) model %s os %s version %s arch %s platform %s dynamic %u "
+	       "opencpi version %s ==> %s",
+	       name().c_str(), m_ordinal, m_model.c_str(), m_os.c_str(), m_osVersion.c_str(),
+	       m_arch.c_str(), m_platform.c_str(), m_dynamic, opencpiVersion,
+	       ok ? "accepted" : "rejected");
       return ok;
     }
 
@@ -127,8 +152,12 @@ namespace OCPI {
     // This is for the derived class's destructor to call
     void Container::shutdown() {
       stop();
-      if (m_thread)
+      if (m_thread) {
+	this->unlock();
+	// Allow the container's thread to recognize being disabled
 	m_thread->join();
+	this->lock();
+      }
     }
     Container::~Container() {
       m_enabled = false;

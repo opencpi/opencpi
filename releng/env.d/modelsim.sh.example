@@ -1,0 +1,8 @@
+## Define the location of Modelsim in in OCPI_MODELSIM_DIR.
+## Ex: "/opt/Modelsim/modelsim_dlx/"
+
+export OCPI_MODELSIM_DIR=
+
+## Set the location of the license file/server (matching Modelsim's LM_LICENSE_FILE documentation)
+
+export OCPI_MODELSIM_LICENSE_FILE=

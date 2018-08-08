@@ -1,0 +1,8 @@
+<ComponentSpec>
+  <Property Name="M_p" Type="uchar" Default="2" Readable="true" Parameter="true"/>
+  
+  <Property Name="symbols" Type="short" Readable="true" Writable="true" ArrayLength="M_p"/>
+  
+  <DataInterfaceSpec Name="in" Producer="false"/>
+  <DataInterfaceSpec Name="out" Producer="true" Protocol="rstream_protocol.xml" ZeroLengthMessages="true"/>
+</ComponentSpec>

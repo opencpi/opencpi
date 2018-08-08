@@ -22,6 +22,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <set>
+#include "ocpi-config.h"
 #include "OcpiOsAssert.h"
 #include "OcpiOsFileIterator.h"
 #include "OcpiOsFileSystem.h"
@@ -93,7 +94,7 @@ namespace OCPI {
 	  bool isDir;
 	  OS::FileSystem::FileId file_id;
 	  if (!OS::FileSystem::exists(a_libName, &isDir, NULL, NULL, &file_id))
-	    ocpiInfo("Path name found in OCPI_LIBRARY_PATH, \"%s\", "
+	    ocpiDebug("Path name found in OCPI_LIBRARY_PATH, \"%s\", "
 		     "is nonexistent, not a normal file, or a broken link.  It will be ignored",
 		     a_libName.c_str());
 	  else if (m_fileIds.insert(file_id).second) {
@@ -142,6 +143,7 @@ namespace OCPI {
 	  // Now we look in the path environment variable
 	  // FIXME: canonicalize the names before dup matching? (i.e. realpath)??
 	  const char *path = getenv("OCPI_LIBRARY_PATH");
+	  ocpiDebug("ComponentLibrary search with OCPI_LIBRARY_PATH: %s", path);
 	  if (path) {
 	    ocpiDebug("OCPI_LIBRARY_PATH is %s", path);
 	    char *cp = strdup(path), *last;

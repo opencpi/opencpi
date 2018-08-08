@@ -1,0 +1,7 @@
+The DRS Picoflexor T6A uses CodeSourcery's distribution of the GCC compiler suite. However, the default
+install does not include the Boost libraries. The VM image provided by DRS for Picoflexor development
+has the required headers and libraries. To install them, copy out of the VM the following files and
+place them in the same place on your local machine:
+
+/opt/CodeSourcery/Sourcery_G++_Lite/arm-none-linux-gnueabi/libc/usr/lib/libboost*.a (various files)
+/opt/CodeSourcery/Sourcery_G++_Lite/arm-none-linux-gnueabi/libc/usr/include/boost (directory)

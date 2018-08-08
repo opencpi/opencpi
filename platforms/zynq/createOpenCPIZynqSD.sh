@@ -17,6 +17,7 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
+##########################################################################################
 set -e
 if test "$1" = ""; then
   cat <<EOF
@@ -38,8 +39,8 @@ This script takes three arguments to run:
 2. the HDL platform name to use associated with the software platform you are enabling.
 3. the Zynq software platform to use (which defaults to the name of the CWD)
 
-Don't forget to copy zynq/user_zynq_setup.sh to mysetup.sh and customize mysetup.sh before
-doing this.  Also, copy zynq/user_zynq_net_setup.sh to mynetsetup.sh and customize
+Don't forget to copy zynq/default_mysetup.sh to mysetup.sh and customize mysetup.sh before
+doing this.  Also, copy zynq/default_mynetsetup.sh to mynetsetup.sh and customize
 mynetsetup.sh before doing this.
 
 Also, artifacts for the SD card are found based on the OCPI_LIBRARY_PATH environment variable,
@@ -56,37 +57,37 @@ if test ! -d $REL; then
   exit 1
 fi
 
+source $OCPI_CDK_DIR/scripts/util.sh
+
 export OCPI_TARGET_PLATFORM=${3:-$(basename $(pwd))}
-export OCPI_TARGET_HOST=$(< ../$OCPI_TARGET_PLATFORM/target)
 # This one might be overridden if we want an SD from a particular build mode
-export OCPI_TARGET_DIR=$OCPI_TARGET_HOST
+# Someday provide the option to select the build mode
+export OCPI_TARGET_DIR=$OCPI_TARGET_PLATFORM
 export HDL_PLATFORM=${2:-zed}
-if [ -z "$OCPI_PROJECT_REGISTRY_DIR" ]; then
-  OCPI_PROJECT_REGISTRY_DIR=$OCPI_CDK_DIR/../project-registry
-fi
 source $OCPI_CDK_DIR/scripts/util.sh
 echo Software platform is $OCPI_TARGET_PLATFORM, and hardware platform is $HDL_PLATFORM.
 if test -z $RPM_BUILD_ROOT; then
   # We assume a built tree for the tool platform - check for exports etc.?
   # ensure OCPI_CDK_DIR and OCPI_TOOL_DIR
-  OCPI_BOOTSTRAP=$OCPI_CDK_DIR/exports/scripts/ocpibootstrap.sh; source $OCPI_BOOTSTRAP
-  source $OCPI_CDK_DIR/exports/scripts/ocpitarget.sh ""
-  EXAMPLES_ROOTDIR=$(getProjectRegistryDir)/ocpi.core
-  if test "$OCPI_LIBRARY_PATH" = ""; then
-    # Put all rcc components, and available bitstreams for the platform.
-    export OCPI_LIBRARY_PATH=$(getProjectRegistryDir)/ocpi.core/exports/lib/components:$OCPI_CDK_DIR/lib/platforms/$HDL_PLATFORM
-  fi
+  OCPI_BOOTSTRAP=$OCPI_CDK_DIR/scripts/ocpibootstrap.sh; source $OCPI_BOOTSTRAP
+  source $OCPI_CDK_DIR/scripts/ocpitarget.sh $OCPI_TARGET_PLATFORM
+  EXAMPLES_ROOTDIR=$(getProjectRegistryDir)/ocpi.assets
 else
   echo RPM Build detected - faking directory structure
   OCPI_CDK_DIR=${RPM_BUILD_ROOT}/opt/opencpi/cdk
   # Cannot just use CDK/lib and CDK/bin because the driver stuff isn't pushed there
   # EXAMPLES_ROOTDIR set externally
   # This is using a "path" variable assuming it has no colons in it!
-  export OCPI_LIBRARY_PATH=$(getProjectRegistryDir)/ocpi.core/exports/lib/components:${OCPI_HDL_PLATFORM_PATH}/${OCPI_TARGET_PLATFORM}/
+  export OCPI_LIBRARY_PATH=${RPM_BUILD_ROOT}/opt/opencpi/projects/core/artifacts
 fi
-BIN_DIR=${OCPI_CDK_DIR}/bin/${OCPI_TARGET_DIR}
-KERNEL_LIB_DIR=$OCPI_CDK_DIR/lib/${OCPI_TARGET_DIR}
-RUNTIME_LIB_DIR=${OCPI_CDK_DIR}/lib/${OCPI_TARGET_DIR}
+if test "$OCPI_LIBRARY_PATH" = ""; then
+  # Put all artifacts in the core project, as well as any pre-built bitstreams in the hdl
+  # platforms' directory in case there are prebuilt bitstreams in the repo
+  export OCPI_LIBRARY_PATH=$(getProjectRegistryDir)/ocpi.core/exports/artifacts:$HDL_PLATFORM_DIR
+fi
+BIN_DIR=${OCPI_CDK_DIR}/${OCPI_TARGET_DIR}/bin
+KERNEL_LIB_DIR=$OCPI_CDK_DIR/${OCPI_TARGET_DIR}/lib
+RUNTIME_LIB_DIR=${OCPI_CDK_DIR}/${OCPI_TARGET_DIR}/lib
 
 cd $REL
 sd=OpenCPI-SD-$HDL_PLATFORM
@@ -125,21 +126,21 @@ if test "${drivers[*]}" = ""; then
   echo It is expected to be in: "${KERNEL_LIB_DIR}/opencpi*.ko"
   exit 1
 fi
-# Note we take files from OCPI_TARGET_DIR and put them in OCPI_TARGET_HOST
+# Note we take files from OCPI_TARGET_DIR and put them in OCPI_TARGET_PLATFORM
 # So we can support building SD cards from particular modes, but any particular SD card will
 # have only one mode for now.
-mkdir $sd/opencpi/lib/${OCPI_TARGET_HOST}
-cp -L ${KERNEL_LIB_DIR}/opencpi*.ko $sd/opencpi/lib/${OCPI_TARGET_HOST}
-cp -L ${KERNEL_LIB_DIR}/mdev-opencpi.rules $sd/opencpi/lib/${OCPI_TARGET_HOST}
+mkdir $sd/opencpi/lib/${OCPI_TARGET_PLATFORM}
+cp -L ${KERNEL_LIB_DIR}/opencpi*.ko $sd/opencpi/lib/${OCPI_TARGET_PLATFORM}
+cp -L ${KERNEL_LIB_DIR}/mdev-opencpi.rules $sd/opencpi/lib/${OCPI_TARGET_PLATFORM}
 for b in run hdl zynq serve xml; do
   cp -L $BIN_DIR/ocpi$b $sd/opencpi/bin
   # Ensure the deployed files are stripped - if we debug we'll be looking at dev-sys executables
-  test -z $RPM_BUILD_ROOT && $OCPI_CROSS_BUILD_BIN_DIR/$OCPI_CROSS_HOST-strip $sd/opencpi/bin/ocpi$b
+  test -z $RPM_BUILD_ROOT && ${OCPI_TARGET_CROSS_COMPILE}strip $sd/opencpi/bin/ocpi$b
 done
 # we use rdate for now... : cp ../ntpclient $sd/opencpi/bin
 # copy driver libraries to the subdirectory so that OCPI_CDK_DIR will
 # find them.
-cp -L ${RUNTIME_LIB_DIR}/*_s.so $sd/opencpi/lib/${OCPI_TARGET_HOST}
+cp -L ${RUNTIME_LIB_DIR}/*_s.so $sd/opencpi/lib/${OCPI_TARGET_PLATFORM}
 cp -L $OCPI_CDK_DIR/scripts/ocpibootstrap.sh $sd/opencpi/bin
 cp -L $OCPI_CDK_DIR/scripts/ocpidriver $sd/opencpi/bin
 cp -L $OCPI_CDK_DIR/scripts/ocpi_linux_driver $sd/opencpi/bin
@@ -152,7 +153,7 @@ cp $sx $sd/opencpi/system.xml
 n=0
 echo Adding artifacts found in OCPI_LIBRARY_PATH for ${OCPI_TARGET_PLATFORM} and ${HDL_PLATFORM} HDL targets.
 export OCPI_SYSTEM_CONFIG=
-for i in $(${OCPI_CDK_DIR}/bin/${OCPI_TOOL_DIR}/ocpirun -A ${OCPI_TARGET_PLATFORM},${HDL_PLATFORM} | xargs -rn1 readlink -e | sort -u ); do
+for i in $(${OCPI_CDK_DIR}/${OCPI_TOOL_DIR}/bin/ocpirun -A ${OCPI_TARGET_PLATFORM},${HDL_PLATFORM} | xargs -rn1 readlink -e | sort -u ); do
   cp $i $sd/opencpi/artifacts/$(printf %03d-%s $n $(basename $i))
   n=$(expr $n + 1)
 done

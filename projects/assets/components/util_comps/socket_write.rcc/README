@@ -1,0 +1,25 @@
+The socket library used by this worker is "asio" which is the Boost ASIO library with less
+dependencies on Boost. It would be totally independent if we had full C++11 capabilities,
+but some ARM compilers (e.g. picoflexor) only support up to GCC 4.4, which has certain
+limitations (cf. https://gcc.gnu.org/gcc-4.4/cxx0x_status.html and
+https://gcc.gnu.org/projects/cxx-status.html#cxx11 ).
+
+So, I downloaded "asio-1.10.6" from http://think-async.com/Asio/ (well, SourceForge) and
+checked in a stripped-down version of only the include/ subdir and needed configuration
+files. Since it is header only, I use the boost headers included on the base system even
+for cross-compiling. Any editing I had to do will have "#AV" comments to easily find.
+
+The library should auto-configure using "Makefile.av" and rules in this directory's
+Makefile. However, to manually configure the library, go to the asio subdir and run:
+./av-reconf
+./av-configure (for host) OR ./picoflexor-configure (for pf) OR
+  ./configure --with-boost=$(pwd)/local_boost --host=your-crosshost-prefix-here
+
+The source code from src/examples/cpp03/http/server was then taken and modified to
+provide certain classes (e.g. connection). Being derivative works, they fall under the
+BOOST 1.0 License and NOT the LGPL License as the rest of this project. However, the Boost
+license is considered LESS restrictive, so this should be of no concern. The modified version
+can be found in ext_src/ .
+
+To add a new platform, RccOnlyPlatforms in the Makefile should be expanded, as well as the
+platform-specific flags added to the Makefile to designate if the build is boost-based, etc.

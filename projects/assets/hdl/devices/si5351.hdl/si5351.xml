@@ -1,4 +1,4 @@
-
+<!-- device worker for Si5351C I2C-Programmable Clock Generator IC-->
 <HdlDevice language='vhdl' FirstRawProperty='dev_status'>
   <ComponentSpec/>
   <!-- I2C read/write transactions require additional time to complete -->

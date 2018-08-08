@@ -1,0 +1,16 @@
+# ./av-reconf
+Makefile.in
+aclocal.m4
+autom4te.cache/
+compile
+config.guess
+config.sub
+configure
+install-sh
+ltmain.sh
+missing
+include/Makefile.in
+# ./av-configure
+Makefile
+config.status
+include/Makefile

@@ -1,3 +1,4 @@
+#!/bin/bash --noprofile
 # This file is protected by Copyright. Please refer to the COPYRIGHT file
 # distributed with this source distribution.
 #
@@ -32,5 +33,6 @@ if test ! -d exports; then
     exit 1
   fi
   # Ensure a skeletal exported CDK
-  ./scripts/makeExportLinks.sh - x - x
+  ./scripts/makeExportLinks.sh - -
 fi
+mkdir -p prerequisites

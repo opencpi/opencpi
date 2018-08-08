@@ -1,0 +1,207 @@
+\documentclass{article}
+\iffalse
+This file is protected by Copyright. Please refer to the COPYRIGHT file
+distributed with this source distribution.
+
+This file is part of OpenCPI <http://www.opencpi.org>
+
+OpenCPI is free software: you can redistribute it and/or modify it under the
+terms of the GNU Lesser General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License along
+with this program. If not, see <http://www.gnu.org/licenses/>.
+\fi
+
+\author{} % Force author to be blank
+%----------------------------------------------------------------------------------------
+% Paper size, orientation and margins
+%----------------------------------------------------------------------------------------
+\usepackage{geometry}
+\geometry{
+	letterpaper,			% paper type
+	portrait,				% text direction
+	left=.75in,				% left margin
+	top=.75in,				% top margin
+	right=.75in,			% right margin
+	bottom=.75in			% bottom margin
+ }
+%----------------------------------------------------------------------------------------
+% Header/Footer
+%----------------------------------------------------------------------------------------
+\usepackage{fancyhdr} \pagestyle{fancy} % required for fancy headers
+\renewcommand{\headrulewidth}{0.5pt}
+\renewcommand{\footrulewidth}{0.5pt}
+\rhead{\small{ANGRYVIPER Team}}
+%----------------------------------------------------------------------------------------
+% Appendix packages
+%----------------------------------------------------------------------------------------
+\usepackage[toc,page]{appendix}
+%----------------------------------------------------------------------------------------
+% Defined Commands & Renamed Commands
+%----------------------------------------------------------------------------------------
+\renewcommand{\contentsname}{Table of Contents}
+\renewcommand{\listfigurename}{List of Figures}
+\renewcommand{\listtablename}{List of Tables}
+\newcommand{\todo}[1]{\textcolor{red}{TODO: #1}\PackageWarning{TODO:}{#1}} % To do notes
+\newcommand{\code}[1]{\texttt{#1}} % For inline code snippet or command line
+%----------------------------------------------------------------------------------------
+% Various pacakges
+%----------------------------------------------------------------------------------------
+\usepackage{hyperref} % for linking urls and lists
+\usepackage{graphicx} % for including pictures by file
+\usepackage{listings} % for coding language styles
+\usepackage{rotating} % for sideways table
+\usepackage{pifont}   % for sideways table
+\usepackage{pdflscape} % for landscape view
+%----------------------------------------------------------------------------------------
+% Table packages
+%----------------------------------------------------------------------------------------
+\usepackage{tabularx} % c=center,l=left,r=right,X=fill
+\usepackage{float}
+\floatstyle{plaintop}
+\usepackage[tableposition=top]{caption}
+\newcolumntype{P}[1]{>{\centering\arraybackslash}p{#1}}
+\newcolumntype{M}[1]{>{\centering\arraybackslash}m{#1}}
+%----------------------------------------------------------------------------------------
+% Block Diagram / FSM Drawings
+%----------------------------------------------------------------------------------------
+\usepackage{tikz}
+\usetikzlibrary{shapes,arrows,fit,positioning}
+\usetikzlibrary{automata} % used for the fsm
+%----------------------------------------------------------------------------------------
+% Colors Used
+%----------------------------------------------------------------------------------------
+\usepackage{colortbl}
+\definecolor{blue}{rgb}{.7,.8,.9}
+\definecolor{ceruleanblue}{rgb}{0.16, 0.32, 0.75}
+\definecolor{drkgreen}{rgb}{0,0.6,0}
+\definecolor{deepmagenta}{rgb}{0.8, 0.0, 0.8}
+\definecolor{cyan}{rgb}{0.0,0.6,0.6}
+\definecolor{maroon}{rgb}{0.5,0,0}
+%----------------------------------------------------------------------------------------
+% Update the docTitle and docVersion per document
+%----------------------------------------------------------------------------------------
+\def\docTitle{Component Data Sheet}
+\def\docVersion{1.3}
+%----------------------------------------------------------------------------------------
+\date{Version \docVersion} % Force date to be blank and override date with version
+\title{\docTitle}
+\lhead{\small{\docTitle}}
+
+\def\comp{real\_digitizer}
+\edef\ecomp{real_digitizer}
+\def\Comp{Real Digitizer}
+\graphicspath{ {figures/} }
+
+\begin{document}
+
+\section*{Summary - \Comp}
+\begin{tabular}{|c|M{13.5cm}|}
+	\hline
+	\rowcolor{blue}
+	                  &                                          \\
+	\hline
+	Name              & \comp                                    \\
+	\hline
+	Worker Type       & Application                              \\
+	\hline
+	Version           & v\docVersion \\
+	\hline
+	Release Date      & February 2018 \\
+	\hline
+	Component Library & ocpi.assets.dsp\_comps                    \\
+	\hline
+	Workers           & \comp.rcc                                \\
+	\hline
+	Tested Platforms  & linux-x13\_3-arm, c7-x86-64, and c6-x86-64 \\
+	\hline
+\end{tabular}
+
+\section*{Worker Implementation Details}
+\subsection*{\comp.rcc}
+This worker takes single samples and turns them into bits and packs them into a stream of words (16 bits) intended to be written to file.  If a positive sample comes in, a 1 is packed into the output word.  If a negative sample comes in, a 0 is packed into the output word.  All data is discarded before it receives the initialization sequence 0xFACE.  After the initialization sequence is received, data then starts to be passed to the output port.
+
+\section*{Block Diagrams}
+\subsection*{Top level}
+\begin{center}
+	\begin{tikzpicture}[% List of styles applied to all, to override specify on a case-by-case
+			every node/.style={
+				align=center,  		% use this so that the "\\" for line break works
+				minimum size=2cm	% creates space above and below text in rectangle
+			},
+			every edge/.style={draw,thick}
+		]
+		\node[rectangle,ultra thick,draw=black,fill=blue](R2){\Comp};
+		\node[rectangle,draw=white,fill=white](R3)[left= of R2]{``in'' \\ Signed real samples};
+		\node[rectangle,draw=white,fill=white](R4)[right= of R2]{``out'' \\ Signed real samples};
+		\node[rectangle,draw=white,fill=white](R5)[above= of R2]{\verb+need_sync+};
+		\path[->]
+		(R3)edge []	node [] {} (R2)
+		(R2)edge []	node [] {} (R4)
+		(R2)edge []	node [] {} (R5)
+		(R5)edge []	node [] {} (R2)
+		;
+	\end{tikzpicture}
+\end{center}
+
+\section*{Source Dependencies}
+\subsection*{\comp.rcc}
+\begin{itemize}
+	\item ocpiassets/components/dsp\_comps/\comp.rcc/\comp.c
+\end{itemize}
+
+\begin{landscape}
+	\section*{Component Spec Properties}
+	\begin{scriptsize}
+		\begin{tabular}{|p{3cm}|p{1.5cm}|c|c|c|c|c|p{7cm}|}
+			\hline
+			\rowcolor{blue}
+			Name             & Type & SequenceLength & ArrayDimensions & Accessibility    & Valid Range & Default & Usage                                                                                                                                                                                \\
+			\hline
+			\verb+need_sync+ & Bool & -              & -               & Readable,Initial & Standard    & True    & When set to true the worker will look for the initialization sequence 0xFACE in the data stream before sending data to the next worker. When set to false, all data is passed along. \\
+			\hline
+		\end{tabular}
+	\end{scriptsize}
+
+	\section*{Worker Properties}
+	\subsection*{\comp.rcc}
+	Control Operations: Start
+
+	\section*{Component Ports}
+	\begin{scriptsize}
+		\begin{tabular}{|M{2cm}|M{1.5cm}|M{4cm}|c|c|M{9cm}|}
+			\hline
+			\rowcolor{blue}
+			Name & Producer & Protocol          & Optional & Advanced & Usage               \\
+			\hline
+			in   & false    & rstream\_protocol & false    & -        & Signed real samples \\
+			\hline
+			out  & true     & rstream\_protocol & false    & -        & Signed real samples \\
+			\hline
+		\end{tabular}
+	\end{scriptsize}
+\end{landscape}
+
+\section*{Performance and Resource Utilization}
+% RCC-Only \input{../../\ecomp.hdl/utilization.inc}
+\subsubsection*{\comp.rcc}
+\begin{scriptsize}
+	\begin{tabular}{|c|c|c|}
+		\hline
+		\rowcolor{blue}
+		Processor Type & Processor Frequency & Run Function Time \\
+		\hline
+		TBD            & TBD                 & TBD               \\
+		\hline
+	\end{tabular}
+\end{scriptsize}
+\section*{Test and Verification}
+\normalsize
+No unit test currently exists for this worker.
+\end{document}

@@ -1,0 +1,43 @@
+<RccWorker language="c++" spec="rx_spec.xml" controloperations='initialize,start'>
+
+  <!-- OCS Parameters -->
+
+  <!-- OWD Parameters -->
+
+  <Property Name="TYPE_p" Type="enum" Enums="matchstiq_z1" Parameter="true" Default="matchstiq_z1" Description="The purpose of this property is to provide the option for an application XML to specifiy this property in order to enforce use of a parameterized build for a particular frontend type."/>
+
+  <!-- OCS Properties -->
+
+  <specproperty name='rf_gain_dB'              writesync='1' default='0'/>
+  <specproperty name='bb_gain_dB'              writesync='1' default='5'/>
+  <specproperty name='frequency_MHz'           writesync='1' default='500'/>
+  <specproperty name='sample_rate_MHz'         writesync='1' default='.100'/>
+  <specproperty name='rf_cutoff_frequency_MHz' writesync='1' default='400'/>
+  <specproperty name='bb_cutoff_frequency_MHz' writesync='1' default='10'/>
+
+  <specproperty name='rf_gain_max_dB' default='16'/>
+  <specproperty name='rf_gain_min_dB' default='-32.5'/> 
+  <specproperty name='rf_gain_step_dB' default='1'/>
+  
+  <specproperty name='bb_gain_max_dB' default='60'/>
+  <specproperty name='bb_gain_min_dB' default='5'/>
+  <specproperty name='bb_gain_step_dB' default='1'/>
+  
+  <specproperty name='frequency_max_MHz' default='3.72e3'/>
+  <specproperty name='frequency_min_MHz' default='0.2325e3'/>
+  <specproperty name='frequency_step_MHz' default='0.1'/>
+  
+  <specproperty name='sample_rate_max_MHz' default='40'/>
+  <specproperty name='sample_rate_min_MHz' default='0.100'/>
+  <specproperty name='sample_rate_step_MHz' default='1'/>
+  
+  <specproperty name='rf_cutoff_frequency_max_MHz' default='400'/>
+  <specproperty name='rf_cutoff_frequency_min_MHz' default='0'/>
+  <specproperty name='rf_cutoff_frequency_step_MHz' default='400'/>
+  
+  <specproperty name='bb_cutoff_frequency_max_MHz' default='14'/>
+  <specproperty name='bb_cutoff_frequency_min_MHz' default='0'/>
+  <specproperty name='bb_cutoff_frequency_step_MHz' default='0.125'/>
+
+  <property name='bb_loopback' readable='1' writable='1' default='0'/>
+</RccWorker>
