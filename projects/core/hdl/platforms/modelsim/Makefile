@@ -22,7 +22,7 @@ ExportFiles=runSimExec.modelsim probe.tgz
 include $(OCPI_CDK_DIR)/include/hdl/hdl-platform.mk
 ifneq ($(findstring modelsim,$(HdlPlatforms)),)
 # FIXME: integrate this with modelsim.mk
-ModelsimExec=LD_PRELOAD=$(OCPI_PREREQUISITES_DIR)/inode64/$(OCPI_TOOL_DIR)/lib/inode64.so $(OCPI_MODELSIM_DIR)/linuxpe/$1
+ModelsimExec=LD_PRELOAD=$(OCPI_CDK_DIR)/$(OCPI_TOOL_DIR)/lib/inode64.so $(OCPI_MODELSIM_DIR)/linuxpe/$1
 probe.tgz:
 	$(AT)echo Creating the tiny modelsim project for probing that modelsim is installed and licensed.
 	$(AT)echo Output is in target-modelsim/probe.out

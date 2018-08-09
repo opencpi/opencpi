@@ -26,7 +26,7 @@ function bad {
   verbose=1
   shift
 }
-vsim="LD_PRELOAD=$OCPI_PREREQUISITES_DIR/inode64/$OCPI_TOOL_DIR/lib/inode64.so $OCPI_MODELSIM_DIR/linuxpe/vsim"
+vsim="LD_PRELOAD=$OCPI_CDK_DIR/$OCPI_TOOL_DIR/lib/inode64.so $OCPI_MODELSIM_DIR/linuxpe/vsim"
 [ "$1" = probe ] && {
   [ -z "$OCPI_MODELSIM_DIR" ] &&
     bad The OCPI_MODELSIM_DIR environment variable is not set.

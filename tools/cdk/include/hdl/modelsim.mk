@@ -70,7 +70,7 @@ ModelsimFiles=\
 $(call OcpiDbgVar,ModelsimFiles)
 
 
-ModelsimExec=LD_PRELOAD=$(OCPI_PREREQUISITES_DIR)/inode64/$(OCPI_TOOL_DIR)/lib/inode64.so $(OCPI_MODELSIM_DIR)/linuxpe/$1
+ModelsimExec=LD_PRELOAD=$(OCPI_CDK_DIR)/$(OCPI_TOOL_DIR)/lib/inode64.so $(OCPI_MODELSIM_DIR)/linuxpe/$1
 
 ModelsimVlogLibs=
 
