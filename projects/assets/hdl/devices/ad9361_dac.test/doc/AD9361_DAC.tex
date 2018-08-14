@@ -52,7 +52,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \newcommand{\todo}[1]{\textcolor{red}{TODO: #1}\PackageWarning{TODO:}{#1}} % To do notes
 \newcommand{\code}[1]{\texttt{#1}} % For inline code snippet or command line
 %----------------------------------------------------------------------------------------
-% Various pacakges
+% Various packages
 %----------------------------------------------------------------------------------------
 \usepackage{hyperref} % for linking urls and lists
 \usepackage{graphicx} % for including pictures by file
@@ -90,7 +90,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Component Data Sheet}
-\def\docVersion{1.3}
+\def\docVersion{1.4}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
@@ -102,7 +102,6 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \def\DevSignal{DevSignal}
 
 \def\comp{ad9361\_dac}
-\edef\ecomp{ad9361_dac}
 \def\Comp{AD9361 DAC}
 \graphicspath{ {figures/} }
 
@@ -120,21 +119,28 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Version           & v\docVersion     \\
 	\hline
-	Release Date      & Aug 2017         \\
+	Release Date      & Jun 2018         \\
 	\hline
 	Component Library & ocpi.assets.devices     \\
 	\hline
 	Workers           & \comp.hdl        \\
 	\hline
-	Tested Platforms  &  Zedboard (Vivado), Zedboard(ISE), ML605 (FMC LPC slot) \\
+	Tested Platforms  &
+\begin{itemize}
+  \item Agilent Zedboard/Analog Devices FMCOMMS2
+  \item Agilent Zedboard/Analog Devices FMCOMMS3
+  \item x86/Xilinx ML605/Analog Devices FMCOMMS2 (FMC-LPC slot only)
+  \item x86/Xilinx ML605/Analog Devices FMCOMMS3 (FMC-LPC slot only)
+  \item Ettus E310 (Vivado only, unit test exists in av.bsp.e310 project)
+\end{itemize} \\
 	\hline
 \end{tabular}
 
 \section*{Functionality}
-	The \Comp{} device worker ingests a single TX channel's data to be sent to the AD9361 IC \cite{ad9361}. Up to two instances of this worker can be used send multichannel TX data to an AD9361 in an independent, non-phase-coherent fashion.
+	The \Comp{} device worker ingests a single TX channel's data to be sent to the AD9361 IC \cite{ad9361}. Up to two instances of this worker can be used to send multichannel TX data to an AD9361 in an independent, non-phase-coherent fashion.
 \section*{Worker Implementation Details}
 \subsection*{\comp.hdl}
-The \comp{}.hdl worker ingests signed Q0.15 I/Q samples from its input port, rounds them to Q0.11, then passes the through an asynchronous First-In-First-Out (FIFO) buffer on to the the \verb+dev_dac+ \devsignal{} bus. The rounding is done in order to map to the AD9361's 12-bit I/Q dac bus\cite{adi_ug570}. For more information on how ad9361\_dac\_sub.hdl handles the data from this worker's \verb+dev_dac+ port, see \cite{dac_sub_comp_datasheet}. The asynchronous FIFO is necessary in order to cross clock domains from control clock to \verb+dev_dac+'s dac\_clk clock. Note that the control clock rate is considered static but platform-specific and that the clock rate of dac\_clk (which is an inverted and divided by 2 version of the AD9361 DATA\_CLK\_P pin\cite{dac_sub_comp_datasheet}) is potentially runtime variable. The FIFO's depth in number of samples is determined at build-time by the \verb+fifo_depth+ parameter property. An \verb+underrun+ property indicates when invalid samples have been clocked in by the DAC due to the FIFO being empty. 
+The \comp{}.hdl worker ingests signed Q0.15 I/Q samples from its input port, rounds them to Q0.11, then passes them through an asynchronous First-In-First-Out (FIFO) buffer on to the \verb+dev_dac+ \devsignal{} bus. The rounding is done in order to map to the AD9361's 12-bit I/Q dac bus\cite{adi_ug570}. For more information on how ad9361\_dac\_sub.hdl handles the data from this worker's \verb+dev_dac+ port, see \cite{dac_sub_comp_datasheet}. The asynchronous FIFO is necessary in order to cross clock domains from control clock to \verb+dev_dac+'s dac\_clk clock. Note that the control clock rate is considered static but platform-specific and that the clock rate of dac\_clk (which is an inverted and divided by 2 version of the AD9361 DATA\_CLK\_P pin\cite{dac_sub_comp_datasheet}) is potentially runtime variable. The FIFO's depth in number of samples is determined at build-time by the \verb+fifo_depth+ parameter property. An \verb+underrun+ property indicates when invalid samples have been clocked in by the DAC due to the FIFO being empty.
 \section*{Block Diagrams}
 \subsection*{Top level}
 \subsubsection*{\comp.hdl}
@@ -147,7 +153,7 @@ The \comp{}.hdl worker ingests signed Q0.15 I/Q samples from its input port, rou
 			every edge/.style={draw,thick}
 		]
 		\node[rectangle,ultra thick,draw=black,fill=blue,minimum width=5 cm](R2){Parameter Properties: \verb+fifo_depth+ \\ \\ \Comp \\};
-		\node[rectangle,draw=white,fill=white](R3)[below= of R2]{"dev\_adc" devsignal port\\ DAC data bus (see AD9361\_DAC\_Sub.pdf)};
+		\node[rectangle,draw=white,fill=white](R3)[below= of R2]{``dev\_dac" devsignal port\\ DAC data bus (see AD9361\_DAC\_Sub.pdf)};
 		\node[rectangle,draw=white,fill=white](R4)[left= of R2]{``in'' StreamInterface \\ Complex signed samples (Q0.15 I, Q0.15 Q)};
 		\node[rectangle,draw=white,fill=white](R5)[above= of R2]{Non-parameter Properties:\\\verb+underrun+};
 		\path[->]
@@ -233,7 +239,7 @@ The \comp{}.hdl worker ingests signed Q0.15 I/Q samples from its input port, rou
 			\cline{6-9}
 			&             &        &     &      & dac\_clk     & Input     & 1      & Clock for dac\_ready, dac\_take, dac\_data\_I, and dac\_data\_Q. \\
 			\cline{6-9}
-			&             &        &     &      & dac\_ready   & Output    & 1      & Indicates that the dac\_data\_I and dac\_data\_Q are valid/ready to be latched on the next rising edge of adc\_clk. \\
+			&             &        &     &      & dac\_ready   & Output    & 1      & Indicates that the dac\_data\_I and dac\_data\_Q are valid/ready to be latched on the next rising edge of dac\_clk. \\
 			\cline{6-9}
 			&             &        &     &      & dac\_take    & Input     & 1      & Indicates that dac\_data\_I and dac\_data\_Q were latched on the previous rising edge of dac\_clk. If in the previous clock cycle dac\_ready was 1, the values of dac\_data\_I and dac\_data\_Q should not be allowed to update with a new sample until dac\_take is 1. \\
 			\cline{6-9}
@@ -247,7 +253,7 @@ The \comp{}.hdl worker ingests signed Q0.15 I/Q samples from its input port, rou
 
 \section*{Control Timing and Signals}
 \subsection*{Clock Domains}
-The \Comp{}.hdl device worker contains two clock domains: the clock from the control plane, and the dac\_clk clock from the \devsignal{}. It is expected that the control plane clock is faster than the dac\_clk clock in order to prevent a FIFO underrun (monitored via the \verb+underrun+ property). Note that the clock rate of dac\_clk is equivalent to half the clock rate of the AD9361 DATA\_CLK\_P pin\cite{dac_sub_comp_datasheet} and that the AD9361 DATA\_CLK\_P rate's range is 2,083,333 Hz to 61,440,000 Hz. As such, always running this worker with a minimum control plane clock rate of 30,720,000 Hz will prevent underrun under all circumstances.
+The \Comp{} device worker contains two clock domains: the clock from the control plane, and the dac\_clk clock from the \devsignal{}. It is expected that the control plane clock is faster than the dac\_clk clock in order to prevent a FIFO underrun (monitored via the \verb+underrun+ property).
 \subsection*{Latency}
 The latency from the input port to the \devsignal{} data bus is both both non-deterministic and dynamic. Non-determinism exists as a result of the data flowing through an asynchronous FIFO with each side in a different clock domain. Runtime dynamism exists as a result of the AD9361 DATA\_CLK\_P clock, and therefore the dac\_clk clock rates, being runtime dynamic. The use of any FIFO, synchronous or asynchronous, between the input port and the \devsignal{} also creates runtime dynamism in latency.
 \subsection*{Backpressure}
@@ -255,9 +261,8 @@ Backpressure is transferred from the \devsignal{}'s dac\_clk clock to the input 
 
 \section*{Performance and Resource Utilization}
 \subsubsection*{\comp.hdl}
-Fmax refers to the maximum allowable clock rate for any registered signal paths within a given clock domain for an FPGA design. Fmax in the table below is specific only to this worker and represents the maximum possible Fmax for any OpenCPI bitstream built with this worker included. Note that the Fmax value for a given clock domain for the final bitstream is often worse than the Fmax specific to this worker, even if this worker is the only one included in the bitstream. Note also that the dev\_dac's dac\_clk clock rate will only ever go as high as half of the AD9361's DATA\_CLK\_P rate, or half of 245.76 MHz\cite{adi_ug570} which is 122.88 MHz. \\ \\
-Table entries are a result of building the woker with the following parameter property sets:
-%\input{../../\ecomp.hdl/utilization.inc}
+Fmax refers to the maximum allowable clock rate for any registered signal paths within a given clock domain for an FPGA design. Fmax in the table below is specific only to this worker and represents the maximum possible Fmax for any OpenCPI bitstream built with this worker included. Note that the Fmax value for a given clock domain for the final bitstream is often worse than the Fmax specific to this worker, even if this worker is the only one included in the bitstream. \\ \\
+Table entries are a result of building the worker with the following parameter property sets:
 \begin{itemize}
 	\item \verb+fifo_depth+=64
 \end{itemize}
@@ -287,32 +292,32 @@ Table entries are a result of building the woker with the following parameter pr
 \section*{Test and Verification}
 \subsection*{Theory of Operation}
 The AD9361 has a Built In Self Test (BIST) mode cable of validating in-situ the digital RX/TX data paths without the need for additional external equipment. One of the BIST configurations enables a Linear Feedback Shift Register (LFSR) within the AD9361 and sends the LFSR output to AD9361's ADC data pins. The LFSR generates a Pseudo Random Bit Sequence (PRBS). By using the LFSR algorithm to verify data fidelity after the RX data is registered inside the FPGA, the AD9361-to-FPGA digital RX data path is verified. An additional BIST configuration exists which performs a digital TX-to-RX loopback on the AD9361. By first validating the RX data path with the PRBS BIST, then running a loopback BIST while sending generating LFSR data to the AD9361 TX path while using the LFSR algorithm to verify data fidently after the RX data is registered inside the FPGA, the entire FPGA-to-AD9361-to-FPGA digital RX/TX data path is verfied. For more information on the BIST modes see \cite{adi_bist_doc} and \cite{adi_ug570}. \\ \\
-The \comp{}.hdl unit test performs an in-situ hardware test on either a Zedboard / FMCOMMS2/3 or x86 / ML605 / FMCOMMS2/3 hardware platform. The unit test currently only tests the AD9361 in its single channel LVDS mode. Note that AD9361 also supports two-channel mode and 4 non-LVDS (CMOS) modes. The unit test validates not only the \comp{}.hdl device worker, but the entire command/control and RX/TX data paths both in software and hardware. \\ \\
-The unit test first runs multiple ocpirun applications which use the AD9361 BIST PRBS mode and save the first 8192 samples output from the ad9361\_adc.hdl output port to a binary file. A Bit Error Rate (BER) is then calculated on each output file and verified to be 0\%. These data fidelty tests are run across the full range of possible AD9361 sample rates, (2.083334 Msps complex - 61.44 Msps complex for a single channel is the full range when the AD9361 FIR filter is disabled, note that said filter is disabled for all tests). The ad9361\_adc.hdl's \verb+overrun+ property is verified to be false for apps running as long as 10 seconds at the max sample rate. All of these tests are run for both 1R1T timing and 2R2T AD9361 timing modes. For more information on these AD9361 modes, see \cite{adi_ug570}. \\ \\
-The unit test next runs multiple ocpirun applications which use the AD9361 BIST loopback mode and save the first 8192 samples output from the ad9361\_adc.hdl output port to a binary file. The applications utilize an HDL worker which generates LFSR data (similar to the LFSR data generated on the AD9361 for the PRBS BIST) and sends this data out the TX path\footnote{For more information, see Data Src Component Data Sheet}. A Bit Error Rate (BER) is then calculated on each output file and verified to be 0\%. These data fidelty tests are run across the full range of possible AD9361 sample rates, (2.083334 Msps complex - 61.44 Msps complex for a single channel is the full range when the AD9361 FIR filter is disabled, note that said filter is disabled for all tests). The \verb+underrun+ property is verified to be false for apps running as long as 10 seconds at the max sample rate. All of these tests are run for both 1R1T timing and 2R2T AD9361 timing modes. For more information on these AD9361 modes, see \cite{adi_ug570}.
-\subsection*{Hardware Configuration}
-The \comp{}.hdl unit test requires an FMCOMMS2 or FMCOMMS3 card (which has an AD9361 on board) and an ML605 or Zedboard. On ML605, the FMCOMMS3 must be in the FMC LPC slot due to known TX data fidelity issues with the FMC HPC slot.
-\subsection*{Build Instructions}
-The \comp{}.test directory contains the \comp{}.hdl unit test. The test can be built on a development machine from within this directory by running the following command to build for ML605 deployment:
-\lstset{language=bash, columns=flexible, breaklines=true, prebreak=\textbackslash, basicstyle=\ttfamily, showstringspaces=false,upquote=true, aboveskip=\baselineskip, belowskip=\baselineskip}
-\begin{lstlisting}
-ocpidev build --hdl-platform ml605
-\end{lstlisting}
-The following command builds for Zedboard deployment:
-\begin{lstlisting}
-ocpidev build --rcc-platform xilinx13_3 --hdl-platform zed
-\end{lstlisting}
+The \comp{}.hdl unit test performs an in-situ hardware test. The unit test validates not only the \comp{}.hdl device worker, but the entire command/control and RX/TX data paths both in software and hardware. \\ \\
+The unit test runs multiple applications via ocpirun which use the AD9361 BIST loopback mode and save the first 8192 samples output from the ad9361\_adc.hdl output port to a binary file. The applications utilize an HDL worker which generates LFSR data (similar to the LFSR data generated on the AD9361 for the PRBS BIST) and sends this data out the TX path\footnote{For more information, see Data Src Component Data Sheet}. A Bit Error Rate (BER) is then calculated on each output file and verified to be 0\%. These data fidelty tests are run across the full range of possible AD9361 sample rates for the given mode. Note that the AD9361 RX and TX FIR filters are disabled for all tests. The \verb+underrun+ property is verified to be false for apps running as long as 10 seconds at the max sample rate. All of these tests are run with 1R1T mode, and with force 2R2T timing both on and off. For more information on these AD9361 modes/settings, see \cite{adi_ug570}.
 \subsection*{Execution Instructions}
-The ML605 test is executed by running the following commands. Note that for this particular unit test, the ocpidev call occurs from the projects/assets/hdl/devices/ directory.
+Prerequisites for execution are as follows:
+\begin{itemize}
+  \item all OAS artifacts must be in the \texttt{OCPI\_LIBRARY\_PATH} environment variable
+  \item if the AD9361 exists on a card on a platform with multiple slots for said card, the intended slot-specific bitstream must occur first in the \texttt{OCPI\_LIBRARY\_PATH}
+  \item must be in the \texttt{ad9361\_dac.test} directory
+\end{itemize}
+Note that, if multiple HDL containers/platforms are found (e.g. multiple ML605s), the first one found will be used. Tests are run on non-embedded systems using the following command:
+\lstset{language=bash, columns=flexible, breaklines=true, prebreak=\space\textbackslash, basicstyle=\ttfamily, showstringspaces=false,upquote=true, aboveskip=\baselineskip, belowskip=\baselineskip}
 \begin{lstlisting}
-cd projects/assets/hdl/devices/
-ocpidev run test ad9361_dac.test
+ocpidev run
 \end{lstlisting}
-To run on the Zedboard, the built \comp{}.test directory must either be mounted from the development machine to the Zedboard, or copied to the Zedboard. From within the \comp{}.test directory, the follow command executes the test natively on the Zedboard:
+For example, usage on ML605 w/ FMCOMMS3 on its FMC LPC slot with core and assets projects in \texttt{/data/ocpi.core/} and \texttt{/data/ocpi.assets/}:
 \begin{lstlisting}
-OCPI_LIBRARY_PATH=$OCPI_LIBRARY_PATH:<path-to-ocpi.core-project/exports/lib/>:<path-to-ocpi.assets-project/exports/lib> ./run/runtests.sh verify
+export OCPI_LIBRARY_PATH=$(find $PWD/assemblies | grep ml605_cfg_1rx_0tx_fmcomms_2_3_lpc | grep bitz):/data/ocpi.core:/data/ocpi.assets/
+cd /data/ocpi.assets/hdl/devices/ad9361_dac.test/
+ocpidev run
+\end{lstlisting}
+Tests are run natively on embedded systems using the following commands:
+\begin{lstlisting}
+./run/runtests.sh verify
 \end{lstlisting}
 Upon completion of a successful test, PASSED is printed to the screen and a value of 0 is returned. Upon failure, FAILED is printed to the screen and a non-zero value is returned.
+
 \subsection*{Troubleshooting}
 This unit test is in need of more robust error messaging. If a failure occurs but the test completed, the screen will output a diff between a generated log file odata/AD9361\_BIST\_PRBS.log and a golden log file. If a failure occurs before the test was completed, there is sometimes not a good error message generated. Upon failure, the logs should be checked to ensure the error was not one which prevented the test from being run. Log files are also saved which capture the stdout/stderr for each of the multiple ocpirun calls, e.g. odata/app\_2.083334e6sps\_fir0\_0\_1sec\_prbs.log.
 
@@ -327,7 +332,7 @@ AD9361\_Reference\_Manual\_UG-570.pdf
 \url{https://ez.analog.com/servlet/JiveServlet/download/11828-2-28791/AD9361%20BIST%20FAQ.pdf}
 \bibitem{vendor_tools_install} FPGA Vendor Tools Installation Guide \\
 FPGA\_Vendor\_Tools\_Installation\_Guide.pdf
-\bibitem{dac_sub_comp_datasheet} AD361 DAC Sub Component Data Sheet \\AD9361\_DAC\_Sub.pdf
+\bibitem{dac_sub_comp_datasheet} AD9361 DAC Sub Component Data Sheet \\AD9361\_DAC\_Sub.pdf
 
 \end{thebibliography}
 \pagebreak

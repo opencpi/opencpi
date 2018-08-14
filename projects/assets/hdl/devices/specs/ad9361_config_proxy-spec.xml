@@ -534,6 +534,9 @@
   <property name='half_duplex'      type='bool' volatile='1' description="Value is true if bitstream monitored by instance of this worker was built to use half duplex mode, and false if full duplex mode."/>
   <property name='data_rate_config' type='enum' enums='SDR,DDR'     volatile='1' description="Value indicates which data rate mode (SDR/DDR) the bitstream was built to use."/>
   <property name='DATA_CLK_P_rate_Hz' type='double' volatile='1'/>
-
+  <property name='BIST_Mask_Channel_2_Q_data' type='bool' volatile='1' writable='1' description='Setting zeros out Channel 2 Q data.'/> <!-- BIST mode only? -->
+  <property name='BIST_Mask_Channel_2_I_data' type='bool' volatile='1' writable='1' description='Setting zeros out Channel 2 I data.'/> <!-- BIST mode only? -->
+  <property name='BIST_Mask_Channel_1_Q_data' type='bool' volatile='1' writable='1' description='Setting zeros out Channel 1 Q data.'/> <!-- BIST mode only? -->
+  <property name='BIST_Mask_Channel_1_I_data' type='bool' volatile='1' writable='1' description='Setting zeros out Channel 1 I data.'/> <!-- BIST mode only? -->
 
 </componentspec>

@@ -121,7 +121,7 @@ do
       echo "sample rate      : $samprate sps"
       echo "runtime          : $APP_RUNTIME_SEC sec"
 
-      PREFIX=/var/volatile/app_"$samprate"sps_fir"$firenable"_"$twortwot"_"$APP_RUNTIME_SEC"sec
+      PREFIX=app_"$samprate"sps_fir"$firenable"_"$twortwot"_"$APP_RUNTIME_SEC"sec
 
       # only TX 64 samples which will cause and underrun since the TX duration
       # of 64 samples for any possible AD9361 DAC sample rate is less than the

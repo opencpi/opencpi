@@ -19,27 +19,46 @@
 library IEEE; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;
 library ocpi; use ocpi.types.all, ocpi.util.all; // remove this to avoid all ocpi name collisions
 library util; use util.util.all;
+library unisim; use unisim.vcomponents.all;
+
 architecture rtl of ad9361_data_sub_worker is
-  constant adc_c        : natural := 0;
-  constant dac_c        : natural := 1;
-  constant lvds_width_c : natural := 6;
-  constant port_width_c : natural := 12;
-  signal   DATA_CLK_s   : std_logic; // data clock to both adc and dac workers
-  signal   TXNRX_i      : std_logic := '0'; // TODO / FIXME - from upstream somewhere
+  constant adc_c           : natural := 0;
+  constant dac_c           : natural := 1;
+  constant lvds_width_c    : natural := 6;
+  constant port_width_c    : natural := 12;
+  signal   DATA_CLK_s      : std_logic; // data clock to both adc and dac workers
+  signal   DATA_CLK_bufg_s : std_logic; // data clock to both adc and dac workers
+  signal   TXNRX_i         : std_logic := '0'; // TODO / FIXME - from upstream somewhere
 begin
   // inform supported workers about our parameters
   dev_cfg_data_port_out.p0_p1_are_swapped  <= swap_ports_p;
   dev_cfg_data_port_out.iostandard_is_lvds <= lvds_p;
   // provide data clock to both adc and dac subdevice workers
-  dev_data_clk_out(adc_c).data_clk_p       <= DATA_CLK_s;
-  dev_data_clk_out(dac_c).data_clk_p       <= DATA_CLK_s;
 
   #if !OCPI_PARAM_LVDS_p()
   //---------------------------------------------------------------------------------
   // Signals common to all CMOS modes (0-6)
-    DATA_CLK_s <= DATA_CLK_P;
+
+    // Here, we have DATA_CLK come through an IBUF followed by a BUFG before
+    // forwarding it to the adc/dac subdevices via the devsignals below
+    dev_data_clk_out(adc_c).data_clk_p       <= DATA_CLK_bufg_s;
+    dev_data_clk_out(dac_c).data_clk_p       <= DATA_CLK_bufg_s;
+
+    data_clk : BUFFER_IN_1 generic map(DIFFERENTIAL => false)
+      port map(I => DATA_CLK_P, O => DATA_CLK_s);
+
+    data_clk_bufg : BUFG port map(I => DATA_CLK_s, O => DATA_CLK_bufg_s);
+
     rx_frame : BUFFER_IN_1 generic map(DIFFERENTIAL => false)
       port map(I => RX_FRAME_P, O => dev_data_adc_out.rx_frame);
+    tx_frame : BUFFER_OUT_1 generic map(DIFFERENTIAL => false)
+      port map(I => dev_data_dac_in.tx_frame, O => TX_FRAME_P);
+    fb_clk   : BUFFER_OUT_1 generic map(DIFFERENTIAL => false)
+      port map(I => dev_data_dac_in.fb_clk, O => FB_CLK_P);
+    // Tie _N signals to ground for CMOS as recommended in Table 13 of
+    // the AD9361 datasheet
+    TX_FRAME_N <= '0';
+    FB_CLK_N   <= '0';
   #endif
   #if OCPI_PARAM_MODE_p()==0
   //---------------------------------------------------------------------------------
@@ -142,6 +161,8 @@ begin
     signal out_p, out_n, in_p, in_n : std_logic_vector(lvds_width_c-1 downto 0);
     signal p0 : std_logic_vector(lvds_width_c*2-1 downto 0);
   begin
+    dev_data_clk_out(adc_c).data_clk_p       <= DATA_CLK_s;
+    dev_data_clk_out(dac_c).data_clk_p       <= DATA_CLK_s;
     // Instantiate LVDS IO buffers
     data_clk : BUFFER_IN_1 generic map(DIFFERENTIAL => true)
       port map(I => DATA_CLK_P, IBAR => DATA_CLK_N, O => DATA_CLK_s);

@@ -12,26 +12,31 @@
     <parameter name='SINGLE_PORT_p' value='true'/>
     <parameter name='HALF_DUPLEX_p' value='true'/>
     <parameter name='DATA_RATE_CONFIG_p' value='DDR'/>
-  </configuration>
-  <configuration id='2'>
+  </configuration>-->
+  <configuration id='1'>
     <parameter name='LVDS_p' value='false'/>
     <parameter name='SINGLE_PORT_p' value='true'/>
     <parameter name='HALF_DUPLEX_p' value='false'/>
     <parameter name='DATA_RATE_CONFIG_p' value='DDR'/>
   </configuration>
-  <configuration id='3'>
+  <!--<configuration id='3'>
     <parameter name='LVDS_p' value='false'/>
     <parameter name='SINGLE_PORT_p' value='false'/>
     <parameter name='HALF_DUPLEX_p' value='true'/>
     <parameter name='DATA_RATE_CONFIG_p' value='DDR'/>
-  </configuration>
-  <configuration id='4'>
+  </configuration>-->
+  <!--<configuration id='4'>-->
+
+  <!-- this will build and is expected to function correctly but data fidelity
+       problems have been observed -->
+  <!--configuration id='2'>
     <parameter name='LVDS_p' value='false'/>
     <parameter name='SINGLE_PORT_p' value='false'/>
     <parameter name='HALF_DUPLEX_p' value='false'/>
     <parameter name='DATA_RATE_CONFIG_p' value='DDR'/>
-  </configuration>
-  <configuration id='5'>
+  </configuration-->
+
+  <!--<configuration id='5'>
     <parameter name='LVDS_p' value='false'/>
     <parameter name='SINGLE_PORT_p' value='true'/>
     <parameter name='HALF_DUPLEX_p' value='true'/>

@@ -40,8 +40,7 @@ REG_SYNC_FFFF=4294967295
 
 run_delay_tests_1r1t_fmcomms3() {
 
-  touch /var/volatile/toberemoved.out
-  rm /var/volatile/*out
+  rm -rf *out
 
   for clkdelay in "${clkdelays[@]}"
   do
@@ -78,7 +77,7 @@ do
     echo "FIR enabled is $firenable : "
     echo "$samprate sps : "
 
-    FILENAME=/var/volatile/app_"$samprate"sps_fir"$firenable"_prbs.out
+    FILENAME=app_"$samprate"sps_fir"$firenable"_prbs.out
     run_delay_tests_1r1t_fmcomms3 \
       -pad9361_config_proxy=rx_fir_en_dis=$firenable \
       -pad9361_config_proxy=tx_sampling_freq=$samprate \

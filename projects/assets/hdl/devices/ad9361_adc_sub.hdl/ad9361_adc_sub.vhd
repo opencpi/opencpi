@@ -167,18 +167,9 @@ begin
     );
   end generate;
 
-  bufr_cmos_half_duplex_DDR : if ((LVDS_p              = bfalse) and
-                                  (HALF_DUPLEX_p       = bfalse) and
-                                  (DATA_RATE_CONFIG_p  = DDR_e)) generate
-    BUFR_inst : BUFR
-    generic map (
-       BUFR_DIVIDE => "1")   -- "BYPASS", "1", "2", "3", "4", "5", "6", "7", "8"
-    port map (
-       O => adc_clk_buf, -- 1-bit output: Clock output port
-       CE => '1',        -- 1-bit input: Active high, clock enable (Divided modes only)
-       CLR => '0',       -- 1-bit input: Active high, asynchronous clear (Divided mode only)
-       I => dev_data_clk_in.DATA_CLK_P -- 1-bit input: Clock buffer input driven by an IBUFG, MMCM or local interconnect
-    );
+  -- In CMOS mode, we use a single BUFG in the data_sub instead of one BUFR here and the first one in dac_sub
+  no_bufr_cmos : if LVDS_p = bfalse generate
+    adc_clk_buf <= dev_data_clk_in.DATA_CLK_P;
   end generate;
 
   -- we want adc_clk to be rising edge for worker-internal logic
