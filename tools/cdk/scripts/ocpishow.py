@@ -122,7 +122,7 @@ def do_rccplatforms(options):
     elif options.json:
         platformDict = {}
         for platform in sorted(rccPlatforms):
-            target = rccDict["RccTargetAux_" + platform][0]
+            target = rccDict["RccTarget_" + platform][0]
             platformDict[platform] = {"target": target}
         json.dump(platformDict, sys.stdout)
         print()

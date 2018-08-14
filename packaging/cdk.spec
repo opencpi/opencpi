@@ -130,8 +130,9 @@ done
   echo "%%attr(644,root,root)" %%{prefix1}/$dir/$file >> %{_builddir}/runtime-files
 
   # A very special case that will go away at some point
-  cp releng/projects/new_project_source %{buildroot}%{prefix0}/projects
+  cp packaging/dist/projects/{new_project_source,README} %{buildroot}%{prefix0}/projects
   echo %%{prefix0}/projects/new_project_source >> %{_builddir}/devel-files
+  echo %%{prefix0}/projects/README >> %{_builddir}/devel-files
 %endif
 
 ##########################################################################################

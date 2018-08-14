@@ -69,7 +69,7 @@ ModelsimFiles=\
      $(call FindRelative,$(TargetDir),$(dir $(f)))/$(notdir $(f)))
 $(call OcpiDbgVar,ModelsimFiles)
 
-
+# Modelsim seems to have 32-bit portions, so needs the inode spoofing preloaded
 ModelsimExec=LD_PRELOAD=$(OCPI_CDK_DIR)/$(OCPI_TOOL_DIR)/lib/inode64.so $(OCPI_MODELSIM_DIR)/linuxpe/$1
 
 ModelsimVlogLibs=

@@ -159,7 +159,6 @@ basenames['script'] = ('Project.exports',)
 basenames['skip'] = ('.gitattributes', '.gitignore', '.project', 'target', '.tags*', 'test.*', '.DS_Store')
 basenames['text'] = ('COPYRIGHT', 'LICENSE', 'README', 'README*')
 
-
 # Custom scanning functions (run before anything else)
 other_regexs = (
     re.compile(r'Copyright.*Altera Corporation'),
@@ -170,14 +169,14 @@ other_regexs = (
     re.compile(r'Xilinx Core Generator'),
     re.compile(r'Downloaded.*opencores'),
     re.compile(r'OpenSplice\s+DDS'),
-    re.compile(r'OSSP uuid - Universally Unique Identifier'),
     re.compile(r'This file is part of CommPy'),
-    re.compile(r'This file is part of REDHAWK'),
-    re.compile(r'Boost Software License'),
+    # re.compile(r'Boost Software License'),
     re.compile(r'The Khronos Group Inc.'),
-    re.compile(r'Copyright \(C\)\s*\d+\s*Massachusetts Institute of Technology'),
+    re.compile(r'Copyright \(C\)[\s\d ,-]+Massachusetts Institute of Technology', re.IGNORECASE),
     re.compile(r'Copyright.*Intel Corp'),
-    re.compile(r'(?:#|dnl)?.*http://www\.gnu\.org/software/(?:autoconf|ac)-archive/'),
+    re.compile(r'Copyright \(c\) Internet2'),  # Fasttime
+    re.compile(r'Copyright[\s\d ,-]+Aaron Voisine'),  # ezxml
+    re.compile(r'^#\s*Doxyfile\s+[.\d]+$'),  # Doxygen config files
 )
 bad_paths = (
     '/.git/',
@@ -189,6 +188,8 @@ bad_paths = (
     '/gen/',
     '/kernel-headers',
     '/opencpi-zynq-linux-release-',
+    '/projects/assets/components/util_comps/socket_write.rcc/asio/',  # Boost
+    '/projects/assets/components/util_comps/socket_write.rcc/ext_src/',  # Boost
     '/release-2013.4/',
     '/releng/blacklist/',
     '/releng/jenkins/',
@@ -202,6 +203,8 @@ bad_paths = (
 bad_path_globs = (
     '*/idata/*',  # Unit test data source
     '*/MANIFEST.MF',  # Java packaging
+    '*/notes',  # Misc notes
+    '*/odata/*',  # Unit test data destination
     '*/package-name',
     '*/package-id',
     '*/__pycache__/*',

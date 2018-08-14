@@ -24,12 +24,12 @@ export OCPI_SMB_SIZE=3000000
 
 if [ -d $OCPI_CDK_DIR/../project-registry ]; then
   source $OCPI_CDK_DIR/scripts/util.sh
-  # Add core AND the default installed projects/core project so that
+  # Add core AND the default installed ocpi.core project so that
   # core's artifacts can be found on a remote system via the default
   # installed location
   core1=$(getProjectRegistryDir)/ocpi.core
   [ -d $core1/exports ] && core1+=/exports
-  core2=$OCPI_CDK_DIR/../projects/core
+  core2=$OCPI_CDK_DIR/../project-registry/ocpi.core
   [ -d $core2/exports ] && core2+=/exports
   export OCPI_LIBRARY_PATH=$core1/artifacts:$core2/artifacts
 fi

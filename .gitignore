@@ -14,7 +14,7 @@ TAGS
 *.exe
 *~
 *.d
-!releng/env.d
+!packaging/dist/env.d
 *.o
 *.gch
 */*/*/*/idl/*.cxx

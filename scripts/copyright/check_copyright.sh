@@ -37,7 +37,9 @@ trap cleanup EXIT
 
 OCPI_SCAN_COPYRIGHTS=x ./scripts/copyright/copyright.py
 grep ":ERROR:" copyright.log | cut -f5 -d: | sort > missing.log
-diff -u scripts/copyright/whitelist missing.log > missing_diff.log
+# Put a single space before each whitelist item to match the diff output.
+# That space is needed or the later greps will see "---" as an issue.
+diff -u <( sed -e 's/^/ /' scripts/copyright/whitelist) missing.log > missing_diff.log
 RET=$?
 
 if [ "${RET}" == "1" ]; then

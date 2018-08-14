@@ -247,33 +247,12 @@ define DoLink
   $(infox DoLink:$1:$2:$3:$4:$5)
   $$(infox DoLink2:$1:$2:$3:$4:$5)
   BinLibLinks+=$(LibDir)/$1/$3
-  ifeq ($(Model),hdl)
-    $(LibDir)/$1/$(basename $3)-generics.vhd: | $(LibDir)/$1
-	$(AT)$$(call MakeSymLink2,$(call WkrTargetDir,$1,$4)/generics.vhd,$(LibDir)/$1,$(basename $3)-generics.vhd)
-	$(AT)if test -f $(call WkrTargetDir,$1,$4)/$(call RmRv,$(basename $2)).cores; then \
-               $$(call MakeSymLink,$(call WkrTargetDir,$1,$4)/$(call RmRv,$(basename $2)).cores,$(LibDir)/$1);\
-             fi
-  endif
   $$(eval $$(call $(CapModel)WkrBinaryLink,$1,$2,$3,$4,$5))
-  $(LibDir)/$1/$3: | $(call WkrTargetDir,$1,$4)/$2 $(and $(filter hdl,$(Model)),$(LibDir)/$1/$(basename $3)-generics.vhd) $(LibDir)/$1
+  $(LibDir)/$1/$3: | $(call WkrTargetDir,$1,$4)/$2 $(LibDir)/$1
 	$(AT)echo Creating link to export worker binary: $(LibDir)/$1/$3 '->' $(call WkrTargetDir,$1,$4)/$2
 	$(AT)$$(call MakeSymLink2,$(call WkrTargetDir,$1,$4)/$2,$(LibDir)/$1,$3)
 
-  $(infox DoLink3:$1:$(HdlToolSet_$1):$(HdlToolNeedBB_$(HdlToolSet_$1)))
-  $$(infox DoLink4:$1:$(HdlToolSet_$1):$(HdlToolNeedBB_$(HdlToolSet_$1)))
-  ifdef HdlToolNeedBB_$(HdlToolSet_$1)
-      $(infox DLHTNB1:$1:$2:$3:$4==$$(call MyBBLibFile,$1,$2,$4))
-      $$(infox DLHTNB2:$1:$2:$3:$4==$$(call MyBBLibFile,$1,$2,$4))
-    ifeq ($(and $(filter %_rv,$(basename $2)),$(filter 2,$(words $(HdlCores)))),)
-      $$(infox DLHTNB:$1:$2:$3:$4==$$(call MyBBLibFile,$1,$2,$4))
-      BinLibLinks+=$(LibDir)/$1/$5
-      # This will actually be included/evaluated twice
-      $(LibDir)/$1/$5: | $$$$(call MyBBLibFile,$1,$2,$4) $(LibDir)/$1
-	$(AT)echo Creating link from $$@ -\> $$(patsubst %/,%,$$(dir $$(call MyBBLibFile,$1,$2,$4))) to export the stub library.
-	$(AT)$$(call MakeSymLink2,$$(patsubst %/,%,$$(dir $$(call MyBBLibFile,$1,$2,$4))),$(strip\
-                                  $(LibDir)/$1),$5)
-    endif
-  endif
+  #TODO move below to the "ifndef HdlSkip" so this does repeat for every configuration of a worker
   ifneq ($$(filter $$(call OcpiGetDirType,$$(DirContainingLib)),library),)
     $$(if $$(call DoShell,make -C $$(DirContainingLib) workersfile speclinks,Value),$$(warning $$(Value)))
   endif
@@ -318,9 +297,11 @@ endif
 
 $(call OcpiDbgVar,LibLinks,Before all:)
 $(call OcpiDbgVar,BinLibLinks,Before all:)
-.PHONY: links binlinks genlinks
+.PHONY: links binlinks genlinks $(Model)links
 genlinks: $$(LibLinks)
-binlinks: $$(BinLibLinks)
+# <model>-worker.mk may define its own rules for more links
+$(Model)links:
+binlinks: $$(BinLibLinks) $(Model)links
 links: binlinks genlinks
 all: links
 $(LibDir) $(LibDirs):

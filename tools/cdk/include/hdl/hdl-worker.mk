@@ -273,26 +273,85 @@ $(LibDir)/$(notdir $(ImplXmlFile)): | $(LibDir)
 $(call OcpiDbgVar,DefsFile)
 # Macro to generate a links for a target $1 and a configuration $2
 HdlDefsDir=$(call WkrTargetDir,$1,$2)
-define DoDefsLinks
 
-$(LibDir)/$1/$(Worker)$3$(HdlSourceSuffix): \
-                 $(call HdlDefsDir,$1,$2,$(HdlLanguage))/$(notdir $(DefsFile)) | $(LibDir)/$1
-	$(AT)echo Creating link from $$@ -\> $$< to expose the definition of worker "$(Worker)$3".
+# Generate the hdllinks make-rule and all of the files it depends on. Basically
+# create all of the links that are HDL or wkr-config dependent.
+define DoHdlLinks
+  $(infox DoHdlLinks:$1:$2:$3:$4:$5:$6)
+  $$(infox DoHdlLinks2:$1:$2:$3:$4:$5:$6)
+
+  # Need to set the ParamConfig so that the make-rule for generics.vhd uses the correct ParamConfig
+  ParamConfig=$4
+
+  # Create link in LibDir to the generics.vhd file. Also create link to .cores file if it exists in
+  # the built configuration dir
+  $(LibDir)/$1/$(basename $3)-generics.vhd: $(call WkrTargetDir,$1,$4)/generics.vhd | $(LibDir)/$1
+	$(AT)echo Creating link from $$@ -\> $$< to expose generics for worker "$(Worker)$6".
+	$(AT)$$(call MakeSymLink2,$(call WkrTargetDir,$1,$4)/generics.vhd,$(LibDir)/$1,$(basename $3)-generics.vhd)
+	$(AT)if test -f $(call WkrTargetDir,$1,$4)/$(call RmRv,$(basename $2)).cores; then \
+	       echo Creating link from $(LibDir)/$1/$(call RmRv,$(basename $2)).cores -\> \
+	            $(call WkrTargetDir,$1,$4)/$(call RmRv,$(basename $2)).cores to expose list \
+	            of core dependencies for worker "$(Worker)$6".;\
+	       $$(call MakeSymLink,$(call WkrTargetDir,$1,$4)/$(call RmRv,$(basename $2)).cores,$(LibDir)/$1);\
+	     fi
+
+  # Create link in LibDir to the -defs.vhd file
+  $(LibDir)/$1/$(Worker)$6$(HdlSourceSuffix): \
+                   $(call HdlDefsDir,$1,$4,$(HdlLanguage))/$(notdir $(DefsFile)) | $(LibDir)/$1
+	$(AT)echo Creating link from $$@ -\> $$< to expose the definition of worker "$(Worker)$6".
 	$(AT)$$(call MakeSymLink2,$$<,$$(dir $$@),$$(notdir $$@))
 
-$(LibDir)/$1/$(Worker)$3$(HdlOtherSourceSuffix): \
-                 $(call HdlDefsDir,$1,$2,$(HdlOtherLanguage))/$(notdir $(WDefsFile)) | $(LibDir)
-	$(AT)echo Creating link from $$@ -\> $$< to expose the other-language stub for worker "$(Worker)$3".
+  # Create link in LibDir to the -defs.vh file
+  $(LibDir)/$1/$(Worker)$6$(HdlOtherSourceSuffix): \
+                   $(call HdlDefsDir,$1,$4,$(HdlOtherLanguage))/$(notdir $(WDefsFile)) | $(LibDir)/$1
+	$(AT)echo Creating link from $$@ -\> $$< to expose the other-language stub for worker "$(Worker)$6".
 	$(AT)$$(call MakeSymLink2,$$<,$$(dir $$@),$$(notdir $$@))
+
+  # Link needed for workers when tool requires a Black Box Library
+  $(infox DoHdlLinks3:$1:$(HdlToolSet_$1):$(HdlToolNeedBB_$(HdlToolSet_$1)))
+  $$(infox DoHdlLinks4:$1:$(HdlToolSet_$1):$(HdlToolNeedBB_$(HdlToolSet_$1)))
+  ifdef HdlToolNeedBB_$(HdlToolSet_$1)
+      $(infox DLHTNB1:$1:$2:$3:$4==$$(call MyBBLibFile,$1,$2,$4))
+      $$(infox DLHTNB2:$1:$2:$3:$4==$$(call MyBBLibFile,$1,$2,$4))
+    ifeq ($(and $(filter %_rv,$(basename $2)),$(filter 2,$(words $(HdlCores)))),)
+      $$(infox DLHTNB:$1:$2:$3:$4==$$(call MyBBLibFile,$1,$2,$4))
+      BinLibLinks+=$(LibDir)/$1/$5
+      # This will actually be included/evaluated twice
+      $(LibDir)/$1/$5: | $$$$(call MyBBLibFile,$1,$2,$4) $(LibDir)/$1
+	$(AT)echo Creating link from $$@ -\> $$(patsubst %/,%,$$(dir $$(call MyBBLibFile,$1,$2,$4))) to export the stub library.
+	$(AT)$$(call MakeSymLink2,$$(patsubst %/,%,$$(dir $$(call MyBBLibFile,$1,$2,$4))),$(strip\
+	       $(LibDir)/$1),$5)
+    endif
+  endif
 
 $(call OcpiDbg,Before all: "$(LibDir)/$(Worker)$(HdlSourceSuffix)")
-genlinks: $(LibDir)/$1/$(Worker)$3$(HdlSourceSuffix) $(LibDir)/$1/$(Worker)$3$(HdlOtherSourceSuffix)
+
+# hdllinks contains makerules for links to any HDL files needed for using HDL "binary" (netlist) files
+# This is listed alongside the binary itself in BinLibLinks in xxx-worker.mk
+hdllinks: $(LibDir)/$1/$(basename $3)-generics.vhd \
+          $(LibDir)/$1/$(Worker)$6$(HdlSourceSuffix) $(LibDir)/$1/$(Worker)$6$(HdlOtherSourceSuffix)
 
 endef
 
 $(foreach t,$(HdlTargets),\
   $(foreach c,$(ParamConfigurations),\
-    $(eval $(call DoDefsLinks,$t,$c,$(if $(filter $c,0),,_c$c)))))
+    $(foreach n,$(call WkrExportNames,$1),\
+     $(foreach b,$(basename $(notdir $n)),\
+       $(foreach r,$(call RmRv,$b)$(if $(filter 0,$c),,_c$c),\
+         $(foreach l,$b$(if $(filter 0,$c),,_c$c),\
+           $(infox LLL:$c:$n:$b:$r:$l:$t:$(HdlToolSet_$t))\
+           $(eval $(call DoHdlLinks,$t,$(strip\
+                              $(if $(HdlToolRealCore_$(HdlToolSet_$t)),\
+                                $(notdir $n),$r)),$(strip\
+                            $(if $(HdlToolRealCore_$(HdlToolSet_$t)),$l,$r)$(suffix $n)),$(strip\
+			    $c),$r,$(if $(filter $c,0),,_c$c)))))))))
+# Add the block below before the "eval..." line a few lines above to see the actual make rules
+# generated for the links to the generics and defs files
+           #$(info $(call DoHdlLinks,$t,$(strip\
+                              $(if $(HdlToolRealCore_$(HdlToolSet_$t)),\
+                                $(notdir $n),$r)),$(strip\
+                            $(if $(HdlToolRealCore_$(HdlToolSet_$t)),$l,$r)$(suffix $n)),$(strip\
+			    $c),$r,$(if $(filter $c,0),,_c$c)))\
 
 all: links
 

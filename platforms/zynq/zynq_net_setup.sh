@@ -68,7 +68,10 @@ else
     export OCPI_TOOL_PLATFORM
     export OCPI_TOOL_OS=linux
     export OCPI_TOOL_DIR=\$OCPI_TOOL_PLATFORM
-    export OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/../projects/core/exports/artifacts
+    # As a default, access all built artifacts in the core project as well as
+    # the bare-bones set of prebuilt runtime artifacts for this SW platform
+    export OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/../project-registry/ocpi.core/exports/artifacts
+    export OCPI_LIBRARY_PATH+=:$OCPI_CDK_DIR/\$OCPI_TOOL_PLATFORM/artifacts
     # Priorities for finding system.xml:
     # 1. If is it on the local system it is considered customized for this system - use it.
     if test -r /mnt/card/opencpi/system.xml; then

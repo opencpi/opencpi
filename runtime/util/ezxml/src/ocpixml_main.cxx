@@ -84,7 +84,7 @@ static int mymain(const char **argv) {
       buffer << src.rdbuf();
     }
     xml = buffer.str();
-    OX::artifact_addXML(argv[1],buffer.str()); // Throws if invalid XML
+    OX::artifact_addXML(argv[1],xml); // Throws if invalid XML
   }
 
   // get

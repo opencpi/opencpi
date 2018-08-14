@@ -351,6 +351,7 @@ class Test(RunnableAsset, HDLBuildableAsset, RCCBuildableAsset):
         self.mode_dict['prep_run']        = ["runonly"]
         self.mode_dict['verify']          = ["verify"]
         self.mode_dict['view']            = ["view"]
+        self.mode_dict['gen']             = ["generate"]
         self.mode_dict['clean_run']       = ["cleanrun"]
         self.mode_dict['clean_sim']       = ["cleansim"]
         self.mode_dict['all']             = ["all", "run"]
@@ -1121,11 +1122,6 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
                                          "'.  Tried to use relative path: " + rel_registry_path +
                                          " in project: " + self.directory + "'.\nPath does not " +
                                          "exist or is not a directory.")
-        if not os.path.isdir(registry_path + "/ocpi.cdk"):
-            logging.warning("There is no CDK registered in '" + registry_path + "'. Make sure to " +
-                            "register the CDK before moving on.\nNext time, consider using " +
-                            "'ocpidev create registry', which will automatically register your " +
-                            "CDK.")
 
     def unset_registry(self):
         """

@@ -1,0 +1,5 @@
+The new_project_source script takes two inputs: the first is the project that is being copied and the
+second is the location where it is to be copied.  The script will attempt to register the project if
+the user has permissions and if a version of this project isn't already registered.
+
+example usage: new_project_source core /home/user/myCore

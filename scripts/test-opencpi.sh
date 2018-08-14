@@ -56,7 +56,7 @@ if [ -n "$the_tests" ]; then
   tests="$the_tests"
 else
   if [ -d $OCPI_CDK_DIR/../project-registry/ocpi.assets/exports ]; then
-    echo ========= Running project-based tests since \"projects/core/exports\" is available
+    echo ========= Running project-based tests since the ocpi.assets project is available
     tests="$tests $network_tests"
   fi
   # Note "which -s" not available on busybox
@@ -111,7 +111,7 @@ for t in $TESTS; do
     # After this we are depending on the core project being built for the targeted platform
     swig)
       echo ======================= Running python swig test
-      OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/../projects/core/exports/artifacts \
+      OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/../project-registry/ocpi.core/exports/artifacts \
 		       PYTHONPATH=$OCPI_CDK_DIR/$OCPI_TARGET_DIR/lib \
 		       python <<-EOF
 	import opencpi.aci as OA
@@ -120,7 +120,7 @@ for t in $TESTS; do
       ;;
     core)
       echo ======================= Running unit tests in project/core
-      make -C $OCPI_CDK_DIR/../projects/core runtest;;
+      make -C $OCPI_CDK_DIR/../project-registry/ocpi.core runtest;;
     ##########################################################################################
     # After this we are depending on the other projects being built for the targeted platform
     assets)

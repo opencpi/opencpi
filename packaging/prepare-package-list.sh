@@ -108,7 +108,8 @@ for l in `find cdk -follow -type l`; do
   bad=1
   echo Dead exports link found: $l >&2
 done
-for l in `find -H . -name "-*"`; do
+# We must allow directories that start with '-' due to a Jenkins bug: JENKINS-38706
+for l in `find -H . -type f -name "-*"`; do
   bad=1
   echo Found files starting with hyphen >&2
 done

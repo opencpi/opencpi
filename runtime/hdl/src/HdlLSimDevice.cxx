@@ -1120,6 +1120,7 @@ getSims(std::vector<std::string> &sims) {
     std::string sim;
     OU::format(sim, "%s/runSimExec.%s", pdirs[n].c_str(), name.c_str());
     bool isDir;
+    ocpiDebug("Looking for %s for simulator %s", name.c_str(), sim.c_str());
     if (OS::FileSystem::exists(sim.c_str(), &isDir))
       sims.push_back(pdirs[n]);
   }

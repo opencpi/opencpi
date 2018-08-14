@@ -540,11 +540,9 @@ OcpiGetRccPlatformPaths=$(strip \
                           $(foreach p,$(OcpiGetExtendedProjectPath),\
                           $(if $(filter-out $(realpath $(OCPI_PROJECT_DIR)),\
                                             $(realpath $(call OcpiAbsPathToContainingProject,$p))),\
-                            $(or $(if $(call OcpiIsPathCdk,$p),\
-                              $(call OcpiExists,$p/platforms),\
-                              $(if $(filter $(notdir $p),exports),\
+                            $(or $(if $(filter $(notdir $p),exports),\
                                 $(call OcpiExists,$p/lib/rcc/platforms),\
-                                $(call OcpiExists,$p/rcc/platforms))),\
+                                $(call OcpiExists,$p/rcc/platforms)),\
                                   $(info Warning: The path $p/rcc/platforms does not exist.)))))
 
 # Search for a given platform ($1) in the list of 'rcc/platform' directories found
@@ -559,7 +557,7 @@ OcpiGetRccPlatformDir=$(strip $(firstword \
 ##################################################################################
 # Project Dependencies are defined by those explicitly listed in a Project.mk as well as the 'required'
 # projects such as core/cdk
-OcpiProjectDependenciesInternal=$(strip $(call Unique,$(ProjectDependencies) ocpi.core ocpi.cdk))
+OcpiProjectDependenciesInternal=$(strip $(call Unique,$(ProjectDependencies) ocpi.core))
 # If a project dependency is a path, use it as is. Otherwise, check for it in imports.
 OcpiGetProjectDependencies=$(strip \
   $(foreach d,$(OcpiProjectDependenciesInternal),\
@@ -615,12 +613,6 @@ OcpiGetProjectImports=$(strip \
       ,\
       $p )))
 
-# Determine if a path is in fact the CDK. If so, return the CDK's
-# import alias 'ocpi.cdk'
-# $(call OcpiIsPathCdk,<path>)
-OcpiIsPathCdk=$(strip \
-  $(if $(filter $(realpath $1),$(realpath $(OCPI_CDK_DIR))),ocpi.cdk))
-
 # Given an 'origin' path ($1) and a path to a 'destination' project $2,
 # if the 'destination' project is imported in 'origin's project,
 # return the path to that import.
@@ -643,7 +635,6 @@ OcpiGetProjectInImports=$(strip \
         $(call OcpiExists,$i/$2)),\
       $(foreach a,$(call OcpiExists,$i/$(notdir $2)),\
         $(if $(filter $(realpath $a),$(realpath $2)),$a)),\
-      $(call OcpiExists,$(foreach c,$(call OcpiIsPathCdk,$2),$i/$c)),\
       $(foreach a,$(wildcard $i/*),\
         $(if $(filter $(realpath $a),$(realpath $2)),$a)))))
 

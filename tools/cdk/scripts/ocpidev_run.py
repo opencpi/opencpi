@@ -146,7 +146,7 @@ def get_directory(args, name, lib):
             ret_val = ret_val + ".test"
     elif args['noun'] in ["test", "library"]:
         ret_val = os.path.realpath('.')
-    elif args['noun'] == "application":
+    elif args['noun'] == "application" and dir_type != "application":
         ret_val = os.path.realpath('.') + "/applications/" + name
     return ret_val
 

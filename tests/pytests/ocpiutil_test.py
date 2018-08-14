@@ -223,7 +223,7 @@ class TestPathFunctions(unittest.TestCase):
         all_pjs = [pj for pj in ocpiutil.get_all_projects() if not re.search(r".*/ocpi\.core$", pj)]
         pj_paths = [os.path.realpath('.') + '/project-registry/'
                     + pj for pj in list(PROJECT_PACKAGES.values())]
-        golden_all_pjs = pj_paths# + [os.path.realpath('.') + '/project-registry/ocpi.cdk']
+        golden_all_pjs = pj_paths
         project_path = os.environ.get('OCPI_PROJECT_PATH')
         if project_path:
            golden_all_pjs += project_path.split(':')

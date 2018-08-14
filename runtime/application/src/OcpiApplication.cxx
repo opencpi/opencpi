@@ -262,15 +262,21 @@ namespace OCPI {
     }
 
     static unsigned
-    findSlave(OU::Worker &sImpl, OU::Worker &mImpl, std::string &slaveWkrName) {
+    findSlave(OU::Worker &sImpl, OU::Worker &mImpl, std::string &slaveWkrName,
+              unsigned int index = UINT_MAX) {
       OU::format(slaveWkrName, "%s.%s", sImpl.cname(), sImpl.model().c_str());
       size_t dashIdx =  slaveWkrName.rfind('-');
       if (dashIdx != std::string::npos) // if worker has configuration suffix, remove it
-	slaveWkrName.erase(dashIdx, slaveWkrName.rfind('.') - dashIdx);
+        slaveWkrName.erase(dashIdx, slaveWkrName.rfind('.') - dashIdx);
       // Is this a valid slave for this master
+      if (index != UINT_MAX){
+        assert(index < mImpl.slaves().size());
+        if (!strcasecmp(mImpl.slaves()[index], slaveWkrName.c_str()))
+          return index;
+      }
       for (unsigned n = 0; n < mImpl.slaves().size(); ++n)
-	if (!strcasecmp(mImpl.slaves()[n], slaveWkrName.c_str()))
-	  return n;
+        if (!strcasecmp(mImpl.slaves()[n], slaveWkrName.c_str()))
+          return n;
       return UINT_MAX;
     }
 
@@ -1258,7 +1264,7 @@ namespace OCPI {
 	      std::string slaveWkrName;
 	      OU::Worker &sImpl =
 		m_instances[ui.m_slaves[s]].m_bestDeployment.m_impls[0]->m_metadataImpl;
-	      unsigned x = findSlave(sImpl, mImpl, slaveWkrName);
+	      unsigned x = findSlave(sImpl, mImpl, slaveWkrName, s);
 	      assert(x != UINT_MAX); // error checks are already done
 	      assert(!li->m_slaves[x]);
 	      li->m_slaves[x] = &m_launchMembers[m_instances[ui.m_slaves[s]].m_firstMember];

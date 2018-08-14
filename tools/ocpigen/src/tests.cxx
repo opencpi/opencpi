@@ -1025,7 +1025,7 @@ namespace {
 	else if (nOutputs == 1)
 	  OU::formatAdd(app, " done='file_write'");
 	else if (nOutputs > 1) {
-	  OU::formatAdd(app, " done='file_write_from_%s'", first->pname());
+	  OU::formatAdd(app, " done='file_write_from_%s'", (firstEm ? firstEm : first)->pname());
 	}
 	app += ">\n";
 	if (nInputs)
