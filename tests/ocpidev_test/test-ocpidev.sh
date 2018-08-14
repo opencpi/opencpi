@@ -1,4 +1,22 @@
 #!/bin/bash
+# This file is protected by Copyright. Please refer to the COPYRIGHT file
+# distributed with this source distribution.
+#
+# This file is part of OpenCPI <http://www.opencpi.org>
+#
+# OpenCPI is free software: you can redistribute it and/or modify it under the
+# terms of the GNU Lesser General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your option) any
+# later version.
+#
+# OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+# A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Lesser General Public License along
+# with this program. If not, see <http://www.gnu.org/licenses/>.
+
 
 if [[ "$1" == "-h" || "$1" == "-help" || "$1" == "--help" ]] ; then
 echo "This script creates a project and every type of asset,
@@ -224,6 +242,62 @@ for p in ${platnames[@]}; do
   echo "Confirming that \"$p\" is in the list [$shownplats]"
   [ -n "`echo $shownplats | grep \"$p\"`" ] || bad \"ocpidev show hdl platforms\" does not include platform \"$p\"
 done
+
+echo "============OCPIDEVTEST:'show' tests"
+echo "ocpidev show rcc platforms"
+do_ocpidev show rcc platforms
+echo "ocpidev show rcc platforms --json"
+do_ocpidev show rcc platforms --json
+echo "ocpidev show hdl platforms --json"
+do_ocpidev show hdl platforms --json
+echo "ocpidev show workers"
+do_ocpidev show workers
+echo "ocpidev show workers --json"
+do_ocpidev show workers --json
+echo "ocpidev show components"
+do_ocpidev show components
+echo "ocpidev show components --json"
+do_ocpidev show components --json
+echo "ocpidev show platforms"
+do_ocpidev show platforms
+echo "ocpidev show platforms --json"
+do_ocpidev show platforms --json
+echo "ocpidev show rcc targets"
+do_ocpidev show rcc targets
+echo "ocpidev show rcc targets --json"
+do_ocpidev show rcc targets --json
+echo "ocpidev show hdl targets"
+do_ocpidev show hdl targets
+echo "ocpidev show hdl targets --json"
+do_ocpidev show hdl targets --json
+echo "ocpidev show projects"
+do_ocpidev show projects
+echo "ocpidev show projects --table"
+do_ocpidev show projects --table
+echo "ocpidev show projects --json"
+do_ocpidev show projects --json
+echo "ocpidev show registry"
+do_ocpidev show registry
+echo "ocpidev show registry --table"
+do_ocpidev show registry --table
+echo "ocpidev show registry --json"
+do_ocpidev show registry --json
+echo "ocpidev show tests --json"
+do_ocpidev show tests --json
+echo "ocpidev show tests"
+do_ocpidev show tests 
+echo "ocpidev show project"
+do_ocpidev show project 
+echo "ocpidev show -v project"
+do_ocpidev show -v project 
+echo "ocpidev show project --json"
+do_ocpidev show project --json
+echo "ocpidev show -v project --json"
+do_ocpidev show -v project --json
+echo "ocpidev show libraries --json"
+do_ocpidev show libraries --json
+echo "ocpidev show libraries"
+do_ocpidev show libraries
 
 if [ "$ONLY_CREATE" == "1" ] ; then
   echo "Keeping the project and exiting before build or deletion"

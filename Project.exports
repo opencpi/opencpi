@@ -55,7 +55,7 @@
 # This is what is run from /etc/profile.d/opencpi.sh from RPMs.
 # We need to rationalize this with opencpi-setup.sh
 =env/rpm_cdk.sh env/
-=releng/env.d/* env.d/
+=packaging/dist/env.d/* env.d/
 # generic make scripts
 +tools/cdk/include/show.mk include/
 +tools/cdk/include/lib.mk include/
@@ -103,7 +103,7 @@
 =tools/cdk/scripts/ocpisudo scripts/
 +tools/cdk/scripts/ocpitarget.sh scripts/
 +tools/cdk/scripts/ocpidev scripts/
-+tools/cdk/scripts/ocpishow scripts/
++tools/cdk/scripts/ocpishow.py scripts/
 +tools/cdk/scripts/ocpidev_run.py scripts/
 +tools/cdk/scripts/ocpiassets.py scripts/
 +tools/cdk/scripts/ocpiutil.py scripts/

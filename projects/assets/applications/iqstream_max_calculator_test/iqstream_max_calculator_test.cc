@@ -80,23 +80,23 @@ void test_max_Q(OA::Short expected_val) {
 }
 
 bool test_range_of_I_Q(const std::string& file_str) {
-  if(file_str.compare("max_I_0_Q_0") == 0) {
+  if(file_str.compare("max_I_0_Q_0.bin") == 0) {
     test_max_I(0);
     test_max_Q(0);
   }
-  else if(file_str.compare("max_I_0_Q_1024") == 0) {
+  else if(file_str.compare("max_I_0_Q_1024.bin") == 0) {
     test_max_I(0);
     test_max_Q(1024);
   }
-  else if(file_str.compare("max_I_1024_Q_0") == 0) {
+  else if(file_str.compare("max_I_1024_Q_0.bin") == 0) {
     test_max_I(1024);
     test_max_Q(0);
   }
-  else if(file_str.compare("max_I_1024_Q_1024") == 0) {
+  else if(file_str.compare("max_I_1024_Q_1024.bin") == 0) {
     test_max_I(1024);
     test_max_Q(1024);
   }
-  else if(file_str.compare("max_I_is_valid_false_max_Q_is_valid_false") == 0) {
+  else if(file_str.compare("max_I_is_valid_false_max_Q_is_valid_false.bin") == 0) {
     if(max_I_is_valid) {
       throw_max_I_is_valid_unexpected();
     }
@@ -129,7 +129,7 @@ void run_app(std::string app_xml_str, std::string file_str,
 
   app.start();
 
-  if(no_file_write or (file_str.compare("10_ZLM_passthrough") == 0)) {
+  if(no_file_write or (file_str.compare("10_ZLM_passthrough.bin") == 0)) {
     sleep(1);
     app.stop();
   }
@@ -225,7 +225,7 @@ void run_app(std::string app_xml_str, std::string file_str,
       test_range_of_I_Q(file_str);
     }
   }
-  else if(file_str.compare("10_ZLM_passthrough") == 0) {
+  else if(file_str.compare("10_ZLM_passthrough.bin") == 0) {
     // test diff read/write files
 
     std::ostringstream oss;
