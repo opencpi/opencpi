@@ -63,17 +63,19 @@ if [ -n "$OCPI_TARGET_PREREQUISITES" ]; then
 
   for p in $OCPI_TARGET_PREREQUISITES; do
     read preq tool <<<$(echo $p | tr : ' ')
+    script=$OCPI_TARGET_PLATFORM_DIR/install-$preq.sh
+    [ -x $script ] || (echo No executable installation script found in $script. && exit 1)
     if [ -z "$tool" -o "$tool" = $OCPI_TOOL_PLATFORM ]; then
       echo --- Building/installing the $OCPI_TARGET_PLATFORM-specific prerequisite $preq for executing on $OCPI_TOOL_PLATFORM.
-      script=$OCPI_TARGET_PLATFORM_DIR/install-$preq.sh
-      [ -x $script ] || (echo No executable installation script found in $script. && exit 1)
       (for e in $(env | grep OCPI_TARGET_|sed 's/=.*//'); do unset $e; done &&
         $script $OCPI_TOOL_PLATFORM)
-    else
-      echo --- The prerequisite $preq is only built for executing on $tool.
-      echo --- Building prequisites for $OCPI_TARGET_PLATFORM can only be done on $tool.
-      echo --- Building prerequisites for $OCPI_TARGET_PLATFORM has failed.
-      exit 1
+    fi
+    if [ -z "$tool" -o "$tool" = $OCPI_TARGET_PLATFORM ]; then
+      echo --- Building/installing the $OCPI_TARGET_PLATFORM-specific prerequisite $preq for executing on $OCPI_TARGET_PLATFORM.
+      $script $OCPI_TARGET_PLATFORM
+    fi
+    if [ -n "$tool" -a "$tool" != $OCPI_TOOL_PLATFORM -a "$tool" != $OCPI_TARGET_PLATFORM ] ; then
+      echo --- Skipping the prequisite \"$p\" for $OCPI_TARGET_PLATFORM since we are running on $tool.
     fi
   done
 fi
