@@ -202,12 +202,12 @@ def set_vars_from_make(mk_file, mk_arg="", verbose=None):
 
 def get_make_vars_rcc_targets():
     """
-    Get make variables from rcc-target.mk
+    Get make variables from rcc-targets.mk
     Dictionary key examples are:
         RccAllPlatforms, RccPlatforms, RccAllTargets, RccTargets
     """
     return set_vars_from_make(os.environ["OCPI_CDK_DIR"] +
-                              "/include/rcc/rcc-target.mk",
+                              "/include/rcc/rcc-targets.mk",
                               "ShellRccTargetsVars=1", "verbose")
 
 ###############################################################################
