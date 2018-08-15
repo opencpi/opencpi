@@ -1308,9 +1308,11 @@ const char* Worker::parseSlaves(){
     // If we need to auto generate the name
     if (name.empty()){
 	  unsigned int idx = wkr_idx_map[wkr]++;
-	  if (name.empty())
-	    name = wkr_sub + (wkr_num_map[wkr] == 1 ? "" : "_" +
-	    	   std::to_string(static_cast<unsigned long long>(idx-1)));
+	  if (name.empty()) {
+	    name = wkr_sub;
+	    if (wkr_num_map[wkr] > 1)
+	      OU::formatAdd(name, "_%u", idx - 1);
+	  }
 	  if (m_slaves.find(name) != m_slaves.end()){
 		std::string printMap = print_map();
 		return OU::esprintf("Invalid slave name specified: %s", name.c_str());

@@ -80,7 +80,10 @@ ifeq ($V,1)
   Verbose=-v
   $(info VERBOSE:$(Verbose))
 endif
-export OCPI_CDK_DIR=$(CURDIR)/../../bootstrap
+# We previously and cleanly just used the bootstrap CDK, but in fact building
+# the framework requires prerequisites being built..
+# export OCPI_CDK_DIR=$(CURDIR)/../../bootstrap
+export OCPI_CDK_DIR=$(CURDIR)/../../cdk
 #####################################################################################
 # Determine our platform (once) if we're not cleaning, so each sub-make can assume it
 #####################################################################################
