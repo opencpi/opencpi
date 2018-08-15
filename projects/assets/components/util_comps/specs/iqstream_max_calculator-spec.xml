@@ -1,0 +1,47 @@
+<!-- This is the spec file (OCS) for: iqstream_max_calculator
+     Add component spec attributes, like "protocol".
+     Add property elements for spec properties.
+     Add port elements for i/o ports -->
+<!-- max_I_is_valid    Indicates max_I is valid. Will be false if no data has
+                       been received on in port since either a) the last read of
+                       max_I or b) the worker first went into the operating
+                       state.
+     max_Q_is_valid    Indicates max_Q is valid. Will be false if no data has
+                       been received on in port since either a) the last read of
+                       max_I or b) the worker first went into the operating
+                       state.
+     max_I             Max I value observed on in port. Value will be -32768 
+                       when worker first enters the operating state and will be
+                       reset to -32768 after each read. max_I_is_valid should
+                       always be read prior to reading this property because
+                       max_I_is_valid will immediately be set to false once
+                       max_I is read.
+     max_Q             Max Q value observed on in port. Value will be -32768 
+                       when worker first enters the operating state and will be
+                       reset to -32768 after each read. max_Q_is_valid should
+                       always be read prior to reading this property because
+                       max_I_is_valid will immediately be set to false once
+                       max_Q is read.
+-->
+<ComponentSpec>
+  <!-- The max_I_is_valid/max_Q_is_valid properties are *intentially* placed
+       above max_I/max_Q in this XML file to ensure that they are read before
+       the reset behavior caused by max_I/max_Q property reads. -->
+  <Property Name="max_I_is_valid" Type="bool"
+                                  Volatile="true"
+                                  Description="Indicates max_I is valid."/>
+  <Property Name="max_Q_is_valid" Type="bool"
+                                  Volatile="true"
+                                  Description="Indicates max_Q is valid."/>
+  <Property Name="max_I" Type="short"
+                         Volatile="true"
+                         Description="Max I value observed on in port."/>
+  <Property Name="max_Q" Type="short"
+                         Volatile="true"
+                         Description="Max Q value observed on in port."/>
+  <DataInterfaceSpec Name="in" Producer="false"
+                               Protocol="iqstream_protocol.xml"/>
+  <DataInterfaceSpec Name="out" Producer="true"
+                                Protocol="iqstream_protocol.xml"
+                                Optional="true"/>
+</ComponentSpec>

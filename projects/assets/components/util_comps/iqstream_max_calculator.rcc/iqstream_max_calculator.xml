@@ -1,0 +1,13 @@
+<RccWorker language='c++' spec='iqstream_max_calculator-spec'>
+
+  <!-- we add read sync to these property so we can perform the max_I/max_I_is
+       valid resetting just after the read of the max_I property.
+       (which is intended behavior according to comments in OCS) -->
+  <SpecProperty Name="max_I" ReadSync="true"/>
+
+  <!-- we add read sync to this property so we can perform the max_Q/max_Q_is
+       valid resetting just after the read of the max_Q property.
+       (which is intended behavior according to comments in OCS) -->
+  <SpecProperty Name="max_Q" ReadSync="true"/>
+
+</RccWorker>
