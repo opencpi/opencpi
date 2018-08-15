@@ -1,0 +1,6 @@
+<!-- test worker that tests functionality of the slave interface -->
+<RccWorker language='c++' spec='proxy1-spec'>
+ <slave worker="wkr1.rcc" name='first_wkr1'/>
+ <slave worker="wkr1.rcc" name='second_wkr1'/>
+ <slave worker="wkr2.rcc"/>
+</RccWorker>
