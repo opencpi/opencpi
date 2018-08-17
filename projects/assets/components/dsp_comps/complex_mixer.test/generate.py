@@ -59,7 +59,7 @@ real = np.cos(2*np.pi*Ft*t)
 imag = np.sin(2*np.pi*Ft*t)
 # Initialize empty array, sized to store 16b I/Q samples
 z = np.array(np.zeros(NUM_SAMPLES), 
-             dtype=np.dtype((np.uint32, {'real_idx':(np.int16,2), 'imag_idx':(np.int16,0)})))
+             dtype=np.dtype((np.uint32, {'real_idx':(np.int16,0), 'imag_idx':(np.int16,2)})))
 # Set the gain
 gain_i = AMPLITUDE / max(abs(real))
 gain_q = AMPLITUDE / max(abs(imag))

@@ -25,12 +25,12 @@
 #include <sys/stat.h>
 #include <climits>
 #include <set>
+#include "ocpi-config.h"
 #include "OcpiUtilException.h"
 #include "OcpiLibraryManager.h"
 #include "LibrarySimple.h"
 #include "OcpiComponentLibrary.h"
 #include "OcpiOsAssert.h"
-#include "av_team.h"
 
 // This file contains code common to all library drivers
 
@@ -42,9 +42,9 @@ namespace OE = OCPI::Util::EzXml;
 namespace OCPI {
   namespace Library {
     const char *library = "library";
-    static OCPI::Driver::Registration<Manager> lm;
-    // This forces the compiler to link in the component library handler:
+    // This is intended to force this "driver" to be statically linked into this library
     const char **complib OCPI_USED = &CompLib::component;
+    static OCPI::Driver::Registration<Manager> lm;
     // The Library Driver Manager class
     Manager::Manager() {
     }

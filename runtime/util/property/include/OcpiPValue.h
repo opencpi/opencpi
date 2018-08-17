@@ -55,6 +55,7 @@ namespace OCPI {
       findAssign(const PValue *p, const char *name, const char *var, std::string &value),
       findAssignNext(const PValue *p, const char *name, const char *var, const char *&val,
 		     unsigned &next);
+      const PValue *find(const PValue *p, const char *name);
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store) \
     typedef OCPI::API::PV##pretty PV##pretty;
   OCPI_PROPERTY_DATA_TYPES
@@ -79,7 +80,13 @@ namespace OCPI {
 	*parse(ezxml_t x, ...),
 	*parse(const PValue *p, ezxml_t x, ...),
 	*add(const char *name, const char *value);
-      void add(const PValue *params, const PValue *override = NULL);
+      void
+	add(const PValue *params, const PValue *override = NULL),
+	add(const PValue &param);
+#define OCPI_DATA_TYPE(sca, corba, letter, bits, run, pretty, store) \
+      void add##pretty(const char *name, run value);
+      OCPI_PROPERTY_DATA_TYPES
+#undef OCPI_DATA_TYPE
     };
   }
 } // OCPI

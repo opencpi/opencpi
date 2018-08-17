@@ -1,0 +1,1 @@
+../build/install-prerequisites.sh

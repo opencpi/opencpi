@@ -30,7 +30,6 @@ Applications=bias.xml \
              copy.xml \
              file-bias-capture.xml \
              hello.xml \
-             iqstream_max_calculator_test \
              nothing.xml \
              pattern-bias-file.xml \
              pattern.xml \
@@ -49,6 +48,7 @@ Applications=bias.xml \
               dc_offset_iq_imbalance_cic_dec \
               dc_offset_iq_imbalance_mixer_cic_dec \
               empty_rxtx_zed_zipper_card \
+              iqstream_max_calculator_test \
               rx_app \
 
 # Otherwise all applications will be built and run

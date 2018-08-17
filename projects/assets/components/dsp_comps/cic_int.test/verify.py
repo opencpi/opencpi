@@ -66,7 +66,7 @@ Ft = int(os.environ.get("OCPI_TEST_TARGET_FREQ"))      # target frequency
 print '    UUT:(N=%d, M=%d, R=%d) Test Data:(%d)' % (N,M,R,Ft)
 
 # Declare complex data type
-dt_iq_pair = np.dtype((np.uint32, {'real_idx':(np.int16,2), 'imag_idx':(np.int16,0)}))
+dt_iq_pair = np.dtype((np.uint32, {'real_idx':(np.int16,0), 'imag_idx':(np.int16,2)}))
 
 # Read output and input data as complex int16 samples
 ofilename = open(sys.argv[2], 'rb')

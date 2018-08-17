@@ -66,12 +66,16 @@ begin
   ready_for_in_port_data <= out_in.ready or out_port_connected_n;
   out_port_connected_n <= out_in.reset;
 
-  -- iqstream w/ DataWidth=32 formats Q in most significant bits, I in least
-  -- significant (see OpenCPI_HDL_Development section on Message Payloads vs.
-  -- Physical Data Width on Data Interfaces)
-  in_Q <= signed(in_in.data(in_in.data'length-1 downto
-                            in_in.data'length - in_Q'length));
-  in_I <= signed(in_in.data(in_I'length-1 downto 0));
+  idata_width_32 : if IDATA_WIDTH_p = 32 generate
+
+    -- iqstream w/ DataWidth=32 formats Q in most significant bits, I in least
+    -- significant (see OpenCPI_HDL_Development section on Message Payloads vs.
+    -- Physical Data Width on Data Interfaces)
+    in_Q <= signed(in_in.data(in_in.data'length-1 downto
+                              in_in.data'length - in_Q'length));
+    in_I <= signed(in_in.data(in_I'length-1 downto 0));
+
+  end generate idata_width_32;
 
   ------------------------------------------------------------------------------
   -- out port
@@ -89,10 +93,15 @@ begin
 
   data_ready_for_out_port <= in_in.ready;
 
-  -- iqstream w/ DataWidth=32 formats Q in most significant bits, I in least
-  -- significant (see OpenCPI_HDL_Development section on Message Payloads vs.
-  -- Physical Data Width on Data Interfaces)
-  out_out.data        <= std_logic_vector(in_Q) & std_logic_vector(in_I);
+  odata_width_32 : if ODATA_WIDTH_p = 32 generate
+
+    -- iqstream w/ DataWidth=32 formats Q in most significant bits, I in least
+    -- significant (see OpenCPI_HDL_Development section on Message Payloads vs.
+    -- Physical Data Width on Data Interfaces)
+    out_out.data <= std_logic_vector(in_Q) & std_logic_vector(in_I);
+
+  end generate odata_width_32;
+
   out_som             <= in_in.som;
   out_eom             <= in_in.eom;
   out_valid           <= in_in.valid;

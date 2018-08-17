@@ -1,0 +1,107 @@
+# This file is protected by Copyright. Please refer to the COPYRIGHT file
+# distributed with this source distribution.
+#
+# This file is part of OpenCPI <http://www.opencpi.org>
+#
+# OpenCPI is free software: you can redistribute it and/or modify it under the
+# terms of the GNU Lesser General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your option) any
+# later version.
+#
+# OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+# A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Lesser General Public License along
+# with this program. If not, see <http://www.gnu.org/licenses/>.
+
+##########################################################################################
+# This file specifies what gets built and how, in a way independent of the particular
+# "build system" being used.
+
+# The source tree follows these rules
+# - all source files are expected to be built as part of the library where they live
+# - all source files depend on headers of the place they are in, and places occuring earlier
+# - all programs have a main/top file with the suffix _main
+# - all programs depend on the library of the place they are in, statically, and earlier libs
+# - all programs and libraries can use all runtime prereq libraries
+
+# The syntax of describing places is one line per place, with blank lines and # comments ok
+
+# Specifying places: (source subtrees)
+# Places are specified one per line, with directory pathname followed by options
+# Default behavior for a place is:
+# - library name is basename of pathname (with ocpi_ prefix)
+# - resulting library is an exported runtime library, installed in "<platform>/lib"
+# - resulting library is OpenCPI code subject to strict warnings etc.
+# - resulting library should be available to later libraries and programs (lines after it)
+# - any programs found are exported to "<platform>/bin"
+
+# Options (after source tree pathname) are to change the default behavior:
+# -l <name>: the library name is not the basename of the directory, but this name
+# -n: library is not installed, and is only static, used for programs in the same place
+# -f: library is "foreign", built with less strict options since its not OpenCPI code
+# -d <dir>: installation subdirectory for programs (under <platform>/bin), default is none
+# -D <XX=YY>: value is cpp definition for use when building the library
+# -v: library is a driver/plugin
+# -I <dir>: value is other dir to look for headers, relative to top of source tree
+# -t: library and programs are "tools" not "runtime" and thus depend on subset of runtime libs,
+#     will not be built for cross-compiled targets, and not used by runtime programs
+# -x <pattern>: source files to ignore in the place
+# -s: library members have static constructors and are not necessarily referenced
+#     This causes programs to be build with the place's object files, not its library
+# -T <program>: a top-level program, overriding the -d <dir> default for programs in the place
+# -L <library>: access a library that would not normally be accessible from tools
+# -r force programs into the runtime package that are normally considered tools
+
+# There are several "special" lines:
+# 1. "prerequisites" which is a list of the *runtime* prerequisite libraries
+# 2. "end-of-runtime-for-tools", which marks the end of the runtime libraries usable by tools
+
+# We know, when building:
+# 1. The platform we are building (default is the current build machine)
+# 2. Whether it is a development platform or a runtime-only platform (default is development)
+# 3. Whether it is cross compiled or not (default is not cross compiled)
+prerequisites gmp lzma gtest
+# There is lots of leftover/unbuilt stuff in the foreign directories
+runtime/foreign -f -x .*/pwq/kern/.* -x .*/pwq/src/.*/.* -x .*/uuid/src/.*/.*
+# From old Makefiles:c and c++: for linux: -D_XOPEN_SOURCE=600 -D_FILE_OFFSET_BITS=64
+os -x .*/driver/.* -x .*/winnt/.*
+runtime/util -d internal -T ocpixml
+end-of-runtime-for-tools
+
+runtime/dataplane/xfer/base -l xfer
+runtime/dataplane/xfer/tests -n -d internal -l xfer_tests
+runtime/dataplane/xfer/drivers/datagram -v
+runtime/dataplane/xfer/drivers/dma -v
+runtime/dataplane/xfer/drivers/ofed -v
+runtime/dataplane/xfer/drivers/pio -v
+runtime/dataplane/xfer/drivers/socket -v
+runtime/dataplane/transport
+runtime/dataplane/msg_driver_interface -d internal
+runtime/dataplane/msg_drivers
+runtime/library
+runtime/container
+runtime/remote -v
+# remote-support is not -n since ocpirun/ACI needs it
+runtime/remote-support -I runtime/remote/include
+runtime/rcc -v
+runtime/ocl -v -I runtime/ocl/include/CL 
+runtime/ocl-support -n -I runtime/ocl/include -I runtime/ocl/include/CL
+runtime/hdl -v
+runtime/application
+runtime/hdl-support -n -I runtime/hdl/include
+runtime/ctests -n -d ctests -I runtime/rcc/include
+tests/c++tests -d cxxtests -n -s
+tools/cdkutils -t
+# ocpigen use some runtime libraries that are higher up the stack
+tools/ocpigen -n -t -I tools/cdkutils/include -I runtime/hdl/include -I runtime/library/include -I runtime/ocl/include -L cdkutils -L library
+# ocpisca uses runtime so is not really a "tool" as far as builds go
+# but it is actually a tool so it won't be part of the runtime package
+# we stash it in "internal" and let the exports file put it into the devel
+# test: -n to see if this works
+tools/ocpisca -n -d internal
+tools/ocpirh
+tools/ocpigr -t  -I tools/cdkutils/include -I runtime/library/include -L cdkutils -L library
+tools/ocpidds -d cxxtests -n -r -t -I tools/cdkutils/include -L cdkutils

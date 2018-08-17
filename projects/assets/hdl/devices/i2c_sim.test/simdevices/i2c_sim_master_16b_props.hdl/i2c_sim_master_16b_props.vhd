@@ -20,8 +20,10 @@
 -- delegates the control interface to an I2C subdevice.
 architecture rtl of i2c_sim_master_16b_props_worker is
   signal wdata : std_logic_vector(31 downto 0);
+  signal byte_enable : std_logic_vector(props_in.raw.byte_enable'range);  -- for modelsim
 begin
-  -- Control plane outputs.  Raw props routed to underlying I2C
+  byte_enable <= props_in.raw.byte_enable;
+ -- Control plane outputs.  Raw props routed to underlying I2C
   rawprops_out.present         <= '1';
   rawprops_out.reset           <= ctl_in.reset;
   rawprops_out.raw.address     <= props_in.raw.address srl 1;  --Need to shift to 16bit addressing
@@ -33,7 +35,7 @@ begin
   --Input byte enable decode (LSB then MSB then 0)
   be_input : process (props_in.raw.byte_enable, props_in.raw.data)
   begin
-    case props_in.raw.byte_enable is
+    case byte_enable is
       when "0011" => wdata <= x"0000"&props_in.raw.data(7 downto 0)&props_in.raw.data(15 downto 8);
       when "0110" => wdata <= x"00"&props_in.raw.data(15 downto 8)&props_in.raw.data(23 downto 16)&x"00";
       when "1100" => wdata <= props_in.raw.data(23 downto 16)&props_in.raw.data(31 downto 24)&x"0000";

@@ -25,6 +25,8 @@
 #include <cstdlib>
 #include <cerrno>
 #include <cctype>
+#include <list>
+#include <glob.h>
 #include "OcpiOsEther.h"
 #include "OcpiOsFileSystem.h"
 #include "OcpiUtilValue.h"
@@ -51,7 +53,8 @@ std::string
 integerToString (int value)
 {
   bool positive = (value >= 0);
-  int count=1, tmp;
+  unsigned count=1;
+  int tmp;
 
   if (!positive) {
     value = -value;
@@ -230,7 +233,7 @@ stringToUnsigned (const std::string & str,
   char * endPtr;
 
   errno = 0;
-  value = std::strtoul (txtPtr, &endPtr, base);
+  value = std::strtoul (txtPtr, &endPtr, (int)base);
 
   if ((value == 0 && endPtr == txtPtr) || errno == ERANGE || *endPtr) {
     throw std::string ("not an unsigned integer");
@@ -256,10 +259,10 @@ stringToULongLong (const std::string & str,
 
 #if defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
   unsigned long long int value;
-  value = std::strtoull (txtPtr, &endPtr, base);
+  value = std::strtoull (txtPtr, &endPtr, (int)base);
 #else
-  long int value;
-  value = std::strtoul (txtPtr, &endPtr, base);
+  unsigned long int value;
+  value = std::strtoul (txtPtr, &endPtr, (int)base);
 #endif
 
   if ((value == 0 && endPtr == txtPtr) || errno == ERANGE || *endPtr) {
@@ -551,7 +554,7 @@ file2String(std::string &out, const char *file, const char *start, const char *m
       fseek(f, 0, SEEK_END) == 0 &&
       (size = ftell(f)) > 0 &&
       fseek(f, 0, SEEK_SET) == 0) {
-    out.reserve(size);
+    out.reserve((size_t)size);
     // To avoid requiring double storage, we chunk the input.
     char buf[4*1024+1];
     bool initial = true;  // for trimming initial which space
@@ -580,7 +583,7 @@ file2String(std::string &out, const char *file, const char *start, const char *m
 	char *np = cp;
 	for (size_t nn = n; nn; nn--, np++)
 	  if (*np == '\n') {
-	    out.append(cp, np - cp);
+	    out.append(cp, (size_t)(np - cp));
 	    if (nn == 1)
 	      newLine = true, n--;
 	    else {
@@ -589,7 +592,7 @@ file2String(std::string &out, const char *file, const char *start, const char *m
 	    }
 	  }
 	if (!newLine) {
-	  out.append(cp, np - cp);
+	  out.append(cp, (size_t)(np - cp));
 	  cp = np + 1;
 	}
       } else
@@ -656,6 +659,13 @@ TokenIter(const char *list, const char *delims, bool allowEmpty)
   : m_copy(list ? strdup(list) : NULL), m_ptr(m_copy), m_token(NULL), m_delims(delims),
     m_allowEmpty(allowEmpty) {
   if (list)
+    next();
+}
+TokenIter::
+TokenIter(const std::string &list, const char *delims, bool allowEmpty)
+  : m_copy(strdup(list.c_str())), m_ptr(m_copy), m_token(NULL), m_delims(delims),
+    m_allowEmpty(allowEmpty) {
+  if (!list.empty())
     next();
 }
 TokenIter::
@@ -790,7 +800,7 @@ baseName(const char *path, std::string &buf) {
     const char *dot = strrchr(slash, '.');
     if (!dot)
       dot = end;
-    buf.assign(slash, dot - slash);
+    buf.assign(slash, (size_t)(dot - slash));
   } else
     buf.clear();
   return buf.c_str();
@@ -839,6 +849,19 @@ searchPath(const char *path, const char *item, std::string &result, const char *
   return result.empty();
 }
 
+const char *
+getProjectRegistry(std::string &path) {
+  const char *prenv = getenv("OCPI_PROJECT_REGISTRY_DIR");
+  path = prenv ? prenv : getOpenCPI() + "/project-registry";
+  bool isDir;
+  return
+    OS::FileSystem::exists(path, &isDir) && isDir ? NULL :
+    prenv ?
+    esprintf("The OCPI_PROJECT_REGISTRY_DIR environment variable (%s) is not a directory",
+	     prenv) :
+    esprintf("The OpenCPI project registry (%s) is not a directory", path.c_str());
+}
+
 // Determine the full list of projects from either the project path
 // or project registry.
 // Return, via "path", a ":" separated list of all projects registered
@@ -848,38 +871,165 @@ const char *
 getAllProjects(std::string &path) {
   // Collect path variables from environment used to determine
   // projects in path
-  const char
-    *xenv = getenv("OCPI_CDK_DIR"),
-    *ppenv = getenv("OCPI_PROJECT_PATH"),
-    *prenv = getenv("OCPI_PROJECT_REGISTRY_DIR");
+  const char *err;
+  std::string prpath;
+  if ((err = getProjectRegistry(prpath)))
+    return err;
+  const char *ppenv = getenv("OCPI_PROJECT_PATH");
 
-  if (!xenv)
-    return "The OCPI_CDK_DIR environment variable is not set";
   // Append path with the contents of OCPI_PROJECT_PATH
   if (ppenv)
     format(path, "%s:", ppenv);
-
-  bool isDir;
-  std::string prpath;
-  // Determine the project registry from either the environment
-  // variable or from CDK/../project-registry
-  if (prenv) {
-    if (!OS::FileSystem::exists(prenv, &isDir) || !isDir)
-      return "The OCPI_PROJECT_REGISTRY_DIR environment variable is not a directory";
-    prpath = prenv;
-  } else {
-    prpath = xenv + std::string("/../project-registry");
-  }
-  // If the project registry is does not exist, skip this
+  
   // Determine all of the files that exist inside project-registry.
   // Add each one to 'path' so that each registered project can be searched.
-  if (OS::FileSystem::exists(prpath, &isDir) && isDir)
-    for (OS::FileIterator fi(prpath, "*"); !fi.end(); fi.next())
-      path += fi.absoluteName() + ":";
+  for (OS::FileIterator fi(prpath, "*"); !fi.end(); fi.next())
+    path += fi.absoluteName() + ":";
   // Finally, add CDK as the last element of 'path'
-  path += xenv;
+  path += getCDK();
   return NULL;
 }
-  }
 
+// Do glob processing where the expectation is that any pattern results in a single
+// unique name
+// Consider making this more global.
+// Return true on error
+static bool
+globPath(const char *in, std::string &out) {
+  if (!in || !in[0])
+    return true;
+  glob_t pglob;
+  bool rv = true;
+  if (!glob(in, GLOB_NOSORT|GLOB_TILDE, NULL, &pglob) && pglob.gl_pathc == 1) {
+    rv = false;
+    out = pglob.gl_pathv[0];
+  }
+  globfree(&pglob);
+  return rv;
 }
+// Add fancier tests here if we want.
+static bool
+isOpenCPI(const std::string &d) {
+  bool isDir;
+  return OS::FileSystem::exists(d, &isDir) && isDir;
+}
+// Find our OpenCPI installation
+// - We only do it once, so we don't deal with changing locations during execution.
+// - If you specify the OCPI_ROOT_DIR, it must exist and be a dir or we throw an exception.
+// - Otherwise if you specify OCPI_CDK_DIR, it must exist, and we use "..".
+// - If we have to search, we skip things that are not directories (not throw)
+// - We only check for it to exist and be a directory.  No other checks are performed (yet).
+// - We don't care about multithreading here (yet).
+// ************ This should be consisitent with the make, bash, and python versions *******
+// The rules are:
+// 1. Use OCPI_ROOT_DIR which may have leading ~/
+// 2. The OCPI_CDK_DIR/.. which may have leading ~/
+// 3. Try: ~/OpenCPI, then ~/opencpi, then /opt/opencpi
+const std::string &
+getOpenCPI() {
+  static std::string s_opencpi;
+  if (s_opencpi.empty()) {
+    std::string opencpi;
+    const char
+      *home = getenv("HOME"),
+      *root = getenv("OCPI_ROOT_DIR"),
+      *cdk = getenv("OCPI_CDK_DIR");
+    if (root) {
+      if (globPath(root, opencpi))
+	throw Error("OCPI_ROOT_DIR is \"%s\", which is not a valid pathname", root);
+      if (!isOpenCPI(opencpi))
+	throw Error("OCPI_ROOT_DIR was \"%s\", but is not a valid OpenCPI installation", root);
+    } else if (cdk) {
+      if (globPath(cdk, opencpi))
+	throw Error("OCPI_CDK_DIR is \"%s\", which is not a valid pathname", cdk);
+      opencpi += "/..";
+      if (!isOpenCPI(opencpi))
+	throw Error("OCPI_CDK_DIR set to \"%s\", but \"%s\" is not a valid OpenCPI installation",
+		    cdk, opencpi.c_str());
+      // fixup/canonicalize the ..
+      char *abs = ::realpath(opencpi.c_str(), NULL);
+      if (!abs)
+	throw Error("Cannot get absolute path for \"%s\", from OCPI_CDK_DIR set to \"%s\"",
+		    opencpi.c_str(), cdk);
+      opencpi = abs;
+      free(abs);
+    } else {
+      // Ok, nothing was specified so we search.
+      std::list<std::string> tries;
+      do {
+	if (home) {
+	  format(opencpi, "%s/OpenCPI", home);
+	  if (isOpenCPI(opencpi))
+	    break;
+	  tries.push_back(opencpi);
+	  format(opencpi, "%s/opencpi", home);
+	  if (isOpenCPI(opencpi))
+	    break;
+	  tries.push_back(opencpi);
+	}
+	opencpi = "/opt/opencpi";
+	if (isOpenCPI(opencpi))
+	  break;
+	opencpi.clear();
+	for (auto it = tries.begin(); it != tries.end(); ++it)
+	  formatAdd(opencpi, " \"%s\"", (*it).c_str());
+	throw Error("Cannot find a valid OpenCPI installation and neither OCPI_ROOT_DIR nor "
+		    "OCPI_CDK_DIR is set.  Locations tried were: %s", opencpi.c_str());
+      } while (0);
+    }
+    ocpiInfo("The OpenCPI installation has been found at \"%s\"", opencpi.c_str());
+    ocpiInfo("OCPI_ROOT_DIR was \"%s\".  OCPI_CDK_DIR was \"%s\"",
+	     root ? root : "", cdk ? cdk : "");
+    s_opencpi = opencpi;
+  }
+  return s_opencpi;
+}
+// Add fancier tests here if we want.
+static bool
+isCdk(const std::string &d) {
+  bool isDir;
+  return OS::FileSystem::exists(d, &isDir) && isDir &&
+    OS::FileSystem::exists(d + "/scripts", &isDir) && isDir;
+}
+// Find our CDK.
+// - We only do it once, so we don't deal with changing CDK locations during execution.
+// - If you specify the OCPI_CDK_DIR, it must exist and be a dir or we throw an exception.
+// - Otherwise we look for OpenCPI with a cdk under it.
+// - We don't care about multithreading here (yet).
+// ************ This should be consisitent with the make, bash, and python versions *******
+// The rules are:
+// 1. Use OCPI_CDK_DIR which may have leading ~/
+// 2. Find the OpenCPI installation and expect a CDK subdirectory.
+
+// Otherwise find the OpenCPI installation and try "cdk";
+const std::string &
+getCDK() {
+  static std::string s_cdk;
+  if (s_cdk.empty()) {
+    std::string l_cdk;
+    const char *cdk = getenv("OCPI_CDK_DIR");
+    if (cdk) {
+      if (globPath(cdk, l_cdk))
+	throw Error("OCPI_CDK_DIR is \"%s\", which is not a valid pathname", cdk);
+      if (!isCdk(l_cdk))
+	throw Error("OCPI_CDK_DIR set to \"%s\", but \"%s\" is not a valid OpenCPI CDK",
+		    cdk, l_cdk.c_str());
+    } else {
+      l_cdk = getOpenCPI() + "/cdk";
+      if (!isCdk(l_cdk))
+	throw Error("When looking for the OpenCPI CDK, \"%s\" is not a valid penCPI CDK",
+		    l_cdk.c_str());
+    }      
+    char *abs = ::realpath(l_cdk.c_str(), NULL);
+    if (!abs)
+      throw Error("Cannot get absolute path for OpenCPI CDK at \"%s\"",
+		  l_cdk.c_str());
+    l_cdk = abs;
+    free(abs);
+    s_cdk = l_cdk;
+    ocpiInfo("OpenCPI CDK location is: %s", s_cdk.c_str());
+  }
+  return s_cdk;
+}
+} // Util
+} // OCPI

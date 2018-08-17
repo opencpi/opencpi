@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # This file is protected by Copyright. Please refer to the COPYRIGHT file
 # distributed with this source distribution.
 #
@@ -54,15 +54,15 @@ number_of_symbols_in_input_file = len(idata)*8/bits_per_symbol
 
 #Ensure dout is not all zeros
 if all(odata == 0):
-    print 'FAILED, values are all zero'
+    print('FAILED, values are all zero')
     sys.exit(1)
 #Ensure that dout is the expected amount of data
 if len(odata) != number_of_symbols_in_input_file:
-    print 'FAILED, input file length is unexpected'
-    print 'Length odata = ', len(odata), 'while expected length is = ', number_of_symbols_in_input_file
+    print('FAILED, input file length is unexpected')
+    print('Length odata = ', len(odata), 'while expected length is = ', number_of_symbols_in_input_file)
     sys.exit(1)
 
-for i in xrange(0,len(odata)):
+for i in range(0,len(odata)):
     if odata[i] != numpy.mod(i,m_p):
-        print 'FAILED at sample:', i, 'with value:', format(odata[i], '#X')
+        print('FAILED at sample:', i, 'with value:', format(odata[i], '#X'))
         sys.exit(1)

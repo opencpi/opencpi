@@ -32,9 +32,6 @@
          level proxy is included, typically that proxy should set this value -->
     <!--property name="rx_rf_port_input" value=""/--> <!-- relying on ACI -->
 
-    <!-- this app is inherently fixed to 1 channels, so fixing the value here -->
-    <property name="no_ch_mode" value="1"/>
-
   </instance>
 
   <instance component="ocpi.assets.devices.qadc"/>

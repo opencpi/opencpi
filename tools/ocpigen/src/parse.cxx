@@ -27,11 +27,12 @@
 #include <assert.h>
 #include <strings.h>
 #include <ctype.h>
-#include "av_team.h"
+#include "ocpi-config.h"
 #include "OcpiOsFileSystem.h"
 #include "OcpiUtilMisc.h"
 #include "OcpiUtilEzxml.h"
 #include "OcpiUtilAssembly.h"
+#include "OcpiUtilCppMacros.h"
 #include "wip.h"
 #include "hdl.h"
 #include "rcc.h"
@@ -51,6 +52,7 @@ OCPI_PROPERTY_DATA_TYPES
 
 const char *g_platform = 0, *g_device = 0, *load = 0, *g_os = 0, *g_os_version = 0, *g_arch = 0,
   *assembly = 0, *attribute, *platformDir;
+bool g_dynamic = false;
 
 Clock *Worker::
 addClock() {
@@ -951,7 +953,7 @@ Worker(ezxml_t xml, const char *xfile, const std::string &parentFile,
     m_specName(NULL), m_isThreaded(false), m_maxPortTypeName(0), m_wciClock(NULL),
     m_endian(NoEndian), m_needsEndian(false), m_pattern(NULL), m_portPattern(NULL),
     m_staticPattern(NULL), m_defaultDataWidth(-1), m_language(NoLanguage), m_assembly(NULL),
-    m_slave(NULL), m_emulate(NULL), m_emulator(NULL), m_library(NULL), m_outer(false),
+    m_emulate(NULL), m_emulator(NULL), m_library(NULL), m_outer(false),
     m_debugProp(NULL), m_mkFile(NULL), m_xmlFile(NULL), m_outDir(NULL), m_build(*this),
     m_paramConfig(NULL), m_parent(parent), m_scalable(false), m_requiredWorkGroupSize(0),
     m_maxLevel(0), m_dynamic(false)
@@ -1096,6 +1098,9 @@ metaPort(unsigned long which) const {
 
 Worker::~Worker() {
   deleteAssy();
+  for (auto it = m_slaves.begin(); it != m_slaves.end(); it++) {
+    delete (*it).second;
+  }
 }
 
 const char *Worker::
@@ -1157,8 +1162,9 @@ emitArtXML(const char *wksFile) {
   OU::UuidString uuid_string;
   OU::uuid2string(uuid, uuid_string);
   fprintf(f,
-          "<artifact uuid=\"%s\"", uuid_string.uuid);
-  fprintf(f, " ocpi_version=\"%d.%d\"", OCPI_VERSION_MAJOR, OCPI_VERSION_MINOR); // AV-2452
+	  "<artifact uuid=\"%s\"", uuid_string.uuid);
+  fprintf(f, " opencpiVersion=\"" OCPI_CPP_STRINGIFY(OCPI_VERSION_MAJOR) "."
+	  OCPI_CPP_STRINGIFY(OCPI_VERSION_MINOR) "\"");
   if (g_os)         fprintf(f, " os=\"%s\"",        g_os);
   if (g_os_version) fprintf(f, " osVersion=\"%s\"", g_os_version);
   if (g_platform)   fprintf(f, " platform=\"%s\"",  g_platform);

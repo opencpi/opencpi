@@ -42,6 +42,8 @@ architecture rtl of data_src_worker is
   signal data          : std_logic_vector(WIDTH-1 downto 0) := (others => '0');
   signal data_I        : std_logic_vector(15 downto 0)      := (others => '0');
   signal data_Q        : std_logic_vector(15 downto 0)      := (others => '0');
+  signal mask_I        : std_logic_vector(props_in.mask_I'range) := (others => '0');
+  signal mask_Q        : std_logic_vector(props_in.mask_Q'range) := (others => '0');
 
   signal message_size_samples  : ulong_t := (others => '0');
   signal msg_samp_ctr : ulong_t := (0 => '1', others => '0');
@@ -103,7 +105,10 @@ begin
   end generate;
   data_Q(15-WIDTH downto 0) <= (others => '0');
 
-  out_out.data <= data_Q & data_I;
+  mask_Q <= std_logic_vector(props_in.mask_Q);
+  mask_I <= std_logic_vector(props_in.mask_I);
+
+  out_out.data <= (data_Q and mask_Q) & (data_I and mask_I);
 
   enable <= ctl_in.is_operating and out_in.ready and props_in.enable and
             (to_bool(props_in.num_samples = -1) or

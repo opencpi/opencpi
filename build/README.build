@@ -1,0 +1,29 @@
+This directory is for the build machinery for building the OpenCPI framework libraries and
+executables.
+
+We try to separate concerns of:
+
+1. The description of OpenCPI software and platforms that does not say how it is built.
+2. The build mechanisms used to actually build it.
+
+Furthermore we want to enable multiple instances of #2 (e.g. autotools, cmake, scons)
+so that it is relatively easy to change and evolve.
+
+The files in this directory are of type #1:
+
+README.build - this file
+places - a list of framework source directories and their attributes, one per line
+         see the comments in that file for its format and syntax
+
+Also, key files used when building the framework for various platforms:
+
+../tools/cdk/include/platform-defaults.mk
+       - the file that defines the default values for software platform definitions.
+(any-project)/rcc/platforms/<platform>/<platform>.mk
+       - the file that defines a particular software platform
+
+In addition to these files are directories containing build mechanisms, (type #2)
+the first being "autotools".  In the autotools directory, files described above are used
+to build the framework using autotools.
+
+

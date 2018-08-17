@@ -16,17 +16,18 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-Name: %{RPM_BASENAME}-doc
+Name: opencpi-doc
 Version: %{RPM_VERSION}
 Release: %{RPM_RELEASE}%{?RELEASE_TAG}%{?COMMIT_TAG}%{?dist}
 BuildArch: noarch
+BuildRequires: ghostscript rubber unoconv
 
 Summary:   OpenCPI Documentation
 Group:     Documentation
 
 License:        LGPLv3+
 Vendor:         ANGRYVIPER Team
-Packager:       ANGRYVIPER team <discuss@lists.opencpi.org>
+Packager:       ANGRYVIPER Team <discuss@lists.opencpi.org>
 
 %description
 PDFs and HTML index file installed into %{_pkgdocdir}

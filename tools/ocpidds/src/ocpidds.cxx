@@ -44,6 +44,7 @@
 #include <vector>
 #include <list>
 
+#include "ocpi-config.h"
 #include "OcpiOsFileSystem.h"
 #include "OcpiUtilDataTypes.h"
 #include "OcpiUtilProtocol.h"
@@ -305,7 +306,6 @@ mymkstemp(char **result, char **dir, const char *prefix, const char *suffix) {
   } else {
     free(tmp);
     free(cp);
-    // Should we set *dir and *result to nullptr here?
   }
   return fd; 
 }

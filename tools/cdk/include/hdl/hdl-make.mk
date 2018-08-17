@@ -123,53 +123,9 @@ HdlGetCores=$(infox HGC:$(Cores):$(HdlWorkers):$(HdlTarget))$(call Unique,\
         $(call FindRelative,.,$f))))
 
 ################################################################################
-# $(call HdlGetTargetFromPart,hdl-part)
-# Return the target name from a hyphenated partname
-HdlGetTargetFromPart=$(firstword $(subst -, ,$1))
-
-################################################################################
 # $(call HdlGetTop,family)
 # Return the top name from a family
 HdlGetTop=$(strip $(foreach v,$(HdlTopTargets),$(or $(filter $1,$v),$(and $(filter $1,$(HdlTargets_$v)),$v))))
-
-################################################################################
-# $(call HdlGetFamily,hdl-target,[multi-ok?])
-# Return the family name associated with the target(usually a part)
-# If the target IS a family, just return it.
-# If it is a top level target with no family, return itself
-# If it is a top level target with one family, return that family
-# Otherwise return the family of the supplied part
-# If the second argument is present, it is ok to return multiple families
-# (The second argument should not contain spaces)
-
-# StringEq=$(if $(subst x$1,,x$2)$(subst x$2,,x$1),,x)
-HdlGetFamily=$(eval m1=$(subst $(Space),___,$1))$(strip \
-  $(if $(HdlGetFamily_cached<$(m1)__$2>),,\
-    $(call OcpiDbg,HdlGetFamily($1,$2) cache miss)$(eval export HdlGetFamily_cached<$(m1)__$2>=$(call HdlGetFamily_core,$1,$2)))\
-  $(infox HdlGetFamily($1,$2)->$(HdlGetFamily_cached<$(m1)__$2>))$(HdlGetFamily_cached<$(m1)__$2>))
-
-HdlGetFamily_core=$(call OcpiDbg,Entering HdlGetFamily_core($1,$2))$(strip \
-  $(foreach gf,\
-     $(or $(findstring $(1),$(HdlAllFamilies)),$(strip \
-          $(if $(findstring $(1),all), \
-	      $(if $(2),$(HdlAllFamilies),\
-		   $(call $(HdlError),$(strip \
-	                  HdlFamily is ambiguous for '$(1)'))))),$(strip \
-          $(and $(findstring $(1),$(HdlTopTargets)),$(strip \
-	        $(if $(and $(if $(2),,x),$(word 2,$(HdlTargets_$(1)))),\
-                   $(call $(HdlError),$(strip \
-	             HdlFamily is ambiguous for '$(1)'. Choices are '$(HdlTargets_$(1))')),\
-	           $(or $(HdlTargets_$(1)),$(1)))))),$(strip \
-	  $(foreach f,$(HdlAllFamilies),\
-	     $(and $(filter $(call HdlGetTargetFromPart,$1),$(HdlTargets_$f)),$f))),$(strip \
-	  $(and $(filter $1,$(HdlAllPlatforms)), \
-	        $(call HdlGetFamily_core,$(call HdlGetTargetFromPart,$(HdlPart_$1))))),\
-	  $(call $(HdlError),$(strip \
-	     The build target '$1' is not a family or a part in any family))),\
-     $(gf)))
-
-#     $(call OcpiDbg,HdlGetFamily($1,$2)->$(gf))$(gf)))
-
 
 ################################################################################
 # $(call HdlGetFamilies,hdl-target)
@@ -188,6 +144,14 @@ HdlGetPart=$(call OcpiDbg,Entering HdlGetPart($1))$(strip \
 $(foreach gp,$(firstword $(subst -, ,$(HdlPart_$1))),\
    $(call OcpiDbg,HdlGetPart($1)->$(gp))$(gp)))
 
+
+# model-specific getting a platform for a target
+# which is inherently problematic for HDL...
+HdlGetPlatform=$(or $(HdlPlatform),$(error Getting platform for HDL target $1 is ambiguous))
+# The model-specific determination of the "tail end" of the target directory,
+# after the prefix (target), and build configuration.
+# The argument is a TARGET
+HdlTargetDirTail=$(infox HTDT:$1)$(foreach t,$(or $1,$(HdlTarget)),$(infox HTDTr:$t)$t)
 
 ################################################################################
 # The generic hdl compile that depends on HdlToolCompile

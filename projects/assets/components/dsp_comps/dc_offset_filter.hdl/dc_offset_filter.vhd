@@ -174,7 +174,7 @@ begin
       BYPASS    => std_logic(props_in.bypass),
       UPDATE    => std_logic(props_in.update),
       TC        => signed(props_in.tc),
-      DIN       => signed(in_in.data(DATA_WIDTH_c-1+16 downto 16)),
+      DIN       => signed(in_in.data(DATA_WIDTH_c-1 downto 0)),
       DIN_VLD   => idata_vld,
       DOUT      => i_odata,
       DOUT_VLD  => odata_vld);
@@ -188,7 +188,7 @@ begin
       BYPASS    => std_logic(props_in.bypass),
       UPDATE    => std_logic(props_in.update),
       TC        => signed(props_in.tc),
-      DIN       => signed(in_in.data(DATA_WIDTH_c-1 downto 0)),
+      DIN       => signed(in_in.data(DATA_WIDTH_c-1+16 downto 16)),
       DIN_VLD   => idata_vld,
       DOUT      => q_odata,
       DOUT_VLD  => open);
@@ -205,8 +205,8 @@ begin
       end process backPressure;
 
 
-    out_out.data        <= std_logic_vector(resize(i_odata,16)) &
-                           std_logic_vector(resize(q_odata,16));
+    out_out.data        <= std_logic_vector(resize(q_odata,16)) &
+                           std_logic_vector(resize(i_odata,16));
 
 
   -----------------------------------------------------------------------------

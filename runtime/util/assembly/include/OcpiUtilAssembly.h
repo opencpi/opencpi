@@ -62,7 +62,7 @@ namespace OCPI {
         std::string m_name;
         std::string m_instPropName; // non-empty for top level
         unsigned m_instance;        // if m_instPropName is nonempty this is valid
-        const char *parse(ezxml_t x, Assembly &a);
+        const char *parse(ezxml_t x, Assembly &a, const PValue *params);
       };
       typedef std::vector<MappedProperty> MappedProperties;
       typedef uint32_t Delay;
@@ -93,34 +93,35 @@ namespace OCPI {
           const;
       };
       struct Instance {
-        std::string
-          m_name,                  // name of the instance within the assembly
-          m_specName,              // name of component or worker being instantiated
-          m_implName,              // name of implementation (may be a path)
-          m_selection;             // the selection expression
-        unsigned m_ordinal;
-        bool     m_externals;      // whether all ports should be considered external
-        unsigned m_slave;
-        bool     m_hasSlave;
-        unsigned m_master;
-        bool     m_hasMaster;
-        Properties m_properties;
-        PValueList m_parameters;
-        std::list<Port*> m_ports; // attachments to connections
-        typedef std::list<Port*>::iterator PortsIter;
-        CollocationPolicy m_collocation;
-        ezxml_t m_xml;
-        bool m_freeXml;
-        Instance();
-        ~Instance();
-        const char *cname() const { return m_name.c_str(); }
-        const char
-          *parse(ezxml_t ix, Assembly &a, unsigned ordinal, const char **extraInstAttrs,
-                 const PValue *params),
-          *addProperty(const char *name, ezxml_t px),
-          *parseConnection(ezxml_t ix, Assembly &a, const PValue *params),
-          *setProperty(const char *propAssign);
-        ezxml_t xml() const { return m_xml; }
+	std::string
+	  m_name,                  // name of the instance within the assembly
+	  m_specName,              // name of component or worker being instantiated
+	  m_implName,              // name of implementation (may be a path)
+	  m_selection;             // the selection expression
+	unsigned m_ordinal;
+	bool     m_externals;      // whether all ports should be considered external
+	std::vector<unsigned> m_slaves;
+	unsigned m_master;
+	bool     m_hasMaster;
+	Properties m_properties;
+	PValueList m_parameters;
+	std::list<Port*> m_ports; // attachments to connections
+	typedef std::list<Port*>::iterator PortsIter;
+	CollocationPolicy m_collocation;
+	ezxml_t m_xml;
+	bool m_freeXml;
+	Instance();
+	~Instance();
+	const char *cname() const { return m_name.c_str(); }
+	const char
+	  *parse(ezxml_t ix, Assembly &a, unsigned ordinal, const char **extraInstAttrs,
+		 const PValue *params),
+	  *addProperty(const char *name, ezxml_t px),
+	  *parseConnection(ezxml_t ix, Assembly &a, const PValue *params),
+	  *checkSlave(Assembly &a, const char *name),
+	  *setProperty(const char *propAssign);
+	ezxml_t xml() const { return m_xml; }
+	const std::vector<unsigned> &slaves() const { return m_slaves; }
       };
       struct Role {
         bool m_knownRole;     // role is known

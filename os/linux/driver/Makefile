@@ -16,14 +16,42 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
+##########################################################################################
 ThisMake := $(lastword $(MAKEFILE_LIST))
 
-.PHONY: all
-# RPM-based options:
--include $(OCPI_CDK_DIR)/include/autoconfig_import-$(OCPI_TARGET_PLATFORM).mk
-ifneq (1,$(OCPI_AUTOCONFIG_IMPORTED))
--include $(OCPI_CDK_DIR)/include/autoconfig_import.mk
+# We have two situations for building the linux kernel driver.
+# 1. One is simply part of the source tree, where building the driver happens in a CDK environment
+# where all the software platforms are defined in projects etc.
+# This can target the native system or a cross-build with accessible kernel headers.
+# 2. The other is when we are running in an installed standalone driver package where the driver
+# is rebuilt based on the kernel installed on the system.  In this situation we want to be
+# independent from the rest of OpenCPI so that it can be the minimal thing that is *not*
+# sharable on a network-shared CDK etc. where everything else is.
+# This is clearly only a native build.
+
+# This Makefile decides that it is "standalone" (#2) simply by the absence of the
+# OCPI_TARGET_PLATFORM, meaning it is not in the framework build environment,
+# and thus cannot get the platform description from a project-defined software platform, and
+# thus must be a native build.
+ifdef OCPI_TARGET_PLATFORM
+ $(info Building driver in a CDK environment)
+ # Get the info about the target platform from the CDK
+ include $(OCPI_CDK_DIR)/include/setup-target-platform.mk
+else
+ $(info Building driver in a standalone environment)
+ # Set the variables that we use to constant values we know for self-hosted platforms
+ # If this isn't good enough we can easily cache them in the RPM.
+ OcpiCrossCompile=
+ OcpiCC=gcc 
+ OcpiCXX=g++
+ OCPI_TARGET_DIR=$OCPI_TOOL_DIR
 endif
+# Set the global make variables that the kernel Makefiles want to see set in global variables
+CC=$(OcpiCrossCompile)$(OcpiCC)
+CXX=$(OcpiCrossCompile)$(OcpiCXX)
+LD=$(OcpiCrossCompile)ld
+
+.PHONY: all
 
 # AV-1571 - map arm_cs => arm
 ifeq ($(OCPI_TARGET_ARCH),arm_cs)
@@ -57,23 +85,47 @@ ifdef OCPI_TARGET_KERNEL_DIR
   ifeq ($(wildcard $(KERNELDIR)),)
     $(error OCPI_TARGET_KERNEL_DIR indicates '$(OCPI_TARGET_KERNEL_DIR)', which does not exist)
   endif
-  ifdef OCPI_CROSS_BUILD_BIN_DIR
-    override CROSS_COMPILE:=$(OCPI_CROSS_BUILD_BIN_DIR)/$(OCPI_CROSS_HOST)-
+  ifdef OcpiCrossCompile
+    override CROSS_COMPILE:=$(OcpiCrossCompile)
     override ARCH:=$(OCPI_TARGET_ARCH)
     export CROSS_COMPILE
     export ARCH
   endif
   $(info OCPI_TARGET_KERNEL_DIR was specified, we are now using: KERNELDIR=$(KERNELDIR) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE))
 else
-  ifdef OCPI_CROSS_BUILD_BIN_DIR
-   $(error OCPI_CROSS_BUILD_BIN_DIR is set, but OCPI_TARGET_KERNEL_DIR is not set, which is not supported.)
+  ifdef OcpiCrossCompile
+    $(error This is a cross-compiled platform, but OCPI_TARGET_KERNEL_DIR is not set, which is not supported.)
   endif
-  # Assume the source tree is where the running kernel was built
-  # You should set KERNELDIR in the environment if it's elsewhere
+
   ifeq ($(filter clean topclean,$(MAKECMDGOALS)),)
-    KERNELDIR ?= /lib/modules/$(shell uname -r)/build
-    ifeq ($(wildcard $(KERNELDIR)),)
-      $(error Cannot figure out where the KERNELDIR should be (tried $(KERNELDIR)).)
+    # Find the kernel headers - they can be found:
+    #  1. Specified KERNELDIR (always chosen if given)
+    #  2. /usr/src/kernels/(uname -r)
+    #  3. /usr/src/kernels/(specific RPM-specified location based on the kernel-headers package)
+    OcpiKernelRelease:=$(shell uname -r)
+    # this command should be platform-specific (e.g. different for debian etc.)
+    OcpiKernelHeadersVersion:=$(shell rpm -q --qf=%{version}-%{release}.%{arch} kernel-headers)
+    $(info --- The running kernel is release: $(OcpiKernelRelease))
+    $(info --- The current kernel-headers package is version: $(OcpiKernelHeadersVersion))
+    ifdef KERNELDIR
+      $(info --- The requested kernel header location (via KERNELDIR) is: $(KERNELDIR))
+      ifeq ($(wildcard $(KERNELDIR)),)
+        $(error The requested kernel header location ($(KERNELDIR)) is not found)
+      endif
+    else
+      KERNELDIR=/usr/src/kernels/$(OcpiKernelRelease)
+      ifeq ($(wildcard $(KERNELDIR)),)
+        try1:=$(KERNELDIR)
+        KERNELDIR=/usr/src/kernels/$(OcpiKernelHeadersVersion)
+        ifneq ($(wildcard $(KERNELDIR)),)
+          $(info --- Using the kernel headers version at: $(KERNELDIR))
+        else
+          $(info XXX: $(shell ls -l /lib/modules ))
+          $(error Cannot find a kernel headers directory.  Tried $(try1) and $(KERNELDIR))
+        endif
+      else
+        $(info --- Using the kernel release at: $(KERNELDIR))
+      endif
     endif
     $(info No OCPI_TARGET_KERNEL_DIR specified, so using: KERNELDIR=$(KERNELDIR))
   endif
@@ -90,14 +142,13 @@ MyTargetDir?=target-$(OCPI_TARGET_DIR)
 MyIncs?= \
          -I$(realpath $(MyDir)/../../../runtime/hdl/include) \
          -I$(realpath $(MyDir)/../../interfaces/include)
-MyLib:=$(realpath $(OCPI_CDK_DIR)/lib/$(OCPI_TARGET_DIR))
+MyLib:=$(realpath $(OCPI_CDK_DIR)/$(OCPI_TARGET_DIR)/lib)
 $(infox x:$(MyTargetDir) $(MyDir))
 ifneq ($(MAKECMDGOALS),topclean)
-  ifeq ($(strip $(MyLib)),)
-    $(error OpenCPI libraries must be built before the driver is built)
-  endif
-  ifeq ($(strip $(OCPI_TARGET_PLATFORM)),)
-    $(error OCPI_TARGET_PLATFORM not set. Have you built the OpenCPI libraries yet?)
+  ifdef OCPI_TARGET_PLATFORM
+    ifeq ($(strip $(MyLib)),)
+      $(error OpenCPI libraries must be built before the driver is built)
+    endif
   endif
 endif
 # This is what works with RHEL5

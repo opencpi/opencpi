@@ -1,0 +1,6 @@
+This directory is for autoconf macros that are part of OpenCPI rather than those
+imported from elsewhere, which are in the ../imported-macros directory.
+Note that autoconf is executed in the gen/ subdirectory, using the acinclude
+subdirectory constructed *there*, which is a combination of this directory
+and the imported-macros directory.
+

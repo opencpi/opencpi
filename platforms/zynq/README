@@ -77,7 +77,7 @@ The flow of these scripts is:
   results:    The Xilinx Binary release's root file system image can be patched adopted and
               patched for the OpenCPI Zynq release.
 
-5. createLinuxRootFS.sh <rel-name>
+5. createLinuxRootFS.sh <rel-name> <work-dir>
    arguments: release name, same as step above
    inputs:    the output from step 4: the downloaded xilinx binary zynq release
               the output from step 3: the kernel headers package with captured other files

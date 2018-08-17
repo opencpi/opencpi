@@ -20,6 +20,7 @@
 
 $(if $(realpath $(OCPI_CDK_DIR)),,$(error The OCPI_CDK_DIR environment variable is not set correctly.))
 
+OcpiAppNoRun=1
 #APP=calculate_AD9361_BIST_PRBS_RX_BER
 #APP2=get_comma_separated_ocpi_platforms
 #APP3=get_at_least_one_platform_is_available
@@ -65,7 +66,7 @@ runnoprepare:
 
 runonly: prepare runnoprepare
 
-verify: build
+verify:
 	$(AT)./run/runtests.sh verify $(and $(View),view)
 
 view:

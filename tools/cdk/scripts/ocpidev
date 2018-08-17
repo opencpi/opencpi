@@ -23,6 +23,7 @@
 # FIXME: add option to copy "other" files when creating worker
 
 [ -z "$OCPI_CDK_DIR" -o ! -d "$OCPI_CDK_DIR" ] && echo "Error: OCPI_CDK_DIR environment setting not valid: '${OCPI_CDK_DIR}'" && exit 1
+source $OCPI_CDK_DIR/scripts/util.sh
 
 # Database of models, languages and suffixes, redundant with util.mk
 Models=(rcc hdl ocl)
@@ -375,7 +376,6 @@ function do_registry {
     else
       [ -z "$verbose" ] || echo The project registry \"$1\" has been created
       mkdir $1
-      ln -s $OCPI_CDK_DIR $1/ocpi.cdk
     fi
   elif [ "$verb" == delete ]; then
     if [ -z "$1" ]; then
@@ -384,8 +384,8 @@ function do_registry {
       registry_to_delete=$1
     fi
     if [ -e "$registry_to_delete" ]; then
-      if [ "$(readlink -e $registry_to_delete)" == "$(readlink -e $OCPI_CDK_DIR/../project-registry)" \
-           -o "$(readlink -e $registry_to_delete)" == "/opt/opencpi/project-registry" ] ; then
+      if [ "$(ocpiReadLinkE $registry_to_delete)" == "$(ocpiReadLinkE $OCPI_CDK_DIR/../project-registry)" \
+           -o "$(ocpiReadLinkE $registry_to_delete)" == "/opt/opencpi/project-registry" ] ; then
         bad cannot delete the default project registry \"$registry_to_delete\"
       fi
       ask delete the project registry at \"$registry_to_delete\"
@@ -462,6 +462,10 @@ function do_project {
             ${swplats:+RccPlatforms=" ${swplats[@]}"} \
             ${hwswplats:+RccHdlPlatforms="${hwswplats[@]}"} \
             $OCPI_MAKE_OPTS
+    if [ -n buildClean -a -z "$hardClean" ] ; then
+      make ${verbose:+AT=} imports
+      make ${verbose:+AT=} exports
+    fi
     return 0
   fi
   [ -n "$dirtype" ] &&
@@ -1757,7 +1761,7 @@ function do_build_here {
       buildHdl=""
       cleanTarget+=" cleanhdl"
     fi
-  make ${cleanTarget:+$cleanTarget} ${buildRcc:+rcc} ${buildHdl:+hdl} ${buildTest} \
+  make ${cleanTarget:+$cleanTarget} ${verbose:+AT=} ${buildRcc:+rcc} ${buildHdl:+hdl} ${buildTest} \
        ${buildNoAssemblies:+Assemblies=} \
        ${assys:+Assemblies=" ${assys[@]}"} \
        ${hdlplats:+HdlPlatforms=" ${hdlplats[@]}"} \
@@ -1765,6 +1769,11 @@ function do_build_here {
        ${swplats:+RccPlatforms=" ${swplats[@]}"} \
        ${hwswplats:+RccHdlPlatforms=" ${hwswplats[@]}"} \
        $OCPI_MAKE_OPTS
+  get_dirtype .
+  if [ "$dirtype" == "project" -a -z "$hardClean" ] ; then
+    make ${verbose:+AT=} imports
+    make ${verbose:+AT=} exports
+  fi
 }
 
 # Create an hdl assembly
@@ -2016,6 +2025,8 @@ Options for the build|clean verbs:
   --rcc              Build rcc workers (when building at the project or library level)
   --hdl              Build hdl workers/assets (when building at the project or library level)
   --worker <worker>  *Add a worker to be specificially built and don't build any other workers
+  --clean-all        Force cleaning of all project registry related files (This option should
+                     only be uses for SCM checkins)
   --no-assemblies    Do not build HDL assemblies (when building at the project level)
   --hdl-assembly <assembly>
                      *Add an assembly to be built instead of building all assemblies
@@ -2260,11 +2271,12 @@ argv=($*)
 original_argv=($*)
 while [[ "${argv[0]}" != "" ]] ; do
   if [[ "${argv[0]}" == show ]] ; then
-    ocpishow_options=`sed 's/\(^\| \)show\( \|$\)/\1\2/' <<< "${original_argv[@]}"`
-    $OCPI_CDK_DIR/scripts/ocpishow $ocpishow_options
+    ocpishow_options=`sed -E 's/(^| )show( |$)/ /' <<< "${original_argv[@]}"`
+    $OCPI_CDK_DIR/scripts/ocpishow.py $ocpishow_options
     exit $?
   elif [[ "${argv[0]}" == run ]] ; then
-    ocpidev_run_options=`sed 's/\(^\| \)run\( \|$\)/\1\2/' <<< "${original_argv[@]}"`
+    # This is portable while the below is not
+    ocpidev_run_options=`sed -E 's/(^| )run( |$)/ /' <<< "${original_argv[@]}"`
     $OCPI_CDK_DIR/scripts/ocpidev_run.py $ocpidev_run_options
     exit $?
   elif [[ -n "$verb" && -n "$help_screen" ]]; then
@@ -2351,6 +2363,7 @@ while [[ "${argv[0]}" != "" ]] ; do
       (-x) xmldirapp=1;;
       (-help|--help)  help_screen=true;;
       # for building
+      (--clean-all) hardClean=1;;
       (--build-rcc|--rcc) buildRcc=1;;
       (--build-hdl|--hdl) buildHdl=1;;
       (--worker) takeval curWorker; workerList="${workerList[@]} $curWorker";;

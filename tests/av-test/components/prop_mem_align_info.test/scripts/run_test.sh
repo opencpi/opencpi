@@ -1,3 +1,4 @@
+#!/bin/bash
 # This file is protected by Copyright. Please refer to the COPYRIGHT file
 # distributed with this source distribution.
 #
@@ -17,7 +18,7 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 MEASUREMENT_FILE=measured.out
-OCPI_LIBRARY_PATH=../:$OCPI_LIBRARY_PATH ocpirun -t 1 app.xml > $MEASUREMENT_FILE 2>&1
+OCPI_LIBRARY_PATH=../:$OCPI_LIBRARY_PATH $OCPI_CDK_DIR/$OCPI_TOOL_PLATFORM/bin/ocpirun -t 1 app.xml > $MEASUREMENT_FILE 2>&1
 OCPIRUN_EXIT=$?
 if [ "$OCPIRUN_EXIT" != "0" ]; then
 cat $MEASUREMENT_FILE

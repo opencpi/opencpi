@@ -1,0 +1,4 @@
+<RccWorker language='c++' spec='comp1-spec'>
+    <Property Name="my_enum" Type="enum" Readable="true" Volatile="true" Writable="true" Initial="true" enums="first_enum,second_enum,third_enum" Default="first_enum"></Property>
+    <Property Name="my_string" Type="string" StringLength="20" Readable="true" Writable="true" Volatile="true"></Property>
+</RccWorker>

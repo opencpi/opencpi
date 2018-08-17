@@ -24,11 +24,6 @@ SourceSuffix:=$($(CapModel)SourceSuffix)
 ImplXmlFiles:=$(foreach w,$(Workers),$(or $(Worker_$w_xml),$(Worker).xml))
 $(call OcpiDbgVar,ImplXmlFiles)
 
-# Get the (a) platform for this target if it is present.
-WkrGetPlatform=$(strip \
-  $(foreach v,$(filter $(CapModel)Target_%,$(.VARIABLES)),\
-    $(and $(filter $1,$(value $v)),$(v:$(CapModel)Target_%=%))))
-
 -include $(GeneratedDir)/*.deps
 
 # Only workers need the implementation "header" file and the skeleton
@@ -71,7 +66,8 @@ clean:: cleanfirst
 	$(AT)rm -r -f $(GeneratedDir) \
              $(if $(filter all,$($(CapModel)Targets)),\
                   $(call WkrTargetDirWild,*),\
-                  $(foreach t,$(CleanTargets) $($(CapModel)Targets),$(call WkrTargetDirWild,$t)))
+                  $(foreach t,$($(CapModel)Targets),\
+                    $(call WkrTargetDirWild,$(call $(CapModel)TargetDirTail,$t))))
 
 ################################################################################
 # source files that are target-independent
@@ -161,7 +157,7 @@ define WkrWorkerDep
 
   $$(call WkrObject,$1,$2,$3): TargetDir=$$(call WkrTargetDir,$2,$3)
   $$(call WkrObject,$1,$2,$3): $(CapModel)Target=$2
-  $$(call WkrObject,$1,$2,$3): $(CapModel)Platform=$$(call WkrGetPlatform,$2)
+  $$(call WkrObject,$1,$2,$3): $(CapModel)Platform=$$(call $(CapModel)GetPlatform,$2)
   $$(call WkrObject,$1,$2,$3): Worker=$1
   $$(call WkrObject,$1,$2,$3): \
      $$(call ImplHeaderFile,$1) \
@@ -184,17 +180,15 @@ define WkrDoTargetConfig
     $$(call OcpiDbgVar,CompiledSourceFiles)
     $$(foreach s,$$(CompiledSourceFiles),$$(eval $$(call WkrMakeObject,$$s,$1,$2)))
     $$(call WkrBinary,$1,$2): $(CapModel)Target=$1
-    $$(call WkrBinary,$1,$2): $(CapModel)Platform=$$(call WkrGetPlatform,$1)
+    $$(call WkrBinary,$1,$2): $(CapModel)Platform=$$(call $$(CapModel)GetPlatform,$1)
 
-    # Note the use of ls -o -g -l below is to not be affected by
-    # user and group names with spaces.
     $$(call WkrBinary,$1,$2): $$$$(ObjectFiles_$1_$2) $$(call ArtifactXmlFile,$1,$2) $$$$($(CapModel)LinkDependencies_$$$$($(CapModel)Target)) \
                             | $$(call WkrTargetDir,$1,$2)
 	$(AT)echo Linking final artifact file \"$$@\" and adding metadata to it...
 	$(AT)$$(call LinkBinary,$$(ObjectFiles_$1_$2) $$(OtherLibraries))
-	$(AT)if test -f "$$(call ArtifactXmlFile,$1,$2)"; then \
-	  $(ToolsDir)/ocpixml add $$@ "$$(call ArtifactXmlFile,$1,$2)"; \
-	fi
+	$(AT)$$(and $$(call ArtifactXmlFile,$1,$2),\
+	       $$(call OcpiPrepareArtifact,$$(call ArtifactXmlFile,$1,$2),$$@,$$(strip\
+               $$(ParentPackage)),$2,$$(call $$(CapModel)GetPlatform,$1)))
     # Make sure we actually make the final binary for this target
     $$(call OcpiDbg,Before all: 1:$1 2:$2 RccTarget:$$(RccTarget). WkrBinary is "$$(call WkrBinary,$1,$2)")
     $$(eval $$(call $(CapModel)WkrBinary,$1,$2))
@@ -223,7 +217,7 @@ endif
 # Export support - what we put into the (export) library above us
 
 ifndef WkrExportNames
-WkrExportNames+=$(WkrBinaryName)$(BF)
+WkrExportNames+=$(WkrBinaryName)$(call BF,$1)
 endif
 
 # If LibDir is unset, but the parent directory is a library
@@ -253,33 +247,12 @@ define DoLink
   $(infox DoLink:$1:$2:$3:$4:$5)
   $$(infox DoLink2:$1:$2:$3:$4:$5)
   BinLibLinks+=$(LibDir)/$1/$3
-  ifeq ($(Model),hdl)
-    $(LibDir)/$1/$(basename $3)-generics.vhd: | $(LibDir)/$1
-	$(AT)$$(call MakeSymLink2,$(call WkrTargetDir,$1,$4)/generics.vhd,$(LibDir)/$1,$(basename $3)-generics.vhd)
-	$(AT)if test -f $(call WkrTargetDir,$1,$4)/$(call RmRv,$(basename $2)).cores; then \
-               $$(call MakeSymLink,$(call WkrTargetDir,$1,$4)/$(call RmRv,$(basename $2)).cores,$(LibDir)/$1);\
-             fi
-  endif
   $$(eval $$(call $(CapModel)WkrBinaryLink,$1,$2,$3,$4,$5))
-  $(LibDir)/$1/$3: | $(call WkrTargetDir,$1,$4)/$2 $(and $(filter hdl,$(Model)),$(LibDir)/$1/$(basename $3)-generics.vhd) $(LibDir)/$1
+  $(LibDir)/$1/$3: | $(call WkrTargetDir,$1,$4)/$2 $(LibDir)/$1
 	$(AT)echo Creating link to export worker binary: $(LibDir)/$1/$3 '->' $(call WkrTargetDir,$1,$4)/$2
 	$(AT)$$(call MakeSymLink2,$(call WkrTargetDir,$1,$4)/$2,$(LibDir)/$1,$3)
 
-  $(infox DoLink3:$1:$(HdlToolSet_$1):$(HdlToolNeedBB_$(HdlToolSet_$1)))
-  $$(infox DoLink4:$1:$(HdlToolSet_$1):$(HdlToolNeedBB_$(HdlToolSet_$1)))
-  ifdef HdlToolNeedBB_$(HdlToolSet_$1)
-      $(infox DLHTNB1:$1:$2:$3:$4==$$(call MyBBLibFile,$1,$2,$4))
-      $$(infox DLHTNB2:$1:$2:$3:$4==$$(call MyBBLibFile,$1,$2,$4))
-    ifeq ($(and $(filter %_rv,$(basename $2)),$(filter 2,$(words $(HdlCores)))),)
-      $$(infox DLHTNB:$1:$2:$3:$4==$$(call MyBBLibFile,$1,$2,$4))
-      BinLibLinks+=$(LibDir)/$1/$5
-      # This will actually be included/evaluated twice
-      $(LibDir)/$1/$5: | $$$$(call MyBBLibFile,$1,$2,$4) $(LibDir)/$1
-	$(AT)echo Creating link from $$@ -\> $$(patsubst %/,%,$$(dir $$(call MyBBLibFile,$1,$2,$4))) to export the stub library.
-	$(AT)$$(call MakeSymLink2,$$(patsubst %/,%,$$(dir $$(call MyBBLibFile,$1,$2,$4))),$(strip\
-                                  $(LibDir)/$1),$5)
-    endif
-  endif
+  #TODO move below to the "ifndef HdlSkip" so this does repeat for every configuration of a worker
   ifneq ($$(filter $$(call OcpiGetDirType,$$(DirContainingLib)),library),)
     $$(if $$(call DoShell,make -C $$(DirContainingLib) workersfile speclinks,Value),$$(warning $$(Value)))
   endif
@@ -293,7 +266,7 @@ define DoLinks
   $(foreach c,$(ParamConfigurations),\
     $(foreach n,$(call WkrExportNames,$1),\
      $(foreach b,$(basename $(notdir $n)),\
-       $(foreach r,$(call RmRv,$b)$(if $(filter 0,$c),,_c$c),
+       $(foreach r,$(call RmRv,$b)$(if $(filter 0,$c),,_c$c),\
          $(foreach l,$b$(if $(filter 0,$c),,_c$c),\
            $(infox LLL:$c:$n:$b:$r:$l:$1:$(HdlToolSet_$1))\
            $(call DoLink,$1,$(strip\
@@ -302,13 +275,12 @@ define DoLinks
                                $(notdir $n),$r)),$(strip\
                      $(if $(HdlToolRealCore_$(HdlToolSet_$1)),$l,$r)$(suffix $n)),$c,$r))))))
   $$(call OcpiDbgVar,WkrExportNames,In Dolinks )
-
 endef
 
 # These links are to binaries
 ifndef HdlSkip
   $(call OcpiDbgVar,WkrExportNames)
-  $(foreach t,$($(CapModel)Targets),$(infox $(call DoLinks,$t))$(eval $(call DoLinks,$t)))
+  $(foreach t,$($(CapModel)Targets),$(infox $(call zDoLinks,$t))$(eval $(call DoLinks,$(call $(CapModel)TargetDirTail,$t))))
 endif
 
 # The generated build file is done as the makefile is read, so we can use
@@ -325,9 +297,11 @@ endif
 
 $(call OcpiDbgVar,LibLinks,Before all:)
 $(call OcpiDbgVar,BinLibLinks,Before all:)
-.PHONY: links binlinks genlinks
+.PHONY: links binlinks genlinks $(Model)links
 genlinks: $$(LibLinks)
-binlinks: $$(BinLibLinks)
+# <model>-worker.mk may define its own rules for more links
+$(Model)links:
+binlinks: $$(BinLibLinks) $(Model)links
 links: binlinks genlinks
 all: links
 $(LibDir) $(LibDirs):

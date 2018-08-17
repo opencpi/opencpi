@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash --noprofile
 # This file is protected by Copyright. Please refer to the COPYRIGHT file
 # distributed with this source distribution.
 #
@@ -22,10 +22,11 @@
 # This confirms that a manually set set registry will only
 # only be removed by 'make clean' if it matches the current
 # global default. Otherwise it should remain untouched.
-set -e
+set -ex
 
 proj="set-reg-clean"
 reg="$proj-project-registry"
+rm -r -f $proj $reg
 
 ocpidev create registry $reg
 ocpidev create project $proj
@@ -38,7 +39,7 @@ test "$(readlink imports)" == "../$reg"
 
 ocpidev set registry
 source $OCPI_CDK_DIR/scripts/util.sh # needed for getProjectRegistryDir
-test "$(readlink -f imports)" == "$(getProjectRegistryDir)"
+test "$(ocpiReadLinkE imports)" == "$(getProjectRegistryDir)"
 make cleanimports
 test -z "$(ls imports 2>/dev/null)"
 

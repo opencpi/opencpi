@@ -80,8 +80,8 @@ begin
   out_out.som   <= som_s;
   out_out.eom   <= eom_s;
   out_out.valid <= vld_s;
-  out_out.data  <= std_logic_vector(resize(signed(odata_i), 16))  -- default output
-                   & std_logic_vector(resize(signed(odata_q), 16))
+  out_out.data  <= std_logic_vector(resize(signed(odata_q), 16)) &              -- default output
+                   std_logic_vector(resize(signed(odata_i), 16))
                    when (props_in.enable = '1') else (idata_mag & in_in.data);  --BYPASS (ENABLE=0)
   -- Since ZeroLengthMessages=true for the output WSI, this signal must be controlled
   out_out.byte_enable <= (others => '1');

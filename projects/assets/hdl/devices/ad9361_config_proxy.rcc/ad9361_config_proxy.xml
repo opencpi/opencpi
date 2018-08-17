@@ -107,6 +107,10 @@
   <specproperty name='half_duplex'           readsync='true'                 />
   <specproperty name='data_rate_config'      readsync='true'                 />
   <specproperty name='DATA_CLK_P_rate_Hz'    readsync='true'                 />
+  <specproperty name='BIST_Mask_Channel_2_Q_data' readsync='true' writesync='true'/>
+  <specproperty name='BIST_Mask_Channel_2_I_data' readsync='true' writesync='true'/>
+  <specproperty name='BIST_Mask_Channel_1_Q_data' readsync='true' writesync='true'/>
+  <specproperty name='BIST_Mask_Channel_1_I_data' readsync='true' writesync='true'/>
 
 </rccworker>
 

@@ -209,6 +209,8 @@ num\_samples & long  & - & - & Readable, Writeable & -  &-1 & Maximum number of 
 \\
 \hline
 fixed\_value & bool  & - & DATA\_BIT\_WIDTH\_p & Readable, Writeable & -  &0x5a5a & The value of this property will be used for I (and the bit-reversed version of this value will be used for Q) to send to the output port when the \verb+mode+ property's value is 'fixed'.
+Array index 0 corresponds to the 15th (most significant) I bit and the 16-\verb+DATA_BIT_WIDTH_p Q+ bit of the out port,
+array index 1 corresponds to the 14th (next-to-most significant) I bit and the 15-\verb+DATA_BIT_WIDTH_p+ Q bit of the out port, etc...
 \\
 \hline
 mode & enum  & - & - & Readable, Writeable & count,walking, LFSR,fixed  &count & Counter, walking ones, Linear Feedback Shift Register, or fixed value.

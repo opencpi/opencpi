@@ -17,10 +17,19 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-if [ -z "$HDL_PLATFORM" ] ; then
-  HDL_PLATFORM=xsim
-fi
 set -e
+if [ -n "$HDL_TEST_PLATFORM" ]; then
+   sims=$HDL_TEST_PLATFORM
+else
+   sims=(`ocpirun -C --only-platforms | grep '.*-.*sim' | sed s/^.*-//`)
+   [ -z "$sims" ] && {
+       echo This test requires a simulator for building, and there are none so we are skipping it.
+       exit 0
+  }
+  echo Available simulators are: ${sims[*]}, using $sims.
+  export HDL_TEST_PLATFORM=$sims
+fi
+echo Using sim platform: $sims
 
 fail() {
   echo "Did not receive an error running this test: this command should not work"
@@ -30,7 +39,7 @@ fail() {
 # OCPIDEV="coverage3 run --append ../../../tools/cdk/scripts/ocpidev_run.py -d ../../av-test"
 OCPIDEV="${OCPI_CDK_DIR}/scripts/ocpidev run -d ../../av-test"
 
-${OCPI_CDK_DIR}/scripts/ocpidev build -d ../../av-test --hdl-platform $HDL_PLATFORM
+${OCPI_CDK_DIR}/scripts/ocpidev build -d ../../av-test --hdl-platform $HDL_TEST_PLATFORM
 echo "Running Test 1"
 $OCPIDEV
 echo "Running Test 2"
@@ -68,13 +77,13 @@ $OCPIDEV test test_worker --mode clean_sim
 echo "Running Test 17"
 $OCPIDEV test test_worker --mode clean_run
 echo "Running Test 18"
-$OCPIDEV test test_worker.test --hdl-platform $HDL_PLATFORM
+$OCPIDEV test test_worker.test --hdl-platform $HDL_TEST_PLATFORM
 echo "Running Test 19"
 $OCPIDEV test test_worker --mode clean_all
-$OCPIDEV test test_worker.test --only-platform $HDL_PLATFORM
+$OCPIDEV test test_worker.test --only-platform $HDL_TEST_PLATFORM
 echo "Running Test 20"
 $OCPIDEV test test_worker --mode clean_all
-$OCPIDEV test test_worker.test --exclude-platform $HDL_PLATFORM
+$OCPIDEV test test_worker.test --exclude-platform $HDL_TEST_PLATFORM
 # need to add things we expect to fail to this test as well
 set +e
 echo "Running Test 21: Expecting Error"

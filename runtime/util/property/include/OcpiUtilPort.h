@@ -33,6 +33,9 @@ namespace OCPI {
   namespace Util {
     typedef uint32_t PortOrdinal; // this must be fixed size across achitectures
     const size_t DEFAULT_BUFFER_SIZE = 2*1024;
+    // FIXME: This constant should be negotiated by platforms.
+    // It applies to both the base address of a set of buffers and the alignment of each buffer
+    // in the set
     const unsigned BUFFER_ALIGNMENT = 16;
     // FIXME:  use a pointer to a protocol, and share protocols in the artifact xml
     class Worker;

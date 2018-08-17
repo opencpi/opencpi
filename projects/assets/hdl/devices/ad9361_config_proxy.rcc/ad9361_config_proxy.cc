@@ -119,9 +119,7 @@ private:
     return RCC_OK;
   }
 
-  template<typename T> void
-  libad9361_API_print_idk(std::string functionStr, T param,
-                          uint8_t chan = 255) {
+  void libad9361_API_print_idk(std::string functionStr) {
     // typical use results in leading '&' on functionStr, erase for prettiness
     std::string functionStdStr(functionStr);
     if(functionStdStr[0] == '&') functionStdStr.erase(functionStdStr.begin());
@@ -166,7 +164,7 @@ private:
   RCCResult
   libad9361_API_init(int32_t function(struct ad9361_rf_phy**, AD9361_InitParam*),
       AD9361_InitParam* param, const char* functionStr) {
-    libad9361_API_print_idk(functionStr, param);
+    libad9361_API_print_idk(functionStr);
     
     const bool    LVDS          = slave.get_LVDS();
     const bool    single_port   = slave.get_single_port();
@@ -435,7 +433,7 @@ private:
   template<typename T> RCCResult
   libad9361_API_1param(int32_t function(struct ad9361_rf_phy*, T),
       T param, const char* functionStr, bool doPrint = true) {
-    if (doPrint) libad9361_API_print_idk(functionStr, param);
+    if (doPrint) libad9361_API_print_idk(functionStr);
 
     RCCResult ret = ad9361_pre_API_call_validation(m_default_init_param);
     if(ret != RCC_OK) return ret;
@@ -464,7 +462,7 @@ private:
   template<typename T> RCCResult
   libad9361_API_1paramv(void function(struct ad9361_rf_phy*, T),
       T param, const char* functionStr) {
-    libad9361_API_print_idk(functionStr, param);
+    libad9361_API_print_idk(functionStr);
 
     RCCResult ret = ad9361_pre_API_call_validation(m_default_init_param);
     if(ret != RCC_OK) return ret;
@@ -486,7 +484,7 @@ private:
   libad9361_API_2param(int32_t function(struct ad9361_rf_phy*, T, R),
       T param1, R param2,
       const char* functionStr) {
-    libad9361_API_print_idk(functionStr, param1);
+    libad9361_API_print_idk(functionStr);
 
     RCCResult ret = ad9361_pre_API_call_validation(m_default_init_param);
     if(ret != RCC_OK) return ret;
@@ -522,7 +520,7 @@ private:
       uint8_t chan, T*), T* param, const char* functionStr,
       bool ch1Disable = false) {
     for(uint8_t chan=0; chan<AD9361_CONFIG_PROXY_RX_NCHANNELS; chan++) {
-      libad9361_API_print_idk(functionStr, param, chan);
+      libad9361_API_print_idk(functionStr);
 
       RCCResult ret = ad9361_pre_API_call_validation(m_default_init_param);
       if(ret != RCC_OK) return ret;
@@ -3145,6 +3143,79 @@ private:
     m_properties.DATA_CLK_P_rate_Hz = DATA_CLK_P_rate_Hz;
     return RCC_OK;
   }
+  // notification that BIST_Mask_Channel_2_Q_data property has been written
+  RCCResult BIST_Mask_Channel_2_Q_data_written() {
+    uint8_t reg = slave.get_test_bist_and_data_port_test_config();
+    if(m_properties.BIST_Mask_Channel_2_Q_data) {
+      reg |= D5_BITMASK;
+    }
+    else {
+      reg &= ~D5_BITMASK;
+    }
+    slave.set_test_bist_and_data_port_test_config(reg);
+    return RCC_OK;
+  }
+  // notification that BIST_Mask_Channel_2_Q_data property will be read
+  RCCResult BIST_Mask_Channel_2_Q_data_read() {
+    uint8_t reg = slave.get_test_bist_and_data_port_test_config();
+    m_properties.BIST_Mask_Channel_2_Q_data = (reg & D5_BITMASK) == D5_BITMASK;
+    return RCC_OK;
+  }
+  // notification that BIST_Mask_Channel_2_I_data property has been written
+  RCCResult BIST_Mask_Channel_2_I_data_written() {
+    uint8_t reg = slave.get_test_bist_and_data_port_test_config();
+    if(m_properties.BIST_Mask_Channel_2_I_data) {
+      reg |= D4_BITMASK;
+    }
+    else {
+      reg &= ~D4_BITMASK;
+    }
+    slave.set_test_bist_and_data_port_test_config(reg);
+    return RCC_OK;
+  }
+  // notification that BIST_Mask_Channel_2_I_data property will be read
+  RCCResult BIST_Mask_Channel_2_I_data_read() {
+    uint8_t reg = slave.get_test_bist_and_data_port_test_config();
+    m_properties.BIST_Mask_Channel_2_I_data = (reg & D4_BITMASK) == D4_BITMASK;
+    return RCC_OK;
+  }
+  // notification that BIST_Mask_Channel_1_Q_data property has been written
+  RCCResult BIST_Mask_Channel_1_Q_data_written() {
+    uint8_t reg = slave.get_test_bist_and_data_port_test_config();
+    if(m_properties.BIST_Mask_Channel_1_Q_data) {
+      reg |= D3_BITMASK;
+    }
+    else {
+      reg &= ~D3_BITMASK;
+    }
+    slave.set_test_bist_and_data_port_test_config(reg);
+    return RCC_OK;
+  }
+  // notification that BIST_Mask_Channel_1_Q_data property will be read
+  RCCResult BIST_Mask_Channel_1_Q_data_read() {
+    uint8_t reg = slave.get_test_bist_and_data_port_test_config();
+    m_properties.BIST_Mask_Channel_1_Q_data = (reg & D3_BITMASK) == D3_BITMASK;
+    return RCC_OK;
+  }
+  // notification that BIST_Mask_Channel_1_I_data property has been written
+  RCCResult BIST_Mask_Channel_1_I_data_written() {
+    uint8_t reg = slave.get_test_bist_and_data_port_test_config();
+    if(m_properties.BIST_Mask_Channel_1_I_data) {
+      reg |= D2_BITMASK;
+    }
+    else {
+      reg &= ~D2_BITMASK;
+    }
+    slave.set_test_bist_and_data_port_test_config(reg);
+    return RCC_OK;
+  }
+  // notification that BIST_Mask_Channel_1_I_data property will be read
+  RCCResult BIST_Mask_Channel_1_I_data_read() {
+    uint8_t reg = slave.get_test_bist_and_data_port_test_config();
+    m_properties.BIST_Mask_Channel_1_I_data = (reg & D2_BITMASK) == D2_BITMASK;
+    return RCC_OK;
+  }
+
   RCCResult run(bool /*timedout*/) {
     return RCC_DONE;
   }

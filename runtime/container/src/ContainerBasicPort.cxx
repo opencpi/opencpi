@@ -22,7 +22,7 @@
 #include <pthread.h>
 // This is obviously temporary
 #ifdef __APPLE__
-#include "../../../util/pwq/src/platform.c"
+#include "../../../foreign/pwq/src/platform.c"
 #endif
 #include "OcpiOsAssert.h"
 #include "OcpiUtilCDR.h"
@@ -507,8 +507,11 @@ namespace OCPI {
 	sConn = sIn;
       } else
 	sConn = sOut;
+      ocpiDebug("Looking for transport (%zu in, %zu out) for connection: %s",
+		in.size(), out.size(), sConn.c_str());
       for (unsigned ni = 0; ni < in.size(); ni++) {
 	const Transport &it = in[ni];
+	ocpiDebug("Considering input transport %s", it.transport.c_str());
 	if (sConn.length() && strcasecmp(sConn.c_str(), it.transport.c_str()))
 	  ocpiInfo("Rejecting input transport %s since %s was specified for the connection",
 		   it.transport.c_str(), sConn.c_str());
@@ -519,6 +522,7 @@ namespace OCPI {
 	  // fall through - an acceptable possible input
 	  for (unsigned no = 0; no < out.size(); no++) {
 	    const Transport &ot = out[no];
+	    ocpiDebug("Considering output transport %s", ot.transport.c_str());
 	    if (strcasecmp(it.transport.c_str(), ot.transport.c_str()))
 	      ;
 	    else if (strcasecmp(it.id.c_str(), ot.id.c_str()))
@@ -553,7 +557,7 @@ namespace OCPI {
 		transport.id = it.id;
 		transport.optionsIn |= (1 << OR::MandatedRole);
 		transport.optionsOut |= (1 << OR::MandatedRole);
-		ocpiInfo("Choosing transport %s/%s for connection with roles %s(0x%x)->%s(0x%x)",
+		ocpiInfo("Choosing transport %s id \"%s\" for connection with roles %s(0x%x)->%s(0x%x)",
 			 it.transport.c_str(), it.id.c_str(), roleNames[transport.roleOut],
 			 transport.optionsOut, roleNames[transport.roleIn], transport.optionsIn);
 		return;

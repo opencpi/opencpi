@@ -54,6 +54,7 @@ bool did_pass_test_ocpi_app_min_value_rf_gain_dB()
       TEST_EXPECTED_VAL(did_pass, true);
       if(!did_pass) { return false; }
       p.setDoubleValue(1.);
+
     }
     {
       OCPI::API::Property p(app, APP_DEFAULT_XML_INST_NAME_RX, "rf_gain_dB");

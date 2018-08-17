@@ -20,6 +20,7 @@
 
 #include "RemoteDriver.h"
 namespace OU =  OCPI::Util;
+namespace OD =  OCPI::Driver;
 
 #define OCPI_OPTIONS_HELP \
   "Usage syntax is: ocpiremote [options] <command>\n" \
@@ -43,6 +44,12 @@ static int mymain(const char **ap) {
   OCPI::Driver::ManagerManager::suppressDiscovery();
   if (!*ap)
     return 0;
+  // Now we explicitly load the remote container driver
+  std::string err;
+  OD::Driver *d = OD::ManagerManager::loadDriver("container", "remote", err);
+  if (!d)
+    options.bad("Error during loading of remote container driver: %s", err.c_str());
+  OR::Driver &driver = *static_cast<OR::Driver*>(d);
   if (!strcasecmp(*ap, "search")) {
     OA::PVarray vals(5);
     unsigned n = 0;
@@ -53,12 +60,12 @@ static int mymain(const char **ap) {
       vals[n++] = OA::PVString("interface", options.interface());
     vals[n++] = OA::PVEnd;
     OA::enableServerDiscovery();
-    OR::Driver::getSingleton().search(vals, NULL, true);
+    driver.search(vals, NULL, true);
   } else if(!strcasecmp(*ap, "probe")) {
     if (!*++ap)
       options.bad("Missing server name argument to probe");
-    std::string err;
-    if (OR::Driver::probeServer(*ap, options.verbose(), NULL, true, err))
+    if (driver.probeServer(*ap, options.verbose(), NULL, NULL, true,
+						       err))
       options.bad("Error during probe for \"%s\": %s", *ap, err.c_str());
   }
   return 0;

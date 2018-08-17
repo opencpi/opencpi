@@ -3,7 +3,8 @@
      implements the ad9361_config_proxy OCS). If the application overrides
      the ad9361_config_proxy instance name to something other than
      ad9361_config_proxy, this worker's app_inst_name_ad9361_config_proxy
-     property should be set to the instance name. -->
+     property should be set to the instance name. The same is true for
+     ad9361_adc_sub, and ad9361_data_sub. -->
 <!--  ___________________________________________________________________    -->
 <!-- +                                                                   +   -->
 <!-- |                       fmcomms_2_3_rx.rcc                          |   -->

@@ -1,0 +1,13 @@
+Valgrind is your friend, especially for runtime code.
+Runtime code should have no leaks, except for those in underlying code we don't control,
+like some one-time allocations in the printf and dlopen libraries.
+
+Tools (code that is NOT used at runtime), can take a more relaxed view of memory leaks.
+I.e. it is not of great value to sweat obscure memory leaks in the existing code.
+
+When tool code is maintained and memory leaks are found, they should be fixed if the fix is
+local and clear, but chasing difficult-to-find-or-fix leaks is just as likely to break
+existing code as help it be better.
+
+When new code can be factored and leak-checked, it is sensible/desirable to keep it leak free.
+

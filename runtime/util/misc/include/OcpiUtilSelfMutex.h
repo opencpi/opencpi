@@ -45,16 +45,7 @@ namespace OCPI {
       OCPI::OS::Mutex &m_mutex;
     protected:
       SelfRefMutex(OCPI::OS::Mutex &m) : m_mutex(m) {}
-// In cleaning (AV-698), I am not sure if this is a real issue or not...
-// -Wnull-dereference is new in GCC6
-#if __GNUC__ >= 6
-#pragma GCC diagnostic push
-#pragma GCC diagnostic warning "-Wnull-dereference"
       operator OCPI::OS::Mutex &() { return m_mutex; }
-#pragma GCC diagnostic pop
-#else
-      operator OCPI::OS::Mutex &() { return m_mutex; }
-#endif
     };
     // The class used with automatic storage.
     class SelfAutoMutex {

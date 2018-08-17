@@ -8,10 +8,10 @@ Scripts that are exposed to users must follow these rules:
    Try to fit it in so it is similar to other "ocpixxx" commands and appears to be part of the
    same environment rather than an outlier.
 
-2. any language suffix should not be present so that the documented use of the tool does not
-   depend upon its implementation language - the file in "scripts" can have the suffix,
-   but it cannot be exported or documented with it.  I.e. if you write ocpifoo.py or ocpifoo.sh,
-   export it as ocpifoo.
+2. any language suffix should not be present in the exported name so that the documented use
+   of the tool does not depend upon its implementation language - the file in "scripts" can
+   have the suffix, but it cannot be exported or documented with it.  I.e. if you write
+   ocpifoo.py or ocpifoo.sh, export it as ocpifoo.
 
 3. scripts should be exported to bin directories so they are available in the user's path
    with only a single directory added by OpenCPI.  The "scripts" directory is not put into

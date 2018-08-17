@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # This file is protected by Copyright. Please refer to the COPYRIGHT file
 # distributed with this source distribution.
 #
@@ -26,6 +26,7 @@ function bad {
   verbose=1
   shift
 }
+vsim="LD_PRELOAD=$OCPI_CDK_DIR/$OCPI_TOOL_DIR/lib/inode64.so $OCPI_MODELSIM_DIR/linuxpe/vsim"
 [ "$1" = probe ] && {
   [ -z "$OCPI_MODELSIM_DIR" ] &&
     bad The OCPI_MODELSIM_DIR environment variable is not set.
@@ -33,15 +34,20 @@ function bad {
     bad The OCPI_MODELSIM_LICENSE_FILE environment variable is not set.
   [ -d "$OCPI_MODELSIM_DIR" ] ||
     bad The OCPI_MODELSIM_DIR directory $OCPI_MODELSIM_DIR does not exist as a directory.
-  [ -x "$OCPI_MODELSIM_DIR/bin/vsim" ] ||
-    bad No modelsim executable found at \"$OCPI_MODELSIM_DIR/bin/vsim\".
+  [ -x "$OCPI_MODELSIM_DIR/linuxpe/vsim" ] ||
+    bad No modelsim executable found at \"$OCPI_MODELSIM_DIR/linuxpe/vsim\".
+  probefile=$(cd $(dirname $0); pwd)/probe.tgz
+  [ -f "$probefile" ] ||
+    bad Missing modelsim probe support file \"$probefile\".
+  tmpdir=`mktemp -d 2>/dev/null || mktemp -d -t 'mytmpdirXXX'` # stackoverflow 30091
+  cd $tmpdir
+  tar xzf $probefile
   divert="2>&1"
   [ -n "$verbose" ] && {
     echo Attempting to run modelsim/vsim with license file \"$OCPI_MODELSIM_LICENSE_FILE\". 1>&2
     divert=
   }
-  LM_LICENSE_FILE=$OCPI_MODELSIM_LICENSE_FILE \
-    eval $OCPI_MODELSIM_DIR/bin/vsim -l /dev/null -c < /dev/null > /dev/null $divert
+  eval LM_LICENSE_FILE=$OCPI_MODELSIM_LICENSE_FILE $vsim -c work.probe < /dev/null > /dev/null $divert
   if [ $? = 0 ] ; then
     [ -n "$verbose" ] && echo Modelsim is available and licensed. 1>&2
     exit 0
@@ -68,8 +74,8 @@ shift
 export LM_LICENSE_FILE=$OCPI_MODELSIM_LICENSE_FILE
 for i in $*; do echo for $i; plusargs="$plusargs +$i"; done
 #echo plusargs are: $plusargs 1>&2
-echo $OCPI_MODELSIM_DIR/bin/vsim -c -lib $contname -f vsim.args $plusargs $contname.$contname > FFF 1>&2
-exec $OCPI_MODELSIM_DIR/bin/vsim -c -lib $contname -f vsim.args $plusargs $contname.$contname <<EOF
+echo $vsim -c -lib $contname -f vsim.args $plusargs $contname.$contname > FFF 1>&2
+eval $vsim -c -lib $contname -f vsim.args $plusargs $contname.$contname <<EOF
 #archive load vsim.dbar
 dataset list
 dataset info file

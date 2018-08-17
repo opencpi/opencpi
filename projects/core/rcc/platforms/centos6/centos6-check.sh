@@ -17,13 +17,5 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-if test -f /etc/centos-release; then
-  read v0 v1 <<EOF
-`sed < /etc/centos-release 's/^\(.\).*release \([0-9]\+\).*/\1 \2/' | tr A-Z a-z`
-EOF
-  if test "$v0" = "c" -a "$v1" = "6"; then
-    echo $1 c6 $2
-    exit 0
-  fi
-fi
-exit 1
+f=/etc/centos-release
+[ -r $f ] && read c r v x < $f && [[ $c  == CentOS && $v == 6.* ]]

@@ -54,8 +54,8 @@ namespace OCPI {
 								   wProps, wParams);
       // This is for passing in a dispatch table for RCC workers.
       else {
-	Worker &w =
-	  createWorker(NULL, instName, (ezxml_t)NULL, (ezxml_t)NULL, NULL, false, 0, 1, aParams);
+	Worker &w = createWorker(NULL, instName, (ezxml_t)NULL, (ezxml_t)NULL, NoWorkers, false,
+				 0, 1, aParams);
 	w.initialize();
 	return w;
       }
@@ -84,11 +84,11 @@ namespace OCPI {
     }
     Worker &Application::
     createWorker(OCPI::Library::Artifact &art, const char *appInstName, 
-		 ezxml_t impl, ezxml_t inst, Worker *slave, bool hasMaster,
+		 ezxml_t impl, ezxml_t inst, const Workers &slaves, bool hasMaster,
 		 size_t member, size_t crewSize, const OCPI::Util::PValue *wParams) {
       // Load the artifact and create the worker
       return
-	container().loadArtifact(art).createWorker(*this, appInstName, impl, inst, slave,
+	container().loadArtifact(art).createWorker(*this, appInstName, impl, inst, slaves,
 						   hasMaster, member, crewSize, wParams);
     }
     // If not master, then we ignore slave, so there are three cases
@@ -96,7 +96,7 @@ namespace OCPI {
     startMasterSlave(bool isMaster, bool isSlave, bool isSource) {
       for (Worker *w = firstWorker(); w; w = w->nextWorker())
 	if (isSource == w->isSource() &&
-	    isMaster == (w->slave() != NULL) &&
+	    isMaster == (w->slaves().size() != 0) &&
 	    isSlave == w->hasMaster()) {
 	  assert(w->getState() == OU::Worker::INITIALIZED || 
 		 w->getState() == OU::Worker::SUSPENDED);
@@ -109,18 +109,21 @@ namespace OCPI {
     void Application::
     stop(bool isMaster, bool isSlave) {
       for (Worker *w = firstWorker(); w; w = w->nextWorker())
-	if ((isMaster && w->slave() &&
+	if ((isMaster && w->slaves().size() &&
 	     ((isSlave && w->hasMaster()) || (!isSlave && !w->hasMaster()))) ||
-	    (!isMaster && !w->slave()))
-	w->stop();
+	    (!isMaster && w->slaves().empty())) {
+	  ocpiInfo("Stopping worker: %s in container %s from %s/%s", w->name().c_str(),
+		   container().name().c_str(), w->implTag().c_str(), w->instTag().c_str());
+	  w->stop();
+	}
     }
     // If not master, then we ignore slave, so there are three cases
     void Application::
     release(bool isMaster, bool isSlave) {
       for (Worker *w = firstWorker(); w; w = w->nextWorker())
-	if ((isMaster && w->slave() &&
+	if ((isMaster && w->slaves().size() &&
 	     ((isSlave && w->hasMaster()) || (!isSlave && !w->hasMaster()))) ||
-	    (!isMaster && !w->slave()))
+	    (!isMaster && w->slaves().empty()))
 	w->release();
     }
     bool Application::

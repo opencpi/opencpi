@@ -56,8 +56,6 @@ Artifact(Container &c, OCPI::Library::Artifact &lart, const OA::PValue *props)
     m_entryTable = (RCCEntryTable *)m_loader.getSymbol(entryPoint);
   } catch (std::string &error) {
     OU::format(err, "Could not open RCC worker file %s: %s", url, error.c_str());
-    // Why the format calls and not simply (below)?
-    // err = "Could not open RCC worker file " + lart.name() + ": " + error;
     throw err;
   } catch (...) {
     OU::format(err, "Unknown exception opening RCC worker file %s", url);
@@ -134,11 +132,11 @@ Application::
 
 OC::Worker & Application::
 createWorker(OC::Artifact *art, const char *appInstName, ezxml_t impl, ezxml_t inst,
-	     OC::Worker *slave, bool hasMaster, size_t member, size_t crewSize,
+	     const OC::Workers &slaves, bool hasMaster, size_t member, size_t crewSize,
 	     const OCPI::Util::PValue *wParams) {
   OU::SelfAutoMutex guard(&container());
   return *new Worker(*this, art ? static_cast<Artifact*>(art) : NULL,
-		     appInstName ? appInstName : "unnamed-worker", impl, inst, slave, hasMaster,
+		     appInstName ? appInstName : "unnamed-worker", impl, inst, slaves, hasMaster,
 		     member, crewSize, wParams);
 }
 

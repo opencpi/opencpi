@@ -16,8 +16,9 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
+################################################################################################
 # Set up the prereq install and build directories.
-# This file is sourced either from install-prerequisites.sh or setup-install.sh
+# This file is sourced either from install-prerequisites.sh or setup-prerequisite.sh
 [ -z "$OCPI_PREREQUISITES_INSTALL_DIR" ] &&
     export OCPI_PREREQUISITES_INSTALL_DIR=$OCPI_PREREQUISITES_DIR
 [ -z "$OCPI_PREREQUISITES_BUILD_DIR" ] && {
@@ -41,12 +42,12 @@ function checkdir {
     else  
       echo Could not create $1 or its parents without sudo.
       ask try to create $1 as root	
-      [ sudo mkdir -p $1 ] || exit 1
+      sudo mkdir -p $1 || exit 1
     fi
   elif [ ! -w $1 ]; then
       echo You do not have permission for writing to $1.
       ask try to change permissions $1 as root	
-      [ sudo chmod a+w $1 ] || exit 1
+      sudo chmod a+w $1 || exit 1
   fi
 }
 checkdir $OCPI_PREREQUISITES_BUILD_DIR

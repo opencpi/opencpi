@@ -45,12 +45,13 @@ namespace OCPI {
       }
     }
 
+    const Workers NoWorkers;
     Worker::
-    Worker(Artifact *art, ezxml_t impl, ezxml_t inst, Worker *a_slave, bool a_hasMaster,
+    Worker(Artifact *art, ezxml_t impl, ezxml_t inst, const Workers &a_slaves, bool a_hasMaster,
 	   size_t a_member, size_t a_crewSize, const OA::PValue *) 
       : OU::Worker::Worker(),
 	m_artifact(art), m_xml(impl), m_instXml(inst), m_workerMutex(true),
-	m_controlOpPending(false), m_slave(a_slave), m_hasMaster(a_hasMaster),
+	m_controlOpPending(false), m_slaves(a_slaves), m_hasMaster(a_hasMaster),
         m_member(a_member), m_crewSize(a_crewSize), m_connectedPorts(0), m_optionalPorts(0) {
       if (impl) {
 	const char *err = parse(impl);
@@ -122,12 +123,11 @@ namespace OCPI {
       return prop;
     }
     // Internal used by others.
-    void Worker::setPropertyValue(const OU::Property &prop, const std::string &v) {
+    void Worker::setPropertyValue(const OU::Property &prop, const char *v) {
       OU::Value val(prop);
-      const char *err = val.parse(v.c_str());
+      const char *err = val.parse(v);
       if (err)
-	throw OU::Error("For value \"%s\" for property \"%s\": %s",
-			v.c_str(), prop.m_name.c_str(), err);
+	throw OU::Error("For value \"%s\" for property \"%s\": %s", v, prop.m_name.c_str(), err);
       setPropertyValue(prop, val);
     }
 
@@ -231,12 +231,10 @@ namespace OCPI {
       OU::Property &prop = findProperty(pname);
       OU::ValueType &vt = prop;
       OU::Value v(vt); // FIXME storage when not scalar
-      std::string value_orig(value);
       const char *err = v.parse(value);
       if (err)
-        throw OU::ApiError("Received the following error when parsing worker "
-                           "property \"", pname, "\" value of \"",
-                           value_orig.c_str(), "\": \"", err, "\"", NULL);
+        throw OU::Error("When parsing worker property \"%s\" with value \"%s\":  %s",
+			pname, value, err);
       setPropertyValue(prop, v);
     }
     void Worker::
@@ -362,6 +360,10 @@ namespace OCPI {
       return true;
     }
     void Worker::setProperty(unsigned ordinal, OU::Value &value) {
+      OU::Property &prop(property(ordinal));
+      setPropertyValue(prop, value);
+    }
+    void Worker::setProperty(unsigned ordinal, const char *value) {
       OU::Property &prop(property(ordinal));
       setPropertyValue(prop, value);
     }

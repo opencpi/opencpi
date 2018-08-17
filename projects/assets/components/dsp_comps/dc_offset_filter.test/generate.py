@@ -56,7 +56,7 @@ real = np.cos(Tone05*2*np.pi*t) + np.cos(Tone13*2*np.pi*t) + np.cos(Tone27*2*np.
 imag = np.sin(Tone05*2*np.pi*t) + np.sin(Tone13*2*np.pi*t) + np.sin(Tone27*2*np.pi*t) + 1
 #real = np.random.randn(NUM_SAMPLES,1) + 1
 #imag = np.random.randn(NUM_SAMPLES,1) + 1
-out_data = np.array(np.zeros(NUM_SAMPLES), dtype=np.dtype((np.uint32, {'real_idx':(np.int16,2), 'imag_idx':(np.int16,0)})))
+out_data = np.array(np.zeros(NUM_SAMPLES), dtype=np.dtype((np.uint32, {'real_idx':(np.int16,0), 'imag_idx':(np.int16,2)})))
 #pick a gain at 70% max value - i.e. back off more than a 1/4 bit to avoid
 #internal worker overflow. Note that the amplitude is not centered due to
 #the "+1" dc offset argument above in the real/imag declarations. This

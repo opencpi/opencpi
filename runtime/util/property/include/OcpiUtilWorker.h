@@ -75,19 +75,23 @@ namespace OCPI {
     // Attributes of an artifact and/or implementation
     // Generally shared by all the implementations in an artifact
     class Attributes {
-    public:
+    protected:
       std::string
 	m_uuid,
 	m_os, m_osVersion, m_arch,
 	m_platform,
 	m_tool, m_toolVersion,
-	m_artVersion,
+	m_opencpiVersion,
 	m_runtime, m_runtimeVersion;
       bool m_dynamic;
+    public:
       inline const std::string &uuid() const { return m_uuid; }
-      inline const std::string &platform() const { return m_platform; }
+      inline const std::string &os() const { return m_os; }
+      inline const std::string &osVersion() const { return m_osVersion; }
       inline const std::string &arch() const { return m_arch; }
-      inline const std::string &version() const { return m_artVersion; }
+      inline const std::string &platform() const { return m_platform; }
+      inline const std::string &opencpiVersion() const { return m_opencpiVersion; }
+      inline bool dynamic() const { return m_dynamic; }
     protected:
       // Parse from target string
       void parse(const char *pString);
@@ -115,8 +119,8 @@ namespace OCPI {
 	m_specName,
 	m_name,
 	m_model,
-	m_package,
-	m_slave; // the model.impl name of a slave
+	m_package;
+      std::vector<const char *> m_slaves; // the model.impl name of a slave, in the m_xml
       Attributes *m_attributes; // not a reference due to these being in arrays
       Port *m_ports;
       Memory *m_memories;
@@ -143,7 +147,7 @@ namespace OCPI {
       inline const std::string &specName() const { return m_specName; }
       //      inline const std::string &name() const { return m_name; }
       inline const char *cname() const { return m_name.c_str(); }
-      inline const std::string &slave() const { return m_slave; }
+      inline const std::vector<const char *> &slaves() const { return m_slaves; }
       inline const Attributes &attributes() const { return *m_attributes; }
       inline bool isSource() const { return m_isSource; }
       const char *parse(ezxml_t xml, Attributes *attr = NULL);

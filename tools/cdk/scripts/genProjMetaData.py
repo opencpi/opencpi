@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 # This file is protected by Copyright. Please refer to the COPYRIGHT file
 # distributed with this source distribution.
 #
@@ -48,12 +48,15 @@ def addLibs(curRoot, libs):
     else:
         for libDir in libraryDirectories:
             ET.SubElement(curRoot, "library", {"name" : libDir})
+
 def addSpecs(curRoot, curDir):
-    for dirName, subdirList, fileList in os.walk(curDir):
-        if (dirName.endswith("/specs")):
-            for a in fileList:
-                worker = ET.SubElement(curRoot, "spec")
-                worker.set('name', a)
+    for dirName in os.listdir(curDir):
+        if (dirName == "specs"):
+            for a in os.listdir(curDir + "/" + dirName):
+                if a == "package-id":
+                    continue
+                comp = ET.SubElement(curRoot, "spec")
+                comp.set('name', a)
 
 def getWorkerPlatforms(dirName, name):
     buildFile = dirName + "/" + name.split('.', 1)[0] + "-build.xml"
@@ -277,6 +280,9 @@ if (isStale(mydir, force)):
     assys = ET.SubElement(hdl, "assemblies")
     prims = ET.SubElement(hdl, "primitives")
 
+    if os.path.isdir(mydir + "/specs"):
+        top_specs = ET.SubElement(root, "specs")
+        addSpecs(top_specs, mydir)
     comps = None
     if os.path.isdir(mydir + "/components"):
         comps = ET.SubElement(root, "components")

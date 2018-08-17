@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash --noprofile
 # This file is protected by Copyright. Please refer to the COPYRIGHT file
 # distributed with this source distribution.
 #
@@ -22,11 +22,18 @@
 # in library if the library itself has not been built. The
 # fix was to 'make speclinks -C ../' when building a worker.
 set -e
-
-if [ -z "$HDL_PLATFORM" ] ; then
-  HDL_PLATFORM=xsim
+if [ -n "$HDL_TEST_PLATFORM" ]; then
+   sims=$HDL_TEST_PLATFORM
+else
+   sims=(`ocpirun -C --only-platforms | grep '.*-.*sim' | sed s/^.*-//`)
+   [ -z "$sims" ] && {
+       echo This test requires a simulator for building, and there are none so we are skipping it.
+       exit 0
+  }
+  echo Available simulators are: ${sims[*]}, using $sims.
 fi
-
+echo Using sim platform: $sims
+rm -r -f test
 ocpidev create project test
 cd test
 ocpidev create library components
@@ -40,7 +47,8 @@ echo -n '<ComponentSpec>
 </ComponentSpec>' > components/specs/workerTwo-spec.xml
 ocpidev create worker workerOne.hdl
 ocpidev create worker workerTwo.hdl
-ocpidev create hdl assembly testAssembly
+# Note mixed case assemblies do not work on isim
+ocpidev create hdl assembly testassembly
 echo -n '<HdlAssembly>
   <Instance Worker="workerOne"/>
   <Instance Worker="workerTwo"/>
@@ -48,14 +56,12 @@ echo -n '<HdlAssembly>
      <Port Instance="workerOne" Name="out"/>
      <Port Instance="workerTwo" Name="in"/>
   </Connection>
-</HdlAssembly>' > hdl/assemblies/testAssembly/testAssembly.xml
-(cd components/workerOne.hdl && ocpidev build --hdl-platform $HDL_PLATFORM)
-(cd components/workerTwo.hdl && ocpidev build --hdl-platform $HDL_PLATFORM)
-
+</HdlAssembly>' > hdl/assemblies/testassembly/testassembly.xml
+(cd components/workerOne.hdl && ocpidev build --hdl-platform $sims)
+(cd components/workerTwo.hdl && ocpidev build --hdl-platform $sims)
 # When AV-4130 was encountered, this line is necessary in order to make things work:
 #make exports
-
-(cd hdl/assemblies/testAssembly && ocpidev build --hdl-platform $HDL_PLATFORM)
+(cd hdl/assemblies/testassembly && ocpidev build --hdl-platform $sims)
 
 cd ../;
 ocpidev delete -f project test/

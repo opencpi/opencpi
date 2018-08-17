@@ -121,7 +121,7 @@ class TestPathFunctions(unittest.TestCase):
         logging.info("...")
         # Set the registry, (export the variable in bash), register core in the new location
         os.environ['OCPI_PROJECT_REGISTRY_DIR'] = os.path.realpath('./project-registry')
-        ocpidev_command = "set -o pipefail; " + SET_X
+        ocpidev_command = "set -e; set -o pipefail && rm -r -f project-registry; " + SET_X
         ocpidev_command += OCPIDEV_CMD + " create registry project-registry; "
         ocpidev_command += "export OCPI_PROJECT_REGISTRY_DIR=" + \
                            os.path.realpath('./project-registry') + " ; "
@@ -134,7 +134,7 @@ class TestPathFunctions(unittest.TestCase):
         ocpidev_command += OCPIDEV_CMD + " -d " + PROJECT0 + " create -l mylibrary test myspec; "
         ocpidev_command += OCPIDEV_CMD + " -d " + PROJECT0 + \
                            " create -l mylibrary worker myworker0.rcc -S myspec-spec.xml; "
-        ocpidev_command += "ocpidev -d " + PROJECT0 + \
+        ocpidev_command += OCPIDEV_CMD + " -d " + PROJECT0 + \
                            " create -l mylibrary worker myworker1.hdl -S myspec-spec.xml; "
         ocpidev_command += OCPIDEV_CMD + " -d " + PROJECT0 + " create hdl primitive core mycore; "
         ocpidev_command += OCPIDEV_CMD + " -d " + PROJECT0 + " create hdl primitive library mylib; "
@@ -166,16 +166,17 @@ class TestPathFunctions(unittest.TestCase):
         # Copy the exported pj8 to a new dir, but omit the imports
         ocpidev_command += "mkdir mypj8_exported;"
         ocpidev_command += "rm mypj8/exports/imports; "
-        ocpidev_command += "cp -rfL mypj8/exports/* mypj8_exported 2>/dev/null; "
+        # Note use -R, not -r, for POSIX/BSD portability
+        ocpidev_command += "cp -RfL mypj8/exports/* mypj8_exported 2>/dev/null; "
         # Rebuild pj8's imports
         ocpidev_command += "make imports -C mypj8; "
         # Get imports by setting registry for the new exported non-source project
-        ocpidev_command += "ocpidev -d mypj8_exported set registry; "
+        ocpidev_command += OCPIDEV_CMD + " -d mypj8_exported set registry; "
         # Register the exported project
         ocpidev_command += OCPIDEV_CMD + " register project mypj8_exported; "
 
         logging.debug("OCPIDEV CMD: '" + ocpidev_command.replace('; ', ';\n') + "';")
-        process = subprocess.Popen(ocpidev_command, shell=True)
+        process = subprocess.Popen(ocpidev_command, shell=True, executable='/bin/bash')
         results = process.communicate()
         if results[1] or process.returncode != 0:
             raise ocpiutil.OCPIException("'ocpidev create project' failed in ocpiutil test\n" +
@@ -222,7 +223,10 @@ class TestPathFunctions(unittest.TestCase):
         all_pjs = [pj for pj in ocpiutil.get_all_projects() if not re.search(r".*/ocpi\.core$", pj)]
         pj_paths = [os.path.realpath('.') + '/project-registry/'
                     + pj for pj in list(PROJECT_PACKAGES.values())]
-        golden_all_pjs = pj_paths + [os.path.realpath('.') + '/project-registry/ocpi.cdk']
+        golden_all_pjs = pj_paths
+        project_path = os.environ.get('OCPI_PROJECT_PATH')
+        if project_path:
+           golden_all_pjs += project_path.split(':')
         logging.info("Verifying that get_all_projects correctly collects CDK, Project path, " +
                      "and registry contents: " + str(golden_all_pjs))
         self.assertEqual(set(all_pjs), set(golden_all_pjs))

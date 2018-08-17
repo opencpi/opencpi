@@ -57,7 +57,7 @@ namespace OCPI {
       void emitArtifact(const OCPI::Library::Artifact &art);
       void emitCrew(const OCPI::Container::Launcher::Crew &crew);
       void emitMember(const char *name, unsigned contN, unsigned artN, unsigned crewN,
-		      const Launcher::Member &i, int slave);
+		      const Launcher::Member &i, const char *slaves);
       void emitSide(const Launcher::Members &members, Launcher::Port &p, bool input,
 		    size_t bufferSize);
       void emitConnection(const Launcher::Members &members, Launcher::Connection &c);

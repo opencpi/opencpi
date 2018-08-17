@@ -16,31 +16,19 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-# Makefile for RCC common definitions not specific to "workers"
+##########################################################################################
+# This file preprocesses the RccPlatform(s) and RccTarget(s) variables, defines common
+# RCC-related definitions not specific to "workers", and ensures that all the platform
+# variables are set for the requested platforms.
+# Thus this file has significant side-effects
 ifndef RCC_MAKE_MK
 RCC_MAKE_MK:=xxx
-include $(OCPI_CDK_DIR)/include/util.mk
-#
-# The block below needs to happen prior to the assignments below for
-# extracting RccTarget/Platform info from this makefile
-ifdef ShellRccTargetsVars
-$(OcpiIncludeProject)
-# When collecting a list of RCC targets/platforms, you do not need to be inside a project.
-# So, collect all projects in the Project Registry Dir into the project path for searching.
-# If inside a project, the registry should be searched automatically via the project's imports.
-ifeq ($(OCPI_PROJECT_DIR),)
-  export OCPI_PROJECT_PATH:=$(OCPI_PROJECT_PATH):$(subst $(Space),:,$(wildcard $(OcpiProjectRegistryDir)/*))
-endif
-endif
-
-RccOs=$(word 1,$(subst -, ,$(or $1,$(RccTarget))))
-RccOsVersion=$(word 2,$(subst -, ,$1))
-RccArch=$(word 3,$(subst -, ,$1))
+include $(OCPI_CDK_DIR)/include/rcc/rcc-targets.mk
 
 $(call OcpiDbgVar,RccPlatforms)
 $(call OcpiDbgVar,RccTargets)
 
-# for a clean environment, ensure OCPI_TOOL_PLATFORM at least
+# for a clean environment, ensure OCPI_TOOL_PLATFORM at least, unlikely needed, but...
 $(eval $(OcpiEnsureToolPlatform))
 
 # Allow the option of specifying an rcc platform by referencing the associated
@@ -55,8 +43,10 @@ ifdef RccHdlPlatforms
      $(if $(filter $p,$(HdlAllPlatforms)),\
        $(if $(HdlRccPlatform_$p),\
          $(eval override RccPlatforms:=$(call Unique,$(RccPlatforms) $(HdlRccPlatform_$p))), \
-         $(eval override RccPlatforms:=$(call Unique,$(RccPlatforms) $(OCPI_TOOL_PLATFORM)))$(warning There is no RCC platform associated with the HDL platform: $p. Using $(OCPI_TOOL_PLATFORM))),\
-       $(eval override RccPlatforms:=$(call Unique,$(RccPlatforms) $(OCPI_TOOL_PLATFORM)))$(warning There is no HDL platform named: $p, so no RCC platform for it. Using $(OCPI_TOOL_PLATFORM))\
+         $(eval override RccPlatforms:=$(call Unique,$(RccPlatforms) $(OCPI_TOOL_PLATFORM)))\
+         $(warning There is no RCC platform associated with the HDL platform: $p. Using $(OCPI_TOOL_PLATFORM))),\
+       $(eval override RccPlatforms:=$(call Unique,$(RccPlatforms) $(OCPI_TOOL_PLATFORM)))\
+       $(warning There is no HDL platform named: $p, so no RCC platform for it. Using $(OCPI_TOOL_PLATFORM))\
      ))
 endif
 
@@ -81,54 +71,62 @@ endif
 $(call OcpiDbgVar,RccPlatforms)
 $(call OcpiDbgVar,RccTargets)
 
-ifdef OCPI_ALL_RCC_PLATFORMS
-  RccAllPlatforms:=$(OCPI_ALL_RCC_PLATFORMS)
-  RccAllTargets:=$(OCPI_ALL_RCC_TARGETS)
-else
-  $(foreach d,$(OcpiGetRccPlatformPaths),\
-    $(foreach p,$(wildcard $d/*),\
-      $(and $(wildcard $p/$(notdir $p)-target.mk),\
-        $(eval RccAllPlatforms:=$(RccAllPlatforms) $(notdir $p))) \
-      $(and $(wildcard $p/target),\
-        $(eval RccAllTargets:=$(RccAllTargets) $(shell cat $p/target)))))
-  RccAllTargets:=$(call Unique,$(RccAllTargets))
-  export OCPI_ALL_RCC_PLATFORMS:=$(RccAllPlatforms)
-  export OCPI_ALL_RCC_TARGETS:=$(RccAllTargets)
-#  $(info OCPI_ALL_RCC_PLATFORMS is $(OCPI_ALL_RCC_PLATFORMS))
-#  $(info OCPI_ALL_RCC_TARGETS is $(OCPI_ALL_RCC_TARGETS))
-endif
-# AV-4112 Relate a platform to its target
-$(foreach p,$(RccAllPlatforms),\
-  $(foreach d, $(call OcpiGetRccPlatformDir,$p),\
-    $(foreach f,$d/target,\
-      $(if $(wildcard $f),\
-        $(foreach t,$(shell echo $$(< $f)),\
-          $(eval RccTargetAux_$p:=$t))))))
+# This must be called with a list of platforms
+# It converts "platforms that might have build options" to "platforms"
+# I.e. strips off the build options from the input list
+RccRealPlatforms=$(infox GETREAL:$1)$(foreach p,$1,$(word 1,$(subst -, ,$p)))
+# This operates on the target-specific variable assignment of RccPlatform
+# And strips off the build options if present
+RccRealPlatform=$(strip $(infox RRP:$(RccPlatform))\
+                $(foreach p,$(call RccRealPlatforms,$(RccPlatform)),$(infox RRPr:$p)$p))
+# Find the platform that has the argument as a target
+# Look through all RccTarget_% variables (where the value or RccTarget_<platform> is the target
+# of the <platform>) to find one that maps a platform to the target in $1.  Return <platform>
+# This relies on the 1:1 mapping of rcc platforms and targets
+RccGetPlatform=$(strip $(infox RGP:$1:$2:)\
+  $(or $(filter $1,$(RccAllPlatforms)),\
+       $(foreach v,$(filter RccTarget_%,$(.VARIABLES)),$(infox VV:$v:$($v))\
+         $(foreach p,$(v:RccTarget_%=%),\
+           $(and $(filter $p,$(RccAllPlatforms)),$(filter $1,$(value $v)),\
+	         $(infox RGPr:$1:$v:$p:$(value $v))$p))),\
+       $($(or $2,error) Cannot find an RCC platform for the target: $1)))
+# The model-specific determination of the "tail end" of the target directory,
+# after the prefix (target), and build configuration.
+# The argument is a TARGET, more or less for legacy reasons now.
+RccTargetDirTail=$(infox RTDT:$1:$(RccTarget_$1):$(RccPlatform))$(strip\
+  $(or $(and $(RccTarget_$1),$1),\
+       $(and $(filter $1,$(RccTarget_$(RccPlatform))),$(RccPlatform)),\
+       $(call RccGetPlatform,$1,error)))
 
+# Transfer build options to target from platform
+# $(call RccPlatformTarget,<platform>,<target>)
+RccPlatformTarget=$2$(foreach b,$(word 2,$(subst -, ,$1)),$(and $b,-$b))
 ifdef RccPlatforms
-  # FIXME: this logic is copied in ocl-make.mk
-  override RccPlatforms:=$(filter-out $(ExcludePlatforms) $(RccExcludePlatforms),$(RccPlatforms))
+  # Exclude any platform whose real platform matches one in the exluded platform lists
+  override RccPlatforms:=$(strip\
+    $(foreach p,$(RccPlatforms),\
+      $(if $(filter $(call RccRealPlatforms,$p),$(ExcludePlatforms) $(RccExcludePlatforms)),,$p)))
+  # If (Rcc)OnlyPlatforms is specified, retain only platforms whose real platform is in the list
   ifneq ($(OnlyPlatforms)$(RccOnlyPlatforms),)
-    override RccPlatforms:=$(filter $(OnlyPlatforms) $(RccOnlyPlatforms),$(RccPlatforms))
+    override RccPlatforms:=$(strip\
+      $(foreach p,$(RccPlatforms),\
+        $(if $(filter $(call RccRealPlatforms,$p),$(OnlyPlatforms) $(RccOnlyPlatforms)),$p,)))
   endif
-  # We cannot perform this check since we may be inheriting changes made in a higher
-  # level Makefile.  If the user tries this, it is simply ignored.
-  # ifdef RccTargets
-  #   $(error You cannot set both RccTarget(s) and RccPlatform(s))
-  # endif
   RccTargets:=
-  RccFound:=
+  $(call OcpiDbgVar,RccTargets)
+  # Set the target (RccTarget_<platform>) for each platform specified, retaining
+  # build options here on both sides.  If there are no build options for a platform this
+  # essentially rewrites the RccTarget_<platform> variable that is already set from
+  # RccAllPlatforms.  All create the RccTargets list too.
   $(foreach p,$(RccPlatforms),\
-    $(foreach d, $(call OcpiGetRccPlatformDir,$p),\
-      $(foreach f,$d/target,\
-         $(if $(wildcard $f),\
-           $(foreach t,$(shell echo $$(< $f)),\
-               $(eval RccTargets+=$t)\
-               $(eval RccTarget_$p:=$t)\
-               $(eval RccFound+=$p))))))\
-  $(foreach p,$(RccPlatforms),\
-    $(if $(findstring $p,$(RccFound)),,\
-      $(error RccPlatform $p is unknown, $f does not exist)))
+    $(foreach r,$(call RccRealPlatforms,$p),\
+      $(if $(filter $r,$(RccAllPlatforms)),,\
+        $(error RccPlatform $r is unknown, it is not found in any registered project))\
+      $(foreach t,$(call RccPlatformTarget,$p,$(RccTarget_$r)),\
+        $(eval RccTarget_$p:=$t)\
+        $(eval RccTargets=$(strip $(RccTargets) $t)))))
+  $(call OcpiDbgVar,RccPlatforms)
+  $(call OcpiDbgVar,RccTargets)
 else
   # Derive a platform from each target (somewhat expensive, but we have shortcuts)
   # This can be deprecated or accelerated as it makes sense
@@ -136,18 +134,14 @@ else
   # (A single wildcard then does it)
   # We could also cache this
   RccPlatforms:=
-  RccFound:=\
-  $(foreach d,$(OcpiGetRccPlatformPaths),\
-    $(foreach f,$(wildcard $d/*/target),\
-      $(foreach p,$(notdir $(patsubst %/,%,$(dir $f))),\
-        $(foreach t,$(shell echo $$(< $f)),\
-          $(if $(findstring $t,$(RccTargets)),\
-            $(eval RccTarget_$p:=$t)\
-            $(eval RccPlatforms+=$p)\
-            $(eval RccFound+=$t))))))\
   $(foreach t,$(RccTargets),\
-     $(if $(findstring $t,$(RccFound)),,\
-        $(error The RccTarget $t is not the target for any software platform (in $(OCPI_CDK_DIR) or $(OCPI_PROJECT_PATH)))))
+    $(eval RccFound:=)\
+    $(foreach p,$(RccAllPlatforms),\
+      $(if $(filter $t,$(RccTarget_$p)),\
+        $(eval RccPlatforms+=$p)\
+        $(eval RccFound+=$t)))\
+    $(if $(RccFound),,\
+      $(error The RccTarget "$t" is not the target for any software platform in any registered project)))
 endif
 
 $(call OcpiDbgVar,RccPlatforms)
@@ -157,39 +151,16 @@ $(call OcpiDbgVar,RccTargets)
 override RccTarget:=
 override RccPlatform:=
 
-# Read in all the tool sets indicated by the targets
-#
-ifeq ($(filter clean cleanrcc,$(MAKECMDGOALS)),)
-# include all the rcc compilation files for all target platforms
-$(foreach p,$(RccPlatforms), \
-  $(foreach t,$(RccTarget_$p),\
-    $(eval files:=)\
-    $(eval cross:=)\
-    $(foreach d, $(call OcpiGetRccPlatformDir,$p),\
-      $(foreach m,$(if $(findstring $(OCPI_TOOL_PLATFORM),$p),rcc=$p,rcc=$(OCPI_TOOL_PLATFORM)=$p) \
-                  $(if $(findstring $(OCPI_TOOL_HOST),$t),$t,$(OCPI_TOOL_HOST)=$t),\
-        $(eval files:=$(files) $(or $(wildcard $(OCPI_CDK_DIR)/include/rcc/$m.mk),\
-                                    $(wildcard $d/$m.mk)))\
-        $(and $(findstring =,$(subst rcc=,,$m)),$(eval cross:=1)))\
-      $(foreach n,$(words $(files)),\
-         $(if $(filter 0,$n),\
-	    $(if $(cross),\
-               $(error There is no cross compiler defined from $(OCPI_TOOL_PLATFORM) to $p),\
-               $(eval include $(OCPI_CDK_DIR)/include/rcc/default.mk)),\
-	    $(if $(filter 1,$n),,\
-               $(warning More than one file defined for compiling $(OCPI_TOOL_PLATFORM) to $p, using $(word 1,$(files)), others are $(wordlist 2,$(words $(files)),$(files)).))\
-            $(eval include $(word 1,$(files))))))))
-endif
-endif
+# Allow either platforms or targets for now
+# Unfortunately these are called sometimes with target assignment of RccTarget and
+# sometimes not.
+RccOs=$(or $(OcpiPlatformOs_$1),$(word 1,$(subst -, ,$(or $1,$(RccTarget),$(error Internal)))))
+RccOsVersion=$(or $(OcpiPlatformOsVersion_$1),$(word 2,$(subst -, ,$1)))
+RccArch=$(or $(OcpiPlatformArch_$1),$(word 3,$(subst -, ,$1)))
 
-# Assignments that can be used to extract make variables into bash/python...
-ifdef ShellRccTargetsVars
-all:
-$(info RccAllPlatforms="$(sort $(RccAllPlatforms))";\
-       RccPlatforms="$(sort $(RccPlatforms))";\
-       RccAllTargets="$(sort $(RccAllTargets))";\
-       RccTargets="$(sort $(RccTargets))";\
-       $(foreach p,$(sort $(RccAllPlatforms)),\
-         $(if $(RccTargetAux_$p),RccTargetAux_$p="$(RccTargetAux_$p)";)))
+# Read in all the tool sets for the platforms we are building
+ifeq ($(filter clean cleanrcc,$(MAKECMDGOALS)),)
+  $(foreach x,$(RccPlatforms),\
+      $(eval $(call OcpiSetPlatformVariables,$(call RccRealPlatforms,$x))))
 endif
-#$(foreach t,$(RccTopTargets),$(or $(RccTargets_$t),$t))";\
+endif # guard for whole file

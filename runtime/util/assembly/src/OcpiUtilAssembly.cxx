@@ -152,7 +152,7 @@ namespace OCPI {
       m_mappedProperties.resize(OE::countChildren(ax, "property"));
       MappedProperty *p = &m_mappedProperties[0];
       for (ezxml_t px = ezxml_cchild(ax, "property"); px; px = ezxml_cnext(px), p++)
-        if ((err = p->parse(px, *this)))
+        if ((err = p->parse(px, *this, params)))
           return err;
       n = 0;
       for (ezxml_t cx = ezxml_cchild(ax, "Connection"); cx; cx = ezxml_cnext(cx)) {
@@ -366,7 +366,7 @@ namespace OCPI {
     }
 
     const char *Assembly::MappedProperty::
-    parse(ezxml_t px, Assembly &a) {
+    parse(ezxml_t px, Assembly &a, const PValue *params) {
       const char *err;
       std::string instance;
 
@@ -381,8 +381,16 @@ namespace OCPI {
           return esprintf("Duplicate mapped property: %s", m_name.c_str());
       const char *cp = ezxml_cattr(px, "property");
       m_instPropName = cp ? cp : m_name.c_str();
-      //      if (ezxml_cattr(px, "value") || ezxml_cattr(px, "valueFile") || ezxml_cattr(px, "dumpFile"))
-      return a.m_instances[m_instance]->addProperty(m_instPropName.c_str(), px);
+      if ((err = a.m_instances[m_instance]->addProperty(m_instPropName.c_str(), px)))
+	return err;
+      // Add any top-level property assignment in params for this mapped property
+      const char *propAssign;
+      for (unsigned n = 0; findAssignNext(params, "property", m_name.c_str(), propAssign, n); ) {
+	std::string assign = m_instPropName + "=" + propAssign;
+	if ((err = a.m_instances[m_instance]->setProperty(assign.c_str())))
+	  return err;
+      }
+      return NULL;
     }
 
     const char *Assembly::Property::
@@ -399,6 +407,21 @@ namespace OCPI {
     
     Assembly::Instance::Instance() : m_freeXml(false) {}
     Assembly::Instance::~Instance() { if (m_freeXml) ezxml_free(m_xml); }
+    const char *Assembly::Instance::
+    checkSlave(Assembly &a, const char *name) {
+      unsigned n;
+      const char *err = a.getInstance(name, n);
+      if (err)
+	return err;
+      Instance &slave = *a.m_instances[n];
+      if (slave.m_hasMaster)
+	  return esprintf("Instance %s is slave to multiple proxies", slave.m_name.c_str());
+      m_slaves.emplace_back(n);
+      slave.m_hasMaster = true;
+      slave.m_master = m_ordinal;
+      return NULL;
+    }
+
     // connect, then optionally, which local port (from) and which dest port (to).
     // external=port, connect=instance, then to or from?
     const char *Assembly::Instance::
@@ -419,23 +442,39 @@ namespace OCPI {
                         m_name.c_str());
 
       if ((e = ezxml_cattr(ix, "external")) &&
-          (err = a.addExternalConnection(m_ordinal, e, params)))
-        return err;
-      if ((s = ezxml_cattr(ix, "slave"))){
-        if ((err = a.getInstance(s, m_slave)))
-          return err;
-        else {
-          Instance &slave = *a.m_instances[m_slave];
-          if (slave.m_hasMaster)
-            return esprintf("Instance %s is slave to multiple proxies",
-                            slave.m_name.c_str());
-          else {
-            m_hasSlave = true;
-            slave.m_hasMaster = true;
-            slave.m_master = m_ordinal;
-          }
-        }
+	  (err = a.addExternalConnection(m_ordinal, e, params)))
+	return err;
+#if 1
+      const char *slave = ezxml_cattr(ix, "slave");
+      if (slave) {
+	if (ezxml_cchild(ix, "slave"))
+	  return esprintf("cannot have slave elements when you have a slave attribute");
+	if ((err = checkSlave(a, slave)))
+	  return err;
+      } else      
+	for (ezxml_t cx = ezxml_cchild(ix, "slave"); cx; cx = ezxml_cnext(cx)) {
+	  if (!(slave = ezxml_cattr(cx, "name")))
+	    return esprintf("Missing \"name\" attribute for \"slave\" element");
+	  if ((err = checkSlave(a, slave)))
+	    return err;
+	}
+#else
+      if ((s = ezxml_cattr(ix, "slave"))) {
+	if ((err = a.getInstance(s, m_slave)))
+	  return err;
+	else {
+	  Instance &slave = *a.m_instances[m_slave];
+	  if (slave.m_hasMaster)
+	    return esprintf("Instance %s is slave to multiple proxies",
+			    slave.m_name.c_str());
+	  else {
+	    m_hasSlave = true;
+	    slave.m_hasMaster = true;
+	    slave.m_master = m_ordinal;
+	  }
+	}
       }
+#endif
       return NULL;
     }
 
@@ -562,7 +601,7 @@ namespace OCPI {
     parse(ezxml_t ix, Assembly &a, unsigned ordinal, const char **extraInstAttrs,
           const PValue *params) {
       m_ordinal = ordinal;
-      m_hasSlave = false;
+      //      m_hasSlave = false;
       m_hasMaster = false;
       const char *err;
       static const char *instAttrs[] =
@@ -595,8 +634,8 @@ namespace OCPI {
         myBase = compName;
       }
       // FIXME: somehow pass in valid elements or do this test somewhere else...
-      if ((err = OE::checkElements(ix, "property", "signal", NULL)))
-        return err;
+      if ((err = OE::checkElements(ix, "property", "signal", "slave", NULL)))
+	return err;
       // Figure out the name of this instance.
       if (!OE::getOptionalString(ix, m_name, "name")) {
       // default is component%u unless there is only one, in which case it is "component".

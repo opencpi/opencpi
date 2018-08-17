@@ -20,6 +20,7 @@
 
 #include <inttypes.h>
 #include "HdlDevice.h"
+#include "HdlDriver.h"
 #include "HdlWciControl.h"
 
 namespace OCPI {
@@ -71,9 +72,11 @@ namespace OCPI {
       //      m_wName = m_instName ? m_instName : "<unknown>";
       if (m_hasControl) {
 	setControlMask(getControlMask() | 1 << OU::Worker::OpStart);
+	// Find the log base 2 of the m_timeout value since that is what is specified in
+	// the hardware control register.
+	// FIXME: maybe use logTimeout = OU::ceilLog2(m_timeout).
 	unsigned logTimeout = 31;
-	for (size_t u = 1 << logTimeout; !(u & m_timeout);
-	     u >>= 1, logTimeout--)
+	for (size_t u = 1 << logTimeout; !(u & m_timeout); u >>= 1, logTimeout--)
 	  ;
 	ocpiDebug("Timeout for %s is %zu log is %u\n", m_implName, m_timeout, logTimeout);
 	// Get access to registers and properties.  The "this" is for our Access
@@ -211,7 +214,7 @@ namespace OCPI {
     setProperty##n(const OA::PropertyInfo &info, size_t off, uint##n##_t val, unsigned idx) const { \
       uint32_t offset = checkWindow(info.m_offset + off + idx * (n/8), n/8);	\
 	uint32_t status = 0;						     \
-	if (m_properties.m_registers) {					     \
+	if (m_properties.registers()) {					     \
 	  if (!info.m_writeError ||					     \
 	      !(status =						     \
 		get32Register(status, OccpWorkerRegisters) &                 \
@@ -222,9 +225,9 @@ namespace OCPI {
 	      get32Register(status, OccpWorkerRegisters) &		     \
 	      OCCP_STATUS_WRITE_ERRORS;					     \
 	} else if (n == 64)						\
-	  m_properties.m_accessor->set64(m_properties.m_base + offset, val, &status); \
+	  m_properties.accessor()->set64(m_properties.base() + offset, val, &status); \
 	else								\
-	  m_properties.m_accessor->set(m_properties.m_base + offset, sizeof(uint##n##_t), val, \
+	  m_properties.accessor()->set(m_properties.base() + offset, sizeof(uint##n##_t), val, \
                                        &status);			     \
 	if (status)							     \
 	  throwPropertyWriteError(status);				     \
@@ -240,7 +243,7 @@ namespace OCPI {
 		     const uint8_t *data, size_t nBytes, unsigned idx) const {
       offset = checkWindow(offset + idx * info.m_elementBytes, nBytes);
       uint32_t status = 0;
-      if (m_properties.m_registers) {
+      if (m_properties.registers()) {
 	if (!info.m_writeError ||
 	    !(status = (get32Register(status, OccpWorkerRegisters) &
 			OCCP_STATUS_WRITE_ERRORS)))
@@ -249,7 +252,7 @@ namespace OCPI {
 	  status = (get32Register(status, OccpWorkerRegisters) &
 		    OCCP_STATUS_WRITE_ERRORS);
       } else
-	m_properties.m_accessor->setBytes(m_properties.m_base + offset, data, nBytes,
+	m_properties.accessor()->setBytes(m_properties.base() + offset, data, nBytes,
 					  info.m_elementBytes, &status);
       if (status)
 	throwPropertyWriteError(status);
@@ -261,7 +264,7 @@ namespace OCPI {
       offset = checkWindow(offset + idx * info.m_elementBytes, nBytes);
       uint32_t status = 0;
 
-      if (m_properties.m_registers) {
+      if (m_properties.registers()) {
 	if (!info.m_readError ||
 	    !(status = (get32Register(status, OccpWorkerRegisters) &
 			OCCP_STATUS_READ_ERRORS))) {
@@ -270,7 +273,7 @@ namespace OCPI {
 	    status = get32Register(status, OccpWorkerRegisters) & OCCP_STATUS_READ_ERRORS;
 	}
       } else
-	m_properties.m_accessor->getBytes(m_properties.m_base + offset, buf, nBytes,
+	m_properties.accessor()->getBytes(m_properties.base() + offset, buf, nBytes,
 					  info.m_elementBytes, &status, string);
       if (status)
 	throwPropertyReadError(status, (uint32_t)offset, nBytes, 0);
@@ -281,7 +284,7 @@ namespace OCPI {
 			size_t nItems, size_t nBytes) const {
       uint32_t offset = checkWindow(p.m_offset, nBytes);
       uint32_t status = 0;
-      if (m_properties.m_registers) {
+      if (m_properties.registers()) {
 	if (!p.m_writeError ||
 	    !(status = get32Register(status, OccpWorkerRegisters) & OCCP_STATUS_WRITE_ERRORS)) {
 	  if (p.m_isSequence) {
@@ -294,13 +297,13 @@ namespace OCPI {
 	if (p.m_writeError && !status)
 	  status = get32Register(status, OccpWorkerRegisters) & OCCP_STATUS_WRITE_ERRORS;
       } else if (p.m_isSequence) {
-	m_properties.m_accessor->setBytes(m_properties.m_base + offset + p.m_align,
+	m_properties.accessor()->setBytes(m_properties.base() + offset + p.m_align,
 					  val, nBytes, p.m_elementBytes, &status);
 	if (!status)
-	  m_properties.m_accessor->set(m_properties.m_base + offset, sizeof(uint32_t),
+	  m_properties.accessor()->set(m_properties.base() + offset, sizeof(uint32_t),
 				       (uint32_t)nItems, &status);
       } else
-	m_properties.m_accessor->setBytes(m_properties.m_base + offset, val, nBytes,
+	m_properties.accessor()->setBytes(m_properties.base() + offset, val, nBytes,
 					  p.m_elementBytes, &status);
       if (status)
 	throwPropertyWriteError(status);
@@ -311,7 +314,7 @@ namespace OCPI {
       uint32_t status = 0, nItems;
       size_t nBytes;
 
-      if (m_properties.m_registers) {
+      if (m_properties.registers()) {
 	if (!p.m_readError ||
 	    !(status =
 	      get32Register(status, OccpWorkerRegisters) &
@@ -333,13 +336,13 @@ namespace OCPI {
 	      OCCP_STATUS_READ_ERRORS;
 	}
       } else {
-	nItems = m_properties.m_accessor->get(m_properties.m_base + offset, sizeof(uint32_t),
+	nItems = m_properties.accessor()->get(m_properties.base() + offset, sizeof(uint32_t),
 					      &status);
 	nBytes = nItems * p.m_elementBytes;
 	if (!status) {
 	  if (nBytes > n)
 	    throwPropertySequenceError();
-	  m_properties.m_accessor->getBytes(m_properties.m_base + offset + p.m_align, 
+	  m_properties.accessor()->getBytes(m_properties.base() + offset + p.m_align, 
 					    buf, nBytes, p.m_elementBytes, &status);
 	}
       }
@@ -400,5 +403,130 @@ namespace OCPI {
 	OCPI_CONTROL_OPS
 #undef CONTROL_OP
 	0};
+    DirectWorker::DirectWorker(Device &dev, const Access &cAccess, Access &wAccess, ezxml_t impl,
+			       ezxml_t inst, const char *idx, unsigned timeout) 
+      : OC::Worker(NULL, impl, inst, OC::NoWorkers, false, 0, 1, NULL),
+      WciControl(dev, impl, inst, properties(), false),
+      m_name(ezxml_cattr(inst, "name")),
+      m_wName(ezxml_cattr(impl, "name")),
+      m_wAccess(wAccess), m_timeout(timeout)
+    {
+      // We need to initialize the status of the worker since the OC::Worker class
+      // object is being created without knowledge of previous state.
+      // The worker's status register tells us the last control operation
+      // that was performed.  It also has a sticky indication of
+      // errors from the worker itself, but it doesn't remember whether the
+      // previous control operation failed for other reasons (FIXME: the OCCP should
+      // capture this information).  We do our best here by first bypassing the software.
+
+      // check the presumed-correct XML just to avoid bad accesses to the control plane.
+      if ((m_occpIndex = strtoul(idx, NULL, 10)) > OCCP_MAX_WORKERS)
+	throw OU::Error("Internal artifact XML problem: worker number `%s' invalid", idx);
+      cAccess.offsetRegisters(m_wAccess, (intptr_t)(&((OccpSpace*)0)->worker[m_occpIndex]));
+      uint32_t
+	l_control = m_wAccess.get32Register(control, OccpWorkerRegisters),
+	l_status =  m_wAccess.get32Register(status, OccpWorkerRegisters);
+      OU::Worker::ControlState cs;
+      OU::Worker::ControlOperation lastOp =
+	(OU::Worker::ControlOperation)OCCP_STATUS_LAST_OP(l_status);
+      if (!(l_control & OCCP_WORKER_CONTROL_ENABLE))
+	cs = OU::Worker::EXISTS; // there is no specific reset state since it isn't hetero
+      else if (!(l_status & OCCP_STATUS_CONFIG_OP_VALID) || lastOp == 4)
+	cs = OU::Worker::EXISTS; // no control op since reset
+      else if (l_status & OCCP_STATUS_CONTROL_ERRORS)
+	cs = OU::Worker::UNUSABLE;
+      else if (lastOp == OU::Worker::OpRelease)
+	cs = OU::Worker::UNUSABLE;
+      else if (l_status & OCCP_STATUS_FINISHED)
+	cs = OU::Worker::FINISHED;
+      else
+	switch(lastOp) {
+	case OU::Worker::OpInitialize: cs = OU::Worker::INITIALIZED; break;
+	case OU::Worker::OpStart: cs = OU::Worker::OPERATING; break;
+	case OU::Worker::OpStop: cs = OU::Worker::SUSPENDED; break;
+	default:
+	  cs = OU::Worker::OPERATING;
+	  // FIXME:  the beforeQuery, and AfterConfig and test ops screw us up here.
+	}
+      setControlState(cs);
+    }
+    void DirectWorker::
+    control(const char *op) {
+      bool ignored = false;
+      uint32_t c =  m_wAccess.get32Register(control, OccpWorkerRegisters);
+      if (!strcasecmp(op, "reset")) {
+	if (OCCP_WORKER_CONTROL_ENABLE & c) {
+	  // Force the last control op to be bad
+	  c &= ~OCCP_WORKER_CONTROL_ENABLE;
+	  m_wAccess.set32Register(control, OccpWorkerRegisters,
+				  c | OCCP_CONTROL_CLEAR_ATTENTION | OCCP_CONTROL_CLEAR_ERRORS);
+	} else
+	  ignored = true;
+      } else if (!strcasecmp(op, "unreset")) {
+	if (OCCP_WORKER_CONTROL_ENABLE & c && !m_timeout)
+	  ignored = true;
+	else {
+	  if (m_timeout) {
+	    c &= ~0x1f;
+	    unsigned logTimeout = 31;
+	    for (size_t u = 1 << logTimeout; !(u & m_timeout);
+		 u >>= 1, logTimeout--)
+	      ;
+	    c |= logTimeout;
+	  }
+	  m_wAccess.set32Register(control, OccpWorkerRegisters, c |= OCCP_WORKER_CONTROL_ENABLE);
+	  m_wAccess.get32Register(test, OccpWorkerRegisters);
+	  m_wAccess.set32Register(control, OccpWorkerRegisters,
+				  c | OCCP_CONTROL_CLEAR_ATTENTION | OCCP_CONTROL_CLEAR_ERRORS);
+	}
+      } else {
+	unsigned i;
+	for (i = 0; OU::Worker::s_controlOpNames[i]; i++) 
+	  if (!strcasecmp(OU::Worker::s_controlOpNames[i], op)) {
+	    ignored = controlOp((OU::Worker::ControlOperation)i);
+	    break;
+	  }
+	if (!OU::Worker::s_controlOpNames[i])
+	  throw OU::Error("Unknown control operation: %s", op);
+      }
+      if (ignored)
+	printf("The '%s' operation was IGNORED on instance '%s' of worker '%s'.\n",
+	       op, name().c_str(), implTag().c_str());
+      else
+	printf("The '%s' operation was performed on instance '%s' of worker '%s'.\n",
+	       op, name().c_str(), implTag().c_str());
+    }
+    void DirectWorker::
+    status() {
+      printf("Status of instance '%s' of worker '%s' is '%s'\n",
+	     name().c_str(), implTag().c_str(),
+	     m_wAccess.get32Register(control,
+				     OccpWorkerRegisters) & OCCP_WORKER_CONTROL_ENABLE ?
+	                             OU::Worker::s_controlStateNames[getState()] : "RESET");
+    }
+    OC::Port *DirectWorker::findPort(const char *) { return NULL; }
+    const std::string &DirectWorker::name() const { return m_name; }
+    void DirectWorker::
+    prepareProperty(OU::Property &, volatile uint8_t *&, const volatile uint8_t *&) {}
+    OC::Port &DirectWorker::createPort(const OU::Port &, const OU::PValue *) {
+      ocpiAssert("This method is not expected to ever be called" == 0);
+      return *(OC::Port*)this;
+    }
+    OC::Port &DirectWorker::
+    createOutputPort(OU::PortOrdinal, size_t, size_t, const OU::PValue*)
+      throw (OU::EmbeddedException) {
+      ocpiAssert("This method is not expected to ever be called" == 0);
+      return *(OC::Port*)this;
+    }
+    OC::Port &DirectWorker::
+    createInputPort(OU::PortOrdinal, size_t, size_t, const OU::PValue*)
+      throw (OU::EmbeddedException) {
+      ocpiAssert("This method is not expected to ever be called" == 0);
+      return *(OC::Port*)this;
+    }
+    OC::Application *DirectWorker::application() { return NULL;}
+    OC::Worker *DirectWorker::nextWorker() { return NULL; }
+    void DirectWorker::read(size_t, size_t, void *) {}
+    void DirectWorker::write(size_t, size_t, const void *) {}
   }
 }

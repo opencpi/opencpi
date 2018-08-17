@@ -19,11 +19,19 @@
 
 # remove any leftover results from last run
 make clean
-if [ -z "$HDL_PLATFORM" ] ; then
-  HDL_PLATFORM=xsim
-fi
+[ -z "$HDL_PLATFORM" ] && {
+  sims=(`ocpirun -C --only-platforms | grep '.*-.*sim' | sed s/^.*-//`)
+  if [ -n "$sims" ]; then
+     echo Available simulators are: ${sims[*]}, using $sims.
+    HDL_PLATFORM=$sims
+  else
+    echo No simulators are available, not using any.
+  fi
+}
 set -e
-ocpidev -d ../av-test build --hdl-platform $HDL_PLATFORM
+# clearly this test cannot run concurrently with av-test!
+make -C ../av-test cleaneverything
+ocpidev -d ../av-test build ${HDL_PLATFORM:+--hdl-platform $HDL_PLATFORM}
 MIN_COVERAGE=80 #%
 rm -f .coverage
 # Run each test and collect coverage info

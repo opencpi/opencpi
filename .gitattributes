@@ -3,4 +3,3 @@
 *.bit -diff
 doc/html/** -diff
 **/config.json !merge
-releng/jenkins/jenkins_backups/** -diff

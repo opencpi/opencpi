@@ -85,7 +85,7 @@ Zynq-Based Platform - setup environment
 cd /mnt/ocpi_assets/applications/FSK
 
 HDL ('common' export) :
-export OCPI_LIBRARY_PATH=$$OCPI_CDK_DIR/../projects/core/exports/lib/components/rcc
+export OCPI_LIBRARY_PATH=$$OCPI_CDK_DIR/../projects/core/exports/artifacts
 
 Pick one of the following, depending upon the test to be executed:
 Test 1:
@@ -105,11 +105,11 @@ export OCPI_LIBRARY_PATH=$$OCPI_LIBRARY_PATH:$$(pwd)/../../hdl/assemblies/fsk_mo
 Execution:
 ----------------------------------------------------------------------------
 Zynq-Based Platform - execute (pick one)
-Test 1: ./target-linux-x13_3-arm/FSK filerw
-Test 2: ./target-linux-x13_3-arm/FSK rx
-Test 3: ./target-linux-x13_3-arm/FSK tx
-Test 4: ./target-linux-x13_3-arm/FSK txrx
-Test 5: ./target-linux-x13_3-arm/FSK bbloopback
+Test 1: ./target-x13_3-arm/FSK filerw
+Test 2: ./target-x13_3-arm/FSK rx
+Test 3: ./target-x13_3-arm/FSK tx
+Test 4: ./target-x13_3-arm/FSK txrx
+Test 5: ./target-x13_3-arm/FSK bbloopback
 ----------------------------------------------------------------------------
 Development Computer - verify output data (pick one)
 Test 1: eog odata/out_app_fsk_filerw.bin &

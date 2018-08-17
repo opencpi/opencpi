@@ -74,7 +74,7 @@ else
     LABEL=$(uname -r)
   fi
   # Look for a driver most-specific to least specific
-  DIR=$OCPI_CDK_DIR/lib/$OCPI_TOOL_DIR
+  DIR=$OCPI_CDK_DIR/$OCPI_TOOL_DIR/lib
   DIR2=/opt/opencpi/driver/$(uname -r)
   MODFILE=$MODNAME-$LABEL.ko
   MODFILE2=$MODNAME.ko

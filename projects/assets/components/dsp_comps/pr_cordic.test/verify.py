@@ -118,8 +118,8 @@ for k in range(0,NUM_OUTPUT_SAMPLES):
 diffsY=[None]*NUM_OUTPUT_SAMPLES
 diffsX=[None]*NUM_OUTPUT_SAMPLES
 
-diffsX= getDiff(diffsX,oUpper16,x_expected,NUM_OUTPUT_SAMPLES)
-diffsY= getDiff(diffsY,oLower16,y_expected,NUM_OUTPUT_SAMPLES)
+diffsX= getDiff(diffsX,oLower16,x_expected,NUM_OUTPUT_SAMPLES)
+diffsY= getDiff(diffsY,oUpper16,y_expected,NUM_OUTPUT_SAMPLES)
 
 check_AvgPeakError=0
 check_AvgPeakError=AvgPeakError(diffsX,diffsY,NUM_OUTPUT_SAMPLES)

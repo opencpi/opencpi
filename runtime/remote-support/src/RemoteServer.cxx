@@ -296,14 +296,12 @@ namespace OCPI {
       m_members.resize(OX::countChildren(m_lx, "member"));
       OC::Launcher::Member *i = &m_members[0];
       for (ezxml_t ix = ezxml_cchild(m_lx, "member"); ix; ix = ezxml_cnext(ix), i++) {
-	std::string inst, impl;
-	size_t artN, contN, slave, crewN;
-	bool slaveFound;
+	std::string inst, impl, slaves;
+	size_t artN, contN, crewN;
 	const char *err;
 	if ((err = OX::getRequiredString(ix, i->m_name, "name")) ||
 	    (err = OX::getRequiredString(ix, impl, "worker")) ||
 	    (err = OX::getBoolean(ix, "done", &i->m_doneInstance)) ||
-	    (err = OX::getNumber(ix, "slave", &slave, &slaveFound)) ||
 	    (err = OX::getNumber(ix, "container", &contN, NULL, 0, false, true)) ||
 	    (err = OX::getNumber(ix, "artifact", &artN, NULL, 0, false, true)) ||
 	    (err = OX::getNumber(ix, "crew", &crewN, NULL, 0, false, true)) ||
@@ -312,6 +310,7 @@ namespace OCPI {
 	  return true;
 	}
 	OX::getOptionalString(ix, inst, "static");
+	OX::getOptionalString(ix, slaves, "slaves");
 	assert(contN < m_containers.size() && m_containers[contN]);
 	assert(artN < m_artifacts.size() && m_artifacts[artN]);
 	i->m_container = m_containers[contN];
@@ -324,10 +323,14 @@ namespace OCPI {
 		     impl.c_str(), inst.length() ? " with instance " : "",
 		     inst.length() ? inst.c_str() : "", art.name().c_str());
 	}
-	if (slaveFound) {
-	  assert(slave < m_members.size());
-	  i->m_slave = &m_members[slave];
-	  i->m_slave->m_hasMaster = true;
+	if (slaves.length()) {
+	  for (OU::TokenIter li(slaves.c_str()); li.token(); li.next()) {
+	    unsigned slave = atoi(li.token());
+	    assert(slave < m_members.size());
+	    i->m_slaves.push_back(&m_members[n]);
+	    i->m_slaves.back()->m_hasMaster = true;
+	  }
+	  i->m_slaveWorkers.resize(i->m_slaves.size());
 	}
 	i->m_crew = &m_crews[crewN];
 	if (crewsXml[crewN]) {
@@ -482,7 +485,7 @@ namespace OCPI {
 	  if (get)
 	    w.getPropertyValue(p, m_response, hex, true);
 	  else
-	    w.setPropertyValue(p, m_response);
+	    w.setPropertyValue(p, m_response.c_str());
 	} else if (op)
 	  w.controlOp((OU::Worker::ControlOperation)n);
 	else if (wait)

@@ -18,14 +18,15 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <OcpiOsAssert.h>
-#include <OcpiOsLoadableModule.h>
-#include <OcpiOsSizeCheck.h>
-#include <OcpiOsDataTypes.h>
 #include <cassert>
 #include <string>
 #include <pthread.h>
 #include <dlfcn.h>
+#include "ocpi-config.h"
+#include "OcpiOsAssert.h"
+#include "OcpiOsLoadableModule.h"
+#include "OcpiOsSizeCheck.h"
+#include "OcpiOsDataTypes.h"
 
 /*
  * We need a mutex, because dlerror() is not thread-safe.

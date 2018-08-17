@@ -113,7 +113,6 @@ const char* get_AD9361_BBPLL_N_Integer(
 }
 
 const char* get_AD9361_BBPLL_N_Integer_step(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
     double& val)
 {
   val = 1.;
@@ -132,7 +131,6 @@ const char* get_AD9361_BBPLL_N_Fractional(
 }
 
 const char* get_AD9361_BBPLL_N_Fractional_step(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
     double& val)
 {
   val = 1.;
@@ -238,9 +236,9 @@ const char* get_AD9361_BBPLL_FREQ_step_Hz(
     if(ret != 0) { return ret; }
     ret = (char*) get_AD9361_BBPLL_ref_scaler(       app, inst, ref_scaler       );
     if(ret != 0) { return ret; }
-    ret = (char*) get_AD9361_BBPLL_N_Integer_step(   app, inst, N_Integer_step   );
+    ret = (char*) get_AD9361_BBPLL_N_Integer_step(              N_Integer_step   );
     if(ret != 0) { return ret; }
-    ret = (char*) get_AD9361_BBPLL_N_Fractional_step(app, inst, N_Fractional_step);
+    ret = (char*) get_AD9361_BBPLL_N_Fractional_step(           N_Fractional_step);
     if(ret != 0) { return ret; }
 
     d_input_F_REF       = (double) input_F_REF;

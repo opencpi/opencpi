@@ -27,6 +27,8 @@
 #include <sstream> // std::ostringstream
 #include "OcpiApi.hh"
 
+#define EXIT__TEST_COULD_NOT_COMPLETE 100
+
 namespace OA = OCPI::API;
 
 OA::Short max_I, max_Q;
@@ -78,23 +80,23 @@ void test_max_Q(OA::Short expected_val) {
 }
 
 bool test_range_of_I_Q(const std::string& file_str) {
-  if(file_str.compare("max_I_0_Q_0") == 0) {
+  if(file_str.compare("max_I_0_Q_0.bin") == 0) {
     test_max_I(0);
     test_max_Q(0);
   }
-  else if(file_str.compare("max_I_0_Q_1024") == 0) {
+  else if(file_str.compare("max_I_0_Q_1024.bin") == 0) {
     test_max_I(0);
     test_max_Q(1024);
   }
-  else if(file_str.compare("max_I_1024_Q_0") == 0) {
+  else if(file_str.compare("max_I_1024_Q_0.bin") == 0) {
     test_max_I(1024);
     test_max_Q(0);
   }
-  else if(file_str.compare("max_I_1024_Q_1024") == 0) {
+  else if(file_str.compare("max_I_1024_Q_1024.bin") == 0) {
     test_max_I(1024);
     test_max_Q(1024);
   }
-  else if(file_str.compare("max_I_is_valid_false_max_Q_is_valid_false") == 0) {
+  else if(file_str.compare("max_I_is_valid_false_max_Q_is_valid_false.bin") == 0) {
     if(max_I_is_valid) {
       throw_max_I_is_valid_unexpected();
     }
@@ -127,7 +129,7 @@ void run_app(std::string app_xml_str, std::string file_str,
 
   app.start();
 
-  if(no_file_write or (file_str.compare("10_ZLM_passthrough") == 0)) {
+  if(no_file_write or (file_str.compare("10_ZLM_passthrough.bin") == 0)) {
     sleep(1);
     app.stop();
   }
@@ -223,7 +225,7 @@ void run_app(std::string app_xml_str, std::string file_str,
       test_range_of_I_Q(file_str);
     }
   }
-  else if(file_str.compare("10_ZLM_passthrough") == 0) {
+  else if(file_str.compare("10_ZLM_passthrough.bin") == 0) {
     // test diff read/write files
 
     std::ostringstream oss;
@@ -261,48 +263,63 @@ void run_app(std::string app_xml_str, std::string file_str,
   std::cout << "TEST:   " << file_str << ": PASSED\n";
 }
 
-int main(int argc, char **argv) {
+int main(int, char **) {
+  bool hdl = false;
+  unsigned n = 0;
+  for (OA::Container *c; (c = OA::ContainerManager::get(n)); n++) {
+    if (c->model() == "hdl") {
+      hdl = true;
+      break;
+    }
+  }
+
   try {
     std::cout << "TEST: file_read->RCC worker->file_write\n";
-    run_app("iqstream_max_calculator_test_rcc.xml", "max_I_0_Q_0");
-    run_app("iqstream_max_calculator_test_rcc.xml", "max_I_0_Q_1024");
-    run_app("iqstream_max_calculator_test_rcc.xml", "max_I_1024_Q_0");
-    run_app("iqstream_max_calculator_test_rcc.xml", "max_I_1024_Q_1024");
-    run_app("iqstream_max_calculator_test_rcc.xml", "max_I_is_valid_false_max_Q_is_valid_false");
+    run_app("iqstream_max_calculator_test_rcc.xml", "max_I_0_Q_0.bin");
+    run_app("iqstream_max_calculator_test_rcc.xml", "max_I_0_Q_1024.bin");
+    run_app("iqstream_max_calculator_test_rcc.xml", "max_I_1024_Q_0.bin");
+    run_app("iqstream_max_calculator_test_rcc.xml", "max_I_1024_Q_1024.bin");
+    run_app("iqstream_max_calculator_test_rcc.xml", "max_I_is_valid_false_max_Q_is_valid_false.bin");
     std::cout << "TEST: file_read->RCC worker\n";
-    run_app("iqstream_max_calculator_test_no_file_write_rcc.xml", "max_I_0_Q_0", true);
-    run_app("iqstream_max_calculator_test_no_file_write_rcc.xml", "max_I_0_Q_1024", true);
-    run_app("iqstream_max_calculator_test_no_file_write_rcc.xml", "max_I_1024_Q_0", true);
-    run_app("iqstream_max_calculator_test_no_file_write_rcc.xml", "max_I_1024_Q_1024", true);
-    run_app("iqstream_max_calculator_test_no_file_write_rcc.xml", "max_I_is_valid_false_max_Q_is_valid_false", true);
+    run_app("iqstream_max_calculator_test_no_file_write_rcc.xml", "max_I_0_Q_0.bin", true);
+    run_app("iqstream_max_calculator_test_no_file_write_rcc.xml", "max_I_0_Q_1024.bin", true);
+    run_app("iqstream_max_calculator_test_no_file_write_rcc.xml", "max_I_1024_Q_0.bin", true);
+    run_app("iqstream_max_calculator_test_no_file_write_rcc.xml", "max_I_1024_Q_1024.bin", true);
+    run_app("iqstream_max_calculator_test_no_file_write_rcc.xml", "max_I_is_valid_false_max_Q_is_valid_false.bin", true);
     std::cout << "TEST: RCC worker 10 ZLM passthrough\n";
-    run_app("iqstream_max_calculator_test_zlm_passthrough_rcc.xml", "10_ZLM_passthrough");
+    run_app("iqstream_max_calculator_test_zlm_passthrough_rcc.xml", "10_ZLM_passthrough.bin");
+
+    if(not hdl) {
+      std::cout << "ERROR: test could not be completed because no HDL containers were found\n";
+      return EXIT__TEST_COULD_NOT_COMPLETE;
+    }
+
     std::cout << "TEST: file_read->HDL worker->file_write\n";
-    run_app("iqstream_max_calculator_test_hdl.xml", "max_I_0_Q_0");
-    run_app("iqstream_max_calculator_test_hdl.xml", "max_I_0_Q_1024");
-    run_app("iqstream_max_calculator_test_hdl.xml", "max_I_1024_Q_0");
-    run_app("iqstream_max_calculator_test_hdl.xml", "max_I_1024_Q_1024");
-    run_app("iqstream_max_calculator_test_hdl.xml", "max_I_is_valid_false_max_Q_is_valid_false");
+    run_app("iqstream_max_calculator_test_hdl.xml", "max_I_0_Q_0.bin");
+    run_app("iqstream_max_calculator_test_hdl.xml", "max_I_0_Q_1024.bin");
+    run_app("iqstream_max_calculator_test_hdl.xml", "max_I_1024_Q_0.bin");
+    run_app("iqstream_max_calculator_test_hdl.xml", "max_I_1024_Q_1024.bin");
+    run_app("iqstream_max_calculator_test_hdl.xml", "max_I_is_valid_false_max_Q_is_valid_false.bin");
     std::cout << "TEST: file_read->HDL worker\n";
-    run_app("iqstream_max_calculator_test_no_file_write_hdl.xml", "max_I_0_Q_0", true);
-    run_app("iqstream_max_calculator_test_no_file_write_hdl.xml", "max_I_0_Q_1024", true);
-    run_app("iqstream_max_calculator_test_no_file_write_hdl.xml", "max_I_1024_Q_0", true);
-    run_app("iqstream_max_calculator_test_no_file_write_hdl.xml", "max_I_1024_Q_1024", true);
-    run_app("iqstream_max_calculator_test_no_file_write_hdl.xml", "max_I_is_valid_false_max_Q_is_valid_false", true);
+    run_app("iqstream_max_calculator_test_no_file_write_hdl.xml", "max_I_0_Q_0.bin", true);
+    run_app("iqstream_max_calculator_test_no_file_write_hdl.xml", "max_I_0_Q_1024.bin", true);
+    run_app("iqstream_max_calculator_test_no_file_write_hdl.xml", "max_I_1024_Q_0.bin", true);
+    run_app("iqstream_max_calculator_test_no_file_write_hdl.xml", "max_I_1024_Q_1024.bin", true);
+    run_app("iqstream_max_calculator_test_no_file_write_hdl.xml", "max_I_is_valid_false_max_Q_is_valid_false.bin", true);
     std::cout << "TEST: HDL worker 10 ZLM passthrough\n";
-    run_app("iqstream_max_calculator_test_zlm_passthrough_hdl.xml", "10_ZLM_passthrough");
+    run_app("iqstream_max_calculator_test_zlm_passthrough_hdl.xml", "10_ZLM_passthrough.bin");
 
     ///@todo / FIXME - figure out why this test fails
     /*std::cout << "TEST: file_read->RCC->RCC->file_write\n";
-    run_app("iqstream_max_calculator_test_rcc_rcc.xml", "max_I_0_Q_1024");*/
+    run_app("iqstream_max_calculator_test_rcc_rcc.xml", "max_I_0_Q_1024.bin");*/
 
     std::cout << "TEST: file_read->RCC->HDL->RCC->file_write\n";
-    run_app("iqstream_max_calculator_test_rcc_hdl_rcc.xml", "max_I_0_Q_1024");
-    run_app("iqstream_max_calculator_test_rcc_hdl_rcc.xml", "max_I_0_Q_0");
-    run_app("iqstream_max_calculator_test_rcc_hdl_rcc.xml", "max_I_0_Q_1024");
-    run_app("iqstream_max_calculator_test_rcc_hdl_rcc.xml", "max_I_1024_Q_0");
-    run_app("iqstream_max_calculator_test_rcc_hdl_rcc.xml", "max_I_1024_Q_1024");
-    run_app("iqstream_max_calculator_test_rcc_hdl_rcc.xml", "max_I_is_valid_false_max_Q_is_valid_false");
+    run_app("iqstream_max_calculator_test_rcc_hdl_rcc.xml", "max_I_0_Q_1024.bin");
+    run_app("iqstream_max_calculator_test_rcc_hdl_rcc.xml", "max_I_0_Q_0.bin");
+    run_app("iqstream_max_calculator_test_rcc_hdl_rcc.xml", "max_I_0_Q_1024.bin");
+    run_app("iqstream_max_calculator_test_rcc_hdl_rcc.xml", "max_I_1024_Q_0.bin");
+    run_app("iqstream_max_calculator_test_rcc_hdl_rcc.xml", "max_I_1024_Q_1024.bin");
+    run_app("iqstream_max_calculator_test_rcc_hdl_rcc.xml", "max_I_is_valid_false_max_Q_is_valid_false.bin");
 
   } catch (std::string &e) {
     std::cerr << "app failed: " << e << std::endl;

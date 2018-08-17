@@ -37,6 +37,7 @@
 #include <verbs.h>
 #include <ezxml.h>
 
+#include "ocpi-config.h"
 #include "OcpiOsDataTypes.h"
 #include "OcpiOsMisc.h"
 #include "OcpiOsAssert.h"
@@ -257,9 +258,7 @@ namespace DataTransfer {
 	  *this = *defs;
 	if (!x)
 	  return;
-#ifndef NDEBUG
-	printf("Processing device %s\n", ezxml_attr(x,"name") );
-#endif
+	ocpiDebug("Processing device %s", ezxml_attr(x,"name") );
 	const char *err;
 	if ((err = OX::checkAttrs(x, OFED_DEVICE_ATTRS, NULL)) ||
 	    (err = OX::getNumber(x, "port", &m_port, NULL, 0, false)) ||
@@ -485,18 +484,14 @@ namespace DataTransfer {
     XferFactory()
       throw()
     {
-#ifndef NDEBUG
-      printf("In OFED::XferFactory()\n");
-#endif
+      ocpiDebug("In OFED::XferFactory()");
     }
 
     XferFactory::
     ~XferFactory()
       throw()
     {
-#ifndef NDEBUG
-      printf(" ~OFED::XferFactory() Implement me~~\n");
-#endif
+      ocpiDebug(" ~OFED::XferFactory() Implement me~~");
     }
 
 
@@ -669,9 +664,7 @@ namespace DataTransfer {
       m_cq_count += c;
       int index=0;
       while ( c ) {
-#ifndef NDEBUG
-	//	printf("*** Got a completion event\n");
-#endif
+	//	ocpiDebug("*** Got a completion event");
 	if ( c < 0 ) {
 	  ocpiInfo("OFED::XferServices ERROR: Couldn't poll completion Q()");
 	  throw XF::DataTransferEx( API_ERROR, "ibv_poll_cq()");
@@ -695,7 +688,7 @@ namespace DataTransfer {
 #ifdef L1_DEBUG
       cq_mod++;
       if ( (cq_mod%10000) == 0 ) 
-	printf("got %d completions, posted %d\n", m_cq_count, m_post_count);
+	ocpiDebug("got %d completions, posted %d", m_cq_count, m_post_count);
 #endif
 
 
@@ -775,10 +768,8 @@ namespace DataTransfer {
       attr.min_rnr_timer          = 127;
       attr.ah_attr.is_global  = 1;
       attr.ah_attr.grh.dgid   = tep->m_gid;
-#ifndef NDEBUG
-      printf("Dest QPN = %d, PSN = %d, dlid = %d, dgid= %lld.%lld\n", attr.dest_qp_num, attr.rq_psn, attr.ah_attr.dlid,
+      ocpiDebug("Dest QPN = %d, PSN = %d, dlid = %d, dgid= %lld.%lld", attr.dest_qp_num, attr.rq_psn, attr.ah_attr.dlid,
 	     (long long)attr.ah_attr.grh.dgid.global.subnet_prefix, (long long)attr.ah_attr.grh.dgid.global.interface_id );
-#endif
       attr.ah_attr.grh.sgid_index = 0;
       attr.ah_attr.grh.hop_limit = sep->m_device->m_hopLimit;
       attr.ah_attr.sl         = 0;
@@ -836,9 +827,7 @@ namespace DataTransfer {
       XferServices       & xferServices = parent();
       sge->addr = (uint64_t)xferServices.m_sourceSmb->map(0,nbytes) + srcoffs;
       MASK_ADDR( sge->addr );
-#ifndef NDEBUG
-      printf("local addr = %llu\n", (unsigned long long )sge->addr );
-#endif
+      ocpiDebug("local addr = %llu", (unsigned long long )sge->addr );
       sge->length = (uint32_t)nbytes;
       sge->lkey = xferServices.m_sourceSmb->getMr()->lkey;
       wr->wr_id = (uint64_t)this;
@@ -998,14 +987,12 @@ namespace DataTransfer {
     createXferRequest()
     {
 
-#ifndef NDEBUG
       if ( ! m_finalized ) {
-	printf("Attempt to create XferRequest object with non-finalized transfer service\n");
-	printf(" s = (%s) t = (%s)\n", m_sourceSmb->endPoint().name().c_str(),
+	ocpiDebug("Attempt to create XferRequest object with non-finalized transfer service");
+	ocpiDebug(" s = (%s) t = (%s)", m_sourceSmb->endPoint().name().c_str(),
 	       m_targetSmb->endPoint().name().c_str() );
 
       }
-#endif
 
       ocpiAssert( m_finalized );
       return new XferRequest( *this );

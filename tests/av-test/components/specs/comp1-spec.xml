@@ -1,0 +1,18 @@
+<!-- This is the spec file (OCS) for: comp1
+     Add component spec attributes, like "protocol".
+     Add property elements for spec properties.
+     Add port elements for i/o ports -->
+<ComponentSpec>
+  <!-- Add property and port elements here -->
+    <Property name="test_double" type="double" readable="true" volatile="true" writable="true"></Property>
+    <Property name="test_ulong" readable="true" volatile="true" writable="true" ></Property>
+    <Property name="test_bool" type="bool"readable="true" volatile="true" writable="true" ></Property>
+    <Property type="char" name="test_char"readable="true" volatile="true" writable="true" ></Property>
+    <Property type="float" name="test_float"readable="true" volatile="true" writable="true" ></Property>
+    <Property type="long" name="test_long"readable="true" volatile="true" writable="true" ></Property>
+    <Property type="longLong" name="test_longlong"readable="true" volatile="true" writable="true" ></Property>
+    <Property type="short" name="test_short"readable="true" volatile="true" writable="true" ></Property>
+    <Property type="uChar" name="test_uchar"readable="true" volatile="true" writable="true" ></Property>
+    <Property type="uLongLong" name="test_ulonglong"readable="true" volatile="true" writable="true" ></Property>
+    <Property type="uShort" name="test_ushort"readable="true" volatile="true" writable="true" ></Property>
+</ComponentSpec>

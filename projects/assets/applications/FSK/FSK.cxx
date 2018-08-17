@@ -111,7 +111,6 @@ template<typename T> void prompt_default_min(OA::Application& app,
     const char* propmax)
 {
   T min = get_worker_prop_val<T>(app, worker, propmin);
-  printf("min=%.19f\n", min);
   T max = get_worker_prop_val<T>(app, worker, propmax);
   val = min; // set default for prompt
 
@@ -189,7 +188,7 @@ int main(int argc, char **argv) {
   std::string mode, xml_name, input, value;
   bool debug_mode = false;
   double rx_sample_rate = 39.936;
-  double rx_rf_center_freq = 999;
+  double rx_rf_center_freq = 1001;
   double rx_rf_bw;
   double rx_rf_gain;
   double rx_bb_bw = 5;
@@ -1201,6 +1200,8 @@ int main(int argc, char **argv) {
       {
         // workaround for lime_adc.hdl broken property
         app.setProperty("qadc","overrun", "false");
+	// dbg: DAC/ADC - (I/Q select polarity, ordering, rising/falling edge)
+	//app.setProperty("rf_rx","rx_ctrl3", "0x20");
       }
 
       printf("App runs for %f seconds...\n",runtime);

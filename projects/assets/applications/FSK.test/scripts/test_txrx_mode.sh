@@ -19,7 +19,7 @@
 #This script tests the FSK app for the following permutations of sample rate and RF frequency:
 sample_rate_min=36
 sample_rate_increment=1
-frequency_min=233
+frequency_min=234
 frequency_max=2988
 frequency_increment=1
 #Analog parameters which remain fixed
@@ -84,12 +84,13 @@ else
 	#t=$((20 - (sample_rate / 2)))
 	t=`dc $sample_rate 2 div p`
 	t=`dc 20 $t sub p`
+	#echo "t=$t"
 	#for frequency in $(eval echo "{$frequency_min..$frequency_max..$frequency_increment}")
 	#do
 	while [ $max_frequency_exceeded -eq 0 ] && [ $failures -lt $number_of_allowed_failures ]; do
 	    failures=0
 	    success=0
-	    tx_frequency=`dc $frequency 1 add p`
+	    tx_frequency=`dc $frequency 1 sub p`
 	    echo "Testing frequency TX: $tx_frequency RX: $frequency"
 	    while [ $failures -lt $number_of_allowed_failures ] && [ $success -eq 0 ]
 	    do

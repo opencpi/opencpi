@@ -29,6 +29,7 @@
 // A slot type is really just a set of signals
 // The direction is all from the perspective of the motherboard (a.k.a. carrier).
 struct SlotType;
+// key type is a pointer since it all comes from parsed XML files, but std::string would be safer
 typedef std::map<const char *, SlotType *, OCPI::Util::ConstCharCaseComp> SlotTypes;
 // AV-1482/AV-1490 fix: typedef std::map<std::string, SlotType *, OCPI::Util::ConstStringCaseComp> SlotTypes;
 typedef SlotTypes::iterator SlotTypesIter;

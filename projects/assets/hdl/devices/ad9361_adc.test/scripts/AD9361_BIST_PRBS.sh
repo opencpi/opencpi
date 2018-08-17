@@ -113,7 +113,8 @@ do
       echo "sample rate      : $samprate sps"
       echo "runtime          : $APP_RUNTIME_SEC sec"
 
-      PREFIX=/var/volatile/app_"$samprate"sps_fir"$firenable"_"$twortwot"_"$APP_RUNTIME_SEC"sec
+      #PREFIX=/var/volatile/app_"$samprate"sps_fir"$firenable"_"$twortwot"_"$APP_RUNTIME_SEC"sec
+      PREFIX=app_"$samprate"sps_fir"$firenable"_"$twortwot"_"$APP_RUNTIME_SEC"sec
 
       TEST_ID="PRBS"
       FILENAME="$PREFIX"_prbs.out
@@ -167,7 +168,8 @@ do
 
   echo "runtime          : $APP_RUNTIME_SEC sec"
 
-  PREFIX=/var/volatile/app_61.44e6sps_fir0_"$twortwot"_"$APP_RUNTIME_SEC"sec
+  #PREFIX=/var/volatile/app_61.44e6sps_fir0_"$twortwot"_"$APP_RUNTIME_SEC"sec
+  PREFIX=app_61.44e6sps_fir0_"$twortwot"_"$APP_RUNTIME_SEC"sec
 
   TEST_ID="additional test for overrun avoidance"
   FILENAME="$PREFIX"_prbs.out

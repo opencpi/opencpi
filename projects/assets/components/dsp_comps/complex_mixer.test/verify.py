@@ -62,7 +62,7 @@ TEST #3: Two possibilities: 1) NORMAL MODE - Target tone tuned to DC, 2) BYPASS 
 if len(sys.argv) != 5:
     print('Invalid arguments:  usage is: verify.py <sample-freq> <num-samples> <output-file> <input-file>')
     sys.exit(1)
-dt_iq_pair = np.dtype((np.uint32, {'real_idx':(np.int16,2), 'imag_idx':(np.int16,0)}))
+dt_iq_pair = np.dtype((np.uint32, {'real_idx':(np.int16,0), 'imag_idx':(np.int16,2)}))
 # Read all input data as complex int16
 ifilename = open(sys.argv[4], 'rb')
 idata = np.fromfile(ifilename, dtype=dt_iq_pair, count=-1)

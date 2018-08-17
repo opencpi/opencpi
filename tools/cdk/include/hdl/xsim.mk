@@ -142,7 +142,7 @@ HdlToolCompile=\
         $(OcpiXilinxVivadoDir)/data/verilog/src/glbl.v) -prj $(Worker).prj ;) \
   $(if $(filter worker platform config assembly,$(HdlMode)),\
     $(if $(HdlNoSimElaboration),, \
-      xelab $(WorkLib).$(WorkLib)$(and $(filter config,$(HdlMode)),_rv) work.glbl -v 2 \
+      xelab $(WorkLib).$(WorkLib)$(and $(filter assembly config,$(HdlMode)),_rv) work.glbl -v 2 \
              -prj $(Worker).prj -L unisims_ver -s $(Worker).exe --timescale 10ns/1ps \
              --override_timeprecision --override_timeunit --timeprecision_vhdl 1ps \
              $(XsimXelabArgs) $(XsimXelabExtraArgs) -lib $(WorkLib)=$(WorkLib) $(XsimLibs)))

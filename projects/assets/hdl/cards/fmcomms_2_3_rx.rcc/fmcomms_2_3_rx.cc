@@ -36,6 +36,7 @@
 #include <iomanip> // std::setprecision()
 #include <cstdint> // uint32_t, uint64_t
 #include <utility> // std::pair
+#include <cinttypes> // PRIu64
 
 #include "ad9361.h"   // for RFPLL_MODULUS
 #include "OcpiApi.hh" // OCPI::API::Application
@@ -51,8 +52,6 @@
 #include "writers_ad9361_rf_rx_pll.h" // set_AD9361_Rx_RFPLL_LO_freq_Hz()
 #include "writers_ad9361_bb_rx_adc.h" // set_AD9361_CLKRF_FREQ_Hz()
 #include "writers_ad9361_bb_rx_filters_analog.h" // set_AD9361_rx_rf_bandwidth()
-
-namespace OA = OCPI::API;
 
 // it is possible for this worker to assign the AD9361 to one of the RXB or RXC ports, none of which are connctedwhich would result in an invalid settings
 // it is possible for the AD9361 to have the setting assigned where one of the
@@ -85,6 +84,7 @@ enum class ad9361_adc_sub_devsignal_channel_t {zero, one};
 
 using namespace OCPI::RCC; // for easy access to RCC data types and constants
 using namespace Fmcomms_2_3_rxWorkerTypes;
+namespace OA = OCPI::API;
 
 class Fmcomms_2_3_rxWorker : public Fmcomms_2_3_rxWorkerBase {
 
@@ -260,8 +260,7 @@ private:
   }
 
   const char* get_AD9361_RX_port_controlled_by_this_worker(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
-    AD9361_RX_port_t& val)
+    OCPI::API::Application& app, AD9361_RX_port_t& val)
   {
     // See Table 1: Channel Connectivity in AD9361 ADC Sub Component Data Sheet
 
@@ -293,8 +292,7 @@ private:
     AD9361_RX_port_t AD9361_RX_port;
 
     OCPI::API::Application& app = getApplication();
-    const char* inst = m_properties.app_inst_name_ad9361_config_proxy;
-    get_AD9361_RX_port_controlled_by_this_worker(app, inst, AD9361_RX_port);
+    get_AD9361_RX_port_controlled_by_this_worker(app, AD9361_RX_port);
     if(AD9361_RX_port == AD9361_RX_port_t::RX1A)
     {
       return worker_FMCOMMS_2_3_SMA_port_RF_RX_t::RX1A;
@@ -686,7 +684,7 @@ private:
       std::string err = "invalid property: " + prop;
       throw err.c_str();
     }
-    log_info("attempted property write: %s=%.15f, value to be written (after potential adjustment due to No-OS API precision limitations) is %lu %s", prop.c_str(), val_desired, adjusted.first, adjusted.second.c_str());
+    log_info("attempted property write: %s=%.15f, value to be written (after potential adjustment due to No-OS API precision limitations) is %" PRIu64 " %s", prop.c_str(), val_desired, adjusted.first, adjusted.second.c_str());
   }
 
   void get_adjusted_val_to_be_applied_to_hw(
@@ -792,7 +790,7 @@ private:
       // (worth also noting that the No-OS API also includes *digital*
       // gain as well as analog gain...)
       AD9361_RX_port_t AD9361_RX_port;
-      get_AD9361_RX_port_controlled_by_this_worker(app, inst, AD9361_RX_port);
+      get_AD9361_RX_port_controlled_by_this_worker(app, AD9361_RX_port);
       if(AD9361_RX_port == AD9361_RX_port_t::RX1A)
       {
         const char* err = set_AD9361_gain_RX1_dB(app, inst, val_adjusted);
@@ -1670,10 +1668,8 @@ private:
       ad9361_init.xo_disable_use_ext_refclk_enable = 0; // will be later applied
     }
 
-    // perform I/Q swap for RX channel(s) (necessary
-    // for data to be spectrally aligned correctly,
-    // not sure why...)
-    ad9361_init.pp_rx_swap_enable = (ocpi_uchar_t) 1;
+    // no I/Q swap for RX channel(s)
+    ad9361_init.pp_rx_swap_enable = (ocpi_uchar_t) 0;
 
     // See Table 1: Channel Connectivity in AD9361 ADC Sub Component Data Sheet
     OCPI::API::Application &app = getApplication();

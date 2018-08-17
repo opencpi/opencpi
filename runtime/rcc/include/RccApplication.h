@@ -88,8 +88,8 @@ namespace OCPI {
       public:
 	OCPI::Container::Worker &
 	createWorker(OCPI::Container::Artifact *art, const char *appInstName, ezxml_t impl,
-		     ezxml_t inst, OCPI::Container::Worker *slave, bool hasMaster, size_t member,
-		     size_t crewSize, const OCPI::Util::PValue *wParams);
+		     ezxml_t inst, const OCPI::Container::Workers &slaves, bool hasMaster,
+		     size_t member, size_t crewSize, const OCPI::Util::PValue *wParams);
 
       /**********************************
        * Constructor

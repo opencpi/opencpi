@@ -60,7 +60,7 @@ ifdef TestApplications
 endif
 # We include this to know the universe of possible platforms
 include $(OCPI_CDK_DIR)/include/hdl/hdl-targets.mk
-include $(OCPI_CDK_DIR)/include/rcc/rcc-make.mk
+include $(OCPI_CDK_DIR)/include/rcc/rcc-targets.mk
 include $(OCPI_CDK_DIR)/include/ocl/ocl-make.mk
 
 # We need the project dir because remote system mount dirs point to the project

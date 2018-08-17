@@ -52,7 +52,7 @@ Ts = 1.0/float(Fs)
 t = np.arange(0,num_samples*Ts,Ts,dtype=np.float)
 real = np.cos(Tone27*2*np.pi*t)
 imag = np.sin(Tone27*2*np.pi*t)
-dt_iq_pair = np.dtype((np.uint32, {'real_idx':(np.int16,2), 'imag_idx':(np.int16,0)}))
+dt_iq_pair = np.dtype((np.uint32, {'real_idx':(np.int16,0), 'imag_idx':(np.int16,2)}))
 out_data = np.array(np.zeros(num_samples), dtype=dt_iq_pair)
 j = 0
 # pick a gain at 32767 (full scale) - this verifies full scale does not cause overflows

@@ -83,7 +83,18 @@ namespace OCPI {
 	return err;
       if (!OE::getOptionalString(xml, m_specName, "specName"))
 	m_specName = m_name;
-      OE::getOptionalString(xml, m_slave, "slave");
+      const char *slave = ezxml_cattr(xml, "slave");
+      if (slave) {
+	if (ezxml_cchild(xml, "slave"))
+	  return esprintf("cannot have slave elements when you have a slave attribute");
+	m_slaves.push_back(slave);
+      } else      
+	for (ezxml_t cx = ezxml_cchild(xml, "slave"); cx; cx = ezxml_cnext(cx)) {
+	  const char *w = ezxml_cattr(cx, "worker");
+	  if (!w)
+	    return esprintf("Missing \"worker\" attribute for \"slave\" element");
+	  m_slaves.push_back(w);
+	}
       if ((m_nProperties = OE::countChildren(xml, "property")))
 	m_properties = new Property[m_nProperties];
       if ((m_nPorts = OE::countChildren(xml, "port")))
@@ -163,10 +174,10 @@ namespace OCPI {
 	val.setString(m_model);
 	return NULL;
       } else if (!strcasecmp(sym, "platform") && m_attributes) {
-	val.setString(m_attributes->m_platform);
+	val.setString(m_attributes->platform());
 	return NULL;
       } else if (!strcasecmp(sym, "os") && m_attributes) {
-	val.setString(m_attributes->m_os);
+	val.setString(m_attributes->os());
 	return NULL;
       }
       Property *p = m_properties;
@@ -207,9 +218,10 @@ namespace OCPI {
       if ((cp = ezxml_cattr(x, "runtimeVersion"))) m_runtimeVersion = cp;
       if ((cp = ezxml_cattr(x, "tool"))) m_tool = cp;
       if ((cp = ezxml_cattr(x, "toolVersion"))) m_toolVersion = cp;
-      // Before 1.3, the attribute was "av_version" but now "ocpi_version"
-      if ((cp = ezxml_cattr(x, "av_version"))) m_artVersion = cp;
-      if ((cp = ezxml_cattr(x, "ocpi_version"))) m_artVersion = cp;
+      // Before 1.3, the attribute was "av_version" but then "ocpi_version"
+      if ((cp = ezxml_cattr(x, "av_version"))) m_opencpiVersion = cp;
+      if ((cp = ezxml_cattr(x, "ocpi_version"))) m_opencpiVersion = cp;
+      if ((cp = ezxml_cattr(x, "opencpiVersion"))) m_opencpiVersion = cp;
       if ((cp = ezxml_cattr(x, "uuid"))) m_uuid = cp;
       OE::getBoolean(x, "dynamic", &m_dynamic);
       validate();

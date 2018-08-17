@@ -24,7 +24,7 @@ BuildRequires:  perl
 Requires(pre):  opencpi
 Requires:       opencpi opencpi-devel xz
 # AV-2772:
-Requires:       ocpi-prereq-liquid
+#### TEMPORARY FOR BUILD2 Requires:       ocpi-prereq-liquid
 Requires:       tar >= 1.22
 # AV-3314 (socket_write, etc):
 Requires:       autoconf automake libtool

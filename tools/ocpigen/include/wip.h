@@ -348,6 +348,7 @@ typedef std::vector<Clock*> Clocks;
 typedef Clocks::const_iterator ClocksIter;
 typedef std::list<Worker *> Workers;
 typedef Workers::iterator WorkersIter;
+typedef std::pair<std::string, std::string> StringPair;
 class Assembly;
 class HdlDevice;
 class DataPort;
@@ -387,7 +388,9 @@ class Worker : public OU::Worker {
   int m_defaultDataWidth;           // initialized to -1 to allow zero
   Language m_language;
   ::Assembly *m_assembly;
-  Worker *m_slave;                  // from slave attribute - is RCC-only
+  // vector of slave worker objects paired with a string of the name of the slave either from name
+  // attribute or auto generated
+  std::map<std::string, Worker*> m_slaves;
   HdlDevice *m_emulate;
   Worker *m_emulator;               // for test only, the emulator of this worker
   Signals m_signals;
@@ -419,6 +422,9 @@ class Worker : public OU::Worker {
   Clock *addWciClockReset();
   OU::Property *findProperty(const char *name) const;
   OU::Port *findMetaPort(const char *id, const OU::Port *except) const;
+  const char* parseSlaves();
+  std::string print_map();
+  const char* addSlave(const std::string worker_name, const std::string slave_name);
   virtual OU::Port &metaPort(unsigned long which) const;
   const char
     *addBuiltinProperties(),
@@ -510,7 +516,7 @@ class Worker : public OU::Worker {
     emitXmlInstances(FILE *f),
     emitXmlConnections(FILE *f);
   void
-    emitCppTypesNamespace(FILE *f, std::string &nsName),
+    emitCppTypesNamespace(FILE *f, std::string &nsName, const std::string &slaveName=""),
     emitDeviceConnectionSignals(FILE *f, const char *iname, bool container),
     setParent(Worker *p), // when it can't happen at construction
     prType(OU::Property &pr, std::string &type),
@@ -556,7 +562,7 @@ class Worker : public OU::Worker {
 
 #define IMPL_ATTRS \
   "name", "spec", "paramconfig", "reentrant", "scaling", "scalable", "controlOperations", "xmlincludedirs", "componentlibraries"
-#define IMPL_ELEMS "componentspec", "properties", "property", "specproperty", "propertysummary", "xi:include", "controlinterface",  "timeservice", "unoc", "timebase", "sdp"
+#define IMPL_ELEMS "componentspec", "properties", "property", "specproperty", "propertysummary", "slave", "xi:include", "controlinterface",  "timeservice", "unoc", "timebase", "sdp"
 #define GENERIC_IMPL_CONTROL_ATTRS \
   "name", "SizeOfConfigSpace", "ControlOperations", "Sub32BitConfigProperties"
 #define ASSY_ELEMS "instance", "connection", "external"
@@ -584,6 +590,7 @@ extern const char
 		      ezxml_t *parsed, std::string &childFile, bool optional),
   *emitContainerHDL(Worker*, const char *);
 
+extern bool g_dynamic;
 extern void
   doPrev(FILE *f, std::string &last, std::string &comment, const char *myComment),
   vhdlType(const OU::Property &dt, std::string &typeDecl, std::string &type,

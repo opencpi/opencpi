@@ -1,6 +1,7 @@
 <!-- The iqstream_max_calculator_test application xml file -->
 <application done="file_write">
-  <Instance Component="ocpi.core.file_read" Connect="iqstream_max_calculator_rcc_start">
+  <Instance Component="ocpi.core.file_read"
+            Connect="iqstream_max_calculator_rcc_start">
     <Property Name="messagesInFile" value="true"/>
   </Instance>
   <Instance Component="ocpi.assets.util_comps.iqstream_max_calculator"
@@ -10,13 +11,7 @@
   <Instance Component="ocpi.assets.util_comps.iqstream_max_calculator"
             Model="hdl"
             Name="iqstream_max_calculator_hdl"
-            Connect="dc_offset_filter"/>
-
-  <!-- workaround for AV-4311 -->
-  <Instance Component="ocpi.assets.dsp_comps.dc_offset_filter" Connect="iqstream_max_calculator_rcc_end">
-    <Property Name="bypass" Value="true"/>
-  </Instance>
-
+            Connect="iqstream_max_calculator_rcc_end"/>
   <Instance Component="ocpi.assets.util_comps.iqstream_max_calculator"
             Model="rcc"
             Name="iqstream_max_calculator_rcc_end"

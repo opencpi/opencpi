@@ -128,7 +128,8 @@ architecture rtl of sdp_receive_dma is
   signal sdp_am_last_r       : sdp_addrs_t(0 to max_buffers-1); -- to know when done
   signal sdp_dws_left        : pkt_ndw_t;
   signal sdp_dws_left_r      : pkt_ndw_t;
-  signal sdp_starting_r      : bool_t;
+  signal sdp_starting_r      : bool_t; -- when sdp_in is valid, its the first of a packet
+  signal sdp_ignoring_r      : bool_t; -- in a packet ignoring data until eop
   -- Sending flags and indexing buffers:
   -- Active Flow Control: flag is sent when buffer has become empty/consumed by WSI.
   --                      buffers are consumed in order, using rem_buffer_idx_r.
@@ -301,6 +302,7 @@ g2: for i in 0 to sdp_width-1 generate
         rem_buffer_idx_r    <= (others => '0');
         lcl_buffer_idx_r    <= (others => '0');
         sdp_starting_r      <= btrue;
+        sdp_ignoring_r      <= bfalse;
         faults_r            <= (others => '0');
         flags_to_send_r     <= (others => '0');
         rem_read_idx_r      <= (others => '0');
@@ -411,25 +413,21 @@ g2: for i in 0 to sdp_width-1 generate
           else
             sdp_dws_left_r <= sdp_dws_left_r - dws_in_xfer;
           end if;
-          --if its(read_complete) then
-          --  if its(sdp_in.sdp.eop) then
-          --    status2_r <= status2_r + 1;
-          --  else
-          --    status3_r <= status3_r + 1;
-          --  end if;
-          --end if;
-          if its(sdp_in.sdp.eop) then
-            sdp_starting_r <= btrue;
-            if role = activemessage_e then
-              if its(read_complete) then -- last read response for a message
-                -- If the flag transfer for this read completion is not immediate, queue it up
-                if not flag_accepted then
---                  status4_r <= status4_r + 1;
-                  flags_to_send_r <= flags_to_send_r + 1;
-                end if;
-              end if;
-              sdp_am_addr_r(to_integer(sdp_am_buffer_idx)) <= sdp_addr + dws_in_xfer;
+          -- read_complete may occur BEFORE sdp.eop since we allow read responses to have extra
+          -- data in them, e.g. for AXI reading when the AXI is wider than the SDP.
+          if its(read_complete) then -- last read response for a message
+             -- If the flag transfer for this read completion is not immediate, queue it up
+            if not flag_accepted then
+              flags_to_send_r <= flags_to_send_r + 1;
             end if;
+            if not sdp_in.sdp.eop then
+              sdp_ignoring_r <= btrue; -- ignore the rest of the data in this packet
+            end if;
+          end if;
+          if its(sdp_in.sdp.eop) then
+            sdp_am_addr_r(to_integer(sdp_am_buffer_idx)) <= sdp_addr + dws_in_xfer;
+            sdp_starting_r <= btrue;
+            sdp_ignoring_r <= bfalse;
           else
             sdp_starting_r <= bfalse;
             sdp_addr_r     <= sdp_addr + dws_in_xfer;

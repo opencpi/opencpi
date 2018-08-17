@@ -31,14 +31,41 @@ architecture rtl of ad9361_dac_worker is
   constant fifo_width : positive := (dac_width*2); -- the fifo is just wide enough to feed AD9361 DAC
 
   -- CTL/WSI Clock domain signals
-  signal wsi_data : std_logic_vector(fifo_width - 1 downto 0);
+  signal in_I       : std_logic_vector(15 downto 0);
+  signal in_Q       : std_logic_vector(15 downto 0);
+  signal wsi_data_I : std_logic_vector(dac_width- 1 downto 0);
+  signal wsi_data_Q : std_logic_vector(dac_width- 1 downto 0);
+  signal wsi_data   : std_logic_vector(fifo_width - 1 downto 0);
   -- AD9361 TX clock domain signals
   signal dac_data : std_logic_vector(fifo_width - 1 downto 0);
+  signal dac_ready : std_logic := '0';
+  signal dac_data_I : std_logic_vector(dac_width - 1 downto 0);
+  signal dac_data_Q : std_logic_vector(dac_width - 1 downto 0);
 begin
-  -- Temp signal necessary only because of older VHDL
-  -- transform Q0.15 to Q0.12, taking most significant 12 bits (and using the 13th bit to round)
-  wsi_data <= slv(unsigned(in_in.data(31 downto 31-dac_width+1)) + ('0' & in_in.data(31-dac_width))) &
-              slv(unsigned(in_in.data(15 downto 15-dac_width+1)) + ('0' & in_in.data(15-dac_width)));
+
+  idata_width_32 : if IDATA_WIDTH_p = 32 generate
+
+    -- iqstream w/ DataWidth=32 formats Q in most significant bits, I in least
+    -- significant (see OpenCPI_HDL_Development section on Message Payloads vs.
+    -- Physical Data Width on Data Interfaces)
+    in_Q <= in_in.data(31 downto 16);
+    in_I <= in_in.data(15 downto 0);
+
+  end generate idata_width_32;
+
+  -- transform signed Q0.15 to signed Q0.11, taking most significant 12 bits
+  -- (and using the 13th bit to round)
+  trunc_round_Q : entity work.trunc_round_16_to_12_signed
+    port map(
+      DIN  => in_Q,
+      DOUT => wsi_data_Q);
+  trunc_round_I : entity work.trunc_round_16_to_12_signed
+    port map(
+      DIN  => in_I,
+      DOUT => wsi_data_I);
+
+  wsi_data <= wsi_data_Q & wsi_data_I;
+
   fifo : util.util.dac_fifo
     generic map(width     => fifo_width,
                 depth     => to_integer(fifo_depth))
@@ -51,15 +78,21 @@ begin
                 clear     => props_in.underrun_written,
                 wsi_take  => in_out.take,
                 underrun  => props_out.underrun,
-                dac_clk   => dev_dac_in.dac_clk, -- dac_clk is rising edge aligned with data
+                dac_clk   => dev_dac_in.dac_clk,
                 dac_reset => open,
                 dac_take  => dev_dac_in.dac_take,
-                dac_ready => dev_dac_out.dac_ready,
+                dac_ready => dac_ready,
                 dac_data  => dac_data);
-  dev_dac_out.dac_data_I <= dac_data((dac_width*2)-1 downto dac_width);
-  dev_dac_out.dac_data_Q <= dac_data(dac_width-1     downto 0        );
+
+  dev_dac_out.dac_ready <= dac_ready;
+
+  dac_data_Q <= dac_data((dac_width*2)-1 downto dac_width);
+  dac_data_I <= dac_data(dac_width-1     downto 0        );
+
+  -- TX zeros when starved for input data
+  dev_dac_out.dac_data_Q <= dac_data_Q when dac_ready='1' else (others => '0');
+  dev_dac_out.dac_data_I <= dac_data_I when dac_ready='1' else (others => '0');
 
   dev_dac_out.present <= '1';
 
 end rtl;
-

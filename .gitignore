@@ -24,6 +24,8 @@ target-*/
 *.deps
 gen/
 **/driver/modules.order
+prerequisites
+prerequisites-build
 # temporary, until we rename targets
 *.old
 *.bak
@@ -63,7 +65,6 @@ releng/acinclude/lt*.m4
 /av_config.h
 /config.status
 /libtool
-/Makefile
 stamp-h*
 tools/cdk/include/autoconfig_import*.mk
 

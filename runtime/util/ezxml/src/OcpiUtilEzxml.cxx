@@ -23,9 +23,9 @@
 #include <cerrno>
 #include <unistd.h>
 #include <sys/uio.h>
-#include <cassert>
 #include <climits>
-#include <iostream>
+#include <cassert>
+
 #include "ezxml.h"
 #include "OcpiOsAssert.h"
 #include "OcpiUtilVfs.h"
@@ -393,7 +393,6 @@ namespace OCPI {
 	return 0;
       }
 
-#if 0
       const char *
       checkAttrsV(ezxml_t x, const char **attrs) {
 	if (!x->attr)
@@ -408,7 +407,6 @@ namespace OCPI {
 	}
 	return 0;
       }
-#endif
 
       bool
       getUNum(const char *s, size_t *valp) {

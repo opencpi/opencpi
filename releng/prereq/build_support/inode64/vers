@@ -1,7 +1,0 @@
-GLIBC_2.0 {
-  global:
-    readdir;
-    __fxstat;
-    __xstat;
-    __lxstat;
-};

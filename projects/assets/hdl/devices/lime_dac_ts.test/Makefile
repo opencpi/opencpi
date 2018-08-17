@@ -32,7 +32,7 @@ PLOT?=0
 PLATFORM=none
 APP=testbench
 
-include setup.mk
+include $(OCPI_CDK_DIR)/include/application.mk
 
 ifneq (,)
   include $(OCPI_CDK_DIR)/include/test.mk
@@ -46,8 +46,7 @@ all:
 ifeq ($(filter clean%,$(MAKECMDGOALS))$(filter show,$(MAKECMDGOALS)),)
 # "make tests" runs all tests below based upon running containers, and if isim
 # or modelsim is found to be installed.
-# This can be overriden on the command line, e.g. "make tests RCC_CONTAINERS=0 MODELSIM_CONTAINERS=0"
-ifeq (,$(CONTAINERS))
+# This can be overriden on the command line, e.g. "make tests RCC_CONTAINERS=0 MODELSIM_CONTAINERS=0"ifeq (,$(CONTAINERS))
 # This should run ONCE
 CONTAINERS:=$(shell ocpirun -C)
 endif
@@ -57,7 +56,6 @@ ALST4_CONTAINERS?=$(shell echo "$(CONTAINERS)" | grep -c alst4)
 ISIM_CONTAINERS?=$(shell echo "$(CONTAINERS)" | grep -c isim)
 XSIM_CONTAINERS?=$(shell echo "$(CONTAINERS)" | grep -c xsim)
 MODELSIM_CONTAINERS?=$(shell echo "$(CONTAINERS)" | grep -c modelsim)
-endif
 
 export CONTAINERS RCC_CONTAINERS ML605_CONTAINERS ALST4_CONTAINERS ISIM_CONTAINERS XSIM_CONTAINERS MODELSIM_CONTAINERS
 
@@ -67,11 +65,11 @@ export CONTAINERS RCC_CONTAINERS ML605_CONTAINERS ALST4_CONTAINERS ISIM_CONTAINE
 # Work with "ocpidev run":
 run: all tests
 ifeq ($(ISIM_CONTAINERS)$(MODELSIM_CONTAINERS)$(XSIM_CONTAINERS),000)
-	@echo "No simulators were found!"
-	@false
+	@echo "No simulators were found! No tests were run."
+	@true
 endif
 
-tests:
+runtest tests:
 ifneq ($(ISIM_CONTAINERS),0)
 	$(MAKE) test P=isim OAS=app FLUSH=false BURST=false NUM_OUTPUT_SAMPLES=480 CLK_RATE=100e6
 	$(MAKE) test P=isim OAS=app FLUSH=false BURST=false NUM_OUTPUT_SAMPLES=480 CLK_RATE=80e6
@@ -145,7 +143,7 @@ endif
 
 test: lime_dac_ts
 
-EXECUTION_STRING=$(VG) ./$(PROG) $(OAS) $(CLK_RATE) $(P) $(FLUSH) $(NUM_OUTPUT_SAMPLES)
+EXECUTION_STRING=$(VG) ./target-$(OCPI_TOOL_DIR)/$(APP) $(OAS) $(CLK_RATE) $(P) $(FLUSH) $(NUM_OUTPUT_SAMPLES)
 
 # TODO: Move to Makefile native so can fail properly
 
@@ -167,7 +165,7 @@ lime_dac_ts:
 	$(EXPORT_PATH) \
 	$(EXECUTION_STRING) ;
 	python ./scripts/verify.py odata/output_file.bin idata/input_data_only.bin
-	grep tx_time_int simulations/lime_dac_ts_assy.$(P).*/sim.out
+	grep tx_time_int simulations/*lime_dac_ts_assy.$(P).*/sim.out
 
 clean::
 	rm -rf idata/* odata/* simulations
