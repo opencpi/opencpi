@@ -74,7 +74,7 @@ _ocpidev()
     bopts="--rcc --hdl --no-assemblies --hdl-assembly --hdl-target --hdl-platform \
            --rcc-platform --rcc-hdl-platform --ok-if-missing --worker --clean-all"
     # show verb has different options and nouns
-    showopts="-h --help -v -d --table --json"
+    showopts="-h --help -v -d --table --json --local-scope --global-scope --simple"
     if [[ ${verb} == show ]] ; then
       # valid nouns in first slot
       nouns1="projects registry components workers platforms targets hdl rcc project libraries"
@@ -97,7 +97,7 @@ _ocpidev()
     fi
     opts="--help -v -f -d -s -p -t -n -l -h -F -D -K -N -S -P -L -V -E -W -R -r -g -q -u -I -A -O -C -Y -y \
 	-T -Z -G -Q -U -M -B -H -J -X -x"
-    # for project noun, add the --register option
+    # for project noun, add the --regisr option
     if [[ ${noun1} == project ]]; then
       opts="${opts} --register"
     fi
@@ -113,20 +113,20 @@ _ocpidev()
     fi
     # if current word stars with a - it is an option of some sort
     if [[ ${prev} == --hdl-platform || ${prev} == --build-hdl-platform ]] ; then
-      plats=`ocpidev show hdl platforms 2>/dev/null`
+      plats=`ocpidev show hdl platforms --simple 2>/dev/null`
       COMPREPLY=( $(compgen -W "${plats}" -- ${cur}) )
       return 0
     elif [[ ${prev} == --hdl-target || ${prev} == --build-hdl-target ]] ; then
-      tgts=`ocpidev show hdl targets 2>/dev/null`
+      tgts=`ocpidev show hdl targets --simple 2>/dev/null`
       COMPREPLY=( $(compgen -W "${tgts}" -- ${cur}) )
       return 0
     # Not supported yet:
     #elif [[ ${prev} == --rcc-target || ${prev} == --build-rcc-target ]] ; then
-    #  tgts=`ocpidev show rcc targets`
+    #  tgts=`ocpidev show rcc targets --simple`
     #  COMPREPLY=( $(compgen -W "${tgts}" -- ${cur}) )
     #  return 0
     elif [[ ${prev} == --rcc-platform || ${prev} == --build-rcc-platform ]] ; then
-      plats=`ocpidev show rcc platforms 2>/dev/null`
+      plats=`ocpidev show rcc platforms --simple 2>/dev/null`
       COMPREPLY=( $(compgen -W "${plats}" -- ${cur}) )
       return 0
     elif [[ ${cur} == -* ]] ; then
@@ -143,7 +143,7 @@ _ocpidev()
       COMPREPLY=( $(compgen -W "${bopts} ${opts}" -- ${cur}) )
       return 0
     elif [[ ${verb} == unregister && ${prev} == project ]]; then
-      projs=`ocpidev show registry 2>/dev/null`
+      projs=`ocpidev show registry --simple 2>/dev/null`
       COMPREPLY=( $(compgen -W "${projs}" -- ${cur}) )
       return 0
      elif [[ ${verb} == run && ${prev} == --mode ]]; then

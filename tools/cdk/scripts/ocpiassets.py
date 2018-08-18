@@ -875,13 +875,24 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
             raise ocpiutil.OCPIException("For a Project to show tests \"init_libs\" "
                                          "must be set to True when the object is constructed")
 
-        if not kwargs.get("json", False):
+        details = kwargs.get("details", "")
+        if details == "simple":
             for lib in self.lib_list:
                 valid_tests = lib.get_valid_tests()
                 if  valid_tests:
                     print("Library: " + lib.directory)
                 for test_dir in valid_tests:
                     print("    Test: " + os.path.basename(test_dir.rstrip('/')))
+        elif details == "table":
+            row_1 = ["Library Directory", "Test"]
+            row_2 = ["----------------------------------------", "-------------------"]
+            rows = [row_1, row_2]
+            for lib in self.lib_list:
+                valid_tests = lib.get_valid_tests()
+                for test_dir in valid_tests:
+                    row_n = [lib.directory, os.path.basename(test_dir.rstrip('/'))]
+                    rows.append(row_n)
+            ocpiutil.print_table(rows)
         else:
             '''
             JSON format:
@@ -925,9 +936,18 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
             print()
 
     def show_libraries(self, **kwargs):
-        if not kwargs.get("json", False):
+        details = kwargs.get("details", "")
+        if details == "simple":
             for lib_directory in self.get_valid_libraries():
                 print("Library: " + lib_directory)
+        elif details == "table":
+            row_1 = ["Library Directories"]
+            row_2 = ["----------------------------------------"]
+            rows = [row_1, row_2]
+            for lib_directory in self.get_valid_libraries():
+                row_n = [lib_directory]
+                rows.append(row_n)
+            ocpiutil.print_table(rows)
         else:
             json_dict = {}
             project_dict = {}
@@ -949,6 +969,18 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
             json.dump(json_dict, sys.stdout)
             print()
 
+    def print_project_table(self):
+        project_vars = ocpiutil.set_vars_from_make(self.directory + "/Makefile",
+                                                   "projectdeps ShellProjectVars=1",
+                                                   "verbose")
+
+        row_1 = ["Project Directory", "Project Package", "Project Dependencies"]
+        row_2 = ["---------------------------", "---------------", "---------------------"]
+        row_3 = [self.directory, self.package_id, 
+                 ", ".join(project_vars['ProjectDependencies'])]
+        rows = [row_1, row_2, row_3]
+        ocpiutil.print_table(rows)
+
     def show(self, **kwargs):
         """
         This method prints out information about the project based on the options passed in as
@@ -959,7 +991,7 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
             tests (T/F) - Instructs the method whether print out the tests that that exist in
                           this project
         """
-
+        details = kwargs.get("details", "")
         if kwargs.get("tests", False):
             self.show_tests(**kwargs)
         elif kwargs.get("libraries", False):
@@ -968,10 +1000,12 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
             project_vars = ocpiutil.set_vars_from_make(self.directory + "/Makefile",
                                                    "projectdeps ShellProjectVars=1",
                                                    "verbose")
-            if not kwargs.get("json", False):
+            if details == "simple":
                 print ("Project Directory: " + self.directory)
                 print ("Project Package: " + self.package_id)
                 print ("Project Dependencies: " + ", ".join(project_vars['ProjectDependencies']))
+            elif details == "table":
+                self.print_project_table()
             else:
                 json_dict = {'project': {'directory': self.directory,
                                          'package': self.package_id,
@@ -982,7 +1016,7 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
             if self.lib_list is None:
                 raise ocpiutil.OCPIException("For a Project to show verbosely \"init_libs\" "
                                              "must be set to True when the object is constructed")
-            if not kwargs.get("json", False):
+            if details == "simple":
                 project_vars = ocpiutil.set_vars_from_make(self.directory + "/Makefile",
                                                    "projectdeps ShellProjectVars=1",
                                                    "verbose")
@@ -1004,6 +1038,26 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
                     valid_tests = lib.get_valid_tests()
                     for test_dir in valid_tests:
                         print("    Test: " + os.path.basename(test_dir.rstrip('/')))
+            elif details == "table":
+                print("Overview:")
+                self.print_project_table()
+                print("Libraries:")
+                self.show_libraries(details="table")
+                print("Tests:")
+                self.show_tests(details="table")
+                print("Primatives:")
+                row_1 = ["Primative Directory", "Primative"]
+                row_2 = ["---------------------------", "---------------"]
+                rows = [row_1, row_2]
+                prim_dir = self.directory + "/hdl/primitives"
+                if os.path.isdir(prim_dir):
+                    prims = [dir for dir in os.listdir(prim_dir)
+                            if not os.path.isfile(os.path.join(prim_dir, dir))]
+                    prims = [x for x in prims if x != "lib"]
+                    for prim in prims:
+                        row_n = [prim_dir, prim]
+                        rows.append(row_n)
+                    ocpiutil.print_table(rows)
             else:
                 json_dict = {}
                 project_dict = {}
@@ -1019,14 +1073,11 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
                                              for test in valid_tests}
                     libraries_dict[lib_package] = lib_dict
                 prim_dir = self.directory + "/hdl/primitives"
-                print (prim_dir)
                 if os.path.isdir(prim_dir):
                     prims_dict = {}
                     prims = [dir for dir in os.listdir(prim_dir)
                             if not os.path.isfile(os.path.join(prim_dir, dir))]
                     prims = [x for x in prims if x != "lib"]
-                    print (prims)
-                    #TODO remove lib
                     prim_vars = ocpiutil.set_vars_from_make(prim_dir + "/Makefile",
                                                             "ShellTestVars=1 showpackage")
                     prim_pkg = "".join(prim_vars['Package'])

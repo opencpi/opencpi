@@ -48,14 +48,15 @@ def addLibs(curRoot, libs):
     else:
         for libDir in libraryDirectories:
             ET.SubElement(curRoot, "library", {"name" : libDir})
+
 def addSpecs(curRoot, curDir):
-    for dirName, subdirList, fileList in os.walk(curDir):
-        if (dirName.endswith("/specs")):
-            for a in fileList:
+    for dirName in os.listdir(curDir):
+        if (dirName == "specs"):
+            for a in os.listdir(curDir + "/" + dirName):
                 if a == "package-id":
                     continue
-                worker = ET.SubElement(curRoot, "spec")
-                worker.set('name', a)
+                comp = ET.SubElement(curRoot, "spec")
+                comp.set('name', a)
 
 def getWorkerPlatforms(dirName, name):
     buildFile = dirName + "/" + name.split('.', 1)[0] + "-build.xml"

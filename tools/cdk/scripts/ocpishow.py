@@ -70,11 +70,29 @@ def parseCLVars():
                         "Changing directory may have no effect for some commands.")
 
     details_group = parser.add_mutually_exclusive_group()
-    details_group.add_argument("--table", action="store_true", dest="table",
-                               help="Pretty-print details in a table " +
-                               "associated with the chosen noun")
-    details_group.add_argument("--json", action="store_true", dest="json",
+    details_group.add_argument("--table", action="store_const", dest="details", const="table",
+                               default="table",
+                               help="Pretty-print details in a table associated with the chosen " 
+                               "noun.  This is the default if no print mode is specified")
+    details_group.add_argument("--json", action="store_const", dest="details", const="json",
+                               default="table",
                                help="Print information in a json format")
+    details_group.add_argument("--simple", action="store_const", dest="details", const="simple",
+                               default="table",
+                               help="Print information in a simple format ")
+    scope_group = parser.add_mutually_exclusive_group()
+    scope_group.add_argument("--local-scope", action="store_const", dest="scope", const="local",
+                             default="global",
+                             help="Only show assets in the local project")
+    #scope_group.add_argument("--available-scope", action="store_const", dest="scope", const="depend",
+    #                         default="global",
+    #                         help="Only show assets in the local project and the projects it " +
+    #                             "depends on")
+    scope_group.add_argument("--global-scope", action="store_const", dest="scope", const="global",
+                             default="global",
+                             help="show assets in all projects. This is the default if no "+
+                                  "scope mode is given")
+
     first_pass_args, remaining_args = parser.parse_known_args()
     if first_pass_args.noun in plainNouns:
         args = first_pass_args
@@ -108,7 +126,7 @@ def do_rccplatforms(options):
     except TypeError:
         print("No RCC platforms found. Make sure the core project is registered or in your OCPI_PROJECT_PATH.")
         return
-    if options.table:
+    if options.details == "table":
         rows = [["Platform", "Target"]]
         rows += [["---------", "---------"]]
         # Collect the information for each platform into a "row" list
@@ -119,7 +137,7 @@ def do_rccplatforms(options):
             rows.append(platformRow)
         # Format the list of rows into a table and print
         ocpiutil.print_table(rows)
-    elif options.json:
+    elif options.details in {"json", "table"}:
         platformDict = {}
         for platform in sorted(rccPlatforms):
             target = rccDict["RccTarget_" + platform][0]
@@ -136,7 +154,7 @@ def do_rcctargets(options):
     If the "table" option is provided, print out a formatted table of the platforms and targets.
     If the "json" option is provided, dump json output for the platform/target details.
     """
-    if options.table or options.json:
+    if options.details in {"json", "table"}:
         do_rccplatforms(options)
     else:
         rccDict = ocpiutil.get_make_vars_rcc_targets()
@@ -156,7 +174,7 @@ def do_hdlplatforms(options):
     If the "json" option is provided, dump json output for the platform details.
     """
     platforms = HdlPlatform.all()
-    if options.table:
+    if options.details == "table":
         rows = [["Platform", "Target", "Part", "Vendor", "Toolset"]]
         rows += [["---------", "---------", "---------", "---------", "---------"]]
         # Collect the information for each platform into a "row" list
@@ -172,7 +190,7 @@ def do_hdlplatforms(options):
         ocpiutil.print_table(rows)
         print("* An asterisk indicates that the platform has not been built yet.\n" + \
               "  Assemblies and tests cannot be built until the platform is built.")
-    elif options.json:
+    elif options.details == "json":
         # Dump the json containing each platform's attributes
         platformDict = {}
         for platform in HdlPlatform.all():
@@ -197,7 +215,7 @@ def do_hdltargets(options):
     the details associated with each.
     If the "json" option is provided, dump json output for the target details.
     """
-    if options.table:
+    if options.details == "table":
         rows = [["Target", "Parts", "Vendor", "Toolset"]]
         rows += [["---------", "---------", "---------", "---------"]]
         # Collect the information for each target into a "row" list
@@ -205,7 +223,7 @@ def do_hdltargets(options):
             targetRow = [str(target), ','.join(target.parts), target.vendor, target.toolset.title]
             rows.append(targetRow)
         ocpiutil.print_table(rows)
-    elif options.json:
+    elif options.details == "json":
         # Dump the json containing each platform's attributes
         vendorDict = {}
         for vendor in HdlTarget.get_all_vendors():
@@ -223,52 +241,90 @@ def do_platforms(options):
     """
     Print out platforms for all authoring models
     """
-    if not options.json:
+    if options.details != "json":
         print("RCC:")
     else:
         print("{")
         print("\"rcc\":")
     do_rccplatforms(options)
-    if not options.json:
+    if options.details != "json":
         print("HDL:")
     else:
         print(",")
         print("\"hdl\":")
     do_hdlplatforms(options)
-    if options.json:
+    if options.details == "json":
         print("}")
 
 def do_targets(options):
     """
     Print out targets for all authoring models
     """
-    if not options.json:
+    if options.details != "json":
         print("RCC:")
     do_rcctargets(options)
-    if not options.json:
+    if options.details != "json":
         print("HDL:")
     do_hdltargets(options)
 
-def do_workers(options):
-    # TODO: regen project metadatas for all projects in proj path.
+def do_worker_or_comp(options, worker):
+    #TODO this is not be the right way to do this long term
+    if worker:
+        cap_asset = "Worker"
+        xml_asset = "worker"
+    else:
+        cap_asset = "Component"
+        xml_asset = "spec"
     mdFileList = ocpiutil.get_all_projects()
-    #print mdFileList
-    workList = ""
-    for mdFile in mdFileList:
-        mdFile = rchop(mdFile, '/')
-        mdFile = rchop(mdFile, 'exports')
-        if os.access('mdFile', os.W_OK):
+    assetList = ""
+    if options.details == "table":
+        # Table header
+        row_1 = ["Project Directory", cap_asset]
+        row_2 = ["------------------", "------------------------------------"]
+        rows = [row_1, row_2]
+
+    for proj_dir in mdFileList:
+        proj_dir = rchop(proj_dir, '/')
+        proj_dir = rchop(proj_dir, 'exports')
+        if os.access('proj_dir', os.W_OK):
             subprocess.check_output([os.environ['OCPI_CDK_DIR']+"/scripts/genProjMetaData.py", mdFile])
-        mdFile = mdFile + "/project.xml"
+        mdFile = proj_dir + "/project.xml"
         if os.path.isfile(mdFile):
-            workList = workList + get_tags(mdFile, "worker")
-    print("Workers: " + workList)
+            assetList = assetList + get_tags(mdFile, xml_asset)
+            if options.details == "simple":
+                print("Project: " + proj_dir)
+                for asset in assetList.split():
+                    print("    " + cap_asset + ": " + asset)
+            elif options.details == "table":
+                # Generate rows of the table. Only add the registered column if only_registry is False
+                for asset in assetList.split():
+                    row_n = [os.path.realpath(proj_dir), asset]
+                    rows.append(row_n)
+            else:
+                raise ocpiutil.OCPIException("ocpidev show components/worker --json is not " +
+                                             "valid, this option is under construction.")
+    if options.details == "table":
+        ocpiutil.print_table(rows)
+
+def do_components(options):
+    do_worker_or_comp(options, False)
+
+def do_workers(options):
+    do_worker_or_comp(options, True)
 
 def do_libraries(options):
+    if options.scope != "local":
+        raise ocpiutil.OCPIException("ocpidev show libraries is only valid in \"--local-scope\"." +
+                                     "  Other scope options are under construction.")
+    if not ocpiutil.get_path_to_project_top():
+        raise ocpiutil.OCPIException("When using the \"--local-scope\" scope you must run the command " +
+                                    "in a valid OpenCPI project. " + os.path.realpath(".") +
+                                    " is not a valid project.  Use the \"-d\" option or change " +
+                                    "directories")
     #TODO this may not be the right way to do this long term
     my_asset = ocpiassets.AssetFactory.factory("project",
                                                ocpiutil.get_path_to_project_top())
-    my_asset.show(libraries=True, json=options.json, verbose=options.verbose)
+    my_asset.show(libraries=True, details=options.details, verbose=options.verbose)
 
 def do_project(options):
     #TODO this may not be the right way to do this long term
@@ -279,14 +335,22 @@ def do_project(options):
     else:
         my_asset = ocpiassets.AssetFactory.factory("project",
                                                ocpiutil.get_path_to_project_top())
-    my_asset.show(json=options.json, verbose=options.verbose)
+    my_asset.show(details=options.details, verbose=options.verbose)
 
 def do_tests(options):
+    if options.scope != "local":
+        raise ocpiutil.OCPIException("ocpidev show tests is only valid in \"--local\" scope.  " +
+                                     "Other scope options are under construction.")
+    if not ocpiutil.get_path_to_project_top():
+        raise ocpiutil.OCPIException("When using the \"--local\" scope you must run the command " +
+                                    "in a valid OpenCPI project. " + os.path.realpath(".") +
+                                    " is not a valid project.  Use the \"-d\" option or change " +
+                                    "directories")
     #TODO this may not be the right way to do this long term
     my_asset = ocpiassets.AssetFactory.factory("project",
                                                ocpiutil.get_path_to_project_top(),
                                                init_libs=True)
-    my_asset.show(tests=True, json=options.json, verbose=options.verbose)
+    my_asset.show(tests=True, details=options.details, verbose=options.verbose)
 
 def rchop(thestring, ending):
     if thestring.endswith(ending):
@@ -302,21 +366,6 @@ def get_tags(mdFile, tagName):
           retVal = retVal + " " + tag.get("name")
     return retVal
 
-def do_components(options):
-    # TODO: regen project metadatas for all projects in proj path.
-    mdFileList = ocpiutil.get_all_projects()
-    #print mdFileList
-    compList = ""
-    for mdFile in mdFileList:
-        mdFile = rchop(mdFile, '/')
-        mdFile = rchop(mdFile, 'exports')
-        if os.access('mdFile', os.W_OK):
-            subprocess.check_output([os.environ['OCPI_CDK_DIR']+"/scripts/genProjMetaData.py", mdFile])
-        mdFile = mdFile + "/project.xml"
-        if os.path.isfile(mdFile):
-            compList = compList + get_tags(mdFile, "spec")
-    print("Components: " + compList)
-
 def do_registry(options):
     """
     Print out the currently registered projects
@@ -324,7 +373,6 @@ def do_registry(options):
     """
     do_projects(options, only_registry=True)
 
-# TODO most of this can be pulled into ocpiutil in a reusable fashion
 def collect_projects_from_path():
     project_path = os.environ.get('OCPI_PROJECT_PATH')
     projects_from_env = {}
@@ -371,7 +419,7 @@ def do_projects(options, only_registry=False):
     if not only_registry:
         projects_from_env = collect_projects_from_path()
 
-    if not options.json and not options.table:
+    if options.details == "simple":
         # With no options, just print the result of 'ls <registry>'
         # omit broken links
         proj_list = []
@@ -409,7 +457,7 @@ def do_projects(options, only_registry=False):
         if not only_registry:
             projects_dict.update(projects_from_env)
 
-        if options.table:
+        if options.details == "table":
             # Print out a table listing project IDs, projects' realpaths, and whether they exist
             if reg_exists:
                 print("Project registry is located at: " + reg_dir)
@@ -444,8 +492,8 @@ def do_projects(options, only_registry=False):
             print()
 
 def main():
+    ocpiutil.configure_logging()
     (args, noun) = parseCLVars()
-
     action = {"registry":     do_registry,
               "projects":     do_projects,
               "project":      do_project,
@@ -459,12 +507,16 @@ def main():
               "hdltargets":   do_hdltargets,
               "rccplatforms": do_rccplatforms,
               "rcctargets":   do_rcctargets}
-    if args.verbose:
+    if args.verbose and args.details != "json":
         #TODO use ocpilogging module
         print("ocpishow is processing noun \"" + str(noun) + "\" with options \"" + str(args) + "\"")
     with ocpiutil.cd(args.dir):
         # call the correct noun function
-        action[noun](args)
+        try:
+            action[noun](args)
+        except ocpiutil.OCPIException as ex:
+            ocpiutil.logging.error(str(ex))
+            sys.exit(1)
 
 if __name__ == '__main__':
     main()

@@ -17,7 +17,6 @@
 ./projects/assets/hdl/primitives/temac_v6/v6_emac_v1_3_patch.v
 ./projects/inactive/applications/cat_xml/hello.file
 ./projects/inactive/applications/copy_xml/hello.file
-./projects/inactive/applications/corbaURL_xml/foo
 ./projects/inactive/applications/corbaURL_xml/hello.idl
 ./projects/inactive/applications/dds_ports/specs/msg1.idl
 ./projects/inactive/applications/dds_ports/standalone_dds/Test/idl/JTest.idl

@@ -2271,13 +2271,12 @@ argv=($*)
 original_argv=($*)
 while [[ "${argv[0]}" != "" ]] ; do
   if [[ "${argv[0]}" == show ]] ; then
-    ocpishow_options=`sed -E 's/(^| )show( |$)//' <<< "${original_argv[@]}"`
+    ocpishow_options=`sed -E 's/(^| )show( |$)/ /' <<< "${original_argv[@]}"`
     $OCPI_CDK_DIR/scripts/ocpishow.py $ocpishow_options
     exit $?
   elif [[ "${argv[0]}" == run ]] ; then
     # This is portable while the below is not
-    ocpidev_run_options=`sed -E 's/(^| )run( |$)//' <<< "${original_argv[@]}"`
-    #ocpidev_run_options=`sed 's/\(^\| \)run\( \|$\)/\1\2/' <<< "${original_argv[@]}"`
+    ocpidev_run_options=`sed -E 's/(^| )run( |$)/ /' <<< "${original_argv[@]}"`
     $OCPI_CDK_DIR/scripts/ocpidev_run.py $ocpidev_run_options
     exit $?
   elif [[ -n "$verb" && -n "$help_screen" ]]; then

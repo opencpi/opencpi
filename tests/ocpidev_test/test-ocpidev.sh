@@ -246,58 +246,74 @@ done
 echo "============OCPIDEVTEST:'show' tests"
 echo "ocpidev show rcc platforms"
 do_ocpidev show rcc platforms
+echo "ocpidev show rcc platforms --simple"
+do_ocpidev show rcc platforms --simple
 echo "ocpidev show rcc platforms --json"
 do_ocpidev show rcc platforms --json
+echo "ocpidev show hdl platforms"
+do_ocpidev show hdl platforms
+echo "ocpidev show hdl platforms --simple"
+do_ocpidev show hdl platforms --simple 
 echo "ocpidev show hdl platforms --json"
 do_ocpidev show hdl platforms --json
 echo "ocpidev show workers"
 do_ocpidev show workers
-echo "ocpidev show workers --json"
-do_ocpidev show workers --json
+echo "ocpidev show workers --simple"
+do_ocpidev show workers --simple
 echo "ocpidev show components"
 do_ocpidev show components
-echo "ocpidev show components --json"
-do_ocpidev show components --json
+echo "ocpidev show components --simple"
+do_ocpidev show components --simple
 echo "ocpidev show platforms"
 do_ocpidev show platforms
+echo "ocpidev show platforms --simple"
+do_ocpidev show platforms --simple
 echo "ocpidev show platforms --json"
 do_ocpidev show platforms --json
 echo "ocpidev show rcc targets"
 do_ocpidev show rcc targets
+echo "ocpidev show rcc targets --simple"
+do_ocpidev show rcc targets --simple
 echo "ocpidev show rcc targets --json"
 do_ocpidev show rcc targets --json
 echo "ocpidev show hdl targets"
 do_ocpidev show hdl targets
+echo "ocpidev show hdl targets --simple"
+do_ocpidev show hdl targets --simple
 echo "ocpidev show hdl targets --json"
 do_ocpidev show hdl targets --json
 echo "ocpidev show projects"
 do_ocpidev show projects
-echo "ocpidev show projects --table"
-do_ocpidev show projects --table
+echo "ocpidev show projects --simple"
+do_ocpidev show projects --simple
+echo "ocpidev show projects --simple"
+do_ocpidev show projects --simple
 echo "ocpidev show projects --json"
 do_ocpidev show projects --json
 echo "ocpidev show registry"
 do_ocpidev show registry
-echo "ocpidev show registry --table"
-do_ocpidev show registry --table
+echo "ocpidev show registry --simple"
+do_ocpidev show registry --simple
 echo "ocpidev show registry --json"
 do_ocpidev show registry --json
-echo "ocpidev show tests --json"
-do_ocpidev show tests --json
-echo "ocpidev show tests"
-do_ocpidev show tests 
-echo "ocpidev show project"
-do_ocpidev show project 
-echo "ocpidev show -v project"
-do_ocpidev show -v project 
-echo "ocpidev show project --json"
-do_ocpidev show project --json
-echo "ocpidev show -v project --json"
-do_ocpidev show -v project --json
-echo "ocpidev show libraries --json"
-do_ocpidev show libraries --json
-echo "ocpidev show libraries"
-do_ocpidev show libraries
+echo "ocpidev show tests --json --local-scope"
+do_ocpidev show tests --json --local-scope
+echo "ocpidev show tests --local-scope"
+do_ocpidev show tests --local-scope
+echo "ocpidev show tests --local-scope --simple"
+do_ocpidev show tests --local-scope --simple 
+echo "ocpidev show project --local-scope"
+do_ocpidev show project --local-scope
+echo "ocpidev show project --local-scope --simple"
+do_ocpidev show project --local-scope --simple
+echo "ocpidev show project --json --local-scope"
+do_ocpidev show project --json --local-scope
+echo "ocpidev show libraries --json --local-scope"
+do_ocpidev show libraries --json --local-scope
+echo "ocpidev show libraries --local-scope"
+do_ocpidev show libraries --local-scope
+echo "ocpidev show libraries --local-scope --simple"
+do_ocpidev show libraries --local-scope --simple
 
 if [ "$ONLY_CREATE" == "1" ] ; then
   echo "Keeping the project and exiting before build or deletion"
