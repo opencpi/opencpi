@@ -333,6 +333,11 @@ function do_download {
 	  download_path cache && return 0
         fi;;
       local)
+        # Special case when the URL is in fact a pathname already
+        [[ "$url" != *.git &&  "$url" != [a-zA-Z]*://* ]] && {
+           download_path internet && return 0
+           continue;           
+	}
         [ -z "$OCPI_PREREQUISITES_LOCAL_SERVER" -a -z "$OCPI_PREREQUISITES_LOCAL_PATHNAME" ] && {
           echo No local server or pathname is supplied, so no local server or pathname used.
 	  continue
