@@ -17,7 +17,7 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 ##########################################################################################
-ifneq ($(filter show help clean% distclean%,$(MAKECMDGOALS)),)
+ifneq ($(filter-out cleandriver,$(filter show help clean% distclean%,$(MAKECMDGOALS))),)
   ifndef OCPI_CDK_DIR
     export OCPI_CDK_DIR:=$(CURDIR)/bootstrap
   endif
