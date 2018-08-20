@@ -36,6 +36,7 @@
 #include <iomanip> // std::setprecision()
 #include <cstdint> // uint32_t, uint64_t
 #include <utility> // std::pair
+#include <cinttypes> // PRIu64
 
 #include "ad9361.h"   // for RFPLL_MODULUS
 #include "OcpiApi.hh" // OCPI::API::Application
@@ -52,8 +53,6 @@
 #include "writers_ad9361_rf_tx_pll.h" // set_AD9361_Tx_RFPLL_LO_freq_Hz()
 #include "writers_ad9361_bb_tx_dac.h" // set_AD9361_CLKTF_FREQ_Hz()
 #include "writers_ad9361_bb_tx_filters_analog.h" // set_AD9361_bb_tx_filter_complex_bandwidth_Hz()
-
-namespace OA = OCPI::API;
 
 #define PROP_STR_RF_GAIN_DB              "rf_gain_dB"
 #define PROP_STR_BB_GAIN_DB              "bb_gain_dB"
@@ -76,6 +75,7 @@ namespace OA = OCPI::API;
 
 using namespace OCPI::RCC; // for easy access to RCC data types and constants
 using namespace Fmcomms_2_3_txWorkerTypes;
+namespace OA = OCPI::API;
 
 class Fmcomms_2_3_txWorker : public Fmcomms_2_3_txWorkerBase {
 
@@ -610,7 +610,7 @@ private:
       std::string err = "invalid property: " + prop;
       throw err.c_str();
     }
-    log_info("attempted property write: prop=%s,\tdesired value=%.15f,\tvalue to be written (after potential adjustment due to No-OS API precision limitations) is %lu %s", prop.c_str(), val_desired, adjusted.first, adjusted.second.c_str());
+    log_info("attempted property write: prop=%s,\tdesired value=%.15f,\tvalue to be written (after potential adjustment due to No-OS API precision limitations) is %" PRIu64 " %s", prop.c_str(), val_desired, adjusted.first, adjusted.second.c_str());
   }
 
   /*void get_adjusted_val_to_be_applied_to_hw(
@@ -1617,7 +1617,6 @@ private:
     //
     if(m_properties.config.SMA_channel == CONFIG_SMA_CHANNEL_TX1A)
     {
-      // (this is what performs no channel swap)
       ad9361_init.tx_channel_swap_enable = 0; // will be later applied
       // (this is what ensures desired channel TX_1 is enabled)
       std::string TX_1_str = get_TX_1_str();
@@ -1626,7 +1625,6 @@ private:
     }
     else // i.e. (m_properties.config.SMA_channel == CONFIG_SMA_CHANNEL_TX2A)
     {
-      // (this is what performs channel swap)
       ad9361_init.tx_channel_swap_enable = 0; // will be later applied
       // (this is what ensures desired channel TX_2 is enabled)
       std::string TX_2_str = get_TX_2_str();

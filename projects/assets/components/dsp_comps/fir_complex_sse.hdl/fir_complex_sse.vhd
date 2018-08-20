@@ -282,7 +282,7 @@ begin
     port map (
       CLK      => ctl_in.clk,
       RST      => ctl_in.reset,
-      DIN      => in_in.data(DATA_WIDTH_c-1+16 downto 16),
+      DIN      => in_in.data(DATA_WIDTH_c-1 downto 0),
       DIN_VLD  => enable,
       DOUT     => i_odata,
       DOUT_VLD => odata_vld,
@@ -304,7 +304,7 @@ begin
     port map (
       CLK      => ctl_in.clk,
       RST      => ctl_in.reset,
-      DIN      => in_in.data(DATA_WIDTH_c-1 downto 0),
+      DIN      => in_in.data(DATA_WIDTH_c-1+16 downto 16),
       DIN_VLD  => enable,
       DOUT     => q_odata,
       DOUT_VLD => open,
@@ -325,8 +325,8 @@ begin
     end if;
   end process backPressure;
 
-  out_out.data        <= std_logic_vector(resize(signed(i_odata),16)) &
-                         std_logic_vector(resize(signed(q_odata),16));
+  out_out.data        <= std_logic_vector(resize(signed(q_odata),16)) &
+                         std_logic_vector(resize(signed(i_odata),16));
   out_out.byte_enable <= (others => '1');
 
   -----------------------------------------------------------------------------

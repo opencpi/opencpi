@@ -432,8 +432,7 @@ begin
     -----------------------------------------------------------------------------
 
     invalid_half_duplex : if HALF_DUPLEX_p      = btrue  generate
-      -- this OpenCPI build configuration is not supported by AD9361
-      -- and should not be used until it is
+      -- this OpenCPI build configuration is not yet supported
       ctl_out.error <= '1'; -- force unsuccessful end of all control operations
     end generate;
     -----------------------------------------------------------------------------

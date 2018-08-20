@@ -55,11 +55,11 @@ begin
 
   -- transform signed Q0.15 to signed Q0.11, taking most significant 12 bits
   -- (and using the 13th bit to round)
-  trunc_round_Q : entity work.trunc_round_15_to_12_signed
+  trunc_round_Q : entity work.trunc_round_16_to_12_signed
     port map(
       DIN  => in_Q,
       DOUT => wsi_data_Q);
-  trunc_round_I : entity work.trunc_round_15_to_12_signed
+  trunc_round_I : entity work.trunc_round_16_to_12_signed
     port map(
       DIN  => in_I,
       DOUT => wsi_data_I);

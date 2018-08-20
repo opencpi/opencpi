@@ -94,7 +94,7 @@ begin
 
   out_out.valid <= '1' when out_in.ready = '1' and odata_vld = '1' else '0';
 
-  out_out.data  <= std_logic_vector(resize(signed(i_out), 16)) & std_logic_vector(resize(signed(q_out), 16));
+  out_out.data  <= std_logic_vector(resize(signed(q_out), 16)) & std_logic_vector(resize(signed(i_out), 16));
 
   -- Since ZeroLengthMessages=true for the output WSI, this signal must be controlled
   out_out.byte_enable <= (others => '1');
@@ -208,7 +208,7 @@ begin
       CLK      => ctl_in.clk,
       RST      => ctl_in.reset,
       DIN_VLD  => idata_vld,
-      DIN      => in_in.data(DIN_WIDTH_c-1+16 downto 16),
+      DIN      => in_in.data(DIN_WIDTH_c-1 downto 0),
       DOUT_VLD => odata_vld,
       DOUT     => i_out
       );
@@ -225,7 +225,7 @@ begin
       CLK      => ctl_in.clk,
       RST      => ctl_in.reset,
       DIN_VLD  => idata_vld,
-      DIN      => in_in.data(DIN_WIDTH_c-1 downto 0),
+      DIN      => in_in.data(DIN_WIDTH_c-1+16 downto 16),
       DOUT_VLD => open,
       DOUT     => q_out
       );

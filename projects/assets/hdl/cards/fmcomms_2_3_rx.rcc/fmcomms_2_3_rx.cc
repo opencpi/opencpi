@@ -36,6 +36,7 @@
 #include <iomanip> // std::setprecision()
 #include <cstdint> // uint32_t, uint64_t
 #include <utility> // std::pair
+#include <cinttypes> // PRIu64
 
 #include "ad9361.h"   // for RFPLL_MODULUS
 #include "OcpiApi.hh" // OCPI::API::Application
@@ -51,8 +52,6 @@
 #include "writers_ad9361_rf_rx_pll.h" // set_AD9361_Rx_RFPLL_LO_freq_Hz()
 #include "writers_ad9361_bb_rx_adc.h" // set_AD9361_CLKRF_FREQ_Hz()
 #include "writers_ad9361_bb_rx_filters_analog.h" // set_AD9361_rx_rf_bandwidth()
-
-namespace OA = OCPI::API;
 
 // it is possible for this worker to assign the AD9361 to one of the RXB or RXC ports, none of which are connctedwhich would result in an invalid settings
 // it is possible for the AD9361 to have the setting assigned where one of the
@@ -85,6 +84,7 @@ enum class ad9361_adc_sub_devsignal_channel_t {zero, one};
 
 using namespace OCPI::RCC; // for easy access to RCC data types and constants
 using namespace Fmcomms_2_3_rxWorkerTypes;
+namespace OA = OCPI::API;
 
 class Fmcomms_2_3_rxWorker : public Fmcomms_2_3_rxWorkerBase {
 
@@ -684,7 +684,7 @@ private:
       std::string err = "invalid property: " + prop;
       throw err.c_str();
     }
-    log_info("attempted property write: %s=%.15f, value to be written (after potential adjustment due to No-OS API precision limitations) is %lu %s", prop.c_str(), val_desired, adjusted.first, adjusted.second.c_str());
+    log_info("attempted property write: %s=%.15f, value to be written (after potential adjustment due to No-OS API precision limitations) is %" PRIu64 " %s", prop.c_str(), val_desired, adjusted.first, adjusted.second.c_str());
   }
 
   void get_adjusted_val_to_be_applied_to_hw(

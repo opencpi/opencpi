@@ -69,9 +69,7 @@ NUM_SAMPLES = int(os.environ.get("OCPI_TEST_NUM_SAMPLES"))
 # from arguments to generate.py (-test.xml)
 # NONE
 
-# I/Q pair in a 32-bit vector (31:0) is Q(0) Q(1) I(0) I(1) in bytes 0123 little-Endian
-# Thus Q is indexed at byte 0 and I is indexed at byte 2
-dt_iq_pair = np.dtype((np.uint32, {'real_idx':(np.int16,2), 'imag_idx':(np.int16,0)}))
+dt_iq_pair = np.dtype((np.uint32, {'real_idx':(np.int16,0), 'imag_idx':(np.int16,2)}))
 
 # Read all output data as complex int16 samples
 ofilename = open(sys.argv[1], 'rb')
@@ -139,7 +137,7 @@ if (enable == "true"): # => NORMAL MODE
         print '    PASS - Max freq is within the expected range'
 
 else: # => BYPASS MODE
-    if (idata[0:NUM_SAMPLES-STAGES-2] != odata['imag_idx']).all():
+    if (idata[0:NUM_SAMPLES-STAGES-2] != odata['real_idx']).all():
         print '    FAIL: Input and output data files do not match'
         sys.exit(1)
     else:

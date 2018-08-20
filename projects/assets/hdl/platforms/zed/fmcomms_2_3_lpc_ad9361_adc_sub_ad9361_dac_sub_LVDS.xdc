@@ -210,7 +210,7 @@ set_property IOSTANDARD LVCMOS33 [get_ports -of_objects [get_iobanks 13]];
 create_clock -period 5.712 -name FMC_LA00_CC_P -waveform {0.000 2.856} [get_ports {FMC_LA00_CC_P}]
 
 # FMCOMMS3 TX_FB_CLK_P (forwarded version of DATA_CLK_P)
-create_generated_clock -name FMC_LA08_P -source [get_pins {ftop/FMC_ad9361_dac_sub_i/worker/dac_clock_forward/C}] -divide_by 1 -invert [get_ports {FMC_LA08_P}]
+create_generated_clock -name FMC_LA08_P -source [get_pins {ftop/pfconfig_i/FMC_ad9361_dac_sub_i/worker/data_mode_lvds.dac_clock_forward/C}] -divide_by 1 -invert [get_ports {FMC_LA08_P}]
 
 # FMCOMMS3 RX_D/RX_FRAME_P
 #
@@ -325,7 +325,7 @@ set_input_delay -clock [get_clocks {FMC_LA00_CC_P}] -clock_fall -max -add_delay 
 set_input_delay -clock [get_clocks {FMC_LA00_CC_P}] -clock_fall -min -add_delay 2.206 [get_ports {FMC_LA01_CC_N}]
 set_input_delay -clock [get_clocks {FMC_LA00_CC_P}] -clock_fall -max -add_delay 3.206 [get_ports {FMC_LA01_CC_N}]
 # because RX_FRAME_P is sampled on the DATA_CLK_P falling edge (we use DDR primitive as a sample-in-the-middle), the rising edge latched output is unconnected and therefore should not be used in timing analysis
-set_false_path -from [get_ports FMC_LA01_CC_P] -rise_to [get_pins ftop/FMC_ad9361_adc_sub_i/worker/data_mode_lvds.rx_frame_p_ddr/D]
+set_false_path -from [get_ports FMC_LA01_CC_P] -rise_to [get_pins ftop/pfconfig_i/FMC_ad9361_adc_sub_i/worker/supported_so_far.rx_frame_p_ddr/D]
 
 # FMCOMMS3 TX_FRAME_P
 set_output_delay -clock [get_clocks {FMC_LA08_P}] -clock_fall -min -add_delay 0.3 [get_ports {FMC_LA09_P}]
@@ -429,5 +429,5 @@ set_output_delay -clock [get_clocks {FMC_LA08_P}] -max -add_delay 1.3 [get_ports
 set_clock_groups -asynchronous -group [get_clocks {FMC_LA00_CC_P}] -group [get_clocks {clk_fpga_0}]
 
 # disable timing check among paths between AD9361 DATA_CLK_P/2 clock domain and control plane clock domains (which are asynchronous)
-set_clock_groups -asynchronous -group [get_clocks clk_fpga_0] -group [get_clocks -of_objects [get_pins ftop/FMC_ad9361_dac_sub_i/worker/BUFR_inst/O]]
+set_clock_groups -asynchronous -group [get_clocks clk_fpga_0] -group [get_clocks -of_objects [get_pins ftop/pfconfig_i/FMC_ad9361_dac_sub_i/worker/data_mode_lvds.BUFR_inst/O]]
 

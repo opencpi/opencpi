@@ -30,6 +30,6 @@ HdlExactPart=\
 	$(and $(filter virtex6,$(HdlTarget)),xc6vlx240t-1-ff1156), \
 	$(and $(filter stratix4,$(HdlTarget)),ep4sgx230k-c2-f40))
 
-SourceFiles+=trunc_round_15_to_12_signed.vhd
+SourceFiles+=trunc_round_16_to_12_signed.vhd
 
 include $(OCPI_CDK_DIR)/include/worker.mk

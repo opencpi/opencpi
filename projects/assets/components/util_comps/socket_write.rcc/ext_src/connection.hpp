@@ -94,7 +94,7 @@ private:
   reply reply_;
 #endif
   void send_done(const asio::error_code& e);
-  // Copying "strand" usage from https://stackoverflow.com/a/7756894 (AV-3257 Thanks, Dave P!)
+  // Copying "strand" usage from https://stackoverflow.com/a/7756894 (AV-3257)
   void push_back_internal(outbound::shared_metapair_t in_data); // new AV
   asio::io_service::strand strand_; // new AV: Forces safe serialization
   void send(); // new AV

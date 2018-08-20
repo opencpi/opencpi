@@ -135,8 +135,8 @@ begin
   -----------------------------------------------------------------------------
   -- Data Output (pack respective Worker output ports into iqstream)
   -----------------------------------------------------------------------------
-  out_out.data(31 downto 16) <= std_logic_vector(resize(signed(real_out_data), 16));
-  out_out.data(15 downto  0) <= std_logic_vector(resize(signed(imag_out_data), 16));
+  out_out.data(31 downto 16) <= std_logic_vector(resize(signed(imag_out_data), 16));
+  out_out.data(15 downto  0) <= std_logic_vector(resize(signed(real_out_data), 16));
 
   -- Since ZeroLengthMessages=true for the output WSI, this signal must be controlled
   out_out.byte_enable <= (others => '1');

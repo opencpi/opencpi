@@ -34,6 +34,7 @@ library ocpi; use ocpi.types.all; -- remove this to avoid all ocpi name collisio
 architecture rtl of zero_pad_worker is
   signal message_wcnt_r    : unsigned(15 downto 0);
   signal doit              : bool_t;
+  signal doit_out          : bool_t;
   signal output_valid      : std_logic;
   signal output_som        : std_logic;
   signal output_eom        : std_logic;
@@ -41,7 +42,8 @@ architecture rtl of zero_pad_worker is
   signal zlm_detected      : std_logic;  
   signal data_eom          : std_logic;
 begin
-  doit <= ctl_in.is_operating and in_in.ready and out_in.ready;
+  doit     <= ctl_in.is_operating and in_in.ready and out_in.ready;
+  doit_out <= ctl_in.is_operating and out_in.ready;
   
   -- WSI input interface outputs
   in_out.take <= doit and 
@@ -69,11 +71,11 @@ begin
     if rising_edge(ctl_in.clk) then
       if its(ctl_in.reset) then
         message_wcnt_r <= (others => '0');
-      elsif its(doit) then
+      elsif its(doit_out) then
         if its(data_eom) then --reset on last zero
           message_wcnt_r <= (others => '0');
         elsif message_wcnt_r=0 then 
-          if its(in_in.valid) then--only increment for valid data
+          if its(in_in.valid) and its(in_in.ready) then--increment when taking valid data
             message_wcnt_r <= message_wcnt_r+1;
           end if;
         else
@@ -92,8 +94,8 @@ begin
   end process;
 
     -- WSI output interface outputs
-  out_out.give          <= doit and (output_valid or output_som or output_eom);
-  output_valid          <= in_in.valid when message_wcnt_r=0 else doit;
+  out_out.give          <= doit_out and (output_valid or output_som or output_eom);
+  output_valid          <= in_in.valid when message_wcnt_r=0 else doit_out;
   out_out.valid         <= output_valid;
   output_som            <= to_bool(message_wcnt_r=0) when its(in_in.valid) else zlm_detected;
   output_eom            <= data_eom when its(output_valid) else zlm_detected;
