@@ -50,7 +50,9 @@ HostProcessor=`uname -m | tr A-Z a-z`
 if [ -n "$OCPI_CDK_DIR" -a -e "$OCPI_CDK_DIR/scripts/util.sh" ]; then
   source $OCPI_CDK_DIR/scripts/util.sh
   projects="`getProjectPathAndRegistered`"
-  [ -d $OCPI_CDK_DIR/../projects/core ] && projects="$projects $OCPI_CDK_DIR/../projects/core"
+  # I can't think of a reason why the following line is necessary
+  # The core project must be registered.  So we'll find out
+  # [ -d $OCPI_CDK_DIR/../projects/core ] && projects="$projects $OCPI_CDK_DIR/../projects/core"
 elif [ -n "$OCPI_PROJECT_PATH" ]; then
   # If the CDK is not set or util.sh does not exist, fall back on OCPI_PROJECT_PATH
   echo Unexpected internal error: OCPI_CDK_DIR IS NOT SET1 >&2 && exit 1

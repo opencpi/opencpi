@@ -894,7 +894,7 @@ getAllProjects(std::string &path) {
 // unique name
 // Consider making this more global.
 // Return true on error
-static bool
+bool
 globPath(const char *in, std::string &out) {
   if (!in || !in[0])
     return true;

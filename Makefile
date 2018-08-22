@@ -105,8 +105,10 @@ cleaneverything distclean: clean cleandriver cleanpackaging
 	$(AT)rm -r -f exports
 	$(AT)find . -depth -a ! -name .git  -a ! -path "./prerequisites*" -a \( \
              -name '*~' -o -name '*.dSym' -o -name timeData.raw -o -name 'target-*' -o \
-             -name "*.lo" -o -name "*.o" -o -name gen -o \
+             -name "*.lo" -o -name "*.o" -o \
 	     \( -name lib -a -type d -a \
+	       ! -path "*/rcc/platforms/*" -a ! -path "./prerequisites*" \) -o \
+	     \( -name gen -a -type d -a \
 	       ! -path "*/rcc/platforms/*" -a ! -path "./prerequisites*" \)  \
              \) -exec rm -r {} \;
 	$(AT)for p in projects/*; do [ -d $$p ] && make -C $$p cleaneverything || :; done

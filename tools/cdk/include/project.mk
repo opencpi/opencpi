@@ -250,8 +250,8 @@ cleanexports:
 cleaneverything: clean
 	find . -name '*~' -exec rm {} \;
 	find . -depth -name '*.dSym' -exec rm -r {} \;
-	find . -depth -name gen -exec rm -r -f {} \;
 	find . -depth -name 'target-*' -exec rm -r -f {} \;
+	find . -depth -name gen -a -type d -a ! -path "*/rcc/platforms/*" -exec  rm -r -f {} \;
 	find . -depth -name lib -a -type d -a ! -path "*/rcc/platforms/*" -exec  rm -r -f {} \;
 
 ifdef ShellProjectVars

@@ -141,7 +141,7 @@ else
         $(eval RccPlatforms+=$p)\
         $(eval RccFound+=$t)))\
     $(if $(RccFound),,\
-      $(error The RccTarget "$t" is not the target for any software platform in any registered project)))
+      $(error The RccTarget "$t" is not a valid target.  Specifying an RccPlatform is preferred)))
 endif
 
 $(call OcpiDbgVar,RccPlatforms)
