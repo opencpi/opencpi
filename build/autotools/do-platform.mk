@@ -94,7 +94,7 @@ Makefile: ../gen/configure platform-variables.sh ../do-platform.mk ../gen/Makefi
 	        CXX=$(OcpiCrossCompile)$(OcpiCXX) \
 	        LD=$(OcpiCrossCompile)$(OcpiLD) \
 	        AR=$(OcpiCrossCompile)$(OcpiAR) \
-	        STRIP=$(OcpiCrossCompile)$(OcpiSTRIP)
+	        STRIP=$(OcpiCrossCompile)$(OcpiSTRIP) \
 	        RANLIB=$(OcpiCrossCompile)ranlib
 	$(AT) [ -z "$JENKINS_HOME" ] || cat config.log
 

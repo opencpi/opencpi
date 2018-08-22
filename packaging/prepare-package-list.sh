@@ -161,11 +161,12 @@ case $type in
 	    find $d/bin -type d -exec echo {}/ \; && pfound=1
           [ -d $d/include ] && find $d/include ! -type d &&
             find $d/include -type d -exec echo {}/ \; && pfound=1
-	  [ -n "$staticlibs" ] && pfound=1 && {
-            for i in $staticlibs; do echo $i; done
-            [ -z "$dynamiclibs" ] && find $d/lib -type d -exec echo {}/ \;
-          }
-          [ -z "$dynamiclibs" -a -n "$pfound" ] && echo $d/
+          # Prereq libraries are in the single lib dir for the platform
+	  # [ -n "$staticlibs" ] && pfound=1 && {
+          #  for i in $staticlibs; do echo $i; done
+          #  [ -z "$dynamiclibs" ] && find $d/lib -type d -exec echo {}/ \;
+          # }
+          # [ -z "$dynamiclibs" -a -n "$pfound" ] && echo $d/
 	  [ -n "$pfound" ] && found=1
         elif [ -z "$cross" ] && [[ $d == */include ]]; then
 	  found=1
