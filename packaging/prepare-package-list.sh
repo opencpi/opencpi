@@ -144,7 +144,7 @@ case $type in
       # If its not platform specific, it won't be in the cross-platform devel
       [ -n "$cross" -a $f != cdk/$platforms ] && continue
       (cd cdk; find -H $(basename $f)) | while read path; do
-	 [ -e cdk/runtime/$path ] || echo cdk/$path$([ -d cdk/$path ] && echo /)
+         [ -e cdk/runtime/$path ] || echo cdk/$path$([ -d cdk/$path ] && echo /)
       done
     done
     for p in $prereqs; do
@@ -155,22 +155,22 @@ case $type in
         skip_platform $d && continue;
         if is_platform $d; then
           dynamiclibs=`echo $d/lib/*.{so,so.*,dylib}`
-	  staticlibs=`echo $d/lib/*.a`
-	  pfound=
+          staticlibs=`echo $d/lib/*.a`
+          pfound=
           [ -z "$cross" -a -d $d/bin ] && find $d/bin ! -type d &&
-	    find $d/bin -type d -exec echo {}/ \; && pfound=1
+            find $d/bin -type d -exec echo {}/ \; && pfound=1
           [ -d $d/include ] && find $d/include ! -type d &&
             find $d/include -type d -exec echo {}/ \; && pfound=1
           # Prereq libraries are in the single lib dir for the platform
-	  # [ -n "$staticlibs" ] && pfound=1 && {
+          # [ -n "$staticlibs" ] && pfound=1 && {
           #  for i in $staticlibs; do echo $i; done
           #  [ -z "$dynamiclibs" ] && find $d/lib -type d -exec echo {}/ \;
           # }
           # [ -z "$dynamiclibs" -a -n "$pfound" ] && echo $d/
-	  [ -n "$pfound" ] && found=1
+          [ -n "$pfound" ] && found=1
         elif [ -z "$cross" ] && [[ $d == */include ]]; then
-	  found=1
-	  echo $d
+          found=1
+          echo $d
           find $d -type d -exec echo {}/ \;
         fi
       done

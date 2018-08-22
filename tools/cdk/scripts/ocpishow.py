@@ -290,7 +290,7 @@ def do_worker_or_comp(options, worker):
             subprocess.check_output([os.environ['OCPI_CDK_DIR']+"/scripts/genProjMetaData.py", mdFile])
         mdFile = proj_dir + "/project.xml"
         if os.path.isfile(mdFile):
-            assetList = assetList + get_tags(mdFile, xml_asset)
+            assetList = get_tags(mdFile, xml_asset)
             if options.details == "simple":
                 print("Project: " + proj_dir)
                 for asset in assetList.split():

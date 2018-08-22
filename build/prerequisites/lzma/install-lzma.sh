@@ -35,7 +35,7 @@ source $OCPI_CDK_DIR/scripts/setup-prerequisite.sh \
   --disable-scripts --disable-doc \
   --with-pic=liblzma \
   CFLAGS="-g -fPIC" CXXFLAGS="-g -fPIC" # why doesn't with-pic to this?
-make
+make -j
 make install
 # lzma creates an empty directory even when we have disabled the executables
 rm -r -f $OcpiInstallExecDir/bin

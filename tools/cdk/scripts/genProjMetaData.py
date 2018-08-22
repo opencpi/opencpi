@@ -297,7 +297,10 @@ if (isStale(mydir, force)):
         if "exports" in dirName or "imports" in dirName:
             continue
         elif dirName.endswith("/components"):
-            addLibs(comps, subdirList)
+            if ocpiutil.get_dirtype(dirName) == "library":
+                addLibs(comps, [dirName])
+            else:
+                addLibs(comps, subdirList)
         elif dirName.endswith("/hdl/platforms"):
             platforms = ET.SubElement(hdl, "platforms")
             addPlatforms(platforms, subdirList, dirName)

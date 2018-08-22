@@ -223,8 +223,8 @@ cleanpackaging:
 # There is currently no dependency on prerequisites from building the framework.
 .PHONY: prerequisites cleanprerequisites
 prerequisites:
-	$(AT)for p in $(call RccRealPlatforms,$(RccPlatforms)); do\
-                ./scripts/install-prerequisites.sh $(and $(filter 1,$(Force)),-f) $$p;\
+	$(AT)for p in $(call RccRealPlatforms,$(RccPlatforms)); do \
+                ./scripts/install-prerequisites.sh $(and $(filter 1,$(Force)),-f) $$p || exit 1; \
              done
 cleanprerequisites:
 	$(AT)rm -r -f prerequisites-build prerequisites
@@ -260,7 +260,7 @@ This top-level Makefile builds and/or tests the framework and built-in projects 
 
 The valid goals that accept platforms (using RccPlatform(s) or Platforms(s)) are:
    Make goals for framework (core of Opencpi):
-     framework(default) - Build the framework for platfors and export them
+     framework(default) - Build the framework for platforms and export them
      cleanframework     - Clean the specific platforms
      exports            - Redo exports, including for indicated platforms
                         - This is cumulative;  previous exports are not removed
