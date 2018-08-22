@@ -74,7 +74,7 @@ fi
 # Here we have not checked the part or the position yet.
 # Do more generic work that does not depend on the platform-specifics
 echo Checking existing loaded bitstream on OpenCPI HDL device \"$device\"...
-ocf="$OCPI_CDK_DIR/scripts/ocpisudo $OCPI_CDK_DIR/bin/$OCPI_TOOL_DIR/ocfrp_check"
+ocf="$OCPI_CDK_DIR/scripts/ocpisudo $OCPI_CDK_DIR/$OCPI_TOOL_DIR/bin/ocfrp_check"
 $ocf $pciDevice
 if test $? != 0; then
    echo Existing loaded bitstream on device \"$device\" does not appear to be functional.
