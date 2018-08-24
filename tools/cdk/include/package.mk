@@ -80,6 +80,15 @@ endif
 export PackageName:=$$(if $$(PackageName),.$$(patsubst .%,%,$$(PackageName)))
 
 ###############################################################################
+# Arg2 to OcpiCreatePackageId is an optional Authoring Model Prefix Segment
+# Basically, if this is provided, the PackagePrefix will be appended with
+# the authoring model. E.g for hdl/primitives, we have <project>.hdl.primitives
+ifneq ($2,)
+  export PackageAuth:=$$(if $2,.$$(patsubst .%,%,$2))
+  export PackagePrefix:=$$(PackagePrefix)$$(PackageAuth)
+endif
+
+###############################################################################
 # If package is not set, set it to Package
 #   set it to $$(PackagePrefix)$$(PackageName)
 # Otherwise, if Package starts with '.',
@@ -120,4 +129,4 @@ endif
 endef # define OcpiCreatePackageId
 
 # Create the Package-ID for dir $1 and return it (the Package variable)
-OcpiSetAndGetPackageId=$(eval $(call OcpiCreatePackageId,$1))$(Package)
+OcpiSetAndGetPackageId=$(eval $(call OcpiCreatePackageId,$1,$2))$(Package)

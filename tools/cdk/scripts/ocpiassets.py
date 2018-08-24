@@ -171,7 +171,7 @@ class Asset(metaclass=ABCMeta):
         # list constructor is required here because the original arg_list is being
         # changed and we can't change a variable we are iterating over
         for setting, value in list(settings_list.items()):
-            if (value in [None, False]) or (setting not in self.__class__.valid_settings):
+            if (value in [None, False]) or (setting not in self.get_valid_settings()):
                 del settings_list[setting]
 
         return settings_list
@@ -199,7 +199,7 @@ class Asset(metaclass=ABCMeta):
         if not force:
             prompt = ("removing " + ocpiutil.get_dirtype(self.directory) + " at directory: " +
                      self.directory)
-            force = ocpiutil.get_ok(prompt)
+            force = ocpiutil.get_ok(prompt=prompt)
         if force:
             shutil.rmtree(self.directory)
 
@@ -581,8 +581,9 @@ class Registry(Asset):
             raise ocpiutil.OCPIException("Failure to register project with package '" + pid +
                                          "'.\nA project/link with that package qualifier " +
                                          "already exists and is registered in '" + self.directory +
-                                         "'.\nTo unregister that project, call: 'ocpidev " +
-                                         "unregister project " + pid +"'.\nThen, rerun the " +
+                                         "'.\nThe old project is not being overwitten to" +
+                                         " unregister the original project, call: 'ocpidev " +
+                                         "unregister project " + pid +"'.\nThen, run the " +
                                          "command: 'ocpidev -d " + project.directory +
                                          " register project'")
 
@@ -613,6 +614,12 @@ class Registry(Asset):
                                              "could not be determined.\nIs it really a project?")
 
         if package_id not in self.__projects:
+            link_path = self.directory + "/" + package_id
+            if os.path.exists(link_path) and not os.path.exists(os.readlink(link_path)):
+                logging.debug("Removing the following broken link from the registry:\n" +
+                              link_path + " -> " + os.readlink(link_path))
+                self.remove_link(package_id)
+                return
             raise ocpiutil.OCPIException("Could not unregister project with package-ID \"" +
                                          package_id + "\" because the project is not in the " +
                                          "registry.\n Run 'ocpidev show registry --table' for " +
@@ -682,6 +689,12 @@ class Registry(Asset):
                                          "project directory")
         return self.__projects[package_id]
 
+    @staticmethod
+    def create(asset_dir="."):
+        print("making: " + asset_dir)
+        os.mkdir(asset_dir)
+        return AssetFactory.factory("registry", asset_dir)
+        
     @staticmethod
     def get_default_registry_dir():
         """

@@ -442,6 +442,9 @@ function do_project {
     if [ -z "$buildRcc" -a -z "$buildHdl" -a -n "$buildClean" ]; then
       cleanTarget="clean"
     fi
+    if [ -z "$hdlplats" -a -z "$hdltargets" -a -z "$swplats" -a -z "$hwswplats" -a -n "$buildClean" ]; then
+       cleanTarget="cleaneverything"
+    fi
     if [ -n "$buildRcc" -a -n "$buildClean" ]; then
       buildRcc=""
       cleanTarget+=" cleanrcc"
@@ -997,6 +1000,12 @@ function do_library {
     get_dirtype $libbase
     case "$dirtype" in
       (library|lib)
+        if [ "$(basename $libbase)" == "components" ]; then
+          bad "this project has a flattened components library. This components library can have
+              workers/tests/specs, but cannot have sub-libraries. If sub-libraries are desired,
+              the components library must be deleted at which point a sub-library can be directly
+              created via 'ocpidev create library <sub-library>'."
+        fi
         bad this project already has a \"$libbase\" library, you cannot create another library.
         ;;
       (libraries)
@@ -1746,8 +1755,13 @@ function do_assemblies {
 
 function do_build_here {
     buildTest="$1"
+    get_dirtype .
     if [ -z "$buildRcc" -a -z "$buildHdl" -a -n "$buildClean" -a "$1" != "test" ]; then
       cleanTarget="clean"
+    fi
+    if [ -z "$hdlplats" -a -z "$hdltargets" -a -z "$swplats" -a -z "$hwswplats" \
+         -a "$dirtype" == "project" -a -n "$buildClean" ]; then
+       cleanTarget="cleaneverything"
     fi
     if [ -n "$buildClean" -a "$1" == "test" ]; then
       buildTest=""
@@ -1769,7 +1783,6 @@ function do_build_here {
        ${swplats:+RccPlatforms=" ${swplats[@]}"} \
        ${hwswplats:+RccHdlPlatforms=" ${hwswplats[@]}"} \
        $OCPI_MAKE_OPTS
-  get_dirtype .
   if [ "$dirtype" == "project" -a -z "$hardClean" ] ; then
     make ${verbose:+AT=} imports
     make ${verbose:+AT=} exports
@@ -1858,7 +1871,7 @@ EOF
 <!-- The $1 HDL assembly xml file -->
 <HdlAssembly>
   <!-- Remove this instance and replace it with real ones -->
-  <Instance Worker='nothing'/>
+  <Instance Worker='nothing' name='nothing'/>
 </HdlAssembly>
 EOF
   [ -z "$verbose" ] || echo The HDL assembly \"$assy\" has been created in ${topdir}hdl/assemblies/$assy/$assy.xml
@@ -2191,7 +2204,7 @@ function help {
   if [ -n "$PAGER" ]; then
     pager=$PAGER
   else
-    pager="less -esX"
+    pager="less"
   fi
   if [[   "$verb" == create   || "$verb" == delete     ]]; then
     help_create
@@ -2211,7 +2224,7 @@ The ocpidev command performs developer functions on/in projects for OpenCPI.
 usage: ocpidev [options] <verb> [<noun> [<name>]]
 
 Choices:
-  <verb>: create, delete, build, clean, [un]register, [un]set, show, refresh
+  <verb>: create, delete, build, clean, [un]register, [un]set, show, refresh, run
   <noun>: project, registry, application, component, protocol, test, library,
           worker, <model> <<model>_noun>
 

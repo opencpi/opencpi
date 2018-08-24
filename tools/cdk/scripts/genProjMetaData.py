@@ -296,9 +296,9 @@ if (isStale(mydir, force)):
     for dirName, subdirList, fileList in os.walk(mydir):
         if "exports" in dirName or "imports" in dirName:
             continue
-        elif dirName.endswith("/components"):
+        elif dirName == mydir + "/components":
             if ocpiutil.get_dirtype(dirName) == "library":
-                addLibs(comps, [dirName])
+                addLibs(comps, ["components"])
             else:
                 addLibs(comps, subdirList)
         elif dirName.endswith("/hdl/platforms"):

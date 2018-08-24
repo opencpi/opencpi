@@ -102,8 +102,8 @@ def parse_cl_vars():
     parser.add_argument("-l", dest="lib", default="components",
                         help="Specify the component library for the test to be run.  " +
                         "Not valid for Application.")
-    parser.add_argument("--cases", dest="cases", action="append",
-                        help="Specify Which test cases that will be run/verified.  " +
+    parser.add_argument("--case", dest="cases", action="append",
+                        help="Specify Which test case that will be run/verified.  " +
                         "Not valid for Application.")
     parser.add_argument("--before", dest="run_before", action="append",
                         help="Arguments to insert before the ACI executable or ocpirun, such as " +

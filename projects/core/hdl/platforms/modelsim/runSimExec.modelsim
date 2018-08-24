@@ -69,13 +69,15 @@ echo Filename: $1 1>&2
 read assyname contname<<EOF
 `echo $1 | sed 's/^.*://' | sed 's/^\(.*\)_modelsim.*$/\1 &/'`
 EOF
-echo Assembly: $assyname  Container: $contname 1>&2
+libname=${contname##*.}
+echo Assembly: $assyname  Container: $contname  Libname: $libname 1>&2
 shift
 export LM_LICENSE_FILE=$OCPI_MODELSIM_LICENSE_FILE
 for i in $*; do echo for $i; plusargs="$plusargs +$i"; done
+libname=${contname##*.}
 #echo plusargs are: $plusargs 1>&2
-echo $vsim -c -lib $contname -f vsim.args $plusargs $contname.$contname > FFF 1>&2
-eval $vsim -c -lib $contname -f vsim.args $plusargs $contname.$contname <<EOF
+echo $vsim -c -lib $libname -f vsim.args $plusargs $libname.$libname > FFF 1>&2
+eval $vsim -c -lib $libname -f vsim.args $plusargs $libname.$libname <<EOF
 #archive load vsim.dbar
 dataset list
 dataset info file

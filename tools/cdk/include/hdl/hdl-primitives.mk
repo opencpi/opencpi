@@ -24,7 +24,11 @@
 # ImportCoreDirs
 
 include $(OCPI_CDK_DIR)/include/util.mk
-$(OcpiIncludeAssetAndParent)
+# Set the hdl/primitives' parent asset to be the Project, and enforce that it
+# use the authoring model prefix of 'hdl'.
+# So, Package-ID of the hdl/primitives dir will be default look like:
+#   <project>.hdl.primitives
+$(call OcpiIncludeAssetAndParent,,hdl)
 # Default the PrimitiveLibraries and PrimitiveCores variables
 ifeq ($(origin PrimitiveLibraries),undefined)
   PrimitiveLibraries:=$(foreach d,$(wildcard */Makefile),$(infox d:$d)\

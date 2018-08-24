@@ -85,7 +85,7 @@ _ocpidev()
       #valid options not having to do with build
     fi
     runopts="-h --help -v --verbose --keep-simulations --accumulate-errors -G --only-platform -Q \
-	--exclude-platform --rcc-platform --hdl-platform -d -l --cases --before --after --run-args \
+	--exclude-platform --rcc-platform --hdl-platform -d -l --case --before --after --run-args \
 	--mode --remotes"
     if [[ ${verb} == run ]] ; then
       # valid nouns in first slot

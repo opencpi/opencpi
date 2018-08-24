@@ -103,6 +103,7 @@
 =tools/cdk/scripts/ocpisudo scripts/
 +tools/cdk/scripts/ocpitarget.sh scripts/
 +tools/cdk/scripts/ocpidev scripts/
++tools/cdk/scripts/ocpi-copy-projects scripts/
 +tools/cdk/scripts/ocpishow.py scripts/
 +tools/cdk/scripts/ocpidev_run.py scripts/
 +tools/cdk/scripts/ocpiassets.py scripts/
@@ -123,6 +124,7 @@
 +tools/cdk/scripts/maybeExport.sh scripts/
 # user level scripts made available in the bin directory
 +tools/cdk/scripts/ocpidev <target>/bin/
++tools/cdk/scripts/ocpi-copy-projects <target>/bin/
 =tools/cdk/scripts/ocpidriver <target>/bin/
 +tools/cdk/scripts/genProjMetaData.py scripts/
 #+tools/cdk/scripts/genProjMetaData.pyc scripts/

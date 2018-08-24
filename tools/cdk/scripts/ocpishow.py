@@ -307,9 +307,15 @@ def do_worker_or_comp(options, worker):
         ocpiutil.print_table(rows)
 
 def do_components(options):
+    if options.scope != "global":
+        raise ocpiutil.OCPIException("ocpidev show components is only valid in \"--global-scope\"." +
+                                     "  Other scope options are under construction.")
     do_worker_or_comp(options, False)
 
 def do_workers(options):
+    if options.scope != "global":
+        raise ocpiutil.OCPIException("ocpidev show workers is only valid in \"--global-scope\"." +
+                                     "  Other scope options are under construction.")
     do_worker_or_comp(options, True)
 
 def do_libraries(options):

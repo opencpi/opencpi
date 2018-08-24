@@ -916,8 +916,8 @@ OcpiIncludeProject=$(call OcpiIncludeProjectX,$(or $(OCPI_PROJECT_DIR),.),$1,$(c
 # find Platform.mk if it exists. Otherwise, the parent is just the project
 OcpiIncludeParentAsset_library=\
   $(if $(filter %-platform,$(call OcpiGetDirType,$1/../)),\
-    $(call OcpiIncludeAssetAndParentX,$1/../,$2),\
-    $(call OcpiIncludeProject,$2))
+    $(call OcpiIncludeAssetAndParentX,$1/../,$2,$3),\
+    $(call OcpiIncludeProject,$3))
 
 # For a platform directory, we include the platforms directory in ../
 # We provide it with type Platforms so it can find the Platforms.mk
@@ -925,7 +925,7 @@ OcpiIncludeParentAsset_library=\
 # then it is not in a project at all and does not have a parent.
 OcpiIncludeParentAsset_platform=\
   $(if $(filter %-platforms,$(call OcpiGetDirType,$1/../)),\
-    $(call OcpiIncludeAssetAndParentX,$1/../,$2))
+    $(call OcpiIncludeAssetAndParentX,$1/../,$2,$3))
 
 # For asset in directory arg1, look for makefile <arg2>.mk and include it to
 # extract any variables that are set.  Clear the package variables so that the
@@ -962,29 +962,31 @@ endef
 # function, call that to include the parent. Otherwise parent is the project,
 # so include the project. Next, include the current asset by importing its
 # *.mk file and determining its package via OcpiSetAndGetPackageId
-#   Arg1 = reference directory
-#   Arg2 = error/warning/info mode (optional)
-OcpiIncludeAssetAndParentX=$(infox OIAAPX:$1:$2)$(strip \
+#   Arg1 = reference directory (optional) - defaults to '.' in subcalls
+#   Arg2 = authoring model prefix (optional) - <parent>.<auth>.<package-name>
+#   Arg3 = error/warning/info mode (optional)
+OcpiIncludeAssetAndParentX=$(infox OIAAPX:$1:$2:$3)$(strip \
   $(foreach s,$(call OcpiGetShortenedDirType,$1),\
     $(foreach c,$(call Capitalize,$s),\
       $(if $(filter-out undefined,$(origin OcpiIncludeParentAsset_$s)),\
-        $(call OcpiIncludeParentAsset_$s,$1,$c,$2),\
-        $(call OcpiIncludeProject,$2))\
+        $(call OcpiIncludeParentAsset_$s,$1,$2,$3),\
+        $(call OcpiIncludeProject,$3))\
       $(eval $(call OcpiSetAsset,$1,$c))\
       $(eval ParentPackage:=)\
       $(eval unexport ParentPackage)\
-      $(eval override ParentPackage:=$(call OcpiSetAndGetPackageId,$1)))))
+      $(eval override ParentPackage:=$(call OcpiSetAndGetPackageId,$1,$2)))))
 
 # Wrapper function for OcpiIncludeAssetAndParentX. package.mk is included here
 # so that it is not included many times during recursive calls of the *X
 # function above. This function assumes Arg1 should be the current directory if
 # none is provided. Finally, it determines the shortened and capitalized
 # directory type to be used for finding *.mk files.
-#   Arg1 = reference directory
-#   Arg2 = error/warning/info mode (optional)
+#   Arg1 = reference directory (optional) - defaults to '.' in subcalls
+#   Arg2 = authoring model prefix (optional) - <parent>.<auth>.<package-name>
+#   Arg3 = error/warning/info mode (optional)
 OcpiIncludeAssetAndParent=$(strip \
   $(eval include $(OCPI_CDK_DIR)/include/package.mk)\
-  $(call OcpiIncludeAssetAndParentX,$(or $1,.),$2))
+  $(call OcpiIncludeAssetAndParentX,$(or $1,.),$2,$3))
 
 ###############################################################################
 
@@ -1118,13 +1120,10 @@ OcpiPrepareArtifact=\
   $(ToolsDir)/ocpixml add $2 $1 \
   $(and $(OCPI_PROJECT_DIR), &&\
     adir=$(OCPI_PROJECT_DIR)/artifacts &&\
-    name="$(subst .,-,$(subst /,-,$(call FindRelative,$(OCPI_PROJECT_DIR),$(CURDIR)/$(call OcpiDirName,$2))-$(notdir $2)))" &&\
-    [ -L $$adir/$$name ] || { \
-      uuid=$3.$(Worker).$(Model).$4.$5 &&\
-      mkdir -p $(OCPI_PROJECT_DIR)/artifacts &&\
-      ln -s $$uuid $$adir/$$name &&\
-      $(call MakeSymLink2,$2,$(OCPI_PROJECT_DIR)/artifacts,$${uuid}$(suffix $2)) \
-    })
+    uuid=$3.$(Worker).$(Model).$4.$5 &&\
+    mkdir -p $(OCPI_PROJECT_DIR)/artifacts &&\
+    $(call MakeSymLink2,$2,$(OCPI_PROJECT_DIR)/artifacts,$${uuid}$(suffix $2)) \
+   )
 
 # What to do early in each top level Makefile to process build files.
 ParamShell=\
