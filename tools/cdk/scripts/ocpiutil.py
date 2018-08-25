@@ -121,7 +121,7 @@ def execute_cmd(settings, directory, action=None):
         if isinstance(value, bool):
             make_list.append(settings_dict[setting] + '=1')
         elif isinstance(value, list):
-            make_list.append(settings_dict[setting] + '=\"' + ' '.join(value) + '\"')
+            make_list.append(settings_dict[setting] + '=' + ' '.join(value))
         else:
             raise OCPIException("Invalid setting data-type passed to execute_cmd().  Valid data-" +
                                 "types are bool and list")
