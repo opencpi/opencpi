@@ -55,6 +55,10 @@ HdlBin=
 # If not set, it implies that only a library containing the implementation is
 # possible
 HdlToolRealCore=
+#
+# For this tool, it is not sufficient just to include the assembly and pfconfig
+# at the container level. We must also include app workers, devices and the PW
+HdlToolRequiresFullCoreHierarchy_isim=yes
 ################################################################################
 # Variable required by toolset: HdlToolNeedBB=yes
 # Set if the tool set requires a black-box library to access a core
@@ -79,7 +83,7 @@ IsimLibs=\
       $(HdlLibrariesInternal),\
       -lib $(notdir $l)=$(strip \
             $(call FindRelative,$(TargetDir),$(call HdlLibraryRefDir,$l,isim,,isim)))) \
-    $(foreach c,$(call HdlCollectCores,isim),$(infox CCC:$c)\
+    $(foreach c,$(call HdlCollectCorePaths),$(infox CCC:$c)\
       -lib $(call HdlRmRv,$(notdir $(c)))=$(infox fc:$c)$(call FindRelative,$(TargetDir),$(strip \
           $(firstword $(foreach l,$(call IsimCoreLibraryChoices,$c),$(call HdlExists,$l))))))
 
@@ -111,11 +115,7 @@ HdlToolCompile=\
 # individual files get updated.
 # Since there is not a singular output, make's builtin deletion will not work
 HdlToolPost=\
-  if test $$HdlExit != 0; then \
-    rm -r -f $(WorkLib); \
-  else \
-    touch $(WorkLib);\
-  fi;
+  touch $(WorkLib);
 
 BitFile_isim=$1.tar
 

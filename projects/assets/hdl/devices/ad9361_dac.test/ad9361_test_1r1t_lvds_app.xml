@@ -33,7 +33,9 @@
     <!--property name="rx_rf_port_input" value=""/--> <!-- relying on ACI -->
 
   </instance>
-  <instance component="ocpi.assets.misc_comps.data_src"/>
+  <instance component="ocpi.assets.misc_comps.data_src">
+    <property name="LFSR_bit_reverse" value="false"/>
+  </instance>
   <instance component="ocpi.assets.devices.qadc"/>
   <instance component="ocpi.assets.devices.ad9361_adc_sub">
     <!-- this app xml is intended to use only the LVDS mode of the AD9361, so it
@@ -51,7 +53,7 @@
   </connection>
   <connection>
     <port instance="fifo" name="out"/>
-    <port instance="file_write" name="in" buffersize="8192"/>
+    <port instance="file_write" name="in"/>
   </connection>
   <instance component="ocpi.core.file_write">
     <!-- filename property not set here (for flexibility), must be set in ACI or using ocpirun -p -->

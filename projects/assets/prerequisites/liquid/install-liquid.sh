@@ -29,10 +29,14 @@ source $OCPI_CDK_DIR/scripts/setup-prerequisite.sh \
        1
 
 # since this package does not use automake, it is not prepared for vpath mode
-# (using ../configure from a build directory), so we have to snapshow the code for each platform
+# (using ../configure from a build directory), so we have to snapshot the code for each platform
 echo Copying git repo checkout contents for building in `pwd`
 base=$(basename `pwd`)
 (cd ..; cp -R $(ls . | grep -v ocpi-build-) $base)
+
+# Patch malloc macros for cross-compilers ("undefined symbol: rpl_malloc")
+patch < ${OcpiThisPrerequisiteDir}/malloc.patch
+
 #ed bootstrap.sh <<-EOF
 #	/^ *aclocal/s/\$/ -Iscripts/
 #	w

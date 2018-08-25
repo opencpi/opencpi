@@ -75,22 +75,28 @@ HdlTargets_zynq_ise:=$(foreach tgt,$(HdlTargets_zynq),$(tgt)_ise_alias)
 ###############################################################################
 # Altera targets
 ###############################################################################
-HdlTargets_altera:=arria10soc_std stratix4 stratix5 # altera-sim
+HdlTargets_altera:=arria10soc arria10soc_std stratix4 stratix5 # altera-sim
 
 # The "k", when present indicates the transceiver count (k = 36)
 # But in many places it is left off..
 HdlTargets_stratix4:=ep4sgx230k ep4sgx530k ep4sgx360
-HdlTargets_stratix5:=ep5sgsmd8k2
-HdlTargets_arria10soc_std:=10AS066N3F40E2SG_std_alias
-
 HdlDefaultTarget_stratix4:=AUTO
+HdlTargets_stratix5:=ep5sgsmd8k2
 HdlDefaultTarget_stratix5:=AUTO
+
+HdlTargets_arria10soc:=10AS066N3F40E2SG
 # Quartus Pro (and maybe newer versions of standard) does not
 # support the 'AUTO' part for arria10 because you cannot reuse
 # synthesized partitions from different devices.
 # We must enforce one exact part per target for Quartus Pro
 # (and maybe newer/17+ versions of standard).
+HdlDefaultTarget_arria10soc:=10AS066N3F40E2SG
+
+HdlTargets_arria10soc_std:=10AS066N3F40E2SG_std_alias
 HdlDefaultTarget_arria10soc_std:=10AS066N3F40E2SG_std_alias
+
+
+
 
 ###############################################################################
 
@@ -111,6 +117,7 @@ HdlToolSet_verilator:=verilator
 HdlToolSet_icarus:=icarus
 HdlToolSet_stratix4:=quartus
 HdlToolSet_stratix5:=quartus
+HdlToolSet_arria10soc:=quartus_pro
 HdlToolSet_arria10soc_std:=quartus
 
 # Call the tool-specific function to get the full part incase the

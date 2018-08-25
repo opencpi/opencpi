@@ -67,6 +67,13 @@ runtest() {
     fi
 
     RX_DATA_DELAY=$RX_DATA_DELAY RX_DATA_CLOCK_DELAY=$RX_DATA_CLOCK_DELAY ./scripts/run_app_FMCOMMS3.sh $APP_XML $APP_RUNTIME_SEC $twortwot > $LOGFILENAME 2>&1
+    XX=$?
+    if [ "$XX" != "0" ]; then
+      if [ "$try" == "$MAX_NUM_APP_RETRIES" ]; then
+        cat $LOGFILENAME
+        exit $XX
+      fi
+    fi
     if [ -f $FILENAME ]; then
       break
     fi

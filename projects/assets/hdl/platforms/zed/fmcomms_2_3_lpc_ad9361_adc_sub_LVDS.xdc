@@ -27,6 +27,15 @@
 # 10 ns period = 100000 KHz
 create_clock -name clk_fpga_0 -period 10.000 [get_pins {ftop/pfconfig_i/zed_i/worker/ps/ps/PS7_i/FCLKCLK[0]}]
 
+# FMCOMMS3 DATA_CLK_P
+# AD9361 datasheet-specified max clock period
+#create_clock -period 4.069 -name FMC_LA00_CC_P [get_ports {FMC_LA00_CC_P}]
+# larger clock period (slower clock) to meet setup/hold requirements of RX data path
+create_clock -period 5.712 -name FMC_LA00_CC_P [get_ports {FMC_LA00_CC_P}]
+
+# FMCOMMS3 FB_CLK (forwarded version of DATA_CLK_P)
+create_generated_clock -name FMC_LA08_P -source [get_pins {ftop/pfconfig_i/FMC_ad9361_data_sub_i/worker/mode7.dac_clock_forward/C}] -divide_by 1 -invert [get_ports {FMC_LA08_P}]
+
 # ----------------------------------------------------------------------------
 # User LEDs - Bank 33
 # ---------------------------------------------------------------------------- 
@@ -203,12 +212,6 @@ set_property IOSTANDARD LVCMOS25 [get_ports -of_objects [get_iobanks 35]];
 # Note that the bank voltage for IO Bank 13 is fixed to 3.3V on ZedBoard. 
 set_property IOSTANDARD LVCMOS33 [get_ports -of_objects [get_iobanks 13]];
 
-# FMCOMMS3 DATA_CLK_P
-# AD9361 datasheet-specified max clock period
-#create_clock -period 4.069 -name FMC_LA00_CC_P -waveform {0.000 2.0345} [get_ports {FMC_LA00_CC_P}]
-# larger clock period (slower clock) to meet setup/hold requirements of RX data path
-create_clock -period 5.712 -name FMC_LA00_CC_P -waveform {0.000 2.856} [get_ports {FMC_LA00_CC_P}]
-
 # FMCOMMS3 RX_D/RX_FRAME_P
 #
 # ----- from Vivado GUI:
@@ -222,7 +225,7 @@ create_clock -period 5.712 -name FMC_LA00_CC_P -waveform {0.000 2.856} [get_port
 # skew_bre : Data invalid before rising edge  (I think this really means max
 #                                              amount of time that
 #                                              start-of-valid for "rising" data
-#                                              preceeds rising edge by)
+#                                              precedes rising edge by)
 # skew_are : Data invalid after rising edge   (I think this really means max
 #                                              amount of time that
 #                                              start-of-valid for "rising" data
@@ -230,7 +233,7 @@ create_clock -period 5.712 -name FMC_LA00_CC_P -waveform {0.000 2.856} [get_port
 # skew_bfe : Data invalid before falling edge (I think this really means max
 #                                              amount of time that
 #                                              start-of-valid for "falling" data
-#                                              preceeds falling edge by)
+#                                              precedes falling edge by)
 # skew_afe : Data invalid after falling edge  (I think this really means max
 #                                              amount of time that
 #                                              start-of-valid for "falling" data

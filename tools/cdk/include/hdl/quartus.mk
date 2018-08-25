@@ -129,6 +129,14 @@ HdlConstraintsSuffix_quartus=.qsf
 QuartusConstraints_default=$(HdlPlatformDir_$1)/$1$(HdlConstraintsSuffix_quartus)
 QuartusConstraints=$(or $(HdlConstraints),$(QuartusConstraints_default))
 
+# Echo a string (for writing to QSF), but only during elaboration (if the syn flag is unset)
+# This command calls the hdl_files helper function in quartus_pro_qsf_gen.sh. This helper
+# function takes an HDL library and a list of source files. It creates a Quartus Pro
+# Tcl assignment for each source file based on file-extension.
+QuartusEchoFiles=$(strip \
+    hdl_files $1 $2; )
+QuartusEchoFilesNoVlgLibs=$(strip \
+    hdl_files_no_vlg_libs $1 $2; )
 # Make the settings file
 # Note that the local source files use notdir names and search paths while the
 # remote libraries use pathnames so that you can have files with the same names.
@@ -143,6 +151,7 @@ QuartusMakeQsf=\
    $(X Fake top module so we can compile libraries anyway for syntax errors) \
    echo 'module onewire(input  W_IN, output W_OUT); assign W_OUT = W_IN; endmodule' > onewire.v;) \
  $(X From here we generate qsf file contents, e.g. "settings") \
+ source $$OCPI_CDK_DIR/include/hdl/quartus_qsf_gen.sh; \
  (\
   echo '\#' Common assignments whether a library or a core; \
   $(call QuartusMakeDevices,$(HdlTarget)) \
@@ -153,18 +162,18 @@ QuartusMakeQsf=\
     echo set_global_assignment -name QXP_FILE \
       '\"'$(call FindRelative,$(TargetDir),$(call HdlCoreRefMaybeTargetSpecificFile,$c,$(HdlTarget)))'\"';\
     $(if $(filter $c,$(Cores)),\
-      $(foreach s,$(call HdlExtractSourcesForLib,$(HdlTarget),$c,$(TargetDir)),\
-        echo set_global_assignment -name $(if $(filter vhdl,$(HdlLanguage)),VHDL,VERILOG)_FILE -library $c '\"'$s'\"';),\
+      $(call QuartusEchoFiles,$c,$(call HdlExtractSourcesForLib,$(HdlTarget),$c,$(TargetDir))),\
       $(foreach w,$(subst _rv,,$(basename $(notdir $c))),$(infox WWW:$w)\
-        $(foreach d,$(dir $c),$(infox DDD:$d)\
-          $(foreach l,$(if $(filter vhdl,$(HdlLanguage)),vhd,v),$(infox LLLLL:$l)\
-            $(foreach f,$(or $(xxcall HdlExists,$d../gen/$w-defs.$l),\
-                             $(call HdlExists,$d$w.$l)),$(infox FFFF:$f)\
-              echo set_global_assignment -name $(if $(filter vhdl,$(HdlLanguage)),VHDL,VERILOG)_FILE -library $w '\"'$(call FindRelative,$(TargetDir),$f)'\"';\
-              $(and $(filter vhdl,$(HdlLanguage)),\
-                $(foreach g,$(or $(call HdlExists,$d/generics.vhd),\
-                                 $(call HdlExists,$d/$(basename $(notdir $c))-generics.vhd)),\
-                  echo set_global_assignment -name VHDL_FILE -library $w '\"'$(call FindRelative,$(TargetDir),$g)'\"';))))))))\
+        $(call QuartusEchoFiles,$w,\
+          $(foreach d,$(dir $c),$(infox DDD:$d)\
+            $(foreach l,$(if $(filter vhdl,$(HdlLanguage)),vhd,v),$(infox LLLLL:$l)\
+              $(foreach f,$(or $(xxcall HdlExists,$d../gen/$w-defs.$l),\
+                               $(call HdlExists,$d$w.$l)),$(infox FFFF:$f)\
+                $(call FindRelative,$(TargetDir),$f) ))\
+            $(and $(filter vhdl,$(HdlLanguage)),\
+              $(foreach g,$(or $(call HdlExists,$d/generics.vhd),\
+                               $(call HdlExists,$d/$(basename $(notdir $c))-generics.vhd)),\
+                $(call FindRelative,$(TargetDir),$g) )))))))\
   echo '\# Search path(s) for local files'; \
   $(foreach d,$(call Unique,$(patsubst %/,%,$(dir $(QuartusSources)) $(VerilogIncludeDirs))), \
     echo set_global_assignment -name SEARCH_PATH '\"'$(strip \
@@ -179,12 +188,12 @@ QuartusMakeQsf=\
         echo set_global_assignment -name VHDL_FILE -library $(notdir $l) '\"'$f'\"';\
         $(foreach b,$(subst _pkg.vhd,_body.vhd,$f),\
           $(and $(wildcard $b),\
-	     echo set_global_assignment -name VHDL_FILE -library $(notdir $l) '\"'$b'\"';))))) \
+          echo set_global_assignment -name VHDL_FILE -library $(notdir $l) '\"'$b'\"';))))) \
   \
   echo '\#' Assignment for local source files using search paths above; \
-  $(foreach s,$(QuartusSources), \
-    echo set_global_assignment -name $(if $(filter %.vhd,$s),VHDL_FILE -library $(LibName),$(if $(filter %.sv,$s),SYSTEMVERILOG_FILE,VERILOG_FILE)) \
-        '\"'$(call FindRelative,$(TargetDir),$s)'\"';) \
+  $(call QuartusEchoFilesNoVlgLibs,$(LibName),\
+    $(foreach s,$(QuartusSources), \
+      $(call FindRelative,$(TargetDir),$s) ))\
   \
   $(if $(findstring $(HdlMode),core worker platform assembly container),\
     echo '\#' Assignments for building cores; \
@@ -231,20 +240,18 @@ HdlToolFiles=\
 # force them into the correct library when they are "discovered" via SEARCH_PATH.
 ifeq ($(HdlMode),library)
 HdlToolPost=\
-  if test $$HdlExit = 0; then \
-    if ! test -d $(LibName); then \
-      mkdir $(LibName); \
+  if ! test -d $(LibName); then \
+    mkdir $(LibName); \
+  else \
+    rm -f $(LibName)/*; \
+  fi;\
+  for s in $(HdlToolFiles); do \
+    if [[ $$s == *.vhd ]]; then \
+      echo -- synthesis library $(LibName) | cat - $$s > $(LibName)/`basename $$s`; \
     else \
-      rm -f $(LibName)/*; \
-    fi;\
-    for s in $(HdlToolFiles); do \
-      if [[ $$s == *.vhd ]]; then \
-        echo -- synthesis library $(LibName) | cat - $$s > $(LibName)/`basename $$s`; \
-      else \
-        ln -s ../$$s $(LibName); \
-      fi; \
-    done; \
-  fi;
+      ln -s ../$$s $(LibName); \
+    fi; \
+  done;
 endif
 
 BitFile_quartus=$1.sof

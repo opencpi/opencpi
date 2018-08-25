@@ -1,0 +1,13 @@
+--- configure.ac
++++ configure.ac
+@@ -75,8 +75,8 @@
+ 
+ # Check for necessary libraries, library functions
+ AC_FUNC_ERROR_AT_LINE
+-AC_FUNC_MALLOC
+-AC_FUNC_REALLOC
++#AC_FUNC_MALLOC
++#AC_FUNC_REALLOC
+ 
+ # AC_CHECK_LIB (library, function, [action-if-found], [action-if-not-found], [other-libraries])
+ AC_CHECK_LIB([c],[main], [],[AC_MSG_ERROR(Could not use standard C library)],   [])

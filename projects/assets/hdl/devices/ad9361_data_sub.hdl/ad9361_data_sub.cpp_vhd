@@ -26,9 +26,13 @@ architecture rtl of ad9361_data_sub_worker is
   constant dac_c           : natural := 1;
   constant lvds_width_c    : natural := 6;
   constant port_width_c    : natural := 12;
-  signal   DATA_CLK_s      : std_logic; // data clock to both adc and dac workers
-  signal   DATA_CLK_bufg_s : std_logic; // data clock to both adc and dac workers
+  signal   DATA_CLK_s      : std_logic;
+  signal   data_clk_buf    : std_logic; // CMOS only
+  signal   data_clk_n_s    : std_logic := '1'; // LVDS only
+  signal   data_clk_n_buf  : std_logic := '1'; // LVDS only
+
   signal   TXNRX_i         : std_logic := '0'; // TODO / FIXME - from upstream somewhere
+  signal   FB_CLK_P_s      : std_logic := '0';
 begin
   // inform supported workers about our parameters
   dev_cfg_data_port_out.p0_p1_are_swapped  <= swap_ports_p;
@@ -39,22 +43,42 @@ begin
   //---------------------------------------------------------------------------------
   // Signals common to all CMOS modes (0-6)
 
+    -- forward (and invert) data_clk_buf (D1=0 and D2=1 inverts data_clk_buf,
+    -- which is necessary for ad9361_dac_sub.hdl framing alignment)
+    dac_clock_forward : ODDR
+      generic map(
+        DDR_CLK_EDGE => "SAME_EDGE",
+        INIT         => '0',
+        SRTYPE       => "ASYNC")
+      port map(
+        Q  => FB_CLK_P_s,
+        C  => data_clk_buf,
+        CE => '1',
+        D1 => '0',
+        D2 => '1',
+        R  => '0',
+        S  => '0');
+
     // Here, we have DATA_CLK come through an IBUF followed by a BUFG before
     // forwarding it to the adc/dac subdevices via the devsignals below
-    dev_data_clk_out(adc_c).data_clk_p       <= DATA_CLK_bufg_s;
-    dev_data_clk_out(dac_c).data_clk_p       <= DATA_CLK_bufg_s;
+    dev_data_clk_out(adc_c).data_clk_p       <= data_clk_buf;
+    dev_data_clk_out(dac_c).data_clk_p       <= data_clk_buf;
 
-    data_clk : BUFFER_IN_1 generic map(DIFFERENTIAL => false)
+    -- GLOBAL_CLOCK=true (forces use of IBUFG instead of IBUF) was found to
+    -- improve clock stability for CMOS mode
+    data_clk : BUFFER_IN_1 generic map(DIFFERENTIAL => false, GLOBAL_CLOCK => true)
       port map(I => DATA_CLK_P, O => DATA_CLK_s);
 
-    data_clk_bufg : BUFG port map(I => DATA_CLK_s, O => DATA_CLK_bufg_s);
+    -- while both BUFG and BUFR met timing for CMOS modes, data fidelity was
+    -- observed to be better for BUFG than it was for BUFR
+    data_clk_bufg : BUFG port map(I => DATA_CLK_s, O => data_clk_buf);
 
     rx_frame : BUFFER_IN_1 generic map(DIFFERENTIAL => false)
       port map(I => RX_FRAME_P, O => dev_data_adc_out.rx_frame);
     tx_frame : BUFFER_OUT_1 generic map(DIFFERENTIAL => false)
       port map(I => dev_data_dac_in.tx_frame, O => TX_FRAME_P);
     fb_clk   : BUFFER_OUT_1 generic map(DIFFERENTIAL => false)
-      port map(I => dev_data_dac_in.fb_clk, O => FB_CLK_P);
+      port map(I => FB_CLK_P_s, O => FB_CLK_P);
     // Tie _N signals to ground for CMOS as recommended in Table 13 of
     // the AD9361 datasheet
     TX_FRAME_N <= '0';
@@ -161,15 +185,48 @@ begin
     signal out_p, out_n, in_p, in_n : std_logic_vector(lvds_width_c-1 downto 0);
     signal p0 : std_logic_vector(lvds_width_c*2-1 downto 0);
   begin
-    dev_data_clk_out(adc_c).data_clk_p       <= DATA_CLK_s;
-    dev_data_clk_out(dac_c).data_clk_p       <= DATA_CLK_s;
+    dev_data_clk_out(adc_c).data_clk_p       <= DATA_CLK_s; -- send IBUF version to adc_sub
+    dev_data_clk_out(dac_c).data_clk_p       <= data_clk_n_buf; -- send IBUF->BUFR version to dac_sub
+
+    -- inverter is necessary for (LVDS) DAC timing to be met (additional clock
+    -- propagation delay is helpful)
+    -- TODO/FIXME - investigate increasing FB_CLK_Delay to remedy this problem instead of using an inverter
+    data_clk_n_s <= not DATA_CLK_s;
+
+    -- forward (and invert) data_clk_n_buf (D1=0 and D2=1 inverts data_clk_n_buf,
+    -- which is necessary for ad9361_dac_sub.hdl framing alignment)
+    dac_clock_forward : ODDR
+      generic map(
+        DDR_CLK_EDGE => "SAME_EDGE",
+        INIT         => '0',
+        SRTYPE       => "ASYNC")
+      port map(
+        Q  => FB_CLK_P_s,
+        C  => data_clk_n_buf,
+        CE => '1',
+        D1 => '0',
+        D2 => '1',
+        R  => '0',
+        S  => '0');
+
+    -- BUFR required for (LVDS) timing to be met (BUFG would not meet timing)
+    data_clk_buf_i : BUFR
+      generic map(
+        BUFR_DIVIDE => "BYPASS") -- "BYPASS", "1", "2", "3", "4", "5", "6", "7", "8"
+      port map(
+        O   => data_clk_n_buf, -- 1-bit output: Clock output port
+        CE  => '1',            -- 1-bit input: Active high, clock enable (Divided modes only)
+        CLR => '0',            -- 1-bit input: Active high, asynchronous clear (Divided mode only)
+        I   => data_clk_n_s    -- 1-bit input: Clock buffer input driven by an IBUFG, MMCM or local interconnect
+      );
+
     // Instantiate LVDS IO buffers
     data_clk : BUFFER_IN_1 generic map(DIFFERENTIAL => true)
       port map(I => DATA_CLK_P, IBAR => DATA_CLK_N, O => DATA_CLK_s);
     rx_frame : BUFFER_IN_1 generic map(DIFFERENTIAL => true)
       port map(I => RX_FRAME_P, IBAR => RX_FRAME_N, O => dev_data_adc_out.rx_frame);
     fb_clk : BUFFER_OUT_1 generic map(DIFFERENTIAL => true)
-      port map(I => dev_data_dac_in.fb_clk, O => FB_CLK_P, OBAR => FB_CLK_N);
+      port map(I => FB_CLK_P_s, O => FB_CLK_P, OBAR => FB_CLK_N);
     tx_frame : BUFFER_OUT_1 generic map(DIFFERENTIAL => true)
       port map(I => dev_data_dac_in.tx_frame, O => TX_FRAME_P, OBAR => TX_FRAME_N);
     p0p1: for idx in 0 to lvds_width_c/2-1 generate

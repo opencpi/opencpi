@@ -27,6 +27,13 @@
 # 10 ns period = 100000 KHz
 create_clock -name clk_fpga_0 -period 10.000 [get_pins {ftop/pfconfig_i/zed_i/worker/ps/ps/PS7_i/FCLKCLK[0]}]
 
+# FMCOMMS3 DATA_CLK_P
+# AD9361 datasheet-specified max clock period
+create_clock -period 4.069 -name FMC_LA00_CC_P [get_ports {FMC_LA00_CC_P}]
+
+# FMCOMMS3 FB_CLK (forwarded version of DATA_CLK_P)
+create_generated_clock -name FMC_LA08_P -source [get_pins {ftop/pfconfig_i/FMC_ad9361_data_sub_i/worker/mode7.dac_clock_forward/C}] -divide_by 1 -invert [get_ports {FMC_LA08_P}]
+
 # ----------------------------------------------------------------------------
 # User LEDs - Bank 33
 # ---------------------------------------------------------------------------- 
@@ -203,12 +210,6 @@ set_property IOSTANDARD LVCMOS25 [get_ports -of_objects [get_iobanks 35]];
 # Note that the bank voltage for IO Bank 13 is fixed to 3.3V on ZedBoard. 
 set_property IOSTANDARD LVCMOS33 [get_ports -of_objects [get_iobanks 13]];
 
-# FMCOMMS3 DATA_CLK_P
-# AD9361 datasheet-specified max clock period
-create_clock -period 4.069 -name FMC_LA00_CC_P -waveform {0.000 2.0345} [get_ports {FMC_LA00_CC_P}]
-
-# FMCOMMS3 TX_FB_CLK_P (forwarded version of DATA_CLK_P)
-create_generated_clock -name FMC_LA08_P -source [get_pins {ftop/pfconfig_i/FMC_ad9361_dac_sub_i/worker/data_mode_lvds.dac_clock_forward/C}] -divide_by 1 -invert [get_ports {FMC_LA08_P}]
 
 # FMCOMMS3 TX_FRAME_P
 set_output_delay -clock [get_clocks {FMC_LA08_P}] -clock_fall -min -add_delay 0.3 [get_ports {FMC_LA09_P}]

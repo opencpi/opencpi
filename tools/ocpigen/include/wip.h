@@ -460,7 +460,7 @@ class Worker : public OU::Worker {
     *addProperty(const char *xml, bool includeImpl),
     //    *doAssyClock(Instance *i, Port *p),
     *openSkelHDL(const char *suff, FILE *&f),
-    *emitVhdlRecordInterface(FILE *f),
+    *emitVhdlRecordInterface(FILE *f, bool isEntity = false),
     *emitImplHDL( bool wrap = false),
     *emitAssyImplHDL(FILE *f, bool wrap),
     *emitConfigImplHDL(FILE *f),
@@ -468,6 +468,7 @@ class Worker : public OU::Worker {
     *emitSkelHDL(),
     *emitBsvHDL(),
     *emitDefsHDL(bool wrap = false),
+    *emitVhdlEnts(),
     *emitVhdlWorkerPackage(FILE *f, unsigned maxPropName),
     *emitVhdlWorkerEntity(FILE *f),
     *emitVhdlPackageConstants(FILE *f),
@@ -554,7 +555,9 @@ class Worker : public OU::Worker {
 #define SKEL "-skel"
 #define IMPL "-impl"
 #define DEFS "-defs"
+#define ENTS "-ents"
 #define ASSY "-assy"
+#define CONTINST "-continst"
 #define VHD ".vhd"
 #define VER ".v"
 #define VERH ".vh"

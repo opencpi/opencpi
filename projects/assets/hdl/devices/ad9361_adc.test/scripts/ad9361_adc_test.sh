@@ -17,9 +17,6 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-# (for zed platform only) run PRBS test twice - once for zed bitstream, once
-# for zed_ise bitstream
-
 if [ -z "$OCPI_TOOL_DIR" ]; then
   echo OCPI_TOOL_DIR env variable must be specified before running BIST_PRBS_rates.sh
   exit 1
@@ -38,28 +35,17 @@ fi
 FOUND_PLATFORMS=$(./target-$OCPI_TOOL_DIR/get_comma_separated_ocpi_platforms)
 AT_LEAST_ONE_ML605_AVAILABLE=$(./target-$OCPI_TOOL_DIR/get_at_least_one_platform_is_available ml605)
 
-for run in {1..2}
-do
-
 if [ "$FOUND_PLATFORMS" == "" ]; then
   echo ERROR: no platforms found! check ocpirun -C
   echo "TEST FAILED"
   exit 1
 elif [ "$FOUND_PLATFORMS" == "zed" ]; then
-  if [ "$run" == "1" ]; then
-    # force test 1 of 2 to test zed     bitstream (and NOT zed_ise bitstream)
-    ocpihdl -d PL:0 load assemblies/ad9361_1r1t_test_adc_asm/container-ad9361_1r1t_test_adc_asm_zed_cfg_1rx_0tx_fmcomms_2_3_lpc_lvds_cnt_1rx_0tx_thruasm_fmcomms_2_3_lpc_LVDS_zed/target-zynq/ad9361_1r1t_test_adc_asm_zed_cfg_1rx_0tx_fmcomms_2_3_lpc_lvds_cnt_1rx_0tx_thruasm_fmcomms_2_3_lpc_LVDS_zed.bitz
-  elif [ "$run" == "2" ]; then
-    # force test 2 of 2 to test zed_ise bitstream (and NOT zed     bitstream)
-    ocpihdl -d PL:0 load assemblies/ad9361_1r1t_test_adc_asm/container-ad9361_1r1t_test_adc_asm_zed_ise_cfg_1rx_0tx_fmcomms_2_3_lpc_lvds_cnt_1rx_0tx_thruasm_fmcomms_2_3_lpc_LVDS_zed/target-zynq_ise/ad9361_1r1t_test_adc_asm_zed_ise_cfg_1rx_0tx_fmcomms_2_3_lpc_lvds_cnt_1rx_0tx_thruasm_fmcomms_2_3_lpc_LVDS_zed.bitz
-  fi
-elif [ "$FOUND_PLATFORMS" == "zed_ise" ]; then
-  if [ "$run" == "1" ]; then
-    # force test 1 of 2 to test zed     bitstream (and NOT zed_ise bitstream)
-    ocpihdl -d PL:0 load assemblies/ad9361_1r1t_test_adc_asm/container-ad9361_1r1t_test_adc_asm_zed_cfg_1rx_0tx_fmcomms_2_3_lpc_lvds_cnt_1rx_0tx_thruasm_fmcomms_2_3_lpc_LVDS_zed/target-zynq/ad9361_1r1t_test_adc_asm_zed_cfg_1rx_0tx_fmcomms_2_3_lpc_lvds_cnt_1rx_0tx_thruasm_fmcomms_2_3_lpc_LVDS_zed.bitz
-  elif [ "$run" == "2" ]; then
-    # force test 2 of 2 to test zed_ise bitstream (and NOT zed     bitstream)
-    ocpihdl -d PL:0 load assemblies/ad9361_1r1t_test_adc_asm/container-ad9361_1r1t_test_adc_asm_zed_ise_cfg_1rx_0tx_fmcomms_2_3_lpc_lvds_cnt_1rx_0tx_thruasm_fmcomms_2_3_lpc_LVDS_zed/target-zynq_ise/ad9361_1r1t_test_adc_asm_zed_ise_cfg_1rx_0tx_fmcomms_2_3_lpc_lvds_cnt_1rx_0tx_thruasm_fmcomms_2_3_lpc_LVDS_zed.bitz
+  # force test zed bitstream (and NOT zed_ise bitstream)
+  ocpihdl -d PL:0 load assemblies/ad9361_1r1t_test_adc_asm/container-ad9361_1r1t_test_adc_asm_zed_cfg_1rx_0tx_fmcomms_2_3_lpc_lvds_cnt_1rx_0tx_thruasm_fmcomms_2_3_lpc_LVDS_zed/target-zynq/ad9361_1r1t_test_adc_asm_zed_cfg_1rx_0tx_fmcomms_2_3_lpc_lvds_cnt_1rx_0tx_thruasm_fmcomms_2_3_lpc_LVDS_zed.bitz
+  XX=$?
+  if [ "$XX" !=  "0" ]; then
+    echo "TEST FAILED"
+    exit $XX
   fi
 elif [ "$AT_LEAST_ONE_ML605_AVAILABLE" == "true" ]; then
   if [ "$run" == "2" ]; then
@@ -77,6 +63,11 @@ rm *log > /dev/null 2>&1
 
 if [ -d odata ]; then
   rm -rf odata
+  XX=$?
+  if [ "$XX" !=  "0" ]; then
+    echo "TEST FAILED: could not remove odata"
+    exit 1
+  fi
 fi
 
 mkdir odata
@@ -110,14 +101,10 @@ elif [ "$FOUND_PLATFORMS" == "zed" ]; then
   diff odata/AD9361_BIST_PRBS.log scripts/AD9361_BIST_PRBS.zed.golden >/dev/null
   XX=$?
   diff odata/AD9361_BIST_PRBS.log scripts/AD9361_BIST_PRBS.zed.golden | head -n 20
-elif [ "$FOUND_PLATFORMS" == "zed_ise" ]; then
-  diff odata/AD9361_BIST_PRBS.log scripts/AD9361_BIST_PRBS.zed_ise.golden >/dev/null
-  XX=$?
-  diff odata/AD9361_BIST_PRBS.log scripts/AD9361_BIST_PRBS.zed_ise.golden | head -n 20
 elif [ "$AT_LEAST_ONE_ML605_AVAILABLE" == "true" ]; then
-  diff odata/AD9361_BIST_PRBS.log scripts/AD9361_BIST_PRBS.ml605.golden >/dev/null
+  diff odata/AD9361_BIST_PRBS.log scripts/AD9361_BIST_PRBS.lvds.delays_2_0_7_0.use_xo.golden >/dev/null
   XX=$?
-  diff odata/AD9361_BIST_PRBS.log scripts/AD9361_BIST_PRBS.ml605.golden | head -n 20
+  diff odata/AD9361_BIST_PRBS.log scripts/AD9361_BIST_PRBS.lvds.delays_2_0_7_0.use_xo.golden | head -n 20
 else
   printf "platform found which is not supported: "
   echo $FOUND_PLATFORMS
@@ -132,8 +119,6 @@ else
   echo "TEST FAILED"
   exit 1
 fi
-
-done # for run in {1..2}
 
 #echo "Running additional reports: (PRBS Built-In-Self-Test across range of clock and data delays)"
 #./scripts/AD9361_BIST_PRBS_delays.sh $APP_XML > odata/AD9361_BIST_PRBS_delays.log

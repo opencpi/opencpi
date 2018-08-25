@@ -135,6 +135,10 @@ do
          -pdata_src=num_samples=64 \
          -pfile_write=filename=$FILENAME" \
         runtest
+      XX=$?
+      if [ "$XX" != "0" ]; then
+        exit $XX
+      fi
       dogrep
       mvfiles
       echo --------------------------------------------------------------------------------
@@ -149,6 +153,10 @@ do
          -pdata_src=fixed_value=0,0,0,0,0,0,0,0,0,0,0,0 \
          -pfile_write=filename=$FILENAME" \
         runtest
+      XX=$?
+      if [ "$XX" != "0" ]; then
+        exit $XX
+      fi
       dogrep
       GOLDEN=./scripts/data_src_fixed0_4096samps.out.golden domd5sum
       mvfiles
@@ -164,6 +172,10 @@ do
          -pdata_src=fixed_value=1,1,1,1,1,1,1,1,1,1,1,1 \
          -pfile_write=filename=$FILENAME" \
         runtest
+      XX=$?
+      if [ "$XX" != "0" ]; then
+        exit $XX
+      fi
       dogrep
       GOLDEN=./scripts/data_src_fixedf_4096samps.out.golden domd5sum
       mvfiles
@@ -179,6 +191,10 @@ do
          -pdata_src=fixed_value=0,1,0,1,0,1,0,1,0,1,0,1 \
          -pfile_write=filename=$FILENAME" \
         runtest
+      XX=$?
+      if [ "$XX" != "0" ]; then
+        exit $XX
+      fi
       dogrep
       GOLDEN=./scripts/data_src_fixed5_4096samps.out.golden domd5sum
       mvfiles
@@ -194,6 +210,10 @@ do
          -pdata_src=fixed_value=1,0,1,0,1,0,1,0,1,0,1,0 \
          -pfile_write=filename=$FILENAME" \
         runtest
+      XX=$?
+      if [ "$XX" != "0" ]; then
+        exit $XX
+      fi
       dogrep
       GOLDEN=./scripts/data_src_fixeda_4096samps.out.golden domd5sum
       mvfiles
@@ -208,6 +228,10 @@ do
          -pdata_src=mode=walking \
          -pfile_write=filename=$FILENAME" \
         runtest
+      XX=$?
+      if [ "$XX" != "0" ]; then
+        exit $XX
+      fi
       dogrep
 
       # skipping md5sum since we don't have a sync-up operation like
@@ -225,6 +249,10 @@ do
          -pdata_src=mode=lfsr \
          -pfile_write=filename=$FILENAME" \
         runtest
+      XX=$?
+      if [ "$XX" != "0" ]; then
+        exit $XX
+      fi
       dogrep
 
       # no md5sum, relying on calculate_AD9361_BIST_PRBS_RX_BER

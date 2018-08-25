@@ -484,7 +484,7 @@ VivadoIncludeCores=\
   $(foreach c,$1,\
     echo read_edif_or_dcp $(call FindRelative,$(TargetDir),$(call HdlCoreRefMaybeTargetSpecificFile,$c,$(HdlTarget))) >> $(CoreOrLibName)-imports.tcl;\
     $(if $(filter $c,$(Cores)),\
-	echo add_files_set_lib $c '\"'$(call HdlExtractSourcesForLib,$(HdlTarget),$c,$(TargetDir))'\"' >> $(CoreOrLibName)-imports.tcl;,\
+        echo add_files_set_lib $c '\"'$(call HdlExtractSourcesForLib,$(HdlTarget),$c,$(TargetDir))'\"' >> $(CoreOrLibName)-imports.tcl;,\
       $(foreach w,$(subst _rv,,$(basename $(notdir $c))),\
         $(foreach d,$(dir $c),\
           $(foreach l,$(if $(filter vhdl,$(HdlLanguage)),vhd,v),\
@@ -546,25 +546,14 @@ VivadoToolExports=\
 # force them into the correct library when they are "discovered" via SEARCH_PATH.
 ifneq ($(filter $(HdlMode),library core),)
 HdlToolPost=$(infox HS:$(HdlSources):VTE:$(VivadoToolExports))\
-  if test "$$HdlExit" != 0 ; then \
-    if test -n "$(PreBuiltCore)" ; then\
-      makelinks=1;\
-    else\
-      makelinks=0;\
-    fi;\
-  else\
-    makelinks=1;\
+  if ! test -d $(CoreOrLibName); then \
+    mkdir $(CoreOrLibName); \
+  else \
+    rm -f $(CoreOrLibName)/*; \
   fi;\
-  if test $$makelinks = 1 ; then\
-    if ! test -d $(CoreOrLibName); then \
-      mkdir $(CoreOrLibName); \
-    else \
-      rm -f $(CoreOrLibName)/*; \
-    fi;\
-    for s in $(VivadoToolExports); do \
-      ln -s $$s $(CoreOrLibName); \
-    done; \
-  fi;
+  for s in $(VivadoToolExports); do \
+    ln -s $$s $(CoreOrLibName); \
+  done;
 endif
 
 #        rm -f $(CoreOrLibName)/$(notdir $$s);
