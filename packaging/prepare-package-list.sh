@@ -26,6 +26,7 @@
 # all:     everything in exports and everything in projects in the git repo
 # runtime: minimal runtime (plus some tests) for the platform(s)
 # devel:   development configuration minus runtime
+# deploy:  runtime with redundant non-platform-specific files
 #
 # Basically we generate a set of directories and files for export that are
 # minimal for the export type.
@@ -136,6 +137,14 @@ case $type in
       echo $f cdk
       [ -d $f ] && (cd cdk/runtime;
                     find $(basename $f) -type d -exec echo cdk/runtime/{}/ cdk/{} \; ) || :
+    done
+    ;;
+  deploy)
+    for f in cdk/runtime/*; do
+      is_platform $f && [ $(basename $f) != $2 ] && continue;
+      echo $f
+      [ -d $f ] && (cd cdk/runtime;
+                    find $(basename $f) -type d -exec echo cdk/runtime/{}/ \; ) || :
     done
     ;;
   devel)

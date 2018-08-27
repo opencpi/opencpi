@@ -230,3 +230,6 @@
 # Until wildcards are supported, the cross-compiled platforms:
 #+tools/cdk/include/autoconfig_import-zed.mk include/
 #+tools/cdk/include/autoconfig_import-pico_t6a.mk include/
+=projects/assets/applications/*.xml applications/
+=projects/assets/applications/test.input applications/
+=projects/assets/applications/run.sh applications/

@@ -45,7 +45,7 @@ export OCPI_DEFAULT_HDL_DEVICE=pl:0
 # The system config file sets the default SMB size
 export OCPI_SYSTEM_CONFIG=/mnt/card/opencpi/system.xml
 # Get ready to run some test xml-based applications
-cd $OCPI_CDK_DIR/xml
+cd $OCPI_CDK_DIR/applications
 # Shorten the default shell prompt
 PS1='% '
 # add any commands to be run every time this script is run

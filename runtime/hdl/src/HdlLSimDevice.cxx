@@ -1102,8 +1102,11 @@ static const char *
 getSims(std::vector<std::string> &sims) {
   std::string path;
   const char *err;
-  if ((err = OU::getAllProjects(path)))
-    return err;
+  // In a riuntimne environment there are no projects
+  if ((err = OU::getAllProjects(path))) {
+    ocpiInfo("When looking for simulators, could not find any projects: %s", err);
+    return NULL;
+  }
   std::vector<std::string> pdirs;
   sims.clear();
   std::string first;
