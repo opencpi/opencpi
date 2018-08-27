@@ -62,7 +62,10 @@ else ifeq ($(origin RccPlatforms),undefined)
   ifdef OCPI_TARGET_PLATFORM
     RccPlatforms:=$(OCPI_TARGET_PLATFORM)
   else ifdef OCPI_TOOL_PLATFORM
-    RccPlatforms:=$(OCPI_TOOL_PLATFORM)
+    # If no target platform was specified, and we are not cleaning, set to the running one
+    ifeq ($(filter clean%,$(MAKECMDGOALS)),)
+      RccPlatforms:=$(OCPI_TOOL_PLATFORM)
+    endif
   else
     $(error Unexpected failure to figure out which RCC compiler to use.)
   endif

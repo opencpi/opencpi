@@ -29,7 +29,7 @@ You can use "df -h" or "mount" to see what is mounted.
 EOF
   exit 1
 fi
-if test "$USER" != root; then
+if [ $(id -u) != 0; then
   echo This script must be run as root or under sudo.
   exit 1
 fi

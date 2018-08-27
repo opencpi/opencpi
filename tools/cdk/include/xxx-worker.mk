@@ -64,10 +64,10 @@ endif
 
 clean:: cleanfirst
 	$(AT)rm -r -f $(GeneratedDir) \
-             $(if $(filter all,$($(CapModel)Targets)),\
-                  $(call WkrTargetDirWild,*),\
+             $(if $($(CapModel)Targets),\
                   $(foreach t,$($(CapModel)Targets),\
-                    $(call WkrTargetDirWild,$(call $(CapModel)TargetDirTail,$t))))
+                    $(call WkrTargetDirWild,$(call $(CapModel)TargetDirTail,$t))),\
+                  $(call WkrTargetDirWild,*))
 
 ################################################################################
 # source files that are target-independent
