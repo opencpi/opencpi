@@ -172,3 +172,36 @@ cleansim:
 
 clean:: cleanrun
 	$(AT)rm -r -f gen *.pyc
+##########################################################################################
+# Help
+define help
+The make command is used with the following goals to invoke the phases:
+  build — (the default goal if none is specified) build locally generated HDL
+           assemblies, implies generate if needed
+  run   — perform execution and verification, interleaved per subcase
+  clean — clean all generated, built and execution directories and files
+
+The following goals control the process at a finer granularity:
+  generate     — perform all offline generation tasks: scripted input data and property
+                 values, applications, HDL assemblies, generation report
+  prepare      — discover platforms and artifacts and generate execution scripts per
+                 platform, assumes required artifacts are built
+  runnoprepare — execute tests assuming a previous prepare was done
+  runonly      — prepare and execute tests, but do not perform any verification
+  verify       — perform verification for whatever platforms have been executed
+  view         — run the view scripts and put the results in separate windows
+  cleanrun     — clean all run results
+  cleansim     — clean all simulation output (but not run results)
+
+The following variables can be set, usually on the command line:
+  Verbose              - set to 1 for putting the execution logs on the console
+  TestAccumulateErrors - set to 1 to continue after errors until all platforms/cases are done
+  Cases                - set to specific cases, including wildcards for execute and/or verify
+  KeepSimulations      - set to 1 to preserve simulation outputs rather than delete on success
+  TestTimeout          - set to number of seconds to limit execution for any case
+  OnlyPlatforms        - set to platforms to run tests on, rather than those available
+  View                 - set to 1 to enable the "view" script during verify
+  TestApplications     - set to C++ programs to build (set only in the Makefile)
+
+endef
+$(OcpiHelp)
