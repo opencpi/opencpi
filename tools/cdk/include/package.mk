@@ -39,8 +39,8 @@ define OcpiCreatePackageId
 
 ###############################################################################
 # Determine where the 'lib' directory is relative to the current location
-LibIsInCwd=$$(filter lib library %-platform %-platforms,$$(call OcpiGetDirType,$$(or $1,./)))
-LibIsInParent=$$(filter lib library %-platform %-platforms,$$(call OcpiGetDirType,$$(or $1,.)/../))
+LibIsInCwd=$$(filter lib library %-platform %-platforms %-primitives,$$(call OcpiGetDirType,$$(or $1,./)))
+LibIsInParent=$$(filter lib library %-platform %-platforms %-primitives,$$(call OcpiGetDirType,$$(or $1,.)/../))
 
 # Determine the directory containing the 'lib' directory to place package-id
 DirContainingLib=$$(if $$(LibIsInCwd),$$(or $1,.)/,$$(and $$(LibIsInParent),$$(or $1,.)/../))
@@ -49,7 +49,7 @@ DirContainingLib=$$(if $$(LibIsInCwd),$$(or $1,.)/,$$(and $$(LibIsInParent),$$(o
 # So, we grep for it here to include if building from the worker level
 #   (if building from the worker level, <library>/Library.mk is included,
 #    but not <library>/Makefile)
-$$(foreach p,$$(shell grep "^\s*Package\s*:\?=\s*.*" $$(DirContainingLib)/Makefile),\
+$$(foreach p,$$(shell [ -f $$(DirContainingLib)/Makefile ] && grep "^\s*Package\s*:\?=\s*.*" $$(DirContainingLib)/Makefile),\
   $$(warning The Package variable can be set in either Project.mk, Library.mk, Platforms.mk or Platform.mk. Setting of Package= in 'Makefile' is deprecated and will not be supported in future releases.)\
   $$(eval $$p))
 
@@ -78,6 +78,15 @@ endif
 
 # If PackageName is nonempty, prepend it with '.'
 export PackageName:=$$(if $$(PackageName),.$$(patsubst .%,%,$$(PackageName)))
+
+###############################################################################
+# Arg2 to OcpiCreatePackageId is an optional Authoring Model Prefix Segment
+# Basically, if this is provided, the PackagePrefix will be appended with
+# the authoring model. E.g for hdl/primitives, we have <project>.hdl.primitives
+ifneq ($2,)
+  export PackageAuth:=$$(if $2,.$$(patsubst .%,%,$2))
+  export PackagePrefix:=$$(PackagePrefix)$$(PackageAuth)
+endif
 
 ###############################################################################
 # If package is not set, set it to Package
@@ -120,4 +129,4 @@ endif
 endef # define OcpiCreatePackageId
 
 # Create the Package-ID for dir $1 and return it (the Package variable)
-OcpiSetAndGetPackageId=$(eval $(call OcpiCreatePackageId,$1))$(Package)
+OcpiSetAndGetPackageId=$(eval $(call OcpiCreatePackageId,$1,$2))$(Package)

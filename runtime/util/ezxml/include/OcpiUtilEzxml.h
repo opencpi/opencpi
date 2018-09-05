@@ -242,7 +242,7 @@ namespace OCPI {
 		    bool setDefault = true, bool *found = NULL),
         *checkAttrs(ezxml_t x, ...),
         *checkElements(ezxml_t x, ...),
-	*checkAttrsV(ezxml_t x, const char **attrs),
+        *checkAttrsV(ezxml_t x, const char **attrs),
 	*checkAttrsVV(ezxml_t x, ...),
         *checkElements(ezxml_t x, ...),
 	*getEnum(ezxml_t x, const char *attr, const char **enums, const char *type, size_t &n,

@@ -17,7 +17,7 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 ##########################################################################################
-ifneq ($(filter show help clean% distclean%,$(MAKECMDGOALS)),)
+ifneq ($(filter-out cleandriver,$(filter show help clean% distclean%,$(MAKECMDGOALS))),)
   ifndef OCPI_CDK_DIR
     export OCPI_CDK_DIR:=$(CURDIR)/bootstrap
   endif
@@ -45,14 +45,14 @@ RccPlatforms:=$(call Unique,\
 	             $(OCPI_TOOL_PLATFORM))))
 export RccPlatforms
 DoExports=for p in $(RccPlatforms); do ./scripts/makeExportLinks.sh $$p; done
-DoTests=for p in $(RccPlatforms); do ./scripts/test-opencpi.sh $$p; done
+DoTests=for p in $(RccPlatforms); do ./scripts/test-opencpi.sh --platform $$p; done
 # Get macros and rcc platform/target processing, as well as all platforms
 include $(OCPI_CDK_DIR)/include/rcc/rcc-make.mk
 
 ##########################################################################################
 # Goals that are not about projects
-.PHONY: exports      framework      driver      testframework \
-        cleanexports cleanframework cleanprojects cleandriver clean
+.PHONY: exports      framework      driver      testframework cleanpackaging \
+        cleanexports cleanframework cleanprojects cleandriver clean distclean cleaneverything
 all framework:
 	$(AT)$(MAKE) -C build/autotools install Platforms="$(RccPlatforms)"
 	$(AT)$(DoExports)
@@ -79,7 +79,7 @@ driver:
 	         $(foreach o,$(call RccOs,$t),\
 	           if test -d os/$o/driver; then \
 	             echo Building the $o kernel driver for $(call RccRealPlatforms,$p); \
-	             $(MAKE) -C os/$o/driver AT=$(AT) OcpiPlatform=$p;\
+	             $(MAKE) -C os/$o/driver AT=$(AT) OCPI_TARGET_PLATFORM=$p;\
 	           else \
 	             echo There is no kernel driver for the OS '"'$o'"', so none built. ; \
 	           fi;))) \
@@ -101,37 +101,44 @@ cleandriver:
 clean: cleanframework cleanprojects
 
 # Super clean, but not git clean, based on our patterns, not sub-make cleaning
-cleaneverything distclean: clean cleandriver
+cleaneverything distclean: clean cleandriver cleanpackaging
 	$(AT)rm -r -f exports
-	$(AT)find . -depth -a ! -name .git -a \( \
+	$(AT)find . -depth -a ! -name .git  -a ! -path "./prerequisites*" -a \( \
              -name '*~' -o -name '*.dSym' -o -name timeData.raw -o -name 'target-*' -o \
-             -name gen -o \
-	     \( -name lib -a -type d -a ! -path "*/rcc/platforms/*" \)  \
+             -name "*.lo" -o -name "*.o" -o \
+	     \( -name lib -a -type d -a \
+	       ! -path "*/rcc/platforms/*" -a ! -path "./prerequisites*" \) -o \
+	     \( -name gen -a -type d -a \
+	       ! -path "*/rcc/platforms/*" -a ! -path "./prerequisites*" \)  \
              \) -exec rm -r {} \;
-	$(AT)for p in projects/*; do make -C $p cleaneverything; done
+	$(AT)for p in projects/*; do [ -d $$p ] && make -C $$p cleaneverything || :; done
 
 ##########################################################################################
 # Goals, variables and macros that are about packaging the CDK, whether tarball, rpm, etc.
 ##### Set variables that affect the naming of the release packages
 # The general package naming scheme is:
-# <base>[-sw-platform-<platform>]-<version>-<release>[_<tag>][_J<job>][_<branch>][<dist>]
+# <base>[-sw-platform][-<platform>]-<version>[-<release>][_<tag>][_J<job>][_<branch>][<dist>]
 # where:
-# <base> is our core package name
-# <platform> is a cross target when we are releasing packages per platform
-# <version> is our normally versioning scheme v1.2.3
+# <base> is our core package name: opencpi
+# [-sw-platform] is omitted for development platforms
+# [-<platform>] is the OpenCPI platform being distributed
+#   Omitted in RPMs for dev platforms since it is redundant with the RPM suffix (e.g. el7.x86_64)
+# <version> is our normally versioning scheme 1.2.3
 # <release> is a label that defaults to "snapshot" if not overridden with OcpiRelease
+#          Omitted for an actual official release
 # These are only applied if not a specific versioned release:
 # <tag> is a sequence number/timestamp within a release cycle (when not a specific release)
-# <job> is a jenkins job reference
-# <branch> is a git branch reference
-# <dist> for RPM, e.g. el.
+# <job> is a jenkins job reference if this process is run under Jenkins
+# <branch> is a git branch reference if not "develop" or "undefined"
+# <dist> added by RPM building, e.g. el7.x86_64
+# And the appropriate suffix is added:  .rpm, or .tar.gz
 base=opencpi
 # cross: value is the target platform or null if not cross
 # arg 1 is a single platform
 cross=$(strip $(foreach r,$(call RccRealPlatforms,$1),\
         $(if $(filter $(call RccRealPlatforms,$(OCPI_TOOL_PLATFORM)),$r),,$r)))
 name=$(base)$(and $(call cross,$1),-sw-platform-$(call cross,$1))
-release=$(or $(OcpiRelease),snapshot)
+release=$(or $(OcpiRelease),$(Release),snapshot$(tag)$(git_tag))
 # This changes every 6 minutes which is enough for updated releases (snapshots).
 # It is rebased after a release so it is relative within its release cycle
 # FIXME:automate this...
@@ -141,71 +148,75 @@ timestamp:=_$(shell printf %05d $(shell expr `date -u +"%s"` / 360 - 4231562))
 # If somebody checks in between Jenkins builds, it will sometimes get "develop^2~37" etc,
 # The BitBucket prefix of something like "bugfix--" is also stripped if present.
 git_branch :=$(notdir $(shell git name-rev --name-only HEAD | \
-                              perl -pe 's/[~^\d]*$$//' | perl -pe 's/^.*?--//'))
-git_version:=$(shell echo $(branch) | perl -ne '/^v[\.\d]+$$/ && print')
+                              perl -pe 's/~[^\d]*$$//' | perl -pe 's/^.*?--//'))
+git_version:=$(shell echo $(git_branch) | perl -ne '/^v[\.\d]+$$/ && print')
 git_hash   :=$(shell h=`(git tag --points-at HEAD | grep github | head -n1) 2>/dev/null`;\
                      [ -z "$$h" ] && h=`git rev-list --max-count=1 HEAD`; echo $$h)
-git_tag    :=$(if $(git_version),\
-               $(if $(BUILD_NUMBER),_J$(BUILD_NUMBER))\
-               $(if $(filter-out undefined develop,$(git_branch)),_$(subst -,_,$(git_branch))))
+# git_tag is used in *.spec files for RPM release tag.
+# Any non alphanumeric (or .) strings converted to single _
+git_tag    :=$(if $(git_version),,$(strip\
+               $(if $(BUILD_NUMBER),_J$(BUILD_NUMBER)))$(strip\
+               $(if $(filter-out undefined develop,$(git_branch)),\
+                    _$(shell echo $(git_branch) | sed -e 's/[^A-Za-z0-9.]\+/_/g'))))
 ##### Set final variables that depend on git variables
 # This could be nicer, but at least it gets it from the true source, which should be places
-version:=$(or $(git_version),$(strip\
+version:=$(or $(Version),$(git_version),$(strip\
               $(shell sed -n 's/.*AC_INIT.\[opencpi\],\[\([0-9.]*\)\].*$$/\1/p' \
                       build/autotools/configure.ac)))
-tag:=$(and $(git_version),$(timestamp))
-#$(info NAME:$(name) TAG:$(tag) VERSION:$(version) GIT_TAG:$(git_tag) GIT_HASH:$(git_hash) BRANCH:$(git_branch))
-package_name=$(name)-$(version)$(foreach p,$(RccPlatforms),-$p)
+tag:=$(if $(git_version),,$(timestamp))
+#$(info GIT_VERSION:$(git_version): GIT_TAG:$(git_tag): GIT_HASH:$(git_hash): GIT_BRANCH:$(git_branch):)
+#$(info NAME:$(name): TAG:$(tag): VERSION:$(version): RELEASE:$(release): PACKAGE:$(Package):)
 Package=runtime
-Prepare=./packaging/prepare-packaging-list.sh $(Package) "$(RccPlatforms)" $(call cross,$(word 1,$(RccPlatforms)))
+# This name applies generically, but is not used for RPMs since there are other issues about
+# being as "normal" as possible in the RPM context.  See the args passed to rpmbuild
+package_name=$(name)$(if $(filter runtime,$(Package)),,-$(Package))$(strip\
+                    $(foreach p,$(RccPlatforms),-$p))$(strip\
+	            -$(version)$(if $(git_version),,-)$(release))
+#$(info PACKAGE_NAME:$(package_name):)
+Prepare=./packaging/prepare-package-list.sh $(Package) "$(RccPlatforms)" $(call cross,$(word 1,$(RccPlatforms)))
 
 .PHONY: test_packaging
 test_packaging: exports
 	$(AT)$(Prepare)
 
 # Make a tarball of exports
-# We convert the "Prepare" output mappings into tar command transformations
+# We convert the "Prepare" output mappings suitable for cp -R, into tar command transformations
+# This should be moved into the packaging subdir...
 .PHONY: tar
 tar: exports
-	$(AT)set -e; file=$(package_name).tgz; \
-	     args=$$($(Prepare) |\
-                     while read source dest; do\
-	               [ -n "$$dest" ] && { \
-                         printf " --xform=s@^$$source\$$@$$dest/$$(basename $$source)@"; \
-                         printf " --xform=s@^$$source/@$$dest/$$(basename $$source)/@"; \
-	               } || : ; \
-	               printf " $$source"; \
-	            done); \
-	     echo Creating tar export file: $$file; \
-	     tar -z -h -f $$file -c $$args
+	$(AT)set -e; file=$(package_name).tar temp=$(mktemp -t tarcmdXXXX); \
+	     echo Determining tar export file contents for the $(Package) package: $$file.gz; \
+	     (echo "tar -h -f $$file -c \\";\
+	      $(Prepare) |\
+	        ( while read source dest; do\
+	          if [ -n "$$dest" ]; then \
+	            [ -d "$$source" ] && \
+	              echo ' --xform="s@^'$$source/@$$dest/$$(basename $$source)/'@" \'; \
+	            echo '  --xform="s@^'$$source\\\$$@$$dest/$$(basename $$source)'@" \'; \
+	          fi; \
+	          if [[ $$source == *@ ]]; then \
+	            symlinks="$$symlinks $${source/@}"; \
+	          else \
+	            echo " $$source \\"; \
+	          fi; \
+	          done ; echo; \
+	          echo "tar --append -f $$file $$symlinks") \
+	     ) > $$temp; \
+	     echo Creating tar export file: $$file.gz; \
+	     sh $$temp && rm -f $$file.gz $$temp && gzip $$file
 
-# Create a relocatable RPM from what is exported for the given platforms
-# Feed in the various naming components
-# redefine _rpmdir and _build_name_fmt to simply output the RPMs here
 .PHONY: rpm rpm_runtime rpm_devel
-first_real_platform:=$(word 1,$(RccPlatforms))
-rpm rpm_runtime rpm_devel: exports
-	$(AT)! command -v rpmbuild >/dev/null 2>&1 && \
-	     echo "Error: Cannot build an RPM: rpmbuild (rpm-build package) is not available." && exit 1 || :
-	$(AT)[ $(words $(call Unique,$(call RccRealPlatforms,$(RccPlatforms)))) != 1 ] && \
+real_platforms:=$(call Unique,$(call RccRealPlatforms,$(RccPlatforms)))
+rpm: exports
+	$(AT)[ $(words $(real_platforms)) != 1 ] && \
 	     echo Error: Cannot build an RPM for more than one platform at a time. && exit 1 || :
-	$(AT)echo "Creating an RPM file from the current built CDK for platform(s):" $(RccPlatforms)
-	$(AT)$(eval first:=$(word 1,$(RccPlatforms))) \
-	     source $(OCPI_CDK_DIR)/scripts/ocpitarget.sh $(first) &&\
-	     rpmbuild $(if $(RpmVerbose),-vv,--quiet) -bb\
-		      --define="RPM_BASENAME    $(base)"\
-		      --define="RPM_NAME        $(call name,$(first))"\
-		      --define="RPM_RELEASE     $(release)$(tag)$(commit)"\
-		      --define="RPM_VERSION     $(version)" \
-		      --define="RPM_HASH        $(git_hash)" \
-		      --define="RPM_PLATFORM    $(first)" \
-		      --define="RPM_OPENCPI     $(CURDIR)" \
-		      $(foreach c,$(call cross,$(first)),\
-		        --define="RPM_CROSS $c") \
-		      --define "_rpmdir $(CURDIR)"\
-		      --define "_build_name_fmt %%{NAME}-%%{VERSION}-%%{RELEASE}.%%{ARCH}.rpm"\
-		      packaging/cdk.spec
-	$(AT)rpm=`ls -1t *.rpm|head -1` && echo Created RPM file: $$rpm && ls -l $$rpm
+	$(AT)./packaging/make-sw-rpms.sh $(and $(RpmVerbose),-v) \
+          $(real_platforms) "$(call cross,$(real_platforms))" \
+	   $(Package) $(base) $(call name,$(real_platforms)) $(release) $(version) $(git_hash)
+
+cleanpackaging:
+	$(AT)rm -r -f packaging/target-*
+
 
 ##########################################################################################
 # Goals that are about prerequisites
@@ -214,8 +225,8 @@ rpm rpm_runtime rpm_devel: exports
 # There is currently no dependency on prerequisites from building the framework.
 .PHONY: prerequisites cleanprerequisites
 prerequisites:
-	$(AT)for p in $(call RccRealPlatforms,$(RccPlatforms)); do\
-                ./scripts/install-prerequisites.sh $(and $(filter 1,$(Force)),-f) $$p;\
+	$(AT)for p in $(call RccRealPlatforms,$(RccPlatforms)); do \
+                ./scripts/install-prerequisites.sh $(and $(filter 1,$(Force)),-f) $$p || exit 1; \
              done
 cleanprerequisites:
 	$(AT)rm -r -f prerequisites-build prerequisites
@@ -251,7 +262,7 @@ This top-level Makefile builds and/or tests the framework and built-in projects 
 
 The valid goals that accept platforms (using RccPlatform(s) or Platforms(s)) are:
    Make goals for framework (core of Opencpi):
-     framework(default) - Build the framework for platfors and export them
+     framework(default) - Build the framework for platforms and export them
      cleanframework     - Clean the specific platforms
      exports            - Redo exports, including for indicated platforms
                         - This is cumulative;  previous exports are not removed
@@ -280,7 +291,7 @@ Variables that are useful for most goals:
 Platforms/Platform/RccPlatforms/RccPlatform: all specify software platforms
   -- Useful for goals:  framework(default), exports, cleanframework, projects, exportprojects,
                         driver, cleandriver, prerequisites, tar, rpm
-  -- Platforms can have build options/letters after a hyphen: d=dynamic, o=optimized 
+  -- Platforms can have build options/letters after a hyphen: d=dynamic, o=optimized
      <platform>:    default static, debug build
      <platform>-d:  dynamic library, debug build
      <platform>-o:  static library, optimized build

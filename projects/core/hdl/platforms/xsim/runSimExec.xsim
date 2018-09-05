@@ -59,11 +59,11 @@ set -e
 . $OcpiXilinxVivadoDir/.settings64-Vivado.sh $OcpiXilinxVivadoDir
 export LM_LICENSE_FILE=$OcpiXilinxVivadoLicenseFile
 set -vx
-appname=$1
-echo Filename: $1 1>&2
-read assyname contname<<EOF
-`echo $1 | sed 's/^.*://' | sed 's/^\(.*\)_xsim.*$/\1 &/'`
-EOF
+appname=${1##*.}
+package=${1%.*}
+assyname=${appname%%_xsim*}
+contname=$appname
+echo Filename: $1 Package: $package Appname: $appname 1>&2
 echo Assembly: $assyname  Container: $contname 1>&2
 shift
 for i in $*; do echo for $i; plusargs="$plusargs -testplusarg $i"; done 1>&2
@@ -86,6 +86,7 @@ echo "open_wave_database xsim.wdb" > view.tcl
 # We want to pass the WDB output file and tcl source to the TCL xsim
 # command, not the xsim executable
 # -onerror quit -onfinish quit
+export XILINXD_LICENSE_FILE=$LM_LICENSE_FILE
 exec xsim $contname <<EOF
 xsim -verbose $plusargs {$contname} -wdb xsim.wdb -tclbatch run.tcl
 puts [current_time]

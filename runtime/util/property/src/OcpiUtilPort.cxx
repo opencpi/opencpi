@@ -281,6 +281,7 @@ namespace OCPI {
 	std::max(sizeIn, sizeOut);
       if (size == SIZE_MAX)
 	throw Error("Buffer size for connection must be specified");
+      size = roundUp(size, BUFFER_ALIGNMENT);
       return size;
     }
 

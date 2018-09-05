@@ -74,7 +74,7 @@ Fs = float(1024000)
 Fs_dec = Fs / float (R)
 
 # Declare complex data type
-dt_iq_pair = np.dtype((np.uint32, {'real_idx':(np.int16,2), 'imag_idx':(np.int16,0)}))
+dt_iq_pair = np.dtype((np.uint32, {'real_idx':(np.int16,0), 'imag_idx':(np.int16,2)}))
 
 # Read input and output data as complex int16 samples
 ofilename = open(sys.argv[2], 'rb')

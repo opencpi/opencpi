@@ -19,12 +19,15 @@
 
 version=6.1.2
 dir=gmp-$version
+# This server is unavailable:       https://ftp.gnu.org/gnu/gmp
+# Since we don't look at multiple URLs/mirrors (yet)
+# The one below is one of the advertised mirrors
 [ -z "$OCPI_CDK_DIR" ] && echo Environment variable OCPI_CDK_DIR not set && exit 1
 source $OCPI_CDK_DIR/scripts/setup-prerequisite.sh \
        "$1" \
        gmp \
        "Extended Precision Numeric library" \
-       https://ftp.gnu.org/gnu/gmp \
+       https://mirror.csclub.uwaterloo.ca/gnu/gmp \
        $dir.tar.xz \
        $dir \
        1
@@ -33,4 +36,5 @@ source $OCPI_CDK_DIR/scripts/setup-prerequisite.sh \
   --enable-fat=yes --enable-cxx=yes --with-pic
 #=gmp \
 #  CFLAGS='-g -fPIC' CXXFLAGS='-g -fPIC' # why doesn't --with-pic do this?
-make && make install
+make -j && make install
+rm -f $OcpiInstallExecDir/lib/*.la

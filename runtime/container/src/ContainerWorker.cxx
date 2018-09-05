@@ -123,12 +123,11 @@ namespace OCPI {
       return prop;
     }
     // Internal used by others.
-    void Worker::setPropertyValue(const OU::Property &prop, const std::string &v) {
+    void Worker::setPropertyValue(const OU::Property &prop, const char *v) {
       OU::Value val(prop);
-      const char *err = val.parse(v.c_str());
+      const char *err = val.parse(v);
       if (err)
-	throw OU::Error("For value \"%s\" for property \"%s\": %s",
-			v.c_str(), prop.m_name.c_str(), err);
+	throw OU::Error("For value \"%s\" for property \"%s\": %s", v, prop.m_name.c_str(), err);
       setPropertyValue(prop, val);
     }
 
@@ -364,6 +363,10 @@ namespace OCPI {
       return true;
     }
     void Worker::setProperty(unsigned ordinal, OU::Value &value) {
+      OU::Property &prop(property(ordinal));
+      setPropertyValue(prop, value);
+    }
+    void Worker::setProperty(unsigned ordinal, const char *value) {
       OU::Property &prop(property(ordinal));
       setPropertyValue(prop, value);
     }

@@ -146,7 +146,8 @@ ifneq ($(MAKECMDGOALS),clean)
         $(call HdlContBitZName,$1): $(call HdlContBitName,$1)
 	   $(AT)echo Making compressed bit file: $$@ from $$< and $(call ArtifactXmlName,$1)
 	   $(AT)gzip -c $(call HdlContBitName,$1) > $$@
-	   $(AT)$$(call OcpiPrepareArtifact,$(call ArtifactXmlName,$1),$$@)
+	   $(AT)$$(call OcpiPrepareArtifact,$(call ArtifactXmlName,$1),$$@,$(strip\
+                   $(or $(ParentPackage),$(ProjectPackage))),0,$(Platform))
 
         $(call HdlContBitZ,$1): | $(call HdlContBitZName,$1)
 	    $(AT)ln -s $(notdir $(call HdlContBitZName,$1)) $$@

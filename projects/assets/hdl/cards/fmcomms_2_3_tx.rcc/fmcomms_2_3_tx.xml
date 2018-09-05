@@ -3,7 +3,21 @@
      implements the ad9361_config_proxy OCS). If the application overrides
      the ad9361_config_proxy instance name to something other than
      ad9361_config_proxy, this worker's app_inst_name_ad9361_config_proxy
-     property should be set to the instance name. -->
+     property should be set to the instance name. The same is true for
+     ad9361_data_sub. -->
+<!--  ___________________________________________________________________    -->
+<!-- +                                                                   +   -->
+<!-- |                       fmcomms_2_3_tx.rcc                          |   -->
+<!-- +___________________________________________________________________+   -->
+<!--   ^                             ^                                       -->
+<!--   |  slave                      | slave                                 -->
+<!--   |  interface                  | interface                             -->
+<!--   |  (ACI)                      | (ACI)                                 -->
+<!--  _V_______________________    __V_________________                      -->
+<!-- +                         +  +                    +                     -->
+<!-- | ad9361_config_proxy.rcc |  |ad9361_data_sub.hdl |                     -->
+<!-- +_________________________+  +____________________+                     -->
+<!--                                                                         -->
 <RccWorker language='c++' spec='tx_spec'>
 
   <!-- OCS Parameters -->
@@ -21,11 +35,11 @@
   <Property Name="AD9361_TX_BBBW_NO_OS_MAX_MHZ_p" Type="double" Parameter="true" Default="20"/>
   <Property Name="AD9361_TX_BBBW_NO_OS_MIN_MHZ_p" Type="double" Parameter="true" Default="0.625"/>
 
-  <Property Name="AD9361_TX_ATTENUATION_MAX_MILLIDB_P" Type="double" Parameter="true" Default="89.750"/>
+  <Property Name="AD9361_TX_ATTENUATION_MAX_MILLIDB_P" Type="double" Parameter="true" Default="89750"/>
   <Property Name="AD9361_TX_ATTENUATION_MIN_MILLIDB_P" Type="double" Parameter="true" Default="0"/>
 
-  <Property Name="RF_GAIN_MAX_DB_p"      Type="double" Parameter="true" Default="-AD9361_TX_ATTENUATION_MIN_MILLIDB_P"/>
-  <Property Name="RF_GAIN_MIN_DB_p"      Type="double" Parameter="true" Default="-AD9361_TX_ATTENUATION_MAX_MILLIDB_P"/>
+  <Property Name="RF_GAIN_MAX_DB_p"      Type="double" Parameter="true" Default="-AD9361_TX_ATTENUATION_MIN_MILLIDB_P/1000"/>
+  <Property Name="RF_GAIN_MIN_DB_p"      Type="double" Parameter="true" Default="-AD9361_TX_ATTENUATION_MAX_MILLIDB_P/1000"/>
   <Property Name="RF_GAIN_STEP_DB_p"     Type="double" Parameter="true" Default="0.250"/>
   <Property Name="BB_GAIN_MAX_DB_p"      Type="double" Parameter="true" Default="NOT_SUPPORTED_p"/>
   <Property Name="BB_GAIN_MIN_DB_p"      Type="double" Parameter="true" Default="NOT_SUPPORTED_p"/>

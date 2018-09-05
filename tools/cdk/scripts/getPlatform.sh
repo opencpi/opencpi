@@ -19,7 +19,7 @@
 
 ##########################################################################################
 # This script determines the runtime platform and target variables
-# The fivesix variables are: OS OSVersion Processor Triple Platform PlatformDir
+# The six variables are: OS OSVersion Processor Triple Platform PlatformDir
 # The triple (os-osversion-processor) is redundant and legacy.
 # If it returns nothing (""), that is an error
 
@@ -32,7 +32,7 @@ returnPlatform() {
     echo "Error:  Platform file $d/$p.mk is invalid and cannot be used.${vars[*]}" >&2
     echo "Error:  OcpiPlatform(Os|OsVersion|Arch) variables are not valid." >&2
     exit 1
-  }      
+  }
   echo ${vars[3]} ${vars[5]} ${vars[1]} ${vars[3]}-${vars[5]}-${vars[1]} $p $d
   exit 0
 }
@@ -50,6 +50,7 @@ HostProcessor=`uname -m | tr A-Z a-z`
 if [ -n "$OCPI_CDK_DIR" -a -e "$OCPI_CDK_DIR/scripts/util.sh" ]; then
   source $OCPI_CDK_DIR/scripts/util.sh
   projects="`getProjectPathAndRegistered`"
+  # A fresh RPM install won't even have a registered core yet, so fallback
   [ -d $OCPI_CDK_DIR/../projects/core ] && projects="$projects $OCPI_CDK_DIR/../projects/core"
 elif [ -n "$OCPI_PROJECT_PATH" ]; then
   # If the CDK is not set or util.sh does not exist, fall back on OCPI_PROJECT_PATH

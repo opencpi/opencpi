@@ -17,8 +17,4 @@
        the AD9361 TX FRAME P pin. -->
   <signal output='tx_frame'/>
 
-  <!-- Signal which will drive the output buffer which will drive
-       the AD9361 FB CLK P pin. -->
-  <signal output='fb_clk'/>
-
 </signals>

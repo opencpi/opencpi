@@ -31,14 +31,4 @@ Tests = \
 # All workers created here will be built automatically
 # If you want to limit the workers that actually get built, set the Workers= variable
 
-Workers += \
-	advanced_pattern.rcc \
-	agc_real.hdl \
-	fifo.hdl \
-	file_write_demux.rcc \
-	socket_write.rcc \
-	timestamper.hdl \
-	zero_padding.hdl zero_padding.rcc \
-	zero_pad.hdl zero_pad.rcc
-
 include $(OCPI_CDK_DIR)/include/library.mk

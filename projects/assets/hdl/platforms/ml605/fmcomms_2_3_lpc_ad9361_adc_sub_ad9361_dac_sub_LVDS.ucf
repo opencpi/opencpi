@@ -133,6 +133,10 @@ INST "FMC_LPC_LA08_P" TNM_NET = "TG_TX_FALLING";
 TIMEGRP "TG_TX_RISING" OFFSET = OUT AFTER "FMC_LPC_LA00_CC_P" REFERENCE_PIN "FMC_LPC_LA08_P" RISING;
 TIMEGRP "TG_TX_FALLING" OFFSET = OUT AFTER "FMC_LPC_LA00_CC_P" REFERENCE_PIN "FMC_LPC_LA08_P" FALLING;
 
+# this placement constraints were observed to be necessary
+INST "ftop/pfconfig_i/FMC_LPC_ad9361_dac_sub_i/worker/data_mode_lvds.BUFR_inst"  LOC = BUFR_X0Y7;
+INST "ftop/pfconfig_i/FMC_LPC_ad9361_data_sub_i/worker/mode7.data_clk_buf_i"  LOC = BUFR_X0Y6;
+
 NET "pci0_clkp" TNM_NET = "PCICLK" ;
 NET "ftop*pciw_pci0_pcie_ep/ep*pcie_clocking_i/clk_125" TNM_NET = "CLK_125" ;
 NET "ftop*pciw_pci0_pcie_ep/ep*pcie_clocking_i/clk_250" TNM_NET = "CLK_250" ;

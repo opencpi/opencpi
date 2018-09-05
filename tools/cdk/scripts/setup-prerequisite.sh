@@ -52,7 +52,7 @@
 
 scriptfile=${BASH_SOURCE[1]}
 scriptdir=$(dirname $scriptfile)
-[[ scriptdir == /* ]] || scriptdir=`pwd`/$scriptdir
+[[ $scriptdir == /* ]] || scriptdir=`pwd`/$scriptdir
 set +o posix
 platform=$1
 package=$2
@@ -81,7 +81,8 @@ fi
 #set -vx
 [ -z "$OCPI_PREREQUISITES_DOWNLOAD_PATH" ] && OCPI_PREREQUISITES_DOWNLOAD_PATH=cache:internet
 caller_dir=$(dirname ${BASH_SOURCE[${#BASH_SOURCE[*]}-1]})
-# echo Caller of setup-install.sh is $caller_dir
+[[ $caller_dir == /* ]] || caller_dir=`pwd`/$caller_dir
+# echo Caller of setup-prerequisite.sh is $caller_dir
 set -e
 source $OCPI_CDK_DIR/scripts/ocpitarget.sh "$platform"
 platform=$OCPI_TARGET_PLATFORM
@@ -146,7 +147,9 @@ function download_git {
       echo "Trying to clone the git repo for $package locally from:  $myurl"
       rm -r -f $directory.bak
       [ -d $directory ] && mv $directory{,.bak}
-      if git clone $myurl; then
+      # Note that we force the directory name to be what we want even though
+      # the myurl might be redirected in the local case.
+      if git clone $myurl $directory; then
         echo The git clone succeeded from $myurl.
         if [ -d $directory ] ; then
           cd $directory
@@ -230,9 +233,9 @@ function download_url {
       }
       [ -f "$caller_dir/$file" ] && { # consider one that has been manually downloaded
         echo "The distribution file for $package, $file, exists in the script's directory ($caller_dir) and is being (re)used."
-        echo Remove $caller_dir/$file if you want to download it.
-        file="$caller_dir/$file"
-	enter
+        [ $url = . ] || echo Remove $caller_dir/$file if you want to download it next time.
+	cp $caller_dir/$file .
+	unpack
         return
       };;
     local)
@@ -275,6 +278,12 @@ function download_path {
       download_url cache
       return;;
     local)
+      [ $url = . -a -f "$caller_dir/$file" ] && {
+        echo "The distribution file for $package, $file, exists in the script's directory ($caller_dir) and is being used."
+	cp $caller_dir/$file .
+	unpack
+        return
+      }
       echo Trying to copy the distribution file locally from:  $2/$3
       cp $2/$3 . && {
         echo Copy completed successfully from $2/$3.
@@ -282,7 +291,7 @@ function download_path {
         unpack
 	return
       }
-      echo Copy failed from $2/$file.
+      echo Copy failed from $2/$3.
       ;;
     internet)
       echo Copying the distribution file from $url/$file
@@ -324,6 +333,11 @@ function do_download {
 	  download_path cache && return 0
         fi;;
       local)
+        # Special case when the URL is in fact a pathname already
+        [[ "$url" != *.git &&  "$url" != [a-zA-Z]*://* ]] && {
+           download_path internet && return 0
+           continue;           
+	}
         [ -z "$OCPI_PREREQUISITES_LOCAL_SERVER" -a -z "$OCPI_PREREQUISITES_LOCAL_PATHNAME" ] && {
           echo No local server or pathname is supplied, so no local server or pathname used.
 	  continue

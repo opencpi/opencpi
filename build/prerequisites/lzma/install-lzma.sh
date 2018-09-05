@@ -17,14 +17,14 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-lzma_version=5.2.2
+lzma_version=5.2.3
 dir=xz-$lzma_version
 [ -z "$OCPI_CDK_DIR" ] && echo Environment variable OCPI_CDK_DIR not set && exit 1
 source $OCPI_CDK_DIR/scripts/setup-prerequisite.sh \
        "$1" \
        lzma \
        "LZMA compression library" \
-       https://github.com/xz-mirror/xz/releases/download/v$lzma_version \
+       https://tukaani.org/xz \
        $dir.tar.gz \
        $dir \
        1
@@ -35,5 +35,10 @@ source $OCPI_CDK_DIR/scripts/setup-prerequisite.sh \
   --disable-scripts --disable-doc \
   --with-pic=liblzma \
   CFLAGS="-g -fPIC" CXXFLAGS="-g -fPIC" # why doesn't with-pic to this?
-make
+make -j
 make install
+# lzma creates an empty directory even when we have disabled the executables
+rm -r -f $OcpiInstallExecDir/bin
+# this is not needed in our sandbox
+rm -r -f $OcpiInstallExecDir/lib/pkgconfig
+rm -f $OcpiInstallExecDir/lib/*.la

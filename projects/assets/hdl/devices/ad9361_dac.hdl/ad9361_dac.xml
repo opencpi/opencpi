@@ -2,8 +2,10 @@
 <HdlDevice language="vhdl" spec='qdac-spec'>
   <!-- Properties -->
   <Property name='fifo_depth' type='ulong' parameter='1' default='64' description='Depth in number of samples of the control-to-DAC clock domain crossing FIFO.'/> <!-- default depth of 64 has been tested and known to be valid -->
+  <Property Name="IDATA_WIDTH_p" Type="ushort" Default="32" Parameter="true"/>
+
   <!-- Ports -->
-  <StreamInterface Name="in" DataWidth="32" Optional="1"/>
+  <StreamInterface Name="in" DataWidth="IDATA_WIDTH_p" Optional="1"/>
 
   <devsignal name='dev_dac' signals='dac-12-signals.xml' master='true'/>
 </HdlDevice>

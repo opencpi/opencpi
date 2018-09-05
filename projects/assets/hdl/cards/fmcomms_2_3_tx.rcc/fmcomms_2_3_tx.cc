@@ -36,6 +36,7 @@
 #include <iomanip> // std::setprecision()
 #include <cstdint> // uint32_t, uint64_t
 #include <utility> // std::pair
+#include <cinttypes> // PRIu64
 
 #include "ad9361.h"   // for RFPLL_MODULUS
 #include "OcpiApi.hh" // OCPI::API::Application
@@ -74,6 +75,7 @@
 
 using namespace OCPI::RCC; // for easy access to RCC data types and constants
 using namespace Fmcomms_2_3_txWorkerTypes;
+namespace OA = OCPI::API;
 
 class Fmcomms_2_3_txWorker : public Fmcomms_2_3_txWorkerBase {
 
@@ -226,41 +228,149 @@ private:
     app.setProperty(inst, "tx_fir_en_dis", DISABLE_str.c_str());
   }
 
-  void set_ad9361_init(ad9361_config_proxy_ad9361_init& ad9361_init)
-  {
-    std::string ad9361_init_str = to_string(ad9361_init);
+  /*! @brief Get value from worker array property read. This is just a
+   *         convenience function to reduce lines of code.
+   *  @param[in] w            application's worker instance name of the worker
+   *                          whose property is to be accessed
+   *  @param[in] p            property name
+   ****************************************************************************/
+  template<typename T>
+  T get_prop_val(const std::string& w, const std::string& p, size_t array_idx) {
+
+    OA::AccessList list({array_idx});
+    return getApplication().getPropertyValue<T>(w, p, list);
+  }
+
+  /*! @brief Set worker array property value for a single array index. This is
+   *         just a convenience function to reduce lines of code
+   *  @param[in] w            application's worker instance name of the worker
+   *                          whose property is to be accessed
+   *  @param[in] p            property name
+   *  @param[in] val          value to assign
+   ****************************************************************************/
+  template<typename T>
+  void set_prop_val(const std::string& w, const std::string& p, size_t array_idx,
+                    T val) {
+    OA::AccessList list({array_idx});
+    getApplication().setPropertyValue<T>(w, p, val, list);
+  }
+
+  /*! @brief Get a single channel's rx_gain_control_mode from the AD9361.
+   *  @param[in] chan         channel forwarded onto No-OS call (0 or 1)
+   ****************************************************************************/
+  uint8_t get_rx_gain_control_mode(size_t chan) {
+
+    const char* inst = m_properties.app_inst_name_ad9361_config_proxy;
+    return get_prop_val<uint8_t>(inst, "rx_gain_control_mode", chan);
+  }
+
+  /*! @brief Get a single channel's rx_rf_gain dB from the AD9361. Note
+   *         that this uses the No-OS API call to retrieve the value, which
+   *         returns the theoretical value based on register settings.
+   *  @param[in] chan         channel forwarded onto No-OS call (0 or 1)
+   ****************************************************************************/
+  int32_t get_rx_rf_gain_dB(size_t chan) {
+
+    const char* inst = m_properties.app_inst_name_ad9361_config_proxy;
+    return get_prop_val<int32_t>(inst, "rx_rf_gain", chan);
+  }
+
+  /*! @brief Get the nominal rx_rf_bandwidth in Hz from the AD9361. Note that
+   *         this uses the No-OS API call to retrieve the value.
+   ****************************************************************************/
+  uint32_t get_rx_rf_bandwidth_Hz() {
+
+    const char* inst = m_properties.app_inst_name_ad9361_config_proxy;
+    return getApplication().getPropertyValue<uint32_t>(inst, "rx_rf_bandwidth");
+  }
+
+  /*! @brief Get nominal tx_lo_freq in Hz from the AD9361. Note this is the
+   *         No-OS API call with nominal (integer) precision, which is less
+   *         precise than get_AD9361_Rx_RFPLL_LO_freq_Hz().
+   ****************************************************************************/
+  uint64_t get_rx_lo_freq_Hz() {
+
+    const char* inst = m_properties.app_inst_name_ad9361_config_proxy;
+    return getApplication().getPropertyValue<uint64_t>(inst, "rx_lo_freq");
+  }
+
+  /*! @brief Get a single channel's rx_gain_control_mode from the AD9361.
+   *  @param[in] chan         channel forwarded onto No-OS call (0 or 1)
+   ****************************************************************************/
+  void set_rx_gain_control_mode(size_t chan, uint8_t gc_mode) {
+
+    const char* inst = m_properties.app_inst_name_ad9361_config_proxy;
+    set_prop_val(inst, "rx_gain_control_mode", chan, gc_mode);
+  }
+
+  /*! @brief Set a single channel's rx_rf_gain in dB on the AD9361.
+   *  @param[in] chan         channel forwarded onto No-OS call (0 or 1)
+   ****************************************************************************/
+  void set_rx_rf_gain_dB(size_t chan, int32_t rx_rf_gain_dB) {
+
+    const char* inst = m_properties.app_inst_name_ad9361_config_proxy;
+    set_prop_val(inst, "rx_rf_gain", chan, rx_rf_gain_dB);
+  }
+
+  /*! @brief Set rx_rf_bandwidth in Hz on the AD9361.
+   ****************************************************************************/
+  void set_rx_rf_bandwidth_Hz(uint32_t rx_rf_bandwidth_Hz) {
+
     OCPI::API::Application& app = getApplication();
     const char* inst = m_properties.app_inst_name_ad9361_config_proxy;
+    app.setPropertyValue<uint32_t>(inst, "rx_rf_bandwidth", rx_rf_bandwidth_Hz);
+  }
+
+  /*! @brief Set rx_lo_freq in Hz on the AD9361.
+   ****************************************************************************/
+  void set_rx_lo_freq_Hz(uint64_t rx_lo_freq_Hz) {
+
+    OCPI::API::Application& app = getApplication();
+    const char* inst = m_properties.app_inst_name_ad9361_config_proxy;
+    app.setPropertyValue<uint64_t>(inst, "rx_lo_freq", rx_lo_freq_Hz);
+  }
+
+  void set_ad9361_init(ad9361_config_proxy_ad9361_init& ad9361_init) {
+
+    const size_t chan = 0;
 
     // save property values which may change during write to ad9361_init
 
-    OCPI::API::Property p_rx_rf_bandwidth(app, inst, "rx_rf_bandwidth" );
-    OCPI::API::Property p_rx_lo_freq(     app, inst, "rx_lo_freq"      );
-    // we do not set ad9361_config_proxy's rx_sampling_freq because this worker's sample_rate_MHz's value will affect both the ad9361_config_proxy's tx_sampling_freq and rx_sampling_freq properties
-    std::string str_rx_gain_control_mode;
-    app.getProperty(inst, "rx_gain_control_mode", str_rx_gain_control_mode);
-    std::string str_rx_rf_gain;
-    app.getProperty(inst, "rx_rf_gain", str_rx_rf_gain);
+    /// @TODO/FIXME - chan==0 assumes 1R1T
+    const uint8_t gc_mode       = get_rx_gain_control_mode(chan);
+    const int32_t rx_rf_gain_dB = get_rx_rf_gain_dB(       chan);
 
-    ocpi_ulong_t     rx_rf_bandwidth = p_rx_rf_bandwidth.getULongValue();
-    ocpi_ulonglong_t rx_lo_freq      = p_rx_lo_freq.getULongLongValue();
-    // we do not set ad9361_config_proxy's rx_sampling_freq because this worker's sample_rate_MHz's value will affect both the ad9361_config_proxy's tx_sampling_freq and rx_sampling_freq properties
-    ad9361_config_proxy_rx_rf_gain_t rx_rf_gain;
-    parse(str_rx_rf_gain.c_str(), rx_rf_gain); //! @todo TODO/FIXME -  ignoring return value, idk if this is the right thing to do...
+    const uint32_t rx_rf_bandwidth_Hz = get_rx_rf_bandwidth_Hz();
+    const uint64_t rx_lo_freq_Hz      = get_rx_lo_freq_Hz();
 
     // write ad9361_init
-
-    app.setProperty(inst, "ad9361_init", ad9361_init_str.c_str());
+    {
+      const char* inst = m_properties.app_inst_name_ad9361_config_proxy;
+      std::string ad9361_init_str = to_string(ad9361_init);
+      getApplication().setProperty(inst, "ad9361_init",ad9361_init_str.c_str());
+    }
 
     // re-apply saved properties property values which may have changed during
     // write to ad9361_init
 
-    p_rx_rf_bandwidth.setULongValue( rx_rf_bandwidth );
-    p_rx_lo_freq.setULongLongValue(  rx_lo_freq      );
-    // we do not set ad9361_config_proxy's rx_sampling_freq because this worker's sample_rate_MHz's value will affect both the ad9361_config_proxy's tx_sampling_freq and rx_sampling_freq properties
-    app.setProperty(inst, "rx_gain_control_mode", str_rx_gain_control_mode.c_str());
-    std::string rx_rf_gain_str = to_string(rx_rf_gain);
-    app.setProperty(inst, "rx_rf_gain", rx_rf_gain_str.c_str());
+    /// @TODO/FIXME - chan==0 assumes 1R1T
+    if(not(get_rx_gain_control_mode(chan) == gc_mode)) {
+      set_rx_gain_control_mode(chan, gc_mode);
+    }
+    if(not(get_rx_rf_gain_dB(chan) == rx_rf_gain_dB)) {
+      set_rx_rf_gain_dB(chan, rx_rf_gain_dB);
+    }
+
+    if(not(get_rx_rf_bandwidth_Hz() == rx_rf_bandwidth_Hz)) {
+      set_rx_rf_bandwidth_Hz(rx_rf_bandwidth_Hz);
+    }
+    if(not(get_rx_lo_freq_Hz() == rx_lo_freq_Hz)) {
+      set_rx_lo_freq_Hz(rx_lo_freq_Hz);
+    }
+
+    // we do not set ad9361_config_proxy's rx_sampling_freq because this
+    // worker's sample_rate_MHz's value will affect both the
+    // ad9361_config_proxy's tx_sampling_freq and rx_sampling_freq properties
   }
 
   /* @brief calc_difference_between_desired_and_in_situ_after_hw_write
@@ -500,7 +610,7 @@ private:
       std::string err = "invalid property: " + prop;
       throw err.c_str();
     }
-    log_info("attempted property write: prop=%s,\tdesired value=%.15f,\tvalue to be written (after potential adjustment due to No-OS API precision limitations) is %lu %s", prop.c_str(), val_desired, adjusted.first, adjusted.second.c_str());
+    log_info("attempted property write: prop=%s,\tdesired value=%.15f,\tvalue to be written (after potential adjustment due to No-OS API precision limitations) is %" PRIu64 " %s", prop.c_str(), val_desired, adjusted.first, adjusted.second.c_str());
   }
 
   /*void get_adjusted_val_to_be_applied_to_hw(
@@ -689,7 +799,7 @@ private:
     if(prop.compare(PROP_STR_RF_GAIN_DB) == 0)
     {
       double atten;
-      //! @todo TODO/FIXME - attenuation[0] assumes 1R1T
+      /// @TODO/FIXME - attenuation[0] assumes 1R1T
       const char* err = get_AD9361_tx_attenuation_TX1_mdB(app, inst, atten);
       val = -atten; // gain = -attenuation
       in_situ_after_hw_write = std::make_pair(val, "mdB");
@@ -1507,7 +1617,6 @@ private:
     //
     if(m_properties.config.SMA_channel == CONFIG_SMA_CHANNEL_TX1A)
     {
-      // (this is what performs no channel swap)
       ad9361_init.tx_channel_swap_enable = 0; // will be later applied
       // (this is what ensures desired channel TX_1 is enabled)
       std::string TX_1_str = get_TX_1_str();
@@ -1516,7 +1625,6 @@ private:
     }
     else // i.e. (m_properties.config.SMA_channel == CONFIG_SMA_CHANNEL_TX2A)
     {
-      // (this is what performs channel swap)
       ad9361_init.tx_channel_swap_enable = 0; // will be later applied
       // (this is what ensures desired channel TX_2 is enabled)
       std::string TX_2_str = get_TX_2_str();

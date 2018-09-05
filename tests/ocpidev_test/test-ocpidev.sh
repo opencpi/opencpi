@@ -1,4 +1,22 @@
 #!/bin/bash
+# This file is protected by Copyright. Please refer to the COPYRIGHT file
+# distributed with this source distribution.
+#
+# This file is part of OpenCPI <http://www.opencpi.org>
+#
+# OpenCPI is free software: you can redistribute it and/or modify it under the
+# terms of the GNU Lesser General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your option) any
+# later version.
+#
+# OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+# A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Lesser General Public License along
+# with this program. If not, see <http://www.gnu.org/licenses/>.
+
 
 if [[ "$1" == "-h" || "$1" == "-help" || "$1" == "--help" ]] ; then
 echo "This script creates a project and every type of asset,
@@ -144,7 +162,11 @@ for lib in ${devlibs[@]} ; do
     Workers+=" $c"_sub.hdl
     do_ocpidev create worker "$c"_proxy.rcc -h $lib -V "$c".hdl -S "$c"-spec
     Workers+=" $c"_proxy.rcc
-    do_ocpidev create hdl device "$c"_em.hdl $libopt -E "$c".hdl 
+    # This one file is copied so that this entire set of tests can run without depending
+    # on built or exported projects - i.e. these tests can run in a virgin RPM installation
+    [ -f specs/emulator-spec.xml ] ||
+	cp $OCPI_CDK_DIR/../projects/core/specs/emulator-spec.xml specs
+    do_ocpidev -v create hdl device "$c"_em.hdl $libopt -E "$c".hdl 
     Workers+=" $c"_em.hdl
   done
   # update the makefile beacuse order matters 
@@ -220,6 +242,78 @@ for p in ${platnames[@]}; do
   echo "Confirming that \"$p\" is in the list [$shownplats]"
   [ -n "`echo $shownplats | grep \"$p\"`" ] || bad \"ocpidev show hdl platforms\" does not include platform \"$p\"
 done
+
+echo "============OCPIDEVTEST:'show' tests"
+echo "ocpidev show rcc platforms"
+do_ocpidev show rcc platforms
+echo "ocpidev show rcc platforms --simple"
+do_ocpidev show rcc platforms --simple
+echo "ocpidev show rcc platforms --json"
+do_ocpidev show rcc platforms --json
+echo "ocpidev show hdl platforms"
+do_ocpidev show hdl platforms
+echo "ocpidev show hdl platforms --simple"
+do_ocpidev show hdl platforms --simple 
+echo "ocpidev show hdl platforms --json"
+do_ocpidev show hdl platforms --json
+echo "ocpidev show workers"
+do_ocpidev show workers
+echo "ocpidev show workers --simple"
+do_ocpidev show workers --simple
+echo "ocpidev show components"
+do_ocpidev show components
+echo "ocpidev show components --simple"
+do_ocpidev show components --simple
+echo "ocpidev show platforms"
+do_ocpidev show platforms
+echo "ocpidev show platforms --simple"
+do_ocpidev show platforms --simple
+echo "ocpidev show platforms --json"
+do_ocpidev show platforms --json
+echo "ocpidev show rcc targets"
+do_ocpidev show rcc targets
+echo "ocpidev show rcc targets --simple"
+do_ocpidev show rcc targets --simple
+echo "ocpidev show rcc targets --json"
+do_ocpidev show rcc targets --json
+echo "ocpidev show hdl targets"
+do_ocpidev show hdl targets
+echo "ocpidev show hdl targets --simple"
+do_ocpidev show hdl targets --simple
+echo "ocpidev show hdl targets --json"
+do_ocpidev show hdl targets --json
+echo "ocpidev show projects"
+do_ocpidev show projects
+echo "ocpidev show projects --simple"
+do_ocpidev show projects --simple
+echo "ocpidev show projects --simple"
+do_ocpidev show projects --simple
+echo "ocpidev show projects --json"
+do_ocpidev show projects --json
+echo "ocpidev show registry"
+do_ocpidev show registry
+echo "ocpidev show registry --simple"
+do_ocpidev show registry --simple
+echo "ocpidev show registry --json"
+do_ocpidev show registry --json
+echo "ocpidev show tests --json --local-scope"
+do_ocpidev show tests --json --local-scope
+echo "ocpidev show tests --local-scope"
+do_ocpidev show tests --local-scope
+echo "ocpidev show tests --local-scope --simple"
+do_ocpidev show tests --local-scope --simple 
+echo "ocpidev show project --local-scope"
+do_ocpidev show project --local-scope
+echo "ocpidev show project --local-scope --simple"
+do_ocpidev show project --local-scope --simple
+echo "ocpidev show project --json --local-scope"
+do_ocpidev show project --json --local-scope
+echo "ocpidev show libraries --json --local-scope"
+do_ocpidev show libraries --json --local-scope
+echo "ocpidev show libraries --local-scope"
+do_ocpidev show libraries --local-scope
+echo "ocpidev show libraries --local-scope --simple"
+do_ocpidev show libraries --local-scope --simple
 
 if [ "$ONLY_CREATE" == "1" ] ; then
   echo "Keeping the project and exiting before build or deletion"

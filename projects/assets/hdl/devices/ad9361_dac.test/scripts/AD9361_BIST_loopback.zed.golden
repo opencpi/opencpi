@@ -93,8 +93,8 @@ Property  qdac.underrun = "false"
 Property  ad9361_adc_sub.r1_samps_dropped = "false"
 Property  ad9361_adc_sub.r2_samps_dropped = "false"
 Property  file_write.bytesWritten = "32768"
-eb02bc19b38655fe87bee57219445e91  ./tmp.out
-eb02bc19b38655fe87bee57219445e91  ./scripts/data_src_fixed5_4096samps.out.golden
+f13a2d3c3379895bcc6066e40cc126a2  ./tmp.out
+f13a2d3c3379895bcc6066e40cc126a2  ./scripts/data_src_fixed5_4096samps.out.golden
 --------------------------------------------------------------------------------
 loopback fixed value of 0xaaa
 Property  ad9361_config_proxy.bb_pll_is_locked = "true"
@@ -117,8 +117,8 @@ Property  qdac.underrun = "false"
 Property  ad9361_adc_sub.r1_samps_dropped = "false"
 Property  ad9361_adc_sub.r2_samps_dropped = "false"
 Property  file_write.bytesWritten = "32768"
-f13a2d3c3379895bcc6066e40cc126a2  ./tmp.out
-f13a2d3c3379895bcc6066e40cc126a2  ./scripts/data_src_fixeda_4096samps.out.golden
+eb02bc19b38655fe87bee57219445e91  ./tmp.out
+eb02bc19b38655fe87bee57219445e91  ./scripts/data_src_fixeda_4096samps.out.golden
 --------------------------------------------------------------------------------
 loopback walking ones
 Property  ad9361_config_proxy.bb_pll_is_locked = "true"
@@ -260,8 +260,8 @@ Property  qdac.underrun = "false"
 Property  ad9361_adc_sub.r1_samps_dropped = "false"
 Property  ad9361_adc_sub.r2_samps_dropped = "false"
 Property  file_write.bytesWritten = "32768"
-eb02bc19b38655fe87bee57219445e91  ./tmp.out
-eb02bc19b38655fe87bee57219445e91  ./scripts/data_src_fixed5_4096samps.out.golden
+f13a2d3c3379895bcc6066e40cc126a2  ./tmp.out
+f13a2d3c3379895bcc6066e40cc126a2  ./scripts/data_src_fixed5_4096samps.out.golden
 --------------------------------------------------------------------------------
 loopback fixed value of 0xaaa
 Property  ad9361_config_proxy.bb_pll_is_locked = "true"
@@ -284,8 +284,8 @@ Property  qdac.underrun = "false"
 Property  ad9361_adc_sub.r1_samps_dropped = "false"
 Property  ad9361_adc_sub.r2_samps_dropped = "false"
 Property  file_write.bytesWritten = "32768"
-f13a2d3c3379895bcc6066e40cc126a2  ./tmp.out
-f13a2d3c3379895bcc6066e40cc126a2  ./scripts/data_src_fixeda_4096samps.out.golden
+eb02bc19b38655fe87bee57219445e91  ./tmp.out
+eb02bc19b38655fe87bee57219445e91  ./scripts/data_src_fixeda_4096samps.out.golden
 --------------------------------------------------------------------------------
 loopback walking ones
 Property  ad9361_config_proxy.bb_pll_is_locked = "true"
@@ -427,8 +427,8 @@ Property  qdac.underrun = "false"
 Property  ad9361_adc_sub.r1_samps_dropped = "false"
 Property  ad9361_adc_sub.r2_samps_dropped = "false"
 Property  file_write.bytesWritten = "32768"
-eb02bc19b38655fe87bee57219445e91  ./tmp.out
-eb02bc19b38655fe87bee57219445e91  ./scripts/data_src_fixed5_4096samps.out.golden
+f13a2d3c3379895bcc6066e40cc126a2  ./tmp.out
+f13a2d3c3379895bcc6066e40cc126a2  ./scripts/data_src_fixed5_4096samps.out.golden
 --------------------------------------------------------------------------------
 loopback fixed value of 0xaaa
 Property  ad9361_config_proxy.bb_pll_is_locked = "true"
@@ -451,8 +451,8 @@ Property  qdac.underrun = "false"
 Property  ad9361_adc_sub.r1_samps_dropped = "false"
 Property  ad9361_adc_sub.r2_samps_dropped = "false"
 Property  file_write.bytesWritten = "32768"
-f13a2d3c3379895bcc6066e40cc126a2  ./tmp.out
-f13a2d3c3379895bcc6066e40cc126a2  ./scripts/data_src_fixeda_4096samps.out.golden
+eb02bc19b38655fe87bee57219445e91  ./tmp.out
+eb02bc19b38655fe87bee57219445e91  ./scripts/data_src_fixeda_4096samps.out.golden
 --------------------------------------------------------------------------------
 loopback walking ones
 Property  ad9361_config_proxy.bb_pll_is_locked = "true"
@@ -594,8 +594,8 @@ Property  qdac.underrun = "false"
 Property  ad9361_adc_sub.r1_samps_dropped = "false"
 Property  ad9361_adc_sub.r2_samps_dropped = "false"
 Property  file_write.bytesWritten = "32768"
-eb02bc19b38655fe87bee57219445e91  ./tmp.out
-eb02bc19b38655fe87bee57219445e91  ./scripts/data_src_fixed5_4096samps.out.golden
+f13a2d3c3379895bcc6066e40cc126a2  ./tmp.out
+f13a2d3c3379895bcc6066e40cc126a2  ./scripts/data_src_fixed5_4096samps.out.golden
 --------------------------------------------------------------------------------
 loopback fixed value of 0xaaa
 Property  ad9361_config_proxy.bb_pll_is_locked = "true"
@@ -618,8 +618,8 @@ Property  qdac.underrun = "false"
 Property  ad9361_adc_sub.r1_samps_dropped = "false"
 Property  ad9361_adc_sub.r2_samps_dropped = "false"
 Property  file_write.bytesWritten = "32768"
-f13a2d3c3379895bcc6066e40cc126a2  ./tmp.out
-f13a2d3c3379895bcc6066e40cc126a2  ./scripts/data_src_fixeda_4096samps.out.golden
+eb02bc19b38655fe87bee57219445e91  ./tmp.out
+eb02bc19b38655fe87bee57219445e91  ./scripts/data_src_fixeda_4096samps.out.golden
 --------------------------------------------------------------------------------
 loopback walking ones
 Property  ad9361_config_proxy.bb_pll_is_locked = "true"
@@ -761,8 +761,8 @@ Property  qdac.underrun = "false"
 Property  ad9361_adc_sub.r1_samps_dropped = "false"
 Property  ad9361_adc_sub.r2_samps_dropped = "false"
 Property  file_write.bytesWritten = "32768"
-eb02bc19b38655fe87bee57219445e91  ./tmp.out
-eb02bc19b38655fe87bee57219445e91  ./scripts/data_src_fixed5_4096samps.out.golden
+f13a2d3c3379895bcc6066e40cc126a2  ./tmp.out
+f13a2d3c3379895bcc6066e40cc126a2  ./scripts/data_src_fixed5_4096samps.out.golden
 --------------------------------------------------------------------------------
 loopback fixed value of 0xaaa
 Property  ad9361_config_proxy.bb_pll_is_locked = "true"
@@ -785,8 +785,8 @@ Property  qdac.underrun = "false"
 Property  ad9361_adc_sub.r1_samps_dropped = "false"
 Property  ad9361_adc_sub.r2_samps_dropped = "false"
 Property  file_write.bytesWritten = "32768"
-f13a2d3c3379895bcc6066e40cc126a2  ./tmp.out
-f13a2d3c3379895bcc6066e40cc126a2  ./scripts/data_src_fixeda_4096samps.out.golden
+eb02bc19b38655fe87bee57219445e91  ./tmp.out
+eb02bc19b38655fe87bee57219445e91  ./scripts/data_src_fixeda_4096samps.out.golden
 --------------------------------------------------------------------------------
 loopback walking ones
 Property  ad9361_config_proxy.bb_pll_is_locked = "true"
@@ -928,8 +928,8 @@ Property  qdac.underrun = "false"
 Property  ad9361_adc_sub.r1_samps_dropped = "false"
 Property  ad9361_adc_sub.r2_samps_dropped = "false"
 Property  file_write.bytesWritten = "32768"
-eb02bc19b38655fe87bee57219445e91  ./tmp.out
-eb02bc19b38655fe87bee57219445e91  ./scripts/data_src_fixed5_4096samps.out.golden
+f13a2d3c3379895bcc6066e40cc126a2  ./tmp.out
+f13a2d3c3379895bcc6066e40cc126a2  ./scripts/data_src_fixed5_4096samps.out.golden
 --------------------------------------------------------------------------------
 loopback fixed value of 0xaaa
 Property  ad9361_config_proxy.bb_pll_is_locked = "true"
@@ -952,8 +952,8 @@ Property  qdac.underrun = "false"
 Property  ad9361_adc_sub.r1_samps_dropped = "false"
 Property  ad9361_adc_sub.r2_samps_dropped = "false"
 Property  file_write.bytesWritten = "32768"
-f13a2d3c3379895bcc6066e40cc126a2  ./tmp.out
-f13a2d3c3379895bcc6066e40cc126a2  ./scripts/data_src_fixeda_4096samps.out.golden
+eb02bc19b38655fe87bee57219445e91  ./tmp.out
+eb02bc19b38655fe87bee57219445e91  ./scripts/data_src_fixeda_4096samps.out.golden
 --------------------------------------------------------------------------------
 loopback walking ones
 Property  ad9361_config_proxy.bb_pll_is_locked = "true"
@@ -1095,8 +1095,8 @@ Property  qdac.underrun = "false"
 Property  ad9361_adc_sub.r1_samps_dropped = "false"
 Property  ad9361_adc_sub.r2_samps_dropped = "false"
 Property  file_write.bytesWritten = "32768"
-eb02bc19b38655fe87bee57219445e91  ./tmp.out
-eb02bc19b38655fe87bee57219445e91  ./scripts/data_src_fixed5_4096samps.out.golden
+f13a2d3c3379895bcc6066e40cc126a2  ./tmp.out
+f13a2d3c3379895bcc6066e40cc126a2  ./scripts/data_src_fixed5_4096samps.out.golden
 --------------------------------------------------------------------------------
 loopback fixed value of 0xaaa
 Property  ad9361_config_proxy.bb_pll_is_locked = "true"
@@ -1119,8 +1119,8 @@ Property  qdac.underrun = "false"
 Property  ad9361_adc_sub.r1_samps_dropped = "false"
 Property  ad9361_adc_sub.r2_samps_dropped = "false"
 Property  file_write.bytesWritten = "32768"
-f13a2d3c3379895bcc6066e40cc126a2  ./tmp.out
-f13a2d3c3379895bcc6066e40cc126a2  ./scripts/data_src_fixeda_4096samps.out.golden
+eb02bc19b38655fe87bee57219445e91  ./tmp.out
+eb02bc19b38655fe87bee57219445e91  ./scripts/data_src_fixeda_4096samps.out.golden
 --------------------------------------------------------------------------------
 loopback walking ones
 Property  ad9361_config_proxy.bb_pll_is_locked = "true"
@@ -1262,8 +1262,8 @@ Property  qdac.underrun = "false"
 Property  ad9361_adc_sub.r1_samps_dropped = "false"
 Property  ad9361_adc_sub.r2_samps_dropped = "false"
 Property  file_write.bytesWritten = "32768"
-eb02bc19b38655fe87bee57219445e91  ./tmp.out
-eb02bc19b38655fe87bee57219445e91  ./scripts/data_src_fixed5_4096samps.out.golden
+f13a2d3c3379895bcc6066e40cc126a2  ./tmp.out
+f13a2d3c3379895bcc6066e40cc126a2  ./scripts/data_src_fixed5_4096samps.out.golden
 --------------------------------------------------------------------------------
 loopback fixed value of 0xaaa
 Property  ad9361_config_proxy.bb_pll_is_locked = "true"
@@ -1286,8 +1286,8 @@ Property  qdac.underrun = "false"
 Property  ad9361_adc_sub.r1_samps_dropped = "false"
 Property  ad9361_adc_sub.r2_samps_dropped = "false"
 Property  file_write.bytesWritten = "32768"
-f13a2d3c3379895bcc6066e40cc126a2  ./tmp.out
-f13a2d3c3379895bcc6066e40cc126a2  ./scripts/data_src_fixeda_4096samps.out.golden
+eb02bc19b38655fe87bee57219445e91  ./tmp.out
+eb02bc19b38655fe87bee57219445e91  ./scripts/data_src_fixeda_4096samps.out.golden
 --------------------------------------------------------------------------------
 loopback walking ones
 Property  ad9361_config_proxy.bb_pll_is_locked = "true"
@@ -1429,8 +1429,8 @@ Property  qdac.underrun = "false"
 Property  ad9361_adc_sub.r1_samps_dropped = "false"
 Property  ad9361_adc_sub.r2_samps_dropped = "false"
 Property  file_write.bytesWritten = "32768"
-eb02bc19b38655fe87bee57219445e91  ./tmp.out
-eb02bc19b38655fe87bee57219445e91  ./scripts/data_src_fixed5_4096samps.out.golden
+f13a2d3c3379895bcc6066e40cc126a2  ./tmp.out
+f13a2d3c3379895bcc6066e40cc126a2  ./scripts/data_src_fixed5_4096samps.out.golden
 --------------------------------------------------------------------------------
 loopback fixed value of 0xaaa
 Property  ad9361_config_proxy.bb_pll_is_locked = "true"
@@ -1453,8 +1453,8 @@ Property  qdac.underrun = "false"
 Property  ad9361_adc_sub.r1_samps_dropped = "false"
 Property  ad9361_adc_sub.r2_samps_dropped = "false"
 Property  file_write.bytesWritten = "32768"
-f13a2d3c3379895bcc6066e40cc126a2  ./tmp.out
-f13a2d3c3379895bcc6066e40cc126a2  ./scripts/data_src_fixeda_4096samps.out.golden
+eb02bc19b38655fe87bee57219445e91  ./tmp.out
+eb02bc19b38655fe87bee57219445e91  ./scripts/data_src_fixeda_4096samps.out.golden
 --------------------------------------------------------------------------------
 loopback walking ones
 Property  ad9361_config_proxy.bb_pll_is_locked = "true"
@@ -1596,8 +1596,8 @@ Property  qdac.underrun = "false"
 Property  ad9361_adc_sub.r1_samps_dropped = "false"
 Property  ad9361_adc_sub.r2_samps_dropped = "false"
 Property  file_write.bytesWritten = "32768"
-eb02bc19b38655fe87bee57219445e91  ./tmp.out
-eb02bc19b38655fe87bee57219445e91  ./scripts/data_src_fixed5_4096samps.out.golden
+f13a2d3c3379895bcc6066e40cc126a2  ./tmp.out
+f13a2d3c3379895bcc6066e40cc126a2  ./scripts/data_src_fixed5_4096samps.out.golden
 --------------------------------------------------------------------------------
 loopback fixed value of 0xaaa
 Property  ad9361_config_proxy.bb_pll_is_locked = "true"
@@ -1620,8 +1620,8 @@ Property  qdac.underrun = "false"
 Property  ad9361_adc_sub.r1_samps_dropped = "false"
 Property  ad9361_adc_sub.r2_samps_dropped = "false"
 Property  file_write.bytesWritten = "32768"
-f13a2d3c3379895bcc6066e40cc126a2  ./tmp.out
-f13a2d3c3379895bcc6066e40cc126a2  ./scripts/data_src_fixeda_4096samps.out.golden
+eb02bc19b38655fe87bee57219445e91  ./tmp.out
+eb02bc19b38655fe87bee57219445e91  ./scripts/data_src_fixeda_4096samps.out.golden
 --------------------------------------------------------------------------------
 loopback walking ones
 Property  ad9361_config_proxy.bb_pll_is_locked = "true"
@@ -1763,8 +1763,8 @@ Property  qdac.underrun = "false"
 Property  ad9361_adc_sub.r1_samps_dropped = "false"
 Property  ad9361_adc_sub.r2_samps_dropped = "false"
 Property  file_write.bytesWritten = "32768"
-eb02bc19b38655fe87bee57219445e91  ./tmp.out
-eb02bc19b38655fe87bee57219445e91  ./scripts/data_src_fixed5_4096samps.out.golden
+f13a2d3c3379895bcc6066e40cc126a2  ./tmp.out
+f13a2d3c3379895bcc6066e40cc126a2  ./scripts/data_src_fixed5_4096samps.out.golden
 --------------------------------------------------------------------------------
 loopback fixed value of 0xaaa
 Property  ad9361_config_proxy.bb_pll_is_locked = "true"
@@ -1787,8 +1787,8 @@ Property  qdac.underrun = "false"
 Property  ad9361_adc_sub.r1_samps_dropped = "false"
 Property  ad9361_adc_sub.r2_samps_dropped = "false"
 Property  file_write.bytesWritten = "32768"
-f13a2d3c3379895bcc6066e40cc126a2  ./tmp.out
-f13a2d3c3379895bcc6066e40cc126a2  ./scripts/data_src_fixeda_4096samps.out.golden
+eb02bc19b38655fe87bee57219445e91  ./tmp.out
+eb02bc19b38655fe87bee57219445e91  ./scripts/data_src_fixeda_4096samps.out.golden
 --------------------------------------------------------------------------------
 loopback walking ones
 Property  ad9361_config_proxy.bb_pll_is_locked = "true"
@@ -1930,8 +1930,8 @@ Property  qdac.underrun = "false"
 Property  ad9361_adc_sub.r1_samps_dropped = "false"
 Property  ad9361_adc_sub.r2_samps_dropped = "false"
 Property  file_write.bytesWritten = "32768"
-eb02bc19b38655fe87bee57219445e91  ./tmp.out
-eb02bc19b38655fe87bee57219445e91  ./scripts/data_src_fixed5_4096samps.out.golden
+f13a2d3c3379895bcc6066e40cc126a2  ./tmp.out
+f13a2d3c3379895bcc6066e40cc126a2  ./scripts/data_src_fixed5_4096samps.out.golden
 --------------------------------------------------------------------------------
 loopback fixed value of 0xaaa
 Property  ad9361_config_proxy.bb_pll_is_locked = "true"
@@ -1954,8 +1954,8 @@ Property  qdac.underrun = "false"
 Property  ad9361_adc_sub.r1_samps_dropped = "false"
 Property  ad9361_adc_sub.r2_samps_dropped = "false"
 Property  file_write.bytesWritten = "32768"
-f13a2d3c3379895bcc6066e40cc126a2  ./tmp.out
-f13a2d3c3379895bcc6066e40cc126a2  ./scripts/data_src_fixeda_4096samps.out.golden
+eb02bc19b38655fe87bee57219445e91  ./tmp.out
+eb02bc19b38655fe87bee57219445e91  ./scripts/data_src_fixeda_4096samps.out.golden
 --------------------------------------------------------------------------------
 loopback walking ones
 Property  ad9361_config_proxy.bb_pll_is_locked = "true"

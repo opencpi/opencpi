@@ -52,7 +52,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \newcommand{\todo}[1]{\textcolor{red}{TODO: #1}\PackageWarning{TODO:}{#1}} % To do notes
 \newcommand{\code}[1]{\texttt{#1}} % For inline code snippet or command line
 %----------------------------------------------------------------------------------------
-% Various pacakges
+% Various packages
 %----------------------------------------------------------------------------------------
 \usepackage{hyperref} % for linking urls and lists
 \usepackage{graphicx} % for including pictures by file
@@ -94,7 +94,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Component Data Sheet}
-\def\docVersion{1.3}
+\def\docVersion{1.4}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
@@ -119,35 +119,70 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Version           & v\docVersion     \\
 	\hline
-	Release Date      & Aug 2017         \\
+	Release Date      & June 2018         \\
 	\hline
 	Component Library & ocpi.assets.devices     \\
 	\hline
 	Workers           & \comp.hdl        \\
 	\hline
-	Tested Platforms  & Zedboard (ISE and Vivado), ML605 (all FMC slots) \\
+	Tested Platforms  &
+\begin{itemize}
+  \item Agilent Zedboard/Analog Devices FMCOMMS2
+  \item Agilent Zedboard/Analog Devices FMCOMMS3
+  \item x86/Xilinx ML605/Analog Devices FMCOMMS2
+  \item x86/Xilinx ML605/Analog Devices FMCOMMS3
+  \item Ettus E310 (Vivado only, tested via \comp{}.test in av.bsp.e310 project)
+\end{itemize} \\
 	\hline
 \end{tabular}
 
 \section*{Functionality}
-	The \Comp{} is a subdevice worker whose primary purpose is to de-interleave the AD9361 IC pin-provided time-interleaved RX data streams (independent of which of the IC's P0/P1 buses the RX data stream came from). De-interleaving occurs according to the timing diagrams specified in figures 65, 68, 71, 74, and 79 in \cite{adi_ug570}. This worker ingests RX data from devsignals from ad9361\_data\_sub.hdl\cite{data_sub_comp_datasheet}, de-interleaves it into at most two 12-bit (Q0.11) RX channel data buses, and makes each channel bus available to an instance of the supported ad9361\_adc.hdl device worker via a devsignal port.
+	The \Comp{} is a subdevice worker whose primary purpose is to de-interleave the AD9361 IC pin-provided time-interleaved RX data streams (independent of which of the IC's P0/P1 buses the RX data stream came from). De-interleaving occurs according to the timing diagrams specified in \cite{adi_ug570}. This worker ingests RX data from devsignals from ad9361\_data\_sub.hdl\cite{data_sub_comp_datasheet}, de-interleaves it into at most two 12-bit (Q0.11) RX channel data buses, and makes each channel bus available to an instance of the supported ad9361\_adc.hdl device worker via a devsignal port.
 
 \section*{Worker Implementation Details}
 \subsection*{\comp.hdl}
 \begin{sloppypar}
-The \comp.hdl subdevice worker handles registering and de-interleaving of ADC data made available via the \verb+dev_data_from_pins+ devsignal port. This worker's \verb+LVDS_p+, \verb+HALF_DUPLEX_p+, \verb+SINGLE_PORT_p+, and \verb+DATA_RATE_CONFIG_p+ parameter properties enforce build-time configuration\footnote{Although parameter property infrastructure is in place for all data interface configurations, LVDS is the only currently supported configuration.} for all of the possible AD9361 RX data time-interleaved modes:
-\begin{itemize}
-	\item CMOS Single Port Half Duplex SDR,
-	\item CMOS Single Port Half Duplex DDR,
-	\item CMOS Single Port Full Duplex SDR,
-	\item CMOS Single Port Full Duplex DDR,
-	\item CMOS Dual Port Half Duplex SDR,
-	\item CMOS Dual Port Half Duplex DDR,
-	\item CMOS Dual Port Full Duplex SDR,
-	\item CMOS Dual Port Full Duplex DDR, and
-	\item LVDS (Dual Port Full Duplex DDR).
-\end{itemize}
-Data is sent out the \verb+dev_data_ch0_out+ and \verb+dev_data_ch1_out+ devsignal ports for channel 0 and channel 1, respectively. Note that channel 0 corresponds to the AD9361 R1 channel and channel 1 corresponds to the AD9361 R2 channel when the \verb+channels_are_swapped+ property has a value of false. The channel relationship is otherwise reversed. Note that which of the two AD9361 RX analog RF port's signal is sent in the R1 and R2 time slots are variable depending on the AD9361 register configuration. This relationship is shown in the following table.
+The \comp.hdl subdevice worker handles registering and de-interleaving of ADC data made available via the \verb+dev_data_from_pins+ devsignal port. This worker's \verb+LVDS_p+, \verb+HALF_DUPLEX_p+, \verb+SINGLE_PORT_p+, and \verb+DATA_RATE_CONFIG_p+ parameter properties allow for and enforce build-time configuration of the possible AD9361 RX data time-interleaved modes. The currently supported modes and their limitations are shown in the following table.
+\begin{scriptsize}
+	\begin{longtable}{|c|c|c|c|c|}
+		\caption{Supported ADC Sampling Rates per RX channel} \\
+    \hline
+		\rowcolor{blue}
+    Platform/Cards which & AD9361 Data Port Mode & AD9361 Channel Mode & Max AD9361- & Max \\
+		\rowcolor{blue}
+    allow the AD9361                         & &                       & Supported Sampling    & \comp.hdl{}- \\
+		\rowcolor{blue}
+    Data Port/Channel       & &                       & Rate per RX channel        & Supported Sampling \\
+		\rowcolor{blue}
+    Mode                    & &                       &                            & Rate per RX channel \\
+    \hline
+    E310 & CMOS Single Port Half Duplex SDR &                   & & not yet supported  \\
+    \hline
+    E310 & CMOS Single Port Half Duplex DDR &                   & & not yet supported  \\
+    \hline
+    E310 & CMOS Single Port Full Duplex SDR &                   & & not yet supported  \\
+    \hline
+    E310 & CMOS Single Port Full Duplex DDR &                   & & not yet supported  \\
+    \hline
+    E310 & CMOS Dual   Port Half Duplex SDR &                   & & not yet supported  \\
+    \hline
+    E310 & CMOS Dual   Port Half Duplex DDR &                   & & not yet supported \\
+    \hline
+    E310 & CMOS Dual   Port Full Duplex SDR &                   & & not yet supported  \\
+    \hline
+    E310 & CMOS Dual   Port Full Duplex DDR &                   & & not yet supported  \\
+    \hline
+         &                           & 1R1T, 2R2T Timing=0 & 30.72 Msps & 30.72 Msps \\
+    \cline{2-5}
+         &                           & 1R1T, 2R2T Timing=1 &            &            \\
+    E310 & CMOS Single Port Full Duplex DDR & 2R1T                & 15.36 Msps & 15.36 Msps \\
+         &                           & 1R2T                &            &            \\
+    \hline
+    FMCOMMS2/3 & LVDS (Dual Port Full Duplex DDR) & all configs         & 61.44 Msps & 61.44 Msps\footnote{There are limited guarantees of data fidelity on the FMCOMMS2/3 cards for certain multichannel modes on certain platforms, although tests at room temperature have always yielded 100\% fidelity. For more info see tables \ref{tablemaxsamprate} and \ref{tableber}.} \\
+    \hline
+	\end{longtable}
+\end{scriptsize}
+\noindent Data is sent out the \verb+dev_data_ch0_out+ and \verb+dev_data_ch1_out+ devsignal ports for channel 0 and channel 1, respectively. Note that channel 0 corresponds to the AD9361 R1 channel and channel 1 corresponds to the AD9361 R2 channel when the \verb+channels_are_swapped+ property has a value of false. The channel relationship is otherwise reversed. Note that which of the two AD9361 RX analog RF port's signal is sent in the R1 and R2 time slots are variable depending on the AD9361 register configuration. This relationship is shown in the following table.
 \end{sloppypar}
 
 \begin{landscape}
@@ -377,15 +412,15 @@ Data is sent out the \verb+dev_data_ch0_out+ and \verb+dev_data_ch1_out+ devsign
 			\hline
 			\multirow{48}{*}{DevSignal} & \multirow{48}{*}{dev\_cfg\_data} & \multirow{48}{*}{1} & \multirow{48}{*}{False} & \multirow{48}{*}{True} & config\_is\_two\_r &Input& 1      & If 0, de-interleaving of R2 time slot data and monitoring of data drops via the \verb+r2_samps_dropped+ property are both disabled. \\
 			\cline{6-9}
-			&             &        &     &      & ch0\_handler\_is\_present &Output & 1      & Value is 1 if the dev\_data\_ch0 dev signal is connected to a worker (that "handles" the data) and 0 otherwise. This is expected to be hardcoded at buildtime. \\
+			&             &        &     &      & ch0\_handler\_is\_present &Output & 1      & Value is 1 if the dev\_data\_ch0 dev signal is connected to a worker (that ``handles" the data) and 0 otherwise. This is expected to be hardcoded at buildtime. \\
 			\cline{6-9}
-			&             &        &     &      & ch1\_handler\_is\_present &Output & 1      &  Value is 1 if the dev\_data\_ch1 dev signal is connected to a worker (that "handles" the data) and 0 otherwise. This is expected to be hardcoded at buildtime. \\
+			&             &        &     &      & ch1\_handler\_is\_present &Output & 1      &  Value is 1 if the dev\_data\_ch1 dev signal is connected to a worker (that ``handles" the data) and 0 otherwise. This is expected to be hardcoded at buildtime. \\
 			\cline{6-9}
 			&             &        &     &      & data\_bus\_index\_direction &Output&1      &  Value is 1 if the bus indexing of the P0\_D/P1\_D signals from dev\_data\_from\_pins was reversed before processing. This is expected to be hardcoded at buildtime. \\
 			\cline{6-9}
 			&             &        &     &      & data\_clk\_is\_inverted     &Output& 1      & Value is 1 if the clock in via dev\_data\_clk was inverted inside this worker before used as an active-edge rising clock. This is expected to be hardcoded at buildtime. \\
 			\cline{6-9}
-			&             &        &     &      & islvds       & Output     & 1      &  Value is 1 if \verb+LVDS_p+ has a value of true and 0 if \verb+LVDS_p_p+ has a value of false. Because \verb+LVDS_p+ is a parameter property, this is hardcoded at buildtime. The purpose of this devsignal is to feed this worker's buildtime-specified LVDS/CMOS mode through ad9361\_config.hdl to ad9361\_config\_proxy.rcc so No-OS knows which LVDS/CMOS mode to use when initializing the AD9361 IC. \\
+			&             &        &     &      & islvds       & Output     & 1      &  Value is 1 if \verb+LVDS_p+ has a value of true and 0 if \verb+LVDS_p+ has a value of false. Because \verb+LVDS_p+ is a parameter property, this is hardcoded at buildtime. The purpose of this devsignal is to feed this worker's buildtime-specified LVDS/CMOS mode through ad9361\_config.hdl to ad9361\_config\_proxy.rcc so No-OS knows which LVDS/CMOS mode to use when initializing the AD9361 IC. \\
 			\cline{6-9}
 			&             &        &     &      & isdualport   & Output     & 1      &  Value is 1 if \verb+SINGLE_PORT_p+ has a value of false and 0 if \verb+SINGLE_PORT_p+ has a value of true. Because \verb+SINGLE_PORT_p+ is a parameter property, this is hardcoded at buildtime. The purpose of this devsignal is to feed this worker's buildtime-specified single/dual port mode through ad9361\_config.hdl to ad9361\_config\_proxy.rcc so No-OS knows which single/dual port mode to use when initializing the AD9361 IC. \\
 			\cline{6-9}
@@ -395,9 +430,9 @@ Data is sent out the \verb+dev_data_ch0_out+ and \verb+dev_data_ch1_out+ devsign
 			\cline{6-9}
 			&             &        &     &      & present      & Output     & 1      &  Used to communicate to ad9361\_config.hdl that it should validate the islvds, isdualport, isfullduplex, and isddr signals against similar signals in the ad9361\_dac\_sub.hdl and ad9361\_data\_sub.hdl workers if they are present in the bitstream. This is expected to be hardcoded at buildtime. \\
 			\hline
-			\multirow{10}{*}{DevSignal} & \multirow{10}{*}{dev\_cfg\_data\_rx} & \multirow{10}{*}{1} & \multirow{10}{*}{False} & \multirow{10}{*}{True}  & rx\_frame\_usage & Output     & 1      & Value is 1 of worker was built with the assumption that the RX frame operates in its toggle setting and 0 if the assumption was that RX frame has a rising edge on the first sample and then stays high. This value is intended to match that of AD9361 register 0x010 BIT D3\cite{adi_ug671}. This is expected to be hardcoded at buildtime.\\
+			\multirow{10}{*}{DevSignal} & \multirow{10}{*}{dev\_cfg\_data\_rx} & \multirow{10}{*}{1} & \multirow{10}{*}{False} & \multirow{10}{*}{True}  & rx\_frame\_usage & Output     & 1      & Value is 1 if worker was built with the assumption that the RX frame operates in its toggle setting and 0 if the assumption was that RX frame has a rising edge on the first sample and then stays high. This value is intended to match that of AD9361 register 0x010 BIT D3\cite{adi_ug671}. This is expected to be hardcoded at buildtime.\\
 			\cline{6-9}
-			&             &        &     &      & rx\_frame\_is\_inverted &Output& 1 & Rx path-specific data port configuration. Used to tell other workers about the configuration that was enforced when this worker was compiled. This is expected to be hardcoded at buildtime.\\
+			&             &        &     &      & rx\_frame\_is\_inverted &Output& 1 & RX path-specific data port configuration. Used to tell other workers about the configuration that was enforced when this worker was compiled. This is expected to be hardcoded at buildtime.\\
 			\hline
 			DevSignal     & dev\_data\_clk & 1  & False & True & DATA\_CLK\_P & Input     & 1      & Buffered version of AD9361 DATA\_CLK\_P pin. \\
 			\hline
@@ -419,7 +454,7 @@ Data is sent out the \verb+dev_data_ch0_out+ and \verb+dev_data_ch1_out+ devsign
 			\hline
 			\multirow{8}{*}{DevSignal} & \multirow{8}{*}{dev\_data\_ch0\_out} & \multirow{8}{*}{1} & \multirow{8}{*}{False} & \multirow{8}{*}{False}  & present & Output&1& Value is 1 if a worker is connected to this devsignal port. \\
 			\cline{6-9}
-			&             &        &     &      & adc\_data\_I & Input     & 12     & Signed Q0.11 Q value of ADC sample corresponding to RX channel 0. \\
+			&             &        &     &      & adc\_data\_I & Input     & 12     & Signed Q0.11 I value of ADC sample corresponding to RX channel 0. \\
 			\cline{6-9}
 			&             &        &     &      & adc\_data\_Q & Input     & 12     & Signed Q0.11 Q value of ADC sample corresponding to RX channel 0.\\
 			\cline{6-9}
@@ -429,7 +464,7 @@ Data is sent out the \verb+dev_data_ch0_out+ and \verb+dev_data_ch1_out+ devsign
 			\hline
 			\multirow{8}{*}{DevSignal} & \multirow{8}{*}{dev\_data\_ch1\_out} & \multirow{8}{*}{1} & \multirow{8}{*}{True} & \multirow{8}{*}{False}  & present & Output&1& Value is 1 if a worker is connected to this devsignal port. \\
 			\cline{6-9}
-			&             &        &     &      & adc\_data\_I & Input     & 12     & Signed Q0.11 Q value of ADC sample corresponding to RX channel 1. \\
+			&             &        &     &      & adc\_data\_I & Input     & 12     & Signed Q0.11 I value of ADC sample corresponding to RX channel 1. \\
 			\cline{6-9}
 			&             &        &     &      & adc\_data\_Q & Input     & 12     & Signed Q0.11 Q value of ADC sample corresponding to RX channel 1. \\
 			\cline{6-9}
@@ -460,32 +495,26 @@ Data is sent out the \verb+dev_data_ch0_out+ and \verb+dev_data_ch1_out+ devsign
 \subsection*{Clock Domains}
 The \Comp{} subdevice worker contains two clock domains: the clock from the Control Plane, and the AD9361 DATA\_CLK\_P clock from the \verb+dev_data_clk+ devsignal. The control clock domain is only used to read or write the \verb+channels_are_swapped+, \verb+r1_samps_dropped+, and \verb+r2_samps_dropped+ properties (all of which are synchronized between the clock domains in one direction or the other). The DATA\_CLK\_P domain is used for the registering/de-interleaving of RX data. The data sent out the dev\_data\_ch0\_out and dev\_data\_ch1\_out dev signals is on the DATA\_CLK\_P domain.
 \subsection*{Latency}
-\noindent For the LVDS configuration, the latency from the first active edge of the AD9361 DATA\_CLK\_P clock on which an R1 channel's sample begins to the first rising edge of the output clock on the \verb+dev_data_ch0_out+/\verb+dev_data_ch1_out+ port for the same sample is 6 DATA\_CLK\_P cycles. For the LVDS configuration, the latency from the first active edge of the AD9361 DATA\_CLK\_P clock on which an R2 channel's sample begins to the first rising edge of the output clock on the \verb+dev_data_ch0_out+/\verb+dev_data_ch1_out+ port for the same sample is 4 DATA\_CLK\_P cycles.
+\noindent For the LVDS configuration or CMOS Single Port Full Duplex (DDR) configuration, the latency from the first active edge of the AD9361 DATA\_CLK\_P clock on which an R1 channel's sample begins to the first rising edge of the output clock on the \verb+dev_data_ch0_out+/\verb+dev_data_ch1_out+ port for the same sample is 6 DATA\_CLK\_P cycles. For these modes, the latency from the first active edge of the AD9361 DATA\_CLK\_P clock on which an R2 channel's sample begins to the first rising edge of the output clock on the \verb+dev_data_ch0_out+/\verb+dev_data_ch1_out+ port for the same sample is 4 DATA\_CLK\_P cycles.
 \subsection*{Multichannel Phase Coherency}
 Note that the aforementioned 6 cycle/4 cycle latency results on the multichannel data being output the devsignal ports in a clock-aligned, phase coherent fashion. However, just because the each channel's devsignal data is phase-aligned at the output of the \comp{}.hdl worker's devsignals, that does not mean that the data is phase-aligned once each channel is ingested inside an instance of an ad9361\_adc.hdl device worker because each ad9361\_adc.hdl instance handles its data as an independent, uniquely flow-controlled data path.
 
 \pagebreak
 \section*{Performance and Resource Utilization}
 \noindent
-The FPGA resource utilization and Fmax are included for this worker. Fmax refers to the maximum allowable clock rate for any registered signal paths within a given clock domain for an FPGA design. Fmax in the table below is specific only to this worker and represents the maximum possible Fmax for any OpenCPI bitstream built with this worker included. Note that the Fmax value for a given clock domain for the final bitstream is often worse than the Fmax specific to this worker, even if this worker is the only one included in the bitstream. It's important to note that the full range of possible operating conditions for the AD9361 is not guaranteed to operate without error, e.g. maximum achievable RX sample rates in certain LVDS modes are less than AD9361 LVDS mode-maximum of 245.76 MHz\cite{adi_ug570}. For more information, see Tables \ref{tablebitstreamfmax}, \ref{tablemaxsamprate}, and \ref{tableber}.
+The FPGA resource utilization and Fmax are included for this worker. Fmax refers to the maximum allowable clock rate for any registered signal paths within a given clock domain for an FPGA design. Fmax in the table below is specific only to this worker and represents the maximum possible Fmax for any OpenCPI bitstream built with this worker included. Note that the Fmax value for a given clock domain for the final bitstream is often worse than the Fmax specific to this worker, even if this worker is the only one included in the bitstream. It's important to note that the full range of possible operating conditions for the AD9361 is not guaranteed to operate without error, e.g. maximum achievable RX sample rates in certain LVDS modes are less than AD9361 LVDS mode-maximum of 245.76 MHz\cite{adi_ug570}. For more information, see Tables \ref{tablebitstreamfmax}, \ref{tablemaxsamprate}, and \ref{tableber}. \\
 
-\subsubsection*{\comp.hdl - LVDS configuration}
-
-The parameterized build configuration for this worker which corresponds to the AD9361 LVDS mode is represented by the following parameter property values:
-%\input{../../\ecomp.hdl/utilization.inc}
+\noindent In the tables below, dev\_data\_clk is the worker source code name for the signal which is ultimately driven by, and has the same clock rate of, the AD9361 DATA\_CLK pin pair. \\
 \begin{itemize}
-	\item \verb+LVDS_p+=True
-	\item \verb+HALF_DUPLEX_p+=False
-	\item \verb+SINGLE_PORT_p+=False
+	\item \verb+LVDS_p+=true
+	\item \verb+HALF_DUPLEX_p+=false
+	\item \verb+SINGLE_PORT_p+=false
 	\item \verb+DATA_RATE_CONFIG_p+=DDR
 \end{itemize}
-
-\noindent Table entries are specific to the worker build configuration with the aforementioned parameter property set. Note that dev\_data\_clk is the worker source code name for the signal which is ultimately driven by, and has the same clock rate of, the AD9361 DATA\_CLK pin pair. \\
-
 % see performance_and_resource_utilization.txt
 \noindent\begin{scriptsize}
 	\begin{longtable}{|M{4.4cm}|M{1.9cm}|M{1.9cm}|M{1.5cm}|M{1.8cm}|M{1.7cm}|M{1.4cm}|}
-		\caption{\comp{}.hdl LVDS Configuration Performance and Resource Utilization.} \\
+		\caption{\comp{}.hdl LVDS Performance and Resource Utilization.} \\
 		\hline
 		\rowcolor{blue}
     Device                                 & Registers (typical) & LUTS (typical) & \multicolumn{2}{c|}{Worker Fmax (typical)}  & Memory/ Special Functions & Design Suite \\
@@ -503,11 +532,34 @@ The parameterized build configuration for this worker which corresponds to the A
 		\hline
 	\end{longtable}
 \end{scriptsize}
+%\input{../../\ecomp.hdl/utilization.inc}
+\begin{itemize}
+	\item \verb+LVDS_p+=false
+	\item \verb+HALF_DUPLEX_p+=false
+	\item \verb+SINGLE_PORT_p+=true
+	\item \verb+DATA_RATE_CONFIG_p+=DDR
+\end{itemize}
+\noindent\begin{scriptsize}
+	\begin{longtable}{|M{4.4cm}|M{1.9cm}|M{1.9cm}|M{1.5cm}|M{1.8cm}|M{1.7cm}|M{1.4cm}|}
+		\caption{\comp{}.hdl CMOS Single Port Full Duplex DDR Performance and Resource Utilization.} \\
+		\hline
+		\rowcolor{blue}
+    Device                                 & Registers (typical) & LUTS (typical) & \multicolumn{2}{c|}{Worker Fmax (typical)}  & Memory/ Special Functions & Design Suite \\
+		\hline
+    \rowcolor{blue}
+		                                       &           &      & control plane clock & dev\_data\_clk clock &           &          \\
+		\hline
+		\multirow{1}{*}{Zynq XC7Z020-1-CLG484} & 175       & 87   & 315 MHz \textsuperscript{\ref{abc}} & ? & 1 BUFR, 7 IDDR             & Vivado 2017.1      \\
+		\hline
+	\end{longtable}
+\end{scriptsize}
+
 \footnotetext[1]{\label{abc}These measurements were the result of a Vivado timing analysis which was different from the Vivado analysis performed by default for OpenCPI worker builds. For more info see Appendix \ref{appendix}}
 \footnotetext[2]{\label{quartustiming}Quartus does not perform timing analysis at the OpenCPI worker build (i.e. synthesis) stage.}
+% see performance_and_resource_utilization.txt
 
 \pagebreak
-\noindent A notable example of the aforementioned potential discrepancy between worker Fmax and bitstream Fmax for a given clock domain is the maximum achievable AD9361 RX data clock rate for Zynq 7020 speed grade 1 bitstreams containing this worker. The bitstream Fmax in this case is significantly lower than the worker netlist Fmax of 418MHz on a Zynq 7020 speed grade 1. The timing analysis for the ad9361\_adc\_sub netlist is not capable of taking into account the paths from the internal-to-the-AD9361 registers which produce the RX data to the ad9361\_adc\_sub worker's DDR register inputs. The Fmax discrepancy in this case results from these external-to-the-ad9361\_adc\_sub paths being the limiting factor for the max bistream RX data clock rate. In order to perform a timing analysis which does include these paths, and therefore takes into account all paths which may limit the maximum achievable RX data clock rate, a timing analysis must be done 1) on a netlist/bitstream which includes the rest of the path from the DDR input from the FPGA pad (i.e. it includes the ad9361\_data\_sub worker) and 2) which includes delay/offset constraints which contain the information about the range of possible clock/data skews from the internal-to-the-AD9361 register which produced the RX data to the FPGA pad (i.e. constraints are used which include the AD9361 datasheet-specified $t_{DDRX}$ and $t_{DDDV}$ min/max values). \\
+\noindent A notable example of the aforementioned potential discrepancy between worker Fmax and bitstream Fmax for a given clock domain is the maximum achievable AD9361 LVDS RX data clock rate for Zynq 7020 speed grade 1 bitstreams containing this worker. The bitstream Fmax in this case is significantly lower than the worker netlist Fmax of 418MHz on a Zynq 7020 speed grade 1. The timing analysis for the ad9361\_adc\_sub netlist is not capable of taking into account the paths from the internal-to-the-AD9361 registers which produce the RX data to the ad9361\_adc\_sub worker's DDR register inputs. The Fmax discrepancy in this case results from these external-to-the-ad9361\_adc\_sub paths being the limiting factor for the max bistream RX data clock rate. In order to perform a timing analysis which does include these paths, and therefore takes into account all paths which may limit the maximum achievable RX data clock rate, a timing analysis must be done 1) on a netlist/bitstream which includes the rest of the path from the DDR input from the FPGA pad (i.e. it includes the ad9361\_data\_sub worker) and 2) which includes delay/offset constraints which contain the information about the range of possible clock/data skews from the internal-to-the-AD9361 register which produced the RX data to the FPGA pad (i.e. constraints are used which include the AD9361 datasheet-specified $t_{DDRX}$ and $t_{DDDV}$ min/max values). \\
 
 \noindent Table \ref{tablebitstreamfmax} includes the known theoretical limitations at the bitstream level (as opposed to ad9361\_adc\_sub level) for the AD9361 DATA\_CLK clock rate for various hardware/software configurations. For convenience, Table \ref{tablemaxsamprate} converts the AD9361 DATA\_CLK rate limitations into their consequential RX sample rate limitations. Table \ref{tableber} contains the experimental verification results for RX sample rate limitations.\\
 \begin{scriptsize}
@@ -518,7 +570,7 @@ The parameterized build configuration for this worker which corresponds to the A
 		\rowcolor{blue}
     Parameter & \multicolumn{1}{|c|}{Conditions} & Min & Typ & Max & Unit & \multicolumn{1}{|c|}{Notes} \\
 		\hline
-    \multirow{27}{*}{\parbox{2cm}{min dev\_data\_clk (AD9361 DATA\_CLK) clock period}} & \parbox{4.5 cm}{Zedboard w/ FMC voltage 2.5V, \\ FMCOMMS2/3} & & & & & \\
+    \multirow{39}{*}{\parbox{2cm}{min dev\_data\_clk (AD9361 DATA\_CLK) clock period}} & \parbox{4.5 cm}{Zedboard w/ FMC voltage 2.5V, \\ FMCOMMS2/3} & & & & & \\
                           &                                      &                                & &                                &                      & \\
                           & \multirow{1}{*}{\parbox{5.8 cm}{\hspace*{2mm} Vivado 2017.1 Design Suite}} & & & & & \\
                           & \multirow{1}{*}{\parbox{5.8 cm}{\hspace*{6mm} AD9361 DATA\_CLK duty cycle=50\% \textsuperscript{\ref{notfullrange}} }} & & & & & \\
@@ -549,12 +601,27 @@ The parameterized build configuration for this worker which corresponds to the A
                           &                                      &                                & &                                &                      & \\
                           &                                      &                                & &                                &                      & \\
                           &                                      &                                & &                                &                      & \\
+                          &                                      &                                & &                                &                      & \\
+                          & \parbox{5.8 cm}{Ettus E310} & & & & & \\
+                          &                                      &                                & &                                &                      & \\
+                          & \multirow{1}{*}{\parbox{5.8 cm}{\hspace*{2mm} Vivado 2017.1 Design Suite}} & & & & & \\
+                          & \multirow{1}{*}{\parbox{5.8 cm}{\hspace*{6mm} AD9361 DATA\_CLK duty cycle=50\% \textsuperscript{\ref{notfullrange}} }} & & & & & \\
+                          & \multirow{1}{*}{\parbox{5.8 cm}{\hspace*{9mm} AD9361 LVDS Mode=0}} & & & & & \\
+                          & \multirow{1}{*}{\parbox{5.8 cm}{\hspace*{9mm} AD9361 Half Duplex Mode=0}} & & & & & \\
+                          & \multirow{1}{*}{\parbox{5.8 cm}{\hspace*{9mm} AD9361 Single Port Mode=1}} & & & & & \\
+                          & \multirow{1}{*}{\parbox{5.8 cm}{\hspace*{9mm} AD9361 Single Data Rate=0}} & & & & & \\
+                          & \multirow{4}{*}{\parbox{5.8 cm}{\hspace*{12mm}AD9361 DATA\_CLK Delay=11, \\\hspace*{12mm}AD9361 Rx Data Delay=0 }} & \multirow{4}{*}{16.276} & & \multirow{4}{*}{16.276} & \multirow{4}{*}{ns} &
+\multirow{4}{*}{\parbox{3.8cm}{(approx 61.44 MHz), \\ guaranteed by FPGA timing analysis}}
+\\
+                          &                                      &                                & &                                &                      & \\
+                          &                                      &                                & &                                &                      & \\                         &                                      &                                & &                                &                      & \\
 		\hline
 	\end{longtable}
 \end{scriptsize}
 \footnotetext[1]{\label{lessthanmaxsamprate}Note this is more than the minimum AD9361 LVDS DATA\_CLK Clock Period of 4.069 ns, i.e. not all possible AD9361 LVDS clock rates can be accounted for.}
-\footnotetext[2]{\label{notfullrange}Note that a) this condition is driven by the limitations of the capabilities of Xilinx constraints, and b) the range of value(s) for this condition does not cover the full range of possible values for AD9361 for the given mode.}
+\footnotetext[2]{\label{notfullrange}Note that a) this condition is driven by the limitations of the capabilities of Xilinx ISE/Vivado constraints, and b) the range of value(s) for this condition does not cover the full range of possible values for AD9361 for the given mode.}
 \pagebreak
+\begin{landscape}
 \begin{scriptsize}
 	\begin{longtable}{|c|l|c|c|c|c|l|}
 		\caption{Theoretical bitstream limits for AD9361 RX sample rates per antenna port / channel.}
@@ -613,12 +680,32 @@ The parameterized build configuration for this worker which corresponds to the A
                           &                                      &                                & &                                &                      & \\
                           &                                      &                                & &                                &                      & \\
                           &                                      &                                & &                                &                      & \\
+    \cline{2-7}
+                          & & & & & & \\
+                          & \parbox{6.7cm}{Ettus E310} & & & & & \\
+                          &                                      &                                & &                                &                      & \\
+                          & \parbox{9.5 cm}{\hspace*{3mm}Vivado 2017.1 Design Suite bitstream \\\hspace*{6mm}AD9361 LVDS Mode=0 \\\hspace*{6mm}AD9361 Half Duplex Mode=0 \\\hspace*{6mm}AD9361 Single Port Mode=1 \\ \hspace*{6mm}AD9361 Single Data Rate=0 \\ \hspace*{9mm}AD9361 DATA\_CLK Delay=11, \\\hspace*{9mm}AD9361 Rx Data Delay=0 } & & & & & \\
+                          & \multirow{2}{*}{\parbox{6.7 cm}{\hspace*{9mm}AD9361 1R1T mode, \\ \hspace*{9mm}AD9361 2R2T Timing = 0}} & & & & & \\
+                          &                                      &                                & &                                &                      & \\
+                          & \multirow{5}{*}{\parbox{6.7cm}{\hspace*{12mm}full range of FPGA voltages/temperatures,\\ \hspace*{12mm}AD9361 DATA\_CLK duty cycle=50\% \textsuperscript{\ref{notfullrange}} }} & & \multirow{5}{*}{32.552} & & \multirow{5}{*}{ns} & \multirow{5}{*}{\parbox{3.0cm}{(approx 30.72 Msps complex per RX channel), \\ guaranteed by FPGA timing anaylysis}} \\
+                          &                                      &                                & &                                &                      & \\
+                          &                                      &                                & &                                &                      & \\
+                          &                                      &                                & &                                &                      & \\
+                          &                                      &                                & &                                &                      & \\
+                          & \multirow{2}{*}{\parbox{6.7 cm}{\hspace*{9mm}AD9361 2R1T mode or 2R2T mode or \\ \hspace*{9mm}AD9361 2R2T Timing = 1}} & & & & & \\
+                          &                                      &                                & &                                &                      & \\
+			  & \multirow{5}{*}{\parbox{6.7cm}{\hspace*{12mm}full range of FPGA voltages/temperatures,\\ \hspace*{12mm}AD9361 DATA\_CLK duty cycle=50\% \textsuperscript{\ref{notfullrange}} }} & & \multirow{5}{*}{65.104} & & \multirow{5}{*}{ns} & \multirow{5}{*}{\parbox{3.0cm}{(approx 15.36 Msps complex per RX channel), \\ guaranteed by FPGA timing anaylysis}} \\
+                          &                                      &                                & &                                &                      & \\
+                          &                                      &                                & &                                &                      & \\
+                          &                                      &                                & &                                &                      & \\
+                          &                                      &                                & &                                &                      & \\
 		\hline
 	\end{longtable}
 \end{scriptsize}
 \footnotetext[1]{\label{lessthanmaxsamprate2}Note this value corresponds to less than the maximum possible AD9361 sample rate per AD9361 antenna port/channel for the given mode.}
-\footnotetext[2]{\label{notfullrange}Note that a) this condition is driven by the limitations of the capabilities of Xilinx constraints, and b) the range of value(s) for this condition does not cover the full range of possible values for AD9361 for the given mode.}
-\pagebreak
+\footnotetext[2]{\label{notfullrange}Note that a) this condition is driven by the limitations of the capabilities of Xilinx ISE constraints, and b) the range of value(s) for this condition does not cover the full range of possible values for AD9361 for the given mode.}
+\end{landscape}
+\begin{landscape}
 \begin{scriptsize}
 	\begin{longtable}{|c|l|c|c|c|c|l|}
 		\caption{Experimentally verified RX bit error rates.}
@@ -627,7 +714,7 @@ The parameterized build configuration for this worker which corresponds to the A
 		\rowcolor{blue}
     Parameter & \multicolumn{1}{|c|}{Conditions} & Min & Typ & Max & Unit & \multicolumn{1}{|c|}{Notes} \\
 		\hline
-    \multirow{42}{*}{\parbox{1.7cm}{RX bit error rate}} & \parbox{4.5cm}{Zedboard w/ FMC voltage jumper \\ setting 2.5V, FMCOMMS2/3} & & & & & \multirow{42}{*}{AD9361 PRBS test} \\
+    \multirow{58}{*}{\parbox{1.7cm}{RX bit error rate}} & \parbox{4.5cm}{Zedboard w/ FMC voltage jumper \\ setting 2.5V, FMCOMMS2/3} & & & & & \multirow{58}{*}{AD9361 PRBS test} \\
                           &                                      &                                & &                                &                      & \\
                           & \parbox{9.5 cm}{\hspace*{3mm}Vivado 2017.1 Design Suite bitstream \\\hspace*{6mm}AD9361 LVDS Mode=1 \\ \hspace*{9mm}AD9361 DATA\_CLK Delay=2, \\\hspace*{9mm}AD9361 Rx Data Delay=0 } & & & & & \\
                           & \multirow{2}{*}{\parbox{9.5 cm}{\hspace*{12mm}AD9361 1R1T mode, \\ \hspace*{12mm}AD9361 2R2T Timing = 0}} & & & & & \\
@@ -662,14 +749,29 @@ The parameterized build configuration for this worker which corresponds to the A
                           &                                      &                                & &                                &                      & \\
                           & \multirow{2}{*}{\parbox{9.5cm}{\hspace*{12mm}room temperature, \\ \hspace*{12mm}RX sample rate=61.44 Msps complex (approx, nominal)}} & \multirow{2}{*}{0} & \multirow{2}{*}{0} & & \multirow{2}{*}{\%} & \\
                           &                                      &                                & &                                &                      & \\
-		\hline
+    \cline{2-6}
+                          & \parbox{9.5cm}{Ettus E310} & & & & & \\
+                          &                                      &                                & &                                &                      & \\
+                          & \parbox{9.5 cm}{\hspace*{3mm}Vivado 2017.1 Design Suite bitstream \\\hspace*{6mm}AD9361 LVDS Mode=0 \\\hspace*{6mm}AD9361 Half Duplex Mode=0\\\hspace*{6mm}AD9361 Single Port Mode=1\\\hspace*{9mm}AD9361 DATA\_CLK Delay=11, \\\hspace*{9mm}AD9361 Rx Data Delay=0 } & & & & & \\
+                          &                                      &                                & &                                &                      & \\
+                          & \multirow{2}{*}{\parbox{9.5 cm}{\hspace*{12mm}AD9361 1R1T mode, \\ \hspace*{12mm}AD9361 2R2T Timing = 0}} & & & & & \\
+                          &                                      &                                & &                                &                      & \\
+                          & \multirow{2}{*}{\parbox{9.5cm}{\hspace*{15mm}room temperature, \\ \hspace*{15mm}RX sample rate=30.72 Msps complex (approx, nominal)}} & \multirow{2}{*}{0} & \multirow{2}{*}{0} & & \multirow{2}{*}{\%} & \\
+                          &                                      &                                & &                                &                      & \\
+                          &                                      &                                & &                                &                      & \\
+                          & \multirow{2}{*}{\parbox{9.5 cm}{\hspace*{12mm}AD9361 1R1T mode, \\ \hspace*{12mm}AD9361 2R2T Timing = 1}} & & & & & \\
+                          &                                      &                                & &                                &                      & \\
+                          & \multirow{2}{*}{\parbox{9.5cm}{\hspace*{15mm}room temperature, \\ \hspace*{15mm}RX sample rate=15.36 Msps complex (approx, nominal)}} & \multirow{2}{*}{0} & \multirow{2}{*}{0} & & \multirow{2}{*}{\%} & \\
+                          &                                      &                                & &                                &                      & \\
+			  \hline
 	\end{longtable}
 \end{scriptsize}
+\end{landscape}
 \footnotetext[1]{\label{lessthanmaxsamprate3}Note this value corresponds to less than the maximum possible AD9361 sample rate per AD9361 antenna port/channel for the given mode.}
 
 \pagebreak
 \section*{Test and Verification}
-The test outlined in \cite{adc_comp_datasheet} includes validation of this worker's functionality (for LVDS only).
+The test outlined in \cite{adc_comp_datasheet} includes validation of this worker's functionality (for LVDS mode and CMOS Single Port Full Duplex DDR mode only).
 
  \begin{thebibliography}{1}
 

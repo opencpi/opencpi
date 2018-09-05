@@ -243,7 +243,7 @@ $(call XstPruneOption,$(XstDefaultOptions)) $(XstMyExtraOptions) $(XstInternalOp
 # Note that "Libraries" is for precompiled libraries, whereas "OcpiLibraries" are for cores (in the -sd path),
 # BUT! the empty module declarations must be in the lso list to get cores we need the bb in a library too.
 
-XstCores=$(call HdlCollectCores,$(HdlTarget),XstCores)
+XstCores=$(call HdlCollectCorePaths)
 XstLsoFile=$(Core).lso
 XstIniFile=$(Core).ini
 
@@ -409,7 +409,7 @@ HdlToolCompile=\
 # Plus we create the edif all the time...
 HdlToolPost=\
   if grep -q 'Number of errors   :    0 ' $(HdlLog); then \
-    ($(call OcpiXilinxIseInit); ngc2edif -log ngc2edif-$(Top).log -w $(Top).ngc) >> $(HdlLog) 2>&1 ; \
+    ($(call OcpiXilinxIseInit); ngc2edif -log ngc2edif-$(Core).log -w $(Core).ngc) >> $(HdlLog) 2>&1 ; \
     HdlExit=0; \
   else \
     HdlExit=1; \

@@ -82,6 +82,7 @@ AciLibs=$(foreach l,$(RccLibrariesInternal) $(Libraries),\
 # Build the executables
 # $(call DoBuildAci,<platform>,<appfile>)
 define DoBuildAci
+  -include $$(call AciDir,$1)/*.deps
   $$(foreach s,$$(filter %.c,$(SourceFiles)),\
     $$(eval $$(call DoAciSource,$1,$$s,c)))
   $$(foreach s,$$(filter %.cxx %.cc %.cpp,$(SourceFiles)),\

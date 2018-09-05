@@ -1,0 +1,11 @@
+<application>
+  <Instance Component="ocpi.core.file_read" Connect="iqstream_max_calculator">
+    <Property Name="messagesInFile" value="true"/>
+    <Property Name="suppressEOF" value="true"/>
+  </Instance>
+  <Instance Component="ocpi.assets.util_comps.iqstream_max_calculator" Model="rcc" Connect="file_write"/>
+  <Instance Component="ocpi.core.file_write">
+    <Property Name="messagesInFile" value="true"/>
+    <Property Name="stopOnEOF" value="false"/>
+  </Instance>
+</application>

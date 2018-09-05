@@ -16,41 +16,64 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-# This file is used to build the Application Control Interface api testbench,
-# calls make on the underlying unit test hdl assemblies, and is used to test the
-# respective component. This file handles hardware workers and has been tested on
-# the zed platform.
+# this is an ACI Makefile modified to act simlar to $(OCPI_CDK_DIR/include/test.mk
 
 $(if $(realpath $(OCPI_CDK_DIR)),,$(error The OCPI_CDK_DIR environment variable is not set correctly.))
 
+OcpiAppNoRun=1
 #APP=calculate_AD9361_BIST_PRBS_RX_BER
 #APP2=get_comma_separated_ocpi_platforms
 #APP3=get_at_least_one_platform_is_available
-OcpiApps=calculate_AD9361_BIST_PRBS_RX_BER get_comma_separated_ocpi_platforms get_at_least_one_platform_is_available
+OcpiApp=calculate_AD9361_BIST_PRBS_RX_BER get_comma_separated_ocpi_platforms get_at_least_one_platform_is_available
+RccOnlyPlatforms+=centos7 xilinx13_3 # we only include tested rcc platforms
 
 include $(OCPI_CDK_DIR)/include/application.mk
 
-.SILENT: show
-.PHONY: run clean show
+# this is necessary to allow 'ocpidev run' to correctly run the unit test (without this
+# line you can still run the test but must use make, e.g. 'make run')
+ifneq (,)
+include $(OCPI_CDK_DIR)/include/test.mk
+endif
 
-# build the testbench executable
-run: tests
-
-# build the HDL unit test assemblies
-all:
+asm:
 	make -C assemblies
 
-clean::
-	rm -rf 7 xx yy .run*; make -C assemblies clean
+# Map global goals to local goals
+test: build
+runtests: run
+tests: build
+verifytest: verify
+all: build
+runonlytest: runonly
+runtest: run
 
-show:
-	echo "$$showhelp"
+# mimicking targets defined in OpenCPI_Component_Development.pdf Section 13.9
 
-tests:
-	OCPI_LIBRARY_PATH=$(OCPI_LIBRARY_PATH):$(PWD):$(PWD)/../ad9361_config_proxy.rcc/:$(PWD)/../../../../core/components/lib/ ./ad9361_adc_test_app
+# "The make command is used with the following goals to invoke the phases:"
+build: asm
 
-define showhelp
-----------------------------------------------------------------------------
-----------------------------------------------------------------------------
-endef
-export showhelp
+run: prepare
+	$(AT)./run/runtests.sh run verify $(and $(View),view)
+
+# "The following goals control the process at a finer granularity:"
+
+generate:
+
+prepare:
+
+runnoprepare:
+	$(AT)./run/runtests.sh run
+
+runonly: prepare runnoprepare
+
+verify:
+	$(AT)./run/runtests.sh verify $(and $(View),view)
+
+view:
+	$(AT)./run/runtests.sh view
+
+cleanrun:
+
+cleansim:
+	$(AT)rm -r -f run/*/*.simulation
+

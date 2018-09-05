@@ -24,11 +24,12 @@ export OCPI_DEBUG_MAKE
 AT=@
 
 # RPM-based options:
--include $(OCPI_CDK_DIR)/include/autoconfig_import-$(OCPI_TARGET_PLATFORM).mk
-ifneq (1,$(OCPI_AUTOCONFIG_IMPORTED))
--include $(OCPI_CDK_DIR)/include/autoconfig_import.mk
-endif
-
+# Removing these since they cause all kinds of problems, but should discuss further...
+# to see whether they still are relevant
+#-include $(OCPI_CDK_DIR)/include/autoconfig_import-$(OCPI_TARGET_PLATFORM).mk
+#ifneq (1,$(OCPI_AUTOCONFIG_IMPORTED))
+#-include $(OCPI_CDK_DIR)/include/autoconfig_import.mk
+#endif
 # THIS IS THE make VERSION OF WHAT IS IN ocpibootstrap.sh
 ifndef OCPI_PREREQUISITES_DIR
   ifneq ($(and $(OCPI_CDK_DIR),$(wildcard $(OCPI_CDK_DIR)/../prerequisites)),)
@@ -374,10 +375,15 @@ DoShell=$(eval X:=$(shell X=`bash -c '$1; exit $$?'`;echo $$?; echo "$$X" | sed 
 OcpiConvertListToPythonList=$(strip \
   ["$(subst $(Space),"$(Comma) ",$(strip $1))"])
 
+# Run the python code in $1
+# Usage: $(call OcpiCallPythonFunc,this_is_a_python_function_with_output())
+OcpiCallPythonFunc=\
+  $(shell python3 -c '$1')
+
 # Import the ocpiutil module and run the python code in $1
 # Usage: $(call OcpiCallPythonUtil,ocpiutil.utility_function(arg1, arg2))
 OcpiCallPythonUtil=$(infox OPYTHON:$1)\
-  $(shell python -c 'import sys; \
+  $(shell python3 -c 'import sys; \
 sys.path.append("$(OCPI_CDK_DIR)/scripts/"); \
 import ocpiutil; \
 $1')
@@ -489,9 +495,11 @@ OcpiXmlComponentLibraries=$(infox HXC)\
 # 1. arg1 if present
 # 2. the core project's artifacts
 # 3. the artifacts exported from the projects in the project path (its dependencies)
+# 4. the global core rcc artifacts in the runtime package for the host
 OcpiGetDefaultLibraryPath=$(foreach p,$(strip \
-  $(and $1,$1:)$(foreach p,$(call OcpiAbsPathToContainingProject,$1),$p/artifacts)$(strip\
-  $(subst $(Space),,$(foreach p,$(OcpiGetProjectPath),:$p/artifacts)))),$(infox OGDLPr:$p)$p)
+  $(and $1,$1:)$(foreach p,$(call OcpiAbsPathToContainingProject,$1),$p/artifacts$)$(strip\
+  $(subst $(Space),,$(foreach p,$(OcpiGetProjectPath),:$p/artifacts)\
+                    :$(OCPI_CDK_DIR)/$(OCPI_TOOL_DIR)/artifacts))),$(infox OGDLPr:$p)$p)
 
 # Export the library path as the default
 OcpiSetDefaultLibraryPath=$(eval export OCPI_LIBRARY_PATH=$(call OcpiGetDefaultLibraryPath))
@@ -537,11 +545,9 @@ OcpiGetRccPlatformPaths=$(strip \
                           $(foreach p,$(OcpiGetExtendedProjectPath),\
                           $(if $(filter-out $(realpath $(OCPI_PROJECT_DIR)),\
                                             $(realpath $(call OcpiAbsPathToContainingProject,$p))),\
-                            $(or $(if $(call OcpiIsPathCdk,$p),\
-                              $(call OcpiExists,$p/platforms),\
-                              $(if $(filter $(notdir $p),exports),\
+                            $(or $(if $(filter $(notdir $p),exports),\
                                 $(call OcpiExists,$p/lib/rcc/platforms),\
-                                $(call OcpiExists,$p/rcc/platforms))),\
+                                $(call OcpiExists,$p/rcc/platforms)),\
                                   $(info Warning: The path $p/rcc/platforms does not exist.)))))
 
 # Search for a given platform ($1) in the list of 'rcc/platform' directories found
@@ -556,7 +562,7 @@ OcpiGetRccPlatformDir=$(strip $(firstword \
 ##################################################################################
 # Project Dependencies are defined by those explicitly listed in a Project.mk as well as the 'required'
 # projects such as core/cdk
-OcpiProjectDependenciesInternal=$(strip $(call Unique,$(ProjectDependencies) ocpi.core ocpi.cdk))
+OcpiProjectDependenciesInternal=$(strip $(call Unique,$(ProjectDependencies) ocpi.core))
 # If a project dependency is a path, use it as is. Otherwise, check for it in imports.
 OcpiGetProjectDependencies=$(strip \
   $(foreach d,$(OcpiProjectDependenciesInternal),\
@@ -612,12 +618,6 @@ OcpiGetProjectImports=$(strip \
       ,\
       $p )))
 
-# Determine if a path is in fact the CDK. If so, return the CDK's
-# import alias 'ocpi.cdk'
-# $(call OcpiIsPathCdk,<path>)
-OcpiIsPathCdk=$(strip \
-  $(if $(filter $(realpath $1),$(realpath $(OCPI_CDK_DIR))),ocpi.cdk))
-
 # Given an 'origin' path ($1) and a path to a 'destination' project $2,
 # if the 'destination' project is imported in 'origin's project,
 # return the path to that import.
@@ -640,7 +640,6 @@ OcpiGetProjectInImports=$(strip \
         $(call OcpiExists,$i/$2)),\
       $(foreach a,$(call OcpiExists,$i/$(notdir $2)),\
         $(if $(filter $(realpath $a),$(realpath $2)),$a)),\
-      $(call OcpiExists,$(foreach c,$(call OcpiIsPathCdk,$2),$i/$c)),\
       $(foreach a,$(wildcard $i/*),\
         $(if $(filter $(realpath $a),$(realpath $2)),$a)))))
 
@@ -870,12 +869,12 @@ OcpiGetDirTypeX=$(strip $(infox GDT1:$1)\
   $(or \
     $(and $(wildcard $1/Makefile),\
       $(foreach d,$(shell sed -n \
-                  's=^[ 	]*include[ 	]*.*OCPI_CDK_DIR.*/include/\(.*\).mk$$=\1=p' \
+                  's=^[ 	]*include[ 	]*.*OCPI_CDK_DIR.*/include/\(.*\)\.mk[ 	]*$$=\1=p' \
                   $1/Makefile | tail -1),\
       $(infox OGT1: found type: $d ($1))$(notdir $d))) \
     ,$(and $(wildcard $1/Makefile.am),\
       $(foreach d,$(shell sed -n \
-                  's=^[ 	]*@AUTOGUARD@[ 	]*include[ 	]*.*OCPI_CDK_DIR.*/include/\(.*\).mk$$=\1=p' \
+                  's=^[ 	]*@AUTOGUARD@[ 	]*include[ 	]*.*OCPI_CDK_DIR.*/include/\(.*\)\.mk[ 	]*$$=\1=p' \
                   $1/Makefile.am | tail -1),\
       $(warning Found what I think is a $d in "$1", but it is not fully configured and may not work as expected.)$(notdir $d))) \
     ,$(and $(filter $(realpath $1),$(realpath $(OCPI_CDK_DIR))),project)\
@@ -922,8 +921,8 @@ OcpiIncludeProject=$(call OcpiIncludeProjectX,$(or $(OCPI_PROJECT_DIR),.),$1,$(c
 # find Platform.mk if it exists. Otherwise, the parent is just the project
 OcpiIncludeParentAsset_library=\
   $(if $(filter %-platform,$(call OcpiGetDirType,$1/../)),\
-    $(call OcpiIncludeAssetAndParentX,$1/../,$2),\
-    $(call OcpiIncludeProject,$2))
+    $(call OcpiIncludeAssetAndParentX,$1/../,$2,$3),\
+    $(call OcpiIncludeProject,$3))
 
 # For a platform directory, we include the platforms directory in ../
 # We provide it with type Platforms so it can find the Platforms.mk
@@ -931,7 +930,7 @@ OcpiIncludeParentAsset_library=\
 # then it is not in a project at all and does not have a parent.
 OcpiIncludeParentAsset_platform=\
   $(if $(filter %-platforms,$(call OcpiGetDirType,$1/../)),\
-    $(call OcpiIncludeAssetAndParentX,$1/../,$2))
+    $(call OcpiIncludeAssetAndParentX,$1/../,$2,$3))
 
 # For asset in directory arg1, look for makefile <arg2>.mk and include it to
 # extract any variables that are set.  Clear the package variables so that the
@@ -968,29 +967,31 @@ endef
 # function, call that to include the parent. Otherwise parent is the project,
 # so include the project. Next, include the current asset by importing its
 # *.mk file and determining its package via OcpiSetAndGetPackageId
-#   Arg1 = reference directory
-#   Arg2 = error/warning/info mode (optional)
-OcpiIncludeAssetAndParentX=$(infox OIAAPX:$1:$2)$(strip \
+#   Arg1 = reference directory (optional) - defaults to '.' in subcalls
+#   Arg2 = authoring model prefix (optional) - <parent>.<auth>.<package-name>
+#   Arg3 = error/warning/info mode (optional)
+OcpiIncludeAssetAndParentX=$(infox OIAAPX:$1:$2:$3)$(strip \
   $(foreach s,$(call OcpiGetShortenedDirType,$1),\
     $(foreach c,$(call Capitalize,$s),\
       $(if $(filter-out undefined,$(origin OcpiIncludeParentAsset_$s)),\
-        $(call OcpiIncludeParentAsset_$s,$1,$c,$2),\
-        $(call OcpiIncludeProject,$2))\
+        $(call OcpiIncludeParentAsset_$s,$1,$2,$3),\
+        $(call OcpiIncludeProject,$3))\
       $(eval $(call OcpiSetAsset,$1,$c))\
       $(eval ParentPackage:=)\
       $(eval unexport ParentPackage)\
-      $(eval override ParentPackage:=$(call OcpiSetAndGetPackageId,$1)))))
+      $(eval override ParentPackage:=$(call OcpiSetAndGetPackageId,$1,$2)))))
 
 # Wrapper function for OcpiIncludeAssetAndParentX. package.mk is included here
 # so that it is not included many times during recursive calls of the *X
 # function above. This function assumes Arg1 should be the current directory if
 # none is provided. Finally, it determines the shortened and capitalized
 # directory type to be used for finding *.mk files.
-#   Arg1 = reference directory
-#   Arg2 = error/warning/info mode (optional)
+#   Arg1 = reference directory (optional) - defaults to '.' in subcalls
+#   Arg2 = authoring model prefix (optional) - <parent>.<auth>.<package-name>
+#   Arg3 = error/warning/info mode (optional)
 OcpiIncludeAssetAndParent=$(strip \
   $(eval include $(OCPI_CDK_DIR)/include/package.mk)\
-  $(call OcpiIncludeAssetAndParentX,$(or $1,.),$2))
+  $(call OcpiIncludeAssetAndParentX,$(or $1,.),$2,$3))
 
 ###############################################################################
 
@@ -1116,18 +1117,18 @@ OcpiDirName=$(patsubst %/,%,$(dir $1))
 #  Note that the first time these links are created, the UUID used for the links comes from
 #  the artifact, but later, when the links are reused, the UUID in the links is not changed
 #  because there is no value in changing it.
-# $(call OcpiPrepareArtifact,<artifact-file-input>,<output-file-to-modify>)
+# $(call OcpiPrepareArtifact,
+#    <artifact-file-input>,<output-file-to-modify>,<packageparent>,<config>,<platform>)
+# old name based on xml uuid not used anymore since we rely on package ids
+#    $(comment uuid=`sed -n '/artifact uuid/s/^.*artifact uuid="\([^"]*\)".*$$/\1/p' $1` &&)
 OcpiPrepareArtifact=\
   $(ToolsDir)/ocpixml add $2 $1 \
   $(and $(OCPI_PROJECT_DIR), &&\
     adir=$(OCPI_PROJECT_DIR)/artifacts &&\
-    name="$(subst .,-,$(subst /,-,$(call FindRelative,$(OCPI_PROJECT_DIR),$(CURDIR)/$(call OcpiDirName,$2))-$(notdir $2)))" &&\
-    [ -L $$adir/$$name ] || { \
-      uuid=`sed -n '/artifact uuid/s/^.*artifact uuid="\([^"]*\)".*$$/\1/p' $1` &&\
-      mkdir -p $(OCPI_PROJECT_DIR)/artifacts &&\
-      ln -s $$uuid $$adir/$$name &&\
-      $(call MakeSymLink2,$2,$(OCPI_PROJECT_DIR)/artifacts,$${uuid}:$(notdir $2)))  \
-    }
+    uuid=$3.$(Worker).$(Model).$4.$5 &&\
+    mkdir -p $(OCPI_PROJECT_DIR)/artifacts &&\
+    $(call MakeSymLink2,$2,$(OCPI_PROJECT_DIR)/artifacts,$${uuid}$(suffix $2)) \
+   )
 
 # What to do early in each top level Makefile to process build files.
 ParamShell=\
@@ -1243,7 +1244,8 @@ define OcpiSetPlatformVariables
     OcpiPlatformFile:=$$(OcpiPlatformFile_$1)
     OcpiPlatformPrevars:=$$(.VARIABLES)
     include $$(OcpiPlatformFile_$1)
-    $$(foreach v,$$(filter-out OcpiXilinx%,$$(filter Ocpi% OCPI%,$$(.VARIABLES))),\
+    AllowedVars=OcpiAltera% OcpiXilinx% OCPI_ALTERA_VERSION OCPI_XILINX_VIVADO_SDK_VERSION
+    $$(foreach v,$$(filter-out $$(AllowedVars),$$(filter Ocpi% OCPI%,$$(.VARIABLES))),\
        $$(if $$(strip $$(filter $$v,OcpiPlatformPrevars $$(OcpiPlatformPrevars))\
 		      $$(filter $$v,$$(OcpiAllPlatformVars))),,\
           $$(warning Software platform file $$(OcpiPlatformDir)/$1.mk has $$(strip\

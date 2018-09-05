@@ -485,7 +485,7 @@ namespace OCPI {
 	  if (get)
 	    w.getPropertyValue(p, m_response, hex, true);
 	  else
-	    w.setPropertyValue(p, m_response);
+	    w.setPropertyValue(p, m_response.c_str());
 	} else if (op)
 	  w.controlOp((OU::Worker::ControlOperation)n);
 	else if (wait)

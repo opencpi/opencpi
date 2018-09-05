@@ -79,7 +79,7 @@ mymain(const char **argv) {
   fprintf(stderr, "This program is only functional on Zynq/Arm platforms\n");
   return 1;
 #endif
-  std::string cmd = argv[0];
+  std::string cmd = argv[0]; // ensured valid by caller
   if (cmd == "test")
     printf("test\n");
   else if (cmd == "clocks") {

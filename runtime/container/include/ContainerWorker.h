@@ -163,7 +163,7 @@ namespace OCPI {
       virtual void setPropertyValue(const OCPI::Util::Property &p, const OCPI::Util::Value &v);
       // Return true when ignored due to "ignored due to existing state"
       bool controlOp(OCPI::Util::Worker::ControlOperation);
-      void setPropertyValue(const OCPI::Util::Property &p, const std::string &v);
+      void setPropertyValue(const OCPI::Util::Property &p, const char *v);
       virtual const std::string &name() const = 0;
       // This class is actually used in some contexts (e.g. ocpihdl),
       // Where it is not a child of an application, hence this method
@@ -171,6 +171,7 @@ namespace OCPI {
       virtual Application *application() = 0;
       void setProperty(const char *name, const char *value);
       void setProperty(unsigned ordinal, OCPI::Util::Value &value);
+      void setProperty(unsigned ordinal, const char *value);
       void setProperties(const char *props[][2]);
       void setProperties(const OCPI::API::PValue *props);
       virtual void getPropertyValue(const OCPI::Util::Property &p, std::string &value, bool hex,

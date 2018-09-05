@@ -662,6 +662,13 @@ TokenIter(const char *list, const char *delims, bool allowEmpty)
     next();
 }
 TokenIter::
+TokenIter(const std::string &list, const char *delims, bool allowEmpty)
+  : m_copy(strdup(list.c_str())), m_ptr(m_copy), m_token(NULL), m_delims(delims),
+    m_allowEmpty(allowEmpty) {
+  if (!list.empty())
+    next();
+}
+TokenIter::
 ~TokenIter() {
   free(m_copy);
 }
@@ -887,7 +894,7 @@ getAllProjects(std::string &path) {
 // unique name
 // Consider making this more global.
 // Return true on error
-static bool
+bool
 globPath(const char *in, std::string &out) {
   if (!in || !in[0])
     return true;

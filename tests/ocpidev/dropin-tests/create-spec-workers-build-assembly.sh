@@ -47,6 +47,7 @@ echo -n '<ComponentSpec>
 </ComponentSpec>' > components/specs/workerTwo-spec.xml
 ocpidev create worker workerOne.hdl
 ocpidev create worker workerTwo.hdl
+# Note mixed case assemblies do not work on isim
 ocpidev create hdl assembly testassembly
 echo -n '<HdlAssembly>
   <Instance Worker="workerOne"/>

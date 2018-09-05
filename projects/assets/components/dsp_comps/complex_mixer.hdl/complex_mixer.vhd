@@ -88,13 +88,14 @@ begin
   out_out.som   <= som_s;
   out_out.eom   <= eom_s;
   out_out.valid <= vld_s;
-  out_out.data  <= std_logic_vector(resize(signed(mix_i), 16))  -- default output
-                   & std_logic_vector(resize(signed(mix_q), 16))
+  out_out.data  <= std_logic_vector(resize(signed(mix_q), 16))  -- default output
+                   & std_logic_vector(resize(signed(mix_i), 16))
                    when (props_in.enable = '1') else in_in.data -- BYPASS: input(ENABLE=0)
                    when (props_in.data_select = '0')            -- BYPASS: NCO output(ENABLE=0, DATA_SELECT=1)
                    else std_logic_vector(resize(signed(nco_out_i), 16)) & std_logic_vector(resize(signed(nco_out_q), 16));
 
   -- Since ZeroLengthMessages=true for the output WSI, this signal must be controlled
+  -- (revisit once AV-4200 is resolved)
   out_out.byte_enable <= (others => '1');
 
   -----------------------------------------------------------------------------
@@ -277,8 +278,8 @@ begin
       RST      => ctl_in.reset,
       DIN_A_RE => nco_out_i,
       DIN_A_IM => nco_out_q,
-      DIN_B_RE => in_in.data(INPUT_DATA_WIDTH_c+15 downto 16),
-      DIN_B_IM => in_in.data(INPUT_DATA_WIDTH_c-1 downto 0),
+      DIN_B_RE => in_in.data(INPUT_DATA_WIDTH_c-1 downto 0),
+      DIN_B_IM => in_in.data(INPUT_DATA_WIDTH_c+15 downto 16),
       DIN_VLD  => mult_enable,
       DOUT_RE  => mix_i,
       DOUT_IM  => mix_q,
@@ -289,9 +290,9 @@ begin
   -----------------------------------------------------------------------------
   peak_rst_in <= ctl_in.reset or std_logic(props_in.peak_read);
   peak_a_in  <= std_logic_vector(resize(signed(mix_i), 16))  -- default output
-                when (props_in.enable = '1') else in_in.data(31 downto 16);  --BYPASS (ENABLE=0)
-  peak_b_in  <= std_logic_vector(resize(signed(mix_q), 16))  -- default output
                 when (props_in.enable = '1') else in_in.data(15 downto 0);  --BYPASS (ENABLE=0)
+  peak_b_in  <= std_logic_vector(resize(signed(mix_q), 16))  -- default output
+                when (props_in.enable = '1') else in_in.data(31 downto 16);  --BYPASS (ENABLE=0)
 
 
   pm_gen : if its(PEAK_MONITOR_p) generate

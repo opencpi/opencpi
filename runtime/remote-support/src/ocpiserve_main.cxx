@@ -51,6 +51,8 @@ namespace OR = OCPI::Remote;
   CMD_OPTION(addresses , a,    String,  0,   "Write server's TCP addresses to this file, one per line") \
   CMD_OPTION(loopback  , L,    Bool,    0,   "Allow discovery on the local/loopback subnet") \
   CMD_OPTION(onlyloopback, O,  Bool,    0,   "Allow discovery ONLY on local/loopback subnet") \
+  CMD_OPTION(list,       C,    Bool,    0,   "Show available containers") \
+  CMD_OPTION(only_platforms,,  Bool,    0,   "modifies the list command to show only platforms")\
 
 // FIXME: local-only like ocpihdl simulate?
 #include "CmdOption.h"
@@ -153,6 +155,10 @@ static int mymain(const char **) {
   if (options.remove())
     ocpiCheck(signal(SIGTERM, sigint) != SIG_ERR);
   OCPI::Driver::ManagerManager::configure();
+  if (options.list()) {
+    OA::ContainerManager::list(options.only_platforms());
+    return 0;
+  }
   assert(OCPI::Library::Library::s_firstLibrary);
   for (unsigned n = 1; n < options.processors(); n++) {
     std::string name;

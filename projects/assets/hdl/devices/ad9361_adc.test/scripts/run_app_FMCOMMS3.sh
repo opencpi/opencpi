@@ -67,4 +67,8 @@ echo "ocpirun -U -d -v -t $APP_RUNTIME_SEC \
 
 chmod +x $RUNFILE
 ./$RUNFILE
+XX=$?
+if [ "$XX" != "0" ]; then
+  exit $XX
+fi
 

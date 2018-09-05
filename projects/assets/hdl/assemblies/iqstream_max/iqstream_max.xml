@@ -1,0 +1,4 @@
+<!-- The iqstream_max_calculator HDL assembly xml file -->
+<HdlAssembly>
+  <Instance Worker="iqstream_max_calculator" Externals="true"/>
+</HdlAssembly>

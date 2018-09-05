@@ -18,13 +18,11 @@
 
 # This directory contains a library of device workers.
 # It is similar to the components directory except that all of the workers
-# are device specific - each worker controls some piece of hardware on a 
+# are device specific - each worker controls some piece of hardware on a
 # chip or attached to a chip.
 
-Tests = \
-	matchstiq_z1_rx.test \
-	matchstiq_z1_tx.test \
-	matchstiq_z1_i2c.test \
+# Currently, all tests are disabled because they need specific setups with a signal generator, etc.
+Tests =
 
 # Build Ordering Rules:
 # 1) Subdevices that support other devices must occur AFTER the devices they support.

@@ -110,6 +110,7 @@
   CMD_OPTION(component,   , Bool,   0, "first non-option argument is a component name,\n" \
 	                               "not an application XML file") \
   CMD_OPTION(seconds,     , Long,   0, "<seconds> -- legacy, use \"duration\" now\n") \
+  CMD_OPTION(version,     , Bool,   0, "print the OpenCPI release version") \
   /**/
 
 //  CMD_OPTION_S(simulator, H,String, 0, "Create a container with this HDL simulator")
@@ -253,9 +254,11 @@ static bool setup(const char *arg, ezxml_t &xml, std::string &file,
   }
   if (options.deployment())
     OL::Manager::getSingleton().suppressDiscovery();
-  if (options.remote())
+  if (options.remote()) {
+    (void)OA::ContainerManager::get(0); // force config/discovery
     OA::enableServerDiscovery();
-  OA::Container *c;
+  }
+  //  OA::Container *c;
   if (options.processors())
     for (unsigned n = 1; n < options.processors(); n++) {
       std::string name;
@@ -264,28 +267,8 @@ static bool setup(const char *arg, ezxml_t &xml, std::string &file,
     }
   if (options.list()) {
     (void)OA::ContainerManager::get(0); // force config/discovery
-    // This is redundant with what happens in OcpiApplication.cxx
-    for (const OA::PValue *p = &params[0]; p->name; ++p)
-      if (!strcasecmp(p->name, "server")) {
-	if (p->type != OA::OCPI_String)
-	  throw OU::Error("Value of \"server\" parameter is not a string");
-	OA::useServer(p->vString, options.verbose());
-      }
-    if (options.only_platforms()) {
-      std::set<std::string> plats;
-      for (unsigned n = 0; (c = OA::ContainerManager::get(n)); n++)
-	plats.insert(c->model() + "-" + (c->dynamic() ? "1" : "0") + "-" + c->platform());
-      for (std::set<std::string>::const_iterator i = plats.begin(); i != plats.end(); ++i)
-	printf("%s\n", i->c_str());
-    } else {
-      printf("Available containers:\n"
-	     " #  Model Platform       OS     OS-Version  Arch     Name\n");
-      for (unsigned n = 0; (c = OA::ContainerManager::get(n)); n++)
-	printf("%2u  %-5s %-14s %-6s %-11s %-8s %s\n",
-	       n,  c->model().c_str(), c->platform().c_str(), c->os().c_str(),
-	       c->osVersion().c_str(), c->arch().c_str(), c->name().c_str());
-    }
-    fflush(stdout);
+    OA::useServers(NULL, params, options.verbose());
+    OA::ContainerManager::list(options.only_platforms());
   }
   return false;
 }
@@ -293,6 +276,10 @@ static bool setup(const char *arg, ezxml_t &xml, std::string &file,
 static int mymain(const char **ap) {
   OU::PValueList params;
 
+  if (options.version()) {
+    printf("OpenCPI version is " OCPI_PACKAGE_VERSION "\n");
+    return 0;
+  }
   if (options.library_path()) {
     std::string env("OCPI_LIBRARY_PATH=");
     env += options.library_path();

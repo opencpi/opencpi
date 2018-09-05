@@ -36,10 +36,10 @@
 # Extract the target-related variables from the make context for use in the shell context.
 # This file must be sourced since its purpose is to change the environment
 # This is rarely needed since these variables are almost always used in the "make" context,
-# where the initialization is done using ocpisetup.mk.
+# where the initialization is done using setup-target-platform.mk
 # A single argument is required which will become OCPI_TARGET_PLATFORM.
 # If the single argument is empty, and OCPI_TARGET_PLATFORM is already set, it is used.
-# If the single argument is empty and OCPI_TARGET_PLATFORM is not set, ocpisetup.mk will set
+# If the single argument is empty and OCPI_TARGET_PLATFORM is not set, it will be set
 # it as OCPI_TOOL_PLATFORM.
 # Just some extra error checking
 if [ -n "$OCPI_TARGET_PLATFORM" ]; then
@@ -68,7 +68,7 @@ fi
     export OCPI_TARGET_PLATFORM_DIR=$OCPI_TOOL_PLATFORM_DIR
   else    
     read v0 v1 v2 v3 v4 v5 <<< `$OCPI_CDK_DIR/scripts/getPlatform.sh $OCPI_TARGET_PLATFORM`
-    [ -d $v5 ] || {
+    [ -d "$v5" ] || {
       echo Error:  Cannot find the platform directory for platform $OCPI_TARGET_PLATFORM
       exit 1
     }

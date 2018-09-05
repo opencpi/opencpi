@@ -1102,8 +1102,11 @@ static const char *
 getSims(std::vector<std::string> &sims) {
   std::string path;
   const char *err;
-  if ((err = OU::getAllProjects(path)))
-    return err;
+  // In a riuntimne environment there are no projects
+  if ((err = OU::getAllProjects(path))) {
+    ocpiInfo("When looking for simulators, could not find any projects: %s", err);
+    return NULL;
+  }
   std::vector<std::string> pdirs;
   sims.clear();
   std::string first;
@@ -1120,6 +1123,7 @@ getSims(std::vector<std::string> &sims) {
     std::string sim;
     OU::format(sim, "%s/runSimExec.%s", pdirs[n].c_str(), name.c_str());
     bool isDir;
+    ocpiDebug("Looking for %s for simulator %s", name.c_str(), sim.c_str());
     if (OS::FileSystem::exists(sim.c_str(), &isDir))
       sims.push_back(pdirs[n]);
   }
@@ -1170,7 +1174,7 @@ search(const OU::PValue *params, const char **excludes, bool discoveryOnly, std:
       }
 
       std::string cmd;
-      OU::format(cmd, "sh %s/runSimExec.%s %s probe", sims[n].c_str(), name,
+      OU::format(cmd, "bash %s/runSimExec.%s %s probe", sims[n].c_str(), name,
 		 OS::logGetLevel() >= 8 ? "-v" : "");
       ocpiInfo("Checking whether the %s simulator is available and licensed", name);
       //  FIXME: make this more of a utility

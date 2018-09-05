@@ -176,7 +176,6 @@ HdlCompile=\
   grep -i error $(HdlLog)| grep -v Command: |\
     grep -v '^WARNING:'|grep -v " 0 errors," | grep -i -v -e '[_a-z]error' -e 'error[a-rt-z_]' $(HdlGrepExclude_$(HdlToolSet)); \
   if grep -q '^ERROR:' $(HdlLog); then HdlExit=1; fi; \
-  $(HdlToolPost) \
   if test "$$OCPI_HDL_VERBOSE_OUTPUT" != ''; then \
     cat $(HdlLog); \
   fi; \
@@ -188,6 +187,12 @@ HdlCompile=\
   (cat $(HdlTime) | tr -d "\n"; $(ECHO) -n " at "; date +%T); \
   rm -f $(HdlTime); \
   exit $$HdlExit
+
+HdlPost=\
+  $(and $(HdlToolPost),\
+    set -e; \
+    cd $(TargetDir) && \
+    $(HdlToolPost))
 ################################################################################
 # The post processing by tools that do not produce any intermediate
 # build results
@@ -236,7 +241,7 @@ HdlGetBinSuffix=$(HdlBin_$(call HdlGetToolSet,$1))
 # Return all the targets that work with this tool
 HdlGetTargetsForToolSet=$(call Unique,\
     $(foreach t,$(2),\
-       $(and $(findstring $(1),$(call HdlGetToolSet,$(t))),$(t))))
+       $(and $(filter $(1),$(call HdlGetToolSet,$(t))),$(t))))
 
 ################################################################################
 # $(call HdlGetConstraintsSuffix,<platform>)
@@ -266,38 +271,190 @@ define HdlSearchComponentLibraries
 endef
 HdlRmRv=$(if $(filter %_rv,$1),$(patsubst %_rv,%,$1),$1)
 
-#########################################################################################################
+# Grep a file and collect all non-comment lines into a space-separated list
+HdlGrepExcludeComments=$(shell grep -v '\#' $1 2>/dev/null)
 
-# Stash all the cores we needed in a file so that tools that do not implement
-# proper hierarchies can include indirectly required cores later
-# Called from HdlCompile which is already tool-specific
+#########################################################################################################
+#  An OpenCPI 'core' is really any core-like asset that results in a netlist-like artifact for later reuse.
+#  Assets that function like cores are all assets except primitive libraries. So, the list is:
+#    primitive core, worker, platform, config, assembly, container
+#
+#  Certain tools require that all core-dependencies are captured at every level of compilation. This means
+#  that if a worker includes a primitive core, that information needs to be reiterated not only during
+#  compilation of the worker, but also during compilation of the containing assembly AND finally the
+#  container.
+#
+#  Furthermore, certain tools (e.g. Quartus Pro) require that each core/netlist be mapped to a specific HDL
+#  instance in the design. This further compilicates this logic because the instance hierarchy changes and
+#  expands at every level of OpenCPI's incremental compilation.
+#
+#  So, everytime an OpenCPI asset is compiled and includes another 'core' asset(s) (or plain old netlist),
+#  the included core's path (from the project top when possible) and optionally the HDL instance that it maps
+#  to (if the tool requires it) must be recorded. This information is recorded in the *.cores file for an
+#  OpenCPI asset.
+#
+#  While an asset is being compiled, the mapping of cores to instances in the HDL hierarchy must be considered.
+#
+#    Based on the HdlMode, we can determine an instance hierarchy prefix that will be prepended to any cores'
+#    instances in the current design. So, if the user specifies an instance for a core via
+#    <mycore>:<its-instance>, the resulting instance name in the current design would be
+#    <prefix>|<its-instance>. The prefix is determined using the HdlInstancePrefix function.
+#
+#    If a subcore is user-specified via Cores=<core>:<inst>, this is simple enough, but when the core is
+#    included by OpenCPI itself (e.g. when an assembly includes app workers), there is more information
+#    we need to gather. HdlInstancesForCore accesses the HdlInstances list to determine which HDL instance
+#    a worker/core in an assembly corresponds to. The results of HdlInstancesForCore are prepended with the
+#    results of HdlInstancePrefix to determine the full instance hierarchy for a core.
+#
+#    HdlCollectCores is used to iterate through SubCores_<target>, collect core names, paths and instances, and
+#    iterate down to the '.cores' files for each SubCore (when appropriate) using the HdlGetSubCoresFromFile
+#    function. Each core discovered in a .cores file is then prepended with the current HdlInstancePrefix, and
+#    the paths are processed. This results in a list of format:
+#    <corename/partialpath>:<full-core-path>:<core-instance>. This three part list allows us to index
+#    the list of Cores (set by the user) by 'corename'. This is important because if a user set
+#    'Cores=<corename/path>:<instance>', we may want to handle it differently in the <tool>.mk. So, we store the
+#    user-set <corename/path> before modifications so that we can check an entry against the Cores variable
+#    to determine if a core (returned by HdlCollectCores) corresponds to one listed in the user-set Cores
+#    variable.
+#
+#    HdlRecordCores writes the list of cores (from HdlCollectCores) to a file. It writes each in the format
+#    <partial-core-path>:<instance>. HdlCoresToRecord modifies the core paths so that they are relative to the
+#    top level of the current project (e.g. hdl/devices/lib/hdl/arria10soc/sdp_node_rv.qdb or
+#    imports/ocpi.core/exports/lib/devices/hdl/arria10soc/sdp_node_rv.qdb), and then records them alongside the
+#    instance names for respective cores as used when compiling the current asset.
+
+# For each instance mapping listed in HdlInstances:
+#   If the instance maps (via HdlInstanceWkrCfg) to the worker/config provided by $1:
+#     return the instance name (last colon-separated word in inst)
+# If there is no mapping for the provided core ($1):
+#   default to <core>_i
+HdlInstancesForCore=$(infox HIFC:$1)$(strip \
+  $(or $(strip \
+         $(foreach inst,$(HdlInstances)$(infox HdlInstances:$(HdlInstances)),\
+           $(if $(filter $(basename $(notdir $1)),$(call HdlInstanceWkrCfg,$(inst))),\
+             $(lastword $(subst :, ,$(inst)))))),\
+       $(call RmRv,$(basename $(notdir $1)))))
+
+# For some modes, instances should by default be appended with _i
+HdlDefaultInstanceSuffix=$(strip \
+  $(if $(filter-out assembly worker,$(HdlMode)),\
+    _i))
+
+# '|' needs to be escaped
+# switch HdlMode:
+#   case container: pref = "ftop|"
+#   case assembly : pref =  "assy|"
+#   case worker \
+#     or config   : if HdlUsesRv: pref = "worker|", else pref = "rv|worker|"
+#   case */default: pref = ""
+# return pref
+HdlInstancePrefix=$(strip \
+  $(if $(filter container,$(HdlMode)),ftop\\|,\
+    $(if $(filter assembly,$(HdlMode)),assy\\|,\
+       $(if $(filter worker platform,$(HdlMode)),$(if $(HdlUsesRv),,rv\\|)worker\\|))))
+
+# Each line in a .cores file must have an instance name for each core. This instance
+# is the text after the ':'.
+# This must hold true whenever HdlTooLRequiresInstanceMap_<tool> is set.
+# After being read from a file, the '|' hierarchy separator must be re-escaped in the
+# instance string.
+#
+# $1 = coreline from .cores file <core>:<hdl-instance>
+HdlInstanceForCoreFromFile=$(strip \
+  $(if $(filter $(words $(subst :, ,$1)),2),\
+     $(subst |,\|,$(lastword $(subst :, ,$1))),\
+     $(error Format of .cores file should be <core>:<core-path>:<hdl-instance> for tools that require HDL instance mapping.)))
+
+# If checking for core instances from the command line (e.g. directly from SubCores variable), the instance/2nd-word
+# can be blank
+HdlUserInstanceForCore=$(strip \
+  $(if $(filter $(words $(subst :, ,$1)),2),\
+     $(lastword $(subst :, ,$1))))
+
+# Recorded paths to cores are either absolute paths (e.g. to non-OpenCPI ngc files),
+# or partial paths from the top of the containing project. Here, we convert these
+# paths to real/full paths.
+#
+# $1 = name of core as seen in .cores files
+# $2 = path to top of project containing core
+HdlConvertRecordedCoreToPath=$(strip \
+  $(if $(filter /%,$(1)),\
+    $(1),\
+      $(or $(call OcpiExists,$(2)/$(1)),\
+           $(call OcpiExists,$(2)/$(subst /lib/,/,$(patsubst hdl/platforms/%,lib/platforms/%,$(1)))),\
+           $(call OcpiExists,$(2)/$(subst /lib/,/,$(patsubst hdl/devices/%,lib/devices/%,$(1)))),\
+           $(call OcpiExists,$(2)/$(subst /lib/,/,$(patsubst hdl/primitives/%,lib/hdl/%,$(1)))))))
+
+# For each line of this SubCore's .cores file,
+#   assume the first element is the core (partial path),
+#   and the second element is the instance (if the tool requires instance maps).
+#   Get the real path to the core
+#   (Optionally) Get the HDL instance for the core
+# return a space separated list of elements in the format <core-name>:<path-to-core>:<instance-for-core>
+#   here, core-name is the pre-: text from the file before being transformed
+# $1 is the path to the core that might have a .cores file
+HdlGetSubCoresFromFile=$(infox GetSubCoresFrom:$(call HdlRmRv,$(basename $1)).cores:arg3=$3)$(strip \
+  $(foreach coresfile,$(call HdlExists,$(call HdlRmRv,$(basename $1)).cores),$(infox CoreFile:$(coresfile))\
+    $(foreach pjtop,$(call OcpiAbsPathToContainingProject,$(coresfile)),$(infox pjtop:$(pjtop))\
+      $(foreach coreline,$(call HdlGrepExcludeComments,$(coresfile)),$(infox CoreLine:$(coreline):from:$(coresfile))\
+          $(subst $(Space),,\
+            $(corename):\
+            $(foreach corename,$(firstword $(subst :, ,$(coreline))),\
+              $(call HdlConvertRecordedCoreToPath,$(corename),$(pjtop)))\
+            $(if $(filter $3,noinstances),,\
+              $(if $(HdlToolRequiresInstanceMap_$(HdlToolSet)),\
+                :$2\\|$(call HdlInstanceForCoreFromFile,$(coreline))))) ))))
+
+# Foreach subcore listed in SubCores:
+#   Determine the corename (text before :)
+#     Determine the path to this core
+#       Get all subsubcores for this core if it has a .cores file (HdlGetSubCoresFromFile)
+#         Only perform this step if the tool requires a full core hierarchy (e.g. might not need to recures to subcores)
+# return a space separated list with elements of format <core-name>:<core-path>
+#   One element for each SubCore (and each of ITS subcores if it has a .cores file)
+#
+#   If we DO want an instancemap (if $1 != noinstances and tool does needs instances):
+#     elements in the returned list will have format: <core-name>:<core-path>:<instance>
+#       <instance> will have a prefix (HdlInstancePrefix) preppended and a suffix (HdlDefaultInstanceSuffix) appended
+#     <instance> is determined by first  checking for user provided instance mappings (HdlUserInstanceForCore), and
+#                                 second checking for OpenCPI defined mappings (HdlInstancesForCore - e.g. .wks file)
+#       if there are > 1 instances mapped to by a single core, each instance string must have its prefix and suffix applied before
+#         being assigned to "subcoreinst" and inserted in the constructed/returned element (format <core-name>:<core-path:<instance>)
+HdlCollectCores=$(infox Collect:$(SubCores_$(HdlTarget)):$(HdlTarget))$(strip \
+  $(foreach subcore,$(SubCores_$(HdlTarget)),\
+    $(foreach corename,$(firstword $(subst :, ,$(subcore))),\
+      $(foreach corepath,$(call HdlCoreRefMaybeTargetSpecificFile,$(corename),$(HdlTarget)),$(infox CorePath:$(corepath))\
+        $(if $(or $(filter $1,noinstances),$(if $(HdlToolRequiresInstanceMap_$(HdlToolSet)),,noinstances)),\
+          $(corename):$(corepath) $(if $(HdlToolRequiresFullCoreHierarchy_$(HdlToolSet)),$(call HdlGetSubCoresFromFile,$(corepath),,$1)),\
+          $(if $(HdlToolRequiresInstanceMap_$(HdlToolSet)),\
+            $(foreach subcoreinst,$(strip $(foreach oneormoreinsts,$(or $(call HdlUserInstanceForCore,$(subcore)),\
+                                                                        $(call HdlInstancesForCore,$(corepath))),\
+                                            $(HdlInstancePrefix)$(oneormoreinsts)$(HdlDefaultInstanceSuffix))),\
+              $(corename):$(corepath):$(subcoreinst)$(infox SubCoreInst:$(subcoreinst)) \
+              $(if $(HdlToolRequiresFullCoreHierarchy_$(HdlToolSet)),$(call HdlGetSubCoresFromFile,$(corepath),$(subcoreinst),$1)))))))))
+
+# Collect all cores of interest, but just return the list of paths (do no care about core names or instances here)
+# This is an simpler list of cores used by certain tools and in HdlPreCore (in HdlPrepareAssembly)
+HdlCollectCorePaths=$(strip \
+  $(foreach corenameandpath,$(call HdlCollectCores,noinstances),\
+    $(word 2,$(subst :, ,$(corenameandpath))) ))
+#
+# Iterate through all collected cores, and determine the partial path (and optionally instance) to record in the .cores file
+# Make sure to escape any '|' characters found in HDL instance strings
+HdlCoresToRecord=$(strip \
+  $(foreach corenamepathandinst,$(call HdlCollectCores,$(if $(HdlToolRequiresInstanceMap_$(HdlToolSet)),,noinstances)),$(infox CPAI:$(corenamepathandinst))\
+      $(foreach partialpath,$(call OcpiPathFromProjectTopOrImports,$(dir $1),$(word 2,$(subst :, ,$(corenamepathandinst)))),$(infox PartialPath:$(partialpath))\
+        $(partialpath)$(if $(HdlToolRequiresInstanceMap_$(HdlToolSet)),:$(subst |,\|,$(lastword $(subst :, ,$(corenamepathandinst)))))) ))
+
+# Determine cores to record and write them to the .cores file
 HdlRecordCores=\
   $(infox Record:$1:$(SubCores_$(HdlTarget)):$(HdlTarget))\
   $(and $(call HdlExists,$(dir $1)),\
-  (\
-   echo '\#' This generated file records cores necessary to build this $(LibName) $(HdlMode); \
-   echo $(call OcpiPathsFromProjectTopOrImports,$(dir $1),\
-          $(foreach p,$(foreach c,$(call HdlCollectCores,$(HdlTarget),HdlRecordCores),$(strip\
-            $(call HdlCoreRefMaybeTargetSpecificFile,$c,$(HdlTarget)))),$p)); \
-  ) > $(call HdlRmRv,$1).cores;)
-
-# Collect a list of cores that this asset depends on. If the path to the core
-# is correct as is, use that path. Otherwise, use HdlCoreRef to determine the
-# path to the core.
-HdlCollectCores=$(infox CCCC:$(SubCores_$(HdlTarget)):$1:$2)$(strip $(call Unique,\
-  $(foreach a,\
-    $(foreach c,$(SubCores_$(HdlTarget)),$(infox ZC:$c)$c \
-      $(foreach r,$(basename $(call HdlCoreRefMaybeTargetSpecificFile,$c,$1)),$(infox ZR:$r)\
-        $(foreach f,$(call HdlExists,$(call HdlRmRv,$r).cores),$(infox ZF:$f)\
-          $(foreach p,$(call OcpiAbsPathToContainingProject,$f),\
-            $(foreach z,$(shell grep -v '\#' $f),$(infox found:$z)\
-              $(if $(filter /%,$z),\
-                $z,\
-	        $(or $(call OcpiExists,$p/$z),\
-                     $(call OcpiExists,$p/$(subst /lib/,/,$(patsubst hdl/platforms/%,lib/platforms/%,$z))),\
-                     $(call OcpiExists,$p/$(subst /lib/,/,$(patsubst hdl/devices/%,lib/devices/%,$z))),\
-	             $(call OcpiExists,$p/$(subst /lib/,/,$(patsubst hdl/primitives/%,lib/hdl/%,$z)))))))))),\
-    $a)))
+    (\
+     echo '\#' This generated file records cores necessary to build this $(LibName) $(HdlMode); \
+     $(foreach core,$(HdlCoresToRecord)$(infox Recording:$(HdlCoresToRecord)),\
+       echo $(core); )\
+    ) > $(call HdlRmRv,$1).cores;)
 
 #########################################################################################################
 # Record all of the libraries and sources required for this asset (onl when a tool requires this is done)
@@ -323,8 +480,8 @@ HdlRecordLibraries=\
 
 # Extract the list of libraries required by an asset/library $2 for target $1
 HdlExtractLibrariesFromFile=$(infox Extract:$2:$1)$(call Unique,\
-	$(foreach f,$(call HdlExists,$(call HdlRmRv,$2)/$(HdlTarget)/$(notdir $(call HdlRmRv,$2)).libs),$(infox ZF:$f)\
-	  $(foreach z,$(shell grep -v '\#' $f),$(infox found:$z)$z )))
+  $(foreach f,$(call HdlExists,$(call HdlRmRv,$2)/$(HdlTarget)/$(notdir $(call HdlRmRv,$2)).libs),$(infox ZF:$f)\
+    $(foreach z,$(call HdlGrepExcludeComments,$f),$(infox found:$z)$z )))
 
 # If the libname consists of one word, search the primitive path.
 # If the libname is an absolute path, return it abspath of $2,
@@ -363,7 +520,7 @@ HdlRecordSources=\
   $(and $(call HdlExists,$(dir $1)),\
   (\
    echo '\#' This generated file records sources necessary to build this $(LibName) $(HdlMode); \
-   $(foreach s,$(if $(filter $(HdlMode),core),$(wildcard $(CoreBlackBoxFiles)),$(HdlSources)),echo $(notdir $s);) \
+   $(foreach s,$(if $(filter $(HdlMode),core),$(wildcard $(CoreBlackBoxFiles)),$(call OcpiUniqueNotDir,$(HdlSources))),echo $(notdir $s);) \
   ) > $(patsubst %/,%,$(call HdlRmRv,$1)).sources ;)
 
 # Here, we use HdlLibraryRefDir to determine the path to the library
@@ -388,7 +545,7 @@ HdlRelativeOrAbsolutePathToLib=$(infox HRAPL:$1:$2:$3)$(strip \
 HdlExtractSourcesForLib=$(infox Extract:$2:$1)\
   $(foreach f,\
     $(call HdlRelativeOrAbsolutePathToLib,$1,$2,.),$(infox ZF:$f)\
-      $(foreach z,$(shell grep -v  '\#' $f/$(notdir $2).sources),$(infox found:$z)\
+      $(foreach z,$(call HdlGrepExcludeComments,$f/$(notdir $2).sources),$(infox found:$z)\
         $(call HdlRelativeOrAbsolutePathToLib,$1,$2,$3)/$z ))
 
 #########################################################################################################
@@ -414,6 +571,7 @@ HdlShadowFiles=\
 # $(call HdlTargetSrcFiles,target-dir,paramconfig)
 HdlTargetSrcFiles=$(and $(filter-out library core,$(HdlMode)),\
   $(call HdlVHDLTargetDefs,$1,$2)\
+  $(if $(HdlToolRequiresEntityStubs_$(HdlToolSet)),$(call HdlVHDLTargetEnts,$1,$2))\
   $(call HdlVerilogTargetDefs,$1,$2)\
   $(call WkrTargetDir,$1,$2)/generics$(HdlVHDLIncSuffix)\
   $(call WkrTargetDir,$1,$2)/generics$(HdlVerilogIncSuffix)\
@@ -477,7 +635,7 @@ define HdlPrepareAssembly
   # 4. Make the generated assembly source file one of the files to compile
   WorkerSourceFiles=$$(ImplFile)
   # 5. Define the variable used for dependencies when the worker is actually built
-  HdlPreCore=$$(eval $$(HdlSetWorkers))$$(call HdlCollectCores,$$(HdlTarget),HdlPrepareAssembly)
+  HdlPreCore=$$(eval $$(HdlSetWorkers))$$(call HdlCollectCorePaths)
 endef
 #ifndef OCPI_HDL_PLATFORM
 #OCPI_HDL_PLATFORM=zed

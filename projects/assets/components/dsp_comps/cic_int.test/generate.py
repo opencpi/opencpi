@@ -87,7 +87,7 @@ else: # Generate a complex waveform with a tone
         num_cycles = 1
 
 # Define complex data type
-dt_iq_pair = np.dtype((np.uint32, {'real_idx':(np.int16,2), 'imag_idx':(np.int16,0)}))
+dt_iq_pair = np.dtype((np.uint32, {'real_idx':(np.int16,0), 'imag_idx':(np.int16,2)}))
 # Initialize empty array, sized to store interleaved I/Q 16bit samples
 out_data = np.array(np.zeros(len(real)), dtype=dt_iq_pair)
 

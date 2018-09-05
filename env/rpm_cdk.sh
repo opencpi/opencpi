@@ -17,9 +17,21 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
+##########################################################################################
+# This script is intended to be dropped in to the /etc/profile.d directory so that after
+# installation all users get their environment initialized the same, with no action on
+# their part.
+# Note that these /etc/profile.d scripts actually get called from /etc/profile for login
+# shells AND get called from /etc/bashrc for interactive shells.  This is to allow
+# these drop-ins to do either type of initialization (environment in .profile or
+# aliases and functions in .bashrc).
+# Since we are only doing the former, we do not run if we are being called later
+# in interactive shells.
+# Note we also look into platform-specific directories for this running platform.
+shopt -q login_shell || return 0
 source /opt/opencpi/cdk/opencpi-setup.sh -
-# Import any user configuration files
-for i in /opt/opencpi/cdk/env.d/*.sh ; do
+# Import any user configuration files, including ones specific to this platform
+for i in /opt/opencpi/cdk/env.d/*.sh /opt/opencpi/cdk/$OCPI_TOOL_PLATFORM/env.d/*.sh; do
   if [ -r "$i" ]; then
     . "$i"
   fi

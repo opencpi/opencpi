@@ -1,5 +1,0 @@
-<application package='ocpi' >
-  <instance component='patgen' externals='true'>
-    <property name='pattern' value='0x1'/>
-  </instance>
-</application>

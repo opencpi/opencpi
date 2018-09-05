@@ -154,7 +154,7 @@ namespace OCPI {
 	  ocpiAssert(ep.maxCount() == m_maxMBox);
 	  // chop it up into equal parts assuming everyone has the same maxCount
 	  if (ep.size() > m_perMBox)
-	    throw OU::Error("not enough memory to accomodate all endpoints");
+	    throw OU::Error("not enough memory to accommodate all endpoints");
 	  request.actual = m_perMBox;
 	  request.address = m_dmaBase + m_perMBox * ep.mailBox();
 	  request.bus_addr = ep.m_busAddr;

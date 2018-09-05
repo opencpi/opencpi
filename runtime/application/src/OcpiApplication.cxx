@@ -63,19 +63,7 @@ namespace OCPI {
 		  c->name().c_str(), c->model().c_str(), c->os().c_str(), c->platform().c_str());
 	fprintf(stderr, "\n");
       }
-      // server arguments and server environment variables are all used, no shadowing
-      char *saddr = getenv("OCPI_SERVER_ADDRESS");
-      if (saddr)
-	OA::useServer(saddr, verbose);
-      if ((saddr = getenv("OCPI_SERVER_ADDRESSES")))
-	for (OU::TokenIter li(saddr); li.token(); li.next())
-	  OA::useServer(li.token(), verbose);
-      for (const PValue *p = params; p && p->name; ++p)
-	if (!strcasecmp(p->name, "server")) {
-	  if (p->type != OCPI_String)
-	    throw OU::Error("Value of \"server\" parameter is not a string");
-	  OA::useServer(p->vString, verbose);
-	}
+      OA::useServers(NULL, params, verbose);
       return *new OL::Assembly(appXml, name, params);
     }
     // Deal with a deployment file referencing an app file
@@ -274,15 +262,21 @@ namespace OCPI {
     }
 
     static unsigned
-    findSlave(OU::Worker &sImpl, OU::Worker &mImpl, std::string &slaveWkrName) {
+    findSlave(OU::Worker &sImpl, OU::Worker &mImpl, std::string &slaveWkrName,
+              unsigned int index = UINT_MAX) {
       OU::format(slaveWkrName, "%s.%s", sImpl.cname(), sImpl.model().c_str());
       size_t dashIdx =  slaveWkrName.rfind('-');
       if (dashIdx != std::string::npos) // if worker has configuration suffix, remove it
-	slaveWkrName.erase(dashIdx, slaveWkrName.rfind('.') - dashIdx);
+        slaveWkrName.erase(dashIdx, slaveWkrName.rfind('.') - dashIdx);
       // Is this a valid slave for this master
+      if (index != UINT_MAX){
+        assert(index < mImpl.slaves().size());
+        if (!strcasecmp(mImpl.slaves()[index], slaveWkrName.c_str()))
+          return index;
+      }
       for (unsigned n = 0; n < mImpl.slaves().size(); ++n)
-	if (!strcasecmp(mImpl.slaves()[n], slaveWkrName.c_str()))
-	  return n;
+        if (!strcasecmp(mImpl.slaves()[n], slaveWkrName.c_str()))
+          return n;
       return UINT_MAX;
     }
 
@@ -1061,11 +1055,14 @@ namespace OCPI {
 	  lc.m_in.m_container != lc.m_out.m_container &&
 	  (!lc.m_in.m_container->portsInProcess() ||
 	   !lc.m_out.m_container->portsInProcess())) {
-	ocpiInfo("Negotiating connection from instance %s port %s to instance %s port %s",
+	ocpiInfo("Negotiating connection from instance %s port %s to instance %s port %s "
+		 "(buffer size is %zu/0x%zx)",
 		 lc.m_out.m_member ? lc.m_out.m_member->m_name.c_str() : "<external>",
 		 lc.m_out.m_name,
 		 lc.m_in.m_member ? lc.m_in.m_member->m_name.c_str() : "<external>",
-		 lc.m_in.m_name);
+		 lc.m_in.m_name, lc.m_bufferSize, lc.m_bufferSize);
+	ocpiDebug("Input container: %s, output container: %s",
+		  lc.m_in.m_container->name().c_str(), lc.m_out.m_container->name().c_str());
 	OC::BasicPort::
 	  determineTransport(lc.m_in.m_container->transports(),
 			     lc.m_out.m_container->transports(),
@@ -1269,7 +1266,7 @@ namespace OCPI {
 	      std::string slaveWkrName;
 	      OU::Worker &sImpl =
 		m_instances[ui.m_slaves[s]].m_bestDeployment.m_impls[0]->m_metadataImpl;
-	      unsigned x = findSlave(sImpl, mImpl, slaveWkrName);
+	      unsigned x = findSlave(sImpl, mImpl, slaveWkrName, s);
 	      assert(x != UINT_MAX); // error checks are already done
 	      assert(!li->m_slaves[x]);
 	      li->m_slaves[x] = &m_launchMembers[m_instances[ui.m_slaves[s]].m_firstMember];
@@ -1678,7 +1675,7 @@ namespace OCPI {
     setProperty(const char * worker_inst_name, const char * prop_name, const char *value) {
       Property &p = findProperty(worker_inst_name, prop_name);
       m_launchMembers[m_instances[p.m_instance].m_firstMember].m_worker->
-	setProperty(prop_name, value);
+	setProperty(p.m_property, value);
     }
 
     void ApplicationI::

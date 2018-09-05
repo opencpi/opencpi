@@ -10,6 +10,7 @@
   </container>
   <transfer smbsize='128K'>
     <pio load='1' smbsize='10M'/>
+    <socket load='1'/>
     <dma load='1'/>
   </transfer>
 </opencpi>

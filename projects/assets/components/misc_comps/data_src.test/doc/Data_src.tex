@@ -97,10 +97,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \title{\docTitle}
 \lhead{\small{\docTitle}}
 
-\def\comp{temp}
-\edef\ecomp{temp}
 % do not delete this line, it is used by the auto gen script to insert latex code
 \def\comp{data\_src}
+\edef\ecomp{data_src}
 %GEN_COMPLC_NAME
 \def\Comp{TEMP}
 % do not delete this line, it is used by the auto gen script to insert latex code
@@ -210,6 +209,8 @@ num\_samples & long  & - & - & Readable, Writeable & -  &-1 & Maximum number of 
 \\
 \hline
 fixed\_value & bool  & - & DATA\_BIT\_WIDTH\_p & Readable, Writeable & -  &0x5a5a & The value of this property will be used for I (and the bit-reversed version of this value will be used for Q) to send to the output port when the \verb+mode+ property's value is 'fixed'.
+Array index 0 corresponds to the 15th (most significant) I bit and the 16-\verb+DATA_BIT_WIDTH_p Q+ bit of the out port,
+array index 1 corresponds to the 14th (next-to-most significant) I bit and the 15-\verb+DATA_BIT_WIDTH_p+ Q bit of the out port, etc...
 \\
 \hline
 mode & enum  & - & - & Readable, Writeable & count,walking, LFSR,fixed  &count & Counter, walking ones, Linear Feedback Shift Register, or fixed value.
@@ -371,24 +372,24 @@ StreamInterface & out & 32 & - & -\\
 Device utilization summary:
 ---------------------------
 
-Selected Device : 6vcx75tff484-2 
+Selected Device : 6vcx75tff484-2
 
 
-Slice Logic Utilization: 
- Number of Slice Registers:             244  out of  93120     0%  
- Number of Slice LUTs:                  320  out of  46560     0%  
-    Number used as Logic:               320  out of  46560     0%  
+Slice Logic Utilization:
+ Number of Slice Registers:             244  out of  93120     0%
+ Number of Slice LUTs:                  320  out of  46560     0%
+    Number used as Logic:               320  out of  46560     0%
 
-Slice Logic Distribution: 
+Slice Logic Distribution:
  Number of LUT Flip Flop pairs used:    467
-   Number with an unused Flip Flop:     223  out of    467    47%  
-   Number with an unused LUT:           147  out of    467    31%  
-   Number of fully used LUT-FF pairs:    97  out of    467    20%  
+   Number with an unused Flip Flop:     223  out of    467    47%
+   Number with an unused LUT:           147  out of    467    31%
+   Number of fully used LUT-FF pairs:    97  out of    467    20%
    Number of unique control sets:        19
 
-IO Utilization: 
+IO Utilization:
  Number of IOs:                         129
- Number of bonded IOBs:                   0  out of    240     0%  
+ Number of bonded IOBs:                   0  out of    240     0%
 \fi
 
 %data_src.hdl/target-virtex6/data_src-xst.out
@@ -408,24 +409,24 @@ Speed Grade: -2
 Device utilization summary:
 ---------------------------
 
-Selected Device : 6vcx75tff484-2 
+Selected Device : 6vcx75tff484-2
 
 
-Slice Logic Utilization: 
- Number of Slice Registers:             243  out of  93120     0%  
- Number of Slice LUTs:                  396  out of  46560     0%  
-    Number used as Logic:               396  out of  46560     0%  
+Slice Logic Utilization:
+ Number of Slice Registers:             243  out of  93120     0%
+ Number of Slice LUTs:                  396  out of  46560     0%
+    Number used as Logic:               396  out of  46560     0%
 
-Slice Logic Distribution: 
+Slice Logic Distribution:
  Number of LUT Flip Flop pairs used:    531
-   Number with an unused Flip Flop:     288  out of    531    54%  
-   Number with an unused LUT:           135  out of    531    25%  
-   Number of fully used LUT-FF pairs:   108  out of    531    20%  
+   Number with an unused Flip Flop:     288  out of    531    54%
+   Number with an unused LUT:           135  out of    531    25%
+   Number of fully used LUT-FF pairs:   108  out of    531    20%
    Number of unique control sets:        19
 
-IO Utilization: 
+IO Utilization:
  Number of IOs:                         129
- Number of bonded IOBs:                   0  out of    240     0%  
+ Number of bonded IOBs:                   0  out of    240     0%
 \fi
 
 %data_src.hdl/target-1-virtex6/data_src-xst.out
@@ -445,24 +446,24 @@ Speed Grade: -2
 Device utilization summary:
 ---------------------------
 
-Selected Device : 7z010clg400-3 
+Selected Device : 7z010clg400-3
 
 
-Slice Logic Utilization: 
- Number of Slice Registers:             244  out of  35200     0%  
- Number of Slice LUTs:                  320  out of  17600     1%  
-    Number used as Logic:               320  out of  17600     1%  
+Slice Logic Utilization:
+ Number of Slice Registers:             244  out of  35200     0%
+ Number of Slice LUTs:                  320  out of  17600     1%
+    Number used as Logic:               320  out of  17600     1%
 
-Slice Logic Distribution: 
+Slice Logic Distribution:
  Number of LUT Flip Flop pairs used:    467
-   Number with an unused Flip Flop:     223  out of    467    47%  
-   Number with an unused LUT:           147  out of    467    31%  
-   Number of fully used LUT-FF pairs:    97  out of    467    20%  
+   Number with an unused Flip Flop:     223  out of    467    47%
+   Number with an unused LUT:           147  out of    467    31%
+   Number of fully used LUT-FF pairs:    97  out of    467    20%
    Number of unique control sets:        19
 
-IO Utilization: 
+IO Utilization:
  Number of IOs:                         129
- Number of bonded IOBs:                   0  out of    100     0%  
+ Number of bonded IOBs:                   0  out of    100     0%
 \fi
 
 %data_src.hdl/target-zynq/data_src-xst.out
@@ -482,24 +483,24 @@ Speed Grade: -3
 Device utilization summary:
 ---------------------------
 
-Selected Device : 7z010clg400-3 
+Selected Device : 7z010clg400-3
 
 
-Slice Logic Utilization: 
- Number of Slice Registers:             243  out of  35200     0%  
- Number of Slice LUTs:                  396  out of  17600     2%  
-    Number used as Logic:               396  out of  17600     2%  
+Slice Logic Utilization:
+ Number of Slice Registers:             243  out of  35200     0%
+ Number of Slice LUTs:                  396  out of  17600     2%
+    Number used as Logic:               396  out of  17600     2%
 
-Slice Logic Distribution: 
+Slice Logic Distribution:
  Number of LUT Flip Flop pairs used:    531
-   Number with an unused Flip Flop:     288  out of    531    54%  
-   Number with an unused LUT:           135  out of    531    25%  
-   Number of fully used LUT-FF pairs:   108  out of    531    20%  
+   Number with an unused Flip Flop:     288  out of    531    54%
+   Number with an unused LUT:           135  out of    531    25%
+   Number of fully used LUT-FF pairs:   108  out of    531    20%
    Number of unique control sets:        19
 
-IO Utilization: 
+IO Utilization:
  Number of IOs:                         129
- Number of bonded IOBs:                   0  out of    100     0%  
+ Number of bonded IOBs:                   0  out of    100     0%
 \fi
 
 %data_src.hdl/target-1-zynq/data_src-xst.out

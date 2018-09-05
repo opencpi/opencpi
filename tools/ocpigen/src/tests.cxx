@@ -1025,7 +1025,7 @@ namespace {
 	else if (nOutputs == 1)
 	  OU::formatAdd(app, " done='file_write'");
 	else if (nOutputs > 1) {
-	  OU::formatAdd(app, " done='file_write_from_%s'", first->pname());
+	  OU::formatAdd(app, " done='file_write_from_%s'", (firstEm ? firstEm : first)->pname());
 	}
 	app += ">\n";
 	if (nInputs)
@@ -1218,16 +1218,16 @@ namespace {
 			      io.m_file[0] == '/' ? "" : "../../", io.m_file.c_str());
 	      OU::formatAdd(verify,
 			    "  r=$?\n"
-			    "  tput bold\n"
+			    "  tput bold 2>/dev/null\n"
 			    "  if [ $r = 0 ] ; then \n"
-			    "    tput setaf 2\n"
+			    "    tput setaf 2 2>/dev/null\n"
 			    "    echo '    Verification for port %s: PASSED'\n"
 			    "  else\n"
-			    "    tput setaf 1\n"
+			    "    tput setaf 1 2>/dev/null\n"
 			    "    echo '    Verification for port %s: FAILED'\n"
 			    "    failed=1\n"
 			    "  fi\n"
-			    "  tput sgr0\n"
+			    "  tput sgr0 2>/dev/null\n"
 			    "  [ $r = 0 ] || exitval=1\n"
 			    "}\n", io.m_port->pname(), io.m_port->pname());
 	    } else

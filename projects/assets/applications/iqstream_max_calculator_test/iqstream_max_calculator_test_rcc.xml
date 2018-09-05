@@ -1,0 +1,10 @@
+<!-- The iqstream_max_calculator_test application xml file -->
+<application done="file_write">
+  <Instance Component="ocpi.core.file_read" Connect="iqstream_max_calculator">
+    <Property Name="messagesInFile" value="true"/>
+  </Instance>
+  <Instance Component="ocpi.assets.util_comps.iqstream_max_calculator" Model="rcc" Connect="file_write"/>
+  <Instance Component="ocpi.core.file_write">
+    <Property Name="messagesInFile" value="true"/>
+  </Instance>
+</application>

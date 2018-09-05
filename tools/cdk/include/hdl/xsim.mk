@@ -54,6 +54,10 @@ HdlBin=
 # If not set, it implies that only a library containing the implementation is
 # possible
 HdlToolRealCore=
+
+# For this tool, it is not sufficient just to include the assembly and pfconfig
+# at the container level. We must also include app workers, devices and the PW
+HdlToolRequiresFullCoreHierarchy_xsim=yes
 ################################################################################
 # Variable required by toolset: HdlToolNeedBB=yes
 # Set if the tool set requires a black-box library to access a core
@@ -96,7 +100,7 @@ XsimLibs=\
       $(HdlLibrariesInternal),\
       -lib $(notdir $l)=$(strip \
             $(call FindRelative,$(TargetDir),$(call HdlLibraryRefDir,$l,xsim,,xsim)))) \
-    $(foreach c,$(call HdlCollectCores,xsim),$(infox CCC:$c)\
+    $(foreach c,$(call HdlCollectCorePaths),$(infox CCC:$c)\
       -lib $(call HdlRmRv,$(notdir $(c)))=$(infox fc:$c)$(call FindRelative,$(TargetDir),$(strip \
           $(firstword $(foreach l,$(call XsimCoreLibraryChoices,$c),$(call HdlExists,$l))))))
 
@@ -142,18 +146,14 @@ HdlToolCompile=\
         $(OcpiXilinxVivadoDir)/data/verilog/src/glbl.v) -prj $(Worker).prj ;) \
   $(if $(filter worker platform config assembly,$(HdlMode)),\
     $(if $(HdlNoSimElaboration),, \
-      xelab $(WorkLib).$(WorkLib)$(and $(filter config,$(HdlMode)),_rv) work.glbl -v 2 \
+      xelab $(WorkLib).$(WorkLib)$(and $(filter assembly config,$(HdlMode)),_rv) work.glbl -v 2 \
              -prj $(Worker).prj -L unisims_ver -s $(Worker).exe --timescale 10ns/1ps \
              --override_timeprecision --override_timeunit --timeprecision_vhdl 1ps \
              $(XsimXelabArgs) $(XsimXelabExtraArgs) -lib $(WorkLib)=$(WorkLib) $(XsimLibs)))
 
 # Since there is not a singular output, make's builtin deletion will not work
 HdlToolPost=\
-  if test $$HdlExit != 0; then \
-    rm -r -f $(WorkLib); \
-  else \
-    touch $(WorkLib); \
-  fi;
+  touch $(WorkLib);
 
 BitFile_xsim=$1.tar
 

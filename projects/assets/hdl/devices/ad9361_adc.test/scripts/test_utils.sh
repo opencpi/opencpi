@@ -48,20 +48,32 @@ runtest() {
 
     RX_DATA_CLOCK_DELAY=0
     FOUND_PLATFORMS=$(./target-$OCPI_TOOL_DIR/get_comma_separated_ocpi_platforms)
-    if [ "$FOUND_PLATFORMS" == "zed" ]; then
+    AT_LEAST_ONE_ML605_AVAILABLE=$(./target-$OCPI_TOOL_DIR/get_at_least_one_platform_is_available ml605)
+    if [ "$FOUND_PLATFORMS" == "" ]; then
+      echo ERROR: no platforms found! check ocpirun -C
+      echo "TEST FAILED"
+      exit 1
+    elif [ "$FOUND_PLATFORMS" == "zed" ]; then
       RX_DATA_CLOCK_DELAY=3
     elif [ "$FOUND_PLATFORMS" == "zed_ise" ]; then
       RX_DATA_CLOCK_DELAY=2
-    elif [ "$FOUND_PLATFORMS" == "ml605" ]; then
+    elif [ "$AT_LEAST_ONE_ML605_AVAILABLE" == "true" ]; then
       RX_DATA_CLOCK_DELAY=2
     else
       printf "platform found which is not supported: "
-      echo $FOUND_PLATFORM
+      echo $FOUND_PLATFORMS
       echo "TEST FAILED"
       exit 1
     fi
 
     RX_DATA_DELAY=$RX_DATA_DELAY RX_DATA_CLOCK_DELAY=$RX_DATA_CLOCK_DELAY ./scripts/run_app_FMCOMMS3.sh $APP_XML $APP_RUNTIME_SEC $twortwot > $LOGFILENAME 2>&1
+    XX=$?
+    if [ "$XX" != "0" ]; then
+      if [ "$try" == "$MAX_NUM_APP_RETRIES" ]; then
+        cat $LOGFILENAME
+        exit $XX
+      fi
+    fi
     if [ -f $FILENAME ]; then
       break
     fi

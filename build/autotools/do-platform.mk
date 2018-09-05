@@ -22,6 +22,7 @@
 # established using the (exported) OcpiThisPlatform* variables.
 # It expects the Platform variable to be set on the command line
 .DELETE_ON_ERROR:
+.NOTPARALLEL:
 .PHONY: configure build clean cleanconfigure install
 
 # unexpected
@@ -30,6 +31,7 @@ all:
 	$(AT)exit 1
 OcpiRelativeTop=../../..
 OcpiPrerequisitesDir:=$(or $(PrerequisitesDir),$(OcpiRelativeTop)/prerequisites)
+export OCPI_PREREQUISITES_DIR:=$(OcpiPrerequisitesDir)
 # Gather target information if we're not cleaning
 ifeq ($(filter clean%,$(MAKECMDGOALS)),)
   # separate the build options from the platform.
@@ -92,7 +94,9 @@ Makefile: ../gen/configure platform-variables.sh ../do-platform.mk ../gen/Makefi
 	        CXX=$(OcpiCrossCompile)$(OcpiCXX) \
 	        LD=$(OcpiCrossCompile)$(OcpiLD) \
 	        AR=$(OcpiCrossCompile)$(OcpiAR) \
-	        STRIP=$(OcpiCrossCompile)$(OcpiSTRIP) 
+	        STRIP=$(OcpiCrossCompile)$(OcpiSTRIP) \
+	        RANLIB=$(OcpiCrossCompile)ranlib
+	$(AT) [ -z "$JENKINS_HOME" ] || cat config.log
 
 Jobs=5
 build:

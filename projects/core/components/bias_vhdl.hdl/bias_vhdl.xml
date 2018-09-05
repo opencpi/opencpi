@@ -1,6 +1,6 @@
-<HDLImplementation language="vhdl">
+<HdlWorker language="vhdl">
   <xi:include href="bias_spec.xml"/>
   <StreamInterface Name="in" ImpreciseBurst="true" DataWidth="32" numberofopcodes='256'/>
   <StreamInterface Name="out" ImpreciseBurst="true" DataWidth="32" numberofopcodes='256'/>
   <property name='test64' writable='true' readable='true' type='ulonglong'/>
-</HDLImplementation>
+</HdlWorker>

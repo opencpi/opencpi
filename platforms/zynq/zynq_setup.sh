@@ -55,10 +55,10 @@ else
     export OCPI_TOOL_OS=linux
     # There is no multimode support when running standalone
     export OCPI_TOOL_DIR=\$OCPI_TOOL_PLATFORM
-    export OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/artifacts
-    export PATH=$OCPI_CDK_DIR/bin:\$PATH
+    export OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/artifacts:$OCPI_CDK_DIR/\$OCPI_TOOL_PLATFORM/artifacts
+    export PATH=$OCPI_CDK_DIR/\$OCPI_TOOL_PLATFORM/bin:\$PATH
     # This is only for explicitly-linked driver libraries.  Fixed someday.
-    export LD_LIBRARY_PATH=$OCPI_CDK_DIR/lib/\$OCPI_TOOL_DIR:\$LD_LIBRARY_PATH
+    export LD_LIBRARY_PATH=$OCPI_CDK_DIR/\$OCPI_TOOL_DIR/lib:\$LD_LIBRARY_PATH
     ocpidriver load
     export TZ=$2
     echo OpenCPI ready for zynq.

@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-Libraries=platform
+Libraries=platform misc_prims
 
 # During the build process, swap HdlTarget with 'actual' target part of the target platform
 # We do this to build for a part with the correct number of resources, such as hardware
@@ -29,5 +29,7 @@ HdlExactPart=\
 	$(and $(filter zynq,$(HdlTarget)),xc7z020-1-clg484), \
 	$(and $(filter virtex6,$(HdlTarget)),xc6vlx240t-1-ff1156), \
 	$(and $(filter stratix4,$(HdlTarget)),ep4sgx230k-c2-f40))
+
+SourceFiles+=trunc_round_16_to_12_signed.vhd
 
 include $(OCPI_CDK_DIR)/include/worker.mk

@@ -164,39 +164,58 @@
        Direction of most signals depends on the mode. -->       
   <Signal name='DATA_CLK_P' direction='in' pin='1'
 	  description='Pin G11: RX Clock from ad9361 (positive).'/>
-  <Signal name='DATA_CLK_N' direction='lvds_p ? in : unused' pin='1'
+  <!--Signal name='DATA_CLK_N' direction='lvds_p ? in : unused' pin='1' --> <!-- TODO/FIXME - comment this back in once problem is fixed -->
+  <Signal name='DATA_CLK_N' direction='lvds_p ? in : in' pin='1'
 	  description='Pin H11: RX Clock from ad9361 (negative), unused in CMOS mode.'/>
   <Signal name='RX_FRAME_P' direction='in' pin='1'
 	  description='Pin G8:  Receive Digital Data Framing Output Signal from ad9361 (positive).'/>
-  <Signal name='RX_FRAME_N' direction='lvds_p ? in : unused' pin='1'
+  <!--Signal name='RX_FRAME_N' direction='lvds_p ? in : unused' pin='1' --> <!-- TODO/FIXME - comment this back in once problem is fixed -->
+  <Signal name='RX_FRAME_N' direction='lvds_p ? in : in' pin='1'
 	  description='Pin G7:  Receive Digital Data Framing Output Signal from ad9361 (negative), unused in CMOS mode.'/>
   <!-- theoretically these might not be connected in a receive-only configuration -->
   <Signal name='FB_CLK_P'   direction='out' pin='1'
 	  description='Pin F10: TX Clock to ad9361 (positive).'/>
-  <Signal name='FB_CLK_N'   direction='lvds_p ? out : unused' pin='1'
+  <!--Signal name='FB_CLK_N'   direction='lvds_p ? out : unused' pin='1' --> <!-- TODO / FIXME - comment this back in once problem is fixed -->
+  <Signal name='FB_CLK_N'   direction='lvds_p ? out : out' pin='1'
 	  description='Pin G10: TX Clock to ad9361 (negative), unused in CMOS mode.'/>
   <Signal name='TX_FRAME_P' direction='out' pin='1'
 	  description='Pin G9:  Transmit Digital Data Framing Input Signal from ad9361 (positive).'/>
-  <Signal name='TX_FRAME_N' direction='lvds_p ? out : unused' pin='1'
+  <!--Signal name='TX_FRAME_N' direction='lvds_p ? out : unused' pin='1' --> <!-- TODO/FIXME - comment this back in once problem is fixed -->
+  <Signal name='TX_FRAME_N' direction='lvds_p ? out : out' pin='1'
 	  description='Pin H9:  Transmit Digital Data Framing Input Signal from ad9361 (negative), unused in CMOS mode.'/>
   <Signal name='TXNRX'      direction='out'
 	  description="Pin H4:  Enable State Machine Control Signal to ad9361."/>
   <Signal name='ENABLE'     direction='out'
 	  description="Pin G6:  Control Input to ad9361. This pin moves the device through various operational states."/>
   <!-- P0 signals are aliased to LVDS TX_D[5:0]_N and TX_D[5:0]_P pairs in the data sheet -->
-  <Signal name='P0_D_11_6' width='6' pin='1' direction='mode_p == 0 || mode_p == 4 ? inout :
+  <!--Signal name='P0_D_11_6' width='6' pin='1' direction='mode_p == 0 || mode_p == 4 ? inout :
 		 					mode_p == 1 || mode_p == 3 ? unused :
+							mode_p == 5 ? in : out'/--> <!-- TODO/FIXME - comment back in once problem is fixed -->
+  <Signal name='P0_D_11_6' width='6' pin='1' direction='mode_p == 0 || mode_p == 4 ? inout :
+		 					mode_p == 1 || mode_p == 3 ? in :
 							mode_p == 5 ? in : out'/>
-  <Signal name='P0_D_5_0'  width='6' pin='1' direction='mode_p == 0 || mode_p == 4 ? inout :
+  <!--Signal name='P0_D_5_0'  width='6' pin='1' direction='mode_p == 0 || mode_p == 4 ? inout :
 							mode_p == 1 || mode_p == 3 ? unused :
+							mode_p == 2 || mode_p == 5 ? in :
+							out'/--> <!-- TODO/FIXME - comment back in once problem is fixed -->
+  <Signal name='P0_D_5_0'  width='6' pin='1' direction='mode_p == 0 || mode_p == 4 ? inout :
+							mode_p == 1 || mode_p == 3 ? in :
 							mode_p == 2 || mode_p == 5 ? in :
 							out'/>
   <!-- P1 signals are aliased to LVDS RX_D[5:0]_N and RX_D[5:0]_P pairs in the data sheet -->
-  <Signal name='P1_D_11_6' width='6' pin='1' direction='mode_p == 0 || mode_p == 2 ? unused :
+  <!--Signal name='P1_D_11_6' width='6' pin='1' direction='mode_p == 0 || mode_p == 2 ? unused :
+							mode_p == 1 || mode_p == 4 ? inout :
+							mode_p == 6 || mode_p == 7 ? in :
+							out'/--> <!-- TODO / FIXME - comment back in once problem is fixed -->
+  <Signal name='P1_D_11_6' width='6' pin='1' direction='mode_p == 0 || mode_p == 2 ? in :
 							mode_p == 1 || mode_p == 4 ? inout :
 							mode_p == 6 || mode_p == 7 ? in :
 							out'/>
-  <Signal name='P1_D_5_0'  width='6' pin='1' direction='mode_p == 0 || mode_p == 2 ? unused :
+  <!--Signal name='P1_D_5_0'  width='6' pin='1' direction='mode_p == 0 || mode_p == 2 ? unused :
+							mode_p == 1 || mode_p == 4 ? inout :
+							mode_p == 5 ? out :
+							in'/--> <!-- TODO / FIXME - comment back in once problem is fixed -->
+  <Signal name='P1_D_5_0'  width='6' pin='1' direction='mode_p == 0 || mode_p == 2 ? in :
 							mode_p == 1 || mode_p == 4 ? inout :
 							mode_p == 5 ? out :
 							in'/>

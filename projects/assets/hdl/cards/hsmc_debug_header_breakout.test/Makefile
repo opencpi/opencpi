@@ -20,6 +20,11 @@ $(if $(realpath $(OCPI_CDK_DIR)),,$(error The OCPI_CDK_DIR environment variable 
 
 include setup.mk
 
+# if never, this statement exists so that the directory evaluates as a test directory for ocpidev
+ifneq (,)
+  include $(OCPI_CDK_DIR)/include/test.mk
+endif
+
 .SILENT: show
 .PHONY: clean show
 

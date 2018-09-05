@@ -38,15 +38,18 @@ if [ -z "${OCPI_CDK_DIR}" ]; then
   export OCPI_CDK_DIR=/opt/opencpi/cdk
 fi
 if [ -x ${OCPI_CDK_DIR}/scripts/getPlatform.sh ]; then
-  export OCPI_TOOL_DIR=$(${OCPI_CDK_DIR}/scripts/getPlatform.sh | cut -f4 -d" ")
+  export OCPI_TOOL_DIR=$(${OCPI_CDK_DIR}/scripts/getPlatform.sh | cut -f5 -d" ")
 else
   # Less reliable method if CDK not installed yet
-  export OCPI_TOOL_DIR=linux-c$(rpm -q opencpi-driver --qf="%{release}" | perl -ne '/el(\d+)/ && print $1')-x86_64
+  export OCPI_TOOL_DIR=centos$(rpm -q opencpi-driver --qf="%{release}" | perl -ne '/el(\d+)/ && print $1')
 fi
-if [ -z "${OCPI_TARGET_PLATFORM}" ]; then
-  #export OCPI_TARGET_PLATFORM=centos`expr substr ${OCPI_TOOL_DIR#linux-c} 1 1`
-  export OCPI_TARGET_PLATFORM=DONTCARE
+if [ -n "${OCPI_TARGET_PLATFORM}" ]; then
+  echo This opencpi-driver-check script is not expected to run in an environment with OCPI_TARGET_PLATFORM set. >&2
+  exit 1
 fi
+
+# Do not require the "cdk" to actually exist
+OCPI_DRIVER_DIR=$(dirname $OCPI_CDK_DIR)/driver
 
 case "$1" in
   start)
@@ -62,9 +65,9 @@ case "$1" in
     fi
     [ -z "${dont_just_check}" ] && exit 0;
     echo -n "Loading OpenCPI driver:"
-    cd /opt/opencpi/driver
-    cd ${kernel_ver} 2> /dev/null
-    ../ocpi_linux_driver load x >/tmp/last_opencpi_driver_load.log 2>&1
+    # set -vx
+    cd $OCPI_DRIVER_DIR
+    ./ocpi_linux_driver load x >/tmp/last_opencpi_driver_load.log 2>&1
     if [ $? -ne 0 ]; then
       warning
       echo
@@ -75,12 +78,13 @@ case "$1" in
     fi
     # Need to rebuild
     echo -n "Building OpenCPI kernel driver: "
-    mkdir -p /opt/opencpi/driver/${kernel_ver}/work
-    cp --target-directory=/opt/opencpi/driver/${kernel_ver} *.rules Makefile *.c
-    cd /opt/opencpi/driver/${kernel_ver}
+    mkdir -p ${kernel_ver}/work
+    cp --target-directory=${kernel_ver} *.rules Makefile *.c
+    cd ${kernel_ver}
     # Won't detect KERNEL_DIR if combined clean and modules targets
     make clean MyLib=work MyTargetDir=work AT='' V=1 > build.log 2>&1
-    make modules modules_install MyIncs=-I/opt/opencpi/driver MyLib=work MyTargetDir=work AT='' V=1 OCPI_TARGET_HOST=${OCPI_TOOL_DIR} >> build.log 2>&1
+    make modules modules_install MyIncs=-I$OCPI_DRIVER_DIR MyLib=work MyTargetDir=work \
+	 AT='' V=1 >> build.log 2>&1
     mv work/*.ko .
     rmdir work
     # Make sure world-readable (AV-1760)
@@ -100,9 +104,9 @@ case "$1" in
     ;;
   stop|status|reload)
     # Pass to OSS handler
-    cd /opt/opencpi/driver
+    cd $OCPI_DRIVER_DIR
     cd ${kernel_ver} 2> /dev/null
-    /opt/opencpi/driver/ocpi_linux_driver $1
+    $OCPI_DRIVER_DIR/ocpi_linux_driver $1
     exit 0
     ;;
   condstart|condrestart|restart)

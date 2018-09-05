@@ -73,33 +73,3 @@ if [ "$OCPI_CDK_DIR" = "" -o ! -d "$OCPI_CDK_DIR" ]; then # and any other sanity
 fi
 source $OCPI_CDK_DIR/opencpi-setup.sh -r
 return 0
-# Initialize PREREQUISITES variables
-# THIS IS THE SHELL VERSION OF WHAT IS IN util.mk
-[ -z "$OCPI_PREREQUISITES_DIR" ] && {
-  export OCPI_PREREQUISITES_DIR=$(dirname $OCPI_CDK_DIR)/prerequisites
-  [ -d $OCPI_PREREQUISITES_DIR ] ||
-    echo "Warning: $OCPI_PREREQUISITES_DIR does not exist yet."
-}
-
-# Initialize the TOOL variables
-if test "$OCPI_TOOL_PLATFORM" = ""; then
-  GETPLATFORM=$OCPI_CDK_DIR/scripts/getPlatform.sh
-  if test ! -f $OCPI_CDK_DIR/scripts/getPlatform.sh; then
-    echo Error:  ocpibootstrap.sh cannot find getPlatforms.sh    
-    exit 1
-  fi
-  read v0 v1 v2 v3 v4 v5 <<< `${GETPLATFORM}`
-  if test "$v5" == "" -o $? != 0; then
-    echo Failed to determine runtime platform.
-    exit 1
-  fi
-  export OCPI_TOOL_OS=$v0
-  export OCPI_TOOL_OS_VERSION=$v1
-  export OCPI_TOOL_ARCH=$v2
-  export OCPI_TOOL_HOST=$v3
-  export OCPI_TOOL_PLATFORM=$v4
-  export OCPI_TOOL_PLATFORM_DIR=$v5
-fi
-# Determine OCPI_TOOL_MODE if it is not set already
-[ -z "$OCPI_TOOL_DIR" ] && export OCPI_TOOL_DIR=$OCPI_TOOL_PLATFORM
-return 0

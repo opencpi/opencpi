@@ -31,32 +31,6 @@ bool did_pass_test_ocpi_app_max_value_rf_gain_dB()
   bool did_pass;
   try
   {
-    OCPI::API::Application app(APP_DEFAULT_FMCOMMS2_XML, NULL);
-    app.initialize();
-    app.start();
-
-    {
-      OCPI::API::Property p(app, APP_DEFAULT_XML_INST_NAME_RX, "frequency_MHz");
-      p.setDoubleValue(2400.);
-    }
-    {
-      OCPI::API::Property p(app, APP_DEFAULT_XML_INST_NAME_RX, "rf_gain_dB");
-      p.setDoubleValue(71.);
-    }
-    did_pass = did_pass_test_expected_value_frequency_MHz(app, 2400., (ocpi_ulonglong_t) 2400000000);
-    if(!did_pass) { return false; }
-    did_pass = did_pass_test_expected_value_rf_gain_dB(app, 71., (ocpi_long_t) 71);
-    if(!did_pass) { return false; }
-
-    app.stop();
-  }
-  catch (std::string &e)
-  {
-    fprintf(stderr, "Exception thrown: %s\n", e.c_str());
-    return false;
-  }
-  try
-  {
     OCPI::API::Application app(APP_DEFAULT_FMCOMMS3_XML, NULL);
     app.initialize();
     //app.setProperty(APP_DEFAULT_XML_INST_NAME_RX, "enable_log_info",  "true");
@@ -70,6 +44,14 @@ bool did_pass_test_ocpi_app_max_value_rf_gain_dB()
     }
     {
       OCPI::API::Property p(app, APP_DEFAULT_XML_INST_NAME_RX, "rf_gain_dB");
+      try {
+        p.setDoubleValue(78.);
+        did_pass = false; // set to 78. should not have succeeded
+      }
+      catch(...) {
+        did_pass = true;
+      }
+      TEST_EXPECTED_VAL(did_pass, true);
       p.setDoubleValue(77.);
     }
     did_pass = did_pass_test_expected_value_frequency_MHz(app, 1299.999999, (ocpi_ulonglong_t) 1299999999);
@@ -83,6 +65,15 @@ bool did_pass_test_ocpi_app_max_value_rf_gain_dB()
     }
     {
       OCPI::API::Property p(app, APP_DEFAULT_XML_INST_NAME_RX, "rf_gain_dB");
+      try {
+        p.setDoubleValue(72.);
+        did_pass = false; // set to 72. should not have succeeded
+      }
+      catch(...) {
+        did_pass = true;
+      }
+      TEST_EXPECTED_VAL(did_pass, true);
+      if(!did_pass) { return false; }
       p.setDoubleValue(71.);
     }
     did_pass = did_pass_test_expected_value_frequency_MHz(app, 2400., (ocpi_ulonglong_t) 2400000000);
@@ -96,6 +87,14 @@ bool did_pass_test_ocpi_app_max_value_rf_gain_dB()
     }
     {
       OCPI::API::Property p(app, APP_DEFAULT_XML_INST_NAME_RX, "rf_gain_dB");
+      try {
+        p.setDoubleValue(63.);
+        did_pass = false; // set to 63. should not have succeeded
+      }
+      catch(...) {
+        did_pass = true;
+      }
+      TEST_EXPECTED_VAL(did_pass, true);
       p.setDoubleValue(62.);
     }
     did_pass = did_pass_test_expected_value_frequency_MHz(app, 4000.000001, (ocpi_ulonglong_t) 4000000001);

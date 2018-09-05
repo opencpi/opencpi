@@ -27,8 +27,9 @@ import sys
 import re
 import subprocess
 import logging
-sys.path.insert(0, os.path.realpath('../../tools/cdk/scripts/'))
+sys.path.insert(0, os.path.realpath(os.getenv('OCPI_CDK_DIR') + '/scripts/'))
 import ocpiutil
+from ocpiassets import *
 
 # The following globals are used within the test cases for
 # setting up and verifying projects and paths
@@ -36,7 +37,7 @@ DIR_PATH = os.path.dirname(os.path.realpath(__file__)) + "/"
 
 # Unfortunately we need to use get_project_registry_dir before its unit test to find and
 # register the core project in the locally created registry
-_, ORIGINAL_REGISTRY = ocpiutil.get_project_registry_dir()
+ORIGINAL_REGISTRY = Registry.get_registry_dir()
 
 PROJECT0 = "ocpiutil_test_project0"
 
@@ -70,16 +71,15 @@ PROJECT_PACKAGES = {
 
 OCPI_LOG_LEVEL = os.environ.get('OCPI_LOG_LEVEL')
 OCPI_CDK_DIR = os.environ.get('OCPI_CDK_DIR')
-OCPI_TOOL_DIR = os.environ.get('OCPI_TOOL_DIR')
 
 # Determine path to ocpidev based on CDK so that we avoid accidentally
 # using the one installed by RPMs
-OCPIDEV_PATH = OCPI_CDK_DIR + "/" + OCPI_TOOL_DIR + "/bin/ocpidev"
+OCPIDEV_PATH = OCPI_CDK_DIR + "/scripts/ocpidev"
 if OCPI_LOG_LEVEL and int(OCPI_LOG_LEVEL) > 8:
-    SET_X=" set -x; "
+    SET_X = " set -x; "
     OCPIDEV_CMD = OCPIDEV_PATH + " -v"
 else:
-    SET_X=" "
+    SET_X = " "
     OCPIDEV_CMD = OCPIDEV_PATH
 # Initialize ocpiutil's logging settings which switch
 # based on OCPI_LOG_LEVEL
@@ -115,21 +115,6 @@ class TestPathFunctions(unittest.TestCase):
     Test the path finding/manipulating functions in ocpiutil (e.g. get_path(s)_...)
     as well as the project package functions (e.g. get_project_package)
     """
-    # AV-3552
-    # The setUp/tearDownClass methods are not supported for python <= 2.6. So, only use them
-    # if using python >= 2.7. Otherwise use the setUp/tearDown functions which happen before
-    # before EVERY test function is called. setUp/tearDownClass in python 2.7 on the other
-    # hand are classmethods that are called once before the class's tests begin and after
-    # they are all done.
-    if sys.version_info[0] < 2 or (sys.version_info[0] == 2 and sys.version_info[1] < 7):
-        def setUp(self):
-            logging.debug("Using 'setUp' wrapper function because python <= 2.6 does not " +
-                          "support 'setUpClass'")
-            self.setUpClass()
-        def tearDown(self):
-            logging.debug("Using 'tearDown' wrapper function because python <= 2.6 does not " +
-                          "support 'tearDownClass'")
-            self.tearDownClass()
     @classmethod
     def setUpClass(cls):
         logging.info("Setting up test projects...")
@@ -141,7 +126,8 @@ class TestPathFunctions(unittest.TestCase):
         ocpidev_command += "export OCPI_PROJECT_REGISTRY_DIR=" + \
                            os.path.realpath('./project-registry') + " ; "
         # Create PROJECT0 and fill it with assets of many types
-        ocpidev_command += OCPIDEV_CMD + " -d " + ORIGINAL_REGISTRY + " register project ocpi.core; "
+        ocpidev_command += "ln -s " + OCPI_CDK_DIR + \
+                           "/../project-registry/ocpi.core project-registry/ocpi.core; "
         ocpidev_command += OCPIDEV_CMD + " --register create project " + PROJECT0 + "; "
         ocpidev_command += OCPIDEV_CMD + " -d " + PROJECT0 + " create library mylibrary; "
         ocpidev_command += OCPIDEV_CMD + " -d " + PROJECT0 + " create -l mylibrary spec myspec; "
@@ -193,9 +179,8 @@ class TestPathFunctions(unittest.TestCase):
         process = subprocess.Popen(ocpidev_command, shell=True, executable='/bin/bash')
         results = process.communicate()
         if results[1] or process.returncode != 0:
-            logging.error("'ocpidev create project' failed in ocpiutil test\n" +
-                          "process.returncode: " +  str(process.returncode))
-            raise RuntimeError
+            raise ocpiutil.OCPIException("'ocpidev create project' failed in ocpiutil test\n" +
+                                         "process.returncode: " +  str(process.returncode))
 
     @classmethod
     def tearDownClass(cls):
@@ -229,9 +214,8 @@ class TestPathFunctions(unittest.TestCase):
                      "===================================")
         logging.info("Asserting that 'project-registry directory' " +
                      "defaults to correct values\n")
-        gprd = ocpiutil.get_project_registry_dir()
-        self.assertTrue(gprd[0])
-        self.assertEqual(gprd[1], os.environ.get('OCPI_PROJECT_REGISTRY_DIR'))
+        reg_dir = Registry.get_registry_dir()
+        self.assertEqual(reg_dir, os.environ.get('OCPI_PROJECT_REGISTRY_DIR'))
 
         # Collect all of the projects except for core
         # TODO: test get_all_project cases where OCPI_PROJECT_PATH exists,
@@ -239,7 +223,7 @@ class TestPathFunctions(unittest.TestCase):
         all_pjs = [pj for pj in ocpiutil.get_all_projects() if not re.search(r".*/ocpi\.core$", pj)]
         pj_paths = [os.path.realpath('.') + '/project-registry/'
                     + pj for pj in list(PROJECT_PACKAGES.values())]
-        golden_all_pjs = pj_paths + [os.path.realpath('.') + '/project-registry/ocpi.cdk']
+        golden_all_pjs = pj_paths
         project_path = os.environ.get('OCPI_PROJECT_PATH')
         if project_path:
            golden_all_pjs += project_path.split(':')
@@ -249,58 +233,48 @@ class TestPathFunctions(unittest.TestCase):
         orig_gprd = os.environ['OCPI_PROJECT_REGISTRY_DIR']
 
 
-        logging.info("Ensuring that invalid registry environment variable does not error, " +
-                     "but returns False")
+        logging.info("Ensuring that invalid registry environment variable results in error")
         os.environ['OCPI_PROJECT_REGISTRY_DIR'] = "INVALID"
-        gprd = ocpiutil.get_project_registry_dir()
-        self.assertFalse(gprd[0])
-        self.assertEqual(gprd[1], "INVALID")
-        logging.info("Verify that the default registry is correct even for a bad registry.")
-        self.assertEqual(gprd[1], ocpiutil.get_default_project_registry_dir())
+        self.assertRaises(ocpiutil.OCPIException, Registry.get_registry_dir)
 
         logging.info("Verify that a project's imports takes precedence over the environment's " +
                      "registry settings.")
         for proj in PROJECT_PACKAGES:
             with ocpiutil.cd(proj):
-                gprd = ocpiutil.get_project_registry_dir()
-                self.assertTrue(gprd[0])
+                reg_dir = Registry.get_registry_dir()
                 if re.search(r".*exported$", proj):
-                    logging.debug("Verify that deep-copied/exported project (" + proj + ") uses" +
+                    logging.debug("Verify that deep-copied/exported project (" + proj + ") uses " +
                                   "its imports dir as the registry.")
-                    self.assertEqual(os.path.realpath("imports"), gprd[1])
+                    self.assertEqual(os.path.realpath("imports"), reg_dir)
                 else:
-                    logging.debug("Verify that the project (" + proj + ") uses its" +
+                    logging.debug("Verify that the project (" + proj + ") uses its " +
                                   "imports link as the registry.")
-                    self.assertEqual(os.path.realpath("../project-registry"), gprd[1])
+                    self.assertEqual(os.path.realpath("../project-registry"), reg_dir)
 
         # Test for 'bad' registry results
         os.environ['OCPI_PROJECT_REGISTRY_DIR'] = __file__
-        try:
-            logging.info("Verify that the default registry is correct even for a bad registry.")
-            self.assertEqual(__file__, ocpiutil.get_default_project_registry_dir())
-            ocpiutil.get_project_registry_dir()
-            assert False, "Should not have gotten to this point. get_project_registry_dir() " + \
-                   "should throw an error when the registry is not a directory!."
-        except OSError:
-            assert True, "Caught OSError from get_project_registry_dir() " + \
-                   "when the registry was not a directory"
+        logging.info("Verify that the default registry is correct even for a bad registry.")
+        self.assertEqual(__file__, Registry.get_default_registry_dir())
+        self.assertRaises(ocpiutil.OCPIException, Registry.get_registry_dir)
 
         del os.environ['OCPI_PROJECT_REGISTRY_DIR']
         logging.info("Verify that the registry is correct when OCPI_PROJECT_REGISTRY_DIR is unset.")
-        gprd = ocpiutil.get_project_registry_dir()
-        self.assertTrue(gprd[0])
-        self.assertEqual(gprd[1], os.environ.get('OCPI_CDK_DIR') + "/../project-registry")
-        self.assertEqual(gprd[1], os.environ.get('OCPI_CDK_DIR') + "/../project-registry")
+        reg_dir = Registry.get_registry_dir()
+        self.assertEqual(reg_dir, os.environ.get('OCPI_CDK_DIR') + "/../project-registry")
         logging.info("Verify that the default registry is correct when the env var is unset.")
-        self.assertEqual(gprd[1], ocpiutil.get_default_project_registry_dir())
-        orig_cdk = os.environ['OCPI_CDK_DIR']
-        del os.environ['OCPI_CDK_DIR']
-        gprd = ocpiutil.get_project_registry_dir()
-        self.assertEqual(gprd[1], "/opt/opencpi/project-registry")
-        logging.info("Verify that the default registry is correct when no env vars are set.")
-        self.assertEqual(gprd[1], ocpiutil.get_default_project_registry_dir())
+        self.assertEqual(reg_dir, Registry.get_default_registry_dir())
+        if os.path.isdir("/opt/opencpi/project-registry"):
+            orig_cdk = os.environ['OCPI_CDK_DIR']
+            del os.environ['OCPI_CDK_DIR']
+            reg_dir = Registry.get_registry_dir()
+            self.assertEqual(reg_dir, "/opt/opencpi/project-registry")
+            logging.info("Verify that the default registry is correct when no env vars are set.")
+            self.assertEqual(reg_dir, Registry.get_default_registry_dir())
+            os.environ['OCPI_CDK_DIR'] = orig_cdk
+        else:
+            logging.warning("Skipping default registry check because " +
+                            "/opt/opencpi/project-registry does not exist")
 
-        os.environ['OCPI_CDK_DIR'] = orig_cdk
         os.environ['OCPI_PROJECT_REGISTRY_DIR'] = orig_gprd
 
     def test_get_dirtype(self):
@@ -396,7 +370,7 @@ class TestPathFunctions(unittest.TestCase):
 
     def test_pj_with_pkg_exist(self):
         """
-        Verify that each known package is recognized as existing from differenct CWDs.
+        Verify that each known package is recognized as existing from different CWDs.
         Invalid ones of course should result in False for 'project with pkg DNE'
         """
         logging.info("===========================\n" +
@@ -441,49 +415,68 @@ class TestPathFunctions(unittest.TestCase):
         Set and unset the registry for a project in various ways. Confirm that
         the resulting imports link is correct.
         """
+        # TODO/FIXME: set and unset registry are no longer in ocpiutil and should be tested in
+        #             a separate unit test
         logging.info("===========================\nTesting 'set/unset_project_registry'")
         #TODO: test set case where imports exists and is not a link
         #TODO: test set for warning when setting to a registry that does not include CDK
 
-        logging.info("Set and unset project should only work when INSIDE a project. " +
-                     "Expect ERRORs:")
-        self.assertFalse(ocpiutil.set_project_registry())
-        self.assertFalse(ocpiutil.unset_project_registry())
-
         with ocpiutil.cd(PROJECT0):
+            proj = AssetFactory.factory("project", ".")
             logging.info("Make sure you can set a project's registry to the default via no args.")
-            ocpiutil.set_project_registry()
+            proj.set_registry()
             self.assertEqual(os.path.realpath("../project-registry"),
                              os.path.realpath(os.readlink("imports")))
-            ocpiutil.unset_project_registry()
+            # Cannot set/unset the registry for a project when it is registered
+            self.assertRaises(ocpiutil.OCPIException, proj.set_registry, "../../../project-registry")
+            self.assertRaises(ocpiutil.OCPIException, proj.unset_registry)
+            self.assertTrue(os.path.exists("imports"))
+
+            reg = AssetFactory.factory("registry", Registry.get_registry_dir("."))
+            # Remove the project from the registry and proceed with unsetting
+            reg.remove(package_id=proj.package_id)
+            proj.unset_registry()
             self.assertFalse(os.path.exists("imports"))
+            reg.add(directory=proj.directory)
 
             logging.info("Make sure you can set a project's registry to a given directory.")
-            ocpiutil.set_project_registry("../../../project-registry")
-            self.assertEqual(os.path.realpath("../../../project-registry"),
-                             os.path.realpath(os.readlink("imports")))
-            ocpiutil.unset_project_registry()
-            self.assertFalse(os.path.exists("imports"))
+            if os.path.isdir("../../../project-registry"):
+                # Cannot set/unset the registry for a project when it is registered
+                self.assertRaises(ocpiutil.OCPIException, proj.set_registry, "../../../project-registry")
+                # Remove the project from the registry and proceed with (un)setting
+                reg.remove(package_id=proj.package_id)
+                proj.set_registry("../../../project-registry")
+                self.assertEqual(os.path.realpath("../../../project-registry"),
+                                 os.path.realpath(os.readlink("imports")))
+                proj.unset_registry()
+                self.assertFalse(os.path.exists("imports"))
+                reg.add(directory=proj.directory)
+            else:
+                logging.warning("Skipping this registry test because ../../../project-registry " +
+                                "does not exist (not run from repo?).")
 
+            reg.remove(package_id=proj.package_id)
             logging.info("Make sure you cannot set a project's registry to a non-dir file. " +
                          "Expect an ERROR:")
-            self.assertFalse(ocpiutil.set_project_registry("Project.mk"))
+            self.assertRaises(ocpiutil.OCPIException, proj.set_registry, "Project.mk")
             self.assertFalse(os.path.exists("imports"))
 
             # Test unset when imports is a plain file and when it does not exist
             logging.info("Make sure you cannot unset/rm an 'imports' file that is not a link. " +
                          "Expect an ERROR:")
             open("imports", 'a').close()
-            self.assertFalse(ocpiutil.unset_project_registry())
+            #self.assertFalse(ocpiutil.unset_project_registry())
+            self.assertRaises(ocpiutil.OCPIException, proj.unset_registry)
             self.assertTrue(os.path.isfile("imports"))
             os.remove("imports")
             logging.info("Make sure unsetting a project's registry succeeds and does nothing " +
                          "when it was already unset.")
-            self.assertTrue(ocpiutil.unset_project_registry())
+            proj.unset_registry()
             self.assertFalse(os.path.exists("imports"))
 
             # Reset project registry to default
-            ocpiutil.set_project_registry()
+            proj.set_registry()
+            reg.add(directory=proj.directory)
 
 
     def test_reg_unreg_project(self):
@@ -493,42 +486,43 @@ class TestPathFunctions(unittest.TestCase):
         registry and then recreated.
         """
         logging.info("===========================\nTesting 'register_project'")
+        # TODO/FIXME: Register and unregister are no longer in ocpiutil and should be tested in
+        #             a separate unit test
         # TODO: test reg cases where package is 'local', and where registry does not exist
         # TODO: test reg case where project with the package already exists
         # TODO: test reg case where a link conflicting with the package package exists
         # TODO: test unreg case where user tries to unregister a project, but the registered
         #       project with that package is actually a different project
-        gprd = ocpiutil.get_project_registry_dir()[1]
-        for proj, pkg in list(PROJECT_PACKAGES.items()):
-            logging.info("Unregistering and re-registering project \"" + proj +
+        reg = AssetFactory.factory("registry", Registry.get_registry_dir("."))
+        gprd = reg.directory
+        for proj_dir, pkg in list(PROJECT_PACKAGES.items()):
+            logging.info("Unregistering and re-registering project \"" + proj_dir +
                          "\" with package \"" + pkg + "\"")
-            self.assertTrue(ocpiutil.unregister_project(proj))
+            reg.remove(directory=proj_dir)
             self.assertFalse(os.path.lexists(gprd + "/" + pkg))
-            self.assertTrue(ocpiutil.register_project(proj))
+            reg.add(proj_dir)
             self.assertTrue(os.path.lexists(gprd + "/" + pkg))
 
             logging.info("Should be able to unregister via project package instead.")
-            self.assertTrue(ocpiutil.unregister_project(pkg))
+            reg.remove(pkg)
             self.assertFalse(os.path.lexists(gprd + "/" + pkg))
-            self.assertTrue(ocpiutil.register_project(proj))
+            reg.add(proj_dir)
             self.assertTrue(os.path.lexists(gprd + "/" + pkg))
-            with ocpiutil.cd(proj):
+            with ocpiutil.cd(proj_dir):
                 # Exclude deep-copied/exported projects because they cannot import themselves
                 #   or the risk infinite recursive imports
-                if not re.search(r".*exported$", proj):
+                if not re.search(r".*exported$", proj_dir):
                     logging.info("Confirming this all works from within " +
                                  "the project using path='.'")
-                    self.assertTrue(ocpiutil.unregister_project("."))
+                    reg.remove(directory=".")
                     self.assertFalse(os.path.lexists(gprd + "/" + pkg))
-                    self.assertTrue(ocpiutil.register_project("."))
+                    reg.add(".")
                     self.assertTrue(os.path.lexists(gprd + "/" + pkg))
         # If log level is low, disable logging to prevent the expected scary ERROR
         if not OCPI_LOG_LEVEL or int(OCPI_LOG_LEVEL) < 8:
             OCPIUTIL_LOGGER.disabled = True
         logging.info("Should print an ERROR and return false for invalid project_paths:")
-        self.assertFalse(ocpiutil.register_project("INVALID"))
-        logging.info("Should print an ERROR and return false for invalid project_paths:")
-        self.assertFalse(ocpiutil.unregister_project("INVALID"))
+        self.assertRaises(ocpiutil.OCPIException, reg.remove, "INVALID")
         if OCPI_LOG_LEVEL and int(OCPI_LOG_LEVEL) < 8:
             OCPIUTIL_LOGGER.disabled = False
 

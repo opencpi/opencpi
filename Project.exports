@@ -55,7 +55,7 @@
 # This is what is run from /etc/profile.d/opencpi.sh from RPMs.
 # We need to rationalize this with opencpi-setup.sh
 =env/rpm_cdk.sh env/
-=releng/env.d/* env.d/
+=packaging/dist/env.d/* env.d/
 # generic make scripts
 +tools/cdk/include/show.mk include/
 +tools/cdk/include/lib.mk include/
@@ -74,10 +74,6 @@
 +tools/cdk/include/aci.mk include/
 +tools/cdk/include/setup-target-platform.mk include/
 +tools/cdk/include/platform-defaults.mk include/
-# Export the common stuff for zynq platforms for runtime only
-=platforms/zynq/zynq_setup.sh platforms/zynq/
-=platforms/zynq/zynq_net_setup.sh platforms/zynq/
-=platforms/zynq/zynq_system.xml platforms/zynq/
 # CDK scripts we need
 +scripts/clean-env.sh scripts/
 # This is runtime although this one script deals with initialization issues
@@ -107,7 +103,10 @@
 =tools/cdk/scripts/ocpisudo scripts/
 +tools/cdk/scripts/ocpitarget.sh scripts/
 +tools/cdk/scripts/ocpidev scripts/
-+tools/cdk/scripts/ocpishow scripts/
++tools/cdk/scripts/ocpi-copy-projects scripts/
++tools/cdk/scripts/ocpishow.py scripts/
++tools/cdk/scripts/ocpidev_run.py scripts/
++tools/cdk/scripts/ocpiassets.py scripts/
 +tools/cdk/scripts/ocpiutil.py scripts/
 +tools/cdk/scripts/upgradeApp_v1_3.py scripts/
 +tools/cdk/scripts/hdltargets.py scripts/
@@ -118,11 +117,14 @@
 +tools/cdk/scripts/testrun.sh scripts/
 +tools/cdk/scripts/testutil.sh scripts/
 +tools/cdk/scripts/setsid.py scripts/
++tools/cdk/scripts/freeze_project.sh scripts/
++tools/cdk/scripts/thaw_project.sh scripts/
 +tools/cdk/scripts/makeProjectExports.sh scripts/
 #+scripts/makeExportLinks.sh scripts/
 +tools/cdk/scripts/maybeExport.sh scripts/
 # user level scripts made available in the bin directory
 +tools/cdk/scripts/ocpidev <target>/bin/
++tools/cdk/scripts/ocpi-copy-projects <target>/bin/
 =tools/cdk/scripts/ocpidriver <target>/bin/
 +tools/cdk/scripts/genProjMetaData.py scripts/
 #+tools/cdk/scripts/genProjMetaData.pyc scripts/
@@ -135,6 +137,10 @@
 =os/linux/driver/mdev-opencpi.rules <target>/lib/
 =os/linux/driver/target-<target>/opencpi*.ko <target>/lib/
 =os/linux/driver/ocpi_linux_driver scripts/
+################################################################################
+# Python related exclusions and additions
+# It is runtime for systems that have python, but non-python platforms can exclude it
+=runtime/python/opencpi/__init__.py <target>/lib/opencpi/
 ################################################################################
 # RCC related exclusions and additions
 # We don't want everything so we are selective here.  was: +tools/cdk/include/rcc include/rcc
@@ -220,11 +226,10 @@
 =COPYRIGHT
 ################################################################################
 # automake related exclusions and additions
-# --- discuss with Aaron
 #+tools/cdk/include/autoconfig_import.mk include/
 # Until wildcards are supported, the cross-compiled platforms:
 #+tools/cdk/include/autoconfig_import-zed.mk include/
 #+tools/cdk/include/autoconfig_import-pico_t6a.mk include/
-# Macros and configuration wrapper:
-#+runtime/application/include/angryviper.h include/aci/
-#+runtime/application/include/angryviper.h include/rcc/
+=projects/assets/applications/*.xml applications/
+=projects/assets/applications/test.input applications/
+=projects/assets/applications/run.sh applications/

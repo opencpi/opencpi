@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # This file is protected by Copyright. Please refer to the COPYRIGHT file
 # distributed with this source distribution.
 #
@@ -62,7 +62,7 @@ if len(odata) != number_of_symbols_in_input_file:
     print('Length odata = ', len(odata), 'while expected length is = ', number_of_symbols_in_input_file)
     sys.exit(1)
 
-for i in xrange(0,len(odata)):
+for i in range(0,len(odata)):
     if odata[i] != numpy.mod(i,m_p):
         print('FAILED at sample:', i, 'with value:', format(odata[i], '#X'))
         sys.exit(1)

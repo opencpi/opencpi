@@ -1,0 +1,10 @@
+<!-- This is the test xml for testing component "test_worker" -->
+<Tests UseHDLFileIo='true'>
+  <!-- Here are typical examples of generating for an input port and verifying results
+       at an output port
+  <Input Port='in' Script='generate.py'/>
+  <Output Port='out' Script='verify.py' View='view.sh'/>
+  -->
+  <!-- Set properties here.
+       Use Test='true' to create a test-exclusive property. -->
+</Tests>

@@ -95,7 +95,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Component Data Sheet}
-\def\docVersion{1.3}
+\def\docVersion{1.4}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
@@ -120,36 +120,71 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Version           & v\docVersion     \\
 	\hline
-	Release Date      & Aug 2017         \\
+	Release Date      & June 2018         \\
 	\hline
 	Component Library & ocpi.assets.devices     \\
 	\hline
 	Workers           & \comp.hdl        \\
 	\hline
-	Tested Platforms  &  Zedboard (ISE and Vivado), ML605 (FMC LPC slot) \\
+	Tested Platforms  &
+\begin{itemize}
+  \item Agilent Zedboard/Analog Devices FMCOMMS2
+  \item Agilent Zedboard/Analog Devices FMCOMMS3
+  \item x86/Xilinx ML605/Analog Devices FMCOMMS2 (FMC-LPC slot only)
+  \item x86/Xilinx ML605/Analog Devices FMCOMMS3 (FMC-LPC slot only)
+  \item Ettus E310 (Vivado only, tested via \comp{}.test in av.bsp.e310 project)
+\end{itemize} \\
 	\hline
 \end{tabular}
 
 \section*{Functionality}
-	The \Comp{} is a subdevice worker whose primary purpose is to time-interleave data streams for two TX channels in preparation for sending to the AD9361 IC pins (independent of which of the IC's P0/P1 buses the TX data streams are sent to). Time-interleaving occurs according to the timing diagrams specified in figures 66, 69, 72, 75, and 80 in \cite{adi_ug570}. This worker ingests data from at most two instances of the ad9361\_dac.hdl device worker, each which handles a single TX channel data stream, and time-interleaves all channels onto a single data bus that is sent out eventually (via devsignals to ad9361\_data\_sub.hdl\cite{data_sub_comp_datasheet}) to the appropriate TX data stream pins of the AD9361 IC\cite{ad9361}.
+	The \Comp{} is a subdevice worker whose primary purpose is to time-interleave data streams for two TX channels in preparation for sending to the AD9361 IC pins (independent of which of the IC's P0/P1 buses the TX data streams are sent to). Time-interleaving occurs according to the timing diagrams specified in \cite{adi_ug570}. This worker ingests data from at most two instances of the ad9361\_dac.hdl device worker, each which handles a single TX channel data stream, and time-interleaves all channels onto a single data bus that is sent out eventually (via devsignals to ad9361\_data\_sub.hdl\cite{data_sub_comp_datasheet}) to the appropriate TX data stream pins of the AD9361 IC\cite{ad9361}.
 
 \section*{Worker Implementation Details}
 \subsection*{\comp.hdl}
 \begin{sloppypar}
-The \comp.hdl subdevice worker handles registering and interleaving of two independent TX data streams which are sent to this worker via the \verb+dev_data_ch0_in+ and \verb+dev_data_ch1_in+ devsignal ports. Data is sent out via the \verb+dev_data_to_pins+ devsignal port which ad9361\_data\_sub.hdl routes to the AD9361\cite{data_sub_comp_datasheet}. This worker's \verb+LVDS_p+, \verb+HALF_DUPLEX_p+, \verb+SINGLE_PORT_p+, and \verb+DATA_RATE_CONFIG_p+ parameter properties enforce build-time configuration\footnote{Although parameter property infrastructure is in place for all data interface configurations, LVDS is the only currently supported configuration.} for all of the possible AD9361 TX data time-interleaved modes:
-\begin{itemize}
-	\item CMOS Single Port Half Duplex SDR,
-	\item CMOS Single Port Half Duplex DDR,
-	\item CMOS Single Port Full Duplex SDR,
-	\item CMOS Single Port Full Duplex DDR,
-	\item CMOS Dual Port Half Duplex SDR,
-	\item CMOS Dual Port Half Duplex DDR,
-	\item CMOS Dual Port Full Duplex SDR,
-	\item CMOS Dual Port Full Duplex DDR, and
-	\item LVDS (Dual Port Full Duplex DDR).
-\end{itemize}
+The \comp.hdl subdevice worker handles registering and interleaving of two independent TX data streams which are sent to this worker via the \verb+dev_data_ch0_in+ and \verb+dev_data_ch1_in+ devsignal ports. Data is sent out via the \verb+dev_data_to_pins+ devsignal port which ad9361\_data\_sub.hdl routes to the AD9361\cite{data_sub_comp_datasheet}. This worker's \verb+LVDS_p+, \verb+HALF_DUPLEX_p+, \verb+SINGLE_PORT_p+, and \verb+DATA_RATE_CONFIG_p+ parameter properties enforce build-time configuration for all of the possible AD9361 TX data time-interleaved modes. The currently supported modes and their limitations are shown in the following table.
+\begin{scriptsize}
+	\begin{longtable}{|c|c|c|c|c|}
+		\caption{Supported ADC Sampling Rates per RX channel} \\
+    \hline
+		\rowcolor{blue}
+    Platform/Cards which & AD9361 Data Port Mode & AD9361 Channel Mode & Max AD9361- & Max \\
+		\rowcolor{blue}
+    allow the AD9361                           & &                       & Supported Sampling    & \comp.hdl{}- \\
+		\rowcolor{blue}
+    Data Port/Channel       & &                       & Rate per RX channel        & Supported Sampling \\
+		\rowcolor{blue}
+    Mode                    & &                       &                            & Rate per RX channel \\
+    \hline
+    E310 & CMOS Single Port Half Duplex SDR &                   & & not yet supported  \\
+    \hline
+    E310 & CMOS Single Port Half Duplex DDR &                   & & not yet supported  \\
+    \hline
+    E310 & CMOS Single Port Full Duplex SDR &                   & & not yet supported  \\
+    \hline
+    E310 & CMOS Single Port Full Duplex DDR &                   & & not yet supported  \\
+    \hline
+    E310 & CMOS Dual   Port Half Duplex SDR &                   & & not yet supported  \\
+    \hline
+    E310 & CMOS Dual   Port Half Duplex DDR &                   & & not yet supported \\
+    \hline
+    E310 & CMOS Dual   Port Full Duplex SDR &                   & & not yet supported  \\
+    \hline
+    E310 & CMOS Dual   Port Full Duplex DDR &                   & & not yet supported  \\
+    \hline
+         &                           & 1R1T, 2R2T Timing=0 & 30.72 Msps & 30.72 Msps \\
+    \cline{2-5}
+         &                           & 1R1T, 2R2T Timing=1 &            &            \\
+    E310 & CMOS Single Port Full Duplex DDR & 2R1T                & 15.36 Msps & 15.36 Msps \\
+         &                           & 1R2T                &            &            \\
+    \hline
+    FMCOMMS2/3 & LVDS (Dual Port Full Duplex DDR) & all configs         & 61.44 Msps & 61.44 Msps\footnote{There are limited guarantees of data fidelity on the FMCOMMS2/3 cards for certain multichannel modes on certain platforms, although tests at room temperature have always yielded 100\% fidelity.} \\
+    \hline
+	\end{longtable}
+\end{scriptsize}
 \pagebreak
-Note that "channel 0" within the context of this worker corresponds to the AD9361 T1 channel and "channel 1" corresponds to the AD9361 T2 channel in the AD9361 timing diagrams\footnote{For more info, see e.g. Figure 80 in \cite{adi_ug570}.}. The mapping between the AD9361's T1/T2 channels and the AD9361 physical TX connector outputs is variable depending on the AD9361 register configuration. This relationship is shown in the following table.  Due to the AD9361's T2 behavior\footnote{\label{t2}Data sent via T2 is only ever transmitted when the AD9361 register 0x002 Bits D7 and D6 are 1 (which corresponds to one of 1R2T or 2R2T modes).}, channel 1 should only ever be used when 2 TX channels are desired.
+Note that ``channel 0" within the context of this worker corresponds to the AD9361 T1 channel and ``channel 1" corresponds to the AD9361 T2 channel in the AD9361 timing diagrams\footnote{For more info, see e.g. Figure 80 in \cite{adi_ug570}.}. The mapping between the AD9361's T1/T2 channels and the AD9361 physical TX connector outputs is variable depending on the AD9361 register configuration. This relationship is shown in the following table.  Due to the AD9361's T2 behavior\footnote{\label{t2}Data sent via T2 is only ever transmitted when the AD9361 register 0x002 Bits D7 and D6 are 1 (which corresponds to one of 1R2T or 2R2T modes).}, channel 1 should only ever be used when 2 TX channels are desired.
 \end{sloppypar}
 \begin{scriptsize}
 	\centering
@@ -214,7 +249,7 @@ Note that "channel 0" within the context of this worker corresponds to the AD936
     \gettikzxy{(placeholder)}{\rx}{\ry}
     \myclient.apply(\rx - 150,\ry,C1, ``dev\_data\_ch0\_in'' \\ dev signal port \\ DAC channel's data bus sent from \\ instance of ad9361\_dac.hdl);
     \path[<->]($(R1.north) + (-150 pt,0)$) edge [] node [] {} (C1);
-    \myclient.apply(-\rx + 150,\ry,C1, ``dev\_data\_ch1\_in'' \\ dev signal port \\ DAC channels' data bus sent from \\ instance of ad9361\_dac.hdl);
+    \myclient.apply(-\rx + 150,\ry,C1, ``dev\_data\_ch1\_in'' \\ dev signal port \\ DAC channel's data bus sent from \\ instance of ad9361\_dac.hdl);
     \path[<->]($(R1.north) + (150 pt,0)$) edge [] node [] {} (C1);
     
 	\fontsize{9.5}{12}\selectfont    
@@ -314,7 +349,7 @@ Note that "channel 0" within the context of this worker corresponds to the AD936
 			\cline{6-9}
 			&             &        &     &      & data\_clk\_is\_inverted     &Output& 1      & Value is 1 if the clock in via dev\_data\_clk was inverted inside this worker before used as an active-edge rising clock. This is expected to be hardcoded at buildtime. \\
 			\cline{6-9}
-			&             &        &     &      & islvds       & Output     & 1      &  Value is 1 if \verb+LVDS_p+ has a value of true and 0 if \verb+LVDS_p_p+ has a value of false. Because \verb+LVDS_p+ is a parameter property, this is hardcoded at buildtime. The purpose of this devsignal is to feed this worker's buildtime-specified LVDS/CMOS mode through ad9361\_config.hdl to ad9361\_config\_proxy.rcc so No-OS knows which LVDS/CMOS mode to use when initializing the AD9361 IC. \\
+			&             &        &     &      & islvds       & Output     & 1      &  Value is 1 if \verb+LVDS_p+ has a value of true and 0 if \verb+LVDS_p+ has a value of false. Because \verb+LVDS_p+ is a parameter property, this is hardcoded at buildtime. The purpose of this devsignal is to feed this worker's buildtime-specified LVDS/CMOS mode through ad9361\_config.hdl to ad9361\_config\_proxy.rcc so No-OS knows which LVDS/CMOS mode to use when initializing the AD9361 IC. \\
 			\cline{6-9}
 			&             &        &     &      & isdualport   & Output     & 1      &  Value is 1 if \verb+SINGLE_PORT_p+ has a value of false and 0 if \verb+SINGLE_PORT_p+ has a value of true. Because \verb+SINGLE_PORT_p+ is a parameter property, this is hardcoded at buildtime. The purpose of this devsignal is to feed this worker's buildtime-specified single/dual port mode through ad9361\_config.hdl to ad9361\_config\_proxy.rcc so No-OS knows which single/dual port mode to use when initializing the AD9361 IC. \\
 			\cline{6-9}
@@ -393,37 +428,35 @@ Note that "channel 0" within the context of this worker corresponds to the AD936
 \end{landscape}
 
 \section*{Control Timing and Signals}
-The \Comp{} subdevice worker contains four clock domains: control plane, FB\_CLK\_P, "dac\_clk" and "dad2\_clk".
+The \Comp{} subdevice worker contains four clock domains: control plane, FB\_CLK\_P, ``dac\_clk" and ``dacd2\_clk".
 \subsection*{Control Plane Clock Domain}
 The \verb+data_cfg_tx+ signals enter this worker in the control plane clock domain. Inside this worker, they are combined combinatorially into a single signal which is subsequently synchronized to the dacd2\_clk domain. The dacd2\_clk domain signal is then used to handle time-interleaving of multiple channel's data.
 \subsection*{DATA\_CLK\_P/FB\_CLK\_P Clock Domain}
 The AD9361 DATA\_CLK\_P clock enters this worker via the \verb+dev_data_clk+ devsignal. DATA\_CLK\_P clock is forwarded to the \verb+FB_CLK_P+ device signal as well as used to generate dac\_clk.
-\subsection*{"dac\_clk" Clock Domain}
-The "dac\_clk" clock is an inverted version of DATA\_CLK\_P. Note that data transitions for the TX data sent out via the \verb+dev_data_to_pins+ devsignal port are falling-edge aligned with \verb+FB_CLK_P+ since the falling edge is what the AD9361 datasheets specifies its setup/hold requirements against\cite{adi_ug570}. The dac\_clk domain allows for logic within this worker to be falling edge aligned with \verb+FB_CLK_P+.
-\subsection*{"dacd2\_clk" Clock Domain}
-The "dacd2\_clk" clock is a divided by 2 version of "dac\_clk". TX data for channel 0 and channel 1 enter this worker in the dacd2\_clk domain from the  \verb+dev_data_ch0_in+ and \verb+dev_data_ch1_in+ devsignal ports, respectively. The dacd2\_clk clock was a necessary replacement for some of the dac\_clk logic in order to alleviate timing violations in the dac\_clk domain for the zed\_ise platform. Note that because dacd2\_clk is a divided version of dac\_clk, synchronization logic between the two is not necessary and not included.
+\subsection*{``dac\_clk" Clock Domain}
+The ``dac\_clk" clock is an inverted version of DATA\_CLK\_P. Note that data transitions for the TX data sent out via the \verb+dev_data_to_pins+ devsignal port are falling-edge aligned with \verb+FB_CLK_P+ since the falling edge is what the AD9361 datasheets specifies its setup/hold requirements against\cite{adi_ug570}. The dac\_clk domain allows for logic within this worker to be falling edge aligned with \verb+FB_CLK_P+.
+\subsection*{``dacd2\_clk" Clock Domain}
+The ``dacd2\_clk" clock is a divided by 2 version of ``dac\_clk". TX data for channel 0 and channel 1 enter this worker in the dacd2\_clk domain from the  \verb+dev_data_ch0_in+ and \verb+dev_data_ch1_in+ devsignal ports, respectively. The dacd2\_clk clock was a necessary replacement for some of the dac\_clk logic in order to alleviate timing violations in the dac\_clk domain for the zed\_ise platform. Note that because dacd2\_clk is a divided version of dac\_clk, synchronization logic between the two is not necessary and not included.
 \subsection*{Data latency}
 \begin{itemize}
-\item{\textbf{LVDS}} \\ Latency for LVDS is given as the number of clock cycles from a given channel's data becoming ready on the dac\_data\_I and dac\_data\_Q devsignals to the starting edge of the high 6-bit I word on the AD9361 data bus output. Note that, for multichannel modes, latency can be two possible values depending on the current state of the 2-state channel serialization state machine exists when dac\_data\_I/dac\_data\_Q becomes ready. The latency for the various LVDS configurations are as follows:
+	\item{\textbf{LVDS mode and CMOS Single Port Full Duplex}} \\ Latency for these modes is given as the number of clock cycles from a given channel's data becoming ready on the dac\_data\_I and dac\_data\_Q devsignals to the starting edge of the high 6-bit I word on the AD9361 data bus output. Note that, for multichannel modes, latency can be two possible values depending on the current state of the 2-state channel serialization state machine when dac\_data\_I/dac\_data\_Q becomes ready. The latency for the various LVDS and CMOS Single Port Full Duplex configurations are as follows:
 \begin{itemize}
-	\item{1R1T} \\channel 0 data latency = 3 FB\_CLK\_P cycles (2 are pipeline delay which are arguably unnecessary and 1 is a 12-bit word to 6-bit word serialization register),
-	\item{2R1T/1R2T/2R2T} \\channel 0 data latency = 3 or 5 FB\_CLK\_P cycles (2 are pipeline delay which are arguably unnecessary, 2 are possible channel serialization register delay, and 1 is a 12-bit word to 6-bit word serialization register), \\channel 1 data latency = 3 or 5 FB\_CLK\_P cycles (2 are pipeline delay which are arguably unnecessary, 2 are possible channel serialization register delay, and 1 is a 12-bit word to 6-bit word serialization register).
+	\item{1R1T} \\channel 0 data latency = 3 FB\_CLK\_P cycles (2 are pipeline delay which are arguably unnecessary and 1 is a 12-bit word to 6-bit word serialization register)
+	\item{2R1T/1R2T/2R2T} \\channel 0 data latency = 3 or 5 FB\_CLK\_P cycles (2 are pipeline delay which are arguably unnecessary, 2 are possible channel serialization register delay, and 1 is a 12-bit word to 6-bit word serialization register) \\channel 1 data latency = 3 or 5 FB\_CLK\_P cycles (2 are pipeline delay which are arguably unnecessary, 2 are possible channel serialization register delay, and 1 is a 12-bit word to 6-bit word serialization register)
 \end{itemize}
-\item{\textbf{CMOS}} \\ Not yet implemented or supported.
 \end{itemize}
 \pagebreak
 \subsection*{Multichannel Phase Coherency}
 Note that the two channel data made available via dev\_data\_ch0\_in and dev\_data\_ch1\_in are only ever considered to be phase coherent if coherency is guaranteed by the worker(s) that dev\_data\_ch0\_in and dev\_data\_ch1\_in are connected to. For example, multiple instances of ad9361\_dac.hdl would not guarantee phase coherence because their datastreams would be independent. However, if a single device worker was created which interfaced with both dev\_data\_ch0\_in and dev\_data\_ch1\_in, phase coherency could be guaranteed by updating the values for the two channels in an every-other-clock fashion.
 
 \section*{Performance and Resource Utilization}
-\subsubsection*{\comp.hdl}
-Fmax refers to the maximum allowable clock rate for any registered signal paths within a given clock domain for an FPGA design. Fmax in the table below is specific only to this worker and represents the maximum possible Fmax for any OpenCPI bitstream built with this worker included. Note that the Fmax value for a given clock domain for the final bitstream is often worse than the Fmax specific to this worker, even if this worker is the only one included in the bitstream. Note also that the DATA\_CLK\_P devsignal's rate will only ever go as high as 245.76 MHz\cite{adi_ug570}. \\ \\
-Table entries are a result of building the worker with the following parameter property sets:
-%\input{../../\ecomp.hdl/utilization.inc}
+Fmax refers to the maximum allowable clock rate for any registered signal paths within a given clock domain for an FPGA design. Fmax in the table below is specific only to this worker and represents the maximum possible Fmax for any OpenCPI bitstream built with this worker included. Note that the Fmax value for a given clock domain for the final bitstream is often worse than the Fmax specific to this worker, even if this worker is the only one included in the bitstream. \\
+
+\noindent In the tables below, dev\_data\_clk is the worker source code name for the signal which is ultimately driven by, and has the same clock rate of, the AD9361 DATA\_CLK pin pair. \\
 \begin{itemize}
-	\item \verb+LVDS_p+=True
-	\item \verb+HALF_DUPLEX_p+=False
-	\item \verb+SINGLE_PORT_p+=False
+	\item \verb+LVDS_p+=true
+	\item \verb+HALF_DUPLEX_p+=false
+	\item \verb+SINGLE_PORT_p+=false
 	\item \verb+DATA_RATE_CONFIG_p+=DDR
 \end{itemize}
 % see performance_and_resource_utilization.txt
@@ -443,10 +476,28 @@ Table entries are a result of building the worker with the following parameter p
 		\hline
 	\end{longtable}
 \end{scriptsize}
+\begin{itemize}
+	\item \verb+LVDS_p+=false
+	\item \verb+HALF_DUPLEX_p+=false
+	\item \verb+SINGLE_PORT_p+=true
+	\item \verb+DATA_RATE_CONFIG_p+=DDR
+\end{itemize}
+% see performance_and_resource_utilization.txt
+\begin{scriptsize}
+	\begin{longtable}{|M{4.5cm}|M{2cm}|M{2cm}|M{2cm}|M{2.5cm}|M{2cm}|}
+		\hline
+		\rowcolor{blue}
+		Device                       & Registers (typical) & LUTs (typical) & Fmax (typical) (dev\_data\_clk) & Memory/Special Functions   & Design Suite       \\
+		\hline
+		\multirow{1}{*}{Zynq XC7Z020-1-CLG484} & 91  & 88            & 286 MHz \textsuperscript{\ref{abc}} & 2 BUFR, 8 ODDR             & Vivado 2017.1      \\
+		\hline
+	\end{longtable}
+\end{scriptsize}
+%\input{../../\ecomp.hdl/utilization.inc}
 \footnotetext[1]{\label{abc}These measurements were the result of a Vivado timing analysis which was different from the Vivado analysis performed by default for OpenCPI worker builds. For more info see Appendix \ref{appendix}}
 \footnotetext[2]{\label{quartustiming}Quartus does not perform timing analysis at the OpenCPI worker build (i.e. synthesis) stage.}
 \section*{Test and Verification}
-The test outlined in \cite{dac_comp_datasheet} includes validation of this worker's functionality (for LVDS only). Note that this worker does not successfully operate with the FMCOMMS2/3 card on the ML605 FMC-HPC slot due to an unknown data fidelity issue.
+The test outlined in \cite{dac_comp_datasheet} includes validation of this worker's functionality (for LVDS mode and CMOS Single Port Full Duplex DDR mode only).
 \pagebreak
 \begin{thebibliography}{1}
 
@@ -464,7 +515,7 @@ AD9361\_Register\_Map\_Reference\_Manual\_UG-671.pdf
 \pagebreak
 \section{Appendix - Vivado Timing Analysis} \label{appendix}
 The Vivado timing report that OpenCPI runs for device workers erroneously reports net delays which are not indicative of the maximum allowable clock rate for a given clock pin. Custom Vivado tcl commands have to be run device workers to calculate this information. \\ \\
-The desired maximum clock rate for the DATA\_CLK\_P clock domain for this worker is computed as the inverse of the DATA\_CLK\_P clock period which causes the worst case slack to be 0 ns. In preparation for running the timing analys, build the worker, source the Vivado settings64.sh script, the run the following commands from the base project directory):
+The desired maximum clock rate for the DATA\_CLK\_P clock domain for this worker is computed as the inverse of the DATA\_CLK\_P clock period which causes the worst case slack to be 0 ns. In preparation for running the timing analysis, build the worker, source the Vivado settings64.sh script, and then run the following commands from the base project directory:
 \lstset{language=bash, columns=flexible, breaklines=true, prebreak=\textbackslash, basicstyle=\ttfamily, showstringspaces=false,upquote=true, aboveskip=\baselineskip, belowskip=\baselineskip, upquote=true}
 \begin{lstlisting}
 cd hdl/devices/
@@ -476,7 +527,7 @@ To get the desired period, we must define DATA\_CLK\_P as a clock in Vivado (cre
 \begin{lstlisting}
 create_clock -name clk2 -period 0.001 [get_nets dev_data_clk*]
 \end{lstlisting}
-The timing report is then run to to report the worst case slack for our defined clock period.
+The timing report is then run to report the worst case slack for our defined clock period.
 \begin{lstlisting}
 report_timing -delay_type min_max
 \end{lstlisting}
@@ -549,7 +600,7 @@ Slack (VIOLATED) :        -3.485ns  (required time - arrival time)
 
 \end{lstlisting}
 \fontsize{10}{12}\selectfont
-In order to calculate the clock period which would give a 0.000 ns slack, we add 2*0.001 ns to the slack violation which corresponded to a 0.001 ns period. For this example, the result is -(-3.485) + 2*(0.001) = 3.487 ns. The inverse of this value is what corresponds to the 286 MHz measurement in the table above\textsuperscript{\ref{measurement}}. This measurement can be verified by re-defining the clock period to have a period of 3.487 ns and re-running the timing report to see a worst case slack of 0 ns.
+In order to calculate the clock period which would give a 0.000 ns slack, we add 2*0.001 ns to the slack violation which corresponded to a 0.001 ns period. For this example, the result is -(-3.485) + 2*(0.001) = 3.487 ns. The inverse of this value is what corresponds to the 286 MHz measurement in the table above. This measurement can be verified by re-defining the clock period to have a period of 3.487 ns and re-running the timing report to see a worst case slack of 0 ns.
 \begin{lstlisting}
 create_clock -name clk2 -period 3.487 [get_nets dev_data_clk*]
 report_timing -delay_type min_max

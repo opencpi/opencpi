@@ -1,0 +1,9 @@
+<HdlWorker language='vhdl' spec='iqstream_max_calculator-spec'>
+
+  <Property Name="IDATA_WIDTH_p" Type="ushort" Default="32" Parameter="true"/>
+  <Property Name="ODATA_WIDTH_p" Type="ushort" Default="32" Parameter="true"/>
+
+  <StreamInterface Name="in" DataWidth="IDATA_WIDTH_p"/>
+  <StreamInterface Name="out" DataWidth="ODATA_WIDTH_p"/>
+
+</HdlWorker>

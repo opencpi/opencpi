@@ -366,6 +366,7 @@ namespace OCPI {
 	bool m_allowEmpty;
       public:
         TokenIter(const char *list, const char *delims = ", \t\n", bool allowEmpty = false);
+        TokenIter(const std::string &list, const char *delims = ", \t\n", bool allowEmpty = false);
 	~TokenIter();
 	inline const char *token() const { return m_token; }
 	void next();
@@ -447,6 +448,9 @@ namespace OCPI {
       // empty strings and "/" result in an empty string.
       // The return value is a convenience - the c_str() of the output buffer.
       const char *baseName(const char *path, std::string &buf);
+      // Do glob processing where the expectation is that any pattern results in a single
+      // unique name.  Include tilde processing.  Return true on error
+      bool globPath(const char *in, std::string &out);
       // find item in colon-separated path, returning complete path in "result"
       // return true on error
       bool searchPath(const char *path, const char *item, std::string &result,

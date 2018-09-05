@@ -1,9 +1,0 @@
-<HdlContainer platform='isim'>
-   <!-- <device worker='lime_spi' floating='1'/> -->
-   <device worker='lime_spi_em' floating='1'/>
-   <device worker='lime_spi' floating='1'>
-    <property name='CLK_FREQ_p' value='50e6'/>
-   </device>
-   <device worker='lime_tx' floating='1'/>
-   <device worker='lime_tx_em' floating='1'/>
-</HdlContainer>

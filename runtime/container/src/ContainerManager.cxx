@@ -165,6 +165,29 @@ namespace OCPI {
 	n >= OCPI::Container::Manager::s_nContainers ? NULL : 
 	&OCPI::Container::Container::nthContainer(n);
     }
+    // List the containers available
+    void ContainerManager::
+    list(bool onlyPlatforms) {
+      Container *c;
+      if (onlyPlatforms) {
+	std::set<std::string> plats;
+	for (unsigned n = 0; (c = ContainerManager::get(n)); n++)
+	  plats.insert(c->model() + "-" + (c->dynamic() ? "1" : "0") + "-" + c->platform());
+	for (std::set<std::string>::const_iterator i = plats.begin(); i != plats.end(); ++i)
+	  printf("%s\n", i->c_str());
+      } else {
+	printf("Available containers:\n"
+	       " #  Model Platform       OS     OS-Version  Arch     Name\n");
+	for (unsigned n = 0; (c = ContainerManager::get(n)); n++)
+	  printf("%2u  %-5s %-14s %-6s %-11s %-8s %s\n",
+		 n,  c->model().c_str(), c->platform().c_str(), c->os().c_str(),
+		 c->osVersion().c_str(), c->arch().c_str(), c->name().c_str());
+      }
+      fflush(stdout);
+    }
+
+
+
   }
   /*
    * This ensures the following functions are linked into the final ocpirun/ACI executables when

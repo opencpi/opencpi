@@ -20,15 +20,26 @@
 ##########################################################################################
 # Run the av-tests, assuming a clean tree
 set -e
+[ -z "$OCPI_TARGET_PLATFORM" ] && {
+  # Set just enough target variables to run runtime tests
+  export OCPI_TARGET_PLATFORM=$OCPI_TOOL_PLATFORM
+  export OCPI_TARGET_OS=$OCPI_TOOL_OS
+  export OCPI_TARGET_DIR=$OCPI_TOOL_DIR
+}
 shopt -s expand_aliases
 alias odev="$OCPI_CDK_DIR/$OCPI_TOOL_DIR/bin/ocpidev -v"
 echo Cleaning the project
 make cleaneverything
 echo Building the components
 odev build rcc
-echo Building the application
+echo Building the mulislave_test application
+odev build application mulislave_test
+echo Running the mulislave_test application
+(cd applications/mulislave_test &&
+  OCPI_LIBRARY_PATH=../../:$OCPI_LIBRARY_PATH ./target-$OCPI_TARGET_DIR/mulislave_test)
+echo Building the aci_property_test_app application
 odev build application aci_property_test_app
-echo Running the test application
+echo Running the aci_property_test_app application
 (cd applications/aci_property_test_app &&
   OCPI_LIBRARY_PATH=../../:$OCPI_LIBRARY_PATH ./target-$OCPI_TARGET_DIR/test_app)
 cd components

@@ -27,6 +27,10 @@ architecture rtl of data_src_worker is
   constant WIDTH      : integer := to_integer(DATA_BIT_WIDTH_p);
   -- mandatory output port logic, don't touch this
   signal data_ready_for_out_port : std_logic := '0';
+  signal out_meta_is_reserved    : std_logic := '0';
+  signal out_som                 : std_logic := '0';
+  signal out_eom                 : std_logic := '0';
+  signal out_valid               : std_logic := '0';
 
   signal enable        : std_logic := '0';
   signal data_count    : std_logic_vector(WIDTH-1 downto 0) := (others => '0');
@@ -38,6 +42,8 @@ architecture rtl of data_src_worker is
   signal data          : std_logic_vector(WIDTH-1 downto 0) := (others => '0');
   signal data_I        : std_logic_vector(15 downto 0)      := (others => '0');
   signal data_Q        : std_logic_vector(15 downto 0)      := (others => '0');
+  signal mask_I        : std_logic_vector(props_in.mask_I'range) := (others => '0');
+  signal mask_Q        : std_logic_vector(props_in.mask_Q'range) := (others => '0');
 
   signal message_size_samples  : ulong_t := (others => '0');
   signal msg_samp_ctr : ulong_t := (0 => '1', others => '0');
@@ -49,7 +55,11 @@ begin
   -- mandatory output port logic, don't touch this, (note that
   -- data_ready_for_out_port MUST be clock-aligned with out_out.data)
   out_out.give <= ctl_in.is_operating and out_in.ready and
-                  data_ready_for_out_port;
+                  (not out_meta_is_reserved) and data_ready_for_out_port;
+  out_meta_is_reserved <= (not out_som) and (not out_valid) and (not out_eom);
+  out_out.som   <= out_som;
+  out_out.eom   <= out_eom;
+  out_out.valid <= out_valid;
 
   data_ready_for_out_port <= enable or force_zlm;
 
@@ -71,11 +81,11 @@ begin
     end if;
   end process;
 
-  out_out.valid           <= ctl_in.is_operating and out_in.ready and
+  out_valid               <= ctl_in.is_operating and out_in.ready and
                              data_ready_for_out_port and (not force_zlm);
   out_out.byte_enable     <= (others => '1');
-  out_out.som <= to_bool(msg_samp_ctr = 1) or force_zlm;
-  out_out.eom <= eom or force_zlm;
+  out_som     <= to_bool(msg_samp_ctr = 1) or force_zlm;
+  out_eom     <= eom or force_zlm;
   eom <= to_bool(msg_samp_ctr = message_size_samples) or
          to_bool(msg_samp_ctr = unsigned(props_in.num_samples));
 
@@ -95,12 +105,16 @@ begin
   end generate;
   data_Q(15-WIDTH downto 0) <= (others => '0');
 
-  out_out.data <= data_Q & data_I;
+  mask_Q <= std_logic_vector(props_in.mask_Q);
+  mask_I <= std_logic_vector(props_in.mask_I);
+
+  out_out.data <= (data_Q and mask_Q) & (data_I and mask_I);
 
   enable <= ctl_in.is_operating and out_in.ready and props_in.enable and
             (to_bool(props_in.num_samples = -1) or
              to_bool(long_t(data_count_32) < props_in.num_samples));
 
+  -- TODO / FIXME - separate structural code from behavioral code
   lfsr : misc_prims.misc_prims.lfsr
     generic map (
       POLYNOMIAL => std_logic_vector(LFSR_POLYNOMIAL_p),

@@ -9,7 +9,7 @@
  </Instance>
 
   <Instance Name="UUT" Component="ocpi.assets.util_comps.socket_write">
-    <Property Name="outSocket" Value='address 127.0.0.1, ports {
+    <Property Name="outSocket" Value='address 127.0.0.1, expectedClients 2, ports {
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,

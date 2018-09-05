@@ -77,7 +77,12 @@ firenables=( $DISABLE )
 twortwots=( 0 1 ) # force using 2R2T timing diagram regardless of number of enabled channels
 
 FOUND_PLATFORMS=$(./target-$OCPI_TOOL_DIR/get_comma_separated_ocpi_platforms)
-if [ "$FOUND_PLATFORMS" == "zed" ]; then
+AT_LEAST_ONE_ML605_AVAILABLE=$(./target-$OCPI_TOOL_DIR/get_at_least_one_platform_is_available ml605)
+if [ "$FOUND_PLATFORMS" == "" ]; then
+  echo ERROR: no platforms found! check ocpirun -C
+  echo "TEST FAILED"
+  exit 1
+elif [ "$FOUND_PLATFORMS" == "zed" ]; then
     # DATA_CLK_P rate rounded via floor = floor(1/5.712 ns) ~= 175.070028 MHz
     # for LVDS, max samp rate = DATA_CLK_P rate / 4         ~=  43.767507 Msps complex
   samprates=( $AD9361_MIN_ADC_RATE 25e6 30e6 35e6 40e6 43767507 )
@@ -85,11 +90,11 @@ elif [ "$FOUND_PLATFORMS" == "zed_ise" ]; then
   # DATA_CLK_P rate rounded via floor = floor(1/4.294 ns) ~= 232.883092 MHz
   # for LVDS, max samp rate = DATA_CLK_P rate / 4         ~=  58.220773 Msps complex
   samprates=( $AD9361_MIN_ADC_RATE 25e6 30e6 35e6 40e6 45e6 50e6 55e6 58220773 )
-elif [ "$FOUND_PLATFORMS" == "ml605" ]; then
+elif [ "$AT_LEAST_ONE_ML605_AVAILABLE" == "true" ]; then
   samprates=( $AD9361_MIN_ADC_RATE 25e6 30e6 35e6 40e6 45e6 50e6 55e6 $AD9361_MAX_ADC_RATE )
 else
   printf "platform found which is not supported: "
-  echo $FOUND_PLATFORM
+  echo $FOUND_PLATFORMS
   echo "TEST FAILED"
   exit 1
 fi
@@ -116,7 +121,7 @@ do
       echo "sample rate      : $samprate sps"
       echo "runtime          : $APP_RUNTIME_SEC sec"
 
-      PREFIX=/var/volatile/app_"$samprate"sps_fir"$firenable"_"$twortwot"_"$APP_RUNTIME_SEC"sec
+      PREFIX=app_"$samprate"sps_fir"$firenable"_"$twortwot"_"$APP_RUNTIME_SEC"sec
 
       # only TX 64 samples which will cause and underrun since the TX duration
       # of 64 samples for any possible AD9361 DAC sample rate is less than the
@@ -130,6 +135,10 @@ do
          -pdata_src=num_samples=64 \
          -pfile_write=filename=$FILENAME" \
         runtest
+      XX=$?
+      if [ "$XX" != "0" ]; then
+        exit $XX
+      fi
       dogrep
       mvfiles
       echo --------------------------------------------------------------------------------
@@ -144,6 +153,10 @@ do
          -pdata_src=fixed_value=0,0,0,0,0,0,0,0,0,0,0,0 \
          -pfile_write=filename=$FILENAME" \
         runtest
+      XX=$?
+      if [ "$XX" != "0" ]; then
+        exit $XX
+      fi
       dogrep
       GOLDEN=./scripts/data_src_fixed0_4096samps.out.golden domd5sum
       mvfiles
@@ -159,6 +172,10 @@ do
          -pdata_src=fixed_value=1,1,1,1,1,1,1,1,1,1,1,1 \
          -pfile_write=filename=$FILENAME" \
         runtest
+      XX=$?
+      if [ "$XX" != "0" ]; then
+        exit $XX
+      fi
       dogrep
       GOLDEN=./scripts/data_src_fixedf_4096samps.out.golden domd5sum
       mvfiles
@@ -174,6 +191,10 @@ do
          -pdata_src=fixed_value=0,1,0,1,0,1,0,1,0,1,0,1 \
          -pfile_write=filename=$FILENAME" \
         runtest
+      XX=$?
+      if [ "$XX" != "0" ]; then
+        exit $XX
+      fi
       dogrep
       GOLDEN=./scripts/data_src_fixed5_4096samps.out.golden domd5sum
       mvfiles
@@ -189,6 +210,10 @@ do
          -pdata_src=fixed_value=1,0,1,0,1,0,1,0,1,0,1,0 \
          -pfile_write=filename=$FILENAME" \
         runtest
+      XX=$?
+      if [ "$XX" != "0" ]; then
+        exit $XX
+      fi
       dogrep
       GOLDEN=./scripts/data_src_fixeda_4096samps.out.golden domd5sum
       mvfiles
@@ -203,6 +228,10 @@ do
          -pdata_src=mode=walking \
          -pfile_write=filename=$FILENAME" \
         runtest
+      XX=$?
+      if [ "$XX" != "0" ]; then
+        exit $XX
+      fi
       dogrep
 
       # skipping md5sum since we don't have a sync-up operation like
@@ -220,6 +249,10 @@ do
          -pdata_src=mode=lfsr \
          -pfile_write=filename=$FILENAME" \
         runtest
+      XX=$?
+      if [ "$XX" != "0" ]; then
+        exit $XX
+      fi
       dogrep
 
       # no md5sum, relying on calculate_AD9361_BIST_PRBS_RX_BER
