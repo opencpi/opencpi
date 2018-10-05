@@ -48,4 +48,27 @@ component lfsr
     REG      : out std_logic_vector(POLYNOMIAL'length-1 downto 0));
 end component;
 
+component event_in_to_txen
+  port (
+    EVENT_IN_CLK           : in  std_logic;
+    EVENT_IN_RESET         : in  std_logic;
+    CTL_IN_IS_OPERATING    : in  std_logic;
+    EVENT_IN_IN_RESET      : in  std_logic;
+    EVENT_IN_IN_SOM        : in  std_logic;
+    EVENT_IN_IN_VALID      : in  std_logic;
+    EVENT_IN_IN_EOM        : in  std_logic;
+    EVENT_IN_IN_READY      : in  std_logic;
+    EVENT_IN_OUT_TAKE      : in  std_logic;
+    -- '1'/'0' corresponds to on opcode/off opcode
+    EVENT_IN_OPCODE_ON_OFF : in  std_logic;
+    -- use case 1: use tx enable to directly drive pin
+    TXEN                   : out std_logic;
+    -- use case 2: use intermediate signals to drive other logic which
+    -- drives pin (useful when there are multiple channels/event ports)
+    TXON_PULSE             : out std_logic;
+    TXOFF_PULSE            : out std_logic;
+    EVENT_IN_CONNECTED     : out std_logic;
+    IS_OPERATING           : out std_logic);
+end component;
+
 end package misc_prims;

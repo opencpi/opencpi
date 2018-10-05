@@ -225,24 +225,14 @@ The Lime LMS6002D register map is realized via a rawprops port whose communicati
 \section*{Control Timing and Signals}
 The \Comp{} subdevice worker operates in the control plane clock domain. Note that this worker is essentially the central worker that command/control passes through, and no RX or TX data paths flow through this worker.
 
+\begin{landscape}
+\section*{Worker Configuration Parameters}
+\subsubsection*{\comp.hdl}
+\input{../../\ecomp.hdl/configurations.inc}
 \section*{Performance and Resource Utilization}
 \subsubsection*{\comp.hdl}
-\begin{scriptsize}
-  \begin{tabular}{|M{4.5cm}|M{1cm}|M{1cm}|M{1.5cm}|M{2cm}|M{1cm}|M{1cm}|M{2.5cm}|}
-    \hline
-    \rowcolor{blue}
-    Device                    		& Registers & LUTs & Fmax    & Memory/Special Functions & Design Suite \\
-    \hline
-    Zynq XC7Z020-1-CLG484     		& 63        & 176  & 644 MHz & -                        & ISE 14.7 \\
-    \hline
-    Zynq XC7Z020-1-CLG484     		& 66        & 95   & 294 MHz & -                        & Vivado 2017.1 \\
-    \hline
-    Virtex-6 XC6VCX75T-2FF484 		& 63        & 176  & 501 MHz & -                        & ISE 14.7     \\
-    \hline
-    Stratix IV EP4SGX230K-C2-F40 	& 67     	& 154  &         & -                        & Quartus Prime 15.1 \\
-    \hline
-  \end{tabular}
-\end{scriptsize}
+\input{../../\ecomp.hdl/utilization.inc}
+\end{landscape}
 
 \section*{Test and Verification}
 \begin{flushleft}

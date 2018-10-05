@@ -20,7 +20,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Vivado Usage Guide}
-\def\docVersion{1.2}
+\def\docVersion{1.4}
 %----------------------------------------------------------------------------------------
 \input{snippets/LaTeX_Header.tex}
 \date{Version \docVersion} % Force date to be blank and override date with version
@@ -41,6 +41,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
       \textbf{Revision} & \textbf{Description of Change} & \textbf{Date} \\
       \hline
       v1.2 & Initial creation for Release 1.2 & 8/2017 \\
+      \hline
+      v1.3 & Update for Release 1.4 & 9/2018 \\
       \hline
     \end{tabularx}
   \end{table}
@@ -70,7 +72,7 @@ This document explains usage of Xilinx Vivado in the context of OpenCPI. For fur
 \end{enumerate}
 
 \section{Reverting a Platform from Vivado to ISE}
-This process is described in \code{ocpiassets/hdl/platforms/matchstiq\_z1/ise\_constraints/README} for the ``matchstiq\_z1'' platform. To summarize more generically:
+This process is described in \code{assets/hdl/platforms/matchstiq\_z1/ise\_constraints/README} for the ``matchstiq\_z1'' platform. To summarize more generically:
 \begin{enumerate}
 \item Modify \code{hdl/platforms/<platform>/<platform>.mk} to use the ``ise alias'' of the target part (\textit{e.g.} \code{HdlPart\_matchstiq\_z1=xc7z020\_ise\_alias-1-clg484}).
 \item{Port the platform's XDC file (``*.xdc'') to a UCF file. Reference Xilinx's document \textit{Vivado Migration (UG911)} for assistance}.
@@ -249,7 +251,7 @@ To open up the results of XSIM's \code{xelab}:\newline
 \subsection{Open XSIM Wave Database}
 As with any other simulator, you can run:\newline
 \code{ocpiview <simulations-directory>}\newline
-For example, for the complex\_mixer.test Unit Test, after running case00.00 with KeepSimulations=1, you can run:\newline
+For example, for the complex\_mixer.test Unit Test, after running case00.00 with \code{ocpidev}'s \code{--keep-simulations} option (or Make's \code{KeepSimulations=1}) set, you can run:\newline
 \code{ocpiview run/xsim/case00.00.complex\_mixer.hdl.simulation}
 \begin{figure}[H]
 	\centerline{\includegraphics[scale=0.4]{figures/xilinx_xsim_ocpiview}}

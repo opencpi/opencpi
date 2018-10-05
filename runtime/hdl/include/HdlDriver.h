@@ -60,14 +60,20 @@ namespace OCPI {
       // Probe a specific container
       OCPI::Container::Container *probeContainer(const char *which, std::string &error,
 						 const OCPI::API::PValue *props);
-      OCPI::HDL::Device * open(const char *which, bool discovery, bool forLoad,
-			       const OCPI::API::PValue *params, std::string &err);
+      virtual OCPI::HDL::Device * open(const char *which, bool discovery, bool forLoad,
+				       const OCPI::API::PValue *params, std::string &err);
       void close();
 
       // Create an actual container.
       static OCPI::Container::Container *
       createContainer(Device &dev, ezxml_t config = NULL,
 		      const OCPI::Util::PValue *params = NULL);
+      // Create a dummy worker. - virtual due to driver access
+      virtual DirectWorker *
+      createDirectWorker(Device &dev, const Access &cAccess, Access &wAccess, ezxml_t impl,
+			 ezxml_t inst, const char *idx, unsigned timeout);
+      virtual void initAdmin(OccpAdminRegisters &admin, const char *platform, HdlUUID &hdlUuid,
+			     OU::UuidString *uuidString);
     };
   }
 }

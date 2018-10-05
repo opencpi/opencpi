@@ -52,7 +52,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \newcommand{\todo}[1]{\textcolor{red}{TODO: #1}\PackageWarning{TODO:}{#1}} % To do notes
 \newcommand{\code}[1]{\texttt{#1}} % For inline code snippet or command line
 %----------------------------------------------------------------------------------------
-% Various pacakges
+% Various packages
 %----------------------------------------------------------------------------------------
 \usepackage{scrextend}
 \usepackage{hyperref} % for linking urls and lists
@@ -65,6 +65,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 %----------------------------------------------------------------------------------------
 % Table packages
 %----------------------------------------------------------------------------------------
+\usepackage{longtable} % for long possibly multi-page tables
 \usepackage{tabularx} % c=center,l=left,r=right,X=fill
 \usepackage{float}
 \floatstyle{plaintop}
@@ -94,7 +95,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Component Data Sheet}
-\def\docVersion{1.3}
+\def\docVersion{1.4}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
@@ -119,13 +120,20 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Version           & v\docVersion     \\
 	\hline
-	Release Date      & Aug 2017         \\
+	Release Date      & October 2018         \\
 	\hline
-	Component Library & ocpi.devices     \\
+	Component Library & ocpi.assets.devices     \\
 	\hline
 	Workers           & \comp.hdl        \\
 	\hline
-	Tested Platforms  &  Zedboard (ISE and Vivado), ML605 (all FMC slots) \\
+	Tested Platforms  &
+\begin{itemize}
+  \item Agilent Zedboard/Analog Devices FMCOMMS2
+  \item Agilent Zedboard/Analog Devices FMCOMMS3
+  \item x86/Xilinx ML605/Analog Devices FMCOMMS2
+  \item x86/Xilinx ML605/Analog Devices FMCOMMS3
+  \item Ettus E310 (Vivado only)
+\end{itemize} \\
 	\hline
 \end{tabular}
 
@@ -177,24 +185,32 @@ Note that the half duplex data interface formats allow for AD9361 P0/P1 port rou
       },
       every edge/.style={draw,thick}
     ]
-    \node[rectangle,ultra thick,draw=black,fill=blue,minimum size=2cm,minimum width=16cm](R1){ Parameter Properties:\\ \verb+LVDS_p+, \verb+HALF_DUPLEX_p+, \verb+SINGLE_PORT_p+, \verb+SWAP_PORTS_p+, \verb+MODE_p+, \\ \verb+DATA_CLK_Delay+, \verb+RX_Data_Delay+, \verb+FB_CLK_Delay+, \verb+TX_Data_Delay+ \\ \\ \\ \Comp \\ \\ };
+	\fontsize{6.5}{6.5}\selectfont
+    \node[rectangle,ultra thick,draw=black,fill=blue,minimum size=2cm,minimum width=17.5cm](R1){ Parameter Properties:\\ \verb+LVDS_p+, \verb+HALF_DUPLEX_p+, \verb+SINGLE_PORT_p+, \verb+SWAP_PORTS_p+, \verb+MODE_p+, \\ \verb+DATA_CLK_Delay+, \verb+RX_Data_Delay+, \verb+FB_CLK_Delay+, \verb+TX_Data_Delay+ \\ \\ \\ \Comp \\ \\ };
     \node[rectangle,draw=white,fill=white](R2)[above= of R1]{ };
     \node[rectangle,draw=white,fill=white](placeholder)[above= of R1] { };
     \path[->]
     ;
     \gettikzxy{(placeholder)}{\rx}{\ry}
-    \myclient.apply(\rx - 200,\ry,C1, ``dev\_data\_clk'' \\ dev signal port \\ DATA\_CLK\_P \\ sent to \\ ad9361\_adc\_sub.hdl);
-    \path[->]($(R1.north) + (-200 pt,0)$) edge [] node [] {} (C1);
-    \myclient.apply(\rx - 100,\ry,C1, ``dev\_data\_adc'' \\ dev signal port \\ ADC data bus \\ sent to \\ ad9361\_adc\_sub.hdl);
-    \path[->]($(R1.north) + (-100 pt,0)$) edge [] node [] {} (C1);
-    \myclient.apply(\rx     ,\ry,C1, ``dev\_cfg\_data\_port'' \\ dev signal port \\ config info \\ sent to \\ ad9361\_config.hdl);
-    \path[->]($(R1.north) + (0   pt,0)$) edge [] node [] {} (C1);
-    \myclient.apply(\rx + 100,\ry,C1, ``dev\_data\_clk'' \\ dev signal port \\ DATA\_CLK\_P \\ sent to \\ ad9361\_dac\_sub.hdl);
-    \path[->]($(R1.north) + (100 pt,0)$) edge [] node [] {} (C1);
-    \myclient.apply(-\rx + 200,\ry,C1, ``dev\_data\_dac'' \\ dev signal port \\ DAC data bus \\ sent from \\ ad9361\_dac\_sub.hdl);
-    \path[<-]($(R1.north) + (200 pt,0)$) edge [] node [] {} (C1);
+    \myclient.apply(\rx - 220,\ry,C1, ``dev\_data\_clk'' \\ dev signal port \\ DATA\_CLK\_P \\ sent to \\ ad9361\_adc\_sub.hdl);
+    \path[->]($(R1.north) + (-220 pt,0)$) edge [] node [] {} (C1);
+    \myclient.apply(\rx - 155,\ry,C1, ``dev\_data\_adc'' \\ dev signal port \\ ADC data bus \\ sent to \\ ad9361\_adc\_sub.hdl);
+    \path[->]($(R1.north) + (-155 pt,0)$) edge [] node [] {} (C1);
+    \myclient.apply(\rx - 93,\ry,C1, ``dev\_cfg\_data\_port'' \\ dev signal port \\ config info \\ sent to \\ ad9361\_config.hdl);
+    \path[->]($(R1.north) + (-93 pt,0)$) edge [] node [] {} (C1);
+    \myclient.apply(\rx - 30 ,\ry,C1, ``dev\_data\_clk'' \\ dev signal port \\ DATA\_CLK\_P \\ sent to \\ ad9361\_dac\_sub.hdl);
+    \path[->]($(R1.north) + (-30 pt,0)$) edge [] node [] {} (C1);
+    \myclient.apply(-\rx +  35,\ry,C1, ``dev\_data\_dac'' \\ dev signal port \\ DAC data bus \\ sent from \\ ad9361\_dac\_sub.hdl);
+    \path[<-]($(R1.north) + ( 35 pt,0)$) edge [] node [] {} (C1);
+    \myclient.apply(-\rx + 100,\ry,C1, ``dev\_txen\_dac'' \\ dev signal port \\ DAC data bus \\ sent from \\ ad9361\_dac\_sub.hdl);
+    \path[<-]($(R1.north) + (100 pt,0)$) edge [] node [] {} (C1);
+    \myclient.apply(-\rx + 165,\ry,C1, ``dev\_rxen\_config'' \\ dev signal port \\ DAC data bus \\ sent to   \\ ad9361\_adc\_sub.hdl);
+    \path[->]($(R1.north) + (165 pt,0)$) edge [] node [] {} (C1);
+    \myclient.apply(-\rx + 229,\ry,C1, ``dev\_txen\_config'' \\ dev signal port \\ DAC data bus \\ sent to   \\ ad9361\_dac\_sub.hdl);
+    \path[->]($(R1.north) + (229 pt,0)$) edge [] node [] {} (C1);
+	\fontsize{10}{10}\selectfont
 
-    \myclient.apply(\rx,\ry-170,C1, Signals: \\ DATA\_CLK\_P, DATA\_CLK\_N, RX\_FRAME\_P, RX\_FRAME\_N, FB\_CLK\_P, FB\_CLK\_N, \\ TX\_FRAME\_P, TX\_FRAME\_N, TXNRX, ENABLE, \\ P0\_D\_11\_6[5:0], P0\_D\_5\_0[5:0], P1\_D\_11\_6[5:0], P0\_D\_5\_0[5:0] );
+    \myclient.apply(\rx,\ry-170,C1, Signals: \\ DATA\_CLK\_P, DATA\_CLK\_N, RX\_FRAME\_P, RX\_FRAME\_N, FB\_CLK\_P, FB\_CLK\_N, \\ TX\_FRAME\_P, TX\_FRAME\_N, TXNRX, ENABLE, \\ P0\_D\_11\_6[5:0], P0\_D\_5\_0[5:0], P1\_D\_11\_6[5:0], P1\_D\_5\_0[5:0] );
     \path[<->]($(R1.south) + (0,0)$) edge [] node [] {} (C1);
 
   \end{tikzpicture}
@@ -203,7 +219,7 @@ Note that the half duplex data interface formats allow for AD9361 P0/P1 port rou
 \section*{Source Dependencies}
 \subsection*{\comp.hdl}
 \begin{itemize}
-	\item opencpi/hdl/devices/ad9361\_data\_sub.hdl/ad9361\_data\_sub.cpp\_vhd
+	\item assets/hdl/devices/\comp.hdl/\comp.cpp\_vhd
 \end{itemize}
 \begin{landscape}
 
@@ -218,7 +234,7 @@ Note that the half duplex data interface formats allow for AD9361 P0/P1 port rou
 			\hline
 		\end{tabular}
 	\end{scriptsize}
-	
+
 	\section*{Component Spec Properties}
 	\begin{scriptsize}
 		\begin{tabular}{|p{3.75cm}|p{1.25cm}|p{2cm}|p{2.75cm}|p{1.5cm}|p{1.5cm}|p{1cm}|p{6.23cm}|}
@@ -249,7 +265,7 @@ Note that the half duplex data interface formats allow for AD9361 P0/P1 port rou
 			\hline
 			Property     & \verb+MODE_p+        & UShort&-              & -               & Parameter     & Standard           & \verb+lvds_p+ ? 7 : \verb+single_port_p+ ? (\verb+half_duplex_p+ ? (\verb+swap_ports_p+ ? 1 : 0) : (\verb+swap_ports_p+ ? 3 : 2)) : \verb+half_duplex_p+ ? 4 : \verb+swap_ports_p+ ? 6 : 5) & a convenience parameter to map the various options into 8 modes. \\
 			\hline
-			Property     & \verb+DATA_CLK_Delay+& UShort&-              & -               & Parameter     & Standard           & -       & 
+			Property     & \verb+DATA_CLK_Delay+& UShort&-              & -               & Parameter     & Standard           & -       &
 Ushort representation of AD9361 SPI Register 0x006 -
                          DATA\_CLK Delay bits. These bits affect the
                          DATA\_CLK delay. The typical delay is approximately
@@ -265,14 +281,14 @@ Ushort representation of AD9361 SPI Register 0x006 -
                          worker is defined. There may be future framework
                          features added to better facilitate such enforcement,
                          but currently the only places where this enforcement is
-                         possible is in a 1) a platform XML for a platform which
+                         possible is in 1) a platform XML for a platform which
                          instantiates this device worker, 2) a platform
                          configuration for a card which includes this device
                          worker, or 3) a container for a card which includes
                          this device worker.
 \\
 			\hline
-			Property     & \verb+RX_Data_Delay+ & UShort&-              & -               & Parameter     & Standard           & -       & 
+			Property     & \verb+RX_Data_Delay+ & UShort&-              & -               & Parameter     & Standard           & -       &
 Ushort representation of AD9361 SPI Register 0x006 -
                          RX Data Delay bits. These bits affect the
                          Rx data delay. The typical delay is approximately
@@ -288,14 +304,14 @@ Ushort representation of AD9361 SPI Register 0x006 -
                          worker is defined. There may be future framework
                          features added to better facilitate such enforcement,
                          but currently the only places where this enforcement is
-                         possible is in a 1) a platform XML for a platform which
+                         possible is in 1) a platform XML for a platform which
                          instantiates this device worker, 2) a platform
                          configuration for a card which includes this device
                          worker, or 3) a container for a card which includes
                          this device worker.
 \\
 			\hline
-			Property     & \verb+FB_CLK_Delay+ & UShort &-              & -               & Parameter     & Standard           & -       & 
+			Property     & \verb+FB_CLK_Delay+ & UShort &-              & -               & Parameter     & Standard           & -       &
 Ushort representation of AD9361 SPI Register 0x007 -
                          FB\_CLK Delay bits. These bits function the same as
                          DATA\_CLK and RX data delays but affect the FB\_CLK
@@ -309,14 +325,14 @@ Ushort representation of AD9361 SPI Register 0x007 -
                          worker is defined. There may be future framework
                          features added to better facilitate such enforcement,
                          but currently the only places where this enforcement is
-                         possible is in a 1) a platform XML for a platform which
+                         possible is in 1) a platform XML for a platform which
                          instantiates this device worker, 2) a platform
                          configuration for a card which includes this device
                          worker, or 3) a container for a card which includes
                          this device worker.
 \\
 			\hline
-			Property     & \verb+TX_Data_Delay+ & UShort&-              & -               & Parameter     & Standard           & -       & 
+			Property     & \verb+TX_Data_Delay+ & UShort&-              & -               & Parameter     & Standard           & -       &
 Ushort representation of AD9361 SPI Register 0x007 -
                          TX Data Delay bits. These bits function the same as
                          DATA\_CLK and RX data delays but affect the Tx\_FRAME and
@@ -331,7 +347,7 @@ Ushort representation of AD9361 SPI Register 0x007 -
                          worker is defined. There may be future framework
                          features added to better facilitate such enforcement,
                          but currently the only places where this enforcement is
-                         possible is in a 1) a platform XML for a platform which
+                         possible is in 1) a platform XML for a platform which
                          instantiates this device worker, 2) a platform
                          configuration for a card which includes this device
                          worker, or 3) a container for a card which includes
@@ -365,7 +381,7 @@ Ushort representation of AD9361 SPI Register 0x007 -
 			\cline{6-9}
 			                           &                                 &                    &                       &                        & p0\_p1\_are\_swapped & Input               &                           1 & Value is 1 if the buildtime configuration was with the AD9361 P0 and P1 data port roles inverted and 0 otherwise. \\
 			\hline
-			DevSignal                  & dev\_data\_clk                  & 2     & True     & False                 & DATA\_CLK\_P          & Input                      & 1                        & Buffered version of AD9361 DATA\_CLK\_P pin.               \\
+			DevSignal                  & dev\_data\_clk                  & 3     & True     & False                 & DATA\_CLK\_P          & Input                      & 1                        & Buffered version of AD9361 DATA\_CLK\_P pin.               \\
 			\hline
 			\multirow{15}{*}{DevSignal} & \multirow{15}{*}{dev\_data\_adc} & \multirow{15}{*}{1} & \multirow{15}{*}{True} & \multirow{15}{*}{False} & \multirow{13}{*}{data} & \multirow{13}{*}{Input}     & \multirow{13}{*}{24}      & Data bus driven by configuration-specific AD9361 pins corresponding to the RX data path: \\
 			                           &                                 &       &          &                       &                       &                            &                          & * CMOS single port half duplex: [12'b0 P0\_D[11:0]], \\
@@ -393,15 +409,19 @@ Ushort representation of AD9361 SPI Register 0x007 -
 			                           &                                 &       &          &                       &                       &                            &                          & * CMOS single port full duplex: [18'b0 P1\_D[11:6]], \\
 			                           &                                 &       &          &                       &                       &                            &                          & * CMOS dual port half duplex: [P1\_D[11:0] P0\_D[11:0]], \\
 			                           &                                 &       &          &                       &                       &                            &                          & * CMOS dual port full duplex: [12'b0 P0\_D[11:0]], \\
-			                           &                                 &       &          &                       &                       &                            &                          & * LVDS: (unspported with port swap). \\
+			                           &                                 &       &          &                       &                       &                            &                          & * LVDS: (unsupported with port swap). \\
 			\cline{6-9}
 			&  &  &     &      &tx\_frame&Output&1& Signal which will drive the output buffer which drives the AD9361 TX\_FRAME\_P pin. \\
-			\cline{6-9}
-			&  &  &     &      &fb\_clk  &Output&1& Signal which will drive the output buffer which will drive the AD9361 FB\_CLK\_P pin. \\
+			\hline
+			DevSignal                  & dev\_txen\_dac                  & 1     & True     & False                 & txen                  & Output                     & 1                        &  \\
+			\hline
+			DevSignal                  & dev\_rxen\_config               & 1     & True     & False                 & rxen                  & Input                      & 1                        &  \\
+			\hline
+			DevSignal                  & dev\_txen\_config               & 1     & True     & False                 & txen                  & Input                      & 1                        &  \\
 			\hline
 	    \end{tabular}
 	\end{scriptsize}
-	
+
 	\section*{Subdevice Connections}
 	\begin{scriptsize}
 		\begin{tabular}{|p{5cm}|p{5cm}|p{5cm}|p{6.73cm}|}
@@ -409,7 +429,13 @@ Ushort representation of AD9361 SPI Register 0x007 -
 			\rowcolor{blue}
 			Supports Worker & Supports Worker Port & \comp{}.hdl Port     & \comp{}.hdl Port Index \\
 			\hline
-			ad9361\_config  & dev\_cfg\_data\_port & dev\_cfg\_data\_port & 0                      \\
+			\multirow{4}{*}{ad9361\_config}& dev\_cfg\_data\_port & dev\_cfg\_data\_port & 0                      \\
+			\cline{2-4}
+			                & dev\_rxen\_data\_sub & dev\_rxen\_config    & 0                      \\
+			\cline{2-4}
+			                & dev\_txen\_data\_sub & dev\_txen\_config    & 0                      \\
+			\cline{2-4}
+			                & dev\_data\_clk       & dev\_data\_adc       & 2                      \\
 			\hline
 			\multirow{2}{*}{ad9361\_adc\_sub}& dev\_data\_clk       & dev\_data\_clk       & 0                      \\
 			\cline{2-4}
@@ -427,32 +453,18 @@ Ushort representation of AD9361 SPI Register 0x007 -
 \section*{Control Timing and Signals}
 Because this worker does not include a control plane and serves purely as an IC pin buffering and routing mechanism, there are no latency or clock domain considerations. For considerations specific to the RX/TX data paths, see the supports-connected device worker data sheets for  ad9361\_adc\_sub.hdl\cite{adc_comp_datasheet} and ad9361\_dac\_sub.hdl\cite{dac_comp_datasheet}.
 
+\begin{landscape}
 \section*{Performance and Resource Utilization}
+\section*{Worker Configuration Parameters}
+\subsubsection*{\comp.hdl}
+\input{../../\ecomp.hdl/configurations.inc}
 \subsubsection*{\comp.hdl}
 Because every possible parameter property combination of this worker has no control plane and no registered data paths, no registers or LUTS are used and the Fmax measurement does not exist. \\
-%\input{../../\ecomp.hdl/utilization.inc}
-% see performance_and_resource_utilization.txt
-\begin{scriptsize}
-	\begin{tabular}{|M{4.5cm}|M{2cm}|M{2cm}|M{1.94cm}|M{2cm}|M{2.5cm}|}
-		\hline
-		\rowcolor{blue}
-		Device                    & Registers (typical) & LUTs (typical) & Fmax (typical) & Memory/Special Functions & Design Suite \\
-		\hline
-		\multirow{2}{*}{Zynq XC7Z020-1-CLG484} & 0   & 0             & N/A            & -                          & Vivado 2017.1      \\
-    \cline{2-6}
-		                             & 0             & 0             & N/A            & -                          & ISE 14.7           \\
-		\hline
-		Virtex-6 XC6VLX240T-1-FF1156 & 0             & 0             & N/A            & -                          & ISE 14.7           \\
-		\hline
-		Stratix IV EP4SGX230K-C2-F40 & (unsupported) & (unsupported) & \ref{quartustiming} & (unsupported)              & Quartus Prime 15.1 \\
-		\hline
-	\end{tabular}
-\end{scriptsize}
-\footnotetext[1]{\label{quartustiming}Quartus does not perform timing analysis at the OpenCPI worker build (i.e. synthesis) stage.}
+\input{../../\ecomp.hdl/utilization.inc}
+\end{landscape}
 
 \section*{Test and Verification}
-The test outlined in \cite{dac_comp_datasheet} includes validation of this worker's functionality (for LVDS only).
-
+The test outlined in \cite{dac_comp_datasheet} includes validation of this worker's functionality (for LVDS mode and CMOS Single Port Full Duplex DDR mode).
 
   \begin{thebibliography}{1}
 
@@ -460,8 +472,10 @@ The test outlined in \cite{dac_comp_datasheet} includes validation of this worke
 \url{http://www.analog.com/en/products/rf-microwave/integrated-transceivers-transmitters-receivers/wideband}
   \bibitem{adi_ug570} AD9361 Reference Manual UG-570\\
   AD9361\_Reference\_Manual\_UG-570.pdf
-  \bibitem{adc_comp_datasheet} AD9361 ADC Component Data Sheet \\AD9361\_ADC.pdf
-  \bibitem{dac_comp_datasheet} AD361 DAC Component Data Sheet \\AD9361\_DAC.pdf
+ \bibitem{adc_comp_datasheet} AD9361 ADC Component Data Sheet \\
+ \url{https://opencpi.github.io/assets/AD9361_ADC.pdf}
+ \bibitem{dac_comp_datasheet} AD9361 DAC Component Data Sheet \\
+ \url{https://opencpi.github.io/assets/AD9361_DAC.pdf}
 
   \end{thebibliography}
 \end{document}

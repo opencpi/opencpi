@@ -95,11 +95,15 @@ namespace OCPI {
       PVString("platform"),
       PVBool("signal"),
       PVBool("emulated"),
+      PVString("property"),
+      PVString("worker"),
+      PVString("server"),
+      PVString("container"),
       PVEnd
     };
 
     PVULong PVEnd(0,0);
-    static const PValue *
+    const PValue *
     find(const PValue* p, const char* name) {
       if (p)
 	for (; p->name; p++)
@@ -148,12 +152,12 @@ namespace OCPI {
       for (; p && p->name; p++)
 	if (!strcasecmp(p->name, name)) {
 	  if (p->type != OA::OCPI_String)
-	    throw ApiError("Parameter \"%s\" value for \"%s\" is not a string", var, name);
+	    throw Error("Parameter \"%s\" value for \"%s\" is not a string", var, name);
 	  if (p->vString[0] != '=') {
 	    size_t len = strlen(var);
 	    if (!strncasecmp(var, p->vString, len) && p->vString[len] == '=') {
 	      if (specific)
-		throw ApiError("Parameter \"%s\" for instance \"%s\" is specified more than once",
+		throw Error("Parameter \"%s\" for instance \"%s\" is specified more than once",
 			    name,  var);
 	      specific = true;
 	      val = p->vString + len + 1;
@@ -326,20 +330,36 @@ namespace OCPI {
       p->name = NULL;
       return NULL;
     }
+    void PValueList::
+    add(const PValue &newp) {
+      PValue *oldp = m_list;
+      PValue *p = m_list = new PValue[(m_list ? m_list->length() : 0) + 2];
+      for (const PValue *op = oldp; op && op->name; op++)
+	*p++ = *op;
+      *p = newp;
+      if (newp.type == OA::OCPI_String) {
+	p->vString = new char[strlen(newp.vString) + 1];
+	strcpy((char *)p->vString, newp.vString);
+	p->owned = true;
+      }
+      *++p = PVEnd;
+      delete [] oldp;
+    }
     const char *PValueList::
     add(const char *name, const char *value) {
       PValue newp;
       const char *err;
       if ((err = parseParam(name, value, newp)))
 	return err;
-      PValue *oldp = m_list;
-      PValue *p = m_list = new PValue[(m_list ? m_list->length() : 0) + 2];
-      for (const PValue *op = oldp; op && op->name; op++)
-	*p++ = *op;
-      *p++ = newp;
-      *p++ = PVEnd;
-      delete [] oldp;
+      add(newp);
       return NULL;
     }
+#define OCPI_DATA_TYPE(sca, corba, letter, bits, run, pretty, store)\
+    void PValueList::						    \
+    add##pretty(const char *name, run value) {                      \
+      PV##pretty newp(name, value);				    \
+      add(newp);						    \
+    }
+    OCPI_PROPERTY_DATA_TYPES
   }
 }

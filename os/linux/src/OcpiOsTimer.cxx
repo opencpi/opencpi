@@ -28,6 +28,7 @@
 #include <cstdlib>
 #include <string>
 
+#include "ocpi-config.h"
 #ifdef OCPI_OS_linux
   #include <sched.h>
   #ifdef OCPI_OS_VERSION_r5
@@ -41,16 +42,15 @@
   typedef uint64_t cpu_set_t;
 #endif
 
-#include "av_team.h"
 #include "OcpiOsTimer.h"
 #include "OcpiOsSizeCheck.h"
 #include "OcpiOsAssert.h"
 
-#ifndef OCPI_CLOCK_TYPE
+#ifndef OCPI_GETTIME_CLOCK_TYPE
   #ifdef CLOCK_MONOTONIC_RAW
-    #define OCPI_CLOCK_TYPE CLOCK_MONOTONIC_RAW
+    #define OCPI_GETTIME_CLOCK_TYPE CLOCK_MONOTONIC_RAW
   #else
-    #define OCPI_CLOCK_TYPE CLOCK_MONOTONIC
+    #define OCPI_GETTIME_CLOCK_TYPE CLOCK_MONOTONIC
   #endif
 #endif
 
@@ -64,7 +64,7 @@ Time Time::now() {
   return Time((uint32_t)tv.tv_sec, tv.tv_usec * 1000);
 #else
   struct timespec ts;
-  ocpiCheck(clock_gettime (OCPI_CLOCK_TYPE, &ts) == 0);
+  ocpiCheck(clock_gettime(OCPI_GETTIME_CLOCK_TYPE, &ts) == 0);
   return Time((uint32_t)ts.tv_sec, (uint32_t)ts.tv_nsec);
 #endif
 }
@@ -474,7 +474,7 @@ getPrecision (ElapsedTime & prec)
     prec.set(0, 10000000); // 10ms - hah!
 #else
     struct timespec res;
-    ocpiCheck(clock_getres (OCPI_CLOCK_TYPE, &res) == 0);
+    ocpiCheck(clock_getres(OCPI_GETTIME_CLOCK_TYPE, &res) == 0);
     prec.set((uint32_t)res.tv_sec, (uint32_t)res.tv_nsec);
 #endif
   }

@@ -29,7 +29,7 @@ OCPI_AMD_SDK_VERSION=3.0
 OCPI_AMD_SDK_BUILD=130.135-GA
 TARBALL=AMD-APP-SDKInstaller-v${OCPI_AMD_SDK_VERSION}.${OCPI_AMD_SDK_BUILD}-linux64.tar.bz2
 INSTALLER=AMD-APP-SDK-v${OCPI_AMD_SDK_VERSION}.${OCPI_AMD_SDK_BUILD}-linux64.sh
-AMD_SDK_INSTALL_DIR=$OCPI_PREREQUISITES_INSTALL_DIR/amd-sdk/$OCPI_TARGET_HOST
+AMD_SDK_INSTALL_DIR=$OCPI_PREREQUISITES_INSTALL_DIR/amd-sdk/$OCPI_TARGET_PLATFORM
 . ./scripts/setup-install.sh
 mkdir -p amd-sdk
 cd amd-sdk
@@ -46,7 +46,7 @@ else
   exit 1
 fi
 if test -d $SUBDIR; then
-  echo The source directory $SUBDIR exists, using it for this target: $OCPI_TARGET_HOST.
+  echo The source directory $SUBDIR exists, using it for this target: $OCPI_TARGET_PLATFORM.
   cd $SUBDIR
 else
   echo Unpacking download file $TARBALL into directory $SUBDIR.
@@ -64,8 +64,8 @@ else
   (cd tmp; HOME=$OCPI_PREREQUISITES_INSTALL_DIR/amd-sdk/installed ./install.sh --silent --acceptEULA y)
   cd ..
   rm -r -f $SUBDIR
-  rm -r -f $OCPI_TARGET_HOST
-  ln -s installed/AMDAPPSDK-$OCPI_AMD_SDK_VERSION $OCPI_TARGET_HOST
+  rm -r -f $OCPI_TARGET_PLATFORM
+  ln -s installed/AMDAPPSDK-$OCPI_AMD_SDK_VERSION $OCPI_TARGET_PLATFORM
 fi
-echo ============= amd-sdk for $OCPI_TARGET_HOST built and installed in $OCPI_PREREQUISITES_INSTALL_DIR/amd-sdk/$OCPI_TARGET_HOST
+echo ============= amd-sdk for $OCPI_TARGET_PLATFORM built and installed in $OCPI_PREREQUISITES_INSTALL_DIR/amd-sdk/$OCPI_TARGET_PLATFORM
 exit 0

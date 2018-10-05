@@ -32,6 +32,10 @@ architecture rtl of fifo_worker is
 
   -- mandatory output port logic, don't touch this
   signal data_ready_for_out_port : std_logic := '0';
+  signal out_meta_is_reserved    : std_logic := '0';
+  signal out_som                 : std_logic := '0';
+  signal out_eom                 : std_logic := '0';
+  signal out_valid               : std_logic := '0';
 
   signal oneshot_and_done_enq_d : std_logic := '0';
   signal oneshot_and_done_deq_d : std_logic := '0';
@@ -60,8 +64,13 @@ begin
 
   -- mandatory output port logic, don't touch this, (note that
   -- data_ready_for_out_port MUST be clock-aligned with out_out.data)
+  -- (note that reserved messages will be DROPPED ON THE FLOOR)
   out_out.give <= ctl_in.is_operating and out_in.ready and
-                  data_ready_for_out_port;
+                  (not out_meta_is_reserved) and data_ready_for_out_port;
+  out_meta_is_reserved <= (not out_som) and (not out_valid) and (not out_eom);
+  out_out.som   <= out_som;
+  out_out.eom   <= out_eom;
+  out_out.valid <= out_valid;
 
   oneshot_and_done_enq_d <= '1' when (props_in.oneshot = btrue) and
                             (nsamps_enq_count_d = FIFO_DEPTH_p) else '0';
@@ -106,6 +115,7 @@ begin
   ctl_in_reset_n <= not ctl_in.reset;
   fifo_reset_n <= ctl_in_reset_n and (not oneshot_and_done_deq_d);
 
+  -- TODO / FIXME - separate structural code from behavioral code
   rx_data_fifo : bsv.bsv.SizedFIFO
     generic map (
       p1width      => 36, -- FIFO data bus width
@@ -127,10 +137,10 @@ begin
                else '0';
 
   out_out.data            <= fifo_d_out(35 downto 4);
-  out_out.som             <= fifo_d_out(3) or force_zlm;
-  out_out.eom             <= fifo_d_out(2) or oneshot_and_done_enq_d
+  out_som                 <= fifo_d_out(3) or force_zlm;
+  out_eom                 <= fifo_d_out(2) or oneshot_and_done_enq_d
                                            or force_zlm;
-  out_out.valid           <= fifo_d_out(1) and (not force_zlm);
+  out_valid               <= fifo_d_out(1) and (not force_zlm);
   out_out.byte_enable     <= (others => fifo_d_out(0));
 
 end rtl;

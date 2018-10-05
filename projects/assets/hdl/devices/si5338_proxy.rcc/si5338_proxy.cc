@@ -35,20 +35,21 @@ using namespace OCPI::RCC; // for easy access to RCC data types and constants
 using namespace Si5338_proxyWorkerTypes;
 
 class Si5338_proxyWorker : public Si5338_proxyWorkerBase {
+  RunCondition m_aRunCondition;
+public:
+  Si5338_proxyWorker() : m_aRunCondition(RCC_NO_PORTS) {
+    //Run function should never be called
+    setRunCondition(&m_aRunCondition);
+  }
+private:
   static const unsigned nPLLs = SI5338_PROXY_NSOURCES;
   static const unsigned nChannels = SI5338_PROXY_NCHANNELS;
   Channels savedChannels[nChannels]; // to see which channels have changed.
 
-  RCCResult initialize() {
-    return RCC_OK;
-  }
   RCCResult start() {
     for (unsigned i = 0; i < nChannels; i++)
       if (config(i) != RCC_OK)
 	return RCC_ERROR;
-    return RCC_OK;
-  }
-  RCCResult stop() {
     return RCC_OK;
   }
   // notification that input_hz property will be read
@@ -67,7 +68,7 @@ class Si5338_proxyWorker : public Si5338_proxyWorkerBase {
     return RCC_OK;
   }
   RCCResult run(bool /*timedout*/) {
-    return RCC_ADVANCE;
+    return RCC_DONE;
   }
   RCCResult config(unsigned i) {
     //setDisabledMode(i); // Set the right mode, but don't enable it, separate from counters

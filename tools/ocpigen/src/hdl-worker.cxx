@@ -93,6 +93,23 @@ rawBitWidth(const OU::ValueType &dt) {
     return dt.m_nBits;
   }
 }
+// This is the encoded bit width in string form, subject to the data type being finalized or not
+static const char *
+rawBitWidthCstr(const OU::Member &dt, bool finalized = false) {
+  static std::string s;
+  switch (dt.m_baseType) {
+  case OA::OCPI_Bool:
+    return "1";
+  case OA::OCPI_Enum:
+    return OU::format(s, "%zu", OU::bitsForMax(dt.m_nEnums - 1));
+  case OA::OCPI_String:
+    return finalized ?
+      OU::format(s, "%zu", (dt.m_stringLength+1) * 8) :
+      OU::format(s, "(%s_string_length+1)*8", dt.cname());
+  default:
+    return OU::format(s, "%zu", dt.m_nBits);
+  }
+}
 // This is the width as it lives in the OU::Value object
 // which is based on the "run" value of the OCPI_DATA_TYPE macro
 // which is in bytes
@@ -112,11 +129,13 @@ rawValueBytes(const OU::ValueType &dt) {
 // Third arg is saying that the type must be appropriate for VHDL to pass
 // to verilog
 static void
-vhdlBaseType(const OU::ValueType &dt, std::string &s, bool convert) {
+vhdlBaseType(const OU::Member &dt, std::string &s, bool convert, bool finalized) {
   if (convert)
-    OU::formatAdd(s, "std_logic_vector(%zu downto 0)", rawBitWidth(dt)-1);
+    OU::formatAdd(s, "std_logic_vector((%s)-1 downto 0)", rawBitWidthCstr(dt, finalized));
   else if (dt.m_baseType == OA::OCPI_String)
-    OU::formatAdd(s, "string_t(0 to %zu)", dt.m_stringLength);
+    OU::formatAdd(s, "string_t"); // (0 to %zu)", dt.m_stringLength);
+  else if (dt.m_baseType == OA::OCPI_Enum)
+    OU::formatAdd(s, "%s_t", dt.cname());
   else {
     for (const char *cp = OU::baseTypeNames[dt.m_baseType]; *cp; cp++)
       s += (char)tolower(*cp);
@@ -125,9 +144,10 @@ vhdlBaseType(const OU::ValueType &dt, std::string &s, bool convert) {
 }
 static void
 vhdlArrayType(const OU::Property &dt, size_t rank, const size_t */*dims*/, std::string &decl,
-	      std::string &type, bool convert) {
+	      std::string &type, bool convert, bool finalized) {
   if (convert) {
-    OU::format(type, "std_logic_vector(%zu downto 0)", dt.m_nItems * rawBitWidth(dt) - 1);
+    OU::format(type, "std_logic_vector(%zu*(%s)-1 downto 0)", dt.m_nItems,
+	       rawBitWidthCstr(dt, finalized));
     return;
   }
   // Single dimensional arrays when type is neither enum nor string us built-in array types
@@ -146,7 +166,7 @@ vhdlArrayType(const OU::Property &dt, size_t rank, const size_t */*dims*/, std::
   //		  //  		  dims[0] - 1, dt.m_stringLength);
   //    else {
   rank = dt.m_arrayRank + (dt.m_isSequence ? 1 : 0);
-  OU::format(decl, "type %s_array_t is array (", dt.m_name.c_str());
+  OU::formatAdd(decl, "type %s_array_t is array (", dt.m_name.c_str());
   for (unsigned i = 0; i < rank; i++) {
     std::string asize;
     size_t dim = i >= dt.m_arrayRank ? dt.m_sequenceLength : dt.m_arrayDimensions[i];
@@ -175,29 +195,38 @@ vhdlArrayType(const OU::Property &dt, size_t rank, const size_t */*dims*/, std::
     //      s += dt.m_stringLengthExpr; // for now simply expressions should work;
     decl += ")";
   } else
-    vhdlBaseType(dt, decl, convert);
+    vhdlBaseType(dt, decl, convert, finalized);
 }
 // Custom types are for enumerations or string arrays - otherwise built-in types are used.
 void
-vhdlType(const OU::Property &dt, std::string &decl, std::string &type, bool convert) {
+vhdlType(const OU::Property &dt, std::string &decl, std::string &type, bool convert,
+	 bool finalized) {
+  decl.clear();
   if (!convert && dt.m_baseType == OA::OCPI_Enum) {
     OU::format(decl, "type %s_t is (", dt.m_name.c_str());
     for (const char **ap = dt.m_enums; *ap; ap++)
       OU::formatAdd(decl, "%s%s_e", ap == dt.m_enums ? "" : ", ", *ap);
     decl += ")";
     type = dt.m_name + "_t";
-  } else if (dt.m_isSequence) {
+    if (dt.m_isSequence || dt.m_arrayDimensions)
+      decl += "; ";
+  }
+  if (dt.m_isSequence) {
     std::vector<size_t> seqdims(dt.m_arrayRank + 1);
     seqdims[0] = dt.m_sequenceLength;
     for (unsigned n = 0; n < dt.m_arrayRank; n++)
       seqdims[n+1] = dt.m_arrayDimensions[n];
-    vhdlArrayType(dt, dt.m_arrayRank+2, &seqdims[0], decl, type, convert);
+    vhdlArrayType(dt, dt.m_arrayRank+2, &seqdims[0], decl, type, convert, finalized);
   } else if (dt.m_arrayDimensions)
-    vhdlArrayType(dt, dt.m_arrayRank, dt.m_arrayDimensions, decl, type, convert);
-  else
-    vhdlBaseType(dt, type, convert);
+    vhdlArrayType(dt, dt.m_arrayRank, dt.m_arrayDimensions, decl, type, convert, finalized);
+  else {
+    type.clear();
+    vhdlBaseType(dt, type, convert, finalized);
+  }
  }
 static struct VhdlUnparser : public OU::Unparser {
+  const char *m_name;
+  bool m_finalized;
   bool
   elementUnparse(const OU::Value &v, std::string &s, unsigned nSeq, bool hex, char comma,
 		 bool wrap, const Unparser &up) const {
@@ -226,6 +255,7 @@ static struct VhdlUnparser : public OU::Unparser {
       Unparser::valueUnparse(v, s, nSeq, nArray, hex, comma, false, up);
       break;
     case OA::OCPI_String:
+      assert(m_name);
       s += "to_string(";
       {
 	std::string temp;
@@ -235,7 +265,10 @@ static struct VhdlUnparser : public OU::Unparser {
 	else
 	  OU::formatAdd(s, "\"%s\"", temp.c_str());
       }
-      OU::formatAdd(s, ", %zu)", v.m_vt->m_stringLength);
+      if (m_finalized)
+	OU::formatAdd(s, ", %zu)", v.m_vt->m_stringLength);
+      else
+	OU::formatAdd(s, ", %s_string_length)", m_name);
       break;
     default:
       s += "to_";
@@ -311,7 +344,8 @@ static struct VhdlUnparser : public OU::Unparser {
 } vhdlUnparser;
 
 static void
-vhdlInnerValue(const char *pkg, const OU::Value &v, std::string &s) {
+vhdlInnerValue(const std::string &name, const char *pkg, const OU::Value &v, bool finalized,
+	       std::string &s) {
   if (v.needsComma())
     s += "(";
 #if 1
@@ -320,6 +354,8 @@ vhdlInnerValue(const char *pkg, const OU::Value &v, std::string &s) {
     s += ".";
   }
 #endif
+  vhdlUnparser.m_name = name.c_str();
+  vhdlUnparser.m_finalized = finalized;
   v.unparse(s, &vhdlUnparser, true);
   if (v.m_vt->m_baseType == OA::OCPI_Enum)
     s += "_e";
@@ -408,9 +444,9 @@ vhdlConvert(const std::string &name, const OU::ValueType &dt, std::string &v, st
 // If param==true, the value is used in a top level generic setting in tools
 const char *
 vhdlValue(const char *pkg, const std::string &name, const OU::Value &v, std::string &s,
-	  bool convert) {
+	  bool convert, bool finalized) {
   std::string tmp;
-  vhdlInnerValue(pkg, v, tmp);
+  vhdlInnerValue(name, pkg, v, finalized, tmp);
   if (convert) {
     //    if (v.m_vt->m_baseType == OA::OCPI_Enum)
     //      OU::format(tmp, "%zu", (size_t)v.m_ULong);
@@ -421,7 +457,7 @@ vhdlValue(const char *pkg, const std::string &name, const OU::Value &v, std::str
 }
 
 const char*
-verilogValue(const OU::Value &v, std::string &s) {
+verilogValue(const OU::Value &v, std::string &s, bool finalized) {
   const OU::ValueType &dt = *v.m_vt;
 #if 0
   if (dt.m_baseType == OA::OCPI_String) {
@@ -456,6 +492,7 @@ verilogValue(const OU::Value &v, std::string &s) {
    {
     // Everything else is linear in memory
     // How many bits in the std_logic_vector
+    assert(finalized);
     size_t bits = rawBitWidth(dt); // bits in verilog constant
     // How many bytes per scalar value
     size_t bytes = rawValueBytes(dt);
@@ -491,11 +528,11 @@ verilogValue(const OU::Value &v, std::string &s) {
 }
 const char *Worker::
 hdlValue(const std::string &a_name, const OU::Value &v, std::string &value, bool convert,
-	 Language lang) {
+	 Language lang, bool finalized) {
   if (lang == NoLanguage)
     lang = m_language;
   return lang == VHDL ?
-    vhdlValue(NULL, a_name, v, value, convert) : verilogValue(v, value);
+    vhdlValue(NULL, a_name, v, value, convert, finalized) : verilogValue(v, value, finalized);
 }
 
 void Worker::
@@ -555,7 +592,7 @@ emitParameters(FILE *f, Language lang, bool useDefaults, bool convert) {
 	if (useDefaults && pr.m_default)
 	  verilogValue(*pr.m_default, value);
 	// If there is no default value, then parameters must be specified when instantiated
-	fprintf(f, "  parameter [%zu:0] %s%s%s;\n", rawBitWidth(pr)-1, pr.m_name.c_str(),
+	fprintf(f, "  parameter [(%s)-1:0] %s%s%s;\n", rawBitWidthCstr(pr), pr.m_name.c_str(),
 		value.empty() ? "" : " = ", value.c_str());
 #endif
       }
@@ -867,7 +904,7 @@ emitVhdlPackageConstants(FILE *f) {
   } else {
     fprintf(f,
 	    "  constant properties : ocpi.wci.properties_t(0 to %u) := (\n"
-	    "  --#   bits    offset bytes-1 slen elems write read    vol   debug\n" ,
+	    "  --#   bits    offset bytes-1 slen seqhdr elems write read    vol   debug\n" ,
 	    m_ctl.nNonRawRunProperties - 1);
     unsigned n = 0;
     const char *last = NULL;
@@ -881,12 +918,13 @@ emitVhdlPackageConstants(FILE *f) {
 	  nElements *= pr->m_nItems;
 	if (pr->m_isSequence)
 	  nElements *= pr->m_sequenceLength; // can't be zero
-	fprintf(f, "%s%s%s   %2u => (%2zu, x\"%08zx\", %3zu, %3zu, %3zu, %s %s %s %s)",
+	fprintf(f, "%s%s%s   %2u => (%2zu, x\"%08zx\", %3zu, %3zu, %3zu, %3zu, %s %s %s %s)",
 		last ? ", -- " : "", last ? last : "", last ? "\n" : "", n,
 		pr->m_nBits,
 		pr->m_offset,
-		pr->m_nBytes - 1,
+		pr->m_nBytes - 1 - (pr->m_isSequence ? pr->m_align : 0),
 		pr->m_stringLength,
+		pr->m_isSequence ? pr->m_align : 0,
 		nElements,
 		pr->m_isWritable ? "true, " : "false,",
 		pr->m_isReadable ? "true, " : "false,",
@@ -995,19 +1033,19 @@ emitVhdlWorkerEntity(FILE *f) {
 }
 
 const char *Worker::
-emitVhdlRecordInterface(FILE *f) {
+emitVhdlRecordInterface(FILE *f, bool isEntity) {
   const char *err = NULL;
-  //  size_t maxName = 0;
+  const char *compOrEnt = isEntity ? "entity" : "component";
   // Generate record types to easily and compactly plumb interface signals internally
-  for (unsigned i = 0; i < m_ports.size(); i++)
-    m_ports[i]->emitRecordInterface(f, m_implName);
+  if (!isEntity)
+    for (unsigned i = 0; i < m_ports.size(); i++)
+      m_ports[i]->emitRecordInterface(f, m_implName);
   fprintf(f,
-	  "\ncomponent %s_rv--__\n  is\n", m_implName);
+	  "\n%s %s_rv--__\n  is\n", compOrEnt, m_implName);
   emitParameters(f, VHDL);
   emitSignals(f, VHDL, true, true, false);
   fprintf(f,
-	  "end component %s_rv--__\n;\n\n",
-	  m_implName);
+	  "end %s %s_rv--__\n;\n\n", compOrEnt, m_implName);
   return err;
 }
 
@@ -1042,7 +1080,7 @@ emitDefsHDL(bool wrap) {
       OU::Property &p = **pi;
       std::string decl, type;
       // Introduce a constant for string/sequence/array lengths that are parameterized
-      if (p.m_baseType == OA::OCPI_String && p.m_stringLengthExpr.length())
+      if (p.m_baseType == OA::OCPI_String) // && p.m_stringLengthExpr.length())
 	fprintf(f, "  constant %s_string_length : natural;\n", p.m_name.c_str());
       if (p.m_isSequence && p.m_sequenceLengthExpr.length())
 	fprintf(f, "  constant %s_sequence_length : natural;\n", p.m_name.c_str());
@@ -1196,6 +1234,53 @@ emitDefsHDL(bool wrap) {
   fclose(f);
   return 0;
 }
+
+// Some tools may require entity declarations when instantiating workers
+const char *Worker::
+emitVhdlEnts() {
+  const char *err;
+  FILE *f;
+  if ((err = openOutput(m_implName, m_outDir, "", ENTS, VHD, NULL, f)))
+    return err;
+  const char *comment = hdlComment(VHDL);
+  printgen(f, comment, m_file.c_str());
+  fprintf(f,
+	  "%s This file contains the VHDL entity declaration for the worker\n"
+	  "%s with spec name \"%s\" and implementation name \"%s\".\n"
+	  "%s It is needed for instantiating the worker for certain tools.\n",
+	  comment, comment, m_specName,
+	  m_implName, comment);
+  fprintf(f,
+          "-- Entity declaration with definitions for instantiating this worker\n"
+          "Library IEEE; use IEEE.std_logic_1164.all, IEEE.numeric_std.all;\n"
+          "Library ocpi; use ocpi.all, ocpi.types.all;\n");
+  emitVhdlLibraries(f);
+  fprintf(f,
+          "use work.%s_constants.all;\n"
+          "use work.%s_defs.all;\n",
+          m_implName, m_implName);
+  if ((err = emitVhdlRecordInterface(f, true)))
+    return err;
+  fprintf(f,
+          "-- Entity declaration with definitions for instantiating this worker\n"
+          "Library IEEE; use IEEE.std_logic_1164.all, IEEE.numeric_std.all;\n"
+          "Library ocpi; use ocpi.all, ocpi.types.all;\n");
+  emitVhdlLibraries(f);
+  fprintf(f,
+          "use work.%s_constants.all;\n"
+          "use work.%s_defs.all;\n",
+          m_implName, m_implName);
+  fprintf(f,
+    "\nentity %s--__\n is\n", m_implName);
+  emitParameters(f, VHDL, true, true);
+  emitSignals(f, VHDL, false, true, false, true);
+  fprintf(f,
+    "end entity %s--__\n;\n",
+    m_implName);
+  fclose(f);
+  return NULL;
+}
+
 
 void Worker::
 emitVhdlShell(FILE *f) {
@@ -1572,7 +1657,7 @@ emitImplHDL(bool wrap) {
 	    "-- Port based  ==| \\ | and the <worker>_worker entity, both in this file,   |   =| \\ Port based\n"
 	    "-- on the WSI  ==| / | both in the \"work\" library.                          |   =| / on the WSI\n"
 	    "-- OCP Profile   |/  | Package and entity declarations are in this          |    |/  OCP Profile\n"
-	    "--               O   | <worker>_impl.vhd file. Architecture is in your      |    |\n"
+	    "--               |   | <worker>_impl.vhd file. Architecture is in your      |    |\n"
 	    "--               O   |  <worker>.vhd file                                   |    O\n"
 	    "--               C   |                                                      |    C\n"
 	    "--               P   +------------------------------------------------------+    P\n"
@@ -1770,7 +1855,7 @@ emitImplHDL(bool wrap) {
 	    //	    if (pr.m_baseType == OA::OCPI_String && (pr.m_arrayRank || pr.m_isSequence))
 	    //	      fprintf(f, "string_array_t(%s_t'range(0), ");
 	    //	    else
-	      fprintf(f, "%s;\n", pr.m_baseType == OA::OCPI_Enum ? "ulong_t" : type.c_str());
+	    fprintf(f, "%s;\n", pr.m_baseType == OA::OCPI_Enum ? "ulong_t" : type.c_str());
 	  }
 	  if (!pr.m_isParameter && pr.m_isWritable && (pr.m_arrayRank || pr.m_isSequence)) {
 	    // Writable array/sequence properties need their default values defined in a
@@ -1790,14 +1875,29 @@ emitImplHDL(bool wrap) {
 	      fprintf(f, "(others => %s)", vv.c_str());
 	    fprintf(f, ";\n");
 	  }
-	  if (!pr.m_isParameter && pr.m_isVolatile && pr.m_baseType == OA::OCPI_Enum) {
-	    // We need a separate readback signal for volatile enumerations
-	    // This is the signal that will be decoded from the worker's enumeration
-	    // type to feed into the readback
-	    fprintf(f,
-		    "  -- signal for conveying the volatile enum value to readback mux\n"
-		    "  signal my_volatile_%s : ulong_t;\n", temp); //, type.c_str());
-
+	  if (!pr.m_isParameter && (pr.m_isVolatile || (pr.m_isReadable && !pr.m_isWritable))) {
+	    if (pr.m_isSequence) {
+	      fprintf(f,
+		      "  -- readback value that is the sequence length *OR* a dword of data\n"
+		      "  signal my_sequence_data_%s : dword_t;\n", pr.cname());
+	      fprintf(f,
+		      "  -- offset value that is net of the initial sequence length\n"
+		      "  signal my_sequence_offset_%s : "
+		      "unsigned(width_for_max(%zu-%zu-1)-1 downto 0);\n",
+		      pr.cname(), pr.m_nBytes, pr.m_align);
+	    }
+	    if (pr.m_baseType == OA::OCPI_Enum) {
+	      // We need a separate readback signal for volatile enumerations
+	      // This is the signal that will be decoded from the worker's enumeration
+	      // type to feed into the readback
+	      std::string utype = "ulong_t";
+	      if (pr.m_isSequence || pr.m_arrayRank)
+		OU::format(utype, "ulong_array_t(0 to %zu-1)",
+			   pr.m_nItems * (pr.m_isSequence ? pr.m_sequenceLength : 1));
+	      fprintf(f,
+		      "  -- signal for conveying the volatile enum value to readback mux\n"
+		      "  signal my_volatile_%s : %s;\n", temp, utype.c_str());
+	    }
 	  }
 	  free(temp);
 	}
@@ -2088,7 +2188,8 @@ emitImplHDL(bool wrap) {
 	}
 	if (pr.m_isReadable) {
 	  std::string var; // the value fed into the readback
-	  if (pr.m_isVolatile && pr.m_baseType == OA::OCPI_Enum)
+	  if (pr.m_baseType == OA::OCPI_Enum && !pr.m_isParameter &&
+	      (pr.m_isVolatile || !pr.m_isWritable))
 	    OU::format(var, "my_volatile_%s_value", name);
 	  else if (pr.m_isParameter || (!pr.m_isVolatile && pr.m_isWritable))
 	    OU::format(var, "my_%s_value", name);
@@ -2129,11 +2230,19 @@ emitImplHDL(bool wrap) {
 	  else
 	    fprintf(f, "%s,\n", var.c_str());
 	  fprintf(f,   "                is_big_endian=> my_big_endian,\n");
-	  fprintf(f,   "                data_out     => readback_data(%u)", n);
-	  if (pr.m_arrayRank || pr.m_isSequence || pr.m_baseType == OA::OCPI_String)
-	    fprintf(f, ",\n"
-		    "                offset        => offsets(%u)(width_for_max(work.%s_worker_defs.properties(%u).bytes_1)-1 downto 0)",
+	  if ((pr.m_isVolatile || !pr.m_isWritable) && pr.m_isSequence)
+	    fprintf(f,
+		    "                data_out     => my_sequence_data_%s,\n"
+		    "                offset       => my_sequence_offset_%s",
+		    pr.cname(), pr.cname());
+	  else {
+	    fprintf(f,   "                data_out     => readback_data(%u)", n);
+	    if (pr.m_arrayRank || pr.m_isSequence || pr.m_baseType == OA::OCPI_String)
+	      fprintf(f, ",\n"
+		      "                offset        => offsets(%u)"
+		      "(width_for_max(work.%s_worker_defs.properties(%u).bytes_1)-1 downto 0)",
 		      n, m_implName, n);
+	  }
 	  if (pr.m_nBits == 64)
 	    fprintf(f, ",\n"
 		    "                hi32       => hi32");
@@ -2147,10 +2256,44 @@ emitImplHDL(bool wrap) {
 	    fprintf(f, ");\n");
 	  if (!pr.m_isParameter)
 	    fprintf(f, "  props_to_worker.%s_read <= read_enables(%u);\n", pr.m_name.c_str(), n);
-	  if (pr.m_baseType == OA::OCPI_Enum && pr.m_isVolatile)
-	    fprintf(f, "  my_volatile_%s_value    <= "
-		    "to_ulong(work.%s_constants.%s_t'pos(props_from_worker.%s));\n",
-		    name, m_implName, name, name);
+	  if (!pr.m_isParameter && (pr.m_isVolatile || !pr.m_isWritable)) {
+	    if (pr.m_isSequence) {
+	      fprintf(f,
+		      "  my_sequence_offset_%s <= (others => '0')\n"
+		      "    when offsets(%u)(width_for_max(%zu-1)-1 downto 0) = 0\n"
+		      "    else resize(offsets(%u)(width_for_max(%zu-1)-1 downto 0) - %zu,\n"
+		      "                width_for_max(%zu-%zu-1));\n"
+		      "  readback_data(%u) <=\n"
+		      "    slv(props_from_worker.%s_length)\n"
+		      "    when offsets(%u)(width_for_max(%zu-1)-1 downto 0) = 0\n"
+		      "    else my_sequence_data_%s;\n",
+		      pr.cname(), n, pr.m_nBytes, n, pr.m_nBytes, pr.m_align, pr.m_nBytes,
+		      pr.m_align, n, pr.cname(), n, pr.m_nBytes, pr.cname());
+	      if (pr.m_baseType == OA::OCPI_Enum) {
+		fprintf(f,
+			"gen_volatile_%s:\n"
+			"  for i in 0 to %zu-1 generate\n",
+			name, pr.m_sequenceLength);
+#if 0 // this is what is sensible, but does not work on isim
+	      fprintf(f,
+		      "    my_volatile_%s_value(i) <=\n"
+		      "      to_ulong(work.%s_constants.%s_t'pos(props_from_worker.%s(i)));\n",
+		      name, m_implName, name, name);
+#else
+	      fprintf(f,
+		      "    with props_from_worker.%s(i) select my_volatile_%s_value(i) <=\n",
+		      name, name);
+	      for (unsigned nn = 0; nn < pr.m_nEnums; nn++)
+		fprintf(f, "   to_ulong(%u)  when %s_e,\n", nn, pr.m_enums[nn]);
+	      fprintf(f, "   to_ulong(0) when others;\n");
+#endif
+	      fprintf(f, "  end generate gen_volatile_%s;\n", name);
+	      }
+	    } else if (pr.m_baseType == OA::OCPI_Enum)
+	      fprintf(f, "  my_volatile_%s_value    <= "
+		      "to_ulong(work.%s_constants.%s_t'pos(props_from_worker.%s));\n",
+		      name, m_implName, name, name);
+	  }
 	  if (isStringArray)
 	    // String arrays require a wrapper to convert to the generic string_array_t
 	    fprintf(f, "end block; -- end of wrapper for readable string_array conversion\n");

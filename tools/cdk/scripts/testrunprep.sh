@@ -35,9 +35,13 @@ function getRemote {
 }
 
 mkdir -p run
-ToolsDir=$OCPI_CDK_DIR/bin/$OCPI_TOOL_DIR
+ToolsDir=$OCPI_CDK_DIR/$OCPI_TOOL_DIR/bin
 echo 'Probing for available local platforms:'
 localplatforms=(`$ToolsDir/ocpirun -C --only-platforms`)
+if [ -z "${localplatforms[0]}" ]; then
+  echo 'No local platforms found! Assuming something very bad happened and aborting.'
+  exit 1
+fi
 echo '  Local platforms are: '${localplatforms[@]}
 # TODO use testutil.sh to parse
 if [ -n "${OCPI_REMOTE_TEST_SYSTEMS}" ]; then
@@ -67,6 +71,7 @@ export OCPI_LIBRARY_PATH=../lib/rcc:gen/assemblies:$OCPI_LIBRARY_PATH
 $ToolsDir/ocpigen -v -C ${localplatforms[@]} ${remoteplatforms[@]}
 (echo '#!/bin/bash --noprofile'
  echo 'source $OCPI_CDK_DIR/scripts/util.sh'
+ echo 'failed=0'
  for p in ${localplatforms[@]##*-} ${remoteplatforms[@]##*-}; do
    for f in run verify; do
      file=run/$p/$f.sh
@@ -77,10 +82,13 @@ $ToolsDir/ocpigen -v -C ${localplatforms[@]} ${remoteplatforms[@]}
       cat <<-EOF
 	if onlyExclude $p "\$OnlyPlatforms" "\$ExcludePlatforms"; then
 	  (cd ./run/$p && ./run.sh \$*)
-          if [ \$? = 130 ]; then exit 130; fi
+	  r=\$?
+          [ \$r = 130 -o \( \$r != 0 -a "$TestAccumulateErrors" != 1 \) ] && exit \$r
+          [ \$r != 0 ] && failed=1
 	fi
 	EOF
  done
+ echo 'exit $failed'
 )  > run/runtests.sh
 for p in ${remoteplatforms[@]##*-}; do
   for f in run verify; do

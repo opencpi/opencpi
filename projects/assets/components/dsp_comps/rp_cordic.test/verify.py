@@ -70,7 +70,7 @@ magnitude   = int(os.environ.get("OCPI_TEST_magnitude")) - 1
 
 # Read all of input data file as complex int16
 ifx = open(sys.argv[3], 'rb')
-dt_iq_pair = np.dtype((np.uint32, {'real_idx':(np.int16,2), 'imag_idx':(np.int16,0)}))
+dt_iq_pair = np.dtype((np.uint32, {'real_idx':(np.int16,0), 'imag_idx':(np.int16,2)}))
 din = np.fromfile(ifx, dtype=dt_iq_pair, count=-1)
 ifx.close()
 # Read all of output data file as real int16

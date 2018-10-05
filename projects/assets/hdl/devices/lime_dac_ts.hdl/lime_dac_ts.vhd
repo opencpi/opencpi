@@ -21,6 +21,7 @@ library IEEE, ocpi;
 use IEEE.std_logic_1164.all, IEEE.numeric_std.all, ocpi.types.all, ocpi.wci.all, ocpi.util.all;
 library util; use util.util.all;
 architecture rtl of lime_dac_ts_worker is
+  constant dac_width          : positive := 12; -- must not be > 15 due to WSI width
   -- FIFO parameters
   constant FIFO_WIDTH_c       : natural := 26; -- the fifo is just wide enough to feed lime DAC plus EOM flag plus Flush flag
   constant FIFO_DEPTH_c       : natural := to_integer(unsigned(FIFO_DEPTH_p));
@@ -28,6 +29,10 @@ architecture rtl of lime_dac_ts_worker is
   constant SECONDS_WIDTH_c    : natural := to_integer(unsigned(SECONDS_WIDTH_p));
   constant FRACTION_WIDTH_c   : natural := to_integer(unsigned(FRACTION_WIDTH_p));
   -- CTL/WSI Clock domain signals
+  signal in_I                 : std_logic_vector(15 downto 0);
+  signal in_Q                 : std_logic_vector(15 downto 0);
+  signal wsi_data_I           : std_logic_vector(dac_width- 1 downto 0);
+  signal wsi_data_Q           : std_logic_vector(dac_width- 1 downto 0);
   signal wsi_data             : std_logic_vector(FIFO_WIDTH_c - 1 downto 0);
   signal wsi_valid            : std_logic;
   signal wsi_take             : std_logic; -- take data
@@ -72,7 +77,21 @@ architecture rtl of lime_dac_ts_worker is
   signal tx_en_d_cclk_re      : std_logic;
   signal tx_en_d_cclk_fe      : std_logic;
   signal doit                 : std_logic;
+  -- Event Port Signals
+  signal event_port_connected         : std_logic := '0';
+  signal event_pending                : std_logic := '0';
+  signal wsi_event_in_opcode_on_off   : std_logic := '0';
+  signal event_in_out_take            : std_logic := '0';
+  signal ready_for_event_in_port_data : std_logic := '0';
+  signal done_flag                    : std_logic := '0';
+  signal event_in_clk                 : std_logic := '0';
+  signal event_in_reset               : std_logic := '0';
+  signal worker_driven_txen           : std_logic := '0';
+  signal event_driven_txen            : std_logic := '0';
 begin
+  --TODO: Replace ctl clock with port clock once AV-65 is resolved 
+  event_in_clk <= ctl_in.clk;
+  event_in_reset <= ctl_in.reset;
   --------------------------------------------------------------------------------
   -- DAC Sample Clock choices
   --------------------------------------------------------------------------------
@@ -295,36 +314,17 @@ begin
   end process tx_event_gen;
 
   tx_en_d_cclk_re <= (not tx_en_d_cclk_r1) and tx_en_d_cclk;
-  tx_en_d_cclk_fe <= (not tx_en_d_cclk) and tx_en_d_cclk_r1; 
-
-  doit <= event_out_in.ready and ctl_in.is_operating; 
-  event_out_out.give <= doit and (tx_en_d_cclk_re or tx_en_d_cclk_fe);
-  event_out_out.som <= doit;
-  event_out_out.eom <= doit;
-  event_out_out.valid <= '0';
-  event_out_out.opcode <= tx_event_txOn_op_e when its(tx_en_d_cclk_re) else tx_event_txOff_op_e;
-  event_out_out.byte_enable <= (others => '0');
-
-  missed_event_reg : process(ctl_in.clk)
-  begin
-    if rising_edge(ctl_in.clk) then
-      if ctl_in.control_op = START_e then
-        props_out.missed_event <= '0';
-      elsif its(ctl_in.is_operating) and not its(event_out_in.ready) and (its(tx_en_d_cclk_re) or its(tx_en_d_cclk_fe)) then
-        props_out.missed_event <= '1';
-      end if;
-    end if;
-  end process missed_event_reg;
+  tx_en_d_cclk_fe <= (not tx_en_d_cclk) and tx_en_d_cclk_r1;
 
   tx_en_proc : process(dac_clk)
   begin
     if rising_edge(dac_clk) then
       if (dac_reset = '1') then
-        dev_out.TX_EN <= '0';
+        worker_driven_txen <= '0';
       elsif (flush_count /= 0) then
-        dev_out.TX_EN <= '0';
+        worker_driven_txen <= '0';
       else
-        dev_out.TX_EN <= tx_en_d and not(dac_flush_hold);
+        worker_driven_txen <= tx_en_d and not(dac_flush_hold);
       end if;
     end if;
   end process tx_en_proc;
@@ -342,11 +342,25 @@ begin
     end if;
   end process dac_flush_hold_proc;
 
-  -- Temp signal necessary only because of older VHDL
+  -- iqstream w/ DataWidth=32 formats Q in most significant bits, I in least
+  -- significant (see OpenCPI_HDL_Development section on Message Payloads vs.
+  -- Physical Data Width on Data Interfaces)
+  in_Q <= in_in.data(31 downto 16);
+  in_I <= in_in.data(15 downto 0);
+
+  -- Transform signed Q0.15 to signed Q0.11, taking most significant 12 bits
+  -- (and using the 13th bit to round)
+  trunc_round_Q : entity work.trunc_round_16_to_12_signed
+    port map(
+      DIN  => in_Q,
+      DOUT => wsi_data_Q);
+  trunc_round_I : entity work.trunc_round_16_to_12_signed
+    port map(
+      DIN  => in_I,
+      DOUT => wsi_data_I);
+
   flush_op        <= '1' when (in_in.opcode = TimeStamped_IQ_flush_op_e and in_in.som = '1' and in_in.eom = '1') else '0';
-  wsi_data        <= flush_op & in_in.eom &
-                     slv(unsigned(in_in.data(31 downto 20)) + ('0' & in_in.data(19))) &
-                     slv(unsigned(in_in.data(15 downto  4)) + ('0' & in_in.data( 3)));
+  wsi_data        <= flush_op & in_in.eom & wsi_data_Q & wsi_data_I;
   wsi_valid       <= '1' when ((in_in.valid = '1' and in_in.opcode = TimeStamped_IQ_samples_op_e) or flush_op) else '0';
   ts_take         <= '1' when (in_in.ready = '1' and ctl_in.is_operating = '1' and in_in.valid = '1' and in_in.opcode /= TimeStamped_IQ_samples_op_e and tx_en_d_cclk = '0' and transmit_busy = '0') else '0';
   nvalid_take     <= '1' when (in_in.ready = '1' and ctl_in.is_operating = '1' and in_in.valid = '0') else '0';
@@ -355,7 +369,7 @@ begin
   dac_eom         <= dac_data(24);
   dac_flush       <= dac_data(25);
   dac_flush_event <= dac_flush and dac_ready and not(sel_iq_r) and tx_en_d;
-
+  
   fifo : util.util.dac_fifo
     generic map(width       => FIFO_WIDTH_c,
                 depth       => FIFO_DEPTH_c)
@@ -373,4 +387,102 @@ begin
                 dac_take    => dac_take,
                 dac_ready   => dac_ready,
                 dac_data    => dac_data);
+  -- lime_tx.hdl reports back when it is done processing an event. The done flag
+  -- must be registered in the case that it occurs when ready_for_event_in_port_data
+  -- is not set yet
+  done_flag_proc : process(ctl_in.clk)
+  begin
+    if rising_edge(ctl_in.clk) then
+      if ctl_in.reset = '1' then
+        done_flag <= '0';
+      else
+        if event_in_out_take = '1' then                        --clear on take
+          done_flag <= '0';
+        elsif dev_tx_event_in.done_processing_event = '1' then --set on done
+          done_flag <= '1';
+        end if;
+      end if;
+    end if;
+  end process;
+
+  --Event port activity (connectin,pending,opcode) must be conveyed to lime_tx.hdl
+  dev_tx_event_out.connected <= event_port_connected;
+  
+  event_pending <= ctl_in.is_operating and event_in_in.ready;
+  dev_tx_event_out.event_pending <= event_pending and not done_flag;
+  
+  wsi_event_in_opcode_on_off <= '1' when (event_in_in.opcode = tx_event_txOn_op_e) else '0';
+  dev_tx_event_out.opcode <= wsi_event_in_opcode_on_off;
+  
+  -- Taking an event requires
+  -- 1. Port is connected
+  -- 2. Event pending (port ready and operating)
+  -- 3. lime_tx.hdl is not busy other non-event SPI transaction (always not
+  --    busy for pin control)
+  -- 4. Counter to space out TX events signals it is ready
+  -- 5. lime_tx.hdl is done processing the previous event (in case of SPI
+  --    control, always done for pin_control)
+  event_in_out_take <= event_port_connected and
+                       event_pending and
+                       not dev_tx_event_in.busy and
+                       ready_for_event_in_port_data and
+                       done_flag;
+  event_in_out.take <= event_in_out_take;
+
+  -- this is necessary because we have to synchronize tx events from control
+  -- plane clock domain to DAC clock domain (was decided to use two
+  -- flip-flop synchronizer, which necessitates ensuring tx events only occur at
+  -- most at 1.5X the DAC clock rate
+  -- the 
+  counter_to_space_out_tx_events : process(ctl_in.clk)
+    -- props.in-min_num_cp_clks_per_txen_events is UShort_t
+    constant init_val : UShort_t := to_ushort(1);
+    variable count : UShort_t := to_ushort(1);
+  begin
+    if rising_edge(ctl_in.clk) then
+      if ctl_in.reset = '1' then
+        count := init_val;
+        ready_for_event_in_port_data <= '1';
+      elsif count < props_in.min_num_cp_clks_per_txen_events then
+        if count = init_val then
+          if event_in_in.ready = '1' then
+            count := count + 1;
+
+            -- applies backpressure to event_in
+            ready_for_event_in_port_data <= '0';
+
+          end if;
+        else -- count > 1
+          count := count + 1;
+        end if;
+      else -- count >= props_in.min_num_cp_clks_per_txen_events
+        -- note this will be always be reached when
+        -- props_in.min_num_cp_clks_per_txen_events is 0 or 1
+        ready_for_event_in_port_data <= '1';
+        --reset counter on take
+        if event_in_out_take = '1' then
+          count := init_val;
+        end if;
+      end if;
+    end if;
+  end process counter_to_space_out_tx_events;
+
+  event_in_to_txen : misc_prims.misc_prims.event_in_to_txen
+    port map (event_in_clk           => event_in_clk,
+              event_in_reset         => event_in_clk,
+              ctl_in_is_operating    => ctl_in.is_operating,
+              event_in_in_reset      => event_in_in.reset,
+              event_in_in_som        => event_in_in.som,
+              event_in_in_valid      => event_in_in.valid,
+              event_in_in_eom        => event_in_in.eom,
+              event_in_in_ready      => event_in_in.ready,
+              event_in_out_take      => event_in_out_take,
+              event_in_opcode_on_off => wsi_event_in_opcode_on_off,
+              txon_pulse             => open,
+              txoff_pulse            => open,
+              txen                   => event_driven_txen,
+              event_in_connected     => event_port_connected,
+              is_operating           => open);
+
+  dev_txen_out.txen <= event_driven_txen and worker_driven_txen;
 end rtl;

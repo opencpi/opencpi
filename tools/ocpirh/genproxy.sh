@@ -57,7 +57,7 @@ olibs="application container library transport rdma_driver_interface rdma_utils 
 plibs="gmp lzma"
 OCPI_LIB_DIR=$OCPI_CDK_DIR/lib/$OCPI_TARGET_DIR
 OCPI_LIBS="$(for l in $olibs; do echo -n ' '-locpi_$l; done) \
-           $(for p in $plibs; do echo -n ' '$pdir/$p/$OCPI_TARGET_HOST/lib/lib$p.a; done)"
+           $(for p in $plibs; do echo -n ' '$pdir/$p/$OCPI_TARGET_PLATFORM/lib/lib$p.a; done)"
 OCPI_LDFLAGS="-Xlinker --export-dynamic"
 # Patch the automake makefile to include our headers, libraries and linker options
 ed -s cpp/Makefile.am <<EOF

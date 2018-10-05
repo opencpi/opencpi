@@ -32,5 +32,5 @@ ocpitests &&
 echo ======================= Running Datatype/protocol Tests &&
 ocpidds -t 100000 > /dev/null &&
 echo ======================= Running Container Tests &&
-($OCPI_CDK_DIR/bin/$(${OCPI_CDK_DIR}/platforms/getPlatform.sh | awk '{print $4}')/ctests/run_tests.sh) &&
+($OCPI_CDK_DIR/bin/$(${OCPI_CDK_DIR}/scripts/getPlatform.sh | awk '{print $4}')/ctests/run_tests.sh) &&
 echo All tests passed.

@@ -39,6 +39,7 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/time.h>
+#include "ocpi-config.h"
 #ifdef OCPI_OS_macos
 #include <mach-o/dyld.h>
 #endif

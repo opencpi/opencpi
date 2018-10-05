@@ -23,9 +23,9 @@
 #include <cerrno>
 #include <unistd.h>
 #include <sys/uio.h>
-#include <cassert>
 #include <climits>
-#include <iostream>
+#include <cassert>
+
 #include "ezxml.h"
 #include "OcpiOsAssert.h"
 #include "OcpiUtilVfs.h"
@@ -368,7 +368,7 @@ namespace OCPI {
 	      break;
 	  va_end(ap);
 	  if (!p)
-	    RETURNFAILED(false, "attribute(1)", *a, x->name);
+	    RETURNFAILED(false, "attribute", *a, x->name);
 	}
 	return 0;
       }
@@ -387,13 +387,12 @@ namespace OCPI {
 		goto found;
 	      }
 	  va_end(ap);
-	  RETURNFAILED(true, "attribute(2)", *a, x->name);
+	  RETURNFAILED(true, "attribute", *a, x->name);
 	found:;
 	}
 	return 0;
       }
 
-#if 0
       const char *
       checkAttrsV(ezxml_t x, const char **attrs) {
 	if (!x->attr)
@@ -408,7 +407,6 @@ namespace OCPI {
 	}
 	return 0;
       }
-#endif
 
       bool
       getUNum(const char *s, size_t *valp) {
@@ -628,14 +626,14 @@ namespace OCPI {
       ezxml_t
       findChildWithAttr(ezxml_t x, const char *cName, const char *aName,
 			const char *value) {
-	for (ezxml_t c = ezxml_cchild(x, cName); c; c = ezxml_next(c))
+	for (ezxml_t c = ezxml_cchild(x, cName); c; c = ezxml_cnext(c))
 	  if (hasAttrEq(c, aName, value))
 	    return c;
 	return 0;
       }
       unsigned countChildren(ezxml_t x, const char*cName) {
 	unsigned n = 0;
-	for (ezxml_t c = ezxml_cchild(x, cName); c; c = ezxml_next(c))
+	for (ezxml_t c = ezxml_cchild(x, cName); c; c = ezxml_cnext(c))
 	  n++;
 	return n;
       }

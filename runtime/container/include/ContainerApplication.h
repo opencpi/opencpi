@@ -39,6 +39,7 @@
 #include "OcpiPValue.h"
 #include "OcpiLibraryManager.h"
 #include "OcpiParentChild.h"
+#include "ContainerWorker.h"
 
 namespace OCPI {
   namespace API {
@@ -65,8 +66,8 @@ namespace OCPI {
       OCPI::API::Application *getApplication() { return m_apiApplication; }
       virtual Container &container() = 0;
       virtual Worker &createWorker(Artifact *, const char *appInstName,
-				   ezxml_t impl, ezxml_t inst, Worker *slave, bool hasMaster,
-				   size_t member, size_t crewSize,
+				   ezxml_t impl, ezxml_t inst, const Workers &slaves,
+				   bool hasMaster, size_t member, size_t crewSize,
 				   const OCPI::Util::PValue *wparams) = 0;
       virtual ~Application();
 
@@ -86,8 +87,8 @@ namespace OCPI {
 				      const char *selectCriteria = NULL,
 				      const OCPI::API::Connection *connections = NULL);
       Worker &createWorker(OCPI::Library::Artifact &art, const char *appInstName, 
-			   const ezxml_t impl, const ezxml_t inst, Worker *slave, bool hasMaster,
-			   size_t member, size_t crewSize,
+			   ezxml_t impl, ezxml_t inst, const Workers &slaves,
+			   bool hasMaster, size_t member, size_t crewSize,
 			   const OCPI::Util::PValue *wparams = NULL);
       virtual Worker *firstWorker() const = 0;
       //      void start();

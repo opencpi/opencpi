@@ -1,0 +1,10 @@
+<!-- This is the spec file (OCS) for: event_in_to_txen_tester
+     Add component spec attributes, like "protocol".
+     Add property elements for spec properties.
+     Add port elements for i/o ports -->
+<ComponentSpec>
+  <Property Name="txon_pulse" Type="bool" Volatile="true"/>
+  <Property Name="txoff_pulse" Type="bool" Volatile="true"/>
+  <Property Name="txen" Type="bool" Volatile="true"/>
+  <Port Name="event_in" Protocol="tx_event-prot"/>
+</ComponentSpec>

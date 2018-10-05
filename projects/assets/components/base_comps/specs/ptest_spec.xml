@@ -34,8 +34,56 @@
      <Property Name="pp1" Type="Char" parameter='true' default='1'/>
      <Property Name="pp2" Type="Double" parameter='true' default='2'/>
      <Property Name="pp3" Type="Float" parameter='true' default='3'/>
+     <Property Name="pp4" Type="Short" parameter='true' default='4'/>
+     <Property Name="pp5" Type="Long" parameter='true' default='5'/>
+     <Property Name="pp6" Type="UChar" parameter='true' default='6'/>
+     <Property Name="pp7" Type="ULong" parameter='true' default='7'/>
+     <Property Name="pp8" Type="UShort" parameter='true' default='8'/>
+     <Property Name="pp9" Type="LongLong"  parameter='true' default='9'/>
+     <Property Name="pp10" Type="ULongLong" parameter='true' default='10'/>
+     <Property Name="pp11" Type="String" StringLength="20" parameter='true' default='11'/>
      <property name='led' type='enum' enums="off,green,red,orange" readable='false' writable='true'/>
      <property name='ledv' type='enum' enums="off,green,red,orange" volatile='1' writable='true'/>
      <property name='ledp' type='enum' enums="off,green,red,orange" parameter='1' readable='false' default='red'/>
   </Properties>
+  <property name='testvolseqbool' volatile='1' type='bool' sequencelength='5'/>
+  <property name='testvolsequlonglong' volatile='1' type='ulonglong' sequencelength='6'/>
+  <property name='testvolseqstring' volatile='1' type='string' stringlength='5' sequencelength='6'/>
+  <property name='testvolseqenum' volatile='1' type='enum' enums='r,g,b' sequencelength='7'/>
+  <property name='testrdseqbool' readable='1' type='bool' sequencelength='5'/>
+  <property name='testrdsequlonglong' readable='1' type='ulonglong' sequencelength='6'/>
+  <property name='testrdseqstring' readable='1' type='string' stringlength='5' sequencelength='6'/>
+  <property name='testrdseqenum' readable='1' type='enum' enums='r,g,b' sequencelength='7'/>
+  <property name='testvolarybool' volatile='1' type='bool' arraylength='5'/>
+  <property name='testrdarybool' readable='1' type='bool' arraylength='5'/>
+     <Property Name="sp0" Type="Bool" Readable="true" Writable="true" sequencelength="1"/>
+     <Property Name="sp1" Type="Char" Volatile="true" Writable="true" sequencelength="2"/>
+     <Property Name="sp2" Type="Double" Readable="true" Writable="true" sequencelength="3"/>
+     <Property Name="sp3" Type="Float" Volatile="true" Writable="true" sequencelength="4"/>
+     <Property Name="sp4" Type="Short" Readable="true" Writable="true" sequencelength="5"/>
+     <Property Name="sp5" Type="Long" Volatile="true" Writable="true" sequencelength="6"/>
+     <Property Name="sp6" Type="UChar" Readable="true" Writable="true" sequencelength="7"/>
+     <Property Name="sp7" Type="ULong" Volatile="true" Writable="true" sequencelength="8"/>
+     <Property Name="sp8" Type="UShort" Readable="true" Writable="true" sequencelength="9"/>
+     <Property Name="sp9" Type="LongLong"  Volatile="true" Writable="true" sequencelength="10"/>
+     <Property Name="sp10" Type="ULongLong" Readable="true" Writable="true" sequencelength="11"/>
+     <Property Name="sp11" Type="String" StringLength="20" Volatile="true" Writable="true" sequencelength="12"/>
+     <Property Name="pap0" Type="Bool" arraylength="1" parameter='1' default='1'/>
+     <Property Name="pap1" Type="Char" arraylength="2" parameter='1' default='1,2'/>
+     <Property Name="pap2" Type="Double" arraylength="3" parameter='1' default='1,2,3'/>
+     <Property Name="pap3" Type="Float" arraylength="4" parameter='1' default='1,2,3,4'/>
+     <Property Name="pap4" Type="Short" arraylength="5" parameter='1' default='1,2,3,4'/>
+     <Property Name="pap5" Type="Long" arraylength="6" parameter='1' default='1,2,3,4'/>
+     <Property Name="pap6" Type="UChar" arraylength="7" parameter='1' default='1,2,3,4'/>
+     <Property Name="pap7" Type="ULong" arraylength="8" parameter='1' default='1,2,3,4'/>
+     <Property Name="pap8" Type="UShort" arraylength="9" parameter='1' default='1,2,3,4'/>
+     <Property Name="pap9" Type="LongLong"  arraylength="10" parameter='1' default='1,2,3,4'/>
+     <Property Name="pap10" Type="ULongLong" arraylength="pp7" parameter='1' default='1,2,3,4'/>
+     <Property Name="pap11" Type="String" StringLength="7" arraylength="pp7" parameter='1' default='1,2,3,4'/>
+  <property name="str" parameter='true' type='string' default='foo'/>
+  <property name='error' type='bool' initial='true'/>
+  <property name='nchannels' parameter='1' default='3' readable='1'/>
+  <property name='param' parameter='1' default='2+3'/>
+  <!-- For AV-2497 -->
+  <Property Name="enables" Type="uchar" ArrayLength="3" Default="4,8,10" Readable="true" Writable="true"/>
 </ComponentSpec>

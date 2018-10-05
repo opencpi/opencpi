@@ -66,7 +66,7 @@ class HdlToolSet(object):
         return self.name
 
     def __eq__(self, other):
-        if isinstance(other, basestring):
+        if isinstance(other, str):
             return self.name == other
         return isinstance(other, HdlToolSet) and self.name == other.name
 
@@ -161,12 +161,12 @@ class HdlTarget(object):
         >>> [tgt.name for tgt in HdlTarget.all_except_sims()]
         ['mytgt0', 'mytgt1']
         """
-        return sorted([target for target in HdlTarget.__all_targets.values()
+        return sorted([target for target in list(HdlTarget.__all_targets.values())
                        if not target.toolset.is_simtool])
 
     @staticmethod
     def get_all_vendors():
-        return sorted(set([target.vendor for target in HdlTarget.__all_targets.values()]))
+        return sorted(set([target.vendor for target in list(HdlTarget.__all_targets.values())]))
 
     @staticmethod
     def get_all_targets_for_vendor(vendor):
@@ -176,7 +176,7 @@ class HdlTarget(object):
         >>> [tgt.name for tgt in HdlTarget.get_all_targets_for_vendor('vend1')]
         ['mytgt0', 'mytgt1']
         """
-        return sorted([target for target in HdlTarget.__all_targets.values()
+        return sorted([target for target in list(HdlTarget.__all_targets.values())
                        if target.vendor == vendor])
 
     @staticmethod
@@ -187,7 +187,7 @@ class HdlTarget(object):
         >>> [tgt.name for tgt in HdlTarget.get_all_targets_for_toolset('mytool1')]
         ['mytgt0', 'mytgt1']
         """
-        return sorted([target for target in HdlTarget.__all_targets.values()
+        return sorted([target for target in list(HdlTarget.__all_targets.values())
                        if target.toolset == toolset])
 
     @staticmethod
@@ -198,7 +198,7 @@ class HdlTarget(object):
         >>> HdlTarget.get_target_for_part('part2').name
         'mytgt2'
         """
-        targets = [target for target in HdlTarget.__all_targets.values() if part in target.parts]
+        targets = [target for target in list(HdlTarget.__all_targets.values()) if part in target.parts]
         if len(targets) > 0:
             return targets[0]
         return None
@@ -310,7 +310,7 @@ class HdlPlatform(object):
         """
         Get all instances of the HdlPlatform class
         """
-        return sorted([plat for plat in HdlPlatform.__all_platforms.values()
+        return sorted([plat for plat in list(HdlPlatform.__all_platforms.values())
                        if plat.built])
 
     @staticmethod
@@ -322,7 +322,7 @@ class HdlPlatform(object):
         >>> [plat.name for plat in HdlPlatform.all_except_sims()]
         ['myplat0', 'myplat1']
         """
-        return sorted([plat for plat in HdlPlatform.__all_platforms.values()
+        return sorted([plat for plat in list(HdlPlatform.__all_platforms.values())
                        if not plat.get_toolset().is_simtool])
 
     def get_toolset(self):

@@ -27,6 +27,7 @@
  */
 
 #include <sstream> // needed for std::ostringstream
+#include <unistd.h> // usleep()
 #include "ad9361_config_proxy-worker.hh"
 
 extern "C" {
@@ -72,7 +73,18 @@ using namespace Ad9361_config_proxyWorkerTypes;
 #define D0_BITMASK 0x01
 
 class Ad9361_config_proxyWorker : public Ad9361_config_proxyWorkerBase {
+  RunCondition m_aRunCondition;
+public:
+  Ad9361_config_proxyWorker() : m_aRunCondition(RCC_NO_PORTS) {
+    //Run function should never be called
+    setRunCondition(&m_aRunCondition);
 
+    ad9361_phy = 0;
+  }
+  ~Ad9361_config_proxyWorker() {
+    ad9361_free(ad9361_phy); // this function added in ad9361.patch
+  }
+private:
   // note that RX_FAST_LOCK_CONFIG_WORD_NUM is in fact applicable to both
   // RX and TX faslock configs
   typedef struct fastlock_profile_s {
@@ -94,7 +106,7 @@ class Ad9361_config_proxyWorker : public Ad9361_config_proxyWorkerBase {
   std::vector<fastlock_profile_t> m_rx_fastlock_profiles;
   std::vector<fastlock_profile_t> m_tx_fastlock_profiles;
   struct ad9361_rf_phy *ad9361_phy;
-  AD9361_InitParam m_default_init_param;
+  AD9361_InitParam m_init_param;
 
   template<typename T> RCCResult
   checkIfPointerIsNull(T* p, const char* pChar) {
@@ -108,9 +120,7 @@ class Ad9361_config_proxyWorker : public Ad9361_config_proxyWorkerBase {
     return RCC_OK;
   }
 
-  template<typename T> void
-  libad9361_API_print_idk(std::string functionStr, T param,
-                      uint8_t chan = 255) {
+  void libad9361_API_print_idk(std::string functionStr) {
     // typical use results in leading '&' on functionStr, erase for prettiness
     std::string functionStdStr(functionStr);
     if(functionStdStr[0] == '&') functionStdStr.erase(functionStdStr.begin());
@@ -147,15 +157,29 @@ class Ad9361_config_proxyWorker : public Ad9361_config_proxyWorkerBase {
     }
   }
 
-  /* @brief Function that should be used to make the ad9361_init() API call.
-   * @param[in]   function    libad9361 API function pointer
-   * @param[in]   param       parameter for ad9361 API function
-   * @param[in]   functionStr Stringified function name
+  void enforce_ensm_config() {
+
+    slave.set_Half_Duplex_Mode(not ad9361_phy->pdata->fdd);
+
+    uint8_t ensm_config_1 = slave.get_ensm_config_1();
+    //log(OCPI_LOG_INFO, "ensm_config_1=%u", ensm_config_1);
+    slave.set_ENSM_Pin_Control((ensm_config_1 & 0x10) == 0x10);
+    slave.set_Level_Mode((ensm_config_1 & 0x08) == 0x08);
+
+    uint8_t ensm_config_2 = slave.get_ensm_config_2();
+    //log(OCPI_LOG_INFO, "ensm_config_2=%u", ensm_config_2);
+    slave.set_FDD_External_Control_Enable((ensm_config_2 & 0x80) == 0x80);
+  }
+
+  /*! @brief Function that should be used to make the ad9361_init() API call.
+   *  @param[in]   function    libad9361 API function pointer
+   *  @param[in]   param       parameter for ad9361 API function
+   *  @param[in]   functionStr Stringified function name
    ****************************************************************************/
   RCCResult
   libad9361_API_init(int32_t function(struct ad9361_rf_phy**, AD9361_InitParam*),
       AD9361_InitParam* param, const char* functionStr) {
-    libad9361_API_print_idk(functionStr, param);
+    libad9361_API_print_idk(functionStr);
     
     const bool    LVDS          = slave.get_LVDS();
     const bool    single_port   = slave.get_single_port();
@@ -172,7 +196,7 @@ class Ad9361_config_proxyWorker : public Ad9361_config_proxyWorkerBase {
     // full duplex) supports TDD
     //param->frequency_division_duplex_mode_enable = ;
 
-    ///-----SPI Register 0x010-Parallel Port Configuration 1-----///
+    // -----SPI Register 0x010-Parallel Port Configuration 1-----///
     // D7-PP Tx Swap IQ
     // passed in via param variable
 
@@ -211,7 +235,7 @@ class Ad9361_config_proxyWorker : public Ad9361_config_proxyWorkerBase {
     const bool dataClkIsInverted = (data_clk_inv == 1);
     param->invert_data_clk_enable = dataClkIsInverted ? 1 : 0;
 
-    ///-----SPI Register 0x011-Parallel Port Configuration 2-----///
+    // -----SPI Register 0x011-Parallel Port Configuration 2-----///
     //D7-FDD Alt Word Order
 #define FDD_ALT_WORD_ORDER_ENABLE 0 ///@TODO / FIXME read this value from FPGA, I think we want 0 for now ??
     param->fdd_alt_word_order_enable = FDD_ALT_WORD_ORDER_ENABLE;
@@ -224,7 +248,7 @@ class Ad9361_config_proxyWorker : public Ad9361_config_proxyWorkerBase {
     const bool rxFrameIsInverted = (rx_frame_inv == 1);
     param->invert_rx_frame_enable = rxFrameIsInverted ? 1 : 0;
     
-    ///-----SPI Register 0x012-Parallel Port Configuration 3-----///
+    // -----SPI Register 0x012-Parallel Port Configuration 3-----///
     // D7-FDD RX Rate=2*Tx Rate
     // I think we want to leave the initialization-time value default and rely
     // on runtime libad9361 API to set this
@@ -357,6 +381,8 @@ class Ad9361_config_proxyWorker : public Ad9361_config_proxyWorkerBase {
       return setError(err.str().c_str());
     }
 
+    enforce_ensm_config();
+
     if(_1R2Tconfig)
     {
       // I *think* this is step 2 of 2 on how to use No-OS to implement 1R2T
@@ -380,7 +406,26 @@ class Ad9361_config_proxyWorker : public Ad9361_config_proxyWorkerBase {
     if((!ad9361_init_called) || force_init)
     {
       ad9361_init_called = true;
-      return LIBAD9361_API_INIT(&ad9361_init, &init_param);
+
+      // ADI forum post recommended setting ENABLE/TXNRX pins high *prior to
+      // ad9361_init() call* when
+      // frequency_division_duplex_independent_mode_enable is set to 1
+
+      slave.set_ENABLE_force_set(true);
+      slave.set_TXNRX_force_set(true);
+
+      // sleep duration chosen to be relatively small in relation to AD9361
+      // initialization duration (which, through observation, appears to be
+      // roughly 200 ms), but a long enough pulse that AD9361 is likely
+      // recognizing it many, many times over
+      usleep(1000);
+
+      RCCResult res = LIBAD9361_API_INIT(&ad9361_init, &init_param);
+
+      slave.set_ENABLE_force_set(false);
+      slave.set_TXNRX_force_set(false);
+
+      return res;
     }
     return RCC_OK;
   }
@@ -396,13 +441,13 @@ class Ad9361_config_proxyWorker : public Ad9361_config_proxyWorkerBase {
     return ret;
   }
 
-  /* @brief Function that should be used to make channel-agnostic libad9361 API
-   *        calls with 1 parameter with most common return type of int32_t. Also
-   *        performs debug printing of function call and passed parameters when
-   *        AD9361_CONFIG_PROXY_OCPI_DEBUG defined.
-   * @param[in]   function    libad9361 API function pointer
-   * @param[in]   param       second and last parameter for ad9361 API function
-   * @param[in]   functionStr Stringified function name
+  /*! @brief Function that should be used to make channel-agnostic libad9361 API
+   *         calls with 1 parameter with most common return type of int32_t.
+   *         Also performs debug printing of function call and passed parameters
+   *         when AD9361_CONFIG_PROXY_OCPI_DEBUG defined.
+   *  @param[in]   function    libad9361 API function pointer
+   *  @param[in]   param       second and last parameter for ad9361 API function
+   *  @param[in]   functionStr Stringified function name
    ****************************************************************************/
   template<typename T> RCCResult
   libad9361_API_1paramp(int32_t function(struct ad9361_rf_phy*, T),
@@ -411,22 +456,22 @@ class Ad9361_config_proxyWorker : public Ad9361_config_proxyWorkerBase {
     return libad9361_API_1param(function, param, functionStr, false);
   }
 
-  /* @brief Function that should be used to make channel-agnostic libad9361 API
-   *        calls with 1 parameter with most common return type of int32_t.
-   * @param[in]   function    libad9361 API function pointer
-   * @param[in]   param       second and last parameter for ad9361 API function
-   * @param[in]   functionStr Stringified function name
-   * @param[in]   doPrint     Enables debugging printing of function call and
-   *                          passed parameters (when
-   *                          AD9361_CONFIG_PROXY_OCPI_DEBUG is defined).
-   *                          Default is true.
+  /*! @brief Function that should be used to make channel-agnostic libad9361 API
+   *         calls with 1 parameter with most common return type of int32_t.
+   *  @param[in]   function    libad9361 API function pointer
+   *  @param[in]   param       second and last parameter for ad9361 API function
+   *  @param[in]   functionStr Stringified function name
+   *  @param[in]   doPrint     Enables debugging printing of function call and
+   *                           passed parameters (when
+   *                           AD9361_CONFIG_PROXY_OCPI_DEBUG is defined).
+   *                           Default is true.
    ****************************************************************************/
   template<typename T> RCCResult
   libad9361_API_1param(int32_t function(struct ad9361_rf_phy*, T),
       T param, const char* functionStr, bool doPrint = true) {
-    if (doPrint) libad9361_API_print_idk(functionStr, param);
+    if (doPrint) libad9361_API_print_idk(functionStr);
 
-    RCCResult ret = ad9361_pre_API_call_validation(m_default_init_param);
+    RCCResult ret = ad9361_pre_API_call_validation(m_init_param);
     if(ret != RCC_OK) return ret;
 
     const int32_t res = function(ad9361_phy, param);
@@ -442,42 +487,42 @@ class Ad9361_config_proxyWorker : public Ad9361_config_proxyWorkerBase {
     return RCC_OK;
   }
 
-  /* @brief Function that should be used to make channel-agnostic libad9361 API
-   *        calls with 1 parameter with return type of void. Also performs debug
-   *        printing of function call and passed parameters when
-   *        AD9361_CONFIG_PROXY_OCPI_DEBUG defined.
-   * @param[in]   function    libad9361 API function pointer
-   * @param[in]   param       second and last parameter for ad9361 API function
-   * @param[in]   functionStr Stringified function name
+  /*! @brief Function that should be used to make channel-agnostic libad9361 API
+   *         calls with 1 parameter with return type of void. Also performs
+   *         debug printing of function call and passed parameters when
+   *         AD9361_CONFIG_PROXY_OCPI_DEBUG defined.
+   *  @param[in]   function    libad9361 API function pointer
+   *  @param[in]   param       second and last parameter for ad9361 API function
+   *  @param[in]   functionStr Stringified function name
    ****************************************************************************/
   template<typename T> RCCResult
   libad9361_API_1paramv(void function(struct ad9361_rf_phy*, T),
       T param, const char* functionStr) {
-    libad9361_API_print_idk(functionStr, param);
+    libad9361_API_print_idk(functionStr);
 
-    RCCResult ret = ad9361_pre_API_call_validation(m_default_init_param);
+    RCCResult ret = ad9361_pre_API_call_validation(m_init_param);
     if(ret != RCC_OK) return ret;
 
     function(ad9361_phy, param);
     return RCC_OK;
   }
 
-  /* @brief Function that should be used to make channel-agnostic libad9361 API
-   *        calls with 2 parameters. Also performs debug printing of function
-   *        call and passed parameters when AD9361_CONFIG_PROXY_OCPI_DEBUG
-   *        defined.
-   * @param[in]   function    libad9361 API function pointer
-   * @param[in]   param1      second parameter for ad9361 API function
-   * @param[in]   param2      third and last parameter for ad9361 API function
-   * @param[in]   functionStr Stringified function name
+  /*! @brief Function that should be used to make channel-agnostic libad9361 API
+   *         calls with 2 parameters. Also performs debug printing of function
+   *         call and passed parameters when AD9361_CONFIG_PROXY_OCPI_DEBUG
+   *         defined.
+   *  @param[in]   function    libad9361 API function pointer
+   *  @param[in]   param1      second parameter for ad9361 API function
+   *  @param[in]   param2      third and last parameter for ad9361 API function
+   *  @param[in]   functionStr Stringified function name
    ****************************************************************************/
   template<typename T, typename R> RCCResult
   libad9361_API_2param(int32_t function(struct ad9361_rf_phy*, T, R),
       T param1, R param2,
       const char* functionStr) {
-    libad9361_API_print_idk(functionStr, param1);
+    libad9361_API_print_idk(functionStr);
 
-    RCCResult ret = ad9361_pre_API_call_validation(m_default_init_param);
+    RCCResult ret = ad9361_pre_API_call_validation(m_init_param);
     if(ret != RCC_OK) return ret;
 
     const int32_t res = function(ad9361_phy, param1, param2);
@@ -493,26 +538,27 @@ class Ad9361_config_proxyWorker : public Ad9361_config_proxyWorkerBase {
     return RCC_OK;
   }
 
-  /* @brief Function that should be used to make channel-dependent libad9361 API
-   *        get calls. Also performs debug printing of function call and passed
-   *        parameters when AD9361_CONFIG_PROXY_OCPI_DEBUG defined.
-   * @param[in]   function    libad9361 API function pointer
-   * @param[in]   param       Reference to variable sent as second and last
-   *                          parameter for ad9361 API function
-   * @param[in]   functionStr Stringified function name
-   * @param[in]   ch1Disable  While channel 0 is always processing, channel 1
-   *                          may be disabled by setting this to true. This
-   *                          allows for handling of some libad9361 *_get_*
-   *                          calls falling when ch=1 and
-   *                          ad9361_phy->pdata->rx2tx2 == 0
+  /*! @brief Function that should be used to make channel-dependent libad9361
+   *         API get calls. Also performs debug printing of function call and
+   *         passed parameters when AD9361_CONFIG_PROXY_OCPI_DEBUG defined.
+   *  @param[in]   function    libad9361 API function pointer
+   *  @param[in]   param       Reference to variable sent as second and last
+   *                           parameter for ad9361 API function
+   *  @param[in]   functionStr Stringified function name
+   *  @param[in]   ch1Disable  While channel 0 is always processing, channel 1
+   *                           may be disabled by setting this to true. This
+   *                           allows for handling of some libad9361 *_get_*
+   *                           calls falling when ch=1 and
+   *                           ad9361_phy->pdata->rx2tx2 == 0
    ****************************************************************************/
   template<typename T> RCCResult
   libad9361_API_chan_get(int32_t function(struct ad9361_rf_phy*,
-      uint8_t chan, T*), T* param, const char* functionStr, bool ch1Disable = false) {
+      uint8_t chan, T*), T* param, const char* functionStr,
+      bool ch1Disable = false) {
     for(uint8_t chan=0; chan<AD9361_CONFIG_PROXY_RX_NCHANNELS; chan++) {
-      libad9361_API_print_idk(functionStr, param, chan);
+      libad9361_API_print_idk(functionStr);
 
-      RCCResult ret = ad9361_pre_API_call_validation(m_default_init_param);
+      RCCResult ret = ad9361_pre_API_call_validation(m_init_param);
       if(ret != RCC_OK) return ret;
 
       const int32_t res = function(ad9361_phy, chan, param++);
@@ -521,21 +567,20 @@ class Ad9361_config_proxyWorker : public Ad9361_config_proxyWorkerBase {
       {
         if(ad9361_phy->pdata->rx2tx2 == 0)
         {
-          break; // some _get_ calls fail when ch=1 and rx2tx2=0
+          break; // some _get_ calls (intentionally) fail when ch=1 and rx2tx2=0
         }
       }
     }
     return RCC_OK;
   }
 
-  /* @brief Function that should be used to make channel-dependent libad9361 API
-   *        set calls. Also performs debug printing of function call and passed
-   *        parameters when AD9361_CONFIG_PROXY_OCPI_DEBUG defined.
-   * @param[in]   function    libad9361 API function pointer
-   * @param[in]   ad9361_phy  first parameter for ad9361 API function
-   * @param[in]   param       Constant Reference to variable sent as second and
-   *                          last parameter for ad9361 API function
-   * @param[in]   functionStr Stringified function name
+  /*! @brief Function that should be used to make channel-dependent libad9361
+   *         API set calls. Also performs debug printing of function call and
+   *         passed parameters when AD9361_CONFIG_PROXY_OCPI_DEBUG defined.
+   *  @param[in]   function    libad9361 API function pointer
+   *  @param[in]   param       Constant Reference to variable sent as second and
+   *                           last parameter for ad9361 API function
+   *  @param[in]   functionStr Stringified function name
    ****************************************************************************/
   template<typename T> RCCResult
   libad9361_API_chan_set(int32_t function(struct ad9361_rf_phy*,
@@ -544,7 +589,7 @@ class Ad9361_config_proxyWorker : public Ad9361_config_proxyWorkerBase {
     for(uint8_t chan=0; chan<AD9361_CONFIG_PROXY_RX_NCHANNELS; chan++) {
       libad9361_API_print(functionStr, *param, chan);
 
-      RCCResult ret = ad9361_pre_API_call_validation(m_default_init_param);
+      RCCResult ret = ad9361_pre_API_call_validation(m_init_param);
       if(ret != RCC_OK) return ret;
 
       const int32_t res = function(ad9361_phy, chan, *param++);
@@ -565,12 +610,12 @@ class Ad9361_config_proxyWorker : public Ad9361_config_proxyWorkerBase {
     return RCC_OK;
   }
 
-  /* @brief The AD9361 register set determines which channel mode is used (1R1T,
-   * 1R2T, 2R1T, or 1R2T). This mode eventually determines which timing diagram
-   * the AD9361 is expecting for the TX data path pins. This function
-   * tells the FPGA bitstream which channel mode should be assumed when
-   * generating the TX data path signals.
-   ***************************************************************************/
+  /*! @brief The AD9361 register set determines which channel mode is used
+   *         (1R1T, 1R2T, 2R1T, or 1R2T). This mode eventually determines which
+   *         timing diagram the AD9361 is expecting for the TX data path pins.
+   *         This function tells the FPGA bitstream which channel mode should be
+   *         assumed when generating the TX data path signals.
+   ****************************************************************************/
   void set_FPGA_channel_config(void) {
     uint8_t general_tx_enable_filter_ctrl =
         slave.get_general_tx_enable_filter_ctrl();
@@ -585,7 +630,6 @@ class Ad9361_config_proxyWorker : public Ad9361_config_proxyWorkerBase {
   }
 
   RCCResult initialize() {
-    // start MODIFIED copy from no-OS main.c (modified to remove warnings only)
     AD9361_InitParam default_init_param = {
       /* Device selection */
       ID_AD9361,	// dev_sel
@@ -598,7 +642,7 @@ class Ad9361_config_proxyWorker : public Ad9361_config_proxyWorkerBase {
       1,		//one_rx_one_tx_mode_use_rx_num *** adi,1rx-1tx-mode-use-rx-num
       1,		//one_rx_one_tx_mode_use_tx_num *** adi,1rx-1tx-mode-use-tx-num
       1,		//frequency_division_duplex_mode_enable *** adi,frequency-division-duplex-mode-enable
-      0,		//frequency_division_duplex_independent_mode_enable *** adi,frequency-division-duplex-independent-mode-enable
+      1,		//frequency_division_duplex_independent_mode_enable *** adi,frequency-division-duplex-independent-mode-enable
       0,		//tdd_use_dual_synth_mode_enable *** adi,tdd-use-dual-synth-mode-enable
       0,		//tdd_skip_vco_cal_enable *** adi,tdd-skip-vco-cal-enable
       0,		//tx_fastlock_delay_ns *** adi,tx-fastlock-delay-ns
@@ -825,8 +869,7 @@ class Ad9361_config_proxyWorker : public Ad9361_config_proxyWorkerBase {
       NULL,	//(*ad9361_rfpll_ext_round_rate)()
       NULL	//(*ad9361_rfpll_ext_set_rate)()
     };
-    // end MODIFIED copy from no-OS main.c (modified to remove warnings only)
-    m_default_init_param = default_init_param;
+    m_init_param = default_init_param;
 
     // nasty cast below included since compiler wouldn't let us cast from
     // Ad9361_config_proxyWorkerTypes::Ad9361_config_proxyWorkerBase::Slave to
@@ -842,7 +885,7 @@ class Ad9361_config_proxyWorker : public Ad9361_config_proxyWorkerBase {
 
   // notification that ad9361_init property has been written
   RCCResult ad9361_init_written() {
-    AD9361_InitParam init_param = m_default_init_param;
+    AD9361_InitParam init_param = m_init_param;
     init_param.reference_clk_rate =
         m_properties.ad9361_init.reference_clk_rate;
     init_param.one_rx_one_tx_mode_use_rx_num =
@@ -893,8 +936,10 @@ class Ad9361_config_proxyWorker : public Ad9361_config_proxyWorkerBase {
   }
   // notification that en_state_machine_mode property has been written
   RCCResult en_state_machine_mode_written() {
-    return LIBAD9361_API_1PARAMP(&ad9361_set_en_state_machine_mode,
+    RCCResult ret = LIBAD9361_API_1PARAMP(&ad9361_set_en_state_machine_mode,
                                  m_properties.en_state_machine_mode);
+    enforce_ensm_config();
+    return ret;
   }
   // notification that en_state_machine_mode property will be read
   RCCResult en_state_machine_mode_read() {
@@ -909,7 +954,7 @@ class Ad9361_config_proxyWorker : public Ad9361_config_proxyWorkerBase {
   // notification that rx_rf_gain property will be read
   RCCResult rx_rf_gain_read() {
     return LIBAD9361_API_CHAN_GETN(&ad9361_get_rx_rf_gain,
-                                  &(m_properties.rx_rf_gain[0]));
+                                   &(m_properties.rx_rf_gain[0]));
   }
   // notification that rx_rf_bandwidth property has been written
   RCCResult rx_rf_bandwidth_written() {
@@ -1103,7 +1148,7 @@ class Ad9361_config_proxyWorker : public Ad9361_config_proxyWorkerBase {
     fastlock_profile_t profile_to_load;
     std::vector<fastlock_profile_t>::iterator it =
         find_worker_fastlock_profile(
-            m_properties.rx_fastlock_save.worker_profile_id,
+            m_properties.rx_fastlock_load.worker_profile_id,
             m_rx_fastlock_profiles);
     if(it == m_rx_fastlock_profiles.end())
     {
@@ -1391,7 +1436,7 @@ class Ad9361_config_proxyWorker : public Ad9361_config_proxyWorkerBase {
       return setError(ostr.str().c_str());
     }
     
-    // libad9361's set_no_ch_mode() is known to change TX/RX sampling freqs
+    // No-OS's set_no_ch_mode() re-initializes the AD9361!!!!
     uint32_t tx_sampling_freq;
     res = LIBAD9361_API_1PARAM(&ad9361_get_tx_sampling_freq,
                                &tx_sampling_freq);
@@ -1403,9 +1448,12 @@ class Ad9361_config_proxyWorker : public Ad9361_config_proxyWorkerBase {
 
     set_FPGA_channel_config(); // because channel config potentially changed
 
-    // libad9361's set_no_ch_mode() is known to change TX/RX sampling freqs
-    return LIBAD9361_API_1PARAMP(&ad9361_set_tx_sampling_freq,
+    // No-OS's set_no_ch_mode() re-initializes the AD9361!!!!
+    RCCResult r = LIBAD9361_API_1PARAMP(&ad9361_set_tx_sampling_freq,
                                  tx_sampling_freq);
+
+    enforce_ensm_config();
+    return r;
   }
   // notification that trx_fir_en_dis property has been written
   RCCResult trx_fir_en_dis_written() {
@@ -3134,8 +3182,81 @@ class Ad9361_config_proxyWorker : public Ad9361_config_proxyWorkerBase {
     m_properties.DATA_CLK_P_rate_Hz = DATA_CLK_P_rate_Hz;
     return RCC_OK;
   }
+  // notification that BIST_Mask_Channel_2_Q_data property has been written
+  RCCResult BIST_Mask_Channel_2_Q_data_written() {
+    uint8_t reg = slave.get_test_bist_and_data_port_test_config();
+    if(m_properties.BIST_Mask_Channel_2_Q_data) {
+      reg |= D5_BITMASK;
+    }
+    else {
+      reg &= ~D5_BITMASK;
+    }
+    slave.set_test_bist_and_data_port_test_config(reg);
+    return RCC_OK;
+  }
+  // notification that BIST_Mask_Channel_2_Q_data property will be read
+  RCCResult BIST_Mask_Channel_2_Q_data_read() {
+    uint8_t reg = slave.get_test_bist_and_data_port_test_config();
+    m_properties.BIST_Mask_Channel_2_Q_data = (reg & D5_BITMASK) == D5_BITMASK;
+    return RCC_OK;
+  }
+  // notification that BIST_Mask_Channel_2_I_data property has been written
+  RCCResult BIST_Mask_Channel_2_I_data_written() {
+    uint8_t reg = slave.get_test_bist_and_data_port_test_config();
+    if(m_properties.BIST_Mask_Channel_2_I_data) {
+      reg |= D4_BITMASK;
+    }
+    else {
+      reg &= ~D4_BITMASK;
+    }
+    slave.set_test_bist_and_data_port_test_config(reg);
+    return RCC_OK;
+  }
+  // notification that BIST_Mask_Channel_2_I_data property will be read
+  RCCResult BIST_Mask_Channel_2_I_data_read() {
+    uint8_t reg = slave.get_test_bist_and_data_port_test_config();
+    m_properties.BIST_Mask_Channel_2_I_data = (reg & D4_BITMASK) == D4_BITMASK;
+    return RCC_OK;
+  }
+  // notification that BIST_Mask_Channel_1_Q_data property has been written
+  RCCResult BIST_Mask_Channel_1_Q_data_written() {
+    uint8_t reg = slave.get_test_bist_and_data_port_test_config();
+    if(m_properties.BIST_Mask_Channel_1_Q_data) {
+      reg |= D3_BITMASK;
+    }
+    else {
+      reg &= ~D3_BITMASK;
+    }
+    slave.set_test_bist_and_data_port_test_config(reg);
+    return RCC_OK;
+  }
+  // notification that BIST_Mask_Channel_1_Q_data property will be read
+  RCCResult BIST_Mask_Channel_1_Q_data_read() {
+    uint8_t reg = slave.get_test_bist_and_data_port_test_config();
+    m_properties.BIST_Mask_Channel_1_Q_data = (reg & D3_BITMASK) == D3_BITMASK;
+    return RCC_OK;
+  }
+  // notification that BIST_Mask_Channel_1_I_data property has been written
+  RCCResult BIST_Mask_Channel_1_I_data_written() {
+    uint8_t reg = slave.get_test_bist_and_data_port_test_config();
+    if(m_properties.BIST_Mask_Channel_1_I_data) {
+      reg |= D2_BITMASK;
+    }
+    else {
+      reg &= ~D2_BITMASK;
+    }
+    slave.set_test_bist_and_data_port_test_config(reg);
+    return RCC_OK;
+  }
+  // notification that BIST_Mask_Channel_1_I_data property will be read
+  RCCResult BIST_Mask_Channel_1_I_data_read() {
+    uint8_t reg = slave.get_test_bist_and_data_port_test_config();
+    m_properties.BIST_Mask_Channel_1_I_data = (reg & D2_BITMASK) == D2_BITMASK;
+    return RCC_OK;
+  }
+
   RCCResult run(bool /*timedout*/) {
-    return RCC_ADVANCE;
+    return RCC_DONE;
   }
 };
 

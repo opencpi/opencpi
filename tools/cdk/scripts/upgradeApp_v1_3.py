@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 # This file is protected by Copyright. Please refer to the COPYRIGHT file
 # distributed with this source distribution.
 #
@@ -159,7 +159,8 @@ except:
 if (oPack != ""):
     uPack = update(oPack, packDict)
     if (uPack != oPack):
-        if ocpiutil.get_ok("do you want to change Package: " + oPack + " to: " + uPack):
+        prompt = "do you want to change Package: " + oPack + " to: " + uPack
+        if ocpiutil.get_ok(prompt=prompt):
             if (packageLC): 
                 inTree.getroot().attrib["package"] = uPack
             else : 
@@ -168,7 +169,8 @@ if (oPack != ""):
 for child in inTree.findall("Instance") + inTree.findall("instance"):
     uComp = update(child.attrib["Component"], compDict)
     if (child.attrib["Component"] != uComp):
-        if ocpiutil.get_ok("do you want to change Component: " + child.attrib["Component"] + " to: " + uComp):
+        prompt = "do you want to change Component: " + child.attrib["Component"] + " to: " + uComp
+        if ocpiutil.get_ok(prompt=prompt):
             child.attrib["Component"] = uComp
 
 print("writing file:" + outFileName)

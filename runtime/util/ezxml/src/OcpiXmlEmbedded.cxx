@@ -106,6 +106,7 @@ namespace EzXml {
 
 void artifact_addXML(const std::string &fname, const std::string &xml) {
   // Verify XML buffer
+  //TODO allow for blank lines at the end of a file
   if (not verify_XML_block(xml)) throw std::runtime_error("XML input not valid!");
   // Difference between old version and new version: old version blindly appended
   while (artifact_stripXML(fname)) {};

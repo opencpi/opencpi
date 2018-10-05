@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
+##########################################################################################
 # Get the project registry directory. This is OCPI_PROJECT_REGISTRY_DIR,
 # or OCPI_CDK_DIR/../project-registry, or /opt/opencpi/cdk.
 # If in a development environment, use the fully functional python function
@@ -25,17 +26,17 @@
 # Otherwise, this is likely a runtime-only evironment, and the registry should
 # be determined based solely on the environment and defaults.
 function getProjectRegistryDir {
-  if [ -n "$OCPI_CDK_DIR" -a -n "$(which python 2> /dev/null)" -a -r $OCPI_CDK_DIR/scripts/ocpiutil.py ]; then
-    python -c "\
-import sys; sys.path.append(\"$OCPI_CDK_DIR/scripts/\");
-import ocpiutil; print ocpiutil.get_project_registry_dir()[1];"
+  if [ -n "$OCPI_CDK_DIR" -a -n "$(command -v python3 2> /dev/null)" -a -r $OCPI_CDK_DIR/scripts/ocpiutil.py ]; then
+    python3 -c "\
+import sys; sys.path.insert(0,\"$OCPI_CDK_DIR/scripts/\");
+import ocpiassets; print (ocpiassets.Registry.get_registry_dir());"
   elif [ -n "$OCPI_PROJECT_REGISTRY_DIR" ]; then
     echo $OCPI_PROJECT_REGISTRY_DIR
   elif [ -n "$OCPI_CDK_DIR" ]; then
     # Return default registry relative to CDK
     echo $OCPI_CDK_DIR/../project-registry
   else
-    # Return default registry installed by RPMs
+    # Return default global registry installation location
     echo /opt/opencpi/project-registry
   fi
 }
@@ -75,8 +76,12 @@ function setVarsFromMake {
     [ -n "$3" ] && echo The '"make"' command is not available. 2>&1
     return 1
   }
-  eval $(eval make -n -r -s -f $1 $2 \
-	 ${quiet:+2>/dev/null} | grep '^[a-zA-Z_][a-zA-Z_]*=')
+  local vars
+  vars=$(set -o pipefail;\
+         eval make -n -r -s -f $1 $2 ${quiet:+2>/dev/null} | \
+	 grep '^[a-zA-Z_][a-zA-Z_]*=')
+  [ $? != 0 ] && return 1
+  eval $vars
 }
 
 function isPresent {
@@ -162,47 +167,20 @@ function ocpiGetToolPlatform {
 # echo the tool dir, setting OCPI_TOOL_DIR as a side effect
 function ocpiGetToolDir {
   [ -n "$OCPI_TOOL_DIR" ] || {
-    GETPLATFORM=$OCPI_CDK_DIR/platforms/getPlatform.sh
-    if test ! -f $OCPI_CDK_DIR/platforms/getPlatform.sh; then
-      echo Error:  cannot find $OCPI_CDK_DIR/platforms/getPlatforms.sh 1>&2
+    GETPLATFORM=$OCPI_CDK_DIR/scripts/getPlatform.sh
+    if test ! -f $OCPI_CDK_DIR/scripts/getPlatform.sh; then
+      echo Error:  cannot find $OCPI_CDK_DIR/scripts/getPlatforms.sh 1>&2
       exit 1
     fi
-    read v0 v1 v2 v3 v4 <<-EOF
-	`${GETPLATFORM}`
-	EOF
-    if test "$v0" == "" -o $? != 0; then
+    read v0 v1 v2 v3 v4 v5 <<< `${GETPLATFORM}`
+    if test "$v5" == "" -o $? != 0; then
       echo Error:  Failed to determine runtime platform. 1>&2
       exit 1
     fi
     # We always set this as a side-effect
     export OCPI_TOOL_PLATFORM=$v4
-    # Determine OCPI_TOOL_MODE if it is not set already
-    # It can be set to null to suppress these modes, and just use whatever has been
-    # built without modes.
-    if test "$OCPI_USE_TOOL_MODES" = "1"; then
-      if test "$OCPI_TOOL_MODE" = ""; then
-        # OCPI_TOOL_MODE not set at all, just look for one
-        for i in sd so dd do; do
-          if test -x "$OCPI_CDK_DIR/$v3/$i/ocpirun"; then
-            export OCPI_TOOL_MODE=$i
-            echo "Choosing tool mode "$i" since there are tool executables for it." 1>&2
-            break
-          fi
-        done
-      fi
-      if [ -z "$OCPI_TOOL_MODE"]; then
-        if test ! -x "$OCPI_CDK_DIR/bin/$v3/ocpirun"; then
-          echo "Could not find any OpenCPI executables in $OCPI_CDK_DIR/$v3/*"
-          if test "$OCPI_DEBUG" = 1; then do=d; else do=o; fi
-          if test "$OCPI_DYNAMIC" = 1; then sd=d; else sd=s; fi
-          export OCPI_TOOL_MODE=$sd$do
-          echo "Hopefully you are building OpenCPI from scratch.  Tool mode will be \"$OCPI_TOOL_MODE\"". 1>&1
-        fi
-      fi
-      export OCPI_TOOL_MODE=$v3/$OCPI_TOOL_MODE
-    else
-      export OCPI_TOOL_DIR=$v3
-    fi
+    export OCPI_TOOL_PLATFORM_DIR=$v5
+    export OCPI_TOOL_DIR=$v4
   }
   [ "$1" = - ] || echo $OCPI_TOOL_DIR
   return 0
@@ -213,6 +191,22 @@ function ocpiGetToolOS {
   echo ${OCPI_TOOL_DIR/-*/}
   return 0
 }
+
+# do readlink -e, but more portably
+# There are 100 ways to do this....
+function ocpiReadLinkE {
+  [ -f $1 -o -d $1 ] && python3 -c 'import os; print (os.path.realpath("'$1'"))'
+}
+
+function ocpiDirType {
+  [ -d $1 -a -f $1/Makefile ] && {
+      local type=`sed -n 's=^[ 	]*include[ 	]*.*OCPI_CDK_DIR.*/include/\(.*\)\.mk.*=\1=p' $1/Makefile | tail -1 2>/dev/null`
+      local rc=$?
+      # echo ocpiDirType of $1: rc: $rc type: $type > /dev/tty
+      [ $rc = 0 ] && echo $type
+  }
+}
+
 
 OcpiEcho=/bin/echo
 

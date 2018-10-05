@@ -1,0 +1,30 @@
+<ComponentSpec>
+
+  	<Port Name="out" Producer="true"/>
+
+    <Property Name="dataRepeat" Type="bool" Default="false" Initial='true' Description="
+    True - Multiple messages sent from the beginning of the data buffer.
+    False - Multiple messages sent from the current position of the data buffer."/>
+
+    <Property Name="numMessagesMax" Parameter="true" Type="uLong" Default="5" Description="Max number of messages to send."/>
+
+    <Property Name="messagesToSend" Type="uLong" Volatile="true" Writable="true" Default="5" Description="Counter of messages to send. This value must be
+    less than or equal to numMessagesMax. Decrements as they are sent."/>
+
+    <Property Name="messagesSent" Type="uLong" Volatile="true" Description="Messages sent counter. Initialized to 0."/>
+
+    <Property Name="dataSent" Type="uLong" Volatile="true" Description="Words sent counter. Initialized to 0."/>
+
+    <Property Name="numDataWords" Parameter="true" Type="uLong"  Default="15" Description="Max number of four byte data for the data buffer. To calculate
+    the numDataWords when dataRepeat is true, divide the largest message size (in bytes) by 4. To calculate the numDataWords when dataRepeat is false,
+    divide the sum of all the message sizes (in bytes) by 4. Dividing by four required because the data is output as a 4 byte data word."/>
+
+    <Property Name="numMessageFields" Parameter="true" Type="uLong" Default="2" Description="Due to a limitation (AV-4292), cannot use constrained elements
+    in unconstrained array declarations, so cannot directly set the second dimension for the messages property to 2. The numMessageFields property must
+    always be 2 since there are 2 message fields; the number of data bytes and opcode. So the default value must not be changed."/>
+
+    <Property Name="messages" Type="uLong" ArrayDimensions="numMessagesMax, numMessageFields" Initial="true" Description="Multidimensional array that defines
+    the record of messages to send, as well as, defines the number of data bytes and an opcode for each message."/>
+
+    <Property Name="data" Type="uLong" ArrayLength="numDataWords" Initial="true" Description="Data buffer containing the data to be sent."/>
+</ComponentSpec>

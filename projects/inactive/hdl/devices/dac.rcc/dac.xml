@@ -1,0 +1,4 @@
+<RccImplementation>
+  <xi:include href="dac_spec.xml"/>
+  <ControlInterface SizeOfConfigSpace="1m" ControlOperations="initialize,start,stop,release"/>
+</RccImplementation>

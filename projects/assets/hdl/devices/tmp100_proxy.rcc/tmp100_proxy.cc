@@ -32,9 +32,15 @@ using namespace OCPI::RCC; // for easy access to RCC data types and constants
 using namespace Tmp100_proxyWorkerTypes;
 
 class Tmp100_proxyWorker : public Tmp100_proxyWorkerBase {
-
+  RunCondition m_aRunCondition;
+public:
+  Tmp100_proxyWorker() : m_aRunCondition(RCC_NO_PORTS) {
+    //Run function should never be called
+    setRunCondition(&m_aRunCondition);
+  }
+private:
   RCCResult run(bool /*timedout*/) {
-    return RCC_ADVANCE;
+    return RCC_DONE;
   }
   RCCResult temperature_read()
   {

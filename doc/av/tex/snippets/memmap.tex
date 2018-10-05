@@ -1,126 +1,146 @@
-\subsection*{Driver Setup}
+\section{Driver Setup}
 \begin{flushleft}
 If you want to use more then 128KB of RAM, then you will need to reserve a
 block of memory during the Linux kernel boot, using the memmap parameter.  The
 memmap parameter takes a number of formats, but the one that is most useful to
 us is the following: \\
-
+\bigskip
 	memmap=SIZE\$START \\
-
+\bigskip
 Where SIZE is the number of bytes to reserve in either hex or decimal, and
 START is the physical address in hexidecimal bytes.  You *must* use even
 page boundaries (0x1000 or 4096 bytes) for all addresses and sizes. \\
-
+\subsection{Calculate Values in Preparation for Memory Reservation}
 Start by running: \\
-
-\$ dmesg | grep BIOS \\
-BIOS-provided physical RAM map: \\
- BIOS-e820: 0000000000000000 - 000000000009f800 (usable)\\
- BIOS-e820: 000000000009f800 - 00000000000a0000 (reserved)\\
- BIOS-e820: 00000000000ca000 - 00000000000cc000 (reserved)\\
- BIOS-e820: 00000000000dc000 - 00000000000e4000 (reserved)\\
- BIOS-e820: 00000000000e8000 - 0000000000100000 (reserved)\\
- BIOS-e820: 0000000000100000 - 000000005fef0000 (usable)\\
- BIOS-e820: 000000005fef0000 - 000000005feff000 (ACPI data)\\
- BIOS-e820: 000000005feff000 - 000000005ff00000 (ACPI NVS)\\
- BIOS-e820: 000000005ff00000 - 0000000060000000 (usable)\\
- BIOS-e820: 00000000e0000000 - 00000000f0000000 (reserved)\\
- BIOS-e820: 00000000fec00000 - 00000000fec10000 (reserved)\\
- BIOS-e820: 00000000fee00000 - 00000000fee01000 (reserved)\\
- BIOS-e820: 00000000fffe0000 - 0000000100000000 (reserved)\\
-
+\lstset{language=bash, backgroundcolor=\color{lightgray}, columns=flexible, breaklines=true, prebreak=\textbackslash, basicstyle=\ttfamily, showstringspaces=false,upquote=true, aboveskip=\baselineskip, belowskip=\baselineskip}
+\begin{lstlisting}
+dmesg | grep BIOS
+\end{lstlisting}
+The output will look something like:
+\begin{lstlisting}
+BIOS-provided physical RAM map:
+ BIOS-e820: 0000000000000000 - 000000000009f800 (usable)
+ BIOS-e820: 000000000009f800 - 00000000000a0000 (reserved)
+ BIOS-e820: 00000000000ca000 - 00000000000cc000 (reserved)
+ BIOS-e820: 00000000000dc000 - 00000000000e4000 (reserved)
+ BIOS-e820: 00000000000e8000 - 0000000000100000 (reserved)
+ BIOS-e820: 0000000000100000 - 000000005fef0000 (usable)
+ BIOS-e820: 000000005fef0000 - 000000005feff000 (ACPI data)
+ BIOS-e820: 000000005feff000 - 000000005ff00000 (ACPI NVS)
+ BIOS-e820: 000000005ff00000 - 0000000060000000 (usable)
+ BIOS-e820: 00000000e0000000 - 00000000f0000000 (reserved)
+ BIOS-e820: 00000000fec00000 - 00000000fec10000 (reserved)
+ BIOS-e820: 00000000fee00000 - 00000000fee01000 (reserved)
+ BIOS-e820: 00000000fffe0000 - 0000000100000000 (reserved)
+\end{lstlisting}
  You want to select a (usable) section of memory and reserve a section of that
  memory.  Once the memory is reserved, the Linux kernel will ignore it.  In
  this example, there are 3 useable sections:\\
-
- BIOS-e820: 0000000000000000 - 000000000009f800 (usable)\\
- BIOS-e820: 0000000000100000 - 000000005fef0000 (usable)\\
- BIOS-e820: 000000005ff00000 - 0000000060000000 (usable)\\
-
+\begin{lstlisting}
+ BIOS-e820: 0000000000000000 - 000000000009f800 (usable)
+ BIOS-e820: 0000000000100000 - 000000005fef0000 (usable)
+ BIOS-e820: 000000005ff00000 - 0000000060000000 (usable)
+\end{lstlisting}
 Due to the way Linux manages memory, it is recommended you pick a higher
 address (above the first 24 bits).  The best choice is the second section
 (pages 0x100-0x5fef0).  If you wanted to reserve 128MB, that would be
 0x8000 pages.  Pick the end of the block (page 0x5fef0) and subtract the
 number of pages, leaving 0x57ef0.  This would result in the following memmap
-parameter: \\
-
-	memmap=128M\$0x57EF0000 \\
-
+parameter:\\
+\bigskip
+memmap=128M\$0x57EF0000\\
+\subsection{Configure Memory Reservation}
 Once you've calculated your memmap parameter, you will need to add it to the
 kernel command line in your boot loader. \\
-
-For CentOS 6 and 7, you can use the utility "grubby". \\
-
+\bigskip
+For CentOS, you can use the utility ``grubby''. \\
+\bigskip
 This will add the parameter to all kernels in the startup menu. The single
 quotes are REQUIRED or your shell will interpret the \$0: \\
-
-sudo grubby --update-kernel=ALL --args=memmap='128M\$0x57EF0000' \\
-
-CentOS 7 uses grub2, which requires a double backslash to not interpret it:\\
-
-sudo grubby --update-kernel=ALL --args=memmap=\verb+`128M\\$0x57EF0000'+ \\
+\bigskip
+For \textbf{\textit{CentOS6}}:\\
+\begin{lstlisting}
+sudo grubby --update-kernel=ALL --args=memmap='128M\$0x57EF0000'
+\end{lstlisting}
+\textbf{\textit{CentOS 7}} uses grub2, which requires a double backslash to not interpret it:\\
+\begin{lstlisting}
+sudo grubby --update-kernel=ALL --args=memmap='128M\\$0x57EF0000'
+\end{lstlisting}
 
 To verify the current kernel has the argument set:\\
-sudo -v\\
-sudo grubby --info \$(sudo grubby --default-kernel)\\
+\begin{lstlisting}
+sudo -v
+sudo grubby --info $(sudo grubby --default-kernel)
+\end{lstlisting}
 
-CentOS 7 users should see a SINGLE backslash before the \$. \\
+\textbf{\textit{CentOS 7}} users should see a SINGLE backslash before the \$, for example: \\
+\begin{lstlisting}
+args="ro rdblacklist=nouveau crashkernel=auto rd.lvm.lv=vg.0/root quiet audit=1 boot=UUID=96933cb5-f478-4933-a0d4-16953cf47f5c memmap=128M\$0x57EF0000 LANG=en_US.UTF-8"
+\end{lstlisting}
 
-To remove the parameter:\\
-sudo grubby --update-kernel=ALL --remove-args=memmap\\
+
+
+If no longer desired, the parameter can also be removed:
+\begin{lstlisting}
+sudo grubby --update-kernel=ALL --remove-args=memmap
+\end{lstlisting}
 
 More information concerning grubby can be found at:\\
-https://access.redhat.com/documentation/en-US/Red\_Hat\_Enterprise\_Linux/7/html/System\_Administrators\_Guide/sec-Making\_Persistent\_Changes\_to\_a\_GRUB\_2\_Menu\_Using\_the\_grubby\_Tool.html\\
-
+\url{https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/7/html/System_Administrators_Guide/sec-Making_Persistent_Changes_to_a_GRUB_2_Menu_Using_the_grubby_Tool.html}
+\bigskip
 ... the memmap parameter:\\
-https://www.kernel.org/doc/Documentation/kernel-parameters.txt\\
+\url{https://www.kernel.org/doc/html/latest/admin-guide/kernel-parameters.html}
 
+\bigskip
 Note: If you have other memmap parameters, e.g. for non-OpenCPI PCI cards,
 then grubby usage will be different. The OpenCPI driver will use the first
-memmap parameter on the command line OR the parameter "opencpi\_memmap" if it
+memmap parameter on the command line OR the parameter ``opencpi\_memmap'' if it
 is explicitly given. If this parameter is given, the standard memmap command
 with the same parameters must ALSO be passed to the kernel.\\
-
+\subsection{Apply Memory Reservation}
 Reboot the system, making certain to boot from your new configuration.
+\subsection{Verify Memory Reservation}
 Once that's done, if you run 'dmesg' you should see something like this:\\
-
-\$dmesg | more\\
-Linux version 2.6.18-128.el5 (mockbuild@hs20-bc1-7.build.redhat.com) (gcc version 4.1.2 20080704 (Red Hat 4.1.2-44)) \#1 SMP Wed Dec 17 11:41:38 EST 2008 \\
-Command line: ro root=/dev/VolGroup00/LogVol00 rhgb quiet memmap=128M\$0x57EF0000\\
-BIOS-provided physical RAM map:\\
- BIOS-e820: 0000000000000000 - 000000000009f800 (usable)\\
- BIOS-e820: 000000000009f800 - 00000000000a0000 (reserved)\\
- BIOS-e820: 00000000000ca000 - 00000000000cc000 (reserved)\\
- BIOS-e820: 00000000000dc000 - 00000000000e4000 (reserved)\\
- BIOS-e820: 00000000000e8000 - 0000000000100000 (reserved)\\
- BIOS-e820: 0000000000100000 - 000000005fef0000 (usable)\\
- BIOS-e820: 000000005fef0000 - 000000005feff000 (ACPI data)\\
- BIOS-e820: 000000005feff000 - 000000005ff00000 (ACPI NVS)\\
- BIOS-e820: 000000005ff00000 - 0000000060000000 (usable)\\
- BIOS-e820: 00000000e0000000 - 00000000f0000000 (reserved)\\
- BIOS-e820: 00000000fec00000 - 00000000fec10000 (reserved)\\
- BIOS-e820: 00000000fee00000 - 00000000fee01000 (reserved)\\
- BIOS-e820: 00000000fffe0000 - 0000000100000000 (reserved)\\
-user-defined physical RAM map:\\
- user: 0000000000000000 - 000000000009f800 (usable)\\
- user: 000000000009f800 - 00000000000a0000 (reserved)\\
- user: 00000000000ca000 - 00000000000cc000 (reserved)\\
- user: 00000000000dc000 - 00000000000e4000 (reserved)\\
- user: 00000000000e8000 - 0000000000100000 (reserved)\\
- user: 0000000000100000 - 0000000057ef0000 (usable)\\
- user: 0000000057ef0000 - 000000005fef0000 (reserved)  \verb+<==+ New\\
- user: 000000005fef0000 - 000000005feff000 (ACPI data)\\
- user: 000000005feff000 - 000000005ff00000 (ACPI NVS)\\
- user: 000000005ff00000 - 0000000060000000 (usable)\\
- user: 00000000e0000000 - 00000000f0000000 (reserved)\\
- user: 00000000fec00000 - 00000000fec10000 (reserved)\\
- user: 00000000fee00000 - 00000000fee01000 (reserved)\\
- user: 00000000fffe0000 - 0000000100000000 (reserved)\\
-DMI present.\\
+\bigskip
+\begin{lstlisting}
+dmesg | more
+Linux version 2.6.18-128.el5 (mockbuild@hs20-bc1-7.build.redhat.com) (gcc version 4.1.2 20080704 (Red Hat 4.1.2-44)) #1 SMP Wed Dec 17 11:41:38 EST 2008
+Command line: ro root=/dev/VolGroup00/LogVol00 rhgb quiet memmap=128M$0x57EF0000
+BIOS-provided physical RAM map:
+ BIOS-e820: 0000000000000000 - 000000000009f800 (usable)
+ BIOS-e820: 000000000009f800 - 00000000000a0000 (reserved)
+ BIOS-e820: 00000000000ca000 - 00000000000cc000 (reserved)
+ BIOS-e820: 00000000000dc000 - 00000000000e4000 (reserved)
+ BIOS-e820: 00000000000e8000 - 0000000000100000 (reserved)
+ BIOS-e820: 0000000000100000 - 000000005fef0000 (usable)
+ BIOS-e820: 000000005fef0000 - 000000005feff000 (ACPI data)
+ BIOS-e820: 000000005feff000 - 000000005ff00000 (ACPI NVS)
+ BIOS-e820: 000000005ff00000 - 0000000060000000 (usable)
+ BIOS-e820: 00000000e0000000 - 00000000f0000000 (reserved)
+ BIOS-e820: 00000000fec00000 - 00000000fec10000 (reserved)
+ BIOS-e820: 00000000fee00000 - 00000000fee01000 (reserved)
+ BIOS-e820: 00000000fffe0000 - 0000000100000000 (reserved)
+user-defined physical RAM map:
+ user: 0000000000000000 - 000000000009f800 (usable)
+ user: 000000000009f800 - 00000000000a0000 (reserved)
+ user: 00000000000ca000 - 00000000000cc000 (reserved)
+ user: 00000000000dc000 - 00000000000e4000 (reserved)
+ user: 00000000000e8000 - 0000000000100000 (reserved)
+ user: 0000000000100000 - 0000000057ef0000 (usable)
+ user: 0000000057ef0000 - 000000005fef0000 (reserved)  <== New
+ user: 000000005fef0000 - 000000005feff000 (ACPI data)
+ user: 000000005feff000 - 000000005ff00000 (ACPI NVS)
+ user: 000000005ff00000 - 0000000060000000 (usable)
+ user: 00000000e0000000 - 00000000f0000000 (reserved)
+ user: 00000000fec00000 - 00000000fec10000 (reserved)
+ user: 00000000fee00000 - 00000000fee01000 (reserved)
+ user: 00000000fffe0000 - 0000000100000000 (reserved)
+DMI present.
+\end{lstlisting}
 
 You will see a new (reserved) area between the second (useable) section and the
 (ACPI data) section.\\
-
+\bigskip
 Now, when you run the 'make load' script, it will detect the new reserved
 area, and pass that data to the opencpi kernel module. \\
 \end{flushleft}

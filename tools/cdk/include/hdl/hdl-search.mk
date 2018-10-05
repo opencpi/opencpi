@@ -249,9 +249,10 @@ HdlCoreRef=$(infox HCR:$1:$2:$(HdlMode))$(strip \
 # If arg 1 is NOT a path that should be left alone, determine the
 #   tool-specific path to the core.
 HdlCoreRefMaybeTargetSpecificFile=$(infox HCRMTSF:$1:$2)$(strip \
-  $(if $(and $(findstring /,$1),$(findstring .,$(basename $1)),$(call HdlExists,$1)),\
-    $1,\
-    $(call HdlCoreRef,$(call HdlToolCoreRef,$1),$2)))
+  $(foreach c,$1,\
+    $(if $(and $(findstring /,$c),$(findstring .,$(basename $c)),$(call HdlExists,$c)),\
+      $c,\
+      $(call HdlCoreRef,$(call HdlToolCoreRef,$c),$2))))
 
 ################################################################################
 # $(call HdlLibraryRefFile,location-dir,target)

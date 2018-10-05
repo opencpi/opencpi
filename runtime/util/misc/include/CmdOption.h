@@ -56,7 +56,9 @@ namespace OCPI {
     };
   }
 }
-#ifdef OCPI_OPTIONS
+#ifndef OCPI_OPTIONS
+#define OCPI_OPTIONS
+#endif
 #define CMD_OPTION_S(n,b,d,t,v) CMD_OPTION(n,b,d,t,v)
 namespace {
 #if !defined(OCPI_OPTIONS_CLASS_NAME)
@@ -115,6 +117,8 @@ namespace {
 #undef CMD_OPTION_S
   OCPI_OPTIONS_CLASS_NAME OCPI_OPTIONS_NAME;
 }
+//#endif // ifdef CMD_OPTIONS
+
 
 #ifndef OCPI_OPTIONS_NO_MAIN
 #ifndef OCPI_OPTIONS_MAIN
@@ -126,7 +130,5 @@ main(int /*argc*/, const char **argv) {
   return options.main(argv, OCPI_OPTIONS_MAIN);
 }
 #endif
-
-#endif // ifdef CMD_OPTIONS
 
 #endif

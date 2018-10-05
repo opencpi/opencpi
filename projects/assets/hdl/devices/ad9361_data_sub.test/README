@@ -1,0 +1,3 @@
+No unit test for this component exists. However, a hardware-in-the-loop
+application (which is NOT a unit test) exists for testing purposes (see
+projects/assets/applications/ad9361_dac_test).

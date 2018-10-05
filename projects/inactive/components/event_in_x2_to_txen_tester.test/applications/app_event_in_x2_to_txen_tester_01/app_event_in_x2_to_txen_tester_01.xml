@@ -1,0 +1,23 @@
+<!-- The app_event_in_x2_to_txen_tester_01 application xml file -->
+<Application>
+  <Instance Component="ocpi.core.file_read" Name="file_read_0" Model="hdl">
+    <Property Name="fileName" Value="idata/app_0.in"/>
+    <Property Name="messagesInFile" Value="true"/>
+    <Property Name="suppressEOF" Value="true"/>
+  </Instance>
+  <Instance Component="ocpi.core.file_read" Name="file_read_1" Model="hdl">
+    <Property Name="fileName" Value="idata/app_0.in"/>
+    <Property Name="messagesInFile" Value="true"/>
+    <Property Name="suppressEOF" Value="true"/>
+  </Instance>
+  <Instance Component="ocpi.inactive.event_in_x2_to_txen_tester"/>
+
+  <Connection>
+    <Port Instance="file_read_0" Name="out"/>
+    <Port Instance="event_in_x2_to_txen_tester" Name="event_in_0"/>
+  </Connection>
+  <Connection>
+    <Port Instance="file_read_1" Name="out"/>
+    <Port Instance="event_in_x2_to_txen_tester" Name="event_in_1"/>
+  </Connection>
+</Application>

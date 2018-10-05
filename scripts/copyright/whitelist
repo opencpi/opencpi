@@ -1,40 +1,34 @@
- ./platforms/zynq/ntpclient
- ./projects/assets/components/dsp_comps/complex_mixer.hdl/vivado_ila/vivado_ila.dcp
- ./projects/assets/components/util_comps/socket_write.rcc/asio/configure.ac
- ./projects/assets/components/util_comps/socket_write.rcc/asio/include/Makefile.am
- ./projects/assets/components/util_comps/socket_write.rcc/asio/Makefile.am
- ./projects/assets/hdl/cards/hsmc_loopback.test/odata/stdout.expected
- ./projects/assets/hdl/platforms/matchstiq_z1/ise_constraints/matchstiq_z1.ut
- ./projects/assets/hdl/platforms/matchstiq_z1/sd_card/iveia-atlas-i-z7e.dtb
- ./projects/assets/hdl/platforms/ml605/mk605.xst-annotate
- ./projects/assets/hdl/platforms/ml605/ml605.ut
- ./projects/assets/hdl/platforms/ml605/xilinx-master-ml605.ucf-orig
- ./projects/assets/hdl/platforms/zed_ise/zed_ise.ut
- ./projects/assets/hdl/primitives/dsp_prims/cordic/sim/com.do
- ./projects/assets/hdl/primitives/dsp_prims/cordic/sim/sim.do
- ./projects/assets/hdl/primitives/i2c/timescale.v
- ./projects/assets/hdl/primitives/pcie_4243_hip_s4gx_gen2_x4_128/altpcie_hip_pipen1b.v
- ./projects/assets/hdl/primitives/pcie_4243_hip_s4gx_gen2_x4_128/pciexp_dcram.v
- ./projects/assets/hdl/primitives/stratix4/pll1.qip
- ./projects/assets/hdl/primitives/temac_v6/v6_emac_v1_3_block_bb.v
- ./projects/assets/hdl/primitives/temac_v6/v6_emac_v1_3_patch.v
- ./projects/inactive/applications/cat_xml/hello.file
- ./projects/inactive/applications/copy_xml/hello.file
- ./projects/inactive/applications/corbaURL_xml/foo
- ./projects/inactive/applications/corbaURL_xml/hello.idl
- ./projects/inactive/applications/dds_ports/specs/msg1.idl
- ./projects/inactive/applications/dds_ports/standalone_dds/Test/idl/JTest.idl
- ./projects/inactive/applications/dds_ports/standalone_dds/Test/idl/JTest.idl.bk
- ./projects/inactive/applications/fsk_modem_xml/gtkwave.cfg/BufferTransferTiming.gtkw
- ./projects/inactive/applications/fsk_modem_xml/gtkwave.cfg/PropertyTiming.gtkw
- ./projects/inactive/applications/fsk_modem_xml/gtkwave.cfg/WorkerRun.gtkw
- ./projects/inactive/applications/optical_flow_xml/runit
- ./projects/inactive/hdl/platforms/zed_zipper/devices/zipper_i2c.hdl/timescale.v
- ./projects/inactive/hdl/platforms/zed_zipper/zed_zipper.ut
- ./projects/inactive/hdl/primitives/virtex5/Ethernet_v5.v
- ./releng/acinclude/pkg.m4
- ./runtime/application/notes
- ./runtime/hdl-support/scripts/donft
- ./scripts/copyright/whitelist
- ./tools/cdk/include/xm/fortran.h
- ./tools/cdk/include/xm/xmpfc.cnf
+./doc/av/tex/generator/pdfmarks
+./platforms/zynq/ntpclient
+./projects/assets/components/dsp_comps/complex_mixer.hdl/vivado_ila/vivado_ila.dcp
+./projects/assets/hdl/platforms/matchstiq_z1/ise_constraints/matchstiq_z1.ut
+./projects/assets/hdl/platforms/matchstiq_z1/sd_card/iveia-atlas-i-z7e.dtb
+./projects/assets/hdl/platforms/ml605/mk605.xst-annotate
+./projects/assets/hdl/platforms/ml605/ml605.ut
+./projects/assets/hdl/platforms/ml605/xilinx-master-ml605.ucf-orig
+./projects/assets/hdl/platforms/zed_ise/zed_ise.ut
+./projects/assets/hdl/primitives/dsp_prims/cordic/sim/com.do
+./projects/assets/hdl/primitives/dsp_prims/cordic/sim/sim.do
+./projects/assets/hdl/primitives/i2c/timescale.v
+./projects/assets/hdl/primitives/pcie_4243_hip_s4gx_gen2_x4_128/altpcie_hip_pipen1b.v
+./projects/assets/hdl/primitives/pcie_4243_hip_s4gx_gen2_x4_128/pciexp_dcram.v
+./projects/assets/hdl/primitives/stratix4/pll1.qip
+./projects/assets/hdl/primitives/temac_v6/v6_emac_v1_3_block_bb.v
+./projects/assets/hdl/primitives/temac_v6/v6_emac_v1_3_patch.v
+./projects/inactive/applications/cat_xml/hello.file
+./projects/inactive/applications/copy_xml/hello.file
+./projects/inactive/applications/corbaURL_xml/hello.idl
+./projects/inactive/applications/dds_ports/specs/msg1.idl
+./projects/inactive/applications/dds_ports/standalone_dds/Test/idl/JTest.idl
+./projects/inactive/applications/dds_ports/standalone_dds/Test/idl/JTest.idl.bk
+./projects/inactive/applications/fsk_modem_xml/gtkwave.cfg/BufferTransferTiming.gtkw
+./projects/inactive/applications/fsk_modem_xml/gtkwave.cfg/PropertyTiming.gtkw
+./projects/inactive/applications/fsk_modem_xml/gtkwave.cfg/WorkerRun.gtkw
+./projects/inactive/applications/optical_flow_xml/runit
+./projects/inactive/hdl/platforms/zed_zipper/devices/zipper_i2c.hdl/timescale.v
+./projects/inactive/hdl/platforms/zed_zipper/zed_zipper.ut
+./projects/inactive/hdl/primitives/virtex5/Ethernet_v5.v
+./runtime/hdl-support/scripts/donft
+./scripts/copyright/whitelist
+./tools/cdk/include/xm/fortran.h
+./tools/cdk/include/xm/xmpfc.cnf

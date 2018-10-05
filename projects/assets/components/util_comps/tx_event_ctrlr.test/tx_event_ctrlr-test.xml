@@ -1,0 +1,13 @@
+<!-- This is the test xml for testing component "tx_event_ctrlr" -->
+<!--Tests UseHDLFileIo="false" Duration="5"-->
+<Tests UseHDLFileIo="false" Duration="1">
+  <Output Port="out" Script="verify.py" MessagesInFile="true" StopOnEOF="false"/>
+  <Property Name="txen" Values="true,false">
+    <!--Set Delay="0.1" Value="true"/>
+    <Set Delay="0.1" Value="false"/>
+    <Set Delay="0.1" Value="true"/>
+    <Set Delay="0.1" Value="false"/>
+    <Set Delay="1" Value="true"/>
+    <Set Delay="1" Value="false"/-->
+  </Property>
+</Tests>

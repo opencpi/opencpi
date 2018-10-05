@@ -32,8 +32,15 @@ using namespace OCPI::RCC; // for easy access to RCC data types and constants
 using namespace Matchstiq_z1_pca9535_proxyWorkerTypes;
 
 class Matchstiq_z1_pca9535_proxyWorker : public Matchstiq_z1_pca9535_proxyWorkerBase {
+  RunCondition m_aRunCondition;
+public:
+  Matchstiq_z1_pca9535_proxyWorker() : m_aRunCondition(RCC_NO_PORTS) {
+    //Run function should never be called
+    setRunCondition(&m_aRunCondition);
+  }
+private:
   RCCResult run(bool /*timedout*/) {
-    return RCC_ADVANCE;
+    return RCC_DONE;
   }
 
   RCCResult frontLNA_enable_written(){

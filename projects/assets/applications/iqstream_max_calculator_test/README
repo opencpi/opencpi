@@ -1,0 +1,8 @@
+Script calls to generate idata:
+
+./generate.py idata/max_I_0_Q_1024 0 1024 0 0
+./generate.py idata/max_I_1024_Q_0 1024 0 0 0
+./generate.py idata/max_I_0_Q_0 0 0 0 0
+./generate.py idata/max_I_1024_Q_1024 1024 1024 0 0
+./generate.py idata/max_I_is_valid_false_max_Q_is_valid_false 0 0 1 0
+./generate.py idata/10_ZLM_passthrough 0 0 0 10

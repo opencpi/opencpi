@@ -42,9 +42,7 @@ if len(sys.argv) != 3:
 num_samples = int(sys.argv[1])
 filename = sys.argv[2]
 
-#I/Q pair in a 32-bit vector (31:0) is Q(0) Q(1) I(0) I(1) in bytes 0123 little-Endian
-#Thus Q is indexed at byte 0 and I is indexed at byte 2
-dt_iq_pair = np.dtype((np.uint32, {'real_idx':(np.int16,2), 'imag_idx':(np.int16,0)}))
+dt_iq_pair = np.dtype((np.uint32, {'real_idx':(np.int16,0), 'imag_idx':(np.int16,2)}))
 
 #Create an input file with three complex tones
 #Tones are at 5 Hz, 13 Hz, and 27 Hz; Fs=100 Hz

@@ -23,13 +23,16 @@
 
 #include "ContainerWorker.h"
 #include "HdlOCCP.h"
-#include "HdlAccess.h"
+#include "XferAccess.h"
 
 namespace OCPI {
   namespace HDL {
 
     // The class that knows about WCI interfaces and the OCCP.
     class Device;
+    typedef DataTransfer::Access Access;
+    typedef DataTransfer::Accessor Accessor;
+    typedef DataTransfer::RegisterOffset RegisterOffset;
     class WciControl : public Access, virtual public OCPI::Container::Controllable,
       virtual public OCPI::API::PropertyAccess, virtual OCPI::Container::WorkerControl {
       
@@ -51,13 +54,13 @@ namespace OCPI {
     public:
       WciControl(Device &device, ezxml_t implXml, ezxml_t instXml, OCPI::Util::Property *props, bool doInit = true);
       virtual ~WciControl();
+      inline size_t index() const { return m_occpIndex; }
     protected:
       // This is shadowed by real application workers, but is used when this is 
       // standalone.
       //      const std::string &name() const { return m_wName; }
       void init(bool redo, bool doInit);
       bool isReset() const;
-      inline size_t index() const { return m_occpIndex; }
       void propertyWritten(unsigned ordinal) const;
       void propertyRead(unsigned ordinal) const;
       // Add the hardware considerations to the property object that supports
@@ -96,7 +99,7 @@ namespace OCPI {
 	uint32_t status = 0;                                                      \
         uint##wb##_t val##wb;							  \
 	uint##n##_t val;						          \
-	if (m_properties.m_registers) {					          \
+	if (m_properties.registers()) {					          \
 	  if (!info.m_readError ||					          \
 	      !(status =						          \
 		get32Register(status, OccpWorkerRegisters) &		          \
@@ -124,8 +127,8 @@ namespace OCPI {
 	} else								          \
 	  val = (uint##n##_t)						\
 	    (n == 64 ?							\
-	     m_properties.m_accessor->get64(m_properties.m_base + offset, &status) : \
-	     m_properties.m_accessor->get(m_properties.m_base + offset,	sizeof(uint##n##_t), \
+	     m_properties.accessor()->get64(m_properties.base() + offset, &status) : \
+	     m_properties.accessor()->get(m_properties.base() + offset,	sizeof(uint##n##_t), \
 					  &status));	\
 	if (status)							          \
 	  throwPropertyReadError(status, offset, n/8, val);			\
@@ -184,6 +187,35 @@ OCPI_DATA_TYPES
 			     size_t offset, char *val, size_t length, unsigned idx) const;
       unsigned getStringSequenceProperty(const OCPI::API::Property &, char * *,
 					 size_t ,char*, size_t) const;
+    };
+    // This is a dummy worker for accesssing workers outside the purview of executing
+    // applications.  It is used by ocpihdl when it wants to talk to HDL workers based on
+    // the artifact XML embedded in the bitstream, which is the result of the whole bitstream
+    // build process, not user-authored.  Many of the methods don't do anything.
+    struct DirectWorker : public OCPI::Container::Worker, public WciControl {
+      std::string m_name, m_wName;
+      Access &m_wAccess;
+      unsigned m_timeout;
+      DirectWorker(Device &dev, const Access &cAccess, Access &wAccess, ezxml_t impl,
+		   ezxml_t inst, const char *idx, unsigned timeout);
+      virtual void control(const char *op); // virtual due to driver access, custom in this class
+      virtual void status();                // virtual due to driver access, custom in this class
+      OCPI::Container::Port *findPort(const char *);
+      const std::string &name() const;
+      void
+      prepareProperty(OCPI::Util::Property &, volatile uint8_t *&, const volatile uint8_t *&);
+      OCPI::Container::Port &
+      createPort(const OCPI::Util::Port &, const OCPI::Util::PValue *);
+      OCPI::Container::Port &
+      createOutputPort(OCPI::Util::PortOrdinal, size_t, size_t, const OCPI::Util::PValue*)
+        throw (OCPI::Util::EmbeddedException);
+      OCPI::Container::Port &
+      createInputPort(OCPI::Util::PortOrdinal, size_t, size_t, const OCPI::Util::PValue*)
+        throw (OCPI::Util::EmbeddedException);
+      OCPI::Container::Application *application();
+      OCPI::Container::Worker *nextWorker();
+      void read(size_t, size_t, void *);
+      void write(size_t, size_t, const void *);
     };
   }
 }

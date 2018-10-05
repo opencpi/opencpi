@@ -31,6 +31,6 @@ echo LFSR_bit_reverse $OCPI_TEST_LFSR_bit_reverse
 echo number of samples in output file: $(xxd -b -c 4 $FILENAME | wc -l)
 CMD="xxd -b -c 4 -l $NUM_BYTES $FILENAME"
 echo "output from: $CMD"
-echo "         Q LSB    Q MSB    I LSB    I MSB"
+echo "         I LSB    I MSB    Q LSB    Q MSB"
 exec $CMD
 

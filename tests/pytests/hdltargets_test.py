@@ -39,7 +39,7 @@ import os
 import sys
 import logging
 from shutil import copyfile
-sys.path.insert(0, os.path.realpath('../../tools/cdk/scripts/'))
+sys.path.insert(0, os.path.realpath(os.getenv('OCPI_CDK_DIR') + '/scripts/'))
 import ocpiutil
 # Initialize ocpiutil's logging settings which switch
 # based on OCPI_LOG_LEVEL

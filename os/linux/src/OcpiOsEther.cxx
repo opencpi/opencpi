@@ -32,6 +32,7 @@
 #include <unistd.h>
 #include <algorithm>
 #include <vector>
+#include "ocpi-config.h"
 #ifdef OCPI_OS_macos
 #include <arpa/inet.h>
 #include <net/ethernet.h>
@@ -740,11 +741,12 @@ namespace OCPI {
 	      break;
 	  }
 	}
-	if (err.empty())
+	if (err.empty()) {
 	  if (o.buffer)
 	    o.ifm = (struct if_msghdr *)o.buffer;
 	  else
 	    err = "sysctl failed after 10 retries";
+	}
 #else
         // Put together a list of possible interface names.
         struct if_nameindex *if_ni, *i;

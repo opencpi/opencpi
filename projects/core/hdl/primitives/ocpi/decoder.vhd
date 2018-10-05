@@ -310,7 +310,9 @@ begin
                        write_enable  => my_write_enables(i),
                        read_enable   => my_read_enables(i),
                        offset_out    => my_offsets(i)
-                                        (width_for_max(properties(i).bytes_1)-1 downto 0),
+-- FIXME: we don't have an attribute here that includes the sequence-length prefix length
+-- So for now we set it to the max.  Its a minor thing but might add a few gates...
+                                        (width_for_max(properties(i).bytes_1+8)-1 downto 0),
 --                       index_out     => indices(i)(worker.decode_width-1 downto 0),
                        data_out      => data_outputs(i));
 --            indices(i)(indices(i)'left downto worker.decode_width) <= (others => '0');

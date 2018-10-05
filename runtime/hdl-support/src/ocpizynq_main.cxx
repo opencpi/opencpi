@@ -32,6 +32,7 @@
 #include <unistd.h>
 #include <sys/mman.h>
 #include <time.h>
+#include "ocpi-config.h"
 #include "OcpiUtilMisc.h"
 #include "CmdOption.h"
 #include "HdlZynq.h"

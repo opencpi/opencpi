@@ -1,0 +1,45 @@
+<!--      CPU                  FPGA                                          -->
+<!--     ______     _________________________________________                -->
+<!--    +      +   +                                         +               -->
+<!--    |      | i |          container               ___    |               -->
+<!--    |      | n |                                 +   +   |               -->
+<!--    |      |*t*|*********************************|dev|   |               -->
+<!--    |      | e |    (3)                    *     +___+   |               -->
+<!--    |      | r |                           *             |               -->
+<!--    |      | c |          ______________   *             |               -->
+<!--    |      | o |         +  assembly   +   *(1)          |               -->
+<!--    |      | n |         |             |   *             |               -->
+<!--    |      | n |   (2)   |             |   *             |               -->
+<!--    |      |*e*|*********|             |****             |               -->
+<!--    |      | c |         |             |                 |               -->
+<!--    |      | t |         |             |                 |               -->
+<!--    +______+   +_________+_____________+_________________+               -->
+<!--                                                                         -->
+<HdlContainer Config="cfg_0rx_1tx_fmcomms_2_3_lpc_lvds" Only="zed,zed_ise">
+
+  <!-- (1) external-to-FPGA device (worker) to FPGA assembly connections -->
+  <!--Connection External="<assembly_port_name>"
+                 Port="<device_port_name>"
+                 Device="<device_name>"
+                 Card="<card_name>" (required if card is used)
+                 Slot="<slot_name>" (required if more than one platform slot of the card slot type exists) -->
+  <!-- e.g. <Connection External="in_to_asm_rx_path_from_adc"  Port="out" Device="lime_adc"/> -->
+  <!-- e.g. <Connection External="out_from_asm_tx_path_to_dac" Port="in"  Device="lime_dac"/> -->
+  <Connection External="out_from_asm_tx_path_to_dac" Port="in"  Device="ad9361_dac0" Card="fmcomms_2_3_lpc"/>
+
+  <!-- (2) FPGA assembly to CPU interconnect connections -->
+  <!--Connection External="<assembly_port_name>"
+                 Interconnect="<interconnect_name, probably zynq or pcie>"/-->
+  <!-- e.g. <Connection External="out_from_asm_rx_path" Interconnect="zynq"/> -->
+  <!-- e.g. <Connection External="in_to_asm_tx_path"    Interconnect="zynq"/> -->
+
+  <!-- (3) external-to-FPGA device (worker) to CPU interconnect connections (bypassing the assembly)-->
+  <!--Connection Device="<device_name>"
+                 Port="<device_port_name>"
+                 Card="<card_name>" (required if card is used)
+                 Slot="<slot_name>" (required if more than one platform slot of the card slot type exists)
+                 Interconnect="<interconnect_name, probably zynq or pcie>"/-->
+  <!-- e.g. <Connection Device="lime_adc" Port="out" Interconnect="pcie"/> -->
+  <!-- e.g. <Connection Device="lime_dac" Port="in"  Interconnect="pcie"/> -->
+
+</HdlContainer>

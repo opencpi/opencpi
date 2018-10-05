@@ -1,6 +1,6 @@
-<tests useHDLFileIo='true' Duration='20'>
-  <output port='out' script='verify.py' view='view.sh 64'/> <!-- Argument to script is num bytes to view-->
-  <property name='ZLM_WHEN_NUM_SAMPLES_REACHED_p' values='true'/> <!-- must have this for sim -->
+<tests useHDLFileIo='true' Duration='60'> <!-- Duration set to 2x expected max necessary runtime -->
+  <output port='out' script='verify.py' view='view.sh 64'/> <!-- Argument to script is num bytes to view -->
+  <property name='ZLM_WHEN_NUM_SAMPLES_REACHED_p' values='true'/>
   <property name='num_samples' values='-1,0,1,2,3,4,64,128,1024,32768'/>
   <property name='mode' values='count,walking,LFSR,fixed'/>
   <property name='enable' values='false,true'/>

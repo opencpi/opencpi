@@ -22,7 +22,7 @@
   <Property Name="ZLM_WHEN_NUM_SAMPLES_REACHED_p" Type="bool"
                                    Parameter="true"
                                    Default="false"
-                                   Description="When value is true and num_samples property value is not -1, worker will generate Zero-Length-Message after num_samples amount of samples have been sent out the output port."/>
+                                   Description="When value is true and num_samples property value is not -1, worker will generate Zero-Length-Message after num_samples amount of samples have been sent out the output port. Note this functionality is independent of the value of the enable property."/>
 
   <!-- Initial Properties -->
   <Property Name="messageSize_bytes" Type="ulong"
@@ -42,7 +42,9 @@
                                Readable="true"
                                Writable="true"
                                Default="0x5a5a"
-                               Description="The value of this property will be used for I (and the bit-reversed version of this value will be used for Q) to send to the output port when the mode property's value is 'fixed'."/>
+                               Description="The value of this property will be used for I (and the bit-reversed version of this value will be used for Q) to send to the output port when the mode property's value is 'fixed'.
+                                            Array index 0 corresponds to the 15th (most significant) I bit and the 16-DATA_BIT_WIDTH_p Q bit of the out port,
+                                            array index 1 corresponds to the 14th (next-to-most significant) I bit and the 15-DATA_BIT_WIDTH_p Q bit of the out port, etc..."/>
   <Property Name="mode" Type="enum"
                         Enums="count,walking,LFSR,fixed"
                         Readable="true"
@@ -53,12 +55,22 @@
                           Readable="true"
                           Writable="true"
                           Default="true"
-                          Description="When the worker is not in reset, this property must have a value of true for the data to be sent to the output."/>
+                          Description="When the worker is not in reset, this property must have a value of true for the data to be sent to the output. Note that this property has no effect on the ZLM operation (see ZLM_WHEN_NUM_SAMPLES_REACHED_p parameter property)."/>
   <Property Name="LFSR_bit_reverse" Type="bool"
                                     Readable="true"
                                     Writable="true"
                                     Default="true"
                                     Description="Used to determine the LFSR shift direction. When true, the DATA_BIT_WIDTH_p-bits wide LFSR will be reversed for both I and Q."/>
+  <Property Name="mask_I" Type="ushort"
+                          Readable="true"
+                          Writable="true"
+                          Default="0xffff"
+                          Description="I data will be bitwise anded with this mask before being sent to out port."/>
+  <Property Name="mask_Q" Type="ushort"
+                          Readable="true"
+                          Writable="true"
+                          Default="0xffff"
+                          Description="Q data will be bitwise anded with this mask before being sent to out port."/>
 
   <!-- Ports -->
   <!-- Complex signed samples (Q0.15 I, Q0.15 Q). This port generates data while obeying backpressure. This port is disabled when either the enable property has a value of false or when the num_samples property has a value of greater than 0 and num_samples amount of samples have been sent out this port. -->

@@ -1,0 +1,22 @@
+<!-- The iqstream_max_calculator_test application xml file -->
+<application done="file_write">
+  <Instance Component="ocpi.core.file_read"
+            Connect="iqstream_max_calculator_rcc_start">
+    <Property Name="messagesInFile" value="true"/>
+  </Instance>
+  <Instance Component="ocpi.assets.util_comps.iqstream_max_calculator"
+            Model="rcc"
+            Name="iqstream_max_calculator_rcc_start"
+            Connect="iqstream_max_calculator_hdl"/>
+  <Instance Component="ocpi.assets.util_comps.iqstream_max_calculator"
+            Model="hdl"
+            Name="iqstream_max_calculator_hdl"
+            Connect="iqstream_max_calculator_rcc_end"/>
+  <Instance Component="ocpi.assets.util_comps.iqstream_max_calculator"
+            Model="rcc"
+            Name="iqstream_max_calculator_rcc_end"
+            Connect="file_write"/>
+  <Instance Component="ocpi.core.file_write">
+    <Property Name="messagesInFile" value="true"/>
+  </Instance>
+</application>

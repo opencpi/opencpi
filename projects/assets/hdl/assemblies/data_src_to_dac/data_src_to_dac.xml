@@ -1,0 +1,12 @@
+<!-- The data_src_to_dac HDL assembly xml file -->
+<HdlAssembly>
+
+  <Instance Worker="data_src">
+    <Property Name="DATA_BIT_WIDTH_p" Value="12"/>
+  </Instance>
+
+  <Connection Name="out_from_asm_tx_path_to_dac" External="producer">
+    <Port Instance="data_src" Name="out"/>
+  </Connection>
+
+</HdlAssembly>

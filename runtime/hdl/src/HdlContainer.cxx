@@ -268,7 +268,7 @@ namespace OCPI {
 	: OC::ApplicationBase<Container, Application, Worker>(con, *this, a_name, props)
       {}
       OC::Worker & createWorker(OC::Artifact *art, const char *appInstName, ezxml_t impl,
-				ezxml_t inst, OC::Worker *slave, bool hasMaster,
+				ezxml_t inst, const OC::Workers &slaves, bool hasMaster,
 			        size_t member, size_t crewSize, const OU::PValue *wParams);
     };
 
@@ -284,10 +284,10 @@ namespace OCPI {
       friend class ExternalPort;
       Container &m_container;
       Worker(Application &app, OC::Artifact *art, const char *a_name, ezxml_t implXml,
-	     ezxml_t instXml, OC::Worker *a_slave, bool a_hasMaster, size_t a_member,
+	     ezxml_t instXml, const OC::Workers &a_slaves, bool a_hasMaster, size_t a_member,
 	     size_t a_crewSize, const OA::PValue* execParams) :
         OC::WorkerBase<Application, Worker, Port>(app, *this, art, a_name, implXml, instXml,
-						  a_slave, a_hasMaster, a_member, a_crewSize,
+						  a_slaves, a_hasMaster, a_member, a_crewSize,
 						  execParams),
         WciControl(app.parent().hdlDevice(), implXml, instXml, properties()),
         m_container(app.parent())
@@ -378,10 +378,10 @@ OCPI_DATA_TYPES
     };
     OC::Worker & Application::
     createWorker(OC::Artifact *art, const char *appInstName, ezxml_t impl, ezxml_t inst,
-		 OC::Worker *slave, bool hasMaster, size_t member, size_t crewSize,
+		 const OC::Workers &slaves, bool hasMaster, size_t member, size_t crewSize,
 		 const OCPI::Util::PValue *wParams) {
-      assert(!slave);
-      return *new Worker(*this, art, appInstName, impl, inst, slave, hasMaster, member, crewSize,
+      assert(slaves.empty());
+      return *new Worker(*this, art, appInstName, impl, inst, slaves, hasMaster, member, crewSize,
 			 wParams);
     }
     // This port class really has two cases: externally connected ports and
@@ -798,7 +798,7 @@ OCPI_DATA_TYPES
       const char *myName = mPort.m_name.c_str();
       // Find connections attached to this port
       ezxml_t conn, ic = 0, icw = 0, ad = 0, adw = 0;
-      for (conn = ezxml_cchild(myXml()->parent, "connection"); conn; conn = ezxml_next(conn)) {
+      for (conn = ezxml_cchild(myXml()->parent, "connection"); conn; conn = ezxml_cnext(conn)) {
         const char
           *from = ezxml_cattr(conn, "from"), // instance with user port
           *to = ezxml_cattr(conn, "to"),     // instance with provider port
@@ -813,7 +813,8 @@ OCPI_DATA_TYPES
 	  else
 	    continue;
 	  // We have a connection.  Check to see if it is an inserted adapter which we skip over.
-          for (ezxml_t ix = ezxml_cchild(myXml()->parent, "instance"); ix; ix = ezxml_next(ix)) {
+          for (ezxml_t ix = ezxml_cchild(myXml()->parent, "instance"); ix;
+	       ix = ezxml_cnext(ix)) {
             const char *ixName = ezxml_cattr(ix, "name");
             if (ixName &&
                 ((iAmTo && !strcasecmp(ixName, from)) ||
@@ -824,7 +825,7 @@ OCPI_DATA_TYPES
 		continue;
 	      // find the connection on the other side of the inserted adapter
 	      for (ezxml_t c = ezxml_cchild(myXml()->parent, "connection"); 
-		   ixName && c; c = ezxml_next(c)) {
+		   ixName && c; c = ezxml_cnext(c)) {
 		const char
 		  *iFrom = ezxml_cattr(c, "from"), // instance with user port
 		  *iTo = ezxml_cattr(c, "to");     // instance with provider port
@@ -847,7 +848,7 @@ OCPI_DATA_TYPES
 	  }
           // We have a connection.  See if it is to a container adapter, which in turn would be
 	  // connected to an interconnect.  No other adapters are expected yet.
-          for (ad = ezxml_cchild(myXml()->parent, "adapter"); ad; ad = ezxml_next(ad)) {
+          for (ad = ezxml_cchild(myXml()->parent, "adapter"); ad; ad = ezxml_cnext(ad)) {
             const char *adName = ezxml_cattr(ad, "name");
             if (adName &&
                 ((iAmTo && !strcasecmp(adName, from)) ||
@@ -855,7 +856,7 @@ OCPI_DATA_TYPES
               // We have a connection on this port to an adapter instance.  Find the worker
 	      const char *adwName = ezxml_cattr(ad, "worker");
 	      if (adwName)
-		for (adw = ezxml_cchild(myXml()->parent, "worker"); adw; adw = ezxml_next(adw)) {
+		for (adw = ezxml_cchild(myXml()->parent, "worker"); adw; adw = ezxml_cnext(adw)) {
 		  const char *nameAttr = ezxml_cattr(adw, "name");
 		  if (nameAttr && !strcasecmp(nameAttr, adwName))
 		    break;
@@ -864,13 +865,14 @@ OCPI_DATA_TYPES
 		throw OU::Error("For port \"%s\": adapter worker missing for connection", myName);
 	      // Find the attached interconnect instance
 	      const char *attach = ezxml_cattr(ad, "attachment");
-	      for (ic = ezxml_cchild(myXml()->parent, "interconnect"); ic; ic = ezxml_next(ic)) {
+	      for (ic = ezxml_cchild(myXml()->parent, "interconnect"); ic;
+		   ic = ezxml_cnext(ic)) {
 		const char *icName = ezxml_cattr(ic, "attachment");
 		if (icName && !strcasecmp(icName, attach)) {
 		  // See if this interconnect worker is connected to this adapter
 		  const char *iciName = ezxml_cattr(ic, "name");
 		  ezxml_t c;
-		  for (c = ezxml_cchild(myXml()->parent, "connection"); c; c = ezxml_next(c)) {
+		  for (c = ezxml_cchild(myXml()->parent, "connection"); c; c = ezxml_cnext(c)) {
 		    const char
 		      *cfrom = ezxml_cattr(c,"from"), // instance with user port
 		      *cto = ezxml_cattr(c,"to");     // instance with provider port
@@ -890,7 +892,7 @@ OCPI_DATA_TYPES
 	  }
           // We have a connection.  See if it is to an external interconnect.  FIXME i/o later
 	  if (!ic)
-	    for (ic = ezxml_child(myXml()->parent, "interconnect"); ic; ic = ezxml_next(ic)) {
+	    for (ic = ezxml_child(myXml()->parent, "interconnect"); ic; ic = ezxml_cnext(ic)) {
 	      const char *icName = ezxml_attr(ic, "name");
 	      if (icName &&
 		  ((iAmTo && !strcmp(icName, from)) ||
@@ -900,7 +902,7 @@ OCPI_DATA_TYPES
 	  if (ic) {
 	    const char *icwName = ezxml_attr(ic, "worker");
 	    if (icwName)
-	      for (icw = ezxml_child(myXml()->parent, "worker"); icw; icw = ezxml_next(icw)) {
+	      for (icw = ezxml_child(myXml()->parent, "worker"); icw; icw = ezxml_cnext(icw)) {
 		const char *nameAttr = ezxml_attr(icw, "name");
 		if (nameAttr && !strcmp(nameAttr, icwName))
 		  break;

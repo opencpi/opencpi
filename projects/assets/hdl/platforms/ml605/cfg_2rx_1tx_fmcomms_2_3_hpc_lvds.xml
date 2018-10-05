@@ -1,10 +1,10 @@
 <hdlconfig constraints="fmcomms_2_3_hpc_ad9361_adc_sub_ad9361_dac_sub_LVDS">
   <!-- comm buses (e.g. I2C/SPI) -->
-  <device name="fmcomms_2_3_i2c"  card="fmcomms_2_3_hpc" slot="fmc_hpc">
-    <property name="CP_CLK_FREQ_p" value="125e6"/> <!-- we MUST provide to this worker the ml605's control plane clock freq value -->
-    <property name="FMC_GA1" value="0"/> <!-- we MUST provide to this worker the ml605's hardwired value for FMC HPC slot -->
-    <property name="FMC_GA0" value="0"/> <!-- we MUST provide to this worker the ml605's hardwired value for FMC HPC slot -->
-  </device>
+  <!--device name="fmcomms_2_3_i2c"  card="fmcomms_2_3_hpc" slot="fmc_hpc"--> <!-- TODO - FIXME - add I2C worker once the FMCOMMS EEPROM IC is utilized -->
+    <!--property name="CP_CLK_FREQ_p" value="125e6"/--> <!-- we MUST provide to this worker the ml605's control plane clock freq value -->
+    <!--property name="FMC_GA1" value="0"/--> <!-- we MUST provide to this worker the ml605's hardwired value for FMC HPC slot -->
+    <!--property name="FMC_GA0" value="0"/--> <!-- we MUST provide to this worker the ml605's hardwired value for FMC HPC slot -->
+  <!--/device-->
   <device name="ad9361_spi"  card="fmcomms_2_3_hpc">
     <property name="CP_CLK_FREQ_HZ_p" value="125e6"/> <!-- we MUST provide to this worker the ml605's control plane clock freq value -->
   </device>
@@ -21,7 +21,9 @@
     <property name='FB_CLK_Delay'   value='7'/>
     <property name='TX_Data_Delay'  value='0'/>
   </device>
-  <device name="ad9361_config"  card="fmcomms_2_3_hpc" slot="fmc_hpc"/>
+  <device name="ad9361_config"  card="fmcomms_2_3_hpc" slot="fmc_hpc">
+    <property name='pin_control_p' value='true'/>
+  </device>
 
   <!-- 2 RX channel(s), 1 TX channel(s) data interface(s) -->
   <device name="ad9361_adc_sub" card="fmcomms_2_3_hpc" slot="fmc_hpc"/>

@@ -72,7 +72,7 @@ architecture rtl of fir_complex_sse_worker is
   signal take              : std_logic;
   signal force_som         : std_logic;
   signal force_eom         : std_logic;
-  type state_t is (INIT_s, WAIT_s, SEND_s);
+  type state_t is (INIT_s, WAIT_s, SEND_s, TERM_CURR_MSG_s);
   signal current_state     : state_t;
   -- temp signals for old VHDL
   signal raw_byte_enable   : std_logic_vector(3 downto 0);
@@ -122,7 +122,7 @@ begin
   -- Zero-Length Message FSM
   -- the zlm_fsm is being depreciated, instead see dc_offset_filter.vhd
   -- for recommended mechanism for dealing with primitive latency
-  -----------------------------------------------------------------------------  
+  -----------------------------------------------------------------------------
 
   zlm_fsm : process (ctl_in.clk)
   begin
@@ -145,6 +145,11 @@ begin
               current_state <= SEND_s;
             elsif (in_in.som = '1' and in_in.valid = '0') then
               current_state <= WAIT_s;
+            elsif (force_som = '1' and force_eom = '1' and out_in.ready = '0') then
+              current_state <= SEND_s;
+              force_som     <= '1';
+              force_eom     <= '1';
+              take          <= '0';
             end if;
           when WAIT_s =>
             if (in_in.valid = '1') then
@@ -153,13 +158,27 @@ begin
               current_state <= SEND_s;
             end if;
           when SEND_s =>
-            take <= '0';
-            if (msg_cnt /= 1 and out_in.ready = '1') then
-              force_eom     <= '1';
-            elsif (out_in.ready = '1') then
-              current_state <= INIT_s;
-              force_som     <= '1';
-              force_eom     <= '1';
+            if (out_in.ready = '1') then
+              if (msg_cnt /= 1 and out_in.ready = '1') then
+                current_state <= TERM_CURR_MSG_s;
+                force_eom     <= '1';
+                take <= '1';
+              else
+                take <= '0';
+                current_state <= INIT_s;
+                force_som     <= '1';
+                force_eom     <= '1';
+              end if;
+            else
+              force_som     <= force_som;
+              force_eom     <= force_eom;
+              take          <= take;
+            end if;
+          when TERM_CURR_MSG_s =>
+            force_eom     <= '1';
+            if (out_in.ready = '1') then
+              force_eom     <= '0';
+              current_state <= SEND_s;
             end if;
         end case;
 
@@ -178,7 +197,7 @@ begin
     if rising_edge(ctl_in.clk) then
       if(ctl_in.reset = '1' or force_eom = '1') then
         msg_cnt   <= (0 => '1', others => '0');
-      elsif (odata_vld = '1') then
+      elsif (out_in.ready = '1' and odata_vld = '1') then
         if(msg_cnt = max_sample_cnt) then
           msg_cnt <= (0 => '1', others => '0');
         else
@@ -282,7 +301,7 @@ begin
     port map (
       CLK      => ctl_in.clk,
       RST      => ctl_in.reset,
-      DIN      => in_in.data(DATA_WIDTH_c-1+16 downto 16),
+      DIN      => in_in.data(DATA_WIDTH_c-1 downto 0),
       DIN_VLD  => enable,
       DOUT     => i_odata,
       DOUT_VLD => odata_vld,
@@ -304,7 +323,7 @@ begin
     port map (
       CLK      => ctl_in.clk,
       RST      => ctl_in.reset,
-      DIN      => in_in.data(DATA_WIDTH_c-1 downto 0),
+      DIN      => in_in.data(DATA_WIDTH_c-1+16 downto 16),
       DIN_VLD  => enable,
       DOUT     => q_odata,
       DOUT_VLD => open,
@@ -325,8 +344,8 @@ begin
     end if;
   end process backPressure;
 
-  out_out.data        <= std_logic_vector(resize(signed(i_odata),16)) &
-                         std_logic_vector(resize(signed(q_odata),16));
+  out_out.data        <= std_logic_vector(resize(signed(q_odata),16)) &
+                         std_logic_vector(resize(signed(i_odata),16));
   out_out.byte_enable <= (others => '1');
 
   -----------------------------------------------------------------------------

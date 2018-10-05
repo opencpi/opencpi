@@ -1,4 +1,34 @@
-
+<!-- device worker for Si5351C I2C-Programmable Clock Generator IC-->
+<!--        __________________________________________________________       -->
+<!--       | FPGA                                                     |      -->
+<!--       | (represented by       /\                                 |      -->
+<!--       | OpenCPI platform)     | control plane interface exposes  |      -->
+<!--       |                       | each Si5351C register as a       |      -->
+<!--       |                _______V_____     uchar property          |      -->
+<!--       | ______________|_______|_____|__                          |      -->
+<!--       || si5351.hdl           |        |          (other device  |      -->
+<!--       ||______________________|________|           workers on    |      -->
+<!--       | /\intr |oeb   |_______|_____|              I2C bus.....) |      -->
+<!--       | |      |              /\                        /\    /\ |      -->
+<!--       | |      |  raw property| ........................:     :  |      -->
+<!--       | |      |     interface| : ............................:  |      -->
+<!--       | |      |          ____V_:_:_                             |      -->
+<!--       | |      |  _______|____|_:_:_|___                         |      -->
+<!--       | |      | | <>_i2c.hdl | : :     | worker/platform/card-  |      -->
+<!--       | |      | |  __________|_:_:___  | specific subdevice     |      -->
+<!--       | |      | | | raw prop arbiter | | worker which arbitrates|      -->
+<!--       | |      | | |__________________| | I2C bus access         |      -->
+<!--       | |      | |_______|_____|________|                        |      -->
+<!--       | |      |         /\    /\                                |      -->
+<!--       | |      |         |     | I2C bus signals                 |      -->
+<!--       |_|______V_________V_____V_________________________________|      -->
+<!--         |      |         |.....|... (other                              -->
+<!--         |      |         |     |...  IC devices)                        -->
+<!--        _|______|_________|_____|_________________________________       -->
+<!--       |INTR    OEB       SDA  SCL                                |      -->
+<!--       | Si5351C IC                                               |      -->
+<!--       |__________________________________________________________|      -->
+<!--                                                                         -->
 <HdlDevice language='vhdl' FirstRawProperty='dev_status'>
   <ComponentSpec/>
   <!-- I2C read/write transactions require additional time to complete -->

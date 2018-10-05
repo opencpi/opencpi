@@ -54,6 +54,7 @@ static int mymain(const char **argv) {
   valid_verbs["get"]=1;
   valid_verbs["strip"]=2;
   valid_verbs["add"]=2;
+  valid_verbs["check"]=1;
 
   if (not valid_verbs.count(argv[0])) {
     std::string e = "Invalid verb '";
@@ -83,7 +84,7 @@ static int mymain(const char **argv) {
       buffer << src.rdbuf();
     }
     xml = buffer.str();
-    OX::artifact_addXML(argv[1],buffer.str()); // Throws if invalid XML
+    OX::artifact_addXML(argv[1],xml); // Throws if invalid XML
   }
 
   // get
@@ -94,6 +95,12 @@ static int mymain(const char **argv) {
       return 1;
     }
     std::cout << xml;
+  }
+
+  // check
+  if (0 == strcmp("check", argv[0])) {
+    OX::artifact_getXML(argv[1], xml);
+    return xml.empty() ? 1 : 0;
   }
 
   // strip

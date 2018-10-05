@@ -34,9 +34,9 @@ namespace OCPI {
 
 Worker::
 Worker(Application & app, Artifact *art, const char *a_name, ezxml_t impl, ezxml_t inst,
-       OC::Worker *a_slave, bool a_hasMaster, size_t a_member, size_t a_crewSize,
+       const OC::Workers &a_slaves, bool a_hasMaster, size_t a_member, size_t a_crewSize,
        const OU::PValue *wParams)
-  : OC::WorkerBase<Application,Worker,Port>(app, *this, art, a_name, impl, inst, a_slave,
+  : OC::WorkerBase<Application,Worker,Port>(app, *this, art, a_name, impl, inst, a_slaves,
 					    a_hasMaster, a_member, a_crewSize, wParams),
     OCPI::Time::Emit(&parent().parent(), "Worker", a_name), 
     m_entry(art ? art->getDispatch(ezxml_cattr(impl, "name")) : NULL), m_user(NULL),
@@ -121,10 +121,10 @@ setError(const char *fmt, va_list ap) {
 }
 
 OC::Worker &Worker::
-getSlave() {
-  if (!slave())
+getSlave(unsigned n) {
+  if (slaves().empty() || n >= slaves().size())
     throw OU::Error("No slave has been set for worker '%s'", name().c_str());
-  return *slave();
+  return *slaves()[n];
 }
 
 Worker::
@@ -287,7 +287,8 @@ rccTake(RCCPort *rccPort, RCCBuffer *oldBuffer, RCCBuffer *newBuffer)
 	 throw OU::EmbeddedException(OU::PORT_COUNT_MISMATCH, "run condition mask is invalid",
 				     OU::ApplicationRecoverable);
      // Found a C-language run condition
-     m_cRunCondition.setRunCondition(*wd->runCondition);
+     m_cRunCondition.setRunCondition(wd->runCondition->portMasks, wd->runCondition->timeout,
+				     wd->runCondition->usecs);
      setRunCondition(m_cRunCondition);
    } else // Use our default rundition
      setRunCondition(m_defaultRunCondition);
@@ -344,22 +345,24 @@ rccTake(RCCPort *rccPort, RCCBuffer *oldBuffer, RCCBuffer *newBuffer)
      }
    }  
    // Now create and initialize the worker properties
-   if (m_dispatch) {
-     if (m_info.propertySize)
+   if (m_dispatch) { // A C language worker.  The properties are initialized to zero here
+     if (m_info.propertySize) {
        m_context->properties = new char[m_info.propertySize + 4];
+       memset(m_context->properties, 0, sizeof(char)*m_info.propertySize);
+     }
    } else
      try {
        pthread_setspecific(Driver::s_threadKey, this);
        m_user = ((RCCConstruct *)m_entry->dispatch)(m_entry, m_info);
        m_context->properties = m_user->rawProperties(m_info.propertySize);
+       // A C++ worker has properties initialized in the base class constructor so that the
+       // workers actual derived constructor can initialize properties conveniently.
      } catch (std::string &e) {
        throw OU::Error("RCC Worker C++ constructor failed with an unknown exception: %s",
 		       e.c_str());
      } catch (...) {
        throw OU::Error("RCC Worker C++ constructor failed with an unknown exception");
      }
-   if (m_context->properties)
-     memset(m_context->properties, 0, sizeof(char)*m_info.propertySize);
  }
 
  // Called from the generic getPort when the port is not found.
@@ -586,7 +589,9 @@ run(bool &anyone_run) {
       if (m_runCondition->m_timeout)
 	m_runTimer.reset();
       if (m_context->runCondition) {
-	m_cRunCondition.setRunCondition(*m_context->runCondition);
+	m_cRunCondition.setRunCondition(m_context->runCondition->portMasks,
+					m_context->runCondition->timeout,
+					m_context->runCondition->usecs);
 	setRunCondition(m_cRunCondition);
       } else
 	setRunCondition(m_defaultRunCondition);
@@ -1184,14 +1189,20 @@ OCPI_CONTROL_OPS
        assert(arg == o.m_nArgs - 1);
        size_t l_maxLength = buf.m_rccBuffer->maxLength;
        if (o.m_nArgs == 1) {
-	 assert(buf.m_rccBuffer->length_ % m.m_elementBytes == 0);
+	 if (buf.m_rccBuffer->length_ % m.m_elementBytes)
+	   throw OU::Error("buffer length %zu is not a multiple of sequence element size %zu",
+			   buf.m_rccBuffer->length_, m.m_elementBytes);
+	 //assert(buf.m_rccBuffer->length_ % m.m_elementBytes == 0);
 	 *a_length = buf.m_rccBuffer->length_ / m.m_elementBytes;
        } else {
 	 *a_length = *(uint32_t *)p;
 	 l_maxLength -= m.m_offset + m.m_align;
 	 p += m.m_align;
        }
-       assert(!m.m_sequenceLength || *a_length <= m.m_sequenceLength);
+       if (m.m_sequenceLength && *a_length > m.m_sequenceLength)
+	 throw OU::Error("Sequence length %zu exceeds maximum for protocol: %zu",
+			 *a_length, m.m_sequenceLength);
+       //assert(!m.m_sequenceLength || *a_length <= m.m_sequenceLength);
        if (capacity)
 	 *capacity = l_maxLength / m.m_elementBytes;
      }
@@ -1360,8 +1371,8 @@ OCPI_CONTROL_OPS
 
 
    RCCUserSlave::
-   RCCUserSlave()
-     : m_worker(((OCPI::RCC::Worker *)pthread_getspecific(Driver::s_threadKey))->getSlave())
+   RCCUserSlave(unsigned n)
+     : m_worker(((OCPI::RCC::Worker *)pthread_getspecific(Driver::s_threadKey))->getSlave(n))
    {
    }
 #if 0
@@ -1369,122 +1380,5 @@ OCPI_CONTROL_OPS
    ~RCCUserSlave() {
    }
 #endif
-   RunCondition::
-   RunCondition()
-     : m_portMasks(m_myMasks), m_timeout(false), m_usecs(0), m_allocated(NULL), m_allMasks(0) {
-     m_myMasks[0] = RCC_ALL_PORTS; // all connected ports must be ready
-     m_myMasks[1] = 0;
-     m_allMasks = m_myMasks[0];
-   }
-   RunCondition::
-   RunCondition(RCCPortMask pm, ...) :
-     m_timeout(false), m_usecs(0), m_allocated(NULL), m_allMasks(0) {
-     va_list ap;
-     va_start(ap, pm);
-     initMasks(ap);
-     va_end(ap);
-     va_start(ap, pm);
-     setMasks(pm, ap);
-     va_end(ap);
-   }
-   RunCondition::
-   RunCondition(RCCPortMask *rpm, uint32_t usecs, bool timeout)
-     : m_portMasks(NULL), m_timeout(timeout), m_usecs(usecs), m_allocated(NULL), m_allMasks(0) {
-     setPortMasks(rpm);
-   }
-   RunCondition::
-   ~RunCondition() {
-     delete [] m_allocated;
-   }
-   void RunCondition::
-   initMasks(va_list ap) {
-     unsigned n;
-     RCCPortMask m;
-     for (n = 2; (m = va_arg(ap, RCCPortMask)); n++)
-	;
-     if (n < sizeof(m_myMasks)/sizeof(RCCPortMask))
-       m_portMasks = m_allocated = new RCCPortMask[n];
-     else
-       m_portMasks = m_myMasks;
-   }
-   void RunCondition::
-   setMasks(RCCPortMask first, va_list ap) {
-     RCCPortMask
-       *pms = m_portMasks,
-       m = first;
-     do {
-       *pms++ = m;
-       m_allMasks |= m;
-     } while ((m = va_arg(ap, RCCPortMask)));
-     *pms++ = 0;
-   }
-   void RunCondition::
-   setPortMasks(RCCPortMask pm, ...) {
-     delete [] m_allocated;
-     m_allocated = NULL;
-     m_allMasks = 0;
-     va_list ap;
-     va_start(ap, pm);
-     initMasks(ap);
-     va_end(ap);
-     va_start(ap, pm);
-     setMasks(pm, ap);
-     va_end(ap);
-   }
-   void RunCondition::
-   setPortMasks(RCCPortMask *rpm) {
-     delete [] m_allocated;
-     m_allocated = NULL;
-     m_allMasks = 0;
-     m_portMasks = NULL;
-     if (rpm) {
-       unsigned n;
-       for (n = 0; rpm[n]; n++)
-	 ;
-       if (n >= sizeof(m_myMasks)/sizeof(RCCPortMask))
-	 m_portMasks = m_allocated = new RCCPortMask[n + 1];
-       else
-	 m_portMasks = m_myMasks;
-       RCCPortMask m;
-       RCCPortMask *pms = m_portMasks;
-       do {
-	 *pms++ = m = *rpm++;
-	 m_allMasks |= m;
-       } while (m);
-     }
-   }
-    void RunCondition::
-    activate(OCPI::OS::Timer &tmr, unsigned nPorts) {
-      if (m_timeout)
-	tmr.reset(m_usecs / 1000000, (m_usecs % 1000000) * 1000);
-      // fix up default run condition when there are no ports at all
-      if (!nPorts && m_portMasks && m_portMasks[0] == RCC_ALL_PORTS) {
-	if (m_timeout)
-	  m_portMasks[0] = RCC_NO_PORTS;
-	else
-	  m_portMasks = NULL;
-      }
-      m_hasRun = false;
-    }
-    bool RunCondition::
-    shouldRun(OCPI::OS::Timer &timer, bool &timedOut, bool &bail) {
-      if (!m_portMasks) // no port mask array means run all the time
-	return true;
-      if (m_timeout && timer.expired()) {
-	ocpiInfo("WORKER TIMED OUT, elapsed time = %u,%u", 
-		 timer.getElapsed().seconds(), timer.getElapsed().nanoseconds());
-	timedOut = true;
-	return true;
-      }
-      // If no port masks, then we don't run except for timeouts, checked above
-      if (!m_portMasks[0]) {
-	if (m_timeout && !m_hasRun) {
-	  m_hasRun = true;
-	  return true; // run if we're in period execution and haven't run at all yet
-	} else
-	  bail = true;
-      }
-      return false;
-    }
   }
 }

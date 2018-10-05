@@ -43,10 +43,8 @@ WciPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
     m_worker->m_wciClock = clock;
   }
   if (x &&
-      ((err = OE::checkAttrs(x, GENERIC_IMPL_CONTROL_ATTRS, "ResetWhileSuspended",
-			     "Clock", "MyClock", "Timeout", "Count", "Name", "Pattern",
-			     "master",
-			     (void *)0)) ||
+      ((err = OE::checkAttrs(x, GENERIC_IMPL_CONTROL_ATTRS, "ResetWhileSuspended", "Timeout",
+			     "Count", "Name", "Pattern", "master", (void *)0)) ||
        (err = OE::getNumber(x, "Timeout", &m_timeout, 0, 0)) ||
        (err = OE::getBoolean(x, "ResetWhileSuspended", &m_resetWhileSuspended))))
     return;
@@ -325,7 +323,7 @@ emitPropertyAttributeConstants(FILE *f, Language lang) {
 	      hdlComment(lang));
       first = false;
     }
-    if (pr.m_baseType == OA::OCPI_String && pr.m_stringLengthExpr.length())
+    if (pr.m_baseType == OA::OCPI_String)
       emitConstant(f, pr.m_name, "string_length", pr.m_stringLength, lang);
     if (pr.m_isSequence && pr.m_sequenceLengthExpr.length())
       emitConstant(f, pr.m_name, "sequence_length", pr.m_sequenceLength, lang);
@@ -455,7 +453,7 @@ emitSkelSignals(FILE *f) {
       return;
     for (PropertiesIter pi = m_worker->m_ctl.properties.begin();
 	 pi != m_worker->m_ctl.properties.end(); pi++)
-      if ((*pi)->m_isVolatile) {
+      if ((*pi)->m_isVolatile || ((*pi)->m_isReadable && !(*pi)->m_isWritable)) {
 	const OU::Property &pr = **pi;
 	if (pr.m_isSequence)
 	  fprintf(f,

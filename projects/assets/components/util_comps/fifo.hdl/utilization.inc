@@ -1,59 +1,25 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Utilization Report for Worker "fifo"
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\textbf{Worker Build Configuration ``0'':}\\
-Table entries are a result of building the worker with the following parameter sets:\
-\begin{itemize}
-	\item \verb+ocpi_endian=little+
-	\item \verb+ocpi_debug=false+
-	\item \verb+ZLM_WHEN_ONESHOT_DONE_p=false+
-	\item \verb+FIFO_DEPTH_p=8192+
-\end{itemize}
-\begin{scriptsize}
-	\begin{table}[H]
-	\captionsetup{justification=raggedright,singlelinecheck=false}
-	\caption{Worker Build Configuration ``0''}
-	\begin{tabular}{|c|c|c|c|c|c|c|c|}
-		\hline
-		\rowcolor{blue}
-		OpenCPI Target & Tool    & Version & Device          & Registers & LUTs & Fmax (MHz) & Memory/Special Functions                         \\
-		\hline
-		stratix4       & Quartus & 15.1.0  & N/A             & 291       & 350  & N/A        & N/A                                              \\
-		\hline
-		virtex6        & ISE     & 14.7    & 6vcx75tff484-2  & 191       & 8044 & 255.582    & \begin{tabular}{@{}c@{}}RAM64Ms=1536\end{tabular}\\
-		\hline
-		zynq           & Vivado  & 2017.1  & xc7z020clg400-3 & 373       & 7948 & 249.004    & N/A                                              \\
-		\hline
-		zynq\_ise      & ISE     & 14.7    & 7z010clg400-3   & 191       & 8028 & 307.390    & \begin{tabular}{@{}c@{}}RAM64Ms=1536\end{tabular}\\
-		\hline
-	\end{tabular}
-	\end{table}
-\end{scriptsize}
-\textbf{Worker Build Configuration ``1'':}\\
-Table entries are a result of building the worker with the following parameter sets:\
-\begin{itemize}
-	\item \verb+ocpi_endian=little+
-	\item \verb+ocpi_debug=false+
-	\item \verb+ZLM_WHEN_ONESHOT_DONE_p=true+
-	\item \verb+FIFO_DEPTH_p=8192+
-\end{itemize}
-\begin{scriptsize}
-	\begin{table}[H]
-	\captionsetup{justification=raggedright,singlelinecheck=false}
-	\caption{Worker Build Configuration ``1''}
-	\begin{tabular}{|c|c|c|c|c|c|c|c|}
-		\hline
-		\rowcolor{blue}
-		OpenCPI Target & Tool    & Version & Device          & Registers & LUTs & Fmax (MHz) & Memory/Special Functions                         \\
-		\hline
-		stratix4       & Quartus & 15.1.0  & N/A             & 291       & 342  & N/A        & N/A                                              \\
-		\hline
-		virtex6        & ISE     & 14.7    & 6vcx75tff484-2  & 191       & 8034 & 253.615    & \begin{tabular}{@{}c@{}}RAM64Ms=1536\end{tabular}\\
-		\hline
-		zynq           & Vivado  & 2017.1  & xc7z020clg400-3 & 372       & 7956 & 249.004    & N/A                                              \\
-		\hline
-		zynq\_ise      & ISE     & 14.7    & 7z010clg400-3   & 191       & 8031 & 307.390    & \begin{tabular}{@{}c@{}}RAM64Ms=1536\end{tabular}\\
-		\hline
-	\end{tabular}
-	\end{table}
-\end{scriptsize}
+% Generated on Fri Oct  5 08:45:57 2018
+
+% It is best to wrap this table in \begin{landscape} and \end{landscape} in its including doc
+\begin{tiny}
+    \begin{longtable}[l]{* {9}{|c}|}
+    \captionsetup{justification=raggedright,singlelinecheck=false}
+    \caption{Resource Utilization Table for worker: fifo}\\
+        \hline
+        \rowcolor{blue}
+            Configuration & OCPI Target & Tool    & Version & Device          & Registers (Typ) & LUTs (Typ) & Fmax (MHz) (Typ) & Memory/Special Functions \\
+            \hline
+            0             & zynq        & Vivado  & 2017.1  & xc7z020clg400-3 & 370             & 7913       & N/A              & N/A \\
+            \hline
+            0             & virtex6     & ISE     & 14.7    & 6vcx75tff484-2  & 191             & 8032       & 267.551          & \begin{tabular}{@{}l@{}}RAM64M: 1536\end{tabular} \\
+            \hline
+            0             & stratix4    & Quartus & 17.1.0  & N/A             & 286             & 344        & N/A              & \begin{tabular}{@{}l@{}}Block Memory Bits: 278494\end{tabular} \\
+            \hline
+            1             & zynq        & Vivado  & 2017.1  & xc7z020clg400-3 & 409             & 7989       & N/A              & N/A \\
+            \hline
+            1             & virtex6     & ISE     & 14.7    & 6vcx75tff484-2  & 191             & 8035       & 253.615          & \begin{tabular}{@{}l@{}}RAM64M: 1536\end{tabular} \\
+            \hline
+            1             & stratix4    & Quartus & 17.1.0  & N/A             & 286             & 348        & N/A              & \begin{tabular}{@{}l@{}}Block Memory Bits: 278494\end{tabular} \\
+            \hline
+        \end{longtable}
+\end{tiny}

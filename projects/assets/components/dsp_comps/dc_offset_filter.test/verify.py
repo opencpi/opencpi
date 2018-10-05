@@ -48,10 +48,10 @@ bypass = os.environ.get("OCPI_TEST_bypass")
 
 #Read input and output data files as complex int16
 ofile = open(OFILENAME, 'rb')
-dout = np.fromfile(ofile, dtype=np.dtype((np.uint32, {'real_idx':(np.int16,2), 'imag_idx':(np.int16,0)})), count=-1)
+dout = np.fromfile(ofile, dtype=np.dtype((np.uint32, {'real_idx':(np.int16,0), 'imag_idx':(np.int16,2)})), count=-1)
 ofile.close()
 ifile = open(IFILENAME, 'rb')
-din = np.fromfile(ifile, dtype=np.dtype((np.uint32, {'real_idx':(np.int16,2), 'imag_idx':(np.int16,0)})), count=-1)
+din = np.fromfile(ifile, dtype=np.dtype((np.uint32, {'real_idx':(np.int16,0), 'imag_idx':(np.int16,2)})), count=-1)
 ifile.close()
 
 #Ensure output data is not all zeros

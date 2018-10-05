@@ -42,7 +42,7 @@ static void usage(const char *name, const char *error_message, HdlPlatform curre
 	  "    bb_bw              # Baseband bandwidth (0.125 - 14) MHz\n"
 	  "    bb_gain            # Baseband gain (5 - 60) dB\n"
 	  "    runtime            # Runtime of app (1 - 5) seconds\n"
-	  "Example: ./target-linux-x13_3-arm/testbench 1000 5 400 10 9 14 1\n",
+	  "Example: ./target-xilinx13_3/testbench 1000 5 400 10 9 14 1\n",
        	  error_message, 
 	  name, 
 	  currentPlatform==matchstiq_z1 ? "0.125 - 5" : "3.84",

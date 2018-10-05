@@ -1,4 +1,4 @@
-<HdlImplementation Language="vhdl">
+<HdlWorker Language="vhdl">
   <xi:include href="file_read_spec.xml"/>
   
   <!-- Current working directory string -->
@@ -8,4 +8,4 @@
   <specproperty name="fileName" readable='true'/>
   <specproperty name="suppressEOF" readable='true'/>
   <streaminterface name="out" datawidth='32'/>
-</HdlImplementation>
+</HdlWorker>

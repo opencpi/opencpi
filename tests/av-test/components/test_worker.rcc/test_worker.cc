@@ -33,7 +33,7 @@ using namespace Test_workerWorkerTypes;
 
 class Test_workerWorker : public Test_workerWorkerBase {
   RCCResult run(bool /*timedout*/) {
-    return RCC_ADVANCE;
+    return RCC_ADVANCE_DONE;
   }
 };
 

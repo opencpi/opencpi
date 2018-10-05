@@ -34,7 +34,9 @@ Workers=\
 	adcx.hdl \
 	dac.hdl \
 	gbe.hdl \
-	icap.hdl
+	icap.hdl \
+	lime_spi_em.hdl \
+	lime_tx_em.hdl
 
 Tests=
 

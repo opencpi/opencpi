@@ -19,6 +19,7 @@
  */
 #include "cl.h"
 #include "cl_ext.h"
+#include "ocpi-config.h"
 #include "OcpiOsDebugApi.h"
 #include "OcpiOsLoadableModule.h"
 #include "OcpiDriverManager.h"

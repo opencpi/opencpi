@@ -1,1 +1,0 @@
-../../ad9361_adc.test/scripts/run_app_FMCOMMS3.sh

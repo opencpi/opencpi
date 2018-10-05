@@ -1,0 +1,736 @@
+\iffalse
+This file is protected by Copyright. Please refer to the COPYRIGHT file
+distributed with this source distribution.
+
+This file is part of OpenCPI <http://www.opencpi.org>
+
+OpenCPI is free software: you can redistribute it and/or modify it under the
+terms of the GNU Lesser General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License along
+with this program. If not, see <http://www.gnu.org/licenses/>.
+\fi
+
+%----------------------------------------------------------------------------------------
+% Update the docTitle and docVersion per document
+%----------------------------------------------------------------------------------------
+\def\docTitle{Benchmarking non-OCPI PCIe Data Throughput on the ML605}
+\def\docVersion{1.0}
+%----------------------------------------------------------------------------------------
+\input{Benchmarking_header.tex}
+\date{Version \docVersion} % Force date to be blank and override date with version
+\title{\docTitle}
+\lhead{\small {\docTitle} }
+%----------------------------------------------------------------------------------------
+\begin{document}
+\maketitle
+\thispagestyle{fancy}
+\newpage
+
+	\begin{center}
+	\textit{\textbf{Revision History}}
+		\begin{table}[H]
+		\label{table:revisions} % Add "[H]" to force placement of table
+			\begin{tabularx}{\textwidth}{|c|X|l|}
+			\hline
+			\rowcolor{blue}
+			\textbf{Revision} & \textbf{Description of Change} & \textbf{Date} \\
+		    \hline
+			1.0.0-alpha & Initial document creation & 02/22/2017 \\
+			\hline
+			\end{tabularx}
+		\end{table}
+	\end{center}
+
+\newpage
+
+\tableofcontents
+
+\newpage
+
+\listoffigures
+
+\newpage
+
+\listoftables
+
+\newpage
+
+\section{References}
+
+
+\section{PCIe Tx data rate, non-OCPI (FPGA -$>$ Host)}
+
+
+\subsection{Setup Folder and Create a Coregen Project}
+
+\begin{lstlisting}{language=bash}
+$mkdir nonocpi
+$cd nonocpi
+$mkdir coregen
+$cd coregen
+$coregen&
+\end{lstlisting}
+
+File -$>$ New Project
+\begin{itemize}
+\item{Family: Virtex6}
+\item{Device: xc6vlx240t}
+\item{Package: ff1156}
+\item{Speed Grade: -1}
+\item{Everything else: default}
+\end{itemize}
+\subsection{Use Coregen to recreate PCIe endpoint block for non-OCPI implementation}
+View By Name Tab --$>$ Standadr Bus Interfaces --$>$ PCI Express
+\begin{itemize}
+
+\item Right click on Virtex-6 Intergrated Block for PCI Express, Version 1.7, and select Customize and Generate[[BR]]
+\item Do \textbf{not} select Version 2.5, as this implements an AXI interface, not the TRN interface used in current OCPI designs on the ML605.
+
+\end{itemize}
+
+Once Generated with the parameters below, check that the output shell file exhibits the same parameters as the existing shell file for the OCPI implementation.
+
+\textbf{bold} - must be changed from the default value\\
+$<$ $>$ - grayed-out field based on previously entered values
+if a value is not explicitly below, it is to remain at the default value.
+
+
+\subsubsection{Page 1}
+
+Component name - v6\_pcie\_v2\_5\\
+Lane width - x4\\
+Link Speed - 5 GT/s\\
+Freq(MHz) - 250\\
+
+\subsubsection{Page 2}
+
+Bar0 - \textbf{32 bit memory, 16 Megabytes worth, Value FF000000}
+
+Bar1 - \textbf{32 bit memory, 64 Kilobytes worth, value FFFF0000}
+
+Expansion Rom - 0x00000000
+
+\subsubsection{Page 3}
+Vendor ID - 10EE\\
+Device ID - \textbf{4243}\\
+Revision ID - \textbf{02}\\
+Subsystem Vendor ID - 10EE\\
+Subsystem ID - 0007\\
+Base Class - 05\\
+Sub-Class - 00\\
+Interface - 00\\
+Class Code - $<$050000$>$\\
+Base Class - $<$simple communications controllers$>$\\
+Base Class - $<$07h$>$\\
+Sub-Class/Interface Value - $<$Generic XT compatible serial controller$>$\\
+Sub-Class - $<$00h$>$\\
+Interface - $<$00h$>$\\
+Cardbus CIS Pointer - 00000000\\
+\subsubsection{Page 4}
+
+$<$all default$>$ \\
+Capability Version $<$2$>$ \\
+Device Port/Type $<$PCI\_Express\_Endpoint\_device$>$ \\
+Capabilities Register $<$0002$>$  \\
+\\
+Max Payload Size $<$512 bytes$>$ \\
+Extended Tag Field $<$False$>$ \\
+Phantom Functions $<$No function number bits used$>$ \\
+Acceptable L0s Latency $<$Maximum of 64ns$>$ \\
+Acceptable L1 Latency $<$No limit$>$ \\
+Device Capabilities Register $<$00000E02$>$  \\
+\\
+Completion Timeout Disable Supported $<$False$>$ \\
+Completion Timeout Ranges Supported: $<$Range B$>$ \\
+Device Capabilities 2 Register $<$00000002$>$  \\
+\\
+BRAM Config - Performance Level - High \\
+
+
+\subsubsection{Page 5}
+Supported Link Speeds $<$2$>$ \\
+Maximum Link Width $<$4$>$ \\
+Link Capabilities Register $<$0003F442$>$ \\
+Hardware Autonomous Speed Disable $<$false$>$ \\
+Enable Slot Clock Configuration $<$false$>$ \\
+
+\subsubsection{Page 6}
+Enable INTx $<$true$>$  \\
+Enable MSI Capability Structure $<$true$>$ \\
+64-bit Adress Capable $<$true$>$ \\
+Multible Message Capable $<$1 vector$>$  \\
+Enable MSIx Capability Structure $<$false$>$ \\
+
+\subsubsection{Page 7}
+Power Management Registers \\
+Device Specific Initialization $<$false$>$ \\
+D1 Support $<$false$>$ \\
+D2 Support $<$false$>$ \\
+PME Support from: \\
+D0 $<$true$>$ \\
+D1 $<$true$>$ \\
+D2 $<$true$>$ \\
+D3hot $<$true$>$\\
+D3cold $<$false$>$\\
+No Soft Reset $<$true$>$  \\
+
+
+Power Consumption \\
+D0 $<$0$>$ x $<$0$>$ \\
+D0 $<$0$>$ x $<$0$>$ \\
+D0 $<$0$>$ x $<$0$>$ \\
+D0 $<$0$>$ x $<$0$>$  \\
+Power Dissipation \\
+D0 $<$0$>$ x $<$0$>$ \\
+D0 $<$0$>$ x $<$0$>$ \\
+D0 $<$0$>$ x $<$0$>$ \\
+D0 $<$0$>$ x $<$0$>$ \\
+
+\subsubsection{Page 8}
+Enable DSN Capability true \\
+Enable VC Capability false \\
+Enable VSEC Capability false \\
+PCI Configuration Space Enable false? \\
+PCI Express Extended Configuration Space Enable false?  \\
+
+\subsubsection{Page 9}
+Generate Xilinx Development Board specific UCF true \\
+PCIe Block Location Selection <grayed out>  \\
+
+\subsubsection{Page 10}
+Trim TLP Digest ECRC false \\
+Endpoint: Unlock false \\
+Endpoint: PME\_Turn\_Off false \\
+Pipeline Registers for Transaction Block RAM Buffers none  \\
+\\
+Link Layer Module Advanced Settings \\
+Override ACK/NAK Latency false \\
+Override Replay Timer true \\
+Override Function add \\
+Override Value 0026  \\
+
+\subsubsection{Page 11}
+Disable Lane Reversal false \\
+Force No Scrambling false \\
+
+Upconfigure Capable - Default   \\
+Disable TX ASPM LOs - Default  \\
+
+Pipeline for PIPE Interface None \\
+Link Number - Default \\
+PCIe DRP Ports false \\
+
+Reference Clock Frequency - 250MHz  \\
+
+
+\subsection{Existing OCPI Params Used As Reference}
+The ML605 PCIe IP core used within the OCPI framework is at opencpi/hdl/primitives/pcie\_4243\_trn\_v6\_gtx\_x4\_250, and the ip customization selections are in the file v6\_pcie\_v1\_7.v, and are as follows:
+\begin{lstlisting}{language=verilog}
+// Project    : Virtex-6 Integrated Block for PCI Express
+// File       : v6_pcie_v1_7.v
+// Version    : 1.7
+//--F
+//-- Description: Virtex6 solution wrapper : Endpoint for PCI Express
+(* CORE_GENERATION_INFO = "v6_pcie_v1_7, v6_pcie_v1_7, {LINK_CAP_MAX_LINK_SPEED=2,
+LINK_CAP_MAX_LINK_WIDTH=04,
+PCIE_CAP_DEVICE_PORT_TYPE=0000,
+DEV_CAP_MAX_PAYLOAD_SUPPORTED=2,
+USER_CLK_FREQ=3,
+REF_CLK_FREQ=2,
+MSI_CAP_ON=TRUE,
+MSI_CAP_MULTIMSGCAP=0,
+MSI_CAP_MULTIMSG_EXTENSION=0,
+MSIX_CAP_ON=FALSE,
+TL_TX_RAM_RADDR_LATENCY=0,
+TL_TX_RAM_RDATA_LATENCY=2,
+TL_RX_RAM_RADDR_LATENCY=0,
+TL_RX_RAM_RDATA_LATENCY=2,
+TL_RX_RAM_WRITE_LATENCY=0,
+VC0_TX_LASTPACKET=29,
+VC0_RX_RAM_LIMIT=7FF,
+VC0_TOTAL_CREDITS_PH=32,
+VC0_TOTAL_CREDITS_PD=308,
+VC0_TOTAL_CREDITS_NPH=12,
+VC0_TOTAL_CREDITS_CH=36,
+VC0_TOTAL_CREDITS_CD=308,
+
+VC0_CPL_INFINITE=TRUE,
+DEV_CAP_PHANTOM_FUNCTIONS_SUPPORT=0,
+DEV_CAP_EXT_TAG_SUPPORTED=FALSE,
+LINK_STATUS_SLOT_CLOCK_CONFIG=FALSE,
+ENABLE_RX_TD_ECRC_TRIM=FALSE,
+DISABLE_LANE_REVERSAL=TRUE,
+DISABLE_SCRAMBLING=FALSE,
+DSN_CAP_ON=TRUE,
+PIPE_PIPELINE_STAGES=0,
+REVISION_ID=02,
+VC_CAP_ON=FALSE}" *)
+
+module v6_pcie_v1_7 # (
+  parameter        ALLOW_X8_GEN2 = "FALSE",
+  parameter        BAR0 = 32'hFF000000,
+  parameter        BAR1 = 32'hFFFF0000,
+  parameter        BAR2 = 32'h00000000,
+  parameter        BAR3 = 32'h00000000,
+  parameter        BAR4 = 32'h00000000,
+  parameter        BAR5 = 32'h00000000,
+
+  parameter        CARDBUS_CIS_POINTER = 32'h00000000,
+  parameter        CLASS_CODE = 24'h050000,
+  parameter        CMD_INTX_IMPLEMENTED = "TRUE",
+  parameter        CPL_TIMEOUT_DISABLE_SUPPORTED = "FALSE",
+  parameter        CPL_TIMEOUT_RANGES_SUPPORTED = 4'h2,
+
+  parameter        DEV_CAP_ENDPOINT_L0S_LATENCY = 0,
+  parameter        DEV_CAP_ENDPOINT_L1_LATENCY = 7,
+  parameter        DEV_CAP_EXT_TAG_SUPPORTED = "FALSE",
+  parameter        DEV_CAP_MAX_PAYLOAD_SUPPORTED = 2,
+  parameter        DEV_CAP_PHANTOM_FUNCTIONS_SUPPORT = 0,
+  parameter        DEVICE_ID = 16'h4243,
+
+  parameter        DISABLE_LANE_REVERSAL = "TRUE",
+  parameter        DISABLE_SCRAMBLING = "FALSE",
+  parameter        DSN_BASE_PTR = 12'h100,
+  parameter        DSN_CAP_NEXTPTR = 12'h000,
+  parameter        DSN_CAP_ON = "TRUE",
+
+  parameter        ENABLE_MSG_ROUTE = 11'h00000000000,
+  parameter        ENABLE_RX_TD_ECRC_TRIM = "FALSE",
+  parameter        EXPANSION_ROM = 32'h00000000,
+  parameter        EXT_CFG_CAP_PTR = 6'h3F,
+  parameter        EXT_CFG_XP_CAP_PTR = 10'h3FF,
+  parameter        HEADER_TYPE = 8'h00,
+  parameter        INTERRUPT_PIN = 8'h1,
+
+  parameter        LINK_CAP_DLL_LINK_ACTIVE_REPORTING_CAP = "FALSE",
+  parameter        LINK_CAP_LINK_BANDWIDTH_NOTIFICATION_CAP = "FALSE",
+  parameter        LINK_CAP_MAX_LINK_SPEED = 4'h2,
+  parameter        LINK_CAP_MAX_LINK_WIDTH = 6'h04,
+  parameter        LINK_CAP_SURPRISE_DOWN_ERROR_CAPABLE = "FALSE",
+
+  parameter        LINK_CTRL2_DEEMPHASIS = "FALSE",
+  parameter        LINK_CTRL2_HW_AUTONOMOUS_SPEED_DISABLE = "FALSE",
+  parameter        LINK_CTRL2_TARGET_LINK_SPEED = 4'h2,
+  parameter        LINK_STATUS_SLOT_CLOCK_CONFIG = "FALSE",
+
+  parameter        LL_ACK_TIMEOUT = 15'h0000,
+  parameter        LL_ACK_TIMEOUT_EN = "FALSE",
+  parameter        LL_ACK_TIMEOUT_FUNC = 0,
+  parameter        LL_REPLAY_TIMEOUT = 15'h0026,
+  parameter        LL_REPLAY_TIMEOUT_EN = "TRUE",
+  parameter        LL_REPLAY_TIMEOUT_FUNC = 1,
+
+  parameter        LTSSM_MAX_LINK_WIDTH = 6'h04,
+  parameter        MSI_CAP_MULTIMSGCAP = 0,
+  parameter        MSI_CAP_MULTIMSG_EXTENSION = 0,
+  parameter        MSI_CAP_ON = "TRUE",
+  parameter        MSI_CAP_PER_VECTOR_MASKING_CAPABLE = "FALSE",
+  parameter        MSI_CAP_64_BIT_ADDR_CAPABLE = "TRUE",
+
+  parameter        MSIX_CAP_ON = "FALSE",
+  parameter        MSIX_CAP_PBA_BIR = 0,
+  parameter        MSIX_CAP_PBA_OFFSET = 29'h0,
+  parameter        MSIX_CAP_TABLE_BIR = 0,
+  parameter        MSIX_CAP_TABLE_OFFSET = 29'h0,
+  parameter        MSIX_CAP_TABLE_SIZE = 11'h000,
+
+  parameter        PCIE_CAP_DEVICE_PORT_TYPE = 4'b0000,
+  parameter        PCIE_CAP_INT_MSG_NUM = 5'h1,
+  parameter        PCIE_CAP_NEXTPTR = 8'h00,
+  parameter        PCIE_DRP_ENABLE = "FALSE",
+  parameter        PIPE_PIPELINE_STAGES = 0,                // 0 - 0 stages, 1 - 1 stage, 2 - 2 stages
+
+  parameter        PM_CAP_DSI = "FALSE",
+  parameter        PM_CAP_D1SUPPORT = "FALSE",
+  parameter        PM_CAP_D2SUPPORT = "FALSE",
+  parameter        PM_CAP_NEXTPTR = 8'h48,
+  parameter        PM_CAP_PMESUPPORT = 5'h0F,
+  parameter        PM_CSR_NOSOFTRST = "TRUE",
+
+  parameter        PM_DATA_SCALE0 = 2'h0,
+  parameter        PM_DATA_SCALE1 = 2'h0,
+  parameter        PM_DATA_SCALE2 = 2'h0,
+  parameter        PM_DATA_SCALE3 = 2'h0,
+  parameter        PM_DATA_SCALE4 = 2'h0,
+  parameter        PM_DATA_SCALE5 = 2'h0,
+  parameter        PM_DATA_SCALE6 = 2'h0,
+  parameter        PM_DATA_SCALE7 = 2'h0,
+
+  parameter        PM_DATA0 = 8'h00,
+  parameter        PM_DATA1 = 8'h00,
+  parameter        PM_DATA2 = 8'h00,
+  parameter        PM_DATA3 = 8'h00,
+  parameter        PM_DATA4 = 8'h00,
+  parameter        PM_DATA5 = 8'h00,
+  parameter        PM_DATA6 = 8'h00,
+  parameter        PM_DATA7 = 8'h00,
+
+  parameter        REF_CLK_FREQ = 2,                        // 0 - 100 MHz, 1 - 125 MHz, 2 - 250 MHz
+  parameter        REVISION_ID = 8'h02,
+  parameter        SPARE_BIT0 = 0,
+  parameter        SUBSYSTEM_ID = 16'h0007,
+  parameter        SUBSYSTEM_VENDOR_ID = 16'h10EE,
+
+  parameter        TL_RX_RAM_RADDR_LATENCY = 0,
+  parameter        TL_RX_RAM_RDATA_LATENCY = 2,
+  parameter        TL_RX_RAM_WRITE_LATENCY = 0,
+  parameter        TL_TX_RAM_RADDR_LATENCY = 0,
+  parameter        TL_TX_RAM_RDATA_LATENCY = 2,
+  parameter        TL_TX_RAM_WRITE_LATENCY = 0,
+
+  parameter        UPCONFIG_CAPABLE = "TRUE",
+  parameter        USER_CLK_FREQ = 3,
+  parameter        VC_BASE_PTR = 12'h0,
+  parameter        VC_CAP_NEXTPTR = 12'h000,
+  parameter        VC_CAP_ON = "FALSE",
+  parameter        VC_CAP_REJECT_SNOOP_TRANSACTIONS = "FALSE",
+
+  parameter        VC0_CPL_INFINITE = "TRUE",
+  parameter        VC0_RX_RAM_LIMIT = 13'h7FF,
+  parameter        VC0_TOTAL_CREDITS_CD = 308,
+  parameter        VC0_TOTAL_CREDITS_CH = 36,
+  parameter        VC0_TOTAL_CREDITS_NPH = 12,
+  parameter        VC0_TOTAL_CREDITS_PD = 308,
+  parameter        VC0_TOTAL_CREDITS_PH = 32,
+  parameter        VC0_TX_LASTPACKET = 29,
+
+  parameter        VENDOR_ID = 16'h10EE,
+  parameter        VSEC_BASE_PTR = 12'h0,
+  parameter        VSEC_CAP_NEXTPTR = 12'h000,
+  parameter        VSEC_CAP_ON = "FALSE",
+
+  parameter        AER_BASE_PTR = 12'h128,
+  parameter        AER_CAP_ECRC_CHECK_CAPABLE = "FALSE",
+  parameter        AER_CAP_ECRC_GEN_CAPABLE = "FALSE",
+  parameter        AER_CAP_ID = 16'h0001,
+  parameter        AER_CAP_INT_MSG_NUM_MSI = 5'h0a,
+  parameter        AER_CAP_INT_MSG_NUM_MSIX = 5'h15,
+  parameter        AER_CAP_NEXTPTR = 12'h160,
+  parameter        AER_CAP_ON = "FALSE",
+  parameter        AER_CAP_PERMIT_ROOTERR_UPDATE = "TRUE",
+  parameter        AER_CAP_VERSION = 4'h1,
+
+  parameter        CAPABILITIES_PTR = 8'h40,
+  parameter        CRM_MODULE_RSTS = 7'h00,
+  parameter        DEV_CAP_ENABLE_SLOT_PWR_LIMIT_SCALE = "TRUE",
+  parameter        DEV_CAP_ENABLE_SLOT_PWR_LIMIT_VALUE = "TRUE",
+  parameter        DEV_CAP_FUNCTION_LEVEL_RESET_CAPABLE = "FALSE",
+  parameter        DEV_CAP_ROLE_BASED_ERROR = "TRUE",
+  parameter        DEV_CAP_RSVD_14_12 = 0,
+  parameter        DEV_CAP_RSVD_17_16 = 0,
+  parameter        DEV_CAP_RSVD_31_29 = 0,
+  parameter        DEV_CONTROL_AUX_POWER_SUPPORTED = "FALSE",
+
+  parameter        DISABLE_ASPM_L1_TIMER = "FALSE",
+  parameter        DISABLE_BAR_FILTERING = "FALSE",
+  parameter        DISABLE_ID_CHECK = "FALSE",
+  parameter        DISABLE_RX_TC_FILTER = "FALSE",
+  parameter        DNSTREAM_LINK_NUM = 8'h00,
+
+  parameter        DSN_CAP_ID = 16'h0003,
+  parameter        DSN_CAP_VERSION = 4'h1,
+  parameter        ENTER_RVRY_EI_L0 = "TRUE",
+  parameter        INFER_EI = 5'h0c,
+  parameter        IS_SWITCH = "FALSE",
+
+  parameter        LAST_CONFIG_DWORD = 10'h3FF,
+  parameter        LINK_CAP_ASPM_SUPPORT = 1,
+  parameter        LINK_CAP_CLOCK_POWER_MANAGEMENT = "FALSE",
+  parameter        LINK_CAP_L0S_EXIT_LATENCY_COMCLK_GEN1 = 7,
+  parameter        LINK_CAP_L0S_EXIT_LATENCY_COMCLK_GEN2 = 7,
+  parameter        LINK_CAP_L0S_EXIT_LATENCY_GEN1 = 7,
+  parameter        LINK_CAP_L0S_EXIT_LATENCY_GEN2 = 7,
+  parameter        LINK_CAP_L1_EXIT_LATENCY_COMCLK_GEN1 = 7,
+  parameter        LINK_CAP_L1_EXIT_LATENCY_COMCLK_GEN2 = 7,
+  parameter        LINK_CAP_L1_EXIT_LATENCY_GEN1 = 7,
+  parameter        LINK_CAP_L1_EXIT_LATENCY_GEN2 = 7,
+  parameter        LINK_CAP_RSVD_23_22 = 0,
+  parameter        LINK_CONTROL_RCB = 0,
+
+  parameter        MSI_BASE_PTR = 8'h48,
+  parameter        MSI_CAP_ID = 8'h05,
+  parameter        MSI_CAP_NEXTPTR = 8'h60,
+  parameter        MSIX_BASE_PTR = 8'h9c,
+  parameter        MSIX_CAP_ID = 8'h11,
+  parameter        MSIX_CAP_NEXTPTR = 8'h00,
+  parameter        N_FTS_COMCLK_GEN1 = 255,
+  parameter        N_FTS_COMCLK_GEN2 = 254,
+  parameter        N_FTS_GEN1 = 255,
+  parameter        N_FTS_GEN2 = 255,
+
+  parameter        PCIE_BASE_PTR = 8'h60,
+  parameter        PCIE_CAP_CAPABILITY_ID = 8'h10,
+  parameter        PCIE_CAP_CAPABILITY_VERSION = 4'h2,
+  parameter        PCIE_CAP_ON = "TRUE",
+  parameter        PCIE_CAP_RSVD_15_14 = 0,
+  parameter        PCIE_CAP_SLOT_IMPLEMENTED = "FALSE",
+  parameter        PCIE_REVISION = 2,
+  parameter        PGL0_LANE = 0,
+  parameter        PGL1_LANE = 1,
+  parameter        PGL2_LANE = 2,
+  parameter        PGL3_LANE = 3,
+  parameter        PGL4_LANE = 4,
+  parameter        PGL5_LANE = 5,
+  parameter        PGL6_LANE = 6,
+  parameter        PGL7_LANE = 7,
+  parameter        PL_AUTO_CONFIG = 0,
+  parameter        PL_FAST_TRAIN = "FALSE",
+
+  parameter        PM_BASE_PTR = 8'h40,
+  parameter        PM_CAP_AUXCURRENT = 0,
+  parameter        PM_CAP_ID = 8'h01,
+  parameter        PM_CAP_ON = "TRUE",
+  parameter        PM_CAP_PME_CLOCK = "FALSE",
+  parameter        PM_CAP_RSVD_04 = 0,
+  parameter        PM_CAP_VERSION = 3,
+  parameter        PM_CSR_BPCCEN = "FALSE",
+  parameter        PM_CSR_B2B3 = "FALSE",
+
+  parameter        RECRC_CHK = 0,
+  parameter        RECRC_CHK_TRIM = "FALSE",
+  parameter        ROOT_CAP_CRS_SW_VISIBILITY = "FALSE",
+  parameter        SELECT_DLL_IF = "FALSE",
+  parameter        SLOT_CAP_ATT_BUTTON_PRESENT = "FALSE",
+  parameter        SLOT_CAP_ATT_INDICATOR_PRESENT = "FALSE",
+  parameter        SLOT_CAP_ELEC_INTERLOCK_PRESENT = "FALSE",
+  parameter        SLOT_CAP_HOTPLUG_CAPABLE = "FALSE",
+  parameter        SLOT_CAP_HOTPLUG_SURPRISE = "FALSE",
+  parameter        SLOT_CAP_MRL_SENSOR_PRESENT = "FALSE",
+  parameter        SLOT_CAP_NO_CMD_COMPLETED_SUPPORT = "FALSE",
+  parameter        SLOT_CAP_PHYSICAL_SLOT_NUM = 13'h0000,
+  parameter        SLOT_CAP_POWER_CONTROLLER_PRESENT = "FALSE",
+  parameter        SLOT_CAP_POWER_INDICATOR_PRESENT = "FALSE",
+  parameter        SLOT_CAP_SLOT_POWER_LIMIT_SCALE = 0,
+  parameter        SLOT_CAP_SLOT_POWER_LIMIT_VALUE = 8'h00,
+  parameter        SPARE_BIT1 = 0,
+  parameter        SPARE_BIT2 = 0,
+  parameter        SPARE_BIT3 = 0,
+  parameter        SPARE_BIT4 = 0,
+  parameter        SPARE_BIT5 = 0,
+  parameter        SPARE_BIT6 = 0,
+  parameter        SPARE_BIT7 = 0,
+  parameter        SPARE_BIT8 = 0,
+  parameter        SPARE_BYTE0 = 8'h00,
+  parameter        SPARE_BYTE1 = 8'h00,
+  parameter        SPARE_BYTE2 = 8'h00,
+  parameter        SPARE_BYTE3 = 8'h00,
+  parameter        SPARE_WORD0 = 32'h00000000,
+  parameter        SPARE_WORD1 = 32'h00000000,
+  parameter        SPARE_WORD2 = 32'h00000000,
+  parameter        SPARE_WORD3 = 32'h00000000,
+
+  parameter        TL_RBYPASS = "FALSE",
+  parameter        TL_TFC_DISABLE = "FALSE",
+  parameter        TL_TX_CHECKS_DISABLE = "FALSE",
+  parameter        EXIT_LOOPBACK_ON_EI  = "TRUE",
+  parameter        UPSTREAM_FACING = "TRUE",
+  parameter        UR_INV_REQ = "TRUE",
+
+  parameter        VC_CAP_ID = 16'h0002,
+  parameter        VC_CAP_VERSION = 4'h1,
+  parameter        VSEC_CAP_HDR_ID = 16'h1234,
+  parameter        VSEC_CAP_HDR_LENGTH = 12'h018,
+  parameter        VSEC_CAP_HDR_REVISION = 4'h1,
+  parameter        VSEC_CAP_ID = 16'h000b,
+  parameter        VSEC_CAP_IS_LINK_VISIBLE = "TRUE",
+  parameter        VSEC_CAP_VERSION = 4'h1
+
+\end{lstlisting}
+
+\subsection{Compile the PCIe Core}
+
+The following command will use Xilinx ISE to run map, place\&route, bitgen, etc. for the newly generated PCIe core.  The results will be written to implement.log.  Modify implement.sh to customize the build process.
+
+\begin{lstlisting}{language=bash}
+$cd nonocpi/coregen/v6_pcie_v2_5/implement
+$implement.sh > implement.log 2>&1
+\end{lstlisting}
+
+Copy the attached files, ace.sh and pcie\_ace.cmd, to the nonocpi directory, then the following command will use Xilinx Impact to generate the ace file.
+
+
+\begin{lstlisting}{language=bash}
+ace.sh
+\end{lstlisting}
+
+\subsection{Creating the BMD Design}
+
+Xilinx provides a reference BMD (Bus Master DMA) Design.  The instructions that follow are customized from a Xilinx pdf, titled "Bus Master Performance Demonstration Reference Design for the Xilinx Endpoint PCI Express Solutions.  The file was too big to attach, but currently it is located here:[http://www.xilinx.com/support/documentation/application\_notes/xapp1052.pdf]
+
+You will need a (free) account with Xilinx to download and use the BMD design.
+
+There is some prep work:
+\begin{enumerate}
+
+\item Copy needed coregen files to a new working directory.
+\begin{lstlisting}{language=bash}
+$cd nonocpi
+$mkdir ise_dma_pcie_performance
+$cd ise_dma_pcie_performance
+$cp -r ../coregen/v6_pcie_v1_7/* .
+\end{lstlisting}
+
+\item Change line 4 of nonocpi/ise\_dma\_pcie\_performance/dma\_performance\_demo/fpga/implement/xst/xst\_v6\_ml605\_prod.scr argument, -ifmt VERILOG to:
+\begin{lstlisting}{language=bash}
+-ifmt mixed
+\end{lstlisting}
+
+\item Overwrite the contents of xilinx\_pci\_exp\_v6\_ep\_inc\_prod.xst to accomodate mixed languages and new xst formatting requirements:
+\begin{lstlisting}{language=bash}
+vhdl include ../../../source/v6_pcie_v1_7.vhd
+vhdl include ../../../source/pcie_2_0_v6.vhd
+vhdl include ../../../source/pcie_upconfig_fix_3451_v6.vhd
+vhdl include ../../../source/gtx_drp_chanalign_fix_3752_v6.vhd
+vhdl include ../../../source/pcie_gtx_v6.vhd
+vhdl include ../../../source/gtx_wrapper_v6.vhd
+vhdl include ../../../source/gtx_tx_sync_rate_v6.vhd
+vhdl include ../../../source/gtx_rx_valid_filter_v6.vhd
+vhdl include ../../../source/pcie_bram_top_v6.vhd
+vhdl include ../../../source/pcie_brams_v6.vhd
+vhdl include ../../../source/pcie_bram_v6.vhd
+vhdl include ../../../source/pcie_clocking_v6.vhd
+vhdl include ../../../source/pcie_pipe_v6.vhd
+vhdl include ../../../source/pcie_pipe_lane_v6.vhd
+vhdl include ../../../source/pcie_pipe_misc_v6.vhd
+vhdl include ../../../source/pcie_reset_delay_v6.vhd
+
+#BMD Source
+verilog include  ../BMD/common/BMD_PCIE_20.v
+vhdl include  ../../../example_design/xilinx_pcie_2_0_ep_v6.vhd
+verilog include  ../BMD/v6_pci_exp_64b_app.v
+#vhdl include ../../../example_design/pcie_app_v6.vhd
+
+verilog include  ../BMD/common/BMD.v
+verilog include  ../BMD/BMD_64_RX_ENGINE.v
+verilog include  ../BMD/BMD_64_TX_ENGINE.v
+verilog include  ../BMD/common/BMD_GEN2.v
+verilog include  ../BMD/common/BMD_CFG_CTRL.v
+verilog include  ../BMD/common/BMD_EP.v
+verilog include  ../BMD/common/BMD_EP_MEM.v
+verilog include  ../BMD/common/BMD_EP_MEM_ACCESS.v
+verilog include  ../BMD/common/BMD_INTR_CTRL.v
+verilog include  ../BMD/common/BMD_INTR_CTRL_DELAY.v
+verilog include  ../BMD/common/BMD_RD_THROTTLE.v
+verilog include  ../BMD/common/BMD_TO_CTRL.v
+\end{lstlisting}
+
+\item Update contraint file preferences
+\begin{enumerate}
+\item Change line 381 of implement\_dma.pl to use the right constraints file:
+\begin{lstlisting}{language=bash}
+#$NGDBUILD_UCF ="${dir}${l}ucf${l}xilinx_pci_exp_${prod}_${link_width}_lane_ep_${board}${gen_speed}.ucf";
+
+$NGDBUILD_UCF ="${dir}${l}ucf${l}xilinx_pcie_2_0_ep_${prod}_0${link_width}_lane_${gen_speed}_xc6vlx240t-ff1156-1-PCIE_X0Y0.ucf";
+\end{lstlisting}
+
+\item cp the coregen-generated file coregen/v6\_pcie\_v2\_5/example\_design/xilinx\_pcie\_2\_0\_ep\_v6\_04\_lane\_gen2\_xc6vlx240t-ff1156-1-PCIE\_X0Y0.ucf to
+  ise\_dma\_pcie\_performance/dma\_performance\_demo/fpga/implement/ucf/
+
+\end{enumerate}
+\end{enumerate}
+BMD instructions
+\begin{enumerate}
+
+\item Download xapp1052.zip
+\item Extract the xapp1052.zip file to your top-level hierarchy. A directory called dma\_performance\_demo will be added to the core hierarchy.
+\item Navigate to the following directory:
+ dma\_performance\_demo/fpga/implement
+\item Type xilperl implement\_dma.pl and hit return.
+ The PERL script will present a series a prompts requesting user input. Based on this user input, the script will grab the necessary files to synthesize and build the design.
+\begin{enumerate}
+\item At the first prompt, select '1' to indicate targeting of a Xilinx Development Platform.
+\item At the second prompt, select '4' to indicate the PCI Express solution as a Virtex-6 Integrated Block for PCI Express.
+\item At the third prompt, select '1' to confirm the platform as an ML605.
+\item At the fourth prompt, select '4' to indicate a x4 Gen 2 speed.
+\item At the fifth prompt, select '2' to indicate C-grade silicon.
+
+\end{enumerate}
+
+\end{enumerate}
+\subsection{Program the Flash with PCIe Design}
+\begin{enumerate}
+
+\item Open Xilinx Impact
+
+\begin{lstlisting}{language=bash}
+impact&
+\end{lstlisting}
+
+\item File --$>$ New Project --$>$ create a new project (click on ok)
+\item Select Prepare a PROM File (click on ok)
+\item In the first window of the PROM File Formatter, select BPI Flash: Configure Single FPGA, and click on the first green arrow.
+\item In the second window of the PROM File Formatter, select the following:
+\begin{itemize}
+
+\item Target FPGA: Virtex6
+\item Storage Device: xcf128x
+
+\end{itemize}
+\item Click "add storage device", and then the second green arrow.
+\item Make the "Output File Name" ml605\_pcie\_x4\_gen2\_bmd, and the "Output File Location" point to the nonocpi/ise\_dma\_pcie\_performance directory (click on ok).
+\item When prompted, add routed.bit from nonocpi/ise\_dma\_pcie\_performance/dma\_performance\_demo/fpga/implement/results (and no other devices to add to Revision:0) (click ok until returned to the main screen)
+\item From the main Impact Menu, select Operations --$>$ Generate File
+\item Once the "Generate Succeeded" banner appears, double-click on Boundary Scan from the iMPACT Flows screen.
+\item From the main Impact Menu, select File --$>$ Initialize Chain, and verify that the xccace and xc6vlx240t devices appear.  Close any windows offering configuration options.
+\item Right click on the blue square, titled SPI/BPI?, and select Add SPI/BPI Flash.
+\item Browse to nonocpi/ and select ml605\_pcie\_x4\_gen2\_bmd.mcs.  Click "open"
+\item In the "Select PROM attached to FPGA:" window, click "ok", as the defaults are correct.
+\item Right click on the FLASH icon, and select "Program".
+\item Ensure that the "Erase Before Programming" box is checked, and click on "ok".  The programming will take a while, $>$10min.
+\item Reboot the machine so that the new Flash contents are recognized.
+\item Confirm pcie device is recognized:
+\begin{lstlisting}{language=bash}
+$ lspci|grep Xilinx
+08:00.0 RAM memory: Xilinx Corporation Device 6024
+\end{lstlisting}
+
+\end{enumerate}
+\subsection{Build Kernel Driver and DMA Test App}
+\begin{enumerate}
+
+\item Copy the xbmd directory to root.
+\begin{lstlisting}{language=bash}
+$ su
+# cp -r nonocpi/ise_dma_pcie_performance/dma_performance_demo/linux_sw/xbmd /root
+\end{lstlisting}
+
+\item Modify xbmd.c with correct PCI Device ID
+
+When following instructions in xapp1052.pdf, before installing the kernel driver, change xbmd.c:
+\begin{lstlisting}{language=bash}
+//#define PCI_DEVICE_ID_XILINX_PCIE 0x0007
+#define PCI_DEVICE_ID_XILINX_PCIE 0x6024
+\end{lstlisting}
+
+\item Build the kernel driver and application.
+
+\begin{lstlisting}{language=bash}
+# cd /root/xbmd
+# ./run_bmd.csh
+\end{lstlisting}
+
+\item Run application and execute benchmarking test.
+
+\begin{lstlisting}{language=bash}
+./run_xbmd
+\end{lstlisting}
+\begin{itemize}
+
+\item Select the "Write" checkbox.
+\item Set "TLP Size" and "TLP's to Transfer" fields both to 32.
+\item Set the "Run Count" field to 100
+\item Click "Start"
+\item The Mb/s will show in red in the "Write Results" field
+
+\end{itemize}
+\item Running on an Intel Corporation Xeon E5/Core with a 128-byte payload capability, PCIe writes consistently ran at '''~883MB/s.'''
+\end{enumerate}
+%[[Image(xbmd_app.png)]]
+\end{document}

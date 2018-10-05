@@ -30,9 +30,9 @@
  *   which specifies the derived class of devices it supports.
  *
  *   This all relies on the OCPI::Util::Parent/Child templates.
- *     
+ *
  * Revision History: 
- * 
+ *
  *    Author: Jim Kulp
  *    Date: 2/2011
  *    Revision Detail: Created
@@ -55,6 +55,7 @@ namespace OCPI {
     using OCPI::Util::Parent;
     using OCPI::Util::PValue;
     class Manager;
+    class Driver;
     // The concrete owner of all driver managers, not inherited.
     // Created on demand when the first manager is created
     // It doesn't ever need to know or access the derived type of its
@@ -80,13 +81,14 @@ namespace OCPI {
       static void configError(ezxml_t x, const char *fmt,...);
       // Global suppression of discovery
       static void suppressDiscovery();
+      // Find a specific driver, returning NULL if not present or loaded
+      static Driver *findDriver(const char *managerName, const char *drvrName);
       // Load a specific driver
-      static bool loadDriver(const char *managerName, const char *drvrName, std::string &error);
+      static Driver *loadDriver(const char *managerName, const char *drvrName, std::string &err);
     };
     // The base class for all (singleton) driver managers which are children of
     // ManagerManager. This is NOT directly inherited by derived managers. They
     // inherit the ManagerBase template class below
-    class Driver;
     class Manager : public Child<ManagerManager,Manager> {
       friend class ManagerManager;
     protected:
@@ -105,6 +107,7 @@ namespace OCPI {
       bool shouldDiscover() const { return !m_doNotDiscover; }
     public:
       virtual unsigned discover(const OCPI::Util::PValue *params = NULL) = 0;
+      virtual Driver *findDriver(const char *name) = 0;
       inline void suppressDiscovery() { m_doNotDiscover = true; }
       inline void enableDiscovery() { m_doNotDiscover = false; }
       virtual ~Manager();
@@ -114,10 +117,14 @@ namespace OCPI {
     class Driver {
       ezxml_t m_config;
     protected:
+      bool m_doNotDiscover;
       Driver();
       virtual ~Driver();
       ezxml_t getDeviceConfig(const char *name);
     public:
+      inline bool shouldDiscover() const { return !m_doNotDiscover; }
+      inline void suppressDiscovery() { m_doNotDiscover = true; }
+      inline void enableDiscovery() { m_doNotDiscover = false; }
       virtual const std::string &name() const = 0;
       virtual Driver *nextDriverBase() = 0;
       virtual void configure(ezxml_t);
@@ -148,13 +155,21 @@ namespace OCPI {
 	return firstDriver();
       }
     public:
+      Driver *findDriver(const char *a_name) {
+	return Parent<DerivedDriver>::findChildByName(a_name);
+      }
       unsigned discover(const OCPI::Util::PValue *params) {
 	parent().configureOnce();
 	unsigned found  = 0;
 	ocpiInfo("Performing discovery for all %s drivers", name().c_str());
 	if (!m_doNotDiscover)
-	  for (DerivedDriver *dd = firstDriver(); dd; dd = dd->nextDriver())
-	    dd->search(params, NULL, false);
+	  for (DerivedDriver *dd = firstDriver(); dd; dd = dd->nextDriver()) {
+	    if (dd->shouldDiscover())
+	      dd->search(params, NULL, false);
+	    else
+	      ocpiDebug("Discovery for %s driver %s suppressed",
+			name().c_str(), dd->name().c_str());
+	  }
 	return found;
       }
     };
@@ -181,7 +196,7 @@ namespace OCPI {
       DriverType(const char *a_name, DriBase &d)
 	: Child<DriMgr,DriBase>(DriMgr::getSingleton(), d, a_name)
       {
-	ocpiInfo("Registering/constructing %s driver: %s", 
+	ocpiInfo("Registering/constructing %s driver: %s",
 		 Child<DriMgr,DriBase>::parent().name().c_str(), a_name);
       }
     public:
@@ -200,9 +215,9 @@ namespace OCPI {
       // and didn't want "discovery" via search.
       // If "which" is null, return any one that matches props, otherwise
       // request a specific one.
-      virtual Device *probe(const char *which = NULL, const char *processor = NULL,
-			    const char *mach = NULL) {
-	(void)which; (void)processor; (void)mach;
+      virtual Device *probe(const char */*which*/, bool /*verbose*/, bool /*discovery*/,
+			    const char **/*exclude*/, const OCPI::Util::PValue */*params*/,
+			    std::string &/*err*/) {
 	return NULL;
       };
       DriBase *nextDriver() { return Sibling<DriBase>::nextChild(); }
@@ -217,16 +232,16 @@ namespace OCPI {
     // The template class that concrete drivers should inherit from, with the
     // template parameters being:
     // 1. the derived driver manager class (e.g. Container::Manager)
-    // 2. the derived driver base class inherited by the concrete driver 
+    // 2. the derived driver base class inherited by the concrete driver
     //    (e.g. Container::Driver)
-    // 3. the concrete device class for this concrete driver inheriting this 
+    // 3. the concrete device class for this concrete driver inheriting this
     //    template  (e.g.RCC::Container)
     //    this is the class of device that the concrete driver knows how to handle
     template <class Man, class DriBase, class ConcDri, class Dev, const char *&name>
     class DriverBase
       : public Parent<Dev>,
         public OCPI::Util::Singleton<ConcDri>,
-	public DriBase { // destroy this class BEFORE children 
+	public DriBase { // destroy this class BEFORE children
     public:
       // to access a specific driver
       inline static ConcDri &getDriver() {

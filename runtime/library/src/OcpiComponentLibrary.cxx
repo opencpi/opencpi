@@ -22,6 +22,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <set>
+#include "ocpi-config.h"
 #include "OcpiOsAssert.h"
 #include "OcpiOsFileIterator.h"
 #include "OcpiOsFileSystem.h"
@@ -72,7 +73,11 @@ namespace OCPI {
 	public:
 	// Do a recursive directory search for all files.
 	void configure(ezxml_t) {
-	  doPath(name());
+	  std::string globbedName;
+	  if (OU::globPath(name().c_str(), globbedName))
+	    ocpiInfo("Library path pathname \"%s\" is invalid or nonexistent, and ignored",
+		    name().c_str());
+	  doPath(globbedName);
 	}
 	OCPI::Library::Artifact *
 	addArtifact(const char *url, const OCPI::API::PValue *params) {
@@ -93,11 +98,11 @@ namespace OCPI {
 	  bool isDir;
 	  OS::FileSystem::FileId file_id;
 	  if (!OS::FileSystem::exists(a_libName, &isDir, NULL, NULL, &file_id))
-	    ocpiInfo("Path name found in OCPI_LIBRARY_PATH, \"%s\", "
+	    ocpiDebug("Path name found in OCPI_LIBRARY_PATH, \"%s\", "
 		     "is nonexistent, not a normal file, or a broken link.  It will be ignored",
 		     a_libName.c_str());
 	  else if (m_fileIds.insert(file_id).second) {
-	    ocpiDebug("Found ARTIFACT: %s id is: %016" PRIx64 "%016" PRIx64, a_libName.c_str(),
+	    ocpiLog(20, "Found ARTIFACT: %s id is: %016" PRIx64 "%016" PRIx64, a_libName.c_str(),
 		     file_id.m_opaque[0], file_id.m_opaque[1]);
 	    // New id was inserted, and thus was not already there
 	    if (isDir) {
@@ -142,6 +147,7 @@ namespace OCPI {
 	  // Now we look in the path environment variable
 	  // FIXME: canonicalize the names before dup matching? (i.e. realpath)??
 	  const char *path = getenv("OCPI_LIBRARY_PATH");
+	  ocpiDebug("ComponentLibrary search with OCPI_LIBRARY_PATH: %s", path);
 	  if (path) {
 	    ocpiDebug("OCPI_LIBRARY_PATH is %s", path);
 	    char *cp = strdup(path), *last;

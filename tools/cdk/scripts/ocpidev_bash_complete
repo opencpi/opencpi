@@ -18,7 +18,7 @@
 
 _ocpidev()
 {
-    local cur prev opts
+    local cur prev verb
     COMPREPLY=()
     cur="${COMP_WORDS[COMP_CWORD]}"
     oneopts="-v -f -s -p -t -n -u -H -J -X -x"
@@ -63,59 +63,83 @@ _ocpidev()
     noun3="${COMP_WORDS[i]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
     # valid verbs
-    verbs="build delete create report clean register unregister set unset show"
+    verbs="build delete create clean register unregister set unset show refresh run"
     # valid nouns in first slot
-    nouns1="project registry application spec protocol test library worker hdl"
+    nouns1="project registry application component protocol test library worker hdl"
     # valid nouns in second slot
     nouns2="assembly card slot device platform platforms targets primitive primitives"
     # valid nouns in third slot
     nouns3="library core"
     #valid build options
-    bopts="--rcc --hdl --no-assemblies --hdl-assembly --hdl-target --hdl-platform \
-           --rcc-platform --rcc-hdl-platform --ok-if-missing --worker"
+    bopts="-h --help -v -d -l -h -P --rcc --hdl --no-assemblies --hdl-assembly --hdl-target \
+           --hdl-platform --rcc-platform --rcc-hdl-platform --worker --clean-all"
     # show verb has different options and nouns
-    showopts="-h --help -v -d --table --json"
-    if [[ ${verb} == show ]] ; then
+    showopts="-h --help -v -d --table --json --local-scope --global-scope --simple"
+    runopts="-h --help -v --verbose --keep-simulations --accumulate-errors -G --only-platform -Q \
+	--exclude-platform --rcc-platform --hdl-platform -d -l --case --before --after --run-args \
+	--mode --remotes --view"
+    copts="--help -v -f -d -s -p -t -n -l -h -F -D -K -N -S -P -L -V -E -W -R -r -g -q -u -I -A -O -C -Y -y \
+	-T -Z -G -Q -U -M -B -H -J -X -x"
+    # for project noun, add the --register option
+    if [[ ${noun1} == project ]]; then
+      copts="${copts} --register"
+    fi
+    if [[ ${verb} == create  || ${verb} == delete ]]; then
       # valid nouns in first slot
-      nouns1="projects registry components workers platforms targets hdl rcc"
+      nouns1="project registry application component protocol test library worker hdl"
+      # valid nouns in second slot
+      nouns2="assembly card slot device platform primitive"
+      # valid nouns in third slot
+      nouns3="library core"
+    elif [[ ${verb} == build  || ${verb} == clean ]]; then
+      # valid nouns in first slot
+      nouns1="project application test library worker hdl"
+      # valid nouns in second slot
+      nouns2="assembly device platform platforms primitives primitive"
+      # valid nouns in third slot
+      nouns3="library core"
+    elif [[ ${verb} == *register  || ${verb} == refresh ]]; then
+      # valid nouns in first slot
+      nouns1="project"
+      nouns2=""
+      nouns3=""
+    elif [[ ${verb} == *set ]]; then
+      # valid nouns in first slot
+      nouns1="registry"
+      nouns2=""
+      nouns3=""
+    elif [[ ${verb} == show ]] ; then
+      # valid nouns in first slot
+      nouns1="projects registry components workers platforms targets hdl rcc project libraries \
+             tests"
       # valid nouns in second slot
       nouns2="platforms targets"
       # valid nouns in third slot
       nouns3=""
-      #valid options not having to do with build
-    fi
-    opts="--help -v -f -d -s -p -t -n -l -h -F -D -K -N -S -P -L -V -E -W -R -r -g -q -u -I -A -O -C -Y -y \
-	-T -Z -G -Q -U -M -B -H -J -X -x"
-    # for project noun, add the --register option
-    if [[ ${noun1} == project ]]; then
-      opts="${opts} --register"
-    fi
-    if [[ ${verb} == *register ]]; then
-      nouns1="project"
+    elif [[ ${verb} == run ]] ; then
+      # valid nouns in first slot
+      nouns1="test tests library application applications project"
+      # valid nouns in second slot
       nouns2=""
+      # valid nouns in third slot
       nouns3=""
     fi
-    if [[ ${verb} == *set ]]; then
-      nouns1="registry"
-      nouns2=""
-      nouns3=""
-    fi
-    # if current word stars with a - it is an option of some sort
+    # if current word starts with a - it is an option of some sort
     if [[ ${prev} == --hdl-platform || ${prev} == --build-hdl-platform ]] ; then
-      plats=`ocpidev show hdl platforms 2>/dev/null`
+      plats=`ocpidev show hdl platforms --simple 2>/dev/null`
       COMPREPLY=( $(compgen -W "${plats}" -- ${cur}) )
       return 0
     elif [[ ${prev} == --hdl-target || ${prev} == --build-hdl-target ]] ; then
-      tgts=`ocpidev show hdl targets 2>/dev/null`
+      tgts=`ocpidev show hdl targets --simple 2>/dev/null`
       COMPREPLY=( $(compgen -W "${tgts}" -- ${cur}) )
       return 0
     # Not supported yet:
     #elif [[ ${prev} == --rcc-target || ${prev} == --build-rcc-target ]] ; then
-    #  tgts=`ocpidev show rcc targets`
+    #  tgts=`ocpidev show rcc targets --simple`
     #  COMPREPLY=( $(compgen -W "${tgts}" -- ${cur}) )
     #  return 0
     elif [[ ${prev} == --rcc-platform || ${prev} == --build-rcc-platform ]] ; then
-      plats=`ocpidev show rcc platforms 2>/dev/null`
+      plats=`ocpidev show rcc platforms --simple 2>/dev/null`
       COMPREPLY=( $(compgen -W "${plats}" -- ${cur}) )
       return 0
     elif [[ ${cur} == -* ]] ; then
@@ -125,16 +149,38 @@ _ocpidev()
       elif [[ ${verb} == show ]] ; then
         COMPREPLY=( $(compgen -W "${showopts}" -- ${cur}) )
         return 0
+      elif [[ ${verb} == run ]] ; then
+        COMPREPLY=( $(compgen -W "${runopts}" -- ${cur}) )
+        return 0
+      elif [[ ${verb} == create || ${verb} == delete ]] ; then
+        COMPREPLY=( $(compgen -W "${copts}" -- ${cur}) )
+      elif [[ ${verb} == build || ${verb} == clean ]] ; then
+        COMPREPLY=( $(compgen -W "${bopts}" -- ${cur}) )
+      else
+        COMPREPLY=( $(compgen -W "${copts} ${runopts} ${showopts} ${bopts}"  -- ${cur}) )
+        return 0
       fi
-      COMPREPLY=( $(compgen -W "${bopts} ${opts}" -- ${cur}) )
-      return 0
     elif [[ ${verb} == unregister && ${prev} == project ]]; then
-      projs=`ocpidev show registry 2>/dev/null`
+      projs=`ocpidev show registry --simple 2>/dev/null`
       COMPREPLY=( $(compgen -W "${projs}" -- ${cur}) )
+      return 0
+     elif [[ ${verb} == run && ${prev} == --mode ]]; then
+       modes="gen_build prep_run_verify clean_all gen prep run prep_run verify view clean_run \
+	clean_sim all"
+      COMPREPLY=( $(compgen -W "${modes}" -- ${cur}) )
       return 0
     # if current word is in the verb slot
     elif [[ ${verb} == ${cur} ]] ; then
       COMPREPLY=( $(compgen -W "${verbs}" ${cur}) )
+      # AV-3871 added this to do completion for words that only have one option
+      # If COMPREPLY is size 1 we know what word is to be completed
+      if [ ${#COMPREPLY[@]} -eq 1 ] ; then
+        if [[ ${COMPREPLY} == register || ${COMPREPLY} == unregister ]] ; then
+          COMPREPLY="${COMPREPLY} project"
+        elif [[ ${COMPREPLY} == set || ${COMPREPLY} == unset ]] ; then
+          COMPREPLY="${COMPREPLY} registry"
+        fi
+      fi
       return 0
     # if current word is in the first noun slot
     elif [[ ${noun1} == ${cur} ]] ; then

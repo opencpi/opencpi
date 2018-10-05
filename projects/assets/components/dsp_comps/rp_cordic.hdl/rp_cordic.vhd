@@ -238,8 +238,8 @@ begin
     port map (
       CLK     => ctl_in.clk,
       RST     => ctl_in.reset,
-      I       => in_in.data(DATA_WIDTH_c-1+16 downto 16),
-      Q       => in_in.data(DATA_WIDTH_c-1 downto 0),
+      I       => in_in.data(DATA_WIDTH_c-1 downto 0),
+      Q       => in_in.data(DATA_WIDTH_c-1+16 downto 16),
       VLD_IN  => enable,
       MAG     => magnitude,
       PHASE   => phase,

@@ -17,6 +17,7 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 ifndef _XILINX_MK
+export SHELL=/bin/bash
 _XILINX_MK=1
 # Functions to retrieve and default pathnames for Xilinx tools
 # FIXME: it may be worth caching these singular values
@@ -119,15 +120,17 @@ OcpiXilinxTryVivadoDir=$(strip $(foreach t,$(or $(OCPI_XILINX_VIVADO_DIR),$(OCPI
 		 $(if $(shell test -d $t && echo 1),$t,\
 		    $(call $(or $1,error), Directory "$t" for OCPI_VIVADO_XILINX_DIR or OCPI_XILINX_DIR not found))))
 
+# When getting the VIVADO_VERSION, first check OCPI_XILINX_VIVADO_VERSION,
+# then fall back on OCPI_XILINX_VERSION ONLY IF it does NOT start with '0' or '1' which are reserved for ISE.
 OcpiXilinxVivadoDir=$(strip\
 $(foreach t,$(OcpiXilinxTryVivadoDir)/Vivado,$(infox vt:$t)\
   $(foreach i,\
     $(or $(OCPI_XILINX_VIVADO_TOOLS_DIR),\
       $(foreach v,\
-        $(if $(filter-out undefined,$(origin OCPI_XILINX_VIVADO_VERSION)),\
-          $(foreach e,$(OCPI_XILINX_VIVADO_VERSION),\
+        $(if $(or $(filter-out undefined,$(origin OCPI_XILINX_VIVADO_VERSION)),$(and $(filter-out undefined,$(origin OCPI_XILINX_VERSION)),$(filter-out  0% 1%,$(OCPI_XILINX_VERSION)))),\
+          $(foreach e,$(or $(OCPI_XILINX_VIVADO_VERSION),$(OCPI_XILINX_VERSION)),\
             $(if $(shell test -d $t/$e && echo 1),$e,\
-              $(call $(or $1,error), Directory "$t/$e", for OCPI_XILINX_VIVADO_VERSION, not found))),\
+              $(call $(or $1,error), Directory "$t/$e", for OCPI_XILINX_VIVADO_VERSION (or OCPI_XILINX_VERSION), not found))),\
           $(or $(shell for i in \
                         `shopt -s nullglob && echo $t/*  | tr ' ' '\n' | sort -n -r`; \
                        do \
@@ -141,7 +144,7 @@ $(foreach t,$(OcpiXilinxTryVivadoDir)/Vivado,$(infox vt:$t)\
 
 # Here we first check for an explicitly set license path.
 # Then, we check for common/default location for a Vivado license
-# Finally, we resort to checking for the plain/ISE Xilinx license 
+# Finally, we resort to checking for the plain/ISE Xilinx license
 OcpiXilinxVivadoLicenseFile=$(strip\
   $(foreach t,$(or $(OCPI_XILINX_VIVADO_LICENSE_FILE),\
                 $(wildcard $(call OcpiXilinxTryVivadoDir,$1)/Vivado/Xilinx-License.lic),$(call OcpiXilinxLicenseFile,$1)),\

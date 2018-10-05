@@ -53,3 +53,7 @@ Use italics for typical emphasis as in common usage, as in all writing.
 Use bold for extra strong emphasis very rarely.
 
 Use bold-italics/"first emphasis" char style for terms used specially in the document, until it truly seems routine and then drop it.
+
+When referring to OpenCPI the framework, using OpenCPI, not ocpi, OCPI, opencpi, etc.
+Use EM dashed when separating an initial item in a list with hanging indented labels.
+(alt-shift? -)

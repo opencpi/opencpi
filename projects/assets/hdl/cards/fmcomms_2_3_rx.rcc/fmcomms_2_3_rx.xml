@@ -3,7 +3,21 @@
      implements the ad9361_config_proxy OCS). If the application overrides
      the ad9361_config_proxy instance name to something other than
      ad9361_config_proxy, this worker's app_inst_name_ad9361_config_proxy
-     property should be set to the instance name. -->
+     property should be set to the instance name. The same is true for
+     ad9361_adc_sub, and ad9361_data_sub. -->
+<!--  ___________________________________________________________________    -->
+<!-- +                                                                   +   -->
+<!-- |                       fmcomms_2_3_rx.rcc                          |   -->
+<!-- +___________________________________________________________________+   -->
+<!--   ^                             ^                     ^                 -->
+<!--   |  slave                      | slave               | slave           -->
+<!--   |  interface                  | interface           | interface       -->
+<!--   |  (ACI)                      | (ACI)               | (ACI)           -->
+<!--  _V_______________________    __V_______________   ___V_______________  -->
+<!-- +                         +  +                  + +                   + -->
+<!-- | ad9361_config_proxy.rcc |  |ad9361_adc_sub.hdl| |ad9361_data_sub.hdl| -->
+<!-- +_________________________+  +__________________+ +___________________+ -->
+<!--                                                                         -->
 <RccWorker language='c++' spec='rx_spec'>
 
   <!-- OCS Parameters -->
@@ -11,7 +25,7 @@
   <!-- OWD Parameters -->
 
   <Property Name="fmcomms_num" Type="ushort" Parameter="true" Default="3" Description="Valid values are 2 or 3."/>
-  <Property Name="TYPE_p" Type="enum" Enums="fmcomms2,fmcomms3" Parameter="true" Default="fmcomms_num == 2 ? fmcomms2 : fmcomms3" Description="The purpose of this property is to provide the option for an application XML to specifiy this property in order to enforce use of a parameterized build for a particular frontend type."/>
+  <Property Name="TYPE_p" Type="enum" Enums="fmcomms2,fmcomms3" Parameter="true" Default="fmcomms_num == 2 ? fmcomms2 : fmcomms3" Description="The purpose of this property is to provide the option for an application XML to specify this property in order to enforce use of a parameterized build for a particular frontend type."/>
 
   <Property Name="NOT_SUPPORTED_p" Type="double" Parameter="true" Default="-1" Description="This value, when assigned to a frontend property, e.g. rf_gain_dB, indicates that the frontend setting corresponding to said property is not supported by the frontend hardware controlled by this worker."/>
 
@@ -38,25 +52,25 @@
   <Property Name="BB_CUTOFF_FREQUENCY_MAX_MHZ_p" Type="double"
                                                  Parameter="true"
                                                  Default="AD9361_RX_BBBW_NO_OS_MAX_MHZ_p * 1.4"
-                                                 Description="The minimum configurable cutoff frequency in MHz of the FMCOMMS2's AD9361's third-order Butterworth Rx anti-aliasing filter. The Rx filter is normally calibrated to 1.4x the BBBW. For more information, see AD9361_Reference_Manual_UG-570.pdf p. 9."/>
+                                                 Description="The maximum configurable cutoff frequency in MHz of the FMCOMMS2/3's AD9361's third-order Butterworth Rx anti-aliasing filter. The Rx filter is normally calibrated to 1.4x the BBBW. For more information, see AD9361_Reference_Manual_UG-570.pdf p. 9."/>
   <Property Name="BB_CUTOFF_FREQUENCY_MIN_MHZ_p" Type="double"
                                                  Parameter="true"
                                                  Default="AD9361_RX_BBBW_NO_OS_MIN_MHZ_p * 1.4"
-                                                 Description="The maximum configurable cutoff frequency in MHz of the FMCOMMS2's AD9361's third-order Butterworth Rx anti-imaging filter. The Rx filter is normally calibrated to 1.6x the BBBW. For more information, see AD9361_Reference_Manual_UG-570.pdf p. 9."/>
+                                                 Description="The minimum configurable cutoff frequency in MHz of the FMCOMMS2/3's AD9361's third-order Butterworth Rx anti-aliasing filter. The Rx filter is normally calibrated to 1.4x the BBBW. For more information, see AD9361_Reference_Manual_UG-570.pdf p. 9."/>
 
   <!-- OCS Properties -->
 
   <!-- When a write to the property occurs, this property's written value is
        applied to hardware. When a read of this property occurs, the read value
-       is the in-situ value (actual value which is currently assigned in
-       hardware, which may be slightly different than a previously written value
-       due to rounding  that occurs when assigning hardware register values
-       and/or No-OS API rounding that must occur before hardware register
-       rounding occurs). -->
+       is the (nominal) in-situ value (actual value which is currently assigned in
+       hardware, which may be slightly different than a previously written
+       property value due to rounding  that occurs before writing hardware
+       register values and/or No-OS API rounding) with double floating point
+       precision. -->
   <SpecProperty Name="rf_gain_dB" Volatile="true"
                                   ReadSync="true"
                                   WriteSync="true"
-                                  Default="1"/> <!-- gain is LO-dependant due to No-OS gain tables, default of 1 is valid for all LO freqs (0 isn't) -->
+                                  Default="1"/> <!-- gain is LO-dependent due to No-OS gain tables, default of 1 is valid for all LO freqs (0 isn't) -->
   <SpecProperty Name="bb_gain_dB" WriteSync="true"
                                   Default="NOT_SUPPORTED_p"/> <!-- TODO / FIXME - remove Writable from OCS for this property and remove WriteSync from the OWD for this property, the only reason we need WriteSync here is to ensure any write to this property of a value other than NOT_SUPPORTED_p causes a failure. -->
   <SpecProperty Name="frequency_MHz" Volatile="true"
@@ -71,19 +85,18 @@
                                                Default="NOT_SUPPORTED_p"/> <!-- TODO / FIXME - remove Writable from OCS for this property and remove WriteSync from the OWD for this property, the only reason we need WriteSync here is to ensure any write to this property of a value other than NOT_SUPPORTED_p causes a failure. -->
 
   <!-- The cutoff frequency in MHz of the FMCOMMS2/3's AD9361's third-order
-       Butterworth Tx anti-imaging filter. The Tx filter is located just after
-       the DAC in the Tx signal path and is normally calibrated to 0.7x the
-       desired complex bandwidth of the Butterworth filter. For more
-       information, see AD9361_Reference_Manual_UG-570.pdf p. 10. Example:
+       Butterworth Rx anti-aliasing filter. The Rx filter is located just before
+       the ADC in the Rx signal path and is normally calibrated to 1.4x the
+       baseband channel bandwidth (BBBW). For more
+       information, see AD9361_Reference_Manual_UG-570.pdf p. 9. Example:
         _________________________________________________________
        | Standard | Sample | Desired   | Desired   | Butterworth |
        |          | Rate   | baseband  | baseband  | filter      |
        |          | (Msps) | analog    | analog    | cutoff      |
        |          |        | filter    | filter    | frequency   |
-       |          |        | passband  | passband  | (MHz)       |
-       |          |        | complex   | bandwidth |             |
-       |          |        | bandwidth | (MHz)     |             |
-       |          |        | (MHz)     |           |             |
+       |          |        | passband  | cutoff    | (MHz)       |
+       |          |        | bandwidth | frequency |             |
+       |          |        | (MHz)     | (MHz)     |             |
        |__________|________|___________|___________|_____________|
        | LTE 10   | 15.36  | 10        | 5         | 7           |
        | LTE 20   | 30.72  | 20        | 10        | 14          |

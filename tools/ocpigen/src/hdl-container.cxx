@@ -277,7 +277,7 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
   if ((err = parseDevInstances(m_xml, xfile, this, &m_config.devInstances())))
     return;
 #else
-  for (ezxml_t dx = ezxml_cchild(m_xml, "device"); dx; dx = ezxml_next(dx)) {
+  for (ezxml_t dx = ezxml_cchild(m_xml, "device"); dx; dx = ezxml_cnext(dx)) {
     bool floating = false;
     if ((err = OE::getBoolean(dx, "floating", &floating)))
       return;
@@ -298,7 +298,7 @@ HdlContainer(HdlConfig &config, HdlAssembly &appAssembly, ezxml_t xml, const cha
 #endif
   // Establish connections, WHICH MAY ALSO IMPLICITLY CREATE DEVICE INSTANCES
   ContConnects connections;
-  for (ezxml_t cx = ezxml_cchild(m_xml, "connection"); cx; cx = ezxml_next(cx)) {
+  for (ezxml_t cx = ezxml_cchild(m_xml, "connection"); cx; cx = ezxml_cnext(cx)) {
     ContConnect c;
     if ((err = parseConnection(cx, c)))
       return;

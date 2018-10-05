@@ -27,7 +27,7 @@ $(OcpiIncludeProject)
 ifeq ($(filter clean%,$(MAKECMDGOALS)),)
  $(eval $(OcpiEnsureToolPlatform))
   ifndef OCPI_LIBRARY_PATH
-    $(OcpiSetDefaultLibraryPath)
+    $(call OcpiSetDefaultLibraryPath)
   endif
 endif
 
@@ -40,9 +40,10 @@ OcpiApp:=$(CwdName)
 endif
 
 # The existence of a C++ app file determines if this is an ACI app
-OcpiAppCC:=$(strip $(foreach s,cc cxx cpp,$(wildcard $(OcpiApp).$s)))
+OcpiAppCC:=$(strip\
+  $(foreach s,cc cxx cpp,$(wildcard $(addsuffix .$s,$(call Unique,$(OcpiApp) $(OcpiApps))))))
 ifdef OcpiAppCC
-  OcpiApps:=$(OcpiApp)
+  OcpiApps:=$(call Unique,$(OcpiApp) $(OcpiApps))
   include $(OCPI_CDK_DIR)/include/aci.mk
   # If we are running in this Makefile, then we are running the TOOL_PLATFORM
   ifndef OcpiRunCC
@@ -58,7 +59,7 @@ ifdef OcpiAppCC
 else ifneq ($(wildcard $(OcpiApp).xml),)
   ifndef OcpiAppNoRun
     ifndef OcpiRunXML
-      OcpiRunXML=$(OcpiRunBefore) $(OCPI_CDK_DIR)/bin/$(OCPI_TOOL_DIR)/ocpirun $(OcpiRunArgs) $1 \
+      OcpiRunXML=$(OcpiRunBefore) $(OCPI_CDK_DIR)/$(OCPI_TOOL_DIR)/bin/ocpirun $(OcpiRunArgs) $1 \
                  $(OcpiRunAfter)
     endif
     run: all

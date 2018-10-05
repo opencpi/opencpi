@@ -57,7 +57,7 @@ RPM_TARGETS=$(foreach pkg, $(PACKAGES), $(pkg)_rpm)
 CLEAN_TARGETS=$(foreach pkg, $(PACKAGES), $(pkg)_clean)
 GIT_TARGETS=$(foreach pkg, $(PACKAGES), $(pkg)_gitcheck)
 GIT_BRANCHES=$(foreach pkg, $(PACKAGES), $(pkg)_gitbranch)
-export GIT_BRANCH:=$(notdir $(shell git name-rev --name-only HEAD))
+export GIT_BRANCH:=$(notdir $(shell git name-rev --name-only HEAD | perl -pe 's/([~^]\d+)*$$//'))
 
 .PHONY: $(RPM_TARGETS) $(CLEAN_TARGETS) $(GIT_TARGETS) $(GIT_BRANCHES)
 .SILENT: $(RPM_TARGETS) $(CLEAN_TARGETS) $(GIT_TARGETS) $(GIT_BRANCHES) $(PACKAGES) clean cleanrpmbuild
@@ -97,7 +97,8 @@ cleanrpmbuild:
 	-mkdir -p ~/rpmbuild/
 
 # If the "jq" tool is there, try to use Jenkins configuration
-export JSON_GIT_REPO:=$(shell jq '.hdl_platforms.$(BSPNAME).bsp_repo' ../jenkins/runtime/config.json 2>/dev/null || :)
+# Note, it has to send a literal set of " around the BSP name or numbers will blow up (e.g. e310)
+export JSON_GIT_REPO:=$(shell jq '.hdl_platforms."$(BSPNAME)".bsp_repo' ../jenkins/runtime/config.json 2>/dev/null || :)
 
 $(PACKAGES):
 	# They might already have the repo checked out elsewhere - the standard location of ../../projects/bsps/
@@ -106,7 +107,7 @@ ifneq '' "$(wildcard ../../projects/bsps/$(BSPNAME)/Makefile)"
 	ln -s ../../projects/bsps/$(BSPNAME) $@
 else
 	# If not, check JSON config
-ifneq '' "$(JSON_GIT_REPO)"
+ifneq 'null' "$(JSON_GIT_REPO)"
 	echo "Parsed Jenkins config.json and found repo for $(BSPNAME): $(JSON_GIT_REPO)"
 	git clone $(JSON_GIT_REPO) $@
 else
@@ -126,10 +127,14 @@ DEFAULT_GITBRANCH?=develop
 $(GIT_BRANCHES): PKG=$(@:_gitbranch=)
 $(GIT_BRANCHES):
 	echo "====================== $(PKG) ======================"
-	echo "Pulling... (OK if fails)"
-	cd $(PKG) && git pull || : # Always get latest from repo
-	cd $(PKG) && git checkout $(DEFAULT_GITBRANCH) 2>/dev/null # Always reset first
-	cd $(PKG) && git checkout $(GIT_BRANCH) 2>/dev/null || : # Try to check out
+	echo "Synchronizing repo information..."
+	cd $(PKG) && git fetch --all
+	echo "Switching to $(DEFAULT_GITBRANCH)..."
+	cd $(PKG) && git checkout $(DEFAULT_GITBRANCH) # Always reset first
+	echo "Trying to switch to $(GIT_BRANCH)... (OK if fails)"
+	cd $(PKG) && git checkout $(GIT_BRANCH) || : # Try to check out
+	echo "Pulling latest code..."
+	cd $(PKG) && git pull
 	echo "Currently working in AV branch '$(GIT_BRANCH)' and using '`cd $(PKG);git name-rev --name-only HEAD`' for $(PKG) branch."
 
 .PHONY: distclean_warning distclean_nowarning

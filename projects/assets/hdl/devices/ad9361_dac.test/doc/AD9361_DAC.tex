@@ -52,7 +52,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \newcommand{\todo}[1]{\textcolor{red}{TODO: #1}\PackageWarning{TODO:}{#1}} % To do notes
 \newcommand{\code}[1]{\texttt{#1}} % For inline code snippet or command line
 %----------------------------------------------------------------------------------------
-% Various pacakges
+% Various packages
 %----------------------------------------------------------------------------------------
 \usepackage{hyperref} % for linking urls and lists
 \usepackage{graphicx} % for including pictures by file
@@ -63,6 +63,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 %----------------------------------------------------------------------------------------
 % Table packages
 %----------------------------------------------------------------------------------------
+\usepackage{longtable} % for long possibly multi-page tables
 \usepackage{tabularx} % c=center,l=left,r=right,X=fill
 \usepackage{float}
 \floatstyle{plaintop}
@@ -75,6 +76,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \usepackage{tikz}
 \usetikzlibrary{shapes,arrows,fit,positioning}
 \usetikzlibrary{automata} % used for the fsm
+\usetikzlibrary{calc} % For duplicating clients
+\usepgfmodule{oo} % To define a client box
 %----------------------------------------------------------------------------------------
 % Colors Used
 %----------------------------------------------------------------------------------------
@@ -90,7 +93,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Component Data Sheet}
-\def\docVersion{1.3}
+\def\docVersion{1.4}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
@@ -102,7 +105,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \def\DevSignal{DevSignal}
 
 \def\comp{ad9361\_dac}
-\edef\ecomp{ad9361_dac}
+\edef\ecomp{ad9361_adc}
 \def\Comp{AD9361 DAC}
 \graphicspath{ {figures/} }
 
@@ -120,57 +123,157 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Version           & v\docVersion     \\
 	\hline
-	Release Date      & Aug 2017         \\
+	Release Date      & October 2018         \\
 	\hline
-	Component Library & ocpi.devices     \\
+	Component Library & ocpi.assets.devices     \\
 	\hline
 	Workers           & \comp.hdl        \\
 	\hline
-	Tested Platforms  &  Zedboard (Vivado), Zedboard(ISE), ML605 (FMC LPC slot) \\
+	Tested Platforms  &
+\begin{itemize}
+  \item Agilent Zedboard/Analog Devices FMCOMMS2 (Vivado only)
+  \item Agilent Zedboard/Analog Devices FMCOMMS3 (Vivado only)
+  \item x86/Xilinx ML605/Analog Devices FMCOMMS2 (FMC-LPC slot only)
+  \item x86/Xilinx ML605/Analog Devices FMCOMMS3 (FMC-LPC slot only)
+  \item Ettus E310 (Vivado only, application for testing exists in e310 project)
+\end{itemize} \\
 	\hline
 \end{tabular}
 
+	\begin{center}
+	\textit{\textbf{Revision History}}
+		\begin{table}[H]
+		\label{table:revisions} % Add "[H]" to force placement of table
+			\begin{tabularx}{\textwidth}{|c|X|l|}
+			\hline
+			\rowcolor{blue}
+			\textbf{Revision} & \textbf{Description of Change} & \textbf{Date} \\
+		    \hline
+		    v1.3 & Initial Release & Mar 2018 \\
+		    \hline
+		    v1.3.1 & -               & Apr 2018 \\
+		    \hline
+        v1.4 &
+          \begin{itemize}
+            \item TX powerdown functionality added (event\_in port, dev\_tx\_event devsignal port, min\_num\_cp\_clks\_per\_txen\_event property)
+            \item \verb+IDATA_WIDTH_p+ parameter property added
+            \item source dependency list updated (new sources added, paths now specified by project)
+          \end{itemize} & Oct 2018 \\
+		    \hline
+			\end{tabularx}
+		\end{table}
+	\end{center}
+
+
+
 \section*{Functionality}
-	The \Comp{} device worker ingests a single TX channel's data to be sent to the AD9361 IC \cite{ad9361}. Up to two instances of this worker can be used send multichannel TX data to an AD9361 in an independent, non-phase-coherent fashion.
-\section*{Worker Implementation Details}
-\subsection*{\comp.hdl}
-The \comp{}.hdl worker ingests signed Q0.15 I/Q samples from its input port, rounds them to Q0.11, then passes the through an asynchronous First-In-First-Out (FIFO) buffer on to the the \verb+dev_dac+ \devsignal{} bus. The rounding is done in order to map to the AD9361's 12-bit I/Q dac bus\cite{adi_ug570}. For more information on how ad9361\_dac\_sub.hdl handles the data from this worker's \verb+dev_dac+ port, see \cite{dac_sub_comp_datasheet}. The asynchronous FIFO is necessary in order to cross clock domains from control clock to \verb+dev_dac+'s dac\_clk clock. Note that the control clock rate is considered static but platform-specific and that the clock rate of dac\_clk (which is an inverted and divided by 2 version of the AD9361 DATA\_CLK\_P pin\cite{dac_sub_comp_datasheet}) is potentially runtime variable. The FIFO's depth in number of samples is determined at build-time by the \verb+fifo_depth+ parameter property. An \verb+underrun+ property indicates when invalid samples have been clocked in by the DAC due to the FIFO being empty. 
+	The \Comp{} device worker ingests a single TX channel's data to be sent to the AD9361 IC \cite{ad9361}. Up to two instances of this worker can be used to send multichannel TX data to an AD9361 in an independent, non-phase-coherent fashion. This worker also has a port which controls AD9361 transmitter power on/off.
 \section*{Block Diagrams}
 \subsection*{Top level}
-\subsubsection*{\comp.hdl}
+\makeatletter
+\newcommand{\gettikzxy}[3]{%
+  \tikz@scan@one@point\pgfutil@firstofone#1\relax
+  \edef#2{\the\pgf@x}%
+  \edef#3{\the\pgf@y}%
+}
+\makeatother
+\pgfooclass{clientbox}{ % This is the class clientbox
+    \method clientbox() { % The clientbox
+    }
+    \method apply(#1,#2,#3,#4) { % Causes the clientbox to be shown at coordinate (#1,#2) and named #3
+        \node[rectangle,draw=white,fill=white] at (#1,#2) (#3) {#4};
+    }
+}
+\pgfoonew \myclient=new clientbox()
 \begin{center}
-	\begin{tikzpicture}[% List of styles applied to all, to override specify on a case-by-case
-			every node/.style={
-				align=center,  		% use this so that the "\\" for line break works
+  \begin{tikzpicture}[% List of styles applied to all, to override specify on a case-by-case
+      every node/.style={
+        align=center,      % use this so that the "\\" for line break works
 				minimum size=1.5cm	% creates space above and below text in rectangle
-			},
-			every edge/.style={draw,thick}
-		]
-		\node[rectangle,ultra thick,draw=black,fill=blue,minimum width=5 cm](R2){Parameter Properties: \verb+fifo_depth+ \\ \\ \Comp \\};
-		\node[rectangle,draw=white,fill=white](R3)[below= of R2]{"dev\_adc" devsignal port\\ DAC data bus (see AD9361\_DAC\_Sub.pdf)};
-		\node[rectangle,draw=white,fill=white](R4)[left= of R2]{``in'' StreamInterface \\ Complex signed samples (Q0.15 I, Q0.15 Q)};
-		\node[rectangle,draw=white,fill=white](R5)[above= of R2]{Non-parameter Properties:\\\verb+underrun+};
+      },
+      every edge/.style={draw,thick}
+    ]
+		\node[rectangle,ultra thick,draw=black,fill=blue,minimum width=5 cm](R1){Parameter Properties: \\ \verb+fifo_depth+ \\ \verb+IDATA_WIDTH_p+ \\ \\ \\ \Comp \\};
+		%\node[rectangle,draw=white,fill=white](R3)[below= of R1]{``dev\_dac'' devsignal port\\ DAC data bus (see AD9361\_DAC\_Sub.pdf)};
+		%\node[rectangle,draw=white,fill=white](R4)[left= of R1]{``in'' StreamInterface \\ Complex signed samples (Q0.15 I, Q0.15 Q)};
+		\node[rectangle,draw=white,fill=white](R5)[above= of R1]{Non-parameter Properties:\\\verb+underrun+ \\ \verb+min_num_cp_clks_per_txen_event+};
 		\path[->]
-		(R3)edge []	node [] {} (R2)
-		(R2)edge []	node [] {} (R3)
-		(R4)edge []	node [] {} (R2)
-		(R2)edge []	node [] {} (R5)
-		(R5)edge []	node [] {} (R2)
-		;
-	\end{tikzpicture}
+		(R1)edge []	node [] {} (R5)
+		(R5)edge []	node [] {} (R1)
+    ;
+    \gettikzxy{(R1)}{\rx}{\ry}
+    \myclient.apply(\rx - 220,\ry + 20,C1, ``in'' StreamInterface \\ Complex signed samples \texttt{(}Q0.15 I, Q0.15 Q\texttt{)} );
+    \path[<-]($(R1.west) + (-0 pt,20 pt)$) edge [] node [] {} (C1);
+    \myclient.apply(\rx - 247,\ry - 20,C1, ``event\_in'' StreamInterface \\ \texttt{(}connection optional\texttt{)} txOn/txOff Zero-Length Messages );
+    \path[<-]($(R1.west) + (-0 pt,-20 pt)$) edge [] node [] {} (C1);
+    \myclient.apply(\rx - 55,\ry-80,C1, ``dev\_dac'' \\ dev signal port \texttt{(}see \\ AD9361\_DAC\_Sub.pdf\texttt{)} );
+    \path[<->]($(R1.south) + (-55 pt,0)$) edge [] node [] {} (C1);
+    \myclient.apply(\rx + 55,\ry-80,C1, ``dev\_tx\_event'' \\ dev signal port \texttt{(}see \\ AD9361\_DAC\_Sub.pdf\texttt{)} );
+    \path[->]($(R1.south) + (55 pt,0)$) edge [] node [] {} (C1);
+
+
+  \end{tikzpicture}
 \end{center}
+\pagebreak
+
+\section*{Worker Implementation Details}
+\subsection*{\comp.hdl}
+\subsubsection*{DAC Data Flow (in port)}
+The \comp{}.hdl worker ingests signed Q0.15 I/Q samples from its \verb+in+ port, rounds them to signed Q0.11 I/Q samples, then passes them through an asynchronous First-In-First-Out (FIFO) buffer on to the \verb+dev_dac+ \devsignal{} bus. The rounding is done in order to map to the AD9361's 12-bit I/Q DAC bus\cite{adi_ug570}. For more information on how ad9361\_dac\_sub.hdl handles the data from this worker's \verb+dev_dac+ port, see \cite{dac_sub_comp_datasheet}. The asynchronous FIFO is necessary in order to cross clock domains from control clock to \verb+dev_dac+'s dac\_clk clock. Note that the control clock rate is considered static but platform-specific and that the clock rate of dac\_clk is potentially runtime variable. The FIFO's depth in number of samples is determined at build-time by the \verb+fifo_depth+ parameter property. The \verb+in+ port's data width is also configurable via the \verb+IDATA_WIDTH_p+ parameter property, whose default value of 32 allows for a signed Q0.15 I/ Q0.15 Q input sample to be processed in a single control clock cycle. An \verb+underrun+ property indicates when invalid samples have been clocked in by the DAC due to the FIFO being empty.
+\subsubsection*{AD9361 Transmitter Power Control (event\_in port)}
+\noindent The \verb+event_in+ port provides a port message-based mechanism (in the control plane clock domain) for turning on/off the AD9361 transmitter. Connection of this port is optional. If the port is disconnected, the transmitter will be on for the duration of an application. \\ \\
+\noindent The transmitter is powered \textit{on} when:
+\begin{itemize}
+  \item the AD9361 is being initialized (typical duration is 200 ms), or
+  \item one or more \comp.hdl workers exist in the bitstream and
+    \begin{itemize}
+      \item all \comp.hdl workers have their \verb+event_in+ ports disconnected and any are in the operating state, or
+      \item any \comp.hdl workers have their \verb+event_in+ ports connected and receive a txOn message (while in the operating state)
+    \end{itemize}
+\end{itemize}
+The transmitter is powered \textit{off} when:
+\begin{itemize}
+  \item the AD9361 is not being initialized and
+  \begin{itemize}
+    \item no \comp.hdl workers exist in the bitstream, or
+    \item one \comp.hdl worker exists in the bitstream and
+      \begin{itemize}
+        \item is not in the operating state, or
+        \item is in operating state and has its \verb+event_in+ port connected but has not yet received a message on its \verb+event_in+ port,
+        \item is in operating state and has its \verb+event_in+ port connected and receives a txOff message on its \verb+event_in+ port
+      \end{itemize}
+    \item two \comp.hdl workers exist in the bitstream and
+      \begin{itemize}
+        \item both workers are not in the operating state, or
+        \item no workers which are in the operating state and have their \verb+event_in+ port connected have yet received a message on their \verb+event_in+ port
+        \item both workers have received a txOff message on their \verb+event_in+ ports in succession (with no txOn messages in-between) while in the operating state
+      \end{itemize}
+  \end{itemize}
+\end{itemize}
+Note that the normal use case for utilizing both DAC channels (and thus using two \comp.hdl workers) is for MIMO applications. As such, the normal use case is to either have no \verb+even_in+ ports connected, causing the transmitter to default to on for the duration of an application, or to have all connected and to send the same txOn/txOff message to all \verb+event_in+ ports simultaneously. \\
+
+\pagebreak
+\noindent Note that \verb+event_in+ messages exist in the control plane clock domain but the AD9361 registers them in the AD9361 FB\_CLK domain, which may be slower than the control plane clock . The \verb+min_num_cp_clks_per_txen_event+ property enforces that tx events are properly synchronized to the AD9361 FB\_CLK without losing any events by ensuring \verb+event_in+ messages are property spaced out. This is done by applying backpressure to the \verb+event_in+ port after each message is received. Backpressure is applied for \verb+min_num_cp_clks_per_txen_event+ - 1 number of control plane clocks after each \verb+event_in+ message is received. See property description for more info on calculation of the \verb+min_num_cp_clks_per_txen_event+ value. This property's default value of 180 was calculated using the worst-case (lowest) AD9361 sampling rate, worst-case (highest) AD9361 TX FIR interpolation factor, and highest known control plane clock rate of 125 MHz. The AD9361 LVDS or CMOS single port full duplex DDR mode was used for the default calculation. This property's value can be lowered for specific sampling rates / control plane clock rates if desired. Note that if using with a control plane clock rate of greater than 125 MHz, the default value should be overridden with a higher value.
+
+\pagebreak
+
 
 \section*{Source Dependencies}
 \subsection*{\comp.hdl}
 \begin{itemize}
-	\item opencpi/hdl/devices/ad9361\_dac.hdl/ad9361\_dac.vhd
-	\item opencpi/hdl/primitives/util/dac\_fifo.vhd
-	\item opencpi/hdl/primitives/util/util\_pkg.vhd
-	\item opencpi/hdl/primitives/util/sync\_status.vhd
-	\item opencpi/hdl/primitives/bsv/imports/SyncFIFO.v
-	\item opencpi/hdl/primitives/bsv/imports/SyncResetA.v
-	\item opencpi/hdl/primitives/bsv/imports/SyncHandshake.v
-	\item opencpi/hdl/primitives/bsv/bsv\_pkg.vhd
+	\item core/hdl/primitives/util/util\_pkg.vhd
+	\item core/hdl/primitives/util/zlm\_detector.vhd
+	\item assets/hdl/devices/ad9361\_dac.hdl/ad9361\_dac.vhd
+	\item assets/hdl/devices/ad9361\_dac.hdl/trunc\_round\_16\_to\_12\_signed.vhd
+	\item assets/hdl/primitives/misc\_prims/event\_in\_to\_txen/src/event\_in\_to\_txen.vhd
+	\item assets/hdl/primitives/misc\_prims/misc\_prims\_pkg.vhd
+	\item assets/hdl/primitives/util/dac\_fifo.vhd
+	\item assets/hdl/primitives/util/util\_pkg.vhd
+	\item assets/hdl/primitives/util/sync\_status.vhd
+	\item assets/hdl/primitives/bsv/imports/SyncFIFO.v
+	\item assets/hdl/primitives/bsv/imports/SyncResetA.v
+	\item assets/hdl/primitives/bsv/imports/SyncHandshake.v
+	\item assets/hdl/primitives/bsv/bsv\_pkg.vhd
 \end{itemize}
 \begin{landscape}
 
@@ -189,12 +292,18 @@ The \comp{}.hdl worker ingests signed Q0.15 I/Q samples from its input port, rou
 	\section*{Worker Properties}
 	\subsection*{\comp.hdl}
 	\begin{scriptsize}
-		\begin{tabular}{|p{2cm}|p{2cm}|p{1cm}|p{2cm}|p{2cm}|p{2cm}|p{2cm}|p{1cm}|p{5.95cm}|}
+		\begin{tabular}{|p{2cm}|p{4cm}|p{1cm}|p{2cm}|p{2cm}|p{2cm}|p{2cm}|p{1cm}|p{3.95cm}|}
 			\hline
 			\rowcolor{blue}
 			Scope        & Name                 & Type & SequenceLength & ArrayDimensions & Accessibility & Valid Range        & Default & Usage                                                                                                                  \\
 			\hline
 			Property     & \verb+fifo_depth+    & ULong& -              & -               & Parameter     & Standard           & 64      & Depth in number of samples of the control-to-DAC clock domain crossing FIFO. \\
+			\hline
+			Property     & \verb+IDATA_WIDTH_p+ & UShort&-              & -               & Parameter     & Standard           & 32      & \\
+			\hline
+			Property     & \verb+min_num_cp_clks_per_txen_events+ & UShort & - & -        & Initial, Readable & Standard       & 180     &
+After every ZLM received on the \verb+event_in+ port, backpressure will be held on that port for one less than the number of control plane clock cycles specified by this property. This is done in order to ensure tx events are properly synchronized to the AD9361 FB\_CLK without losing any events. Minimum required value is ceil(1.5 * control plane clock rate / AD9361 FB\_CLK rate [use lowest expected FB\_CLK rate for your scenario]).
+\\
 			\hline
 		\end{tabular}
 	\end{scriptsize}
@@ -208,18 +317,22 @@ The \comp{}.hdl worker ingests signed Q0.15 I/Q samples from its input port, rou
 			\hline
 			in   & False    & iqstream\_protocol & False     & -        & Complex signed samples (Q0.15 I, Q0.15 Q). \\
 			\hline
+			event\_in & False & tx\_event-prot   & False     & -        & TX on/off events. \\
+			\hline
 		\end{tabular}
 	\end{scriptsize}
 
 	\section*{Worker Interfaces}
 	\subsection*{\comp.hdl}
 	\begin{scriptsize}
-		\begin{tabular}{|p{2cm}|p{1.5cm}|p{1.5cm}|p{1.5cm}|p{15.18cm}|}
+		\begin{tabular}{|p{2cm}|p{1.5cm}|p{1.5cm}|p{1.5cm}|p{1.5cm}|p{13.23cm}|}
 			\hline
 			\rowcolor{blue}
-			Type            & Name & DataWidth & Advanced & Usage                  \\
+			Type            & Name & DataWidth & Optional & Advanced & Usage                  \\
 			\hline
-			StreamInterface & in   & 32        & -        & Complex signed samples (Q0.15 I, Q0.15 Q). This port ingests data and forces backpressure. Because both a "pulling" pressure from the DAC clock and potentially limited "pushing pressure" from this port exists, it is possible for a value to be clocked to the DAC while no new value was yet seen at the in port. This event is monitored via the \verb+underrun+ property.  \\
+			StreamInterface & in   & 32        & False    & -        & Complex signed samples (Q0.15 I, Q0.15 Q). This port ingests data and forces backpressure. Because both a ``pulling'' pressure from the DAC clock and potentially limited ``pushing pressure'' from this port exists, it is possible for a value to be clocked to the DAC while no new value was yet seen at the in port. This event is monitored via the \verb+underrun+ property.  \\
+			\hline
+			StreamInterface & event\_in  & -   & True     & -        & TX on/off events. \\
 			\hline
 		\end{tabular}
 	\end{scriptsize} \\ \\
@@ -233,7 +346,7 @@ The \comp{}.hdl worker ingests signed Q0.15 I/Q samples from its input port, rou
 			\cline{6-9}
 			&             &        &     &      & dac\_clk     & Input     & 1      & Clock for dac\_ready, dac\_take, dac\_data\_I, and dac\_data\_Q. \\
 			\cline{6-9}
-			&             &        &     &      & dac\_ready   & Output    & 1      & Indicates that the dac\_data\_I and dac\_data\_Q are valid/ready to be latched on the next rising edge of adc\_clk. \\
+			&             &        &     &      & dac\_ready   & Output    & 1      & Indicates that the dac\_data\_I and dac\_data\_Q are valid/ready to be latched on the next rising edge of dac\_clk. \\
 			\cline{6-9}
 			&             &        &     &      & dac\_take    & Input     & 1      & Indicates that dac\_data\_I and dac\_data\_Q were latched on the previous rising edge of dac\_clk. If in the previous clock cycle dac\_ready was 1, the values of dac\_data\_I and dac\_data\_Q should not be allowed to update with a new sample until dac\_take is 1. \\
 			\cline{6-9}
@@ -247,77 +360,24 @@ The \comp{}.hdl worker ingests signed Q0.15 I/Q samples from its input port, rou
 
 \section*{Control Timing and Signals}
 \subsection*{Clock Domains}
-The \Comp{}.hdl device worker contains two clock domains: the clock from the control plane, and the dac\_clk clock from the \devsignal{}. It is expected that the control plane clock is faster than the dac\_clk clock in order to prevent a FIFO underrun (monitored via the \verb+underrun+ property). Note that the clock rate of dac\_clk is equivalent to half the clock rate of the AD9361 DATA\_CLK\_P pin\cite{dac_sub_comp_datasheet} and that the AD9361 DATA\_CLK\_P rate's range is 2,083,333 Hz to 61,440,000 Hz. As such, always running this worker with a minimum control plane clock rate of 30,720,000 Hz will prevent underrun under all circumstances.
+The \Comp{} device worker contains two clock domains: the clock from the control plane, and the dac\_clk clock from the \devsignal{}. It is expected that the control plane clock is faster than the dac\_clk clock in order to prevent a FIFO underrun (monitored via the \verb+underrun+ property).
 \subsection*{Latency}
 The latency from the input port to the \devsignal{} data bus is both both non-deterministic and dynamic. Non-determinism exists as a result of the data flowing through an asynchronous FIFO with each side in a different clock domain. Runtime dynamism exists as a result of the AD9361 DATA\_CLK\_P clock, and therefore the dac\_clk clock rates, being runtime dynamic. The use of any FIFO, synchronous or asynchronous, between the input port and the \devsignal{} also creates runtime dynamism in latency.
 \subsection*{Backpressure}
-Backpressure is transferred from the \devsignal{}'s dac\_clk clock to the input port. The input port is expected to frequently experience backpressure in order to prevent a FIFO underrun.
+Backpressure is transferred from the \devsignal{}'s dac\_clk clock to the input port. The input port is expected to frequently experience backpressure in order to prevent a FIFO underrun. Backpressure is applied to the \verb+event_in+ port according to the \verb+min_num_cp_clks_per_txen_event+ property value.
 
+\section*{Worker Configuration Parameters}
+\subsubsection*{\comp.hdl}
+\input{../../\ecomp.hdl/configurations.inc}
 \section*{Performance and Resource Utilization}
 \subsubsection*{\comp.hdl}
-Fmax refers to the maximum allowable clock rate for any registered signal paths within a given clock domain for an FPGA design. Fmax in the table below is specific only to this worker and represents the maximum possible Fmax for any OpenCPI bitstream built with this worker included. Note that the Fmax value for a given clock domain for the final bitstream is often worse than the Fmax specific to this worker, even if this worker is the only one included in the bitstream. Note also that the dev\_dac's dac\_clk clock rate will only ever go as high as half of the AD9361's DATA\_CLK\_P rate, or half of 245.76 MHz\cite{adi_ug570} which is 122.88 MHz. \\ \\
-Table entries are a result of building the woker with the following parameter property sets:
+Fmax refers to the maximum allowable clock rate for any registered signal paths within a given clock domain for an FPGA design. Fmax in the table below is specific only to this worker and represents the maximum possible Fmax for any OpenCPI bitstream built with this worker included. Note that the Fmax value for a given clock domain for the final bitstream is often worse than the Fmax specific to this worker, even if this worker is the only one included in the bitstream. \\ \\
+
 %\input{../../\ecomp.hdl/utilization.inc}
-\begin{itemize}
-	\item \verb+fifo_depth+=64
-\end{itemize}
-% see performance_and_resource_utilization.txt
-\begin{scriptsize}
-	\begin{tabular}{|M{4.2cm}|M{1.1cm}|M{1.1cm}|M{2.3cm}|M{2.7cm}|M{1.9cm}|M{1.3cm}|}
-		\hline
-    \rowcolor{blue}
-    Device                                 & Registers (typical) & LUTS (typical) & \multicolumn{2}{c|}{Fmax (typical)}  & Memory/Special Functions & Design Suite \\
-		\hline
-    \rowcolor{blue}
-		                                       &           &      & control plane clock & dev\_dac.dac\_clk clock &           &          \\
-		\hline
-		\multirow{2}{*}{Zynq XC7Z020-1-CLG484} & 149       & 126  & 245 MHz \textsuperscript{\ref{abc}} & 233 MHz \textsuperscript{\ref{abc}} & 1 RAMB18 & Vivado 2017.1 \\
-		\cline{2-7}
-		                                       & 169       & 297  & 410 MHz             & 419 MHz                 & 8 RAM64M  & ISE 14.7 \\
-		\hline
-		Virtex-6 XC6VLX240T-1-FF1156           & 169       & 289  & 388 MHz             & 391 MHz                 & 8 RAM64M  & ISE 14.7 \\
-		\hline
-		Stratix IV EP4SGX230K-C2-F40           & 148       & 166  & \ref{quartustiming} & \ref{quartustiming} & 1,536 block memory bits & Quartus Prime 15.1 \\
-		\hline
-	\end{tabular}
-\end{scriptsize} \\ \\
+\input{utilization_custom.inc}
+
 \footnotetext[1]{\label{abc}These measurements were the result of a Vivado timing analysis which was different from the Vivado analysis performed by default for OpenCPI worker builds. For more info see Appendix \ref{appendix}}
 \footnotetext[2]{\label{quartustiming}Quartus does not perform timing analysis at the OpenCPI worker build (i.e. synthesis) stage.}
-\pagebreak
-\section*{Test and Verification}
-\subsection*{Theory of Operation}
-The AD9361 has a Built In Self Test (BIST) mode cable of validating in-situ the digital RX/TX data paths without the need for additional external equipment. One of the BIST configurations enables a Linear Feedback Shift Register (LFSR) within the AD9361 and sends the LFSR output to AD9361's ADC data pins. The LFSR generates a Pseudo Random Bit Sequence (PRBS). By using the LFSR algorithm to verify data fidelity after the RX data is registered inside the FPGA, the AD9361-to-FPGA digital RX data path is verified. An additional BIST configuration exists which performs a digital TX-to-RX loopback on the AD9361. By first validating the RX data path with the PRBS BIST, then running a loopback BIST while sending generating LFSR data to the AD9361 TX path while using the LFSR algorithm to verify data fidently after the RX data is registered inside the FPGA, the entire FPGA-to-AD9361-to-FPGA digital RX/TX data path is verfied. For more information on the BIST modes see \cite{adi_bist_doc} and \cite{adi_ug570}. \\ \\
-The \comp{}.hdl unit test performs an in-situ hardware test on either a Zedboard / FMCOMMS2/3 or x86 / ML605 / FMCOMMS2/3 hardware platform. The unit test currently only tests the AD9361 in its single channel LVDS mode. Note that AD9361 also supports two-channel mode and 4 non-LVDS (CMOS) modes. The unit test validates not only the \comp{}.hdl device worker, but the entire command/control and RX/TX data paths both in software and hardware. \\ \\
-The unit test first runs multiple ocpirun applications which use the AD9361 BIST PRBS mode and save the first 8192 samples output from the ad9361\_adc.hdl output port to a binary file. A Bit Error Rate (BER) is then calculated on each output file and verified to be 0\%. These data fidelty tests are run across the full range of possible AD9361 sample rates, (2.083334 Msps complex - 61.44 Msps complex for a single channel is the full range when the AD9361 FIR filter is disabled, note that said filter is disabled for all tests). The ad9361\_adc.hdl's \verb+overrun+ property is verified to be false for apps running as long as 10 seconds at the max sample rate. All of these tests are run for both 1R1T timing and 2R2T AD9361 timing modes. For more information on these AD9361 modes, see \cite{adi_ug570}. \\ \\
-The unit test next runs multiple ocpirun applications which use the AD9361 BIST loopback mode and save the first 8192 samples output from the ad9361\_adc.hdl output port to a binary file. The applications utilize an HDL worker which generates LFSR data (similar to the LFSR data generated on the AD9361 for the PRBS BIST) and sends this data out the TX path\footnote{For more information, see Data Src Component Data Sheet}. A Bit Error Rate (BER) is then calculated on each output file and verified to be 0\%. These data fidelty tests are run across the full range of possible AD9361 sample rates, (2.083334 Msps complex - 61.44 Msps complex for a single channel is the full range when the AD9361 FIR filter is disabled, note that said filter is disabled for all tests). The \verb+underrun+ property is verified to be false for apps running as long as 10 seconds at the max sample rate. All of these tests are run for both 1R1T timing and 2R2T AD9361 timing modes. For more information on these AD9361 modes, see \cite{adi_ug570}.
-\subsection*{Hardware Configuration}
-The \comp{}.hdl unit test requires an FMCOMMS2 or FMCOMMS3 card (which has an AD9361 on board) and an ML605 or Zedboard. On ML605, the FMCOMMS3 must be in the FMC LPC slot due to known TX data fidelity issues with the FMC HPC slot.
-\subsection*{Build Instructions}
-The \comp{}.test directory contains the \comp{}.hdl unit test. The test can be built on a development machine from within this directory by running the following command to build for ML605 deployment:
-\lstset{language=bash, columns=flexible, breaklines=true, prebreak=\textbackslash, basicstyle=\ttfamily, showstringspaces=false,upquote=true, aboveskip=\baselineskip, belowskip=\baselineskip}
-\begin{lstlisting}
-ocpidev build --hdl-platform ml605
-\end{lstlisting}
-The following command builds for Zedboard deployment:
-\begin{lstlisting}
-OCPI_TARGET_PLATFORM=xilinx13_3 ocpidev build --hdl-platform zed
-\end{lstlisting}
-\subsection*{Execution Instructions}
-When executing on an x86/ML605 machine, the \texttt{LD\_LIBRARY\_PATH} environment variable must be prepended with the location of the libusb install directory which was determined when performing the AngryViper Xilinx ISE installation instructions\cite{vendor_tools_install} (most likely location is /usr/local/lib/). If it does not matter which ML605 FMC slot is tested, the ML605 test should be executed by running the following command. Using this command, it is possible for either ML605 FMC slot to be used for AD9361 tests at runtime.
-\begin{lstlisting}
-LD_LIBRARY_PATH=<libusb-install-location>:$LD_LIBRARY_PATH make tests
-\end{lstlisting}
-To test the ML605 for a specific FMCOMMS2/3 FMC slot location, the \texttt{OCPI\_LIBRARY\_PATH} environment variable must be prepended with the location of the FPGA bitstream for the desired FMC LPC/HPC slot. The command is as follows:
-\begin{lstlisting}
-LD_LIBRARY_PATH=<libusb-install-location>:$LD_LIBRARY_PATH OCPI_LIBRARY_PATH=<path-to-bitstream>:$OCPI_LIBRARY_PATH make tests
-\end{lstlisting}
-To run on the Zedboard, the built \comp{}.test directory must either be mounted from the development machine to the Zedboard, or copied to the Zedboard. From within the \comp{}.test directory, the follow command executes the test natively on the Zedboard:
-\begin{lstlisting}
-OCPI_LIBRARY_PATH=$OCPI_LIBRARY_PATH:<path-to-ocpi.core-project/exports/lib/>:<path-to-ocpi.assets-project/exports/lib> ./ad9361_dac_test_app
-\end{lstlisting}
-Upon completion of a successful test, PASSED is printed to the screen and a value of 0 is returned. Upon failure, FAILED is printed to the screen and a non-zero value is returned.
-\subsection*{Troubleshooting}
-This unit test is in need of more robust error messaging. If a failure occurs but the test completed, the screen will output a diff between a generated log file odata/AD9361\_BIST\_PRBS.log and a golden log file. If a failure occurs before the test was completed, there is sometimes not a good error message generated. Upon failure, the logs should be checked to ensure the error was not one which prevented the test from being run. Log files are also saved which capture the stdout/stderr for each of the multiple ocpirun calls, e.g. odata/app\_2.083334e6sps\_fir0\_0\_1sec\_prbs.log.
 
 \pagebreak
 \begin{thebibliography}{1}
@@ -326,17 +386,17 @@ This unit test is in need of more robust error messaging. If a failure occurs bu
 \url{http://www.analog.com/en/products/rf-microwave/integrated-transceivers-transmitters-receivers/wideband-transceivers-ic/ad9361.html}
 \bibitem{adi_ug570} AD9361 Reference Manual UG-570\\
 AD9361\_Reference\_Manual\_UG-570.pdf
-\bibitem{adi_bist_doc} AD9361 BIST FAQ \\
-\url{https://ez.analog.com/servlet/JiveServlet/download/11828-2-28791/AD9361%20BIST%20FAQ.pdf}
 \bibitem{vendor_tools_install} FPGA Vendor Tools Installation Guide \\
-FPGA\_Vendor\_Tools\_Installation\_Guide.pdf
-\bibitem{dac_sub_comp_datasheet} AD361 DAC Sub Component Data Sheet \\AD9361\_DAC\_Sub.pdf
+\url{https://opencpi.github.io/FPGA_Vendor_Tools_Installation_Guide.pdf}
+\bibitem{dac_sub_comp_datasheet} AD9361 DAC Sub Component Data Sheet \\
+\url{https://opencpi.github.io/assets/AD9361_DAC_Sub.pdf}
 
 \end{thebibliography}
 \pagebreak
 \section{Appendix - Vivado Timing Analysis} \label{appendix}
 
-The Vivado timing report that OpenCPI runs for device workers may erroneously report a max delay for a clocking path which should have been ignored. Custom Vivado tcl commands had to be run for this device worker to extract pertinent information from Vivado timing analysis. After building the worker, the following commands were run from the base project directory (after the Vivado settings64.sh was sourced):
+The Vivado timing report that OpenCPI runs for device workers may erroneously report a max delay for a clocking path which should have been ignored. Custom Vivado tcl commands had to be run for this device worker to extract pertinent information from Vivado timing analysis. After building the worker, the following commands were run from the assets project directory (after the Vivado settings64.sh was sourced):
+\lstset{language=bash, backgroundcolor=\color{lightgray}, columns=flexible, breaklines=true, prebreak=\textbackslash, basicstyle=\ttfamily, showstringspaces=false,upquote=true, aboveskip=\baselineskip, belowskip=\baselineskip}
 \begin{lstlisting}
 cd hdl/devices/
 vivado -mode tcl
@@ -348,28 +408,48 @@ synth_design -part xc7z020clg484-1 -top ad9361_dac_rv -mode out_of_context
 create_clock -name clk1 -period 0.001 [get_nets {ctl_in[Clk]}]
 create_clock -name clk2 -period 0.001 [get_nets {dev_dac_in[dac_clk]}]
 set_clock_groups -asynchronous -group [get_clocks clk1] -group [get_clocks clk2]
-report_timing -delay_type min_max -sort_by slack -input_pins -group clk1
-report_timing -delay_type min_max -sort_by slack -input_pins -group clk2
 \end{lstlisting}
-The following is the output of the timing reports. The Fmax for the control plane clock for this worker is computed as the maximum magnitude slack with a control plane clock of 1 ps plus 2 times the assumed 1 ps control plane clock period (4.075 ns + 0.002 ns = 4.077 ns, 1/4.077 ns = 245.28 MHz). The Fmax for the dac\_clk clock from the devsignal is computed as the maximum magnitude slack with dac\_clk of 1 ps plus 2 times the assumed 1 ps dac\_clk period (4.285 ns + 0.002 ns = 4.287 ns, 1/4.287 ns = 233.26 MHz).
+The Fmax for the control plane clock for this worker is computed as the maximum magnitude slack with a control plane clock of 1 ps plus 2 times the assumed 1 ps control plane clock period (5.372 ns + 0.002 ns = 5.374 ns, 1/5.374 ns = 186.08 MHz). The Fmax for the dac\_clk clock from the devsignal is computed as the maximum magnitude slack with dac\_clk of 1 ps plus 2 times the assumed 1 ps dac\_clk period (4.306 ns + 0.002 ns = 4.308 ns, 1/4.287 ns = 232.12 MHz). \\ \\
+The following command is run to get control plane clock timing:
+\begin{lstlisting}
+report_timing -delay_type min_max -sort_by slack -input_pins -group clk1
+\end{lstlisting}
+The expected output of the command is as follows:
 \fontsize{6}{12}\selectfont
 \begin{lstlisting}
-Vivado% report_timing -delay_type min_max -sort_by slack -input_pins -group clk1
+INFO: [Timing 38-35] Done setting XDC timing constraints.
+INFO: [Timing 38-91] UpdateTimingParams: Speed grade: -1, Delay Type: min_max.
+INFO: [Timing 38-191] Multithreading enabled for timing update using a maximum of 8 CPUs
+WARNING: [Timing 38-242] The property HD.CLK_SRC of clock port "ctl_in[Clk]" is not set. In out-of-context mode, this prevents timing estimation for clock delay/skew
+Resolution: Set the HD.CLK_SRC property of the out-of-context port to the location of the clock buffer instance in the top-level design
+WARNING: [Timing 38-242] The property HD.CLK_SRC of clock port "dev_dac_in[dac_clk]" is not set. In out-of-context mode, this prevents timing estimation for clock delay/skew
+Resolution: Set the HD.CLK_SRC property of the out-of-context port to the location of the clock buffer instance in the top-level design
+INFO: [Timing 38-78] ReportTimingParams: -max_paths 1 -nworst 1 -delay_type min_max -sort_by slack.
+Copyright 1986-2017 Xilinx, Inc. All Rights Reserved.
+-------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2017.1 (lin64) Build 1846317 Fri Apr 14 18:54:47 MDT 2017
+| Date         : Wed Oct  3 16:41:06 2018
+| Host         : <removed> running 64-bit CentOS Linux release 7.5.1804 (Core)
+| Command      : report_timing -delay_type min_max -sort_by slack -input_pins -group clk1
+| Design       : ad9361_dac_rv
+| Device       : 7z020-clg484
+| Speed File   : -1  PRODUCTION 1.11 2014-09-11
+-------------------------------------------------------------------------------------------------
 
 Timing Report
 
-Slack (VIOLATED) :        -4.075ns  (required time - arrival time)
-  Source:                 IN_port/fifo/data0_reg_reg[12]/C
+Slack (VIOLATED) :        -5.372ns  (required time - arrival time)
+  Source:                 IN_port/fifo/data0_reg_reg[13]/C
                             (rising edge-triggered cell FDRE clocked by clk1  {rise@0.000ns fall@0.001ns period=0.001ns})
   Destination:            worker/fifo/fifo/fifoMem_reg/DIADI[9]
                             (rising edge-triggered cell RAMB18E1 clocked by clk1  {rise@0.000ns fall@0.001ns period=0.001ns})
   Path Group:             clk1
   Path Type:              Setup (Max at Slow Process Corner)
   Requirement:            0.002ns  (clk1 rise@0.002ns - clk1 rise@0.000ns)
-  Data Path Delay:        3.077ns  (logic 1.780ns (57.854%)  route 1.297ns (42.146%))
-  Logic Levels:           4  (CARRY4=3 LUT2=1)
+  Data Path Delay:        4.374ns  (logic 1.904ns (43.533%)  route 2.470ns (56.467%))
+  Logic Levels:           5  (CARRY4=3 LUT4=1 LUT5=1)
   Clock Path Skew:        -0.049ns (DCD - SCD + CPR)
-    Destination Clock Delay (DCD):    0.924ns = ( 0.926 - 0.002 ) 
+    Destination Clock Delay (DCD):    0.924ns = ( 0.926 - 0.002 )
     Source Clock Delay      (SCD):    0.973ns
     Clock Pessimism Removal (CPR):    0.000ns
   Clock Uncertainty:      0.035ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
@@ -380,65 +460,89 @@ Slack (VIOLATED) :        -4.075ns  (required time - arrival time)
 
     Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
   -------------------------------------------------------------------    -------------------
-                         (clock clk1 rise edge)       0.000     0.000 r  
+                         (clock clk1 rise edge)       0.000     0.000 r
                                                       0.000     0.000 r  ctl_in[Clk] (IN)
-                         net (fo=114, unset)          0.973     0.973    IN_port/fifo/ctl_in[Clk]
-                         FDRE                                         r  IN_port/fifo/data0_reg_reg[12]/C
+                         net (fo=198, unset)          0.973     0.973    IN_port/fifo/ctl_in[Clk]
+                         FDRE                                         r  IN_port/fifo/data0_reg_reg[13]/C
   -------------------------------------------------------------------    -------------------
-                         FDRE (Prop_fdre_C_Q)         0.518     1.491 r  IN_port/fifo/data0_reg_reg[12]/Q
-                         net (fo=3, unplaced)         0.488     1.979    IN_port/fifo/IN_data[4]
-                                                                      r  IN_port/fifo/fifoMem_reg_i_24/I0
-                         LUT2 (Prop_lut2_I0_O)        0.295     2.274 r  IN_port/fifo/fifoMem_reg_i_24/O
-                         net (fo=1, unplaced)         0.000     2.274    IN_port/fifo/fifoMem_reg_i_24_n_0
+                         FDRE (Prop_fdre_C_Q)         0.518     1.491 r  IN_port/fifo/data0_reg_reg[13]/Q
+                         net (fo=3, unplaced)         0.759     2.250    IN_port/fifo/IN_data[5]
+                                                                      r  IN_port/fifo/fifoMem_reg_i_36/I1
+                         LUT4 (Prop_lut4_I1_O)        0.295     2.545 r  IN_port/fifo/fifoMem_reg_i_36/O
+                         net (fo=1, unplaced)         0.902     3.447    IN_port/fifo/fifoMem_reg_i_36_n_0
+                                                                      r  IN_port/fifo/fifoMem_reg_i_24/I1
+                         LUT5 (Prop_lut5_I1_O)        0.124     3.571 r  IN_port/fifo/fifoMem_reg_i_24/O
+                         net (fo=1, unplaced)         0.000     3.571    IN_port/fifo/fifoMem_reg_i_24_n_0
                                                                       r  IN_port/fifo/fifoMem_reg_i_5/S[0]
                          CARRY4 (Prop_carry4_S[0]_CO[3])
-                                                      0.513     2.787 r  IN_port/fifo/fifoMem_reg_i_5/CO[3]
-                         net (fo=1, unplaced)         0.009     2.796    IN_port/fifo/fifoMem_reg_i_5_n_0
+                                                      0.513     4.084 r  IN_port/fifo/fifoMem_reg_i_5/CO[3]
+                         net (fo=1, unplaced)         0.009     4.093    IN_port/fifo/fifoMem_reg_i_5_n_0
                                                                       r  IN_port/fifo/fifoMem_reg_i_4/CI
                          CARRY4 (Prop_carry4_CI_CO[3])
-                                                      0.117     2.913 r  IN_port/fifo/fifoMem_reg_i_4/CO[3]
-                         net (fo=1, unplaced)         0.000     2.913    IN_port/fifo/fifoMem_reg_i_4_n_0
+                                                      0.117     4.210 r  IN_port/fifo/fifoMem_reg_i_4/CO[3]
+                         net (fo=1, unplaced)         0.000     4.210    IN_port/fifo/fifoMem_reg_i_4_n_0
                                                                       r  IN_port/fifo/fifoMem_reg_i_3/CI
                          CARRY4 (Prop_carry4_CI_O[1])
-                                                      0.337     3.250 r  IN_port/fifo/fifoMem_reg_i_3/O[1]
-                         net (fo=1, unplaced)         0.800     4.050    worker/fifo/fifo/sD_IN[9]
+                                                      0.337     4.547 r  IN_port/fifo/fifoMem_reg_i_3/O[1]
+                         net (fo=1, unplaced)         0.800     5.347    worker/fifo/fifo/sD_IN[9]
                          RAMB18E1                                     r  worker/fifo/fifo/fifoMem_reg/DIADI[9]
   -------------------------------------------------------------------    -------------------
 
-                         (clock clk1 rise edge)       0.002     0.002 r  
+                         (clock clk1 rise edge)       0.002     0.002 r
                                                       0.000     0.002 r  ctl_in[Clk] (IN)
-                         net (fo=114, unset)          0.924     0.926    worker/fifo/fifo/ctl_in[Clk]
+                         net (fo=198, unset)          0.924     0.926    worker/fifo/fifo/ctl_in[Clk]
                          RAMB18E1                                     r  worker/fifo/fifo/fifoMem_reg/CLKBWRCLK
-                         clock pessimism              0.000     0.926    
-                         clock uncertainty           -0.035     0.891    
+                         clock pessimism              0.000     0.926
+                         clock uncertainty           -0.035     0.891
                          RAMB18E1 (Setup_ramb18e1_CLKBWRCLK_DIADI[9])
                                                      -0.916    -0.025    worker/fifo/fifo/fifoMem_reg
   -------------------------------------------------------------------
-                         required time                         -0.025    
-                         arrival time                          -4.050    
+                         required time                         -0.025
+                         arrival time                          -5.347
   -------------------------------------------------------------------
-                         slack                                 -4.075    
+                         slack                                 -5.372
 
 
 
 
-report_timing: Time (s): cpu = 00:00:08 ; elapsed = 00:00:09 . Memory (MB): peak = 2080.828 ; gain = 485.520 ; free physical = 16892 ; free virtual = 84602
-Vivado% report_timing -delay_type min_max -sort_by slack -input_pins -group clk2
+report_timing: Time (s): cpu = 00:00:08 ; elapsed = 00:00:09 . Memory (MB): peak = 2095.184 ; gain = 497.547 ; free physical = 7704 ; free virtual = 54670
+\end{lstlisting}
+\fontsize{10}{12}\selectfont
+The following command is run to get dev\_dac.dac\_clk timing:
+\begin{lstlisting}
+report_timing -delay_type min_max -sort_by slack -input_pins -group clk2
+\end{lstlisting}
+The expected output of the command is as follows:
+\fontsize{6}{12}\selectfont
+\begin{lstlisting}
+INFO: [Timing 38-91] UpdateTimingParams: Speed grade: -1, Delay Type: min_max.
+INFO: [Timing 38-191] Multithreading enabled for timing update using a maximum of 8 CPUs
+INFO: [Timing 38-78] ReportTimingParams: -max_paths 1 -nworst 1 -delay_type min_max -sort_by slack.
+Copyright 1986-2017 Xilinx, Inc. All Rights Reserved.
+-------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2017.1 (lin64) Build 1846317 Fri Apr 14 18:54:47 MDT 2017
+| Date         : Thu Oct  4 10:56:37 2018
+| Host         : <removed> running 64-bit CentOS Linux release 7.5.1804 (Core)
+| Command      : report_timing -delay_type min_max -sort_by slack -input_pins -group clk2
+| Design       : ad9361_dac_rv
+| Device       : 7z020-clg484
+| Speed File   : -1  PRODUCTION 1.11 2014-09-11
+-------------------------------------------------------------------------------------------------
 
 Timing Report
 
-Slack (VIOLATED) :        -4.285ns  (required time - arrival time)
-  Source:                 worker/fifo/fifo/dGDeqPtr_reg[1]/C
+Slack (VIOLATED) :        -4.306ns  (required time - arrival time)
+  Source:                 worker/fifo/fifo/dEnqPtr_reg[0]/C
                             (rising edge-triggered cell FDCE clocked by clk2  {rise@0.000ns fall@0.001ns period=0.001ns})
   Destination:            worker/fifo/fifo/fifoMem_reg/ENARDEN
                             (rising edge-triggered cell RAMB18E1 clocked by clk2  {rise@0.000ns fall@0.001ns period=0.001ns})
   Path Group:             clk2
   Path Type:              Setup (Max at Slow Process Corner)
   Requirement:            0.002ns  (clk2 rise@0.002ns - clk2 rise@0.000ns)
-  Data Path Delay:        3.760ns  (logic 1.061ns (28.220%)  route 2.699ns (71.780%))
-  Logic Levels:           3  (LUT4=2 LUT6=1)
+  Data Path Delay:        3.781ns  (logic 1.061ns (28.063%)  route 2.720ns (71.937%))
+  Logic Levels:           3  (LUT2=1 LUT6=2)
   Clock Path Skew:        -0.049ns (DCD - SCD + CPR)
-    Destination Clock Delay (DCD):    0.924ns = ( 0.926 - 0.002 ) 
+    Destination Clock Delay (DCD):    0.924ns = ( 0.926 - 0.002 )
     Source Clock Delay      (SCD):    0.973ns
     Clock Pessimism Removal (CPR):    0.000ns
   Clock Uncertainty:      0.035ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
@@ -449,38 +553,38 @@ Slack (VIOLATED) :        -4.285ns  (required time - arrival time)
 
     Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
   -------------------------------------------------------------------    -------------------
-                         (clock clk2 rise edge)       0.000     0.000 r  
+                         (clock clk2 rise edge)       0.000     0.000 r
                                                       0.000     0.000 r  dev_dac_in[dac_clk] (IN)
                          net (fo=35, unset)           0.973     0.973    worker/fifo/fifo/dev_dac_in[dac_clk]
-                         FDCE                                         r  worker/fifo/fifo/dGDeqPtr_reg[1]/C
+                         FDCE                                         r  worker/fifo/fifo/dEnqPtr_reg[0]/C
   -------------------------------------------------------------------    -------------------
-                         FDCE (Prop_fdce_C_Q)         0.518     1.491 r  worker/fifo/fifo/dGDeqPtr_reg[1]/Q
-                         net (fo=3, unplaced)         0.983     2.474    worker/fifo/fifo/p_0_in[0]
-                                                                      r  worker/fifo/fifo/dNotEmptyReg_i_5/I0
-                         LUT6 (Prop_lut6_I0_O)        0.295     2.769 r  worker/fifo/fifo/dNotEmptyReg_i_5/O
-                         net (fo=1, unplaced)         0.449     3.218    worker/fifo/fifo/dNotEmptyReg_i_5_n_0
-                                                                      r  worker/fifo/fifo/dNotEmptyReg_i_3/I3
-                         LUT4 (Prop_lut4_I3_O)        0.124     3.342 r  worker/fifo/fifo/dNotEmptyReg_i_3/O
-                         net (fo=3, unplaced)         0.467     3.809    worker/fifo/fifo/dNextNotEmpty__12
+                         FDCE (Prop_fdce_C_Q)         0.518     1.491 r  worker/fifo/fifo/dEnqPtr_reg[0]/Q
+                         net (fo=1, unplaced)         0.965     2.456    worker/fifo/fifo/dEnqPtr[0]
+                                                                      r  worker/fifo/fifo/dGDeqPtr_rep[0]_i_3/I0
+                         LUT6 (Prop_lut6_I0_O)        0.295     2.751 r  worker/fifo/fifo/dGDeqPtr_rep[0]_i_3/O
+                         net (fo=1, unplaced)         0.449     3.200    worker/fifo/fifo/dGDeqPtr_rep[0]_i_3_n_0
+                                                                      r  worker/fifo/fifo/dGDeqPtr_rep[0]_i_1/I1
+                         LUT6 (Prop_lut6_I1_O)        0.124     3.324 r  worker/fifo/fifo/dGDeqPtr_rep[0]_i_1/O
+                         net (fo=18, unplaced)        0.506     3.830    worker/fifo/fifo/dGDeqPtr0
                                                                       r  worker/fifo/fifo/fifoMem_reg_i_1/I0
-                         LUT4 (Prop_lut4_I0_O)        0.124     3.933 r  worker/fifo/fifo/fifoMem_reg_i_1/O
-                         net (fo=1, unplaced)         0.800     4.733    worker/fifo/fifo/fifoMem_reg_i_1_n_0
+                         LUT2 (Prop_lut2_I0_O)        0.124     3.954 r  worker/fifo/fifo/fifoMem_reg_i_1/O
+                         net (fo=1, unplaced)         0.800     4.754    worker/fifo/fifo/fifoMem_reg_i_1_n_0
                          RAMB18E1                                     r  worker/fifo/fifo/fifoMem_reg/ENARDEN
   -------------------------------------------------------------------    -------------------
 
-                         (clock clk2 rise edge)       0.002     0.002 r  
+                         (clock clk2 rise edge)       0.002     0.002 r
                                                       0.000     0.002 r  dev_dac_in[dac_clk] (IN)
                          net (fo=35, unset)           0.924     0.926    worker/fifo/fifo/dev_dac_in[dac_clk]
                          RAMB18E1                                     r  worker/fifo/fifo/fifoMem_reg/CLKARDCLK
-                         clock pessimism              0.000     0.926    
-                         clock uncertainty           -0.035     0.891    
+                         clock pessimism              0.000     0.926
+                         clock uncertainty           -0.035     0.891
                          RAMB18E1 (Setup_ramb18e1_CLKARDCLK_ENARDEN)
                                                      -0.443     0.448    worker/fifo/fifo/fifoMem_reg
   -------------------------------------------------------------------
-                         required time                          0.448    
-                         arrival time                          -4.733    
+                         required time                          0.448
+                         arrival time                          -4.754
   -------------------------------------------------------------------
-                         slack                                 -4.285    
+                         slack                                 -4.306
 
 
 

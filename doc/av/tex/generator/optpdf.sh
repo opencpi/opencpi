@@ -33,6 +33,10 @@ if [ ! -e ${MYLOC}/pdfmarks ]; then
   echo "Cannot find ${MYLOC}/pdfmarks file. Use makepdf.sh."
   exit 1
 fi
+if [ -z "$(command -v gs)" ]; then
+  echo "Cannot find ghostscript / gs."
+  exit 1
+fi
 
 file=$1
 filebase=$(basename $file .pdf)

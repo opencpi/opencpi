@@ -17,7 +17,17 @@ This is for CentOS 6 or 7 systems:
 For additional information, consult the [YUM/RPM Installation Guide][rpminstall].
 
 #### Build from Source
- - `scripts/install-opencpi.sh` (root permission *not* required)
+- These steps perform a source installation and build, in a user-controlled location.
+- `sudo yum install git` (ensure `git` is installed on the system)
+- Enter the following command in a directory where `opencpi` will be cloned/downloaded.
+- `git clone https://github.com/opencpi/opencpi.git`
+- `cd opencpi` (enter the directory where the OpenCPI git repository was cloned)
+- This next command will:
+--- first install some standard prerequisites using `sudo yum install`
+--- download/build others directly in the `prerequisites` subdirectory under `opencpi/`. 
+--- build the framework and built-in projects from source
+--- if a development system, run tests on the resulting built system
+- `scripts/install-opencpi.sh` (root permission *not* required)
 
 For additional information, consult the [traditional Installation Guide][ossinstall].
 

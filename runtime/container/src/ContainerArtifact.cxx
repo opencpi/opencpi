@@ -25,6 +25,7 @@
 namespace OL = OCPI::Library;
 namespace OA = OCPI::API;
 namespace OU = OCPI::Util;
+namespace OC = OCPI::Container;
 
 namespace OCPI {
   namespace Container {
@@ -58,7 +59,7 @@ namespace OCPI {
     static ezxml_t findChildWithAttr(ezxml_t x, const char *cName, const char *aName,
                                      const char *value)
     {
-      for (ezxml_t c = ezxml_child(x, cName); c; c = ezxml_next(c))
+      for (ezxml_t c = ezxml_child(x, cName); c; c = ezxml_cnext(c))
         if (hasAttrEq(c, aName, value))
           return c;
       return 0;
@@ -118,16 +119,17 @@ namespace OCPI {
 #endif
 
       }
-      Worker &w = createWorker(app, appInstName, impl, inst, NULL, false, 0, 1, wParams);
+      Worker &w = createWorker(app, appInstName, impl, inst, OC::NoWorkers, false, 0, 1, wParams);
       if (wProps)
 	w.setProperties(wProps);
       return w;
     }
 
     Worker & Artifact::createWorker(Application &app, const char *appInstName, ezxml_t impl,
-				    ezxml_t inst, Worker *slave, bool hasMaster, size_t member,
-				    size_t crewSize, const OCPI::Util::PValue *wParams) {
-      Worker &w = app.createWorker(this, appInstName, impl, inst, slave, hasMaster, member,
+				    ezxml_t inst, const OC::Workers &slaves, bool hasMaster,
+				    size_t member, size_t crewSize,
+				    const OCPI::Util::PValue *wParams) {
+      Worker &w = app.createWorker(this, appInstName, impl, inst, slaves, hasMaster, member,
 				   crewSize, wParams);
       m_workers.push_back(&w);
       w.initialize();

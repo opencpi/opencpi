@@ -281,6 +281,7 @@ namespace OCPI {
 	std::max(sizeIn, sizeOut);
       if (size == SIZE_MAX)
 	throw Error("Buffer size for connection must be specified");
+      size = roundUp(size, BUFFER_ALIGNMENT);
       return size;
     }
 
@@ -422,7 +423,7 @@ namespace OCPI {
       // Now we parse the child elements for operations.
       assert(m_nOpcodes >= m_nOperations);
       m_opScaling.resize(m_nOpcodes, NULL);
-      for (ezxml_t ox = ezxml_cchild(m_xml, "operation"); ox; ox = ezxml_next(ox)) {
+      for (ezxml_t ox = ezxml_cchild(m_xml, "operation"); ox; ox = ezxml_cnext(ox)) {
 	const char *err;
 	std::string oName;
 	if ((err = OE::checkAttrs(ox, "name", DISTRIBUTION_ATTRS, PARTITION_ATTRS, (void*)0)) ||
@@ -562,7 +563,7 @@ namespace OCPI {
 	return esprintf("hashfield attribute value \"%s\" not an argument to \"%s\"",
 			hash.c_str(), op.m_name.c_str());
       m_partitioning.resize(op.m_nArgs, 0);
-      for (ezxml_t ax = ezxml_cchild(x, "argument"); ax; ax = ezxml_next(ax)) {
+      for (ezxml_t ax = ezxml_cchild(x, "argument"); ax; ax = ezxml_cnext(ax)) {
 	std::string aName;
 	if ((err = OE::checkAttrs(ax, "name", PARTITION_ATTRS, (void*)0)) ||
 	    (err = OE::checkElements(ax, "dimension", (void*)0)) ||
@@ -584,7 +585,7 @@ namespace OCPI {
 	for (n = 0; n < nDims; n++)
 	  p[n] = def;
 	n = 0;
-	for (ezxml_t dx = ezxml_cchild(ax, "dimension"); dx; dx = ezxml_next(dx), n++, p++) {
+	for (ezxml_t dx = ezxml_cchild(ax, "dimension"); dx; dx = ezxml_cnext(dx), n++, p++) {
 	  if (n >= nDims)
 	    return esprintf("Too many dimensions for argument \"%s\" in operation \"%s\"",
 				a->m_name.c_str(), op.m_name.c_str());

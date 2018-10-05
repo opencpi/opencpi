@@ -1,23 +1,19 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Utilization Report for Worker "bias"
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\begin{scriptsize}
-	\begin{table}[H]
-	\captionsetup{justification=raggedright,singlelinecheck=false}
-	\caption{Worker Build Configuration ``0''}
-	\begin{tabular}{|c|c|c|c|c|c|c|c|}
-		\hline
-		\rowcolor{blue}
-		OpenCPI Target & Tool    & Version & Device          & Registers & LUTs & Fmax (MHz) & Memory/Special Functions\\
-		\hline
-		zynq\_ise      & ISE     & 14.7    & 7z010clg400-3   & 352       & 515  & 412.619    & N/A                     \\
-		\hline
-		virtex6        & ISE     & 14.7    & 6vcx75tff484-2  & 352       & 520  & 373.497    & N/A                     \\
-		\hline
-		zynq           & Vivado  & 2017.1  & xc7z020clg400-3 & 352       & 434  & 350.631    & N/A                     \\
-		\hline
-		stratix4       & Quartus & 15.1.0  & N/A             & 468       & 469  & N/A        & N/A                     \\
-		\hline
-	\end{tabular}
-	\end{table}
-\end{scriptsize}
+% Generated on Fri Oct  5 08:45:35 2018
+
+% It is best to wrap this table in \begin{landscape} and \end{landscape} in its including doc
+\begin{tiny}
+    \begin{longtable}[l]{* {9}{|c}|}
+    \captionsetup{justification=raggedright,singlelinecheck=false}
+    \caption{Resource Utilization Table for worker: bias}\\
+        \hline
+        \rowcolor{blue}
+            Configuration & OCPI Target & Tool    & Version & Device          & Registers (Typ) & LUTs (Typ) & Fmax (MHz) (Typ) & Memory/Special Functions \\
+            \hline
+            0             & zynq        & Vivado  & 2017.1  & xc7z020clg400-3 & 352             & 447        & N/A              & N/A \\
+            \hline
+            0             & stratix4    & Quartus & 17.1.0  & N/A             & 468             & 469        & N/A              & \begin{tabular}{@{}l@{}}Block Memory Bits: 210\end{tabular} \\
+            \hline
+            0             & virtex6     & ISE     & 14.7    & 6vcx75tff484-2  & 352             & 520        & 373.497          & N/A \\
+            \hline
+        \end{longtable}
+\end{tiny}

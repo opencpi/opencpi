@@ -154,6 +154,7 @@ public:
     for (int i = 0; i <256; ++i)
       workers.emplace_back(static_cast<FileWriter *>(NULL));
 #endif
+    // Bug? AV-4109 - we should optionally do output port here
     m_RunCondition.setPortMasks(1<<FILE_WRITE_DEMUX_IN, RCC_NO_PORTS);
     setRunCondition(&m_RunCondition);
   }

@@ -348,6 +348,7 @@ typedef std::vector<Clock*> Clocks;
 typedef Clocks::const_iterator ClocksIter;
 typedef std::list<Worker *> Workers;
 typedef Workers::iterator WorkersIter;
+typedef std::pair<std::string, std::string> StringPair;
 class Assembly;
 class HdlDevice;
 class DataPort;
@@ -387,7 +388,9 @@ class Worker : public OU::Worker {
   int m_defaultDataWidth;           // initialized to -1 to allow zero
   Language m_language;
   ::Assembly *m_assembly;
-  Worker *m_slave;                  // from slave attribute - is RCC-only
+  // vector of slave worker objects paired with a string of the name of the slave either from name
+  // attribute or auto generated
+  std::map<std::string, Worker*> m_slaves;
   HdlDevice *m_emulate;
   Worker *m_emulator;               // for test only, the emulator of this worker
   Signals m_signals;
@@ -419,6 +422,9 @@ class Worker : public OU::Worker {
   Clock *addWciClockReset();
   OU::Property *findProperty(const char *name) const;
   OU::Port *findMetaPort(const char *id, const OU::Port *except) const;
+  const char* parseSlaves();
+  std::string print_map();
+  const char* addSlave(const std::string worker_name, const std::string slave_name);
   virtual OU::Port &metaPort(unsigned long which) const;
   const char
     *addBuiltinProperties(),
@@ -454,7 +460,7 @@ class Worker : public OU::Worker {
     *addProperty(const char *xml, bool includeImpl),
     //    *doAssyClock(Instance *i, Port *p),
     *openSkelHDL(const char *suff, FILE *&f),
-    *emitVhdlRecordInterface(FILE *f),
+    *emitVhdlRecordInterface(FILE *f, bool isEntity = false),
     *emitImplHDL( bool wrap = false),
     *emitAssyImplHDL(FILE *f, bool wrap),
     *emitConfigImplHDL(FILE *f),
@@ -462,6 +468,7 @@ class Worker : public OU::Worker {
     *emitSkelHDL(),
     *emitBsvHDL(),
     *emitDefsHDL(bool wrap = false),
+    *emitVhdlEnts(),
     *emitVhdlWorkerPackage(FILE *f, unsigned maxPropName),
     *emitVhdlWorkerEntity(FILE *f),
     *emitVhdlPackageConstants(FILE *f),
@@ -474,7 +481,7 @@ class Worker : public OU::Worker {
     *finalizeHDL(),
     *deriveOCP(),
     *hdlValue(const std::string &name, const OU::Value &v, std::string &value,
-	      bool param = false, Language = NoLanguage),
+	      bool param = false, Language = NoLanguage, bool finalized = false),
     *findParamProperty(const char *name, OU::Property *&prop, size_t &nParam,
 		       bool includeInitial = false),
     *addConfig(ParamConfig &info, bool fromXml),
@@ -510,7 +517,7 @@ class Worker : public OU::Worker {
     emitXmlInstances(FILE *f),
     emitXmlConnections(FILE *f);
   void
-    emitCppTypesNamespace(FILE *f, std::string &nsName),
+    emitCppTypesNamespace(FILE *f, std::string &nsName, const std::string &slaveName=""),
     emitDeviceConnectionSignals(FILE *f, const char *iname, bool container),
     setParent(Worker *p), // when it can't happen at construction
     prType(OU::Property &pr, std::string &type),
@@ -548,7 +555,9 @@ class Worker : public OU::Worker {
 #define SKEL "-skel"
 #define IMPL "-impl"
 #define DEFS "-defs"
+#define ENTS "-ents"
 #define ASSY "-assy"
+#define CONTINST "-continst"
 #define VHD ".vhd"
 #define VER ".v"
 #define VERH ".vh"
@@ -556,7 +565,7 @@ class Worker : public OU::Worker {
 
 #define IMPL_ATTRS \
   "name", "spec", "paramconfig", "reentrant", "scaling", "scalable", "controlOperations", "xmlincludedirs", "componentlibraries"
-#define IMPL_ELEMS "componentspec", "properties", "property", "specproperty", "propertysummary", "xi:include", "controlinterface",  "timeservice", "unoc", "timebase", "sdp"
+#define IMPL_ELEMS "componentspec", "properties", "property", "specproperty", "propertysummary", "slave", "xi:include", "controlinterface",  "timeservice", "unoc", "timebase", "sdp"
 #define GENERIC_IMPL_CONTROL_ATTRS \
   "name", "SizeOfConfigSpace", "ControlOperations", "Sub32BitConfigProperties"
 #define ASSY_ELEMS "instance", "connection", "external"
@@ -571,8 +580,8 @@ extern const char
   *parseList(const char *list, const char * (*doit)(const char *tok, void *arg), void *arg),
   *parseControlOp(const char *op, void *arg),
   *vhdlValue(const char *pkg, const std::string &name, const OU::Value &v, std::string &value,
-	     bool param = false),
-  *verilogValue(const OU::Value &v, std::string &value),
+	     bool param = false, bool finalized = false),
+  *verilogValue(const OU::Value &v, std::string &value, bool finalized = false),
   *rccValue(OU::Value &v, std::string &value),
   *g_platform, *g_device, *load, *g_os, *g_os_version, *g_arch, **libraries, **mappedLibraries,
   *assembly, *attribute, *platformDir,
@@ -584,10 +593,11 @@ extern const char
 		      ezxml_t *parsed, std::string &childFile, bool optional),
   *emitContainerHDL(Worker*, const char *);
 
+extern bool g_dynamic;
 extern void
   doPrev(FILE *f, std::string &last, std::string &comment, const char *myComment),
   vhdlType(const OU::Property &dt, std::string &typeDecl, std::string &type,
-	   bool convert = false),
+	   bool convert = false, bool finalized = false),
   emitConstant(FILE *f, const std::string &prefix, const char *name, size_t val, Language lang),
   emitVhdlLibraries(FILE *f),
   emitLastSignal(FILE *f, std::string &last, Language lang, bool end);

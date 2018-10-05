@@ -25,19 +25,6 @@ include $(OCPI_CDK_DIR)/include/util.mk
 # IncludeProject so that platforms in current project are discovered
 $(OcpiIncludeProject)
 
-# The block below needs to happen prior to the HdlTargets:= assignments for
-# extracting HdlTarget info from this makefile
-ifdef ShellHdlTargetsVars
-# When collecting a list of HDL targets/platforms, you do not need to be inside a project.
-# So, collect all projects in the Project Registry Dir into the project path for searching.
-# If inside a project, the registry should be searched automatically via the project's imports.
-ifeq ($(OCPI_PROJECT_DIR),)
-  export OCPI_PROJECT_PATH:=$(OCPI_PROJECT_PATH):$(subst $(Space),:,$(wildcard $(OcpiProjectRegistryDir)/*))
-endif
-# hdl-make is needed for HdlGetFamily to determine HdlFamily_*
-include $(OCPI_CDK_DIR)/include/hdl/hdl-make.mk
-endif
-
 # This file is the database of hdl targets and associated tools
 # It is a "leaf file" that is used in several places.
 
@@ -45,11 +32,10 @@ endif
 # All other targets are some level underneath these
 # The levels are: top, family, part, speed
 
-#Testing: HdlTopTargets=xilinx altera verilator icarus
-HdlTopTargets:=xilinx altera modelsim # icarus altera # verilator # altera
-
+###############################################################################
+# Notes regarding HdlTargets:
+#
 # The HdlDefaultTarget_<family> is the one used for core building (primitives, workers...).
-# TODO: HdlDefaultTarget_<family> is only supported by Vivado at this time.
 # If the default is unset, the first part in a family is the one used for core building.
 # Usually the default should be the smallest so that you ensure each worker will fit
 # on the smaller parts. If you want to ensure that worker-synthesis uses as many
@@ -60,21 +46,59 @@ HdlTopTargets:=xilinx altera modelsim # icarus altera # verilator # altera
 # can be mapped to a part here and therefore a family as well.
 # E.g. in zed.mk, HdlPart_zed=xc7z020-1-clg484, which maps to xc7z020, which
 # maps to the 'zynq' family with a default target of xc7z020 for building pre-platform cores.
+###############################################################################
+
+# Vendors
+HdlTopTargets:=xilinx altera modelsim # icarus # verilator
+
+###############################################################################
+# Xilinx targets
+###############################################################################
 HdlTargets_xilinx:=isim virtex5 virtex6 spartan3adsp spartan6 zynq_ise zynq xsim
+
 HdlTargets_virtex5:=xc5vtx240t xc5vlx50t xc5vsx95t xc5vlx330t xc5vlx110t
 HdlTargets_virtex6:=xc6vlx240t
+
 HdlTargets_spartan6:=xc6slx45
 HdlTargets_spartan3adsp:=xc3sd3400a
-HdlTargets_zynq_ise:=xc7z020_ise_alias
-HdlTargets_zynq:=xc7z020
-HdlDefaultTarget_zynq:=xc7z020
 
-HdlTargets_altera:=stratix4 stratix5 # altera-sim
+# Zynq targets - supported by both ISE and Vivado
+HdlTargets_zynq:=xc7z007s xc7z012s xc7z014s xc7z010 xc7z015 xc7z020 xc7z030 xc7z035 xc7z045 xc7z100
+# If building for zynq and no target is specified, default to the xc7z020
+HdlDefaultTarget_zynq:=xc7z020
+# Parts for zynq in ISE are the same as Vivado but with _ise_alias appended for internal differentiation
+HdlTargets_zynq_ise:=$(foreach tgt,$(HdlTargets_zynq),$(tgt)_ise_alias)
+# The line below is not needed because for ISE we just hand the tools the word "zynq" when
+# compiling any zynq parts unless given an HdlExactPart
+#HdlDefaultTarget_zynq_ise:=xc7z020_ise_alias
+
+###############################################################################
+# Altera targets
+###############################################################################
+HdlTargets_altera:=arria10soc arria10soc_std stratix4 stratix5 # altera-sim
+
 # The "k", when present indicates the transceiver count (k = 36)
 # But in many places it is left off..
 HdlTargets_stratix4:=ep4sgx230k ep4sgx530k ep4sgx360
+HdlDefaultTarget_stratix4:=AUTO
 HdlTargets_stratix5:=ep5sgsmd8k2
-#Testing: HdlTargets_test1=test2
+HdlDefaultTarget_stratix5:=AUTO
+
+HdlTargets_arria10soc:=10AS066N3F40E2SG
+# Quartus Pro (and maybe newer versions of standard) does not
+# support the 'AUTO' part for arria10 because you cannot reuse
+# synthesized partitions from different devices.
+# We must enforce one exact part per target for Quartus Pro
+# (and maybe newer/17+ versions of standard).
+HdlDefaultTarget_arria10soc:=10AS066N3F40E2SG
+
+HdlTargets_arria10soc_std:=10AS066N3F40E2SG_std_alias
+HdlDefaultTarget_arria10soc_std:=10AS066N3F40E2SG_std_alias
+
+
+
+
+###############################################################################
 
 HdlSimTools=isim icarus verilator ghdl xsim modelsim
 
@@ -93,6 +117,25 @@ HdlToolSet_verilator:=verilator
 HdlToolSet_icarus:=icarus
 HdlToolSet_stratix4:=quartus
 HdlToolSet_stratix5:=quartus
+HdlToolSet_arria10soc:=quartus_pro
+HdlToolSet_arria10soc_std:=quartus
+
+# Call the tool-specific function to get the full part incase the
+# tool needs to rearrange the different part elements
+# If the tool does not define this function, return part as-is
+# Arg1 is the full/exact part number
+HdlFullPart=$(or $(call HdlFullPart_$(HdlToolSet),$1),$1)
+# In the platform and post-platform stages, get the part from the <platform>.mk
+# In other stages, use the HdlExactPart if set, or the Default part if set,
+# or the first part for this target
+# Arg1 can be optionally set instead of determining the part here.
+HdlChoosePart=$(strip \
+  $(if $(findstring $(HdlMode),platform config container),\
+    $(call HdlFullPart,$(HdlPart_$(HdlPlatform))),\
+    $(or \
+      $(and $(HdlExactPart),$(call HdlFullPart,$(HdlExactPart))),\
+      $(HdlDefaultTarget_$(HdlTarget)),\
+      $(firstword $(HdlTargets_$(HdlTarget))))))
 
 # Make the initial definition as a simply-expanded variable
 HdlAllPlatforms:=
@@ -103,22 +146,48 @@ override OCPI_HDL_PLATFORM_PATH:=$(subst $(Space),:,$(call Unique,\
   $(foreach p,$(OcpiGetExtendedProjectPath),$(call OcpiExists,$p/lib/platforms))))
 export OCPI_HDL_PLATFORM_PATH
 $(call OcpiDbgVar,OCPI_HDL_PLATFORM_PATH)
+################################################################################
+# These functions are here because this file is leaf and used when callers
+# only want to know the facts about targets, without pulling in any other
+# aspects of the HDL building machinery.
+# Otherwise various HDL utilities are in hdl-make.mk which this file does not
+# depend on.
+################################################################################
+HdlError:=error
+
 # Add a platform to the database.
 # Arg 1: The directory where the *.mk file is
 # Arg 2: The name of the platform
 # Arg 3: The actual platform directory for using the platform (which may not exist).
+#
+# Include the <platform>.mk file found in the HDL platform directory
+# If the HdlPart_<platform> set in the .mk file corresponds to a valid family,
+#   add this platform to the list of all platforms, and record the directoy where it was found
+#   if the family-specific directory exists in the platform's lib/ dir, an attempt has been
+#     made to build it and therefore we add it to HdlBuiltPlatforms
+# Otherwise (we cannot determine the family for HdlPart_<platform>, either warn or error
+#   We only error here if the user actually specified this platform at the command line
+#     (e.g. via HdlPlatform(s) or OCPI_HDL_PLATFORM)
 HdlAddPlatform=\
   $(call OcpiDbg,HdlAddPlatform($1,$2,$3))\
   $(if $(HdlPlatformDir_$2),,\
     $(eval include $1/$2.mk)\
-    $(eval HdlAllPlatforms+=$2)\
-    $(eval HdlPlatformDir_$2:=$3)\
-    $(if $(or \
-	   $(call OcpiExists,$3/lib/hdl/$(HdlFamily_$(HdlPart_$2))),\
-           $(call OcpiExists,$3/hdl/$(HdlFamily_$(HdlPart_$2)))),\
-      $(eval HdlBuiltPlatforms+=$2)))
+    $(if $(call HdlGetFamily,$(HdlPart_$2)),\
+      $(eval HdlAllPlatforms+=$2)\
+      $(eval HdlPlatformDir_$2:=$3)\
+      $(if $(or \
+             $(call OcpiExists,$3/lib/hdl/$(HdlFamily_$(HdlPart_$2))),\
+             $(call OcpiExists,$3/hdl/$(HdlFamily_$(HdlPart_$2)))),\
+        $(eval HdlBuiltPlatforms+=$2)),\
+      $(call $(if $(filter $2,$(HdlPlatforms) $(HdlPlatform) $(OCPI_HDL_PLATFORM)),$(HdlError),warning),$(strip \
+        HDL Platform '$2' was specified by user, but an appropriate HDL family cannot be \
+        determined for its HdlPart_$2 of '$(HdlPart_$2)'. \
+        Check '$(realpath $1/$2.mk)' to make sure HdlPart_$2 is set to a valid target part \
+        supported by $(OCPI_CDK_DIR)/include/hdl/hdl-targets.mk. Reference other existing HDL \
+        platforms for assistance))))
 
 # Call this with a directory that is a platform's directory, either source (with "lib" subdir
+
 # if built) or exported. For the individual platform directories we need to deal with
 # the prebuilt, postbuilt, and exported scenarios.  Hence the complexity.
 # Both the *.xml and *.mk are generally needed, but the *.mk is more critical here,
@@ -145,6 +214,53 @@ HdlDoPlatformsDir=\
         $(if $(wildcard $d/$p.mk)$(wildcard $d/lib/hdl/$p.mk)$(wildcard $d/hdl/$p.mk),\
           $(call HdlDoPlatform,$d)))))
 
+################################################################################
+# $(call HdlGetTargetFromPart,hdl-part)
+# Return the target name from a hyphenated partname
+HdlGetTargetFromPart=$(firstword $(subst -, ,$1))
+
+################################################################################
+# $(call HdlGetFamily,hdl-target,[multi-ok?])
+# Return the family name associated with the target(usually a part)
+# If the target IS a family, just return it.
+# If it is a top level target with no family, return itself
+# If it is a top level target with one family, return that family
+# Otherwise return the family of the supplied part
+# If the second argument is present, it is ok to return multiple families
+# (The second argument should not contain spaces)
+# If no appropriate family is found, warn
+# StringEq=$(if $(subst x$1,,x$2)$(subst x$2,,x$1),,x)
+HdlGetFamily=$(eval m1=$(subst $(Space),___,$1))$(strip \
+  $(if $(HdlGetFamily_cached<$(m1)__$2>),,\
+    $(call OcpiDbg,HdlGetFamily($1,$2) cache miss)$(eval export HdlGetFamily_cached<$(m1)__$2>=$(call HdlGetFamily_core,$1,$2)))\
+  $(infox HdlGetFamily($1,$2)->$(HdlGetFamily_cached<$(m1)__$2>))$(HdlGetFamily_cached<$(m1)__$2>))
+
+HdlGetFamily_core=$(call OcpiDbg,Entering HdlGetFamily_core($1,$2))$(strip \
+  $(foreach gf,\
+     $(or $(findstring $(1),$(HdlAllFamilies)),$(strip \
+          $(if $(findstring $(1),all), \
+	      $(if $(2),$(HdlAllFamilies),\
+		   $(call $(HdlError),$(strip \
+	                  HdlFamily is ambiguous for '$(1)'))))),$(strip \
+          $(and $(findstring $(1),$(HdlTopTargets)),$(strip \
+	        $(if $(and $(if $(2),,x),$(word 2,$(HdlTargets_$(1)))),\
+                   $(call $(HdlError),$(strip \
+	             HdlFamily is ambiguous for '$(1)'. Choices are '$(HdlTargets_$(1))')),\
+	           $(or $(HdlTargets_$(1)),$(1)))))),$(strip \
+	  $(foreach f,$(HdlAllFamilies),\
+	     $(and $(filter $(call HdlGetTargetFromPart,$1),$(HdlTargets_$f)),$f))),$(strip \
+	  $(and $(filter $1,$(HdlAllPlatforms)), \
+	        $(call HdlGetFamily_core,$(call HdlGetTargetFromPart,$(HdlPart_$1))))),\
+	  $(warning The build target '$1' is not a family or a part in any family)),\
+     $(gf)))
+
+# Families are either top level targets with nothing underneath or one level down
+# HdlAllFamilies should be set before the HdlDoPlatform calls below so that it is set
+# for use in any sub-calls to HdlGetFamily_core
+HdlAllFamilies:=$(call Unique,$(foreach t,$(HdlTopTargets),$(or $(HdlTargets_$(t)),$(t))))
+HdlAllTargets:=$(call Unique,$(HdlAllFamilies) $(HdlTopTargets))
+export OCPI_ALL_HDL_TARGETS:=$(HdlAllTargets)
+
 $(call OcpiDbgVar,HdlAllPlatforms)
 $(call OcpiDbgVar,OCPI_HDL_PLATFORM_PATH)
 # The warning below would apply, e.g. if a new project has been registered.
@@ -154,10 +270,6 @@ $(foreach d,$(subst :, ,$(OCPI_HDL_PLATFORM_PATH)),\
     $(call HdlDoPlatformsDir,$d),\
     $(call HdlDoPlatform,$d)))
 
-# Families are either top level targets with nothing underneath or one level down
-HdlAllFamilies:=$(call Unique,$(foreach t,$(HdlTopTargets),$(or $(HdlTargets_$(t)),$(t))))
-HdlAllTargets:=$(call Unique,$(HdlAllFamilies) $(HdlTopTargets))
-export OCPI_ALL_HDL_TARGETS:=$(HdlAllTargets)
 export OCPI_ALL_HDL_PLATFORMS:=$(strip $(HdlAllPlatforms))
 export OCPI_BUILT_HDL_PLATFORMS:=$(strip $(HdlBuiltPlatforms))
 $(call OcpiDbgVar,HdlAllFamilies)
@@ -182,11 +294,11 @@ $(info HdlTopTargets="$(HdlTopTargets)";\
          $(foreach t,$(HdlTargets_$f),\
            $(if $(HdlTargets_$t),HdlTargets_$t="$(HdlTargets_$t)";)))\
        $(foreach t,$(call Unique,\
-         $(foreach f,$(HdlAllTargets),$(if $(HdlToolSet_$f),$(HdlToolSet_$f) ))),\
-	   $(eval __ONLY_TOOL_VARS__:=true)\
-	   $(eval include $(OCPI_CDK_DIR)/include/hdl/$t.mk)\
-	   HdlToolName_$t="$(or $(HdlToolName_$t),$t)";)\
+                     $(foreach f,$(HdlAllTargets),$(if $(HdlToolSet_$f),$(HdlToolSet_$f) ))),\
+         $(eval __ONLY_TOOL_VARS__:=true)\
+         $(eval include $(OCPI_CDK_DIR)/include/hdl/$t.mk)\
+         HdlToolName_$t="$(or $(HdlToolName_$t),$t)";)\
        $(foreach p,$(HdlAllPlatforms),\
-	 HdlFamily_$(HdlPart_$p)=$(call HdlGetFamily,$(HdlPart_$p));))
+         HdlFamily_$(HdlPart_$p)=$(call HdlGetFamily,$(HdlPart_$p));))
 endif
 endif

@@ -34,12 +34,15 @@ using namespace OCPI::RCC; // for easy access to RCC data types and constants
 using namespace Matchstiq_z1_avr_proxyWorkerTypes;
 
 class Matchstiq_z1_avr_proxyWorker : public Matchstiq_z1_avr_proxyWorkerBase {
- 
-  RCCResult start() {
-    return RCC_OK;
+  RunCondition m_aRunCondition;
+public:
+  Matchstiq_z1_avr_proxyWorker() : m_aRunCondition(RCC_NO_PORTS) {
+    //Run function should never be called
+    setRunCondition(&m_aRunCondition);
   }
+private: 
   RCCResult run(bool /*timedout*/) {
-    return RCC_ADVANCE;
+    return RCC_DONE;
   }
 
   RCCResult serial_num_read() {

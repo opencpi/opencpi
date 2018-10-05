@@ -1,6 +1,6 @@
 <Protocol>
-  <Operation name="txOff"/>
-  <Operation name="txOn"/>
+  <Operation name="txOff"/> <!-- Directs RF hardware to suppress carrier. -->
+  <Operation name="txOn"/> <!-- Directs RF hardware to not suppress carrier. -->
   <!-- Use the following operation to work around AV-3417-->
   <Operation name="dummy">
    <Argument name="nothing" type="bool"/>

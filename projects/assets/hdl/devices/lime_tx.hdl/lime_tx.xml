@@ -1,11 +1,19 @@
 <HdlDevice language='vhdl' spec='rf_tx-spec' FirstRawProperty='dc_regval'>
   <ControlInterface Timeout='1024'/>
-  <property name='pin_control_p' type='bool' parameter='1'/>
-  <property name='other_present' type='bool' readable='1'/>
+  <property name='txen_pin_control_p' type='bool' parameter='1' readable='1' description='When true, worker controls TXEN pin to enable/disable transmitter. When false, worker uses SPI.'/>
+  <property name='other_present' type='bool' readable='1' description='Value is true if raw property port is connected.'/>
+  <property name='event_port_connected' type='bool' volatile='1' description='Value is true if event_in port of dac is connected.'/>
+  <!--lime-properties.xml describes the registers of the Lime IC per the datasheet-->
   <xi:include href='lime-properties.xml'/>
   <!-- shared SPI -->
   <rawprop name='rawprops' master='true'/>
   <!-- other than the SPI, the only wired signal relevant to the RF TX is this enable -->
   <signal output='txen'/>
-  <StreamInterface Name='event_in' optional='1'/>
+  <!-- Dev Signal Ports -->
+  <Devsignal Name='dev_txen_dac' Optional='true' Signals='txen-out-signals.xml'/>
+  <Devsignal Name='dev_tx_event' Optional='true' Signals='lime-tx-event-signals.xml'/>
+  <Supports Worker='lime_dac'>
+    <Connect Port='dev_txen' To='dev_txen_dac'/>
+    <Connect Port='dev_tx_event' To='dev_tx_event'/>
+  </Supports>
 </HdlDevice>

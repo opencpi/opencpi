@@ -18,7 +18,6 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "OcpiOsPosixSocket.h"
 #include <string>
 #include <cstring>
 #include <pthread.h>
@@ -30,6 +29,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include "OcpiOsPosixError.h"
+#include "OcpiOsPosixSocket.h"
 
 namespace {
   pthread_mutex_t netDbMutex = PTHREAD_MUTEX_INITIALIZER;
@@ -71,7 +71,7 @@ OCPI::OS::Posix::getFQDN ()
 
   if (!hent || !hent->h_name) {
     netDbUnlock ();
-    throw std::string ("gethostbyname() failed");
+    throw std::string ("gethostbyname() failed1");
   }
 
   std::string fqdn = hent->h_name;
@@ -90,7 +90,7 @@ OCPI::OS::Posix::getIPAddress ()
 
   if (!hent || !hent->h_name || !*hent->h_addr_list) {
     netDbUnlock ();
-    throw std::string ("gethostbyname() failed");
+    throw std::string ("gethostbyname() failed2");
   }
 
   struct in_addr in;
@@ -131,7 +131,7 @@ OCPI::OS::Posix::isLocalhost (const std::string & name)
 
   if (!hent || !hent->h_name) {
     netDbUnlock ();
-    throw std::string ("gethostbyname() failed");
+    throw std::string ("gethostbyname() failed3");
   }
 
   bool res = (name.compare (hent->h_name) == 0);

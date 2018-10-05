@@ -38,3 +38,10 @@ generate:
 	$(call BuildModel,ocl,generate)
 	$(call BuildModel,rcc,generate)
 	$(call BuildModel,test,generate)
+	
+ifdef ShellTestVars
+showtests:
+	$(info Tests="$(TestImplementations)";)
+showpackage:
+	$(info Package="$(Package)";)
+endif

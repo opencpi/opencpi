@@ -24,7 +24,7 @@ if [ $# -lt 2 ] || [ $# -gt 2 ]; then
 else
   echo "Testing $1 platform..."
   if [ $1 == "zed" ] ; then
-    app_xml=app_fsk_txrx_zed_no_rcc.xml
+    app_xml=app_fsk_txrx_zipper.xml
   elif [ $1 == "matchstiq_z1" ] ; then
     app_xml=app_fsk_txrx_matchstiq_z1.xml
   elif [ $1 == "alst4" ] ; then
@@ -50,8 +50,10 @@ else
     fi
     if [ $1 == "alst4" ] ; then
       echo "3" | `./target-$OCPI_TOOL_HOST/FSK bbloopback &> /dev/null`
+    elif [ $1 == "zed" ] ; then
+      echo "3" | echo "zipper" | `./target-xilinx13_3/FSK bbloopback &> /dev/null`
     else
-      echo "3" | `./target-linux-x13_3-arm/FSK bbloopback &> /dev/null`
+      echo "3" | `./target-xilinx13_3/FSK bbloopback &> /dev/null`
     fi
     if [ -f odata/out_app_fsk_bbloopback.bin ]; then
       `dd bs=1 if=odata/out_app_fsk_bbloopback.bin of=odata/truncated_out_app_fsk_txrx.bin count=8912 &> /dev/null` # YES THIS IS 8912 not 8192

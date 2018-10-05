@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash --noprofile
 # This file is protected by Copyright. Please refer to the COPYRIGHT file
 # distributed with this source distribution.
 #
@@ -19,14 +19,23 @@
 
 # quick way to run all tests
 # First ensure CDK and TOOL_xxx vars
-OCPI_BOOTSTRAP=$OCPI_CDK_DIR/scripts/ocpibootstrap.sh; . $OCPI_BOOTSTRAP
+#OCPI_BOOTSTRAP=$OCPI_CDK_DIR/scripts/ocpibootstrap.sh; . $OCPI_BOOTSTRAP
 export OCPI_SMB_SIZE=3000000
 
-source $OCPI_CDK_DIR/scripts/util.sh
-# Add core AND the default installed projects/core project so that
-# core's artifacts can be found on a remote system via the default
-# installed location
-export OCPI_LIBRARY_PATH=$(getProjectRegistryDir)/ocpi.core/exports/lib/components/rcc:$OCPI_CDK_DIR/../projects/core/exports/lib/components/rcc
+if [ -d $OCPI_CDK_DIR/../project-registry ]; then
+  source $OCPI_CDK_DIR/scripts/util.sh
+  # Add core AND the default installed ocpi.core project so that
+  # core's artifacts can be found on a remote system via the default
+  # installed location
+  core1=$(getProjectRegistryDir)/ocpi.core
+  [ -d $core1/exports ] && core1+=/exports
+  core2=$OCPI_CDK_DIR/../project-registry/ocpi.core
+  [ -d $core2/exports ] && core2+=/exports
+  export OCPI_LIBRARY_PATH=$core1/artifacts:$core2/artifacts
+fi
+# add the runtime artifacts as a last resort.
+export OCPI_LIBRARY_PATH=${OCPI_LIBRARY_PATH:+$OCPI_LIBRARY_PATH:}$OCPI_CDK_DIR/$OCPI_TOOL_DIR/artifacts
+
 
 # export OCPI_LOG_LEVEL=11
 # Allow caller to force location (e.g. Jenkins)
@@ -34,10 +43,8 @@ if [ -z "${DIR}" ]; then
   export DIR=$(mktemp -d -t ocpi_ctests.XXXXX)
 fi
 echo "========= Outputs from these tests will be in: $DIR"
-# if the script lives in the source tree, we are running where the executables are
-# otherwise assume this script is in the same directory as the executables are,
-# and change to that directory
-[ "$(basename $(dirname $0))" = src ] || cd "$(dirname $0)"
+# Where ever this script lives, or what the pwd is, go to where the tests are.
+cd $OCPI_CDK_DIR/${OCPI_TARGET_DIR:-$OCPI_TOOL_DIR}/bin/ctests
 
 failed=
 set -o pipefail
@@ -61,7 +68,12 @@ function doit {
 if test $# = 1 ; then
   doit $1
 else
-for i in `ls -d test* | grep -v '_main' | grep -v '\.'` ; do
+tests=`for i in test*; do [ -f $i -a -x $i ] && echo $i; done`
+[ -z "$tests" ] && {
+  echo Error:  ctests appear to be missing from `pwd`
+  exit 1
+}
+for i in $tests; do
   echo "Running $i..."
   doit $i
 done

@@ -1,0 +1,42 @@
+# This file is protected by Copyright. Please refer to the COPYRIGHT file
+# distributed with this source distribution.
+#
+# This file is part of OpenCPI <http://www.opencpi.org>
+#
+# OpenCPI is free software: you can redistribute it and/or modify it under the
+# terms of the GNU Lesser General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your option) any
+# later version.
+#
+# OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+# A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Lesser General Public License along
+# with this program. If not, see <http://www.gnu.org/licenses/>.
+
+# Add generic zynq files to this zynq platform.
+# These files will be used for both the runtime package as well as the initial/default contents
+# of the hardware platform's SD card.  The hardware platform's script for its SD card can
+# remove files as well as add files.
+
+# Both the default setup files for users and the underlying ones, for the runtime and SD card
+=platforms/zynq/zynq_*setup.sh <target>/
+=platforms/zynq/default_my*setup.sh <target>/
+# no system.xml, let the hardware platform specify that
+# any value in having the zynq-generic one lying around anyway?
+# =platforms/zynq/zynq_system.xml <target>/zynq/
+# Put the platform's READMEs onto the runtime
+=<platform_dir>/README* <target>/
+# Put the generic READMEs onto the development package under zynq
++platforms/zynq/README* <target>/zynq/
+# For the development package add this script for formatting SD cards
++platforms/zynq/formatOpenCPIZynqSD.sh <target>/zynq/
+# Use the default zynq system.xml
+=platforms/zynq/zynq_system.xml <target>/system.xml
++<platform_dir>/README <target>/
+# Deployment files
+@<platform_dir>/release/zed/boot.bin <target>/
+@<platform_dir>/release/uramdisk.image.gz <target>/
+@<platform_dir>/release/uImage <target>/

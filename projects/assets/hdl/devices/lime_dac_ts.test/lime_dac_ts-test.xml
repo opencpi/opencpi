@@ -1,0 +1,29 @@
+<tests useHDLFileIo='true' spec='qdac_ts'>
+  <input port='in' script='generate.py' messagesinfile='1' messagesize='8192'/>
+  <input port='event_in' file='onmessage.bin' messagesinfile='1'/>
+  <output port='out' script='verify.py' disableBackpressure='true'/>
+
+  <property name='tx_clk_rate' values='100e6,80e6,40e6,20e6,10e6,1e6,1e5'/>
+  <property name='FRACTION_WIDTH_p' values='32'/>
+
+  <!-- Properties for the emulator -->
+  <property name='messageSize' values='128'/>
+
+  <!-- BURST only used in the generate script -->
+  <property name='burst' test='true'/>
+
+  <case>
+    <property name='numOutputSamples' values='480'/>
+    <property name='burst' values='false,true'/>
+    <property name='flush' values='false'/>
+  </case>
+  <!-- the flush property isn't working properly -->
+  <!-- <case> -->
+  <!--   <property name='numOutputSamples' values='320'/> -->
+  <!--   <property name='burst' values='true'/> -->
+     <!-- if "flush", then set flush property to true after start -->
+  <!--   <property name='flush'> -->
+  <!--     <set value='true' delay='0'/> -->
+  <!--   </property> -->
+  <!-- </case> -->
+</tests>

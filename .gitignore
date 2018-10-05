@@ -24,6 +24,8 @@ target-*/
 *.deps
 gen/
 **/driver/modules.order
+/prerequisites
+/prerequisites-build
 # temporary, until we rename targets
 *.old
 *.bak
@@ -49,28 +51,6 @@ projects/*/imports
 projects/*/project.xml
 projects/*/specs/package-id
 doc/tex/build
-
-# Autotools (after reconf):
-/aclocal.m4
-/autom4te.cache
-/build-aux
-/configure
-releng/acinclude/libt*.m4
-releng/acinclude/lt*.m4
-/Makefile.in
-
-# Autotools (after configure):
-/av_config.h
-/config.status
-/libtool
-/Makefile
-stamp-h*
-tools/cdk/include/autoconfig_import*.mk
-
-#Autotools (after build):
-.dirstamp
-*.lo
-
-# Our hidden files
-.build_platform
-.ocpi_config.*
+vendor/
+# Output PDFs
+pdfs

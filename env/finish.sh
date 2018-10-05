@@ -19,6 +19,12 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
+cat <<EOF >&2
+This finish.sh script is obsolete and deprecated.
+Use the opencpi-setup.sh script, which is sourced in the top level CDK directory.
+If using a clean/virgin unbuilt source tree, use "make exports" first, then use
+"source cdk/opencpi-setup.sh <options>"
+EOF
 source exports/scripts/ocpisetup.sh exports/scripts/ocpisetup.sh
 echo ""; echo " *** OpenCPI Environment settings"; echo ""
 env | grep OCPI_ | sort

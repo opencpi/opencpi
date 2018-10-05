@@ -18,7 +18,7 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 source scripts/setup-install.sh
-CMAKE=$OCPI_PREREQUISITES_INSTALL_DIR/cmake/$OCPI_TOOL_HOST/bin/cmake
+CMAKE=$OCPI_PREREQUISITES_INSTALL_DIR/cmake/$OCPI_TOOL_DIR/bin/cmake
 if test ! -x $CMAKE ; then
   echo No cmake found at: $CMAKE
   echo Installing opencv requires cmake, and it is not installed as an opencpi prerequisite.

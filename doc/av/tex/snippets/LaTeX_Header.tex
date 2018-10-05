@@ -63,9 +63,13 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \usepackage{subfig}
 \hyphenation{ANGRY-VIPER} % Tell it where to hyphenate
 \hyphenation{Cent-OS} % Tell it where to hyphenate
+\hyphenation{install-ation} % Tell it where to hyphenate
+\uchyph=0 % Never hyphenate acronyms like RCC (I think this overrides ANGRYVIPER above)
+\renewcommand\_{\textunderscore\allowbreak} % Allow words to break/newline on underscores
 %----------------------------------------------------------------------------------------
 % Table packages
 %----------------------------------------------------------------------------------------
+\usepackage{longtable} % for long possibly multi-page tables
 \usepackage{tabularx} % c=center,l=left,r=right,X=fill
 % These define tabularx columns "C" and "R" to match "X" but center/right aligned
 \newcolumntype{C}{>{\centering\arraybackslash}X}

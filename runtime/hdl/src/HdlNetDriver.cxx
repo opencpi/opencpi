@@ -467,7 +467,10 @@ namespace OCPI {
       unsigned Driver::
       search(const OU::PValue *params, const char **excludes, bool discoveryOnly, bool udp,
 	     std::string &error) {
-	if (!getenv("OCPI_ENABLE_HDL_NETWORK_DISCOVERY"))
+	// Note that the default here is to NOT do discovery, i.e. to enable discovery
+	// the variable must be set and set to 1
+	const char *env;
+	if (!(env = getenv("OCPI_ENABLE_HDL_NETWORK_DISCOVERY")) || env[0] != '1')
 	  return 0;
 	ocpiInfo("Searching for network-based HDL devices%s.",
 		 udp ? " using UDP" : " using L2 Ethernet");

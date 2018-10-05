@@ -41,6 +41,7 @@ $$$$(foreach l,$$$$(HdlLibrariesInternal),$$$$(call HdlLibraryRefDir,$$$$l,$$$$(
 $(call OutLibFile,$1,$2): $$$$(HdlPreCore) $$$$(HdlSources) | $$$$(TargetDir)
 	$(AT)echo Building the $(LibName) $(HdlMode) for $$(HdlTarget) \($$@\) $$(ParamConfig):$$(ParamMsg)
 	$(AT)$$(HdlCompile)
+	$(AT)$$(HdlPost)
 
 endef
 

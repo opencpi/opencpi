@@ -35,7 +35,7 @@ architecture rtl of BUFFER_IN_N is
   -- signal tmp : std_logic_vector(width-1 downto 0);
 begin
   gen_loop : for idx in width-1 downto 0 generate
-    buf : work.BUFFER_IN_1
+    buf : component work.util.BUFFER_IN_1
       generic map(IOSTANDARD   => IOSTANDARD,
                   DIFFERENTIAL => DIFFERENTIAL,
                   GLOBAL_CLOCK => GLOBAL_CLOCK)

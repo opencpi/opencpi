@@ -1,3 +1,0 @@
-<HdlContainer Platform='ml605/ml605_zipper_fmc_hpc_tx'>
-  <connection external='out' device='lime_tx' port='event_in' card='lime_zipper_fmc_hpc' slot='fmc_hpc'/>
-</HdlContainer>

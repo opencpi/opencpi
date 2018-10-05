@@ -363,7 +363,7 @@ class Matchstiq_z1_rxWorker : public Matchstiq_z1_rxWorkerBase
     OA::Application &app  = getApplication();
     std::string propStr;
 
-    // availible values are : {14, 10, 7, 6, 5, 4.375, 3.5, 3, 2.75,
+    // available values are : {14, 10, 7, 6, 5, 4.375, 3.5, 3, 2.75,
     //                         2.5, 1.92, 1.5, 1.375, 1.25, 0.875, 0.75, 0}
 
     if (m_properties.bb_cutoff_frequency_MHz > 10.001)

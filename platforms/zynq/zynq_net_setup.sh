@@ -19,11 +19,14 @@
 # If there is a "mynetsetup.sh" script in this directory it will run it after the
 # other setup items, and arrange for it to be run in any login scripts later
 # e.g. ssh logins
-if test $# != 5; then
-  echo You must supply 5 arguments to this script.
-  echo Usage is: zynq_net_setup.sh '<nfs-ip-address> <nfs-share-name> <opencpi-dir> <time-server> <timezone>'
+if test -z  "$5"; then
+  echo You must supply at least 5 arguments to this script.
+  echo Usage is: zynq_net_setup.sh '<nfs-ip-address> <nfs-share-name> <opencpi-dir> <time-server> <timezone> [<hdl-platform>]'
   echo A good example timezone is: EST5EDT,M3.2.0,M11.1.0
 else
+  if test -n "$6"; then
+     echo OCPI_HDL_PLATFORM set to $6.
+  fi
   if ifconfig | grep -v 127.0.0.1 | grep 'inet addr:' > /dev/null; then
      echo An IP address was detected.
   else
@@ -32,6 +35,9 @@ else
   fi
   echo Setting the time from time server: $4
   rdate $4
+  # Tell the kernel to make fake 32 bit inodes when 64 nodes come from the NFS server
+  # This may change for 64 bit zynqs
+  echo 0 > /sys/module/nfs/parameters/enable_ino64
   # Mount the opencpi development system as an NFS server, onto /mnt/net
   mount -t nfs -o udp,nolock,soft,intr $1:$2 /mnt/net
   # Make sure the hostname is in the host table
@@ -50,23 +56,43 @@ else
   fi
   export OCPI_CDK_DIR=/mnt/net/$3
   cat <<EOF > $PROFILE_FILE
-  if test -e /mnt/net/cdk; then
+  if test -e /mnt/net/$3; then
     echo Executing $PROFILE_FILE
     export OCPI_CDK_DIR=$OCPI_CDK_DIR
     if test -f /etc/opencpi-release; then
-      read OCPI_TOOL_PLATFORM OCPI_TOOL_HOST x < /etc/opencpi-release
+      read OCPI_TOOL_PLATFORM x < /etc/opencpi-release
     else
       echo No /etc/opencpi-release - assuming ZedBoard hardware
       OCPI_TOOL_PLATFORM=zed
-      OCPI_TOOL_HOST=linux-x13_3-arm
     fi
     export OCPI_TOOL_PLATFORM
-    export OCPI_TOOL_HOST
-    export OCPI_TOOL_DIR=\$OCPI_TOOL_HOST\${OCPI_TOOL_MODE:+/$OCPI_TOOL_MODE}
-    export OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/../projects/core/exports/lib/components/rcc/\$OCPI_TOOL_DIR
-    export PATH=$OCPI_CDK_DIR/bin/\$OCPI_TOOL_DIR:\$PATH
-    # This is only for explicitly-linked driver libraries.  Fixed someday.
-    export LD_LIBRARY_PATH=$OCPI_CDK_DIR/lib/$OCPI_TOOL_DIR:\$LD_LIBRARY_PATH
+    export OCPI_TOOL_OS=linux
+    export OCPI_TOOL_DIR=\$OCPI_TOOL_PLATFORM
+    # As a default, access all built RCC artifacts from the core project
+    export OCPI_LIBRARY_PATH+=:$OCPI_CDK_DIR/\$OCPI_TOOL_PLATFORM/artifacts
+    # Priorities for finding system.xml:
+    # 1. If is it on the local system it is considered customized for this system - use it.
+    if test -r /mnt/card/opencpi/system.xml; then
+      OCPI_SYSTEM_CONFIG=/mnt/card/opencpi/system.xml
+    # 2. If is it at the top level of the mounted CDK, it is considered customized for all the
+    #    systems that use this CDK installation (not shipped/installed by the CDK)
+    elif test -r $OCPI_CDK_DIR/system.xml; then
+      OCPI_SYSTEM_CONFIG=$OCPI_CDK_DIR/system.xml
+    # 3. If there is one for this HDL platform, it is considered more specific than one that is
+    #    specific to the RCC platform, so it should be used in preference to the RCC platform one.
+    elif test -n "$OCPI_HDL_PLATFORM" -a -r $OCPI_CDK_DIR/$OCPI_HDL_PLATFORM/system.xml; then
+      OCPI_SYSTEM_CONFIG=$OCPI_CDK_DIR/$OCPI_HDL_PLATFORM/system.xml
+    # 4. If there is one for this RCC platform, it is more specific than the default one.
+    elif test -r $OCPI_CDK_DIR/\$OCPI_TOOL_PLATFORM/system.xml; then
+      OCPI_SYSTEM_CONFIG=$OCPI_CDK_DIR/\$OCPI_TOOL_PLATFORM/system.xml
+    # 5. Finally use the default one that is very generic.
+    else
+      OCPI_SYSTEM_CONFIG=$OCPI_CDK_DIR/default-system.xml
+    fi
+    export OCPI_SYSTEM_CONFIG
+    export PATH=$OCPI_CDK_DIR/\$OCPI_TOOL_DIR/bin:\$PATH
+    # This is only for ACI executables in special cases...
+    export LD_LIBRARY_PATH=$OCPI_CDK_DIR/\$OCPI_TOOL_DIR/lib:\$LD_LIBRARY_PATH
     ocpidriver load
     export TZ=$5
     echo OpenCPI ready for zynq.

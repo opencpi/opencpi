@@ -64,6 +64,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 %----------------------------------------------------------------------------------------
 % Table packages
 %----------------------------------------------------------------------------------------
+\usepackage{longtable} % for long possibly multi-page tables
 \usepackage{tabularx} % c=center,l=left,r=right,X=fill
 \usepackage{float}
 \floatstyle{plaintop}
@@ -93,7 +94,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Component Data Sheet}
-\def\docVersion{1.3}
+\def\docVersion{1.4}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
@@ -118,13 +119,20 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
   \hline
   Version           & v\docVersion{}   \\
   \hline
-  Release Date      & Aug 2017         \\
+  Release Date      & October 2018         \\
   \hline
-  Component Library & ocpi.devices     \\
+  Component Library & ocpi.assets.devices     \\
   \hline
   Workers           & \comp.hdl        \\
   \hline
-  Tested Platforms  & Zedboard (ISE), Zedboard (Vivado), ML605 (FMC LPC slot) \\
+	Tested Platforms  &
+\begin{itemize}
+  \item Agilent Zedboard/Analog Devices FMCOMMS2 (Vivado only)
+  \item Agilent Zedboard/Analog Devices FMCOMMS3 (Vivado only)
+  \item x86/Xilinx ML605/Analog Devices FMCOMMS2
+  \item x86/Xilinx ML605/Analog Devices FMCOMMS3
+  \item Ettus E310 (Vivado only)
+\end{itemize} \\
   \hline
 \end{tabular}
 
@@ -160,20 +168,22 @@ The AD9361 register map is realized via a rawprops port whose communication is f
       },
       every edge/.style={draw,thick}
     ]
-    \node[rectangle,ultra thick,draw=black,fill=blue,minimum size=2cm,minimum width=15cm](R1){\Comp};
+    \node[rectangle,ultra thick,draw=black,fill=blue,minimum size=2cm,minimum width=15cm](R1){Parameter Properties: \verb+pin_control_p+ \\ \Comp};
     \node[rectangle,draw=white,fill=white](R4)[above= of R1]{ };
-    \node[rectangle,draw=white,fill=white](placeholder)[above= of R1] { Non-parameter \\ Properties:\\ \verb+other_present+ \\ \verb+force_reset+ \\ \verb+qadc0_is_present+ \\ \verb+qadc1_is_present+ \\ \verb+qdac0_is_present+ \\ \verb+qdac1_is_present+ \\ \verb+rx_frame_usage+ \\ \verb+data_bus_index_direction+ \\ \verb+data_clk_is_inverted+ \\ \verb+rx_frame_is_inverted+ \\ \verb+p0_p1_are_swapped+ \\ \verb+iostandard+ \\ \verb+port_config+ \verb+duplex_config+ \\ \verb+data_rate_config+ \\ \verb+data_configs_are_valid+ \\ \verb+config_is_two_r+ \\ \verb+config_is_two_t+ \\ \verb+force_two_r_two_t_timing+ \\ (ad9361 register set - see Appendix \ref{appendix1}) };
+    \node[rectangle,draw=white,fill=white](placeholder)[above= of R1] { Non-parameter \\ Properties:\\ \verb+other_present+ \\ \verb+force_reset+ \\ \verb+qadc0_is_present+ \\ \verb+qadc1_is_present+ \\ \verb+qdac0_is_present+ \\ \verb+qdac1_is_present+ \\ \verb+rx_frame_usage+ \\ \verb+data_bus_index_direction+ \\ \verb+data_clk_is_inverted+ \\ \verb+rx_frame_is_inverted+ \\ \verb+p0_p1_are_swapped+ \\ \verb+iostandard+ \\ \verb+port_config+ \verb+duplex_config+ \\ \verb+data_rate_config+ \\ \verb+data_configs_are_valid+ \\ \verb+config_is_two_r+ \\ \verb+config_is_two_t+ \\ \verb+force_two_r_two_t_timing+ \\ \verb+Half_Duplex_Mode+ \\ \verb+ENSM_Pin_Control+ \\ \verb+Level_Mode+ \\ \verb+FDD_External_Control_Enable+ \\ \verb+ENABLE_force_set+ \\ \verb+TXNRX_force_set+ \\ (ad9361 register set - see Appendix \ref{appendix1}) };
     \path[->]
   (R1)edge [] node [] {} (R4)
   (R4)edge [] node [] {} (R1)
     ;
     \gettikzxy{(placeholder)}{\rx}{\ry}
-    \myclient.apply(\rx - 120,\ry-250,C1, ``dev\_force\_spi\_reset'' \\ dev signal port \texttt{(}see \\ AD9361\_SPI.pdf\texttt{)} );
-    \path[->]($(R1.south) + (-120 pt,0)$) edge [] node [] {} (C1);
-    \myclient.apply(\rx,\ry-250,C1, ``rawprops'' \\ rawprop \texttt{(}see \\ AD9361\_SPI.pdf\texttt{)} );
-    \path[->]($(R1.south) + (0,0)$) edge [] node [] {} (C1);
-    \myclient.apply(\rx + 120,\ry-250,C1, ``dev\_cfg\_data\_port'' \\ dev signal port \texttt{(}see \\ AD9361\_DATA\_SUB.pdf\texttt{)} );
-    \path[->]($(R1.south) + (120 pt,0)$) edge [] node [] {} (C1);
+    \myclient.apply(\rx - 180,\ry-290,C1, ``dev\_force\_spi\_reset'' \\ dev signal port \texttt{(}see \\ AD9361\_SPI.pdf\texttt{)} );
+    \path[->]($(R1.south) + (-180 pt,0)$) edge [] node [] {} (C1);
+    \myclient.apply(\rx - 60,\ry-290,C1, ``rawprops'' \\ rawprop \texttt{(}see \\ AD9361\_SPI.pdf\texttt{)} );
+    \path[->]($(R1.south) + (-60 pt,0)$) edge [] node [] {} (C1);
+    \myclient.apply(\rx + 60,\ry-290,C1, ``dev\_cfg\_data\_port'' \\ dev signal port \texttt{(}see \\ AD9361\_DATA\_SUB.pdf\texttt{)} );
+    \path[->]($(R1.south) + (60 pt,0)$) edge [] node [] {} (C1);
+    \myclient.apply(\rx + 180,\ry-290,C1, ``dev\_txen\_data\_sub'' \\ dev signal port \texttt{(}see \\ AD9361\_DATA\_SUB.pdf\texttt{)} );
+    \path[<-]($(R1.south) + (180 pt,0)$) edge [] node [] {} (C1);
 	\fontsize{9.5}{12}\selectfont
     \myclient.apply(\rx - 190,\ry,C1, ``dev\_cfg\_data\_rx'' \\ dev signal port \\ sent from \\ ad9361\_adc\_sub.hdl);
     \path[<-]($(R1.north) + (-190 pt,0)$) edge [] node [] {} (C1);
@@ -189,64 +199,76 @@ The AD9361 register map is realized via a rawprops port whose communication is f
 \section*{Source Dependencies}
 \subsection*{\comp.hdl}
 \begin{itemize}
-  \item opencpi/hdl/devices/ad9361\_config.hdl/ad9361\_config.vhd
+  \item assets/hdl/devices/\comp.hdl/\comp.vhd
+  \item assets/hdl/devices/ad9361\_config.hdl/signals.vhd
 \end{itemize}
 \begin{landscape}
-
   \section*{Component Spec Properties}
   \begin{scriptsize}
   \subsection*{\comp.hdl}
-      \begin{tabular}{|p{2cm}|p{5cm}|p{1cm}|p{2cm}|p{2cm}|p{1.75cm}|p{1.5cm}|p{5.24cm}|}
+      \begin{longtable}{|p{2cm}|p{5cm}|p{1cm}|p{1.1cm}|p{1.4cm}|p{1.75cm}|p{1.5cm}|p{1.5cm}|p{5.24cm}|}
       \hline
       \rowcolor{blue}
-      Scope    & Name  & Type  & Sequence Length & Array Dimensions & Accessibility & Valid Range & Usage \\
+      Scope    & Name  & Type  & Sequence Length & Array Dimensions & Accessibility & Valid Range & Default & Usage \\
       \hline
-      Property & other\_present & Bool & - & - & Readable & Standard & Value is true if raw property port is connected. \\
+      Property & other\_present & Bool & - & - & Readable & Standard & - & Value is true if raw property port is connected. \\
       \hline
-      Property & force\_reset & Bool & - & - & Writable, Readable  & Standard & If true, the force\_reset signal of the dev\_force\_spi\_reset devsignal port is 1. If false, 0. \\
+      Property & force\_reset & Bool & - & - & Writable, Readable  & Standard & 0 & If true, the force\_reset signal of the dev\_force\_spi\_reset devsignal port is 1. If false, 0. \\
       \hline
-      Property & qadc0\_is\_present & Bool & - & - & Volatile & Standard & Value is true if a qadc worker is present in the bitstream that can handle channel 0 data. \\
+      Property & qadc0\_is\_present & Bool & - & - & Volatile & Standard & - & Value is true if a qadc worker is present in the bitstream that can handle channel 0 data. \\
       \hline
-      Property & qadc1\_is\_present & Bool & - & - & Volatile & Standard & Value is true if a qadc worker is present in the bitstream that can handle channel 1 data. \\
+      Property & qadc1\_is\_present & Bool & - & - & Volatile & Standard & - & Value is true if a qadc worker is present in the bitstream that can handle channel 1 data. \\
       \hline
-      Property & qdac0\_is\_present & Bool & - & - & Volatile & Standard & Value is true if a qdac worker is present in the bitstream that can handle channel 0 data.  \\
+      Property & qdac0\_is\_present & Bool & - & - & Volatile & Standard & - & Value is true if a qdac worker is present in the bitstream that can handle channel 0 data.  \\
       \hline
-      Property & qdac1\_is\_present & Bool & - & - & Volatile & Standard & Value is true if a qdac worker is present in the bitstream that can handle channel 1 data. \\
+      Property & qdac1\_is\_present & Bool & - & - & Volatile & Standard & - & Value is true if a qdac worker is present in the bitstream that can handle channel 1 data. \\
       \hline
-      Property & rx\_frame\_usage & Enum & - & - & Volatile & enable, toggle & Value represents the only supported usage of the AD9361 RX\_FRAME\_P pin. \\
+      Property & rx\_frame\_usage & Enum & - & - & Volatile & enable, toggle & - & Value represents the only supported usage of the AD9361 RX\_FRAME\_P pin. \\
       \hline
-      Property & data\_bus\_index\_direction & Enum & - & - & Volatile & normal, reverse & Value represents the expected direction of the AD9361 data buses. \\
+      Property & data\_bus\_index\_direction & Enum & - & - & Volatile & normal, reverse & - & Value represents the expected direction of the AD9361 data buses. \\
       \hline
-      Property & data\_clk\_is\_inverted & Bool & - & - & Volatile & Standard & Value represents the expected inversion of the AD9361 DATA\_CLK\_P pin.\\
+      Property & data\_clk\_is\_inverted & Bool & - & - & Volatile & Standard & - & Value represents the expected inversion of the AD9361 DATA\_CLK\_P pin.\\
       \hline
-      Property & rx\_frame\_is\_inverted & Bool & - & - & Volatile & Standard & Value represents the expected inversion of the AD9361 RX\_FRAME\_P pin.\\
+      Property & rx\_frame\_is\_inverted & Bool & - & - & Volatile & Standard & - & Value represents the expected inversion of the AD9361 RX\_FRAME\_P pin.\\
       \hline
-      Property & p0\_p1\_are\_swapped & Bool & - & - & Volatile & Standard & Value represents the expected usage of the AD9361 P0\_D/P1\_D data ports.\\
+      Property & p0\_p1\_are\_swapped & Bool & - & - & Volatile & Standard & - & Value represents the expected usage of the AD9361 P0\_D/P1\_D data ports.\\
       \hline
-      Property & iostandard & Enum & - & - & Volatile & CMOS, LVDS & Value represents the only supported AD9361 data port configuration.\\
+      Property & iostandard & Enum & - & - & Volatile & CMOS, LVDS & - & Value represents the only supported AD9361 data port configuration.\\
       \hline
-      Property & port\_config & Enum & - & - & Volatile & single, dual & Value represents the only supported AD9361 data port configuration.\\
+      Property & port\_config & Enum & - & - & Volatile & single, dual & - & Value represents the only supported AD9361 data port configuration.\\
       \hline
-      Property & duplex\_config & Enum & - & - & Volatile & half\_duplex, full\_duplex, runtime\_dynamic & Value represents the only supported AD9361 data port configuration.\\
+      Property & duplex\_config & Enum & - & - & Volatile & half\_duplex, full\_duplex, runtime\_dynamic & - & Value represents the only supported AD9361 data port configuration.\\
       \hline
-      Property & data\_rate\_config & Enum & - & - & Volatile & SDR, DDR & Value represents the only supported AD9361 data port configuration.\\
+      Property & data\_rate\_config & Enum & - & - & Volatile & SDR, DDR & - & Value represents the only supported AD9361 data port configuration.\\
       \hline
-      Property & config\_is\_two\_r & Bool & - & - & Readable, Writable & Standard & Should be set to true when both RX channels are used and false when one RX channel is used.\\
+      Property & config\_is\_two\_r & Bool & - & - & Readable, Writable & Standard & - & Should be set to true when both RX channels are used and false when one RX channel is used.\\
       \hline
-      Property & config\_is\_two\_t & Bool & - & - & Readable, Writable & Standard & Should be set to true when both TX channels are used and false when one TX channel is used.\\
+      Property & config\_is\_two\_t & Bool & - & - & Readable, Writable & Standard & - & Should be set to true when both TX channels are used and false when one TX channel is used.\\
       \hline
-      Property & force\_two\_r\_two\_t\_timing & Bool & - & - & Readable, Writable & Standard & Should be set to true when 2R2T timing is forced (the AD9361 register 0x010 bit D2 is 1) and false when not foced (D2 is 0).\\
+      Property & force\_two\_r\_two\_t\_timing & Bool & - & - & Readable, Writable & Standard & - & Should be set to true when 2R2T timing is forced (the AD9361 register 0x010 bit D2 is 1) and false when not foced (D2 is 0).\\
+      \hline
+      Property & Half\_Duplex\_Mode            & Bool & - & - & Writable           & Standard & False & - \\
+      \hline
+      Property & ENSM\_Pin\_Control            & Bool & - & - & Writable           & Standard & True  & Intended to match AD9361 register 0x014 bit D4. \\
+      \hline
+      Property & Level\_Mode                   & Bool & - & - & Writable           & Standard & False & Intended to match AD9361 register 0x014 bit D3. \\
+      \hline
+      Property & FDD\_External\_Control\_Enable& Bool & - & - & Writable           & Standard & False & Intended to match AD9361 register 0x014 bit D7. \\
+      \hline
+      Property & ENABLE\_force\_set            & Bool & - & - & Writable           & Standard & False & Forces set of AD9361 ENABLE pin. \\
+      \hline
+      Property & TXNRX\_force\_set             & Bool & - & - & Writable           & Standard & False & Forces set of AD9361 TXNRX pin. \\
       \hline
       ... & ... & ... & ... & ... & ... & ... & ... \\
       Property & AD9361 register set (see Appendix \ref{appendix1}) & ... & ... & ... & ... & ... & ... \\
       ... & ... & ... & ... & ... & ... & ... & ... \\
       \hline
-  \end{tabular}
+  \end{longtable}
   \end{scriptsize}
 
   \section*{Component Ports}
   \begin{scriptsize}
-    \begin{tabular}{|p{2cm}|p{1.5cm}|p{4cm}|p{1.5cm}|p{1.5cm}|p{10.85cm}|}
+    \begin{tabular}{|p{2cm}|p{1.5cm}|p{4cm}|p{1.5cm}|p{1.5cm}|p{11.29cm}|}
       \hline
       \rowcolor{blue}
       Name & Producer & Protocol           & Optional & Advanced & Usage                  \\
@@ -258,12 +280,12 @@ The AD9361 register map is realized via a rawprops port whose communication is f
 
   \section*{Worker Properties}
   \begin{scriptsize}
-    \begin{tabular}{|p{3.75cm}|p{1.25cm}|p{2cm}|p{2.75cm}|p{1.5cm}|p{1.5cm}|p{1cm}|p{6.74cm}|}
+    \begin{tabular}{|p{3.75cm}|p{1.25cm}|p{2cm}|p{2.75cm}|p{1.5cm}|p{1.5cm}|p{1cm}|p{7.17cm}|}
       \hline
       \rowcolor{blue}
       Name               & Type & SequenceLength & ArrayDimensions & Accessibility      & Valid Range & Default & Usage                                                                               \\
       \hline
-      - & - & - & - & - & - & - & - \\
+      pin\_control\_p & Bool & - & - & Parameter & Standard & - & Whether RX/TX powerdown via pin control is possible. \\
       \hline
     \end{tabular}
   \end{scriptsize}
@@ -271,7 +293,7 @@ The AD9361 register map is realized via a rawprops port whose communication is f
   \section*{Worker Interfaces}
   \subsection*{\comp.hdl}
   \begin{scriptsize}
-    \begin{longtable}{|p{1.75cm}|p{3.25cm}|p{17.67cm}|}
+    \begin{longtable}{|p{1.75cm}|p{3.25cm}|p{18.10cm}|}
     \hline
     \rowcolor{blue}
     Type              & Name                    & Master    \\
@@ -293,9 +315,9 @@ The AD9361 register map is realized via a rawprops port whose communication is f
 			\hline
 			\multirow{38}{*}{DevSignal} & \multirow{38}{*}{dev\_cfg\_data} & \multirow{38}{*}{2} & \multirow{38}{*}{True} & \multirow{38}{*}{False} & config\_is\_two\_r &Input& 1      & Some data port configurations (such as LVDS) require the TX bus to use 2R2T timing if either 2 TX or 2 RX channels are used. For example, if using LVDS and this has a value of 1, 2R2T timing will be forced. \\
 			\cline{6-9}
-			&             &        &     &      & ch0\_handler\_is\_present &Output & 1      & Value is 1 if the dev\_data\_ch0 dev signal is connected to a worker (that "handles" the data) and 0 otherwise. This is expected to be hardcoded at buildtime. \\
+			&             &        &     &      & ch0\_handler\_is\_present &Output & 1      & Value is 1 if the dev\_data\_ch0 dev signal is connected to a worker (that ``handles'' the data) and 0 otherwise. This is expected to be hardcoded at buildtime. \\
 			\cline{6-9}
-			&             &        &     &      & ch1\_handler\_is\_present &Output & 1      &  Value is 1 if the dev\_data\_ch1 dev signal is connected to a worker (that "handles" the data) and 0 otherwise. This is expected to be hardcoded at buildtime. \\
+			&             &        &     &      & ch1\_handler\_is\_present &Output & 1      &  Value is 1 if the dev\_data\_ch1 dev signal is connected to a worker (that ``handles'' the data) and 0 otherwise. This is expected to be hardcoded at buildtime. \\
 			\cline{6-9}
 			&             &        &     &      & data\_bus\_index\_direction &Output&1      &  Value is 1 if the bus indexing of the P0\_D/P1\_D signals from dev\_data\_from\_pins was reversed before processing. This is expected to be hardcoded at buildtime. \\
 			\cline{6-9}
@@ -320,9 +342,14 @@ The AD9361 register map is realized via a rawprops port whose communication is f
 			\cline{6-9}
 			&             &        &     &      & force\_two\_r\_two\_t\_timing &Input& 1 & Expected to match value of AD9361 register 0x010 bit D2\cite{adi_ug671}.\\
 			\hline
+			DevSignal & dev\_rxen\_data\_sub & 1 & False & True  & rxen & Input     & 1      & \\
+			\hline
+			DevSignal & dev\_txen\_data\_sub & 1 & False & True  & txen & Input     & 1      & \\
+			\cline{6-9}
+			\hline
 		\end{longtable}
 	\end{scriptsize}
-  
+
   \section*{Subdevice Connections}
   \begin{scriptsize}
     \begin{tabular}{|p{5cm}|p{5cm}|p{5cm}|p{7.22cm}|}
@@ -344,422 +371,20 @@ The AD9361 register map is realized via a rawprops port whose communication is f
 \section*{Control Timing and Signals}
 The \Comp{} subdevice worker operates in the control plane clock domain. Note that this worker is essentially the central worker that command/control passes through, and no RX or TX data paths flow through this worker.
 
+\begin{landscape}
 \section*{Performance and Resource Utilization}
+\section*{Worker Configuration Parameters}
+\subsubsection*{\comp.hdl}
+\input{../../\ecomp.hdl/configurations.inc}
 \subsubsection*{\comp.hdl}
 Fmax refers to the maximum allowable clock rate for any registered signal paths within a given clock domain for an FPGA design. Fmax in the table below is specific only to this worker and represents the maximum possible Fmax for any OpenCPI bitstream built with this worker included. Note that the Fmax value for a given clock domain for the final bitstream is often worse than the Fmax specific to this worker, even if this worker is the only one included in the bitstream. \\ \\
-%ad9361_config.hdl/target-stratix4/ad9361_config_rv.merge.summary
-\iffalse
-Partition Merge Status : Successful - Tue Aug  1 18:31:58 2017
-Quartus Prime Version : 15.1.0 Build 185 10/21/2015 SJ Standard Edition
-Revision Name : ad9361_config_rv
-Top-level Entity Name : ad9361_config_rv
-Family : Stratix IV
-Logic utilization : N/A
-    Combinational ALUTs : 167
-    Memory ALUTs : 0
-    Dedicated logic registers : 70
-Total registers : 70
-Total pins : 216
-Total virtual pins : 0
-Total block memory bits : 0
-DSP block 18-bit elements : 0
-Total GXB Receiver Channel PCS : 0
-Total GXB Receiver Channel PMA : 0
-Total GXB Transmitter Channel PCS : 0
-Total GXB Transmitter Channel PMA : 0
-Total PLLs : 0
-Total DLLs : 0
-\fi
-%ad9361_config.hdl/target-zynq_ise/ad9361_config_rv-xst.out
-\iffalse
-Primitive and Black Box Usage:
-------------------------------
-# BELS                             : 210
-#      GND                         : 16
-#      INV                         : 2
-#      LUT2                        : 56
-#      LUT3                        : 18
-#      LUT4                        : 9
-#      LUT5                        : 23
-#      LUT6                        : 81
-#      MUXF7                       : 4
-#      VCC                         : 1
-# FlipFlops/Latches                : 64
-#      FD                          : 6
-#      FDE                         : 32
-#      FDR                         : 4
-#      FDRE                        : 21
-#      FDS                         : 1
 
-Device utilization summary:
----------------------------
-
-Selected Device : 7z010clg400-3 
-
-
-Slice Logic Utilization: 
- Number of Slice Registers:              64  out of  35200     0%  
- Number of Slice LUTs:                  189  out of  17600     1%  
-    Number used as Logic:               189  out of  17600     1%  
-
-Slice Logic Distribution: 
- Number of LUT Flip Flop pairs used:    253
-   Number with an unused Flip Flop:     189  out of    253    74%  
-   Number with an unused LUT:            64  out of    253    25%  
-   Number of fully used LUT-FF pairs:     0  out of    253     0%  
-   Number of unique control sets:        10
-
-IO Utilization: 
- Number of IOs:                         216
- Number of bonded IOBs:                   0  out of    100     0%  
-
-Specific Feature Utilization:
-
-\fi
-%ad9361_config.hdl/target-zynq_ise/ad9361_config_rv-xst.out
-\iffalse
-Timing Summary:
----------------
-Speed Grade: -3
-
-   Minimum period: 2.093ns (Maximum Frequency: 477.737MHz)
-   Minimum input arrival time before clock: 1.156ns
-   Maximum output required time after clock: 2.161ns
-   Maximum combinational path delay: 2.405ns
-
-Timing Details:
----------------
-All values displayed in nanoseconds (ns)
-
-=========================================================================
-Timing constraint: Default period analysis for Clock 'ctl_in_Clk'
-  Clock period: 2.093ns (frequency: 477.737MHz)
-  Total number of paths / destination ports: 806 / 74
--------------------------------------------------------------------------
-Delay:               2.093ns (Levels of Logic = 5)
-  Source:            wci/wci_decode/my_offset_r_4 (FF)
-  Destination:       wci/wci_decode/my_read_index_r_0 (FF)
-  Source Clock:      ctl_in_Clk rising
-  Destination Clock: ctl_in_Clk rising
-
-  Data Path: wci/wci_decode/my_offset_r_4 to wci/wci_decode/my_read_index_r_0
-                                Gate     Net
-    Cell:in->out      fanout   Delay   Delay  Logical Name (Net Name)
-    ----------------------------------------  ------------
-     FDRE:C->Q            24   0.232   0.645  my_offset_r_4 (my_offset_r_4)
-     begin scope: 'wci/wci_decode/g0.g1[13].g2.prop:offset_in<4>'
-     LUT5:I0->O            1   0.043   0.289  read_enable_SW0 (N01)
-     LUT6:I5->O            3   0.043   0.466  read_enable (read_enable)
-     end scope: 'wci/wci_decode/g0.g1[13].g2.prop:read_enable'
-     LUT4:I0->O            1   0.043   0.289  Mmux_GND_19_o_GND_19_o_mux_90_OUT1_SW0 (N6)
-     LUT6:I5->O            1   0.043   0.000  Mmux_GND_19_o_GND_19_o_mux_90_OUT1 (GND_19_o_GND_19_o_mux_90_OUT<0>)
-     FDRE:D                   -0.001          my_read_index_r_0
-    ----------------------------------------
-    Total                      2.093ns (0.404ns logic, 1.689ns route)
-                                       (19.3% logic, 80.7% route)
-\fi
-%ad9361_config.hdl/target-zynq/ad9361_config_rv-vivado.out
-\iffalse
-
-Utilization Design Information
-
-Table of Contents
------------------
-1. Slice Logic
-1.1 Summary of Registers by Type
-2. Memory
-3. DSP
-4. IO and GT Specific
-5. Clocking
-6. Specific Feature
-7. Primitives
-8. Black Boxes
-9. Instantiated Netlists
-
-1. Slice Logic
---------------
-
-+-------------------------+------+-------+-----------+-------+
-|        Site Type        | Used | Fixed | Available | Util% |
-+-------------------------+------+-------+-----------+-------+
-| Slice LUTs*             |  117 |     0 |     53200 |  0.22 |
-|   LUT as Logic          |  117 |     0 |     53200 |  0.22 |
-|   LUT as Memory         |    0 |     0 |     17400 |  0.00 |
-| Slice Registers         |   67 |     0 |    106400 |  0.06 |
-|   Register as Flip Flop |   67 |     0 |    106400 |  0.06 |
-|   Register as Latch     |    0 |     0 |    106400 |  0.00 |
-| F7 Muxes                |    0 |     0 |     26600 |  0.00 |
-| F8 Muxes                |    0 |     0 |     13300 |  0.00 |
-+-------------------------+------+-------+-----------+-------+
-* Warning! The Final LUT count, after physical optimizations and full implementation, is typically lower. Run opt_design after synthesis, if not already completed, for a more realistic count.
-
-
-1.1 Summary of Registers by Type
---------------------------------
-
-+-------+--------------+-------------+--------------+
-| Total | Clock Enable | Synchronous | Asynchronous |
-+-------+--------------+-------------+--------------+
-| 0     |            _ |           - |            - |
-| 0     |            _ |           - |          Set |
-| 0     |            _ |           - |        Reset |
-| 0     |            _ |         Set |            - |
-| 0     |            _ |       Reset |            - |
-| 0     |          Yes |           - |            - |
-| 0     |          Yes |           - |          Set |
-| 0     |          Yes |           - |        Reset |
-| 2     |          Yes |         Set |            - |
-| 65    |          Yes |       Reset |            - |
-+-------+--------------+-------------+--------------+
-
-
-2. Memory
----------
-
-+----------------+------+-------+-----------+-------+
-|    Site Type   | Used | Fixed | Available | Util% |
-+----------------+------+-------+-----------+-------+
-| Block RAM Tile |    0 |     0 |       140 |  0.00 |
-|   RAMB36/FIFO* |    0 |     0 |       140 |  0.00 |
-|   RAMB18       |    0 |     0 |       280 |  0.00 |
-+----------------+------+-------+-----------+-------+
-* Note: Each Block RAM Tile only has one FIFO logic available and therefore can accommodate only one FIFO36E1 or one FIFO18E1. However, if a FIFO18E1 occupies a Block RAM Tile, that tile can still accommodate a RAMB18E1
-
-
-3. DSP
-------
-
-+-----------+------+-------+-----------+-------+
-| Site Type | Used | Fixed | Available | Util% |
-+-----------+------+-------+-----------+-------+
-| DSPs      |    0 |     0 |       220 |  0.00 |
-+-----------+------+-------+-----------+-------+
-
-
-4. IO and GT Specific
----------------------
-
-+-----------------------------+------+-------+-----------+-------+
-|          Site Type          | Used | Fixed | Available | Util% |
-+-----------------------------+------+-------+-----------+-------+
-| Bonded IOB                  |    0 |     0 |       200 |  0.00 |
-| Bonded IPADs                |    0 |     0 |         2 |  0.00 |
-| Bonded IOPADs               |    0 |     0 |       130 |  0.00 |
-| PHY_CONTROL                 |    0 |     0 |         4 |  0.00 |
-| PHASER_REF                  |    0 |     0 |         4 |  0.00 |
-| OUT_FIFO                    |    0 |     0 |        16 |  0.00 |
-| IN_FIFO                     |    0 |     0 |        16 |  0.00 |
-| IDELAYCTRL                  |    0 |     0 |         4 |  0.00 |
-| IBUFDS                      |    0 |     0 |       192 |  0.00 |
-| PHASER_OUT/PHASER_OUT_PHY   |    0 |     0 |        16 |  0.00 |
-| PHASER_IN/PHASER_IN_PHY     |    0 |     0 |        16 |  0.00 |
-| IDELAYE2/IDELAYE2_FINEDELAY |    0 |     0 |       200 |  0.00 |
-| ILOGIC                      |    0 |     0 |       200 |  0.00 |
-| OLOGIC                      |    0 |     0 |       200 |  0.00 |
-+-----------------------------+------+-------+-----------+-------+
-
-
-5. Clocking
------------
-
-+------------+------+-------+-----------+-------+
-|  Site Type | Used | Fixed | Available | Util% |
-+------------+------+-------+-----------+-------+
-| BUFGCTRL   |    0 |     0 |        32 |  0.00 |
-| BUFIO      |    0 |     0 |        16 |  0.00 |
-| MMCME2_ADV |    0 |     0 |         4 |  0.00 |
-| PLLE2_ADV  |    0 |     0 |         4 |  0.00 |
-| BUFMRCE    |    0 |     0 |         8 |  0.00 |
-| BUFHCE     |    0 |     0 |        72 |  0.00 |
-| BUFR       |    0 |     0 |        16 |  0.00 |
-+------------+------+-------+-----------+-------+
-
-
-6. Specific Feature
--------------------
-
-+-------------+------+-------+-----------+-------+
-|  Site Type  | Used | Fixed | Available | Util% |
-+-------------+------+-------+-----------+-------+
-| BSCANE2     |    0 |     0 |         4 |  0.00 |
-| CAPTUREE2   |    0 |     0 |         1 |  0.00 |
-| DNA_PORT    |    0 |     0 |         1 |  0.00 |
-| EFUSE_USR   |    0 |     0 |         1 |  0.00 |
-| FRAME_ECCE2 |    0 |     0 |         1 |  0.00 |
-| ICAPE2      |    0 |     0 |         2 |  0.00 |
-| STARTUPE2   |    0 |     0 |         1 |  0.00 |
-| XADC        |    0 |     0 |         1 |  0.00 |
-+-------------+------+-------+-----------+-------+
-
-
-7. Primitives
--------------
-
-+----------+------+---------------------+
-| Ref Name | Used | Functional Category |
-+----------+------+---------------------+
-| FDRE     |   65 |        Flop & Latch |
-| LUT6     |   40 |                 LUT |
-| LUT3     |   40 |                 LUT |
-| LUT5     |   30 |                 LUT |
-| LUT2     |   22 |                 LUT |
-| LUT4     |   17 |                 LUT |
-| FDSE     |    2 |        Flop & Latch |
-| LUT1     |    1 |                 LUT |
-+----------+------+---------------------+
-
-
-8. Black Boxes
---------------
-
-+----------+------+
-| Ref Name | Used |
-+----------+------+
-
-
-9. Instantiated Netlists
-------------------------
-
-+----------+------+
-| Ref Name | Used |
-+----------+------+
-
-\fi
-%ad9361_config.hdl/target-zynq/ad9361_config_rv-vivado.out
-\iffalse
-
-Timing Report
-
-Slack:                    inf
-  Source:                 dev_cfg_data_in[1][data_bus_index_direction]
-                            (input port)
-  Destination:            ctl_out[SData][0]
-                            (output port)
-  Path Group:             (none)
-  Path Type:              Max at Slow Process Corner
-  Data Path Delay:        4.331ns  (logic 0.372ns (8.589%)  route 3.959ns (91.411%))
-  Logic Levels:           3  (LUT4=1 LUT5=1 LUT6=1)
-
-    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
-  -------------------------------------------------------------------    -------------------
-                                                      0.000     0.000 r  dev_cfg_data_in[1][data_bus_index_direction] (IN)
-                         net (fo=1, unset)            0.973     0.973    dev_cfg_data_in[1][data_bus_index_direction]
-                         LUT4 (Prop_lut4_I3_O)        0.124     1.097 f  ctl_out[SData][0]_INST_0_i_9/O
-                         net (fo=1, unplaced)         1.111     2.208    wci/wci_decode/dev_cfg_data_in[1][data_bus_index_direction]_0
-                         LUT5 (Prop_lut5_I1_O)        0.124     2.332 r  wci/wci_decode/ctl_out[SData][0]_INST_0_i_4/O
-                         net (fo=1, unplaced)         0.902     3.234    wci/wci_decode/ctl_out[SData][0]_INST_0_i_4_n_0
-                         LUT6 (Prop_lut6_I3_O)        0.124     3.358 r  wci/wci_decode/ctl_out[SData][0]_INST_0/O
-                         net (fo=0)                   0.973     4.331    ctl_out[SData][0]
-                                                                      r  ctl_out[SData][0] (OUT)
-  -------------------------------------------------------------------    -------------------
-\fi
-%ad9361_config.hdl/target-virtex6/ad9361_config_rv-xst.out
-\iffalse
-Primitive and Black Box Usage:
-------------------------------
-# BELS                             : 210
-#      GND                         : 16
-#      INV                         : 2
-#      LUT2                        : 56
-#      LUT3                        : 18
-#      LUT4                        : 9
-#      LUT5                        : 23
-#      LUT6                        : 81
-#      MUXF7                       : 4
-#      VCC                         : 1
-# FlipFlops/Latches                : 70
-#      FD                          : 6
-#      FDE                         : 32
-#      FDR                         : 4
-#      FDRE                        : 27
-#      FDS                         : 1
-
-Device utilization summary:
----------------------------
-
-Selected Device : 6vlx240tff1156-1 
-
-
-Slice Logic Utilization: 
- Number of Slice Registers:              70  out of  301440     0%  
- Number of Slice LUTs:                  189  out of  150720     0%  
-    Number used as Logic:               189  out of  150720     0%  
-
-Slice Logic Distribution: 
- Number of LUT Flip Flop pairs used:    259
-   Number with an unused Flip Flop:     189  out of    259    72%  
-   Number with an unused LUT:            70  out of    259    27%  
-   Number of fully used LUT-FF pairs:     0  out of    259     0%  
-   Number of unique control sets:        10
-
-IO Utilization: 
- Number of IOs:                         216
- Number of bonded IOBs:                   0  out of    600     0%  
-
-Specific Feature Utilization:
-
-\fi
-%ad9361_config.hdl/target-virtex6/ad9361_config_rv-xst.out
-\iffalse
-Timing Summary:
----------------
-Speed Grade: -1
-
-   Minimum period: 3.037ns (Maximum Frequency: 329.272MHz)
-   Minimum input arrival time before clock: 1.656ns
-   Maximum output required time after clock: 3.134ns
-   Maximum combinational path delay: 3.395ns
-
-Timing Details:
----------------
-All values displayed in nanoseconds (ns)
-
-=========================================================================
-Timing constraint: Default period analysis for Clock 'ctl_in_Clk'
-  Clock period: 3.037ns (frequency: 329.272MHz)
-  Total number of paths / destination ports: 818 / 80
--------------------------------------------------------------------------
-Delay:               3.037ns (Levels of Logic = 5)
-  Source:            wci/wci_decode/my_offset_r_0 (FF)
-  Destination:       wci/wci_decode/my_read_index_r_1 (FF)
-  Source Clock:      ctl_in_Clk rising
-  Destination Clock: ctl_in_Clk rising
-
-  Data Path: wci/wci_decode/my_offset_r_0 to wci/wci_decode/my_read_index_r_1
-                                Gate     Net
-    Cell:in->out      fanout   Delay   Delay  Logical Name (Net Name)
-    ----------------------------------------  ------------
-     FDRE:C->Q            17   0.375   0.884  my_offset_r_0 (my_offset_r_0)
-     begin scope: 'wci/wci_decode/g0.g1[3].g2.prop:offset_in<0>'
-     LUT6:I0->O            1   0.068   0.491  read_enable1 (read_enable1)
-     LUT2:I0->O            2   0.068   0.587  read_enable3 (read_enable)
-     end scope: 'wci/wci_decode/g0.g1[3].g2.prop:read_enable'
-     LUT4:I1->O            1   0.068   0.417  Mmux_GND_19_o_GND_19_o_mux_90_OUT2_SW0_SW0 (N18)
-     LUT6:I5->O            1   0.068   0.000  Mmux_GND_19_o_GND_19_o_mux_90_OUT2 (GND_19_o_GND_19_o_mux_90_OUT<1>)
-     FDRE:D                    0.011          my_read_index_r_1
-    ----------------------------------------
-    Total                      3.037ns (0.658ns logic, 2.379ns route)
-                                       (21.7% logic, 78.3% route)
-\fi
 %\input{../../\ecomp.hdl/utilization.inc}
-\begin{scriptsize}
-	\begin{tabular}{|M{4.4cm}|M{1.9cm}|M{1.9cm}|M{1.5cm}|M{1.8cm}|M{1.4cm}|}
-    \hline
-    \rowcolor{blue}
-    Device                    & Registers (typical) & LUTs (typical) & Fmax (typical) & Memory/Special Functions & Design Suite \\
-    \hline
-    \multirow{2}{*}{Zynq XC7Z020-1-CLG484} & 67        & 117  & 318 MHz\textsuperscript{\ref{abc}} & -                        & Vivado 2017.1 \\
-    \cline{2-6}
-                              & 64        & 189  & 477 MHz & -                        & ISE 14.7      \\
-    \hline
-		Virtex-6 XC6VLX240T-1-FF1156 & 70        & 189  & 329 MHz & -                        & ISE 14.7     \\
-    \hline
-    Stratix IV EP4SGX230K-C2-F40 & 70     & 167  & \ref{quartustiming} & -                        & Quartus Prime 15.1 \\
-    \hline
-  \end{tabular}
-\end{scriptsize}
+\input{utilization_custom.inc}
+
+\end{landscape}
+
 \footnotetext[1]{\label{abc}These measurements were the result of a Vivado timing analysis which was different from the Vivado analysis performed by default for OpenCPI worker builds. For more info see Appendix \ref{appendix1}}
-\footnotetext[2]{\label{quartustiming}Quartus does not perform timing analysis at the OpenCPI worker build (i.e. synthesis) stage.}
 
 \section*{Test and Verification}
 No standalone unit test currently exists for this worker. However, the test outlined in \cite{dac_comp_datasheet} includes validation of a subset of this worker's functionality (for LVDS only).
@@ -774,9 +399,12 @@ No standalone unit test currently exists for this worker. However, the test outl
 AD9361\_Reference\_Manual\_UG-570.pdf
 \bibitem{adi_ug671} AD9361 Register Map Reference Manual UG-671\\
 AD9361\_Register\_Map\_Reference\_Manual\_UG-671.pdf
-\bibitem{spi_comp_datasheet} AD361 SPI Component Data Sheet \\AD9361\_SPI.pdf
-\bibitem{dac_comp_datasheet} AD361 DAC Component Data Sheet \\AD9361\_DAC.pdf
-\bibitem{config_proxy_comp_datasheet} AD361 Config Proxy Component Data Sheet \\AD9361\_Config\_Proxy.pdf
+\bibitem{spi_comp_datasheet} AD361 SPI Component Data Sheet \\
+\url{https://opencpi.github.io/assets/AD9361_SPI.pdf}
+\bibitem{dac_comp_datasheet} AD361 DAC Component Data Sheet \\
+\url{https://opencpi.github.io/assets/AD9361_DAC.pdf}
+\bibitem{config_proxy_comp_datasheet} AD361 Config Proxy Component Data Sheet \\
+\url{https://opencpi.github.io/assets/AD9361_Config_Proxy.pdf}
 
 \end{thebibliography}
 \pagebreak
@@ -1754,8 +1382,8 @@ AD9361\_Register\_Map\_Reference\_Manual\_UG-671.pdf
 
 \section{Appendix - Vivado Timing Analysis} \label{appendix}
 
-The Vivado timing report that OpenCPI runs for device workers may erroneously report a max delay for a clocking path which should have been ignored. Custom Vivado tcl commands had to be run for this device worker to extract pertinent information from Vivado timing analysis. After building the worker, the following commands were run from the base project directory (after the Vivado settings64.sh was sourced):
-\lstset{language=bash, columns=flexible, breaklines=true, prebreak=\textbackslash, basicstyle=\ttfamily, showstringspaces=false,upquote=true, aboveskip=\baselineskip, belowskip=\baselineskip}
+The Vivado timing report that OpenCPI runs for device workers may erroneously report a max delay for a clocking path which should have been ignored. Custom Vivado tcl commands had to be run for this device worker to extract pertinent information from Vivado timing analysis. After building the worker, the following commands were run from the assets project directory (after the Vivado settings64.sh was sourced):
+\lstset{language=bash, backgroundcolor=\color{lightgray}, columns=flexible, breaklines=true, prebreak=\textbackslash, basicstyle=\ttfamily, showstringspaces=false,upquote=true, aboveskip=\baselineskip, belowskip=\baselineskip}
 \begin{lstlisting}
 cd hdl/devices/
 vivado -mode tcl
@@ -1785,7 +1413,7 @@ Slack (VIOLATED) :        -3.135ns  (required time - arrival time)
   Data Path Delay:        2.884ns  (logic 0.937ns (32.490%)  route 1.947ns (67.510%))
   Logic Levels:           2  (LUT6=2)
   Clock Path Skew:        -0.049ns (DCD - SCD + CPR)
-    Destination Clock Delay (DCD):    0.924ns = ( 0.926 - 0.002 ) 
+    Destination Clock Delay (DCD):    0.924ns = ( 0.926 - 0.002 )
     Source Clock Delay      (SCD):    0.973ns
     Clock Pessimism Removal (CPR):    0.000ns
   Clock Uncertainty:      0.035ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
@@ -1796,7 +1424,7 @@ Slack (VIOLATED) :        -3.135ns  (required time - arrival time)
 
     Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
   -------------------------------------------------------------------    -------------------
-                         (clock clk1 rise edge)       0.000     0.000 r  
+                         (clock clk1 rise edge)       0.000     0.000 r
                                                       0.000     0.000 r  ctl_in[Clk] (IN)
                          net (fo=66, unset)           0.973     0.973    wci/wci_decode/ctl_in[Clk]
                          FDRE                                         r  wci/wci_decode/my_state_r_reg[2]/C
@@ -1812,18 +1440,18 @@ Slack (VIOLATED) :        -3.135ns  (required time - arrival time)
                          FDSE                                         r  wci/wci_decode/FSM_onehot_my_access_r_reg[0]/CE
   -------------------------------------------------------------------    -------------------
 
-                         (clock clk1 rise edge)       0.002     0.002 r  
+                         (clock clk1 rise edge)       0.002     0.002 r
                                                       0.000     0.002 r  ctl_in[Clk] (IN)
                          net (fo=66, unset)           0.924     0.926    wci/wci_decode/ctl_in[Clk]
                          FDSE                                         r  wci/wci_decode/FSM_onehot_my_access_r_reg[0]/C
-                         clock pessimism              0.000     0.926    
-                         clock uncertainty           -0.035     0.891    
+                         clock pessimism              0.000     0.926
+                         clock uncertainty           -0.035     0.891
                          FDSE (Setup_fdse_C_CE)      -0.169     0.722    wci/wci_decode/FSM_onehot_my_access_r_reg[0]
   -------------------------------------------------------------------
-                         required time                          0.722    
-                         arrival time                          -3.857    
+                         required time                          0.722
+                         arrival time                          -3.857
   -------------------------------------------------------------------
-                         slack                                 -3.135    
+                         slack                                 -3.135
 
 
 

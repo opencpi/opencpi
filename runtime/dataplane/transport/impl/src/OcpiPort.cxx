@@ -31,18 +31,19 @@
  */
 #include <inttypes.h>
 #include <ctype.h>
-#include <DtHandshakeControl.h>
+#include "OcpiOsAssert.h"
+#include "OcpiUtilPort.h"
+#include "DtHandshakeControl.h"
 #include "XferManager.h"
-#include <OcpiPort.h>
-#include <OcpiOutputBuffer.h>
-#include <OcpiInputBuffer.h>
-#include <OcpiPortSet.h>
-#include <OcpiTransport.h>
-#include <OcpiOsAssert.h>
 #include "XferEndPoint.h"
-#include <OcpiCircuit.h>
-#include <OcpiRDTInterface.h>
-#include <OcpiTransferController.h>
+#include "OcpiOutputBuffer.h"
+#include "OcpiInputBuffer.h"
+#include "OcpiPortSet.h"
+#include "OcpiTransport.h"
+#include "OcpiCircuit.h"
+#include "OcpiRDTInterface.h"
+#include "OcpiTransferController.h"
+#include "OcpiPort.h"
 
 
 //using namespace OCPI::DataTransport;
@@ -52,7 +53,7 @@ namespace OU = OCPI::Util;
 namespace DDT = DtOsDataTypes;
 namespace XF = DataTransfer;
 // Buffer allignment
-#define BUF_ALIGNMENT 16
+#define BUF_ALIGNMENT OU::BUFFER_ALIGNMENT
 namespace OCPI {
 namespace DataTransport {
 void Port::reset()

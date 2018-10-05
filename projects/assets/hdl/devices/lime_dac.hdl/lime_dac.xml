@@ -3,8 +3,27 @@
   <!-- Other included XML -->
   <xi:include href='lime-iq-properties.xml'/>
 
+  <!-- Properties -->
+  <Property name='fifo_depth' type='ulong' parameter='1' default='64' description='Depth in number of samples of the control-to-DAC clock domain crossing FIFO.'/> <!-- default depth of 64 has been tested and known to be valid -->
+  <Property Name="IDATA_WIDTH_p" Type="ushort" Default="32" Parameter="true"/>
+
+  <!-- min_num_cp_clks_per_txen_events default value calculation:
+       num clocks / sample = 2
+       min sample rate = 100 kHz (from matchstiq_rx.rcc)
+       min DAC CLK rate = min sample rate * (num clocks/sample) ~= 200 kHz
+       fastest known control plane clock = 125 MHz (ml605)
+       min_num_cp_clks_per_txen_events = ceil(1.5 * CP clk / (min DAC CLK rate))
+                                       = ceil(1.5*125e6/(200e3))
+                                       = ceil(937.5) = 938
+  -->
+  <Property name='min_num_cp_clks_per_txen_events' type='ushort' initial='true' readable='true' default='938' description='event_in backpressure will be held for this many clock cycles in order to ensure tx events are properly synchronized to the DAC CLK. Set to ceil(1.5 * control plane clock rate / DAC CLK rate [use lowest expected DAC CLK rate for your scenario])'/>
+
   <!-- Ports -->
   <StreamInterface Name="IN" DataWidth="32" optional='1'/>
+  <StreamInterface Name="event_in" Optional="1" ZeroLengthMessages="true"/>
+
+  <Devsignal Name='dev_txen' Signals='txen-out-signals.xml' Master='true'/>
+  <Devsignal Name='dev_tx_event' Signals='lime-tx-event-signals.xml' Master='true'/>
 
   <!-- Clocks -->
   <Clock name='sample_clk'/>

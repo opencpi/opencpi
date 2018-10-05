@@ -35,6 +35,13 @@ using namespace Lime_rx_proxyWorkerTypes;
 using namespace OCPI::Lime;
 
 class Lime_rx_proxyWorker : public Lime_rx_proxyWorkerBase {
+  RunCondition m_aRunCondition;
+public:
+  Lime_rx_proxyWorker() : m_aRunCondition(RCC_NO_PORTS) {
+    //Run function should never be called
+    setRunCondition(&m_aRunCondition);
+  }
+private:
   // notification that input_select property has been written
   RCCResult input_select_written() {
     if (m_properties.input_select > 3)
@@ -167,9 +174,19 @@ class Lime_rx_proxyWorker : public Lime_rx_proxyWorkerBase {
     slave.set_rxfe_dcoff_q(m_properties.post_mixer_dc_offset_q | (1 << 7));
     return RCC_OK;
   }
-  RCCResult initialize() {
+  // enable required for both initialize and start
+  RCCResult enable() {
     slave.set_top_ctl0(slave.get_top_ctl0() | (1 << 2));
     slave.set_clk_ctl(slave.get_clk_ctl() | (1 << 2));
+    return RCC_OK;
+  }
+  RCCResult initialize() {
+    enable();
+    return RCC_OK;
+  }
+  RCCResult start() {
+    if(isSuspended()) //Prevents duplication of initialize
+      enable();
     return RCC_OK;
   }
   RCCResult stop() {

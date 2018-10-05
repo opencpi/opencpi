@@ -1,6 +1,6 @@
 <HdlDevice language='vhdl' spec='lime_dac_ts_em-spec.xml' emulate='lime_dac_ts.hdl'>
   <!-- Assumes this is an integer value for the TX clock rate -->
-  <Property Name="tx_clk_rate" Type="ulong" Default="40000000" Readable="true" Writable="true"/>
+  <Property Name="tx_clk_rate" Type="ulong" Default="100000000" Readable="true" Writable="true"/>
   <Property Name="messageSize" Type="ulong" Readable="true" Writable="true" Default="8192"/>
   <!-- Number of output samples is used to inject a ZLM after this number of samples -->
   <Property Name='numOutputSamples' Type="ulong" Readable="true" Writable="true"/>
@@ -8,8 +8,8 @@
   <Property Name="overrun" Type="Bool" Volatile="true" Writable='true'/>
 
   <StreamInterface Name="out" DataWidth="32" ZeroLengthMessages="true"/>
-  <Devsignals Name="dev" Signals="lime_dac_sim-signals" Optional="true"/>
-  <Supports Worker="lime_dac_ts">
-    <Connect Port="dev" To="dev"/>
+  <Supports Worker='lime_dac_ts'>
+    <Connect Port='dev_txen' To='dev_txen'/>
+    <Connect Port='dev_tx_event' To='dev_tx_event'/>
   </Supports>
 </HdlDevice>

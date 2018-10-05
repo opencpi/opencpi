@@ -62,6 +62,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 %----------------------------------------------------------------------------------------
 % Table packages
 %----------------------------------------------------------------------------------------
+\usepackage{longtable} % for long possibly multi-page tables
 \usepackage{tabularx} % c=center,l=left,r=right,X=fill
 \usepackage{float}
 \floatstyle{plaintop}
@@ -88,7 +89,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Component Data Sheet}
-\def\docVersion{1.3}
+\def\docVersion{1.4}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
@@ -115,13 +116,13 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Version           & v\docVersion \\
 	\hline
-	Release Date      & February 2018 \\
+	Release Date      & September 2018 \\
 	\hline
 	Component Library & ocpi.assets.util\_comps                                                                     \\
 	\hline
 	Workers           & \comp.rcc \comp.hdl                                                                        \\
 	\hline
-	Tested Platforms  & xsim, isim, modelsim, alst4, ml605, ZedBoard(PL), Matchstiq-Z1(PL), linux-x13\_3-arm, c7-x86\_64 \\
+	Tested Platforms  & xsim, isim, modelsim, alst4, ml605, ZedBoard(PL), Matchstiq-Z1(PL), centos7, xilinx13\_3 \\
 	\hline
 \end{tabular}
 
@@ -175,13 +176,13 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \section*{Source Dependencies}
 \subsection*{\comp.rcc}
 \begin{itemize}
-	\item ocpiassets/components/util\_comps/zero\_padding.rcc/zero\_padding.cc
+	\item projects/assets/components/util\_comps/zero\_padding.rcc/zero\_padding.cc
 \end{itemize}
 \subsection*{\comp.hdl}
 \begin{itemize}
-	\item ocpiassets/components/util\_comps/zero\_padding.hdl/zero\_padding.vhd
-	\item ocpiassets/hdl/primitives/util\_prims/util\_prims\_pkg.vhd
-	      \subitem ocpiassets/hdl/primitives/util\_prims/zp/src/zero\_padding\_gen.vhd
+	\item projects/assets/components/util\_comps/zero\_padding.hdl/zero\_padding.vhd
+	\item projects/assets/hdl/primitives/util\_prims/util\_prims\_pkg.vhd
+	      \subitem projects/assets/hdl/primitives/util\_prims/zp/src/zero\_padding\_gen.vhd
 \end{itemize}
 
 \begin{landscape}
@@ -252,6 +253,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	This worker implementation uses the clock from the Control Plane and standard Control Plane signals.
 \end{flushleft}
 
+\begin{landscape}
 \section*{Performance and Resource Utilization}
 \subsubsection*{\comp.rcc}
 Table entries are a result of compiling the worker with the following parameter/property set:\
@@ -273,9 +275,13 @@ Table entries are a result of compiling the worker with the following parameter/
 		linux-x13\_3-arm ARMv7 Processor rev 0 (v7l)    & 666 MHz             & $\sim21$ ms       \\
 		\hline
 	\end{tabular}
+\section*{Worker Configuration Parameters}
+\subsubsection*{\comp.hdl}
+\input{../../\ecomp.hdl/configurations.inc}
 \end{scriptsize}
 \subsubsection*{\comp.hdl}
 \input{../../\ecomp.hdl/utilization.inc}
+\end{landscape}
 \section*{Test and Verification}
 \begin{flushleft}
 	Both input and output data widths of 8/16/32/64 are supported and fully tested on both RCC and HDL worker implementations. The sixteen cross products of these input/output data width combinations are built for both RCC and HDL workers. These input/output combinations are each tested with \verb+num_zeros+ equal to 0, 1, 128, and 255 resulting in 64 test cases for both RCC and HDL workers.\medskip

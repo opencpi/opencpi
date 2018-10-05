@@ -1,12 +1,5 @@
 This branch of OpenCPI is designed to be RPM-based for CentOS 6 and 7.
 
-RPMs are available in a yum repo at http://opencpi.github.io/repo/
-
-To build the RPMs:
-  cd releng
-  make prereq-host
-  make cdk
-
-Type just "make" in releng for more options, e.g. building the RPMs for Zynq-based platforms.
+Pre-built RPMs are available in a yum repo at http://opencpi.github.io/repo/
 
 Consult the "RPM Installation Guide" for more information.

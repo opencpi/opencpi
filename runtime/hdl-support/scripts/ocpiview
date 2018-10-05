@@ -35,7 +35,7 @@ if test -f isim.wdb; then
     echo Could not find the Xilinx ISE tools directory or license file. >&2
     exit 1
   }
-  set -e 
+  set -e
   . $OcpiXilinxIseDir/settings64.sh > /dev/null
   export LM_LICENSE_FILE=$OcpiXilinxLicenseFile
   exec isimgui -view isim.wdb
@@ -51,7 +51,10 @@ elif test -f xsim.wdb; then
   set -e
   . $OcpiXilinxVivadoDir/.settings64-Vivado.sh > /dev/null
   export LM_LICENSE_FILE=$OcpiXilinxLicenseFile
-  exec xsim -gui xsim.wdb -tclbatch view.tcl
+  # Do NOT want to open xsim.wdb right away. First we open the xsim TCL console by opening
+  # a session with the OTHER WDB file. Then we use the open_wave_database TCL command
+  # in view.tcl to open the correct Wave Database file.
+  exec xsim -gui $(echo *_xsim*.wdb | cut -f 1 -d '.') -tclbatch view.tcl
 else
   files=(`shopt -s nullglob; echo *.*sim.20*[0-9]`)
   nfiles=${#files[@]}

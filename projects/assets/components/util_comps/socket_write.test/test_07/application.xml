@@ -12,7 +12,7 @@
  </Instance>
 
   <Instance Name="UUT" Component="ocpi.assets.util_comps.socket_write">
-    <Property Name="outSocket" Value='ports {
+    <Property Name="outSocket" Value='expectedClients 4, ports {
       12359,0,0,0,0,0,0,0,0,12360,0,12361,0,0,0,0,
       0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
       0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,

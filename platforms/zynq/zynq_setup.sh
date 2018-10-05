@@ -46,20 +46,19 @@ else
     echo Executing $HOME/.profile.
     export OCPI_CDK_DIR=$OCPI_CDK_DIR
     if test -f /etc/opencpi-release; then
-      read OCPI_TOOL_PLATFORM OCPI_TOOL_HOST x < /etc/opencpi-release
+      read OCPI_TOOL_PLATFORM x < /etc/opencpi-release
     else
       echo No /etc/opencpi-release - assuming ZedBoard hardware
       OCPI_TOOL_PLATFORM=zed
-      OCPI_TOOL_HOST=linux-x13_3-arm
     fi
     export OCPI_TOOL_PLATFORM
-    export OCPI_TOOL_HOST
+    export OCPI_TOOL_OS=linux
     # There is no multimode support when running standalone
-    export OCPI_TOOL_DIR=\$OCPI_TOOL_HOST
-    export OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/artifacts
-    export PATH=$OCPI_CDK_DIR/bin:\$PATH
+    export OCPI_TOOL_DIR=\$OCPI_TOOL_PLATFORM
+    export OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/\$OCPI_TOOL_DIR/artifacts
+    export PATH=$OCPI_CDK_DIR/\$OCPI_TOOL_DIR/bin:\$PATH
     # This is only for explicitly-linked driver libraries.  Fixed someday.
-    export LD_LIBRARY_PATH=$OCPI_CDK_DIR/lib/\$OCPI_TOOL_DIR:\$LD_LIBRARY_PATH
+    export LD_LIBRARY_PATH=$OCPI_CDK_DIR/\$OCPI_TOOL_DIR/lib:\$LD_LIBRARY_PATH
     ocpidriver load
     export TZ=$2
     echo OpenCPI ready for zynq.

@@ -20,7 +20,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{OpenCPI Overview}
-\def\docVersion{1.3}
+\def\docVersion{1.4}
 %----------------------------------------------------------------------------------------
 \input{snippets/LaTeX_Header.tex}
 \setlength{\parindent}{0pt} % Don't indent all paragraphs
@@ -38,7 +38,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \begin{document}
 \section*{What is OpenCPI?}
 \label{sec:what_is_opencpi}
-OpenCPI is a framework for developing and deploying software-defined radio applications for heterogeneous systems consisting of General Purpose Processors (GPPs), Field Programmable Gate Arrays (FPGAs), and Radio Frequency (RF) transceivers. The goal of the OpenCPI framework is to decrease development time and cost for such systems by:
+OpenCPI is a framework for developing and deploying data processing applications for heterogeneous systems consisting of General Purpose Processors (GPPs), Field Programmable Gate Arrays (FPGAs), and other processors. The goal of the OpenCPI framework is to decrease development time and cost for such systems by:
 \begin{itemize}
 \item Maximizing reuse of existing capabilities through use of a component-based architecture
 \item Simplifying complex integration through standards-based interface code generation
@@ -46,11 +46,11 @@ OpenCPI is a framework for developing and deploying software-defined radio appli
 \end{itemize}
 
 \section*{OpenCPI concept of operation}
-A block diagram of a typical OpenCPI system can be seen in Figure \ref{fig:sdr_block_diagram}. It includes a GPP connected to an FPGA with an RF transceiver containing digitizers and transmit and receive functionality. Different categories of hardware can meet this description including tactical radios, commercial SDRs, and FPGA development kits. Examples of such hardware can also be seen in Figure \ref{fig:sdr_block_diagram}. The problem OpenCPI addresses is how to develop applications that can be shared between these types of systems quickly and with minimal effort.\par
+A block diagram of a typical OpenCPI software-defined radio system (SDR) can be seen in Figure \ref{fig:sdr_block_diagram}. It includes a GPP connected to an FPGA with a Radio Frequency (RF) transceiver containing digitizers and transmit and receive functionality. Different categories of hardware can meet this description including tactical radios, commercial SDRs, and FPGA development kits. Examples of such hardware can also be seen in Figure \ref{fig:sdr_block_diagram}. The problem OpenCPI addresses is how to develop applications that can be shared between these types of systems quickly and with minimal effort.\par
 \begin{figure}[ht]
         \centering
         \includegraphics[scale=0.4]{./figures/sdr_block_diagram.png}
-        \caption{Block diagram of a typical OpenCPI system (left). Examples systems with this block diagram (right)}
+        \caption{Block diagram of a typical OpenCPI software-defined radio system (left). Examples systems with this block diagram (right)}
         \label{fig:sdr_block_diagram}
 \end{figure}
 \newpage

@@ -474,8 +474,20 @@ namespace OCPI {
 	    if (!strncmp(mName, start, len) && isspace(start[len]))
 	      break;
 	  }
-	  if (n >= m_vt->m_nMembers)
-	    return "unknown member name in struct value";
+	  if (n >= m_vt->m_nMembers) {
+	    std::string err("struct member name \"");
+	    const char *endOfName = start;
+	    while (!isspace(*endOfName) && endOfName != end)
+	      endOfName++;
+	    err.append(start,  endOfName - start);
+	    err += "\" did not match any of the expected member names (";
+	    for (size_t ii = 0; ii < m_vt->m_nMembers; ii++)
+	      formatAdd(err, "%s\"%s\"", ii ? ", " : "", m_vt->m_members[ii].cname());
+	    err += ")";
+	    return esprintf("%s%s", err.c_str(), *start == '{' ?
+			    ", note that opening curly braces are only used for structs when "
+			    "they occur within an array or sequence or struct" : "");
+	  }
 	  if (sv[n])
 	    return "duplicate member name in struct value";
 	  start += len;
@@ -834,7 +846,7 @@ namespace OCPI {
 	err = "Unexpected illegal type in parsing value";
       }
       return err ?
-	esprintf("in value \"%.*s\" (%zu): %s", (int)(end-start), start, end-start, err) : NULL;
+	esprintf("in value \"%.*s\" (length of prop value is %zu chars): %s", (int)(end-start), start, end-start, err) : NULL;
     }
 
 Unparser::
@@ -1092,6 +1104,19 @@ bool Unparser::
 unparseULongLong(std::string &s, uint64_t val, bool hex) const {
   doFormat(s, hex ? "0x%" PRIx64 : "%" PRIu64, val);
   return val == 0;
+}
+size_t Value::
+maxStringLength() const {
+  assert(m_vt->m_baseType == OA::OCPI_String);
+  size_t maxLen = 0, len;
+  if (m_vt->m_isSequence || m_vt->m_arrayRank)
+    for (size_t n = 0; n < m_nTotal; n++) {
+      if ((len = m_pString[n] ? strlen(m_pString[n]) : 0) > maxLen)
+	maxLen = len;
+    }
+  else if ((len = m_String ? strlen(m_String) : 0) > maxLen)
+    maxLen = len;
+  return maxLen;
 }
 bool Unparser::
 unparseString(std::string &s, const char *val, bool hex) const {

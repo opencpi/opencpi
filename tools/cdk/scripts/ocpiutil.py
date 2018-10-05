@@ -39,6 +39,7 @@ import subprocess
 from glob import glob
 import logging
 from contextlib import contextmanager
+from functools import reduce
 
 # Use python3's input name
 try:
@@ -46,11 +47,18 @@ try:
 except NameError:
     pass
 
+class OCPIException(Exception):
+    """
+    A exception class that we can throw and catch within OpenCPI code while ignoring other exception
+    types. This class inherits from the built-in Exception class and doesn't extend it in any way
+    """
+    pass
+
 def configure_logging(level=None, output_fd=sys.stderr):
     """
     Initialize the root logging module such that:
             OCPI_LOG_LEVEL <  8 : only log WARNINGS, ERRORS and CRITICALs
-        8 < OCPI_LOG_LEVEL <  10: also log INFOs
+       8 <= OCPI_LOG_LEVEL <  10: also log INFOs
             OCPI_LOG_LEVEL >= 10: also log DEBUGs
     This can be used in other modules to change the default log level of the
     logging module. For example, from another module:
@@ -80,64 +88,143 @@ def configure_logging(level=None, output_fd=sys.stderr):
             rootlogger.setLevel(level=logging.DEBUG)
     return rootlogger
 
+###############################################################################
+# Utility functions for extracting variables and information from and calling
+# Makefiles
+###############################################################################
+
+def execute_cmd(settings, directory, action=None):
+    """
+    This command is a wrapper around any calls to make in order to encapsulate the use of make to a
+    minimal number of places.  The function contains a hard-coded dictionary of generic settings to
+    make variables that it uses to construct the call to make at that given directory
+    """
+    settings_dict = {'rcc_plat'        : "RccPlatforms",
+                     'hdl_plat'        : "HdlPlatforms",
+                     'only_plat'       : "OnlyPlatforms",
+                     'ex_plat'         : "ExcludePlatforms",
+                     'keep_sims'       : "KeepSimulations",
+                     'acc_errors'      : "TestAccumulateErrors",
+                     'view'            : "View",
+                     'case'            : "Cases",
+                     'run_before'      : "OcpiRunBefore",
+                     'run_after'       : "OcpiRunAfter",
+                     'run_arg'        : "OcpiRunArgs",
+                     'remote_test_sys' : "OCPI_REMOTE_TEST_SYSTEMS",
+                     'verbose'         : "TestVerbose"}
+    make_list = []
+
+    make_list.append("make")
+    make_list.append("-C")
+    make_list.append(directory)
+    debug_string = "make -C " + directory
+
+    if action is not None:
+        make_list.extend(action)
+        debug_string += " " + ' '.join(action) + " "
+
+    for setting, value in settings.items():
+        if isinstance(value, bool):
+            make_list.append(settings_dict[setting] + '=1')
+            debug_string += settings_dict[setting] + '=1'
+        elif isinstance(value, list):
+            make_list.append(settings_dict[setting] + '='  + ' '.join(value))
+            if len(value) > 1:
+                debug_string += settings_dict[setting] + '="'  + ' '.join(value) + '"'
+            else:
+                debug_string += settings_dict[setting] + '='  + ' '.join(value)
+        else:
+            raise OCPIException("Invalid setting data-type passed to execute_cmd().  Valid data-" +
+                                "types are bool and list")
+
+    logging.debug("running make command: " + debug_string )
+    #shell=True is bad dont set it here running the following command was able to execute 
+    # arbitary code
+    #ocpidev run test --hdl-platform \$\(./script.temp\)
+    # all the script would need to do is cat isim then go on its merry way doing whatever it wanted
+    child = subprocess.Popen(make_list)
+    child.wait()
+    return child.returncode
+
 def set_vars_from_make(mk_file, mk_arg="", verbose=None):
     """
-    -------------------------------------------------------------------------------
-    | Collect a dictionary of variables from a makefile
-    |--------------------------------------------------
-    | First arg is .mk file to use
-    | Second arg is make arguments needed to invoke correct output
-    |     The output can be an assignment or a target
-    | Third arg is a verbosity flag
-    | Return a dictionary of variable names mapped to values from make
-    -------------------------------------------------------------------------------
+     Collect a dictionary of variables from a makefile
+    --------------------------------------------------
+     First arg is .mk file to use
+     Second arg is make arguments needed to invoke correct output
+         The output can be an assignment or a target
+     Third arg is a verbosity flag
+     Return a dictionary of variable names mapped to values from make
+
+     OCPI_LOG_LEVEL>=6  will print stderr from make for user to see
+     OCPI_LOG_LEVEL>=10 will pass OCPI_DEBUG_MAKE to make command and will
+                        print both stdout and stderr for user to see
     """
-    fnull = open(os.devnull, 'w')
-    make_exists = subprocess.Popen(["which", "make"],\
-                  stdout=subprocess.PIPE, stderr=fnull).communicate()[0]
-    if make_exists is None or make_exists == "":
-        if verbose != None and verbose != "":
-            logging.error("The '\"make\"' command is not available.")
-        return 1
+    with open(os.devnull, 'w') as fnull:
+        make_exists = subprocess.Popen(["which", "make"],\
+                      stdout=subprocess.PIPE, stderr=fnull).communicate()[0]
+        if make_exists is None or make_exists == "":
+            if verbose != None and verbose != "":
+                logging.error("The '\"make\"' command is not available.")
+            return 1
 
-    make_cmd = "make -n -r -s -f " + mk_file + " " + mk_arg
-    # If verbose is unset, redirect 'make' stderr to /dev/null
-    if verbose is None or verbose == "":
-        mk_output = subprocess.Popen(make_cmd.split(),
-                                     stdout=subprocess.PIPE, stderr=fnull).communicate()[0]
-    else:
-        mk_output = subprocess.Popen(make_cmd.split(), stdout=subprocess.PIPE).communicate()[0]
-    try:
-        grep_str = re.search(r'(^|\n)[a-zA-Z_][a-zA-Z_]*=.*', mk_output.strip()).group()
-    except AttributeError:
-        logging.warning("No variables are set from \"" + mk_file + "\"")
-        return None
-
-    assignment_strs = [x.strip() for x in grep_str.split(';') if len(x.strip()) > 0]
-    make_vars = {}
-    for var_assignment in assignment_strs:
-        var_name, var_val = var_assignment.split('=')
-        # If the value is an empty string or just matching quotes, assign [] as the value
-        if var_val == "\"\"" or var_val == "\'\'" or var_val == "":
-            assignment_value = []
+        # If log level >= 10 set OCPI_DEBUG_MAKE=1 (max debug level)
+        ocpi_log_level = int(os.environ.get('OCPI_LOG_LEVEL', 0))
+        if ocpi_log_level >= 10:
+            mk_dbg = "OCPI_DEBUG_MAKE=1"
         else:
-            assignment_value = var_val.strip('"').strip().split(' ')
-        make_vars[var_name] = assignment_value
-    return make_vars
+            mk_dbg = ""
 
-###############################################################################
-# Utility functions for extracting variables and information from
-# rcc-make.mk
-###############################################################################
+        # If mk_file is a "Makefile" then we use the -C option on the directory containing
+        # the makefile else (is a .mk) use the -f option on the file
+        if mk_file.endswith("/Makefile"):
+            make_cmd = "make " + mk_dbg + " -n -r -s -C " + os.path.dirname(mk_file) + " " + mk_arg
+        else:
+            make_cmd = "make " + mk_dbg + " -n -r -s -f " + mk_file + " " + mk_arg
+
+        logging.debug("Calling make via:" + str(make_cmd.split()))
+
+        child = subprocess.Popen(make_cmd.split(), stderr=subprocess.PIPE, stdout=subprocess.PIPE,
+                                 universal_newlines=True)
+        mk_output, mk_err = child.communicate()
+
+        # Print out output from make if log level is high
+        logging.debug("STDOUT output from Make (set_vars_from_make):\n" + str(mk_output))
+
+        # Print out stderr from make if log level is medium/high or if make returned error
+        if child.returncode != 0 or ocpi_log_level >= 6:
+            if mk_err:
+                logging.error("STDERR output from Make (set_vars_from_make):\n" + str(mk_err))
+            if child.returncode != 0:
+                raise OCPIException("The following make command returned an error:\n" + make_cmd)
+
+        try:
+            grep_str = re.search(r'(^|\n)[a-zA-Z_][a-zA-Z_]*=.*',
+                                 str(mk_output.strip())).group()
+        except AttributeError:
+            logging.warning("No variables are set from \"" + mk_file + "\"")
+            return None
+
+        assignment_strs = [x.strip() for x in grep_str.split(';') if len(x.strip()) > 0]
+        make_vars = {}
+        for var_assignment in assignment_strs:
+            var_name, var_val = var_assignment.split('=')
+            # If the value is an empty string or just matching quotes, assign [] as the value
+            if var_val == "\"\"" or var_val == "\'\'" or var_val == "":
+                assignment_value = []
+            else:
+                assignment_value = var_val.strip('"').strip().split(' ')
+            make_vars[var_name] = assignment_value
+        return make_vars
 
 def get_make_vars_rcc_targets():
     """
-    Get make variables from rcc-make.mk
+    Get make variables from rcc-targets.mk
     Dictionary key examples are:
         RccAllPlatforms, RccPlatforms, RccAllTargets, RccTargets
     """
     return set_vars_from_make(os.environ["OCPI_CDK_DIR"] +
-                              "/include/rcc/rcc-make.mk",
+                              "/include/rcc/rcc-targets.mk",
                               "ShellRccTargetsVars=1", "verbose")
 
 ###############################################################################
@@ -151,9 +238,10 @@ def get_dirtype(directory="."):
     """
     match = None
     if os.path.isfile(directory + "/Makefile"):
-        for line in open(directory + "/Makefile"):
-            result = re.match(r"^\s*include\s*.*OCPI_CDK_DIR.*/include/(hdl/)?(.*)\.mk.*", line)
-            match = result.group(2) if result != None else match
+        with open(directory + "/Makefile") as mk_file:
+            for line in mk_file:
+                result = re.match(r"^\s*include\s*.*OCPI_CDK_DIR.*/include/(hdl/)?(.*)\.mk.*", line)
+                match = result.group(2) if result != None else match
     if match is None:
         if os.path.isfile(directory + "/project-package-id"):
             return "project"
@@ -181,13 +269,14 @@ def export_libraries():
     This will allow specs to be exported before workers in a library are built.
     """
     for lib_dir in get_subdirs_of_type("library"):
-        logging.debug("Library found at \"" + lib_dir + "\", runnning \"make speclinks\" there.")
+        logging.debug("Library found at \"" + lib_dir + "\", running \"make speclinks\" there.")
         proc = subprocess.Popen(["make", "-C", lib_dir, "speclinks"],
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE)
-        proc.communicate()  # Don't care about the outputs
+        my_out = proc.communicate() 
         if proc.returncode != 0:
-            logging.warning("""Failed to export libraries in project at "{0}". Check your permissions for this project.""".format(os.getcwd()))
+          logging.warning("Failed to export library at " + lib_dir + " because of error : \n" + 
+                          str(my_out[1]))
 
 ###############################################################################
 # Utility functions for determining paths to/from the top level of a project
@@ -222,7 +311,6 @@ def __get_path_to_project_top(origin_path, relative_mode, accum_path):
         elif abs_path != "/":
             return __get_path_to_project_top(os.path.dirname(abs_path),
                                              relative_mode, accum_path + "/..")
-    logging.debug("Path \"" + str(origin_path) + "\" did not exist")
     return None
 def get_path_to_project_top(origin_path=".", relative_mode=False):
     """
@@ -230,7 +318,13 @@ def get_path_to_project_top(origin_path=".", relative_mode=False):
     Optionally enable relative_mode for relative paths.
     Note: call aux function to set accum_path internal arg
     """
-    return __get_path_to_project_top(origin_path, relative_mode, ".")
+    path_to_top = __get_path_to_project_top(origin_path, relative_mode, ".")
+    if path_to_top is None:
+        if origin_path is None:
+            logging.debug("Cannot get path to project for origin_path=None.")
+        else:
+            logging.debug("Path \"" + os.path.realpath(origin_path) + "\" is not in a project")
+    return path_to_top
 
 # Go to the project top and check if the project-package-id file is present.
 def is_path_in_exported_project(origin_path):
@@ -240,7 +334,8 @@ def is_path_in_exported_project(origin_path):
     project_top = get_path_to_project_top(origin_path)
     if project_top is not None:
         if os.path.isfile(project_top + "/project-package-id"):
-            logging.debug("Path \"" + str(origin_path) + "\" is in a exported project.")
+            logging.debug("Path \"" + os.path.realpath(origin_path) +
+                          "\" is in an exported project.")
             return True
     return False
 
@@ -258,7 +353,6 @@ def __get_path_from_project_top(to_path, accum_path):
             if accum_path != "":
                 appended_accum = appended_accum + "/" + accum_path
             return __get_path_from_project_top(os.path.dirname(abs_path), appended_accum)
-    logging.debug("Path \"" + str(to_path) + "\" did not exist")
     return None
 def get_path_from_project_top(to_path="."):
     """
@@ -267,7 +361,13 @@ def get_path_from_project_top(to_path="."):
     the path TO the project top.
     Note: call aux function to set accum_path internal arg
     """
-    return __get_path_from_project_top(to_path, "")
+    path_from_top = __get_path_from_project_top(to_path, "")
+    if path_from_top is None:
+        if to_path is None:
+            logging.debug("Cannot get path from project for to_path=None.")
+        else:
+            logging.debug("Path \"" + os.path.realpath(to_path) + "\" is not in a project")
+    return path_from_top
 
 def get_project_imports(origin_path="."):
     """
@@ -391,6 +491,23 @@ def does_project_with_package_exist(origin_path=".", package=None):
             return True
     return False
 
+def is_path_in_registry(origin_path="."):
+    """
+    Is the path provided one of the projects in the registry?
+    """
+    project_registry_dir_exists, project_registry_dir = get_project_registry_dir()
+    if not project_registry_dir_exists:
+        # If registry does not exist, origin path cannot be a project in it
+        return False
+    origin_realpath = os.path.realpath(origin_path)
+    # For each project in the registry, check equivalence to origin_path
+    for project in glob(project_registry_dir + "/*"):
+        if origin_realpath == os.path.realpath(project):
+            # A project was found that matches origin path!
+            return True
+    # No matching project found. Project/path is not in registry
+    return False
+
 ###############################################################################
 # Functions for and accessing/modifying the project registry and collecting
 # existing projects
@@ -409,7 +526,7 @@ def get_default_project_registry_dir():
             project_registry_dir = "/opt/opencpi/project-registry"
     return project_registry_dir
 
-def get_project_registry_dir():
+def get_project_registry_dir(directory="."):
     """
     Determine the project registry directory. If in a project, check for the imports link.
     Otherwise, get the default registry from the environment setup:
@@ -419,9 +536,10 @@ def get_project_registry_dir():
 
     Return the exists boolean and the path to the project registry directory.
     """
-    if is_path_in_project() and os.path.isdir(get_path_to_project_top() + "/imports"):
+    if is_path_in_project(directory) and \
+       os.path.isdir(get_path_to_project_top(directory) + "/imports"):
         # allow imports to be a link OR a directory (needed for deep copies of exported projects)
-        project_registry_dir = os.path.realpath(get_path_to_project_top() + "/imports")
+        project_registry_dir = os.path.realpath(get_path_to_project_top(directory) + "/imports")
     else:
         project_registry_dir = get_default_project_registry_dir()
 
@@ -429,7 +547,7 @@ def get_project_registry_dir():
     if not exists:
         logging.warning("The project registry directory '" + project_registry_dir +
                         "' does not exist.\nCorrect " + "'OCPI_PROJECT_REGISTRY_DIR' or run: " +
-                        "'mkdir " + project_registry_dir + "'")
+                        "'ocpidev create registry " + project_registry_dir + "'")
     elif not os.path.isdir(project_registry_dir):
         raise OSError("The current project registry '" + project_registry_dir +
                       "' exists but is not a directory.\nCorrect " +
@@ -456,213 +574,25 @@ def get_all_projects():
     logging.debug("All projects: " + str(projects))
     return projects
 
-def register_project(project_path):
-    """
-    Given a project, determine its package name and create the corresponding link
-    in the project registry. If a link with the same name already exists
-    (e.g. a project is already registered with that package name), return False for
-    failure. Return True on success.
-    """
-    project_package = get_project_package(project_path)
-    if project_package is None:
-        logging.error("Failure to register project with path/name '" + str(project_path) +
-                      "'. Project does not exist (or package could not be determined).")
-        return False
-    if project_package == "local":
-        logging.error("Failure to register project. Cannot register a project with package-ID " +
-                      "'local'.\nSet the PackageName, PackagePrefix and/or Package variables in " +
-                      "your Project.mk.")
-        return False
-    project_registry_dir_exists, project_registry_dir = get_project_registry_dir()
-    if not project_registry_dir_exists:
-        logging.error("Failure to register project because the project registry dir is not set.\n" +
-                      "Double check your OCPI_PROJECT_REGISTRY_DIR or make sure " +
-                      "$OCPI_CDK_DIR/../project-registry exists.")
-        return False
-    project_link = project_registry_dir + "/" + project_package
-    # If the project is already registered and is the same
-    if get_path_to_project_top(".") is not None and \
-       os.path.realpath(project_link) == os.path.realpath(get_path_to_project_top(".")):
-        logging.debug("Project link is already in the registry. Proceeding...")
-        return True
-    # Set the containing directory for use in error logging and command-run recommendations
-    containing_dir = os.path.dirname(os.path.abspath(project_path))
-    if containing_dir == "" or containing_dir == ".":
-        containing_dir = os.path.abspath(os.path.curdir)
-    if does_project_with_package_exist(package=project_package):
-        logging.error("Failure to register project with package '" + str(project_package) +
-                      "'.\nA project/link with that package qualifier already exists and is " +
-                      "registered in '" + project_registry_dir + "'.\nTo unregister that " +
-                      "project, call: 'ocpidev unregister project " + str(project_package) +
-                      "'.\nThen, rerun the command: 'ocpidev -d " + containing_dir +
-                      " register project " + os.path.basename(os.path.abspath(project_path)) + "'.")
-        return False
-    if os.path.lexists(project_link):
-        logging.error("Failure to register project with package '" + str(project_package) +
-                      "'\n. The following link is causing this conflict: '" +
-                      project_link + " --> " + os.path.realpath(project_link) +
-                      "'\nTo unregister that project, call: 'rm " + project_link + "'." +
-                      "Then, rerun the command: 'ocpidev -d " + containing_dir +
-                      " register project " + os.path.basename(os.path.abspath(project_path)) + "'.")
-
-        return False
-
-    project_to_reg = os.path.abspath(get_path_to_project_top(project_path))
-
-    # TODO: pull this relative link functionality into a helper function
-    # Try to make the path relative. This helps with environments involving mounted directories
-    # Find the path that is common to the project and registry
-    common_prefix = os.path.commonprefix([project_to_reg, project_registry_dir])
-    # If the two paths contain no common directory except root,
-    #     use the path as-is
-    # Otherwise, use the relative path from the registry to the project
-    if common_prefix == '/' or common_prefix == '':
-        project_to_reg = os.path.normpath(project_to_reg)
-    else:
-        project_to_reg = os.path.relpath(os.path.normpath(project_to_reg), project_registry_dir)
-    try:
-        os.symlink(project_to_reg, project_link)
-    except OSError:
-        logging.error("Failure to register project link: " +
-                      project_link + " --> " + project_to_reg +
-                      "\nCommand attempted: " + "'ln -s " + project_to_reg + " " + project_link +
-                      "'.\nTo (un)register projects in /opt/opencpi/project-registry, " +
-                      "you need to be a member of the opencpi group.")
-        return False
-    return True
-
-def unregister_project(project_path):
-    """
-    Given a project, determine its package name. If a project is registered with that
-    name via a link in the project registry, remove that link. If 'project_path'
-    does not correspond to an existing project, assume it is a package name itself that
-    should be unregistered.
-    """
-    project_package = get_project_package(project_path)
-    # If the project_package could not be determined, set it to project_path itself
-    # In this mode, we are assuming project_path is actually just a link-name to
-    # try and remove from the registry
-    if project_package is None:
-        project_package = project_path if not os.path.exists(project_path) else \
-                                           os.path.basename(os.path.abspath(project_path))
-    project_registry_dir_exists, project_registry_dir = get_project_registry_dir()
-    if not project_registry_dir_exists:
-        return False
-    project_link = project_registry_dir + "/" + str(project_package)
-    if not os.path.lexists(project_link):
-        logging.error("Failure to unregister project with package '" + str(project_package) +
-                      "'.\nThere is no registered project link '" + project_link + "'")
-        return False
-    if os.path.exists(project_path) and not os.path.exists(os.path.realpath(project_path)) and \
-       os.path.realpath(project_path) != os.path.realpath(project_link):
-        logging.error("Failure to unregister project with package '" + str(project_package) +
-                      "'.\nThe registered project with link '" + project_link + " --> " +
-                      os.path.realpath(project_link)+ "' does not point to the specified project " +
-                      "'" + os.path.realpath(project_path) + "'." +
-                      "\nThis project does not appear to be registered.")
-        return False
-
-    try:
-        os.unlink(project_link)
-    except OSError:
-        logging.error("Failure to unregister link to project: " +project_link + " --> " +
-                      project_path + "\nCommand attempted: " +
-                      "'unlink " + project_link + "'\nTo (un)register projects in " +
-                      "/opt/opencpi/project-registry, you need to be a member of " +
-                      "the opencpi group.")
-        return False
-    return True
-
-def set_project_registry(registry_path=None):
-    """
-    Set the project registry link for a given project. If a registry path is provided,
-    set the link to that path. Otherwise, set it to the default registry based on the
-    current environment.
-    I.e. Create the 'imports' link at the top-level of the project to point to the project registry
-    """
-    # MUST be in a project to run this. Project registry is (un)set per-project.
-    if not is_path_in_project():
-        logging.error("Can only set the project registry from within a project.\n" +
-                      "Enter a project and try again.")
-        return False
-    # If registry path is not provided, get the default
-    if registry_path is None or registry_path == "":
-        # Get the default project registry set by the environment state
-        registry_path = get_default_project_registry_dir()
-
-    # TODO: pull this relative link functionality into a helper function
-    # Try to make the path relative. This helps with environments involving mounted directories
-    # Find the path that is common to the registry AND CWD
-    common_prefix = os.path.commonprefix([os.path.normpath(registry_path), os.getcwd()])
-    # If the two paths contain no common directory except root,
-    #     use the path as-is
-    # Otherwise, use the relative path from CWD to registry_path
-    if common_prefix == '/' or common_prefix == '':
-        registry_path = os.path.normpath(registry_path)
-    else:
-        registry_path = os.path.relpath(os.path.normpath(registry_path), os.getcwd())
-    # Registry must exist and must be a directory
-    if os.path.isdir(registry_path):
-        imports_link = get_path_to_project_top() + "/imports"
-        # If it exists and IS NOT a link, tell the user to manually remove it.
-        # If 'imports' exists and is a link, remove the link.
-        if os.path.exists(imports_link):
-            if not os.path.islink(imports_link):
-                logging.error("The 'imports' for the current project ('" + imports_link + \
-                              "') is not a symbolic link.\nMove or remove this file and try " +
-                              "to set the project registry again.")
-                return False
-            else:
-                os.unlink(imports_link)
-        # ln -s registry_path imports_link
-        try:
-            os.symlink(registry_path, imports_link)
-        except OSError:
-            # Symlink creation failed....
-            # User probably does not have write permissions in the project
-            logging.error("Failure to set project link: " +
-                          imports_link + " --> " + registry_path +
-                          "\nCommand attempted: " + "'ln -s " + registry_path + " " + imports_link +
-                          "'.\nMake sure you have correct permissions in this project.")
-            return False
-    else:
-        logging.error("Failure to set project registry to '" + registry_path + "'." +
-                      "'.\nPath does not exist or is not a directory.")
-        return False
-    if not os.path.isdir(registry_path + "/ocpi.cdk"):
-        logging.warning("There is no CDK registered in '" + registry_path + "'. Make sure to " +
-                        "register the CDK before moving on.\nNext time, consider using " +
-                        "'ocpidev create registry', which will automatically register your CDK.")
-    return True
-
-def unset_project_registry():
-    """
-    Unset the project registry link for a given project.
-    I.e. remove the 'imports' link at the top-level of the project.
-    """
-    # MUST be in a project to run this. Project registry is (un)set per-project.
-    if not is_path_in_project():
-        logging.error("Can only unset the project registry from within a project.\n" +
-                      "Enter a project and try again.")
-        return False
-    # If the 'imports' link exists at the project-top, and it is a link, remove it.
-    # If it is not a link, let the user remove it manually.
-    imports_link = get_path_to_project_top() + "/imports"
-    if os.path.islink(imports_link):
-        os.unlink(imports_link)
-    else:
-        if os.path.exists(imports_link):
-            logging.error("The 'imports' for the current project ('" + imports_link + \
-                          "') is not a symbolic link.\nThis file will need to be removed manually.")
-            return False
-        else:
-            logging.debug("Unset project registry has succeeded, but nothing was done.\n" +
-                          "Registry was not set in the first place for this project.")
-    return True
-
 ###############################################################################
-# String and number manipulation utility functions
+# String, number and dictionary manipulation utility functions
 ###############################################################################
+# https://stackoverflow.com/questions/38987/how-to-merge-two-dictionaries-in-a-single-expression
+# when code is moved to python 3.5+ this function goes away and becomes: z = {**x, **y}
+def merge_two_dicts(x, y):
+    """
+    This function combines two dictionaries into a single dictionary, if both have the same key
+    the value in y overwrites the value in x
+    >>> x = {'a': 'avalue'}
+    >>> y = {'b': 'bvalue'}
+    >>> z = merge_two_dicts(x, y)
+    >>> sorted(z.items())
+    [('a', 'avalue'), ('b', 'bvalue')]
+    """
+    z = x.copy()   # start with x's keys and values
+    z.update(y)    # modifies z with y's keys and values & returns None
+    return z
+
 def python_list_to_bash(pylist):
     """
     Convert a python list to a Makefile list (a space separated string)
@@ -807,12 +737,12 @@ def match_regex(target_file, regex):
     >>> match_regex(os.path.realpath(__file__), "#.*This text right.*\((.*)ns\)!!!!.*")
     '2.000'
     """
-    if isinstance(regex, basestring):
+    if isinstance(regex, str):
         regex = re.compile(regex)
     elif not isinstance(regex, type(re.compile(''))):
         raise ValueError("Error: regular expression invalid")
     matches = [re.findall(regex, line) for line in open(target_file)]
-    matches = filter(lambda m: m != [] and m != None, matches)
+    matches = [m for m in matches if m != [] and m != None]
     if len(matches) > 0 and len(matches[0]) > 0:
         match = matches[0][0]
         if isinstance(match, tuple):
@@ -833,9 +763,9 @@ def normalize_column_lengths(lists):
     >>> list1, list2 = normalize_column_lengths([["15 chr long str",\
                                                   "this is a longgg string"],\
                                                  ["< 15", "pretty short"]])
-    >>> print str(list1)
+    >>> print (str(list1))
     ['15 chr long str', 'this is a longgg string']
-    >>> print str(list2)
+    >>> print (str(list2))
     ['< 15           ', 'pretty short           ']
     """
     lists = [[str(elem) for elem in lst] for lst in lists]
@@ -853,6 +783,7 @@ def print_table(rows, col_delim='|', row_delim=None, surr_cols_delim='|', surr_r
     Print a table specified by the list of rows in the 'rows' parameter. Optionally specify
     col_delim and row_delim which are each a single character that will separate cols and rows.
     surr_rows_delim and surr_cols_delim determine the border of the border of the table
+    For example (doctest):
     """
     rows = normalize_column_lengths(rows)
     row_strs = []
@@ -863,16 +794,28 @@ def print_table(rows, col_delim='|', row_delim=None, surr_cols_delim='|', surr_r
     max_row_len = len(max(row_strs, key=len))
     if row_delim:
         row_line = row_delim * max_row_len
-    print surr_rows_delim * max_row_len
+    print(surr_rows_delim * max_row_len)
     for line in row_strs:
-        print line
+        print(line)
         if row_delim:
-            print row_line
-    print surr_rows_delim * max_row_len
+            print(row_line)
+    print(surr_rows_delim * max_row_len)
 
 ###############################################################################
 # Functions to ease filesystem navigation
 ###############################################################################
+def name_of_dir(directory="."):
+    """
+    Return the name of the directory provided. This will return the actual
+    Directory name even if the argument is something like "."
+    For example (doctest):
+    >>> name_of_dir("/etc/.")
+    'etc'
+    >>> name_of_dir("/etc/../etc")
+    'etc'
+    """
+    return os.path.basename(os.path.realpath(directory))
+
 @contextmanager
 def cd(target):
     """
@@ -889,16 +832,17 @@ def cd(target):
 ###############################################################################
 # Functions for prompting the user for input
 ###############################################################################
-def get_ok(prompt=""):
+def get_ok(prompt="", default=False):
     """Prompt the user to say okay"""
-    print prompt,
+    print(prompt, end=' ')
     while True:
         ok = input(" [y/n]? ")
         if ok.lower() in ('y', 'yes', 'ok'):
             return True
-        if ok.lower() in ('', 'n', 'no', 'nope'):
+        if ok.lower() in ('n', 'no', 'nope'):
             return False
-
+        if ok.lower() == '':
+            return default
 
 if __name__ == "__main__":
     import doctest

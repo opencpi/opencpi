@@ -9,7 +9,7 @@
  </Instance>
 
   <Instance Name="UUT" Component="ocpi.assets.util_comps.socket_write">
-    <Property Name="outSocket" Value='port 12345'/>
+    <Property Name="outSocket" Value='expectedClients 1, port 12345'/>
   </Instance>
 
   <Instance Name="Sink" Component="ocpi.assets.util_comps.file_write_demux">

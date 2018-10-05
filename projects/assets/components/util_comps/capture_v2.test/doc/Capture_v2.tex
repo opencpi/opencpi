@@ -1,0 +1,320 @@
+\iffalse
+This file is protected by Copyright. Please refer to the COPYRIGHT file
+distributed with this source distribution.
+
+This file is part of OpenCPI <http://www.opencpi.org>
+
+OpenCPI is free software: you can redistribute it and/or modify it under the
+terms of the GNU Lesser General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License along
+with this program. If not, see <http://www.gnu.org/licenses/>.
+\fi
+
+\author{} % Force author to be blank
+%----------------------------------------------------------------------------------------
+% Snippets
+%----------------------------------------------------------------------------------------
+\input{../../../../../../doc/av/tex/snippets/LaTeX_Header.tex}
+%----------------------------------------------------------------------------------------
+% Paper size, orientation and margins
+%----------------------------------------------------------------------------------------
+\usepackage{geometry}
+\geometry{
+	letterpaper,			% paper type
+	portrait,				% text direction
+	left=.75in,				% left margin
+	top=.75in,				% top margin
+	right=.75in,			% right margin
+	bottom=.75in			% bottom margin
+ }
+%----------------------------------------------------------------------------------------
+% Header/Footer
+%----------------------------------------------------------------------------------------
+\usepackage{fancyhdr} \pagestyle{fancy} % required for fancy headers
+\renewcommand{\headrulewidth}{0.5pt}
+\renewcommand{\footrulewidth}{0.5pt}
+\rhead{\small{ANGRYVIPER Team}}
+%----------------------------------------------------------------------------------------
+% Appendix packages
+%----------------------------------------------------------------------------------------
+\usepackage[toc,page]{appendix}
+%----------------------------------------------------------------------------------------
+% Defined Commands & Renamed Commands
+%----------------------------------------------------------------------------------------
+\renewcommand{\contentsname}{Table of Contents}
+\renewcommand{\listfigurename}{List of Figures}
+\renewcommand{\listtablename}{List of Tables}
+%----------------------------------------------------------------------------------------
+% Various packages
+%----------------------------------------------------------------------------------------
+\usepackage{hyperref} % for linking urls and lists
+\usepackage{graphicx} % for including pictures by file
+\usepackage{listings} % for coding language styles
+\usepackage{rotating} % for sideways table
+\usepackage{pifont}   % for sideways table
+\usepackage{pdflscape} % for landscape view
+%----------------------------------------------------------------------------------------
+% Table packages
+%----------------------------------------------------------------------------------------
+\usepackage{longtable} % for long possibly multi-page tables
+\usepackage{tabularx} % c=center,l=left,r=right,X=fill
+\usepackage{float}
+\floatstyle{plaintop}
+\usepackage[tableposition=top]{caption}
+%----------------------------------------------------------------------------------------
+% Block Diagram / FSM Drawings
+%----------------------------------------------------------------------------------------
+\usepackage{tikz}
+\usetikzlibrary{shapes,arrows,fit,positioning}
+\usetikzlibrary{automata} % used for the fsm
+%----------------------------------------------------------------------------------------
+% Colors Used
+%----------------------------------------------------------------------------------------
+\usepackage{colortbl}
+\definecolor{blue}{rgb}{.7,.8,.9}
+\definecolor{ceruleanblue}{rgb}{0.16, 0.32, 0.75}
+\definecolor{drkgreen}{rgb}{0,0.6,0}
+\definecolor{deepmagenta}{rgb}{0.8, 0.0, 0.8}
+\definecolor{cyan}{rgb}{0.0,0.6,0.6}
+\definecolor{maroon}{rgb}{0.5,0,0}
+%----------------------------------------------------------------------------------------
+% Update the docTitle and docVersion per document
+%----------------------------------------------------------------------------------------
+\def\docTitle{Component Data Sheet}
+\def\docVersion{1.0}
+%----------------------------------------------------------------------------------------
+\date{Version \docVersion} % Force date to be blank and override date with version
+\title{\docTitle}
+\lhead{\small{\docTitle}}
+
+\def\comp{capture\_v2}
+\graphicspath{ {figures/} }
+
+\def\comp{Capture\_v2}
+\edef\ecomp{capture_v2}
+\def\Comp{Capture\_v2}
+
+\begin{document}
+
+\section*{Summary - \comp}
+	\begin{tabular}{|c|M{13.5cm}|}
+		\hline
+		\rowcolor{blue}
+		• & • \\
+		\hline
+		Name & \comp \\
+		\hline
+		Version & v1.0 \\
+		\hline
+		Release Date & August 2018 \\
+		\hline
+		Component Library & ocpi.assets.util\_comps \\
+		\hline
+		Workers & \comp.hdl \\
+		\hline
+		Tested Platforms & xsim, isim, matchstiq\_z1 \\
+		\hline
+	\end{tabular}
+\section*{Functionality}
+\begin{flushleft}
+The {\comp} component takes input port messages and stores their data in a buffer via the \texttt{data} property as 4 byte words. Metadata associated with each message is stored as a record in a metadata buffer via the \texttt{metadata} property. It captures four 4 byte words of metadata. The first metadata word is the opcode for the message and message size in bytes; opcode 8 MSB and message size 24 LSB. The second word is the fraction time stamp for the EOM. The third word is the fraction time stamp for the SOM. And the fourth word is the seconds timestamp for the SOM. So that the metadata can be read on a little-endian processor, the ordering of the metadata is as follows: \newline
+
+opcode (8-bit), \\
+message size (24-bit), \\
+eom fraction (32-bit), \\
+som fraction (32-bit), \\
+som seconds (32-bit) \newline
+
+Some example python code for reading in the \texttt{metadata} property values written to a file packed little-endian:
+    \begin{lstlisting}[language=Python]
+    data = struct.unpack('<I', ifile.read(4))[0] # 32/8 = 4 bytes
+    \end{lstlisting}
+
+
+When the number bytes sent for a message is not a multiple of 4, only the last (number of bytes modulus 4) least significant bytes of the last word in the data buffer represent received data. The (number of bytes modulus 4) most significant bytes will always be zero in the last word in the data buffer. \newline
+
+For example, if number of bytes is 5 and the last captured data buffer word is 0x0000005a, the last data received by {\comp} was 0x5a. If number if bytes was 6, the last data received was 0x005a. \newline
+
+The {\comp} component keeps count of how many metadata records (\texttt{metadataCount}) have been captured and a count of how many data words have been captured (\texttt{dataCount}). It allows for the option to wrap around and continue to capture data and metadata once the buffers are full or to stop capturing data and metadata when the data and metadata buffers are full via the \texttt{stoponFull} property. \newline
+
+When \texttt{stopOnFull} is true, data and metadata will be captured as long as the data and metadata buffers are not full. If the data buffer is full before the metadata buffer, metadata will still be captured until the metadata buffer is full. If the metadata buffer is full before the data buffer, no more metadata and no more data will be captured. When \texttt{stopOnFull} is false, there will be a wrap around when the data and metadata buffers are full and data metadata will continue to be captured.  \newline
+
+The component also has properties that keep track of whether or not the metadata and data buffers are full; \texttt{metaFull} and \texttt{dataFull}. \newline
+
+It has an (optional) output port so that it can placed between two workers. The input message are directly passed to the output port with a latency of the control plane clock cycles. \newline
+
+
+\end{flushleft}
+
+\section*{Block Diagrams}
+	\subsection*{Top level}
+\begin{center}
+\begin{tikzpicture}[% List of styles applied to all, to override specify on a case-by-case
+					every node/.style={
+						align=center,  		% use this so that the "\\" for line break works
+						minimum size=1.5cm	% creates space above and below text in rectangle
+						},
+					every edge/.style={draw,thick}
+					]
+\node[rectangle,ultra thick,draw=black,fill=blue, minimum width=5 cm](R2){Parameter Properties:\\ \verb+numRecords+ \\ \verb+numDataWords+ \\ \verb+numMetadataWords+ \\ \\ \comp \\ };
+\node[rectangle,draw=white,fill=white](R3)[left= of R2]{``in'' \\ Data};
+\node[rectangle,draw=white,fill=white](R4)[right= of R2]{``out'' \\ Data};
+\node[rectangle,draw=white,fill=white](R5)[above= of R2]{Non-parameter Properties:\\ See property table \\};
+\path[->]
+(R3)edge []	node [] {} (R2)
+(R2)edge []	node [] {} (R4)
+(R2)edge []	node [] {} (R5)
+(R5)edge []	node [] {} (R2)
+;
+\end{tikzpicture}
+\end{center}
+
+\section*{Source Dependencies}
+\subsection*{\comp.hdl}
+	\begin{itemize}
+		\item assets/components/util\_comps/\comp.hdl/\comp.vhd
+		\item core/hdl/primitives/util/util\_pkg.vhd
+	\end{itemize}
+
+
+\begin{landscape}
+\section*{Component Spec Properties}
+
+\begin{flushleft}
+
+	\begin{scriptsize}
+	\begin{tabular}{|p{2.5cm}|p{1cm}|p{1cm}|p{2cm}|p{2.5cm}|p{2cm}|p{1.5cm}|p{1.5cm}|p{5.5cm}|}
+		\hline
+		\rowcolor{blue}
+		Name & Type & Default & SequenceLength & ArrayLength & ArrayDimensions & Parameter  & Accessibility & Usage \\
+		\hline
+		\verb+stopOnFull+ & bool & false & - & - & - & false & Initial &
+		True - Stop capturing data and metadata when the data and metadata buffers are full. If the metadata buffer is full before the data buffer, no more metadata and no more data will be captured. If the data buffer is full before the metadata buffer, no more data is captured, but continue to capture metadata until the metadata buffer is full. \newline
+		False - Wrap around and continue to capture data and metadata once the buffers are full. This stop functionality is independent of both the control plane 'stop' operation and 'finished' worker state.\\
+		\hline
+		\verb+metadataCount+ & uLong & - & - & - & - & false & Volatile & Counter of metadata records written.\\
+		\hline
+		\verb+dataCount+ & uLong & - & - & - & - & false & Volatile & Counter of words captured.\\
+		\hline
+		\verb+numRecords+ & uLong & 256 & - & - & - & true & - & Number of metadata records/messages to be captured. \\
+		\hline
+		\verb+numDataWords+ & uLong & 1024 & - & - & - & true & - & Number of four byte data words stored in the data buffer. If stopOnFull is true, meaning no wrap around, no more data will be captured once the data buffer is full.  \\
+		\hline
+		\verb+numMetadataWords+ & uLong & 4 & - & - & - & true & - & Due to a limitation, cannot use constrained elements in unconstrained array declarations, so cannot directly set the second dimension for the metadata property to 4. The number of metadata words must always be 4, since there are four 4 byte words that are captured. The first metadata word is the opcode for the message and message size in bytes;opcode 8 MSB and message size 24 LSB. The second word is the fraction time stamp for the EOM. The third word is the fraction time stamp for the SOM. And the fourth word is the seconds timestamp for the SOM. So the default value must not be changed.  \\
+		\hline
+		\verb+metaFull+ & bool & false & - & - & - & false & Volatile, Initial & Metadata buffer full flag.  \\
+		\hline
+		\verb+dataFull+ & bool & false & - & - & - & false & Volatile, Initial & Data buffer is full flag.  \\
+		\hline
+		\verb+stopZLMOpcode+ & uChar & 0 & - & - & - & false & Initial & Opcode associated with the ZLM which indicates the application is 'done'.\\
+		\hline
+		\verb+stopOnZLM+ & bool & false & - & - & - & false & Initial & Indicates stopping on ZLM of stopZLMOpcode.\\
+		\hline
+		\verb+stopOnEOF+ & bool & true & - & - & - & false & Initial & As of now, this indicates stopping on ZLM of opcode 0. In the future it is expected that OpenCPI will standardize a definition of EOF.\\
+  		\hline
+		\verb+metadata+ & uLong & - & - & - & numRecords, numMetadataWords & false & Volatile & Multidimensional array containing metadata records.\\
+		\hline
+		\verb+data+ & uLong & - & - & numDataWords & - & false & Volatile & Data buffer containing data words.\\
+		\hline
+	\end{tabular}
+	\end{scriptsize}
+
+
+\end{flushleft}
+
+
+\section*{Component Ports}
+
+	\begin{scriptsize}
+		\begin{tabular}{|M{2cm}|M{2cm}|M{2cm}|M{3cm}|M{12cm}|}
+			\hline
+			\rowcolor{blue}
+			Name & Protocol & Producer & Optional & Usage\\
+			\hline
+			in
+			& -
+			& false
+			& false
+			& Data input to capture \\
+			\hline
+			out
+			& -
+			& true
+			& true
+			& Data from input passed to output unchanged \\
+			\hline
+		\end{tabular}
+		\end{scriptsize}
+\section*{Worker Interfaces}
+\subsection*{\comp.hdl}
+\begin{scriptsize}
+\begin{tabular}{|M{2.5cm}|M{2.5cm}|M{3cm}|c|M{3.5cm}|M{3.5cm}|}
+             \hline
+             \rowcolor{blue}
+             Type    & Name & DataWidth (b) & Advanced  & Usage     \\
+             \hline
+             StreamInterface & in   & 32  & DataValueWidth = 8, NumberOfOpcodes='256', ZeroLengthMessages = true  & Data input to capture \\
+            \hline
+            StreamInterface & out   & 32  & DataValueWidth = 8, NumberOfOpcodes='256', ZeroLengthMessages = true  & Data from input passed to output unchanged \\
+            \hline
+            TimeInterface & time  & 64 (32b sec MSW and 32b frac LSW) & - & Allows worker to capture timestamps \\
+            \hline
+\end{tabular}
+\end{scriptsize}
+\end{landscape}
+
+\section*{Control Timing and Signals}
+\begin{flushleft}
+The {\comp} worker uses the clock from the Control Plane and standard Control Plane signals.
+\end{flushleft}
+
+\begin{landscape}
+\section*{Worker Configuration Parameters}
+\subsubsection*{\comp.hdl}
+\input{../../\ecomp.hdl/configurations.inc}
+\section*{Performance and Resource Utilization}
+\subsubsection*{\comp.hdl}
+\input{../../\ecomp.hdl/utilization.inc}
+\end{landscape}
+
+\section*{Limitations}
+
+Since the raw property address (props\_in.raw.address) is currently 16 bits wide and \texttt{data} and \texttt{metadata} are raw properties that contain 4 byte words, the total address space for these properties is 2\textsuperscript{16}/4. The framework does not throw an error when the total number of elements between the two array properties exceeds 2\textsuperscript{16}/4 so the properties will not be filled correctly. This failure is run time and the application will successfully execute. Once AV-4254 is addressed to change the raw.address from 16 to 32, the new address space limit will be 2\textsuperscript{32}/4.
+
+\section*{Test and Verification}
+\normalsize
+
+\begin{flushleft}
+
+The {\comp}-test.xml has a test property called \texttt{testScenario} that allows for four different test cases; testing sending no data, testing making only metadata full, testing making data full, testing sending multiple zlms (with different opcodes), a single word message, filling data and filling up metadata (for configurations where there are at least six metadata records).
+\newline
+
+An input file is generated via \path{generate.py}. The \path{generate.py} script will output different input data based on the \texttt{testScenario} chosen.
+\newline
+
+The tests are verified by \path{verify.py} script. It checks that the \texttt{metadataCount}, \texttt{dataCount}, status(\texttt{metaFull} and \texttt{dataFull}), \texttt{metadata} and \texttt{data} match the expected results. \newline
+
+
+There are also some custom tests located in the {\comp}.test directory that tests things not currently supported by the test suite. These tests are: testing stopping on an opcode other than 0 (need to be able to set done='{\comp}' in the app xml to be able to test this) and testing the {\comp} with no output connected. The tests are built and run manually via a \path{run_test.sh} script.
+\newline
+
+The custom tests also have \path{generate.py} and \path{verify.py} scripts but they are simpler versions than the ones in the top level {\comp}.test directory or they are specific to the custom test.
+
+\end{flushleft}
+
+\section*{Applications}
+\begin{flushleft}
+
+For an example of the {\comp} component used in an application, please reference the
+tb\_bias\_v2 application located in \path{assets/applications/tb_bias_v2}.
+
+\end{flushleft}
+
+\end{document}

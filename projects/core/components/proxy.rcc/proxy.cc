@@ -32,12 +32,19 @@ using namespace OCPI::RCC; // for easy access to RCC data types and constants
 using namespace ProxyWorkerTypes;
 
 class ProxyWorker : public ProxyWorkerBase {
+  RunCondition m_aRunCondition;
+public:
+  ProxyWorker() : m_aRunCondition(RCC_NO_PORTS) {
+    //Run function should never be called
+    setRunCondition(&m_aRunCondition);
+  }
+private:
   RCCResult start() {
     slave.set_biasValue(m_properties.proxybias);
     return RCC_OK;
   }
   RCCResult run(bool /*timedout*/) {
-    return RCC_ADVANCE;
+    return RCC_DONE;
   }
 };
 

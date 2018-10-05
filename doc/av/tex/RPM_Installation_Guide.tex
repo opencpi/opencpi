@@ -20,7 +20,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{RPM Installation Guide}
-\def\docVersion{1.3}
+\def\docVersion{1.4}
 %----------------------------------------------------------------------------------------
 \input{snippets/LaTeX_Header.tex}
 \date{Version \docVersion} % Force date to be blank and override date with version
@@ -62,6 +62,10 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 			\hline
 			v1.3 & Updated for OpenCPI Release 1.3 & 2/2018 \\
 			\hline
+			v1.3.1 & Updated for OpenCPI Release 1.3.1 & 4/2018 \\
+			\hline
+			v1.4 & Updated for OpenCPI Release 1.4 & 9/2018 \\
+			\hline
 			\end{tabularx}
 		\end{table}
 	\end{center}
@@ -70,7 +74,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 \tableofcontents
 
-\newpage
+% \newpage
 
 % \listoffigures
 % \newpage
@@ -80,22 +84,20 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \newpage
 
 \section{References}
-
 This document assumes a basic understanding of the Linux command line environment. It does not require a working knowledge of OpenCPI. However, it is recommended that the user read the \textit{Getting Started} document (up to the ``Installation of OpenCPI'' section) or reference the \textit{Acronyms and Definitions} document for various terms used within.
 \def\refskipig{} % Skip self
 \def\myreferences{
-% you can add "info" between goo.gl and the tag for analytics
 \hline
 Installation Guide\footnote{The RPM installation process is quite different from the process explained in the OpenCPI Installation Guide, but the OpenCPI Installation guide has applicable post-installation information for PCI-based boards, etc.}
-& OpenCPI & \url{https://goo.gl/VWo2jX} \\
+& OpenCPI & \url{https://opencpi.github.io/OpenCPI_Installation.pdf} \\
 \hline
-Component Development Guide & OpenCPI & \url{https://goo.gl/zBwIe0} \\
+Component Development Guide & OpenCPI & \url{https://opencpi.github.io/OpenCPI_Component_Development.pdf} \\
 \hline
-RCC Development Guide & OpenCPI & \url{https://goo.gl/0ix1E0} \\
+RCC Development Guide & OpenCPI & \url{https://opencpi.github.io/OpenCPI_RCC_Development.pdf} \\
 \hline
-HDL Development Guide & OpenCPI & \url{https://goo.gl/OVmRhI} \\
+HDL Development Guide & OpenCPI & \url{https://opencpi.github.io/OpenCPI_HDL_Development.pdf} \\
 \hline
-FPGA Vendor Tools Installation Guide & ANGRYVIPER & \path{FPGA_Vendor_Tools_Installation_Guide.pdf} \\
+FPGA Vendor Tools Installation Guide & ANGRYVIPER & \url{https://opencpi.github.io/FPGA_Vendor_Tools_Installation_Guide.pdf} \\
 \hline
 Managing Software with \texttt{yum} & CentOS Project &  \url{https://www.centos.org/docs/5/html/yum/} \\
 \hline
@@ -105,13 +107,11 @@ CentOS Deployment Guide: Useful \texttt{yum} commands (\textit{e.g.} \texttt{yum
 \newpage
 \section{Document Overview}
 \label{sec:doc_overview}
-This document describes how to install OpenCPI on a development host via RPMs. The host installation allows for local software-based execution of OpenCPI applications and components, cross-building for non-x86 platforms, simulation of HDL, and, when available, hardware testing. It is recommended that users install from RPMs.\\
-
-To allow for RPM packaging, the build system was significantly modified compared to the original OpenCPI Build System, and the changes are still being resolved. If you are working in a branch on GitHub that includes a top-level script \path{ocpi-configure}, and you do \textit{not} want to use the RPM files, consult Appendix~\ref{App:install_from_source}.\\
+This document describes how to \textbf{install OpenCPI at a system level} on a development host for multiple users via RPMs. The host installation allows for local software-based execution of OpenCPI applications and components, cross-building for non-x86 platforms, simulation of HDL, and, when available, hardware testing. \textbf{Upon completion of this Guide, the steps described in the \textit{Getting Started Guide} must be followed by \textit{each} OpenCPI user.}\\
 
 The default host installation platform for OpenCPI development is CentOS~6 or CentOS~7 Linux x86\_64 (64-bit). Other Linux variants and 32-bit systems have been used successfully, but this document expects the OS to be CentOS~7. Development hosts can either be actual physical systems or virtual machine installations.\\
 \begin{center}
-\framebox{\parbox{0.8\linewidth}{\centering This document assumes that CentOS is already installed, has the necessary packages installed for software compilation, and proper administrative privileges have been established.}}
+\framebox{\parbox{0.8\linewidth}{\centering This document assumes that CentOS is already installed and\\ proper administrative privileges have been established.}}
 \end{center}
 \ \\ % Gap under box
 Additional installation options exist for other target processors and technologies such as the Xilinx Zynq SoC (with ARM processor cores and FPGA resources). Preference when targeting non-x86 architectures is given to \textit{cross-building}, rather than self-hosting development. This limits the complexity of installing tools on different development hosts.\\
@@ -119,7 +119,6 @@ Additional installation options exist for other target processors and technologi
 Installation of OpenCPI is completed in the following steps:
 \begin{enumerate}
 \item\textbf{Section~\ref{sec:acquiring_opencpi}}: Acquiring the OpenCPI framework
-\item\textbf{Section~\ref{sec:installing_prereq}}: Installing the OpenCPI prerequisites
 \item\textbf{Section~\ref{sec:install_opencpi}}: Installing the OpenCPI framework
 \item\textbf{Section~\ref{sec:setup_opencpi}}: Setting up the OpenCPI environment
 \item\textbf{Section~\ref{sec:testing_opencpi}}: Testing the OpenCPI installation
@@ -128,97 +127,14 @@ These steps result in a development system with tooling and runtime software rea
 
 \section{Acquiring the OpenCPI framework}
 \label{sec:acquiring_opencpi}
-Currently, the ANGRYVIPER Team releases DVD-Rs containing the RPMs and PDF documentation of the OpenCPI framework. These should be available on \path{github.io}.
-
-\section{Installing FPGA vendor tool prerequisites}
-\label{sec:installing_fpga_vendor_prereq}
-For HDL bitstream generation, OpenCPI requires vendor-provided tools (\textit{e.g.} Xilinx Vivado, Xilinx ISE, Altera Quartus) for FPGA bitstream compilation, as well as various other operations. Refer to \path{FPGA_Vendor_Tools_Installation_Guide.pdf} for instruction in installing and configuring these tools for use with OpenCPI.
-
-\section{Installing OpenCPI third-party prerequisites}
-\label{sec:installing_prereq}
-
-OpenCPI development is dependent on various external packages from the Open Source community. These include:
-	\begin{enumerate}
-		\item Analog Devices' AD9361 no-OS Library
-		\item GNU Multiple Precision Arithmetic Library (GMP)
-		\item Google Test (GTEST)
-		\item Lempel-Ziv-Markov chain algorithm (LZMA/XZ)
-		\item Liquid DSP
-		\item PatchELF
-	\end{enumerate}
-These packages have OpenCPI-specific patches and are provided as RPMs. This packaging ensures they will not conflict with other\footnote{OS vendor, EPEL, other third-party-packagers, etc.} installed copies by using a nonstandard installation location of \code{/opt/opencpi/prerequisites}. Appendices~\ref{App:ad9361} -- \ref{App:patchelf} contain a synopsis of the changes that were made to these packages.\\
-
-These prerequisites are packaged into multiple RPMs due to different usage configurations. Not all are required for a standard development install; consult Table~\ref{table:prereqs}.\\
-\def\crosscompiled{Cross-compiled platform-specific library.}
-\newcommand{\libname}[1]{\rowcolor{blue}\multicolumn{2}{|c|}{#1}\\ \hline}
-\begin{minipage}{\textwidth}
-	\begin{center}
-		\renewcommand*\footnoterule{} % Remove separator line from footnote
-		\renewcommand{\thempfootnote}{\arabic{mpfootnote}} % Use Arabic numbers (or can't reuse)
-		\begin{minipage}{\textwidth}
-		\begin{table}[H]
-		\caption {RPM Prerequisite Descriptions}
-		\label{table:prereqs}
-			\begin{tabularx}{\textwidth}{|l|X|}
-			\hline
-			\rowcolor{blue}\multicolumn{1}{|c|}{\textbf{RPM Name}} & \multicolumn{1}{|c|}{\textbf{Description}} \\
-			\hline
-			\libname{AD9361 No-OS Library}
-			\code{ocpi-prereq-ad9361-*.rpm}\footnote{\label{fnreq-dev}Only required for development} &
-			Header file(s) and software library: ADI's No-OS library for AD9361 command/control. \\
-			\hline
-			\code{ocpi-prereq-ad9361-platform-*.noarch.rpm}\footnote{\label{fnreq-pf}Always required for development and deployment using matched platform name} &
-			\crosscompiled \\
-			\hline
-			\libname{GNU Multiple Precision Arithmetic Library}
-			\code{ocpi-prereq-gmp-6.1.1-*.rpm}\footnotemark[\getrefnumber{fnreq-dev}] &
-			Header file(s) and software library: GNU Multiple Precision Arithmetic Library (GMP). \\
-			\hline
-			\code{ocpi-prereq-gmp-platform-*.noarch.rpm}\footnotemark[\getrefnumber{fnreq-pf}] &
-			\crosscompiled \\
-			\hline
-			\libname{Google Test}
-			\code{ocpi-prereq-gtest-1.7.0-.rpm}\footnotemark[\getrefnumber{fnreq-dev}] &
-			Header file(s) and software library: Google's C++ test framework. \\
-			\hline
-			\code{ocpi-prereq-gtest-platform-*.noarch.rpm}\footnotemark[\getrefnumber{fnreq-pf}] &
-			\crosscompiled \\
-			\hline
-			\libname{Liquid DSP}
-			\code{ocpi-prereq-liquid-1.2.0-*.rpm}\footnote{\label{fnreq-liquid}Required to build some components in \code{ocpi.assets} but not required for base OpenCPI usage; provided as a courtesy for RCC Workers} &
-			Header file(s) and software library: Liquid DSP library. \\
-			\hline
-			\code{ocpi-prereq-liquid-platform-*.noarch.rpm}\footnotemark[\getrefnumber{fnreq-liquid}] &
-			\crosscompiled \\
-			\hline
-			\libname{LZMA / XZ}
-			\code{ocpi-prereq-xz-5.2.2-*.rpm}\footnotemark[\getrefnumber{fnreq-dev}] &
-			Header file(s) and software library: ``xz'' utils, a set of FOSS lossless data compressors (formerly known as ``lzma''). \\
-			\hline
-			\code{ocpi-prereq-xz-platform-*.noarch.rpm}\footnotemark[\getrefnumber{fnreq-pf}] &
-			\crosscompiled \\
-			\hline
-			\libname{Miscellaneous RPMs}
-			\code{ocpi-prereq-build\_support-inode64-*.rpm}\footnotemark[\getrefnumber{fnreq-dev}] & Shim library to allow 32-bit compilers to compile code on 64-bit file systems \\
-			\hline
-			\code{ocpi-prereq-patchelf-0.9-*.rpm}\footnotemark[\getrefnumber{fnreq-dev}] &
-			A utility for modifying existing ELF executables and libraries. \\
-			\hline
-			\end{tabularx}
-		\end{table}
-		\end{minipage}
-	\end{center}
-\end{minipage}
-~\\
-For simplicity, it is recommended that the user installs \textit{all} available prerequisite RPMs; this may be completed using \texttt{yum}:\\
-
-\code {\% sudo yum localinstall <location of prerequisite RPMs>/*rpm}
+Currently, the ANGRYVIPER Team releases DVD-Rs containing the RPMs and PDF documentation of the OpenCPI framework. These are also available on \url{https://opencpi.github.io/}.
 
 \section{Installing OpenCPI framework}
 \label{sec:install_opencpi}
-The ANGRYVIPER Team's recommended installation method for development is through the use of RPMs. The framework can be built from source for a development host, but is not recommended. In either case, the prerequisites described in section~\ref{sec:installing_prereq} must be installed prior to the following section.\\
+The ANGRYVIPER Team's recommended installation method for development is through the use of RPMs. The framework can be built from source for a development host, but is not recommended.\\
 
-The ANGRYVIPER Team provides RPMs to their direct customers and end users can consult Appendix~\ref{App:building_rpms} for instructions on re-building them.
+The ANGRYVIPER Team provides RPMs to their direct customers and other users can find them on \path{github.io}.
+% While discouraged, documentation concerning building the RPMs from scratch can be found in \path{packaging/README}.
 
 \subsubsection*{Understanding OpenCPI RPM naming convention}
 \label{sec:understand_rpm_naming}
@@ -237,102 +153,110 @@ OpenCPI's RPM naming follows that of the Red Hat Package Manager recommendations
 	 \end{enumerate}
  	\item \textit{dist} is the OS distribution that the package is built for (\textit{e.g.} \texttt{.el7.centos})
  	\item \textit{architecture} is shorthand name describing the type of hardware the packaged software is to be installed on
- 	\item ``\textit{devel}'' is sometimes appended to the package name to indicate development RPMs which are required for building from source
+ 	\item ``\textit{devel}'' is sometimes appended to the package's name to indicate development RPMs which are required for building from source
 \end{enumerate}
 
 \subsubsection*{When to Install}
-It is recommended that the user install these packages \textit{before} additional tools, e.g. ModelSim, because the \texttt{devel} subpackage forces the installation of otherwise-hidden dependencies, \textit{e.g.} 32-bit X11 libraries for ModelSim.
+It is recommended that the user install these packages \textit{before} additional tools described in Section~\ref{subsec:installing_fpga_vendor} because the RPMs force the installation of some otherwise-hidden dependencies, \textit{e.g.} 32-bit X11 libraries for ModelSim.
 
 \subsection{Installing OpenCPI from RPMs}
 \label{sec:install_av_rpm}
-After installation of the OpenCPI prerequisite RPMs\footnote{All main and prerequisite RPMs can be simultaneously installed.}, the main RPMs may be installed. Again, as with the prerequisites, it is recommended that the user installs all available packages whenever possible. If limited by available disk space, Table~\ref{table:decide} can be used to help determine which of the packages should be installed based upon the intended use of the target machine.\\
+It is recommended that the user installs all available packages whenever possible. If limited by available disk space, Table~\ref{table:decide} can be used to help determine which of the packages should be installed based upon the intended use of the target machine.\\
 
-Within OpenCPI, there are two types of implementations, called \textit{Workers}, that are used in this framework: Resource-Constrained C Language (RCC) Workers and Hardware Description Language (HDL) Workers. RCC Workers are written using either C or C++ and are designed for either x86 or ARM architecture, while HDL Workers are written in VHDL and are designed for Field Programmable Gate Arrays (FPGAs). For further details regarding RCC and HDL Workers see the \textit{OpenCPI RCC Development Guide} and the \textit{OpenCPI HDL Development Guide}.
+Within OpenCPI, there are two types of implementations, called \textit{Workers}, that are used in this framework: Resource-Constrained C Language (RCC) Workers and Hardware Description Language (HDL) Workers. RCC Workers are written using either C or C++ and are designed for either x86 or ARM architecture, while HDL Workers are written in VHDL and are designed for Field Programmable Gate Arrays (FPGAs) or HDL Simulators. For further details regarding RCC and HDL Workers see the \textit{OpenCPI RCC Development Guide} and the \textit{OpenCPI HDL Development Guide} (cf. Table~\ref{table:references}).
 \begin{center}
 \begin{minipage}{.75\textwidth}
+	% Make new row command - single space is unchecked; anything else checks
+	\newcommand{\rpm}[6]{\multicolumn{1}{|r|}{\texttt{#1}} &
+		\ifthenelse{ \equal{#2}{ } }{}{\ding{51}} &
+		\ifthenelse{ \equal{#3}{ } }{}{\ding{51}} &
+		\ifthenelse{ \equal{#4}{ } }{}{\ding{51}} &
+		\ifthenelse{ \equal{#5}{ } }{}{\ding{51}} &
+		\ifthenelse{ \equal{#6}{ } }{}{\ding{51}}\\\hline}
 	\renewcommand*\footnoterule{} % Remove separator line from footnote
 	\renewcommand{\thempfootnote}{\arabic{mpfootnote}} % Use Arabic numbers (or can't reuse)
 	\begin{table}[H]
-	\caption{Main RPM Decision Guide}
+	\caption{RPM Decision Guide}
 	\label{table:decide}
 	\begin{tabular}{r|c|c|c|c|c|}
 		\cline{2-6}
 		&\begin{turn}{90}Runtime RCC Host\end{turn}
 		&\begin{turn}{90}Runtime HDL Host\end{turn}
 		&\begin{turn}{90}RCC-Only Development\end{turn}\newline\begin{turn}{90}(x86 RCC exclusive)\end{turn}
-		&\begin{turn}{90}RCC/HDL Development\end{turn}\newline\begin{turn}{90}(x86 RCC, non-hybrid\footnote{``Non-hybrid'' meaning a standalone FPGA \textit{without} an integrated processor, \textit{e.g.} Xilinx ML605.} FPGA HDL)\end{turn}
+		&\begin{turn}{90}RCC/HDL Development\end{turn}\newline\begin{turn}{90}(x86 RCC, non-SoC\footnote{``Non-SoC'' meaning a standalone FPGA \textit{without} an integrated processor, \textit{e.g.} Xilinx ML605.} FPGA HDL)\end{turn}
 		&\begin{turn}{90}RCC/HDL Development\end{turn}\newline\begin{turn}{90}(Targeting non-x86 HW/SW platform)\end{turn}\\\hline
-		\multicolumn{1}{|r|}{\texttt{angryviper-ide...rpm}} & & & \ding{51} & \ding{51} & \ding{51}\\\hline
-		\multicolumn{1}{|r|}{\texttt{opencpi-...rpm}} & \ding{51} & \ding{51} & \ding{51} & \ding{51} & \ding{51}\\\hline
-		\multicolumn{1}{|r|}{\texttt{opencpi-devel...rpm}} & & & \ding{51} & \ding{51} & \ding{51}\\\hline
-		\multicolumn{1}{|r|}{\texttt{opencpi-driver...rpm}} & & \ding{51} & & \ding{51} & \ding{51}\\\hline
-		\multicolumn{1}{|r|}{\texttt{opencpi-interface-python...rpm}\footnote{Only required when running or developing ACIs written in python}} & \ding{51} & \ding{51} & \ding{51} & \ding{51} & \ding{51}\\\hline
-		\multicolumn{1}{|r|}{\texttt{opencpi-project-assets...rpm}} & & & \ding{51}  & \ding{51} & \ding{51}\\\hline
-		\multicolumn{1}{|r|}{\texttt{opencpi-project-bsp...rpm}\footnote{BSP RPMs may not be provided with the standard/basic RPMs, but represent a placeholder for RPMs providing Board Support Package Projects. There are certain BSPs which are located in the \code{ocpi.assets} Project and therefore do not require their own separate BSP RPMs.}} & & & \ding{51} & \ding{51} & \ding{51}\\\hline
-		\multicolumn{1}{|r|}{\texttt{opencpi-*-platform...rpm}} & & & & & \ding{51}\\\hline
+		\rpm{angryviper-ide...rpm   }{ }{ }{.}{.}{.}
+		\rpm{opencpi-...rpm         }{x}{x}{x}{x}{x}
+		\rpm{opencpi-debuginfo...rpm}{ }{ }{x}{x}{x}
+		\rpm{opencpi-devel...rpm    }{ }{ }{x}{x}{x}
+		\rpm{opencpi-doc...rpm      }{ }{ }{x}{x}{x}
+		\rpm{opencpi-driver...rpm   }{ }{x}{ }{x}{x}
+		\rpm{opencpi-project-bsp...rpm\footnote{BSP RPMs may not be provided with the standard/basic RPMs, but represent a placeholder for RPMs providing Board Support Package Projects.% There are certain BSPs which are located in the \code{ocpi.assets} Project and therefore do not require their own separate BSP RPMs.
+		}}{ }{ }{x}{x}{x}
+		\rpm{opencpi-*-platform...rpm}{ }{ }{ }{ }{x}
 	\end{tabular}
 	\end{table}
 \end{minipage}
 \end{center}
 
-The main RPMs each have specific usage. Table~\ref{table:mainrpm} outlines what each of the main RPMs are used for.
-
+The RPMs each have specific usage. Table~\ref{table:rpm} outlines what each of the RPMs are used for.
+\newcommand{\rpm}[2]{\code{#1} & #2\\\hline}
 	\begin{center}
 		\begin{table}[H]
-		\caption {Main RPM Descriptions}
-		\label{table:mainrpm}
-			\begin{tabularx}{\textwidth}{|l|X|}
+		\caption {RPM Descriptions}
+		\label{table:rpm}
+			\begin{tabularx}{\textwidth}{|>{\small}l|X|}
 \hline
-\rowcolor{blue}\textbf{Main RPMs} & \textbf{Description} \\
+\rowcolor{blue}\textbf{RPMs} & \textbf{Description} \\
 \hline
-\small{\code{angryviper-ide-*.x86\_64.rpm}} &
-The ANGRYVIPER IDE (Eclipse with plugins). \\
-\hline
-\small{\code{opencpi-*.x86\_64.rpm}} &
-				Base installation RPM includes the runtime portion of the Component Development Kit (CDK), scripts for creating the user's workspace, limited documentation, and a read-only \code{ocpi.core} Project containing framework essential components, workers, platforms, etc. \\
-\hline
-\small{\code{opencpi-debuginfo-*.x86\_64.rpm}} &
-Debug symbols needed to debug the framework. \\
-\hline
-\small{\code{opencpi-devel-*.x86\_64.rpm}} &
-Additional header files and scripts for developing new assets as HDL and/or RCC. \\
-\hline
-\small{\code{opencpi-driver-*.noarch.rpm}} &
-OpenCPI driver. Once installed, any subsequent kernel updates will cause the driver to be built automatically on restart. \\
-\hline
-\small{\code{opencpi-hw-platform-*.noarch.rpm}} &
-Additional files necessary to build the framework targeting specific hardware platforms. Automatically require the appropriate \texttt{sw-platform} package. \\
-\hline
-\small{\code{opencpi-interface-python*.x86\_64.rpm}} &
-This package includes SWIG bindings to allow Python-based top-level ACI applications. \\
-\hline
-\small{\code{opencpi-project-assets*.noarch.rpm}} &
-The \texttt{ocpi.assets} Project, which contains the remaining supported OpenCPI resources, e.g. additional Platform Support, Workers, Demo Applications, etc. \\
-\hline
-\small{\code{opencpi-project-bsp*.noarch.rpm}} &
-A \texttt{*.bsp.*} Project contains a Board Support Package for a particular platform, e.g. RCC/HDL Platform Support, Device Workers, etc. There are certain BSPs which are located in the \code{ocpi.assets} Project and therefore do not require their own separate BSP RPMs. \\
-\hline
-\small{\code{opencpi-sw-platform-*.noarch.rpm}} &
-Additional files necessary to build the framework targeting specific software platforms. \\
-\hline
+\rpm{angryviper-ide-*.x86\_64.rpm}{The ANGRYVIPER IDE (Eclipse with plugins). See Appendix~\ref{App:IDE_plugin} for an alternative method to set up the IDE using an existing Eclipse installation.}
+
+\rpm{opencpi-*.x86\_64.rpm}{Base installation RPM includes the runtime portion of the Component Development Kit (CDK) and the source for the \path{ocpi.core} and \path{ocpi.assets} Projects containing framework essential components, workers, platforms, etc.}
+
+\rpm{opencpi-debuginfo-*.x86\_64.rpm}{Debug symbols needed to debug the framework.}
+
+\rpm{opencpi-devel-*.x86\_64.rpm}{Additional header files and scripts for developing new assets as HDL and/or RCC.}
+
+\rpm{opencpi-doc-*.x86\_64.rpm}{Includes most of the documentation found at \href{https://opencpi.github.io/}{github.io}. A symlink can be found at \code{/opt/opencpi/documentation.html}. If you receive the RPM directly from the AV team, it may include BSP documentation that is not available on GitHub.}
+
+\rpm{opencpi-driver-*.noarch.rpm}{OpenCPI driver. Once installed, any subsequent kernel updates will cause the driver to be built automatically on restart.}
+
+\rpm{opencpi-hw-platform-X-Y-*.noarch.rpm}{Additional files necessary to build the framework targeting specific hardware platform ``X'' when running RCC platform ``Y'' (``Y'' \textit{can} be ``\code{no\_sw}''). This RPM also includes hardware-specific SD Card images when applicable.}
+
+\rpm{opencpi-project-bsp-*.noarch.rpm}{A \texttt{*.bsp.*} Project (\textit{e.g.} \code{ocpi.bsp.e3xx}) contains a Board Support Package for a particular physical radio, e.g. RCC/HDL Platform Support, Device Workers, etc. There are certain BSPs which are located in the \code{ocpi.assets} Project and therefore do not require their own separate BSP RPMs. As noted in Table~\ref{table:decide}, these RPMs are \textit{only} needed for development; the \code{hw-platform} RPMs contain all required runtime files to deploy to an SD Card.}
+
+\rpm{opencpi-sw-platform-*.noarch.rpm}{Additional files necessary to build the framework targeting specific RCC/software platforms, independent of the final deployed hardware.}
 			\end{tabularx}
 		\end{table}
 	\end{center}
 
-Installation may be completed using yum and the following command:\\
+\subsubsection{Installing from \code{github.io}}
+Installation may be completed\footnote{This will not include the ANGRYVIPER IDE; see Appendix~\ref{App:IDE_plugin} for installation} using the publicly available RPMs on \href{https://opencpi.github.io/}{github.io} with the following reference commands:
 
-	\code {\% sudo yum localinstall <location of main RPMs>/*rpm}
+\subsubsection*{Configure Yum Repository}
+\code {\$ sudo yum install yum-utils}\\
+\code {\$ sudo yum-config-manager --add-repo=https://opencpi.github.io/repo/opencpi-v1.4.repo}
 
-\subsection{Installing OpenCPI from Source}
-See Appendix~\ref{App:install_from_source}.
+\subsubsection*{List Available Packages}
+To see packages available in the repository (to cross-reference with Tables~\ref{table:decide} and \ref{table:rpm}):\\
+\code {\$ yum list 'opencpi*'}
+
+\subsubsection*{Install}
+You can choose individual packages to install (cf. Tables~\ref{table:decide} and \ref{table:rpm}), or install \textit{every} OpenCPI package available:\\
+\code {\$ sudo yum install 'opencpi-*'}\\
+
+\subsubsection{Installing from DVD-R}
+Installation may be completed using yum with the following command:\\
+
+\code {\$ sudo yum localinstall --nogpgcheck <location of RPMs>/*rpm}
 
 \section{Setting up the OpenCPI Environment}
 \label{sec:setup_opencpi}
-\subsubsection*{Notes about installing HDL simulator(s) and/or compiler(s)}
-Before attempting the next section, ensure that the desired HDL simulators and HDL tools are installed. Installation of these is outside the scope of this document.\\
+\subsection{HDL Simulator(s) and/or Compiler(s)}
+\label{subsec:installing_fpga_vendor}
+For FPGA development and/or HDL simulation, OpenCPI requires vendor-provided tools (\textit{e.g.} Xilinx Vivado, Mentor Graphics ModelSim). Refer to the \textit{FPGA Vendor Tools Installation Guide} from Table~\ref{table:references} for instruction in installing and configuring these tools for use with OpenCPI.\\
 
-Keep note of where the \textit{license files} are, the \textit{version number} of the tools, and \textit{where the tools are installed}, as they will be needed to configure the required environment variables.
-
+Keep note of where the \textit{license files} are, the \textit{version number} of the tools, and \textit{where the tools are installed}, as this information will be needed to configure the required environment variables.
 \subsection{The \code{opencpi} Group}
 \label{subsec:opencpi_group}
 At this point, certain users should be added to the \code{opencpi} group. When a user creates a Project, it is likely that the Project should be \code{registered}. Registering a Project allows other users and Projects to access its assets. The default Registry on an RPM-configured system is located at \verb+/opt/opencpi/project-registry+. In order for a user to register Projects in this default location, the user will need to be a member of the \code{opencpi} group. To add a user to the \code{opencpi} group, run the following command:\\
@@ -341,10 +265,13 @@ At this point, certain users should be added to the \code{opencpi} group. When a
 
 If this command is run as user \verb+<username>+, the user will need to log out and back in to apply this change.\\
 
-Note that users can use a non-default Project Registry. For more information on this, please visit the \textit{OpenCPI Component Development} document or the \textit{Getting Started Guide}.
+Note that users can use a personal non-default Project Registry. For more information on this, please visit the \textit{OpenCPI Component Development} document or the \textit{Getting Started Guide} (cf. Table~\ref{table:references}).
 
 \subsection{Setup Environment} \label{setenv}
 \label{subsec:setup_environment}
+\begin{center}
+\framebox{\parbox{0.8\linewidth}{\centering The Framework tries very hard to accept vendor default installation and configuration without additional settings. This section is only required if Section~\ref{subsec:installing_fpga_vendor} and/or the \textit{FPGA Vendor Tools Installation Guide} required a non-standard configuration.}}
+\end{center}
 
 Setting up the environment when installing from RPM requires root privileges. Navigate to \verb+$(OCPI_CDK_DIR)/env.d+ and notice the following example scripts:
 
@@ -355,7 +282,7 @@ Setting up the environment when installing from RPM requires root privileges. Na
  	\item \verb+xilinx.sh.example+
 \end{itemize}
 
-Every time a new shell is opened, all \verb+*.sh+ files in \verb+/opt/opencpi/cdk/env.d+ are executed, and all \verb+*.sh.example+ files in \verb+/opt/opencpi/cdk/env.d+ are \textit{ignored}. To enable a script for execution, the name of the script must be changed so that the \verb+.example+ suffix is removed. A simple demonstration is below:\\
+Every time a new \code{bash}\footnote{Some problems have been reported when the user's shell is set to \path{/bin/sh} and not \path{/bin/bash}.} \textit{login} shell is opened, all \verb+*.sh+ files in \verb+/opt/opencpi/cdk/env.d+ are executed, and all \verb+*.sh.example+ files in \verb+/opt/opencpi/cdk/env.d+ are \textit{ignored}. To enable a script for execution, the name of the script must be changed so that the \verb+.example+ suffix is removed. A simple demonstration is below:\\
 
 \verb+ % sudo cp altera.sh.example altera.sh+\\
 
@@ -363,291 +290,118 @@ Now \verb+altera.sh+ will execute every time a new shell is opened.\\
 
 If using the Altera tools, the \verb+altera.sh+ will need to be created and the variables \path{OCPI_ALTERA_DIR}, \path{OCPI_ALTERA_VERSION}, and \path{OCPI_ALTERA_LICENSE_FILE} must be defined in \verb+altera.sh+. The \verb+altera.sh+ script also calls another script to set up the rest of the variables needed for the Altera tools.\\
 
-If using the Modelsim tools, the \verb+modelsim.sh+ will need to be created and the variables \verb+OCPI_MODELSIM_DIR+ and \verb+OCPI_MODELSIM_LICENSE_FILE+ must be defined in \verb+modelsim.sh+.\\
+If using the ModelSim tools, the \verb+modelsim.sh+ will need to be created and the variables \verb+OCPI_MODELSIM_DIR+ and \verb+OCPI_MODELSIM_LICENSE_FILE+ must be defined in \verb+modelsim.sh+.\\
 
-If using the Xilinx tools, the \verb+xilinx.sh+ will need to be created and the variable \verb+OCPI_XILINX_LICENSE_FILE+ must be defined in \verb+xilinx.sh+. If using an installation of Xilinx Vivado that was \textit{not} installed in the default \verb+/opt+ directory then the variable \verb+OCPI_XILINX_VIVADO_DIR+ must be defined in \verb+xilinx.sh+. If using a version other than the most recent one installed in that location, then the variable \verb+OCPI_XILINX_VIVADO_VERSION+ must be defined in \verb+xilinx.sh+. If using an installation of Xilinx ISE that was \textit{not} installed in the default \verb+/opt+ directory then the variable \verb+OCPI_XILINX_DIR+ must be defined in \verb+xilinx.sh+. If not using the 14.7 version of ISE, then the variable \verb+OCPI_XILINX_VERSION+ must be defined in \verb+xilinx.sh+. The \verb+xilinx.sh+ script also calls another script to set up the rest of the variables needed for the Xilinx tools. See the \textit{FPGA Vendor Tools Installation Guide} for more information on Xilinx license setup.\\
+If using the Xilinx tools, the \verb+xilinx.sh+ will need to be created and the variable \verb+OCPI_XILINX_LICENSE_FILE+ must be defined in \verb+xilinx.sh+. If using an installation of Xilinx Vivado that was \textit{not} installed in the default \verb+/opt+ directory then the variable \verb+OCPI_XILINX_VIVADO_DIR+ must be defined in \verb+xilinx.sh+. If using a version other than the most recent one installed in that location, then the variable \verb+OCPI_XILINX_VIVADO_VERSION+ must be defined in \verb+xilinx.sh+. If using an installation of Xilinx ISE that was \textit{not} installed in the default \verb+/opt+ directory then the variable \verb+OCPI_XILINX_DIR+ must be defined in \verb+xilinx.sh+. If not using the 14.7 version of ISE, then the variable \verb+OCPI_XILINX_VERSION+ must be defined in \verb+xilinx.sh+. The \verb+xilinx.sh+ script also calls another script to set up the rest of the variables needed for the Xilinx tools. See the \textit{FPGA Vendor Tools Installation Guide} (cf. Table~\ref{table:references}) for more information on Xilinx license setup.\\
 
-The script \verb+site.sh.example+ has been provided as an example central location where any other variables can be defined globally. \textit{Remember that the names of the scripts do not matter, only the \texttt{*.sh} extension.} More configuration variables can be found in the \textit{Getting Started Guide}.\\
+The script \verb+site.sh.example+ has been provided as an example central location where any other variables can be defined globally. \textit{Remember that the names of the scripts do not matter; only the \texttt{*.sh} extension.} More configuration variables can be found in the \textit{Getting Started Guide}.\\
 
 Once all the desired scripts have been created and edited, open a new shell and check to see that the environment is now set up.
 
 \subsection{Removing OpenCPI RPMs}
-In the event that the OpenCPI RPM needs to be uninstalled, or reinstalled, the best way to remove the OpenCPI RPM is to use \verb+yum+ to erase the RPMs from Table~\ref{table:mainrpm} as seen below:\\
+In the event that the OpenCPI RPM needs to be uninstalled, or reinstalled, the best way to remove the OpenCPI RPM is to use \verb+yum+ to erase the RPMs from Table~\ref{table:rpm} as seen below:\\
 
 	\verb+% sudo yum erase <RPM name>+
 
 \section{Testing the OpenCPI installation}
 \label{sec:testing_opencpi}
-To verify the OpenCPI installation run the following command from a new terminal\footnote{This command is only available if the \texttt{-devel} package was installed.}:\\
+To verify the OpenCPI installation, there is a command \code{ocpitest} that presents various test options. \code{ocpitest --showtests} will list all available. Some require additional files to be present or Projects to be built, but for a fresh RPM install, you can use:\\
 
-\verb+% test-opencpi-rpm+\\
+\verb+% ocpitest driver os datatype load-drivers container+\\
 
-A successful install will output ``All tests passed.'' at the end of the test.
+The first test, \code{driver}, will require \code{sudo} access. A successful install will output ``All tests passed.'' at the end of the test.
 
 \newpage
 \begin{appendices}
 \appendix
-\section{Prerequisite Modifications}
-% Including full diffs is excessive...
-% \begin{lstlisting}[language=diff]
-% \end{lstlisting}
-This section provides an overview of changes made to various Free and Open Source software required to be implemented within the Framework. Exact \texttt{diff} files and various sources are available upon request. Implied with every list are patches to the build configuration to allow the library's final installation location to be under the \path{/opt/opencpi/prerequisite} tree, along with cross-compilation targeting various platforms.
+\section{Prerequisites and Their Modifications}
+This section provides a list of various Free and Open Source software required by the Framework. They are included within the RPMs behind the scenes to allow the Framework to function, as well as provide utility to RCC Workers. OpenCPI's packaging of these ensures they will not conflict with other\footnote{OS vendor, EPEL, other third-party-packagers, etc.} installed copies by using a nonstandard installation location. Listed below are any explicit modifications required, but implied with every item are possible modifications to the build configuration to override the library's final installation location along with
+cross-compilation targeting various platforms.
 
 % NOTE: If another prereq is ever added here, update refs that are using ad9361 as "first Appendix item"
 \subsection{Analog Devices' AD9361 no-OS Library}
 \label{App:ad9361}
-Source: \url{https://github.com/analogdevicesinc/no-OS}
+Source: \url{https://github.com/analogdevicesinc/no-OS.git} (tied to specific git hash)\\
+Diff: \path{projects/assets/prerequisites/ad9361/ad9361.patch}
 \begin{enumerate}
 \item[$\bullet$] Patches to allow older compilers to compile (missing \path{stdint.h} includes)
+\item[$\bullet$] Fix memory leaks on de-allocation
 \item[$\bullet$] Move some top-level structs from \path{common.h} into \path{ad9361.h} to limit scope of items, \textit{e.g.} ``\code{struct clk}''
 \end{enumerate}
 
 \subsection{GNU Multiple Precision Arithmetic Library (GMP)}
 \label{App:gmp}
-Source: \url{https://ftp.gnu.org/gnu/gmp/gmp-6.1.1.tar.xz}
-\begin{enumerate}
-\item[$\bullet$] A wrapper file, \verb+gmp-mparam.h+, replaces the original one. This wrapper file is provided by Red Hat and used in their RPM packaging of \texttt{gmp}.
-\end{enumerate}
+Source: \url{https://mirror.csclub.uwaterloo.ca/gnu/gmp/gmp-6.1.2.tar.xz}\\
+Diff: (N/A)
 
 \subsection{Google Test (GTEST)}
 \label{App:gtest}
-Source: \url{https://github.com/google/googletest/archive/release-1.7.0.zip}
-\begin{enumerate}
-\item[$\bullet$] Removed most tests and examples
-\item[$\bullet$] Removed non-\texttt{gcc} source
-\end{enumerate}
+Source: \url{https://github.com/google/googletest/archive/release-1.8.0.zip}\\
+Diff: (N/A)\\
+Note: Not available to RCC Workers
 
 \subsection{Liquid DSP}
-Source: \url{https://github.com/jgaeddert/liquid-dsp.git} (tied to specific git hash)
+Source: \url{https://github.com/jgaeddert/liquid-dsp/archive/v1.3.1.tar.gz}\\
+Diff: \path{projects/assets/prerequisites/liquid/malloc.patch}
 \label{App:liquid}
 \begin{enumerate}
-\item[$\bullet$] Nothing beyond configuration modifications noted above
+\item[$\bullet$] Disable \path{autoconf} macros for \path{malloc()} and \path{realloc()} that cause missing \path{rpl_malloc} symbols for some cross-compilers; assumes cross-compilers have sane/modern \path{malloc()} implementations
 \end{enumerate}
 
 \subsection{Lempel-Ziv-Markov chain algorithm (LZMA/XZ)}
-Source: \url{https://github.com/xz-mirror/xz/releases/download/v5.2.2/xz-5.2.2.tar.xz}
+Source: \url{https://tukaani.org/xz/xz-5.2.3.tar.gz}\\
+Diff: (N/A)
 \label{App:xz}
-\begin{enumerate}
-\item[$\bullet$] CentOS~6: Lower build environment expectations to \texttt{autoconf 2.63}, \texttt{automake 1.11}, and \texttt{gettext 0.17}
-\item[$\bullet$] CentOS~7: Nothing beyond configuration modifications noted above
-\end{enumerate}
 
 \subsection{PatchELF}
-Source: \url{https://github.com/NixOS/patchelf.git} (tied to git tag \texttt{0.9})
+Source: \url{http://nixos.org/releases/patchelf/patchelf-0.9/patchelf-0.9.tar.gz}\\
+Diff: (N/A)\\
+Note: Not available to RCC Workers
 \label{App:patchelf}
-\begin{enumerate}
-\item[$\bullet$] Add new command-line option (\texttt{--ocpi-fix-soname}) that removes the suffix \verb+_s.so+ in an ELF's \texttt{SONAME} and replaces it with \verb+.so+ using only string manipulations (no sections are created or modified).
-\end{enumerate}
 
 % NOTE: If another prereq is ever added here, update refs that are using patchelf as "last Appendix item"
 
 \newpage
-\section{Appendix - Building OpenCPI RPMs}
+\section{Appendix - Add the ANGRYVIPER IDE to Eclipse using the Plugin}
+\label{App:IDE_plugin}
+The ANGRYVIPER IDE is constructed using the Eclipse Neon release and a plugin developed by the ANGRYVIPER team. Since the entire IDE is too large to be placed on GitHub, the following instructions may be used to obtain the IDE by downloading Eclipse and installing the plugin as an Eclipse drop-in.
 
-\label{App:building_rpms}
-This section does \textit{not} cover fundamentals such as basic Linux usage, cloning the \texttt{git} repository, etc.
-
-\subsection{Prerequisites to Building}
-\label{subsec:prereq_to_build}
-This document assumes that you already have:
-\begin{itemize}
-\item A working CentOS-based system (or docker container / virtual machine)
-\subitem Fully updated with \code{yum upgrade}\footnote{Skipping this may result in ``multilib'' errors in \code{yum} due to installing the latest 32-bit version of a tool when the installed 64-bit version is out of date.}
-\item A \texttt{git} clone of the repository
-\item The GCC suite (e.g. the \texttt{gcc-c++} RPM)
-\item GNU Make (\texttt{make})
-\item A cross-compiler for target systems
-\subitem This document uses Xilinx's EDK
-\item Certain packages already installed that are called out in each RPM's specfile's \texttt{BuildRequires} tag.
-\subitem This can usually be resolved with \texttt{sudo yum install missingpkg} or the more advanced \texttt{repoquery --whatprovides /path/to/missing/file}.
-\subitem The build system is pretty good about indicating what is missing (cf. \ref{subsubsec:example_build} for example)
-\subitem Some require the EPEL Repository (provided by the \code{epel-release} RPM)
-\item Both 32- and 64-bit versions of \texttt{glibc-static} and \texttt{glibc-devel} installed
-\subitem \verb+sudo yum install glibc{,-static,-devel}{,.i686}+
-\end{itemize}
-
-\subsubsection{Example of Required Packages}
-\label{subsubsec:example_build}
-% 2018-02-20
-As an example, to build the \textit{prerequisite RPMs} on a fresh CentOS 7 docker container, the build actually took \textit{eight} iterations to get all required packages installed to build all for the host:
-
-\begin{lstlisting}[basicstyle=\ttfamily]
-$ yum install -y git make
-$ make prereq
-$ yum install -y gcc mlocate rpm-build
-$ make prereq
-$ yum install -y glibc-devel.i686
-$ make prereq
-$ yum install -y libgcc.i686
-$ make prereq
-$ yum install -y ed
-$ make prereq
-$ yum install -y autoconf automake libtool
-$ make prereq
-$ yum install -y gcc-c++
-$ make prereq
-$ yum install -y gettext-devel
-$ make prereq # Success!
-\end{lstlisting}
-
-\subsection{Prerequisite RPMs}
-\label{App:building_rpms:prereq}
-See Section~\ref{sec:installing_prereq} for an overview of the prerequisite RPMs that will be built and Appendices starting with \ref{App:ad9361} for how the source code for each is modified.\\
-
-To build all prerequisite RPMs:
+\subsubsection*{Download Plugin JAR}
 \begin{enumerate}
-\item Change to the \texttt{releng} subdirectory
-\item \texttt{export CROSS\_FAIL\_OK=1}
-\item \texttt{make prereq}
+\item Obtain the latest ANGRYVIPER plugin jar file
+\subitem \verb+wget https://opencpi.github.io/ide/av.proj.ide.plugin_1.4.jar+
 \end{enumerate}
 
-If applicable, the build system will build an RPM for each target platform for each prerequisite. After the builds are complete, the RPMs will be copied into the \path{prereq} directory and listed. \textit{If you are missing a specific cross-compiler, that platform will be skipped unless explicitly requested} (because of the \path{CROSS_FAIL_OK}).\\
-
-There are other prerequisite-related \texttt{make} targets available (cf. Table~\ref{table:make_releng}); running \texttt{make help} in \texttt{releng} will present additional information, \textit{e.g.} \texttt{make prereq-host} will only build for the host machine.
-
-\subsection{Building Main RPMs}
-\textit{Note}: This section assumes the prerequisite RPMs have been installed. If they were built on another machine, then other required RPMs must be installed as well; they will be requested by the build system\footnote{The ones without 1:1 direct RPM names are covered in section~\ref{subsec:prereq_to_build}}.\\
-
-The RPM-building \texttt{Makefile} has various targets which are shown by running \texttt{make} from within the \texttt{releng} subdirectory. A sampling:
-
-% \begin{minipage}{\textwidth}
-\begin{table}[H]
-\begin{minipage}{\textwidth}
-\begin{center}
-\caption {\texttt{releng} directory \texttt{make} targets}
-\label{table:make_releng}
-\begin{tabular}{|c|c|}
-\hline
-\rowcolor{blue}
-Target & Result \\
-\hline
-clean & Remove generated files
-\\
-\hline
-prereq & Builds the prerequisite RPMs\\&(described above)
-\\
-\hline
-cdk & The CDK RPMs (base libraries and runtime)
-\\
-\hline
-cdk-all & The CDK RPMs (all platforms)
-\\
-\hline
-driver & The driver RPM
-\\
-\hline
-\end{tabular}
-\end{center}
-\end{minipage}
-\end{table}
-% \end{minipage}
-~\\
-
-If you are making modifications to the framework, to rebuild for testing the command \texttt{make cdk} is usually sufficient.
-
-\subsubsection{Common Problems}
-If you are having trouble building the RPMs, please ensure:
-\begin{itemize}
-\item All of the prerequisite packages listed above are installed.
-\subitem Remove any manually-installed versions if applicable.
-\subitem \texttt{sudo yum install releng/prereq/*rpm}
-\item The cross-compilers can be found.
-\subitem For example, if you installed the cross-compilers today, ``\texttt{sudo updatedb}'' will refresh the \texttt{locate} command's database.
-% \subitem If the cross-compiler is remotely located, see \hyperref[subsubsec:VM_usage]{an example below}.
-\item Attempt your build independent of RPM building (see Appendix~\ref{App:install_from_source}).
-\subitem \textit{Note}: This can interfere with RPM builds and you \textbf{must} clean up the non-RPM build files with \texttt{make distclean} or \texttt{git clean -fdx}.
-\end{itemize}
-
-\subsubsection{Debugging Your Build Process}
-If you are having trouble compiling the source code there are a few options to try:
-\begin{itemize}
-\item Examine the automatically generated log file, \texttt{build.log} (or \texttt{build-\textit{platform}.log}).
-\item Disable multithreaded building by removing \verb+%{?_smp_mflags}+ from the specfile.
-\subitem This will help you trace the error message by processing source files serially, keeping error messages in \texttt{build.log} local to each other.
-\end{itemize}
-\iffalse
-% Removed because too specific and don't want to support OSS
-\subsubsection{Building Main RPMs in a VM}
-\label{subsubsec:VM_usage}
-In an ideal configuration, you would build the RPMs in a self-contained VM or Docker Container. The problem with this ideal is that you would need to have a VM-local \texttt{git} repository, along with a full Xilinx install for the cross-compilers. Since the installation for each VM would be obnoxiously time consuming, the following shortcuts can be taken:
+\subsection{Eclipse (Neon Release)}
 \begin{enumerate}
-\item Install \texttt{sshfs} on the VM
-\subitem \texttt{sudo yum install fuse-sshfs}
-\subitem (There may have been a configuration thing I did here that I don't remember)
-\item Create mount points
-\subitem \texttt{mkdir /tmp/repo}
-\subitem \texttt{mkdir -p /opt/Xilinx}
-\item Mount your \texttt{git} repository from the host to the VM:
-\subitem \verb+sshfs -o uid=$(id -u),gid=$(id -g)+\verb+ user@192.168.x.x:/data/user/repopath /tmp/repo+
-\item Mount your Xilinx directory:
-\subitem \verb+sshfs user@192.168.x.x:/opt/Xilinx /opt/Xilinx+
-\item From within your checkout, e.g. \texttt{/tmp/repo}:
-\subitem \verb+make driver cdk-all +\textbackslash
-\subitem \verb+ OCPI_CROSS_BUILD_BIN_DIR=/opt/Xilinx/14.7/ISE_DS/EDK/gnu/arm/lin/bin+
-\end{enumerate}
-\fi
-
-\newpage
-\section{Appendix - Building OpenCPI from Source}
-
-\label{App:install_from_source}
-When installing OpenCPI from RPM, there is \textit{no need} to build the OpenCPI Framework from source and the ANGRYVIPER Team \textit{does not} recommend this process for standard users. However, there are certain conditions where it may be appropriate, such as:
-\begin{enumerate}
-\item Contributions to the OpenCPI architecture
-\item Utilization of the latest features between releases
-\item Identification and troubleshooting of bugs
+\item Download the Eclipse Neon IDE for C/C++ Developers
+\subitem URL: https://www.eclipse.org/neon/
+\item Install Eclipse by extracting the archive in the desired location
+\item Start Eclipse
+\subitem Go into the folder where it was installed and click/run \path{eclipse}
+\item Put the \path{av.proj.ide.plugin_*.jar} file in the \path{eclipse/dropins} folder
+\item Install Sapphire via the Eclipse Marketplace
+\subitem In Eclipse, navigate to ``Help $\rightarrow$ Eclipse Marketplace''. Search for ``Sapphire''. There should be one search result for Sapphire.
+Click the ``Install'' button.  Sapphire and its dependencies will be installed.
+\item Restart Eclipse when prompted.
+\item Eclipse now has the ANGRYVIPER IDE functionality.
 \end{enumerate}
 
-\begin{center}
-\framebox{\parbox{0.8\linewidth}{\centering This section only applies to the ANGRYVIPER Team's branch(es) of OpenCPI.\\Consult the standard \textit{Installation Guide} for more information as well as commands to be used elsewhere.}}
-\end{center}
+\subsection{Eclipse (Oxygen Release)}
+The process to construct the IDE is the same as described above using the Oxygen release for C/C++ Developers. \\
 
-\subsection{Prerequisites}
-\label{subsec:build_prereq}
-Before building from source, ensure that the OpenCPI prerequisites are installed (cf. section~\ref{sec:installing_prereq}). If you need to rebuild the RPMs for the prerequisites, see appendix~\ref{App:building_rpms:prereq}\\
-
-To build from source, there are additional packages beyond the prerequisites that need to be installed. The primary ones are: \textbf{gcc}, \textbf{gcc-c++}, \textbf{automake}, \textbf{autoconf}, and \textbf{libtool}.  The most efficient method to install these is through the \textbf{yum group} \textbf{``Development Tools''}\footnote{\code{yum grouplist --verbose} shows the \code{development} alias.}.\\
-
-\verb+% sudo yum groupinstall development+
-
-\subsection{Git Access}
-Open a terminal window, change directories to the location the framework should be checkout in:\\
-
-\verb+% git clone https://github.com/opencpi/opencpi+\\
-
-This will create an \code{opencpi} subdirectory and populate it with the current master branch of the OpenCPI code base. Change into this directory before issuing further commands:\\
-
-\verb+$ cd opencpi+\\
-
-By default, the \code{git clone} operation downloads the \code{master} branch of the git repository. The master branch points to the latest stable release of the framework. This stable release will correlate to a git tag version.\\
-
-The OpenCPI releases are identified by version numbers, as explained in section~\ref{sec:understand_rpm_naming} OpenCPI RPM naming convention with major.minor.subminor releases. The release compatibility policy is to maintain component binary compatibility within the sub-minor releases, and API source compatibility (requiring rebuilding) for minor releases.
-% The latest version of the framework can always be found in the \textbf{develop} branch. Release candidates are identified with \textbf{rc} and are found in the tag branches.\\
-
-To set the release of the codebase downloaded, use the \code{git checkout} command with the release tag as an argument:\\
-
-\verb+$ git checkout release_1.3_rc+\\
-
-\subsection{Building OpenCPI From Source}
-Set the \path{OCPI_CDK_DIR} variable, from the top level of the repository:\\
-
-\verb+$ export OCPI_CDK_DIR=$(pwd)/exports+\\
-
-The provided \path{ocpi-configure} script wraps the ``usual'' GNU autotools commands like \path{reconf} and \path{configure}. From the top level of the repository, run the following:\\
-
-\verb+$ ./ocpi-configure+
-
-\verb+$ make -j+\\
-
-To cross-build for a target RCC platform, instead of calling \path{ocpi-configure}, you call \path{cross-configure}. To use this script, you must configure the variable \path{OCPI_TARGET_PLATFORM}. See the standard documentation for more details. An example:\\
-
-\verb+$ export OCPI_TARGET_PLATFORM=xilinx13_3+
-
-\verb+$ ./cross-configure+
-
-\verb+$ make -j+\\
-
-\textbf{Note}: To use the recently-installed CDK, you will need to add \verb+$(pwd)/exports/bin/linux-c7-x86_64/+ (or appropriate host platform) to your \verb+PATH+ variable.
+\textit{Note}: At this time, the ANGRYVIPER Team has not been able to 100\% verify using the plugin in Oxygen release. Eclipse Oxygen changed an API that caused problems for Sapphire, and Sapphire 9.1.1 has been released to correct the issue. The unknown part of the process is whether or not the Eclipse Marketplace will have the new version of Sapphire. If it does not, it can be installed manually as follows:
+\begin{enumerate}
+\item In Eclipse, navigate to ``Help $\rightarrow$ Install New Software''.
+\item Add the Sapphire 9.1.1 repository
+\subitem Click the ``add'' button (to add a new repository site), fill in the popup form:
+\subitem \code{name: Sapphire9.1.1}
+\subitem \code{location: http://download.eclipse.org/sapphire/9.1.1/repository/}
+\item Click ``OK'' to add it
+\item Select the down arrow at the end of the ``work with:'' input. Select the new Sapphire repository.
+\item Select Sapphire. If Samples and Tests appear in the list; deselect them.
+\item Install
+\end{enumerate}
 
 \end{appendices}
 \end{document}

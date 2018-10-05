@@ -25,7 +25,7 @@
 
 MYHOSTNAME_MNAME:=$(shell uname -m)
 libmyhostname:=libmyhostname_$(MYHOSTNAME_MNAME).so
-MYHOSTNAME_PWD:=$(shell pwd)
+MYHOSTNAME_PWD?=$(shell pwd)
 # This mess is to NOT expand ${LIB} or $LIB if found in current LD_PRELOAD
 ifneq (,$(LD_PRELOAD))
   ifneq (,$(L))
@@ -47,7 +47,7 @@ SPOOF_HOSTNAME:=LD_PRELOAD="$(MYHOSTNAME_PWD)/myhostname/\$$LIB/$(libmyhostname)
 .SILENT: myhostnameclean
 .IGNORE: myhostnameclean
 myhostnameclean:
-	rm -rf myhostname
+	rm -rf $(MYHOSTNAME_PWD)/myhostname
 
 # Linux doesn't support explicit 32- vs. 64-bit LD paths like Solaris, but ld.so
 # does accept a literal "$LIB" in the path to expand to lib vs lib64. So we need
@@ -55,9 +55,9 @@ myhostnameclean:
 .PHONY: libmyhostname
 .SILENT: libmyhostname
 libmyhostname: /usr/include/gnu/stubs-32.h /usr/include/gnu/stubs-64.h /lib/libgcc_s.so.1
-	mkdir -p myhostname/lib{,64}
-	$(MAKE) -I $(MYHOSTNAME_PWD) -s --no-print-directory -C myhostname/lib   -f $(MYHOSTNAME_PWD)/Makefile $(libmyhostname) MYHOSTARCH=32
-	$(MAKE) -I $(MYHOSTNAME_PWD) -s --no-print-directory -C myhostname/lib64 -f $(MYHOSTNAME_PWD)/Makefile $(libmyhostname) MYHOSTARCH=64
+	mkdir -p $(MYHOSTNAME_PWD)/myhostname/lib{,64}
+	$(MAKE) -I $(MYHOSTNAME_PWD) -s --no-print-directory -C $(MYHOSTNAME_PWD)/myhostname/lib   -f $(MYHOSTNAME_PWD)/Makefile $(libmyhostname) MYHOSTARCH=32
+	$(MAKE) -I $(MYHOSTNAME_PWD) -s --no-print-directory -C $(MYHOSTNAME_PWD)/myhostname/lib64 -f $(MYHOSTNAME_PWD)/Makefile $(libmyhostname) MYHOSTARCH=64
 
 .SILENT: /usr/include/gnu/stubs-32.h /usr/include/gnu/stubs-64.h /lib/libgcc_s.so.1
 /usr/include/gnu/stubs-32.h:

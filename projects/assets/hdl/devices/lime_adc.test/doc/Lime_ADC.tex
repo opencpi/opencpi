@@ -52,7 +52,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \newcommand{\todo}[1]{\textcolor{red}{TODO: #1}\PackageWarning{TODO:}{#1}} % To do notes
 \newcommand{\code}[1]{\texttt{#1}} % For inline code snippet or command line
 %----------------------------------------------------------------------------------------
-% Various pacakges
+% Various packages
 %----------------------------------------------------------------------------------------
 \usepackage{hyperref} % for linking urls and lists
 \usepackage{graphicx} % for including pictures by file
@@ -63,6 +63,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 %----------------------------------------------------------------------------------------
 % Table packages
 %----------------------------------------------------------------------------------------
+\usepackage{longtable} % for long possibly multi-page tables
 \usepackage{tabularx} % c=center,l=left,r=right,X=fill
 \usepackage{float}
 \floatstyle{plaintop}
@@ -89,7 +90,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Component Data Sheet}
-\def\docVersion{1.3}
+\def\docVersion{1.4}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
@@ -102,7 +103,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 \begin{document}
 
-\section*{Summary - \Comp (PRELIMINARY RELEASE)}
+\section*{Summary - \Comp}
 \begin{tabular}{|c|M{13.5cm}|}
 	\hline
 	\rowcolor{blue}
@@ -120,7 +121,13 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Workers           & \comp.hdl        \\
 	\hline
-	Tested Platforms  &  \\
+	Tested Platforms  &
+\begin{itemize}
+  \item Epiq Solutions Matchstiq-Z1
+  \item Digilent Zedboard/Zipper
+  \item x86/Xilinx ML605/Zipper (FMC-LPC/FMC-HPC)
+  \item x86/Altera ALST4/Zipper (HSMC A/B)
+\end{itemize} \\
 	\hline
 \end{tabular}
 
@@ -172,14 +179,14 @@ The main purpose of this worker is to perform a CDC for a data bus. The decision
 	\begin{tikzpicture}[% List of styles applied to all, to override specify on a case-by-case
 			every node/.style={
 				align=center,  		% use this so that the "\\" for line break works
-				minimum size=2cm	% creates space above and below text in rectangle
+				minimum size=1.5cm	% creates space above and below text in rectangle
 			},
 			every edge/.style={draw,thick}
 		]
 		\node[rectangle,ultra thick,draw=black,fill=blue](R2){\Comp};
-		\node[rectangle,draw=white,fill=white](R3)[below= of R2]{Signals to/from Lime \\ See signal table};
-		\node[rectangle,draw=white,fill=white](R4)[right= of R2]{``out'' \\ Signed complex samples};
-		\node[rectangle,draw=white,fill=white](R5)[above= of R2]{\verb+overrun+\\ \verb+messageSize+};
+		\node[rectangle,draw=white,fill=white](R3)[below= of R2]{Signals from Lime \\ See signal table};
+		\node[rectangle,draw=white,fill=white](R4)[right= of R2]{``out'' port \\ Complex signed samples (Q0.15 I, Q0.15 Q)};
+		\node[rectangle,draw=white,fill=white](R5)[above= of R2]{Non-parameter Properties:\\\verb+overrun+\\ \verb+messageSize+\\};
 		\path[->]
 		(R3)edge []	node [] {} (R2)
 		(R2)edge []	node [] {} (R4)
@@ -192,12 +199,12 @@ The main purpose of this worker is to perform a CDC for a data bus. The decision
 \section*{Source Dependencies}
 \subsection*{\comp.hdl}
 \begin{itemize}
-	\item ocpi.assets/hdl/devices/lime\_adc.hdl/lime\_adc.vhd
-	\item ocpi.core/hdl/primitives/util/sync\_status.vhd
+	\item assets/hdl/devices/lime\_adc.hdl/lime\_adc.vhd
+	\item core/hdl/primitives/util/sync\_status.vhd
 	      \begin{itemize}
 	      	\item Generates the overrun event when the ADC tries to load a sample and the ADC FIFO is full
 	      \end{itemize}
-	\item ocpi.core/hdl/primitives/util/adc\_fifo.vhd
+	\item core/hdl/primitives/util/adc\_fifo.vhd
 	      \begin{itemize}
 	      	\item Performs the clock domain crossing from the sample clock to the control clock domain
 	      \end{itemize}
@@ -206,14 +213,14 @@ The main purpose of this worker is to perform a CDC for a data bus. The decision
 
 	\section*{Component Spec Properties}
 	\begin{scriptsize}
-		\begin{tabular}{|p{3cm}|p{1.5cm}|c|c|c|c|c|p{7cm}|}
+		\begin{tabular}{|p{3.75cm}|p{1.25cm}|p{2cm}|p{2.75cm}|p{1.5cm}|p{1.5cm}|p{1cm}|p{5.25cm}|}
 			\hline
 			\rowcolor{blue}
 			Name               & Type & SequenceLength & ArrayDimensions & Accessibility      & Valid Range & Default & Usage                                                                               \\
 			\hline
-			\verb+overrun+     & Bool & -              & -               & Writable, Volatile & Standard    & -       & Flag set when ADC tries to load a sample and the ADC FIFO is full. Once high, this flag is not cleared (i.e. set low) until the property is written to again (the flag clears regardless of write value, i.e. writing true or false both result in a value of false, also note that a property write happens on reset).\\
+			\verb+messageSize+ & Long & -              & -               & Initial, Readable  & Standard    & -       & Number of bytes in output message                                                   \\
 			\hline
-			\verb+messageSize+ & -    & -              & -               & Initial, Readable  & -           & -       & Number of bytes in output message                                                   \\
+			\verb+overrun+     & Bool & -              & -               & Writable, Volatile & Standard    & -       & Flag set when ADC tries to load a sample and the ADC FIFO is full. Once high, this flag is not cleared (i.e. set low) until the property is written to again (the flag clears regardless of write value, i.e. writing true or false both result in a value of false, also note that a property write happens on reset).\\
 			\hline
 		\end{tabular}
 	\end{scriptsize}
@@ -249,25 +256,25 @@ The main purpose of this worker is to perform a CDC for a data bus. The decision
 
 	\section*{Component Ports}
 	\begin{scriptsize}
-		\begin{tabular}{|M{2cm}|M{1.5cm}|M{4cm}|c|c|M{9cm}|}
+		\begin{tabular}{|p{2cm}|p{1.5cm}|p{4cm}|p{1.5cm}|p{1.5cm}|p{9.38cm}|}
 			\hline
 			\rowcolor{blue}
 			Name & Producer & Protocol           & Optional & Advanced & Usage                  \\
 			\hline
-			out  & true     & iqstream\_protocol & true     & -        & Signed complex samples \\
+			out  & true     & iqstream\_protocol & true     & -        & Complex signed samples (Q0.15 I, Q0.15 Q). \\
 			\hline
 		\end{tabular}
 	\end{scriptsize}
-
+\pagebreak
 	\section*{Worker Interfaces}
 	\subsection*{\comp.hdl}
 	\begin{scriptsize}
-		\begin{tabular}{|M{2cm}|M{1.5cm}|c|c|M{12cm}|}
+		\begin{tabular}{|p{2cm}|p{1.5cm}|p{1.5cm}|p{1.5cm}|p{13.8cm}|}
 			\hline
 			\rowcolor{blue}
 			Type            & Name & DataWidth & Advanced & Usage                  \\
 			\hline
-			StreamInterface & out  & 32        & -        & Signed complex samples \\
+			StreamInterface & out  & 32        & -        & Complex signed samples (Q0.15 I, Q0.15 Q). This port generates data and obeys backpressure. Because both backpressure from the \verb+out+ port and forward pressure from the \verb+dev_adc+ data bus exists, it is possible for samples to be dropped in the clock domain-crossing FIFO, i.e. seen on the \verb+dev_adc+ data bus but never make it to the output port. This event is monitored via the \verb+overrun+ property.  \\
 			\hline
 		\end{tabular}
 	\end{scriptsize}
@@ -297,6 +304,10 @@ The main purpose of this worker is to perform a CDC for a data bus. The decision
 The Lime ADC device worker uses the clock from the Control Plane and Control Plane signals.\par\bigskip
 \noindent The latency through the worker from the ADC pins to the output port is 2 sample clock cycles and 1 control clock cycle. The data is registered twice in the sample clock domain (once to capture the ADC pins, and once to capture I and Q) before it is loaded into the CDC FIFO.
 
+\begin{landscape}
+\section*{Worker Configuration Parameters}
+\subsubsection*{\comp.hdl}
+\input{../../\ecomp.hdl/configurations.inc}
 \section*{Performance and Resource Utilization}
 \subsubsection*{\comp.hdl}
 The table entries for configuration ``0'' are a result of building the worker for the following (Matchstiq-Z1-related) parameter set. Note that that are two global clocks (GCLKs), one for the control plane clock, and one for the Lime ADC-sourced clock (Fmax is assumed to be worst case for all available clocks).\\
@@ -304,6 +315,7 @@ The table entries for configuration ``0'' are a result of building the worker fo
 The Virtex-6 implementation is specific to the Zipper card's pin locations, which exhibit suboptimal timing due to the Lime ADC's clock pin location on the FPGA. Table entries for configuration1 ``1'' are a result of building the worker for the (Zipper-related) parameter set.\\
 
 \input{../../\ecomp.hdl/utilization.inc}
+\end{landscape}
 \section*{Test and Verification}
 \begin{flushleft}
  To be detailed in a future release.

@@ -29,23 +29,23 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \lhead{\small {\docTitle} }
 %----------------------------------------------------------------------------------------
 \begin{document}
-\maketitle 
-\thispagestyle{fancy} 
+\maketitle
+\thispagestyle{fancy}
 \newpage
 
-	\begin{center} 
-	\textit{\textbf{Revision History}} 
-		\begin{table}[H] 
-		\label{table:revisions} % Add "[H]" to force placement of table	
-			\begin{tabularx}{\textwidth}{|c|X|l|}	
+	\begin{center}
+	\textit{\textbf{Revision History}}
+		\begin{table}[H]
+		\label{table:revisions} % Add "[H]" to force placement of table
+			\begin{tabularx}{\textwidth}{|c|X|l|}
 			\hline
 			\rowcolor{blue}
-			\textbf{Revision} & \textbf{Description of Change} & \textbf{Date} \\ 
-		    \hline 	
-			1.0.0-alpha & Initial document creation & 02/22/2017 \\ 					
-			\hline 
-			\end{tabularx} 
-		\end{table} 
+			\textbf{Revision} & \textbf{Description of Change} & \textbf{Date} \\
+		    \hline
+			1.0.0-alpha & Initial document creation & 02/22/2017 \\
+			\hline
+			\end{tabularx}
+		\end{table}
 	\end{center}
 
 \newpage
@@ -64,26 +64,26 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 \section{References}
 \label{sec:references}
-This document assumes a general understanding of FPGA development tools and workflow.  
-	\begin{center} 
-		\begin{table}[H]	
+This document assumes a general understanding of FPGA development tools and workflow.
+	\begin{center}
+		\begin{table}[H]
 		\caption {References}
 		\label{table:references}
-			\begin{tabularx}{\textwidth}{|c|c|X|}	
+			\begin{tabularx}{\textwidth}{|c|c|X|}
 			\hline
 			\rowcolor{blue}
-			\textbf{Title} & \textbf{Published By} & \textbf{Link} \\ 
-			\hline 
-			 & & \url{} \\ 
-			\hline 
-			&  & \url{} \\ 
-			\hline 
-			 &  & \url{} \\ 
-			\hline 
-			\\ 					
-			\hline 
-			\end{tabularx} 
-		\end{table} 		
+			\textbf{Title} & \textbf{Published By} & \textbf{Link} \\
+			\hline
+			 & & \url{} \\
+			\hline
+			&  & \url{} \\
+			\hline
+			 &  & \url{} \\
+			\hline
+			\\
+			\hline
+			\end{tabularx}
+		\end{table}
 	\end{center}
 
 \newpage
@@ -100,7 +100,7 @@ The following describes the methodology for achieving this on a generic platform
 The PCIe transmission protocol has three layers.  From the bottom up, they are:
 \begin{itemize}
 \item{Phisical Layer (PL)}
-\item{Data Link Layer (DLL)} 
+\item{Data Link Layer (DLL)}
 \item{Transmission Link Layer (TLL)}
 \end{itemize}
 
@@ -123,20 +123,20 @@ Find overhead created by each layer of PCIe message protocol
 \begin{lstlisting}[language=bash]
 $sudo lspci -vv
  07:00.0 USB controller: NEC Corporation uPD720200 USB 3.0 Host Controller (rev 04) (prog-if 30 [XHCI])
- Capabilities: [a0] Express (v2) Endpoint, MSI 00  
+ Capabilities: [a0] Express (v2) Endpoint, MSI 00
        .
-       .                                                   
+       .
        DevCap: MaxPayload 128 bytes, PhantFunc 0, Latency L0s unlimited, L1 unlimited
 
  08:00.0 RAM memory: Xilinx Corporation Device 4243 (rev 02)
        .
-       .  
+       .
        DevCap: MaxPayload 512 bytes, PhantFunc 0, Latency L0s <64ns, L1 unlimited
 \end{lstlisting}
 
 
 
-The above code block shows the limiting PCIe segmentation is 128 bytes. 
+The above code block shows the limiting PCIe segmentation is 128 bytes.
 
 \subsubsection{Subtract TLL protocol overhead per packet as defined by transmitting hardware}
 
@@ -172,26 +172,26 @@ To achieve minimum overhead percentage, use the largest message where entire mes
    If you already have an app up and running, you can use ocpirun -l 8 <app> to get the OCDP (hardware) buffer size:
 
 \begin{lstlisting}[language=bash]
-$ ocpihdl -d 8 -v -x get                                                                                              
-HDL Device: 'PCI:0000:08:00.0' is platform 'ml605' part 'xc6vlx240t' and UUID 'a8a14a66-7c89-11e4-984c-a7a995a51aa1'                                 
-Platform configuration workers are:                                                                                                                  
-  Instance p/ml605 of platform worker ml605 (spec ocpi.platform) with index 0                                                                        
+$ ocpihdl -d 8 -v -x get
+HDL Device: 'PCI:0000:08:00.0' is platform 'ml605' part 'xc6vlx240t' and UUID 'a8a14a66-7c89-11e4-984c-a7a995a51aa1'
+Platform configuration workers are:
+  Instance p/ml605 of platform worker ml605 (spec ocpi.platform) with index 0
   .
   .
-  .                                                                                                                                      
-Container workers are:                                                                                                                                               
-  Instance c/pcie_ocdp0 of interconnect worker ocdp (spec ocpi.devices.ocdp) with index 5                                                                            
-  0        nLocalBuffers: 0x2                                                                                                                                        
-  1       nRemoteBuffers: 0x2                                                                                                                                        
-  2      localBufferBase: 0x0                                                                                                                                        
-  3    localMetadataBase: 0x7fe0                                                                                                                                     
-  4      localBufferSize: 0x800                                                                                                                                      
-  5    localMetadataSize: 0x10                                                                                                                                       
-  6          nRemoteDone: <unreadable>                                                                                                                               
-  7           rsvdregion: <unreadable>                                                                                                                               
-  8               nReady: 0x0                                                                                                                                        
-  9             foodFace: 0xf00dface                                                                                                                                 
- 10                debug: 0x0                                                                                                                                        
+  .
+Container workers are:
+  Instance c/pcie_ocdp0 of interconnect worker ocdp (spec ocpi.devices.ocdp) with index 5
+  0        nLocalBuffers: 0x2
+  1       nRemoteBuffers: 0x2
+  2      localBufferBase: 0x0
+  3    localMetadataBase: 0x7fe0
+  4      localBufferSize: 0x800
+  5    localMetadataSize: 0x10
+  6          nRemoteDone: <unreadable>
+  7           rsvdregion: <unreadable>
+  8               nReady: 0x0
+  9             foodFace: 0xf00dface
+ 10                debug: 0x0
  11          memoryBytes: 0x8000
   .
   .
@@ -211,7 +211,7 @@ Each OCPI message has the following.  Dwords are 32-bit words.
 
 \end{itemize}
 
-Therefore, the overhead due to OCPI in this case is 
+Therefore, the overhead due to OCPI in this case is
 \[\frac{24}{24+16352} = about 1.5\%\]
 
 
@@ -227,7 +227,7 @@ Maximum Data Throughput = Max Rate * (PCIe data throughput) * (OCPI data througp
 
 To determine the actual PCIe rate, set up an application that uses two workers, one firmware and one software, which will communicate over PCIe.  In the test case below characterizes a PCIe interface on an ml605 board.  The firmware (hdl) worker runs on a Virtex 6, and the software (rcc) worker is on a Linux machine with an x86\_64 architecture.
 
-In the initial test case, the firmware worker, written in vhdl, contains a counter.  The value of the counter is then transmitted over PCIe to a file\_write software worker.  There are various switches in the firmware that can vary the rate and conditions under which the counter value progresses.  
+In the initial test case, the firmware worker, written in vhdl, contains a counter.  The value of the counter is then transmitted over PCIe to a file\_write software worker.  There are various switches in the firmware that can vary the rate and conditions under which the counter value progresses.
 
 \todo{-- attach workers, application and assembly--}
 
@@ -243,9 +243,9 @@ Here is a graph showing observed data rates writing to three different locations
 
 \subsection{NFT}
 
-NFT is an ocpi program that will connect and run hardware workers, and will run data to the PCIe interface without necessitating a software worker to receive the data.  Using nft with the workers mentioned above could yield a faster data rate than the traditional application/assembly message.  
+NFT is an ocpi program that will connect and run hardware workers, and will run data to the PCIe interface without necessitating a software worker to receive the data.  Using nft with the workers mentioned above could yield a faster data rate than the traditional application/assembly message.
 \subsubsection{Modifying the NFT code}
-You will have to modify the nft c code to fit your desired data flow as follows:  
+You will have to modify the nft c code to fit your desired data flow as follows:
 \begin{enumerate}
 
 \item Change the defined workers to match the workers in your data flow.  If you have previously run your application without nft, you can find the correct indecies to put in the parentheses by running ocpihdl get 8.  8 is the typical device assignment given to the PCIe:
@@ -289,24 +289,24 @@ Application workers are:
 \item Remove function calls associated with unused workers, and add corresponding function calls for new workers:
 
 \begin{lstlisting}[language=customc]
-//dp1Props = (OcdpProperties*)occp->config[WORKER_DP1];                                   
-                                        
-//sma1Props = (uint32_t*)occp->config[WORKER_SMA1];                                         
-//biasProps = (uint32_t*)occp->config[WORKER_BIAS];                                  
-multirateCounterProps = (uint32_t*)occp->config[WORKER_MULTIRATE_COUNTER];                                 
-                                                
-//  dp1 = &occp->worker[WORKER_DP1].control,                                                                                               
-//sma1 = &occp->worker[WORKER_SMA1].control,                                              
-//bias = &occp->worker[WORKER_MULTIRATE_COUNTER].control;                                 
+//dp1Props = (OcdpProperties*)occp->config[WORKER_DP1];
+
+//sma1Props = (uint32_t*)occp->config[WORKER_SMA1];
+//biasProps = (uint32_t*)occp->config[WORKER_BIAS];
+multirateCounterProps = (uint32_t*)occp->config[WORKER_MULTIRATE_COUNTER];
+
+//  dp1 = &occp->worker[WORKER_DP1].control,
+//sma1 = &occp->worker[WORKER_SMA1].control,
+//bias = &occp->worker[WORKER_MULTIRATE_COUNTER].control;
 multirateCounter = &occp->worker[WORKER_MULTIRATE_COUNTER].control;
-                                                                         
-//reset(sma1,  0);                                                                          
-//reset(bias,  0);                                                                          
-reset(multirateCounter,  0);                                                                        
-//reset(dp1,  0);                                                                         
-                                                                                                                     
-//init(sma1);                                                                             
-//init(bias);                                                                           
+
+//reset(sma1,  0);
+//reset(bias,  0);
+reset(multirateCounter,  0);
+//reset(dp1,  0);
+
+//init(sma1);
+//init(bias);
 //init(dp1);
 
 //*sma0Props = 1; // WMI input to WSI output
@@ -413,23 +413,23 @@ Measure:      16384  1279424260      14935 2019637094  740197898
 Bytes 161920, Time delta = 3565, 45.419355 MBytes/seconds, Message size 16384
 
 $ sudo -E `which nft` -m10 -c -t -s 0000:08:00.0 > foo
-BufSize=16384, CpuBufs 200 FpgaBufs 2 Ramp 0                                      
-delta ticks min 0 max 0 avg 0                                                     
-now delta is: 0ns                                                                 
-res: 1                                                                            
-Running single threaded                                                           
-Nanoseconds:   Size        Pull       Push      Total    Processing               
-Measure:      16384  1140274596      14850  509339577 3664017427                  
-Measure:      16384  1140274596      14850  509499132 3664176982                  
-Measure:      16384  1140274596      14825  509658662 3664336537                  
-Measure:      16384  1140274596      14825  509818187 3664496062                  
-Measure:      16384  1140274596      14825  509977741 3664655617                  
-Measure:      16384  1140274596      14825  510137296 3664815172                  
-Measure:      16384  1140274596      14800  510296821 3664974721                  
-Measure:      16384  1140274596      14850  510456401 3665134251                  
-Measure:      16384  1140274596      14805  510615931 3665293827                  
-Measure:      16384  1140274596 4294902386  510775531 3665533141                  
-Bytes 161920, Time delta = 1749, 92.578616 MBytes/seconds, Message size 16384 
+BufSize=16384, CpuBufs 200 FpgaBufs 2 Ramp 0
+delta ticks min 0 max 0 avg 0
+now delta is: 0ns
+res: 1
+Running single threaded
+Nanoseconds:   Size        Pull       Push      Total    Processing
+Measure:      16384  1140274596      14850  509339577 3664017427
+Measure:      16384  1140274596      14850  509499132 3664176982
+Measure:      16384  1140274596      14825  509658662 3664336537
+Measure:      16384  1140274596      14825  509818187 3664496062
+Measure:      16384  1140274596      14825  509977741 3664655617
+Measure:      16384  1140274596      14825  510137296 3664815172
+Measure:      16384  1140274596      14800  510296821 3664974721
+Measure:      16384  1140274596      14850  510456401 3665134251
+Measure:      16384  1140274596      14805  510615931 3665293827
+Measure:      16384  1140274596 4294902386  510775531 3665533141
+Bytes 161920, Time delta = 1749, 92.578616 MBytes/seconds, Message size 16384
 \end{lstlisting}
 
 \textbf{These two runs show data speeds of 45.4 and 92.6MB/s.  The slower run is on par with the data rate observed using the full OpenCPI with the counter-to-file\_write application.  The faster run offers almost a two-fold improvement.}

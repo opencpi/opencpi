@@ -1,0 +1,90 @@
+\iffalse
+This file is protected by Copyright. Please refer to the COPYRIGHT file
+distributed with this source distribution.
+
+This file is part of OpenCPI <http://www.opencpi.org>
+
+OpenCPI is free software: you can redistribute it and/or modify it under the
+terms of the GNU Lesser General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License along
+with this program. If not, see <http://www.gnu.org/licenses/>.
+\fi
+
+%----------------------------------------------------------------------------------------
+% Update the docTitle and docVersion per document
+%----------------------------------------------------------------------------------------
+\def\docTitle{OpenCPI\\ fmcomms\_2\_3\_rx.rcc Test App Guide}
+\def\docVersion{1.4}
+%----------------------------------------------------------------------------------------
+\input{../../../../../doc/av/tex/snippets/LaTeX_Header.tex}
+\date{Version \docVersion} % Force date to be blank and override date with version
+\title{\docTitle}
+\lhead{fmcomms\_2\_3\_rx.rcc Test App Guide}
+%----------------------------------------------------------------------------------------
+%\usepackage[T1]{fontenc} % http://tex.stackexchange.com/a/181119
+\usepackage{graphicx}
+\graphicspath{ {figures/} }
+\usepackage{textcomp}
+\usepackage{listings}
+
+\begin{document}
+\maketitle
+%\thispagestyle{fancy}
+
+\section{Description}
+This application is intended to perform a hardware-in-the-loop test of the fmcomms\_2\_3\_rx.rcc worker. It tests to ensure that the default values and the expected possible min/max values are applied successfully for the various RF frontend parameters. It also tests that fmcomms\_2\_3\_rx.rcc property writes do not override the fmcomms\_2\_3\_tx.rcc worker property writes when both exist in the OAS. Note that RX data fidelity is not verified within this test.
+
+\section{Hardware Portability}
+This application is intended to test fmcomms\_2\_3\_rx.rcc, which is by design specific to the FMCOMMS2/3 cards. There is nothing about the application that precludes use of any particular HDL platform, assuming that platform includes an FMC slot on which an FMCOMMS2/3 card may be used.
+
+\section{Execution}
+\subsection{Prerequisites}
+The following must be true before application execution:
+\begin{itemize}
+  \item An OpenCPI platform is available w/ an FMCOMMS2 or FMCOMMS3 card plugged into its FMC slot.
+  \item The following assets are built for the HDL/RCC platform which correspond to the intended HDL/RCC runtime containers, and their build artifacts (FPGA bitstream file/shared object files) are contained within the directory list of the OCPI\_LIBRARY\_PATH environment variable.
+  \begin{itemize}
+    \item \verb+empty+ assembly with one of the *\verb+fmcomms_2_3+* containers for the desired HDL platform
+    \item \verb+fmcomms_2_3_rx.rcc+ for all \verb+TYPE_p+ configurations (both fmcomms2 and fmcomms3)
+    \item \verb+fmcomms_2_3_tx.rcc+ for all \verb+TYPE_p+ configurations (both fmcomms2 and fmcomms3)
+    \item \verb+ad9361_config_proxy.rcc+
+  \end{itemize}
+  \item The application itself (\verb+fmcomms_2_3_rx_test+) must be built.
+  \item The current directory is the applications/fmcomms\_2\_3\_rx\_test directory.
+\end{itemize}
+\subsection{Command(s)}
+The full test is run with the following command:
+\lstset{language=bash, backgroundcolor=\color{lightgray}, columns=flexible, breaklines=true, prebreak=\textbackslash, basicstyle=\ttfamily, showstringspaces=false,upquote=true, aboveskip=\baselineskip, belowskip=\baselineskip}
+\begin{lstlisting}
+./<target-dir>/fmcomms_2_3_rx_test
+\end{lstlisting}
+A software-only test can be run which performs testing on the fmcomms\_2\_3\_rx.rcc software calculation routines (no hardware actuation).
+\begin{lstlisting}
+./<target-dir>/fmcomms_2_3_rx_test swonly
+\end{lstlisting}
+\section{Verification}
+An application exit status of 0 indicates success, and non-zero indicates failure. Either PASSED or FAILED will also be printed to the screen.
+
+\section{Troubleshooting}
+The application will occasionally fail with the following printed to screen:
+\begin{lstlisting}
+      variable: actual_ad9361_config_proxy_val, expected value: 2083340,  actual value: 2083340 EXPECTED
+Calibration TIMEOUT (0x16, 0x10)
+Exception thrown: Worker ad9361_config_proxy produced error during execution: ad9361_set_tx_sampling_freq() returned: -110
+FAILED
+\end{lstlisting}
+The fmcomms\_2\_3\_rx.rcc endpoint proxy controls the ad9361\_config\_proxy.rcc device proxy which wraps the ADI No-OS library for SPI command/control of the AD9361. A known defect of the AD9361 hardware/No-OS library is that the AD9361 hardware will occasionally fail to calibrate when No-OS sets low sample rate values (such as 2083340 sps in example above), resulting in a calibration timeout. When this occurs, No-OS prints to the screen:
+\begin{lstlisting}
+Calibration TIMEOUT (0x16, 0x10)
+\end{lstlisting}
+Neither of the ad9361\_config\_proxy.rcc/fmcomms\_2\_3\_rx.rcc workers yet implement a mechanism for overcomming this AD9361/No-OS shortcoming.
+
+
+\end{document}

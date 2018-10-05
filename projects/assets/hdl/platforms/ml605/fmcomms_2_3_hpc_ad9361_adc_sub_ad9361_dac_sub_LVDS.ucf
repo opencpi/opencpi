@@ -1080,8 +1080,9 @@ NET "FMC_HPC_LA14_P"                LOC = "AN19" | IOSTANDARD=LVDS_25 | DIFF_TER
 NET "FMC_HPC_LA15_N"                LOC = "AL23" | IOSTANDARD=LVDS_25 | DIFF_TERM=TRUE; # AD9361 TX_D5_N  ## H20 on J64
 NET "FMC_HPC_LA15_P"                LOC = "AM23" | IOSTANDARD=LVDS_25 | DIFF_TERM=TRUE; # AD9361 TX_D5_P  ## H19 on J64
 
-NET "FMC_HPC_LA16_N"                LOC = "AN23";   ## G19 on J64
-NET "FMC_HPC_LA16_P"                LOC = "AP22";   ## G18 on J64
+NET "FMC_HPC_LA16_N"                LOC = "AN23"; # AD9361 TXNRX   ## G19 on J64
+NET "FMC_HPC_LA16_P"                LOC = "AP22"; # AD9361 ENABLE   ## G18 on J64
+
 NET "FMC_HPC_LA17_CC_N"             LOC = "AM27";   ## D21 on J64
 NET "FMC_HPC_LA17_CC_P"             LOC = "AN27";   ## D20 on J64
 NET "FMC_HPC_LA18_CC_N"             LOC = "AJ25";   ## C23 on J64

@@ -20,7 +20,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Debugging Tools Guide}
-\def\docVersion{1.3}
+\def\docVersion{1.4}
 %----------------------------------------------------------------------------------------
 \input{snippets/LaTeX_Header.tex}
 \date{Version \docVersion} % Force date to be blank and override date with version
@@ -48,6 +48,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
             v1.2 & Updated for OpenCPI Release 1.2 & 8/2017 \\
 		    \hline
 		    v1.3 & Updated for OpenCPI Release 1.3 & 2/2018 \\
+		    \hline
+		    v1.4 & Updated for OpenCPI Release 1.4 & 9/2018 \\
 		    \hline
 			\end{tabularx}
 		\end{table}
@@ -149,45 +151,52 @@ To run this tool with an OpenCPI application simply type ddd in a console window
 \newpage
 
 \subsection{Xilinx Vivado}
-	\subsubsection{Case 1: Instance a Debug ILA in an HDL Worker using cores from Vivado's IP Catalog}
-	This case assumes that the developer has created a debug core with Vivado and written it to an EDIF or DCP file. This can be done in the GUI by navigating to:\newline \code{Window$\rightarrow$IP Catalog$\rightarrow$Debug and Verification$\rightarrow$Debug$\rightarrow\langle$Core-of-Choice$\rangle$} \newline
-
-Once the synthesis completes, you will need to open the resulting checkpoint (found in the project sources), and use \code{write\_edif} or \code{write\_checkpoint} write these out in a format that can be used later:
+\subsubsection{Case 1: Instance a Debug ILA in an HDL Worker using cores from Vivado's IP Catalog}
+This case requires that the developer create a debug core with Vivado and write it to an EDIF or DCP file. This can be done in the Vivado GUI:
 \begin{itemize}
-		\item Enter the Tcl Console, and overwrite the netlist created by the `make' system in the ``target-zynq'' directory:
-			\subitem \code{> write\_edif vivado\_ila.edf}
-			\subitem \textit{or}
-			\subitem \code{> write\_checkpoint vivado\_ila.dcp}
-
-		\item In the Tcl Console, generate the *.ltx file containing the debug probe information:
-			\subitem \code{> write\_debug\_probes vivado\_ila.ltx}
+	\item Navigate to:\newline \code{Window$\rightarrow$IP Catalog$\rightarrow$Debug and Verification$\rightarrow$Debug$\rightarrow\langle$Core-of-Choice$\rangle$}
+	\item Customize the IP
+	\item Generate IP output products in Global mode
+	\item Run Synthesis and Open Synthesized Design
+	\item Once synthesis completes, enter the Tcl Console, and write the checkpoint file to be included by the worker:
+		\subitem \code{> write\_checkpoint vivado\_ila.dcp}
+		\subitem \textit{Note:} you can alternatively use an EDIF netlist (\code{write\_edif}) and stub file
+		\subitem * See the \textit{Vivado\_Usage} document for more information on using Vivado IP with OpenCPI
 \end{itemize}
-Note that some probe names may be unhelpful unless the \code{flatten\_hierarchy} option is set to ``none'' during synthesis of the asset being debugged (in this case the worker). This can be done either in the Vivado GUI or via an OpenCPI Makefile option as explained in \textit{OpenCPI\_Vivado\_Usage.pdf}.\newline
 
-Note: ISE debug cores (NGCs) can be used in conjunction with Chipscope for debugging \textit{even if Vivado is the tool that OpenCPI is using} to synthesize and implement designs. Reference \ref{ise1} for information on including NGC debug cores.
+\textit{Note:} ISE debug cores (NGCs) can be used in conjunction with Chipscope for debugging \textit{even if Vivado is the tool that OpenCPI is using} to synthesize and implement designs. Reference \ref{ise1} for information on including NGC debug cores.\newline
+
+Integrate the debug core into the worker, generate the required files and proceed with compilation as follows:
 		\begin{enumerate}
 			\item Integrate the \textit{Debug and Verification} cores into the worker's VHDL:
-				\subitem - Declare and instantiate the component for each core (ILA, VIO, etc)
+				\subitem - Declare and instantiate the component for the core (ILA, VIO, etc)
 				\subitem - As needed, add signal declarations and assignments (TRIG(Y downto 0), DATA(Z downto 0), etc)
-			\item Edit the worker's \textit{Makefile} to include the path and file name of the
-			instantiated cores' (ILA, VIO, etc) *.vhd files. Note that this step is \textit{not} necessary if using a DCP file instead of an EDIF netlist because a DCP file includes the EDIF netlist \textit{and} the VHDL stub file. Use the framework's Makefile
-			variable "SourceFiles=" to include the path and	name of the VHDL file of each core.
+			\item (\textit{Only required if using an EDIF instead of DCP}):
+			In the worker's \code{Makefile}, set ``\code{SourceFiles=}'' to include the stub file for the core.
+			\footnote{Note that this step is \textit{not} necessary if using a DCP file instead of an EDIF netlist because a DCP file includes the EDIF netlist \textit{and} the VHDL stub file.}.
 			Absolute or relative paths are acceptable. An example is provided:
 			\small\begin{verbatim}
 				SourceFiles=../vivado_ila/vivado_ila.vhd
 			\end{verbatim}
-		 	\item Edit the HDL Assembly's \textit{Makefile} to include the path and file name of
-		 	the	instantiated cores' (ILA, VIO, etc) *.edf or *.dcp files. Use the framework's
-		 	Makefile variable "Cores=" to include the path and name of the EDIF or DCP file of each
-		 	core. Absolute or relative paths are acceptable. An example is provided:
+		 	\item In the worker's \code{Makefile}, set ``Cores='' to include the EDIF or DCP file for the core.
+			Absolute or relative paths are acceptable. An example is provided:
 		 	\small\begin{verbatim}
-		 		Cores=../vivado_ila/vivado_ila.edf
+		 		Cores=../vivado_ila/vivado_ila.dcp
 		 	\end{verbatim}
-		 	\item Build HDL worker for target.
-			\item Build HDL assembly for platform.
+		 	\item Build HDL worker for target
+				\subitem \textbf{Critical:} some probe names may not be helpful unless the \code{flatten\_hierarchy} option is set to ``\code{none}'' during synthesis of the asset being debugged (in this case the worker). This can be done either in the Vivado GUI or in the OpenCPI worker's \code{Makefile} (\code{export VivadoExtraOptions\_synth=-flatten\_hierarchy none}) as explained in \textit{Vivado\_Usage.pdf}.
+			\item Generate the debug probes file for use in the Logic Analyzer
+				\subitem - Open the generated \code{XPR} file located in the worker's \code{target-*} directory
+				\subitem - Rerun synthesis now that we are in ``project mode''
+					\subsubitem \textbf{Critical:} In the project's synthesis settings, make sure \code{flatten\_hierarchy} is set to ``\code{none}''
+				\subitem - Open the synthesized design
+				\subitem - In the Tcl Console, generate the *.ltx file containing the debug probe information:
+			 		\subsubitem \code{> write\_debug\_probes vivado\_ila.ltx}
+					\subsubitem * Save this file in a \textit{persistent} location for later use
+			\item Build HDL assembly for platform
 		\end{enumerate}
 
-		The generated bitstream contains the \textit{Debug and Verification} cores which will be recognized by the Xilinx Vivado Logic Analyzer tool. Once the bitstream has been loaded onto the target FPGA, the Analyzer tool can connect and detect the presence of the \textit{Debug and Verification} core(s).
+		The generated bitstream contains the \textit{Debug and Verification} cores which will be recognized by the Xilinx Vivado Logic Analyzer tool. Once the bitstream has been loaded onto the target FPGA, the Analyzer tool can connect and detect the presence of the \textit{Debug and Verification} core(s). At that point, the LTX debug probes file can be loaded.
 
 	\subsubsection{Case 2: Insert Vivado Debug ILA into an HDL Worker}
 	After building your core, worker, platform, config, assembly, or container, you can add a debug core using the Vivado GUI. The result will be a new netlist containing the debug core. This will replace the netlist generated by OpenCPI. Note that rebuilding or cleaning the worker (or other AV asset) at any time (with ``make'') will remove any debug functionality added to the Vivado project. The Vivado project files are an artifact of the ``make'' process, and will be overwritten each time ``make'' is run for that asset.\newline
@@ -221,8 +230,9 @@ Note: ISE debug cores (NGCs) can be used in conjunction with Chipscope for debug
 					\caption{Xilinx Vivado 2017.1 Debug Cores Schematic}
 			\end{figure}
 		\item Enter the Tcl Console, and overwrite the netlist created by the `make' system in the ``target-zynq'' directory:
-			\subitem \code{> write\_edif -force complex\_mixer.edf}
+			\subitem \code{> write\_edif -security\_mode all -force complex\_mixer.edf}
 			\subitem \textit{Note:} ``-force'' tells the write\_edif command to overwrite the file if it already exists.
+			\subitem \textit{Note:} ``-security\_mode all'' ensures that partially encrypted designs will still result in a single EDIF file.
 		\item In the Tcl Console, generate the *.ltx file containing the debug probe information:
 			\subitem \code{> write\_debug\_probes complex\_mixer.ltx}
 		\item Build an HDL assembly containing this worker
@@ -241,16 +251,16 @@ The generated bitstream contains the debug and ILA cores which will be recognize
 			\item Integrate the \textit{Debug and Verification} cores into the worker's VHDL:
 				\subitem - Declare and instantiate the component for each core (ICON, ILA, VIO, etc)
 				\subitem - As needed, add signal declarations and assignments (CONTROL(35 downto 0), TRIG(Y downto 0), DATA(Z downto 0), etc)
-			\item Edit the worker's \textit{Makefile} to include the path and file name of the
+			\item Edit the worker's \code{Makefile} to include the path and file name of the
 			instantiated cores (ICON, ILA, VIO, etc) *.vhd files. Use the framework's Makefile
-			variable "SourceFiles=" to include the path and	name of the VHDL file of each core.
+			variable ``SourceFiles='' to include the path and name of the VHDL file of each core.
 			Absolute or relative paths are acceptable. An example is provided:
 			\small\begin{verbatim}
 				SourceFiles=../../chipscope/icon1.vhd ../../chipscope/ila_trig32_data128_16384.vhd
 			\end{verbatim}
-		 	\item Edit the HDL Assembly's \textit{Makefile} to include the path and file name of
+		 	\item Edit the HDL Assembly's \code{Makefile} to include the path and file name of
 		 	the	instantiated cores (ICON, ILA, etc) *.ngc files. Use the framework's
-		 	Makefile variable "Cores=" to include the path and name of the NGC file of each
+		 	Makefile variable ``Cores='' to include the path and name of the NGC file of each
 		 	core. Absolute or relative paths are acceptable. An example is provided:
 		 	\small\begin{verbatim}
 		 		Cores=../../../../components/dsp_comps/cic_dec.hdl/chipscope/icon1.ngc
@@ -343,7 +353,7 @@ The generated bitstream contains the debug and ILA cores which will be recognize
 			\item Integrate the \textit{Debug and Verification} cores into the worker's VHDL:
 				\subitem - Declaration and instantiate the component for the core
 				\subitem - As needed, add signal declarations and assignments (acq\_clk, acq\_data\_in(Y downto 0), acq\_trigger\_in(Z downto 0), etc)
-			\item Edit the Worker's \textit{Makefile} to include the path and file name of the instantiated core *.v files Use the framework's Makefile variable "SourceFiles=" to include the path and	name of the Verilog file of the core. Absolute or relative paths are acceptable. An example is provided:
+			\item Edit the Worker's \code{Makefile} to include the path and file name of the instantiated core *.v files Use the framework's Makefile variable ``SourceFiles='' to include the path and	name of the Verilog file of the core. Absolute or relative paths are acceptable. An example is provided:
 			\small\begin{verbatim}
 				SourceFiles=./signaltap/sld_trig64_data64_4096.v
 			\end{verbatim}

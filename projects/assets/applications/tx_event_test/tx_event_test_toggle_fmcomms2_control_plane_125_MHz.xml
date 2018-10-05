@@ -1,0 +1,75 @@
+<Application>
+
+  <!-- must be Instanced here in app XML as a workaround for AV-3799 -->
+  <Instance Component="ocpi.assets.devices.ad9361_spi"/>
+
+  <!-- this app xml is intended to use only the LVDS mode of the AD9361
+       (because that's what FMCOMMS3 requires), so it
+       must enforce LVDS artifact matching by setting here all of the
+       parameter Property Values which are LVDS mode-specific -->
+  <Instance Component="ocpi.assets.devices.ad9361_data_sub" Selection="LVDS_p"/>
+
+  <Instance Component="ocpi.assets.devices.ad9361_config"/>
+  <Instance Component="ocpi.assets.devices.ad9361_config_proxy" slave="ad9361_config">
+
+    <!-- when ad9361_config_proxy is the highest-level proxy in an app xml,
+         this Property must be specified here in the app xml OR set using the ACI
+         to reflect a valid RF Port input for the hardware being used, if a higher
+         level proxy is included, typically that proxy should set this Value -->
+    <!--Property Name="rx_rf_Port_input" Value=""/--> <!-- relying on ACI -->
+
+  </Instance>
+
+  <Instance Component="ocpi.core.tx">
+    <Property Name="TYPE_p" Value="fmcomms2"/>
+
+    <!-- because the AD9361 max sample rate gives lowest duty cycle variation in
+         ns, and the timing analysis currently erroneously assumes 50% duty
+         cycle, the max LVDS sampling rate of 61.44 Msps is preferred for this
+         application -->
+    <Property Name="sample_rate_MHz" Value="61.44"/>
+
+    <!-- users can change values as necessary -->
+    <Property Name="frequency_MHz" Value="2400"/> <!-- tone will be transmitted at this freq -->
+    <Property Name="bb_cutoff_frequency_MHz" Value="10"/>
+    <Property Name="rf_cutoff_frequency_MHz" Value="-1"/>
+    <Property Name="rf_gain_dB" Value="0"/>
+
+  </Instance>
+
+  <!-- data_src is used to send continuous I=constant, Q=0 samples to create
+       DC tone, set DATA_BIT_WIDTH_p to DAC bitwidth -->
+  <Instance Component="ocpi.assets.misc_comps.data_src" Selection="DATA_BIT_WIDTH_p == 12">
+
+    <Property Name="mode" Value="fixed"/>
+
+    <!-- users can change value as necessary to vary TX amplitude -->
+    <Property Name="fixed_value" Value="0,0,0,0,0,0,0,1,1,1,1,1"/>
+
+    <Property Name="mask_Q" Value="0"/> <!-- set Q to 0 -->
+
+  </Instance>
+
+  <Connection>
+    <Port Instance="data_src" Name="out"/>
+    <Port Instance="qdac" Name="in"/>
+  </Connection>
+
+  <Instance Component="ocpi.assets.util_comps.test_tx_event">
+    <!-- number of clocks/sec for control plane of 125 MHz -->
+    <!-- (causing tx_event to toggle once per second) -->
+    <Property Name="max_count_value" Value="125e6"/>
+  </Instance>
+  <Connection>
+    <Port Instance="test_tx_event" Name="event_out"/>
+    <Port Instance="qdac" Name="event_in"/>
+  </Connection>
+
+  <Instance Component="ocpi.assets.devices.qdac"/>
+
+  <!-- this app xml is intended to use only the LVDS mode of the AD9361
+       (because that's what FMCOMMS3 requires), so it
+       must enforce LVDS artifact matching by setting here all of the
+       parameter Property Values which are LVDS mode-specific -->
+  <Instance Component="ocpi.assets.devices.ad9361_dac_sub" Selection="LVDS_p"/>
+</Application>

@@ -3,6 +3,10 @@ There is a distinciton between names visible to non-programmer "users", and code
 
 At least briefly, they are captured here.
 
+Camel-case names should try to leave acronyms as upper case, like getCDK(),
+especially when the acronym is the last word.  When the acronym is an inner word,
+it may be either capitalized or upper case.
+
 Source Code file names
 -- C++ 
    The intention is to move to "*.cc" and "*.hh", but for now it is "*.cxx" and "*.h".

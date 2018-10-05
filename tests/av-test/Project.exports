@@ -21,3 +21,4 @@
 # documented rules.
 # Lines starting with + add to the exports
 # Lines starting with - subtract from the exports
+all

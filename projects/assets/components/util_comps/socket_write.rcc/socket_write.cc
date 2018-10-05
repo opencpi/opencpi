@@ -32,6 +32,7 @@
 #include <memory>
 #include <cstdlib>
 #include <cinttypes>
+#include <limits>
 
 #ifdef ASIO_STANDALONE
 #include <thread>
@@ -99,7 +100,7 @@ protected:
       parent.properties().current.Total.bytes += len;
       const bool ZLM_trigger = (0 == len) and (buf.second->opCode() == parent.properties().stopOn.ZLM);
 
-      if (active()) {
+      if (listeners()) {
         // ocpiDebug("SocketWriter: Sending to %d client(s).", my_server.listeners());
         // TODO: Should probably do something about endianness with hdr_out.
         const http::server::outbound::metadata_t hdr_out = {message_mode, {static_cast<uint32_t>(buf.first->len), buf.second->opCode()}};
@@ -126,7 +127,7 @@ protected:
       return RCC_OK;
     } // work
 
-    inline bool active() const { return (my_server.listeners() > 0); }
+    inline size_t listeners() const { return my_server.listeners(); }
 
     // Utility function that compares a value to a property if the property is non-zero
     template <typename T>
@@ -168,6 +169,7 @@ public:
       workers.emplace_back(static_cast<SocketWriter *>(NULL));
 #endif
     // Tell framework to call us every 100ms even if no incoming data (to clear out completed buffers avoiding deadlock)
+    // Bug? AV-4109 - we should optionally do output port here
     m_RunCondition.setPortMasks(1<<SOCKET_WRITE_IN, RCC_NO_PORTS);
     m_RunCondition.enableTimeout(10 * 1000); // 10ms
     setRunCondition(&m_RunCondition);
@@ -230,6 +232,24 @@ public:
       }
     }
 #endif
+
+    // If we were explicitly told how many listeners, ensure that many are (still) there
+    const auto expected = properties().outSocket.expectedClients;
+    if (expected) {
+        typedef uint16_t exp_t; // Our framework should expose this... (AV-4280)
+        size_t acc = 0;
+        // Lambdas would be so much easier...
+        for (auto it = workers.begin(); it < workers.end(); ++it) {
+          if (*it)
+            acc += (*it)->listeners();
+        }
+        assert (acc <= std::numeric_limits<exp_t>::max());
+        if (unlikely(static_cast<exp_t>(acc) < expected)) {
+            ocpiInfo("SocketWriter: Expecting %u clients but only have %zd.", expected, acc);
+            sleep(1);
+            return RCC_OK;
+        }
+    }
 
     if (in.hasBuffer()) {
       const uint8_t op = in.opCode();

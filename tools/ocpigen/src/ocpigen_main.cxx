@@ -68,6 +68,7 @@ add to tree.
   CMD_OPTION  (log_level, l,    ULong,  0,    "<log-level>\n" \
 	                                      "set log level during execution, overriding OCPI_LOG_LEVEL")\
   CMD_OPTION  (defs,      d,    Bool,   NULL, "Generate the definition file (used for instantiation)") \
+  CMD_OPTION  (ents,      E,    Bool,   NULL, "Generate the VHDL entity declaration file (used for instantiation by some tools)") \
   CMD_OPTION  (impl,      i,    Bool,   NULL, "Generate the implementation header file (readonly)") \
   CMD_OPTION  (skel,      s,    Bool,   NULL, "Generate the implementation skeleton file (modified part)") \
   CMD_OPTION  (assy,      a,    Bool,   NULL, "Generate the assembly implementation file (readonly)") \
@@ -95,6 +96,7 @@ add to tree.
   CMD_OPTION  (pfdir,     F,    String, NULL, "The directory where the current platform lives") \
   CMD_OPTION  (gentest,   T,    Bool,   NULL, "Generate unit testing files, assemblies, apps")  \
   CMD_OPTION  (gencases,  C,    Bool,   NULL, "Figure out which test cases to run on which platforms") \
+  CMD_OPTION  (dynamic,   Z,    Bool,   NULL, "Whether the artifact should be dynamic") \  
 
 #define OCPI_OPTION
 #define OCPI_OPTIONS_NO_MAIN
@@ -107,9 +109,9 @@ main(int argc, const char **argv) {
     return 1;
   if (options.log_level())
     OCPI::OS::logSetLevel(options.log_level());
-  const char *outDir = NULL, *wksFile = NULL, *package = NULL;
+  const char *outDir = NULL, *entName = NULL, *wksFile = NULL, *package = NULL;
   bool
-    doDefs = false, doImpl = false, doSkel = false, doAssy = false, doWrap = false,
+    doDefs = false, doEnts = false, doImpl = false, doSkel = false, doAssy = false, doWrap = false,
     doArt = false, doTopContainer = false, doTest = false, doCases = false, verbose = false,
     doTopConfig = false;
   int doGenerics = -1;
@@ -117,7 +119,8 @@ main(int argc, const char **argv) {
     fprintf(stderr,
 	    "Usage is: ocpigen [options] <owd>.xml\n"
 	    " Code generation options that determine which files are created:\n"
-	    " -d            Generate the definition/instantiation file: xyz_defs.[vh|vhd]\n"
+	    " -d            Generate the definition/instantiation file: xyz-defs.[vh|vhd]\n"
+	    " -E            Generate the VHDL entity declaration file: xyz-ents.vhd\n"
 	    " -i            Generate the implementation include file: xyz_impl.[vh|vhd]\n"
 	    " -s            Generate the skeleton file: xyz_skel.[c|v|vhd]\n"
 	    " -a            Generate the assembly (composition) file: xyz.[v|vhd]\n"
@@ -159,6 +162,9 @@ main(int argc, const char **argv) {
       case 'd':
 	doDefs = true;
 	break;
+      case 'E':
+	doEnts = true;
+	break;
       case 'i':
 	doImpl = true;
 	break;
@@ -190,7 +196,7 @@ main(int argc, const char **argv) {
 	doGenerics = atoi(&ap[0][2]);
 	break;
       case 'W':
-	wksFile =*++ap;
+	wksFile = *++ap;
 	break;
       case 'M':
 	setDep(*++ap);
@@ -219,6 +225,9 @@ main(int argc, const char **argv) {
 	break;
       case 'P':
 	g_platform = *++ap;
+	break;
+      case 'Z':
+	g_dynamic = (*++ap)[0] == '1';
 	break;
       case 'O':
 	g_os = *++ap;
@@ -266,7 +275,7 @@ main(int argc, const char **argv) {
 	  printf("%s %s", config.c_str(), constraints.c_str());
 	  for (auto pi = platforms.begin(); pi != platforms.end(); ++pi)
 	    printf(" %s", (*pi).c_str());
-	  fputs("\n", stdout); 
+	  fputs("\n", stdout);
 	  return 0;
 	}
 	if (doTopConfig) {
@@ -297,6 +306,8 @@ main(int argc, const char **argv) {
 	  err = OU::esprintf("%s: Error retrieving attribute %s from file: %s", attribute, *ap, err);
 	else if (doDefs && (err = w->emitDefsHDL(doWrap)))
 	  err = OU::esprintf("%s: Error generating definition/declaration file: %s", *ap, err);
+	else if (doEnts && (err = w->emitVhdlEnts()))
+	  err = OU::esprintf("%s: Error generating VHDL entity declaration file: %s", *ap, err);
 	else if (doImpl && (err =
 			    w->m_model == HdlModel ? w->emitImplHDL(doWrap) :
 			    (w->m_model == RccModel ? w->emitImplRCC() : w->emitImplOCL())))

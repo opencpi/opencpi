@@ -1,0 +1,14 @@
+<!-- The file_read_iqstream_max_calculator_file_write HDL assembly xml file -->
+<HdlAssembly>
+  <Instance Worker="file_read"/>
+  <Connection>
+    <Port Instance="file_read" Name="out"/>
+    <Port Instance="iqstream_max_calculator" Name="in"/>
+  </Connection>
+  <Instance Worker="iqstream_max_calculator"/>
+  <Connection>
+    <Port Instance="iqstream_max_calculator" Name="out"/>
+    <Port Instance="file_write" Name="in"/>
+  </Connection>
+  <Instance Worker="file_write"/>
+</HdlAssembly>

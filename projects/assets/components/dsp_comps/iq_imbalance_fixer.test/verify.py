@@ -64,9 +64,7 @@ num_samples = int(sys.argv[1])
 ofilename = sys.argv[2]
 ifilename = sys.argv[3]
 
-#I/Q pair in a 32-bit vector (31:0) is Q(0) Q(1) I(0) I(1) in bytes 0123 little-Endian
-#Thus Q is indexed at byte 0 and I is indexed at byte 2
-dt_iq_pair = np.dtype((np.uint32, {'real_idx':(np.int16,2), 'imag_idx':(np.int16,0)}))
+dt_iq_pair = np.dtype((np.uint32, {'real_idx':(np.int16,0), 'imag_idx':(np.int16,2)}))
 
 #Read input and output data files as complex int16
 ifile = open(ifilename, 'rb')

@@ -20,7 +20,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Acronyms and Definitions}
-\def\docVersion{1.3}
+\def\docVersion{1.4}
 %----------------------------------------------------------------------------------------
 \input{snippets/LaTeX_Header.tex}
 \date{Version \docVersion} % Force date to be blank and override date with version
@@ -48,6 +48,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
       \hline
       v1.3 & Updated for OpenCPI Release 1.3 & 2/2018 \\
       \hline
+      v1.4 & Updated for OpenCPI Release 1.4 & 9/2018 \\
+      \hline
     \end{tabularx}
   \end{table}
   \par
@@ -63,6 +65,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \item[AV] ANGRYVIPER Team: sometimes used as prefix on ticket numbers within code
 \item[AXI] Advanced eXtensible Interface
 % \item[CBD] \textit{Component}-Based Development
+\item[BSP] \textit{Board Support Package}
 \item[CDK] \textit{Component Development Kit}
 \item[CPU] Central Processing Unit
 \item[DSP] Digital Signal Processing or Digital Signal Processor
@@ -85,6 +88,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \item[PCIe] \textit{PCI}-Express
 \item[RCC] Resource Constrained C-Language: see \textit{RCC Authoring Model}
 \item[RPM] RPM Package Manager
+\item[UUT] Unit Under Test
 \item[VHDL] VHSIC Hardware Description Language
 \item[VM] Virtual Machine
 \item[XML] eXtensible Markup Language
@@ -116,6 +120,9 @@ One of several ways of creating \textit{component} implementations in a specific
 
 \item[AXI (Advanced eXtensible Interface)]
 Industry-standard bus used by ARM processors.
+
+\item[Board Support Package]
+A \textit{project} that defines all items needed to enable OpenCPI on a given hardware and/or software \textit{platform}. This includes, but is not limited to, \textit{platform workers}, \textit{device workers}, configuration of software cross-compilers, etc.
 
 \item[Component]
 Interface ``contract'' that is specified by a \textit{component specification} and implemented by an \textit{application worker}.
@@ -276,7 +283,7 @@ The XML file describing the \textit{worker} and references the \textit{component
 \item[XML]
 Standardized markup language that defines a set of rules for encoding documents in a format which is both human- and machine-readable.
 
-\item[XSIM] The HDL simulator that Xilinx provides with their Vivado software.
+\item[xsim] The HDL simulator that Xilinx provides with their Vivado software.
 
 \item[Zero Length Message]
 Data payload with no \textit{operation arguments} present when a \textit{protocol specification} allows such an \textit{operation code} with no data fields.

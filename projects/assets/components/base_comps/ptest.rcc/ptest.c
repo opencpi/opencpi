@@ -38,6 +38,47 @@ RCCDispatch ptest = {
  */
 
 static RCCResult
+initialize(RCCWorker *self) {
+  PtestProperties *p = self->properties;
+#define bool RCCBoolean
+#define false 0
+#define true 1
+#define SET(name,type,len,...)						\
+  do {									\
+    p->name.length = len;						\
+    type tmp[len] = __VA_ARGS__;					\
+    for (unsigned i = 0; i < len; i++)					\
+      p->name.data[i] = tmp[i];						\
+  } while(0)
+#define SETA(name,type,length,...)					\
+  do {									\
+    type tmp[length] = __VA_ARGS__;					\
+    for (unsigned i = 0; i < length; i++)				\
+      p->name[i] = tmp[i];						\
+  } while(0)
+#define SETSTR(name,len,slength,...)					\
+  do {									\
+    p->name.length = len;						\
+    char tmp[len][slength+1] = __VA_ARGS__;				\
+    for (unsigned i = 0; i < len; i++)					\
+      for (unsigned j = 0; j <= slength; j++)				\
+	p->name.data[i][j] = tmp[i][j];					\
+  } while(0)
+      
+    SET(testvolseqbool,bool,4,{false,true,false,true});
+    SET(testvolsequlonglong,uint64_t,4,{0, 4, ~0ull, 1ull << 36});
+    SETSTR(testvolseqstring,5,5,{"hell0","hell1","hell2",""});
+    SET(testvolseqenum,enum Testvolseqenum,6,{PTEST_TESTVOLSEQENUM_R, PTEST_TESTVOLSEQENUM_G, PTEST_TESTVOLSEQENUM_B});
+    SET(testrdseqbool,bool,4,{false,true,false,true});
+    SET(testrdsequlonglong,uint64_t,4,{0, 4, ~0ull, 1ull << 36});
+    SETSTR(testrdseqstring,5,5,{"hell0","hell1","hell2",""});
+    SET(testrdseqenum,enum Testrdseqenum,6,{PTEST_TESTRDSEQENUM_R, PTEST_TESTRDSEQENUM_G, PTEST_TESTRDSEQENUM_B});
+    SETA(testvolarybool,bool,4,{false,true,false,true});
+    SETA(testrdarybool,bool,4,{false,true,false,true});
+ return RCC_OK;
+}
+
+static RCCResult
 run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
  (void)timedOut;(void)newRunCondition;
  PtestProperties *p = self->properties;

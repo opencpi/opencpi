@@ -190,8 +190,8 @@ begin
       UPDATE          => std_logic(props_in.update),
       LOG2_AVG_LEN    => unsigned(props_in.log2_averaging_length(4 downto 0)),
       NLOG2_LOOP_GAIN => unsigned(props_in.neg_log2_loop_gain(4 downto 0)),
-      DIN_I           => signed(in_in.data(DATA_WIDTH_c-1+16 downto 16)),
-      DIN_Q           => signed(in_in.data(DATA_WIDTH_c-1    downto  0)),
+      DIN_I           => signed(in_in.data(DATA_WIDTH_c-1    downto  0)),
+      DIN_Q           => signed(in_in.data(DATA_WIDTH_c-1+16 downto 16)),
       DIN_VLD         => enable,
       DOUT_I          => i_odata,
       DOUT_Q          => q_odata,
@@ -210,8 +210,8 @@ begin
     end if;
   end process backPressure;
 
-  out_out.data        <= std_logic_vector(resize(i_odata,16)) &
-                         std_logic_vector(resize(q_odata,16));
+  out_out.data        <= std_logic_vector(resize(q_odata,16)) &
+                         std_logic_vector(resize(i_odata,16));
   out_out.byte_enable <= (others => '1');
 
   -----------------------------------------------------------------------------

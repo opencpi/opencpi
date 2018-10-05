@@ -17,7 +17,8 @@ Make a pair of empty paragraphs: style Diagram over style Caption.
 6. In LO-Writer: click-right on pasted diagram (which should already be be selected with green corners), and under anchor menu, set "anchor *as* character"
 7. click on diagram to select it as a diagram - with green/blue corners
 8. scale the diagram holding down shift key to scale in X and Y at the same time proportionally
-9. Insert text in caption paragraph: after "Diagram ", using insert->fields->other..., Click on: type: "number range", select: Diagram, insert, then finish diagram title
+9. Insert text in caption paragraph: after "Diagram ", using insert->fields->More-fields...,
+   Click on: type: "number range", select: Diagram, insert, then finish diagram title
 
 When ou re-edit the power point, just do another saveas PNG, and just use the same file name (if the whole ppt file full of diagrams is abc123.ppt,
 Just continue to use abc123.png, since it is just a temp file anyway.
@@ -26,10 +27,24 @@ Then since you have the diagrams open in LO-Draw anyway (don't close them after 
 
 Then copying the cropped diagram, you can paste over the selected diagram and not have to redo any of the other steps.  It even remembers the initial scaling.
 
-
 In a perfect world it would be:
 1. Select all in PPT diagram
 2. Copy
 3. At cursor in LO-Writer, paste
 4. Crop in place
 5. scale in place
+
+Timing diagrams created as SVG files using wavedrom...
+
+1. Make a pair of empty paragraphs: style Diagram over style Caption.
+2. In document, put text cursor AND MOUSE CURSOR EXACTLY OVER TEXT CURSOR into (empty) diagram paragraph
+3. Use insert->image to open and insert the SVG file.
+4. Click-right on inserted diagram (which should already be be selected with green/blue corners),
+   and under the anchor menu, set "anchor *as* character"
+5. Click-right on diagram to crop which space around it.
+6. Hit escape to exit the crop mode and click on the diagram again to select it.
+7. Drag a corner with no modifiers to maintain proportions while resizing as needed.
+8. Insert text in caption paragraph: after "Diagram ", using insert->fields->More-fields...,
+   Click on: type: "number range", select: Figure, insert, then finish diagram title
+
+

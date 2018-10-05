@@ -20,7 +20,9 @@
 -- delegates the control interface to an I2C subdevice.
 architecture rtl of i2c_sim_master_mix_props_worker is
   signal wdata : std_logic_vector(31 downto 0);
+  signal byte_enable : std_logic_vector(props_in.raw.byte_enable'range);  -- for modelsim
 begin
+  byte_enable <= props_in.raw.byte_enable;
   -- Control plane outputs.  Raw props routed to underlying I2C
   rawprops_out.present         <= '1';
   rawprops_out.reset           <= ctl_in.reset;
@@ -33,7 +35,7 @@ begin
   --Input byte enable decode (LSB then MSB then 0)
   be_input : process (props_in.raw.byte_enable, props_in.raw.data)
   begin
-    case props_in.raw.byte_enable is
+    case byte_enable is
       when "0001" => wdata <= x"000000"&props_in.raw.data(7 downto 0);
       when "0010" => wdata <= x"0000"&props_in.raw.data(7 downto 0)&x"00";
       when "0100" => wdata <= x"00"&props_in.raw.data(7 downto 0)&x"0000";

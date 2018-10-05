@@ -41,7 +41,6 @@
     <Property Name="LVDS_p" value="true"/> <!-- FMCOMMS3 must use LVDS mode -->
   </Instance>
 
-  <Instance Component="ocpi.assets.devices.qadc" Model="hdl"/>
   <Instance Component="ocpi.assets.dsp_comps.dc_offset_filter">
     <Property Name="bypass" Value="false"/>
   </Instance>
@@ -181,4 +180,9 @@
     <Port Instance="real_digitizer" Name="out"/>
     <Port Instance="file_write" Name="in"/>
   </Connection>
+
+  <!-- AV-4546: ad9361_adc.hdl must be instantiated last in app XML to avoid
+       erroneous CDC FIFO overrun -->
+  <Instance Component="ocpi.assets.devices.qadc" Model="hdl"/>
+
 </Application>

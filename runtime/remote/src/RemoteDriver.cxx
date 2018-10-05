@@ -24,8 +24,6 @@
 #include "OcpiUtilValue.h"
 #include "ContainerManager.h"
 #include "RemoteLauncher.h"
-#include "RemoteServer.h"
-#include "RemoteClient.h"
 #include "RemoteDriver.h"
 
 // This is the "driver" for remote containers, which finds them, constructs them, and 
@@ -80,7 +78,7 @@ class Worker
   unsigned m_remoteInstance;
   Launcher &m_launcher;
   Worker(Application & app, Artifact *art, const char *name, ezxml_t impl, ezxml_t inst,
-	 OC::Worker */*slave*/, bool hasMaster, size_t member, size_t crewSize,
+	 const OC::Workers &/*slaves*/, bool hasMaster, size_t member, size_t crewSize,
 	 const OU::PValue *wParams, unsigned remoteInstance);
   virtual ~Worker() {}
   OC::Port &createPort(const OU::Port&, const OU::PValue */*params*/) {
@@ -188,13 +186,13 @@ class Application
   }
   OC::Worker &
   createWorker(OC::Artifact *art, const char *appInstName, ezxml_t impl, ezxml_t inst,
-	       OC::Worker *slave, bool hasMaster, size_t member, size_t crewSize,
+	       const OC::Workers &slaves, bool hasMaster, size_t member, size_t crewSize,
 	       const OU::PValue *wParams) {
     uint32_t remoteInstance;
     if (!OU::findULong(wParams, "remoteInstance", remoteInstance))
       throw OU::Error("Remote ContainerApplication expects remoteInstance parameter");
     return *new Worker(*this, art ? static_cast<Artifact*>(art) : NULL,
-		       appInstName ? appInstName : "unnamed-worker", impl, inst, slave,
+		       appInstName ? appInstName : "unnamed-worker", impl, inst, slaves,
 		       hasMaster, member, crewSize, wParams, remoteInstance);
   }
 };
@@ -294,9 +292,9 @@ public:
 
 Worker::
 Worker(Application & app, Artifact *art, const char *a_name, ezxml_t impl, ezxml_t inst,
-       OC::Worker *a_slave, bool a_hasMaster, size_t a_member, size_t a_crewSize,
+       const OC::Workers &a_slaves, bool a_hasMaster, size_t a_member, size_t a_crewSize,
        const OU::PValue *wParams, unsigned remoteInstance)
-  : OC::WorkerBase<Application,Worker,Port>(app, *this, art, a_name, impl, inst, a_slave,
+  : OC::WorkerBase<Application,Worker,Port>(app, *this, art, a_name, impl, inst, a_slaves,
 					    a_hasMaster, a_member, a_crewSize, wParams),
     m_remoteInstance(remoteInstance),
     m_launcher(*static_cast<Launcher *>(&app.parent().launcher())) {
@@ -313,22 +311,19 @@ Worker(Application & app, Artifact *art, const char *a_name, ezxml_t impl, ezxml
 
 // The driver class owns the containers (like all container driver classes)
 // and also owns the clients of those containers.
-
-// class Driver : public OC::DriverBase<Driver, Container, remote>,
-//	       public OU::Parent<Client> {
-  // public:
-  //  static pthread_key_t s_threadKey;
 Driver::Driver() throw() {
   ocpiCheck(pthread_key_create(&s_threadKey, NULL) == 0);
   ocpiDebug("Registering the Remote Container driver");
-  g_probeServer = probeServer;
+  const char *env = getenv("OCPI_ENABLE_REMOTE_DISCOVERY");
+  if ((m_doNotDiscover = env && env[0] == '1' ? false : true))
+    ocpiInfo("Remote container discovery is off.  Use OCPI::API::enableServerDiscovery() or the OCPI_ENABLE_REMOTE_DISCOVERY variable described in the Application Guide.");
 }
 // Called either from UDP discovery or explicitly, e.g. from ocpirun
 // If the latter, the "containers" argument will be NULL
 bool Driver::
 probeServer(const char *server, bool verbose, const char **exclude, char *containers,
 	    bool discovery, std::string &error) {
-  ocpiDebug("probing remote container server: %s", server);
+  ocpiInfo("probing remote container server: %s", server);
   error.clear();
   OS::Socket *sock = NULL;
   uint16_t port;
@@ -528,13 +523,7 @@ tryIface(std::set<std::string> &servers, OE::Interface &ifc, OE::Address &devAdd
 // whatever containers are local to that server/system
 unsigned Driver::
 search(const OA::PValue* params, const char **exclude, bool discoveryOnly) {
-  const char *env = getenv("OCPI_ENABLE_REMOTE_DISCOVERY");
-  if (!g_enableRemoteDiscovery && (!env || env[0] != '1')) {
-    ocpiInfo("Remote container discovery is off");
-    return 0;
-  }
-  g_enableRemoteDiscovery = true;
-  ocpiInfo("Remote container discovery is on");
+  ocpiInfo("Remote container discovery is on and proceeding");
   std::string error;
   unsigned count = 0;
   OE::IfScanner ifs(error);
@@ -589,12 +578,6 @@ Driver::
   //      if ( m_tpg_no_events ) delete m_tpg_no_events;
   //      if ( m_tpg_events ) delete m_tpg_events;
   ocpiCheck(pthread_key_delete(s_threadKey) == 0);
-}
-
-bool Driver::
-probeServer(const char *server, bool verbose, const char **exclude, bool discovery,
-	    std::string &error) {
-  return Driver::getSingleton().probeServer(server, verbose, exclude, NULL, discovery, error);
 }
 
 pthread_key_t Driver::s_threadKey;

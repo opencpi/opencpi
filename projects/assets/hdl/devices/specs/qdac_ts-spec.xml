@@ -1,5 +1,5 @@
 <ComponentSpec>
   <xi:include href='dac-properties'/>
   <DataInterfaceSpec Name="IN" protocol='TimeStamped_IQ-prot'/>
-  <DataInterfaceSpec Name='event_out' protocol='tx_event-prot' producer='true'/>
+  <DataInterfaceSpec Name='event_in' Protocol='tx_event-prot'/>
 </ComponentSpec>

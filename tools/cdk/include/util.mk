@@ -15,7 +15,6 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
-
 ifndef __UTIL_MK__
 __UTIL_MK__=x
 # The /bin/sh shell in Debian/Ubuntu is explicitly strict/stupid
@@ -25,15 +24,29 @@ export OCPI_DEBUG_MAKE
 AT=@
 
 # RPM-based options:
--include $(OCPI_CDK_DIR)/include/autoconfig_import-$(OCPI_TARGET_PLATFORM).mk
-ifneq (1,$(OCPI_AUTOCONFIG_IMPORTED))
--include $(OCPI_CDK_DIR)/include/autoconfig_import.mk
-endif
-
+# Removing these since they cause all kinds of problems, but should discuss further...
+# to see whether they still are relevant
+#-include $(OCPI_CDK_DIR)/include/autoconfig_import-$(OCPI_TARGET_PLATFORM).mk
+#ifneq (1,$(OCPI_AUTOCONFIG_IMPORTED))
+#-include $(OCPI_CDK_DIR)/include/autoconfig_import.mk
+#endif
+# THIS IS THE make VERSION OF WHAT IS IN ocpibootstrap.sh
 ifndef OCPI_PREREQUISITES_DIR
-  export OCPI_PREREQUISITES_DIR=/opt/opencpi/prerequisites
+  ifneq ($(and $(OCPI_CDK_DIR),$(wildcard $(OCPI_CDK_DIR)/../prerequisites)),)
+    export OCPI_PREREQUISITES_DIR:=$(abspath $(OCPI_CDK_DIR)/../prerequisites)
+  else
+    export OCPI_PREREQUISITES_DIR:=/opt/opencpi/prerequisites
+  endif
 endif
-
+#FIXME  this registration should be somewhere else nicer
+ifndef OCPI_PREREQUISITES_LIBS
+  # Libraries used with ACI and our executables
+  export OCPI_PREREQUISITES_LIBS:=lzma gmp
+endif
+ifndef OCPI_PREREQUISITES
+  # All prerequisites we need to build and use
+  export OCPI_PREREQUISITES:=$(OCPI_PREREQUISITES_LIBS) gtest patchelf ad9361
+endif
 OCPI_DEBUG_MAKE=
 ifneq (,)
 define OcpiDoInclude
@@ -109,15 +122,13 @@ Suffix_xm:=xm
 CapModels:=$(foreach m,$(Models),$(call Capitalize,$m))
 UCModel=$(call ToUpper,$(Model))
 CapModel=$(call Capitalize,$(Model))
-HostSystem:=$(shell uname -s | tr A-Z a-z)
 AT=@
 RM=rm
-ifneq ($(HostSystem),darwin)
+ifeq ($(OCPI_TOOL_OS),linux)
+# gnu version has nicer formatting options
 TIME=/usr/bin/time -f %E
-OcpiLibraryPathEnv=LD_LIBRARY_PATH
 else
 TIME=/usr/bin/time
-OcpiLibraryPathEnv=DYLD_LIBRARY_PATH
 endif
 # this is to ensure support for the -n flag
 ECHO=/bin/echo
@@ -127,13 +138,7 @@ CompiledSourceFiles=$(TargetSourceFiles_$(ParamConfig)) $(GeneratedSourceFiles) 
 # function to add a ../ to pathnames, avoiding changing absolute ones
 AdjustRelative2=$(foreach i,$(1),$(if $(filter /%,$(i)),$(i),../../$(patsubst ./%,%,$(filter-out .,$(i)))))
 AdjustRelative=$(foreach i,$(1),$(if $(filter /%,$(i)),$(i),..$(patsubst %,/%,$(patsubst ./%,%,$(filter-out .,$(i))))))
-HostProcessor:=$(shell uname -m | tr A-Z a-z)
-# Patch darwin's notion of x86 to linux's.  Assumes 64 bit machine...
-ifeq ($(HostProcessor),i386)
-HostProcessor=x86_64
-endif
-HostTarget=$(HostSystem)-$(HostProcessor)
-OcpiHostTarget=$(HostTarget)
+
 # Physical and realpath are broken on some NFS mounts..
 OcpiAbsDir=$(foreach d,$(shell cd $1; pwd -L),$d)
 OcpiAbsPath=$(strip \
@@ -226,7 +231,7 @@ $(GeneratedDir): | $(OutDir)
 	$(AT)mkdir $@
 
 # Make all target dirs
-TargetDir=$(OutDir)target-$($(CapModel)Target)
+TargetDir=$(OutDir)target-$(or $(and $(CapModel),$($(CapModel)TargetDir)),$($(CapModel)Target))
 #$(AT)echo Creating target directory: $@
 $(OutDir)target-%: | $(OutDir)
 	$(AT)mkdir $@
@@ -236,7 +241,7 @@ $(OutDir)target-%: | $(OutDir)
 # A utility function to compare two trees that might contain binary files
 # The first argument is the directory (or file) to be copied, and whose
 # "tail" name should be placed in the destination directory
-ifeq ($(HostSystem),darwin)
+ifeq ($(OCPI_TOOL_OS),macos)
 MD5=md5
 else
 MD5=md5sum -b -
@@ -321,14 +326,7 @@ LibraryRefFile=$(call $(CapModel)LibraryRefFile,$1,$2)
 ################################################################################
 # Tools for metadata and generated files
 DateStamp := $(shell date +"%c")
-ToolsDir=$(eval $(OcpiEnsureToolPlatform))$(OCPI_CDK_DIR)/bin/$(OCPI_TOOL_DIR)
-ifeq ($(HostSystem),darwin)
-DYN_PREFIX=DYLD_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/$(OCPI_TOOL_DIR)
-else
-DYN_PREFIX=LD_LIBRARY_PATH=$(OCPI_CDK_DIR)/lib/$(OCPI_TOOL_DIR)
-endif
-#$(info OCDK $(OCPI_CDK_DIR))
-#DYN_PREFIX=
+ToolsDir=$(eval $(OcpiEnsureToolPlatform))$(OCPI_CDK_DIR)/$(OCPI_TOOL_DIR)/bin
 # Here are the environment variables that might be set in the "make" environment,
 # that must be propagated to ocpigen.
 OcpiGenEnv=\
@@ -353,7 +351,7 @@ OcpiFixPathArgs=\
       $(if $(filter -I/%,$p),\
         $(patsubst %,-I"%",$(call OcpiPathThroughProjectTopOrImports,.,$(patsubst -I%,%,$p))),\
         $p)))
-OcpiGenArg=$(DYN_PREFIX) $(call OcpiGenTool, $1 -M $(dir $@)$(@F).deps $2)
+OcpiGenArg=$(call OcpiGenTool, $1 -M $(dir $@)$(@F).deps $2)
 OcpiGen=$(call OcpiGenArg,,$1)$(infox OGA:$(call OcpiGenArg,,$1))
 
 # Return stderr and the exit status as variables
@@ -377,10 +375,15 @@ DoShell=$(eval X:=$(shell X=`bash -c '$1; exit $$?'`;echo $$?; echo "$$X" | sed 
 OcpiConvertListToPythonList=$(strip \
   ["$(subst $(Space),"$(Comma) ",$(strip $1))"])
 
+# Run the python code in $1
+# Usage: $(call OcpiCallPythonFunc,this_is_a_python_function_with_output())
+OcpiCallPythonFunc=\
+  $(shell python3 -c '$1')
+
 # Import the ocpiutil module and run the python code in $1
 # Usage: $(call OcpiCallPythonUtil,ocpiutil.utility_function(arg1, arg2))
 OcpiCallPythonUtil=$(infox OPYTHON:$1)\
-  $(shell python -c 'import sys; \
+  $(shell python3 -c 'import sys; \
 sys.path.append("$(OCPI_CDK_DIR)/scripts/"); \
 import ocpiutil; \
 $1')
@@ -419,7 +422,10 @@ OcpiDefaultOWD=$(if $(call OcpiDefaultSpec,$1),,$(error No default spec found fo
 
 # Function to generate target dir from target: $(call WkrTargetDir,target,config)
 # FIXME: shouldn't really be named "Wkr"
-WkrTargetDir=$(OutDir)target$(if $(filter 0,$2),,-$2)-$1
+WkrTargetDir=$(if $1,,$(error Internal error: WkrTargetDir called without a target))$(strip \
+              $(foreach d,\
+                $(OutDir)target$(if $(filter 0,$2),,-$2)-$(or $(call $(CapModel)TargetDirTail,$1),$1),\
+                $d))
 
 Comma:=,
 ParamMsg=$(and $(ParamConfigurations), $(strip \
@@ -428,10 +434,6 @@ ParamMsg=$(and $(ParamConfigurations), $(strip \
 RmRv=$(if $(filter %_rv,$1),$(patsubst %_rv,%,$1),$1)
 
 OcpiAdjustLibraries=$(call Unique,$(foreach l,$1,$(if $(findstring /,$l),$(call AdjustRelative,$l),$l)))
-
-ifndef OCPI_PREREQUISITES_INSTALL_DIR
-  export OCPI_PREREQUISITES_INSTALL_DIR:=$(OCPI_PREREQUISITES_DIR)
-endif
 
 ################################################################################
 # This works when wildcard doesn't.
@@ -489,18 +491,18 @@ OcpiXmlComponentLibraries=$(infox HXC)\
   $(infox OcpiXmlComponentLibraries returned: $(OcpiTempDirs))\
   $(OcpiTempDirs)
 
-# Return a colon separated default OCPI_LIBRARY_PATH. It contains arg1 (or .), the core project's exports,
-# the current project's libraries underneath 'components', and the current project's hdl/assemblies
-OcpiGetDefaultLibraryPath=$(infox OGDLP)$(strip \
-  $(or $1,.):$(OcpiProjectRegistryDir)/ocpi.core/exports:$(subst $(Space),:,$(strip \
-    $(if $(call OcpiAbsPathToContainingProject,$1),\
-      $(if $(filter libraries,$(call OcpiGetDirType,$(call OcpiAbsPathToContainingProject,$1)/components)),\
-        $(wildcard $(call OcpiAbsPathToContainingProject,$1)/components/*/lib),\
-        $(wildcard $(call OcpiAbsPathToContainingProject,$1)/components/lib))\
-      $(call OcpiAbsPathToContainingProject,$1)/hdl/assemblies))))
+# Return a colon separated default OCPI_LIBRARY_PATH. It contains:
+# 1. arg1 if present
+# 2. the core project's artifacts
+# 3. the artifacts exported from the projects in the project path (its dependencies)
+# 4. the global core rcc artifacts in the runtime package for the host
+OcpiGetDefaultLibraryPath=$(foreach p,$(strip \
+  $(and $1,$1:)$(foreach p,$(call OcpiAbsPathToContainingProject,$1),$p/artifacts$)$(strip\
+  $(subst $(Space),,$(foreach p,$(OcpiGetProjectPath),:$p/artifacts)\
+                    :$(OCPI_CDK_DIR)/$(OCPI_TOOL_DIR)/artifacts))),$(infox OGDLPr:$p)$p)
 
 # Export the library path as the default
-OcpiSetDefaultLibraryPath=$(eval export OCPI_LIBRARY_PATH=$(call OcpiGetDefaultLibraryPath,$1))
+OcpiSetDefaultLibraryPath=$(eval export OCPI_LIBRARY_PATH=$(call OcpiGetDefaultLibraryPath))
 
 # Collect the projects in path from the different sources.
 # OCPI_PROJECT_PATH comes first and is able to shadow the others.
@@ -515,14 +517,19 @@ OcpiGetProjectPath=$(strip \
                        $(or $(call OcpiExists,$p/exports),$(call OcpiExists,$p),$(RPM_BUILD_ROOT),\
                          $(info Warning: The path $p in Project Path does not exist.))))
 
-# There are certain cases where we will want all projects that are 'registered' (not just the ones
+# There are certain cases where we will want all projects that are 'registered'
+# (not just the ones
 # explicitly or implicitly depended on by the current project).
 # For example, available platforms can be determined based on all known projects.
 # Warning is suppressed during RPM builds
-OcpiGetExtendedProjectPath=$(strip $(OcpiGetProjectPath) \
-                             $(foreach p,$(OcpiGetImportsNotInDependencies),\
-                               $(or $(call OcpiExists,$p/exports),$(call OcpiExists,$p),$(RPM_BUILD_ROOT),\
-                                 $(info Warning: The path $p in Project Path does not exist.))))
+# This may be called from outside of a project
+OcpiGetExtendedProjectPath=$(strip\
+  $(if $(OCPI_PROJECT_DIR),\
+    $(OcpiGetProjectPath) \
+    $(foreach p,$(OcpiGetImportsNotInDependencies),\
+      $(or $(call OcpiExists,$p/exports),$(call OcpiExists,$p),$(RPM_BUILD_ROOT),\
+           $(info Warning: The path $p in Project Path does not exist.))),\
+    $(subst :, ,$(OCPI_PROJECT_PATH)) $(wildcard $(OcpiGlobalDefaultProjectRegistryDir)/*/exports)))
 
 # Loop through all imported projects and check for 'exports' and then try to find
 # rcc/platforms. Return a list of paths to 'rcc/platforms' directories found in each
@@ -532,16 +539,15 @@ OcpiGetExtendedProjectPath=$(strip $(OcpiGetProjectPath) \
 # Note: the path 'platforms' without a leading 'rcc/' is searched as well for legacy
 #       compatibilty before rcc platforms were supported outside of the CDK
 OcpiGetRccPlatformPaths=$(strip \
-                          $(foreach p,$(OCPI_PROJECT_DIR),\
+                          $(foreach p,$(or $(OCPI_PROJECT_DIR),\
+                                        $(wildcard $(OcpiProjectRegistryDir)/*)),\
                             $(call OcpiExists,$p/rcc/platforms))\
                           $(foreach p,$(OcpiGetExtendedProjectPath),\
                           $(if $(filter-out $(realpath $(OCPI_PROJECT_DIR)),\
                                             $(realpath $(call OcpiAbsPathToContainingProject,$p))),\
-                            $(or $(if $(call OcpiIsPathCdk,$p),\
-                              $(call OcpiExists,$p/platforms),\
-                              $(if $(filter $(notdir $p),exports),\
+                            $(or $(if $(filter $(notdir $p),exports),\
                                 $(call OcpiExists,$p/lib/rcc/platforms),\
-                                $(call OcpiExists,$p/rcc/platforms))),\
+                                $(call OcpiExists,$p/rcc/platforms)),\
                                   $(info Warning: The path $p/rcc/platforms does not exist.)))))
 
 # Search for a given platform ($1) in the list of 'rcc/platform' directories found
@@ -556,7 +562,7 @@ OcpiGetRccPlatformDir=$(strip $(firstword \
 ##################################################################################
 # Project Dependencies are defined by those explicitly listed in a Project.mk as well as the 'required'
 # projects such as core/cdk
-OcpiProjectDependenciesInternal=$(strip $(call Unique,$(ProjectDependencies) ocpi.core ocpi.cdk))
+OcpiProjectDependenciesInternal=$(strip $(call Unique,$(ProjectDependencies) ocpi.core))
 # If a project dependency is a path, use it as is. Otherwise, check for it in imports.
 OcpiGetProjectDependencies=$(strip \
   $(foreach d,$(OcpiProjectDependenciesInternal),\
@@ -574,16 +580,27 @@ OcpiGetImportsNotInDependencies=$(strip \
 # Functions for collecting paths to/through/from the top level of a project
 # and potentially through a project's 'imports' directory
 ###################################################################################
-# This is the 'project registry' where symlinks
-# exist to any projects created on a system.
-# If inside a project, try to use its imports.
-OcpiProjectRegistryDir=$(strip \
+# This is the global default 'project registry'
+# where symlinks exist to any projects created
+# on a system. Unlike OcpiProjectRegistryDir,
+# this function does not consider the current
+# project's 'imports' link:
+# OCPI_PROJECT_REGISTRY_DIR or CDK/../project-registry
+OcpiGlobalDefaultProjectRegistryDir=$(strip \
   $(or \
-    $(and $(OCPI_PROJECT_DIR),$(call OcpiExists,$(call OcpiImportsDirForContainingProject,.))),\
     $(strip $(OCPI_PROJECT_REGISTRY_DIR)),\
     $(if $(strip $(OCPI_CDK_DIR)),\
       $(OCPI_CDK_DIR)/../project-registry,\
       $(error Error: OCPI_CDK_DIR is unset))))
+
+# This is the 'project registry' where symlinks
+# exist to any projects created on a system.
+# If inside a project, try to use its imports:
+# Local 'imports' or OCPI_PROJECT_REGISTRY_DIR or CDK/../project-registry
+OcpiProjectRegistryDir=$(strip \
+  $(or \
+    $(and $(OCPI_PROJECT_DIR),$(call OcpiExists,$(call OcpiImportsDirForContainingProject,$1))),\
+    $(OcpiGlobalDefaultProjectRegistryDir)))
 
 # Return the path to the 'imports' directory for the project containing $1
 # $(call OcpiImportsDirForContainingProject,.)
@@ -593,16 +610,13 @@ OcpiImportsDirForContainingProject=$(strip $(foreach p,$(call OcpiAbsPathToConta
 # Do no include the current project if it is found in imports.
 # $(call OcpiGetProjectImports)
 OcpiGetProjectImports=$(strip \
-  $(foreach p,$(foreach i,$(call OcpiImportsDirForContainingProject,.),$(wildcard $i/*)),\
+  $(foreach p,$(foreach i,$(if $(filter clean%,$(MAKECMDGOALS)),\
+                            $(OcpiProjectRegistryDir),\
+                            $(call OcpiImportsDirForContainingProject,.)),\
+	        $(wildcard $i/*)),\
     $(if $(filter $(realpath $p),$(realpath $(OcpiAbsPathToContainingProject))),\
       ,\
       $p )))
-
-# Determine if a path is in fact the CDK. If so, return the CDK's
-# import alias 'ocpi.cdk'
-# $(call OcpiIsPathCdk,<path>)
-OcpiIsPathCdk=$(strip \
-  $(if $(filter $(realpath $1),$(realpath $(OCPI_CDK_DIR))),ocpi.cdk))
 
 # Given an 'origin' path ($1) and a path to a 'destination' project $2,
 # if the 'destination' project is imported in 'origin's project,
@@ -618,13 +632,14 @@ OcpiIsPathCdk=$(strip \
 # the requested import by checking the 'realpath' of each import against $2
 # $(call OcpiGetProjectInImports,<origin-path>,<destination-project>)
 OcpiGetProjectInImports=$(strip \
-  $(foreach i,$(call OcpiImportsDirForContainingProject,$1),\
+  $(foreach i,$(if $(filter clean%,$(MAKECMDGOALS)),\
+                $(call OcpiProjectRegistryDir,$1),\
+                $(call OcpiImportsDirForContainingProject,$1)),\
     $(or \
       $(if $(filter $2,$(notdir $2)),\
         $(call OcpiExists,$i/$2)),\
       $(foreach a,$(call OcpiExists,$i/$(notdir $2)),\
         $(if $(filter $(realpath $a),$(realpath $2)),$a)),\
-      $(call OcpiExists,$(foreach c,$(call OcpiIsPathCdk,$2),$i/$c)),\
       $(foreach a,$(wildcard $i/*),\
         $(if $(filter $(realpath $a),$(realpath $2)),$a)))))
 
@@ -854,12 +869,12 @@ OcpiGetDirTypeX=$(strip $(infox GDT1:$1)\
   $(or \
     $(and $(wildcard $1/Makefile),\
       $(foreach d,$(shell sed -n \
-                  's=^[ 	]*include[ 	]*.*OCPI_CDK_DIR.*/include/\(.*\).mk$$=\1=p' \
+                  's=^[ 	]*include[ 	]*.*OCPI_CDK_DIR.*/include/\(.*\)\.mk[ 	]*$$=\1=p' \
                   $1/Makefile | tail -1),\
       $(infox OGT1: found type: $d ($1))$(notdir $d))) \
     ,$(and $(wildcard $1/Makefile.am),\
       $(foreach d,$(shell sed -n \
-                  's=^[ 	]*@AUTOGUARD@[ 	]*include[ 	]*.*OCPI_CDK_DIR.*/include/\(.*\).mk$$=\1=p' \
+                  's=^[ 	]*@AUTOGUARD@[ 	]*include[ 	]*.*OCPI_CDK_DIR.*/include/\(.*\)\.mk[ 	]*$$=\1=p' \
                   $1/Makefile.am | tail -1),\
       $(warning Found what I think is a $d in "$1", but it is not fully configured and may not work as expected.)$(notdir $d))) \
     ,$(and $(filter $(realpath $1),$(realpath $(OCPI_CDK_DIR))),project)\
@@ -906,8 +921,8 @@ OcpiIncludeProject=$(call OcpiIncludeProjectX,$(or $(OCPI_PROJECT_DIR),.),$1,$(c
 # find Platform.mk if it exists. Otherwise, the parent is just the project
 OcpiIncludeParentAsset_library=\
   $(if $(filter %-platform,$(call OcpiGetDirType,$1/../)),\
-    $(call OcpiIncludeAssetAndParentX,$1/../,$2),\
-    $(call OcpiIncludeProject,$2))
+    $(call OcpiIncludeAssetAndParentX,$1/../,$2,$3),\
+    $(call OcpiIncludeProject,$3))
 
 # For a platform directory, we include the platforms directory in ../
 # We provide it with type Platforms so it can find the Platforms.mk
@@ -915,7 +930,7 @@ OcpiIncludeParentAsset_library=\
 # then it is not in a project at all and does not have a parent.
 OcpiIncludeParentAsset_platform=\
   $(if $(filter %-platforms,$(call OcpiGetDirType,$1/../)),\
-    $(call OcpiIncludeAssetAndParentX,$1/../,$2))
+    $(call OcpiIncludeAssetAndParentX,$1/../,$2,$3))
 
 # For asset in directory arg1, look for makefile <arg2>.mk and include it to
 # extract any variables that are set.  Clear the package variables so that the
@@ -952,29 +967,31 @@ endef
 # function, call that to include the parent. Otherwise parent is the project,
 # so include the project. Next, include the current asset by importing its
 # *.mk file and determining its package via OcpiSetAndGetPackageId
-#   Arg1 = reference directory
-#   Arg2 = error/warning/info mode (optional)
-OcpiIncludeAssetAndParentX=$(infox OIAAPX:$1:$2)$(strip \
+#   Arg1 = reference directory (optional) - defaults to '.' in subcalls
+#   Arg2 = authoring model prefix (optional) - <parent>.<auth>.<package-name>
+#   Arg3 = error/warning/info mode (optional)
+OcpiIncludeAssetAndParentX=$(infox OIAAPX:$1:$2:$3)$(strip \
   $(foreach s,$(call OcpiGetShortenedDirType,$1),\
     $(foreach c,$(call Capitalize,$s),\
       $(if $(filter-out undefined,$(origin OcpiIncludeParentAsset_$s)),\
-        $(call OcpiIncludeParentAsset_$s,$1,$c,$2),\
-        $(call OcpiIncludeProject,$2))\
+        $(call OcpiIncludeParentAsset_$s,$1,$2,$3),\
+        $(call OcpiIncludeProject,$3))\
       $(eval $(call OcpiSetAsset,$1,$c))\
       $(eval ParentPackage:=)\
       $(eval unexport ParentPackage)\
-      $(eval override ParentPackage:=$(call OcpiSetAndGetPackageId,$1)))))
+      $(eval override ParentPackage:=$(call OcpiSetAndGetPackageId,$1,$2)))))
 
 # Wrapper function for OcpiIncludeAssetAndParentX. package.mk is included here
 # so that it is not included many times during recursive calls of the *X
 # function above. This function assumes Arg1 should be the current directory if
 # none is provided. Finally, it determines the shortened and capitalized
 # directory type to be used for finding *.mk files.
-#   Arg1 = reference directory
-#   Arg2 = error/warning/info mode (optional)
+#   Arg1 = reference directory (optional) - defaults to '.' in subcalls
+#   Arg2 = authoring model prefix (optional) - <parent>.<auth>.<package-name>
+#   Arg3 = error/warning/info mode (optional)
 OcpiIncludeAssetAndParent=$(strip \
   $(eval include $(OCPI_CDK_DIR)/include/package.mk)\
-  $(call OcpiIncludeAssetAndParentX,$(or $1,.),$2))
+  $(call OcpiIncludeAssetAndParentX,$(or $1,.),$2,$3))
 
 ###############################################################################
 
@@ -983,7 +1000,7 @@ OcpiFindSubdirs=$(strip \
   $(foreach a,$(wildcard */Makefile),\
     $(shell grep -q '^[ 	]*include[ 	]*.*/include/$1.mk' $a && echo $(patsubst %/,%,$(dir $a)))))
 
-OcpiHavePrereq=$(realpath $(OCPI_PREREQUISITES_INSTALL_DIR)/$1)
+OcpiHavePrereq=$(realpath $(OCPI_PREREQUISITES_DIR)/$1)
 OcpiPrereqDir=$(call OcpiHavePrereq,$1)
 OcpiCheckPrereq=$(strip\
    $(if $(realpath $(OCPI_PREREQUISITES_DIR)/$1),,\
@@ -994,41 +1011,19 @@ OcpiCheckPrereq=$(strip\
                          $(error For the $1 prerequisite package, $t/$3 is missing))))))
 
 define OcpiEnsureToolPlatform
-  ifndef OCPI_TOOL_HOST
-    GETPLATFORM=$(OCPI_CDK_DIR)/platforms/getPlatform.sh
-    vars:=$$(shell $$(GETPLATFORM) || echo 1 2 3 4 5 6)
-    ifneq ($$(words $$(vars)),5)
+  ifndef OCPI_TOOL_OS
+    GETPLATFORM=$$(OCPI_CDK_DIR)/scripts/getPlatform.sh
+    vars:=$$(shell $$(OcpiExportVars) $$(GETPLATFORM))
+    ifneq ($$(words $$(vars)),6)
       $$(error $$(OcpiThisFile): Could not determine the platform after running $$(GETPLATFORM)).
     endif
     export OCPI_TOOL_OS:=$$(word 1,$$(vars))
     export OCPI_TOOL_OS_VERSION:=$$(word 2,$$(vars))
     export OCPI_TOOL_ARCH:=$$(word 3,$$(vars))
-    export OCPI_TOOL_HOST:=$$(word 4,$$(vars))
     export OCPI_TOOL_PLATFORM:=$$(word 5,$$(vars))
+    export OCPI_TOOL_PLATFORM_DIR:=$$(word 6,$$(vars))
+    export OCPI_TOOL_DIR:=$$(OCPI_TOOL_PLATFORM)
   endif
-  # Determine OCPI_TOOL_MODE if it is not set already
-  # It can be set to null to suppress these modes, and just use whatever has been
-  # built without modes.
-  ifeq ($$(OCPI_USE_TOOL_MODES),1)
-    ifndef OCPI_TOOL_MODE
-      # OCPI_TOOL_MODE not set at all, just look for one
-      $$(foreach i,sd so dd do,\
-        $$(if $$(OCPI_TOOL_MODE),,\
-          $$(and $$(wildcard $$(OCPI_CDK_DIR)/$$(OCPI_TOOL_HOST)/$$i/ocpigen),\
-            $$(eval export OCPI_TOOL_MODE=$$i)\
-            $$(info "Choosing tool mode "$$i" since there are tool executables for it."))))
-    endif
-    ifndef OCPI_TOOL_MODE
-      ifeq ($$(wildcard $$(OCPI_CDK_DIR)/bin/$$(OCPI_TOOL_HOST)/ocpigen),)
-        $$(info Could not find any OpenCPI executables in $$(OCPI_CDK_DIR)/$$(OCPI_TOOL_HOST)/*)
-	OCPI_TOOL_MODE:=$$(strip \
-          $$(if $$(filter 1,$$(OCPI_DYNAMIC)),d,s)$$(if $$(filter 1,$$(OCPI_DEBUG)),d,o))
-        $$(info Assuming you are building OpenCPI from scratch:  tool mode will be "$$(OCPI_TOOL_MODE)".)
-      endif
-      export OCPI_TOOL_MODE=
-    endif
-  endif
-  export OCPI_TOOL_DIR:=$$(OCPI_TOOL_HOST)$$(and $$(OCPI_TOOL_MODE),/$$(OCPI_TOOL_MODE))
 endef
 # First arg is a list of exported variables/patterns that must be present.
 # Second arg is a list of exported variables/patterns that may be present.
@@ -1083,6 +1078,58 @@ OcpiCheckVars=$(and $($1),$(error The "$1" variable is set in both the Makefile 
 
 OcpiBuildFile=$(or $(call OcpiExists,$(Worker).build),$(call OcpiExists,$(Worker)-build.xml))
 
+# Something to insert into $(shell) as first argument
+OcpiExportVars=$(foreach v,$(filter OCPI_%,$(.VARIABLES)),export $v='$($v)';)
+
+# Easy help message in Makefiles:
+# Typical usage:
+# define help
+# this is the help message with variables like $(something)
+# endef
+# $(OcpiHelp)
+OcpiHelp=help:;@:$(and $(filter help,$(MAKECMDGOALS)),$(info $(help)))
+
+OcpiDirName=$(patsubst %/,%,$(dir $1))
+# Prepare an artifact in the project.
+# First, add the artifact xml (from the file in $2) to the binary file ($1) IN PLACE.
+#  Next, if we are in a project, ensure there is a symlink in the artifacts/ directory at the
+#  project's top level.
+#  We actually use two symlinks in the artifacts/ directory per artifact, for several reasons.
+#  The first link is a functional (not dead) link to the artifact that is a relative link within
+#    the project.  The name of this link is <uuid>:<basename-of-artifact>.
+#    The name is of bounded length, which is required by some tools, notably modelsim.
+#    The uuid ensures uniqueness even when artifacts from different projects are ultimately
+#    combined into one directory - i.e. it allows for that.
+#    Example: 06bcdc80-4803-11e8-97d5-a7ad40a16f1f:bias_0_modelsim_base.tar.gz
+#  The second link is a dead link (the target does not point to a real file).  Its name is:
+#    <project-relative-pathname-with-slashes-and-periods-replaced-with-hypens>
+#    Its target is <uuid>, which does not exist as a file.
+#    This link does not have bounded length (since it is a fully navigable name with multiple
+#    directory levels etc.
+#    If serves several purposes:
+#      - It annotates the first uuid-based functional links by showing the relative pathname
+#        that they in fact point it.  "ls -l" allows you to know where the first links point.
+#      - It serves as a placeholder to show that a symlink already exists to the pathname,
+#        and thus does not need to be created or modified - without reading the link.
+#      - It is a dead link so that an unbounded pathname is never used as an artifact that will
+#        break some tools.
+#      - It is a dead so that the artifact searching machinery efficiently avoids it
+#  Note that the first time these links are created, the UUID used for the links comes from
+#  the artifact, but later, when the links are reused, the UUID in the links is not changed
+#  because there is no value in changing it.
+# $(call OcpiPrepareArtifact,
+#    <artifact-file-input>,<output-file-to-modify>,<packageparent>,<config>,<platform>)
+# old name based on xml uuid not used anymore since we rely on package ids
+#    $(comment uuid=`sed -n '/artifact uuid/s/^.*artifact uuid="\([^"]*\)".*$$/\1/p' $1` &&)
+OcpiPrepareArtifact=\
+  $(ToolsDir)/ocpixml add $2 $1 \
+  $(and $(OCPI_PROJECT_DIR), &&\
+    adir=$(OCPI_PROJECT_DIR)/artifacts &&\
+    uuid=$3.$(Worker).$(Model).$4.$5 &&\
+    mkdir -p $(OCPI_PROJECT_DIR)/artifacts &&\
+    $(call MakeSymLink2,$2,$(OCPI_PROJECT_DIR)/artifacts,$${uuid}$(suffix $2)) \
+   )
+
 # What to do early in each top level Makefile to process build files.
 ParamShell=\
   if [ -n "$(OcpiBuildFile)" -a -r "$(OcpiBuildFile)" ] ; then \
@@ -1131,6 +1178,7 @@ MakeRawParams= \
      echo "</parameter>";) \
    echo "</parameters>")
 
+# A single quote ' to balance the one above when some editors/colorizers get confused.
 # This must be done early to allow the make file fragment that is generated from the -build.xml
 # file to be processed as if it was a user-written Makefile, before most other processing
 define OcpiProcessBuildFiles
@@ -1150,7 +1198,7 @@ endif
 # FIXME: make a narrower rcc-targets.mk
 # FIXME: make this generated by the list of known models
 include $(OCPI_CDK_DIR)/include/hdl/hdl-targets.mk
-include $(OCPI_CDK_DIR)/include/rcc/rcc-make.mk
+include $(OCPI_CDK_DIR)/include/rcc/rcc-targets.mk
 
 # This is called here since some xml include dirs may be set in the original Makefile
 # But if some are set in the build file, they will be processed internally in ocpigen
@@ -1179,5 +1227,32 @@ $$(call OcpiDbgVar,ParamConfigurations)
 endif # if not cleaning
 
 endef # OcpiProcessBuildFiles
+
+# This function reads the platform's target definition file <platform>.mk, against the defaults,
+# and assigns the platform-specific variables
+define OcpiSetPlatformVariables
+  ifndef OcpiPlatformDir_$1 # avoid all the work if its already done
+    # reset default variables for the platform.
+    include $(OCPI_CDK_DIR)/include/platform-defaults.mk
+    OcpiPlatformDir_$1:=$$(or $$(call OcpiGetRccPlatformDir,$1),\
+                          $$(error Unknown RCC/Software platform: $1))
+    OcpiPlatformFile_$1:=$$(wildcard $$(OcpiPlatformDir_$1)/$1.mk)
+    ifeq ($$(wildcard $$(OcpiPlatformFile_$1)),)
+      $$(error The RCC/Software Platform file $$(OcpiPlatformFile_$1) is missing.)
+    endif
+    OcpiPlatformDir:=$$(OcpiPlatformDir_$1)
+    OcpiPlatformFile:=$$(OcpiPlatformFile_$1)
+    OcpiPlatformPrevars:=$$(.VARIABLES)
+    include $$(OcpiPlatformFile_$1)
+    AllowedVars=OcpiAltera% OcpiXilinx% OCPI_ALTERA_VERSION OCPI_XILINX_VIVADO_SDK_VERSION
+    $$(foreach v,$$(filter-out $$(AllowedVars),$$(filter Ocpi% OCPI%,$$(.VARIABLES))),\
+       $$(if $$(strip $$(filter $$v,OcpiPlatformPrevars $$(OcpiPlatformPrevars))\
+		      $$(filter $$v,$$(OcpiAllPlatformVars))),,\
+          $$(warning Software platform file $$(OcpiPlatformDir)/$1.mk has $$(strip\
+                   illegal variable: $$v))))
+    $$(foreach v,$$(OcpiAllPlatformVars),\
+      $$(eval $$v_$1:=$$($$v)))
+  endif
+endef
 
 endif # ifndef __UTIL_MK__

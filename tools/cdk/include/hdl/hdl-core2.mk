@@ -51,6 +51,7 @@ ifdef HdlToolRealCore
     $(call WkrTargetDir,$1,$4)/$2$(HdlBin): LibName=$(call HdlRmRv,$(word 1,$(HdlCores)))$(if $(filter 0,$4),,_c$4)
 #    $(call WkrTargetDir,$1,$4)/$2$(HdlBin): Top=$(or $(filter %_rv,$3),$3$(and $(WorkerParamNames),$(filter-out 0,$4),_c$4))
     $(call WkrTargetDir,$1,$4)/$2$(HdlBin): Top=$3$(and $(filter-out 0,$4),_c$4)
+    $(call WkrTargetDir,$1,$4)/$2$(HdlBin): override HdlUsesRv:=$(and $5,1)
     $(call WkrTargetDir,$1,$4)/$2$(HdlBin): ParamConfig=$4
     ifdef PreBuiltCore
       $(call WkrTargetDir,$1,$4)/$2$(HdlBin): $(PreBuiltCore)
@@ -62,7 +63,7 @@ ifdef HdlToolRealCore
                 $(PreBuiltCore)),$(strip \
                 $$(TargetDir)),$(2)$(HdlBin))
 	$(AT)$$(HdlSourceListCompile)
-	$(AT)$$(if $$(HdlToolNeedsSourceList_$(HdlToolSet)),(cd $$(TargetDir) ; $$(HdlToolPost)))
+	$(AT)$$(if $$(HdlToolNeedsSourceList_$(HdlToolSet)),$$(HdlPost))
 
     else
       $(call OcpiDbgVar,CompiledSourceFiles)
@@ -82,6 +83,7 @@ ifneq (,$(JENKINS_HOME))
 	$(AT)echo "============= ($$(shell date +"%H:%M:%S"), started $$(JOB_STARTTIME))"
 endif
 	$(AT)$$(HdlCompile)
+	$(AT)$$(HdlPost)
     endif # end of else of prebuilt
 
     $(call OcpiDbg,Binary: $(call WkrTargetDir,$1,$4)/$2$(HdlBin))
@@ -103,7 +105,7 @@ endif
         $(foreach both,$(join $(HdlCores),$(Tops:%=:%)),\
           $(foreach core,$(word 1,$(subst :, ,$(both))),\
             $(foreach top,$(word 2,$(subst :, ,$(both))),\
-              $(eval $(call DoCore,$t,$(core),$(top),$c)))))))
+              $(eval $(call DoCore,$t,$(core),$(top),$c,$(and $(filter %_rv,$(top)),uses_rv))))))))
    endif
   endif # end of not cleaning
   $(call OcpiDbgVar,CompiledSourceFiles,b3 )
@@ -166,6 +168,7 @@ $(call BBLibFile,$1,$2,$3,$4): $$$$(HdlSources) | $$$$(TargetDir)
 	$(AT)$(ECHO) -n Building stub/blackbox library \($$@\) for target' '
 	$(AT)$(ECHO) $$(HdlTarget) from: $5
 	$(AT)$$(HdlCompile)
+	$(AT)$$(HdlPost)
 
 $(call WkrTargetDir,$1,$3)/bb:
 	$(AT)mkdir -p $$@
@@ -189,7 +192,7 @@ $(call OcpiDbgVar,HdlActualTargets)
 HdlCoreBBInstallDir=$(call HdlCoreInstallDir,$(word 1,$(HdlCores)))_bb
 # Install the black box library
 $(HdlCoreBBInstallDir):
-	$(AT)mkdir $@
+	$(AT)mkdir -p $@
 
 install_bb: | $(HdlCoreBBInstallDir)
 	$(AT)for f in $(HdlFamilies); do \

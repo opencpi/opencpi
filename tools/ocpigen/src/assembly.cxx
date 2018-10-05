@@ -514,8 +514,6 @@ emitXmlWorker(FILE *f) {
   if (m_wci && m_wci->timeout())
     //  if (m_ports.size() && m_ports[0]->type == WCIPort && m_ports[0]->u.wci.timeout)
     fprintf(f, " Timeout=\"%zu\"", m_wci->timeout());
-  if (m_slave)
-    fprintf(f, " Slave='%s.%s'", m_slave->m_implName, m_slave->m_modelString);
   if (m_ctl.firstRaw)
     fprintf(f, " FirstRaw='%u'", m_ctl.firstRaw->m_ordinal);
   if (m_scalable)
@@ -530,6 +528,10 @@ emitXmlWorker(FILE *f) {
       m_scaling.emit(out, NULL);
       fprintf(f, "  <scaling %s/>\n", out.c_str());
     }
+  }
+  for (auto it = m_slaves.begin(); it != m_slaves.end(); ++it){
+    fprintf(f, "  <slave worker='%s.%s'/>\n", (*it).second->m_implName,
+                                              (*it).second->m_modelString);
   }
   unsigned nn;
   std::string out;

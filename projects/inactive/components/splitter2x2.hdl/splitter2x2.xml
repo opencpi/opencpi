@@ -1,4 +1,4 @@
-<HdlImplementation Name="splitter2x2" Language="Verilog" Pattern="%w%M%0_">
+<HdlWorker Name="splitter2x2" Language="Verilog" Pattern="%w%M%0_">
   <xi:include href="splitter2x2_spec.xml"/>
   <!-- force byte enables because shep always uses them -->
   <ControlInterface Sub32BitConfigProperties="true">
@@ -22,4 +22,4 @@
   <StreamInterface Name="in1" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32" NumberOfOpcodes="256"/>
   <StreamInterface Name="out0" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32" NumberOfOpcodes="256"/>
   <StreamInterface Name="out1" ImpreciseBurst="true" PreciseBurst="true" DataWidth="32" NumberOfOpcodes="256"/>
-</HdlImplementation>
+</HdlWorker>

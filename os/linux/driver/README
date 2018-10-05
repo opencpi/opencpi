@@ -65,10 +65,16 @@ us is the following:
 Where SIZE is the number of bytes to reserve in either hex or decimal, and
 START is the physical address in hexidecimal bytes.  You *must* use even
 page boundaries (0x1000 or 4096 bytes) for all addresses and sizes.  
+
+Calculate Values in Preparation for Memory Reservation
+################################################################################
   
 Start by running:
 
-$ dmesg | grep BIOS
+dmesg | grep BIOS
+
+The output will look something like:
+
 BIOS-provided physical RAM map:
  BIOS-e820: 0000000000000000 - 000000000009f800 (usable)
  BIOS-e820: 000000000009f800 - 00000000000a0000 (reserved)
@@ -101,13 +107,18 @@ parameter:
 
 	memmap=128M$0x57EF0000
 
+Configure Memory Reservation
+################################################################################
+
 Once you've calculated your memmap parameter, you will need to add it to the
 kernel command line in your boot loader.
 
-For CentOS 6 and 7, you can use the utility "grubby".
+For CentOS, you can use the utility "grubby".
 
 This will add the parameter to all kernels in the startup menu. The single
 quotes are REQUIRED or your shell will interpret the $0:
+
+For CentOS6:
 
 sudo grubby --update-kernel=ALL --args=memmap='128M$0x57EF0000'
 
@@ -119,16 +130,18 @@ To verify the current kernel has the argument set:
 sudo -v
 sudo grubby --info $(sudo grubby --default-kernel)
 
-CentOS 7 users should see a SINGLE backslash before the $.
+CentOS 7 users should see a SINGLE backslash before the $, for example:
 
-To remove the parameter:
+args="ro rdblacklist=nouveau crashkernel=auto rd.lvm.lv=vg.0/root quiet audit=1 boot=UUID=96933cb5-f478-4933-a0d4-16953cf47f5c memmap=128M\$0x57EF0000 LANG=en_US.UTF-8"
+
+If no longer desired, the parameter can also be removed:
 sudo grubby --update-kernel=ALL --remove-args=memmap
 
 More information concerning grubby can be found at:
 https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/7/html/System_Administrators_Guide/sec-Making_Persistent_Changes_to_a_GRUB_2_Menu_Using_the_grubby_Tool.html
 
 ... the memmap parameter:
-https://www.kernel.org/doc/Documentation/kernel-parameters.txt
+https://www.kernel.org/doc/html/latest/admin-guide/kernel-parameters.html
 
 Note: If you have other memmap parameters, e.g. for non-OpenCPI PCI cards,
 then grubby usage will be different. The OpenCPI driver will use the first
@@ -136,7 +149,14 @@ memmap parameter on the command line OR the parameter "opencpi_memmap" if it
 is explicitly given. If this parameter is given, the standard memmap command
 with the same parameters must ALSO be passed to the kernel.
 
+Apply Memory Reservation
+################################################################################
+
 Reboot the system, making certain to boot from your new configuration.
+
+Verify Memory Reservation
+################################################################################
+
 Once that's done, if you run 'dmesg' you should see something like this:
 
 $dmesg | more

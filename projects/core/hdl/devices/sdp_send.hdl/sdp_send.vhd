@@ -448,9 +448,9 @@ g0: for i in 0 to sdp_width_c-1 generate
       end if;
     end procedure begin_remote;
   begin
-    r              := to_integer(sdp_remote_idx_r);
-    started_remote := false;
     if rising_edge(sdp_in.clk) then
+      r              := to_integer(sdp_remote_idx_r);
+      started_remote := false;
       -- FIXME deal properly with the potential of a separate CDP clk
       -- THe control clock should reset this state, but it might not be the same as the SDP clk.
       if its(ctl_in.reset) then

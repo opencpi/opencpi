@@ -40,10 +40,13 @@ else ifeq ($(OCPI_HAVE_OPENCL),1)
   ifeq ($(filter clean%,$(MAKECMDGOALS)),)
     # OCPI_HAVE_OPENCL enables us to even try to use OpenCL
     # OCPI_FOUND_OPENCL is internal telling us the guard has succeeeded previously
-    ifndef OCPI_FOUND_OPENCL
-      ifeq ($(call DoShell,\
-              OCPI_OPENCL_LIB=$(OCPI_OPENCL_LIB) $(ToolsDir)/ocpiocltest test,OclTargetMap,1),)
-        export OCPI_FOUND_OPENCL:=1
+    $(infox OCPI_HAVE_OPENCL=$(OCPI_HAVE_OPENCL) and OCPI_FOUND_OPENCL=$(OCPI_FOUND_OPENCL))
+    ifeq ($(OCPI_HAVE_OPENCL),1)
+      ifndef OCPI_FOUND_OPENCL
+        ifeq ($(call DoShell,\
+                OCPI_OPENCL_LIB=$(OCPI_OPENCL_LIB) $(ToolsDir)/ocpiocltest test,OclTargetMap,1),)
+          export OCPI_FOUND_OPENCL:=1
+        endif
       endif
     endif
     ifdef OCPI_FOUND_OPENCL
