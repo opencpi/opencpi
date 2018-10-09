@@ -232,10 +232,15 @@ The RPMs each have specific usage. Table~\ref{table:rpm} outlines what each of t
 
 \subsubsection{Installing from \code{github.io}}
 Installation may be completed\footnote{This will not include the ANGRYVIPER IDE; see Appendix~\ref{App:IDE_plugin} for installation} using the publicly available RPMs on \href{https://opencpi.github.io/}{github.io} with the following reference commands:
-
+% To test:
+% docker run -it --rm centos:7
 \subsubsection*{Configure Yum Repository}
 \code {\$ sudo yum install yum-utils}\\
-\code {\$ sudo yum-config-manager --add-repo=https://opencpi.github.io/repo/opencpi-v1.4.repo}
+\code {\$ sudo yum-config-manager --add-repo=https://opencpi.github.io/repo/opencpi-v1.4.0.repo} % Previously did not have "0" at end; there is a symlink on github.io for either to work
+
+\subsubsection*{Install External Dependencies}
+\code {\$ sudo yum install epel-release}\\
+\code {\$ sudo yum install libXft.i686 libXext.i686} % AV-4733
 
 \subsubsection*{List Available Packages}
 To see packages available in the repository (to cross-reference with Tables~\ref{table:decide} and \ref{table:rpm}):\\
