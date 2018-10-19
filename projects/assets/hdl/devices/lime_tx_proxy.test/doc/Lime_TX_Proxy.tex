@@ -119,7 +119,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Workers           & \comp.rcc      \\
 	\hline
-	Tested Platforms  & linux-x13\_3-arm, CentOS 7 (via alst4/Zipper), CentOS 6/7 (via ml605/Zipper for HPC and LPC FMC slots) \\
+	Tested Platforms  & xilinx13\_3, CentOS 7 (via alst4/Zipper), CentOS 6/7 (via ml605/Zipper for HPC and LPC FMC slots) \\
 	\hline
 	Slave Worker      & lime\_tx.hdl   \\
 	\hline
@@ -154,7 +154,7 @@ A diagram of the transmitter in the Lime Microsystems LMS6002D can be seen in fi
 
 \section*{Source Dependencies}
 \begin{itemize}
-	\item ocpi.assets/hdl/devices/lime\_tx\_proxy.rcc/lime\_tx\_proxy.cc
+	\item assets/hdl/devices/lime\_tx\_proxy.rcc/lime\_tx\_proxy.cc
 \end{itemize}
 
 \begin{landscape}
@@ -231,6 +231,9 @@ A diagram of the transmitter in the Lime Microsystems LMS6002D can be seen in fi
 
 \section*{Test and Verification}
 \begin{flushleft}
+
+\textit{\textbf{Note: A component unit test does not exist.  Reference the applications/ for a hardware-in-the-loop test application.}}\\ \medskip
+
 	The testbench for this proxy is meant to exercise the properties of the proxy worker dynamically while the application is running.  Random data is sent out to emulate noise on the spectrum analyzer. The following steps are taken in the testbench:
 	\begin{itemize}
 		\item[1)] Change the \verb+output_gain_db+ settings

@@ -73,7 +73,11 @@ namespace OCPI {
 	public:
 	// Do a recursive directory search for all files.
 	void configure(ezxml_t) {
-	  doPath(name());
+	  std::string globbedName;
+	  if (OU::globPath(name().c_str(), globbedName))
+	    ocpiInfo("Library path pathname \"%s\" is invalid or nonexistent, and ignored",
+		    name().c_str());
+	  doPath(globbedName);
 	}
 	OCPI::Library::Artifact *
 	addArtifact(const char *url, const OCPI::API::PValue *params) {

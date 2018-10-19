@@ -62,15 +62,13 @@ else
     if test -f /etc/opencpi-release; then
       read OCPI_TOOL_PLATFORM x < /etc/opencpi-release
     else
-      echo No /etc/opencpi-release - assuming ZedBoard hardware
-      OCPI_TOOL_PLATFORM=zed
+      echo No /etc/opencpi-release - assuming xilinx13_3 software platform
+      OCPI_TOOL_PLATFORM=xilinx13_3
     fi
     export OCPI_TOOL_PLATFORM
     export OCPI_TOOL_OS=linux
     export OCPI_TOOL_DIR=\$OCPI_TOOL_PLATFORM
-    # As a default, access all built artifacts in the core project as well as
-    # the bare-bones set of prebuilt runtime artifacts for this SW platform
-    export OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/../project-registry/ocpi.core/exports/artifacts
+    # As a default, access all built RCC artifacts from the core project
     export OCPI_LIBRARY_PATH+=:$OCPI_CDK_DIR/\$OCPI_TOOL_PLATFORM/artifacts
     # Priorities for finding system.xml:
     # 1. If is it on the local system it is considered customized for this system - use it.
@@ -94,7 +92,7 @@ else
     export OCPI_SYSTEM_CONFIG
     export PATH=$OCPI_CDK_DIR/\$OCPI_TOOL_DIR/bin:\$PATH
     # This is only for ACI executables in special cases...
-    export LD_LIBRARY_PATH=$OCPI_CDK_DIR/$OCPI_TOOL_DIR/lib:\$LD_LIBRARY_PATH
+    export LD_LIBRARY_PATH=$OCPI_CDK_DIR/\$OCPI_TOOL_DIR/lib:\$LD_LIBRARY_PATH
     ocpidriver load
     export TZ=$5
     echo OpenCPI ready for zynq.

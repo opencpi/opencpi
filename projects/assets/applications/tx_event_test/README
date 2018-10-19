@@ -1,0 +1,9 @@
+Example 1 - Zedboard/FMCOMMS3 w/ SMA TX1A connected to spectrum analyzer w/ 2.4 GHz visible
+OCPI_LIBRARY_PATH=../../hdl/assemblies/data_src_to_dac_test_tx_event/:../../hdl/:../../components/:$OCPI_LIBRARY_PATH ocpirun -t 10 tx_event_test_toggle_fmcomms3_control_plane_100_MHz.xml
+Spectrum analyzer is used to observe tone at 2.4 GHz toggle on/off once a second for 10 sec.
+
+Example 2 - Zedboard/FMCOMMS3 w/ SMA TX1A connected to spectrum analyzer w/ 2.4 GHz visible
+OCPI_LIBRARY_PATH=../../hdl/assemblies/data_src_to_dac/:../../hdl/:../../components/:$OCPI_LIBRARY_PATH ocpirun -t 10 tx_event_test_const_tone_fmcomms3.xml
+Spectrum analyzer is used to observe constant tone at 2.4 GHz for 10 sec.
+
+For more info, see TX_Event_Test.tex / TX_Event_Test.pdf

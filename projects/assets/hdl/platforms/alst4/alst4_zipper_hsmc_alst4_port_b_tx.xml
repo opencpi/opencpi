@@ -1,6 +1,8 @@
 <hdlconfig>
-  <device name="lime_dac" card="lime_zipper_hsmc_alst4" slot="hsmc_alst4_b"/>
+  <!-- Note: (AV-4465) - A limitation of OpenCPI requires that subdevice masters (e.g. lime_dac)
+       be placed after subdevice slaves (e.g. lime_tx). -->
   <device name="si5351"   card="lime_zipper_hsmc_alst4" slot="hsmc_alst4_b"/> <!-- i2c bus -->
   <device name="lime_tx"  card="lime_zipper_hsmc_alst4" slot="hsmc_alst4_b"/>
+  <device name="lime_dac" card="lime_zipper_hsmc_alst4" slot="hsmc_alst4_b"/>
 </hdlconfig>
 

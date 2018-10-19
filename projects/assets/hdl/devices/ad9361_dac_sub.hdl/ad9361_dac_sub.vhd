@@ -43,7 +43,6 @@ architecture rtl of ad9361_dac_sub_worker is
   -- those dev signals to ensure that the corresponding registers are set
   -- properly)
   constant data_bus_bits_are_reversed    : bool_t := bfalse;
-  constant data_clk_p_is_inverted        : bool_t := bfalse;
 
   -- Determine the data_width based on the mode.
   -- While the data-width to the adc/dac will be the same,
@@ -83,6 +82,7 @@ architecture rtl of ad9361_dac_sub_worker is
   signal wsi_clear       : std_logic := '0';
   signal wsi_reset_n     : std_logic := '1';
   signal wsi_use_two_r_two_t_timing : std_logic := '0';
+  signal wsi_txen                   : std_logic := '0';
   -- AD9361 TX clock divided by 2 clock domain signals
   signal dacd2_clk              : std_logic := '0';
 
@@ -108,12 +108,10 @@ architecture rtl of ad9361_dac_sub_worker is
   signal dac_data_ddr_first_r   : std_logic_vector(data_width_from_pins-1 downto 0) := (others => '0');
   signal dac_data_ddr_second_r  : std_logic_vector(data_width_from_pins-1 downto 0) := (others => '0');
   signal dac_start_frame_r : std_logic := '0';
-  signal dac_dev_data_clk_p : std_logic := '0';
   -- AD9361 TX clock domain x2 signals (i.e. TX clock w/ DDR data)
   signal dacm2_tx_data_r     : std_logic_vector(dac_width-1 downto 0);
   -- signals interface (DAC clock domain)
   signal TX_FRAME_P_s : std_logic := '0';
-  signal FB_CLK_P_s   : std_logic := '0';
 
   attribute equivalent_register_removal : string;
   attribute equivalent_register_removal of dacd2_processing_ch0 : signal is "no";
@@ -129,7 +127,7 @@ begin
   dev_cfg_data_out.ch0_handler_is_present   <= ch0_worker_present;
   dev_cfg_data_out.ch1_handler_is_present   <= ch1_worker_present;
   dev_cfg_data_out.data_bus_index_direction <= '1' when data_bus_bits_are_reversed = btrue  else '0';
-  dev_cfg_data_out.data_clk_is_inverted     <= '1' when data_clk_p_is_inverted     = btrue  else '0';
+  dev_cfg_data_out.data_clk_is_inverted     <= '0'; -- this worker really doesn't care if DATA_CLK is inverted
   dev_cfg_data_out.islvds                   <= '1' when LVDS_p                     = btrue  else '0';
   dev_cfg_data_out.isdualport               <= '1' when LVDS_p                     = btrue  else wsi_dual_port;
   dev_cfg_data_out.isfullduplex             <= '1' when LVDS_p                     = btrue  else wsi_full_duplex;
@@ -140,8 +138,8 @@ begin
   ch0_worker_present <= dev_data_ch0_in_in.present;
   ch1_worker_present <= dev_data_ch1_in_in.present;
 
-  -- ******* THIS OPENCPI BUILD CONFIGURATION IS NOT SUPPORTED BY ******* 
-  -- ******* AD9361 AND SHOULD NEVER BE USED ******* 
+  -- ******* THIS OPENCPI BUILD CONFIGURATION IS NOT SUPPORTED BY *******
+  -- ******* AD9361 AND SHOULD NEVER BE USED *******
   data_mode_invalid : if (LVDS_p = btrue) and
                          ((SINGLE_PORT_p      = btrue) or
                           (HALF_DUPLEX_p      = btrue) or
@@ -155,7 +153,7 @@ begin
 
   end generate;
 
-  -- ******* ALL CMOS-SPECIFIC DAC DATA INTERLEAVING HDL CODE IS ******* 
+  -- ******* ALL CMOS-SPECIFIC DAC DATA INTERLEAVING HDL CODE IS *******
   -- ******* INTENDED TO EXIST WITHIN THIS IF/GENERATE           *******
   data_mode_cmos : if LVDS_p = bfalse generate
   begin
@@ -181,7 +179,6 @@ begin
         dac_data_q_ch1               => dev_data_ch1_in_in.dac_data_Q,
         dac_dev_data_ch0_in_in_ready => dev_data_ch0_in_in.dac_ready,
         dac_dev_data_ch1_in_in_ready => dev_data_ch1_in_in.dac_ready,
-        dac_fb_clk                   => FB_CLK_P_s,
         dac_tx_frame                 => TX_FRAME_P_s,
         dac_dev_data_ch0_in_out_clk  => dev_data_ch0_in_out.dac_clk,
         dac_dev_data_ch1_in_out_clk  => dev_data_ch1_in_out.dac_clk,
@@ -193,7 +190,7 @@ begin
 
   end generate data_mode_cmos;
 
-  -- ******* ALL LVDS-SPECIFIC DAC DATA INTERLEAVING HDL CODE EXISTS ******* 
+  -- ******* ALL LVDS-SPECIFIC DAC DATA INTERLEAVING HDL CODE EXISTS *******
   -- ******* WITHIN THIS IF/GENERATE                                 *******
   data_mode_lvds : if (LVDS_p = btrue) and
                       (SINGLE_PORT_p       = bfalse) and
@@ -201,22 +198,7 @@ begin
                       (DATA_RATE_CONFIG_p  = DDR_e) generate
   begin
 
-    gen_dac_clk : if data_clk_p_is_inverted = bfalse generate
-      dac_dev_data_clk_p <= not dev_data_clk_in.DATA_CLK_P;
-    end generate;
-    gen_dac_clk_inv : if data_clk_p_is_inverted = btrue generate
-      dac_dev_data_clk_p <= dev_data_clk_in.DATA_CLK_P;
-    end generate;
-
-    dac_clk_bufr : BUFR
-    generic map (
-       BUFR_DIVIDE => "BYPASS")   -- "BYPASS", "1", "2", "3", "4", "5", "6", "7", "8"
-    port map (
-       O => dac_clk,   -- 1-bit output: Clock output port
-       CE => '1',        -- 1-bit input: Active high, clock enable (Divided modes only)
-       CLR => '0',       -- 1-bit input: Active high, asynchronous clear (Divided mode only)
-       I => dac_dev_data_clk_p-- 1-bit input: Clock buffer input driven by an IBUFG, MMCM or local interconnect
-    );
+    dac_clk <= dev_data_clk_in.DATA_CLK_P;
 
     BUFR_inst : BUFR
     generic map (
@@ -227,21 +209,6 @@ begin
        CLR => '0',       -- 1-bit input: Active high, asynchronous clear (Divided mode only)
        I => dac_clk      -- 1-bit input: Clock buffer input driven by an IBUFG, MMCM or local interconnect
     );
-
-    -- forward DATA_CLK_P (D1/D2 of 0/1 inverts dac_clk, which is correct because the data sent out should be falling-edge aligned)
-    dac_clock_forward : ODDR
-      generic map(
-        DDR_CLK_EDGE => "SAME_EDGE",
-        INIT         => '0',
-        SRTYPE       => "ASYNC")
-      port map(
-        Q  => FB_CLK_P_s,
-        C  => dac_clk,
-        CE => '1',
-        D1 => '0',
-        D2 => '1',
-        R  => '0',
-        S  => '0');
 
     dev_data_ch0_in_out.dac_clk <= dacd2_clk;
     dev_data_ch1_in_out.dac_clk <= dacd2_clk;
@@ -410,6 +377,19 @@ begin
 
   -- delegate to the data_sub.
   dev_data_to_pins_out.tx_frame <= TX_FRAME_P_s;
-  dev_data_to_pins_out.fb_clk   <= FB_CLK_P_s;
 
+  event_in_x2_to_txen : entity work.event_in_x2_to_txen
+    port map (ctl_in_clk           => wci_clk,
+              ctl_in_reset         => wci_reset,
+              txon_pulse_0         => dev_tx_event_ch0_in.txon_pulse,
+              txoff_pulse_0        => dev_tx_event_ch0_in.txoff_pulse,
+              event_in_connected_0 => dev_tx_event_ch0_in.event_in_connected,
+              is_operating_0       => dev_tx_event_ch0_in.is_operating,
+              txon_pulse_1         => dev_tx_event_ch1_in.txon_pulse,
+              txoff_pulse_1        => dev_tx_event_ch1_in.txoff_pulse,
+              event_in_connected_1 => dev_tx_event_ch1_in.event_in_connected,
+              is_operating_1       => dev_tx_event_ch1_in.is_operating,
+              txen                 => wsi_txen);
+
+  dev_txen_out.txen         <= wsi_txen;
 end rtl;

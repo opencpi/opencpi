@@ -1,0 +1,15 @@
+<!-- The cust_test_app application xml file -->
+<Application done='capture_v2'>
+    <Instance component="ocpi.assets.util_comps.capture_v2" name="capture_v2">
+    <property name='stopOnFull'  value='true'></property>
+    </Instance>
+    <Instance component="ocpi.core.file_read" name="file_read">
+    <property name='filename' value='test.in'/>
+	  <property name='messagesInFile' value='true'>
+	  </property>
+    </Instance>
+    <Connection>
+        <Port Instance="file_read" Name="out"></Port>
+        <Port Instance="capture_v2" Name="in"></Port>
+    </Connection>
+</Application>

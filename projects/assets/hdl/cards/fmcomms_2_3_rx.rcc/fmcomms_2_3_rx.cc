@@ -1669,7 +1669,9 @@ private:
     }
 
     // no I/Q swap for RX channel(s)
-    ad9361_init.pp_rx_swap_enable = (ocpi_uchar_t) 0;
+    // (from AD9361_Register_Map_Reference_Manual_UG-671.pdf pg. 9:
+    // "Clearing this bit swaps I and Q (performs spectral inversion).")
+    ad9361_init.pp_rx_swap_enable = 1;
 
     // See Table 1: Channel Connectivity in AD9361 ADC Sub Component Data Sheet
     OCPI::API::Application &app = getApplication();

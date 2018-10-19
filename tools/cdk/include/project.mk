@@ -38,7 +38,7 @@ ifeq ($(HdlPlatform)$(HdlPlatforms),)
   endif
 endif
 
-# imports need to be created before ocpisetup.mk no matter what
+# imports need to be created before exports etc.
 ifeq ($(filter imports projectpackage,$(MAKECMDGOALS)),)
   doimports=$(shell $(OcpiExportVars) $(MAKE) imports NoExports=1)
   ifeq ($(wildcard imports),)
@@ -233,6 +233,7 @@ cleanapplications:
 # needs to be accessible via imports for projects other than core
 # (e.g. for cleaning rcc)
 clean: cleancomponents cleanapplications cleanrcc cleanhdl cleanexports cleanimports
+	rm -r -f artifacts
 
 # Iterate through symlinks in imports. If the link points to the project registry dir,
 # it is the CDK, or is a broken link, it can be cleaned/removed. If the imports directory
@@ -245,13 +246,13 @@ cleanimports:
 	fi
 
 cleanexports:
-	rm -r -f exports artifacts
+	rm -r -f exports
 
 cleaneverything: clean
 	find . -name '*~' -exec rm {} \;
 	find . -depth -name '*.dSym' -exec rm -r {} \;
-	find . -depth -name gen -exec rm -r -f {} \;
 	find . -depth -name 'target-*' -exec rm -r -f {} \;
+	find . -depth -name gen -a -type d -a ! -path "*/rcc/platforms/*" -exec  rm -r -f {} \;
 	find . -depth -name lib -a -type d -a ! -path "*/rcc/platforms/*" -exec  rm -r -f {} \;
 
 ifdef ShellProjectVars

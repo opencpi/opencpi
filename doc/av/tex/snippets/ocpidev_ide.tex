@@ -1,0 +1,126 @@
+\iffalse
+This file is protected by Copyright. Please refer to the COPYRIGHT file
+distributed with this source distribution.
+
+This file is part of OpenCPI <http://www.opencpi.org>
+
+OpenCPI is free software: you can redistribute it and/or modify it under the
+terms of the GNU Lesser General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License along
+with this program. If not, see <http://www.gnu.org/licenses/>.
+\fi
+
+\iffalse
+
+This snippet defines macros to be used when describing ocpidev commands
+to give the user the equivalent in the IDE. See AV-4628.
+
+To see all output:
+\code{\$ ocpidev build something something}
+\OcpidevBuild
+\code{\$ ocpidev clean something something}
+\OcpidevClean
+\code{\$ ocpidev run test something something}
+\OcpidevRunTest
+\code{\$ ocpidev create (no options)}
+\OcpidevCreate{}
+\code{\$ ocpidev create project}
+\OcpidevCreate{Project}
+\code{\$ ocpidev clean project Project}
+\OcpidevCleanProject{Project}
+\code{\$ ocpidev register project my\_proj}
+\OcpidevRegisterProject{my_proj}
+\code{\$ ocpidev unregister project my\_proj}
+\OcpidevUnRegisterProject{my_proj}
+
+\fi
+% https://tex.stackexchange.com/a/5227
+\usetikzlibrary{shadows}
+\newcommand*\OcpidevKeystroke[1]{%
+  \tikz[baseline=(key.base)]
+    \node[%
+      draw,
+      fill=white,
+      drop shadow={shadow xshift=0.25ex,shadow yshift=-0.25ex,fill=black,opacity=0.75},
+      rectangle,
+      rounded corners=2pt,
+      inner sep=1pt,
+      line width=0.5pt,
+      font=\scriptsize\sffamily
+    ](key) {#1\strut}
+  ;
+}
+
+\providecommand{\OcpidevCtrlClick}{(use \OcpidevKeystroke{~Ctrl~} for multiple selection)}
+
+\providecommand{\OcpidevTemplate}[1]{
+\begin{center}
+\framebox{\parbox{0.8\linewidth}{\textit{To perform this operation within the IDE:}
+#1}}
+\end{center}
+}
+
+% OcpidevBuild = "ocpidev build"
+\providecommand{\OcpidevBuild}{\OcpidevTemplate{
+\begin{enumerate}
+\setlength\itemsep{0em} %tighten
+\item Open the ANGRYVIPER Perspective
+\item Select the asset from OpenCPI Project View
+\item Import to AV Operations Panel using ``$>$'' button
+\item Select the RCC and/or HDL platforms for the build \OcpidevCtrlClick
+\item Click ``Build''
+\end{enumerate}
+% Open the ANGRYVIPER Perspective, select the RCC and/or HDL platforms for the build \OcpidevCtrlClick , then select the asset in OpenCPI Projects view, right click, select build.
+}}
+
+% OcpidevClean = "ocpidev clean"
+\providecommand{\OcpidevClean}{\OcpidevTemplate{
+In the OpenCPI Projects view, select the project, right-click, select clean from the menu.
+}}
+
+% OcpidevRunTest = "ocpidev run test"
+\providecommand{\OcpidevRunTest}{\OcpidevTemplate{
+\begin{enumerate}
+\setlength\itemsep{0em} %tighten
+\item Click the ``Tests'' radio button and select RCC and/or HDL platforms for the run \OcpidevCtrlClick .
+\item Click the ``+remotes'' button, enter the remote string, click OK.
+\item Select the remote in the remotes list.
+\item In the OpenCPI Projects view, select the desired unit tests, click the ``$>$'' button in the operations panel, then click the desired operation to build and then run the listed tests on the selected remote.
+\end{enumerate}
+}}
+
+% OcpidevCreate = "ocpidev create <$1>"
+\providecommand{\OcpidevCreate}[1]{\OcpidevTemplate{
+\begin{itemize}
+\setlength\itemsep{0em} %tighten
+\item Place the cursor in the OpenCPI Projects panel, right click, select asset wizard.
+\item Select the asset type\ifthenelse{\equal{#1}{}}{}{ (``#1'')} in the drop-down, fill in the required inputs, click finish.
+\item When the process finishes, the new asset is displayed in both project views. (If the asset has an XML editor, then the editor opens.)
+\end{itemize}
+}}
+
+% OcpidevCleanProject = "ocpidev clean project <$1>"
+\providecommand{\OcpidevCleanProject}[1]{\OcpidevTemplate{\textit{(The project ``#1'' must be imported into the IDE and then refresh the OpenCPI Projects view so the project is shown.)}
+\begin{itemize}
+\setlength\itemsep{0em} %tighten
+\item Right click on #1 $\Rightarrow$ ``Clean''
+\end{itemize}
+}}
+
+% OcpidevRegisterProject = "ocpidev register project <$1>"
+% OcpidevUnRegisterProject = "ocpidev unregister project <$1>"
+\providecommand{\OcpidevRegisterProjectKernel}[2]{\OcpidevTemplate{\textit{(The project ``#1'' must be imported into the IDE and then refresh the OpenCPI Projects view so the project is shown.)}
+\begin{itemize}
+\setlength\itemsep{0em} %tighten
+\item In the OpenCPI Projects view, select the project, right-click, select ``#2'' from the menu. (Depending on state of the project, this option may not be available.)
+\end{itemize}
+}}
+\providecommand{\OcpidevRegisterProject}[2]{\OcpidevRegisterProjectKernel{\path{#1}}{register}}
+\providecommand{\OcpidevUnRegisterProject}[2]{\OcpidevRegisterProjectKernel{\path{#1}}{unregister}}

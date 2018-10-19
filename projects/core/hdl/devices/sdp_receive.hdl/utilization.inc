@@ -1,23 +1,19 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Utilization Report for Worker "sdp_receive"
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\begin{scriptsize}
-	\begin{table}[H]
-	\captionsetup{justification=raggedright,singlelinecheck=false}
-	\caption{Worker Build Configuration ``0''}
-	\begin{tabular}{|c|c|c|c|c|c|c|c|}
-		\hline
-		\rowcolor{blue}
-		OpenCPI Target & Tool    & Version & Device          & Registers & LUTs  & Fmax (MHz) & Memory/Special Functions                         \\
-		\hline
-		zynq\_ise      & ISE     & 14.7    & 7z010clg400-3   & 954       & 1604  & 356.721    & \begin{tabular}{@{}c@{}}RAMB36E1s=16\end{tabular}\\
-		\hline
-		virtex6        & ISE     & 14.7    & 6vcx75tff484-2  & 954       & 1592  & 289.683    & \begin{tabular}{@{}c@{}}RAMB36E1s=16\end{tabular}\\
-		\hline
-		zynq           & Vivado  & 2017.1  & xc7z020clg400-3 & 956       & 1037  & 225.836    & \begin{tabular}{@{}c@{}}RAMB36E1s=16\end{tabular}\\
-		\hline
-		stratix4       & Quartus & 15.1.0  & N/A             & 1057      & 1,083 & N/A        & N/A                                              \\
-		\hline
-	\end{tabular}
-	\end{table}
-\end{scriptsize}
+% Generated on Fri Oct  5 08:45:38 2018
+
+% It is best to wrap this table in \begin{landscape} and \end{landscape} in its including doc
+\begin{tiny}
+    \begin{longtable}[l]{* {9}{|c}|}
+    \captionsetup{justification=raggedright,singlelinecheck=false}
+    \caption{Resource Utilization Table for worker: sdp\_receive}\\
+        \hline
+        \rowcolor{blue}
+            Configuration & OCPI Target & Tool    & Version & Device          & Registers (Typ) & LUTs (Typ) & Fmax (MHz) (Typ) & Memory/Special Functions \\
+            \hline
+            0             & zynq        & Vivado  & 2017.1  & xc7z020clg400-3 & 957             & 1059       & N/A              & \begin{tabular}{@{}l@{}}RAMB36E1: 16\end{tabular} \\
+            \hline
+            0             & stratix4    & Quartus & 17.1.0  & N/A             & 1057            & 1081       & N/A              & \begin{tabular}{@{}l@{}}Block Memory Bits: 524387\end{tabular} \\
+            \hline
+            0             & virtex6     & ISE     & 14.7    & 6vcx75tff484-2  & 954             & 1584       & 289.683          & \begin{tabular}{@{}l@{}}RAMB36E1: 16\end{tabular} \\
+            \hline
+        \end{longtable}
+\end{tiny}

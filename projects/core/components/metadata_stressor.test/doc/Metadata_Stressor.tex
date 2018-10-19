@@ -1,0 +1,361 @@
+\documentclass{article}
+\iffalse
+This file is protected by Copyright. Please refer to the COPYRIGHT file
+distributed with this source distribution.
+
+This file is part of OpenCPI <http://www.opencpi.org>
+
+OpenCPI is free software: you can redistribute it and/or modify it under the
+terms of the GNU Lesser General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License along
+with this program. If not, see <http://www.gnu.org/licenses/>.
+\fi
+
+\author{} % Force author to be blank
+%----------------------------------------------------------------------------------------
+% Paper size, orientation and margins
+%----------------------------------------------------------------------------------------
+\usepackage{geometry}
+\geometry{
+	letterpaper,			% paper type
+	portrait,				% text direction
+	left=.75in,				% left margin
+	top=.75in,				% top margin
+	right=.75in,			% right margin
+	bottom=.75in			% bottom margin
+ }
+%----------------------------------------------------------------------------------------
+% Header/Footer
+%----------------------------------------------------------------------------------------
+\usepackage{fancyhdr} \pagestyle{fancy} % required for fancy headers
+\renewcommand{\headrulewidth}{0.5pt}
+\renewcommand{\footrulewidth}{0.5pt}
+%----------------------------------------------------------------------------------------
+% Appendix packages
+%----------------------------------------------------------------------------------------
+\usepackage[toc,page]{appendix}
+%----------------------------------------------------------------------------------------
+% Defined Commands & Renamed Commands
+%----------------------------------------------------------------------------------------
+\renewcommand{\contentsname}{Table of Contents}
+\renewcommand{\listfigurename}{List of Figures}
+\renewcommand{\listtablename}{List of Tables}
+\newcommand{\todo}[1]{\textcolor{red}{TODO: #1}\PackageWarning{TODO:}{#1}} % To do notes
+\newcommand{\code}[1]{\texttt{#1}} % For inline code snippet or command line
+%----------------------------------------------------------------------------------------
+% Various pacakges
+%----------------------------------------------------------------------------------------
+\usepackage{hyperref} % for linking urls and lists
+\usepackage{graphicx} % for including pictures by file
+\usepackage{listings} % for coding language styles
+\usepackage{rotating} % for sideways table
+\usepackage{pifont}   % for sideways table
+\usepackage{pdflscape} % for landscape view
+%----------------------------------------------------------------------------------------
+% Table packages
+%----------------------------------------------------------------------------------------
+\usepackage{longtable} % for long possibly multi-page tables
+\usepackage{tabularx} % c=center,l=left,r=right,X=fill
+\usepackage{float}
+\floatstyle{plaintop}
+\usepackage[tableposition=top]{caption}
+\newcolumntype{P}[1]{>{\centering\arraybackslash}p{#1}}
+\newcolumntype{M}[1]{>{\centering\arraybackslash}m{#1}}
+%----------------------------------------------------------------------------------------
+% Block Diagram / FSM Drawings
+%----------------------------------------------------------------------------------------
+\usepackage{tikz}
+\usetikzlibrary{shapes,arrows,fit,positioning}
+\usetikzlibrary{automata} % used for the fsm
+%----------------------------------------------------------------------------------------
+% Colors Used
+%----------------------------------------------------------------------------------------
+\usepackage{colortbl}
+\definecolor{blue}{rgb}{.7,.8,.9}
+\definecolor{ceruleanblue}{rgb}{0.16, 0.32, 0.75}
+\definecolor{drkgreen}{rgb}{0,0.6,0}
+\definecolor{deepmagenta}{rgb}{0.8, 0.0, 0.8}
+\definecolor{cyan}{rgb}{0.0,0.6,0.6}
+\definecolor{maroon}{rgb}{0.5,0,0}
+%----------------------------------------------------------------------------------------
+% Update the docTitle and docVersion per document
+%----------------------------------------------------------------------------------------
+\def\docTitle{Component Data Sheet}
+\def\docVersion{1.4}
+%----------------------------------------------------------------------------------------
+\date{Version \docVersion} % Force date to be blank and override date with version
+\title{\docTitle}
+\lhead{\small{\docTitle}}
+
+\def\comp{metadata\_stressor}
+\edef\ecomp{metadata_stressor}
+\def\Comp{Metadata Stressor}
+\graphicspath{ {figures/} }
+
+\begin{document}
+
+\section*{Summary - \Comp}
+\begin{tabular}{|c|M{13.5cm}|}
+	\hline
+	\rowcolor{blue}
+	                  &  \\
+	\hline
+	Name              & \comp  \\
+	\hline
+	Worker Type       & Application  \\
+	\hline
+	Version           &  v\docVersion  \\
+	\hline
+	Release Date      &  September 2018  \\
+	\hline
+	Component Library &  ocpi.core  \\
+	\hline
+	Workers           &  \comp.hdl, \comp.rcc  \\
+	\hline
+	Tested Platforms  &  isim, xsim, modelsim, xilinx13\_3, centos6, centos7, alst4, ml605, ZedBoard(PL), Matchstiq-Z1(PL)  \\
+	\hline
+\end{tabular}
+
+\section*{Functionality}
+\begin{flushleft}
+The \textit{\comp} component tests an HDL worker's robustness during development as part of the unit test suite. An HDL worker is expected to accept all valid combinations of metadata without failure, though some are unlikely to be encountered in normal operation. It also may starve the unit under test of data and insert delays between messages. The data starvation may be random or based on a duty cycle. The worker is automatically built into the HDL test assemblies generated by the framework. It can also add zero length messages between messages. It passes through the data it receives without change.  \medskip
+\end{flushleft}
+
+
+\section*{Worker Implementation Details}
+\subsection*{\comp.hdl}
+\begin{flushleft}
+The \textit{\comp} test worker has four modes controlling its primary operation: bypass, data, metadata, and full. In bypass mode, this worker passes through the data and metadata is receives without change. In data mode, the worker passes through the metadata associated with a message unchanged, but the data will be held based on the duty cycle or lfsr, imitating data starvation for the unit under test. (If enable\_take\_lsfr is not set to true or take\_duty is not set to greater than 1, then the worker will set the duty cycle to 5.) In metadata mode, the worker passes through the data (not intentionally withholding any data) but manipulates the metadata in the following ways:
+\begin{itemize}
+ \item early start of message (SOM), data, late end of message (EOM)
+ \item early SOM, data, EOM with data
+ \item SOM with data, data, late EOM
+ \item SOM with data, data, EOM with data, (single word message if that is what is received)
+ \item zero length message (if allow\_zlms is true)
+\end{itemize}
+It repeats those patterns so long as there is data.
+In full mode, the worker combines data and metadata modes, manipulating both the metadata and starving the unit under test of data.
+Do not use data and allow\_zlms in combination. Data mode does not allow for manipulation of metadata, so zero length messages cannot be inserted. Enabling both does not cause a failure, but one behavior will preclude the expression of the other.  \medskip
+\end{flushleft}
+
+\subsection*{\comp.rcc}
+\begin{flushleft}
+The RCC version of this component is just a placeholder to fulfill the requirements of unit test framework. It passes through data without change and shouldn't be included in normal applications, as it provides no real functionality.  \medskip
+\end{flushleft}
+
+\section*{Theory}
+\begin{flushleft}
+There are some combinations of metadata that are valid but not often encountered that a worker should be designed to handle.   \medskip
+\end{flushleft}
+
+\section*{Block Diagrams}
+\subsection*{Top level}
+\begin{center}
+\begin{tikzpicture}[% List of styles applied to all, to override specify on a case-by-case
+	every node/.style={
+		align=center,  		% use this so that the "\\" for line break works
+		minimum size=2cm	% creates space above and below text in rectangle
+		},
+		every edge/.style={draw,thick}
+		]
+	\node[rectangle,ultra thick,draw=black,fill=blue](R2){\Comp};
+	\node[rectangle,draw=white,fill=white](R3)[left= of R2]{``in'' \\ DATA\_WIDTH\_p bits};
+	\node[rectangle,draw=white,fill=white](R4)[right= of R2]{``out'' \\ DATA\_WIDTH\_p bits};
+	\node[rectangle,draw=white,fill=white](R5)[above= of R2]{\verb+enable_give_lsfr+, \verb+enable_take_lsfr+ \\ \verb+give_duty+, \verb+take_duty+, \verb+mode+ \\ \verb+seed+, \verb+insert_nop+, \verb+allow_zlms+};
+	\path[->]
+	(R3)edge []	node [] {} (R2)
+	(R2)edge []	node [] {} (R4)
+	(R2)edge []	node [] {} (R5)
+	(R5)edge []	node [] {} (R2)
+	;
+\end{tikzpicture}
+\captionof{figure}{Top Level Block Diagram}
+\end{center}\pagebreak
+
+\subsection*{State Machine}
+\begin{flushleft}
+Below is an abbreviated representation of the primary finite state machine implemented in the HDL version of this component.
+\end{flushleft}
+\begin{center}
+	\centering\captionsetup{type=figure}\includegraphics[scale=0.25]{ms_fsm_abrv}
+\end{center}
+
+\section*{Source Dependencies}
+\subsection*{\comp.hdl}
+\begin{itemize}
+	\item projects/core/components//metadata\_stressor.hdl/metadata\_stressor.vhd
+	\item core/hdl/primitives/util/util\_pkg.vhd
+	      \subitem projects/core/hdl/primitives/util/zlm\_detector.vhd
+\end{itemize}
+
+\subsection*{\comp.rcc}
+\begin{itemize}
+	\item projects/core/components/metadata\_stressor.rcc/metadata\_stressor.cc
+\end{itemize}
+
+\begin{landscape}
+	\section*{Component Spec Properties}
+	\begin{scriptsize}
+% do not delete this line, it is used by the auto gen script to insert latex code
+\begin{tabular}{|p{2cm}|p{1.5cm}|c|c|c|p{1.5cm}|p{1cm}|p{7cm}|}
+\hline
+\rowcolor{blue}
+Name & Type & SequenceLength & ArrayDimensions & Accessibility & Valid Range & Default & Usage \\
+\hline
+\verb+enable_give_lsfr+  & bool & - & - & Readable, Writable & Standard & False & True: MSB of lsfr drives give, False: give\_duty drives give \\
+\hline
+\verb+enable_take_lsfr+  & bool & -  & - & Readable, Writable & Standard & False & True: 7th bit of lsfr drives take, False: take\_duty drives take \\
+\hline
+\verb+give_duty+     & ushort & -  & - & Readable, Writable & Standard & 1 & Set `give' duty cycle if enable\_give\_lsfr is false \\
+\hline
+\verb+take_duty+     & ushort & -  & -  & Readable, Writable & Standard & 1 & Set `take' duty cycle if enable\_take\_lsfr is false \\
+\hline
+\verb+mode+     & enum & -  & -  & Readable, Writable & Standard & bypass & bypass: worker passes through data and metadata, data: worker varies data, but passes through metadata, metadata: vary metadata, keep data steady, full: vary all metadata and data \\
+\hline
+\verb+seed+     & ushort & -  & - & Readable, Writable & Standard & 1 & seed for lsfr \\
+\hline
+\verb+allow_zlms+     & bool & -  & -  & Readable, Writable & Standard & False & Insert ZLMs between some messages \\
+\hline
+\verb+insert_nop+     & bool & -  & -  & Readable, Writable & Standard & False & Insert delays between messages \\
+\hline
+\end{tabular}
+%GEN_SPEC_TABLE
+\end{scriptsize}
+
+\section*{Worker Properties}
+\subsection*{\comp.hdl}
+\begin{scriptsize}
+	\begin{tabular}{|p{1.5cm}|p{2.5cm}|p{1cm}|c|c|c|p{2cm}|p{1cm}|p{5cm}|}
+		\hline
+		\rowcolor{blue}
+		Type     & Name                      & Type  & SequenceLength & ArrayDimensions & Accessibility       & Valid Range & Default & Usage                                      \\
+		\hline
+		Property & \verb+DATA_WIDTH_p+   & UChar & -              & -               & Readable, Parameter & 8/16/32/64        & 12      & I/O data width                   \\
+		\hline
+	\end{tabular}
+\end{scriptsize}
+% do not delete this line, it is used by the auto gen script to insert latex code
+%GEN_WORKER_TABLE
+
+\section*{Component Ports}
+\begin{scriptsize}
+% do not delete this line, it is used by the auto gen script to insert latex code
+\begin{tabular}{|M{2cm}|M{1.5cm}|M{4cm}|c|c|M{9cm}|}
+\hline
+\rowcolor{blue}
+Name & Producer & Protocol & Optional & Advanced & Usage
+\\
+\hline
+in & false & None& False & - & 32 bits\\
+\hline
+out & true & None& False & - & 32 bits\\
+\hline
+\end{tabular}
+%GEN_PORT_TABLE
+\end{scriptsize}
+
+\section*{Worker Interfaces}
+\subsection*{\comp.hdl}
+\begin{scriptsize}
+	\begin{tabular}{|M{2cm}|M{1.5cm}|M{4cm}|c|M{12cm}|}
+		\hline
+		\rowcolor{blue}
+		Type            & Name & DataWidth            & Advanced & Usage                                       \\
+		\hline
+		StreamInterface & in   & \verb+DATA_WIDTH_p+ & -        & Size defined by \verb+DATA_WIDTH_p+        \\
+		\hline
+		StreamInterface & out  & \verb+DATA_WIDTH_p+ & -        & Size defined by \verb+DATA_WIDTH_p+ \\
+		\hline
+	\end{tabular}
+\end{scriptsize}
+\end{landscape}
+
+\section*{Control Timing and Signals}
+\subsection*{\comp.hdl}
+\begin{flushleft}
+This worker implementation uses the clock from the Control Plane and standard Control Plane signals.
+\end{flushleft}
+
+\begin{landscape}
+\section*{Worker Configuration Parameters}
+\subsubsection*{\comp.hdl}
+\input{../../\ecomp.hdl/configurations.inc}
+\section*{Performance and Resource Utilization}
+\subsubsection*{\comp.hdl}
+\input{../../\ecomp.hdl/utilization.inc}
+\end{landscape}
+
+\section*{Test and Verification}
+\begin{flushleft}
+This component is tested via the unit test automation feature of the framework. The component's .test/ contains XML files that describe the combinations of tests. \medskip
+
+The test cases exercise changes in every property across three cases, though not every property in every case, as that would take a prohibitively long time.
+
+\begin{itemize}
+% these tests need to be included again when AV-4720 is resolved
+%\item Case 0 - Tests the component with crafted ZLMs and SWMs, backpressure on, duration set to 100 seconds
+%\begin{enumerate}
+%	\item mode = data: only vary data
+%	\item mode = metadata: only vary metadata
+%	\item mode = full: vary data and metadata
+%	\item insert\_nop = True: insert delay between messages
+%	\item enable\_give\_lsfr = True: use lsfr to vary give
+%	\item enable\_take\_lsfr = True: use lsfr to vary take
+%\end{enumerate}
+%\item Case 1 - Tests the component with crafted ZLMs and SWMs, backpressure off, duration set to 100 seconds
+%\begin{enumerate}
+%	\item mode = data: only vary data
+%	\item mode = metadata: only vary metadata
+%	\item mode = full: vary data and metadata
+%\end{enumerate}
+\item Case 1 - Message size set to 4, tests component with single word messages, duration set to 60 seconds
+\begin{enumerate}
+	\item give\_duty = 1: constant
+	\item give\_duty = 4: 1 on 4 off
+	\item take\_duty = 1: constant
+	\item take\_duty = 5: 1 on 5 off
+	\item insert\_nop = True: insert delay between messages
+	\item insert\_nop = False: no delay between messages
+	\item mode = data: only vary data
+	\item mode = metadata: only vary metadata
+	\item mode = full: vary data and metadata
+\end{enumerate}
+\item Case 2 - Message size set to 128, this tests most of the functionality, duration set to 100 seconds
+\begin{enumerate}
+	\item enable\_give\_lsfr = True: use lsfr to vary give
+	\item enable\_give\_lsfr = False: use duty cycle to vary give
+	\item enable\_take\_lsfr = True: use lsfr to vary take
+	\item enable\_take\_lsfr = False: use duty cycle to vary take
+	\item give\_duty = 1: constant
+	\item give\_duty = 4: 1 on 3 off
+	\item take\_duty = 1: constant
+	\item take\_duty = 5: 1 on 4 off
+	\item mode = data: only vary data
+	\item mode = metadata: only vary metadata
+	\item mode = full: vary data and metadata
+	\item insert\_nop = True: insert delay between messages
+	\item insert\_nop = False: no delay between messages
+	\item seed = 35: seed for lsfr
+\end{enumerate}
+\item Case 3 - Tests using the component to generate zero length messages, duration set to 60 seconds
+\begin{enumerate}
+	\item allow\_zlms = True: zero length messages inserted between some messages
+	\item mode = metadata: only vary metadata
+	\item mode = full: vary data and metadata
+	\item insert\_nop = True: insert delay between messages
+	\item insert\_nop = False: no delay between messages
+\end{enumerate}
+\item Case 4 - Tests the RCC version of this component, which is nothing but a placeholder, duration set to 60 seconds
+\end{itemize}
+
+In all test cases, the data is simply passed through the component and the tests are determined to be successful by comparing the input and output files.
+
+\end{flushleft}
+\end{document}

@@ -20,7 +20,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{FPGA Vendor Tools Installation Guide}
-\def\docVersion{1.2}
+\def\docVersion{1.4}
 %----------------------------------------------------------------------------------------
 \input{snippets/LaTeX_Header.tex}
 \date{Version \docVersion} % Force date to be blank and override date with version
@@ -41,11 +41,13 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 			\hline
 			\rowcolor{blue}
 			\textbf{Revision} & \textbf{Description of Change} & \textbf{Date} \\
-		    \hline
-		    v1.1 & Initial Release & 3/2017 \\
 			\hline
-            v1.2 & Updated for Release 1.2 & 8/2017 \\
-		    \hline
+			v1.1 & Initial Release & 3/2017 \\
+			\hline
+			v1.2 & Updated for Release 1.2 & 8/2017 \\
+			\hline
+			v1.4 & Updated for Release 1.4 & 9/2018 \\
+			\hline
 			\end{tabularx}
 		\end{table}
 	\end{center}
@@ -66,7 +68,10 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \begin{landscape}
 \section{OpenCPI Vendor Tool Prerequisites}
 \label{sec:doc_overview}
-One or more third party vendor toolsets are required to perform various OpenCPI operations. Table~\ref{table:tool-support} identifies the various possible vendor tool installation and license requirement combinations. Each combination enumerates the associated functionality that the given combination provides to OpenCPI. OpenCPI supports Xilinx Vivado 2017.1 with Xilinx Vivado (SDK Only) 2013.4 (explained in \ref{sec:viv_intro}). Testing has been done with Vivado 2015.4, but future regression testing will be performed against 2017.1. OpenCPI also supports Xilinx ISE 14.7, Xilinx LabTools 14.7, and Altera Quartus 15.1.
+OpenCPI utilizes third party vendor toolsets to perform various operations, such as, building bitstreams or loading bitstreams into FPGAs.
+Table~\ref{table:tool-support} identifies the various vendor tool installation and license requirement combinations, which are actively supported by OpenCPI. Each combination enumerates the associated capability that the given combination provides to OpenCPI. \\
+Note that Quartus Standard and Quartus Pro are \textit{different tools}. These two tools support different sets of devices and users should consult Intel's documentation for more information.\\
+Order versions of the FPGA tools have been supported by OpenCPI but are not actively regression tested, such as, Vivado 2015.4 and Quartus Standard Edition 15.1. \\
 %Commented this out because there may be other Vivado functionality that requires a non-webpack license.
 %Maximum functionality for OpenCPI's currently supported platforms is provided by a WebPACK licensed Xilinx Vivado installation, a non-WebPACK licensed Xilinx ISE installation and a licensed Quartus installation.
 
@@ -74,19 +79,17 @@ One or more third party vendor toolsets are required to perform various OpenCPI 
 	\renewcommand*\footnoterule{} % Remove separator line from footnote
 	\renewcommand{\thempfootnote}{\arabic{mpfootnote}} % Use Arabic numbers (or can't reuse)
 	\begin{table}[H]
-		\caption {Support with Vendor Tools}
-		\label{table:tool-support} % Add "[H]" to force placement of table
 		\newcolumntype{Z}{>{\raggedright\arraybackslash}X}
 		\def\arraystretch{1.5}
-		\begin{tabularx}{1.35\textwidth}{| c | Z | p{1.8cm} | p{2.9cm} | p{3.6cm} | p{3cm} | Z |}
+		\begin{tabularx}{1.35\textwidth}{| p{2.6cm} | p{5cm} | p{1.8cm} | p{2.9cm} | p{3.6cm} | p{2.0cm} | Z |}
 			\hline
 			\rowcolor{blue}
-			\textbf{Tool} & \multicolumn{1}{|c|}{\textbf{Installation}} & \textbf{Supported \newline simulators} & \textbf{Load bitstreams onto} & \textbf{Run applications on these platforms} & \textbf{Build bitstreams for} & \textbf{Build software for} \\
+			\multicolumn{1}{|c|}{\textbf{Tool}} & \multicolumn{1}{|c|}{\textbf{Installation}} & \textbf{Supported \newline simulators} & \textbf{Load bitstreams onto} & \textbf{Run applications on these platforms} & \textbf{Build bitstreams for} & \textbf{Build software for} \\
 			\hline
 			\multicolumn{2}{|c|}{\textbf{No vendor tools}} & & Zynq$^1$ & Zynq-based$^2$, x86-only$^1$ & & x86$^1$ \\
 			\hline
-			\multirow{3}{*}[-2em]{\textbf{Xilinx Vivado}} & 2017.1 with WebPACK License & \code{xsim} & & & Zynq$^3$ & \\ \cline{2-7}
-			& 2013.4 (SDK only) & & & & & Zynq-ARM \\ \cline{2-7}
+			\multirow{3}{*}{\textbf{Xilinx Vivado}} & 2017.1 with WebPACK License & \code{xsim} & & & Zynq$^3$ & \\ \cline{2-7}
+			& 2013.4 (SDK only)$^5$ & & & & & Zynq-ARM \\ \cline{2-7}
 			& 2017.1 \textit{and} 2013.4 SDK with WebPACK License & \code{xsim} & & & Zynq$^3$ &  Zynq-ARM \\
 			\hline
 			\multicolumn{2}{|c|}{\textbf{Xilinx LabTools 14.7}} & & ML605 & x86/ML605 & & \\
@@ -94,13 +97,23 @@ One or more third party vendor toolsets are required to perform various OpenCPI 
 			\multirow{2}{*}{\textbf{Xilinx ISE 14.7}} & WebPACK License & \code{isim} & ML605 & x86/ML605 & Zynq$^3$ & Zynq-ARM \\ \cline{2-7}
 			& Full License & \code{isim} & ML605 & x86/ML605 & Zynq, ML605 & Zynq-ARM \\
 			\hline
-			\multicolumn{2}{|c|}{\textbf{Altera Quartus 15.1 with License}}  & \code{modelsim} & ALST4 & x86/ALST4 & ALST4 & \\
+			\multicolumn{2}{|c|}{\textbf{Intel Quartus Standard 17.1 with License}}  & & ALST4 & x86/ALST4 & ALST4 & \\
+			\hline
+			%\multicolumn{2}{|c|}{\textbf{Intel Quartus Pro Edition 17.0.2 with License}}  & & & & arria10soc$^4$ & \\
+			\multicolumn{2}{|c|}{\textbf{Intel Quartus Pro Edition 17.0.2 with License}}  & & & & arria10soc$^4$ & \\
+			\hline
+			%\multicolumn{2}{|c|}{\textbf{ModelSim DE 10.6e with License}}  & modelsim &  & & modelsim & \\
+			\multicolumn{2}{|c|}{\textbf{Mentor Graphics ModelSim DE 10.6e with License}}  & modelsim &  & & modelsim & \\
 			\hline
 		\end{tabularx}\newline
 
 		\footnotesize{$^1$With OpenCPI installed, no additional software is required to load bitstreams onto Zynq FPGAs, run applications on Zynq-based or x86-only platforms, or build software for x86.}\\
 		\footnotesize{$^2$``Zynq-based'' platform includes both a Zynq's FPGA and ARM PS. The usage of ``Zynq'' or ``Zynq-based'' here does not include Zynq UltraScale devices.}\\
 		\footnotesize{$^3$Building bitstreams with a WebPACK license is limited to certain Zynq parts. Refer to the vendor's documentation for further information.}\\
+		\footnotesize{$^4$While there are currently no OpenCPI Board Support Packages developed for Quartus Pro, HDL workers can be built targeting the \textit{arria10soc} device family.}\\
+		\footnotesize{$^5$The relationship between the Vivado Design Edition and SDK is discussed in \ref{sec:viv_intro}.}\\
+		\caption {Support with Vendor Tools}
+		\label{table:tool-support} % Add "[H]" to force placement of table
 	\end{table}
 \end{center}
 \end{landscape}
@@ -109,7 +122,10 @@ One or more third party vendor toolsets are required to perform various OpenCPI 
 \subsection{Xilinx Vivado Installation in CentOS~6/7}
 \label{sec:viv_intro}
 \begin{flushleft}
-In order to use Vivado with OpenCPI, it is required that you install Vivado 2017.1 \textit{and} Vivado 2013.4's SDK. The 2013.4 SDK is necessary because OpenCPI's ``\code{xilinx13\_3}'' software platform requires an SDK with matching glibc/glibc++ versions. An SDK meeting this requirement can be found explicitly in either ISE 14.7 or Vivado 2013.4 SDK. For more information on this requirement you can reference the README for the \code{xilinx13\_3} software platform. This is located in the CDK (\textit{e.g.}: \path{/opt/opencpi/cdk/platforms/xilinx13_3}).
+As described in Table~\ref{table:tool-support}, building for OpenCPI board support packages (BSPs) which are Xilinx FPGA-based requires various Xilinx FPGA tools to be installed. \\
+In the case of Zynq-based OpenCPI BSPs, the required tools are Vivado 2017.1 \textit{and} Vivado 2013.4's SDK, where the 2013.4 SDK is necessary because OpenCPI's ``\code{xilinx13\_3}'' and ``\code{xilinx13\_4}'' software platforms require an SDK with matching glibc/glibc++ versions. An SDK meeting this requirement can be found explicitly in either ISE 14.7 or Vivado 2013.4 SDK. For more information on this requirement you can reference the README for the \code{xilinx13\_3} software platform. This is located in the core project (\textit{e.g.}: \path{<core-project>/rcc/platforms/xilinx13_3}).\\
+In the case of the ML605 development board (PCIe) , only ISE v14.7 is required, because the host's gcc-compiler will be used.
+
 \subsubsection{Xilinx Vivado 2017.1 Installation in CentOS~6/7}
 \label{sec:viv}
 \begin{enumerate}
@@ -378,7 +394,9 @@ The steps herein are a slightly modified subset of those outlined in \url{https:
 \begin{enumerate}
 \item Run the following command : \code{ls -al /etc/udev/rules.d}
 \item Check if the following two files are present : \code{52-digilent-usb.rules 52-xilinx-pcusb.rules}
-\item If the files above are not present, run the installer (\textit{it is important to have the JTAG cable unplugged while you perform the installation}):\\ \path{<YOUR_XILINX_INSTALL>/data/xicom/cable_drivers/<lin64 or lin32>/install_script/install_drivers/install_drivers}
+\item If the files above are not present, run the installer (\textit{it is important to have the JTAG cable unplugged while you perform the installation}):\\
+	\code{cd <YOUR\_XILINX\_INSTALL>/data/xicom/cable\_drivers/<lin64 or lin32>/install\_script/install\_drivers;} \\
+	\code{./install\_drivers;}
 \end{enumerate}
 
 \subsubsection{ISE}
@@ -395,10 +413,6 @@ The steps herein are a slightly modified subset of those outlined in \url{https:
 \item Reload the udev rules by typing \code{udevadm control --reload-rules}
 \end{enumerate}
 \subsubsection{Testing Cable Driver Installation}
-\textbf{Vivado}
-\begin{flushleft}
-TODO
-\end{flushleft}
 \textbf{ISE}
 \begin{flushleft}
 To verify successful cable driver installation, you can run the following:\\
@@ -431,72 +445,229 @@ If the cable driver is successfully installed, ``\code{Using libusb.}'' will be 
 
 \newpage
 
-\section{Altera Toolset Installation and Configuration}
-\subsection{Altera Quartus Prime 15.1 Installation in CentOS~7}
+\section{Intel Quartus Toolset Installation and Configuration}
+\subsection{Intel Quartus Prime Standard Edition 17.1 Installation in CentOS~7}
 \begin{flushleft}
 \begin{enumerate}
-\item Download the Quartus Prime 15.1 installation files from Altera's download site: \url{https://www.altera.com/downloads/download-center.html}. A \verb+myAltera+ account will be required. This first page is the download-center home page. Select the \verb+Download+ button next to ``Quartus Prime software Standard edition'' as shown in Figure \ref{fig:altera_download_center}.
-\begin{figure}[ht]
-	\centerline{\includegraphics[scale=0.4]{figures/altera_download_center}}
-	\caption{Altera Download Homepage}
-	\label{fig:altera_download_center}
-\end{figure}
-\item From the ``Quartus Prime software Standard edition'' page, select \verb+15.1+ from the drop-down box next to ``Select release'' as shown in Figure \ref{fig:altera_download_15_1}.
-\item Select the \verb+Complete Download+ version which downloads the file \verb+Quartus-15.1.0.185-linux-complete.tar+. Click the arrow pointing downward to begin the download as shown in Figure \ref{fig:altera_download_15_1}. Note that the tarball is $\sim$24GB. Ensure that the installation system has enough disk space and correct file write permissions.\pagebreak
-\begin{figure}[ht]
-	\centerline{\includegraphics[scale=0.4]{figures/altera_download_15_1}}
-	\caption{Altera Quartus Prime Standard Edition 15.1 Download}
-	\label{fig:altera_download_15_1}
-\end{figure}
-\item If installing Altera tools in a permission-restricted directory, you may need to change the umask temporarily:\newline
+	\item Download the Quartus Prime Standard Edition 17.1 installation files from Altera's download site: \url{https://www.intel.com/content/www/us/en/programmable/downloads/download-center.html}. Choose \verb+Standard Edition 17.1+ and either choose the ``Complete Download'', or the ``Multiple File Download'' (for this option, make sure to download the device packages of interest). An \verb+Intel Customer+ account will be required.
+\item If installing Quartus tools in a permission-restricted directory, you may need to change the umask temporarily:\newline
 \code{\% sudo su -}\newline
 \code{\% umask 0002}
 \item Extract the tarball:\newline
-\code{\% tar xvf Quartus-15.1.0.185-linux-complete.tar}
+\code{\% tar xvf Quartus-17.1.0*.tar}
 \item Run the installer:\newline
 \code{\% ./setup.sh}\newline
-\pagebreak
-\item Run through the installation process. Refer to the images here when needed:
-\begin{figure}[H]
-	\centerline{\includegraphics[scale=0.5]{figures/altera_install_1}}
-	\caption{Altera Quartus Prime Setup Wizard}
-\end{figure}
+\item Run through the installation process and choose your installation directory. Note that OpenCPI will search for Quartus Standard in \path{/opt/altera} or \path{~/intelFPGA} without any additional user settings.
+\end{enumerate}
 
-\begin{figure}[H]
-	\centerline{\includegraphics[scale=0.5]{figures/altera_install_2}}
-	\caption{Altera Quartus Prime License Agreement}
-\end{figure}
-Take note of the installation directory chosen (e.g. \code{/opt/altera}) as well as the LabTools version (e.g. \code{15.1}) for later use.
-\begin{figure}[H]
-	\centerline{\includegraphics[scale=0.5]{figures/altera_install_3}}
-	\caption{Altera Quartus Prime Installation Directory}
-\end{figure}
-\begin{figure}[H]
-	\centerline{\includegraphics[scale=0.5]{figures/altera_install_4}}
-	\caption{Altera Quartus Prime Select Components}
-\end{figure}
-\begin{figure}[H]
-	\centerline{\includegraphics[scale=0.5]{figures/altera_install_5}}
-	\caption{Altera Quartus Prime DSP Builder Setup}
-\end{figure}
-\begin{figure}[H]
-	\centerline{\includegraphics[scale=0.5]{figures/altera_install_6}}
-	\caption{Altera Quartus Prime Installation Summary}
-\end{figure}
+\subsubsection{OpenCPI Considerations}
+It may required to set the following environment variables before running OpenCPI commands. Note that \texttt{<quartus-version>} should be replaced with the appropriate Quartus version (e.g. \code{17.1}), and \texttt{<quartus-install-dir>} should be replaced with the installation directory (\textit{e.g.} \path{~/intelFPGA}). Note also that each of the following \code{export} statements are only necessary when the non-default installation location (\textit{e.g.} anything other than \path{~/intelFPGA}, \path{/opt/intelFPGA}, \path{~/altera} or \path{/opt/Altera}), or non-default version (\textit{e.g.} anything other than the newest version) of the tools were used.\newline
+\code{\% export OCPI\_ALTERA\_DIR=<quartus-install-dir>}\newline
+\code{\% export OCPI\_ALTERA\_VERSION=<quartus-version>}\newline
+\code{\% export OCPI\_ALTERA\_LICENSE\_FILE=<path\_to\_license\_file>}
+
+These variables can be set automatically upon login for all users if added in \path{/opt/opencpi/cdk/env.d/altera.sh}. Logging out and logging back into the user account will apply said variables.
+
+\end{flushleft}
+
+\subsection{Intel Quartus Prime Pro Edition 17.0.2 Installation in CentOS~7}
+\begin{flushleft}
+	NOTE: Do not install Quartus Pro in the same directory as Quartus Standard because OpenCPI cannot differentiate between the two.\\
+	NOTE: Quartus Pro and Quartus Standard are \textit{different tools}. The devices supported by each are different, and users should consult Intel documentation before choosing a tool edition.
+\begin{enumerate}
+	\item Download the Quartus Prime Pro Edition 17.0 installation files from Altera's download site: \url{https://www.intel.com/content/www/us/en/programmable/downloads/download-center.html}. Choose \verb+Pro Edition 17.0+ and either choose the ``Complete Download'', or the ``Multiple File Download'' (for this option, make sure to download the device packages of interest). An \verb+Intel Customer+ account will be required.
+\item If installing Quartus tools in a permission-restricted directory, you may need to change the umask temporarily:\newline
+\code{\% sudo su -}\newline
+\code{\% umask 0002}
+\item Extract the tarball:\newline
+\code{\% tar xvf Quartus-pro-17.0.0*.tar}
+\item Run the installer:\newline
+\code{\% ./setup.sh}\newline
+\item Run through the installation process and choose your installation directory. Note that OpenCPI will search for Quartus Pro in \path{~/intelFPGA_pro} or \path{/opt/intelFPGA_pro} without any additional user settings.
+\item Download the 17.0.2 patch by navigating to the \verb+Updates+ tab and downloading ``Quartus Prime Software v17.0 Update 2''.
+\item Run the installer:\newline
+	\code{\% ./QuartusProSetup-17.0.2*.run}
+\end{enumerate}
+
+\subsubsection{OpenCPI Considerations}
+It may be required to set the following environment variables before running OpenCPI commands. Note that \texttt{<quartus-version>} should be replaced with the appropriate Quartus version (e.g. \code{17.0} not \code{17.0.2}), and \texttt{<quartus-install-dir>} should be replaced with the installation directory (\textit{e.g.} \path{~/intelFPGA_pro}). Note also that each of the following \code{export} statements are only necessary when the non-default installation location (\textit{e.g.} anything other than \path{~/intelFPGA_pro}, \path{/opt/intelFPGA_pro}, \path{~/altera} or \path{/opt/Altera}), or non-default version (\textit{e.g.} anything other than the newest version) of the tools were used.\newline
+\code{\% export OCPI\_ALTERA\_PRO\_DIR=<quartus-install-dir>}\newline
+\code{\% export OCPI\_ALTERA\_PRO\_VERSION=<quartus-version>}\newline
+\code{\% export OCPI\_ALTERA\_PRO\_LICENSE\_FILE=<path\_to\_license\_file>}
+
+These variables can be set automatically upon login for all users if added in \path{/opt/opencpi/cdk/env.d/altera.sh}. Logging out and logging back into the user account will apply said variables.
+\end{flushleft}
+
+\begin{flushleft}
+\subsection{Licensing Notes}
+% AV-3316
+If the user runs the Quartus software in its native GUI mode outside of OpenCPI, a license file configuration \textit{might} be stored in the variable \path{LICENSE_FILE} within \path{~user/.altera.quartus/quartus2.ini}; this setting overrides the \code{OCPI\_ALTERA\_LICENSE\_FILE} noted above and may cause confusion.
+
+\end{flushleft}
+
+\section{ModelSim Installation and Configuration}
+\subsection{ModelSim DE 16.0e Installation in CentOS~7}
+\begin{flushleft}
+\begin{enumerate}
+	\item Download the ModelSim installation files for version 10.6e.
+\item If installing ModelSim tools in a permission-restricted directory, you may need to change the umask temporarily:\newline
+\code{\% sudo su -}\newline
+\code{\% umask 0002}
+\item Run the installer:\newline
+\code{\% ./install.linux64}
+\item Run through the installation process and choose your installation directory. Note that OpenCPI has no default search paths for ModelSim installations.
 \end{enumerate}
 
 
 \subsubsection{OpenCPI Considerations}
-If OpenCPI has been installed prior to the Quartus installation, it is required to set the following environment variables before running OpenCPI commands. Note that \texttt{<altera-version>} should be replaced with the appropriate Altera version (e.g. \code{15.1}), and \texttt{<altera-install-dir>} should be replaced with the installation directory (i.e. \path{/opt/altera}). Note also that each of the following \code{export} statements are only necessary when the non-default installation location (i.e. anything other that \path{/opt/altera} or non-default version (i.e. anything other than \path{14.7}) of the tools were used.\newline
-\code{\% export OCPI\_ALTERA\_DIR=<altera-install-dir>}\newline
-\code{\% export OCPI\_ALTERA\_VERSION=<altera-version>}\newline
-\code{\% export OCPI\_ALTERA\_LICENSE\_FILE=<path\_to\_license\_file>}
+Users will need to set the following environment variables to use ModelSim with OpenCPI. Note that \texttt{<modelsim-version>} should be replaced with the appropriate ModelSim version (e.g. \code{10.6}), and \texttt{<modelsim-install-dir>} should be replaced with the installation directory (\textit{e.g.} \path{~/modelsim_dlx}). The version variable need only be set if multiple ModelSim versions exist in this directory and the user wishes to use a version \textit{other than the most recent}.\\
+\code{\% export OCPI\_MODELSIM\_DIR=<modelsim-install-dir>}\newline
+\code{\% export OCPI\_MODELSIM\_VERSION=<modelsim-version>}\newline
+\code{\% export OCPI\_MODELSIM\_LICENSE\_FILE=<path\_to\_license\_file>}
 
-If OpenCPI has been installed prior to the Quartus installation, and it is desired to make the environment variables set automatically upon login for all users, the variables should be added in \path{/opt/opencpi/cdk/env.d/altera.sh}. Logging out and logging back into the user account will apply said variables.
+These variables can be set automatically upon login for all users if added in \path{/opt/opencpi/cdk/env.d/modelsim.sh}. Logging out and logging back into the user account will apply said variables.
+\subsection{Compile Xilinx/Zynq simulation libraries for ModelSim}
 
-\subsection{Licensing Notes}
-% AV-3316
-If the user runs the Quartus software in its native GUI mode outside of OpenCPI, a license file configuration \textit{might} be stored in the variable \path{LICENSE_FILE} within \path{~user/.altera.quartus/quartus2.ini}; this setting overrides the \code{OCPI\_ALTERA\_LICENSE\_FILE} noted above and may cause confusion.
+	This section describes how to compile Xilinx simulation libraries of a device(s) for a particular 3rd party simulator, such as ModelSim.
+
+	\begin{enumerate}
+	 	\item Compile Xilinx libraries for ModelSim
+		\item Modify \texttt{modelsim.ini} to include path of compiled Xilinx libraries
+	\end{enumerate}
+
+\subsubsection{Compile Vivado's simulation libraries}
+	This section provides the steps necessary to compile Xilinx Vivado's simulation libraries of the Zynq device, for ModelSim. If using ModelSim 10.4c, note that Vivado 2017.1 does not support compilation of simulation libraries for ModelSim versions earlier than 10.5c. Therefore, if using a ModelSim 10.4c, you will need to use an earlier version of Vivado (\textit{e.g} 2015.4) to compile the simulation libraries. For this example, we use Vivado 2017.1 with ModelSim DE 10.6e.
+
+\begin{flushleft}
+	\begin{enumerate}
+		\item Open a terminal window and switch the user to root:
+			\subitem \code{> sudo su -}
+		\item Configure the terminal for Xilinx Vivado by sourcing the setup script (for bash):
+			\subitem \code{> source /opt/Xilinx/Vivado/<version>/settings64.sh}
+		\item Launch Vivado:
+			\subitem \code{> vivado}
+		\item Select Tools $\rightarrow$ Compile Simulation Libraries...
+		\item Select the following:
+			\subitem Simulator: ModelSim Simulator
+			\subitem Language: VHDL
+			\subitem Library: All
+			\subitem Family: Zynq-7000
+			\subitem Compiled library location: \path{/opt/Xilinx/Vivado/<version>/vhdl/modelsim/<version>/lin64}
+			\subitem Simulator executable path: \path{/opt/Modelsim/modelsim_dlx/linuxpe}
+			\subitem Compile 32-bit libraries: Yes
+		\item Click ``Compile''
+		\item Note that 2017.1 Vivado will result in errors for ModelSim versions earlier than 10.5c. Here, we show the results for Vivado 2017.1 with ModelSim DE 10.6e, and Vivado 2015.4 with ModelSim DE 10.4c.
+	\begin{figure}[H]
+	\centering\captionsetup{type=figure}\includegraphics[scale=0.5]{figures/xilinx_vivado_2017_compsimlib_out}
+		\captionof{figure}{Vivado 2017.1 Compilation Output with ModelSim DE 10.6e}
+	\end{figure}
+	\begin{figure}[H]
+	\centering\captionsetup{type=figure}\includegraphics[scale=0.5]{figures/xilinx_vivado_2015_compsimlib_out}
+		\captionof{figure}{Vivado 2015.4 Compilation Output with ModelSim DE 10.4c}
+	\end{figure}
+		\end{enumerate}
+\end{flushleft}
+\subsubsection{Compile ISE's simulation libraries}
+	This section provides the steps necessary to compile Xilinx ISE's simulation libraries of the Zynq device, for ModelSim.
+
+\begin{flushleft}
+	\begin{enumerate}
+	 	\item Open a terminal window and switch the user to root:
+			\subitem \code{> sudo su -}
+		\item Configure the terminal window for Xilinx ISE by sourcing the setup script (for bash):
+			\subitem \code{> cd /opt/Xilinx/14.7/ISE\_DS/}
+			\subitem \code{> source settings64.sh}
+		\item Launch the Xilinx CompXLib GUI:
+			\subitem \code{> cd /opt/Xilinx/14.7/ISE\_DS/ISE/bin/lin64}
+			\subitem \code{> ./compxlib}
+
+	\begin{figure}[H]
+	\centering\captionsetup{type=figure}\includegraphics[scale=0.5]{figures/Xilinx_CompXLib_1_Select32bit}
+		\captionof{figure}{Compilation Wizard - Select Simulator}
+		\label{fig:wizard_page_1}
+	\end{figure}
+
+		\item Select ModelSim DE.
+		\item Set Simulator Executable Location.
+		\item Click ``Next''.
+
+	\begin{figure}[H]
+	\centering\captionsetup{type=figure}\includegraphics[scale=0.5]{figures/Xilinx_CompXLib_3_VHDLonly}
+		\captionof{figure}{Compilation Wizard - HDLs to support simulator}
+		\label{fig:wizard_page_3}
+	\end{figure}
+
+		\item Select ``VHDL''.
+		\item Click ``Next''.
+
+	\begin{figure}[H]
+	\centering\captionsetup{type=figure}\includegraphics[scale=0.5]{figures/Xilinx_CompXLib_2_SelectZynq}
+		\captionof{figure}{Compilation Wizard - Select Device Families}
+		\label{fig:wizard_page_2}
+	\end{figure}
+
+		\item Uncheck ``All FPGA Device Families''.
+		\item Uncheck ``All CPLD Device Families''.
+		\item Check ``Zynq''.
+		\item Click ``Next''.
+
+	\begin{figure}[H]
+	\centering\captionsetup{type=figure}\includegraphics[scale=0.5]{figures/Xilinx_CompXLib_4_BuildAll}
+		\captionof{figure}{Compilation Wizard - Select Simulation Libraries}
+		\label{fig:wizard_page_4}
+	\end{figure}
+
+		\item No change.
+		\item Click ``Next''.
+
+	\begin{figure}[H]
+	\centering\captionsetup{type=figure}\includegraphics[scale=0.5]{figures/Xilinx_CompXLib_5_SelectDefaults}
+		\captionof{figure}{Compilation Wizard - Select Output directory}
+		\label{fig:wizard_page_5}
+	\end{figure}
+
+		\item Select defaults.
+		\item Click ``Launch Compile Process''.
+			\subitem Note: This step will take approximately 20 mins.
+
+	\begin{figure}[H]
+	\centering\captionsetup{type=figure}\includegraphics[scale=0.5]{figures/Xilinx_CompXLib_6_CompilationLog}
+		\captionof{figure}{Compilation Wizard - Start Compilation}
+		\label{fig:wizard_page_6}
+	\end{figure}
+
+		\item Click ``Next''.
+
+	\begin{figure}[H]
+	\centering\captionsetup{type=figure}\includegraphics[scale=0.5]{figures/Xilinx_CompXLib_7_CompilationSummary}
+		\captionof{figure}{Compilation Wizard - Compilation Summary}
+		\label{fig:wizard_page_7}
+	\end{figure}
+
+
+		\item Click ``Finish''.
+	\end{enumerate}
+
+\newpage
+
+\end{flushleft}
+
+\subsubsection{Modify ``modelsim.ini'' to include path to built library}
+	This section details the steps to modify the ``\texttt{modelsim.ini}'' file.
+
+	\begin{enumerate}
+		\item Browse to the install directory of ModelSim
+			\subitem \code{> cd /opt/Modelsim/modelsim\_dlx}
+		\item Open the modelsim.ini file as the root user
+			\subitem \code{> vi modelsim.ini}
+		\item Locate the bottom of the ``\texttt{[Library]}'' section and add the following for Vivado:
+			\subitem unifast = /opt/Xilinx/Vivado/2017.1/vhdl/modelsim/10.6e/lin64/unifast
+			\subitem unisim = /opt/Xilinx/Vivado/2017.1/vhdl/modelsim/10.6e/lin64/unisim
+		\item Or, add the following for ISE:
+			\subitem xilinxcorelib = /opt/Xilinx/14.7/ISE\_DS/ISE/vhdl/mti\_de/10.4c/lin64/xilinxcorelib
+			\subitem unisim = /opt/Xilinx/14.7/ISE\_DS/ISE/vhdl/mti\_de/10.4c/lin64/unisim
+
+	\end{enumerate}
 
 \end{flushleft}
 

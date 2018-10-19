@@ -119,7 +119,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Version           & v\docVersion     \\
 	\hline
-	Release Date      & June 2018         \\
+	Release Date      & October 2018         \\
 	\hline
 	Component Library & ocpi.assets.devices     \\
 	\hline
@@ -127,11 +127,11 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Tested Platforms  &
 \begin{itemize}
-  \item Agilent Zedboard/Analog Devices FMCOMMS2
-  \item Agilent Zedboard/Analog Devices FMCOMMS3
+  \item Agilent Zedboard/Analog Devices FMCOMMS2 (Vivado only)
+  \item Agilent Zedboard/Analog Devices FMCOMMS3 (Vivado only)
   \item x86/Xilinx ML605/Analog Devices FMCOMMS2
   \item x86/Xilinx ML605/Analog Devices FMCOMMS3
-  \item Ettus E310 (Vivado only, tested via \comp{}.test in av.bsp.e310 project)
+  \item Ettus E310 (Vivado only, application for testing exists in e310 project)
 \end{itemize} \\
 	\hline
 \end{tabular}
@@ -284,7 +284,7 @@ The \comp.hdl subdevice worker handles registering and de-interleaving of ADC da
 		True & 1 & R1 & RX2C\_P/RX2C\_N & 1 & [1 D.C.] & 110000 \\
 		\hline
 	\end{longtable}
-	
+
 \end{scriptsize}
 \end{landscape}
 
@@ -327,7 +327,7 @@ The \comp.hdl subdevice worker handles registering and de-interleaving of ADC da
     \path[<->]($(R1.north) + (150 pt,0)$) edge [] node [] {} (C1);
 
     \fontsize{9.5}{12}\selectfont
-        
+
     \myclient.apply(\rx - 167.5,\ry-180,C1, ``dev\_cfg\_data'' \\ dev signal port \texttt{(}see \\ AD9361\_CONFIG.pdf\texttt{)});
     \path[<->]($(R1.south) + (-167.5 pt,0)$) edge [] node [] {} (C1);
     \myclient.apply(\rx - 52.5,\ry-180,C1, ``dev\_cfg\_data\_rx'' \\ dev signal port \texttt{(}see \\ AD9361\_CONFIG.pdf\texttt{)} );
@@ -343,13 +343,13 @@ The \comp.hdl subdevice worker handles registering and de-interleaving of ADC da
 \section*{Source Dependencies}
 \subsection*{\comp.hdl}
 \begin{itemize}
-	\item opencpi/hdl/devices/ad9361\_adc\_sub.hdl/ad9361\_adc\_sub.vhd
-	\item opencpi/hdl/primitives/util/util\_pkg.vhd
-	\item opencpi/hdl/primitives/util/sync\_status.vhd
-	\item opencpi/hdl/primitives/bsv/imports/SyncBit.v
-	\item opencpi/hdl/primitives/bsv/imports/SyncResetA.v
-	\item opencpi/hdl/primitives/bsv/imports/SyncHandshake.v
-	\item opencpi/hdl/primitives/bsv/bsv\_pkg.vhd
+	\item assets/hdl/devices/\comp.hdl/\comp.vhd
+	\item core/hdl/primitives/util/util\_pkg.vhd
+	\item core/hdl/primitives/util/sync\_status.vhd
+	\item core/hdl/primitives/bsv/imports/SyncBit.v
+	\item core/hdl/primitives/bsv/imports/SyncResetA.v
+	\item core/hdl/primitives/bsv/imports/SyncHandshake.v
+	\item core/hdl/primitives/bsv/bsv\_pkg.vhd
 \end{itemize}
 \begin{landscape}
 
@@ -412,9 +412,9 @@ The \comp.hdl subdevice worker handles registering and de-interleaving of ADC da
 			\hline
 			\multirow{48}{*}{DevSignal} & \multirow{48}{*}{dev\_cfg\_data} & \multirow{48}{*}{1} & \multirow{48}{*}{False} & \multirow{48}{*}{True} & config\_is\_two\_r &Input& 1      & If 0, de-interleaving of R2 time slot data and monitoring of data drops via the \verb+r2_samps_dropped+ property are both disabled. \\
 			\cline{6-9}
-			&             &        &     &      & ch0\_handler\_is\_present &Output & 1      & Value is 1 if the dev\_data\_ch0 dev signal is connected to a worker (that ``handles" the data) and 0 otherwise. This is expected to be hardcoded at buildtime. \\
+			&             &        &     &      & ch0\_handler\_is\_present &Output & 1      & Value is 1 if the dev\_data\_ch0 dev signal is connected to a worker (that ``handles'' the data) and 0 otherwise. This is expected to be hardcoded at buildtime. \\
 			\cline{6-9}
-			&             &        &     &      & ch1\_handler\_is\_present &Output & 1      &  Value is 1 if the dev\_data\_ch1 dev signal is connected to a worker (that ``handles" the data) and 0 otherwise. This is expected to be hardcoded at buildtime. \\
+			&             &        &     &      & ch1\_handler\_is\_present &Output & 1      &  Value is 1 if the dev\_data\_ch1 dev signal is connected to a worker (that ``handles'' the data) and 0 otherwise. This is expected to be hardcoded at buildtime. \\
 			\cline{6-9}
 			&             &        &     &      & data\_bus\_index\_direction &Output&1      &  Value is 1 if the bus indexing of the P0\_D/P1\_D signals from dev\_data\_from\_pins was reversed before processing. This is expected to be hardcoded at buildtime. \\
 			\cline{6-9}
@@ -474,7 +474,7 @@ The \comp.hdl subdevice worker handles registering and de-interleaving of ADC da
 			\hline
 		\end{longtable}
 	\end{scriptsize}
-	
+
 	\section*{Subdevice Connections}
 	\begin{scriptsize}
 		\begin{tabular}{|p{5cm}|p{5cm}|p{5cm}|p{7.23cm}|}
@@ -500,63 +500,21 @@ The \Comp{} subdevice worker contains two clock domains: the clock from the Cont
 Note that the aforementioned 6 cycle/4 cycle latency results on the multichannel data being output the devsignal ports in a clock-aligned, phase coherent fashion. However, just because the each channel's devsignal data is phase-aligned at the output of the \comp{}.hdl worker's devsignals, that does not mean that the data is phase-aligned once each channel is ingested inside an instance of an ad9361\_adc.hdl device worker because each ad9361\_adc.hdl instance handles its data as an independent, uniquely flow-controlled data path.
 
 \pagebreak
+\section*{Worker Configuration Parameters}
+\subsubsection*{\comp.hdl}
+\input{../../\ecomp.hdl/configurations.inc}
 \section*{Performance and Resource Utilization}
+\subsubsection*{\comp.hdl}
+
 \noindent
 The FPGA resource utilization and Fmax are included for this worker. Fmax refers to the maximum allowable clock rate for any registered signal paths within a given clock domain for an FPGA design. Fmax in the table below is specific only to this worker and represents the maximum possible Fmax for any OpenCPI bitstream built with this worker included. Note that the Fmax value for a given clock domain for the final bitstream is often worse than the Fmax specific to this worker, even if this worker is the only one included in the bitstream. It's important to note that the full range of possible operating conditions for the AD9361 is not guaranteed to operate without error, e.g. maximum achievable RX sample rates in certain LVDS modes are less than AD9361 LVDS mode-maximum of 245.76 MHz\cite{adi_ug570}. For more information, see Tables \ref{tablebitstreamfmax}, \ref{tablemaxsamprate}, and \ref{tableber}. \\
 
 \noindent In the tables below, dev\_data\_clk is the worker source code name for the signal which is ultimately driven by, and has the same clock rate of, the AD9361 DATA\_CLK pin pair. \\
-\begin{itemize}
-	\item \verb+LVDS_p+=true
-	\item \verb+HALF_DUPLEX_p+=false
-	\item \verb+SINGLE_PORT_p+=false
-	\item \verb+DATA_RATE_CONFIG_p+=DDR
-\end{itemize}
-% see performance_and_resource_utilization.txt
-\noindent\begin{scriptsize}
-	\begin{longtable}{|M{4.4cm}|M{1.9cm}|M{1.9cm}|M{1.5cm}|M{1.8cm}|M{1.7cm}|M{1.4cm}|}
-		\caption{\comp{}.hdl LVDS Performance and Resource Utilization.} \\
-		\hline
-		\rowcolor{blue}
-    Device                                 & Registers (typical) & LUTS (typical) & \multicolumn{2}{c|}{Worker Fmax (typical)}  & Memory/ Special Functions & Design Suite \\
-		\hline
-    \rowcolor{blue}
-		                                       &           &      & control plane clock & dev\_data\_clk clock &           &          \\
-		\hline
-		\multirow{4}{*}{Zynq XC7Z020-1-CLG484} & 175       & 89   & 291 MHz \textsuperscript{\ref{abc}} & 418 MHz \textsuperscript{\ref{abc}} & 1 BUFR, 7 IDDR             & Vivado 2017.1      \\
-    \cline{2-7}
-		                             & 156           & 160           & 465 MHz                    & 510 MHz & 1 BUFR, 7 IDDR, 25 SRLC16E & ISE 14.7           \\
-		\hline
-		Virtex-6 XC6VLX240T-1-FF1156 & 156           & 160           & 437 MHz                    & 454 MHz & 1 BUFR, 7 IDDR, 25 SRLC16E & ISE 14.7           \\
-		\hline
-		Stratix IV EP4SGX230K-C2-F40 & (unsupported) & (unsupported) & \ref{quartustiming}  & \ref{quartustiming} & (unsupported)              & Quartus Prime 15.1 \\
-		\hline
-	\end{longtable}
-\end{scriptsize}
+
 %\input{../../\ecomp.hdl/utilization.inc}
-\begin{itemize}
-	\item \verb+LVDS_p+=false
-	\item \verb+HALF_DUPLEX_p+=false
-	\item \verb+SINGLE_PORT_p+=true
-	\item \verb+DATA_RATE_CONFIG_p+=DDR
-\end{itemize}
-\noindent\begin{scriptsize}
-	\begin{longtable}{|M{4.4cm}|M{1.9cm}|M{1.9cm}|M{1.5cm}|M{1.8cm}|M{1.7cm}|M{1.4cm}|}
-		\caption{\comp{}.hdl CMOS Single Port Full Duplex DDR Performance and Resource Utilization.} \\
-		\hline
-		\rowcolor{blue}
-    Device                                 & Registers (typical) & LUTS (typical) & \multicolumn{2}{c|}{Worker Fmax (typical)}  & Memory/ Special Functions & Design Suite \\
-		\hline
-    \rowcolor{blue}
-		                                       &           &      & control plane clock & dev\_data\_clk clock &           &          \\
-		\hline
-		\multirow{1}{*}{Zynq XC7Z020-1-CLG484} & 175       & 87   & 315 MHz \textsuperscript{\ref{abc}} & ? & 1 BUFR, 7 IDDR             & Vivado 2017.1      \\
-		\hline
-	\end{longtable}
-\end{scriptsize}
+\input{utilization_custom.inc}
 
 \footnotetext[1]{\label{abc}These measurements were the result of a Vivado timing analysis which was different from the Vivado analysis performed by default for OpenCPI worker builds. For more info see Appendix \ref{appendix}}
-\footnotetext[2]{\label{quartustiming}Quartus does not perform timing analysis at the OpenCPI worker build (i.e. synthesis) stage.}
-% see performance_and_resource_utilization.txt
 
 \pagebreak
 \noindent A notable example of the aforementioned potential discrepancy between worker Fmax and bitstream Fmax for a given clock domain is the maximum achievable AD9361 LVDS RX data clock rate for Zynq 7020 speed grade 1 bitstreams containing this worker. The bitstream Fmax in this case is significantly lower than the worker netlist Fmax of 418MHz on a Zynq 7020 speed grade 1. The timing analysis for the ad9361\_adc\_sub netlist is not capable of taking into account the paths from the internal-to-the-AD9361 registers which produce the RX data to the ad9361\_adc\_sub worker's DDR register inputs. The Fmax discrepancy in this case results from these external-to-the-ad9361\_adc\_sub paths being the limiting factor for the max bistream RX data clock rate. In order to perform a timing analysis which does include these paths, and therefore takes into account all paths which may limit the maximum achievable RX data clock rate, a timing analysis must be done 1) on a netlist/bitstream which includes the rest of the path from the DDR input from the FPGA pad (i.e. it includes the ad9361\_data\_sub worker) and 2) which includes delay/offset constraints which contain the information about the range of possible clock/data skews from the internal-to-the-AD9361 register which produced the RX data to the FPGA pad (i.e. constraints are used which include the AD9361 datasheet-specified $t_{DDRX}$ and $t_{DDDV}$ min/max values). \\
@@ -771,7 +729,9 @@ The FPGA resource utilization and Fmax are included for this worker. Fmax refers
 
 \pagebreak
 \section*{Test and Verification}
-The test outlined in \cite{adc_comp_datasheet} includes validation of this worker's functionality (for LVDS mode and CMOS Single Port Full Duplex DDR mode only).
+No unit test for this component exists. However, a hardware-in-the-loop
+application (which is NOT a unit test) exists for testing purposes (see
+assets/applications/ad9361\_adc\_test).
 
  \begin{thebibliography}{1}
 
@@ -781,22 +741,25 @@ The test outlined in \cite{adc_comp_datasheet} includes validation of this worke
  AD9361\_Reference\_Manual\_UG-570.pdf
  \bibitem{adi_ug671} AD9361 Register Map Reference Manual UG-671\\
  AD9361\_Register\_Map\_Reference\_Manual\_UG-671.pdf
- \bibitem{adc_comp_datasheet} AD361 ADC Component Data Sheet \\AD9361\_ADC.pdf
- \bibitem{data_sub_comp_datasheet} AD361 Data Sub Component Data Sheet \\AD9361\_Data\_Sub.pdf
- \bibitem{config_proxy_comp_datasheet} AD361 Configy Proxy Component Data Sheet \\AD9361\_Config\_Proxy.pdf
+ \bibitem{adc_comp_datasheet} AD9361 ADC Component Data Sheet \\
+ \url{https://opencpi.github.io/assets/AD9361_ADC.pdf}
+ \bibitem{data_sub_comp_datasheet} AD9361 Data Sub Component Data Sheet \\
+ \url{https://opencpi.github.io/assets/AD9361_Data_Sub.pdf}
+ \bibitem{config_proxy_comp_datasheet} AD9361 Config Proxy Component Data Sheet \\
+ \url{https://opencpi.github.io/assets/AD9361_Config_Proxy.pdf}
 
  \end{thebibliography}
 
 \pagebreak
 \section{Appendix - Vivado Timing Analysis} \label{appendix}
 
-The Vivado timing report that OpenCPI runs for device workers may erroneously report a max delay for a clocking path which should have been ignored. Custom Vivado tcl commands had to be run for this device worker to extract pertinent information from Vivado timing analysis. After building the worker, the following commands were run from the base project directory (after the Vivado settings64.sh was sourced):
-\lstset{language=bash, columns=flexible, breaklines=true, prebreak=\textbackslash, basicstyle=\ttfamily, showstringspaces=false,upquote=true, aboveskip=\baselineskip, belowskip=\baselineskip}
+The Vivado timing report that OpenCPI runs for device workers may erroneously report a max delay for a clocking path which should have been ignored. Custom Vivado tcl commands had to be run for this device worker to extract pertinent information from Vivado timing analysis. After building the worker, the following commands were run from the assets project directory (after the Vivado settings64.sh was sourced):
+\lstset{language=bash, backgroundcolor=\color{lightgray}, columns=flexible, breaklines=true, prebreak=\textbackslash, basicstyle=\ttfamily, showstringspaces=false,upquote=true, aboveskip=\baselineskip, belowskip=\baselineskip}
 \begin{lstlisting}
 cd hdl/devices/
 vivado -mode tcl
 \end{lstlisting}
-Then the following commands were run inside the Vivado tcl terminal:
+Then the following commands were run inside the Vivado tcl terminal. \textbf{\textit{Note this example is for build configuration 0 only}}.
 \begin{lstlisting}
 open_project ad9361_adc_sub.hdl/target-zynq/ad9361_adc_sub_rv.xpr
 synth_design -part xc7z020clg484-1 -top ad9361_adc_sub_rv -mode out_of_context
@@ -806,25 +769,43 @@ set_clock_groups -asynchronous -group [get_clocks clk1] -group [get_clocks clk2]
 report_timing -delay_type min_max -sort_by slack -input_pins -group clk1
 report_timing -delay_type min_max -sort_by slack -input_pins -group clk2
 \end{lstlisting}
-The following is the output of the timing reports. The Fmax for the control plane clock for this worker is computed as the maximum magnitude slack with a control plane clock of 1 ps plus 2 times the assumed 1 ps control plane clock period (3.432 ns + 0.002 ns = 3.434 ns, 1/3.434 ns = 291.21 MHz). The Fmax for the dev\_data\_clk clock from the devsignal is computed as the maximum magnitude slack with dev\_data\_clk of 1 ps plus 2 times the assumed 1 ps dev\_data\_clk period (2.387 ns + 0.002 ns = 2.389 ns, 1/2.389 ns = 418.59 MHz).
+The following is the output of the timing reports. The Fmax for the control plane clock for this worker is computed as the maximum magnitude slack with a control plane clock of 1 ps plus 2 times the assumed 1 ps control plane clock period (3.172 ns + 0.002 ns = 3.174 ns, 1/3.174 ns = 315.06 MHz). The Fmax for the dev\_data\_clk clock from the devsignal is computed as the maximum magnitude slack with dev\_data\_clk of 1 ps plus 2 times the assumed 1 ps dev\_data\_clk period (2.387 ns + 0.002 ns = 2.389 ns, 1/2.389 ns = 418.59 MHz).
 \fontsize{6}{12}\selectfont
 \begin{lstlisting}
 Vivado% report_timing -delay_type min_max -sort_by slack -input_pins -group clk1
+INFO: [Timing 38-35] Done setting XDC timing constraints.
+INFO: [Timing 38-91] UpdateTimingParams: Speed grade: -1, Delay Type: min_max.
+INFO: [Timing 38-191] Multithreading enabled for timing update using a maximum of 8 CPUs
+WARNING: [Timing 38-242] The property HD.CLK_SRC of clock port "ctl_in[Clk]" is not set. In out-of-context mode, this prevents timing estimation for clock delay/skew
+Resolution: Set the HD.CLK_SRC property of the out-of-context port to the location of the clock buffer instance in the top-level design
+WARNING: [Timing 38-242] The property HD.CLK_SRC of clock port "dev_data_clk_in[DATA_CLK_P]" is not set. In out-of-context mode, this prevents timing estimation for clock delay/skew
+Resolution: Set the HD.CLK_SRC property of the out-of-context port to the location of the clock buffer instance in the top-level design
+INFO: [Timing 38-78] ReportTimingParams: -max_paths 1 -nworst 1 -delay_type min_max -sort_by slack.
+Copyright 1986-2017 Xilinx, Inc. All Rights Reserved.
+-------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2017.1 (lin64) Build 1846317 Fri Apr 14 18:54:47 MDT 2017
+| Date         : Mon Oct  1 14:28:58 2018
+| Host         : <removed> running 64-bit CentOS Linux release 7.5.1804 (Core)
+| Command      : report_timing -delay_type min_max -sort_by slack -input_pins -group clk1
+| Design       : ad9361_adc_sub_rv
+| Device       : 7z020-clg484
+| Speed File   : -1  PRODUCTION 1.11 2014-09-11
+-------------------------------------------------------------------------------------------------
 
 Timing Report
 
-Slack (VIOLATED) :        -3.432ns  (required time - arrival time)
-  Source:                 wci/wci_decode/FSM_onehot_my_access_r_reg[2]/C
+Slack (VIOLATED) :        -3.172ns  (required time - arrival time)
+  Source:                 wci/wci_decode/my_state_r_reg[2]/C
                             (rising edge-triggered cell FDRE clocked by clk1  {rise@0.000ns fall@0.001ns period=0.001ns})
-  Destination:            wci/wci_decode/my_state_r_reg[0]/D
+  Destination:            wci/wci_decode/FSM_onehot_my_access_r_reg[0]/CE
                             (rising edge-triggered cell FDSE clocked by clk1  {rise@0.000ns fall@0.001ns period=0.001ns})
   Path Group:             clk1
   Path Type:              Setup (Max at Slow Process Corner)
   Requirement:            0.002ns  (clk1 rise@0.002ns - clk1 rise@0.000ns)
-  Data Path Delay:        3.427ns  (logic 1.061ns (30.960%)  route 2.366ns (69.040%))
-  Logic Levels:           3  (LUT4=1 LUT5=1 LUT6=1)
+  Data Path Delay:        2.921ns  (logic 0.937ns (32.078%)  route 1.984ns (67.922%))
+  Logic Levels:           2  (LUT6=2)
   Clock Path Skew:        -0.049ns (DCD - SCD + CPR)
-    Destination Clock Delay (DCD):    0.924ns = ( 0.926 - 0.002 ) 
+    Destination Clock Delay (DCD):    0.924ns = ( 0.926 - 0.002 )
     Source Clock Delay      (SCD):    0.973ns
     Clock Pessimism Removal (CPR):    0.000ns
   Clock Uncertainty:      0.035ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
@@ -835,42 +816,39 @@ Slack (VIOLATED) :        -3.432ns  (required time - arrival time)
 
     Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
   -------------------------------------------------------------------    -------------------
-                         (clock clk1 rise edge)       0.000     0.000 r  
+                         (clock clk1 rise edge)       0.000     0.000 r
                                                       0.000     0.000 r  ctl_in[Clk] (IN)
                          net (fo=41, unset)           0.973     0.973    wci/wci_decode/ctl_in[Clk]
-                         FDRE                                         r  wci/wci_decode/FSM_onehot_my_access_r_reg[2]/C
+                         FDRE                                         r  wci/wci_decode/my_state_r_reg[2]/C
   -------------------------------------------------------------------    -------------------
-                         FDRE (Prop_fdre_C_Q)         0.518     1.491 f  wci/wci_decode/FSM_onehot_my_access_r_reg[2]/Q
-                         net (fo=1, unplaced)         0.965     2.456    wci/wci_decode/FSM_onehot_my_access_r_reg_n_0_[2]
-                                                                      f  wci/wci_decode/ctl_out[SResp][1]_INST_0_i_3/I0
-                         LUT6 (Prop_lut6_I0_O)        0.295     2.751 f  wci/wci_decode/ctl_out[SResp][1]_INST_0_i_3/O
-                         net (fo=6, unplaced)         0.934     3.685    wci/wci_decode/ctl_out[SResp][1]_INST_0_i_3_n_0
-                                                                      f  wci/wci_decode/my_state_r[2]_i_2/I1
-                         LUT5 (Prop_lut5_I1_O)        0.124     3.809 r  wci/wci_decode/my_state_r[2]_i_2/O
-                         net (fo=3, unplaced)         0.467     4.276    wci/wci_decode/my_state_r[2]_i_2_n_0
-                                                                      r  wci/wci_decode/my_state_r[0]_i_1/I2
-                         LUT4 (Prop_lut4_I2_O)        0.124     4.400 r  wci/wci_decode/my_state_r[0]_i_1/O
-                         net (fo=1, unplaced)         0.000     4.400    wci/wci_decode/my_state_r[0]_i_1_n_0
-                         FDSE                                         r  wci/wci_decode/my_state_r_reg[0]/D
+                         FDRE (Prop_fdre_C_Q)         0.518     1.491 r  wci/wci_decode/my_state_r_reg[2]/Q
+                         net (fo=7, unplaced)         1.000     2.491    wci/wci_decode/wci_state[2]
+                                                                      r  wci/wci_decode/ctl_out[SResp][1]_INST_0_i_2/I0
+                         LUT6 (Prop_lut6_I0_O)        0.295     2.786 r  wci/wci_decode/ctl_out[SResp][1]_INST_0_i_2/O
+                         net (fo=4, unplaced)         0.473     3.259    wci/wci_decode/ctl_out[SResp][1]_INST_0_i_2_n_0
+                                                                      r  wci/wci_decode/FSM_onehot_my_access_r[4]_i_2/I2
+                         LUT6 (Prop_lut6_I2_O)        0.124     3.383 r  wci/wci_decode/FSM_onehot_my_access_r[4]_i_2/O
+                         net (fo=8, unplaced)         0.511     3.894    wci/wci_decode/my_access_r
+                         FDSE                                         r  wci/wci_decode/FSM_onehot_my_access_r_reg[0]/CE
   -------------------------------------------------------------------    -------------------
 
-                         (clock clk1 rise edge)       0.002     0.002 r  
+                         (clock clk1 rise edge)       0.002     0.002 r
                                                       0.000     0.002 r  ctl_in[Clk] (IN)
                          net (fo=41, unset)           0.924     0.926    wci/wci_decode/ctl_in[Clk]
-                         FDSE                                         r  wci/wci_decode/my_state_r_reg[0]/C
-                         clock pessimism              0.000     0.926    
-                         clock uncertainty           -0.035     0.891    
-                         FDSE (Setup_fdse_C_D)        0.077     0.968    wci/wci_decode/my_state_r_reg[0]
+                         FDSE                                         r  wci/wci_decode/FSM_onehot_my_access_r_reg[0]/C
+                         clock pessimism              0.000     0.926
+                         clock uncertainty           -0.035     0.891
+                         FDSE (Setup_fdse_C_CE)      -0.169     0.722    wci/wci_decode/FSM_onehot_my_access_r_reg[0]
   -------------------------------------------------------------------
-                         required time                          0.968    
-                         arrival time                          -4.400    
+                         required time                          0.722
+                         arrival time                          -3.894
   -------------------------------------------------------------------
-                         slack                                 -3.432    
+                         slack                                 -3.172
 
 
 
 
-report_timing: Time (s): cpu = 00:00:08 ; elapsed = 00:00:09 . Memory (MB): peak = 2090.078 ; gain = 497.523 ; free physical = 36828 ; free virtual = 87147
+report_timing: Time (s): cpu = 00:00:07 ; elapsed = 00:00:08 . Memory (MB): peak = 2089.160 ; gain = 497.523 ; free physical = 604 ; free virtual = 55948
 Vivado% report_timing -delay_type min_max -sort_by slack -input_pins -group clk2
 
 Timing Report
@@ -886,7 +864,7 @@ Slack (VIOLATED) :        -2.387ns  (required time - arrival time)
   Data Path Delay:        2.007ns  (logic 0.686ns (34.185%)  route 1.321ns (65.815%))
   Logic Levels:           1  (LUT3=1)
   Clock Path Skew:        -0.145ns (DCD - SCD + CPR)
-    Destination Clock Delay (DCD):    1.849ns = ( 1.851 - 0.002 ) 
+    Destination Clock Delay (DCD):    1.849ns = ( 1.851 - 0.002 )
     Source Clock Delay      (SCD):    2.094ns
     Clock Pessimism Removal (CPR):    0.099ns
   Clock Uncertainty:      0.035ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
@@ -897,7 +875,7 @@ Slack (VIOLATED) :        -2.387ns  (required time - arrival time)
 
     Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
   -------------------------------------------------------------------    -------------------
-                         (clock clk2 rise edge)       0.000     0.000 r  
+                         (clock clk2 rise edge)       0.000     0.000 r
                                                       0.000     0.000 r  dev_data_clk_in[DATA_CLK_P] (IN)
                          net (fo=0)                   0.973     0.973    worker/dev_data_clk_in[DATA_CLK_P]
                                                                       r  worker/BUFR_inst/I
@@ -913,21 +891,21 @@ Slack (VIOLATED) :        -2.387ns  (required time - arrival time)
                          FDRE                                         r  worker/data_mode_lvds.adc_r1_i_h_rrr_reg[0]/CE
   -------------------------------------------------------------------    -------------------
 
-                         (clock clk2 rise edge)       0.002     0.002 r  
+                         (clock clk2 rise edge)       0.002     0.002 r
                                                       0.000     0.002 r  dev_data_clk_in[DATA_CLK_P] (IN)
                          net (fo=0)                   0.924     0.926    worker/dev_data_clk_in[DATA_CLK_P]
                                                                       r  worker/BUFR_inst/I
                          BUFR (Prop_bufr_I_O)         0.486     1.412 r  worker/BUFR_inst/O
                          net (fo=140, unplaced)       0.439     1.851    worker/dev_data_ch0_out_out[adc_clk]
                          FDRE                                         r  worker/data_mode_lvds.adc_r1_i_h_rrr_reg[0]/C
-                         clock pessimism              0.099     1.951    
-                         clock uncertainty           -0.035     1.915    
+                         clock pessimism              0.099     1.951
+                         clock uncertainty           -0.035     1.915
                          FDRE (Setup_fdre_C_CE)      -0.202     1.713    worker/data_mode_lvds.adc_r1_i_h_rrr_reg[0]
   -------------------------------------------------------------------
-                         required time                          1.713    
-                         arrival time                          -4.100    
+                         required time                          1.713
+                         arrival time                          -4.100
   -------------------------------------------------------------------
-                         slack                                 -2.387    
+                         slack                                 -2.387
 
 
 
@@ -936,74 +914,14 @@ Slack (VIOLATED) :        -2.387ns  (required time - arrival time)
 \fontsize{10}{12}\selectfont
 These calculations can be verified by replacing the \texttt{create\_clock} lines above with the following values and rerunning the \texttt{report\_timing} commands and observing a value of 0.000 ns for the slacks:
 \begin{lstlisting}
-create_clock -name clk1 -period 3.434 [get_nets {ctl_in[Clk]}]
+create_clock -name clk1 -period 3.174 [get_nets {ctl_in[Clk]}]
 create_clock -name clk2 -period 2.389 [get_nets {dev_data_clk_in[DATA_CLK_P]}]
 report_timing -delay_type min_max -sort_by slack -input_pins -group clk1
 report_timing -delay_type min_max -sort_by slack -input_pins -group clk2
 \end{lstlisting}
+For the clk2 example:
 \fontsize{6}{12}\selectfont
 \begin{lstlisting}
-Vivado% report_timing -delay_type min_max -sort_by slack -input_pins -group clk1
-
-Timing Report
-
-Slack (MET) :             0.000ns  (required time - arrival time)
-  Source:                 wci/wci_decode/FSM_onehot_my_access_r_reg[2]/C
-                            (rising edge-triggered cell FDRE clocked by clk1  {rise@0.000ns fall@1.717ns period=3.434ns})
-  Destination:            wci/wci_decode/my_state_r_reg[0]/D
-                            (rising edge-triggered cell FDSE clocked by clk1  {rise@0.000ns fall@1.717ns period=3.434ns})
-  Path Group:             clk1
-  Path Type:              Setup (Max at Slow Process Corner)
-  Requirement:            3.434ns  (clk1 rise@3.434ns - clk1 rise@0.000ns)
-  Data Path Delay:        3.427ns  (logic 1.061ns (30.960%)  route 2.366ns (69.040%))
-  Logic Levels:           3  (LUT4=1 LUT5=1 LUT6=1)
-  Clock Path Skew:        -0.049ns (DCD - SCD + CPR)
-    Destination Clock Delay (DCD):    0.924ns = ( 4.358 - 3.434 ) 
-    Source Clock Delay      (SCD):    0.973ns
-    Clock Pessimism Removal (CPR):    0.000ns
-  Clock Uncertainty:      0.035ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
-    Total System Jitter     (TSJ):    0.071ns
-    Total Input Jitter      (TIJ):    0.000ns
-    Discrete Jitter          (DJ):    0.000ns
-    Phase Error              (PE):    0.000ns
-
-    Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
-  -------------------------------------------------------------------    -------------------
-                         (clock clk1 rise edge)       0.000     0.000 r  
-                                                      0.000     0.000 r  ctl_in[Clk] (IN)
-                         net (fo=41, unset)           0.973     0.973    wci/wci_decode/ctl_in[Clk]
-                         FDRE                                         r  wci/wci_decode/FSM_onehot_my_access_r_reg[2]/C
-  -------------------------------------------------------------------    -------------------
-                         FDRE (Prop_fdre_C_Q)         0.518     1.491 f  wci/wci_decode/FSM_onehot_my_access_r_reg[2]/Q
-                         net (fo=1, unplaced)         0.965     2.456    wci/wci_decode/FSM_onehot_my_access_r_reg_n_0_[2]
-                                                                      f  wci/wci_decode/ctl_out[SResp][1]_INST_0_i_3/I0
-                         LUT6 (Prop_lut6_I0_O)        0.295     2.751 f  wci/wci_decode/ctl_out[SResp][1]_INST_0_i_3/O
-                         net (fo=6, unplaced)         0.934     3.685    wci/wci_decode/ctl_out[SResp][1]_INST_0_i_3_n_0
-                                                                      f  wci/wci_decode/my_state_r[2]_i_2/I1
-                         LUT5 (Prop_lut5_I1_O)        0.124     3.809 r  wci/wci_decode/my_state_r[2]_i_2/O
-                         net (fo=3, unplaced)         0.467     4.276    wci/wci_decode/my_state_r[2]_i_2_n_0
-                                                                      r  wci/wci_decode/my_state_r[0]_i_1/I2
-                         LUT4 (Prop_lut4_I2_O)        0.124     4.400 r  wci/wci_decode/my_state_r[0]_i_1/O
-                         net (fo=1, unplaced)         0.000     4.400    wci/wci_decode/my_state_r[0]_i_1_n_0
-                         FDSE                                         r  wci/wci_decode/my_state_r_reg[0]/D
-  -------------------------------------------------------------------    -------------------
-
-                         (clock clk1 rise edge)       3.434     3.434 r  
-                                                      0.000     3.434 r  ctl_in[Clk] (IN)
-                         net (fo=41, unset)           0.924     4.358    wci/wci_decode/ctl_in[Clk]
-                         FDSE                                         r  wci/wci_decode/my_state_r_reg[0]/C
-                         clock pessimism              0.000     4.358    
-                         clock uncertainty           -0.035     4.323    
-                         FDSE (Setup_fdse_C_D)        0.077     4.400    wci/wci_decode/my_state_r_reg[0]
-  -------------------------------------------------------------------
-                         required time                          4.400    
-                         arrival time                          -4.400    
-  -------------------------------------------------------------------
-                         slack                                  0.000    
-
-
-
-
 Vivado% report_timing -delay_type min_max -sort_by slack -input_pins -group clk2
 
 Timing Report
@@ -1019,7 +937,7 @@ Slack (MET) :             0.000ns  (required time - arrival time)
   Data Path Delay:        2.007ns  (logic 0.686ns (34.185%)  route 1.321ns (65.815%))
   Logic Levels:           1  (LUT3=1)
   Clock Path Skew:        -0.145ns (DCD - SCD + CPR)
-    Destination Clock Delay (DCD):    1.849ns = ( 4.238 - 2.389 ) 
+    Destination Clock Delay (DCD):    1.849ns = ( 4.238 - 2.389 )
     Source Clock Delay      (SCD):    2.094ns
     Clock Pessimism Removal (CPR):    0.099ns
   Clock Uncertainty:      0.035ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
@@ -1030,7 +948,7 @@ Slack (MET) :             0.000ns  (required time - arrival time)
 
     Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
   -------------------------------------------------------------------    -------------------
-                         (clock clk2 rise edge)       0.000     0.000 r  
+                         (clock clk2 rise edge)       0.000     0.000 r
                                                       0.000     0.000 r  dev_data_clk_in[DATA_CLK_P] (IN)
                          net (fo=0)                   0.973     0.973    worker/dev_data_clk_in[DATA_CLK_P]
                                                                       r  worker/BUFR_inst/I
@@ -1046,21 +964,21 @@ Slack (MET) :             0.000ns  (required time - arrival time)
                          FDRE                                         r  worker/data_mode_lvds.adc_r1_i_h_rrr_reg[0]/CE
   -------------------------------------------------------------------    -------------------
 
-                         (clock clk2 rise edge)       2.389     2.389 r  
+                         (clock clk2 rise edge)       2.389     2.389 r
                                                       0.000     2.389 r  dev_data_clk_in[DATA_CLK_P] (IN)
                          net (fo=0)                   0.924     3.313    worker/dev_data_clk_in[DATA_CLK_P]
                                                                       r  worker/BUFR_inst/I
                          BUFR (Prop_bufr_I_O)         0.486     3.799 r  worker/BUFR_inst/O
                          net (fo=140, unplaced)       0.439     4.238    worker/dev_data_ch0_out_out[adc_clk]
                          FDRE                                         r  worker/data_mode_lvds.adc_r1_i_h_rrr_reg[0]/C
-                         clock pessimism              0.099     4.338    
-                         clock uncertainty           -0.035     4.302    
+                         clock pessimism              0.099     4.338
+                         clock uncertainty           -0.035     4.302
                          FDRE (Setup_fdre_C_CE)      -0.202     4.100    worker/data_mode_lvds.adc_r1_i_h_rrr_reg[0]
   -------------------------------------------------------------------
-                         required time                          4.100    
-                         arrival time                          -4.100    
+                         required time                          4.100
+                         arrival time                          -4.100
   -------------------------------------------------------------------
-                         slack                                  0.000    
+                         slack                                  0.000
 
 
 

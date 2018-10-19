@@ -1,0 +1,6 @@
+<Signals>
+  <Signal Output="txon_pulse"/>
+  <Signal Output="txoff_pulse"/>
+  <Signal Output="event_in_connected"/>
+  <Signal Output="is_operating"/>
+</Signals>

@@ -30,11 +30,16 @@
 
 [ -n "${JENKINS_HOME}" ] && export PDF_SUDO=sudo
 
+# Lookup table for BSP names (defaults to just capitalization) (AV-4753)
+declare -A bsp_aliases
+bsp_aliases["e310"]="Ettus E310/E312/E313"
+bsp_aliases["picoflexor"]="DRS Picoflexor S1T6A/S3T6A"
+
 ## Enables color variables BOLD, RED, and RESET
 enable_color() {
   if [ -n "$(command -v tput)" -a -n "${TERM}" ]; then
     export BOLD=$(tput bold 2>/dev/null)
-    export RED=$(tput setaf 1 2>/dev/null)
+    export RED=${BOLD}$(tput setaf 1 2>/dev/null)
     export RESET=$(tput sgr0 2>/dev/null)
   fi
 }
@@ -71,7 +76,7 @@ add_new_list() {
 #   OUTPUT_PATH
 #       The path where the PDFs are to be written
 #   BSPS
-#        Array of the avaliable bsps
+#        Array of the available bsps (filtered)
 #   MYLOC
 #       The path of the directory that contains this script
 # Arguments:
@@ -93,11 +98,35 @@ create_index() {
     add_new_list "Core Project Documentation" "${core_pdf_loc}"
 
     for d in ${BSPS[*]}; do
-        add_new_list "${d^} BSP Documentation" "./bsp_$d"
+      bsp_name=$(get_bsp_name $d)
+      bsp_prettyname="${bsp_name^}" # Capitalize
+      [ -n "${bsp_aliases[${bsp_name}]}" ] && bsp_prettyname="${bsp_aliases[${bsp_name}]}"
+      add_new_list "${bsp_prettyname} Board Support Package (BSP) Project Documentation" "./bsp_${bsp_name}"
     done
 
     # Bring in ending of index.html
     cat ${MYLOC}/listing_footer.html
+}
+
+###
+# Throws warnings if file exists
+# Globals:
+#   None
+# Arguments:
+#   $1: Output directory
+#   $2: Output file basename (pdf added)
+#   $3: Caller directory
+# Returns:
+#   True if there is a file already (usage: warn_existing_pdf && continue when looping over files)
+#       Will write to the screen and top-level errors.log
+###
+warn_existing_pdf() {
+    if [ -e "${OUTPUT_PATH}/${prefix}/${ofile}.pdf" ]; then
+        echo "${RED}Output file $(readlink -e ${OUTPUT_PATH}/${prefix}/${ofile}.pdf) already exists! Skipping!${RESET}"
+        echo "Output file $(readlink -e ${OUTPUT_PATH}/${prefix}/${ofile}.pdf) already exists when parsing ${d}/${ofile}. Skipping!" >> ${OUTPUT_PATH}/errors.log
+    else
+        false
+    fi
 }
 
 ###
@@ -111,9 +140,10 @@ create_index() {
 #   REPO_PATH
 #       The path where the opencpi repo is located
 #   BSPS
-#       Array of the avaliable bsps
+#       Array of the available bsps (filtered)
 # Arguments:
-#   None
+#   $1: If $1 is provided it means we want to use our own search path for
+#         dirs_to_search instead of the provided ones we use
 # Returns:
 #   None
 #       Some stuff will be returned but it is all garbage and
@@ -121,56 +151,64 @@ create_index() {
 ###
 generate_pdfs() {
     shopt -s nullglob
-    enable_color
 
-    echo "${BOLD}Building PDFs from '${REPO_PATH}' with results in '${OUTPUT_PATH}'${RESET}"
-
-    # Set up output area
-    mkdir -p ${OUTPUT_PATH}/{,assets,core}/logs
-    for d in ${BSPS[*]}; do
-        mkdir -p ${OUTPUT_PATH}/bsp_$d/logs
-    done
+    [ -z "$1" ] && echo "${BOLD}Building PDFs from '${REPO_PATH}' with results in '${OUTPUT_PATH}'${RESET}"
 
     # Get around unoconv bug ( https://github.com/dagwieers/unoconv/issues/241 )
-    cd /tmp; ${PDF_SUDO} unoconv -vvv -f pdf /dev/null >/dev/null 2>&1 || :
+    cd /tmp; ${PDF_SUDO} unoconv -vvv -f pdf /dev/null >/dev/null 2>&1 || :; cd -
 
-    dirs_to_search=()
-    dirs_to_search+=("${REPO_PATH}/doc/av/tex")
-    dirs_to_search+=("${REPO_PATH}/doc/odt")
-    dirs_to_search+=($(find ${REPO_PATH}/projects/assets -type d \( -name doc -o -name docs \)))
-    dirs_to_search+=($(find ${REPO_PATH}/projects/bsps -type d -name doc))
-    dirs_to_search+=($(find ${REPO_PATH}/projects/core -type d -name doc))
-
+    # TODO: remove core/assets and have it just walk projects/ skipping bsps and inactive
+    if [ -z "$1" ]; then
+        dirs_to_search=()
+        dirs_to_search+=("${REPO_PATH}/doc/av/tex")
+        dirs_to_search+=("${REPO_PATH}/doc/odt")
+        dirs_to_search+=($(find ${REPO_PATH}/projects/assets -type d \( -name doc -o -name docs \)))
+        dirs_to_search+=($(find ${REPO_PATH}/projects/core -type d -name doc))
+        # Searching for bsps done differently due to possibility of shared bsps
+        for bsp in ${BSPS[@]}; do
+            dirs_to_search+=($(find ${REPO_PATH}/projects/bsps/${bsp} -type d -name doc))
+        done
+    else # given directories to search
+        dirs_to_search=()
+        tmp_array=($1)
+        for dir in ${tmp_array[@]}; do
+            # Code elsewhere requires absolute paths, like REPO_PATH is above
+            dirs_to_search+=($(find "$(readlink -e ${dir})" -type d \( -name doc -o -name docs \)))
+        done
+    fi
     for d in ${dirs_to_search[*]}; do
         echo "${BOLD}Directory: $d${RESET}"
         cd $d
+        bsp_name="$(get_bsp_name $d)"
+        # If we are building for a specific directory there will be no prefix
+        [ -z "$1" ] &&
+        # otherwise, assets / core / bsp_XXX, or left empty
         if expr match $d '.*assets' > /dev/null; then
             prefix=assets
         elif expr match $d '.*core' > /dev/null; then
             prefix=core
-        else
-            # If it is a BSP, set prefix to bsp_<bspsname> else set prefix to ""
-            prefix=$(echo $d | perl -ne 'print "bsp_$1\n" if m|/bsps/(.+?)/|')
+        elif [ -n "${bsp_name}" ]; then
+            prefix=bsp_${bsp_name}
         fi
 
         log_dir=${OUTPUT_PATH}/${prefix}/logs
+        mkdir -p "${log_dir}"
 
         # Once upon a time, we allowed custom scripts to build PDFs.
         # If that code is ever needed again, see Jenkins Job 1 before 6a64d20.
         # AV-3987, AV-4085
 
-        for ext in *docx *pptx *odt *fodt *odp *fodp; do
+        for ext in *docx *pptx *odt *odp; do
             # Get the name of the file without the file extension
             ofile=${ext%.*}
-            echo "${BOLD}office: $d/$ext${RESET}"
+            echo "${BOLD}office: $d/$ext ${prefix+(output prefix=${prefix})}${RESET}"
+            warn_existing_pdf "${OUTPUT_PATH}/${prefix}" ${ofile} $d && continue
             ${PDF_SUDO} unoconv -vvv -f pdf $ext >> ${log_dir}/${ofile}.log 2>&1
             # If the pdf was created then try to shrink it
             if [ -f $ofile.pdf ]; then
-                echo "Original $(stat -c "%s" ${ofile}.pdf) bytes"
-                while ${MYLOC}/optpdf.sh ${ofile}.pdf;do :;done
                 mv ${ofile}.pdf ${OUTPUT_PATH}/${prefix}/
             else
-              echo "${BOLD}${RED}Error creating $ofile.pdf${RESET}"
+              echo "${RED}Error creating $ofile.pdf${RESET}"
               echo "Error creating $ofile.pdf ($d)" >> ${OUTPUT_PATH}/errors.log
             fi
         done
@@ -180,18 +218,17 @@ generate_pdfs() {
             echo $tex | grep -iq '_header' && continue # Skip headers
             echo $tex | grep -iq '_footer' && continue # Skip footers
             echo $tex | grep -iq '_template' && continue # Skip templates
-            echo "${BOLD}LaTeX: $d/$tex${RESET}"
+            echo "${BOLD}LaTeX: $d/$tex ${prefix+(output prefix=${prefix})}${RESET}"
             # Jump into subdir if present (note: $tex is no longer valid - use ofile.tex)
             expr match $tex '.*/' >/dev/null && cd "$(dirname $tex)"
             ofile=$(basename -s .tex $tex)
+            warn_existing_pdf "${OUTPUT_PATH}/${prefix}" ${ofile} $d && continue
             rubber -d $ofile.tex
             # If the pdf was created then try to shrink it
-            if [ -f $ofile.pdf ]; then
-                echo "Original $(stat -c "%s" ${ofile}.pdf) bytes"
-                while ${MYLOC}/optpdf.sh ${ofile}.pdf;do :;done
-            else
-              echo "${BOLD}${RED}Error creating $ofile.pdf${RESET}"
+            if [ ! -f $ofile.pdf ]; then
+              echo "${RED}Error creating $ofile.pdf${RESET}"
               echo "Error creating $ofile.pdf ($d)" >> ${OUTPUT_PATH}/errors.log
+              continue
             fi
             mv ${ofile}.log ${log_dir}/${ofile}.log 2>&1
             rubber-info --boxes $ofile.tex >> ${log_dir}/${ofile}_boxes.log 2>&1
@@ -201,6 +238,124 @@ generate_pdfs() {
             mv ${ofile}.pdf ${OUTPUT_PATH}/${prefix}/
             expr match ${tex} '.*/' >/dev/null && cd ..
         done
+    done
+}
+
+###
+# Compresses resulting PDFs
+# Globals:
+#   MYLOC
+#       The path where the compression script is located
+#   OUTPUT_PATH
+#       The path where the PDFs are
+# Arguments:
+#   None
+# Returns:
+#   None; prints to the screen a lot
+###
+compress_kernel() {
+  echo "$(basename $1): Original $(stat -c "%s" $1) bytes"
+  while ${MYLOC}/optpdf.sh $1;do :;done
+}
+compress_pdfs() {
+  echo -n "Compressing output PDFs"
+  export -f compress_kernel
+  export MYLOC
+  if [ -z "$(command -v parallel)" -o -n "${JENKINS_HOME}" ]; then
+    echo "..."
+    find "${OUTPUT_PATH}" -name '*.pdf' -print0 | xargs -r -0 -I+ bash -c "compress_kernel +"
+  else
+    echo " (in parallel)..."
+    find "${OUTPUT_PATH}" -name '*.pdf' -print0 | parallel -r -0 compress_kernel
+  fi
+}
+
+###
+# Removes any duplicate packages in bsp subdirectory and stores the filtered list in BSPS
+# This is needed for when multiple platforms may check out the same source repository
+# Globals:
+#   None
+# Arguments:
+#   Two paths, will return true iff both are git checkouts with same remote URL for 'origin'
+# Returns:
+#   true/false
+###
+same_git_repo() {
+  [ -e $1/.git ] &&
+  [ -e $2/.git ] &&
+  [ "$(git --git-dir=$1/.git config --get remote.origin.url)" = \
+    "$(git --git-dir=$2/.git config --get remote.origin.url)" ]
+}
+
+###
+# Checks if a directory is a BSP. If it is, attempts to figure out a "pretty" name based on
+# repository name, e.g. XXX.bsp.YYY => YYY
+# Globals:
+#   REPO_PATH
+#       The path where the opencpi repo is located
+# Arguments:
+#   Path to check (defaults to cwd)
+# Returns:
+#   string; empty if not a BSP, YYY if it is
+###
+get_bsp_name() {
+  dir=.
+  [ -n "$1" ] && dir=$1
+  # Check if "here" or in projects/bsps/
+  [ -e ${dir} ] || dir=${REPO_PATH}/projects/bsps/$1
+  outname=$(basename "$(realpath ${dir})")
+  # Does it have /projects/bsps/ in its path? If not, bail.
+  [ "$(expr match "$(realpath ${dir})" '.*/projects/bsps/')" = 0 ] && echo "" && return
+  git_url=$(cd "$(realpath ${dir})" && git config --get remote.origin.url)
+  # Does it have .bsp. in its git URL? (The extra . at end captures first letter for substring)
+  git_url_offset=$(expr match "${git_url}" '.*\.bsp\..')
+  [ "${git_url_offset}" = 0 ] && echo "" && return
+  git_url=$(expr substr "${git_url}" ${git_url_offset} 1000)
+  git_url_offset=$(( $(expr match "${git_url}" '.*\.git$') - 4 ))
+  git_url=$(expr substr "${git_url}" 1 ${git_url_offset})
+  # Does it look decent?
+  [ -z "${git_url}" ] && echo "" && return
+  echo "${git_url}"
+}
+
+###
+# Removes any duplicate packages in bsp subdirectory and stores the filtered list in BSPS
+# This is needed for when multiple platforms may check out the same source repository
+# Globals:
+#   REPO_PATH
+#   BSPS
+# Arguments:
+#   None
+# Returns:
+#   The correct list of BSPS to use in the global variable BSPS
+###
+find_bsps() {
+    shared_bsp=()
+    tmp_bsps=($(find ${REPO_PATH}/projects/bsps/ -mindepth 1 -maxdepth 1 \
+                -type d -printf '%f\n'))
+
+    # If the list of tmp_bsps is greater than one it is possible that we have shared_bsps so we need to find them here
+    [ ${#tmp_bsps[@]} -gt 1 ] &&
+    for ((i=0; i<${#tmp_bsps[@]}-1; i+=1)); do
+        for ((j=i+1; j<${#tmp_bsps[@]}; j+=1)); do
+            # If there exists any two projects that both have the same remote.origin.url we can assume that they are a shared_bsp; add the
+            # second occuring one to the shared_bsp array which will later be used to remove bsps from BSPS
+            same_git_repo ${REPO_PATH}/projects/bsps/${tmp_bsps[$i]} \
+                          ${REPO_PATH}/projects/bsps/${tmp_bsps[$j]} &&
+              shared_bsp+=(${tmp_bsps[$j]})
+        done
+    done
+
+    # Making array unique
+    shared_bsp=($(echo "${shared_bsp[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
+
+    # Add all of the bsps to BSP if they are not in shared_bsp
+    for bsp in ${tmp_bsps[@]}; do
+        multiple_occurences=false
+        for unincluded_bsp in ${shared_bsp[@]}; do
+            [ $bsp = $unincluded_bsp ] && multiple_occurences=true
+        done
+        [ "$multiple_occurences" = false ] && BSPS+=($bsp) || echo "${RED}${bsp} is a duplicate BSP and we are not including it in the output${RESET}"
     done
 }
 
@@ -218,10 +373,15 @@ show_help() {
     [ -n "$1" ] && printf "\n${RED}ERROR: %s\n\n${RESET}" "$1"
     cat <<EOF >&2
 ${BOLD}This genDocumentation script creates PDFs for OpenCPI.
-Usage is: $0 [-h] [-r] [-o]
+Usage is: $0 [-h] [-r] [-o] [-d]
 
   -r / --repopath          Use the repo location provided
   -o / --outputpath        Use the provided location for output
+  -d / --dirsearch         Instead of using our automatic directory list to search
+                             for documents to build, provide your own. If you want
+                             to provide more than one directory, provide them as a
+                             space separated string. Note that it will only look in
+                             subdirectories named 'doc[s]' within the given path(s).
   -h / --help              Display the help screen${RESET}
 EOF
     [ -n "$1" ] && exit 99
@@ -253,6 +413,11 @@ while [[ $# -gt 0 ]]; do
             shift # past argument
             shift # past value
             ;;
+        -d|--dirsearch)
+            dirsearch="$2"
+            shift # past argument
+            shift # past value
+            ;;
         *)  # unknown option
             show_help "Unknown argument $key"
             ;;
@@ -260,26 +425,32 @@ while [[ $# -gt 0 ]]; do
 done
 # Do not try to access parameters to the script past this
 
+enable_color
 # Failures
 [ ! -r ${REPO_PATH} ] && show_help "\"${REPO_PATH}\" not readable by $USER. Consider using a different repo path."
 [ ! -d "${REPO_PATH}/doc/av" ] && show_help "\"${REPO_PATH}\" doesn't seem to be correct. Could not find doc/av/."
 [ -d "${OUTPUT_PATH}" ] && show_help "\"${OUTPUT_PATH}\" already exists"
 
 # Warnings
+echo -n "${RED}"
 [ -z "$(command -v rubber)" ] && printf "\nThe 'rubber' command was not found - will not be able to convert LaTeX => PDF!\n\n"
 [ -z "$(command -v gs)" ] && printf "\nThe 'gs' command was not found - will not be able to optimize PDF!\n\n"
 [ -z "$(command -v unoconv)" ] && printf "\nThe 'unoconv' command was not found - will not be able to convert Open/LibreOffice => PDF!\n\n"
+echo -n "${RESET}"
 
 mkdir -p ${OUTPUT_PATH} > /dev/null 2>&1
 touch ${OUTPUT_PATH}/${index_file} > /dev/null 2>&1
 [ ! -w ${OUTPUT_PATH}/${index_file} ] && show_help "\"${OUTPUT_PATH}\" not writable by $USER. Consider using a different output path."
 
 BSPS=()
-BSPS+=($(find ${REPO_PATH}/projects/bsps/ -mindepth 1 -maxdepth 1 \
-            -type d -printf '%f\n'))
+[ -z "${dirsearch}" ] && find_bsps
+generate_pdfs "${dirsearch}"
 
-generate_pdfs
-create_index > ${OUTPUT_PATH}/${index_file}
+# Special case - we don't (currently) have a decent source for the IDE PDF
+(cd ${OUTPUT_PATH} && wget http://opencpi.github.io/ANGRYVIPER_IDE_UG.pdf) || :
+
+[ -z "${dirsearch}" ] && create_index > ${OUTPUT_PATH}/${index_file}
+compress_pdfs
 
 # If errors...
 if [ -f ${OUTPUT_PATH}/errors.log ]; then

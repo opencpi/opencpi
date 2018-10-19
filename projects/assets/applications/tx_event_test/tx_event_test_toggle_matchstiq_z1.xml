@@ -1,0 +1,65 @@
+<Application>
+
+  <Instance Component="ocpi.core.platform">
+    <Property Name="platform" Value="matchstiq_z1"/>
+  </Instance>
+
+  <Instance Component="ocpi.assets.devices.tmp100"/>
+
+  <Instance Component="ocpi.assets.devices.si5338"/>
+  <Instance Component="ocpi.core.devices.clock_gen" Slave="si5338"/>
+
+  <Instance Component="ocpi.assets.platforms.matchstiq_z1.devices.matchstiq_z1_avr"/>
+  <Instance Component="ocpi.assets.platforms.matchstiq_z1.devices.matchstiq_z1_avr_proxy" Slave="matchstiq_z1_avr">
+    <Property Name="warp_voltage" Value="1970"/>
+    <Property Name="led" Value="green"/>
+  </Instance>
+
+  <Instance Component="ocpi.assets.devices.rf_tx"/>
+  <Instance Component="ocpi.assets.devices.rf_tx_proxy" Slave="rf_tx">
+    <Property Name="pre_mixer_dc_offset_i" Value="110"/>
+    <Property Name="pre_mixer_dc_offset_q" Value="148"/>
+  </Instance>
+
+  <Instance Component="ocpi.core.tx">
+    <Property Name="TYPE_p" Value="matchstiq_z1"/>
+
+    <!-- users can change values as necessary -->
+    <Property Name="sample_rate_MHz" Value="10"/>
+    <Property Name="frequency_MHz" Value="2400"/> <!-- tone will be transmitted at this freq -->
+    <Property Name="bb_cutoff_frequency_MHz" Value="14"/>
+    <Property Name="rf_gain_dB" Value="4"/>
+    <Property Name="bb_gain_dB" Value="-4"/>
+
+  </Instance>
+
+  <!-- data_src is used to send continuous I=constant, Q=0 samples to create
+       DC tone, set DATA_BIT_WIDTH_p to DAC bitwidth -->
+  <Instance Component="ocpi.assets.misc_comps.data_src" Selection="DATA_BIT_WIDTH_p == 12">
+
+    <Property Name="mode" Value="fixed"/>
+
+    <!-- users can change value as necessary to vary TX amplitude -->
+    <Property Name="fixed_value" Value="0,0,0,0,0,0,0,1,1,1,1,1"/>
+
+    <Property Name="mask_Q" Value="0"/> <!-- set Q to 0 -->
+
+  </Instance>
+
+  <Connection>
+    <Port Instance="data_src" Name="out"/>
+    <Port Instance="qdac" Name="in"/>
+  </Connection>
+
+  <Instance Component="ocpi.assets.util_comps.test_tx_event">
+    <!-- number of clocks/sec for control plane on zed -->
+    <!-- (causing tx_event to toggle once per second) -->
+    <Property Name="max_count_value" Value="100e6"/>
+  </Instance>
+  <Connection>
+    <Port Instance="test_tx_event" Name="event_out"/>
+    <Port Instance="qdac" Name="event_in"/>
+  </Connection>
+
+  <Instance Component="ocpi.assets.devices.qdac"/>
+</Application>

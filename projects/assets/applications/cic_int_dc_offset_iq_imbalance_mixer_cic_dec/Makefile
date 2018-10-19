@@ -44,37 +44,55 @@ show:
 
 define showhelp
 ----------------------------------------------------------------------------
-Instructions for setup/execution on remote platforms '(i.e. Matchstiq, Zedboard)'
-These steps may be repeated to test each available HDL assembly
+----------------------------------------------------------------------------
+The instructions below are used to execute an application on a remote
+platform like the Matchstiq-Z1 or Zedboard/Zipper.
+
+There are four steps for executing an application:
+1) Build ACI and/or input test data (development system)
+2) Setup the OCPI_LIBRARY_PATH (remote system)
+3) Execution of application (remote system)
+4) Verification of output data (development system)
+
 ----------------------------------------------------------------------------
 ----------------------------------------------------------------------------
 Setup:
 ----------------------------------------------------------------------------
-Development Computer - generate input data
-'make'
+1) Build ACI and/or input test data: (development system)
+NOTE: Required only if test data has never been built.
+ocpidev build --rcc-platform xilinx13_3
+or
+ocpidev build --rcc-platform xilinx13_4
 ----------------------------------------------------------------------------
-Zynq-Based Platform - setup environment
+2) Setup the OCPI_LIBRARY_PATH: (remote system)
+
+NOTE: Reminder to setup the run-time OCPI environment on remote system.
 . /mnt/card/opencpi/mynetsetup.sh {DEVELOPMENT HOST IPADDRESS}
 
+NOTE: Convenience cmd to quickly switch to application directory.
 cd /mnt/ocpi_assets/applications/cic_int_dc_offset_iq_imbalance_mixer_cic_dec
 
-export OCPI_LIBRARY_PATH=$$OCPI_CDK_DIR/../projects/core/exports/lib/components:$$(pwd)/../../hdl/assemblies/$${PWD##*/}:$$(pwd)/../../exports/lib
-#NOTE: If copy/paste of the above exports, the redundant '$' must be removed.
-----------------------------------------------------------------------------
-----------------------------------------------------------------------------
-Execution:
-----------------------------------------------------------------------------
-Zynq-Based Platform - execute
-Note:
-Must install a loopback cable between Tx and Rx
+REQUIRED - Reconfigure to default.
+Copy/paste string to terminal of remote system:
+export OCPI_LIBRARY_PATH=$$OCPI_CDK_DIR/$$OCPI_TOOL_PLATFORM/artifacts
 
-HDL (Matchstiq):
+REQUIRED - Configure for operation.
+Copy/paste string to terminal of remote system:
+export OCPI_LIBRARY_PATH+=:$$(pwd)/../../hdl/assemblies/$${PWD##*/}:$$(pwd)/../../artifacts
+NOTE: When copy/paste of the above 'export' from the Makefile source file, the redundant '$' must be manually removed.
+----------------------------------------------------------------------------
+3) Execution of application is specific to platform: (remote system)
+
+3a) Install a loopback cable between Tx and Rx
+3b) Launch app using the appropriate OAS for the target platform:
+Matchstiq-Z1:
 ocpirun -v -d -t 1 app_cic_int_dc_offset_iq_imbalance_mixer_cic_dec_matchstiq_z1.xml
-HDL (Zed/Zipper):
+Zedboard/Zipper:
 ocpirun -v -d -t 1 app_cic_int_dc_offset_iq_imbalance_mixer_cic_dec_zed_zipper.xml
 ----------------------------------------------------------------------------
-Development Computer - verify output data
+4) Verification of output data: (development system)
 python ./scripts/plotAndFft.py odata/out_app_cic_int_dc_offset_iq_imbalance_mixer_cic_dec_txrx.bin complex 131072 2062500 &
+----------------------------------------------------------------------------
 ----------------------------------------------------------------------------
 endef
 export showhelp

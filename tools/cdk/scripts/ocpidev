@@ -299,7 +299,7 @@ function get_subdir {
         ;;
       (*) if [ -z "$dirtype" ] ; then
             bad cannot operate within unknown directory type.  Try returning to the top level of your project.
-          else 
+          else
             bad cannot operate within directory of type \"$dirtype\". Try returning to the top level of your project.
           fi ;;
     esac
@@ -375,6 +375,9 @@ function do_registry {
       bad the registry to create \(\"$1\"\) already exists. Use that one, or remove it and try again
     else
       [ -z "$verbose" ] || echo The project registry \"$1\" has been created
+      echo "OCPI:WARNING:To use this registry, run the following command and add it to "\
+           "your ~/.bashrc:" >&2
+      echo "export OCPI_PROJECT_REGISTRY_DIR=$(realpath $1)" >&2
       mkdir $1
     fi
   elif [ "$verb" == delete ]; then
@@ -422,7 +425,7 @@ function do_project {
   elif [ "$verb" == unregister ]; then
     pj_title=\"$1\"
     [ -n "$1" ] || pj_title=current
-    ask unregister the $pj_title project/package from the registered projects registry
+    ask unregister the $pj_title project/package from the project registry
     if [ $(unregister_project $1 1> /dev/null; echo $?) -eq 1 ]; then
       # Error message printed from python
       exit 1
@@ -490,7 +493,7 @@ EOF
   cat <<EOF > Project.mk
 # This Makefile fragment is for the "$1" project created at `pwd`
 
-# Package identifier is used in a hierachical fashion from Project to Libraries....
+# Package identifier is used in a hierarchical fashion from Project to Libraries....
 # The PackageName, PackagePrefix and Package variables can optionally be set here:
 # PackageName defaults to the name of the directory
 # PackagePrefix defaults to local
@@ -641,7 +644,7 @@ function do_application {
     ask delete the application project in the \"$adir\" directory
     rm -r -f $adir
     [ -z "$verbose" ] || echo The application \"$1\" in the directory \"$adir\" has been deleted.
-    exit 0
+    return 0
   fi
   app=${1/%.xml/}
   if [ -n "$xmlapp" ] ; then
@@ -764,7 +767,7 @@ function do_protocol_or_spec {
     ask delete the file \"$subdir/$file\"
     rm $subdir/$file
     [ -z "$verbose" ] || echo The $2 \"$1\" in file $subdir/$file has been deleted.
-    exit 0
+    return 0
   fi
   [ -e "$subdir/$file" ] && bad the file \"$subdir/$file\" already exists
   if [ ! -d "$subdir" -a -n "$verbose" ] ; then
@@ -889,9 +892,9 @@ EOF
 # This is the $1 library
 
 # This makefile contains variable definitions that will apply when building each
-# individual worker and test in the libary
+# individual worker and test in the library
 
-# Package identifier is used in a hierachical fashion from Project to Libraries....
+# Package identifier is used in a hierarchical fashion from Project to Libraries....
 # The PackageName, PackagePrefix and Package variables can optionally be set here:
 # PackageName defaults to the name of the directory
 # PackagePrefix defaults to package of parent (project)
@@ -997,6 +1000,12 @@ function do_library {
     get_dirtype $libbase
     case "$dirtype" in
       (library|lib)
+        if [ "$(basename $libbase)" == "components" ]; then
+          bad "this project has a flattened components library. This components library can have
+              workers/tests/specs, but cannot have sub-libraries. If sub-libraries are desired,
+              the components library must be deleted at which point a sub-library can be directly
+              created via 'ocpidev create library <sub-library>'."
+        fi
         bad this project already has a \"$libbase\" library, you cannot create another library.
         ;;
       (libraries)
@@ -1433,7 +1442,7 @@ function do_hdl_platform {
     ask delete the HDL platform in the \"$pdir\" directory
     rm -r -f $pdir
     [ -z "$verbose" ] || echo The HDL platform \"$1\" in the directory \"$pdir\" has been deleted.
-    exit 0
+    return 0
   fi
   [ -e "$subdir$1" ] && bad the HDL platform \"$1\" in directory \"$topdir$subdir$1\" already exists
   libbase=hdl
@@ -1519,7 +1528,7 @@ function do_rcc_platform {
     ask delete the RCC platform in the \"$pdir\" directory
     rm -r -f $pdir
     [ -z "$verbose" ] || echo The RCC platform \"$1\" in the directory \"$pdir\" has been deleted.
-    exit 0
+    return 0
   fi
   [ -e "$pdir" ] && bad the RCC platform \"$1\" in directory \"$topdir$subdir$1\" already exists
   if [ "$dirtype" == project -a ! -e rcc/platforms ]; then
@@ -1746,6 +1755,7 @@ function do_assemblies {
 
 function do_build_here {
     buildTest="$1"
+    get_dirtype .
     if [ -z "$buildRcc" -a -z "$buildHdl" -a -n "$buildClean" -a "$1" != "test" ]; then
       cleanTarget="clean"
     fi
@@ -1769,7 +1779,6 @@ function do_build_here {
        ${swplats:+RccPlatforms=" ${swplats[@]}"} \
        ${hwswplats:+RccHdlPlatforms=" ${hwswplats[@]}"} \
        $OCPI_MAKE_OPTS
-  get_dirtype .
   if [ "$dirtype" == "project" -a -z "$hardClean" ] ; then
     make ${verbose:+AT=} imports
     make ${verbose:+AT=} exports
@@ -1802,7 +1811,7 @@ function do_assembly {
     ask delete the HDL assembly in the \"$adir\" directory
     rm -r -f $adir
     [ -z "$verbose" ] || echo The HDL assembly \"$1\" in the directory \"$adir\" has been deleted.
-    exit 0
+    return 0
   fi
   [ -e "$subdir$1" ] && bad the HDL assembly \"$1\" in directory \"$topdir$subdir$1\" already exists
   if [ "$dirtype" == project -a ! -e hdl/assemblies ]; then
@@ -1858,7 +1867,7 @@ EOF
 <!-- The $1 HDL assembly xml file -->
 <HdlAssembly>
   <!-- Remove this instance and replace it with real ones -->
-  <Instance Worker='nothing'/>
+  <Instance Worker='nothing' name='nothing'/>
 </HdlAssembly>
 EOF
   [ -z "$verbose" ] || echo The HDL assembly \"$assy\" has been created in ${topdir}hdl/assemblies/$assy/$assy.xml
@@ -2180,7 +2189,7 @@ Examples:
 
 Notes:
   The 'refresh' verb is useful if an asset is created outside of ocpidev and the metadata gets
-  out of sync with wats in the actual project.
+  out of sync with what is in the actual project.
 
 For a complete list of options and further documentation of ocpidev, please reference the
 OpenCPI Component Development Guide.
@@ -2191,7 +2200,7 @@ function help {
   if [ -n "$PAGER" ]; then
     pager=$PAGER
   else
-    pager="less -esX"
+    pager="less"
   fi
   if [[   "$verb" == create   || "$verb" == delete     ]]; then
     help_create
@@ -2211,7 +2220,7 @@ The ocpidev command performs developer functions on/in projects for OpenCPI.
 usage: ocpidev [options] <verb> [<noun> [<name>]]
 
 Choices:
-  <verb>: create, delete, build, clean, [un]register, [un]set, show, refresh
+  <verb>: create, delete, build, clean, [un]register, [un]set, show, refresh, run
   <noun>: project, registry, application, component, protocol, test, library,
           worker, <model> <<model>_noun>
 
@@ -2228,6 +2237,8 @@ Verb descriptions:
   [un]set        (Un)set a project's registry to control which project-registry it references when
                  searching for assets
   show           Print listings or details of OpenCPI assets in projects in the current registry
+  refresh        Regenerate any project metadata
+  run            Run unit-tests and applications
 
 'ocpidev --help <verb>' will show help for the specified verb
 
@@ -2624,11 +2635,16 @@ case $noun in
 esac
 gpmd=$OCPI_CDK_DIR/scripts/genProjMetaData.py
 if [ -x $gpmd ] ; then
-  if [ "$verb" == create -a "$noun" == project ] ; then
+  if [ "$verb" == "create" -a "$noun" == "project" ] ; then
     $gpmd $(pwd) force
   elif [ \( "$verb" == create -a "$noun" != registry \) \
+         -o \( "$verb" == "build" -o  "$verb" == "clean" -o "$verb" == "register" \) \
          -o \( "$verb" == delete -a "$noun" != project -a "$noun" != registry \) ] ; then
-    $gpmd $(pwd)
+    if [ "$noun" == "project" -a -n "${args[0]}" ]; then
+      $gpmd ${args[0]}
+    else
+      $gpmd $(pwd)
+    fi
   fi
 fi
 exit 0

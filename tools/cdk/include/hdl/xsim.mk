@@ -54,14 +54,18 @@ HdlBin=
 # If not set, it implies that only a library containing the implementation is
 # possible
 HdlToolRealCore=
+
+# For this tool, it is not sufficient just to include the assembly and pfconfig
+# at the container level. We must also include app workers, devices and the PW
+HdlToolRequiresFullCoreHierarchy_xsim=yes
 ################################################################################
 # Variable required by toolset: HdlToolNeedBB=yes
 # Set if the tool set requires a black-box library to access a core
 HdlToolNeedBB=
 
 ################################################################################
-# Function required by toolset: $(call HdlToolLibRef,libname)
-# This is the name after library name in a path
+# Function required by toolset: $(call HdlToolCoreRef,corename)
+# This is the name after core name in a path
 # It might adjust (genericize?) the target
 HdlToolCoreRef=$(call HdlRmRv,$1)
 HdlToolCoreRef_xsim=$(call HdlRmRv,$1)
@@ -96,7 +100,7 @@ XsimLibs=\
       $(HdlLibrariesInternal),\
       -lib $(notdir $l)=$(strip \
             $(call FindRelative,$(TargetDir),$(call HdlLibraryRefDir,$l,xsim,,xsim)))) \
-    $(foreach c,$(call HdlCollectCores,xsim),$(infox CCC:$c)\
+    $(foreach c,$(call HdlCollectCorePaths),$(infox CCC:$c)\
       -lib $(call HdlRmRv,$(notdir $(c)))=$(infox fc:$c)$(call FindRelative,$(TargetDir),$(strip \
           $(firstword $(foreach l,$(call XsimCoreLibraryChoices,$c),$(call HdlExists,$l))))))
 
@@ -149,11 +153,7 @@ HdlToolCompile=\
 
 # Since there is not a singular output, make's builtin deletion will not work
 HdlToolPost=\
-  if test $$HdlExit != 0; then \
-    rm -r -f $(WorkLib); \
-  else \
-    touch $(WorkLib); \
-  fi;
+  touch $(WorkLib);
 
 BitFile_xsim=$1.tar
 

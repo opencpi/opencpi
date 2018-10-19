@@ -1,3 +1,7 @@
+#AV-4482
+This script is deprecated you should be using ocpi-copy-projects instead.  This script will be 
+removed in version 1.5
+
 The new_project_source script takes two inputs: the first is the project that is being copied and the
 second is the location where it is to be copied.  The script will attempt to register the project if
 the user has permissions and if a version of this project isn't already registered.

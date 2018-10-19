@@ -1,0 +1,5 @@
+<RccWorker language='c++' spec='tx_event_ctrlr-spec'>
+
+  <SpecProperty Name="txen" WriteSync="true" ReadSync="true"/>
+
+</RccWorker>

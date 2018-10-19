@@ -22,6 +22,7 @@
 -- i.e. zero-latency, for which timing is expected to be met given the
 -- range of data_clk rates for CMOS mode.
 --
+-- IMPORTANT: we assume AD9361 FB_CLK is inverted version of AD9361 DATA_CLK
 --------------------------------------------------------------------------------
 library IEEE; use IEEE.std_logic_1164.all, ieee.numeric_std.all;
 library util; use util.util.all;
@@ -40,7 +41,6 @@ entity ad936x_tx_data_cmos_single_port_fdd_ddr is
         ready_t2       : in  std_logic; -- data...t2 are valid and ready
         take_t1        : out std_logic;
         take_t2        : out std_logic;
-        fb_clk         : out std_logic; -- AD9361 FB_CLK
         tx_frame       : out std_logic; -- AD9361 TX_FRAME
         tx_data        : out std_logic_vector(5 downto 0)); -- AD9361 P0 or P1
 end entity ad936x_tx_data_cmos_single_port_fdd_ddr;
@@ -102,22 +102,6 @@ begin
 
   tx_data_ddr_ris <= data_i_hi when hi_lo_sel = '1' else data_i_lo_r;
   tx_data_ddr_fal <= data_q_hi when hi_lo_sel = '1' else data_q_lo_r;
-
-  -- D1/D2 of 0/1 causes fb_clk to be inverted version of data_clk
-  -- (necessary for framing alignment)
-  data_clk_forward : ODDR
-    generic map(
-      DDR_CLK_EDGE => "SAME_EDGE",
-      INIT         => '0',
-      SRTYPE       => "ASYNC")
-    port map(
-      Q  => fb_clk,
-      C  => data_clk,
-      CE => '1',
-      D1 => '0',
-      D2 => '1',
-      R  => '0',
-      S  => '0');
 
   -- an ODDR primitive is used here not because it is necessary but because it
   -- maximizes timing slack on Zynq FPGAs

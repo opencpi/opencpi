@@ -168,8 +168,6 @@ static int mymain(const char **) {
   const char *addrFile = options.addresses();
   if (!addrFile)
     addrFile = getenv("OCPI_SERVER_ADDRESSES_FILE");
-  if (!addrFile)
-    addrFile = getenv("OCPI_SERVER_ADDRESS_FILE"); // deprecated
   RemoteContainerServer server(addrFile);
   if (options.error().length() || server.run(options.error()))
     options.bad("Container server error");

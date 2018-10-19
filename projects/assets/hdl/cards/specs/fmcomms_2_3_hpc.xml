@@ -79,8 +79,7 @@
     <Signal name='DATA_CLK_P'  slot='LA00_P_CC'/> <!--  G11  -->
     <Signal name='DATA_CLK_N'  slot='LA00_N_CC'/> <!--  H11  -->
     <Signal name='P0_D_5_0(0)'     slot='LA11_N'/>    <!--  H17  TX_D0_N -->
-    <Signal name='P0_D_5_0(1)'     slot='LA11_P'/>    <!--  H16  TX_D0_P -->
-    <Signal name='P0_D_5_0(2)'     slot='LA12_N'/>    <!--  G16  TX_D1_N -->
+    <Signal name='P0_D_5_0(1)'     slot='LA11_P'/>    <!--  H16  TX_D0_P --> <Signal name='P0_D_5_0(2)'     slot='LA12_N'/>    <!--  G16  TX_D1_N -->
     <Signal name='P0_D_5_0(3)'     slot='LA12_P'/>    <!--  G15  TX_D1_P -->
     <Signal name='P0_D_5_0(4)'     slot='LA13_N'/>    <!--  D18  TX_D2_N -->
     <Signal name='P0_D_5_0(5)'     slot='LA13_P'/>    <!--  D17  TX_D2_P -->
@@ -109,8 +108,6 @@
     <Signal name='FB_CLK_N'    slot='LA08_N'/>    <!--  G13  -->
     <Signal name='TX_FRAME_P'  slot='LA09_P'/>    <!--  D14  -->
     <Signal name='TX_FRAME_N'  slot='LA09_N'/>    <!--  D15  -->
-    <Signal name='TXNRX'       slot='LA16_N'/>    <!--  H4   -->
-    <Signal name='ENABLE'      slot='LA16_P'/>    <!--  G6   -->
     <!-- TODO / FIXME - enable this property, there is currently a bug
          preventing it from being enabled -->
     <!-- The LVDS configuration is not a hard requirement but it is included
@@ -119,9 +116,12 @@
     <!--Property name='DIFFERENTIAL_p'      value='true'/-->
     <!--Property name='PORT_CONFIG_p'       value='dual'/-->
     <!--Property name='DUPLEX_CONFIG_p'     value='full_duplex'/-->
-    <Property name='LVDS_P' value='true'/>
+    <Property name='LVDS_p' value='true'/>
   </device>
-  <device worker='ad9361_config'/>
+  <device worker='ad9361_config'>
+    <Signal name='TXNRX'  slot='LA16_N'/>    <!--  H4   -->
+    <Signal name='ENABLE' slot='LA16_P'/>    <!--  G6   -->
+  </device>
   <!-- the ad7291 and mc24c02 are just an I2C slave devices so there are no specific pins -->
   <device worker='ad7291'>
     <Signal name='ALERT' slot=''/>

@@ -1,0 +1,6 @@
+<build>
+  <configuration id='0'>
+   <parameter name='numMessagesMax' value='5'/>
+   <parameter name='numDataWords' value='15'/>
+ </configuration>
+</build>

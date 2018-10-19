@@ -213,8 +213,9 @@ bad_path_globs = (
     '*.test/test*/description',
     '*.test/test*/portmap',
     '*.test/test*/*.input',
+    '*.test/golden*',
     '*.test/test*/golden*',
-    '*/utilization.inc',  # LaTeX include files for utilization
+    '*/configurations*.inc', '*/utilization*.inc',  # LaTeX include files for utilization
 )
 
 

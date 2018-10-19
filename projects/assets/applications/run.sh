@@ -39,7 +39,7 @@ $VG ocpirun -v -d $OPTS $BIAS $FR file-bias-capture
 $VG ocpirun -v -d $OPTS $BIAS $FW pattern-bias-file
 $VG ocpirun -v -d $OPTS $BIAS $FW pattern
 # This delay is necessary until capture.hdl has the stop-on-eof feature
-# The default is appropropriate for hardware, but not sim
+# The default is appropriate for hardware, but not sim
 $VG ocpirun -v -d $OPTS $BIAS -t ${DURATION:-3} tb_bias
 $VG ocpirun -v -d $OPTS $BIAS $FR tb_bias_file
 $VG ocpirun -v -d $OPTS $BIAS $FR $FW testbias

@@ -83,6 +83,7 @@
 +tools/cdk/scripts/setup-prerequisite.sh scripts/
 +tools/cdk/scripts/setup-prereq-dirs.sh scripts/
 +tools/cdk/scripts/getPlatform.sh scripts/
++tools/cdk/scripts/getHdlPlatform.sh scripts/
 # Put this script where the executables are exported to run there - needed?
 =runtime/ctests/src/run_tests.sh <target>/bin/ctests/
 #+runtime/ctests/src/run_tests.sh scripts/
@@ -95,7 +96,6 @@
 # Perhaps migrate this to bin with a new name at some point
 
 =scripts/test-opencpi.sh <target>/bin/ocpitest
-=scripts/test-opencpi.sh <target>/bin/test-opencpi-rpm
 +tools/cdk/scripts/makeStaticWorker.sh scripts/
 =tools/cdk/scripts/ocpidriver scripts/
 =tools/cdk/scripts/ocpisetup.sh scripts/
@@ -103,6 +103,7 @@
 =tools/cdk/scripts/ocpisudo scripts/
 +tools/cdk/scripts/ocpitarget.sh scripts/
 +tools/cdk/scripts/ocpidev scripts/
++tools/cdk/scripts/ocpi-copy-projects scripts/
 +tools/cdk/scripts/ocpishow.py scripts/
 +tools/cdk/scripts/ocpidev_run.py scripts/
 +tools/cdk/scripts/ocpiassets.py scripts/
@@ -123,6 +124,7 @@
 +tools/cdk/scripts/maybeExport.sh scripts/
 # user level scripts made available in the bin directory
 +tools/cdk/scripts/ocpidev <target>/bin/
++tools/cdk/scripts/ocpi-copy-projects <target>/bin/
 =tools/cdk/scripts/ocpidriver <target>/bin/
 +tools/cdk/scripts/genProjMetaData.py scripts/
 #+tools/cdk/scripts/genProjMetaData.pyc scripts/
@@ -194,7 +196,6 @@
 =runtime/hdl-support/altera/altera.mk include/hdl/
 =runtime/hdl-support/altera/loadFlash_altera scripts/
 =runtime/hdl-support/altera/probeJtag_altera scripts/
-=runtime/hdl-support/altera/51-opencpi-usbblaster.rules udev-rules/
 =runtime/hdl-support/xilinx/loadFlash_xilinx scripts/
 =runtime/hdl-support/xilinx/probeJtag_xilinx scripts/
 =runtime/hdl-support/xilinx/findJtagByESN_xilinx scripts/
@@ -228,3 +229,6 @@
 # Until wildcards are supported, the cross-compiled platforms:
 #+tools/cdk/include/autoconfig_import-zed.mk include/
 #+tools/cdk/include/autoconfig_import-pico_t6a.mk include/
+=projects/assets/applications/*.xml applications/
+=projects/assets/applications/test.input applications/
+=projects/assets/applications/run.sh applications/

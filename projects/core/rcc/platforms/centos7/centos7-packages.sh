@@ -69,9 +69,11 @@ PKGS_D+=(epel-release)
 #    -- for rpm-required, we need a file-in-this-package too
 PKGS_D+=(glibc.i686=/lib/ld-linux.so.2
          redhat-lsb-core.i686=/lib/ld-lsb.so.3
-         ncurses-libs.i686=/lib/libncurses.so.5
-         libXft.i686=/lib/libXft.so.2
-         libXext.i686=/lib/libXext.so.6)
+         ncurses-libs.i686=/usr/lib/libncurses.so.5
+         libXft.i686=/usr/lib/libXft.so.2
+         libXext.i686=/usr/lib/libXext.so.6)
+#    for Quartus Pro 17 (AV-4318), we need specifically the 1.2 version of libpng
+PKGS_D+=(libpng12)
 # docker container missing this	libXdmcp.i686=/lib/libXdmcp.so.6) # AV-3645
 #    for bash completion - a noarch package  (AV-2398)
 PKGS_D+=(bash-completion=/etc/profile.d/bash_completion.sh)

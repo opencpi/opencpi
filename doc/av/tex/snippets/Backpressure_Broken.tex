@@ -1,0 +1,44 @@
+\iffalse
+This file is protected by Copyright. Please refer to the COPYRIGHT file
+distributed with this source distribution.
+
+This file is part of OpenCPI <http://www.opencpi.org>
+
+OpenCPI is free software: you can redistribute it and/or modify it under the
+terms of the GNU Lesser General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License along
+with this program. If not, see <http://www.gnu.org/licenses/>.
+\fi
+
+\iffalse
+
+This snippet creates a box labeled 'warning:backpressure' based on inputs.
+
+Call it in two ways:
+
+\backpressure{worker}{} % note the empty required second parameter!
+
+or
+
+\backpressure{worker1}{and ``worker2''}
+or
+\backpressure{worker1}{, ``worker2'', and ``worker3''}
+etc.
+
+\fi
+
+\providecommand{\backpressure}[2]{
+\label{warning:backpressure}
+\begin{center}
+\framebox{\parbox{0.8\linewidth}{\centering
+  \ifthenelse{\equal{#2}{}}{The worker ``#1''}{The workers ``#1''#2} that implement\ifthenelse{\equal{#2}{}}{s}{} this component specification \ifthenelse{\equal{#2}{}}{is}{are} known to currently be faulty. \ifthenelse{\equal{#2}{}}{It}{They} do\ifthenelse{\equal{#2}{}}{es}{} not properly implement flow control (``backpressure'') and should be used with caution.
+}}
+\end{center}
+}

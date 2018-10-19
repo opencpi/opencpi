@@ -62,7 +62,10 @@ else ifeq ($(origin RccPlatforms),undefined)
   ifdef OCPI_TARGET_PLATFORM
     RccPlatforms:=$(OCPI_TARGET_PLATFORM)
   else ifdef OCPI_TOOL_PLATFORM
-    RccPlatforms:=$(OCPI_TOOL_PLATFORM)
+    # If no target platform was specified, and we are not cleaning, set to the running one
+    ifeq ($(filter clean%,$(MAKECMDGOALS)),)
+      RccPlatforms:=$(OCPI_TOOL_PLATFORM)
+    endif
   else
     $(error Unexpected failure to figure out which RCC compiler to use.)
   endif
@@ -121,7 +124,9 @@ ifdef RccPlatforms
   $(foreach p,$(RccPlatforms),\
     $(foreach r,$(call RccRealPlatforms,$p),\
       $(if $(filter $r,$(RccAllPlatforms)),,\
-        $(error RccPlatform $r is unknown, it is not found in any registered project))\
+	$(if $(filter $r,$(OCPI_TOOL_PLATFORM)),\
+          $(error Host RCC Platform "$r" was not found in any registered project. Make sure the OpenCPI core project is registered as well as any other projects that may contain the missing RCC Platform. Current valid of RCC Platforms are: $(RccAllPlatforms)),\
+          $(error RCC Platform "$r" was not found in any registered project. Current valid of RCC Platforms are: $(RccAllPlatforms))))\
       $(foreach t,$(call RccPlatformTarget,$p,$(RccTarget_$r)),\
         $(eval RccTarget_$p:=$t)\
         $(eval RccTargets=$(strip $(RccTargets) $t)))))
@@ -141,7 +146,7 @@ else
         $(eval RccPlatforms+=$p)\
         $(eval RccFound+=$t)))\
     $(if $(RccFound),,\
-      $(error The RccTarget "$t" is not the target for any software platform in any registered project)))
+      $(error The RccTarget "$t" is not a valid target.  Specifying an RccPlatform is preferred. Valid of RCC Platforms are: $(RccAllPlatforms))))
 endif
 
 $(call OcpiDbgVar,RccPlatforms)

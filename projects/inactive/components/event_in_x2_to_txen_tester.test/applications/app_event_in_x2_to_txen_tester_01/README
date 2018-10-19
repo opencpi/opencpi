@@ -1,0 +1,2 @@
+OCPI_LIBRARY_PATH=../../assemblies/ ocpirun -d -t 20 app_event_in_x2_to_txen_tester_01.xml
+cd simulations/<some-simulation> && ocpiview

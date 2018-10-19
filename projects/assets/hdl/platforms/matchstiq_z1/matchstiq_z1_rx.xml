@@ -1,4 +1,4 @@
-<!-- 
+<!--
  Matchstiq-Z1 All Platform Configuration Definition
 -->
 <HdlConfig Language="vhdl">
@@ -13,4 +13,6 @@
   <device name="lime_rx"/>
   <!-- GPS -->
   <device name="gps_uart"/>
+  <!-- 1 RX channel(s), 0 TX channel(s) data interface(s) -->
+  <device name="lime_adc"/> <!-- connection must be defined in a container -->
 </HdlConfig>

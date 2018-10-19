@@ -64,6 +64,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 %----------------------------------------------------------------------------------------
 % Table packages
 %----------------------------------------------------------------------------------------
+\usepackage{longtable} % for long possibly multi-page tables
 \usepackage{tabularx} % c=center,l=left,r=right,X=fill
 \usepackage{float}
 \floatstyle{plaintop}
@@ -92,7 +93,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Platform Data Sheet}
-\def\docVersion{1.3}
+\def\docVersion{1.4}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
@@ -117,7 +118,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Version           & v\docVersion \\
 	\hline
-	Release Date      & February 2018 \\
+	Release Date      & October 2018 \\
 	\hline
 	Component Library & ocpi                                        \\
 	\hline
@@ -194,49 +195,49 @@ No state machines exist within the platform worker outside of those within the P
 \section*{Source Dependencies}
 \begin{itemize}
 	\item
-opencpi/hdl/platforms/ml605/ml605.vhd
+assets/hdl/platforms/ml605/ml605.vhd
 	\item
-opencpi/hdl/platforms/ml605/pci\_ml605.v
+assets/hdl/platforms/ml605/pci\_ml605.v
 	\item
-opencpi/hdl/platforms/ml605/ml605\_pkg.vhd
+assets/hdl/platforms/ml605/ml605\_pkg.vhd
 	\item
-opencpi/hdl/primitives/virtex6/xilinx\_v6\_pcie\_wrapper.v
+assets/hdl/primitives/virtex6/xilinx\_v6\_pcie\_wrapper.v
 	\item
-opencpi/hdl/primitives/pcie\_4243\_trn\_v6\_gtx\_x4\_250/gtx\_drp\_chanalign\_fix\_3752\_v6.v
+assets/hdl/primitives/pcie\_4243\_trn\_v6\_gtx\_x4\_250/gtx\_drp\_chanalign\_fix\_3752\_v6.v
 	\item
-opencpi/hdl/primitives/pcie\_4243\_trn\_v6\_gtx\_x4\_250/gtx\_rx\_valid\_filter\_v6.v
+assets/hdl/primitives/pcie\_4243\_trn\_v6\_gtx\_x4\_250/gtx\_rx\_valid\_filter\_v6.v
 	\item
-opencpi/hdl/primitives/pcie\_4243\_trn\_v6\_gtx\_x4\_250/gtx\_tx\_sync\_rate\_v6.v
+assets/hdl/primitives/pcie\_4243\_trn\_v6\_gtx\_x4\_250/gtx\_tx\_sync\_rate\_v6.v
 	\item
-opencpi/hdl/primitives/pcie\_4243\_trn\_v6\_gtx\_x4\_250/gtx\_wrapper\_v6.v
+assets/hdl/primitives/pcie\_4243\_trn\_v6\_gtx\_x4\_250/gtx\_wrapper\_v6.v
 	\item
-opencpi/hdl/primitives/pcie\_4243\_trn\_v6\_gtx\_x4\_250/Makefile
+assets/hdl/primitives/pcie\_4243\_trn\_v6\_gtx\_x4\_250/Makefile
 	\item
-opencpi/hdl/primitives/pcie\_4243\_trn\_v6\_gtx\_x4\_250/pcie\_2\_0\_v6.v
+assets/hdl/primitives/pcie\_4243\_trn\_v6\_gtx\_x4\_250/pcie\_2\_0\_v6.v
 	\item
-opencpi/hdl/primitives/pcie\_4243\_trn\_v6\_gtx\_x4\_250/pcie\_brams\_v6.v
+assets/hdl/primitives/pcie\_4243\_trn\_v6\_gtx\_x4\_250/pcie\_brams\_v6.v
 	\item
-opencpi/hdl/primitives/pcie\_4243\_trn\_v6\_gtx\_x4\_250/pcie\_bram\_top\_v6.v
+assets/hdl/primitives/pcie\_4243\_trn\_v6\_gtx\_x4\_250/pcie\_bram\_top\_v6.v
 	\item
-opencpi/hdl/primitives/pcie\_4243\_trn\_v6\_gtx\_x4\_250/pcie\_bram\_v6.v
+assets/hdl/primitives/pcie\_4243\_trn\_v6\_gtx\_x4\_250/pcie\_bram\_v6.v
 	\item
-opencpi/hdl/primitives/pcie\_4243\_trn\_v6\_gtx\_x4\_250/pcie\_clocking\_v6.v
+assets/hdl/primitives/pcie\_4243\_trn\_v6\_gtx\_x4\_250/pcie\_clocking\_v6.v
 	\item
-opencpi/hdl/primitives/pcie\_4243\_trn\_v6\_gtx\_x4\_250/pcie\_gtx\_v6.v
+assets/hdl/primitives/pcie\_4243\_trn\_v6\_gtx\_x4\_250/pcie\_gtx\_v6.v
 	\item
-opencpi/hdl/primitives/pcie\_4243\_trn\_v6\_gtx\_x4\_250/pcie\_pipe\_lane\_v6.v
+assets/hdl/primitives/pcie\_4243\_trn\_v6\_gtx\_x4\_250/pcie\_pipe\_lane\_v6.v
 	\item
-opencpi/hdl/primitives/pcie\_4243\_trn\_v6\_gtx\_x4\_250/pcie\_pipe\_misc\_v6.v
+assets/hdl/primitives/pcie\_4243\_trn\_v6\_gtx\_x4\_250/pcie\_pipe\_misc\_v6.v
 	\item
-opencpi/hdl/primitives/pcie\_4243\_trn\_v6\_gtx\_x4\_250/pcie\_pipe\_v6.v
+assets/hdl/primitives/pcie\_4243\_trn\_v6\_gtx\_x4\_250/pcie\_pipe\_v6.v
 	\item
-opencpi/hdl/primitives/pcie\_4243\_trn\_v6\_gtx\_x4\_250/pcie\_reset\_delay\_v6.v
+assets/hdl/primitives/pcie\_4243\_trn\_v6\_gtx\_x4\_250/pcie\_reset\_delay\_v6.v
 	\item
-opencpi/hdl/primitives/pcie\_4243\_trn\_v6\_gtx\_x4\_250/pcie\_upconfig\_fix\_3451\_v6.v
+assets/hdl/primitives/pcie\_4243\_trn\_v6\_gtx\_x4\_250/pcie\_upconfig\_fix\_3451\_v6.v
 	\item
-opencpi/hdl/primitives/pcie\_4243\_trn\_v6\_gtx\_x4\_250/v6\_pcie\_v1\_7\_bb.v
+assets/hdl/primitives/pcie\_4243\_trn\_v6\_gtx\_x4\_250/v6\_pcie\_v1\_7\_bb.v
 	\item
-opencpi/hdl/primitives/pcie\_4243\_trn\_v6\_gtx\_x4\_250/v6\_pcie\_v1\_7.v
+assets/hdl/primitives/pcie\_4243\_trn\_v6\_gtx\_x4\_250/v6\_pcie\_v1\_7.v
 \end{itemize}
 
 \begin{landscape}
@@ -284,7 +285,9 @@ opencpi/hdl/primitives/pcie\_4243\_trn\_v6\_gtx\_x4\_250/v6\_pcie\_v1\_7.v
 			\hline
 			\verb+nSlots+      & ULong  & -              & -               & Parameter & Standard & 0 & Number of slots available for cards, which indicates the usable length of the slotCardIsPresent array property. \\
 			\hline
-			\verb+slotNames+   & String & 32             & -               & Parameter & Standard & "" & A string which is intended to include comma-separated names of the slots available for cards. The inter-comma position of each name corresponds to the same index of the slotCardIsPresent array property. \\
+			\verb+slotNames+   & String & 32             & -               & Parameter & Standard & ``'' & A string which is intended to include comma-separated names of the slots available for cards. The inter-comma position of each name corresponds to the same index of the slotCardIsPresent array property. \\
+			\hline
+			\verb+pci_device_id+ & Enum & -              & -               & Parameter & unknown, ml605, alst4, alst4x & unknown & PCI Device ID for PCI devices. This is essentially the ``registry'' of PCI device IDs. New platforms can use ``unknown'' before they are registered. \\
 			\hline
 			\verb+slotCardIsPresent+ & Bool & -          & 64              & Volatile           & Standard    & -       & An array of booleans, where each index contains an indication whether a card is physically present in the given index's slot. For a description of a given index's slot, see the corresponding comma-separated string contents in the slotName property. Note that only the first min(nSlots,64) of the 64 indices contain pertinent information. \\
 			\hline
@@ -303,6 +306,8 @@ opencpi/hdl/primitives/pcie\_4243\_trn\_v6\_gtx\_x4\_250/v6\_pcie\_v1\_7.v
 			SpecProperty & \verb+nSlots+         & ULong  & -             & -               & Parameter & Standard & 2 & Number of slots available for cards, which indicates the usable length of the slotCardIsPresent array property. \\
 			\hline
 			SpecProperty & \verb+slotNames+      & String & 32            & -               & Parameter & Standard & fmc\_lpc,fmc\_hpc & A string which is intended to include comma-separated names of the slots available for cards. The inter-comma position of each name corresponds to the same index of the slotCardIsPresent array property. \\
+			\hline
+			SpecProperty & \verb+pci_device_id+ & Enum & -              & -               & Parameter & unknown, ml605, alst4, alst4x & ml605 & PCI Device ID for PCI devices. This is essentially the ``registry'' of PCI device IDs. New platforms can use ``unknown'' before they are registered. \\
 			\hline
 			Property & \verb+pciId+              & UShort & -             & -               & Volatile            & Standard    & -       &                                  \\
 			\hline
@@ -325,7 +330,7 @@ opencpi/hdl/primitives/pcie\_4243\_trn\_v6\_gtx\_x4\_250/v6\_pcie\_v1\_7.v
 			\hline
 			timebase   & -    & true   & -     & Providing a timebase for the time service. All platform workers must provide this port. \\
 			\hline
-			unoc       & pcie & true   & -     & This platform worker provides a control/data plane called "pcie". \\
+			unoc       & pcie & true   & -     & This platform worker provides a control/data plane called ``pcie''. \\
 			\hline
 		\end{tabular}
 	\end{scriptsize}
@@ -565,10 +570,13 @@ The following table enumerates the available slots for this platform and the sig
 	\end{tabular}
 	\section*{Control Timing and Signals}
 	There are 3 clock domains present in the ml605 platform worker: 250 MHz, 125 MHz, and 200 MHz. The worker ingests an external-to-the FPGA 250 MHz clock. This clock serves as the clock source for the LogiCORE PCIe Integrated Block within the worker. The LogiCORE block divides the 250 MHz clock down to a 125 MHz clock which is subsequently supplied to the control plane as its clock. The worker also feeds a buffered version of the external-to-the-FPGA 200 MHz clock to the timebase port. The timebase port is also supplied with a PPS from the ML605 board's J56 SMA connector. The timebase port also include a PPS output which is fed to the J57 SMA connector.
+
+\begin{landscape}
 \section*{Performance and Resource Utilization}
 In the following Platform Worker Utilization tables, the Worker Build Configuration ``0'' refers to the Platform Worker itself. Named configurations refer to platform configurations (\textit{e.g.} they may include other device workers along with the Platform Worker).\\\\
-
 \input{../../\ecomp/utilization.inc}
+\end{landscape}
+
 \section*{Test and Verification}
 \begin{flushleft}
  To be detailed in a future release.

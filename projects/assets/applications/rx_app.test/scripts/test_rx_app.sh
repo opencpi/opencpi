@@ -95,8 +95,8 @@ else
 	    complete_run_command="/root/test_apps/rx_samples $output_dir$output_file $rf_tune_freq_hz 1048576 1 0 6 30 $bb_bw_hz $data_bw_hz 2048 0"
 	    sig_gen_rf_tune_freq=`echo $rf_tune_freq-.25 | bc -l`
 	else
-	    library_path="OCPI_LIBRARY_PATH=/mnt/ocpi_core/exports/lib/components/rcc/:/mnt/ocpi_assets/exports/lib/devices/rcc/:/mnt/ocpi_assets/exports/lib/platforms/matchstiq_z1/devices/rcc:/mnt/ocpi_assets/exports/lib/hdl/assemblies/"
-	    run_command="./target-linux-x13_3-arm/rx_app $rf_tune_freq $data_bw $rf_bw $rf_gain $bb_bw $bb_gain $if_tune_freq $runtime $enable_timestamps matchstiq_z1"
+	    library_path="OCPI_LIBRARY_PATH=$OCPI_CDK_DIR/$OCPI_TOOL_PLATFORM/artifacts:/mnt/ocpi_assets/artifacts:"
+	    run_command="./target-xilinx13_3/rx_app $rf_tune_freq $data_bw $rf_bw $rf_gain $bb_bw $bb_gain $if_tune_freq $runtime $enable_timestamps matchstiq_z1"
 	    complete_run_command="cd /mnt/ocpi_assets/applications/rx_app && $library_path $run_command"
 	    sig_gen_rf_tune_freq=`echo $rf_tune_freq+1.25 | bc -l`
 	fi

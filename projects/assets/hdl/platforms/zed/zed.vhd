@@ -182,7 +182,7 @@ begin
   props_out.UUID            <= metadata_in.UUID;
   props_out.romData         <= metadata_in.romData;
   --props_out.slotCardIsPresent_length <= nSlots; -- TODO / FIXME comment back in once volatile sequence properties are fixed in codegen (which SHOULD result in this property being changed from an array to a sequence)
-  props_out.slotCardIsPresent <= (0 => not fmc_prsnt, -- active low, this coincides with index 0 of slotName property
+  props_out.slotCardIsPresent <= (0 => not fmc_prsnt, -- fmc_prsnt is active low, this coincides with index 0 of slotName property
                                   others => '0');
 --  props_out.slotCardIsPresent(1 to 63) <= (others => '0'); -- TODO / FIXME remove this line once volatile sequence properties are fixed in codegen (which SHOULD result in this property being changed from an array to a sequence)
   -- Settable properties - drive the leds that are not driven by hardware from the property

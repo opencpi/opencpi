@@ -41,8 +41,8 @@ endif
 # Note: If somebody checks in between Jenkins builds, it will sometimes get "develop^2~37" etc,
 # so anything like that is stripped.
 # The BitBucket prefix of something like "bugfix--" is also stripped if present.
-GIT_BRANCH:=$(notdir $(shell git name-rev --name-only HEAD | perl -pe 's/[~^][~^\d]*$$//' | perl -pe 's/^.*?--//'))
-GIT_VERSION:=$(shell echo $(GIT_BRANCH) | perl -ne '/^v[\.\d]+$$/ && print')
+GIT_BRANCH:=$(notdir $(shell git name-rev --name-only HEAD | perl -pe 's/([~^]\d+)*$$//' | perl -pe 's/^.*?--//'))
+GIT_VERSION:=$(shell echo $(GIT_BRANCH) | perl -ne '/^v[\.\d]+/ && print')
 # For testing:
 # GIT_VERSION:=$(shell echo v1.4.0 | perl -ne '/^v[\.\d]+$$/ && print')
 RPM_RELEASE?=snapshot
@@ -69,14 +69,20 @@ ifeq "$(GIT_VERSION)" ''
   endif
   # Generate an increasing number for version comparisons (since git hashes aren't)
   # Number of 6-minute increments since release in 5 digits (rolls over >1/yr)
-  RELEASE_TAG=_$(shell printf %05d $(shell expr `date -u +"%s"` / 360 - 4231562))
+  RELEASE_TAG=_$(shell printf %05d $(shell expr `date -u +"%s"` / 360 - 4273900))
   # When bumping this, don't miss configure.ac as well (AV-3433)
-  RPM_VERSION:=1.4.0
+  RPM_VERSION:=1.5.0
 else
   # This is a specific version branch
   RELEASE_TAG=%{nil}
   RPM_VERSION:=$(GIT_VERSION)
 endif
+# Let BSP builders get these as well. (AV-2768)
+export COMMIT_HASH
+export COMMIT_TAG
+export RELEASE_TAG
+export RPM_RELEASE
+export RPM_VERSION
 
 # There are various targets...
 .PHONY: help
@@ -134,6 +140,6 @@ bsp-%: cleanrpmbuild
     $(MAKE) -C $(BSPDIR) rpms; \
     mv $(BSPDIR)/*rpm .; \
   else \
-    echo "Could not find directory $(BSPDIR)!"; \
+    echo "Could not find directory releng/$(BSPDIR)!"; \
     false; \
   fi

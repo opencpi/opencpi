@@ -81,7 +81,7 @@ class Complex_mixerWorker : public Complex_mixerWorkerBase
         in_sample.imag = Uscale(inData->Q);
 
         nco_crcf_step(q);
-        nco_crcf_mix_down(q, in_sample, &out_sample);
+        nco_crcf_mix_up(q, in_sample, &out_sample);
         outData->I = Scale(out_sample.real);
         outData->Q = Scale(out_sample.imag);
 

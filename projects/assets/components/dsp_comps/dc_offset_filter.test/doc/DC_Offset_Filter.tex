@@ -62,6 +62,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 %----------------------------------------------------------------------------------------
 % Table packages
 %----------------------------------------------------------------------------------------
+\usepackage{longtable} % for long possibly multi-page tables
 \usepackage{tabularx} % c=center,l=left,r=right,X=fill
 \usepackage{float}
 \floatstyle{plaintop}
@@ -114,7 +115,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Version           & v\docVersion \\
 	\hline
-	Release Date      & February 2018 \\
+	Release Date      & September 2018 \\
 	\hline
 	Component Library & ocpi.assets.dsp\_comps                              \\
 	\hline
@@ -264,9 +265,14 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 		The DC Offset Cancellation Filter worker uses the clock from the Control Plane and standard Control Plane signals.
 	\end{flushleft}
 
-	\section*{Performance and Resource Utilization}
-	\subsubsection*{\comp.hdl}
-	\input{../../\ecomp.hdl/utilization.inc}
+\begin{landscape}
+\section*{Worker Configuration Parameters}
+\subsubsection*{\comp.hdl}
+\input{../../\ecomp.hdl/configurations.inc}
+\section*{Performance and Resource Utilization}
+\subsubsection*{\comp.hdl}
+\input{../../\ecomp.hdl/utilization.inc}
+\end{landscape}
 	\section*{Test and Verification}
 	\normalsize
 	Two test cases are implemented to validate the \Comp{} component:

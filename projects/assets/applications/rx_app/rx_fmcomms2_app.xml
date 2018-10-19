@@ -96,9 +96,10 @@
     <Port Instance="file_write" Name="in" Buffersize="16352" Buffercount="7"/>
   </Connection>
 
-  <!-- ad9361_adc.hdl must be instantiated last in app XML to avoid erroneous
-       CDC FIFO overrun -->
+  <!-- AV-4546: ad9361_adc.hdl must be instantiated last in app XML to avoid
+       erroneous CDC FIFO overrun -->
   <Instance Component="ocpi.assets.devices.qadc">
     <Property Name="messageSize" Value="16352"/>
   </Instance>
+
 </Application>

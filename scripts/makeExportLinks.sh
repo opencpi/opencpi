@@ -53,10 +53,30 @@ if [ "$1" = "-v" -o "$OCPI_EXPORTS_VERBOSE" = 1 ]; then
 fi
 [ -n "$1" -a -n "$verbose" ] && echo Exporting for platform: $1
 target=$1
+# If a specific sw platform is specified we must set some variables
+# specific_rcc so we no what rcc platform to use
+# target: hdl platform
+# target2: This variable is needed to help specify the target whenver target is
+# hdl
+[[ "$target" = *:* ]] \
+  && specific_rcc=$(echo $target | cut -d: -f2) \
+  && target=$(echo $target | cut -d: -f1) \
+  && target2="$target/$specific_rcc"
 bootstrap=$2
 [ -z "$target" ] && target=$OCPI_TOOL_DIR
 export OCPI_CDK_DIR=`pwd`/bootstrap
-[ $target = - ] || source $OCPI_CDK_DIR/scripts/ocpitarget.sh 
+read -r hdl_platform hdl_platform_dir hdl_rcc_platform <<<$($OCPI_CDK_DIR/../tools/cdk/scripts/getHdlPlatform.sh $target 2>/dev/null)
+[ -n "$specific_rcc" ] && hdl_rcc_platform=$specific_rcc
+# Hdl targets need to specify the rcc platform path for when there are multiple
+# rcc platforms per hdl platform to prevent one object from stomping on another
+# To do this target2 is target appended with /<rcc-platform> for hdl and
+# just equal to target for an rcc platform
+[ "$hdl_platform" = "$target" -a -z "$target2" ] && target2="$target/$hdl_rcc_platform"
+[ "$hdl_platform" != "$target" -a -z "$target2" ] && target2="$target"
+# If a rcc platform was passed in unset all the variables set above.
+# These variables are only to be set if a hdl platform was passed in as target.
+[ "$hdl_platform" != "$target" ] && unset hdl_platform hdl_platform_dir hdl_rcc_platform
+[ $target = - -o -n "$hdl_platform" ] || source $OCPI_CDK_DIR/scripts/ocpitarget.sh
 
 # match_pattern: Find the files that match the pattern:
 #  - use default bash glob, and also
@@ -90,7 +110,7 @@ function match_filter {
       return 0
     elif [[ "${edirs[$i]}" == target-* ]]; then
       if [[ "${pdirs[$i]}" != target-* ]]; then
-	return 1
+        return 1
       fi
     elif [[ "${edirs[$i]}" != "${pdirs[$i]}" ]]; then
       return 1
@@ -166,12 +186,16 @@ function do_addition {
   [ "$target" = - ] && case $1 in
       *\<target\>*|*\<platform\>*|*\<platform_dir\>*) return;;
   esac
-  rawsrc=${both[0]//<target>/$target}
+  rawsrc=${both[0]//<target>/$target2}
   rawsrc=${rawsrc//<platform>/$OPCI_TARGET_PLATFROM}
   rawsrc=${rawsrc/#<platform_dir>/$OCPI_TARGET_PLATFORM_DIR}
+  [ -n "$rcc_platform_dir" ] && rawsrc=${rawsrc/#<rcc_platform_dir>/$rcc_platform_dir}
+  [ -n "$rcc_platform" ] && rawsrc=${rawsrc//<rcc_platform>/$rcc_platform}
   exp=${both[1]}
   [ -z "$exp" ] && bad unexpected empty second field
-  exp=${exp//<target>/$target}
+  # If not deplyment(@) replace with just target else replace with deploy/target
+  [ "$2" != "--" ] && exp=${exp//<target>/$target2} || exp=${exp//<target>/deploy/$target2}
+  [ -n "$rcc_platform" ] && exp=${exp//<rcc_platform>/$rcc_platform}
   set +f
   targets=$(match_pattern "$rawsrc")
   for src in $targets; do
@@ -182,7 +206,7 @@ function do_addition {
       local srctmp=$src
       if [ -n "${both[2]}" ]; then  # a platform-specific export
         # dir=$target/
-	srctmp=${src=#$OCPI_TARGET_PLATFORM_DIR/=}
+        srctmp=${src=#$OCPI_TARGET_PLATFORM_DIR/=}
       fi
       if [[ $exp = - ]]; then
         : # [[ $srctmp == */* ]] && dir+=$(dirname $srctmp)/
@@ -199,7 +223,9 @@ function do_addition {
       # echo For $1 $2
       # echo dir=$dir base=$base
       make_filtered_link $src exports/$dir$base
-      [ -n "$2" ] && make_filtered_link $src exports/runtime/$dir$base
+      [ -n "$2" ] && [ "$2" = "-" ] && make_filtered_link $src exports/runtime/$dir$base
+      # Calling make_filtered_link for @ (deployment)
+      [ -n "$2" ] && [ "$2" = "--" ] && make_filtered_link $src exports/$dir$base
     else
       [ -z "$bootstrap" ] && echo Warning: link source $src does not '(yet?)' exist.
     fi
@@ -238,17 +264,20 @@ mkdir -p exports
 #}
 set -f
 [ -f Project.exports ] || bad No Project.exports file found for framework.
+[ "$hdl_rcc_platform" != "-" ] && read -r OcpiPlatformOs OcpiPlatformOsVersion OcpiPlatformArch rcc_platform_full_name rcc_platform rcc_platform_dir <<<$($OCPI_CDK_DIR/../tools/cdk/scripts/getPlatform.sh $hdl_rcc_platform)
+[ -n "$hdl_platform" ] && OCPI_TARGET_PLATFORM_DIR=$hdl_platform_dir && OCPI_TARGET_PLATFORM=$hdl_platform
 platform_exports=$OCPI_TARGET_PLATFORM_DIR/$OCPI_TARGET_PLATFORM.exports
 [ -f $platform_exports ] || platform_exports=
 [ -n "$verbose" ] && echo Collecting exclusions
 readExport exclusions - Project.exports
 [ -n "$verbose" ] && echo Collecting additions and runtimes
-readExport additions + Project.exports
-readExport runtimes = Project.exports
+[ -z "$hdl_platform" ] && readExport additions + Project.exports
+[ -z "$hdl_platform" ] && readExport runtimes = Project.exports
 [ -n "$platform_exports" ] && {
   echo Using extra exports file for platform $OCPI_TARGET_PLATFORM: $platform_exports
   readExport additions + $platform_exports -
   readExport runtimes = $platform_exports -
+  readExport deployments @ $platform_exports -
   readExport exclusions - $platform_exports -
 }
 set +f
@@ -339,7 +368,11 @@ done
 for a in $runtimes; do
   do_addition $a -
 done
+for a in $deployments; do
+  do_addition $a --
+done
 # After this are only exports done when targets exist
+[ -n "$hdl_platform" ] && exit 0
 [ "$1" = - ] && exit 0
 set +f
 # Put the check file into the runtime platform dir

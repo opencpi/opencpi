@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-# This is the devices library
+# This is the hdl/devices library
 
 # All workers created here in *.<model> will be built automatically
 # All tests created here in *.test directories will be built/run automatically
@@ -34,7 +34,9 @@ Workers=\
 	adcx.hdl \
 	dac.hdl \
 	gbe.hdl \
-	icap.hdl
+	icap.hdl \
+	lime_spi_em.hdl \
+	lime_tx_em.hdl
 
 Tests=
 

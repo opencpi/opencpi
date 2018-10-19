@@ -115,6 +115,9 @@ private:
     return RCC_OK;
   }
   RCCResult initialize() {
+    //When event port is connected, TX off at initialize
+    if (not slave.get_txen_pin_control_p() and slave.get_event_port_connected()) 
+      slave.set_tx_en_rf(0x00);
     enable();
     return RCC_OK;
   }

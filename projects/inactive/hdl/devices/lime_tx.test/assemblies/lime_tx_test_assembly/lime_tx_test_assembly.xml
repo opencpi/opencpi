@@ -1,6 +1,0 @@
-<hdlassembly>
-  <instance worker='test_tx_event'/>
-  <connection name='out' external='producer'>
-    <port instance='test_tx_event' name='event_out'/>
-  </connection>
-</hdlassembly>

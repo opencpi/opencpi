@@ -38,8 +38,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \renewcommand{\headrulewidth}{0.5pt}
 \renewcommand{\footrulewidth}{0.5pt}
 \rhead{\small{ANGRYVIPER Team}}
-\chead{\textbf{\color{red}DRAFT \color{drkgreen}UNCLASSIFIED//FOUO}\\}
-\cfoot{\textbf{\color{red}DRAFT \color{drkgreen}UNCLASSIFIED//FOUO}}
+\chead{\textbf{\color{red}DRAFT\\}}
+\cfoot{\textbf{\color{red}DRAFT}}
 \rfoot{\thepage}
 %----------------------------------------------------------------------------------------
 % Appendix packages
@@ -52,7 +52,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \renewcommand{\listfigurename}{List of Figures}
 \renewcommand{\listtablename}{List of Tables}
 \newcommand{\todo}[1]{\textcolor{red}{TODO: #1}\PackageWarning{TODO:}{#1}} % To do notes
-\newcommand{\code}[1]{\texttt{#1}} % For inline code snippet or command line 
+\newcommand{\code}[1]{\texttt{#1}} % For inline code snippet or command line
 %----------------------------------------------------------------------------------------
 % Various pacakges
 %----------------------------------------------------------------------------------------
@@ -73,7 +73,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 %----------------------------------------------------------------------------------------
 % Colors Used
 %----------------------------------------------------------------------------------------
-\usepackage{colortbl} 
+\usepackage{colortbl}
 \definecolor{blue}{rgb}{.7,.8,.9}
 \definecolor{ceruleanblue}{rgb}{0.16, 0.32, 0.75}
 \definecolor{drkgreen}{rgb}{0,0.6,0}
@@ -89,7 +89,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 {
   	basicstyle=\ttfamily\footnotesize,
   	keywordstyle=\color{ceruleanblue},
-  	commentstyle=\color{drkgreen},  
+  	commentstyle=\color{drkgreen},
   	morekeywords={
     library,use,all,entity,is,port,in,out,architecture,of,
     begin,and, signal, when, if, else, process, end,
@@ -120,7 +120,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
   	basicstyle=\ttfamily\footnotesize,
 	breaklines=true,							% wrap text
   	morecomment=[f][\color{ceruleanblue}]{@@},	% group identifier
-  	morecomment=[f][\color{red}]-,         		% deleted lines 
+  	morecomment=[f][\color{red}]-,         		% deleted lines
   	morecomment=[f][\color{drkgreen}]+,       	% added lines
   	morecomment=[f][\color{deepmagenta}]{---}, 	% Diff header lines (must appear after +,-)
   	morecomment=[f][\color{deepmagenta}]{+++},
@@ -137,7 +137,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 %    \Large
 %    \LARGE
 %    \huge
-%    \Huge 
+%    \Huge
 
 %----------------------------------------------------------------------------------------
 % Python Coding Language Style
@@ -147,7 +147,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 {
   	basicstyle=\ttfamily\footnotesize,
    	keywordstyle=\color{ceruleanblue},
-  	commentstyle=\color{drkgreen},  
+  	commentstyle=\color{drkgreen},
   	stringstyle=\color{orange},
   	morekeywords={
     print, if, sys, len, from, import, as, open,close, def, main, for, else, write, read, range,
@@ -156,7 +156,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 }
 %----------------------------------------------------------------------------------------
 % C Coding Language Style
-% modified from 
+% modified from
 %----------------------------------------------------------------------------------------
 
 \lstdefinelanguage{customc}
@@ -164,7 +164,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	language=[ANSI]C,
   	basicstyle=\ttfamily\footnotesize,
   	keywordstyle=\color{drkgreen},
-  	commentstyle=\color{maroon},  
-  	identifierstyle=\color{ceruleanblue},  
+  	commentstyle=\color{maroon},
+  	identifierstyle=\color{ceruleanblue},
   	stringstyle=\color{cyan},
 }

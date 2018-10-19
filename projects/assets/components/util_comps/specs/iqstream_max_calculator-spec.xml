@@ -24,7 +24,7 @@
                        max_Q is read.
 -->
 <ComponentSpec>
-  <!-- The max_I_is_valid/max_Q_is_valid properties are *intentially* placed
+  <!-- The max_I_is_valid/max_Q_is_valid properties are *intentionally* placed
        above max_I/max_Q in this XML file to ensure that they are read before
        the reset behavior caused by max_I/max_Q property reads. -->
   <Property Name="max_I_is_valid" Type="bool"

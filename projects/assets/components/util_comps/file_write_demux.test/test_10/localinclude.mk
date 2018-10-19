@@ -16,8 +16,8 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-ifneq (,$(IP))
-$(warning Note the command line is not just the test number changing!)
+# ifneq (,$(IP))
+# $(warning Note the command line is not just the test number changing!)
 # ARM slows down a lot...
 SIM_TIME := 30
-endif
+# endif

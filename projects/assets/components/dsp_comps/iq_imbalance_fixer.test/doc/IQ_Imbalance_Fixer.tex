@@ -62,6 +62,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 %----------------------------------------------------------------------------------------
 % Table packages
 %----------------------------------------------------------------------------------------
+\usepackage{longtable} % for long possibly multi-page tables
 \usepackage{tabularx} % c=center,l=left,r=right,X=fill
 \usepackage{float}
 \floatstyle{plaintop}
@@ -114,7 +115,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Version           & v\docVersion \\
 	\hline
-	Release Date      & February 2018 \\
+	Release Date      & September 2018 \\
 	\hline
 	Component Library & ocpi.assets.dsp\_comps                                        \\
 	\hline
@@ -269,9 +270,14 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 		The IQ Imbalance Fixer worker uses the clock from the Control Plane and standard Control Plane signals.
 	\end{flushleft}
 
-	\section*{Performance and Resource Utilization}
-	\subsubsection*{\comp.hdl}
+\begin{landscape}
+\section*{Worker Configuration Parameters}
+\subsubsection*{\comp.hdl}
+\input{../../\ecomp.hdl/configurations.inc}
+\section*{Performance and Resource Utilization}
+\subsubsection*{\comp.hdl}
 \input{../../\ecomp.hdl/utilization.inc}
+\end{landscape}
 	\section*{Test and Verification}
 	\begin{flushleft}
 	A single test case is implemented to validate the IQ Imbalance Fixer component. An input file is generated consisting of a waveform with tones at 5 Hz, 13 Hz, and 27 Hz, and creates a spectral image by both adding different gain to I and Q rails and also adding an additional 10 degrees of phase to the sine portion of the complex signal. The result is the addition of spectral image tones at -5 Hz, -13 Hz, and -27 Hz. The complex waveform is then scaled to fixed-point signed 16-bit integers, with a maximum amplitude of 31000 to avoid roll-over.\medskip

@@ -139,21 +139,30 @@
                          this device worker."/>
   <!-- Dev Signal Ports -->
   <devsignal name='dev_cfg_data_port' signals='ad9361-cfg-data-port-signals.xml'/>
-  <devsignal name='dev_data_clk' count='2' optional='true' signals='ad9361-data-clk-signals.xml'/>
+  <devsignal name='dev_data_clk' count='3' optional='true' signals='ad9361-data-clk-signals.xml'/>
   <devsignal name='dev_data_adc' optional='true' signals='ad9361-data-adc-signals.xml'/>
   <devsignal name='dev_data_dac' optional='true' signals='ad9361-data-dac-signals.xml'/>
+  <!--devsignal name='dev_rxen_adc' optional='true' signals='rxen-out-signals.xml'/--> <!-- TODO / FIXME - support this -->
+  <devsignal name='dev_txen_dac' optional='true' signals='txen-out-signals.xml'/>
+  <devsignal name='dev_rxen_config' optional='true' signals='rxen-in-signals.xml'/>
+  <devsignal name='dev_txen_config' optional='true' signals='txen-in-signals.xml'/>
 
   <!-- Sub-Device Port Connections (Supports) -->
   <supports worker='ad9361_config'>
     <connect port="dev_cfg_data_port" to="dev_cfg_data_port"/>
+    <connect port="dev_rxen_data_sub" to="dev_rxen_config"/>
+    <connect port="dev_txen_data_sub" to="dev_txen_config"/>
+    <connect port="dev_data_clk" to="dev_data_clk" index='2'/>
   </supports>
   <supports worker='ad9361_adc_sub'>
     <connect port="dev_data_clk" to="dev_data_clk" index='0'/>
     <connect port="dev_data_from_pins" to="dev_data_adc"/>
+    <!--connect port="dev_rxen" to="dev_rxen_adc"/--> <!-- TODO / FIXME - support this -->
   </supports>
   <supports worker='ad9361_dac_sub'>
     <connect port="dev_data_clk" to="dev_data_clk" index='1'/>
     <connect port="dev_data_to_pins" to="dev_data_dac"/>
+    <connect port="dev_txen" to="dev_txen_dac"/>
   </supports>
 
   <!-- Signals per data sheet.  Necessary changes from the data sheet signal naming:
@@ -183,10 +192,6 @@
   <!--Signal name='TX_FRAME_N' direction='lvds_p ? out : unused' pin='1' --> <!-- TODO/FIXME - comment this back in once problem is fixed -->
   <Signal name='TX_FRAME_N' direction='lvds_p ? out : out' pin='1'
 	  description='Pin H9:  Transmit Digital Data Framing Input Signal from ad9361 (negative), unused in CMOS mode.'/>
-  <Signal name='TXNRX'      direction='out'
-	  description="Pin H4:  Enable State Machine Control Signal to ad9361."/>
-  <Signal name='ENABLE'     direction='out'
-	  description="Pin G6:  Control Input to ad9361. This pin moves the device through various operational states."/>
   <!-- P0 signals are aliased to LVDS TX_D[5:0]_N and TX_D[5:0]_P pairs in the data sheet -->
   <!--Signal name='P0_D_11_6' width='6' pin='1' direction='mode_p == 0 || mode_p == 4 ? inout :
 		 					mode_p == 1 || mode_p == 3 ? unused :

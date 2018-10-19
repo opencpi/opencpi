@@ -1,17 +1,15 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Utilization Report for Worker "matchstiq_z1_avr"
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\begin{scriptsize}
-	\begin{table}[H]
-	\captionsetup{justification=raggedright,singlelinecheck=false}
-	\caption{Worker Build Configuration ``0''}
-	\begin{tabular}{|c|c|c|c|c|c|c|c|}
-		\hline
-		\rowcolor{blue}
-		OpenCPI Target & Tool   & Version & Device          & Registers & LUTs & Fmax (MHz) & Memory/Special Functions\\
-		\hline
-		zynq           & Vivado & 2017.1  & xc7z020clg484-1 & 41        & 77   & 234.082    & N/A                     \\
-		\hline
-	\end{tabular}
-	\end{table}
-\end{scriptsize}
+% Generated on Fri Oct  5 08:46:01 2018
+
+% It is best to wrap this table in \begin{landscape} and \end{landscape} in its including doc
+\begin{tiny}
+    \begin{longtable}[l]{* {9}{|c}|}
+    \captionsetup{justification=raggedright,singlelinecheck=false}
+    \caption{Resource Utilization Table for worker: matchstiq\_z1\_avr}\\
+        \hline
+        \rowcolor{blue}
+            Configuration & OCPI Target & Tool   & Version & Device          & Registers (Typ) & LUTs (Typ) & Fmax (MHz) (Typ) & Memory/Special Functions \\
+            \hline
+            0             & zynq        & Vivado & 2017.1  & xc7z020clg484-1 & 41              & 77         & N/A              & N/A \\
+            \hline
+        \end{longtable}
+\end{tiny}

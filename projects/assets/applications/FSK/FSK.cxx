@@ -31,8 +31,7 @@
 namespace OA = OCPI::API;
 using namespace std;
 
-#define PROMPT_DEFAULT_MIN(app,val,worker,propmin,propmax) prompt_default_min(app, val, #val, "Error: invalid "#val".\n",worker,propmin,propmax);
-#define PROMPT_DEFAULT_MAX(app,val,worker,propmin,propmax) prompt_default_max(app, val, #val, "Error: invalid "#val".\n",worker,propmin,propmax);
+#define PROMPT(app,val,worker,propmin,propmax) prompt_auto_range(app, val, #val, "Error: invalid "#val".\n",worker,propmin,propmax);
 
 template <typename T>
 std::string to_string(T const& value) {
@@ -47,7 +46,7 @@ static void usage(const char *name, const char *error_message) {
   "Usage is: %s <mode> <optional debug_mode>\n"
   "    mode       # Test mode of the application. Valid modes are 'rx', 'tx', 'txrx', 'filerw', or 'bbloopback'.\n"
   "    debug_mode # Optional debug mode which performs both an initial and final dump of all properties. Use 'd'.\n"
-  "Example: ./target-linux-x13_3-arm/fsk_app filerw d\n",
+  "Example: FSK filerw d\n",
   error_message,name);
   exit(1);
 }
@@ -82,15 +81,7 @@ template<typename T> T get_worker_prop_val(OA::Application& app,
   return prop.getValue<T>();
 }
 
-// just allows skipping creating the property object
-template<typename T> void set_worker_prop_val(OA::Application& app,
-    T val, const char* worker_app_inst_name, const char* prop_name)
-{
-  OA::Property prop(app, worker_app_inst_name, prop_name);
-  prop.setValue<T>(val);
-}
-
-template<typename T> void prompt(T& val, const char* val_c_str,
+template<typename T> void prompt_with_range(T& val, const char* val_c_str,
     const char* error_message, T& min, T& max)
 {
   cout << setprecision(15) << "Enter " << val_c_str << " [range("
@@ -106,26 +97,13 @@ template<typename T> void prompt(T& val, const char* val_c_str,
   validate_limits(val, error_message, min, max);
 }
 
-template<typename T> void prompt_default_min(OA::Application& app,
-    T& val, const char* val_c_str, const char* message, const char* worker, const char* propmin,
-    const char* propmax)
+template<typename T> void prompt_auto_range(OA::Application& app,T& val, const char* val_c_str,
+    const char* error_message, const char* worker, const char* propmin, const char* propmax)
 {
   T min = get_worker_prop_val<T>(app, worker, propmin);
   T max = get_worker_prop_val<T>(app, worker, propmax);
-  val = min; // set default for prompt
 
-  prompt(val, val_c_str, message, min, max);
-}
-
-template<typename T> void prompt_default_max(OA::Application& app,
-    T& val, const char* val_c_str, const char* message, const char* worker, const char* propmin,
-    const char* propmax)
-{
-  T min = get_worker_prop_val<T>(app, worker, propmin);
-  T max = get_worker_prop_val<T>(app, worker, propmax);
-  val = max; // set default for prompt
-
-  prompt(val, val_c_str, message, min, max);
+  prompt_with_range(val, val_c_str, error_message, min, max);
 }
 
 uint16_t get_zero_pad_num_zeros(OCPI::API::Application& app) {
@@ -188,7 +166,7 @@ int main(int argc, char **argv) {
   std::string mode, xml_name, input, value;
   bool debug_mode = false;
   double rx_sample_rate = 39.936;
-  double rx_rf_center_freq = 1001;
+  double rx_rf_center_freq = 999;
   double rx_rf_bw;
   double rx_rf_gain;
   double rx_bb_bw = 5;
@@ -230,7 +208,7 @@ int main(int argc, char **argv) {
   //double tx_rf_bw_max;
 
 
-  double runtime = 3;
+  double runtime;
   enum HdlPlatform           {matchstiq_z1, zed, alst4, alst4x, ml605};
   enum HdlPlatformRFFrontend {matchstiq_z1_Frontend, zipperFrontend, FMCOMMS2Frontend, FMCOMMS3Frontend};
   OA::Container *container;
@@ -767,6 +745,18 @@ int main(int argc, char **argv) {
     //Prompt the user for the amount of time to run for all modes except filerw
     if (mode == "rx" || mode == "tx" || mode == "txrx" || mode == "bbloopback")
     {
+      switch (currentFrontend)
+      {
+        case zipperFrontend:
+        case matchstiq_z1_Frontend: runtime = 3;
+                                    break;
+        case FMCOMMS2Frontend:
+        case FMCOMMS3Frontend: runtime = 20;
+                               break;
+        default: cout << "Invalid frontend choice.";
+                 exit(1);
+      }
+
       cout << setprecision(5) << "Enter run time in seconds [default = "
                        << runtime << "]" << endl;
       std::getline(std::cin, input);
@@ -833,74 +823,92 @@ int main(int argc, char **argv) {
     //Prompt the user for rx settings
     //Verify rx inputs are within valid ranges
     if ((mode == "rx" || mode == "txrx") and
-        ((currentFrontend != zipperFrontend) and
-         (currentFrontend != matchstiq_z1_Frontend)))
+        ((currentFrontend == FMCOMMS2Frontend) or
+         (currentFrontend == FMCOMMS3Frontend)))
     {
-      PROMPT_DEFAULT_MIN(         app, rx_sample_rate,    "rx", "sample_rate_min_MHz",         "sample_rate_max_MHz"        );
-      set_worker_prop_val<double>(app, rx_sample_rate,    "rx", "sample_rate_MHz");
+      // set known-good defaults for FMCOMMS2/3
+      rx_sample_rate = 4.;
+      rx_rf_center_freq = 2400.;
+      rx_rf_bw = -1.;
+      rx_rf_gain = 24.;
+      rx_bb_bw = 4.;
+      rx_bb_gain = -1.;
 
-      PROMPT_DEFAULT_MIN(         app, rx_rf_center_freq, "rx", "frequency_min_MHz",           "frequency_max_MHz"          );
-      set_worker_prop_val<double>(app, rx_rf_center_freq, "rx", "frequency_MHz");
+      PROMPT(app, rx_sample_rate,    "rx", "sample_rate_min_MHz",         "sample_rate_max_MHz"         );
+      app.setPropertyValue<double>(  "rx", "sample_rate_MHz",             rx_sample_rate);
 
-      PROMPT_DEFAULT_MAX(         app, rx_rf_bw,          "rx", "rf_cutoff_frequency_min_MHz", "rf_cutoff_frequency_max_MHz");
-      set_worker_prop_val<double>(app, rx_rf_bw,          "rx", "rf_cutoff_frequency_MHz");
+      PROMPT(app, rx_rf_center_freq, "rx", "frequency_min_MHz",           "frequency_max_MHz"           );
+      app.setPropertyValue<double>(  "rx", "frequency_MHz",               rx_rf_center_freq);
 
-      PROMPT_DEFAULT_MIN(         app, rx_rf_gain,         "rx", "rf_gain_min_dB",              "rf_gain_max_dB"             );
-      set_worker_prop_val<double>(app, rx_rf_gain,         "rx", "rf_gain_dB");
+      PROMPT(app, rx_rf_bw,          "rx", "rf_cutoff_frequency_min_MHz", "rf_cutoff_frequency_max_MHz" );
+      app.setPropertyValue<double>(  "rx", "rf_cutoff_frequency_MHz",     rx_rf_bw);
 
-      PROMPT_DEFAULT_MAX(         app, rx_bb_bw,           "rx", "bb_cutoff_frequency_min_MHz", "bb_cutoff_frequency_max_MHz");
-      set_worker_prop_val<double>(app, rx_bb_bw,           "rx", "bb_cutoff_frequency_MHz");
+      PROMPT(app, rx_rf_gain,        "rx", "rf_gain_min_dB",              "rf_gain_max_dB"             );
+      app.setPropertyValue<double>(  "rx", "rf_gain_dB",                  rx_rf_gain);
 
-      PROMPT_DEFAULT_MIN(         app, rx_bb_gain,         "rx", "bb_gain_min_dB",              "bb_gain_max_dB"             );
-      set_worker_prop_val<double>(app, rx_bb_gain,         "rx", "bb_gain_dB");
+      PROMPT(app, rx_bb_bw,          "rx", "bb_cutoff_frequency_min_MHz", "bb_cutoff_frequency_max_MHz");
+      app.setPropertyValue<double>(  "rx", "bb_cutoff_frequency_MHz",     rx_bb_bw);
+
+      PROMPT(app, rx_bb_gain,        "rx", "bb_gain_min_dB",              "bb_gain_max_dB"             );
+      app.setPropertyValue<double>(  "rx", "bb_gain_dB",                  rx_bb_gain);
 
       rx_if_center_freq_min = rx_sample_rate*-0.5;
       rx_if_center_freq_max = rx_sample_rate*32767/65536;
-      rx_if_center_freq     = rx_if_center_freq_min; // set default for prompt
+      rx_if_center_freq = 0; // set default for prompt
 
-      prompt(rx_if_center_freq, "rx_if_center_freq", "Error: invalid rx_if_center_freq.\n", rx_if_center_freq_min, rx_if_center_freq_max);
+      prompt_with_range(rx_if_center_freq, "rx_if_center_freq", "Error: invalid rx_if_center_freq.\n", rx_if_center_freq_min, rx_if_center_freq_max);
 
-      if (rx_if_center_freq == 0)
-      {
+      // It is desired that setting a + IF freq results in mixing *down*.
+      // Because complex_mixer's NCO mixes *up* for + freqs (see complex mixer
+      // datasheet), IF tune freq must be negated in order to achieve the
+      // desired effect.
+      double nco_output_freq = -rx_if_center_freq;
+
+      // todo this math might be better off in a small proxy that sits on top of complex_mixer
+      // from complex mixer datasheet, nco_output_freq =
+      // sample_freq * phs_inc / 2^phs_acc_width, phs_acc_width is fixed at 16
+      OA::Short phase_inc = round(nco_output_freq/rx_sample_rate*65536.);
+
+      if(phase_inc == 0) {
         app.setProperty("complex_mixer", "enable", "false");
       }
-      else
-      {
-        // todo this math might be better off in a small proxy that sits on top of the HDL worker
-       // from nco.vhd, PHS_INC = freq        / f_clk            *  2^(PHS_ACC_WIDTH)
-       //                                                           2^(PHS_ACC_WIDTH) is 65536
-        char phase_inc_str[25];
-        double phase_inc_double = rx_if_center_freq / rx_sample_rate * 65536.;
-        int16_t phase_inc =  (int16_t) round(phase_inc_double);
-        //printf("phase inc is: %i\n", phase_inc);
-        sprintf(phase_inc_str,  "%i", phase_inc);
-        app.setProperty("complex_mixer","phs_inc", phase_inc_str);
+      else {
+        //std::cout << "setting complex mixer phase_inc = " << phase_inc <<"\n";
+        app.setPropertyValue<OA::Short>("complex_mixer","phs_inc", phase_inc);
       }
     }
 
     //Prompt the user for tx settings
     //Verify tx inputs are within valid ranges
     if ((mode == "tx" || mode == "txrx") and
-        ((currentFrontend != zipperFrontend) and
-         (currentFrontend != matchstiq_z1_Frontend)))
+        ((currentFrontend == FMCOMMS2Frontend) or
+         (currentFrontend == FMCOMMS3Frontend)))
     {
-      PROMPT_DEFAULT_MIN(         app, tx_sample_rate,    "tx", "sample_rate_min_MHz",         "sample_rate_max_MHz"        );
-      set_worker_prop_val<double>(app, tx_sample_rate,    "tx", "sample_rate_MHz");
+      // set known-good defaults for FMCOMMS2/3
+      tx_sample_rate = 4.;
+      tx_rf_center_freq = 2400.;
+      double tx_rf_bw = -1.;
+      tx_rf_gain = -34.;
+      tx_bb_bw = 4.;
+      tx_bb_gain = -1.;
 
-      PROMPT_DEFAULT_MIN(         app, tx_rf_center_freq, "tx", "frequency_min_MHz",           "frequency_max_MHz"          );
-      set_worker_prop_val<double>(app, tx_rf_center_freq, "tx", "frequency_MHz");
-      double tx_rf_bw;
-      PROMPT_DEFAULT_MAX(         app, tx_rf_bw,          "tx", "rf_cutoff_frequency_min_MHz", "rf_cutoff_frequency_max_MHz");
-      set_worker_prop_val<double>(app, tx_rf_bw,          "tx", "rf_cutoff_frequency_MHz");
+      PROMPT(app, tx_sample_rate,    "tx", "sample_rate_min_MHz",         "sample_rate_max_MHz"        );
+      app.setPropertyValue<double>(  "tx", "sample_rate_MHz",             tx_sample_rate);
 
-      PROMPT_DEFAULT_MIN(         app, tx_rf_gain,        "tx", "rf_gain_min_dB",              "rf_gain_max_dB"             );
-      set_worker_prop_val<double>(app, tx_rf_gain,        "tx", "rf_gain_dB");
+      PROMPT(app, tx_rf_center_freq, "tx", "frequency_min_MHz",           "frequency_max_MHz"          );
+      app.setPropertyValue<double>(  "tx", "frequency_MHz",               tx_rf_center_freq);
 
-      PROMPT_DEFAULT_MAX(         app, tx_bb_bw,          "tx", "bb_cutoff_frequency_min_MHz", "bb_cutoff_frequency_max_MHz");
-      set_worker_prop_val<double>(app, tx_bb_bw,          "tx", "bb_cutoff_frequency_MHz");
+      PROMPT(app, tx_rf_bw,          "tx", "rf_cutoff_frequency_min_MHz", "rf_cutoff_frequency_max_MHz");
+      app.setPropertyValue<double>(  "tx", "rf_cutoff_frequency_MHz",     tx_rf_bw);
 
-      PROMPT_DEFAULT_MIN(         app, tx_bb_gain,        "tx", "bb_gain_min_dB",              "bb_gain_max_dB"             );
-      set_worker_prop_val<double>(app, tx_bb_gain,        "tx", "bb_gain_dB");
+      PROMPT(app, tx_rf_gain,         "tx", "rf_gain_min_dB",              "rf_gain_max_dB"             );
+      app.setPropertyValue<double>(  "tx", "rf_gain_dB",                  tx_rf_gain);
+
+      PROMPT(app, tx_bb_bw,          "tx", "bb_cutoff_frequency_min_MHz", "bb_cutoff_frequency_max_MHz");
+      app.setPropertyValue<double>(  "tx", "bb_cutoff_frequency_MHz",     tx_bb_bw);
+
+      PROMPT(app, tx_bb_gain,        "tx", "bb_gain_min_dB",              "bb_gain_max_dB"             );
+      app.setPropertyValue<double>(  "tx", "bb_gain_dB",                  tx_bb_gain);
     }
 
     //Verify rx inputs are within valid ranges
@@ -933,12 +941,11 @@ int main(int argc, char **argv) {
         printLimits("Error: invalid rx_rf_center_freq.\n", rx_rf_center_freq, rx_frequency_min_MHz, rx_frequency_max_MHz);
       }
 
-      app.getProperty("rx","rf_cutoff_frequency_min_MHz", value);
-      rx_rf_cutoff_frequency_min_MHz = atof(value.c_str());
-      app.getProperty("rx","rf_cutoff_frequency_max_MHz", value);
-      rx_rf_cutoff_frequency_max_MHz = atof(value.c_str());
-      if (rx_rf_bw != rx_rf_cutoff_frequency_min_MHz && rx_rf_bw != rx_rf_cutoff_frequency_max_MHz)
-      {
+      OA::Property prop_rf_cutoff_min(app, "rx", "rf_cutoff_frequency_min_MHz");
+      rx_rf_cutoff_frequency_min_MHz = prop_rf_cutoff_min.getValue<double>();
+      OA::Property prop_rf_cutoff_max(app, "rx", "rf_cutoff_frequency_max_MHz");
+      rx_rf_cutoff_frequency_max_MHz = prop_rf_cutoff_max.getValue<double>();
+      if (rx_rf_bw < rx_rf_cutoff_frequency_min_MHz || rx_rf_bw > rx_rf_cutoff_frequency_max_MHz) {
         printLimits("Error: invalid rx_rf_bw.\n", rx_rf_bw, rx_rf_cutoff_frequency_min_MHz, rx_rf_cutoff_frequency_max_MHz);
       }
 
@@ -1089,19 +1096,24 @@ int main(int argc, char **argv) {
       app.setProperty("rx","rf_gain_dB", to_string(rx_rf_gain).c_str());
       app.setProperty("rx","bb_cutoff_frequency_MHz", to_string(rx_bb_bw).c_str());
       app.setProperty("rx","bb_gain_dB", to_string(rx_bb_gain).c_str());
-      if (rx_if_center_freq == 0)
-      {
+
+      // It is desired that setting a + IF freq results in mixing *down*.
+      // Because complex_mixer's NCO mixes *up* for + freqs (see complex mixer
+      // datasheet), IF tune freq must be negated in order to achieve the
+      // desired effect.
+      double nco_output_freq = -rx_if_center_freq;
+
+      // todo this math might be better off in a small proxy that sits on top of complex_mixer
+      // from complex mixer datasheet, nco_output_freq =
+      // sample_freq * phs_inc / 2^phs_acc_width, phs_acc_width is fixed at 16
+      OA::Short phase_inc = round(nco_output_freq/rx_sample_rate*65536.);
+
+      if(phase_inc == 0) {
         app.setProperty("complex_mixer", "enable", "false");
       }
-      else
-      {
-        // todo this math might be better off in a small proxy that sits on top of the HDL worker
-        char phase_inc_str[25];
-        short phase_inc;
-	phase_inc = rx_if_center_freq/rx_sample_rate * (16384 * 4);
-        //printf("phase inc is: %i\n", phase_inc);
-        sprintf(phase_inc_str,  "%i", phase_inc);
-        app.setProperty("complex_mixer","phs_inc", phase_inc_str);
+      else {
+        //std::cout << "setting complex mixer phase_inc = " << phase_inc <<"\n";
+        app.setPropertyValue<OA::Short>("complex_mixer","phs_inc", phase_inc);
       }
     }
 
@@ -1192,18 +1204,9 @@ int main(int argc, char **argv) {
     //  app.setProperty("ad9361_config_proxy","bist_loopback", "1");
     //}
 
-    //Mode filerw waits for a zlm message to complete. All others use runtime.
+    //Mode filerw waits for a zlm to complete. All others use runtime.
     if (mode == "rx" || mode == "tx" || mode == "txrx" || mode == "bbloopback")
     {
-      const bool usingADCWorker_lime_adc = currentFrontendUsesLimeTransceiver;
-      if ((mode == "rx" || mode == "txrx" || mode == "bbloopback") and usingADCWorker_lime_adc)
-      {
-        // workaround for lime_adc.hdl broken property
-        app.setProperty("qadc","overrun", "false");
-	// dbg: DAC/ADC - (I/Q select polarity, ordering, rising/falling edge)
-	//app.setProperty("rf_rx","rx_ctrl3", "0x20");
-      }
-
       printf("App runs for %f seconds...\n",runtime);
       while (runtime > 0)
       {

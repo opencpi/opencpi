@@ -53,6 +53,10 @@ HdlBin=
 # If not set, it implies that only a library containing the implementation is
 # possible
 HdlToolRealCore=
+#
+# For this tool, it is not sufficient just to include the assembly and pfconfig
+# at the container level. We must also include app workers, devices and the PW
+HdlToolRequiresFullCoreHierarchy_modelsim=yes
 ################################################################################
 # Variable required by toolset: HdlToolNeedBB=yes
 # Set if the tool set requires a black-box library to access a core
@@ -88,7 +92,7 @@ HdlToolCompile=\
       echo $(lastword $(subst -, ,$(notdir $l)))=$(strip \
         $(call FindRelative,$(TargetDir),$(strip \
            $(call HdlLibraryRefDir,$l,$(HdlTarget),,modelsim))));) \
-   $(foreach c,$(call HdlCollectCores,modelsim),\
+   $(foreach c,$(call HdlCollectCorePaths),\
       echo $(call HdlRmRv,$(notdir $(c)))=$(call FindRelative,$(TargetDir),$(strip \
           $(call HdlCoreRef,$(call HdlRmRv,$c),modelsim)));) \
    echo others=$(OCPI_MODELSIM_DIR)/modelsim.ini \
@@ -103,11 +107,7 @@ HdlToolCompile=\
 
 # Since there is not a singular output, make's builtin deletion will not work
 HdlToolPost=\
-  if test $$HdlExit != 0; then \
-    rm -r -f $(WorkLib); \
-  else \
-    touch $(WorkLib);\
-  fi;
+  touch $(WorkLib);
 
 BitFile_modelsim=$1.tar
 

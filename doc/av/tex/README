@@ -8,7 +8,8 @@ $ sudo yum install -y texlive-latex-bin texlive-texconfig-bin texlive-metafont-b
 To build a single PDF from sources, run:
 $ rubber --pdf <filename>.tex
 
-To build multiples, see the "generator" subdirectory.
+To build multiples, see the "generator" subdirectory. The script there handles ALL documentation in the
+repository, including some OpenOffice documents. To convert them, you must also install "unoconv" package.
 
 To spell check your edits, run:
 aspell list < filename.tex | sort | uniq -c | less

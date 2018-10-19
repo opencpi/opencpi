@@ -1,0 +1,1 @@
+../../ad9361_adc_test/scripts/AD9361_BIST_PRBS.sh

@@ -43,7 +43,10 @@ Containers= \
 	cnt_1rx_1tx_bypassasm_zipper_hsmc_b_alst4 \
 	cnt_1rx_1tx_bypassasm_zipper_lpc_ml605 \
 	cnt_1rx_1tx_bypassasm_zipper_lpc_zed \
-	cnt_2rx_2tx_bypassasm_fmcomms_2_3_lpc_LVDS_zed
+	cnt_2rx_2tx_bypassasm_fmcomms_2_3_lpc_LVDS_zed \
+	cnt_hsmc_alst4_debug_header_breakout_card_hsmc_alst4_a \
+	cnt_hsmc_alst4_debug_header_breakout_card_hsmc_alst4_b \
+	cnt_hsmc_loopback_card_hsmc_alst4_a_hsmc_alst4_b.xml
 # ML605/FMCOMMS3-FMC_HPC combo is currently known to have TX data fidelity issues
 #	cnt_0rx_1tx_bypassasm_fmcomms_2_3_hpc_LVDS_ml605 \
 #	cnt_1rx_1tx_bypassasm_fmcomms_2_3_hpc_LVDS_ml605 \

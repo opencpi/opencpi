@@ -22,3 +22,4 @@ PackageName=inactive
 PackagePrefix=ocpi
 
 ProjectDependencies=ocpi.assets
+ComponentLibraries+=misc_comps util_comps dsp_comps comms_comps devices cards

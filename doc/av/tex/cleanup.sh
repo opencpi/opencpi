@@ -23,7 +23,7 @@
 # For use in assets:
 # for d in $(find -type d -regex '.*docs?'); do (cd $d; ..../cleanup.sh); done
 
-set -e
+# set -e
 
 replace() {
   for f in $(git grep -Il $1 *.tex); do
@@ -44,9 +44,13 @@ for f in $(git grep -Il --perl-regexp "\s+$" *.tex); do
 done
 
 # Other cleanup
-echo "If you were to run 'git clean -fx':"
-git clean -nx
+# echo "If you were to run 'git clean -fx':"
+# git clean -nx
 
 # Bad closing quotes:
 echo "Mismatched quotes:"
-git grep -I  '``.*?"'
+git grep -I  '``.*?"' *.tex
+
+# Bad double quotes (but not in a comment):
+echo "Bad double quotes:"
+git grep -I '"' *.tex | grep -v '.*%.*"' | grep '"'

@@ -34,7 +34,6 @@ entity ad9361_dac_sub_cmos_single_port_fdd_ddr is
         dac_data_q_ch1               : in  std_logic_vector(11 downto 0);
         dac_dev_data_ch0_in_in_ready : in  std_logic;
         dac_dev_data_ch1_in_in_ready : in  std_logic;
-        dac_fb_clk                   : out std_logic; -- AD9361 FB_CLK
         dac_tx_frame                 : out std_logic; -- AD9361 TX_FRAME
         dac_dev_data_ch0_in_out_clk  : out std_logic;
         dac_dev_data_ch1_in_out_clk  : out std_logic;
@@ -112,7 +111,6 @@ begin
       ready_t2        => dac_ch1_ready_rr,
       take_t1         => dac_dev_data_ch0_in_out_take,
       take_t2         => dac_dev_data_ch1_in_out_take,
-      fb_clk          => dac_fb_clk,
       tx_frame        => dac_tx_frame,
       tx_data         => dacm2_tx_data);
 

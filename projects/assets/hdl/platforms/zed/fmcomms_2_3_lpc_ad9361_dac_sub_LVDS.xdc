@@ -18,14 +18,30 @@
 
 # this is the zed XDC file that should be generated when instantiating the:
 # ad9361_dac_sub worker
-# on the fmcomms3_lpc card
+# on the fmcomms_2_3_lpc card
 
-# Extracted form the zedboard_master_XDC_RevC_D_v3.xdc
+# Extracted from the zedboard_master_XDC_RevC_D_v3.xdc
 ############################################################################
 # Clock constraints                                                        #
 ############################################################################
 # 10 ns period = 100000 KHz
 create_clock -name clk_fpga_0 -period 10.000 [get_pins {ftop/pfconfig_i/zed_i/worker/ps/ps/PS7_i/FCLKCLK[0]}]
+
+# ----------------------------------------------------------------------------
+# Clock constraints - ad9361_data_sub.hdl
+# ----------------------------------------------------------------------------
+
+# FMCOMMS2/3 AD9361 DATA_CLK_P
+
+
+# create_clock command defaults to 50% duty cycle when -waveform is not specified
+
+# from AD9361 datasheet
+set AD9361_LVDS_t_CP_ns 4.069
+create_clock -period $AD9361_LVDS_t_CP_ns -name FMC_LA00_CC_P [get_ports {FMC_LA00_CC_P}]
+
+# FMCOMMS2/3 AD9361 FB_CLK_P (forwarded version of DATA_CLK_P)
+create_generated_clock -name FMC_LA08_P -source [get_pins {ftop/pfconfig_i/FMC_ad9361_data_sub_i/worker/mode7.dac_clock_forward/C}] -divide_by 1 -invert [get_ports {FMC_LA08_P}]
 
 # ----------------------------------------------------------------------------
 # User LEDs - Bank 33
@@ -146,7 +162,7 @@ set_property PACKAGE_PIN B21 [get_ports {FMC_LA33_P}];  # "FMC-LA33_P"
 #
 # Un-comment one or more of the following IOSTANDARD constraints according to
 # the bank pin assignments that are required within a design.
-# ---------------------------------------------------------------------------- 
+# ----------------------------------------------------------------------------
 
 # Note that the bank voltage for IO Bank 33 is fixed to 3.3V on ZedBoard. 
 set_property IOSTANDARD LVCMOS33 [get_ports -of_objects [get_iobanks 33]];
@@ -155,11 +171,22 @@ set_property IOSTANDARD LVCMOS33 [get_ports -of_objects [get_iobanks 33]];
 # set_property IOSTANDARD LVCMOS33 [get_ports -of_objects [get_iobanks 34]];
 set_property IOSTANDARD LVCMOS25 [get_ports -of_objects [get_iobanks 34]];
 
-# whenever we instantiate any of the ad9361 workers for FMCOMMS3, we really
-# should set the IOSTANDARD for all of the FMCOMMS3 pins for the given slot
+# whenever we instantiate any of the ad9361 workers for FMCOMMS2/3, we really
+# should set the IOSTANDARD for all of the FMCOMMS2/3 pins for the given slot
 
-# note that the fmcomms3_lpc card definition forces LVDS mode, so we do the same
-# here since this constraints file is fmcomms3_lpc card-specific
+# note that the fmcomms_2_3_lpc card definition forces LVDS mode, so we do the
+# same here since this constraints file is fmcomms_2_3_lpc card-specific
+
+# ----------------------------------------------------------------------------
+# IOSTANDARD constraints - ad9361_config.hdl
+# ----------------------------------------------------------------------------
+
+set_property IOSTANDARD LVCMOS25 [get_ports {FMC_LA16_N}]; # FMCOMMS2/3 AD9361 TXNRX
+set_property IOSTANDARD LVCMOS25 [get_ports {FMC_LA16_P}]; # FMCOMMS2/3 AD9361 ENABLE
+
+# ----------------------------------------------------------------------------
+# IOSTANDARD constraints - ad9361_data_sub.hdl
+# ----------------------------------------------------------------------------
 
 set_property IOSTANDARD LVDS_25 [get_ports {FMC_LA00_CC_P}]; # FMCOMMS3 DATA_CLK_P
 set_property DIFF_TERM 1 [get_ports {FMC_LA00_CC_P}]
@@ -203,20 +230,11 @@ set_property IOSTANDARD LVCMOS25 [get_ports -of_objects [get_iobanks 35]];
 # Note that the bank voltage for IO Bank 13 is fixed to 3.3V on ZedBoard. 
 set_property IOSTANDARD LVCMOS33 [get_ports -of_objects [get_iobanks 13]];
 
-# FMCOMMS3 DATA_CLK_P
-# AD9361 datasheet-specified max clock period
-create_clock -period 4.069 -name FMC_LA00_CC_P -waveform {0.000 2.0345} [get_ports {FMC_LA00_CC_P}]
+# ----------------------------------------------------------------------------
+# INPUT / OUTPUT DELAY constraints - ad9361_dac_sub.hdl
+# ----------------------------------------------------------------------------
 
-# FMCOMMS3 TX_FB_CLK_P (forwarded version of DATA_CLK_P)
-create_generated_clock -name FMC_LA08_P -source [get_pins {ftop/pfconfig_i/FMC_ad9361_dac_sub_i/worker/data_mode_lvds.dac_clock_forward/C}] -divide_by 1 -invert [get_ports {FMC_LA08_P}]
-
-# FMCOMMS3 TX_FRAME_P
-set_output_delay -clock [get_clocks {FMC_LA08_P}] -clock_fall -min -add_delay 0.3 [get_ports {FMC_LA09_P}]
-set_output_delay -clock [get_clocks {FMC_LA08_P}] -clock_fall -max -add_delay 1.3 [get_ports {FMC_LA09_P}]
-set_output_delay -clock [get_clocks {FMC_LA08_P}] -clock_fall -min -add_delay 0.3 [get_ports {FMC_LA09_N}]
-set_output_delay -clock [get_clocks {FMC_LA08_P}] -clock_fall -max -add_delay 1.3 [get_ports {FMC_LA09_N}]
-
-# FMCOMMS3 TX_D
+# FMCOMMS3 TX_D/TX_FRAME_P
 #
 # ----- from Vivado GUI:
 #                                 _____________
@@ -237,8 +255,8 @@ set_output_delay -clock [get_clocks {FMC_LA08_P}] -clock_fall -max -add_delay 1.
 # Rise Min = trce_dly_min - thd_r
 #
 # ----- from AD9361 datasheet:
-# t_STx_max = 1 # datasheet specifies t_STx_min but they REALLY mean t_STx_max (why would the MINIMUM required setup time be 1 ns? that leaves the possible for the requirement to be MORE than that, idk semantics...)
-# t_HTx_max = 0 # datasheet specifies t_HTx_min but they REALLY mean t_HTx_max (why would the MINIMUM required setup time be 1 ns? that leaves the possible for the requirement to be MORE than that, idk semantics...)
+# t_STx_min = 1
+# t_HTx_min = 0
 #
 # ----- assumed ad9361_data_sub.hdl parameter property/no-OS init_param settings
 # ----- (values chosen specifically to meet static timing):
@@ -251,10 +269,10 @@ set_output_delay -clock [get_clocks {FMC_LA08_P}] -clock_fall -max -add_delay 1.
 # ------------------------------------------------------------------------------
 #
 # ----- calculations
-# tsu_r = t_STx_max + (FB_CLK_Delay-TX_Data_Delay)*0.3 =  1.3 (AD9361 datasheet only specifies falling edge requirement, but rising is implied since DDR is used)
-# thd_r = t_HTx_max - (FB_CLK_Delay-TX_Data_Delay)*0.3 = -0.3 (AD9361 datasheet only specifies falling edge requirement, but rising is implied since DDR is used)
-# tsu_f = t_STx_max + (FB_CLK_Delay-TX_Data_Delay)*0.3 =  1.3
-# thd_f = t_HTx_max - (FB_CLK_Delay-TX_Data_Delay)*0.3 = -0.3
+# tsu_r = t_STx_min + (FB_CLK_Delay-TX_Data_Delay)*0.3 =  1.3 (AD9361 datasheet only specifies falling edge requirement, but rising is implied since DDR is used)
+# thd_r = t_HTx_min - (FB_CLK_Delay-TX_Data_Delay)*0.3 = -0.3 (AD9361 datasheet only specifies falling edge requirement, but rising is implied since DDR is used)
+# tsu_f = t_STx_min + (FB_CLK_Delay-TX_Data_Delay)*0.3 =  1.3
+# thd_f = t_HTx_min - (FB_CLK_Delay-TX_Data_Delay)*0.3 = -0.3
 # trce_dly_max is unknown, so value of 0 is used for calculation
 # trce_dly_min is unknown, so value of 0 is used for calculation
 # Rise Max = trce_dly_max + tsu_r = 0 + 1.3    = 1.3
@@ -307,10 +325,61 @@ set_output_delay -clock [get_clocks {FMC_LA08_P}] -min -add_delay 0.3 [get_ports
 set_output_delay -clock [get_clocks {FMC_LA08_P}] -max -add_delay 1.3 [get_ports {FMC_LA15_P}]
 set_output_delay -clock [get_clocks {FMC_LA08_P}] -min -add_delay 0.3 [get_ports {FMC_LA15_N}]
 set_output_delay -clock [get_clocks {FMC_LA08_P}] -max -add_delay 1.3 [get_ports {FMC_LA15_N}]
+# TX_FRAME_P
+set_output_delay -clock [get_clocks {FMC_LA08_P}] -clock_fall -min -add_delay 0.3 [get_ports {FMC_LA09_P}]
+set_output_delay -clock [get_clocks {FMC_LA08_P}] -clock_fall -max -add_delay 1.3 [get_ports {FMC_LA09_P}]
+set_output_delay -clock [get_clocks {FMC_LA08_P}] -clock_fall -min -add_delay 0.3 [get_ports {FMC_LA09_N}]
+set_output_delay -clock [get_clocks {FMC_LA08_P}] -clock_fall -max -add_delay 1.3 [get_ports {FMC_LA09_N}]
+
+# ----------------------------------------------------------------------------
+# INPUT / OUTPUT DELAY constraints - ad9361_data_sub.hdl
+# ----------------------------------------------------------------------------
+
+# from AD9361 datasheet
+set AD9361_ENABLE_t_SC_min 1.0;
+set AD9361_ENABLE_t_HC_min 0.0;
+
+set AD9361_ENABLE_tsu_r $AD9361_ENABLE_t_SC_min;
+set AD9361_ENABLE_thd_r $AD9361_ENABLE_t_HC_min;
+
+# assume 0 for now, can measure later if necessary
+set AD9361_ENABLE_trce_dly_max 0;
+set AD9361_ENABLE_trce_dly_min 0;
+
+# see Vivado constraints wizard for these formulas
+set AD9361_ENABLE_Rise_Max [expr $AD9361_ENABLE_trce_dly_max + $AD9361_ENABLE_tsu_r];
+set AD9361_ENABLE_Rise_Min [expr $AD9361_ENABLE_trce_dly_min - $AD9361_ENABLE_thd_r];
+
+set_output_delay -clock [get_clocks {FMC_LA08_P}] -min -add_delay $AD9361_ENABLE_Rise_Min [get_ports {FMC_LA16_N}]
+set_output_delay -clock [get_clocks {FMC_LA08_P}] -max -add_delay $AD9361_ENABLE_Rise_Max [get_ports {FMC_LA16_N}]
+
+# from AD9361 datasheet
+set AD9361_TXNRX_t_SC_min 1.0;
+set AD9361_TXNRX_t_HC_min 0.0;
+
+set AD9361_TXNRX_tsu_r $AD9361_TXNRX_t_SC_min;
+set AD9361_TXNRX_thd_r $AD9361_TXNRX_t_HC_min;
+
+# assume 0 for now, can measure later if necessary
+set AD9361_TXNRX_trce_dly_max 0;
+set AD9361_TXNRX_trce_dly_min 0;
+
+# see Vivado constraints wizard for these formulas
+set AD9361_TXNRX_Rise_Max [expr $AD9361_TXNRX_trce_dly_max + $AD9361_TXNRX_tsu_r];
+set AD9361_TXNRX_Rise_Min [expr $AD9361_TXNRX_trce_dly_min - $AD9361_TXNRX_thd_r];
+
+set_output_delay -clock [get_clocks {FMC_LA08_P}] -min -add_delay $AD9361_TXNRX_Rise_Min [get_ports {FMC_LA16_P}]
+set_output_delay -clock [get_clocks {FMC_LA08_P}] -max -add_delay $AD9361_TXNRX_Rise_Max [get_ports {FMC_LA16_P}]
+
+# ----------------------------------------------------------------------------
+# CLOCK DOMAIN CROSSING / FALSE PATH constraints - ad9361_data_sub.hdl
+# ----------------------------------------------------------------------------
 
 # disable timing check among paths between AD9361 DATA_CLK_P and control plane clock domains (which are asynchronous)
 set_clock_groups -asynchronous -group [get_clocks {FMC_LA00_CC_P}] -group [get_clocks {clk_fpga_0}]
 
+# ----------------------------------------------------------------------------
+# CLOCK DOMAIN CROSSING / FALSE PATH constraints - ad9361_dac_sub.hdl
+# ----------------------------------------------------------------------------
 # disable timing check among paths between AD9361 DATA_CLK_P/2 clock domain and control plane clock domains (which are asynchronous)
 set_clock_groups -asynchronous -group [get_clocks clk_fpga_0] -group [get_clocks -of_objects [get_pins ftop/pfconfig_i/FMC_ad9361_dac_sub_i/worker/data_mode_lvds.BUFR_inst/O]]
-

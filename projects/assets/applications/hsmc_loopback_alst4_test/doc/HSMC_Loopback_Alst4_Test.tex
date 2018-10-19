@@ -1,0 +1,80 @@
+\iffalse
+This file is protected by Copyright. Please refer to the COPYRIGHT file
+distributed with this source distribution.
+
+This file is part of OpenCPI <http://www.opencpi.org>
+
+OpenCPI is free software: you can redistribute it and/or modify it under the
+terms of the GNU Lesser General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License along
+with this program. If not, see <http://www.gnu.org/licenses/>.
+\fi
+
+%----------------------------------------------------------------------------------------
+% Update the docTitle and docVersion per document
+%----------------------------------------------------------------------------------------
+\def\docTitle{OpenCPI\\ HSMC Loopback Stratix IV (alst4) Test App Guide}
+\def\docVersion{1.4}
+%----------------------------------------------------------------------------------------
+\input{../../../../../doc/av/tex/snippets/LaTeX_Header.tex}
+\date{Version \docVersion} % Force date to be blank and override date with version
+\title{\docTitle}
+\lhead{HSMC Loopback Stratix IV (alst4) Test App Guide}
+%----------------------------------------------------------------------------------------
+%\usepackage[T1]{fontenc} % http://tex.stackexchange.com/a/181119
+\usepackage{graphicx}
+\graphicspath{ {figures/} }
+\usepackage{textcomp}
+\usepackage{listings}
+
+\begin{document}
+\maketitle
+%\thispagestyle{fancy}
+	\begin{center}
+	\textit{\textbf{Revision History}}
+		\begin{table}[H]
+		\label{table:revisions} % Add "[H]" to force placement of table
+			\begin{tabularx}{\textwidth}{|c|X|l|}
+			\hline
+			\rowcolor{blue}
+			\textbf{Revision} & \textbf{Description of Change} & \textbf{Date} \\
+		    \hline
+		    v1.4 & Converted to application from unit test structure. & 9/2018 \\
+			\hline
+			\end{tabularx}
+		\end{table}
+	\end{center}
+
+\section{Description}
+Intended to test HSMC slots on the alst4 platform.
+\section{Hardware Setup}
+x86 machine with the Stratix IV PCIE card with both HSMC slots populated with a Loopback HSMC Card\cite{debugcard}.
+\section{Prerequisites}
+empty assembly w/ the cnt\_hsmc\_loopback\_card\_hsmc\_alst4\_a\_hsmc\_alst4\_b container built for alst4 platform.
+\section{Execution}
+\subsection{OCPI\_LIBRARY\_PATH Requirements/Considerations}
+None.
+\subsection{Command(s)}
+Execution must occur from within the hsmc\_loopback\_test directory. \\
+\lstset{language=bash, backgroundcolor=\color{lightgray}, columns=flexible, breaklines=true, prebreak=\textbackslash, basicstyle=\ttfamily, showstringspaces=false,upquote=true, aboveskip=\baselineskip, belowskip=\baselineskip}
+\begin{lstlisting}
+./<target-dir>/hsmc_loopback_test
+\end{lstlisting}
+\section{Verification}
+Application exit status indicates success (status of 0 indicates success, status of 1 indicates failure, status of 100 indicates test unexpectedly could not complete). Either PASSED or FAILED is also printed to stdout/stderr, respectively.
+
+\begin{thebibliography}{1}
+
+\bibitem{debugcard} Terasic - Components - Extras - HSMC Debug \& Loopback Connector Package
+\url{https://www.terasic.com.tw/cgi-bin/page/archive.pl?Language=English&No=495}
+
+\end{thebibliography}
+
+\end{document}

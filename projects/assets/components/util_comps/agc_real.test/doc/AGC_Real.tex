@@ -62,6 +62,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 %----------------------------------------------------------------------------------------
 % Table packages
 %----------------------------------------------------------------------------------------
+\usepackage{longtable} % for long possibly multi-page tables
 \usepackage{tabularx} % c=center,l=left,r=right,X=fill
 \usepackage{float}
 \floatstyle{plaintop}
@@ -88,7 +89,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Component Data Sheet}
-\def\docVersion{1.3}
+\def\docVersion{1.4}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
@@ -100,8 +101,18 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \graphicspath{ {figures/} }
 
 \begin{document}
-
 \section*{Summary - \Comp}
+
+% AV-4723 blurb start
+\begin{center}
+\framebox{\parbox{0.8\linewidth}{\centering
+\textcolor{red}{WARNING:}
+Run-time failures have been observed for several unit tests and applications on PCIe-based platforms.
+The work around requires modifying the \textbf{buffersize} attribute of the PL to PS (egress) boundary connection, as defined in the OAS. An example for modifying the OAS for executing on PCIe-based platforms is provided in a below section.
+\PackageWarning{}{AV-4723} }}
+\end{center}
+% AV-4723 blurb end
+
 \begin{tabular}{|c|M{13.5cm}|}
 	\hline
 	\rowcolor{blue}
@@ -183,9 +194,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \section*{Source Dependencies}
 \subsection*{\comp.hdl}
 \begin{itemize}
-	\item ocpiassets/components/util\_comps/agc\_real.hdl/agc\_real.vhd
-	\item ocpiassets/hdl/primitives/util\_prims/util\_prims\_pkg.vhd
-		\subitem ocpiassets/hdl/primitives/util\_prims/agc/src/agc.vhd
+	\item assets/components/util\_comps/agc\_real.hdl/agc\_real.vhd
+	\item assets/hdl/primitives/util\_prims/util\_prims\_pkg.vhd
+		\subitem assets/hdl/primitives/util\_prims/agc/src/agc.vhd
 \end{itemize}
 
 \begin{landscape}
@@ -250,10 +261,26 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	The {\Comp} worker uses the clock from the Control Plane and standard Control Plane signals.
 \end{flushleft}
 
+\begin{landscape}
+\section*{Worker Configuration Parameters}
+\subsubsection*{\comp.hdl}
+\input{../../\ecomp.hdl/configurations.inc}
 \section*{Performance and Resource Utilization}
 \subsubsection*{\comp.hdl}
 \input{../../\ecomp.hdl/utilization.inc}
+\end{landscape}
 \section*{Test and Verification}
+
+\noindent\textcolor{red}{WARNING:}
+Run-time failures have been observed for several unit tests and applications on PCIe-based platforms. The work around requires modifying the \textbf{buffersize} attribute of the PL to PS (egress) boundary connection, as defined in the OAS. \\
+The OAS XML must be changed to resolve this issue for the unit tests as shown below:\\
+\begin{lstlisting}[showspaces=false]
+  <Connection>
+   <Port Instance="last_PL_worker" Name="out"/>
+   <Port Instance="first_PS_worker" Name="in" Buffersize="8192" Buffercount="4"/>
+  </Connection>
+\end{lstlisting}
+
 \begin{flushleft}
 	A single test case is implemented to validate the AGC Real component. An input file is generated with a single tone at Fs/16 Hz, where Fs = 100 Hz, but applies 20\% of the maximum amplitude to the first quarter of the file, 90\% maximum amplitude to the second quarter of the file, 20\% maximum amplitude to the third quarter of the file, and 30\% maximum amplitude to the fourth quarter of the file. The real waveform is then scaled to fixed-point signed 16-bit integers. Time and frequency domain plots may be viewed in Figures \ref{fig:in_time_tone} and \ref{fig:in_freq_tone} below, respectively.
 \end{flushleft}

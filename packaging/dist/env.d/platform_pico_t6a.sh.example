@@ -1,0 +1,2 @@
+# This is the location of the DUBRI "Drop". At the top-level, you should have things like "include/dubri"
+export OCPI_DRS_DUBRI_HOME=/opt/drs/DROP5.4_DUBRI-0.2.0-alpha.11-Atlas-I-Z7e-Host/

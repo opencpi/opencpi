@@ -1,0 +1,79 @@
+\iffalse
+This file is protected by Copyright. Please refer to the COPYRIGHT file
+distributed with this source distribution.
+
+This file is part of OpenCPI <http://www.opencpi.org>
+
+OpenCPI is free software: you can redistribute it and/or modify it under the
+terms of the GNU Lesser General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License along
+with this program. If not, see <http://www.gnu.org/licenses/>.
+\fi
+
+%----------------------------------------------------------------------------------------
+% Update the docTitle and docVersion per document
+%----------------------------------------------------------------------------------------
+\def\docTitle{OpenCPI\\ TX Event Test App Guide}
+\def\docVersion{1.4}
+%----------------------------------------------------------------------------------------
+\input{../../../../../doc/av/tex/snippets/LaTeX_Header.tex}
+\date{Version \docVersion} % Force date to be blank and override date with version
+\title{\docTitle}
+\lhead{TX Event Test App Guide}
+%----------------------------------------------------------------------------------------
+%\usepackage[T1]{fontenc} % http://tex.stackexchange.com/a/181119
+\usepackage{graphicx}
+\graphicspath{ {figures/} }
+\usepackage{textcomp}
+\usepackage{listings}
+
+\begin{document}
+\maketitle
+%\thispagestyle{fancy}
+\newpage
+	\begin{center}
+	\textit{\textbf{Revision History}}
+		\begin{table}[H]
+		\label{table:revisions} % Add "[H]" to force placement of table
+			\begin{tabularx}{\textwidth}{|c|X|l|}
+			\hline
+			\rowcolor{blue}
+			\textbf{Revision} & \textbf{Description of Change} & \textbf{Date} \\
+		    \hline
+		    v1.4 & Initial Release & 8/2018 \\
+			\hline
+			\end{tabularx}
+		\end{table}
+	\end{center}
+
+\newpage
+\tableofcontents
+\pagebreak
+
+\section{Description}
+This application directory containts several OAS files which allow for the testing of the \verb+tx_event+ protocol using the \verb+qdac+ component's \verb+event_in+ port in multiple scenarios include both \verb+event_in+ port connected and unconnected. The application transmits a single tone at a frequency set via the \verb+tx+ component's \verb+frequency_MHz+ property in each OAS. OAS files exist for each supported hardware setup for two different behaviors: 1) transmitted tone is toggled (on/off) at a rate of once per second (\verb+event_in+ port is connected), and 2) transmitted tone is constant over duration of application (\verb+event_in+ port is unconnected). The application duration is set via ocpirun ... -t $<$duration\_sec$>$ ...).
+
+\section{Example usage}
+
+\subsection{Example 1 - Zedboard/FMCOMMS3 w/ SMA TX1A connected to spectrum analyzer w/ 2.4 GHz visible}
+\lstset{language=bash, columns=flexible, breaklines=true, prebreak=\textbackslash, basicstyle=\ttfamily, showstringspaces=false,upquote=true, aboveskip=\baselineskip, belowskip=\baselineskip}
+\begin{lstlisting}
+OCPI_LIBRARY_PATH=../../hdl/assemblies/data_src_to_dac_test_tx_event/:../../hdl/:../../components/:$OCPI_LIBRARY_PATH ocpirun -t 10 tx_event_test_toggle_fmcomms3_control_plane_100_MHz.xml
+\end{lstlisting}
+Spectrum analyzer is used to observe tone at 2.4 GHz toggle on/off once a second for 10 sec. \\
+
+\subsection{Example 2 - Zedboard/FMCOMMS3 w/ SMA TX1A connected to spectrum analyzer w/ 2.4 GHz visible}
+\lstset{language=bash, columns=flexible, breaklines=true, prebreak=\textbackslash, basicstyle=\ttfamily, showstringspaces=false,upquote=true, aboveskip=\baselineskip, belowskip=\baselineskip}
+\begin{lstlisting}
+OCPI_LIBRARY_PATH=../../hdl/assemblies/data_src_to_dac/:../../hdl/:../../components/:$OCPI_LIBRARY_PATH ocpirun -t 10 tx_event_test_const_tone_fmcomms3.xml
+\end{lstlisting}
+Spectrum analyzer is used to observe constant tone at 2.4 GHz for 10 sec. \\
+
+\end{document}

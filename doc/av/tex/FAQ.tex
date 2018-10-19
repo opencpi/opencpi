@@ -20,7 +20,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Frequently Asked Questions}
-\def\docVersion{1.2}
+\def\docVersion{1.4}
 %----------------------------------------------------------------------------------------
 \input{snippets/LaTeX_Header.tex}
 \setlength{\parindent}{0pt} % Don't indent all paragraphs
@@ -47,7 +47,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
                         v1.1 & Initial creation for OpenCPI 1.1 & 3/2017 \\
                         \hline
                         v1.2 & Updated for OpenCPI Release 1.2 & 8/2017 \\
-		                \hline
+                        \hline
+                        v1.4 & Updated for OpenCPI Release 1.4 & 9/2018 \\
+                        \hline
                         \end{tabularx}
                 \end{table}
         \end{center}
@@ -73,15 +75,16 @@ Both CentOS~6 and CentOS~7 are supported as long as the proper version of the RP
 \section{General Usage Questions}
 \begin{description}[style=nextline]
 % AV-1724
+% AV-4029
 \item[Make error: ``*** isim not an available HDL platform.  Stop.'']~\\
-Either the Base Project was never built, or the variable \path{OCPI_PROJECT_PATH} is not set. This is explained in the \textit{Getting Started Guide}.
+Either the Core Project was never built, or it is not properly registered. This is explained in the \textit{Getting Started Guide}.
 
 % 2016-10-19
 \item[I am trying to run a demo application with ``ocpirun'' and artifacts are not being found.]~\\
 The usual causes of this are:
 \begin{itemize}
 \setlength\itemsep{0pt}
-\item Base Project was not built for the target platform
+\item Core Project was not built for the target platform
 \begin{itemize}
 \item Consult the \textit{Getting Started Guide}
 \end{itemize}
@@ -90,6 +93,26 @@ The usual causes of this are:
 \item View the artifacts being checked by adding ``\code{-l 8}'' on the \texttt{ocpirun} command line to increase the logging level
 \end{itemize}
 \end{itemize}
+
+% AV-3149, 2018-09-12 (1.4)
+\item[HDL Workers are failing Unit Tests that passed before 1.4.]~\\
+The most likely cause is that``backpressure'' is now automatically asserted by default; see the \textit{Component Development Guide} for details.
+
+% AV-4310 AV-4311 AV-4327
+\item[My application's I and Q seem wrong after moving to 1.4.]~\\
+See \href{sec:14_iqdata}{below} and the \textit{Release Notes}.
+
+% AV-4310 AV-4311 AV-4327
+\label{sec:14_iqdata}
+\item[How do I handle \code{iqstream\_protocol}'s I and Q data ordering in HDL workers?]~\\
+As noted in the \textit{HDL Development Guide}, when a Protocol contains a Struct Argument, the first Argument Member defined in the Protocol's XML is \textit{always} in the \textit{least significant} bits of the resulting Port. A good example of the importance of this is the scenario where a Port's default data width is overridden (in the OWD) to present all of a Struct's Members in parallel within a single clock cycle. For example, \code{iqstream\_protocol}'s default ordering is a 16-bit interleaved I/Q data: ``$I_{t=0}, Q_{t=0}, I_{t=1}, Q_{t=1}, I_{t=2}, ...$''. However, if the Worker configures its data Ports to be a width of 32 bits, then the I/Q data is presented as a parallel I/Q sample pair with ``I'' in the \textit{lower} 16 bits and ``Q'' in the \textit{upper} 16 bits, \textit{i.e.}:
+\begin{center}
+$I_{0}=InPort_{0}[15:0]; Q_{0}=InPort_{0}[31:16]\newline
+I_{1}=InPort_{1}[15:0]; Q_{1}=InPort_{1}[31:16]\newline
+$
+\end{center}
+A Worker to consult as an example is ``\path{iqstream_max_calculator.hdl}.''
+
 \end{description}
 
 \section{Xilinx-Specific Questions}

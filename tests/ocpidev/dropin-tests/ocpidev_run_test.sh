@@ -45,14 +45,12 @@ $OCPIDEV
 echo "Running Test 2"
 $OCPIDEV tests
 echo "Running Test 3"
-$OCPIDEV project --junk
-echo "Running Test 4"
 $OCPIDEV applications
-echo "Running Test 5"
+echo "Running Test 4"
 $OCPIDEV application aci_property_test_app
-echo "Running Test 6"
+echo "Running Test 5"
 $OCPIDEV test test_worker
-echo "Running Test 6.5"
+echo "Running Test 6"
 $OCPIDEV library components
 echo "Running Test 7"
 $OCPIDEV test test_worker.test -l components
@@ -65,7 +63,7 @@ $OCPIDEV test test_worker --mode prep_run_verify
 echo "Running Test 11"
 $OCPIDEV test test_worker --mode clean_all
 echo "Running Test 12"
-$OCPIDEV test test_worker --mode gen_build --cases '*'
+$OCPIDEV test test_worker --mode gen_build --case '0.*'
 echo "Running Test 13"
 $OCPIDEV test test_worker --mode prep
 echo "Running Test 14"
@@ -92,4 +90,6 @@ echo "Running Test 22: Expecting Error"
 $OCPIDEV test test_worker -l components/dsp_comps && fail
 echo "Running Test 23: Expecting Error"
 $OCPIDEV test -l components/dsp_comps && fail
+echo "Running Test 24: Expecting Error"
+$OCPIDEV project --junk && fail
 echo "Tests Passed!"

@@ -99,49 +99,66 @@ def execute_cmd(settings, directory, action=None):
     minimal number of places.  The function contains a hard-coded dictionary of generic settings to
     make variables that it uses to construct the call to make at that given directory
     """
-    settings_dict = {'rcc_plats'       : "RccPlatform",
-                     'hdl_plats'       : "HdlPlatform",
-                     'only_plats'      : "OnlyPlatform",
-                     'ex_plats'        : "ExcludePlatform",
+    settings_dict = {'rcc_plat'        : "RccPlatforms",
+                     'hdl_plat'        : "HdlPlatforms",
+                     'only_plat'       : "OnlyPlatforms",
+                     'ex_plat'         : "ExcludePlatforms",
                      'keep_sims'       : "KeepSimulations",
-                     'errors'          : "TestAccumulateErrors",
-                     'cases'           : "Cases",
+                     'acc_errors'      : "TestAccumulateErrors",
+                     'view'            : "View",
+                     'case'            : "Cases",
                      'run_before'      : "OcpiRunBefore",
                      'run_after'       : "OcpiRunAfter",
-                     'run_args'        : "OcpiRunArgs",
+                     'run_arg'        : "OcpiRunArgs",
                      'remote_test_sys' : "OCPI_REMOTE_TEST_SYSTEMS",
                      'verbose'         : "TestVerbose"}
+    make_list = []
 
-    make_list = ["make", "-C", directory]
+    make_list.append("make")
+    make_list.append("-C")
+    make_list.append(directory)
+    debug_string = "make -C " + directory
 
     if action is not None:
         make_list.extend(action)
+        debug_string += " " + ' '.join(action) + " "
 
     for setting, value in settings.items():
         if isinstance(value, bool):
             make_list.append(settings_dict[setting] + '=1')
+            debug_string += settings_dict[setting] + '=1'
         elif isinstance(value, list):
-            make_list.append(settings_dict[setting] + '=' + ' '.join(value))
+            make_list.append(settings_dict[setting] + '='  + ' '.join(value))
+            if len(value) > 1:
+                debug_string += settings_dict[setting] + '="'  + ' '.join(value) + '"'
+            else:
+                debug_string += settings_dict[setting] + '='  + ' '.join(value)
         else:
             raise OCPIException("Invalid setting data-type passed to execute_cmd().  Valid data-" +
                                 "types are bool and list")
 
-    logging.debug("running make command: " + " ".join(make_list))
+    logging.debug("running make command: " + debug_string )
+    #shell=True is bad dont set it here running the following command was able to execute 
+    # arbitary code
+    #ocpidev run test --hdl-platform \$\(./script.temp\)
+    # all the script would need to do is cat isim then go on its merry way doing whatever it wanted
     child = subprocess.Popen(make_list)
     child.wait()
     return child.returncode
 
 def set_vars_from_make(mk_file, mk_arg="", verbose=None):
     """
-    -------------------------------------------------------------------------------
-    | Collect a dictionary of variables from a makefile
-    |--------------------------------------------------
-    | First arg is .mk file to use
-    | Second arg is make arguments needed to invoke correct output
-    |     The output can be an assignment or a target
-    | Third arg is a verbosity flag
-    | Return a dictionary of variable names mapped to values from make
-    -------------------------------------------------------------------------------
+     Collect a dictionary of variables from a makefile
+    --------------------------------------------------
+     First arg is .mk file to use
+     Second arg is make arguments needed to invoke correct output
+         The output can be an assignment or a target
+     Third arg is a verbosity flag
+     Return a dictionary of variable names mapped to values from make
+
+     OCPI_LOG_LEVEL>=6  will print stderr from make for user to see
+     OCPI_LOG_LEVEL>=10 will pass OCPI_DEBUG_MAKE to make command and will
+                        print both stdout and stderr for user to see
     """
     with open(os.devnull, 'w') as fnull:
         make_exists = subprocess.Popen(["which", "make"],\
@@ -151,39 +168,39 @@ def set_vars_from_make(mk_file, mk_arg="", verbose=None):
                 logging.error("The '\"make\"' command is not available.")
             return 1
 
+        # If log level >= 10 set OCPI_DEBUG_MAKE=1 (max debug level)
+        ocpi_log_level = int(os.environ.get('OCPI_LOG_LEVEL', 0))
+        if ocpi_log_level >= 10:
+            mk_dbg = "OCPI_DEBUG_MAKE=1"
+        else:
+            mk_dbg = ""
+
         # If mk_file is a "Makefile" then we use the -C option on the directory containing
         # the makefile else (is a .mk) use the -f option on the file
         if mk_file.endswith("/Makefile"):
-            make_cmd = "make -n -r -s -C " + os.path.dirname(mk_file) + " " + mk_arg
+            make_cmd = "make " + mk_dbg + " -n -r -s -C " + os.path.dirname(mk_file) + " " + mk_arg
         else:
-            make_cmd = "make -n -r -s -f " + mk_file + " " + mk_arg
+            make_cmd = "make " + mk_dbg + " -n -r -s -f " + mk_file + " " + mk_arg
 
         logging.debug("Calling make via:" + str(make_cmd.split()))
-        # If verbose is unset, redirect 'make' stderr to /dev/null
-        if verbose is None or verbose == "":
-            child = subprocess.Popen(make_cmd.split(), stderr=fnull, stdout=subprocess.PIPE)
-            child.wait()
-            mk_output = child.stdout.read()
+
+        child = subprocess.Popen(make_cmd.split(), stderr=subprocess.PIPE, stdout=subprocess.PIPE,
+                                 universal_newlines=True)
+        mk_output, mk_err = child.communicate()
+
+        # Print out output from make if log level is high
+        logging.debug("STDOUT output from Make (set_vars_from_make):\n" + str(mk_output))
+
+        # Print out stderr from make if log level is medium/high or if make returned error
+        if child.returncode != 0 or ocpi_log_level >= 6:
+            if mk_err:
+                logging.error("STDERR output from Make (set_vars_from_make):\n" + str(mk_err))
             if child.returncode != 0:
-                child.stdout.close()
-                raise OCPIException("make command: " + make_cmd + "\n returned an error: " +
-                                    str(mk_output))
-            child.stdout.close()
-        else:
-            child = subprocess.Popen(make_cmd.split(), stderr=subprocess.PIPE, stdout=subprocess.PIPE)
-            child.wait()
-            mk_output = child.stdout.read()
-            if child.returncode != 0:
-                child.stdout.close()
-                child.stderr.close()
-                raise OCPIException("make command: " + make_cmd + "\n returned an error: " +
-                                    str(mk_output))
-            child.stdout.close()
-            child.stderr.close()
-        logging.debug("Output from make in set_vars_from_make: " + str(mk_output))
+                raise OCPIException("The following make command returned an error:\n" + make_cmd)
+
         try:
             grep_str = re.search(r'(^|\n)[a-zA-Z_][a-zA-Z_]*=.*',
-                                 str(mk_output.strip(), 'utf-8')).group()
+                                 str(mk_output.strip())).group()
         except AttributeError:
             logging.warning("No variables are set from \"" + mk_file + "\"")
             return None
@@ -202,12 +219,12 @@ def set_vars_from_make(mk_file, mk_arg="", verbose=None):
 
 def get_make_vars_rcc_targets():
     """
-    Get make variables from rcc-make.mk
+    Get make variables from rcc-targets.mk
     Dictionary key examples are:
         RccAllPlatforms, RccPlatforms, RccAllTargets, RccTargets
     """
     return set_vars_from_make(os.environ["OCPI_CDK_DIR"] +
-                              "/include/rcc/rcc-make.mk",
+                              "/include/rcc/rcc-targets.mk",
                               "ShellRccTargetsVars=1", "verbose")
 
 ###############################################################################
@@ -815,16 +832,17 @@ def cd(target):
 ###############################################################################
 # Functions for prompting the user for input
 ###############################################################################
-def get_ok(prompt=""):
+def get_ok(prompt="", default=False):
     """Prompt the user to say okay"""
     print(prompt, end=' ')
     while True:
         ok = input(" [y/n]? ")
         if ok.lower() in ('y', 'yes', 'ok'):
             return True
-        if ok.lower() in ('', 'n', 'no', 'nope'):
+        if ok.lower() in ('n', 'no', 'nope'):
             return False
-
+        if ok.lower() == '':
+            return default
 
 if __name__ == "__main__":
     import doctest

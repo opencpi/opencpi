@@ -1,0 +1,13 @@
+The tb_bias_v2 application utilizes the pattern_v2, bias, and capture_v2 components.
+
+The pattern_v2 component sends the following messages:
+
+msg1 = {0x00000000} with opcode 251, msg2 = {0x00000000,0x00000001} with opcode 252, msg3 = {0x00000000,0x00000001,0x00000002} with opcode 253,
+msg4 = {0x00000000,0x00000001,0x00000002,0x00000003} with opcode 254, msg5 = {0x00000000,0x00000001,0x00000002,0x00000003,0x00000004} with opcode 255
+
+The bias component adds the bias value 0x01020304 to the data in the messages.
+
+The expected messages capture_v2 will receive are:
+
+msg1 = {0x01020304} with opcode 251, msg2 = {0x01020304,0x01020305} with opcode 252, msg3 = {0x01020304,0x01020305,0x01020306} with opcode 253,
+msg4 = {0x01020304,0x01020305,0x01020306,0x01020307} with opcode 254, msg5 = {0x01020304,0x01020305,0x01020306,0x01020307,0x01020308} with opcode 255

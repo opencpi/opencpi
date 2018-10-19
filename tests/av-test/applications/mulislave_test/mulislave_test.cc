@@ -127,6 +127,7 @@ std::string checkValues(OCPI::API::Application* app, std::string comp_name)
               " and should be : 16" ;
     return ret_val;
   }
+  return ret_val;
 }
 
 int main(int argc, char **argv)

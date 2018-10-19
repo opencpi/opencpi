@@ -143,7 +143,11 @@ EOF
      (*)
        tempfile=$temp.bit
        temps+=$tempfile
-       ln -s $tempfile $bitfile
+       echo Creating link with the ISE impact command\'s expected suffix '".bit"': $tempfile '->' $bitfile
+       ln -s $bitfile $tempfile
+       if test $? != 0; then
+         bad
+       fi
        bitfile=$tempfile
        ;;
     esac

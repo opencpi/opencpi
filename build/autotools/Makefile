@@ -80,10 +80,7 @@ ifeq ($V,1)
   Verbose=-v
   $(info VERBOSE:$(Verbose))
 endif
-# We previously and cleanly just used the bootstrap CDK, but in fact building
-# the framework requires prerequisites being built..
-# export OCPI_CDK_DIR=$(CURDIR)/../../bootstrap
-export OCPI_CDK_DIR=$(CURDIR)/../../cdk
+export OCPI_CDK_DIR=$(CURDIR)/../../bootstrap
 #####################################################################################
 # Determine our platform (once) if we're not cleaning, so each sub-make can assume it
 #####################################################################################
@@ -95,6 +92,9 @@ ifeq ($(filter help cleanpreconfigure cleaneverything distclean% preconfigure,$(
   OcpiThisPlatformDir:=$(word 6,$(OcpiThisPlatformArgs))
   export OcpiThisPlatformArgs OcpiThisPlatform OcpiThisPlatformDir
   export OcpiToolDir:=$(or $(OCPI_TOOL_DIR),$(OcpiThisPlatform))
+  # Although we are generally avoiding CDK env vars at this level, this one may be needed
+  # for some software platforms (e.g. cross compilers).
+  export OCPI_TOOL_DIR:=$(OcpiThisPlatform)
 endif
 # Allow singular or plural, and default to the currently running platform, status and debug
 ifndef Platforms

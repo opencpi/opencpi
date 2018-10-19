@@ -1033,19 +1033,19 @@ emitVhdlWorkerEntity(FILE *f) {
 }
 
 const char *Worker::
-emitVhdlRecordInterface(FILE *f) {
+emitVhdlRecordInterface(FILE *f, bool isEntity) {
   const char *err = NULL;
-  //  size_t maxName = 0;
+  const char *compOrEnt = isEntity ? "entity" : "component";
   // Generate record types to easily and compactly plumb interface signals internally
-  for (unsigned i = 0; i < m_ports.size(); i++)
-    m_ports[i]->emitRecordInterface(f, m_implName);
+  if (!isEntity)
+    for (unsigned i = 0; i < m_ports.size(); i++)
+      m_ports[i]->emitRecordInterface(f, m_implName);
   fprintf(f,
-	  "\ncomponent %s_rv--__\n  is\n", m_implName);
+	  "\n%s %s_rv--__\n  is\n", compOrEnt, m_implName);
   emitParameters(f, VHDL);
   emitSignals(f, VHDL, true, true, false);
   fprintf(f,
-	  "end component %s_rv--__\n;\n\n",
-	  m_implName);
+	  "end %s %s_rv--__\n;\n\n", compOrEnt, m_implName);
   return err;
 }
 
@@ -1234,6 +1234,53 @@ emitDefsHDL(bool wrap) {
   fclose(f);
   return 0;
 }
+
+// Some tools may require entity declarations when instantiating workers
+const char *Worker::
+emitVhdlEnts() {
+  const char *err;
+  FILE *f;
+  if ((err = openOutput(m_implName, m_outDir, "", ENTS, VHD, NULL, f)))
+    return err;
+  const char *comment = hdlComment(VHDL);
+  printgen(f, comment, m_file.c_str());
+  fprintf(f,
+	  "%s This file contains the VHDL entity declaration for the worker\n"
+	  "%s with spec name \"%s\" and implementation name \"%s\".\n"
+	  "%s It is needed for instantiating the worker for certain tools.\n",
+	  comment, comment, m_specName,
+	  m_implName, comment);
+  fprintf(f,
+          "-- Entity declaration with definitions for instantiating this worker\n"
+          "Library IEEE; use IEEE.std_logic_1164.all, IEEE.numeric_std.all;\n"
+          "Library ocpi; use ocpi.all, ocpi.types.all;\n");
+  emitVhdlLibraries(f);
+  fprintf(f,
+          "use work.%s_constants.all;\n"
+          "use work.%s_defs.all;\n",
+          m_implName, m_implName);
+  if ((err = emitVhdlRecordInterface(f, true)))
+    return err;
+  fprintf(f,
+          "-- Entity declaration with definitions for instantiating this worker\n"
+          "Library IEEE; use IEEE.std_logic_1164.all, IEEE.numeric_std.all;\n"
+          "Library ocpi; use ocpi.all, ocpi.types.all;\n");
+  emitVhdlLibraries(f);
+  fprintf(f,
+          "use work.%s_constants.all;\n"
+          "use work.%s_defs.all;\n",
+          m_implName, m_implName);
+  fprintf(f,
+    "\nentity %s--__\n is\n", m_implName);
+  emitParameters(f, VHDL, true, true);
+  emitSignals(f, VHDL, false, true, false, true);
+  fprintf(f,
+    "end entity %s--__\n;\n",
+    m_implName);
+  fclose(f);
+  return NULL;
+}
+
 
 void Worker::
 emitVhdlShell(FILE *f) {

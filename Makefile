@@ -17,7 +17,7 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 ##########################################################################################
-ifneq ($(filter show help clean% distclean%,$(MAKECMDGOALS)),)
+ifneq ($(filter-out cleandriver,$(filter show help clean% distclean%,$(MAKECMDGOALS))),)
   ifndef OCPI_CDK_DIR
     export OCPI_CDK_DIR:=$(CURDIR)/bootstrap
   endif
@@ -39,12 +39,43 @@ endif
 include $(OCPI_CDK_DIR)/include/util.mk
 $(eval $(OcpiEnsureToolPlatform))
 override \
+Platforms:=$(call Unique,$(strip $(Platforms) $(Platform)))
+export Platforms
+# tmpRccPlatforms is needed here because if RccPlatforms is empty the following include
+# will overwite it with OCPI_TARGET_PLATFORM or OCPI_TOOL_PLATFORM
+tmpRccPlatforms:=$(RccPlatforms)
+include $(OCPI_CDK_DIR)/include/rcc/rcc-make.mk
+override \
 RccPlatforms:=$(call Unique,\
-                $(or $(strip $(RccPlatforms) $(RccPlatform) $(Platforms) $(Platform)),$(strip\
-                     $(OCPI_TARGET_PLATFORM)),$(strip\
-	             $(OCPI_TOOL_PLATFORM))))
+                $(or $(strip $(tmpRccPlatforms) $(RccPlatform) \
+                  $(foreach p,$(Platforms),$(if $(filter $(p),$(RccAllPlatforms)),$p))),\
+                  $(strip $(OCPI_TARGET_PLATFORM)),$(strip\
+                    $(OCPI_TOOL_PLATFORM))))
 export RccPlatforms
-DoExports=for p in $(RccPlatforms); do ./scripts/makeExportLinks.sh $$p; done
+override \
+HdlPlatforms:=$(call Unique,$(strip $(HdlPlatforms) $(HdlPlatform)))
+export HdlPlatforms
+# If Platforms are not specified only export what is in RccPlatforms
+# If Platforms is set add all platforms to toExport. If the platform is an hdl
+# platform also export its rcc platform.
+# Then export all of the platforms found.
+DoExports=if [ -z "$(Platforms)" ]; then \
+		for p in $(strip $(RccPlatforms) $(HdlPlatforms)); do ./scripts/makeExportLinks.sh $$p; done; \
+	else \
+		toExport=(); \
+		for p in $(Platforms); do \
+			read -r hdl_platform hdl_platform_dir hdl_rcc_platform <<<$$($$OCPI_CDK_DIR/../tools/cdk/scripts/getHdlPlatform.sh $$p 2>/dev/null); \
+			if [ "$$hdl_platform" = "$$p" ]; then \
+				toExport+=("$$hdl_rcc_platform"); \
+			fi; \
+			if [[ $$p = *":"* ]]; then \
+				toExport+=("$$(echo $$p | cut -d: -f2)"); \
+			fi; \
+			toExport+=($$p); \
+		done; \
+		uniqueToExport=($$(echo "$${toExport[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' ')); \
+		for export in $${uniqueToExport[@]}; do ./scripts/makeExportLinks.sh $$export; done; \
+	fi
 DoTests=for p in $(RccPlatforms); do ./scripts/test-opencpi.sh --platform $$p; done
 # Get macros and rcc platform/target processing, as well as all platforms
 include $(OCPI_CDK_DIR)/include/rcc/rcc-make.mk
@@ -66,7 +97,7 @@ testframework:
 	$(AT)$(DoTests)
 
 exports:
-	$(AT)echo Updating exports for platforms: $(RccPlatforms) >&2
+	$(AT)echo Updating exports for platforms: $(Platforms) >&2
 	$(AT)$(DoExports)
 
 cleanexports:
@@ -105,8 +136,10 @@ cleaneverything distclean: clean cleandriver cleanpackaging
 	$(AT)rm -r -f exports
 	$(AT)find . -depth -a ! -name .git  -a ! -path "./prerequisites*" -a \( \
              -name '*~' -o -name '*.dSym' -o -name timeData.raw -o -name 'target-*' -o \
-             -name "*.lo" -o -name "*.o" -o -name gen -o \
+             -name "*.lo" -o -name "*.o" -o \
 	     \( -name lib -a -type d -a \
+	       ! -path "*/rcc/platforms/*" -a ! -path "./prerequisites*" \) -o \
+	     \( -name gen -a -type d -a \
 	       ! -path "*/rcc/platforms/*" -a ! -path "./prerequisites*" \)  \
              \) -exec rm -r {} \;
 	$(AT)for p in projects/*; do [ -d $$p ] && make -C $$p cleaneverything || :; done
@@ -140,7 +173,7 @@ release=$(or $(OcpiRelease),$(Release),snapshot$(tag)$(git_tag))
 # This changes every 6 minutes which is enough for updated releases (snapshots).
 # It is rebased after a release so it is relative within its release cycle
 # FIXME:automate this...
-timestamp:=_$(shell printf %05d $(shell expr `date -u +"%s"` / 360 - 4231562))
+timestamp:=_$(shell printf %05d $(shell expr `date -u +"%s"` / 360 - 4273900))
 ##### Set variables based on what git can tell us
 # Get the git branch and clean it up from various prefixes and suffixes tacked on
 # If somebody checks in between Jenkins builds, it will sometimes get "develop^2~37" etc,
@@ -204,17 +237,39 @@ tar: exports
 	     sh $$temp && rm -f $$file.gz $$temp && gzip $$file
 
 .PHONY: rpm rpm_runtime rpm_devel
-real_platforms:=$(call Unique,$(call RccRealPlatforms,$(RccPlatforms)))
+include $(OCPI_CDK_DIR)/include/hdl/hdl-targets.mk
+# Build rpms for all platforms in Platforms
+# If you want to build a hardware platform rpm for a specific software package
+# use this syntax <hw-platform>:<specific-sw-platform>
+# e.g.: make rpm Platforms="zed:xilinx13_4"
 rpm: exports
+	$(AT)for p in $(Platforms); do \
+		./packaging/build-rpms.sh $(and $(RpmVerbose),-v) $$p $(call cross,$$p) \
+			$(Package) $(base) $(call name,$$p) $(release) $(version) $(git_hash); \
+	done
+# Make a deployment package for a hardware platform that gets stored in
+# $OCPI_CDK_DIR/deploy/<hw-platform>/<hw-platform>-deploy
+# Use Platforms for the hw platforms you want to deploy.
+# Use the same syntax specified for rpm to build a hardware platform for a
+# specific software platform
+deploy: exports
+	$(AT)for p in $(Platforms); do \
+		./packaging/build-rpms.sh $(and $(RpmVerbose),-v) $$p $(call cross,$$p) \
+			$(Package) $(base) $(call name,$$p) $(release) $(version) $(git_hash) non-rpm; \
+	done
+# The following are used by jenkins to identify hw-platforms that can be used
+# for a given sw-platform
+real_platforms:=$(filter-out $(strip $(OCPI_TARGET_PLATFORM) $(OCPI_TOOL_PLATFORM)),$(call Unique,$(call RccRealPlatforms,$(RccPlatforms))))
+showhw:
 	$(AT)[ $(words $(real_platforms)) != 1 ] && \
-	     echo Error: Cannot build an RPM for more than one platform at a time. && exit 1 || :
-	$(AT)./packaging/make-sw-rpms.sh $(and $(RpmVerbose),-v) \
-          $(real_platforms) "$(call cross,$(real_platforms))" \
-	   $(Package) $(base) $(call name,$(real_platforms)) $(release) $(version) $(git_hash)
-
+		echo Error: Cannot show hardware platforms for more than one platform at a time. && exit 1 || :
+	$(AT)$$OCPI_CDK_DIR/scripts/getHdlPlatform.sh $(real_platforms) 2>/dev/null | cut -d' ' -f1 | tr '\r\n' ' ' | sed -e 's/ $$/\n/g'
+showhwdir:
+	$(AT)[ $(words $(real_platforms)) != 1 ] && \
+		echo Error: Cannot show hardware platform directories for more than one platform at a time. && exit 1 || :
+	$(AT)$$OCPI_CDK_DIR/scripts/getHdlPlatform.sh $(real_platforms) 2>/dev/null | cut -d' ' -f2 | tr '\r\n' ':' | sed -e 's/:$$/\n/g'
 cleanpackaging:
 	$(AT)rm -r -f packaging/target-*
-
 
 ##########################################################################################
 # Goals that are about prerequisites
@@ -223,8 +278,8 @@ cleanpackaging:
 # There is currently no dependency on prerequisites from building the framework.
 .PHONY: prerequisites cleanprerequisites
 prerequisites:
-	$(AT)for p in $(call RccRealPlatforms,$(RccPlatforms)); do\
-                ./scripts/install-prerequisites.sh $(and $(filter 1,$(Force)),-f) $$p;\
+	$(AT)for p in $(call RccRealPlatforms,$(RccPlatforms)); do \
+                ./scripts/install-prerequisites.sh $(and $(filter 1,$(Force)),-f) $$p || exit 1; \
              done
 cleanprerequisites:
 	$(AT)rm -r -f prerequisites-build prerequisites
@@ -260,7 +315,7 @@ This top-level Makefile builds and/or tests the framework and built-in projects 
 
 The valid goals that accept platforms (using RccPlatform(s) or Platforms(s)) are:
    Make goals for framework (core of Opencpi):
-     framework(default) - Build the framework for platfors and export them
+     framework(default) - Build the framework for platforms and export them
      cleanframework     - Clean the specific platforms
      exports            - Redo exports, including for indicated platforms
                         - This is cumulative;  previous exports are not removed

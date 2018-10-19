@@ -22,7 +22,7 @@
   <Property Name="ZLM_WHEN_NUM_SAMPLES_REACHED_p" Type="bool"
                                    Parameter="true"
                                    Default="false"
-                                   Description="When value is true and num_samples property value is not -1, worker will generate Zero-Length-Message after num_samples amount of samples have been sent out the output port."/>
+                                   Description="When value is true and num_samples property value is not -1, worker will generate Zero-Length-Message after num_samples amount of samples have been sent out the output port. Note this functionality is independent of the value of the enable property."/>
 
   <!-- Initial Properties -->
   <Property Name="messageSize_bytes" Type="ulong"
@@ -55,7 +55,7 @@
                           Readable="true"
                           Writable="true"
                           Default="true"
-                          Description="When the worker is not in reset, this property must have a value of true for the data to be sent to the output."/>
+                          Description="When the worker is not in reset, this property must have a value of true for the data to be sent to the output. Note that this property has no effect on the ZLM operation (see ZLM_WHEN_NUM_SAMPLES_REACHED_p parameter property)."/>
   <Property Name="LFSR_bit_reverse" Type="bool"
                                     Readable="true"
                                     Writable="true"

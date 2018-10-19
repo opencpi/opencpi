@@ -24,23 +24,10 @@ $(if $(realpath $(OCPI_CDK_DIR)),,$(error The OCPI_CDK_DIR environment variable 
 
 include $(OCPI_CDK_DIR)/include/application.mk
 
-#APP=fsk_app
-
-#include setup.mk
-
 .SILENT: show
 .PHONY: show
 
-# build the testbench executable
-#run: all
-#	OCPI_LIBRARY_PATH=lib $(VG) $(PROG) $(OUT)
-
-# build ...
-#all: test
-
-#test: app
-
-all: tap_gen 
+all: tap_gen
 
 idata/tx_rrcos_taps.dat idata/rx_rrcos_taps.dat: tap_gen
 
@@ -64,59 +51,78 @@ show:
 
 define showhelp
 ----------------------------------------------------------------------------
-Instructions for setup/execution on remote platforms '(i.e. Matchstiq-Z1, Zedboard/Zipper)'
-One of five available tests may be executed per the following instructions
-Test 1: Application Workers only in loopback mode (no RF; no device workers)
-Test 2: RX only mode
-Test 3: TX only mode
-Test 4: TX/RX mode
-Test 5: TX/RX mode with baseband loopback within the transceiver chip
 ----------------------------------------------------------------------------
-----------------------------------------------------------------------------
-Setup:
-----------------------------------------------------------------------------
-Development Computer - generate test ACI executable and filter coefficients
-'OCPI_TARGET_PLATFORM=xilinx13_3 make'
+The instructions below are used to test the various mode of the FSK
+application on a remote platform like the Matchstiq-Z1 or Zedboard/Zipper.
+The FSK application has five modes of operation: filerw, rx, tx, txrx, bbloopback.
+Each has been giving a test '#', that must be followed for execution on a
+remote system and, subsequent verification of the output data on the development system.
+Test 1: filerw - Application Workers only in loopback mode (no RF; no device workers)
+Test 2: rx - receive only
+Test 3: tx - transmit only
+Test 4: txrx - transmit and receive (may use COAX cable for loopback)
+Test 5: bbloopback - TX/RX with baseband loopback path of the transceiver device
 
+There are four steps for executing a test:
+1) Build ACI and/or input test data (development system)
+2) Setup the OCPI_LIBRARY_PATH (remote system)
+3) Execution of application (remote system)
+4) Verification of output data (development system)
 ----------------------------------------------------------------------------
-Zynq-Based Platform - setup environment
+1) Build ACI and/or input test data: (development system)
+NOTE: Required only if ACI has never been built.
+ocpidev build --rcc-platform xilinx13_3
+or
+ocpidev build --rcc-platform xilinx13_4
+or
+----------------------------------------------------------------------------
+2) Setup the OCPI_LIBRARY_PATH: (remote system)
+IMPORTANT NOTE: this guide assumes you are operating in NFS/Network mode on the
+radio and you have your projects mounted at:
+/mnt/ocpi_core and /mnt/ocpi_assets
+
+NOTE: Reminder to setup the run-time OCPI environment on remote system.
 . /mnt/card/opencpi/mynetsetup.sh {DEVELOPMENT HOST IPADDRESS}
 
+NOTE: Convenience cmd to quickly switch to application directory.
 cd /mnt/ocpi_assets/applications/FSK
 
-HDL ('common' export) :
-export OCPI_LIBRARY_PATH=$$OCPI_CDK_DIR/../projects/core/exports/artifacts
+REQUIRED - Reconfigure to default. 'Common' export string for all Tests.
+Copy/paste string to terminal of remote system:
+export OCPI_LIBRARY_PATH=/mnt/ocpi_core/artifacts:$$(pwd)/../../artifacts
 
-Pick one of the following, depending upon the test to be executed:
+REQUIRED - Configure per FSK mode of operation. 'Unique' export string for each Test.
+Copy/paste command to terminal of remote system:
 Test 1:
-export OCPI_LIBRARY_PATH=$$OCPI_LIBRARY_PATH:$$(pwd)/../../hdl/assemblies/fsk_filerw:$$(pwd)/../../exports/lib
+export OCPI_LIBRARY_PATH=$$(pwd)/../../artifacts/fsk_filerw:$$OCPI_LIBRARY_PATH
 Test 2:
-export OCPI_LIBRARY_PATH=$$OCPI_LIBRARY_PATH:$$(pwd)/../../hdl/assemblies/dc_offset_iq_imbalance_mixer_cic_dec_rp_cordic_fir_real:$$(pwd)/../../exports/lib
+export OCPI_LIBRARY_PATH=$$(pwd)/../../artifacts/dc_offset_iq_imbalance_mixer_cic_dec_rp_cordic_fir_real:$$OCPI_LIBRARY_PATH
 Test 3:
-export OCPI_LIBRARY_PATH=$$OCPI_LIBRARY_PATH:$$(pwd)/../../hdl/assemblies/mfsk2_zp16_fir_real_phase_to_amp_cordic_cic_int:$$(pwd)/../../exports/lib
+export OCPI_LIBRARY_PATH=$$(pwd)/../../artifacts/mfsk2_zp16_fir_real_phase_to_amp_cordic_cic_int:$$OCPI_LIBRARY_PATH
 Test 4:
-export OCPI_LIBRARY_PATH=$$OCPI_LIBRARY_PATH:$$(pwd)/../../hdl/assemblies/fsk_modem:$$(pwd)/../../exports/lib
+export OCPI_LIBRARY_PATH=$$(pwd)/../../artifacts/fsk_modem:$$OCPI_LIBRARY_PATH
 Test 5:
-export OCPI_LIBRARY_PATH=$$OCPI_LIBRARY_PATH:$$(pwd)/../../hdl/assemblies/fsk_modem:$$(pwd)/../../exports/lib
+export OCPI_LIBRARY_PATH=$$(pwd)/../../artifacts/fsk_modem:$$OCPI_LIBRARY_PATH
 
-#NOTE: If copy/paste of the above exports, the redundant '$' must be removed.
+NOTE: We could be more narrow with these search paths, but it is unnecessary
+for Zynq-Based platforms because each assembly only has a single container
+that will work for a given test mode.
+
 ----------------------------------------------------------------------------
+3) Execution of application: (remote system)
+Test 1: ./target-xilinx13_3/FSK filerw
+Test 2: ./target-xilinx13_3/FSK rx
+Test 3: ./target-xilinx13_3/FSK tx
+Test 4: ./target-xilinx13_3/FSK txrx
+Test 5: ./target-xilinx13_3/FSK bbloopback
 ----------------------------------------------------------------------------
-Execution:
-----------------------------------------------------------------------------
-Zynq-Based Platform - execute (pick one)
-Test 1: ./target-x13_3-arm/FSK filerw
-Test 2: ./target-x13_3-arm/FSK rx
-Test 3: ./target-x13_3-arm/FSK tx
-Test 4: ./target-x13_3-arm/FSK txrx
-Test 5: ./target-x13_3-arm/FSK bbloopback
-----------------------------------------------------------------------------
-Development Computer - verify output data (pick one)
+4) Verification of output data: (development system)
 Test 1: eog odata/out_app_fsk_filerw.bin &
 Test 2: eog odata/out_app_fsk_rx.bin &
 Test 3: Visually inspect the spectrum on a spectrum analyzer.
 Test 4: eog odata/out_app_fsk_txrx.bin &
 Test 5: eog odata/out_app_fsk_bbloopback.bin &
+----------------------------------------------------------------------------
 ----------------------------------------------------------------------------
 endef
 export showhelp

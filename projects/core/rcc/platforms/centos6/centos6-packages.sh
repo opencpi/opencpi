@@ -73,6 +73,9 @@ PKGS_D+=(glibc.i686=/lib/ld-linux.so.2
          ncurses-libs.i686=/lib/libncurses.so.5
          libXft.i686=/usr/lib/libXft.so.2
          libXext.i686=/usr/lib/libXext.so.6)
+#    for Quartus Pro 17 (AV-4318), we need specifically the 1.2 version of libpng
+#    -- this seems to be the default version for CentOS 6
+PKGS_D+=(libpng)
 # docker container missing this	libXdmcp.i686=/lib/libXdmcp.so.6) # AV-3645
 #    for bash completion - a noarch package  (AV-2398)
 # in epel for centos6 - see below PKGS_D+=(bash-completion=/etc/profile.d/bash_completion.sh)

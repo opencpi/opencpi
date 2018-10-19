@@ -25,8 +25,8 @@ import ocpiassets
 import ocpiutil
 
 NOUNS = ["test", "tests", "library", "application", "applications", "project"]
-MODES = ["gen_build", "prep_run_verify", "clean_all", "gen", "prep", "run", "prep_run",
-         "verify", "view", "clean_run", "clean_sim", "all"]
+MODES = ["all", "gen", "gen_build", "prep_run_verify", "prep", "run", "prep_run", "verify", "view",
+         "clean_all", "clean_run", "clean_sim"]
 
 def parse_cl_vars():
     """
@@ -35,15 +35,16 @@ def parse_cl_vars():
     """
     description = ("Utility for running component unit-tests and simple applications \n" +
                   "Component unit-tests have 5 phases: \n" +
-                  "    Generate- generate testing artifacts after finding the spec and the " +
-                  "workers\n" +
-                  "    Build- building HDL bitstream/executable artifacts for testing\n" +
-                  "    Prepare-  examine available built workers and available platforms, " +
-                  "creating execution scripts to use them all for executing feasible tests.\n" +
-                  "    Run-execute tests for all workers, configurations, test cases and " +
-                  "platforms\n"
-                  "    Verify- verify results from the execution of tests on workers and " +
-                  "platforms\n" +
+                  "    Generate: generate testing artifacts after finding the spec and the \n" +
+                  "              workers\n" +
+                  "    Build:    building HDL bitstream/executable artifacts for testing\n" +
+                  "    Prepare:  examine available built workers and available platforms, \n" +
+                  "              creating execution scripts to use them all for executing \n" +
+                  "              feasible tests.\n" +
+                  "    Run:      execute tests for all workers, configurations, test cases \n" +
+                  "              and platforms\n"
+                  "    Verify:   verify results from the execution of tests on workers and \n" +
+                  "              platforms\n \n" +
                   "Usage Examples: \n" +
                   "run a single application: \n" +
                   "    ocpidev run application <app_name> \n"
@@ -57,7 +58,7 @@ def parse_cl_vars():
                   "    ocpidev run -l <library_dir>  --mode gen_build test <test_name>\n")
 
     parser = argparse.ArgumentParser(description=description,
-                                     formatter_class=argparse.RawTextHelpFormatter)
+                                     formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.print_help = types.MethodType(lambda self,
                                                 _=None: pydoc.pager("\n" + self.format_help()),
                                          parser)
@@ -75,57 +76,65 @@ def parse_cl_vars():
     parser.add_argument("name", default=None, type=str, action="store", nargs='?',
                         help="This is the name of the test or application to run.")
     parser.add_argument("-v", "--verbose", action="store_true", help="Be verbose with output.")
-    parser.add_argument("--keep-simulations", dest="sims", action="store_true",
-                        help="Keep HDL simulation files for any simulation platforms.  " +
-                        "(files can become large)")
-    parser.add_argument("--accumulate-errors", dest="errors", action="store_true",
-                        help="When set causes execution or verification errors to accumulate " +
-                        "(i.e. not stop the process) and simply be reported as they occurr.")
-    parser.add_argument("-G", "--only-platform", dest="only_plats", action="append",
+    parser.add_argument("--keep-simulations", dest="keep_sims", action="store_true",
+                        help="Keep HDL simulation files regardless of verification results.  " +
+                            "By default, simulation files are removed if the verification is " +
+                            "successful.  Warning: Simulation files can become large!")
+    parser.add_argument("--accumulate-errors", dest="acc_errors", action="store_true",
+                        help="When enabled, execution or verification errors are accumulated " +
+                            "(i.e. not stop the process) and simply be reported as they occur, " +
+                            "rather than ending the test upon first failure detected.")
+    parser.add_argument("--view", dest="view", action="store_true",
+                        help="When set the view script (view.sh) for this test is run at the " +
+                             "conclusion of the test's execution.  Not valid for Application")
+    parser.add_argument("-G", "--only-platform", dest="only_plat", action="append",
                         help="Specify which platforms to use with a unit test from the " +
                         "list of runtime platforms.")
-    parser.add_argument("-Q", "--exclude-platform ", dest="ex_plats", action="append",
+    parser.add_argument("-Q", "--exclude-platform ", dest="ex_plat", action="append",
                         help="Specify which platforms not to use with a unit test from the " +
                         "list of runtime platforms.")
-    parser.add_argument("--rcc-platform", dest="rcc_plats", action="append",
+    parser.add_argument("--rcc-platform", dest="rcc_plat", action="append",
                         help="Specify which RCC platform from the list of buildable " +
                         "platforms to use with unit test.  Only valid in generate " +
                         "and build phases.  For application specifies which RCC " +
                         "platform to build ACI applications.")
-    parser.add_argument("--hdl-platform", dest="hdl_plats", action="append",
+    parser.add_argument("--hdl-platform", dest="hdl_plat", action="append",
                         help="Specify which HDL platform from the list of buildable " +
                         "platforms to use with unit test. only valid in generate " +
                         "and build phases.  Not valid for Application")
     parser.add_argument("-d", dest="cur_dir", default=os.path.curdir,
                         help="Change directory to the specified path before proceeding. " +
                         "Changing directory may have no effect for some commands.")
-    parser.add_argument("-l", dest="lib", default="components",
+    parser.add_argument("-l", dest="library", default="components",
                         help="Specify the component library for the test to be run.  " +
                         "Not valid for Application.")
-    parser.add_argument("--cases", dest="cases", action="append",
-                        help="Specify Which test cases that will be run/verified.  " +
-                        "Not valid for Application.")
+    parser.add_argument("--case", dest="case", action="append",
+                        help="Specify which test case(s) that will be run/verified.  Wildcards " +
+                             "are valid, ex. case*., case0.0*, case00.01 Not valid for " +
+                             "Application.")
     parser.add_argument("--before", dest="run_before", action="append",
-                        help="Arguments to insert before the ACI executable or ocpirun, such as " +
-                        "environment settings or prefix commands.  Not valid for Test.")
+                        help="Argument(s) to insert before the ACI executable or ocpirun, such " +
+                        "as environment settings or prefix commands.  Not valid for Test.")
     parser.add_argument("--after", dest="run_after", action="append",
-                        help="Arguments to insert at the end of the execution command line " +
+                        help="Argument(s) to insert at the end of the execution command line " +
                         "Not valid for Test.")
-    parser.add_argument("--run-args", dest="run_args", action="append",
-                        help="Arguments to insert immediately after the ACI executable or " +
+    parser.add_argument("--run-arg", dest="run_arg", action="append",
+                        help="Argument(s) to insert immediately after the ACI executable or " +
                         "ocpirun.  Not valid for Test.")
     parser.add_argument("--mode", dest="mode", default="all", choices=MODES,
-                        help="Specify which phases of the unit test to run valid options are:  " +
-                        ",".join(MODES) + ".  Not valid for Application.")
+                        help="Specify which phase(s) of the unit test to execute.  Not valid " +
+                             "for Application.")
     parser.add_argument("--remotes", dest="remote_test_sys", action="append",
-                        help="Specify remote systems to run the test(s).  see OpenCPI Component " +
+                        help="Specify remote systems to run the test(s) using the format " +
+                        "<IP address=u/n=p/w=NFS mount directory>.  see OpenCPI Component " +
                         "Development Guide (section 13.8) for more information on the "
                         "OCPI_REMOTE_TEST_SYSTEMS  variable.  Not valid for Application.")
 
     cmd_args, args_value = parser.parse_known_args()
 
     if args_value:
-        ocpiutil.logging.warning("invalid options were ignored: " + " ".join(args_value))
+        ocpiutil.logging.error("invalid options were used: " + " ".join(args_value))
+        sys.exit(1)
 
     return vars(cmd_args)
 
@@ -139,15 +148,18 @@ def get_directory(args, name, lib):
     dir_type = ocpiutil.get_dirtype()
     ret_val = os.path.realpath('.')
     if args['noun'] == "applications":
-            ret_val = ocpiutil.get_path_to_project_top() + "/applications"
+        ret_val = ocpiutil.get_path_to_project_top() + "/applications"
     elif args['noun'] in ["test", "library"] and name and name != os.path.basename(os.path.realpath('.')):
         ret_val = os.path.realpath('.') + "/" + lib + "/" + name
         if args['noun'] == "test" and not ret_val.endswith(".test"):
             ret_val = ret_val + ".test"
     elif args['noun'] in ["test", "library"]:
         ret_val = os.path.realpath('.')
-    elif args['noun'] == "application" and dir_type != "application":
-        ret_val = os.path.realpath('.') + "/applications/" + name
+    elif args['noun'] == "application":
+        if dir_type == "project" and name != os.path.basename(os.path.realpath('.')):
+            ret_val = os.path.realpath('.') + "/applications/" + name
+        elif dir_type == "applications" and name != os.path.basename(os.path.realpath('.')):
+            ret_val = os.path.realpath('.') + "/" + name
     return ret_val
 
 def set_init_values(args, dir_type):
@@ -174,6 +186,8 @@ def set_init_values(args, dir_type):
 def main():
     ocpiutil.configure_logging()
     args = parse_cl_vars()
+    directory = None
+    name = None
     try:
         with ocpiutil.cd(args['cur_dir']):
             dir_type = ocpiutil.get_dirtype()
@@ -190,7 +204,7 @@ def main():
                                                  "\" Valid directory types are: " +
                                                  ", ".join([n for n in NOUNS if n != "tests"]))
             set_init_values(args, dir_type)
-            lib = args.get("lib", "")
+            lib = args.get("library", "")
             if args['noun'] in ["test", "library"]:
                 if dir_type == "library":
                     lib = ""
@@ -210,7 +224,15 @@ def main():
 
             sys.exit(my_asset.run())
     except ocpiutil.OCPIException as ex:
-        ocpiutil.logging.error(str(ex))
+        ocpiutil.logging.error(ex)
+        if args['noun'] is not None:
+            my_noun = '' if args['noun'] is None else " \"" + args['noun'] + "\""
+            my_name = '' if name is None else " named \"" + name + "\""
+            my_dir = '' if directory is None else " in directory \"" + directory + "\""
+            run_dbg = "Unable to run" + my_noun +  my_name + my_dir + " due to previous errors"
+        else:
+            run_dbg = "Unable to run due to previous errors"
+        ocpiutil.logging.error(run_dbg)
         sys.exit(1)
 
 if __name__ == '__main__':

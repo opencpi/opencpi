@@ -18,7 +18,7 @@ You should have received a copy of the GNU Lesser General Public License along
 with this program. If not, see <http://www.gnu.org/licenses/>.
 \fi
 
-\title{Creating and Executing a Design on the Zedboard}
+\title{Creating and Executing an AXI Central Direct Memory Access (CDMA) Design on the Zedboard}
 
 \usepackage{amsmath}
 \usepackage{graphicx}
@@ -61,9 +61,10 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \makeatother
 
 \begin{document}
+\date{} % This document is outdated; don't put today
 \maketitle
 \newpage
-\begin{table}[h!] 
+\begin{table}[h!]
   \caption{Revision History}
   \begin{tabular}{|p{0.12\linewidth}|p{0.57\linewidth}|p{0.07\linewidth}|p{0.14\linewidth}|}
     \hline
@@ -95,8 +96,8 @@ The following hardware and software were used to create and test the benchmarkin
 \begin{itemize}
 \item Avnet Zedboard
 \item Xilinx Platform Cable USB II
-\item Cypress USB-uart cable 
-\item Unix machine running Centos 7 
+\item Cypress USB-uart cable
+\item Unix machine running Centos 7
 \item Xilinx Vivado version 2015.3
 \item Xilinx SDK version 2015.3
 \item Xilinx UG1165 supporting resources
@@ -119,10 +120,10 @@ The following hardware and software were used to create and test the benchmarkin
   \label{table:references}
 \end{table}
 
-\section{Vivado Design}  Vivado is used to create a hardware design to target the Zynq chip on the Zedboard platform.  The current design uses a PL-based CDMA to write and read data to/from the DDR via the high performance (HP) AXI ports.  The AXI general purpose (GP) port will be used with an AXI lite interface to configure the CDMA.  This application mimics a Xilinx project, UG1165, but targets the Zedboard instead of the Xilinx Evaluation Board, XC702. 
+\section{Vivado Design}  Vivado is used to create a hardware design to target the Zynq chip on the Zedboard platform.  The current design uses a PL-based CDMA to write and read data to/from the DDR via the high performance (HP) AXI ports.  The AXI general purpose (GP) port will be used with an AXI lite interface to configure the CDMA.  This application mimics a Xilinx project, UG1165, but targets the Zedboard instead of the Xilinx Evaluation Board, XC702.
 
 \subsection{Create a new Project in Vivado} \label{subsec:new project}
-\begin{enumerate} 
+\begin{enumerate}
 \item Open a new Linux terminal window and set up the environment:
 \begin{lstlisting}
 $export CROSS_COMPILE=arm-xilinx-linux-gnueabi
@@ -134,7 +135,7 @@ $vivado&
 \end{lstlisting}
 
 \item In the Quick Start screen, click on "Create New Project"
-%\subsection{Setting up the Project Directory} 
+%\subsection{Setting up the Project Directory}
 \item In the New Project Wizard, click "Next"
 \item Type in the project name and location.  For this effort, the project name is "pcie\_benmarking" and the location is /home/devel/.  Leave the box marked "Create project subdirectory" checked.  Then click "Next"\label{itm:project name}
 \item Leave the circle marked "RTL Project" checked and companion box unchecked.  Click "Next"
@@ -155,7 +156,7 @@ $vivado&
 \item In the "Diagram" window, right click and select "Add IP..."
 \item In the Dialog Box, search for "CDMA" and double click on "AXI Central Direct Memory Access"
 \item Double click on the CDMA block and make the following changes:
-\begin{itemize} 
+\begin{itemize}
 \item Uncheck "Enable Scatter Gather"
 \item Change "Write/Read Data Width" to 1024
 \item Change "Write/Read Burst Size" to 32
@@ -168,7 +169,7 @@ $vivado&
 \item In the "Diagram" window, right click and select "Add IP..."
 \item In the Dialog Box, search for "zynq" and double click on "ZYNQ7 Processing System"
 \item Double click on the Zynq block and make the following changes:
-\begin{itemize} 
+\begin{itemize}
 \item Click on the "Presets" icon and select "ZedBoard"
 \item Under PS-PL Configuration, click on HP Slave AXI Interface, and check the boxes for "S AXI HP0 interface" and "S AXI HP2 interface"
 \item Under PS-PL Configuration, click on AXI Non Secure Enablement, and then on GP Master AXI Interface, and check the box for "M AXI GP0 interface"
@@ -178,7 +179,7 @@ $vivado&
 \item Click "ok"
 \end{enumerate}
 
-\subsection{Customize Processor System Reset} It is recommended to instantiate a Processor System Reset IP block to support the ZYNQ Processing System. 
+\subsection{Customize Processor System Reset} It is recommended to instantiate a Processor System Reset IP block to support the ZYNQ Processing System.
 \begin{enumerate}
 \item In the "Diagram" window, right click and select "Add IP..."
 \item In the Dialog Box, search for "reset" and double click on "Processor System Reset"
@@ -246,8 +247,8 @@ $vivado&
 \subsection{Modifying Addresses}
 \begin{enumerate}
 \item Select the Address tab, which is near the top left corner of the IP Integrator block diagram.
-\item Expand the axi\_cdma\_0 line to see two cells with base names HP0\_DDR\_LOWOCM and HP2\_DDR\_LOWOCM.   These are the two memory locations at which the AXI ports can access the DDR for writing and reading.  
-\item Click on Offset Address.  Enter 0x10000000 as the address for HP0\_DDR\_LOWOCM and 0x18000000 of HP2\_DDR\_LOWOCM.  
+\item Expand the axi\_cdma\_0 line to see two cells with base names HP0\_DDR\_LOWOCM and HP2\_DDR\_LOWOCM.   These are the two memory locations at which the AXI ports can access the DDR for writing and reading.
+\item Click on Offset Address.  Enter 0x10000000 as the address for HP0\_DDR\_LOWOCM and 0x18000000 of HP2\_DDR\_LOWOCM.
 \item Change the Range of both HP0\_DDR\_LOWOCM and HP2\_DDR\_LOWOCM to 128M.
 \end{enumerate}
 
@@ -258,9 +259,9 @@ The final design appears in Figure \ref{fig:hardware_design}
   \includegraphics[scale=0.5]{figures/hardware_design.jpeg}
   \caption{Worker Control Interface - Separation of Concerns}  \label{fig:hardware_design}
   \end{center}
-\end{figure}													
+\end{figure}
 \begin{enumerate}
-\item Along the main Vivado toolbar, there is a yellow box icon with a green checkmark.  Click this icon to validate the design. When the "Validation Successful" dialogue block opens, click ok. 
+\item Along the main Vivado toolbar, there is a yellow box icon with a green checkmark.  Click this icon to validate the design. When the "Validation Successful" dialogue block opens, click ok.
 \item In the Sources tab/window, expand Design Sources, right-click on the top level design name, and select "Create HDL Wrapper".
 \item In the dialogue box that appears, select "Let Vivado manage wrapper and auto-update" and then click ok.
 \item In the Sources tab/window, right-click in the top level *.bd file, and select "Generate Output Products".  In the dialogue box that opens, click "Generate"
@@ -269,12 +270,12 @@ The final design appears in Figure \ref{fig:hardware_design}
 \subsection{Generating Bitstream and Exporting to SDK}\label{subsec:Exporting to SDK}
 \begin{enumerate}
 
-\item In the Flow Navigator pane of Vivado, under Program and Debug, click on Generate Bitstream.  
+\item In the Flow Navigator pane of Vivado, under Program and Debug, click on Generate Bitstream.
 \item A pop-up window will ask whether or not to perform synthesis and implementation first.  Click "yes".  Bitstream generation can take 10 minutes or so, depending on design and computer resources.
 \item Once bitstream generation is complete, a "Bitstream Generation Completed" window will appear.  Select "View Reports" to see implementation results such as device utilization, place and route details, etc.
-\item To export the hardware design to SDK, click on the File menu in the upper left corner of the Vivado screen.  Navigate to Export, and click on Hardware.  
+\item To export the hardware design to SDK, click on the File menu in the upper left corner of the Vivado screen.  Navigate to Export, and click on Hardware.
 \item In the Export Hardware window that appears, check the box marked "Include Bitstream".  Keep the "Export to:" field as $<$Local to Project$>$, and click "ok".  This will create a subdirectory in the vivado project folder which will contain the SDK workspace.  The subdirectory will be called $<$project name$>$.sdk.  Vivado will populate the subdirectory with initalization code and settings for the Zynq processor, DDR, clocks, PLLs and MIOs.
-\item Note - If SDK does not automatically open, from the File menu, select "Launch SDK".  Keep both the Exported location and Workspace as $<$Local to Project$>$.  Click "ok". 
+\item Note - If SDK does not automatically open, from the File menu, select "Launch SDK".  Keep both the Exported location and Workspace as $<$Local to Project$>$.  Click "ok".
 
 \end{enumerate}
 \section{Running an Application on Zedboard Baremetal}
@@ -305,7 +306,7 @@ Continuing from the end of section \ref{subsec:Exporting to SDK}, SDK is now ope
 \item Language: C
 \item Board Support Package: Create New: linux\_cdma\_app\_bsp
 \end{itemize}
-\item Click Next.  
+\item Click Next.
 \item Under Avalable Templates, select Empty Application, and select "Finish"
 \item Two new items will appear in the project explorer: linux\_cdma\_app and linux\_cdma\_app\_bsp.
 \item Right click on the src directory under the linux\_cdma\_app, and select Import.
@@ -313,13 +314,13 @@ Continuing from the end of section \ref{subsec:Exporting to SDK}, SDK is now ope
 \item Browse to the unzipped UG1165 support files, and select "linux\_cdma\_app.c".  Add the file, and click Finish.  Temporarily ignore any warnings or errors.
 \item Open cdma\_app.c in an editor and make the following changes:
 \begin{enumerate}
-\item Include a missing library 
+\item Include a missing library
 \begin{lstlisting}
 #include <unistd.h>
 \end{lstlisting}
-\item Change CDMA\_BASE\_ADDRESS to match offset address of axi\_cdma\_0 from vivado address editor 
+\item Change CDMA\_BASE\_ADDRESS to match offset address of axi\_cdma\_0 from vivado address editor
 \begin{lstlisting}
-#define CDMA_BASE_ADDRESS     0x7e200000 
+#define CDMA_BASE_ADDRESS     0x7e200000
 \end{lstlisting}
 \item Change DDR\_BASE\_ADDRESS to match offset address of S\_AXI\_HP0*/
 \begin{lstlisting}
@@ -335,13 +336,13 @@ Continuing from the end of section \ref{subsec:Exporting to SDK}, SDK is now ope
 \end{lstlisting}
 \item Halve BUFFER\_BYTE\_SIZE
 \begin{lstlisting}
-#define BUFFER_BYTESIZE	131072		
+#define BUFFER_BYTESIZE	131072
 \end{lstlisting}
 
 \end{enumerate}
 \item The application may still fail to compile or link due to a current error in the way Vivado populates the SDK settings when it exports the design.  If this is the case, review compiler and linker scripts.  Right click on linux\_cdma\_app and go to Properties --$>$ C/C++ build --$>$ Settings --$>$ ARM Linux gcc compiler/linker.  Some of the options under the field "All options" may need to be removed.
 \end{enumerate}
-\subsection{Repos and Downloads}\label{subsec:repos}The following repos are required to build the linux kernal and run the design on hardware.  See table \ref{table:references} for more information.  
+\subsection{Repos and Downloads}\label{subsec:repos}The following repos are required to build the linux kernal and run the design on hardware.  See table \ref{table:references} for more information.
 \\
 
 %\newline
@@ -356,7 +357,7 @@ Download these repos into the top level of the Xilinx directory on the Linux mac
 \paragraph*{dtc.git}\label{par:dtc}https://git.kernel.org/pub/scm/utils/dtc/dtc.git.  For this effort, this repo will only be used to convert devictree.dts to system.dtb, a recognizable u-boot format.
 \paragraph*{2015.4-zed-release}\label{par:zed}http://www.xilinx.com/Zynq+2015.4+Release - this download contains files necessary for a basic zedboard booting.  This effort uses only uramdisk.image.gz which is the zedboard-customized file system image.
 
-\subsection{Environment} 
+\subsection{Environment}
 \label{subsec:environment}
 Set the environment as follows.  The provided path values assume the git repos are installed at /opt/Xilinx.
 \begin{lstlisting}
@@ -409,19 +410,19 @@ $make zynq_zed_config
 \end{lstlisting}
 \item Type the following and hit enter, to rebuild u-boot for the Zedboard and to create the mkimage executable (can be used later to wrap u-boot headers).
 \begin{lstlisting}
-$make 
-\end{lstlisting} 
+$make
+\end{lstlisting}
 *Note - compiling u-boot also creates the mkimage utility, which will be used in subsection \ref{subsec:LinuxKernel}, item \ref{itm:CreateKernel}, to wrap the linux kernel in a format that the u-boot recognizes.
 \item Rename u-boot to \textbf{u-boot.elf}
 \end{enumerate}
 \subsubsection{Linux Kernel Image} \label{subsec:LinuxKernel}
 \begin{enumerate}
-\item cd to /opt/Xilinx/linux-xlnx and 
+\item cd to /opt/Xilinx/linux-xlnx and
 \item type the following to configure the kernel based on the contents of linux-xlnx/arch/arm/configs/xilinx\_zynq\_defconfig:
 \begin{lstlisting}
 make ARCH=arm xilinx_zynq_defconfig
 \end{lstlisting}
-\item type the following for an interactive menu allowing additional kernel configuration: 
+\item type the following for an interactive menu allowing additional kernel configuration:
 \begin{lstlisting}
 make ARCH=arm menuconfig
 \end{lstlisting}
@@ -435,7 +436,7 @@ uImage will be created at /opt/Xilinx/linux-xlnx/arch/arm/boot.\\
 \subsubsection{Device Tree}
 The Device Tree identifies all of the hardware devices for the Linux kernel.
 \begin{enumerate}
-\item  cd to /opt/Xilinx/dtc and type 
+\item  cd to /opt/Xilinx/dtc and type
 \begin{lstlisting}
 $make
 \end{lstlisting}
@@ -451,11 +452,11 @@ $make
 \item Target Hardware Platform: $<$Vivado\_design\_name$>$\_wrapper\_hw\_platform\_0
 \item Target CPU: ps7\_cortexa9\_0
 \item Board Support Package OS: device\_tree
-\\ *Note "device\_tree" will only appear in the Board Support Package OS type list if the device-tree-xlnx repository was correctly added as described in list item \ref{itm:repo} above. 
+\\ *Note "device\_tree" will only appear in the Board Support Package OS type list if the device-tree-xlnx repository was correctly added as described in list item \ref{itm:repo} above.
 \end{enumerate}
 \item Click "Finish".
 \item System.mss will be created, and can be viewed in the Project Explorer pane under device\_tree\_bsp\_0.  The file can be modified by double-clicking it, and then clicking the button "Modify this BSP's Settings"
-\item In the terminal window, cd to the path of system.mss, and type 
+\item In the terminal window, cd to the path of system.mss, and type
 \begin{lstlisting}
 dtc -I dts -O dtb -o devicetree.dtb system.dts
 \end{lstlisting}
@@ -499,7 +500,7 @@ The Zynq Boot Image is a compilation of elements already created in previous sec
 \item BOOT.bin will be created in workspace under fsbl/bootimage
 \end{enumerate}
 \subsubsection{Loading and Booting from the SD Card}\label{subsubsec:SD}
-\begin{enumerate} 
+\begin{enumerate}
 \item Load the following files onto an SD Card to boot and run a linux application:
 \begin{itemize}
 \item \textbf{Zynq Boot Image} - BOOT.bin
@@ -520,8 +521,8 @@ Zynq>
 \item In the minicom window, type "boot" and hit enter.
 \item If Linux boots successfully, boot information will scroll by, ending with the following:
 \begin{lstlisting}
-Starting syslogd/klogd: done                                                    
-Starting tcf-agent: OK                                                          
+Starting syslogd/klogd: done
+Starting tcf-agent: OK
 zedboard-zynq7 login:
 \end{lstlisting}
 \item Type "root" for the Zedboard username/password and hit enter.
@@ -530,7 +531,7 @@ zedboard-zynq7 login:
 \subsubsection{Running the CDMA Application}
 The CDMA Application modified in subsection \ref{subsec:cdma_project} will now be tranferred to and run on the Zedboard.
 \begin{enumerate}
-\item In a terminal window, cd to linux\_cdma\_app/Debug/ 
+\item In a terminal window, cd to linux\_cdma\_app/Debug/
 \item Type the following:
 \begin{lstlisting}
 sudo scp ./linux_cdma_app.elf <IP address of Zedboard>:/home/root
@@ -542,15 +543,15 @@ sudo scp ./linux_cdma_app.elf <IP address of Zedboard>:/home/root
 \end{lstlisting}
 Successful execution will yield the following display in the minicom window:
 \begin{lstlisting}
-Entering Main                                                                   
-/dev/mem opened.                                                                
-Memory mapped at address 0xb1fc4000.                                            
-DATA Transfer is Successfull 
+Entering Main
+/dev/mem opened.
+Memory mapped at address 0xb1fc4000.
+DATA Transfer is Successfull
 \end{lstlisting}
 \end{enumerate}
 
 \subsection{Booting Zedboard Over JTAG and Running the Linux Application}
-Booting over JTAG allows one useful benefit: The ability to utilize Xilinx SDK's GDB Debug environment while executing an application on the Zedboard.  
+Booting over JTAG allows one useful benefit: The ability to utilize Xilinx SDK's GDB Debug environment while executing an application on the Zedboard.
 
 \subsubsection{Board Settings}
 \begin{enumerate}
@@ -571,7 +572,7 @@ Booting over JTAG allows one useful benefit: The ability to utilize Xilinx SDK's
 \subsubsection{Loading and Booting over JTAG}
 In the following instructions, fsbl.elf is not used, as it has not been shown to work in this effort.  Instead, a tcl script released by Xilinx is used.
 \begin{enumerate}
-%\item Open a minicom window as described in subsubsection \ref{subsubsec:SD}, item \ref{itm:minicom} 
+%\item Open a minicom window as described in subsubsection \ref{subsubsec:SD}, item \ref{itm:minicom}
 \item Withing the Xilinx SDK workspace, use the SDK Terminal for serial input and output.  If one is not open in the C/C++ perspective, then in the main menu click on Window --$>$ Show View --$>$ Other --$>$ Xilinx --$>$ SDK Terminal, and then click "OK".
 \item In the SDK Terminal window, click on the green "+" sign to open a new serial port.  Set the baudrate to 115200.  In this effort the port was located at /dev/ttyACM0.  Click OK.
 \item Also within the Xilinx SDK workspace, locate the Xilinx XMD Console.  If it is not open, on the main menu, select Xilinx Tools --$>$ XMD Console.
@@ -655,7 +656,7 @@ bootm 0x03000000 0x02000000 0x02a00000
 \item Navigate to Remote ARM Linux Application --$>$ linux\_cdma\_app Debug.
 \item Click on "Debug" in the lower right corner of the dialogue box.
 \item The Debug perspective will automatically open.  If linux\_cdma\_app.c is not already open, from the main menu select File --$>$ Open File, browse to the file and click "OK". Set and step through breakpoints using the menu icons.
-\item Click on the Console tab to view program output. 
+\item Click on the Console tab to view program output.
 \item A successful program run will end with the Console messages below:
 \begin{lstlisting}
 DATA Transfer is Successful

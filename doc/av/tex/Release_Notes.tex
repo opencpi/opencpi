@@ -20,11 +20,13 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Release Notes}
-\def\docVersion{1.3.1}
+\def\docVersion{1.4.0}
 %----------------------------------------------------------------------------------------
 \input{snippets/LaTeX_Header.tex}
+\usepackage{multicol}
 \setlength{\parindent}{0pt} % Don't indent all paragraphs
 \newcommand{\forceindent}{\leavevmode{\parindent=1em\indent}}
+\newcommand{\ocpidev}{\code{ocpidev} }
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
 \lhead{\small{\docTitle}}
@@ -53,6 +55,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 			\hline
 			v1.3.1 & Updates for 1.3.1 release & 3/2018 \\
 			\hline
+			v1.4.0 & Updates for 1.4.0 release and moved previous to appendices & 10/2018 \\
+			\hline
 			\end{tabularx}
 		\end{table}
 	\end{center}
@@ -60,20 +64,231 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \newpage
 
 \tableofcontents
-
+% Make section numbers (Roman)-(Arabic).(Arabic) instead of default (Arabic).(Arabic).(Arabic)
+\renewcommand\thesection{\Roman{section}}
+\renewcommand\thesubsection{\thesection-\arabic{subsection}}
 \newpage
 \section*{Overview}
-This document contains corrections, changes, and enhancements made to OpenCPI since the previous release. It can never encapsulate \textit{every} change or bug fix, but attempts to assist previous users in getting up and running as swiftly as possible. \textit{It is highly recommended that the user review the entire document and not only the section concerning the latest release.}
+This document contains corrections, changes, and enhancements made to OpenCPI since the previous release. It can never encapsulate \textit{every} change or bug fix, but attempts to assist previous users in getting up and running as swiftly as possible. The \textit{general} format of this document is to answer user questions:
+\begin{itemize}
+\item Section~I (``Enhancements'') describes ``\textit{What's New?}'' about the current release.
+\item Section~II (``Changes and Notes'') is ``\textit{What do I need to be aware of as a \textbf{previous} user of the Framework?}''
+\item Section~III (``Major Known Deficiencies'') is for \textit{all} users to answer ``\textit{What bugs should I be aware of?}''
+\end{itemize}
+The \href{sec:appendices}{appendices} contain the Release Notes from previously released versions of the Framework, roughly following the same format, e.g. \ref{sec:13_enhancements}, being Section~I of the v1.3~Appendix, is the ``Enhancements'' that were added to Release 1.3. \textit{\textbf{It is highly recommended that a new user reviews the appendices as well; not only the main document concerning the latest release.}}
 
 \iffalse
-\section{Release XXX}
-\subsection{Enhancements}
-\subsection{Changes and Notes}
-\subsection{Major Known Deficiencies}
+% \origsection{Release XXX}
+\section{Enhancements}
+\section{Changes and Notes}
+\section{Major Known Deficiencies}
+\label{sec:XX_bugs}
+\subsection{Previously Documented Deficiencies}
 \fi
 
-\section{Release 1.3.1}
-\subsection{Enhancements}
+% \origsection{Release 1.4.0}
+\section{Enhancements}
+
+\subsection{Support for Ettus E310 Platform} % AV-4247
+\label{sec:14_e310}
+The Ettus Research USRP E310 is now supported within the OpenCPI framework. This includes the changes to the AD9361 device workers for using a CMOS interface, increasing the number of modes that the framework supports\footnote{AD9361 LVDS signaling has been supported since 1.3; cf. \ref{sec:13_ad9361}.} There is currently a limitation of a single TX and RX channel being supported; see the \textit{E3xx Getting Started Guide} for more information.
+
+\subsection{Component Unit Test Enhancements} % AV-3149 and many other tickets
+\label{sec:14_test}
+The provided Component Unit Test infrastructure has been enhanced to automatically incorporate elements that address common issues when developing HDL workers:
+\begin{enumerate}
+\setlength\itemsep{0em} %tighten
+\item Input message metadata manipulation applied to the Unit Under Test's (UUT) input port(s) helps ensure an HDL Worker can properly handle various message-protocol edge conditions, \textit{e.g.} start-of-message without data until a later clock. \textbf{This manipulation is \textit{not} enabled by default.}
+\item Output message throttling applied to the UUT's output port(s). Not respecting ``backpressure'' is often the reason an HDL Worker fails on a ``real'' hardware platform after passing all tests within a simulation. \textbf{This backpressure is now enabled in \textit{all} test benches by default.}
+\end{enumerate}
+Exercising Workers in this manner during the simulation design phase has been shown to greatly increase the likelihood of success on physical hardware. More information can be found in the \textit{Component Development Guide}.
+
+\subsection{Multi-Slave Proxy Support} % AV-2448
+\label{sec:14_multislave}
+Previously, a Proxy Worker could only represent a single Worker but not a collection of Workers that had related functions, \textit{e.g.} the transmit and receive paths of a single RF link. This resulted in various workarounds that are not officially supported by the Framework. For example, one user had a Proxy ``peeking'' into the Application to find peer Workers: this does not work with Remote Containers with the Application on another physical machine. Now a Proxy can (optionally) define more than one slave Worker with full interface compatibility with previous implementations \footnote{The interface of using an object named ``\code{slave}'' remains. The type of the object is considered an implementation detail and \textit{has} changed.}. More information can be found in the \textit{Component Development Guide}.
+
+\subsection{Transmit Blanking / Powerdown for DACs} % AV-4273
+\label{sec:14_blanking}
+Both the AD9361 and LIME DACs are now blanked / powered down\footnote{Implemented by TX RF carrier suppression} when not in use. To perform this on-demand, they use a new ``\code{tx\_event}'' Port/Protocol, as well as properties exposed in their proxies. See the respective Worker datasheets for more details. \textbf{This added capability resulted in a change to the \code{qdac-spec} that may affect current user applications.} If an application used \code{connect=qadc} (\code{connect} attribute), that application will require an additional \code{to} attribute specified directing it to explicitly use the \code{IN} input port.
+
+\subsection{\ocpidev Improvements} % AV-3439 et al
+\label{sec:14_ocpidev}
+The \ocpidev tool has been significantly improved, including:
+\begin{itemize}
+\setlength\itemsep{0em} %tighten
+\item \code{run} some Applications
+\item \code{run} Unit Tests
+\item \code{show} Unit Tests within a Project
+\item \code{show} additional Project information
+\end{itemize}
+See \ref{sec:14_ocpidev_changes} for \ocpidev command changes.
+
+\subsection{VHDL-Native Pattern and Capture HDL Workers} % AV-4118
+\label{sec:14_pattern_capture}
+The \code{pattern\_v2} and \code{capture\_v2} Workers have been written from the ground up in VHDL to replace the machine-generated Verilog-sourced \code{pattern} and \code{capture} Workers. \textbf{These latter Workers are now considered deprecated.} The new Workers include fully-functional test benches and data sheets. Platform and BSP Developers will find these Workers to be very useful when debugging various issues related to low-level OpenCPI development.
+
+\subsection{New Documentation RPM} % AV-4267
+\label{sec:14_docrpm}
+In addition to the PDF-based documentation available at \href{http://opencpi.github.io/}{github.io}, a new RPM is now included ``\verb+opencpi-doc+,'' which includes most of that documentation. Most of the PDFs are installed into \code{/usr/share/doc/}\footnote{The Fedora/Red Hat standard documentation location.}, but a convenience symlink can be found at \code{/opt/opencpi/documentation.html}. This path should not change across multiple OpenCPI versions and can be passed directly to most browsers, \textit{e.g.} ``\code{xdg-open /opt/opencpi/documentation.html}''. If you receive the RPM directly from the AV team, it may include BSP documentation that is not available on GitHub.
+
+\subsection{Zynq Parts Defined} % AV-4356
+\label{sec:14_zynq}
+All Zynq-based Xilinx parts that are supported by the current Framework, but not necessarily used in an OpenCPI-supported platform, have been defined within the Framework build system. This means that an end user creating a BSP for a ``larger fabric'' Zynq-7000, \textit{e.g.} xc7z100, will not need to change any Framework files and have all required changes isolated to a single Project. This does \textit{not} include additional platforms that have different internal configurations, e.g. Zynq-UltraScale+ devices.
+
+\section{Changes and Notes}
+\subsection{I/Q Data Ordering} % AV-4310 AV-4311 AV-4327
+\label{sec:14_iqdata}
+As noted in the \textit{HDL Development Guide}, when a Protocol contains a Struct Argument, the first Argument Member defined in the Protocol's XML is \textit{always} in the \textit{least significant} bits of the resulting Port. A good example of the importance of this is the scenario where a Port's default data width is overridden (in the OWD) to present all of a Struct's Members in parallel within a single clock cycle. For example, \code{iqstream\_protocol}'s default ordering is a 16-bit interleaved I/Q data: ``$I_{t=0}, Q_{t=0}, I_{t=1}, Q_{t=1}, I_{t=2}, ...$''. However, if the Worker configures its data Ports to be a width of 32 bits, then the I/Q data is presented as a parallel I/Q sample pair with ``I'' in the \textit{lower} 16 bits and ``Q'' in the \textit{upper} 16 bits, \textit{i.e.}:
+\begin{center}
+$I_{0}=InPort_{0}[15:0]; Q_{0}=InPort_{0}[31:16]\newline
+I_{1}=InPort_{1}[15:0]; Q_{1}=InPort_{1}[31:16]\newline
+$
+\end{center}
+The following Application and Workers were identified as improperly handling \code{iqstream\_protocol} complex data (I/Q) presented in the manner noted above and have been corrected:
+\begin{itemize}
+\setlength\itemsep{0em} %tighten
+\item \path{assets/components/dsp_comps:}
+\begin{multicols}{3}
+\subitem \path{cic_dec.hdl}
+\subitem \path{cic_int.hdl}
+\subitem \path{complex_mixer.hdl}\footnotemark
+\subitem \path{complex_mixer.rcc}\footnotemark[\value{footnote}]\footnotetext{See last paragraph as well concerning Property changes.}
+\subitem \path{dc_offset_filter.hdl}
+\subitem \path{fir_complex_sse.hdl}
+\subitem \path{iq_imbalance_fixer.hdl}
+\subitem \path{phase_to_amp_cordic.hdl}
+\subitem \path{pr_cordic.hdl}
+\subitem \path{rp_cordic.hdl}
+\end{multicols}
+\item \path{assets/hdl/devices:}
+\begin{multicols}{3}
+\subitem \path{ad9361_dac.hdl}
+\subitem \path{lime_dac.hdl}
+\subitem \path{lime_dac_ts.hdl}
+\end{multicols}
+\item \path{assets/applications}
+\begin{multicols}{3}
+\subitem \path{FSK}
+\subitem \path{Rx_App}
+\end{multicols}
+\end{itemize}
+
+It is important to note that this list includes various DACs as well as the \path{complex_mixer}, meaning that \textbf{user's RF Applications from previous versions of the Framework \textit{may} need to be updated}, \textit{e.g.} to handle this change in the DAC's interpretation of data presented for transmission. Also related to this, the \path{phs_inc} Property of \path{complex_mixer} may require inversion when compared to previous versions.
+
+\subsection{Upgrade Notes}
+If you have previous versions of the RPM-based OpenCPI RPMs installed, they must all be manually removed, including the prerequisites. \textbf{There is no automatic upgrade path.} Manually performing ``\code{sudo rm -rf} \path{/opt/opencpi/prerequisities}'' after uninstalling \textbf{all} previous RPMs \textit{may} also be needed.
+
+\subsection{Significant SD Card Layout Changes} % AV-4419
+\label{sec:14_sdcard}
+There have been significant changes to the layout of the Framework and its support files. These are mostly implementation details that the end user does not need to be concerned with. However, scripts and paths that are used for embedded development (both locally and using NFS mounts) have changed enough that users should wipe any SD cards they have used and follow the directions given in the respective platform's \textit{Getting Started Guide} to create a new one.
+
+\subsection{Intel Quartus and Quartus Pro Version Change} % AV-3972
+This release has been tested with Quartus Standard 17.1 which is a newly supported version of the tool. Version 15.1 should still work, but future versions will be tested with 17.1. Additionally, preliminary support for Quartus Pro 17.0.2 is also available within the Framework, but is not used by any platforms at this time.
+
+\subsection{New Input Port ZLM-Handling Primitive} % AV-4484
+For an HDL Worker to handle the \textit{de facto} end-of-stream signaling used by the Component Unit Test infrastructure (a ZLM with OpCode 0), a convenience primitive is now available and found at \path{projects/core/hdl/primitives/util/zlm_detector.vhd} with an example implementation shown in the \path{capture_v2.hdl} Worker.
+
+\subsection{Change in QDAC/QDAC\_TS Component Spec}
+The QDACs now have two ports. The ``\code{IN}'' ports have not changed, but some applications may need to be updated if they did not explicitly connect to them. See \ref{sec:14_blanking} above for more information.
+
+\subsection{Change in \ocpidev Default Output and Scope}
+\label{sec:14_ocpidev_changes}
+Some of the output from \code{ocpidev}'s \code{show} has changed to default to being more ``human friendly'' and reporting in a tabular fashion (\code{--table}). Many of these commands retain a \code{--simple} parameter for quick parsing. Most also support \code{--json}, which is the recommended and most stable method of parsing \ocpidev output.\newline
+
+Some of \code{ocpidev}'s \code{show} commands now have the concept of ``scope'' where the user is requesting a list of \textit{somethings} provided by a single project, or \textit{all somethings} available within all registered Projects. At this time, no commands support both of the scoping arguments \code{--global-scope} and \code{--local-scope}. However, to ensure future \ocpidev enhancements remain compatible with user scripts, some commands will force the user to explicitly specify a scope if the ``reasonable'' not-yet-implemented default is not yet ready. For example, in a future release, ``\code{ocpidev show tests}'' will report \textit{all} Unit Tests that are available. That report is not yet available, so the user \textit{must} currently explicitly scope the request with ``\code{ocpidev show tests --local-scope}''. However, something like ``\code{ocpidev show registry --local-scope}'' would make no sense, so will never be supported.
+
+\subsection{Rounding and Truncation in \code{qdac-spec} Workers} % AV-4387 AV-4388 AV-4389
+\label{sec:14_rounding}
+Various DACs were found to be improperly casting \textit{signed} data to \textit{unsigned} during certain operations, resulting in an overflow when the maximum value was transmitted.
+
+\subsection{HDL Workers Failing Unit Tests That Previously Passed}
+If a user experiences Unit Test failures that were not present in previous releases, the most likely cause is that ``backpressure'' is now automatically asserted by default; see \ref{sec:14_test} for details.
+
+\subsection{New Framework Build System} % AV-4362
+\label{sec:14_build2}
+The OSS OpenCPI Project has migrated the Framework build system to a new custom-made system that produces RPMs directly\footnote{If a user was building custom RPMs (from the \path{releng} directory), the process has changed considerably.} and removes the need for ``prerequisite'' RPMs. If upgrading from a previous RPM-based installation, the prerequisite RPMs might require manual deletion. Any mention of prerequisite RPMs in the Appendices (\textit{e.g.} \ref{sec:11_prereq}) below can likely be ignored.
+
+\subsection{New RCC Platform Configuration} % AV-4371
+Prior to 1.4, RCC Platforms were defined in \path{/projects/core/rcc/platforms}. With 1.4, they can be in the \path{/rcc/platforms} directory of any Project. \textit{The Platform Development Guide} defines how RCC Platforms are \textit{now} defined and a condensed migration guide can be found at \path{projects/core/rcc/platforms/README.migrating} .
+
+\section{Major Known Deficiencies}
+\label{sec:14_bugs}
+
+\subsection{ZedBoard IP Required Even In Standalone Mode} % AV-4173
+\label{bug:4173}
+Applications (including XML-only ones) fail if there is not an IP address assigned to the ZedBoard, even when in ``standalone mode.'' If the network connection is not used, forcing a MAC (cf. Section~\ref{bug:2400}) and IP addresses is required. To set a temporary IP address, the command ``\code{ifconfig eth0 192.168.244.244}'' can be used. This problem was found late within the 1.4 release cycle and should be addressed with the next major release.
+
+\subsection{Connection Direction In GUI Assumes XML order} % AV-2811
+\label{bug:2811}
+When importing hand-written XML into the GUI, the \texttt{to} and \texttt{from} attributes are ignored on connections. This does not affect any XML generated by the GUI.
+
+\subsection{OnlyPlatforms/ExcludePlatforms Does Not Work For Individual Unit Test Cases} % AV-4278
+\label{bug:4278}
+You can include and exclude platforms at a full-test level, but individual cases currently ignore the directives.
+
+\subsection{Some HDL Workers Will Need To Be Updated When \code{props\_in.raw.address} Width Fixed} % AV-4307
+\label{bug:4307}
+The ``raw'' address scheme for HDL workers is documented as a 32-bit bus. In testing, it was found that this is currently implemented as only 16 bits. While this has \textit{not} yet been fixed, users should review their own libraries for any Workers that make assumptions concerning the size of the bus. Any \code{raw.address} access should be written in more generic VHDL, \textit{e.g.}:
+\begin{lstlisting}[language=diff]
+-        event_rawprops.raw.address <= x"0040"; --TXRF modules enable register
++        event_rawprops.raw.address <= (6 => '1', others => '0'); --TXRF modules enable register (0x40)
+\end{lstlisting}
+
+\subsection{Default \code{python} Must Be Python2} % AV-4526
+\label{bug:4526}
+According to the \href{https://www.python.org/dev/peps/pep-0394/}{PEP-394} specification, system-level \code{python} \textit{should} point to a 2.x version of the Python interpreter. Some scripts within the Framework and Unit Tests \textit{require} this configuration.
+
+\subsection{Some \code{ocpi.assets} Workers Have Flow Control Issues} % AV-4486
+\label{bug:4486}
+The Component Unit Test infrastructure has been enhanced (cf. Section~\ref{sec:14_test}) and deficiencies within some Workers have been revealed during regression testing. The following \code{ocpi.assets} Workers are currently known to have defects which will be fixed in a future release:
+\begin{itemize}
+\setlength\itemsep{0em} %tighten
+\begin{multicols}{3}
+\item[] \path{bias_ver.hdl}
+\item[] \path{cic_dec.hdl}
+\item[] \path{cic_int.hdl}
+\item[] \path{fir_complex_sse.hdl}
+\item[] \path{fir_real_sse.hdl}
+\end{multicols}
+\end{itemize}
+
+\subsection{Previously Documented Deficiencies}
+The following deficiencies are still present in 1.4:
+\begin{itemize}
+\setlength\itemsep{0em} %tighten
+\item \ref{bug:693}: 32-bit Architecture File Size Limit
+\item \ref{bug:1035}: HDL Assembly Filename Constraint
+\item \ref{bug:1392}: Maximum Message Length in PCI-Based Platforms
+\item \ref{bug:2241}: Properties Before Raw Properties Cannot Have Parameterized Lengths
+\item \ref{bug:2400}: MAC Address on ZedBoard
+\item \ref{bug:2477}: PCI-Based Platforms Not Always Detected in Remote Tests
+\item \ref{bug:3193}: Lime RX/TX Proxy Tests on CentOS6
+\item \ref{bug:3783}: PCI Platforms Can Only Transmit Using One Channel
+\end{itemize}
+
+The following previously-documented deficiencies have been fixed in this release:
+\begin{itemize}
+\setlength\itemsep{0em} %tighten
+\item \ref{bug:1385}: XML Parser Mixed-Case Issue\footnote{The opening and closing tags must still match, \textit{e.g.} \texttt{<Element>} pairs with \texttt{</Element>} but not \texttt{</element>}.}
+\item \ref{bug:1585}: Platform Development Guide
+\end{itemize}
+
+% Demote sectional commands from here on out - https://tex.stackexchange.com/a/61803
+% This lets us just move the text from above and add a new "origsection" header
+\let\origsection\section%
+\let\section\subsection%
+\let\subsection\subsubsection%
+\let\subsubsection\paragraph%
+\let\paragraph\subparagraph%
+% Make section numbers (Roman)-(Roman).(Arabic) instead of previously defined (Roman)-(Arabic).(Arabic), e.g. old release's II-3 becomes B-II.3 not B-2.3
+\renewcommand\thesection{\Roman{section}}
+\renewcommand\thesubsection{\thesection-\Roman{subsection}}
+\newpage
+\begin{appendices}
+The Release Notes from previous releases are included here as reference for still-existing bugs, relevant upgrading notes for users of very old versions, etc.
+\origsection{Release 1.3.1}
+\label{sec:appendices}
+\section{Enhancements}
 \begin{itemize}
 \item All documentation has now been updated to cover 1.3 capabilities and features
 \item Bugfixes and enhancements for AD9361
@@ -82,38 +297,39 @@ This document contains corrections, changes, and enhancements made to OpenCPI si
 \item \code{ocpizynq} tool fixed
 \end{itemize}
 
-\subsection{Changes and Notes}
+\section{Changes and Notes}
 None to report.
-\subsection{Major Known Deficiencies}
+\section{Major Known Deficiencies}
 \begin{itemize}
 \item \textit{Note}: no other deficiencies from Section~\ref{sec:13_bugs} have been mitigated and all remain.
 \end{itemize}
-\subsubsection{PCI Platforms Can Only Transmit Using One Channel} % AV-3783
+\subsection{PCI Platforms Can Only Transmit Using One Channel} % AV-3783
 \label{bug:3783}
 
 The current implementation of the PCI-e Specification (ALST4 and ML605 platforms) only allows DMA transaction from the host to the platform on the \textit{first External Port defined in the Assembly or Container XML}. This means the \textit{input} to any Assembly/Container should be listed first. See
 \path{projects/assets/hdl/assemblies/empty/cnt_1rx_1tx_bypassasm_fmcomms_2_3_hpc_LVDS_ml605.xml}
 as an example. \textit{This does not affect any Zynq-based platforms.} This problem was found late within the 1.3 release cycle and should be addressed with the next major release.
 
-\section{Release 1.3}
-\subsection{Enhancements}
-
-\subsubsection{OSS Release} % AV-2575 and many other tickets
+\newpage
+\origsection{Release 1.3}
+\section{Enhancements}
+\label{sec:13_enhancements}
+\subsection{OSS Release} % AV-2575 and many other tickets
 \label{sec:13_oss}
 ANGRYVIPER Team's build of OpenCPI is now available on GitHub under the OpenCPI Organization. The first release is in a git branch, but full integration is planned in the future. This includes all of the previously-proprietary ``ocpiassets / Assets'' Project, including the Board Support Package (BSP) for Epiq Solutions' Matchstiq Z1.
 
-\subsubsection{Python and GNU Radio Integration (Technology Preview)} % AV-3699
+\subsection{Python and GNU Radio Integration (Technology Preview)} % AV-3699
 There are now SWIG bindings available to allow a top-level Python script to use the ACI to manipulate an Application in the same manner as from C++\footnote{This integration is only available on CentOS 7 platforms.}. One use case is a GNU Radio block that allows GNU Radio Companion to handle the entire lifecycle of an OpenCPI Application. This block can handle data flows of complex I/Q streams or any primitive data type (\textit{e.g.} floats or bytes) in and out of the Application. A reference implementation of this block is provided in OpenCPI's fork of GNU Radio Companion.\\
 
 This fork of GNU Radio Companion also allows for Application and HDL Assembly building, as well as deployment independent of the ANGRYVIPER GUI. Some of this capability was presented at the GNU Radio Conference GRCon17; the video is available on \href{https://www.youtube.com/watch?v=CriLitW5vtM}{YouTube}.
 
-\subsubsection{AD9361 Support}
+\subsection{AD9361 Support}
 \label{sec:13_ad9361}
 The popular Analog Devices, Inc's AD9361 RF transceiver IC is now supported via a series of Device Workers. The modularity of these workers eases AD9361 transceiver integration with future FPGA systems. Most of the major AD9361 features are supported, including RX/TX RF digitization/data streaming and RF tuning/gain control. The AD9361 Device Workers currently only fully support some operating modes, but contain infrastructure in anticipation of future expansion. These device workers utilize the vendor's \href{https://github.com/analogdevicesinc/no-os}{No-OS software library} for high-level control.\\
 
 There is also ``card'' support for the FMCOMMS2 and FMCOMMS3 evaluation/prototyping RF transceiver FMC cards centered on the AD9361. The newly released \code{ocpi.assets} Project includes a single-channel RX narrowband I/Q stream to file (\path{applications/rx_app}) and single-channel RX/TX FSK modem (\path{applications/FSK}) reference applications, which each support the FMCOMMS2 and FMCOMMS3 card on the zed platform.
 
-\subsubsection{GUI Improvements}
+\subsection{GUI Improvements}
 Since 1.2, the GUI has multiple improvements, some of which are:
 
 \begin{itemize}
@@ -130,21 +346,21 @@ Since 1.2, the GUI has multiple improvements, some of which are:
 \item \textbf{New HDL Platform Editor} - The HDL developer can now create and view HDL platform XML in a graphical presentation.
 \end{itemize}
 
-\subsubsection{Project Registry} % AV-3028
+\subsection{Project Registry} % AV-3028
 \label{sec:13_proj_registry}
-Release 1.3 introduces a new concept of ``Project Registry'' to organize and interrelate a set of Projects which allows Projects to be moved (cf.  \ref{sec:13_proj_moved}) as well as present an explicit relationship between them, \textit{e.g.} ``\textit{this} copy of \code{ocpi.assets} was built based upon \textit{that} copy of \code{ocpi.core}.'' Registry manipulation is performed using \code{ocpidev} (cf. \ref{sec:13_ocpidev}).\\
+Release 1.3 introduces a new concept of ``Project Registry'' to organize and interrelate a set of Projects which allows Projects to be moved (cf.  \ref{sec:13_proj_moved}) as well as present an explicit relationship between them, \textit{e.g.} ``\textit{this} copy of \code{ocpi.assets} was built based upon \textit{that} copy of \code{ocpi.core}.'' Registry manipulation is performed using \ocpidev (cf. \ref{sec:13_ocpidev}).\\
 
 The default configuration is that every Project on a machine shares a single Registry (located at \path{/opt/opencpi/project-registry}). A user must be in the Unix group ``\code{opencpi}'' to manage this global Registry.\\
 
 This new capability deprecates the previously-used \code{OCPI\_PROJECT\_PATH} build-time variable as well as the scripts \path{freeze_project.sh} and \path{thaw_project.sh} noted in \ref{bug:3031}.
 
-\subsubsection{Project Migration} % AV-3031
+\subsection{Project Migration} % AV-3031
 \label{sec:13_proj_moved}
 With the new Project Registry (cf. \ref{sec:13_proj_registry}), Projects can now be moved to new locations or archived and then restored on another machine with the use of the \code{ocpidev unregister} and \code{ocpidev register} commands. This mitigates the previously-documented deficiency found in \ref{bug:3031}.
 
-\subsubsection{ocpidev Improvements} % AV-2583
+\subsection{\ocpidev Improvements} % AV-2583
 \label{sec:13_ocpidev}
-The ``\code{ocpidev}'' command has been improved in various ways, including:
+The ``\ocpidev'' command has been improved in various ways, including:
 \begin{itemize}
 \setlength\itemsep{0em} %tighten
 \item \code{bash} completion for many commands (try \code{ocpidev <tab><tab>})
@@ -154,20 +370,20 @@ The ``\code{ocpidev}'' command has been improved in various ways, including:
 \item Project Registry (\ref{sec:13_proj_registry}) manipulations
 \end{itemize}
 
-\subsubsection{RCC Platforms}
+\subsection{RCC Platforms}
 \label{sec:13_rcc_platforms}
 With the new Project Registry (cf. \ref{sec:13_proj_registry}), RCC Platforms can now be defined exclusively within a Project outside of the CDK / Core Project. An example of this can be seen in the \code{inactive} project under \path{rcc/platforms/macos10_13}. This improvement allows BSPs to be self-contained within a Project.
 
-\subsubsection{Remote Containers (Technology Preview)}
+\subsection{Remote Containers (Technology Preview)}
 The full-OSS OpenCPI code base has imported previously-written code that allows Remote Containers. This code has not yet been evaluated by the ANGRYVIPER Team.
 
-\subsubsection{OpenCL Containers (Technology Preview)}
+\subsection{OpenCL Containers (Technology Preview)}
 The full-OSS OpenCPI code base has imported previously-written code that allows OpenCL (``OCL model'') Containers on CPUs and GPUs. This code has not yet been evaluated by the ANGRYVIPER Team.
 
-\subsection{Changes and Notes}
+\section{Changes and Notes}
 This section describes items that may cause users of previous versions to modify their code, build system, etc.
 
-\subsubsection{Major Project Restructuring} % AV-3048, AV-3411, AV-3568
+\subsection{Major Project Restructuring} % AV-3048, AV-3411, AV-3568
 Starting with Release 1.3, the CDK is no longer a top-level Project. All Components that were previously found in the CDK, \textit{e.g.} \code{file\_read}, have migrated to \code{ocpi.core}. The previously-documented ``Base Project'' has been removed; it was the RPM-specific manner of separating the CDK from the core components needed to run OpenCPI. The various items (cards, devices, specs, etc) that were previously found in the Base Project have been distributed into one of three new Projects. The previously non-OSS proprietary items have been redistributed within the new Projects as well. The Projects are:
 \begin{itemize}
 \setlength\itemsep{0em} %tighten
@@ -188,29 +404,29 @@ There is a provided utility script (\path{/opt/opencpi/cdk/scripts/upgradeApp_v1
 
 This change also removes the \path{/opt/opencpi/base_project_source/new_base_project.sh} script found in earlier releases; its equivalent is now \path{/opt/opencpi/projects/new_project_source}, which uses the same arguments as noted in the \textit{Getting Started Guide}.
 
-\subsubsection{Upgrade Notes} % AV-3240
+\subsection{Upgrade Notes} % AV-3240
 % The RPMs are designed to allow direct upgrading to newer versions. However, if previous versions of some of the prerequisite RPMs are \textit{uninstalled}, some empty directories may remain, blocking the installation of the current RPMs.
-If you have previous versions of the RPM-based OpenCPI RPMs installed, they must all be manually removed, including the prerequisites. \textbf{There is no automatic upgrade path.} Manually performing \code{sudo rm -rf /opt/opencpi/prerequisities} after uninstalling \textbf{all} previous RPMs \textit{may} also be needed.
+If you have previous versions of the RPM-based OpenCPI RPMs installed, they must all be manually removed, including the prerequisites. \textbf{There is no automatic upgrade path.} Manually performing ``\code{sudo rm -rf} \path{/opt/opencpi/prerequisities}'' after uninstalling \textbf{all} previous RPMs \textit{may} also be needed.
 
-\subsubsection{Prerequisite RPMs Built With Newer Language Standards} % AV-2670, AV-2601
+\subsection{Prerequisite RPMs Built With Newer Language Standards} % AV-2670, AV-2601
 All prerequisites are now built with the C++11 or the C98 standard implemented. This will increase interoperability and avoid ambiguous situations, \textit{e.g.} the size of a \code{bool} variable.
 
-\subsubsection{Legacy Platform Names Continue to be Deprecated} % AV-2983
+\subsection{Legacy Platform Names Continue to be Deprecated} % AV-2983
 The legacy suffix ``\code{\_pf}'' for simulator platforms, \textit{e.g.} \code{isim\_pf}, is not supported when running unit tests. Unit tests were introduced after the suffix was deprecated, so the effect on end users should be minimal.
 
-\subsubsection{OCPI\_XILINX\_VIVADO\_DIR Variable Changed} % AV-3220
+\subsection{OCPI\_XILINX\_VIVADO\_DIR Variable Changed} % AV-3220
 A bug in Release 1.2 required the variable to be set ``deep'', \textit{e.g.} \path{/data/Xilinx/Vivado/2017.1}. You \textit{must} now set it to the top-level value, \textit{e.g.} \code{/data/Xilinx}. If a specific version of Vivado is required, \code{OCPI\_XILINX\_VIVADO\_VERSION} should be set, \textit{e.g.} \code{2017.01}. As a reminder, these variables only apply if you have both ISE and Vivado installed in different base directories, \textit{e.g.} ISE in \path{/opt/Xilinx} vs. Vivado in \path{/data/Xilinx}.
 
-\subsubsection{ocpidev and Requesting RCC Platform To Match HDL Platform} % AV-3457
-When building Projects with \code{ocpidev}, the user can tell the build system to automatically select the proper RCC Platform when given an HDL Platform. This option is \code{--rcc-hdl-platform} with a mnemonic of ``build \textit{this} RCC Platform for \textit{that} HDL Platform.'' Previous Releases had the flags backwards (``\code{--build-hdl-rcc-platform}''). This is incorrect and has been deprecated.
+\subsection{\ocpidev and Requesting RCC Platform To Match HDL Platform} % AV-3457
+When building Projects with \ocpidev, the user can tell the build system to automatically select the proper RCC Platform when given an HDL Platform. This option is \code{--rcc-hdl-platform} with a mnemonic of ``build \textit{this} RCC Platform for \textit{that} HDL Platform.'' Previous Releases had the flags backwards (``\code{--build-hdl-rcc-platform}''). This is incorrect and has been deprecated.
 
-\subsubsection{zero\_padding Component in \texttt{ocpi.assets} deprecated}
+\subsection{zero\_padding Component in \texttt{ocpi.assets} deprecated}
 In the FSK reference application, \path{zero_padding.hdl} was replaced by two new Workers, \path{zero_pad.hdl} and \path{mfsk_mapper.hdl}. The change was made because \path{zero_padding.hdl} performed two functions: binary FSK mapping and inserting zeros between symbols. Whenever possible, functions should be separated into their own Components for increased flexibility and reuse. The \path{zero_padding} Component will be removed in Release 2.0.
 
-\subsection{Major Known Deficiencies}
+\section{Major Known Deficiencies}
 \label{sec:13_bugs}
 
-\subsubsection{Previously Documented Deficiencies}
+\subsection{Previously Documented Deficiencies}
 The following deficiencies are still present in 1.3:
 \begin{itemize}
 \setlength\itemsep{0em} %tighten
@@ -243,9 +459,10 @@ The following previously-documented deficiencies will \textit{not} be fixed:
 
 % === End of 1.3
 
-\section{Release 1.2}
-\subsection{Enhancements}
-\subsubsection{Vivado Support for Applicable Xilinx-Based Platforms} % AV-78, AV-2897, AV-3126
+\newpage
+\origsection{Release 1.2}
+\section{Enhancements}
+\subsection{Vivado Support for Applicable Xilinx-Based Platforms} % AV-78, AV-2897, AV-3126
 \label{sec:12_vivado}
 By far the \#1 requested feature by OpenCPI users, the Framework now supports the use of Xilinx's Vivado on the appropriate Platforms. \textbf{This toolchain is now the default} where applicable (mostly Zynq-based), and it is highly recommended that users of Xilinx-based platforms review the provided \textit{Vivado Usage Guide}.\\
 
@@ -257,17 +474,17 @@ End users should be aware (see \textit{Vivado Usage Guide} for more details) tha
 \item There is a new platform, \path{zed_ise}, that is intended for testing purposes, but released with the distribution. This platform is the ZedBoard using the Xilinx ISE tool chain.
 \end{itemize}
 
-\subsubsection{New command option ``ocpidev build''}
-To help improve the end-user experience, OpenCPI 1.2 requires less command-line usage of ``\texttt{make}''. The previously-available tool \texttt{ocpidev} now has a ``\texttt{build}'' verb available. More information can be found in the (OSS) \textit{Component} and \textit{Application Development Guides}.
+\subsection{New command option ``\code{ocpidev build}''} % AV-2584
+To help improve the end-user experience, OpenCPI 1.2 requires less command-line usage of ``\texttt{make}''. The previously-available tool \ocpidev now has a ``\texttt{build}'' verb available. More information can be found in the (OSS) \textit{Component} and \textit{Application Development Guides}.
 
-\subsubsection{GUI Now Delivered as RPM} % AV-2642
+\subsection{GUI Now Delivered as RPM} % AV-2642
 \label{sec:12_guirpm}
 There is now an \path{opencpi-ide} RPM included in the distribution. A separate installation of Eclipse for each end user is no longer required. Once installed, any user can launch with the \path{ocpigui} command.
 
-\subsubsection{Artifact Version Checking} % AV-2226, AV-2453
+\subsection{Artifact Version Checking} % AV-2226, AV-2453
 While backwards compatibility is a major goal of OpenCPI, binary compatibility across versions is \textit{not} guaranteed. Every artifact should always be rebuilt with the latest framework. To enforce this requirement, the framework will check all artifact metadata at deployment time to verify the version used to build. Version 1.1 inserted the proper metadata, but the comparison is new in 1.2, allowing 1.2 to recognize and reject 1.1 artifacts. Artifacts rejected for no other reason will issue a warning message at all debugging levels. This behavior can be overridden by setting the environment variable \path{OCPI_ALLOW_VERSION_MISMATCH} to ``1''; \textit{this is not recommended}.
 
-\subsubsection{Miscellaneous Improvements}
+\subsection{Miscellaneous Improvements}
 A quick list of improvements not documented above include:
 \begin{itemize}
 \setlength\itemsep{0em} %tighten
@@ -277,53 +494,53 @@ A quick list of improvements not documented above include:
 \item Proxies can now use string properties\footnote{This is noted here because it is one of the first user reported bugs.} % AV-2649
 \end{itemize}
 
-\subsection{Changes and Notes}
+\section{Changes and Notes}
 This section describes items that may cause users of previous versions to modify their code, build system, etc.
 
-\subsubsection{rx-spec and tx-spec Support Property Interdependence} % AV-2679
+\subsection{rx-spec and tx-spec Support Property Interdependence} % AV-2679
 Certain front-ends have different ranges based other properties, \textit{e.g.} the current sample rate, requiring some properties that were previously ``Initial'' (immutable) to have their restrictions relaxed. \textit{This compatibility break should only affect platform developers,} unless applications were incorrectly caching these values. All interfaces above that level should be unaffected.
 
-\subsubsection{Vivado Support}
+\subsection{Vivado Support}
 Please see \ref{sec:12_vivado} for modifications that \textit{may} need to be performed.
 
-\subsection{Major Known Deficiencies}
-\subsubsection{Driver Failing to Allocate Memory on Zynq-Based Platforms} % AV-1645, AV-3040
+\section{Major Known Deficiencies}
+\subsection{Driver Failing to Allocate Memory on Zynq-Based Platforms} % AV-1645, AV-3040
 \label{bug:1645}
 In some situations after repeated multi-model (RCC and HDL) application runs on Zynq-based platforms (e.g. ZedBoard), the kernel driver will fail to allocate contiguous memory for DMA data transfers. On x86-based platforms, memory for this use is allocated at boot time before memory fragmentation. Currently, no memory is being allocated at boot time for the Zynq-based platforms. Single ocpirun or ACI application runs from the command line do not present any errors. When running an app in a long loop, such as in the unit test framework, or an application that writes a large amount of data (approx. 1GB) to file, this error \textit{may} occur.
 
-\subsubsection{HDL Workers Cannot Send SOM Without Valid Data} % AV-3099
+\subsection{HDL Workers Cannot Send SOM Without Valid Data} % AV-3099
 \label{bug:3099}
 Although the HDL Component documentation claims the Framework's internal protocols support a separate Start-of-Message independent of valid data designations, this sequence causes the Component's output port to ignore any remaining data. This was found late within the 1.2 release cycle and should be addressed with the next release.
 
-\subsubsection{SDP Cannot Handle More Than One ZLM Per Application Run} % AV-3109
+\subsection{SDP Cannot Handle More Than One ZLM Per Application Run} % AV-3109
 \label{bug:3109}
 The SDP transport will not propagate a second ZLM, so at this time the \textit{only} ZLM should be an implied end-of-application transmission. This problem does not exist when communicating between RCC-only Workers. Related to, but independent of \ref{bug:3107}. (See also \ref{sec:101_zlm}.)
 
-\subsubsection{File\_Read and File\_Write Cannot Handle ZLM Mid-file} % AV-3107
+\subsection{File\_Read and File\_Write Cannot Handle ZLM Mid-file} % AV-3107
 \label{bug:3107}
 \path{file_read} (HDL implementation) and \path{file_write} (RCC and HDL implementations) will stop if a Zero-Length-Message (ZLM) is found when operating in ``message mode'' regardless of the location within the file. Related to, but independent of \ref{bug:3109}. (See also \ref{sec:101_zlm}.)
 
-\subsubsection{PCI-Based Platforms Not Always Detected in Remote Tests} % AV-2477
+\subsection{PCI-Based Platforms Not Always Detected in Remote Tests} % AV-2477
 \label{bug:2477}
 Using \path{OCPI_REMOTE_TEST_SYSTEMS}, JTAG connection problems have been observed, possibly related to system reboots. They seem to be resolved after disconnecting and reconnecting the USB cable.
 
-\subsubsection{Built Projects Cannot Be Moved} % AV-3031
+\subsection{Built Projects Cannot Be Moved} % AV-3031
 \label{bug:3031}
 When a Project is built, the dependencies of each artifact and other support files are captured. Some of these contain absolute paths pointing to where the Project is currently located. The distribution includes a pair of \textit{unsupported} scripts that \textit{may} allow movement of Projects. They can be found in \path{/opt/opencpi/cdk/scripts/} and are named \path{freeze_project.sh} and \path{thaw_project.sh}.
 
-\subsubsection{Properties Before Raw Properties Cannot Have Parameterized Lengths} % AV-2241
+\subsection{Properties Before Raw Properties Cannot Have Parameterized Lengths} % AV-2241
 \label{bug:2241}
 ``Raw properties'' start at a certain property with the properties before that being ``non-raw'' properties. Currently, none of these ``before'' properties can have their length be set by an expression dependent on another parameter property.
 
-\subsubsection{XML Parser Mixed-Case Issue} % AV-1385
+\subsection{XML Parser Mixed-Case Issue} % AV-1385
 \label{bug:1385}
 The XML parser does not always recognize tags if differently-cased versions of the same tag are in the same XML file, \textit{e.g.} an OAS having both \texttt{<Instance .../>} and \texttt{<instance .../>} XML tags will fail. Users of the GUI should not be affected.
 
-\subsubsection{Simulation of Primitive Cores Needs \texttt{Makefile} Modified} % AV-3170
+\subsection{Simulation of Primitive Cores Needs \texttt{Makefile} Modified} % AV-3170
 \label{bug:3170}
 When designing a Primitive vendor-specific core that is intended for simulation, the required \path{*_pkg} file containing the core's stub must be explicitly listed first in the \path{Makefile}'s \texttt{SourceFiles} variable.
 
-\subsubsection{Lime RX/TX Proxy Tests on CentOS6} % AV-3193
+\subsection{Lime RX/TX Proxy Tests on CentOS6} % AV-3193
 \label{bug:3193}
 The proxy tests for the Lime transceiver use a feature of C++11 that is not supported by the compiler in CentOS 6. The workaround is to use similar code to the following in the various places \verb+to_string()+ was used:
 \begin{lstlisting}[language=diff]
@@ -333,7 +550,7 @@ The proxy tests for the Lime transceiver use a feature of C++11 that is not supp
 +      ClkInStr = ostr_clkin.str().c_str();
 \end{lstlisting}
 
-\subsubsection{Previously Documented Deficiencies}
+\subsection{Previously Documented Deficiencies}
 The following deficiencies are still present in 1.2:
 \begin{itemize}
 \setlength\itemsep{0em} %tighten
@@ -344,7 +561,7 @@ The following deficiencies are still present in 1.2:
 \item \ref{bug:1585}: Platform Development Guide
 \end{itemize}
 
-\subsection{Addenda to Previous Release Notes}
+\section{Addenda to Previous Release Notes}
 % Keep these in order of section
 \begin{itemize}
 \setlength\itemsep{0em} %tighten
@@ -353,8 +570,8 @@ The following deficiencies are still present in 1.2:
 \end{itemize}
 
 \newpage
-\section{Release 1.1}
-\subsection{Enhancements}
+\origsection{Release 1.1}
+\section{Enhancements}
 A quick list of improvements include:
 \begin{itemize}
 \setlength\itemsep{0em} %tighten
@@ -372,11 +589,11 @@ integration between heterogeneous Workers
 \item Added platform support (Picoflexor RCC-Only)
 \end{itemize}
 
-\subsubsection{Debug Symbols for Framework Now Available}
+\subsection{Debug Symbols for Framework Now Available}
 % AV-2101
 An RPM containing most debug symbols for the Framework (\code{opencpi-debuginfo-*.x86\_64.rpm}) is now provided. This greatly enhances the debugging of RCC Workers using industry-standard debuggers such as \texttt{gdb} and \texttt{ddd}.
 
-\subsubsection{Kernel Driver Memory Arguments}
+\subsection{Kernel Driver Memory Arguments}
 In previous versions, the ``\texttt{memmap}'' argument was given to the Linux kernel command line. This can conflict with other software that may also require reserved memory. If the user requires the reservation of more than one memory area using the \texttt{memmap} option, the OpenCPI driver will:
 \begin{itemize}
 \setlength\itemsep{0pt} %tighten
@@ -386,15 +603,15 @@ In previous versions, the ``\texttt{memmap}'' argument was given to the Linux ke
 % AV-268
 See \path{/opt/opencpi/driver/README} for more information, including usage examples and configuration.
 
-\subsubsection{HDL File\_Read and File\_Write CWD}
+\subsection{HDL File\_Read and File\_Write CWD}
 \label{sec:11_cwd}
 % AV-977
 The HDL Workers implementing the \texttt{File\_Read} and \texttt{File\_Write} specs distributed in 1.0 failed if used in a directory that exceeded 100 characters deep. There is an additional parameter \texttt{CWD\_MAX\_LENGTH} on these Workers that can be increased to allow deeper directories when needed.
 
-\subsection{Changes and Notes}
+\section{Changes and Notes}
 This section describes items that may cause users of previous versions to modify their code, build system, etc.
 
-\subsubsection{Simulators Renamed and Work Out-of-the-Box}
+\subsection{Simulators Renamed and Work Out-of-the-Box}
 \label{sec:11_simulators}
 % AV-1889, AV-2279
 The simulator platform names have been renamed to remove the ``\_pf'' suffix, \textit{e.g.} \texttt{isim}. The \texttt{isim}\footnote{Only version 14.7 without rebuilding the Base Project.} and \texttt{modelsim} simulation platforms can now be targeted once the appropriate environment variables are set, \textit{e.g.} \texttt{OCPI\_MODELSIM\_DIR}. With \texttt{ocpirun} able to launch simulations, the usage of ``\texttt{ocpihdl simulate}'' is now deprecated and does nothing.\\
@@ -411,16 +628,16 @@ Available containers:
 \end{verbatim}
 \end{minipage}
 
-\subsubsection{HDL Width Adapters Not Required}
+\subsection{HDL Width Adapters Not Required}
 % AV-1230 et al
 One of the advantages of the new \textit{Scalable Data Plane} is the Framework's automatic insertion of ``width adapters'' whenever needed between Workers in an Assembly. This means the user can remove any \path{wsi_16_to_32}, \path{wsi_32_to_16}, or \path{wsi_width_adapter} Components that are instantiated in their Assemblies or Applications. It is harmless to leave them in existing designs, but future Applications should not instantiate them.
 
-\subsubsection{Platform Name Changes}
+\subsection{Platform Name Changes}
 % AV-2270
 \label{sec:11_platform_names}
 To allow for more hardware and software separation in the future, there is now more distinction used in platform naming. Previously, the keyword ``zed'' was used to describe both software (the Xilinx-based Linux kernel) and hardware (the ZedBoard). This ambiguity led to confusion for some users and implied a nonexistent reliance on the ZedBoard. Starting with OpenCPI 1.1, the software platform for most Zynq-based hardware is labeled ``\verb+xilinx13_3+'', analogous to ``\verb+centos7+''. The ``13\_3'' is shorthand for Xilinx's Linux release from the Third Quarter (Q3) of 2013. This means that previous code that used an \texttt{OCPI\_TARGET\_PLATFORM} of \texttt{zed} must now be changed to \texttt{xilinx13\_3}.
 
-\subsubsection{RCC Cross-compilation No Longer Uses \texttt{OCPI\_CROSS\_HOST}}
+\subsection{RCC Cross-compilation No Longer Uses \texttt{OCPI\_CROSS\_HOST}}
 % AV-816, AV-1998, AV-2143
 Previous OpenCPI releases used \texttt{OCPI\_CROSS\_HOST} to define RCC cross-compilation. This required the usage of less-than-memorable values such as \texttt{arm-xilinx-linux-gnueabi}. The new manner is to use \texttt{OCPI\_TARGET\_PLATFORM}, \texttt{RccPlatforms}, or \texttt{RccHdlPlatforms}, which allow more intuitive and consistent values (See Section~\ref{sec:11_platform_names}). For example, the example above could be replaced with ``\texttt{OCPI\_TARGET\_PLATFORM=xilinx13\_3}'', ``\texttt{RccPlatforms=xilinx13\_3}'', or ``\texttt{RccHdlPlatforms=zed}''.\\
 
@@ -428,7 +645,7 @@ The \texttt{RccPlatforms} and \texttt{RccHdlPlatforms} variables allow the targe
 % AV-2363
 While either format can be used for Workers, ACI Applications can only be built for a single target platform using the \texttt{OCPI\_TARGET\_PLATFORM} variable.
 
-\subsubsection{Updating a 1.0.x Unit Test for the 1.1 Framework}
+\subsection{Updating a 1.0.x Unit Test for the 1.1 Framework}
 % AV-1869
 Some unit tests for Components were released with the 1.0.x version of \texttt{ocpiassets} that relied upon simulator availability or certain platform names reported by \texttt{ocpirun} (see Sections~\ref{sec:11_simulators} and \ref{sec:11_platform_names}). If any users have developed their own unit tests based on these, some updates may be required for them to work using the new release.\\
 
@@ -463,7 +680,7 @@ This patch is adding the platform that is passed in (via \texttt{argv[2]}) to th
 
 The user could do a full conversion to the new testing framework released with 1.1, but this is expected to be more work.
 
-\subsubsection{Prerequisite RPM Changes}
+\subsection{Prerequisite RPM Changes}
 \label{sec:11_prereq}
 % AV-1117
 The Open Source \href{http://tukaani.org/xz/}{XZ Utils} has replaced the LZMA Utils. This has caused the ANGRYVIPER-provided RPM to change names. Additionally, new RPMs are now provided for other prerequisite packages; consult the \textit{Installation Guide} for a list. An upgrade to the new RPMs \textit{should} cause previous versions to be removed, but the recommended procedure is to uninstall all 1.0.x RPMs before installing 1.1.\\
@@ -471,57 +688,57 @@ The Open Source \href{http://tukaani.org/xz/}{XZ Utils} has replaced the LZMA Ut
 % AV-1788
 For the first time, OpenCPI is providing a pre-packaged third-party library that is not directly required by the Framework: \href{http://liquidsdr.org/}{liquid-dsp}. This is provided to assist end users in the creation of DSP-heavy RCC Workers that execute on all currently-supported platforms without requiring any additional configuration for cross-compilation. It is treated like any other prerequisite library; usage information can be found in the \textit{OpenCPI RCC Development Guide}.
 
-\subsubsection{Deprecated RCC controlOperations}
+\subsection{Deprecated RCC controlOperations}
 % AV-1711, AV-1674
 The RCC \texttt{controlOperations} \texttt{afterConfigure} and \texttt{beforeQuery} have been deprecated and removed from the IDE. They were never called by the Framework and the C++ interface provides the finer-granularity \texttt{XXX\_read()} and \texttt{XXX\_written()} notification methods.
 
-\subsubsection{64-Bit Build Host Issues (``Value too large for defined data type'')}
+\subsection{64-Bit Build Host Issues (``Value too large for defined data type'')}
 % AV-1838
 Some 32-bit cross-compilers exhibit somewhat-rare problems on 64-bit host machines using file systems that allow 64-bit inodes, \textit{e.g.} XFS. A new RPM, \path{ocpi-rereq-build_support-inode64}, provides a workaround. Additional information can be found in the ANGRYVIPER-provided Picoflexor T6A documentation.
 
-\subsection{Major Known Deficiencies}
+\section{Major Known Deficiencies}
 This is a list of major known deficiencies at the release of 1.1 that were not previously documented in Section~\ref{sec:101}. This is \textit{not} an exhaustive list.
 
-\subsubsection{Maximum Message Length in PCI-Based Platforms}
+\subsection{Maximum Message Length in PCI-Based Platforms}
 % AV-1392, AV-2105
 \label{bug:1392}
 PCI-based platforms, \textit{e.g.} ML605 and ALST4, are limited to a 32KB buffer. By default, that buffer is split into two, resulting in two 16KB buffers. The maximum message length, in bytes, is then 16KB-16\footnote{16 bytes required for metadata}. RCC Workers will see any data beyond the limit as zero-filled.
 
-\subsubsection{MAC Address on ZedBoard}
+\subsection{MAC Address on ZedBoard}
 % AV-2400, AV-2403
 \label{bug:2400}
 The currently used Linux release (``\texttt{xilinx13\_3}'') cannot properly set the MAC address on the ZedBoard. This should only affect users who have \textit{more than one ZedBoard} on a single network. Consult the \textit{ZedBoard Getting Started Guide} for a workaround.
 
-\subsubsection{Platform Development Guide}
+\subsection{Platform Development Guide}
 % AV-1585
 \label{bug:1585}
 While all documentation is constantly under improvement, the \textit{Platform Development Guide} in particular is currently undergoing major changes, in part due to the SDP improvements. If an end user intends to create a Board Support Package (BSP) for a new target platform, they should contact the ANGRYVIPER Team to ensure the latest Guide is used.
 
 \newpage
-\section{Release 1.0.1}
+\origsection{Release 1.0.1}
 \label{sec:101}
 These are ``Release Notes'' from Version 1.0.1 that are still relevant as of Version 1.1.
-\subsection{OpenCPI HDL Assembly Filename Constraint}
+\section{OpenCPI HDL Assembly Filename Constraint}
 \label{bug:1035}
 % AV-1035
 Due to a limitation with the ISE Simulator (isim), the filename of any HDL Assembly must be all lowercase letters. A capital letter anywhere in the filename will result in an error.
 
-\subsection{32-bit Architecture File Size Limit}
+\section{32-bit Architecture File Size Limit}
 \label{bug:693}
 % AV-693
 On some software platforms, there will be an error when writing files greater than 2\textsuperscript{31} bytes (about 2.2 GB), especially if using NFS. This includes the ARM 32-bit architecture on Zynq-based platforms.
 
-\subsection{Eclipse Project Description File}
+\section{Eclipse Project Description File}
 A necessary file known as the project description file (\verb+.project+) is generated when creating a Project in the ANGRYVIPER IDE. This file is required by Eclipse and is used to describe the project in its workspace. Removal of this file will cause an error.
 
-\subsection{Refreshing the ANGRYVIPER IDE}
+\section{Refreshing the ANGRYVIPER IDE}
 Whenever files are being created or removed via command-line for an Project, the Project within the IDE needs to be refreshed. Examples include executing \verb+make clean+, \verb+make tests+, \verb+make rcc+, etc. Many of the \verb+make+ commands will create or remove files in the Project, so it is important to refresh the Project within the IDE to reflect the changes.
 
-\subsection{Non-default Xilinx Installation Locations}
-OpenCPI assumes Xilinx's installation location is \verb+/opt/+. If the Xilinx tools were installed in another location, the cross compiling environment variable can not be inferred correctly. To resolve this issue, refer to the \verb+/opt/opencpi/cdk/env/xilinx.sh.example+ file and the \textit{Installation Guide}.
+\section{Non-default Xilinx Installation Locations}
+OpenCPI assumes Xilinx's installation location is \verb+/opt/+. If the Xilinx tools were installed in another location, the cross compiling environment variable can not be inferred correctly. To resolve this issue, refer to the \path{/opt/opencpi/cdk/env/xilinx.sh.example} file and the \textit{Installation Guide}.
 
-\subsection{Zero-Length Message Finite State Machines}
+\section{Zero-Length Message Finite State Machines}
 \label{sec:101_zlm}
 Some workers make use of a finite state machine to monitor a zero-length message (\textit{ZLM}) from an upstream worker. This implementation was designed specifically with unit tests in mind so that simulations could be ended with an end-of-file (EOF) condition from the File Read Worker rather than waiting for a fixed amount of time. Simulation times vary across machines and Workers, so predicting how much time a Worker might need on various machines is not deterministic. In the future, the handling of zero-length message may change, but the current finite state machines for handling them are provided to complete the unit tests of the workers.
-
+\end{appendices}
 \end{document}

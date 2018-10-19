@@ -1,0 +1,8 @@
+<HdlWorker language='vhdl' spec='backpressure-spec'>
+  <Property Name="IDATA_WIDTH_p" Type="ulong" Default="32" Readable="true" Parameter="true"/>
+  <Property Name="ODATA_WIDTH_p" Type="ulong" Default="32" Readable="true" Parameter="true"/>
+
+  <StreamInterface Name="in" DataWidth="IDATA_WIDTH_p"/>
+  <StreamInterface Name="out" DataWidth="ODATA_WIDTH_p"/>
+
+</HdlWorker>

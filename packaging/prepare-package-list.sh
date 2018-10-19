@@ -26,6 +26,7 @@
 # all:     everything in exports and everything in projects in the git repo
 # runtime: minimal runtime (plus some tests) for the platform(s)
 # devel:   development configuration minus runtime
+# deploy:  runtime with redundant non-platform-specific files
 #
 # Basically we generate a set of directories and files for export that are
 # minimal for the export type.
@@ -58,8 +59,12 @@ function found_in {
   return 1
 }
 
+# If a dir has a lib or bin dir it is a rcc platform
+# If the name dir being passed in as $1 returns something to stdin from getHdlPlatform.sh
+# it is an hdl platform (This would also catch rcc platforms but an rcc platform
+# should not get that far because it would have a bin or lib dir).
 function is_platform {
-  [ -d $1/lib -o -d $1/bin ]
+  [ -d $1/lib -o -d $1/bin -o -n "$(./tools/cdk/scripts/getHdlPlatform.sh $(basename $1) 2> /dev/null)" ]
 }
 
 function skip_platform {
@@ -92,7 +97,7 @@ function emit_project_dir {
         emit_project_dir $i && found=1
       else
         echo $i@
-        found=1  
+        found=1
       fi
     done
     [ -n "$found" ] && echo $1/
@@ -138,13 +143,29 @@ case $type in
                     find $(basename $f) -type d -exec echo cdk/runtime/{}/ cdk/{} \; ) || :
     done
     ;;
+  deploy)
+    for f in cdk/runtime/*; do
+      platform=$(basename $f)
+      is_platform $f && [ $platform != $2 ] && continue;
+      [ $f != cdk/runtime/env -a $f != cdk/runtime/env.d -a $f != cdk/runtime/include ] && echo $f
+      [ -d $f ] && (cd cdk/runtime;
+                    find $platform -type d -not -path "*env*" -not -path "*include*" -exec echo cdk/runtime/{}/ \; ) || :
+      # Get directories exported to cdk/deploy/<platform>.  However do not get anything
+      # In subdirectory <platform>/<platform>-deploy as this is where the source build
+      # stores the deployment package
+      [ -d cdk/deploy/$platform ] \
+        && echo cdk/deploy/$platform \
+        && (cd cdk/deploy;
+            find $platform -type d -not -path "*$platform/$platform-deploy*" -exec echo cdk/deploy/{}/ \; ) || :
+    done
+    ;;
   devel)
     for f in cdk/*; do
       ( [ $f = cdk/runtime ] || skip_platform $f ) && continue
       # If its not platform specific, it won't be in the cross-platform devel
       [ -n "$cross" -a $f != cdk/$platforms ] && continue
       (cd cdk; find -H $(basename $f)) | while read path; do
-	 [ -e cdk/runtime/$path ] || echo cdk/$path$([ -d cdk/$path ] && echo /)
+         [ -e cdk/runtime/$path ] || echo cdk/$path$([ -d cdk/$path ] && echo /)
       done
     done
     for p in $prereqs; do
@@ -155,27 +176,29 @@ case $type in
         skip_platform $d && continue;
         if is_platform $d; then
           dynamiclibs=`echo $d/lib/*.{so,so.*,dylib}`
-	  staticlibs=`echo $d/lib/*.a`
-	  pfound=
-          [ -z "$cross" -a -d $d/bin ] && find $d/bin ! -type d &&
-	    find $d/bin -type d -exec echo {}/ \; && pfound=1
-          [ -d $d/include ] && find $d/include ! -type d &&
-            find $d/include -type d -exec echo {}/ \; && pfound=1
-	  [ -n "$staticlibs" ] && pfound=1 && {
-            for i in $staticlibs; do echo $i; done
-            [ -z "$dynamiclibs" ] && find $d/lib -type d -exec echo {}/ \;
-          }
-          [ -z "$dynamiclibs" -a -n "$pfound" ] && echo $d/
-	  [ -n "$pfound" ] && found=1
+          staticlibs=`echo $d/lib/*.a`
+          pfound=
+          [ -z "$cross" -a -d $d/bin ] && find -L $d/bin ! -type d &&
+            find -L $d/bin -type d -exec echo {}/ \; && pfound=1
+          [ -d $d/include ] && find -L $d/include ! -type d &&
+            find -L $d/include -type d -exec echo {}/ \; && pfound=1
+          # Prereq libraries are in the single lib dir for the platform
+          # [ -n "$staticlibs" ] && pfound=1 && {
+          #  for i in $staticlibs; do echo $i; done
+          #  [ -z "$dynamiclibs" ] && find $d/lib -type d -exec echo {}/ \;
+          # }
+          # [ -z "$dynamiclibs" -a -n "$pfound" ] && echo $d/
+          [ -n "$pfound" ] && echo $d/ && found=1
         elif [ -z "$cross" ] && [[ $d == */include ]]; then
-	  found=1
-	  echo $d
-          find $d -type d -exec echo {}/ \;
+          found=1
+          echo $d
+          find -L $d -type d -exec echo {}/ \;
         fi
       done
-      [ -z "$dynamiclibs" -a -n "$found" ] && echo $pdir/
+      [ -n "$found" -a -z "$cross" ] && echo $pdir/
     done
     if [ -z "${cross}" ]; then
+      echo prerequisites/
       # emit project stuff that are git repo items
       git ls-files project-registry | sed 's/$/@/'
       echo project-registry/

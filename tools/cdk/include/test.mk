@@ -67,10 +67,10 @@ include $(OCPI_CDK_DIR)/include/ocl/ocl-make.mk
 #
 # Tests do not have their own package-id file
 # They inherit the containing library's package-id
-$(call OcpiIncludeAssetAndParent,..,error)
+$(call OcpiIncludeAssetAndParent,..,,error)
 
 # This is to allow the spec to be found and any protocols it depends on
-ifneq ($(if $(MAKECMDGOALS),$(filter build all generate generated,$(MAKECMDGOALS)),1),)
+ifneq ($(if $(MAKECMDGOALS),$(filter test build all generate generated,$(MAKECMDGOALS)),1),)
   $(call OcpiSetXmlIncludes)
 endif
 
@@ -96,7 +96,7 @@ TESTXML:=$(CwdName)-test.xml
 $(CASEXML): $(TESTXML)
 	$(AT)echo ========= Generating test assemblies, inputs and applications for $(CwdName):
 	$(AT)OCPI_ALL_PLATFORMS="$(strip $(HdlAllPlatforms:%=%.hdl) $(RccAllPlatforms:%=%.rcc) $(OclAllPlatforms:%=%.ocl))" \
-	     $(call OcpiGen, -v -T $<) && chmod a+x gen/applications/*.sh
+	     $(call OcpiGen, -v -T $<)
 
 -include gen/*.deps
 generate: $(CASEXML)
@@ -120,7 +120,12 @@ build: generate
 #        so we don't (here or elsewhere) have to recompute it
 prepare:
 	$(AT)echo ======== Preparing for execution on available platforms with available built workers and assemblies for $(CwdName):
-	$(AT)$(OCPI_CDK_DIR)/scripts/testrunprep.sh $(call FindRelative,$(realpath $(OCPI_PROJECT_DIR)),$(realpath $(CURDIR)))
+	$(AT)if [ -d gen/applications ]; then \
+	       $(OCPI_CDK_DIR)/scripts/testrunprep.sh \
+                    $(call FindRelative,$(realpath $(OCPI_PROJECT_DIR)),$(realpath $(CURDIR))); \
+	     else \
+	       echo No tests generated here so preparation skipped.; \
+	     fi
 
 runnoprepare:
 	$(AT)echo ======== Executing tests on available or specified platforms for $(CwdName):
@@ -135,7 +140,11 @@ runonly: prepare runnoprepare
 # run is generic (not just for tests)
 run: prepare
 	$(AT)echo ======== Running and verifying test outputs on available platforms for $(CwdName):
-	$(AT)./run/runtests.sh run verify $(and $(View),view)
+	$(AT)if [ -d gen/applications ]; then \
+	       ./run/runtests.sh run verify $(and $(View),view); \
+	     else \
+	       echo No tests generated here so none run.; \
+	     fi
 
 # only for verify only so we can use wildcard
 RunPlatforms=$(foreach p,$(filter-out $(ExcludePlatforms),$(notdir $(wildcard run/*))),\
@@ -172,3 +181,36 @@ cleansim:
 
 clean:: cleanrun
 	$(AT)rm -r -f gen *.pyc
+##########################################################################################
+# Help
+define help
+The make command is used with the following goals to invoke the phases:
+  build — (the default goal if none is specified) build locally generated HDL
+           assemblies, implies generate if needed
+  run   — perform execution and verification, interleaved per subcase
+  clean — clean all generated, built and execution directories and files
+
+The following goals control the process at a finer granularity:
+  generate     — perform all offline generation tasks: scripted input data and property
+                 values, applications, HDL assemblies, generation report
+  prepare      — discover platforms and artifacts and generate execution scripts per
+                 platform, assumes required artifacts are built
+  runnoprepare — execute tests assuming a previous prepare was done
+  runonly      — prepare and execute tests, but do not perform any verification
+  verify       — perform verification for whatever platforms have been executed
+  view         — run the view scripts and put the results in separate windows
+  cleanrun     — clean all run results
+  cleansim     — clean all simulation output (but not run results)
+
+The following variables can be set, usually on the command line:
+  Verbose              - set to 1 for putting the execution logs on the console
+  TestAccumulateErrors - set to 1 to continue after errors until all platforms/cases are done
+  Cases                - set to specific cases, including wildcards for execute and/or verify
+  KeepSimulations      - set to 1 to preserve simulation outputs rather than delete on success
+  TestTimeout          - set to number of seconds to limit execution for any case
+  OnlyPlatforms        - set to platforms to run tests on, rather than those available
+  View                 - set to 1 to enable the "view" script during verify
+  TestApplications     - set to C++ programs to build (set only in the Makefile)
+
+endef
+$(OcpiHelp)

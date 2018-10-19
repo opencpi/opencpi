@@ -20,6 +20,9 @@
 
 #include <stdarg.h>
 #include <assert.h>
+#include <string.h> //strerror
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <istream>
 #include <string>
 #include <cstdlib>
@@ -613,7 +616,8 @@ file2String(std::string &out, const char *file, const char *start, const char *m
   return NULL;
 }
 const char *
-string2File(const std::string &in, const char *file, bool leaveExisting, bool onlyIfDifferent) {
+string2File(const std::string &in, const char *file, bool leaveExisting, bool onlyIfDifferent,
+            bool makeExecutable) {
   bool isDir;
   if (OS::FileSystem::exists(file, &isDir)) {
     if (isDir)
@@ -632,10 +636,24 @@ string2File(const std::string &in, const char *file, bool leaveExisting, bool on
   }
   FILE *f = fopen(file, "w");
   size_t n = in.size();
+  const char *err = NULL;
 
-  if (f && fwrite(in.c_str(), 1, n, f) == n && fclose(f) == 0)
-    return NULL;
-  return esprintf("error writing string value to file '%s'", file);
+  if (!f)
+    err = esprintf("Failed to create file: %s (%s)", file, strerror(errno));
+  else {
+    if (fwrite(in.c_str(), 1, n, f) != n || fflush(f))
+      err = esprintf("Failed to write file: %s (%s)", file, strerror(errno));
+    else if (makeExecutable) {
+      // Linux does not have getumask
+      mode_t mask = umask(0);
+      umask(mask);
+      if (fchmod(fileno(f), (mode_t)0777 & ~mask))
+	err = esprintf("Failed to set execute permission on: %s (%s)", file, strerror(errno));
+    }
+    if (fclose(f) && !err)
+      err = esprintf("Failed to close/write file: %s (%s)", file, strerror(errno));
+  }
+  return err;
 }
 
 const char *
@@ -894,7 +912,7 @@ getAllProjects(std::string &path) {
 // unique name
 // Consider making this more global.
 // Return true on error
-static bool
+bool
 globPath(const char *in, std::string &out) {
   if (!in || !in[0])
     return true;

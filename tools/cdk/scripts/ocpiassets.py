@@ -66,6 +66,9 @@ class AssetFactory():
         Others will use an auxiliary function to first check if a matching instance
         already exists.
         """
+        if not directory:
+            raise ocpiutil.OCPIException("directory passed to  AssetFactory is None.  Pass a " +
+                                         "valid directory to the factory")
         # actions maps asset_type string to the function that creates objects of that type
         # Some types will use plain constructors,
         # and some will use __get_or_create with asset_cls set accordingly
@@ -171,7 +174,7 @@ class Asset(metaclass=ABCMeta):
         # list constructor is required here because the original arg_list is being
         # changed and we can't change a variable we are iterating over
         for setting, value in list(settings_list.items()):
-            if (value in [None, False]) or (setting not in self.__class__.valid_settings):
+            if (value in [None, False]) or (setting not in self.get_valid_settings()):
                 del settings_list[setting]
 
         return settings_list
@@ -183,13 +186,13 @@ class Asset(metaclass=ABCMeta):
         thrown
         """
         if not os.path.isdir(directory):
-            raise ocpiutil.OCPIException("Tried creating a " + dirtype + " in a directory that " +
-                                         "doesn't exist. " + directory)
+            raise ocpiutil.OCPIException("Expected directory of type \"" + dirtype + "\" for a " +
+                                         "directory that does not exist \"" + directory + "\"")
 
         if ocpiutil.get_dirtype(directory) != dirtype:
-            raise ocpiutil.OCPIException("Tried creating a " + dirtype + " in invalid directory " +
-                                         "type: " +  str(ocpiutil.get_dirtype(directory)) +
-                                         " in directory: " + directory)
+            raise ocpiutil.OCPIException("Expected directory of type \"" + dirtype + "\", but " +
+                                         "found type \"" + str(ocpiutil.get_dirtype(directory)) +
+                                         "\" for directory \"" + directory + "\"")
     #@abstractmethod
     def delete(self, force=False):
         """
@@ -199,7 +202,7 @@ class Asset(metaclass=ABCMeta):
         if not force:
             prompt = ("removing " + ocpiutil.get_dirtype(self.directory) + " at directory: " +
                      self.directory)
-            force = ocpiutil.get_ok(prompt)
+            force = ocpiutil.get_ok(prompt=prompt)
         if force:
             shutil.rmtree(self.directory)
 
@@ -208,17 +211,17 @@ class BuildableAsset(Asset):
     Virtual class that requires that any child classes implement a build method.  Contains settings
     that are specific to all assets that can be run
     """
-    valid_settings = ["only_plats", "ex_plats"]
+    valid_settings = ["only_plat", "ex_plat"]
     def __init__(self, directory, name=None, **kwargs):
         """
         Initializes BuildableAsset member data  and calls the super class __init__
         valid kwargs handled at this level are:
-            ex_plats (list) - list of platforms(strings) to exclude from a build
-            only_plats (list) - list of the only platforms(strings) to build for
+            ex_plat (list) - list of platforms(strings) to exclude from a build
+            only_plat (list) - list of the only platforms(strings) to build for
         """
         super().__init__(directory, name, **kwargs)
-        self.ex_plats = kwargs.get("ex_plats", None)
-        self.only_plats = kwargs.get("only_plats", None)
+        self.ex_plat = kwargs.get("ex_plat", None)
+        self.only_plat = kwargs.get("only_plat", None)
 
     @abstractmethod
     def build(self):
@@ -232,15 +235,15 @@ class HDLBuildableAsset(BuildableAsset):
     Virtual class that requires that any child classes implement a build method.  Contains settings
     that are specific to all assets that can be run
     """
-    valid_settings = ["hdl_plats"]
+    valid_settings = ["hdl_plat"]
     def __init__(self, directory, name=None, **kwargs):
         """
         Initializes HDLBuildableAsset member data  and calls the super class __init__
         valid kwargs handled at this level are:
-            hdl_plats (list) - list of hdl platforms(strings) to build for
+            hdl_plat (list) - list of hdl platforms(strings) to build for
         """
         super().__init__(directory, name, **kwargs)
-        self.hdl_plats = kwargs.get("hdl_plats", None)
+        self.hdl_plat = kwargs.get("hdl_plat", None)
 
     @abstractmethod
     def build(self):
@@ -254,15 +257,15 @@ class RCCBuildableAsset(BuildableAsset):
     Virtual class that requires that any child classes implement a build method.  Contains settings
     that are specific to all assets that can be run
     """
-    valid_settings = ["rcc_plats"]
+    valid_settings = ["rcc_plat"]
     def __init__(self, directory, name=None, **kwargs):
         """
         Initializes HDLBuildableAsset member data  and calls the super class __init__
         valid kwargs handled at this level are:
-            rcc_plats (list) - list of rcc platforms(strings) to build for
+            rcc_plat (list) - list of rcc platforms(strings) to build for
         """
         super().__init__(directory, name, **kwargs)
-        self.rcc_plats = kwargs.get("rcc_plats", None)
+        self.rcc_plat = kwargs.get("rcc_plat", None)
 
     @abstractmethod
     def build(self):
@@ -318,7 +321,7 @@ class Test(RunnableAsset, HDLBuildableAsset, RCCBuildableAsset):
     This class represents an OpenCPI Component Unit test.  Contains build/run settings that are
     specific to Tests.
     """
-    valid_settings = ["keep_sims", "errors", "cases", "verbose", "remote_test_sys"]
+    valid_settings = ["keep_sims", "acc_errors", "case", "verbose", "remote_test_sys", "view"]
     def __init__(self, directory, name=None, **kwargs):
         """
         Initializes Test member data  and calls the super class __init__.  Throws an exception if
@@ -326,7 +329,7 @@ class Test(RunnableAsset, HDLBuildableAsset, RCCBuildableAsset):
         valid kwargs handled at this level are:
             keep_sims (T/F) - Keep HDL simulation files for any simulation platforms
             acc_errors (T/F) - Causes errors to accumulate and tests to continue on
-            cases (list) - Specify Which test cases that will be run/verified
+            case (list) - Specify Which test cases that will be run/verified
             mode (list) - Specify which phases of the unit test to run
             remote_test_sys (list) - Specify remote systems to run the test(s)
         """
@@ -334,8 +337,9 @@ class Test(RunnableAsset, HDLBuildableAsset, RCCBuildableAsset):
         super().__init__(directory, name, **kwargs)
 
         self.keep_sims = kwargs.get("keep_sims", False)
+        self.view = kwargs.get("view", False)
         self.acc_errors = kwargs.get("acc_errors", False)
-        self.cases = kwargs.get("cases", None)
+        self.case = kwargs.get("case", None)
         self.mode = kwargs.get("mode", "all")
         self.remote_test_sys = kwargs.get("remote_test_sys", None)
 
@@ -405,7 +409,7 @@ class ApplicationsCollection(RunnableAsset, RCCBuildableAsset):
     This class represents an OpenCPI applications directory.  Ability act on multiple applications
     with a single instance are located in this class.
     """
-    valid_settings = ["run_before", "run_after", "run_args"]
+    valid_settings = ["run_before", "run_after", "run_arg"]
     def __init__(self, directory, name=None, **kwargs):
         """
         Initializes Application member data  and calls the super class __init__.  Throws an
@@ -413,14 +417,14 @@ class ApplicationsCollection(RunnableAsset, RCCBuildableAsset):
         valid kwargs handled at this level are:
             run_before (list) - Arguments to insert before the ACI executable or ocpirun
             run_after (list) - Arguments to insert at the end of the execution command line A
-            run_args (list) - Arguments to insert immediately after the ACI executable or ocpirun
+            run_arg (list) - Arguments to insert immediately after the ACI executable or ocpirun
         """
         self.check_dirtype("applications", directory)
         super().__init__(directory, name, **kwargs)
 
         self.run_before = kwargs.get("run_before", None)
         self.run_after = kwargs.get("run_after", None)
-        self.run_args = kwargs.get("run_args", None)
+        self.run_arg = kwargs.get("run_arg", None)
 
     def run(self):
         """
@@ -563,7 +567,7 @@ class Registry(Asset):
         if not ocpiutil.is_path_in_project(directory):
             raise ocpiutil.OCPIException("Failure to register project:  \"" + directory +
                                          "\" in location: " + os.getcwd() + "is not in a " +
-                                         "project or doesn't exist.")
+                                         "project or does not exist.")
 
         project = AssetFactory.factory("project", directory)
         pid = project.package_id
@@ -581,8 +585,9 @@ class Registry(Asset):
             raise ocpiutil.OCPIException("Failure to register project with package '" + pid +
                                          "'.\nA project/link with that package qualifier " +
                                          "already exists and is registered in '" + self.directory +
-                                         "'.\nTo unregister that project, call: 'ocpidev " +
-                                         "unregister project " + pid +"'.\nThen, rerun the " +
+                                         "'.\nThe old project is not being overwitten to" +
+                                         " unregister the original project, call: 'ocpidev " +
+                                         "unregister project " + pid +"'.\nThen, run the " +
                                          "command: 'ocpidev -d " + project.directory +
                                          " register project'")
 
@@ -613,6 +618,12 @@ class Registry(Asset):
                                              "could not be determined.\nIs it really a project?")
 
         if package_id not in self.__projects:
+            link_path = self.directory + "/" + package_id
+            if os.path.exists(link_path) and not os.path.exists(os.readlink(link_path)):
+                logging.debug("Removing the following broken link from the registry:\n" +
+                              link_path + " -> " + os.readlink(link_path))
+                self.remove_link(package_id)
+                return
             raise ocpiutil.OCPIException("Could not unregister project with package-ID \"" +
                                          package_id + "\" because the project is not in the " +
                                          "registry.\n Run 'ocpidev show registry --table' for " +
@@ -682,6 +693,12 @@ class Registry(Asset):
                                          "project directory")
         return self.__projects[package_id]
 
+    @staticmethod
+    def create(asset_dir="."):
+        print("making: " + asset_dir)
+        os.mkdir(asset_dir)
+        return AssetFactory.factory("registry", asset_dir)
+        
     @staticmethod
     def get_default_registry_dir():
         """
@@ -974,7 +991,7 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
                                                    "projectdeps ShellProjectVars=1",
                                                    "verbose")
 
-        row_1 = ["Project Directory", "Project Package", "Project Dependencies"]
+        row_1 = ["Project Directory", "Package-ID", "Project Dependencies"]
         row_2 = ["---------------------------", "---------------", "---------------------"]
         row_3 = [self.directory, self.package_id, 
                  ", ".join(project_vars['ProjectDependencies'])]
@@ -1002,7 +1019,7 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
                                                    "verbose")
             if details == "simple":
                 print ("Project Directory: " + self.directory)
-                print ("Project Package: " + self.package_id)
+                print ("Package-ID: " + self.package_id)
                 print ("Project Dependencies: " + ", ".join(project_vars['ProjectDependencies']))
             elif details == "table":
                 self.print_project_table()
@@ -1021,7 +1038,7 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
                                                    "projectdeps ShellProjectVars=1",
                                                    "verbose")
                 print ("Project Directory: " + self.directory)
-                print ("Project Package: " + self.package_id)
+                print ("Package-ID: " + self.package_id)
                 print ("Project Dependencies: " + ", ".join(project_vars['ProjectDependencies']))
                 # this will likely change when we have more to show under libraries but for now 
                 # all we have is tests
@@ -1045,8 +1062,8 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
                 self.show_libraries(details="table")
                 print("Tests:")
                 self.show_tests(details="table")
-                print("Primatives:")
-                row_1 = ["Primative Directory", "Primative"]
+                print("Primitives:")
+                row_1 = ["Primitive Directory", "Primitive"]
                 row_2 = ["---------------------------", "---------------"]
                 rows = [row_1, row_2]
                 prim_dir = self.directory + "/hdl/primitives"
@@ -1083,7 +1100,7 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
                     prim_pkg = "".join(prim_vars['Package'])
                     for prim in prims:
                         prims_dict[prim] = prim_dir + "/" + prim
-                    project_dict["primatives"] = prims_dict
+                    project_dict["primitives"] = prims_dict
                 project_vars = ocpiutil.set_vars_from_make(self.directory + "/Makefile",
                                                        "projectdeps ShellProjectVars=1",
                                                        "verbose")
@@ -1129,6 +1146,10 @@ class Project(RunnableAsset, RCCBuildableAsset, HDLBuildableAsset, ShowableAsset
                                          self.directory + "\", you must unregister the project.\n" +
                                          "This can be done by running 'ocpidev unregister project" +
                                          " " + self.package_id + "'.")
+
+        ocpiutil.logging.warning("To use this registry, run the following command and add it " +
+                                 "to your ~/.bashrc:\nexport OCPI_PROJECT_REGISTRY_DIR=" +
+                                 os.path.realpath(registry_path))
 
         #self.__registry = AssetFactory.factory("registry", registry_path)
         # TODO: pull this relative link functionality into a helper function

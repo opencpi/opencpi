@@ -344,7 +344,7 @@ namespace OCPI {
 	*file2String(std::string &out, const char *file, const char *start, const char *middle, 
 		     const char *end),
 	*string2File(const std::string &in, const char *file, bool leaveExisting = false,
-		     bool onlyIfDifferent = false),
+		     bool onlyIfDifferent = false, bool makeExecutable = false),
 	*evsprintf(const char *fmt, va_list ap),
 	*esprintf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
       inline const char *file2String(std::string &out, const std::string &file,
@@ -448,6 +448,9 @@ namespace OCPI {
       // empty strings and "/" result in an empty string.
       // The return value is a convenience - the c_str() of the output buffer.
       const char *baseName(const char *path, std::string &buf);
+      // Do glob processing where the expectation is that any pattern results in a single
+      // unique name.  Include tilde processing.  Return true on error
+      bool globPath(const char *in, std::string &out);
       // find item in colon-separated path, returning complete path in "result"
       // return true on error
       bool searchPath(const char *path, const char *item, std::string &result,

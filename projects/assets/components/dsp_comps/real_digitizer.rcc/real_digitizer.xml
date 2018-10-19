@@ -1,3 +1,7 @@
 <RccImplementation controloperations="start" Spec="real_digitizer-spec.xml">
+  <Property Name="enable_printing" Type="Bool" Writable="true" Default="true"
+                                   Description="Enable stdout/stderr printing."/>
+  <Property Name="sync_criteria_met" Type="Bool" Volatile="true"
+                                     Description="Indicates either 0xFACE found or need_sync is false."/>
 </RccImplementation>
 

@@ -119,12 +119,15 @@ def do_rccplatforms(options):
     If the "table" option is provided, print out a formatted table of the platforms and targets.
     If the "json" option is provided, dump json output for the platform/target details.
     """
+    if options.scope != "global":
+        raise ocpiutil.OCPIException("ocpidev show rcc platforms is only valid in \"--global-scope\"." +
+                                     "  Other scope options are under construction.")
     rccDict = ocpiutil.get_make_vars_rcc_targets()
     try:
       rccPlatforms = rccDict["RccAllPlatforms"]
       rccTargets   = rccDict["RccAllTargets"]
     except TypeError:
-        print("No RCC platforms found. Make sure the core project is registered or in your OCPI_PROJECT_PATH.")
+        print("No RCC platforms found. Make sure the core project is registered or in the OCPI_PROJECT_PATH.")
         return
     if options.details == "table":
         rows = [["Platform", "Target"]]
@@ -154,6 +157,9 @@ def do_rcctargets(options):
     If the "table" option is provided, print out a formatted table of the platforms and targets.
     If the "json" option is provided, dump json output for the platform/target details.
     """
+    if options.scope != "global":
+        raise ocpiutil.OCPIException("ocpidev show targets is only valid in \"--global-scope\"." +
+                                     "  Other scope options are under construction.")
     if options.details in {"json", "table"}:
         do_rccplatforms(options)
     else:
@@ -161,7 +167,7 @@ def do_rcctargets(options):
         try:
           print(ocpiutil.python_list_to_bash(sorted(rccDict["RccAllTargets"])))
         except TypeError:
-            print("No RCC targets found. Make sure the core project is registered or in your OCPI_PROJECT_PATH.")
+            print("No RCC targets found. Make sure the core project is registered or in the OCPI_PROJECT_PATH.")
             return
 
 
@@ -173,6 +179,9 @@ def do_hdlplatforms(options):
     the details associated with each.
     If the "json" option is provided, dump json output for the platform details.
     """
+    if options.scope != "global":
+        raise ocpiutil.OCPIException("ocpidev show hdl platforms is only valid in \"--global-scope\"." +
+                                     "  Other scope options are under construction.")
     platforms = HdlPlatform.all()
     if options.details == "table":
         rows = [["Platform", "Target", "Part", "Vendor", "Toolset"]]
@@ -215,6 +224,9 @@ def do_hdltargets(options):
     the details associated with each.
     If the "json" option is provided, dump json output for the target details.
     """
+    if options.scope != "global":
+        raise ocpiutil.OCPIException("ocpidev show hdl targets is only valid in \"--global-scope\"." +
+                                     "  Other scope options are under construction.")
     if options.details == "table":
         rows = [["Target", "Parts", "Vendor", "Toolset"]]
         rows += [["---------", "---------", "---------", "---------"]]
@@ -241,6 +253,9 @@ def do_platforms(options):
     """
     Print out platforms for all authoring models
     """
+    if options.scope != "global":
+        raise ocpiutil.OCPIException("ocpidev show platforms is only valid in \"--global-scope\"." +
+                                     "  Other scope options are under construction.")
     if options.details != "json":
         print("RCC:")
     else:
@@ -260,6 +275,9 @@ def do_targets(options):
     """
     Print out targets for all authoring models
     """
+    if options.scope != "global":
+        raise ocpiutil.OCPIException("ocpidev show targets is only valid in \"--global-scope\"." +
+                                     "  Other scope options are under construction.")
     if options.details != "json":
         print("RCC:")
     do_rcctargets(options)
@@ -290,7 +308,7 @@ def do_worker_or_comp(options, worker):
             subprocess.check_output([os.environ['OCPI_CDK_DIR']+"/scripts/genProjMetaData.py", mdFile])
         mdFile = proj_dir + "/project.xml"
         if os.path.isfile(mdFile):
-            assetList = assetList + get_tags(mdFile, xml_asset)
+            assetList = get_tags(mdFile, xml_asset)
             if options.details == "simple":
                 print("Project: " + proj_dir)
                 for asset in assetList.split():
@@ -307,9 +325,15 @@ def do_worker_or_comp(options, worker):
         ocpiutil.print_table(rows)
 
 def do_components(options):
+    if options.scope != "global":
+        raise ocpiutil.OCPIException("ocpidev show components is only valid in \"--global-scope\"." +
+                                     "  Other scope options are under construction.")
     do_worker_or_comp(options, False)
 
 def do_workers(options):
+    if options.scope != "global":
+        raise ocpiutil.OCPIException("ocpidev show workers is only valid in \"--global-scope\"." +
+                                     "  Other scope options are under construction.")
     do_worker_or_comp(options, True)
 
 def do_libraries(options):
@@ -317,8 +341,14 @@ def do_libraries(options):
         raise ocpiutil.OCPIException("ocpidev show libraries is only valid in \"--local-scope\"." +
                                      "  Other scope options are under construction.")
     if not ocpiutil.get_path_to_project_top():
-        raise ocpiutil.OCPIException("When using the \"--local-scope\" scope you must run the command " +
-                                    "in a valid OpenCPI project. " + os.path.realpath(".") +
+        raise ocpiutil.OCPIException("When using the \"--local-scope\" option the command must " +
+                                    "be run in a valid OpenCPI project. " + os.path.realpath(".") +
+                                    " is not a valid project.  Use the \"-d\" option or change " +
+                                    "directories")
+
+    if not ocpiutil.get_path_to_project_top():
+        raise ocpiutil.OCPIException("When using the \"--local-scope\" option the command must " +
+                                    "be run in a valid OpenCPI project. " + os.path.realpath(".") +
                                     " is not a valid project.  Use the \"-d\" option or change " +
                                     "directories")
     #TODO this may not be the right way to do this long term
@@ -327,23 +357,31 @@ def do_libraries(options):
     my_asset.show(libraries=True, details=options.details, verbose=options.verbose)
 
 def do_project(options):
-    #TODO this may not be the right way to do this long term
+    if options.scope != "local":
+        raise ocpiutil.OCPIException("ocpidev show project is only valid in \"--local-scope\".  " +
+                                     "Other scope options are under construction.")
+
+    if not ocpiutil.get_path_to_project_top():
+        raise ocpiutil.OCPIException("When using the \"--local-scope\" option the command must " +
+                                    "be run in a valid OpenCPI project. " + os.path.realpath(".") +
+                                    " is not a valid project.  Use the \"-d\" option or change " +
+                                    "directories")
     if options.verbose:
         my_asset = ocpiassets.AssetFactory.factory("project",
                                                ocpiutil.get_path_to_project_top(),
                                                init_libs=True)
     else:
         my_asset = ocpiassets.AssetFactory.factory("project",
-                                               ocpiutil.get_path_to_project_top())
+                                                   ocpiutil.get_path_to_project_top())
     my_asset.show(details=options.details, verbose=options.verbose)
 
 def do_tests(options):
     if options.scope != "local":
-        raise ocpiutil.OCPIException("ocpidev show tests is only valid in \"--local\" scope.  " +
+        raise ocpiutil.OCPIException("ocpidev show tests is only valid using \"--local-scope\" " +
                                      "Other scope options are under construction.")
     if not ocpiutil.get_path_to_project_top():
-        raise ocpiutil.OCPIException("When using the \"--local\" scope you must run the command " +
-                                    "in a valid OpenCPI project. " + os.path.realpath(".") +
+        raise ocpiutil.OCPIException("When using the \"--local-scope\" option the command must " +
+                                    "be run in a valid OpenCPI project. " + os.path.realpath(".") +
                                     " is not a valid project.  Use the \"-d\" option or change " +
                                     "directories")
     #TODO this may not be the right way to do this long term
@@ -371,6 +409,8 @@ def do_registry(options):
     Print out the currently registered projects
         -- different from do_projects because we omit OCPI_PROJECT_PATH
     """
+    if options.scope != "global":
+        raise ocpiutil.OCPIException("ocpidev show registry is only valid in \"--global-scope\".")
     do_projects(options, only_registry=True)
 
 def collect_projects_from_path():
@@ -405,6 +445,8 @@ def do_projects(options, only_registry=False):
                   }
     }
     """
+    if options.scope != "global":
+        raise ocpiutil.OCPIException("ocpidev show projects is only valid in \"--global-scope\".")
     # Get projects from registry
     try:
         reg_dir = Registry.get_registry_dir()

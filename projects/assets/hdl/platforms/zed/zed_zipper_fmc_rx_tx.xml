@@ -1,4 +1,4 @@
 <HdlConfig Language='vhdl'>
-  <device name='lime_adc' card='lime_zipper_fmc_lpc'/>
-  <device name='lime_dac' card='lime_zipper_fmc_lpc'/>
+  <device name='lime_adc' card='lime_zipper_fmc_lpc'/> <!-- connection must be defined in a container -->
+  <device name='lime_dac' card='lime_zipper_fmc_lpc'/> <!-- connection must be defined in a container -->
 </HdlConfig>

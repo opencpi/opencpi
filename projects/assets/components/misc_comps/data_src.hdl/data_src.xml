@@ -1,3 +1,7 @@
 <HdlWorker language='vhdl' spec='data_src-spec'>
-  <StreamInterface Name="out" DataWidth="32"/>
+
+  <Property Name="ODATA_WIDTH_p" Type="ushort" Default="32" Parameter="true"/>
+
+  <StreamInterface Name="out" DataWidth="ODATA_WIDTH_p"/>
+
 </HdlWorker>

@@ -1,115 +1,27 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Utilization Report for Worker "alst4"
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\begin{scriptsize}
-	\begin{table}[H]
-	\captionsetup{justification=raggedright,singlelinecheck=false}
-	\caption{Worker Build Configuration ``0''}
-	\begin{tabular}{|c|c|c|c|c|c|c|c|}
-		\hline
-		\rowcolor{blue}
-		OpenCPI Target & Tool    & Version & Device             & Registers & LUTs  & Fmax (MHz) & Memory/Special Functions                                                                                                                     \\
-		\hline
-		stratix4       & Quartus & 15.1.0  & EP4SGX230KF40C2    & 3119      & 4,448 & N/A        & \begin{tabular}{@{}c@{}}GXB Receiver PCSs=4 \\ GXB Transmitter PCSs=4 \\ GXB Transmitter PMAs=4 \\ GXB Receiver PMAs=4 \\ PLLs=1\end{tabular}\\
-		\hline
-	\end{tabular}
-	\end{table}
-\end{scriptsize}
-\begin{scriptsize}
-	\begin{table}[H]
-	\captionsetup{justification=raggedright,singlelinecheck=false}
-	\caption{Worker Build Configuration ``base''}
-	\begin{tabular}{|c|c|c|c|c|c|c|c|}
-		\hline
-		\rowcolor{blue}
-		OpenCPI Target & Tool    & Version & Device             & Registers & LUTs  & Fmax (MHz) & Memory/Special Functions                                                                                                                     \\
-		\hline
-		stratix4       & Quartus & 15.1.0  & EP4SGX230KF40C2    & 4166      & 5,150 & N/A        & \begin{tabular}{@{}c@{}}GXB Receiver PCSs=4 \\ GXB Transmitter PCSs=4 \\ GXB Transmitter PMAs=4 \\ GXB Receiver PMAs=4 \\ PLLs=1\end{tabular}\\
-		\hline
-	\end{tabular}
-	\end{table}
-\end{scriptsize}
-\begin{scriptsize}
-	\begin{table}[H]
-	\captionsetup{justification=raggedright,singlelinecheck=false}
-	\caption{Worker Build Configuration ``alst4\_zipper\_hsmc\_alst4\_port\_a\_rx''}
-	\begin{tabular}{|c|c|c|c|c|c|c|c|}
-		\hline
-		\rowcolor{blue}
-		OpenCPI Target & Tool    & Version & Device                               & Registers & LUTs  & Fmax (MHz) & Memory/Special Functions                                                                                                                     \\
-		\hline
-		stratix4       & Quartus & 15.1.0  & EP4SGX230KF40C2                      & 4716      & 5,950 & N/A        & \begin{tabular}{@{}c@{}}GXB Receiver PCSs=4 \\ GXB Transmitter PCSs=4 \\ GXB Transmitter PMAs=4 \\ GXB Receiver PMAs=4 \\ PLLs=1\end{tabular}\\
-		\hline
-	\end{tabular}
-	\end{table}
-\end{scriptsize}
-\begin{scriptsize}
-	\begin{table}[H]
-	\captionsetup{justification=raggedright,singlelinecheck=false}
-	\caption{Worker Build Configuration ``alst4\_zipper\_hsmc\_alst4\_port\_a\_rx\_tx''}
-	\begin{tabular}{|c|c|c|c|c|c|c|c|}
-		\hline
-		\rowcolor{blue}
-		OpenCPI Target & Tool    & Version & Device                                  & Registers & LUTs  & Fmax (MHz) & Memory/Special Functions                                                                                                                     \\
-		\hline
-		stratix4       & Quartus & 15.1.0  & EP4SGX230KF40C2                         & 4934      & 6,288 & N/A        & \begin{tabular}{@{}c@{}}GXB Receiver PCSs=4 \\ GXB Transmitter PCSs=4 \\ GXB Transmitter PMAs=4 \\ GXB Receiver PMAs=4 \\ PLLs=1\end{tabular}\\
-		\hline
-	\end{tabular}
-	\end{table}
-\end{scriptsize}
-\begin{scriptsize}
-	\begin{table}[H]
-	\captionsetup{justification=raggedright,singlelinecheck=false}
-	\caption{Worker Build Configuration ``alst4\_zipper\_hsmc\_alst4\_port\_a\_tx''}
-	\begin{tabular}{|c|c|c|c|c|c|c|c|}
-		\hline
-		\rowcolor{blue}
-		OpenCPI Target & Tool    & Version & Device                               & Registers & LUTs  & Fmax (MHz) & Memory/Special Functions                                                                                                                     \\
-		\hline
-		stratix4       & Quartus & 15.1.0  & EP4SGX230KF40C2                      & 4603      & 5,973 & N/A        & \begin{tabular}{@{}c@{}}GXB Receiver PCSs=4 \\ GXB Transmitter PCSs=4 \\ GXB Transmitter PMAs=4 \\ GXB Receiver PMAs=4 \\ PLLs=1\end{tabular}\\
-		\hline
-	\end{tabular}
-	\end{table}
-\end{scriptsize}
-\begin{scriptsize}
-	\begin{table}[H]
-	\captionsetup{justification=raggedright,singlelinecheck=false}
-	\caption{Worker Build Configuration ``alst4\_zipper\_hsmc\_alst4\_port\_b\_rx''}
-	\begin{tabular}{|c|c|c|c|c|c|c|c|}
-		\hline
-		\rowcolor{blue}
-		OpenCPI Target & Tool    & Version & Device                               & Registers & LUTs  & Fmax (MHz) & Memory/Special Functions                                                                                                                     \\
-		\hline
-		stratix4       & Quartus & 15.1.0  & EP4SGX230KF40C2                      & 4716      & 5,950 & N/A        & \begin{tabular}{@{}c@{}}GXB Receiver PCSs=4 \\ GXB Transmitter PCSs=4 \\ GXB Transmitter PMAs=4 \\ GXB Receiver PMAs=4 \\ PLLs=1\end{tabular}\\
-		\hline
-	\end{tabular}
-	\end{table}
-\end{scriptsize}
-\begin{scriptsize}
-	\begin{table}[H]
-	\captionsetup{justification=raggedright,singlelinecheck=false}
-	\caption{Worker Build Configuration ``alst4\_zipper\_hsmc\_alst4\_port\_b\_rx\_tx''}
-	\begin{tabular}{|c|c|c|c|c|c|c|c|}
-		\hline
-		\rowcolor{blue}
-		OpenCPI Target & Tool    & Version & Device                                  & Registers & LUTs  & Fmax (MHz) & Memory/Special Functions                                                                                                                     \\
-		\hline
-		stratix4       & Quartus & 15.1.0  & EP4SGX230KF40C2                         & 4934      & 6,288 & N/A        & \begin{tabular}{@{}c@{}}GXB Receiver PCSs=4 \\ GXB Transmitter PCSs=4 \\ GXB Transmitter PMAs=4 \\ GXB Receiver PMAs=4 \\ PLLs=1\end{tabular}\\
-		\hline
-	\end{tabular}
-	\end{table}
-\end{scriptsize}
-\begin{scriptsize}
-	\begin{table}[H]
-	\captionsetup{justification=raggedright,singlelinecheck=false}
-	\caption{Worker Build Configuration ``alst4\_zipper\_hsmc\_alst4\_port\_b\_tx''}
-	\begin{tabular}{|c|c|c|c|c|c|c|c|}
-		\hline
-		\rowcolor{blue}
-		OpenCPI Target & Tool    & Version & Device                               & Registers & LUTs  & Fmax (MHz) & Memory/Special Functions                                                                                                                     \\
-		\hline
-		stratix4       & Quartus & 15.1.0  & EP4SGX230KF40C2                      & 4603      & 5,973 & N/A        & \begin{tabular}{@{}c@{}}GXB Receiver PCSs=4 \\ GXB Transmitter PCSs=4 \\ GXB Transmitter PMAs=4 \\ GXB Receiver PMAs=4 \\ PLLs=1\end{tabular}\\
-		\hline
-	\end{tabular}
-	\end{table}
-\end{scriptsize}
+% Generated on Fri Oct  5 08:46:03 2018
+
+% It is best to wrap this table in \begin{landscape} and \end{landscape} in its including doc
+\begin{tiny}
+    \begin{longtable}[l]{* {9}{|c}|}
+    \captionsetup{justification=raggedright,singlelinecheck=false}
+    \caption{Resource Utilization Table for hdl-platform: alst4}\\
+        \hline
+        \rowcolor{blue}
+            Configuration                               & OCPI Target & Tool    & Version & Device          & Registers (Typ) & LUTs (Typ) & Fmax (MHz) (Typ) & Memory/Special Functions \\
+            \hline
+            alst4\_zipper\_hsmc\_alst4\_port\_a\_rx     & stratix4    & Quartus & 17.1.0  & EP4SGX230KF40C2 & 4720            & 5964       & N/A              & \begin{tabular}{@{}l@{}}Block Memory Bits: 170540 \\ PLL: 1 \\ GXB Transmitter PMA: 4 \\ GXB Receiver PCS: 4 \\ GXB Receiver PMA: 4 \\ GXB Transmitter PCS: 4\end{tabular} \\
+            \hline
+            alst4\_zipper\_hsmc\_alst4\_port\_a\_rx\_tx & stratix4    & Quartus & 17.1.0  & EP4SGX230KF40C2 & 5016            & 6424       & N/A              & \begin{tabular}{@{}l@{}}Block Memory Bits: 172076 \\ PLL: 1 \\ GXB Transmitter PMA: 4 \\ GXB Receiver PCS: 4 \\ GXB Receiver PMA: 4 \\ GXB Transmitter PCS: 4\end{tabular} \\
+            \hline
+            alst4\_zipper\_hsmc\_alst4\_port\_a\_tx     & stratix4    & Quartus & 17.1.0  & EP4SGX230KF40C2 & 4685            & 6109       & N/A              & \begin{tabular}{@{}l@{}}Block Memory Bits: 73772 \\ PLL: 1 \\ GXB Transmitter PMA: 4 \\ GXB Receiver PCS: 4 \\ GXB Receiver PMA: 4 \\ GXB Transmitter PCS: 4\end{tabular} \\
+            \hline
+            alst4\_zipper\_hsmc\_alst4\_port\_b\_rx     & stratix4    & Quartus & 17.1.0  & EP4SGX230KF40C2 & 4720            & 5964       & N/A              & \begin{tabular}{@{}l@{}}Block Memory Bits: 170540 \\ PLL: 1 \\ GXB Transmitter PMA: 4 \\ GXB Receiver PCS: 4 \\ GXB Receiver PMA: 4 \\ GXB Transmitter PCS: 4\end{tabular} \\
+            \hline
+            alst4\_zipper\_hsmc\_alst4\_port\_b\_rx\_tx & stratix4    & Quartus & 17.1.0  & EP4SGX230KF40C2 & 5016            & 6424       & N/A              & \begin{tabular}{@{}l@{}}Block Memory Bits: 172076 \\ PLL: 1 \\ GXB Transmitter PMA: 4 \\ GXB Receiver PCS: 4 \\ GXB Receiver PMA: 4 \\ GXB Transmitter PCS: 4\end{tabular} \\
+            \hline
+            alst4\_zipper\_hsmc\_alst4\_port\_b\_tx     & stratix4    & Quartus & 17.1.0  & EP4SGX230KF40C2 & 4685            & 6109       & N/A              & \begin{tabular}{@{}l@{}}Block Memory Bits: 73772 \\ PLL: 1 \\ GXB Transmitter PMA: 4 \\ GXB Receiver PCS: 4 \\ GXB Receiver PMA: 4 \\ GXB Transmitter PCS: 4\end{tabular} \\
+            \hline
+            base                                        & stratix4    & Quartus & 17.1.0  & EP4SGX230KF40C2 & 4168            & 5156       & N/A              & \begin{tabular}{@{}l@{}}Block Memory Bits: 72236 \\ PLL: 1 \\ GXB Transmitter PMA: 4 \\ GXB Receiver PCS: 4 \\ GXB Receiver PMA: 4 \\ GXB Transmitter PCS: 4\end{tabular} \\
+            \hline
+        \end{longtable}
+\end{tiny}

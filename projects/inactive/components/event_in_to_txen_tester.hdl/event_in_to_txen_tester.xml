@@ -1,0 +1,5 @@
+<HdlWorker language='vhdl' spec='event_in_to_txen_tester-spec'>
+
+  <StreamInterface Name="event_in" Optional="1" ZeroLengthMessages="true"/>
+
+</HdlWorker>
