@@ -9,10 +9,13 @@ All documentation is in the `doc/` subdirectory available [here](doc/). **This i
 Installation
 ---
 #### YUM / RPM
-This is for CentOS 6 or 7 systems:
- - `sudo yum install yum-utils`
+
+**This is the recommended usage for most users** and the most likely to be supported.
+
+On CentOS 6 or 7 systems:
+ - `sudo yum install yum-utils epel-release`
  - `sudo yum-config-manager --add-repo=http://opencpi.github.io/repo/opencpi-v1.4.0.repo`
- - `sudo yum install 'opencpi-*' 'ocpi-prereq-*'`
+ - `sudo yum install 'opencpi*'`
 
 For additional information, consult the [YUM/RPM Installation Guide][rpminstall].
 
@@ -22,12 +25,12 @@ For additional information, consult the [YUM/RPM Installation Guide][rpminstall]
 - Enter the following command in a directory where `opencpi` will be cloned/downloaded.
 - `git clone https://github.com/opencpi/opencpi.git`
 - `cd opencpi` (enter the directory where the OpenCPI git repository was cloned)
-- This next command will:
---- first install some standard prerequisites using `sudo yum install`
---- download/build others directly in the `prerequisites` subdirectory under `opencpi/`.
---- build the framework and built-in projects from source
---- if a development system, run tests on the resulting built system
-- `scripts/install-opencpi.sh` (root permission *not* required)
+- `scripts/install-opencpi.sh` (root permission *not* required) will:
+  - first install some standard prerequisites using `sudo yum install`
+  - download/build others directly in the `prerequisites` subdirectory under `opencpi/`.
+  - build the framework and built-in projects from source
+  - if a development system, run tests on the resulting built system
+
 
 For additional information, consult the [traditional Installation Guide][ossinstall].
 
