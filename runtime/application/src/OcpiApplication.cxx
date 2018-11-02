@@ -41,6 +41,21 @@ namespace OCPI {
     // divert some application PValue parameters into the discovery process
     static OL::Assembly &
     createLibraryAssembly(ezxml_t appXml, const char *name, const PValue *params) {
+      // Extract any extra application params from the environment
+      const char *env = getenv("OCPI_APPLICATION_PARAMS");
+      OU::PValueList envParams;
+      if (env) {
+	OU::PValueList tempParams;
+	for (OU::TokenIter li(env); li.token(); li.next()) {
+	  const char *eq = strchr(li.token(), '=');
+	  if (!eq)
+	    ocpiBad("OCPI_APPLICATION_PARAMS value \"%s\" is invalid", env);
+	  std::string name(li.token(), OCPI_SIZE_T_DIFF(eq, li.token()));
+	  tempParams.add(name.c_str(), eq + 1);
+	}
+	envParams.add(params, tempParams);
+	params = envParams;
+      }
       // Among other things, this provides the simparams for simulation containers
       static const char *forDiscovery[] = {
 	OCPI_DISCOVERY_PARAMETERS, OCPI_DISCOVERY_ONLY_PARAMETERS, NULL

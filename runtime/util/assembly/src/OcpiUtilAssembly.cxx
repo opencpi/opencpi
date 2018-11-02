@@ -221,6 +221,9 @@ namespace OCPI {
           emptySeen = true; // this means a later empty assigned value is ok
           continue;
         }
+	bool optional = false;
+	if (assign[0] == '?' && len > 1)
+	  assign++, len--, optional = true;
         for (unsigned nn = 0; assign && nn < m_instances.size(); nn++)
           if (m_instances[nn]->m_name.length() == len &&
               !strncasecmp(assign, m_instances[nn]->m_name.c_str(), len)) {
@@ -235,7 +238,7 @@ namespace OCPI {
             if (mp->m_name.length() == len && !strncasecmp(assign, mp->m_name.c_str(), len))
               assign = NULL;
         }
-        if (assign)
+        if (assign && !optional)
           return esprintf("No instance for %s assignment '%s'", pName, assign);
       }
       return NULL;

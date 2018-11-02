@@ -155,7 +155,10 @@ namespace OCPI {
 	    throw Error("Parameter \"%s\" value for \"%s\" is not a string", var, name);
 	  if (p->vString[0] != '=') {
 	    size_t len = strlen(var);
-	    if (!strncasecmp(var, p->vString, len) && p->vString[len] == '=') {
+	    const char *match = p->vString;
+	    if (match[0] == '?')
+	      match++;
+	    if (!strncasecmp(var, match, len) && match[len] == '=') {
 	      if (specific)
 		throw Error("Parameter \"%s\" for instance \"%s\" is specified more than once",
 			    name,  var);
