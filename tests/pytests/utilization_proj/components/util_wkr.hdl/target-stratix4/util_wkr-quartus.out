@@ -1,0 +1,146 @@
+Commands to execute tool:
+set -e;
+echo '  'Creating target-stratix4/util_wkr.qxp with top == util_wkr\; details in target-stratix4/quartus-util_wkr.out.;
+rm -r -f db incremental_db util_wkr.qxp util_wkr.*.rpt util_wkr.*.summary util_wkr.qpf util_wkr.qsf util_wkr.qxp;
+if test -f util_wkr.qsf;
+then cp util_wkr.qsf util_wkr.qsf.bak;
+fi;
+source /home/user/opencpi/ocpi_util/cdk/include/hdl/quartus_qsf_gen.sh;
+( echo '#' Common assignments whether a library or a core;
+echo set_global_assignment -name FAMILY '"'Stratix IV'"';
+echo set_global_assignment -name DEVICE AUTO;
+echo set_global_assignment -name TOP_LEVEL_ENTITY util_wkr;
+echo '# Search path(s) for local files';
+echo set_global_assignment -name SEARCH_PATH '"'.'"';
+echo set_global_assignment -name SEARCH_PATH '"'..'"';
+echo set_global_assignment -name SEARCH_PATH '"'../gen'"';
+echo set_global_assignment -name SEARCH_PATH '"'../../../../../../cdk/include/hdl'"';
+echo '#' Assignments for adding libraries to search path;
+echo set_global_assignment -name SEARCH_PATH '"'../../../imports/ocpi.core/exports/lib/hdl/fixed_float/stratix4'"';
+echo set_global_assignment -name VHDL_FILE -library fixed_float '"'/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/fixed_float/stratix4//fixed_float_types_pkg.vhd'"';
+echo set_global_assignment -name VHDL_FILE -library fixed_float '"'/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/fixed_float/stratix4//float_pkg.vhd'"';
+echo set_global_assignment -name VHDL_FILE -library fixed_float '"'/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/fixed_float/stratix4//float_body.vhd'"';
+echo set_global_assignment -name VHDL_FILE -library fixed_float '"'/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/fixed_float/stratix4//fixed_pkg.vhd'"';
+echo set_global_assignment -name VHDL_FILE -library fixed_float '"'/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/fixed_float/stratix4//fixed_body.vhd'"';
+echo set_global_assignment -name SEARCH_PATH '"'../../../imports/ocpi.core/exports/lib/hdl/ocpi/stratix4'"';
+echo set_global_assignment -name VHDL_FILE -library ocpi '"'/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4//props_pkg.vhd'"';
+echo set_global_assignment -name VHDL_FILE -library ocpi '"'/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4//wci_pkg.vhd'"';
+echo set_global_assignment -name VHDL_FILE -library ocpi '"'/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4//wci_body.vhd'"';
+echo set_global_assignment -name VHDL_FILE -library ocpi '"'/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4//types_pkg.vhd'"';
+echo set_global_assignment -name VHDL_FILE -library ocpi '"'/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4//types_body.vhd'"';
+echo set_global_assignment -name VHDL_FILE -library ocpi '"'/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4//wsi_pkg.vhd'"';
+echo set_global_assignment -name VHDL_FILE -library ocpi '"'/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4//wsi_body.vhd'"';
+echo set_global_assignment -name VHDL_FILE -library ocpi '"'/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4//ocp_pkg.vhd'"';
+echo set_global_assignment -name VHDL_FILE -library ocpi '"'/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4//util_pkg.vhd'"';
+echo set_global_assignment -name VHDL_FILE -library ocpi '"'/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4//util_body.vhd'"';
+echo set_global_assignment -name SEARCH_PATH '"'../../../imports/ocpi.core/exports/lib/hdl/util/stratix4'"';
+echo set_global_assignment -name VHDL_FILE -library util '"'/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/util/stratix4//types_pkg.vhd'"';
+echo set_global_assignment -name VHDL_FILE -library util '"'/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/util/stratix4//util_pkg.vhd'"';
+echo set_global_assignment -name VHDL_FILE -library util '"'/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/util/stratix4//util_body.vhd'"';
+echo set_global_assignment -name SEARCH_PATH '"'../../../imports/ocpi.core/exports/lib/hdl/bsv/stratix4'"';
+echo set_global_assignment -name VHDL_FILE -library bsv '"'/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/bsv/stratix4//bsv_pkg.vhd'"';
+echo '#' Assignment for local source files using search paths above;
+hdl_files_no_vlg_libs util_wkr util_wkr-defs.vhd generics.vhd util_wkr-impl.vhd ../util_wkr.vhd ;
+echo '#' Assignments for building cores;
+echo set_global_assignment -name AUTO_EXPORT_INCREMENTAL_COMPILATION on;
+echo set_global_assignment -name INCREMENTAL_COMPILATION_EXPORT_FILE util_wkr.qxp;
+echo set_global_assignment -name INCREMENTAL_COMPILATION_EXPORT_NETLIST_TYPE POST_SYNTH;
+) > util_wkr.qsf;
+echo fit_stratixii_disallow_slm=On > quartus.ini;
+cat -n util_wkr.qsf;
+set -e;
+(set -o pipefail;
+set +e;
+export LM_LICENSE_FILE=2100@license_server ;
+/usr/bin/time -f %E /opt/Altera/17.1/quartus/bin/quartus_map --64bit --write_settings_files=off util_wkr > util_wkr-map.tmp 2>&1;
+ST=$?;
+sed 's/^.\[0m.\[0;
+32m//' < util_wkr-map.tmp > util_wkr-map.out ;
+rm util_wkr-map.tmp ;
+if test $ST = 0;
+then /bin/echo -n quartus_map:' succeeded ' ;
+tail -1 util_wkr-map.out | tee x1 | tr -d \\n | tee x2;
+/bin/echo -n ' at ' && date +%T ;
+else /bin/echo  quartus_map: failed with status $ST \(see results in target-stratix4/util_wkr-map.out\);
+fi;
+exit $ST);
+(set -o pipefail;
+set +e;
+export LM_LICENSE_FILE=2100@license_server ;
+/usr/bin/time -f %E /opt/Altera/17.1/quartus/bin/quartus_cdb --64bit --merge --write_settings_files=off util_wkr > util_wkr-merge.tmp 2>&1;
+ST=$?;
+sed 's/^.\[0m.\[0;
+32m//' < util_wkr-merge.tmp > util_wkr-merge.out ;
+rm util_wkr-merge.tmp ;
+if test $ST = 0;
+then /bin/echo -n quartus_cdb:' succeeded ' ;
+tail -1 util_wkr-merge.out | tee x1 | tr -d \\n | tee x2;
+/bin/echo -n ' at ' && date +%T ;
+else /bin/echo  quartus_cdb: failed with status $ST \(see results in target-stratix4/util_wkr-merge.out\);
+fi;
+exit $ST);
+(set -o pipefail;
+set +e;
+export LM_LICENSE_FILE=2100@license_server ;
+/usr/bin/time -f %E /opt/Altera/17.1/quartus/bin/quartus_cdb --64bit --incremental_compilation_export --write_settings_files=off util_wkr > util_wkr-export.tmp 2>&1;
+ST=$?;
+sed 's/^.\[0m.\[0;
+32m//' < util_wkr-export.tmp > util_wkr-export.out ;
+rm util_wkr-export.tmp ;
+if test $ST = 0;
+then /bin/echo -n quartus_cdb:' succeeded ' ;
+tail -1 util_wkr-export.out | tee x1 | tr -d \\n | tee x2;
+/bin/echo -n ' at ' && date +%T ;
+else /bin/echo  quartus_cdb: failed with status $ST \(see results in target-stratix4/util_wkr-export.out\);
+fi;
+exit $ST) ;
+
+Output from executing commands above:
+  Creating target-stratix4/util_wkr.qxp with top == util_wkr; details in target-stratix4/quartus-util_wkr.out.
+     1	# Common assignments whether a library or a core
+     2	set_global_assignment -name FAMILY "Stratix IV"
+     3	set_global_assignment -name DEVICE AUTO
+     4	set_global_assignment -name TOP_LEVEL_ENTITY util_wkr
+     5	# Search path(s) for local files
+     6	set_global_assignment -name SEARCH_PATH "."
+     7	set_global_assignment -name SEARCH_PATH ".."
+     8	set_global_assignment -name SEARCH_PATH "../gen"
+     9	set_global_assignment -name SEARCH_PATH "../../../../../../cdk/include/hdl"
+    10	# Assignments for adding libraries to search path
+    11	set_global_assignment -name SEARCH_PATH "../../../imports/ocpi.core/exports/lib/hdl/fixed_float/stratix4"
+    12	set_global_assignment -name VHDL_FILE -library fixed_float "/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/fixed_float/stratix4//fixed_float_types_pkg.vhd"
+    13	set_global_assignment -name VHDL_FILE -library fixed_float "/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/fixed_float/stratix4//float_pkg.vhd"
+    14	set_global_assignment -name VHDL_FILE -library fixed_float "/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/fixed_float/stratix4//float_body.vhd"
+    15	set_global_assignment -name VHDL_FILE -library fixed_float "/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/fixed_float/stratix4//fixed_pkg.vhd"
+    16	set_global_assignment -name VHDL_FILE -library fixed_float "/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/fixed_float/stratix4//fixed_body.vhd"
+    17	set_global_assignment -name SEARCH_PATH "../../../imports/ocpi.core/exports/lib/hdl/ocpi/stratix4"
+    18	set_global_assignment -name VHDL_FILE -library ocpi "/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4//props_pkg.vhd"
+    19	set_global_assignment -name VHDL_FILE -library ocpi "/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4//wci_pkg.vhd"
+    20	set_global_assignment -name VHDL_FILE -library ocpi "/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4//wci_body.vhd"
+    21	set_global_assignment -name VHDL_FILE -library ocpi "/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4//types_pkg.vhd"
+    22	set_global_assignment -name VHDL_FILE -library ocpi "/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4//types_body.vhd"
+    23	set_global_assignment -name VHDL_FILE -library ocpi "/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4//wsi_pkg.vhd"
+    24	set_global_assignment -name VHDL_FILE -library ocpi "/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4//wsi_body.vhd"
+    25	set_global_assignment -name VHDL_FILE -library ocpi "/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4//ocp_pkg.vhd"
+    26	set_global_assignment -name VHDL_FILE -library ocpi "/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4//util_pkg.vhd"
+    27	set_global_assignment -name VHDL_FILE -library ocpi "/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4//util_body.vhd"
+    28	set_global_assignment -name SEARCH_PATH "../../../imports/ocpi.core/exports/lib/hdl/util/stratix4"
+    29	set_global_assignment -name VHDL_FILE -library util "/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/util/stratix4//types_pkg.vhd"
+    30	set_global_assignment -name VHDL_FILE -library util "/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/util/stratix4//util_pkg.vhd"
+    31	set_global_assignment -name VHDL_FILE -library util "/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/util/stratix4//util_body.vhd"
+    32	set_global_assignment -name SEARCH_PATH "../../../imports/ocpi.core/exports/lib/hdl/bsv/stratix4"
+    33	set_global_assignment -name VHDL_FILE -library bsv "/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/bsv/stratix4//bsv_pkg.vhd"
+    34	# Assignment for local source files using search paths above
+    35	# Assignments for util_wkr local sources files without library name for VERILOG files
+    36	set_global_assignment -name VHDL_FILE -library util_wkr "util_wkr-defs.vhd"
+    37	set_global_assignment -name VHDL_FILE -library util_wkr "generics.vhd"
+    38	set_global_assignment -name VHDL_FILE -library util_wkr "util_wkr-impl.vhd"
+    39	set_global_assignment -name VHDL_FILE -library util_wkr "../util_wkr.vhd"
+    40	# Assignments for building cores
+    41	set_global_assignment -name AUTO_EXPORT_INCREMENTAL_COMPILATION on
+    42	set_global_assignment -name INCREMENTAL_COMPILATION_EXPORT_FILE util_wkr.qxp
+    43	set_global_assignment -name INCREMENTAL_COMPILATION_EXPORT_NETLIST_TYPE POST_SYNTH
+quartus_map: succeeded 0:12.26 at 12:26:02
+quartus_cdb: succeeded 0:01.71 at 12:26:04
+quartus_cdb: succeeded 0:01.46 at 12:26:05
+0:15.52 at 12:26:05

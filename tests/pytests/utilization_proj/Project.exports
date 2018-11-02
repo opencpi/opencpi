@@ -1,0 +1,6 @@
+# This file specifies aspects of this project that are made available to users,
+# by adding or subtracting from what is automatically exported based on the
+# documented rules.
+# Lines starting with + add to the exports
+# Lines starting with - subtract from the exports
+all

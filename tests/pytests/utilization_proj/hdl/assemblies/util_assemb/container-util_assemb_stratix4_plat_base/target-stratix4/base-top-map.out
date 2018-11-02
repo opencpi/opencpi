@@ -1,0 +1,46 @@
+Info: *******************************************************************
+Info: Running Quartus Prime Analysis & Synthesis
+    Info: Version 17.1.0 Build 590 10/25/2017 SJ Standard Edition
+    Info: Copyright (C) 2017  Intel Corporation. All rights reserved.
+    Info: Your use of Intel Corporation's design tools, logic functions 
+    Info: and other software and tools, and its AMPP partner logic 
+    Info: functions, and any output files from any of the foregoing 
+    Info: (including device programming or simulation files), and any 
+    Info: associated documentation or information are expressly subject 
+    Info: to the terms and conditions of the Intel Program License 
+    Info: Subscription Agreement, the Intel Quartus Prime License Agreement,
+    Info: the Intel FPGA IP License Agreement, or other applicable license
+    Info: agreement, including, without limitation, that your use is for
+    Info: the sole purpose of programming logic devices manufactured by
+    Info: Intel and sold by Intel or its authorized distributors.  Please
+    Info: refer to the applicable agreement for further details.
+    Info: Processing started: Tue Oct 16 16:13:54 2018
+Info: Command: quartus_map --64bit base-top
+Info: Using INI file /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/quartus.ini
+Warning (18236): Number of processors has not been specified which may cause overloading on shared machines.  Set the global assignment NUM_PARALLEL_PROCESSORS in your QSF to an appropriate value for best performance.
+Info (20030): Parallel compilation is enabled and will use 12 of the 12 processors detected
+Info (12021): Found 1 design units, including 1 entities, in source file util_assemb_alst4_base.qxp
+    Info (12023): Found entity 1: util_assemb_alst4_base File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+Info (12127): Elaborating entity "util_assemb_alst4_base" for the top level hierarchy
+Info (16010): Generating hard_block partition "hard_block:auto_generated_inst"
+    Info (16011): Adding 26 node(s), including 0 DDIO, 1 PLL, 0 transceiver and 0 LCELL
+Warning (21074): Design contains 6 input pin(s) that do not drive logic
+    Warning (15610): No output dependent on input pin "HSMC_ALST4_A_CLKIN0"
+    Warning (15610): No output dependent on input pin "HSMC_ALST4_A_CLKIN1p"
+    Warning (15610): No output dependent on input pin "HSMC_ALST4_A_CLKIN1n"
+    Warning (15610): No output dependent on input pin "HSMC_ALST4_B_CLKIN0"
+    Warning (15610): No output dependent on input pin "HSMC_ALST4_B_CLKIN1p"
+    Warning (15610): No output dependent on input pin "HSMC_ALST4_B_CLKIN1n"
+Info (21057): Implemented 24965 device resources after synthesis - the final resource count might be different
+    Info (21058): Implemented 16 input pins
+    Info (21059): Implemented 24 output pins
+    Info (21060): Implemented 158 bidirectional pins
+    Info (21061): Implemented 24360 logic cells
+    Info (21064): Implemented 381 RAM segments
+    Info (21065): Implemented 1 PLLs
+Info: Quartus Prime Analysis & Synthesis was successful. 0 errors, 8 warnings
+    Info: Peak virtual memory: 1258 megabytes
+    Info: Processing ended: Tue Oct 16 16:14:21 2018
+    Info: Elapsed time: 00:00:27
+    Info: Total CPU time (on all processors): 00:00:50
+0:27.50

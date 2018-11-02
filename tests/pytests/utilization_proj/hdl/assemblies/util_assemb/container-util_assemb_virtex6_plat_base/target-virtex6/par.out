@@ -1,0 +1,370 @@
+. /opt/Xilinx/14.7/ISE_DS/common/.settings64.sh /opt/Xilinx/14.7/ISE_DS/common
+. /opt/Xilinx/14.7/ISE_DS/EDK/.settings64.sh /opt/Xilinx/14.7/ISE_DS/EDK
+. /opt/Xilinx/14.7/ISE_DS/PlanAhead/.settings64.sh /opt/Xilinx/14.7/ISE_DS/PlanAhead
+. /opt/Xilinx/14.7/ISE_DS/ISE/.settings64.sh /opt/Xilinx/14.7/ISE_DS/ISE
+Command: par -mt 4 -w -xe n util_assemb_ml605_base-map.ncd util_assemb_ml605_base-par.ncd util_assemb_ml605_base.pcf
+Release 14.7 - par P.20131013 (lin64)
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+
+
+
+Constraints file: util_assemb_ml605_base.pcf.
+Loading device for application Rf_Device from file '6vlx240t.nph' in environment /opt/Xilinx/14.7/ISE_DS/ISE/.
+   "util_assemb_ml605_base" is an NCD, version 3.2, device xc6vlx240t, package ff1156, speed -1
+vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+INFO:Security:67 - XILINXD_LICENSE_FILE is set to '2100@license_server' in /home/user/.flexlmrc.
+INFO:Security:50 - The XILINXD_LICENSE_FILE environment variable is set to '/opt/Xilinx/WebPACK.lic'.
+INFO:Security:52 - The LM_LICENSE_FILE environment variable is set to '2100@license_server'.
+INFO:Security:56 - Part 'xc6vlx240t' is not a WebPack part.
+WARNING:Security:43 - No license file was found in the standard Xilinx license directory.
+WARNING:Security:44 - Since no license file was found,
+       please run the Xilinx License Configuration Manager
+       (xlcm or "Manage Xilinx Licenses")
+       to assist in obtaining a license.
+WARNING:Security:42 - Your software subscription period has lapsed. Your current version of Xilinx tools will continue
+to function, but you no longer qualify for Xilinx software updates or new releases.
+
+----------------------------------------------------------------------
+
+Initializing temperature to 85.000 Celsius. (default - Range: 0.000 to 85.000 Celsius)
+Initializing voltage to 0.950 Volts. (default - Range: 0.950 to 1.050 Volts)
+
+
+Device speed data version:  "PRODUCTION 1.17 2013-10-13".
+
+
+
+Device Utilization Summary:
+
+Slice Logic Utilization:
+  Number of Slice Registers:                 4,597 out of 301,440    1%
+    Number used as Flip Flops:               4,594
+    Number used as Latches:                      2
+    Number used as Latch-thrus:                  0
+    Number used as AND/OR logics:                1
+  Number of Slice LUTs:                      4,866 out of 150,720    3%
+    Number used as logic:                    3,749 out of 150,720    2%
+      Number using O6 output only:           2,704
+      Number using O5 output only:             159
+      Number using O5 and O6:                  886
+      Number used as ROM:                        0
+    Number used as Memory:                     921 out of  58,400    1%
+      Number used as Dual Port RAM:            148
+        Number using O6 output only:             4
+        Number using O5 output only:             3
+        Number using O5 and O6:                141
+      Number used as Single Port RAM:            0
+      Number used as Shift Register:           773
+        Number using O6 output only:           773
+        Number using O5 output only:             0
+        Number using O5 and O6:                  0
+    Number used exclusively as route-thrus:    196
+      Number with same-slice register load:    168
+      Number with same-slice carry load:        10
+      Number with other load:                   18
+
+Slice Logic Distribution:
+  Number of occupied Slices:                 1,615 out of  37,680    4%
+  Number of LUT Flip Flop pairs used:        5,582
+    Number with an unused Flip Flop:         1,489 out of   5,582   26%
+    Number with an unused LUT:                 716 out of   5,582   12%
+    Number of fully used LUT-FF pairs:       3,377 out of   5,582   60%
+    Number of slice register sites lost
+      to control set restrictions:               0 out of 301,440    0%
+
+  A LUT Flip Flop pair for this architecture represents one LUT paired with
+  one Flip Flop within a slice.  A control set is a unique combination of
+  clock, reset, set, and enable signals for a registered element.
+  The Slice Logic Distribution report is not meaningful if the design is
+  over-mapped for a non-slice resource or if Placement fails.
+  OVERMAPPING of BRAM resources should be ignored if the design is
+  over-mapped for a non-BRAM resource or if placement fails.
+
+IO Utilization:
+  Number of bonded IOBs:                        60 out of     600   10%
+    Number of LOCed IOBs:                       29 out of      60   48%
+    Number of bonded IPADs:                     10
+      Number of LOCed IPADs:                     2 out of      10   20%
+    Number of bonded OPADs:                      8
+
+Specific Feature Utilization:
+  Number of RAMB36E1/FIFO36E1s:                 10 out of     416    2%
+    Number using RAMB36E1 only:                 10
+    Number using FIFO36E1 only:                  0
+  Number of RAMB18E1/FIFO18E1s:                  0 out of     832    0%
+  Number of BUFG/BUFGCTRLs:                      6 out of      32   18%
+    Number used as BUFGs:                        5
+    Number used as BUFGCTRLs:                    1
+  Number of ILOGICE1/ISERDESE1s:                 0 out of     720    0%
+  Number of OLOGICE1/OSERDESE1s:                 0 out of     720    0%
+  Number of BSCANs:                              0 out of       4    0%
+  Number of BUFHCEs:                             0 out of     144    0%
+  Number of BUFIODQSs:                           0 out of      72    0%
+  Number of BUFRs:                               0 out of      36    0%
+  Number of CAPTUREs:                            0 out of       1    0%
+  Number of DSP48E1s:                            0 out of     768    0%
+  Number of EFUSE_USRs:                          0 out of       1    0%
+  Number of FRAME_ECCs:                          0 out of       1    0%
+  Number of GTXE1s:                              4 out of      20   20%
+    Number of LOCed GTXE1s:                      4 out of       4  100%
+  Number of IBUFDS_GTXE1s:                       1 out of      12    8%
+    Number of LOCed IBUFDS_GTXE1s:               1 out of       1  100%
+  Number of ICAPs:                               0 out of       2    0%
+  Number of IDELAYCTRLs:                         0 out of      18    0%
+  Number of IODELAYE1s:                          0 out of     720    0%
+  Number of MMCM_ADVs:                           1 out of      12    8%
+  Number of PCIE_2_0s:                           1 out of       2   50%
+    Number of LOCed PCIE_2_0s:                   1 out of       1  100%
+  Number of STARTUPs:                            1 out of       1  100%
+  Number of SYSMONs:                             0 out of       1    0%
+  Number of TEMAC_SINGLEs:                       0 out of       4    0%
+
+
+Overall effort level (-ol):   Standard 
+Router effort level (-rl):    High 
+
+PAR will use up to 4 processors
+WARNING:Par:288 - The signal FMC_HPC_CLK0_M2C_N_IBUF has no load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal FMC_HPC_CLK0_M2C_P_IBUF has no load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal FMC_HPC_CLK1_M2C_N_IBUF has no load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal FMC_HPC_CLK1_M2C_P_IBUF has no load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal FMC_HPC_PG_M2C_LS_IBUF has no load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal FMC_LPC_CLK0_M2C_N_IBUF has no load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal FMC_LPC_CLK0_M2C_P_IBUF has no load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal FMC_LPC_CLK1_M2C_N_IBUF has no load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal FMC_LPC_CLK1_M2C_P_IBUF has no load.  PAR will not attempt to route this signal.
+WARNING:Par:288 - The signal ftop/pfconfig_i/time_server_i/worker/ts/syncFifo_setRefF/Mram_fifoMem1_RAMD_D1_O has no load.  PAR will not
+   attempt to route this signal.
+WARNING:Par:288 - The signal ftop/pfconfig_i/time_server_i/worker/ts/syncFifo_setRefF/Mram_fifoMem2_RAMD_D1_O has no load.  PAR will not
+   attempt to route this signal.
+WARNING:Par:288 - The signal ftop/pfconfig_i/time_server_i/worker/ts/syncFifo_setRefF/Mram_fifoMem4_RAMD_D1_O has no load.  PAR will not
+   attempt to route this signal.
+WARNING:Par:288 - The signal ftop/pfconfig_i/time_server_i/worker/ts/syncFifo_setRefF/Mram_fifoMem3_RAMD_D1_O has no load.  PAR will not
+   attempt to route this signal.
+WARNING:Par:288 - The signal ftop/pfconfig_i/time_server_i/worker/ts/syncFifo_setRefF/Mram_fifoMem7_RAMD_D1_O has no load.  PAR will not
+   attempt to route this signal.
+WARNING:Par:288 - The signal ftop/pfconfig_i/time_server_i/worker/ts/syncFifo_setRefF/Mram_fifoMem8_RAMD_D1_O has no load.  PAR will not
+   attempt to route this signal.
+WARNING:Par:288 - The signal ftop/pfconfig_i/time_server_i/worker/ts/syncFifo_setRefF/Mram_fifoMem5_RAMD_D1_O has no load.  PAR will not
+   attempt to route this signal.
+WARNING:Par:288 - The signal ftop/pfconfig_i/time_server_i/worker/ts/syncFifo_setRefF/Mram_fifoMem9_RAMD_D1_O has no load.  PAR will not
+   attempt to route this signal.
+WARNING:Par:288 - The signal ftop/pfconfig_i/time_server_i/worker/ts/syncFifo_setRefF/Mram_fifoMem10_RAMD_D1_O has no load.  PAR will not
+   attempt to route this signal.
+WARNING:Par:288 - The signal ftop/pfconfig_i/time_server_i/worker/ts/syncFifo_setRefF/Mram_fifoMem6_RAMD_D1_O has no load.  PAR will not
+   attempt to route this signal.
+WARNING:Par:288 - The signal ftop/pfconfig_i/ml605_i/worker/pcie/pciw_fP2I/Mram_arr5_RAMD_D1_O has no load.  PAR will not attempt to route
+   this signal.
+WARNING:Par:288 - The signal ftop/pfconfig_i/ml605_i/worker/pcie/pciw_fP2I/Mram_arr4_RAMD_D1_O has no load.  PAR will not attempt to route
+   this signal.
+WARNING:Par:288 - The signal ftop/pfconfig_i/ml605_i/worker/pcie/pciw_fP2I/Mram_arr7_RAMD_D1_O has no load.  PAR will not attempt to route
+   this signal.
+WARNING:Par:288 - The signal ftop/pfconfig_i/ml605_i/worker/pcie/pciw_fP2I/Mram_arr2_RAMD_D1_O has no load.  PAR will not attempt to route
+   this signal.
+WARNING:Par:288 - The signal ftop/pfconfig_i/ml605_i/worker/pcie/pciw_fP2I/Mram_arr13_RAMD_D1_O has no load.  PAR will not attempt to route
+   this signal.
+WARNING:Par:288 - The signal ftop/pfconfig_i/ml605_i/worker/pcie/pciw_fP2I/Mram_arr11_RAMC_D1_DPO has no load.  PAR will not attempt to
+   route this signal.
+WARNING:Par:288 - The signal ftop/pfconfig_i/ml605_i/worker/pcie/pciw_fP2I/Mram_arr11_RAMD_D1_O has no load.  PAR will not attempt to route
+   this signal.
+WARNING:Par:288 - The signal ftop/pfconfig_i/ml605_i/worker/pcie/pciw_fI2P/Mram_arr3_RAMD_D1_O has no load.  PAR will not attempt to route
+   this signal.
+WARNING:Par:288 - The signal ftop/pfconfig_i/ml605_i/worker/pcie/pciw_fP2I/Mram_arr1_RAMD_D1_O has no load.  PAR will not attempt to route
+   this signal.
+WARNING:Par:288 - The signal ftop/pfconfig_i/ml605_i/worker/pcie/pciw_fP2I/Mram_arr8_RAMD_D1_O has no load.  PAR will not attempt to route
+   this signal.
+WARNING:Par:288 - The signal ftop/pfconfig_i/ml605_i/worker/pcie/pciw_fP2I/Mram_arr9_RAMD_D1_O has no load.  PAR will not attempt to route
+   this signal.
+WARNING:Par:288 - The signal ftop/pfconfig_i/ml605_i/worker/pcie/pciw_fP2I/Mram_arr10_RAMD_D1_O has no load.  PAR will not attempt to route
+   this signal.
+WARNING:Par:288 - The signal ftop/pfconfig_i/ml605_i/worker/pcie/pciw_fI2P/Mram_arr4_RAMD_D1_O has no load.  PAR will not attempt to route
+   this signal.
+WARNING:Par:288 - The signal ftop/pfconfig_i/ml605_i/worker/pcie/pciw_fP2I/Mram_arr3_RAMD_D1_O has no load.  PAR will not attempt to route
+   this signal.
+WARNING:Par:288 - The signal ftop/pfconfig_i/ml605_i/worker/pcie/pciw_fI2P/Mram_arr6_RAMD_D1_O has no load.  PAR will not attempt to route
+   this signal.
+WARNING:Par:288 - The signal ftop/pfconfig_i/ml605_i/worker/pcie/pciw_fI2P/Mram_arr7_RAMD_D1_O has no load.  PAR will not attempt to route
+   this signal.
+WARNING:Par:288 - The signal ftop/pfconfig_i/ml605_i/worker/pcie/pciw_fP2I/Mram_arr6_RAMD_D1_O has no load.  PAR will not attempt to route
+   this signal.
+WARNING:Par:288 - The signal ftop/pfconfig_i/ml605_i/worker/pcie/pciw_fI2P/Mram_arr9_RAMD_D1_O has no load.  PAR will not attempt to route
+   this signal.
+WARNING:Par:288 - The signal ftop/pfconfig_i/ml605_i/worker/pcie/pciw_fI2P/Mram_arr12_RAMD_D1_O has no load.  PAR will not attempt to route
+   this signal.
+WARNING:Par:288 - The signal ftop/pfconfig_i/ml605_i/worker/pcie/pciw_fI2P/Mram_arr1_RAMD_D1_O has no load.  PAR will not attempt to route
+   this signal.
+WARNING:Par:288 - The signal ftop/pfconfig_i/ml605_i/worker/pcie/pciw_fI2P/Mram_arr5_RAMD_D1_O has no load.  PAR will not attempt to route
+   this signal.
+WARNING:Par:288 - The signal ftop/pfconfig_i/ml605_i/worker/pcie/pciw_fI2P/Mram_arr2_RAMD_D1_O has no load.  PAR will not attempt to route
+   this signal.
+WARNING:Par:288 - The signal ftop/pfconfig_i/ml605_i/worker/pcie/pciw_fI2P/Mram_arr8_RAMD_D1_O has no load.  PAR will not attempt to route
+   this signal.
+WARNING:Par:288 - The signal ftop/pfconfig_i/ml605_i/worker/pcie/pciw_fI2P/Mram_arr10_RAMD_D1_O has no load.  PAR will not attempt to route
+   this signal.
+WARNING:Par:288 - The signal ftop/pfconfig_i/ml605_i/worker/pcie/pciw_fI2P/Mram_arr11_RAMD_D1_O has no load.  PAR will not attempt to route
+   this signal.
+Starting Multi-threaded Router
+
+
+Phase  1  : 36854 unrouted;      REAL time: 19 secs 
+
+Phase  2  : 30348 unrouted;      REAL time: 22 secs 
+
+Phase  3  : 9601 unrouted;      REAL time: 37 secs 
+
+Phase  4  : 9630 unrouted; (Setup:0, Hold:27422, Component Switching Limit:0)     REAL time: 43 secs 
+
+Updating file: util_assemb_ml605_base-par.ncd with current fully routed design.
+
+Phase  5  : 0 unrouted; (Setup:0, Hold:24579, Component Switching Limit:0)     REAL time: 48 secs 
+
+Phase  6  : 0 unrouted; (Setup:0, Hold:24579, Component Switching Limit:0)     REAL time: 48 secs 
+
+Phase  7  : 0 unrouted; (Setup:0, Hold:24579, Component Switching Limit:0)     REAL time: 48 secs 
+
+Phase  8  : 0 unrouted; (Setup:0, Hold:24579, Component Switching Limit:0)     REAL time: 48 secs 
+
+Phase  9  : 0 unrouted; (Setup:0, Hold:0, Component Switching Limit:0)     REAL time: 50 secs 
+
+Phase 10  : 0 unrouted; (Setup:0, Hold:0, Component Switching Limit:0)     REAL time: 52 secs 
+Total REAL time to Router completion: 52 secs 
+Total CPU time to Router completion (all processors): 1 mins 3 secs 
+
+Generating "PAR" statistics.
+
+**************************
+Generating Clock Report
+**************************
+
++---------------------+--------------+------+------+------------+-------------+
+|        Clock Net    |   Resource   |Locked|Fanout|Net Skew(ns)|Max Delay(ns)|
++---------------------+--------------+------+------+------------+-------------+
+|ftop/ocscp_wci_out_i |              |      |      |            |             |
+|             [0]_Clk |BUFGCTRL_X0Y27| No   |  863 |  0.444     |  2.046      |
++---------------------+--------------+------+------+------------+-------------+
+|ftop/pfconfig_i/ml60 |              |      |      |            |             |
+|5_timebase_out_i_clk |              |      |      |            |             |
+|                     | BUFGCTRL_X0Y0| No   |  148 |  0.201     |  1.838      |
++---------------------+--------------+------+------+------------+-------------+
+|ftop/pfconfig_i/ml60 |              |      |      |            |             |
+|5_i/worker/pcie/pciw |              |      |      |            |             |
+|_pci0_pcie_ep/ep/pip |              |      |      |            |             |
+|               e_clk |BUFGCTRL_X0Y28| No   |  150 |  0.413     |  2.046      |
++---------------------+--------------+------+------+------------+-------------+
+|ftop/pfconfig_i/ml60 |              |      |      |            |             |
+|5_i/worker/pcie/pciw |              |      |      |            |             |
+|_pci0_pcie_ep$trn_cl |              |      |      |            |             |
+|                   k |BUFGCTRL_X0Y29| No   |  205 |  0.154     |  1.787      |
++---------------------+--------------+------+------+------------+-------------+
+|ftop/pfconfig_i/ml60 |              |      |      |            |             |
+|5_i/worker/pcie/pciw |              |      |      |            |             |
+|_pci0_pcie_ep/ep/TxO |              |      |      |            |             |
+|          utClk_bufg |BUFGCTRL_X0Y31| No   |    6 |  0.006     |  1.641      |
++---------------------+--------------+------+------+------------+-------------+
+|ftop/pfconfig_i/ml60 |              |      |      |            |             |
+|5_i/worker/pcie/pciw |              |      |      |            |             |
+|_pci0_pcie_ep/ep/pci |              |      |      |            |             |
+|e_clocking_i/mmcm_ad |              |      |      |            |             |
+|      v_i_ML_NEW_OUT |         Local|      |    2 |  0.000     |  0.355      |
++---------------------+--------------+------+------+------------+-------------+
+|MMCM_PHASE_CALIBRATI |              |      |      |            |             |
+|ON_ML_LUT2_12_ML_NEW |              |      |      |            |             |
+|                _CLK |         Local|      |    3 |  0.139     |  0.616      |
++---------------------+--------------+------+------+------------+-------------+
+|ftop/pfconfig_i/ml60 |              |      |      |            |             |
+|5_i/worker/pcie/pciw |              |      |      |            |             |
+|_pci0_pcie_ep/ep/pci |              |      |      |            |             |
+|e_clocking_i/mmcm_ad |              |      |      |            |             |
+|       v_i_ML_NEW_I1 |         Local|      |    3 |  0.000     |  2.082      |
++---------------------+--------------+------+------+------------+-------------+
+|ftop/pfconfig_i/ml60 |              |      |      |            |             |
+|5_i/worker/pcie/pciw |              |      |      |            |             |
+|         _pci0_clk$O |         Local|      |    8 |  0.000     |  2.396      |
++---------------------+--------------+------+------+------------+-------------+
+|ftop/pfconfig_i/time |              |      |      |            |             |
+|_server_i/worker/ts/ |              |      |      |            |             |
+|Mram_s_ppsOutMode_dD |              |      |      |            |             |
+|_OUT[1]_GND_100_o_Mu |              |      |      |            |             |
+|              x_14_o |         Local|      |    1 |  0.000     |  0.349      |
++---------------------+--------------+------+------+------------+-------------+
+
+* Net Skew is the difference between the minimum and maximum routing
+only delays for the net. Note this is different from Clock Skew which
+is reported in TRCE timing report. Clock Skew is the difference between
+the minimum and maximum path delays which includes logic delays.
+
+* The fanout is the number of component pins not the individual BEL loads,
+for example SLICE loads not FF loads.
+
+Timing Score: 0 (Setup: 0, Hold: 0, Component Switching Limit: 0)
+
+Number of Timing Constraints that were not applied: 1
+
+Asterisk (*) preceding a constraint indicates it was not met.
+   This may be due to a setup or hold violation.
+
+----------------------------------------------------------------------------------------------------------
+  Constraint                                |    Check    | Worst Case |  Best Case | Timing |   Timing   
+                                            |             |    Slack   | Achievable | Errors |    Score   
+----------------------------------------------------------------------------------------------------------
+  TS_CLK_250 = PERIOD TIMEGRP "CLK_250" TS_ | SETUP       |     0.047ns|     3.953ns|       0|           0
+  PCICLK HIGH 50% PRIORITY 1                | HOLD        |     0.001ns|            |       0|           0
+                                            | MINPERIOD   |     0.000ns|     4.000ns|       0|           0
+----------------------------------------------------------------------------------------------------------
+  Pin to Pin Skew Constraint                | MAXDELAY    |     0.108ns|     0.450ns|       0|           0
+----------------------------------------------------------------------------------------------------------
+  TS_CLK_125 = PERIOD TIMEGRP "CLK_125" TS_ | SETUP       |     0.116ns|     7.846ns|       0|           0
+  PCICLK / 2 HIGH 50% PRIORITY 100          | HOLD        |     0.007ns|            |       0|           0
+----------------------------------------------------------------------------------------------------------
+  TS_SYS0CLK = PERIOD TIMEGRP "SYS0CLK" 200 | SETUP       |     0.696ns|     4.304ns|       0|           0
+   MHz HIGH 50%                             | HOLD        |     0.072ns|            |       0|           0
+----------------------------------------------------------------------------------------------------------
+  TS_PCICLK = PERIOD TIMEGRP "PCICLK" 250 M | MINPERIOD   |     2.462ns|     1.538ns|       0|           0
+  Hz HIGH 50%                               |             |            |            |        |            
+----------------------------------------------------------------------------------------------------------
+
+
+Derived Constraint Report
+Review Timing Report for more details on the following derived constraints.
+To create a Timing Report, run "trce -v 12 -fastpaths -o design_timing_report design.ncd design.pcf"
+or "Run Timing Analysis" from Timing Analyzer (timingan).
+Derived Constraints for TS_PCICLK
++-------------------------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+
+|                               |   Period    |       Actual Period       |      Timing Errors        |      Paths Analyzed       |
+|           Constraint          | Requirement |-------------+-------------|-------------+-------------|-------------+-------------|
+|                               |             |   Direct    | Derivative  |   Direct    | Derivative  |   Direct    | Derivative  |
++-------------------------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+
+|TS_PCICLK                      |      4.000ns|      1.538ns|      4.000ns|            0|            0|            0|       137095|
+| TS_CLK_125                    |      8.000ns|      7.846ns|          N/A|            0|            0|       116600|            0|
+| TS_CLK_250                    |      4.000ns|      4.000ns|          N/A|            0|            0|        20495|            0|
++-------------------------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+
+
+All constraints were met.
+
+
+Generating Pad Report.
+
+All signals are completely routed.
+
+WARNING:Par:283 - There are 44 loadless signals in this design. This design will cause Bitgen to issue DRC warnings.
+
+Total REAL time to PAR completion: 58 secs 
+Total CPU time to PAR completion (all processors): 1 mins 9 secs 
+
+Peak Memory Usage:  1714 MB
+
+Placer: Placement generated during map.
+Routing: Completed - No errors found.
+Timing: Completed - No errors found.
+
+Number of error messages: 0
+Number of warning messages: 46
+Number of info messages: 0
+
+Writing design to file util_assemb_ml605_base-par.ncd
+
+
+
+PAR done!
+Exit status: 0
+Elapsed time:1:01.99, completed at 09:05:50

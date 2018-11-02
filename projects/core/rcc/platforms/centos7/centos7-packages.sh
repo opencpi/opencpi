@@ -74,6 +74,8 @@ PKGS_D+=(glibc.i686=/lib/ld-linux.so.2
          libXext.i686=/usr/lib/libXext.so.6)
 #    for Quartus Pro 17 (AV-4318), we need specifically the 1.2 version of libpng
 PKGS_D+=(libpng12)
+#    to cleanup multiple copies of Linux kernel, etc. (AV-4802)
+PKGS_D+=(hardlink)
 # docker container missing this	libXdmcp.i686=/lib/libXdmcp.so.6) # AV-3645
 #    for bash completion - a noarch package  (AV-2398)
 PKGS_D+=(bash-completion=/etc/profile.d/bash_completion.sh)

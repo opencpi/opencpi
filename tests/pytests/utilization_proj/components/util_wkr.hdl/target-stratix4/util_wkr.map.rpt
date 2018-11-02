@@ -1,0 +1,595 @@
+Analysis & Synthesis report for util_wkr
+Wed Oct 17 12:26:02 2018
+Quartus Prime Version 17.1.0 Build 590 10/25/2017 SJ Standard Edition
+
+
+---------------------
+; Table of Contents ;
+---------------------
+  1. Legal Notice
+  2. Analysis & Synthesis Summary
+  3. Analysis & Synthesis Settings
+  4. Parallel Compilation
+  5. Analysis & Synthesis Source Files Read
+  6. Analysis & Synthesis Resource Usage Summary
+  7. Analysis & Synthesis Resource Utilization by Entity
+  8. State Machine - |util_wkr|util_wkr_rv:rv|util_wkr_wci:wci|no_props_decoder:wci_decode|my_control_op_r
+  9. State Machine - |util_wkr|util_wkr_rv:rv|util_wkr_wci:wci|no_props_decoder:wci_decode|my_state_r
+ 10. State Machine - |util_wkr|util_wkr_rv:rv|util_wkr_wci:wci|no_props_decoder:wci_decode|my_access_r
+ 11. Registers Removed During Synthesis
+ 12. Removed Registers Triggering Further Register Optimizations
+ 13. General Register Statistics
+ 14. Multiplexer Restructuring Statistics (Restructuring Performed)
+ 15. Parameter Settings for User Entity Instance: Top-level Entity: |util_wkr
+ 16. Parameter Settings for User Entity Instance: util_wkr_rv:rv
+ 17. Parameter Settings for User Entity Instance: util_wkr_rv:rv|util_wkr_wci:wci
+ 18. Parameter Settings for User Entity Instance: util_wkr_rv:rv|util_wkr_wci:wci|no_props_decoder:wci_decode
+ 19. Parameter Settings for User Entity Instance: util_wkr_rv:rv|util_wkr_worker:worker
+ 20. Port Connectivity Checks: "util_wkr_rv:rv|util_wkr_wci:wci|no_props_decoder:wci_decode"
+ 21. Post-Synthesis Netlist Statistics for Top Partition
+ 22. Elapsed Time Per Partition
+ 23. Analysis & Synthesis Messages
+
+
+
+----------------
+; Legal Notice ;
+----------------
+Copyright (C) 2017  Intel Corporation. All rights reserved.
+Your use of Intel Corporation's design tools, logic functions 
+and other software and tools, and its AMPP partner logic 
+functions, and any output files from any of the foregoing 
+(including device programming or simulation files), and any 
+associated documentation or information are expressly subject 
+to the terms and conditions of the Intel Program License 
+Subscription Agreement, the Intel Quartus Prime License Agreement,
+the Intel FPGA IP License Agreement, or other applicable license
+agreement, including, without limitation, that your use is for
+the sole purpose of programming logic devices manufactured by
+Intel and sold by Intel or its authorized distributors.  Please
+refer to the applicable agreement for further details.
+
+
+
++-------------------------------------------------------------------------------------+
+; Analysis & Synthesis Summary                                                        ;
++-----------------------------------+-------------------------------------------------+
+; Analysis & Synthesis Status       ; Successful - Wed Oct 17 12:26:02 2018           ;
+; Quartus Prime Version             ; 17.1.0 Build 590 10/25/2017 SJ Standard Edition ;
+; Revision Name                     ; util_wkr                                        ;
+; Top-level Entity Name             ; util_wkr                                        ;
+; Family                            ; Stratix IV                                      ;
+; Logic utilization                 ; N/A                                             ;
+;     Combinational ALUTs           ; 25                                              ;
+;     Memory ALUTs                  ; 0                                               ;
+;     Dedicated logic registers     ; 12                                              ;
+; Total registers                   ; 12                                              ;
+; Total pins                        ; 18                                              ;
+; Total virtual pins                ; 0                                               ;
+; Total block memory bits           ; 0                                               ;
+; DSP block 18-bit elements         ; 0                                               ;
+; Total GXB Receiver Channel PCS    ; 0                                               ;
+; Total GXB Receiver Channel PMA    ; 0                                               ;
+; Total GXB Transmitter Channel PCS ; 0                                               ;
+; Total GXB Transmitter Channel PMA ; 0                                               ;
+; Total PLLs                        ; 0                                               ;
+; Total DLLs                        ; 0                                               ;
++-----------------------------------+-------------------------------------------------+
+
+
++---------------------------------------------------------------------------------------------------------------------------+
+; Analysis & Synthesis Settings                                                                                             ;
++---------------------------------------------------------------------------------+--------------------+--------------------+
+; Option                                                                          ; Setting            ; Default Value      ;
++---------------------------------------------------------------------------------+--------------------+--------------------+
+; Top-level entity name                                                           ; util_wkr           ; util_wkr           ;
+; Family name                                                                     ; Stratix IV         ; Cyclone V          ;
+; Use smart compilation                                                           ; Off                ; Off                ;
+; Enable parallel Assembler and TimeQuest Timing Analyzer during compilation      ; On                 ; On                 ;
+; Enable compact report table                                                     ; Off                ; Off                ;
+; Restructure Multiplexers                                                        ; Auto               ; Auto               ;
+; MLAB Add Timing Constraints For Mixed-Port Feed-Through Mode Setting Don't Care ; Off                ; Off                ;
+; Create Debugging Nodes for IP Cores                                             ; Off                ; Off                ;
+; Preserve fewer node names                                                       ; On                 ; On                 ;
+; Intel FPGA IP Evaluation Mode                                                   ; Enable             ; Enable             ;
+; Verilog Version                                                                 ; Verilog_2001       ; Verilog_2001       ;
+; VHDL Version                                                                    ; VHDL_1993          ; VHDL_1993          ;
+; State Machine Processing                                                        ; Auto               ; Auto               ;
+; Safe State Machine                                                              ; Off                ; Off                ;
+; Extract Verilog State Machines                                                  ; On                 ; On                 ;
+; Extract VHDL State Machines                                                     ; On                 ; On                 ;
+; Ignore Verilog initial constructs                                               ; Off                ; Off                ;
+; Iteration limit for constant Verilog loops                                      ; 5000               ; 5000               ;
+; Iteration limit for non-constant Verilog loops                                  ; 250                ; 250                ;
+; Add Pass-Through Logic to Inferred RAMs                                         ; On                 ; On                 ;
+; Infer RAMs from Raw Logic                                                       ; On                 ; On                 ;
+; Parallel Synthesis                                                              ; On                 ; On                 ;
+; DSP Block Balancing                                                             ; Auto               ; Auto               ;
+; NOT Gate Push-Back                                                              ; On                 ; On                 ;
+; Power-Up Don't Care                                                             ; On                 ; On                 ;
+; Remove Redundant Logic Cells                                                    ; Off                ; Off                ;
+; Remove Duplicate Registers                                                      ; On                 ; On                 ;
+; Ignore CARRY Buffers                                                            ; Off                ; Off                ;
+; Ignore CASCADE Buffers                                                          ; Off                ; Off                ;
+; Ignore GLOBAL Buffers                                                           ; Off                ; Off                ;
+; Ignore ROW GLOBAL Buffers                                                       ; Off                ; Off                ;
+; Ignore LCELL Buffers                                                            ; Off                ; Off                ;
+; Ignore SOFT Buffers                                                             ; On                 ; On                 ;
+; Limit AHDL Integers to 32 Bits                                                  ; Off                ; Off                ;
+; Optimization Technique                                                          ; Balanced           ; Balanced           ;
+; Carry Chain Length                                                              ; 70                 ; 70                 ;
+; Auto Carry Chains                                                               ; On                 ; On                 ;
+; Auto Open-Drain Pins                                                            ; On                 ; On                 ;
+; Perform WYSIWYG Primitive Resynthesis                                           ; Off                ; Off                ;
+; Auto ROM Replacement                                                            ; On                 ; On                 ;
+; Auto RAM Replacement                                                            ; On                 ; On                 ;
+; Auto DSP Block Replacement                                                      ; On                 ; On                 ;
+; Auto Shift Register Replacement                                                 ; Auto               ; Auto               ;
+; Allow Shift Register Merging across Hierarchies                                 ; Auto               ; Auto               ;
+; Auto Clock Enable Replacement                                                   ; On                 ; On                 ;
+; Strict RAM Replacement                                                          ; Off                ; Off                ;
+; Allow Synchronous Control Signals                                               ; On                 ; On                 ;
+; Force Use of Synchronous Clear Signals                                          ; Off                ; Off                ;
+; Auto RAM Block Balancing                                                        ; On                 ; On                 ;
+; Auto RAM to Logic Cell Conversion                                               ; Off                ; Off                ;
+; Auto Resource Sharing                                                           ; Off                ; Off                ;
+; Allow Any RAM Size For Recognition                                              ; Off                ; Off                ;
+; Allow Any ROM Size For Recognition                                              ; Off                ; Off                ;
+; Allow Any Shift Register Size For Recognition                                   ; Off                ; Off                ;
+; Use LogicLock Constraints during Resource Balancing                             ; On                 ; On                 ;
+; Ignore translate_off and synthesis_off directives                               ; Off                ; Off                ;
+; Timing-Driven Synthesis                                                         ; On                 ; On                 ;
+; Report Parameter Settings                                                       ; On                 ; On                 ;
+; Report Source Assignments                                                       ; On                 ; On                 ;
+; Report Connectivity Checks                                                      ; On                 ; On                 ;
+; Ignore Maximum Fan-Out Assignments                                              ; Off                ; Off                ;
+; Synchronization Register Chain Length                                           ; 3                  ; 3                  ;
+; Power Optimization During Synthesis                                             ; Normal compilation ; Normal compilation ;
+; HDL message level                                                               ; Level2             ; Level2             ;
+; Suppress Register Optimization Related Messages                                 ; Off                ; Off                ;
+; Number of Removed Registers Reported in Synthesis Report                        ; 5000               ; 5000               ;
+; Number of Swept Nodes Reported in Synthesis Report                              ; 5000               ; 5000               ;
+; Number of Inverted Registers Reported in Synthesis Report                       ; 100                ; 100                ;
+; Clock MUX Protection                                                            ; On                 ; On                 ;
+; Auto Gated Clock Conversion                                                     ; Off                ; Off                ;
+; Block Design Naming                                                             ; Auto               ; Auto               ;
+; SDC constraint protection                                                       ; Off                ; Off                ;
+; Synthesis Effort                                                                ; Auto               ; Auto               ;
+; Shift Register Replacement - Allow Asynchronous Clear Signal                    ; On                 ; On                 ;
+; Pre-Mapping Resynthesis Optimization                                            ; Off                ; Off                ;
+; Analysis & Synthesis Message Level                                              ; Medium             ; Medium             ;
+; Disable Register Merging Across Hierarchies                                     ; Auto               ; Auto               ;
+; Resource Aware Inference For Block RAM                                          ; On                 ; On                 ;
++---------------------------------------------------------------------------------+--------------------+--------------------+
+
+
++------------------------------------------+
+; Parallel Compilation                     ;
++----------------------------+-------------+
+; Processors                 ; Number      ;
++----------------------------+-------------+
+; Number detected on machine ; 24          ;
+; Maximum allowed            ; 12          ;
+;                            ;             ;
+; Average used               ; 1.00        ;
+; Maximum used               ; 12          ;
+;                            ;             ;
+; Usage by Processor         ; % Time Used ;
+;     Processor 1            ; 100.0%      ;
+;     Processors 2-12        ;   0.0%      ;
++----------------------------+-------------+
+
+
++------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+; Analysis & Synthesis Source Files Read                                                                                                                                                                                                                                                         ;
++-------------------------------------------------------------------------------------------+-----------------+-----------------------+--------------------------------------------------------------------------------------------------------------------------------------------+-------------+
+; File Name with User-Entered Path                                                          ; Used in Netlist ; File Type             ; File Name with Absolute Path                                                                                                               ; Library     ;
++-------------------------------------------------------------------------------------------+-----------------+-----------------------+--------------------------------------------------------------------------------------------------------------------------------------------+-------------+
+; ../../../imports/ocpi.core/exports/lib/hdl/fixed_float/stratix4/fixed_float_types_pkg.vhd ; yes             ; User VHDL File        ; /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/fixed_float/stratix4/fixed_float_types_pkg.vhd ; fixed_float ;
+; ../../../imports/ocpi.core/exports/lib/hdl/fixed_float/stratix4/float_pkg.vhd             ; yes             ; User VHDL File        ; /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/fixed_float/stratix4/float_pkg.vhd             ; fixed_float ;
+; ../../../imports/ocpi.core/exports/lib/hdl/fixed_float/stratix4/float_body.vhd            ; yes             ; User VHDL File        ; /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/fixed_float/stratix4/float_body.vhd            ; fixed_float ;
+; ../../../imports/ocpi.core/exports/lib/hdl/fixed_float/stratix4/fixed_pkg.vhd             ; yes             ; User VHDL File        ; /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/fixed_float/stratix4/fixed_pkg.vhd             ; fixed_float ;
+; ../../../imports/ocpi.core/exports/lib/hdl/fixed_float/stratix4/fixed_body.vhd            ; yes             ; User VHDL File        ; /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/fixed_float/stratix4/fixed_body.vhd            ; fixed_float ;
+; ../../../imports/ocpi.core/exports/lib/hdl/ocpi/stratix4/props_pkg.vhd                    ; yes             ; User VHDL File        ; /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4/props_pkg.vhd                    ; ocpi        ;
+; ../../../imports/ocpi.core/exports/lib/hdl/ocpi/stratix4/wci_pkg.vhd                      ; yes             ; User VHDL File        ; /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4/wci_pkg.vhd                      ; ocpi        ;
+; ../../../imports/ocpi.core/exports/lib/hdl/ocpi/stratix4/wci_body.vhd                     ; yes             ; User VHDL File        ; /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4/wci_body.vhd                     ; ocpi        ;
+; ../../../imports/ocpi.core/exports/lib/hdl/ocpi/stratix4/types_pkg.vhd                    ; yes             ; User VHDL File        ; /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4/types_pkg.vhd                    ; ocpi        ;
+; ../../../imports/ocpi.core/exports/lib/hdl/ocpi/stratix4/types_body.vhd                   ; yes             ; User VHDL File        ; /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4/types_body.vhd                   ; ocpi        ;
+; ../../../imports/ocpi.core/exports/lib/hdl/ocpi/stratix4/wsi_pkg.vhd                      ; yes             ; User VHDL File        ; /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4/wsi_pkg.vhd                      ; ocpi        ;
+; ../../../imports/ocpi.core/exports/lib/hdl/ocpi/stratix4/wsi_body.vhd                     ; yes             ; User VHDL File        ; /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4/wsi_body.vhd                     ; ocpi        ;
+; ../../../imports/ocpi.core/exports/lib/hdl/ocpi/stratix4/ocp_pkg.vhd                      ; yes             ; User VHDL File        ; /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4/ocp_pkg.vhd                      ; ocpi        ;
+; ../../../imports/ocpi.core/exports/lib/hdl/ocpi/stratix4/util_pkg.vhd                     ; yes             ; User VHDL File        ; /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4/util_pkg.vhd                     ; ocpi        ;
+; ../../../imports/ocpi.core/exports/lib/hdl/ocpi/stratix4/util_body.vhd                    ; yes             ; User VHDL File        ; /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4/util_body.vhd                    ; ocpi        ;
+; util_wkr-defs.vhd                                                                         ; yes             ; User VHDL File        ; /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-stratix4/util_wkr-defs.vhd                        ; util_wkr    ;
+; generics.vhd                                                                              ; yes             ; User VHDL File        ; /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-stratix4/generics.vhd                             ; util_wkr    ;
+; util_wkr-impl.vhd                                                                         ; yes             ; User VHDL File        ; /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-stratix4/util_wkr-impl.vhd                        ; util_wkr    ;
+; ../util_wkr.vhd                                                                           ; yes             ; User VHDL File        ; /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/util_wkr.vhd                                             ; util_wkr    ;
+; no_props_decoder.vhd                                                                      ; yes             ; Auto-Found VHDL File  ; /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4/no_props_decoder.vhd             ;             ;
++-------------------------------------------------------------------------------------------+-----------------+-----------------------+--------------------------------------------------------------------------------------------------------------------------------------------+-------------+
+
+
++---------------------------------------------------------------+
+; Analysis & Synthesis Resource Usage Summary                   ;
++-----------------------------------------------+---------------+
+; Resource                                      ; Usage         ;
++-----------------------------------------------+---------------+
+; Estimated ALUTs Used                          ; 25            ;
+;     -- Combinational ALUTs                    ; 25            ;
+;     -- Memory ALUTs                           ; 0             ;
+;     -- LUT_REGs                               ; 0             ;
+; Dedicated logic registers                     ; 12            ;
+;                                               ;               ;
+; Estimated ALUTs Unavailable                   ; 7             ;
+;     -- Due to unpartnered combinational logic ; 7             ;
+;     -- Due to Memory ALUTs                    ; 0             ;
+;                                               ;               ;
+; Total combinational functions                 ; 25            ;
+; Combinational ALUT usage by number of inputs  ;               ;
+;     -- 7 input functions                      ; 0             ;
+;     -- 6 input functions                      ; 7             ;
+;     -- 5 input functions                      ; 5             ;
+;     -- 4 input functions                      ; 8             ;
+;     -- <=3 input functions                    ; 5             ;
+;                                               ;               ;
+; Combinational ALUTs by mode                   ;               ;
+;     -- normal mode                            ; 25            ;
+;     -- extended LUT mode                      ; 0             ;
+;     -- arithmetic mode                        ; 0             ;
+;     -- shared arithmetic mode                 ; 0             ;
+;                                               ;               ;
+; Estimated ALUT/register pairs used            ; 32            ;
+;                                               ;               ;
+; Total registers                               ; 12            ;
+;     -- Dedicated logic registers              ; 12            ;
+;     -- I/O registers                          ; 0             ;
+;     -- LUT_REGs                               ; 0             ;
+;                                               ;               ;
+;                                               ;               ;
+; I/O pins                                      ; 18            ;
+;                                               ;               ;
+; DSP block 18-bit elements                     ; 0             ;
+;                                               ;               ;
+; Maximum fan-out node                          ; ctl_Clk~input ;
+; Maximum fan-out                               ; 12            ;
+; Total fan-out                                 ; 156           ;
+; Average fan-out                               ; 2.14          ;
++-----------------------------------------------+---------------+
+
+
++-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+; Analysis & Synthesis Resource Utilization by Entity                                                                                                                                                                                                                                                       ;
++----------------------------------------+---------------------+---------------------------+-------------------+--------------+---------+-----------+-----------+-----------+------+--------------+-----------------------------------------------------------------------+------------------+--------------+
+; Compilation Hierarchy Node             ; Combinational ALUTs ; Dedicated Logic Registers ; Block Memory Bits ; DSP Elements ; DSP 9x9 ; DSP 12x12 ; DSP 18x18 ; DSP 36x36 ; Pins ; Virtual Pins ; Full Hierarchy Name                                                   ; Entity Name      ; Library Name ;
++----------------------------------------+---------------------+---------------------------+-------------------+--------------+---------+-----------+-----------+-----------+------+--------------+-----------------------------------------------------------------------+------------------+--------------+
+; |util_wkr                              ; 25 (0)              ; 12 (0)                    ; 0                 ; 0            ; 0       ; 0         ; 0         ; 0         ; 18   ; 0            ; |util_wkr                                                             ; util_wkr         ; util_wkr     ;
+;    |util_wkr_rv:rv|                    ; 25 (0)              ; 12 (0)                    ; 0                 ; 0            ; 0       ; 0         ; 0         ; 0         ; 0    ; 0            ; |util_wkr|util_wkr_rv:rv                                              ; util_wkr_rv      ; util_wkr     ;
+;       |util_wkr_wci:wci|               ; 25 (0)              ; 12 (0)                    ; 0                 ; 0            ; 0       ; 0         ; 0         ; 0         ; 0    ; 0            ; |util_wkr|util_wkr_rv:rv|util_wkr_wci:wci                             ; util_wkr_wci     ; util_wkr     ;
+;          |no_props_decoder:wci_decode| ; 25 (25)             ; 12 (12)                   ; 0                 ; 0            ; 0       ; 0         ; 0         ; 0         ; 0    ; 0            ; |util_wkr|util_wkr_rv:rv|util_wkr_wci:wci|no_props_decoder:wci_decode ; no_props_decoder ; ocpi         ;
++----------------------------------------+---------------------+---------------------------+-------------------+--------------+---------+-----------+-----------+-----------+------+--------------+-----------------------------------------------------------------------+------------------+--------------+
+Note: For table entries with two numbers listed, the numbers in parentheses indicate the number of resources of the given type used by the specific entity alone. The numbers listed outside of parentheses indicate the total resources of the given type used by the specific entity and all of its sub-entities in the hierarchy.
+
+
+Encoding Type:  One-Hot
++-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+; State Machine - |util_wkr|util_wkr_rv:rv|util_wkr_wci:wci|no_props_decoder:wci_decode|my_control_op_r                                                                                                                                                             ;
++--------------------------------+-------------------------+------------------------+--------------------------------+--------------------------------+---------------------------+------------------------+-------------------------+------------------------------+
+; Name                           ; my_control_op_r.NO_OP_e ; my_control_op_r.TEST_e ; my_control_op_r.AFTER_CONFIG_e ; my_control_op_r.BEFORE_QUERY_e ; my_control_op_r.RELEASE_e ; my_control_op_r.STOP_e ; my_control_op_r.START_e ; my_control_op_r.INITIALIZE_e ;
++--------------------------------+-------------------------+------------------------+--------------------------------+--------------------------------+---------------------------+------------------------+-------------------------+------------------------------+
+; my_control_op_r.INITIALIZE_e   ; 0                       ; 0                      ; 0                              ; 0                              ; 0                         ; 0                      ; 0                       ; 0                            ;
+; my_control_op_r.START_e        ; 0                       ; 0                      ; 0                              ; 0                              ; 0                         ; 0                      ; 1                       ; 1                            ;
+; my_control_op_r.STOP_e         ; 0                       ; 0                      ; 0                              ; 0                              ; 0                         ; 1                      ; 0                       ; 1                            ;
+; my_control_op_r.RELEASE_e      ; 0                       ; 0                      ; 0                              ; 0                              ; 1                         ; 0                      ; 0                       ; 1                            ;
+; my_control_op_r.BEFORE_QUERY_e ; 0                       ; 0                      ; 0                              ; 1                              ; 0                         ; 0                      ; 0                       ; 1                            ;
+; my_control_op_r.AFTER_CONFIG_e ; 0                       ; 0                      ; 1                              ; 0                              ; 0                         ; 0                      ; 0                       ; 1                            ;
+; my_control_op_r.TEST_e         ; 0                       ; 1                      ; 0                              ; 0                              ; 0                         ; 0                      ; 0                       ; 1                            ;
+; my_control_op_r.NO_OP_e        ; 1                       ; 0                      ; 0                              ; 0                              ; 0                         ; 0                      ; 0                       ; 1                            ;
++--------------------------------+-------------------------+------------------------+--------------------------------+--------------------------------+---------------------------+------------------------+-------------------------+------------------------------+
+
+
+Encoding Type:  One-Hot
++-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+; State Machine - |util_wkr|util_wkr_rv:rv|util_wkr_wci:wci|no_props_decoder:wci_decode|my_state_r                                                                            ;
++--------------------------+-----------------------+-----------------------+------------------------+------------------------+---------------------+--------------------------+
+; Name                     ; my_state_r.UNUSABLE_e ; my_state_r.FINISHED_e ; my_state_r.SUSPENDED_e ; my_state_r.OPERATING_e ; my_state_r.EXISTS_e ; my_state_r.INITIALIZED_e ;
++--------------------------+-----------------------+-----------------------+------------------------+------------------------+---------------------+--------------------------+
+; my_state_r.INITIALIZED_e ; 0                     ; 0                     ; 0                      ; 0                      ; 0                   ; 0                        ;
+; my_state_r.EXISTS_e      ; 0                     ; 0                     ; 0                      ; 0                      ; 1                   ; 1                        ;
+; my_state_r.OPERATING_e   ; 0                     ; 0                     ; 0                      ; 1                      ; 0                   ; 1                        ;
+; my_state_r.SUSPENDED_e   ; 0                     ; 0                     ; 1                      ; 0                      ; 0                   ; 1                        ;
+; my_state_r.FINISHED_e    ; 0                     ; 1                     ; 0                      ; 0                      ; 0                   ; 1                        ;
+; my_state_r.UNUSABLE_e    ; 1                     ; 0                     ; 0                      ; 0                      ; 0                   ; 1                        ;
++--------------------------+-----------------------+-----------------------+------------------------+------------------------+---------------------+--------------------------+
+
+
+Encoding Type:  One-Hot
++----------------------------------------------------------------------------------------------------------------------------------------------------------+
+; State Machine - |util_wkr|util_wkr_rv:rv|util_wkr_wci:wci|no_props_decoder:wci_decode|my_access_r                                                        ;
++-----------------------+-----------------------+---------------------+--------------------+---------------------+--------------------+--------------------+
+; Name                  ; my_access_r.Control_e ; my_access_r.Write_e ; my_access_r.Read_e ; my_access_r.Error_e ; my_access_r.Init_e ; my_access_r.None_e ;
++-----------------------+-----------------------+---------------------+--------------------+---------------------+--------------------+--------------------+
+; my_access_r.None_e    ; 0                     ; 0                   ; 0                  ; 0                   ; 0                  ; 0                  ;
+; my_access_r.Init_e    ; 0                     ; 0                   ; 0                  ; 0                   ; 1                  ; 1                  ;
+; my_access_r.Error_e   ; 0                     ; 0                   ; 0                  ; 1                   ; 0                  ; 1                  ;
+; my_access_r.Read_e    ; 0                     ; 0                   ; 1                  ; 0                   ; 0                  ; 1                  ;
+; my_access_r.Write_e   ; 0                     ; 1                   ; 0                  ; 0                   ; 0                  ; 1                  ;
+; my_access_r.Control_e ; 1                     ; 0                   ; 0                  ; 0                   ; 0                  ; 1                  ;
++-----------------------+-----------------------+---------------------+--------------------+---------------------+--------------------+--------------------+
+
+
++-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+; Registers Removed During Synthesis                                                                                                                                                ;
++--------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------+
+; Register name                                                                        ; Reason for Removal                                                                         ;
++--------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------+
+; util_wkr_rv:rv|util_wkr_wci:wci|no_props_decoder:wci_decode|my_access_r.Init_e       ; Lost fanout                                                                                ;
+; util_wkr_rv:rv|util_wkr_wci:wci|no_props_decoder:wci_decode|my_control_op_r.NO_OP_e  ; Lost fanout                                                                                ;
+; util_wkr_rv:rv|util_wkr_wci:wci|no_props_decoder:wci_decode|my_state_r.INITIALIZED_e ; Lost fanout                                                                                ;
+; util_wkr_rv:rv|util_wkr_wci:wci|no_props_decoder:wci_decode|my_access_r.Write_e      ; Merged with util_wkr_rv:rv|util_wkr_wci:wci|no_props_decoder:wci_decode|my_access_r.Read_e ;
+; util_wkr_rv:rv|util_wkr_wci:wci|no_props_decoder:wci_decode|my_state_r.EXISTS_e      ; Stuck at GND due to stuck port data_in                                                     ;
+; util_wkr_rv:rv|util_wkr_wci:wci|no_props_decoder:wci_decode|my_access_r.Read_e       ; Stuck at GND due to stuck port data_in                                                     ;
+; util_wkr_rv:rv|util_wkr_wci:wci|no_props_decoder:wci_decode|my_state_r.FINISHED_e    ; Stuck at GND due to stuck port data_in                                                     ;
+; util_wkr_rv:rv|util_wkr_wci:wci|no_props_decoder:wci_decode|my_state_r.SUSPENDED_e   ; Lost fanout                                                                                ;
+; Total Number of Removed Registers = 8                                                ;                                                                                            ;
++--------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------+
+
+
++------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+; Removed Registers Triggering Further Register Optimizations                                                                                                                                    ;
++--------------------------------------------------------------------------------+---------------------------+-----------------------------------------------------------------------------------+
+; Register name                                                                  ; Reason for Removal        ; Registers Removed due to This Register                                            ;
++--------------------------------------------------------------------------------+---------------------------+-----------------------------------------------------------------------------------+
+; util_wkr_rv:rv|util_wkr_wci:wci|no_props_decoder:wci_decode|my_access_r.Read_e ; Stuck at GND              ; util_wkr_rv:rv|util_wkr_wci:wci|no_props_decoder:wci_decode|my_state_r.FINISHED_e ;
+;                                                                                ; due to stuck port data_in ;                                                                                   ;
++--------------------------------------------------------------------------------+---------------------------+-----------------------------------------------------------------------------------+
+
+
++------------------------------------------------------+
+; General Register Statistics                          ;
++----------------------------------------------+-------+
+; Statistic                                    ; Value ;
++----------------------------------------------+-------+
+; Total registers                              ; 12    ;
+; Number of registers using Synchronous Clear  ; 0     ;
+; Number of registers using Synchronous Load   ; 0     ;
+; Number of registers using Asynchronous Clear ; 0     ;
+; Number of registers using Asynchronous Load  ; 0     ;
+; Number of registers using Clock Enable       ; 1     ;
+; Number of registers using Preset             ; 0     ;
++----------------------------------------------+-------+
+
+
++-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+; Multiplexer Restructuring Statistics (Restructuring Performed)                                                                                                                                      ;
++--------------------+-----------+---------------+----------------------+------------------------+------------+---------------------------------------------------------------------------------------+
+; Multiplexer Inputs ; Bus Width ; Baseline Area ; Area if Restructured ; Saving if Restructured ; Registered ; Example Multiplexer Output                                                            ;
++--------------------+-----------+---------------+----------------------+------------------------+------------+---------------------------------------------------------------------------------------+
+; 3:1                ; 8 bits    ; 16 ALUTs      ; 16 ALUTs             ; 0 ALUTs                ; No         ; |util_wkr|util_wkr_rv:rv|util_wkr_wci:wci|no_props_decoder:wci_decode|my_control_op_r ;
+; 4:1                ; 4 bits    ; 8 ALUTs       ; 8 ALUTs              ; 0 ALUTs                ; No         ; |util_wkr|util_wkr_rv:rv|util_wkr_wci:wci|no_props_decoder:wci_decode|my_access_r     ;
+; 4:1                ; 2 bits    ; 4 ALUTs       ; 4 ALUTs              ; 0 ALUTs                ; No         ; |util_wkr|util_wkr_rv:rv|util_wkr_wci:wci|no_props_decoder:wci_decode|my_access_r     ;
+; 9:1                ; 2 bits    ; 12 ALUTs      ; 8 ALUTs              ; 4 ALUTs                ; No         ; |util_wkr|util_wkr_rv:rv|util_wkr_wci:wci|no_props_decoder:wci_decode|my_state_r      ;
++--------------------+-----------+---------------+----------------------+------------------------+------------+---------------------------------------------------------------------------------------+
+
+
++--------------------------------------------------------------------------+
+; Parameter Settings for User Entity Instance: Top-level Entity: |util_wkr ;
++----------------+-------+-------------------------------------------------+
+; Parameter Name ; Value ; Type                                            ;
++----------------+-------+-------------------------------------------------+
+; ocpi_debug     ; 0     ; Unsigned Binary                                 ;
+; ocpi_endian    ; 00    ; Unsigned Binary                                 ;
++----------------+-------+-------------------------------------------------+
+Note: In order to hide this table in the UI and the text report file, please set the "Show Parameter Settings in Synthesis Report" option in "Analysis and Synthesis Settings -> More Settings" to "Off".
+
+
++-------------------------------------------------------------+
+; Parameter Settings for User Entity Instance: util_wkr_rv:rv ;
++----------------+----------+---------------------------------+
+; Parameter Name ; Value    ; Type                            ;
++----------------+----------+---------------------------------+
+; ocpi_debug     ; '0'      ; Enumerated                      ;
+; ocpi_endian    ; little_e ; Enumerated                      ;
++----------------+----------+---------------------------------+
+Note: In order to hide this table in the UI and the text report file, please set the "Show Parameter Settings in Synthesis Report" option in "Analysis and Synthesis Settings -> More Settings" to "Off".
+
+
++------------------------------------------------------------------------------+
+; Parameter Settings for User Entity Instance: util_wkr_rv:rv|util_wkr_wci:wci ;
++----------------+----------+--------------------------------------------------+
+; Parameter Name ; Value    ; Type                                             ;
++----------------+----------+--------------------------------------------------+
+; ocpi_debug     ; '0'      ; Enumerated                                       ;
+; endian         ; little_e ; Enumerated                                       ;
++----------------+----------+--------------------------------------------------+
+Note: In order to hide this table in the UI and the text report file, please set the "Show Parameter Settings in Synthesis Report" option in "Analysis and Synthesis Settings -> More Settings" to "Off".
+
+
++----------------------------------------------------------------------------------------------------------+
+; Parameter Settings for User Entity Instance: util_wkr_rv:rv|util_wkr_wci:wci|no_props_decoder:wci_decode ;
++----------------+--------------------------+--------------------------------------------------------------+
+; Parameter Name ; Value                    ; Type                                                         ;
++----------------+--------------------------+--------------------------------------------------------------+
+; worker         ; A(D"5",D"0",B"00000110") ; Array/Record                                                 ;
+; ocpi_debug     ; '0'                      ; Enumerated                                                   ;
+; endian         ; little_e                 ; Enumerated                                                   ;
++----------------+--------------------------+--------------------------------------------------------------+
+Note: In order to hide this table in the UI and the text report file, please set the "Show Parameter Settings in Synthesis Report" option in "Analysis and Synthesis Settings -> More Settings" to "Off".
+
+
++------------------------------------------------------------------------------------+
+; Parameter Settings for User Entity Instance: util_wkr_rv:rv|util_wkr_worker:worker ;
++----------------+----------+--------------------------------------------------------+
+; Parameter Name ; Value    ; Type                                                   ;
++----------------+----------+--------------------------------------------------------+
+; ocpi_debug     ; '0'      ; Enumerated                                             ;
+; ocpi_endian    ; little_e ; Enumerated                                             ;
++----------------+----------+--------------------------------------------------------+
+Note: In order to hide this table in the UI and the text report file, please set the "Show Parameter Settings in Synthesis Report" option in "Analysis and Synthesis Settings -> More Settings" to "Off".
+
+
++-------------------------------------------------------------------------------------------------------------------------------+
+; Port Connectivity Checks: "util_wkr_rv:rv|util_wkr_wci:wci|no_props_decoder:wci_decode"                                       ;
++---------------------+--------+----------+-------------------------------------------------------------------------------------+
+; Port                ; Type   ; Severity ; Details                                                                             ;
++---------------------+--------+----------+-------------------------------------------------------------------------------------+
+; ocp_in.MAddr[31..5] ; Input  ; Info     ; Stuck at GND                                                                        ;
+; ocp_in.MAddrSpace   ; Input  ; Info     ; Stuck at GND                                                                        ;
+; ocp_in.MByteEn      ; Input  ; Info     ; Stuck at GND                                                                        ;
+; ocp_in.MData        ; Input  ; Info     ; Stuck at GND                                                                        ;
+; ocp_in.MFlag[18..2] ; Input  ; Info     ; Stuck at GND                                                                        ;
+; raw_in              ; Input  ; Info     ; Stuck at GND                                                                        ;
+; raw_out             ; Output ; Info     ; Connected to dangling logic. Logic that only feeds a dangling port will be removed. ;
+; barrier             ; Output ; Info     ; Connected to dangling logic. Logic that only feeds a dangling port will be removed. ;
+; crew                ; Output ; Info     ; Connected to dangling logic. Logic that only feeds a dangling port will be removed. ;
+; rank                ; Output ; Info     ; Connected to dangling logic. Logic that only feeds a dangling port will be removed. ;
++---------------------+--------+----------+-------------------------------------------------------------------------------------+
+
+
++-----------------------------------------------------+
+; Post-Synthesis Netlist Statistics for Top Partition ;
++-----------------------+-----------------------------+
+; Type                  ; Count                       ;
++-----------------------+-----------------------------+
+; boundary_port         ; 18                          ;
+; stratixiv_ff          ; 12                          ;
+;     ENA               ; 1                           ;
+;     plain             ; 11                          ;
+; stratixiv_lcell_comb  ; 27                          ;
+;     normal            ; 27                          ;
+;         0 data inputs ; 2                           ;
+;         2 data inputs ; 4                           ;
+;         3 data inputs ; 1                           ;
+;         4 data inputs ; 8                           ;
+;         5 data inputs ; 5                           ;
+;         6 data inputs ; 7                           ;
+;                       ;                             ;
+; Max LUT depth         ; 3.00                        ;
+; Average LUT depth     ; 2.09                        ;
++-----------------------+-----------------------------+
+
+
++-------------------------------+
+; Elapsed Time Per Partition    ;
++----------------+--------------+
+; Partition Name ; Elapsed Time ;
++----------------+--------------+
+; Top            ; 00:00:00     ;
++----------------+--------------+
+
+
++-------------------------------+
+; Analysis & Synthesis Messages ;
++-------------------------------+
+Info: *******************************************************************
+Info: Running Quartus Prime Analysis & Synthesis
+    Info: Version 17.1.0 Build 590 10/25/2017 SJ Standard Edition
+    Info: Copyright (C) 2017  Intel Corporation. All rights reserved.
+    Info: Your use of Intel Corporation's design tools, logic functions 
+    Info: and other software and tools, and its AMPP partner logic 
+    Info: functions, and any output files from any of the foregoing 
+    Info: (including device programming or simulation files), and any 
+    Info: associated documentation or information are expressly subject 
+    Info: to the terms and conditions of the Intel Program License 
+    Info: Subscription Agreement, the Intel Quartus Prime License Agreement,
+    Info: the Intel FPGA IP License Agreement, or other applicable license
+    Info: agreement, including, without limitation, that your use is for
+    Info: the sole purpose of programming logic devices manufactured by
+    Info: Intel and sold by Intel or its authorized distributors.  Please
+    Info: refer to the applicable agreement for further details.
+    Info: Processing started: Wed Oct 17 12:25:50 2018
+Info: Command: quartus_map --64bit --write_settings_files=off util_wkr
+Info: Using INI file /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-stratix4/quartus.ini
+Warning (18236): Number of processors has not been specified which may cause overloading on shared machines.  Set the global assignment NUM_PARALLEL_PROCESSORS in your QSF to an appropriate value for best performance.
+Info (20030): Parallel compilation is enabled and will use 12 of the 12 processors detected
+Info (12021): Found 1 design units, including 0 entities, in source file /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/fixed_float/stratix4/fixed_float_types_pkg.vhd
+    Info (12022): Found design unit 1: fixed_float_types (fixed_float) File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/fixed_float/stratix4/fixed_float_types_pkg.vhd Line: 17
+Info (12021): Found 1 design units, including 0 entities, in source file /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/fixed_float/stratix4/float_pkg.vhd
+    Info (12022): Found design unit 1: float_pkg (fixed_float) File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/fixed_float/stratix4/float_pkg.vhd Line: 29
+Info (12021): Found 1 design units, including 0 entities, in source file /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/fixed_float/stratix4/float_body.vhd
+    Info (12022): Found design unit 1: float_pkg-body File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/fixed_float/stratix4/float_body.vhd Line: 14
+Info (12021): Found 1 design units, including 0 entities, in source file /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/fixed_float/stratix4/fixed_pkg.vhd
+    Info (12022): Found design unit 1: fixed_pkg (fixed_float) File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/fixed_float/stratix4/fixed_pkg.vhd Line: 26
+Info (12021): Found 1 design units, including 0 entities, in source file /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/fixed_float/stratix4/fixed_body.vhd
+    Info (12022): Found design unit 1: fixed_pkg-body File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/fixed_float/stratix4/fixed_body.vhd Line: 14
+Info (12021): Found 1 design units, including 0 entities, in source file /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4/props_pkg.vhd
+    Info (12022): Found design unit 1: props (ocpi) File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4/props_pkg.vhd Line: 6
+Info (12021): Found 1 design units, including 0 entities, in source file /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4/wci_pkg.vhd
+    Info (12022): Found design unit 1: wci (ocpi) File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4/wci_pkg.vhd Line: 23
+Info (12021): Found 1 design units, including 0 entities, in source file /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4/wci_body.vhd
+    Info (12022): Found design unit 1: wci-body File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4/wci_body.vhd Line: 22
+Info (12021): Found 1 design units, including 0 entities, in source file /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4/types_pkg.vhd
+    Info (12022): Found design unit 1: types (ocpi) File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4/types_pkg.vhd Line: 21
+Info (12021): Found 1 design units, including 0 entities, in source file /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4/types_body.vhd
+    Info (12022): Found design unit 1: types-body File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4/types_body.vhd Line: 29
+Info (12021): Found 1 design units, including 0 entities, in source file /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4/wsi_pkg.vhd
+    Info (12022): Found design unit 1: wsi (ocpi) File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4/wsi_pkg.vhd Line: 25
+Info (12021): Found 1 design units, including 0 entities, in source file /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4/wsi_body.vhd
+    Info (12022): Found design unit 1: wsi-body File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4/wsi_body.vhd Line: 22
+Info (12021): Found 1 design units, including 0 entities, in source file /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4/ocp_pkg.vhd
+    Info (12022): Found design unit 1: ocp (ocpi) File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4/ocp_pkg.vhd Line: 24
+Info (12021): Found 1 design units, including 0 entities, in source file /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4/util_pkg.vhd
+    Info (12022): Found design unit 1: util (ocpi) File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4/util_pkg.vhd Line: 22
+Info (12021): Found 1 design units, including 0 entities, in source file /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4/util_body.vhd
+    Info (12022): Found design unit 1: util-body File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4/util_body.vhd Line: 21
+Info (12021): Found 1 design units, including 0 entities, in source file /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/util/stratix4/types_pkg.vhd
+    Info (12022): Found design unit 1: types (util) File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/util/stratix4/types_pkg.vhd Line: 20
+Info (12021): Found 1 design units, including 0 entities, in source file /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/util/stratix4/util_pkg.vhd
+    Info (12022): Found design unit 1: util (util) File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/util/stratix4/util_pkg.vhd Line: 24
+Info (12021): Found 1 design units, including 0 entities, in source file /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/util/stratix4/util_body.vhd
+    Info (12022): Found design unit 1: util-body File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/util/stratix4/util_body.vhd Line: 23
+Info (12021): Found 1 design units, including 0 entities, in source file /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/bsv/stratix4/bsv_pkg.vhd
+    Info (12022): Found design unit 1: bsv (bsv) File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/bsv/stratix4/bsv_pkg.vhd Line: 22
+Info (12021): Found 2 design units, including 0 entities, in source file util_wkr-defs.vhd
+    Info (12022): Found design unit 1: util_wkr_constants (util_wkr) File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-stratix4/util_wkr-defs.vhd Line: 12
+    Info (12022): Found design unit 2: util_wkr_defs (util_wkr) File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-stratix4/util_wkr-defs.vhd Line: 27
+Info (12021): Found 1 design units, including 0 entities, in source file generics.vhd
+    Info (12022): Found design unit 1: util_wkr_constants-body File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-stratix4/generics.vhd Line: 3
+Info (12021): Found 8 design units, including 4 entities, in source file util_wkr-impl.vhd
+    Info (12022): Found design unit 1: util_wkr_worker_defs (util_wkr) File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-stratix4/util_wkr-impl.vhd Line: 43
+    Info (12022): Found design unit 2: util_wkr_wci-rtl File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-stratix4/util_wkr-impl.vhd Line: 159
+    Info (12022): Found design unit 3: util_wkr_rv-rtl File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-stratix4/util_wkr-impl.vhd Line: 205
+    Info (12022): Found design unit 4: util_wkr-rtl File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-stratix4/util_wkr-impl.vhd Line: 279
+    Info (12023): Found entity 1: util_wkr_worker File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-stratix4/util_wkr-impl.vhd Line: 69
+    Info (12023): Found entity 2: util_wkr_rv File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-stratix4/util_wkr-impl.vhd Line: 98
+    Info (12023): Found entity 3: util_wkr_wci File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-stratix4/util_wkr-impl.vhd Line: 140
+    Info (12023): Found entity 4: util_wkr File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-stratix4/util_wkr-impl.vhd Line: 249
+Info (12021): Found 1 design units, including 0 entities, in source file /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/util_wkr.vhd
+    Info (12022): Found design unit 1: util_wkr_worker-rtl File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/util_wkr.vhd Line: 8
+Info (12127): Elaborating entity "util_wkr" for the top level hierarchy
+Warning (10445): VHDL Subtype or Type Declaration warning at fixed_body.vhd(18): subtype or type has null range File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/fixed_float/stratix4/fixed_body.vhd Line: 18
+Warning (10445): VHDL Subtype or Type Declaration warning at fixed_body.vhd(19): subtype or type has null range File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/fixed_float/stratix4/fixed_body.vhd Line: 19
+Warning (10445): VHDL Subtype or Type Declaration warning at fixed_body.vhd(20): subtype or type has null range File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/fixed_float/stratix4/fixed_body.vhd Line: 20
+Warning (10445): VHDL Subtype or Type Declaration warning at float_body.vhd(29): subtype or type has null range File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/fixed_float/stratix4/float_body.vhd Line: 29
+Warning (10445): VHDL Subtype or Type Declaration warning at float_body.vhd(30): subtype or type has null range File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/fixed_float/stratix4/float_body.vhd Line: 30
+Info (12128): Elaborating entity "util_wkr_rv" for hierarchy "util_wkr_rv:rv" File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-stratix4/util_wkr-impl.vhd Line: 282
+Info (12128): Elaborating entity "util_wkr_wci" for hierarchy "util_wkr_rv:rv|util_wkr_wci:wci" File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-stratix4/util_wkr-impl.vhd Line: 210
+Warning (10542): VHDL Variable Declaration warning at util_body.vhd(66): used initial value expression for variable "v" because variable was never assigned a value File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4/util_body.vhd Line: 66
+Warning (12125): Using design file /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4/no_props_decoder.vhd, which is not specified as a design file for the current project, but contains definitions for 2 design units and 1 entities in project
+    Info (12022): Found design unit 1: no_props_decoder-rtl File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4/no_props_decoder.vhd Line: 51
+    Info (12023): Found entity 1: no_props_decoder File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4/no_props_decoder.vhd Line: 26
+Info (12128): Elaborating entity "no_props_decoder" for hierarchy "util_wkr_rv:rv|util_wkr_wci:wci|no_props_decoder:wci_decode" File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-stratix4/util_wkr-impl.vhd Line: 175
+Warning (10540): VHDL Signal Declaration warning at no_props_decoder.vhd(54): used explicit default value for signal "my_config_error" because signal was never assigned a value File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/stratix4/no_props_decoder.vhd Line: 54
+Info (12128): Elaborating entity "util_wkr_worker" for hierarchy "util_wkr_rv:rv|util_wkr_worker:worker" File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-stratix4/util_wkr-impl.vhd Line: 226
+Warning (13024): Output pins are stuck at VCC or GND
+    Warning (13410): Pin "ctl_SFlag[0]" is stuck at GND File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-stratix4/util_wkr-impl.vhd Line: 271
+    Warning (13410): Pin "ctl_SFlag[1]" is stuck at GND File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-stratix4/util_wkr-impl.vhd Line: 271
+    Warning (13410): Pin "ctl_SFlag[2]" is stuck at VCC File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-stratix4/util_wkr-impl.vhd Line: 271
+Info (286030): Timing-Driven Synthesis is running
+Info (17049): 4 registers lost all their fanouts during netlist optimizations.
+Info (16010): Generating hard_block partition "hard_block:auto_generated_inst"
+    Info (16011): Adding 0 node(s), including 0 DDIO, 0 PLL, 0 transceiver and 0 LCELL
+Warning (21074): Design contains 4 input pin(s) that do not drive logic
+    Warning (15610): No output dependent on input pin "ctl_MAddr[0]" File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-stratix4/util_wkr-impl.vhd Line: 267
+    Warning (15610): No output dependent on input pin "ctl_MAddr[1]" File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-stratix4/util_wkr-impl.vhd Line: 267
+    Warning (15610): No output dependent on input pin "ctl_MFlag[0]" File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-stratix4/util_wkr-impl.vhd Line: 269
+    Warning (15610): No output dependent on input pin "ctl_MFlag[1]" File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-stratix4/util_wkr-impl.vhd Line: 269
+Info (21057): Implemented 45 device resources after synthesis - the final resource count might be different
+    Info (21058): Implemented 12 input pins
+    Info (21059): Implemented 6 output pins
+    Info (21061): Implemented 27 logic cells
+Info: Quartus Prime Analysis & Synthesis was successful. 0 errors, 18 warnings
+    Info: Peak virtual memory: 1232 megabytes
+    Info: Processing ended: Wed Oct 17 12:26:02 2018
+    Info: Elapsed time: 00:00:12
+    Info: Total CPU time (on all processors): 00:00:33
+
+

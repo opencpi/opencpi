@@ -27,6 +27,10 @@
  *         AD9361 IC using an OpenCPI application.
  ******************************************************************************/
 
+#include "OcpiApi.hh" // OA namespace
+
+namespace OA = OA;
+
 /*! @brief Set the nominal in-situ value with No-OS precision
  *         of the
  *         AD9361 RX RF LO frequency in Hz
@@ -44,10 +48,10 @@
  *          are errors (char array content will describe the error).
  ******************************************************************************/
 const char* set_AD9361_Rx_RFPLL_LO_freq_Hz(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
-    const ocpi_ulonglong_t& val)
+    OA::Application& app, const char* app_inst_name_proxy,
+    const OA::ULongLong& val)
 {
-  OCPI::API::Property p(app, app_inst_name_proxy, "rx_lo_freq");
+  OA::Property p(app, app_inst_name_proxy, "rx_lo_freq");
   p.setULongLongValue(val);
 
   return 0;

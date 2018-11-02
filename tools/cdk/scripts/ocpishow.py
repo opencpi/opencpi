@@ -29,11 +29,11 @@ import pydoc
 from xml.etree import ElementTree as ET
 import ocpiutil
 import ocpiassets
-from hdltargets import HdlTarget, HdlPlatform
+from hdltargets import HdlTarget, HdlPlatform, HdlToolFactory
 from ocpiassets import Registry
 
 subParserNouns = ["hdl", "rcc"]
-plainNouns = ["registry", "projects", "workers", "components", "platforms", "targets", "tests", 
+plainNouns = ["registry", "projects", "workers", "components", "platforms", "targets", "tests",
               "libraries", "project"]
 nounsList = plainNouns + subParserNouns
 subnouns = {}
@@ -72,7 +72,7 @@ def parseCLVars():
     details_group = parser.add_mutually_exclusive_group()
     details_group.add_argument("--table", action="store_const", dest="details", const="table",
                                default="table",
-                               help="Pretty-print details in a table associated with the chosen " 
+                               help="Pretty-print details in a table associated with the chosen " +
                                "noun.  This is the default if no print mode is specified")
     details_group.add_argument("--json", action="store_const", dest="details", const="json",
                                default="table",
@@ -131,7 +131,6 @@ def do_rccplatforms(options):
         return
     if options.details == "table":
         rows = [["Platform", "Target"]]
-        rows += [["---------", "---------"]]
         # Collect the information for each platform into a "row" list
         for platform in sorted(rccPlatforms):
             # Assuming there is only one target per platform with [0]
@@ -139,7 +138,7 @@ def do_rccplatforms(options):
             platformRow = [platform, target]
             rows.append(platformRow)
         # Format the list of rows into a table and print
-        ocpiutil.print_table(rows)
+        ocpiutil.print_table(rows, underline="-")
     elif options.details in {"json", "table"}:
         platformDict = {}
         for platform in sorted(rccPlatforms):
@@ -182,12 +181,11 @@ def do_hdlplatforms(options):
     if options.scope != "global":
         raise ocpiutil.OCPIException("ocpidev show hdl platforms is only valid in \"--global-scope\"." +
                                      "  Other scope options are under construction.")
-    platforms = HdlPlatform.all()
+    all_platforms = HdlToolFactory.get_or_create_all("hdlplatform")
     if options.details == "table":
         rows = [["Platform", "Target", "Part", "Vendor", "Toolset"]]
-        rows += [["---------", "---------", "---------", "---------", "---------"]]
         # Collect the information for each platform into a "row" list
-        for platform in HdlPlatform.all():
+        for platform in all_platforms:
             target = platform.target
             platformStr = platform.name
             if not platform.built:
@@ -196,13 +194,13 @@ def do_hdlplatforms(options):
                            target.vendor, target.toolset.title]
             rows.append(platformRow)
         # Format the list of rows into a table and print
-        ocpiutil.print_table(rows)
+        ocpiutil.print_table(rows, underline="-")
         print("* An asterisk indicates that the platform has not been built yet.\n" + \
               "  Assemblies and tests cannot be built until the platform is built.")
     elif options.details == "json":
         # Dump the json containing each platform's attributes
         platformDict = {}
-        for platform in HdlPlatform.all():
+        for platform in all_platforms:
             target = platform.target
             platformDict[platform.name] = {"target": target.name,
                                            "part": platform.exactpart,
@@ -212,7 +210,7 @@ def do_hdlplatforms(options):
         json.dump(platformDict, sys.stdout)
         print()
     else:
-        print(ocpiutil.python_list_to_bash(sorted(platforms)))
+        print(ocpiutil.python_list_to_bash(sorted(all_platforms)))
 
 def do_hdltargets(options):
     """
@@ -229,25 +227,26 @@ def do_hdltargets(options):
                                      "  Other scope options are under construction.")
     if options.details == "table":
         rows = [["Target", "Parts", "Vendor", "Toolset"]]
-        rows += [["---------", "---------", "---------", "---------"]]
         # Collect the information for each target into a "row" list
-        for target in HdlTarget.all():
+        all_targets = HdlToolFactory.get_or_create_all("hdltarget")
+        for target in all_targets:
             targetRow = [str(target), ','.join(target.parts), target.vendor, target.toolset.title]
             rows.append(targetRow)
-        ocpiutil.print_table(rows)
+        ocpiutil.print_table(rows, underline="-")
     elif options.details == "json":
         # Dump the json containing each platform's attributes
         vendorDict = {}
-        for vendor in HdlTarget.get_all_vendors():
+        for vendor in HdlToolFactory.get_all_vendors():
             targetDict = {}
-            for target in HdlTarget.get_all_targets_for_vendor(vendor):
+            for target in HdlToolFactory.get_all_targets_for_vendor(vendor):
                 targetDict[target.name] = {"parts": target.parts,
                                            "tool": target.toolset.title}
             vendorDict[vendor] = targetDict
         json.dump(vendorDict, sys.stdout)
         print()
     else:
-        print(ocpiutil.python_list_to_bash(sorted([str(tgt) for tgt in HdlTarget.all()])))
+        all_targets = HdlToolFactory.get_or_create_all("hdltarget")
+        print(ocpiutil.python_list_to_bash(sorted([str(tgt) for tgt in all_targets])))
 
 def do_platforms(options):
     """
@@ -346,11 +345,6 @@ def do_libraries(options):
                                     " is not a valid project.  Use the \"-d\" option or change " +
                                     "directories")
 
-    if not ocpiutil.get_path_to_project_top():
-        raise ocpiutil.OCPIException("When using the \"--local-scope\" option the command must " +
-                                    "be run in a valid OpenCPI project. " + os.path.realpath(".") +
-                                    " is not a valid project.  Use the \"-d\" option or change " +
-                                    "directories")
     #TODO this may not be the right way to do this long term
     my_asset = ocpiassets.AssetFactory.factory("project",
                                                ocpiutil.get_path_to_project_top())
@@ -508,13 +502,11 @@ def do_projects(options, only_registry=False):
 
             # Table header
             row_1 = ["Project Package-ID", "Path to Project", "Valid/Exists"]
-            row_2 = ["------------------", "---------------", "------------"]
 
             # No reason to output the 'Registered' column if the noun is registry
             if not only_registry:
                 row_1.append("Registered")
-                row_2.append("----------")
-            rows = [row_1, row_2]
+            rows = [row_1]
 
             # Generate rows of the table. Only add the registered column if only_registry is False
             for link, dest in projects_dict.items():
@@ -522,7 +514,7 @@ def do_projects(options, only_registry=False):
                 if not only_registry:
                     row_n.append(dest["registered"])
                 rows.append(row_n)
-            ocpiutil.print_table(rows)
+            ocpiutil.print_table(rows, underline="-")
         else:
             # JSON mode
             # Print registry location and project links in JSON format

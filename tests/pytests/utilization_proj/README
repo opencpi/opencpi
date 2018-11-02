@@ -1,0 +1,38 @@
+This project is used by the unit tests in utilization_test.py.
+
+The purpose of this project is to contain static log files for
+utilization reporting so that the get/show_utilization() python
+functions can be tested for correctness.
+
+The project contains a worker, three hdl platforms, and an assembly,
+each of which has the directory structure that makes it appear as a
+built OpenCPI asset. In reality the only real 'built' files are
+the tool log files for synthesis and implementation. So, even
+though there are no netlists or bitstreams, show/get_utilization()
+functions can be run on these assets from python to see HDL
+utilization tables for them.
+
+In order to avoid removal of these log files on a clean, all target-*
+directories have been made read-only. This also avoids overwriting of
+these files if a user tries to rebuild this project.
+
+Initially, these assets have been built for the following targets with
+the following tool versions:
+virtex6  : Xilinx ISE 14.7
+zynq     : Xilinx Vivado 2017.1
+stratix4 : Intel Quartus Prime Standard Edition 17.1
+
+In order to test different tool versions, there are two options:
+1. Duplicate this project
+   - change the README to list different tool versions in the table above
+   - choose a name for the new project (this name might mention the tool versions)
+   - change the target-* directories to writable in the new copy
+   - build the project using whichever tool versions are desired
+   - only add the necessary log files to the git repo
+   - update the utilization_test.py to test this project as well
+2. Duplicate each worker/platform/assembly
+   - names might have tool-versions in them (e.g. util_wkr_viv19_1_quartus19_1.hdl)
+   - change the target-* directories to writable in the new copy
+   - build each new asset using whichever tool versions are desired
+   - only add the necessary log files to the git repo
+   - update the utilization_test.py to test these assets as well

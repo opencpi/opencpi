@@ -914,11 +914,13 @@ OcpiIncludeProject=$(call OcpiIncludeProjectX,$(or $(OCPI_PROJECT_DIR),.),$1,$(c
 #
 # For OcpiIncludeParentAsset_* functions, arguments are as follows:
 #   Arg1 = reference directory
-#   Arg2 = error/warning/info mode
+#   Arg2 = authoring model prefix (optional) - <parent>.<auth>.<package-name>
+#   Arg3 = error/warning/info mode
 
 # So, for library, first check if this is a platform's devices library.
 # If so, include the parent (../) with type Platform so it can
 # find Platform.mk if it exists. Otherwise, the parent is just the project
+# TODO: should hdl/devices library should have an hdl prefix?
 OcpiIncludeParentAsset_library=\
   $(if $(filter %-platform,$(call OcpiGetDirType,$1/../)),\
     $(call OcpiIncludeAssetAndParentX,$1/../,$2,$3),\
@@ -987,7 +989,7 @@ OcpiIncludeAssetAndParentX=$(infox OIAAPX:$1:$2:$3)$(strip \
 # none is provided. Finally, it determines the shortened and capitalized
 # directory type to be used for finding *.mk files.
 #   Arg1 = reference directory (optional) - defaults to '.' in subcalls
-#   Arg2 = authoring model prefix (optional) - <parent>.<auth>.<package-name>
+#   Arg2 = authoring model prefix for package-ID (optional) - <parent>.<auth>.<package-name>
 #   Arg3 = error/warning/info mode (optional)
 OcpiIncludeAssetAndParent=$(strip \
   $(eval include $(OCPI_CDK_DIR)/include/package.mk)\
@@ -1131,6 +1133,11 @@ OcpiPrepareArtifact=\
    )
 
 # What to do early in each top level Makefile to process build files.
+# Process the build file one of two ways:
+# 1. If there is a build file, process it.
+# 2. If there is no build file, create one in gen/, based on what is found in the Makefile
+#    which uses MakeRawParams to feed the parameter in the Makefile into ocpigen -r
+# Either option generates gen/<wkr>.mk
 ParamShell=\
   if [ -n "$(OcpiBuildFile)" -a -r "$(OcpiBuildFile)" ] ; then \
     (mkdir -p $(GeneratedDir) &&\
@@ -1179,6 +1186,7 @@ MakeRawParams= \
    echo "</parameters>")
 
 # A single quote ' to balance the one above when some editors/colorizers get confused.
+
 # This must be done early to allow the make file fragment that is generated from the -build.xml
 # file to be processed as if it was a user-written Makefile, before most other processing
 define OcpiProcessBuildFiles
@@ -1207,10 +1215,10 @@ $$(call OcpiDbgVar,XmlIncludeDirsInternal)
 $$(call OcpiSetXmlIncludes)
 $$(call OcpiDbgVar,XmlIncludeDirsInternal)
 
-# Process the build file one of two ways:
-# 1. If there is no build file, create one in gen/, based on what is found in the Makefile
+# Process the build file using ParamShell one of two ways:
+# 1. If there is a build file, process it.
+# 2. If there is no build file, create one in gen/, based on what is found in the Makefile
 #    which uses MakeRawParams to feed the parameter in the Makefile into ocpigen -r
-# 2. If there is a build file, process it.
 # In both cases, a gen/<wkr>.mk file is created and then included
 
 $$(call OcpiDbgVar,ParamShell)
@@ -1228,7 +1236,7 @@ endif # if not cleaning
 
 endef # OcpiProcessBuildFiles
 
-# This function reads the platform's target definition file <platform>.mk, against the defaults,
+# This function reads the RCC platform's target definition file <platform>.mk, against the defaults,
 # and assigns the platform-specific variables
 define OcpiSetPlatformVariables
   ifndef OcpiPlatformDir_$1 # avoid all the work if its already done

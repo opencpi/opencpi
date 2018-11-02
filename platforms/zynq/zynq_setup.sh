@@ -19,6 +19,37 @@
 # If there is a "mysetup.sh" script in this directory it will run it after the
 # other setup items, and arrange for it to be run in any login scripts later
 # e.g. ssh logins
+
+# Set time using ntpd
+# If ntpd fails because it could not find ntp.conf fall back on time server
+# passed in as the first parameter
+set_time() {
+  if test "$1" != -; then
+    echo Attempting to set the time from time server
+    if test -f /etc/opencpi-release; then
+      read OCPI_TOOL_PLATFORM x < /etc/opencpi-release
+    else
+      echo No /etc/opencpi-release - assuming ZedBoard hardware
+      OCPI_TOOL_PLATFORM=zed
+    fi
+    # Calling ntpd without any options will run it as a dameon
+    if /mnt/card/opencpi/$OCPI_TOOL_PLATFORM/bin/ntpd -nq; then
+      echo Succeeded in setting the time from /mnt/card/opencpi/ntp.conf
+    else
+      if [ ! -e /mnt/card/opencpi/ntp.conf ]; then
+        if /mnt/card/opencpi/$OCPI_TOOL_PLATFORM/bin/ntpd -nq -p $1; then
+          echo Succeeded in setting the time from: $1
+        else
+          echo ====YOU HAVE NO NETWORK CONNECTION and NO HARDWARE CLOCK====
+          echo Set the time using the '"date YYYY.MM.DD-HH:MM[:SS]"' command.
+        fi
+      else
+        echo ====YOU HAVE NO NETWORK CONNECTION and NO HARDWARE CLOCK====
+        echo Set the time using the '"date YYYY.MM.DD-HH:MM[:SS]"' command.
+      fi
+    fi
+  fi
+}
 if test $# != 2; then
   echo You must supply 2 arguments to this script.
   echo Usage is: zynq_setup.sh '<ntp-server> <timezone>'
@@ -27,15 +58,7 @@ if test $# != 2; then
 else
   export OCPI_CDK_DIR=/mnt/card/opencpi
   # In case dhcp failed on eth0, try it on eth1
-  if test "$1" != -; then
-    echo Attempting to set the time from time server: $1
-    if rdate $1; then
-      echo Succeeded in setting the time from time server: $1
-    else
-      echo ====YOU HAVE NO NETWORK CONNECTION and NO HARDWARE CLOCK====
-      echo Set the time using the '"date YYYY.MM.DD-HH:MM[:SS]"' command.
-    fi
-  fi
+  set_time $1
   # Make sure the hostname is in the host table
   myhostname=`hostname`
   if ! grep -q $myhostname /etc/hosts; then echo 127.0.0.1 $myhostname >> /etc/hosts; fi

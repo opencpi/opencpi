@@ -39,7 +39,7 @@ if test "$OCPI_CDK_DIR" = ""; then
   # CUSTOMIZE THIS LINE FOR YOUR ENVIRONMENT
   # Second arg is shared file system mount point on development system
   # Third argument is opencpi dir relative to mount point
-  # Fourth argument is time server for the (old) time protocol used by the rdate command
+  # Fourth argument is backup time server for the time protocol used by the ntp command
   # Fifth arg is timezone spec - see "man timezone" for the format.
   source /mnt/card/opencpi/zynq_net_setup.sh $1 /opt/opencpi cdk time.nist.gov EST5EDT,M3.2.0,M11.1.0
   # mkdir -p /mnt/ocpi_core

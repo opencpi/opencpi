@@ -28,6 +28,7 @@ Name:           %{RPM_NAME}
 Requires(pre):  opencpi
 Requires:       opencpi opencpi-devel
 Requires(pre,postun): opencpi
+Requires(post): hardlink
 BuildArch:      noarch
 Version:        %{RPM_VERSION}
 Release:        %{RPM_RELEASE}%{?dist}
@@ -70,7 +71,7 @@ for link in $path0/*; do
 done
 
 %postun
-# Uninstall any broken links left in udev rules (e.g. ones installed in %post but now deleted)
+# Uninstall any broken links left in udev rules (e.g. ones installed in %%post but now deleted)
 shopt -s nullglob
 [ "$RPM_INSTALL_PREFIX1" != "%{prefix1}" ] \
   && path1=$RPM_INSTALL_PREFIX1 \

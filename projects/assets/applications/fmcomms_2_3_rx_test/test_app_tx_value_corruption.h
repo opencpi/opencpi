@@ -27,6 +27,8 @@
 #define APP_TX_CORRUPTION_FMCOMMS2_XML "app_tx_corruption_fmcomms2.xml"
 #define APP_TX_CORRUPTION_FMCOMMS3_XML "app_tx_corruption_fmcomms3.xml"
 
+namespace OA = OCPI::API;
+
 bool did_pass_test_ocpi_app_tx_corruption_tx_rf_gain_dB()
 {
   printf("TEST: ensure no corruption of tx rf_gain_dB\n");
@@ -35,7 +37,7 @@ bool did_pass_test_ocpi_app_tx_corruption_tx_rf_gain_dB()
     OCPI::API::Application app(APP_TX_CORRUPTION_FMCOMMS2_XML, NULL);
     app.initialize();
     app.start();
-    if(!did_pass_test_expected_value_tx_rf_gain_dB(app, -13., (ocpi_long_t) 13000)) { return false; }
+    if(!did_pass_test_expected_value_tx_rf_gain_dB(app, -13., (OA::Long) 13000)) { return false; }
     app.stop();
   }
   catch (std::string &e) {
@@ -48,7 +50,7 @@ bool did_pass_test_ocpi_app_tx_corruption_tx_rf_gain_dB()
     OCPI::API::Application app(APP_TX_CORRUPTION_FMCOMMS3_XML, NULL);
     app.initialize();
     app.start();
-    if(!did_pass_test_expected_value_tx_rf_gain_dB(app, -13., (ocpi_long_t) 13000)) { return false; }
+    if(!did_pass_test_expected_value_tx_rf_gain_dB(app, -13., (OA::Long) 13000)) { return false; }
     app.stop();
   }
   catch (std::string &e) {
@@ -67,7 +69,7 @@ bool did_pass_test_ocpi_app_tx_corruption_tx_frequency_MHz()
     OCPI::API::Application app(APP_TX_CORRUPTION_FMCOMMS2_XML, NULL);
     app.initialize();
     app.start();
-    if(!did_pass_test_expected_value_tx_frequency_MHz(app, 2468.123, (ocpi_ulonglong_t) 2468123000)) { return false; }
+    if(!did_pass_test_expected_value_tx_frequency_MHz(app, 2468.123, (OA::ULongLong) 2468123000)) { return false; }
     app.stop();
   }
   catch (std::string &e) {
@@ -80,7 +82,7 @@ bool did_pass_test_ocpi_app_tx_corruption_tx_frequency_MHz()
     OCPI::API::Application app(APP_TX_CORRUPTION_FMCOMMS3_XML, NULL);
     app.initialize();
     app.start();
-    if(!did_pass_test_expected_value_tx_frequency_MHz(app, 2468.123, (ocpi_ulonglong_t) 2468123000)) { return false; }
+    if(!did_pass_test_expected_value_tx_frequency_MHz(app, 2468.123, (OA::ULongLong) 2468123000)) { return false; }
     app.stop();
   }
   catch (std::string &e) {
@@ -99,7 +101,7 @@ bool did_pass_test_ocpi_app_tx_corruption_tx_bb_cutoff_frequency_MHz()
     OCPI::API::Application app(APP_TX_CORRUPTION_FMCOMMS2_XML, NULL);
     app.initialize();
     app.start();
-    if(!did_pass_test_expected_value_tx_bb_cutoff_frequency_MHz(app, 1.234567, (ocpi_ulong_t) 1234567)) { return false; }
+    if(!did_pass_test_expected_value_tx_bb_cutoff_frequency_MHz(app, 1.234567, (OA::ULong) 1234567)) { return false; }
     app.stop();
   }
   catch (std::string &e) {
@@ -112,7 +114,7 @@ bool did_pass_test_ocpi_app_tx_corruption_tx_bb_cutoff_frequency_MHz()
     OCPI::API::Application app(APP_TX_CORRUPTION_FMCOMMS3_XML, NULL);
     app.initialize();
     app.start();
-    if(!did_pass_test_expected_value_tx_bb_cutoff_frequency_MHz(app, 1.234567, (ocpi_ulong_t) 1234567)) { return false; }
+    if(!did_pass_test_expected_value_tx_bb_cutoff_frequency_MHz(app, 1.234567, (OA::ULong) 1234567)) { return false; }
     app.stop();
   }
   catch (std::string &e) {

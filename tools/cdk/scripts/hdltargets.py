@@ -17,13 +17,292 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 """
-HdlTarget, HdlPlatform, and HdlToolSet
+HdlToolFactory is a factory for collecting information from elsewhere in
+OpenCPI regarding HDL targets, platforms and tools and then constructing
+instances for them.
+
+HdlTarget, HdlPlatform, HdlToolSet and HdlReportableToolSet
 are classes which contain information and functions for collecting OpenCPI
 supported HDL platforms and their corresponding target-parts and vendor
 toolsets.
+
+Documentation and testing:
+    Documentation can be viewed by running:
+        $ pydoc3 hdltargets
+Note on testing:
+    When adding functions to this file, add unit tests to
+    opencpi/tests/pytests/*_test.py
 """
+
 import os
+import glob
+import importlib
+from functools import partial
 import ocpiutil
+import hdltools
+
+class HdlToolFactory(object):
+    """
+    This class contains logic for collecting Tool/Target/Platform information
+    and constructing classes for each. It also contains logic for importing
+    tool modules and absorbing their metadata.
+    """
+
+    __mk_dict = {}
+    __tgt_dict = {}
+    __plat_dict = {}
+    __tool_dict = {}
+    __tool_assets = {}
+
+    # __tool_reporting is an internal dictionary that is initialized to contain
+    # metadata associated with tools. It is initialized by importing the tools'
+    # modules and populating the dict as follows
+    #     {
+    #      "vivado": {
+    #                 "synth_files": [],
+    #                 "impl_files": [],
+    #                 "reportable_items": []
+    #                },
+    #      ...
+    #     }
+    __tool_reporting = {}
+
+    # Initialization for this module. Collect ReportableItems and files for each tool
+    # Iterate through all tools, import each, and each tool's initialize reporting info
+    for tool_str in hdltools.__all__:
+        try:
+            # import the tool submodule of "hdltools"
+            tool_module = importlib.import_module("hdltools." + tool_str)
+            # Initialize metadata for the tool
+            __tool_reporting[tool_str] = {}
+            # pylint:disable=bad-whitespace
+            __tool_reporting[tool_str]["synth_files"]      = tool_module.synth_files
+            __tool_reporting[tool_str]["impl_files"]       = tool_module.impl_files
+            __tool_reporting[tool_str]["reportable_items"] = tool_module.reportable_items
+            # pylint:enable=bad-whitespace
+        except ImportError as ex:
+            ocpiutil.logging.error(str(ex))
+            ocpiutil.logging.error("Could not import HDL ToolSet module \"" + tool_str + "\"")
+
+    @classmethod
+    def factory(cls, asset_type, name=None):
+        """
+        Class method that is the intended wrapper to create all instances of any Asset subclass.
+        Returns a constructed object of the type specified by asset_type. Throws an exception for
+        an invalid type.
+
+        Every asset must have a directory, and may provide a name and other args.
+        Some assets will be created via the corresponding subclass constructor.
+        Others will use an auxiliary function to first check if a matching instance
+        already exists.
+        """
+        # actions maps asset_type string to the function that creates objects of that type
+        # Some types will use plain constructors,
+        # and some will use __get_or_create with asset_cls set accordingly
+        actions = {"hdltoolset":  partial(cls.__get_or_create, HdlToolSet),
+                   "hdltarget":   partial(cls.__get_or_create, HdlTarget),
+                   "hdlplatform": partial(cls.__get_or_create, HdlPlatform)}
+
+        if asset_type not in actions.keys():
+            raise ocpiutil.OCPIException("Bad asset creation, \"" + asset_type + "\" not supported")
+
+        # Call the action for this type and hand it the arguments provided
+        return actions[asset_type](name)
+
+    @classmethod
+    def __get_or_create(cls, asset_cls, name):
+        """
+        Given an asset subclass type, check whether an instance of the
+        subclass already exists for the provided directory. If so, return
+        that instance. Otherwise, call the subclass constructor and return
+        the new instance.
+        """
+        # Determine the sub-dictionary in __assets corresponding to the provided class (asset_cls)
+        if asset_cls not in cls.__tool_assets:
+            cls.__tool_assets[asset_cls] = {}
+        asset_inst_dict = cls.__tool_assets[asset_cls]
+
+        # Does an instance of the asset_cls subclass exist with a directory matching the provided
+        # "dictionary" parameter? If so, just return that instance.
+        if name not in asset_inst_dict:
+            # If not, construct a new one, add it to the dictionary, and return it
+            asset_inst_dict[name] = cls.__init_hdltool_asset_from_dict(asset_cls, name)
+        return asset_inst_dict[name]
+
+    @classmethod
+    def get_or_create_all(cls, asset_type):
+        """
+        Create all assets of the provided type (target platform or tool)
+        """
+        if cls.__tgt_dict == {}:
+            cls.__parse_hdltargets_from_make()
+        asset_list = []
+        if asset_type == "hdltarget":
+            # iterate through all target names, construct, and add to return list for tgt in cls.__tgt_dict:
+            for tgt in cls.__tgt_dict:
+                asset_list.append(cls.__get_or_create(HdlTarget, tgt))
+            return asset_list
+        if asset_type == "hdlplatform":
+            # iterate through all platform names, construct, and add to return list
+            for plat in cls.__plat_dict:
+                asset_list.append(cls.__get_or_create(HdlPlatform, plat))
+            return asset_list
+        if asset_type == "hdltoolset":
+            # iterate through all tool names, construct, and add to return list
+            for tool in cls.__tool_dict:
+                asset_list.append(cls.__get_or_create(HdlToolSet, tool))
+            return asset_list
+        raise ocpiutil.OCPIException("Bad asset creation, \"" + asset_type + "\" not supported")
+
+    @classmethod
+    def get_all_vendors(cls):
+        """
+        Get list of vendors (e.g. unique list of vendors covering all targets)
+        """
+        return sorted(set([target.vendor for target in list(cls.get_or_create_all("hdltarget"))]))
+
+    @classmethod
+    def get_all_targets_for_vendor(cls, vendor):
+        """
+        Get all instances of the HdlTarget class that have the specified vendor.
+        """
+        return sorted([target for target in list(cls.get_or_create_all("hdltarget"))
+                       if target.vendor == vendor])
+
+    @classmethod
+    def __init_hdltool_asset_from_dict(cls, asset_cls, name):
+        """
+        Construct an asset instance using information from the static internal
+        dictionaries that store hdltarget/tool/platform info.
+        """
+        if cls.__tgt_dict == {}:
+            # if the dicts have not yet been initialized, initialize them using
+            # information from make
+            cls.__parse_hdltargets_from_make()
+
+        if asset_cls is HdlToolSet:
+            # if tool, name should be a key in tool_dict
+            if name not in cls.__tool_dict:
+                raise ocpiutil.OCPIException("Tool with name \"" + name + "\" does not exist. " +
+                                             "Run 'ocpidev show hdl targets --table' for more " +
+                                             "information on tools and HDL targets.")
+
+            if name in cls.__tool_reporting.keys():
+                # if this tool is found in the reporting dictionary,
+                # get this tools reporting metadata to pass to constructor
+                report_dict = cls.__tool_reporting[name]
+                # and create a reportable tool
+                return HdlReportableToolSet(name=name, title=cls.__tool_dict[name]["title"],
+                                            is_simtool=cls.__tool_dict[name]["is_simtool"],
+                                            synth_files=report_dict["synth_files"],
+                                            impl_files=report_dict["impl_files"],
+                                            reportable_items=report_dict["reportable_items"])
+
+            else:
+                # otherwise, this is not a reportable tool, so just go ahead and call the
+                # HdlToolSet constructor
+                return asset_cls(name=name, title=cls.__tool_dict[name]["title"],
+                                 is_simtool=cls.__tool_dict[name]["is_simtool"])
+
+        if asset_cls is HdlTarget:
+            # if tgt, name should be a key in tgt_dict
+            if name not in cls.__tgt_dict:
+                raise ocpiutil.OCPIException("Target with name \"" + name + "\" does not exist. " +
+                                             "Valid targets are:\n" +
+                                             str(list(cls.__tgt_dict.keys())))
+            # construct and return the target
+            return asset_cls(name=name, vendor=cls.__tgt_dict[name]["vendor"],
+                             parts=cls.__tgt_dict[name]["parts"],
+                             toolset=cls.__tgt_dict[name]["toolset"])
+        if asset_cls is HdlPlatform:
+            # if plat, name should be a key in plat_dict
+            if name not in cls.__plat_dict:
+                raise ocpiutil.OCPIException("Platform with name \"" + name + "\" does not exist" +
+                                             " or its project needs to be registered. Valid "
+                                             "platforms are:\n" +
+                                             str(list(cls.__plat_dict.keys())) + "\n"
+                                             "To make sure the platform's project is registered " +
+                                             "run 'ocpidev register project'" + " in the " +
+                                             "project containing the platform.")
+            # ensure this platform's target exists and get it
+            tgt_for_plat = cls.factory("hdltarget", cls.__plat_dict[name]["targetname"])
+            # construct and return the target
+            return asset_cls(name=name, target=tgt_for_plat,
+                             exactpart=cls.__plat_dict[name]["exactpart"],
+                             built=cls.__plat_dict[name]["built"])
+
+        asset_cls_name = "None" if asset_class is none else asset_cls.__name__
+        raise ocpiutil.OCPIException("Bad initializion. Asset Class \"" + asset_cls_name +
+                                     "\" not supported")
+
+    @classmethod
+    def __parse_hdltargets_from_make(cls):
+        """
+        Ask make for the HDL target/platform/toolset information, and parse it into the
+        __tool_dict, __tgt_dict and __plat_dict dictionaries. Other functions in this
+        class will use those dictionaries to construct HdlTarget/Platform/ToolSet intances
+        """
+        if cls.__mk_dict == {}:
+            # Ask make for tool/tgt/plat info which will be reorganized/parsed below
+            cls.__mk_dict = ocpiutil.set_vars_from_make(os.environ["OCPI_CDK_DIR"] +
+                                                        "/include/hdl/hdl-targets.mk",
+                                                        "ShellHdlTargetsVars=1 " +
+                                                        "ShellGlobalProjectsVars=1",
+                                                        "verbose")
+        # Top targets are general groups that likely contain multiple child targets/families
+        if 'HdlTopTargets' in cls.__mk_dict:
+            # we call TopTargets "vendors" because that is a more readable term
+            for vendor in cls.__mk_dict['HdlTopTargets']:
+                # Each vendor may have a list of associated targets. We assign those
+                # to the "families" list
+                if 'HdlTargets_' + vendor in cls.__mk_dict:
+                    families = cls.__mk_dict['HdlTargets_' + vendor]
+                else:
+                    # if there is no list of targets for the vendor, then the vendor name is
+                    # itself the target to use
+                    families = [vendor]
+                # for each family, create an entry in the class' tgt_dict. set the vendor, list
+                # of associated parts, the toolset, and some other metadata
+                for family in families:
+                    cls.__tgt_dict[family] = {}
+                    cls.__tgt_dict[family]["vendor"] = vendor
+                    # A family will have a list of associated parts, so get them and
+                    # add them to the tgt_dict under the "parts" entry for this family
+                    if 'HdlTargets_' + family in cls.__mk_dict:
+                        cls.__tgt_dict[family]["parts"] = cls.__mk_dict['HdlTargets_' + family]
+                    else:
+                        # if there is no parts list, then the family itself is the part
+                        cls.__tgt_dict[family]["parts"] = [family]
+
+                    # There must be a toolset associated with each family, so get it and add
+                    # it to the tgt_dict under the family's "toolset" entry
+                    toolname = cls.__mk_dict['HdlToolSet_' + family][0]
+                    cls.__tgt_dict[family]["toolset"] = toolname
+
+                    # Add this tool to the separate tool_dict along with its associated title,
+                    # and whether or not it is a simulator tool
+                    if toolname not in cls.__tool_dict:
+                        cls.__tool_dict[toolname] = {}
+                        # Get the title for this tool via HdlToolName
+                        if 'HdlToolName_' + toolname in cls.__mk_dict:
+                            cls.__tool_dict[toolname]["title"] = \
+                                    cls.__mk_dict['HdlToolName_' + toolname][0]
+
+                        # Determine if this tool is one of the HdlSimTools. Set the is_simtool
+                        # entry in __tool_dict accordingly
+                        is_simtool = ('HdlSimTools' in cls.__mk_dict and
+                                      family in cls.__mk_dict['HdlSimTools'])
+                        cls.__tool_dict[toolname]["is_simtool"] = is_simtool
+
+        # For each HdlPlatform, add an entry to __plat_dict including the platform's exact part,
+        # its HDL target name, and whether it is built
+        if 'HdlAllPlatforms' in cls.__mk_dict:
+            for platname in cls.__mk_dict['HdlAllPlatforms']:
+                cls.__plat_dict[platname] = {}
+                exactpart = cls.__mk_dict['HdlPart_' + platname][0]
+                cls.__plat_dict[platname]['exactpart'] = exactpart
+                cls.__plat_dict[platname]['targetname'] = cls.__mk_dict['HdlFamily_' + exactpart][0]
+                cls.__plat_dict[platname]['built'] = platname in cls.__mk_dict['HdlBuiltPlatforms']
 
 class HdlToolSet(object):
     """
@@ -44,12 +323,7 @@ class HdlToolSet(object):
         'MyTool2'
         >>> tool2.is_simtool
         True
-        >>> HdlToolSet.get("mytool1").name
-        'mytool1'
-        >>> [str(tool) for tool in HdlToolSet.all()]
-        ['mytool1', 'mytool2']
     """
-    __all_toolsets = {}
     def __init__(self, name, title=None, is_simtool=False):
         """
         Create an instance of HdlToolSet.
@@ -60,7 +334,6 @@ class HdlToolSet(object):
         self.name = name
         self.title = title if title else name
         self.is_simtool = is_simtool
-        HdlToolSet.__all_toolsets[name] = self
 
     def __str__(self):
         return self.name
@@ -73,21 +346,183 @@ class HdlToolSet(object):
     def __lt__(self, other):
         return str(self) < str(other)
 
-    @staticmethod
-    def get(name):
-        """
-        Get an existing instance of HdlToolSet class by name.
-        """
-        if name in HdlToolSet.__all_toolsets:
-            return HdlToolSet.__all_toolsets[name]
-        return None
+class HdlReportableToolSet(HdlToolSet):
+    """
+    HdlReportableToolSet
+    Subclass of HdlToolSet that supports utilization reporting
+    """
+    __valid_modes = ["synth", "impl"]
 
-    @staticmethod
-    def all():
+    # Synth items that should precede the common items in a synth report:
+    __default_synth_items = []
+
+    __default_synth_sort_priority = ["Tool", "OCPI Target"]
+    __default_impl_sort_priority = ["Tool", "OCPI Platform"]
+
+    # Implementation items that should precede the common items in an impl report:
+    #
+    # Container should be appended to each element dictionary prior to reporting on that
+    # dictionary in the "impl" fasion. OpenCPI Platform is determined for each data-point
+    # based on the platform arguments passed in.
+    __default_impl_items = ["OCPI Platform"]
+    # TODO add ReportableItem w/ function for Timing pass/failure for impl
+
+    # OpenCPI Target is determined for each data-point based on the target arguments passed in
+    # The remaining items here are truly ReportableItems that are calculated from each ToolSets's
+    # output files
+    __default_common_items = ["OCPI Target", "Tool", "Version", "Device", "Registers (Typ)",
+                              "LUTs (Typ)", "Fmax (MHz) (Typ)", "Memory/Special Functions"]
+    __ordered_items = []
+
+    def __init__(self, name, title=None, is_simtool=False,
+                 synth_files=[], impl_files=[], reportable_items=[]):
+        super().__init__(name, title, is_simtool)
+        self.files = {}
+        self.files["synth"] = synth_files
+        self.files["impl"] = impl_files
+        self.reportable_items = reportable_items
+        for item in reportable_items:
+            if item.key not in HdlReportableToolSet.get_ordered_items():
+                raise ocpiutil.OCPIException("Item \"" + item.key + "\" is not recognized." +
+                                             "Be sure to use " +
+                                             "HdlReportableToolSet.set_ordered_items([<items>])" +
+                                             "to set the list of acceptable report items.")
+
+    def get_files(self, directory, mode="synth"):
         """
-        Get all instances of the HdlToolSet class
+        Return the list of files that are usable for reporting utilization given the directory
+        and mode.
         """
-        return sorted(HdlToolSet.__all_toolsets.values())
+        if mode not in self.__valid_modes:
+            raise ocpiutil.OCPIException("Cannot provide reportable files for mode \"" +
+                                         mode + "\". Valid modes are: " + str(self.__valid_modes))
+
+        file_options = [directory + "/" + fname for fname in self.files[mode]]
+        report_files = []
+        for fil in file_options:
+            globbed_files = glob.glob(fil)
+            if globbed_files == []:
+                ocpiutil.logging.info("Skipping non-existent report file \"" + fil + "\"")
+            else:
+                report_files += glob.glob(fil)
+        return report_files
+
+    @classmethod
+    def get_ordered_items(cls, mode="synth"):
+        """
+        Return the default ordering for the given mode
+        """
+        if mode == "synth":
+            return cls.__default_synth_items + cls.__default_common_items + cls.__ordered_items
+        if mode == "impl":
+            return cls.__default_impl_items + cls.__default_common_items + cls.__ordered_items
+        raise ocpiutil.OCPIException("Valid modes for reporting utilization are \"synth\" " +
+                                     "and \"impl\". Mode specified was \"" + mode + "\".")
+
+    @classmethod
+    def get_sort_priority(cls, mode="synth"):
+        """
+        Return the default sort priority for the given mode
+        """
+        if mode == "synth":
+            return cls.__default_synth_sort_priority
+        elif mode == "impl":
+            return cls.__default_impl_sort_priority
+        else:
+            raise ocpiutil.OCPIException("Valid modes for reporting utilization are \"synth\" " +
+                                         "and \"impl\". Mode specified was \"" + mode + "\".")
+
+    def collect_report_items(self, files, target=None, platform=None, mode="synth"):
+        """
+        For a given list of files and a target OR platform, iterate through this
+        tool's ReportableItems and apply them to each file to collect a dictionary
+        mapping element keys to the values where each value was determined
+        by applying a ReportableItem to a file.
+        """
+        ocpiutil.logging.debug("Reporting on files: " + str(files))
+        if files is None or files == []:
+            ocpiutil.logging.info("No files to report on")
+            return {}
+        if mode != "synth" and mode != "impl":
+            raise ocpiutil.OCPIException("Valid modes for reporting utilization are \"synth\" " +
+                                         "and \"impl\". Mode specified was \"" + mode + "\".")
+
+        # pylint:disable=bad-continuation
+        if ((mode == "synth" and target is None) or (mode == "impl" and platform is None) or
+            (target is not None  and platform is not None)):
+            raise ocpiutil.OCPIException("Synthesis reporting operates only on HDL targets.\n" +
+                                         "Implementation reporting operates only on HDL platforms.")
+        # pylint:enable=bad-continuation
+
+        elem_dict = {}
+        if mode == "impl":
+            elem_dict["OCPI Platform"] = platform.name
+            elem_dict["OCPI Target"] = platform.target.name
+        else:
+            elem_dict["OCPI Target"] = target.name
+        elem_dict["Tool"] = self.title
+
+        # If not a single value is found for this tool's ReportableItems,
+        # this data-point is empty
+        non_empty = False
+        # Iterate through this tool's ReportableItems and match each item (regex) with on the files
+        # provided. Each value found is added to this data_point or filled in with None
+        for item in self.reportable_items:
+            elem = None
+            for fil in files:
+                if mode == "synth":
+                    elem = item.match_and_transform_synth(fil)
+                else:
+                    elem = item.match_and_transform_impl(fil)
+                if elem:
+                    elem_dict[item.key] = elem
+                    # An element's value has been found, so this item is non-empty
+                    non_empty = True
+                    break
+            if elem is None:
+                # No value was found/matched in the provided files for this item
+                # Fill in None
+                elem_dict[item.key] = None
+        return elem_dict if non_empty else {}
+
+    def construct_report_item(self, directory, target=None, platform=None, mode="synth",
+                              init_report=None):
+        """
+        For a single directory and single target OR platform, construct (or add to) a Report with
+        a new data-point for the directory and target/platform provided. The data-point will
+        contain a key/value pair for each ReportableItem of this toolset.
+        """
+        if mode != "synth" and mode != "impl":
+            raise ocpiutil.OCPIException("Valid modes for reporting utilization are \"synth\" " +
+                                         "and \"impl\". Mode specified was \"" + mode + "\".")
+
+        # pylint:disable=bad-continuation
+        if ((mode == "synth" and target is None) or (mode == "impl" and platform is None) or
+            (target is not None  and platform is not None)):
+            raise ocpiutil.OCPIException("Synthesis reporting operates only on HDL targets.\n" +
+                                         "Implementation reporting operates only on HDL platforms.")
+        # pylint:enable=bad-continuation
+
+        # Initialize a report object with the default ordered headers for this mode
+        if init_report is None:
+            init_report = ocpiutil.Report(ordered_headers=self.get_ordered_items(mode))
+
+        # Determine the toolset to collect these report items
+        if mode == "synth":
+            toolset = target.toolset
+        elif mode == "impl":
+            toolset = platform.target.toolset
+
+        # For the tool in question, get the files for reporting on this directory/mode
+        files = toolset.get_files(directory, mode)
+        # Collect the actual report items dict of itemkey=>value and add as a data-point to the
+        # report for returning
+        new_report = toolset.collect_report_items(files, target=target, platform=platform,
+                                                  mode=mode)
+        # If the new_report is non-empty, add it to the initial one
+        if new_report:
+            init_report.append(new_report)
+        return init_report
 
 class HdlTarget(object):
     """
@@ -104,16 +539,13 @@ class HdlTarget(object):
         ['mytgt1', 'vend1', ['part1.1', 'part1.2'], 'mytool1']
         >>> [target2.name, target2.vendor, target2.parts, str(target2.toolset)]
         ['mytgt2', 'vend2', ['part2'], 'mytool2']
-        >>> HdlTarget.get("mytgt1").name
+        >>> target1.name
         'mytgt1'
-        >>> HdlTarget.get("mytgt1").parts
+        >>> target1.parts
         ['part1.1', 'part1.2']
-        >>> HdlTarget.get("mytgt2").vendor
+        >>> target2.vendor
         'vend2'
-        >>> [tgt.name for tgt in HdlTarget.all()]
-        ['mytgt0', 'mytgt1', 'mytgt2']
     """
-    __all_targets = {}
     def __init__(self, name, vendor, parts, toolset):
         """
         Create an instance of HdlTarget.
@@ -122,8 +554,13 @@ class HdlTarget(object):
         self.name = name
         self.vendor = vendor
         self.parts = parts
-        self.toolset = toolset
-        HdlTarget.__all_targets[name] = self
+        # If the caller passed in a toolset instance instead of name, just assign
+        # the instance (no need to construct or search for one). This is especially
+        # useful for simple tests of this class (e.g. see doctest setup at end of file
+        if isinstance(toolset, HdlToolSet):
+            self.toolset = toolset
+        else:
+            self.toolset = HdlToolFactory.factory("hdltoolset", toolset)
 
     def __str__(self):
         return self.name
@@ -135,115 +572,6 @@ class HdlTarget(object):
             return str(self) < str(other)
         else:
             return False
-
-    @staticmethod
-    def get(name):
-        """
-        Get an existing instance of HdlTarget class by name.
-        """
-        if name in HdlTarget.__all_targets:
-            return HdlTarget.__all_targets[name]
-        return None
-
-    @staticmethod
-    def all():
-        """
-        Get all instances of the HdlTarget class
-        """
-        return sorted(HdlTarget.__all_targets.values())
-
-    @staticmethod
-    def all_except_sims():
-        """
-        Get all instances of the HdlTarget class except those that have
-        simulator toolsets.
-        Example (doctest):
-        >>> [tgt.name for tgt in HdlTarget.all_except_sims()]
-        ['mytgt0', 'mytgt1']
-        """
-        return sorted([target for target in list(HdlTarget.__all_targets.values())
-                       if not target.toolset.is_simtool])
-
-    @staticmethod
-    def get_all_vendors():
-        return sorted(set([target.vendor for target in list(HdlTarget.__all_targets.values())]))
-
-    @staticmethod
-    def get_all_targets_for_vendor(vendor):
-        """
-        Get all instances of the HdlTarget class that have the specified vendor.
-        Example (doctest):
-        >>> [tgt.name for tgt in HdlTarget.get_all_targets_for_vendor('vend1')]
-        ['mytgt0', 'mytgt1']
-        """
-        return sorted([target for target in list(HdlTarget.__all_targets.values())
-                       if target.vendor == vendor])
-
-    @staticmethod
-    def get_all_targets_for_toolset(toolset):
-        """
-        Get all instances of the HdlTarget class that have the specified toolset.
-        Example (doctest):
-        >>> [tgt.name for tgt in HdlTarget.get_all_targets_for_toolset('mytool1')]
-        ['mytgt0', 'mytgt1']
-        """
-        return sorted([target for target in list(HdlTarget.__all_targets.values())
-                       if target.toolset == toolset])
-
-    @staticmethod
-    def get_target_for_part(part):
-        """
-        Example (doctest):
-        Get an instance of the HdlTarget class that has the specified part.
-        >>> HdlTarget.get_target_for_part('part2').name
-        'mytgt2'
-        """
-        targets = [target for target in list(HdlTarget.__all_targets.values()) if part in target.parts]
-        if len(targets) > 0:
-            return targets[0]
-        return None
-
-    # Collect a dictionary of variable names -> values
-    # from make-land
-    # NOTE: Internal method
-    @staticmethod
-    def __get_make_vars():
-        return ocpiutil.set_vars_from_make(os.environ["OCPI_CDK_DIR"] +
-                                           "/include/hdl/hdl-targets.mk",
-                                           "ShellHdlTargetsVars=1 ShellGlobalProjectsVars=1",
-                                           "verbose")
-
-    @staticmethod
-    def __initialize_from_dict(mk_dict):
-        if mk_dict and 'HdlTopTargets' in mk_dict:
-            for vendor in mk_dict['HdlTopTargets']:
-                if 'HdlTargets_' + vendor in mk_dict:
-                    families = mk_dict['HdlTargets_' + vendor]
-                else:
-                    families = [vendor]
-                for family in families:
-                    if 'HdlTargets_' + family in mk_dict:
-                        parts = mk_dict['HdlTargets_' + family]
-                    else:
-                        parts = [family]
-                    if not HdlTarget.get(family):
-                        toolname = mk_dict['HdlToolSet_' + family][0]
-                        tooltitle = mk_dict['HdlToolName_' + toolname][0]
-                        HdlTarget(family, vendor, parts,
-                                  HdlToolSet(toolname, tooltitle,
-                                             'HdlSimTools' in mk_dict and\
-                                             family in mk_dict['HdlSimTools']))
-
-    # Collect HDL target/platform variables from make-land
-    # and initialize a collection of HdlTarget/ToolSet objects
-    # accordingly.
-    # NOTE: This is called from the HdlPlatform class' cousin
-    # method and should not be called elsewhere!
-    @staticmethod
-    def _initialize_from_make_variables():
-        mk_dict = HdlTarget.__get_make_vars()
-        HdlTarget.__initialize_from_dict(mk_dict)
-        return mk_dict
 
 class HdlPlatform(object):
     """
@@ -263,19 +591,13 @@ class HdlPlatform(object):
         ['myplat1', 'mytgt1', 'mytool1']
         >>> [platform2.name, platform2.target.name, str(platform2.target.toolset)]
         ['myplat2', 'mytgt2', 'mytool2']
-        >>> HdlPlatform.get("myplat0").name
-        'myplat0'
-        >>> HdlPlatform.get("myplat0").exactpart
+        >>> platform0.exactpart
         'exactpart0'
-        >>> [plat.name for plat in HdlPlatform.all()]
-        ['myplat0', 'myplat1', 'myplat2']
     """
-    __all_platforms = {}
     def __init__(self, name, target, exactpart, built=False):
         self.name = name
         self.target = target
         self.exactpart = exactpart
-        HdlPlatform.__all_platforms[name] = self
         self.built = built
 
     def __str__(self):
@@ -289,70 +611,11 @@ class HdlPlatform(object):
         else:
             return False
 
-    @staticmethod
-    def get(name):
-        """
-        Get an existing instance of HdlPlatform class by name.
-        """
-        if name in HdlPlatform.__all_platforms:
-            return HdlPlatform.__all_platforms[name]
-        return None
-
-    @staticmethod
-    def all():
-        """
-        Get all instances of the HdlPlatform class
-        """
-        return sorted(HdlPlatform.__all_platforms.values())
-
-    @staticmethod
-    def all_built():
-        """
-        Get all instances of the HdlPlatform class
-        """
-        return sorted([plat for plat in list(HdlPlatform.__all_platforms.values())
-                       if plat.built])
-
-    @staticmethod
-    def all_except_sims():
-        """
-        Get all instances of the HdlPlatform class except those that have
-        simulator toolsets.
-        Example (doctest):
-        >>> [plat.name for plat in HdlPlatform.all_except_sims()]
-        ['myplat0', 'myplat1']
-        """
-        return sorted([plat for plat in list(HdlPlatform.__all_platforms.values())
-                       if not plat.get_toolset().is_simtool])
-
     def get_toolset(self):
+        """
+        Return the toolset for this target
+        """
         return self.target.toolset
-
-    @staticmethod
-    def get_all_platforms_for_toolset(toolset):
-        """
-        Get all instances of the HdlPlatform class that have the specified toolset.
-        Example (doctest):
-        >>> [plat.name for plat in HdlPlatform.get_all_platforms_for_toolset('mytool1')]
-        ['myplat0', 'myplat1']
-        """
-        return sorted([platform for platform in HdlPlatform.all()
-                       if platform.get_toolset() == toolset])
-
-def initialize_from_make_variables():
-    """
-    Set the project path to cover all projects available,
-    initialize all available platforms and targets from from make variables.
-    """
-    mk_dict = HdlTarget._initialize_from_make_variables()
-    if mk_dict and 'HdlAllPlatforms' in mk_dict:
-        for platform_name in mk_dict['HdlAllPlatforms']:
-            exactpart = mk_dict['HdlPart_' + platform_name][0]
-            target_name = mk_dict['HdlFamily_' + exactpart][0]
-            built = platform_name in mk_dict['HdlBuiltPlatforms']
-            target = HdlTarget.get(target_name)
-            if not HdlPlatform.get(platform_name):
-                HdlPlatform(platform_name, target, exactpart, built)
 
 # Set log level and setup for doctest
 if __name__ == "__main__":
@@ -366,17 +629,15 @@ if __name__ == "__main__":
         except ValueError:
             pass
     # for testing, set an invalid projects dir
-    os.environ['OCPI_CDK_DIR'] = os.path.realpath('.')
-    doctest.testmod(verbose=__VERBOSITY, optionflags=doctest.ELLIPSIS,
-                    extraglobs={'tool1': HdlToolSet("mytool1"),
-                                'tool2': HdlToolSet("mytool2", "MyTool1", True),
-                                'target0': HdlTarget("mytgt0", "vend1",
-                                                     ["part0.1", "part0.2"],
-                                                     HdlToolSet.get("mytool1")),
-                                'target1': HdlTarget("mytgt1", "vend1",
-                                                     "part1", HdlToolSet.get("mytool1")),
-                                'target2': HdlTarget("mytgt2", "vend2",
-                                                     "part2", HdlToolSet.get("mytool2"))})
-else:
-    # On run or import, initialize objects from make variables
-    initialize_from_make_variables()
+    #os.environ['OCPI_CDK_DIR'] = os.path.realpath('.')
+    init_instances = {'tool1': HdlToolSet("mytool1"),
+                      'tool2': HdlToolSet("mytool2", "MyTool1", True)}
+
+    init_instances['target0'] = HdlTarget("mytgt0", "vend1",
+                                          ["part0.1", "part0.2"],
+                                          init_instances['tool1'])
+    init_instances['target1'] = HdlTarget("mytgt1", "vend1",
+                                           "part1", init_instances['tool1'])
+    init_instances['target2'] = HdlTarget("mytgt2", "vend2",
+                                           "part2", init_instances['tool2'])
+    doctest.testmod(verbose=__VERBOSITY, optionflags=doctest.ELLIPSIS, extraglobs=init_instances)

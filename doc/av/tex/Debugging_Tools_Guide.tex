@@ -204,16 +204,21 @@ Integrate the debug core into the worker, generate the required files and procee
 	For our example, we use the complex\_mixer.hdl worker built for ``zynq'':
 	\begin{enumerate}
 		\item Build the worker:
-			\subitem \code{> cd ocpiassets/components/dsp\_comps/complex\_mixer.hdl}
-			\subitem \code{> make HdlTarget=zynq VivadoExtraOptions\_synth="-flatten\_hierarchy none"}
-			\subsubitem Note that some probe names may be unhelpful unless the \code{flatten\_hierarchy} option is set to ``none''
-			\subsubitem during synthesis of the asset being debugged (in this case the worker). Reference: \textit{Vivado\_Usage.pdf}\newline
+\lstset{language=bash, backgroundcolor=\color{lightgray}, columns=flexible, breaklines=true, prebreak=\textbackslash, basicstyle=\ttfamily, showstringspaces=false,upquote=true, aboveskip=\baselineskip, belowskip=\baselineskip}
+\begin{lstlisting}
+cd ocpiassets/components/dsp_comps/complex_mixer.hdl
+make HdlTarget=zynq VivadoExtraOptions_synth="-flatten_hierarchy none"
+\end{lstlisting}
+Note that some probe names may be unhelpful unless the \code{flatten\_hierarchy} option is set to ``none''
+during synthesis of the asset being debugged (in this case the worker). Reference: \textit{Vivado\_Usage.pdf}
 		\item Open up the worker's Vivado project:
-			\subitem \code{> cd target-zynq}
-			\subitem \code{> (source /opt/Xilinx/Vivado/2017.1/settings64.sh ; vivado complex\_mixer.xpr) \&}
-			\subitem \textit{Note}: because OpenCPI operates in Vivado's Non-Project Mode, you will need to rerun synthesis
-			\subitem in Project Mode using the GUI. Refer to the \textit{Vivado\_Usage} doc for more information. You may want to
-			\subitem set the \code{flatten\_hierarchy} option to \code{none} via the GUI as well.
+\begin{lstlisting}
+cd target-zynq
+source /opt/Xilinx/Vivado/2017.1/settings64.sh ; vivado complex_mixer_rv.xpr &
+\end{lstlisting}
+			\textit{Note}: because OpenCPI operates in Vivado's Non-Project Mode, you will need to rerun synthesis
+			in Project Mode using the GUI. Refer to the \textit{Vivado\_Usage} doc for more information. You may want to
+			set the \code{flatten\_hierarchy} option to \code{none} via the GUI as well.
 		\item In the Flow Navigator's Synthesis section, select ``Set Up Debug''. Choose the debug settings and nets of your choice. You can drag nets in from the Netlist hierarchy, or the Schematic view:
 			\begin{figure}[H]
 				\centerline{\includegraphics[scale=0.6]			{figures/xilinx_vivado_2017_set_up_debug}}

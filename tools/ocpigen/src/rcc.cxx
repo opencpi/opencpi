@@ -632,6 +632,8 @@ emitImplRCC() {
                         m_language == C ? RCC_C_HEADER : RCC_CC_HEADER, m_implName, f))) {
     return err;
   }
+
+
   fprintf(f, "/*\n");
   printgen(f, " *", m_file.c_str());
   fprintf(f, " *\n");
@@ -750,6 +752,8 @@ emitImplRCC() {
                 "   * This class defines the properties of a slave for convenient access.\n"
                 "   */\n"
                 "  class Slave%u : OCPI::RCC::RCCUserSlave {\n"
+                "  private:\n"
+                "    std::string dont_care_temp;\n"
                 "  public:\n"
                 "    Slave%u(): RCCUserSlave(%u){/* Default constructor */}\n",
                 index+1, index+1, index);
@@ -772,7 +776,7 @@ emitImplRCC() {
             pretty = ccpretty[p.m_baseType];
           }
           std::vector<std::string> offsets(p.m_arrayRank);
-          if (p.m_arrayRank) {
+          if (p.m_arrayRank ) {
             size_t n = p.m_arrayRank - 1;
             offsets[n] = "1";
             while (n > 0) {
@@ -782,13 +786,16 @@ emitImplRCC() {
               n--;
             }
           }
-          if (p.m_baseType == OA::OCPI_String)
-            fprintf(f, "    inline size_t getLength_%s() { return %zu; }\n", p.m_name.c_str(),
-                    p.m_stringLength);
+          if (p.m_baseType == OA::OCPI_String) {
+            fprintf(f,
+                    "    inline size_t getLength_%s() { return %zu; }\n",
+                    p.m_name.c_str(), p.m_stringLength);
+          }
           std::string dims, offset;
           const char *comma = "";
-          for (unsigned n = 0; n < p.m_arrayRank; n++)
+          for (unsigned n = 0; n < p.m_arrayRank; n++) {
             OU::formatAdd(dims, "%sunsigned idx%u", n ? ", " : "", n);
+          }
           if (p.m_arrayRank) {
             for (unsigned n = 0; n < p.m_arrayRank; n++)
               OU::formatAdd(offset, "%sidx%u*%s", n ? " + " : "", n, offsets[n].c_str());
@@ -796,64 +803,100 @@ emitImplRCC() {
           } else
             offset = ", 0";
           if (p.m_isReadable) {
-            if (p.m_baseType == OA::OCPI_String)
+            // always expose the string based interface to the property
+            fprintf(f,
+                    "    inline std::string & getProperty_%s(std::string &val) {\n"
+                    "      // get the string value of the property based on the ordinal\n"
+                    "      m_worker.getProperty(%u, dont_care_temp, val);\n"
+                    "      return val;\n"
+                    "    }\n",
+                    p.m_name.c_str(),  p.m_ordinal);
+            // expose the nicer non-string based interface if it exists
+            if (p.m_baseType == OA::OCPI_String && !p.m_isSequence) {
               fprintf(f,
-                      "    inline void get_%s(%s%schar *buf, size_t length) {\n"
+                      "    inline char* get_%s(%s%schar *buf, size_t length) {\n"
                       "      m_worker.get%s%s(%u, buf, length%s%s);\n"
+                      "      return buf;\n"
                       "    }\n"
-                      "    void get_%s(%s%sstd::string &s) {\n"
+                      "    std::string & get_%s(%s%sstd::string &s) {\n"
                       "      size_t len = getLength_%s() + 1;\n"
                       "      char *buf = new char[len];\n"
                       "      m_worker.get%s%s(%u, buf, len%s%s);\n"
                       "      s = buf;\n"
                       "      delete [] buf;\n"
-                      "   }\n",
+                      "      return s;\n"
+                      "    }\n",
                       p.m_name.c_str(), dims.c_str(), comma, pretty.c_str(),
                       p.m_isParameter ? "Parameter" : "PropertyOrd", p.m_ordinal, comma,
                       offset.c_str(), p.m_name.c_str(), dims.c_str(), comma, p.m_name.c_str(),
                       pretty.c_str(), p.m_isParameter ? "Parameter" : "PropertyOrd", p.m_ordinal,
                       comma, offset.c_str());
-            else
+            } else if (p.m_baseType != OA::OCPI_Struct && !p.m_isSequence) {
               fprintf(f,
                       "    inline %s get_%s(%s) {\n"
                       "      return %sm_worker.get%s%s(%u%s%s);\n"
                       "    }\n",
-                      type.c_str(), p.m_name.c_str(), dims.c_str(), cast.c_str(), pretty.c_str(),
-                      p.m_isParameter ? "Parameter" : "PropertyOrd", p.m_ordinal, comma,
-                      offset.c_str());
+                      type.c_str(), p.m_name.c_str(), dims.c_str(),
+                      cast.c_str(),  // if val needs to be cast in the case of an enum
+                      pretty.c_str(), p.m_isParameter ? "Parameter" : "PropertyOrd", p.m_ordinal,
+                      comma, offset.c_str());
+            }
           }
           if (p.m_isWritable) {
+            // always expose the string interface to the property
             fprintf(f,
-                    "    inline void set_%s(%s%s%s val) {\n",
-                    p.m_name.c_str(), dims.c_str(), comma, type.c_str());
-            if (p.m_arrayRank) {
-              fprintf(f,
-                      "      unsigned idx = %s;\n"
-                      "      m_worker.set%sPropertyOrd(%u, %sval, idx);\n",
-                      offset.c_str(), pretty.c_str(), p.m_ordinal, cast.c_str());
-            } else
-              fprintf(f,
-                      "      m_worker.set%sPropertyOrd(%u, %sval, 0);\n",
-                      pretty.c_str(), p.m_ordinal, cast.c_str());
+                    "    inline void setProperty_%s(const char* val) {\n"
+                    "      m_worker.setProperty(\"%s\", val);\n",
+                    p.m_name.c_str(), p.m_name.c_str());
             fprintf(f,
                     "#if !defined(NDEBUG)\n"
-                    "      OCPI::OS::logPrint(OCPI_LOG_DEBUG, \"Setting slave.set_%s",
+                    "      OCPI::OS::logPrint(OCPI_LOG_DEBUG, \"Setting slave.set_string_%s",
                     p.m_name.c_str());
-            if (p.m_arrayRank)
-              fprintf(f,
-                      " at index %%u(0x%%x): 0x%%llx\", idx, idx, (unsigned long long)val);\n");
-            else
-              fprintf(f,
+            fprintf(f,
                       ": 0x%%llx\", (unsigned long long)val);\n");
             fprintf(f,
                     "#endif\n"
                     "    }\n");
-            if (p.m_baseType == OA::OCPI_String)
+
+            // expose the nicer non-string based interface to the property
+            if (p.m_baseType != OA::OCPI_Struct && !p.m_isSequence) {
+              fprintf(f,
+                      "    inline void set_%s(%s%s%s val) {\n",
+                      p.m_name.c_str(), dims.c_str(), comma, type.c_str());
+              if (p.m_arrayRank) {
+                fprintf(f,
+                        "      unsigned idx = %s;\n"
+                        "      m_worker.set%sPropertyOrd(%u, %sval, idx);\n",
+                        offset.c_str(), pretty.c_str(), p.m_ordinal,
+                        cast.c_str());  // if val needs to be cast in the case of an enum
+              } else {
+                fprintf(f,
+                        "      m_worker.set%sPropertyOrd(%u, %sval, 0);\n",
+                        pretty.c_str(), p.m_ordinal,
+                        cast.c_str());  // if val needs to be cast in the case of an enum
+              }
+              fprintf(f,
+                      "#if !defined(NDEBUG)\n"
+                      "      OCPI::OS::logPrint(OCPI_LOG_DEBUG, \"Setting slave.set_%s",
+                      p.m_name.c_str());
+              if (p.m_arrayRank && p.m_baseType != OA::OCPI_Struct) {
+                fprintf(f,
+                        " at index %%u(0x%%x): 0x%%llx\", idx, idx, (unsigned long long)val);\n");
+              } else {
+                fprintf(f,
+                        ": 0x%%llx\", (unsigned long long)val);\n");
+              }
+              fprintf(f,
+                      "#endif\n"
+                      "    }\n");
+            }
+            if (p.m_baseType == OA::OCPI_String && !p.m_isSequence) {
               fprintf(f,
                       "    inline void set_%s(%s%sconst std::string &val) {\n"
                       "      m_worker.setStringPropertyOrd(%u, val.c_str()%s%s);\n"
                       "    }\n",
                       p.m_name.c_str(), dims.c_str(), comma, p.m_ordinal, comma, offset.c_str());
+            }
           }
         } // for iterate over m_ctl.properties
         fprintf(f,
@@ -1240,7 +1283,7 @@ const char*  Worker::addSlave(const std::string worker_name, const std::string s
    return OU::esprintf("for slave worker %s: %s", worker_name.c_str(), err);
   }
   m_slaves[slave_name] = wkr;
-  return err;       
+  return err;
 }
 
 std::string Worker::print_map(){
@@ -1521,7 +1564,7 @@ emitRccCppImpl(FILE *f) {
         OU::Member *m = o->args();
         for (unsigned n = 0; n < o->nArgs(); m++) {
           std::string a;
-          camel(a, m->m_name.c_str());  
+          camel(a, m->m_name.c_str());
           fprintf(f, "           m_%sArg(*this)%s", a.c_str(), ++n == o->nArgs() ? "" : ", ");
         }
         fprintf(f,
@@ -1533,7 +1576,7 @@ emitRccCppImpl(FILE *f) {
         m = o->args();
         for (unsigned n = 0; n < o->nArgs(); m++) {
           std::string a;
-          camel(a, m->m_name.c_str());  
+          camel(a, m->m_name.c_str());
           fprintf(f, "           m_%sArg(*this)%s", a.c_str(), ++n == o->nArgs() ? "" : ", ");
         }
         fprintf(f,
@@ -1550,7 +1593,7 @@ emitRccCppImpl(FILE *f) {
         fprintf(f, "       enum { \n" );
         for (unsigned n = 0; n < o->nArgs(); n++, m++) {
           std::string a;
-          camel(a, m->m_name.c_str() ); 
+          camel(a, m->m_name.c_str() );
           fprintf(f,"         %s_ARG%s\n",  a.c_str(), n == o->nArgs() - 1 ? "" : ",");
         }
         fprintf(f, "       }; \n" );
@@ -1559,9 +1602,9 @@ emitRccCppImpl(FILE *f) {
         m = o->args();
         for (unsigned n = 0; n < o->nArgs(); n++, m++) { // TODO: Why void * when we know the type?
           std::string a;
-          camel(a, m->m_name.c_str() ); 
+          camel(a, m->m_name.c_str() );
           std::string p;
-          camel(p, cname() );   
+          camel(p, cname() );
           std::string on;
           camel(on, worker().m_implName, "WorkerTypes::", OU::Protocol::cname(),
                 o->cname());
@@ -1643,15 +1686,15 @@ emitRccCppImpl(FILE *f) {
                       m_isProducer ? "" : "const ", a.c_str());
         }
         // End args
-        fprintf(f, 
+        fprintf(f,
                 "    } m_%sOp;\n"
                 "    // Conversion operators\n"
                 "    inline operator %sOp &() { m_%sOp.setBuffer(this); return m_%sOp; }\n"
-                "    // Factories, used to take messages\n" 
+                "    // Factories, used to take messages\n"
                 "    inline %sOp* take(%sOp &rhs) const {\n"
                 "      %sOp *so = new %sOp(rhs);\n"
                 "      return so;\n"
-                "    }\n", 
+                "    }\n",
                 s.c_str(), s.c_str(), s.c_str(), s.c_str(), s.c_str(), s.c_str(), s.c_str(),
                 s.c_str());
       // End Op class

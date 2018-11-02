@@ -67,7 +67,9 @@ HdlContDir=$(call HdlContOutDir,$(call HdlContName,$1,$2))
 HdlStripXml=$(if $(filter .xml,$(suffix $1)),$(basename $1),$1)
 ifneq ($(MAKECMDGOALS),clean)
 #  $(info 0.Only:$(OnlyPlatforms),All:$(HdlAllPlatforms),Ex:$(ExcludePlatforms),HP:$(HdlPlatforms))
-  $(eval $(HdlPrepareAssembly))
+  ifndef ShellHdlAssemblyVars
+    $(eval $(HdlPrepareAssembly))
+  endif
   # default the container names
   $(foreach c,$(Containers),$(eval HdlContXml_$c:=$c))
   # $(call doConfigConstraints,<container>,<platform>,<config>)
@@ -86,6 +88,7 @@ ifneq ($(MAKECMDGOALS),clean)
       $$(call OcpiDbg,HdlPart_$2:$$(HdlPart_$2))
       HdlMyTargets+=$$(call HdlGetFamily,$$(HdlPart_$2))
       ContName:=$(Worker)_$2_$3_$1
+      HdlContainerImpls_$1+= $$(ContName)
       HdlPlatform_$$(ContName):=$2
       HdlTarget_$$(ContName):=$$(call HdlGetFamily,$$(HdlPart_$2))
       HdlConfig_$$(ContName):=$3
@@ -141,6 +144,7 @@ ifneq ($(MAKECMDGOALS),clean)
       HdlConfig_$$(ContName):=$2
       HdlContXml_$$(ContName):=$$(call HdlContOutDir,$$(ContName))/gen/$$(ContName).xml
       HdlContainers:=$$(HdlContainers) $$(ContName)
+      HdlBaseContainerImpls:=$$(HdlBaseContainerImpls) $$(ContName)
     endif
   endef
   ifeq ($(origin DefaultContainers),undefined)
@@ -186,8 +190,10 @@ else ifndef HdlContainers
     $(info No containers will be built since none match the specified platforms.)
   endif
 else
-  $(eval $(OcpiProcessBuildFiles))
-  include $(OCPI_CDK_DIR)/include/hdl/hdl-worker.mk
+  ifndef ShellHdlAssemblyVars
+    $(eval $(OcpiProcessBuildFiles))
+    include $(OCPI_CDK_DIR)/include/hdl/hdl-worker.mk
+  endif
   ifndef HdlSkip
     ifndef HdlContainers
       ifneq ($(MAKECMDGOALS),clean)
@@ -218,3 +224,23 @@ endif # check for no targets
 endif
 clean::
 	$(AT) rm -r -f container-* lib
+
+# Expose information about this assembly's containers for use
+# in some external application.
+#
+# Impl is an Implementation of a Container (i.e. the actual build directory)
+# An Impl is bound to a Platform and even a Platform Configuration
+# TODO: Here we should also provide HdlConfig_* so the actual Platform Configuration
+#       mapping is available for each container implementation
+ifdef ShellHdlAssemblyVars
+shellhdlassemblyvars:
+$(info Containers="$(Containers)"; \
+       DefaultContainers="$(DefaultContainers)"; \
+       HdlContainers="$(HdlContainers)"; \
+       HdlBaseContainerImpls="$(HdlBaseContainerImpls)"; \
+       $(foreach c,$(Containers),\
+	 HdlContainerImpls_$c="$(HdlContainerImpls_$c)"; )\
+       $(foreach c,$(HdlContainers),\
+         HdlPlatform_$c="$(HdlPlatform_$c)"; )\
+        )
+endif

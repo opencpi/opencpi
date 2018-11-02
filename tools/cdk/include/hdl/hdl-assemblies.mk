@@ -82,3 +82,7 @@ clean:
 		done
 	$(AT)rm -r -f $(LibDir) $(GenDir)
 
+ifdef ShellAssembliesVars
+showassemblies:
+	$(info Assemblies="$(Assemblies)";)
+endif

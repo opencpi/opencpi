@@ -414,12 +414,45 @@ function liblink {
     make_relative_link $1 $2/$target/lib/$base
   fi
 }
+# Enable prerequisites to be found/exported in directory of choosing
+function anylink {
+  local base=$(basename $2)
+  if [[ -L $2 && $(readlink $2) != */* ]]; then
+    cp -R -P $2 $3/$target/$1/$base
+  else
+    make_relative_link $2 $3/$target/$1/$base
+  fi
+}
 shopt -s nullglob
 for p in prerequisites/*; do
   for l in $p/$target/lib/*; do
     liblink $l exports
     if [[ $l == *.so || $l == *.so.* || $l == *.dylib ]]; then
        liblink $l exports/runtime
+    fi
+  done
+done
+# Some extra prereqs need to be part of our exports... exporting those here
+for p in $OcpiPlatformPrerequisites; do
+  # Prerequisites can be in the form: <prerequisite>:<platform>
+  # Below we are removing the : and everything after it so we are left with only the prereq
+  p=$(echo $p | cut -d: -f1)
+  p="prerequisites/$p"
+  for l in $p/$target/*; do
+    if [[ "$l" = *conf ]]; then
+      for f in $l/*; do
+        # AV-4799 need to use different file internally
+        if [ -e "releng/config_files/$(basename $f)" ]; then
+          f="releng/config_files/$(basename $f)"
+        fi
+        anylink "" $f exports
+        anylink "" $f exports/runtime
+      done
+    elif [[ "$l" = *bin ]]; then
+      for f in $l/*; do
+        anylink bin $f exports
+        anylink bin $f exports/runtime
+      done
     fi
   done
 done

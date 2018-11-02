@@ -27,6 +27,7 @@
  */
 
 #include "proxy1-worker.hh"
+//#include "temp_worker.hh"
 
 using namespace OCPI::RCC; // for easy access to RCC data types and constants
 using namespace Proxy1WorkerTypes;
@@ -34,7 +35,8 @@ using namespace std;
 
 class Proxy1Worker : public Proxy1WorkerBase {
   RCCResult run(bool /*timedout*/) {
-
+    int i;
+    std::string temp_str;
     slaves.first_wkr1.set_test_double(5.0);
     slaves.first_wkr1.set_test_ulong(10);
     slaves.first_wkr1.set_test_bool(true);
@@ -47,7 +49,43 @@ class Proxy1Worker : public Proxy1WorkerBase {
     slaves.first_wkr1.set_test_ulonglong(350);
     slaves.first_wkr1.set_test_ushort(16);
     slaves.first_wkr1.set_my_string("test_string");
+    slaves.first_wkr1.setProperty_test_seq_ulong("1,2,3,4,6,7,8,100");
+    slaves.first_wkr1.setProperty_test_seq_str("\"one\",\"two\",\"three\",\"four\",\"five\"");
+    slaves.first_wkr1.setProperty_test_seq_of_ulong_arrays("{1,2,3,4,6,7,8,100},"
+                                                           "{1,2,3,4,6,7,8,100},"
+                                                           "{1,2,3,4,6,7,8,100},"
+                                                           "{1,2,3,4,6,7,8,100},"
+                                                           "{1,2,3,4,6,7,8,100},"
+                                                           "{1,2,3,4,6,7,8,100},"
+                                                           "{1,2,3,4,6,7,8,100},"
+                                                           "{1,2,3,4,6,7,8,100}");
+    slaves.first_wkr1.setProperty_test_struct("struct_bool true,struct_ulong 10,struct_char K");
+    slaves.first_wkr1.setProperty_test_struct_of_seq("struct_char M, struct_ulong_seq {1,2,3}");
+    slaves.first_wkr1.setProperty_test_array_of_struct(
+        "{test_ulong 10,test_bool true,test_char A},"
+        "{test_ulong 11,test_bool true,test_char B},"
+        "{test_ulong 12,test_bool true,test_char C},"
+        "{test_ulong 13,test_bool true,test_char D},"
+        "{test_ulong 14,test_bool true,test_char E},"
+        "{test_ulong 15,test_bool true,test_char F},"
+        "{test_ulong 16,test_bool true,test_char G},"
+        "{test_ulong 17,test_bool true,test_char H},"
+        "{test_ulong 18,test_bool true,test_char I},"
+        "{test_ulong 19,test_bool true,test_char J}");
+    slaves.first_wkr1.setProperty_test_seq_of_structs(
+        "{struct_bool true,struct_ulong 20,struct_char D},"
+        "{struct_bool true,struct_ulong 21,struct_char E},"
+        "{struct_bool true,struct_ulong 22,struct_char F},"
+        "{struct_bool true,struct_ulong 23,struct_char G},"
+        "{struct_bool true,struct_ulong 24,struct_char H},"
+        "{struct_bool true,struct_ulong 25,struct_char I},"
+        "{struct_bool true,struct_ulong 26,struct_char J}");
     slaves.first_wkr1.set_my_enum(First_wkr1WorkerTypes::My_enum::MY_ENUM_THIRD_ENUM);
+    for (i = 0; i < 10; i++)
+    {
+      slaves.first_wkr1.set_test_array_ulong(i, i*10);
+      slaves.first_wkr1.set_test_array_of_str(i, "that");
+    }
 
     slaves.second_wkr1.set_test_double(5.0);
     slaves.second_wkr1.set_test_ulong(10);
@@ -61,7 +99,43 @@ class Proxy1Worker : public Proxy1WorkerBase {
     slaves.second_wkr1.set_test_ulonglong(350);
     slaves.second_wkr1.set_test_ushort(16);
     slaves.second_wkr1.set_my_string("test_string");
+    slaves.second_wkr1.setProperty_test_seq_ulong("1,2,3,4,6,7,8,100");
+    slaves.second_wkr1.setProperty_test_seq_str("\"one\",\"two\",\"three\",\"four\",\"five\"");
+    slaves.second_wkr1.setProperty_test_seq_of_ulong_arrays("{1,2,3,4,6,7,8,100},"
+                                                            "{1,2,3,4,6,7,8,100},"
+                                                            "{1,2,3,4,6,7,8,100},"
+                                                            "{1,2,3,4,6,7,8,100},"
+                                                            "{1,2,3,4,6,7,8,100},"
+                                                            "{1,2,3,4,6,7,8,100},"
+                                                            "{1,2,3,4,6,7,8,100},"
+                                                            "{1,2,3,4,6,7,8,100}");
+    slaves.second_wkr1.setProperty_test_struct("struct_bool true,struct_ulong 10,struct_char K");
+    slaves.second_wkr1.setProperty_test_struct_of_seq("struct_char M, struct_ulong_seq {1,2,3}");
+    slaves.second_wkr1.setProperty_test_array_of_struct(
+        "{test_ulong 10,test_bool true,test_char A},"
+        "{test_ulong 11,test_bool true,test_char B},"
+        "{test_ulong 12,test_bool true,test_char C},"
+        "{test_ulong 13,test_bool true,test_char D},"
+        "{test_ulong 14,test_bool true,test_char E},"
+        "{test_ulong 15,test_bool true,test_char F},"
+        "{test_ulong 16,test_bool true,test_char G},"
+        "{test_ulong 17,test_bool true,test_char H},"
+        "{test_ulong 18,test_bool true,test_char I},"
+        "{test_ulong 19,test_bool true,test_char J}");
+    slaves.second_wkr1.setProperty_test_seq_of_structs(
+        "{struct_bool true,struct_ulong 20,struct_char D},"
+        "{struct_bool true,struct_ulong 21,struct_char E},"
+        "{struct_bool true,struct_ulong 22,struct_char F},"
+        "{struct_bool true,struct_ulong 23,struct_char G},"
+        "{struct_bool true,struct_ulong 24,struct_char H},"
+        "{struct_bool true,struct_ulong 25,struct_char I},"
+        "{struct_bool true,struct_ulong 26,struct_char J}");
     slaves.second_wkr1.set_my_enum(Second_wkr1WorkerTypes::My_enum::MY_ENUM_THIRD_ENUM);
+    for (i = 0; i < 10; i++)
+    {
+      slaves.second_wkr1.set_test_array_ulong(i, i*10);
+      slaves.second_wkr1.set_test_array_of_str(i, "that");
+    }
 
     slaves.wkr2.set_test_double(5.0);
     slaves.wkr2.set_test_ulong(10);
@@ -97,13 +171,23 @@ class Proxy1Worker : public Proxy1WorkerBase {
          << endl;
     cout << "slaves.first_wkr1.set_test_ushort(16): " << slaves.first_wkr1.get_test_ushort()
          << endl;
-    std::string temp_str;
-    slaves.first_wkr1.get_my_string(temp_str);
-    cout << "slaves.first_wkr1.get_my_string(test_string): " << temp_str
-         << endl;
+    cout << "slaves.first_wkr1.get_my_string(test_string): "
+         << slaves.first_wkr1.get_my_string(temp_str) << endl;
     cout << "slaves.first_wkr1.set_my_enum(THIRD_ENUM) (2): " << slaves.first_wkr1.get_my_enum()
          << endl;
-
+    cout << "slaves.first_wkr1.get_test_struct: "
+         << slaves.first_wkr1.getProperty_test_struct(temp_str) << endl;
+    cout << "slaves.first_wkr1.get_test_struct_of_seq: "
+         << slaves.first_wkr1.getProperty_test_struct_of_seq(temp_str) << endl;
+    for (int i = 0; i < 10; i++)
+    {
+      cout << "slaves.first_wkr1.get_test_array_ulong [" << i << "]: "
+           <<  slaves.first_wkr1.get_test_array_ulong(i) << endl;
+      cout << "slaves.first_wkr1.get_test_array_of_str [" << i << "]: "
+           << slaves.first_wkr1.get_test_array_of_str(i, temp_str) << endl;
+    }
+    cout << "slaves.first_wkr1.get_test_array_of_struct: "
+         << slaves.first_wkr1.getProperty_test_array_of_struct(temp_str) << endl;
     cout << "slaves.second_wkr1.set_test_double(5.0): " << slaves.second_wkr1.get_test_double()
          << endl;
     cout << "slaves.second_wkr1.set_test_ulong(10): " << slaves.second_wkr1.get_test_ulong()
@@ -126,11 +210,23 @@ class Proxy1Worker : public Proxy1WorkerBase {
          << slaves.second_wkr1.get_test_ulonglong() << endl;
     cout << "slaves.second_wkr1.set_test_ushort(16): " << slaves.second_wkr1.get_test_ushort()
          << endl;
-    slaves.second_wkr1.get_my_string(temp_str);
-    cout << "slaves.second_wkr1.get_my_string(test_string): " << temp_str
-         << endl;
+    cout << "slaves.second_wkr1.get_my_string(test_string): "
+         << slaves.second_wkr1.get_my_string(temp_str) << endl;
     cout << "slaves.second_wkr1.set_my_enum(THIRD_ENUM) (2): " << slaves.second_wkr1.get_my_enum()
          << endl;
+    cout << "slaves.second_wkr1.get_test_struct: "
+         << slaves.second_wkr1.getProperty_test_struct(temp_str) << endl;
+    cout << "slaves.second_wkr1.get_test_struct_of_seq: "
+         << slaves.second_wkr1.getProperty_test_struct_of_seq(temp_str) << endl;
+    for (int i = 0; i < 10; i++)
+    {
+      cout << "slaves.second_wkr1.get_test_array_ulong [" << i << "]: "
+           <<  slaves.second_wkr1.get_test_array_ulong(i) << endl;
+      cout << "slaves.second_wkr1.get_test_array_of_str [" << i << "]: "
+           << slaves.second_wkr1.get_test_array_of_str(i, temp_str) << endl;
+    }
+    cout << "slaves.second_wkr1.get_test_array_of_struct: "
+         << slaves.second_wkr1.getProperty_test_array_of_struct(temp_str) << endl;
 
     cout << "slaves.wkr2.set_test_double(5.0): " << slaves.wkr2.get_test_double() << endl;
     cout << "slaves.wkr2.set_test_ulong(10): " << slaves.wkr2.get_test_ulong() << endl;

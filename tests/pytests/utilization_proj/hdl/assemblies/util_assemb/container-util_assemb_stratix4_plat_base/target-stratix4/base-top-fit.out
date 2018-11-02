@@ -1,0 +1,941 @@
+Info: *******************************************************************
+Info: Running Quartus Prime Fitter
+    Info: Version 17.1.0 Build 590 10/25/2017 SJ Standard Edition
+    Info: Copyright (C) 2017  Intel Corporation. All rights reserved.
+    Info: Your use of Intel Corporation's design tools, logic functions 
+    Info: and other software and tools, and its AMPP partner logic 
+    Info: functions, and any output files from any of the foregoing 
+    Info: (including device programming or simulation files), and any 
+    Info: associated documentation or information are expressly subject 
+    Info: to the terms and conditions of the Intel Program License 
+    Info: Subscription Agreement, the Intel Quartus Prime License Agreement,
+    Info: the Intel FPGA IP License Agreement, or other applicable license
+    Info: agreement, including, without limitation, that your use is for
+    Info: the sole purpose of programming logic devices manufactured by
+    Info: Intel and sold by Intel or its authorized distributors.  Please
+    Info: refer to the applicable agreement for further details.
+    Info: Processing started: Tue Oct 16 16:14:21 2018
+Info: Command: quartus_fit --64bit base-top
+Info: Using INI file /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/quartus.ini
+Info: qfit2_default_script.tcl version: #3
+Info: Project  = base-top
+Info: Revision = base-top
+Warning (18236): Number of processors has not been specified which may cause overloading on shared machines.  Set the global assignment NUM_PARALLEL_PROCESSORS in your QSF to an appropriate value for best performance.
+Info (20030): Parallel compilation is enabled and will use 12 of the 12 processors detected
+Info (119006): Selected device EP4SGX230KF40C2 for design "base-top"
+Info (21076): High junction temperature operating condition is not set. Assuming a default value of '85'.
+Info (21076): Low junction temperature operating condition is not set. Assuming a default value of '0'.
+Info (171003): Fitter is performing an Auto Fit compilation, which may decrease Fitter effort to reduce compilation time
+Info (176444): Device migration not selected. If you intend to use device migration later, you may need to change the pin assignments as they may be incompatible with other devices
+    Info (176445): Device EP4SGX180KF40C2 is compatible
+    Info (176445): Device EP4SGX290KF40C2 is compatible
+    Info (176445): Device EP4SGX360KF40C2 is compatible
+    Info (176445): Device EP4SGX530KH40C2 is compatible
+Info (169124): Fitter converted 1 user pins into dedicated programming pins
+    Info (169125): Pin ~ALTERA_DATA0~ is reserved at location W30
+Warning (15714): Some pins have incomplete I/O assignments. Refer to the I/O Assignment Warnings report for details
+Info (176045): Design uses memory blocks. Violating setup or hold times of memory block address registers for either read or write operations could cause memory contents to be corrupted. Make sure that all memory block address registers meet the setup and hold time requirements.
+Warning (176674): Following 10 pins are differential I/O pins but do not have their complement pins. Hence, the Fitter automatically created the complement pins.
+    Warning (176118): Pin "pcie_tx[0]" is a differential I/O pin but does not have its complement pin. Hence, fitter automatically created the complement pin "pcie_tx[0](n)"
+    Warning (176118): Pin "pcie_tx[1]" is a differential I/O pin but does not have its complement pin. Hence, fitter automatically created the complement pin "pcie_tx[1](n)"
+    Warning (176118): Pin "pcie_tx[2]" is a differential I/O pin but does not have its complement pin. Hence, fitter automatically created the complement pin "pcie_tx[2](n)"
+    Warning (176118): Pin "pcie_tx[3]" is a differential I/O pin but does not have its complement pin. Hence, fitter automatically created the complement pin "pcie_tx[3](n)"
+    Warning (176118): Pin "sys0_clk" is a differential I/O pin but does not have its complement pin. Hence, fitter automatically created the complement pin "sys0_clk(n)"
+    Warning (176118): Pin "pcie_rx[0]" is a differential I/O pin but does not have its complement pin. Hence, fitter automatically created the complement pin "pcie_rx[0](n)"
+    Warning (176118): Pin "pcie_rx[1]" is a differential I/O pin but does not have its complement pin. Hence, fitter automatically created the complement pin "pcie_rx[1](n)"
+    Warning (176118): Pin "pcie_rx[2]" is a differential I/O pin but does not have its complement pin. Hence, fitter automatically created the complement pin "pcie_rx[2](n)"
+    Warning (176118): Pin "pcie_rx[3]" is a differential I/O pin but does not have its complement pin. Hence, fitter automatically created the complement pin "pcie_rx[3](n)"
+    Warning (176118): Pin "pcie_clk" is a differential I/O pin but does not have its complement pin. Hence, fitter automatically created the complement pin "pcie_clk(n)"
+Info (167065): Input frequency of fixedclk for the GXB Central Control Unit "util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|cent_unit0" must be 125.0 MHz
+Info (15535): Implemented PLL "util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pll1:reconfig_pll|altpll:altpll_component|pll1_altpll:auto_generated|pll1" as Top/Bottom PLL type File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+    Info (15099): Implementing clock multiplication of 1, clock division of 4, and phase shift of 0 degrees (0 ps) for util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pll1:reconfig_pll|altpll:altpll_component|pll1_altpll:auto_generated|wire_pll1_clk[0] port File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+    Info (15099): Implementing clock multiplication of 5, clock division of 8, and phase shift of 0 degrees (0 ps) for util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pll1:reconfig_pll|altpll:altpll_component|pll1_altpll:auto_generated|wire_pll1_clk[1] port File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+Info (167012): GXB Quad Optimizer operation is complete
+    Info (167013): Successfully optimized the GXB associated with the "GXB Central control unit" "util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|cent_unit0" File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+        Info (167014): "GXB Receiver channel PCS" is associated with node "util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pcs0" on channel 0 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+        Info (167014): "GXB Receiver channel PCS" is associated with node "util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pcs1" on channel 1 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+        Info (167014): "GXB Receiver channel PCS" is associated with node "util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pcs2" on channel 2 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+        Info (167014): "GXB Receiver channel PCS" is associated with node "util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pcs3" on channel 3 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+        Info (167014): "GXB Receiver channel PMA" is associated with node "util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pma0" on channel 0 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+        Info (167014): "GXB Receiver channel PMA" is associated with node "util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pma1" on channel 1 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+        Info (167014): "GXB Receiver channel PMA" is associated with node "util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pma2" on channel 2 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+        Info (167014): "GXB Receiver channel PMA" is associated with node "util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pma3" on channel 3 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+        Info (167014): "GXB PLL" is associated with node "util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|rx_cdr_pll0" on channel 0 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+        Info (167014): "GXB PLL" is associated with node "util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|rx_cdr_pll1" on channel 1 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+        Info (167014): "GXB PLL" is associated with node "util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|rx_cdr_pll2" on channel 2 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+        Info (167014): "GXB PLL" is associated with node "util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|rx_cdr_pll3" on channel 3 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+        Info (167014): "GXB Transmitter channel PCS" is associated with node "util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|transmit_pcs0" on channel 0 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+        Info (167014): "GXB Transmitter channel PCS" is associated with node "util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|transmit_pcs1" on channel 1 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+        Info (167014): "GXB Transmitter channel PCS" is associated with node "util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|transmit_pcs2" on channel 2 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+        Info (167014): "GXB Transmitter channel PCS" is associated with node "util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|transmit_pcs3" on channel 3 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+        Info (167014): "GXB Transmitter channel PMA" is associated with node "util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|transmit_pma0" on channel 0 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+        Info (167014): "GXB Transmitter channel PMA" is associated with node "util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|transmit_pma1" on channel 1 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+        Info (167014): "GXB Transmitter channel PMA" is associated with node "util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|transmit_pma2" on channel 2 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+        Info (167014): "GXB Transmitter channel PMA" is associated with node "util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|transmit_pma3" on channel 3 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+        Info (167015): "GXB Central control unit" associated with node "util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|cent_unit0" is preserved File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+        Info (167016): "GXB PLL" associated with node "util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|tx_pll0" at logical PLL location 0 is preserved File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+        Info (167015): "GXB clock divider" associated with node "util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|central_clk_div0" is preserved File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+Info (167097): Current transceiver placement
+    Info (167097): QUAD_SIDE_LEFT
+        Info (167097): PCIEHIP_X0_Y3_N134           util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_core:wrapper|altpcie_hip_pipen1b:altpcie_hip_pipen1b_inst|stratix_iv.stratixiv_hssi_pcie_hip File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+        Info (167097): CALIBRATIONBLOCK_X0_Y2_N135  util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|cal_blk0 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+        Info (167097): CALIBRATIONBLOCK_X0_Y89_N135  
+        Info (167097): ATX LCTANK_X0_Y25_N135
+            Info (167097): CMU_X0_Y25_N137              
+            Info (167097): HSSIPLL_X0_Y25_N135          
+            Info (167097): CLOCKDIVIDER_X0_Y25_N136     
+        Info (167097): Atoms placed to IOBANK_QL0
+            Info (167097): CMU_X0_Y10_N139              util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|cent_unit0 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+            Info (167097): Regular Channel 0
+                Info (167097): PIN_AU38                     pcie_rx[0]
+                Info (167097): RXPMA_X0_Y4_N137             util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pma0 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+                Info (167097): RXPCS_X0_Y4_N139             util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pcs0 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+                Info (167097): HSSIPLL_X0_Y4_N135           util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|rx_cdr_pll0 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+                Info (167097): CLOCKDIVIDER_X0_Y4_N136      
+                Info (167097): TXPCS_X0_Y4_N140             util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|transmit_pcs0 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+                Info (167097): TXPMA_X0_Y4_N138             util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|transmit_pma0 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+                Info (167097): PIN_AT36                     pcie_tx[0]
+            Info (167097): Regular Channel 1
+                Info (167097): PIN_AR38                     pcie_rx[1]
+                Info (167097): RXPMA_X0_Y7_N137             util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pma1 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+                Info (167097): RXPCS_X0_Y7_N139             util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pcs1 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+                Info (167097): HSSIPLL_X0_Y7_N135           util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|rx_cdr_pll1 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+                Info (167097): CLOCKDIVIDER_X0_Y7_N136      
+                Info (167097): TXPCS_X0_Y7_N140             util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|transmit_pcs1 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+                Info (167097): TXPMA_X0_Y7_N138             util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|transmit_pma1 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+                Info (167097): PIN_AP36                     pcie_tx[1]
+            Info (167097): Central Channel 0
+                Info (167097): PIN_AN38                     pcie_clk
+                Info (167097): RXPMA_X0_Y10_N137            
+                Info (167097): HSSIPLL_X0_Y10_N135          util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|tx_pll0 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+                Info (167097): CLOCKDIVIDER_X0_Y10_N136     util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|central_clk_div0 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+                Info (167097): TXPMA_X0_Y10_N138            
+                Info (167097): PIN_AM36                     
+            Info (167097): Central Channel 1
+                Info (167097): PIN_AL38                     
+                Info (167097): RXPMA_X0_Y13_N137            
+                Info (167097): HSSIPLL_X0_Y13_N135          
+                Info (167097): CLOCKDIVIDER_X0_Y13_N136     
+                Info (167097): TXPMA_X0_Y13_N138            
+                Info (167097): PIN_AK36                     
+            Info (167097): Regular Channel 2
+                Info (167097): PIN_AJ38                     pcie_rx[2]
+                Info (167097): RXPMA_X0_Y16_N137            util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pma2 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+                Info (167097): RXPCS_X0_Y16_N139            util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pcs2 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+                Info (167097): HSSIPLL_X0_Y16_N135          util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|rx_cdr_pll2 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+                Info (167097): CLOCKDIVIDER_X0_Y16_N136     
+                Info (167097): TXPCS_X0_Y16_N140            util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|transmit_pcs2 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+                Info (167097): TXPMA_X0_Y16_N138            util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|transmit_pma2 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+                Info (167097): PIN_AH36                     pcie_tx[2]
+            Info (167097): Regular Channel 3
+                Info (167097): PIN_AG38                     pcie_rx[3]
+                Info (167097): RXPMA_X0_Y19_N137            util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pma3 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+                Info (167097): RXPCS_X0_Y19_N139            util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pcs3 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+                Info (167097): HSSIPLL_X0_Y19_N135          util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|rx_cdr_pll3 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+                Info (167097): CLOCKDIVIDER_X0_Y19_N136     
+                Info (167097): TXPCS_X0_Y19_N140            util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|transmit_pcs3 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+                Info (167097): TXPMA_X0_Y19_N138            util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|transmit_pma3 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+                Info (167097): PIN_AF36                     pcie_tx[3]
+        Info (167097): Atoms placed to IOBANK_QL1
+            Info (167097): CMU_X0_Y41_N139              
+            Info (167097): Regular Channel 0
+                Info (167097): PIN_AE38                     
+                Info (167097): RXPMA_X0_Y35_N137            
+                Info (167097): RXPCS_X0_Y35_N139            
+                Info (167097): HSSIPLL_X0_Y35_N135          
+                Info (167097): CLOCKDIVIDER_X0_Y35_N136     
+                Info (167097): TXPCS_X0_Y35_N140            
+                Info (167097): TXPMA_X0_Y35_N138            
+                Info (167097): PIN_AD36                     
+            Info (167097): Regular Channel 1
+                Info (167097): PIN_AC38                     
+                Info (167097): RXPMA_X0_Y38_N137            
+                Info (167097): RXPCS_X0_Y38_N139            
+                Info (167097): HSSIPLL_X0_Y38_N135          
+                Info (167097): CLOCKDIVIDER_X0_Y38_N136     
+                Info (167097): TXPCS_X0_Y38_N140            
+                Info (167097): TXPMA_X0_Y38_N138            
+                Info (167097): PIN_AB36                     
+            Info (167097): Central Channel 0
+                Info (167097): PIN_AA38                     
+                Info (167097): RXPMA_X0_Y41_N137            
+                Info (167097): HSSIPLL_X0_Y41_N135          
+                Info (167097): CLOCKDIVIDER_X0_Y41_N136     
+                Info (167097): TXPMA_X0_Y41_N138            
+                Info (167097): PIN_Y36                      
+            Info (167097): Central Channel 1
+                Info (167097): PIN_W38                      
+                Info (167097): RXPMA_X0_Y44_N137            
+                Info (167097): HSSIPLL_X0_Y44_N135          
+                Info (167097): CLOCKDIVIDER_X0_Y44_N136     
+                Info (167097): TXPMA_X0_Y44_N138            
+                Info (167097): PIN_V36                      
+            Info (167097): Regular Channel 2
+                Info (167097): PIN_U38                      
+                Info (167097): RXPMA_X0_Y47_N137            
+                Info (167097): RXPCS_X0_Y47_N139            
+                Info (167097): HSSIPLL_X0_Y47_N135          
+                Info (167097): CLOCKDIVIDER_X0_Y47_N136     
+                Info (167097): TXPCS_X0_Y47_N140            
+                Info (167097): TXPMA_X0_Y47_N138            
+                Info (167097): PIN_T36                      
+            Info (167097): Regular Channel 3
+                Info (167097): PIN_R38                      
+                Info (167097): RXPMA_X0_Y50_N137            
+                Info (167097): RXPCS_X0_Y50_N139            
+                Info (167097): HSSIPLL_X0_Y50_N135          
+                Info (167097): CLOCKDIVIDER_X0_Y50_N136     
+                Info (167097): TXPCS_X0_Y50_N140            
+                Info (167097): TXPMA_X0_Y50_N138            
+                Info (167097): PIN_P36                      
+        Info (167097): Atoms placed to IOBANK_QL2
+            Info (167097): CMU_X0_Y69_N139              
+            Info (167097): Regular Channel 0
+                Info (167097): PIN_N38                      
+                Info (167097): RXPMA_X0_Y63_N137            
+                Info (167097): RXPCS_X0_Y63_N139            
+                Info (167097): HSSIPLL_X0_Y63_N135          
+                Info (167097): CLOCKDIVIDER_X0_Y63_N136     
+                Info (167097): TXPCS_X0_Y63_N140            
+                Info (167097): TXPMA_X0_Y63_N138            
+                Info (167097): PIN_M36                      
+            Info (167097): Regular Channel 1
+                Info (167097): PIN_L38                      
+                Info (167097): RXPMA_X0_Y66_N137            
+                Info (167097): RXPCS_X0_Y66_N139            
+                Info (167097): HSSIPLL_X0_Y66_N135          
+                Info (167097): CLOCKDIVIDER_X0_Y66_N136     
+                Info (167097): TXPCS_X0_Y66_N140            
+                Info (167097): TXPMA_X0_Y66_N138            
+                Info (167097): PIN_K36                      
+            Info (167097): Central Channel 0
+                Info (167097): PIN_J38                      
+                Info (167097): RXPMA_X0_Y69_N137            
+                Info (167097): HSSIPLL_X0_Y69_N135          
+                Info (167097): CLOCKDIVIDER_X0_Y69_N136     
+                Info (167097): TXPMA_X0_Y69_N138            
+                Info (167097): PIN_H36                      
+            Info (167097): Central Channel 1
+                Info (167097): PIN_G38                      
+                Info (167097): RXPMA_X0_Y72_N137            
+                Info (167097): HSSIPLL_X0_Y72_N135          
+                Info (167097): CLOCKDIVIDER_X0_Y72_N136     
+                Info (167097): TXPMA_X0_Y72_N138            
+                Info (167097): PIN_F36                      
+            Info (167097): Regular Channel 2
+                Info (167097): PIN_E38                      
+                Info (167097): RXPMA_X0_Y75_N137            
+                Info (167097): RXPCS_X0_Y75_N139            
+                Info (167097): HSSIPLL_X0_Y75_N135          
+                Info (167097): CLOCKDIVIDER_X0_Y75_N136     
+                Info (167097): TXPCS_X0_Y75_N140            
+                Info (167097): TXPMA_X0_Y75_N138            
+                Info (167097): PIN_D36                      
+            Info (167097): Regular Channel 3
+                Info (167097): PIN_C38                      
+                Info (167097): RXPMA_X0_Y78_N137            
+                Info (167097): RXPCS_X0_Y78_N139            
+                Info (167097): HSSIPLL_X0_Y78_N135          
+                Info (167097): CLOCKDIVIDER_X0_Y78_N136     
+                Info (167097): TXPCS_X0_Y78_N140            
+                Info (167097): TXPMA_X0_Y78_N138            
+                Info (167097): PIN_B36                      
+    Info (167097): QUAD_SIDE_RIGHT
+        Info (167097): PCIEHIP_X119_Y3_N134         
+        Info (167097): CALIBRATIONBLOCK_X119_Y2_N135  
+        Info (167097): CALIBRATIONBLOCK_X119_Y89_N135  
+        Info (167097): ATX LCTANK_X119_Y25_N135
+            Info (167097): CMU_X119_Y25_N137            
+            Info (167097): HSSIPLL_X119_Y25_N135        
+            Info (167097): CLOCKDIVIDER_X119_Y25_N136   
+        Info (167097): Atoms placed to IOBANK_QR0
+            Info (167097): CMU_X119_Y10_N139            
+            Info (167097): Regular Channel 0
+                Info (167097): PIN_AU2                      
+                Info (167097): RXPMA_X119_Y4_N137           
+                Info (167097): RXPCS_X119_Y4_N139           
+                Info (167097): HSSIPLL_X119_Y4_N135         
+                Info (167097): CLOCKDIVIDER_X119_Y4_N136    
+                Info (167097): TXPCS_X119_Y4_N140           
+                Info (167097): TXPMA_X119_Y4_N138           
+                Info (167097): PIN_AT4                      
+            Info (167097): Regular Channel 1
+                Info (167097): PIN_AR2                      
+                Info (167097): RXPMA_X119_Y7_N137           
+                Info (167097): RXPCS_X119_Y7_N139           
+                Info (167097): HSSIPLL_X119_Y7_N135         
+                Info (167097): CLOCKDIVIDER_X119_Y7_N136    
+                Info (167097): TXPCS_X119_Y7_N140           
+                Info (167097): TXPMA_X119_Y7_N138           
+                Info (167097): PIN_AP4                      
+            Info (167097): Central Channel 0
+                Info (167097): PIN_AN2                      
+                Info (167097): RXPMA_X119_Y10_N137          
+                Info (167097): HSSIPLL_X119_Y10_N135        
+                Info (167097): CLOCKDIVIDER_X119_Y10_N136   
+                Info (167097): TXPMA_X119_Y10_N138          
+                Info (167097): PIN_AM4                      
+            Info (167097): Central Channel 1
+                Info (167097): PIN_AL2                      
+                Info (167097): RXPMA_X119_Y13_N137          
+                Info (167097): HSSIPLL_X119_Y13_N135        
+                Info (167097): CLOCKDIVIDER_X119_Y13_N136   
+                Info (167097): TXPMA_X119_Y13_N138          
+                Info (167097): PIN_AK4                      
+            Info (167097): Regular Channel 2
+                Info (167097): PIN_AJ2                      
+                Info (167097): RXPMA_X119_Y16_N137          
+                Info (167097): RXPCS_X119_Y16_N139          
+                Info (167097): HSSIPLL_X119_Y16_N135        
+                Info (167097): CLOCKDIVIDER_X119_Y16_N136   
+                Info (167097): TXPCS_X119_Y16_N140          
+                Info (167097): TXPMA_X119_Y16_N138          
+                Info (167097): PIN_AH4                      
+            Info (167097): Regular Channel 3
+                Info (167097): PIN_AG2                      
+                Info (167097): RXPMA_X119_Y19_N137          
+                Info (167097): RXPCS_X119_Y19_N139          
+                Info (167097): HSSIPLL_X119_Y19_N135        
+                Info (167097): CLOCKDIVIDER_X119_Y19_N136   
+                Info (167097): TXPCS_X119_Y19_N140          
+                Info (167097): TXPMA_X119_Y19_N138          
+                Info (167097): PIN_AF4                      
+        Info (167097): Atoms placed to IOBANK_QR1
+            Info (167097): CMU_X119_Y41_N139            
+            Info (167097): Regular Channel 0
+                Info (167097): PIN_AE2                      
+                Info (167097): RXPMA_X119_Y35_N137          
+                Info (167097): RXPCS_X119_Y35_N139          
+                Info (167097): HSSIPLL_X119_Y35_N135        
+                Info (167097): CLOCKDIVIDER_X119_Y35_N136   
+                Info (167097): TXPCS_X119_Y35_N140          
+                Info (167097): TXPMA_X119_Y35_N138          
+                Info (167097): PIN_AD4                      
+            Info (167097): Regular Channel 1
+                Info (167097): PIN_AC2                      
+                Info (167097): RXPMA_X119_Y38_N137          
+                Info (167097): RXPCS_X119_Y38_N139          
+                Info (167097): HSSIPLL_X119_Y38_N135        
+                Info (167097): CLOCKDIVIDER_X119_Y38_N136   
+                Info (167097): TXPCS_X119_Y38_N140          
+                Info (167097): TXPMA_X119_Y38_N138          
+                Info (167097): PIN_AB4                      
+            Info (167097): Central Channel 0
+                Info (167097): PIN_AA2                      
+                Info (167097): RXPMA_X119_Y41_N137          
+                Info (167097): HSSIPLL_X119_Y41_N135        
+                Info (167097): CLOCKDIVIDER_X119_Y41_N136   
+                Info (167097): TXPMA_X119_Y41_N138          
+                Info (167097): PIN_Y4                       
+            Info (167097): Central Channel 1
+                Info (167097): PIN_W2                       
+                Info (167097): RXPMA_X119_Y44_N137          
+                Info (167097): HSSIPLL_X119_Y44_N135        
+                Info (167097): CLOCKDIVIDER_X119_Y44_N136   
+                Info (167097): TXPMA_X119_Y44_N138          
+                Info (167097): PIN_V4                       
+            Info (167097): Regular Channel 2
+                Info (167097): PIN_U2                       
+                Info (167097): RXPMA_X119_Y47_N137          
+                Info (167097): RXPCS_X119_Y47_N139          
+                Info (167097): HSSIPLL_X119_Y47_N135        
+                Info (167097): CLOCKDIVIDER_X119_Y47_N136   
+                Info (167097): TXPCS_X119_Y47_N140          
+                Info (167097): TXPMA_X119_Y47_N138          
+                Info (167097): PIN_T4                       
+            Info (167097): Regular Channel 3
+                Info (167097): PIN_R2                       
+                Info (167097): RXPMA_X119_Y50_N137          
+                Info (167097): RXPCS_X119_Y50_N139          
+                Info (167097): HSSIPLL_X119_Y50_N135        
+                Info (167097): CLOCKDIVIDER_X119_Y50_N136   
+                Info (167097): TXPCS_X119_Y50_N140          
+                Info (167097): TXPMA_X119_Y50_N138          
+                Info (167097): PIN_P4                       
+        Info (167097): Atoms placed to IOBANK_QR2
+            Info (167097): CMU_X119_Y69_N139            
+            Info (167097): Regular Channel 0
+                Info (167097): PIN_N2                       
+                Info (167097): RXPMA_X119_Y63_N137          
+                Info (167097): RXPCS_X119_Y63_N139          
+                Info (167097): HSSIPLL_X119_Y63_N135        
+                Info (167097): CLOCKDIVIDER_X119_Y63_N136   
+                Info (167097): TXPCS_X119_Y63_N140          
+                Info (167097): TXPMA_X119_Y63_N138          
+                Info (167097): PIN_M4                       
+            Info (167097): Regular Channel 1
+                Info (167097): PIN_L2                       
+                Info (167097): RXPMA_X119_Y66_N137          
+                Info (167097): RXPCS_X119_Y66_N139          
+                Info (167097): HSSIPLL_X119_Y66_N135        
+                Info (167097): CLOCKDIVIDER_X119_Y66_N136   
+                Info (167097): TXPCS_X119_Y66_N140          
+                Info (167097): TXPMA_X119_Y66_N138          
+                Info (167097): PIN_K4                       
+            Info (167097): Central Channel 0
+                Info (167097): PIN_J2                       
+                Info (167097): RXPMA_X119_Y69_N137          
+                Info (167097): HSSIPLL_X119_Y69_N135        
+                Info (167097): CLOCKDIVIDER_X119_Y69_N136   
+                Info (167097): TXPMA_X119_Y69_N138          
+                Info (167097): PIN_H4                       
+            Info (167097): Central Channel 1
+                Info (167097): PIN_G2                       
+                Info (167097): RXPMA_X119_Y72_N137          
+                Info (167097): HSSIPLL_X119_Y72_N135        
+                Info (167097): CLOCKDIVIDER_X119_Y72_N136   
+                Info (167097): TXPMA_X119_Y72_N138          
+                Info (167097): PIN_F4                       
+            Info (167097): Regular Channel 2
+                Info (167097): PIN_E2                       
+                Info (167097): RXPMA_X119_Y75_N137          
+                Info (167097): RXPCS_X119_Y75_N139          
+                Info (167097): HSSIPLL_X119_Y75_N135        
+                Info (167097): CLOCKDIVIDER_X119_Y75_N136   
+                Info (167097): TXPCS_X119_Y75_N140          
+                Info (167097): TXPMA_X119_Y75_N138          
+                Info (167097): PIN_D4                       
+            Info (167097): Regular Channel 3
+                Info (167097): PIN_C2                       
+                Info (167097): RXPMA_X119_Y78_N137          
+                Info (167097): RXPCS_X119_Y78_N139          
+                Info (167097): HSSIPLL_X119_Y78_N135        
+                Info (167097): CLOCKDIVIDER_X119_Y78_N136   
+                Info (167097): TXPCS_X119_Y78_N140          
+                Info (167097): TXPMA_X119_Y78_N138          
+                Info (167097): PIN_B4                       
+Info (332164): Evaluating HDL-embedded SDC commands
+    Info (332165): Entity util_assemb_alst4_base
+        Info (332166): set_false_path -from [get_cells -compatibility_mode *|alt_cal_channel[*]] 
+        Info (332166): set_false_path -from [get_cells -compatibility_mode *|alt_cal_busy] 
+        Info (332166): create_clock -name alt_cal_edge_detect_ff0_clk -period 20 [get_pins -compatibility_mode *|*pd*_det|alt_edge_det_ff0|clk]
+        Info (332166): create_clock -name alt_cal_edge_detect_ff0q_clk -period 20 [get_pins -compatibility_mode *|*pd*_det|alt_edge_det_ff0|q]
+        Info (332166): create_clock -name alt_cal_edge_detect_ff1_clk -period 20 [get_pins -compatibility_mode *|*pd*_det|alt_edge_det_ff1|clk]
+        Info (332166): create_clock -name alt_cal_edge_detect_ff1q_clk -period 20 [get_pins -compatibility_mode *|*pd*_det|alt_edge_det_ff1|q]
+        Info (332166): set_clock_groups -asynchronous -group [get_clocks {alt_cal_edge_detect_ff0_clk}]
+        Info (332166): set_clock_groups -asynchronous -group [get_clocks {alt_cal_edge_detect_ff0q_clk}]
+        Info (332166): set_clock_groups -asynchronous -group [get_clocks {alt_cal_edge_detect_ff1_clk}]
+        Info (332166): set_clock_groups -asynchronous -group [get_clocks {alt_cal_edge_detect_ff1q_clk}]
+Info (332104): Reading SDC File: '../../../../../imports/ocpi.assets/exports/lib/platforms/alst4/alst4.sdc'
+Info (332110): Deriving PLL clocks
+    Info (332110): create_generated_clock -source {ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|tx_pll0|clk[0]} -divide_by 5 -duty_cycle 50.00 -name {ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|central_clk_div0|analogrefclkpulse} {ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|central_clk_div0|analogrefclkpulse}
+    Info (332110): create_generated_clock -source {ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|tx_pll0|clk[0]} -divide_by 5 -duty_cycle 50.00 -name {ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|central_clk_div0|refclkout} {ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|central_clk_div0|refclkout}
+    Info (332110): create_generated_clock -source {ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|tx_pll0|clk[0]} -divide_by 5 -duty_cycle 50.00 -name {ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|central_clk_div0|coreclkout} {ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|central_clk_div0|coreclkout}
+    Info (332110): create_generated_clock -source {ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|tx_pll0|clk[0]} -divide_by 5 -duty_cycle 50.00 -name {ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|central_clk_div0|rateswitchbaseclock} {ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|central_clk_div0|rateswitchbaseclock}
+    Info (332110): create_generated_clock -source {ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|tx_pll0|clk[0]} -divide_by 5 -duty_cycle 50.00 -name {ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|central_clk_div0|analogrefclkout[0]} {ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|central_clk_div0|analogrefclkout[0]}
+    Info (332110): create_generated_clock -source {ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|tx_pll0|clk[0]} -duty_cycle 50.00 -name {ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|central_clk_div0|analogfastrefclkout[0]} {ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|central_clk_div0|analogfastrefclkout[0]}
+    Info (332110): create_generated_clock -source {ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|central_clk_div0|rateswitchbaseclock} -divide_by 2 -duty_cycle 50.00 -name {ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|wrapper|altpcie_hip_pipen1b_inst|stratix_iv.stratixiv_hssi_pcie_hip|pllfixedclk} {ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|wrapper|altpcie_hip_pipen1b_inst|stratix_iv.stratixiv_hssi_pcie_hip|pllfixedclk}
+    Info (332110): create_generated_clock -source {ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|wrapper|altpcie_hip_pipen1b_inst|stratix_iv.stratixiv_hssi_pcie_hip|pllfixedclk} -divide_by 2 -duty_cycle 50.00 -name {ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|wrapper|altpcie_hip_pipen1b_inst|stratix_iv.stratixiv_hssi_pcie_hip|coreclkout} {ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|wrapper|altpcie_hip_pipen1b_inst|stratix_iv.stratixiv_hssi_pcie_hip|coreclkout}
+    Info (332110): create_clock -period 0.400 -name {ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|tx_pll0|clk[0]} {ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|tx_pll0|clk[0]}
+    Info (332110): create_generated_clock -source {ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|reconfig_pll|altpll_component|auto_generated|pll1|inclk[0]} -divide_by 4 -duty_cycle 50.00 -name {ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|reconfig_pll|altpll_component|auto_generated|pll1|clk[0]} {ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|reconfig_pll|altpll_component|auto_generated|pll1|clk[0]}
+    Info (332110): create_generated_clock -source {ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|reconfig_pll|altpll_component|auto_generated|pll1|inclk[0]} -divide_by 8 -multiply_by 5 -duty_cycle 50.00 -name {ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|reconfig_pll|altpll_component|auto_generated|pll1|clk[1]} {ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|reconfig_pll|altpll_component|auto_generated|pll1|clk[1]}
+    Info (332110): create_clock -period 0.400 -name {ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|rx_cdr_pll3|clk[0]} {ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|rx_cdr_pll3|clk[0]}
+    Info (332110): create_clock -period 0.400 -name {ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|rx_cdr_pll2|clk[0]} {ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|rx_cdr_pll2|clk[0]}
+    Info (332110): create_clock -period 0.400 -name {ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|rx_cdr_pll1|clk[0]} {ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|rx_cdr_pll1|clk[0]}
+    Info (332110): create_clock -period 0.400 -name {ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|rx_cdr_pll0|clk[0]} {ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|rx_cdr_pll0|clk[0]}
+    Info (332110): create_generated_clock -source {ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|rx_cdr_pll3|clk[0]} -divide_by 5 -duty_cycle 50.00 -name {ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pma3|deserclock[0]} {ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pma3|deserclock[0]}
+    Info (332110): create_generated_clock -source {ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|rx_cdr_pll2|clk[0]} -divide_by 5 -duty_cycle 50.00 -name {ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pma2|deserclock[0]} {ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pma2|deserclock[0]}
+    Info (332110): create_generated_clock -source {ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|rx_cdr_pll1|clk[0]} -divide_by 5 -duty_cycle 50.00 -name {ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pma1|deserclock[0]} {ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pma1|deserclock[0]}
+    Info (332110): create_generated_clock -source {ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|rx_cdr_pll0|clk[0]} -divide_by 5 -duty_cycle 50.00 -name {ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pma0|deserclock[0]} {ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pma0|deserclock[0]}
+    Info (332110): create_generated_clock -source {ftop|pfconfig_i|alst4_i|pcie_clk~input|o} -duty_cycle 50.00 -name {ftop|pfconfig_i|alst4_i|pcie_clk~input~INSERTED_REFCLK_DIVIDER|clkout} {ftop|pfconfig_i|alst4_i|pcie_clk~input~INSERTED_REFCLK_DIVIDER|clkout}
+    Info (332110): set_min_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|transmit_pcs3~OBSERVABLE_DIGITAL_RESET }] 0.000
+    Info (332110): set_max_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|transmit_pcs3~OBSERVABLE_DIGITAL_RESET }] 20.000
+    Info (332110): set_min_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|transmit_pcs3~OBSERVABLEQUADRESET }] 0.000
+    Info (332110): set_max_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|transmit_pcs3~OBSERVABLEQUADRESET }] 20.000
+    Info (332110): set_min_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|transmit_pma3~OBSERVABLE_TX_DET_RX }] 0.000
+    Info (332110): set_max_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|transmit_pma3~OBSERVABLE_TX_DET_RX }] 20.000
+    Info (332110): set_min_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|transmit_pma3~OBSERVABLE_FORCE_ELEC_IDLE }] 0.000
+    Info (332110): set_max_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|transmit_pma3~OBSERVABLE_FORCE_ELEC_IDLE }] 20.000
+    Info (332110): set_min_delay -from [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|rx_pcs_rxfound_wire[6] }] 0.000
+    Info (332110): set_max_delay -from [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|rx_pcs_rxfound_wire[6] }] 20.000
+    Info (332110): set_min_delay -from [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|tx_rxdetectvalidout[3] }] 0.000
+    Info (332110): set_max_delay -from [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|tx_rxdetectvalidout[3] }] 20.000
+    Info (332110): set_min_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|transmit_pcs2~OBSERVABLE_DIGITAL_RESET }] 0.000
+    Info (332110): set_max_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|transmit_pcs2~OBSERVABLE_DIGITAL_RESET }] 20.000
+    Info (332110): set_min_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|transmit_pcs2~OBSERVABLEQUADRESET }] 0.000
+    Info (332110): set_max_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|transmit_pcs2~OBSERVABLEQUADRESET }] 20.000
+    Info (332110): set_min_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|transmit_pma2~OBSERVABLE_TX_DET_RX }] 0.000
+    Info (332110): set_max_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|transmit_pma2~OBSERVABLE_TX_DET_RX }] 20.000
+    Info (332110): set_min_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|transmit_pma2~OBSERVABLE_FORCE_ELEC_IDLE }] 0.000
+    Info (332110): set_max_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|transmit_pma2~OBSERVABLE_FORCE_ELEC_IDLE }] 20.000
+    Info (332110): set_min_delay -from [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|rx_pcs_rxfound_wire[4] }] 0.000
+    Info (332110): set_max_delay -from [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|rx_pcs_rxfound_wire[4] }] 20.000
+    Info (332110): set_min_delay -from [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|tx_rxdetectvalidout[2] }] 0.000
+    Info (332110): set_max_delay -from [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|tx_rxdetectvalidout[2] }] 20.000
+    Info (332110): set_min_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|transmit_pcs1~OBSERVABLE_DIGITAL_RESET }] 0.000
+    Info (332110): set_max_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|transmit_pcs1~OBSERVABLE_DIGITAL_RESET }] 20.000
+    Info (332110): set_min_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|transmit_pcs1~OBSERVABLEQUADRESET }] 0.000
+    Info (332110): set_max_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|transmit_pcs1~OBSERVABLEQUADRESET }] 20.000
+    Info (332110): set_min_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|transmit_pma1~OBSERVABLE_TX_DET_RX }] 0.000
+    Info (332110): set_max_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|transmit_pma1~OBSERVABLE_TX_DET_RX }] 20.000
+    Info (332110): set_min_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|transmit_pma1~OBSERVABLE_FORCE_ELEC_IDLE }] 0.000
+    Info (332110): set_max_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|transmit_pma1~OBSERVABLE_FORCE_ELEC_IDLE }] 20.000
+    Info (332110): set_min_delay -from [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|rx_pcs_rxfound_wire[2] }] 0.000
+    Info (332110): set_max_delay -from [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|rx_pcs_rxfound_wire[2] }] 20.000
+    Info (332110): set_min_delay -from [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|tx_rxdetectvalidout[1] }] 0.000
+    Info (332110): set_max_delay -from [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|tx_rxdetectvalidout[1] }] 20.000
+    Info (332110): set_min_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pcs1~OBSERVABLE_DIGITAL_RESET }] 0.000
+    Info (332110): set_max_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pcs1~OBSERVABLE_DIGITAL_RESET }] 20.000
+    Info (332110): set_min_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pcs1~OBSERVABLEQUADRESET }] 0.000
+    Info (332110): set_max_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pcs1~OBSERVABLEQUADRESET }] 20.000
+    Info (332110): set_min_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pcs2~OBSERVABLE_DIGITAL_RESET }] 0.000
+    Info (332110): set_max_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pcs2~OBSERVABLE_DIGITAL_RESET }] 20.000
+    Info (332110): set_min_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pcs2~OBSERVABLEQUADRESET }] 0.000
+    Info (332110): set_max_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pcs2~OBSERVABLEQUADRESET }] 20.000
+    Info (332110): set_min_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pcs3~OBSERVABLE_DIGITAL_RESET }] 0.000
+    Info (332110): set_max_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pcs3~OBSERVABLE_DIGITAL_RESET }] 20.000
+    Info (332110): set_min_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pcs3~OBSERVABLEQUADRESET }] 0.000
+    Info (332110): set_max_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pcs3~OBSERVABLEQUADRESET }] 20.000
+    Info (332110): set_min_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|cent_unit0~OBSERVABLERXANALOGRESET }] 0.000
+    Info (332110): set_max_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|cent_unit0~OBSERVABLERXANALOGRESET }] 20.000
+    Info (332110): set_min_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|cent_unit0~OBSERVABLETXDIGITALRESET }] 0.000
+    Info (332110): set_max_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|cent_unit0~OBSERVABLETXDIGITALRESET }] 20.000
+    Info (332110): set_min_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|cent_unit0~OBSERVABLERXDIGITALRESET }] 0.000
+    Info (332110): set_max_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|cent_unit0~OBSERVABLERXDIGITALRESET }] 20.000
+    Info (332110): set_min_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|cent_unit0~OBSERVABLEDPRIODISABLE }] 0.000
+    Info (332110): set_max_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|cent_unit0~OBSERVABLEDPRIODISABLE }] 20.000
+    Info (332110): set_min_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|cent_unit0~OBSERVABLEDPRIOLOAD }] 0.000
+    Info (332110): set_max_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|cent_unit0~OBSERVABLEDPRIOLOAD }] 20.000
+    Info (332110): set_min_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|cent_unit0~OBSERVABLEDPRIORESET }] 0.000
+    Info (332110): set_max_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|cent_unit0~OBSERVABLEDPRIORESET }] 20.000
+    Info (332110): set_min_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pcs0~OBSERVABLE_DIGITAL_RESET }] 0.000
+    Info (332110): set_max_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pcs0~OBSERVABLE_DIGITAL_RESET }] 20.000
+    Info (332110): set_min_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pcs0~OBSERVABLEQUADRESET }] 0.000
+    Info (332110): set_max_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pcs0~OBSERVABLEQUADRESET }] 20.000
+    Info (332110): set_min_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pma3~OBSERVABLE_LOCK_TO_REF }] 0.000
+    Info (332110): set_max_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pma3~OBSERVABLE_LOCK_TO_REF }] 20.000
+    Info (332110): set_min_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pma2~OBSERVABLE_LOCK_TO_REF }] 0.000
+    Info (332110): set_max_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pma2~OBSERVABLE_LOCK_TO_REF }] 20.000
+    Info (332110): set_min_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pma1~OBSERVABLE_LOCK_TO_REF }] 0.000
+    Info (332110): set_max_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pma1~OBSERVABLE_LOCK_TO_REF }] 20.000
+    Info (332110): set_min_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pma0~OBSERVABLE_LOCK_TO_REF }] 0.000
+    Info (332110): set_max_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pma0~OBSERVABLE_LOCK_TO_REF }] 20.000
+    Info (332110): set_min_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|transmit_pma0~OBSERVABLE_TX_DET_RX }] 0.000
+    Info (332110): set_max_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|transmit_pma0~OBSERVABLE_TX_DET_RX }] 20.000
+    Info (332110): set_min_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|transmit_pma0~OBSERVABLE_FORCE_ELEC_IDLE }] 0.000
+    Info (332110): set_max_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|transmit_pma0~OBSERVABLE_FORCE_ELEC_IDLE }] 20.000
+    Info (332110): set_min_delay -from [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|rx_pcs_rxfound_wire[0] }] 0.000
+    Info (332110): set_max_delay -from [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|rx_pcs_rxfound_wire[0] }] 20.000
+    Info (332110): set_min_delay -from [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|tx_rxdetectvalidout[0] }] 0.000
+    Info (332110): set_max_delay -from [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|tx_rxdetectvalidout[0] }] 20.000
+    Info (332110): set_min_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|transmit_pcs0~OBSERVABLE_DIGITAL_RESET }] 0.000
+    Info (332110): set_max_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|transmit_pcs0~OBSERVABLE_DIGITAL_RESET }] 20.000
+    Info (332110): set_min_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|transmit_pcs0~OBSERVABLEQUADRESET }] 0.000
+    Info (332110): set_max_delay -to [get_ports { util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|transmit_pcs0~OBSERVABLEQUADRESET }] 20.000
+Info (332151): Clock uncertainty is not calculated until you update the timing netlist.
+Info (332097): The following timing edges are non-unate.  TimeQuest will assume pos-unate behavior for these edges in the clock network.
+    Info (332098): From: ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|cent_unit0|dpclk  to: util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|wire_cent_unit0_dprioout
+    Info (332098): Cell: ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pma0  from: deserclock[0]  to: clockout
+    Info (332098): Cell: ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pma1  from: deserclock[0]  to: clockout
+    Info (332098): Cell: ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pma2  from: deserclock[0]  to: clockout
+    Info (332098): Cell: ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pma3  from: deserclock[0]  to: clockout
+    Info (332098): From: ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|wrapper|altpcie_hip_pipen1b_inst|stratix_iv.stratixiv_hssi_pcie_hip|pldclk  to: util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_core:wrapper|altpcie_hip_pipen1b:altpcie_hip_pipen1b_inst|l2_exit
+    Info (332098): From: ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|wrapper|altpcie_hip_pipen1b_inst|stratix_iv.stratixiv_hssi_pcie_hip|pllfixedclk  to: util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_core:wrapper|altpcie_hip_pipen1b:altpcie_hip_pipen1b_inst|tl_cfg_ctl_wr_hip
+    Info (332098): Cell: ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|reconfig_pll|altpll_component|auto_generated|pll1  from: inclk[0]  to: observablevcoout
+    Info (332098): Cell: ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|reconfig|altpcie_reconfig_4sgx_alt2gxb_reconfig_squ1_component|calibration|pd0_det|pd_xor~0  from: dataa  to: combout
+    Info (332098): Cell: ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|reconfig|altpcie_reconfig_4sgx_alt2gxb_reconfig_squ1_component|calibration|pd0_det|pd_xor~0  from: datab  to: combout
+    Info (332098): Cell: ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|reconfig|altpcie_reconfig_4sgx_alt2gxb_reconfig_squ1_component|calibration|pd180_det|pd_xor~0  from: dataa  to: combout
+    Info (332098): Cell: ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|reconfig|altpcie_reconfig_4sgx_alt2gxb_reconfig_squ1_component|calibration|pd180_det|pd_xor~0  from: datab  to: combout
+    Info (332098): Cell: ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|reconfig|altpcie_reconfig_4sgx_alt2gxb_reconfig_squ1_component|calibration|pd270_det|pd_xor~0  from: dataa  to: combout
+    Info (332098): Cell: ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|reconfig|altpcie_reconfig_4sgx_alt2gxb_reconfig_squ1_component|calibration|pd270_det|pd_xor~0  from: datab  to: combout
+    Info (332098): Cell: ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|reconfig|altpcie_reconfig_4sgx_alt2gxb_reconfig_squ1_component|calibration|pd90_det|pd_xor~0  from: dataa  to: combout
+    Info (332098): Cell: ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|reconfig|altpcie_reconfig_4sgx_alt2gxb_reconfig_squ1_component|calibration|pd90_det|pd_xor~0  from: datab  to: combout
+Info (332123): Deriving Clock Uncertainty. Please refer to report_sdc in TimeQuest to see clock uncertainties.
+Info (332129): Detected timing requirements -- optimizing circuit to achieve only the specified requirements
+Info (332111): Found 26 clocks
+    Info (332111):   Period   Clock Name
+    Info (332111): ======== ============
+    Info (332111):   20.000 alt_cal_edge_detect_ff0_clk
+    Info (332111):   20.000 alt_cal_edge_detect_ff0q_clk
+    Info (332111):   20.000 alt_cal_edge_detect_ff1_clk
+    Info (332111):   20.000 alt_cal_edge_detect_ff1q_clk
+    Info (332111):   10.000 ftop|pfconfig_i|alst4_i|pcie_clk~input~INSERTED_REFCLK_DIVIDER|clkout
+    Info (332111):    0.400 ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|central_clk_div0|analogfastrefclkout[0]
+    Info (332111):    2.000 ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|central_clk_div0|analogrefclkout[0]
+    Info (332111):    2.000 ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|central_clk_div0|analogrefclkpulse
+    Info (332111):    2.000 ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|central_clk_div0|coreclkout
+    Info (332111):    2.000 ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|central_clk_div0|rateswitchbaseclock
+    Info (332111):    2.000 ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|central_clk_div0|refclkout
+    Info (332111):    2.000 ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pma0|deserclock[0]
+    Info (332111):    2.000 ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pma1|deserclock[0]
+    Info (332111):    2.000 ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pma2|deserclock[0]
+    Info (332111):    2.000 ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|receive_pma3|deserclock[0]
+    Info (332111):    0.400 ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|rx_cdr_pll0|clk[0]
+    Info (332111):    0.400 ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|rx_cdr_pll1|clk[0]
+    Info (332111):    0.400 ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|rx_cdr_pll2|clk[0]
+    Info (332111):    0.400 ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|rx_cdr_pll3|clk[0]
+    Info (332111):    0.400 ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|tx_pll0|clk[0]
+    Info (332111):    8.000 ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|wrapper|altpcie_hip_pipen1b_inst|stratix_iv.stratixiv_hssi_pcie_hip|coreclkout
+    Info (332111):    4.000 ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|wrapper|altpcie_hip_pipen1b_inst|stratix_iv.stratixiv_hssi_pcie_hip|pllfixedclk
+    Info (332111):   20.000 ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|reconfig_pll|altpll_component|auto_generated|pll1|clk[0]
+    Info (332111):    8.000 ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|reconfig_pll|altpll_component|auto_generated|pll1|clk[1]
+    Info (332111):   10.000     pcie_clk
+    Info (332111):    5.000     sys0_clk
+Info (176353): Automatically promoted node util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_core:wrapper|altpcie_hip_pipen1b:altpcie_hip_pipen1b_inst|core_clk_out  File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+    Info (176355): Automatically promoted destinations to use location or clock signal Global Clock CLKCTRL_G1
+Info (176353): Automatically promoted node util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pll1:reconfig_pll|altpll:altpll_component|pll1_altpll:auto_generated|wire_pll1_clk[0] (placed in counter C0 of PLL_T1) File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+    Info (176355): Automatically promoted destinations to use location or clock signal Global Clock CLKCTRL_G15
+Info (176353): Automatically promoted node util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pll1:reconfig_pll|altpll:altpll_component|pll1_altpll:auto_generated|wire_pll1_clk[1] (placed in counter C1 of PLL_T1) File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+    Info (176355): Automatically promoted destinations to use location or clock signal Global Clock CLKCTRL_G14
+Info (176353): Automatically promoted node util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|sys0_clk~input (placed in PIN A21 (CLK12p, DIFFIO_RX_T24p, DIFFOUT_T48p)) File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+    Info (176355): Automatically promoted destinations to use location or clock signal Global Clock CLKCTRL_G13
+Info (176353): Automatically promoted node util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|altpcie_reconfig_4sgx:reconfig|altpcie_reconfig_4sgx_alt2gxb_reconfig_squ1:altpcie_reconfig_4sgx_alt2gxb_reconfig_squ1_component|alt_cal:calibration|lpm_mux:alt_cal_mux_gen.testbus_mux|mux_foc:auto_generated|l3_w0_n0_mux_dataout~0  File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+    Info (176355): Automatically promoted destinations to use location or clock signal Global Clock CLKCTRL_G4
+    Info (176356): Following destination nodes may be non-global or may not use global or regional clocks
+        Info (176357): Destination node util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|altpcie_reconfig_4sgx:reconfig|altpcie_reconfig_4sgx_alt2gxb_reconfig_squ1:altpcie_reconfig_4sgx_alt2gxb_reconfig_squ1_component|alt_cal:calibration|ch_testbus0q[0] File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+Info (176353): Automatically promoted node util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|altpcie_reconfig_4sgx:reconfig|altpcie_reconfig_4sgx_alt2gxb_reconfig_squ1:altpcie_reconfig_4sgx_alt2gxb_reconfig_squ1_component|alt_cal:calibration|lpm_mux:alt_cal_mux_gen.testbus_mux|mux_foc:auto_generated|l3_w1_n0_mux_dataout~0  File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+    Info (176355): Automatically promoted destinations to use location or clock signal Global Clock CLKCTRL_G12
+    Info (176356): Following destination nodes may be non-global or may not use global or regional clocks
+        Info (176357): Destination node util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|altpcie_reconfig_4sgx:reconfig|altpcie_reconfig_4sgx_alt2gxb_reconfig_squ1:altpcie_reconfig_4sgx_alt2gxb_reconfig_squ1_component|alt_cal:calibration|ch_testbus0q[1] File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+Info (176353): Automatically promoted node util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|altpcie_reconfig_4sgx:reconfig|altpcie_reconfig_4sgx_alt2gxb_reconfig_squ1:altpcie_reconfig_4sgx_alt2gxb_reconfig_squ1_component|alt_cal:calibration|lpm_mux:alt_cal_mux_gen.testbus_mux|mux_foc:auto_generated|l3_w2_n0_mux_dataout~0  File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+    Info (176355): Automatically promoted destinations to use location or clock signal Global Clock CLKCTRL_G5
+    Info (176356): Following destination nodes may be non-global or may not use global or regional clocks
+        Info (176357): Destination node util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|altpcie_reconfig_4sgx:reconfig|altpcie_reconfig_4sgx_alt2gxb_reconfig_squ1:altpcie_reconfig_4sgx_alt2gxb_reconfig_squ1_component|alt_cal:calibration|ch_testbus0q[2] File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+Info (176353): Automatically promoted node util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|altpcie_reconfig_4sgx:reconfig|altpcie_reconfig_4sgx_alt2gxb_reconfig_squ1:altpcie_reconfig_4sgx_alt2gxb_reconfig_squ1_component|alt_cal:calibration|lpm_mux:alt_cal_mux_gen.testbus_mux|mux_foc:auto_generated|l3_w3_n0_mux_dataout~0  File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+    Info (176355): Automatically promoted destinations to use location or clock signal Global Clock CLKCTRL_G6
+    Info (176356): Following destination nodes may be non-global or may not use global or regional clocks
+        Info (176357): Destination node util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|altpcie_reconfig_4sgx:reconfig|altpcie_reconfig_4sgx_alt2gxb_reconfig_squ1:altpcie_reconfig_4sgx_alt2gxb_reconfig_squ1_component|alt_cal:calibration|ch_testbus0q[3] File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+Info (176353): Automatically promoted node util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|npor  File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+    Info (176355): Automatically promoted destinations to use location or clock signal Global Clock CLKCTRL_G9
+    Info (176356): Following destination nodes may be non-global or may not use global or regional clocks
+        Info (176357): Destination node util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|cent_unit0 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+        Info (176357): Destination node util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_core:wrapper|altpcie_hip_pipen1b:altpcie_hip_pipen1b_inst|stratix_iv.stratixiv_hssi_pcie_hip File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+Info (176353): Automatically promoted node util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|altpcie_reconfig_4sgx:reconfig|altpcie_reconfig_4sgx_alt2gxb_reconfig_squ1:altpcie_reconfig_4sgx_alt2gxb_reconfig_squ1_component|alt_cal:calibration|state.DPRIO_WRITE  File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+    Info (176355): Automatically promoted destinations to use location or clock signal Global Clock CLKCTRL_G7
+    Info (176356): Following destination nodes may be non-global or may not use global or regional clocks
+        Info (176357): Destination node util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|altpcie_reconfig_4sgx:reconfig|altpcie_reconfig_4sgx_alt2gxb_reconfig_squ1:altpcie_reconfig_4sgx_alt2gxb_reconfig_squ1_component|alt_cal:calibration|Selector76~2 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+        Info (176357): Destination node util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|altpcie_reconfig_4sgx:reconfig|altpcie_reconfig_4sgx_alt2gxb_reconfig_squ1:altpcie_reconfig_4sgx_alt2gxb_reconfig_squ1_component|alt_cal:calibration|Selector90~0 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+        Info (176357): Destination node util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|altpcie_reconfig_4sgx:reconfig|altpcie_reconfig_4sgx_alt2gxb_reconfig_squ1:altpcie_reconfig_4sgx_alt2gxb_reconfig_squ1_component|alt_cal:calibration|Selector20~0 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+        Info (176357): Destination node util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|altpcie_reconfig_4sgx:reconfig|altpcie_reconfig_4sgx_alt2gxb_reconfig_squ1:altpcie_reconfig_4sgx_alt2gxb_reconfig_squ1_component|alt_cal:calibration|Selector30~0 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+        Info (176357): Destination node util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|altpcie_reconfig_4sgx:reconfig|altpcie_reconfig_4sgx_alt2gxb_reconfig_squ1:altpcie_reconfig_4sgx_alt2gxb_reconfig_squ1_component|alt_cal:calibration|state~56 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+        Info (176357): Destination node util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|altpcie_reconfig_4sgx:reconfig|altpcie_reconfig_4sgx_alt2gxb_reconfig_squ1:altpcie_reconfig_4sgx_alt2gxb_reconfig_squ1_component|alt_cal:calibration|Selector22~1 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+        Info (176357): Destination node util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|altpcie_reconfig_4sgx:reconfig|altpcie_reconfig_4sgx_alt2gxb_reconfig_squ1:altpcie_reconfig_4sgx_alt2gxb_reconfig_squ1_component|alt_cal:calibration|Selector20~2 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+        Info (176357): Destination node util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|altpcie_reconfig_4sgx:reconfig|altpcie_reconfig_4sgx_alt2gxb_reconfig_squ1:altpcie_reconfig_4sgx_alt2gxb_reconfig_squ1_component|alt_cal:calibration|Selector36~1 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+        Info (176357): Destination node util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|altpcie_reconfig_4sgx:reconfig|altpcie_reconfig_4sgx_alt2gxb_reconfig_squ1:altpcie_reconfig_4sgx_alt2gxb_reconfig_squ1_component|alt_cal:calibration|alt_cal_channel~2 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+        Info (176357): Destination node util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|altpcie_reconfig_4sgx:reconfig|altpcie_reconfig_4sgx_alt2gxb_reconfig_squ1:altpcie_reconfig_4sgx_alt2gxb_reconfig_squ1_component|alt_cal:calibration|alt_cal_channel[0]~3 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+        Info (176358): Non-global destination nodes limited to 10 nodes
+Info (176353): Automatically promoted node util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|npor_serdes_pll_locked  File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+    Info (176355): Automatically promoted destinations to use location or clock signal Global Clock CLKCTRL_G8
+    Info (176356): Following destination nodes may be non-global or may not use global or regional clocks
+        Info (176357): Destination node util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|pllreset_delay_blk0c[0]~0 File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+Info (176233): Starting register packing
+Info (176235): Finished register packing
+    Extra Info (176219): No registers were packed into other blocks
+Info (167065): Input frequency of fixedclk for the GXB Central Control Unit "util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|cent_unit0" must be 125.0 MHz
+Info (167066): Clock input frequency of GXB Calibration block atom "util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|cal_blk0" must be in the frequency range of 10.0 MHz to 125.0 MHz File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+Info (167067): Input frequency of dpclk for the GXB Central Control Unit "util_assemb_alst4_base_rv:ftop|base_rv:pfconfig_i|alst4_rv:alst4_i|alst4_worker:worker|pci_alst4:pcie|pcie_hip_s4gx_gen2_x4_128_wrapper:pciw_pci0_pcie_ep|pcie_hip_s4gx_gen2_x4_128:epmap|pcie_hip_s4gx_gen2_x4_128_serdes:serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa:pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|cent_unit0" must be in the frequency range of 37.5 MHz to 50.0 MHz File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/util_assemb_alst4_base.qxp Line: -1
+Warning (15705): Ignored locations or region assignments to the following nodes
+    Warning (15706): Node "ddr3top_a[0]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "ddr3top_a[10]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "ddr3top_a[11]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "ddr3top_a[12]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "ddr3top_a[1]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "ddr3top_a[2]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "ddr3top_a[3]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "ddr3top_a[4]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "ddr3top_a[5]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "ddr3top_a[6]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "ddr3top_a[7]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "ddr3top_a[8]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "ddr3top_a[9]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "ddr3top_ba[0]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "ddr3top_ba[1]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "ddr3top_ba[2]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "ddr3top_casn" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "ddr3top_ck_n" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "ddr3top_ck_p" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "ddr3top_cke" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "ddr3top_csn" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "ddr3top_dm[0]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "ddr3top_dm[1]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "ddr3top_dq[0]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "ddr3top_dq[10]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "ddr3top_dq[11]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "ddr3top_dq[12]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "ddr3top_dq[13]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "ddr3top_dq[14]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "ddr3top_dq[15]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "ddr3top_dq[1]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "ddr3top_dq[2]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "ddr3top_dq[3]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "ddr3top_dq[4]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "ddr3top_dq[5]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "ddr3top_dq[6]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "ddr3top_dq[7]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "ddr3top_dq[8]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "ddr3top_dq[9]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "ddr3top_dqs_n[0]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "ddr3top_dqs_n[1]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "ddr3top_dqs_p[0]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "ddr3top_dqs_p[1]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "ddr3top_odt" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "ddr3top_rasn" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "ddr3top_rstn" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "ddr3top_wen" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "flash_advn" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "flash_cen" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "flash_clk" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "flash_oen" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "flash_rdybsyn" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "flash_resetn" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "flash_wen" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_a[0]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_a[10]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_a[11]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_a[12]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_a[13]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_a[14]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_a[15]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_a[16]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_a[17]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_a[18]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_a[19]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_a[1]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_a[20]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_a[21]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_a[22]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_a[23]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_a[24]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_a[25]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_a[2]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_a[3]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_a[4]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_a[5]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_a[6]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_a[7]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_a[8]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_a[9]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_d[0]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_d[10]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_d[11]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_d[12]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_d[13]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_d[14]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_d[15]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_d[16]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_d[17]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_d[18]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_d[19]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_d[1]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_d[20]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_d[21]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_d[22]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_d[23]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_d[24]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_d[25]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_d[26]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_d[27]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_d[28]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_d[29]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_d[2]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_d[30]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_d[31]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_d[3]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_d[4]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_d[5]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_d[6]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_d[7]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_d[8]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "fsm_d[9]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "lcd_db[0]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "lcd_db[1]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "lcd_db[2]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "lcd_db[3]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "lcd_e" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "lcd_rs" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "lcd_rw" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "oct_rdn" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "oct_rup" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "usr_sw[0]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "usr_sw[1]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "usr_sw[2]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "usr_sw[3]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "usr_sw[4]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "usr_sw[5]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "usr_sw[6]" is assigned to location or region, but does not exist in design
+    Warning (15706): Node "usr_sw[7]" is assigned to location or region, but does not exist in design
+Info (171121): Fitter preparation operations ending: elapsed time is 00:00:22
+Info (170189): Fitter placement preparation operations beginning
+Info (170190): Fitter placement preparation operations ending: elapsed time is 00:00:05
+Info (170191): Fitter placement operations beginning
+Info (170137): Fitter placement was successful
+Info (170192): Fitter placement operations ending: elapsed time is 00:00:29
+Info (170193): Fitter routing operations beginning
+Info (170195): Router estimated average interconnect usage is 1% of the available device resources
+    Info (170196): Router estimated peak interconnect usage is 15% of the available device resources in the region that extends from location X36_Y48 to location X47_Y59
+Info (170199): The Fitter performed an Auto Fit compilation.  Optimizations were skipped to reduce compilation time.
+    Info (170201): Optimizations that may affect the design's routability were skipped
+Info (170194): Fitter routing operations ending: elapsed time is 00:00:33
+Info (11888): Total time spent on timing analysis during the Fitter is 23.35 seconds.
+Info (334003): Started post-fitting delay annotation
+Info (334004): Delay annotation completed successfully
+Info (334003): Started post-fitting delay annotation
+Info (334004): Delay annotation completed successfully
+Info (11218): Fitter post-fit operations ending: elapsed time is 00:00:27
+Warning (171167): Found invalid Fitter assignments. See the Ignored Assignments panel in the Fitter Compilation Report for more information.
+Warning (169064): Following 158 pins have no output enable or a GND or VCC output enable - later changes to this connectivity may change fitting results
+    Info (169065): Pin HSMC_ALST4_A_SDA has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D0 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D1 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D2 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D3 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D4_OR_LVDS_TXp0 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D5_OR_LVDS_RXp0 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D6_OR_LVDS_TXn0 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D7_OR_LVDS_RXn0 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D8_OR_LVDS_TXp1 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D9_OR_LVDS_RXp1 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D10_OR_LVDS_TXn1 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D11_OR_LVDS_RXn1 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D12_OR_LVDS_TXp2 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D13_OR_LVDS_RXp2 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D14_OR_LVDS_TXn2 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D15_OR_LVDS_RXn2 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D16_OR_LVDS_TXp3 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D17_OR_LVDS_RXp3 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D18_OR_LVDS_TXn3 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D19_OR_LVDS_RXn3 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D20_OR_LVDS_TXp4 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D21_OR_LVDS_RXp4 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D22_OR_LVDS_TXn4 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D23_OR_LVDS_RXn4 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D24_OR_LVDS_TXp5 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D25_OR_LVDS_RXp5 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D26_OR_LVDS_TXn5 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D27_OR_LVDS_RXn5 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D28_OR_LVDS_TXp6 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D29_OR_LVDS_RXp6 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D30_OR_LVDS_TXn6 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D31_OR_LVDS_RXn6 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D32_OR_LVDS_TXp7 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D33_OR_LVDS_RXp7 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D34_OR_LVDS_TXn7 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D35_OR_LVDS_RXn7 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D36_OR_LVDS_CLKOUT1p has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D38_OR_LVDS_CLKOUT1n has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D40_OR_LVDS_TXp8 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D41_OR_LVDS_RXp8 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D42_OR_LVDS_TXn8 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D43_OR_LVDS_RXn8 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D44_OR_LVDS_TXp9 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D45_OR_LVDS_RXp9 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D46_OR_LVDS_TXn9 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D47_OR_LVDS_RXn9 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D48_OR_LVDS_TXp10 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D49_OR_LVDS_RXp10 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D50_OR_LVDS_TXn10 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D51_OR_LVDS_RXn10 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D52_OR_LVDS_TXp11 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D53_OR_LVDS_RXp11 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D54_OR_LVDS_TXn11 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D55_OR_LVDS_RXn11 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D56_OR_LVDS_TXp12 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D57_OR_LVDS_RXp12 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D58_OR_LVDS_TXn12 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D59_OR_LVDS_RXn12 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D60_OR_LVDS_TXp13 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D61_OR_LVDS_RXp13 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D62_OR_LVDS_TXn13 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D63_OR_LVDS_RXn13 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D64_OR_LVDS_TXp14 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D65_OR_LVDS_RXp14 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D66_OR_LVDS_TXn14 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D67_OR_LVDS_RXn14 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D68_OR_LVDS_TXp15 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D69_OR_LVDS_RXp15 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D70_OR_LVDS_TXn15 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D71_OR_LVDS_RXn15 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D72_OR_LVDS_TXp16 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D73_OR_LVDS_RXp16 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D74_OR_LVDS_TXn16 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D75_OR_LVDS_RXn16 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D76_OR_CLKOUT2p has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D77_OR_CLKIN2p has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D78_OR_CLOUT2n has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_A_D79_OR_CLKIN2n has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_SDA has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D0 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D1 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D2 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D3 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D4_OR_LVDS_TXp0 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D5_OR_LVDS_RXp0 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D6_OR_LVDS_TXn0 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D7_OR_LVDS_RXn0 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D8_OR_LVDS_TXp1 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D9_OR_LVDS_RXp1 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D10_OR_LVDS_TXn1 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D11_OR_LVDS_RXn1 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D12_OR_LVDS_TXp2 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D13_OR_LVDS_RXp2 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D14_OR_LVDS_TXn2 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D15_OR_LVDS_RXn2 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D16_OR_LVDS_TXp3 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D17_OR_LVDS_RXp3 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D18_OR_LVDS_TXn3 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D19_OR_LVDS_RXn3 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D20_OR_LVDS_TXp4 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D21_OR_LVDS_RXp4 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D22_OR_LVDS_TXn4 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D23_OR_LVDS_RXn4 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D24_OR_LVDS_TXp5 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D25_OR_LVDS_RXp5 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D26_OR_LVDS_TXn5 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D27_OR_LVDS_RXn5 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D28_OR_LVDS_TXp6 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D29_OR_LVDS_RXp6 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D30_OR_LVDS_TXn6 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D31_OR_LVDS_RXn6 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D32_OR_LVDS_TXp7 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D33_OR_LVDS_RXp7 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D34_OR_LVDS_TXn7 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D35_OR_LVDS_RXn7 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D36_OR_LVDS_CLKOUT1p has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D38_OR_LVDS_CLKOUT1n has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D40_OR_LVDS_TXp8 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D41_OR_LVDS_RXp8 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D42_OR_LVDS_TXn8 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D43_OR_LVDS_RXn8 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D44_OR_LVDS_TXp9 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D45_OR_LVDS_RXp9 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D46_OR_LVDS_TXn9 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D47_OR_LVDS_RXn9 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D48_OR_LVDS_TXp10 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D49_OR_LVDS_RXp10 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D50_OR_LVDS_TXn10 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D51_OR_LVDS_RXn10 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D52_OR_LVDS_TXp11 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D53_OR_LVDS_RXp11 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D54_OR_LVDS_TXn11 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D55_OR_LVDS_RXn11 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D56_OR_LVDS_TXp12 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D57_OR_LVDS_RXp12 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D58_OR_LVDS_TXn12 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D59_OR_LVDS_RXn12 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D60_OR_LVDS_TXp13 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D61_OR_LVDS_RXp13 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D62_OR_LVDS_TXn13 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D63_OR_LVDS_RXn13 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D64_OR_LVDS_TXp14 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D65_OR_LVDS_RXp14 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D66_OR_LVDS_TXn14 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D67_OR_LVDS_RXn14 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D68_OR_LVDS_TXp15 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D69_OR_LVDS_RXp15 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D70_OR_LVDS_TXn15 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D71_OR_LVDS_RXn15 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D72_OR_LVDS_TXp16 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D73_OR_LVDS_RXp16 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D74_OR_LVDS_TXn16 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D75_OR_LVDS_RXn16 has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D76_OR_CLKOUT2p has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D77_OR_CLKIN2p has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D78_OR_CLOUT2n has a permanently disabled output enable
+    Info (169065): Pin HSMC_ALST4_B_D79_OR_CLKIN2n has a permanently disabled output enable
+Info (144001): Generated suppressed messages file /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_alst4_base/target-stratix4/base-top.fit.smsg
+Info: Quartus Prime Fitter was successful. 0 errors, 145 warnings
+    Info: Peak virtual memory: 3057 megabytes
+    Info: Processing ended: Tue Oct 16 16:17:06 2018
+    Info: Elapsed time: 00:02:45
+    Info: Total CPU time (on all processors): 00:05:34
+2:45.21

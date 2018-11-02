@@ -26,9 +26,10 @@
  *         values to an operating AD9361 IC using an OpenCPI application.
  ******************************************************************************/
 
-#include "OcpiApi.hh" // OCPI::API namespace
-#include "ocpi_component_prop_type_helpers.h" // ocpi_long_t type
+#include "OcpiApi.hh" // OA namespace
 #include "worker_prop_parsers_ad9361_config_proxy.h" // parse()
+
+namespace OA = OA;
 
 /*! @brief Set the nominal in-situ value with exact precision
  *         of the
@@ -40,28 +41,22 @@
  *  @param[in]  app_inst_name_proxy OpenCPI application instance name of the
  *                                  OpenCPI ad9361_config_proxy.rcc worker
  *  @param[in]  val                 Value to assign.
- *  @return 0 if there are no errors, non-zero char array pointer if there
- *          are errors (char array content will describe the error).
  ******************************************************************************/
-const char* set_AD9361_gain_RX1_dB(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
-    const ocpi_long_t& val)
+void set_AD9361_gain_RX1_dB(
+    OA::Application& app, const char* app_inst_name_proxy,
+    const OA::Long& val)
 {
   std::string vstr;
   app.getProperty(app_inst_name_proxy, "rx_rf_gain", vstr);
 
-  char* ret;
   ad9361_config_proxy_rx_rf_gain_t rx_rf_gain;
 
-  ret = (char*) parse(vstr.c_str(), rx_rf_gain);
-  if(ret != 0) { return ret; }
+  parse(vstr.c_str(), rx_rf_gain);
 
   rx_rf_gain[0] = val; // 0 corresponds to RX1
 
   std::string rx_rf_gain_str = to_string(rx_rf_gain);
   app.setProperty(app_inst_name_proxy, "rx_rf_gain", rx_rf_gain_str.c_str());
-
-  return 0;
 }
 
 /*! @brief Set the nominal in-situ value with exact precision
@@ -74,28 +69,22 @@ const char* set_AD9361_gain_RX1_dB(
  *  @param[in]  app_inst_name_proxy OpenCPI application instance name of the
  *                                  OpenCPI ad9361_config_proxy.rcc worker
  *  @param[in]  val                 Value to assign.
- *  @return 0 if there are no errors, non-zero char array pointer if there
- *          are errors (char array content will describe the error).
  ******************************************************************************/
-const char* set_AD9361_gain_RX2_dB(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
-    const ocpi_long_t& val)
+void set_AD9361_gain_RX2_dB(
+    OA::Application& app, const char* app_inst_name_proxy,
+    const OA::Long& val)
 {
   std::string vstr;
   app.getProperty(app_inst_name_proxy, "rx_rf_gain", vstr);
 
-  char* ret;
   ad9361_config_proxy_rx_rf_gain_t rx_rf_gain;
 
-  ret = (char*) parse(vstr.c_str(), rx_rf_gain);
-  if(ret != 0) { return ret; }
+  parse(vstr.c_str(), rx_rf_gain);
 
   rx_rf_gain[1] = val; // 1 corresponds to RX2
 
   std::string rx_rf_gain_str = to_string(rx_rf_gain);
   app.setProperty(app_inst_name_proxy, "rx_rf_gain", rx_rf_gain_str.c_str());
-
-  return 0;
 }
 
 /*! @brief Set the nominal in-situ setting
@@ -108,19 +97,15 @@ const char* set_AD9361_gain_RX2_dB(
  *  @param[in]  app_inst_name_proxy OpenCPI application instance name of the
  *                                  OpenCPI ad9361_config_proxy.rcc worker
  *  @param[in]  val                 Value to assign.
- *  @return 0 if there are no errors, non-zero char array pointer if there
- *          are errors (char array content will describe the error).
  ******************************************************************************/
-const char* set_AD9361_rx_gain_control_mode(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
+void set_AD9361_rx_gain_control_mode(
+    OA::Application& app, const char* app_inst_name_proxy,
     const ad9361_config_proxy_rx_gain_control_mode_t& val)
 {
   std::string val_str = to_string(val);
   
   const char* inst = app_inst_name_proxy;
   app.setProperty(inst, "rx_gain_control_mode", val_str.c_str());
-
-  return 0;
 }
 
 #endif // _WRITERS_AD9361_RX_GAIN_H

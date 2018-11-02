@@ -26,9 +26,10 @@
  *         values from an operating AD9361 IC using an OpenCPI application.
  ******************************************************************************/
 
-#include "ocpi_component_prop_type_helpers.h" // ocpi_ulong_t type
 #include "worker_prop_parsers_ad9361_config_proxy.h" // ad9361_config_proxy_tx_attenuation_t type, parse()
-#include "OcpiApi.hh"      // OCPI::API namespace
+#include "OcpiApi.hh"      // OA namespace
+
+namespace OA = OCPI::API;
 
 /*! @brief Get the in-situ value with exact precision of the
  *         Tx attenuation in mdB for the TX1 channel
@@ -39,23 +40,19 @@
  *  @param[in]  app_inst_name_proxy OpenCPI application instance name of the
  *                                  OpenCPI ad9361_config_proxy.rcc worker
  *  @param[out] val                 Retrieved value.
- *  @return 0 if there are no errors, non-zero char array pointer if there
- *          are errors (char array content will describe the error).
  ******************************************************************************/
-const char* get_AD9361_tx_attenuation_TX1_mdB(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
-    ocpi_ulong_t& val)
+void get_AD9361_tx_attenuation_TX1_mdB(
+    OA::Application& app, const char* app_inst_name_proxy,
+    OA::ULong& val)
 {
   std::string str;
   app.getProperty(app_inst_name_proxy, "tx_attenuation", str);
 
   ad9361_config_proxy_tx_attenuation_t tx_attenuation;
 
-  const char* err = parse(str.c_str(), tx_attenuation);
+  parse(str.c_str(), tx_attenuation);
 
   val = tx_attenuation[0]; // 0 corresponds to TX1
-
-  return err;
 }
 
 /*! @brief Get the in-situ value with exact precision of the
@@ -67,24 +64,21 @@ const char* get_AD9361_tx_attenuation_TX1_mdB(
  *  @param[in]  app_inst_name_proxy OpenCPI application instance name of the
  *                                  OpenCPI ad9361_config_proxy.rcc worker
  *  @param[out] val                 Retrieved value.
- *  @return 0 if there are no errors, non-zero char array pointer if there
- *          are errors (char array content will describe the error).
  ******************************************************************************/
-const char* get_AD9361_tx_attenuation_TX2_mdB(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
-    ocpi_ulong_t& val)
+void get_AD9361_tx_attenuation_TX2_mdB(
+    OA::Application& app, const char* app_inst_name_proxy,
+    OA::ULong& val)
 {
   std::string str;
   app.getProperty(app_inst_name_proxy, "tx_attenuation", str);
 
   ad9361_config_proxy_tx_attenuation_t tx_attenuation;
 
-  const char* err = parse(str.c_str(), tx_attenuation);
+  parse(str.c_str(), tx_attenuation);
 
   val = tx_attenuation[1]; // 1 corresponds to TX2
-
-  return err;
 }
+
 /*! @brief Get the in-situ value with double floating point precision of the
  *         Tx attenuation in mdB for the TX1 channel
  *         from an operating AD9361 IC controlled by the specified OpenCPI
@@ -94,21 +88,16 @@ const char* get_AD9361_tx_attenuation_TX2_mdB(
  *  @param[in]  app_inst_name_proxy OpenCPI application instance name of the
  *                                  OpenCPI ad9361_config_proxy.rcc worker
  *  @param[out] val                 Retrieved value.
- *  @return 0 if there are no errors, non-zero char array pointer if there
- *          are errors (char array content will describe the error).
  ******************************************************************************/
-const char* get_AD9361_tx_attenuation_TX1_mdB(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
+void get_AD9361_tx_attenuation_TX1_mdB(
+    OA::Application& app, const char* app_inst_name_proxy,
     double& val)
 {
-  char* ret;
   const char* inst = app_inst_name_proxy;
 
-  ocpi_ulong_t val_precast;
-  ret = (char*) get_AD9361_tx_attenuation_TX1_mdB(app, inst, val_precast);
+  OA::ULong val_precast;
+  get_AD9361_tx_attenuation_TX1_mdB(app, inst, val_precast);
   val = (double) val_precast;
-
-  return ret;
 }
 
 /*! @brief Get the in-situ value with double floating point precision of the
@@ -120,21 +109,16 @@ const char* get_AD9361_tx_attenuation_TX1_mdB(
  *  @param[in]  app_inst_name_proxy OpenCPI application instance name of the
  *                                  OpenCPI ad9361_config_proxy.rcc worker
  *  @param[out] val                 Retrieved value.
- *  @return 0 if there are no errors, non-zero char array pointer if there
- *          are errors (char array content will describe the error).
  ******************************************************************************/
-const char* get_AD9361_tx_attenuation_TX2_mdB(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
+void get_AD9361_tx_attenuation_TX2_mdB(
+    OA::Application& app, const char* app_inst_name_proxy,
     double& val)
 {
-  char* ret;
   const char* inst = app_inst_name_proxy;
 
-  ocpi_ulong_t val_precast;
-  ret = (char*) get_AD9361_tx_attenuation_TX2_mdB(app, inst, val_precast);
+  OA::ULong val_precast;
+  get_AD9361_tx_attenuation_TX2_mdB(app, inst, val_precast);
   val = (double) val_precast;
-
-  return ret;
 }
 
 #endif // _READERS_AD9361_TX_GAIN_H

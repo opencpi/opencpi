@@ -1,0 +1,341 @@
+------------------------------------------------------------
+TimeQuest Timing Analyzer Summary
+------------------------------------------------------------
+
+Type  : Slow 900mV 85C Model Setup 'ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|central_clk_div0|coreclkout'
+Slack : -1.983
+TNS   : -3.690
+
+Type  : Slow 900mV 85C Model Setup 'sys0_clk'
+Slack : -1.881
+TNS   : -668.939
+
+Type  : Slow 900mV 85C Model Setup 'ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|wrapper|altpcie_hip_pipen1b_inst|stratix_iv.stratixiv_hssi_pcie_hip|coreclkout'
+Slack : -0.506
+TNS   : -37.172
+
+Type  : Slow 900mV 85C Model Setup 'ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|reconfig_pll|altpll_component|auto_generated|pll1|clk[1]'
+Slack : 7.142
+TNS   : 0.000
+
+Type  : Slow 900mV 85C Model Setup 'n/a'
+Slack : 8.662
+TNS   : 0.000
+
+Type  : Slow 900mV 85C Model Setup 'ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|reconfig_pll|altpll_component|auto_generated|pll1|clk[0]'
+Slack : 10.232
+TNS   : 0.000
+
+Type  : Slow 900mV 85C Model Hold 'ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|wrapper|altpcie_hip_pipen1b_inst|stratix_iv.stratixiv_hssi_pcie_hip|coreclkout'
+Slack : 0.233
+TNS   : 0.000
+
+Type  : Slow 900mV 85C Model Hold 'sys0_clk'
+Slack : 0.247
+TNS   : 0.000
+
+Type  : Slow 900mV 85C Model Hold 'ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|reconfig_pll|altpll_component|auto_generated|pll1|clk[1]'
+Slack : 0.249
+TNS   : 0.000
+
+Type  : Slow 900mV 85C Model Hold 'ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|reconfig_pll|altpll_component|auto_generated|pll1|clk[0]'
+Slack : 0.255
+TNS   : 0.000
+
+Type  : Slow 900mV 85C Model Hold 'ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|central_clk_div0|coreclkout'
+Slack : 0.441
+TNS   : 0.000
+
+Type  : Slow 900mV 85C Model Hold 'n/a'
+Slack : 1.362
+TNS   : 0.000
+
+Type  : Slow 900mV 85C Model Recovery 'sys0_clk'
+Slack : -1.584
+TNS   : -82.744
+
+Type  : Slow 900mV 85C Model Recovery 'ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|wrapper|altpcie_hip_pipen1b_inst|stratix_iv.stratixiv_hssi_pcie_hip|coreclkout'
+Slack : 4.704
+TNS   : 0.000
+
+Type  : Slow 900mV 85C Model Removal 'ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|wrapper|altpcie_hip_pipen1b_inst|stratix_iv.stratixiv_hssi_pcie_hip|coreclkout'
+Slack : 0.501
+TNS   : 0.000
+
+Type  : Slow 900mV 85C Model Removal 'sys0_clk'
+Slack : 1.235
+TNS   : 0.000
+
+Type  : Slow 900mV 85C Model Minimum Pulse Width 'ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|reconfig_pll|altpll_component|auto_generated|pll1|clk[0]'
+Slack : 0.000
+TNS   : 0.000
+
+Type  : Slow 900mV 85C Model Minimum Pulse Width 'ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|central_clk_div0|coreclkout'
+Slack : 0.416
+TNS   : 0.000
+
+Type  : Slow 900mV 85C Model Minimum Pulse Width 'ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|central_clk_div0|rateswitchbaseclock'
+Slack : 1.000
+TNS   : 0.000
+
+Type  : Slow 900mV 85C Model Minimum Pulse Width 'sys0_clk'
+Slack : 1.732
+TNS   : 0.000
+
+Type  : Slow 900mV 85C Model Minimum Pulse Width 'ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|wrapper|altpcie_hip_pipen1b_inst|stratix_iv.stratixiv_hssi_pcie_hip|pllfixedclk'
+Slack : 1.834
+TNS   : 0.000
+
+Type  : Slow 900mV 85C Model Minimum Pulse Width 'ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|wrapper|altpcie_hip_pipen1b_inst|stratix_iv.stratixiv_hssi_pcie_hip|coreclkout'
+Slack : 3.236
+TNS   : 0.000
+
+Type  : Slow 900mV 85C Model Minimum Pulse Width 'ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|reconfig_pll|altpll_component|auto_generated|pll1|clk[1]'
+Slack : 3.418
+TNS   : 0.000
+
+Type  : Slow 900mV 85C Model Minimum Pulse Width 'pcie_clk'
+Slack : 5.000
+TNS   : 0.000
+
+Type  : Slow 900mV 85C Model Minimum Pulse Width 'alt_cal_edge_detect_ff0_clk'
+Slack : 9.439
+TNS   : 0.000
+
+Type  : Slow 900mV 85C Model Minimum Pulse Width 'alt_cal_edge_detect_ff1_clk'
+Slack : 9.439
+TNS   : 0.000
+
+Type  : Slow 900mV 85C Model Minimum Pulse Width 'alt_cal_edge_detect_ff1q_clk'
+Slack : 9.472
+TNS   : 0.000
+
+Type  : Slow 900mV 85C Model Minimum Pulse Width 'alt_cal_edge_detect_ff0q_clk'
+Slack : 9.473
+TNS   : 0.000
+
+Type  : Slow 900mV 0C Model Setup 'ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|central_clk_div0|coreclkout'
+Slack : -1.792
+TNS   : -3.322
+
+Type  : Slow 900mV 0C Model Setup 'sys0_clk'
+Slack : -1.777
+TNS   : -631.631
+
+Type  : Slow 900mV 0C Model Setup 'ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|wrapper|altpcie_hip_pipen1b_inst|stratix_iv.stratixiv_hssi_pcie_hip|coreclkout'
+Slack : -0.370
+TNS   : -25.017
+
+Type  : Slow 900mV 0C Model Setup 'ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|reconfig_pll|altpll_component|auto_generated|pll1|clk[1]'
+Slack : 7.176
+TNS   : 0.000
+
+Type  : Slow 900mV 0C Model Setup 'n/a'
+Slack : 9.411
+TNS   : 0.000
+
+Type  : Slow 900mV 0C Model Setup 'ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|reconfig_pll|altpll_component|auto_generated|pll1|clk[0]'
+Slack : 10.267
+TNS   : 0.000
+
+Type  : Slow 900mV 0C Model Hold 'ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|wrapper|altpcie_hip_pipen1b_inst|stratix_iv.stratixiv_hssi_pcie_hip|coreclkout'
+Slack : 0.205
+TNS   : 0.000
+
+Type  : Slow 900mV 0C Model Hold 'sys0_clk'
+Slack : 0.238
+TNS   : 0.000
+
+Type  : Slow 900mV 0C Model Hold 'ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|reconfig_pll|altpll_component|auto_generated|pll1|clk[1]'
+Slack : 0.240
+TNS   : 0.000
+
+Type  : Slow 900mV 0C Model Hold 'ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|reconfig_pll|altpll_component|auto_generated|pll1|clk[0]'
+Slack : 0.245
+TNS   : 0.000
+
+Type  : Slow 900mV 0C Model Hold 'ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|central_clk_div0|coreclkout'
+Slack : 0.426
+TNS   : 0.000
+
+Type  : Slow 900mV 0C Model Hold 'n/a'
+Slack : 1.344
+TNS   : 0.000
+
+Type  : Slow 900mV 0C Model Recovery 'sys0_clk'
+Slack : -1.494
+TNS   : -78.234
+
+Type  : Slow 900mV 0C Model Recovery 'ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|wrapper|altpcie_hip_pipen1b_inst|stratix_iv.stratixiv_hssi_pcie_hip|coreclkout'
+Slack : 4.873
+TNS   : 0.000
+
+Type  : Slow 900mV 0C Model Removal 'ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|wrapper|altpcie_hip_pipen1b_inst|stratix_iv.stratixiv_hssi_pcie_hip|coreclkout'
+Slack : 0.484
+TNS   : 0.000
+
+Type  : Slow 900mV 0C Model Removal 'sys0_clk'
+Slack : 1.208
+TNS   : 0.000
+
+Type  : Slow 900mV 0C Model Minimum Pulse Width 'ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|reconfig_pll|altpll_component|auto_generated|pll1|clk[0]'
+Slack : 0.000
+TNS   : 0.000
+
+Type  : Slow 900mV 0C Model Minimum Pulse Width 'ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|central_clk_div0|coreclkout'
+Slack : 0.407
+TNS   : 0.000
+
+Type  : Slow 900mV 0C Model Minimum Pulse Width 'ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|central_clk_div0|rateswitchbaseclock'
+Slack : 1.000
+TNS   : 0.000
+
+Type  : Slow 900mV 0C Model Minimum Pulse Width 'sys0_clk'
+Slack : 1.746
+TNS   : 0.000
+
+Type  : Slow 900mV 0C Model Minimum Pulse Width 'ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|wrapper|altpcie_hip_pipen1b_inst|stratix_iv.stratixiv_hssi_pcie_hip|pllfixedclk'
+Slack : 1.811
+TNS   : 0.000
+
+Type  : Slow 900mV 0C Model Minimum Pulse Width 'ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|wrapper|altpcie_hip_pipen1b_inst|stratix_iv.stratixiv_hssi_pcie_hip|coreclkout'
+Slack : 3.283
+TNS   : 0.000
+
+Type  : Slow 900mV 0C Model Minimum Pulse Width 'ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|reconfig_pll|altpll_component|auto_generated|pll1|clk[1]'
+Slack : 3.439
+TNS   : 0.000
+
+Type  : Slow 900mV 0C Model Minimum Pulse Width 'pcie_clk'
+Slack : 5.000
+TNS   : 0.000
+
+Type  : Slow 900mV 0C Model Minimum Pulse Width 'alt_cal_edge_detect_ff0_clk'
+Slack : 9.445
+TNS   : 0.000
+
+Type  : Slow 900mV 0C Model Minimum Pulse Width 'alt_cal_edge_detect_ff1_clk'
+Slack : 9.445
+TNS   : 0.000
+
+Type  : Slow 900mV 0C Model Minimum Pulse Width 'alt_cal_edge_detect_ff1q_clk'
+Slack : 9.463
+TNS   : 0.000
+
+Type  : Slow 900mV 0C Model Minimum Pulse Width 'alt_cal_edge_detect_ff0q_clk'
+Slack : 9.464
+TNS   : 0.000
+
+Type  : Fast 900mV 0C Model Setup 'sys0_clk'
+Slack : -0.676
+TNS   : -220.751
+
+Type  : Fast 900mV 0C Model Setup 'ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|central_clk_div0|coreclkout'
+Slack : -0.478
+TNS   : -0.796
+
+Type  : Fast 900mV 0C Model Setup 'ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|wrapper|altpcie_hip_pipen1b_inst|stratix_iv.stratixiv_hssi_pcie_hip|coreclkout'
+Slack : -0.058
+TNS   : -0.243
+
+Type  : Fast 900mV 0C Model Setup 'ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|reconfig_pll|altpll_component|auto_generated|pll1|clk[1]'
+Slack : 7.521
+TNS   : 0.000
+
+Type  : Fast 900mV 0C Model Setup 'n/a'
+Slack : 12.503
+TNS   : 0.000
+
+Type  : Fast 900mV 0C Model Setup 'ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|reconfig_pll|altpll_component|auto_generated|pll1|clk[0]'
+Slack : 14.901
+TNS   : 0.000
+
+Type  : Fast 900mV 0C Model Hold 'ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|reconfig_pll|altpll_component|auto_generated|pll1|clk[1]'
+Slack : 0.135
+TNS   : 0.000
+
+Type  : Fast 900mV 0C Model Hold 'ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|wrapper|altpcie_hip_pipen1b_inst|stratix_iv.stratixiv_hssi_pcie_hip|coreclkout'
+Slack : 0.136
+TNS   : 0.000
+
+Type  : Fast 900mV 0C Model Hold 'ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|reconfig_pll|altpll_component|auto_generated|pll1|clk[0]'
+Slack : 0.138
+TNS   : 0.000
+
+Type  : Fast 900mV 0C Model Hold 'sys0_clk'
+Slack : 0.145
+TNS   : 0.000
+
+Type  : Fast 900mV 0C Model Hold 'ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|central_clk_div0|coreclkout'
+Slack : 0.250
+TNS   : 0.000
+
+Type  : Fast 900mV 0C Model Hold 'n/a'
+Slack : 0.859
+TNS   : 0.000
+
+Type  : Fast 900mV 0C Model Recovery 'sys0_clk'
+Slack : -0.546
+TNS   : -24.973
+
+Type  : Fast 900mV 0C Model Recovery 'ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|wrapper|altpcie_hip_pipen1b_inst|stratix_iv.stratixiv_hssi_pcie_hip|coreclkout'
+Slack : 6.013
+TNS   : 0.000
+
+Type  : Fast 900mV 0C Model Removal 'ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|wrapper|altpcie_hip_pipen1b_inst|stratix_iv.stratixiv_hssi_pcie_hip|coreclkout'
+Slack : 0.275
+TNS   : 0.000
+
+Type  : Fast 900mV 0C Model Removal 'sys0_clk'
+Slack : 0.668
+TNS   : 0.000
+
+Type  : Fast 900mV 0C Model Minimum Pulse Width 'ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|reconfig_pll|altpll_component|auto_generated|pll1|clk[0]'
+Slack : 0.000
+TNS   : 0.000
+
+Type  : Fast 900mV 0C Model Minimum Pulse Width 'ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|central_clk_div0|coreclkout'
+Slack : 0.622
+TNS   : 0.000
+
+Type  : Fast 900mV 0C Model Minimum Pulse Width 'ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|serdes|pcie_hip_s4gx_gen2_x4_128_serdes_alt4gxb_svoa_component|central_clk_div0|rateswitchbaseclock'
+Slack : 1.000
+TNS   : 0.000
+
+Type  : Fast 900mV 0C Model Minimum Pulse Width 'sys0_clk'
+Slack : 1.722
+TNS   : 0.000
+
+Type  : Fast 900mV 0C Model Minimum Pulse Width 'ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|wrapper|altpcie_hip_pipen1b_inst|stratix_iv.stratixiv_hssi_pcie_hip|pllfixedclk'
+Slack : 1.901
+TNS   : 0.000
+
+Type  : Fast 900mV 0C Model Minimum Pulse Width 'ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|epmap|wrapper|altpcie_hip_pipen1b_inst|stratix_iv.stratixiv_hssi_pcie_hip|coreclkout'
+Slack : 3.194
+TNS   : 0.000
+
+Type  : Fast 900mV 0C Model Minimum Pulse Width 'ftop|pfconfig_i|alst4_i|worker|pcie|pciw_pci0_pcie_ep|reconfig_pll|altpll_component|auto_generated|pll1|clk[1]'
+Slack : 3.620
+TNS   : 0.000
+
+Type  : Fast 900mV 0C Model Minimum Pulse Width 'pcie_clk'
+Slack : 5.000
+TNS   : 0.000
+
+Type  : Fast 900mV 0C Model Minimum Pulse Width 'alt_cal_edge_detect_ff0_clk'
+Slack : 9.637
+TNS   : 0.000
+
+Type  : Fast 900mV 0C Model Minimum Pulse Width 'alt_cal_edge_detect_ff1_clk'
+Slack : 9.637
+TNS   : 0.000
+
+Type  : Fast 900mV 0C Model Minimum Pulse Width 'alt_cal_edge_detect_ff0q_clk'
+Slack : 9.657
+TNS   : 0.000
+
+Type  : Fast 900mV 0C Model Minimum Pulse Width 'alt_cal_edge_detect_ff1q_clk'
+Slack : 9.657
+TNS   : 0.000
+
+------------------------------------------------------------

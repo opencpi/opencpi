@@ -40,7 +40,6 @@
 
 #include "ad9361.h"   // for RFPLL_MODULUS
 #include "OcpiApi.hh" // OCPI::API::Application
-#include "ocpi_component_prop_type_helpers.h" // ocpi_*_t types
 #include "ad9361_common.h" // AD9361_RX_port_t, AD9361_duplex_mode_t
 #include "worker_prop_parsers_ad9361_config_proxy.h" // AD9361_InitParam_ad9361_config_proxy type, parse()
 #include "readers_ad9361_cfg.h" // get_AD9361_duplex_mode(), get_AD9361_use_extclk()
@@ -241,7 +240,7 @@ private:
     OCPI::API::Application& app = getApplication();
     const char* adc_sub_inst = m_properties.app_inst_name_ad9361_adc_sub;
     OCPI::API::Property p(app, adc_sub_inst, "channels_are_swapped");
-    ocpi_bool_t channels_are_swapped = p.getBoolValue();
+    OA::Bool channels_are_swapped = p.getBoolValue();
 
     return channels_are_swapped ? ad9361_adc_sub_devsignal_channel_t::one : ad9361_adc_sub_devsignal_channel_t::zero;
   }
@@ -254,12 +253,12 @@ private:
     OCPI::API::Application& app = getApplication();
     const char* adc_sub_inst = m_properties.app_inst_name_ad9361_adc_sub;
     OCPI::API::Property p(app, adc_sub_inst, "channels_are_swapped");
-    ocpi_bool_t channels_are_swapped = p.getBoolValue();
+    OA::Bool channels_are_swapped = p.getBoolValue();
 
     return channels_are_swapped ? ad9361_adc_sub_devsignal_channel_t::zero : ad9361_adc_sub_devsignal_channel_t::one;
   }
 
-  const char* get_AD9361_RX_port_controlled_by_this_worker(
+  void get_AD9361_RX_port_controlled_by_this_worker(
     OCPI::API::Application& app, AD9361_RX_port_t& val)
   {
     // See Table 1: Channel Connectivity in AD9361 ADC Sub Component Data Sheet
@@ -274,24 +273,23 @@ private:
     chan_t& idxR2 = ad9361_adc_sub_devsignal_channel_for_timing_diagram_R2;
     idxR2 =  get_ad9361_adc_sub_devsignal_channel_for_timing_diagram_R2();
 
+    std::string ret_str;
     const char* inst = m_properties.app_inst_name_ad9361_config_proxy;
     if(m_ad9361_adc_sub_devsignal_channel_controlled_by_this_worker == idxR1)
     {
-      const char* err = get_AD9361_RX_RF_port_for_timing_diagram_R1(app, inst, val);
-      if(err != 0) { return err; }
+      get_AD9361_RX_RF_port_for_timing_diagram_R1(app, inst, val);
     }
     else // (m_ad9361_adc_sub_devsignal_channel_controlled_by_this_worker == idxR2)
     {
-      const char* err = get_AD9361_RX_RF_port_for_timing_diagram_R2(app, inst, val);
-      if(err != 0) { return err; }
+      get_AD9361_RX_RF_port_for_timing_diagram_R2(app, inst, val);
     }
-    return 0;
   }
 
   worker_FMCOMMS_2_3_SMA_port_RF_RX_t get_FMCOMMS_2_3_SMA_port_controlled_by_this_worker() {
     AD9361_RX_port_t AD9361_RX_port;
 
     OCPI::API::Application& app = getApplication();
+    std::string err;
     get_AD9361_RX_port_controlled_by_this_worker(app, AD9361_RX_port);
     if(AD9361_RX_port == AD9361_RX_port_t::RX1A)
     {
@@ -334,8 +332,8 @@ private:
    *  @param[in] w            application's worker instance name of the worker
    *                          whose property is to be accessed
    *  @param[in] p            property name
-   *  @param[in] val          value to assign
    *  @param[in] array_idx    index of array
+   *  @param[in] val          value to assign
    ****************************************************************************/
   template<typename T>
   void set_prop_val(const std::string& w, const std::string& p, size_t array_idx,
@@ -550,26 +548,13 @@ private:
     return RCC_OK;
   }
 
-
-
-  const char* get_min_allowed_val(const std::string prop, double& min) {
+  void get_min_allowed_val(const std::string prop, double& min) {
     if(prop == PROP_STR_RF_GAIN_DB)
     {
-      try
-      {
-        OCPI::API::Application& app = getApplication();
-        const char* inst = m_properties.app_inst_name_ad9361_config_proxy;
+      OCPI::API::Application& app = getApplication();
+      const char* inst = m_properties.app_inst_name_ad9361_config_proxy;
 
-        const char* err = get_AD9361_rx_gain_min_dB(app, inst, min);
-        if(err != 0) { return err; }
-      }
-      catch(const std::exception& e)
-      {
-        std::string err;
-        err = "Exception when setting ad9361_config_proxy property: ";
-        err += e.what();
-        return err.c_str();
-      }
+      get_AD9361_rx_gain_min_dB(app, inst, min);
     }
     else if(prop == PROP_STR_BB_GAIN_DB)
     {
@@ -593,30 +578,18 @@ private:
     }
     else
     {
-      std::string err = "requested min for invalid property named " + prop;
-      return err.c_str();
+      std::string err_str = "requested min for invalid property named " + prop;
+      throw err_str;
     }
-    return 0;
   }
 
-  const char* get_max_allowed_val(const std::string prop, double& max) {
+  void get_max_allowed_val(const std::string prop, double& max) {
     if(prop == PROP_STR_RF_GAIN_DB)
     {
-      try
-      {
-        OCPI::API::Application& app = getApplication();
-        const char* inst = m_properties.app_inst_name_ad9361_config_proxy;
+      OCPI::API::Application& app = getApplication();
+      const char* inst = m_properties.app_inst_name_ad9361_config_proxy;
 
-        const char* err = get_AD9361_rx_gain_max_dB(app, inst, max);
-        if(err != 0) { return err; }
-      }
-      catch(const std::exception& e)
-      {
-        std::string err;
-        err = "Exception when setting ad9361_config_proxy property: ";
-        err += e.what();
-        return err.c_str();
-      }
+      get_AD9361_rx_gain_max_dB(app, inst, max);
     }
     else if(prop == PROP_STR_BB_GAIN_DB)
     {
@@ -640,22 +613,21 @@ private:
     }
     else
     {
-      std::string err = "requested max for invalid property named " + prop;
-      return err.c_str();
+      std::string err_str = "requested max for invalid property named " + prop;
+      throw err_str;
     }
-    return 0;
   }
 
   /*! @brief E.g., if prop is "rf_gain_dB", return RCC_OK if
    *         m_properties_rf_gain_min_dB <= m_properties.rf_gain_dB <= 
    *         m_properties_rf_gain_max_dB, and return setError(...) otherwise.
    ****************************************************************************/
-  RCCResult check_bounds(const std::string& prop, double desired_val) {
+  void check_bounds(const std::string& prop, double desired_val) {
+
     double min, max;
-    const char* errmin = get_min_allowed_val(prop, min);
-    if(errmin != 0) { return setError(errmin); }
-    const char* errmax = get_max_allowed_val(prop, max);
-    if(errmax != 0) { return setError(errmax); }
+    get_min_allowed_val(prop, min);
+    get_max_allowed_val(prop, max);
+
     const bool too_low  = (desired_val < min);
     const bool too_high = (desired_val > max);
     if(too_high || too_low)
@@ -666,17 +638,16 @@ private:
       oss << std::setprecision(17) << min << " to ";
       oss  << std::setprecision(17) << max << " ]";
       
-      return setError(oss.str().c_str());
+      throw oss.str();
     }
-    return RCC_OK;
   }
 
   void get_adjusted_val_to_be_applied_to_hw(
       const std::string& prop, double val_desired,
-      std::pair<ocpi_ulonglong_t, std::string>& adjusted) {
+      std::pair<OA::ULongLong, std::string>& adjusted) {
     if(prop.compare(PROP_STR_FREQUENCY_MHZ) == 0)
     {
-      ocpi_ulonglong_t val = (ocpi_ulonglong_t) round(val_desired*1e6);
+      OA::ULongLong val = (OA::ULongLong) round(val_desired*1e6);
       adjusted = std::make_pair(val, "Hz");
     }
     else
@@ -684,15 +655,15 @@ private:
       std::string err = "invalid property: " + prop;
       throw err.c_str();
     }
-    log_info("attempted property write: %s=%.15f, value to be written (after potential adjustment due to No-OS API precision limitations) is %" PRIu64 " %s", prop.c_str(), val_desired, adjusted.first, adjusted.second.c_str());
+    log_info("attempted property write: prop=%s,\tdesired value=%.15f,\tvalue to be written (after potential adjustment due to No-OS API precision limitations) is %" PRIu64 " %s", prop.c_str(), val_desired, adjusted.first, adjusted.second.c_str());
   }
 
   void get_adjusted_val_to_be_applied_to_hw(
       const std::string& prop, double val_desired,
-      std::pair<ocpi_long_t, std::string>& adjusted) {
+      std::pair<OA::Long, std::string>& adjusted) {
     if(prop.compare(PROP_STR_RF_GAIN_DB) == 0)
     {
-      ocpi_long_t val = (ocpi_long_t) round(val_desired);
+      OA::Long val = (OA::Long) round(val_desired);
       adjusted = std::make_pair(val, "dB");
     }
     else
@@ -705,23 +676,22 @@ private:
 
   void get_adjusted_val_to_be_applied_to_hw(
       const std::string& prop, double val_desired,
-      std::pair<ocpi_ulong_t, std::string>& adjusted) {
+      std::pair<OA::ULong, std::string>& adjusted) {
     if(prop.compare(PROP_STR_SAMPLE_RATE_MHZ) == 0)
     {
-      ocpi_ulong_t val = (ocpi_ulong_t) round(val_desired*1e6); // Msps to sps
+      OA::ULong val = (OA::ULong) round(val_desired*1e6); // Msps to sps
       adjusted = std::make_pair(val, "Hz");
     }
     else if(prop.compare(PROP_STR_BB_CUTOFF_FREQUENCY_MHZ) == 0)
     {
       //! @todo TODO/FIXME - calc value to write to rx_rf_bandwidth that will result in actual nominal 3dB freq instead of assuming No-OS/ad9361_config_proxy's 'rx_rf_bandwidth' corresponds to the 3dB freq
-      ocpi_ulong_t val = (ocpi_ulong_t) round(val_desired*1e6); // MHz to Hz
+      OA::ULong val = (OA::ULong) round(val_desired*1e6); // MHz to Hz
 
       // AD9361_Reference_Manual_UG-570.pdf Rev. A pg. 9 - 
       // "... is normally calibrated to 1.4x the baseband channel bandwidth (BBBW)"
-      //ocpi_ulong_t val = (ocpi_ulong_t) round(val_desired/1.4*1e6);
+      //OA::ULong val = (OA::ULong) round(val_desired/1.4*1e6);
 
       adjusted = std::make_pair(val, "Hz");
-
     }
     else
     {
@@ -731,49 +701,48 @@ private:
     log_info("attempted property write: prop%s,\tdesired value=%.15f,\tvalue to be written (after potential adjustment due to No-OS API precision limitations) is %u %s", prop.c_str(), val_desired, adjusted.first, adjusted.second.c_str());
   }
 
-  RCCResult set_in_situ_val(const std::string& prop,
-      ocpi_ulonglong_t adjusted_val_to_be_applied_to_hw) {
+  void set_in_situ_val(const std::string& prop,
+      OA::ULongLong adjusted_val_to_be_applied_to_hw) {
     OCPI::API::Application& app = getApplication();
-    ocpi_ulonglong_t& val_adjusted = adjusted_val_to_be_applied_to_hw;
+    OA::ULongLong& val_adjusted = adjusted_val_to_be_applied_to_hw;
     const char* inst = m_properties.app_inst_name_ad9361_config_proxy;
     if(prop.compare(PROP_STR_FREQUENCY_MHZ) == 0)
     {
-      const char* err = set_AD9361_Rx_RFPLL_LO_freq_Hz(app, inst, val_adjusted);
-      if(err != 0) { return setError(err); }
+      set_AD9361_Rx_RFPLL_LO_freq_Hz(app, inst, val_adjusted);
     }
     else
     {
-      return setError("invalid property: %s", prop.c_str());
+      std::string err_str("invalid property: ");
+      err_str += prop.c_str();
+      throw err_str;
     }
-    return RCC_OK;
   }
 
-  RCCResult set_in_situ_val(const std::string& prop,
-      ocpi_ulong_t adjusted_val_to_be_applied_to_hw) {
+  void set_in_situ_val(const std::string& prop,
+      OA::ULong adjusted_val_to_be_applied_to_hw) {
     OCPI::API::Application& app = getApplication();
-    ocpi_ulong_t& val_adjusted = adjusted_val_to_be_applied_to_hw;
+    OA::ULong& val_adjusted = adjusted_val_to_be_applied_to_hw;
     const char* inst = m_properties.app_inst_name_ad9361_config_proxy;
     if(prop.compare(PROP_STR_SAMPLE_RATE_MHZ) == 0)
     {
-      const char* err = set_AD9361_CLKRF_FREQ_Hz(app, inst, val_adjusted);
-      if(err != 0) { return setError(err); }
+      set_AD9361_CLKRF_FREQ_Hz(app, inst, val_adjusted);
     }
     else if(prop.compare(PROP_STR_BB_CUTOFF_FREQUENCY_MHZ) == 0)
     {
-      const char* err = set_AD9361_rx_rf_bandwidth_Hz(app, inst, val_adjusted);
-      if(err != 0) { return setError(err); }
+      set_AD9361_rx_rf_bandwidth_Hz(app, inst, val_adjusted);
     }
     else
     {
-      return setError("invalid property: %s", prop.c_str());
+      std::string err_str("invalid property: ");
+      err_str += prop.c_str();
+      throw err_str;
     }
-    return RCC_OK;
   }
 
-  RCCResult set_in_situ_val(const std::string& prop,
-      ocpi_long_t adjusted_val_to_be_applied_to_hw) {
+  void set_in_situ_val(const std::string& prop,
+      OA::Long adjusted_val_to_be_applied_to_hw) {
     OCPI::API::Application& app = getApplication();
-    ocpi_long_t& val_adjusted = adjusted_val_to_be_applied_to_hw;
+    OA::Long& val_adjusted = adjusted_val_to_be_applied_to_hw;
     const char* inst = m_properties.app_inst_name_ad9361_config_proxy;
     if(prop.compare(PROP_STR_RF_GAIN_DB) == 0)
     {
@@ -790,72 +759,69 @@ private:
       // (worth also noting that the No-OS API also includes *digital*
       // gain as well as analog gain...)
       AD9361_RX_port_t AD9361_RX_port;
+      std::string err;
       get_AD9361_RX_port_controlled_by_this_worker(app, AD9361_RX_port);
       if(AD9361_RX_port == AD9361_RX_port_t::RX1A)
       {
-        const char* err = set_AD9361_gain_RX1_dB(app, inst, val_adjusted);
-        if(err != 0) { return setError(err); }
+        set_AD9361_gain_RX1_dB(app, inst, val_adjusted);
       }
       else if(AD9361_RX_port == AD9361_RX_port_t::RX2A)
       {
-        const char* err = set_AD9361_gain_RX2_dB(app, inst, val_adjusted);
-        if(err != 0) { return setError(err); }
+        set_AD9361_gain_RX2_dB(app, inst, val_adjusted);
       }
       else
       {
-        return setError("AD9361 configured for invalid RX port for FMCOMMS2/3");
+        std::string err_str("AD9361 configured for invalid RX port for ");
+        err_str += "FMCOMMS2/3";
+        throw err_str;
       }
     }
     else
     {
-      return setError("invalid property: %s", prop.c_str());
+      std::string err_str("invalid property: ");
+      err_str += prop.c_str();
+      throw err_str;
     }
-    return RCC_OK;
   }
 
-  const char* get_in_situ_val(const std::string& prop,
+  void get_in_situ_val(const std::string& prop,
       std::pair<double, std::string>& in_situ_after_hw_write) {
-    OCPI::API::Application& app = getApplication();
+    OA::Application& app = getApplication();
     double val;
     const char* inst = m_properties.app_inst_name_ad9361_config_proxy;
     if(prop.compare(PROP_STR_RF_GAIN_DB) == 0)
     {
-      const char* err = get_AD9361_rx_gain_dB(app, inst, val);
+      get_AD9361_rx_gain_dB(app, inst, val);
       in_situ_after_hw_write = std::make_pair(val, "dB");
-      return err;
     }
     else if(prop.compare(PROP_STR_FREQUENCY_MHZ) == 0)
     {
-      const char* err = get_AD9361_Rx_RFPLL_LO_freq_Hz(app, inst, val);
+      get_AD9361_Rx_RFPLL_LO_freq_Hz(app, inst, val);
       in_situ_after_hw_write = std::make_pair(val, "Hz");
-      return err;
     }
     else if(prop.compare(PROP_STR_SAMPLE_RATE_MHZ) == 0)
     {
-      const char* err = get_AD9361_CLKRF_FREQ_Hz(app, inst, val);
+      get_AD9361_CLKRF_FREQ_Hz(app, inst, val);
       in_situ_after_hw_write = std::make_pair(val, "Hz");
-      return err;
     }
     else if(prop.compare(PROP_STR_BB_CUTOFF_FREQUENCY_MHZ) == 0)
     {
       //! @todo TODO/FIXME - calc actual in-situ nominal 3dB freq instead of assuming No-OS/ad9361_config_proxy's 'rx_rf_bandwidth' readback value corresponds to the 3dB freq
-      const char* err = get_AD9361_rx_rf_bandwidth_Hz(app, inst, val);
+      get_AD9361_rx_rf_bandwidth_Hz(app, inst, val);
 
       /*double BBBW_Hz;
-      const char* err = get_AD9361_Rx_BBBW_Hz(app, inst, BBBW_Hz);
+      get_AD9361_Rx_BBBW_Hz(app, inst, BBBW_Hz);
 
       // AD9361_Reference_Manual_UG-570.pdf Rev. A pg. 9 - 
       // "Note that the BBBW is half the complex bandwidth"
       val = BBBW_Hz*2;*/
 
       in_situ_after_hw_write = std::make_pair(val, "Hz");
-      return err;
     }
     else
     {
-      return "invalid property read";
+      throw std::string("invalid property read");
     }
-    return 0;
   }
 
   void convert_value(std::pair<double, std::string>& value, std::string unit_desired)
@@ -996,65 +962,72 @@ private:
 
   template<typename T>
   RCCResult do_written(const std::string& prop, bool& previously_skipped) {
-    LOG_WRITTEN_START();
-    
-    // 1. We must allow setting of the property during the "initialized" state
-    //    in order to allow the default values to be applied.
-    // 2. Otherwise, we only want to allow any operations when in the
-    //    "operating" state.
-    /*if(not (isOperating() or isInitialized()))
-    {
-      printf("not operating and not initialized\n");
-      LOG_WRITTEN_END();
-      return RCC_OK;
-    }*/ //! @todo TODO/FIXME - bug is causing isOperating() to erroneously return false
-    if(not m_config_initialized)
-    {
-      previously_skipped = true;
+    try {
+      LOG_WRITTEN_START();
+      
+      // 1. We must allow setting of the property during the "initialized" state
+      //    in order to allow the default values to be applied.
+      // 2. Otherwise, we only want to allow any operations when in the
+      //    "operating" state.
+      /*if(not (isOperating() or isInitialized()))
+      {
+        printf("not operating and not initialized\n");
+        LOG_WRITTEN_END();
+        return RCC_OK;
+      }*/ //! @todo TODO/FIXME - bug is causing isOperating() to erroneously return false
+      if(not m_config_initialized)
+      {
+        previously_skipped = true;
 
-      log_debug("skipping %s property initialization because 'config' property has not yet been initialized", prop.c_str());
-      m_pending_prop_write_queue.push_back(prop);
+        log_debug("skipping %s property initialization because 'config' property has not yet been initialized", prop.c_str());
+        m_pending_prop_write_queue.push_back(prop);
 
-      LOG_WRITTEN_END();
-      return RCC_OK;
+        LOG_WRITTEN_END();
+        return RCC_OK;
+      }
+      if(previously_skipped)
+      {
+        log_debug("executing previously skipped %s property initialization because 'init' and 'LO_source' properties have been initialized", prop.c_str());
+        previously_skipped = false;
+      }
+
+      const std::string unit_desired = strip_unit(prop);
+
+      // first is value, second is value's unit description
+      std::pair<double, std::string> desired;
+      std::pair<T,      std::string> adjusted_to_be_applied_to_hw;
+      std::pair<double, std::string> in_situ_after_hw_write;
+
+      double& val_desired                      = desired.first;
+      T&      val_adjusted_to_be_applied_to_hw = adjusted_to_be_applied_to_hw.first;
+
+      desired = std::make_pair(*(m_map_val.at(prop)), unit_desired);
+
+      // ensure attempted write of desired value is valid, exit otherwise
+      check_bounds(prop, val_desired);
+
+      // apply step size value adjustment necessary for No-OS API call which
+      // ad9361_config_proxy.rcc performs
+      get_adjusted_val_to_be_applied_to_hw(prop, val_desired, adjusted_to_be_applied_to_hw);
+
+      // apply property value to hardware
+      set_in_situ_val(prop, val_adjusted_to_be_applied_to_hw);
+
+      // for final logging
+      if(m_properties.enable_log_info)
+      {
+        std::string unit;
+        get_in_situ_val(prop, in_situ_after_hw_write);
+        do_log_info_desired_vs_in_situ(prop, desired, in_situ_after_hw_write);
+      }
     }
-    if(previously_skipped)
-    {
-      log_debug("executing previously skipped %s property initialization because 'init' and 'LO_source' properties have been initialized", prop.c_str());
-      previously_skipped = false;
+    catch(const std::exception& e) {
+      LOG_WRITTEN_END();
+      return setError(e.what());
     }
-
-    const std::string unit_desired = strip_unit(prop);
-
-    // first is value, second is value's unit description
-    std::pair<double, std::string> desired;
-    std::pair<T,      std::string> adjusted_to_be_applied_to_hw;
-    std::pair<double, std::string> in_situ_after_hw_write;
-
-    double& val_desired                      = desired.first;
-    T&      val_adjusted_to_be_applied_to_hw = adjusted_to_be_applied_to_hw.first;
-
-    desired = std::make_pair(*(m_map_val.at(prop)), unit_desired);
-
-    // ensure attempted write of desired value is valid, exit otherwise
-    RCCResult res = check_bounds(prop, val_desired);
-    if(res != RCC_OK) { LOG_WRITTEN_END(); return res; }
-
-    // apply step size value adjustment necessary for No-OS API call which
-    // ad9361_config_proxy.rcc performs
-    get_adjusted_val_to_be_applied_to_hw(prop, val_desired, adjusted_to_be_applied_to_hw);
-
-    // apply property value to hardware
-    res = set_in_situ_val(prop, val_adjusted_to_be_applied_to_hw);
-    if(res != RCC_OK) { LOG_WRITTEN_END(); return res; }
-
-    // for final logging
-    if(m_properties.enable_log_info)
-    {
-      std::string unit;
-      const char* err = get_in_situ_val(prop, in_situ_after_hw_write);
-      if(err != 0) { return setError(err); }
-      do_log_info_desired_vs_in_situ(prop, desired, in_situ_after_hw_write);
+    catch(const std::string& e) {
+      LOG_WRITTEN_END();
+      return setError(e.c_str());
     }
 
     LOG_WRITTEN_END();
@@ -1089,33 +1062,39 @@ private:
     double val_desired = *(m_map_val.at(prop));
 
     // ensure attempted write of desired value is valid, exit otherwise
-    RCCResult res = check_bounds(prop, val_desired);
-    if(res != RCC_OK) { LOG_WRITTEN_END(); return res; }
+    check_bounds(prop, val_desired);
 
     LOG_WRITTEN_END();
     return RCC_OK;
   }
 
   RCCResult do_read(const std::string& prop) {
-    LOG_READ_START();
-    const std::string unit_desired = strip_unit(prop);
-    
-    std::pair<double, std::string> in_situ;
-    double& val_in_situ = in_situ.first;
+    try {
+      LOG_READ_START();
+      const std::string unit_desired = strip_unit(prop);
+      
+      std::pair<double, std::string> in_situ;
+      double& val_in_situ = in_situ.first;
 
-    const char* err = get_in_situ_val(prop, in_situ);
-    if(err != 0) { return setError(err); }
+      get_in_situ_val(prop, in_situ);
 
-    convert_value(in_situ, unit_desired);
-    *(m_map_val.at(prop)) = val_in_situ;
+      convert_value(in_situ, unit_desired);
+      *(m_map_val.at(prop)) = val_in_situ;
 
-    log_info("current in-situ nominal %s = %.15f", prop.c_str(), val_in_situ);
+      log_info("current in-situ nominal %s = %.15f", prop.c_str(), val_in_situ);
+    }
+    catch(const std::exception& e) {
+      return setError(e.what());
+    }
+    catch(const std::string& e) {
+      return setError(e.c_str());
+    }
 
     LOG_READ_END();
     return RCC_OK;
   }
 
-  const char* calc_worst_case_Rx_RFPLL_freq_step_for_current_F_REF_and_ref_divider(
+  void calc_worst_case_Rx_RFPLL_freq_step_for_current_F_REF_and_ref_divider(
       OCPI::API::Application& app, const char* app_inst_name_proxy,
       double& val)
   {
@@ -1124,30 +1103,26 @@ private:
 
     { // restrict scope so we don't accidentally use non-double values
       // for later calculation
-      bool         Rx_RFPLL_external_div_2_enable;
-      ocpi_ulong_t Rx_RFPLL_input_F_REF;
-      ocpi_float_t Rx_RFPLL_ref_divider;
+      bool      Rx_RFPLL_external_div_2_enable;
+      OA::ULong Rx_RFPLL_input_F_REF;
+      OA::Float Rx_RFPLL_ref_divider;
 
-      char* err;
       const char*& inst = app_inst_name_proxy;
 
-      err = (char*) get_AD9361_Rx_RFPLL_external_div_2_enable(app, inst, Rx_RFPLL_external_div_2_enable);
-      if(err != 0) { return err; }
+      get_AD9361_Rx_RFPLL_external_div_2_enable(app, inst, Rx_RFPLL_external_div_2_enable);
 
       if(Rx_RFPLL_external_div_2_enable)
       {
         // in this case, the Rx PLL is fixed, so we set the step size to infinity
         val = std::numeric_limits<double>::infinity();
-        return 0;
+        return;
       }
 
-      err = (char*) get_AD9361_Rx_RFPLL_input_F_REF(app, inst, Rx_RFPLL_input_F_REF );
-      if(err != 0) { return err; }
-      err = (char*) get_AD9361_Rx_RFPLL_ref_divider(app, inst, Rx_RFPLL_ref_divider);
-      if(err != 0) { return err; }
+      get_AD9361_Rx_RFPLL_input_F_REF(app, inst, Rx_RFPLL_input_F_REF );
+      get_AD9361_Rx_RFPLL_ref_divider(app, inst, Rx_RFPLL_ref_divider);
 
-      d_Rx_RFPLL_input_F_REF  = (double) Rx_RFPLL_input_F_REF;
-      d_Rx_RFPLL_ref_divider  = (double) Rx_RFPLL_ref_divider;
+      d_Rx_RFPLL_input_F_REF = (double) Rx_RFPLL_input_F_REF;
+      d_Rx_RFPLL_ref_divider = (double) Rx_RFPLL_ref_divider;
     }
 
     double x = d_Rx_RFPLL_input_F_REF;
@@ -1160,10 +1135,10 @@ private:
     
     val = x;
 
-    return 0;
+    return;
   }
 
-  void get_FPGA_bitstream_DATA_CLK_Delay(ocpi_ushort_t& DATA_CLK_Delay) {
+  void get_FPGA_bitstream_DATA_CLK_Delay(OA::UShort& DATA_CLK_Delay) {
     OCPI::API::Application &app = getApplication();
     const char* inst = m_properties.app_inst_name_ad9361_data_sub;
 
@@ -1172,7 +1147,7 @@ private:
     DATA_CLK_Delay = strtol(DATA_CLK_Delay_str.c_str(), NULL, 0);
   }
 
-  void get_FPGA_bitstream_RX_Data_Delay(ocpi_ushort_t& RX_Data_Delay) {
+  void get_FPGA_bitstream_RX_Data_Delay(OA::UShort& RX_Data_Delay) {
     OCPI::API::Application &app = getApplication();
     const char* inst = m_properties.app_inst_name_ad9361_data_sub;
 
@@ -1231,14 +1206,12 @@ private:
   RCCResult rf_gain_dB_written() {
     const std::string prop = PROP_STR_RF_GAIN_DB;
     static bool previously_skipped = false;
-    RCCResult res = do_written<ocpi_long_t>(prop, previously_skipped);
-    return res;
+
+    return do_written<OA::Long>(prop, previously_skipped);
   }
   // notification that rf_gain_dB property will be read
   RCCResult rf_gain_dB_read() {
-    const std::string prop = PROP_STR_RF_GAIN_DB;
-    RCCResult res = do_read(prop);
-    return res;
+    return do_read(PROP_STR_RF_GAIN_DB);
   }
   // notification that rf_gain_max_dB property has been written
   RCCResult rf_gain_max_dB_written() {
@@ -1250,9 +1223,17 @@ private:
   // notification that rf_gain_max_dB property will be read
   RCCResult rf_gain_max_dB_read() {
     const std::string prop(PROP_STR_RF_GAIN_DB);
+
     double val;
-    const char* err = get_max_allowed_val(prop, val);
-    if(err != 0) { return setError(err); }
+    try {
+      get_max_allowed_val(prop, val);
+    }
+    catch(const std::exception& e) {
+      return setError(e.what());
+    }
+    catch(const std::string& e) {
+      return setError(e.c_str());
+    }
 
     m_properties.rf_gain_max_dB = val;
 
@@ -1268,9 +1249,17 @@ private:
   // notification that rf_gain_min_dB property will be read
   RCCResult rf_gain_min_dB_read() {
     const std::string prop(PROP_STR_RF_GAIN_DB);
+
     double val;
-    const char* err = get_min_allowed_val(prop, val);
-    if(err != 0) { return setError(err); }
+    try {
+      get_min_allowed_val(prop, val);
+    }
+    catch(const std::exception& e) {
+      return setError(e.what());
+    }
+    catch(const std::string& e) {
+      return setError(e.c_str());
+    }
 
     m_properties.rf_gain_min_dB = val;
 
@@ -1291,8 +1280,7 @@ private:
   RCCResult bb_gain_dB_written() {
     const std::string prop(PROP_STR_BB_GAIN_DB);
     static bool previously_skipped = false;
-    RCCResult res = do_written_no_hw(prop, previously_skipped);
-    return res;
+    return do_written_no_hw(prop, previously_skipped);
   }
   // notification that bb_gain_max_dB property has been written
   RCCResult bb_gain_max_dB_written() {
@@ -1331,14 +1319,11 @@ private:
   RCCResult frequency_MHz_written() {
     const std::string prop = PROP_STR_FREQUENCY_MHZ;
     static bool previously_skipped = false;
-    RCCResult res = do_written<ocpi_ulonglong_t>(prop, previously_skipped);
-    return res;
+    return do_written<OA::ULongLong>(prop, previously_skipped);
   }
   // notification that frequency_MHz property will be read
   RCCResult frequency_MHz_read() {
-    const std::string prop = PROP_STR_FREQUENCY_MHZ;
-    RCCResult res = do_read(prop);
-    return res;
+    return do_read(PROP_STR_FREQUENCY_MHZ);
   }
   // notification that frequency_max_MHz property has been written
   RCCResult frequency_max_MHz_written() {
@@ -1379,8 +1364,7 @@ private:
     OCPI::API::Application& app = getApplication();
     const char* inst = m_properties.app_inst_name_ad9361_config_proxy;
 
-    //const char* r = get_in_situ_Rx_RFPLL_freq_step(app, step_Hz);
-    //if(r != 0) { return setError(r); }
+    //get_in_situ_Rx_RFPLL_freq_step(app, step_Hz);
     //log_info("current in-situ nominal RX RF LO step size = %.15f Hz", step_Hz);
 
     // we use this function instead of get_in_situ_Rx_RFPLL_freq_step()
@@ -1388,9 +1372,16 @@ private:
     // precision at lower RX RF LO frequencies is nowhere near the theoretical
     // precision of the AD9361 dividers :( - it was observed that every step
     // size was at or below the theoretical worst case value
-    const char* r = calc_worst_case_Rx_RFPLL_freq_step_for_current_F_REF_and_ref_divider(app, inst, step_Hz);
+    try {
+      calc_worst_case_Rx_RFPLL_freq_step_for_current_F_REF_and_ref_divider(app, inst, step_Hz);
+    }
+    catch(const std::exception& e) {
+      return setError(e.what());
+    }
+    catch(const std::string& e) {
+      return setError(e.c_str());
+    }
 
-    if(r != 0) { return setError(r); }
     log_info("using worst-case in-situ nominal RX RF LO step size = %.15f Hz", step_Hz);
 
     m_properties.frequency_step_MHz = step_Hz/1e6;
@@ -1402,14 +1393,12 @@ private:
   RCCResult sample_rate_MHz_written() {
     const std::string prop(PROP_STR_SAMPLE_RATE_MHZ);
     static bool previously_skipped = false;
-    RCCResult res = do_written<ocpi_ulong_t>(prop, previously_skipped);
-    return res;
+
+    return do_written<OA::ULong>(prop, previously_skipped);
   }
   // notification that sample_rate_MHz property will be read
   RCCResult sample_rate_MHz_read() {
-    const std::string prop(PROP_STR_SAMPLE_RATE_MHZ);
-    RCCResult res = do_read(prop);
-    return res;
+    return do_read(PROP_STR_SAMPLE_RATE_MHZ);
   }
   // notification that sample_rate_max_MHz property has been written
   RCCResult sample_rate_max_MHz_written() {
@@ -1452,8 +1441,16 @@ private:
     // RX_SAMPL_FREQ
     OCPI::API::Application& app = getApplication();
     const char* inst = m_properties.app_inst_name_ad9361_config_proxy;
-    const char* r = get_AD9361_CLKRF_FREQ_step_Hz(app, inst, step_Hz);
-    if(r != 0) { return setError(r); }
+
+    try {
+      get_AD9361_CLKRF_FREQ_step_Hz(app, inst, step_Hz);
+    }
+    catch(const std::exception& e) {
+      return setError(e.what());
+    }
+    catch(const std::string& e) {
+      return setError(e.c_str());
+    }
 
     if(step_Hz < m_No_OS_API_precision_rx_sampling_freq) 
     {
@@ -1518,14 +1515,12 @@ private:
   RCCResult bb_cutoff_frequency_MHz_written() {
     const std::string prop(PROP_STR_BB_CUTOFF_FREQUENCY_MHZ);
     static bool previously_skipped = false;
-    RCCResult res = do_written<ocpi_ulong_t>(prop, previously_skipped);
-    return res;
+
+    return do_written<OA::ULong>(prop, previously_skipped);
   }
   // notification that bb_cutoff_frequency_MHz property will be read
   RCCResult bb_cutoff_frequency_MHz_read() {
-    const std::string prop(PROP_STR_BB_CUTOFF_FREQUENCY_MHZ);
-    RCCResult res = do_read(prop);
-    return res;
+    return do_read(PROP_STR_BB_CUTOFF_FREQUENCY_MHZ);
   }
   // notification that bb_cutoff_frequency_max_MHz property has been written
   RCCResult bb_cutoff_frequency_max_MHz_written() {
@@ -1635,10 +1630,12 @@ private:
     // avoid potentially stepping on anyone else's toes
     
     std::string pstr;
+    ad9361_config_proxy_ad9361_init ad9361_init;
     try
     {
       OCPI::API::Application &app = getApplication();
       app.getProperty(m_properties.app_inst_name_ad9361_config_proxy, "ad9361_init", pstr);
+      parse(pstr.c_str(), ad9361_init);
     }
     catch(const std::exception& e)
     {
@@ -1647,10 +1644,13 @@ private:
       err += e.what();
       return setError(err.c_str());
     }
-
-    ad9361_config_proxy_ad9361_init ad9361_init;
-    const char* retc = parse(pstr.c_str(), ad9361_init);
-    if(retc != 0) { return setError(retc); }
+    catch(const std::string& e)
+    {
+      std::string err;
+      err = "Exception when reading ad9361_config_proxy property: ";
+      err += e;
+      return setError(err.c_str());
+    }
 
     ad9361_init.reference_clk_rate =
         round(m_properties.config.reference_clk_rate_Hz); // will be later applied
@@ -1709,14 +1709,13 @@ private:
     // (and values are later applied via the ad9361_config_proxy.rcc worker's
     // ad9361_init property).
 
-    ocpi_ushort_t                     DATA_CLK_Delay;
+    OA::UShort                        DATA_CLK_Delay;
     get_FPGA_bitstream_DATA_CLK_Delay(DATA_CLK_Delay);
     ad9361_init.rx_data_clock_delay = DATA_CLK_Delay; // will be later applied
 
-    ocpi_ushort_t                     RX_Data_Delay;
+    OA::UShort                        RX_Data_Delay;
     get_FPGA_bitstream_RX_Data_Delay( RX_Data_Delay );
     ad9361_init.rx_data_delay       = RX_Data_Delay;  // will be later applied
-
 
     // values are finally applied
     try
@@ -1729,14 +1728,13 @@ private:
       const char* inst = m_properties.app_inst_name_ad9361_config_proxy;
 
       std::string RF_GAIN_MGC_str = get_RF_GAIN_MGC_str();
-      ocpi_uchar_t RF_GAIN_MGC = (ocpi_uchar_t) strtol(RF_GAIN_MGC_str.c_str(), NULL, 0) & 0xff;
+      OA::UChar RF_GAIN_MGC = (OA::UChar) strtol(RF_GAIN_MGC_str.c_str(), NULL, 0) & 0xff;
 
       std::string initial_val_str;
       app.getProperty(inst, "rx_gain_control_mode", initial_val_str);
 
       ad9361_config_proxy_rx_gain_control_mode_t rx_gain_control_mode;
-      const char* err = parse(initial_val_str.c_str(), rx_gain_control_mode);
-      if(err != 0) { return setError(err); }
+      parse(initial_val_str.c_str(), rx_gain_control_mode);
 
 #define NO_OS_ONLY_VALID_VALUE_FOR_CH_FOR_1X1_MODE 0 //see description of No-OS rx_gain_control_mode ch parameter
       rx_gain_control_mode[NO_OS_ONLY_VALID_VALUE_FOR_CH_FOR_1X1_MODE] = RF_GAIN_MGC;
@@ -1748,6 +1746,15 @@ private:
       std::string err;
       err = "Exception when setting ad9361_config_proxy property: ";
       err += e.what();
+
+      log_trace("end   of config_written()");
+      return setError(err.c_str());
+    }
+    catch(const std::string& e)
+    {
+      std::string err;
+      err = "Exception when setting ad9361_config_proxy property: ";
+      err += e;
 
       log_trace("end   of config_written()");
       return setError(err.c_str());
@@ -1775,23 +1782,30 @@ private:
     // precision
 
     AD9361_duplex_mode_t mode;
-    const char* err1 = get_AD9361_duplex_mode(app, inst, mode);
-    if(err1 != 0) { return setError(err1); }
-    m_properties.config.duplex_mode = (mode == AD9361_duplex_mode_t::FDD) ? CONFIG_DUPLEX_MODE_FDD : CONFIG_DUPLEX_MODE_FDD;
-
     bool use_extclk;
-    const char* err2 = get_AD9361_use_extclk(app, inst, use_extclk);
-    if(err2 != 0) { return setError(err2); }
-    m_properties.config.are_using_REF_CLK_SMA = use_extclk;
-
     bool adc_sub_chan_swap;
-    const char* adc_sub_inst = m_properties.app_inst_name_ad9361_adc_sub;
-    OCPI::API::Property p(app, adc_sub_inst, "channels_are_swapped");
-    adc_sub_chan_swap = p.getBoolValue();
-
     bool rx_channel_swap_enable;
-    const char* err3 = get_AD9361_Rx_Channel_Swap(app, inst, rx_channel_swap_enable);
-    if(err3 != 0) { return setError(err3); }
+    try {
+      get_AD9361_duplex_mode(app, inst, mode);
+      m_properties.config.duplex_mode = (mode == AD9361_duplex_mode_t::FDD) ? CONFIG_DUPLEX_MODE_FDD : CONFIG_DUPLEX_MODE_FDD;
+
+      get_AD9361_use_extclk(app, inst, use_extclk);
+      m_properties.config.are_using_REF_CLK_SMA = use_extclk;
+
+      const char* adc_sub_inst = m_properties.app_inst_name_ad9361_adc_sub;
+      OCPI::API::Property p(app, adc_sub_inst, "channels_are_swapped");
+      adc_sub_chan_swap = p.getBoolValue();
+
+      get_AD9361_Rx_Channel_Swap(app, inst, rx_channel_swap_enable);
+    }
+    catch(const std::exception& e)
+    {
+      return setError(e.what());
+    }
+    catch(const std::string& e)
+    {
+      return setError(e.c_str());
+    }
 
     // See Table 1: Channel Connectivity in AD9361 ADC Sub Component Data Sheet
     if(adc_sub_chan_swap == false)

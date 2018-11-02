@@ -23,6 +23,7 @@
 #include <cstring>
 #include <iostream>
 #include <sstream>
+#include <string>
 #include <unistd.h>
 #include <iomanip>
 #include <math.h>
@@ -106,8 +107,8 @@ void run_test(std::unique_ptr<OA::Application>& app)
 
 enum HdlPlatformRFFrontend {matchstiq_z1_Frontend, zipperFrontend};
 
-int main(int argc, char **argv)
-{ 
+int main(/*int argc, char **argv*/)
+{
   OA::Container *container;
   std::string container_name, xml_name, input;
   const HdlPlatformRFFrontend defaultFrontend = matchstiq_z1_Frontend;
@@ -179,9 +180,7 @@ int main(int argc, char **argv)
   double sample_rate; // = 1.0; // default
   // double sample_rate_min;
   // double sample_rate_max;
-  std::string ClkInStr;
-  std::string rxClkInStr;
-  std::string txClkInStr = std::string("0"); // Forced to 0 during Rx
+  std::string txClkInStr("0"); // Forced to 0 during Rx
   std::ostringstream clock_gen_config;
 
   app->initialize();
@@ -215,10 +214,12 @@ int main(int argc, char **argv)
       //  	{
       //  	  printLimits("Error: invalid sample_rate.\n", sample_rate, sample_rate_min, sample_rate_max);
       //  	}
-      cout << "Setting sample rate to " << to_string(sample_rate) << " MHz " << endl;
+      cout << "Setting sample rate to " << sample_rate << " MHz " << endl;
 
       // Si5338:CLKIN (i.e. Si5338:CH0 = Rx clock to Lime transceiver) = 2 x sample_rate x 1 MHz
-      ClkInStr = to_string(2 * sample_rate * 1e6).c_str();
+      std::ostringstream ostr_clkin;
+      ostr_clkin << (2 * sample_rate * 1e6);
+      std::string ClkInStr(ostr_clkin.str());
 
       // Only required to set CH0 of the Clock Synthesis device
       clock_gen_config <<
@@ -267,10 +268,12 @@ int main(int argc, char **argv)
       //  	{
       //  	  printLimits("Error: invalid sample_rate.\n", sample_rate, sample_rate_min, sample_rate_max);
       //  	}
-      cout << "Setting sample rate to " << to_string(sample_rate) << " MHz " << endl;
+      cout << "Setting sample rate to " << sample_rate << " MHz " << endl;
 
       // Si5351:CLKIN (i.e. Si5351:CH4 & 5 = Rx clock to Lime transceiver & FPGA) = 2 x sample_rate x 1 MHz
-      rxClkInStr = to_string(2 * sample_rate * 1e6).c_str();
+      std::ostringstream ostr_clkin;
+      ostr_clkin << (2 * sample_rate * 1e6);
+      std::string rxClkInStr(ostr_clkin.str());
 
       // CH 4&5 tx CH 2&3 rx
       clock_gen_config <<
@@ -297,7 +300,8 @@ int main(int argc, char **argv)
     }
 
   // Configure clock synthesis device
-  app->setProperty("clock_gen", "channels", clock_gen_config.str().c_str());
+  std::string clock_gen_config_str(clock_gen_config.str());
+  app->setProperty("clock_gen", "channels", clock_gen_config_str.c_str());
 
   cout << "Set sig gen to 300 MHz" << endl;
   cout << "Enter y to Continue" << endl;
@@ -405,6 +409,7 @@ int main(int argc, char **argv)
 
   } catch (std::string &e) {
     fprintf(stderr, "Exception thrown: %s\n", e.c_str());
+    return 1;
   }
 
 }

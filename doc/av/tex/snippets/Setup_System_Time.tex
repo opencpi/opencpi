@@ -1,0 +1,37 @@
+\iffalse
+This file is protected by Copyright. Please refer to the COPYRIGHT file
+distributed with this source distribution.
+
+This file is part of OpenCPI <http://www.opencpi.org>
+
+OpenCPI is free software: you can redistribute it and/or modify it under the
+terms of the GNU Lesser General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License along
+with this program. If not, see <http://www.gnu.org/licenses/>.
+\fi
+
+% This is for inserting into various "Getting Started" Guides
+% First, turn off indenting to avoid all the flushleft
+\newlength{\savedparindentsystime}%
+\setlength{\savedparindentsystime}{\parindent}%
+\setlength{\parindent}{0pt} % Don't indent all paragraphs
+\providecommand{\forceindent}{\leavevmode{\parindent=1em\indent}}%
+\subsection{Setup system time reference}
+\label{sec:Setup system time reference}
+\textbf{If Linux system time is not required to be accurate, this step may be skipped.} \\ \medskip
+
+\textit{For either Network or Standalone mode}, the following settings that are passed by \texttt{mynetsetup.sh/mysetup.sh} to the \texttt{zynq\_net\_setup.sh/zynq\_setup.sh} scripts \textit{may} require modification:
+
+\begin{itemize}
+ \item Identify the system that is to be used as a time server, where the default is ``time.nist.gov'' and is set in \path{/mnt/card/opencpi/ntp.conf}. A valid time server must support ntp.
+ \item Identify the current timezone description, where the default is ``EST5EDT,M3.2.0,M11.1.0''. Change this if required for the local timezone. See \texttt{man tzset} on the host PC for more information.
+ \item If a time server is not required, or cannot connect to a time server, the user is required to manually set the time at start up.  Use the \code{date} command to manually set the Linux system time. See \texttt{man date} on the host PC for more information.
+\end{itemize}
+\setlength{\parindent}{\savedparindentsystime}%

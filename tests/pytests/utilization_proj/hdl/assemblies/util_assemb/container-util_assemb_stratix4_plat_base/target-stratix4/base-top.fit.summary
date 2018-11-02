@@ -1,0 +1,22 @@
+Fitter Status : Successful - Tue Oct 16 16:17:02 2018
+Quartus Prime Version : 17.1.0 Build 590 10/25/2017 SJ Standard Edition
+Revision Name : base-top
+Top-level Entity Name : util_assemb_alst4_base
+Family : Stratix IV
+Device : EP4SGX230KF40C2
+Timing Models : Final
+Logic utilization : 11 %
+    Combinational ALUTs : 10,669 / 182,400 ( 6 % )
+    Memory ALUTs : 0 / 91,200 ( 0 % )
+    Dedicated logic registers : 17,624 / 182,400 ( 10 % )
+Total registers : 17624
+Total pins : 208 / 888 ( 23 % )
+Total virtual pins : 0
+Total block memory bits : 137,772 / 14,625,792 ( < 1 % )
+DSP block 18-bit elements : 0 / 1,288 ( 0 % )
+Total GXB Receiver Channel PCS : 4 / 24 ( 17 % )
+Total GXB Receiver Channel PMA : 4 / 36 ( 11 % )
+Total GXB Transmitter Channel PCS : 4 / 24 ( 17 % )
+Total GXB Transmitter Channel PMA : 4 / 36 ( 11 % )
+Total PLLs : 1 / 8 ( 13 % )
+Total DLLs : 0 / 4 ( 0 % )

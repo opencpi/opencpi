@@ -47,8 +47,12 @@ hdl_plat="$(./tools/cdk/scripts/getHdlPlatform.sh $platform 2>/dev/null)"
 set -e
 # If rcc_plat is not null then platform is a rcc platform
 if [ -n "$rcc_plat" ]; then
+  if [ -n "$rpm_build" ]; then
+    echo "You tried to deploy software platform: $platform but you can only deploy hardware platforms."
+  else
   ./packaging/make-sw-rpms.sh $verbose $platform "$cross" $package \
     $base $name $release $version $hash
+  fi
 # If hdl_plat is not null then platform is a hdl platform
 elif [ -n "$hdl_plat" ]; then
   # Since the platform is a hdl platform we need to change sw to hw in name

@@ -1,0 +1,16 @@
+<!-- This file defines the virtex6_plat HDL platform -->
+<HdlPlatform Language="VHDL" Spec="platform-spec">
+  <SpecProperty Name='platform' Value='virtex6_plat'/>
+  <!-- These next two lines must be present in all platforms -->
+  <MetaData Master="true"/>
+  <TimeBase Master="true"/>
+  
+  <!-- Set your time server frequency -->
+  <Device Worker='time_server'>
+    <Property Name='frequency' Value='100e6'/>
+  </Device>
+  <!-- Put any additional platform-specific properties here using <Property> -->
+  <!-- Put any built-in (always present) devices here using <device> -->
+  <!-- Put any card slots here using <slot> -->
+  <!-- Put ad hoc signals here using <signal> -->
+</HdlPlatform>

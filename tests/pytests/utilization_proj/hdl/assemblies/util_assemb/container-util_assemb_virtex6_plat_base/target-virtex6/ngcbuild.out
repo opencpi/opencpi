@@ -1,0 +1,64 @@
+. /opt/Xilinx/14.7/ISE_DS/common/.settings64.sh /opt/Xilinx/14.7/ISE_DS/common
+. /opt/Xilinx/14.7/ISE_DS/EDK/.settings64.sh /opt/Xilinx/14.7/ISE_DS/EDK
+. /opt/Xilinx/14.7/ISE_DS/PlanAhead/.settings64.sh /opt/Xilinx/14.7/ISE_DS/PlanAhead
+. /opt/Xilinx/14.7/ISE_DS/ISE/.settings64.sh /opt/Xilinx/14.7/ISE_DS/ISE
+Command: ngcbuild -verbose -sd ../../lib/hdl/virtex6 -sd ../../../../../components/lib/hdl/virtex6 -sd ../../../../../imports/ocpi.core/exports/lib/components/hdl/virtex6 -sd ../../../../../imports/ocpi.assets/exports/lib/adapters/hdl/virtex6 -sd ../../../../../imports/ocpi.core/exports/lib/adapters/hdl/virtex6 -sd ../../../../../imports/ocpi.assets/exports/lib/platforms/ml605/hdl/virtex6 -sd ../../../../../imports/ocpi.assets/exports/lib/devices/hdl/virtex6 -sd ../../../../../imports/ocpi.core/exports/lib/devices/hdl/virtex6 -sd ../../../../../imports/ocpi.assets/exports/lib/cards/hdl/virtex6 -sd ../../../../../imports/ocpi.core/exports/lib/cards/hdl/virtex6 util_assemb_ml605_base.ngc util_assemb_ml605_base-b.ngc
+Release 14.7 - ngcbuild P.20131013 (lin64)
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+
+Command Line: /opt/Xilinx/14.7/ISE_DS/ISE/bin/lin64/unwrapped/ngcbuild -verbose
+-sd ../../lib/hdl/virtex6 -sd ../../../../../components/lib/hdl/virtex6 -sd
+../../../../../imports/ocpi.core/exports/lib/components/hdl/virtex6 -sd
+../../../../../imports/ocpi.assets/exports/lib/adapters/hdl/virtex6 -sd
+../../../../../imports/ocpi.core/exports/lib/adapters/hdl/virtex6 -sd
+../../../../../imports/ocpi.assets/exports/lib/platforms/ml605/hdl/virtex6 -sd
+../../../../../imports/ocpi.assets/exports/lib/devices/hdl/virtex6 -sd
+../../../../../imports/ocpi.core/exports/lib/devices/hdl/virtex6 -sd
+../../../../../imports/ocpi.assets/exports/lib/cards/hdl/virtex6 -sd
+../../../../../imports/ocpi.core/exports/lib/cards/hdl/virtex6
+util_assemb_ml605_base.ngc util_assemb_ml605_base-b.ngc
+
+Reading NGO file
+"/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_a
+ssemb/container-util_assemb_ml605_base/target-virtex6/util_assemb_ml605_base.ngc
+" ...
+Loading design module
+"../../../../../imports/ocpi.assets/exports/lib/platforms/ml605/hdl/virtex6/base
+_rv.ngc"...
+Loading design module
+"../../../../../imports/ocpi.assets/exports/lib/platforms/ml605/hdl/virtex6/ml60
+5_rv.ngc"...
+Loading design module
+"../../../../../imports/ocpi.core/exports/lib/devices/hdl/virtex6/time_server_rv
+_c2.ngc"...
+Loading design module "../../lib/hdl/virtex6/util_assemb_rv.ngc"...
+Loading design module
+"../../../../../imports/ocpi.core/exports/lib/components/hdl/virtex6/nothing.ngc
+"...
+Loading design module
+"../../../../../imports/ocpi.core/exports/lib/devices/hdl/virtex6/unoc2cp_rv.ngc
+"...
+Loading design module
+"../../../../../imports/ocpi.core/exports/lib/devices/hdl/virtex6/unoc_term_rv.n
+gc"...
+
+Partition Implementation Status
+-------------------------------
+
+  No Partitions were found in this design.
+
+-------------------------------
+
+NGCBUILD Design Results Summary:
+  Number of errors:     0
+  Number of warnings:   0
+
+Writing NGC file "util_assemb_ml605_base-b.ngc" ...
+Total REAL time to NGCBUILD completion:  4 sec
+Total CPU time to NGCBUILD completion:   3 sec
+
+Writing NGCBUILD log file "util_assemb_ml605_base-b.blc"...
+
+NGCBUILD done.
+Exit status: 0
+Elapsed time:0:06.96, completed at 09:02:49

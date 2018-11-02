@@ -57,12 +57,13 @@ mkdir -p $opencpi_output_path
 if [ "$hdl_rcc_platform" != "no_sw" ]; then
   for item in $output_path/$hdl_rcc_platform/opencpi/*; do
     if [[ $item = *deploy* ]]; then
-      cp -LR $item/$hdl_rcc_platform/* $opencpi_output_path/..
+      cp -R $item/$hdl_rcc_platform/* $opencpi_output_path/..
     else
-      cp -LR $item $opencpi_output_path
+      cp -R $item $opencpi_output_path
       if [[ $item = **opencpi/$hdl_rcc_platform** ]]; then
         mv $opencpi_output_path/$hdl_rcc_platform/system.xml $opencpi_output_path
         mv $opencpi_output_path/$hdl_rcc_platform/*_*setup.sh $opencpi_output_path
+        mv $opencpi_output_path/$hdl_rcc_platform/*.conf $opencpi_output_path
       fi
     fi
   done
@@ -93,7 +94,7 @@ mkdir -p $output_path/$hdl_platform/host-udev-rules
       rm -rf $opencpi_output_path/$hdl_platform) \
 # Exit with 0 status so the script that calls this script does not complain
 exit 0
-# TODO Build pdfs for current platform AV-4538
+# TODO Build pdfs for current platform AV-4538 AV-4817
 #[ -e $output_path/$hdl_platform/pdfs ] && rm -rf $output_path/$hdl_platform/pdfs
 #$OCPI_CDK_DIR/../doc/av/tex/generator/genDocumentation.sh --repopath $OCPI_CDK_DIR/../ --outputpath $output_path/$hdl_platform/pdfs --dirsearch "$hdl_platform_dir"
 ## Removing unnecessary files

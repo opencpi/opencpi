@@ -33,13 +33,6 @@ using namespace std;
 
 #define PROMPT(app,val,worker,propmin,propmax) prompt_auto_range(app, val, #val, "Error: invalid "#val".\n",worker,propmin,propmax);
 
-template <typename T>
-std::string to_string(T const& value) {
-  stringstream sstr;
-  sstr << value;
-  return sstr.str();
-}
-
 static void usage(const char *name, const char *error_message) {
   fprintf(stderr,
   "%s\n"
@@ -1090,12 +1083,12 @@ int main(int argc, char **argv) {
         rx_bb_bw = rx_sample_rate;
         rx_bb_gain = -1.; // must be disabled
       }
-      app.setProperty("rx","sample_rate_MHz", to_string(rx_sample_rate).c_str());
-      app.setProperty("rx","frequency_MHz", to_string(rx_rf_center_freq).c_str());
-      app.setProperty("rx","rf_cutoff_frequency_MHz", to_string(rx_rf_bw).c_str());
-      app.setProperty("rx","rf_gain_dB", to_string(rx_rf_gain).c_str());
-      app.setProperty("rx","bb_cutoff_frequency_MHz", to_string(rx_bb_bw).c_str());
-      app.setProperty("rx","bb_gain_dB", to_string(rx_bb_gain).c_str());
+      app.setPropertyValue<double>("rx","sample_rate_MHz", rx_sample_rate);
+      app.setPropertyValue<double>("rx","frequency_MHz", rx_rf_center_freq);
+      app.setPropertyValue<double>("rx","rf_cutoff_frequency_MHz", rx_rf_bw);
+      app.setPropertyValue<double>("rx","rf_gain_dB", rx_rf_gain);
+      app.setPropertyValue<double>("rx","bb_cutoff_frequency_MHz", rx_bb_bw);
+      app.setPropertyValue<double>("rx","bb_gain_dB", rx_bb_gain);
 
       // It is desired that setting a + IF freq results in mixing *down*.
       // Because complex_mixer's NCO mixes *up* for + freqs (see complex mixer
@@ -1136,11 +1129,11 @@ int main(int argc, char **argv) {
         tx_bb_bw = tx_sample_rate;
         tx_bb_gain = -1.; // must be disabled
       }
-      app.setProperty("tx","sample_rate_MHz", to_string(tx_sample_rate).c_str());
-      app.setProperty("tx","frequency_MHz", to_string(tx_rf_center_freq).c_str());
-      app.setProperty("tx","rf_gain_dB", to_string(tx_rf_gain).c_str());
-      app.setProperty("tx","bb_cutoff_frequency_MHz", to_string(tx_bb_bw).c_str());
-      app.setProperty("tx","bb_gain_dB", to_string(tx_bb_gain).c_str());
+      app.setPropertyValue<double>("tx","sample_rate_MHz", tx_sample_rate);
+      app.setPropertyValue<double>("tx","frequency_MHz", tx_rf_center_freq);
+      app.setPropertyValue<double>("tx","rf_gain_dB", tx_rf_gain);
+      app.setPropertyValue<double>("tx","bb_cutoff_frequency_MHz", tx_bb_bw);
+      app.setPropertyValue<double>("tx","bb_gain_dB", tx_bb_gain);
     }
 
     //Loopback mode for txrx app

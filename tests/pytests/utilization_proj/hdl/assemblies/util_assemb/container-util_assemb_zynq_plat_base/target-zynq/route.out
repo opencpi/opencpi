@@ -1,0 +1,329 @@
+Command: vivado -mode batch -source /home/user/opencpi/ocpi_util/cdk/include/hdl/vivado-impl.tcl -nolog -journal vivado-route.jou -tclargs stage=route target_file=util_assemb_e3xx_base-route.dcp checkpoint=util_assemb_e3xx_base-place.dcp part=xc7z020clg484-1 impl_opts=-directive NoTimingRelaxation post_route_opt=false phys_opt_opts=-hold_fix incr_comp=false
+
+****** Vivado v2017.1 (64-bit)
+  **** SW Build 1846317 on Fri Apr 14 18:54:47 MDT 2017
+  **** IP Build 1846188 on Fri Apr 14 20:52:08 MDT 2017
+    ** Copyright 1986-2017 Xilinx, Inc. All Rights Reserved.
+
+source /home/user/opencpi/ocpi_util/cdk/include/hdl/vivado-impl.tcl
+# source $env(OCPI_CDK_DIR)/include/hdl/vivado-util.tcl
+## proc parse_args {arguments} {
+##   foreach i $arguments {
+##     set assignment [split $i =]
+##     if {[llength $assignment] != 2} {
+##       puts "Invalid assignment \"$assignment\". tclargs must be in the following format: variablename=value"
+##       exit 2
+##     }
+##     set var_name [lindex $assignment 0]
+##     upvar 1 $var_name var
+##     set var_value [lindex $assignment 1]
+##     set var $var_value
+##   }
+## }
+## proc add_files_set_lib {library f} {
+##   add_files $f -quiet
+##   set_property LIBRARY $library [get_files $f -quiet] -quiet 
+## }
+## proc read_edif_or_dcp {f} {
+##   if {[string match *.edf $f] || [string match *.edn $f] || [string match *.ngc $f]} {
+##     read_edif $f
+##   } elseif {[string match *.dcp $f]} {
+##     read_checkpoint $f
+##   } else {
+##     puts "File $f is not an EDIF, NGC, DCP or XCI file. This may cause problems."
+##     add_files $f
+##   }
+## }
+# set stage               ""
+# set target_file         ""
+# set checkpoint          ""
+# set part                ""
+# set edif_file           ""
+# set constraints         ""
+# set impl_opts           ""
+# set incr_comp           ""
+# set power_opt           ""
+# set post_place_opt      ""
+# set post_route_opt      ""
+# set phys_opt_opts       ""
+# parse_args $argv
+# create_project -part $part -force [file rootname $target_file]
+# if {[info exists checkpoint] && [string length $checkpoint] > 0} {
+#   read_checkpoint -part $part $checkpoint
+# }
+Command: read_checkpoint -part xc7z020clg484-1 util_assemb_e3xx_base-place.dcp
+# if {[info exists edif_file] && [string length $edif_file] > 0} {
+#   read_edif $edif_file
+# }
+# set mode default
+# link_design -mode $mode -part $part
+Design is defaulting to srcset: sources_1
+Design is defaulting to constrset: constrs_1
+Design is defaulting to dcp top: util_assemb_e3xx_base
+INFO: [Netlist 29-17] Analyzing 160 Unisim elements for replacement
+INFO: [Netlist 29-28] Unisim Transformation completed in 0 CPU seconds
+INFO: [Project 1-479] Netlist was created with Vivado 2017.1
+INFO: [Device 21-403] Loading part xc7z020clg484-1
+INFO: [Project 1-570] Preparing netlist for logic optimization
+Parsing XDC File [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_e3xx_base/target-zynq/.Xil/Vivado-30973-buildserver                 /dcp7/util_assemb_e3xx_base.xdc]
+Finished Parsing XDC File [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_e3xx_base/target-zynq/.Xil/Vivado-30973-buildserver                 /dcp7/util_assemb_e3xx_base.xdc]
+Reading XDEF placement.
+Reading placer database...
+Reading XDEF routing.
+Read XDEF File: Time (s): cpu = 00:00:00.24 ; elapsed = 00:00:00.24 . Memory (MB): peak = 1588.367 ; gain = 2.000 ; free physical = 1228 ; free virtual = 46812
+Restored from archive | CPU: 0.250000 secs | Memory: 3.413422 MB |
+Finished XDEF File Restore: Time (s): cpu = 00:00:00.24 ; elapsed = 00:00:00.24 . Memory (MB): peak = 1588.367 ; gain = 2.000 ; free physical = 1228 ; free virtual = 46812
+INFO: [Opt 31-138] Pushed 0 inverter(s) to 0 load pin(s).
+INFO: [Project 1-111] Unisim Transformation Summary:
+  A total of 11 instances were transformed.
+  RAM32M => RAM32M (RAMD32, RAMD32, RAMD32, RAMD32, RAMD32, RAMD32, RAMS32, RAMS32): 11 instances
+
+link_design: Time (s): cpu = 00:00:06 ; elapsed = 00:00:06 . Memory (MB): peak = 1588.371 ; gain = 395.848 ; free physical = 1286 ; free virtual = 46864
+# if {[info exists constraints] && [string length $constraints] > 0} {
+#   puts "Loading XDC: $constraints"
+#   read_xdc $constraints
+# }
+# set stage_start_time [clock seconds]
+# puts "Running Implementation stage $stage"
+Running Implementation stage route
+# set command ""
+# switch $stage {
+#   opt {
+#     set command "opt_design $impl_opts ;"
+#     # Optionally run power optimization
+#     if {[info exists power_opt] && [string equal $power_opt true]} { 
+#       set command "$command power_opt_design"
+#     }
+#   }
+#   place {
+#     # Attempt to find an incremental-compile result to use. First look
+#     # for a post-route checkpoint. Then fall back on a post-place checkpoint.
+#     if {[info exists incr_comp] && [string equal $incr_comp true]} { 
+#       set incr_dcp $target_file
+#       set route_dcp [glob -nocomplain [file dirname $target_file]/*-route.dcp]
+#       if {[file exists $route_dcp]} {
+#         set incr_dcp $route_dcp
+#       }
+#       if {[file exist $incr_dcp]} {
+#         read_checkpoint -incremental $incr_dcp
+#       }
+#     }
+#     set command "$command place_design $impl_opts ;"
+#     if {[info exists post_place_opt] && [string equal $post_place_opt true]} { 
+#       set command "$command phys_opt_design $phys_opt_opts ;"
+#     }
+#   }
+#   route {
+#     set command "route_design $impl_opts ;"
+#     if {[info exists incr_comp] && [string equal $incr_comp true]} { 
+#       set command "$command report_incremental_reuse"
+#     }
+#     if {[info exists post_route_opt] && [string equal $post_route_opt true]} { 
+#       set command "$command phys_opt_design $phys_opt_opts ;"
+#     }
+#   }
+#   timing {
+#     set command "report_timing $impl_opts ;"
+#     set command "$command report_timing -rpx $target_file $impl_opts"
+#   }
+#   bit {
+#     set command "write_bitstream $target_file $impl_opts ;"
+#     set command "$command report_utilization ;"
+#     set command "$command report_clock_networks ;"
+#     set command "$command report_design_analysis ;"
+#     set command "$command report_clocks ;"
+#   }
+# }
+# puts "Command: $command"
+Command: route_design -directive NoTimingRelaxation ;
+# eval "$command"
+Command: route_design -directive NoTimingRelaxation
+Attempting to get a license for feature 'Implementation' and/or device 'xc7z020-clg484'
+INFO: [Common 17-349] Got license for feature 'Implementation' and/or device 'xc7z020-clg484'
+Running DRC as a precondition to command route_design
+Command: report_drc (run_mandatory_drcs) for: router_checks
+INFO: [DRC 23-27] Running DRC with 8 threads
+report_drc (run_mandatory_drcs) completed successfully
+INFO: [Vivado_Tcl 4-198] DRC finished with 0 Errors
+INFO: [Vivado_Tcl 4-199] Please refer to the DRC report (report_drc) for more information.
+
+
+Starting Routing Task
+INFO: [Route 35-270] Using Router directive 'NoTimingRelaxation'.
+INFO: [Route 35-254] Multithreading enabled for route_design using a maximum of 8 CPUs
+Checksum: PlaceDB: bc566ae4 ConstDB: 0 ShapeSum: 8e6241f RouteDB: 0
+
+Phase 1 Build RT Design
+Phase 1 Build RT Design | Checksum: 10bb915ef
+
+Time (s): cpu = 00:00:17 ; elapsed = 00:00:14 . Memory (MB): peak = 1799.066 ; gain = 105.664 ; free physical = 1346 ; free virtual = 46923
+
+Phase 2 Router Initialization
+
+Phase 2.1 Create Timer
+INFO: [Timing 38-35] Done setting XDC timing constraints.
+Phase 2.1 Create Timer | Checksum: 10bb915ef
+
+Time (s): cpu = 00:00:24 ; elapsed = 00:00:21 . Memory (MB): peak = 2266.562 ; gain = 573.160 ; free physical = 953 ; free virtual = 46530
+
+Phase 2.2 Fix Topology Constraints
+Phase 2.2 Fix Topology Constraints | Checksum: 10bb915ef
+
+Time (s): cpu = 00:00:24 ; elapsed = 00:00:21 . Memory (MB): peak = 2266.562 ; gain = 573.160 ; free physical = 920 ; free virtual = 46497
+
+Phase 2.3 Pre Route Cleanup
+Phase 2.3 Pre Route Cleanup | Checksum: 10bb915ef
+
+Time (s): cpu = 00:00:24 ; elapsed = 00:00:21 . Memory (MB): peak = 2266.562 ; gain = 573.160 ; free physical = 920 ; free virtual = 46497
+ Number of Nodes with overlaps = 0
+
+Phase 2.4 Update Timing
+Phase 2.4 Update Timing | Checksum: 1f51ff43c
+
+Time (s): cpu = 00:00:26 ; elapsed = 00:00:22 . Memory (MB): peak = 2282.590 ; gain = 589.188 ; free physical = 884 ; free virtual = 46459
+INFO: [Route 35-416] Intermediate Timing Summary | WNS=1.485  | TNS=0.000  | WHS=-0.144 | THS=-37.056|
+
+Phase 2 Router Initialization | Checksum: 162755be1
+
+Time (s): cpu = 00:00:27 ; elapsed = 00:00:22 . Memory (MB): peak = 2282.590 ; gain = 589.188 ; free physical = 882 ; free virtual = 46457
+
+Phase 3 Initial Routing
+Phase 3 Initial Routing | Checksum: 11fc02121
+
+Time (s): cpu = 00:00:28 ; elapsed = 00:00:22 . Memory (MB): peak = 2282.590 ; gain = 589.188 ; free physical = 879 ; free virtual = 46454
+
+Phase 4 Rip-up And Reroute
+
+Phase 4.1 Global Iteration 0
+ Number of Nodes with overlaps = 368
+ Number of Nodes with overlaps = 46
+ Number of Nodes with overlaps = 6
+ Number of Nodes with overlaps = 2
+ Number of Nodes with overlaps = 4
+ Number of Nodes with overlaps = 1
+ Number of Nodes with overlaps = 1
+ Number of Nodes with overlaps = 0
+INFO: [Route 35-416] Intermediate Timing Summary | WNS=1.440  | TNS=0.000  | WHS=N/A    | THS=N/A    |
+
+Phase 4.1 Global Iteration 0 | Checksum: 13cae9cd3
+
+Time (s): cpu = 00:00:33 ; elapsed = 00:00:23 . Memory (MB): peak = 2282.590 ; gain = 589.188 ; free physical = 865 ; free virtual = 46439
+Phase 4 Rip-up And Reroute | Checksum: 13cae9cd3
+
+Time (s): cpu = 00:00:33 ; elapsed = 00:00:23 . Memory (MB): peak = 2282.590 ; gain = 589.188 ; free physical = 865 ; free virtual = 46439
+
+Phase 5 Delay and Skew Optimization
+
+Phase 5.1 Delay CleanUp
+
+Phase 5.1.1 Update Timing
+Phase 5.1.1 Update Timing | Checksum: 16aeb9dcf
+
+Time (s): cpu = 00:00:34 ; elapsed = 00:00:23 . Memory (MB): peak = 2282.590 ; gain = 589.188 ; free physical = 865 ; free virtual = 46439
+INFO: [Route 35-416] Intermediate Timing Summary | WNS=1.454  | TNS=0.000  | WHS=N/A    | THS=N/A    |
+
+Phase 5.1 Delay CleanUp | Checksum: 16aeb9dcf
+
+Time (s): cpu = 00:00:34 ; elapsed = 00:00:23 . Memory (MB): peak = 2282.590 ; gain = 589.188 ; free physical = 865 ; free virtual = 46439
+
+Phase 5.2 Clock Skew Optimization
+Phase 5.2 Clock Skew Optimization | Checksum: 16aeb9dcf
+
+Time (s): cpu = 00:00:34 ; elapsed = 00:00:23 . Memory (MB): peak = 2282.590 ; gain = 589.188 ; free physical = 865 ; free virtual = 46439
+Phase 5 Delay and Skew Optimization | Checksum: 16aeb9dcf
+
+Time (s): cpu = 00:00:34 ; elapsed = 00:00:23 . Memory (MB): peak = 2282.590 ; gain = 589.188 ; free physical = 865 ; free virtual = 46439
+
+Phase 6 Post Hold Fix
+
+Phase 6.1 Hold Fix Iter
+
+Phase 6.1.1 Update Timing
+Phase 6.1.1 Update Timing | Checksum: 15897db8e
+
+Time (s): cpu = 00:00:34 ; elapsed = 00:00:23 . Memory (MB): peak = 2282.590 ; gain = 589.188 ; free physical = 865 ; free virtual = 46439
+INFO: [Route 35-416] Intermediate Timing Summary | WNS=1.454  | TNS=0.000  | WHS=0.011  | THS=0.000  |
+
+Phase 6.1 Hold Fix Iter | Checksum: 177b4ac1d
+
+Time (s): cpu = 00:00:34 ; elapsed = 00:00:23 . Memory (MB): peak = 2282.590 ; gain = 589.188 ; free physical = 865 ; free virtual = 46439
+Phase 6 Post Hold Fix | Checksum: 177b4ac1d
+
+Time (s): cpu = 00:00:34 ; elapsed = 00:00:23 . Memory (MB): peak = 2282.590 ; gain = 589.188 ; free physical = 865 ; free virtual = 46439
+
+Phase 7 Route finalize
+
+Router Utilization Summary
+  Global Vertical Routing Utilization    = 0.632029 %
+  Global Horizontal Routing Utilization  = 0.675118 %
+  Routable Net Status*
+  *Does not include unroutable nets such as driverless and loadless.
+  Run report_route_status for detailed report.
+  Number of Failed Nets               = 0
+  Number of Unrouted Nets             = 0
+  Number of Partially Routed Nets     = 0
+  Number of Node Overlaps             = 0
+
+Phase 7 Route finalize | Checksum: 101e4664c
+
+Time (s): cpu = 00:00:34 ; elapsed = 00:00:24 . Memory (MB): peak = 2282.590 ; gain = 589.188 ; free physical = 865 ; free virtual = 46439
+
+Phase 8 Verifying routed nets
+
+ Verification completed successfully
+Phase 8 Verifying routed nets | Checksum: 101e4664c
+
+Time (s): cpu = 00:00:34 ; elapsed = 00:00:24 . Memory (MB): peak = 2282.590 ; gain = 589.188 ; free physical = 864 ; free virtual = 46438
+
+Phase 9 Depositing Routes
+Phase 9 Depositing Routes | Checksum: 17aae325f
+
+Time (s): cpu = 00:00:35 ; elapsed = 00:00:24 . Memory (MB): peak = 2282.590 ; gain = 589.188 ; free physical = 865 ; free virtual = 46439
+
+Phase 10 Post Router Timing
+INFO: [Route 35-57] Estimated Timing Summary | WNS=1.454  | TNS=0.000  | WHS=0.011  | THS=0.000  |
+
+INFO: [Route 35-327] The final timing numbers are based on the router estimated timing analysis. For a complete and accurate timing signoff, please run report_timing_summary.
+Phase 10 Post Router Timing | Checksum: 17aae325f
+
+Time (s): cpu = 00:00:35 ; elapsed = 00:00:24 . Memory (MB): peak = 2282.590 ; gain = 589.188 ; free physical = 865 ; free virtual = 46439
+INFO: [Route 35-16] Router Completed Successfully
+
+Time (s): cpu = 00:00:35 ; elapsed = 00:00:24 . Memory (MB): peak = 2282.590 ; gain = 589.188 ; free physical = 899 ; free virtual = 46474
+
+Routing Is Done.
+14 Infos, 0 Warnings, 0 Critical Warnings and 0 Errors encountered.
+route_design completed successfully
+route_design: Time (s): cpu = 00:00:38 ; elapsed = 00:00:25 . Memory (MB): peak = 2282.594 ; gain = 694.223 ; free physical = 899 ; free virtual = 46474
+# set stage_end_time [clock seconds]
+# puts "Writing checkpoint for stage $stage"
+Writing checkpoint for stage route
+# if {![string equal $stage bit] && ![string equal $stage timing]} {
+#   write_checkpoint -force $target_file
+# }
+Writing placer database...
+Writing XDEF routing.
+Writing XDEF routing logical nets.
+Writing XDEF routing special nets.
+Write XDEF Complete: Time (s): cpu = 00:00:00.88 ; elapsed = 00:00:00.29 . Memory (MB): peak = 2306.602 ; gain = 0.000 ; free physical = 846 ; free virtual = 46427
+INFO: [Common 17-1381] The checkpoint '/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_e3xx_base/target-zynq/util_assemb_e3xx_base-route.dcp' has been generated.
+# set final_time [clock seconds]
+# puts "======Timing broken up into subtasks======
+# -----------------------------------------------------------------
+# |  Implementation Stage time: [expr $stage_end_time - $stage_start_time] seconds \t|
+# -----------------------------------------------------------------
+# | Post-stage operations time: [expr [clock seconds] - $stage_end_time] seconds \t|
+# -----------------------------------------------------------------
+# |                 Total time: [expr [clock seconds] - $stage_start_time] seconds \t|
+# -----------------------------------------------------------------"
+======Timing broken up into subtasks======
+-----------------------------------------------------------------
+|  Implementation Stage time: 25 seconds 	|
+-----------------------------------------------------------------
+| Post-stage operations time: 1 seconds 	|
+-----------------------------------------------------------------
+|                 Total time: 26 seconds 	|
+-----------------------------------------------------------------
+INFO: [Common 17-206] Exiting Vivado at Tue Oct 16 16:11:37 2018...
+Elapsed time:0:40.24, completed at 16:11:37
+Exit status: 0

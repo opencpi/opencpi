@@ -172,8 +172,12 @@ generate_pdfs() {
         dirs_to_search=()
         tmp_array=($1)
         for dir in ${tmp_array[@]}; do
-            # Code elsewhere requires absolute paths, like REPO_PATH is above
-            dirs_to_search+=($(find "$(readlink -e ${dir})" -type d \( -name doc -o -name docs \)))
+            if [ -e "$dir" ]; then
+             # Code elsewhere requires absolute paths, like REPO_PATH is above
+             dirs_to_search+=($(find "$(readlink -e ${dir})" -type d \( -name doc -o -name docs \)))
+            else
+              echo "${RED}Error: provided directory: $dir does not exist${RESET}"
+            fi
         done
     fi
     for d in ${dirs_to_search[*]}; do
@@ -276,7 +280,7 @@ compress_pdfs() {
 # Globals:
 #   None
 # Arguments:
-#   Two paths, will return true iff both are git checkouts with same remote URL for 'origin'
+#   Two paths, will return true if both are git checkouts with same remote URL for 'origin'
 # Returns:
 #   true/false
 ###
@@ -339,7 +343,7 @@ find_bsps() {
     for ((i=0; i<${#tmp_bsps[@]}-1; i+=1)); do
         for ((j=i+1; j<${#tmp_bsps[@]}; j+=1)); do
             # If there exists any two projects that both have the same remote.origin.url we can assume that they are a shared_bsp; add the
-            # second occuring one to the shared_bsp array which will later be used to remove bsps from BSPS
+            # second occurring one to the shared_bsp array which will later be used to remove bsps from BSPS
             same_git_repo ${REPO_PATH}/projects/bsps/${tmp_bsps[$i]} \
                           ${REPO_PATH}/projects/bsps/${tmp_bsps[$j]} &&
               shared_bsp+=(${tmp_bsps[$j]})
@@ -441,13 +445,13 @@ echo -n "${RESET}"
 mkdir -p ${OUTPUT_PATH} > /dev/null 2>&1
 touch ${OUTPUT_PATH}/${index_file} > /dev/null 2>&1
 [ ! -w ${OUTPUT_PATH}/${index_file} ] && show_help "\"${OUTPUT_PATH}\" not writable by $USER. Consider using a different output path."
-
+rm ${OUTPUT_PATH}/${index_file}
 BSPS=()
 [ -z "${dirsearch}" ] && find_bsps
 generate_pdfs "${dirsearch}"
 
 # Special case - we don't (currently) have a decent source for the IDE PDF
-(cd ${OUTPUT_PATH} && wget http://opencpi.github.io/ANGRYVIPER_IDE_UG.pdf) || :
+[ -z "${dirsearch}" ] && (cd ${OUTPUT_PATH} && wget http://opencpi.github.io/ANGRYVIPER_IDE_UG.pdf) || :
 
 [ -z "${dirsearch}" ] && create_index > ${OUTPUT_PATH}/${index_file}
 compress_pdfs

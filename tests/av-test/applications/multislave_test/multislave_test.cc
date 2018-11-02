@@ -37,6 +37,7 @@ std::string checkWkr1Values(OCPI::API::Application* app, std::string comp_name)
 {
   std::string ret_val;
   std::string temp_string;
+  std::string expected_str;
 
   app->getProperty(comp_name.c_str(), "my_string", temp_string);
   if (temp_string != "test_string"){
@@ -49,6 +50,77 @@ std::string checkWkr1Values(OCPI::API::Application* app, std::string comp_name)
     ret_val = comp_name + ".my_enum is not set correctly. Was :" + temp_string +
               " and should be : third_enum" ;
     return ret_val;
+  }
+  expected_str = "struct_bool true,struct_ulong 10,struct_char K";
+  app->getProperty(comp_name.c_str(), "test_struct", temp_string);
+  if (temp_string != expected_str){
+      ret_val = comp_name + ".test_struct is not set correctly.  Was :" +
+                temp_string + "\n should be : " + expected_str;
+  }
+  expected_str = "{struct_bool true,struct_ulong 20,struct_char D},"
+                 "{struct_bool true,struct_ulong 21,struct_char E},"
+                 "{struct_bool true,struct_ulong 22,struct_char F},"
+                 "{struct_bool true,struct_ulong 23,struct_char G},"
+                 "{struct_bool true,struct_ulong 24,struct_char H},"
+                 "{struct_bool true,struct_ulong 25,struct_char I},"
+                 "{struct_bool true,struct_ulong 26,struct_char J}";
+  app->getProperty(comp_name.c_str(), "test_seq_of_structs", temp_string);
+  if (temp_string != expected_str){
+      ret_val = comp_name + ".test_seq_of_structs is not set correctly.  Was :" +
+                temp_string + "\n should be : " + expected_str;
+  }
+  expected_str = "struct_char M,struct_ulong_seq {1,2,3}";
+  app->getProperty(comp_name.c_str(), "test_struct_of_seq", temp_string);
+  if (temp_string != expected_str){
+      ret_val = comp_name + ".test_struct_of_seq is not set correctly.  Was :" +
+                temp_string + "\n should be : " + expected_str;
+  }
+  expected_str = "that,that,that,that,that,that,that,that,that,that";
+  app->getProperty(comp_name.c_str(), "test_array_of_str", temp_string);
+  if (temp_string != expected_str){
+      ret_val = comp_name + ".test_array_of_str is not set correctly.  Was :" +
+                temp_string + "\n should be : " + expected_str;
+  }
+  expected_str = "0,10,20,30,40,50,60,70,80,90";
+  app->getProperty(comp_name.c_str(), "test_array_ulong", temp_string);
+  if (temp_string != expected_str){
+      ret_val = comp_name + ".test_array_ulong is not set correctly.  Was :" +
+                temp_string + "\n should be : " + expected_str;
+  }
+  expected_str = "{test_ulong 10,test_bool true,test_char A},"
+                 "{test_ulong 11,test_bool true,test_char B},"
+                 "{test_ulong 12,test_bool true,test_char C},"
+                 "{test_ulong 13,test_bool true,test_char D},"
+                 "{test_ulong 14,test_bool true,test_char E},"
+                 "{test_ulong 15,test_bool true,test_char F},"
+                 "{test_ulong 16,test_bool true,test_char G},"
+                 "{test_ulong 17,test_bool true,test_char H},"
+                 "{test_ulong 18,test_bool true,test_char I},"
+                 "{test_ulong 19,test_bool true,test_char J}";
+  app->getProperty(comp_name.c_str(), "test_array_of_struct", temp_string);
+  if (temp_string != expected_str){
+      ret_val = comp_name + ".test_array_of_struct is not set correctly.  Was :" +
+                temp_string + "\n should be : " + expected_str;
+  }
+  expected_str = "1,2,3,4,6,7,8,100";
+  app->getProperty(comp_name.c_str(), "test_seq_ulong", temp_string);
+  if (temp_string != expected_str){
+      ret_val = comp_name + ".test_seq_ulong is not set correctly.  Was :" +
+                temp_string + "\n should be : " + expected_str;
+  }
+  expected_str = "one,two,three,four,five";
+  app->getProperty(comp_name.c_str(), "test_seq_str", temp_string);
+  if (temp_string != expected_str){
+      ret_val = comp_name + ".test_seq_str is not set correctly.  Was :" +
+                temp_string + "\n should be : " + expected_str;
+  }
+  expected_str = "{1,2,3,4,6,7,8,100,0},{1,2,3,4,6,7,8,100,0},{1,2,3,4,6,7,8,100,0},"
+                 "{1,2,3,4,6,7,8,100,0},{1,2,3,4,6,7,8,100,0},{1,2,3,4,6,7,8,100,0},"
+                 "{1,2,3,4,6,7,8,100,0},{1,2,3,4,6,7,8,100,0}";
+  app->getProperty(comp_name.c_str(), "test_seq_of_ulong_arrays", temp_string);
+  if (temp_string != expected_str){
+      ret_val = comp_name + ".test_seq_of_ulong_arrays is not set correctly.  Was :" +
+                temp_string + "\n should be : " + expected_str;
   }
   return ret_val;
 }
@@ -122,11 +194,12 @@ std::string checkValues(OCPI::API::Application* app, std::string comp_name)
   }
   app->getPropertyValue(comp_name, "test_ushort", temp_ushort);
   if (temp_ushort != 16){
-    ret_val = comp_name + ".test_ushort is not set correctly.  Was :" + 
-              std::to_string(static_cast<unsigned long long>(temp_ushort)) + 
+    ret_val = comp_name + ".test_ushort is not set correctly.  Was :" +
+              std::to_string(static_cast<unsigned long long>(temp_ushort)) +
               " and should be : 16" ;
     return ret_val;
   }
+
   return ret_val;
 }
 
@@ -135,12 +208,12 @@ int main(int argc, char **argv)
   // Reference OpenCPI_Application_Development document for an explanation of the ACI
   try
   {
-    OCPI::API::Application app("mulislave_test.xml");
+    OCPI::API::Application app("multislave_test.xml");
     app.initialize(); // all resources have been allocated
     app.start();      // execution is started
     app.wait();       // wait until app is "done"
 
-
+    //app.dumpProperties();
     std::string err;
     err = checkValues(&app, "comp1");
     if (!err.empty())

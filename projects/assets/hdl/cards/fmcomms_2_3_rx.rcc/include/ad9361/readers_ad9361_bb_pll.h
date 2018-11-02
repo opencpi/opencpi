@@ -58,8 +58,9 @@
 #include <string>     // std::string
 #include "OcpiApi.hh" // OCPI::API namespace
 #include "ad9361.h"   // BBPLL_MODULUS macro
-#include "ocpi_component_prop_type_helpers.h" // ocpi_float_t, ocpi_ushort_t, ocpi_ulong_t types
 #include "worker_prop_parsers_ad9361_config_proxy.h" // parse()
+
+namespace OA = OCPI::API;
 
 /*! @brief Get the nominal in-situ value with No-OS precision
  *         of the
@@ -71,71 +72,55 @@
  *  @param[in]  app_inst_name_proxy OpenCPI application instance name of the
  *                                  OpenCPI ad9361_config_proxy.rcc worker
  *  @param[out] val                 Retrieved value.
- *  @return 0 if there are no errors, non-zero char array pointer if there
- *          are errors (char array content will describe the error).
  ******************************************************************************/
-const char* get_AD9361_BBPLL_input_F_REF(
+void get_AD9361_BBPLL_input_F_REF(
     OCPI::API::Application& app, const char* app_inst_name_proxy,
-    ocpi_ulong_t& val)
+    OA::ULong& val)
 {
   std::string vstr;
   app.getProperty(app_inst_name_proxy, "ad9361_rf_phy", vstr);
 
-  char* ret;
   struct ad9361_config_proxy_ad9361_rf_phy ad9361_rf_phy;
 
-  ret = (char*) parse(vstr.c_str(), ad9361_rf_phy);
-  if(ret != 0) { return ret; }
+  parse(vstr.c_str(), ad9361_rf_phy);
 
   val = ad9361_rf_phy.clk_refin.rate;
-
-  return 0;
 }
 
-const char* get_AD9361_BBPLL_ref_scaler(
+void get_AD9361_BBPLL_ref_scaler(
     OCPI::API::Application& app, const char* app_inst_name_proxy,
-    ocpi_float_t& val)
+    OA::Float& val)
 {
   OCPI::API::Property p(app, app_inst_name_proxy, "BBPLL_Ref_Clock_Scaler");
   val = p.getFloatValue();
-
-  return 0;
 }
 
-const char* get_AD9361_BBPLL_N_Integer(
+void get_AD9361_BBPLL_N_Integer(
     OCPI::API::Application& app, const char* app_inst_name_proxy,
-    ocpi_ushort_t& val)
+    OA::UShort& val)
 {
   OCPI::API::Property p(app, app_inst_name_proxy, "Integer_BB_Frequency_Word");
   val = p.getUShortValue();
-
-  return 0;
 }
 
-const char* get_AD9361_BBPLL_N_Integer_step(
+void get_AD9361_BBPLL_N_Integer_step(
     double& val)
 {
   val = 1.;
-
-  return 0;
 }
 
-const char* get_AD9361_BBPLL_N_Fractional(
+void get_AD9361_BBPLL_N_Fractional(
     OCPI::API::Application& app, const char* app_inst_name_proxy,
-    ocpi_ulong_t& val)
+    OA::ULong& val)
 {
-  OCPI::API::Property p(app, app_inst_name_proxy, "Fractional_BB_Frequency_Word");
+  const char* inst = app_inst_name_proxy;
+  OCPI::API::Property p(app, inst, "Fractional_BB_Frequency_Word");
   val = p.getULongValue();
-
-  return 0;
 }
 
-const char* get_AD9361_BBPLL_N_Fractional_step(
-    double& val)
+void get_AD9361_BBPLL_N_Fractional_step(double& val)
 {
   val = 1.;
-
-  return 0;
 }
 
 /*! @brief Get the nominal in-situ value with exact precision
@@ -148,10 +133,8 @@ const char* get_AD9361_BBPLL_N_Fractional_step(
  *  @param[in]  app_inst_name_proxy OpenCPI application instance name of the
  *                                  OpenCPI ad9361_config_proxy.rcc worker
  *  @param[out] val                 Retrieved value.
- *  @return 0 if there are no errors, non-zero char array pointer if there
- *          are errors (char array content will describe the error).
  ******************************************************************************/
-const char* get_AD9361_BBPLL_FREQ_Hz(
+void get_AD9361_BBPLL_FREQ_Hz(
     OCPI::API::Application& app, const char* app_inst_name_proxy,
     double& val)
 {
@@ -162,22 +145,16 @@ const char* get_AD9361_BBPLL_FREQ_Hz(
 
   { // restrict scope so we don't accidentally use non-double values
     // for later calculation
-    ocpi_ulong_t  input_F_REF;
-    ocpi_float_t  ref_scaler;
-    ocpi_ushort_t N_Integer;
-    ocpi_ulong_t  N_Fractional;
-
-    char* ret;
+    OA::ULong  input_F_REF;
+    OA::Float  ref_scaler;
+    OA::UShort N_Integer;
+    OA::ULong  N_Fractional;
 
     const char* inst = app_inst_name_proxy;
-    ret = (char*) get_AD9361_BBPLL_input_F_REF( app, inst, input_F_REF );
-    if(ret != 0) { return ret; }
-    ret = (char*) get_AD9361_BBPLL_ref_scaler(  app, inst, ref_scaler  );
-    if(ret != 0) { return ret; }
-    ret = (char*) get_AD9361_BBPLL_N_Integer(   app, inst, N_Integer   );
-    if(ret != 0) { return ret; }
-    ret = (char*) get_AD9361_BBPLL_N_Fractional(app, inst, N_Fractional);
-    if(ret != 0) { return ret; }
+    get_AD9361_BBPLL_input_F_REF( app, inst, input_F_REF );
+    get_AD9361_BBPLL_ref_scaler(  app, inst, ref_scaler  );
+    get_AD9361_BBPLL_N_Integer(   app, inst, N_Integer   );
+    get_AD9361_BBPLL_N_Fractional(app, inst, N_Fractional);
 
     d_input_F_REF  = (double) input_F_REF;
     d_ref_scaler   = (double) ref_scaler;
@@ -195,8 +172,6 @@ const char* get_AD9361_BBPLL_FREQ_Hz(
   //log_debug("BBPLL N_Integer= %.15f", d_N_Integer);
   //log_debug("BBPLL N_Fractional= %.15f", d_N_Fractional);
   //log_debug("calculated BBPLL frequency = %.15f Hz", val);
-
-  return 0;
 }
 
 /*! @brief Get the nominal in-situ value with double floating point precision
@@ -210,10 +185,8 @@ const char* get_AD9361_BBPLL_FREQ_Hz(
  *  @param[in]  app_inst_name_proxy OpenCPI application instance name of the
  *                                  OpenCPI ad9361_config_proxy.rcc worker
  *  @param[out] val                 Retrieved value.
- *  @return 0 if there are no errors, non-zero char array pointer if there
- *          are errors (char array content will describe the error).
  ******************************************************************************/
-const char* get_AD9361_BBPLL_FREQ_step_Hz(
+void get_AD9361_BBPLL_FREQ_step_Hz(
     OCPI::API::Application& app, const char* app_inst_name_proxy,
     double& val)
 {
@@ -224,22 +197,16 @@ const char* get_AD9361_BBPLL_FREQ_step_Hz(
 
   { // restrict scope so we don't accidentally use non-double values
     // for later calculation
-    ocpi_ulong_t  input_F_REF;
-    ocpi_float_t  ref_scaler;
-    double        N_Integer_step;
-    double        N_Fractional_step;
-
-    char* ret;
+    OA::ULong  input_F_REF;
+    OA::Float  ref_scaler;
+    double     N_Integer_step;
+    double     N_Fractional_step;
 
     const char* inst = app_inst_name_proxy;
-    ret = (char*) get_AD9361_BBPLL_input_F_REF(      app, inst, input_F_REF      );
-    if(ret != 0) { return ret; }
-    ret = (char*) get_AD9361_BBPLL_ref_scaler(       app, inst, ref_scaler       );
-    if(ret != 0) { return ret; }
-    ret = (char*) get_AD9361_BBPLL_N_Integer_step(              N_Integer_step   );
-    if(ret != 0) { return ret; }
-    ret = (char*) get_AD9361_BBPLL_N_Fractional_step(           N_Fractional_step);
-    if(ret != 0) { return ret; }
+    get_AD9361_BBPLL_input_F_REF(      app, inst, input_F_REF      );
+    get_AD9361_BBPLL_ref_scaler(       app, inst, ref_scaler       );
+    get_AD9361_BBPLL_N_Integer_step(              N_Integer_step   );
+    get_AD9361_BBPLL_N_Fractional_step(           N_Fractional_step);
 
     d_input_F_REF       = (double) input_F_REF;
     d_ref_scaler        = (double) ref_scaler;
@@ -250,8 +217,6 @@ const char* get_AD9361_BBPLL_FREQ_step_Hz(
   double x = d_input_F_REF * d_ref_scaler;
   x *= (d_N_Integer_step+(d_N_Fractional_step/BBPLL_MODULUS));
   val = x;
-
-  return 0;
 }
 
 /*! @brief Get the nominal in-situ value of the AD9361 BaseBand PLL divider
@@ -261,10 +226,8 @@ const char* get_AD9361_BBPLL_FREQ_step_Hz(
  *  @param[in]  app_inst_name_proxy OpenCPI application instance name of the
  *                                  OpenCPI ad9361_config_proxy.rcc worker
  *  @param[out] val                 Retrieved value.
- *  @return 0 if there are no errors, non-zero char array pointer if there
- *          are errors (char array content will describe the error).
  ******************************************************************************/
-const char* get_AD9361_BBPLL_Divider(
+void get_AD9361_BBPLL_Divider(
     OCPI::API::Application& app, const char* app_inst_name_proxy,
     uint8_t& val)
 {
@@ -281,10 +244,8 @@ const char* get_AD9361_BBPLL_Divider(
     std::string err;
     err = "Invalid value read for ad9361_config_proxy.rcc ";
     err += "BBPLL_Divider property: " + enum_str;
-    return err.c_str();
+    throw err;
   }
-
-  return 0;
 }
 
 #endif //_READERS_AD9361_BBPLL_H

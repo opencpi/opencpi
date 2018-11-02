@@ -1,0 +1,622 @@
+Commands to execute tool:
+set -e;
+echo '  'Creating target-virtex6/util_wkr.ngc with top == util_wkr\; details in target-virtex6/xst-util_wkr.out.;
+rm -f util_wkr.ngc;
+rm -f util_wkr.prj;
+( echo verilog work '../../../../../../cdk/include/hdl/onewire.v';
+) >>  util_wkr.prj;
+(    echo vhdl    util_wkr './util_wkr-defs.vhd';
+echo vhdl    util_wkr './generics.vhd';
+echo vhdl    util_wkr './util_wkr-impl.vhd';
+echo vhdl    util_wkr '../util_wkr.vhd';
+) >> util_wkr.prj;
+(    echo fixed_float;
+echo ocpi;
+echo util;
+echo bsv;
+) > util_wkr.lso;
+(  echo fixed_float=../../../imports/ocpi.core/exports/lib/hdl/fixed_float/virtex6;
+echo ocpi=../../../imports/ocpi.core/exports/lib/hdl/ocpi/virtex6;
+echo util=../../../imports/ocpi.core/exports/lib/hdl/util/virtex6;
+echo bsv=../../../imports/ocpi.core/exports/lib/hdl/bsv/virtex6;
+) > util_wkr.ini;
+(echo set -xsthdpdir . -xsthdpini util_wkr.ini;
+echo run  -ifmt mixed -bufg 0 -iobuf no -opt_mode speed -opt_level 2 -ofmt NGC -keep_hierarchy soft -netlist_hierarchy rebuilt -hierarchy_separator / -read_cores yes -use_new_parser yes -lso util_wkr.lso -ifn util_wkr.prj -ofn util_wkr.ngc -work_lib util_wkr -top util_wkr -p virtex6 -vlgincdir { .. ../gen ../../../../../../cdk/include/hdl }) > util_wkr.scr;
+set -e ;
+. /opt/Xilinx/14.7/ISE_DS/settings64.sh ;
+export LM_LICENSE_FILE=2100@license_server;
+xst -ifn util_wkr.scr && touch util_wkr 
+Output from executing commands above:
+  Creating target-virtex6/util_wkr.ngc with top == util_wkr; details in target-virtex6/xst-util_wkr.out.
+. /opt/Xilinx/14.7/ISE_DS/common/.settings64.sh /opt/Xilinx/14.7/ISE_DS/common
+. /opt/Xilinx/14.7/ISE_DS/EDK/.settings64.sh /opt/Xilinx/14.7/ISE_DS/EDK
+. /opt/Xilinx/14.7/ISE_DS/PlanAhead/.settings64.sh /opt/Xilinx/14.7/ISE_DS/PlanAhead
+. /opt/Xilinx/14.7/ISE_DS/ISE/.settings64.sh /opt/Xilinx/14.7/ISE_DS/ISE
+Release 14.7 - xst P.20131013 (lin64)
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+--> 
+Parameter xsthdpdir set to .
+Parameter xsthdpini set to util_wkr.ini
+
+
+Total REAL time to Xst completion: 0.00 secs
+Total CPU time to Xst completion: 0.05 secs
+ 
+--> 
+WARNING:Xst:1583 - You are using an internal switch '-use_new_parser'.
+
+TABLE OF CONTENTS
+  1) Synthesis Options Summary
+  2) HDL Parsing
+  3) HDL Elaboration
+  4) HDL Synthesis
+       4.1) HDL Synthesis Report
+  5) Advanced HDL Synthesis
+       5.1) Advanced HDL Synthesis Report
+  6) Low Level Synthesis
+  7) Partition Report
+  8) Design Summary
+       8.1) Primitive and Black Box Usage
+       8.2) Device utilization summary
+       8.3) Partition Resource Summary
+       8.4) Timing Report
+            8.4.1) Clock Information
+            8.4.2) Asynchronous Control Signals Information
+            8.4.3) Timing Summary
+            8.4.4) Timing Details
+            8.4.5) Cross Clock Domains Report
+
+
+=========================================================================
+*                      Synthesis Options Summary                        *
+=========================================================================
+---- Source Parameters
+Input Format                       : mixed
+Input File Name                    : "util_wkr.prj"
+Verilog Include Directory          : { .. ../gen ../../../../../../cdk/include/hdl }
+
+---- Target Parameters
+Output Format                      : NGC
+Output File Name                   : "util_wkr.ngc"
+Target Device                      : Virtex6
+
+---- Source Options
+Use New Parser                     : yes
+Work Library                       : util_wkr
+Top Module Name                    : util_wkr
+
+---- Target Options
+Add Generic Clock Buffer(BUFG)     : 0
+Add IO Buffers                     : no
+
+---- General Options
+Optimization Goal                  : speed
+Optimization Effort                : 2
+Keep Hierarchy                     : soft
+Netlist Hierarchy                  : rebuilt
+Hierarchy Separator                : /
+Read Cores                         : yes
+Library Search Order               : util_wkr.lso
+
+=========================================================================
+
+
+=========================================================================
+*                          HDL Parsing                                  *
+=========================================================================
+The vhdl library search path for library \"fixed_float\" is now \"/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/fixed_float/virtex6\"
+The veri library search path for library \"fixed_float\" is now \"/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/fixed_float/virtex6\"
+The vhdl library search path for library \"ocpi\" is now \"/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/virtex6\"
+The veri library search path for library \"ocpi\" is now \"/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/ocpi/virtex6\"
+The vhdl library search path for library \"util\" is now \"/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/util/virtex6\"
+The veri library search path for library \"util\" is now \"/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/util/virtex6\"
+The vhdl library search path for library \"bsv\" is now \"/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/bsv/virtex6\"
+The veri library search path for library \"bsv\" is now \"/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.core/exports/lib/hdl/bsv/virtex6\"
+Analyzing Verilog file "/home/user/opencpi/ocpi_util/cdk/include/hdl/onewire.v" into library util_wkr
+Parsing module <onewire>.
+Parsing VHDL file "/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-virtex6/util_wkr-defs.vhd" into library util_wkr
+Parsing package <util_wkr_constants>.
+Parsing package <util_wkr_defs>.
+Parsing VHDL file "/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-virtex6/generics.vhd" into library util_wkr
+Parsing package body <util_wkr_constants>.
+Parsing VHDL file "/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-virtex6/util_wkr-impl.vhd" into library util_wkr
+Parsing package <util_wkr_worker_defs>.
+Parsing entity <util_wkr_worker>.
+Parsing entity <util_wkr_rv>.
+Parsing entity <util_wkr_wci>.
+Parsing architecture <rtl> of entity <util_wkr_wci>.
+Parsing architecture <rtl> of entity <util_wkr_rv>.
+Parsing entity <util_wkr>.
+Parsing architecture <rtl> of entity <util_wkr>.
+Parsing VHDL file "/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/util_wkr.vhd" into library util_wkr
+Parsing architecture <rtl> of entity <util_wkr_worker>.
+
+=========================================================================
+*                            HDL Elaboration                            *
+=========================================================================
+WARNING:HDLCompiler:746 - "/workspace/core/hdl/primitives/fixed_float/fixed_body.vhd" Line 17: Range is empty (null range)
+WARNING:HDLCompiler:746 - "/workspace/core/hdl/primitives/fixed_float/fixed_body.vhd" Line 18: Range is empty (null range)
+WARNING:HDLCompiler:746 - "/workspace/core/hdl/primitives/fixed_float/fixed_body.vhd" Line 19: Range is empty (null range)
+WARNING:HDLCompiler:746 - "/workspace/core/hdl/primitives/fixed_float/float_body.vhd" Line 28: Range is empty (null range)
+WARNING:HDLCompiler:746 - "/workspace/core/hdl/primitives/fixed_float/float_body.vhd" Line 29: Range is empty (null range)
+
+Elaborating entity <util_wkr> (architecture <rtl>) with generics from library <util_wkr>.
+
+Elaborating entity <util_wkr_rv> (architecture <rtl>) with generics from library <util_wkr>.
+
+Elaborating entity <util_wkr_wci> (architecture <rtl>) with generics from library <util_wkr>.
+
+Elaborating entity <no_props_decoder> (architecture <rtl>) with generics from library <ocpi>.
+WARNING:HDLCompiler:871 - "/workspace/core/hdl/primitives/ocpi/no_props_decoder.vhd" Line 53: Using initial value '0' for my_config_error since it is never assigned
+
+Elaborating entity <util_wkr_worker> (architecture <rtl>) with generics from library <util_wkr>.
+
+=========================================================================
+*                           HDL Synthesis                               *
+=========================================================================
+
+Synthesizing Unit <util_wkr>.
+    Related source file is "/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-virtex6/util_wkr-impl.vhd".
+        ocpi_debug = "0"
+        ocpi_endian = ('0','0')
+    Summary:
+	no macro.
+Unit <util_wkr> synthesized.
+
+Synthesizing Unit <util_wkr_rv>.
+    Related source file is "/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-virtex6/util_wkr-impl.vhd".
+        ocpi_debug = '0'
+        ocpi_endian = little_e
+    Summary:
+	no macro.
+Unit <util_wkr_rv> synthesized.
+
+Synthesizing Unit <util_wkr_wci>.
+    Related source file is "/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-virtex6/util_wkr-impl.vhd".
+        ocpi_debug = '0'
+        endian = little_e
+INFO:Xst:3210 - "/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-virtex6/util_wkr-impl.vhd" line 175: Output port <raw_out_address> of the instance <wci_decode> is unconnected or connected to loadless signal.
+INFO:Xst:3210 - "/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-virtex6/util_wkr-impl.vhd" line 175: Output port <raw_out_byte_enable> of the instance <wci_decode> is unconnected or connected to loadless signal.
+INFO:Xst:3210 - "/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-virtex6/util_wkr-impl.vhd" line 175: Output port <raw_out_data> of the instance <wci_decode> is unconnected or connected to loadless signal.
+INFO:Xst:3210 - "/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-virtex6/util_wkr-impl.vhd" line 175: Output port <crew> of the instance <wci_decode> is unconnected or connected to loadless signal.
+INFO:Xst:3210 - "/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-virtex6/util_wkr-impl.vhd" line 175: Output port <rank> of the instance <wci_decode> is unconnected or connected to loadless signal.
+INFO:Xst:3210 - "/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-virtex6/util_wkr-impl.vhd" line 175: Output port <raw_out_is_read> of the instance <wci_decode> is unconnected or connected to loadless signal.
+INFO:Xst:3210 - "/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-virtex6/util_wkr-impl.vhd" line 175: Output port <raw_out_is_write> of the instance <wci_decode> is unconnected or connected to loadless signal.
+INFO:Xst:3210 - "/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-virtex6/util_wkr-impl.vhd" line 175: Output port <barrier> of the instance <wci_decode> is unconnected or connected to loadless signal.
+    Summary:
+	no macro.
+Unit <util_wkr_wci> synthesized.
+
+Synthesizing Unit <no_props_decoder>.
+    Related source file is "/workspace/core/hdl/primitives/ocpi/no_props_decoder.vhd".
+        worker = (5,0,"00000110")
+        ocpi_debug = '0'
+        endian = little_e
+WARNING:Xst:647 - Input <ocp_in_MAddr<31:16>> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <ocp_in_MFlag<1:1>> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <raw_in_data> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+    Found 3-bit register for signal <my_state_r>.
+    Found 3-bit register for signal <my_control_op_r>.
+    Found 32-bit register for signal <my_data_r>.
+    Found 3-bit register for signal <my_access_r>.
+    Found finite state machine <FSM_0> for signal <my_state_r>.
+    -----------------------------------------------------------------------
+    | States             | 6                                              |
+    | Transitions        | 64                                             |
+    | Inputs             | 9                                              |
+    | Outputs            | 7                                              |
+    | Clock              | ocp_in_Clk (rising_edge)                       |
+    | Reset              | my_reset (positive)                            |
+    | Reset type         | synchronous                                    |
+    | Reset State        | initialized_e                                  |
+    | Power Up State     | exists_e                                       |
+    | Encoding           | auto                                           |
+    | Implementation     | LUT                                            |
+    -----------------------------------------------------------------------
+    Found 8x3-bit Read Only RAM for signal <ocp_in_MAddr[4]_PWR_19_o_wide_mux_16_OUT>
+    Found 8x3-bit Read Only RAM for signal <_n0175>
+    Found 1-bit 7-to-1 multiplexer for signal <next_op> created at line 120.
+    Summary:
+	inferred   2 RAM(s).
+	inferred  38 D-type flip-flop(s).
+	inferred   8 Multiplexer(s).
+	inferred   1 Finite State Machine(s).
+Unit <no_props_decoder> synthesized.
+
+Synthesizing Unit <util_wkr_worker>.
+    Related source file is "/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-virtex6/util_wkr-impl.vhd".
+        ocpi_debug = '0'
+        ocpi_endian = little_e
+WARNING:Xst:647 - Input <ctl_in_control_op> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <ctl_in_state> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <ctl_in_clk> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <ctl_in_reset> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <ctl_in_is_operating> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <ctl_in_abort_control_op> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:647 - Input <ctl_in_is_big_endian> is never used. This port will be preserved and left unconnected if it belongs to a top-level block or it belongs to a sub-block and the hierarchy of this sub-block is preserved.
+WARNING:Xst:2935 - Signal 'ctl_out_done', unconnected in block 'util_wkr_worker', is tied to its initial value (1).
+WARNING:Xst:2935 - Signal 'ctl_out_error', unconnected in block 'util_wkr_worker', is tied to its initial value (0).
+WARNING:Xst:2935 - Signal 'ctl_out_attention', unconnected in block 'util_wkr_worker', is tied to its initial value (0).
+    Summary:
+	no macro.
+Unit <util_wkr_worker> synthesized.
+
+=========================================================================
+HDL Synthesis Report
+
+Macro Statistics
+# RAMs                                                 : 2
+ 8x3-bit single-port Read Only RAM                     : 2
+# Registers                                            : 3
+ 3-bit register                                        : 2
+ 32-bit register                                       : 1
+# Multiplexers                                         : 8
+ 1-bit 2-to-1 multiplexer                              : 4
+ 1-bit 7-to-1 multiplexer                              : 1
+ 2-bit 2-to-1 multiplexer                              : 1
+ 3-bit 2-to-1 multiplexer                              : 1
+ 32-bit 2-to-1 multiplexer                             : 1
+# FSMs                                                 : 1
+
+=========================================================================
+
+=========================================================================
+*                       Advanced HDL Synthesis                          *
+=========================================================================
+
+
+Synthesizing (advanced) Unit <no_props_decoder>.
+INFO:Xst:3231 - The small RAM <Mram_ocp_in_MAddr[4]_PWR_19_o_wide_mux_16_OUT> will be implemented on LUTs in order to maximize performance and save block RAM resources. If you want to force its implementation on block, use option/constraint ram_style.
+    -----------------------------------------------------------------------
+    | ram_type           | Distributed                         |          |
+    -----------------------------------------------------------------------
+    | Port A                                                              |
+    |     aspect ratio   | 8-word x 3-bit                      |          |
+    |     weA            | connected to signal <GND>           | high     |
+    |     addrA          | connected to signal <ocp_in_MAddr<4:2>> |          |
+    |     diA            | connected to signal <GND>           |          |
+    |     doA            | connected to internal node          |          |
+    -----------------------------------------------------------------------
+INFO:Xst:3218 - HDL ADVISOR - The RAM <Mram__n0175> will be implemented on LUTs either because you have described an asynchronous read or because of currently unsupported block RAM features. If you have described an asynchronous read, making it synchronous would allow you to take advantage of available block RAM resources, for optimized device usage and improved timings. Please refer to your documentation for coding guidelines.
+    -----------------------------------------------------------------------
+    | ram_type           | Distributed                         |          |
+    -----------------------------------------------------------------------
+    | Port A                                                              |
+    |     aspect ratio   | 8-word x 3-bit                      |          |
+    |     weA            | connected to signal <GND>           | high     |
+    |     addrA          | connected to signal <my_control_op_r> |          |
+    |     diA            | connected to signal <GND>           |          |
+    |     doA            | connected to internal node          |          |
+    -----------------------------------------------------------------------
+Unit <no_props_decoder> synthesized (advanced).
+
+=========================================================================
+Advanced HDL Synthesis Report
+
+Macro Statistics
+# RAMs                                                 : 2
+ 8x3-bit single-port distributed Read Only RAM         : 2
+# Registers                                            : 38
+ Flip-Flops                                            : 38
+# Multiplexers                                         : 8
+ 1-bit 2-to-1 multiplexer                              : 4
+ 1-bit 7-to-1 multiplexer                              : 1
+ 2-bit 2-to-1 multiplexer                              : 1
+ 3-bit 2-to-1 multiplexer                              : 1
+ 32-bit 2-to-1 multiplexer                             : 1
+# FSMs                                                 : 1
+
+=========================================================================
+
+=========================================================================
+*                         Low Level Synthesis                           *
+=========================================================================
+WARNING:Xst:1710 - FF/Latch <my_data_r_31> (without init value) has a constant value of 0 in block <no_props_decoder>. This FF/Latch will be trimmed during the optimization process.
+WARNING:Xst:1895 - Due to other FF/Latch trimming, FF/Latch <my_data_r_30> (without init value) has a constant value of 0 in block <no_props_decoder>. This FF/Latch will be trimmed during the optimization process.
+WARNING:Xst:1895 - Due to other FF/Latch trimming, FF/Latch <my_data_r_29> (without init value) has a constant value of 0 in block <no_props_decoder>. This FF/Latch will be trimmed during the optimization process.
+WARNING:Xst:1895 - Due to other FF/Latch trimming, FF/Latch <my_data_r_28> (without init value) has a constant value of 0 in block <no_props_decoder>. This FF/Latch will be trimmed during the optimization process.
+WARNING:Xst:1895 - Due to other FF/Latch trimming, FF/Latch <my_data_r_27> (without init value) has a constant value of 0 in block <no_props_decoder>. This FF/Latch will be trimmed during the optimization process.
+WARNING:Xst:1895 - Due to other FF/Latch trimming, FF/Latch <my_data_r_26> (without init value) has a constant value of 0 in block <no_props_decoder>. This FF/Latch will be trimmed during the optimization process.
+WARNING:Xst:1895 - Due to other FF/Latch trimming, FF/Latch <my_data_r_25> (without init value) has a constant value of 0 in block <no_props_decoder>. This FF/Latch will be trimmed during the optimization process.
+WARNING:Xst:1895 - Due to other FF/Latch trimming, FF/Latch <my_data_r_24> (without init value) has a constant value of 0 in block <no_props_decoder>. This FF/Latch will be trimmed during the optimization process.
+WARNING:Xst:1895 - Due to other FF/Latch trimming, FF/Latch <my_data_r_23> (without init value) has a constant value of 0 in block <no_props_decoder>. This FF/Latch will be trimmed during the optimization process.
+WARNING:Xst:1895 - Due to other FF/Latch trimming, FF/Latch <my_data_r_22> (without init value) has a constant value of 0 in block <no_props_decoder>. This FF/Latch will be trimmed during the optimization process.
+WARNING:Xst:1895 - Due to other FF/Latch trimming, FF/Latch <my_data_r_21> (without init value) has a constant value of 0 in block <no_props_decoder>. This FF/Latch will be trimmed during the optimization process.
+WARNING:Xst:1895 - Due to other FF/Latch trimming, FF/Latch <my_data_r_20> (without init value) has a constant value of 0 in block <no_props_decoder>. This FF/Latch will be trimmed during the optimization process.
+WARNING:Xst:1895 - Due to other FF/Latch trimming, FF/Latch <my_data_r_19> (without init value) has a constant value of 0 in block <no_props_decoder>. This FF/Latch will be trimmed during the optimization process.
+WARNING:Xst:1895 - Due to other FF/Latch trimming, FF/Latch <my_data_r_18> (without init value) has a constant value of 0 in block <no_props_decoder>. This FF/Latch will be trimmed during the optimization process.
+WARNING:Xst:1895 - Due to other FF/Latch trimming, FF/Latch <my_data_r_17> (without init value) has a constant value of 0 in block <no_props_decoder>. This FF/Latch will be trimmed during the optimization process.
+WARNING:Xst:1895 - Due to other FF/Latch trimming, FF/Latch <my_data_r_16> (without init value) has a constant value of 0 in block <no_props_decoder>. This FF/Latch will be trimmed during the optimization process.
+WARNING:Xst:1895 - Due to other FF/Latch trimming, FF/Latch <my_data_r_15> (without init value) has a constant value of 0 in block <no_props_decoder>. This FF/Latch will be trimmed during the optimization process.
+WARNING:Xst:1895 - Due to other FF/Latch trimming, FF/Latch <my_data_r_14> (without init value) has a constant value of 0 in block <no_props_decoder>. This FF/Latch will be trimmed during the optimization process.
+WARNING:Xst:1895 - Due to other FF/Latch trimming, FF/Latch <my_data_r_13> (without init value) has a constant value of 0 in block <no_props_decoder>. This FF/Latch will be trimmed during the optimization process.
+WARNING:Xst:1895 - Due to other FF/Latch trimming, FF/Latch <my_data_r_12> (without init value) has a constant value of 0 in block <no_props_decoder>. This FF/Latch will be trimmed during the optimization process.
+WARNING:Xst:1895 - Due to other FF/Latch trimming, FF/Latch <my_data_r_11> (without init value) has a constant value of 0 in block <no_props_decoder>. This FF/Latch will be trimmed during the optimization process.
+WARNING:Xst:1895 - Due to other FF/Latch trimming, FF/Latch <my_data_r_10> (without init value) has a constant value of 0 in block <no_props_decoder>. This FF/Latch will be trimmed during the optimization process.
+WARNING:Xst:1895 - Due to other FF/Latch trimming, FF/Latch <my_data_r_9> (without init value) has a constant value of 0 in block <no_props_decoder>. This FF/Latch will be trimmed during the optimization process.
+WARNING:Xst:1895 - Due to other FF/Latch trimming, FF/Latch <my_data_r_8> (without init value) has a constant value of 0 in block <no_props_decoder>. This FF/Latch will be trimmed during the optimization process.
+WARNING:Xst:1895 - Due to other FF/Latch trimming, FF/Latch <my_data_r_7> (without init value) has a constant value of 0 in block <no_props_decoder>. This FF/Latch will be trimmed during the optimization process.
+WARNING:Xst:1895 - Due to other FF/Latch trimming, FF/Latch <my_data_r_6> (without init value) has a constant value of 0 in block <no_props_decoder>. This FF/Latch will be trimmed during the optimization process.
+WARNING:Xst:1895 - Due to other FF/Latch trimming, FF/Latch <my_data_r_5> (without init value) has a constant value of 0 in block <no_props_decoder>. This FF/Latch will be trimmed during the optimization process.
+WARNING:Xst:1895 - Due to other FF/Latch trimming, FF/Latch <my_data_r_4> (without init value) has a constant value of 0 in block <no_props_decoder>. This FF/Latch will be trimmed during the optimization process.
+WARNING:Xst:1895 - Due to other FF/Latch trimming, FF/Latch <my_data_r_3> (without init value) has a constant value of 0 in block <no_props_decoder>. This FF/Latch will be trimmed during the optimization process.
+WARNING:Xst:1895 - Due to other FF/Latch trimming, FF/Latch <my_data_r_2> (without init value) has a constant value of 0 in block <no_props_decoder>. This FF/Latch will be trimmed during the optimization process.
+WARNING:Xst:1895 - Due to other FF/Latch trimming, FF/Latch <my_data_r_1> (without init value) has a constant value of 0 in block <no_props_decoder>. This FF/Latch will be trimmed during the optimization process.
+WARNING:Xst:1895 - Due to other FF/Latch trimming, FF/Latch <my_data_r_0> (without init value) has a constant value of 0 in block <no_props_decoder>. This FF/Latch will be trimmed during the optimization process.
+Analyzing FSM <MFsm> for best encoding.
+Optimizing FSM <rv/wci/wci_decode/FSM_0> on signal <my_state_r[1:3]> with user encoding.
+---------------------------
+ State         | Encoding
+---------------------------
+ exists_e      | 000
+ initialized_e | 001
+ operating_e   | 010
+ suspended_e   | 011
+ finished_e    | 100
+ unusable_e    | 101
+---------------------------
+
+Optimizing unit <util_wkr> ...
+
+Optimizing unit <util_wkr_rv> ...
+
+Optimizing unit <util_wkr_worker> ...
+
+Optimizing unit <util_wkr_wci> ...
+
+Optimizing unit <no_props_decoder> ...
+WARNING:Xst:1293 - FF/Latch <my_state_r_FSM_FFd1> has a constant value of 0 in block <wci_decode>. This FF/Latch will be trimmed during the optimization process.
+
+Mapping all equations...
+Building and optimizing final netlist ...
+Found area constraint ratio of 100 (+ 0) on block util_wkr, actual ratio is 0.
+
+Final Macro Processing ...
+
+=========================================================================
+Final Register Report
+
+Macro Statistics
+# Registers                                            : 8
+ Flip-Flops                                            : 8
+
+=========================================================================
+
+=========================================================================
+*                           Partition Report                            *
+=========================================================================
+
+Partition Implementation Status
+-------------------------------
+
+  No Partitions were found in this design.
+
+-------------------------------
+
+=========================================================================
+*                            Design Summary                             *
+=========================================================================
+
+Top Level Output File Name         : util_wkr.ngc
+
+Primitive and Black Box Usage:
+------------------------------
+# BELS                             : 21
+#      GND                         : 2
+#      INV                         : 1
+#      LUT2                        : 3
+#      LUT3                        : 2
+#      LUT4                        : 5
+#      LUT5                        : 1
+#      LUT6                        : 6
+#      VCC                         : 1
+# FlipFlops/Latches                : 8
+#      FDR                         : 3
+#      FDS                         : 2
+#      FDSE                        : 3
+
+Device utilization summary:
+---------------------------
+
+Selected Device : 6vcx75tff484-2 
+
+
+Slice Logic Utilization: 
+ Number of Slice Registers:               8  out of  93120     0%  
+ Number of Slice LUTs:                   18  out of  46560     0%  
+    Number used as Logic:                18  out of  46560     0%  
+
+Slice Logic Distribution: 
+ Number of LUT Flip Flop pairs used:     26
+   Number with an unused Flip Flop:      18  out of     26    69%  
+   Number with an unused LUT:             8  out of     26    30%  
+   Number of fully used LUT-FF pairs:     0  out of     26     0%  
+   Number of unique control sets:         2
+
+IO Utilization: 
+ Number of IOs:                          18
+ Number of bonded IOBs:                   0  out of    240     0%  
+
+Specific Feature Utilization:
+
+---------------------------
+Partition Resource Summary:
+---------------------------
+
+  No Partitions were found in this design.
+
+---------------------------
+
+
+=========================================================================
+Timing Report
+
+NOTE: THESE TIMING NUMBERS ARE ONLY A SYNTHESIS ESTIMATE.
+      FOR ACCURATE TIMING INFORMATION PLEASE REFER TO THE TRACE REPORT
+      GENERATED AFTER PLACE-and-ROUTE.
+
+Clock Information:
+------------------
+-----------------------------------+------------------------------------------+-------+
+Clock Signal                       | Clock buffer(FF name)                    | Load  |
+-----------------------------------+------------------------------------------+-------+
+ctl_Clk                            | NONE(rv/wci/wci_decode/my_control_op_r_0)| 8     |
+-----------------------------------+------------------------------------------+-------+
+INFO:Xst:2169 - HDL ADVISOR - Some clock signals were not automatically buffered by XST with BUFG/BUFR resources. Please use the buffer_type constraint in order to insert these buffers to the clock signals to help prevent skew problems.
+
+Asynchronous Control Signals Information:
+----------------------------------------
+No asynchronous control signals found in this design
+
+Timing Summary:
+---------------
+Speed Grade: -2
+
+   Minimum period: 1.507ns (Maximum Frequency: 663.438MHz)
+   Minimum input arrival time before clock: 1.004ns
+   Maximum output required time after clock: 1.394ns
+   Maximum combinational path delay: 0.718ns
+
+Timing Details:
+---------------
+All values displayed in nanoseconds (ns)
+
+=========================================================================
+Timing constraint: Default period analysis for Clock 'ctl_Clk'
+  Clock period: 1.507ns (frequency: 663.438MHz)
+  Total number of paths / destination ports: 26 / 5
+-------------------------------------------------------------------------
+Delay:               1.507ns (Levels of Logic = 2)
+  Source:            rv/wci/wci_decode/my_state_r_FSM_FFd3 (FF)
+  Destination:       rv/wci/wci_decode/my_state_r_FSM_FFd3 (FF)
+  Source Clock:      ctl_Clk rising
+  Destination Clock: ctl_Clk rising
+
+  Data Path: rv/wci/wci_decode/my_state_r_FSM_FFd3 to rv/wci/wci_decode/my_state_r_FSM_FFd3
+                                Gate     Net
+    Cell:in->out      fanout   Delay   Delay  Logical Name (Net Name)
+    ----------------------------------------  ------------
+     FDS:C->Q              4   0.317   0.711  my_state_r_FSM_FFd3 (my_state_r_FSM_FFd3)
+     LUT5:I0->O            1   0.061   0.357  my_state_r_FSM_FFd3-In_SW4 (N12)
+     LUT6:I5->O            1   0.061   0.000  my_state_r_FSM_FFd3-In (my_state_r_FSM_FFd3-In)
+     FDS:D                    -0.002          my_state_r_FSM_FFd3
+    ----------------------------------------
+    Total                      1.507ns (0.439ns logic, 1.068ns route)
+                                       (29.1% logic, 70.9% route)
+
+=========================================================================
+Timing constraint: Default OFFSET IN BEFORE for Clock 'ctl_Clk'
+  Total number of paths / destination ports: 52 / 19
+-------------------------------------------------------------------------
+Offset:              1.004ns (Levels of Logic = 3)
+  Source:            ctl_MCmd<0> (PAD)
+  Destination:       rv/wci/wci_decode/my_control_op_r_0 (FF)
+  Destination Clock: ctl_Clk rising
+
+  Data Path: ctl_MCmd<0> to rv/wci/wci_decode/my_control_op_r_0
+                                Gate     Net
+    Cell:in->out      fanout   Delay   Delay  Logical Name (Net Name)
+    ----------------------------------------  ------------
+     begin scope: 'rv:ctl_in_MCmd<0>'
+     begin scope: 'rv/wci:inputs_MCmd<0>'
+     begin scope: 'rv/wci/wci_decode:ocp_in_MCmd<0>'
+     LUT4:I0->O            3   0.061   0.351  my_access_r[2]_access_in[2]_mux_44_OUT<1>11 (my_access_r[2]_access_in[2]_mux_44_OUT<1>)
+     FDSE:S                    0.365          my_control_op_r_0
+    ----------------------------------------
+    Total                      1.004ns (0.653ns logic, 0.351ns route)
+                                       (65.0% logic, 35.0% route)
+
+=========================================================================
+Timing constraint: Default OFFSET OUT AFTER for Clock 'ctl_Clk'
+  Total number of paths / destination ports: 15 / 3
+-------------------------------------------------------------------------
+Offset:              1.394ns (Levels of Logic = 4)
+  Source:            rv/wci/wci_decode/my_control_op_r_0 (FF)
+  Destination:       ctl_SResp<1> (PAD)
+  Source Clock:      ctl_Clk rising
+
+  Data Path: rv/wci/wci_decode/my_control_op_r_0 to ctl_SResp<1>
+                                Gate     Net
+    Cell:in->out      fanout   Delay   Delay  Logical Name (Net Name)
+    ----------------------------------------  ------------
+     FDSE:C->Q             4   0.317   0.443  my_control_op_r_0 (my_control_op_r_0)
+     LUT2:I0->O            1   0.061   0.512  my_state_r_FSM_FFd2-In31 (my_state_r_FSM_FFd2-In3)
+     LUT6:I3->O            0   0.061   0.000  GND_19_o_my_error_AND_1_o1 (resp<1>)
+     end scope: 'rv/wci/wci_decode:resp<1>'
+     end scope: 'rv/wci:outputs_SResp<1>'
+     end scope: 'rv:ctl_out_SResp<1>'
+    ----------------------------------------
+    Total                      1.394ns (0.439ns logic, 0.955ns route)
+                                       (31.5% logic, 68.5% route)
+
+=========================================================================
+Timing constraint: Default path analysis
+  Total number of paths / destination ports: 4 / 1
+-------------------------------------------------------------------------
+Delay:               0.718ns (Levels of Logic = 5)
+  Source:            ctl_MReset_n (PAD)
+  Destination:       ctl_SThreadBusy<0> (PAD)
+
+  Data Path: ctl_MReset_n to ctl_SThreadBusy<0>
+                                Gate     Net
+    Cell:in->out      fanout   Delay   Delay  Logical Name (Net Name)
+    ----------------------------------------  ------------
+     begin scope: 'rv:ctl_in_MReset_n'
+     begin scope: 'rv/wci:inputs_MReset_n'
+     begin scope: 'rv/wci/wci_decode:ocp_in_MReset_n'
+     LUT4:I0->O            3   0.061   0.369  n0026<2>1 (n0026)
+     LUT4:I3->O            0   0.061   0.000  busy1 (busy)
+     end scope: 'rv/wci/wci_decode:busy'
+     end scope: 'rv/wci:outputs_SThreadBusy<0>'
+     end scope: 'rv:ctl_out_SThreadBusy<0>'
+    ----------------------------------------
+    Total                      0.718ns (0.349ns logic, 0.369ns route)
+                                       (48.6% logic, 51.4% route)
+
+=========================================================================
+
+Cross Clock Domains Report:
+--------------------------
+
+Clock to Setup on destination clock ctl_Clk
+---------------+---------+---------+---------+---------+
+               | Src:Rise| Src:Fall| Src:Rise| Src:Fall|
+Source Clock   |Dest:Rise|Dest:Rise|Dest:Fall|Dest:Fall|
+---------------+---------+---------+---------+---------+
+ctl_Clk        |    1.507|         |         |         |
+---------------+---------+---------+---------+---------+
+
+=========================================================================
+
+
+Total REAL time to Xst completion: 5.00 secs
+Total CPU time to Xst completion: 5.19 secs
+ 
+--> 
+
+
+Total memory usage is 520292 kilobytes
+
+Number of errors   :    0 (   0 filtered)
+Number of warnings :   53 (   0 filtered)
+Number of infos    :   11 (   0 filtered)
+
+0:06.76 at 12:27:27
+. /opt/Xilinx/14.7/ISE_DS/common/.settings64.sh /opt/Xilinx/14.7/ISE_DS/common
+. /opt/Xilinx/14.7/ISE_DS/EDK/.settings64.sh /opt/Xilinx/14.7/ISE_DS/EDK
+. /opt/Xilinx/14.7/ISE_DS/PlanAhead/.settings64.sh /opt/Xilinx/14.7/ISE_DS/PlanAhead
+. /opt/Xilinx/14.7/ISE_DS/ISE/.settings64.sh /opt/Xilinx/14.7/ISE_DS/ISE
+Release 14.7 - ngc2edif P.20131013 (lin64)
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+
+Release 14.7 - ngc2edif P.20131013 (lin64)
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+Reading design util_wkr.ngc ...
+WARNING:NetListWriters:298 - No output is written to util_wkr.xncf, ignored.
+Processing design ...
+   Preping design's networks ...
+   Preping design's macros ...
+  finished :Prep
+Writing EDIF netlist file util_wkr.ndf ...
+ngc2edif: Total memory usage is 103780 kilobytes
+

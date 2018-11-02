@@ -100,7 +100,8 @@ def checkBuiltAssy (assyName, workerDir):
     containers = []
     fileList_noxml = [x.strip('.xml') for x in fileList]
     fileList_noxml = [x for x in fileList_noxml if not x.startswith("container-")]
-    platformList = [plat_obj.name for plat_obj in hdltargets.HdlPlatform.all()]
+    platformList = [plat_obj.name for plat_obj in \
+                    hdltargets.HdlToolFactory.get_or_create_all("hdlplatform")]
     for fileName in fileList:
         if fileName.startswith("container-"):
             foundContainer = False;

@@ -544,10 +544,11 @@ When designing a Primitive vendor-specific core that is intended for simulation,
 \label{bug:3193}
 The proxy tests for the Lime transceiver use a feature of C++11 that is not supported by the compiler in CentOS 6. The workaround is to use similar code to the following in the various places \verb+to_string()+ was used:
 \begin{lstlisting}[language=diff]
+-      std::string ClkInStr;
 -      ClkInStr = to_string(2 * sample_rate * 1e6).c_str();
 +      std::ostringstream ostr_clkin;
 +      ostr_clkin << (2 * sample_rate * 1e6);
-+      ClkInStr = ostr_clkin.str().c_str();
++      std::string ClkInStr(ostr_clkin.str());
 \end{lstlisting}
 
 \subsection{Previously Documented Deficiencies}

@@ -1,0 +1,327 @@
+. /opt/Xilinx/14.7/ISE_DS/common/.settings64.sh /opt/Xilinx/14.7/ISE_DS/common
+. /opt/Xilinx/14.7/ISE_DS/EDK/.settings64.sh /opt/Xilinx/14.7/ISE_DS/EDK
+. /opt/Xilinx/14.7/ISE_DS/PlanAhead/.settings64.sh /opt/Xilinx/14.7/ISE_DS/PlanAhead
+. /opt/Xilinx/14.7/ISE_DS/ISE/.settings64.sh /opt/Xilinx/14.7/ISE_DS/ISE
+Command: ngc2edif -w util_assemb_ml605_base-b.ngc
+Release 14.7 - ngc2edif P.20131013 (lin64)
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+
+Release 14.7 - ngc2edif P.20131013 (lin64)
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+Reading design util_assemb_ml605_base-b.ngc ...
+WARNING:NetListWriters:298 - No output is written to
+   util_assemb_ml605_base-b.xncf, ignored.
+Processing design ...
+   Preping design's networks ...
+   Preping design's macros ...
+WARNING:NetListWriters:306 - Signal bus data0_reg<152 : 0> on block FIFO2_4_NO1
+   is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus data1_reg<152 : 0> on block FIFO2_4_NO1
+   is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus d0di_d0h_or_8_OUT<152 : 0> on block
+   FIFO2_4_NO1 is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus data0_reg<152 : 0> on block FIFO2_4 is
+   not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus data1_reg<152 : 0> on block FIFO2_4 is
+   not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus d0di_d0h_or_8_OUT<152 : 0> on block
+   FIFO2_4 is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus outF$D_IN<151 : 0> on block
+   mkTLPSerializer is not reconstructed, because there are some missing bus
+   signals.
+WARNING:NetListWriters:306 - Signal bus inF$D_OUT<152 : 0> on block
+   mkTLPSerializer is not reconstructed, because there are some missing bus
+   signals.
+WARNING:NetListWriters:306 - Signal bus tlpReq<62 : 0> on block mkTLPSerializer
+   is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus Mmux_cmpDWRemain$D_IN_rs_cy<5 : 2> on
+   block mkTLPSerializer is not reconstructed, because there are some missing
+   bus signals.
+WARNING:NetListWriters:306 - Signal bus s_rplTimeControl[4 : 0] on block
+   time_service is not reconstructed, because there are some missing bus
+   signals.
+WARNING:NetListWriters:306 - Signal bus Msub_n0189_Madd_lut[49 : 0] on block
+   time_service is not reconstructed, because there are some missing bus
+   signals.
+WARNING:NetListWriters:306 - Signal bus readback_data<31 : 0> on block
+   time_server_wci is not reconstructed, because there are some missing bus
+   signals.
+WARNING:NetListWriters:306 - Signal bus write_enables<3 : 0> on block
+   time_server_wci is not reconstructed, because there are some missing bus
+   signals.
+WARNING:NetListWriters:306 - Signal bus data<31 : 0> on block time_server_wci is
+   not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus D_OUT[80]_head[1]_mux_27_OUT<80 : 0> on
+   block SizedFIFO_NO1 is not reconstructed, because there are some missing bus
+   signals.
+WARNING:NetListWriters:306 - Signal bus _n0117<80 : 0> on block SizedFIFO_NO1 is
+   not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus pciw_i2pS<152 : 0> on block pci_ml605 is
+   not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   pciw_Prelude_inst_changeSpecialWires_2_rg$D_IN<79 : 0> on block pci_ml605 is
+   not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   pciw_Prelude_inst_changeSpecialWires_2_rg<81 : 0> on block pci_ml605 is not
+   reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus pciw_p2iS$D_IN<152 : 0> on block
+   pci_ml605 is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   pciw_Prelude_inst_changeSpecialWires_1_rg$D_IN<80 : 0> on block pci_ml605 is
+   not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus
+   pciw_Prelude_inst_changeSpecialWires_1_rg<81 : 0> on block pci_ml605 is not
+   reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus pciw_fP2I$D_IN<80 : 64> on block
+   pci_ml605 is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus pciw_fI2P$D_IN<80 : 0> on block
+   pci_ml605 is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus pciw_fI2P$D_OUT<80 : 0> on block
+   pci_ml605 is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus offsets<5 : 0> on block ml605_wci is not
+   reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus readback_data<31 : 0> on block ml605_wci
+   is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus write_enables<10 : 2> on block ml605_wci
+   is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus data<31 : 0> on block ml605_wci is not
+   reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus props_from_worker_nSwitches<3 : 0> on
+   block ml605_rv is not reconstructed, because there are some missing bus
+   signals.
+WARNING:NetListWriters:306 - Signal bus props_from_worker_nLEDs<3 : 0> on block
+   ml605_rv is not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus props_from_worker_memories_length<3 : 0>
+   on block ml605_rv is not reconstructed, because there are some missing bus
+   signals.
+WARNING:NetListWriters:305 - Port bus wci_in[0]_MCmd has a mismatched property
+   name wci_in on block base_rv.
+WARNING:NetListWriters:303 - Unable to preserve the ordering for port bus
+   wci_in[0]_MCmd on block base_rv using the data wci_in[0]_MCmd<2:0>.
+WARNING:NetListWriters:305 - Port bus wci_in[0]_MAddr has a mismatched property
+   name wci_in on block base_rv.
+WARNING:NetListWriters:303 - Unable to preserve the ordering for port bus
+   wci_in[0]_MAddr on block base_rv using the data wci_in[0]_MAddr<31:0>.
+WARNING:NetListWriters:305 - Port bus wci_in[0]_MAddrSpace has a mismatched
+   property name wci_in on block base_rv.
+WARNING:NetListWriters:303 - Unable to preserve the ordering for port bus
+   wci_in[0]_MAddrSpace on block base_rv using the data
+   wci_in[0]_MAddrSpace<0:0>.
+WARNING:NetListWriters:305 - Port bus wci_in[0]_MByteEn has a mismatched
+   property name wci_in on block base_rv.
+WARNING:NetListWriters:303 - Unable to preserve the ordering for port bus
+   wci_in[0]_MByteEn on block base_rv using the data wci_in[0]_MByteEn<3:0>.
+WARNING:NetListWriters:305 - Port bus wci_in[0]_MData has a mismatched property
+   name wci_in on block base_rv.
+WARNING:NetListWriters:303 - Unable to preserve the ordering for port bus
+   wci_in[0]_MData on block base_rv using the data wci_in[0]_MData<31:0>.
+WARNING:NetListWriters:305 - Port bus wci_in[0]_MFlag has a mismatched property
+   name wci_in on block base_rv.
+WARNING:NetListWriters:303 - Unable to preserve the ordering for port bus
+   wci_in[0]_MFlag on block base_rv using the data wci_in[0]_MFlag<18:0>.
+WARNING:NetListWriters:305 - Port bus wci_in[1]_MCmd has a mismatched property
+   name wci_in on block base_rv.
+WARNING:NetListWriters:303 - Unable to preserve the ordering for port bus
+   wci_in[1]_MCmd on block base_rv using the data wci_in[1]_MCmd<2:0>.
+WARNING:NetListWriters:305 - Port bus wci_in[1]_MAddr has a mismatched property
+   name wci_in on block base_rv.
+WARNING:NetListWriters:303 - Unable to preserve the ordering for port bus
+   wci_in[1]_MAddr on block base_rv using the data wci_in[1]_MAddr<31:0>.
+WARNING:NetListWriters:305 - Port bus wci_in[1]_MAddrSpace has a mismatched
+   property name wci_in on block base_rv.
+WARNING:NetListWriters:303 - Unable to preserve the ordering for port bus
+   wci_in[1]_MAddrSpace on block base_rv using the data
+   wci_in[1]_MAddrSpace<0:0>.
+WARNING:NetListWriters:305 - Port bus wci_in[1]_MByteEn has a mismatched
+   property name wci_in on block base_rv.
+WARNING:NetListWriters:303 - Unable to preserve the ordering for port bus
+   wci_in[1]_MByteEn on block base_rv using the data wci_in[1]_MByteEn<3:0>.
+WARNING:NetListWriters:305 - Port bus wci_in[1]_MData has a mismatched property
+   name wci_in on block base_rv.
+WARNING:NetListWriters:303 - Unable to preserve the ordering for port bus
+   wci_in[1]_MData on block base_rv using the data wci_in[1]_MData<31:0>.
+WARNING:NetListWriters:305 - Port bus wci_in[1]_MFlag has a mismatched property
+   name wci_in on block base_rv.
+WARNING:NetListWriters:303 - Unable to preserve the ordering for port bus
+   wci_in[1]_MFlag on block base_rv using the data wci_in[1]_MFlag<18:0>.
+WARNING:NetListWriters:305 - Port bus wci_out[0]_SData has a mismatched property
+   name wci_out on block base_rv.
+WARNING:NetListWriters:303 - Unable to preserve the ordering for port bus
+   wci_out[0]_SData on block base_rv using the data wci_out[0]_SData<31:0>.
+WARNING:NetListWriters:305 - Port bus wci_out[0]_SResp has a mismatched property
+   name wci_out on block base_rv.
+WARNING:NetListWriters:303 - Unable to preserve the ordering for port bus
+   wci_out[0]_SResp on block base_rv using the data wci_out[0]_SResp<1:0>.
+WARNING:NetListWriters:305 - Port bus wci_out[0]_SFlag has a mismatched property
+   name wci_out on block base_rv.
+WARNING:NetListWriters:303 - Unable to preserve the ordering for port bus
+   wci_out[0]_SFlag on block base_rv using the data wci_out[0]_SFlag<2:0>.
+WARNING:NetListWriters:305 - Port bus wci_out[0]_SThreadBusy has a mismatched
+   property name wci_out on block base_rv.
+WARNING:NetListWriters:303 - Unable to preserve the ordering for port bus
+   wci_out[0]_SThreadBusy on block base_rv using the data
+   wci_out[0]_SThreadBusy<0:0>.
+WARNING:NetListWriters:305 - Port bus wci_out[1]_SData has a mismatched property
+   name wci_out on block base_rv.
+WARNING:NetListWriters:303 - Unable to preserve the ordering for port bus
+   wci_out[1]_SData on block base_rv using the data wci_out[1]_SData<31:0>.
+WARNING:NetListWriters:305 - Port bus wci_out[1]_SResp has a mismatched property
+   name wci_out on block base_rv.
+WARNING:NetListWriters:303 - Unable to preserve the ordering for port bus
+   wci_out[1]_SResp on block base_rv using the data wci_out[1]_SResp<1:0>.
+WARNING:NetListWriters:305 - Port bus wci_out[1]_SFlag has a mismatched property
+   name wci_out on block base_rv.
+WARNING:NetListWriters:303 - Unable to preserve the ordering for port bus
+   wci_out[1]_SFlag on block base_rv using the data wci_out[1]_SFlag<2:0>.
+WARNING:NetListWriters:305 - Port bus wci_out[1]_SThreadBusy has a mismatched
+   property name wci_out on block base_rv.
+WARNING:NetListWriters:303 - Unable to preserve the ordering for port bus
+   wci_out[1]_SThreadBusy on block base_rv using the data
+   wci_out[1]_SThreadBusy<0:0>.
+WARNING:NetListWriters:306 - Signal bus sticky_r[8 : 0] on block wci_master_3 is
+   not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus sticky_r[8]_response[2]_mux_59_OUT[8 :
+   0] on block wci_master_3 is not reconstructed, because there are some missing
+   bus signals.
+WARNING:NetListWriters:306 - Signal bus sticky_r[8 : 0] on block wci_master_2 is
+   not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus sticky_r[8]_response[2]_mux_59_OUT[8 :
+   0] on block wci_master_2 is not reconstructed, because there are some missing
+   bus signals.
+WARNING:NetListWriters:306 - Signal bus sticky_r[8 : 0] on block wci_master_1 is
+   not reconstructed, because there are some missing bus signals.
+WARNING:NetListWriters:306 - Signal bus sticky_r[8]_response[2]_mux_59_OUT[8 :
+   0] on block wci_master_1 is not reconstructed, because there are some missing
+   bus signals.
+WARNING:NetListWriters:305 - Port bus wci_in[0]_SData has a mismatched property
+   name wci_in on block ocscp_rv.
+WARNING:NetListWriters:303 - Unable to preserve the ordering for port bus
+   wci_in[0]_SData on block ocscp_rv using the data wci_in[0]_SData<31:0>.
+WARNING:NetListWriters:305 - Port bus wci_in[0]_SResp has a mismatched property
+   name wci_in on block ocscp_rv.
+WARNING:NetListWriters:303 - Unable to preserve the ordering for port bus
+   wci_in[0]_SResp on block ocscp_rv using the data wci_in[0]_SResp<1:0>.
+WARNING:NetListWriters:305 - Port bus wci_in[0]_SFlag has a mismatched property
+   name wci_in on block ocscp_rv.
+WARNING:NetListWriters:303 - Unable to preserve the ordering for port bus
+   wci_in[0]_SFlag on block ocscp_rv using the data wci_in[0]_SFlag<2:0>.
+WARNING:NetListWriters:305 - Port bus wci_in[0]_SThreadBusy has a mismatched
+   property name wci_in on block ocscp_rv.
+WARNING:NetListWriters:303 - Unable to preserve the ordering for port bus
+   wci_in[0]_SThreadBusy on block ocscp_rv using the data
+   wci_in[0]_SThreadBusy<0:0>.
+WARNING:NetListWriters:305 - Port bus wci_in[1]_SData has a mismatched property
+   name wci_in on block ocscp_rv.
+WARNING:NetListWriters:303 - Unable to preserve the ordering for port bus
+   wci_in[1]_SData on block ocscp_rv using the data wci_in[1]_SData<31:0>.
+WARNING:NetListWriters:305 - Port bus wci_in[1]_SResp has a mismatched property
+   name wci_in on block ocscp_rv.
+WARNING:NetListWriters:303 - Unable to preserve the ordering for port bus
+   wci_in[1]_SResp on block ocscp_rv using the data wci_in[1]_SResp<1:0>.
+WARNING:NetListWriters:305 - Port bus wci_in[1]_SFlag has a mismatched property
+   name wci_in on block ocscp_rv.
+WARNING:NetListWriters:303 - Unable to preserve the ordering for port bus
+   wci_in[1]_SFlag on block ocscp_rv using the data wci_in[1]_SFlag<2:0>.
+WARNING:NetListWriters:305 - Port bus wci_in[1]_SThreadBusy has a mismatched
+   property name wci_in on block ocscp_rv.
+WARNING:NetListWriters:303 - Unable to preserve the ordering for port bus
+   wci_in[1]_SThreadBusy on block ocscp_rv using the data
+   wci_in[1]_SThreadBusy<0:0>.
+WARNING:NetListWriters:305 - Port bus wci_in[2]_SData has a mismatched property
+   name wci_in on block ocscp_rv.
+WARNING:NetListWriters:303 - Unable to preserve the ordering for port bus
+   wci_in[2]_SData on block ocscp_rv using the data wci_in[2]_SData<31:0>.
+WARNING:NetListWriters:305 - Port bus wci_in[2]_SResp has a mismatched property
+   name wci_in on block ocscp_rv.
+WARNING:NetListWriters:303 - Unable to preserve the ordering for port bus
+   wci_in[2]_SResp on block ocscp_rv using the data wci_in[2]_SResp<1:0>.
+WARNING:NetListWriters:305 - Port bus wci_in[2]_SFlag has a mismatched property
+   name wci_in on block ocscp_rv.
+WARNING:NetListWriters:303 - Unable to preserve the ordering for port bus
+   wci_in[2]_SFlag on block ocscp_rv using the data wci_in[2]_SFlag<2:0>.
+WARNING:NetListWriters:305 - Port bus wci_in[2]_SThreadBusy has a mismatched
+   property name wci_in on block ocscp_rv.
+WARNING:NetListWriters:303 - Unable to preserve the ordering for port bus
+   wci_in[2]_SThreadBusy on block ocscp_rv using the data
+   wci_in[2]_SThreadBusy<0:0>.
+WARNING:NetListWriters:305 - Port bus wci_out[0]_MCmd has a mismatched property
+   name wci_out on block ocscp_rv.
+WARNING:NetListWriters:303 - Unable to preserve the ordering for port bus
+   wci_out[0]_MCmd on block ocscp_rv using the data wci_out[0]_MCmd<2:0>.
+WARNING:NetListWriters:305 - Port bus wci_out[0]_MAddr has a mismatched property
+   name wci_out on block ocscp_rv.
+WARNING:NetListWriters:303 - Unable to preserve the ordering for port bus
+   wci_out[0]_MAddr on block ocscp_rv using the data wci_out[0]_MAddr<31:0>.
+WARNING:NetListWriters:305 - Port bus wci_out[0]_MAddrSpace has a mismatched
+   property name wci_out on block ocscp_rv.
+WARNING:NetListWriters:303 - Unable to preserve the ordering for port bus
+   wci_out[0]_MAddrSpace on block ocscp_rv using the data
+   wci_out[0]_MAddrSpace<0:0>.
+WARNING:NetListWriters:305 - Port bus wci_out[0]_MByteEn has a mismatched
+   property name wci_out on block ocscp_rv.
+WARNING:NetListWriters:303 - Unable to preserve the ordering for port bus
+   wci_out[0]_MByteEn on block ocscp_rv using the data wci_out[0]_MByteEn<3:0>.
+WARNING:NetListWriters:305 - Port bus wci_out[0]_MData has a mismatched property
+   name wci_out on block ocscp_rv.
+WARNING:NetListWriters:303 - Unable to preserve the ordering for port bus
+   wci_out[0]_MData on block ocscp_rv using the data wci_out[0]_MData<31:0>.
+WARNING:NetListWriters:305 - Port bus wci_out[0]_MFlag has a mismatched property
+   name wci_out on block ocscp_rv.
+WARNING:NetListWriters:303 - Unable to preserve the ordering for port bus
+   wci_out[0]_MFlag on block ocscp_rv using the data wci_out[0]_MFlag<18:0>.
+WARNING:NetListWriters:305 - Port bus wci_out[1]_MCmd has a mismatched property
+   name wci_out on block ocscp_rv.
+WARNING:NetListWriters:303 - Unable to preserve the ordering for port bus
+   wci_out[1]_MCmd on block ocscp_rv using the data wci_out[1]_MCmd<2:0>.
+WARNING:NetListWriters:305 - Port bus wci_out[1]_MAddr has a mismatched property
+   name wci_out on block ocscp_rv.
+WARNING:NetListWriters:303 - Unable to preserve the ordering for port bus
+   wci_out[1]_MAddr on block ocscp_rv using the data wci_out[1]_MAddr<31:0>.
+WARNING:NetListWriters:305 - Port bus wci_out[1]_MAddrSpace has a mismatched
+   property name wci_out on block ocscp_rv.
+WARNING:NetListWriters:303 - Unable to preserve the ordering for port bus
+   wci_out[1]_MAddrSpace on block ocscp_rv using the data
+   wci_out[1]_MAddrSpace<0:0>.
+WARNING:NetListWriters:305 - Port bus wci_out[1]_MByteEn has a mismatched
+   property name wci_out on block ocscp_rv.
+WARNING:NetListWriters:303 - Unable to preserve the ordering for port bus
+   wci_out[1]_MByteEn on block ocscp_rv using the data wci_out[1]_MByteEn<3:0>.
+WARNING:NetListWriters:305 - Port bus wci_out[1]_MData has a mismatched property
+   name wci_out on block ocscp_rv.
+WARNING:NetListWriters:303 - Unable to preserve the ordering for port bus
+   wci_out[1]_MData on block ocscp_rv using the data wci_out[1]_MData<31:0>.
+WARNING:NetListWriters:305 - Port bus wci_out[1]_MFlag has a mismatched property
+   name wci_out on block ocscp_rv.
+WARNING:NetListWriters:303 - Unable to preserve the ordering for port bus
+   wci_out[1]_MFlag on block ocscp_rv using the data wci_out[1]_MFlag<18:0>.
+WARNING:NetListWriters:305 - Port bus wci_out[2]_MCmd has a mismatched property
+   name wci_out on block ocscp_rv.
+WARNING:NetListWriters:303 - Unable to preserve the ordering for port bus
+   wci_out[2]_MCmd on block ocscp_rv using the data wci_out[2]_MCmd<2:0>.
+WARNING:NetListWriters:305 - Port bus wci_out[2]_MAddr has a mismatched property
+   name wci_out on block ocscp_rv.
+WARNING:NetListWriters:303 - Unable to preserve the ordering for port bus
+   wci_out[2]_MAddr on block ocscp_rv using the data wci_out[2]_MAddr<31:0>.
+WARNING:NetListWriters:305 - Port bus wci_out[2]_MAddrSpace has a mismatched
+   property name wci_out on block ocscp_rv.
+WARNING:NetListWriters:303 - Unable to preserve the ordering for port bus
+   wci_out[2]_MAddrSpace on block ocscp_rv using the data
+   wci_out[2]_MAddrSpace<0:0>.
+WARNING:NetListWriters:305 - Port bus wci_out[2]_MByteEn has a mismatched
+   property name wci_out on block ocscp_rv.
+WARNING:NetListWriters:303 - Unable to preserve the ordering for port bus
+   wci_out[2]_MByteEn on block ocscp_rv using the data wci_out[2]_MByteEn<3:0>.
+WARNING:NetListWriters:305 - Port bus wci_out[2]_MData has a mismatched property
+   name wci_out on block ocscp_rv.
+WARNING:NetListWriters:303 - Unable to preserve the ordering for port bus
+   wci_out[2]_MData on block ocscp_rv using the data wci_out[2]_MData<31:0>.
+WARNING:NetListWriters:305 - Port bus wci_out[2]_MFlag has a mismatched property
+   name wci_out on block ocscp_rv.
+WARNING:NetListWriters:303 - Unable to preserve the ordering for port bus
+   wci_out[2]_MFlag on block ocscp_rv using the data wci_out[2]_MFlag<18:0>.
+  finished :Prep
+Writing EDIF netlist file util_assemb_ml605_base-b.ndf ...
+ngc2edif: Total memory usage is 143812 kilobytes
+
+Exit status: 0
+Elapsed time:0:02.47, completed at 09:02:52

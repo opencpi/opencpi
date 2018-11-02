@@ -48,7 +48,7 @@ namespace OCPI {
     const Workers NoWorkers;
     Worker::
     Worker(Artifact *art, ezxml_t impl, ezxml_t inst, const Workers &a_slaves, bool a_hasMaster,
-	   size_t a_member, size_t a_crewSize, const OA::PValue *) 
+	   size_t a_member, size_t a_crewSize, const OA::PValue *)
       : OU::Worker::Worker(),
 	m_artifact(art), m_xml(impl), m_instXml(inst), m_workerMutex(true),
 	m_controlOpPending(false), m_slaves(a_slaves), m_hasMaster(a_hasMaster),
@@ -103,7 +103,7 @@ namespace OCPI {
     getPort(const char *a_name, const OA::PValue *params ) {
       return getPort(a_name, 0, params);
     }
-    OA::PropertyInfo & Worker::setupProperty(const char *pname, 
+    OA::PropertyInfo & Worker::setupProperty(const char *pname,
 					     volatile uint8_t *&m_writeVaddr,
 					     const volatile uint8_t *&m_readVaddr) {
       OU::Property &prop = findProperty(pname);
@@ -114,7 +114,7 @@ namespace OCPI {
 	prepareProperty(prop, m_writeVaddr, m_readVaddr);
       return prop;
     }
-    OA::PropertyInfo & Worker::setupProperty(unsigned n, 
+    OA::PropertyInfo & Worker::setupProperty(unsigned n,
 					     volatile uint8_t *&m_writeVaddr,
 					     const volatile uint8_t *&m_readVaddr) {
       OU::Property &prop = property(n);
@@ -173,13 +173,13 @@ namespace OCPI {
 	    // This value is fully serialized, including sequence length
 	    if (info.m_isSequence)
               nBytes += std::max(sizeof(uint32_t), info.m_dataAlign);
-	    size_t length = (nBytes + 7)/8;
-	    alloc = new uint64_t[length];
-	    length = nBytes;
+	    alloc = new uint64_t[(nBytes + 7)/8]; // round nBytes up to next 64bit chunk
+	    size_t length = nBytes;
 	    data = (uint8_t*)alloc;
 	    const OU::Value *vp = &v;
 	    OU::ValueReader reader(&vp);
-	    info.read(reader, data, length, false, true); // not fake, top level
+	    // put data from the value object into the data buffer, not fake top level
+	    info.read(reader, data, length, false, true);
 	    assert(length < info.m_dataAlign); // padding at end may not be written
 	    data = (uint8_t*)alloc;
 	    if (info.m_isSequence) { // because we set the sequence length last below
@@ -277,7 +277,7 @@ namespace OCPI {
 	    v.m_stringNext[info.m_stringLength] = '\0';
 	    v.m_stringNext += length;
 	    offset += length;
-	  }	  
+	  }
 	} else if (nBytes) {
           if (info.m_isSequence)
             nBytes += std::max(sizeof(uint32_t), info.m_dataAlign);
@@ -419,7 +419,7 @@ namespace OCPI {
 	m_controlMutex.lock();
 	m_controlMutex.unlock();
       }
-    }	
+    }
 
     bool Worker::controlOp(OU::Worker::ControlOperation op) {
       // sched_yield does not work with the default
@@ -536,7 +536,7 @@ namespace OCPI {
       return *(Port*)this;
     }
     Port &Worker::
-    createInputPort(OU::PortOrdinal /*portId*/, size_t /*bufferCount*/, size_t /*bufferSize*/, 
+    createInputPort(OU::PortOrdinal /*portId*/, size_t /*bufferCount*/, size_t /*bufferSize*/,
 		    const OU::PValue */*params*/) {
       ocpiAssert("This method is not expected to ever be called" == 0);
       return *(Port*)this;

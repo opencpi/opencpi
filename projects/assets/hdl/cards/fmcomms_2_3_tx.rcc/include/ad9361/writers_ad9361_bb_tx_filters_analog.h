@@ -21,6 +21,10 @@
 #ifndef _WRITERS_AD9361_TX_FILTERS_ANALOG
 #define _WRITERS_AD9361_TX_FILTERS_ANALOG
 
+#include "OcpiApi.hh" // OCPI::API namespace
+
+namespace OA = OCPI::API;
+
 /*! @brief Set the nominal in-situ value with No-OS precision
  *         of the 
  *         tx_rf_bandwidth in Hz
@@ -31,17 +35,13 @@
  *  @param[in]  app_inst_name_proxy OpenCPI application instance name of the
  *                                  OpenCPI ad9361_config_proxy.rcc worker
  *  @param[out] val                 Retrieved value.
- *  @return 0 if there are no errors, non-zero char array pointer if there
- *          are errors (char array content will describe the error).
  ******************************************************************************/
-const char* set_AD9361_tx_rf_bandwidth_Hz(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
-    ocpi_ulong_t& val)
+void set_AD9361_tx_rf_bandwidth_Hz(
+    OA::Application& app, const char* app_inst_name_proxy,
+    OA::ULong& val)
 {
-  OCPI::API::Property p(app, app_inst_name_proxy, "tx_rf_bandwidth");
+  OA::Property p(app, app_inst_name_proxy, "tx_rf_bandwidth");
   p.setULongValue(val);
-
-  return 0;
 }
 
 #endif // _WRITERS_AD9361_TX_FILTERS_ANALOG

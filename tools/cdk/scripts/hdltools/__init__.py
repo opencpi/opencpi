@@ -15,21 +15,8 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
-
-#include $(OCPI_CDK_DIR)/include/util.mk
-include $(OCPI_CDK_DIR)/include/hdl/hdl-targets.mk
-include $(OCPI_CDK_DIR)/include/rcc/rcc-targets.mk
-
-.PHONY: rccPlatform hdlPlatform hdlTarget all
-.SILENT: rccPlatform hdlPlatform hdlTarget all
-all: hdlPlatform rccPlatform hdlTarget
-
-hdlPlatform:
-	echo "HdlAllPlatforms: $(HdlAllPlatforms)"
-
-rccPlatform:
-	echo "RccAllPlatforms: $(RccAllPlatforms)"
-
-hdlTarget:
-	echo "HdlAllTargets: $(HdlAllTargets)"
-
+__all__ = [
+           "xst",
+           "vivado",
+           "quartus",
+          ]

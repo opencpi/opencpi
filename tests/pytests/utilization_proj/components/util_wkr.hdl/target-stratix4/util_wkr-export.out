@@ -1,0 +1,44 @@
+Info: *******************************************************************
+Info: Running Quartus Prime Compiler Database Interface
+    Info: Version 17.1.0 Build 590 10/25/2017 SJ Standard Edition
+    Info: Copyright (C) 2017  Intel Corporation. All rights reserved.
+    Info: Your use of Intel Corporation's design tools, logic functions 
+    Info: and other software and tools, and its AMPP partner logic 
+    Info: functions, and any output files from any of the foregoing 
+    Info: (including device programming or simulation files), and any 
+    Info: associated documentation or information are expressly subject 
+    Info: to the terms and conditions of the Intel Program License 
+    Info: Subscription Agreement, the Intel Quartus Prime License Agreement,
+    Info: the Intel FPGA IP License Agreement, or other applicable license
+    Info: agreement, including, without limitation, that your use is for
+    Info: the sole purpose of programming logic devices manufactured by
+    Info: Intel and sold by Intel or its authorized distributors.  Please
+    Info: refer to the applicable agreement for further details.
+    Info: Processing started: Wed Oct 17 12:26:04 2018
+Info: Command: quartus_cdb --64bit --incremental_compilation_export --write_settings_files=off util_wkr
+Info: Using INI file /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-stratix4/quartus.ini
+Info (142007): Exported design partition includes one or more complex I/O elements
+    Info (142008): Node ctl_MAddr[0] is a complex I/O File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-stratix4/util_wkr-impl.vhd Line: 267
+    Info (142008): Node ctl_MAddr[1] is a complex I/O File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-stratix4/util_wkr-impl.vhd Line: 267
+    Info (142008): Node ctl_MFlag[0] is a complex I/O File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-stratix4/util_wkr-impl.vhd Line: 269
+    Info (142008): Node ctl_MFlag[1] is a complex I/O File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-stratix4/util_wkr-impl.vhd Line: 269
+    Info (142008): Node ctl_SFlag[0] is a complex I/O File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-stratix4/util_wkr-impl.vhd Line: 271
+    Info (142008): Node ctl_SFlag[1] is a complex I/O File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-stratix4/util_wkr-impl.vhd Line: 271
+    Info (142008): Node ctl_SFlag[2] is a complex I/O File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-stratix4/util_wkr-impl.vhd Line: 271
+    Info (142008): Node ctl_SResp[0] is a complex I/O File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-stratix4/util_wkr-impl.vhd Line: 272
+    Info (142008): Node ctl_SResp[1] is a complex I/O File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-stratix4/util_wkr-impl.vhd Line: 272
+    Info (142008): Node ctl_SThreadBusy[0] is a complex I/O File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-stratix4/util_wkr-impl.vhd Line: 273
+    Info (142008): Node ctl_MCmd[2] is a complex I/O File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-stratix4/util_wkr-impl.vhd Line: 268
+    Info (142008): Node ctl_MReset_n is a complex I/O File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-stratix4/util_wkr-impl.vhd Line: 270
+    Info (142008): Node ctl_MCmd[1] is a complex I/O File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-stratix4/util_wkr-impl.vhd Line: 268
+    Info (142008): Node ctl_MCmd[0] is a complex I/O File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-stratix4/util_wkr-impl.vhd Line: 268
+    Info (142008): Node ctl_Clk is a complex I/O File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-stratix4/util_wkr-impl.vhd Line: 266
+    Info (142008): Node ctl_MAddr[4] is a complex I/O File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-stratix4/util_wkr-impl.vhd Line: 267
+    Info (142008): Node ctl_MAddr[3] is a complex I/O File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-stratix4/util_wkr-impl.vhd Line: 267
+    Info (142008): Node ctl_MAddr[2] is a complex I/O File: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/components/util_wkr.hdl/target-stratix4/util_wkr-impl.vhd Line: 267
+Info: Quartus Prime Compiler Database Interface was successful. 0 errors, 0 warnings
+    Info: Peak virtual memory: 1340 megabytes
+    Info: Processing ended: Wed Oct 17 12:26:05 2018
+    Info: Elapsed time: 00:00:01
+    Info: Total CPU time (on all processors): 00:00:00
+0:01.46

@@ -63,7 +63,7 @@ _ocpidev()
     noun3="${COMP_WORDS[i]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
     # valid verbs
-    verbs="build delete create clean register unregister set unset show refresh run"
+    verbs="build delete create clean register unregister set unset show refresh run utilization"
     # valid nouns in first slot
     nouns1="project registry application component protocol test library worker hdl"
     # valid nouns in second slot
@@ -73,6 +73,7 @@ _ocpidev()
     #valid build options
     bopts="-h --help -v -d -l -h -P --rcc --hdl --no-assemblies --hdl-assembly --hdl-target \
            --hdl-platform --rcc-platform --rcc-hdl-platform --worker --clean-all"
+    utilopts="--help -v -d --library --hdl-library -P --hdl-target --hdl-platform --format=latex --format=table"
     # show verb has different options and nouns
     showopts="-h --help -v -d --table --json --local-scope --global-scope --simple"
     runopts="-h --help -v --verbose --keep-simulations --accumulate-errors -G --only-platform -Q \
@@ -123,6 +124,13 @@ _ocpidev()
       nouns2=""
       # valid nouns in third slot
       nouns3=""
+    elif [[ ${verb} == utilization ]]; then
+      # valid nouns in first slot
+      nouns1="project library worker workers hdl"
+      # valid nouns in second slot
+      nouns2="platform platforms assembly assemblies"
+      # valid nouns in third slot
+      nouns3=""
     fi
     # if current word starts with a - it is an option of some sort
     if [[ ${prev} == --hdl-platform || ${prev} == --build-hdl-platform ]] ; then
@@ -156,8 +164,10 @@ _ocpidev()
         COMPREPLY=( $(compgen -W "${copts}" -- ${cur}) )
       elif [[ ${verb} == build || ${verb} == clean ]] ; then
         COMPREPLY=( $(compgen -W "${bopts}" -- ${cur}) )
+      elif [[ ${verb} == utilization ]] ; then
+        COMPREPLY=( $(compgen -W "${utilopts}" -- ${cur}) )
       else
-        COMPREPLY=( $(compgen -W "${copts} ${runopts} ${showopts} ${bopts}"  -- ${cur}) )
+        COMPREPLY=( $(compgen -W "${copts} ${runopts} ${showopts} ${bopts} ${utilopts}"  -- ${cur}) )
         return 0
       fi
     elif [[ ${verb} == unregister && ${prev} == project ]]; then

@@ -1,0 +1,64 @@
+--- networking/ntpd.c
++++ networking/ntpd.c
+@@ -304,13 +304,14 @@
+ 	OPT_q = (1 << 1),
+ 	OPT_N = (1 << 2),
+ 	OPT_x = (1 << 3),
++	OPT_c = (1 << 4),
+ 	/* Insert new options above this line. */
+ 	/* Non-compat options: */
+-	OPT_w = (1 << 4),
+-	OPT_p = (1 << 5),
+-	OPT_S = (1 << 6),
+-	OPT_l = (1 << 7) * ENABLE_FEATURE_NTPD_SERVER,
+-	OPT_I = (1 << 8) * ENABLE_FEATURE_NTPD_SERVER,
++	OPT_w = (1 << 5),
++	OPT_p = (1 << 6),
++	OPT_S = (1 << 7),
++	OPT_l = (1 << 8) * ENABLE_FEATURE_NTPD_SERVER,
++	OPT_I = (1 << 9) * ENABLE_FEATURE_NTPD_SERVER,
+ 	/* We hijack some bits for other purposes */
+ 	OPT_qq = (1 << 31),
+ };
+@@ -2189,6 +2190,7 @@
+ {
+ 	unsigned opts;
+ 	llist_t *peers;
++	char *arg_c = NULL;
+ 
+ 	srand(getpid());
+ 
+@@ -2208,11 +2210,11 @@
+ 		IF_FEATURE_NTPD_SERVER(":Il"); /* -I implies -l */
+ 	opts = getopt32(argv,
+ 			"nqNx" /* compat */
+-			"wp:S:"IF_FEATURE_NTPD_SERVER("l") /* NOT compat */
++			"c:wp:S:"IF_FEATURE_NTPD_SERVER("l") /* NOT compat */
+ 			IF_FEATURE_NTPD_SERVER("I:") /* compat */
+ 			"d" /* compat */
+ 			"46aAbgL", /* compat, ignored */
+-			&peers,&G.script_name,
++			&arg_c,&peers,&G.script_name,
+ #if ENABLE_FEATURE_NTPD_SERVER
+ 			&G.if_name,
+ #endif
+@@ -2229,14 +2231,17 @@
+ 		parser_t *parser;
+ 		char *token[3];
+ 
+-		parser = config_open("/etc/ntp.conf");
++		if (arg_c == NULL) {
++			arg_c = "/mnt/card/opencpi/ntp.conf\0";
++		}
++		parser = config_open(arg_c);
+ 		while (config_read(parser, token, 3, 1, "# \t", PARSE_NORMAL)) {
+ 			if (strcmp(token[0], "server") == 0 && token[1]) {
+ 				add_peers(token[1]);
+ 				continue;
+ 			}
+ 			bb_error_msg("skipping %s:%u: unimplemented command '%s'",
+-				"/etc/ntp.conf", parser->lineno, token[0]
++				arg_c, parser->lineno, token[0]
+ 			);
+ 		}
+ 		config_close(parser);

@@ -16,16 +16,10 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-# This file is used to build the Application Control Interface api testbench
-
 $(if $(realpath $(OCPI_CDK_DIR)),,\
   $(error The OCPI_CDK_DIR environment variable is not set correctly.))
 
-# The RunArgs variable can be set to a standard set of arguments to use when executing either.
-
-export OCPI_LIBRARY_PATH=lib
-RccOnlyPlatforms+=centos7 xilinx13_3
-APP=lime_rx_proxy_test
+RccOnlyPlatforms+=centos6 centos7 xilinx13_3
 
 include $(OCPI_CDK_DIR)/include/application.mk
 

@@ -125,17 +125,17 @@ typedef enum {
   RCC_DYNAMIC
 } RCCEndian;
 #ifdef __cplusplus
-class RCCUserPort;
-typedef OCPI::API::OcpiBoolean RCCBoolean;
-typedef OCPI::API::OcpiPortMask RCCPortMask;
-typedef OCPI::API::RunCondition RunCondition;
-const OCPI::API::OcpiPortMask RCC_ALL_PORTS = OCPI::API::OCPI_ALL_PORTS;
-const OCPI::API::OcpiPortMask RCC_NO_PORTS = OCPI::API::OCPI_NO_PORTS;
+  class RCCUserPort;
+  typedef OCPI::API::OcpiBoolean RCCBoolean;
+  typedef OCPI::API::OcpiPortMask RCCPortMask;
+  typedef OCPI::API::RunCondition RunCondition;
+  const OCPI::API::OcpiPortMask RCC_ALL_PORTS = OCPI::API::OCPI_ALL_PORTS;
+  const OCPI::API::OcpiPortMask RCC_NO_PORTS = OCPI::API::OCPI_NO_PORTS;
 #else
-typedef OcpiBoolean  RCCBoolean;
-typedef OcpiPortMask RCCPortMask;
-#define RCC_ALL_PORTS OCPI_ALL_PORTS
-#define RCC_NO_PORTS OCPI_NO_PORTS
+  typedef OcpiBoolean  RCCBoolean;
+  typedef OcpiPortMask RCCPortMask;
+  #define RCC_ALL_PORTS OCPI_ALL_PORTS
+  #define RCC_NO_PORTS OCPI_NO_PORTS
 #endif
 typedef void      *RCCBufferId;
 typedef float     RCCFloat;

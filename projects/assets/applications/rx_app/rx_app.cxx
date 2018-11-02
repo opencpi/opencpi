@@ -110,7 +110,7 @@ void warn_max_rf_rx_input_power(const char* frontend_name,
   oss << "\n***** WARNING: " << frontend_name;
   oss << " absolute maxmimum RF RX input power is ";
   oss << absolute_max_power_dBm << " dBm *****\n\n";
-  std::cout << oss.str().c_str();
+  std::cout << oss.str();
 }
 
 const char* get_FMCOMMS_2_3_SMA_channel(

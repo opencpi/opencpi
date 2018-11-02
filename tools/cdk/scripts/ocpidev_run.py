@@ -98,14 +98,14 @@ def parse_cl_vars():
                         "platforms to use with unit test.  Only valid in generate " +
                         "and build phases.  For application specifies which RCC " +
                         "platform to build ACI applications.")
-    parser.add_argument("--hdl-platform", dest="hdl_plat", action="append",
+    parser.add_argument("--hdl-platform", dest="hdl_plats", action="append",
                         help="Specify which HDL platform from the list of buildable " +
                         "platforms to use with unit test. only valid in generate " +
                         "and build phases.  Not valid for Application")
     parser.add_argument("-d", dest="cur_dir", default=os.path.curdir,
                         help="Change directory to the specified path before proceeding. " +
                         "Changing directory may have no effect for some commands.")
-    parser.add_argument("-l", dest="library", default="components",
+    parser.add_argument("-l", "--library", dest="library", default="components",
                         help="Specify the component library for the test to be run.  " +
                         "Not valid for Application.")
     parser.add_argument("--case", dest="case", action="append",

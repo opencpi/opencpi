@@ -375,10 +375,10 @@ function do_registry {
       bad the registry to create \(\"$1\"\) already exists. Use that one, or remove it and try again
     else
       [ -z "$verbose" ] || echo The project registry \"$1\" has been created
+      mkdir $1
       echo "OCPI:WARNING:To use this registry, run the following command and add it to "\
            "your ~/.bashrc:" >&2
-      echo "export OCPI_PROJECT_REGISTRY_DIR=$(realpath $1)" >&2
-      mkdir $1
+      echo "export OCPI_PROJECT_REGISTRY_DIR=$(ocpiReadLinkE $1)" >&2
     fi
   elif [ "$verb" == delete ]; then
     if [ -z "$1" ]; then
@@ -853,7 +853,7 @@ EOF
   fi
   if [ -n "$verbose" ]; then
     if [ "$dirtype" == library ]; then
-      echo A new $2, \"$1\", has been created in library \"$(basename `realpath $subdir/..`)\" in $subdir/$file
+      echo A new $2, \"$1\", has been created in library \"$(basename `ocpiReadLinkE $subdir/..`)\" in $subdir/$file
     else
       echo A new $2, \"$1\", has been created at the project level in $subdir/$file
     fi
@@ -2284,6 +2284,10 @@ while [[ "${argv[0]}" != "" ]] ; do
   if [[ "${argv[0]}" == show ]] ; then
     ocpishow_options=`sed -E 's/(^| )show( |$)/ /' <<< "${original_argv[@]}"`
     $OCPI_CDK_DIR/scripts/ocpishow.py $ocpishow_options
+    exit $?
+  elif [[ "${argv[0]}" == utilization ]] ; then
+    ocpiutilization_options=`sed -E 's/(^| )utilization( |$)/ /' <<< "${original_argv[@]}"`
+    $OCPI_CDK_DIR/scripts/ocpidev_utilization.py $ocpiutilization_options
     exit $?
   elif [[ "${argv[0]}" == run ]] ; then
     # This is portable while the below is not

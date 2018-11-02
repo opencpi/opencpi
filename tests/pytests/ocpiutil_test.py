@@ -20,6 +20,15 @@
 Unit test the utility functions in the ocpiutil module.
 Some of the simpler functions in ocpiutil only have doctests
 (which live inside the ocpiutil file).
+
+Run from this directory as follows:
+    $ coverage3 run ocpiutil_test.py -v
+
+To view the code coverage report:
+    $ coverage3 report
+To view the line-by-line code coverage report:
+    $ coverage3 annotate ../../tools/cdk/scripts/ocpiutil.py
+    $ vim ../../tools/cdk/scripts/ocpiutil.py,cover
 """
 import unittest
 import os

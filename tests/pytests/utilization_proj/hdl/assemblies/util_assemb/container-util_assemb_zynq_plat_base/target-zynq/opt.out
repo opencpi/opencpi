@@ -1,0 +1,352 @@
+Command: vivado -mode batch -source /home/user/opencpi/ocpi_util/cdk/include/hdl/vivado-impl.tcl -nolog -journal vivado-opt.jou -tclargs stage=opt target_file=util_assemb_e3xx_base-opt.dcp part=xc7z020clg484-1 edif_file=util_assemb_e3xx_base.edf constraints=/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc impl_opts= power_opt=false
+
+****** Vivado v2017.1 (64-bit)
+  **** SW Build 1846317 on Fri Apr 14 18:54:47 MDT 2017
+  **** IP Build 1846188 on Fri Apr 14 20:52:08 MDT 2017
+    ** Copyright 1986-2017 Xilinx, Inc. All Rights Reserved.
+
+source /home/user/opencpi/ocpi_util/cdk/include/hdl/vivado-impl.tcl
+# source $env(OCPI_CDK_DIR)/include/hdl/vivado-util.tcl
+## proc parse_args {arguments} {
+##   foreach i $arguments {
+##     set assignment [split $i =]
+##     if {[llength $assignment] != 2} {
+##       puts "Invalid assignment \"$assignment\". tclargs must be in the following format: variablename=value"
+##       exit 2
+##     }
+##     set var_name [lindex $assignment 0]
+##     upvar 1 $var_name var
+##     set var_value [lindex $assignment 1]
+##     set var $var_value
+##   }
+## }
+## proc add_files_set_lib {library f} {
+##   add_files $f -quiet
+##   set_property LIBRARY $library [get_files $f -quiet] -quiet 
+## }
+## proc read_edif_or_dcp {f} {
+##   if {[string match *.edf $f] || [string match *.edn $f] || [string match *.ngc $f]} {
+##     read_edif $f
+##   } elseif {[string match *.dcp $f]} {
+##     read_checkpoint $f
+##   } else {
+##     puts "File $f is not an EDIF, NGC, DCP or XCI file. This may cause problems."
+##     add_files $f
+##   }
+## }
+# set stage               ""
+# set target_file         ""
+# set checkpoint          ""
+# set part                ""
+# set edif_file           ""
+# set constraints         ""
+# set impl_opts           ""
+# set incr_comp           ""
+# set power_opt           ""
+# set post_place_opt      ""
+# set post_route_opt      ""
+# set phys_opt_opts       ""
+# parse_args $argv
+# create_project -part $part -force [file rootname $target_file]
+# if {[info exists checkpoint] && [string length $checkpoint] > 0} {
+#   read_checkpoint -part $part $checkpoint
+# }
+# if {[info exists edif_file] && [string length $edif_file] > 0} {
+#   read_edif $edif_file
+# }
+# set mode default
+# link_design -mode $mode -part $part
+Design is defaulting to srcset: sources_1
+Design is defaulting to constrset: constrs_1
+Parsing EDIF File [./util_assemb_e3xx_base.edf]
+Finished Parsing EDIF File [./util_assemb_e3xx_base.edf]
+INFO: [Netlist 29-17] Analyzing 244 Unisim elements for replacement
+INFO: [Netlist 29-28] Unisim Transformation completed in 0 CPU seconds
+INFO: [Project 1-479] Netlist was created with Vivado 2017.1
+INFO: [Device 21-403] Loading part xc7z020clg484-1
+INFO: [Project 1-570] Preparing netlist for logic optimization
+INFO: [Opt 31-138] Pushed 0 inverter(s) to 0 load pin(s).
+INFO: [Project 1-111] Unisim Transformation Summary:
+  A total of 11 instances were transformed.
+  RAM32M => RAM32M (RAMD32, RAMD32, RAMD32, RAMD32, RAMD32, RAMD32, RAMS32, RAMS32): 11 instances
+
+link_design: Time (s): cpu = 00:00:06 ; elapsed = 00:00:06 . Memory (MB): peak = 1585.945 ; gain = 401.422 ; free physical = 832 ; free virtual = 46952
+# if {[info exists constraints] && [string length $constraints] > 0} {
+#   puts "Loading XDC: $constraints"
+#   read_xdc $constraints
+# }
+Loading XDC: /home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc
+Parsing XDC File [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc]
+WARNING: [Vivado 12-507] No nets matched 'E3XX_CONN_TCXO_CLK'. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:141]
+CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:141]
+Resolution: If [get_<value>] was used to populate the object, check to make sure this command returns at least one valid object.
+WARNING: [Vivado 12-584] No ports matched 'E3XX_CONN_CAT_CTRL_OUT_4'. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:180]
+CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:180]
+Resolution: If [get_<value>] was used to populate the object, check to make sure this command returns at least one valid object.
+WARNING: [Vivado 12-584] No ports matched 'E3XX_CONN_CAT_CTRL_OUT_4'. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:181]
+CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:181]
+Resolution: If [get_<value>] was used to populate the object, check to make sure this command returns at least one valid object.
+WARNING: [Vivado 12-584] No ports matched 'E3XX_CONN_CAT_CTRL_OUT_5'. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:188]
+CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:188]
+Resolution: If [get_<value>] was used to populate the object, check to make sure this command returns at least one valid object.
+WARNING: [Vivado 12-584] No ports matched 'E3XX_CONN_CAT_CTRL_OUT_5'. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:189]
+CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:189]
+Resolution: If [get_<value>] was used to populate the object, check to make sure this command returns at least one valid object.
+WARNING: [Vivado 12-584] No ports matched 'E3XX_CONN_CAT_CTRL_OUT_6'. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:196]
+CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:196]
+Resolution: If [get_<value>] was used to populate the object, check to make sure this command returns at least one valid object.
+WARNING: [Vivado 12-584] No ports matched 'E3XX_CONN_CAT_CTRL_OUT_6'. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:197]
+CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:197]
+Resolution: If [get_<value>] was used to populate the object, check to make sure this command returns at least one valid object.
+WARNING: [Vivado 12-584] No ports matched 'E3XX_CONN_CAT_CTRL_OUT_7'. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:204]
+CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:204]
+Resolution: If [get_<value>] was used to populate the object, check to make sure this command returns at least one valid object.
+WARNING: [Vivado 12-584] No ports matched 'E3XX_CONN_CAT_CTRL_OUT_7'. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:205]
+CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:205]
+Resolution: If [get_<value>] was used to populate the object, check to make sure this command returns at least one valid object.
+WARNING: [Vivado 12-507] No nets matched 'E3XX_CONN_CAT_DATA_CLK'. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:422]
+CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:422]
+Resolution: If [get_<value>] was used to populate the object, check to make sure this command returns at least one valid object.
+WARNING: [Vivado 12-584] No ports matched 'AVR_CS_R'. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:487]
+CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:487]
+Resolution: If [get_<value>] was used to populate the object, check to make sure this command returns at least one valid object.
+WARNING: [Vivado 12-584] No ports matched 'AVR_CS_R'. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:488]
+CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:488]
+Resolution: If [get_<value>] was used to populate the object, check to make sure this command returns at least one valid object.
+WARNING: [Vivado 12-584] No ports matched 'AVR_IRQ'. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:489]
+CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:489]
+Resolution: If [get_<value>] was used to populate the object, check to make sure this command returns at least one valid object.
+WARNING: [Vivado 12-584] No ports matched 'AVR_IRQ'. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:490]
+CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:490]
+Resolution: If [get_<value>] was used to populate the object, check to make sure this command returns at least one valid object.
+WARNING: [Vivado 12-584] No ports matched 'AVR_MISO_R'. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:491]
+CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:491]
+Resolution: If [get_<value>] was used to populate the object, check to make sure this command returns at least one valid object.
+WARNING: [Vivado 12-584] No ports matched 'AVR_MISO_R'. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:492]
+CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:492]
+Resolution: If [get_<value>] was used to populate the object, check to make sure this command returns at least one valid object.
+WARNING: [Vivado 12-584] No ports matched 'AVR_MOSI_R'. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:493]
+CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:493]
+Resolution: If [get_<value>] was used to populate the object, check to make sure this command returns at least one valid object.
+WARNING: [Vivado 12-584] No ports matched 'AVR_MOSI_R'. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:494]
+CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:494]
+Resolution: If [get_<value>] was used to populate the object, check to make sure this command returns at least one valid object.
+WARNING: [Vivado 12-584] No ports matched 'AVR_SCK_R'. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:495]
+CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:495]
+Resolution: If [get_<value>] was used to populate the object, check to make sure this command returns at least one valid object.
+WARNING: [Vivado 12-584] No ports matched 'AVR_SCK_R'. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:496]
+CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:496]
+Resolution: If [get_<value>] was used to populate the object, check to make sure this command returns at least one valid object.
+WARNING: [Vivado 12-584] No ports matched 'GPS_PPS'. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:502]
+CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:502]
+Resolution: If [get_<value>] was used to populate the object, check to make sure this command returns at least one valid object.
+WARNING: [Vivado 12-584] No ports matched 'GPS_PPS'. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:503]
+CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:503]
+Resolution: If [get_<value>] was used to populate the object, check to make sure this command returns at least one valid object.
+WARNING: [Vivado 12-584] No ports matched 'PL_GPIO[0]'. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:508]
+CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:508]
+Resolution: If [get_<value>] was used to populate the object, check to make sure this command returns at least one valid object.
+WARNING: [Vivado 12-584] No ports matched 'PL_GPIO[0]'. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:509]
+CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:509]
+Resolution: If [get_<value>] was used to populate the object, check to make sure this command returns at least one valid object.
+WARNING: [Vivado 12-584] No ports matched 'PL_GPIO[1]'. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:510]
+CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:510]
+Resolution: If [get_<value>] was used to populate the object, check to make sure this command returns at least one valid object.
+WARNING: [Vivado 12-584] No ports matched 'PL_GPIO[1]'. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:511]
+CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:511]
+Resolution: If [get_<value>] was used to populate the object, check to make sure this command returns at least one valid object.
+WARNING: [Vivado 12-584] No ports matched 'PL_GPIO[2]'. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:512]
+CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:512]
+Resolution: If [get_<value>] was used to populate the object, check to make sure this command returns at least one valid object.
+WARNING: [Vivado 12-584] No ports matched 'PL_GPIO[2]'. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:513]
+CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:513]
+Resolution: If [get_<value>] was used to populate the object, check to make sure this command returns at least one valid object.
+WARNING: [Vivado 12-584] No ports matched 'PL_GPIO[3]'. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:514]
+CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:514]
+Resolution: If [get_<value>] was used to populate the object, check to make sure this command returns at least one valid object.
+WARNING: [Vivado 12-584] No ports matched 'PL_GPIO[3]'. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:515]
+CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:515]
+Resolution: If [get_<value>] was used to populate the object, check to make sure this command returns at least one valid object.
+WARNING: [Vivado 12-584] No ports matched 'PL_GPIO[4]'. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:516]
+CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:516]
+Resolution: If [get_<value>] was used to populate the object, check to make sure this command returns at least one valid object.
+WARNING: [Vivado 12-584] No ports matched 'PL_GPIO[4]'. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:517]
+CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:517]
+Resolution: If [get_<value>] was used to populate the object, check to make sure this command returns at least one valid object.
+WARNING: [Vivado 12-584] No ports matched 'PL_GPIO[5]'. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:518]
+CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:518]
+Resolution: If [get_<value>] was used to populate the object, check to make sure this command returns at least one valid object.
+WARNING: [Vivado 12-584] No ports matched 'PL_GPIO[5]'. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:519]
+CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:519]
+Resolution: If [get_<value>] was used to populate the object, check to make sure this command returns at least one valid object.
+WARNING: [Vivado 12-584] No ports matched 'PL_GPIO[*]'. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:520]
+CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc:520]
+Resolution: If [get_<value>] was used to populate the object, check to make sure this command returns at least one valid object.
+Finished Parsing XDC File [/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/imports/ocpi.bsp.e310/exports/lib/platforms/e3xx/e3xx.xdc]
+# set stage_start_time [clock seconds]
+# puts "Running Implementation stage $stage"
+Running Implementation stage opt
+# set command ""
+# switch $stage {
+#   opt {
+#     set command "opt_design $impl_opts ;"
+#     # Optionally run power optimization
+#     if {[info exists power_opt] && [string equal $power_opt true]} { 
+#       set command "$command power_opt_design"
+#     }
+#   }
+#   place {
+#     # Attempt to find an incremental-compile result to use. First look
+#     # for a post-route checkpoint. Then fall back on a post-place checkpoint.
+#     if {[info exists incr_comp] && [string equal $incr_comp true]} { 
+#       set incr_dcp $target_file
+#       set route_dcp [glob -nocomplain [file dirname $target_file]/*-route.dcp]
+#       if {[file exists $route_dcp]} {
+#         set incr_dcp $route_dcp
+#       }
+#       if {[file exist $incr_dcp]} {
+#         read_checkpoint -incremental $incr_dcp
+#       }
+#     }
+#     set command "$command place_design $impl_opts ;"
+#     if {[info exists post_place_opt] && [string equal $post_place_opt true]} { 
+#       set command "$command phys_opt_design $phys_opt_opts ;"
+#     }
+#   }
+#   route {
+#     set command "route_design $impl_opts ;"
+#     if {[info exists incr_comp] && [string equal $incr_comp true]} { 
+#       set command "$command report_incremental_reuse"
+#     }
+#     if {[info exists post_route_opt] && [string equal $post_route_opt true]} { 
+#       set command "$command phys_opt_design $phys_opt_opts ;"
+#     }
+#   }
+#   timing {
+#     set command "report_timing $impl_opts ;"
+#     set command "$command report_timing -rpx $target_file $impl_opts"
+#   }
+#   bit {
+#     set command "write_bitstream $target_file $impl_opts ;"
+#     set command "$command report_utilization ;"
+#     set command "$command report_clock_networks ;"
+#     set command "$command report_design_analysis ;"
+#     set command "$command report_clocks ;"
+#   }
+# }
+# puts "Command: $command"
+Command: opt_design  ;
+# eval "$command"
+Command: opt_design
+Attempting to get a license for feature 'Implementation' and/or device 'xc7z020-clg484'
+INFO: [Common 17-349] Got license for feature 'Implementation' and/or device 'xc7z020-clg484'
+Running DRC as a precondition to command opt_design
+
+Starting DRC Task
+Command: report_drc (run_mandatory_drcs) for: opt_checks
+INFO: [DRC 23-27] Running DRC with 8 threads
+report_drc (run_mandatory_drcs) completed successfully
+INFO: [Project 1-461] DRC finished with 0 Errors
+INFO: [Project 1-462] Please refer to the DRC report (report_drc) for more information.
+
+Time (s): cpu = 00:00:02 ; elapsed = 00:00:00.66 . Memory (MB): peak = 1673.980 ; gain = 77.031 ; free physical = 741 ; free virtual = 46860
+INFO: [Timing 38-35] Done setting XDC timing constraints.
+
+Starting Logic Optimization Task
+
+Phase 1 Retarget
+INFO: [Opt 31-138] Pushed 1 inverter(s) to 86 load pin(s).
+INFO: [Opt 31-49] Retargeted 0 cell(s).
+Phase 1 Retarget | Checksum: 115ab57eb
+
+Time (s): cpu = 00:00:00.57 ; elapsed = 00:00:00.30 . Memory (MB): peak = 2138.473 ; gain = 0.000 ; free physical = 365 ; free virtual = 46289
+INFO: [Opt 31-389] Phase Retarget created 0 cells and removed 445 cells
+
+Phase 2 Constant propagation
+INFO: [Opt 31-138] Pushed 8 inverter(s) to 12 load pin(s).
+Phase 2 Constant propagation | Checksum: 133a336c8
+
+Time (s): cpu = 00:00:01 ; elapsed = 00:00:00.98 . Memory (MB): peak = 2138.473 ; gain = 0.000 ; free physical = 364 ; free virtual = 46279
+INFO: [Opt 31-389] Phase Constant propagation created 671 cells and removed 2023 cells
+
+Phase 3 Sweep
+Phase 3 Sweep | Checksum: 185e7ddfa
+
+Time (s): cpu = 00:00:02 ; elapsed = 00:00:01 . Memory (MB): peak = 2138.473 ; gain = 0.000 ; free physical = 351 ; free virtual = 46266
+INFO: [Opt 31-389] Phase Sweep created 0 cells and removed 452 cells
+
+Phase 4 BUFG optimization
+Phase 4 BUFG optimization | Checksum: 185e7ddfa
+
+Time (s): cpu = 00:00:02 ; elapsed = 00:00:02 . Memory (MB): peak = 2138.473 ; gain = 0.000 ; free physical = 350 ; free virtual = 46265
+INFO: [Opt 31-389] Phase BUFG optimization created 0 cells and removed 0 cells
+
+Phase 5 Shift Register Optimization
+Phase 5 Shift Register Optimization | Checksum: 185e7ddfa
+
+Time (s): cpu = 00:00:02 ; elapsed = 00:00:02 . Memory (MB): peak = 2138.473 ; gain = 0.000 ; free physical = 349 ; free virtual = 46264
+INFO: [Opt 31-389] Phase Shift Register Optimization created 0 cells and removed 0 cells
+
+Starting Connectivity Check Task
+
+Time (s): cpu = 00:00:00.01 ; elapsed = 00:00:00.01 . Memory (MB): peak = 2138.473 ; gain = 0.000 ; free physical = 348 ; free virtual = 46262
+Ending Logic Optimization Task | Checksum: 185e7ddfa
+
+Time (s): cpu = 00:00:02 ; elapsed = 00:00:02 . Memory (MB): peak = 2138.473 ; gain = 0.000 ; free physical = 346 ; free virtual = 46261
+
+Starting Power Optimization Task
+INFO: [Pwropt 34-132] Skipping clock gating for clocks with a period < 2.00 ns.
+INFO: [Pwropt 34-9] Applying IDT optimizations ...
+INFO: [Pwropt 34-10] Applying ODC optimizations ...
+WARNING: [Power 33-198] PS7 POWER property is not specified on the PS7 instance. Power reported will not be accurate.
+INFO: [Timing 38-35] Done setting XDC timing constraints.
+Running Vector-less Activity Propagation...
+
+Finished Running Vector-less Activity Propagation
+
+
+Starting PowerOpt Patch Enables Task
+INFO: [Pwropt 34-162] WRITE_MODE attribute of 0 BRAM(s) out of a total of 2 has been updated to save power. Run report_power_opt to get a complete listing of the BRAMs updated.
+INFO: [Pwropt 34-201] Structural ODC has moved 0 WE to EN ports
+Number of BRAM Ports augmented: 0 newly gated: 2 Total Ports: 4
+Ending PowerOpt Patch Enables Task | Checksum: ba98abfe
+
+Time (s): cpu = 00:00:00.02 ; elapsed = 00:00:00.03 . Memory (MB): peak = 2381.750 ; gain = 0.000 ; free physical = 359 ; free virtual = 45953
+Ending Power Optimization Task | Checksum: ba98abfe
+
+Time (s): cpu = 00:00:02 ; elapsed = 00:00:01 . Memory (MB): peak = 2381.750 ; gain = 243.277 ; free physical = 361 ; free virtual = 45955
+19 Infos, 1 Warnings, 0 Critical Warnings and 0 Errors encountered.
+opt_design completed successfully
+opt_design: Time (s): cpu = 00:00:13 ; elapsed = 00:00:11 . Memory (MB): peak = 2381.750 ; gain = 784.805 ; free physical = 361 ; free virtual = 45955
+# set stage_end_time [clock seconds]
+# puts "Writing checkpoint for stage $stage"
+Writing checkpoint for stage opt
+# if {![string equal $stage bit] && ![string equal $stage timing]} {
+#   write_checkpoint -force $target_file
+# }
+Writing placer database...
+Writing XDEF routing.
+Writing XDEF routing logical nets.
+Writing XDEF routing special nets.
+Write XDEF Complete: Time (s): cpu = 00:00:00.11 ; elapsed = 00:00:00.03 . Memory (MB): peak = 2381.750 ; gain = 0.000 ; free physical = 376 ; free virtual = 45952
+INFO: [Common 17-1381] The checkpoint '/home/user/opencpi/ocpi_util/tests/pytests/utilization_proj/hdl/assemblies/util_assemb/container-util_assemb_e3xx_base/target-zynq/util_assemb_e3xx_base-opt.dcp' has been generated.
+# set final_time [clock seconds]
+# puts "======Timing broken up into subtasks======
+# -----------------------------------------------------------------
+# |  Implementation Stage time: [expr $stage_end_time - $stage_start_time] seconds \t|
+# -----------------------------------------------------------------
+# | Post-stage operations time: [expr [clock seconds] - $stage_end_time] seconds \t|
+# -----------------------------------------------------------------
+# |                 Total time: [expr [clock seconds] - $stage_start_time] seconds \t|
+# -----------------------------------------------------------------"
+======Timing broken up into subtasks======
+-----------------------------------------------------------------
+|  Implementation Stage time: 11 seconds 	|
+-----------------------------------------------------------------
+| Post-stage operations time: 1 seconds 	|
+-----------------------------------------------------------------
+|                 Total time: 12 seconds 	|
+-----------------------------------------------------------------
+INFO: [Common 17-206] Exiting Vivado at Tue Oct 16 16:10:27 2018...
+Elapsed time:0:26.25, completed at 16:10:27
+Exit status: 0

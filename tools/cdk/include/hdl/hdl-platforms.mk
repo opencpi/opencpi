@@ -58,3 +58,8 @@ cleanall:
 	$(AT)find . -depth -name gen -exec rm -r -f "{}" ";"
 	$(AT)find . -depth -name "target-*" -exec rm -r -f "{}" ";"
 	$(AT)rm -r -f lib
+
+ifdef ShellPlatformsVars
+showplatforms:
+	$(info HdlPlatforms="$(HdlMyPlatforms)";)
+endif

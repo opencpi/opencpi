@@ -41,13 +41,14 @@ $(eval $(OcpiEnsureToolPlatform))
 override \
 Platforms:=$(call Unique,$(strip $(Platforms) $(Platform)))
 export Platforms
-# tmpRccPlatforms is needed here because if RccPlatforms is empty the following include
+# tmpRccPlatform(s) is needed here because if RccPlatform(s) is empty the following include
 # will overwite it with OCPI_TARGET_PLATFORM or OCPI_TOOL_PLATFORM
 tmpRccPlatforms:=$(RccPlatforms)
+tmpRccPlatform:=$(RccPlatform)
 include $(OCPI_CDK_DIR)/include/rcc/rcc-make.mk
 override \
 RccPlatforms:=$(call Unique,\
-                $(or $(strip $(tmpRccPlatforms) $(RccPlatform) \
+                $(or $(strip $(tmpRccPlatforms) $(tmpRccPlatforms) \
                   $(foreach p,$(Platforms),$(if $(filter $(p),$(RccAllPlatforms)),$p))),\
                   $(strip $(OCPI_TARGET_PLATFORM)),$(strip\
                     $(OCPI_TOOL_PLATFORM))))

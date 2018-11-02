@@ -248,12 +248,14 @@ To see packages available in the repository (to cross-reference with Tables~\ref
 
 \subsubsection*{Install}
 You can choose individual packages to install (cf. Tables~\ref{table:decide} and \ref{table:rpm}), or install \textit{every} OpenCPI package available:\\
-\code {\$ sudo yum install 'opencpi-*'}\\
+\code {\$ sudo yum install 'opencpi-*'}
 
 \subsubsection{Installing from DVD-R}
 Installation may be completed using yum with the following command:\\
-
 \code {\$ sudo yum localinstall --nogpgcheck <location of RPMs>/*rpm}
+
+\subsubsection{Log Out}
+To enable the various \code{ocpi*} commands and set other variables, the user must log out and log back in. \textit{Opening a new terminal session is not sufficient.} This step \textit{can} be delayed until after Section~\ref{sec:setup_opencpi} is complete.
 
 \section{Setting up the OpenCPI Environment}
 \label{sec:setup_opencpi}
@@ -301,7 +303,7 @@ If using the Xilinx tools, the \verb+xilinx.sh+ will need to be created and the 
 
 The script \verb+site.sh.example+ has been provided as an example central location where any other variables can be defined globally. \textit{Remember that the names of the scripts do not matter; only the \texttt{*.sh} extension.} More configuration variables can be found in the \textit{Getting Started Guide}.\\
 
-Once all the desired scripts have been created and edited, open a new shell and check to see that the environment is now set up.
+Once all the desired scripts have been created and edited, log out and back in and check to see that the environment is now set up.
 
 \subsection{Removing OpenCPI RPMs}
 In the event that the OpenCPI RPM needs to be uninstalled, or reinstalled, the best way to remove the OpenCPI RPM is to use \verb+yum+ to erase the RPMs from Table~\ref{table:rpm} as seen below:\\

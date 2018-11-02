@@ -107,8 +107,8 @@ namespace OCPI {
     {
     }
     Member::
-    Member(const Member &other) 
-      : ValueType(other), m_offset(0), m_isIn(false), m_isOut(false), m_isKey(false), 
+    Member(const Member &other)
+      : ValueType(other), m_offset(0), m_isIn(false), m_isOut(false), m_isKey(false),
 	m_default(NULL) {
       if (other.m_default)
 	m_default = new Value(*other.m_default);
@@ -128,7 +128,7 @@ namespace OCPI {
     Member &Member::
     operator=(Member other){
       swap(*this, other);
-      return *this;           
+      return *this;
     }
     void swap(Member& f, Member& s){
       using std::swap;
@@ -281,7 +281,7 @@ namespace OCPI {
       }
       if (ezxml_cattr(xm, "StringLength") && m_baseType != OA::OCPI_String)
 	return "StringLength attribute only valid for string types";
-      
+
       // Deal with arrays now that we have the "basic" type dealt with
 
       bool isArray = false;
@@ -495,14 +495,16 @@ namespace OCPI {
       }
       nElements *= m_nItems;
       if (m_arrayRank)
-	writer.beginArray(*this, m_nItems);			  
+	writer.beginArray(*this, m_nItems);
       align(data, m_dataAlign, length);
       switch (m_baseType) {
       case OA::OCPI_Struct:
 	writer.beginStruct(*this);
-	for (unsigned n = 0; n < nElements; n++)
+	for (unsigned n = 0; n < nElements; n++) {
+	  align(data, m_dataAlign, length);
 	  for (unsigned nn = 0; nn < m_nMembers; nn++)
 	    m_members[nn].write(writer, data, length);
+        }
 	writer.endStruct(*this);
 	break;
       case OA::OCPI_Type:
@@ -538,7 +540,7 @@ namespace OCPI {
       if (m_isSequence) {
 	writer.endSequence(*this);
 	if (m_fixedLayout && !topSeq) {
-	  // If fixed layout override the incremental data/length advance and 
+	  // If fixed layout override the incremental data/length advance and
 	  // advance over the whole thing, including the length prefix
 	  advance(startData, m_nBytes, startLength);
 	  assert(startData >= data && startLength <= length);
@@ -572,15 +574,17 @@ namespace OCPI {
 	radvance(data, m_align, length);
       }
       if (m_arrayRank)
-	reader.beginArray(*this, m_nItems);			  
+	reader.beginArray(*this, m_nItems);
       nElements *= m_nItems;
       ralign(data, m_dataAlign, length);
       switch (m_baseType) {
       case OA::OCPI_Struct:
 	reader.beginStruct(*this);
-	for (unsigned n = 0; n < nElements; n++)
+	for (unsigned n = 0; n < nElements; n++) {
+	  ralign(data, m_dataAlign, length);
 	  for (unsigned nn = 0; nn < m_nMembers; nn++)
 	    m_members[nn].read(reader, data, length, fake);
+        }
 	reader.endStruct(*this);
 	break;
       case OA::OCPI_Type:
@@ -623,7 +627,7 @@ namespace OCPI {
       if (m_isSequence) {
 	reader.endSequence(*this);
 	if (m_fixedLayout && !top) {
-	  // If fixed layout override the incremental data/length advance and 
+	  // If fixed layout override the incremental data/length advance and
 	  // advance over the whole thing, including the length prefix
           // ocpiDebug("radvance(<ptr>, %zu, %zu)", m_nBytes, startLength);
 	  radvance(startData, m_nBytes, startLength);
