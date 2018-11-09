@@ -17,6 +17,7 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 ##########################################################################################
+.NOTPARALLEL:
 ifneq ($(filter-out cleandriver,$(filter show help clean% distclean%,$(MAKECMDGOALS))),)
   ifndef OCPI_CDK_DIR
     export OCPI_CDK_DIR:=$(CURDIR)/bootstrap
@@ -41,14 +42,14 @@ $(eval $(OcpiEnsureToolPlatform))
 override \
 Platforms:=$(call Unique,$(strip $(Platforms) $(Platform)))
 export Platforms
-# tmpRccPlatform(s) is needed here because if RccPlatform(s) is empty the following include
+# origRccPlatform(s) is needed here because if RccPlatform(s) is empty the following include
 # will overwite it with OCPI_TARGET_PLATFORM or OCPI_TOOL_PLATFORM
-tmpRccPlatforms:=$(RccPlatforms)
-tmpRccPlatform:=$(RccPlatform)
+origRccPlatforms:=$(RccPlatforms)
+origRccPlatform:=$(RccPlatform)
 include $(OCPI_CDK_DIR)/include/rcc/rcc-make.mk
 override \
 RccPlatforms:=$(call Unique,\
-                $(or $(strip $(tmpRccPlatforms) $(tmpRccPlatforms) \
+                $(or $(strip $(origRccPlatforms) $(origRccPlatform) \
                   $(foreach p,$(Platforms),$(if $(filter $(p),$(RccAllPlatforms)),$p))),\
                   $(strip $(OCPI_TARGET_PLATFORM)),$(strip\
                     $(OCPI_TOOL_PLATFORM))))

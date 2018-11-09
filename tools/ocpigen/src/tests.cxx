@@ -640,49 +640,49 @@ static const char *s_stressorMode[] = { MS_CONFIG, NULL };
       	m_name = a;
       else
       	OU::format(m_name, "case%02zu", ordinal);
-        if ((err = OE::checkAttrs(x, "duration", "timeout", "onlyplatforms",
-    				"excludeplatforms", "onlyworkers", "excludeworkers", NULL)) ||
-      	  (err = OE::checkElements(x, "property", "input", "output", NULL)) ||
-      	  (err = OE::getNumber(x, "duration", &m_duration, NULL, duration)) ||
-      	  (err = OE::getNumber(x, "timeout", &m_timeout, NULL, timeout)))
-        	return err;
-        if (m_duration && m_timeout)
-        	return OU::esprintf("Specifying both duration and timeout is not supported");
+      if ((err = OE::checkAttrs(x, "duration", "timeout", "onlyplatforms",
+  				"excludeplatforms", "onlyworkers", "excludeworkers", NULL)) ||
+    	  (err = OE::checkElements(x, "property", "input", "output", NULL)) ||
+    	  (err = OE::getNumber(x, "duration", &m_duration, NULL, duration)) ||
+    	  (err = OE::getNumber(x, "timeout", &m_timeout, NULL, timeout)))
+      	return err;
+      if (m_duration && m_timeout)
+      	return OU::esprintf("Specifying both duration and timeout is not supported");
 
-        if ((err = doPorts(*wFirst, x)) || (emulator && (err = doPorts(*emulator, x))))
+      if ((err = doPorts(*wFirst, x)) || (emulator && (err = doPorts(*emulator, x))))
+          return err;
+
+      if ((a = ezxml_cattr(x, "onlyworkers"))) {
+          if (ezxml_cattr(x, "excludeworkers"))
+            return OU::esprintf("the onlyWorkers and excludeWorkers attributes cannot both occur");
+          if ((err = OU::parseList(a, doOnlyWorker, this)))
             return err;
+      } else {
+          m_workers = workers;
+          if ((a = ezxml_cattr(x, "excludeworkers")) && (err = OU::parseList(a, doExcludeWorker, this)))
+            return err;
+      }
 
-        if ((a = ezxml_cattr(x, "onlyworkers"))) {
-            if (ezxml_cattr(x, "excludeworkers"))
-              return OU::esprintf("the onlyWorkers and excludeWorkers attributes cannot both occur");
-            if ((err = OU::parseList(a, doOnlyWorker, this)))
+      //The only time the only= or exclude= attributes have an effect in the gen/case.xml
+      //is at the subcase level, not case or cases, so the global lists of only/excludedPlatforms
+      //must be added to each case's individual lists (m_excludePlatforms and m_onlyPlatforms)
+      //there's a check earlier to make sure both onlyPlatforms and excludePlatforms
+      //aren't set at the same time
+      if (onlyPlatforms.size())
+         m_onlyPlatforms.insert(onlyPlatforms.begin(), onlyPlatforms.end());
+
+      if (excludePlatforms.size())
+         m_excludePlatforms.insert(excludePlatforms.begin(), excludePlatforms.end());
+
+      if ((a = ezxml_cattr(x, "onlyplatforms"))) {
+          if (ezxml_cattr(x, "excludeplatforms") || (excludePlatforms.size()))
+              return OU::esprintf("the onlyplatforms and excludeplatforms attributes cannot both occur");
+          if ((err = OU::parseList(a, doOnlyPlatform, this)))
               return err;
-        } else {
-            m_workers = workers;
-            if ((a = ezxml_cattr(x, "excludeworkers")) && (err = OU::parseList(a, doExcludeWorker, this)))
+      } else {
+          if ((a = ezxml_cattr(x, "excludeplatforms")) && (err = OU::parseList(a, doExcludePlatform, this)))
               return err;
-        }
-
-        //The only time the only= or exclude= attributes have an effect in the gen/case.xml
-        //is at the subcase level, not case or cases, so the global lists of only/excludedPlatforms
-        //must be added to each case's individual lists (m_excludePlatforms and m_onlyPlatforms)
-        //there's a check earlier to make sure both onlyPlatforms and excludePlatforms
-        //aren't set at the same time
-        if (onlyPlatforms.size())
-           m_onlyPlatforms.insert(onlyPlatforms.begin(), onlyPlatforms.end());
-
-        if (excludePlatforms.size())
-           m_excludePlatforms.insert(excludePlatforms.begin(), excludePlatforms.end());
-
-        if ((a = ezxml_cattr(x, "onlyplatforms"))) {
-            if (ezxml_cattr(x, "excludeplatforms") || (excludePlatforms.size()))
-                return OU::esprintf("the onlyplatforms and excludeplatforms attributes cannot both occur");
-            if ((err = OU::parseList(a, doOnlyPlatform, this)))
-                return err;
-        } else {
-            if ((a = ezxml_cattr(x, "excludeplatforms")) && (err = OU::parseList(a, doExcludePlatform, this)))
-                return err;
-        }
+      }
 
       // Parse explicit property values for this case, which will override
       for (ezxml_t px = ezxml_cchild(x, "property"); px; px = ezxml_cnext(px)) {
@@ -1566,9 +1566,9 @@ static const char *s_stressorMode[] = { MS_CONFIG, NULL };
               "  </Connection>\n", w.m_implName, p.pname(), w.m_implName, p.pname());
               if (!hdlFileIO) {
                 OU::formatAdd(assy,
-                  "  <Connection Name='out_backpressure_%s' External='producer'>\n"
+                  "  <Connection Name='%s_backpressure_%s' External='producer'>\n"
                   "    <port Instance='%s_backpressure_%s' Name='out'/>\n"
-                  "  </Connection>\n",  w.m_implName, w.m_implName, p.pname());
+                  "  </Connection>\n", p.pname(), w.m_implName, w.m_implName, p.pname());
               }
           } else {
             OU::formatAdd(assy,
@@ -1580,9 +1580,9 @@ static const char *s_stressorMode[] = { MS_CONFIG, NULL };
               "  </Connection>\n", w.m_implName, p.pname(), w.m_implName, p.pname());
               if (!hdlFileIO) {
                 OU::formatAdd(assy,
-                  "  <Connection Name='in_ms_%s' External='consumer'>\n"
+                  "  <Connection Name='%s_ms_%s' External='consumer'>\n"
                   "    <port Instance='%s_ms_%s' Name='in'/>\n"
-                  "  </Connection>\n",  w.m_implName, w.m_implName, p.pname());
+                  "  </Connection>\n",  p.pname(),  w.m_implName, w.m_implName, p.pname());
               }
           }
         }
