@@ -27,10 +27,12 @@ import json
 import types
 import pydoc
 from xml.etree import ElementTree as ET
-import ocpiutil
-import ocpiassets
-from hdltargets import HdlTarget, HdlPlatform, HdlToolFactory
-from ocpiassets import Registry
+sys.path.append(os.getenv('OCPI_CDK_DIR') + '/' + os.getenv('OCPI_TOOL_PLATFORM') + '/lib/')
+import _opencpi.util as ocpiutil
+import _opencpi.assets.factory as ocpifactory
+import _opencpi.assets.registry as ocpiregistry
+#import _opencpi.assets.project as OA.project
+from _opencpi.hdltargets import HdlTarget, HdlPlatform, HdlToolFactory
 
 subParserNouns = ["hdl", "rcc"]
 plainNouns = ["registry", "projects", "workers", "components", "platforms", "targets", "tests",
@@ -48,10 +50,10 @@ def parseCLVars():
     # https://github.com/fmenabe/python-clg/blob/master/LICENSE#L6
     #     under MIT license
     parser.print_help = types.MethodType(lambda self, _=None: pydoc.pager("\n" +
-                                                                          self.format_help()),
+                                         self.format_help()),
                                          parser)
     parser.print_usage = types.MethodType(lambda self, _=None: pydoc.pager("\n" +
-                                                                           self.format_usage()),
+                                          self.format_usage()),
                                           parser)
     # This displays the error AND help screen when there is a usage error or no arguments provided
     parser.error = types.MethodType(
@@ -346,7 +348,7 @@ def do_libraries(options):
                                     "directories")
 
     #TODO this may not be the right way to do this long term
-    my_asset = ocpiassets.AssetFactory.factory("project",
+    my_asset = ocpifactory.AssetFactory.factory("project",
                                                ocpiutil.get_path_to_project_top())
     my_asset.show(libraries=True, details=options.details, verbose=options.verbose)
 
@@ -361,11 +363,11 @@ def do_project(options):
                                     " is not a valid project.  Use the \"-d\" option or change " +
                                     "directories")
     if options.verbose:
-        my_asset = ocpiassets.AssetFactory.factory("project",
-                                               ocpiutil.get_path_to_project_top(),
-                                               init_libs=True)
+        my_asset = ocpifactory.AssetFactory.factory("project",
+                                                    ocpiutil.get_path_to_project_top(),
+                                                    init_libs=True)
     else:
-        my_asset = ocpiassets.AssetFactory.factory("project",
+        my_asset = ocpifactory.AssetFactory.factory("project",
                                                    ocpiutil.get_path_to_project_top())
     my_asset.show(details=options.details, verbose=options.verbose)
 
@@ -379,7 +381,7 @@ def do_tests(options):
                                     " is not a valid project.  Use the \"-d\" option or change " +
                                     "directories")
     #TODO this may not be the right way to do this long term
-    my_asset = ocpiassets.AssetFactory.factory("project",
+    my_asset = ocpifactory.AssetFactory.factory("project",
                                                ocpiutil.get_path_to_project_top(),
                                                init_libs=True)
     my_asset.show(tests=True, details=options.details, verbose=options.verbose)
@@ -443,7 +445,7 @@ def do_projects(options, only_registry=False):
         raise ocpiutil.OCPIException("ocpidev show projects is only valid in \"--global-scope\".")
     # Get projects from registry
     try:
-        reg_dir = Registry.get_registry_dir()
+        reg_dir = ocpiregistry.Registry.get_registry_dir()
         projects = os.listdir(reg_dir)
         reg_exists = True
     except ocpiutil.OCPIException as err:
@@ -526,7 +528,6 @@ def do_projects(options, only_registry=False):
             print()
 
 def main():
-    ocpiutil.configure_logging()
     (args, noun) = parseCLVars()
     action = {"registry":     do_registry,
               "projects":     do_projects,

@@ -18,9 +18,9 @@
 import unittest
 import sys
 import os
-sys.path.insert(0, os.path.realpath(os.getenv('OCPI_CDK_DIR') + '/scripts/'))
-import ocpiutil
-import ocpiassets
+sys.path.append(os.getenv('OCPI_CDK_DIR') + '/' + os.getenv('OCPI_TOOL_PLATFORM') + '/lib/')
+import _opencpi.util as ocpiutil
+from  _opencpi.assets import factory
 
 """
 This file contains the unit tests for the Application and ApplicationCollection objects
@@ -32,7 +32,7 @@ class ApplicationsTest(unittest.TestCase):
         create a Application in an invalid directory and an exception is thrown
         """
         self.assertRaises(ocpiutil.OCPIException,
-                          ocpiassets.AssetFactory.factory,
+                          factory.AssetFactory.factory,
                           self.asset_type,
                           "/dev")
 
@@ -40,7 +40,7 @@ class ApplicationsTest(unittest.TestCase):
         """
         create a Application and use the default name
         """
-        my_asset = ocpiassets.AssetFactory.factory(self.asset_type,
+        my_asset = factory.AssetFactory.factory(self.asset_type,
                                                   "../av-test/applications/aci_property_test_app")
         assert my_asset.run() == 0
 
@@ -48,7 +48,7 @@ class ApplicationsTest(unittest.TestCase):
         """
         create a Application in the default way
         """
-        my_asset = ocpiassets.AssetFactory.factory(self.asset_type,
+        my_asset = factory.AssetFactory.factory(self.asset_type,
                                                   "../av-test/applications/aci_property_test_app",
                                                   "aci_property_test_app")
         assert my_asset.run() == 0
@@ -60,7 +60,7 @@ class ApplicationsCollectionsTest(unittest.TestCase):
         create a ApplicationCollection in an invalid directory and an exception is thrown
         """
         self.assertRaises(ocpiutil.OCPIException,
-                          ocpiassets.AssetFactory.factory,
+                          factory.AssetFactory.factory,
                           self.asset_type,
                           "/dev")
 
@@ -68,7 +68,7 @@ class ApplicationsCollectionsTest(unittest.TestCase):
         """
         create a ApplicationCollection and use the default name
         """
-        my_asset = ocpiassets.AssetFactory.factory(self.asset_type,
+        my_asset = factory.AssetFactory.factory(self.asset_type,
                                                   "../av-test/applications")
         assert my_asset.run() == 0
 
@@ -76,7 +76,7 @@ class ApplicationsCollectionsTest(unittest.TestCase):
         """
         create a ApplicationCollection in the default way
         """
-        my_asset = ocpiassets.AssetFactory.factory(self.asset_type,
+        my_asset = factory.AssetFactory.factory(self.asset_type,
                                                   "../av-test/applications",
                                                   self.asset_type)
 

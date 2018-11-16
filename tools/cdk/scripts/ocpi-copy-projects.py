@@ -19,14 +19,16 @@
 
 import sys
 import os
-sys.path.append(os.getenv('OCPI_CDK_DIR') + '/scripts/')
+sys.path.append(os.getenv('OCPI_CDK_DIR') + '/scripts/')  # for ocpishow and genProjMetaData
+import ocpishow
+import genProjMetaData
+sys.path.append(os.getenv('OCPI_CDK_DIR') + '/' + os.getenv('OCPI_TOOL_PLATFORM') + '/lib/')
+import _opencpi.util as ocpiutil
+import _opencpi.assets.factory as ocpifactory
+import _opencpi.assets.registry as ocpiregistry
 import shutil
 import tarfile
 import subprocess
-import ocpiutil
-import ocpiassets
-import ocpishow
-import genProjMetaData
 from collections import namedtuple
 
 def print_help(err):
@@ -94,7 +96,7 @@ elif len(sys.argv) == 2 and sys.argv[1] in {"--help", "-h"}:
     print_help(0)
 elif len(sys.argv) == 2:
     new_user_dir = sys.argv[1]
-    new_reg_dir = ocpiassets.Registry.get_registry_dir()
+    new_reg_dir = ocpiregistry.Registry.get_registry_dir()
     force = True
     # if dir exists and is not empty
     if os.path.isdir(new_user_dir) and os.listdir(new_user_dir):
@@ -139,7 +141,7 @@ except:
 # "new_reg_dir".  Otherwise, we will fill up their .bashrc on multiple runs
 if not new_reg_dir:
     prompt_str = ("Use default registry location (" +
-                  os.path.abspath(ocpiassets.Registry.get_registry_dir()) + "):")
+                  os.path.abspath(ocpiregistry.Registry.get_registry_dir()) + "):")
     if not ocpiutil.get_ok(prompt=prompt_str, default=True):
         while not new_reg_dir:
             reg_dir = input("Registry location (default: ~/project-registry): ")
@@ -149,19 +151,19 @@ if not new_reg_dir:
             if not os.path.isdir(reg_dir):
                 # got a valid directory otherwise keep trying
                 new_reg_dir = reg_dir
-                my_registry = ocpiassets.Registry.create(new_reg_dir)
+                my_registry = ocpiregistry.Registry.create(new_reg_dir)
             else:
                 new_reg_dir = reg_dir
-                my_registry = ocpiassets.AssetFactory.factory("registry", new_reg_dir)
+                my_registry = ocpifactory.AssetFactory.factory("registry", new_reg_dir)
         if ocpiutil.get_ok(prompt="~/.bashrc must be updated now to reflect new default " +
                            "registry. Do so automatically now:", default=True):
             bashrc = open(os.path.expanduser("~/.bashrc"), 'a')
             bashrc.write("export OCPI_PROJECT_REGISTRY_DIR="+ new_reg_dir + "\n")
 
     elif (is_ocpi_grp or
-         ocpiassets.Registry.get_registry_dir() != "/opt/opencpi/project-registry"):
-        my_registry = ocpiassets.AssetFactory.factory("registry",
-                                                      ocpiassets.Registry.get_registry_dir())
+         ocpiregistry.Registry.get_registry_dir() != "/opt/opencpi/project-registry"):
+        my_registry = ocpifactory.AssetFactory.factory("registry",
+                                                       ocpiregistry.Registry.get_registry_dir())
     else:
         print("User not in the opencpi user group. This is required to register projects in the" +
               "default location")
@@ -176,9 +178,9 @@ elif (not is_ocpi_grp and new_reg_dir == "/opt/opencpi/project-registry"):
 
 else:
     if os.path.isdir(new_reg_dir):
-        my_registry = ocpiassets.AssetFactory.factory("registry", new_reg_dir)
+        my_registry = ocpifactory.AssetFactory.factory("registry", new_reg_dir)
     else:
-        my_registry = ocpiassets.Registry.create(new_reg_dir)
+        my_registry = ocpiregistry.Registry.create(new_reg_dir)
 
 os.environ['OCPI_PROJECT_REGISTRY_DIR'] = my_registry.directory
 user_yes = False
@@ -188,7 +190,7 @@ if not force:
                                default=True)
 
 for proj in projects:
-    proj_pack_id = ocpiassets.AssetFactory.factory("project", new_user_dir + "/" + proj).package_id
+    proj_pack_id = ocpifactory.AssetFactory.factory("project", new_user_dir + "/" + proj).package_id
     link_name = my_registry.directory + "/" + proj_pack_id
     # remove the project from the registry if it's there and one of the following:
     # 1. the user wants us to
@@ -209,7 +211,7 @@ for proj in projects:
 num_exceptions = 0
 for proj in projects:
     try:
-        proj_obj = ocpiassets.AssetFactory.factory("project", new_user_dir + '/' + proj)
+        proj_obj = ocpifactory.AssetFactory.factory("project", new_user_dir + '/' + proj)
         proj_obj.set_registry(new_reg_dir)
         my_registry.add(proj_dir_dict[proj])
         make_call = ["make", "-C", proj_dir_dict[proj], "exports"]

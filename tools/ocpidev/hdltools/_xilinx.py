@@ -15,8 +15,8 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
-import ocpiutil
-from hdlreportableitem import ReportableItem
+import _opencpi.util as ocpiutil
+from _opencpi.hdlreportableitem import ReportableItem
 """
 This file contains common ReportableItems/regexs for both ISE and Vivado.
 This has been tested with build logs from Xilinx ISE 14.7 and Vivado 2017.1.

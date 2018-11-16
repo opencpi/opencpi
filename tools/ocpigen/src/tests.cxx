@@ -276,23 +276,23 @@ namespace {
 		wname);
       matchedWorkers++;
       if (missing) {
-    	if (verbose)
-    	  fprintf(stderr, "Skipping worker \"%s\" since it isn't built for any target\n", wname);
-    	return NULL;
+      	if (verbose)
+      	  fprintf(stderr, "Skipping worker \"%s\" since it isn't built for any target\n", wname);
+      	return NULL;
       }
       if (matchSpec) {
-    	if (w->m_signals.size()) {
-    	  if (verbose)
-    	    fprintf(stderr, "Worker has device signals.  Looking for emulator worker.\n");
-    	  std::string workerNames;
-    	  if ((err = OU::file2String(workerNames, "../lib/workers", ' ')))
-    	    return err;
-    	  for (OU::TokenIter ti(workerNames.c_str()); ti.token(); ti.next()) {
-    	    if ((err = tryWorker(ti.token(), w->m_implName, false, false)))
-    	      return err;
-    	  }
-    	}
-    	workers.push_back(w);
+      	if (w->m_signals.size()) {
+      	  if (verbose)
+      	    fprintf(stderr, "Worker has device signals.  Looking for emulator worker.\n");
+      	  std::string workerNames;
+      	  if ((err = OU::file2String(workerNames, "../lib/workers", ' ')))
+      	    return err;
+      	  for (OU::TokenIter ti(workerNames.c_str()); ti.token(); ti.next()) {
+      	    if ((err = tryWorker(ti.token(), w->m_implName, false, false)))
+      	      return err;
+      	  }
+      	}
+      	workers.push_back(w);
       } else {
 	// Found an emulator
 	if (emulator)
@@ -446,8 +446,8 @@ static const char *s_stressorMode[] = { MS_CONFIG, NULL };
   }
   OrderedStringSet onlyPlatforms, excludePlatforms;
   const char *doPlatform(const char *platform, Strings &platforms) {
-    return platforms.insert(platform).second ? NULL :
-              OU::esprintf("platform \"%s\" is already in the list", platform);
+    platforms.insert(platform);
+    return NULL;
   }
   const char *doWorker(Worker *w, void *arg) {
     Workers &set = *(Workers *)arg;
@@ -494,12 +494,17 @@ static const char *s_stressorMode[] = { MS_CONFIG, NULL };
       	return err;
       for (auto pi = platforms.begin(); pi != platforms.end(); ++pi) {
       	const char *platform = pi->c_str();
-      	if (excludePlatforms.find(platform) != excludePlatforms.end())
+        if (excludePlatforms.find(platform) != excludePlatforms.end()){
       	  fprintf(stderr, "Warning:  for case \"%s\", excluded platform \"%s\" is already "
-      		  "globally excluded", c.m_name.c_str(), platform);
-      	if (onlyPlatforms.size() && onlyPlatforms.find(platform) == onlyPlatforms.end())
+      		  "globally excluded\n", c.m_name.c_str(), platform);
+          return NULL;
+        }
+      	if (onlyPlatforms.size() && onlyPlatforms.find(platform) == onlyPlatforms.end()){
+          //If there is a global onlyPlatforms list, only exclude things from that list
       	  fprintf(stderr, "Warning:  for case \"%s\", excluded platform \"%s\" is not in the "
-      		  "global only platforms", c.m_name.c_str(), platform);
+      		  "global only platforms\n", c.m_name.c_str(), platform);
+          return NULL;
+        }
       	if ((err = doPlatform(platform, c.m_excludePlatforms)))
       	  return err;
       }
@@ -513,15 +518,16 @@ static const char *s_stressorMode[] = { MS_CONFIG, NULL };
       	return err;
       for (auto pi = platforms.begin(); pi != platforms.end(); ++pi) {
       	const char *platform = pi->c_str();
-      	if (onlyPlatforms.size() && onlyPlatforms.find(platform) == onlyPlatforms.end())
-      	  fprintf(stderr, "Warning:  for case \"%s\", only platform \"%s\" is already in the "
-      		  "global only platforms list", c.m_name.c_str(), platform);
-      	if (excludePlatforms.find(platform) != excludePlatforms.end())
-      	  return
-      	    OU::esprintf("For case \"%s\", only platform \"%s\" is globally excluded",
+        if (excludePlatforms.find(platform) != excludePlatforms.end())
+      	  return OU::esprintf("For case \"%s\", only platform \"%s\" is globally excluded",
       			 c.m_name.c_str(), platform);
-      	if ((err = doPlatform(platform, c.m_onlyPlatforms)))
-      	  return err;
+         if (onlyPlatforms.size() && onlyPlatforms.find(platform) == onlyPlatforms.end()) {
+           return OU::esprintf("For case \"%s\", only platform \"%s\" is not in global list",
+             c.m_name.c_str(), platform);
+         }
+
+         if ((err = doPlatform(platform, c.m_onlyPlatforms)))
+          return err;
       }
       return NULL;
     }
@@ -543,8 +549,9 @@ static const char *s_stressorMode[] = { MS_CONFIG, NULL };
       	return OU::esprintf("excluded worker \"%s\" is already globally excluded", worker);
       WorkersIter wi;
       if ((wi = findWorker(worker, c.m_workers)) == c.m_workers.end()) {
-      	return OU::esprintf("For case \"%s\", excluded worker \"%s\" is not a potential worker",
+        fprintf(stderr, "For case \"%s\", excluded worker \"%s\" is not a potential worker",
       		     c.m_name.c_str(), worker);
+        return NULL;
       }
       c.m_workers.erase(wi);
       return NULL;
@@ -668,14 +675,13 @@ static const char *s_stressorMode[] = { MS_CONFIG, NULL };
       //must be added to each case's individual lists (m_excludePlatforms and m_onlyPlatforms)
       //there's a check earlier to make sure both onlyPlatforms and excludePlatforms
       //aren't set at the same time
-      if (onlyPlatforms.size())
-         m_onlyPlatforms.insert(onlyPlatforms.begin(), onlyPlatforms.end());
-
+      //global level excludePlatforms is added to case level excludePlatforms here
+      //onlyPlatforms is handled later
       if (excludePlatforms.size())
          m_excludePlatforms.insert(excludePlatforms.begin(), excludePlatforms.end());
 
       if ((a = ezxml_cattr(x, "onlyplatforms"))) {
-          if (ezxml_cattr(x, "excludeplatforms") || (excludePlatforms.size()))
+          if (ezxml_cattr(x, "excludeplatforms"))
               return OU::esprintf("the onlyplatforms and excludeplatforms attributes cannot both occur");
           if ((err = OU::parseList(a, doOnlyPlatform, this)))
               return err;
@@ -757,67 +763,67 @@ static const char *s_stressorMode[] = { MS_CONFIG, NULL };
       ocpiDebug("Pruning subcases for case %s starting with %zu subcases",
     		m_name.c_str(), m_subCases.size());
       for (unsigned s = 0; s < m_subCases.size(); s++) {
-	ocpiDebug("Considering pruning subcase %s.%u",	m_name.c_str(), s);
-	ParamConfig &pc = *m_subCases[s];
-	// For each worker configuration, decide whether it can support the subcase.
-	// Note worker configs only have *parameters*, while subcases can have runtime properties
-	unsigned viableConfigs = 0;
-	for (WorkerConfigsIter wci = configs.begin(); wci != configs.end(); ++wci) {
-	  ParamConfig &wcfg = *wci->first;
-	  ocpiDebug("--Considering worker %s.%s(%zu)", wci->second->cname(),
-		    wci->second->m_modelString, wci->first->nConfig);
-	  // For each property in the subcase, decide whether it conflicts with a *parameter*
-	  // in this worker config
-	  for (unsigned nn = 0; nn < pc.params.size(); nn++) {
-	    Param &sp = pc.params[nn];
-	    if (sp.m_param == NULL)
-	      continue;
-	    OU::Property *wprop = wci->second->findProperty(sp.m_param->cname());
-	    for (unsigned n = 0; n < wcfg.params.size(); n++) {
-	      Param &wparam = wcfg.params[n];
-	      if (wparam.m_param && !strcasecmp(sp.m_param->cname(), wparam.m_param->cname())) {
-      		if (sp.m_uValue == wparam.m_uValue)
-      		  goto next;     // match - this subcase property is ok for this worker config
-      		ocpiDebug("--Skipping worker %s.%s(%zu) because its param %s is different",
-      			  wci->second->cname(), wci->second->m_modelString,
-      			  wci->first->nConfig, sp.m_param->cname());
-      		goto skip_worker_config; // mismatch - this worker config rejected from subcase
-	      }
-	    }
-	    // The subcase property was not found as a parameter in the worker config
-	    if (wprop) {
-	      // But it is a runtime property in the worker config so it is ok
-	      assert(!wprop->m_isParameter);
-	      continue; // do next subcase parameter/property
-	    }
-      // The subcase property is for the emulator, which is ok
-      if (sp.m_worker && sp.m_worker->m_emulate)
-        continue;
-      // The subcase property was not in this worker at all, so it must be
-      // implementation specific or a test property or an emulator property
-      if (sp.m_param->m_isImpl && sp.m_uValue.size()) {
-        if (sp.m_param->m_default) {
-      		std::string uValue;
-      		sp.m_param->m_default->unparse(uValue);
-      		if (sp.m_uValue == uValue)
-      		  // The subcase property is the default value so it is ok for the worker
-      		  // to not have it at all.
-      		  continue;
+      	ocpiDebug("Considering pruning subcase %s.%u",	m_name.c_str(), s);
+      	ParamConfig &pc = *m_subCases[s];
+      	// For each worker configuration, decide whether it can support the subcase.
+      	// Note worker configs only have *parameters*, while subcases can have runtime properties
+      	unsigned viableConfigs = 0;
+      	for (WorkerConfigsIter wci = configs.begin(); wci != configs.end(); ++wci) {
+      	  ParamConfig &wcfg = *wci->first;
+      	  ocpiDebug("--Considering worker %s.%s(%zu)", wci->second->cname(),
+      		    wci->second->m_modelString, wci->first->nConfig);
+      	  // For each property in the subcase, decide whether it conflicts with a *parameter*
+      	  // in this worker config
+      	  for (unsigned nn = 0; nn < pc.params.size(); nn++) {
+      	    Param &sp = pc.params[nn];
+      	    if (sp.m_param == NULL)
+      	      continue;
+      	    OU::Property *wprop = wci->second->findProperty(sp.m_param->cname());
+      	    for (unsigned n = 0; n < wcfg.params.size(); n++) {
+      	      Param &wparam = wcfg.params[n];
+      	      if (wparam.m_param && !strcasecmp(sp.m_param->cname(), wparam.m_param->cname())) {
+            		if (sp.m_uValue == wparam.m_uValue)
+            		  goto next;     // match - this subcase property is ok for this worker config
+            		ocpiDebug("--Skipping worker %s.%s(%zu) because its param %s is different",
+            			  wci->second->cname(), wci->second->m_modelString,
+            			  wci->first->nConfig, sp.m_param->cname());
+            		goto skip_worker_config; // mismatch - this worker config rejected from subcase
+      	      }
+      	    }
+      	    // The subcase property was not found as a parameter in the worker config
+      	    if (wprop) {
+      	      // But it is a runtime property in the worker config so it is ok
+      	      assert(!wprop->m_isParameter);
+      	      continue; // do next subcase parameter/property
+      	    }
+            // The subcase property is for the emulator, which is ok
+            if (sp.m_worker && sp.m_worker->m_emulate)
+              continue;
+            // The subcase property was not in this worker at all, so it must be
+            // implementation specific or a test property or an emulator property
+            if (sp.m_param->m_isImpl && sp.m_uValue.size()) {
+              if (sp.m_param->m_default) {
+            		std::string uValue;
+            		sp.m_param->m_default->unparse(uValue);
+            		if (sp.m_uValue == uValue)
+            		  // The subcase property is the default value so it is ok for the worker
+            		  // to not have it at all.
+            		  continue;
+              }
+              // The impl property is not the default so this worker config cannot be used
+              ocpiDebug("Skipping worker %s.%s(%zu) because param %s(%s) is impl-specific and %s",
+            		wci->second->cname(), wci->second->m_modelString, wci->first->nConfig,
+            		sp.m_param->cname(), sp.m_uValue.c_str(),
+            		sp.m_param->m_default ? " the value does not match the default" :
+            		"there is no default to check");
+              goto skip_worker_config;
+            }
+      	    // The property is a test property which is ok
+        	  next:;
+    	    }
+          viableConfigs++;
+          skip_worker_config:;
         }
-        // The impl property is not the default so this worker config cannot be used
-        ocpiDebug("Skipping worker %s.%s(%zu) because param %s(%s) is impl-specific and %s",
-  		wci->second->cname(), wci->second->m_modelString, wci->first->nConfig,
-  		sp.m_param->cname(), sp.m_uValue.c_str(),
-  		sp.m_param->m_default ? " the value does not match the default" :
-  		"there is no default to check");
-        goto skip_worker_config;
-      }
-	    // The property is a test property which is ok
-  	  next:;
-	  }
-      	  viableConfigs++;
-      	skip_worker_config:;
-      	}
       	if (viableConfigs == 0) {
       	  ocpiDebug("Removing subcase %u since no workers implement it", s);
       	  m_subCases.erase(m_subCases.begin() + s);
@@ -825,8 +831,8 @@ static const char *s_stressorMode[] = { MS_CONFIG, NULL };
       	}
       }
       return m_subCases.size() == 0 ?
-	OU::esprintf("For case %s, there are no valid parameter combinations for any worker",
-		     m_name.c_str()) : NULL;
+      	OU::esprintf("For case %s, there are no valid parameter combinations for any worker",
+      	m_name.c_str()) : NULL;
     }
     void
     print(FILE *out) {
@@ -1350,38 +1356,36 @@ static const char *s_stressorMode[] = { MS_CONFIG, NULL };
     	      attrs = &cp.m_attributes[i];
     	  assert(attrs);
     	  for (auto si = allPlatforms.begin(); si != allPlatforms.end(); ++si) {
-    	    const std::string &p = *si;
-    	    // If all values for this platform are not explicit
-    	    if (cp.m_explicitPlatforms.find(p) == cp.m_explicitPlatforms.end()) {
-    	      if (attrs->m_excluded.find(p) != attrs->m_excluded.end() ||
-        		   (attrs->m_included.size() && attrs->m_included.find(p) == attrs->m_included.end()))
-        		excludedPlatforms.insert(p);
-    	    } else if (attrs->m_only.find(p) == attrs->m_only.end())
-    	      // This value is not specifically set for this platform.  Exclude the platform.
+          const char *p = si->c_str();
+          //allowed platform for this test? if platform not in global onlyPlatforms
+          //list it shouldn't be tested anyway
+          if (onlyPlatforms.size() && onlyPlatforms.find(p) == onlyPlatforms.end()){
+            continue;
+          } else {
+      	    // If all values for this platform are not explicit
+      	    if (cp.m_explicitPlatforms.find(p) == cp.m_explicitPlatforms.end()) {
+      	      if (attrs->m_excluded.find(p) != attrs->m_excluded.end() ||
+          		   (attrs->m_included.size() && attrs->m_included.find(p) == attrs->m_included.end()))
+          		excludedPlatforms.insert(p);
+      	    } else if (attrs->m_only.find(p) == attrs->m_only.end()) {
+      	      // This value is not specifically set for this platform.  Exclude the platform.
               excludedPlatforms.insert(p);
+            }
+          }
     	  }
     	}
         //add per-case excluded platforms from the test xml to the list
-        if (m_excludePlatforms.size()){
-          excludedPlatforms.insert(m_excludePlatforms.begin(), m_excludePlatforms.end());
+        if (excludedPlatforms.size()){
+          m_excludePlatforms.insert(excludedPlatforms.begin(), excludedPlatforms.end());
         }
+
     	// Now that all platforms exclusions have been collected, generate list
     	fprintf(out, "    <subcase id='%u'", s);
-    	if (excludedPlatforms.size()) {
-    	  if (excludedPlatforms.size() < allPlatforms.size() - excludedPlatforms.size()) {
-    	    fprintf(out, " exclude='");
-    	    for (auto si = excludedPlatforms.begin(); si != excludedPlatforms.end(); ++si)
-    	      fprintf(out, "%s%s", si == excludedPlatforms.begin() ? "" : " ",
-    		      si->c_str());
-    	  } else {
-    	    fprintf(out, " only='");
-    	    bool first = true;
-    	    for (auto si = allPlatforms.begin(); si != allPlatforms.end(); ++si)
-    	      if (excludedPlatforms.find(*si) == excludedPlatforms.end()) {
-    		fprintf(out, "%s%s", first ? "" : " ", si->c_str());
-    		first = false;
-    	      }
-    	  }
+      if (m_excludePlatforms.size() && !onlyPlatforms.size() && !m_onlyPlatforms.size()) {
+  	    fprintf(out, " exclude='");
+  	    for (auto si = m_excludePlatforms.begin(); si != m_excludePlatforms.end(); ++si)
+  	      fprintf(out, "%s%s", si == m_excludePlatforms.begin() ? "" : " ",
+  		      si->c_str());
     	  fprintf(out, "'");
     	}
         // Now we know which platforms should be included
@@ -1389,6 +1393,16 @@ static const char *s_stressorMode[] = { MS_CONFIG, NULL };
       	  fprintf(out, " only='");
       	  for (auto si = m_onlyPlatforms.begin(); si != m_onlyPlatforms.end(); ++si)
       	    fprintf(out, "%s%s", si == m_onlyPlatforms.begin() ? "" : " ", si->c_str());
+          fprintf(out, "'");
+        } else if (onlyPlatforms.size()) {
+          fprintf(out, " only='");
+      	  for (auto si = onlyPlatforms.begin(); si != onlyPlatforms.end(); ++si) {
+            const char *p = si->c_str();
+            if (m_excludePlatforms.size()  && m_excludePlatforms.find(p) != m_excludePlatforms.end()) {
+              continue;
+            }
+            fprintf(out, "%s%s", si == onlyPlatforms.begin() ? "" : " ", p);
+          }
           fprintf(out, "'");
         }
     	if (m_timeout)

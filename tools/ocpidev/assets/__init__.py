@@ -16,6 +16,15 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-HdlPart_zed=xc7z020-1-clg484
-HdlRccPlatform_zed=xilinx13_3
-HdlAllRccPlatforms_zed="xilinx13_3 xilinx13_4"
+__all__ = [
+           "abstract",
+           "application",
+           "factory",
+           "test",
+           "registry",
+           "project",
+           "worker",
+           "platform",
+           "assembly",
+           "library",
+          ]

@@ -802,7 +802,7 @@ emitImplRCC() {
             comma = ", ";
           } else
             offset = ", 0";
-          if (p.m_isReadable) {
+          if ((p.m_isReadable) || (p.m_isParameter)) {
             // always expose the string based interface to the property
             fprintf(f,
                     "    inline std::string & getProperty_%s(std::string &val) {\n"

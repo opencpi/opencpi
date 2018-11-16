@@ -18,9 +18,9 @@
 import unittest
 import sys
 import os
-sys.path.insert(0, os.path.realpath(os.getenv('OCPI_CDK_DIR') + '/scripts/'))
-import ocpiutil
-import ocpiassets
+sys.path.append(os.getenv('OCPI_CDK_DIR') + '/' + os.getenv('OCPI_TOOL_PLATFORM') + '/lib/')
+import _opencpi.util as ocpiutil
+from  _opencpi.assets.factory import *
 
 """
 This file contains the unit tests for the Test object
@@ -32,7 +32,7 @@ class TestsTest(unittest.TestCase):
         create a Test in an invalid directory and an exception is thrown
         """
         self.assertRaises(ocpiutil.OCPIException,
-                          ocpiassets.AssetFactory.factory,
+                          AssetFactory.factory,
                           self.asset_type,
                           "/dev")
 
@@ -40,17 +40,17 @@ class TestsTest(unittest.TestCase):
         """
         create a Test and use the default for name
         """
-        my_asset = ocpiassets.AssetFactory.factory(self.asset_type,
-                                                  "../av-test/components/test_worker.test")
+        my_asset = AssetFactory.factory(self.asset_type,
+                                        "../av-test/components/test_worker.test")
         assert my_asset.run() == 0
 
     def test_test_good_(self):
         """
         create a Test in the default way
         """
-        my_asset = ocpiassets.AssetFactory.factory(self.asset_type,
-                                                  "../av-test/components/test_worker.test",
-                                                  "prop_mem_align_info")
+        my_asset = AssetFactory.factory(self.asset_type,
+                                        "../av-test/components/test_worker.test",
+                                        "prop_mem_align_info")
         assert my_asset.run() == 0
 
 if __name__ == '__main__':

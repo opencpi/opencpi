@@ -19,7 +19,7 @@
 This file contains ReportableItems/regexs for Xilinx ISE (XST).
 This has been tested with build logs from Xilinx ISE 14.7.
 """
-from hdlreportableitem import ReportableItem
+from _opencpi.hdlreportableitem import ReportableItem
 from . import _xilinx
 
 # NOTE: If adding regular expressions for new tool versions, individual regular

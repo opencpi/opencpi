@@ -35,11 +35,13 @@ Note on testing:
 """
 
 import os
+import sys
 import glob
 import importlib
 from functools import partial
-import ocpiutil
-import hdltools
+sys.path.append(os.getenv('OCPI_CDK_DIR') + '/' + os.getenv('OCPI_TOOL_PLATFORM') + '/lib/')
+import _opencpi.util as ocpiutil
+import _opencpi.hdltools as hdltools
 
 class HdlToolFactory(object):
     """
@@ -72,7 +74,7 @@ class HdlToolFactory(object):
     for tool_str in hdltools.__all__:
         try:
             # import the tool submodule of "hdltools"
-            tool_module = importlib.import_module("hdltools." + tool_str)
+            tool_module = importlib.import_module("_opencpi.hdltools." + tool_str)
             # Initialize metadata for the tool
             __tool_reporting[tool_str] = {}
             # pylint:disable=bad-whitespace

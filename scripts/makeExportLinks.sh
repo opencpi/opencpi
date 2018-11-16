@@ -187,7 +187,7 @@ function do_addition {
       *\<target\>*|*\<platform\>*|*\<platform_dir\>*) return;;
   esac
   rawsrc=${both[0]//<target>/$target2}
-  rawsrc=${rawsrc//<platform>/$OPCI_TARGET_PLATFROM}
+  rawsrc=${rawsrc//<platform>/$OPCI_TARGET_PLATFORM}
   rawsrc=${rawsrc/#<platform_dir>/$OCPI_TARGET_PLATFORM_DIR}
   [ -n "$rcc_platform_dir" ] && rawsrc=${rawsrc/#<rcc_platform_dir>/$rcc_platform_dir}
   [ -n "$rcc_platform" ] && rawsrc=${rawsrc//<rcc_platform>/$rcc_platform}
@@ -458,11 +458,14 @@ for p in $OcpiPlatformPrerequisites; do
 done
 shopt -u nullglob
 
+# If we are not building on the target platform do not pre-compile python AV-4850
+if [ "$OCPI_TOOL_DIR" = "$target" ]; then
 # Force precompilation of python files right here, but only if we are doing a target
-py=python3
-command -v python3 > /dev/null || py=/opt/local/bin/python3
-dirs=
-for d in `find exports -name "*.py"|sed 's=/[^/]*$=='|sort -u`; do
- $py -m compileall -q $d
- $py -O -m compileall -q $d
-done
+  py=python3
+  command -v python3 > /dev/null || py=/opt/local/bin/python3
+  dirs=
+  for d in `find exports -name "*.py"|sed 's=/[^/]*$=='|sort -u`; do
+   $py -m compileall -q $d
+   $py -O -m compileall -q $d
+  done
+fi

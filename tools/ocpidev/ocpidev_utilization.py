@@ -24,8 +24,10 @@ import os
 import sys
 import pydoc
 import types
-import ocpiassets
-import ocpiutil
+sys.path.append(os.getenv('OCPI_CDK_DIR') + '/' + os.getenv('OCPI_TOOL_PLATFORM') + '/lib/')
+import _opencpi.util as ocpiutil
+import _opencpi.assets.factory as ocpifactory
+from _opencpi.abstract import ReportableAsset
 
 # There is a top-level parser that parses FIRST_NOUNS
 # If the noun is a PLAIN_NOUN, it proceeds normally,
@@ -123,7 +125,7 @@ def parse_cl_vars():
     parser.add_argument("-v", "--verbose", action="store_true", help="Be verbose with output.")
 
     parser.add_argument("--format", dest="output_format", default="table",
-                        choices=ocpiassets.ReportableAsset.valid_formats,
+                        choices=ReportableAsset.valid_formats,
                         help='Format to output utilization information. "latex" results in ' +
                              'silent stdout, and all output goes to "utilization.inc" files ' +
                              'in the directories for the assets acted on.')
@@ -256,7 +258,7 @@ def main():
                                str(name) + "\n" + "directory: " + str(directory) +
                                "\nargs: " + str(args))
 
-        my_asset = ocpiassets.AssetFactory.factory(dir_type, directory, name, **args)
+        my_asset = ocpifactory.AssetFactory.factory(dir_type, directory, name, **args)
 
         my_asset.show_utilization()
 

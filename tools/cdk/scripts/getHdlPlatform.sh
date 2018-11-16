@@ -84,6 +84,8 @@ done # done with the project
 
 if [ -n "$1" ]; then
   # If we did not find the hdl platform given see if a software platform was given instead.
+  # The following is used to get all possible rcc platforms for a specific hdl platform
+  setVarsFromMake $OCPI_CDK_DIR/include/hdl/hdl-targets.mk ShellHdlTargetsVars=1 $verbose
   hw_platforms=()
   for j in $projects; do
     platforms_dir=$j/hdl/platforms
@@ -94,6 +96,14 @@ if [ -n "$1" ]; then
         tmp_platform=$(basename $platform)
         [ -e $platforms_dir/$tmp_platform/$tmp_platform.mk ] && ret_platforms=($(returnPlatform $platform -))
         [ "${ret_platforms[2]}" = $1 ] && hw_platforms+=("${ret_platforms[1]}")
+        # Below we are getting rcc platforms that correspond with the hdl platform which is set in <hdl_platform>.mk file
+        var_name=HdlAllRccPlatforms_${tmp_platform}
+        if [ -n "${!var_name}" ]; then
+          if [[ "${!var_name}" =~ $1 ]]; then
+            [ -e $platforms_dir/$tmp_platform/$tmp_platform.mk ] && ret_platforms=($(returnPlatform $platform -))
+            hw_platforms+=("${ret_platforms[1]}")
+          fi
+        fi
       done
     fi
   done

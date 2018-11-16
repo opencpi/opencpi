@@ -39,4 +39,5 @@
         <Member Name="test_char" Type="char"></Member>
     </Property>
     <Property Name="test_seq_of_ulong_arrays" ArrayDimensions="10" SequenceLength="10" Volatile="true" Writable="true" Readable="true"></Property>
+    <Property Parameter="true" Name="test_ulong_param" Default="15"></Property>
 </ComponentSpec>

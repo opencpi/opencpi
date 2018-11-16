@@ -19,8 +19,8 @@
 This file contains ReportableItems/regexs for Vivado.
 This has been tested with build logs from Xilinx Vivado 2017.1.
 """
-import ocpiutil
-from hdlreportableitem import ReportableItem
+import _opencpi.util as ocpiutil
+from _opencpi.hdlreportableitem import ReportableItem
 from . import _xilinx
 
 # NOTE: If adding regular expressions for new tool versions, individual regular

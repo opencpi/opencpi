@@ -27,8 +27,7 @@ Note on testing:
     opencpi/tests/pytests/*_test.py
 """
 
-import ocpiutil
-
+import _opencpi.util as ocpiutil
 
 class ReportableItem(object):
     """

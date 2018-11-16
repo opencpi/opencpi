@@ -33,13 +33,9 @@ import unittest
 import os
 import sys
 import logging
-sys.path.insert(0, os.path.realpath(os.getenv('OCPI_CDK_DIR') + '/scripts/'))
-import ocpiutil
-from hdlreportableitem import ReportableItem
-
-# Initialize ocpiutil's logging settings which switch
-# based on OCPI_LOG_LEVEL
-ocpiutil.configure_logging()
+sys.path.append(os.getenv('OCPI_CDK_DIR') + '/' + os.getenv('OCPI_TOOL_PLATFORM') + '/lib/')
+import _opencpi.util as ocpiutil
+from  _opencpi.hdlreportableitem import ReportableItem
 
 class TestReportableItem(unittest.TestCase):
     def test_reportable_item(self):

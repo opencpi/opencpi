@@ -21,8 +21,9 @@ import os
 import sys
 import pydoc
 import types
-import ocpiassets
-import ocpiutil
+sys.path.append(os.getenv('OCPI_CDK_DIR') + '/' + os.getenv('OCPI_TOOL_PLATFORM') + '/lib/')
+import _opencpi.assets.factory as ocpifactory
+import _opencpi.util as ocpiutil
 
 NOUNS = ["test", "tests", "library", "application", "applications", "project"]
 MODES = ["all", "gen", "gen_build", "prep_run_verify", "prep", "run", "prep_run", "verify", "view",
@@ -87,18 +88,18 @@ def parse_cl_vars():
     parser.add_argument("--view", dest="view", action="store_true",
                         help="When set the view script (view.sh) for this test is run at the " +
                              "conclusion of the test's execution.  Not valid for Application")
-    parser.add_argument("-G", "--only-platform", dest="only_plat", action="append",
-                        help="Specify which platforms to use with a unit test from the " +
-                        "list of runtime platforms.")
-    parser.add_argument("-Q", "--exclude-platform ", dest="ex_plat", action="append",
-                        help="Specify which platforms not to use with a unit test from the " +
-                        "list of runtime platforms.")
-    parser.add_argument("--rcc-platform", dest="rcc_plat", action="append",
+    parser.add_argument("-G", "--only-platform", metavar="ONLY_PLAT", dest="only_plats",
+                        action="append", help="Specify which platforms to use with a unit test " +
+                        "from the list of runtime platforms.")
+    parser.add_argument("-Q", "--exclude-platform ", metavar="EXCLUDE_PLAT", dest="ex_plats",
+                        action="append", help="Specify which platforms not to use with a unit " +
+                        "test from the list of runtime platforms.")
+    parser.add_argument("--rcc-platform", metavar="RCC_PLAT", dest="rcc_plats", action="append",
                         help="Specify which RCC platform from the list of buildable " +
                         "platforms to use with unit test.  Only valid in generate " +
                         "and build phases.  For application specifies which RCC " +
                         "platform to build ACI applications.")
-    parser.add_argument("--hdl-platform", dest="hdl_plats", action="append",
+    parser.add_argument("--hdl-platform", metavar="HDL_PLAT", dest="hdl_plats", action="append",
                         help="Specify which HDL platform from the list of buildable " +
                         "platforms to use with unit test. only valid in generate " +
                         "and build phases.  Not valid for Application")
@@ -108,10 +109,9 @@ def parse_cl_vars():
     parser.add_argument("-l", "--library", dest="library", default="components",
                         help="Specify the component library for the test to be run.  " +
                         "Not valid for Application.")
-    parser.add_argument("--case", dest="case", action="append",
+    parser.add_argument("--case", metavar="CASE", dest="cases", action="append",
                         help="Specify which test case(s) that will be run/verified.  Wildcards " +
-                             "are valid, ex. case*., case0.0*, case00.01 Not valid for " +
-                             "Application.")
+                        "are valid, ex. case*.0, case0.0*, case00.01.  Not valid for Application.")
     parser.add_argument("--before", dest="run_before", action="append",
                         help="Argument(s) to insert before the ACI executable or ocpirun, such " +
                         "as environment settings or prefix commands.  Not valid for Test.")
@@ -184,7 +184,6 @@ def set_init_values(args, dir_type):
                                          dir_type + "\". Valid types are library and project")
 
 def main():
-    ocpiutil.configure_logging()
     args = parse_cl_vars()
     directory = None
     name = None
@@ -219,7 +218,8 @@ def main():
             directory = get_directory(args, name, lib)
             ocpiutil.logging.debug("creating asset as the following \nname: " + str(name) + "\n" +
                                    "directory: " + str(directory) + "\nargs: " + str(args))
-            my_asset = ocpiassets.AssetFactory.factory(args['noun'], directory, name, **args)
+            my_asset = ocpifactory.AssetFactory.factory(args['noun'], directory,
+                                                       name, **args)
             #TODO make sure return value is working right always returning zero ?
 
             sys.exit(my_asset.run())

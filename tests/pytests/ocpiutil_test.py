@@ -36,9 +36,10 @@ import sys
 import re
 import subprocess
 import logging
-sys.path.insert(0, os.path.realpath(os.getenv('OCPI_CDK_DIR') + '/scripts/'))
-import ocpiutil
-from ocpiassets import *
+sys.path.append(os.getenv('OCPI_CDK_DIR') + '/' + os.getenv('OCPI_TOOL_PLATFORM') + '/lib/')
+import _opencpi.util as ocpiutil
+from  _opencpi.assets.factory import *
+from  _opencpi.assets.registry import *
 
 # The following globals are used within the test cases for
 # setting up and verifying projects and paths
@@ -80,19 +81,17 @@ PROJECT_PACKAGES = {
 
 OCPI_LOG_LEVEL = os.environ.get('OCPI_LOG_LEVEL')
 OCPI_CDK_DIR = os.environ.get('OCPI_CDK_DIR')
+OCPI_TOOL_PLATFORM = os.environ.get('OCPI_TOOL_PLATFORM')
 
 # Determine path to ocpidev based on CDK so that we avoid accidentally
 # using the one installed by RPMs
-OCPIDEV_PATH = OCPI_CDK_DIR + "/scripts/ocpidev"
+OCPIDEV_PATH = OCPI_CDK_DIR + '/' + OCPI_TOOL_PLATFORM + '/bin/ocpidev'
 if OCPI_LOG_LEVEL and int(OCPI_LOG_LEVEL) > 8:
     SET_X = " set -x; "
     OCPIDEV_CMD = OCPIDEV_PATH + " -v"
 else:
     SET_X = " "
     OCPIDEV_CMD = OCPIDEV_PATH
-# Initialize ocpiutil's logging settings which switch
-# based on OCPI_LOG_LEVEL
-OCPIUTIL_LOGGER = ocpiutil.configure_logging()
 
 #TODO: test get_ok and print_table
 
@@ -451,7 +450,8 @@ class TestPathFunctions(unittest.TestCase):
             logging.info("Make sure you can set a project's registry to a given directory.")
             if os.path.isdir("../../../project-registry"):
                 # Cannot set/unset the registry for a project when it is registered
-                self.assertRaises(ocpiutil.OCPIException, proj.set_registry, "../../../project-registry")
+                self.assertRaises(ocpiutil.OCPIException, proj.set_registry,
+                                  "../../../project-registry")
                 # Remove the project from the registry and proceed with (un)setting
                 reg.remove(package_id=proj.package_id)
                 proj.set_registry("../../../project-registry")
@@ -529,11 +529,11 @@ class TestPathFunctions(unittest.TestCase):
                     self.assertTrue(os.path.lexists(gprd + "/" + pkg))
         # If log level is low, disable logging to prevent the expected scary ERROR
         if not OCPI_LOG_LEVEL or int(OCPI_LOG_LEVEL) < 8:
-            OCPIUTIL_LOGGER.disabled = True
+            ocpiutil.OCPIUTIL_LOGGER.disabled = True
         logging.info("Should print an ERROR and return false for invalid project_paths:")
         self.assertRaises(ocpiutil.OCPIException, reg.remove, "INVALID")
         if OCPI_LOG_LEVEL and int(OCPI_LOG_LEVEL) < 8:
-            OCPIUTIL_LOGGER.disabled = False
+            ocpiutil.OCPIUTIL_LOGGER.disabled = False
 
     def test_get_path_to_project_top(self):
         """

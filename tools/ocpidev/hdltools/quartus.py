@@ -20,7 +20,7 @@ This file contains ReportableItems/regexs for Quartus Prime Standard Edition.
 This has been tested with build logs from Quartus Prime Standard Edition 17.1.
 """
 
-from hdlreportableitem import ReportableItem
+from _opencpi.hdlreportableitem import ReportableItem
 
 # NOTE: If adding regular expressions for new tool versions, individual regular
 #       expressions can be replaced with lists of regexs. This way, we can add

@@ -36,18 +36,16 @@ import sys
 import fnmatch
 import logging
 import subprocess
-sys.path.insert(0, os.path.realpath(os.getenv('OCPI_CDK_DIR') + '/scripts/'))
-import ocpiutil
-import ocpiassets
-
-# Initialize ocpiutil's logging settings which switch
-# based on OCPI_LOG_LEVEL
-ocpiutil.configure_logging()
+sys.path.append(os.getenv('OCPI_CDK_DIR') + '/' + os.getenv('OCPI_TOOL_PLATFORM') + '/lib/')
+import _opencpi.util as ocpiutil
+from  _opencpi.assets.factory import *
+from  _opencpi.assets.abstract import *
 
 OCPI_CDK_DIR = os.environ.get('OCPI_CDK_DIR')
+OCPI_TOOL_PLATFORM = os.environ.get('OCPI_TOOL_PLATFORM')
 # Determine path to ocpidev based on CDK so that we avoid accidentally
 # using the one installed by RPMs
-OCPIDEV_PATH = OCPI_CDK_DIR + "/scripts/ocpidev"
+OCPIDEV_PATH = OCPI_CDK_DIR + '/' + OCPI_TOOL_PLATFORM + '/bin/ocpidev'
 
 # Project with dummy assets and read-only log files for testing utilization reporting
 UTIL_PROJ = "utilization_proj/"
@@ -157,9 +155,9 @@ def construct_asset(mode):
                   'init_libs': True, 'init_workers': True,
                   'init_assembs': True, 'init_hdlplats': True}
         logging.debug("Constructing " + mode + " with args: " + str(kwargs))
-        return ocpiassets.AssetFactory.factory(asset_type=mode,
-                                               directory=DIRS[mode],
-                                               **kwargs)
+        return AssetFactory.factory(asset_type=mode,
+                                    directory=DIRS[mode],
+                                    **kwargs)
 
 class TestUtilization(unittest.TestCase):
     """

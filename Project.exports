@@ -56,6 +56,34 @@
 # We need to rationalize this with opencpi-setup.sh
 =env/rpm_cdk.sh env/
 =packaging/dist/env.d/* env.d/
++tools/cdk/python/_opencpi/__init__.py <target>/lib/_opencpi/
++tools/cdk/python/_opencpi/util/__init__.py <target>/lib/_opencpi/util/
++tools/cdk/python/_opencpi/util/__init__.py <target>/lib/_opencpi/util/
++tools/cdk/python/_opencpi/util/file.py <target>/lib/_opencpi//util/
++tools/cdk/python/_opencpi/util/project.py <target>/lib/_opencpi/util/
++tools/cdk/python/_opencpi/util/report.py <target>/lib/_opencpi/util/
++tools/ocpidev/hdltools/__init__.py <target>/lib/_opencpi/hdltools/
++tools/ocpidev/hdltools/quartus.py <target>/lib/_opencpi/hdltools/
++tools/ocpidev/hdltools/vivado.py <target>/lib/_opencpi/hdltools/
++tools/ocpidev/hdltools/_xilinx.py <target>/lib/_opencpi/hdltools/
++tools/ocpidev/hdltools/xst.py <target>/lib/_opencpi/hdltools/
++tools/ocpidev/hdlreportableitem.py <target>/lib/_opencpi/
++tools/ocpidev/hdltargets.py <target>/lib/_opencpi/
++tools/ocpidev/assets/abstract.py <target>/lib/_opencpi/assets/
++tools/ocpidev/assets/application.py <target>/lib/_opencpi/assets/
++tools/ocpidev/assets/assembly.py <target>/lib/_opencpi/assets/
++tools/ocpidev/assets/factory.py <target>/lib/_opencpi/assets/
++tools/ocpidev/assets/__init__.py <target>/lib/_opencpi/assets/
++tools/ocpidev/assets/library.py <target>/lib/_opencpi/assets/
++tools/ocpidev/assets/platform.py <target>/lib/_opencpi/assets/
++tools/ocpidev/assets/project.py <target>/lib/_opencpi/assets/
++tools/ocpidev/assets/registry.py <target>/lib/_opencpi/assets/
++tools/ocpidev/assets/test.py <target>/lib/_opencpi/assets/
++tools/ocpidev/assets/worker.py <target>/lib/_opencpi/assets/
++tools/ocpidev/ocpidev.sh <target>/bin/ocpidev
++tools/ocpidev/ocpidev_run.py scripts/   
++tools/ocpidev/ocpishow.py scripts/ 
++tools/ocpidev/ocpidev_utilization.py scripts/
 # generic make scripts
 +tools/cdk/include/show.mk include/
 +tools/cdk/include/lib.mk include/
@@ -103,7 +131,6 @@
 =tools/cdk/scripts/ocpisudo scripts/
 +tools/cdk/scripts/ocpitarget.sh scripts/
 +tools/cdk/scripts/ocpidev scripts/
-+tools/cdk/scripts/ocpi-copy-projects scripts/
 +tools/cdk/scripts/ocpishow.py scripts/
 +tools/cdk/scripts/ocpidev_utilization.py scripts/
 +tools/cdk/scripts/ocpidev_run.py scripts/
@@ -117,7 +144,7 @@
 +tools/cdk/scripts/hdltools/_xilinx.py scripts/hdltools/
 +tools/cdk/scripts/hdltools/xst.py scripts/hdltools/
 +tools/cdk/scripts/upgradeApp_v1_3.py scripts/
-+tools/cdk/scripts/ocpidev_bash_complete scripts/
++tools/ocpidev/ocpidev_bash_complete.sh scripts/ocpidev_bash_complete
 =tools/cdk/scripts/util.sh scripts/
 +tools/cdk/scripts/testrunprep.sh scripts/
 +tools/cdk/scripts/testrunremote.sh scripts/
@@ -131,7 +158,7 @@
 +tools/cdk/scripts/maybeExport.sh scripts/
 # user level scripts made available in the bin directory
 +tools/cdk/scripts/ocpidev <target>/bin/
-+tools/cdk/scripts/ocpi-copy-projects <target>/bin/
++tools/cdk/scripts/ocpi-copy-projects.py <target>/bin/ocpi-copy-projects
 =tools/cdk/scripts/ocpidriver <target>/bin/
 +tools/cdk/scripts/genProjMetaData.py scripts/
 #+tools/cdk/scripts/genProjMetaData.pyc scripts/

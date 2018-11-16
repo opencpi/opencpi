@@ -383,9 +383,9 @@ OcpiCallPythonFunc=\
 # Import the ocpiutil module and run the python code in $1
 # Usage: $(call OcpiCallPythonUtil,ocpiutil.utility_function(arg1, arg2))
 OcpiCallPythonUtil=$(infox OPYTHON:$1)\
-  $(shell python3 -c 'import sys; \
-sys.path.append("$(OCPI_CDK_DIR)/scripts/"); \
-import ocpiutil; \
+  $(shell python3 -c 'import sys;\
+sys.path.append("$(OCPI_CDK_DIR)/$(OCPI_TOOL_PLATFORM)/lib/");\
+import _opencpi.util as ocpiutil;\
 $1')
 
 # Like the builtin "dir", but without the trailing slash

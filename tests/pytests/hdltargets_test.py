@@ -39,13 +39,9 @@ import os
 import sys
 import logging
 from shutil import copyfile
-sys.path.insert(0, os.path.realpath(os.getenv('OCPI_CDK_DIR') + '/scripts/'))
-import ocpiutil
-from hdltargets import HdlToolFactory
-
-# Initialize ocpiutil's logging settings which switch
-# based on OCPI_LOG_LEVEL
-ocpiutil.configure_logging()
+sys.path.append(os.getenv('OCPI_CDK_DIR') + '/' + os.getenv('OCPI_TOOL_PLATFORM') + '/lib/')
+import _opencpi.util as ocpiutil
+from  _opencpi.hdltargets import HdlToolFactory
 
 # Directory of THIS test file
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))

@@ -119,8 +119,8 @@ function check_dirtype {
 function get_project_top {
   # TODO get project, project.dir
   project_top=`python3 -c "\
-import sys; sys.path.append(\"$OCPI_CDK_DIR/scripts/\");
-import ocpiutil; print(ocpiutil.get_path_to_project_top());"`
+import sys; sys.path.append(\"$OCPI_CDK_DIR/$OCPI_TOOL_PLATFORM/lib/\");
+import _opencpi.util as ocpiutil; print(ocpiutil.get_path_to_project_top());"`
   [ "$project_top" != None ] || bad failure to find project containing path \"`pwd`\"
   echo $project_top
 }
@@ -128,7 +128,7 @@ import ocpiutil; print(ocpiutil.get_path_to_project_top());"`
 function get_project_package {
   # TODO get project, project.package_id
   project_pkg=`python3 -c "\
-import sys; sys.path.append(\"$OCPI_CDK_DIR/scripts/\");
+import sys; sys.path.append(\"$OCPI_CDK_DIR/$OCPI_TOOL_PLATFORM/lib/\");
 import Asset; print(Asset.Project(directory=\".\").package);"`
   [ "$project_pkg" != None ] || bad failure to find project package for path \"`pwd`\"
   echo $project_pkg
@@ -137,10 +137,9 @@ import Asset; print(Asset.Project(directory=\".\").package);"`
 # based on the project's package name
 function py_try_return_bool {
   python3 -c "\
-import sys; sys.path.append(\"$OCPI_CDK_DIR/scripts/\")
+import sys; sys.path.append(\"$OCPI_CDK_DIR/$OCPI_TOOL_PLATFORM/lib/\")
 import logging
-import ocpiutil
-ocpiutil.configure_logging()
+import _opencpi.util as ocpiutil
 try:
     $1
     sys.exit(0)
@@ -156,14 +155,14 @@ function register_project {
     project="."
   fi
   py_try_return_bool "
-    from ocpiassets import AssetFactory, Registry;
-    AssetFactory.factory(\"registry\", Registry.get_registry_dir(\"$project\")).add(\"$project\")" || return
+    from _opencpi.assets import factory, registry;
+    factory.AssetFactory.factory(\"registry\", registry.Registry.get_registry_dir(\"$project\")).add(\"$project\")" || return
 
   # We want to export a project on register, but only if it is not
   # an exported project itself
   is_exported=`python3 -c "\
-import sys; sys.path.append(\"$OCPI_CDK_DIR/scripts/\");
-import ocpiutil; print(ocpiutil.is_path_in_exported_project(\"$project\"));"`
+import sys; sys.path.append(\"$OCPI_CDK_DIR/$OCPI_TOOL_PLATFORM/lib/\");
+import _opencpi.util as ocpiutil; print(ocpiutil.is_path_in_exported_project(\"$project\"));"`
   if [ "$is_exported" == "False" ]; then
     make -C $project ${verbose:+AT=} exports 1>&2 || echo Could not export project \"$project\". You may not have write permissions on this project. Proceeding...
   else
@@ -180,14 +179,14 @@ function unregister_project {
     project="."
   fi
   py_try_return_bool "
-    from ocpiassets import AssetFactory, Registry;
+    from _opencpi.assets import factory, registry;
     import os;
     if os.path.exists(\"$project\"):
         # Create registry instance from project dir, and remove project by its dir
-        AssetFactory.factory(\"registry\", Registry.get_registry_dir(\"$project\")).remove(directory=\"$project\")
+        factory.AssetFactory.factory(\"registry\", registry.Registry.get_registry_dir(\"$project\")).remove(directory=\"$project\")
     else:
         # Create registry instance from current dir, and remove project by its package-ID
-        AssetFactory.factory(\"registry\", Registry.get_registry_dir(\"$project\")).remove(\"$project\")"
+        factory.AssetFactory.factory(\"registry\", registry.Registry.get_registry_dir(\"$project\")).remove(\"$project\")"
 }
 
 function delete_project {
@@ -204,13 +203,13 @@ function delete_project {
     py_force=False
   fi
   py_try_return_bool "
-    from ocpiassets import AssetFactory, Project, Registry;
+    from _opencpi.assets import factory, registry;
     import os;
     if (os.path.exists(\"$project\")) and (os.path.isdir(\"$project\")):
-        my_proj = AssetFactory.factory(\"project\", \"$project\")
+        my_proj = factory.AssetFactory.factory(\"project\", \"$project\")
         my_proj.delete($py_force)
     else:
-        my_reg = AssetFactory.factory(\"registry\", Registry.get_registry_dir(\".\"))
+        my_reg = factory.AssetFactory.factory(\"registry\", registry.Registry.get_registry_dir(\".\"))
         my_proj = my_reg.get_project(\"$project\")
         my_proj.delete($py_force)"
 }
@@ -397,13 +396,13 @@ function do_registry {
       bad registry to delete \(\"$registry_to_delete\"\) does not exist
     fi
   elif [ "$verb" == set ]; then
-    py_cmd="import ocpiassets; ocpiassets.AssetFactory.factory(\"project\", \".\").set_registry(\"$1\")"
+    py_cmd="from _opencpi.assets import factory; factory.AssetFactory.factory(\"project\", \".\").set_registry(\"$1\")"
     if [ $(py_try_return_bool "$py_cmd"; echo $?) -eq 1 ]; then
       # Error is printed in python
       exit 1
     fi
   elif [ "$verb" == unset ]; then
-    py_cmd="import ocpiassets; ocpiassets.AssetFactory.factory(\"project\", \".\").unset_registry()"
+    py_cmd="from _opencpi.assets import factory; factory.AssetFactory.factory(\"project\", \".\").unset_registry()"
     if [ $(py_try_return_bool "$py_cmd"; echo $?) -eq 1 ]; then
       # Error is printed in python
       exit 1
@@ -514,8 +513,8 @@ include \$(OCPI_CDK_DIR)/include/project.mk
 EOF
 
 package_id=`python3 -c "\
-import sys; sys.path.append(\"$OCPI_CDK_DIR/scripts/\");
-import ocpiutil; print(ocpiutil.get_project_package());"`
+import sys; sys.path.append(\"$OCPI_CDK_DIR/$OCPI_TOOL_PLATFORM/lib/\");
+import _opencpi.util as ocpiutil; print(ocpiutil.get_project_package());"`
 
 # Create IDE .project file (AV-1247)
   cat << EOF > .project

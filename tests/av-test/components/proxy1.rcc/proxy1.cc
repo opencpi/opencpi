@@ -188,6 +188,8 @@ class Proxy1Worker : public Proxy1WorkerBase {
     }
     cout << "slaves.first_wkr1.get_test_array_of_struct: "
          << slaves.first_wkr1.getProperty_test_array_of_struct(temp_str) << endl;
+    cout << "slaves.first_wkr1.get_test_ulong_param: "
+         << slaves.first_wkr1.get_test_ulong_param() << endl;
     cout << "slaves.second_wkr1.set_test_double(5.0): " << slaves.second_wkr1.get_test_double()
          << endl;
     cout << "slaves.second_wkr1.set_test_ulong(10): " << slaves.second_wkr1.get_test_ulong()
@@ -227,6 +229,8 @@ class Proxy1Worker : public Proxy1WorkerBase {
     }
     cout << "slaves.second_wkr1.get_test_array_of_struct: "
          << slaves.second_wkr1.getProperty_test_array_of_struct(temp_str) << endl;
+    cout << "slaves.second_wkr1.get_test_ulong_param: "
+         << slaves.second_wkr1.get_test_ulong_param() << endl;
 
     cout << "slaves.wkr2.set_test_double(5.0): " << slaves.wkr2.get_test_double() << endl;
     cout << "slaves.wkr2.set_test_ulong(10): " << slaves.wkr2.get_test_ulong() << endl;
