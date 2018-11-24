@@ -84,20 +84,29 @@ namespace OCPI {
 	       const OU::PValue */*otherParams*/)
     {
     }
-#if 0
-    {
-      setMode(OCPI::Container::Port::CON_TYPE_MESSAGE);
-      
-      // See if we have a message driver that is capable of handling this message type
-      DTM::XferFactory *factory = 
-	DataTransfer::Msg::XferFactoryManager::getFactoryManager().findFactory( url, myProps, otherProps );
-      if (!factory)
-	throw OU::Error("Message URL not supported: '%s'", url);
-      DTM::XferServices * msgService  = factory->getXferServices(m_metaPort, url, myProps, otherProps);
-      ocpiAssert ( msgService );
-      m_dtPort = NULL; // msgService->getMsgChannel(url,myProps,otherProps);
-      parent().portIsConnected(ordinal());
+    bool Port::advanceRcc(size_t max) {
+      try {
+	if (m_buffer) {
+	  if (isOutput())
+	    if (parent().version() <= 1 && m_rccPort.current.length_ == 0 &&
+		m_rccPort.current.opCode_ == 0)
+	      m_buffer->put(0, 0, true, m_rccPort.current.direct_);
+	    else
+	      m_buffer->put(m_rccPort.current.length_, m_rccPort.current.opCode_, false,
+			    m_rccPort.current.direct_);
+	  else
+	    release(); // m_buffer->release(); must release on port gotten from
+	  m_rccPort.current.data = NULL;
+	  m_buffer = NULL;
+	}
+	bool ready = requestRcc();
+	if (ready && max && max > m_rccPort.current.maxLength)
+	  throw OU::Error("Output buffer request/advance (size %zu) greater than buffer size "
+			  " (%zu)", max, m_rccPort.current.maxLength);
+      } catch (std::string &e) {
+	error(e);
+      }
+      return false;
     }
-#endif
   }
 }

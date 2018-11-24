@@ -696,7 +696,7 @@ namespace OCPI {
 	m_port.m_next2put = m_next;
       } else if (m_port.m_dtPort) {
 	ocpiAssert(m_dtBuffer);
-	m_port.m_dtPort->sendOutputBuffer(m_dtBuffer, m_hdr.m_length, m_hdr.m_opCode);
+	m_port.m_dtPort->sendOutputBuffer(m_dtBuffer, m_hdr.m_length, m_hdr.m_opCode, m_hdr.m_eof);
 	m_dtBuffer = NULL;
       }
     }

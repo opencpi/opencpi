@@ -1655,13 +1655,13 @@ getNextEmptyOutputBuffer()
 
 void 
 Port::
-sendZcopyInputBuffer(BufferUserFacet &buf, size_t len, uint8_t op, bool /*end*/)
+sendZcopyInputBuffer(BufferUserFacet &buf, size_t len, uint8_t op, bool end)
 {
   Buffer *src_buf = static_cast<Buffer*>(&buf);
   src_buf->getMetaData()->ocpiMetaDataWord.length = (uint32_t)len;
   src_buf->getMetaData()->ocpiMetaDataWord.opCode = op;
   src_buf->getMetaData()->ocpiMetaDataWord.timestamp = 0x01234567;
-  src_buf->getMetaData()->ocpiMetaDataWord.xferMetaData = packXferMetaData(len, op, false);
+  src_buf->getMetaData()->ocpiMetaDataWord.xferMetaData = packXferMetaData(len, op, end);
   ocpiLog(9,"METAZ: @%p %x %x %x %x", src_buf->getMetaData(),
 	  src_buf->getMetaData()->ocpiMetaDataWord.length,
 	  src_buf->getMetaData()->ocpiMetaDataWord.opCode,
@@ -1680,7 +1680,7 @@ getBufferLength()
 
 void 
 Port::
-sendOutputBuffer( BufferUserFacet* buf, size_t length, uint8_t opcode, bool /*end*/,
+sendOutputBuffer( BufferUserFacet* buf, size_t length, uint8_t opcode, bool end,
 		  bool /*data*/)
 {
   if (length > getBufferLength())
@@ -1695,7 +1695,7 @@ sendOutputBuffer( BufferUserFacet* buf, size_t length, uint8_t opcode, bool /*en
   else
     b->getMetaData()->ocpiMetaDataWord.timestamp +=
       OCPI_UTRUNCATE(uint32_t, getBufferCount() << 1);
-  b->getMetaData()->ocpiMetaDataWord.xferMetaData = packXferMetaData(length, opcode, false);
+  b->getMetaData()->ocpiMetaDataWord.xferMetaData = packXferMetaData(length, opcode, end);
   ocpiLog(9,"METAs: @%p %x %x %x %x sz %zu %zu", b->getMetaData(),
 	  b->getMetaData()->ocpiMetaDataWord.length,
 	  b->getMetaData()->ocpiMetaDataWord.opCode,
