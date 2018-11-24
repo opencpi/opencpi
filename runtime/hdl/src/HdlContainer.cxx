@@ -306,7 +306,7 @@ namespace OCPI {
 
       virtual void prepareProperty(OU::Property &mp,
 				   volatile uint8_t *&writeVaddr,
-				   const volatile uint8_t *&readVaddr) {
+				   const volatile uint8_t *&readVaddr) const {
         return WciControl::prepareProperty(mp, writeVaddr, readVaddr);
       }
 #undef OCPI_DATA_TYPE_S

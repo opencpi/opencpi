@@ -135,6 +135,7 @@ namespace OCPI {
       unsigned *m_usedContainers; // A map from used container to global container
 
       // Now the runtime state.
+      std::set<OCPI::Container::Launcher *> m_launchers; // the launchers used by our containers
       OCPI::Container::Container **m_containers;      // the actual containers we are using
       OCPI::Container::Application **m_containerApps; // per used container, the container app
 

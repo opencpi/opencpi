@@ -970,7 +970,7 @@ namespace OCPI {
 
       void prepareProperty(OU::Property& md,
 			   volatile uint8_t *&writeVaddr,
-			   const volatile uint8_t *&readVaddr) {
+			   const volatile uint8_t *&readVaddr) const {
 	if (md.m_baseType != OA::OCPI_Struct && !md.m_isSequence &&
 	    md.m_baseType != OA::OCPI_String && OU::baseTypeSizes[md.m_baseType] <= 32 &&
 	    !md.m_writeError) {

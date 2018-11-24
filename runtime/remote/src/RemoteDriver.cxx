@@ -92,18 +92,18 @@ class Worker
   void setPropertyValue(const OU::Property &p, const OU::Value &v) {
     std::string val;
     v.unparse(val);
-    m_launcher.setPropertyValue(m_remoteInstance, &p - properties(), val);
+    m_launcher.setPropertyValue(m_remoteInstance, p.m_ordinal, val);
   }
   bool wait(OS::Timer *t) {
     return m_launcher.wait(m_remoteInstance, t ? t->getRemaining() : 0);
   }
-  void checkControlState() {
-    setControlState(m_launcher.getState(m_remoteInstance));
+  void checkControlState() const {
+    ((Worker *)this)->setControlState(m_launcher.getState(m_remoteInstance));
   }
   // FIXME: this should be at the lower level for just reading the bytes remotely to enable caching propertly
-  void getPropertyValue(const OU::Property &p, std::string &v, bool hex, bool add,
-			bool /*uncached*/) {
-    m_launcher.getPropertyValue(m_remoteInstance, &p - properties(), v, hex, add);
+  void getPropertyValue(const OA::PropertyInfo &p, std::string &v, bool hex, bool add,
+			bool /*uncached*/) const {
+    m_launcher.getPropertyValue(m_remoteInstance, p.m_ordinal, v, hex, add);
   }
 
   void read(size_t /*offset*/, size_t /*nBytes*/, void */*p_data*/) {}
@@ -131,7 +131,7 @@ class Worker
   void propertyRead(unsigned /*ordinal*/) const {};
   void prepareProperty(OU::Property&,
 		       volatile uint8_t *&/*writeVaddr*/,
-		       const volatile uint8_t *&/*readVaddr*/) {}
+		       const volatile uint8_t *&/*readVaddr*/) const {}
   // These property access methods are called when the fast path
   // is not enabled, either due to no MMIO or that the property can
   // return errors. 
@@ -153,10 +153,17 @@ class Worker
   OCPI_PROPERTY_DATA_TYPES
 #undef OCPI_DATA_TYPE_S
 #undef OCPI_DATA_TYPE
-  // Get Scalar Property
-#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		\
-  run get##pretty##Property(const OCPI::API::PropertyInfo &, const Util::Member *, \
-			    size_t /*offset*/, unsigned /*idx*/) const { return 0; } \
+  // Get Scalar Property by in fact getting the string and parsing it
+#define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		             \
+  run get##pretty##Property(const OCPI::API::PropertyInfo &pi, const Util::Member *, \
+			    size_t /*offset*/, unsigned /*idx*/) const {             \
+    std::string uValue; /* unparsed value */                                         \
+    getPropertyValue(pi, uValue, true, false, false); /* get it as a string value */ \
+    OU::Value v(pi); /* the value object that knows how to parse it */               \
+    run pValue;      /* the parsed value scalar */                                   \
+    (void)v.parse(uValue.c_str());                                                   \
+    return v.m_##pretty;                                                             \
+  }                                                                                  \
   unsigned get##pretty##SequenceProperty(const OA::Property &/*p*/,	\
 					 run */*vals*/,			\
 					 size_t /*length*/) const { return 0; }
@@ -183,6 +190,8 @@ class Application
     : OC::ApplicationBase<Container,Application,Worker>(c, *this, a_name, params) {
   }
   virtual ~Application() {
+    // This really has no local (client-side) state and the server-side state is taken down
+    // by remotelauncher->appShutdown()
   }
   OC::Worker &
   createWorker(OC::Artifact *art, const char *appInstName, ezxml_t impl, ezxml_t inst,
@@ -341,6 +350,8 @@ probeServer(const char *server, bool verbose, const char **exclude, char *contai
   bool taken = false; // whether the socket has been taken by a launcher
   Client *client = OU::Parent<Client>::findChildByName(server);
   if (!containers) {
+    if (client)
+      goto out; // we already are using this server
     // We are not being called during discovery, but explicitly (when avoiding discovery).
     // Whereas during UDP discovery, this info comes back in the UDP datagram, here we must go
     // get it via TCP by opening the TCP socket early, before excluding specific containers.

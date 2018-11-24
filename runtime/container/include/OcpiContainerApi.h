@@ -142,11 +142,11 @@ namespace OCPI {
       friend class Property;
       virtual PropertyInfo &setupProperty(const char *name,
 					  volatile uint8_t *&m_writeVaddr,
-					  const volatile uint8_t *&m_readVaddr) = 0;
+					  const volatile uint8_t *&m_readVaddr) const = 0;
       virtual PropertyInfo &setupProperty(unsigned n,
 					  volatile uint8_t *&m_writeVaddr,
-					  const volatile uint8_t *&m_readVaddr) = 0;
-      virtual bool beforeStart() = 0;
+					  const volatile uint8_t *&m_readVaddr) const = 0;
+      virtual bool beforeStart() const = 0;
     protected:
       virtual ~Worker();
     public:
@@ -282,7 +282,7 @@ namespace OCPI {
     class Property {
       friend class OCPI::Container::Worker;
     protected:
-      Worker &m_worker;               // which worker do I belong to
+      const Worker &m_worker;               // which worker do I belong to
     private:
       const volatile uint8_t *m_readVaddr;
       volatile uint8_t *m_writeVaddr;
@@ -293,9 +293,9 @@ namespace OCPI {
       bool m_readSync, m_writeSync;   // these exist to avoid exposing the innards of m_info.
     public:
       Property(const Application &, const char *, const char * = NULL);
-      Property(Worker &, const char *);
+      Property(const Worker &, const char *);
     private:
-      Property(Worker &, unsigned);
+      Property(const Worker &, unsigned);
       void throwError(const char *err) const;
       template <typename val_t> void setValueInternal(const OCPI::Util::Member &m, size_t off,
 						      const val_t val) const;

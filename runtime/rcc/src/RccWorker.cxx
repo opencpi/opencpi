@@ -482,7 +482,7 @@ propertyRead(unsigned ordinal) const {
 void Worker::
 prepareProperty(OU::Property& md , 
 		volatile uint8_t *&writeVaddr,
-		const volatile uint8_t *&readVaddr) {
+		const volatile uint8_t *&readVaddr) const {
   (void)readVaddr;
   if (md.m_baseType != OA::OCPI_Struct && !md.m_isSequence && md.m_baseType != OA::OCPI_String &&
       OU::baseTypeSizes[md.m_baseType] <= 32 &&
@@ -997,7 +997,7 @@ OCPI_CONTROL_OPS
 	return ((uint64_t *)(getPropertyVaddr() + info.m_offset + offset))[idx];
       }
 
-     RCCUserWorker::RCCUserWorker()
+   RCCUserWorker::RCCUserWorker()
      : m_worker(*(Worker *)pthread_getspecific(Driver::s_threadKey)), m_ports(NULL),
        m_first(true), m_rcc(m_worker.context()) {
    }

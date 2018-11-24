@@ -164,6 +164,8 @@ namespace OCPI {
 	for (unsigned n = 0; n < m_nContainers; n++)
 	  delete m_containerApps[n];
 	delete [] m_containerApps;
+	for (auto li = m_launchers.begin(); li != m_launchers.end(); li++)
+	  (*li)->appShutdown(); // for now a launcher is only serially reusable, so no app id etc.
       }
     }
     unsigned ApplicationI::
@@ -1347,25 +1349,22 @@ namespace OCPI {
       }
       finalizeLaunchMembers();
       finalizeLaunchConnections();
-      typedef std::set<OC::Launcher *> Launchers;
-      typedef Launchers::iterator LaunchersIter;
-      Launchers launchers;
       OC::Launcher &local = OC::LocalLauncher::getSingleton();
       // First pass, record all the launchers, and do initial launch for the local containers.
       // This allows initial connection processing locally to avoid unnecessary round-trips
       // with remote launchers that have connections to local workers.
       for (unsigned n = 0; n < m_nContainers; n++)
-	if (launchers.insert(&m_containers[n]->launcher()).second &&
+	if (m_launchers.insert(&m_containers[n]->launcher()).second &&
 	    &m_containers[n]->launcher() == &local)
 	  m_containers[n]->launcher().launch(m_launchMembers, m_launchConnections);
       // Second pass, do initial launch on remote launchers
-      for (LaunchersIter li = launchers.begin(); li != launchers.end(); li++)
+      for (auto li = m_launchers.begin(); li != m_launchers.end(); li++)
 	if (*li != &local)
 	  (*li)->launch(m_launchMembers, m_launchConnections);
       bool more;
       do {
 	more = false;
-	for (LaunchersIter li = launchers.begin(); li != launchers.end(); li++)
+	for (auto li = m_launchers.begin(); li != m_launchers.end(); li++)
 	  if ((*li)->work(m_launchMembers, m_launchConnections))
 	    more = true;
       } while (more);
