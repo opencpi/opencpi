@@ -126,6 +126,7 @@ namespace OCPI {
       Memory *m_memories;
       //      Test *m_tests;
       unsigned m_nPorts, m_nMemories; //, size , m_nTests
+      uint8_t m_version;  // version of the model-specific API this worker is written to
     private: // FIXME: make more of this stuff private
       size_t m_totalPropertySize;
       bool   m_isSource;
@@ -142,6 +143,7 @@ namespace OCPI {
       std::map<std::string, Port::Scaling> m_scalingParameters;
       Worker();
       ~Worker();
+      inline uint8_t version() const { return m_version; }
       inline const std::string &model() const { return m_model; }
       inline const std::string &package() const { return m_package; }
       inline const std::string &specName() const { return m_specName; }
@@ -199,6 +201,7 @@ namespace OCPI {
       {
         return m_totalPropertySize;
       }
+      const char *finalizeProperties(size_t &offset, uint64_t &totalSize , const IdentResolver *resolver);
       enum ControlOperation {
 #define CONTROL_OP(x, c, t, s1, s2, s3, s4)  Op##c,
 	OCPI_CONTROL_OPS

@@ -222,26 +222,49 @@ namespace OCPI {
       
     }
 
-    void Protocol::init() {
+    // These initial values are for when a protocol is defined by operations
+    // If there are no operations at all, then different defaults apply, see initNoProtocol() below
+    void Protocol::initForProtocol() {
       m_nOperations = 0;
       m_operations = NULL;
       m_op = NULL;
-      m_defaultBufferSize = SIZE_MAX;
       m_minBufferSize = 0;
-      m_dataValueWidth = 8;
-      m_dataValueGranularity = 1;
+      // Summary Attributes
+      m_dataValueWidth = 0;
+      m_dataValueGranularity = SIZE_MAX;
       m_diverseDataSizes = false;
-      m_minMessageValues = 0;
       m_maxMessageValues = SIZE_MAX; // default is no maximum.
       m_variableMessageLength = false;
       m_zeroLengthMessages = false;
-      m_isTwoWay = false;
+      m_minMessageValues = 0;
       m_isUnbounded = false;
+      m_nOpcodes = 0;
+      m_isTwoWay = false;
+      m_defaultBufferSize = SIZE_MAX;
     }
+    // An overriding initialization (after the initForProtocol() call above) when it is known that there is in fact
+    // no protocol at all (put possibly a protocol summary)
+    void Protocol::initNoProtocol() {
+      // When there is no protocol, we force it to variable, unbounded, diverse, zlm
+      // I.e. assume it can deal with anything
+      // But with no operations, we can scale back when connecting to something more specific
+      // Note that these values can be overridden at the port level.
+      // Note that these defaults are not the same as the defaults for a PARSED protocol, but
+      // rather the defaults when there IS NO PROTOCOL AT ALL that are different from the defaults
+      // for a parsed protocol, which are in the constructor/init for OU::Protocol above
+      m_dataValueWidth = 8;
+      m_dataValueGranularity = 1;
+      m_diverseDataSizes = true;
+      m_variableMessageLength = true;
+      m_zeroLengthMessages = true;
+      m_isUnbounded = true;
+      m_nOpcodes = 256;
+    }
+
     // These defaults are for when there is no protocol at all.
     // Notice that the default is for 1 byte fixed size messages...
     Protocol::Protocol() {
-      init();
+      initForProtocol();
     }
     Protocol::
     Protocol(const Protocol & p )
@@ -259,19 +282,20 @@ namespace OCPI {
 	m_qualifiedName = p->m_qualifiedName;
 	m_file = p->m_file;
 	m_name = p->m_name;
-	m_defaultBufferSize = p->m_defaultBufferSize;
-	m_minBufferSize = p->m_minBufferSize;
 	m_dataValueWidth = p->m_dataValueWidth;
 	m_dataValueGranularity = p->m_dataValueGranularity;
 	m_diverseDataSizes = p->m_diverseDataSizes;
-	m_minMessageValues = p->m_minMessageValues;
 	m_maxMessageValues = p->m_maxMessageValues;
 	m_variableMessageLength = p->m_variableMessageLength;
 	m_zeroLengthMessages = p->m_zeroLengthMessages;
-	m_isTwoWay = p->m_isTwoWay;
+	m_minMessageValues = p->m_minMessageValues;
 	m_isUnbounded = p->m_isUnbounded;
+	m_nOpcodes = p->m_nOpcodes;
+	m_isTwoWay = p->m_isTwoWay;
+	m_defaultBufferSize = p->m_defaultBufferSize;
+	m_minBufferSize = p->m_minBufferSize;
       } else
-	init();
+	initForProtocol();
     }
     Protocol::~Protocol() {
 
@@ -291,6 +315,7 @@ namespace OCPI {
     {
       
       m_nOperations = p->m_nOperations;
+      m_nOpcodes = p->m_nOpcodes;
       m_operations = m_nOperations ? new Operation[m_nOperations] : NULL;
       for (unsigned int n = 0; n < m_nOperations; n++)
 	m_operations[n] = p->m_operations[n];
@@ -317,7 +342,9 @@ namespace OCPI {
       if (m_isUnbounded ||
 	  (m_maxMessageValues != SIZE_MAX && m_maxMessageValues != op.m_myOffset))
 	m_variableMessageLength = true; // see below for more setting of this
-      if (m_maxMessageValues == SIZE_MAX || op.m_myOffset > m_maxMessageValues)
+      if (m_isUnbounded)
+	m_maxMessageValues = SIZE_MAX; // in case we became unbounded this time
+      else if (m_maxMessageValues == SIZE_MAX || op.m_myOffset > m_maxMessageValues)
 	m_maxMessageValues = op.m_myOffset; // still in bytes until later
       size_t minLength; // smallest message possible for this operation
       if (op.m_nArgs) {
@@ -347,7 +374,7 @@ namespace OCPI {
 	smallest *= CHAR_BIT;
 	assert(smallest % m_dataValueWidth == 0);
 	smallest /= m_dataValueWidth;
-	if (smallest < m_dataValueGranularity)
+	if (m_dataValueGranularity == SIZE_MAX || smallest < m_dataValueGranularity)
 	  m_dataValueGranularity = smallest;
       }
     }
@@ -376,49 +403,54 @@ namespace OCPI {
     static const char *doOperation(ezxml_t op, void *arg) {
       return ((Protocol *)arg)->parseOperation(op);
     }
-    // Parse summary attributes, presumably when there is no explicit protocol
-    // although possibly to forcibly override, so don't "set default".
+    // Parse summary attributes, when there is no explicit protocol,
+    // althoughor possibly to forcibly override, so don't "set default".
     // This is called in these contexts:
     // In an explicit child element in the spec
     // In the port element in a spec
     // in the port element in an impl
     const char *Protocol::parseSummary(ezxml_t pSum) {
-      bool maxSet = false, minSet = false, ddsSet = false, zlmSet = false, vlmSet = false,
-	unBoundedSet = false, twoWaySet = false;
+      bool minSet = false, zlmSet = false, maxSet = false, unbSet = false;
       const char *err;
+      // FIXME?  Are there any illegal overrides if previous values are protocol-derived?
+      // I.e. are we only allowed to make it more permissive?  For now we'll allow any overrides
+      // e.g. data value width going up or not a multiple?  zlm going false?
       if ((err = OE::getNumber(pSum, "DataValueWidth", &m_dataValueWidth, NULL, 0, false)) ||
-          (err = OE::getNumber(pSum, "DataValueGranularity", &m_dataValueGranularity, NULL, 0,
-			       false)) ||
-          (err = OE::getBoolean(pSum, "DiverseDataSizes", &m_diverseDataSizes, false, false,
-				&ddsSet)) ||
-          (err = OE::getBoolean(pSum, "ZeroLengthMessages", &m_zeroLengthMessages, false,
-				false, &zlmSet)) ||
-          (err = OE::getBoolean(pSum, "VariableMessageLength", &m_variableMessageLength, false,
-				false, &vlmSet)) ||
-	  (err = OE::getBoolean(pSum, "unBounded", &m_isUnbounded, false, false,
-				&unBoundedSet)) ||
-	  (err = OE::getBoolean(pSum, "twoway", &m_isTwoWay, false, false, &twoWaySet)) ||
-	  (err = OE::getNumber(pSum, "MaxMessageValues", &m_maxMessageValues, &maxSet, 0,
-			       false)) ||
-          (err = OE::getNumber(pSum, "MinMessageValues", &m_minMessageValues, &minSet, 0,
-			       false)))
+          (err = OE::getNumber(pSum, "DataValueGranularity", &m_dataValueGranularity, NULL, 0, false)) ||
+          (err = OE::getBoolean(pSum, "DiverseDataSizes", &m_diverseDataSizes, false, false, NULL)) ||
+	  (err = OE::getNumber(pSum, "MaxMessageValues", &m_maxMessageValues, &maxSet, 0, false)) ||
+          (err = OE::getBoolean(pSum, "VariableMessageLength", &m_variableMessageLength, false, false, NULL)) ||
+          (err = OE::getBoolean(pSum, "ZeroLengthMessages", &m_zeroLengthMessages, false, false, &zlmSet)) ||
+          (err = OE::getNumber(pSum, "MinMessageValues", &m_minMessageValues, &minSet, 0, false)) ||
+	  (err = OE::getBoolean(pSum, "unBounded", &m_isUnbounded, false, false, &unbSet)) ||
+	  (err = OE::getNumber(pSum, "NumberOfOpCodes", &m_nOpcodes, NULL, 0, false)) ||
+ 	  (err = OE::getBoolean(pSum, "twoway", &m_isTwoWay, false, false, NULL)) ||
+	  (err = OE::getNumber(pSum, "defaultbuffersize", &m_defaultBufferSize, NULL, 0, false)))
 	return err;
-      if (maxSet || minSet || ddsSet || zlmSet || vlmSet || unBoundedSet || twoWaySet) {
-	// specifying ZLM also overrides minMessageValues
-	if (!minSet && m_zeroLengthMessages)
-	  m_minMessageValues = 0;
-	// Fill in any complicated defaults
-	if (m_zeroLengthMessages && m_minMessageValues != 0)
-	  return "MinMessageValues cannot > 0 when ZeroLengthMessages is true";
-	if (!maxSet) {
-	  m_variableMessageLength = true;
-	  m_isUnbounded = true;
-	}
-      }
-      return NULL;
+      // Some additional fixups that depend on whether there was an override or not, to make them consistent
+      if (zlmSet && !minSet && m_zeroLengthMessages)
+	m_minMessageValues = 0;
+      if (maxSet && !unbSet && m_isUnbounded)
+	m_isUnbounded = false;
+     return NULL;
     }
 
     const char *Protocol::finishParse() {
+      // FIXME:  Could have some summary consistency checks for errors here?
+      if (m_zeroLengthMessages && m_minMessageValues != 0)
+	return "MinMessageValues cannot > 0 when ZeroLengthMessages is true";
+      if (m_maxMessageValues == SIZE_MAX && (!m_isUnbounded || !m_variableMessageLength))
+	return "MaxMessageValues not set, but protocol not bounded or not variable?";
+      if (m_isUnbounded && !m_variableMessageLength)
+	return "Protocol is not bounded but not variable";
+#if 1 // be more permissive so we can test things
+      if (m_maxMessageValues != SIZE_MAX && m_isUnbounded)
+	return "Protocol has max message size but is unbounded";
+      if (m_defaultBufferSize == SIZE_MAX && !m_isUnbounded && m_maxMessageValues != SIZE_MAX)
+#else
+      if (m_defaultBufferSize == SIZE_MAX && m_maxMessageValues != SIZE_MAX)
+#endif
+	m_defaultBufferSize = (m_maxMessageValues * m_dataValueWidth + 7) / 8;
       m_minBufferSize = (m_dataValueWidth * m_minMessageValues + 7) / 8;
       return NULL;
     }
@@ -430,6 +462,7 @@ namespace OCPI {
       m_name = name;
       m_dataValueWidth = 0;
       m_nOperations = random() % 10 + 1;
+      m_nOpcodes = m_nOperations;
       Operation *o = m_operations = new Operation[m_nOperations];
       for (unsigned n = 0; n < m_nOperations; n++, o++) {
 	char *opName;
@@ -475,59 +508,30 @@ namespace OCPI {
 	m_qualifiedName = name;
       m_dataValueWidth = 0;
       const char *err;
-      if ((err = OE::checkAttrs(prot, "Name", "QualifiedName", "defaultbuffersize",
-				"datavaluewidth", "maxmessagevalues", "minmessagevalues",
-				"datavaluegranularity", "diversedatasizes", "unbounded",
-				"zerolengthmessages", "variablemessagelength", (void*)0)) ||
+      if ((err = OE::checkAttrs(prot, "Name", "QualifiedName", OCPI_PROTOCOL_SUMMARY_ATTRS, NULL)) ||
 	  (err = OE::checkElements(prot, "operation", "xi:include", (void*)0)) ||
 	  (err = OE::ezxml_children(prot, doChild ? doChild : doOperation,
 				    arg ? arg : this)))
 	return err;
       if (m_nOperations) {
+	// So the initForProtocol() applies here
 	m_operations = m_op = new Operation[m_nOperations];
-	// Now we call a second time t0 make them.
-	size_t save = m_dataValueGranularity;
-	m_dataValueGranularity = SIZE_MAX;
-	if ((err = OE::ezxml_children(prot, doChild ? doChild : doOperation,
-				      arg ? arg : this)) ||
-	    (err = OE::getBoolean(prot, "ZeroLengthMessages", &m_zeroLengthMessages, true)))
+	// Now we call a second time to make them the operation objects and parse them
+	if ((err = OE::ezxml_children(prot, doChild ? doChild : doOperation, arg ? arg : this)))
 	  return err;
-	if (m_dataValueGranularity == SIZE_MAX)
-	  m_dataValueGranularity = save;
-	// Allow dvw to be overridden to provide for future finer granularity 
-	// (e.g. force 8 when proto says 16)
-	size_t dvwattr;
-	bool hasDvw;
-	if ((err = OE::getNumber(prot, "datavaluewidth", &dvwattr, &hasDvw, m_dataValueWidth)) ||
-	    (err = OE::getNumber(prot, "datavaluegranularity", &m_dataValueGranularity, NULL,
-				 m_dataValueGranularity)))
-	  return err;
-	if (hasDvw) {
-	  if (dvwattr > m_dataValueWidth)
-	    return "can't force DataValueWidth to be greater than protocol implies";
-	  else if (m_dataValueWidth % dvwattr)
-	    return "DataValueWidth attribute must divide into implied datavaluewidth";
-	  m_dataValueWidth = dvwattr;
-	}
+	// Finalize attributes after we have seen the operations but before overrides
+	m_nOpcodes = m_nOperations;
 	if (m_dataValueWidth && m_maxMessageValues != SIZE_MAX) {
 	  // Convert max size from bytes back to values
 	  size_t bytes = (m_dataValueWidth + CHAR_BIT - 1) / CHAR_BIT;
 	  m_maxMessageValues += bytes - 1;
 	  m_maxMessageValues /= bytes;
 	}
-	// Now we can still override the real max message values
-	if ((err = OE::getNumber(prot, "maxmessagevalues", &m_maxMessageValues, 0, 0, false)))
-	  return err;
-	// We can also override the granularity
-	
-      }
-      // Note we parse the summary attribute to allow overriding of attributes derived from
-      // the operations.
+      } else
+	initNoProtocol();
+      // Now we parse the summary attributes to allow overriding of attributes derived from
+      // the operations or to override the no-protocol defaults
       if ((err = parseSummary(prot)))
-	return err;
-      if ((err = OE::getNumber(prot, "defaultbuffersize", &m_defaultBufferSize, 0,
-			       m_isUnbounded || m_maxMessageValues == SIZE_MAX ?
-			       SIZE_MAX : (m_maxMessageValues * m_dataValueWidth + 7) / 8)))
 	return err;
       return finishParse();
     }

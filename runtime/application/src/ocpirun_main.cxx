@@ -320,8 +320,8 @@ static int mymain(const char **ap) {
   addParams("url", options.url(n), params);
   addParams("transport", options.transport(n), params);
   addParams("transferRole", options.transfer_role(n), params);
-  addParams("bufferCount", options.buffer_count(n), params);
-  addParams("bufferSize", options.buffer_size(n), params);
+  addParams("portBufferCount", options.buffer_count(n), params);
+  addParams("portBufferSize", options.buffer_size(n), params);
   addParams("scale", options.scale(n), params);
   addParams("server", options.server(n), params);
   if (options.deployment())

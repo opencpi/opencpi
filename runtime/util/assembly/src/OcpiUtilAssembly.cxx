@@ -176,7 +176,8 @@ namespace OCPI {
       if ((err = checkInstanceParams("selection", params, false, true)) ||
           (err = checkInstanceParams("transport", params)) ||
           (err = checkInstanceParams("transferRole", params)) ||
-          (err = checkInstanceParams("bufferCount", params)) ||
+          (err = checkInstanceParams("portBufferCount", params)) ||
+          (err = checkInstanceParams("portBufferSize", params)) ||
           (err = checkInstanceParams("worker", params, false, true)) ||
           (err = checkInstanceParams("property", params, true)))
         return err;

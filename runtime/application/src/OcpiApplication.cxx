@@ -60,6 +60,12 @@ namespace OCPI {
       static const char *forDiscovery[] = {
 	OCPI_DISCOVERY_PARAMETERS, OCPI_DISCOVERY_ONLY_PARAMETERS, NULL
       };
+      // Patch/rename overloaded pvalue names for compatibility - note nasty caste, which should be ok
+      for (OU::PValue *p = (OU::PValue *)params; p && p->name; p++)
+	if (!strcasecmp(p->name, "buffersize"))
+	  p->name = "portbuffersize";
+	else if (!strcasecmp(p->name, "buffercount"))
+	  p->name = "portbuffercount";
       OU::PValueList discoveryParams;
       for (const char **dp = forDiscovery; *dp; ++dp) {
 	const PValue *p = OU::find(params, *dp);
@@ -487,6 +493,12 @@ namespace OCPI {
 	  if (mp->m_instance == n &&
 	      OU::findAssignNext(params, "property", mp->m_name.c_str(), sDummy, nDummy))
 	    nPropValues++;
+	// Account for the runtime properties set here, e.g. output port buffer size
+	const OL::Implementation &impl = *i->m_bestDeployment.m_impls[0];
+	unsigned nPorts;
+	for (OU::Port *p = impl.m_metadataImpl.ports(nPorts); nPorts; --nPorts, p++)
+	  if (p->m_isProducer)
+	    nPropValues++;
 	if (nPropValues) {
 	  // This allocation will include dump-only properties, which won't be put into the
 	  // array by prepareInstanceProperties
@@ -496,7 +508,22 @@ namespace OCPI {
 	  unsigned *pn = &i->m_crew.m_propOrdinals[0];
 	  // Note that for scaled instances we assume the impls are compatible as far as
 	  // properties go.  FIXME:  WE MUST CHECK COMPILED VALUES WHEN COMPARING IMPLES
-	  prepareInstanceProperties(n, *i->m_bestDeployment.m_impls[0], pn, pv);
+	  prepareInstanceProperties(n, impl, pn, pv);
+	  // Add buffer size property value to each output
+	  for (auto it = m_launchConnections.begin(); it != m_launchConnections.end(); ++it) {
+	    OC::Launcher::Connection &c = *it;
+	    if (c.m_out.m_member->m_crew == m_launchMembers[i->m_firstMember].m_crew) {
+	      OU::Assembly::Property aProp;
+	      aProp.m_name = "ocpi_buffer_size_" + c.m_out.m_metaPort->m_name;
+	      if (!impl.m_metadataImpl.getProperty(aProp.m_name.c_str())) {
+		ocpiInfo("Missing %s property for %s", aProp.m_name.c_str(), impl.m_metadataImpl.cname());
+		continue;
+	      }
+	      aProp.m_hasValue = true;
+	      OU::format(aProp.m_value, "%zu", c.m_bufferSize);
+	      checkPropertyValue(n, impl.m_metadataImpl, aProp, pn, pv);
+	    }
+	  }
 	  nPropValues = (size_t)(pn - &i->m_crew.m_propOrdinals[0]);
 	  i->m_crew.m_propValues.resize(nPropValues);
 	  i->m_crew.m_propOrdinals.resize(nPropValues);
@@ -567,7 +594,12 @@ namespace OCPI {
 	const OU::Port *p;
 	if ((err = m_assembly.getPortAssignment(pName, assign, instn, portn, p, value)))
 	  return err;
-	m_assembly.assyPort(instn, portn)->m_parameters.add(pName, value);
+	// This is taking the string value of a port param and using the same param
+	// name for a port param.  When the data types are different (at least), we need to
+	// change the name.  We have a little heuristic rather than a real table.
+	// FIXME: some more serious scheme for "port and instance params into underlying ones"
+	const char *newName = !strncasecmp(pName, "port", 4) ? pName + 4 : pName;
+	m_assembly.assyPort(instn, portn)->m_parameters.add(newName, value);
 #else
 	unsigned instn;
 	// assign now points to:  <instance>=<port>=<value>
@@ -974,8 +1006,8 @@ namespace OCPI {
 	initLaunchMembers();
 	// All the implementation selection is done, so now do the final check of ports
 	// and properties since they can be implementation specific
-	if ((err = finalizePortParam(params, "bufferCount")) ||
-	    (err = finalizePortParam(params, "bufferSize")) ||
+	if ((err = finalizePortParam(params, "portBufferCount")) ||
+	    (err = finalizePortParam(params, "portBufferSize")) ||
 	    (err = finalizePortParam(params, "transport")) ||
 	    (err = finalizePortParam(params, "transferRole")))
 	  throw OU::Error("Port parameter error: %s", err);
@@ -1470,6 +1502,9 @@ namespace OCPI {
 	    bool done = true;
 	    m = &m_launchMembers[m_doneInstance->m_firstMember];
 	    for (unsigned n = (unsigned)m->m_crew->m_size; n; n--, m++)
+	      if (!m->m_container->enabled())
+		throw OU::Error("Container \"%s\" for worker \"%s\" was shutdown",
+				m->m_container->name().c_str(), m->m_worker->cname());
 	      if (!m->m_worker->isDone()) {
 		done = false;
 		break;
