@@ -68,6 +68,8 @@ namespace OCPI {
 	m_isSub32,
 	m_isImpl,          // is an impl property, not a spec property
 	m_isPadding,
+	m_isRaw,           // Is handled specially by some models
+	m_rawSet,          // Was raw attr explicitly set?
 	m_isTest;
       unsigned long m_dataOffset;
       size_t m_paramOrdinal; // Among parameters, which position?
