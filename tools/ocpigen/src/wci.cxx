@@ -37,7 +37,7 @@ WciPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
     return;
   }
   myClock = true;
-  addMyClock();
+  addMyClock(false);
   if (!m_master) {
     m_worker->m_wci = this;
     m_worker->m_wciClock = clock;
@@ -79,7 +79,7 @@ emitPortDescription(FILE *f, Language lang) const {
     bool first = true;
     for (unsigned op = 0; op < OU::Worker::OpsLimit; op++, first = false)
       if (op != OU::Worker::OpStart &&
-	  m_worker->m_ctl.controlOps & (1 << op))
+	  m_worker->m_ctl.controlOps & (1u << op))
 	fprintf(f, "%s%s", first ? "" : ",", OU::Worker::s_controlOpNames[op]);
   }
   fprintf(f, "\n");

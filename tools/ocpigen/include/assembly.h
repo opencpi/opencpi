@@ -41,6 +41,8 @@ struct Connection {
   size_t m_count; // width of all attachments
   Connection(OU::Assembly::Connection *c, const char *name = NULL);
   const char *attachPort(InstancePort &ip, size_t index = 0); //, size_t count = 0);
+  void setClock(Clock &c);
+  const char *cname() const { return m_name.c_str(); }
 };
 typedef std::list<Connection*> Connections;
 typedef Connections::const_iterator ConnectionsIter;
@@ -160,6 +162,7 @@ void addParamConfigParameters(const ParamConfig &pc, const OU::Assembly::Propert
   InstancePort *
   findInstancePort(const char *name);
   void
+    propagateClocks(),
     emitAssyInstance(FILE *f, Instance *i); //, unsigned nControlInstances);
 };
 

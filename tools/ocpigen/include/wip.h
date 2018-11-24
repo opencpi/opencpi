@@ -327,7 +327,7 @@ class Control {
   unsigned nRunProperties, nNonRawRunProperties, nParameters;
   Control();
   void initAccess();
-  void summarizeAccess(OU::Property &p);
+  void summarizeAccess(OU::Property &p, bool isSpecProperty = false);
 };
 
 enum Endian {
@@ -346,8 +346,6 @@ enum Endian {
 
 typedef std::vector<Clock*> Clocks;
 typedef Clocks::const_iterator ClocksIter;
-typedef std::list<Worker *> Workers;
-typedef Workers::iterator WorkersIter;
 typedef std::pair<std::string, std::string> StringPair;
 class Assembly;
 class HdlDevice;
@@ -385,7 +383,7 @@ class Worker : public OU::Worker {
     *m_pattern,                     // pattern for signal names within ports
     *m_portPattern,                 // pattern for port names
     *m_staticPattern;               // pattern for rcc static methods
-  int m_defaultDataWidth;           // initialized to -1 to allow zero
+  size_t m_defaultDataWidth;        // SIZE_MAX means not set
   Language m_language;
   ::Assembly *m_assembly;
   // vector of slave worker objects paired with a string of the name of the slave either from name
@@ -410,6 +408,7 @@ class Worker : public OU::Worker {
                                     // FIXME: derive from compiled code
   unsigned m_maxLevel;        // when data type processing
   bool m_dynamic;
+  bool m_isSlave;
   Worker(ezxml_t xml, const char *xfile, const std::string &parentFile, WType type,
 	 Worker *parent, OU::Assembly::Properties *ipvs, const char *&err);
   virtual ~Worker();
@@ -418,8 +417,8 @@ class Worker : public OU::Worker {
 	   const char *outDir, Worker *parent, OU::Assembly::Properties *instancePropertyValues,
 	   size_t paramConfig, const char *&err);
   bool nonRaw(PropertiesIter pi);
-  Clock *addClock();
-  Clock *addWciClockReset();
+  Clock &addClock();
+  Clock &addWciClockReset();
   OU::Property *findProperty(const char *name) const;
   OU::Port *findMetaPort(const char *id, const OU::Port *except) const;
   const char* parseSlaves();
@@ -440,7 +439,7 @@ class Worker : public OU::Worker {
     *parseHdl(const char *package = NULL),
     *parseRccAssy(),
     *parseOclAssy(),
-    *parseImplControl(ezxml_t &xctl, const char *firstRaw),
+    *parseImplControl(ezxml_t &xctl),
     *parseImplLocalMemory(),
     *findPackage(ezxml_t spec, const char *package),
     *parseSpecControl(ezxml_t ps),
@@ -451,11 +450,11 @@ class Worker : public OU::Worker {
     *parseBuildFile(bool optional, bool *missing = NULL),
     *parseBuildXml(ezxml_t x),
     *startBuildXml(FILE *&f),
-    *doProperties(ezxml_t top, const char *parent, bool impl, bool anyIsBad),
+    *doProperties(ezxml_t top, const char *parent, bool impl, bool anyIsBad, const char *firstRaw, bool AllRaw),
     *parseHdlAssy(),
     *initImplPorts(ezxml_t xml, const char *element, PortCreate &pc),
     *checkDataPort(ezxml_t impl, DataPort *&sp),
-    *addProperty(ezxml_t prop, bool includeImpl, bool anyIsBad),
+    *addProperty(ezxml_t prop, bool includeImpl, bool anyIsBad, bool isRaw),
     // Add a property from an xml string description
     *addProperty(const char *xml, bool includeImpl),
     //    *doAssyClock(Instance *i, Port *p),
@@ -564,7 +563,8 @@ class Worker : public OU::Worker {
 #define BOOL(b) ((b) ? "true" : "false")
 
 #define IMPL_ATTRS \
-  "name", "spec", "paramconfig", "reentrant", "scaling", "scalable", "controlOperations", "xmlincludedirs", "componentlibraries"
+  "name", "spec", "paramconfig", "reentrant", "scaling", "scalable", "controlOperations", "xmlincludedirs", \
+  "componentlibraries", "version"
 #define IMPL_ELEMS "componentspec", "properties", "property", "specproperty", "propertysummary", "slave", "xi:include", "controlinterface",  "timeservice", "unoc", "timebase", "sdp"
 #define GENERIC_IMPL_CONTROL_ATTRS \
   "name", "SizeOfConfigSpace", "ControlOperations", "Sub32BitConfigProperties"
@@ -593,7 +593,7 @@ extern const char
 		      ezxml_t *parsed, std::string &childFile, bool optional),
   *emitContainerHDL(Worker*, const char *);
 
-extern bool g_dynamic;
+extern bool g_dynamic, g_multipleWorkers;
 extern void
   doPrev(FILE *f, std::string &last, std::string &comment, const char *myComment),
   vhdlType(const OU::Property &dt, std::string &typeDecl, std::string &type,

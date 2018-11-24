@@ -77,8 +77,11 @@ OcpPort(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *d
   if (sp) {
     // WHAT CAN YOU SPECIFY HERE IN A SPEC PORT?  We assume nothing
   }
-  const char *clockName;
-  if ((err = OE::getBoolean(x, "MyClock", &myClock)) ||
+  bool output = false;
+  if (ezxml_cattr(x, "myclock") && ezxml_cattr(x, "myoutputclock"))
+    err = OU::esprintf("the \"myclock\" and \"myoutputclock\" attributes cannot both be specified");
+  if (err || (err = OE::getBoolean(x, "MyClock", &myClock)) ||
+      (err = OE::getBoolean(x, "MyOutputClock", &myClock, false, false, &output)) ||
       (err = OE::getBoolean(x, "ImpreciseBurst", &m_impreciseBurst)) ||
       (err = OE::getBoolean(x, "Continuous", &m_continuous)) ||
       (err = OE::getExprNumber(x, "DataWidth", m_dataWidth,
@@ -86,11 +89,13 @@ OcpPort(Worker &w, ezxml_t x, Port *sp, int ordinal, WIPType type, const char *d
       (err = OE::getNumber(x, "ByteWidth", &m_byteWidth, 0, m_dataWidth)) ||
       (err = OE::getBoolean(x, "PreciseBurst", &m_preciseBurst)))
     return;
-  if (myClock && (clockName = ezxml_cattr(x, "clock")))
-    err = OU::esprintf("port \"%s\" refers to clock \"%s\", and also has MyClock=true, "
-		       "which is invalid", pname(), clockName);
-  // We can't create clocks at this point based on myclock, since
-  // it might depend on what happens with other ports.
+  if (myClock) {
+    const char *clockName = ezxml_cattr(x, "clock");
+    if (clockName)
+      err = OU::esprintf("port \"%s\" refers to clock \"%s\", and also has %s=true, "
+			 "which is invalid", pname(), output ? "myoutputclock" : "myclock", clockName);
+    addMyClock(output);
+  }
 }
 
 // Our special copy constructor

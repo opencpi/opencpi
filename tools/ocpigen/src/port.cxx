@@ -27,10 +27,11 @@
 Port::
 Port(Worker &w, ezxml_t x, Port *sp, int nameOrdinal, WIPType type, const char *defaultName,
      const char *&err)
-  : m_clone(false), m_worker(&w), m_ordinal(0), m_count(0), m_master(false), m_xml(x),
+  : m_clone(false),m_morphed(false), m_worker(&w), m_ordinal(0), m_count(0), m_master(false), m_xml(x),
     m_type(type), pattern(NULL), clock(0), clockPort(0), myClock(false), m_specXml(x) {
   if (sp) {
     // A sort of copy constructor from a spec port to an impl port
+    m_morphed = true;
     m_name = sp->m_name;
     m_ordinal = sp->m_ordinal;
     m_count = sp->m_count; // may be overridden?
@@ -88,7 +89,7 @@ Port(Worker &w, ezxml_t x, Port *sp, int nameOrdinal, WIPType type, const char *
 // instance's port in the assembly that we are cloning/externalizing.
 Port::
 Port(const Port &other, Worker &w, std::string &name, size_t count, const char *&err)
-  : m_clone(true), m_worker(&w), m_name(name), m_ordinal(w.m_ports.size()), m_count(count),
+  : m_clone(true), m_morphed(false), m_worker(&w), m_name(name), m_ordinal(w.m_ports.size()), m_count(count),
     m_master(other.m_master), m_xml(other.m_xml), m_type(other.m_type), pattern(NULL),
     clock(NULL), clockPort(NULL), myClock(false), m_specXml(other.m_specXml)
 {
@@ -180,7 +181,7 @@ doPattern(int n, unsigned wn, bool in, bool master, std::string &suff, bool port
 	break;
       case '0': // zero origin ordinal-within-profile
       case '1':
-	sprintf(s, "%u", wn + (pat[-1] - '0'));
+	sprintf(s, "%u", wn + ((unsigned)pat[-1] - '0'));
 	while (*s) s++;
 	break;
       case 'i':
@@ -266,16 +267,18 @@ doPatterns(unsigned nWip, size_t &maxPortTypeName) {
 }
 
 void Port::
-addMyClock() {
-  clock = m_worker->addClock();
+addMyClock(bool output) {
+  clock = &m_worker->addClock();
   OU::format(clock->m_name, "%s_Clk", pname());
   clock->port = this;
+  clock->m_output = output;
 }
 
 // Here are the cases for "clock" and "myclock":
 // 1. None: assume WciClock, and it there is not one from a WCI, make one.
 // 2. Clock, but not myclock, referring to a port: I'll have what he has.
-// 3. myclock but not clock: define a clock for this port to own
+// 3. Clock, referring to a worker-level clock.
+// 4. myclock but not clock: define a clock for this port to own
 // Minimal error checking has already be done with early parsing.
 const char *Port::
 checkClock() {
@@ -290,7 +293,7 @@ checkClock() {
       return OU::esprintf("Clock for interface \"%s\", \"%s\" is not defined for the worker",
 			  pname(), clockName);
   } else if (myClock)
-    addMyClock();
+    ; // clock already added
   else if (needsControlClock()) {
     if (m_worker->m_wci)
       // If no clock specified, and we have a WCI slave port then use its clock indirectly
@@ -299,7 +302,7 @@ checkClock() {
       // If no clock specified, and no WCI slave, use a wciClock if it exists
       clock = m_worker->m_wciClock;
     else
-      clock = m_worker->addWciClockReset();
+      clock = &m_worker->addWciClockReset();
   }
   return NULL;
 }

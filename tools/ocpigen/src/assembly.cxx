@@ -331,7 +331,7 @@ init(::Assembly &assy, const char *iName, const char *wName, ezxml_t ix,
     return err;
   if (w->m_paramConfig)
     assy.addParamConfigParameters(*w->m_paramConfig, xmlProperties, ipv);
-  m_properties.resize(ipv - &m_properties[0]);
+  m_properties.resize(OCPI_SIZE_T_DIFF(ipv, &m_properties[0]));
   // Initialize the instance ports
   m_ports.resize(m_worker->m_ports.size());
   InstancePort *ip = &m_ports[0];
@@ -405,7 +405,7 @@ parseAssy(ezxml_t xml, const char **topAttrs, const char **instAttrs, bool noWor
   // Now we fill in the top-level worker stuff.
   ocpiCheck(asprintf((char**)&m_assyWorker.m_specName, "local.%s", m_assyWorker.m_implName) > 0);
   // Properties:  we only set the canonical hasDebugLogic property, which is a parameter.
-  if ((err = m_assyWorker.doProperties(xml, m_assyWorker.m_file.c_str(), true, false)))
+  if ((err = m_assyWorker.doProperties(xml, m_assyWorker.m_file.c_str(), true, false, NULL, false)))
     return err;
   // Parse the Connections, creating external ports for this assembly worker as needed.
   for (OU::Assembly::ConnectionsIter ci = m_utilAssembly->m_connections.begin();
@@ -503,7 +503,7 @@ emitXmlWorker(FILE *f) {
   if (m_ctl.controlOps) {
     bool first = true;
     for (unsigned op = 0; op < OU::Worker::OpsLimit; op++)
-      if (m_ctl.controlOps & (1 << op)) {
+      if (m_ctl.controlOps & (1u << op)) {
 	fprintf(f, "%s%s", first ? " controlOperations=\"" : ",",
 		OU::Worker::s_controlOpNames[op]);
 	first = false;
@@ -520,6 +520,8 @@ emitXmlWorker(FILE *f) {
     fprintf(f, " Scalable='1'");
   if (m_requiredWorkGroupSize)
     fprintf(f, " requiredWorkGroupSize='%zu'", m_requiredWorkGroupSize);
+  if (m_version) // keep old distinction between zero and 1 even though they are really the same
+    fprintf(f, " version='%u'", m_version);
   fprintf(f, ">\n");
   if (m_scalable) {
     OU::Port::Scaling s;
@@ -560,6 +562,8 @@ emitXmlWorker(FILE *f) {
       out += " readError='1'";
     if (prop->m_writeError)
       out += " writeError='1'";
+    if (prop->m_isRaw)
+      out += " raw='1'";
     if (!prop->m_isReadable && !prop->m_isWritable && !prop->m_isParameter)
       out += " padding='1'";
     if (prop->m_isIndirect)

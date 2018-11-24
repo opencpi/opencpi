@@ -64,8 +64,9 @@ typedef Attachments::const_iterator AttachmentsIter;
 struct InstancePort;
 // FIXME: have "implPort" class??
 class Port {
- protected:
-  bool m_clone;
+protected:
+  bool m_clone;        // internal to external
+  bool m_morphed;      // spec->impl transitioned
   Worker *m_worker;    // spec: FIXME: name this a reference 
 public:
   // These members are for spec ports
@@ -96,13 +97,14 @@ public:
   virtual const char *parse();    // second pass parsing for ports referring to each other
   virtual const char *resolveExpressions(OCPI::Util::IdentResolver &ir);
   virtual bool masterIn() const;  // Are master signals inputs at this port?
-  void addMyClock();
+  void addMyClock(bool output);
   virtual const char *checkClock();
   // This is not cname to deal with a multiple-inheritance issue.  The runtime classes use cname
   const char *pname() const { return m_name.c_str(); }
   const char *doPattern(int n, unsigned wn, bool in, bool master, std::string &suff,
 			bool port = false);
   void emitConstant(FILE *f, const char *nameFormat, Language lang, size_t n) const;
+  bool isCloned() const { return m_clone; }
   virtual void emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inRecord,
 				bool inPackage, bool inWorker, const char *defaultIn = NULL,
 				const char *defaultOut = NULL);

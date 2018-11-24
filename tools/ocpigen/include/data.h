@@ -29,16 +29,13 @@
   "Name", "Producer", "Count", "Optional", "Protocol", "buffersize", \
     OCPI_PROTOCOL_SUMMARY_ATTRS, "numberofopcodes"
 
+#define  AP(name,type,...) \
+  do {\
+    const char *_aperr = addProperty(#name,OA::OCPI_##type,__VA_ARGS__); if (_aperr) return _aperr; \
+  } while(0)
+
 class DataPort : public OcpPort, public OCPI::Util::Port {
  protected:
-  // bool m_isProducer;
-  //  bool m_isOptional;
-  //  bool m_isBidirectional;
-  //  size_t m_nOpcodes;
-  //   size_t m_minBufferCount;
-  //   size_t m_bufferSize;
-  //  Port *m_bufferSizePort;
-  
   // This constructor is used when data port is inherited
   DataPort(Worker &w, ezxml_t x, DataPort *sp, int ordinal, WIPType type, const char *&err);
   DataPort(const DataPort &other, Worker &w , std::string &name, size_t count,
@@ -58,13 +55,13 @@ class DataPort : public OcpPort, public OCPI::Util::Port {
   bool isDataOptional() const { return m_isOptional; } // call isData first
   bool isDataBidirectional() const { return m_isBidirectional; } // call isData first
   bool isOptional() const { return m_isOptional; }
+  virtual const char *finalize();
   const char
     *parse(),
     *parseProtocolChild(ezxml_t op),
     *parseProtocol(),
-    *finalize(),
-    *addProperty(const char *name, bool debug, bool parameter, OCPI::API::BaseType type,
-		 size_t value = 0),
+    *addProperty(const char *name, OCPI::API::BaseType type, bool isDebug, bool isParameter, bool isInitial,
+		 bool isVolatile, bool isImpl, size_t value = 0, const char *enums = NULL),
     *addProperty(),
     *fixDataConnectionRole(OCPI::Util::Assembly::Role &role),
     *resolveExpressions(OCPI::Util::IdentResolver &ir);
@@ -74,8 +71,8 @@ class DataPort : public OcpPort, public OCPI::Util::Port {
   void emitRecordDataTypes(FILE *f);
   void emitRecordInputs(FILE *f);
   void emitRecordOutputs(FILE *f);
-  void emitVHDLShellPortMap(FILE *f, std::string &last);
-  void emitImplSignals(FILE *f);
+  virtual void emitVHDLShellPortMap(FILE *f, std::string &last);
+  virtual void emitImplSignals(FILE *f);
   void emitXML(std::string &out);
   const char *emitRccCppImpl(FILE *f);
   void emitRccCImpl(FILE *f);
@@ -115,6 +112,8 @@ class WsiPort : public DataPort {
   bool m_abortable;
   bool m_earlyRequest;
   bool m_regRequest; // request is registered
+  bool m_insertEOM;
+  bool m_workerEOF;
   WsiPort(const WsiPort &other, Worker &w , std::string &name, size_t count,
 	  OCPI::Util::Assembly::Role *role, const char *&err);
  public:
@@ -125,7 +124,11 @@ class WsiPort : public DataPort {
   inline const char *prefix() const { return "wsi"; }
   inline const char *typeName() const { return "WSI"; }
   void emitPortDescription(FILE *f, Language lang) const;
+  void emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inRecord,
+			bool inPackage, bool inWorker, const char *defaultIn,
+			const char *defaultOut);
   const char *deriveOCP();
+  const char *finalize(); // virtual override
   void emitVhdlShell(FILE *f, ::Port *wci);
   const char *adjustConnection(::Port &consumer, const char *masterName, Language lang,
 			       OcpAdapt *prodAdapt, OcpAdapt *consAdapt, size_t &unused);
@@ -134,6 +137,7 @@ class WsiPort : public DataPort {
   void emitSkelSignals(FILE *f);
   void emitRecordInputs(FILE *f);
   void emitRecordOutputs(FILE *f);
+  void emitVHDLShellPortMap(FILE *f, std::string &last);
   //  unsigned extraDataInfo() const;
 };
 class WmiPort : public DataPort {
@@ -154,5 +158,6 @@ class WmiPort : public DataPort {
   void emitImplAliases(FILE *f, unsigned n, Language lang);
   void emitRecordInputs(FILE *f);
   void emitRecordOutputs(FILE *f);
+  void emitImplSignals(FILE *f);
 };
 #endif

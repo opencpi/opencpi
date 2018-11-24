@@ -328,7 +328,7 @@ static struct VhdlUnparser : public OU::Unparser {
       if (*cp == 'e' || *cp == 'E') {
 	// An exponent without a decimal point.
 	std::string e(cp);
-	s.resize(cp - s.c_str());
+	s.resize(OCPI_SIZE_T_DIFF(cp, s.c_str()));
 	s += ".0";
 	s += e;
 	dot = true;
@@ -854,10 +854,7 @@ emitVhdlPropMember(FILE *f, OU::Property &pr, unsigned maxPropName, bool in2work
 
 bool Worker::
 nonRaw(PropertiesIter pi) {
-  return pi != m_ctl.properties.end() &&
-    (!m_ctl.rawProperties ||
-     !(m_ctl.firstRaw &&
-       !strcasecmp(m_ctl.firstRaw->m_name.c_str(), (*pi)->m_name.c_str())));
+  return pi != m_ctl.properties.end() && !(*pi)->m_isRaw;
 }
 
 void
@@ -894,7 +891,7 @@ emitVhdlPackageConstants(FILE *f) {
   ops[OU::Worker::OpsLimit+1] = 0;
   if (m_wci) {
     for (unsigned op = 0; op <= OU::Worker::OpsLimit; op++)
-      ops[OU::Worker::OpsLimit - op] = m_ctl.controlOps & (1 << op) ? '1' : '0';
+      ops[OU::Worker::OpsLimit - op] = m_ctl.controlOps & (1u << op) ? '1' : '0';
     rawBase = m_ctl.rawProperties ?
       (m_ctl.firstRaw ? m_ctl.firstRaw->m_offset : 0) :
       OCPI_UTRUNCATE(size_t, m_ctl.sizeOfConfigSpace);
@@ -912,9 +909,7 @@ emitVhdlPackageConstants(FILE *f) {
     const char *last = NULL;
     for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++) {
       OU::Property *pr = *pi;
-      if (!pr->m_isParameter || pr->m_isReadable) {
-	if (m_ctl.firstRaw && pr == m_ctl.firstRaw)
-	  break;
+      if (!pr->m_isRaw && (!pr->m_isParameter || pr->m_isReadable)) {
 	size_t nElements = 1;
 	if (pr->m_arrayRank)
 	  nElements *= pr->m_nItems;
@@ -967,25 +962,11 @@ emitVhdlWorkerPackage(FILE *f, unsigned maxPropName) {
 	    "  -- and/or the constant values of parameter properties (redundant with generics)\n"
 	    "  type worker_props_in_t is record\n",
 	    m_implName);
-    for (PropertiesIter pi = m_ctl.properties.begin(); nonRaw(pi); pi++)
-      if ((*pi)->m_isWritable || (*pi)->m_isReadable || (*pi)->m_isParameter)
+    for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
+      if (!(*pi)->m_isRaw && ((*pi)->m_isWritable || (*pi)->m_isReadable || (*pi)->m_isParameter))
 	emitVhdlPropMember(f, **pi, maxPropName, true);
     if (m_ctl.rawProperties)
-#if 1
       fprintf(f, "    %-*s : wci.raw_in_t;\n", maxPropName, "raw");
-#else
-      fprintf(f,
-	      "    %-*s : unsigned(%zu downto 0); -- raw property address\n"
-	      "    %-*s : std_logic_vector(3 downto 0);\n"
-	      "    %-*s : Bool_t;\n"
-	      "    %-*s : Bool_t;\n"
-	      "    %-*s : std_logic_vector(31 downto 0);\n",
-	      maxPropName, "raw_address", m_wci->decodeWidth() - 1,
-	      maxPropName, "raw_byte_enable",
-	      maxPropName, "raw_is_read",
-	      maxPropName, "raw_is_write",
-	      maxPropName, "raw_data");
-#endif
     fprintf(f,
 	    "  end record worker_props_in_t;\n");
   }
@@ -994,8 +975,8 @@ emitVhdlWorkerPackage(FILE *f, unsigned maxPropName) {
 	    "  -- The following record is for the readable properties of worker \"%s\"\n"
 	    "  type worker_props_out_t is record\n",
 	    m_implName);
-    for (PropertiesIter pi = m_ctl.properties.begin(); nonRaw(pi); pi++)
-      if (!(*pi)->m_isParameter &&
+    for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
+      if (!(*pi)->m_isParameter && !(*pi)->m_isRaw &&
 	  ((*pi)->m_isVolatile || ((*pi)->m_isReadable && !(*pi)->m_isWritable)))
 	emitVhdlPropMember(f, **pi, maxPropName, false);
     if (m_ctl.rawProperties)
@@ -2199,7 +2180,7 @@ emitImplHDL(bool wrap) {
 	    for (unsigned nn = 0; nn < pr.m_nEnums; nn++) {
 	      std::string val;
 	      for (unsigned b = 0; b < bits; b++)
-		val += nn & (1 << (bits-1-b)) ? "1" : "0";
+		val += nn & (1u << (bits-1-b)) ? "1" : "0";
 	      fprintf(f, "    %s_e when \"%s\",\n", pr.m_enums[nn], val.c_str());
 	    }
 	    fprintf(f, "    %s_e when others;\n", pr.m_enums[0]);

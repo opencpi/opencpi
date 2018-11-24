@@ -43,14 +43,14 @@ class Worker;
 #define PARAM_ATTRS "name", "value", "values", "valueFile", "valueFiles"
 #define PLATFORM_ATTRS "only", "exclude", "onlyplatforms", "excludeplatforms"
 struct Param {
+  std::string                 m_name;       // if spec, same as m_param->m_name, if impl worker.model.property
   OCPI::Util::Value           m_value;      // value for the current config, perhaps the default
   std::string                 m_uValue;     // unparsed value: the canonical value for comparison
   OCPI::Util::Member         *m_valuesType; // the type (a sequence of these values).
   Values                      m_uValues;    // *Either* parsed from XML or captured from raw
   const OCPI::Util::Property *m_param;      // the property that is a parameter
   bool                        m_isDefault;  // is m_value from property default?
-  Worker                     *m_worker;     // the worker of this param
-                                            // when the paramconfig spans impls
+  const Worker               *m_worker;     // worker of param when the paramconfig spans impls
   bool                        m_isTest;
   std::string                 m_generate;   // how to generate a value
   Strings                     m_explicitPlatforms; // platforms w/ all platform-specified values
@@ -66,10 +66,12 @@ struct Param {
     Attributes() : m_onlyExcluded(false) {}
   };
   std::vector<Attributes>     m_attributes;
-  //  static const char *getPlatforms(const char *platform, Strings &platforms);
+  static void fullName(const OCPI::Util::Property &prop, const Worker &wkr, std::string &name);
   Param();
+  void setProperty(const OCPI::Util::Property *prop, const Worker *w);
   const char 
-    *parse(ezxml_t px, const OCPI::Util::Property &prop, bool global = false),
+    // only one of w and wkrs should be set
+    *parse(ezxml_t px, const OCPI::Util::Property *prop, const Worker *w = NULL, bool global = false),
     *excludeValue(std::string &uValue, Attributes *&attrs, const char *platform),
     *addValue(std::string &uValue, Attributes *&attrs, const char *platform),
     *onlyValue(std::string &uValue, Attributes *&attrs, const char *platform);
@@ -99,6 +101,7 @@ class ParamConfig : public OCPI::Util::IdentResolver {
   bool equal(ParamConfig &other);
   // The callback when evaluating expressions for data types (e.g. array length).
   const char *getValue(const char *sym, OCPI::Util::ExprValue &val) const;
+  const Worker &worker() const { return m_worker; }
 };
 
 // The build information that is not necessary for code generation.

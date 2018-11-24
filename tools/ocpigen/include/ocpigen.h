@@ -42,10 +42,13 @@ class Port;
 class Worker;
 typedef std::vector<Port*> Ports;
 typedef Ports::const_iterator PortsIter;
+typedef std::list<Worker *> Workers;
+typedef Workers::iterator WorkersIter;
 struct Clock {
   std::string m_name, m_signal, m_reset;
   Port *port;
   bool assembly; // This clock is at the assembly level
+  bool m_output;  // This clock is an output of its worker
   size_t ordinal; // within the worker
   Clock();
   const char *cname() const { return m_name.c_str(); }
