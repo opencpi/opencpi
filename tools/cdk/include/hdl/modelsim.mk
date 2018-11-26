@@ -118,7 +118,7 @@ $1/$3.tar:
 	$(AT)echo Building modelsim simulation executable: "$$@" with details in $1/$3-modelsim.out
 	$(AT)(set -e ; cd $1 && \
 	     echo -L $3 $$$$(grep = modelsim.ini | grep -v others= | sed 's/=.*//' | sed 's/^/-L /') > vsim.args && \
-	     export LM_LICENSE_FILE=$(OCPI_MODELSIM_LICENSE_FILE) && \
+	     export MGLS_LICENSE_FILE=$(OCPI_MODELSIM_LICENSE_FILE) && \
 	     echo 'log -r /*; archive write vsim.dbar -wlf vsim.wlf -include_src ; quit' | \
 	     $(call ModelsimExec,vsim) -c $3.$3 -modelsimini modelsim.ini \
 	       -f vsim.args && \
