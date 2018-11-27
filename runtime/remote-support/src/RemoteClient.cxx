@@ -48,31 +48,16 @@ namespace OCPI {
       if (OR::useServer(server, verbose, NULL, error))
 	throw OU::Error("error trying to use remote server \"%s\": %s", server, error.c_str());
     }
-    // Use servers found in the environment or in the params supplied
+    // Use servers found in the environment or in the params supplied or in the arg supplied
     void useServers(const char *server, const PValue *params, bool verbose) {
-      if (server)
-	useServer(server, verbose);
-      char *saddr = getenv("OCPI_SERVER_ADDRESS");
-      if (saddr)
-	useServer(saddr, verbose);
-      if ((saddr = getenv("OCPI_SERVER_ADDRESSES")))
-	for (OU::TokenIter li(saddr); li.token(); li.next())
-	  useServer(li.token(), verbose);
-      if ((saddr = getenv("OCPI_SERVER_ADDRESS_FILE"))) {
-	std::string addrs;
-	const char *err = OU::file2String(addrs, saddr, ' ');
-	if (err)
-	  throw OU::Error("The file indicated by the OCPI_SERVER_ADDRESS_FILE environment "
-			  "variable, \"%s\", cannot be opened: %s", saddr, err);
-	for (OU::TokenIter li(addrs); li.token(); li.next())
-	  useServer(li.token(), verbose);
-      }
-      for (const PValue *p = params; p && p->name; ++p)
-	if (!strcasecmp(p->name, "server")) {
-	  if (p->type != OCPI_String)
-	    throw OU::Error("Value of \"server\" parameter is not a string");
-	  useServer(p->vString, verbose);
-	}
+      std::string error;
+      if (server && OR::useServer(server, verbose, NULL, error))
+	throw OU::Error("error trying to use remote server \"%s\": %s", server, error.c_str());
+      OD::Driver *driver = OD::ManagerManager::findDriver("container", "remote");
+      if (!driver)
+	throw OU::Error("remote container driver not loaded per system.xml file");
+      if (static_cast<OR::Driver *>(driver)->useServers(params, verbose, error))
+	throw OU::Error(error);
     }
     void enableServerDiscovery() {
       OD::Driver *driver = OD::ManagerManager::findDriver("container", "remote");

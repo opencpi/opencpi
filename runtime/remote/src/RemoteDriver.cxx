@@ -22,6 +22,7 @@
 #include "OcpiOsMisc.h"
 #include "OcpiOsEther.h"
 #include "OcpiUtilValue.h"
+#include "OcpiDriverManager.h"
 #include "ContainerManager.h"
 #include "RemoteLauncher.h"
 #include "RemoteDriver.h"
@@ -326,6 +327,43 @@ Driver::Driver() throw() {
   const char *env = getenv("OCPI_ENABLE_REMOTE_DISCOVERY");
   if ((m_doNotDiscover = env && env[0] == '1' ? false : true))
     ocpiInfo("Remote container discovery is off.  Use OCPI::API::enableServerDiscovery() or the OCPI_ENABLE_REMOTE_DISCOVERY variable described in the Application Guide.");
+}
+
+// The driver entry point to deal with explicitly specified servers, in params or the environment
+bool Driver::
+useServers(const OU::PValue *params, bool verbose, std::string &error) {
+  char *saddr = getenv("OCPI_SERVER_ADDRESS");
+  if (saddr && probeServer(saddr, verbose, NULL, NULL, false, error))
+    return true;
+  if ((saddr = getenv("OCPI_SERVER_ADDRESSES")))
+    for (OU::TokenIter li(saddr); li.token(); li.next())
+      if (probeServer(li.token(), verbose, NULL, NULL, false, error))
+	return true;
+  if ((saddr = getenv("OCPI_SERVER_ADDRESS_FILE"))) {
+    std::string addrs;
+    const char *err = OU::file2String(addrs, saddr, ' ');
+    if (err)
+      throw OU::Error("The file indicated by the OCPI_SERVER_ADDRESS_FILE environment "
+		      "variable, \"%s\", cannot be opened: %s", saddr, err);
+    for (OU::TokenIter li(addrs); li.token(); li.next())
+      if (probeServer(li.token(), verbose, NULL, NULL, false, error))
+	return true;
+  }
+  for (const OU::PValue *p = params; p && p->name; ++p)
+    if (!strcasecmp(p->name, "server")) {
+      if (p->type != OA::OCPI_String)
+	throw OU::Error("Value of \"server\" parameter is not a string");
+      if (probeServer(p->vString, verbose, NULL, NULL, false, error))
+	return true;
+    }
+}
+
+void Driver::
+configure(ezxml_t xml) {
+  OCPI::Driver::Driver::configure(xml);
+  std::string error;
+  if (useServers(NULL, false, error))
+    ocpiBad("Error during remote server processing: %s", error.c_str());
 }
 // Called either from UDP discovery or explicitly, e.g. from ocpirun
 // If the latter, the "containers" argument will be NULL
