@@ -1485,6 +1485,15 @@ namespace OCPI {
 	    usleep(it->first - now);
 	    now = it->first;
 	  }
+	  if (OS::logWillLog(OCPI_LOG_DEBUG)) {
+	    std::string uValue;
+	    it->second.m_value.unparse(uValue);
+	    ocpiDebug("Setting property \"%s\" of instance \"%s\" (worker \"%s\") after %f seconds to \"%s\"",
+		      it->second.m_property->cname(),
+		      m_assembly.instance(it->second.m_instance).name().c_str(),
+		      m_launchMembers[m_instances[it->second.m_instance].m_firstMember].m_worker->cname(),
+		      now/1.e6, uValue.c_str());
+	  }
 	  // FIXME: fan out of value to crew, and stash instance ptr, not index...
 	  m_launchMembers[m_instances[it->second.m_instance].m_firstMember].m_worker->
 	    setPropertyValue(*it->second.m_property, it->second.m_value);

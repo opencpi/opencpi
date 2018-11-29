@@ -564,7 +564,7 @@ namespace OCPI {
         // Recurse for <set> elements
         if (isProperty)
           for (ezxml_t sx = ezxml_cchild(px, "set"); sx; sx = ezxml_cnext(sx))
-            if ((err = OE::checkAttrs(px, "value", "valuefile", "delay", NULL)) ||
+            if ((err = OE::checkAttrs(sx, "value", "valuefile", "delay", NULL)) ||
                 (err = addProperty(name, sx)))
               break;
       } while (0);
