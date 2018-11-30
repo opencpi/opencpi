@@ -88,12 +88,11 @@ namespace OCPI {
       try {
 	if (m_buffer) {
 	  if (isOutput())
-	    if (parent().version() <= 1 && m_rccPort.current.length_ == 0 &&
-		m_rccPort.current.opCode_ == 0)
-	      m_buffer->put(0, 0, true, m_rccPort.current.direct_);
-	    else
-	      m_buffer->put(m_rccPort.current.length_, m_rccPort.current.opCode_, false,
-			    m_rccPort.current.direct_);
+	    m_buffer->put(m_rccPort.current.length_, m_rccPort.current.opCode_,
+			  m_rccPort.current.eof_ ||
+			  (parent().version() <= 1 && m_rccPort.current.length_ == 0 &&
+			   m_rccPort.current.opCode_ == 0),
+			  m_rccPort.current.direct_);
 	  else
 	    release(); // m_buffer->release(); must release on port gotten from
 	  m_rccPort.current.data = NULL;

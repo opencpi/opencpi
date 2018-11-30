@@ -204,6 +204,7 @@ cSend(RCCPort* rccPort, RCCBuffer* rccBuffer, RCCOpCode op, size_t len)
 {
   rccBuffer->length_ = len;
   rccBuffer->opCode_ = op;
+  rccBuffer->eof_ = false;
   rccSend(rccPort, rccBuffer);
 }
 
@@ -221,6 +222,7 @@ cAdvance(RCCPort* rccPort, size_t max)
   // This is only useful for output buffers
   rccPort->current.length_ = rccPort->output.length;
   rccPort->current.opCode_ = rccPort->output.u.operation;
+  rccPort->current.eof_ = rccPort->output.eof;
   return rccAdvance(rccPort, max);
 }
 
