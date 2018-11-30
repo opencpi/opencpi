@@ -46,5 +46,7 @@ Workers = \
 	pr_cordic.hdl \
 	cic_dec.hdl \
 	cic_int.hdl \
+	cic_dec2.hdl \
+	cic_int2.hdl \
 
 include $(OCPI_CDK_DIR)/include/library.mk

@@ -71,7 +71,7 @@ architecture rtl of fir_real_sse_worker is
   signal take              : std_logic;
   signal force_som         : std_logic;
   signal force_eom         : std_logic;
-  type state_t is (INIT_s, WAIT_s, SEND_s);
+  type state_t is (INIT_s, WAIT_s, SEND_s, TERM_CURR_MSG_s);
   signal current_state     : state_t;
   -- temp signals for old VHDL
   signal raw_byte_enable   : std_logic_vector(3 downto 0);
@@ -138,25 +138,44 @@ begin
 
         case current_state is
           when INIT_s =>
-            if (in_in.som = '1' and in_in.eom = '1' and in_in.valid = '0') then
-              current_state <= SEND_s;
-            elsif (in_in.som = '1' and in_in.valid = '0') then
+            if (in_in.ready = '1' and in_in.som = '1' and in_in.eom = '1' and in_in.valid = '0') then
+              current_state <= TERM_CURR_MSG_s;
+            elsif (in_in.ready = '1' and in_in.som = '1' and in_in.valid = '0') then
               current_state <= WAIT_s;
+            elsif (force_som = '1' and force_eom = '1' and out_in.ready = '0') then
+              current_state <= SEND_s;
+              force_som     <= '1';
+              force_eom     <= '1';
+              take          <= '0';
             end if;
           when WAIT_s =>
-            if (in_in.valid = '1') then
+            if (in_in.ready and in_in.valid = '1') then
               current_state <= INIT_s;
-            elsif (in_in.eom = '1') then
+            elsif (in_in.ready and in_in.eom = '1') then
               current_state <= SEND_s;
             end if;
           when SEND_s =>
-            take <= '0';
-            if (msg_cnt /= 1 and out_in.ready = '1') then
-              force_eom     <= '1';
-            elsif (out_in.ready = '1') then
-              current_state <= INIT_s;
-              force_som     <= '1';
-              force_eom     <= '1';
+            if (out_in.ready = '1') then
+              if (msg_cnt /= 1) then
+                current_state <= TERM_CURR_MSG_s;
+                force_eom     <= '1';
+                take <= '1';
+              else
+                take <= '0';
+                current_state <= INIT_s;
+                force_som     <= '1';
+                force_eom     <= '1';
+              end if;
+            else
+              force_som     <= force_som;
+              force_eom     <= force_eom;
+              take          <= take;
+            end if;
+          when TERM_CURR_MSG_s =>
+            force_eom     <= '1';
+            if (out_in.ready = '1') then
+              force_eom     <= '0';
+              current_state <= SEND_s;
             end if;
         end case;
 
@@ -175,7 +194,7 @@ begin
     if rising_edge(ctl_in.clk) then
       if(ctl_in.reset = '1' or force_eom = '1') then
         msg_cnt   <= (0 => '1', others => '0');
-      elsif (odata_vld = '1') then
+      elsif (out_in.ready = '1' and odata_vld = '1') then
         if(msg_cnt = max_sample_cnt) then
           msg_cnt <= (0 => '1', others => '0');
         else

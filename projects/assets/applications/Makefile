@@ -21,7 +21,9 @@ $(if $(realpath $(OCPI_CDK_DIR)),,\
 
 include $(OCPI_CDK_DIR)/include/util.mk
 
-override OcpiRunArgs+= -t 2
+ifndef OcpiRunArgs
+OcpiRunArgs= -t 2
+endif
 
 # To restrict the applications that are built or run, you can set the Applications
 # variable to the specific list of which ones you want to build and run, e.g.:
@@ -39,6 +41,7 @@ Applications=bias.xml \
              tb_bias.xml \
              testbias2.xml \
              testbias5.xml \
+             iqstream_max_calculator_test \
              testbias.xml 
 
 # These are not yet runnable via 'make run'

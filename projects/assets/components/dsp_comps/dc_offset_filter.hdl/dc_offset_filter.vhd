@@ -102,7 +102,8 @@ begin
   -----------------------------------------------------------------------------
 
   out_out.give <= ctl_in.is_operating and out_in.ready and (odata_vld or missed_odata_vld
-                  or valid(valid'high) or ((som(som'high) or eom(eom'high)) and not(valid(valid'high))));
+                  or ((som(som'high) or eom(eom'high)) and not(valid(valid'high))));
+--                  or valid(valid'high) or ((som(som'high) or eom(eom'high)) and not(valid(valid'high))));
 
   -----------------------------------------------------------------------------
   -- Valid (when downstream Worker ready & primitive has valid output OR the
@@ -125,7 +126,7 @@ begin
           valid          <= (others => '0');
           data           <= (others => (others => '0'));
           byte_enable    <= (others => (others => '0'));
-        elsif (ctl_in.is_operating = '1' and out_in.ready = '1') then
+        elsif enable = '1' then
           som(0)         <= in_in.som;
           eom(0)         <= in_in.eom;
           byte_enable(0) <= in_in.byte_enable;
@@ -146,7 +147,7 @@ begin
           valid          <= (others => '0');
           data           <= (others => (others => '0'));
           byte_enable    <= (others => (others => '0'));
-        elsif (ctl_in.is_operating = '1' and out_in.ready = '1') then
+        elsif enable = '1' then
           som            <= som(som'high-1 downto 0) & in_in.som;
           eom            <= eom(eom'high-1 downto 0) & in_in.eom;
           byte_enable    <= byte_enable(byte_enable'high-1 downto 0) & in_in.byte_enable;

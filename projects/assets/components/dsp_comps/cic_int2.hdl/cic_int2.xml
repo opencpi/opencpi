@@ -1,0 +1,22 @@
+<HdlWorker Language="vhdl" Spec="cic_int-spec.xml" version='2'>
+
+  <Property Name="VIVADO_ILA_p" Type="bool" Parameter="true" Readable="true" Default="false"/>
+
+  <Property Name="CHIPSCOPE_p" Type="bool" Parameter="true" Readable="true" Default="false"/>
+
+  <SpecProperty Name="N" Parameter="true" Default="3"/>
+
+  <SpecProperty Name="M" Parameter="true" Default="1"/>
+
+  <SpecProperty Name="R" Parameter="true" Default="4"/>
+
+  <SpecProperty Name="DIN_WIDTH" Parameter="true"  Default="16"/>
+
+  <SpecProperty Name="ACC_WIDTH" Parameter="true" Default="22"/>
+
+  <SpecProperty Name="DOUT_WIDTH" Parameter="true" Default="16"/>
+
+  <StreamInterface Name="in"  DataWidth="32"/>
+  <StreamInterface Name="out" DataWidth="32" inserteom='1'/>
+
+</HdlWorker>
