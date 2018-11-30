@@ -66,7 +66,7 @@ add to tree.
 #define OCPI_OPTIONS \
   CMD_OPTION  (verbose,   v,    Bool,   NULL, "Be verbose") \
   CMD_OPTION  (log_level, l,    ULong,  0,    "<log-level>\n" \
-	                                      "set log level during execution, overriding OCPI_LOG_LEVEL")\
+                                              "set log level during execution, overriding OCPI_LOG_LEVEL")\
   CMD_OPTION  (defs,      d,    Bool,   NULL, "Generate the definition file (used for instantiation)") \
   CMD_OPTION  (ents,      E,    Bool,   NULL, "Generate the VHDL entity declaration file (used for instantiation by some tools)") \
   CMD_OPTION  (impl,      i,    Bool,   NULL, "Generate the implementation header file (readonly)") \
@@ -117,33 +117,33 @@ main(int argc, const char **argv) {
   int doGenerics = -1;
   if (argc <= 1) {
     fprintf(stderr,
-	    "Usage is: ocpigen [options] <owd>.xml\n"
-	    " Code generation options that determine which files are created:\n"
-	    " -d            Generate the definition/instantiation file: xyz-defs.[vh|vhd]\n"
-	    " -E            Generate the VHDL entity declaration file: xyz-ents.vhd\n"
-	    " -i            Generate the implementation include file: xyz_impl.[vh|vhd]\n"
-	    " -s            Generate the skeleton file: xyz_skel.[c|v|vhd]\n"
-	    " -a            Generate the assembly (composition) file: xyz.[v|vhd]\n"
-	    " -b            Generate the BSV interface file\n"
-	    " -A            Generate the UUID and artifact descriptor xml file for a container\n"
-	    " -W <file>     Generate an assembly or container workers file: xyz.wks\n"
-	    " Options for artifact XML and UUID source generation (-A):\n"
-	    " -c <file>     The HDL container file to use for the artifact XML\n"
-	    " -P <platform> The platform for the artifact (or cpu for rcc)\n"
-	    " -O <os>       The OS for the artifact (rcc)\n"
-	    " -V <version>  The OS version for the artifact (rcc)\n"
-	    " -e <device>   The device for the artifact\n"
+            "Usage is: ocpigen [options] <owd>.xml\n"
+            " Code generation options that determine which files are created:\n"
+            " -d            Generate the definition/instantiation file: xyz-defs.[vh|vhd]\n"
+            " -E            Generate the VHDL entity declaration file: xyz-ents.vhd\n"
+            " -i            Generate the implementation include file: xyz_impl.[vh|vhd]\n"
+            " -s            Generate the skeleton file: xyz_skel.[c|v|vhd]\n"
+            " -a            Generate the assembly (composition) file: xyz.[v|vhd]\n"
+            " -b            Generate the BSV interface file\n"
+            " -A            Generate the UUID and artifact descriptor xml file for a container\n"
+            " -W <file>     Generate an assembly or container workers file: xyz.wks\n"
+            " Options for artifact XML and UUID source generation (-A):\n"
+            " -c <file>     The HDL container file to use for the artifact XML\n"
+            " -P <platform> The platform for the artifact (or cpu for rcc)\n"
+            " -O <os>       The OS for the artifact (rcc)\n"
+            " -V <version>  The OS version for the artifact (rcc)\n"
+            " -e <device>   The device for the artifact\n"
             " -p <package>  The package name for component specifications\n"
-	    " Other options:\n"
-	    " -B <lib>      The VHDL library name that <www>_defs.vhd will be placed in (-i)\n"
-	    " -L <complib>:<xml-dir>\n"
-	    "               Associate a component library name with an xml search dir\n"
-	    " -D <dir>      Specify the output directory for generated files\n"
-	    " -I <dir>      Specify an include search directory for XML processing\n"
-	    " -M <file>     Specify the file to write makefile dependencies to\n"
-	    " -S <assembly> Specify the name of the assembly for a container\n"
-	    " -T            Generate test artifacts\n"
-	    );
+            " Other options:\n"
+            " -B <lib>      The VHDL library name that <www>_defs.vhd will be placed in (-i)\n"
+            " -L <complib>:<xml-dir>\n"
+            "               Associate a component library name with an xml search dir\n"
+            " -D <dir>      Specify the output directory for generated files\n"
+            " -I <dir>      Specify an include search directory for XML processing\n"
+            " -M <file>     Specify the file to write makefile dependencies to\n"
+            " -S <assembly> Specify the name of the assembly for a container\n"
+            " -T            Generate test artifacts\n"
+            );
     return 1;
   }
 #if !defined(NDEBUG)
@@ -157,209 +157,209 @@ main(int argc, const char **argv) {
     if (ap[0][0] == '-')
       switch (ap[0][1]) {
       case 'v':
-	verbose = true;
-	break;
+        verbose = true;
+        break;
       case 'd':
-	doDefs = true;
-	break;
+        doDefs = true;
+        break;
       case 'E':
-	doEnts = true;
-	break;
+        doEnts = true;
+        break;
       case 'i':
-	doImpl = true;
-	break;
+        doImpl = true;
+        break;
       case 's':
-	doSkel = true;
-	break;
+        doSkel = true;
+        break;
       case 'a':
-	doAssy = true;
-	break;
+        doAssy = true;
+        break;
       case 'A':
-	doArt = true;
-	break;
+        doArt = true;
+        break;
       case 'w':
-	doWrap = true;
-	break;
+        doWrap = true;
+        break;
       case 'X':
-	doTopContainer = true;
-	break;
+        doTopContainer = true;
+        break;
       case 'Y':
-	doTopConfig = true;
-	break;
+        doTopConfig = true;
+        break;
       case 'T':
-	doTest = true;
-	break;
+        doTest = true;
+        break;
       case 'C':
-	doCases = true;
-	break;
+        doCases = true;
+        break;
       case 'g':
-	doGenerics = atoi(&ap[0][2]);
-	break;
+        doGenerics = atoi(&ap[0][2]);
+        break;
       case 'W':
-	wksFile = *++ap;
-	break;
+        wksFile = *++ap;
+        break;
       case 'M':
-	setDep(*++ap);
-	break;
+        setDep(*++ap);
+        break;
       case 'B':
-	err = addLibrary(ap[0][2] ? &ap[0][2] : *++ap);
-	break;
+        err = addLibrary(ap[0][2] ? &ap[0][2] : *++ap);
+        break;
       case 'I':
-	if (ap[0][2])
-	  addInclude(&ap[0][2]);
-	else
-	  addInclude(*++ap);
-	break;
+        if (ap[0][2])
+          addInclude(&ap[0][2]);
+        else
+          addInclude(*++ap);
+        break;
       case 'D':
-	outDir = *++ap;
-	break;
+        outDir = *++ap;
+        break;
       case 'S':
-	assembly = *++ap;
-	break;
+        assembly = *++ap;
+        break;
       case 'L':
-	if ((err = addLibMap(ap[0][2] ? &ap[0][2] : *++ap)))
-	  err = OU::esprintf("Error processing -L (library map) option: %s", err);
-	break;
+        if ((err = addLibMap(ap[0][2] ? &ap[0][2] : *++ap)))
+          err = OU::esprintf("Error processing -L (library map) option: %s", err);
+        break;
       case 'e':
-	g_device = *++ap;
-	break;
+        g_device = *++ap;
+        break;
       case 'P':
-	g_platform = *++ap;
-	break;
+        g_platform = *++ap;
+        break;
       case 'Z':
-	g_dynamic = (*++ap)[0] == '1';
-	break;
+        g_dynamic = (*++ap)[0] == '1';
+        break;
       case 'O':
-	g_os = *++ap;
-	break;
+        g_os = *++ap;
+        break;
       case 'V':
-	g_os_version = *++ap;
-	break;
+        g_os_version = *++ap;
+        break;
       case 'H':
-	g_arch = *++ap;
-	break;
+        g_arch = *++ap;
+        break;
       case 'p':
-	package = *++ap;
-	break;
+        package = *++ap;
+        break;
       case 'x':
-	attribute = *++ap;
-	break;
+        attribute = *++ap;
+        break;
       case 'r':
-	break;
+        break;
       case 'b':
-	break;
+        break;
       case 'F':
-	platformDir = *++ap;
-	break;
+        platformDir = *++ap;
+        break;
       default:
-	err = OU::esprintf("Unknown flag: %s\n", *ap);
+        err = OU::esprintf("Unknown flag: %s\n", *ap);
       }
     else
       try {
-	setenv("OCPI_SYSTEM_CONFIG", "", 1);
-	OCPI::Driver::ManagerManager::suppressDiscovery();
-	if (doCases)
-	  OCPI::Library::getManager().enableDiscovery();
-	std::string parent;
-	ezxml_t xml;
-	std::string file;
-	if (doTopContainer) {
-	  std::string config, constraints;
-	  OrderedStringSet platforms;
-	  if ((err = parseFile(*ap, parent, "HdlContainer", &xml, file, false, false)) ||
-	      // Get the platform field. Do not bother to verify that each platform exists
-	      (err = HdlContainer::parsePlatform(xml, config, constraints, platforms, false))) {
-	    err = OU::esprintf("For container file %s:  %s", *ap, err);
-	    break;
-	  }
-	  printf("%s %s", config.c_str(), constraints.c_str());
-	  for (auto pi = platforms.begin(); pi != platforms.end(); ++pi)
-	    printf(" %s", (*pi).c_str());
-	  fputs("\n", stdout);
-	  return 0;
-	}
-	if (doTopConfig) {
-	  if ((err = parseFile(*ap, parent, "HdlConfig", &xml, file, false, true))) {
-	    err = OU::esprintf("For platform configuration file %s:  %s", *ap, err);
-	    break;
-	  }
-	  const char *csf = ezxml_cattr(xml, "constraints");
-	  if (csf)
-	    printf("%s\n", csf);
-	  return 0;
-	}
-	if (doTest) {
-	  if ((err = createTests(*ap, package, outDir, verbose)))
-	    break;
-	  return 0;
-	}
-	if (doCases) {
-	  if ((err = createCases(ap, package, outDir, verbose)))
-	    break;
-	  return 0;
-	}
-	Worker *w = Worker::create(*ap, parent, package, outDir, NULL, NULL,
-				   doGenerics >= 0 ? doGenerics : 0, err);
-	if (err)
-	  err = OU::esprintf("For file %s: %s", *ap, err);
-	else if (attribute && (err = w->emitAttribute(attribute)))
-	  err = OU::esprintf("%s: Error retrieving attribute %s from file: %s", attribute, *ap, err);
-	else if (doDefs && (err = w->emitDefsHDL(doWrap)))
-	  err = OU::esprintf("%s: Error generating definition/declaration file: %s", *ap, err);
-	else if (doEnts && (err = w->emitVhdlEnts()))
-	  err = OU::esprintf("%s: Error generating VHDL entity declaration file: %s", *ap, err);
-	else if (doImpl && (err =
-			    w->m_model == HdlModel ? w->emitImplHDL(doWrap) :
-			    (w->m_model == RccModel ? w->emitImplRCC() : w->emitImplOCL())))
-	  err = OU::esprintf("%s: Error generating implementation declaration file: %s", *ap, err);
-	else if (doSkel && (err =
-			    w->m_model == HdlModel ? w->emitSkelHDL() :
-			    w->m_model == RccModel ? w->emitSkelRCC() : w->emitSkelOCL()))
-	  err = OU::esprintf("%s: Error generating implementation skeleton file: %s", *ap, err);
-	else if (doAssy && (err = w->emitAssyHDL()))
-	  err = OU::esprintf("%s: Error generating assembly: %s", *ap, err);
-	else if (wksFile && (err = w->emitWorkersHDL(wksFile)))
-	  err = OU::esprintf("%s: Error generating assembly makefile: %s", *ap, err);
-	else if (doGenerics >= 0 && (err = w->emitHDLConstants((unsigned)doGenerics, doWrap)))
-	  err = OU::esprintf("%s: Error generating constants for parameter configuration %u: %s",
-			     *ap, doGenerics, err);
-	else if (options.parameters() && (err = w->emitToolParameters()))
-	  err = OU::esprintf("%s: Error generating parameter file for tools: %s", *ap, err);
-	else if (options.build() && (err = w->emitMakefile()))
-	  err = OU::esprintf("%s: Error generating gen/*.mk file for tools", err);
-	else if (doArt)
-	  switch (w->m_model) {
-	  case HdlModel:
-	    if (!g_platform || !g_device)
-	      err = OU::esprintf("%s: Missing container/platform/device options for HDL "
-				 "artifact descriptor", *ap);
-	    else if ((err = w->emitArtXML(wksFile)))
-	      err = OU::esprintf("%s: Error generating bitstream artifact XML: %s",
-				 *ap, err);
-	    break;
-	  case RccModel:
-	    if (!g_os || !g_os_version || !g_arch)
-	      err = OU::esprintf("%s: Missing os/os_version/arch options for RCC artifact "
-				 "descriptor", *ap);
-	    else if ((err = w->emitArtXML(wksFile)))
-	      err = OU::esprintf("%s: Error generating shared library artifact XML: %s",
-				 *ap, err);
-	    break;
-	  case OclModel:
-	    if ((err = w->emitArtXML(wksFile)))
-	      err = OU::esprintf("%s: Error generating shared library artifact XML: %s",
-		      *ap, err);
-	    break;
-	  case NoModel:
-	    ;
-	  }
-	delete w;
+        setenv("OCPI_SYSTEM_CONFIG", "", 1);
+        OCPI::Driver::ManagerManager::suppressDiscovery();
+        if (doCases)
+          OCPI::Library::getManager().enableDiscovery();
+        std::string parent;
+        ezxml_t xml;
+        std::string file;
+        if (doTopContainer) {
+          std::string config, constraints;
+          OrderedStringSet platforms;
+          if ((err = parseFile(*ap, parent, "HdlContainer", &xml, file, false, false)) ||
+              // Get the platform field. Do not bother to verify that each platform exists
+              (err = HdlContainer::parsePlatform(xml, config, constraints, platforms, false))) {
+            err = OU::esprintf("For container file %s:  %s", *ap, err);
+            break;
+          }
+          printf("%s %s", config.c_str(), constraints.c_str());
+          for (auto pi = platforms.begin(); pi != platforms.end(); ++pi)
+            printf(" %s", (*pi).c_str());
+          fputs("\n", stdout);
+          return 0;
+        }
+        if (doTopConfig) {
+          if ((err = parseFile(*ap, parent, "HdlConfig", &xml, file, false, true))) {
+            err = OU::esprintf("For platform configuration file %s:  %s", *ap, err);
+            break;
+          }
+          const char *csf = ezxml_cattr(xml, "constraints");
+          if (csf)
+            printf("%s\n", csf);
+          return 0;
+        }
+        if (doTest) {
+          if ((err = createTests(*ap, package, outDir, verbose)))
+            break;
+          return 0;
+        }
+        if (doCases) {
+          if ((err = createCases(ap, package, outDir, verbose)))
+            break;
+          return 0;
+        }
+        Worker *w = Worker::create(*ap, parent, package, outDir, NULL, NULL,
+                                   doGenerics >= 0 ? doGenerics : 0, err);
+        if (err)
+          err = OU::esprintf("For file %s: %s", *ap, err);
+        else if (attribute && (err = w->emitAttribute(attribute)))
+          err = OU::esprintf("%s: Error retrieving attribute %s from file: %s", attribute, *ap, err);
+        else if (doDefs && (err = w->emitDefsHDL(doWrap)))
+          err = OU::esprintf("%s: Error generating definition/declaration file: %s", *ap, err);
+        else if (doEnts && (err = w->emitVhdlEnts()))
+          err = OU::esprintf("%s: Error generating VHDL entity declaration file: %s", *ap, err);
+        else if (doImpl && (err =
+                            w->m_model == HdlModel ? w->emitImplHDL(doWrap) :
+                            (w->m_model == RccModel ? w->emitImplRCC() : w->emitImplOCL())))
+          err = OU::esprintf("%s: Error generating implementation declaration file: %s", *ap, err);
+        else if (doSkel && (err =
+                            w->m_model == HdlModel ? w->emitSkelHDL() :
+                            w->m_model == RccModel ? w->emitSkelRCC() : w->emitSkelOCL()))
+          err = OU::esprintf("%s: Error generating implementation skeleton file: %s", *ap, err);
+        else if (doAssy && (err = w->emitAssyHDL()))
+          err = OU::esprintf("%s: Error generating assembly: %s", *ap, err);
+        else if (wksFile && (err = w->emitWorkersHDL(wksFile)))
+          err = OU::esprintf("%s: Error generating assembly makefile: %s", *ap, err);
+        else if (doGenerics >= 0 && (err = w->emitHDLConstants((unsigned)doGenerics, doWrap)))
+          err = OU::esprintf("%s: Error generating constants for parameter configuration %u: %s",
+                             *ap, doGenerics, err);
+        else if (options.parameters() && (err = w->emitToolParameters()))
+          err = OU::esprintf("%s: Error generating parameter file for tools: %s", *ap, err);
+        else if (options.build() && (err = w->emitMakefile()))
+          err = OU::esprintf("%s: Error generating gen/*.mk file for tools", err);
+        else if (doArt)
+          switch (w->m_model) {
+          case HdlModel:
+            if (!g_platform || !g_device)
+              err = OU::esprintf("%s: Missing container/platform/device options for HDL "
+                                 "artifact descriptor", *ap);
+            else if ((err = w->emitArtXML(wksFile)))
+              err = OU::esprintf("%s: Error generating bitstream artifact XML: %s",
+                                 *ap, err);
+            break;
+          case RccModel:
+            if (!g_os || !g_os_version || !g_arch)
+              err = OU::esprintf("%s: Missing os/os_version/arch options for RCC artifact "
+                                 "descriptor", *ap);
+            else if ((err = w->emitArtXML(wksFile)))
+              err = OU::esprintf("%s: Error generating shared library artifact XML: %s",
+                                 *ap, err);
+            break;
+          case OclModel:
+            if ((err = w->emitArtXML(wksFile)))
+              err = OU::esprintf("%s: Error generating shared library artifact XML: %s",
+                      *ap, err);
+            break;
+          case NoModel:
+            ;
+          }
+        delete w;
       } catch (std::string &e) {
-	fprintf(stderr, "Exception thrown: %s\n", e.c_str());
-	return 1;
+        fprintf(stderr, "Exception thrown: %s\n", e.c_str());
+        return 1;
       } catch (...) {
-	fprintf(stderr, "Unexpected/unknown exception thrown\n");
-	return 1;
+        fprintf(stderr, "Unexpected/unknown exception thrown\n");
+        return 1;
       }
   }
   if (!err)

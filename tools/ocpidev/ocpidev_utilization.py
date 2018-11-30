@@ -27,7 +27,7 @@ import types
 sys.path.append(os.getenv('OCPI_CDK_DIR') + '/' + os.getenv('OCPI_TOOL_PLATFORM') + '/lib/')
 import _opencpi.util as ocpiutil
 import _opencpi.assets.factory as ocpifactory
-from _opencpi.abstract import ReportableAsset
+from _opencpi.assets.abstract import ReportableAsset
 
 # There is a top-level parser that parses FIRST_NOUNS
 # If the noun is a PLAIN_NOUN, it proceeds normally,
@@ -208,7 +208,6 @@ def set_init_values(args, dir_type):
         args['hdl_plats'] = ["all"]
 
 def main():
-    ocpiutil.configure_logging()
     args = parse_cl_vars()
     try:
         cur_dir = args['cur_dir']
@@ -228,7 +227,7 @@ def main():
                                                      hdl_library=args['hdl_library'],
                                                      hdl_platform=args['hdl_plat_dir'])
 
-        ocpiutil.logging.debug('Chose directory "' + directory + '" to operate in');
+        ocpiutil.logging.debug('Chose directory "' + directory + '" to operate in')
 
         dir_type = ocpiutil.get_dirtype(directory)
 

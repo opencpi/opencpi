@@ -52,7 +52,7 @@ findParamProperty(const char *a_name, OU::Property *&prop, size_t &nParam, bool 
   return OU::esprintf("Parameter property not found: '%s'", a_name);
 }
 
-Param::Param() : m_valuesType(NULL), m_param(NULL), m_isDefault(false), m_worker(NULL), 
+Param::Param() : m_valuesType(NULL), m_param(NULL), m_isDefault(false), m_worker(NULL),
 		 m_isTest(false) {}
 
 // Exclude these values from the set
@@ -157,9 +157,7 @@ parse(ezxml_t px, const OU::Property &p, bool global) {
     *values = ezxml_cattr(px, "values"),
     *valueFile = ezxml_cattr(px, "valueFile"),
     *valuesFile = ezxml_cattr(px, "valuesFile");
-  unsigned v = (value ? 1 : 0) + (values ? 1 : 0) + (valueFile ? 1 : 0) + (valuesFile ? 1 : 0) +
-    (generate ? 1 : 0);
-  if (v != 1)
+  if ((!!value + !!values + !!valueFile + !!valuesFile + !!generate) != 1)
     return OU::esprintf("Exactly one attribute must be specified among: "
 			"value, values, valuefile, valuesFile, or (for tests) generate");
   if (generate) {
@@ -176,7 +174,7 @@ parse(ezxml_t px, const OU::Property &p, bool global) {
       return err;
     value = fileValue.c_str();
   } else if (valuesFile) {
-    if ((err = (p.needsComma() ? 
+    if ((err = (p.needsComma() ?
 		OU::file2String(fileValue, valuesFile, "{", "},{", "}") :
 		OU::file2String(fileValue, valuesFile, ','))))
       return err;

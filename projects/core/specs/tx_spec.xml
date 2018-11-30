@@ -1,3 +1,4 @@
+<!-- Not Recommended For New Designs - see dig_radio_ctrlr-spec.xml instead -->
 <ComponentSpec>
   <property name='rf_gain_dB' type='double' writable='true' readable='true'/>
   <property name='rf_gain_max_dB' type='double' writable='true' volatile='true'/>

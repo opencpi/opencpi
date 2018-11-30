@@ -40,6 +40,8 @@ class Test(RunnableAsset, HDLBuildableAsset, RCCBuildableAsset):
             mode (list) - Specify which phases of the unit test to run
             remote_test_sys (list) - Specify remote systems to run the test(s)
         """
+        if not directory.endswith(".test") and not directory.endswith(".test/"):
+            directory = directory + ".test"
         self.check_dirtype("test", directory)
         super().__init__(directory, name, **kwargs)
 

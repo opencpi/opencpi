@@ -79,7 +79,7 @@ class Registry(Asset):
             return True
         return False
 
-    def add(self, directory="."):
+    def add(self, directory=".", force=False):
         """
         Given a project, get its package-ID, create the corresponding link in the project registry,
         and add it to this Registry instance's __projects dictionary.
@@ -103,14 +103,19 @@ class Registry(Asset):
             if self.__projects[pid].directory == project.directory:
                 logging.debug("Project link is already in the registry. Proceeding...")
                 return
-            raise ocpiutil.OCPIException("Failure to register project with package '" + pid +
-                                         "'.\nA project/link with that package qualifier " +
-                                         "already exists and is registered in '" + self.directory +
-                                         "'.\nThe old project is not being overwitten to" +
-                                         " unregister the original project, call: 'ocpidev " +
-                                         "unregister project " + pid +"'.\nThen, run the " +
-                                         "command: 'ocpidev -d " + project.directory +
-                                         " register project'")
+            if not force:
+                raise ocpiutil.OCPIException("Failure to register project with package '" + pid +
+                                             "'.\nA project/link with that package qualifier " +
+                                             "already exists and is registered in '" +
+                                             self.directory + "'.\nThe old registration is not being " +
+                                             "overwitten. To unregister the original project, " +
+                                             "call: 'ocpidev unregister project " +
+                                             self.__projects[pid].directory +
+                                             "'.\nThen, run the command: 'ocpidev -d " +
+                                             project.directory + " register project' or use the " +
+                                             "'force' option")
+            else:
+                 self.remove(package_id=pid)
 
         # link will be created at <registry>/<package-ID>
         project_link = self.directory + "/" + pid
@@ -131,6 +136,7 @@ class Registry(Asset):
         in this registry. If so, remove it from this registry's __projects dictionary
         and remove the registered symlink.
         """
+        logging.debug("package_id=" + str(package_id)+ " directory=" + str(directory))
         if package_id is None:
             package_id = ocpiutil.get_project_package(directory)
             if package_id is None:
@@ -150,14 +156,16 @@ class Registry(Asset):
                                          "registry.\n Run 'ocpidev show registry --table' for " +
                                          "information about the currently registered projects.\n")
 
-        project_link = self.__projects[package_id].directory
-        if directory is not None and os.path.realpath(directory) != project_link:
-            raise ocpiutil.OCPIException("Failure to unregister project with package '" +
-                                         package_id + "'.\nThe registered project with link '" +
-                                         package_id + " --> " + project_link + "' does not " +
-                                         "point to the specified project '" +
-                                         os.path.realpath(directory) + "'." + "\nThis project " +
-                                         "does not appear to be registered.")
+        # if a project is deleted from disk underneath our feet this could be None (AV-4483)
+        if self.__projects[package_id] is not None:
+            project_link = self.__projects[package_id].directory
+            if directory is not None and os.path.realpath(directory) != project_link:
+                raise ocpiutil.OCPIException("Failure to unregister project with package '" +
+                                             package_id + "'.\nThe registered project with link '" +
+                                             package_id + " --> " + project_link + "' does not " +
+                                             "point to the specified project '" +
+                                             os.path.realpath(directory) + "'." + "\nThis " +
+                                             "project does not appear to be registered.")
 
         # Remove the symlink registry/package-ID --> project
         self.remove_link(package_id)

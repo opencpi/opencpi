@@ -154,9 +154,16 @@ function register_project {
   else
     project="."
   fi
+  if [ -n "$force" ]; then
+    py_force=True
+  else
+    py_force=False
+  fi
   py_try_return_bool "
     from _opencpi.assets import factory, registry;
-    factory.AssetFactory.factory(\"registry\", registry.Registry.get_registry_dir(\"$project\")).add(\"$project\")" || return
+    factory.AssetFactory.factory(\"registry\",
+                                 registry.Registry.get_registry_dir(\"$project\")).add(\"$project\",
+                                                                                       force=$py_force)" || return
 
   # We want to export a project on register, but only if it is not
   # an exported project itself
@@ -181,7 +188,7 @@ function unregister_project {
   py_try_return_bool "
     from _opencpi.assets import factory, registry;
     import os;
-    if os.path.exists(\"$project\"):
+    if os.path.exists(\"$project\") or  \"/\" in \"$project\":
         # Create registry instance from project dir, and remove project by its dir
         factory.AssetFactory.factory(\"registry\", registry.Registry.get_registry_dir(\"$project\")).remove(directory=\"$project\")
     else:
@@ -424,7 +431,7 @@ function do_project {
   elif [ "$verb" == unregister ]; then
     pj_title=\"$1\"
     [ -n "$1" ] || pj_title=current
-    ask unregister the $pj_title project/package from the project registry
+    ask unregister the $pj_title project/package from its project registry
     if [ $(unregister_project $1 1> /dev/null; echo $?) -eq 1 ]; then
       # Error message printed from python
       exit 1
@@ -703,17 +710,22 @@ EOF
 namespace OA = OCPI::API;
 
 int main(int argc, char **argv) {
-  // Reference OpenCPI_Application_Development document for an explanation of the ACI
+  // Reference https://opencpi.github.io/OpenCPI_Application_Development.pdf for
+  // an explanation of the ACI.
 
   try {
     OA::Application app("$app.xml");
     app.initialize(); // all resources have been allocated
     app.start();      // execution is started
 
-    // Do most of your work here. You may want to remove this next line:
+    // Do work here.
 
-    // Remove this next line if your application is never "done"
+    // Must use either wait()/finish() or stop(). The finish() method must
+    // always be called after wait(). The start() method can be called
+    // again after stop().
     app.wait();       // wait until app is "done"
+    app.finish();     // do end-of-run processing like dump properties
+    // app.stop();
 
   } catch (std::string &e) {
     std::cerr << "app failed: " << e << std::endl;
@@ -2494,8 +2506,8 @@ fi
 # option testing dependent on noun and verb
 [ -z "$args" -a "$noun" != primitives -a "$noun" != assemblies  -a "$noun" != applications  -a "$noun" != platforms -a "$verb" != build -a "$verb" != register -a "$verb" != unregister -a "$verb" != refresh -a "$verb" != set -a "$verb" != unset -a \( "$verb" != delete -a "$noun" != registry \) ] && bad there must be a name argument after: $verb $hdl$noun
 # force
-[ -n "$force" -a "$verb" != delete -a "$verb" != unregister ] &&
-  bad the -f '(force)' option is only valid when deleting an asset
+[ -n "$force" -a "$verb" != delete -a "$verb" != unregister -a "$verb" != register ] &&
+  bad the -f '(force)' option is only valid when deleting or \(un\)registering an asset
 # project
 [ -n "$project" -a \( "$noun" != spec -a "$noun" != protocol -a "$noun" != properties -a "$noun" != signals \) ] &&
   bad the -p '(project level)' option is only valid when creating a spec or a protocol

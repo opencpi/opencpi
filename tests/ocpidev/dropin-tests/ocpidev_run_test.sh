@@ -82,14 +82,18 @@ $OCPIDEV test test_worker.test --only-platform $HDL_TEST_PLATFORM
 echo "Running Test 20"
 $OCPIDEV test test_worker --mode clean_all
 $OCPIDEV test test_worker.test --exclude-platform $HDL_TEST_PLATFORM
+echo "Running Test 21"
+$OCPIDEV test test_worker2 --hdl-library devices
+echo "Running Test 22"
+$OCPIDEV test test_worker3 -P dummy
 # need to add things we expect to fail to this test as well
 set +e
-echo "Running Test 21: Expecting Error"
+echo "Running Fail Test 1: Expecting Error"
 $OCPIDEV junk test_worker.test && fail
-echo "Running Test 22: Expecting Error"
+echo "Running Fail Test 2: Expecting Error"
 $OCPIDEV test test_worker -l components/dsp_comps && fail
-echo "Running Test 23: Expecting Error"
+echo "Running Fail Test 3: Expecting Error"
 $OCPIDEV test -l components/dsp_comps && fail
-echo "Running Test 24: Expecting Error"
+echo "Running Fail Test 4: Expecting Error"
 $OCPIDEV project --junk && fail
 echo "Tests Passed!"

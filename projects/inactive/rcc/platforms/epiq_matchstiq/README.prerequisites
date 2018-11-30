@@ -1,0 +1,14 @@
+The matchstiq uses the CodeSourcery GCC tool chain. Because it uses the same
+"gnueabi" ABI interface as the standard OpenCPI zynq prerequisite libraries
+(compiled by the Xilinx-distributed GCC tools), they can link and execute
+cleanly.
+
+This means there are no additional required library prerequisites.
+
+For compilation, the CodeSourcery GCC tool chain must be installed in
+/opt/CodeSourcery, e.g.
+/opt/CodeSourcery/Sourcery_G++_Lite/bin/arm-none-linux-gnueabi-g++
+
+As of this writing, the version is 4.4.1, which with the proper flags supports
+a large subset of C++11. See https://gcc.gnu.org/projects/cxx-status.html#cxx11
+and https://gcc.gnu.org/gcc-4.4/cxx0x_status.html

@@ -1170,15 +1170,15 @@ static const char *s_stressorMode[] = { MS_CONFIG, NULL };
                 		OU::formatAdd(app,
           			      "  <connection>\n"
           			      "    <port instance='%s' name='%s'/>\n"
-          			      "    <port instance='file_write_from_%s' name='in'/>\n"
+                      "    <port instance='bp_%s_%s' name='in'/>\n"
           			      "  </connection>\n",
           			      dut, io.m_port->pname(),
-          			      io.m_port->pname());
+          			      dut, io.m_port->pname());
           	      if (&io.m_port->worker() == emulator && nEmOut > 1)
                 		OU::formatAdd(app,
           			      "  <connection>\n"
           			      "    <port instance='%s' name='%s'/>\n"
-          			      "    <port instance='file_write_%s_%s' name='in'/>\n"
+                      "    <port instance='bp_%s_%s' name='in'/>\n"
           			      "  </connection>\n",
           			      em, io.m_port->pname(),
           			      em, io.m_port->pname());

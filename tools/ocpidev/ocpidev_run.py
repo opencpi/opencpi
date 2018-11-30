@@ -106,9 +106,14 @@ def parse_cl_vars():
     parser.add_argument("-d", dest="cur_dir", default=os.path.curdir,
                         help="Change directory to the specified path before proceeding. " +
                         "Changing directory may have no effect for some commands.")
-    parser.add_argument("-l", "--library", dest="library", default="components",
-                        help="Specify the component library for the test to be run.  " +
-                        "Not valid for Application.")
+    parser.add_argument("-l", "--library", dest="library", default=None,
+                        help="Specify the component library in which this operation will be " +
+                        "performed.")
+    parser.add_argument("--hdl-library", dest="hdl_library", default=None,
+                        help="Specify the hdl library in which this operation will be " +
+                        "performed.")
+    parser.add_argument("-P", dest="hdl_plat_dir", default=None,
+                        help="Specify the hdl platform subdirectory to operate in.")
     parser.add_argument("--case", metavar="CASE", dest="cases", action="append",
                         help="Specify which test case(s) that will be run/verified.  Wildcards " +
                         "are valid, ex. case*.0, case0.0*, case00.01.  Not valid for Application.")
@@ -188,10 +193,17 @@ def main():
     directory = None
     name = None
     try:
-        with ocpiutil.cd(args['cur_dir']):
+        cur_dir = args['cur_dir']
+        with ocpiutil.cd(cur_dir):
             dir_type = ocpiutil.get_dirtype()
             # args['name'] could be None if no name is provided at the command line
             name = args['name']
+            directory = ocpiutil.get_ocpidev_working_dir(origin_path=".",
+                                                         noun=args.get("noun", ""),
+                                                         name=name,
+                                                         library=args['library'],
+                                                         hdl_library=args['hdl_library'],
+                                                         hdl_platform=args['hdl_plat_dir'])
             if (name is None) and (dir_type in [n for n in NOUNS if n != "tests"]):
                 name = os.path.basename(os.path.realpath('.'))
             del args['name']
@@ -203,19 +215,6 @@ def main():
                                                  "\" Valid directory types are: " +
                                                  ", ".join([n for n in NOUNS if n != "tests"]))
             set_init_values(args, dir_type)
-            lib = args.get("library", "")
-            if args['noun'] in ["test", "library"]:
-                if dir_type == "library":
-                    lib = ""
-                if (lib != "components") and ('/' not in lib) and (dir_type == "project"):
-                    lib = "components/" + lib
-                # pylint:disable=bad-continuation
-                if (dir_type == "libraries" and
-                    os.path.basename(os.path.realpath('.')) == "components"):
-                    #set lib to a blank string
-                    lib = ""
-                # pylint:enable=bad-continuation
-            directory = get_directory(args, name, lib)
             ocpiutil.logging.debug("creating asset as the following \nname: " + str(name) + "\n" +
                                    "directory: " + str(directory) + "\nargs: " + str(args))
             my_asset = ocpifactory.AssetFactory.factory(args['noun'], directory,

@@ -61,8 +61,30 @@ namespace OCPI {
       sig_t old = signal(SIGBUS, catchBusError); // FIXME: we could make this thread safe
       volatile uint64_t magic = 0x0BAD1BADDEADBEEF;
       try {
-	if (sigsetjmp(jmpbuf, 1) == 0) {
-	  magic = m_cAccess.get64Register(magic, OccpAdminRegisters);
+        if (sigsetjmp(jmpbuf, 1) == 0) {
+          // The following is used to minimize the likelihood of hanging on an invalid read
+          // we only read one uint8 at a time and the continuing if it looks safe
+          // See AV-4297 for more information
+
+          // The uint type we are using to iterate over the magic number.
+          const int iter_size = 8;
+          const int num_iter = (sizeof(magic) * 8)/iter_size;
+          for (int i=0; i < num_iter; i++) {
+            // Get the magic number in uint8's going right to left
+            const uint8_t curr = m_cAccess.get8RegisterOffset(offsetof(OccpAdminRegisters, magic) + (sizeof(uint8_t) * i));
+            // Shift left then right to get the magic number in the current spot
+            // Each of the uint8_t we get are byte swapped. That is why we do the (num_iter-1)-i
+            const uint8_t magic_slice = OCCP_MAGIC << (((num_iter - 1) - i) * iter_size) >> (64 - (64 / num_iter));
+            if (magic_slice != curr) {
+              //FIXME better error message
+              ocpiBad("HDL Device '%s' responds, but not with the OCCP signature: "
+                      "magic: 0x%" PRIx8 " (sb 0x%" PRIx8 ")", m_name.c_str(), magic_slice, curr);
+              err = "Magic numbers in admin space do not match";
+              return true;
+            }
+          }
+          // We verified the magic number on the board is the correct magic number. So we just set it below
+          magic = OCCP_MAGIC;
 	} else {
 	  ocpiBad("HDL Device '%s' gets a bus error on probe: ", m_name.c_str());
 	  err = "bus error on probe";
@@ -175,7 +197,7 @@ namespace OCPI {
 	ocpiInfo("bad ROM[%u]: 0x%08x", i, rom[i]);
       return true;
 #else
-      z_stream zs;  
+      z_stream zs;
       zs.zalloc = zalloc;
       zs.zfree = zfree;
       zs.data_type = Z_TEXT;
@@ -243,7 +265,7 @@ namespace OCPI {
 	;
       if (n > 1)
 	m_loadParams.assign(m_UUID.load, n);
-	
+
       if (config) {
 	// what do I not know about this?
 	// usb port for jtag loading

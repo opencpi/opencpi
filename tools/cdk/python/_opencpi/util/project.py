@@ -26,6 +26,7 @@ import subprocess
 import re
 import os.path
 from .file import *
+from _opencpi.util import OCPIException
 
 def get_make_vars_rcc_targets():
     """
@@ -452,8 +453,9 @@ def get_ocpidev_working_dir(origin_path=".", noun="", name=".",
         origin_path = origin_path + "/" + name
         name = "."
 
+    #from _opencpi.util import OCPIException
     if not is_path_in_project(origin_path):
-        raise OCPIException("Path \"" + origin_path + "\" is not in a project, so its settings " +
+        raise OCPIException("Path \"" + os.path.realpath(origin_path) + "\" is not in a project, so its settings " +
                             "as a subdirectory of a project could not be determined.")
 
     # if this is a collection type, we care about the current directory's dirtype,
@@ -573,6 +575,8 @@ def _get_asset_dir(noun="", name=".", library=None, hdl_library=None, hdl_platfo
         'components/dsp_comps/complex_mixer.hdl'
         >>> _get_asset_dir(noun="test", name="bias.test", library="components")
         'components/bias.test'
+        >>> _get_asset_dir(noun="test", name="bias", library="components")
+        'components/bias.test'
         >>> _get_asset_dir(noun="worker", name="ad9361_adc.hdl", hdl_library="devices")
         'hdl/devices/ad9361_adc.hdl'
         >>> _get_asset_dir(noun="worker", name="matchstiq_z1_avr.hdl", hdl_platform="matchstiq_z1")
@@ -610,6 +614,8 @@ def _get_asset_dir(noun="", name=".", library=None, hdl_library=None, hdl_platfo
             ...
         OCPIException: ...
     """
+    if noun == "test" and not name.endswith((".test", ".test/")):
+      name += ".test"
     # library-directives are mutually exclusive
     if library is not None and hdl_library is not None:
         #raise OCPIException("library, hdl_library, and hdl_platform options are " +
@@ -677,6 +683,9 @@ def _get_asset_dir(noun="", name=".", library=None, hdl_library=None, hdl_platfo
         hdl_library = name if hdl_library is None else hdl_library
         # hdl libraries live in the hdl/ subtree
         asset = "hdl/" + hdl_library
+
+    elif noun in library_assets:
+        asset = "components/"
 
     elif noun in ["project", "workers", "tests"]:
         # If we have gotten this far and a "workers" or "tests" is discovered, the only

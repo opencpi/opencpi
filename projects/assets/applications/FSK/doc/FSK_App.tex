@@ -690,7 +690,16 @@ For these platforms, follow the instructions contained in the FSK application's 
 \subsection{Known Issues}
 \noindent
 \begin{itemize}
-  \item The \textit{rx} mode suffers from limited carrier recovery ability. When using \textit{rx} mode, the center frequency may need to be adjusted to a value other than the expected nominal value.
+  \item  % AV-4043
+    The demodulation algorithm currently suffers from limited carrier
+    recovery ability which can cause the output image to be corrupted or
+    non-existent
+    when using the \textit{rx} or \textit{txrx} mode.
+    If using an SMA loopback for txrx mode
+    on an RF transceiver where the RX and TX data stream's LOs are sourced by
+    the same clock, carrier recovery is not
+    expected to be an issue.
+
   \item For more information on known limitations when using the Zipper-related platforms (Zedboard, Stratix IV, ML605), see the document Myriad-RF\_1\_Zipper\_Limitations included with this project.
   \item  On x86 host machines with more than one Stratix IV and/or ML605s plugged into PCIe slots, this app will assume that the first found Stratix IV/ML605 has a Zipper/MyriadRF plugged in. The first found Stratix IV/ML605 will be used during execution. While there are means to address this issue, they have not been implemented for the current release.
 \end{itemize}

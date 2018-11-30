@@ -24,6 +24,7 @@ import sys
 from contextlib import contextmanager
 import logging
 import re
+from _opencpi.util import OCPIException
 
 ###############################################################################
 # Utility functions for extracting variables and information from and calling
