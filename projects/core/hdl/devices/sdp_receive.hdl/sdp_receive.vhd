@@ -309,9 +309,10 @@ g0: for i in 0 to sdp_width_c-1 generate
   ctl_out.finished    <= to_bool(faults /= 0 );
   props_out.faults     <= faults;
   props_out.sdp_id    <= resize(sdp_in.id, props_out.sdp_id'length);
-  out_out.give        <= will_give;
+  out_out.give        <= will_give and not md_out.eof;
   out_out.som         <= wsi_starting_r and not md_out.eof;
   out_out.eom         <= last_give and not md_out.eof;
+  out_out.eof         <= md_out.eof;
   out_out.valid       <= to_bool(md_not_empty and not its(md_out.zlm));
   out_out.opcode      <= md_out.opcode;
   out_out.byte_enable <= (others => '0') when its(md_out.zlm) else -- zlm
@@ -409,6 +410,7 @@ g0: for i in 0 to sdp_width_c-1 generate
                  bramb_in         => bramb_in,
                  bramb_write      => bramb_write,
                  bramb_addr       => bramb_addr,
+                 buffers_ready    => props_out.local_buffers_ready,
 --                 status           => status_dma,
                  -- inputs from SDP
                  sdp_in           => sdp_in,

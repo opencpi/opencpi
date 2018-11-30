@@ -73,6 +73,7 @@ entity sdp_receive_dma is
            bramb_in         : out dword_array_t(0 to sdp_width-1);
            bramb_write      : out bool_array_t(0 to sdp_width-1);
            bramb_addr       : out unsigned(width_for_max(memory_depth - 1)-1 downto 0);
+           buffers_ready    : out ulong_t;
 --           status           : out ulong_t;
            -- inputs from SDP
            sdp_in          : in  m2s_t;
@@ -187,6 +188,7 @@ begin
   rem_last_buffer_idx <= resize(rem_buffer_count - 1, rem_last_buffer_idx'length);
   lcl_last_buffer_idx <= resize(lcl_buffer_count - 1, lcl_last_buffer_idx'length);
   sdp_am_buffer_idx   <= sdp_in.sdp.header.xid(sdp_am_buffer_idx'range);
+  buffers_ready       <= resize(lcl_buffers_empty_r, buffers_ready'length);
   --------------------------------------------------------------------------------
   -- Bookkeeping for SDP packets
   --------------------------------------------------------------------------------
@@ -376,8 +378,11 @@ g2: for i in 0 to sdp_width-1 generate
         end if;
         -- Maintain buffer empty count and queued consumption events (AFC only)
         case role is
-          when activeflowcontrol_e|passive_e =>                            
+          when passive_e =>                            
+            incdec(lcl_buffers_empty_r, buffer_consumed, length_not_empty);
+          when activeflowcontrol_e =>                            
             incdec(flags_to_send_r, buffer_consumed, flag_accepted);
+            -- should the decrement happen on length_dequeue? rather then length_not_empty?
             incdec(lcl_buffers_empty_r, buffer_consumed, length_not_empty);
             --if its(buffer_consumed) then
             --  if not flag_accepted then

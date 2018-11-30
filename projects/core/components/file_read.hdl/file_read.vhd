@@ -67,7 +67,7 @@ begin
    out_out.byte_enable       <= byte_enable_r;
    out_out.data              <= std_logic_vector(data_r);
    giving                    <= out_in.ready and ready_r;
-
+   out_out.eof               <= to_bool(eof_r);
   -- get access to the CWD for pathname resolution (and as a readable property)
   cwd_i : component util.util.cwd
     generic map(length     => cwd'right)
@@ -104,14 +104,16 @@ begin
      procedure finish(msg : string) is begin
        report "EOF on input file: " & msg;
        close_file(data_file, props_in.fileName);
-       eof_r <= true;
-       if its(props_in.suppressEOF) then
-         finished_r <= true; -- nothing to do at this EOF except be finished
-       else
-         -- We must send a zero-length message
-         opcode_r <= props_in.opcode;
-         bytesLeft_r <= (others => '0');
-         som_next_r <= true;
+       finished_r <= true;
+       if not props_in.suppressEOF then
+         eof_r <= true;
+       -- This code was from the version 0/1 implementation.  We don't want to do this any more
+       -- with version 2 since version two allows for opcode zero ZLMs to be just another message
+       -- else
+       --   -- We must send a zero-length message
+       --   opcode_r <= props_in.opcode;
+       --   bytesLeft_r <= (others => '0');
+       --   som_next_r <= true;
        end if;
      end finish;
    begin    

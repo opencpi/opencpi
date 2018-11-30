@@ -593,6 +593,8 @@ module mkBiasWorker4B(wciS0_Clk,
 		x_data__h10386;
   wire [15 : 0] x__h11148;
 
+  assign wsiM0_MDataInfo[0] = wsiM0_MCmd == 2'd1 && wsiM0_MByteEn == 4'd0;
+
   // value method wciS0_sResp
   assign wciS0_SResp = wci_wslv_respF_q_0[33:32] ;
 

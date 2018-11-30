@@ -157,10 +157,10 @@ begin
   props_out.truncatedData    <= truncatedData;
   nbytes             <= be2bytes(in_in.byte_enable) when its(in_in.valid) else (others => '0');
   md_in.length       <= (resize(buffer_offset_r, meta_length_width_c) sll addr_shift_c) + nbytes;
-  md_in.eof          <= not in_in.eom and not in_in.som and not in_in.valid;
+  md_in.eof          <= in_in.eof;
   md_in.truncate     <= in_in.valid and buffer_maxed_r;
   md_in.opcode       <= in_in.opcode;
-  md_enq             <= to_bool(its(can_take) and in_in.ready and in_in.eom);
+  md_enq             <= to_bool(its(can_take) and ((in_in.ready and its(in_in.eom)) or in_in.eof));
   -- Instance the message data BRAM
   -- Since the BRAM is single cycle, there is no handshake.
   bram : component util.util.BRAM2

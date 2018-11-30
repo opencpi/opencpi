@@ -122,6 +122,10 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
   close(s->fd);
   if (props->suppressEOF)
     return RCC_DONE;
+#if 0 // API version < 2
   props->messagesWritten++;
+#else
+  port->output.eof = true;
+#endif
   return RCC_ADVANCE_DONE;
 }

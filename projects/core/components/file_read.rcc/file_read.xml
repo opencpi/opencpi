@@ -6,7 +6,7 @@ Properties:
  messageSize: indicates the size of messages
  granularity: incidates that the last message will be truncated to be a multiple of this.
 -->
-<RccImplementation controloperations="start,release">
+<RccImplementation controloperations="start,release" version='2'>
   <xi:include href="file_read_spec.xml"/>
   <specproperty name="fileName" readable='true'/>
   <specproperty name="suppressEOF" readable='true'/>

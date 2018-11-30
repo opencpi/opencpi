@@ -32,6 +32,7 @@
   reg [0:0]  ctl_SThreadBusy;
   reg [1:0]  ctl_SResp;
   reg [31:0] out_MData; // not part of request, so not automatically declared.
+  reg [0:0]  out_MDataInfo; // not part of request, so not automatically declared.
   reg [31:0] biasValue;
   reg [1:0]  ctl_ctlSt;
 
@@ -47,8 +48,10 @@
                                            // Registered Operations that don't care about reset...
     if (ctl_ctlSt == 2'h2) begin           // Implement the biasWorker function when operating...
       out_MData <= in_MData + biasValue;    // add the bias
+      out_MDataInfo  <= in_MDataInfo;
       out_MCmd  <= in_MCmd;
     end else begin                         // Or block the WSI pipeline cleanly...
+      out_MDataInfo  <= 1'h0;
       out_MData <= 0;
       out_MCmd  <= 3'h0;                    // Idle
     end
@@ -72,12 +75,12 @@
       biasValue       <= 32'h0000_0000;
     end else begin                         // When not Reset...
       // WCI Configuration Property Writes...
-      if (ctl_IsCfgWrite) begin
+      if (ctl_IsCfgWrite && ctl_MAddr == 0) begin
         biasValue <= ctl_MData;             // Write the biasValue Configuration Property
         ctl_SResp <= 2'h1;
       end
       // WCI Configuration Property Reads...
-      if (ctl_IsCfgRead) begin
+      if (ctl_IsCfgRead && ctl_MAddr == 0) begin
         ctl_SData <= biasValue;             // Read the biasValue Configuration Property
         ctl_SResp <= 2'h1;
       end

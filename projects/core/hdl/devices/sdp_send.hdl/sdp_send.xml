@@ -1,4 +1,4 @@
-<HdlDevice language="vhdl" spec='sdp-spec'>
+<HdlDevice language="vhdl" spec='sdp-spec' version='2'>
   <!-- the number of messages that preceded the first one that was truncated -->
   <property name='truncatedMessage' volatile='1'/>
   <!-- the total amount of data words that were truncated -->
