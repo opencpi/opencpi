@@ -382,7 +382,7 @@ emitRecordTypes(FILE *f) {
     fprintf(f,
 	    "    clk              : std_logic;        -- %s\n",
 	    m_type == WCIPort ? "control clock for this worker" :
-	    " this port has a clk different from the control clock\n");
+	    "this port has a clk different from the control clock\n");
   if (m_type != WTIPort)
     fprintf(f,
 	    "    reset            : Bool_t;           -- this port is being reset from the outside peer\n");

@@ -880,17 +880,17 @@ emitHDLConstants(size_t config, bool other) {
   const char *err;
   FILE *f;
   Language lang = other ? (m_language == VHDL ? Verilog : VHDL) : m_language;
-  if ((err = parseBuildFile(false)) ||
+  if (//(err = parseBuildFile(false)) ||
       (err = openOutput("generics", m_outDir, "", "", lang == VHDL ? VHD : ".vh", NULL, f)))
     return err;
   if (config >= m_paramConfigs.size() || m_paramConfigs[config] == NULL)
     return OU::esprintf("Invalid parameter configuration for VHDL generics: %zu", config);
-  // we must resolve non-parameter expression for the worker based on the parameter
-  // configuration we are emitting.  E.g. ports and signals.
-  resolveExpressions(*m_paramConfigs[config]);
-  m_paramConfigs[config]->writeConstants(f, lang);
+  // NOTE: resolveExpressions is called earlier when the worker is constructed and then called again here
+  // to apply this particular config
+  //  if (!(err = resolveExpressions(*m_paramConfigs[config])) && !(err = finalizeProperties()))
+    m_paramConfigs[config]->writeConstants(f, lang);
   return fclose(f) ?
-    OU::esprintf("File close of VHDL generics file failed.  Disk full?") : NULL;
+    err = OU::esprintf("File close of VHDL generics file failed.  Disk full?") : NULL;
 }
 
 #if 0

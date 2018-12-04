@@ -374,14 +374,16 @@ const char *Worker::
 parseImplControl(ezxml_t &xctl) {
   // Now we do the rest of the control interface
   const char *err;
-  if ((err = OE::getNumber8(m_xml, "version", &m_version)))
-    return err;
-  // We add a spec property here, but we now know the default version for this worker
-  std::string vp;
-  OU::format(vp, "<property name='ocpi_version' hidden='1' type='uchar' parameter='true' default='%u'/>",
-	     m_version);
-  if ((err = addProperty(vp.c_str(), false)))
-    return err;
+    // An emulator must have the same version as the device worker
+    if ((err = OE::getNumber8(m_xml, "version", &m_version)))
+      return err;
+  if (!m_emulate) {
+    std::string vp;
+    OU::format(vp, "<property name='ocpi_version' hidden='1' type='uchar' parameter='true' default='%u'/>",
+	       m_version);
+    if ((err = addProperty(vp.c_str(), false)))
+      return err;
+  }
   if ((xctl = ezxml_cchild(m_xml, "ControlInterface")) &&
       m_noControl)
     return "Worker has a ControlInterface element, but also has NoControl=true";
@@ -404,9 +406,8 @@ parseImplControl(ezxml_t &xctl) {
     return err;
   if (firstRaw && allImplRaw)
     return OU::esprintf("Only one of the \"rawproperties\" and \"firstraw\" attributes is allowed");
-  // Add the built-in properties, then parse all of the OWD properties
-  if (//(!m_emulate && (err = addBuiltinProperties())) ||
-      (err = doProperties(m_xml, m_file.c_str(), true, false, firstRaw, allImplRaw)))
+  // Parse all of the OWD properties
+  if ((err = doProperties(m_xml, m_file.c_str(), true, false, firstRaw, allImplRaw)))
     return err;
   if (firstRaw && !m_ctl.rawProperties) { // firstraw was not found yet.  Must simply be a spec property
     bool raw = false;
@@ -637,9 +638,8 @@ parseSpec(const char *a_package) {
   std::string dummy;
   if ((err = tryOneChildInclude(spec, m_file, "PropertySummary", &ps, dummy, true)))
     return err;
-  if ((err = doProperties(spec, m_file.c_str(), false, ps != NULL || m_noControl, NULL, false)))
-    return err;
-  if ((!m_emulate && (err = addBuiltinProperties())))
+  if ((err = doProperties(spec, m_file.c_str(), false, ps != NULL || m_noControl, NULL, false)) ||
+      (!m_emulate && (err = addBuiltinProperties())))
     return err;
   if (m_noControl) {
     if (ps)

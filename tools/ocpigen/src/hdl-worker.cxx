@@ -742,6 +742,26 @@ emitSignals(FILE *f, Language lang, bool useRecords, bool inPackage, bool inWork
     fprintf(f, ");\n");
 }
 
+// Add to the referenced string the value that is the number of elements of the property
+static void prElemsAdd(OU::Property &pr, const std::string &prefix, std::string &s) {
+  if (pr.m_isSequence) {
+    if (pr.m_sequenceLengthExpr.length())
+      s += prefix + "_sequence_length";
+    else
+      OU::formatAdd(s, "%zu", pr.m_sequenceLength);
+    if (pr.m_arrayRank)
+      s += "*";
+  }
+  for (unsigned n = 0; n < pr.m_arrayRank; n++) {
+    if (n)
+      s += "*";
+    if (pr.m_arrayDimensionsExprs[0].length())
+      OU::formatAdd(s, "%s_array_dimensions(%u)", prefix.c_str(), n);
+    else
+      OU::formatAdd(s, "%zu", pr.m_arrayDimensions[n]);
+  }
+}
+
 // produce the type for a signal or record member declaration
 // The cases are:
 // Basic type uses the base type name, except:
@@ -780,6 +800,9 @@ prType(OU::Property &pr, std::string &type) {
       (pr.m_isSequence && pr.m_sequenceLengthExpr.length()) ||
       (pr.m_arrayRank && pr.m_arrayDimensionsExprs[0].length())) {
     type += "(0 to ";
+#if 1
+    prElemsAdd(pr, prefix, type);
+#else
     if (pr.m_isSequence) {
       if (pr.m_sequenceLengthExpr.length())
 	type += prefix + "_sequence_length";
@@ -796,6 +819,7 @@ prType(OU::Property &pr, std::string &type) {
       else
 	OU::formatAdd(type, "%zu", pr.m_arrayDimensions[n]);
     }
+#endif
     type += "-1)";
   }
 }
@@ -884,18 +908,13 @@ emitVhdlLibraries(FILE *f) {
 
 const char *Worker::
 emitVhdlPackageConstants(FILE *f) {
-  size_t rawBase = 0;
   char ops[OU::Worker::OpsLimit + 1 + 1];
   for (unsigned op = 0; op <= OU::Worker::OpsLimit; op++)
     ops[OU::Worker::OpsLimit - op] = '0';
   ops[OU::Worker::OpsLimit+1] = 0;
-  if (m_wci) {
+  if (m_wci)
     for (unsigned op = 0; op <= OU::Worker::OpsLimit; op++)
       ops[OU::Worker::OpsLimit - op] = m_ctl.controlOps & (1u << op) ? '1' : '0';
-    rawBase = m_ctl.rawProperties ?
-      (m_ctl.firstRaw ? m_ctl.firstRaw->m_offset : 0) :
-      OCPI_UTRUNCATE(size_t, m_ctl.sizeOfConfigSpace);
-  }
   if (!m_ctl.nNonRawRunProperties) {
     fprintf(f, "-- no properties for this worker\n");
     //	      "  constant properties : ocpi.wci.properties_t(1 to 0) := "
@@ -908,26 +927,38 @@ emitVhdlPackageConstants(FILE *f) {
     unsigned n = 0;
     const char *last = NULL;
     for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++) {
-      OU::Property *pr = *pi;
-      if (!pr->m_isRaw && (!pr->m_isParameter || pr->m_isReadable)) {
+      OU::Property &pr = **pi;
+      if (!pr.m_isRaw && (!pr.m_isParameter || pr.m_isReadable)) {
+#if 1
+	std::string nElements;
+	if ((pr.m_isSequence && pr.m_sequenceLengthExpr.length()) ||
+	    (pr.m_arrayRank && pr.m_arrayDimensionsExprs[0].length())) {
+	  std::string prefix;
+	  OU::format(prefix, "work.%s_constants.%s", m_implName, pr.m_name.c_str());
+	  prElemsAdd(pr, prefix, nElements);
+	} else
+	  nElements = "1";
+#else
 	size_t nElements = 1;
 	if (pr->m_arrayRank)
 	  nElements *= pr->m_nItems;
 	if (pr->m_isSequence)
 	  nElements *= pr->m_sequenceLength; // can't be zero
-	fprintf(f, "%s%s%s   %2u => (%2zu, x\"%08zx\", %3zu, %3zu, %3zu, %3zu, %s %s %s %s)",
+#endif
+	fprintf(f, "%s%s%s   %2u => (%2zu, to_unsigned(%s_offset,32), %s_nbytes_1, %s%s, %3zu, %s, %s %s %s %s)",
 		last ? ", -- " : "", last ? last : "", last ? "\n" : "", n,
-		pr->m_nBits,
-		pr->m_offset,
-		pr->m_nBytes - 1 - (pr->m_isSequence ? pr->m_align : 0),
-		pr->m_stringLength,
-		pr->m_isSequence ? pr->m_align : 0,
-		nElements,
-		pr->m_isWritable ? "true, " : "false,",
-		pr->m_isReadable ? "true, " : "false,",
-		pr->m_isVolatile ? "true, " : "false,",
-		pr->m_isDebug    ? "true"  : "false");
-	last = pr->m_name.c_str();
+		pr.m_nBits,
+		pr.cname(), // offset
+		pr.cname(), // nbytes-1 (not including sequence header)
+		pr.m_baseType == OA::OCPI_String ? pr.cname() : "",
+		pr.m_baseType == OA::OCPI_String ? "_string_length" : "0",
+		pr.m_isSequence ? pr.m_align : 0,
+		nElements.c_str(),
+		pr.m_isWritable ? "true, " : "false,",
+		pr.m_isReadable ? "true, " : "false,",
+		pr.m_isVolatile ? "true, " : "false,",
+		pr.m_isDebug    ? "true"  : "false");
+	last = pr.m_name.c_str();
 	n++;
       }
     }
@@ -936,8 +967,8 @@ emitVhdlPackageConstants(FILE *f) {
   if (!m_noControl)
     fprintf(f,
 	    "  constant worker : ocpi.wci.worker_t := "
-	    "(work.%s_constants.ocpi_port_%s_MAddr_width, %zu, \"%s\");\n",
-	    m_implName, m_wci->pname(), rawBase, ops);
+	    "(work.%s_constants.ocpi_port_%s_MAddr_width, work.%s_constants.ocpi_sizeof_non_raw_properties, \"%s\");\n",
+	    m_implName, m_wci->pname(), m_implName, ops);
   return NULL;
 }
 
@@ -1062,7 +1093,7 @@ emitDefsHDL(bool wrap) {
 	    "\n"
 	    "-- Package with constant definitions for instantiating this worker\n"
 	    "package %s_constants is\n", m_implName);
-    bool first = true;
+    bool first = true, anyNonParam = false;
     for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++) {
       OU::Property &p = **pi;
       std::string decl, type;
@@ -1074,6 +1105,11 @@ emitDefsHDL(bool wrap) {
       if (p.m_arrayRank && p.m_arrayDimensionsExprs[0].length())
 	fprintf(f, "  constant %s_array_dimensions : dimensions_t(0 to %zu);\n",
 		p.m_name.c_str(), p.m_arrayRank-1);
+      if (!p.m_isRaw && (!p.m_isParameter || p.m_isReadable)) {
+	fprintf(f, "  constant %s_offset : natural;\n", p.m_name.c_str());
+	fprintf(f, "  constant %s_nbytes_1 : natural;\n", p.m_name.c_str());
+	anyNonParam = true;
+      }
       vhdlType(p, decl, type, false);
       if (decl.length() || p.m_isParameter) {
 	if (first) {
@@ -1101,6 +1137,8 @@ emitDefsHDL(bool wrap) {
 	  fprintf(f, "  constant %s : %s;\n", p.m_name.c_str(), type.c_str());
       }
     }
+    if (anyNonParam)
+      fprintf(f, "  constant ocpi_sizeof_non_raw_properties: natural;\n");
     for (unsigned i = 0; i < m_ports.size(); i++)
       m_ports[i]->emitRecordInterfaceConstants(f);
     fprintf(f,

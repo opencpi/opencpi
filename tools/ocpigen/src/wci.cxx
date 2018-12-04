@@ -313,11 +313,12 @@ emitInterfaceConstants(FILE *f, Language lang) {
   emitConstant(f, pref, "addr_width", ocp.MAddr.width, lang);
 }
 #endif
-// This cannot be a port method since it is needed when there are parameters
+// This cannot be a WCI port method since it is needed when there are parameters
 // with NO CONTROL INTERFACE
 void Worker::
 emitPropertyAttributeConstants(FILE *f, Language lang) {
   bool first = true;
+  size_t last_end = 0;
   for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++) {
     OU::Property &pr = **pi;
     if (first &&
@@ -327,6 +328,11 @@ emitPropertyAttributeConstants(FILE *f, Language lang) {
       fprintf(f, "  %s Attributes of properties determined by parameter expressions\n",
 	      hdlComment(lang));
       first = false;
+    }
+    if (!pr.m_isRaw && (!pr.m_isParameter || pr.m_isReadable)) {
+      emitConstant(f, pr.m_name, "offset", pr.m_offset, lang);
+      emitConstant(f, pr.m_name, "nbytes_1", pr.m_nBytes - 1 - (pr.m_isSequence ? pr.m_align : 0), lang);
+      last_end = pr.m_offset + pr.m_nBytes;
     }
     if (pr.m_baseType == OA::OCPI_String)
       emitConstant(f, pr.m_name, "string_length", pr.m_stringLength, lang);
@@ -345,6 +351,7 @@ emitPropertyAttributeConstants(FILE *f, Language lang) {
 		  pr.m_arrayDimensions[n]);
     }
   }
+  emitConstant(f, "ocpi", "sizeof_non_raw_properties", OU::roundUp(last_end, 4), lang);
 }
 
 void WciPort::
