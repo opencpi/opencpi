@@ -107,7 +107,7 @@ HdlToolNeedsSourceList_vivado=yes
 empty:=
 space:=$(empty) $(empty)
 
-VivadoRearrangePart=$(firstword $1)$(word 3,$1) $(word 2,$1)
+VivadoRearrangePart=$(word 1,$1) $(word 3,$1) $(word 2,$1)$(if $(word 4,$1), $(word 4,$1))
 HdlFullPart_vivado=$(if $1,$(subst $(space),-,$(call VivadoRearrangePart,$(subst -, ,$1))))
 
 ifeq ($(HdlMode),library)

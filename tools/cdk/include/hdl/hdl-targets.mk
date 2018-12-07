@@ -74,10 +74,12 @@ HdlTargets_zynq_ise:=$(foreach tgt,$(HdlTargets_zynq),$(tgt)_ise_alias)
 
 # Zynq UltraScale+ 9 EG - Vivado part needs to be fully specified to UltraScale
 # This part is used on the ZCU102 board
-HdlTargets_zynq_u9eg:=xczu9eg-ffvb1156-2-e
+HdlTargets_zynq_u9eg:=xczu9eg
+HdlDefaultTarget_zynq_u9eg:=xczu9eg-ffvb1156-2-e
 # Zynq UltraScale+ 28 DR - Vivado part needs to be fully specified to UltraScale
 # This part is used on the ZCU111 board
-HdlTargets_zynq_u28dr:=xczu28dr-ffvg1517-2-e
+HdlTargets_zynq_u28dr:=xczu28dr
+HdlDefaultTarget_zynq_u28dr:=xczu28dr-ffvg1517-2-e
 
 ###############################################################################
 # Altera targets
@@ -257,7 +259,8 @@ HdlGetFamily_core=$(call OcpiDbg,Entering HdlGetFamily_core($1,$2))$(strip \
 	             HdlFamily is ambiguous for '$(1)'. Choices are '$(HdlTargets_$(1))')),\
 	           $(or $(HdlTargets_$(1)),$(1)))))),$(strip \
 	  $(foreach f,$(HdlAllFamilies),\
-	     $(and $(filter $(call HdlGetTargetFromPart,$1),$(HdlTargets_$f)),$f))),$(strip \
+	     $(and $(or $(filter $1,$(HdlTargets_$f)),\
+	                $(filter $(call HdlGetTargetFromPart,$1),$(HdlTargets_$f))),$f))),$(strip \
 	  $(and $(filter $1,$(HdlAllPlatforms)), \
 	        $(call HdlGetFamily_core,$(call HdlGetTargetFromPart,$(HdlPart_$1))))),\
 	  $(warning The build target '$1' is not a family or a part in any family)),\

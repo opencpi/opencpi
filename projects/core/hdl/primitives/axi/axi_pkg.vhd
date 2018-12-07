@@ -27,10 +27,24 @@ library platform; use platform.platform_pkg.all;
 package axi_pkg is
 
 constant C_AXI_ADDR_WIDTH      : natural := 32; -- pinned at 32 in the AXI spec.
+
 constant C_M_AXI_GP_ID_WIDTH   : natural := 12;
 constant C_S_AXI_GP_ID_WIDTH   : natural := 6;
 constant C_S_AXI_GP_COUNT      : natural := 2;
 constant C_M_AXI_GP_COUNT      : natural := 2;
+
+constant C_M_AXI_HP_ID_WIDTH   : natural := 12; -- was 12 in axi
+constant C_S_AXI_HP_ID_WIDTH   : natural := 6;
+
+constant C_M_AXI_HP_DATA_WIDTH : natural := 32;
+constant C_S_AXI_HP_DATA_WIDTH : natural := 64;
+
+constant C_M_AXI_HP_COUNT      : natural := 2;
+constant C_S_AXI_HP_COUNT      : natural := 4;
+
+-------------------------------------------------------------------------------
+--GP slave
+-------------------------------------------------------------------------------
 -- Inputs to the s_axi_gp port of the PS
 type s_axi_gp_in_t is record
   ACLK    : std_logic;
@@ -79,6 +93,10 @@ type s_axi_gp_out_t is record
   RID     : std_logic_vector(C_S_AXI_GP_ID_WIDTH-1 downto 0);
 end record s_axi_gp_out_t;
 type s_axi_gp_out_array_t is array (natural range <>) of s_axi_gp_out_t;
+
+-------------------------------------------------------------------------------
+--GP master
+-------------------------------------------------------------------------------
 -- Inputs to the m_axi_gp port of the PS
 type m_axi_gp_in_t is record
   ACLK    : std_logic;
@@ -132,9 +150,9 @@ type m_axi_gp_out_array_t is array (natural range <>) of m_axi_gp_out_t;
 -- the intention is to make them fairly generic at some point
 -- Signals are ordered according to the ARM/AXI spec.
 -- Outputs from the PS's s_axi_hp ports
-constant C_S_AXI_HP_ID_WIDTH   : natural := 6;
-constant C_S_AXI_HP_DATA_WIDTH : natural := 64;
-constant C_S_AXI_HP_COUNT      : natural := 4;
+-------------------------------------------------------------------------------
+--HP slave
+-------------------------------------------------------------------------------
 --type s_axi_hp_out_t is record
 --  ARESETn : std_logic; -- in the zynq AXI_HP, the PS as slave drives reset, async
 --  AWREADY : std_logic;
@@ -273,11 +291,114 @@ type s_axi_hp_out_t is record
 end record s_axi_hp_out_t;
 type s_axi_hp_out_array_t is array (natural range <>) of s_axi_hp_out_t;
 
+-------------------------------------------------------------------------------
+--HP master
+-------------------------------------------------------------------------------
+type m_axi_hp_out_aw_t is record
+  ID           : std_logic_vector(C_M_AXI_HP_ID_WIDTH-1 downto 0);
+  ADDR         : std_logic_vector(C_AXI_ADDR_WIDTH-1 downto 0);
+  LEN          : std_logic_vector(3 downto 0);
+  SIZE         : std_logic_vector(2 downto 0); -- bit 2 unused, but in PS7 interface
+  BURST        : std_logic_vector(1 downto 0);
+  LOCK         : std_logic_vector(1 downto 0);
+  CACHE        : std_logic_vector(3 downto 0);
+  PROT         : std_logic_vector(2 downto 0);
+  VALID        : std_logic;
+  QOS          : std_logic_vector(3 downto 0);
+  ISSUECAP1_EN : std_logic;
+end record m_axi_hp_out_aw_t;
+type m_axi_hp_in_aw_t is record
+  READY : std_logic;
+  --COUNT : std_logic_vector(5 downto 0);
+  COUNT : std_logic_vector(3 downto 0);
+end record m_axi_hp_in_aw_t;
+type m_axi_hp_out_w_t is record
+  ID     : std_logic_vector(C_M_AXI_HP_ID_WIDTH-1 downto 0);
+  DATA   : std_logic_vector(C_M_AXI_HP_DATA_WIDTH-1 downto 0);
+  STRB   : std_logic_vector((C_M_AXI_HP_DATA_WIDTH/8)-1 downto 0);
+  LAST   : std_logic;
+  VALID  : std_logic;
+end record m_axi_hp_out_w_t;
+type m_axi_hp_in_w_t is record
+  READY  : std_logic;
+  COUNT  : std_logic_vector(7 downto 0);
+end record m_axi_hp_in_w_t;
+type m_axi_hp_out_ar_t is record
+  ID           : std_logic_vector(C_M_AXI_HP_ID_WIDTH-1 downto 0);
+  ADDR         : std_logic_vector(C_AXI_ADDR_WIDTH-1 downto 0);
+  LEN          : std_logic_vector(3 downto 0);
+  SIZE         : std_logic_vector(2 downto 0); -- bit 2 unused, but in PS7 interface
+  BURST        : std_logic_vector(1 downto 0);
+  LOCK         : std_logic_vector(1 downto 0);
+  CACHE        : std_logic_vector(3 downto 0);
+  PROT         : std_logic_vector(2 downto 0);
+  VALID        : std_logic;
+  QOS          : std_logic_vector(3 downto 0);
+  ISSUECAP1_EN : std_logic; -- when true, look at the PS register to throttle
+end record m_axi_hp_out_ar_t;
+type m_axi_hp_in_ar_t is record
+  READY : std_logic;
+  --COUNT : std_logic_vector(2 downto 0);
+  COUNT : std_logic_vector(3 downto 0);
+end record m_axi_hp_in_ar_t;
+type m_axi_hp_out_r_t is record
+  READY  : std_logic;
+end record m_axi_hp_out_r_t;
+type m_axi_hp_in_r_t is record
+  ID     : std_logic_vector(C_M_AXI_HP_ID_WIDTH-1 downto 0);
+  DATA   : std_logic_vector(C_M_AXI_HP_DATA_WIDTH-1 downto 0);
+  RESP   : std_logic_vector(1 downto 0);
+  LAST   : std_logic;
+  VALID  : std_logic;
+  COUNT  : std_logic_vector(7 downto 0);
+end record m_axi_hp_in_r_t;
+type m_axi_hp_out_b_t is record
+  READY  : std_logic;
+end record m_axi_hp_out_b_t;
+type m_axi_hp_in_b_t is record
+  ID     : std_logic_vector(C_M_AXI_HP_ID_WIDTH-1 downto 0);
+  RESP   : std_logic_vector(1 downto 0);
+  VALID  : std_logic;
+end record m_axi_hp_in_b_t;
+
+type m_axi_hp_out_t is record
+  ARESETN : std_logic; -- In the zynq AXI_HP, the *PS* as slave supplies the reset
+  aw : m_axi_hp_out_aw_t;
+  ar : m_axi_hp_out_ar_t;
+  w  : m_axi_hp_out_w_t;
+  r  : m_axi_hp_out_r_t;
+  b  : m_axi_hp_out_b_t;
+end record m_axi_hp_out_t;
+type m_axi_hp_out_array_t is array (natural range <>) of m_axi_hp_out_t;
+
+type m_axi_hp_in_t is record
+  ACLK    : std_logic; -- In the zynq AXI_HP, the PL as master supplies the clock
+  aw : m_axi_hp_in_aw_t;
+  ar : m_axi_hp_in_ar_t;
+  w  : m_axi_hp_in_w_t;
+  r  : m_axi_hp_in_r_t;
+  b  : m_axi_hp_in_b_t;
+end record m_axi_hp_in_t;
+type m_axi_hp_in_array_t is array (natural range <>) of m_axi_hp_in_t;
+
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+
 subtype  Resp_t IS std_logic_vector(1 downto 0);
 constant Resp_OKAY   : Resp_t := "00";
 constant Resp_EXOKAY : Resp_t := "01";
 constant Resp_SLVERR : Resp_t := "10";
 constant Resp_DECERR : Resp_t := "11";
+
+component m_gp2hp is
+  port(
+    gp_in  : in  m_axi_gp_in_t;
+    gp_out : out m_axi_gp_out_t;
+    hp_in  : out m_axi_hp_in_t;
+    hp_out : in  m_axi_hp_out_t
+    );
+end component m_gp2hp;
 
 component axi2cp is
   port(
