@@ -23,6 +23,7 @@
 # We do not need error out to arch packages and we also do not need
 # to generate dependices on the so files we have
 %define _binaries_in_noarch_packages_terminate_build   0
+%define __strip %{RPM_CROSS_COMPILE}strip
 AutoReqProv: no
 Name:           %{RPM_NAME}
 Requires(pre):  opencpi

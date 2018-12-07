@@ -57,8 +57,8 @@ mkdir -p $rpm_build_dir/SOURCES
 cp -r $platform_dir/ $rpm_build_dir/SOURCES/
 set -o pipefail
 eval ${SPOOF_HOSTNAME}
-# If rcc platform is not empty append it to the name
-[ -n $hdl_rcc_platform ] && name=$name-$hdl_rcc_platform
+# If rcc platform is not empty append it to the name and source ocpitarget.sh to get OCPI_TARGET_CROSS_COMPILE
+[ -n $hdl_rcc_platform ] && name=$name-$hdl_rcc_platform && source $OCPI_CDK_DIR/scripts/ocpitarget.sh $hdl_rcc_platform
 rpmbuild -bb packaging/hw.spec \
   --define="RPM_BASENAME       $base"\
   --define="RPM_NAME           $name"\
@@ -67,6 +67,7 @@ rpmbuild -bb packaging/hw.spec \
   --define="RPM_HASH           $hash" \
   --define="RPM_PLATFORM       $platform" \
   --define="RPM_CROSS          $cross" \
+  --define="RPM_CROSS_COMPILE  ${OCPI_TARGET_CROSS_COMPILE:--}" \
   --define="_topdir            $rpm_build_dir"\
   --define="_build_name_fmt    %%{NAME}-%%{VERSION}-%%{RELEASE}.%%{ARCH}.rpm"\
   2>&1 | tee build-rpm.log

@@ -16,13 +16,13 @@
 -- You should have received a copy of the GNU Lesser General Public License
 -- along with this program. If not, see <http://www.gnu.org/licenses/>.
 
- ------------------------------------------------------------------------------ 
+ ------------------------------------------------------------------------------
  --GPS UART Device Worker Source Code
 
  --File: gps_uart.vhd
 
- --Description: 
- --This device worker will implement a UART to receive NMEA position data from 
+ --Description:
+ --This device worker will implement a UART to receive NMEA position data from
  --a GPS IC
  -------------------------------------------------------------------------------
 library IEEE; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;
@@ -30,7 +30,7 @@ library ocpi; use ocpi.types.all; -- remove this to avoid all ocpi name collisio
 --library unisim;
 --use unisim.vcomponents.all;
 
-architecture rtl of gps_uart_worker is 
+architecture rtl of gps_uart_worker is
   ------------------------------------------------------------------------------
   -- Constants
   -- Extracted from uart_to_bus.vhd from EMBEDDED framework repo
@@ -39,45 +39,45 @@ architecture rtl of gps_uart_worker is
   -- Received data will be sampled 16 times per baud counting from detection of the
   -- Start Bit (First Hi-to-Low transition).
   --
-  -- The Baud Counter counts 50MHz clock cycles and clears when it reaches 1/16th baud.
-  -- This will occur after 50,000,000 / (16 * Baud Rate) clocks.
+  -- The Baud Counter counts 100MHz clock cycles and clears when it reaches 1/16th baud.
+  -- This will occur after 100,000,000 / (16 * Baud Rate) clocks.
   --
   -- Set BAUD_CNT_MAX as follows to achieve various baud rates:
   --
-  -- Desired    50M Clks  50M Clks  Achieved    Percent
-  -- Baud Rate  Actual    Rounded   Baud Rate   Error     BAUD_CNT_MAX
-  -- =========  ========  ========  ==========  ========  ============
-  -- 110        28409.09  28409     110.000     +0.0003%  28408
-  -- 300        10416.67  10417     299.990     -0.0032%  10416
-  -- 600        5208.33   5208      600.038     +0.0064%  5207
-  -- 1200       2604.17   2604      1200.077    +0.0064%  2603
-  -- 2400       1302.08   1302      2400.154    +0.0064%  1301
-  -- 4800       651.04    651       4800.307    +0.0064%  650
-  -- 9600       325.52    326       9585.890    -0.1470%  325
-  -- 14400      217.01    217       14400.922   +0.0064%  216
-  -- 19200      162.76    163       19171.779   -0.1470%  162
-  -- 38400      81.38     81        38580.247   +0.4694%  80
-  -- 57600      54.25     54        57870.370   +0.4694%  53
-  -- 115200     27.13     27        115740.741  +0.4694%  26
-  -- 128000     24.41     24        130208.333  +1.7253%  23
-  -- 256000     12.21     12        260416.667  +1.7253%  11
+  -- Desired    100M Clks  100M Clks  Achieved    Percent
+  -- Baud Rate  Actual     Rounded    Baud Rate   Error     BAUD_CNT_MAX
+  -- =========  =========  =========  ==========  ========  ============
+  -- 110        56818.18   56818      110.000     +0.0003%  56817
+  -- 300        20833.33   20833      300.005     +0.0016%  20832
+  -- 600        10416.67   10417      599.981     -0.0032%  10416
+  -- 1200       5208.33    5208       1200.077    +0.0064%  5207
+  -- 2400       2604.17    2604       2400.154    +0.0064%  2603
+  -- 4800       1302.08    1302       4800.307    +0.0064%  1301
+  -- 9600       651.04     651        9600.614    +0.0064%  650
+  -- 14400      434.03     434        14400.922   +0.0064%  433
+  -- 19200      325.52     326        19171.779   -0.1470%  325
+  -- 38400      162.76     163        38343.558   -0.1470%  162
+  -- 57600      108.51     109        57339.450   -0.4523%  108
+  -- 115200     54.25      54         115740.741  +0.4694%  53
+  -- 128000     48.83      49         127551.020  -0.3508%  48
+  -- 256000     24.41      24         260416.667  +1.7253%  23
 
   -- BAUD_CNT_MAX Setting
   --
-  -- Set to floor( {Clock Rate} / ( 16*{Baud Rate} ) )
+  -- Set to round( {Clock Rate} / ( 16*{Baud Rate} ) )
   --
   -- 9600 baud for hw / 115200 for sim
   --
-  -- 50.00 MHz Clock  |  325 (hw)  |  26 (sim)
-  -- 30.72 MHz Clock  |  199 (hw)  |  15 (sim)
+  -- 100.00 MHz Clock  |  650 (hw)  |  53 (sim)
+  -- 50.00 MHz Clock   |  325 (hw)  |  26 (sim)
   --
 
-  constant BAUD_CNT_MAX : positive := 325;
+  constant BAUD_CNT_MAX : positive := 650;
 
   -- Set the Baud Counter Width. 16 bits is sufficient for all modes listed above
 
   constant BAUD_CNT_WIDTH : positive := 16;
-  
+
   -----------------------------------------------------------------------------
   -- Component Declarations
   -----------------------------------------------------------------------------
@@ -121,7 +121,7 @@ architecture rtl of gps_uart_worker is
   signal props_out_nmea_in : std_logic_vector(7 downto 0);
   signal props_out_byte_count : std_logic_vector(31 downto 0);
 begin
-  
+
   -- Type conversion for GPS IF outputs
   props_out.nmea_in <= char_t(props_out_nmea_in);
 
@@ -158,7 +158,7 @@ begin
 
   props_out.byte_count <= ulong_t(props_out_byte_count);
   rx_rden <= props_in.nmea_in_read when (rx_buff_nempty = '1') else '0';
-  
+
   tx_uart : uart_tx_rmm
     generic map (
       SAMPS_PER_BAUD => 16,
@@ -171,5 +171,5 @@ begin
       SAMP_EN => baud_en,
       DOUT    => tx,
       READY   => open);
-  
+
 end rtl;
