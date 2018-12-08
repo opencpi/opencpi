@@ -166,26 +166,27 @@ case $type in
           dynamiclibs=`echo $d/lib/*.{so,so.*,dylib}`
           staticlibs=`echo $d/lib/*.a`
           pfound=
-          [ -z "$cross" -a -d $d/bin ] && find $d/bin ! -type d &&
-            find $d/bin -type d -exec echo {}/ \; && pfound=1
-          [ -d $d/include ] && find $d/include ! -type d &&
-            find $d/include -type d -exec echo {}/ \; && pfound=1
+          [ -z "$cross" -a -d $d/bin ] && find -L $d/bin ! -type d &&
+            find -L $d/bin -type d -exec echo {}/ \; && pfound=1
+          [ -d $d/include ] && find -L $d/include ! -type d &&
+            find -L $d/include -type d -exec echo {}/ \; && pfound=1
           # Prereq libraries are in the single lib dir for the platform
           # [ -n "$staticlibs" ] && pfound=1 && {
           #  for i in $staticlibs; do echo $i; done
           #  [ -z "$dynamiclibs" ] && find $d/lib -type d -exec echo {}/ \;
           # }
           # [ -z "$dynamiclibs" -a -n "$pfound" ] && echo $d/
-          [ -n "$pfound" ] && found=1
+          [ -n "$pfound" ] && echo $d/ && found=1
         elif [ -z "$cross" ] && [[ $d == */include ]]; then
           found=1
           echo $d
-          find $d -type d -exec echo {}/ \;
+          find -L $d -type d -exec echo {}/ \;
         fi
       done
-      [ -z "$dynamiclibs" -a -n "$found" ] && echo $pdir/
+      [ -n "$found" -a -z "$cross" ] && echo $pdir/
     done
     if [ -z "${cross}" ]; then
+      echo prerequisites/
       # emit project stuff that are git repo items
       git ls-files project-registry | sed 's/$/@/'
       echo project-registry/

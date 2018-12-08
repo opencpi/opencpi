@@ -191,6 +191,19 @@ installed. It also provides a useful development utilities.
       ! $oxml check $r && $oxml check $a && $oxml get $a | $oxml add $r - \
     done \
     %{nil}
+  # The default __debug_install_post just calls find-debuginfo.sh, but we patch it because
+  # it assumes that the build happens in RPM_BUILD_DIR/RPM_NAME-RPM_VERSION-RPM_RELEASE
+  # So we patch the script making two changes:
+  # 1. Set RPM_BUILD_DIR to our top level sourcedir, where our sources actually live
+  # 2. Tell it to put debug sources in /usr/src/debug/opencpi-RPM_VERSION
+  # Note that all the arguments to find-debuginfo.sh have not changed from __debug_install_post
+  %global __debug_install_post \
+    sed 's=/usr/src/debug=&/opencpi-%{RPM_VERSION}=' %{_rpmconfigdir}/find-debuginfo.sh | \
+    RPM_BUILD_DIR=%{RPM_OPENCPI} bash -s -- \\\
+      %{?_missing_build_ids_terminate_build:--strict-build-id} \\\
+      %{?_include_minidebuginfo:-m} %{?_find_debuginfo_dwz_opts} %{?_find_debuginfo_opts} \\\
+      "%{_builddir}/%{?buildsubdir}"\
+      %{nil}
   %debug_package
 %endif
 

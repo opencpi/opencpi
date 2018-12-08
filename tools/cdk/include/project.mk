@@ -233,6 +233,7 @@ cleanapplications:
 # needs to be accessible via imports for projects other than core
 # (e.g. for cleaning rcc)
 clean: cleancomponents cleanapplications cleanrcc cleanhdl cleanexports cleanimports
+	rm -r -f artifacts
 
 # Iterate through symlinks in imports. If the link points to the project registry dir,
 # it is the CDK, or is a broken link, it can be cleaned/removed. If the imports directory
@@ -245,7 +246,7 @@ cleanimports:
 	fi
 
 cleanexports:
-	rm -r -f exports artifacts
+	rm -r -f exports
 
 cleaneverything: clean
 	find . -name '*~' -exec rm {} \;

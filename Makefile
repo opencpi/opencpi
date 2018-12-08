@@ -236,7 +236,7 @@ cleanprerequisites:
 # Unfortunately, we need to know the order here.
 Projects=core assets inactive
 ProjectGoals=cleanhdl cleanrcc cleanocl rcc ocl hdl applications run runtest hdlprimitives \
-             components cleancomponents test
+             hdlportable components cleancomponents test
 # These are not done in parallel since we do not know the dependencies
 DoProjects=set -e; $(foreach p,$(Projects),\
                      echo Performing $1 on project $p && \
