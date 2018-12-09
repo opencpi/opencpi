@@ -90,6 +90,7 @@ namespace {
       NULL;
   }
   Workers workers;
+  unsigned matchedWorkers = 0; // count them even if they are not built or usable
   WorkersIter findWorker(const char *name, Workers &ws) {
     for (WorkersIter wi = ws.begin(); wi != ws.end(); ++wi)
       if (!strcasecmp(name, (*wi)->cname()))
@@ -270,6 +271,7 @@ namespace {
 	fprintf(stderr,
 		"Found worker for %s:  %s\n", matchSpec ? "this spec" : "emulating this worker",
 		wname);
+      matchedWorkers++;
       if (missing) {
 	if (verbose)
 	  fprintf(stderr, "Skipping worker \"%s\" since it isn't built for any target\n", wname);
@@ -1239,7 +1241,7 @@ namespace {
       if (len == verify.size())
 	verify += "echo '  Verification was not run since there are no output ports.'\n";
       verify += "exit $exitval\n";
-      return OU::string2File(verify.c_str(), file.c_str(), false, true);
+      return OU::string2File(verify.c_str(), file.c_str(), false, true, true);
     }
     const char *
     generateCaseXml(FILE *out) {
@@ -1578,8 +1580,17 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
   // ================= 3. Get/collect the worker parameter configurations
   // Now "workers" has workers with parsed build files.
   // So next we globally enumerate PCs independent of them, that might be dependent on them.
-  if (workers.empty()) // AV-3369 (and possibly others)
+  if (workers.empty()) { // AV-3369 (and possibly others)
+    if (matchedWorkers) {
+      const char *e =
+	"Workers were found that matched the spec, but non were built, so no tests were generated";
+      if (verbose)
+	fprintf(stderr, "%s\n", e);
+      ocpiInfo("%s", e);
+      return NULL;
+    }
     return OU::esprintf("There are currently no valid workers implementing %s", specName.c_str());
+  }
   // But first!... we create the first one from the defaults.
   wFirst = *workers.begin();
 #if 0

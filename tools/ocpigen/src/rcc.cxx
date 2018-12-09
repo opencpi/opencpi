@@ -1636,6 +1636,11 @@ emitRccCppImpl(FILE *f) {
                       m_isProducer ? "" : "const ", a.c_str(),
                       m->m_name.c_str(), m_isProducer ? "" : "const ",
                       a.c_str());
+            else if (m->m_baseType == OA::OCPI_String)
+              fprintf(f,
+                      "      %s%s *%s() %s{ return m_%sArg.data(); }\n",
+                      m_isProducer ? "" : "const ", type.c_str(), m->m_name.c_str(),
+                      m_isProducer ? "" : "const ", a.c_str());
             else
               fprintf(f,
                       "      %s%s &%s() %s{ return *m_%sArg.data(); }\n",

@@ -58,11 +58,11 @@ namespace OCPI {
       if ((saddr = getenv("OCPI_SERVER_ADDRESSES")))
 	for (OU::TokenIter li(saddr); li.token(); li.next())
 	  useServer(li.token(), verbose);
-      if ((saddr = getenv("OCPI_SERVER_ADDRESS_FILE"))) {
+      if ((saddr = getenv("OCPI_SERVER_ADDRESSES_FILE"))) {
 	std::string addrs;
 	const char *err = OU::file2String(addrs, saddr, ' ');
 	if (err)
-	  throw OU::Error("The file indicated by the OCPI_SERVER_ADDRESS_FILE environment "
+	  throw OU::Error("The file indicated by the OCPI_SERVER_ADDRESSES_FILE environment "
 			  "variable, \"%s\", cannot be opened: %s", saddr, err);
 	for (OU::TokenIter li(addrs); li.token(); li.next())
 	  useServer(li.token(), verbose);

@@ -70,7 +70,7 @@ include $(OCPI_CDK_DIR)/include/ocl/ocl-make.mk
 $(call OcpiIncludeAssetAndParent,..,,error)
 
 # This is to allow the spec to be found and any protocols it depends on
-ifneq ($(if $(MAKECMDGOALS),$(filter build all generate generated,$(MAKECMDGOALS)),1),)
+ifneq ($(if $(MAKECMDGOALS),$(filter test build all generate generated,$(MAKECMDGOALS)),1),)
   $(call OcpiSetXmlIncludes)
 endif
 
@@ -96,7 +96,7 @@ TESTXML:=$(CwdName)-test.xml
 $(CASEXML): $(TESTXML)
 	$(AT)echo ========= Generating test assemblies, inputs and applications for $(CwdName):
 	$(AT)OCPI_ALL_PLATFORMS="$(strip $(HdlAllPlatforms:%=%.hdl) $(RccAllPlatforms:%=%.rcc) $(OclAllPlatforms:%=%.ocl))" \
-	     $(call OcpiGen, -v -T $<) && chmod a+x gen/applications/*.sh
+	     $(call OcpiGen, -v -T $<)
 
 -include gen/*.deps
 generate: $(CASEXML)
@@ -120,7 +120,12 @@ build: generate
 #        so we don't (here or elsewhere) have to recompute it
 prepare:
 	$(AT)echo ======== Preparing for execution on available platforms with available built workers and assemblies for $(CwdName):
-	$(AT)$(OCPI_CDK_DIR)/scripts/testrunprep.sh $(call FindRelative,$(realpath $(OCPI_PROJECT_DIR)),$(realpath $(CURDIR)))
+	$(AT)if [ -d gen/applications ]; then \
+	       $(OCPI_CDK_DIR)/scripts/testrunprep.sh \
+                    $(call FindRelative,$(realpath $(OCPI_PROJECT_DIR)),$(realpath $(CURDIR))); \
+	     else \
+	       echo No tests generated here so preparation skipped.; \
+	     fi
 
 runnoprepare:
 	$(AT)echo ======== Executing tests on available or specified platforms for $(CwdName):
@@ -135,7 +140,11 @@ runonly: prepare runnoprepare
 # run is generic (not just for tests)
 run: prepare
 	$(AT)echo ======== Running and verifying test outputs on available platforms for $(CwdName):
-	$(AT)./run/runtests.sh run verify $(and $(View),view)
+	$(AT)if [ -d gen/applications ]; then \
+	       ./run/runtests.sh run verify $(and $(View),view); \
+	     else \
+	       echo No tests generated here so none run.; \
+	     fi
 
 # only for verify only so we can use wildcard
 RunPlatforms=$(foreach p,$(filter-out $(ExcludePlatforms),$(notdir $(wildcard run/*))),\
