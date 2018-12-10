@@ -35,7 +35,7 @@ entity zynq_ultra_ps_e is
     );
 end entity zynq_ultra_ps_e;
 architecture rtl of zynq_ultra_ps_e is
-  --subtype vec_15_t is std_logic_vector(15 downto 0);
+  -- Various SLV arrays of different SLV widths for use below
   type vec_49_array_t is array (natural range <>) of std_logic_vector(48 downto 0);
   type vec_40_array_t is array (natural range <>) of std_logic_vector(39 downto 0);
   type vec_32_array_t is array (natural range <>) of std_logic_vector(31 downto 0);
@@ -44,6 +44,10 @@ architecture rtl of zynq_ultra_ps_e is
   type vec_6_array_t is array (natural range <>) of std_logic_vector(5 downto 0);
   type vec_4_array_t is array (natural range <>) of std_logic_vector(3 downto 0);
 
+  -- Some AXI signals have bit-width mismatches between the UltraScale PS8 and
+  -- the OpenCPI AXI primitive. These intermediate signals below are used to
+  -- compensate for the mismatches by leaving higher-order unused signals open
+  -- or tied to '0'
   signal maxigp_awids   : vec_16_array_t(0 to C_M_AXI_HP_COUNT-1);
   signal maxigp_awaddrs : vec_40_array_t(0 to C_M_AXI_HP_COUNT-1);
   signal maxigp_awlens  : vec_8_array_t (0 to C_M_AXI_HP_COUNT-1);
@@ -66,7 +70,7 @@ architecture rtl of zynq_ultra_ps_e is
 
 begin
 
-  -- tie unused signals to '0'
+  -- tie higher-order unused signals to '0' and connect only needed ones
   m : for i in 0 to C_M_AXI_HP_COUNT-1 generate
     m_axi_hp_out(i).AW.ID <= maxigp_awids(i)(11 downto 0);
     m_axi_hp_out(i).AR.ID <= maxigp_arids(i)(11 downto 0);
@@ -80,22 +84,20 @@ begin
   end generate;
 
   s : for i in 0 to C_S_AXI_HP_COUNT-1 generate
-
     s_axi_hp_out(i).AR.COUNT <= saxigp_racounts(i)(2 downto 0);
     s_axi_hp_out(i).AW.COUNT(5 downto 4) <= (others => '0');
-
     saxigp_awaddrs(i)(31 downto 0)  <= s_axi_hp_in(0).AW.ADDR;
     saxigp_awaddrs(i)(48 downto 32) <= (others =>'0');
     saxigp_araddrs(i)(31 downto 0)  <= s_axi_hp_in(0).AR.ADDR;
     saxigp_araddrs(i)(48 downto 32) <= (others =>'0');
-
     saxigp_awlens(i)(3 downto 0)  <= s_axi_hp_in(0).AW.LEN;
     saxigp_awlens(i)(7 downto 4) <= (others =>'0');
     saxigp_arlens(i)(3 downto 0)  <= s_axi_hp_in(0).AR.LEN;
     saxigp_arlens(i)(7 downto 4) <= (others =>'0');
   end generate;
 
-  ps : zynq_ultra_ps_e_v3_2_1
+  -- Connect the Verilog PS8 wrapper to the VHDL axi records to abstract the interface
+  ps : zynq_ultra_ps_e_v3_2_1_zynq_ultra_ps_e
     generic map(
       C_MAXIGP0_DATA_WIDTH => 32,
       C_MAXIGP1_DATA_WIDTH => 32,

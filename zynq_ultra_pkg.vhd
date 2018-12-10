@@ -15,8 +15,8 @@ type pl2ps_t is record
   DEBUG        : std_logic_vector(31 downto 0); --     FTMT_F2P_DEBUG
 end record pl2ps_t;
 
-
-component zynq_ultra_ps_e_v3_2_1 is
+-- This is the VHDL component with an underlying Verilog implementation
+component zynq_ultra_ps_e_v3_2_1_zynq_ultra_ps_e is
   generic (
     C_MAXIGP0_DATA_WIDTH : integer := 32;
     C_MAXIGP1_DATA_WIDTH : integer := 32;
