@@ -30,12 +30,11 @@ namespace OA = OCPI::API;
 int
 main(int, char **) {
   try {
-    OA::PValue pvs[] = { OA::PVString("model", "=rcc"), OA::PVBool("verbose", true), OA::PVBool("dump", true), OA::PVEnd };
+    OA::PValue pvs[] = { OA::PVString("model", "=rcc"), OA::PVBool("verbose", true), OA::PVBool("dump", true),
+			 OA::PVEnd };
     OA::Application app("<application>"
-			"  <instance component='local.copy' worker='copy_cc' externals='true'>"
-			"    <property name='ocpi_debug' value='0'/>"
-			"  </instance>"
-			//			"  <external instance='copy' port='in' buffersize='4000'/>"
+			"  <instance component='local.copy' worker='copy' externals='true' connect='copy1'/>"
+			"  <instance component='local.copy' worker='copy_cc'externals='true'/>"
 		        "</application>", pvs);
     app.initialize();
     OA::ExternalPort
