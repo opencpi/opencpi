@@ -74,11 +74,13 @@ HdlTargets_zynq_ise:=$(foreach tgt,$(HdlTargets_zynq),$(tgt)_ise_alias)
 
 # Zynq UltraScale+ 9 EG - Vivado part needs to be fully specified to UltraScale
 # This part is used on the ZCU102 board
-HdlTargets_zynq_u9eg:=xczu9eg
-HdlDefaultTarget_zynq_u9eg:=xczu9eg-ffvb1156-2-e
+#HdlTargets_zynq_u9eg:=xczu9eg
+#HdlDefaultTarget_zynq_u9eg:=xczu9eg-ffvb1156-2-e
+#HdlTargets_zynq_u9eg:=xczu9eg
+#HdlDefaultTarget_zynq_u9eg:=xczu9eg-ffvb1156-2-e
 # Zynq UltraScale+ 28 DR - Vivado part needs to be fully specified to UltraScale
 # This part is used on the ZCU111 board
-HdlTargets_zynq_u28dr:=xczu28dr
+HdlTargets_zynq_u28dr:=xczu28dr xczu9eg
 HdlDefaultTarget_zynq_u28dr:=xczu28dr-ffvg1517-2-e
 
 ###############################################################################
