@@ -54,7 +54,7 @@ HdlTopTargets:=xilinx altera modelsim # icarus # verilator
 ###############################################################################
 # Xilinx targets
 ###############################################################################
-HdlTargets_xilinx:=isim virtex5 virtex6 spartan3adsp spartan6 zynq_ise zynq zynq_u9eg zynq_u28dr xsim
+HdlTargets_xilinx:=isim virtex5 virtex6 spartan3adsp spartan6 zynq_ise zynq zynq_ultra xsim
 
 HdlTargets_virtex5:=xc5vtx240t xc5vlx50t xc5vsx95t xc5vlx330t xc5vlx110t
 HdlTargets_virtex6:=xc6vlx240t
@@ -72,16 +72,10 @@ HdlTargets_zynq_ise:=$(foreach tgt,$(HdlTargets_zynq),$(tgt)_ise_alias)
 # compiling any zynq parts unless given an HdlExactPart
 #HdlDefaultTarget_zynq_ise:=xc7z020_ise_alias
 
-# Zynq UltraScale+ 9 EG - Vivado part needs to be fully specified to UltraScale
-# This part is used on the ZCU102 board
-#HdlTargets_zynq_u9eg:=xczu9eg
-#HdlDefaultTarget_zynq_u9eg:=xczu9eg-ffvb1156-2-e
-#HdlTargets_zynq_u9eg:=xczu9eg
-#HdlDefaultTarget_zynq_u9eg:=xczu9eg-ffvb1156-2-e
-# Zynq UltraScale+ 28 DR - Vivado part needs to be fully specified to UltraScale
-# This part is used on the ZCU111 board
-HdlTargets_zynq_u28dr:=xczu28dr xczu9eg
-HdlDefaultTarget_zynq_u28dr:=xczu28dr-ffvg1517-2-e
+# Zynq UltraScale+ parts
+HdlTargets_zynq_ultra:=xczu28dr xczu9eg
+# Zynq UltraScale+ chips require full part to be specified
+HdlDefaultTarget_zynq_ultra:=xczu28dr-ffvg1517-2-e
 
 ###############################################################################
 # Altera targets
@@ -124,8 +118,8 @@ HdlToolSet_virtex6:=xst
 HdlToolSet_spartan6:=xst
 HdlToolSet_zynq_ise:=xst
 HdlToolSet_zynq:=vivado
-HdlToolSet_zynq_u9eg:=vivado
-HdlToolSet_zynq_u28dr:=vivado
+#HdlToolSet_zynq_u9eg:=vivado
+HdlToolSet_zynq_ultra:=vivado
 HdlToolSet_verilator:=verilator
 HdlToolSet_icarus:=icarus
 HdlToolSet_stratix4:=quartus
