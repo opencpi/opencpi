@@ -1199,7 +1199,7 @@ begin
       ps_pl_trigger_2 => open,
       ps_pl_trigger_3 => open,
       ftm_gpo => open, --[31:0]
-      ftm_gpi => (others => '0'), --[31:0]
+      ftm_gpi => ps_in.debug, -- (others => '0'), --[31:0]
 -- irq
       pl_ps_irq0 => (others => '0'), --[(C_NUM_F2P_0_INTR_INPUTS-1):0]
       pl_ps_irq1 => (others => '0'), --[(C_NUM_F2P_1_INTR_INPUTS-1):0]
@@ -1208,7 +1208,7 @@ begin
 
 --resets using gpio
 
-      pl_resetn0 => open,
+      pl_resetn0 => ps_out.FCLKRESET_N,
       pl_resetn1 => open,
       pl_resetn2 => open,
       pl_resetn3 => open,
@@ -1324,10 +1324,10 @@ begin
 
 --For Clock buffering
 --FCLK
-      pl_clk3 => open,
-      pl_clk2 => open,
-      pl_clk1 => open,
-      pl_clk0 => open,
+      pl_clk3 => ps_out.FCLK(3),
+      pl_clk2 => ps_out.FCLK(2),
+      pl_clk1 => ps_out.FCLK(1),
+      pl_clk0 => ps_out.FCLK(0),
 
 --------------------------
 -- ACE interface allotment
