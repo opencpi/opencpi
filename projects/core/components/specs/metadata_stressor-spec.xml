@@ -1,0 +1,43 @@
+<ComponentSpec>
+
+  <Property Name="enable_give_lsfr" Type="bool" Readable="true" Writable="true" Default="false"
+            Description="'true' : MSB of lfsr-15 drives 'give',
+                 'false' : use give_duty to set the give duty-cycle."/>
+
+  <Property Name="enable_take_lsfr" Type="bool" Readable="true" Writable="true" Default="false"
+            Description="'true'  : MSB of lfsr-7 drives the 'take',
+                  'false' : use take_duty to set the take duty-cycle."/>
+
+  <Property Name="give_duty" Type="ushort" Readable="true" Writable="true" Default="1"
+            Description="Set the duty cycle for output port 'give'
+                1 - constant, 2 (toggle off/on), 3 (1/on, 2/off), 4 (1/on, 3/off)"/>
+
+  <Property Name="take_duty" Type="ushort" Readable="true" Writable="true" Default="1"
+           Description="Set the duty cycle for input port 'take'
+                 1 - constant, 2 (toggle off/on), 3 (1/on, 2/off), 4 (1/on, 3/off)"/>
+
+  <Property Name="mode" Type="enum" Readable="true" Writable="true" Enums="bypass, metadata, data, full"
+            Default="bypass" Description="Sets the operating mode of the worker.
+            Bypass: worker is bypassed entirely.
+            Data: metadata is passed through unchanged but data will have no-ops
+               inserted based on enable_take_lsfr or take_duty.
+            Metadata: metadata will cycle through all possible valid combinations,
+               but data will pass through unchanged (ex. it receives a no-op, it passes a no-op).
+            Full both metadata and data will be manipulated."/>
+
+  <Property Name="seed" Type="ushort" Readable="true" Writable="true"  Default="1"
+            Description="Seed value for the lsfr, must not be zero. Only effects data
+            when either enable_give_lsfr or enable_take_lsfr is true."/>
+
+  <Property Name="allow_zlms" Type="bool" Readable="true" Writable="true" Default="false"
+            Description="If true, worker will send zero length messages."/>
+
+  <Property Name="insert_nop" Type="bool" Readable="true" Writable="true" Default="false"
+            Description="If true, worker sets all three metadata lines to zero to
+            provide a delay between messages."/>
+
+  <DataInterfaceSpec Name="in" Producer="false"/>
+
+  <DataInterfaceSpec Name="out" Producer="true"/>
+
+</ComponentSpec>

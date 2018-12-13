@@ -1,0 +1,385 @@
+<!-- This is the spec file (OCS) for: dig_radio_ctrlr
+     Add component spec attributes, like "protocol".
+     Add property elements for spec properties.
+     Add port elements for i/o ports -->
+<ComponentSpec>
+
+  <Property Name="MAX_STRING_LENGTH_p" Type="ushort"
+                                       Parameter="true"
+                                       Default="128"
+                                       Description="Length of all string properties."/>
+  <Property Name="NUM_DATA_STREAM_IDS_p" Type="ushort"
+                                         Parameter="true"
+                                         Default="1"
+                                         Description="Total number of data
+                                           stream IDs."/>
+  <Property Name="NUM_DATA_STREAM_IDS_RX_p" Type="ushort"
+                                             Parameter="true"
+                                             Default="1"
+                                             Description="Total number of data
+                                               stream IDs that can be
+                                               configured for RX streaming."/>
+  <Property Name="NUM_DATA_STREAM_IDS_TX_p"  Type="ushort"
+                                              Parameter="true"
+                                              Default="1"
+                                              Description="Total number of data
+                                                stream IDs that can be
+                                                configured for TX streaming."/>
+  <Property Name="DATA_STREAM_IDS_RX_p" Type="string"
+                                        Parameter="true"
+                                        StringLength="MAX_STRING_LENGTH_p"
+                                        ArrayLength="NUM_DATA_STREAM_IDS_RX_p"
+                                        Description="Defines all data streams
+                                          on the radio that can be configured
+                                          for RX streaming."/>
+  <Property Name="DATA_STREAM_IDS_TX_p" Type="string"
+                                        Parameter="true"
+                                        StringLength="MAX_STRING_LENGTH_p"
+                                        ArrayLength="NUM_DATA_STREAM_IDS_TX_p"
+                                        Description="Defines all data streams
+                                          on the radio that can be configured
+                                          for TX streaming."/>
+  <Property Name="MAX_NUM_DATA_STREAMS_RX_p" Type="ushort"
+                                             Parameter="true"
+                                             Default="1"
+                                             Description="Max number of
+                                               simultaneously usable RX data
+                                               streams available on radio."/>
+  <Property Name="MAX_NUM_DATA_STREAMS_TX_p" Type="ushort"
+                                             Parameter="true"
+                                             Default="1"
+                                             Description="Max number of
+                                               simultaneously usable TX data
+                                               streams available on radio."/>
+  <Property Name="MIN_ACHIEVABLE_RX_TUNING_FREQ_MHZ_p" Type="double"
+                                                       Parameter="true"
+                                                       Description="Min for all
+                                                         RX data streams."/>
+  <Property Name="MAX_ACHIEVABLE_RX_TUNING_FREQ_MHZ_p" Type="double"
+                                                       Parameter="true"
+                                                       Description="Max for all
+                                                         RX data streams."/>
+  <Property Name="MIN_ACHIEVABLE_RX_BANDWIDTH_3DB_MHZ_p" Type="double"
+                                                         Parameter="true"
+                                                         Description="Min for
+                                                           all RX data
+                                                           streams."/>
+  <Property Name="MAX_ACHIEVABLE_RX_BANDWIDTH_3DB_MHZ_p" Type="double"
+                                                         Parameter="true"
+                                                         Description="Max for
+                                                           all RX data
+                                                           streams."/>
+  <Property Name="MIN_ACHIEVABLE_RX_SAMPLING_RATE_MSPS_p" Type="double"
+                                                          Parameter="true"
+                                                          Description="Min for
+                                                            all RX data
+                                                            streams."/>
+  <Property Name="MAX_ACHIEVABLE_RX_SAMPLING_RATE_MSPS_p" Type="double"
+                                                          Parameter="true"
+                                                          Description="Max for
+                                                            all RX data
+                                                            streams."/>
+  <Property Name="IS_SUPPORTED_RX_SAMPLES_COMPLEX_p" Type="bool"
+                                                     Parameter="true"
+                                                     Description="True if
+                                                       supported by any RX data
+                                                       streams."/>
+  <Property Name="IS_SUPPORTED_RX_SAMPLES_REAL_p"    Type="bool"
+                                                     Parameter="true"
+                                                     Description="True if
+                                                       supported by any RX data
+                                                       streams."/>
+  <Property Name="IS_SUPPORTED_RX_GAIN_MODE_AUTO_p" Type="bool"
+                                                    Parameter="true"
+                                                    Description="True if
+                                                      supported by any RX data
+                                                      streams."/>
+  <Property Name="IS_SUPPORTED_RX_GAIN_MODE_MANUAL_p" Type="bool"
+                                                      Parameter="true"
+                                                      Description="True if
+                                                        supported by any RX data
+                                                        streams."/>
+  <Property Name="MIN_ACHIEVABLE_TX_TUNING_FREQ_MHZ_p" Type="double"
+                                                       Parameter="true"
+                                                       Description="Min for all
+                                                         TX data streams."/>
+  <Property Name="MAX_ACHIEVABLE_TX_TUNING_FREQ_MHZ_p" Type="double"
+                                                       Parameter="true"
+                                                       Description="Max for all
+                                                         TX data streams."/>
+  <Property Name="MIN_ACHIEVABLE_TX_BANDWIDTH_3DB_MHZ_p" Type="double"
+                                                         Parameter="true"
+                                                         Description="Min for
+                                                           all TX data
+                                                           streams."/>
+  <Property Name="MAX_ACHIEVABLE_TX_BANDWIDTH_3DB_MHZ_p" Type="double"
+                                                         Parameter="true"
+                                                         Description="Max for
+                                                           all TX data
+                                                           streams."/>
+  <Property Name="MIN_ACHIEVABLE_TX_SAMPLING_RATE_MSPS_p" Type="double"
+                                                          Parameter="true"
+                                                          Description="Min for
+                                                            all TX data
+                                                            streams."/>
+  <Property Name="MAX_ACHIEVABLE_TX_SAMPLING_RATE_MSPS_p" Type="double"
+                                                          Parameter="true"
+                                                          Description="Max for
+                                                            all TX data
+                                                            streams."/>
+  <Property Name="IS_SUPPORTED_TX_SAMPLES_COMPLEX_p" Type="bool"
+                                                     Parameter="true"
+                                                     Description="True if
+                                                       supported by any TX data
+                                                       streams."/>
+  <Property Name="IS_SUPPORTED_TX_SAMPLES_REAL_p"    Type="bool"
+                                                     Parameter="true"
+                                                     Description="True if
+                                                       supported by any TX data
+                                                       streams."/>
+
+  <Property Name="request_config_lock" Type="struct"
+                                       Writable="true"
+                                       Description="Configures radio hardware
+                                         for requested settings and prevents
+                                         settings from changing thereafter.">
+    <Member Name="config_lock_ID"        Type="string"
+                                         StringLength="MAX_STRING_LENGTH_p"/>
+    <Member Name="data_streams"          Type="struct"
+                                         SequenceLength="MAX_NUM_DATA_STREAMS_RX_p + MAX_NUM_DATA_STREAMS_TX_p">
+      <Member Name="data_stream_type"      Type="enum"
+                                           Enums="RX,TX"
+                                           Description="Set to RX or TX."/>
+      <Member Name="data_stream_ID"        Type="string"
+                                           StringLength="MAX_STRING_LENGTH_p"
+                                           Description="Set to empty to request
+                                             data stream by type only, otherwise
+                                             set to one of the values in
+                                             DATA_STREAM_IDS_RX_p or
+                                             DATA_STREAM_IDS_TX_p."/>
+      <Member Name="routing_ID"                   Type="string"
+                                                  StringLength="MAX_STRING_LENGTH_p"
+                                                  Description='Usually set to "RXO", "TXO", "TX1", etc...'/>
+      <Member Name="tuning_freq_MHz"              Type="double"/>
+      <Member Name="bandwidth_3dB_MHz"            Type="double"/>
+      <Member Name="sampling_rate_Msps"           Type="double"/>
+      <Member Name="samples_are_complex"          Type="bool"/>
+      <Member Name="gain_mode"                    Type="String"
+                                                  StringLength="MAX_STRING_LENGTH_p"
+                                                  Description='Set to "null", "auto", "manual", or possibly something worker-specific.'/>
+      <Member Name="gain_dB"                      Type="double"/>
+      <Member Name="tolerance_tuning_freq_MHz"    Type="double"
+                                                  Description="Tolerance which will determine lock success."/>
+      <Member Name="tolerance_bandwidth_3dB_MHz"  Type="double"
+                                                  Description="Tolerance which will determine lock success."/>
+      <Member Name="tolerance_sampling_rate_Msps" Type="double"
+                                                  Description="Tolerance which will determine lock success."/>
+      <Member Name="tolerance_gain_dB"            Type="double"
+                                                  Description="Tolerance which will determine lock success."/>
+    </Member>
+  </Property>
+
+  <Property Name="config_locks" Type="struct"
+                                Volatile="true"
+                                SequenceLength="MAX_NUM_DATA_STREAMS_RX_p + MAX_NUM_DATA_STREAMS_TX_p"
+                                Description="Enumeration of currently locked
+                                  configs for one or more data streams.">
+    <Member Name="config_lock_ID" Type="string"
+                                  StringLength="MAX_STRING_LENGTH_p"
+                                  Description="ID of successfully requested config lock."/>
+    <Member Name="data_streams"   Type="struct"
+                                  SequenceLength="MAX_NUM_DATA_STREAMS_RX_p + MAX_NUM_DATA_STREAMS_TX_p">
+      <!-- _lock was only included due to enum namespace collision (bug AV-4870) -->
+      <Member Name="data_stream_type_lock" Type="enum"
+                                           Enums="RX,TX"
+                                           Description="Locked type
+                                             for data stream specified in
+                                             data_stream_ID."/>
+      <Member Name="data_stream_ID"      Type="string"
+                                         StringLength="MAX_STRING_LENGTH_p"/>
+      <Member Name="routing_ID"          Type="string"
+                                         StringLength="MAX_STRING_LENGTH_p"
+                                         Description="Locked routing ID
+                                             for data stream specified in
+                                             data_stream_ID."/>
+      <Member Name="tuning_freq_MHz"     Type="double"
+                                         Description="Locked tuning frequency
+                                           for data stream specified in
+                                           data_stream_ID."/>
+      <Member Name="bandwidth_3dB_MHz"   Type="double"
+                                         Description="Locked 3dB bandwidt.
+                                           for data stream specified in
+                                           data_stream_ID."/>
+      <Member Name="sampling_rate_Msps"  Type="double"
+                                         Description="Locked sampling rate
+                                           for data stream specified in
+                                           data_stream_ID."/>
+      <Member Name="samples_are_complex" Type="bool"
+                                         Description="Locked value
+                                           for data stream specified in
+                                           data_stream_ID."/>
+
+      <!-- _lock was only included due to enum namespace collision (bug AV-4870) -->
+      <Member Name="gain_mode_lock"      Type="String"
+                                         StringLength="MAX_STRING_LENGTH_p"
+                                         Description="Locked gain mode.
+                                           for data stream specified in
+                                           data_stream_ID."/>
+
+      <Member Name="gain_dB"             Type="double"
+                                         Description="Ignored this value if
+                                           gain_mode_lock is an AGC-related
+                                           value, e.g. auto."/>
+    </Member>
+  </Property>
+
+  <Property Name="unlock_config_lock" Type="struct"
+                                      Writable="true"
+                                      Description="Unlocks a config lock by its ID.">
+    <Member Name="config_lock_ID"       Type="string"
+                                        StringLength="MAX_STRING_LENGTH_p"/>
+  </Property>
+
+  <Property Name="unlock_all" Type="bool"
+                              Writable="true"
+                              Description="Unlocks all existing config locks."/>
+
+  <Property Name="data_stream_is_enabled" Type="struct"
+                                          Volatile="true"
+                                          ArrayLength="NUM_DATA_STREAM_IDS_p"
+                                          Description="Used to read enabled status for all data streams.">
+    <Member Name="data_stream_ID"            Type="string"
+                                             StringLength="MAX_STRING_LENGTH_p"/>
+    <Member Name="data_stream_is_enabled"    Type="bool"/>
+  </Property>
+
+  <!-- _readback was only included due to enum namespace collision (bug AV-4870) -->
+  <Property Name="data_stream_type_readback" Type="struct"
+                                             Volatile="true"
+                                             SequenceLength="MAX_NUM_DATA_STREAMS_RX_p + MAX_NUM_DATA_STREAMS_TX_p"
+                                             Description="Used to read current config
+                                               value (locked or not) for each enabled
+                                               data stream.">
+    <Member Name="data_stream_ID"   Type="string"
+                                    StringLength="MAX_STRING_LENGTH_p"/>
+    <!-- _val was only included due to enum namespace collision (bug AV-4870) -->
+    <Member Name="data_stream_type_val" Type="enum"
+                                        Enums="RX,TX"/>
+  </Property>
+
+  <Property Name="tuning_freq_MHz" Type="struct"
+                                   Volatile="true"
+                                   SequenceLength="MAX_NUM_DATA_STREAMS_RX_p + MAX_NUM_DATA_STREAMS_TX_p"
+                                   Description="Used to read current config
+                                     value (locked or not) for each enabled
+                                     data stream.">
+    <Member Name="data_stream_ID"    Type="string"
+                                     StringLength="MAX_STRING_LENGTH_p"/>
+    <Member Name="tuning_freq_MHz"   Type="double"/>
+  </Property>
+
+  <Property Name="bandwidth_3dB_MHz" Type="struct"
+                                     Volatile="true"
+                                     SequenceLength="MAX_NUM_DATA_STREAMS_RX_p + MAX_NUM_DATA_STREAMS_TX_p"
+                                     Description="Used to read current config
+                                       value (locked or not) for each enabled
+                                       data stream.">
+    <Member Name="data_stream_ID"      Type="string"
+                                       StringLength="MAX_STRING_LENGTH_p"/>
+    <Member Name="bandwidth_3dB_MHz"   Type="double"/>
+  </Property>
+
+  <Property Name="sampling_rate_Msps" Type="struct"
+                                      Volatile="true"
+                                      SequenceLength="MAX_NUM_DATA_STREAMS_RX_p + MAX_NUM_DATA_STREAMS_TX_p"
+                                      Description="Used to read current config
+                                        value (locked or not) for each enabled
+                                        data stream.">
+    <Member Name="data_stream_ID"       Type="string"
+                                        StringLength="MAX_STRING_LENGTH_p"/>
+    <Member Name="sampling_rate_Msps"   Type="double"/>
+  </Property>
+
+  <Property Name="samples_are_complex" Type="struct"
+                                       Volatile="true"
+                                       SequenceLength="MAX_NUM_DATA_STREAMS_RX_p + MAX_NUM_DATA_STREAMS_TX_p"
+                                       Description="Used to read current config
+                                         value (locked or not) for each enabled
+                                         data stream.">
+    <Member Name="data_stream_ID"        Type="string"
+                                         StringLength="MAX_STRING_LENGTH_p"/>
+    <Member Name="samples_are_complex"   Type="bool"/>
+  </Property>
+
+  <Property Name="valid_values_tuning_freq_MHz" Type="struct"
+                                                Volatile="true"
+                                                ArrayLength="NUM_DATA_STREAM_IDS_RX_p + NUM_DATA_STREAM_IDS_TX_p"
+                                                Description="Indicates the
+                                                  current valid ranges of values for all data
+                                                  stream/data stream type combinations.">
+    <Member Name="data_stream_ID" Type="string"
+                                  StringLength="MAX_STRING_LENGTH_p"/>
+
+    <!-- _tuning was only included due to enum namespace collision (bug AV-4870) -->
+    <Member Name="data_stream_type_tuning" Type="Enum" Enums="RX,TX"/>
+
+    <Member Name="valid_values"   Type="struct"
+                                  SequenceLength="32">
+      <Member Name="min"            Type="double"/>
+      <Member Name="max"            Type="double"/>
+    </Member>
+  </Property>
+  <Property Name="valid_values_bandwidth_3dB_MHz" Type="struct"
+                                                  Volatile="true"
+                                                  ArrayLength="NUM_DATA_STREAM_IDS_RX_p + NUM_DATA_STREAM_IDS_TX_p"
+
+                                                  Description="Indicates the
+                                                    current valid ranges of values for all data
+                                                    stream/data stream type combinations.">
+    <Member Name="data_stream_ID" Type="string"
+                                  StringLength="MAX_STRING_LENGTH_p"/>
+
+    <!-- _bandwidth was only included due to enum namespace collision (bug AV-4870) -->
+    <Member Name="data_stream_type_bandwidth" Type="Enum" Enums="RX,TX"/>
+
+    <Member Name="valid_values"   Type="struct"
+                                  SequenceLength="32">
+      <Member Name="min"            Type="double"/>
+      <Member Name="max"            Type="double"/>
+    </Member>
+  </Property>
+  <Property Name="valid_values_sampling_rate_Msps" Type="struct"
+                                                   Volatile="true"
+                                                   ArrayLength="NUM_DATA_STREAM_IDS_RX_p + NUM_DATA_STREAM_IDS_TX_p"
+                                                   Description="Indicates the
+                                                     current valid ranges of values for all data
+                                                     stream/data stream type combinations.">
+    <Member Name="data_stream_ID" Type="string"
+                                  StringLength="MAX_STRING_LENGTH_p"/>
+
+    <!-- _sampling was only included due to enum namespace collision (bug AV-4870) -->
+    <Member Name="data_stream_type_sampling" Type="Enum" Enums="RX,TX"/>
+
+    <Member Name="valid_values"   Type="struct"
+                                  SequenceLength="32">
+      <Member Name="min"            Type="double"/>
+      <Member Name="max"            Type="double"/>
+    </Member>
+  </Property>
+  <Property Name="valid_values_samples_are_complex" Type="struct"
+                                                    Volatile="true"
+                                                    ArrayLength="NUM_DATA_STREAM_IDS_RX_p + NUM_DATA_STREAM_IDS_TX_p"
+                                                    Description="Indicates the
+                                                      current valid ranges of values for all data
+                                                      stream/data stream type combinations.">
+    <Member Name="data_stream_ID" Type="string"
+                                  StringLength="MAX_STRING_LENGTH_p"/>
+
+    <!-- _sampling was only included due to enum namespace collision (bug AV-4870) -->
+    <Member Name="data_stream_type_samples_are" Type="Enum" Enums="RX,TX"/>
+
+    <Member Name="valid_values"   Type="bool"
+                                  SequenceLength="2"/>
+  </Property>
+
+</ComponentSpec>

@@ -57,7 +57,7 @@ component trace_buffer_ulong
          rawin : in ocpi.wci.raw_in_t;  -- wire to raw interface
          rawout : out ocpi.wci.raw_out_t); -- wire to raw interface
 end component trace_buffer_ulong;
-    
+
 --- CWD support during simulation
 constant cwd_length : natural := 256;
 
@@ -144,7 +144,7 @@ component SyncRegister is
       dCLK   : in std_logic;
       sEN    : in std_logic;
       sRDY   : out std_logic;
-      sD_IN  : in std_logic_vector(width-1 downto 0);      
+      sD_IN  : in std_logic_vector(width-1 downto 0);
       dD_OUT : out std_logic_vector(width-1 downto 0));
 end component SyncRegister;
 
@@ -306,5 +306,18 @@ component clock_forward
     CLK_OUT_P : out std_logic;
     CLK_OUT_N : out std_logic);
 end component clock_forward;
+
+component zlm_detector is
+  port(
+    clk         : in  std_logic;  -- control plane clock
+    reset       : in  std_logic;  -- control plane reset (active-high)
+    som         : in  std_logic;  -- input port SOM
+    valid       : in  std_logic;  -- input port valid
+    eom         : in  std_logic;  -- input port EOM
+    ready       : in  std_logic;  -- input port ready
+    take        : in  std_logic;  -- input port take
+    eozlm_pulse : out std_logic;  -- pulse-per-end-of-ZLM
+    eozlm       : out std_logic); -- same as EOM but only for end of ZLMs
+end component;
 
 end package util;

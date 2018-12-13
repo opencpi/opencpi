@@ -16,14 +16,18 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-# This directory contains a library of device workers.
-# It is a lot like the components directory except that all of the workers
-# are device specific - each worker controls some piece of hardware on a
-# chip or attached to a chip.  Currently we have no notion of anything but
-# hdl device workers, although that could (should?) change.
+# This is the hdl/devices library
+
+# All workers created here in *.<model> will be built automatically
+# All tests created here in *.test directories will be built/run automatically
+# To limit the workers that actually get built, set the Workers= variable
+# To limit the tests that actually get built/run, set the Tests= variable
+
+# Any variable definitions that should apply for each individual worker/test
+# in this library belong in Library.mk
 
 # The names of the device workers are only qualified when we have more than
-# one -- until we have a good naming convension.
+# one -- until we have a good naming convention.
 #
 # Remember that subdevices that support other devices must occur AFTER the devices they support
 # Similarly, emulators must occur after the devices they emulate

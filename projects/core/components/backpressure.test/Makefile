@@ -15,6 +15,6 @@
 #
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
-# What all workers will have access to, even if built in place
-ComponentLibraries=devices
-XmlIncludeDirs=../../components/specs ../devices/lib/hdl ../devices/specs
+
+# This is the Makefile for the test directory which tests component "backpressure"
+include $(OCPI_CDK_DIR)/include/test.mk

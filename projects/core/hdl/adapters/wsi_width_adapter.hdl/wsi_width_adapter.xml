@@ -1,6 +1,6 @@
 <HdlImplementation language="vhdl">
   <ComponentSpec nocontrol='true'>
-    <!-- declare accomodating ports with 8-bit bytes, ZLMs, and max opcodes.-->
+    <!-- declare accommodating ports with 8-bit bytes, ZLMs, and max opcodes.-->
     <DataInterfaceSpec Name="in"  Producer="false"
 		       datavaluewidth='8' zerolengthmessages='1' numberofopcodes='256'/>
     <DataInterfaceSpec Name="out" Producer="true" buffersize='in'
