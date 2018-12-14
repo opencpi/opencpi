@@ -75,8 +75,8 @@ namespace OCPI {
 	void configure(ezxml_t) {
 	  std::string globbedName;
 	  if (OU::globPath(name().c_str(), globbedName))
-	    ocpiBad("Library path pathname \"%s\" is invalid or nonexistent, and ignored",
-		    name().c_str());
+	    ocpiInfo("Library path pathname \"%s\" is invalid or nonexistent, and ignored",
+		     name().c_str());
 	  doPath(globbedName);
 	}
 	OCPI::Library::Artifact *

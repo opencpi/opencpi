@@ -125,17 +125,17 @@ typedef enum {
   RCC_DYNAMIC
 } RCCEndian;
 #ifdef __cplusplus
-class RCCUserPort;
-typedef OCPI::API::OcpiBoolean RCCBoolean;
-typedef OCPI::API::OcpiPortMask RCCPortMask;
-typedef OCPI::API::RunCondition RunCondition;
-const OCPI::API::OcpiPortMask RCC_ALL_PORTS = OCPI::API::OCPI_ALL_PORTS;
-const OCPI::API::OcpiPortMask RCC_NO_PORTS = OCPI::API::OCPI_NO_PORTS;
+  class RCCUserPort;
+  typedef OCPI::API::OcpiBoolean RCCBoolean;
+  typedef OCPI::API::OcpiPortMask RCCPortMask;
+  typedef OCPI::API::RunCondition RunCondition;
+  const OCPI::API::OcpiPortMask RCC_ALL_PORTS = OCPI::API::OCPI_ALL_PORTS;
+  const OCPI::API::OcpiPortMask RCC_NO_PORTS = OCPI::API::OCPI_NO_PORTS;
 #else
-typedef OcpiBoolean  RCCBoolean;
-typedef OcpiPortMask RCCPortMask;
-#define RCC_ALL_PORTS OCPI_ALL_PORTS
-#define RCC_NO_PORTS OCPI_NO_PORTS
+  typedef OcpiBoolean  RCCBoolean;
+  typedef OcpiPortMask RCCPortMask;
+  #define RCC_ALL_PORTS OCPI_ALL_PORTS
+  #define RCC_NO_PORTS OCPI_NO_PORTS
 #endif
 typedef void      *RCCBufferId;
 typedef float     RCCFloat;
@@ -169,11 +169,11 @@ typedef struct {
 
 typedef RCCResult RCCMethod(RCCWorker *_this);
 typedef RCCResult RCCRunMethod(RCCWorker *_this,
-			       RCCBoolean timedout,
-			       RCCBoolean *newRunCondition);
+                               RCCBoolean timedout,
+                               RCCBoolean *newRunCondition);
 typedef RCCResult RCCPortMethod(RCCWorker *_this,
-				RCCPort *port,
-				RCCResult reason);
+                                RCCPort *port,
+                                RCCResult reason);
  typedef struct {
    size_t length;
    size_t offset;
@@ -356,7 +356,7 @@ typedef struct {
    RCCUserPort();
    // Note length is capacity for output buffers.
    void *getArgAddress(RCCUserBuffer &buf, unsigned op, unsigned arg, size_t *length,
-		       size_t *capacity) const;
+                       size_t *capacity) const;
    void setArgSize(RCCUserBuffer &buf, unsigned op, unsigned arg, size_t length) const;
  private:
    void checkOpCode(RCCUserBuffer &buf, unsigned op, bool setting = true) const;
@@ -467,7 +467,7 @@ typedef struct {
    // for given a total, and a limit on message sizes.  Return is total for member,
    // optional output arg is max per message for this member.
    size_t memberItemTotal(uint64_t totalItems, size_t maxPerMessage = 0,
-			  size_t *perMessage = NULL);
+                          size_t *perMessage = NULL);
  protected:
    bool m_first;
    RCCWorker &m_rcc;
@@ -527,7 +527,7 @@ typedef struct {
    // Typed property list setting - slightly safer, still slow
    inline void setProperties(const OCPI::API::PValue *props) { m_worker.setProperties(props); }
    inline bool getProperty(unsigned ordinal, std::string &name, std::string &value,
-			   bool *unreadablep = NULL, bool hex = false) {
+                           bool *unreadablep = NULL, bool hex = false) {
      return m_worker.getProperty(ordinal, name, value, unreadablep, hex);
    }
    inline void getRawPropertyBytes(size_t offset, uint8_t *buf, size_t count) {

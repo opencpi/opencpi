@@ -22,11 +22,11 @@
  * Abstract:
  *   This file contains the interface and data structures for the JTRS DSP Worker.
  *
- * Revision History: 
+ * Revision History:
  *
  *    06/23/09  John Miller
  *    Added code to handle RCC_ERROR and RCC_FATAL return codes.
- * 
+ *
  *    06/01/05  John Miller
  *    Initial revision
  *
@@ -79,7 +79,7 @@ namespace OCPI {
 
       // These property access methods are called when the fast path
       // is not enabled, either due to no MMIO or that the property can
-      // return errors. 
+      // return errors.
 #undef OCPI_DATA_TYPE_S
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		\
       void set##pretty##Property(const OCPI::API::PropertyInfo &info, const Util::Member *, \
@@ -140,14 +140,14 @@ namespace OCPI {
       OCPI::Container::Port
 	&createInputPort(OCPI::Util::PortOrdinal portId, size_t bufferCount, size_t bufferSize,
 			 const OCPI::Util::PValue *params),
-	&createOutputPort(OCPI::Util::PortOrdinal portId, size_t bufferCount, size_t bufferSize, 
+	&createOutputPort(OCPI::Util::PortOrdinal portId, size_t bufferCount, size_t bufferSize,
 			  const OCPI::Util::PValue *params),
 	&createTestPort(OCPI::Util::PortOrdinal portId, size_t bufferCount, size_t bufferSize,
 			bool isProvider, const OU::PValue *params);
       void read(size_t offset, size_t nBytes, void* p_data);
       void write(size_t offset, size_t nBytes, const void* p_data);
       // end backward compatibility for ctests
-     
+
       // Get our transport
       inline OCPI::DataTransport::Transport &getTransport() { return m_transport; }
 
@@ -159,8 +159,10 @@ namespace OCPI {
       void initializeContext();
       void checkError() const;
       inline void setRunCondition(RunCondition &rc) {
-	m_runCondition = &rc;
-	m_runCondition->activate(m_runTimer, m_nPorts);
+        if (m_runCondition) // there is no RunCondition::deactivate()
+          m_runCondition->m_inUse = false;
+        m_runCondition = &rc;
+        m_runCondition->activate(m_runTimer, m_nPorts);
       }
       // Our dispatch table
       RCCEntryTable   *m_entry;    // our entry in the entry table of the artifact
@@ -174,7 +176,7 @@ namespace OCPI {
       RunCondition     m_defaultRunCondition; // run condition we create
       RunCondition     m_cRunCondition;       // run condition we use when C-language RC changes
       RunCondition    *m_runCondition;        // current active run condition used in dispatching
-      
+
       // Mutable since this is a side effect of clearing the worker-set error when reported
       mutable char     *m_errorString;         // error string set via "setError"
     protected:
@@ -192,7 +194,7 @@ namespace OCPI {
       // Last time that the worker was run
       OCPI::OS::Timer m_runTimer;
       OCPI::OS::Time  m_lastRun;
-                        
+
       // Debug/stats
       uint64_t worker_run_count;
 
@@ -217,4 +219,3 @@ namespace OCPI {
 }
 
 #endif
-

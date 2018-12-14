@@ -169,6 +169,7 @@ bool Buffer::isEmpty()
 #endif
     OCPI::DataTransport::Port* s_port = 
       static_cast<OCPI::DataTransport::Port*>(this->getPort()->getCircuit()->getOutputPortSet()->getPortFromOrdinal( s_pid ));
+    ocpiAssert(s_port);
     Buffer* s_buf = static_cast<Buffer*>(s_port->getBuffer(tid));
     attachZeroCopy( reinterpret_cast<Buffer*>(s_buf) );
     return false;

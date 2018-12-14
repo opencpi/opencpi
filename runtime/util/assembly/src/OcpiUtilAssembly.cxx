@@ -404,7 +404,7 @@ namespace OCPI {
           return esprintf("Duplicate property \"%s\" in instance", m_name.c_str());
       return setValue(px);
     }
-    
+
     Assembly::Instance::Instance() : m_freeXml(false) {}
     Assembly::Instance::~Instance() { if (m_freeXml) ezxml_free(m_xml); }
     const char *Assembly::Instance::
@@ -451,7 +451,7 @@ namespace OCPI {
 	  return esprintf("cannot have slave elements when you have a slave attribute");
 	if ((err = checkSlave(a, slave)))
 	  return err;
-      } else      
+      } else
 	for (ezxml_t cx = ezxml_cchild(ix, "slave"); cx; cx = ezxml_cnext(cx)) {
 	  if (!(slave = ezxml_cattr(cx, "name")))
 	    return esprintf("Missing \"name\" attribute for \"slave\" element");
@@ -491,7 +491,7 @@ namespace OCPI {
           return err;
         v.m_Double *= 1e6;
         if (v.m_Double < 0 || v.m_Double >= std::numeric_limits<Assembly::Delay>::max())
-          return esprintf("delay value \"%s\"(%g) out of range, 0 to %g", delay, v.m_Double/1e6,
+          return esprintf("delay value \"%s\" (%g) out of range, 0 to %g", delay, v.m_Double/1e6,
                           (double)std::numeric_limits<Assembly::Delay>::max()/1e6);
         usecs = static_cast<Assembly::Delay>(v.m_Double);
         hasDelay = true;
@@ -529,7 +529,7 @@ namespace OCPI {
                 if (p->m_hasDelay) {         // existing has delay
                   if (hasDelay) {            // new has delay
                     if (delay == p->m_delay) {
-                      err = esprintf("two property values have the same delay:  %g",
+                      err = esprintf("two property values have the same delay: %g",
                                      (double)delay / 1000000);
                       break;
                     } // else: skip it since delays are different
@@ -560,7 +560,7 @@ namespace OCPI {
         // Recurse for <set> elements
         if (isProperty)
           for (ezxml_t sx = ezxml_cchild(px, "set"); sx; sx = ezxml_cnext(sx))
-            if ((err = OE::checkAttrs(px, "value", "valuefile", "delay", NULL)) ||
+            if ((err = OE::checkAttrs(sx, "value", "valuefile", "delay", NULL)) ||
                 (err = addProperty(name, sx)))
               break;
       } while (0);
