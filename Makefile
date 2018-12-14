@@ -23,24 +23,46 @@
 OnlyTargets=zynq_ultra xsim isim modelsim
 HdlLibraries=fixed_float ocpi platform axi
 
-SourceFiles=zynq_ultra_pkg.vhd vivado_zynq_ultra/zynq_ultra_ps_e_v3_2_1.v zynq_ultra_ps_e.vhd
+# The source files below basically wrap the ZynqMP UltraScale+ PS multiple times to further abstract away its
+# low level interface. At the lowest level, we have zynq_ultra_ps_e_v3_2_1.v which is a generated file that
+# interfaces with the PS8 primitive. zynq_ultra_ps_e_0.vhd is a generated VHDL file that wraps this Verilog file
+# for a specific configuration of the PS with certain AXI ports chosen and only the features needed for OpenCPI.
+# zynq_ultra_ps_e_wrap.vhd is just a VHDL package that contains the component declaration of that VHDL wrapper
+# entity. This is constructed programmatically from the generated VHO instantiation template. Finally,
+# zynq_ultra_ps_e.vhd connects that VHDL entity's ports to OpenCPI's AXI primitives, and along with
+# zynq_ultra_pkg.vhd, exposes those AXI interfaces via the 'zynq_ultra_ps' component in the zynq_ultra VHDL
+# package.
+IPGEN_DIR=vivado_zynq_ultra
+SourceFiles=zynq_ultra_pkg.vhd $(IPGEN_DIR)/zynq_ultra_ps_e_v3_2_1.v $(IPGEN_DIR)/zynq_ultra_ps_e_0.vhd $(IPGEN_DIR)/zynq_ultra_ps_e_wrap.vhd zynq_ultra_ps_e.vhd
 
 include $(OCPI_CDK_DIR)/include/hdl/hdl-library.mk
 
-# In order to generate the zynq_ultra_ps_e top verilog file with Vivado,
-# we need to run a series of TCL commands located in vivado_zynq_ultra/tcl
-vivado_zynq_ultra/zynq_ultra_ps_e_v3_2_1.v:
-	$(AT)rm -rf vivado_zynq_ultra/tmp; \
-	     mkdir vivado_zynq_ultra/tmp; \
-	     cd vivado_zynq_ultra/tmp; \
+# Here, we generate and configure the the Vivado IP for the ZynqMP UltraScale+ PS, extract the Verilog interface to it
+# (zynq_ultra_ps_e_v3_2_1.v), configure it as it is needed for OpenCPI (choose the AXI ports, disable unneeded features),
+# extract the VHDL wrapper that reflects this particular configuration of the PS (zynq_ultra_ps_e_0.vhd), and also extract
+# the VHDL component declaration template for the resulting entity. This template is then used to construct
+# zynq_ultra_ps_e_wrap.vhd.
+$(IPGEN_DIR)/zynq_ultra_ps_e_v3_2_1.v $(IPGEN_DIR)/zynq_ultra_ps_e_0.vhd $(IPGEN_DIR)/zynq_ultra_ps_e_wrap.vhd:
+	$(AT)rm -rf $(IPGEN_DIR)/tmp; \
+	     mkdir $(IPGEN_DIR)/tmp; \
+	     cd $(IPGEN_DIR)/tmp; \
 	     $(call OcpiXilinxVivadoInit); \
 	     vivado -mode batch -source ../zynq_ultra_ps_e_gen.tcl > ../zynq_ultra_ps_e_gen.log; \
 	     cd ..; \
-	     cp tmp/managed_ip_project/managed_ip_project.srcs/sources_1/ip/zynq_ultra_ps_e_0/hdl/zynq_ultra_ps_e_v3_2_1.v . ;\
+	     cp tmp/managed_ip_project/managed_ip_project.srcs/sources_1/ip/zynq_ultra_ps_e_0/hdl/zynq_ultra_ps_e_v3_2_1.v \
+                tmp/managed_ip_project/managed_ip_project.srcs/sources_1/ip/zynq_ultra_ps_e_0/synth/zynq_ultra_ps_e_0.vhd .; \
+	     echo "library IEEE; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;" >> zynq_ultra_ps_e_wrap.vhd; \
+	     echo "package zynq_ultra_ps_e_wrap is" >> zynq_ultra_ps_e_wrap.vhd; \
+	     awk '/-- COMP_TAG_END ------ End COMPONENT Declaration ------------/{found=0} {if(found) print} /------------- Begin Cut here for COMPONENT Declaration ------ COMP_TAG/{found=1}' tmp/managed_ip_project/managed_ip_project.srcs/sources_1/ip/zynq_ultra_ps_e_0/zynq_ultra_ps_e_0.vho >> zynq_ultra_ps_e_wrap.vhd; \
+	     echo "end package zynq_ultra_ps_e_wrap;" >> zynq_ultra_ps_e_wrap.vhd; \
 	     rm -rf tmp;
+
 
 # Do not remove zynq_ultra_ps_e top level verilog on clean
 # This will save time
 clean::
-	$(AT)rm -rf vivado_zynq_ultra/tmp; \
-	     rm -f vivado_zynq_ultra/zynq_ultra_ps_e_gen.log;
+	$(AT)rm -rf $(IPGEN_DIR)/tmp; \
+	     rm -f $(IPGEN_DIR)/zynq_ultra_ps_e_gen.log;
+
+cleanall:: clean
+	$(AT)rm $(IPGEN_DIR)/zynq_ultra_ps_e_v3_2_1.v $(IPGEN_DIR)/zynq_ultra_ps_e_0.vhd; $(IPGEN_DIR)/zynq_ultra_ps_e_wrap.vhd
