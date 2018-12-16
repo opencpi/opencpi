@@ -30,7 +30,7 @@ Prefix:      %{prefix0}
 # Apparently rpmbuild does not do this for you, only RPM_INSTALL_DIR0/1/2 etc.
 %global      prefix1 /etc
 Prefix:      %{prefix1}
-Vendor:      ANGRYVIPER Team
+Vendor:      OpenCPI
 Packager:    ANGRYVIPER Team <discuss@lists.opencpi.org>
 %include %{RPM_OPENCPI}/packaging/target-%{RPM_PLATFORM}/runtime-requires
 # Then the "requires" that are only needed by the rpm installation itself rather than
@@ -125,14 +125,6 @@ done
   %{__ln_s} -f %{prefix0}/cdk/scripts/ocpidev_bash_complete %{buildroot}%{prefix1}/$dir/$file
   echo %%{prefix1}/$dir/$file >> %{_builddir}/devel-files
 
-  # 4. Add our udev-rules into the drop-in directry for udev rules, using symlinks
-  dir=udev/rules.d file=51-opencpi-usbblaster.rules
-  %{__mkdir_p} %{buildroot}%{prefix1}/$dir
-  %{__ln_s} -f %{prefix0}/udev-rules/$file %{buildroot}%{prefix1}/$dir
-  # RPM build does not accept %attr on symlinks
-  # echo "%%attr(644,root,root)" %%{prefix1}/$dir/$file >> %{_builddir}/runtime-files
-  echo %%{prefix1}/$dir/$file >> %{_builddir}/runtime-files
-
   # A very special case that will go away at some point
   cp packaging/dist/projects/{new_project_source,README} %{buildroot}%{prefix0}/projects
   echo %%{prefix0}/projects/new_project_source >> %{_builddir}/devel-files
@@ -158,7 +150,7 @@ Prefix:     %{prefix0}
 Prefix:     %{prefix1}
 %description devel
 This package ensures that all requirements for OpenCPI development are
-installed. It also provides a useful development utilities.
+installed. It also provides useful development utilities.
 %{?RPM_HASH:ReleaseID: %{RPM_HASH}}
 
 %if !%{RPM_CROSS}
@@ -274,9 +266,6 @@ fi
   link=$RPM_INSTALL_PREFIX0/cdk/env/rpm_cdk.sh
   [ $(readlink $RPM_INSTALL_PREFIX1/profile.d/opencpi.sh) != $link ] &&
     ln -s -f $link $RPM_INSTALL_PREFIX1/profile.d/opencpi.sh || :
-  link=$RPM_INSTALL_PREFIX0/udev-rules/51-opencpi-usbblaster.rules
-  [ $(readlink $RPM_INSTALL_PREFIX1/udev/rules.d/51-opencpi-usbblaster.rules) != $link ] &&
-    ln -s -f $link $RPM_INSTALL_PREFIX1/udev/rules.d/ || :
   # if not relocated, tell dynamic loader to find the (perhaps) new location
   [ "$RPM_INSTALL_PREFIX1" = %{prefix1} -a "$RPM_INSTALL_PREFIX0" = %{prefix0} ] &&
       ( : || /sbin/ldconfig)  # not enabled until we sort out dynamic libraries

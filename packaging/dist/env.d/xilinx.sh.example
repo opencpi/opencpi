@@ -1,4 +1,6 @@
-## If the Xilinx ISE tools were not installed in /opt/Xilinx/, then uncomment 
+## Define Xilinx Tool Directories and Versions
+##
+## If the Xilinx ISE tools were not installed in /opt/Xilinx/, then uncomment
 ## and define the location in OCPI_XILINX_DIR. If you are not using 14.7,
 ## then specify which version to use in OCPI_XILINX_VERSION
 ##example: Xilinx ISE is located in /data/Xilinx/14.7

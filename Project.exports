@@ -56,6 +56,34 @@
 # We need to rationalize this with opencpi-setup.sh
 =env/rpm_cdk.sh env/
 =packaging/dist/env.d/* env.d/
++tools/cdk/python/_opencpi/__init__.py <target>/lib/_opencpi/
++tools/cdk/python/_opencpi/util/__init__.py <target>/lib/_opencpi/util/
++tools/cdk/python/_opencpi/util/__init__.py <target>/lib/_opencpi/util/
++tools/cdk/python/_opencpi/util/file.py <target>/lib/_opencpi//util/
++tools/cdk/python/_opencpi/util/project.py <target>/lib/_opencpi/util/
++tools/cdk/python/_opencpi/util/report.py <target>/lib/_opencpi/util/
++tools/ocpidev/hdltools/__init__.py <target>/lib/_opencpi/hdltools/
++tools/ocpidev/hdltools/quartus.py <target>/lib/_opencpi/hdltools/
++tools/ocpidev/hdltools/vivado.py <target>/lib/_opencpi/hdltools/
++tools/ocpidev/hdltools/_xilinx.py <target>/lib/_opencpi/hdltools/
++tools/ocpidev/hdltools/xst.py <target>/lib/_opencpi/hdltools/
++tools/ocpidev/hdlreportableitem.py <target>/lib/_opencpi/
++tools/ocpidev/hdltargets.py <target>/lib/_opencpi/
++tools/ocpidev/assets/abstract.py <target>/lib/_opencpi/assets/
++tools/ocpidev/assets/application.py <target>/lib/_opencpi/assets/
++tools/ocpidev/assets/assembly.py <target>/lib/_opencpi/assets/
++tools/ocpidev/assets/factory.py <target>/lib/_opencpi/assets/
++tools/ocpidev/assets/__init__.py <target>/lib/_opencpi/assets/
++tools/ocpidev/assets/library.py <target>/lib/_opencpi/assets/
++tools/ocpidev/assets/platform.py <target>/lib/_opencpi/assets/
++tools/ocpidev/assets/project.py <target>/lib/_opencpi/assets/
++tools/ocpidev/assets/registry.py <target>/lib/_opencpi/assets/
++tools/ocpidev/assets/test.py <target>/lib/_opencpi/assets/
++tools/ocpidev/assets/worker.py <target>/lib/_opencpi/assets/
++tools/ocpidev/ocpidev.sh <target>/bin/ocpidev
++tools/ocpidev/ocpidev_run.py scripts/   
++tools/ocpidev/ocpishow.py scripts/ 
++tools/ocpidev/ocpidev_utilization.py scripts/
 # generic make scripts
 +tools/cdk/include/show.mk include/
 +tools/cdk/include/lib.mk include/
@@ -83,6 +111,7 @@
 +tools/cdk/scripts/setup-prerequisite.sh scripts/
 +tools/cdk/scripts/setup-prereq-dirs.sh scripts/
 +tools/cdk/scripts/getPlatform.sh scripts/
++tools/cdk/scripts/getHdlPlatform.sh scripts/
 # Put this script where the executables are exported to run there - needed?
 =runtime/ctests/src/run_tests.sh <target>/bin/ctests/
 #+runtime/ctests/src/run_tests.sh scripts/
@@ -95,7 +124,6 @@
 # Perhaps migrate this to bin with a new name at some point
 
 =scripts/test-opencpi.sh <target>/bin/ocpitest
-=scripts/test-opencpi.sh <target>/bin/test-opencpi-rpm
 +tools/cdk/scripts/makeStaticWorker.sh scripts/
 =tools/cdk/scripts/ocpidriver scripts/
 =tools/cdk/scripts/ocpisetup.sh scripts/
@@ -103,14 +131,20 @@
 =tools/cdk/scripts/ocpisudo scripts/
 +tools/cdk/scripts/ocpitarget.sh scripts/
 +tools/cdk/scripts/ocpidev scripts/
-+tools/cdk/scripts/ocpi-copy-projects scripts/
 +tools/cdk/scripts/ocpishow.py scripts/
++tools/cdk/scripts/ocpidev_utilization.py scripts/
 +tools/cdk/scripts/ocpidev_run.py scripts/
 +tools/cdk/scripts/ocpiassets.py scripts/
 +tools/cdk/scripts/ocpiutil.py scripts/
-+tools/cdk/scripts/upgradeApp_v1_3.py scripts/
 +tools/cdk/scripts/hdltargets.py scripts/
-+tools/cdk/scripts/ocpidev_bash_complete scripts/
++tools/cdk/scripts/hdlreportableitem.py scripts/
++tools/cdk/scripts/hdltools/__init__.py scripts/hdltools/
++tools/cdk/scripts/hdltools/quartus.py scripts/hdltools/
++tools/cdk/scripts/hdltools/vivado.py scripts/hdltools/
++tools/cdk/scripts/hdltools/_xilinx.py scripts/hdltools/
++tools/cdk/scripts/hdltools/xst.py scripts/hdltools/
++tools/cdk/scripts/upgradeApp_v1_3.py scripts/
++tools/ocpidev/ocpidev_bash_complete.sh scripts/ocpidev_bash_complete
 =tools/cdk/scripts/util.sh scripts/
 +tools/cdk/scripts/testrunprep.sh scripts/
 +tools/cdk/scripts/testrunremote.sh scripts/
@@ -124,7 +158,7 @@
 +tools/cdk/scripts/maybeExport.sh scripts/
 # user level scripts made available in the bin directory
 +tools/cdk/scripts/ocpidev <target>/bin/
-+tools/cdk/scripts/ocpi-copy-projects <target>/bin/
++tools/cdk/scripts/ocpi-copy-projects.py <target>/bin/ocpi-copy-projects
 =tools/cdk/scripts/ocpidriver <target>/bin/
 +tools/cdk/scripts/genProjMetaData.py scripts/
 #+tools/cdk/scripts/genProjMetaData.pyc scripts/
@@ -196,7 +230,6 @@
 =runtime/hdl-support/altera/altera.mk include/hdl/
 =runtime/hdl-support/altera/loadFlash_altera scripts/
 =runtime/hdl-support/altera/probeJtag_altera scripts/
-=runtime/hdl-support/altera/51-opencpi-usbblaster.rules udev-rules/
 =runtime/hdl-support/xilinx/loadFlash_xilinx scripts/
 =runtime/hdl-support/xilinx/probeJtag_xilinx scripts/
 =runtime/hdl-support/xilinx/findJtagByESN_xilinx scripts/

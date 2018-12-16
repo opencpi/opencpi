@@ -17,6 +17,11 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
+#AV-4482
+echo "This script is deprecated you should be using ocpi-copy-projects instead."
+echo "This script will be removed in version 1.5"
+echo ""
+
 if [ $# -lt 2 ]; then
   echo "This script will install a copy of a specified OpenCPI project in a desired directory."
   echo "Usage: $0 <project name> <target directory>"

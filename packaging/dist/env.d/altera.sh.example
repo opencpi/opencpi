@@ -1,10 +1,27 @@
-## Define the Altera tools installation location and version.
-## Ex: "/opt/Altera" and "12.1"
-
+## Define Altera/Quartus Tool Directories and Versions
+##
+## If the Quartus Standard tools were not installed in a default location
+## of ~/intelFPGA, /opt/intelFPGA, ~/altera or /opt/Altera, define the
+## installation location via OCPI_ALTERA_DIR.
+## If you have multiple versions in that directory and plan to use one other than
+## the most recent, set OCPI_ALTERA_VERSION
 export OCPI_ALTERA_DIR=
 export OCPI_ALTERA_VERSION=
 
-## Set the location of the license file/server (matching Altera's LM_LICENSE_FILE documentation)
+## If both Quartus Standard AND Pro are installed, or if Quartus Pro is
+## installed in a location other than ~/intelFPGA_pro, /opt/intelFPGA_pro,
+## ~/altera or /opt/Altera, define the installation location via OCPI_ALTERA_PRO_DIR.
+## If you have multiple versions in that directory and plan to use one other than
+## the most recent, set OCPI_ALTERA_PRO_VERSION
+export OCPI_ALTERA_PRO_DIR=
+export OCPI_ALTERA_PRO_VERSION=
 
+## IMPORTANT NOTE: Quartus Standard and Pro Editions cannot be installed in the same
+##                 directory for use with OpenCPI. For example, you cannot have versions
+##                 of both Standard AND Pro installed in ~/altera. Instead, it is recommended
+##                 that you install them in separate directories such as ~/intelFPGA and
+##                 ~/intelFPGA_pro.
+
+## Set the location of the license file/server (matching Altera's LM_LICENSE_FILE documentation)
 export OCPI_ALTERA_LICENSE_FILE=
 

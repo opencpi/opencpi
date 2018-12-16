@@ -188,15 +188,20 @@ bad_paths = (
     '/gen/',
     '/kernel-headers',
     '/opencpi-zynq-linux-release-',
+    '/prerequisites/',
+    '/prerequisites-build/',
     '/projects/assets/components/util_comps/socket_write.rcc/asio/',  # Boost
     '/projects/assets/components/util_comps/socket_write.rcc/ext_src/',  # Boost
     '/release-2013.4/',
     '/releng/blacklist/',
+    '/releng/config_files/',
     '/releng/jenkins/',
     '/releng/oss_release/',
     '/releng/prereq/',
     '/runtime/foreign/',
     '/target-',
+    '/tests/pytests/utilization_proj/',
+    'vendor',
     '/vm_support/',
     '/xilinx-zynq-binary-release-',
 )
@@ -213,8 +218,9 @@ bad_path_globs = (
     '*.test/test*/description',
     '*.test/test*/portmap',
     '*.test/test*/*.input',
+    '*.test/golden*',
     '*.test/test*/golden*',
-    '*/utilization.inc',  # LaTeX include files for utilization
+    '*/configurations*.inc', '*/utilization*.inc',  # LaTeX include files for utilization
 )
 
 

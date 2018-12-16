@@ -52,3 +52,5 @@ projects/*/project.xml
 projects/*/specs/package-id
 doc/tex/build
 vendor/
+# Output PDFs
+pdfs

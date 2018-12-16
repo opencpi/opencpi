@@ -118,6 +118,6 @@ static const nullptr_t __nullptr = {};
 #endif // if __cplusplus <= 199711
 #endif // if not OCPI_HAVE_NULLPTR
 // These undefine stupid autoconf macros when cross-compiling:
-// FIXME: double check with build2 and Aaron
+// FIXME: double check with build2
 //#undef malloc
 //#undef realloc

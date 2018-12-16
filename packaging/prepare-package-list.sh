@@ -60,7 +60,7 @@ function found_in {
 }
 
 function is_platform {
-  [ -d $1/lib -o -d $1/bin ]
+ found_in $1 $OCPI_ALL_RCC_PLATFORMS || found_in $1 $OCPI_ALL_HDL_PLATFORMS
 }
 
 function skip_platform {
@@ -141,10 +141,18 @@ case $type in
     ;;
   deploy)
     for f in cdk/runtime/*; do
-      is_platform $f && [ $(basename $f) != $2 ] && continue;
-      echo $f
+      platform=$(basename $f)
+      is_platform $f && [ $platform != $2 ] && continue;
+      [ $f != cdk/runtime/env -a $f != cdk/runtime/env.d -a $f != cdk/runtime/include ] && echo $f
       [ -d $f ] && (cd cdk/runtime;
-                    find $(basename $f) -type d -exec echo cdk/runtime/{}/ \; ) || :
+                    find $platform -type d -not -path "*env*" -not -path "*include*" -exec echo cdk/runtime/{}/ \; ) || :
+      # Get directories exported to cdk/deploy/<platform>.  However do not get anything
+      # In subdirectory <platform>/<platform>-deploy as this is where the source build
+      # stores the deployment package
+      [ -d cdk/deploy/$platform ] \
+        && echo cdk/deploy/$platform \
+        && (cd cdk/deploy;
+            find $platform -type d -not -path "*$platform/$platform-deploy*" -exec echo cdk/deploy/{}/ \; ) || :
     done
     ;;
   devel)
