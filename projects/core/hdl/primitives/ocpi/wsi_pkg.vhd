@@ -149,12 +149,12 @@ package wsi is
       -- only used if number of opcodes > 1
       opcode           : in  std_logic_vector(opcode_width-1 downto 0);
       eof              : in  Bool_t; -- an EOF is pending from worker for this port
-      give             : in  Bool_t;
+      give             : in  Bool_t := bfalse;
       data             : in  std_logic_vector(byte_width*n_bytes-1 downto 0);
       byte_enable      : in  std_logic_vector(n_bytes-1 downto 0) := (n_bytes-1 downto 0 => '1');
-      som              : in  Bool_t;
-      eom              : in  Bool_t;
-      valid            : in  Bool_t;
+      som              : in  Bool_t := bfalse;
+      eom              : in  Bool_t := bfalse;
+      valid            : in  Bool_t := bfalse;
       reset            : out Bool_t;  -- this port is being reset from outside/peer
       ready            : out Bool_t); -- data can be given
   end component master;

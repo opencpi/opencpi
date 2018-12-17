@@ -53,21 +53,24 @@ architecture rtl of file_read_worker is
   signal valid_r           : boolean     := false;               -- to driver out_out.valid
   -- combi indication that we are giving to output port in the current cycle
   signal giving            : boolean;
+  signal messageSize       : ulong_t;
 begin
-   ctl_out.finished          <= to_bool(finished_r and not ready_r);
-   props_out.cwd             <= cwd;
-   props_out.bytesRead       <= bytesRead_r;
-   props_out.messageswritten <= messagesWritten_r;
-   props_out.badMessage      <= to_bool(bad_r);
-   out_out.give              <= to_bool(giving);
-   out_out.som               <= to_bool(som_r);
-   out_out.eom               <= to_bool(eom_r);
-   out_out.valid             <= to_bool(valid_r);
-   out_out.opcode            <= out_Opcode_t(resize(opcode_r,out_out.opcode'length));
-   out_out.byte_enable       <= byte_enable_r;
-   out_out.data              <= std_logic_vector(data_r);
-   giving                    <= out_in.ready and ready_r;
-   out_out.eof               <= to_bool(eof_r);
+  messageSize               <= props_in.messageSize when props_in.messageSize /= to_ulong(0)
+                               else resize(props_in.ocpi_buffer_size_out,messageSize'length);
+  ctl_out.finished          <= to_bool(finished_r and not ready_r);
+  props_out.cwd             <= cwd;
+  props_out.bytesRead       <= bytesRead_r;
+  props_out.messageswritten <= messagesWritten_r;
+  props_out.badMessage      <= to_bool(bad_r);
+  out_out.give              <= to_bool(giving);
+  out_out.som               <= to_bool(som_r);
+  out_out.eom               <= to_bool(eom_r);
+  out_out.valid             <= to_bool(valid_r and giving);
+  out_out.opcode            <= out_Opcode_t(resize(opcode_r,out_out.opcode'length));
+  out_out.byte_enable       <= byte_enable_r;
+  out_out.data              <= std_logic_vector(data_r);
+  giving                    <= out_in.ready and (ready_r or (eof_r and not finished_r));
+  out_out.eof               <= to_bool(eof_r);
   -- get access to the CWD for pathname resolution (and as a readable property)
   cwd_i : component util.util.cwd
     generic map(length     => cwd'right)
@@ -90,6 +93,7 @@ begin
        ulong_byte_enable := "0000";
        for i in 0 to n2read-1 loop
          if endfile(data_file) then
+           report "EOF when reading header";
            bad_r <= eof_bad;
            return ulong;
          end if;
@@ -104,9 +108,12 @@ begin
      procedure finish(msg : string) is begin
        report "EOF on input file: " & msg;
        close_file(data_file, props_in.fileName);
-       finished_r <= true;
-       if not props_in.suppressEOF then
-         eof_r <= true;
+       ready_r    <= false;
+       if its(props_in.suppressEOF) then
+         finished_r <= true; -- we are finished without sending an EOF
+       else
+         eof_r <= true;      -- we are sending an EOF and will be finished when it is sent.
+       end if;
        -- This code was from the version 0/1 implementation.  We don't want to do this any more
        -- with version 2 since version two allows for opcode zero ZLMs to be just another message
        -- else
@@ -114,7 +121,6 @@ begin
        --   opcode_r <= props_in.opcode;
        --   bytesLeft_r <= (others => '0');
        --   som_next_r <= true;
-       end if;
      end finish;
    begin    
      if rising_edge(ctl_in.clk) then
@@ -131,10 +137,18 @@ begin
          data_r            <= (others => '0');     -- to drive out_out.data;
          opcode_r          <= (others => '0');     -- to drive out_out.opcode
          byte_enable_r     <= "0000";              -- drive out.byte_enable
-         som_r             <= false;               -- to driver out_out.som
-         eom_r             <= false;               -- to driver out_out.eom
-         valid_r           <= false;               -- to driver out_out.valid
-       elsif its(ctl_in.is_operating) and (not finished_r or ready_r) then
+         som_r             <= false;               -- to drive out_out.som
+         eom_r             <= false;               -- to drive out_out.eom
+         valid_r           <= false;               -- to drive out_out.valid
+       elsif its(ctl_in.is_operating) and messageSize > props_in.ocpi_buffer_size_out then
+         report "messageSize property (" & integer'image(to_integer(props_in.messageSize)) &
+           ") exceeds output port buffer size (" & integer'image(to_integer(props_in.ocpi_buffer_size_out)) &
+           ")" severity failure;
+         finished_r <= true;
+       elsif its(ctl_in.is_operating) and eof_r and out_in.ready then
+         -- Final transition to finished when eof "sent"
+         finished_r <= true;
+       elsif its(ctl_in.is_operating) and not eof_r and (not finished_r or ready_r) then
          if giving and eom_r then
            ready_r <= false;
          end if;
@@ -147,6 +161,7 @@ begin
          elsif bytesLeft_r = 0 and not som_next_r then
            -- between messages - see if we can start one
            if endfile(data_file) then
+             report "EOF when no bytes left in message";
              if not ready_r then -- don't finish until nothing is staged to send
                finish("between messages");
              end if;
@@ -160,7 +175,7 @@ begin
                  finish("Bad message header");
                end if;
              else
-               bytesLeft_r <= props_in.messageSize;
+               bytesLeft_r <= messageSize;
              end if;
            end if;
          elsif giving or not ready_r then
@@ -176,15 +191,17 @@ begin
                finished_r <= true;
              end if;
            elsif endfile(data_file) then -- EOF mid-message, w/ no data: shouldn't happen
+             report "EOF when mid-message";
              if its(props_in.messagesInFile) then
                report "Unexpected EOF mid-message" severity failure;
              else
+               finish("Short message at EOF");
                -- Can't use: finish("Short message at EOF");
-               eom        := true;
-               som_r      <= true;
-               valid_r    <= false;
-               finished_r <= true;
-               file_close(data_file);
+               -- eom        := true;
+               -- som_r      <= true;
+               -- valid_r    <= false;
+               -- finished_r <= true;
+               -- file_close(data_file);
              end if;
            else -- we want data (message_length_r != 0), and there is data (not eof)
              data_r        <= read_ulong(to_integer(bytesLeft_r), false);

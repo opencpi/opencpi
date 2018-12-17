@@ -70,12 +70,12 @@ entity master is
     -- only used if number of opcodes > 1
     opcode           : in  std_logic_vector(opcode_width-1 downto 0);
     eof              : in  Bool_t; -- eof from worker, false if not driven
-    give             : in  Bool_t;
+    give             : in  Bool_t := bfalse;
     data             : in  std_logic_vector(n_bytes * byte_width-1 downto 0);
     byte_enable      : in  std_logic_vector(n_bytes-1 downto 0) := (others => '1');
-    som              : in  Bool_t;
-    eom              : in  Bool_t;
-    valid            : in  Bool_t;
+    som              : in  Bool_t := bfalse;
+    eom              : in  Bool_t := bfalse;
+    valid            : in  Bool_t := bfalse;
     reset            : out Bool_t;  -- this port is being reset from outside/peer
     ready            : out Bool_t); -- data can be given
 end entity;
@@ -90,6 +90,8 @@ architecture rtl of master is
   signal ready_r      : Bool_t;
   signal eof_zlm      : Bool_t;
   signal eof_now      : Bool_t;
+  signal input_eof_r  : Bool_t; -- always give the worker one cycle during eof propagation
+  signal my_give      : Bool_t; -- internal version of: give or version>2 and valid
   signal ocp_give     : Bool_t;
   signal opcode_now   : std_logic_vector(opcode'range);
   signal opcode_r     : std_logic_vector(opcode'range);
@@ -112,10 +114,13 @@ begin
   latency <= resize(latency_r,latency'length);
   -- FIXME WHEN OWN CLOCK
   -- internal conveniences
+  -- Version 2 allows valid only, and allows valid as well as give to lead ready, like AXI
+  my_give    <= give when hdl_version < 2 else ready_r and (give or valid);
   som_i      <= to_bool(som or (state_r = before_som_e));
   opcode_now <= opcode when its(som_i) else opcode_r;
-  ocp_eom    <= to_bool(state_r = need_eof_e or state_r = need_eom_e or
+  ocp_eom    <= to_bool(state_r = NEED_EOF_E or state_r = NEED_EOM_E or
                         (data_count_r = data_limit and insert_eom) or
+                        (eof and state_r = BEFORE_SOM_E) or
                         (eom and not its(eof_zlm)));
   -- A condition where we are not passing through to OCP, an early SOM without valid
   early_som  <= som and not valid and not eom;
@@ -124,10 +129,10 @@ begin
                         opcode_now = slv0(opcode_now'length) and
                         (som or state_r = EARLY_SOM_e));
   -- The condition when we know we must do an eof, not necessarily sync'd to give
-  eof_now    <= to_bool((input_eof and hdl_version > 1 and not worker_eof) or eof);
+  eof_now    <= to_bool((input_eof_r and hdl_version > 1 and not worker_eof) or eof);
   -- The condition when we can issue an OCP command
   ocp_give   <= to_bool(state_r /= FINISHED_e and 
-                        ((give and not its(early_som) and not its(eof_zlm)) or
+                        ((my_give and not its(early_som) and not its(eof_zlm)) or
                          state_r = NEED_EOM_e or state_r = NEED_EOF_e));
   -- Outputs to OCP
   MReset_n   <= not wci_reset;
@@ -135,8 +140,9 @@ begin
   MDataLast  <= ocp_eom;
   MReqLast   <= ocp_eom;
   MDataValid <= ocp_give;
-  MByteEn    <= (others => valid) when n_bytes = 1 else
-                byte_enable when its(valid) else (others => '0');
+  MByteEn    <= (others => '0') when state_r = NEED_EOM_e or state_r = NEED_EOF_e else
+                (others => valid) when n_bytes = 1 else
+                byte_enable;
   MReqInfo   <= opcode_now;
   -- If there are parts of bytes in data_info_width, split them properly for OCP
   gen0: if mdata_info_width > 1 generate
@@ -152,7 +158,7 @@ begin
   end generate gen2;
   -- If there is room in mdatainfo for abort, assign it
   -- gen3: if mdata_info_width + mdata_width > data_width generate
-    MDataInfo(MDataInfo'left) <= to_bool(abort or state_r = NEED_EOF_e);
+    MDataInfo(MDataInfo'left) <= to_bool(abort or state_r = NEED_EOF_e or (eof_now and state_r = BEFORE_SOM_E));
   -- end generate gen3;
   
   process(Clk) is
@@ -161,7 +167,11 @@ begin
     begin
       state_r <= AFTER_SOM_e;
       if its(last_data_r) then
-        report "Output message has exceeded the maximum size" severity failure;
+        report "Output message has exceeded the maximum size";
+        report "  Data width " & integer'image(data_width) &
+          ", implementation max bytes " &  integer'image(max_bytes) &
+          ", configured max bytes " &  integer'image(to_integer(buffer_size))
+          severity failure;
       elsif its(ocp_eom) then
         data_count_r <= (others => '0');
         last_data_r <= bfalse;
@@ -193,16 +203,18 @@ begin
         first_data_r <= bfalse;
         last_data_r  <= bfalse;
         data_count_r <= (others => '0');
+        input_eof_r  <= bfalse;
       else
         ready_r <= wci_is_operating and not SThreadBusy(0); -- for next cycle.  OCP pipelining
-        if ready_r and its(first_take) and not its(give) then -- start latency measurement
+        if ready_r and its(first_take) and not its(my_give) then -- start latency measurement
           first_data_r <= btrue;
         end if;
         if its(ready_r) then
-          if give and not its(som or valid or eom or abort) then
+          input_eof_r <= input_eof;
+          if my_give and not its(som or valid or eom or abort) then
             report "Illegal message metadata: no SOM or VALID or EOM" severity failure;
           end if;
-          if its(give) then
+          if its(my_give) then
             first_data_r <= bfalse;
             if som and (state_r = EARLY_SOM_e or state_r = AFTER_SOM_e) then
               report "Illegal SOM after SOM with no EOM" severity failure;
@@ -211,6 +223,8 @@ begin
               when BEFORE_SOM_e => -- between messages
                 if its(early_som) then
                   state_r <= EARLY_SOM_e;
+                elsif its(eof_now) then
+                  state_r <= FINISHED_e;
                 else
                   do_som;
                 end if;
@@ -275,7 +289,7 @@ begin
   begin
     burst: process(Clk) is
     begin
-      if rising_edge(clk) and give and ready_r and som_i then
+      if rising_edge(clk) and my_give and ready_r and som_i then
         my_burst_length <= burst_length;
       end if;
     end process;

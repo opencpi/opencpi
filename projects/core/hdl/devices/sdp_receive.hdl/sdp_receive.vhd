@@ -79,6 +79,7 @@ architecture rtl of sdp_receive_worker is
   -- Combinatorial signals
   signal ctl_reset_n          : std_logic;
   signal will_give            : bool_t;
+  signal giving               : bool_t;
   signal last_give            : bool_t;     -- last give in message
   signal wsi_next_buffer_addr : bram_addr_t;
   signal brama_addr           : bram_addr_t;
@@ -299,6 +300,7 @@ g0: for i in 0 to sdp_width_c-1 generate
   will_give            <= to_bool(operating_r and faults = 0 and
                                   avail_not_empty and out_in.ready);
   last_give            <= to_bool(wsi_dws_left = 0);
+  giving               <= to_bool(will_give and not its(md_out.eof));
   wsi_dws_left         <= md_out.ndws_left when its(wsi_starting_r) else wsi_dws_left_r;
   buffer_ndws          <= props_in.buffer_size(bram_addr_t'left + addr_shift_c
                                                downto addr_shift_c);
@@ -309,11 +311,11 @@ g0: for i in 0 to sdp_width_c-1 generate
   ctl_out.finished    <= to_bool(faults /= 0 );
   props_out.faults     <= faults;
   props_out.sdp_id    <= resize(sdp_in.id, props_out.sdp_id'length);
-  out_out.give        <= will_give and not md_out.eof;
+  out_out.give        <= giving;
   out_out.som         <= wsi_starting_r and not md_out.eof;
   out_out.eom         <= last_give and not md_out.eof;
   out_out.eof         <= md_out.eof;
-  out_out.valid       <= to_bool(md_not_empty and not its(md_out.zlm));
+  out_out.valid       <= to_bool(its(giving) and md_not_empty and not its(md_out.zlm));
   out_out.opcode      <= md_out.opcode;
   out_out.byte_enable <= (others => '0') when its(md_out.zlm) else -- zlm
                          md_out.last_be when its(last_give) else

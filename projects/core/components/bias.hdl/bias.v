@@ -593,7 +593,7 @@ module mkBiasWorker4B(wciS0_Clk,
 		x_data__h10386;
   wire [15 : 0] x__h11148;
 
-  assign wsiM0_MDataInfo[0] = wsiM0_MCmd == 2'd1 && wsiM0_MByteEn == 4'd0;
+  assign wsiM0_MDataInfo[0] = wsiM_reqFifo_q_0[56]; //wsiM0_MCmd == 2'd1 && wsiM0_MByteEn == 4'd0;
 
   // value method wciS0_sResp
   assign wciS0_SResp = wci_wslv_respF_q_0[33:32] ;
@@ -622,7 +622,7 @@ module mkBiasWorker4B(wciS0_Clk,
   assign wsiM0_MReqLast = !wsiM_sThreadBusy_d && wsiM_reqFifo_q_0[57] ;
 
   // value method wsiM0_mBurstPrecise
-  assign wsiM0_MBurstPrecise = !wsiM_sThreadBusy_d && wsiM_reqFifo_q_0[56] ;
+  assign wsiM0_MBurstPrecise = 1'b0; //!wsiM_sThreadBusy_d && wsiM_reqFifo_q_0[56] ;
 
   // value method wsiM0_mBurstLength
   assign wsiM0_MBurstLength =
@@ -885,7 +885,7 @@ module mkBiasWorker4B(wciS0_Clk,
   assign wsiS_wsiReq$wget =
 	     { wsiS0_MCmd,
 	       wsiS0_MReqLast,
-	       wsiS0_MBurstPrecise,
+	       wsiS0_MDataInfo[0], // BurstPrecise,
 	       wsiS0_MBurstLength,
 	       wsiS0_MData,
 	       wsiS0_MByteEn,
