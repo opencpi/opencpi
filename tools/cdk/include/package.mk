@@ -39,6 +39,11 @@ define OcpiCreatePackageId
 
 ###############################################################################
 # Determine where the 'lib' directory is relative to the current location
+# TODO this list of directory-types that are supported for where the 'lib/'
+#      directory might be should be a distributed list that is collected here.
+#      So, there should be some sort of flag that can be set in library.mk or
+#      hdl-platforms.mk for example that flags it as "a dir that can have lib/".
+#      This hardcoded list here is not very scalable.
 LibIsInCwd=$$(filter lib library %-platform %-platforms %-primitives,$$(call OcpiGetDirType,$$(or $1,./)))
 LibIsInParent=$$(filter lib library %-platform %-platforms %-primitives,$$(call OcpiGetDirType,$$(or $1,.)/../))
 

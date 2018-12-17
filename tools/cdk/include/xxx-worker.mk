@@ -134,6 +134,8 @@ WkrBinary=$(call WkrTargetDir,$1,$2)/$(WkrBinaryName)$(call BF,$1,$2)
 # Function to generate object file name from source: $(call WkrObject,src,target,config)
 WkrObject=$(call WkrTargetDir,$2,$3)/$(basename $(notdir $1))$(call OBJ,$3)
 
+# TODO: Could WkrMakeObject, WkrWorkerDep, WkrDoTargetConfig, WkrDoTarget all be moved to rcc-worker?
+
 # Function to make an object from source: $(call WkrMakeObject,src,target,config)
 define WkrMakeObject
 
@@ -203,11 +205,14 @@ endef
 ################################################################################
 # Function to do stuff per target: $(eval $(call WkrDoTarget,target))
 $(call OcpiDbgVar,ParamConfigurations)
+# Call WkrDoTargetConfig for each Parameter Configuration
 define WkrDoTarget
   $(foreach c,$(ParamConfigurations),$(call WkrDoTargetConfig,$1,$c))
 endef
 
 # Do all the targets
+# Call WkrDoTarget for all targets
+#   So, we are now calling this function for all Parameter Configurations and targets
 ifneq ($(MAKECMDGOALS),skeleton)
 $(call OcpiDbgVar,HdlTargets)
 $(call OcpiDbgVar,HdlTarget)
@@ -243,6 +248,7 @@ ifdef LibDir
 
 # $(call DoLink,<target>,<binary>,<linkname>,<confname>,<rmrvname>)
 MyBBLibFile=$(infox MBB:$1:$2:$3)$(call BBLibFile,$1,$(call RmRv,$(basename $2))$(if $(filter 0,$3),,_c$3),$3,$1)
+# FIXME: WkrBinaryLink is not defined anywhere and should be removed below.
 define DoLink
   $(infox DoLink:$1:$2:$3:$4:$5)
   $$(infox DoLink2:$1:$2:$3:$4:$5)
@@ -310,7 +316,7 @@ $(LibDir) $(LibDirs):
 endif # LibDir to export into
 
 ################################################################################
-# Cleanup.  Tricky/careful removal of skeletons that were copied up into the 
+# Cleanup.  Tricky/careful removal of skeletons that were copied up into the
 #           directory.
 cleanfirst::
 	$(AT)$(OcpiRemoveSkeletons)

@@ -75,6 +75,8 @@ endif
 # Before we really do any "worker" or "config" stuff we must recurse into the device directory
 ifneq ($(MAKECMDGOALS),clean)
   ifneq ($(wildcard devices),)
+  # No reason to enter devices library if just printing out vars to shell
+  ifndef ShellHdlPlatformVars
     # We need to build the devices subdir before processing this file any further since the
     # parsing of the platform worker's XML depends on having these devices built.
     # Since we are NOT executing this in a recipe, exports are not happening automatically by make.
@@ -91,6 +93,7 @@ ifneq ($(MAKECMDGOALS),clean)
 	 RET=1; \
        echo ======= Exiting the \"devices\" library for the \"$(Worker)\" platform. 1>&2; \
        echo $$RET),$(error Error building devices library in $(CURDIR)))
+  endif
   endif
 endif
 $(call OcpiDbgVar,HdlExactPart)
@@ -129,9 +132,11 @@ ifndef HdlSkip
   # which is the "app" without container or the platform
   # FIXME: we can't do this yet because the BB library name depends on there being both cores...
   #Tops:=$(Worker)_rv
-  $(eval $(OcpiProcessBuildFiles))
-  $(eval $(HdlSearchComponentLibraries))
-  include $(OCPI_CDK_DIR)/include/hdl/hdl-worker.mk
+  ifndef ShellHdlPlatformVars
+    $(eval $(OcpiProcessBuildFiles))
+    $(eval $(HdlSearchComponentLibraries))
+    include $(OCPI_CDK_DIR)/include/hdl/hdl-worker.mk
+  endif
   ifdef HdlSkip
     $(error unexpected target/platform skip)
   endif
@@ -211,3 +216,8 @@ test:
 clean::
 	$(AT)if test -d devices; then make -C devices clean; fi
 	$(AT) rm -r -f config-* lib
+
+ifdef ShellHdlPlatformVars
+shellhdlplatformvars:
+$(info Configurations="$(Configurations)";)
+endif

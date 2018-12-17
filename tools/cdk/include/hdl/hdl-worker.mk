@@ -210,6 +210,8 @@ HdlVHDLParamSignalDecls=$(call WkrTargetDir,$1,$2)/parameterized_signal_decls.vh
 HdlVHDLParamSignalMap=$(call WkrTargetDir,$1,$2)/parameterized_signal_map.vhd
 HdlVerilogParamSignalDecls=$(call WkrTargetDir,$1,$2)/parameterized_signal_decls.v
 
+# Below, markers like "--rv" are detected in the source files and replaced with something
+# specific to this build configuration like "_c1" (or whichever configuration is being handled)
 define DoImplConfig
   $(call HdlVHDLParamSignalDecls,$1,$2): $(call WkrTargetDir,$1,$2)/generics.vhd \
 	                                 | $(call WkrTargetDir,$1,$2)

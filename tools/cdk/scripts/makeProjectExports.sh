@@ -67,10 +67,10 @@ source $OCPI_CDK_DIR/scripts/util.sh
 #  - avoids looking at ./exports/
 #  - consolidate files that are hard or soft linked into single (first in inode sort order) file
 #  - following links so that patterns can match against the link path
-function warn_check { 
+function warn_check {
   local arg=$1
-  if [ -n "$verbose" ]; then 
-    echo $arg 
+  if [ -n "$verbose" ]; then
+    echo $arg
   fi
 }
 function match_pattern {
@@ -105,8 +105,8 @@ function match_filter {
     elif [[ "${edirs[$i]}" != "${pdirs[$i]}" ]]; then
       return 1
     fi
-  done 
-  return 0   
+  done
+  return 0
 }
 
 function make_relative_link {
@@ -181,7 +181,7 @@ function topdirs {
 	    rdirs+=($d)
 	  else
 	    [ -n "$verbose" ] && echo Ignoring $d when looking for $2 1>&2
-	  fi	    
+	  fi
       done
     else
 	rdirs=($dirs)
@@ -281,7 +281,7 @@ for a in $assets; do
 	      [ "$model" != hdl ] && bad \"$arg\" only supported for HDL model
 	      all=`topdirs $model/$arg "hdl/hdl-(core|library|lib)"`
 	      if [ -z "$all" ]; then
-		  warn_check "Warning:  cannot export $model $arg since none exist" 
+		  warn_check "Warning:  cannot export $model $arg since none exist"
 	      else
 		  eval ${model}_$arg=\(${all[*]}\)
 	      fi;;
@@ -468,6 +468,7 @@ done
 set -f
 [ -n "$verbose" -a -n "$additions" ] && echo Processing additions
 for a in $additions; do
+
   declare -a both=($(echo $a | tr : ' '))
   [[ $a == *\<target\>* && $1 == - ]] && continue
   rawsrc=${both[0]//<target>/$1}
@@ -498,15 +499,16 @@ for a in $additions; do
 done
 set +f
 # This is speclinks for all libraries without recursing into python, then make, then python,
-# and requiring imports to exist to find platforms we aren't using etc. etc. etc. 
+# and requiring imports to exist to find platforms we aren't using etc. etc. etc.
 # This script is really a "leaf" script that should not be recursing back into all the
 # other make machinery.  If necessary before the python rewrite, we could have a
 # shared implementation some other way that avoided all the recursion.
 # Or change the python to do this and not use "make".
 
 # export the specs for each of the libraries
-python3 -c "import sys; sys.path.append(\"$OCPI_CDK_DIR/scripts/\");\
-           import ocpiutil; ocpiutil.export_libraries()"
+python3 -c "import sys, os; 
+sys.path.append(os.getenv('OCPI_CDK_DIR') + '/' + os.getenv('OCPI_TOOL_PLATFORM') + '/lib/')
+import _opencpi.util; _opencpi.util.export_libraries()"
 
 exit 0
 notes:
@@ -516,5 +518,3 @@ assets:
  as well as all component library specs
 core
  top level specs +specs/
-
-

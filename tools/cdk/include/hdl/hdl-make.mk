@@ -168,6 +168,7 @@ HdlCompile=\
   cd $(TargetDir) && \
   $(infox PRECOMPILE:$(HdlPreCompile))$(and $(HdlPreCompile), $(HdlPreCompile) &&)\
   export HdlCommand="set -e; $(HdlToolCompile)"; \
+  touch $(HdlLog) $(HdlTime); \
   $(TIME) bash -c \
    '(/bin/echo Commands to execute tool:@@@"$$HdlCommand" | sed "s/\([^\\]\); */\1;@@@/g" | sed "s/@@@/\n/g"; /bin/echo Output from executing commands above:;eval "$$HdlCommand") > $(HdlLog) 2>&1' \
     > $(HdlTime) 2>&1; \

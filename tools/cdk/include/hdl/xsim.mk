@@ -64,8 +64,8 @@ HdlToolRequiresFullCoreHierarchy_xsim=yes
 HdlToolNeedBB=
 
 ################################################################################
-# Function required by toolset: $(call HdlToolLibRef,libname)
-# This is the name after library name in a path
+# Function required by toolset: $(call HdlToolCoreRef,corename)
+# This is the name after core name in a path
 # It might adjust (genericize?) the target
 HdlToolCoreRef=$(call HdlRmRv,$1)
 HdlToolCoreRef_xsim=$(call HdlRmRv,$1)

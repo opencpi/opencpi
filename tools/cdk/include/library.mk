@@ -38,10 +38,12 @@ generate:
 	$(call BuildModel,ocl,generate)
 	$(call BuildModel,rcc,generate)
 	$(call BuildModel,test,generate)
-	
-ifdef ShellTestVars
+
+ifdef ShellLibraryVars
 showtests:
 	$(info Tests="$(TestImplementations)";)
+showworkers:
+	$(info Workers="$(Implementations)";)
 showpackage:
 	$(info Package="$(Package)";)
 endif

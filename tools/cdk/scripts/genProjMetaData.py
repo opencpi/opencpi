@@ -23,8 +23,8 @@ from xml.etree import ElementTree as ET
 import os
 import sys
 import subprocess
-import hdltargets
-import ocpiutil
+sys.path.append(os.getenv('OCPI_CDK_DIR') + '/' + os.getenv('OCPI_TOOL_PLATFORM') + '/lib/')
+import _opencpi.util as ocpiutil
 
 def addLibs(curRoot, libs):
     allWorkersLocal = False
@@ -92,35 +92,6 @@ def checkBuilt (primDir):
             if len(fileName) == 2 :
                 targets.append(fileName[1])
     retVal = targets
-    return retVal
-
-def checkBuiltAssy (assyName, workerDir):
-    fileList = os.listdir(workerDir)
-    platforms = []
-    containers = []
-    fileList_noxml = [x.strip('.xml') for x in fileList]
-    fileList_noxml = [x for x in fileList_noxml if not x.startswith("container-")]
-    platformList = [plat_obj.name for plat_obj in hdltargets.HdlPlatform.all()]
-    for fileName in fileList:
-        if fileName.startswith("container-"):
-            foundContainer = False;
-            for x in fileList_noxml:
-                if fileName.endswith(x):
-                    #print "adding to containers : " + x + " for " + fileName
-                    containers.append(x)
-                    foundContainer = True
-                    break
-            if (not foundContainer):
-                #print "adding to containers : base for " + fileName
-                containers.append("base")
-            for x in platformList:
-                if x in fileName:
-                    platforms.append(x)
-                    break
-            #print "filename is " + fileName
-    #print "platfroms" + str(platforms)
-    #print "containers" + str(containers)
-    retVal = list(zip(platforms, containers))
     return retVal
 
 def checkBuiltWorker (workerDir):
@@ -192,14 +163,9 @@ def addPlatforms (root, plats, dirName):
 
 def addAssemblies (root, assys, dirName):
     for a in assys:
-        built = checkBuiltAssy(a, dirName + '/' + a)
         #print "assemblies dir is: " + str(built)
         app = ET.SubElement(root, "assembly")
         app.set('name', a)
-        for platformStr, containerStr in built:
-                target = ET.SubElement(app, "built")
-                target.set('platform', platformStr)
-                target.set('container', containerStr)
 
 def addPrimitives (root, primitives, dirName):
     for a in primitives:
@@ -214,9 +180,9 @@ def addPrimitives (root, primitives, dirName):
 
 def isStale (myDir, force):
     retVal = True
-    # removed the functionality of this function to always return true because the find command 
+    # removed the functionality of this function to always return true because the find command
     # was taking longer to run then the regenerating of the metadata itself.  also the command
-    # stopped returning a string into find_output.  this could likely be fixed and optimized to 
+    # stopped returning a string into find_output.  this could likely be fixed and optimized to
     # fix these problems but not worth the time required right now
     '''find_output = ""
     if (force == False):
@@ -230,7 +196,7 @@ def isStale (myDir, force):
             if find_output != b'':
                 retVal = False
                 print ("is stale")
-        else: 
+        else:
             print ("metadata file does not exist yet")'''
 
     return retVal
@@ -250,112 +216,114 @@ def indent(elem, level=0):
         if level and (not elem.tail or not elem.tail.strip()):
             elem.tail = i
 
-# main
-if len(sys.argv) < 2 :
-    print("ERROR: need to specify the path to the project")
-    sys.exit(1)
+def main():
+    if len(sys.argv) < 2 :
+        print("ERROR: need to specify the path to the project")
+        sys.exit(1)
 
-if ((len(sys.argv) == 3) and (sys.argv[2] == "force")):
-    force = True
-else:
-    force = False
-
-mydir = sys.argv[1]
-mydir = ocpiutil.get_path_to_project_top(mydir)
-
-if (isStale(mydir, force)):
-    # Get the project name, add it as an attribute in the project element.
-    strings = mydir.split("/")
-    splitLen = strings.__len__()
-    if splitLen == 1:
-        projectName = strings[0]
+    if ((len(sys.argv) == 3) and (sys.argv[2] == "force")):
+        force = True
     else:
-        projectName = strings[splitLen -1]
+        force = False
 
-    full_proj_name = ocpiutil.get_project_package(mydir)
-    root = ET.Element("project", {"name" : full_proj_name})
+    mydir = sys.argv[1]
+    mydir = ocpiutil.get_path_to_project_top(mydir)
 
-    hdl = ET.SubElement(root, "hdl")
-    rcc = ET.SubElement(root, "rcc")
-    assys = ET.SubElement(hdl, "assemblies")
-    prims = ET.SubElement(hdl, "primitives")
+    if (isStale(mydir, force)):
+        # Get the project name, add it as an attribute in the project element.
+        strings = mydir.split("/")
+        splitLen = strings.__len__()
+        if splitLen == 1:
+            projectName = strings[0]
+        else:
+            projectName = strings[splitLen -1]
 
-    if os.path.isdir(mydir + "/specs"):
-        top_specs = ET.SubElement(root, "specs")
-        addSpecs(top_specs, mydir)
-    comps = None
-    if os.path.isdir(mydir + "/components"):
-        comps = ET.SubElement(root, "components")
+        full_proj_name = ocpiutil.get_project_package(mydir)
+        root = ET.Element("project", {"name" : full_proj_name})
 
-    if os.path.isdir(mydir + "/applications"):
-        apps = ET.SubElement(root, "applications")
-        sub_dirs = onlyfiles = [dir for dir in os.listdir(mydir + "/applications") 
-                                if not os.path.isfile(os.path.join(mydir + "/applications", dir))]
-        addApplications(apps, sub_dirs, mydir + "/applications")
+        hdl = ET.SubElement(root, "hdl")
+        rcc = ET.SubElement(root, "rcc")
+        assys = ET.SubElement(hdl, "assemblies")
+        prims = ET.SubElement(hdl, "primitives")
 
-    for dirName, subdirList, fileList in os.walk(mydir):
-        if "exports" in dirName or "imports" in dirName:
-            continue
-        elif dirName == mydir + "/components":
-            if ocpiutil.get_dirtype(dirName) == "library":
-                addLibs(comps, ["components"])
-            else:
-                addLibs(comps, subdirList)
-        elif dirName.endswith("/hdl/platforms"):
-            platforms = ET.SubElement(hdl, "platforms")
-            addPlatforms(platforms, subdirList, dirName)
-        elif dirName.endswith("/rcc/platforms"):
-            platforms = ET.SubElement(rcc, "platforms")
-            addPlatforms(platforms, subdirList, dirName)
+        if os.path.isdir(mydir + "/specs"):
+            top_specs = ET.SubElement(root, "specs")
+            addSpecs(top_specs, mydir)
+        comps = None
+        if os.path.isdir(mydir + "/components"):
+            comps = ET.SubElement(root, "components")
 
-        elif dirName.endswith("/cards"):
-            hdlLibs = hdl.findall("libraries")
-            if hdlLibs.__len__() == 0:
-                hdlLibs = [ET.SubElement(hdl, "libraries")]
-            cards = ET.SubElement(hdlLibs[0], "library")
-            cards.set('name', "cards")
-            addWorkers(cards, subdirList, dirName)
+        if os.path.isdir(mydir + "/applications"):
+            apps = ET.SubElement(root, "applications")
+            sub_dirs = onlyfiles = [dir for dir in os.listdir(mydir + "/applications")
+                                    if not os.path.isfile(os.path.join(mydir + "/applications", dir))]
+            addApplications(apps, sub_dirs, mydir + "/applications")
 
-        elif dirName.endswith("/devices"):
-            if "/platforms/" not in dirName:
-                # This is the hdl/devices directory
+        for dirName, subdirList, fileList in os.walk(mydir):
+            if "exports" in dirName or "imports" in dirName:
+                continue
+            elif dirName == mydir + "/components":
+                if ocpiutil.get_dirtype(dirName) == "library":
+                    addLibs(comps, ["components"])
+                else:
+                    addLibs(comps, subdirList)
+            elif dirName.endswith("/hdl/platforms"):
+                platforms = ET.SubElement(hdl, "platforms")
+                addPlatforms(platforms, subdirList, dirName)
+            elif dirName.endswith("/rcc/platforms"):
+                platforms = ET.SubElement(rcc, "platforms")
+                addPlatforms(platforms, subdirList, dirName)
+
+            elif dirName.endswith("/cards"):
                 hdlLibs = hdl.findall("libraries")
                 if hdlLibs.__len__() == 0:
                     hdlLibs = [ET.SubElement(hdl, "libraries")]
-                devs = ET.SubElement(hdlLibs[0], "library")
-                devs.set('name', "devices")
-                addWorkers(devs, subdirList, dirName)
-            else:
-                # this is a devices directory under a platform
-                dirSplit = dirName.split('/')
-                platName = [];
-                index = list(range(0, len(dirSplit)-1))
-                for i, sub in zip(index, dirSplit):
-                    if (sub == "platforms"):
-                        platName = dirSplit[i+1]
-                platformsEl =   hdl.findall("platforms")
-                if  platformsEl.__len__() >0:
-                    plats = platformsEl[0]
-                    platformTag = "platform[@name='"+platName+"']"
-                    plat = plats.findall(platformTag)
-                    if plat.__len__() > 0:
-                        devs = ET.SubElement(plat[0], "library")
-                        devs.set('name',"devices")
-                        addWorkers(devs, subdirList, dirName)
+                cards = ET.SubElement(hdlLibs[0], "library")
+                cards.set('name', "cards")
+                addWorkers(cards, subdirList, dirName)
 
-        elif dirName.endswith("hdl/assemblies"):
-            addAssemblies(assys ,subdirList, dirName)
-        elif dirName.endswith("hdl/primitives"):
-            addPrimitives(prims, subdirList, dirName)
+            elif dirName.endswith("/devices"):
+                if "/platforms/" not in dirName:
+                    # This is the hdl/devices directory
+                    hdlLibs = hdl.findall("libraries")
+                    if hdlLibs.__len__() == 0:
+                        hdlLibs = [ET.SubElement(hdl, "libraries")]
+                    devs = ET.SubElement(hdlLibs[0], "library")
+                    devs.set('name', "devices")
+                    addWorkers(devs, subdirList, dirName)
+                else:
+                    # this is a devices directory under a platform
+                    dirSplit = dirName.split('/')
+                    platName = [];
+                    index = list(range(0, len(dirSplit)-1))
+                    for i, sub in zip(index, dirSplit):
+                        if (sub == "platforms"):
+                            platName = dirSplit[i+1]
+                    platformsEl =   hdl.findall("platforms")
+                    if  platformsEl.__len__() >0:
+                        plats = platformsEl[0]
+                        platformTag = "platform[@name='"+platName+"']"
+                        plat = plats.findall(platformTag)
+                        if plat.__len__() > 0:
+                            devs = ET.SubElement(plat[0], "library")
+                            devs.set('name',"devices")
+                            addWorkers(devs, subdirList, dirName)
 
-        retVal = dirIsLib(dirName, comps)
-        if (retVal[0]):
-            addWorkers(retVal[1], subdirList, dirName)
+            elif dirName.endswith("hdl/assemblies"):
+                addAssemblies(assys ,subdirList, dirName)
+            elif dirName.endswith("hdl/primitives"):
+                addPrimitives(prims, subdirList, dirName)
 
-    print("Updating project metadata...")
-    indent(root) 
-    tree = ET.ElementTree(root)
-    tree.write(mydir+"/project.xml")
-else:
-    print("metadata is not stale, not regenerating")
-sys.exit(0)
+            retVal = dirIsLib(dirName, comps)
+            if (retVal[0]):
+                addWorkers(retVal[1], subdirList, dirName)
+
+        print("Updating project metadata...")
+        indent(root)
+        tree = ET.ElementTree(root)
+        tree.write(mydir+"/project.xml")
+    else:
+        print("metadata is not stale, not regenerating")
+
+if __name__ == '__main__':
+    main()
