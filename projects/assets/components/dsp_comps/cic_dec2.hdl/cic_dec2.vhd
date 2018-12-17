@@ -51,6 +51,7 @@ architecture rtl of cic_dec2_worker is
   signal idata_vld          : std_logic;
   signal odata_vld          : std_logic;
   signal i_out, q_out       : std_logic_vector(DOUT_WIDTH_c-1 downto 0);
+--  signal in_in_eof_r        : bool_t;
 
 begin
 
@@ -70,6 +71,29 @@ begin
   out_out.valid       <= odata_vld;
   out_out.data        <= std_logic_vector(resize(signed(q_out), 16)) & std_logic_vector(resize(signed(i_out), 16));
   out_out.byte_enable <= (others => '1');
+  -- out_out.eof         <= in_in_eof_r;
+  -----------------------------------------------------------------------------
+  -- We do not use the default eof-propagation from input to output because
+  -- our output is not continuous, and thus we can have pipelined output data
+  -- to "ship" that occurs AFTER the input happens on input.  In this case
+  -- it is only one cycle, but since the eof input is valid on the next cycle
+  -- after the last input value is taken
+  -- Delay the input EOF according to the known latency of the primitive so that
+  -- we don't assert the output eof while there is still data in the pipeline
+  -----------------------------------------------------------------------------
+  -- eof_delay : process (ctl_in.clk)
+  -- begin
+  --   if rising_edge(ctl_in.clk) then
+  --     if (ctl_in.reset = '1') then
+  --       in_in_eof_r <= bfalse;
+  --     elsif its(out_in.ready) and in_in.eof and odata_vld = '0' then
+  --       in_in_eof_r <= btrue;
+  --     end if;
+  --   end if;
+  -- end process;  
+  
+
+
 
   -----------------------------------------------------------------------------
   -- CIC Decimation primitives (I & Q)

@@ -16,38 +16,16 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-# This is the dsp_comps library
+# During the build process, swap HdlTarget with 'actual' target part of the target platform
+# We do this to build for a part with the correct number of resources, such as hardware
+# multipliers, rather than the default smallest part in the family
+# zynq => xc7z020 (ZedBoard, Matchstiq-Z1, Picoflexor-T6A)
+# virtex6 => xc6vlx240t (ml605 development board)
+# alst4 => ep4sgx230k (Stratix4 development board)
+HdlExactPart=\
+	$(or $(and $(filter zynq_ise,$(HdlTarget)),xc7z020_ise_alias-1-clg484), \
+	$(and $(filter zynq,$(HdlTarget)),xc7z020-1-clg484), \
+	$(and $(filter virtex6,$(HdlTarget)),xc6vlx240t-1-ff1156), \
+	$(and $(filter stratix4,$(HdlTarget)),ep4sgx230k-c2-f40))
 
-Tests = \
-	Baudtracking_simple.test \
-	dc_offset_filter.test \
-	iq_imbalance_fixer.test \
-	complex_mixer.test \
-	fir_real_sse.test \
-	fir_complex_sse.test \
-	phase_to_amp_cordic.test \
-	rp_cordic.test \
-	pr_cordic.test \
-	cic_dec.test \
-	cic_int.test \
-
-# All workers created here will be built automatically
-# If you want to limit the workers that actually get built, set the Workers= variable
-Workers = \
-	Baudtracking_simple.rcc \
-	real_digitizer.rcc \
-	dc_offset_filter.hdl \
-	dc_offset_filter2.hdl \
-	iq_imbalance_fixer.hdl \
-	complex_mixer.rcc \
-	complex_mixer.hdl \
-	fir_real_sse.hdl fir_complex_sse.hdl \
-	phase_to_amp_cordic.hdl \
-	rp_cordic.hdl \
-	pr_cordic.hdl \
-	cic_dec.hdl \
-	cic_int.hdl \
-	cic_dec2.hdl \
-	cic_int2.hdl \
-
-include $(OCPI_CDK_DIR)/include/library.mk
+include $(OCPI_CDK_DIR)/include/worker.mk
