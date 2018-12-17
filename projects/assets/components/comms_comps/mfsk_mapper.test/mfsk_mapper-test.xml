@@ -1,5 +1,5 @@
 <tests timeout='10' useHDLFileIo='true'>
-  <input port='in' script='generate.py 3' messagesize='8192'/>
+  <input port='in' script='generate.py 3'/>
   <output port='out' script='verify.py' view='view.sh'/>
   <property name='symbols' generate='gen_symbols.py'/>
 </tests>
