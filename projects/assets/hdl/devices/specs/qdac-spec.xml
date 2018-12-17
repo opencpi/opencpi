@@ -1,4 +1,5 @@
 <ComponentSpec>
   <xi:include href='dac-properties'/>
   <DataInterfaceSpec Name="IN" protocol='iqstream_protocol'/>
+  <DataInterfaceSpec Name='event_in' Protocol='tx_event-prot'/>
 </ComponentSpec>

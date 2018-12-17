@@ -64,7 +64,9 @@
 
 #include <string>     // std::string
 #include <cstdint>    // uint8_t type
-#include "OcpiApi.hh" // OCPI::API namespace
+#include "OcpiApi.hh" // OA namespace
+
+namespace OA = OCPI::API;
 
 /*! @brief Get the in-situ value with exact precision of the
  *         Transmit Half-Band filter 3's interpolation factor
@@ -75,11 +77,9 @@
  *  @param[in]  app_inst_name_proxy OpenCPI application instance name of the
  *                                  OpenCPI ad9361_config_proxy.rcc worker
  *  @param[out] val                 Retrieved value.
- *  @return 0 if there are no errors, non-zero char array pointer if there
- *          are errors (char array content will describe the error).
  ******************************************************************************/
-const char* get_AD9361_THB3_interpolation_factor(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
+void get_AD9361_THB3_interpolation_factor(
+    OA::Application& app, const char* app_inst_name_proxy,
     uint8_t& val)
 {
   std::string enum_str;
@@ -102,10 +102,8 @@ const char* get_AD9361_THB3_interpolation_factor(
     std::string err;
     err = "Invalid value read for ad9361_config_proxy.rcc ";
     err += "THB3_Enable_and_Interp property: " + enum_str;
-    return err.c_str();
+    throw err;
   }
-
-  return 0;
 }
 
 /*! @brief Get the in-situ value with exact precision of the
@@ -117,17 +115,13 @@ const char* get_AD9361_THB3_interpolation_factor(
  *  @param[in]  app_inst_name_proxy OpenCPI application instance name of the
  *                                  OpenCPI ad9361_config_proxy.rcc worker
  *  @param[out] val                 Retrieved value.
- *  @return 0 if there are no errors, non-zero char array pointer if there
- *          are errors (char array content will describe the error).
  ******************************************************************************/
-const char* get_AD9361_THB2_interpolation_factor(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
+void get_AD9361_THB2_interpolation_factor(
+    OA::Application& app, const char* app_inst_name_proxy,
     uint8_t& val)
 {
-  OCPI::API::Property p(app, app_inst_name_proxy, "THB2_Enable");
+  OA::Property p(app, app_inst_name_proxy, "THB2_Enable");
   val = p.getBoolValue() ? 2 : 1;
-
-  return 0;
 }
 
 /*! @brief Get the in-situ value with exact precision of the
@@ -139,17 +133,13 @@ const char* get_AD9361_THB2_interpolation_factor(
  *  @param[in]  app_inst_name_proxy OpenCPI application instance name of the
  *                                  OpenCPI ad9361_config_proxy.rcc worker
  *  @param[out] val                 Retrieved value.
- *  @return 0 if there are no errors, non-zero char array pointer if there
- *          are errors (char array content will describe the error).
  ******************************************************************************/
-const char* get_AD9361_THB1_interpolation_factor(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
+void get_AD9361_THB1_interpolation_factor(
+    OA::Application& app, const char* app_inst_name_proxy,
     uint8_t& val)
 {
-  OCPI::API::Property p(app, app_inst_name_proxy, "THB1_Enable");
+  OA::Property p(app, app_inst_name_proxy, "THB1_Enable");
   val = p.getBoolValue() ? 2 : 1;
-
-  return 0;
 }
 
 #endif // _READERS_AD9361_TX_FILTERS_DIGITAL_H

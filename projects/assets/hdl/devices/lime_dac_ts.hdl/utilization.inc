@@ -1,65 +1,25 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Utilization Report for Worker "lime_dac_ts"
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\textbf{Worker Build Configuration ``0'':}\\
-Table entries are a result of building the worker with the following parameter sets:\
-\begin{itemize}
-	\item \verb+DRIVE_CLK_p=1+
-	\item \verb+ocpi_endian=little+
-	\item \verb+USE_CTL_CLK_p=0+
-	\item \verb+USE_CLK_IN_p=1+
-	\item \verb+SECONDS_WIDTH_p=32+
-	\item \verb+ocpi_debug=false+
-	\item \verb+FRACTION_WIDTH_p=32+
-\end{itemize}
-\begin{scriptsize}
-	\begin{table}[H]
-	\captionsetup{justification=raggedright,singlelinecheck=false}
-	\caption{Worker Build Configuration ``0''}
-	\begin{tabular}{|c|c|c|c|c|c|c|c|}
-		\hline
-		\rowcolor{blue}
-		OpenCPI Target & Tool    & Version & Device          & Registers & LUTs & Fmax (MHz) & Memory/Special Functions\\
-		\hline
-		stratix4       & Quartus & 15.1.0  & N/A             & 310       & 352  & N/A        & N/A                     \\
-		\hline
-		virtex6        & ISE     & 14.7    & 6vcx75tff484-2  & 305       & 476  & 351.744    & N/A                     \\
-		\hline
-		zynq           & Vivado  & 2017.1  & xc7z020clg400-3 & 313       & 247  & 283.126    & N/A                     \\
-		\hline
-		zynq\_ise      & ISE     & 14.7    & 7z010clg400-3   & 305       & 477  & 431.537    & N/A                     \\
-		\hline
-	\end{tabular}
-	\end{table}
-\end{scriptsize}
-%\textbf{Worker Build Configuration ``1'':}\\
-%Table entries are a result of building the worker with the following parameter sets:\
-%\begin{itemize}
-%	\item \verb+DRIVE_CLK_p=1+
-%	\item \verb+ocpi_endian=little+
-%	\item \verb+USE_CTL_CLK_p=0+
-%	\item \verb+USE_CLK_IN_p=1+
-%	\item \verb+SECONDS_WIDTH_p=32+
-%	\item \verb+ocpi_debug=false+
-%	\item \verb+FRACTION_WIDTH_p=26+
-%\end{itemize}
-%\begin{scriptsize}
-%	\begin{table}[H]
-%	\captionsetup{justification=raggedright,singlelinecheck=false}
-%	\caption{Worker Build Configuration ``1''}
-%	\begin{tabular}{|c|c|c|c|c|c|c|c|}
-%		\hline
-%		\rowcolor{blue}
-%		OpenCPI Target & Tool    & Version & Device          & Registers & LUTs & Fmax (MHz) & Memory/Special Functions\\
-%		\hline
-%		stratix4       & Quartus & 15.1.0  & N/A             & 304       & 339  & N/A        & N/A                     \\
-%		\hline
-%		virtex6        & ISE     & 14.7    & 6vcx75tff484-2  & 299       & 470  & 351.744    & N/A                     \\
-%		\hline
-%		zynq           & Vivado  & 2017.1  & xc7z020clg400-3 & 307       & 244  & 283.126    & N/A                     \\
-%		\hline
-%		zynq\_ise      & ISE     & 14.7    & 7z010clg400-3   & 299       & 471  & 431.537    & N/A                     \\
-%		\hline
-%	\end{tabular}
-%	\end{table}
-%\end{scriptsize}
+% Generated on Fri Oct  5 08:46:00 2018
+
+% It is best to wrap this table in \begin{landscape} and \end{landscape} in its including doc
+\begin{tiny}
+    \begin{longtable}[l]{* {9}{|c}|}
+    \captionsetup{justification=raggedright,singlelinecheck=false}
+    \caption{Resource Utilization Table for worker: lime\_dac\_ts}\\
+        \hline
+        \rowcolor{blue}
+            Configuration & OCPI Target & Tool    & Version & Device          & Registers (Typ) & LUTs (Typ) & Fmax (MHz) (Typ) & Memory/Special Functions \\
+            \hline
+            0             & zynq        & Vivado  & 2017.1  & xc7z020clg400-3 & 394             & 327        & N/A              & \begin{tabular}{@{}l@{}}RAMB18E1: 1 \\ ODDR: 1\end{tabular} \\
+            \hline
+            0             & virtex6     & ISE     & 14.7    & 6vcx75tff484-2  & 386             & 593        & 346.881          & \begin{tabular}{@{}l@{}}ODDR: 1\end{tabular} \\
+            \hline
+            0             & stratix4    & Quartus & 17.1.0  & N/A             & 389             & 469        & N/A              & \begin{tabular}{@{}l@{}}Block Memory Bits: 1664\end{tabular} \\
+            \hline
+            1             & zynq        & Vivado  & 2017.1  & xc7z020clg400-3 & 388             & 322        & N/A              & \begin{tabular}{@{}l@{}}RAMB18E1: 1 \\ ODDR: 1\end{tabular} \\
+            \hline
+            1             & virtex6     & ISE     & 14.7    & 6vcx75tff484-2  & 380             & 587        & 346.881          & \begin{tabular}{@{}l@{}}ODDR: 1\end{tabular} \\
+            \hline
+            1             & stratix4    & Quartus & 17.1.0  & N/A             & 383             & 460        & N/A              & \begin{tabular}{@{}l@{}}Block Memory Bits: 1664\end{tabular} \\
+            \hline
+        \end{longtable}
+\end{tiny}

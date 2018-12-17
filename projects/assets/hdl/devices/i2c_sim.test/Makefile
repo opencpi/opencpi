@@ -23,8 +23,9 @@
 
 $(if $(realpath $(OCPI_CDK_DIR)),,$(error The OCPI_CDK_DIR environment variable is not set correctly.))
 
-# add the RCC component and HDL assemblies to OCPI_LIBRARY_PATH
-EXPORT_PATH = export OCPI_LIBRARY_PATH=:$(OCPI_LIBRARY_PATH):$(PWD);
+# Prefix HDL assembly location to OCPI_LIBRARY_PATH
+#EXPORT_PATH = export OCPI_LIBRARY_PATH=:$(OCPI_LIBRARY_PATH):$(PWD);
+EXPORT_PATH = export OCPI_LIBRARY_PATH=:$(PWD):$(OCPI_LIBRARY_PATH)
 
 MSG_EXE =  ==== Target Platform :
 
@@ -81,8 +82,8 @@ sim_testbench:
 	# Setup environment path per platform and execute application assembly
 	# Set search path and execute application assembly
 	echo $(MSG_EXE) $(P) ; \
-	$(EXPORT_PATH) \
-	./$(PROG) $(OAS) $P ;
+	$(EXPORT_PATH) ; \
+	./target-$(OCPI_TOOL_PLATFORM)/$(APP) $(OAS) $P ;
 
 clean::
 	rm -f *.results && rm -rf simulations/*

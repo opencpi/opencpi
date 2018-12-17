@@ -64,6 +64,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 %----------------------------------------------------------------------------------------
 % Table packages
 %----------------------------------------------------------------------------------------
+\usepackage{longtable} % for long possibly multi-page tables
 \usepackage{tabularx} % c=center,l=left,r=right,X=fill
 \usepackage{float}
 \floatstyle{plaintop}
@@ -116,25 +117,25 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Version           & v\docVersion{}   \\
 	\hline
-	Release Date      & Jun 2018         \\
+	Release Date      & October 2018           \\
 	\hline
 	Component Library & ocpi.assets.devices     \\
 	\hline
 	Workers           & \comp.hdl        \\
 	\hline
-	Tested Platforms  & 
+	Tested Platforms  &
 \begin{itemize}
-  \item Agilent Zedboard/Analog Devices FMCOMMS2
-  \item Agilent Zedboard/Analog Devices FMCOMMS3
+  \item Agilent Zedboard/Analog Devices FMCOMMS2 (Vivado only)
+  \item Agilent Zedboard/Analog Devices FMCOMMS3 (Vivado only)
   \item x86/Xilinx ML605/Analog Devices FMCOMMS2
   \item x86/Xilinx ML605/Analog Devices FMCOMMS3
-  \item Ettus E310 (Vivado only, unit test exists in av.bsp.e310 project)
+  \item Ettus E310 (Vivado only, application for testing exists in e310 project)
 \end{itemize} \\
 	\hline
 \end{tabular}
 \section*{Functionality}
 	The \Comp{} device worker outputs a single RX channel's data from the AD9361 IC\cite{ad9361} via an iqstream output port. Up to two instances of this worker can be used to provide each AD9361 RX channel data stream in an independent, non-phase-coherent fashion.
-	
+
 \section*{Worker Implementation Details}
 \subsection*{\comp.hdl}
 The ad9361\_adc\_sub.hdl subdevice worker supports the \comp{}.hdl device worker. The ad9361\_adc\_sub.hdl subdevice sends a data bus containing 24-bit parallel I/Q data in the AD9361's DATA\_CLK\_P pin clock domain via the \verb+dev_adc+ dev signal port. Either of data streams from the two AD9361 RX channels  may be sent to an instance of \comp{}.hdl. Which RX channel data stream is sent is determined within the ad9361\_adc\_sub.hdl subdevice worker. The Q0.15 I/Q values on the \comp{}.hdl output port are sign extended from the AD9361's 12-bit I/Q ADC bus. For more information see \cite{adc_sub_comp_datasheet}. \\
@@ -150,7 +151,7 @@ The \comp{}.hdl worker passes data from the \verb+dev_adc+ dev signal bus  throu
 			every edge/.style={draw,thick}
 		]
 		\node[rectangle,ultra thick,draw=black,fill=blue,minimum width=5 cm](R2){Parameter Properties: \verb+fifo_depth+ \\ \\ \Comp \\ };
-		\node[rectangle,draw=white,fill=white](R3)[below= of R2]{``dev\_adc" dev signal port\\ ADC data bus (see AD9361\_ADC\_SUB.pdf)};
+		\node[rectangle,draw=white,fill=white](R3)[below= of R2]{``dev\_adc'' dev signal port\\ ADC data bus (see AD9361\_ADC\_SUB.pdf)};
 		\node[rectangle,draw=white,fill=white](R4)[right= of R2]{``out'' port \\ Complex signed samples (Q0.15 I, Q0.15 Q)};
 		\node[rectangle,draw=white,fill=white](R5)[above= of R2]{Non-parameter Properties:\\\verb+overrun+\\ \verb+messageSize+\\};
 		\path[<->]
@@ -165,14 +166,14 @@ The \comp{}.hdl worker passes data from the \verb+dev_adc+ dev signal bus  throu
 \section*{Source Dependencies}
 \subsection*{\comp.hdl}
 \begin{itemize}
-	\item opencpi/hdl/devices/ad9361\_adc.hdl/ad9361\_adc.vhd
-	\item opencpi/hdl/primitives/util/adc\_fifo.vhd
-	\item opencpi/hdl/primitives/util/sync\_status.vhd
-	\item opencpi/hdl/primitives/util/util\_pkg.vhd
-	\item opencpi/hdl/primitives/bsv/imports/SyncFIFO.v
-	\item opencpi/hdl/primitives/bsv/imports/SyncResetA.v
-	\item opencpi/hdl/primitives/bsv/imports/SyncHandshake.v
-	\item opencpi/hdl/primitives/bsv/bsv\_pkg.vhd
+	\item assets/hdl/devices/\comp.hdl/\comp.vhd
+	\item core/hdl/primitives/util/adc\_fifo.vhd
+	\item core/hdl/primitives/util/sync\_status.vhd
+	\item core/hdl/primitives/util/util\_pkg.vhd
+	\item core/hdl/primitives/bsv/imports/SyncFIFO.v
+	\item core/hdl/primitives/bsv/imports/SyncResetA.v
+	\item core/hdl/primitives/bsv/imports/SyncHandshake.v
+	\item core/hdl/primitives/bsv/bsv\_pkg.vhd
 \end{itemize}
 \begin{landscape}
 
@@ -255,88 +256,39 @@ The \comp{}.hdl worker passes data from the \verb+dev_adc+ dev signal bus  throu
 The \comp{}.hdl device worker contains two clock domains: the clock from the Control Plane, and the adc\_clk clock from the dev signal.\par\bigskip
 \noindent The latency from the dev signal data bus to the output port is non-deterministic due to data flowing through an asynchronous FIFO with each side in a different clock domain. This non-determinism exists even in the absense of backpressure. In the presence of backpressure, the latency increases in an amount directly proportional to the degree to which the FIFO is full.
 
+\section*{Worker Configuration Parameters}
+\subsubsection*{\comp.hdl}
+\input{../../\ecomp.hdl/configurations.inc}
 \section*{Performance and Resource Utilization}
 \subsubsection*{\comp.hdl}
 The FPGA resource utilization and Fmax are included for this worker. Fmax refers to the maximum allowable clock rate for any registered signal paths within a given clock domain for an FPGA design. Fmax in the table below is specific only to this worker and represents the maximum possible Fmax for any OpenCPI bitstream built with this worker included. Note that the Fmax value for a given clock domain for the final bitstream is often worse than the Fmax specific to this worker, even if this worker is the only one included in the bitstream. Note also that the DATA\_CLK\_P devsignal's rate will only ever go as high as 245.76 MHz\cite{adi_ug570}. \\ \\
-Table entries are a result of building the worker with the following parameter property sets:
-\begin{itemize}
-	\item \verb+fifo_depth+=64
-\end{itemize}
-% see performance_and_resource_utilization.txt
-\begin{scriptsize}
-	\begin{tabular}{|M{4.2cm}|M{1.1cm}|M{1.1cm}|M{2.0cm}|M{2.6cm}|M{2cm}|M{1.4cm}|}
-		\hline
-    \rowcolor{blue}
-    Device                                 & Registers (typical) & LUTS (typical) & \multicolumn{2}{c|}{Fmax (typical)}  & Memory/Special Functions & Design Suite \\
-		\hline
-    \rowcolor{blue}
-		                                       &           &      & control plane clock & dev\_adc.adc\_clk clock &           &          \\
-		\hline
-		\multirow{2}{*}{Zynq XC7Z020-1-CLG484} & 188       & 133  & 202 MHz \textsuperscript{\ref{abc}} & 339 MHz \textsuperscript{\ref{abc}} & 1 RAMB18 & Vivado 2017.1 \\
-		\cline{2-7}
-		                                       & 208       & 254  & 354 MHz             & 399 MHz                 & 8 RAM64M  & ISE 14.7 \\
-		\hline
-		Virtex-6 XC6VLX240T-1-FF1156           & 208       & 258  & 335 MHz             & 369 MHz                 & 8 RAM64M  & ISE 14.7 \\
-		\hline
-		Stratix IV EP4SGX230K-C2-F40           & 187       & 185  & \ref{quartustiming} & \ref{quartustiming} & 1,536 block memory bits & Quartus Prime 15.1 \\
-		\hline
-	\end{tabular}
-\end{scriptsize} \\ \\
+
+%\input{../../\ecomp.hdl/utilization.inc}
+\input{utilization_custom.inc}
+
 \footnotetext[1]{\label{abc}These measurements were the result of a Vivado timing analysis which was different from the Vivado analysis performed by default for OpenCPI worker builds. For more info see Appendix \ref{appendix}}
-\footnotetext[2]{\label{quartustiming}Quartus does not perform timing analysis at the OpenCPI worker build (i.e. synthesis) stage.}
+
 \pagebreak
 \section*{Test and Verification}
-\subsection*{Theory of Operation}
-The AD9361 has a Built In Self Test (BIST) mode cable of validating in-situ the digital RX/TX data paths without the need for additional external equipment. One of the BIST configurations enables a Linear Feedback Shift Register (LFSR) within the AD9361 and sends the LFSR output to AD9361's ADC data pins. The LFSR generates a Pseudo Random Bit Sequence (PRBS). By using the LFSR algorithm to verify data fidelity after the data is registered inside the FPGA, the AD9361-to-FPGA digital RX data path is verified. For more information on the BIST modes see \cite{adi_bist_doc} and \cite{adi_ug570}. \\ \\
-The \comp{}.hdl unit test performs an in-situ hardware test. The unit test validates not only the \comp{}.hdl device worker, but the entire command/control and RX data path both in software and harwdare.
-The unit test runs multiple ocpirun applications which use the AD9361 BIST PRBS mode and save the first 8192 samples output from the \comp{}.hdl output port to a binary file. A Bit Error Rate (BER) is then calculated on each output file and verified to be 0\%. These data fidelity tests are run across the full range of possible AD9361 sample rates for the mode used. The \verb+overrun+ property is verified to be false for apps running as long as 10 seconds at the max sample rate. All of these tests are run for both 1R1T timing and 2R2T AD9361 timing modes. For more information on these AD9361 modes, see \cite{adi_ug570}.
+No unit test for this component exists. However, a hardware-in-the-loop
+application (which is NOT a unit test) exists for testing purposes (see
+assets/applications/ad9361\_adc\_test).
 
-\subsection*{Execution Instructions}
-Prerequisites for execution are as follows:
-\begin{itemize}
-  \item all OAS artifacts must be in the \texttt{OCPI\_LIBRARY\_PATH} environment variable
-  \item if the AD9361 exists on a card on a platform with multiple slots for said card, the intended slot-specific bitstream must occur first in the \texttt{OCPI\_LIBRARY\_PATH}
-  \item must be in the \texttt{ad9361\_adc.test} directory
-\end{itemize}
-Note that, if multiple HDL containers/platforms are found (e.g. multiple ML605s), the first one found will be used. Tests are run on non-embedded systems using the following command:
-\lstset{language=bash, columns=flexible, breaklines=true, prebreak=\space\textbackslash, basicstyle=\ttfamily, showstringspaces=false,upquote=true, aboveskip=\baselineskip, belowskip=\baselineskip}
-\begin{lstlisting}
-ocpidev run
-\end{lstlisting}
-For example, usage on ML605 w/ FMCOMMS3 on its FMC LPC slot with core and assets projects in \texttt{/data/ocpi.core/} and \texttt{/data/ocpi.assets/}:
-\begin{lstlisting}
-export OCPI_LIBRARY_PATH=$(find $PWD/assemblies | grep ml605_cfg_1rx_0tx_fmcomms_2_3_lpc | grep bitz):/data/ocpi.core:/data/ocpi.assets/
-cd /data/ocpi.assets/hdl/devices/ad9361_adc.test/
-ocpidev run
-\end{lstlisting}
-Tests are run natively on embedded systems using the following commands:
-\begin{lstlisting}
-./run/runtests.sh verify
-\end{lstlisting}
-Upon completion of a successful test, PASSED is printed to the screen and a value of 0 is returned. Upon failure, FAILED is printed to the screen and a non-zero value is returned.
-
-\subsection*{Troubleshooting}
-This unit test is in need of more robust error messaging. If a failure occurs but the test completed, the screen will output a diff between a generated log file odata/AD9361\_BIST\_PRBS.log and a golden log file. If a failure occurs before the test was completed, there is sometimes not a good error message generated. Upon failure, the logs should be checked to ensure the error was not one which prevented the test from being run. Log files are also saved which capture the stdout/stderr for each of the multiple ocpirun calls, e.g. odata/app\_2.083334e6sps\_fir0\_0\_1sec\_prbs.log.
-
-\pagebreak
 \begin{thebibliography}{1}
 
 \bibitem{ad9361} AD9361 Datasheet and Product Info \\
 \url{http://www.analog.com/en/products/rf-microwave/integrated-transceivers-transmitters-receivers/wideband-transceivers-ic/ad9361.html}
 \bibitem{adi_ug570} AD9361 Reference Manual UG-570\\
 AD9361\_Reference\_Manual\_UG-570.pdf
-\bibitem{adi_bist_doc} AD9361 BIST FAQ \\
-\url{https://ez.analog.com/servlet/JiveServlet/download/11828-2-28791/AD9361%20BIST%20FAQ.pdf}
-\bibitem{vendor_tools_install} FPGA Vendor Tools Installation Guide \\
-FPGA\_Vendor\_Tools\_Installation\_Guide.pdf
-\bibitem{adc_sub_comp_datasheet} AD361 ADC Sub Component Data Sheet \\AD9361\_ADC\_Sub.pdf
- 
+\bibitem{adc_sub_comp_datasheet} AD361 ADC Sub Component Data Sheet \\
+\url{https://opencpi.github.io/assets/AD9361_ADC_Sub.pdf}
+
 \end{thebibliography}
 \pagebreak
 \section{Appendix 1 - AD9361 ADC Data Fidelity / Delay Setting Verification}
 \subsection{FMCOMMS3 on ML605 FMC-LPC slot}
 A custom script was run to report bit error rate vs. on-AD9361 RX data-clock delay settings. The following confirms both the ability of the ML605/FMCOMMS3 to have 100\% data fidelity up to the maximum data rate and the experimental range of valid delay settings. Each entry in the table below represents bit error rate in percent.
-\lstset{language=bash, columns=flexible, breaklines=true, prebreak=\textbackslash, basicstyle=\ttfamily, showstringspaces=false,upquote=true, aboveskip=\baselineskip, belowskip=\baselineskip}
+\lstset{language=bash, backgroundcolor=\color{lightgray}, columns=flexible, breaklines=true, prebreak=\textbackslash, basicstyle=\ttfamily, showstringspaces=false,upquote=true, aboveskip=\baselineskip, belowskip=\baselineskip}
 \begin{lstlisting}[basicstyle=\scriptsize]
 FIR enabled      : 0
 Data port config : 1R1T
@@ -345,22 +297,22 @@ sample rate      : 2.083334e6 sps
   |
   v
         0       1       2       3       4       5       6       7       8       9       10      11      12      13      14      15
-0       11.1165 32.5526 38.0768 38.888  38.739  38.7141 38.7461 38.9165 error   38.7726 38.6963 38.887  38.8316 38.8514 38.8423 38.8295 
-1       0.175476        
-2       0       
-3       0       
-4       0       
-5       0       
-6       0       
-7       0       
-8       0       
-9       0       
-10      0       
-11      0       
-12      0       
-13      0       
-14      0       
-15      0       
+0       11.1165 32.5526 38.0768 38.888  38.739  38.7141 38.7461 38.9165 error   38.7726 38.6963 38.887  38.8316 38.8514 38.8423 38.8295
+1       0.175476
+2       0
+3       0
+4       0
+5       0
+6       0
+7       0
+8       0
+9       0
+10      0
+11      0
+12      0
+13      0
+14      0
+15      0
 FIR enabled      : 0
 Data port config : 1R1T
 sample rate      : 25e6 sps
@@ -368,22 +320,22 @@ sample rate      : 25e6 sps
   |
   v
         0       1       2       3       4       5       6       7       8       9       10      11      12      13      14      15
-0       10.0082 32.0424 37.6495 38.6719 38.5193 38.267  38.6541 39.18   38.913  39.1368 38.7884 37.9674 37.9908 38.7934 38.827  37.885  
-1       0.0223796       
-2       0       
-3       0       
-4       0       
-5       0       
-6       0       
-7       0       
-8       0       
-9       0       
-10      0       
-11      0       
-12      0       
-13      0       
-14      0       
-15      0       
+0       10.0082 32.0424 37.6495 38.6719 38.5193 38.267  38.6541 39.18   38.913  39.1368 38.7884 37.9674 37.9908 38.7934 38.827  37.885
+1       0.0223796
+2       0
+3       0
+4       0
+5       0
+6       0
+7       0
+8       0
+9       0
+10      0
+11      0
+12      0
+13      0
+14      0
+15      0
 FIR enabled      : 0
 Data port config : 1R1T
 sample rate      : 40e6 sps
@@ -391,22 +343,22 @@ sample rate      : 40e6 sps
   |
   v
         0       1       2       3       4       5       6       7       8       9       10      11      12      13      14      15
-0       10.0683 32.1218 37.4532 39.2014 39.1764 38.8275 37.9369 38.6688 38.5096 38.9964 38.5442 37.9761 38.4176 37.973  37.9934 38.9781 
-1       0.00101725      
-2       0       
-3       0       
-4       0       
-5       0       
-6       0       
-7       0       
-8       0       
-9       0       
-10      0       
-11      0       
-12      0       
-13      0       
-14      0       
-15      0       
+0       10.0683 32.1218 37.4532 39.2014 39.1764 38.8275 37.9369 38.6688 38.5096 38.9964 38.5442 37.9761 38.4176 37.973  37.9934 38.9781
+1       0.00101725
+2       0
+3       0
+4       0
+5       0
+6       0
+7       0
+8       0
+9       0
+10      0
+11      0
+12      0
+13      0
+14      0
+15      0
 FIR enabled      : 0
 Data port config : 1R1T
 sample rate      : 61.44e6 sps
@@ -414,22 +366,22 @@ sample rate      : 61.44e6 sps
   |
   v
         0       1       2       3       4       5       6       7       8       9       10      11      12      13      14      15
-0       8.7087  31.222  36.0377 39.0559 38.7578 38.8687 38.5117 39.0518 38.8646 38.6719 38.3362 39.0422 38.4893 37.7355 39.0508 39.0106 
-1       0.161743        
-2       0       
-3       0       
-4       0       
-5       0       
-6       0       
-7       0       
-8       0       
-9       0       
-10      0       
-11      0       
-12      0       
-13      0       
-14      0       
-15      0       
+0       8.7087  31.222  36.0377 39.0559 38.7578 38.8687 38.5117 39.0518 38.8646 38.6719 38.3362 39.0422 38.4893 37.7355 39.0508 39.0106
+1       0.161743
+2       0
+3       0
+4       0
+5       0
+6       0
+7       0
+8       0
+9       0
+10      0
+11      0
+12      0
+13      0
+14      0
+15      0
 FIR enabled      : 0
 Data port config : 2R2T
 sample rate      : 2.083334e6 sps
@@ -437,22 +389,22 @@ sample rate      : 2.083334e6 sps
   |
   v
         0       1       2       3       4       5       6       7       8       9       10      11      12      13      14      15
-0       error   31.9356 error   38.8067 38.7568 error   error   38.6948 38.6612 38.8941 38.6012 38.7405 38.7589 38.9399 38.7741 38.8087 
-1       0       
-2       0       
-3       0       
-4       0       
-5       0       
-6       0       
-7       0       
-8       0       
-9       0       
-10      0       
-11      0       
-12      0       
-13      0       
-14      0       
-15      error   
+0       error   31.9356 error   38.8067 38.7568 error   error   38.6948 38.6612 38.8941 38.6012 38.7405 38.7589 38.9399 38.7741 38.8087
+1       0
+2       0
+3       0
+4       0
+5       0
+6       0
+7       0
+8       0
+9       0
+10      0
+11      0
+12      0
+13      0
+14      0
+15      error
 FIR enabled      : 0
 Data port config : 2R2T
 sample rate      : 25e6 sps
@@ -460,22 +412,22 @@ sample rate      : 25e6 sps
   |
   v
         0       1       2       3       4       5       6       7       8       9       10      11      12      13      14      15
-0       10.2153 31.5826 37.1175 38.8011 38.7777 38.7955 38.9638 39.1596 38.6841 39.1734 38.7619 38.6576 38.6983 38.9506 38.5905 38.9964 
-1       0       
-2       0       
-3       0       
-4       0       
-5       0       
-6       0       
-7       0       
-8       0       
-9       0       
-10      0       
-11      0       
-12      0       
-13      0       
-14      0       
-15      0       
+0       10.2153 31.5826 37.1175 38.8011 38.7777 38.7955 38.9638 39.1596 38.6841 39.1734 38.7619 38.6576 38.6983 38.9506 38.5905 38.9964
+1       0
+2       0
+3       0
+4       0
+5       0
+6       0
+7       0
+8       0
+9       0
+10      0
+11      0
+12      0
+13      0
+14      0
+15      0
 FIR enabled      : 0
 Data port config : 2R2T
 sample rate      : 40e6 sps
@@ -483,22 +435,22 @@ sample rate      : 40e6 sps
   |
   v
         0       1       2       3       4       5       6       7       8       9       10      11      12      13      14      15
-0       19.9519 34.5505 38.4109 38.6759 38.8428 39.123  39.1123 38.7451 38.8947 37.7131 38.6642 38.6897 38.415  36.411  26.7649 11.1231 
-1       3.42967 
-2       0       
-3       0       
-4       0       
-5       0       
-6       0       
-7       0       
-8       0       
-9       0       
-10      0       
-11      0       
-12      3.35541 
-13      15.3783 
-14      34.4991 
-15      37.8092 
+0       19.9519 34.5505 38.4109 38.6759 38.8428 39.123  39.1123 38.7451 38.8947 37.7131 38.6642 38.6897 38.415  36.411  26.7649 11.1231
+1       3.42967
+2       0
+3       0
+4       0
+5       0
+6       0
+7       0
+8       0
+9       0
+10      0
+11      0
+12      3.35541
+13      15.3783
+14      34.4991
+15      37.8092
 FIR enabled      : 0
 Data port config : 2R2T
 sample rate      : 61.44e6 sps
@@ -506,27 +458,27 @@ sample rate      : 61.44e6 sps
   |
   v
         0       1       2       3       4       5       6       7       8       9       10      11      12      13      14      15
-0       9.56268 30.2144 37.0743 39.0889 38.6958 38.6719 39.1861 38.9008 37.7182 34.2031 20.5037 5.95449 0       0       0       0       
-1       0.54067 
-2       0       
-3       0       
-4       0       
-5       0       
-6       0.18158 
-7       7.34151 
-8       23.8927 
-9       36.7589 
-10      38.9262 
-11      39.0381 
-12      38.886  
-13      38.8255 
-14      39.1647 
-15      38.3784 
+0       9.56268 30.2144 37.0743 39.0889 38.6958 38.6719 39.1861 38.9008 37.7182 34.2031 20.5037 5.95449 0       0       0       0
+1       0.54067
+2       0
+3       0
+4       0
+5       0
+6       0.18158
+7       7.34151
+8       23.8927
+9       36.7589
+10      38.9262
+11      39.0381
+12      38.886
+13      38.8255
+14      39.1647
+15      38.3784
 \end{lstlisting}
 \pagebreak
 \section{Appendix 2 - Vivado Timing Analysis} \label{appendix}
 
-The Vivado timing report that OpenCPI runs for device workers may erroneously report a max delay for a clocking path which should have been ignored. Custom Vivado tcl commands had to be run for this device worker to extract pertinent information from Vivado timing analysis. After building the worker, the following commands were run from the base project directory (after the Vivado settings64.sh was sourced):
+The Vivado timing report that OpenCPI runs for device workers may erroneously report a max delay for a clocking path which should have been ignored. Custom Vivado tcl commands had to be run for this device worker to extract pertinent information from Vivado timing analysis. After building the worker, the following commands were run from the assets project directory (after the Vivado settings64.sh was sourced):
 \begin{lstlisting}
 cd hdl/devices/
 vivado -mode tcl
@@ -559,7 +511,7 @@ Slack (VIOLATED) :        -4.933ns  (required time - arrival time)
   Data Path Delay:        4.327ns  (logic 2.025ns (46.799%)  route 2.302ns (53.201%))
   Logic Levels:           5  (CARRY4=3 LUT5=1 LUT6=1)
   Clock Path Skew:        -0.049ns (DCD - SCD + CPR)
-    Destination Clock Delay (DCD):    0.924ns = ( 0.926 - 0.002 ) 
+    Destination Clock Delay (DCD):    0.924ns = ( 0.926 - 0.002 )
     Source Clock Delay      (SCD):    0.973ns
     Clock Pessimism Removal (CPR):    0.000ns
   Clock Uncertainty:      0.035ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
@@ -570,7 +522,7 @@ Slack (VIOLATED) :        -4.933ns  (required time - arrival time)
 
     Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
   -------------------------------------------------------------------    -------------------
-                         (clock clk1 rise edge)       0.000     0.000 r  
+                         (clock clk1 rise edge)       0.000     0.000 r
                                                       0.000     0.000 r  ctl_in[Clk] (IN)
                          net (fo=155, unset)          0.973     0.973    wci/messageSize_property/ctl_in[Clk]
                          FDRE                                         r  wci/messageSize_property/value_reg[7]/C
@@ -598,18 +550,18 @@ Slack (VIOLATED) :        -4.933ns  (required time - arrival time)
                          FDSE                                         r  worker/fifo/samplesInMessage_r_reg[0]/S
   -------------------------------------------------------------------    -------------------
 
-                         (clock clk1 rise edge)       0.002     0.002 r  
+                         (clock clk1 rise edge)       0.002     0.002 r
                                                       0.000     0.002 r  ctl_in[Clk] (IN)
                          net (fo=155, unset)          0.924     0.926    worker/fifo/ctl_in[Clk]
                          FDSE                                         r  worker/fifo/samplesInMessage_r_reg[0]/C
-                         clock pessimism              0.000     0.926    
-                         clock uncertainty           -0.035     0.891    
+                         clock pessimism              0.000     0.926
+                         clock uncertainty           -0.035     0.891
                          FDSE (Setup_fdse_C_S)       -0.524     0.367    worker/fifo/samplesInMessage_r_reg[0]
   -------------------------------------------------------------------
-                         required time                          0.367    
-                         arrival time                          -5.300    
+                         required time                          0.367
+                         arrival time                          -5.300
   -------------------------------------------------------------------
-                         slack                                 -4.933    
+                         slack                                 -4.933
 
 Vivado% report_timing -delay_type min_max -sort_by slack -input_pins -group clk2
 
@@ -626,7 +578,7 @@ Slack (VIOLATED) :        -2.947ns  (required time - arrival time)
   Data Path Delay:        2.942ns  (logic 1.061ns (36.064%)  route 1.881ns (63.936%))
   Logic Levels:           3  (LUT4=1 LUT6=2)
   Clock Path Skew:        -0.049ns (DCD - SCD + CPR)
-    Destination Clock Delay (DCD):    0.924ns = ( 0.926 - 0.002 ) 
+    Destination Clock Delay (DCD):    0.924ns = ( 0.926 - 0.002 )
     Source Clock Delay      (SCD):    0.973ns
     Clock Pessimism Removal (CPR):    0.000ns
   Clock Uncertainty:      0.035ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
@@ -637,7 +589,7 @@ Slack (VIOLATED) :        -2.947ns  (required time - arrival time)
 
     Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
   -------------------------------------------------------------------    -------------------
-                         (clock clk2 rise edge)       0.000     0.000 r  
+                         (clock clk2 rise edge)       0.000     0.000 r
                                                       0.000     0.000 r  dev_adc_in[adc_clk] (IN)
                          net (fo=33, unset)           0.973     0.973    worker/fifo/fifo/dev_adc_in[adc_clk]
                          FDCE                                         r  worker/fifo/fifo/sGEnqPtr_reg[1]/C
@@ -656,18 +608,18 @@ Slack (VIOLATED) :        -2.947ns  (required time - arrival time)
                          FDCE                                         r  worker/fifo/fifo/sNotFullReg_reg/D
   -------------------------------------------------------------------    -------------------
 
-                         (clock clk2 rise edge)       0.002     0.002 r  
+                         (clock clk2 rise edge)       0.002     0.002 r
                                                       0.000     0.002 r  dev_adc_in[adc_clk] (IN)
                          net (fo=33, unset)           0.924     0.926    worker/fifo/fifo/dev_adc_in[adc_clk]
                          FDCE                                         r  worker/fifo/fifo/sNotFullReg_reg/C
-                         clock pessimism              0.000     0.926    
-                         clock uncertainty           -0.035     0.891    
+                         clock pessimism              0.000     0.926
+                         clock uncertainty           -0.035     0.891
                          FDCE (Setup_fdce_C_D)        0.077     0.968    worker/fifo/fifo/sNotFullReg_reg
   -------------------------------------------------------------------
-                         required time                          0.968    
-                         arrival time                          -3.915    
+                         required time                          0.968
+                         arrival time                          -3.915
   -------------------------------------------------------------------
-                         slack                                 -2.947    
+                         slack                                 -2.947
 
 
 \end{lstlisting}
@@ -696,7 +648,7 @@ Slack (MET) :             0.000ns  (required time - arrival time)
   Data Path Delay:        4.327ns  (logic 2.025ns (46.799%)  route 2.302ns (53.201%))
   Logic Levels:           5  (CARRY4=3 LUT5=1 LUT6=1)
   Clock Path Skew:        -0.049ns (DCD - SCD + CPR)
-    Destination Clock Delay (DCD):    0.924ns = ( 5.859 - 4.935 ) 
+    Destination Clock Delay (DCD):    0.924ns = ( 5.859 - 4.935 )
     Source Clock Delay      (SCD):    0.973ns
     Clock Pessimism Removal (CPR):    0.000ns
   Clock Uncertainty:      0.035ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
@@ -707,7 +659,7 @@ Slack (MET) :             0.000ns  (required time - arrival time)
 
     Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
   -------------------------------------------------------------------    -------------------
-                         (clock clk1 rise edge)       0.000     0.000 r  
+                         (clock clk1 rise edge)       0.000     0.000 r
                                                       0.000     0.000 r  ctl_in[Clk] (IN)
                          net (fo=155, unset)          0.973     0.973    wci/messageSize_property/ctl_in[Clk]
                          FDRE                                         r  wci/messageSize_property/value_reg[7]/C
@@ -735,18 +687,18 @@ Slack (MET) :             0.000ns  (required time - arrival time)
                          FDSE                                         r  worker/fifo/samplesInMessage_r_reg[0]/S
   -------------------------------------------------------------------    -------------------
 
-                         (clock clk1 rise edge)       4.935     4.935 r  
+                         (clock clk1 rise edge)       4.935     4.935 r
                                                       0.000     4.935 r  ctl_in[Clk] (IN)
                          net (fo=155, unset)          0.924     5.859    worker/fifo/ctl_in[Clk]
                          FDSE                                         r  worker/fifo/samplesInMessage_r_reg[0]/C
-                         clock pessimism              0.000     5.859    
-                         clock uncertainty           -0.035     5.824    
+                         clock pessimism              0.000     5.859
+                         clock uncertainty           -0.035     5.824
                          FDSE (Setup_fdse_C_S)       -0.524     5.300    worker/fifo/samplesInMessage_r_reg[0]
   -------------------------------------------------------------------
-                         required time                          5.300    
-                         arrival time                          -5.300    
+                         required time                          5.300
+                         arrival time                          -5.300
   -------------------------------------------------------------------
-                         slack                                  0.000    
+                         slack                                  0.000
 
 
 
@@ -766,7 +718,7 @@ Slack (MET) :             0.000ns  (required time - arrival time)
   Data Path Delay:        2.942ns  (logic 1.061ns (36.064%)  route 1.881ns (63.936%))
   Logic Levels:           3  (LUT4=1 LUT6=2)
   Clock Path Skew:        -0.049ns (DCD - SCD + CPR)
-    Destination Clock Delay (DCD):    0.924ns = ( 3.873 - 2.949 ) 
+    Destination Clock Delay (DCD):    0.924ns = ( 3.873 - 2.949 )
     Source Clock Delay      (SCD):    0.973ns
     Clock Pessimism Removal (CPR):    0.000ns
   Clock Uncertainty:      0.035ns  ((TSJ^2 + TIJ^2)^1/2 + DJ) / 2 + PE
@@ -777,7 +729,7 @@ Slack (MET) :             0.000ns  (required time - arrival time)
 
     Location             Delay type                Incr(ns)  Path(ns)    Netlist Resource(s)
   -------------------------------------------------------------------    -------------------
-                         (clock clk2 rise edge)       0.000     0.000 r  
+                         (clock clk2 rise edge)       0.000     0.000 r
                                                       0.000     0.000 r  dev_adc_in[adc_clk] (IN)
                          net (fo=33, unset)           0.973     0.973    worker/fifo/fifo/dev_adc_in[adc_clk]
                          FDCE                                         r  worker/fifo/fifo/sGEnqPtr_reg[1]/C
@@ -796,18 +748,18 @@ Slack (MET) :             0.000ns  (required time - arrival time)
                          FDCE                                         r  worker/fifo/fifo/sNotFullReg_reg/D
   -------------------------------------------------------------------    -------------------
 
-                         (clock clk2 rise edge)       2.949     2.949 r  
+                         (clock clk2 rise edge)       2.949     2.949 r
                                                       0.000     2.949 r  dev_adc_in[adc_clk] (IN)
                          net (fo=33, unset)           0.924     3.873    worker/fifo/fifo/dev_adc_in[adc_clk]
                          FDCE                                         r  worker/fifo/fifo/sNotFullReg_reg/C
-                         clock pessimism              0.000     3.873    
-                         clock uncertainty           -0.035     3.838    
+                         clock pessimism              0.000     3.873
+                         clock uncertainty           -0.035     3.838
                          FDCE (Setup_fdce_C_D)        0.077     3.915    worker/fifo/fifo/sNotFullReg_reg
   -------------------------------------------------------------------
-                         required time                          3.915    
-                         arrival time                          -3.915    
+                         required time                          3.915
+                         arrival time                          -3.915
   -------------------------------------------------------------------
-                         slack                                  0.000    
+                         slack                                  0.000
 
 
 

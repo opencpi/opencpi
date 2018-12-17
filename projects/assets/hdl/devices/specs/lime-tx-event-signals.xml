@@ -1,0 +1,7 @@
+<Signals>
+  <Signal Output="connected"/>
+  <Signal Output="event_pending"/>
+  <Signal Output="opcode"/>
+  <Signal  Input="done_processing_event"/>
+  <Signal  Input="busy"/>
+</Signals>

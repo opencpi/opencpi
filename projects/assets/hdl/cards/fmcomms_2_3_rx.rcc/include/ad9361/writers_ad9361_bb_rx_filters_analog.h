@@ -21,6 +21,10 @@
 #ifndef _WRITERS_AD9361_RX_FILTERS_ANALOG
 #define _WRITERS_AD9361_RX_FILTERS_ANALOG
 
+#include "OcpiApi.hh" // OA namespace
+
+namespace OA = OA;
+
 /*! @brief Set the nominal in-situ value with No-OS precision
  *         of the 
  *         rx_rf_bandwidth in Hz
@@ -35,10 +39,10 @@
  *          are errors (char array content will describe the error).
  ******************************************************************************/
 const char* set_AD9361_rx_rf_bandwidth_Hz(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
-    ocpi_ulong_t& val)
+    OA::Application& app, const char* app_inst_name_proxy,
+    OA::ULong& val)
 {
-  OCPI::API::Property p(app, app_inst_name_proxy, "rx_rf_bandwidth");
+  OA::Property p(app, app_inst_name_proxy, "rx_rf_bandwidth");
   p.setULongValue(val);
 
   return 0;

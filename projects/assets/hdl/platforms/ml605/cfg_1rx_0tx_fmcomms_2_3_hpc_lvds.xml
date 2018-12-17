@@ -19,7 +19,9 @@
     <property name='DATA_CLK_Delay' value='2'/>
     <property name='RX_Data_Delay'  value='0'/>
   </device>
-  <device name="ad9361_config"  card="fmcomms_2_3_hpc" slot="fmc_hpc"/>
+  <device name="ad9361_config"  card="fmcomms_2_3_hpc" slot="fmc_hpc">
+    <property name='pin_control_p' value='true'/>
+  </device>
 
   <!-- 1 RX channel(s), 0 TX channel(s) data interface(s) -->
   <device name="ad9361_adc_sub" card="fmcomms_2_3_hpc" slot="fmc_hpc"/> <!-- connection must be defined in a container -->

@@ -26,6 +26,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \usepackage[margin=.75in]{geometry}
 \usepackage{hyperref}
 \usepackage{listings}
+\usepackage{xcolor}
+\usepackage{textcomp}
 \pagestyle{fancy}
 \lhead{Board Support Package Documentation}
 \rhead{ANGRYVIPER Team}
@@ -36,7 +38,8 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \definecolor{drkgreen}{rgb}{0,.6,0}
 \begin{document}
 \section*{ML605 Getting Started Guide}
-\subsection*{Hardware Prerequisites}
+\setcounter{section}{0}
+\section{Hardware Prerequisites}
 This section describes the hardware prerequisites required for an operational Xilinx Virtex-6 ML605 platform using OpenCPI. Note that the slot configurations in Table \ref{table:supported_slots} are limited by what FPGA bitstreams are currently built by OpenCPI and not by what hardware configurations are theoretically possible using OpenCPI.\\ \\
 Hardware prerequisites are as follows.
 \begin{itemize}
@@ -51,79 +54,91 @@ Hardware prerequisites are as follows.
         \begin{tabular}{c|c|c|}
                 \cline{2-3}
                 & FMC LPC slot & FMC HPC slot \\ \hline
-                \multicolumn{1}{|c|}{Zipper A setup} & Modified\cite{zipper_mods} Zipper/MyriadRF & (empty)\\
+                \multicolumn{1}{|c|}{Zipper LPC setup} & Modified\cite{zipper_mods} Zipper/MyriadRF & (empty)\\
                 \multicolumn{1}{|c|}{ } & transceiver card & \\ \hline
-                \multicolumn{1}{|c|}{Zipper B setup} & (empty) & Modified\cite{zipper_mods} Zipper/MyriadRF \\
+                \multicolumn{1}{|c|}{Zipper HPC setup} & (empty) & Modified\cite{zipper_mods} Zipper/MyriadRF \\
+                \multicolumn{1}{|c|}{ } & & transceiver card \\ \hline
+                \multicolumn{1}{|c|}{FMCOMMS2 LPC setup} & FMCOMMS2 & (empty)\\
+                \multicolumn{1}{|c|}{ } & transceiver card & \\ \hline
+                \multicolumn{1}{|c|}{FMCOMMS2 HPC setup (RX data flow only)} & (empty) & FMCOMMS2 \\
+                \multicolumn{1}{|c|}{ } & & transceiver card \\ \hline
+                \multicolumn{1}{|c|}{FMCOMMS3 LPC setup} & FMCOMMS3 & (empty)\\
+                \multicolumn{1}{|c|}{ } & transceiver card & \\ \hline
+                \multicolumn{1}{|c|}{FMCOMMS3 HPC setup (RX data flow only)} & (empty) & FMCOMMS3 \\
                 \multicolumn{1}{|c|}{ } & & transceiver card \\ \hline
         \end{tabular}
         \end{table}
 \end{center}
 
-\subsection*{Software Prerequisites}
+\section{Software Prerequisites}
 \begin{itemize}
 \item A CentOS 6 or CentOS 7 operating system installed on the x86 computer.
-\item Xilinx ISE installed on the x86 computer, including the necessary Xilinx cable driver modifications necessary for CentOS. For information on these modifications, refer to \cite{fpga_vendor_tool_guide}
-\item OpenCPI framework and prerequisite RPMs installed on the x86 computer. For more information refer to \cite{rpm_installation_guide}
-\item OpenCPI Base Project compiled for ml605. For more information refer to the "Base Project" section in \cite{rpm_installation_guide}
-\item OpenCPI assets project compiled for ml605. For more information refer to the "OpenCPI assets Project" section in \cite{rpm_installation_guide}
+\item Xilinx ISE installed on the x86 computer, including the necessary Xilinx cable driver modifications necessary for CentOS. For information on supported ISE versions and cable driver modifications, refer to \cite{fpga_vendor_tool_guide}.
+\item OpenCPI RPMs installed on the x86 computer. For more information refer to \cite{rpm_installation_guide}.
+\item OpenCPI core project compiled for ml605.
+\item OpenCPI assets project compiled for ml605.
 \end{itemize}
 
 \input{../../../../../../doc/av/tex/snippets/memmap.tex }
 
-\section*{Driver Notes}
-\input{../../../../../../doc/av/tex/snippets/Driver_Snippet.tex } 
+\section{Driver Notes}
+\input{../../../../../../doc/av/tex/snippets/Driver_Snippet.tex }
 
-\subsection*{Proof of Operation}
+\section{Proof of Operation}
 The following commands may be run in order to verify correct OpenCPI operation on the x86/ML605 system.\\ \\
-Existence of ML605 RCC/HDL containers may be verified by running the following command and verifying that similar output is produced.\\
-\noindent\terminaloutput{\$ ocpirun -C\\
-Available containers:\\
- \#  Model\hspace{6ex} Platform\hspace{3ex}    OS\hspace{5ex}     OS-Version\hspace{1ex}  Arch\hspace{3ex} Name\\
- 0  hdl\hspace{9ex}   ml605\hspace{39ex} PCI:0000:02:00.0\\
- 1  rcc\hspace{9ex}   centos7\hspace{4ex}      linux\hspace{2ex}  c7\hspace{10ex}          x86\_64\hspace{1ex} rcc0\\
-}\\ \\
-Operation of the RCC container can be verified by running the hello application via the following command and verifying that identical output is produced. Note that the OCPI\_LIBRARY\_PATH environment variable must be setup correctly for your system prior to running this command.\\
-\noindent\terminaloutput{\$ ocpirun -t 1 \$OCPI\_PROJECT\_PATH/examples/xml/hello.xml \\
-Hello, world} \\ \\
-Simultaneous RCC/HDL container operation can be verified by running the testbias application via the following command and verifying that identical output is produced. Note that the OCPI\_LIBRARY\_PATH environment variable must be setup correctly for your system prior to running this command.\\
-\noindent\terminaloutput{ocpirun -d -m bias=hdl testbias.xml \\
-Property  0: file\_read.fileName = "test.input" (cached)\\
-Property  1: file\_read.messagesInFile = "false" (cached)\\
-Property  2: file\_read.opcode = "0" (cached)\\
-Property  3: file\_read.messageSize = "16"\\
-Property  4: file\_read.granularity = "4" (cached)\\
-Property  5: file\_read.repeat = "<unreadable>"\\
-Property  6: file\_read.bytesRead = "0"\\
-Property  7: file\_read.messagesWritten = "0"\\
-Property  8: file\_read.suppressEOF = "false"\\
-Property  9: file\_read.badMessage = "false"\\
-Property 10: file\_read.ocpi\_debug = "false" (parameter)\\
-Property 11: file\_read.ocpi\_endian = "little" (parameter)\\
-Property 12: bias.biasValue = "16909060" (cached)\\
-Property 13: bias.ocpi\_debug = "false" (parameter)\\
-Property 14: bias.ocpi\_endian = "little" (parameter)\\
-Property 15: bias.test64 = "0"\\
-Property 16: file\_write.fileName = "test.output" (cached)\\
-Property 17: file\_write.messagesInFile = "false" (cached)\\
-Property 18: file\_write.bytesWritten = "0"\\
-Property 19: file\_write.messagesWritten = "0"\\
-Property 20: file\_write.stopOnEOF = "true" (cached)\\
-Property 21: file\_write.ocpi\_debug = "false" (parameter)\\
-Property 22: file\_write.ocpi\_endian = "little" (parameter)\\
-Property  3: file\_read.messageSize = "16"\\
-Property  5: file\_read.repeat = "<unreadable>"\\
-Property  6: file\_read.bytesRead = "4000"\\
-Property  7: file\_read.messagesWritten = "251"\\
-Property  8: file\_read.suppressEOF = "false"\\
-Property  9: file\_read.badMessage = "false"\\
-Property 15: bias.test64 = "0"\\
-Property 18: file\_write.bytesWritten = "4000"\\
-Property 19: file\_write.messagesWritten = "250"\\
-\\
-}
+Existence of ML605 RCC/HDL containers may be verified by running the following command and verifying that similar output is produced.
+\lstset{language=bash, backgroundcolor=\color{lightgray}, columns=flexible, breaklines=true, prebreak=\textbackslash, basicstyle=\ttfamily, showstringspaces=false,upquote=true, aboveskip=\baselineskip, belowskip=\baselineskip}
+\begin{lstlisting}
+ocpirun -C
+Available containers:
+ #  Model Platform       OS     OS-Version  Arch     Name
+ 0  hdl   ml605                                      PCI:0000:02:00.0
+ 1  rcc   centos7        linux  c7          x86_64   rcc0
+\end{lstlisting}
+Operation of the RCC container can be verified by running the hello application via the following command and verifying that identical output is produced. Note that the OCPI\_LIBRARY\_PATH environment variable must be setup to include the hello\_world.rcc built shared object file prior to running this command.
+\begin{lstlisting}
+ocpirun -t 1 assets/applications/hello.xml
+Hello, world
+\end{lstlisting}
+Simultaneous RCC/HDL container operation can be verified by running the testbias application via the following command and verifying that identical output is produced. Note that the OCPI\_LIBRARY\_PATH environment variable must be setup correctly for your system prior to running this command.
+\begin{lstlisting}
+ocpirun -d -m bias=hdl assets/applications/testbias.xml
+Property  0: file_read.fileName = "test.input" (cached)
+Property  1: file_read.messagesInFile = "false" (cached)
+Property  2: file_read.opcode = "0" (cached)
+Property  3: file_read.messageSize = "16"
+Property  4: file_read.granularity = "4" (cached)
+Property  5: file_read.repeat = "<unreadable>"
+Property  6: file_read.bytesRead = "0"
+Property  7: file_read.messagesWritten = "0"
+Property  8: file_read.suppressEOF = "false"
+Property  9: file_read.badMessage = "false"
+Property 10: file_read.ocpi_debug = "false" (parameter)
+Property 11: file_read.ocpi_endian = "little" (parameter)
+Property 12: bias.biasValue = "16909060" (cached)
+Property 13: bias.ocpi_debug = "false" (parameter)
+Property 14: bias.ocpi_endian = "little" (parameter)
+Property 15: bias.test64 = "0"
+Property 16: file_write.fileName = "test.output" (cached)
+Property 17: file_write.messagesInFile = "false" (cached)
+Property 18: file_write.bytesWritten = "0"
+Property 19: file_write.messagesWritten = "0"
+Property 20: file_write.stopOnEOF = "true" (cached)
+Property 21: file_write.ocpi_debug = "false" (parameter)
+Property 22: file_write.ocpi_endian = "little" (parameter)
+Property  3: file_read.messageSize = "16"
+Property  5: file_read.repeat = "<unreadable>"
+Property  6: file_read.bytesRead = "4000"
+Property  7: file_read.messagesWritten = "251"
+Property  8: file_read.suppressEOF = "false"
+Property  9: file_read.badMessage = "false"
+Property 15: bias.test64 = "0"
+Property 18: file_write.bytesWritten = "4000"
+Property 19: file_write.messagesWritten = "250"
+\end{lstlisting}
 
-\subsection*{Known Issues}
-\subsubsection*{Single Port of Data from CPU to FPGA} % AV-3783
+\section{Known Issues}
+\subsection{Single Port of Data from CPU to FPGA} % AV-3783
 \label{bug:3783}
 The current implementations of the PCI-e Specification on the this platform only correctly implements data flow from the CPU to the FPGA under certain configurations which must be met when defining new Assemblies:
 \begin{itemize}
@@ -141,14 +156,14 @@ Note that this applies to the TX/DAC data path connections for bitstreams with t
   \begin{thebibliography}{1}
 
 
-  \bibitem{ml605_hardware_setup} ML605 Hardware Setupe\\
-	 ml605\_hardware\_setup.pdf
+  \bibitem{ml605_hardware_setup} ML605 Hardware Setup\\
+	 \url{https://opencpi.github.io/assets/ml605_hardware_setup.pdf}
   \bibitem{fpga_vendor_tool_guide} FPGA Vendor Tools Guide\\
-	 OpenCPI\_FPGA\_Vendor\_Tools\_Guide.pdf
+	 \url{https://opencpi.github.io/FPGA_Vendor_Tools_Installation_Guide.pdf}
 	   \bibitem{rpm_installation_guide} RPM Installation Guide\\
-	 OpenCPI\_RPM\_Installation\_Guide.pdf
+	 \url{https://opencpi.github.io/RPM_Installation_Guide.pdf}
 	   \bibitem{zipper_mods} Required Modifications for Myriad-RF 1 and Zipper Daughtercards\\
-	 Required\_Modifications\_for\_Myriad-RF\_1\_Zipper\_Daughtercards.pdf
+	 \url{https://opencpi.github.io/assets/Required_Modifications_for_Myriad-RF_1_Zipper_Daughtercards.pdf}
 
   \end{thebibliography}
 

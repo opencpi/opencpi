@@ -1,6 +1,0 @@
-<HdlWorker language='vhdl' spec='backpressure-spec'>
-
-  <StreamInterface Name="in" DataWidth="IDATA_WIDTH_p"/>
-  <StreamInterface Name="out" DataWidth="ODATA_WIDTH_p"/>
-
-</HdlWorker>

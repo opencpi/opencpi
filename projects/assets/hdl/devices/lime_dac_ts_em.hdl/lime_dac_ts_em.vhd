@@ -82,7 +82,7 @@ begin
   process(TX_CLK)
   begin
     if falling_edge(TX_CLK) then
-      tx_en_q1 <= dev_in.TX_EN;
+      tx_en_q1 <= dev_txen_in.txen;
       tx_en_q2 <= tx_en_q1;
     end if;
   end process;
@@ -91,7 +91,7 @@ begin
   process(TX_CLK)
   begin
     if rising_edge(TX_CLK) then
-      if (dev_in.TX_EN = '1') then
+      if (dev_txen_in.txen = '1') then
         if (TX_IQ_SEL = '1') then
           data(15 downto  0) <= TXD & x"0";
         else

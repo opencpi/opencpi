@@ -29,60 +29,51 @@
  *         Figure 4. PLL Synthesizer Block Diagram
  ******************************************************************************/
 
-#include "OcpiApi.hh" // OCPI::API namespace
+#include "OcpiApi.hh" // OA namespace
 #include "ad9361.h"   // RFPLL_MODULUS macro (this is a ADI No-OS header)
-#include "ocpi_component_prop_type_helpers.h" // ocpi_... types
 
-const char* get_AD9361_Tx_RFPLL_input_F_REF(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
-    ocpi_ulong_t& val)
+namespace OA = OCPI::API;
+
+void get_AD9361_Tx_RFPLL_input_F_REF(
+    OA::Application& app, const char* app_inst_name_proxy,
+    OA::ULong& val)
 {
   std::string vstr;
   app.getProperty(app_inst_name_proxy, "ad9361_rf_phy", vstr);
 
-  char* ret;
   struct ad9361_rf_phy_ad9361_config_proxy ad9361_rf_phy;
 
-  ret = (char*) parse(vstr.c_str(), ad9361_rf_phy);
-  if(ret != 0) { return ret; }
+  parse(vstr.c_str(), ad9361_rf_phy);
 
   val = ad9361_rf_phy.clk_refin.rate;
-
-  return 0;
 }
 
-const char* get_AD9361_Tx_RFPLL_ref_divider(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
-    ocpi_float_t& val)
+void get_AD9361_Tx_RFPLL_ref_divider(
+    OA::Application& app, const char* app_inst_name_proxy,
+    OA::Float& val)
 {
-  OCPI::API::Property p(app, app_inst_name_proxy, "Tx_Ref_divider");
+  OA::Property p(app, app_inst_name_proxy, "Tx_Ref_divider");
   val = p.getFloatValue();
-
-  return 0;
 }
 
-const char* get_AD9361_Tx_RFPLL_N_Integer(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
-    ocpi_ushort_t& val)
+void get_AD9361_Tx_RFPLL_N_Integer(
+    OA::Application& app, const char* app_inst_name_proxy,
+    OA::UShort& val)
 {
-  OCPI::API::Property p(app, app_inst_name_proxy, "tx_vco_n_integer");
+  OA::Property p(app, app_inst_name_proxy, "tx_vco_n_integer");
   val = p.getUShortValue();
-
-  return 0;
 }
 
-const char* get_AD9361_Tx_RFPLL_N_Fractional(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
-    ocpi_ulong_t& val)
+void get_AD9361_Tx_RFPLL_N_Fractional(
+    OA::Application& app, const char* app_inst_name_proxy,
+    OA::ULong& val)
 {
-  OCPI::API::Property p(app, app_inst_name_proxy, "tx_vco_n_fractional");
+  OA::Property p(app, app_inst_name_proxy, "tx_vco_n_fractional");
   val = p.getULongValue();
-
-  return 0;
 }
 
-const char* get_AD9361_Tx_RFPLL_external_div_2_enable(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
+void get_AD9361_Tx_RFPLL_external_div_2_enable(
+    OA::Application& app, const char* app_inst_name_proxy,
     bool& val)
 {
   std::string enum_str;
@@ -106,14 +97,14 @@ const char* get_AD9361_Tx_RFPLL_external_div_2_enable(
     std::string err;
     err = "Invalid value read for ad9361_config_proxy.rcc ";
     err += "tx_vco_divider property: " + enum_str;
-    return err.c_str();
+    return err;
   }
 
   return 0;
 }
 
-const char* get_AD9361_Tx_RFPLL_VCO_Divider(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
+void get_AD9361_Tx_RFPLL_VCO_Divider(
+    OA::Application& app, const char* app_inst_name_proxy,
     uint8_t& val)
 {
   std::string enum_str;
@@ -137,10 +128,8 @@ const char* get_AD9361_Tx_RFPLL_VCO_Divider(
     std::string err;
     err = "Invalid value read for ad9361_config_proxy.rcc ";
     err += "tx_vco_divider property: " + enum_str;
-    return err.c_str();
+    throw err;
   }
-
-  return 0;
 }
 
 /*! @brief Get the nominal in-situ value with double floating point precision
@@ -153,11 +142,9 @@ const char* get_AD9361_Tx_RFPLL_VCO_Divider(
  *  @param[in]  app_inst_name_proxy OpenCPI application instance name of the
  *                                  OpenCPI ad9361_config_proxy.rcc worker
  *  @param[out] val                 Retrieved value.
- *  @return 0 if there are no errors, non-zero char array pointer if there
- *          are errors (char array content will describe the error).
  ******************************************************************************/
-const char* get_AD9361_Tx_RFPLL_LO_freq_Hz(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
+void get_AD9361_Tx_RFPLL_LO_freq_Hz(
+    OA::Application& app, const char* app_inst_name_proxy,
     double& val)
 {
   double d_Tx_RFPLL_input_F_REF;
@@ -168,35 +155,28 @@ const char* get_AD9361_Tx_RFPLL_LO_freq_Hz(
 
   { // restrict scope so we don't accidentally use non-double values
     // for later calculation
-    bool          Tx_RFPLL_external_div_2_enable;
-    ocpi_ulong_t  Tx_RFPLL_input_F_REF;
-    ocpi_float_t  Tx_RFPLL_ref_divider;
-    ocpi_ushort_t Tx_RFPLL_N_Integer;
-    ocpi_ulong_t  Tx_RFPLL_N_Fractional;
-    uint8_t       Tx_RFPLL_VCO_Divider;
+    bool       Tx_RFPLL_external_div_2_enable;
+    OA::ULong  Tx_RFPLL_input_F_REF;
+    OA::Float  Tx_RFPLL_ref_divider;
+    OA::UShort Tx_RFPLL_N_Integer;
+    OA::ULong  Tx_RFPLL_N_Fractional;
+    uint8_t    Tx_RFPLL_VCO_Divider;
 
-    char* ret;
     const char* inst = app_inst_name_proxy;
 
-    ret = (char*) get_AD9361_Tx_RFPLL_external_div_2_enable(app, inst, Tx_RFPLL_external_div_2_enable);
-    if(ret != 0) { return ret; }
-    ret = (char*) get_AD9361_Tx_RFPLL_input_F_REF( app, inst, Tx_RFPLL_input_F_REF );
-    if(ret != 0) { return ret; }
+    get_AD9361_Tx_RFPLL_external_div_2_enable(app, inst, Tx_RFPLL_external_div_2_enable);
+    get_AD9361_Tx_RFPLL_input_F_REF( app, inst, Tx_RFPLL_input_F_REF );
 
     if(Tx_RFPLL_external_div_2_enable)
     {
       val = ((double)Tx_RFPLL_input_F_REF) / 2.;
-      return 0;
+      return;
     }
 
-    ret = (char*) get_AD9361_Tx_RFPLL_ref_divider( app, inst, Tx_RFPLL_ref_divider );
-    if(ret != 0) { return ret; }
-    ret = (char*) get_AD9361_Tx_RFPLL_N_Integer(   app, inst, Tx_RFPLL_N_Integer   );
-    if(ret != 0) { return ret; }
-    ret = (char*) get_AD9361_Tx_RFPLL_N_Fractional(app, inst, Tx_RFPLL_N_Fractional);
-    if(ret != 0) { return ret; }
-    ret = (char*) get_AD9361_Tx_RFPLL_VCO_Divider( app, inst, Tx_RFPLL_VCO_Divider );
-    if(ret != 0) { return ret; }
+    get_AD9361_Tx_RFPLL_ref_divider( app, inst, Tx_RFPLL_ref_divider );
+    get_AD9361_Tx_RFPLL_N_Integer(   app, inst, Tx_RFPLL_N_Integer   );
+    get_AD9361_Tx_RFPLL_N_Fractional(app, inst, Tx_RFPLL_N_Fractional);
+    get_AD9361_Tx_RFPLL_VCO_Divider( app, inst, Tx_RFPLL_VCO_Divider );
 
     d_Tx_RFPLL_input_F_REF  = (double) Tx_RFPLL_input_F_REF;
     d_Tx_RFPLL_ref_divider  = (double) Tx_RFPLL_ref_divider;
@@ -226,8 +206,6 @@ const char* get_AD9361_Tx_RFPLL_LO_freq_Hz(
   //log_debug("d_Tx_RFPLL_VCO_Divider=%.15f", d_Tx_RFPLL_VCO_Divider);
 
   val = x;
-
-  return 0;
 }
 
 /*! @brief Get the nominal in-situ value with double floating point precision
@@ -241,11 +219,9 @@ const char* get_AD9361_Tx_RFPLL_LO_freq_Hz(
  *  @param[in]  app_inst_name_proxy OpenCPI application instance name of the
  *                                  OpenCPI ad9361_config_proxy.rcc worker
  *  @param[out] val                 Retrieved value.
- *  @return 0 if there are no errors, non-zero char array pointer if there
- *          are errors (char array content will describe the error).
  ******************************************************************************/
 const char* get_AD9361_Tx_RFPLL_LO_freq_step_Hz(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
+    OA::Application& app, const char* app_inst_name_proxy,
     double& val)
 {
   double d_Tx_RFPLL_input_F_REF;
@@ -254,30 +230,25 @@ const char* get_AD9361_Tx_RFPLL_LO_freq_step_Hz(
 
   { // restrict scope so we don't accidentally use non-double values
     // for later calculation
-    bool         Tx_RFPLL_external_div_2_enable;
-    uint32_t     Tx_RFPLL_input_F_REF;
-    ocpi_float_t Tx_RFPLL_ref_divider;
-    uint8_t      Tx_RFPLL_VCO_Divider;
+    bool      Tx_RFPLL_external_div_2_enable;
+    uint32_t  Tx_RFPLL_input_F_REF;
+    OA::Float Tx_RFPLL_ref_divider;
+    uint8_t   Tx_RFPLL_VCO_Divider;
 
-    char* ret;
     const char* inst = app_inst_name_proxy;
 
-    ret = (char*) get_AD9361_Tx_RFPLL_external_div_2_enable(app, inst, Tx_RFPLL_external_div_2_enable);
-    if(ret != 0) { return ret; }
-    ret = (char*) get_AD9361_Tx_RFPLL_input_F_REF( app, inst, Tx_RFPLL_input_F_REF );
-    if(ret != 0) { return ret; }
+    get_AD9361_Tx_RFPLL_external_div_2_enable(app, inst, Tx_RFPLL_external_div_2_enable);
+    get_AD9361_Tx_RFPLL_input_F_REF( app, inst, Tx_RFPLL_input_F_REF );
 
     if(Tx_RFPLL_external_div_2_enable)
     {
       // in this case, the Tx PLL is fixed, so we set the step size to infinity
       val = std::numeric_limits<double>::infinity();
-      return 0;
+      return;
     }
 
-    ret = (char*) get_AD9361_Tx_RFPLL_ref_divider(app, inst, Tx_RFPLL_ref_divider);
-    if(ret != 0) { return ret; }
-    ret = (char*) get_AD9361_Tx_RFPLL_VCO_Divider(app, inst, Tx_RFPLL_VCO_Divider);
-    if(ret != 0) { return ret; }
+    get_AD9361_Tx_RFPLL_ref_divider(app, inst, Tx_RFPLL_ref_divider);
+    get_AD9361_Tx_RFPLL_VCO_Divider(app, inst, Tx_RFPLL_VCO_Divider);
 
     d_Tx_RFPLL_input_F_REF  = (double) Tx_RFPLL_input_F_REF;
     d_Tx_RFPLL_ref_divider  = (double) Tx_RFPLL_ref_divider;
@@ -292,8 +263,6 @@ const char* get_AD9361_Tx_RFPLL_LO_freq_step_Hz(
   x /= d_Tx_RFPLL_VCO_Divider;
   
   val = x;
-
-  return 0;
 }
 
 #endif // _READERS_AD9361_TX_RFPLL_H

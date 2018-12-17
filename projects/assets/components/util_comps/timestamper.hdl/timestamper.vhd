@@ -29,7 +29,7 @@ architecture rtl of timestamper_worker is
 begin
   doit <= ctl_in.is_operating and in_in.ready and out_in.ready;
   zlm_flag <= in_in.som and in_in.eom and not in_in.valid;
-  
+
   RegisterTimeStamp : process(ctl_in.clk)
   begin
     if rising_edge(ctl_in.clk) then
@@ -38,7 +38,7 @@ begin
       end if;
     end if;
   end process;
-  
+
   -- WSI input interface outputs
   in_out.take <= doit and (
                  to_bool(message_wcnt_r>2) or --Timestamp was given
@@ -49,10 +49,10 @@ begin
     if rising_edge(ctl_in.clk) then
       if its(ctl_in.reset) then
         message_wcnt_r <= (others => '0');
-      elsif doit and in_in.valid then
-        if its(in_in.eom) then
-          message_wcnt_r <= (others => '0');  
-        else
+      elsif doit = '1' then
+        if in_in.eom = '1' then
+          message_wcnt_r <= (others => '0');
+        elsif in_in.valid = '1' then
           message_wcnt_r <= message_wcnt_r+1;
         end if;
       end if;
@@ -67,23 +67,23 @@ begin
       when others => wsi_data <= in_in.data;
     end case;
   end process;
-  
+
   -- WSI output interface outputs
   out_out.give <= doit and (
                   to_bool(message_wcnt_r>2) or                                                      --Data
                   (props_in.enable and (to_bool(message_wcnt_r=1) or to_bool(message_wcnt_r=2))) or --Timestamps
                   zlm_flag                                                                          --ZLM
                   );
-                   
+
   out_out.som <= to_bool(message_wcnt_r=1) or --SOM of timestamp
                  to_bool(message_wcnt_r=3) or --SOM of data
                  zlm_flag;                    --ZLM
-  
+
   out_out.eom <= to_bool(message_wcnt_r=2) or --EOM of timestamp
                  in_in.eom;                   --EOM of data
 
-  out_out.data <= wsi_data; 
-  out_out.valid <= doit and to_bool(message_wcnt_r>0);
+  out_out.data <= wsi_data;
+  out_out.valid <= doit and to_bool(message_wcnt_r>0) and in_in.valid;
   out_out.opcode <= iqstream_with_sync_Time_op_e when message_wcnt_r=1 else iqstream_with_sync_iq_op_e;
-  
+
 end rtl;

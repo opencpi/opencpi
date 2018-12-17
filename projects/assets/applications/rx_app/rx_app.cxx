@@ -86,10 +86,10 @@ static void usage(const char *name, const char *error_message) {
   	  "    enable_timestamps  # Enable timestamps (1 or 0)\n"
     "    frontend           # Only required for Zedboard or ML605, (FMCOMMS2 or FMCOMMS3 or zipper)\n"
     "    sma_channel        # (optional) specify which PCB SMA is used when FMCOMMS2/3 is used (RX1A or RX2A)\n"
-         "Example: rx_app 1000   5     400 10 14   51 15   1 1 matchstiq_z1\n"
-         "Example: rx_app 1000   2.5   -1  6  1.25 51 1    1 1 zipper\n"
-         "Example: rx_app 2400.1 1.1   -1  24 3.2  -1 0.4  1 1 FMCOMMS2 RX1A\n"
-         "Example: rx_app 3000.1 1.1   -1  24 3.2  -1 0.4  1 1 FMCOMMS3 RX1A\n",
+         "Example: rx_app 2400   2.5   400 10 14   51 0.1  1 1 matchstiq_z1\n"
+         "Example: rx_app 2400   2.5   -1  6  1.25 51 0.1  1 1 zipper\n"
+         "Example: rx_app 2400   2.5   -1  24 2.5  -1 0.1  1 1 FMCOMMS2 RX1A\n"
+         "Example: rx_app 2400   2.5   -1  24 2.5  -1 0.1  1 1 FMCOMMS3 RX1A\n",
                  error_message,name);
   exit(1);
 }
@@ -110,7 +110,7 @@ void warn_max_rf_rx_input_power(const char* frontend_name,
   oss << "\n***** WARNING: " << frontend_name;
   oss << " absolute maxmimum RF RX input power is ";
   oss << absolute_max_power_dBm << " dBm *****\n\n";
-  std::cout << oss.str().c_str();
+  std::cout << oss.str();
 }
 
 const char* get_FMCOMMS_2_3_SMA_channel(
@@ -288,8 +288,7 @@ int main(int argc, char **argv) {
   uint8_t runtime = atoi(argv[8]);
   uint8_t timestamps = atoi(argv[9]);
   char rx_sample_rate_str [25];
-  char phase_inc_str   [25];
-  short phase_inc;
+  OA::Short phase_inc;
 
   // multiply to compensate for cic decimate
   double rx_sample_rate_MHz = data_bw * CIC_DECIMATION_FACTOR;
@@ -491,13 +490,19 @@ int main(int argc, char **argv) {
   }
   else
   {
-     // todo this math might be better off in a small proxy that sits ontop of the HDL worker
-     // from nco.vhd, PHS_INC = freq        / f_clk            *  2^(PHS_ACC_WIDTH)
-     //                                                           2^(PHS_ACC_WIDTH) is 65536
-     phase_inc = (if_tune_freq/(rx_sample_rate_MHz)) * (65536);
-     //printf("phase inc is: %i\n", phase_inc);
-     sprintf(phase_inc_str,  "%i", phase_inc);
-     app.setProperty("complex_mixer","phs_inc", phase_inc_str);
+     // It is desired that setting a + IF freq results in mixing *down*.
+     // Because complex_mixer's NCO mixes *up* for + freqs (see complex mixer
+     // datasheet), IF tune freq must be negated in order to achieve the
+     // desired effect.
+     double nco_output_freq = -if_tune_freq;
+
+     // todo this math might be better off in a small proxy that sits on top of complex_mixer
+     // from complex mixer datasheet, nco_output_freq =
+     // sample_freq * phs_inc / 2^phs_acc_width, phs_acc_width is fixed at 16
+     phase_inc = round(nco_output_freq/rx_sample_rate_MHz*65536.);
+
+     //std::cout << "setting complex mixer phase_inc = " << phase_inc << "\n";
+     app.setPropertyValue<OA::Short>("complex_mixer","phs_inc", phase_inc);
   }
 
   app.setProperty("rx","rf_cutoff_frequency_Mhz", argv[3]);
@@ -556,10 +561,17 @@ int main(int argc, char **argv) {
   {
   OA::Property p(app, "rx", "sample_rate_MHz");
   double sample_rate_MHz = p.getValue<double>();
-   //! @todo TODO / FIXME this math might be better off in a small proxy that sits ontop of the HDL worker
-   // from nco.vhd, PHS_INC = freq        / f_clk            *  2^(PHS_ACC_WIDTH)
-   //                                                           2^(PHS_ACC_WIDTH) is 65536
-  double IF_tune_frequency = sample_rate_MHz * ((double)phase_inc) / 65536.;
+  double phs_inc = app.getPropertyValue<OA::Short>("complex_mixer", "phs_inc");
+
+  // todo this math might be better off in a small proxy that sits on top of complex_mixer.hdl
+  // from complex mixer datasheet, nco_output_freq =
+  // sample_freq * phs_inc / 2^phs_acc_width, phs_acc_width is fixed at 16
+  double nco_output_freq = sample_rate_MHz * phs_inc / 65536.;
+
+  // It is desired that setting a + IF freq results in mixing *down*. Because
+  // complex_mixer's NCO mixes *up* for + freqs (see complex mixer datasheet),
+  // IF frequency is accurately reported as the negative of the NCO freq.
+  double IF_tune_frequency = -nco_output_freq;
   printf("IF tune frequency     : %.15f\tMHz\n", IF_tune_frequency);
   }
 
@@ -573,14 +585,6 @@ int main(int argc, char **argv) {
   app.setProperty("time_server","timeNow","0");
 
   app.start();
-
-  const bool usingADCWorker_lime_adc = (currentFrontend==matchstiq_z1_Frontend)
-                                    or (currentFrontend==zipperFrontend);
-  if(usingADCWorker_lime_adc)
-  {
-    // workaround for lime_adc.hdl broken property
-    app.setProperty("qadc","overrun", "false");
-  }
 
   printf("App runs for %i seconds...\n",runtime);
   while (runtime > 0)

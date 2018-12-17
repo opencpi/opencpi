@@ -27,7 +27,7 @@
  *         application.
  ******************************************************************************/
  
-#include "OcpiApi.hh" // OCPI::API namespace
+#include "OcpiApi.hh" // OA namespace
 #include <sstream>    // std::ostringstream
 #include <string>     // std::string
 #include "worker_prop_parsers_ad9361_config_proxy.h" // parse()
@@ -43,25 +43,19 @@
  *  @param[in]  app_inst_name_proxy OpenCPI application instance name of the
  *                                  OpenCPI ad9361_config_proxy.rcc worker
  *  @param[out] val                 Retrieved value.
- *  @return 0 if there are no errors, non-zero char array pointer if there
- *          are errors (char array content will describe the error).
  ******************************************************************************/
-const char* get_AD9361_duplex_mode(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
+void get_AD9361_duplex_mode(
+    OA::Application& app, const char* app_inst_name_proxy,
     AD9361_duplex_mode_t& val)
 {
   std::string vstr;
   app.getProperty(app_inst_name_proxy, "ad9361_rf_phy", vstr);
 
-  char* ret;
   struct ad9361_config_proxy_ad9361_rf_phy ad9361_rf_phy;
 
-  ret = (char*) parse(vstr.c_str(), ad9361_rf_phy);
-  if(ret != 0) { return ret; }
+  parse(vstr.c_str(), ad9361_rf_phy);
 
   val = ad9361_rf_phy.pdata.fdd ? AD9361_duplex_mode_t::FDD : AD9361_duplex_mode_t::TDD;
-
-  return 0;
 }
 
 /*! @brief Get the in-situ value
@@ -74,25 +68,19 @@ const char* get_AD9361_duplex_mode(
  *  @param[in]  app_inst_name_proxy OpenCPI application instance name of the
  *                                  OpenCPI ad9361_config_proxy.rcc worker
  *  @param[out] val                 Retrieved value.
- *  @return 0 if there are no errors, non-zero char array pointer if there
- *          are errors (char array content will describe the error).
  ******************************************************************************/
-const char* get_AD9361_use_extclk(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
+void get_AD9361_use_extclk(
+    OA::Application& app, const char* app_inst_name_proxy,
     bool& val)
 {
   std::string vstr;
   app.getProperty(app_inst_name_proxy, "ad9361_rf_phy", vstr);
 
-  char* ret;
   struct ad9361_config_proxy_ad9361_rf_phy ad9361_rf_phy;
 
-  ret = (char*) parse(vstr.c_str(), ad9361_rf_phy);
-  if(ret != 0) { return ret; }
+  parse(vstr.c_str(), ad9361_rf_phy);
 
   val = ad9361_rf_phy.pdata.use_extclk;
-
-  return 0;
 }
 
 /*! @brief Get the in-situ value
@@ -105,19 +93,15 @@ const char* get_AD9361_use_extclk(
  *  @param[in]  app_inst_name_proxy OpenCPI application instance name of the
  *                                  OpenCPI ad9361_config_proxy.rcc worker
  *  @param[out] val                 Retrieved value.
- *  @return 0 if there are no errors, non-zero char array pointer if there
- *          are errors (char array content will describe the error).
  ******************************************************************************/
-const char* get_AD9361_Tx_Channel_Swap(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
-    ocpi_bool_t& val)
+void get_AD9361_Tx_Channel_Swap(
+    OA::Application& app, const char* app_inst_name_proxy,
+    OA::Bool& val)
 {
   std::string vstr;
-  OCPI::API::Property p(app, app_inst_name_proxy, "Tx_Channel_Swap");
+  OA::Property p(app, app_inst_name_proxy, "Tx_Channel_Swap");
 
   val = p.getBoolValue();
-
-  return 0;
 }
 
 /*! @brief Get the in-situ value
@@ -133,16 +117,14 @@ const char* get_AD9361_Tx_Channel_Swap(
  *  @return 0 if there are no errors, non-zero char array pointer if there
  *          are errors (char array content will describe the error).
  ******************************************************************************/
-const char* get_AD9361_Rx_Channel_Swap(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
-    ocpi_bool_t& val)
+void get_AD9361_Rx_Channel_Swap(
+    OA::Application& app, const char* app_inst_name_proxy,
+    OA::Bool& val)
 {
   std::string vstr;
-  OCPI::API::Property p(app, app_inst_name_proxy, "Rx_Channel_Swap");
+  OA::Property p(app, app_inst_name_proxy, "Rx_Channel_Swap");
 
   val = p.getBoolValue();
-
-  return 0;
 }
 
 /*! @brief Get the in-situ value
@@ -155,25 +137,19 @@ const char* get_AD9361_Rx_Channel_Swap(
  *  @param[in]  app_inst_name_proxy OpenCPI application instance name of the
  *                                  OpenCPI ad9361_config_proxy.rcc worker
  *  @param[out] val                 Retrieved value.
- *  @return 0 if there are no errors, non-zero char array pointer if there
- *          are errors (char array content will describe the error).
  ******************************************************************************/
-const char* get_AD9361_one_rx_one_tx_mode_use_rx_num(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
+void get_AD9361_one_rx_one_tx_mode_use_rx_num(
+    OA::Application& app, const char* app_inst_name_proxy,
     AD9361_one_rx_one_tx_mode_use_rx_num_t& val)
 {
   std::string vstr;
   app.getProperty(app_inst_name_proxy, "ad9361_rf_phy", vstr);
 
-  char* ret;
   struct ad9361_config_proxy_ad9361_rf_phy ad9361_rf_phy;
 
-  ret = (char*) parse(vstr.c_str(), ad9361_rf_phy);
-  if(ret != 0) { return ret; }
+  parse(vstr.c_str(), ad9361_rf_phy);
 
   val = (ad9361_rf_phy.pdata.rx1tx1_mode_use_rx_num == 1) ? AD9361_one_rx_one_tx_mode_use_rx_num_t::R1 : AD9361_one_rx_one_tx_mode_use_rx_num_t::R2;
-
-  return 0;
 }
 
 /*! @brief Get the in-situ value
@@ -186,15 +162,13 @@ const char* get_AD9361_one_rx_one_tx_mode_use_rx_num(
  *  @param[in]  app_inst_name_proxy OpenCPI application instance name of the
  *                                  OpenCPI ad9361_config_proxy.rcc worker
  *  @param[out] val                 Retrieved value.
- *  @return 0 if there are no errors, non-zero char array pointer if there
- *          are errors (char array content will describe the error).
  ******************************************************************************/
-const char* get_AD9361_rx_rf_port_input(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
+void get_AD9361_rx_rf_port_input(
+    OA::Application& app, const char* app_inst_name_proxy,
     AD9361_rx_rf_port_input_t& val)
 {
-  OCPI::API::Property p(app, app_inst_name_proxy, "rx_rf_port_input");
-  ocpi_ulong_t rx_rf_port_input = p.getULongValue();
+  OA::Property p(app, app_inst_name_proxy, "rx_rf_port_input");
+  OA::ULong rx_rf_port_input = p.getULongValue();
 
   switch(rx_rf_port_input)
   {
@@ -209,14 +183,12 @@ const char* get_AD9361_rx_rf_port_input(
     case 8:  val = AD9361_rx_rf_port_input_t::C_P;        break;
     default:
       std::ostringstream err_oss;
-      err_oss << "Invalid value read read ";
+      err_oss << "Invalid value read ";
       err_oss << "from 'ad9361_config_proxy' worker's";
       err_oss << "'rx_rf_port_input' property 'rx_rf_port_input': ";
       err_oss << rx_rf_port_input;
-      return err_oss.str().c_str();
+      throw err_oss.str();
   }
-
-  return 0;
 }
 
 /*! @brief Get the in-situ value
@@ -229,18 +201,16 @@ const char* get_AD9361_rx_rf_port_input(
  *  @param[in]  app_inst_name_proxy OpenCPI application instance name of the
  *                                  OpenCPI ad9361_config_proxy.rcc worker
  *  @param[out] val                 Retrieved value.
- *  @return 0 if there are no errors, non-zero char array pointer if there
- *          are errors (char array content will describe the error).
  ******************************************************************************/
-const char* get_AD9361_RX_RF_port_for_timing_diagram_R1(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
+void get_AD9361_RX_RF_port_for_timing_diagram_R1(
+    OA::Application& app, const char* app_inst_name_proxy,
     AD9361_RX_port_t& val)
 {
   AD9361_rx_rf_port_input_t AD9361_rx_rf_port_input;
   
   const char* inst = app_inst_name_proxy;
-  const char* err = get_AD9361_rx_rf_port_input(app, inst, AD9361_rx_rf_port_input);
-  if(err != 0) { return err; }
+  std::string ret_str;
+  get_AD9361_rx_rf_port_input(app, inst, AD9361_rx_rf_port_input);
 
   if((AD9361_rx_rf_port_input == AD9361_rx_rf_port_input_t::A_BALANCED) or
      (AD9361_rx_rf_port_input == AD9361_rx_rf_port_input_t::A_N) or 
@@ -260,8 +230,6 @@ const char* get_AD9361_RX_RF_port_for_timing_diagram_R1(
   {
     val = AD9361_RX_port_t::RX1C;
   }
-  
-  return 0;
 }
 
 /*! @brief Get the in-situ value
@@ -274,18 +242,15 @@ const char* get_AD9361_RX_RF_port_for_timing_diagram_R1(
  *  @param[in]  app_inst_name_proxy OpenCPI application instance name of the
  *                                  OpenCPI ad9361_config_proxy.rcc worker
  *  @param[out] val                 Retrieved value.
- *  @return 0 if there are no errors, non-zero char array pointer if there
- *          are errors (char array content will describe the error).
  ******************************************************************************/
-const char* get_AD9361_RX_RF_port_for_timing_diagram_R2(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
+void get_AD9361_RX_RF_port_for_timing_diagram_R2(
+    OA::Application& app, const char* app_inst_name_proxy,
     AD9361_RX_port_t& val)
 {
   AD9361_rx_rf_port_input_t AD9361_rx_rf_port_input;
   
   const char* inst = app_inst_name_proxy;
-  const char* err = get_AD9361_rx_rf_port_input(app, inst, AD9361_rx_rf_port_input);
-  if(err != 0) { return err; }
+  get_AD9361_rx_rf_port_input(app, inst, AD9361_rx_rf_port_input);
 
   if((AD9361_rx_rf_port_input == AD9361_rx_rf_port_input_t::A_BALANCED) or
      (AD9361_rx_rf_port_input == AD9361_rx_rf_port_input_t::A_N) or 
@@ -305,8 +270,6 @@ const char* get_AD9361_RX_RF_port_for_timing_diagram_R2(
   {
     val = AD9361_RX_port_t::RX2C;
   }
-  
-  return 0;
 }
 
 /*! @brief Get the in-situ value with double floating point precision
@@ -319,21 +282,17 @@ const char* get_AD9361_RX_RF_port_for_timing_diagram_R2(
  *  @param[in]  app_inst_name_proxy OpenCPI application instance name of the
  *                                  OpenCPI ad9361_config_proxy.rcc worker
  *  @param[out] val                 Retrieved value.
- *  @return 0 if there are no errors, non-zero char array pointer if there
- *          are errors (char array content will describe the error).
  ******************************************************************************/
-const char* get_AD9361_FB_CLK_Delay_ns(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
+void get_AD9361_FB_CLK_Delay_ns(
+    OA::Application& app, const char* app_inst_name_proxy,
     double& val)
 {
-  OCPI::API::Property p(app, app_inst_name_proxy, "FB_CLK_Delay");
+  OA::Property p(app, app_inst_name_proxy, "FB_CLK_Delay");
 
   // AD9361_Register_Map_Reference_Manual_UG-671.pdf pg. 6:
   // "The typical delay is approximately 0.3 ns/LSB."
-  ocpi_ushort_t FB_CLK_Delay = p.getUShortValue();
+  OA::UShort FB_CLK_Delay = p.getUShortValue();
   val = ((double)FB_CLK_Delay) * 0.3;
-
-  return 0;
 }
 
 /*! @brief Get the in-situ value with double floating point precision
@@ -346,23 +305,17 @@ const char* get_AD9361_FB_CLK_Delay_ns(
  *  @param[in]  app_inst_name_proxy OpenCPI application instance name of the
  *                                  OpenCPI ad9361_config_proxy.rcc worker
  *  @param[out] val                 Retrieved value.
- *  @return 0 if there are no errors, non-zero char array pointer if there
- *          are errors (char array content will describe the error).
  ******************************************************************************/
-const char* get_AD9361_Tx_Data_Delay_ns(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
+void get_AD9361_Tx_Data_Delay_ns(
+    OA::Application& app, const char* app_inst_name_proxy,
     double& val)
 {
-  OCPI::API::Property p(app, app_inst_name_proxy, "Tx_Data_Delay");
+  OA::Property p(app, app_inst_name_proxy, "Tx_Data_Delay");
 
   // AD9361_Register_Map_Reference_Manual_UG-671.pdf pg. 6:
   // "The typical delay is approximately 0.3 ns/LSB."
-  ocpi_ushort_t Tx_Data_Delay = p.getUShortValue();
+  OA::UShort Tx_Data_Delay = p.getUShortValue();
   val = ((double)Tx_Data_Delay) * 0.3;
-
-  return 0;
 }
-
-
 
 #endif // _READERS_AD9361_CFG_H

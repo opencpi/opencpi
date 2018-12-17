@@ -1,0 +1,18 @@
+<!-- The data_src_to_dac_test_tx_event HDL assembly xml file -->
+<HdlAssembly>
+
+  <Instance Worker="data_src">
+    <Property Name="DATA_BIT_WIDTH_p" Value="12"/>
+  </Instance>
+
+  <Instance Worker="test_tx_event"/>
+
+  <Connection Name="out_from_asm_tx_path_to_dac" External="producer">
+    <Port Instance="data_src" Name="out"/>
+  </Connection>
+
+  <Connection Name="out_from_asm_to_event" External="producer">
+    <Port Instance="test_tx_event" Name="event_out"/>
+  </Connection>
+
+</HdlAssembly>

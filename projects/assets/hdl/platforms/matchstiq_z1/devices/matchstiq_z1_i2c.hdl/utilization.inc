@@ -1,49 +1,17 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Utilization Report for Worker "matchstiq_z1_i2c"
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\textbf{Worker Build Configuration ``0'':}\\
-Table entries are a result of building the worker with the following parameter sets:\
-\begin{itemize}
-	\item \verb+ocpi_endian=little+
-	\item \verb+ocpi_debug=false+
-	\item \verb+CLK_FREQ_p=1e+08+
-	\item \verb+SLAVE_ADDRESS_p=69,113,72,33,32+
-	\item \verb+NUSERS_p=5+
-\end{itemize}
-\begin{scriptsize}
-	\begin{table}[H]
-	\captionsetup{justification=raggedright,singlelinecheck=false}
-	\caption{Worker Build Configuration ``0''}
-	\begin{tabular}{|c|c|c|c|c|c|c|c|}
-		\hline
-		\rowcolor{blue}
-		OpenCPI Target & Tool   & Version & Device          & Registers & LUTs & Fmax (MHz) & Memory/Special Functions\\
-		\hline
-		zynq           & Vivado & 2017.1  & xc7z020clg484-1 & 104       & 328  & 179.824    & N/A                     \\
-		\hline
-	\end{tabular}
-	\end{table}
-\end{scriptsize}
-%\textbf{Worker Build Configuration ``1'':}\\
-%Table entries are a result of building the worker with the following parameter sets:\
-%\begin{itemize}
-%	\item \verb+ocpi_endian=little+
-%	\item \verb+ocpi_debug=false+
-%	\item \verb+CLK_FREQ_p=5e+07+
-%	\item \verb+SLAVE_ADDRESS_p=69,113,72,33,32+
-%	\item \verb+NUSERS_p=5+
-%\end{itemize}
-%\begin{scriptsize}
-%	\begin{table}[H]
-%	\captionsetup{justification=raggedright,singlelinecheck=false}
-%	\caption{Worker Build Configuration ``1''}
-%	\begin{tabular}{|c|c|c|c|c|c|c|c|}
-%		\hline
-%		\rowcolor{blue}
-%		OpenCPI Target & Tool   & Version & Device          & Registers & LUTs & Fmax (MHz) & Memory/Special Functions\\
-%		\hline
-%		zynq           & Vivado & 2017.1  & xc7z020clg484-1 & 104       & 328  & 179.824    & N/A                     \\
-%		\hline
-%	\end{tabular}
-%	\end{table}
-%\end{scriptsize}
+% Generated on Fri Oct  5 08:46:01 2018
+
+% It is best to wrap this table in \begin{landscape} and \end{landscape} in its including doc
+\begin{tiny}
+    \begin{longtable}[l]{* {9}{|c}|}
+    \captionsetup{justification=raggedright,singlelinecheck=false}
+    \caption{Resource Utilization Table for worker: matchstiq\_z1\_i2c}\\
+        \hline
+        \rowcolor{blue}
+            Configuration & OCPI Target & Tool   & Version & Device          & Registers (Typ) & LUTs (Typ) & Fmax (MHz) (Typ) & Memory/Special Functions \\
+            \hline
+            0             & zynq        & Vivado & 2017.1  & xc7z020clg484-1 & 104             & 328        & N/A              & N/A \\
+            \hline
+            1             & zynq        & Vivado & 2017.1  & xc7z020clg484-1 & 104             & 328        & N/A              & N/A \\
+            \hline
+        \end{longtable}
+\end{tiny}

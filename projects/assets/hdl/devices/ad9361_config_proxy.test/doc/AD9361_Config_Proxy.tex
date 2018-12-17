@@ -95,7 +95,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Component Data Sheet}
-\def\docVersion{1.3}
+\def\docVersion{1.4}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
@@ -125,13 +125,21 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Version           & v\docVersion{}   \\
 	\hline
-	Release Date      & Aug 2017         \\
+	Release Date      & October 2018         \\
 	\hline
 	Component Library & ocpi.assets.devices     \\
 	\hline
 	Workers           & \comp.rcc        \\
 	\hline
-	Tested Platforms  & Zedboard (Xilinx Linux release xilinx-v14.7\cite{xilinx_linux}), CentOS 7 (via ML605/FMCOMMS3 for FMC LPC slot) \\
+	Tested Platforms  &
+\begin{itemize}
+  \item Agilent Zedboard/Analog Devices FMCOMMS2 (xilinx13\_3 RCC platform only)
+  \item Agilent Zedboard/Analog Devices FMCOMMS3 (xilinx13\_3 RCC platform only)
+  \item x86/Xilinx ML605/Analog Devices FMCOMMS2 (centos7 RCC platform only)
+  \item x86/Xilinx ML605/Analog Devices FMCOMMS3 (centos7 RCC platform only)
+  \item Ettus E310 (xilinx13\_4 RCC platform only)
+\end{itemize} \\
+
 	\hline
 \end{tabular}
 
@@ -146,7 +154,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 		    \hline
 		    v1.3 & Initial Release & Aug 2017 \\
 		    \hline
-        pre-v1.4 & Worker updated to latest No-OS 2017\_R1 release - rx\_rf\_gain default values removed from OCS as they conflicted with the default startup RX gain mode which is non-manual & Apr 2018 \\
+        v1.4 & \begin{itemize} \item Worker updated to latest No-OS 2017\_R1 release - rx\_rf\_gain default values removed from OCS as they conflicted with the default startup RX gain mode which is non-manual \item Default value removed from \verb+en_state_machine_mode+ property to avoid confusion (state now handled by tx event port on ad9361\_config.hdl \end{itemize} & Oct 2018 \\
 		    \hline
 			\end{tabularx}
 		\end{table}
@@ -157,7 +165,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \section*{Worker Implementation Details}
 \subsection*{\comp.rcc}
 The version of No-OS used was GitHub commit 06bfc76060d5b9767ae9aad7bf40e3648474ebb7\cite{no_os_06bfc76060d5b9767ae9aad7bf40e3648474ebb7}, which was the latest update to the Analog Devices-recommended 2017\_R1 release at the time of development. \\ \\
-No-OS features "platform layers" which are .c/.h files which implement hardware-specific SPI register accesses within generic API calls. No-OS includes several platform layers which are all specific to the Analog Devices HDL design\cite{adi_hdl_github}. In order to use No-OS with OpenCPI, a new platform layer was added within the \comp{}.rcc code which provided OpenCPI-specific functionality for SPI accesses via slave device property read/writes. This new platform layer was implemented via the ad9361\_platform.cc, ad9361\_platform.h, and parameter.h files. \\
+No-OS features ``platform layers'' which are .c/.h files which implement hardware-specific SPI register accesses within generic API calls. No-OS includes several platform layers which are all specific to the Analog Devices HDL design\cite{adi_hdl_github}. In order to use No-OS with OpenCPI, a new platform layer was added within the \comp{}.rcc code which provided OpenCPI-specific functionality for SPI accesses via slave device property read/writes. This new platform layer was implemented via the ad9361\_platform.cc, ad9361\_platform.h, and parameter.h files. \\
 \noindent \begin{sloppypar}
 \noindent This worker implements every No-OS API call as a property, with the matching ad9361\_get...()/ad9361\_set...() API calls collapsed into a single volatile and writable \comp{}.rcc property. Each property's type(s)/data structure(s) map directly to the type(s)/data structure(s) passed as argument(s) to that property's analogous No-OS function. The only exception to this methodology are:
 \begin{itemize}
@@ -187,7 +195,7 @@ int32_t ad9361_set_rx_fir_en_dis (struct ad9361_rf_phy *phy,
 Because a design decision was made to have a strict one-to-one mapping between No-OS API calls and \comp{}.rcc properties, and because No-OS passes integers as arguments instead of forcing strictly enumerated types, this worker likewise uses integer types for properties instead of enumerated ones. To aid in alleviating confusion when using this worker's properties, many of the No-OS C macros are mapped to parameter properties of this worker and the property descriptions reference the parameter properties which are intended to be used. This way, parameter properties can be read at runtime, and the read values used to set a property. For example, the \verb+ad9361_set_rx_fir_en_dis+ property's description references the \verb+ENABLE+ and \verb+DISABLE+ parameter properties which have values of 1 and 0, respectively. \\
 \end{sloppypar}
 In addition to the worker's properties which map to No-OS API calls, other properties exist which provide further functionality. This includes PLL lock status, low-level PLL divider values which can be used to validate the LO frequencies read by No-OS, fastlock memory management (deletion), the FPGA data mode configuration (LVDS, CMOS, etc) via the \verb+LVDS+, \verb+single_port+, \verb+swap_ports+, \verb+half_duplex+, \verb+data_rate_config+ properties, and the \verb+DATA_CLK_P_rate_Hz+.\\ \\
-Note also that this worker's usage of no-OS not only makes SPI register accesses but also sets the AD9361 RESETB pin via the ad9361\_config.hdl\cite{config_comp_datasheet} and ad9361\_spi.hdl\cite{spi_comp_datasheet} workers.
+Note also that this worker's usage of no-OS not only makes SPI register accesses but also sets the AD9361 RESETB, ENABLE, and TXNRX pins via the ad9361\_config.hdl\cite{config_comp_datasheet} and ad9361\_spi.hdl\cite{spi_comp_datasheet} workers.
 \makeatletter
 \newcommand{\gettikzxy}[3]{%
   \tikz@scan@one@point\pgfutil@firstofone#1\relax
@@ -211,7 +219,7 @@ Note also that this worker's usage of no-OS not only makes SPI register accesses
       },
       every edge/.style={draw,thick}
     ]
-    \node[rectangle,ultra thick,draw=black,fill=blue,minimum size=2cm,minimum width=16cm](R1){Parameter Properties: 
+    \node[rectangle,ultra thick,draw=black,fill=blue,minimum size=2cm,minimum width=16cm](R1){Parameter Properties:
 \setstretch{0.4}
 \fontsize{8}{12}\selectfont
       \verb+rx_nchannels+,
@@ -290,7 +298,7 @@ Note also that this worker's usage of no-OS not only makes SPI register accesses
     \node[rectangle,draw=white,fill=white](R4)[above= of R1]{ };
 \setstretch{0.4}
 \fontsize{8}{12}\selectfont
-    \node[rectangle,draw=white,fill=white](placeholder)[above= of R1] { Non-parameter Properties:\\ 
+    \node[rectangle,draw=white,fill=white](placeholder)[above= of R1] { Non-parameter Properties:\\
    			\verb+ad9361_rf_phy+,
 			\verb+ad9361_init+, \\
 			\verb+en_state_machine_mode+,
@@ -374,7 +382,11 @@ Note also that this worker's usage of no-OS not only makes SPI register accesses
 			\verb+swap_ports+,
 			\verb+half_duplex+,
 			\verb+data_rate_config+,
-			\verb+DATA_CLK_P_rate_Hz+
+			\verb+DATA_CLK_P_rate_Hz+, \\
+			\verb+BIST_Mask_Channel_2_Q_data+,
+			\verb+BIST_Mask_Channel_2_I_data+,
+			\verb+BIST_Mask_Channel_1_Q_data+,
+			\verb+BIST_Mask_Channel_1_I_data+
 };
     \node[rectangle,draw=white,fill=white](R2)[below= of R1] { Slave: ad9361\_config.hdl};
     \path[<->]
@@ -387,11 +399,10 @@ Note also that this worker's usage of no-OS not only makes SPI register accesses
 \section*{Source Dependencies}
 \subsection*{\comp.rcc}
 \begin{itemize}
-	\item opencpi/hdl/devices/\comp{}.rcc/\comp{}.cc
-	\item opencpi/hdl/devices/\comp{}.rcc/ad9361\_platform.cc
-	\item opencpi/hdl/devices/\comp{}.rcc/ad9361\_platform.h
-	\item opencpi/hdl/devices/\comp{}.rcc/parameters.h
-	\item libad9361.a (no-OS static library installed with OpenCPI prerequisites)
+	\item assets/hdl/devices/\comp{}.rcc/\comp{}.cc
+	\item assets/hdl/devices/\comp{}.rcc/ad9361\_platform.cc
+	\item assets/hdl/devices/\comp{}.rcc/parameters.h
+	\item libad9361.a (no-OS static library installed with OpenCPI)
 \end{itemize}
 \begin{landscape}
 
@@ -533,8 +544,8 @@ Note also that this worker's usage of no-OS not only makes SPI register accesses
 			\verb+ad9361_rf_phy+ & Struct (see \hyperlink{tab1}{Table 1})  & - & Volatile & Standard & - & - \\
 			\hline
 			\verb+ad9361_init+ & Struct (see \hyperlink{tab2}{Table 2}) & - & Initial & Standard & \begin{tabular}{l}reference\_clk\_rate 4\\0e6,one\_rx\_one\_tx\_m\\ode\_use\_rx\_num 1,o\\ne\_rx\_one\_tx\_mode\_\\use\_tx\_num 1,frequ\\ency\_division\_duple\\x\_mode\_enable 1,xo\\\_disable\_use\_ext\_ref\\clk\_enable 0,two\_t\_\\two\_r\_timing\_enable\\ 0,pp\_tx\_swap\_enable\\ 1,pp\_rx\_swap\_enable\\ 1,tx\_channel\_swap\_e\\nable 1,rx\_channel\_s\\wap\_enable 1,delay\_\\rx\_data 0,rx\_data\_cl\\ock\_delay 0,rx\_data\_\\delay 4,tx\_fb\_clock\_\\delay 7,tx\_data\_dela\\y 0\end{tabular} & Initialize the AD9361 part. \\
-			\hline   
-			\verb+en_state_machine_mode+ & ULong & - & Volatile, Writable & Standard & \verb+ENSM_MODE_ALERT+ & Get/set the Enable State Machine (ENSM) mode. Value should be set using one of the ENSM\_MODE\_ parameters.\\
+			\hline
+			\verb+en_state_machine_mode+ & ULong & - & Volatile, Writable & Standard & - & Get/set the Enable State Machine (ENSM) mode. Value should be set using one of the ENSM\_MODE\_ parameters.\\
 			\hline
 			\verb+rx_rf_gain+ & Long & \verb+rx_nchannels+ & Volatile, Writable & Standard & - & Get/set the receive RF gain for the selected channel. The gain is in dB. Note that the written value to the second index of this property will not be applied when this worker's ad9361\_rf\_phy.pdata.rx2tx2 property member is false.\\
 			\hline
@@ -643,7 +654,7 @@ Note also that this worker's usage of no-OS not only makes SPI register accesses
                                             high-precision calculation of the
                                             nominal DAC rate). \\
 			\hline
-			\verb+THB2_Enable+ & Bool & - & Volatile & Standard & - & 
+			\verb+THB2_Enable+ & Bool & - & Volatile & Standard & - &
                                Note that there are several
                                  functions that calculate digital filter
                                  settings. The ad9361\_calculate\_rf\_clock\_chain
@@ -658,7 +669,7 @@ Note also that this worker's usage of no-OS not only makes SPI register accesses
                                  for high-precision calculation of the nominal
                                  DAC rate). \\
 			\hline
-			\verb+THB1_Enable+ & Bool & - & Volatile & Standard & - & 
+			\verb+THB1_Enable+ & Bool & - & Volatile & Standard & - &
                                Note that there are several
                                  functions that calculate digital filter
                                  settings. The ad9361\_calculate\_rf\_clock\_chain
@@ -691,7 +702,7 @@ Note also that this worker's usage of no-OS not only makes SPI register accesses
                                                 high-precision calculation of
                                                 the nominal ADC rate). \\
 			\hline
-			\verb+RHB2_Enable+ & Bool & - & Volatile & Standard & - & 
+			\verb+RHB2_Enable+ & Bool & - & Volatile & Standard & - &
                                Note that there are several
                                  functions that calculate digital filter
                                  settings. The ad9361\_calculate\_rf\_clock\_chain
@@ -706,7 +717,7 @@ Note also that this worker's usage of no-OS not only makes SPI register accesses
                                  for high-precision calculation of the nominal
                                  ADC rate). \\
 			\hline
-			\verb+RHB1_Enable+ & Bool & - & Volatile & Standard & - & 
+			\verb+RHB1_Enable+ & Bool & - & Volatile & Standard & - &
                                Note that there are several
                                  functions that calculate digital filter
                                  settings. The ad9361\_calculate\_rf\_clock\_chain
@@ -721,7 +732,7 @@ Note also that this worker's usage of no-OS not only makes SPI register accesses
                                  for high-precision calculation of the nominal
                                  ADC rate). \\
 			\hline
-			\verb+DAC_Clk_div2+ & Bool & - & Volatile & Standard & - & 
+			\verb+DAC_Clk_div2+ & Bool & - & Volatile & Standard & - &
                                 The ad9361\_calculate\_rf\_clock\_chain
                                   function configures this value. When false,
                                   the DAC clock rate equals the ADC clock rate.
@@ -746,7 +757,7 @@ Note also that this worker's usage of no-OS not only makes SPI register accesses
 			\hline
 			\verb+Tx_Secondary_Filter_Resistor+ & Enum & - & Volatile & invalid, 800, 400, 200, 100 & - & Secondary Tx filter resistor, which, along with the secondary Tx Capacitor, sets the 3 dB corner frequency of the secondary single-pole Tx RC filter via the equation 1/(2*pi*R*C). Value is represented in ohms. \\
 			\hline
-			\verb+Tx_Secondary_Filter_Capacitor+ & UShort & - & Volatile & Standard & - & 
+			\verb+Tx_Secondary_Filter_Capacitor+ & UShort & - & Volatile & Standard & - &
 Secondary Tx filter capacitor, which, along with the secondary Tx Resistor, sets the 3 dB corner frequency of the secondary single-pole Tx RC filter via the equation 1/(2*pi*R*C). Resolution: 1pF/LSB. Total capacitance (C in previous equation) is 12pF + ( \verb+Tx_Secondary_Filter_Capacitor+ *1pF) \\
 			\hline
 			\verb+Rx_BBF_Tune_Divide+ & Enum & - & Volatile & invalid, 1 to 511 & - &
@@ -775,7 +786,7 @@ Secondary Tx filter capacitor, which, along with the secondary Tx Resistor, sets
 			\hline
 			\verb+rx_vco_n_fractional+ & UShort & - & Volatile & Standard & - & - \\
 			\hline
-			\verb+Rx_Ref_Divider+ & Float & - & Volatile & Standard & - & 
+			\verb+Rx_Ref_Divider+ & Float & - & Volatile & Standard & - &
                                   Rx Ref Divider. This controls the
                                     Rx path divider which scales the rate of the
                                     analog clock which is input to the Rx PLL
@@ -825,6 +836,14 @@ Secondary Tx filter capacitor, which, along with the secondary Tx Resistor, sets
 			\hline
 			\verb+DATA_CLK_P_rate_Hz+ & Double & - & Volatile & Standard & - & - \\
 			\hline
+			\verb+BIST_Mask_Channel_2_Q_data+ & Bool & - & Volatile, Writable & Standard & - & Setting zeros out Channel 2 Q data. \\
+			\hline
+			\verb+BIST_Mask_Channel_2_I_data+ & Bool & - & Volatile, Writable & Standard & - & Setting zeros out Channel 2 I data. \\
+			\hline
+			\verb+BIST_Mask_Channel_1_Q_data+ & Bool & - & Volatile, Writable & Standard & - & Setting zeros out Channel 1 Q data. \\
+			\hline
+			\verb+BIST_Mask_Channel_1_I_data+ & Bool & - & Volatile, Writable & Standard & - & Setting zeros out Channel 1 I data. \\
+			\hline
 		\end{longtable}
 	\end{scriptsize}
 
@@ -838,7 +857,7 @@ Secondary Tx filter capacitor, which, along with the secondary Tx Resistor, sets
 		\begin{scriptsize}
 	\begin{tabular}{|p{4.7cm}|p{2.7cm}|p{13.77cm}|} \hline \rowcolor{blue} Name & Type & Description \\ \hline reference\_clk\_rate & ULong & - \\ \hline one\_rx\_one\_tx\_mode\_use\_rx\_num & UChar & Set to RX\_1 or RX\_2 to set desired channel in 1x1 mode. For example, When set to RX\_2 mode, the R1 and R2 data paths in the timing diagrams will be swapped. \\ \hline  one\_rx\_one\_tx\_mode\_use\_tx\_num & UChar & Set to TX\_1 or TX\_2 to set desired channel in 1x1 mode. For example, When set to TX\_2 mode, the T1 and T2 data paths in the timing diagrams will be swapped. \\ \hline frequency\_division\_duplex\_mode\_enable & UChar & Acceptable values are 1 for true and 0 for false. \\ \hline xo\_disable\_use\_ext\_refclk\_enable & UChar & - \\ \hline two\_t\_two\_r\_timing\_enable & Bool & Setting to true forces 2R2T timing regardless of number of enabled RX/TX channels. Recommended to set to false if only using at most one RX or one TX channel for the duration of an application (this will lower needed DATA\_CLK\_P rate). Setting to true has the advantage of ensuring that the timing diagram for each of the RX and TX data paths will not change when dynamically enabling/disabling any of the 4 possible channels (2 RX, 2 TX) at runtime - this comes at the cost of a higher required DATA\_CLK\_P rate). \\ \hline pp\_tx\_swap\_enable & UChar & Setting to 1 swaps I and Q (performs spectral inversion). Setting to 0 does not swap. \\ \hline pp\_rx\_swap\_enable & UChar & Setting to 1 swaps I and Q (performs spectral inversion). Setting to 0 does not swap. \\ \hline tx\_channel\_swap\_enable & UChar & Setting to 1 swaps RX channels 0 and 1. Setting to 0 does not swap. \\ \hline rx\_channel\_swap\_enable & UChar & - \\ \hline delay\_rx\_data & ULong & Sets the delay of the Rx data relative to Rx frame, measured in 1/2 DATA\_CLK cycles for DDR and full DATA\_CLK cycles for SDR. Valid values are 0, 1, 2, or 3. \\ \hline rx\_data\_clock\_delay & ULong & - \\ \hline rx\_data\_delay & ULong & - \\ \hline tx\_fb\_clock\_delay & ULong & Delay in multiples of 0.3 ns to add to the FB\_CLK\_P pin inside the AD9361 in order to account for the setup/hold requirements of the FB\_CLK\_P and TX data bus pins. Valid range is [0 15]. This value should be calculated using the setup/hold requiremed values and the reported skews in the FPGA bitstream timing report for the FB\_CLK\_P, TX data bus, and TX\_FRAME\_P pins. \\ \hline tx\_data\_delay & ULong & Delay in multiples of 0.3 ns to add to the TX data bus and TX\_FRAME\_P pins inside the AD9361 in order to account for their setup/hold requirements. Valid range is [0 15]. This value should be calculated using the setup/hold requiremed values and the reported skews in the FPGA bitstream timing report for the FB\_CLK\_P, TX data bus, and TX\_FRAME\_P pins. \\ \hline
 	\end{tabular}
-	\end{scriptsize}\\ \\ \\ \\ \\ \\ \\ \\
+	\end{scriptsize}\\ \\ \\ \\ \\ \\ \\ \\ \\
 	Table \hypertarget{tab3}{3}: Structure declaration for \comp{}.rcc rx\_rssi property.\\ \\
 		\begin{scriptsize}
 		\begin{tabular}{|p{4.7cm}|p{2.7cm}|p{13.77cm}|} \hline  \cellcolor{blue} Name & \cellcolor{blue}Type & \cellcolor{blue}Description \\ \hline ant & ULong & Antenna number for which RSSI is reported. \\ \hline symbol & ULong & Runtime RSSI. \\ \hline preamble & ULong & Initial RSSI. \\ \hline multiplier & Long & Multiplier to convert reported RSSI. \\ \hline duration & UChar & Duration to be considered for measuring. \\ \hline\end{tabular}
@@ -860,13 +879,13 @@ Secondary Tx filter capacitor, which, along with the secondary Tx Resistor, sets
 \begin{tabular}{|p{4.7cm}|p{2.7cm}|p{13.77cm}|} \hline \cellcolor{blue} Name & \cellcolor{blue}Type & \cellcolor{blue}Description \\ \hline ad9361\_profile\_id & ULong & Profile ID/index of the AD9361 profile which will be saved into a worker profile (i.e. in memory within this worker). \\ \hline worker\_profile\_id & ULong & Profile ID to assign to the profile saved in this worker's memory. This is for future record keeping of profiles saved within this worker.\\ \hline \end{tabular}
 	\end{scriptsize}\\ \\ \\
 	Table \hypertarget{tab8}{8}: Structure declaration for \comp{}.rcc trx\_path\_clks property.\\ \\
-		\begin{scriptsize}			
+		\begin{scriptsize}
 		\begin{tabular}{|p{4.7cm}|p{2.7cm}|p{13.77cm}|} \hline \cellcolor{blue} Name & \cellcolor{blue}Type & \cellcolor{blue}Description \\ \hline rx\_path\_clks & ULong & RX path rates buffer. Indices are indicated bye one of the parameter values BPLL\_FREQ, ADC\_FREQ, R2\_FREQ, R1\_FREQ, CLKRF\_FREQ, and RX\_SAMPL\_FREQ.\\ \hline tx\_path\_clks & ULong & TX path rates buffer. Indices are indicated bye one of the parameter values IGNORE,    DAC\_FREQ, T2\_FREQ, T1\_FREQ, CLKTF\_FREQ, and TX\_SAMPL\_FREQ.\\ \hline \end{tabular}
-	\end{scriptsize}\\ \\ \\ \\ \\
+	\end{scriptsize}\\ \\ \\ \\ \\ \\ \\
 	Table \hypertarget{tab9}{9}: Structure declaration for \comp{}.rcc do\_calib property.\\ \\
 		\begin{scriptsize}
 		\begin{tabular}{|p{4.7cm}|p{2.7cm}|p{13.77cm}|} \hline \cellcolor{blue} Name & \cellcolor{blue}Type & \cellcolor{blue}Description \\ \hline cal & ULong & The selected calibration. Accepted values are one of the parameter values TX\_QUAD\_CAL or RFDC\_CAL. \\ \hline arg & Long & For TX\_QUAD\_CAL - the optional RX phase value overwrite (set to zero).\\ \hline \end{tabular}
-	\end{scriptsize}\\ \\
+	\end{scriptsize}\\ \\ \\
 	Table \hypertarget{tab10}{10}: Structure declaration for \comp{}.rcc bist\_tone property.\\ \\
 		\begin{scriptsize}
 			\begin{tabular}{|p{4.7cm}|p{2.7cm}|p{13.77cm}|} \hline \cellcolor{blue} Name & \cellcolor{blue}Type & \cellcolor{blue}Description\\ \hline mode & UChar & - \\ \hline freq\_Hz & ULong & -\\ \hline level\_dB & ULong & -\\ \hline mask & ULong & Valid values are 0, 1, 2, 4, or 8 for no masking, chan 1 I, chan 1 Q, chan 2 I, chan 2 Q masking, respectively.\\ \hline\end{tabular}
@@ -1044,6 +1063,14 @@ Secondary Tx filter capacitor, which, along with the secondary Tx Resistor, sets
 			\hline
 			SpecProperty & \verb+DATA_CLK_P_rate_Hz+ & - & - & - & ReadSync  & - & - & - \\
 			\hline
+			SpecProperty & \verb+BIST_Mask_Channel_2_Q_data+ & - & - & - & ReadSync, WriteSync & - & - & - \\
+			\hline
+			SpecProperty & \verb+BIST_Mask_Channel_2_I_data+ & - & - & - & ReadSync, WriteSync & - & - & - \\
+			\hline
+			SpecProperty & \verb+BIST_Mask_Channel_1_Q_data+ & - & - & - & ReadSync, WriteSync & - & - & - \\
+			\hline
+			SpecProperty & \verb+BIST_Mask_Channel_1_I_data+ & - & - & - & ReadSync, WriteSync & - & - & - \\
+			\hline
 		\end{longtable}
 	\end{scriptsize}
 \pagebreak
@@ -1055,28 +1082,6 @@ Secondary Tx filter capacitor, which, along with the secondary Tx Resistor, sets
 			Name & Producer & Protocol           & Optional & Advanced & Usage                  \\
 			\hline
 			-  & -     & - & -     & -        & - \\
-			\hline
-		\end{tabular}
-	\end{scriptsize}
-	\section*{Worker Interfaces}
-	\subsection*{\comp.rcc}
-	\begin{scriptsize}
-		\begin{tabular}{|p{2cm}|p{1.5cm}|p{1.5cm}|p{15.74cm}|}
-			\hline
-			\rowcolor{blue}
-			Type            & Name & Optional & Usage                  \\
-			\hline
-			RawProp & rprops  & True & - \\
-			\hline
-		\end{tabular}
-	\end{scriptsize} \\
-	\begin{scriptsize}
-		\begin{tabular}{|p{1.5cm}|p{2.4cm}|p{1.05cm}|p{1.25cm}|p{1.2cm}|p{2cm}|p{1.4cm}|p{0.9cm}|p{6.88cm}|}
-			\hline
-			\rowcolor{blue}
-			Type                       & Name                            & Count & Optional & Master                & Signal                & Direction                  & Width                    & Description                                                                                                                  \\
-			\hline
-			DevSignal & dev\_force\_spi\_reset & 1 & False & False & force\_reset & Output & 1 & Used to force AD9361 RESETB pin, which is active-low, to logic 0. \\
 			\hline
 		\end{tabular}
 	\end{scriptsize}
@@ -1098,6 +1103,13 @@ Secondary Tx filter capacitor, which, along with the secondary Tx Resistor, sets
 \section*{Test and Verification}
 The test outlined in \cite{dac_comp_datasheet} includes validation of a subset of this worker's functionality.
 
+\section*{Troubleshooting}
+The following error message, which is produced by the No-OS library\cite{no_os} utilized by \comp{}.rcc, indicates a hardware communication error between the FPGA and the AD9361. This message would occur, for example, if the AD9361 existed on a card which was not plugged in to the PCB containing the FPGA.
+\lstset{backgroundcolor=\color{lightgray},language=bash, columns=flexible, breaklines=true, prebreak=\textbackslash, basicstyle=\ttfamily, showstringspaces=false,upquote=true, aboveskip=\baselineskip, belowskip=\baselineskip}
+\begin{lstlisting}
+ad9361_init : Unsupported PRODUCT_ID 0xC0ad9361_init : AD936x initialization error
+\end{lstlisting}
+
 \begin{thebibliography}{1}
 
 \bibitem{no_os_06bfc76060d5b9767ae9aad7bf40e3648474ebb7} analogdevicesinc/no-OS@06bfc76 GitHub\\
@@ -1106,16 +1118,15 @@ The test outlined in \cite{dac_comp_datasheet} includes validation of a subset o
 \url{https://wiki.analog.com/resources/eval/user-guides/ad-fmcomms2-ebz/software/no-os-functions}
 \bibitem{adi_hdl_github} GitHub - analogdevicesinc/hdl: HDL libraries and projects \\
 \url{https://github.com/analogdevicesinc/hdl}
-\bibitem{xilinx_linux} Release xilinx-v14.7 $\cdot$ Xilinx/linux-xlnx $\cdot$ GitHub \\
-\url{https://github.com/Xilinx/linux-xlnx/releases/tag/xilinx-v14.7}
 \bibitem{ad9361} AD9361 Datasheet and Product Info \\
 \url{http://www.analog.com/en/products/rf-microwave/integrated-transceivers-transmitters-receivers/wideband-transceivers-ic/ad9361.html}
-\bibitem{adi_ug570} AD9361 Reference Manual UG-570\\
-AD9361\_Reference\_Manual\_UG-570.pdf
-\bibitem{dac_comp_datasheet} AD9361 DAC Component Data Sheet \\AD9361\_DAC.pdf
-\bibitem{config_comp_datasheet} AD9361 Config Component Data Sheet \\AD9361\_Config.pdf
-\bibitem{spi_comp_datasheet} AD9361 SPI Component Data Sheet \\AD9361\_SPI.pdf
- 
+\bibitem{dac_comp_datasheet} AD9361 DAC Component Data Sheet \\
+\url{https://opencpi.github.io/assets/AD9361_DAC.pdf}
+\bibitem{config_comp_datasheet} AD9361 Config Component Data Sheet \\
+\url{https://opencpi.github.io/assets/AD9361_Config.pdf}
+\bibitem{spi_comp_datasheet} AD9361 SPI Component Data Sheet \\
+\url{https://opencpi.github.io/assets/AD9361_SPI.pdf}
+
 \end{thebibliography}
 
 \end{document}

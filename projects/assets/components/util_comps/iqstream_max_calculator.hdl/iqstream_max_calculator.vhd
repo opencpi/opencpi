@@ -132,7 +132,7 @@ begin
     end if;
   end process;
 
-  max_regs : process(in_in.ready, ready_for_in_port_data)
+  max_regs : process(ctl_in.clk)
   begin
     if rising_edge(ctl_in.clk) then
       if ctl_in.reset = '1' then

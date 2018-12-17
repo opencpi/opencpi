@@ -24,20 +24,28 @@
                                       description='This should have a value of DDR when LVDS_p has a value of true. Either value is acceptable when LVDS_p has a value of false (i.e. CMOS mode is used).'/>
 
   <!-- Dev Signal Ports -->
+
   <devsignal name='dev_cfg_data'     signals='ad9361-cfg-data-signals.xml'    master='true'/>
   <devsignal name='dev_cfg_data_tx'  signals='ad9361-cfg-data-tx-signals.xml' master='true'/>
   <devsignal name='dev_data_clk'     signals='ad9361-data-clk-signals.xml'    master='true'/>
   <devsignal name='dev_data_to_pins' signals='ad9361-data-dac-signals.xml'    master='true'/>
+  <devsignal name='dev_txen'     signals='txen-out-signals.xml'           master='true'/>
 
+  <!-- to supported ad9361_dac.hdl -->
   <devsignal name='dev_data_ch0_in' signals='dac-12-signals.xml'/>
   <devsignal name='dev_data_ch1_in' optional='true' signals='dac-12-signals.xml'/>
+  <devsignal name='dev_tx_event_ch0' signals='ad9361-tx-event-signals.xml'/>
+  <devsignal name='dev_tx_event_ch1' optional='true' signals='ad9361-tx-event-signals.xml'/>
 
   <!-- Sub-Device Port Connections (Supports) -->
+
   <supports worker='ad9361_dac'>
     <connect port="dev_dac" to="dev_data_ch0_in"/>
+    <connect port="dev_tx_event" to="dev_tx_event_ch0"/>
   </supports>
   <supports worker='ad9361_dac'>
     <connect port="dev_dac" to="dev_data_ch1_in"/>
+    <connect port="dev_tx_event" to="dev_tx_event_ch1"/>
   </supports>
 </HdlDevice>
 

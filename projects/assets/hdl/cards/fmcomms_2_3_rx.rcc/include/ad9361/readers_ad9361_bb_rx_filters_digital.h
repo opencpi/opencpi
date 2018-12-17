@@ -73,10 +73,8 @@
  *  @param[in]  app_inst_name_proxy OpenCPI application instance name of the
  *                                  OpenCPI ad9361_config_proxy.rcc worker
  *  @param[out] val                 Retrieved value.
- *  @return 0 if there are no errors, non-zero char array pointer if there
- *          are errors (char array content will describe the error).
  ******************************************************************************/
-const char* get_AD9361_RHB3_decimation_factor(
+void get_AD9361_RHB3_decimation_factor(
     OCPI::API::Application& app, const char* app_inst_name_proxy,
     uint8_t& val)
 {
@@ -100,10 +98,8 @@ const char* get_AD9361_RHB3_decimation_factor(
     std::string err;
     err = "Invalid value read for ad9361_config_proxy.rcc ";
     err += "RHB3_Enable_and_Interp property: " + enum_str;
-    return err.c_str();
+    throw err;
   }
-
-  return 0;
 }
 
 /*! @brief Get the in-situ value with exact precision of the
@@ -115,17 +111,13 @@ const char* get_AD9361_RHB3_decimation_factor(
  *  @param[in]  app_inst_name_proxy OpenCPI application instance name of the
  *                                  OpenCPI ad9361_config_proxy.rcc worker
  *  @param[out] val                 Retrieved value.
- *  @return 0 if there are no errors, non-zero char array pointer if there
- *          are errors (char array content will describe the error).
  ******************************************************************************/
-const char* get_AD9361_RHB2_decimation_factor(
+void get_AD9361_RHB2_decimation_factor(
     OCPI::API::Application& app, const char* app_inst_name_proxy,
     uint8_t& val)
 {
   OCPI::API::Property p(app, app_inst_name_proxy, "RHB2_Enable");
   val = p.getBoolValue() ? 2 : 1;
-
-  return 0;
 }
 
 /*! @brief Get the in-situ value with exact precision of the
@@ -137,17 +129,13 @@ const char* get_AD9361_RHB2_decimation_factor(
  *  @param[in]  app_inst_name_proxy OpenCPI application instance name of the
  *                                  OpenCPI ad9361_config_proxy.rcc worker
  *  @param[out] val                 Retrieved value.
- *  @return 0 if there are no errors, non-zero char array pointer if there
- *          are errors (char array content will describe the error).
  ******************************************************************************/
-const char* get_AD9361_RHB1_decimation_factor(
+void get_AD9361_RHB1_decimation_factor(
     OCPI::API::Application& app, const char* app_inst_name_proxy,
     uint8_t& val)
 {
   OCPI::API::Property p(app, app_inst_name_proxy, "RHB1_Enable");
   val = p.getBoolValue() ? 2 : 1;
-
-  return 0;
 }
 
 #endif // _READERS_AD9361_BB_RX_FILTERS_DIGITAL_H

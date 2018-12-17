@@ -1,0 +1,81 @@
+<!--
+     For FMCOMMS2,
+     MIN_ACHIEVABLE_RX_TUNING_FREQ_MHZ is calculated as follows. Because a
+     potential decimator's decimation factor is not restricted, bw_min is
+     assumed to be zero.
+     FMCOMMS2 min balun freq + bw_min/2 = 2400 + 0/2 = 2400
+
+     For FMCOMMS2,
+     MAX_ACHIEVABLE_RX_TUNING_FREQ_MHZ_p is calculated as follows. Because a
+     potential decimator's decimation factor is not restricted, bw_min is
+     assumed to be zero.
+     FMCOMMS2 max balun freq - bw_max/2 = 2500 + 0/2 = 2500
+
+     For FMCOMMS2,
+     MIN_ACHIEVABLE_TX_TUNING_FREQ_MHZ is calculated as follows. Because a
+     potential decimator's decimation factor is not restricted, bw_min is
+     assumed to be zero.
+     FMCOMMS2 min balun freq + bw_min/2 = 2400 + 0/2 = 2400
+
+     For FMCOMMS2,
+     MAX_ACHIEVABLE_TX_TUNING_FREQ_MHZ_p is calculated as follows. Because a
+     potential decimator's decimation factor is not restricted, bw_min is
+     assumed to be zero.
+     FMCOMMS2 max balun freq - bw_max/2 = 2500 + 0/2 = 2500
+
+     For FMCOMMS3,
+     MIN_ACHIEVABLE_RX_TUNING_FREQ_MHZ_p is calculated as follows. Because a
+     potential decimator's decimation factor is not restricted, bw_min is
+     assumed to be zero.
+     Rx_RFPLL_LO_freq_min - (RX_SAMPL_FREQ_MHz_LVDS_max*
+                             complex_mixer_phs_inc_max/65536) + bw_min/2
+     = 70                 - 61.44 * 32767/65536 + 0/2
+     = 70                 - 30.7190625
+
+     For FMCOMMS3,
+     MAX_ACHIEVABLE_RX_TUNING_FREQ_MHZ_p is calculated as follows. Because a
+     potential decimator's decimation factor is not restricted, bw_min is
+     assumed to be zero.
+     Rx_RFPLL_LO_freq_max - (RX_SAMPL_FREQ_MHz_LVDS_max*
+                             complex_mixer_phs_inc_min/65536) - bw_min/2
+     = 6000               - (61.44 * -32768/65536) - 0/2
+     = 6000               + 30.72
+
+     For FMCOMMS3,
+     MIN_ACHIEVABLE_TX_TUNING_FREQ_MHZ_p is calculated as follows. Because a
+     potential decimator's decimation factor is not restricted, bw_min is
+     assumed to be zero.
+     Tx_RFPLL_LO_freq_min - (TX_SAMPL_FREQ_MHz_LVDS_max*
+                             complex_mixer_phs_inc_max/65536) + bw_min/2
+     = 70                 - 61.44 * 32767/65536 + 0/2
+     = 70                 - 30.7190625
+
+     For FMCOMMS3,
+     MAX_ACHIEVABLE_TX_TUNING_FREQ_MHZ_p is calculated as follows. Because a
+     potential decimator's decimation factor is not restricted, bw_min is
+     assumed to be zero.
+     Tx_RFPLL_LO_freq_max - (TX_SAMPL_FREQ_MHz_LVDS_max*
+                             complex_mixer_phs_inc_min/65536) - bw_min/2
+     = 6000               - (61.44 * -32768/65536) - 0/2
+     = 6000               + 30.72
+-->
+<build>
+  <Configuration Id="0">
+    <Parameter Name="FMCOMMS_NUM_p" Value="2"/>
+    <Parameter Name="DATA_STREAM_IDS_RX_p" Value="SMA_RX1A,SMA_RX2A"/>
+    <Parameter Name="DATA_STREAM_IDS_TX_p" Value="SMA_TX1A,SMA_TX2A"/>
+    <Parameter Name="MIN_ACHIEVABLE_RX_TUNING_FREQ_MHZ_p" Value="2400"/>
+    <Parameter Name="MAX_ACHIEVABLE_RX_TUNING_FREQ_MHZ_p" Value="2500"/>
+    <Parameter Name="MIN_ACHIEVABLE_TX_TUNING_FREQ_MHZ_p" Value="2400"/>
+    <Parameter Name="MAX_ACHIEVABLE_TX_TUNING_FREQ_MHZ_p" Value="2500"/>
+  </Configuration>
+  <Configuration Id="1">
+    <Parameter Name="FMCOMMS_NUM_p" Value="3"/>
+    <Parameter Name="DATA_STREAM_IDS_RX_p" Value="SMA_RX1A,SMA_RX2A"/>
+    <Parameter Name="DATA_STREAM_IDS_TX_p" Value="SMA_TX1A,SMA_TX2A"/>
+    <Parameter Name="MIN_ACHIEVABLE_RX_TUNING_FREQ_MHZ_p" Value="70-30.7190625"/>
+    <Parameter Name="MAX_ACHIEVABLE_RX_TUNING_FREQ_MHZ_p" Value="6000+30.72"/>
+    <Parameter Name="MIN_ACHIEVABLE_TX_TUNING_FREQ_MHZ_p" Value="70-30.7190625"/>
+    <Parameter Name="MAX_ACHIEVABLE_TX_TUNING_FREQ_MHZ_p" Value="6000+30.72"/>
+  </Configuration>
+</build>

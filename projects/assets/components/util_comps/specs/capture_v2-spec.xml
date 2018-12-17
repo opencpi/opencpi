@@ -1,0 +1,43 @@
+<ComponentSpec>
+
+  <Port Name="in"/>
+
+  <Port Name="out" Producer="true" Optional="true"/>
+
+  <Property Name="stopOnFull" Default="false" Type="bool" Initial="true" Description="
+  True - Stop capturing data and metadata when the data and metadata buffers are full. If the metadata buffer is full before the data
+  buffer, no more metadata and no more data will be captured. If the data buffer is full before the metadata buffer, no more data is
+  captured, but continue to capture metadata until the metadata buffer is full.
+  False - Wrap around and continue to capture data and metadata once the buffers are full.
+  This stop functionality is independent of both the control plane 'stop' operation and 'finished' worker state."/>
+
+  <Property Name="metadataCount" Type="uLong" Volatile="true" Description="Counter of metadata records written."/>
+
+  <Property Name="dataCount" Type="uLong" Volatile="true" Description="Counter of words captured."/>
+
+  <Property Name="numRecords" Parameter="true" Type="uLong" Default="256" Description="Number of metadata records/messages to be captured."/>
+
+  <Property Name="numDataWords" Parameter="true" Type="uLong"  Default="1024"  Description="Number of four byte data words stored in the data buffer.
+  If stopOnFull is true, meaning no wrap around, no more data will be captured once the data buffer is full."/>
+
+  <Property Name="numMetadataWords" Parameter="true" Type="uLong" Default="4" Description="Due to a limitation (AV-4292), cannot use constrained elements
+  in unconstrained array declarations, so cannot directly set the second dimension for the metadata property to 4. The number of metadata words must
+  always be 4, since there are four 4 byte words that are captured. The first metadata word is the opcode for the message and message size in bytes;
+  opcode 8 MSB and message size 24 LSB. The second word is the fraction time stamp for the EOM. The third word is the fraction time stamp for the SOM.
+  And the fourth word is the seconds timestamp for the SOM. So the default value must not be changed."/>
+
+  <Property Name="metaFull" Type="bool" Default="false" Volatile="true" Initial="true" Description="Metadata buffer full flag."/>
+
+  <Property Name="dataFull" Type="bool" Default="false" Volatile="true" Initial="true" Description="Data buffer is full flag."/>
+
+  <Property Name="stopZLMOpcode" Type="uChar" Default="0" Initial="true" Description="Opcode associated with the ZLM which indicates the application is 'done'."/>
+
+  <Property Name="stopOnZLM" Type="bool"  Default="false" Initial="true" Description="Indicates stopping on ZLM of stopZLMOpcode."/>
+
+  <Property Name="stopOnEOF" Type="bool"  Default="true" Initial="true" Description="As of now, this indicates stopping on ZLM of opcode 0. In the future it is
+  expected that OpenCPI will standardize a definition of EOF."/>
+
+  <Property Name="metadata" Type="uLong" ArrayDimensions="numRecords, numMetadataWords" Volatile="true" Description="Multidimensional array containing metadata records."/>
+
+  <Property Name="data" Type="uLong" ArrayLength="numDataWords" Volatile="true" Description="Data buffer containing data words."></Property>
+</ComponentSpec>

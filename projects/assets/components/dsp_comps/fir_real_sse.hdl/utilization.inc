@@ -1,61 +1,25 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Utilization Report for Worker "fir_real_sse"
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\textbf{Worker Build Configuration ``0'':}\\
-Table entries are a result of building the worker with the following parameter sets:\
-\begin{itemize}
-	\item \verb+ocpi_endian=little+
-	\item \verb+ocpi_debug=false+
-	\item \verb+COEFF_WIDTH_p=16+
-	\item \verb+DATA_WIDTH_p=16+
-	\item \verb+NUM_TAPS_p=64+
-\end{itemize}
-\begin{scriptsize}
-	\begin{table}[H]
-	\captionsetup{justification=raggedright,singlelinecheck=false}
-	\caption{Worker Build Configuration ``0''}
-	\begin{tabular}{|c|c|c|c|c|c|c|c|}
-		\hline
-		\rowcolor{blue}
-		OpenCPI Target & Tool    & Version & Device             & Registers & LUTs  & Fmax (MHz) & Memory/Special Functions                          \\
-		\hline
-		stratix4       & Quartus & 15.1.0  & EP4SGX230KF40C2    & 6424      & 5,053 & N/A        & \begin{tabular}{@{}c@{}}DSP18x18s=128\end{tabular}\\
-		\hline
-		virtex6        & ISE     & 14.7    & 6vlx240tff1156-1   & 4293      & 5029  & 156.495    & \begin{tabular}{@{}c@{}}DSP48E1s=64\end{tabular}  \\
-		\hline
-		zynq           & Vivado  & 2017.1  & xc7z020clg484-1    & 5318      & 3590  & 153.304    & \begin{tabular}{@{}c@{}}DSP48E1s=64\end{tabular}  \\
-		\hline
-		zynq\_ise      & ISE     & 14.7    & 7z020clg484-1      & 4293      & 5029  & 159.693    & \begin{tabular}{@{}c@{}}DSP48E1s=64\end{tabular}  \\
-		\hline
-	\end{tabular}
-	\end{table}
-\end{scriptsize}
-%\textbf{Worker Build Configuration ``1'':}\\
-%Table entries are a result of building the worker with the following parameter sets:\
-%\begin{itemize}
-%	\item \verb+ocpi_endian=little+
-%	\item \verb+ocpi_debug=false+
-%	\item \verb+COEFF_WIDTH_p=16+
-%	\item \verb+DATA_WIDTH_p=16+
-%	\item \verb+NUM_TAPS_p=128+
-%\end{itemize}
-%\begin{scriptsize}
-%	\begin{table}[H]
-%	\captionsetup{justification=raggedright,singlelinecheck=false}
-%	\caption{Worker Build Configuration ``1''}
-%	\begin{tabular}{|c|c|c|c|c|c|c|c|}
-%		\hline
-%		\rowcolor{blue}
-%		OpenCPI Target & Tool    & Version & Device             & Registers & LUTs  & Fmax (MHz) & Memory/Special Functions                          \\
-%		\hline
-%		stratix4       & Quartus & 15.1.0  & EP4SGX230KF40C2    & 12633     & 9,900 & N/A        & \begin{tabular}{@{}c@{}}DSP18x18s=256\end{tabular}\\
-%		\hline
-%		virtex6        & ISE     & 14.7    & 6vlx240tff1156-1   & 8390      & 9796  & 156.495    & \begin{tabular}{@{}c@{}}DSP48E1s=128\end{tabular} \\
-%		\hline
-%		zynq           & Vivado  & 2017.1  & xc7z020clg484-1    & 9448      & 7223  & 153.304    & \begin{tabular}{@{}c@{}}DSP48E1s=128\end{tabular} \\
-%		\hline
-%		zynq\_ise      & ISE     & 14.7    & 7z020clg484-1      & 8390      & 9796  & 159.693    & \begin{tabular}{@{}c@{}}DSP48E1s=128\end{tabular} \\
-%		\hline
-%	\end{tabular}
-%	\end{table}
-%\end{scriptsize}
+% Generated on Fri Oct  5 08:45:52 2018
+
+% It is best to wrap this table in \begin{landscape} and \end{landscape} in its including doc
+\begin{tiny}
+    \begin{longtable}[l]{* {9}{|c}|}
+    \captionsetup{justification=raggedright,singlelinecheck=false}
+    \caption{Resource Utilization Table for worker: fir\_real\_sse}\\
+        \hline
+        \rowcolor{blue}
+            Configuration & OCPI Target & Tool    & Version & Device           & Registers (Typ) & LUTs (Typ) & Fmax (MHz) (Typ) & Memory/Special Functions \\
+            \hline
+            0             & zynq        & Vivado  & 2017.1  & xc7z020clg484-1  & 5319            & 3596       & N/A              & \begin{tabular}{@{}l@{}}DSP48E1: 64\end{tabular} \\
+            \hline
+            0             & virtex6     & ISE     & 14.7    & 6vlx240tff1156-1 & 4295            & 5038       & 156.495          & \begin{tabular}{@{}l@{}}DSP48E1: 64\end{tabular} \\
+            \hline
+            0             & stratix4    & Quartus & 17.1.0  & EP4SGX230KF40C2  & 6426            & 5063       & N/A              & \begin{tabular}{@{}l@{}}DSP18: 128\end{tabular} \\
+            \hline
+            1             & zynq        & Vivado  & 2017.1  & xc7z020clg484-1  & 9448            & 7229       & N/A              & \begin{tabular}{@{}l@{}}DSP48E1: 128\end{tabular} \\
+            \hline
+            1             & virtex6     & ISE     & 14.7    & 6vlx240tff1156-1 & 8392            & 9805       & 156.495          & \begin{tabular}{@{}l@{}}DSP48E1: 128\end{tabular} \\
+            \hline
+            1             & stratix4    & Quartus & 17.1.0  & EP4SGX230KF40C2  & 12635           & 9912       & N/A              & \begin{tabular}{@{}l@{}}DSP18: 256\end{tabular} \\
+            \hline
+        \end{longtable}
+\end{tiny}

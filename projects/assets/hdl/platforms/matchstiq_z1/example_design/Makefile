@@ -45,27 +45,43 @@ show:
 
 define showhelp
 ----------------------------------------------------------------------------
-Instructions for setup/execution on remote platforms '(i.e. Matchstiq-Z1)'
-These steps may be repeated to test each available HDL assembly
 ----------------------------------------------------------------------------
+The instructions below are used to execute an application on a remote
+platform like the Matchstiq-Z1.
+
+There are four steps for executing an application:
+1) Build ACI and/or input test data (development system)
+2) Setup the OCPI_LIBRARY_PATH (remote system)
+3) Execution of application (remote system)
+4) Verification of output data (development system)
 ----------------------------------------------------------------------------
-Zynq-Based Platform - setup environment
+1) Build ACI and/or input test data: (development system)
+NOTE: Required only if test data has never been built.
+OCPI_TARGET_PLATFORM=xilinx13_3 make
+----------------------------------------------------------------------------
+2) Setup the OCPI_LIBRARY_PATH: (remote system)
+
+NOTE: Reminder to setup the run-time OCPI environment on remote system.
 . /mnt/card/opencpi/mynetsetup.sh {DEVELOPMENT HOST IPADDRESS}
 
+NOTE: Convenience cmd to quickly switch to application directory.
 cd /mnt/ocpi_assets/hdl/platforms/matchstiq_z1/example_design
 
-export OCPI_LIBRARY_PATH=$$OCPI_CDK_DIR/../projects/core/exports/lib/components/rcc:$$(pwd):$$(pwd)/../../../../exports/lib
-#NOTE: If copy/paste of the above exports, the redundant '$' must be removed.
+REQUIRED - Reconfigure to default.
+Copy/paste string to terminal of remote system:
+export OCPI_LIBRARY_PATH=$$OCPI_CDK_DIR/$$OCPI_TOOL_PLATFORM/artifacts
+
+REQUIRED - Configure for operation.
+Copy/paste string to terminal of remote system:
+export OCPI_LIBRARY_PATH+=:$$(pwd):$$(pwd)/../../../../artifacts
+NOTE: When copy/paste of the above 'export' from the Makefile source file, the redundant '$' must be manually removed.
 ----------------------------------------------------------------------------
+3) Execution of application is specific to platform: (remote system)
+./target-xilinx13_3/matchstiq_z1_example_design
 ----------------------------------------------------------------------------
-Execution:
-----------------------------------------------------------------------------
-Zynq-Based Platform - execute
-HDL: 
-./target-linux-x13_3-arm/matchstiq_z1_example_design
-----------------------------------------------------------------------------
-Development Computer - verify output data
+4) Verification of output data: (development system)
 python ./scripts/plotAndFft.py odata/testbench_rx.out complex 300000 1 &
+----------------------------------------------------------------------------
 ----------------------------------------------------------------------------
 endef
 export showhelp

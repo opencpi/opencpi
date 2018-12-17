@@ -1,0 +1,48 @@
+<!-- This is the spec file (OCS) for: tx_event_ctrlr
+     Add component spec attributes, like "protocol".
+     Add property elements for spec properties.
+     Add port elements for i/o ports -->
+<!--                                                                         -->
+<!--         txen property                                                   -->
+<!--              |                                                          -->
+<!--              |                                                          -->
+<!--       _______V_______                                                   -->
+<!--      +       .       +                                                  -->
+<!--      |       .       |                                                  -->
+<!--      |       ........|-> out port sends ZLMs w/ txOn or txOff opcode    -->
+<!--      |               |                                                  -->
+<!--      +_______________+                                                  -->
+<!--                                                                         -->
+<ComponentSpec>
+  <Port Name="out" Producer="true" Protocol="tx_event-prot"/>
+
+  <!-- When writing a value to the txen property that is different from its
+       current value, there will be some finite delay before that write action's
+       correspond ZLM is sent to the output port. Because the value read from
+       the txen property is indicative of the *current* state (i.e. the *last*
+       ZLM sent), the readback value of txen may differ from the value
+       previously written until some amount of time has passed. If multiple
+       property writes somehow occur before their corresponding ZLMs can be
+       sent, they are queued for processing. The following table
+       gives an example.
+
+      Action                          | Time
+      ++++++++++++++++++++++++++++++++|+++++++++++
+      write txen=false                | 0    sec
+      txOff ZLM sent                  | 0.1  sec
+      readback value of txen is false | 1    sec
+      write txen=true                 | 2    sec
+      readback value of txen is false | 2.1  sec
+      txOn ZLM sent                   | 2.1  sec
+      readback value of txen is true  | 2.2  sec
+      readback value of txen is true  | 2.4  sec
+      readback value of txen is true  | 2.6  sec
+      readback value of txen is true  | 2.8  sec
+
+  -->
+  <Property Name="txen" Type="Bool"
+                        Writable="true"
+                        Volatile="true"
+                        Default="true"
+                        Description="TX enable."/>
+</ComponentSpec>

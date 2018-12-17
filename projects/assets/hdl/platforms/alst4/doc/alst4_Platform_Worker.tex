@@ -65,6 +65,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 %----------------------------------------------------------------------------------------
 % Table packages
 %----------------------------------------------------------------------------------------
+\usepackage{longtable} % for long possibly multi-page tables
 \usepackage{tabularx} % c=center,l=left,r=right,X=fill
 \usepackage{float}
 \floatstyle{plaintop}
@@ -93,7 +94,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Platform Data Sheet}
-\def\docVersion{1.3}
+\def\docVersion{1.4}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
@@ -118,7 +119,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Version           & v\docVersion \\
 	\hline
-	Release Date      & February 2018 \\
+	Release Date      & October 2018 \\
 	\hline
 	Component Library & ocpi                                        \\
 	\hline
@@ -202,31 +203,31 @@ No state machines exist within the platform worker outside of those within the P
 \section*{Source Dependencies}
 \begin{itemize}
 	\item
-opencpi/hdl/platforms/alst4/alst4.vhd
+assets/hdl/platforms/alst4/alst4.vhd
 	\item
-opencpi/hdl/primitives/stratix4/altpcie\_reconfig\_4sgx.v
+assets/hdl/primitives/stratix4/altpcie\_reconfig\_4sgx.v
 	\item
-opencpi/hdl/primitives/stratix4/pci\_alst4.v
+assets/hdl/primitives/stratix4/pci\_alst4.v
 	\item
-opencpi/hdl/primitives/stratix4/pcie\_hip\_s4gx\_gen2\_x4\_128\_rs\_hip.v
+assets/hdl/primitives/stratix4/pcie\_hip\_s4gx\_gen2\_x4\_128\_rs\_hip.v
 	\item
-opencpi/hdl/primitives/stratix4/pcie\_hip\_s4gx\_gen2\_x4\_128\_wrapper.v
+assets/hdl/primitives/stratix4/pcie\_hip\_s4gx\_gen2\_x4\_128\_wrapper.v
 	\item
-opencpi/hdl/primitives/stratix4/pll1.v
+assets/hdl/primitives/stratix4/pll1.v
 	\item
-opencpi/hdl/primitives/pcie\_4243\_hip\_s4gx\_gen2\_x4\_128/altpcie\_hip\_pipen1b.v
+assets/hdl/primitives/pcie\_4243\_hip\_s4gx\_gen2\_x4\_128/altpcie\_hip\_pipen1b.v
 	\item
-opencpi/hdl/primitives/pcie\_4243\_hip\_s4gx\_gen2\_x4\_128/altpcie\_rs\_serdes.v
+assets/hdl/primitives/pcie\_4243\_hip\_s4gx\_gen2\_x4\_128/altpcie\_rs\_serdes.v
 	\item
-opencpi/hdl/primitives/pcie\_4243\_hip\_s4gx\_gen2\_x4\_128/pcie\_hip\_s4gx\_gen2\_x4\_128\_bb.v
+assets/hdl/primitives/pcie\_4243\_hip\_s4gx\_gen2\_x4\_128/pcie\_hip\_s4gx\_gen2\_x4\_128\_bb.v
 	\item
-opencpi/hdl/primitives/pcie\_4243\_hip\_s4gx\_gen2\_x4\_128/pcie\_hip\_s4gx\_gen2\_x4\_128\_core.v
+assets/hdl/primitives/pcie\_4243\_hip\_s4gx\_gen2\_x4\_128/pcie\_hip\_s4gx\_gen2\_x4\_128\_core.v
 	\item
-opencpi/hdl/primitives/pcie\_4243\_hip\_s4gx\_gen2\_x4\_128/pcie\_hip\_s4gx\_gen2\_x4\_128\_serdes.v
+assets/hdl/primitives/pcie\_4243\_hip\_s4gx\_gen2\_x4\_128/pcie\_hip\_s4gx\_gen2\_x4\_128\_serdes.v
 	\item
-opencpi/hdl/primitives/pcie\_4243\_hip\_s4gx\_gen2\_x4\_128/pcie\_hip\_s4gx\_gen2\_x4\_128.v
+assets/hdl/primitives/pcie\_4243\_hip\_s4gx\_gen2\_x4\_128/pcie\_hip\_s4gx\_gen2\_x4\_128.v
 	\item
-opencpi/hdl/primitives/pcie\_4243\_hip\_s4gx\_gen2\_x4\_128/pciexp\_dcram.v
+assets/hdl/primitives/pcie\_4243\_hip\_s4gx\_gen2\_x4\_128/pciexp\_dcram.v
 \end{itemize}
 
 \begin{landscape}
@@ -274,7 +275,9 @@ opencpi/hdl/primitives/pcie\_4243\_hip\_s4gx\_gen2\_x4\_128/pciexp\_dcram.v
 			\hline
 			\verb+nSlots+      & ULong  & -              & -               & Parameter & Standard & 0 & Number of slots available for cards, which indicates the usable length of the slotCardIsPresent array property. \\
 			\hline
-			\verb+slotNames+   & String & 32             & -               & Parameter & Standard & "" & A string which is intended to include comma-separated names of the slots available for cards. The inter-comma position of each name corresponds to the same index of the slotCardIsPresent array property. \\
+			\verb+slotNames+   & String & 32             & -               & Parameter & Standard & ``'' & A string which is intended to include comma-separated names of the slots available for cards. The inter-comma position of each name corresponds to the same index of the slotCardIsPresent array property. \\
+			\hline
+			\verb+pci_device_id+ & Enum & -              & -               & Parameter & unknown, ml605, alst4, alst4x & unknown & PCI Device ID for PCI devices. This is essentially the ``registry'' of PCI device IDs. New platforms can use ``unknown'' before they are registered. \\
 			\hline
 			\verb+slotCardIsPresent+ & Bool & -          & 64              & Volatile           & Standard    & -       & An array of booleans, where each index contains an indication whether a card is physically present in the given index's slot. For a description of a given index's slot, see the corresponding comma-separated string contents in the slotName property. Note that only the first min(nSlots,64) of the 64 indices contain pertinent information. \\
 			\hline
@@ -293,6 +296,8 @@ opencpi/hdl/primitives/pcie\_4243\_hip\_s4gx\_gen2\_x4\_128/pciexp\_dcram.v
 			SpecProperty & \verb+nSlots+         & ULong  & -             & -               & Parameter & Standard & 2 & Number of slots available for cards, which indicates the usable length of the slotCardIsPresent array property. \\
 			\hline
 			SpecProperty & \verb+slotNames+      & String & 32            & -               & Parameter & Standard & hsmc\_a,hsmc\_b   & A string which is intended to include comma-separated names of the slots available for cards. The inter-comma position of each name corresponds to the same index of the slotCardIsPresent array property. \\
+			\hline
+			SpecProperty & \verb+pci_device_id+ & Enum & -              & -               & Parameter & unknown, ml605, alst4, alst4x & alst4 & PCI Device ID for PCI devices. This is essentially the ``registry'' of PCI device IDs. New platforms can use ``unknown'' before they are registered. \\
 			\hline
 			Property & \verb+pciId+              & UShort & -             & -               & Volatile            & Standard    & -       & Contains PCIe configuration space register contents. See tl\_cfg\_ctl in IP Compiler for PCI Express User Guide. \\
 			\hline
@@ -315,7 +320,7 @@ opencpi/hdl/primitives/pcie\_4243\_hip\_s4gx\_gen2\_x4\_128/pciexp\_dcram.v
 			\hline
 			timebase   & -    & true   & -     & Providing a timebase for the time service. All platform workers must provide this port. \\
 			\hline
-			unoc       & pcie & true   & -     & This platform worker provides a control/data plane called "pcie". \\
+			unoc       & pcie & true   & -     & This platform worker provides a control/data plane called ``pcie''. \\
 			\hline
 		\end{tabular}
 	\end{scriptsize}
@@ -542,6 +547,9 @@ The following table enumerates the available slots for this platform and the sig
 \section*{Control Timing and Signals}
 	There are 3 clock domains present in the alst4 platform worker: 100 MHz, 125 MHz, and 200 MHz. The worker ingests an external-to-the FPGA 100 MHz clock. This clock serves as the clock source for the MegaCore function within the worker. The MegaCore function produces a clock via it's core\_clk\_out pin which is 125 MHz for the x4 Gen2 Avalon-128 implementation\footnote{See Table 7-1 in the IP Compiler for PCI Express User Guide}. This 125 MHz clock is subsequently supplied to the control plane as its clock. The worker also feeds a buffered version of the external-to-the-FPGA 200 MHz clock to the timebase port. The timebase port's PPS inputs and outputs are left unconnected.
 \begin{landscape}
+%\newcolumntype{Y}{>{\hspace{0pt}}X}
+%\newcolumntype{Z}[1]{>{\hspace{0pt}}p{#1}}
+%\newcolumntype{Z}[1]{{#1}}
 \section*{Performance and Resource Utilization}
 %-----Filename: alst4_rv.merge.summary
 %-----Repo: opencpi.git
@@ -567,8 +575,6 @@ The following table enumerates the available slots for this platform and the sig
 %Total GXB Transmitter Channel PMA : 4
 %Total PLLs : 1
 %Total DLLs : 0
-In the following Platform Worker Utilization tables, the Worker Build Configuration ``0'' refers to the Platform Worker itself. Named configurations refer to platform configurations (\textit{e.g.} they may include other device workers along with the Platform Worker).\\\\
-
 \input{../../\ecomp/utilization.inc}
 
 \section*{Test and Verification}

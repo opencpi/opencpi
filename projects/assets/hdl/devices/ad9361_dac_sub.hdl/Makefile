@@ -20,7 +20,8 @@
 #Only tested targets
 OnlyTargets=zynq zynq_ise virtex6 isim xsim # cause of BUFR primitive
 
-SourceFiles=ad936x_tx_data_cmos_single_port_fdd_ddr.vhd
+SourceFiles=event_in_x2_to_txen.vhd
+SourceFiles+=ad936x_tx_data_cmos_single_port_fdd_ddr.vhd
 SourceFiles+=ad9361_dac_sub_cmos_single_port_fdd_ddr.vhd
 
 # During the build process, swap HdlTarget with 'actual' target part of the target platform

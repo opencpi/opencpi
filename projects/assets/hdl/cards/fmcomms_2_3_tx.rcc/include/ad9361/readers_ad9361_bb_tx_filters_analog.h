@@ -23,7 +23,9 @@
 
 #include <cmath>      // std::log
 #include <string>     //std::string
-#include "OcpiApi.hh" // OCPI::API::Application class
+#include "OcpiApi.hh" // OA::Application class
+
+namespace OA = OCPI::API;
 
 /*! @brief Get the in-situ value with exact precision of the
  *         Tx BaseBand Filter Tune Divider
@@ -34,11 +36,9 @@
  *  @param[in]  app_inst_name_proxy OpenCPI application instance name of the
  *                                  OpenCPI ad9361_config_proxy.rcc worker
  *  @param[out] val                 Retrieved value.
- *  @return 0 if there are no errors, non-zero char array pointer if there
- *          are errors (char array content will describe the error).
  ******************************************************************************/
-const char* get_AD9361_Tx_BBF_Tune_Divider(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
+void get_AD9361_Tx_BBF_Tune_Divider(
+    OA::Application& app, const char* app_inst_name_proxy,
     uint16_t& val)
 {
   std::string enum_str;
@@ -58,9 +58,8 @@ const char* get_AD9361_Tx_BBF_Tune_Divider(
     std::string err;
     err = "Invalid value read for ad9361_config_proxy.rcc ";
     err += "Tx_BBF_Tune_Divider property: " + enum_str;
-    return err.c_str();
+    throw err;
   }
-  return 0;
 }
 
 /*! @brief Get the nominal in-situ value with double floating point precision
@@ -76,8 +75,8 @@ const char* get_AD9361_Tx_BBF_Tune_Divider(
  *  @return 0 if there are no errors, non-zero char array pointer if there
  *          are errors (char array content will describe the error).
  ******************************************************************************/
-const char* get_AD9361_Tx_BBBW_Hz(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
+void get_AD9361_Tx_BBBW_Hz(
+    OA::Application& app, const char* app_inst_name_proxy,
     double& val)
 {
   double d_BBPLL_FREQ_Hz;
@@ -88,13 +87,9 @@ const char* get_AD9361_Tx_BBBW_Hz(
     double   BBPLL_FREQ_Hz;
     uint16_t Tx_BBF_Tune_Divider;
 
-    char* ret;
-
     const char* inst = app_inst_name_proxy;
-    ret = (char*) get_AD9361_BBPLL_FREQ_Hz(      app, inst, BBPLL_FREQ_Hz      );
-    if(ret != 0) { return ret; }
-    ret = (char*) get_AD9361_Tx_BBF_Tune_Divider(app, inst, Tx_BBF_Tune_Divider);
-    if(ret != 0) { return ret; }
+    get_AD9361_BBPLL_FREQ_Hz(      app, inst, BBPLL_FREQ_Hz      );
+    get_AD9361_Tx_BBF_Tune_Divider(app, inst, Tx_BBF_Tune_Divider);
 
     d_BBPLL_FREQ_Hz      = (double) BBPLL_FREQ_Hz;
     d_Tx_BBF_Tune_Divider = (double) Tx_BBF_Tune_Divider;
@@ -104,27 +99,23 @@ const char* get_AD9361_Tx_BBBW_Hz(
   // BBBW_ACTUAL,MHz = BBPLL_MHz * ln(2) / (3.2 * pi * Divider)
   const double PI = 3.141592653589793;
   val = d_BBPLL_FREQ_Hz*std::log(2.)/(1.6*2.*PI*(double)d_Tx_BBF_Tune_Divider);
-
-  return 0;
 }
 
 //! @todo TODO/FIXME - report *EXACT* nominal 3dB cutoff freq
   
-const char* get_AD9361_tx_filter_complex_bandwidth_Hz(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
+void get_AD9361_tx_filter_complex_bandwidth_Hz(
+    OA::Application& app, const char* app_inst_name_proxy,
     double& val)
 {
   double Tx_BBBW_Hz;
   const char* inst = app_inst_name_proxy;
-  const char* err = get_AD9361_Tx_BBBW_Hz(app, inst, Tx_BBBW_Hz);
+  get_AD9361_Tx_BBBW_Hz(app, inst, Tx_BBBW_Hz);
 
   // AD9361_Reference_Manual_UG-570.pdf p. 10 "The baseband Tx analog filter
   // calibration tunes the cutoff frequency of the third-order Butterworth
   // Tx anti-imaging filter. The TX filter ... is normally calibrated to
   // 1.6x the BBBW. Note that BBBW is half the complex bandwidth..."
   val = 1.6*(Tx_BBBW_Hz*2);
-
-  return err;
 }
 
 /*! @brief Calculate AD9361 Tx BBBW step size down (i.e. towards 0) in Hz with double floating
@@ -134,11 +125,9 @@ const char* get_AD9361_tx_filter_complex_bandwidth_Hz(
  *          * double   BBPLL_freq
  *          * uint16_t Tx_BBF_Tune_Divider
  *
- *  @return 0 if there are no errors, non-zero char array pointer if there
- *          are errors (char array content will describe the error).
  ******************************************************************************/
-const char* get_AD9361_Tx_BBBW_step_down(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
+void get_AD9361_Tx_BBBW_step_down(
+    OA::Application& app, const char* app_inst_name_proxy,
     double& val)
 {
   double d_BBPLL_freq;
@@ -149,13 +138,10 @@ const char* get_AD9361_Tx_BBBW_step_down(
     double   BBPLL_freq;
     uint16_t Tx_BBF_Tune_Divider;
 
-    char* ret;
     const char* inst = app_inst_name_proxy;
 
-    ret = (char*) get_AD9361_BBPLL_FREQ_Hz(      app, inst, BBPLL_freq         );
-    if(ret != 0) { return ret; }
-    ret = (char*) get_AD9361_Tx_BBF_Tune_Divider(app, inst, Tx_BBF_Tune_Divider);
-    if(ret != 0) { return ret; }
+    get_AD9361_BBPLL_FREQ_Hz(      app, inst, BBPLL_freq         );
+    get_AD9361_Tx_BBF_Tune_Divider(app, inst, Tx_BBF_Tune_Divider);
 
     d_BBPLL_freq          = (double) BBPLL_freq;
     d_Tx_BBF_Tune_Divider = (double) Tx_BBF_Tune_Divider;
@@ -169,8 +155,6 @@ const char* get_AD9361_Tx_BBBW_step_down(
   //                = BBPLL_MHz * ln(2) / (3.2 * pi ) * (1/Divider/(Divider+1))
   const double PI = 3.141592653589793;
   val = d_BBPLL_freq*std::log(2.)/(1.6*2.*PI) * (1/d_Tx_BBF_Tune_Divider/(d_Tx_BBF_Tune_Divider+1));
-
-  return 0;
 }
 
 /*! @brief Calculate AD9361 Tx BBBW step size up (i.e. towards inf) in Hz with double floating
@@ -179,12 +163,9 @@ const char* get_AD9361_Tx_BBBW_step_down(
  *         double floats before performing calculation):
  *          * double   BBPLL_freq
  *          * uint16_t Tx_BBF_Tune_Divider
- *
- *  @return 0 if there are no errors, non-zero char array pointer if there
- *          are errors (char array content will describe the error).
  ******************************************************************************/
-const char* get_AD9361_Tx_BBBW_step_up(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
+void get_AD9361_Tx_BBBW_step_up(
+    OA::Application& app, const char* app_inst_name_proxy,
     double& val)
 {
   double d_BBPLL_freq;
@@ -195,13 +176,10 @@ const char* get_AD9361_Tx_BBBW_step_up(
     double   BBPLL_freq;
     uint16_t Tx_BBF_Tune_Divider;
 
-    char* ret;
     const char* inst = app_inst_name_proxy;
 
-    ret = (char*) get_AD9361_BBPLL_FREQ_Hz(      app, inst, BBPLL_freq         );
-    if(ret != 0) { return ret; }
-    ret = (char*) get_AD9361_Tx_BBF_Tune_Divider(app, inst, Tx_BBF_Tune_Divider);
-    if(ret != 0) { return ret; }
+    get_AD9361_BBPLL_FREQ_Hz(      app, inst, BBPLL_freq         );
+    get_AD9361_Tx_BBF_Tune_Divider(app, inst, Tx_BBF_Tune_Divider);
 
     d_BBPLL_freq          = (double) BBPLL_freq;
     d_Tx_BBF_Tune_Divider = (double) Tx_BBF_Tune_Divider;
@@ -215,8 +193,6 @@ const char* get_AD9361_Tx_BBBW_step_up(
   //                = BBPLL_MHz * ln(2) / (3.2 * pi ) * (1/Divider/(Divider-1))
   const double PI = 3.141592653589793;
   val = d_BBPLL_freq*std::log(2.)/(1.6*2.*PI) * (1/d_Tx_BBF_Tune_Divider/(d_Tx_BBF_Tune_Divider-1));
-
-  return 0;
 }
 
 /*! @brief Get the nominal in-situ value with No-OS point precision
@@ -229,17 +205,13 @@ const char* get_AD9361_Tx_BBBW_step_up(
  *  @param[in]  app_inst_name_proxy OpenCPI application instance name of the
  *                                  OpenCPI ad9361_config_proxy.rcc worker
  *  @param[out] val                 Retrieved value.
- *  @return 0 if there are no errors, non-zero char array pointer if there
- *          are errors (char array content will describe the error).
  ******************************************************************************/
-const char* get_AD9361_tx_rf_bandwidth_Hz(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
-    ocpi_ulong_t& val)
+void get_AD9361_tx_rf_bandwidth_Hz(
+    OA::Application& app, const char* app_inst_name_proxy,
+    OA::ULong& val)
 {
-  OCPI::API::Property p(app, app_inst_name_proxy, "tx_rf_bandwidth");
+  OA::Property p(app, app_inst_name_proxy, "tx_rf_bandwidth");
   val = p.getULongValue();
-
-  return 0;
 }
 
 /*! @brief Get the nominal in-situ value with double floating point precision
@@ -252,21 +224,16 @@ const char* get_AD9361_tx_rf_bandwidth_Hz(
  *  @param[in]  app_inst_name_proxy OpenCPI application instance name of the
  *                                  OpenCPI ad9361_config_proxy.rcc worker
  *  @param[out] val                 Retrieved value.
- *  @return 0 if there are no errors, non-zero char array pointer if there
- *          are errors (char array content will describe the error).
  ******************************************************************************/
-const char* get_AD9361_tx_rf_bandwidth_Hz(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
+void get_AD9361_tx_rf_bandwidth_Hz(
+    OA::Application& app, const char* app_inst_name_proxy,
     double& val)
 {
-  char* ret;
   const char* inst = app_inst_name_proxy;
 
-  ocpi_ulong_t val_precast;
-  ret = (char*) get_AD9361_tx_rf_bandwidth_Hz(app, inst, val_precast);
+  OA::ULong val_precast;
+  get_AD9361_tx_rf_bandwidth_Hz(app, inst, val_precast);
   val = (double) val_precast;
-  return ret;
 }
-
 
 #endif // _READERS_AD9361_TX_FILTERS_ANALOG

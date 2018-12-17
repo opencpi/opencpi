@@ -25,8 +25,11 @@ Tests = \
 	file_write_demux.test \
 	socket_write.test \
 	timestamper.test \
+	tx_event_ctrlr.test \
 	zero_padding.test \
-	zero_pad.test
+	zero_pad.test \
+	capture_v2.test \
+	pattern_v2.test
 
 # All workers created here will be built automatically
 # If you want to limit the workers that actually get built, set the Workers= variable

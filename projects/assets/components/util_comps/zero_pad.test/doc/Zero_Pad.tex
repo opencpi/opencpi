@@ -62,6 +62,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 %----------------------------------------------------------------------------------------
 % Table packages
 %----------------------------------------------------------------------------------------
+\usepackage{longtable} % for long possibly multi-page tables
 \usepackage{tabularx} % c=center,l=left,r=right,X=fill
 \usepackage{float}
 \floatstyle{plaintop}
@@ -88,7 +89,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Component Data Sheet}
-\def\docVersion{1.1}
+\def\docVersion{1.4}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
@@ -111,9 +112,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Worker Type       & Application            \\
 	\hline
-	Version           & v1.3                  \\
+	Version           & v\docVersion  	        \\
 	\hline
-	Release Date      & February 2018           \\
+	Release Date      & September 2018         \\
 	\hline
 	Component Library & ocpi.assets.util\_comps \\
 	\hline
@@ -131,9 +132,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \section*{Worker Implementation Details}
 \begin{flushleft}
 	In order to be maximally flexible, the component does not define input/output protocols explicitly. The input/output data widths are defined at build time, which in turn define the respective input/output sample sizes.\medskip
-	
+
 	The input and output data width are the same and are configurable via the \verb+DWIDTH_p+ parameter. All zeros inserted between samples are also of size \verb+DWIDTH_p+.\medskip
-	
+
 	The message size on the output is equal to the number of zeros inserted plus 1.
 \end{flushleft}
 
@@ -163,11 +164,11 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \section*{Source Dependencies}
 \subsection*{\comp.hdl}
 \begin{itemize}
-	\item ocpiassets/components/util\_comps/\comp.hdl/\comp.vhd
+	\item projects/assets/components/util\_comps/\comp.hdl/\comp.vhd
 \end{itemize}
 \subsection*{\comp.rcc}
 \begin{itemize}
-	\item ocpiassets/components/util\_comps/\comp.rcc/\comp.cc
+	\item projects/assets/components/util\_comps/\comp.rcc/\comp.cc
 \end{itemize}
 \begin{landscape}
 	\section*{Component Spec Properties}
@@ -185,7 +186,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\end{scriptsize}
 
 	\section*{Worker Properties}
-	There are no worker implementation-specific properties for this component 
+	There are no worker implementation-specific properties for this component
 
 	\section*{Component Ports}
 	\begin{scriptsize}
@@ -221,9 +222,14 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	The \Comp{} HDL worker uses the clock from the Control Plane and standard Control Plane signals.\\
 \end{flushleft}
 
+\begin{landscape}
+\section*{Worker Configuration Parameters}
+\subsubsection*{\comp.hdl}
+\input{../../\ecomp.hdl/configurations.inc}
 \section*{Performance and Resource Utilization}
 \subsubsection*{\comp.hdl}
 \input{../../\ecomp.hdl/utilization.inc}
+\end{landscape}
 \section*{Test and Verification}
 \begin{flushleft}
 	Data widths of 8/16/32/64 are supported and fully tested on both RCC and HDL worker implementations. These widths combinations are tested with \verb+num_zeros+ equal to 0, 7, 8, 38, 127, and 255.\medskip

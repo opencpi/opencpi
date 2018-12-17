@@ -135,7 +135,7 @@ static RCCResult run(RCCWorker *self,
    RCCPort *out = &self->ports[BAUDTRACKING_SIMPLE_OUT];
    Baudtracking_simpleOutData *outData = out->current.data;
    State *myState = self->memories[0];
-   unsigned len = ComplexLen2Real(in->input.length);
+   //unsigned len = ComplexLen2Real(in->input.length);
    int drift;
    unsigned int i;
    double peakVal = 0;
@@ -169,6 +169,21 @@ static RCCResult run(RCCWorker *self,
    {
     getData(self, current_index);
     dataOut_index = 0;
+
+    // BaudAvrCount really should have been a ushort property, but to maintain
+    // backwards compatibility, we leave it as a short and error when its value
+    // is <= 0
+    uint16_t uBaudAvrCount = 0;
+    if (p->BaudAvrCount <= 0)
+    {
+      const char* msg = "BaudAvrCount property set to a negative value";
+      return self->container.setError(msg, strerror(1));
+    }
+    else
+    {
+      uBaudAvrCount = (uint16_t) p->BaudAvrCount & 0x7fff;
+    }
+
     while(myState->savedIndex == p->SPB)
     {
        for(i = 0; i < p->SPB; i++)
@@ -187,7 +202,7 @@ static RCCResult run(RCCWorker *self,
        myState->baudAvrCounter++;
 
        drift = 0;
-       if(myState->baudAvrCounter > p->BaudAvrCount)
+       if(myState->baudAvrCounter > uBaudAvrCount)
        {
          for(i = 0; i < p->SPB; i++)
          {

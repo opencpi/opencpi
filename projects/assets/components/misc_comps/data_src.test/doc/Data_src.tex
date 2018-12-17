@@ -62,9 +62,11 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \usepackage{rotating} % for sideways table
 \usepackage{pifont}   % for sideways table
 \usepackage{pdflscape} % for landscape view
+\usepackage{longtable}
 %----------------------------------------------------------------------------------------
 % Table packages
 %----------------------------------------------------------------------------------------
+\usepackage{longtable} % for long possibly multi-page tables
 \usepackage{tabularx} % c=center,l=left,r=right,X=fill
 \usepackage{float}
 \floatstyle{plaintop}
@@ -119,24 +121,24 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Worker Type       & Application                                                                    \\
 	\hline
-	Version           &  v1.3                                                                         \\
+	Version           &  v1.4                                                                         \\
 	\hline
-	Release Date      & June 2017 \\
+	Release Date      & October 2018 \\
 	\hline
 	Component Library & ocpi.assets.misc\_comps \\
 	\hline
 	Workers           & \comp.hdl \\
 	\hline
-	Tested Platforms  & isim \\
+	Tested Platforms  & zed, matchstiq\_z1, e3xx, alst4, ml605, xsim \\
 	\hline
 \end{tabular}
 
 \section*{Functionality}
 \begin{flushleft}
 \justify
-  The \Comp component selects one data bus from multiple data generation sources, packs it in bit-forward order in an I data bus and bit-reverse order in a Q data bus, and sends that I/Q bus out an iqstream output port. The available data sources consist of:
+  \Comp selects one \verb+DATA_BIT_WIDTH_p+ bits-wide data bus from multiple data generation sources, packs the \verb+DATA_BIT_WIDTH_p+ bits in bit-forward order in the least significant bits of the I data bus and bit-reverse order in the most significant bits of the Q data bus, and outputs that I/Q bus to the \verb+out+ port. The \verb+DATA_BIT_WIDTH_p+ bits-wide data sources are:
   \begin{itemize}
-  \item a counter,
+  \item a unsigned counter,
   \item a walking ones bus (e.g. b'100 \textrightarrow b'010 \textrightarrow b'001 \textrightarrow b'100 \textrightarrow etc),
   \item a Linear Feedback Shift Register (LFSR),
   \item and a property-driven fixed value.
@@ -147,12 +149,13 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 
 \section*{Worker Implementation Details}
 \begin{flushleft}
+\subsection*{\comp.hdl}
 \justify
   In keeping with good data flow control practices, backpressure from the output port will suspend the advancement of each data generation source. The \verb+ZLM_WHEN_NUM_SAMPLES_REACHED_p+ parameter, when having a value of true, forces the worker to send a single ZLM when the output port has been disabled (i.e. when the \verb+num_samples+ property has a value of more than 1 and \verb+num_samples+ amount of samples have been sent out the output port). This is useful for allowing applications which use this worker to terminate once this worker's output port is disabled.
 \end{flushleft}
 
 \section*{Block Diagrams}
-\subsection*{Top level}
+\subsection*{\comp.hdl - Top level}
 \begin{center}
   \begin{tikzpicture}[% List of styles applied to all, to override specify on a case-by-case
       every node/.style={
@@ -161,9 +164,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
       },
       every edge/.style={draw,thick}
     ]
-    \node[rectangle,ultra thick,draw=black,fill=blue](R2){\Comp};
-    \node[rectangle,draw=white,fill=white](R4)[right= of R2]{``out'' \\ Complex signed samples (Q0.15 I, Q0.15 Q)};
-    \node[rectangle,draw=white,fill=white](R5)[above= of R2]{\verb+DATA_BIT_WIDTH_p,+ \\ \verb+LFSR_POLYNOMIAL_p,+ \\ \verb+LFSR_SEED_p,+ \\ \verb+ZLM_WHEN_NUM_SAMPLES_REACHED_p+};
+    \node[rectangle,ultra thick,draw=black,fill=blue](R2){\verb+DATA_BIT_WIDTH_p,+ \\ \verb+LFSR_POLYNOMIAL_p,+ \\ \verb+LFSR_SEED_p,+ \\ \verb+ZLM_WHEN_NUM_SAMPLES_REACHED_p+, \\ \verb+ODATA_WIDTH_p+ \\ \\ \Comp \\ };
+    \node[rectangle,draw=white,fill=white](R4)[right= of R2]{``out'' \\ iqstream\_protocol \\ (complex signed Q0.15 samples)};
+    \node[rectangle,draw=white,fill=white](R5)[above= of R2]{\verb+LFSR_bit_reverse+, \\ \verb+mask_I,+ \\ \verb+mask_Q+};
     \path[->]
     (R2)edge [] node [] {} (R4)
     (R2)edge [] node [] {} (R5)
@@ -175,8 +178,10 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \section*{Source Dependencies}
 \subsection*{\comp.hdl}
 \begin{itemize}
-  \item ocpiassets/components/misc\_comps/data\_src.hdl/data\_src.vhd
-  \item ocpiassets/primitives/misc\_prims/lfsr/src/lfsr.vhd
+  \item assets/components/misc\_comps/\comp.hdl/\comp.vhd
+  \item assets/components/misc\_comps/\comp.hdl/out\_port\_inject\_zlm.vhd
+  \item assets/components/misc\_comps/\comp.hdl/set\_clr.vhd
+  \item assets/primitives/misc\_prims/lfsr/src/lfsr.vhd
 \end{itemize}
 
 
@@ -184,7 +189,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\section*{Component Spec Properties}
 	\begin{scriptsize}
 % do not delete this line, it is used by the auto gen script to insert latex code
-\begin{tabular}{|p{5.5cm}|p{1.25cm}|p{2cm}|p{2.75cm}|p{1.5cm}|p{1.5cm}|p{1cm}|p{5.25cm}|}
+\begin{longtable}{|p{5.5cm}|p{1.25cm}|p{2cm}|p{2.75cm}|p{1.5cm}|p{1.5cm}|p{1cm}|p{5.25cm}|}
 \hline
 \rowcolor{blue}
 Name                 & Type   & SequenceLength & ArrayDimensions & Accessibility       & Valid Range & Default & Usage
@@ -199,7 +204,8 @@ LFSR\_POLYNOMIAL\_p & bool  & - & DATA\_BIT\_WIDTH\_p & Parameter & -  &0 & E.g.
 LFSR\_SEED\_p & bool  & - & DATA\_BIT\_WIDTH\_p & Parameter & -  &0 & Out-of-reset value of the Linear Feedback Shift Register (only affects output data in LFSR mode). This value should never be all zeros, which would cause the register to always have a value of all zeros regardless of polynomial value.
 \\
 \hline
-ZLM\_WHEN\_NUM\_SAMPLES\_REACHED\_p & bool  & - & - & Parameter & -  &false & When value is true and \verb+num_samples+ property value is not -1, worker will generate Zero-Length-Message after \verb+num_samples+ amount of samples have been sent out the output port.
+ZLM\_WHEN\_NUM\_SAMPLES\_REACHED\_p & bool  & - & - & Parameter & -  &false & When value is true and \verb+num_samples+ property value is not -1, worker will generate Zero-Length-Message after \verb+num_samples+ amount of samples have been sent out the output port. Note this functionality is independent of the value of the \verb+enable+ property.
+
 \\
 \hline
 messageSize\_bytes & ulong  & - & - & Readable, Initial & -  &4096 & Message size in bytes. When the value of (\verb+num_samples+ * num bytes per sample) is less than this property's value, the value of (\verb+num_samples+ * num bytes per sample) is used as the message size.
@@ -213,16 +219,22 @@ Array index 0 corresponds to the 15th (most significant) I bit and the 16-\verb+
 array index 1 corresponds to the 14th (next-to-most significant) I bit and the 15-\verb+DATA_BIT_WIDTH_p+ Q bit of the out port, etc...
 \\
 \hline
-mode & enum  & - & - & Readable, Writeable & count,walking, LFSR,fixed  &count & Counter, walking ones, Linear Feedback Shift Register, or fixed value.
+mode & enum  & - & - & Readable, Writeable & count,walking, LFSR,fixed  &count & Counter, walking ones, Linear Feedback Shift Register, or fixed value. The counter is unsigned.
 \\
 \hline
-enable & bool  & - & - & Readable, Writeable & -  &true & When the worker is not in reset, this property must have a value of true for the data to be sent to the output.
+enable & bool  & - & - & Readable, Writeable & -  &true & When the worker is not in reset, this property must have a value of true for the data to be sent to the output. Note that this property has no effect on the ZLM operation (see \verb+ZLM_WHEN_NUM_SAMPLES_REACHED_p+ parameter property).
 \\
 \hline
 LFSR\_bit\_reverse & bool  & - & - & Readable, Writeable & -  &true & Used to determine the LFSR shift direction. When true, the \verb+DATA_BIT_WIDTH_p+-bits wide LFSR will be reversed for both I and Q.
 \\
 \hline
-\end{tabular}
+mask\_I & ushort & - & - & Readable, Writable & -  &0xffff & I data will be bitwise anded with this mask before being sent to out port.
+\\
+\hline
+mask\_Q & ushort & - & - & Readable, Writable & -  &0xffff & Q data will be bitwise anded with this mask before being sent to out port.
+\\
+\hline
+\end{longtable}
 %GEN_SPEC_TABLE
 	\end{scriptsize}
 
@@ -231,6 +243,17 @@ LFSR\_bit\_reverse & bool  & - & - & Readable, Writeable & -  &true & Used to de
 	\begin{scriptsize}
 % do not delete this line, it is used by the auto gen script to insert latex code
 %GEN_WORKER_TABLE
+\begin{longtable}{|p{5.5cm}|p{1.25cm}|p{2cm}|p{2.75cm}|p{1.5cm}|p{1.5cm}|p{1cm}|p{5.25cm}|}
+\hline
+\rowcolor{blue}
+Name                 & Type   & SequenceLength & ArrayDimensions & Accessibility       & Valid Range & Default & Usage
+\\
+\hline
+ODATA\_WIDTH\_p & ushort  & - & - & Parameter & -  &32 & Value is assigned to the out port's data width.
+\\
+\hline
+\end{longtable}
+
 	\end{scriptsize}
 
 	\section*{Component Ports}
@@ -242,7 +265,7 @@ LFSR\_bit\_reverse & bool  & - & - & Readable, Writeable & -  &true & Used to de
 Name & Producer & Protocol & Optional & Advanced & Usage
 \\
 \hline
-out & true & iqstream\_protocol& False & ZeroLengthMessages=true & Complex signed samples (Q0.15 I, Q0.15 Q). This port generates data while obeying backpressure. This port is disabled when either the enable property has a value of false or when the \verb+num_samples+ property has a value of greater than 0 and \verb+num_samples+ amount of samples have been sent out this port.\\
+out & true & iqstream\_protocol& False & ZeroLengthMessages=true & Complex signed samples (Q0.15 I, Q0.15 Q). This port generates data while obeying backpressure. Data is no longer sent to this port when either the enable property has a value of false or when the \verb+num_samples+ property has a value of greater than 0 and \verb+num_samples+ amount of samples have been sent out this port.\\
 \hline
 \end{tabular}
 %GEN_PORT_TABLE
@@ -267,294 +290,17 @@ StreamInterface & out & 32 & - & -\\
 \section*{Control Timing and Signals}
 \subsection*{\comp.hdl}
 \begin{flushleft}
-  The FIFO worker uses the clock from the Control Plane and standard Control Plane signals.
+  The \Comp worker uses the clock from the Control Plane and standard Control Plane signals.
 \end{flushleft}
 
+\begin{landscape}
+\section*{Worker Configuration Parameters}
+\subsubsection*{\comp.hdl}
+\input{../../\ecomp.hdl/configurations.inc}
 \section*{Performance and Resource Utilization}
 \subsubsection*{\comp.hdl}
 \input{../../\ecomp.hdl/utilization.inc}
-%data_src.hdl/target-stratix4/data_src.merge.rpt
-\iffalse
-+-------------------------------------------------------+
-; Partition Merge Resource Usage Summary                ;
-+-----------------------------------------------+-------+
-; Resource                                      ; Usage ;
-+-----------------------------------------------+-------+
-; Estimated ALUTs Used                          ; 378   ;
-;     -- Combinational ALUTs                    ; 378   ;
-;     -- Memory ALUTs                           ; 0     ;
-;     -- LUT_REGs                               ; 0     ;
-; Dedicated logic registers                     ; 270   ;
-;                                               ;       ;
-; Estimated ALUTs Unavailable                   ; 5     ;
-;     -- Due to unpartnered combinational logic ; 5     ;
-;     -- Due to Memory ALUTs                    ; 0     ;
-;                                               ;       ;
-; Total combinational functions                 ; 378   ;
-; Combinational ALUT usage by number of inputs  ;       ;
-;     -- 7 input functions                      ; 5     ;
-;     -- 6 input functions                      ; 72    ;
-;     -- 5 input functions                      ; 102   ;
-;     -- 4 input functions                      ; 61    ;
-;     -- <=3 input functions                    ; 138   ;
-;                                               ;       ;
-; Combinational ALUTs by mode                   ;       ;
-;     -- normal mode                            ; 297   ;
-;     -- extended LUT mode                      ; 5     ;
-;     -- arithmetic mode                        ; 76    ;
-;     -- shared arithmetic mode                 ; 0     ;
-;                                               ;       ;
-; Estimated ALUT/register pairs used            ; 470   ;
-;                                               ;       ;
-; Total registers                               ; 270   ;
-;     -- Dedicated logic registers              ; 270   ;
-;     -- I/O registers                          ; 0     ;
-;     -- LUT_REGs                               ; 0     ;
-;                                               ;       ;
-;                                               ;       ;
-; I/O pins                                      ; 129   ;
-; DSP block 18-bit elements                     ; 0     ;
-; Maximum fan-out                               ; 270   ;
-; Total fan-out                                 ; 2670  ;
-; Average fan-out                               ; 2.95  ;
-+-----------------------------------------------+-------+
-\fi
-
-%data_src.hdl/target-1-stratix4/data_src.merge.rpt
-\iffalse
-+-------------------------------------------------------+
-; Partition Merge Resource Usage Summary                ;
-+-----------------------------------------------+-------+
-; Resource                                      ; Usage ;
-+-----------------------------------------------+-------+
-; Estimated ALUTs Used                          ; 377   ;
-;     -- Combinational ALUTs                    ; 377   ;
-;     -- Memory ALUTs                           ; 0     ;
-;     -- LUT_REGs                               ; 0     ;
-; Dedicated logic registers                     ; 269   ;
-;                                               ;       ;
-; Estimated ALUTs Unavailable                   ; 10    ;
-;     -- Due to unpartnered combinational logic ; 10    ;
-;     -- Due to Memory ALUTs                    ; 0     ;
-;                                               ;       ;
-; Total combinational functions                 ; 377   ;
-; Combinational ALUT usage by number of inputs  ;       ;
-;     -- 7 input functions                      ; 7     ;
-;     -- 6 input functions                      ; 80    ;
-;     -- 5 input functions                      ; 99    ;
-;     -- 4 input functions                      ; 46    ;
-;     -- <=3 input functions                    ; 145   ;
-;                                               ;       ;
-; Combinational ALUTs by mode                   ;       ;
-;     -- normal mode                            ; 294   ;
-;     -- extended LUT mode                      ; 7     ;
-;     -- arithmetic mode                        ; 76    ;
-;     -- shared arithmetic mode                 ; 0     ;
-;                                               ;       ;
-; Estimated ALUT/register pairs used            ; 477   ;
-;                                               ;       ;
-; Total registers                               ; 269   ;
-;     -- Dedicated logic registers              ; 269   ;
-;     -- I/O registers                          ; 0     ;
-;     -- LUT_REGs                               ; 0     ;
-;                                               ;       ;
-;                                               ;       ;
-; I/O pins                                      ; 129   ;
-; DSP block 18-bit elements                     ; 0     ;
-; Maximum fan-out                               ; 269   ;
-; Total fan-out                                 ; 2671  ;
-; Average fan-out                               ; 2.95  ;
-+-----------------------------------------------+-------+
-\fi
-
-%data_src.hdl/target-virtex6/data_src-xst.out
-\iffalse
-Device utilization summary:
----------------------------
-
-Selected Device : 6vcx75tff484-2
-
-
-Slice Logic Utilization:
- Number of Slice Registers:             244  out of  93120     0%
- Number of Slice LUTs:                  320  out of  46560     0%
-    Number used as Logic:               320  out of  46560     0%
-
-Slice Logic Distribution:
- Number of LUT Flip Flop pairs used:    467
-   Number with an unused Flip Flop:     223  out of    467    47%
-   Number with an unused LUT:           147  out of    467    31%
-   Number of fully used LUT-FF pairs:    97  out of    467    20%
-   Number of unique control sets:        19
-
-IO Utilization:
- Number of IOs:                         129
- Number of bonded IOBs:                   0  out of    240     0%
-\fi
-
-%data_src.hdl/target-virtex6/data_src-xst.out
-\iffalse
-Timing Summary:
----------------
-Speed Grade: -2
-
-   Minimum period: 3.690ns (Maximum Frequency: 271.021MHz)
-   Minimum input arrival time before clock: 1.939ns
-   Maximum output required time after clock: 4.353ns
-   Maximum combinational path delay: 3.076ns
-\fi
-
-%data_src.hdl/target-1-virtex6/data_src-xst.out
-\iffalse
-Device utilization summary:
----------------------------
-
-Selected Device : 6vcx75tff484-2
-
-
-Slice Logic Utilization:
- Number of Slice Registers:             243  out of  93120     0%
- Number of Slice LUTs:                  396  out of  46560     0%
-    Number used as Logic:               396  out of  46560     0%
-
-Slice Logic Distribution:
- Number of LUT Flip Flop pairs used:    531
-   Number with an unused Flip Flop:     288  out of    531    54%
-   Number with an unused LUT:           135  out of    531    25%
-   Number of fully used LUT-FF pairs:   108  out of    531    20%
-   Number of unique control sets:        19
-
-IO Utilization:
- Number of IOs:                         129
- Number of bonded IOBs:                   0  out of    240     0%
-\fi
-
-%data_src.hdl/target-1-virtex6/data_src-xst.out
-\iffalse
-Timing Summary:
----------------
-Speed Grade: -2
-
-   Minimum period: 3.557ns (Maximum Frequency: 281.163MHz)
-   Minimum input arrival time before clock: 1.939ns
-   Maximum output required time after clock: 4.353ns
-   Maximum combinational path delay: 3.076ns
-\fi
-
-%data_src.hdl/target-zynq/data_src-xst.out
-\iffalse
-Device utilization summary:
----------------------------
-
-Selected Device : 7z010clg400-3
-
-
-Slice Logic Utilization:
- Number of Slice Registers:             244  out of  35200     0%
- Number of Slice LUTs:                  320  out of  17600     1%
-    Number used as Logic:               320  out of  17600     1%
-
-Slice Logic Distribution:
- Number of LUT Flip Flop pairs used:    467
-   Number with an unused Flip Flop:     223  out of    467    47%
-   Number with an unused LUT:           147  out of    467    31%
-   Number of fully used LUT-FF pairs:    97  out of    467    20%
-   Number of unique control sets:        19
-
-IO Utilization:
- Number of IOs:                         129
- Number of bonded IOBs:                   0  out of    100     0%
-\fi
-
-%data_src.hdl/target-zynq/data_src-xst.out
-\iffalse
-Timing Summary:
----------------
-Speed Grade: -3
-
-   Minimum period: 2.927ns (Maximum Frequency: 341.647MHz)
-   Minimum input arrival time before clock: 1.525ns
-   Maximum output required time after clock: 3.460ns
-   Maximum combinational path delay: 2.447ns
-\fi
-
-%data_src.hdl/target-1-zynq/data_src-xst.out
-\iffalse
-Device utilization summary:
----------------------------
-
-Selected Device : 7z010clg400-3
-
-
-Slice Logic Utilization:
- Number of Slice Registers:             243  out of  35200     0%
- Number of Slice LUTs:                  396  out of  17600     2%
-    Number used as Logic:               396  out of  17600     2%
-
-Slice Logic Distribution:
- Number of LUT Flip Flop pairs used:    531
-   Number with an unused Flip Flop:     288  out of    531    54%
-   Number with an unused LUT:           135  out of    531    25%
-   Number of fully used LUT-FF pairs:   108  out of    531    20%
-   Number of unique control sets:        19
-
-IO Utilization:
- Number of IOs:                         129
- Number of bonded IOBs:                   0  out of    100     0%
-\fi
-
-%data_src.hdl/target-1-zynq/data_src-xst.out
-\iffalse
-Timing Summary:
----------------
-Speed Grade: -3
-
-   Minimum period: 2.838ns (Maximum Frequency: 352.324MHz)
-   Minimum input arrival time before clock: 1.525ns
-   Maximum output required time after clock: 3.460ns
-   Maximum combinational path delay: 2.447ns
-\fi
-
-\begin{itemize}
-  \item \verb+DATA_WIDTH_p=12+
-  \item \verb+LFSR_POLYNOMIAL_p=1,1,1,0,0,0,0,0,1,0,0,0+
-  \item \verb+LFSR_SEED_p=0,0,0,0,0,0,0,0,0,0,0,0+
-  \item \verb+ZLM_WHEN_NUM_SAMPLES_REACHED_p=true+
-\end{itemize}
-\begin{scriptsize}
-  \begin{tabular}{|c|c|c|c|c|c|c|c|}
-    \hline
-    \rowcolor{blue}
-    Device                      & Registers & LUTs & Fmax        & Memory/Special Functions & GCLK & I/O & Design Suite    \\
-    \hline
-    Stratix4 EP4SGX230K-C2-F40  & 270       & 378  & -           & -                        & 1    & 129 &     Quartus 12.1 SP1\\
-    \hline
-    Virtex6 XC6VLX240T-1-FF1156 & 244       & 320 & 271 MHz     & -                        & 1    & 129 & ISE 14.7        \\
-    \hline
-    Zynq XC7Z020-1-CLG484       & 244       & 320 & 341 MHz     & -                        & 1    & 129 & ISE 14.7        \\
-    \hline
-  \end{tabular}
-\end{scriptsize}
-\begin{itemize}
-  \item \verb+DATA_WIDTH_p=12+
-  \item \verb+LFSR_POLYNOMIAL_p=1,1,1,0,0,0,0,0,1,0,0,0+
-  \item \verb+LFSR_SEED_p=0,0,0,0,0,0,0,0,0,0,0,0+
-  \item \verb+ZLM_WHEN_NUM_SAMPLES_REACHED_p=false+
-\end{itemize}
-\begin{scriptsize}
-  \begin{tabular}{|c|c|c|c|c|c|c|c|}
-    \hline
-    \rowcolor{blue}
-    Device                      & Registers & LUTs & Fmax        & Memory/Special Functions & GCLK & I/O & Design Suite    \\
-    \hline
-    Stratix4 EP4SGX230K-C2-F40  & 269       & 377  & -           & -                        & 1    & 129 &     Quartus 12.1 SP1\\
-    \hline
-    Virtex6 XC6VLX240T-1-FF1156 & 243       & 396 & 281 MHz     & -                        & 1    & 129 & ISE 14.7        \\
-    \hline
-    Zynq XC7Z020-1-CLG484       & 243       & 396 & 352 MHz     & -                        & 1    & 129 & ISE 14.7        \\
-    \hline
-  \end{tabular}
-\end{scriptsize}
+\end{landscape}
 
 \section*{Test and Verification}
 \begin{flushleft}

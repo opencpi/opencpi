@@ -1,31 +1,19 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Utilization Report for Worker "mfsk_mapper"
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\textbf{Worker Build Configuration ``0'':}\\
-Table entries are a result of building the worker with the following parameter sets:\
-\begin{itemize}
-	\item \verb+ocpi_endian=little+
-	\item \verb+ocpi_debug=false+
-	\item \verb+M_p=2+
-	\item \verb+DIN_WIDTH_p=16+
-\end{itemize}
-\begin{scriptsize}
-	\begin{table}[H]
-	\captionsetup{justification=raggedright,singlelinecheck=false}
-	\caption{Worker Build Configuration ``0''}
-	\begin{tabular}{|c|c|c|c|c|c|c|c|}
-		\hline
-		\rowcolor{blue}
-		OpenCPI Target & Tool    & Version & Device             & Registers & LUTs & Fmax (MHz) & Memory/Special Functions\\
-		\hline
-		stratix4       & Quartus & 15.1.0  & EP4SGX230KF40C2    & 151       & 189  & N/A        & N/A                     \\
-		\hline
-		virtex6        & ISE     & 14.7    & 6vlx240tff1156-1   & 137       & 464  & 303.306    & N/A                     \\
-		\hline
-		zynq           & Vivado  & 2017.1  & xc7z020clg484-1    & 150       & 144  & 201.654    & N/A                     \\
-		\hline
-		zynq\_ise      & ISE     & 14.7    & 7z020clg484-1      & 139       & 464  & 331.455    & N/A                     \\
-		\hline
-	\end{tabular}
-	\end{table}
-\end{scriptsize}
+% Generated on Fri Oct  5 08:45:50 2018
+
+% It is best to wrap this table in \begin{landscape} and \end{landscape} in its including doc
+\begin{tiny}
+    \begin{longtable}[l]{* {9}{|c}|}
+    \captionsetup{justification=raggedright,singlelinecheck=false}
+    \caption{Resource Utilization Table for worker: mfsk\_mapper}\\
+        \hline
+        \rowcolor{blue}
+            Configuration & OCPI Target & Tool    & Version & Device           & Registers (Typ) & LUTs (Typ) & Fmax (MHz) (Typ) & Memory/Special Functions \\
+            \hline
+            0             & zynq        & Vivado  & 2017.1  & xc7z020clg484-1  & 150             & 144        & N/A              & N/A \\
+            \hline
+            0             & virtex6     & ISE     & 14.7    & 6vlx240tff1156-1 & 137             & 464        & 303.306          & N/A \\
+            \hline
+            0             & stratix4    & Quartus & 17.1.0  & EP4SGX230KF40C2  & 151             & 189        & N/A              & N/A \\
+            \hline
+        \end{longtable}
+\end{tiny}

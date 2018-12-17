@@ -24,7 +24,7 @@
     <parameter name='SINGLE_PORT_p' value='true'/>
     <parameter name='HALF_DUPLEX_p' value='false'/>
     <parameter name='SWAP_PORTS_p' value='false'/>
-    <parameter name='DATA_CLK_Delay' value='11' />
+    <parameter name='DATA_CLK_Delay' value='7' />
     <parameter name='RX_Data_Delay' value='0'/>
     <parameter name='FB_CLK_Delay' value='12'/>
     <parameter name='TX_Data_Delay' value='0' />
@@ -34,7 +34,7 @@
     <parameter name='SINGLE_PORT_p' value='true'/>
     <parameter name='HALF_DUPLEX_p' value='false'/>
     <parameter name='SWAP_PORTS_p' value='true'/>
-    <parameter name='DATA_CLK_Delay' value='11' />
+    <parameter name='DATA_CLK_Delay' value='7' />
     <parameter name='RX_Data_Delay' value='0'/>
     <parameter name='FB_CLK_Delay' value='12'/>
     <parameter name='TX_Data_Delay' value='0' />
@@ -44,7 +44,7 @@
     <parameter name='SINGLE_PORT_p' value='false'/>
     <parameter name='HALF_DUPLEX_p' value='false'/>
     <parameter name='SWAP_PORTS_p' value='false'/>
-    <parameter name='DATA_CLK_Delay' value='11' />
+    <parameter name='DATA_CLK_Delay' value='7' />
     <parameter name='RX_Data_Delay' value='0'/>
     <parameter name='FB_CLK_Delay' value='12'/>
     <parameter name='TX_Data_Delay' value='0' />
@@ -54,7 +54,7 @@
     <parameter name='SINGLE_PORT_p' value='false'/>
     <parameter name='HALF_DUPLEX_p' value='false'/>
     <parameter name='SWAP_PORTS_p' value='true'/>
-    <parameter name='DATA_CLK_Delay' value='11' />
+    <parameter name='DATA_CLK_Delay' value='7' />
     <parameter name='RX_Data_Delay' value='0'/>
     <parameter name='FB_CLK_Delay' value='12'/>
     <parameter name='TX_Data_Delay' value='0' />

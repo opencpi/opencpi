@@ -1,0 +1,99 @@
+\iffalse
+This file is protected by Copyright. Please refer to the COPYRIGHT file
+distributed with this source distribution.
+
+This file is part of OpenCPI <http://www.opencpi.org>
+
+OpenCPI is free software: you can redistribute it and/or modify it under the
+terms of the GNU Lesser General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+OpenCPI is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License along
+with this program. If not, see <http://www.gnu.org/licenses/>.
+\fi
+
+%----------------------------------------------------------------------------------------
+% Update the docTitle and docVersion per document
+%----------------------------------------------------------------------------------------
+\def\docTitle{OpenCPI\\ AD9361 ADC Test App Guide}
+\def\docVersion{1.4}
+%----------------------------------------------------------------------------------------
+\input{../../../../../doc/av/tex/snippets/LaTeX_Header.tex}
+\date{Version \docVersion} % Force date to be blank and override date with version
+\title{\docTitle}
+\lhead{AD9361 ADC Test App Guide}
+%----------------------------------------------------------------------------------------
+%\usepackage[T1]{fontenc} % http://tex.stackexchange.com/a/181119
+\usepackage{graphicx}
+\graphicspath{ {figures/} }
+\usepackage{textcomp}
+\usepackage{listings}
+
+\begin{document}
+\maketitle
+%\thispagestyle{fancy}
+
+\section{Description}
+This application is intended to perform a hardware-in-the-loop test of the ad9361\_adc.hdl worker.
+The AD9361 has a Built In Self Test (BIST) mode cable of validating in-situ the digital RX/TX data paths without the need for additional external equipment. One of the BIST configurations enables a Linear Feedback Shift Register (LFSR) within the AD9361 and sends the LFSR output to AD9361's ADC data pins. The LFSR generates a Pseudo Random Bit Sequence (PRBS). By using the LFSR algorithm to verify data fidelity after the data is registered inside the FPGA, the AD9361-to-FPGA digital RX data path is verified. For more information on the BIST modes see \cite{adi_bist_doc} and \cite{adi_ug570}. \\ \\
+The application validates not only the ad9361\_adc.hdl device worker, but the entire command/control and RX data path both in software and hardware.
+The application runs multiple tests which use the AD9361 BIST PRBS mode and save the first 8192 samples output from the ad9361\_adc.hdl output port to a binary file. A Bit Error Rate (BER) is then calculated on each output file and verified to be 0\%. These data fidelity tests are run across the full range of possible AD9361 sample rates for the mode used. The \verb+overrun+ property is verified to be false for apps running as long as 10 seconds at the max sample rate. All of these tests are run for both 1R1T timing and 2R2T AD9361 timing modes. For more information on these AD9361 modes, see \cite{adi_ug570}.
+
+\section{Hardware Portability}
+This application is currently specific to the FMCOMMS2/3 cards using either of the \verb+zed+/\verb+ml605+ platforms.
+
+\section{Execution}
+\subsection{Prerequisites}
+The following must be true before application execution:
+\begin{itemize}
+  \item Either a \verb+zed+ or \verb+ml605+ platform is available with an FMCOMMS2/3 card in any available FMC slot.
+  \item The following assets are built and their build artifacts (FPGA bitstream file/shared object file) are contained within the directory list of the OCPI\_LIBRARY\_PATH environment variable.
+  \begin{itemize}
+    \item If using the \verb+zed+ platform:
+    \begin{itemize}
+      \item for \verb+zed+/\verb+xilinx13_3+ HDL/RCC platforms:
+      \begin{itemize}
+        \item \verb+ad9361_1r1t_test_adc_asm+/\verb+cnt_1rx_0tx_thruasm_fmcomms_2_3_lpc_LVDS_zed+ assembly/container
+        \item \verb+ad9361_config_proxy.rcc+
+        \item \verb+file_write.rcc+ (from core project)
+      \end{itemize}
+    \end{itemize}
+    \item If using the ml605 platform:
+    \begin{itemize}
+      \item for \verb+ml605+ HDL platform and the desired RCC platform:
+      \begin{itemize}
+        \item \verb+ad9361_1r1t_test_adc_asm+ assembly with whichever \verb+ml605+ container corresponds to the FMC slot in which the FMOCMMS2/3 is plugged in
+        \item \verb+ad9361_config_proxy.rcc+
+        \item \verb+file_write.rcc+ (from core project)
+      \end{itemize}
+    \end{itemize}
+  \end{itemize}
+\item If using the ml605 platform, the intended slot-specific bitstream must occur first in the \texttt{OCPI\_LIBRARY\_PATH}
+\item The current directory is the applications/ad9361\_adc\_test directory.
+\end{itemize}
+\subsection{Command(s)}
+\lstset{language=bash, backgroundcolor=\color{lightgray}, columns=flexible, breaklines=true, prebreak=\textbackslash, basicstyle=\ttfamily, showstringspaces=false,upquote=true, aboveskip=\baselineskip, belowskip=\baselineskip}
+\begin{lstlisting}
+./<target-dir>/ad9361_adc_test
+\end{lstlisting}
+\section{Verification}
+Upon completion of a successful test, PASSED is printed to the screen and a value of 0 is returned. Upon failure, FAILED is printed to the screen and a non-zero value is returned.
+
+\section{Troubleshooting}
+If a failure occurs but the test completed, the screen will output a diff between a generated log file odata/AD9361\_BIST\_PRBS.log and a golden log file. Log files are also saved which capture the stdout/stderr for each of the multiple ocpirun calls, e.g. odata/app\_2.083334e6sps\_fir0\_0\_1sec\_prbs.log.
+
+\begin{thebibliography}{1}
+
+\bibitem{adi_ug570} AD9361 Reference Manual UG-570\\
+AD9361\_Reference\_Manual\_UG-570.pdf
+\bibitem{adi_bist_doc} AD9361 BIST FAQ \\
+\url{https://ez.analog.com/wide-band-rf-transceivers/design-support/w/documents/10068/ad936x-built-in-self-test-bist}
+
+\end{thebibliography}
+
+\end{document}

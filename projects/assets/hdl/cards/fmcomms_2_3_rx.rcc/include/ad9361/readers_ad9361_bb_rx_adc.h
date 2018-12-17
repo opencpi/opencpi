@@ -69,9 +69,11 @@
  ******************************************************************************/
 
 #include <cmath>                   // pow()
-#include "OcpiApi.hh"              // OCPI::API::Application
+#include "OcpiApi.hh"              // OA::Application
 #include "readers_ad9361_bb_pll.h" // get_AD9361_BBPLL_...() functions
 #include "readers_ad9361_bb_rx_filters_digital.h" // get_AD9361_RHB...() functions
+
+namespace OA = OA;
 
 /*! @brief Get the nominal in-situ value with double floating point precision
  *         of the
@@ -83,11 +85,9 @@
  *  @param[in]  app_inst_name_proxy OpenCPI application instance name of the
  *                                  OpenCPI ad9361_config_proxy.rcc worker
  *  @param[out] val                 Retrieved value.
- *  @return 0 if there are no errors, non-zero char array pointer if there
- *          are errors (char array content will describe the error).
  ******************************************************************************/
-const char* get_AD9361_ADC_FREQ_Hz(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
+void get_AD9361_ADC_FREQ_Hz(
+    OA::Application& app, const char* app_inst_name_proxy,
     double& val)
 {
   double d_BBPLL_FREQ;
@@ -98,13 +98,10 @@ const char* get_AD9361_ADC_FREQ_Hz(
     double  BBPLL_FREQ;
     uint8_t BBPLL_Divider;
 
-    char* ret;
     const char* inst = app_inst_name_proxy;
 
-    ret = (char*) get_AD9361_BBPLL_FREQ_Hz(app, inst, BBPLL_FREQ   );
-    if(ret != 0) { return ret; }
-    ret = (char*) get_AD9361_BBPLL_Divider(app, inst, BBPLL_Divider);
-    if(ret != 0) { return ret; }
+    get_AD9361_BBPLL_FREQ_Hz(app, inst, BBPLL_FREQ   );
+    get_AD9361_BBPLL_Divider(app, inst, BBPLL_Divider);
 
     d_BBPLL_FREQ    = (double) BBPLL_FREQ;
     d_BBPLL_Divider = (double) BBPLL_Divider;
@@ -117,8 +114,6 @@ const char* get_AD9361_ADC_FREQ_Hz(
   val = d_BBPLL_FREQ / pow(2,d_BBPLL_Divider);
 
   //log_debug("calculated ADC_FREQ = %.15f Hz", val);
-
-  return 0;
 }
 
 /*! @brief Get the nominal in-situ value with double floating point precision
@@ -131,11 +126,9 @@ const char* get_AD9361_ADC_FREQ_Hz(
  *  @param[in]  app_inst_name_proxy OpenCPI application instance name of the
  *                                  OpenCPI ad9361_config_proxy.rcc worker
  *  @param[out] val                 Retrieved value.
- *  @return 0 if there are no errors, non-zero char array pointer if there
- *          are errors (char array content will describe the error).
  ******************************************************************************/
-const char* get_AD9361_ADC_FREQ_step_Hz(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
+void get_AD9361_ADC_FREQ_step_Hz(
+    OA::Application& app, const char* app_inst_name_proxy,
     double& val)
 {
   double d_BBPLL_FREQ_step_Hz;
@@ -146,13 +139,9 @@ const char* get_AD9361_ADC_FREQ_step_Hz(
     double  BBPLL_FREQ_step_Hz;
     uint8_t BBPLL_Divider;
 
-    char* ret;
-
     const char* inst = app_inst_name_proxy;
-    ret = (char*) get_AD9361_BBPLL_FREQ_step_Hz(app, inst, BBPLL_FREQ_step_Hz);
-    if(ret != 0) { return ret; }
-    ret = (char*) get_AD9361_BBPLL_Divider(     app, inst, BBPLL_Divider     );
-    if(ret != 0) { return ret; }
+    get_AD9361_BBPLL_FREQ_step_Hz(app, inst, BBPLL_FREQ_step_Hz);
+    get_AD9361_BBPLL_Divider(     app, inst, BBPLL_Divider     );
 
     d_BBPLL_FREQ_step_Hz = (double) BBPLL_FREQ_step_Hz;
     d_BBPLL_Divider      = (double) BBPLL_Divider;
@@ -163,12 +152,10 @@ const char* get_AD9361_ADC_FREQ_step_Hz(
   // register, shown in Equation 2.
   // ADC Clock Rate = BBPLL Clock Rate / (2^(BBPLL Divider[2:0] (decimal)))"
   val = d_BBPLL_FREQ_step_Hz / pow(2,d_BBPLL_Divider);
-
-  return 0;
 }
 
-const char* get_AD9361_R2_FREQ_Hz(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
+void get_AD9361_R2_FREQ_Hz(
+    OA::Application& app, const char* app_inst_name_proxy,
     double& val)
 {
   double d_ADC_FREQ_Hz;
@@ -179,25 +166,20 @@ const char* get_AD9361_R2_FREQ_Hz(
     double ADC_FREQ_Hz;
     uint8_t RHB3_decimation_factor;
 
-    char* ret;
     const char* inst = app_inst_name_proxy;
 
-    ret = (char*) get_AD9361_ADC_FREQ_Hz(           app, inst, ADC_FREQ_Hz           );
-    if(ret != 0) { return ret; }
-    ret = (char*) get_AD9361_RHB3_decimation_factor(app, inst, RHB3_decimation_factor);
-    if(ret != 0) { return ret; }
+    get_AD9361_ADC_FREQ_Hz(           app, inst, ADC_FREQ_Hz           );
+    get_AD9361_RHB3_decimation_factor(app, inst, RHB3_decimation_factor);
 
     d_ADC_FREQ_Hz            = (double) ADC_FREQ_Hz;
     d_RHB3_decimation_factor = (double) RHB3_decimation_factor;
   }
 
   val = d_ADC_FREQ_Hz / d_RHB3_decimation_factor;
-
-  return 0;
 }
 
-const char* get_AD9361_R2_FREQ_step_Hz(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
+void get_AD9361_R2_FREQ_step_Hz(
+    OA::Application& app, const char* app_inst_name_proxy,
     double& val)
 {
   double d_ADC_FREQ_step_Hz;
@@ -208,25 +190,20 @@ const char* get_AD9361_R2_FREQ_step_Hz(
     double ADC_FREQ_step_Hz;
     uint8_t RHB3_decimation_factor;
 
-    char* ret;
     const char* inst = app_inst_name_proxy;
 
-    ret = (char*) get_AD9361_ADC_FREQ_step_Hz(      app, inst, ADC_FREQ_step_Hz      );
-    if(ret != 0) { return ret; }
-    ret = (char*) get_AD9361_RHB3_decimation_factor(app, inst, RHB3_decimation_factor);
-    if(ret != 0) { return ret; }
+    get_AD9361_ADC_FREQ_step_Hz(      app, inst, ADC_FREQ_step_Hz      );
+    get_AD9361_RHB3_decimation_factor(app, inst, RHB3_decimation_factor);
 
     d_ADC_FREQ_step_Hz       = (double) ADC_FREQ_step_Hz;
     d_RHB3_decimation_factor = (double) RHB3_decimation_factor;
   }
 
   val = d_ADC_FREQ_step_Hz / d_RHB3_decimation_factor;
-
-  return 0;
 }
 
-const char* get_AD9361_R1_FREQ_Hz(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
+void get_AD9361_R1_FREQ_Hz(
+    OA::Application& app, const char* app_inst_name_proxy,
     double& val)
 {
   double d_R2_FREQ_Hz;
@@ -237,25 +214,20 @@ const char* get_AD9361_R1_FREQ_Hz(
     double R2_FREQ_Hz;
     uint8_t RHB2_decimation_factor;
 
-    char* ret;
     const char* inst = app_inst_name_proxy;
 
-    ret = (char*) get_AD9361_R2_FREQ_Hz(            app, inst, R2_FREQ_Hz            );
-    if(ret != 0) { return ret; }
-    ret = (char*) get_AD9361_RHB2_decimation_factor(app, inst, RHB2_decimation_factor);
-    if(ret != 0) { return ret; }
+    get_AD9361_R2_FREQ_Hz(            app, inst, R2_FREQ_Hz            );
+    get_AD9361_RHB2_decimation_factor(app, inst, RHB2_decimation_factor);
 
     d_R2_FREQ_Hz             = (double) R2_FREQ_Hz;
     d_RHB2_decimation_factor = (double) RHB2_decimation_factor;
   }
 
   val = d_R2_FREQ_Hz / d_RHB2_decimation_factor;
-
-  return 0;
 }
 
-const char* get_AD9361_R1_FREQ_step_Hz(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
+void get_AD9361_R1_FREQ_step_Hz(
+    OA::Application& app, const char* app_inst_name_proxy,
     double& val)
 {
   double d_R2_FREQ_step_Hz;
@@ -266,21 +238,16 @@ const char* get_AD9361_R1_FREQ_step_Hz(
     double R2_FREQ_step_Hz;
     uint8_t RHB2_decimation_factor;
 
-    char* ret;
     const char* inst = app_inst_name_proxy;
 
-    ret = (char*) get_AD9361_R2_FREQ_step_Hz(       app, inst, R2_FREQ_step_Hz       );
-    if(ret != 0) { return ret; }
-    ret = (char*) get_AD9361_RHB2_decimation_factor(app, inst, RHB2_decimation_factor);
-    if(ret != 0) { return ret; }
+    get_AD9361_R2_FREQ_step_Hz(       app, inst, R2_FREQ_step_Hz       );
+    get_AD9361_RHB2_decimation_factor(app, inst, RHB2_decimation_factor);
 
     d_R2_FREQ_step_Hz        = (double) R2_FREQ_step_Hz;
     d_RHB2_decimation_factor = (double) RHB2_decimation_factor;
   }
 
   val = d_R2_FREQ_step_Hz / d_RHB2_decimation_factor;
-
-  return 0;
 }
 
 /*! @brief Get the nominal in-situ value with double floating point precision
@@ -293,11 +260,9 @@ const char* get_AD9361_R1_FREQ_step_Hz(
  *  @param[in]  app_inst_name_proxy OpenCPI application instance name of the
  *                                  OpenCPI ad9361_config_proxy.rcc worker
  *  @param[out] val                 Retrieved value.
- *  @return 0 if there are no errors, non-zero char array pointer if there
- *          are errors (char array content will describe the error).
  ******************************************************************************/
-const char* get_AD9361_CLKRF_FREQ_Hz(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
+void get_AD9361_CLKRF_FREQ_Hz(
+    OA::Application& app, const char* app_inst_name_proxy,
     double& val)
 {
   double d_R1_FREQ_Hz;
@@ -308,21 +273,16 @@ const char* get_AD9361_CLKRF_FREQ_Hz(
     double R1_FREQ_Hz;
     uint8_t RHB1_decimation_factor;
 
-    char* ret;
     const char* inst = app_inst_name_proxy;
 
-    ret = (char*) get_AD9361_R1_FREQ_Hz(            app, inst, R1_FREQ_Hz            );
-    if(ret != 0) { return ret; }
-    ret = (char*) get_AD9361_RHB1_decimation_factor(app, inst, RHB1_decimation_factor);
-    if(ret != 0) { return ret; }
+    get_AD9361_R1_FREQ_Hz(            app, inst, R1_FREQ_Hz            );
+    get_AD9361_RHB1_decimation_factor(app, inst, RHB1_decimation_factor);
 
     d_R1_FREQ_Hz             = (double) R1_FREQ_Hz;
     d_RHB1_decimation_factor = (double) RHB1_decimation_factor;
   }
 
   val = d_R1_FREQ_Hz / d_RHB1_decimation_factor;
-
-  return 0;
 }
 
 /*! @brief Get the nominal in-situ value with double floating point precision
@@ -336,11 +296,9 @@ const char* get_AD9361_CLKRF_FREQ_Hz(
  *  @param[in]  app_inst_name_proxy OpenCPI application instance name of the
  *                                  OpenCPI ad9361_config_proxy.rcc worker
  *  @param[out] val                 Retrieved value.
- *  @return 0 if there are no errors, non-zero char array pointer if there
- *          are errors (char array content will describe the error).
  ******************************************************************************/
-const char* get_AD9361_CLKRF_FREQ_step_Hz(
-    OCPI::API::Application& app, const char* app_inst_name_proxy,
+void get_AD9361_CLKRF_FREQ_step_Hz(
+    OA::Application& app, const char* app_inst_name_proxy,
     double& val)
 {
   double d_R1_FREQ_step_Hz;
@@ -351,21 +309,16 @@ const char* get_AD9361_CLKRF_FREQ_step_Hz(
     double R1_FREQ_step_Hz;
     uint8_t RHB1_decimation_factor;
 
-    char* ret;
     const char* inst = app_inst_name_proxy;
 
-    ret = (char*) get_AD9361_R1_FREQ_step_Hz(       app, inst, R1_FREQ_step_Hz       );
-    if(ret != 0) { return ret; }
-    ret = (char*) get_AD9361_RHB1_decimation_factor(app, inst, RHB1_decimation_factor);
-    if(ret != 0) { return ret; }
+    get_AD9361_R1_FREQ_step_Hz(       app, inst, R1_FREQ_step_Hz       );
+    get_AD9361_RHB1_decimation_factor(app, inst, RHB1_decimation_factor);
 
     d_R1_FREQ_step_Hz        = (double) R1_FREQ_step_Hz;
     d_RHB1_decimation_factor = (double) RHB1_decimation_factor;
   }
 
   val = d_R1_FREQ_step_Hz / d_RHB1_decimation_factor;
-
-  return 0;
 }
 
 #endif // _READERS_AD9361_RX_ADC_H

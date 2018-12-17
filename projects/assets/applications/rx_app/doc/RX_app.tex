@@ -21,7 +21,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{OpenCPI\\ Rx App Guide}
-\def\docVersion{1.3}
+\def\docVersion{1.4}
 %----------------------------------------------------------------------------------------
 \input{../../../../../doc/av/tex/snippets/LaTeX_Header.tex}
 \date{Version \docVersion} % Force date to be blank and override date with version
@@ -32,11 +32,46 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \usepackage{graphicx}
 \graphicspath{ {figures/} }
 \usepackage{textcomp}
-
+\lstset{ % https://tex.stackexchange.com/a/116572
+  basicstyle=\ttfamily,
+  columns=fullflexible,
+  % frame=single,
+  breaklines=true,
+  showstringspaces=true,
+  showspaces=true,
+  postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space},
+}
 \begin{document}
 \maketitle
 %\thispagestyle{fancy}
+
+% AV-4723 blurb start
+\begin{center}
+\framebox{\parbox{0.8\linewidth}{\centering
+\textcolor{red}{WARNING:}
+Run-time failures have been observed for several unit tests and applications on PCIe-based platforms.
+The work around requires modifying the \textbf{buffersize} attribute of the PL to PS (egress) boundary connection, as defined in the OAS. An example for modifying the OAS for executing on PCIe-based platforms is provided in a below section.
+
+% INCLUDE IN AFFECTED UNIT TESTS DOCUMENTATION
+%Specifically, the following XML change must be made to resolve this issue for the unit tests and reference applications:\\
+%\begin{lstlisting}[showspaces=false]
+%  <Connection>
+%   <Port Instance="last_PL_worker" Name="out"/>
+%   <Port Instance="first_PS_worker" Name="in" Buffersize="8192" Buffercount="4"/>
+%  </Connection>
+%\end{lstlisting}
+
+% INCLUDE IN FIR_COMPLEX_SSE.TEST UNIT TEST DOCUMENTATION
+%An additional change is required for fir\_complex\_sse.test, in that the fir\_complex\_sse.hdl's messageSize property must be be reduced from 8192 to 4096.\\ \medskip
+%\begin{lstlisting}[showspaces=false]
+%  <property name='messageSize' value='4096'>
+%\end{lstlisting}
+
+\PackageWarning{}{AV-4723} }}
+\end{center}
+% AV-4723 blurb end
 \newpage
+
 	\begin{center}
 	\textit{\textbf{Revision History}}
 		\begin{table}[H]
@@ -54,6 +89,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 			\hline
 			v1.3.1 & Updated for OpenCPI Release 1.3.1, including FMCOMMS2/3 support & 3/2018 \\
 			\hline
+			v1.4 & Updated recommendations for configuring OCPI\_LIBRARY\_PATH & 9/2018 \\
+
+			\hline
 			\end{tabularx}
 		\end{table}
 	\end{center}
@@ -64,7 +102,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \vspace{1pc}
 \hrule
 \section{Document Scope}
-This document describes the ANGRYPVIPER Receive demo application or "Rx App". It includes a description of the RX App application and instructions on how to setup the various supported hardware platforms, build and execution of the application.
+This document describes the OpenCPI Receive demo application or ``Rx App''. It includes a description of the RX App application and instructions on how to setup the various supported hardware platforms, build and execution of the application.
 
 \section{Supported Hardware Setups}
 This app is supported on the following hardware configurations:
@@ -89,7 +127,7 @@ A block diagram of the RX app (for Stratix IV GX230 / Zipper on HSMC B specifica
 \begin{landscape}
 	\begin{figure}[H]
 	 	\centering
-		\includegraphics[scale=.750, trim={0 0 6cm 0}]{rx_app_left}
+		\includegraphics[scale=.65, trim={0 0 6cm 0}]{rx_app_left}
 		\caption{RX App Block Diagram for Stratix IV GX230 with Zipper on HSMC B (1/2)}
 		\label{fig:rx_app_left}
 	\end{figure}
@@ -102,8 +140,8 @@ A block diagram of the RX app (for Stratix IV GX230 / Zipper on HSMC B specifica
 \end{landscape}
 
 \section{Building the Application}
-\subsection{Common Worker Dependencies}
-The following workers, sorted by component library name, must be built prior to building RX app, regardless of intended deployment hardware. See Appendix A for the parameter configurations used in the application, and see the individual component datasheets for more information.\par\bigskip
+\subsection{Common Application Worker Dependencies}
+The following application workers, sorted by component library name, must be built prior to building the RX application assembly. See Appendix A for the parameter configurations used in the application, and see the individual component datasheets for more information.\par\bigskip
 	\begin{minipage}[t]{.5\textwidth}
 	\begin{itemize}
 		\item ocpi.core
@@ -119,7 +157,7 @@ The following workers, sorted by component library name, must be built prior to 
 	\end{minipage}
 
 \subsection{Hardware-Specific Worker Dependencies}
-The following workers, sorted by component library name, must be built prior to building RX app. See Appendix A for the parameter configurations used in the application, and see the individual component datasheets for more information and build instructions.\par\bigskip
+The following device and proxy workers, sorted by component library name, must be built prior to building the RX application assembly. See Appendix A for the parameter configurations used in the application, and see the individual component datasheets for more information and build instructions.\par\bigskip
 	\begin{minipage}[t]{.33\textwidth}
 	\textbf{Matchstiq-Z1}
 	\begin{itemize}
@@ -142,7 +180,7 @@ The following workers, sorted by component library name, must be built prior to 
 	\end{itemize}
 	\end{minipage}
 	\begin{minipage}[t]{.33\textwidth}
-	\textbf{Zipper/MyriadRF Transceiver Card}
+	\textbf{Zipper/MyriadRF Card}
 	\begin{itemize}
 		\item ocpi.assets.devices
 			\subitem lime\_adc.hdl
@@ -158,7 +196,7 @@ The following workers, sorted by component library name, must be built prior to 
 	\end{itemize}
 	\end{minipage} \medskip
 	\begin{minipage}[t]{.33\textwidth}
-	\textbf{FMCOMMS2/3 Transceiver Cards}
+	\textbf{FMCOMMS2/3 Cards}
 	\begin{itemize}
 		\item ocpi.assets.devices
 			\subitem ad9361\_adc.hdl
@@ -178,9 +216,9 @@ The following workers, sorted by component library name, must be built prior to 
 
 	\end{minipage} \medskip
 
+\subsection{Platform-Specific Dependencies}
 
-
-\noindent Additionally, platform support for the Matchstiq-Z1/Zedboard/Stratix IV/ML605 must also be built prior to building the RX app. See the respective Platform Data Sheet for more information and build instructions.
+Platform support for the Matchstiq-Z1, Zedboard, Stratix IV, ML605 must also be built prior to building the RX application assembly. See the respective Platform Data Sheet for more information and build instructions.
 \newpage
 
 \subsection{HDL Assembly and HDL Container}
@@ -190,43 +228,24 @@ The FPGA portion of the application consists of the dc\_offset\_iq\_imbalance\_m
 	\item[2)] Connects HDL assembly output to the processor for writing data to disk
 	\item[3)] Instances command and control SPI/I2C HDL Device Workers required to configure the RF front end
 \end{itemize}
+\begin{landscape}
 \subsection{Performance and Resource Utilization}
-\begin{scriptsize}
-\begin{tabular}{|P{3.1cm}|c|P{1.5cm}|c|c|c|c|}
-\hline
-\rowcolor{blue}
-Hardware Configuration & FPGA                & Registers (typ) & LUTs (typ) & Fmax (typ)   & Memory/Special Functions & Design Suite       \\
-\hline\
-Matchstiq-Z1               & XC7Z020-1-CLG484    & 9813     & 9918 & 100 MHz & \begin{tabular}{@{}c@{}}DSP48E1s=15 (7\%) \\ RAMB36E1s=21 \\ BUFGs=2 \\ BUFGCTRLs=2\end{tabular} & Vivado 2017.1 \\
-\hline\
-ML605/FMCOMMS2/3 HPC   & XC6VLX240T-1-FF1156 & 13,972 (4\%) & 18,149 (12\%) & 125 MHz & \begin{tabular}{@{}c@{}}DSP48E1s=15 (1\%) \\ BUFG/BUFGCTRLs=6\end{tabular} & ISE 14.7           \\
-\hline
-ML605/FMCOMMS2/3 LPC   & XC6VLX240T-1-FF1156 & 13,972 (4\%) & 18,103 (12\%) & 125 MHz & \begin{tabular}{@{}c@{}}DSP48E1s=15 (1\%) \\ BUFG/BUFGCTRLs=6\end{tabular} & ISE 14.7           \\
-\hline
-ML605/Zipper HPC       & XC6VLX240T-1-FF1156 & 13850     & 18325 & 125 MHz & \begin{tabular}{@{}c@{}}DSP48E1s=15 (1\%) \\ BUFG/BUFGCTRLs=7\end{tabular}                  & ISE 14.7           \\
-\hline
-ML605/Zipper LPC       & XC6VLX240T-1-FF1156 & 13850     & 18404 & 125 MHz & \begin{tabular}{@{}c@{}}DSP48E1s=15 (1\%) \\ BUFG/BUFGCTRLs=7\end{tabular}                  & ISE 14.7           \\
-\hline
-Stratix IV/Zipper HSMCA& EP4SGX230K-C2-F40   & 41017     & 27147 & 125 MHz & \begin{tabular}{@{}c@{}}DSP18x18s=26 (2\%) \\ GXB Receiver PCSs=4 \\ GXB Transmitter PCSs=4 \\ GXB Receiver PMAs=4 \\ GXB Transmitter PMAs=4 \\ PLLs=1\end{tabular}           & Quartus 15.1.0 \\
-\hline
-Stratix IV/Zipper HSMCB& EP4SGX230K-C2-F40   & 41017     & 27147 & 125 MHz & \begin{tabular}{@{}c@{}}DSP18x18s=26 (2\%) \\ GXB Receiver PCSs=4 \\ GXB Transmitter PCSs=4 \\ GXB Receiver PMAs=4 \\ GXB Transmitter PMAs=4 \\ PLLs=1\end{tabular}           & Quartus 15.1.0 \\
-\hline
-Zedboard/FMCOMMS2/3    & XC7Z020-1-CLG484    & 8,882 (9\%) & 8,865 (17\%) & 100 MHz & \begin{tabular}{@{}c@{}}DSP48E1s=15 (7\%) \\ RAMB36E1s=18 \\ BUFGs=1 \\ BUFGCTRLs=2\end{tabular}& Vivado 2017.1 \\
-\hline
-Zedboard/Zipper        & XC7Z020-1-CLG484    & 8759     & 8872 & 100 MHz & \begin{tabular}{@{}c@{}}DSP48E1s=15 (7\%) \\ RAMB36E1s=21 \\ BUFGs=2 \\ BUFGCTRLs=2\end{tabular}& Vivado 2017.1 \\
-\hline
-\end{tabular}
-\end{scriptsize}
+\input{../../../hdl/assemblies/dc_offset_iq_imbalance_mixer_cic_dec_timestamper/utilization.inc}
+\end{landscape}
 
 \subsection{Executable}
 \noindent The software portion of the application consists of a C++ program written using the OpenCPI C++ API, RCC endpoint proxy workers for command and control functionality, and the file\_write.rcc RCC app worker for capturing data. For more implementation details on the endpoint proxy, see the matchstiq\_z1\_rx.rcc,  zipper\_rx.rcc, or fmcomms\_2\_3\_rx.rcc component datasheets. The C++ program instantiates and OpenCPI application object using one of the application XML files: rx\_fmcomms\_2\_app.xml, rx\_fmcomms\_3\_app.xml, rx\_matchstiq\_z1\_app.xml, rx\_zipper\_app.xml. Each of these files contain all of the property settings for the components in the application, except the configuration of the endpoint proxy for controlling RF hardware. These settings are passed on the command line to the approriate endpoint proxy worker and set using the ACI.\par\bigskip
+To build for the host platform (centos6/centos7 - which is the case if ML605 or Stratix IV platform is intended to be used), run the following commands from the \textit{rx\_app} directory:\par\medskip
+\texttt{ ocpidev build}\par\medskip
+\noindent To build for the Zedboard or Matchstiq-Z1 (which run the xilinx13\_3 PetaLinux operating system), run the following command from the \textit{rx\_app} directory:\par\medskip
+\texttt{ ocpidev build --rcc-platform xilinx13\_3 }\par\medskip
 \noindent For optimal throughput, the file write RCC component writes directly to RAM via a Linux RAMdisk at runtime, and the application copies the data from RAM to a file in the application directory (odata/rx\_app\_raw.out) RX data capture is complete. The executable creates an additional shortened copy of this data (odata/rx\_app\_shortened.out) which omits some number of bytes from the beginning of the data. This is done because some of the components include feedback loops which require some setup time before functioning as desired.
 \section{Testing the Application}
 \subsection{Sample Test Setup}
 \noindent To verify functionality of the application, a transmitter broadcasting a known signal is needed. Optionally, a spectrum analyzer to compare the transmitter output to the received data is a useful verification tool.\par\medskip
 \noindent Figure \ref{fig:rx_app_test_setup} shows an example test setup for the RX app. It uses GNUradio and the Ettus N210 SDR to inject data into the Platform Under Test. GNUradio is available to download in the default CENTOS 7 repository, and a sample block diagram for transmitting random FSK data is included with this application (gnuradio/usrp\_fsk.grc). The transmitter output is also split off to a spectrum analyzer.\par\bigskip
 \noindent A recommended alternative to using the Ettus N210 would be an arbitrary RF signal generator.
-	\begin{figure}[h]
+	\begin{figure}[H]
 	 	\centering
 		\includegraphics[scale=.55]{rx_app_test_setup}
 		\caption{RX App Test Setup}
@@ -238,7 +257,7 @@ Zedboard/Zipper        & XC7Z020-1-CLG484    & 8759     & 8872 & 100 MHz & \begi
 \noindent Before running the application, the location of the required deployable artifacts must be specified in the OCPI\_LIBRARY\_PATH environment variable. Each RCC worker and the FPGA image exist as an artifact which should be included. Furthermore, artifacts differ depending on which mode the application is to be run in. Appendix B includes a list of the artifacts required for each platform and mode.
 \newpage
 \subsection{Arguments to executable}
-\noindent There are eleven arguments to the RX app executable. They primarily configure the RF front end of the Platform Unit Test using the matchstiq\_z1\_rx.rcc/zipper\_rx.rcc components. Additionally, the application can be configured by setting properties in the application XML file: rx\_app.xml. Descriptions of properties can be found in the individual component datasheets. Valid ranges for each argument can be printed out by running the executable with no arguments.\par\medskip 
+\noindent There are eleven arguments to the RX app executable. They primarily configure the RF front end of the Platform Unit Test using the matchstiq\_z1\_rx.rcc/zipper\_rx.rcc components. Additionally, the application can be configured by setting properties in the application XML file: rx\_app.xml. Descriptions of properties can be found in the individual component datasheets. Valid ranges for each argument can be printed out by running the executable with no arguments.\par\medskip
 
 \noindent The arguments to the executable are summarized in the below table: \\ \\
 	\begin{tabular}{|l|l|}
@@ -268,110 +287,95 @@ Zedboard/Zipper        & XC7Z020-1-CLG484    & 8759     & 8872 & 100 MHz & \begi
 	\hline
 	sma\_channel & (optional) specify which PCB SMA is used when FMCOMMS2/3 is used (RX1A or RX2A) \\
 	\hline
-	\end{tabular}
+	\end{tabular} \medskip
+
+\noindent\textcolor{red}{WARNING:}
+Run-time failures have been observed for several unit tests and applications on PCIe-based platforms. The work around requires modifying the \textbf{buffersize} attribute of the PL to PS (egress) boundary connection, as defined in the OAS. \\
+While the explicit PS to PL connection is explicitly define, the \textbf{buffersize} must be changed from 16352 to 8192, as shown in the example below:
+\begin{lstlisting}[showspaces=false]
+<Connection>
+  <Port Instance="timestamper" Name="out" Buffercount="2"/>
+  <Port Instance="file_write" Name="in" Buffersize="8192" Buffercount="7"/>
+</Connection>
+\end{lstlisting}
+
 \subsection{Library Path Requirements}
-\noindent Prior to running the application, the environment variable OCPI\_LIBRARY\_PATH must include the following directories:\par\medskip
-	\begin{itemize}
-		\item ocpi.core component RCC library location
-		\item ocpi.assets bitstream directory location
-		\item ocpi.assets.devices library location
-		\item ocpi.assets component RCC library location
-	\end{itemize}
-Matchstiq-Z1 additionally requires the following:
-	\begin{itemize}
-		\item ocpi.assets.platforms.matchstiq\_z1.devices library location
-	\end{itemize}
+\noindent Prior to running the application, the environment variable OCPI\_LIBRARY\_PATH must be configure, such that, all of the Rx application's run-time artifacts can be located. OpenCPI conveniently provides access to a project's run-time artifacts at the top-level of each project in a directory called artifacts. Reference the OpenCPI Application Development Guide for more about OCPI\_LIBRARY\_PATH. \par\medskip
+\noindent Note that the ML605 and Stratix IV GX230 hardware setups require the intended slot-specific bitstream's file location to be first in OCPI\_LIBRARY\_PATH. This is necessary because ocpirun's artifact compatibility test does not currently differentiate between slot-connected device workers for multiple bitstreams that contain the same device worker, in the scenario where what differentiates the bitstreams is the device worker's slot connectivity. \par\medskip
 
-\noindent Note that the Stratix IV GX230/Zipper/MyriadRF and ML605/Zipper/MyriadRF hardware setups require the intended slot-specific bitstream's file location to occur first in OCPI\_LIBRARY\_PATH. This is necessary because ocpirun's aritifact compatibility test can not currently differentiate between slot-connected device workers for multiple bitstreams that contain the same device worker, in the scenario where what differentiates the bitstreams is the device worker's slot connectivity. Examples of library paths that could be used can be seen below:\par\medskip
-\pagebreak
-
-\noindent Examples of library paths that could be used can be seen below:\\
-
-Note: All example paths are relative to the applications/rx\_app/ directory.\\
+\noindent The following are recommendations for configuring the OCPI\_LIBRARY\_PATH based on the platform, the use of a daughter card and specific slot that card is installed. For all recommendations:
+\begin{itemize}
+  \item All paths are relative to the applications/rx\_app/ directory.
+  \item It is assumed (for PCI/host platforms) that the \code{core} and \code{assets} projects are named as such and exist in the same parent directory.\\
+\end{itemize}
 
 \noindent\textbf{Recommended Library Path for Matchstiq-Z1 or Zedboard}\\
 
 \noindent
-%%OCPI_LIBRARY_PATH=$OCPI_PROJECT_REGISTRY_DIR/ocpi.core/exports/lib:$OCPI_PROJECT_REGISTRY_DIR/ocpi.assets/exports/lib
-\verb|OCPI_LIBRARY_PATH=$OCPI_PROJECT_REGISTRY_DIR/ocpi.core/exports/lib:$OCPI_PROJECT\| \\
-\verb|_REGISTRY_DIR/ocpi.assets/exports/lib|
-\par\medskip
+For these platforms, follow the instructions contained in the Rx application's Makefile. They can be viewed by opening the Makefile in an editor, or by executing ``\code{make show}'' from within the assets/applications/rx\_app/.
+\\
 
-\noindent\textbf{Recommended Library Path for Stratix IV GX230/Zipper in HSMC A}\\
-
-\noindent
-%OCPI_LIBRARY_PATH=$OCPI_PROJECT_REGISTRY_DIR/ocpi.core/exports/lib:$OCPI_PROJECT_REGISTRY_DIR/ocpi.assets/exports/lib:../../hdl/assemblies/dc_offset_iq_imbalance_mixer_cic_dec_timestamper/container-dc_offset_iq_imbalance_mixer_cic_dec_timestamper_alst4_alst4_zipper_hsmc_alst4_port_a_rx_cnt_1rx_0tx_thruasm_zipper_hsmc_a_alst4/
-\verb|OCPI_LIBRARY_PATH=$OCPI_PROJECT_REGISTRY_DIR/ocpi.core/exports/lib:$OCPI_PROJECT\| \\
-\verb|_REGISTRY_DIR/ocpi.assets/exports/lib:../../hdl/assemblies/dc_offset_iq_imbalanc\| \\
-\verb|e_mixer_cic_dec_timestamper/container-dc_offset_iq_imbalance_mixer_cic_dec_times\| \\
-\verb|tamper_alst4_alst4_zipper_hsmc_alst4_port_a_rx_cnt_1rx_0tx_thruasm_zipper_hsmc_a\| \\
-\verb|_alst4/|
-\par\medskip
-
-\noindent\textbf{Recommended Library Path for Stratix IV GX230/Zipper in HSMC B}\\
-
-\noindent
-%OCPI_LIBRARY_PATH=$OCPI_PROJECT_REGISTRY_DIR/ocpi.core/exports/lib:$OCPI_PROJECT_REGISTRY_DIR/ocpi.assets/exports/lib:../../hdl/assemblies/dc_offset_iq_imbalance_mixer_cic_dec_timestamper/container-dc_offset_iq_imbalance_mixer_cic_dec_timestamper_alst4_alst4_zipper_hsmc_alst4_port_b_rx_cnt_1rx_0tx_thruasm_zipper_hsmc_b_alst4/
-\verb|OCPI_LIBRARY_PATH=$OCPI_PROJECT_REGISTRY_DIR/ocpi.core/exports/lib:$OCPI_PROJECT\| \\
-\verb|_REGISTRY_DIR/ocpi.assets/exports/lib:../../hdl/assemblies/dc_offset_iq_imbalanc\| \\
-\verb|e_mixer_cic_dec_timestamper/container-dc_offset_iq_imbalance_mixer_cic_dec_times\| \\
-\verb|tamper_alst4_alst4_zipper_hsmc_alst4_port_b_rx_cnt_1rx_0tx_thruasm_zipper_hsmc_b\| \\
-\verb|_alst4/|
-\par\medskip
-
-\noindent\textbf{Recommended Library Path for ML605/Zipper in FMC HPC}\\
-
-\noindent
-%OCPI_LIBRARY_PATH=$OCPI_PROJECT_REGISTRY_DIR/ocpi.core/exports/lib:$OCPI_PROJECT_REGISTRY_DIR/ocpi.assets/exports/lib:../../hdl/assemblies/dc_offset_iq_imbalance_mixer_cic_dec_timestamper/container-dc_offset_iq_imbalance_mixer_cic_dec_timestamper_ml605_ml605_zipper_fmc_hpc_rx_cnt_1rx_0tx_thruasm_zipper_hpc_ml605/
-\verb|OCPI_LIBRARY_PATH=$OCPI_PROJECT_REGISTRY_DIR/ocpi.core/exports/lib:$OCPI_PROJECT\| \\
-\verb|_REGISTRY_DIR/ocpi.assets/exports/lib:../../hdl/assemblies/dc_offset_iq_imbalanc\| \\
-\verb|e_mixer_cic_dec_timestamper/container-dc_offset_iq_imbalance_mixer_cic_dec_times\| \\
-\verb|tamper_ml605_ml605_zipper_fmc_hpc_rx_cnt_1rx_0tx_thruasm_zipper_hpc_ml605/|
-\par\medskip
-
-\noindent\textbf{Recommended Library Path for ML605/Zipper in FMC LPC}\\
-
-\noindent
-%OCPI_LIBRARY_PATH=$OCPI_PROJECT_REGISTRY_DIR/ocpi.core/exports/lib:$OCPI_PROJECT_REGISTRY_DIR/ocpi.assets/exports/lib:../../hdl/assemblies/dc_offset_iq_imbalance_mixer_cic_dec_timestamper/container-dc_offset_iq_imbalance_mixer_cic_dec_timestamper_ml605_ml605_zipper_fmc_lpc_rx_cnt_1rx_0tx_thruasm_zipper_lpc_ml605/
-\verb|OCPI_LIBRARY_PATH=$OCPI_PROJECT_REGISTRY_DIR/ocpi.core/exports/lib:$OCPI_PROJECT\| \\
-\verb|_REGISTRY_DIR/ocpi.assets/exports/lib:../../hdl/assemblies/dc_offset_iq_imbalanc\| \\
-\verb|e_mixer_cic_dec_timestamper/container-dc_offset_iq_imbalance_mixer_cic_dec_times\| \\
-\verb|tamper_ml605_ml605_zipper_fmc_lpc_rx_cnt_1rx_0tx_thruasm_zipper_lpc_ml605/|
-\par\medskip
-
+\newpage
 \noindent\textbf{Recommended Library Path for ML605/FMCOMMS2/3 in FMC HPC}\\
 
 \noindent
-%OCPI_LIBRARY_PATH=$OCPI_PROJECT_REGISTRY_DIR/ocpi.core/exports/lib:$OCPI_PROJECT_REGISTRY_DIR/ocpi.assets/exports/lib:../../hdl/assemblies/dc_offset_iq_imbalance_mixer_cic_dec_timestamper/container-dc_offset_iq_imbalance_mixer_cic_dec_timestamper_ml605_cfg_1rx_0tx_fmcomms_2_3_hpc_lvds_cnt_1rx_0tx_thruasm_fmcomms_2_3_hpc_LVDS_ml605/
-\verb|OCPI_LIBRARY_PATH=$OCPI_PROJECT_REGISTRY_DIR/ocpi.core/exports/lib:$OCPI_PROJECT\| \\
-\verb|_REGISTRY_DIR/ocpi.assets/exports/lib:../../hdl/assemblies/dc_offset_iq_imbalanc\| \\
-\verb|e_mixer_cic_dec_timestamper/container-dc_offset_iq_imbalance_mixer_cic_dec_times\| \\
-\verb|tamper_ml605_cfg_1rx_0tx_fmcomms_2_3_hpc_lvds_cnt_1rx_0tx_thruasm_fmcomms_2_3_hp\| \\
-\verb|c_LVDS_ml605/|
+\verb|OCPI_LIBRARY_PATH=../../artifacts/ocpi.assets.dc_offset_iq_imbalance_mixer_cic_dec_timestamper_\| \\
+\verb|ml605_cfg_1rx_0tx_fmcomms_2_3_hpc_lvds_cnt_1rx_0tx_thruasm_fmcomms_2_3_hpc_LVDS_ml605.hdl.0.ml605.gz\| \\
+\verb|:../../../core/artifacts:../../artifacts| \\
 \par\medskip
 
 \noindent\textbf{Recommended Library Path for ML605/FMCOMMS2/3 in FMC LPC}\\
 
 \noindent
-%OCPI_LIBRARY_PATH=$OCPI_PROJECT_REGISTRY_DIR/ocpi.core/exports/lib:$OCPI_PROJECT_REGISTRY_DIR/ocpi.assets/exports/lib:../../hdl/assemblies/dc_offset_iq_imbalance_mixer_cic_dec_timestamper/container-dc_offset_iq_imbalance_mixer_cic_dec_timestamper_ml605_cfg_1rx_0tx_fmcomms_2_3_lpc_lvds_cnt_1rx_0tx_thruasm_fmcomms_2_3_lpc_LVDS_ml605/
-\verb|OCPI_LIBRARY_PATH=$OCPI_PROJECT_REGISTRY_DIR/ocpi.core/exports/lib:$OCPI_PROJECT\| \\
-\verb|_REGISTRY_DIR/ocpi.assets/exports/lib:../../hdl/assemblies/dc_offset_iq_imbalanc\| \\
-\verb|e_mixer_cic_dec_timestamper/container-dc_offset_iq_imbalance_mixer_cic_dec_times\| \\
-\verb|tamper_ml605_cfg_1rx_0tx_fmcomms_2_3_lpc_lvds_cnt_1rx_0tx_thruasm_fmcomms_2_3_lp\| \\
-\verb|c_LVDS_ml605/|
+\verb|OCPI_LIBRARY_PATH=../../artifacts/ocpi.assets.dc_offset_iq_imbalance_mixer_cic_dec_timestamper_\| \\
+\verb|ml605_cfg_1rx_0tx_fmcomms_2_3_lpc_lvds_cnt_1rx_0tx_thruasm_fmcomms_2_3_lpc_LVDS_ml605.hdl.0.ml605.gz \| \\
+\verb|:../../../core/artifacts:../../artifacts| \\
 \par\medskip
+
+\noindent\textbf{Recommended Library Path for ML605/Zipper in FMC HPC}\\
+
+\noindent
+\verb|OCPI_LIBRARY_PATH=../../artifacts/ocpi.assets.dc_offset_iq_imbalance_mixer_cic_dec_timestamper_\| \\
+\verb|ml605_ml605_zipper_fmc_hpc_rx_cnt_1rx_0tx_thruasm_zipper_hpc_ml605.hdl.0.ml605.gz\| \\
+\verb|:../../../core/artifacts:../../artifacts| \\
+\par\medskip
+
+\noindent\textbf{Recommended Library Path for ML605/Zipper in FMC LPC}\\
+
+\noindent
+\verb|OCPI_LIBRARY_PATH=../../artifacts/ocpi.assets.dc_offset_iq_imbalance_mixer_cic_dec_timestamper_\| \\
+\verb|ml605_ml605_zipper_fmc_lpc_rx_cnt_1rx_0tx_thruasm_zipper_lpc_ml605.hdl.0.ml605.gz\| \\
+\verb|:../../../core/artifacts:../../artifacts| \\
+\par\medskip
+
+\noindent\textbf{Recommended Library Path for Stratix IV GX230/Zipper in HSMC A}\\
+
+\noindent
+\verb|OCPI_LIBRARY_PATH=../../artifacts/ocpi.assets.dc_offset_iq_imbalance_mixer_cic_dec_timestamper_\| \\
+\verb|alst4_alst4_zipper_hsmc_alst4_port_a_rx_cnt_1rx_0tx_thruasm_zipper_hsmc_a_alst4.hdl.0.alst4.gz\| \\
+\verb|:../../../core/artifacts:../../artifacts| \\
+\par\medskip
+
+\noindent\textbf{Recommended Library Path for Stratix IV GX230/Zipper in HSMC B}\\
+
+\noindent
+\verb|OCPI_LIBRARY_PATH=../../artifacts/ocpi.assets.dc_offset_iq_imbalance_mixer_cic_dec_timestamper_\| \\
+\verb|alst4_alst4_zipper_hsmc_alst4_port_b_rx_cnt_1rx_0tx_thruasm_zipper_hsmc_b_alst4.hdl.0.alst4.gz\| \\
+\verb|:../../../core/artifacts:../../artifacts| \\
+\par\medskip
+
 
 \pagebreak
 \subsection{Expected results}
-\noindent A python script is included with the application for plotting the received data in both the time and frequency domain. Using the test setup shown above and the default settings for the GNUradio FSK block diagram, run the application with the following arguments:\par\medskip
+\noindent A python script is included with the application for plotting the received data in both the time and frequency domain. Using the test setup shown above and the default settings for the GNUradio block diagram, run the application with the following arguments:\par\medskip
 
 \small
 \noindent\textbf{FMCOMMS2/3}
 \scriptsize
 \begin{verbatim}
 # Usage is:
-# ./target-linux-x13_3-arm/rx_app rf_tune_freq data_bw rf_bw rf_gain bb_bw bb_gain if_tune_freq runtime enable_timestamps
-  ./target-linux-x13_3-arm/rx_app 1000         0.256   -1    12      1     -1      0.256        1       1
+# ./target-xilinx13_3/rx_app rf_tune_freq data_bw rf_bw rf_gain bb_bw bb_gain if_tune_freq runtime enable_timestamps
+  ./target-xilinx13_3/rx_app 1000         0.256   -1    12      1     -1      0.256        1       1
 \end{verbatim}
 \par\medskip
 \small
@@ -380,8 +384,8 @@ Note: All example paths are relative to the applications/rx\_app/ directory.\\
 \scriptsize
 \begin{verbatim}
 # Usage is:
-# ./target-linux-x13_3-arm/rx_app rf_tune_freq data_bw rf_bw rf_gain bb_bw bb_gain if_tune_freq runtime enable_timestamps
-  ./target-linux-x13_3-arm/rx_app 1000         0.256   400   10      0.75  51      0.256        1       1
+# ./target-xilinx13_3/rx_app rf_tune_freq data_bw rf_bw rf_gain bb_bw bb_gain if_tune_freq runtime enable_timestamps
+  ./target-xilinx13_3/rx_app 1000         0.256   400   10      0.75  51      0.256        1       1
 \end{verbatim}
 \par\medskip
 \small
@@ -391,8 +395,8 @@ Note: All example paths are relative to the applications/rx\_app/ directory.\\
 \noindent
 \begin{verbatim}
 # Usage is:
-# ./target-linux-c6-x86_64/rx_app rf_tune_freq data_bw rf_bw rf_gain bb_bw bb_gain if_tune_freq runtime enable_timestamps frontend
-  ./target-linux-c6-x86_64/rx_app 1000         0.256   -1    6       0.75  51      0.256        1       1                  zipper
+# ./target-centos7/rx_app rf_tune_freq data_bw rf_bw rf_gain bb_bw bb_gain if_tune_freq runtime enable_timestamps frontend
+  ./target-centos7/rx_app 1000         0.256   -1    6       0.75  51      0.256        1       1                  zipper
 \end{verbatim}
 \small
 \par\medskip
@@ -409,9 +413,9 @@ Note: All example paths are relative to the applications/rx\_app/ directory.\\
 		\caption{Output of RX app}
 		\label{fig:rx_app_fft_plot}
 	\end{figure}
-\noindent Alternatively, the shortened file can be plotted which will ignore potentially unwanted startup data:\par\medskip
+\noindent Alternatively, the shortened file can be plotted which will ignore optionally unwanted startup data:\par\medskip
 \noindent\texttt{python ./scripts/plotAndFftAndTime.py odata/rx\_app\_shortened.out complex 18000 256000 16352}\par\medskip
-\noindent The default sample rate for the GNUradio FSK block diagram is 512 kS/s. It is recommended that when using RX app with this input signal that a sample rate close to 512 kS/s be used. Higher sample rates are still valid, but may produce plots that look drastically different than those shown here.\par\medskip
+\noindent The default sample rate for the GNUradio block diagram is 512 kS/s. It is recommended that when using RX app with this input signal that a sample rate close to 512 kS/s be used. Higher sample rates are still valid, but may produce plots that look drastically different than those shown here.\par\medskip
 \newpage
 \noindent Timestamps are embedded, optionally, in the output file, and in addition to plotting, the script parses out and prints the timestamps. An example output gathered using the syntax above:\par\medskip
 \scriptsize\noindent\texttt{Timestamp at index: 000000000 :  1.0728292 Seconds: 0x1 Fraction: 0x12a4eec4  \\
@@ -421,68 +425,123 @@ Timestamp at index: 000016360 :  1.1047664 Seconds: 0x1 Fraction: 0x1ad1f906 ('D
 \par\medskip
 
 \subsection{Using a RF Signal Generator}
-\noindent As mentioned earlier, an arbitrary RF signal generator can be used with RX app instead of the Ettus N210. Below is an example using a signal generator and a Matchstiq-Z1 or Zed/Zipper.\par\medskip
-\noindent In this example, the signal generator is set to 1.001250 GHz with an amplitude of -60 dBm (Matchstiq-Z1) or -40 dBm (Zipper or FMCOMMS2/3). The following parameters can be passed to the executable:\par\medskip
+\noindent An arbitrary RF signal generator can be used with RX app instead of the Ettus N210. \\
 
-\small
-\noindent\textbf{FMCOMMS2/3}
-\scriptsize
-\begin{verbatim}
-# Usage is:
-# ./target-linux-x13_3-arm/rx_app rf_tune_freq data_bw rf_bw rf_gain bb_bw bb_gain if_tune_freq runtime enable_timestamps
-  ./target-linux-x13_3-arm/rx_app 1000         2.5     -1    12      2.5   -1      1            1       1
-\end{verbatim}
-\par\medskip
-\small
-
-
-\noindent\textbf{Matchstiq-Z1}\\
-\scriptsize
-\noindent
-\begin{verbatim}
-# Usage is:
-# ./target-linux-x13_3-arm/rx_app rf_tune_freq data_bw rf_bw rf_gain bb_bw bb_gain if_tune_freq runtime enable_timestamps frontend
-  ./target-linux-x13_3-arm/rx_app 1000         2.5     400   10      1.25  51      1            1       1
-\end{verbatim}
-\par\medskip
-
-\normalsize
-\noindent\textbf{Zed/Zipper}\\
-\scriptsize
-\noindent
-\begin{verbatim}
-# Usage is:
-# ./target-linux-x13_3-arm/rx_app rf_tune_freq data_bw rf_bw rf_gain bb_bw bb_gain if_tune_freq runtime enable_timestamps frontend
-  ./target-linux-x13_3-arm/rx_app 1000         2.5     -1   6      1.25  51      1            1       1                  zipper
-\end{verbatim}
-\par\medskip
-\small
-\noindent Here we plot output data:\par\medskip
-\noindent\texttt{python ./scripts/plotAndFftAndTime.py odata/rx\_app\_shortened.out complex 65536 2500000 16352}\par\medskip
+\subsubsection{Example Hardware Setups}
+\noindent\textbf{FMCOMMS2/3 card}
+\begin{itemize}
+  \item Signal generator is set to 2400.8 MHz with an amplitude of -40 dBm.
+  \item Signal generator is connected to the FMCOMMS2/3 RX1A SMA.
+\end{itemize}
+\noindent\textbf{Matchstiq-Z1 platform}
+\begin{itemize}
+  \item Signal generator is set to 2400.8 MHz with an amplitude of -60 dBm.
+  \item Signal generator is connected to the Matchstiq-Z1 RX SMA.
+\end{itemize}
+\noindent\textbf{Zipper card}
+\begin{itemize}
+  \item Signal generator is set to 2400.8 MHz with an amplitude of -40 dBm.
+  \item Signal generator is connected to the Zipper's MyriadRF's RXTEST SMA.
+\end{itemize}
 \pagebreak
-        \begin{figure}[h]
-                \centering
-                \includegraphics[scale=.5]{rx_app_sig_gen_time_domain}
+\subsubsection{Example 1 - Execution (remote system)}
+An example run with an IF tune freq of 0.1 MHz would be as follows.
+\\\noindent\textbf{FMCOMMS2 card}
+\lstset{language=bash, backgroundcolor=\color{lightgray}, columns=flexible, breaklines=true, prebreak=\textbackslash, basicstyle=\ttfamily, showstringspaces=false,upquote=true, aboveskip=\baselineskip, belowskip=\baselineskip}
+\begin{lstlisting}
+SAMP_RATE_MHZ=2.5
+RF_TUNE_FREQ_MHZ=2400
+IF_TUNE_FREQ_MHZ=0.1
+./<target>/rx_app $RF_TUNE_FREQ_MHZ $SAMP_RATE_MHZ -1 24 2.5 -1 $IF_TUNE_FREQ_MHZ 1 1 FMCOMMS2 RX1A
+\end{lstlisting}
+\noindent\textbf{FMCOMMS3 card}
+\begin{lstlisting}
+SAMP_RATE_MHZ=2.5
+RF_TUNE_FREQ_MHZ=2400
+IF_TUNE_FREQ_MHZ=0.1
+./<target>/rx_app $RF_TUNE_FREQ_MHZ $SAMP_RATE_MHZ -1 24 2.5 -1 $IF_TUNE_FREQ_MHZ 1 1 FMCOMMS3 RX1A
+\end{lstlisting}
+\noindent\textbf{Matchstiq-Z1 platform}
+\begin{lstlisting}
+SAMP_RATE_MHZ=2.5
+RF_TUNE_FREQ_MHZ=2400
+IF_TUNE_FREQ_MHZ=0.1
+./target-xilinx13_3/rx_app $RF_TUNE_FREQ_MHZ $SAMP_RATE_MHZ 400 10 1.25 51 $IF_TUNE_FREQ_MHZ 1 1 matchstiq_z1
+\end{lstlisting}
+\noindent\textbf{Zipper card}
+\begin{lstlisting}
+SAMP_RATE_MHZ=2.5
+RF_TUNE_FREQ_MHZ=2400
+IF_TUNE_FREQ_MHZ=0.1
+./target-xilinx13_3/rx_app $RF_TUNE_FREQ_MHZ $SAMP_RATE_MHZ -1 6 1.25 51 $IF_TUNE_FREQ_MHZ 1 1 zipper
+\end{lstlisting}
+\subsubsection{Example 1 - Verification (development system)}
+Verify that the signal generator tone exists at 700,000 Hz in the plotted baseband signal FFT (calculated as signal generator frequency - RF tune frequency - IF tune frequency = 2400.8 MHz - 2400 MHz - 0.1 MHz = 700,000Hz).
+\begin{lstlisting}
+SAMP_RATE_HZ=2500000
+python ./scripts/plotAndFftAndTime.py odata/rx_app_shortened.out complex 65536 $SAMP_RATE_HZ 16352 &
+\end{lstlisting}
+        \begin{figure}[H]
+        \begin{minipage}{.5\textwidth}
+                \includegraphics[width=7cm,height=5.5cm,keepaspectratio]{rx_app_sig_gen_time_domain}
                 \label{fig:rx_app_sig_gen_time_domain}
-        \end{figure}
-        \begin{figure}[h]
-                \centering
-                \includegraphics[scale=.5]{rx_app_sig_gen_fft}
-                \caption{Output of RX app for Matchstiq-Z1}
+        \end{minipage}%
+        \begin{minipage}{.5\textwidth}
+                \includegraphics[width=7cm,height=5.5cm,keepaspectratio]{rx_app_sig_gen_fft}
+        \end{minipage}
+                \caption{Output of RX app}
                 \label{fig:rx_app_sig_gen_fft}
         \end{figure}
 \pagebreak
-        \begin{figure}[h]
-                \centering
-                \includegraphics[scale=.5]{rx_app_sig_gen_time_domain_zed_zipper}
-                \label{fig:rx_app_sig_gen_time_domain_zed_zipper}
+\subsubsection{Example 2 - Execution (remote system)}
+An example run with an IF tune freq of 0 MHz would be as follows.
+\\\noindent\textbf{FMCOMMS2 card}
+\lstset{language=bash, backgroundcolor=\color{lightgray}, columns=flexible, breaklines=true, prebreak=\textbackslash, basicstyle=\ttfamily, showstringspaces=false,upquote=true, aboveskip=\baselineskip, belowskip=\baselineskip}
+\begin{lstlisting}
+SAMP_RATE_MHZ=2.5
+RF_TUNE_FREQ_MHZ=2400
+IF_TUNE_FREQ_MHZ=0
+./<target>/rx_app $RF_TUNE_FREQ_MHZ $SAMP_RATE_MHZ -1 24 2.5 -1 $IF_TUNE_FREQ_MHZ 1 1 FMCOMMS2 RX1A
+\end{lstlisting}
+\noindent\textbf{FMCOMMS3 card}
+\begin{lstlisting}
+SAMP_RATE_MHZ=2.5
+RF_TUNE_FREQ_MHZ=2400
+IF_TUNE_FREQ_MHZ=0
+./<target>/rx_app $RF_TUNE_FREQ_MHZ $SAMP_RATE_MHZ -1 24 2.5 -1 $IF_TUNE_FREQ_MHZ 1 1 FMCOMMS3 RX1A
+\end{lstlisting}
+\noindent\textbf{Matchstiq-Z1 platform}
+\begin{lstlisting}
+SAMP_RATE_MHZ=2.5
+RF_TUNE_FREQ_MHZ=2400
+IF_TUNE_FREQ_MHZ=0
+./target-xilinx13_3/rx_app $RF_TUNE_FREQ_MHZ $SAMP_RATE_MHZ 400 10 1.25 51 $IF_TUNE_FREQ_MHZ 1 1 matchstiq_z1
+\end{lstlisting}
+\noindent\textbf{Zipper card}
+\begin{lstlisting}
+SAMP_RATE_MHZ=2.5
+RF_TUNE_FREQ_MHZ=2400
+IF_TUNE_FREQ_MHZ=0
+./target-xilinx13_3/rx_app $RF_TUNE_FREQ_MHZ $SAMP_RATE_MHZ -1 6 1.25 51 $IF_TUNE_FREQ_MHZ 1 1 zipper
+\end{lstlisting}
+\subsubsection{Example 2 - Verification (development system)}
+Verify that the signal generator tone exists at 800,000 Hz in the plotted baseband signal FFT (calculated as signal generator frequency - RF tune frequency - IF tune frequency = 2400.8 MHz - 2400 MHz - 0 MHz = 800,000Hz).
+\begin{lstlisting}
+SAMP_RATE_HZ=2500000
+python ./scripts/plotAndFftAndTime.py odata/rx_app_shortened.out complex 65536 $SAMP_RATE_HZ 16352 &
+\end{lstlisting}
+        \begin{figure}[H]
+        \begin{minipage}{.5\textwidth}
+                \includegraphics[width=7cm,height=5.5cm,keepaspectratio]{rx_app_sig_gen_time_domain}
+                \label{fig:rx_app_sig_gen_time_domain}
+        \end{minipage}%
+        \begin{minipage}{.5\textwidth}
+                \includegraphics[width=7cm,height=5.5cm,keepaspectratio]{rx_app_sig_gen_fft_800k}
+        \end{minipage}
+                \caption{Output of RX app}
+                \label{fig:rx_app_sig_gen_fft}
         \end{figure}
-        \begin{figure}[h]
-                \centering
-                \includegraphics[scale=.5]{rx_app_sig_gen_fft_zed_zipper}
-                \caption{Output of RX app for Zed/Zipper}
-                \label{fig:rx_app_sig_gen_fft_zed_zipper}
-        \end{figure}
+\pagebreak
 \subsection{Known Issues}
 \noindent
 \begin{itemize}
@@ -761,14 +820,14 @@ Timestamp at index: 000016360 :  1.1047664 Seconds: 0x1 Fraction: 0x1ad1f906 ('D
 \section{Appendix B: Artifacts}
 \subsection{Zedboard/FMCOMMS2/3}
 	\begin{itemize}
-	\item dc\_offset\_iq\_imbalance\_mixer\_cic\_dec\_timestamper\_zed\_cfg\_1rx\_0tx \\ 
+	\item dc\_offset\_iq\_imbalance\_mixer\_cic\_dec\_timestamper\_zed\_cfg\_1rx\_0tx \\
 \_fmcomms\_2\_3\_lpc\_lvds\_cnt\_1rx\_0tx\_thruasm\_fmcomms\_2\_3\_lpc\_LVDS\_zed.bitz
 	\end{itemize}
 	\begin{itemize}
 	\begin{minipage}[t]{.5\textwidth}
-	\item target-linux-x13\_3-arm/file\_write\_s.so
-	\item target-linux-x13\_3-arm/fmcomms\_2\_3\_rx\_s.so
-	\item target-linux-x13\_3-arm/ad9361\_config\_proxy\_s.so
+	\item target-xilinx13\_3/file\_write\_s.so
+	\item target-xilinx13\_3/fmcomms\_2\_3\_rx\_s.so
+	\item target-xilinx13\_3/ad9361\_config\_proxy\_s.so
 	\end{minipage}
 	\end{itemize}
 \subsection{ML605 FMCOMMS2/3 in FMC HPC}
@@ -778,9 +837,9 @@ Timestamp at index: 000016360 :  1.1047664 Seconds: 0x1 Fraction: 0x1ad1f906 ('D
 	\end{itemize}
 	\begin{itemize}
 	\begin{minipage}[t]{.5\textwidth}
-	\item target-linux-c7-x86\_64/file\_write\_s.so
-	\item target-linux-c7-x86\_64/fmcomms\_2\_3\_rx\_s.so
-	\item target-linux-c7-x86\_64/ad9361\_config\_proxy\_s.so
+	\item target-centos7/file\_write\_s.so
+	\item target-centos7/fmcomms\_2\_3\_rx\_s.so
+	\item target-centos7/ad9361\_config\_proxy\_s.so
 	\end{minipage}
 	\end{itemize}
 \subsection{ML605 FMCOMMS2/3 in FMC LPC}
@@ -790,9 +849,9 @@ Timestamp at index: 000016360 :  1.1047664 Seconds: 0x1 Fraction: 0x1ad1f906 ('D
 	\end{itemize}
 	\begin{itemize}
 	\begin{minipage}[t]{.5\textwidth}
-	\item target-linux-c7-x86\_64/file\_write\_s.so
-	\item target-linux-c7-x86\_64/fmcomms\_2\_3\_rx\_s.so
-	\item target-linux-c7-x86\_64/ad9361\_config\_proxy\_s.so
+	\item target-centos7/file\_write\_s.so
+	\item target-centos7/fmcomms\_2\_3\_rx\_s.so
+	\item target-centos7/ad9361\_config\_proxy\_s.so
 	\end{minipage}
 	\end{itemize}
 \subsection{Matchstiq-Z1}
@@ -802,15 +861,15 @@ dc\_offset\_iq\_imbalance\_mixer\_cic\_dec\_timestamper\_matchstiq\_z1\_matchsti
 	\end{itemize}
 	\begin{itemize}
 	\begin{minipage}[t]{.5\textwidth}
-	\item target-linux-x13\_3-arm/file\_write\_s.so
-	\item target-linux-x13\_3-arm/matchstiq\_z1\_rx\_s.so
-	\item target-linux-x13\_3-arm/lime\_rx\_proxy\_s.so
+	\item target-xilinx13\_3/file\_write\_s.so
+	\item target-xilinx13\_3/matchstiq\_z1\_rx\_s.so
+	\item target-xilinx13\_3/lime\_rx\_proxy\_s.so
 	\end{minipage}
 	\begin{minipage}[t]{.5\textwidth}
-	\item target-linux-x13\_3-arm/si5338\_proxy\_s.so
-	\item target-linux-x13\_3-arm/matchstiq\_z1\_avr\_proxy\_s.so
-	\item target-linux-x13\_3-arm/tmp100\_proxy\_s.so
-	\item target-linux-x13\_3-arm/matchstiq\_z1\_pca9535\_proxy\_s.so
+	\item target-xilinx13\_3/si5338\_proxy\_s.so
+	\item target-xilinx13\_3/matchstiq\_z1\_avr\_proxy\_s.so
+	\item target-xilinx13\_3/tmp100\_proxy\_s.so
+	\item target-xilinx13\_3/matchstiq\_z1\_pca9535\_proxy\_s.so
 	\end{minipage}
 	\end{itemize}
 \subsection{Zedboard/Zipper}
@@ -820,12 +879,12 @@ dc\_offset\_iq\_imbalance\_mixer\_cic\_dec\_timestamper\_zed\_base\_cnt\_1rx\_0t
 	\end{itemize}
 	\begin{itemize}
 	\begin{minipage}[t]{.5\textwidth}
-	\item target-linux-x13\_3-arm/file\_write\_s.so
-	\item target-linux-x13\_3-arm/zipper\_rx\_s.so
+	\item target-xilinx13\_3/file\_write\_s.so
+	\item target-xilinx13\_3/zipper\_rx\_s.so
 	\end{minipage}
 	\begin{minipage}[t]{.5\textwidth}
-	\item target-linux-x13\_3-arm/lime\_rx\_proxy\_s.so
-	\item target-linux-x13\_3-arm/si5351\_proxy\_s.so
+	\item target-xilinx13\_3/lime\_rx\_proxy\_s.so
+	\item target-xilinx13\_3/si5351\_proxy\_s.so
 	\end{minipage}
 	\end{itemize}
 \subsection{Stratix IV/Zipper}
@@ -840,12 +899,12 @@ dc\_offset\_iq\_imbalance\_mixer\_cic\_dec\_timestamper\_alst4\_alst4\_zipper\_h
 	\end{itemize}
 	\begin{itemize}
 	\begin{minipage}[t]{.5\textwidth}
-	\item target-linux-c7-x86\_64/file\_write\_s.so
-	\item target-linux-c7-x86\_64/zipper\_rx\_s.so
+	\item target-centos7/file\_write\_s.so
+	\item target-centos7/zipper\_rx\_s.so
 	\end{minipage}
 	\begin{minipage}[t]{.5\textwidth}
-	\item target-linux-c7-x86\_64/lime\_rx\_proxy\_s.so
-	\item target-linux-c7-x86\_64/si5351\_proxy\_s.so
+	\item target-centos7/lime\_rx\_proxy\_s.so
+	\item target-centos7/si5351\_proxy\_s.so
 	\end{minipage}
 	\end{itemize}
 \subsection{ML605/Zipper}
@@ -856,18 +915,18 @@ dc\_offset\_iq\_imbalance\_mixer\_cic\_dec\_timestamper\_ml605\_ml605\_zipper\_f
  	\end{itemize}
 	\noindent For Zipper plugged into FMC LPC:
 	\begin{itemize}
-	\item 
+	\item
 dc\_offset\_iq\_imbalance\_mixer\_cic\_dec\_timestamper\_ml605\_ml605\_zipper\_fmc\_hpc\_ \\
 rx\_cnt\_1rx\_0tx\_thruasm\_zipper\_hpc\_ml605.bitz
 	\end{itemize}
 	\begin{itemize}
 	\begin{minipage}[t]{.5\textwidth}
-	\item target-linux-c7-x86\_64/file\_write\_s.so
-	\item target-linux-c7-x86\_64/zipper\_rx\_s.so
+	\item target-centos7/file\_write\_s.so
+	\item target-centos7/zipper\_rx\_s.so
 	\end{minipage}
 	\begin{minipage}[t]{.5\textwidth}
-	\item target-linux-c7-x86\_64/lime\_rx\_proxy\_s.so
-	\item target-linux-c7-x86\_64/si5351\_proxy\_s.so
+	\item target-centos7/lime\_rx\_proxy\_s.so
+	\item target-centos7/si5351\_proxy\_s.so
 	\end{minipage}
 	\end{itemize}
 \end{document}

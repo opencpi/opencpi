@@ -25,6 +25,12 @@
 <!--    +______+   +_________+_____________+_________________+               -->
 <HdlContainer Platform="zed,zed_ise">
 
+  <!-- Note: (AV-4465) - A bug exists which requires that subdevice masters (e.g. lime_dac)
+       be instanced after subdevice slaves (e.g. lime_tx). Note that the
+       Connection w/ Device="lime_dac" below instances lime_dac (only because
+       lime_dac had not already been instanced prior in this container XML or in
+       any platform config used by this container XML) -->
+
   <!-- I2C bus -->
   <Device Name="si5351" Card="lime_zipper_fmc_lpc"/>
   <!-- lime_rx and lime_tx control the lime_spi device for configuring the lime -->

@@ -63,8 +63,8 @@ RCC_CONTAINERS?=$(shell echo "$(CONTAINERS)" | grep -c rcc)
 DEBUG=-d -v
 DEBUG+=-l 8
 
-.SILENT: all tests test verify testgen testgen_wrapper testrun testrun_wrapper testverify testverify_wrapper clean generate.sh verify.sh launchlisteners checklisteners killall runtest runtests run verifytest generate build prepare
-.PHONY: all tests test verify testgen testgen_wrapper testrun testrun_wrapper testverify testverify_wrapper clean launchlisteners checklisteners killall runtest runtests run verifytest generate build prepare
+.SILENT: all tests test verify testgen testgen_wrapper testrun testrun_wrapper testverify testverify_wrapper clean generate.sh verify.sh launchlisteners checklisteners killall runtest runtests run verifytest generate build prepare testrun_wrapper testverify_wrapper testgen_wrapper
+.PHONY: all tests test verify testgen testgen_wrapper testrun testrun_wrapper testverify testverify_wrapper clean launchlisteners checklisteners killall runtest runtests run verifytest generate build prepare testrun_wrapper testverify_wrapper testgen_wrapper
 
 # Map to "standard" targets:
 all: build
@@ -81,7 +81,8 @@ prepare: testgen_wrapper
 
 testgen_wrapper:
 	$(foreach tst, $(TESTS), echo -n "Generating $(tst): " && \
-	  $(MAKE) -f ../Makefile -sC $(tst) testgen && \
+	  cat $(tst)/description && \
+	  $(MAKE) -f ../Makefile -sC $(tst) --no-print-directory testgen && \
 	  ) true
 
 testrun_wrapper:
@@ -89,13 +90,15 @@ ifneq (,$(IP))
 	@echo "wrapper not written to handle remote!"
 	@false
 endif
-	$(foreach tst, $(TESTS), echo "Running $(tst): " && \
-	  $(MAKE) -f ../Makefile -sC $(tst) testrun OCPI_HDL_SIMULATORS= && \
+	$(foreach tst, $(TESTS), echo -n "Running $(tst): " && \
+	  cat $(tst)/description && \
+	  $(MAKE) -f ../Makefile -sC $(tst) --no-print-directory testrun OCPI_HDL_SIMULATORS= && \
 	  ) true
 
 testverify_wrapper:
-	$(foreach tst, $(TESTS), echo "Verifying $(tst): " && \
-	  $(MAKE) -f ../Makefile -sC $(tst) testverify && \
+	$(foreach tst, $(TESTS), echo -n "Verifying $(tst): " && \
+	  cat $(tst)/description && \
+	  $(MAKE) -f ../Makefile -sC $(tst) --no-print-directory testverify && \
 	  ) true
 
 TESTS?=$(sort $(wildcard test_[0-9]*))
@@ -163,7 +166,6 @@ verify.sh:
 # The generate / run / verify are split into three because they might be platform-dependent:
 ifeq (,$(SKIP_TEST))
 testgen: generate.sh verify.sh
-	cat description
 	rm -rf odata
 	mkdir odata
 	./generate.sh > generate.log
@@ -182,7 +184,7 @@ endif
 # If called by "ocpidev" then python is running one directory above so OK.
 testverify:
 	rm -f verify.log
-	while [ -n "`lsof -Fc +d . | grep cpython`" ]; do echo "(Waiting for listeners to exit)" >> verify.log ; sleep 1; done
+	while [ -n "`lsof -Fc +d . -x | grep cpython`" ]; do echo "(Waiting for listeners to exit)" >> verify.log ; sleep 1; done
 	./verify.sh >> verify.log 2>&1
 
 else

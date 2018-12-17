@@ -1,23 +1,19 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Utilization Report for Worker "capture"
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\begin{scriptsize}
-	\begin{table}[H]
-	\captionsetup{justification=raggedright,singlelinecheck=false}
-	\caption{Worker Build Configuration ``0''}
-	\begin{tabular}{|c|c|c|c|c|c|c|c|}
-		\hline
-		\rowcolor{blue}
-		OpenCPI Target & Tool    & Version & Device          & Registers & LUTs & Fmax (MHz) & Memory/Special Functions                        \\
-		\hline
-		stratix4       & Quartus & 15.1.0  & N/A             & 848       & 911  & N/A        & N/A                                             \\
-		\hline
-		virtex6        & ISE     & 14.7    & 6vcx75tff484-2  & 552       & 1198 & 250.785    & N/A                                             \\
-		\hline
-		zynq           & Vivado  & 2017.1  & xc7z020clg400-3 & 533       & 959  & 208.725    & \begin{tabular}{@{}c@{}}RAMB36E1s=3\end{tabular}\\
-		\hline
-		zynq\_ise      & ISE     & 14.7    & 7z010clg400-3   & 552       & 1163 & 337.644    & N/A                                             \\
-		\hline
-	\end{tabular}
-	\end{table}
-\end{scriptsize}
+% Generated on Fri Oct  5 08:45:50 2018
+
+% It is best to wrap this table in \begin{landscape} and \end{landscape} in its including doc
+\begin{tiny}
+    \begin{longtable}[l]{* {9}{|c}|}
+    \captionsetup{justification=raggedright,singlelinecheck=false}
+    \caption{Resource Utilization Table for worker: capture}\\
+        \hline
+        \rowcolor{blue}
+            Configuration & OCPI Target & Tool    & Version & Device          & Registers (Typ) & LUTs (Typ) & Fmax (MHz) (Typ) & Memory/Special Functions \\
+            \hline
+            0             & zynq        & Vivado  & 2017.1  & xc7z020clg400-3 & 533             & 965        & N/A              & \begin{tabular}{@{}l@{}}RAMB18E1: 2 \\ RAMB36E1: 3\end{tabular} \\
+            \hline
+            0             & virtex6     & ISE     & 14.7    & 6vcx75tff484-2  & 552             & 1198       & 250.785          & \begin{tabular}{@{}l@{}}RAMB36E1: 5\end{tabular} \\
+            \hline
+            0             & stratix4    & Quartus & 17.1.0  & N/A             & 848             & 911        & N/A              & \begin{tabular}{@{}l@{}}Block Memory Bits: 164374\end{tabular} \\
+            \hline
+        \end{longtable}
+\end{tiny}

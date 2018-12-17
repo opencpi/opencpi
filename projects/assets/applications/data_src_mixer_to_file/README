@@ -1,0 +1,3 @@
+rm -rf odata/*
+OCPI_LIBRARY_PATH=$PWD/../../hdl/assemblies/data_src_mixer/:../../../core/components/file_write.rcc/: ocpirun -d -v -t 1 data_src_mixer_to_file.xml
+../../scripts/plotAndFft.py odata/data_src_mixer_to_file.bin complex 1024 1

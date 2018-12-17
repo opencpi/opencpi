@@ -1,7 +1,9 @@
-<!-- 
+<!--
  Matchstiq-Z1 All Platform Configuration Definition
 -->
 <HdlConfig Language="vhdl">
+  <!-- Note: (AV-4465) - A limitation of OpenCPI requires that subdevice masters (e.g. lime_dac)
+       be placed after subdevice slaves (e.g. lime_tx). -->
   <!-- I2C bus -->
   <device name="si5338"/>
   <device name="tmp100"/>
@@ -14,4 +16,7 @@
   <device name="lime_tx"/>
   <!-- GPS -->
   <device name="gps_uart"/>
+  <!-- 1 RX channel(s), 1 TX channel(s) data interface(s) -->
+  <device name="lime_dac"/> <!-- connection must be defined in a container -->
+  <device name="lime_adc"/> <!-- connection must be defined in a container -->
 </HdlConfig>

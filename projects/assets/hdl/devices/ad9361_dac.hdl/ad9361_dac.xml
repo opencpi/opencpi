@@ -4,8 +4,24 @@
   <Property name='fifo_depth' type='ulong' parameter='1' default='64' description='Depth in number of samples of the control-to-DAC clock domain crossing FIFO.'/> <!-- default depth of 64 has been tested and known to be valid -->
   <Property Name="IDATA_WIDTH_p" Type="ushort" Default="32" Parameter="true"/>
 
+  <!-- min_num_cp_clks_per_txen_event default value calculation:
+       min AD9361 LVDS sample rate (pre-FIR) = 50e6/24 ~= 2.083333 MHz
+       max AD9361 TX Fir interpolation factor = 4
+       LVDS num clocks / sample = 2 (1R1T) or 4 (2R2T)
+       LVDS min num clocks / sample = 2
+       min LVDS sample rate = (min LVDS sample rate / max interpolation factor) ~= 520.833 kHz
+       min FBCLK rate = min LVDS sample rate * (LVDS min num clocks/sample) ~= 1.041667 MHz
+       fastest known control plane clock = 125 MHz (ml605)
+       min_num_cp_clks_per_txen_event = ceil(1.5 * CP clk / (min FBCLK rate))
+                                      = ceil(1.5*125e6/(1.041666e6))
+                                      = ceil(180) = 180
+  -->
+  <Property name='min_num_cp_clks_per_txen_event' type='ushort' initial='true' readable='true' default='180' description='After every ZLM received on the event_in port, backpressure will be held on that port for one less than the number of control plane clock cycles specified by this property. This is done in order to ensure tx events are properly synchronized to the AD9361 FB_CLK without losing any events. Minimum required value is ceil(1.5 * control plane clock rate / AD9361 FB_CLK rate [use lowest expected FB_CLK rate for your scenario]).'/>
   <!-- Ports -->
   <StreamInterface Name="in" DataWidth="IDATA_WIDTH_p" Optional="1"/>
+  <StreamInterface Name="event_in" Optional="1" ZeroLengthMessages="true"/>
 
   <devsignal name='dev_dac' signals='dac-12-signals.xml' master='true'/>
+
+  <devsignal name='dev_tx_event' signals='ad9361-tx-event-signals.xml' master='true'/>
 </HdlDevice>

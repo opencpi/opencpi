@@ -61,6 +61,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 %----------------------------------------------------------------------------------------
 % Table packages
 %----------------------------------------------------------------------------------------
+\usepackage{longtable} % for long possibly multi-page tables
 \usepackage{tabularx} % c=center,l=left,r=right,X=fill
 \usepackage{float}
 \floatstyle{plaintop}
@@ -73,6 +74,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \usepackage{tikz}
 \usetikzlibrary{shapes,arrows,fit,positioning}
 \usetikzlibrary{automata} % used for the fsm
+\usepackage{amsmath}
 %----------------------------------------------------------------------------------------
 % Colors Used
 %----------------------------------------------------------------------------------------
@@ -112,7 +114,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Version           & v\docVersion \\
 	\hline
-	Release Date      & February 2018 \\
+	Release Date      & September 2018 \\
 	\hline
 	Component Library & ocpi.assets.dsp\_comps                              \\
 	\hline
@@ -170,7 +172,18 @@ The RCC worker leverages liquid-dsp v1.2 and its \textit{nco} class to generate 
 		nco\_output\_freq = sample\_freq*\frac{phs\_inc}{2^{phs\_acc\_width}}
 	\end{equation}
 
-	In this component, \verb+phs_inc+ is runtime configurable and has a data type of 16 bit signed short. \verb+phs_acc_width+ is fixed at 16. The input clock frequency is the sample rate of the samples. The amplitude of the NCO's sine wave is also runtime configurable via the \verb+mag+ property.
+	In this component, \verb+phs_inc+ is runtime configurable and has a data type of 16 bit signed short. \verb+phs_acc_width+ is fixed at 16. The input clock frequency is the sample rate of the samples. The amplitude of the NCO's sine wave is also runtime configurable via the \verb+mag+ property. Note that the \verb+mag+ property value should only ever be set to a value within the following range in order for the worker to operate properly.
+
+	\begin{equation} \label{eq:mag_limits_freq}
+		-2^{(NCO\_DATA\_WIDTH\_p-1)} <= mag <= 2^{(NCO\_DATA\_WIDTH\_p-1)}-1
+	\end{equation}
+
+	A positive and negative \verb+phs_inc+ will mix up and down, respectively. The following equation can be used as an aid for setting the \verb+phs_inc+ to have the desired mixing affect.\medskip
+
+	\begin{equation} \label{eq:positive_phs_inc_mixes_up}
+		x_{out}[n] = x_{in}[n] * \dfrac{mag}{2^{NCO\_DATA\_WIDTH\_p-1}} * e^{\big(j2\pi\big(sample\_freq * \dfrac{phs\_inc \; * \; n}{2^{phs\_acc\_width}}\big) + phs\_init\big)} \;\; \forall \;\; n, \; n \ge 0
+	\end{equation}
+
 \end{flushleft}
 
 \section*{Block Diagrams}
@@ -242,8 +255,7 @@ The RCC worker leverages liquid-dsp v1.2 and its \textit{nco} class to generate 
 			\hline
 			\verb+enable+      & Bool   & -              & -               & Readable, Writable & Standard    & true    & Enable(true) or bypass(false) mixer                                           \\
 			\hline
-			\verb+phs_inc+     & Short  & -              & -               & Readable, Writable & *           & -8192   & Phase increment of NCO \scriptsize\begin{verbatim} * -2^(NCO_DATA_WIDTH_p-1)
-			to +2^(NCO_DATA_WIDTH_p-1)-1\end{verbatim}\\
+			\verb+phs_inc+     & Short  & -              & -               & Readable, Writable & *           & -8192   & Phase increment of NCO \\
 			\hline
 
 		\end{tabular}
@@ -271,8 +283,8 @@ The RCC worker leverages liquid-dsp v1.2 and its \textit{nco} class to generate 
 			\hline
 			Property & \verb+phs_init+    & UShort & -              & -               & Readable, Writable & 0           & 0       & Initial phase of NCO                                                          \\
 			\hline
-			Property & \verb+mag+         & UShort & -              & -               & Readable, Writable & *           & 1024    & Magnitude of NCO output \scriptsize\begin{verbatim} * +2^(NCO_DATA_WIDTH_p-1)-1
-			to -2^(NCO_DATA_WIDTH_p-1)\end{verbatim}\\
+			Property & \verb+mag+         & UShort & -              & -               & Readable, Writable & *           & 1024    & Magnitude of NCO output, which must be in the range \scriptsize\begin{verbatim} [-2^(NCO_DATA_WIDTH_p-1)
+   2^(NCO_DATA_WIDTH_p-1)-1]\end{verbatim} in order for the worker to operate properly. \\
 			\hline
 			Property & \verb+messageSize+ & UShort & -              & -               & Readable, Writable & 8192        & 8192    & Number of bytes in output message                                             \\
 			\hline
@@ -330,8 +342,13 @@ The RCC worker leverages liquid-dsp v1.2 and its \textit{nco} class to generate 
 	\end{tabular}
 \end{flushleft}
 
+\begin{landscape}
+\section*{Worker Configuration Parameters}
+\subsubsection*{\comp.hdl}
+\input{../../\ecomp.hdl/configurations.inc}
 \section*{Performance and Resource Utilization}
 \input{../../\ecomp.hdl/utilization.inc}
+\end{landscape}
 \section*{Test and Verification}
 Test cases are derived from the number of properties, and their respective values, as listed in the complex\_mixer-test.xml. Specifically, the \comp.rcc and \comp.hdl implementations tested, as follows:
 \begin{itemize}

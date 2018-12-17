@@ -28,9 +28,40 @@
     <property name='config_is_two_t'        type='bool' readable='1' writable='1' description="Used to tell the ad9361_dac_sub worker what data paths are enabled. Note that, just because a qdac worker is present in the bitstream, that doesn't mean it is enabled."/>
     <property name='force_two_r_two_t_timing' type='bool' readable='1' writable='1' description="Used to force the ad9361_dac_sub worker to use the 2R2T timing diagram regardless of what TX channels are enabled. This property is expected to correspond to the D2 bit of the Parallel Port Configuration 1 register at SPI address 0x010."/>
 
+
+    <!-- These properties exists in order to allow this worker to drive the
+         AD9361 pin control-related dev signals to their proper value, which is
+         dependent upon these registers which these properties are related to.
+         Adding these properties was easier than autonomously determining
+         register contents inside the worker, which would have necessitated and
+        HDL-issued SPI read and bitmasking. -->
+    <property name='Half_Duplex_Mode'            type='bool' writable='1' default='false'/>
+    <property name='ENSM_Pin_Control'            type='bool' writable='1' default='true'
+                                                 description='Intended to match AD9361 register 0x014 bit D4.'/>
+    <property name='Level_Mode'                  type='bool' writable='1' default='false'
+                                                 description='Intended to match AD9361 register 0x014 bit D3.'/>
+    <property name='FDD_External_Control_Enable' type='bool' writable='1' default='false'
+                                                 description='Intended to match AD9361 register 0x014 bit D7.'/>
+
+    <!-- These properties exists in order to allow for use of FDD independent
+         mode, which requires forcing this pin values prior to setting the ENSM
+         into the FDD independent state (vs. having them driven
+         by e.g. qdac event port(s), which is the default behavior once in the
+         FDD independent state) -->
+    <property name='ENABLE_force_set' type='bool' writable='1' default='false'
+                                      description='Forces set of AD9361 ENABLE pin'/>
+    <property name='TXNRX_force_set' type='bool' writable='1' default='false'
+                                     description='Forces set of AD9361 TXNRX pin'/>
+
     <!-- Here are the raw properties that are in registers -->
     <xi:include href='ad9361-properties'/>
   </ComponentSpec>
+
+  <!-- Parameter Properties -->
+  <property name='pin_control_p' type='bool'
+                                 parameter='true'
+                                 description='
+      Whether RX/TX powerdown via pin control is possible.'/>
 
   <!-- Raw Property Ports -->
   <rawprop name='rawprops' master='true'/>
@@ -41,6 +72,9 @@
   <devsignal name='dev_cfg_data' count='2' optional='true' signals='ad9361-cfg-data-signals.xml'/>
   <devsignal name='dev_cfg_data_rx'        optional='true' signals='ad9361-cfg-data-rx-signals.xml'/>
   <devsignal name='dev_cfg_data_tx'        optional='true' signals='ad9361-cfg-data-tx-signals.xml'/>
+  <devsignal name='dev_rxen_data_sub'   signals='rxen-in-signals.xml' master='true'/>
+  <devsignal name='dev_txen_data_sub'   signals='txen-in-signals.xml' master='true'/>
+  <devsignal name='dev_data_clk'        signals='ad9361-data-clk-signals.xml'      master='true'/>
 
   <!-- Sub-Device Port Connections (Supports) -->
   <supports worker='ad9361_adc_sub'>
@@ -52,4 +86,12 @@
     <connect port="dev_cfg_data"    to="dev_cfg_data" index='1'/>
     <connect port="dev_cfg_data_tx" to="dev_cfg_data_tx"/>
   </supports>
+
+  <!-- Signals -->
+  <signal name="ENABLE" direction="out"
+                        description="Control Input. This pin moves the devices
+                                     through various operational states"/>
+  <signal name="TXNRX" direction="out"
+                       description="Enable State Machine Control Signal."/>
+
 </HdlDevice>

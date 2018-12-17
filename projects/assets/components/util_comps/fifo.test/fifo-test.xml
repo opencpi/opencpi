@@ -1,4 +1,4 @@
-<tests useHDLFileIo='true' Timeout='20'>
+<tests useHDLFileIo='true' Timeout='40'>
   <case>
     <input port='in' script='generate.py 1 1' messagesize='8192'/>
   </case>

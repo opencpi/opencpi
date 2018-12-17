@@ -88,7 +88,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 % Update the docTitle and docVersion per document
 %----------------------------------------------------------------------------------------
 \def\docTitle{Component Data Sheet}
-\def\docVersion{1.3}
+\def\docVersion{1.4}
 %----------------------------------------------------------------------------------------
 \date{Version \docVersion} % Force date to be blank and override date with version
 \title{\docTitle}
@@ -119,7 +119,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\hline
 	Workers           & matchstiq\_z1\_tx.rcc                      \\
 	\hline
-	Tested Platforms  & Matchstiq-Z1                           \\
+	Tested Platforms  & xilinx13\_3 \\
 	\hline
 	Slave Worker      & Multiple                               \\
 	\hline
@@ -169,7 +169,7 @@ The sampling clock domain originates from  the CLK0 output of a SI5338 clock gen
 
 \section*{Source Dependencies}
 \begin{itemize}
-	\item ocpi.assets/hdl/platforms/matchstiq\_z1/devices/matchstiq\_z1\_tx.rcc/matchstiq\_z1\_tx.cc
+	\item assets/hdl/platforms/matchstiq\_z1/devices/matchstiq\_z1\_tx.rcc/matchstiq\_z1\_tx.cc
 \end{itemize}
 
 \begin{landscape}
@@ -307,34 +307,8 @@ The sampling clock domain originates from  the CLK0 output of a SI5338 clock gen
 \end{scriptsize}
 
 \section*{Test and Verification}
-\begin{flushleft}
-	The testbench for this worker is meant to exercise the properties of the worker dynamically while the application is running.  Random data is sent out to emulate noise on the spectrum analyzer.  The following steps are taken in the testbench:
-	\begin{itemize}
-		\item[1)] Change the rf\_gain\_dB settings
-		\item[2)] Change the bb\_gain\_dB settings
-		\item[3)] Toggle the low-pass filter settings
-	\end{itemize}
-	These steps are repeated at different center frequencies and directions are provided in the testbench for this.  The results are inspected visually on a spectrum analyzer.\par\medskip
-	WARNING: A 10 dB attenuator is recommended between the radio and spectrum analyzer to prevent any equipment from being damaged.\par\medskip
-	  The results should be as follows:
-	\vspace{10 mm}
-	\begin{figure}[ht]
-		\centerline{\includegraphics[scale=0.7]{NoFilter}}
-		\caption{Expected Results: Beginning}
-		\label{fig:tb1}
-	\end{figure}
-	\vspace{10 mm}
-	\newpage
-	\begin{figure}[ht]
-		\centerline{\includegraphics[scale=0.7]{YesFilter}}
-		\caption{Expected Results: End}
-		\label{fig:tb2}
-	\end{figure}
 
-	\vspace{15 mm}
-
-	\noindent The signal should look like a amplitude adjusted version of the first picture throughout except when testing the filtering.  In the filtering stage of testing the signal will slowly walk from the second picture back to the first picture.
-\end{flushleft}
+\textit{\textbf{Note: A component unit test does not exist.  Reference the applications/ for a hardware-in-the-loop test application: lime\_tx\_proxy\_test}}
 
 \section*{References}
 \begin{itemize}

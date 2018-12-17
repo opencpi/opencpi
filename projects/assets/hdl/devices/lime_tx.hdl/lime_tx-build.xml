@@ -1,11 +1,11 @@
 <build>
   <configuration id='0'>
-    <parameter name='pin_control_p' value='false'/>
+    <parameter name='txen_pin_control_p' value='false'/>
     <parameter name='ocpi_debug' value='false'/>
     <parameter name='ocpi_endian' value='little'/>
   </configuration>
   <configuration id='1'>
-    <parameter name='pin_control_p' value='true'/>
+    <parameter name='txen_pin_control_p' value='true'/>
     <parameter name='ocpi_debug' value='false'/>
     <parameter name='ocpi_endian' value='little'/>
   </configuration>

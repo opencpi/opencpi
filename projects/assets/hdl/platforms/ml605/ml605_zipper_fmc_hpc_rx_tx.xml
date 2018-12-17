@@ -1,8 +1,10 @@
 <hdlconfig>
+  <!-- Note: (AV-4465) - A limitation of OpenCPI requires that subdevice masters (e.g. lime_dac)
+       be placed after subdevice slaves (e.g. lime_tx). -->
   <device name="lime_adc" card="lime_zipper_fmc_hpc" slot="fmc_hpc"/>
-  <device name="lime_dac" card="lime_zipper_fmc_hpc" slot="fmc_hpc"/>
   <device name="si5351"   card="lime_zipper_fmc_hpc" slot="fmc_hpc"/>
   <device name="lime_rx"  card="lime_zipper_fmc_hpc" slot="fmc_hpc"/>
   <device name="lime_tx"  card="lime_zipper_fmc_hpc" slot="fmc_hpc"/>
+  <device name="lime_dac" card="lime_zipper_fmc_hpc" slot="fmc_hpc"/>
 </hdlconfig>
 

@@ -62,6 +62,7 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 %----------------------------------------------------------------------------------------
 % Table packages
 %----------------------------------------------------------------------------------------
+\usepackage{longtable} % for long possibly multi-page tables
 \usepackage{tabularx} % c=center,l=left,r=right,X=fill
 \usepackage{float}
 \floatstyle{plaintop}
@@ -198,9 +199,9 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 \section*{Source Dependencies}
 \subsection*{\comp.hdl}
 \begin{itemize}
-	\item projects/assets/components/dsp\_comps/cic\_int.hdl/cic\_int.vhd
-	\item projects/assets/hdl/primitives/dsp\_prims/dsp\_prims\_pkg.vhd
-	      \subitem projects/assets/hdl/primitives/dsp\_prims/cic/src/cic\_int\_gen.vhd
+	\item assets/components/dsp\_comps/cic\_int.hdl/cic\_int.vhd
+	\item assets/hdl/primitives/dsp\_prims/dsp\_prims\_pkg.vhd
+	      \subitem assets/hdl/primitives/dsp\_prims/cic/src/cic\_int\_gen.vhd
 \end{itemize}
 
 \begin{landscape}
@@ -241,24 +242,27 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 			\hline
 			SpecProperty & \verb+DOUT_WIDTH+  & -    & -              & -               & Parameter           & 16          & 16      & Output Data Width                                \\
 			\hline
-			Property     & \verb+CHIPSCOPE_p+ & Bool & -              & -               & Readable, Parameter & Standard    & false   & Include ChipScope circuit                        \\
+			Property     & \verb+CHIPSCOPE_p+ & Bool & -              & -               & Readable, Parameter & Standard    & false   & Include ISE ChipScope circuit                        \\
+			\hline
+			Property     & \verb+VIVADO_ILA_p+ & Bool & -              & -               & Readable, Parameter & Standard    & false   & Include Vivado Integrated Logic Analyzer circuit                        \\
 			\hline
 		\end{tabular}
 	\end{scriptsize}
 
 	\section*{Component Ports}
 	\begin{scriptsize}
-		\begin{tabular}{|M{2cm}|M{1.5cm}|M{4cm}|c|c|M{9cm}|}
+		\begin{tabular}{|p{2cm}|p{1.5cm}|p{4cm}|p{1.5cm}|p{1.5cm}|p{10.75cm}|}
 			\hline
 			\rowcolor{blue}
 			Name & Producer & Protocol           & Optional & Advanced & Usage                  \\
 			\hline
-			in   & false    & iqstream\_protocol & false    & -        & Signed complex samples \\
+			in   & False    & iqstream\_protocol & False     & -        & Complex signed samples (Q0.15 I, Q0.15 Q). \\
 			\hline
-			out  & true     & iqstream\_protocol & false    & -        & Signed complex samples \\
+			out  & False    & iqstream\_protocol & False     & -        & Complex signed samples (Q0.15 I, Q0.15 Q). \\
 			\hline
 		\end{tabular}
 	\end{scriptsize}
+
 	\section*{Worker Interfaces}
 	\subsection*{\comp.hdl}
 	\begin{scriptsize}
@@ -294,9 +298,14 @@ with this program. If not, see <http://www.gnu.org/licenses/>.
 	\end{tabular}
 \end{flushleft}
 
+\begin{landscape}
+\section*{Worker Configuration Parameters}
+\subsubsection*{\comp.hdl}
+\input{../../\ecomp.hdl/configurations.inc}
 \section*{Performance and Resource Utilization}
 \subsection*{\comp.hdl}
 \input{../../\ecomp.hdl/utilization.inc}
+\end{landscape}
 \newpage
 \section*{Test and Verification}
 Two test cases are implemented to validate the CIC Interpolator component:

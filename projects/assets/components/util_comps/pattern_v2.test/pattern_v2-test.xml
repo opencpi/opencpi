@@ -1,0 +1,8 @@
+<!-- This is the test xml for testing component "pattern_v2" -->
+<Tests UseHDLFileIo='true'>
+     <output port='out' script='verify.py'/>
+     <property name='dataRepeat' values='false, true'/>
+     <property name='messagesToSend' value='5'/>
+     <property name='messages' generate='gen_messages.py'/>
+     <property name='data' generate='gen_data.py'/>
+</Tests>

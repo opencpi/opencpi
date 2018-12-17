@@ -1,0 +1,31 @@
+<!-- The data_src_mixer_to_file application xml file -->
+<Application>
+
+  <Instance Component="ocpi.assets.misc_comps.data_src" Selection="DATA_BIT_WIDTH_p == 12" Connect="complex_mixer">
+    <Property Name="mode" Value="fixed"/>
+
+    <!-- largest positive signed 12-bit fixed value (creates tone at DC for the
+         mixer to mix up or down) -->
+    <Property Name="fixed_value" Value="0,1,1,1,1,1,1,1,1,1,1,1"/>
+
+  </Instance>
+
+  <Instance Component="ocpi.assets.dsp_comps.complex_mixer" Connect="file_write">
+    <Property Name="NCO_DATA_WIDTH_p" Value="12"/>
+
+    <!-- must be in the range [2^(NCO_DATA_WIDTH_p-1) 2^(NCO_DATA_WIDTH_p-1)] -->
+    <Property Name="mag" Value="2047"/>
+
+    <Property Name="phs_init" Value="0"/>
+
+    <!-- must be in the range [-32768 32767] -->
+    <Property Name="phs_inc" Value="512"/> <!-- f_norm frequency = f/f_s = phs_inc/65536 -->
+
+  </Instance>
+
+  <Instance Component="ocpi.core.file_write">
+    <Property Name="fileName" Value="odata/data_src_mixer_to_file.bin"/>
+    <Property Name="messagesInFile" Value="false"/>
+  </Instance>
+
+</Application>
