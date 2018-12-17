@@ -161,7 +161,7 @@ namespace OCPI {
 
     void Operation::generate(const char *name, Protocol &p) {
       m_name = name;
-      m_nArgs = random() % 10;
+      m_nArgs = (unsigned long)random() % 10u;
       Member *m = m_args = m_nArgs ? new Member[m_nArgs] : NULL;
       for (unsigned n = 0; n < m_nArgs; n++, m++) {
 	char *aname;
@@ -228,19 +228,20 @@ namespace OCPI {
       m_nOperations = 0;
       m_operations = NULL;
       m_op = NULL;
-      m_minBufferSize = 0;
       // Summary Attributes
+      // Try to keep the summary attributes in the same order everywhere (see class declaration)
+      m_defaultBufferSize = SIZE_MAX;
+      m_minBufferSize = 0;
       m_dataValueWidth = 0;
       m_dataValueGranularity = SIZE_MAX;
       m_diverseDataSizes = false;
+      m_minMessageValues = 0;
       m_maxMessageValues = SIZE_MAX; // default is no maximum.
       m_variableMessageLength = false;
       m_zeroLengthMessages = false;
-      m_minMessageValues = 0;
+      m_isTwoWay = false;
       m_isUnbounded = false;
       m_nOpcodes = 0;
-      m_isTwoWay = false;
-      m_defaultBufferSize = SIZE_MAX;
     }
     // An overriding initialization (after the initForProtocol() call above) when it is known that there is in fact
     // no protocol at all (put possibly a protocol summary)
@@ -282,18 +283,19 @@ namespace OCPI {
 	m_qualifiedName = p->m_qualifiedName;
 	m_file = p->m_file;
 	m_name = p->m_name;
+	// Try to keep the summary attributes in the same order everywhere (see class declaration)
+	m_defaultBufferSize = p->m_defaultBufferSize;
+	m_minBufferSize = p->m_minBufferSize;
 	m_dataValueWidth = p->m_dataValueWidth;
 	m_dataValueGranularity = p->m_dataValueGranularity;
 	m_diverseDataSizes = p->m_diverseDataSizes;
+	m_minMessageValues = p->m_minMessageValues;
 	m_maxMessageValues = p->m_maxMessageValues;
 	m_variableMessageLength = p->m_variableMessageLength;
 	m_zeroLengthMessages = p->m_zeroLengthMessages;
-	m_minMessageValues = p->m_minMessageValues;
+	m_isTwoWay = p->m_isTwoWay;
 	m_isUnbounded = p->m_isUnbounded;
 	m_nOpcodes = p->m_nOpcodes;
-	m_isTwoWay = p->m_isTwoWay;
-	m_defaultBufferSize = p->m_defaultBufferSize;
-	m_minBufferSize = p->m_minBufferSize;
       } else
 	initForProtocol();
     }
@@ -315,7 +317,6 @@ namespace OCPI {
     {
       
       m_nOperations = p->m_nOperations;
-      m_nOpcodes = p->m_nOpcodes;
       m_operations = m_nOperations ? new Operation[m_nOperations] : NULL;
       for (unsigned int n = 0; n < m_nOperations; n++)
 	m_operations[n] = p->m_operations[n];
@@ -323,6 +324,7 @@ namespace OCPI {
       m_qualifiedName = p->m_qualifiedName;
       m_file = p->m_file;
       m_name = p->m_name;
+      // Try to keep the summary attributes in the same order everywhere (see class declaration)
       m_defaultBufferSize = p->m_defaultBufferSize;
       m_minBufferSize = p->m_minBufferSize;
       m_dataValueWidth = p->m_dataValueWidth;
@@ -334,6 +336,7 @@ namespace OCPI {
       m_zeroLengthMessages = p->m_zeroLengthMessages;
       m_isTwoWay = p->m_isTwoWay;
       m_isUnbounded = p->m_isUnbounded;
+      m_nOpcodes = p->m_nOpcodes;
       return *this;
     }
 
@@ -415,17 +418,19 @@ namespace OCPI {
       // FIXME?  Are there any illegal overrides if previous values are protocol-derived?
       // I.e. are we only allowed to make it more permissive?  For now we'll allow any overrides
       // e.g. data value width going up or not a multiple?  zlm going false?
-      if ((err = OE::getNumber(pSum, "DataValueWidth", &m_dataValueWidth, NULL, 0, false)) ||
+      // Try to keep the summary attributes in the same order everywhere (see class declaration)
+      if ((err = OE::getNumber(pSum, "defaultbuffersize", &m_defaultBufferSize, NULL, 0, false)) ||
+	  (err = OE::getNumber(pSum, "minbuffersize", &m_minBufferSize, NULL, 0, false)) ||
+	  (err = OE::getNumber(pSum, "DataValueWidth", &m_dataValueWidth, NULL, 0, false)) ||
           (err = OE::getNumber(pSum, "DataValueGranularity", &m_dataValueGranularity, NULL, 0, false)) ||
           (err = OE::getBoolean(pSum, "DiverseDataSizes", &m_diverseDataSizes, false, false, NULL)) ||
+          (err = OE::getNumber(pSum, "MinMessageValues", &m_minMessageValues, &minSet, 0, false)) ||
 	  (err = OE::getNumber(pSum, "MaxMessageValues", &m_maxMessageValues, &maxSet, 0, false)) ||
           (err = OE::getBoolean(pSum, "VariableMessageLength", &m_variableMessageLength, false, false, NULL)) ||
           (err = OE::getBoolean(pSum, "ZeroLengthMessages", &m_zeroLengthMessages, false, false, &zlmSet)) ||
-          (err = OE::getNumber(pSum, "MinMessageValues", &m_minMessageValues, &minSet, 0, false)) ||
-	  (err = OE::getBoolean(pSum, "unBounded", &m_isUnbounded, false, false, &unbSet)) ||
-	  (err = OE::getNumber(pSum, "NumberOfOpCodes", &m_nOpcodes, NULL, 0, false)) ||
  	  (err = OE::getBoolean(pSum, "twoway", &m_isTwoWay, false, false, NULL)) ||
-	  (err = OE::getNumber(pSum, "defaultbuffersize", &m_defaultBufferSize, NULL, 0, false)))
+	  (err = OE::getBoolean(pSum, "unBounded", &m_isUnbounded, false, false, &unbSet)) ||
+	  (err = OE::getNumber(pSum, "NumberOfOpCodes", &m_nOpcodes, NULL, 0, false)))
 	return err;
       // Some additional fixups that depend on whether there was an override or not, to make them consistent
       if (zlmSet && !minSet && m_zeroLengthMessages)
@@ -461,7 +466,7 @@ namespace OCPI {
       srandom((unsigned)(tv.tv_sec + tv.tv_usec));
       m_name = name;
       m_dataValueWidth = 0;
-      m_nOperations = random() % 10 + 1;
+      m_nOperations = (unsigned long)random() % 10u + 1u;
       m_nOpcodes = m_nOperations;
       Operation *o = m_operations = new Operation[m_nOperations];
       for (unsigned n = 0; n < m_nOperations; n++, o++) {
@@ -475,7 +480,7 @@ namespace OCPI {
     }
     // Generate a message for a random opcode
     void Protocol::generateOperation(uint8_t &opcode, Value **&v) {
-      opcode = (uint8_t)(random() % m_nOperations);
+      opcode = (uint8_t)((unsigned long)random() % m_nOperations);
       m_operations[opcode].generateArgs(v);
     }
 
@@ -541,29 +546,31 @@ namespace OCPI {
 	formatAdd(out, " name=\"%s\"", m_name.c_str());
       if (!m_qualifiedName.empty())
 	formatAdd(out, " qualifiedName=\"%s\"", m_qualifiedName.c_str());
+      // Try to keep the summary attributes in the same order everywhere (see class declaration)
       if (m_defaultBufferSize != SIZE_MAX)
 	formatAdd(out, " defaultbuffersize=\"%zu\"", m_defaultBufferSize);
-      // We emit all the summary attributes that MIGHT have overridden the protocol
-      // If we kept track of what was overridden we could prune this...
-      formatAdd(out,
-		" dataValueWidth=\"%zu\""
-		" dataValueGranularity=\"%zu\""
-		" diverseDataSizes=\"%u\""
-		" minMessageValues=\"%zu\"",
-		m_dataValueWidth, m_dataValueGranularity, m_diverseDataSizes,
-		m_minMessageValues);
+      if (m_minBufferSize != 0)
+	formatAdd(out, " minbuffersize=\"%zu\"", m_minBufferSize);
+      if (m_dataValueWidth != 0)
+	formatAdd(out, " dataValueWidth=\"%zu\"", m_dataValueWidth);
+      if (m_dataValueGranularity != SIZE_MAX)
+	formatAdd(out, " dataValueGranularity=\"%zu\"", m_dataValueGranularity);
+      if (m_diverseDataSizes)
+	formatAdd(out, " diverseDataSizes=\"1\"");
+      if (m_minMessageValues != 0)
+	formatAdd(out, " minMessageValues=\"%zu\"", m_minMessageValues);
       if (m_maxMessageValues != SIZE_MAX)
 	formatAdd(out, " maxMessageValues=\"%zu\"", m_maxMessageValues);
-      if (m_diverseDataSizes)
-	formatAdd(out, " diversedatasizes=\"true\"");
-      if (m_zeroLengthMessages)
-	formatAdd(out, " zeroLengthMessages=\"true\"");
       if (m_variableMessageLength)
 	formatAdd(out, " variableMessageLength=\"true\"");
+      if (m_zeroLengthMessages)
+	formatAdd(out, " zeroLengthMessages=\"true\"");
       if (m_isTwoWay)
 	formatAdd(out, " twoWay=\"true\"");
       if (m_isUnbounded)
 	formatAdd(out, " unBounded=\"true\"");
+      if (!m_operations || m_nOpcodes != m_nOperations)
+	formatAdd(out, " numberOfOpcodes=\"%zu\"", m_nOpcodes);
       if (m_operations) {
 	formatAdd(out, ">\n");
 	Operation *o = m_operations;

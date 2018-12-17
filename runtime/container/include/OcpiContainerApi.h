@@ -25,6 +25,7 @@
 #include <stdarg.h>
 #include <string>
 #include <initializer_list>
+#include <cassert>
 #include "OcpiPValueApi.h"
 #include "OcpiUtilPropertyApi.h"
 #include "OcpiUtilExceptionApi.h"
@@ -270,6 +271,8 @@ namespace OCPI {
       };
       bool m_number;
       Access(size_t subscript)   : m_index(subscript), m_number(true) {} // get element
+      // Allow (signed) ints for convenience, including 0, which should not end up being NULL for const char*
+      Access(int subscript)      : m_index((assert(subscript >= 0), (size_t)subscript)), m_number(true) {}
       Access(const char *member) : m_member(member), m_number(false) {}; // get member
     };
     typedef const std::initializer_list<Access> AccessList;

@@ -74,7 +74,6 @@ namespace OCPI  {
     class Protocol {
     public:
       size_t m_nOperations; // the actual length of m_operations
-      size_t m_nOpcodes;    // the value from actual operations, or summary, or override
       Operation *m_operations;
       Operation *m_op;                 // used during parsing
       std::string
@@ -99,6 +98,7 @@ namespace OCPI  {
       bool m_zeroLengthMessages;       // are there messages of zero length (min == 0)
       bool m_isTwoWay;                 // are there operations that are two-way?
       bool m_isUnbounded;              // are there messages with no upper bound?
+      size_t m_nOpcodes;               // the value from actual operations, or summary, or override
       Protocol();
       Protocol(const Protocol & p );
       Protocol(Protocol *p); // clone

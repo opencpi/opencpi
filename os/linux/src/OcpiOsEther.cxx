@@ -173,7 +173,7 @@ namespace OCPI {
 	  } else
 	    haveit = false;
 	  init = true;
-	}	  
+	}
 	return haveit;
 #else
 	return false;

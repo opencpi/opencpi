@@ -196,7 +196,7 @@ namespace OCPI {
     }
     // Get a property value from the metadata
     const char *Worker::getValue(const char *sym, ExprValue &val) const {
-      // Our builtin symbols take precendence, but can be overridden with $
+      // Our builtin symbols take precendence, but can be overridden with @
       if (!strcasecmp(sym, "model")) {
 	val.setString(m_model);
 	return NULL;

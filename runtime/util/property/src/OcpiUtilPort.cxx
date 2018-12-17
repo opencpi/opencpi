@@ -506,8 +506,6 @@ namespace OCPI {
 	formatAdd(out, " bidirectional='1'");
       else if (m_isProducer)
 	formatAdd(out, " producer='1'");
-      if (!m_operations || m_nOpcodes != m_nOperations)
-	formatAdd(out, " numberOfOpcodes=\"%zu\"", m_nOpcodes);
       if (m_minBufferCount != 1)
 	formatAdd(out, " minBufferCount=\"%zu\"", m_minBufferCount);
       if (m_defaultBufferCount != SIZE_MAX)
