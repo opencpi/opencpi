@@ -449,6 +449,7 @@ emitImplSignals(FILE *f) {
 
 void WsiPort::
 emitVHDLShellPortMap(FILE *f, std::string &last) {
+  OcpPort::emitVHDLShellPortMap(f, last);
   std::string in, out;
   OU::format(in, typeNameIn.c_str(), "");
   OU::format(out, typeNameOut.c_str(), "");
@@ -532,6 +533,7 @@ adjustConnection(::Port &consPort, const char *masterName, Language lang,
 		 OcpAdapt *prodAdapt, OcpAdapt *consAdapt, size_t &unused) {
   WsiPort &cons = *static_cast<WsiPort *>(&consPort);
   OcpAdapt *oa;
+  
   // Bursting compatibility and adaptation
   if (m_impreciseBurst && !cons.m_impreciseBurst)
     return "consumer needs precise, and producer may produce imprecise";

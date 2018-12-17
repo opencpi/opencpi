@@ -931,12 +931,12 @@ emitVhdlPackageConstants(FILE *f) {
       if (!pr.m_isRaw && (!pr.m_isParameter || pr.m_isReadable)) {
 #if 1
 	std::string nElements;
+	std::string prefix;
 	if ((pr.m_isSequence && pr.m_sequenceLengthExpr.length()) ||
-	    (pr.m_arrayRank && pr.m_arrayDimensionsExprs[0].length())) {
-	  std::string prefix;
+	    (pr.m_arrayRank && pr.m_arrayDimensionsExprs[0].length()))
 	  OU::format(prefix, "work.%s_constants.%s", m_implName, pr.m_name.c_str());
-	  prElemsAdd(pr, prefix, nElements);
-	} else
+	prElemsAdd(pr, prefix, nElements);
+	if (nElements.empty())
 	  nElements = "1";
 #else
 	size_t nElements = 1;
@@ -945,7 +945,7 @@ emitVhdlPackageConstants(FILE *f) {
 	if (pr->m_isSequence)
 	  nElements *= pr->m_sequenceLength; // can't be zero
 #endif
-	fprintf(f, "%s%s%s   %2u => (%2zu, to_unsigned(%s_offset,32), %s_nbytes_1, %s%s, %3zu, %s, %s %s %s %s)",
+	fprintf(f, "%s%s%s   %2u => (%2zu, %s_offset, %s_nbytes_1, %s%s, %3zu, %s, %s %s %s %s)",
 		last ? ", -- " : "", last ? last : "", last ? "\n" : "", n,
 		pr.m_nBits,
 		pr.cname(), // offset
@@ -1093,7 +1093,7 @@ emitDefsHDL(bool wrap) {
 	    "\n"
 	    "-- Package with constant definitions for instantiating this worker\n"
 	    "package %s_constants is\n", m_implName);
-    bool first = true, anyNonParam = false;
+    bool first = true;
     for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++) {
       OU::Property &p = **pi;
       std::string decl, type;
@@ -1106,9 +1106,8 @@ emitDefsHDL(bool wrap) {
 	fprintf(f, "  constant %s_array_dimensions : dimensions_t(0 to %zu);\n",
 		p.m_name.c_str(), p.m_arrayRank-1);
       if (!p.m_isRaw && (!p.m_isParameter || p.m_isReadable)) {
-	fprintf(f, "  constant %s_offset : natural;\n", p.m_name.c_str());
+	fprintf(f, "  constant %s_offset : unsigned(31 downto 0);\n", p.m_name.c_str());
 	fprintf(f, "  constant %s_nbytes_1 : natural;\n", p.m_name.c_str());
-	anyNonParam = true;
       }
       vhdlType(p, decl, type, false);
       if (decl.length() || p.m_isParameter) {
@@ -1137,8 +1136,7 @@ emitDefsHDL(bool wrap) {
 	  fprintf(f, "  constant %s : %s;\n", p.m_name.c_str(), type.c_str());
       }
     }
-    if (anyNonParam)
-      fprintf(f, "  constant ocpi_sizeof_non_raw_properties: natural;\n");
+    fprintf(f, "  constant ocpi_sizeof_non_raw_properties: natural;\n");
     for (unsigned i = 0; i < m_ports.size(); i++)
       m_ports[i]->emitRecordInterfaceConstants(f);
     fprintf(f,

@@ -88,10 +88,15 @@ class WciPort : public OcpPort {
 			const char *defaultOut);
   void emitRecordArray(FILE *f);
   void emitVHDLShellPortMap(FILE *f, std::string &last);
+#if 1
+  void emitPortSignals(FILE *f, const InstancePort &ip, Language lang, const char *indent, bool &any,
+		       std::string &comment, std::string &last, const char *myComment, std::string &exprs);
+#else
   void emitPortSignals(FILE *f, Attachments &atts, Language lang,
 		       const char *indent, bool &any, std::string &comment,
 		       std::string &last, const char *myComment, OcpAdapt *adapt,
-		       std::string *signalIn, std::string &exprs);
+		       std::string *signalIn, std::string &clockSignal, std::string &exprs);
+#endif
   // void emitInterfaceConstants(FILE *f, Language lang);
   const char *finalizeExternal(Worker &aw, Worker &iw, InstancePort &ip,
 			       bool &cantDataResetWhileSuspended);
@@ -150,7 +155,7 @@ class CpPort : public Port {
   inline const char *typeName() const { return "CPMaster"; }
   void emitRecordTypes(FILE *f);
   void emitRecordInterface(FILE *f, const char *implName);
-  void emitConnectionSignal(FILE *f, bool output, Language lang, std::string &signal);
+  void emitConnectionSignal(FILE *f, bool output, Language lang, bool clock, std::string &signal);
 };
 class NocPort : public Port {
   NocPort(const NocPort &other, Worker &w , std::string &name, size_t count,
@@ -163,7 +168,7 @@ class NocPort : public Port {
   inline const char *typeName() const { return "uNoc"; }
   void emitRecordTypes(FILE *f);
   void emitRecordInterface(FILE *f, const char *implName);
-  void emitConnectionSignal(FILE *f, bool output, Language lang, std::string &signal);
+  void emitConnectionSignal(FILE *f, bool output, Language lang, bool clock, std::string &signal);
 };
 class SdpPort : public Port {
   SdpPort(const SdpPort &other, Worker &w , std::string &name, size_t count,
@@ -178,7 +183,7 @@ class SdpPort : public Port {
   void emitRecordInterface(FILE *f, const char *implName);
   void emitRecordInterfaceConstants(FILE *f);
   void emitInterfaceConstants(FILE *f, Language lang);
-  void emitConnectionSignal(FILE *f, bool output, Language lang, std::string &signal);
+  void emitConnectionSignal(FILE *f, bool output, Language lang, bool clock, std::string &signal);
   void emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inRecord,
 			bool inPackage, bool inWorker, const char *defaultIn,
 			const char *defaultOut);
@@ -198,7 +203,7 @@ class MetaDataPort : public Port {
   inline const char *typeName() const { return "Metadata"; }
   void emitRecordTypes(FILE *f);
   void emitRecordInterface(FILE *f, const char *implName);
-  void emitConnectionSignal(FILE *f, bool output, Language lang, std::string &signal);
+  void emitConnectionSignal(FILE *f, bool output, Language lang, bool clock, std::string &signal);
 };
 class TimeServicePort : public Port {
   TimeServicePort(const TimeServicePort &other, Worker &w , std::string &name, size_t count,
@@ -216,11 +221,16 @@ class TimeServicePort : public Port {
   void emitRecordInterface(FILE *f, const char *implName);
   void emitVHDLShellPortMap(FILE *f, std::string &last);
   void emitVHDLSignalWrapperPortMap(FILE *f, std::string &last);
+#if 1
+  void emitPortSignals(FILE *f, const InstancePort &ip, Language lang, const char *indent, bool &any,
+		       std::string &comment, std::string &last, const char *myComment, std::string &exprs);
+#else
   void emitPortSignals(FILE *f, Attachments &atts, Language lang,
 		       const char *indent, bool &any, std::string &comment,
 		       std::string &last, const char *myComment, OcpAdapt *adapt,
-		       std::string *signalIn, std::string &exprs);
-  void emitConnectionSignal(FILE *f, bool output, Language lang, std::string &signal);
+		       std::string *signalIn, std::string &clockSignal, std::string &exprs);
+#endif
+  void emitConnectionSignal(FILE *f, bool output, Language lang, bool clock, std::string &signal);
 };
 class TimeBasePort : public Port {
   TimeBasePort(const TimeBasePort &other, Worker &w , std::string &name, size_t count,
@@ -241,9 +251,9 @@ class TimeBasePort : public Port {
   void emitPortSignals(FILE *f, Attachments &atts, Language lang,
 		       const char *indent, bool &any, std::string &comment,
 		       std::string &last, const char *myComment, OcpAdapt *adapt,
-		       std::string *signalIn, std::string &exprs);
+		       std::string *signalIn, std::string &clockSignal, std::string &exprs);
 #endif
-  void emitConnectionSignal(FILE *f, bool output, Language lang, std::string &signal);
+  void emitConnectionSignal(FILE *f, bool output, Language lang, bool clock, std::string &signal);
 };
 class RawPropPort : public Port {
  public:
@@ -257,7 +267,7 @@ class RawPropPort : public Port {
   bool needsControlClock() const { return true; }
   void emitRecordTypes(FILE *f);
   void emitRecordInterface(FILE *f, const char *implName);
-  void emitConnectionSignal(FILE *f, bool output, Language lang, std::string &signal);
+  void emitConnectionSignal(FILE *f, bool output, Language lang, bool clock, std::string &signal);
   const char *masterMissing() const;
   const char *slaveMissing() const;
 };
@@ -281,13 +291,18 @@ class DevSignalsPort : public Port {
   bool haveWorkerInputs() const { return haveInputs(); }
   bool haveOutputs() const { return m_hasOutputs; }
   bool haveWorkerOutputs() const { return haveOutputs(); }
-  void emitConnectionSignal(FILE *f, bool output, Language lang, std::string &signal);
+  void emitConnectionSignal(FILE *f, bool output, Language lang, bool clock, std::string &signal);
   void emitPortSignalsDir(FILE *f, bool output, const char *indent, bool &any,
 			  std::string &comment, std::string &last, Attachment *other);
+#if 1
+  void emitPortSignals(FILE *f, const InstancePort &ip, Language lang, const char *indent, bool &any,
+		       std::string &comment, std::string &last, const char *myComment, std::string &exprs);
+#else
   void emitPortSignals(FILE *f, Attachments &atts, Language lang,
 		       const char *indent, bool &any, std::string &comment,
 		       std::string &last, const char *myComment, OcpAdapt *adapt,
-		       std::string *signalIn, std::string &exprs);
+		       std::string *signalIn, std::string &clockSignal, std::string &exprs);
+#endif
   void emitExtAssignment(FILE *f, bool int2ext, const std::string &extName,
 			 const std::string &intName, const Attachment &extAt,
 			 const Attachment &intAt, size_t count) const;
@@ -598,7 +613,7 @@ extern void
   doPrev(FILE *f, std::string &last, std::string &comment, const char *myComment),
   vhdlType(const OU::Property &dt, std::string &typeDecl, std::string &type,
 	   bool convert = false, bool finalized = false),
-  emitConstant(FILE *f, const std::string &prefix, const char *name, size_t val, Language lang),
+  emitConstant(FILE *f, const std::string &prefix, const char *name, size_t val, Language lang, bool ieee = false),
   emitVhdlLibraries(FILE *f),
   emitLastSignal(FILE *f, std::string &last, Language lang, bool end);
 

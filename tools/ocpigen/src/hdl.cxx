@@ -204,7 +204,8 @@ parseHdlImpl(const char *a_package) {
     c.m_name = cp;
     cp = ezxml_cattr(xc, "Signal");
     c.m_signal = cp ? cp : "";
-    return OE::getBoolean(xc, "output", &c.m_output);
+    if ((err = OE::getBoolean(xc, "output", &c.m_output)))
+      return err;
   }
   // Now that we have clocks roughly set up, we process the wci clock
   //  if (wci && (err = checkClock(xctl, wci)))

@@ -278,15 +278,15 @@ finalize() {
   AP(max_bytes,   ULong, false, true, false, false, true, max_bytes);
   // 3. Statistics counters for all models, debug and volatile
   // name         type,  debug  param  initl  volatl impl   value
-  AP(messages,    ULong,  true, false, false, true,  false); // messages crossing this port
-  AP(opcode,      ULong,  true, false, false, true,  false);  // opcode of current message
-  AP(length,      ULong,  true, false, false, true,  false);  // length of current message
+  //  AP(messages,    ULong,  true, false, false, true,  false); // messages crossing this port
+  //  AP(opcode,      ULong,  true, false, false, true,  false);  // opcode of current message
+  //  AP(length,      ULong,  true, false, false, true,  false);  // length of current message
   // 4. HDL-specific statistics (FIXME: in nonexistent HDL-data-port class)
   // name         type,  debug  param  initl  volatl impl   value
-  AP(state,       Enum,  true,  false, false, true,  true, 0, "between,idle,data,blocked");
-  AP(between,     ULong,  true,  false, false, true,  true); // cycles between messages
-  AP(idle,        ULong,  true,  false, false, true,  true); // idle cycles within messages
-  AP(data,        ULong,  true,  false, false, true,  true); // cycles used to move data
+  //  AP(state,       Enum,  true,  false, false, true,  true, 0, "between,idle,data,blocked");
+  //  AP(between,     ULong,  true,  false, false, true,  true); // cycles between messages
+  //  AP(idle,        ULong,  true,  false, false, true,  true); // idle cycles within messages
+  //  AP(data,        ULong,  true,  false, false, true,  true); // cycles used to move data
   if (isDataProducer()) {
     // Add a runtime output size if the protocol does not bound it
     //    if (m_isUnbounded)
@@ -440,15 +440,24 @@ emitXML(std::string &out) {
   OU::Port::emitXml(out);
 }
 
-// static method
 const char *DataPort::
-adjustConnection(const char *masterName,
-		 ::Port &prodPort, OcpAdapt *prodAdapt, bool &prodHasExpr,
-		 ::Port &consPort, OcpAdapt *consAdapt, bool &consHasExpr,
-		 Language lang, size_t &unused) {
-  assert(prodPort.isData() && consPort.isData());
-  DataPort &prod = *static_cast<DataPort*>(&prodPort);
-  DataPort &cons = *static_cast<DataPort*>(&consPort);
+adjustConnection(Connection &c, OcpAdapt *myAdapt, bool &myHasExpr, ::Port &otherPort, OcpAdapt *otherAdapt,
+		 bool &otherHasExpr, Language lang, size_t &unused) {
+  const char *err;
+  if ((err = OcpPort::adjustConnection(c, myAdapt, myHasExpr, otherPort, otherAdapt, otherHasExpr, lang, unused)))
+    return err;
+  if (!isDataProducer())
+    return otherPort.adjustConnection(c, otherAdapt, otherHasExpr, *this, myAdapt, myHasExpr, lang, unused);
+  assert(otherPort.isData());
+  DataPort
+    &prod = *this,
+    &cons = *static_cast<DataPort*>(&otherPort);
+  OcpAdapt
+    *prodAdapt = myAdapt,
+    *consAdapt = otherAdapt;
+  bool
+    &prodHasExpr = myHasExpr,
+    &consHasExpr = otherHasExpr;
   // Check WDI compatibility
   // If both sides have protocol, check them for compatibility
   if (prod.nOperations() && cons.nOperations()) {
@@ -481,8 +490,7 @@ adjustConnection(const char *masterName,
   if (cons.m_continuous && !prod.m_continuous)
     return "producer is not continuous, but consumer requires it";
   // Profile-specific error checks and adaptations
-  const char *err = prod.adjustConnection(cons, masterName, lang, prodAdapt, consAdapt, unused);
-  if (err)
+  if ((err = prod.adjustConnection(cons, c.m_masterName.c_str(), lang, prodAdapt, consAdapt, unused)))
     return err;
   // Figure out if this instance port has signal adaptations that will require a temp
   // signal bundle for the port.

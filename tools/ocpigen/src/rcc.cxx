@@ -166,9 +166,9 @@ rccBaseType(std::string &type, OU::Member &m, unsigned level, size_t &offset, un
     if (strcasecmp("ocpi_endian", m.m_name.c_str()) &&
         (level == predefine || predefine == UINT_MAX-1)) {
       OU::formatAdd(type, "%*s%senum %c%s%c%s {\n", indent, "", cnst,
-		    m_language == CC || m_isSlave ? ' ' : toupper(m_implName[0]),
-		    m_language == CC || m_isSlave ? "" : m_implName+1,
-		    toupper(*m.cname()), m.cname()+1);
+                    m_language == CC || m_isSlave ? ' ' : toupper(m_implName[0]),
+                    m_language == CC || m_isSlave ? "" : m_implName+1,
+                    toupper(*m.cname()), m.cname()+1);
       for (const char **ep = m.m_enums; *ep; ep++) {
         std::string s;
         upperconstant(s, parent, m.m_name.c_str(), *ep);
@@ -184,9 +184,9 @@ rccBaseType(std::string &type, OU::Member &m, unsigned level, size_t &offset, un
                       m_language == CC ? "OCPI::RCC::" : "");
       else
         OU::formatAdd(type, "%*s%senum %c%s%c%s", indent, "", cnst,
-		      m_language == CC || m_isSlave ? ' ' : toupper(m_implName[0]),
-		      m_language == CC || m_isSlave ? "" : m_implName+1,
-		      toupper(*m.cname()), m.cname()+1);
+                      m_language == CC || m_isSlave ? ' ' : toupper(m_implName[0]),
+                      m_language == CC || m_isSlave ? "" : m_implName+1,
+                      toupper(*m.cname()), m.cname()+1);
     }
   } else if (level > predefine || predefine == UINT_MAX-1) {
     const char *baseType = m_baseTypes[m.m_baseType];
@@ -471,9 +471,9 @@ emitCppTypesNamespace(FILE *f, std::string &nsName, const std::string &slaveName
       continue;
     if (!last[0])
       fprintf(f,
-	      "  // Enumeration of port ordinals for worker %s\n"
-	      "  enum %c%sPort {\n",
-	      m_implName, toupper(m_implName[0]), m_implName+1);
+              "  // Enumeration of port ordinals for worker %s\n"
+              "  enum %c%sPort {\n",
+              m_implName, toupper(m_implName[0]), m_implName+1);
     fprintf(f, "%s  %s_%s", last, upper, upperdup(port->pname()));
     last = ",\n";
   }
@@ -697,20 +697,20 @@ emitImplRCC() {
     for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++) {
       OU::Property &p = **pi;
       if (p.m_isParameter) {
-	fprintf(f,
-		"/* The constant value of the parameter property named: %s */\n"
-		"static const ", p.m_name.c_str());
-	m_maxLevel = 0;
-	size_t offset = 0;
-	unsigned pad = 0;
-	bool isLast = false;
-	std::string type;
-	rccType(type, p, 0, offset, pad, m_implName, true, isLast, false, UINT_MAX-1);
-	std::string param;
-	upperconstant(param, m_implName, p.m_name.c_str());
-	OU::formatAdd(type, " %s", param.c_str());
-	rccArray(type, p, true, isLast, false, false);
-	fprintf(f, "%s = PARAM_%s_%s();\n", type.c_str(), m_implName, p.m_name.c_str());
+        fprintf(f,
+                "/* The constant value of the parameter property named: %s */\n"
+                "static const ", p.m_name.c_str());
+        m_maxLevel = 0;
+        size_t offset = 0;
+        unsigned pad = 0;
+        bool isLast = false;
+        std::string type;
+        rccType(type, p, 0, offset, pad, m_implName, true, isLast, false, UINT_MAX-1);
+        std::string param;
+        upperconstant(param, m_implName, p.m_name.c_str());
+        OU::formatAdd(type, " %s", param.c_str());
+        rccArray(type, p, true, isLast, false, false);
+        fprintf(f, "%s = PARAM_%s_%s();\n", type.c_str(), m_implName, p.m_name.c_str());
       }
     }
   }
@@ -1275,7 +1275,7 @@ parseSlaves() {
   std::string l_slave;
   std::vector <StringPair> all_slaves;
   if (OE::getOptionalString(m_xml, l_slave, "slave")) {
-	addSlave(l_slave, l_slave.substr(0, l_slave.find(".", 0)));
+        addSlave(l_slave, l_slave.substr(0, l_slave.find(".", 0)));
   }
   std::map<std::string, unsigned int> wkr_num_map;
   std::map<std::string, unsigned int> wkr_idx_map;
@@ -1310,25 +1310,25 @@ parseSlaves() {
     }
 
     size_t dot = wkr.find_last_of('.');
-	if (!dot)
-	  return OU::esprintf("slave attribute: '%s' has no authoring model suffix", wkr.c_str());
+        if (!dot)
+          return OU::esprintf("slave attribute: '%s' has no authoring model suffix", wkr.c_str());
     std::string wkr_sub = wkr.substr(0, dot);
 
     // If we need to auto generate the name
     if (name.empty()){
-	  unsigned int idx = wkr_idx_map[wkr]++;
-	  if (name.empty()) {
-	    name = wkr_sub;
-	    if (wkr_num_map[wkr] > 1)
-	      OU::formatAdd(name, "_%u", idx - 1);
-	  }
-	  if (m_slaves.find(name) != m_slaves.end()){
-		std::string printMap = print_map();
-		return OU::esprintf("Invalid slave name specified: %s", name.c_str());
-	  }
+          unsigned int idx = wkr_idx_map[wkr]++;
+          if (name.empty()) {
+            name = wkr_sub;
+            if (wkr_num_map[wkr] > 1)
+              OU::formatAdd(name, "_%u", idx - 1);
+          }
+          if (m_slaves.find(name) != m_slaves.end()){
+                std::string printMap = print_map();
+                return OU::esprintf("Invalid slave name specified: %s", name.c_str());
+          }
     }
     if ((err = addSlave(wkr, name)))
-	  return err;
+          return err;
   }
   return err;
 }

@@ -149,11 +149,18 @@ public:
   virtual void emitVHDLRecordWrapperSignals(FILE *f);
   virtual void emitVHDLRecordWrapperAssignments(FILE *f);
   virtual void emitVHDLRecordWrapperPortMap(FILE *f, std::string &last);
-  virtual void emitConnectionSignal(FILE *f, bool output, Language lang, std::string &signal);
+  virtual void emitConnectionSignal(FILE *f, bool output, Language lang, bool clock, std::string &signal);
+  virtual void getClockSignal(const InstancePort &ip, Language lang, std::string &s);
+#if 1
+  virtual void emitPortSignals(FILE *f, const InstancePort &ip, Language lang, const char *indent, bool &any,
+			       std::string &comment, std::string &last, const char *myComment,
+			       std::string &exprs);
+#else
   virtual void emitPortSignals(FILE *f, Attachments &atts, Language lang,
 			       const char *indent, bool &any, std::string &comment,
 			       std::string &last, const char *myComment, OcpAdapt *adapt,
-			       std::string *signalIn, std::string &exprs);
+			       std::string *signalIn, std::string &clockSignal, std::string &exprs);
+#endif
   virtual void emitPortSignal(FILE *f, bool any, const char *indent, const std::string &fName,
 			      const std::string &aName, const std::string &index, bool output,
 			      const Port *signalPort, bool external);
@@ -174,6 +181,8 @@ public:
   virtual const char *slaveMissing() const { return "(others => '0')"; }
   virtual const char *finalizeExternal(Worker &aw, Worker &iw, InstancePort &ip,
 				       bool &cantDataResetWhileSuspended);
+  virtual const char *adjustConnection(Connection &c, OcpAdapt *myAdapt, bool &myHasExpr, ::Port &otherPort,
+				       OcpAdapt *otherAdapt, bool &otherHasExpr, Language lang, size_t &unused);
 };
 
 // Factory function template for port types

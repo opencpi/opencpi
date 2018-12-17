@@ -535,13 +535,14 @@ emitVHDLRecordWrapperPortMap(FILE */*f*/, std::string &/*last*/) {
 }
 
 void Port::
-emitConnectionSignal(FILE */*f*/, bool /*output*/, Language /*lang*/, std::string &/*signal*/) {
+emitConnectionSignal(FILE */*f*/, bool /*output*/, Language /*lang*/, bool /*clock*/, std::string &/*signal*/) {
 }
 
 void Port::
-emitPortSignals(FILE *f, Attachments &atts, Language /*lang*/, const char *indent,
+emitPortSignals(FILE *f, const InstancePort &ip, Language /*lang*/, const char *indent,
 		bool &any, std::string &comment, std::string &last, const char *myComment,
-		OcpAdapt */*adapt*/, std::string */*hasExprs*/, std::string &/*exprs*/) {
+		std::string &/*exprs*/) {
+  const Attachments &atts = ip.m_attachments;
   doPrev(f, last, comment, myComment);
   std::string in, out, index, empty;
   OU::format(in, typeNameIn.c_str(), "");
@@ -690,7 +691,7 @@ emitRecordInterface(FILE *f, const char *implName) {
 }
 
 void RawPropPort::
-emitConnectionSignal(FILE *f, bool output, Language /*lang*/, std::string &signal) {
+emitConnectionSignal(FILE *f, bool output, Language /*lang*/, bool /*clock*/, std::string &signal) {
   fprintf(f, "  signal %s : wci.raw_prop_%s%s_t",
 	  signal.c_str(), m_master == output ? "out" : "in",
 	  m_count > 1 || m_countExpr.length() ? "_array" : "");
@@ -756,7 +757,7 @@ emitRecordInterface(FILE *f, const char *implName) {
 }
 
 void CpPort::
-emitConnectionSignal(FILE *f, bool output, Language /*lang*/, std::string &signal) {
+emitConnectionSignal(FILE *f, bool output, Language /*lang*/, bool /*clock*/, std::string &signal) {
   fprintf(f, "  signal %s : platform.platform_pkg.occp_%s_t;\n",
 	  signal.c_str(), m_master == output ? "in" : "out");
 }
@@ -803,7 +804,7 @@ emitRecordTypes(FILE */*f*/) {
 }
 
 void NocPort::
-emitConnectionSignal(FILE *f, bool output, Language /*lang*/, std::string &signal) {
+emitConnectionSignal(FILE *f, bool output, Language /*lang*/, bool /*clock*/, std::string &signal) {
   fprintf(f, "  signal %s : platform.platform_pkg.unoc_master_%s_t;\n",
 	  signal.c_str(), m_master == output ? "out" : "in" );
 }
@@ -883,9 +884,10 @@ emitVHDLSignalWrapperPortMap(FILE *f, std::string &last) {
 }
 
 void TimeServicePort::
-emitPortSignals(FILE *f, Attachments &atts, Language /*lang*/, const char *indent,
+emitPortSignals(FILE *f, const InstancePort &ip, Language /*lang*/, const char *indent,
 		bool &any, std::string &comment, std::string &last, const char *myComment,
-		OcpAdapt */*adapt*/, std::string */*hasExprs*/, std::string &/*exprs*/) {
+		std::string &/*exprs*/) {
+  const Attachments &atts = ip.m_attachments;
   doPrev(f, last, comment, myComment);
   std::string in, out;
   OU::format(in, typeNameIn.c_str(), "");
@@ -895,13 +897,13 @@ emitPortSignals(FILE *f, Attachments &atts, Language /*lang*/, const char *inden
 	  any ? indent : "",
 	  m_master ? out.c_str() : in.c_str());
   //	fputs(p.master ? c.m_masterName.c_str() : c.m_slaveName.c_str(), f);
-  Attachment *at = atts.front();
-  Connection *c = at ? &at->m_connection : NULL;
+  const Attachment *at = atts.front();
+  const Connection *c = at ? &at->m_connection : NULL;
   fputs(at ? c->m_masterName.c_str() : "open", f);
 }
 
 void TimeServicePort::
-emitConnectionSignal(FILE *f, bool /*output*/, Language /*lang*/, std::string &signal) {
+emitConnectionSignal(FILE *f, bool /*output*/, Language /*lang*/, bool /*clock*/, std::string &signal) {
   fprintf(f, "  signal %s : platform.platform_pkg.time_service_t;\n", signal.c_str());
 }
 
@@ -1007,7 +1009,7 @@ emitPortSignals(FILE *f, Attachments &atts, Language /*lang*/, const char *inden
 #endif
 
 void TimeBasePort::
-emitConnectionSignal(FILE *f, bool output, Language /*lang*/, std::string &signal) {
+emitConnectionSignal(FILE *f, bool output, Language /*lang*/, bool /*clock*/, std::string &signal) {
   fprintf(f, "  signal %s : platform.platform_pkg.time_base_%s_t;\n", signal.c_str(),
 	  m_master == output ? "out" : "in");
 }
@@ -1063,7 +1065,7 @@ emitRecordInterface(FILE *f, const char *implName) {
 }
 
 void MetaDataPort::
-emitConnectionSignal(FILE *f, bool output, Language /*lang*/, std::string &signal) {
+emitConnectionSignal(FILE *f, bool output, Language /*lang*/, bool /*clock*/, std::string &signal) {
   fprintf(f, "  signal %s : platform.platform_pkg.metadata_%s_t;\n",
 	  signal.c_str(), (output && m_master) || (!output && !m_master) ? "out" : "in");
 }
@@ -1102,4 +1104,13 @@ emitExtAssignment(FILE *f, bool int2ext, const std::string &extName, const std::
   fprintf(f, "  %s <= %s;\n",
 	  int2ext ? ours.c_str() : theirs.c_str(),
 	  int2ext ? theirs.c_str() : ours.c_str());
+}
+const char *Port::
+adjustConnection(Connection &/*c*/, OcpAdapt */*myAdapt*/, bool &/*myHasExpr*/, ::Port &/*otherPort*/,
+		 OcpAdapt */*otherAdapt*/, bool &/*otherHasExpr*/, Language /*lang*/, size_t &/*unused*/) {
+  return NULL;
+}
+void Port::
+getClockSignal(const InstancePort &/*ip*/, Language /*lang*/, std::string &/*s*/) {
+  assert("unexpected call to getClockSignal"==0);
 }

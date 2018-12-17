@@ -89,9 +89,18 @@ const char *WtiPort::
 deriveOCP() {
   static uint8_t s[1]; // a non-zero string pointer
   OcpPort::deriveOCP();
-  // The OCP interface must have a clock like any other.
-  ocp.Clk.master = false; //  FIXME. this should be smart...
-  ocp.Clk.value = s;
+  // Time interfaces are quite flexible.
+  // Actual scenarios:
+  //   worker wants time in default clock domain
+  //     says nothing, implies wci clock - no Clk signal
+  //   worker wants time in some other of its clock domains
+  //     assigns another clock to this port - no Clk signal here
+  //   worker wants time in the native timekeepping clock domain
+  //     specifies myclock - Clk signal here
+  if (myClock) {
+    ocp.Clk.master = false;
+    ocp.Clk.value = s;
+  }
   ocp.MCmd.width = 3;
   ocp.MData.width = m_dataWidth;
   // Note no MReset is present.  OCP says either reset must be present.
@@ -115,22 +124,18 @@ emitImplSignals(FILE *f) {
 	    "  signal worker_%s : worker_%s_t;\n", out.c_str(), out.c_str());
 }
 void WtiPort::
-emitVhdlShell(FILE *f, Port *wci) {
+emitVhdlShell(FILE *f, Port */*wci*/) {
   std::string in, out, clk;
   OU::format(in, typeNameIn.c_str(), "");
   OU::format(out, typeNameOut.c_str(), "");
-  // FIXME: use a common clock and reset retrieval here
-  if (clock == m_worker->m_wciClock)
-    clk = wci ? "ctl_in.Clk" : "wci_Clk";
-  else
-    OU::format(clk, "worker_%s.clk", out.c_str());
-  fprintf(f,
-	  "  -- The WTI interface conversion between OCP and inner worker interfaces\n"
-	  "  %s.Clk <= %s;\n"
-	  "  -- should be this, but isim crashes.\n"
-	  "  -- .SReset_n <= from_bool(not wci_reset);\n"
-	  "  %s.SReset_n <= '0' when its(wci_reset) else '1';\n",
-	  out.c_str(), clk.c_str(), out.c_str());
+  if (clock != m_worker->m_wciClock)
+    fprintf(f,
+	    "  -- The WTI interface conversion between OCP and inner worker interfaces\n"
+	    "  %s.Clk <= worker_%s.clk\n"
+	    "  -- should be this, but isim crashes.\n"
+	    "  -- .SReset_n <= from_bool(not wci_reset);\n"
+	    "  %s.SReset_n <= '0' when its(wci_reset) else '1';\n",
+	    out.c_str(), out.c_str(), out.c_str());
   if (m_allowUnavailable)
     fprintf(f,
 	    "  %s.SThreadBusy(0) <= not worker_%s.request;\n"

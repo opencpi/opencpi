@@ -26,9 +26,6 @@
 #include "ocp.h"
 #include "hdl.h"
 #define INST_ATTRS "paramconfig"
-//struct Attachment;
-//typedef std::list<Attachment*> Attachments;
-//typedef Attachments::const_iterator AttachmentsIter;
 
 struct InstancePort;
 struct Connection {
@@ -36,7 +33,10 @@ struct Connection {
   Attachments m_attachments;
   unsigned m_nExternals;
   Clock *m_clock;
-  std::string m_masterName, m_slaveName;
+  std::string
+    m_masterName, // the signal/bundle name for the output of internal masters
+    m_slaveName,  // the signal/bundle name for the output of internal slaves
+    m_clockName;  // the signal to connect to internal clocks
   Attachment *m_external; // external assembly port - the last one
   size_t m_count; // width of all attachments
   Connection(OU::Assembly::Connection *c, const char *name = NULL);
@@ -121,14 +121,17 @@ struct InstancePort {
   bool     m_hasExprs;                 // any signal adaptations with expressions present?
   bool     m_externalize;              // should be made external to the assembly
   std::string m_signalIn, m_signalOut; // Internal signal bundle for connecting here, when appropriate
+  std::string m_clockSignal;           // Internal clock signal, when appropriate
   InstancePort();
   InstancePort(Instance *i, Port *p, OU::Assembly::External *ext);
   const char *attach(Attachment *a, size_t index); //, size_t count);
-  const char *createConnectionSignals(FILE *f, Language lang, size_t &unused);
+  const char *adjustConnections(FILE *f, Language lang, size_t &unused);
   void
+    getClockSignal(bool output, Language lang),
+    createConnectionSignals(FILE *f, Language lang),
     init(Instance *i, Port *p, OU::Assembly::External *ext),
     detach(Connection &c), // forget attachment for this connection
-    emitConnectionSignal(FILE *f, bool output, Language lang),
+    emitConnectionSignal(FILE *f, bool output, Language lang, bool clock = false),
     emitTieoffAssignments(FILE *f);
 };
 class Assembly {

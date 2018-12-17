@@ -82,10 +82,8 @@ class DataPort : public OcpPort, public OCPI::Util::Port {
   void emitRecordInterfaceConstants(FILE *f);
   void emitVerilogPortParameters(FILE *f);
   void emitInterfaceConstants(FILE *f, Language lang);
-  static const char *adjustConnection(const char *masterName,
-				      ::Port &prodPort, OcpAdapt *prodAdapt, bool &prodHasExpr,
-				      ::Port &consPort, OcpAdapt *consAdapt, bool &consHasExpr,
-				      Language lang, size_t &unused);
+  const char *adjustConnection(Connection &c, OcpAdapt *myAdapt, bool &myHasExpr, ::Port &otherPort,
+			       OcpAdapt *otherAdapt, bool &otherHasExpr, Language lang, size_t &unused);
   virtual const char *adjustConnection(::Port &consumer, const char *masterName, Language lang,
 				       OcpAdapt *prodAdapt, OcpAdapt *consAdapt, size_t &unused);
   virtual unsigned extraDataInfo() const;

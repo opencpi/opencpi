@@ -37,7 +37,7 @@ WciPort(Worker &w, ezxml_t x, Port *sp, int ordinal, const char *&err)
     return;
   }
   myClock = true;
-  addMyClock(false);
+  addMyClock(m_master);
   if (!m_master) {
     m_worker->m_wci = this;
     m_worker->m_wciClock = clock;
@@ -298,10 +298,13 @@ emitRecordInterfaceConstants(FILE *f) {
 }
 #endif
 void
-emitConstant(FILE *f, const std::string &prefix, const char *name, size_t val, Language lang) {
-  if (lang == VHDL)
-    fprintf(f, "  constant %s_%s : natural := %zu;\n", prefix.c_str(), name, val);
-  else
+emitConstant(FILE *f, const std::string &prefix, const char *name, size_t val, Language lang, bool ieee) {
+  if (lang == VHDL) {
+    if (ieee)
+      fprintf(f, "  constant %s_%s : unsigned(31 downto 0) := X\"%08zx\";\n", prefix.c_str(), name, val);
+    else
+      fprintf(f, "  constant %s_%s : natural := %zu;\n", prefix.c_str(), name, val);
+  } else
     fprintf(f, "  localparam %s_%s = %zu;\n", prefix.c_str(), name, val);
 }
 #if 0
@@ -330,7 +333,7 @@ emitPropertyAttributeConstants(FILE *f, Language lang) {
       first = false;
     }
     if (!pr.m_isRaw && (!pr.m_isParameter || pr.m_isReadable)) {
-      emitConstant(f, pr.m_name, "offset", pr.m_offset, lang);
+      emitConstant(f, pr.m_name, "offset", pr.m_offset, lang, true);
       emitConstant(f, pr.m_name, "nbytes_1", pr.m_nBytes - 1 - (pr.m_isSequence ? pr.m_align : 0), lang);
       last_end = pr.m_offset + pr.m_nBytes;
     }
@@ -439,15 +442,12 @@ emitVHDLShellPortMap(FILE *f, std::string &last) {
 }
 
 void WciPort::
-emitPortSignals(FILE *f, Attachments &atts, Language lang, const char *indent,
-		bool &any, std::string &comment, std::string &last, const char *myComment,
-		OcpAdapt *adapt, std::string *signalIn, std::string &exprs) {
+emitPortSignals(FILE *f, const InstancePort &ip, Language lang, const char *indent,
+		bool &any, std::string &comment, std::string &last, const char *myComment, std::string &exprs) {
   if (m_master || m_worker->m_assembly)
-    Port::emitPortSignals(f, atts, lang, indent, any, comment, last, myComment, adapt, signalIn,
-			  exprs);
+    Port::emitPortSignals(f, ip, lang, indent, any, comment, last, myComment, exprs);
   else
-    OcpPort::emitPortSignals(f, atts, lang, indent, any, comment, last, myComment, adapt,
-			     signalIn, exprs);
+    OcpPort::emitPortSignals(f, ip, lang, indent, any, comment, last, myComment, exprs);
 }
 
 void WciPort::
