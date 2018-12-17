@@ -36,23 +36,21 @@ fail() {
   exit 1
 }
 
-# OCPIDEV="coverage3 run --append ../../../tools/cdk/scripts/ocpidev_run.py -d ../../av-test"
-OCPIDEV="${OCPI_CDK_DIR}/scripts/ocpidev run -d ../../av-test"
+# OCPIDEV="coverage3 run --append $OCPI_CDK_DIR/$OCPI_TOOL_DIR/bin/ocpidev_run.py -d ../../av-test"
+OCPIDEV="$OCPI_CDK_DIR/$OCPI_TOOL_DIR/bin/ocpidev run -d ../../av-test"
 
-${OCPI_CDK_DIR}/scripts/ocpidev build -d ../../av-test --hdl-platform $HDL_TEST_PLATFORM
+$OCPI_CDK_DIR/$OCPI_TOOL_DIR/bin/ocpidev build -d ../../av-test --hdl-platform $HDL_TEST_PLATFORM
 echo "Running Test 1"
 $OCPIDEV
 echo "Running Test 2"
 $OCPIDEV tests
 echo "Running Test 3"
-$OCPIDEV project --junk
-echo "Running Test 4"
 $OCPIDEV applications
-echo "Running Test 5"
+echo "Running Test 4"
 $OCPIDEV application aci_property_test_app
-echo "Running Test 6"
+echo "Running Test 5"
 $OCPIDEV test test_worker
-echo "Running Test 6.5"
+echo "Running Test 6"
 $OCPIDEV library components
 echo "Running Test 7"
 $OCPIDEV test test_worker.test -l components
@@ -65,7 +63,7 @@ $OCPIDEV test test_worker --mode prep_run_verify
 echo "Running Test 11"
 $OCPIDEV test test_worker --mode clean_all
 echo "Running Test 12"
-$OCPIDEV test test_worker --mode gen_build --cases '*'
+$OCPIDEV test test_worker --mode gen_build --case '0.*'
 echo "Running Test 13"
 $OCPIDEV test test_worker --mode prep
 echo "Running Test 14"
@@ -84,12 +82,18 @@ $OCPIDEV test test_worker.test --only-platform $HDL_TEST_PLATFORM
 echo "Running Test 20"
 $OCPIDEV test test_worker --mode clean_all
 $OCPIDEV test test_worker.test --exclude-platform $HDL_TEST_PLATFORM
+echo "Running Test 21"
+$OCPIDEV test test_worker2 --hdl-library devices
+echo "Running Test 22"
+$OCPIDEV test test_worker3 -P dummy
 # need to add things we expect to fail to this test as well
 set +e
-echo "Running Test 21: Expecting Error"
+echo "Running Fail Test 1: Expecting Error"
 $OCPIDEV junk test_worker.test && fail
-echo "Running Test 22: Expecting Error"
+echo "Running Fail Test 2: Expecting Error"
 $OCPIDEV test test_worker -l components/dsp_comps && fail
-echo "Running Test 23: Expecting Error"
+echo "Running Fail Test 3: Expecting Error"
 $OCPIDEV test -l components/dsp_comps && fail
+echo "Running Fail Test 4: Expecting Error"
+$OCPIDEV project --junk && fail
 echo "Tests Passed!"

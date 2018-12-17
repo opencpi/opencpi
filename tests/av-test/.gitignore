@@ -1,0 +1,31 @@
+# Example .gitignore for OpenCPI projects
+# Ignore objects and archives.
+*.rpm
+*.obj
+*.so
+*~
+*.o
+target-*/
+*.deps
+gen/
+*.old
+*.hold
+*.orig
+*.log
+lib/
+#Texmaker artifacts
+*.aux
+*.synctex.gz
+*.out
+**/doc*/*.pdf
+**/doc*/*.toc
+**/doc*/*.lof
+**/doc*/*.lot
+run/
+exports/
+imports
+artifacts/
+*.pyc
+# Some artifacts
+**/kernel-headers/**/*.cmd
+**/aciapps

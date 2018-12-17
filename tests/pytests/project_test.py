@@ -19,9 +19,9 @@ import unittest
 import sys
 import os
 import subprocess
-sys.path.insert(0, os.path.realpath(os.getenv('OCPI_CDK_DIR') + '/scripts/'))
-import ocpiutil
-import ocpiassets
+sys.path.append(os.getenv('OCPI_CDK_DIR') + '/' + os.getenv('OCPI_TOOL_PLATFORM') + '/lib/')
+import _opencpi.util as ocpiutil
+from  _opencpi.assets.factory import *
 
 """
 This file contains the unit tests for the Project object
@@ -33,7 +33,7 @@ class ProjectTest(unittest.TestCase):
         create a project in an invalid directory and an exception should be thrown
         """
         self.assertRaises(ocpiutil.OCPIException,
-                          ocpiassets.AssetFactory.factory,
+                          AssetFactory.factory,
                           self.asset_type,
                           "/dev")
 
@@ -42,17 +42,17 @@ class ProjectTest(unittest.TestCase):
         create a project and use the default name and just initialize the applications.  Then run
         the applications in the project
         """
-        my_asset = ocpiassets.AssetFactory.factory(self.asset_type,
+        my_asset = AssetFactory.factory(self.asset_type,
                                                   "../av-test",
                                                   init_apps=True)
         assert my_asset.run() == 0
-        ocpiassets.AssetFactory.remove("../av-test")
+        AssetFactory.remove("../av-test")
 
     def test_prj_no_init(self):
         """
         create a without initializing apps or libraries an exception is thrown when trying to run
         """
-        my_asset = ocpiassets.AssetFactory.factory(self.asset_type,
+        my_asset = AssetFactory.factory(self.asset_type,
                                                   "../av-test")
         self.assertRaises(ocpiutil.OCPIException, my_asset.run)
 
@@ -60,13 +60,13 @@ class ProjectTest(unittest.TestCase):
         """
         create a project in the default way
         """
-        my_asset = ocpiassets.AssetFactory.factory(self.asset_type,
+        my_asset = AssetFactory.factory(self.asset_type,
                                                   "../av-test",
                                                   "av-test",
                                                   init_tests=True,
                                                   init_libs=True)
         assert my_asset.run() == 0
-        ocpiassets.AssetFactory.remove(instance=my_asset)
+        AssetFactory.remove(instance=my_asset)
 
 class DeleteProjectTest(unittest.TestCase):
     asset_type = "project"
@@ -78,7 +78,7 @@ class DeleteProjectTest(unittest.TestCase):
 
 
     def test_del(self):
-        my_asset = ocpiassets.AssetFactory.factory(self.asset_type, "mypj0_del")
+        my_asset = AssetFactory.factory(self.asset_type, "mypj0_del")
         my_asset.delete(True)
 
 if __name__ == '__main__':

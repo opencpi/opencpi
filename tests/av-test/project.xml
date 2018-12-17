@@ -1,0 +1,79 @@
+<project name="local">
+  <hdl>
+    <assemblies />
+    <primitives />
+    <platforms>
+      <platform name="dummy">
+        <library name="devices">
+          <workers>
+            <worker name="test_worker3.rcc">
+              <built configID="0" target="centos7" />
+            </worker>
+          </workers>
+          <tests>
+            <test name="test_worker3.test" />
+          </tests>
+          <specs>
+            <spec name="test_worker3-spec.xml" />
+          </specs>
+        </library>
+      </platform>
+    </platforms>
+    <libraries>
+      <library name="devices">
+        <workers>
+          <worker name="test_worker2.rcc">
+            <built configID="0" target="centos7" />
+          </worker>
+        </workers>
+        <tests>
+          <test name="test_worker2.test" />
+        </tests>
+        <specs>
+          <spec name="test_worker2-spec.xml" />
+        </specs>
+      </library>
+    </libraries>
+  </hdl>
+  <rcc />
+  <components>
+    <library name="components">
+      <workers>
+        <worker name="test_worker.hdl" />
+        <worker name="proxy1.rcc">
+          <built configID="0" target="centos7" />
+        </worker>
+        <worker name="wkr1.rcc">
+          <built configID="0" target="centos7" />
+        </worker>
+        <worker name="wkr2.rcc">
+          <built configID="0" target="centos7" />
+        </worker>
+        <worker name="test_worker.rcc">
+          <built configID="0" target="centos7" />
+        </worker>
+        <worker name="prop_mem_align_info.rcc">
+          <built configID="0" target="centos7" />
+        </worker>
+      </workers>
+      <tests>
+        <test name="prop_mem_align_info.test" />
+        <test name="test_worker.test" />
+      </tests>
+      <specs>
+        <spec name="proxy1-spec.xml" />
+        <spec name="comp2-spec.xml" />
+        <spec name="test_worker-spec.xml" />
+        <spec name="comp1-spec.xml" />
+      </specs>
+    </library>
+  </components>
+  <applications>
+    <application name="multislave_test">
+      <built target="centos7" />
+    </application>
+    <application name="aci_property_test_app">
+      <built target="N/A" />
+    </application>
+  </applications>
+</project>

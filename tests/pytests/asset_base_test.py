@@ -18,9 +18,10 @@
 import unittest
 import sys
 import os
-sys.path.insert(0, os.path.realpath(os.getenv('OCPI_CDK_DIR') + '/scripts/'))
-import ocpiutil
-import ocpiassets
+sys.path.append(os.getenv('OCPI_CDK_DIR') + '/' + os.getenv('OCPI_TOOL_PLATFORM') + '/lib/')
+import _opencpi.util as ocpiutil
+from  _opencpi.assets import factory
+from _opencpi.assets import project
 
 """
 This file contains the unit tests for the Asset factory class and any of the Asset abstract classes
@@ -31,7 +32,7 @@ class AssetTest(unittest.TestCase):
         create an asset of an invalid type and an exception is thrown
         """
         self.assertRaises(ocpiutil.OCPIException,
-                          ocpiassets.AssetFactory.factory,
+                          factory.AssetFactory.factory,
                           "bad",
                           "../av-test")
 
@@ -39,7 +40,7 @@ class AssetTest(unittest.TestCase):
         """
         create an asset of an invalid type and an exception is thrown
         """
-        ocpiassets.Project.get_valid_settings()
+        project.Project.get_valid_settings()
 
 class AssetFactoryTest(unittest.TestCase):
     """
@@ -48,7 +49,7 @@ class AssetFactoryTest(unittest.TestCase):
     """
     def test_bad_use_remove(self):
         self.assertRaises(ocpiutil.OCPIException,
-                          ocpiassets.AssetFactory.remove)
+                          factory.AssetFactory.remove)
 
 if __name__ == '__main__':
     unittest.main()

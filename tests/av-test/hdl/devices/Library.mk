@@ -16,9 +16,20 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-run:
-	./run_pytests.sh
+# This is the hdl/devices library
 
-clean:
-	rm -rf mypj* ocpiutil_test_project0 project-registry utilization_proj
+# This makefile contains variable definitions that will apply when building each
+# individual worker and test in the library
+
+# Package identifier is used in a hierarchical fashion from Project to Libraries....
+# The PackageName, PackagePrefix and Package variables can optionally be set here:
+# PackageName defaults to the name of the directory
+# PackagePrefix defaults to package of parent (project)
+# Package defaults to PackagePrefix.PackageName
+
+
+
+
+
+
 

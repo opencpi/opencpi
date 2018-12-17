@@ -16,9 +16,5 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-run:
-	./run_pytests.sh
-
-clean:
-	rm -rf mypj* ocpiutil_test_project0 project-registry utilization_proj
-
+# This is the Makefile for worker test_worker2.rcc
+include $(OCPI_CDK_DIR)/include/worker.mk

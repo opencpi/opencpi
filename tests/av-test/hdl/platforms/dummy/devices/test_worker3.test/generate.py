@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # This file is protected by Copyright. Please refer to the COPYRIGHT file
 # distributed with this source distribution.
 #
@@ -16,9 +17,8 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-run:
-	./run_pytests.sh
 
-clean:
-	rm -rf mypj* ocpiutil_test_project0 project-registry utilization_proj
-
+"""
+Use this file to generate your input data.
+Args: <list-of-user-defined-args> <input-file>
+"""

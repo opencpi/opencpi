@@ -32,11 +32,11 @@ echo Cleaning the project
 make cleaneverything
 echo Building the components
 odev build rcc
-echo Building the mulislave_test application
-odev build application mulislave_test
-echo Running the mulislave_test application
-(cd applications/mulislave_test &&
-  OCPI_LIBRARY_PATH=../../:$OCPI_LIBRARY_PATH ./target-$OCPI_TARGET_DIR/mulislave_test)
+echo Building the multislave_test application
+odev build application multislave_test
+echo Running the multislave_test application
+(cd applications/multislave_test &&
+  OCPI_LIBRARY_PATH=../../:$OCPI_LIBRARY_PATH ./target-$OCPI_TARGET_DIR/multislave_test)
 echo Building the aci_property_test_app application
 odev build application aci_property_test_app
 echo Running the aci_property_test_app application

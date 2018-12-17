@@ -16,9 +16,14 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-run:
-	./run_pytests.sh
+# This is the hdl/platforms/dummy/devices library
 
-clean:
-	rm -rf mypj* ocpiutil_test_project0 project-registry utilization_proj
+# All workers created here in *.<model> will be built automatically
+# All tests created here in *.test directories will be built/run automatically
+# To limit the workers that actually get built, set the Workers= variable
+# To limit the tests that actually get built/run, set the Tests= variable
 
+# Any variable definitions that should apply for each individual worker/test
+# in this library belong in Library.mk
+
+include $(OCPI_CDK_DIR)/include/library.mk

@@ -16,9 +16,11 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-run:
-	./run_pytests.sh
-
-clean:
-	rm -rf mypj* ocpiutil_test_project0 project-registry utilization_proj
-
+$(if $(realpath $(OCPI_CDK_DIR)),,\
+  $(error The OCPI_CDK_DIR environment variable is not set correctly.))
+# To restrict the HDL platforms that are built, you can set the Platforms
+# variable to the specific list of which ones you want to build, e.g.:
+# Platforms=pf1 pf3
+# Otherwise all platforms will be built
+# Alternatively, you can set ExcludePlatforms to list the ones you want to exclude
+include $(OCPI_CDK_DIR)/include/hdl/hdl-platforms.mk
