@@ -82,7 +82,7 @@ if test $enable_dynamic = yes ; then
    ocpi_program_flags="$OcpiDynamicProgramFlags"
    ocpi_swig_flags="$OcpiDynamicSwigFlags"
    ocpi_dynamic=1
-else	
+else
    libtool_library_flags="$libtool_static_library_flags"
    libtool_program_flags="$libtool_static_program_flags"
    ocpi_library_suffix="$OcpiStaticLibrarySuffix"

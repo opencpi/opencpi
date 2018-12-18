@@ -6,7 +6,7 @@ Mostly follow PEP 8: https://www.python.org/dev/peps/pep-0008/
 
 Indentation:
     indent by 4 SPACES
-	continuation lines should line up with parent in a sensible way
+        continuation lines should line up with parent in a sensible way
 
 Line length:
     limit to 100 (PEP 8 suggests 80, but explains that 100 is acceptable)

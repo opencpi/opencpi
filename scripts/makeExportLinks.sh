@@ -68,12 +68,11 @@ target2=$target
 platform=$rcc_platform
 platform_dir=$rcc_platform_dir
 [ "$hdl_platform" = - ] && hdl_platform=
-[ -n "$hdl_platform"] && {
+[ -n "$hdl_platform" ] && {
   target2=$hdl_platform/$rcc_platform
   platform=$hdl_platform
   platform_dir=$hdl_platform_dir
 }
-
 [ -z "$target" ] && target=$OCPI_TOOL_DIR
 export OCPI_CDK_DIR=`pwd`/bootstrap
 # The only things we currently need from ocpitarget.sh is OcpiPlatformOs and OcpiPlatformPrerequisites
@@ -122,6 +121,10 @@ function match_filter {
 
 function make_relative_link {
   # echo make_relative_link $1 $2
+  if [ ! -e $1 -a -z "$bootstrap" ]; then
+    echo Warning: link source $1 does not '(yet?)' exist. >&2
+    return
+  fi
   # Figure out what the relative prefix should be
   local up
 #  [[ $1 =~ ^/ ]] || up=$(echo $2 | sed 's-[^/]*$--' | sed 's-[^/]*/-../-g')
@@ -161,7 +164,7 @@ function make_relative_link {
 # $3 is the type of object
 # exclusions can be filtered by source or target
 function make_filtered_link {
-  # echo MAKE_FILTERED:$*
+  #echo MAKE_FILTERED:$*
   local e;
   local -a edirs
   for e in $exclusions; do
@@ -228,7 +231,7 @@ function do_addition {
       # Calling make_filtered_link for @ (deployment)
       [ -n "$2" ] && [ "$2" = "--" ] && make_filtered_link $src exports/$dir$base
     else
-      [ -z "$bootstrap" ] && echo Warning: link source $src does not '(yet?)' exist.
+      [ -z "$bootstrap" ] && echo Warning: link source $src does not '(yet?)' exist. >&2
     fi
   done
   set -f
@@ -280,6 +283,7 @@ readExport exclusions - Project.exports
   readExport exclusions - $platform_exports -
 }
 set +f
+[ -n "$verbose" ] && echo Processing framework source-code-based links
 while read path opts; do
   case "$path" in
     \#*|""|end-of-runtime-for-tools|prerequisites) continue;;
@@ -327,7 +331,8 @@ while read path opts; do
       fi
     done
     file=build/autotools/target-$target/staging/bin/$dir$p
-    [ -x $file -a "$dir" != internal/ ] && {
+#    [ -x $file -a "$dir" != internal/ ] && {
+    [ "$dir" != internal/ ] && {
 	make_filtered_link $file exports/$target/bin/$dir$p
         [ -z "$tools" -o -n "$runtime" ] &&
 	    make_filtered_link $file exports/runtime/$target/bin/$dir$p
@@ -360,13 +365,15 @@ done < build/places
 
 # Add the ad-hoc export links
 set -f
-[ -n "$verbose" ] && echo Processing additions
+[ -n "$verbose" ] && echo Processing cdk additions
 for a in $additions; do
   do_addition $a
 done
+[ -n "$verbose" ] && echo Processing runtime additions
 for a in $runtimes; do
   do_addition $a -
 done
+[ -n "$verbose" ] && echo Processing deployment additions
 for a in $deployments; do
   do_addition $a --
 done
@@ -377,7 +384,7 @@ set +f
 # Put the check file into the runtime platform dir
 # FIXME: make sure if/whether this is really required and why
 check=$rcc_platform_dir/${rcc_platform}-check.sh
-[ -z "$hdl_platform" -r "$check" ] && {
+[ -z "$hdl_platform" -a -r "$check" ] && {
   to=$(python -c "import os.path; print os.path.relpath('"$check"', '.')")
   make_relative_link $to exports/runtime/$target/$(basename $check)
   cat <<-EOF > exports/runtime/$target/${rcc_platform}-init.sh

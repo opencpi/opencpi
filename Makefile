@@ -52,12 +52,11 @@ include $(OCPI_CDK_DIR)/include/hdl/hdl-targets.mk
 
 # Now check all platforms for validity, even the hdl:rcc pairs
 $(foreach p,$(subst :, ,$(Platform)),$(if $(filter $p,$(RccAllPlatforms) $(HdlAllPlatforms)),,\
-  $(error Platform $p is specified but non-existent (RCC or HDL).  HDL platforms may not be built yet.)))
+  $(error Platform $p is specified but non-existent, RCC or HDL.  HDL platforms may not be built yet.)))
 
 # Check that all RCC platforms and the second of pairs are valid RCC platforms
-$(foreach p,$(RccPlatforms) $(foreach r,$(word 2,$(subst :,  ,$p))),\
-  $(if $(filter $p,$(RccAllPlatforms)),,\
-    $(error RCC platform $p is specified but not a known RCC platform.))
+$(foreach p,$(RccPlatforms),$(if $(filter $p,$(RccAllPlatforms)),,\
+  $(error RCC platform $p is specified but not a known RCC platform.)))
 
 # Check that all HDL platforms and the first of pairs are valid HDL platforms
 HdlPlatforms:=$(call Unique,$(strip $(HdlPlatforms) $(HdlPlatform)))
@@ -78,12 +77,18 @@ export HdlPlatforms
 
 # Macro to use when platform pairs (<hdl>:<rcc>) are allowed
 # Take a platform arg that might be <hdl>, <rcc>, or <hdl>:<rcc> return <rcc>:<hdl>, with
-# either possibly being -, and the implicit <rcc> for <hdl> retrieved when not explicit
+# either possibly being -, and the implicit <rcc> for <hdl> retrieved when not explicit,
+# And ensure that all things specified are valid platforms
 GetRccHdlPlatform=$(strip\
   $(foreach f,$(word 1,$(subst :, ,$1)),\
-    $(forach s,$(or $(word 2,$(subst :, ,$1)),-),\
-      $(foreach r,$(or $(filter $f,$(RccAllPlatforms)),$f),$(filter-out -,$s),$(HdlRccPlatform_$f),-),\
-        $(foreach h,$(or $(filter $f,$(HdlAllPlatforms)),-),$r:$h))))
+    $(foreach s,$(or $(word 2,$(subst :, ,$1)),-),\
+      $(if $(filter-out -,$s),\
+        $(if $(filter $f,$(HdlAllPlatforms)),,$(error Unknown/unbuilt HDL platform: $f))\
+        $(if $(filter $s,$(RccAllPlatforms)),,$(error Unknown RCC platform: $s)),\
+        $(if $(filter $f,$(HdlAllPlatforms) $(RccAllPlatforms)),,\
+           $(error Platform $f is neither an RCC platform or a (built) HDL platform)))\
+      $(foreach r,$(or $(filter $f,$(RccAllPlatforms)),$(filter-out -,$s),$(HdlRccPlatform_$f),-),\
+        $(foreach h,$(or $(filter $f,$(HdlAllPlatforms)),-),$r:$h)))))
 
 ##########################################################################################
 # Goals that are not about projects
@@ -92,13 +97,13 @@ GetRccHdlPlatform=$(strip\
 # Feed the required info into makeExportLinks on a silver platter.
 DoExports=\
   $(foreach p,$(or $(Platforms),$(RccPlatforms) $(HdlPlatforms)),\
-    $(foreach x,$(call GetRccHdl,$p),\
+    $(foreach x,$(call GetRccHdlPlatform,$p),\
       $(foreach r,$(word 1,$(subst :, ,$x)),\
         $(foreach h,$(word 2,$(subst :, ,$x)),\
           $(infox x:$x r:$r h:$h)\
           $(if $(and $(filter-out -,$h),$(filter -,$r)),\
-            $(warning The HDL platform "$h" has no RCC platform.  It will be ignored.)),\
-            ./scripts/makeExportLinks.sh $r $(RccPlatformDir_$r) $h $(HdlPlatformDir_$h) &&))))) :
+            $(warning The HDL platform "$h" has no RCC platform.  It will be ignored.))\
+          ./scripts/makeExportLinks.sh $r $(RccPlatformDir_$r) $h $(HdlPlatformDir_$h) &&)))) :
 
 .PHONY: exports      framework      driver      testframework cleanpackaging \
         cleanexports cleanframework cleanprojects cleandriver clean distclean cleaneverything
@@ -115,7 +120,7 @@ testframework:
 	$(AT)for p in $(RccPlatforms); do ./scripts/test-opencpi.sh --platform $$p; done
 
 exports:
-	$(AT)echo Updating exports for platforms: $(or $(Platforms),$(RccPlatforms) $(HdlPlatforms) >&2
+	$(AT)echo Updating exports for platforms: $(or $(Platforms),$(RccPlatforms) $(HdlPlatforms)) >&2
 	$(AT)$(DoExports)
 
 cleanexports:
@@ -265,7 +270,7 @@ real_platforms:=$(call Unique,$(call RccRealPlatforms,$(RccPlatforms)))
 # one argument which if set indicates hw deployment rather than RPM building
 DoRpmOrDeployHw=\
   $(foreach arg,$(Platforms),\
-    $(foreach pair,$(call GetRccHdl,$(arg)),\
+    $(foreach pair,$(call GetRccHdlPlatform,$(arg)),\
       $(foreach r,$(word 1,$(subst :, ,$(pair))),\
         $(foreach h,$(word 2,$(subst :, ,$(pair))),\
           $(foreacn p,$(if $(filter-out -,$h),$h,$r),\
@@ -275,7 +280,7 @@ DoRpmOrDeployHw=\
                   $(release) $(version) $(git_hash),\
               ./packaging/make-hw-rpms.sh $(and $(RpmVerbose),-v) $p \
                  "$(and $(call cross,$p),1))" $(Package) $(base) $(call name,$p,hw) \
-                  $(release) $(version) $(git_hash) $r $1) &&))))) :\
+                  $(release) $(version) $(git_hash) $r $1) &&\))))) :
 rpm: exports
 	$(AT)$(call DoEpmOrDeployHw,)
 
@@ -291,13 +296,13 @@ real_platforms:=$(filter-out $(strip $(OCPI_TARGET_PLATFORM) $(OCPI_TOOL_PLATFOR
                              $(call Unique,$(call RccRealPlatforms,$(RccPlatforms))))
 DoHw=$(strip\
   $(if $(filter 1,$(words $(real_platforms))),\
-    $(foreach h,$(HdlAllPlatforms),$(if $(filter $(HdlRccPlatform_$h),$(real_platforms)),$h)),
+    $(foreach h,$(HdlAllPlatforms),$(if $(filter $(HdlRccPlatform_$h),$(real_platforms)),$h)),\
     $(error Cannot show hardware platforms or directories for more than one platform at a time)))
 
 showhw:
 	$(AT)echo $(DoHw)
 showhwdir:
-	$(AT)echo $(foreach h,$(DoHw),$(HdlPlatformDir_h))
+	$(AT)echo $(foreach h,$(DoHw),$(HdlPlatformDir_$h))
 
 ##########################################################################################
 # Goals that are about prerequisites
