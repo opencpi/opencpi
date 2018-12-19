@@ -72,17 +72,21 @@ begin
   -- of the ZynqMP's AXI to the 32-bit address space of the OpenCPI AXI primitive
   -- (tie higher-order unused signals to '0' and connect only needed ones)
   m : for i in 0 to C_M_AXI_HP_COUNT-1 generate
+    m_axi_hp_out(i).ARESETN <= '1';
+    m_axi_hp_out(i).W.ID <= (others => '0');
 
     m_axi_hp_out(i).AW.ADDR <= maxigp_awaddrs(i)(31 downto 0);
     m_axi_hp_out(i).AW.LEN <= maxigp_awlens(i)(3 downto 0);
     m_axi_hp_out(i).AW.ID <= maxigp_awids(i)(11 downto 0);
     m_axi_hp_out(i).AW.LOCK(1) <= '0';
     m_axi_hp_out(i).AW.ISSUECAP1_EN <= '0';
+    m_axi_hp_out(i).AW.COUNT <= (others => '0');
 
     m_axi_hp_out(i).AR.ADDR <= maxigp_araddrs(i)(31 downto 0);
     m_axi_hp_out(i).AR.LEN <= maxigp_arlens(i)(3 downto 0);
     m_axi_hp_out(i).AR.ID <= maxigp_arids(i)(11 downto 0);
     m_axi_hp_out(i).AR.ISSUECAP1_EN <= '0';
+    m_axi_hp_out(i).AR.COUNT <= (others => '0');
 
     maxigp_bids(i)(11 downto 0)  <= m_axi_hp_in(0).B.ID;
     maxigp_bids(i)(15 downto 12) <= (others =>'0');
@@ -92,6 +96,8 @@ begin
   end generate;
 
   s : for i in 0 to C_S_AXI_HP_COUNT-1 generate
+    s_axi_hp_out(i).ARESETN <= '1';
+
     saxigp_awaddrs(i)(31 downto 0)  <= s_axi_hp_in(0).AW.ADDR;
     saxigp_awaddrs(i)(48 downto 32) <= (others =>'0');
     saxigp_awlens(i)(3 downto 0)  <= s_axi_hp_in(0).AW.LEN;
