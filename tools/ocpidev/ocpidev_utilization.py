@@ -227,7 +227,7 @@ def main():
                                                      hdl_library=args['hdl_library'],
                                                      hdl_platform=args['hdl_plat_dir'])
 
-        ocpiutil.logging.debug('Chose directory "' + directory + '" to operate in')
+        ocpiutil.logging.debug('Choose directory "' + directory + '" to operate in')
 
         dir_type = ocpiutil.get_dirtype(directory)
 

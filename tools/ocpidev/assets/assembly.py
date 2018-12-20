@@ -17,6 +17,7 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 from .abstract import *
+from .worker import *
 import os
 import sys
 import logging

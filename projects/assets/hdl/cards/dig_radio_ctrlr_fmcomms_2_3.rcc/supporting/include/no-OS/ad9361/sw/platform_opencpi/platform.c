@@ -249,18 +249,5 @@ mdelay(unsigned long msecs) {
   usleep(msecs * 1000);
 }
 
-#if 0
-clk_get_rate
-clk_prepare_enable
-clk_set_rate
-do_div
-ERR_PTR
-find_first_bit
-ilog2
-int_sqrt
-#endif
-  //_ad9361_dig_tune
-  //_ad9361_hdl_loopback
-
 }
 

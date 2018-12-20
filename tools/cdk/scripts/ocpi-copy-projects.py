@@ -20,7 +20,6 @@
 import sys
 import os
 sys.path.append(os.getenv('OCPI_CDK_DIR') + '/scripts/')  # for ocpishow and genProjMetaData
-import ocpishow
 import genProjMetaData
 sys.path.append(os.getenv('OCPI_CDK_DIR') + '/' + os.getenv('OCPI_TOOL_PLATFORM') + '/lib/')
 import _opencpi.util as ocpiutil
@@ -66,11 +65,6 @@ def extract_all_tar(cur_dir, delete=False):
         tarball.extractall(os.path.dirname(tfile))
         if delete:
             os.remove(tfile)
-
-def show_reg():
-    MyStruct = namedtuple("MyStruct", "scope details")
-    options = MyStruct(scope="global", details="table")
-    ocpishow.do_projects(options, only_registry=True)
 
 def dir_exists_fail(in_dir):
     print("\"" + in_dir + "\" already exists and is not empty, cannot make new projects there. " +
@@ -185,7 +179,7 @@ else:
 os.environ['OCPI_PROJECT_REGISTRY_DIR'] = my_registry.directory
 user_yes = False
 if not force:
-    show_reg()
+    my_registry.show("table", False)
     user_yes = ocpiutil.get_ok(prompt="Unregister old copies of the projects from the registry",
                                default=True)
 
@@ -222,7 +216,7 @@ for proj in projects:
         print ("\nunable to register project " + proj + " due to error: \n" + str(ex))
         num_exceptions += 1
 
-show_reg()
+my_registry.show("table", False)
 if num_exceptions:
     print("\nProject creation successful, but some or all projects were not registered " +
           "automatically")

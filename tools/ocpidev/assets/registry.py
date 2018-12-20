@@ -26,7 +26,7 @@ sys.path.append(os.getenv('OCPI_CDK_DIR') + '/' + os.getenv('OCPI_TOOL_PLATFORM'
 import _opencpi.util
 
 # TODO: Should also extend CreatableAsset, ShowableAsset
-class Registry(Asset):
+class Registry(ShowableAsset):
     """
     The Registry class represents an OpenCPI project registry. As an OpenCPI
     registry contains project-package-ID named symlinks to project directories,
@@ -274,3 +274,30 @@ class Registry(Asset):
                                          "' exists but is not a directory.\nCorrect " +
                                          "'OCPI_PROJECT_REGISTRY_DIR'")
         return project_registry_dir
+
+    def _get_dict(self):
+        proj_dict = {}
+        for proj in self.__projects:
+            proj_dict[proj] = {"real_path":self.__projects[proj].directory,
+                               "exists":(os.path.exists(self.__projects[proj].directory) and
+                               os.path.isdir(self.__projects[proj].directory))}
+        json_dict = {"registry_location": self.directory}
+        json_dict["projects"] = proj_dict
+        return json_dict
+
+    def show(self, details, verbose, **kwargs):
+        reg_dict = self._get_dict()
+        if details == "simple":
+            print(" ".join(sorted(reg_dict["projects"])))
+        elif details == "table":
+            print("Project registry is located at: " + reg_dict["registry_location"])
+            # Table header
+            row_1 = ["Project Package-ID", "Path to Project", "Valid/Exists"]
+            rows = [row_1]
+            for proj in reg_dict["projects"]:
+                rows.append([proj, reg_dict["projects"][proj]["real_path"],
+                             reg_dict["projects"][proj]["exists"]])
+            ocpiutil.print_table(rows, underline="-")
+        elif (details == "json"):
+            json.dump(reg_dict, sys.stdout)
+            print()

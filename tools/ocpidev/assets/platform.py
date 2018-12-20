@@ -18,11 +18,13 @@
 
 from .abstract import *
 from .assembly import *
+from _opencpi.hdltargets import HdlToolFactory, HdlToolSet
 import os
 import sys
 import logging
 sys.path.append(os.getenv('OCPI_CDK_DIR') + '/' + os.getenv('OCPI_TOOL_PLATFORM') + '/lib/')
 import _opencpi.util
+import json
 
 class HdlPlatformsCollection(HDLBuildableAsset, ReportableAsset):
     """
@@ -199,3 +201,282 @@ class HdlPlatformWorkerConfig(HdlAssembly):
                                                  mode="synth")
         else:
             return ocpiutil.Report()
+
+class Platform(object):
+    @classmethod
+    def show_all(cls, details):
+        if details == "simple" or details == "table":
+            print("RCC:")
+            RccPlatform.show_all(details)
+            print("HDL:")
+            HdlPlatform.show_all(details)
+        elif details == "json":
+            rcc_dict = RccPlatform._get_all_dict()
+            hdl_dict = HdlPlatform._get_all_dict()
+
+            plat_dict = {"rcc":rcc_dict, "hdl":hdl_dict}
+            json.dump(plat_dict, sys.stdout)
+            print()
+
+class Target(object):
+    @classmethod
+    def show_all(cls, details):
+        if details == "simple" or details == "table":
+            print("RCC:")
+            RccTarget.show_all(details)
+            print("HDL:")
+            HdlTarget.show_all(details)
+        elif details == "json":
+            rcc_dict = RccTarget._get_all_dict()
+            hdl_dict = HdlTarget._get_all_dict()
+
+            target_dict = {"rcc":rcc_dict, "hdl":hdl_dict}
+            json.dump(target_dict, sys.stdout)
+            print()
+
+class RccPlatform(Platform):
+    def __init__(self, name, target):
+        self.name = name
+        self.target = target
+
+    def __str__(self):
+        return self.name
+
+    @classmethod
+    def _get_all_dict(cls):
+        rccDict = ocpiutil.get_make_vars_rcc_targets()
+        try:
+          rccPlatforms = rccDict["RccAllPlatforms"]
+        except TypeError:
+            raise ocpiutil.OCPIException("No RCC platforms found. Make sure the core project is " +
+                                         "registered or in the OCPI_PROJECT_PATH.")
+        plat_dict = {}
+        for plat in rccPlatforms:
+            plat_dict[plat] = {}
+            plat_dict[plat]["target"] = rccDict["RccTarget_" + plat][0]
+        return plat_dict
+
+    @classmethod
+    def show_all(cls, details):
+        plat_dict = cls._get_all_dict()
+
+        if details == "simple":
+            for plat in plat_dict:
+                print(plat + " ", end='')
+            print()
+        elif details == "table":
+            row_1 = ["Platform", "Target"]
+            rows = [row_1]
+            for plat in plat_dict:
+                rows.append([plat, plat_dict[plat]["target"]])
+            ocpiutil.print_table(rows, underline="-")
+        elif details == "json":
+            json.dump(plat_dict, sys.stdout)
+            print()
+
+class RccTarget(object):
+    def __init__(self, name, target):
+        self.name = name
+        self.target = target
+
+    def __str__(self):
+        return self.name
+
+    @classmethod
+    def _get_all_dict(cls):
+        rccDict = ocpiutil.get_make_vars_rcc_targets()
+        try:
+          rccPlatforms = rccDict["RccAllPlatforms"]
+
+        except TypeError:
+            raise ocpiutil.OCPIException("No RCC platforms found. Make sure the core project is " +
+                                         "registered or in the OCPI_PROJECT_PATH.")
+        target_dict = {}
+        for plat in rccPlatforms:
+            target_dict[plat] = {}
+            target_dict[plat]["target"] = rccDict["RccTarget_" + plat][0]
+        return target_dict
+
+    @classmethod
+    def show_all(cls, details):
+        target_dict = cls._get_all_dict()
+
+        if details == "simple":
+            for plat in target_dict:
+                print(target_dict[plat]["target"] + " ", end='')
+            print()
+        elif details == "table":
+            row_1 = ["Platform", "Target"]
+            rows = [row_1]
+            for plat in target_dict:
+                rows.append([plat, target_dict[plat]["target"]])
+            ocpiutil.print_table(rows, underline="-")
+        elif details == "json":
+            json.dump(target_dict, sys.stdout)
+            print()
+
+class HdlPlatform(Platform):
+    """
+    HdlPlatform
+    A HDL Platform (e.g. zed, ml605, alst4, modelsim) has an exact-part number
+    (e.g xc7z020-1-clg484) and a corresponding target (e.g zynq, virtex6,
+    stratix4, modelsim). A flag is set which indicates whether this platform
+    has been built yet.
+
+    Example (doctest):
+        >>> platform0 = HdlPlatform("myplat0", target1, "exactpart0")
+        >>> platform1 = HdlPlatform("myplat1", target1, "exactpart1")
+        >>> platform2 = HdlPlatform("myplat2", target2, "exactpart2")
+        >>> [platform0.name, platform0.target.name, str(platform0.target.toolset)]
+        ['myplat0', 'mytgt1', 'mytool1']
+        >>> [platform1.name, platform1.target.name, str(platform1.target.toolset)]
+        ['myplat1', 'mytgt1', 'mytool1']
+        >>> [platform2.name, platform2.target.name, str(platform2.target.toolset)]
+        ['myplat2', 'mytgt2', 'mytool2']
+        >>> platform0.exactpart
+        'exactpart0'
+    """
+    def __init__(self, name, target, exactpart, built=False):
+        self.name = name
+        self.target = target
+        self.exactpart = exactpart
+        self.built = built
+
+    def __str__(self):
+        return self.name
+
+    def __lt__(self, other):
+        if self.target.vendor < other.target.vendor:
+            return True
+        elif self.target.vendor == other.target.vendor:
+            return str(self) < str(other)
+        else:
+            return False
+
+    def get_toolset(self):
+        """
+        Return the toolset for this target
+        """
+        return self.target.toolset
+
+    @classmethod
+    def _get_all_dict(cls):
+        all_plats= HdlToolFactory.get_or_create_all("hdlplatform")
+        plat_dict = {}
+        for plat in all_plats:
+            plat_dict[plat.name] = {}
+            plat_dict[plat.name]["vendor"] = plat.target.vendor
+            plat_dict[plat.name]["target"] = plat.target.name
+            plat_dict[plat.name]["part"] = plat.exactpart
+            plat_dict[plat.name]["built"] = plat.built
+            plat_dict[plat.name]["tool"] = plat.target.toolset.name
+
+        return plat_dict
+
+    @classmethod
+    def show_all(cls, details):
+        plat_dict = cls._get_all_dict()
+
+        if details == "simple":
+            for plat in plat_dict:
+                print(plat + " ", end='')
+            print()
+        elif details == "table":
+            row_1 = ["Platform", "Target", "Part", "Vendor", "Toolset"]
+            rows = [row_1]
+            for plat in plat_dict:
+                built = ""
+                if plat_dict[plat]["built"] == False:
+                    built = "*"
+                rows.append([plat + built, plat_dict[plat]["target"], plat_dict[plat]["part"],
+                             plat_dict[plat]["vendor"], plat_dict[plat]["tool"]])
+            ocpiutil.print_table(rows, underline="-")
+            print("* An asterisk indicates that the platform has not been built yet.\n" +
+                  "  Assemblies and tests cannot be built until the platform is built.\n")
+        elif details == "json":
+            json.dump(plat_dict, sys.stdout)
+            print()
+
+class HdlTarget(object):
+    """
+    HdlTarget
+    A HDL target corresponds to a family (e.g. zynq, virtex6, stratix4) of parts.
+    A target belongs to a vendor/top target (e.g. xilinx, altera, modelsim),
+    and is associated with a toolset (e.g. vivado, quartus, xsim, modelsim).
+
+    Example (doctest):
+        >>> target0 = HdlTarget("mytgt0", "vend1", ["part0.1", "part0.2"], tool1)
+        >>> target1 = HdlTarget("mytgt1", "vend1", ["part1.1", "part1.2"], tool1)
+        >>> target2 = HdlTarget("mytgt2", "vend2", ["part2"], tool2)
+        >>> [target1.name, target1.vendor, target1.parts, str(target1.toolset)]
+        ['mytgt1', 'vend1', ['part1.1', 'part1.2'], 'mytool1']
+        >>> [target2.name, target2.vendor, target2.parts, str(target2.toolset)]
+        ['mytgt2', 'vend2', ['part2'], 'mytool2']
+        >>> target1.name
+        'mytgt1'
+        >>> target1.parts
+        ['part1.1', 'part1.2']
+        >>> target2.vendor
+        'vend2'
+    """
+    def __init__(self, name, vendor, parts, toolset):
+        """
+        Create an instance of HdlTarget.
+        Give it a name and associate it with a vendor, a list of parts, and an HdlToolSet.
+        """
+        self.name = name
+        self.vendor = vendor
+        self.parts = parts
+        # If the caller passed in a toolset instance instead of name, just assign
+        # the instance (no need to construct or search for one). This is especially
+        # useful for simple tests of this class (e.g. see doctest setup at end of file
+        if isinstance(toolset, HdlToolSet):
+            self.toolset = toolset
+        else:
+            self.toolset = HdlToolFactory.factory("hdltoolset", toolset)
+
+    def __str__(self):
+        return self.name
+
+    def __lt__(self, other):
+        if self.vendor < other.vendor:
+            return True
+        elif self.vendor == other.vendor:
+            return str(self) < str(other)
+        else:
+            return False
+
+    @classmethod
+    def _get_all_dict(cls):
+        target_dict = {}
+        for vendor in HdlToolFactory.get_all_vendors():
+            targetDict = {}
+            for target in HdlToolFactory.get_all_targets_for_vendor(vendor):
+                targetDict[target.name] = {"parts": target.parts,
+                                           "tool": target.toolset.title}
+            target_dict[vendor] = targetDict
+
+        return target_dict
+
+    @classmethod
+    def show_all(cls, details):
+        target_dict = cls._get_all_dict()
+
+        if details == "simple":
+            for vendor in target_dict:
+                for target in target_dict[vendor]:
+                    print(target + " ", end='')
+            print()
+        elif details == "table":
+            row_1 = ["Target", "Parts", "Vendor", "Toolset"]
+            rows = [row_1]
+            for vendor in target_dict:
+                for target in target_dict[vendor]:
+                    rows.append([target,
+                                ", ".join(target_dict[vendor][target]["parts"]),
+                                vendor,
+                                target_dict[vendor][target]["tool"]])
+            ocpiutil.print_table(rows, underline="-")
+        elif details == "json":
+            json.dump(target_dict, sys.stdout)
+            print()

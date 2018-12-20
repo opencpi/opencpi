@@ -21,7 +21,7 @@ import os
 import sys
 import logging
 sys.path.append(os.getenv('OCPI_CDK_DIR') + '/' + os.getenv('OCPI_TOOL_PLATFORM') + '/lib/')
-import _opencpi.util
+import _opencpi.hdltargets as hdltargets
 import xml.etree.ElementTree as ET
 
 # Skeleton class

@@ -98,7 +98,9 @@ begin
   output_valid          <= (in_in.ready and in_in.valid and to_bool(message_wcnt_r=0)) or --Sending sample
                            (to_bool(message_wcnt_r/=0));                                  --Sending zeros
   out_out.valid         <= output_valid;
-  output_som            <= to_bool(message_wcnt_r=0) when its(in_in.ready) and its(in_in.valid) else zlm_detected;
+  output_som            <= to_bool(message_wcnt_r=0) when its(in_in.ready) and its(in_in.valid)
+                           else bfalse when message_wcnt_r /= 0
+                           else zlm_detected;
   output_eom            <= data_eom when its(output_valid) else zlm_detected;
   out_out.som           <= output_som;
   out_out.eom           <= output_eom;

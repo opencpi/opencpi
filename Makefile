@@ -99,7 +99,7 @@ testframework:
 	$(AT)$(DoTests)
 
 exports:
-	$(AT)echo Updating exports for platforms: $(Platforms) >&2
+	$(AT)var="$(Platforms)"; [ -z "$$var" ] && var="$(RccPlatforms)"; echo Updating exports for platforms: $$var >&2
 	$(AT)$(DoExports)
 
 cleanexports:

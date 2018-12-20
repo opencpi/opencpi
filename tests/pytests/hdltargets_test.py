@@ -39,9 +39,8 @@ import os
 import sys
 import logging
 from shutil import copyfile
-sys.path.append(os.getenv('OCPI_CDK_DIR') + '/' + os.getenv('OCPI_TOOL_PLATFORM') + '/lib/')
 import _opencpi.util as ocpiutil
-from  _opencpi.hdltargets import HdlToolFactory
+import _opencpi.hdltargets as hdltargets
 
 # Directory of THIS test file
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
@@ -136,7 +135,7 @@ class TestHdlTargets(unittest.TestCase):
         logging.info("********************************************")
         toptargets = TGT_DICT['HdlTopTargets']
         logging.info("List of top targets should be: " + str(toptargets))
-        self.assertEqual(set(HdlToolFactory.get_all_vendors()), set(toptargets))
+        self.assertEqual(set(hdltargets.HdlToolFactory.get_all_vendors()), set(toptargets))
         logging.info("Testing target associations with top-targets/vendors")
         for top in toptargets:
             logging.info("--------------------------------------------")
@@ -144,12 +143,12 @@ class TestHdlTargets(unittest.TestCase):
             if 'HdlTargets_' + top in TGT_DICT:
                 logging.info("Children targets should be: " + str(TGT_DICT['HdlTargets_' + top]))
                 for name in TGT_DICT['HdlTargets_' + top]:
-                    self.assertEqual(HdlToolFactory.factory("hdltarget", name).name, name)
-                    self.assertEqual(HdlToolFactory.factory("hdltarget", name).vendor, top)
+                    self.assertEqual(hdltargets.HdlToolFactory.factory("hdltarget", name).name, name)
+                    self.assertEqual(hdltargets.HdlToolFactory.factory("hdltarget", name).vendor, top)
             else:
                 logging.info("Children targets should be: " + str([top]))
-                self.assertEqual(HdlToolFactory.factory("hdltarget", top).name, top)
-                self.assertEqual(HdlToolFactory.factory("hdltarget", top).vendor, top)
+                self.assertEqual(hdltargets.HdlToolFactory.factory("hdltarget", top).name, top)
+                self.assertEqual(hdltargets.HdlToolFactory.factory("hdltarget", top).vendor, top)
 
     def test_targets_inits(self):
         logging.info("********************************************")
@@ -157,28 +156,28 @@ class TestHdlTargets(unittest.TestCase):
         for name in TGT_DICT['HdlAllFamilies']:
             logging.info("--------------------------------------------")
             logging.info("Initialization of target: " + name)
-            self.assertEqual(HdlToolFactory.factory("hdltarget", name).name, name)
+            self.assertEqual(hdltargets.HdlToolFactory.factory("hdltarget", name).name, name)
             # test __str__
-            self.assertEqual(str(HdlToolFactory.factory("hdltarget", name)), name)
+            self.assertEqual(str(hdltargets.HdlToolFactory.factory("hdltarget", name)), name)
             logging.info("Parts list of target: " + name)
             if 'HdlTargets_' + name in TGT_DICT:
                 logging.info("Parts list should be: " + str(TGT_DICT['HdlTargets_' + name]))
-                self.assertEqual(HdlToolFactory.factory("hdltarget", name).parts,
+                self.assertEqual(hdltargets.HdlToolFactory.factory("hdltarget", name).parts,
                                  TGT_DICT['HdlTargets_' + name])
             else:
                 logging.info("Parts list should be: " + str([name]))
-                self.assertEqual(HdlToolFactory.factory("hdltarget", name).parts,
+                self.assertEqual(hdltargets.HdlToolFactory.factory("hdltarget", name).parts,
                                  [name])
             logging.info("ToolSet for should be: " + str(TGT_DICT['HdlToolSet_' + name][0]))
-            self.assertEqual(HdlToolFactory.factory("hdltarget", name).toolset.name,
+            self.assertEqual(hdltargets.HdlToolFactory.factory("hdltarget", name).toolset.name,
                              TGT_DICT['HdlToolSet_' + name][0])
         self.assertRaises(ocpiutil.OCPIException,
-                          HdlToolFactory.factory, "hdltarget", "Not a valid name")
+                          hdltargets.HdlToolFactory.factory, "hdltarget", "Not a valid name")
 
     def test_all_targets_for_vendor(self):
         logging.info("********************************************")
         for top in TGT_DICT['HdlTopTargets']:
-            alltargets0 = HdlToolFactory.get_all_targets_for_vendor(top)
+            alltargets0 = hdltargets.HdlToolFactory.get_all_targets_for_vendor(top)
             if 'HdlTargets_' + top in TGT_DICT:
                 golden_list_of_targets = TGT_DICT['HdlTargets_' + top]
             else:
@@ -192,7 +191,7 @@ class TestHdlTargets(unittest.TestCase):
         golden_targets = TGT_DICT['HdlAllFamilies']
         logging.info("All targets should be: " + str(golden_targets))
 
-        all_targets = HdlToolFactory.get_or_create_all("hdltarget")
+        all_targets = hdltargets.HdlToolFactory.get_or_create_all("hdltarget")
         self.assertEqual(set([tgt.name for tgt in all_targets]), set(golden_targets))
 
 class TestHdlToolSet(unittest.TestCase):
@@ -213,21 +212,21 @@ class TestHdlToolSet(unittest.TestCase):
                              for tgt in TGT_DICT['HdlAllFamilies']]:
             logging.info("--------------------------------------------")
             logging.info("Target: \"" + tgt + "\" should have toolset: " + name)
-            self.assertEqual(HdlToolFactory.factory("hdltarget", tgt).toolset.name, name)
-            self.assertEqual(HdlToolFactory.factory("hdltoolset", name).name, name)
+            self.assertEqual(hdltargets.HdlToolFactory.factory("hdltarget", tgt).toolset.name, name)
+            self.assertEqual(hdltargets.HdlToolFactory.factory("hdltoolset", name).name, name)
             title = TGT_DICT['HdlToolName_' + name][0]
             logging.info("Toolset: \"" + name + "\" should have title: " + title)
-            self.assertEqual(HdlToolFactory.factory("hdltoolset", name).title, title)
+            self.assertEqual(hdltargets.HdlToolFactory.factory("hdltoolset", name).title, title)
             # test __str__
-            self.assertEqual(str(HdlToolFactory.factory("hdltoolset", name)), name)
+            self.assertEqual(str(hdltargets.HdlToolFactory.factory("hdltoolset", name)), name)
             if name in TGT_DICT['HdlSimTools']:
                 logging.info("This SHOULD be a simulator tool")
-                self.assertTrue(HdlToolFactory.factory("hdltoolset", name).is_simtool)
+                self.assertTrue(hdltargets.HdlToolFactory.factory("hdltoolset", name).is_simtool)
             else:
                 logging.info("This should NOT be a simulator tool")
-                self.assertFalse(HdlToolFactory.factory("hdltoolset", name).is_simtool)
+                self.assertFalse(hdltargets.HdlToolFactory.factory("hdltoolset", name).is_simtool)
         self.assertRaises(ocpiutil.OCPIException,
-                          HdlToolFactory.factory, "hdltoolset", "Not a valid name")
+                          hdltargets.HdlToolFactory.factory, "hdltoolset", "Not a valid name")
 
 class TestHdlPlatform(unittest.TestCase):
     """
@@ -249,7 +248,7 @@ class TestHdlPlatform(unittest.TestCase):
             exactpart = TGT_DICT['HdlPart_' + name][0]
             target = TGT_DICT['HdlFamily_' + exactpart][0]
             logging.info("Fields should be: \"" + name + ", " + target + ", " + exactpart)
-            platform = HdlToolFactory.factory("hdlplatform", name)
+            platform = hdltargets.HdlToolFactory.factory("hdlplatform", name)
             self.assertEqual(platform.name, name)
             # test __str__
             self.assertEqual(str(platform), name)
@@ -259,13 +258,13 @@ class TestHdlPlatform(unittest.TestCase):
             logging.info("Platform should have toolset: " + tool)
             self.assertEqual(str(platform.get_toolset()), tool)
         self.assertRaises(ocpiutil.OCPIException,
-                          HdlToolFactory.factory, "hdlplatform", "Not a valid name")
+                          hdltargets.HdlToolFactory.factory, "hdlplatform", "Not a valid name")
 
     def test_all_platforms(self):
         logging.info("********************************************")
         golden_platforms = TGT_DICT['HdlAllPlatforms']
         logging.info("All platforms should be: " + str(golden_platforms))
-        all_platforms = HdlToolFactory.get_or_create_all("hdlplatform")
+        all_platforms = hdltargets.HdlToolFactory.get_or_create_all("hdlplatform")
         self.assertEqual(set([plat.name for plat in all_platforms]), set(golden_platforms))
 
 if __name__ == '__main__':

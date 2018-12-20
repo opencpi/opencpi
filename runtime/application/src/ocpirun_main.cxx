@@ -72,8 +72,8 @@
 	                               "set log level, overriding OCPI_LOG_LEVEL")\
   CMD_OPTION(duration,   t, Long,   0, "<seconds>\n" \
 	                               "duration (seconds) to run the application if not done\n" \
-                                       "first; exit status is zero in eithercases")\
-  CMD_OPTION(timeout,    O, ULong,  0, "<seconds>\n"			\
+                                       "first; exit status is zero in either case") \
+  CMD_OPTION(timeout,    O, ULong,  0, "<seconds>\n" \
 	                               "time limit (seconds) to run the application; if not\n" \
                                        "done/finished before that time; an error occurs\n")\
   CMD_OPTION(list,       C, Bool,   0, "show available containers\n" \

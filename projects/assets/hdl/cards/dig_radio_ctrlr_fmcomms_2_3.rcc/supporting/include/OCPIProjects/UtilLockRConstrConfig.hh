@@ -21,7 +21,6 @@
 #ifndef _OCPI_PROJECTS_UTIL_LOCK_R_CONSTR_CONFIG_HH
 #define _OCPI_PROJECTS_UTIL_LOCK_R_CONSTR_CONFIG_HH
 
-#include <cstdarg>            // va_list
 #include "UtilValidRanges.hh" // ValidRanges
 
 namespace OCPIProjects {

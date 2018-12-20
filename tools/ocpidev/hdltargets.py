@@ -42,6 +42,7 @@ from functools import partial
 sys.path.append(os.getenv('OCPI_CDK_DIR') + '/' + os.getenv('OCPI_TOOL_PLATFORM') + '/lib/')
 import _opencpi.util as ocpiutil
 import _opencpi.hdltools as hdltools
+import json
 
 class HdlToolFactory(object):
     """
@@ -101,9 +102,10 @@ class HdlToolFactory(object):
         # actions maps asset_type string to the function that creates objects of that type
         # Some types will use plain constructors,
         # and some will use __get_or_create with asset_cls set accordingly
+        import _opencpi.assets.platform as ocpiplat
         actions = {"hdltoolset":  partial(cls.__get_or_create, HdlToolSet),
-                   "hdltarget":   partial(cls.__get_or_create, HdlTarget),
-                   "hdlplatform": partial(cls.__get_or_create, HdlPlatform)}
+                   "hdltarget":   partial(cls.__get_or_create, ocpiplat.HdlTarget),
+                   "hdlplatform": partial(cls.__get_or_create, ocpiplat.HdlPlatform)}
 
         if asset_type not in actions.keys():
             raise ocpiutil.OCPIException("Bad asset creation, \"" + asset_type + "\" not supported")
@@ -142,12 +144,14 @@ class HdlToolFactory(object):
         if asset_type == "hdltarget":
             # iterate through all target names, construct, and add to return list for tgt in cls.__tgt_dict:
             for tgt in cls.__tgt_dict:
-                asset_list.append(cls.__get_or_create(HdlTarget, tgt))
+                import _opencpi.assets.platform as ocpiplat
+                asset_list.append(cls.__get_or_create(ocpiplat.HdlTarget, tgt))
             return asset_list
         if asset_type == "hdlplatform":
             # iterate through all platform names, construct, and add to return list
             for plat in cls.__plat_dict:
-                asset_list.append(cls.__get_or_create(HdlPlatform, plat))
+                import _opencpi.assets.platform as ocpiplat
+                asset_list.append(cls.__get_or_create(ocpiplat.HdlPlatform, plat))
             return asset_list
         if asset_type == "hdltoolset":
             # iterate through all tool names, construct, and add to return list
@@ -206,7 +210,8 @@ class HdlToolFactory(object):
                 return asset_cls(name=name, title=cls.__tool_dict[name]["title"],
                                  is_simtool=cls.__tool_dict[name]["is_simtool"])
 
-        if asset_cls is HdlTarget:
+        import _opencpi.assets.platform as ocpiplat
+        if asset_cls is ocpiplat.HdlTarget:
             # if tgt, name should be a key in tgt_dict
             if name not in cls.__tgt_dict:
                 raise ocpiutil.OCPIException("Target with name \"" + name + "\" does not exist. " +
@@ -216,7 +221,8 @@ class HdlToolFactory(object):
             return asset_cls(name=name, vendor=cls.__tgt_dict[name]["vendor"],
                              parts=cls.__tgt_dict[name]["parts"],
                              toolset=cls.__tgt_dict[name]["toolset"])
-        if asset_cls is HdlPlatform:
+        import _opencpi.assets.platform as ocpiplat
+        if asset_cls is ocpiplat.HdlPlatform:
             # if plat, name should be a key in plat_dict
             if name not in cls.__plat_dict:
                 raise ocpiutil.OCPIException("Platform with name \"" + name + "\" does not exist" +
@@ -526,102 +532,10 @@ class HdlReportableToolSet(HdlToolSet):
             init_report.append(new_report)
         return init_report
 
-class HdlTarget(object):
-    """
-    HdlTarget
-    A HDL target corresponds to a family (e.g. zynq, virtex6, stratix4) of parts.
-    A target belongs to a vendor/top target (e.g. xilinx, altera, modelsim),
-    and is associated with a toolset (e.g. vivado, quartus, xsim, modelsim).
-
-    Example (doctest):
-        >>> target0 = HdlTarget("mytgt0", "vend1", ["part0.1", "part0.2"], tool1)
-        >>> target1 = HdlTarget("mytgt1", "vend1", ["part1.1", "part1.2"], tool1)
-        >>> target2 = HdlTarget("mytgt2", "vend2", ["part2"], tool2)
-        >>> [target1.name, target1.vendor, target1.parts, str(target1.toolset)]
-        ['mytgt1', 'vend1', ['part1.1', 'part1.2'], 'mytool1']
-        >>> [target2.name, target2.vendor, target2.parts, str(target2.toolset)]
-        ['mytgt2', 'vend2', ['part2'], 'mytool2']
-        >>> target1.name
-        'mytgt1'
-        >>> target1.parts
-        ['part1.1', 'part1.2']
-        >>> target2.vendor
-        'vend2'
-    """
-    def __init__(self, name, vendor, parts, toolset):
-        """
-        Create an instance of HdlTarget.
-        Give it a name and associate it with a vendor, a list of parts, and an HdlToolSet.
-        """
-        self.name = name
-        self.vendor = vendor
-        self.parts = parts
-        # If the caller passed in a toolset instance instead of name, just assign
-        # the instance (no need to construct or search for one). This is especially
-        # useful for simple tests of this class (e.g. see doctest setup at end of file
-        if isinstance(toolset, HdlToolSet):
-            self.toolset = toolset
-        else:
-            self.toolset = HdlToolFactory.factory("hdltoolset", toolset)
-
-    def __str__(self):
-        return self.name
-
-    def __lt__(self, other):
-        if self.vendor < other.vendor:
-            return True
-        elif self.vendor == other.vendor:
-            return str(self) < str(other)
-        else:
-            return False
-
-class HdlPlatform(object):
-    """
-    HdlPlatform
-    A HDL Platform (e.g. zed, ml605, alst4, modelsim) has an exact-part number
-    (e.g xc7z020-1-clg484) and a corresponding target (e.g zynq, virtex6,
-    stratix4, modelsim). A flag is set which indicates whether this platform
-    has been built yet.
-
-    Example (doctest):
-        >>> platform0 = HdlPlatform("myplat0", target1, "exactpart0")
-        >>> platform1 = HdlPlatform("myplat1", target1, "exactpart1")
-        >>> platform2 = HdlPlatform("myplat2", target2, "exactpart2")
-        >>> [platform0.name, platform0.target.name, str(platform0.target.toolset)]
-        ['myplat0', 'mytgt1', 'mytool1']
-        >>> [platform1.name, platform1.target.name, str(platform1.target.toolset)]
-        ['myplat1', 'mytgt1', 'mytool1']
-        >>> [platform2.name, platform2.target.name, str(platform2.target.toolset)]
-        ['myplat2', 'mytgt2', 'mytool2']
-        >>> platform0.exactpart
-        'exactpart0'
-    """
-    def __init__(self, name, target, exactpart, built=False):
-        self.name = name
-        self.target = target
-        self.exactpart = exactpart
-        self.built = built
-
-    def __str__(self):
-        return self.name
-
-    def __lt__(self, other):
-        if self.target.vendor < other.target.vendor:
-            return True
-        elif self.target.vendor == other.target.vendor:
-            return str(self) < str(other)
-        else:
-            return False
-
-    def get_toolset(self):
-        """
-        Return the toolset for this target
-        """
-        return self.target.toolset
-
 # Set log level and setup for doctest
 if __name__ == "__main__":
     import doctest
+    import _opencpi.assets.platform as ocpiplat
     __LOG_LEVEL = os.environ.get('OCPI_LOG_LEVEL')
     __VERBOSITY = False
     if __LOG_LEVEL:
@@ -635,11 +549,11 @@ if __name__ == "__main__":
     init_instances = {'tool1': HdlToolSet("mytool1"),
                       'tool2': HdlToolSet("mytool2", "MyTool1", True)}
 
-    init_instances['target0'] = HdlTarget("mytgt0", "vend1",
+    init_instances['target0'] = ocpiplat.HdlTarget("mytgt0", "vend1",
                                           ["part0.1", "part0.2"],
                                           init_instances['tool1'])
-    init_instances['target1'] = HdlTarget("mytgt1", "vend1",
+    init_instances['target1'] = ocpiplat.HdlTarget("mytgt1", "vend1",
                                            "part1", init_instances['tool1'])
-    init_instances['target2'] = HdlTarget("mytgt2", "vend2",
+    init_instances['target2'] = ocpiplat.HdlTarget("mytgt2", "vend2",
                                            "part2", init_instances['tool2'])
     doctest.testmod(verbose=__VERBOSITY, optionflags=doctest.ELLIPSIS, extraglobs=init_instances)

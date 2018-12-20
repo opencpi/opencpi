@@ -95,29 +95,6 @@ else:
 
 #TODO: test get_ok and print_table
 
-class TestUtilFunctions(unittest.TestCase):
-    """
-    Test some general/basic utility functions
-    """
-    def test_py_to_bash_list(self):
-        """
-        List conversion test
-        """
-        logging.info("Testing conversion of py list to bash list")
-        self.assertEqual(ocpiutil.python_list_to_bash(["a", "b", "c"]), "a b c")
-        self.assertEqual(ocpiutil.python_list_to_bash(["a b c"]), "a b c")
-        self.assertEqual(ocpiutil.python_list_to_bash(["a"]), "a")
-        self.assertEqual(ocpiutil.python_list_to_bash([]), "")
-    def test_bash_to_py_list(self):
-        """
-        List conversion test
-        """
-        logging.info("Testing conversion of bash list to py list")
-        self.assertEqual(ocpiutil.bash_list_to_python("a b c"), ["a", "b", "c"])
-        self.assertEqual(ocpiutil.bash_list_to_python("a b c"), ["a", "b", "c"])
-        self.assertEqual(ocpiutil.bash_list_to_python("a"), ["a"])
-        self.assertEqual(ocpiutil.bash_list_to_python(""), [])
-
 class TestPathFunctions(unittest.TestCase):
     """
     Test the path finding/manipulating functions in ocpiutil (e.g. get_path(s)_...)

@@ -614,6 +614,8 @@ def _get_asset_dir(noun="", name=".", library=None, hdl_library=None, hdl_platfo
             ...
         OCPIException: ...
     """
+    #TODO if i do show project in a lower level dir it should use find project top to locate the
+    # directory of the project
     if noun == "test" and not name.endswith((".test", ".test/")):
       name += ".test"
     # library-directives are mutually exclusive

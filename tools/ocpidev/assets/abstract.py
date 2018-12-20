@@ -24,7 +24,6 @@ import copy
 import shutil
 sys.path.append(os.getenv('OCPI_CDK_DIR') + '/' + os.getenv('OCPI_TOOL_PLATFORM') + '/lib/')
 import _opencpi.util as ocpiutil
-import _opencpi.hdltargets as hdltargets
 
 class Asset(metaclass=ABCMeta):
     #TODO add project top and package id as a variable here, maybe this becomes a method instead
@@ -161,6 +160,7 @@ class HDLBuildableAsset(BuildableAsset):
         self.hdl_targets = set()
         self.hdl_platforms = set()
 
+        import _opencpi.hdltargets as hdltargets
         # If there were HDL Targets provided, construct HdlTarget object for each
         # and add to the hdl_targets set
         if self.hdl_tgt_strs is not None:
@@ -237,7 +237,7 @@ class ShowableAsset(Asset):
     Virtual class that requires that any child classes implement a show function
     """
     @abstractmethod
-    def show(self, **kwargs):
+    def show(self, details, verbose, **kwargs):
         """
         This function will show this asset must be implemented by the child class
         """

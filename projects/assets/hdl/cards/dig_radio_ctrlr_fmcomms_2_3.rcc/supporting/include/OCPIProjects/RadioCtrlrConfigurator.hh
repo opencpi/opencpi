@@ -21,7 +21,6 @@
 #ifndef _OCPI_PROJECTS_RADIO_CTRLR_CONFIGURATOR_HH
 #define _OCPI_PROJECTS_RADIO_CTRLR_CONFIGURATOR_HH
 
-#include <cstdarg>         // va_list
 #include <map>             // std::map
 #include <vector>          // std::vector
 #include "RadioCtrlr.hh"   // config_value_t,

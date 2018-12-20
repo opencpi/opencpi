@@ -17,7 +17,6 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import os.path
-import re
 import subprocess
 import os
 import sys
@@ -176,40 +175,6 @@ def merge_two_dicts(dict1, dict2):
     merged = dict1.copy()   # start with dict's keys and values
     merged.update(dict2)    # modifies merged with dict2's keys and values & returns None
     return merged
-
-def python_list_to_bash(pylist):
-    """
-    Convert a python list to a Makefile list (a space separated string)
-
-    For example (docstring):
-    >>> python_list_to_bash(["element1", "element2"])
-    'element1 element2'
-    >>> python_list_to_bash([""])
-    ''
-    >>> python_list_to_bash([])
-    ''
-    """
-    mklist = ""
-    for pyelem in pylist:
-        mklist = mklist + " " + str(pyelem)
-    return mklist.strip()
-
-def bash_list_to_python(mklist):
-    """
-    Convert a bash list (a space separated string) to a python list
-
-    For example (doctest):
-    >>> bash_list_to_python("element0 element1 element2     element3     ")
-    ['element0', 'element1', 'element2', 'element3']
-    >>> bash_list_to_python(" element1 ")
-    ['element1']
-    >>> bash_list_to_python("  ")
-    []
-    >>> bash_list_to_python("")
-    []
-    """
-    return [elem for elem in mklist.strip().split(" ") if elem != ""]
-
 
 def isfloat(value):
     """
@@ -375,8 +340,6 @@ def match_regex(target_file, regex):
     # no match found
     return None
 
-
-
 def match_regex_get_first_num(target_file, regex):
     """
     Match the given regex in the given file (get the first match),
@@ -450,6 +413,10 @@ def get_ok(prompt="", default=False):
             return False
         if ok_input.lower() == '':
             return default
+def rchop(thestring, ending):
+    if thestring.endswith(ending):
+        return thestring[:-len(ending)]
+    return thestring
 
 if __name__ == "__main__":
     import doctest
