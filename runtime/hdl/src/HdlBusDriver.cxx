@@ -75,9 +75,21 @@
 	       (volatile SLCR *)m_driver.map(sizeof(SLCR), SLCR_ADDR, err);
 	     if (!slcr)
 	       return true;
+             // this isnt working on the zynqmp why ?
+             //volatile IDCODE *idcode =
+             //  (volatile IDCODE *)m_driver.map(sizeof(IDCODE), IDCODE_ADDR, err);
+  	     //if (!idcode)
+  	     //  return true;
 	     // We're not loaded, but fake as much stuff as possible.
 	     const char *p = ezxml_cattr(config, "platform");
 	     m_platform = p ? p : "zed"; // FIXME: is there any other automatic way for this?
+#if defined(OCPI_ARCH_arm64)
+             //TODO CMH add logic to grab this from the system.xml
+             //TODO add write of the register to for HPM0 to 32 bits AFI_FS_(FDP_SLCR)
+             m_part = "xczu9eg";
+             // what is the automatic way to determine this?
+             // 0xFFCA0040 returns a buss error i would have thought this was it
+#else
 	     switch ((slcr->pss_idcode >> 12) & 0x1f) {
 	     case 0x02: m_part = "xc7z010"; break;
 	     case 0x07: m_part = "xc7z020"; break;
@@ -85,8 +97,10 @@
 	     case 0x11: m_part = "xc7z045"; break;
 	     default:
 	       m_part = "xc7zXXX";
+
 	     }
-	     ocpiDebug("Zynq SLCR PSS_IDCODE: 0x%x", slcr->pss_idcode);
+             ocpiDebug("Zynq SLCR PSS_IDCODE: 0x%x", slcr->pss_idcode);
+#endif
 	     return m_driver.unmap((uint8_t *)slcr, sizeof(SLCR), err);
 	   }
 	  return OCPI::HDL::Device::configure(config, err);
@@ -121,14 +135,22 @@
         bool
         isProgrammed(std::string &err) {
           std::string val;
+#if defined(OCPI_ARCH_arm) || defined(OCPI_ARCH_arm_cs)
           const char *e = OU::file2String(val, "/sys/class/xdevcfg/xdevcfg/device/prog_done", '|');
+          bool ret_val = val.c_str()[0] == '1';
           ocpiDebug("OCPI::HDL::Zynq::Device::isProgrammed: got %s%s (%s)", e ? "error: " : "",
-            e ? e : (val.c_str()[0] == '1' ? "done" : "not done"), val.c_str());
+            e ? e : (ret_val ? "done" : "not done"), val.c_str());
+#else
+          const char *e = OU::file2String(val, "/sys/class/fpga_manager/fpga0/state", '|');
+          bool ret_val = val == "operating";
+          ocpiDebug("OCPI::HDL::Zynq::Device::isProgrammed: got %s%s (%s)", e ? "error: " : "",
+            e ? e : (ret_val ? "operating" : "not operating"), val.c_str());
+#endif
           if (e) {
             err = e;
             return false;
           }
-          return (val.c_str()[0] == '1');
+          return ret_val;
         }
 	bool getMetadata(std::vector<char> &xml, std::string &err) {
 	  if (isProgrammed(err))
@@ -152,17 +174,17 @@
 	static uint8_t *findsync(uint8_t *buf, size_t len) {
 	  static uint8_t startup[] = {
 	    0xff, 0xff, 0xff, 0xff,
-	    0xff, 0xff, 0xff, 0xff, 
 	    0xff, 0xff, 0xff, 0xff,
-	    0xff, 0xff, 0xff, 0xff, 
 	    0xff, 0xff, 0xff, 0xff,
-	    0xff, 0xff, 0xff, 0xff, 
 	    0xff, 0xff, 0xff, 0xff,
-	    0xff, 0xff, 0xff, 0xff, 
+	    0xff, 0xff, 0xff, 0xff,
+	    0xff, 0xff, 0xff, 0xff,
+	    0xff, 0xff, 0xff, 0xff,
+	    0xff, 0xff, 0xff, 0xff,
 	    0x00, 0x00, 0x00, 0xbb,
 	    0x11, 0x22, 0x00, 0x44,
-	    0xff, 0xff, 0xff, 0xff, 
-	    0xff, 0xff, 0xff, 0xff, 
+	    0xff, 0xff, 0xff, 0xff,
+	    0xff, 0xff, 0xff, 0xff,
 	    0xaa, 0x99, 0x55, 0x66};
 	  uint8_t *p8 = startup;
 	  for (uint8_t *u8 = buf; u8 < buf + len; u8++)
@@ -228,7 +250,7 @@
 	      else {
 		n += OCPI_UTRUNCATE(int, len);
 		len = 0;
-		argBuf = buf; 
+		argBuf = buf;
 	      }
 	      return n;
 	    }
@@ -321,13 +343,13 @@
 	OCPI::HDL::Device *dev = open("0", true, params, error);
 	return dev && !found(*dev, exclude, discoveryOnly, error) ? 1 : 0;
       }
-      
+
       OCPI::HDL::Device *Driver::
       open(const char *busName, bool forLoad, const OU::PValue *params, std::string &error) {
 	(void)params;
 	std::string name("PL:");
 	name += busName;
-#if defined(OCPI_ARCH_arm) || defined(OCPI_ARCH_arm_cs)
+#if defined(OCPI_ARCH_arm) || defined(OCPI_ARCH_arm_cs) || defined(OCPI_ARCH_arm64)
 	Device *dev = new Device(*this, name, forLoad, params, error);
 	if (error.empty())
 	  return dev;

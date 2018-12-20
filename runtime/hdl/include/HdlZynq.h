@@ -25,8 +25,13 @@ namespace OCPI {
   namespace HDL {
     namespace Zynq {
 #endif
-      const uint32_t GP0_PADDR = 0x40000000;
+      const uint32_t GP0_PADDR = 0xA0000000; //0x4000000
       const uint32_t GP1_PADDR = 0x80000000;
+      const uint32_t IDCODE_ADDR = 0xFFCA0000;
+      struct IDCODE {
+        uint32_t pad0[(0x40-0x0-4)/4];
+        uint32_t pss_idcode;
+      };
       const uint32_t FTM_ADDR = 0xF880B000;
       struct FTM {
 	uint32_t
@@ -56,7 +61,7 @@ namespace OCPI {
 	  itatbctr2,
 	  itatbctr1,
 	  itatbctr0,
-	  pad3[(0xf00-0xef8-4)/4],	
+	  pad3[(0xf00-0xef8-4)/4],
 	  itcr,
 	  pad4[(0xfa0-0xf00-4)/4],
 	  claimtagset,
@@ -147,7 +152,7 @@ namespace OCPI {
 	  smc_rst_ctrl,
 	  ocm_rst_ctrl,
           pad3a,
-	  fpga_rst_ctrl,
+          fpga_rst_ctrl,
 	  a9_cpu_rst_ctrl,
 	  pad4[(0x24c-0x244-4)/4],
 	  rs_awdt_ctrl,

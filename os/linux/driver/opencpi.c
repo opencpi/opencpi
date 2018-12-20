@@ -1758,6 +1758,13 @@ opencpi_init(void) {
     }
     opencpi_pci_registered = 1;
 #endif
+#ifdef CONFIG_ARCH_ZYNQMP
+    if (make_block(0xA0000000, 0xA0000000, sizeof(OccpSpace), ocpi_mmio, false,
+        0, NULL, 0) == NULL) {
+      break;
+    }
+    log_debug("Control Plane physical addr space for ZynqMP HP0 slave reserved\n");
+#endif
 #ifdef CONFIG_ARCH_ZYNQ
     // Register the memory range of the control plane GP0 or GP1 on the PL
     if (make_block(0x40000000, 0x40000000, sizeof(OccpSpace), ocpi_mmio, false, 0,

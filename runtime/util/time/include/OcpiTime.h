@@ -35,7 +35,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <sys/time.h>
-#ifdef __arm__
+#if defined(__arm__) || defined(__ARM_ARCH)
 static inline uint64_t getticks()
 {
   struct timeval tv;
