@@ -636,9 +636,10 @@ static const char *s_stressorMode[] = { MS_CONFIG, NULL };
       const char *err, *a;
       if ((a = ezxml_cattr(x, "name")))
       	m_name = a;
-      else
+      else {
       	OU::format(m_name, "case%02zu", ordinal);
-        if ((err = OE::checkAttrs(x, "duration", "timeout", "onlyplatforms", "excludeplatforms",
+      }
+      if ((err = OE::checkAttrs(x, "duration", "timeout", "onlyplatforms", "excludeplatforms",
     				"onlyworkers", "excludeworkers", NULL)) ||
       	  (err = OE::checkElements(x, "property", "input", "output", NULL)) ||
       	  (err = OE::getNumber(x, "duration", &m_duration, NULL, duration)) ||
@@ -646,18 +647,18 @@ static const char *s_stressorMode[] = { MS_CONFIG, NULL };
       	  ((a = ezxml_cattr(x, "onlyplatforms")) && (err = OU::parseList(a, doOnlyPlatform, this))) ||
       	  ((a = ezxml_cattr(x, "excludeplatforms")) && (err = OU::parseList(a, doExcludePlatform, this))))
         	return err;
-        if (m_duration && m_timeout)
+      if (m_duration && m_timeout)
         	return OU::esprintf("Specifying both duration and timeout is not supported");
-        if ((a = ezxml_cattr(x, "onlyworkers"))) {
-        	if ((err = OU::parseList(a, doOnlyWorker, this)))
+      if ((a = ezxml_cattr(x, "onlyworkers"))) {
+	if ((err = OU::parseList(a, doOnlyWorker, this)))
       	  return err;
         } else
-        	m_workers = workers;
-          if (((a = ezxml_cattr(x, "excludeworkers")) &&
-        	  (err = OU::parseList(a, doExcludeWorker, this))) ||
-        	  (err = doPorts(*wFirst, x)) ||
-        	  (emulator && (err = doPorts(*emulator, x))))
-          	return err;
+          m_workers = workers;
+      if (((a = ezxml_cattr(x, "excludeworkers")) &&
+          (err = OU::parseList(a, doExcludeWorker, this))) ||
+          (err = doPorts(*wFirst, x)) ||
+          (emulator && (err = doPorts(*emulator, x))))
+	return err;
       // Parse explicit property values for this case, which will override
       for (ezxml_t px = ezxml_cchild(x, "property"); px; px = ezxml_cnext(px)) {
       	if ((err = OE::checkAttrs(px, PARAM_ATTRS, "generate",
