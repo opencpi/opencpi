@@ -130,7 +130,7 @@ namespace OCPI {
 	      return OU::eformat(error, "Cannot create artifact directoryL \"%s\"", 
 				 m_library.libName().c_str());
 	    }
-	  OU::format(fileName, "%s/%s:%s",
+	  OU::format(fileName, "%s/%s=%s",
 		     m_library.libName().c_str(), uuid.c_str(), artName);
 	  ocpiInfo("Downloading artifact \"%s\" to \"%s\".  Length is %" PRIu64 ".",
 		   name.c_str(), fileName.c_str(), length);
