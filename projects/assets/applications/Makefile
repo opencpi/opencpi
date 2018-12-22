@@ -21,8 +21,8 @@ $(if $(realpath $(OCPI_CDK_DIR)),,\
 
 include $(OCPI_CDK_DIR)/include/util.mk
 
-ifndef OcpiRunArgs
-OcpiRunArgs= -t 2
+ifeq ($(origin OcpiRunArgs),undefined)
+  OcpiRunArgs= -t 2
 endif
 
 # To restrict the applications that are built or run, you can set the Applications

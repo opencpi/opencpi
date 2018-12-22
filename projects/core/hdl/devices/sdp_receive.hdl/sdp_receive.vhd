@@ -22,7 +22,7 @@
 library IEEE, ocpi, util, bsv, sdp;
 use IEEE.std_logic_1164.all, ieee.numeric_std.all;
 use ocpi.types.all, ocpi.all, ocpi.util.all, sdp.sdp.all;
-architecture rtl of sdp_receive_worker is
+architecture rtl of worker is
   -- Local worker constants
   constant sdp_width_c     : natural := to_integer(sdp_width);
   constant memory_depth_c  : natural := to_integer(memory_bytes) / (sdp_width_c * 4);

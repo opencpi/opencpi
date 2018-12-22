@@ -516,8 +516,8 @@ finalizeHdlDataPort() {
 		       worker().m_defaultDataWidth : m_dataValueWidth) > 0);
     ezxml_t wsix = ezxml_parse_str(wsi, strlen(wsi));
     DataPort *p = createDataPort<WsiPort>(worker(), wsix, this, -1, err);
-    if (!err)
-      err = p->checkClock();
+    //if (!err)
+    //      err = p->checkClock();
   }
   return err;
 }

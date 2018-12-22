@@ -125,17 +125,39 @@ emitImplSignals(FILE *f) {
 }
 void WtiPort::
 emitVhdlShell(FILE *f, Port */*wci*/) {
-  std::string in, out, clk;
+  std::string in, out;
   OU::format(in, typeNameIn.c_str(), "");
   OU::format(out, typeNameOut.c_str(), "");
-  if (clock != m_worker->m_wciClock)
-    fprintf(f,
-	    "  -- The WTI interface conversion between OCP and inner worker interfaces\n"
-	    "  %s.Clk <= worker_%s.clk\n"
-	    "  -- should be this, but isim crashes.\n"
-	    "  -- .SReset_n <= from_bool(not wci_reset);\n"
-	    "  %s.SReset_n <= '0' when its(wci_reset) else '1';\n",
-	    out.c_str(), out.c_str(), out.c_str());
+  if (clock != m_worker->m_wciClock) {
+    fprintf(f, "  -- The WTI interface conversion between OCP and inner worker interfaces\n");
+    if (myClock) {
+      if (clock->m_output)
+	fprintf(f,
+		"  %s.Clk <= worker_%s.clk;\n"
+		"  -- should be this, but isim crashes.\n"
+		"  -- .SReset_n <= from_bool(not wci_reset);\n"
+		"  %s.SReset_n <= '0' when its(worker_%s.reset) else '1';\n",
+		out.c_str(), out.c_str(), out.c_str(), out.c_str());
+      else
+	fprintf(f,
+		"  worker_%s.clk <= %s.Clk;\n"
+		"  worker_%s.reset <= '0' when %s.SReset_n else '1';\n",
+		in.c_str(), in.c_str(), in.c_str(), in.c_str());
+    } else if (clock->port) {
+      // The worker is expected to use the correct clock.
+#if 0
+      std::string other;
+      Port &port = *clock->port;
+      Clock &clk = *port.clock;
+      OU::format(other, clk.m_output ? port.typeNameOut.c_str() : port.typeNameIn.c_str(), "");
+      fprintf(f,
+		"  worker_%s.clk <= %s.Clk;\n"
+		"  worker_%s.reset <= '0' when %s.SReset_n else '1';\n",
+	      in.c_str(), other.c_str(), in.c_str(), other.c_str()); 
+#endif
+    } else
+      assert("No support for global clocks for wti" == 0);
+  }     
   if (m_allowUnavailable)
     fprintf(f,
 	    "  %s.SThreadBusy(0) <= not worker_%s.request;\n"

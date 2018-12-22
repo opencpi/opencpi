@@ -27,7 +27,7 @@ library ieee, ocpi, util;
 use ieee.std_logic_1164.all, ieee.numeric_std.all, std.textio.all;  
 use util.util.all, ocpi.types.all, work.file_read_worker_defs.all;
 
-architecture rtl of file_read_worker is
+architecture rtl of worker is
   -- for file I/O and using util.cwd module
   constant pathLength      : natural := props_in.fileName'right;
   signal cwd               : string_t(0 to props_out.cwd'right); -- from cwd module to props_out

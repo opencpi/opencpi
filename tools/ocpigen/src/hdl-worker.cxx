@@ -1041,12 +1041,12 @@ emitVhdlWorkerEntity(FILE *f) {
   emitVhdlLibraries(f);
   fprintf(f,
 	  "use work.%s_worker_defs.all, work.%s_defs.all, work.%s_constants.all;\n"
-	  "entity %s_worker is\n",
-	  m_implName, m_implName, m_implName, m_implName);
+	  "entity %s%sworker is\n",
+	  m_implName, m_implName, m_implName, version() < 2 ? m_implName : "", version() < 2 ? "_" : "");
   emitParameters(f, VHDL);
 
   emitSignals(f, VHDL, true, true, true);
-  fprintf(f, "\nend entity %s_worker;\n", m_implName);
+  fprintf(f, "\nend entity %s%sworker;\n", version() < 2 ? m_implName : "", version() < 2 ? "_" : "");
   return NULL;
 }
 
@@ -1375,7 +1375,7 @@ emitVhdlShell(FILE *f) {
   for (unsigned i = 0; i < m_ports.size(); i++)
     m_ports[i]->emitVhdlShell(f, m_wci);
   fprintf(f,
-	  "worker : entity work.%s_worker\n", m_implName);
+	  "worker : entity work.%s%sworker\n", version() < 2 ? m_implName : "", version() < 2 ? "_" : "");
   bool first = true;
   for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
     if ((*pi)->m_isParameter) {

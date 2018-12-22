@@ -512,7 +512,7 @@ namespace OCPI {
 	  // Add buffer size property value to each output
 	  for (auto it = m_launchConnections.begin(); it != m_launchConnections.end(); ++it) {
 	    OC::Launcher::Connection &c = *it;
-	    if (c.m_out.m_member->m_crew == m_launchMembers[i->m_firstMember].m_crew) {
+	    if (c.m_out.m_member && c.m_out.m_member->m_crew == m_launchMembers[i->m_firstMember].m_crew) {
 	      OU::Assembly::Property aProp;
 	      aProp.m_name = "ocpi_buffer_size_" + c.m_out.m_metaPort->m_name;
 	      if (!impl.m_metadataImpl.getProperty(aProp.m_name.c_str())) {
