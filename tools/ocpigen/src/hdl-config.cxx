@@ -339,7 +339,7 @@ emitSubdeviceConnections(std::string &assy,  DevInstances *baseInstances) {
 	    // We ASSUME that the indices in the config are contiguous and start at 0
 	    // FIXME:  remove this constraint
 	    for (size_t i = 0; i < supPort.m_count; i++)
-	      if (sdi->m_connected[supOrdinal] & (1 << i)) {
+	      if (sdi->m_connected[supOrdinal] & (1u << i)) {
 		assert(i != supIndex);
 		if (i < supIndex)
 		  index--;
@@ -347,7 +347,7 @@ emitSubdeviceConnections(std::string &assy,  DevInstances *baseInstances) {
 		unconnected++; // count how many were unconnected in the config
 	    assert(unconnected > 0 && index < unconnected);
 	  } else // the subdevice is where the device is, so record the connection
-	    sdi->m_connected[supOrdinal] |= 1 << supIndex;
+	    sdi->m_connected[supOrdinal] |= 1u << supIndex;
 	  OU::formatAdd(assy, " index='%zu'", index);
 	} else if (!inConfig) {
 	  // supporting connection is not indexed, and is local,which means it is connected whole
@@ -542,7 +542,7 @@ HdlConfig(HdlPlatform &pf, ezxml_t xml, const char *xfile, Worker *parent, const
 	  (!p.m_master && (p.m_type == PropPort || p.m_type == DevSigPort))) {
 	size_t unconnected = 0, first = 0;
 	for (size_t i = 0; i < p.m_count; i++)
-	  if (!((*dii).m_connected[p.m_ordinal] & (1 << i))) {
+	  if (!((*dii).m_connected[p.m_ordinal] & (1u << i))) {
 	    if (!unconnected++)
 	      first = i;
 	  }

@@ -29,6 +29,9 @@ ifeq ($(filter clean%,$(MAKECMDGOALS)),)
   ifndef OCPI_LIBRARY_PATH
     $(call OcpiSetDefaultLibraryPath)
   endif
+  ifndef AT
+    $(info OCPI_LIBRARY_PATH=$(OCPI_LIBRARY_PATH))
+  endif
 endif
 
 # Allow old-style "APP" to rename

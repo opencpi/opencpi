@@ -59,7 +59,7 @@ namespace {
       // If the specfile (first) or the implfile (second) has a dir,
       // look there for package name file.  If not, look in the CWD (the worker dir).
       if (cp)
-        packageFileDir.assign(base, cp + 1 - base);
+        packageFileDir.assign(base, OCPI_SIZE_T_DIFF(cp + 1, base));
 
       // FIXME: Fix this using the include path maybe?
       std::string packageFileName = packageFileDir + "package-id";
@@ -75,10 +75,10 @@ namespace {
       }
       for (cp = package_out.c_str(); *cp && isspace(*cp); cp++)
         ;
-      package_out.erase(0, cp - package_out.c_str());
+      package_out.erase(0, OCPI_SIZE_T_DIFF(cp, package_out.c_str()));
       for (cp = package_out.c_str(); *cp && !isspace(*cp); cp++)
         ;
-      package_out.resize(cp - package_out.c_str());
+      package_out.resize(OCPI_SIZE_T_DIFF(cp, package_out.c_str()));
     }
     return NULL;
   }
@@ -148,12 +148,12 @@ namespace {
         OU::baseName(parent.c_str(), name);
         const char *dash = strrchr(name.c_str(), '-');
         if (dash)
-          name.resize(dash - name.c_str());
+          name.resize(OCPI_SIZE_T_DIFF(dash, name.c_str()));
       } else {
         OU::baseName(OS::FileSystem::cwd().c_str(), name);
         const char *dot = strrchr(name.c_str(), '.');
         if (dot)
-          name.resize(dot - name.c_str());
+          name.resize(OCPI_SIZE_T_DIFF(dot, name.c_str()));
       }
       // Try the two suffixes
       file = name + "-spec";
@@ -248,7 +248,7 @@ namespace {
     ocpiInfo("Considering worker \"%s\"", wname);
     const char *dot = strrchr(wname, '.');
     std::string
-      name(wname, dot - wname),
+      name(wname, OCPI_SIZE_T_DIFF(dot, wname)),
       file,
       empty;
     if (excludeWorkers.find(wname) != excludeWorkers.end()) {
@@ -463,14 +463,14 @@ namespace {
       for (auto pi = platforms.begin(); pi != platforms.end(); ++pi) {
         const char *platform = pi->c_str();
         if (excludePlatforms.find(platform) != excludePlatforms.end()) {
-          fprintf(stderr, "Warning:  for case \"%s\", excluded platform \"%s\" is already "
-                  "globally excluded", c.m_name.c_str(), platform);
+      	  fprintf(stderr, "Warning:  for case \"%s\", excluded platform \"%s\" is already "
+      		  "globally excluded\n", c.m_name.c_str(), platform);
           return NULL;
         }
-        if (onlyPlatforms.size() && onlyPlatforms.find(platform) == onlyPlatforms.end()) {
+      	if (onlyPlatforms.size() && onlyPlatforms.find(platform) == onlyPlatforms.end()) {
           //If there is a global onlyPlatforms list, only exclude things from that list
-          fprintf(stderr, "Warning:  for case \"%s\", excluded platform \"%s\" is not in the "
-                  "global only platforms\n", c.m_name.c_str(), platform);
+      	  fprintf(stderr, "Warning:  for case \"%s\", excluded platform \"%s\" is not in the "
+      		  "global only platforms\n", c.m_name.c_str(), platform);
           return NULL;
         }
         if ((err = doPlatform(platform, c.m_excludePlatforms)))
@@ -488,10 +488,10 @@ namespace {
         const char *platform = pi->c_str();
         if (excludePlatforms.find(platform) != excludePlatforms.end())
           return OU::esprintf("For case \"%s\", only platform \"%s\" is globally excluded",
-                              c.m_name.c_str(), platform);
+			      c.m_name.c_str(), platform);
         if (onlyPlatforms.size() && onlyPlatforms.find(platform) == onlyPlatforms.end())
-          return OU::esprintf("For case \"%s\", only platform \"%s\" is not in global list",
-                              c.m_name.c_str(), platform);
+           return OU::esprintf("For case \"%s\", only platform \"%s\" is not in global list",
+			       c.m_name.c_str(), platform);
         if ((err = doPlatform(platform, c.m_onlyPlatforms)))
           return err;
       }
@@ -515,7 +515,7 @@ namespace {
         return OU::esprintf("excluded worker \"%s\" is already globally excluded", worker);
       WorkersIter wi;
       if ((wi = findWorker(worker, c.m_workers)) == c.m_workers.end()) {
-        fprintf(stderr, "For case \"%s\", excluded worker \"%s\" is not a potential worker",
+        fprintf(stderr, "Warning:  for case \"%s\", excluded worker \"%s\" is not a potential worker",
                      c.m_name.c_str(), worker);
         return NULL;
       }
@@ -607,6 +607,7 @@ namespace {
       return NULL;
     }
 
+    // Parse a case
     const char *parse(ezxml_t x, size_t ordinal) {
       const char *err, *a;
       if ((a = ezxml_cattr(x, "name")))
@@ -659,33 +660,48 @@ namespace {
         std::string name;
         if ((err = OE::getRequiredString(px, name, "name")))
           return err;
-        Param *found = NULL;
+	// The input name can be worker-qualified or not.
+        Param *found = NULL, *wfound = NULL;
+	bool qname = strchr(name.c_str(), '.') != NULL;
         for (unsigned n = 0; n < m_settings.params.size(); n++) {
           Param &sp = m_settings.params[n];
-          if (sp.m_param && !strcasecmp(sp.m_param->cname(), name.c_str())) {
-            if (px->attr && px->attr[0]) // poor man's: any attributes?
-              sp.parse(px, *sp.m_param);
-            found = &sp;
-            break;
-          }
-        }
+          if (sp.m_param) {
+	    const char *dot = strrchr(sp.m_name.c_str(), '.');
+	    // Note we are looking at the param name, not the property name, which allows us to
+	    // specifically name worker-specific properties (name.model.property)
+	    if (!strcasecmp(sp.m_name.c_str(), name.c_str())) { // whole (maybe qualified) name match
+	      if (qname) {
+		assert(!wfound && !found); // can't happen
+		wfound = &sp;
+	      } else { // found an unqualified name - we should only find one
+		assert(!wfound && !found && (sp.m_isTest || !sp.m_param->m_isImpl));
+		found = &sp;
+	      }
+	    } else if (!qname && dot && !strcasecmp(dot + 1, name.c_str())) { // matched the last part
+	      assert(!wfound);
+	      if (found && !sp.m_worker->m_emulate)
+		return OU::esprintf("Error:  Property name \"%s\" matches more than one worker-specific "
+				    "property and is ambiguous.  Worker-specific properties "
+				    "can be prefixed by worker name and model,"
+				    " e.g. wkr1.rcc.prop1", name.c_str());
+
+	      found = &sp;
+	    }
+	  }
+	}
+	if (!found)
+	  found = wfound;
         if (!found)
-          return OU::esprintf("Property name \"%s\" not a worker or test property", name.c_str());
+          return OU::esprintf("Property name \"%s\" not a spec or test property (worker-specific "
+			      "properties must be prefixed by worker name and model, e.g. wkr1.rcc.prop1)",
+			      name.c_str());
+	// poor man's: any xml attributes? e.g. if not only "set" element?
+	if (px->attr && px->attr[0] && (err = found->parse(px, NULL, NULL, true)))
+	  return err;
         for (ezxml_t sx = ezxml_cchild(px, "set"); sx; sx = ezxml_cnext(sx))
           if ((err = parseDelay(sx, *found->m_param)))
             return err;
       }
-      // We have all the port specs for this case.
-      // What else about a case:
-      // We can exclude values?
-      // This means we need a "subcase" for each set.
-      // But does that mean different IO?
-      // FUNDAMENTALLY A "CASE" IS SOMETHING THAT SHARES I/O ACROSS A PARAM SPACE
-      // I.E. parameterized generators and validators
-      // property/parameter settings issues
-      // property results
-      // generate app.
-      // how to generate cases over the parameter/property space?
       return NULL;
     }
     void
@@ -866,10 +882,11 @@ namespace {
       OU::formatAdd(cmd, " %s %s", generate.c_str(), file.c_str());
       ocpiInfo("For case %s.%02u, executing generator \"%s\" for %s %s: %s", m_name.c_str(), s,
                generate.c_str(), type, name.c_str(), cmd.c_str());
-      fprintf(stderr,
-              "  Generating %s \"%s\" file: \"%s\"\n"
-              "    Using command: %s\n",
-              type, name.c_str(), file.c_str(), cmd.c_str() + prefix);
+      if (verbose)
+	fprintf(stderr,
+		"  Generating %s \"%s\" file: \"%s\"\n"
+		"    Using command: %s\n",
+		type, name.c_str(), file.c_str(), cmd.c_str() + prefix);
       int r;
       if ((r = system(cmd.c_str())))
         return OU::esprintf("Error %d(0x%x) generating %s file \"%s\" from command:  %s",
@@ -879,7 +896,8 @@ namespace {
                             type, file.c_str(), cmd.c_str());
       const char *space = strchr(generate.c_str(), ' ');
       std::string path;
-      path.assign(generate.c_str(), space ? space - generate.c_str() : generate.length());
+      path.assign(generate.c_str(),
+		  space ? OCPI_SIZE_T_DIFF(space, generate.c_str()) : generate.length());
       if (OS::FileSystem::exists(path))
         addDep(path.c_str(), true);
       return NULL;
@@ -1243,14 +1261,14 @@ namespace {
                             "  r=$?\n"
                             "  tput bold 2>/dev/null\n"
                             "  if [ $r = 0 ] ; then \n"
-                            "    tput setaf 2\n"
+                            "    tput setaf 2 2>/dev/null\n"
                             "    echo '    Verification for port %s: PASSED'\n"
                             "  else\n"
-                            "    tput setaf 1\n"
+                            "    tput setaf 1 2>/dev/null\n"
                             "    echo '    Verification for port %s: FAILED'\n"
                             "    failed=1\n"
                             "  fi\n"
-                            "  tput sgr0\n"
+                            "  tput sgr0 2>/dev/null\n"
                             "  [ $r = 0 ] || exitval=1\n"
                             "}\n", io.m_port->pname(), io.m_port->pname());
             } else
@@ -1440,7 +1458,7 @@ namespace {
       return OU::esprintf("Worker \"%s\" doesn't exist or is not a directory", name);
     const char *wname = slash ? slash + 1 : name;
     std::string
-      wkrName(wname, dot - wname),
+      wkrName(wname, OCPI_SIZE_T_DIFF(dot, wname)),
       wOWD = wdir + "/" + wkrName + ".xml";
     if (!OS::FileSystem::exists(wOWD, &isDir) || isDir)
       return OU::esprintf("For worker \"%s\", \"%s\" doesn't exist or is a directory",
@@ -1491,7 +1509,8 @@ namespace {
                       w.m_implName, p.pname(), p.isDataProducer() ? "write" : "read",
                       w.m_implName, p.pname(), p.isDataProducer() ? "to" : "from",
                       p.isDataProducer() ? "in" : "out", w.m_implName,
-                      p.isDataProducer() ? "_backpressure_" : "_ms_", p.pname(), p.isDataProducer() ? "from" : "to", p.isDataProducer() ? "out" : "in");
+                      p.isDataProducer() ? "_backpressure_" : "_ms_", p.pname(),
+		      p.isDataProducer() ? "from" : "to", p.isDataProducer() ? "out" : "in");
       }
   }
 
@@ -1533,6 +1552,7 @@ namespace {
       }
     }
   }
+
   const char *generateHdlAssembly(const Worker &w, unsigned c, const std::string &dir, const
                                   std::string &name, bool hdlFileIO, Strings &assyDirs) {
     OS::FileSystem::mkdir(dir, true);
@@ -1566,7 +1586,7 @@ namespace {
     }
     connectHdlStressWorkers(w, assy, hdlFileIO);
     if(emulator)
-        connectHdlStressWorkers(*emulator, assy, hdlFileIO);
+      connectHdlStressWorkers(*emulator, assy, hdlFileIO);
     if (hdlFileIO) {
       connectHdlFileIO(w, assy);
       if (emulator)
@@ -1577,45 +1597,34 @@ namespace {
   }
 } // end of anonymous namespace
 
-// Called for all workers and the emulator if present
+// Called for all workers globally acceptable workers and the one emulator if present
 static void
 addNonParameterProperties(Worker &w, ParamConfig &globals) {
   for (PropertiesIter pi = w.m_ctl.properties.begin(); pi != w.m_ctl.properties.end(); ++pi) {
     OU::Property &p = **pi;
     if (p.m_isParameter || !p.m_isWritable)
       continue;
-    Param *found = NULL;
+    std::string name;
+    Param::fullName(p, &w, name);
+    bool found = false;
     for (unsigned n = 0; n < globals.params.size(); n++) {
       Param &param = globals.params[n];
-      if (param.m_param && !strcasecmp(param.m_param->cname(), p.cname())) {
-        found = &param;
+      if (param.m_param && !strcasecmp(param.m_name.c_str(), name.c_str())) {
+        found = true;
         break;
       }
     }
-    if (found) {
-      if (w.m_emulate) {
-        // This is expected.  The emulator has a superset of the device worker's properties
-      } else if (!found->m_param->m_isImpl) {
-        // This is expected since workers with the same spec have the same properties
-      } else {
-        // This is unsupported: we don't know what to do with same-named impl-specific properties
-        // in different workers
-        ocpiBad("same property name (\"%s\") for worker-specific properties in different workers",
-                found->m_param->cname());
-        assert("same property name for worker-specific properties in different workers"==0);
-      }
-    } else {
-      globals.params.resize(globals.params.size()+1);
-      Param &param = globals.params.back();
-      param.m_param = &p;
-      if (p.m_isImpl || w.m_emulate)
-        param.m_worker = &w;
-      if (p.m_default) {
-        p.m_default->unparse(param.m_uValue);
-        param.m_uValues.resize(1);
-        param.m_attributes.resize(1);
-        param.m_uValues[0] = param.m_uValue;
-      }
+    if (found)
+      continue;
+    // New, non-parameter property never seen - could be worker-specific
+    globals.params.resize(globals.params.size()+1);
+    Param &param = globals.params.back();
+    param.setProperty(&p, p.m_isImpl || w.m_emulate ? &w : NULL);
+    if (p.m_default) {
+      p.m_default->unparse(param.m_uValue);
+      param.m_uValues.resize(1);
+      param.m_attributes.resize(1);
+      param.m_uValues[0] = param.m_uValue;
     }
   }
 }
@@ -1655,7 +1664,7 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
     return err;
   if (excludeWorkersTmp.size() && verbose)
     for (StringsIter si = excludeWorkersTmp.begin(); si != excludeWorkersTmp.end(); ++si)
-      fprintf(stderr, "Excluded worker \"%s\" never found.\n", si->c_str());
+      fprintf(stderr, "Warning:  excluded worker \"%s\" never found.\n", si->c_str());
   // ================= 3. Get/collect the worker parameter configurations
   // Now "workers" has workers with parsed build files.
   // So next we globally enumerate PCs independent of them, that might be dependent on them.
@@ -1672,19 +1681,6 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
   }
   // But first!... we create the first one from the defaults.
   wFirst = *workers.begin();
-#if 0
-  {
-    static char x[] = "<configuration id='0'/>";
-    ezxml_t cxml = ezxml_parse_str(x, strlen(x));
-    ParamConfig &pc = *new ParamConfig(*wFirst); // leak until we put it into an object
-    ParamConfigs dummy;
-    pc.parse(cxml, dummy, true);
-    ocpiCheck(configs.insert(std::make_pair(&pc, wFirst)).second);
-    // We now have an initial squeaky-clean, defaults-only, param config at id 0
-    ocpiDebug("Inserting worker %s.%s/%p with new config %p/%zu",
-              wFirst->m_implName, wFirst->m_modelString, wFirst, &pc, pc.nConfig);
-  }
-#endif
   for (WorkersIter wi = workers.begin(); wi != workers.end(); ++wi) {
     Worker &w = **wi;
     for (unsigned c = 0; c < w.m_paramConfigs.size(); ++c) {
@@ -1700,46 +1696,37 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
   for (WorkerConfigsIter wci = configs.begin(); wci != configs.end(); ++wci) {
     ParamConfig &pc = *wci->first;
     ocpiDebug("Processing config %zu of worker %s.%s",
-              pc.nConfig, wci->second->cname(), wci->second->m_modelString);
+              pc.nConfig, pc.worker().cname(), pc.worker().m_modelString);
     for (unsigned n = 0; n < pc.params.size(); n++) {
       Param &p = pc.params[n];
       if (p.m_param == NULL)
         continue;
       assert(p.m_param->m_isParameter);
-      OU::Property *found;
       size_t pn;
-      // It might be a non-param in wFirst, even though it is a parameter in another worker
-      if ((err = wFirst->findParamProperty(p.m_param->cname(), found, pn, true))) {
-        // Not in wFirst, must be impl-specific
-        assert(p.m_param->m_isImpl);
-        // See if it is here already
-        unsigned nn;
-        for (nn = 0; nn < globals.params.size(); nn++)
-          if (globals.params[nn].m_param &&
-              !strcasecmp(p.m_param->cname(), globals.params[nn].m_param->cname())) {
-            assert(globals.params[nn].m_worker == wci->second);
-            pn = nn;
-            break;
-          }
-        if (nn >= globals.params.size()) {
-          pn = globals.params.size();
-          globals.params.push_back(p); // add to end
-          globals.params.back().m_worker = wci->second;// remember which worker it came from
+      assert(p.m_name.length());
+      // See if the (implementation-qualified) name is in the globals yet
+      unsigned nn;
+      for (nn = 0; nn < globals.params.size(); nn++) {
+        Param &gp = globals.params[nn];
+        if (!gp.m_param)
+          continue;
+        assert(gp.m_name.length());
+        if (!strcasecmp(p.m_name.c_str(), globals.params[nn].m_name.c_str())) {
+          pn = nn;
+          break;
         }
-      } else if (wFirst == wci->second) {
-        if (found->m_isImpl && strncasecmp("ocpi_", found->cname(), 5))
-          globals.params[pn].m_worker = wFirst;
-      } else if (strncasecmp("ocpi_", found->cname(), 5) &&
-                 (p.m_param->m_isImpl || found->m_isImpl))
-        return OU::esprintf("The implementation-specific property \"%s\" was found in more "
-                            "than one worker:  \"%s\" and \"%s\"",
-                            found->cname(), wFirst->cname(), wci->second->cname());
+      }
+      if (nn >= globals.params.size()) {
+        pn = globals.params.size();
+        globals.params.push_back(p); // add to end
+        globals.params.back().m_worker = &pc.worker();// remember which worker it came from
+      }
       Param &gp = globals.params[pn];
       if (!gp.m_param)
-        gp.m_param = p.m_param;
+        gp.setProperty(p.m_param, p.m_worker);
       ocpiDebug("existing value for %s(%u) is %s(%zu)",
                 p.m_param->cname(), n, p.m_uValue.c_str(), pn);
-      for (unsigned nn = 0; nn < gp.m_uValues.size(); nn++)
+      for (nn = 0; nn < gp.m_uValues.size(); nn++)
         if (p.m_uValue == gp.m_uValues[nn])
           goto next;
       if (!gp.m_valuesType) {
@@ -1785,7 +1772,7 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
       // AV-3372: We shouldn't do this if the property is generated, but we cannot tell at this point if it is.
       // gparam.m_generate is empty because it's from the worker XML. We will remove this later if needed.
       ocpiDebug("Adding empty value for property %s because it is not in worker %s.%s(%zu)",
-                gparam.m_param->cname(), wci->second->cname(), wci->second->m_modelString,
+                gparam.m_param->cname(), pc.worker().cname(), pc.worker().m_modelString,
                 pc.nConfig);
       gparam.m_uValues.push_back("");
       gparam.m_attributes.push_back(Param::Attributes());
@@ -1804,22 +1791,47 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
                 OE::checkAttrs(px, PARAM_ATTRS, TEST_ATTRS, OCPI_UTIL_MEMBER_ATTRS, NULL) :
                 OE::checkAttrs(px, PARAM_ATTRS, TEST_ATTRS, NULL))))
       return err;
-    Param *param;
+    Param *found = NULL;
+    // First pass, look for correctly scoped names in the Param (including worker.model.prop).
     for (unsigned n = 0; n < globals.params.size(); n++) {
-      param = &globals.params[n];
-      if (param->m_param && !strcasecmp(name.c_str(), param->m_param->cname())) {
+      Param &p = globals.params[n];
+      if (p.m_param && !strcasecmp(name.c_str(), p.m_name.c_str())) {
         if (isTest)
           return OU::esprintf("The test property \"%s\" is already a worker property",
                               name.c_str());
-        goto next2;
+        found = &p;
+        break;
       }
     }
+    if (!found) {
+      // Second pass for backward compatibility, with warnings, when a property name is not qualified
+      for (unsigned n = 0; n < globals.params.size(); n++) {
+        Param &p = globals.params[n];
+        if (p.m_param && !strcasecmp(name.c_str(), p.m_param->cname())) {
+          if (isTest)
+            return OU::esprintf("The test property \"%s\" is already a worker property",
+                                name.c_str());
+          if (found)
+            return OU::esprintf("Ambiguous property \"%s\" is worker-specific in multiple workers (%s and %s)",
+                                p.m_param->cname(), p.m_worker->cname(), found->m_worker->cname());
+          found = &p;
+          break;
+        }
+      }
+      if (found) {
+        assert(found->m_param && found->m_param->m_isImpl);
+        fprintf(stderr, "Warning:  property \"%s\" is worker-specific and should be identified as %s.%s.%s\n",
+                found->m_param->cname(), found->m_worker->cname(), found->m_worker->m_modelString,
+                found->m_param->cname());
+      } else if (!isTest)
+        return OU::esprintf("There is no property named \"%s\" for any worker", name.c_str());
+    }
     if (isTest) {
+      assert(!found);
       globals.params.resize(globals.params.size()+1);
-      param = &globals.params.back();
-      OU::Property *newp = new OU::Property();
-      param->m_param = newp;
-      param->m_isTest = true;
+      found = &globals.params.back();
+      OU::Property &newp = *new OU::Property();
+      found->m_isTest = true;
       char *copy = ezxml_toxml(px);
       // Make legal property definition XML out of this xml
       ezxml_t propx;
@@ -1831,8 +1843,9 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
       ezxml_set_attr(propx, "valuefile", NULL);
       ezxml_set_attr(propx, "valuesfile", NULL);
       ezxml_set_attr(propx, "initial", "1");
-      if ((err = newp->Member::parse(propx, false, true, NULL, "property", 0)))
+      if ((err = newp.Member::parse(propx, false, true, NULL, "property", 0)))
         return err;
+      found->setProperty(&newp, NULL);
       // We allow a test property to be specified with no values (values only in cases)
       if (!ezxml_cattr(px, "value") &&
           !ezxml_cattr(px, "values") &&
@@ -1840,10 +1853,8 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
           !ezxml_cattr(px, "valuesfile") &&
           !ezxml_cattr(px, "generate"))
         continue;
-    } else
-      return OU::esprintf("There is no property named \"%s\" for any worker", name.c_str());
-  next2:;
-    if ((err = param->parse(px, *param->m_param, true)))
+    }
+    if ((err = found->parse(px, NULL, NULL, true)))
       return err;
   }
   // Check if any properties have no values.
@@ -1897,7 +1908,7 @@ createTests(const char *file, const char *package, const char */*outDir*/, bool 
     for (WorkerConfigsIter wci = configs.begin(); wci != configs.end(); ++wci, ++c) {
       ParamConfig &pc = *wci->first;
       fprintf(stderr, "  %2u: (from %s.%s)\n",
-              c, wci->second->m_implName, wci->second->m_modelString);
+              c, pc.worker().cname(), pc.worker().m_modelString);
       for (unsigned n = 0; n < pc.params.size(); n++) {
         Param &p = pc.params[n];
         if (p.m_param == NULL)
@@ -2198,7 +2209,7 @@ createCases(const char **platforms, const char */*package*/, const char */*outDi
     std::string model;
     const char *cp = strchr(*p, '-');
     assert(cp);
-    model.assign(*p, cp - *p);
+    model.assign(*p, OCPI_SIZE_T_DIFF(cp, *p));
     CallBack cb(spec, model.c_str(), cp + 3, cp[1] == '1', xml);
     OL::Manager::findImplementations(cb, ezxml_cattr(xml, "spec"));
     if (cb.m_err.size())

@@ -71,6 +71,7 @@ namespace OCPI {
 	work(Launcher::Members &members, Launcher::Connections &connections);
       OCPI::Util::Worker::ControlState getState(unsigned remoteInstance);
       void
+	appShutdown(),
 	controlOp(unsigned remoteInstance, OU::Worker::ControlOperation),
 	setPropertyValue(unsigned remoteInstance, size_t propN, std::string &v),
 	getPropertyValue(unsigned remoteInstance, size_t propN, std::string &v, bool hex,

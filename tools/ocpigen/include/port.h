@@ -64,8 +64,9 @@ typedef Attachments::const_iterator AttachmentsIter;
 struct InstancePort;
 // FIXME: have "implPort" class??
 class Port {
- protected:
-  bool m_clone;
+protected:
+  bool m_clone;        // internal to external
+  bool m_morphed;      // spec->impl transitioned
   Worker *m_worker;    // spec: FIXME: name this a reference 
 public:
   // These members are for spec ports
@@ -96,13 +97,14 @@ public:
   virtual const char *parse();    // second pass parsing for ports referring to each other
   virtual const char *resolveExpressions(OCPI::Util::IdentResolver &ir);
   virtual bool masterIn() const;  // Are master signals inputs at this port?
-  void addMyClock();
+  void addMyClock(bool output);
   virtual const char *checkClock();
   // This is not cname to deal with a multiple-inheritance issue.  The runtime classes use cname
   const char *pname() const { return m_name.c_str(); }
   const char *doPattern(int n, unsigned wn, bool in, bool master, std::string &suff,
 			bool port = false);
   void emitConstant(FILE *f, const char *nameFormat, Language lang, size_t n) const;
+  bool isCloned() const { return m_clone; }
   virtual void emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inRecord,
 				bool inPackage, bool inWorker, const char *defaultIn = NULL,
 				const char *defaultOut = NULL);
@@ -147,11 +149,18 @@ public:
   virtual void emitVHDLRecordWrapperSignals(FILE *f);
   virtual void emitVHDLRecordWrapperAssignments(FILE *f);
   virtual void emitVHDLRecordWrapperPortMap(FILE *f, std::string &last);
-  virtual void emitConnectionSignal(FILE *f, bool output, Language lang, std::string &signal);
+  virtual void emitConnectionSignal(FILE *f, bool output, Language lang, bool clock, std::string &signal);
+  virtual void getClockSignal(const InstancePort &ip, Language lang, std::string &s);
+#if 1
+  virtual void emitPortSignals(FILE *f, const InstancePort &ip, Language lang, const char *indent, bool &any,
+			       std::string &comment, std::string &last, const char *myComment,
+			       std::string &exprs);
+#else
   virtual void emitPortSignals(FILE *f, Attachments &atts, Language lang,
 			       const char *indent, bool &any, std::string &comment,
 			       std::string &last, const char *myComment, OcpAdapt *adapt,
-			       std::string *signalIn, std::string &exprs);
+			       std::string *signalIn, std::string &clockSignal, std::string &exprs);
+#endif
   virtual void emitPortSignal(FILE *f, bool any, const char *indent, const std::string &fName,
 			      const std::string &aName, const std::string &index, bool output,
 			      const Port *signalPort, bool external);
@@ -172,6 +181,8 @@ public:
   virtual const char *slaveMissing() const { return "(others => '0')"; }
   virtual const char *finalizeExternal(Worker &aw, Worker &iw, InstancePort &ip,
 				       bool &cantDataResetWhileSuspended);
+  virtual const char *adjustConnection(Connection &c, OcpAdapt *myAdapt, bool &myHasExpr, ::Port &otherPort,
+				       OcpAdapt *otherAdapt, bool &otherHasExpr, Language lang, size_t &unused);
 };
 
 // Factory function template for port types

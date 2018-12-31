@@ -47,6 +47,7 @@
   CMD_OPTION(dump,       d, Bool,   0, "dump properties after execution")\
   CMD_OPTION(verbose,    v, Bool,   0, "be verbose in describing what is happening")\
   CMD_OPTION(hex,        x, Bool,   0, "print numeric property values in hex, not decimal")\
+  CMD_OPTION(hidden,     h, Bool,   0, "print hidden property values") \
   CMD_OPTION_S(selection,s, String, 0, "<instance-name>=<expression>\n" \
                                        "provide selection expression for worker instance")\
   CMD_OPTION_S(model,    m, String, 0, "[<instance-name>]=<model>\n" \
@@ -295,6 +296,8 @@ static int mymain(const char **ap) {
     params.addBool("uncached", true);
   if (options.hex())
     params.addBool("hex", true);
+  if (options.hidden())
+    params.addBool("hidden", true);
   if (options.dump())
     params.addBool("dump", true);
   if (options.dump_file())
@@ -317,8 +320,8 @@ static int mymain(const char **ap) {
   addParams("url", options.url(n), params);
   addParams("transport", options.transport(n), params);
   addParams("transferRole", options.transfer_role(n), params);
-  addParams("bufferCount", options.buffer_count(n), params);
-  addParams("bufferSize", options.buffer_size(n), params);
+  addParams("portBufferCount", options.buffer_count(n), params);
+  addParams("portBufferSize", options.buffer_size(n), params);
   addParams("scale", options.scale(n), params);
   addParams("server", options.server(n), params);
   if (options.deployment())

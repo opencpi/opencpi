@@ -37,21 +37,14 @@ DataPort(Worker &w, ezxml_t x, DataPort *sp, int ordinal, WIPType type, const ch
   // initializations for specific port types (WSI, etc.)
   if (x &&
       ((err = OU::Port::parse()) || // parse protocol etc. first, then override here
-       // Be careful not to clobber protocol-determined values (i.e. don't set default values)
-       (err = OE::getNumber(x, "NumberOfOpcodes", &m_nOpcodes, NULL, 0, false)) ||
-       (err = OE::getNumber(x, "MaxMessageValues", &m_maxMessageValues, NULL, 0, false)) ||
-       (err = OE::getNumber(x, "DataValueWidth", &m_dataValueWidth, NULL, 0, false)) ||
-       (err = OE::getNumber(x, "DataValueGranularity", &m_dataValueGranularity, NULL, 0,
-			    false)) ||
-       (err = OE::getBoolean(x, "ZeroLengthMessages", &m_zeroLengthMessages, true)) ||
        // Adding optionality in the impl xml is only relevant to devices.
        (err = OE::getBoolean(x, "Optional", &m_isOptional, true))))
     return;
   // Note buffer sizes are all determined in the OU::Util::Port.  FIXME allow parameterized?
   // Data width can be unspecified, specified explicitly, or specified with an expression
   if (!m_dataWidthFound) {
-    if (w.m_defaultDataWidth >= 0)
-      m_dataWidth = (unsigned)w.m_defaultDataWidth;
+    if (w.m_defaultDataWidth != SIZE_MAX)
+      m_dataWidth = w.m_defaultDataWidth;
     else
       m_dataWidth = m_dataValueWidth;  // or granularity?
     if (!m_bwFound)
@@ -153,9 +146,11 @@ parseProtocolChild(ezxml_t op) {
   return OU::Protocol::parseOperation(op);
 }
 
-// This is basically a callback from the low level OU::Port parser
+// This is basically a (virtual) callback from the low level OU::Port parser
 // It needs the protocol to be parsed at this point.  From tools we allow file includes etc.
 // Thus it is entirely replacing the protocol parsing in OU::port
+// NOTE:  this is called on a generic data port from the spec, and then CALLED AGAIN
+// when that port is morphed into a implementation-specific data port
 const char *DataPort::
 parseProtocol() {
   ezxml_t pSum;
@@ -166,17 +161,15 @@ parseProtocol() {
     return err;
   const char *protocolAttr = ezxml_cattr(::Port::m_xml, "protocol");
   ezxml_t protocolElem = ezxml_cchild(::Port::m_xml, "Protocol");
+  if (m_type != WDIPort && (pSum || protocolAttr || protocolElem))
+    return "cannot have protocol or protocol summary in an OWD";
   if (pSum) {
     if (protocolAttr || protocolElem)
       return "cannot have both Protocol and ProtocolSummary";
-    if ((err = OE::checkAttrs(pSum, "DataValueWidth", "DataValueGranularity",
-			      "DiverseDataSizes", "MaxMessageValues", "NumberOfOpcodes",
-			      "VariableMessageLength", "ZeroLengthMessages",
-			      "MinMessageValues",  (void*)0)) ||
-	(err = OE::getNumber(pSum, "NumberOfOpcodes", &m_nOpcodes, NULL, 0, false)) ||
+    initNoProtocol();
+    if ((err = OE::checkAttrs(pSum, OCPI_PROTOCOL_SUMMARY_ATTRS, NULL)) ||
 	(err = OU::Protocol::parseSummary(pSum)))
       return err;
-    m_seenSummary = true;
   } else {
     ezxml_t protx = NULL;
     if ((err = tryOneChildInclude(::Port::m_xml, worker().m_file, "Protocol", &protx, protFile,
@@ -191,6 +184,8 @@ parseProtocol() {
     }
     // The protx comes from an include, a child element, or the protocol attr file
     if (protx) {
+      if (m_type != WDIPort)
+	return "cannot have protocol included in an OWD";
       std::string l_name;
       const char *file = worker().m_file.c_str();
       if (protFile.length() && protFile != worker().m_file) {
@@ -207,33 +202,39 @@ parseProtocol() {
 	last = checkSuffix(start, "_protocol", last);
 	last = checkSuffix(start, "_prot", last);
 	last = checkSuffix(start, "-prot", last);
-	l_name.assign(start, last - start);
+	l_name.assign(start, (size_t)(last - start));
 	file = protFile.c_str();
       } else if (protocolElem)
 	// If we are being parsed from an immediate element, default the name from port name.
 	l_name = cname();
-      if ((err = OU::Protocol::parse(protx, l_name.c_str(), file, doProtocolChild, this)))
-	return err;
-      m_nOpcodes = nOperations();
-    } else if (m_nOperations == 0 && !m_seenSummary) { // if we have never parsed a protocol yet
-      // When there is no protocol, we force it to variable, unbounded, diverse, zlm
-      // I.e. assume it can deal with anything
-      // But with no operations, we can scale back when connecting to something more specific
-      // Note that these values can be overridden at the port level.
-      // Note that these defaults are not the same as the defaults for a PARSED protocol, but
-      // rather the defaults when there IS NO PROTOCOL AT ALL that are different from the defaults
-      // for a parsed protocol, which are in the constructor/init for OU::Protocol
-      m_diverseDataSizes = true;
-      m_variableMessageLength = true;
-      m_zeroLengthMessages = true;
-      m_isUnbounded = true;
-      m_nOpcodes = 256;
+      return OU::Protocol::parse(protx, l_name.c_str(), file, doProtocolChild, this);
     }
+    // No protocolsummary nor protocol elements/attributes, but perhaps top-level protocol summary attrs
+    if (!m_morphed)
+      initNoProtocol();
     // Allow port level overrides for protocol
     if ((err = parseSummary(::Port::m_xml)))
       return err;
   }
-  return NULL;
+  // For protocolsummary or possible protocol summary attributes on on the port itself, finish the parsing
+  return finishParse();
+}
+
+const char *DataPort::
+addProperty(const char *a_name, OA::BaseType type, bool isDebug, bool isParameter, bool isInitial,
+	    bool isVolatile, bool isImpl, size_t value, const char *enums) {
+  if (::Port::m_worker->m_noControl && !isParameter)
+    return NULL;
+  std::string property;
+  OU::format(property, "<property name='ocpi_%s_%s' hidden='1' parameter='%u' debug='%u' type='%s'"
+	     "%s initial='%u' volatile='%u'%s%s%s",
+	     a_name, cname(), isParameter ? 1 : 0, isDebug ? 1 : 0, OU::baseTypeNames[type],
+	     isImpl ? " raw='0'" : "", isInitial ? 1 : 0, isVolatile ? 1 : 0, enums ? " enums='" : "",
+	     enums ? enums : "", enums ? "'" : "");
+  if (isInitial || isParameter)
+    OU::formatAdd(property, " default='%zu'", value);
+  property += "/>";
+  return worker().addProperty(property.c_str(), isImpl);
 }
 
 // After the specific port types have parsed everything
@@ -264,6 +265,35 @@ finalize() {
   // Either the granule is smaller than or not a multiple of data path width
   if (granuleWidth < m_dataWidth || (m_dataWidth && granuleWidth % m_dataWidth))
     worker().m_needsEndian = true;
+  // Now that we know everything about the port, we add properties specific to the port
+  // We make things "debug" that might add gates/resources
+  // Parameters generally do not so they are not debug
+
+  // 1. Protocol-dependent values that are spec-determined (impl == false)
+  // name         type,  debug  param  initl  volatl impl   value
+  AP(max_opcode,  UChar, false, true, false, false, false, m_nOpcodes - 1);
+  size_t max_bytes = 16*1024; // jumbo
+  if (!m_isUnbounded && m_maxMessageValues != SIZE_MAX)
+    max_bytes = (m_maxMessageValues * m_dataValueWidth + 7) / 8;
+  AP(max_bytes,   ULong, false, true, false, false, true, max_bytes);
+  // 3. Statistics counters for all models, debug and volatile
+  // name         type,  debug  param  initl  volatl impl   value
+  //  AP(messages,    ULong,  true, false, false, true,  false); // messages crossing this port
+  //  AP(opcode,      ULong,  true, false, false, true,  false);  // opcode of current message
+  //  AP(length,      ULong,  true, false, false, true,  false);  // length of current message
+  // 4. HDL-specific statistics (FIXME: in nonexistent HDL-data-port class)
+  // name         type,  debug  param  initl  volatl impl   value
+  //  AP(state,       Enum,  true,  false, false, true,  true, 0, "between,idle,data,blocked");
+  //  AP(between,     ULong,  true,  false, false, true,  true); // cycles between messages
+  //  AP(idle,        ULong,  true,  false, false, true,  true); // idle cycles within messages
+  //  AP(data,        ULong,  true,  false, false, true,  true); // cycles used to move data
+  if (isDataProducer()) {
+    // Add a runtime output size if the protocol does not bound it
+    //    if (m_isUnbounded)
+    AP(buffer_size, UShort,  false, false, true, false,  true);  // settable buffer size
+    //    else
+    //      AP(buffer_size, UShort,  false, true, false, false,  true);  // constant buffer size
+  }
   return NULL;
 }
 
@@ -273,21 +303,30 @@ finalizeExternal(Worker &aw, Worker &/*iw*/, InstancePort &ip,
   return ip.m_externalize ? aw.m_assembly->externalizePort(ip, cname(), NULL) : NULL;
 }
 
+static const char *maybeSizeMax(size_t n) {
+  static std::string s;
+  return n == SIZE_MAX ? "<unspecified>" : OU::format(s, "%zu", n);
+}
+
 void DataPort::
 emitPortDescription(FILE *f, Language lang) const {
   OcpPort::emitPortDescription(f, lang);
   const char *comment = hdlComment(lang);
   fprintf(f, " %s  This interface is a data interface acting as %s\n",
 	  comment, m_isProducer ? "producer" : "consumer");
-  fprintf(f, "  %s   Protocol: \"%s\"\n", comment, cname());
+  const char *protName = OU::Protocol::cname();
+  fprintf(f, "  %s   Protocol: \"%s\"\n", comment, protName && protName[0] ? protName : "<none>");
   fprintf(f, "  %s   DataValueWidth: %zu\n", comment, m_dataValueWidth);
   fprintf(f, "  %s   DataValueGranularity: %zu\n", comment, m_dataValueGranularity);
   fprintf(f, "  %s   DiverseDataSizes: %s\n", comment, BOOL(m_diverseDataSizes));
-  fprintf(f, "  %s   MaxMessageValues: %zu\n", comment, m_maxMessageValues);
-  fprintf(f, "  %s   NumberOfOpcodes: %zu\n", comment, m_nOpcodes);
-  fprintf(f, "  %s   Producer: %s\n", comment, BOOL(m_isProducer));
+  fprintf(f, "  %s   MaxMessageValues: %s\n", comment, maybeSizeMax(m_maxMessageValues));
   fprintf(f, "  %s   VariableMessageLength: %s\n", comment, BOOL(m_variableMessageLength));
   fprintf(f, "  %s   ZeroLengthMessages: %s\n", comment, BOOL(m_zeroLengthMessages));
+  fprintf(f, "  %s   MinMessageValues: %zu\n", comment, m_minMessageValues);
+  fprintf(f, "  %s   Unbounded: %s\n", comment, BOOL(m_isUnbounded));
+  fprintf(f, "  %s   NumberOfOpcodes: %zu\n", comment, m_nOpcodes);
+  fprintf(f, "  %s   DefaultBufferSize: %s\n", comment, maybeSizeMax(m_defaultBufferSize));
+  fprintf(f, "  %s   Producer: %s\n", comment, BOOL(m_isProducer));
   fprintf(f, "  %s   Continuous: %s\n", comment, BOOL(m_continuous));
   fprintf(f, "  %s   DataWidth: %zu\n", comment, m_dataWidth);
   fprintf(f, "  %s   ByteWidth: %zu\n", comment, m_byteWidth);
@@ -384,129 +423,16 @@ emitRecordInputs(FILE *f) {
 }
 void DataPort::
 emitRecordOutputs(FILE */*f*/) {
-
-}
-void DataPort::
-emitVHDLShellPortMap(FILE *f, std::string &last) {
-  std::string in, out;
-  OU::format(in, typeNameIn.c_str(), "");
-  OU::format(out, typeNameOut.c_str(), "");
-  fprintf(f,
-	  "%s    %s_in.reset => %s_reset,\n"
-	  "    %s_in.ready => %s_ready,\n",
-	  last.c_str(), cname(), cname(), cname(), cname());
-  if (masterIn()) {
-    if (m_dataWidth)
-      fprintf(f,
-	      "    %s_in.data => %s_data,\n",
-	      cname(), cname());
-    if (ocp.MByteEn.value)
-      fprintf(f, "    %s_in.byte_enable => %s_byte_enable,\n", cname(), cname());
-    if (m_nOpcodes > 1)
-      fprintf(f, "    %s_in.opcode => %s_opcode,\n", cname(), cname());
-    fprintf(f,
-	    "    %s_in.som => %s_som,\n"
-	    "    %s_in.eom => %s_eom,\n",
-	    cname(), cname(), cname(), cname());
-    if (m_dataWidth)
-      fprintf(f,
-	      "    %s_in.valid => %s_valid,\n",
-	      cname(), cname());
-    if (m_isPartitioned)
-      fprintf(f,
-	      "    %s_in.part_size   => %s_part_size,\n"
-	      "    %s_in.part_offset => %s_part_offset,\n"
-	      "    %s_in.part_start  => %s_part_start,\n"
-	      "    %s_in.part_ready  => %s_part_ready,\n",
-	      cname(), cname(), cname(), cname(), cname(),
-	      cname(), cname(), cname());
-    fprintf(f,
-	    "    %s_out.take => %s_take",
-	    cname(), cname());
-    if (m_isPartitioned)
-      fprintf(f,
-	      ",\n"
-	      "    %s_out.part_take  => %s_part_take",
-	      cname(), cname());
-    last = ",\n";
-  } else {
-    if (m_isPartitioned)
-      fprintf(f,
-	      "    %s_in.part_ready   => %s_part_ready,\n", cname(), cname());
-    fprintf(f,
-	    "    %s_out.give => %s_give,\n",
-	    cname(), cname());
-    if (m_dataWidth)
-      fprintf(f,
-	      "    %s_out.data => %s_data,\n", cname(), cname());
-    if (ocp.MByteEn.value)
-      fprintf(f, "    %s_out.byte_enable => %s_byte_enable,\n", cname(), cname());
-    if (ocp.MReqInfo.value)
-      fprintf(f, "    %s_out.opcode => %s_opcode,\n", cname(), cname());
-    fprintf(f,
-	    "    %s_out.som => %s_som,\n"
-	    "    %s_out.eom => %s_eom,\n",
-	    cname(), cname(), cname(), cname());
-    if (m_dataWidth)
-      fprintf(f,
-	      "    %s_out.valid => %s_valid",
-	      cname(), cname());
-    if (m_isPartitioned)
-      fprintf(f,
-	      ",\n"
-	      "    %s_out.part_size   => %s_part_size,\n"
-	      "    %s_out.part_offset => %s_part_offset,\n"
-	      "    %s_out.part_start  => %s_part_start,\n"
-	      "    %s_out.part_give   => %s_part_give",
-	      cname(), cname(), cname(),
-	      cname(), cname(), cname(), cname(), cname());
-    last = ",\n";
-  }
 }
 
 void DataPort::
-emitImplSignals(FILE *f) {
-  //	  const char *tofrom = p->masterIn() ? "from" : "to";
-  fprintf(f,
-	  "  signal %s_%s  : Bool_t;\n"
-	  "  signal %s_ready : Bool_t;\n"
-	  "  signal %s_reset : Bool_t; -- this port is being reset from the outside\n",
-	  cname(), masterIn() ? "take" : "give", cname(), cname());
-  if (m_dataWidth)
-    fprintf(f,
-	    "  signal %s_data  : std_logic_vector(ocpi_port_%s_data_width-1 downto 0);\n",
-	    cname(), cname());
-  if (ocp.MByteEn.value)
-    fprintf(f, "  signal %s_byte_enable: std_logic_vector(ocpi_port_%s_MByteEn_width-1 downto 0);\n",
-	    cname(), cname());
-  if (m_preciseBurst)
-    fprintf(f, "  signal %s_burst_length: std_logic_vector(%zu downto 0);\n",
-	    cname(), ocp.MBurstLength.width - 1);
-  if (m_nOpcodes > 1) {
-    fprintf(f,
-	    "  -- The strongly typed enumeration signal for the port\n"
-	    "  signal %s_opcode      : %s_OpCode_t;\n"
-	    "  -- The weakly typed temporary signals\n"
-	    "  signal %s_opcode_temp : std_logic_vector(%zu downto 0);\n"
-	    "  signal %s_opcode_pos  : integer;\n",
-	    cname(), operations() ?
-	    OU::Protocol::m_name.c_str() : cname(), cname(), ocp.MReqInfo.width - 1, cname());
-  }
-  fprintf(f,
-	  "  signal %s_som   : Bool_t;    -- valid eom\n"
-	  "  signal %s_eom   : Bool_t;    -- valid som\n",
-	  cname(), cname());
-  if (m_dataWidth)
-    fprintf(f,
-	    "  signal %s_valid : Bool_t;   -- valid data\n", cname());
-  if (m_isPartitioned)
-    fprintf(f,
-	    "  signal %s_part_size        : UShort_t;\n"
-	    "  signal %s_part_offset      : UShort_t;\n"
-	    "  signal %s_part_start       : Bool_t;\n"
-	    "  signal %s_part_ready       : Bool_t;\n"
-	    "  signal %s_part_%s        : Bool_t;\n",
-	    cname(), cname(), cname(), cname(), cname(), masterIn() ? "take" : "give");
+emitVHDLShellPortMap(FILE *, std::string &) {
+  assert("unexpected call to emitVHDLShellPortMap" == 0);
+}
+
+void DataPort::
+emitImplSignals(FILE *) {
+  assert("unexpected call to emitImplSignals" == 0);
 }
 
 void DataPort::
@@ -514,15 +440,24 @@ emitXML(std::string &out) {
   OU::Port::emitXml(out);
 }
 
-// static method
 const char *DataPort::
-adjustConnection(const char *masterName,
-		 ::Port &prodPort, OcpAdapt *prodAdapt, bool &prodHasExpr,
-		 ::Port &consPort, OcpAdapt *consAdapt, bool &consHasExpr,
-		 Language lang, size_t &unused) {
-  assert(prodPort.isData() && consPort.isData());
-  DataPort &prod = *static_cast<DataPort*>(&prodPort);
-  DataPort &cons = *static_cast<DataPort*>(&consPort);
+adjustConnection(Connection &c, OcpAdapt *myAdapt, bool &myHasExpr, ::Port &otherPort, OcpAdapt *otherAdapt,
+		 bool &otherHasExpr, Language lang, size_t &unused) {
+  const char *err;
+  if ((err = OcpPort::adjustConnection(c, myAdapt, myHasExpr, otherPort, otherAdapt, otherHasExpr, lang, unused)))
+    return err;
+  if (!isDataProducer())
+    return otherPort.adjustConnection(c, otherAdapt, otherHasExpr, *this, myAdapt, myHasExpr, lang, unused);
+  assert(otherPort.isData());
+  DataPort
+    &prod = *this,
+    &cons = *static_cast<DataPort*>(&otherPort);
+  OcpAdapt
+    *prodAdapt = myAdapt,
+    *consAdapt = otherAdapt;
+  bool
+    &prodHasExpr = myHasExpr,
+    &consHasExpr = otherHasExpr;
   // Check WDI compatibility
   // If both sides have protocol, check them for compatibility
   if (prod.nOperations() && cons.nOperations()) {
@@ -555,8 +490,7 @@ adjustConnection(const char *masterName,
   if (cons.m_continuous && !prod.m_continuous)
     return "producer is not continuous, but consumer requires it";
   // Profile-specific error checks and adaptations
-  const char *err = prod.adjustConnection(cons, masterName, lang, prodAdapt, consAdapt, unused);
-  if (err)
+  if ((err = prod.adjustConnection(cons, c.m_masterName.c_str(), lang, prodAdapt, consAdapt, unused)))
     return err;
   // Figure out if this instance port has signal adaptations that will require a temp
   // signal bundle for the port.
@@ -578,12 +512,12 @@ finalizeHdlDataPort() {
     ocpiCheck(asprintf(&wsi,
 		       "<streaminterface name='%s' dataWidth='%zu' impreciseburst='true'/>",
 		       cname(), 
-		       worker().m_defaultDataWidth >= 0 ?
+		       worker().m_defaultDataWidth != SIZE_MAX ?
 		       worker().m_defaultDataWidth : m_dataValueWidth) > 0);
     ezxml_t wsix = ezxml_parse_str(wsi, strlen(wsi));
-    DataPort *p = createDataPort<WsiPort>(worker(), wsix, this, -1, err);
-    if (!err)
-      err = p->checkClock();
+    /*DataPort *p = */(void)createDataPort<WsiPort>(worker(), wsix, this, -1, err);
+    //if (!err)
+    //      err = p->checkClock();
   }
   return err;
 }

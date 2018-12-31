@@ -33,76 +33,22 @@
 
 #include <stdio.h>
 #include <stddef.h>
-#include "OcpiContainerRunConditionApi.h"
-#ifdef __cplusplus
-
-#include "OcpiContainerApi.h" // For proxy slaves
-#endif
-#if defined (WIN32)
-    /**
-     * 8 bit signed integer data type.
-     */
-
-    typedef signed char int8_t;
-
-    /**
-     * 8 bit unsigned integer data type.
-     */
-
-    typedef unsigned char uint8_t;
-
-    /**
-     * 16 bit signed integer data type.
-     */
-
-    typedef short int16_t;
-
-    /**
-     * 16 bit unsigned integer data type.
-     */
-
-    typedef unsigned short uint16_t;
-
-    /**
-     * 32 bit signed integer data type.
-     */
-
-    typedef int int32_t;
-
-    /**
-     * 32 bit unsigned integer data type.
-     */
-
-    typedef unsigned int uint32_t;
-
-    /**
-     * 64 bit signed integer data type.
-     */
-
-    typedef long long int64_t;
-
-    /**
-     * 64 bit unsigned integer data type.
-     */
-
-    typedef unsigned long long uint64_t;
-#else
-#ifndef _WRS_KERNEL
+#include <stdbool.h>
 #include <stdint.h>
-#endif
-#endif
+#include "OcpiContainerRunConditionApi.h"
 
+#define RCC_CONST const // this definition applies to worker code
+#ifdef __cplusplus
+#include "OcpiContainerApi.h" // For proxy slaves
 #ifdef WORKER_INTERNAL
 namespace OCPI {
   namespace RCC { class Port; }
   namespace DataTransport { class BufferUserFacet; }
   namespace Util { class Member; class Port;}
 }
-#define RCC_CONST
-#else
-#define RCC_CONST const
+#undef RCC_CONST
+#define RCC_CONST // for (C++) framework code these things are not const
 #endif
-#ifdef __cplusplus
 namespace OCPI {
   namespace API {
     class Application;
@@ -115,7 +61,7 @@ namespace OCPI {
   }
   namespace RCC {
     class Worker;
-#endif
+#endif // end of __cplusplus
 
 typedef uint16_t  RCCOrdinal;
 typedef uint8_t   RCCOpCode;
@@ -190,7 +136,8 @@ typedef struct {
   size_t length_;
   RCCOpCode opCode_;
   size_t direct_;
-  RCCBoolean isNew_; // hook for upper level initializations
+  bool eof_;
+  bool isNew_; // hook for upper level initializations
 #ifdef WORKER_INTERNAL
   OCPI::RCC::Port *containerPort;
   OCPI::API::ExternalBuffer *portBuffer;
@@ -208,6 +155,7 @@ struct RCCPort {
       RCCOpCode operation;
       RCCOpCode exception;
     } u;
+    RCCBoolean eof;
   } input;
   struct {
     size_t length;
@@ -215,6 +163,7 @@ struct RCCPort {
       RCCOpCode operation;
       RCCOpCode exception;
     } u;
+    RCCBoolean eof;
   } output;
   RCCPortMethod *callBack;
   size_t connectedCrewSize;
@@ -331,6 +280,8 @@ typedef struct {
    inline size_t getLength() const { return m_rccBuffer->length_; } // same as STL-style length() but complements setLength
    inline RCCOpCode opCode() const { return m_rccBuffer->opCode_; }
    inline RCCOpCode getOpCode() const { return m_rccBuffer->opCode_; } // same as opCode() but complements setOpCode
+   inline bool eof() const { return m_rccBuffer->eof_; } 
+   inline bool getEOF() const { return eof(); }
    // For output buffers
    void setLength(size_t a_length) {
      if (m_rccBuffer->isNew_)
@@ -340,6 +291,7 @@ typedef struct {
    }
    void setOpCode(RCCOpCode op);
    void setDirect(size_t direct) {m_rccBuffer->direct_ = direct; }
+   void setEOF() { m_rccBuffer->eof_ = true; } 
    void setInfo(RCCOpCode op, size_t len) {
      setOpCode(op);
      setLength(len);

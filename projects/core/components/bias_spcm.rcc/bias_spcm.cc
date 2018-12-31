@@ -52,7 +52,8 @@ class Bias_spcmWorker : public Bias_spcmWorkerTypes::Bias_spcmWorkerBase {
     for (unsigned n = in.data().data().size(); n; n--) // n is length in sequence elements of input
       *outData++ = *inData++ + properties().biasValue;
     out.setInfo(in.opCode(), in.length());      // Set the metadata for the output message
-    return in.length() ? RCC_ADVANCE : RCC_ADVANCE_DONE;
+    return RCC_ADVANCE; // yes, let ZLMs through, like other BIAS workers
+    // return in.length() ? RCC_ADVANCE : RCC_ADVANCE_DONE;
   }
   // notification that t1 property will be read
   RCCResult t1_read() {

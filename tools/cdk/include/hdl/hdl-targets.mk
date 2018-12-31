@@ -287,7 +287,7 @@ $(info HdlTopTargets="$(HdlTopTargets)";\
        HdlBuiltPlatforms="$(HdlBuiltPlatforms)";\
        HdlAllTargets="$(HdlAllTargets)";\
        HdlTargets="$(foreach t,$(HdlTopTargets),$(or $(HdlTargets_$t),$t))";\
-       $(foreach p,$(HdlAllPlatforms),HdlPart_$p=$(HdlPart_$p);)\
+       $(foreach p,$(HdlAllPlatforms),HdlPart_$p=$(HdlPart_$p); HdlPlatformDir_$p=$(HdlPlatformDir_$p);)\
        $(foreach f,$(HdlAllTargets),\
          $(if $(HdlTargets_$f),HdlTargets_$f="$(HdlTargets_$f)";)\
          $(if $(HdlToolSet_$f),HdlToolSet_$f="$(HdlToolSet_$f)";)\

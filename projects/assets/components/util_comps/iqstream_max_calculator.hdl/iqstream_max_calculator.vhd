@@ -23,7 +23,7 @@
 
 library IEEE; use IEEE.std_logic_1164.all; use ieee.numeric_std.all;
 library ocpi; use ocpi.types.all; -- remove this to avoid all ocpi name collisions
-architecture rtl of iqstream_max_calculator_worker is
+architecture rtl of worker is
 
   -- all max values will take this value upon reset
   constant RESET_VAL_c : integer := -32768;

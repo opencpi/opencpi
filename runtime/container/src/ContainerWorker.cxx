@@ -105,7 +105,7 @@ namespace OCPI {
     }
     OA::PropertyInfo & Worker::setupProperty(const char *pname,
 					     volatile uint8_t *&m_writeVaddr,
-					     const volatile uint8_t *&m_readVaddr) {
+					     const volatile uint8_t *&m_readVaddr) const {
       OU::Property &prop = findProperty(pname);
       if (!prop.m_isReadable && !prop.m_isWritable && !prop.m_isParameter)
 	throw OU::Error("Property '%s' of worker '%s' is neither readable nor writable",
@@ -116,7 +116,7 @@ namespace OCPI {
     }
     OA::PropertyInfo & Worker::setupProperty(unsigned n,
 					     volatile uint8_t *&m_writeVaddr,
-					     const volatile uint8_t *&m_readVaddr) {
+					     const volatile uint8_t *&m_readVaddr) const {
       OU::Property &prop = property(n);
       if (!prop.m_isParameter)
 	prepareProperty(prop, m_writeVaddr, m_readVaddr);
@@ -180,6 +180,11 @@ namespace OCPI {
 	    OU::ValueReader reader(&vp);
 	    // put data from the value object into the data buffer, not fake top level
 	    info.read(reader, data, length, false, true);
+	    if (info.m_isSequence) {
+	      size_t unset = (v.m_nTotal - v.m_nElements) * info.m_elementBytes;
+	      assert(length >= unset);
+	      length -= unset;
+	    }
 	    assert(length < info.m_dataAlign); // padding at end may not be written
 	    data = (uint8_t*)alloc;
 	    if (info.m_isSequence) { // because we set the sequence length last below
@@ -238,7 +243,7 @@ namespace OCPI {
       setPropertyValue(prop, v);
     }
     void Worker::
-    getPropertyValue(const OU::Property &p, std::string &value, bool hex, bool add, bool uncached) {
+    getPropertyValue(const OA::PropertyInfo &p, std::string &value, bool hex, bool add, bool uncached)  const {
       OU::Value v(p);
       OA::Property a(*this, p.m_name.c_str()); // FIXME clumsy because get methods take API props
       OA::PropertyInfo &info = a.m_info;
@@ -329,7 +334,8 @@ namespace OCPI {
       v.unparse(value, NULL, add, hex);
     }
     bool Worker::getProperty(unsigned ordinal, std::string &a_name, std::string &value,
-			     bool *unreadablep, bool hex, bool *cachedp, bool uncached) {
+			     bool *unreadablep, bool hex, bool *cachedp, bool uncached,
+			     bool *hiddenp) {
       unsigned nProps;
       OU::Property *props = properties(nProps);
       if (ordinal >= nProps)
@@ -352,6 +358,8 @@ namespace OCPI {
 	return true;
       } else
 	throw OU::Error("Property number %u '%s' is unreadable", ordinal, p.m_name.c_str());
+      if (hiddenp)
+	*hiddenp = p.m_isHidden;
       if (p.m_isParameter) {
 	p.m_default->unparse(value, NULL, false, hex);
 	return true;
@@ -472,15 +480,27 @@ namespace OCPI {
 	a->container().start();
       return false;
     }
-    bool Worker::beforeStart() {
+    bool Worker::beforeStart() const {
       return getControlState() == INITIALIZED;
     }
     bool Worker::isDone() {
-      ControlState cs = getControlState();
-      return cs == UNUSABLE || cs == FINISHED;
+      switch(getControlState()) {
+      case FINISHED:
+	return true;
+      case UNUSABLE:
+	throw OU::Error("Worker \"%s\" is now unusable", name().c_str());
+      default:
+	return false;
+      }
     }
     bool Worker::wait(OCPI::OS::Timer *timer) {
+      Container &c = application()->container();
+      ocpiDebug("Waiting1 for \"done\" worker! %p %u %u %u", &c, c.enabled(), isDone(), getControlState());
       while (!isDone()) {
+	ocpiDebug("Waiting for \"done\" worker! %p %u", &c, c.enabled());
+	if (!c.enabled())
+	  throw OU::Error("Container \"%s\" for worker \"%s\" was shutdown",
+			  c.name().c_str(), cname());
 	OS::sleep(10);
 	if (timer && timer->expired())
 	  return true;

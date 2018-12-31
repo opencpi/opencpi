@@ -88,10 +88,15 @@ class WciPort : public OcpPort {
 			const char *defaultOut);
   void emitRecordArray(FILE *f);
   void emitVHDLShellPortMap(FILE *f, std::string &last);
+#if 1
+  void emitPortSignals(FILE *f, const InstancePort &ip, Language lang, const char *indent, bool &any,
+		       std::string &comment, std::string &last, const char *myComment, std::string &exprs);
+#else
   void emitPortSignals(FILE *f, Attachments &atts, Language lang,
 		       const char *indent, bool &any, std::string &comment,
 		       std::string &last, const char *myComment, OcpAdapt *adapt,
-		       std::string *signalIn, std::string &exprs);
+		       std::string *signalIn, std::string &clockSignal, std::string &exprs);
+#endif
   // void emitInterfaceConstants(FILE *f, Language lang);
   const char *finalizeExternal(Worker &aw, Worker &iw, InstancePort &ip,
 			       bool &cantDataResetWhileSuspended);
@@ -150,7 +155,7 @@ class CpPort : public Port {
   inline const char *typeName() const { return "CPMaster"; }
   void emitRecordTypes(FILE *f);
   void emitRecordInterface(FILE *f, const char *implName);
-  void emitConnectionSignal(FILE *f, bool output, Language lang, std::string &signal);
+  void emitConnectionSignal(FILE *f, bool output, Language lang, bool clock, std::string &signal);
 };
 class NocPort : public Port {
   NocPort(const NocPort &other, Worker &w , std::string &name, size_t count,
@@ -163,7 +168,7 @@ class NocPort : public Port {
   inline const char *typeName() const { return "uNoc"; }
   void emitRecordTypes(FILE *f);
   void emitRecordInterface(FILE *f, const char *implName);
-  void emitConnectionSignal(FILE *f, bool output, Language lang, std::string &signal);
+  void emitConnectionSignal(FILE *f, bool output, Language lang, bool clock, std::string &signal);
 };
 class SdpPort : public Port {
   SdpPort(const SdpPort &other, Worker &w , std::string &name, size_t count,
@@ -178,7 +183,7 @@ class SdpPort : public Port {
   void emitRecordInterface(FILE *f, const char *implName);
   void emitRecordInterfaceConstants(FILE *f);
   void emitInterfaceConstants(FILE *f, Language lang);
-  void emitConnectionSignal(FILE *f, bool output, Language lang, std::string &signal);
+  void emitConnectionSignal(FILE *f, bool output, Language lang, bool clock, std::string &signal);
   void emitRecordSignal(FILE *f, std::string &last, const char *prefix, bool inRecord,
 			bool inPackage, bool inWorker, const char *defaultIn,
 			const char *defaultOut);
@@ -198,7 +203,7 @@ class MetaDataPort : public Port {
   inline const char *typeName() const { return "Metadata"; }
   void emitRecordTypes(FILE *f);
   void emitRecordInterface(FILE *f, const char *implName);
-  void emitConnectionSignal(FILE *f, bool output, Language lang, std::string &signal);
+  void emitConnectionSignal(FILE *f, bool output, Language lang, bool clock, std::string &signal);
 };
 class TimeServicePort : public Port {
   TimeServicePort(const TimeServicePort &other, Worker &w , std::string &name, size_t count,
@@ -216,11 +221,16 @@ class TimeServicePort : public Port {
   void emitRecordInterface(FILE *f, const char *implName);
   void emitVHDLShellPortMap(FILE *f, std::string &last);
   void emitVHDLSignalWrapperPortMap(FILE *f, std::string &last);
+#if 1
+  void emitPortSignals(FILE *f, const InstancePort &ip, Language lang, const char *indent, bool &any,
+		       std::string &comment, std::string &last, const char *myComment, std::string &exprs);
+#else
   void emitPortSignals(FILE *f, Attachments &atts, Language lang,
 		       const char *indent, bool &any, std::string &comment,
 		       std::string &last, const char *myComment, OcpAdapt *adapt,
-		       std::string *signalIn, std::string &exprs);
-  void emitConnectionSignal(FILE *f, bool output, Language lang, std::string &signal);
+		       std::string *signalIn, std::string &clockSignal, std::string &exprs);
+#endif
+  void emitConnectionSignal(FILE *f, bool output, Language lang, bool clock, std::string &signal);
 };
 class TimeBasePort : public Port {
   TimeBasePort(const TimeBasePort &other, Worker &w , std::string &name, size_t count,
@@ -241,9 +251,9 @@ class TimeBasePort : public Port {
   void emitPortSignals(FILE *f, Attachments &atts, Language lang,
 		       const char *indent, bool &any, std::string &comment,
 		       std::string &last, const char *myComment, OcpAdapt *adapt,
-		       std::string *signalIn, std::string &exprs);
+		       std::string *signalIn, std::string &clockSignal, std::string &exprs);
 #endif
-  void emitConnectionSignal(FILE *f, bool output, Language lang, std::string &signal);
+  void emitConnectionSignal(FILE *f, bool output, Language lang, bool clock, std::string &signal);
 };
 class RawPropPort : public Port {
  public:
@@ -257,7 +267,7 @@ class RawPropPort : public Port {
   bool needsControlClock() const { return true; }
   void emitRecordTypes(FILE *f);
   void emitRecordInterface(FILE *f, const char *implName);
-  void emitConnectionSignal(FILE *f, bool output, Language lang, std::string &signal);
+  void emitConnectionSignal(FILE *f, bool output, Language lang, bool clock, std::string &signal);
   const char *masterMissing() const;
   const char *slaveMissing() const;
 };
@@ -281,13 +291,18 @@ class DevSignalsPort : public Port {
   bool haveWorkerInputs() const { return haveInputs(); }
   bool haveOutputs() const { return m_hasOutputs; }
   bool haveWorkerOutputs() const { return haveOutputs(); }
-  void emitConnectionSignal(FILE *f, bool output, Language lang, std::string &signal);
+  void emitConnectionSignal(FILE *f, bool output, Language lang, bool clock, std::string &signal);
   void emitPortSignalsDir(FILE *f, bool output, const char *indent, bool &any,
 			  std::string &comment, std::string &last, Attachment *other);
+#if 1
+  void emitPortSignals(FILE *f, const InstancePort &ip, Language lang, const char *indent, bool &any,
+		       std::string &comment, std::string &last, const char *myComment, std::string &exprs);
+#else
   void emitPortSignals(FILE *f, Attachments &atts, Language lang,
 		       const char *indent, bool &any, std::string &comment,
 		       std::string &last, const char *myComment, OcpAdapt *adapt,
-		       std::string *signalIn, std::string &exprs);
+		       std::string *signalIn, std::string &clockSignal, std::string &exprs);
+#endif
   void emitExtAssignment(FILE *f, bool int2ext, const std::string &extName,
 			 const std::string &intName, const Attachment &extAt,
 			 const Attachment &intAt, size_t count) const;
@@ -327,7 +342,7 @@ class Control {
   unsigned nRunProperties, nNonRawRunProperties, nParameters;
   Control();
   void initAccess();
-  void summarizeAccess(OU::Property &p);
+  void summarizeAccess(OU::Property &p, bool isSpecProperty = false);
 };
 
 enum Endian {
@@ -346,8 +361,6 @@ enum Endian {
 
 typedef std::vector<Clock*> Clocks;
 typedef Clocks::const_iterator ClocksIter;
-typedef std::list<Worker *> Workers;
-typedef Workers::iterator WorkersIter;
 typedef std::pair<std::string, std::string> StringPair;
 class Assembly;
 class HdlDevice;
@@ -385,7 +398,7 @@ class Worker : public OU::Worker {
     *m_pattern,                     // pattern for signal names within ports
     *m_portPattern,                 // pattern for port names
     *m_staticPattern;               // pattern for rcc static methods
-  int m_defaultDataWidth;           // initialized to -1 to allow zero
+  size_t m_defaultDataWidth;        // SIZE_MAX means not set
   Language m_language;
   ::Assembly *m_assembly;
   // vector of slave worker objects paired with a string of the name of the slave either from name
@@ -410,6 +423,7 @@ class Worker : public OU::Worker {
                                     // FIXME: derive from compiled code
   unsigned m_maxLevel;        // when data type processing
   bool m_dynamic;
+  bool m_isSlave;
   Worker(ezxml_t xml, const char *xfile, const std::string &parentFile, WType type,
 	 Worker *parent, OU::Assembly::Properties *ipvs, const char *&err);
   virtual ~Worker();
@@ -418,8 +432,8 @@ class Worker : public OU::Worker {
 	   const char *outDir, Worker *parent, OU::Assembly::Properties *instancePropertyValues,
 	   size_t paramConfig, const char *&err);
   bool nonRaw(PropertiesIter pi);
-  Clock *addClock();
-  Clock *addWciClockReset();
+  Clock &addClock();
+  Clock &addWciClockReset();
   OU::Property *findProperty(const char *name) const;
   OU::Port *findMetaPort(const char *id, const OU::Port *except) const;
   const char* parseSlaves();
@@ -440,7 +454,7 @@ class Worker : public OU::Worker {
     *parseHdl(const char *package = NULL),
     *parseRccAssy(),
     *parseOclAssy(),
-    *parseImplControl(ezxml_t &xctl, const char *firstRaw),
+    *parseImplControl(ezxml_t &xctl),
     *parseImplLocalMemory(),
     *findPackage(ezxml_t spec, const char *package),
     *parseSpecControl(ezxml_t ps),
@@ -451,11 +465,11 @@ class Worker : public OU::Worker {
     *parseBuildFile(bool optional, bool *missing = NULL),
     *parseBuildXml(ezxml_t x),
     *startBuildXml(FILE *&f),
-    *doProperties(ezxml_t top, const char *parent, bool impl, bool anyIsBad),
+    *doProperties(ezxml_t top, const char *parent, bool impl, bool anyIsBad, const char *firstRaw, bool AllRaw),
     *parseHdlAssy(),
     *initImplPorts(ezxml_t xml, const char *element, PortCreate &pc),
     *checkDataPort(ezxml_t impl, DataPort *&sp),
-    *addProperty(ezxml_t prop, bool includeImpl, bool anyIsBad),
+    *addProperty(ezxml_t prop, bool includeImpl, bool anyIsBad, bool isRaw),
     // Add a property from an xml string description
     *addProperty(const char *xml, bool includeImpl),
     //    *doAssyClock(Instance *i, Port *p),
@@ -564,7 +578,8 @@ class Worker : public OU::Worker {
 #define BOOL(b) ((b) ? "true" : "false")
 
 #define IMPL_ATTRS \
-  "name", "spec", "paramconfig", "reentrant", "scaling", "scalable", "controlOperations", "xmlincludedirs", "componentlibraries"
+  "name", "spec", "paramconfig", "reentrant", "scaling", "scalable", "controlOperations", "xmlincludedirs", \
+  "componentlibraries", "version"
 #define IMPL_ELEMS "componentspec", "properties", "property", "specproperty", "propertysummary", "slave", "xi:include", "controlinterface",  "timeservice", "unoc", "timebase", "sdp"
 #define GENERIC_IMPL_CONTROL_ATTRS \
   "name", "SizeOfConfigSpace", "ControlOperations", "Sub32BitConfigProperties"
@@ -593,12 +608,12 @@ extern const char
 		      ezxml_t *parsed, std::string &childFile, bool optional),
   *emitContainerHDL(Worker*, const char *);
 
-extern bool g_dynamic;
+extern bool g_dynamic, g_multipleWorkers;
 extern void
   doPrev(FILE *f, std::string &last, std::string &comment, const char *myComment),
   vhdlType(const OU::Property &dt, std::string &typeDecl, std::string &type,
 	   bool convert = false, bool finalized = false),
-  emitConstant(FILE *f, const std::string &prefix, const char *name, size_t val, Language lang),
+  emitConstant(FILE *f, const std::string &prefix, const char *name, size_t val, Language lang, bool ieee = false),
   emitVhdlLibraries(FILE *f),
   emitLastSignal(FILE *f, std::string &last, Language lang, bool end);
 

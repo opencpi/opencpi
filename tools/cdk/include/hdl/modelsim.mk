@@ -118,16 +118,17 @@ $1/$3.tar:
 	$(AT)echo Building modelsim simulation executable: "$$@" with details in $1/$3-modelsim.out
 	$(AT)(set -e ; cd $1 && \
 	     echo -L $3 $$$$(grep = modelsim.ini | grep -v others= | sed 's/=.*//' | sed 's/^/-L /') > vsim.args && \
-	     export LM_LICENSE_FILE=$(OCPI_MODELSIM_LICENSE_FILE) && \
+	     export MGLS_LICENSE_FILE=$(OCPI_MODELSIM_LICENSE_FILE) && \
 	     echo 'log -r /*; archive write vsim.dbar -wlf vsim.wlf -include_src ; quit' | \
 	     $(call ModelsimExec,vsim) -c $3.$3 -modelsimini modelsim.ini \
 	       -f vsim.args && \
              echo vsim exited successfully, now creating archive: $$@ && \
-             tar -cf $$(notdir $$@) -h vsim.dbar vsim.args metadatarom.dat \
+             tar -cf $$(notdir $$@) -h -v --show-transformed-names vsim.dbar vsim.args metadatarom.dat \
 	       $$(foreach i,$$(shell grep = $1/modelsim.ini | grep -v others=),\
                  $$(foreach l,$$(firstword $$(subst =, ,$$i)),\
                    $$(foreach p,$$(word 2,$$(subst =, ,$$i)),\
-                     --xform=s=$$(if $$(filter /%,$$p),$$(patsubst /%,%,$$p),$$(subst ../,,$$p))=$$l= $$p ))) $3 ) > $1/$3-modelsim.out 2>&1
+                     $$(foreach s,$$(if $$(filter /%,$$p),$$(patsubst /%,%,$$p),$$(subst ../,,$$p)),\
+                       --xform='s=$$s$$$$=$$l=' --xform='s=$$s/=$$l/=' $$p )))) $3 ) > $1/$3-modelsim.out 2>&1
 
 endef
 endif

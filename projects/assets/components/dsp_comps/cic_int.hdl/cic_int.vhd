@@ -139,19 +139,19 @@ begin
         case zlm_current_state is
           when INIT_s =>
             -- 'Full' ZLM present, send ZLM
-            if (in_in.som = '1' and in_in.eom = '1' and in_in.valid = '0') then
+            if (in_in.ready = '1' and in_in.som = '1' and in_in.eom = '1' and in_in.valid = '0') then
               zlm_current_state <= SEND_s;
               zlm_detected_l    <= '1';
               -- 'Partial' ZLM present, wait for remaininng portion of ZLM
-            elsif (in_in.som = '1' and in_in.valid = '0') then
+            elsif (in_in.ready = '1' and in_in.som = '1' and in_in.valid = '0') then
               zlm_current_state <= WAIT_s;
             end if;
           when WAIT_s =>
             -- Valid message from upstream, return to ZLM detection
-            if (in_in.valid = '1') then
+            if (in_in.ready = '1' and in_in.valid = '1') then
               zlm_current_state <= INIT_s;
               -- Remainder of 'partial' ZLM present, send ZLM
-            elsif (in_in.eom = '1') then
+            elsif (in_in.ready = '1' and in_in.eom = '1') then
               zlm_current_state <= SEND_s;
             end if;
           when SEND_s =>
@@ -232,7 +232,7 @@ begin
         int_cnt <= (others => '0');
       elsif (out_in.ready = '1' and in_in.ready = '1') then
         -- begin (do not if input ZLM detected)
-        if (in_in.valid = '1' and int_cnt = 0 and zlm_detected_l = '0') then
+        if (in_in.ready = '1' and in_in.valid = '1' and int_cnt = 0 and zlm_detected_l = '0') then
           int_cnt <= to_unsigned(1, 16);
           -- end
         elsif (int_cnt = unsigned(R)-1) then

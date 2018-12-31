@@ -25,6 +25,7 @@
 #include <stdarg.h>
 #include <string>
 #include <initializer_list>
+#include <cassert>
 #include "OcpiPValueApi.h"
 #include "OcpiUtilPropertyApi.h"
 #include "OcpiUtilExceptionApi.h"
@@ -142,11 +143,11 @@ namespace OCPI {
       friend class Property;
       virtual PropertyInfo &setupProperty(const char *name,
 					  volatile uint8_t *&m_writeVaddr,
-					  const volatile uint8_t *&m_readVaddr) = 0;
+					  const volatile uint8_t *&m_readVaddr) const = 0;
       virtual PropertyInfo &setupProperty(unsigned n,
 					  volatile uint8_t *&m_writeVaddr,
-					  const volatile uint8_t *&m_readVaddr) = 0;
-      virtual bool beforeStart() = 0;
+					  const volatile uint8_t *&m_readVaddr) const = 0;
+      virtual bool beforeStart() const = 0;
     protected:
       virtual ~Worker();
     public:
@@ -165,7 +166,8 @@ namespace OCPI {
       virtual void setProperties(const PValue *props) =  0;
       virtual bool getProperty(unsigned ordinal, std::string &name, std::string &value,
 			       bool *unreadablep = NULL, bool hex = false,
-			       bool *cachedp = NULL, bool uncached = false) = 0;
+			       bool *cachedp = NULL, bool uncached = false, bool *hiddenp = NULL)
+	                      = 0;
 #undef OCPI_DATA_TYPE
 #undef OCPI_DATA_TYPE_S
 #define OCPI_DATA_TYPE(sca,corba,letter,bits,run,pretty,store)		\
@@ -269,6 +271,8 @@ namespace OCPI {
       };
       bool m_number;
       Access(size_t subscript)   : m_index(subscript), m_number(true) {} // get element
+      // Allow (signed) ints for convenience, including 0, which should not end up being NULL for const char*
+      Access(int subscript)      : m_index((assert(subscript >= 0), (size_t)subscript)), m_number(true) {}
       Access(const char *member) : m_member(member), m_number(false) {}; // get member
     };
     typedef const std::initializer_list<Access> AccessList;
@@ -281,7 +285,7 @@ namespace OCPI {
     class Property {
       friend class OCPI::Container::Worker;
     protected:
-      Worker &m_worker;               // which worker do I belong to
+      const Worker &m_worker;               // which worker do I belong to
     private:
       const volatile uint8_t *m_readVaddr;
       volatile uint8_t *m_writeVaddr;
@@ -292,9 +296,9 @@ namespace OCPI {
       bool m_readSync, m_writeSync;   // these exist to avoid exposing the innards of m_info.
     public:
       Property(const Application &, const char *, const char * = NULL);
-      Property(Worker &, const char *);
+      Property(const Worker &, const char *);
     private:
-      Property(Worker &, unsigned);
+      Property(const Worker &, unsigned);
       void throwError(const char *err) const;
       template <typename val_t> void setValueInternal(const OCPI::Util::Member &m, size_t off,
 						      const val_t val) const;

@@ -744,7 +744,7 @@ getSystemAddr() {
       while (ifs.getNext(eif, error)) {
 	if (eif.addr.isEther()) {
 	  addr = eif.addr;
-	  ocpiDebug("Establishing system identify from interface '%s': %s",
+	  ocpiDebug("Establishing system identity from interface '%s': %s",
 		    eif.name.c_str(), addr.pretty());
 	  set = true;
 	  break;

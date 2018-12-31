@@ -99,14 +99,20 @@ function "not"  ( l : bool_t             ) return boolean is begin return not it
 --function To_bool(b : boolean) return Bool_t is begin return b; end;
 --function from_bool(b : bool_t) return std_logic_vector is begin
 --  if b then return std_logic_vector'(b"1"); else return std_logic_vector'(b"0"); end if;
---end from_bool;                                                            
+--end from_bool;
 --function from_bool(b : bool_t) return std_logic is begin
 --if b then return '1'; else return '0'; end if;
---end from_bool;                                                            
+--end from_bool;
 
 -- THESE ARE Bool_t related definitions independent of whether bool_t is boolean or std_logic
-function btrue return bool_t is begin return to_bool(true); end;
-function bfalse return bool_t is begin return to_bool(false); end;
+-- The use of these two functions as actuals in port maps CRASHES both isim (ISE) 14.7 and xsim (Vivado),
+-- as of 2015.4.
+-- so they were changed to proper constants rather than functions that returned constants.
+-- modelsim was fine with it.
+--function btrue return bool_t is begin return to_bool(true); end;
+--function bfalse return bool_t is begin return to_bool(false); end;
+constant btrue : bool_t := to_bool(true);
+constant bfalse : bool_t := to_bool(false);
 function To_boolean(b : bool_t) return boolean is begin return its(b); end to_boolean;
 function from_bool_array(ba : bool_array_t;
                          offset, nbytes_1, byte_offset : unsigned;

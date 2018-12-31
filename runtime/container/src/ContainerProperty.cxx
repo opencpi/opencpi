@@ -63,14 +63,14 @@ namespace OCPI {
     // This is user-visible, initialized from information in the metadata
     // It is intended to be constructed on the user's stack - a cache of
     // just the items needed for fastest access
-    Property::Property(Worker &w, const char *aname) :
+    Property::Property(const Worker &w, const char *aname) :
       m_worker(w), m_readVaddr(NULL), m_writeVaddr(NULL),
       m_info(w.setupProperty(aname, m_writeVaddr, m_readVaddr)), m_ordinal(m_info.m_ordinal),
       m_readSync(m_info.m_readSync), m_writeSync(m_info.m_writeSync) {
     }
     // This is a sort of side-door from the application code
     // that already knows the property ordinal
-    Property::Property(Worker &w, unsigned n) :
+    Property::Property(const Worker &w, unsigned n) :
       m_worker(w), m_readVaddr(NULL), m_writeVaddr(NULL),
       m_info(w.setupProperty(n, m_writeVaddr, m_readVaddr)), m_ordinal(m_info.m_ordinal),
       m_readSync(m_info.m_readSync), m_writeSync(m_info.m_writeSync) {

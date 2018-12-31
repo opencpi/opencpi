@@ -135,7 +135,7 @@ namespace OCPI {
       void propertyRead(unsigned ordinal) const;
       void prepareProperty(OCPI::Util::Property&,
 			   volatile uint8_t *&writeVaddr,
-			   const volatile uint8_t *&readVaddr);
+			   const volatile uint8_t *&readVaddr) const;
       // backward compatibility for ctests
       OCPI::Container::Port
 	&createInputPort(OCPI::Util::PortOrdinal portId, size_t bufferCount, size_t bufferSize,

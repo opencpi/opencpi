@@ -34,7 +34,7 @@ namespace OCPI {
       const char *status();
       OCPI::Container::Port *findPort(const char *) { return NULL; }
       const std::string &name() const { return m_name; }
-      void prepareProperty(OCPI::Util::Property &, volatile uint8_t *&, const volatile uint8_t *&) {}
+      void prepareProperty(OCPI::Util::Property &, volatile uint8_t *&, const volatile uint8_t *&) const {}
       OCPI::Container::Port &createPort(const OCPI::Util::Port &, const OCPI::Util::PValue *) {
 	assert("not called"==0);
 	return *(OCPI::Container::Port*)this;

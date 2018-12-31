@@ -114,16 +114,15 @@ namespace OCPI {
 		m_rccPort.useDefaultOpCode_ ? m_rccPort.defaultOpCode_ :
 		m_rccPort.output.u.operation;
 	      m_rccPort.current.length_ = m_rccPort.output.length;
+	      m_rccPort.current.eof_ = false;
 	      m_rccPort.current.direct_ = 0;
 	    }
-	  } else {
-	    bool end;
-	    if ((m_buffer = getBuffer(data, m_rccPort.current.length_,
-				      m_rccPort.current.opCode_, end))) {
-	      m_rccPort.current.data = (void*)data;
-	      m_rccPort.input.u.operation = m_rccPort.current.opCode_;
-	      m_rccPort.input.length = m_rccPort.current.length_;
-	    }
+	  } else if ((m_buffer = getBuffer(data, m_rccPort.current.length_,
+					   m_rccPort.current.opCode_, m_rccPort.current.eof_))) {
+	    m_rccPort.current.data = (void*)data;
+	    m_rccPort.input.u.operation = m_rccPort.current.opCode_;
+	    m_rccPort.input.length = m_rccPort.current.length_;
+	    m_rccPort.input.eof = m_rccPort.current.eof_;
 	  }
 	  if (m_buffer) {
 	    if (max && isOutput() && max < m_rccPort.output.length)
@@ -173,27 +172,7 @@ namespace OCPI {
       inline bool checkReady() {
 	return m_buffer ? true : (m_wantsBuffer ? requestRcc() : false);
       }
-      inline bool advanceRcc(size_t max) {
-	try {
-	  if (m_buffer) {
-	    if (isOutput())
-	      m_buffer->put(m_rccPort.current.length_, m_rccPort.current.opCode_, false,
-			    m_rccPort.current.direct_);
-	    else
-	      release(); // m_buffer->release(); must release on port gotten from
-	    m_rccPort.current.data = NULL;
-	    m_buffer = NULL;
-	  }
-	  bool ready = requestRcc();
-	  if (ready && max && max > m_rccPort.current.maxLength)
-	    throw OU::Error("Output buffer request/advance (size %zu) greater than buffer size "
-			    " (%zu)", max, m_rccPort.current.maxLength);
-	} catch (std::string &e) {
-	  error(e);
-	}
-	return false;
-      }
-
+      bool advanceRcc(size_t max);
       void sendRcc(RCCBuffer &buffer) {
 	ocpiAssert(buffer.portBuffer && buffer.containerPort);
 	try {
@@ -211,7 +190,7 @@ namespace OCPI {
 	      buffer.containerPort->m_buffer = NULL;
 	      buffer.containerPort->requestRcc();
 	    } // else its a taken buffer
-	    put(*buffer.portBuffer, buffer.length_, buffer.opCode_, false, buffer.direct_);
+	    put(*buffer.portBuffer, buffer.length_, buffer.opCode_, buffer.eof_, buffer.direct_);
 	  }
 	} catch (std::string &e) {
 	  error(e);

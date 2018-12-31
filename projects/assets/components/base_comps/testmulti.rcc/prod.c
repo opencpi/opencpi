@@ -69,7 +69,7 @@ static RCCResult initialize(RCCWorker *this_)
     props->p5[n] = 4+n;
   }
   props->p6 = 500;
-  old_props = *props;
+  // old_props = *props; this is a const violation
   return RCC_OK;
 }
 

@@ -39,6 +39,7 @@ $(ImplHeaderFiles): $(GeneratedDir)/%$(ImplSuffix) : $$(Worker_%_xml) | $(Genera
         $(and $(Assembly),-S $(Assembly)) \
 	$(and $(HdlPlatform),-P $(HdlPlatform)) \
 	$(and $(PlatformDir),-F $(PlatformDir)) \
+	$(and $(filter-out 1,$(words $(Workers))),-N ) \
 	$(HdlVhdlLibraries) -i $<)
 
 ifeq ($(origin SkelFiles),undefined)
@@ -280,12 +281,12 @@ define DoLinks
                                        $(HdlToolRealCore_$(HdlToolSet_$1))),\
                                $(notdir $n),$r)),$(strip\
                      $(if $(HdlToolRealCore_$(HdlToolSet_$1)),$l,$r)$(suffix $n)),$c,$r))))))
-  $$(call OcpiDbgVar,WkrExportNames,In Dolinks )
+  $$(call xOcpiDbgVar,WkrExportNames,In Dolinks )
 endef
 
 # These links are to binaries
 ifndef HdlSkip
-  $(call OcpiDbgVar,WkrExportNames)
+  $(call xOcpiDbgVar,WkrExportNames)
   $(foreach t,$($(CapModel)Targets),$(infox $(call zDoLinks,$t))$(eval $(call DoLinks,$(call $(CapModel)TargetDirTail,$t))))
 endif
 

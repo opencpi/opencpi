@@ -138,9 +138,9 @@ begin
 
         case current_state is
           when INIT_s =>
-            if (in_in.som = '1' and in_in.eom = '1' and in_in.valid = '0') then
+            if (in_in.ready = '1' and in_in.som = '1' and in_in.eom = '1' and in_in.valid = '0') then
               current_state <= TERM_CURR_MSG_s;
-            elsif (in_in.som = '1' and in_in.valid = '0') then
+            elsif (in_in.ready = '1' and in_in.som = '1' and in_in.valid = '0') then
               current_state <= WAIT_s;
             elsif (force_som = '1' and force_eom = '1' and out_in.ready = '0') then
               current_state <= SEND_s;
@@ -149,9 +149,9 @@ begin
               take          <= '0';
             end if;
           when WAIT_s =>
-            if (in_in.valid = '1') then
+            if (in_in.ready and in_in.valid = '1') then
               current_state <= INIT_s;
-            elsif (in_in.eom = '1') then
+            elsif (in_in.ready and in_in.eom = '1') then
               current_state <= SEND_s;
             end if;
           when SEND_s =>

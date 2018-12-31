@@ -57,7 +57,7 @@ run(RCCWorker *self, RCCBoolean timedOut, RCCBoolean *newRunCondition) {
    return RCC_ERROR;
  }
  for (unsigned n = in->input.length / sizeof(uint32_t); n; n--)
-   *outData++ = *inData++ + PARAM_biasValue();
+   *outData++ = *inData++ + BIAS_PARAM_BIASVALUE;
  out->output.length = in->input.length;
  out->output.u.operation = in->input.u.operation;
  return in->input.length ? RCC_ADVANCE : RCC_ADVANCE_DONE;
