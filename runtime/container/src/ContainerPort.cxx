@@ -113,8 +113,8 @@ namespace OCPI {
 
     // Bridge port constructor also does the equivalent of "startConnect" for itself.
     BridgePort::
-    BridgePort(LocalPort &port, bool provider, const OU::PValue *params)
-      : BasicPort(port.container(), port.metaPort(), provider, params)
+    BridgePort(Container &c, const OCPI::Util::Port &mPort, bool provider, const OU::PValue *params)
+      : BasicPort(c, mPort, provider, params)
     {
     }
 

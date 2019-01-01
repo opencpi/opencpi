@@ -275,7 +275,8 @@ namespace OCPI {
 	determineTransport(isProvider() ? mine : base, isProvider() ? base : mine,
 			   NULL, NULL, NULL, bridged);
 	applyConnection(bridged, c.m_bufferSize);
-	m_localBridgePort = new BridgePort(*this, !isProvider(), NULL);
+	m_localBridgePort = new BridgePort(Container::baseContainer(), metaPort(), !isProvider(), NULL);
+	ocpiDebug("BRIDGE in setupBridging: %p in container %p", m_localBridgePort, &Container::baseContainer());
 	m_localBridgePort->applyConnection(bridged, c.m_bufferSize); // native transport
 	m_localBridgePort->connectLocal(*this, NULL);
       }
@@ -298,7 +299,8 @@ namespace OCPI {
 	assert(!m_bridgePorts[otherOrdinal]);
 	BridgePort &bp =
 	  *(m_bridgePorts[otherOrdinal] =
-	    new BridgePort(*this, isProvider(), (isProvider() ? c.m_in : c.m_out).m_params));
+	    new BridgePort(Container::baseContainer(), metaPort(), isProvider(),
+			   (isProvider() ? c.m_in : c.m_out).m_params));
 	// we can't imply recurse here without creating a dummy connection.
 	bp.applyConnection(c.m_transport, c.m_bufferSize);
 	if (!other)
