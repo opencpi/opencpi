@@ -75,10 +75,9 @@
 	       (volatile SLCR *)m_driver.map(sizeof(SLCR), SLCR_ADDR, err);
 	     if (!slcr)
 	       return true;
-             // this isnt working on the zynqmp why ?
-             //volatile IDCODE *idcode =
-             //  (volatile IDCODE *)m_driver.map(sizeof(IDCODE), IDCODE_ADDR, err);
-  	     //if (!idcode)
+             /// @todo / FIXME - check whether this works on zynqmp
+             //volatile USP_CSU *csu = (volatile USP_CSU *)map(USP_CSU_ADDR, sizeof(USP_CSU));
+  	     //if (!csu) {
   	     //  return true;
 	     // We're not loaded, but fake as much stuff as possible.
 	     const char *p = ezxml_cattr(config, "platform");

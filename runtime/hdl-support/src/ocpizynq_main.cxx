@@ -35,7 +35,7 @@
 #include "ocpi-config.h"
 #include "OcpiUtilMisc.h"
 #include "CmdOption.h"
-#include "HdlZynq.h"
+#include "HdlZynq.h" // FTM, SLCR, USP_CSU
 
 namespace OU = OCPI::Util;
 using namespace OCPI::HDL::Zynq;
@@ -71,6 +71,66 @@ static uint8_t *map(off_t addr, size_t arg_size) {
     return NULL;
   }
   return ((uint8_t*)ptr) + (addr - base);
+}
+// See "Table 1-2: Device ID Codes and Minimum Production Revisions" in:
+// https://www.xilinx.com/support/documentation/user_guides/ug1085-zynq-ultrascale-trm.pdf
+bool get_is_zynq_usplus(volatile USP_CSU* csu) {
+  bool ret;
+  printf("csu->IDCODE=0x%08x\n", csu->IDCODE);
+  switch(csu->IDCODE) {
+    case 0x14711093:
+      ret = true;
+      break;
+    case 0x14710093:
+      ret = true;
+      break;
+    case 0x04721093:
+      ret = true;
+      break;
+    case 0x04720093:
+      ret = true;
+      break;
+    case 0x24739093:
+      ret = true;
+      break;
+    case 0x14730093:
+      ret = true;
+      break;
+    case 0x24738093:
+      ret = true;
+      break;
+    case 0x04740093:
+      ret = true;
+      break;
+    case 0x14750093:
+      ret = true;
+      break;
+    case 0x14759093:
+      ret = true;
+      break;
+    case 0x14758093:
+      ret = true;
+      break;
+    case 0x147E1093:
+      ret = true;
+      break;
+    case 0x147E5093:
+      ret = true;
+      break;
+    case 0x147E4093:
+      ret = true;
+      break;
+    case 0x147E0093:
+      ret = true;
+      break;
+    case 0x147E2093:
+      ret = true;
+      break;
+    default:
+      ret = false;
+      break;
+  }
+  return ret;
 }
 
 int
@@ -207,6 +267,14 @@ mymain(const char **argv) {
 #endif
       sleep(10);
     }
+  }
+  else if (cmd == "ultrascaletest") {
+      volatile USP_CSU *csu = (volatile USP_CSU *)map(USP_CSU_ADDR, sizeof(USP_CSU));
+      if (!csu) {
+        return 1;
+      }
+      bool is_zynq_usplus = get_is_zynq_usplus(csu);
+      printf("is_zynq_usplus=%i\n", is_zynq_usplus ? 1 : 0);
   }
   return 0;
 }
