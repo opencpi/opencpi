@@ -457,6 +457,7 @@ protected:
     }
     m_exited = false;
     flush();
+    m_isAlive = false;
   }
   bool
   spin(std::string &error) {
