@@ -21,7 +21,7 @@ set -e
 echo Checking for application timeout
 grep "finished after waiting" ocpirun.log
 echo Checking that output file is only zero
-LINES=$(od -x odata/output_000.out | grep -v "0000000 0000 0000 0000 0000 0000 0000 0000 0000" | egrep -v '^\*$' | wc -l)
+LINES=$(od -x odata/output_000.out | grep -v "0000000 *0000 *0000 *0000 *0000 *0000 *0000 *0000 *0000" | egrep -v '^\*$' | wc -l)
 echo 1 = $LINES ?
 [ $LINES -eq 1 ]
 echo Modifying dump files...

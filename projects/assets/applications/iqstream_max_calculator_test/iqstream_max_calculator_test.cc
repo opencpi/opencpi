@@ -113,7 +113,8 @@ bool test_range_of_I_Q(const std::string& file_str) {
 void run_app(const std::string& app_xml_str, const std::string& file_str,
     bool no_file_write = false) {
 
-  OA::Application app(app_xml_str);
+  OA::PValue pvs[] = { OA::PVBool("verbose", false), OA::PVBool("dump", false), OA::PVEnd };
+  OA::Application app(app_xml_str, pvs);
   app.initialize(); // all resources have been allocated
 
   read_fname_str.assign("idata/");
@@ -130,12 +131,13 @@ void run_app(const std::string& app_xml_str, const std::string& file_str,
   app.start();
 
   if(no_file_write or (file_str.compare("10_ZLM_passthrough.bin") == 0)) {
-    sleep(1);
+    sleep(5);
     app.stop();
   }
   else {
     app.wait(); // wait for application's done=file_write
   }
+  //  app.finish();
 
   bool ret = true;
   if((app_xml_str.compare("iqstream_max_calculator_test_rcc_rcc.xml") != 0) and
@@ -268,12 +270,15 @@ void run_app(const std::string& app_xml_str, const std::string& file_str,
 int main(int, char **) {
   bool hdl = false;
   unsigned n = 0;
-  for (OA::Container *c; (c = OA::ContainerManager::get(n)); n++) {
-    if (c->model() == "hdl") {
-      hdl = true;
-      break;
+  // When run in a build environment that is suppressing HDL platforms, respect that.
+  const char *env = getenv("HdlPlatforms");
+  if (!env || env[0])
+    for (OA::Container *c; (c = OA::ContainerManager::get(n)); n++) {
+      if (c->model() == "hdl") {
+        hdl = true;
+        std::cout << "INIT: found HDL container " << c->name() << ", will run HDL tests" << std::endl;
+      }
     }
-  }
 
   try {
     std::cout << "TEST: file_read->RCC worker->file_write\n";

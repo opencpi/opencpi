@@ -149,6 +149,16 @@ run: prepare
 # only for verify only so we can use wildcard
 RunPlatforms=$(foreach p,$(filter-out $(ExcludePlatforms),$(notdir $(wildcard run/*))),\
                $(if $(OnlyPlatforms),$(filter $p,$(OnlyPlatforms)),$p))
+ifneq ($(origin HdlPlatforms),undefined)
+  ifdef OnlyPlatforms
+    OnlyPlatforms:=$(filter-out $(filter-out $(HdlPlatforms),$(HdlAllPlatforms)),$(OnlyPlatforms))
+  else ifdef ExcludePlatforms
+    ExcludePlatforms:=$(call Unique,$(filter-out $(HdlPlatforms),$(HdlAllPlatforms)) $(ExcludePlatforms))
+  else
+    ExcludePlatforms:=$(filter-out $(HdlPlatforms),$(HdlAllPlatforms))
+  endif
+endif
+
 verify:
 	$(AT)if [ ! -d run ]; then \
 	       echo No tests have been run so none can be verified.; \

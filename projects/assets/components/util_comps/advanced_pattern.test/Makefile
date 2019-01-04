@@ -29,6 +29,7 @@ endif
 # SKIP_TEST if the test should not run
 -include localinclude.mk
 
+ECHO=/bin/echo
 WORKER=advanced_pattern
 ifneq (,$(filter testrun,$(MAKECMDGOALS)))
 ifeq (,$(VG))
@@ -54,11 +55,10 @@ endif
 
 RCC_CONTAINERS?=$(shell echo "$(CONTAINERS)" | grep -c rcc)
 
-ECHO=/bin/echo
 DEBUG=-d -v
 # DEBUG+=-l 11
 
-#.SILENT: tests test verify testgen testrun testverify clean generate.sh verify.sh all runtest runtests run verifytest generate build prepare testrun_wrapper testverify_wrapper testgen_wrapper
+.SILENT: tests test verify testgen testrun testverify clean generate.sh verify.sh all runtest runtests run verifytest generate build prepare testrun_wrapper testverify_wrapper testgen_wrapper
 .PHONY: tests test verify testgen testrun testverify clean all runtest runtests run verifytest generate build prepare testrun_wrapper testverify_wrapper testgen_wrapper
 
 # Map to "standard" targets:
