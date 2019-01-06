@@ -17,8 +17,19 @@
 # You should have received a copy of the GNU Lesser General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-echo There are no platform-specific building packages to install for MacOS.
-echo But a current xcode installation is assumed.
-echo Other prerequisites will probably be based on the macports package manager in the future.
-
-
+if ! PORT=`command -v port`; then
+  # Try this in case the macports tree is not in the path
+  PORT=/opt/local/bin/port
+  [ ! -x $PORT ] && {
+    echo 'ERROR: This software platform, $OCPI_TOOL_PLATFORM, requires that the "macports" package be installed.'
+    echo '       It is usually directly installable from: https://www.macports.org/install.php'
+    echo '       The "port" command was not in the PATH or in the standard location, '$PORT
+    exit 1
+  }
+fi
+PKGS="python37 coreutils gsed py37-numpy"
+echo Using $PORT to install packages required by OpenCPI for $OCPI_TOOL_PLATFORM: $PKGS
+sudo $PORT install $PKGS
+# FIXME: somehow automate the required path additions?
+# They are /opt/local/bin and /opt/local/libexec/gnubin
+# At the end of the path.

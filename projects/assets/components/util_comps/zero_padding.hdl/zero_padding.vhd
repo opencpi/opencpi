@@ -215,9 +215,9 @@ begin
         force_eom     <= '0';
       else
         if props_in.messageSize = to_ulong(0) then
-          messageSize <= resize(props_in.ocpi_buffer_size_out,messageSize'length);
+          messageSize <= resize(props_in.ocpi_buffer_size_out, messageSize'length);
         else
-          messageSize <= props_in.messageSize;
+          messageSize <= resize(props_in.messageSize, messageSize'length);
         end if;
         -- defaults
         current_state <= current_state;

@@ -74,12 +74,12 @@
     end
 
     // Implement minimal WCI attach logic...
-    ctl_SThreadBusy     <= 1'b0;
-    ctl_SResp           <= 2'b0;
+    ctl_SThreadBusy   <= 1'b0;
+    ctl_SResp         <= OCPI_OCP_SRESP_NULL;
 
     if (ctl_MReset_n==1'b0) begin                 // Reset Conditions...
       ctl_ctlSt       <= 2'h0;
-      ctl_SResp       <= 2'h0;
+      ctl_SResp       <= OCPI_OCP_SRESP_NULL;
       ctl_SThreadBusy <= 1'b1;
       ctl_Attention   <= 1'b0;
       biasValue       <= 32'h0000_0000;
@@ -87,14 +87,18 @@
       out_Busy        <= 1'b0;
     end else begin                         // When not Reset...
       // WCI Configuration Property Writes...
-      if (ctl_IsCfgWrite && ctl_MAddr == 0) begin
-        biasValue <= ctl_MData;             // Write the biasValue Configuration Property
-        ctl_SResp <= 2'h1;
+      if (ctl_IsCfgWrite) begin
+        ctl_SResp <= OCPI_OCP_SRESP_DVA;
+	if (ctl_MAddr == 0) begin
+           biasValue <= ctl_MData; // Write the biasValue Property
+	end
       end
       // WCI Configuration Property Reads...
-      if (ctl_IsCfgRead && ctl_MAddr == 0) begin
-        ctl_SData <= biasValue;             // Read the biasValue Configuration Property
-        ctl_SResp <= 2'h1;
+      if (ctl_IsCfgRead) begin
+        ctl_SResp <= OCPI_OCP_SRESP_DVA;
+	if (ctl_MAddr == 0) begin
+           ctl_SData <= biasValue;  // Read the biasValue Property
+	 end
       end
       //WCI Control Operations...
       if (ctl_IsControlOp) begin
