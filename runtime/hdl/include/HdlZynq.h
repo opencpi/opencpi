@@ -25,7 +25,7 @@ namespace OCPI {
   namespace HDL {
     namespace Zynq {
 #endif
-      const uint32_t GP0_PADDR = 0xA0000000; //0x40000000
+      const uint32_t GP0_PADDR = 0x40000000;
       const uint32_t GP1_PADDR = 0x80000000;
       const uint32_t FTM_ADDR = 0xF880B000;
       // register map from Appendix B.12 "PL Fabric Trace Monitor" in:
@@ -167,147 +167,35 @@ namespace OCPI {
 	  pss_idcode;
       };
 
-      // See "Figure 39-7: CoreSight System Debug Address Map" in:
-      // https://www.xilinx.com/support/documentation/user_guides/ug1085-zynq-ultrascale-trm.pdf
-      const uint32_t USP_CORESIGHT_ADDR = 0xFE800000;
-      const uint32_t USP_FTM_ADDR = USP_CORESIGHT_ADDR + 0x001D0000;
-
       // See "Table 10-8: PS System Register Map" in:
       // https://www.xilinx.com/support/documentation/user_guides/ug1085-zynq-ultrascale-trm.pdf
-      const uint32_t USP_CSU_ADDR       = 0xFFCA0000;
-
-      /*const uint32_t USP_CLAIM_TAG_BIT = 0;  //  CLAIMSET (FTM) Register
-      const uint32_t USP_TRIGOUT_BIT = 0;    //  ITTRIGOUT (FTM) Register
-      const uint32_t USP_TRIGOUTACK_BIT = 0; //  ITTRIGOUTACK (FTM) Register*/
-
-      // UltraScale+ "FTM Module Register Summary" from UG1087 (v1.6)
-      struct USP_FTM {
-	uint32_t                  // Relative Address
-	  gpi,                    // 0x00000010
-	  pad0[(0x020-0x010-4)/4],
-	  gpo,                    // 0x00000020
-	  pad1[(0xed0-0x020-4)/4],
-	  ittrigout,              // 0x00000ED0
-	  ittrigoutack,           // 0x00000ED4
-	  ittrigin,               // 0x00000ED8
-	  ittriginack,            // 0x00000EDC
-	  pad2[(0xf00-0xedc-4)/4],
-	  itctrl,                 // 0x00000F00
-	  pad3[(0xfa0-0xf00-4)/4],
-	  claimset,               // 0x00000FA0
-	  claimclr,               // 0x00000FA4
-	  pad4[(0xfb0-0xfa4-4)/4],
-	  lar,                    // 0x00000FB0
-	  lsr,                    // 0x00000FB4
-	  authstatus,             // 0x00000FB8
-	  pad5[(0xfc8-0xfb8-4)/4],
-	  devid,                  // 0x00000FC8
-	  devtype,                // 0x00000FCC
-	  pidr4,                  // 0x00000FD0
-	  pidr5,                  // 0x00000FD4
-	  pidr6,                  // 0x00000FD8
-	  pidr7,                  // 0x00000FDC
-	  pidr0,                  // 0x00000FE0
-	  pidr1,                  // 0x00000FE4
-	  pidr2,                  // 0x00000FE8
-	  pidr3,                  // 0x00000FEC
-	  cidr0,                  // 0x00000FF0
-	  cidr1,                  // 0x00000FF4
-	  cidr2,                  // 0x00000FF8
-	  cidr3;                  // 0x00000FFC
-      };
-
-      // UltraScale+ "Configuration Security Unit" from UG1087 (v1.6)
-      struct USP_CSU {
+      const uint64_t USP_AXI_HP_ADDR  = 0xFD380000;
+      // UltraScale+ "AFIFM Module" from:
+      // https://www.xilinx.com/html_docs/registers/ug1087/ug1087-zynq-ultrascale-registers.html
+      struct USP_AFIFM {
 	uint32_t                    // Relative Address
-	  csu_status,               // 0x00000000
-	  csu_ctrl,                 // 0x00000004
-	  csu_sss_cfg,              // 0x00000008
-	  csu_dma_reset,            // 0x0000000C
-	  csu_multi_boot,           // 0x00000010
-	  csu_tamper_trig,          // 0x00000014
-	  CSU_FT_STATUS,            // 0x00000018
-	  csu_isr,                  // 0x00000020
-	  csu_imr,                  // 0x00000024
-	  csu_ier,                  // 0x00000028
-	  csu_idr,                  // 0x0000002C
-	  pad0[(0x0034-0x002c-4)/4],
-	  jtag_chain_status,        // 0x00000034
-	  jtag_sec,                 // 0x00000038
-	  jtag_dap_cfg,             // 0x0000003C
-	  IDCODE,                   // 0x00000040
-	  version,                  // 0x00000044
-	  pad1[(0x0050-0x0044-4)/4],
-	  csu_rom_digest_0,         // 0x00000050
-	  csu_rom_digest_1,         // 0x00000054
-	  csu_rom_digest_2,         // 0x00000058
-	  csu_rom_digest_3,         // 0x0000005C
-	  csu_rom_digest_4,         // 0x00000060
-	  csu_rom_digest_5,         // 0x00000064
-	  csu_rom_digest_6,         // 0x00000068
-	  csu_rom_digest_7,         // 0x0000006c
-	  csu_rom_digest_8,         // 0x00000070
-	  csu_rom_digest_9,         // 0x00000074
-	  csu_rom_digest_10,        // 0x00000078
-	  csu_rom_digest_11,        // 0x0000007C
-	  pad2[(0x1000-0x007c-4)/4],
-	  aes_status,               // 0x00001000
-	  aes_key_src,              // 0x00001004
-	  aes_key_load,             // 0x00001008
-	  aes_start_msg,            // 0x0000100C
-	  aes_reset,                // 0x00001010
-	  aes_key_clear,            // 0x00001014
-	  aes_cfg,                  // 0x00001018
-	  aes_kup_wr,               // 0x0000101C
-	  aes_kup_0,                // 0x00001020
-	  aes_kup_1,                // 0x00001024
-	  aes_kup_2,                // 0x00001028
-	  aes_kup_3,                // 0x0000102C
-	  aes_kup_4,                // 0x00001030
-	  aes_kup_5,                // 0x00001034
-	  aes_kup_6,                // 0x00001038
-	  aes_kup_7,                // 0x0000103C
-	  aes_iv_0,                 // 0x00001040
-	  aes_iv_1,                 // 0x00001044
-	  aes_iv_2,                 // 0x00001048
-	  aes_iv_3,                 // 0x0000104C
-	  pad3[(0x2000-0x104c-4)/4],
-	  sha_start,                // 0x00002000
-	  sha_reset,                // 0x00002004
-	  sha_done,                 // 0x00002008
-	  sha_digest_0,             // 0x00002010
-	  sha_digest_1,             // 0x00002014
-	  sha_digest_2,             // 0x00002018
-	  sha_digest_3,             // 0x0000201C
-	  sha_digest_4,             // 0x00002020
-	  sha_digest_5,             // 0x00002024
-	  sha_digest_6,             // 0x00002028
-	  sha_digest_7,             // 0x0000202C
-	  sha_digest_8,             // 0x00002030
-	  sha_digest_9,             // 0x00002034
-	  sha_digest_10,            // 0x00002038
-	  sha_digest_11,            // 0x0000203C
-	  pad4[(0x3000-0x203c-4)/4],
-	  pcap_prog,                // 0x00003000
-	  pcap_rdwr,                // 0x00003004
-	  pcap_ctrl,                // 0x00003008
-	  pcap_reset,               // 0x0000300C
-	  pcap_status,              // 0x00003010
-	  pad5[(0x5000-0x3010-4)/4],
-	  tamper_status,            // 0x00005000
-	  csu_tamper_0,             // 0x00005004
-	  csu_tamper_1,             // 0x00005008
-	  csu_tamper_2,             // 0x0000500C
-	  csu_tamper_3,             // 0x00005010
-	  csu_tamper_4,             // 0x00005014
-	  csu_tamper_5,             // 0x00005018
-	  csu_tamper_6,             // 0x0000501C
-	  csu_tamper_7,             // 0x00005020
-	  csu_tamper_8,             // 0x00005024
-	  csu_tamper_9,             // 0x00005028
-	  csu_tamper_10,            // 0x0000502C
-	  csu_tamper_11,            // 0x00005030
-	  csu_tamper_12;            // 0x00005034
+	  rdctrl,                   // 0x00000000
+	  rdissue,                  // 0x00000004
+	  rdqos,                    // 0x00000008
+	  pad0[(0x010-0x008-4)/4],
+	  rddebug,                  // 0x00000010
+	  wrctrl,                   // 0x00000014
+	  wrissue,                  // 0x00000018
+	  wrqos,                    // 0x0000001C
+	  pad1[(0xe00-0x01c-4)/4],
+	  i_sts,                    // 0x00000E00
+	  i_en,                     // 0x00000E04
+	  i_dis,                    // 0x00000E08
+	  i_mask,                   // 0x00000E0C
+	  pad2[(0xf04-0xe0c-4)/4],
+	  control,                  // 0x00000F04
+	  pad3[(0xf0c-0xf04-4)/4],
+	  safety_chk,               // 0x00000F0C
+	  pad4[(0x10000-0x00f0c-4)/4];
+      };
+      const unsigned USP_NAXI_HPS = 4;
+      struct USP_AXI_HP {
+	  USP_AFIFM afifm[USP_NAXI_HPS];
       };
 
 #ifdef __cplusplus
