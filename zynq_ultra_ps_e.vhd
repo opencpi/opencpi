@@ -80,13 +80,13 @@ begin
     m_axi_hp_out(i).AW.ID <= maxigp_awids(i)(11 downto 0);
     m_axi_hp_out(i).AW.LOCK(1) <= '0';
     m_axi_hp_out(i).AW.ISSUECAP1_EN <= '0';
-    m_axi_hp_out(i).AW.COUNT <= (others => '0');
+    --m_axi_hp_out(i).AW.COUNT <= (others => '0');
 
     m_axi_hp_out(i).AR.ADDR <= maxigp_araddrs(i)(31 downto 0);
     m_axi_hp_out(i).AR.LEN <= maxigp_arlens(i)(3 downto 0);
     m_axi_hp_out(i).AR.ID <= maxigp_arids(i)(11 downto 0);
     m_axi_hp_out(i).AR.ISSUECAP1_EN <= '0';
-    m_axi_hp_out(i).AR.COUNT <= (others => '0');
+    --m_axi_hp_out(i).AR.COUNT <= (others => '0');
 
     maxigp_bids(i)(11 downto 0)  <= m_axi_hp_in(0).B.ID;
     maxigp_bids(i)(15 downto 12) <= (others =>'0');
@@ -98,17 +98,21 @@ begin
   s : for i in 0 to C_S_AXI_HP_COUNT-1 generate
     s_axi_hp_out(i).ARESETN <= '1';
 
-    saxigp_awaddrs(i)(31 downto 0)  <= s_axi_hp_in(0).AW.ADDR;
-    saxigp_awaddrs(i)(48 downto 32) <= (others =>'0');
+    saxigp_awaddrs(i)(35 downto 0)  <= s_axi_hp_in(0).AW.ADDR;
+    saxigp_awaddrs(i)(48 downto 36) <= (others =>'0');
     saxigp_awlens(i)(3 downto 0)  <= s_axi_hp_in(0).AW.LEN;
     saxigp_awlens(i)(7 downto 4) <= (others =>'0');
     s_axi_hp_out(i).AW.COUNT <= (others => '0');
 
-    saxigp_araddrs(i)(31 downto 0)  <= s_axi_hp_in(0).AR.ADDR;
-    saxigp_araddrs(i)(48 downto 32) <= (others =>'0');
+    s_axi_hp_out(i).W.COUNT <= (others => '0');
+
+    saxigp_araddrs(i)(35 downto 0)  <= s_axi_hp_in(0).AR.ADDR;
+    saxigp_araddrs(i)(48 downto 36) <= (others =>'0');
     saxigp_arlens(i)(3 downto 0)  <= s_axi_hp_in(0).AR.LEN;
     saxigp_arlens(i)(7 downto 4) <= (others =>'0');
     s_axi_hp_out(i).AR.COUNT <= (others => '0');
+
+    s_axi_hp_out(i).R.COUNT <= (others => '0');
 
   end generate;
 
@@ -241,8 +245,8 @@ begin
       saxigp2_arqos => s_axi_hp_in(0).AR.QOS, --[3:0]
 -- saxigp3
       saxihp1_fpd_aclk => s_axi_hp_in(1).ACLK,
-      saxigp3_aruser => '0',
       saxigp3_awuser => '0',
+      saxigp3_aruser => '0',
       saxigp3_awid => s_axi_hp_in(1).AW.ID(5 downto 0), --[5:0]
       saxigp3_awaddr => saxigp_awaddrs(1), --[48:0]
       saxigp3_awlen => saxigp_awlens(1), --[7:0]
