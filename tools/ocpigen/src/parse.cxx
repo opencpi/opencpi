@@ -180,13 +180,14 @@ tryOneChildInclude(ezxml_t top, const std::string &parent, const char *element,
 }
 
 const char *Worker::
-addProperty(ezxml_t prop, bool includeImpl, bool anyIsBad, bool isRaw) {
+addProperty(ezxml_t prop, bool includeImpl, bool anyIsBad, bool isRaw, bool isBuiltin) {
   OU::Property &p = *new OU::Property;
   const char *err;
 
   do { // break from block on error
     if ((err = p.parse(prop, includeImpl, (unsigned)(m_ctl.ordinal++), this)))
       break;
+    p.m_isBuiltin = isBuiltin;
     if (isRaw && includeImpl && !p.m_isParameter && !p.m_rawSet) {
       if (p.m_isRaw) {
 	err = OU::esprintf("Property \"%s\" is declared raw, but firstRaw attribute also set for worker",
@@ -325,7 +326,7 @@ doMaybeProp(ezxml_t maybe, void *vpinfo) {
     return OU::esprintf("Property named \"%s\" conflicts with existing/previous property", name);
   if (firstRaw)
     pinfo.m_raw = true; // this does in fact allow an impl parameter property to be tagged by firstRaw...
-  return w->addProperty(maybe, pinfo.m_isImpl, pinfo.m_anyIsBad, pinfo.m_raw);
+  return w->addProperty(maybe, pinfo.m_isImpl, pinfo.m_anyIsBad, pinfo.m_raw, false);
 }
 
 const char *Worker::
@@ -353,7 +354,7 @@ addProperty(const char *xml, bool includeImpl) {
   char *dprop = strdup(xml); // Make the contents persistent
   ezxml_t dpx = ezxml_parse_str(dprop, strlen(dprop));
   ocpiDebug("Adding ocpi_debug property xml %p", dpx);
-  const char *err = addProperty(dpx, includeImpl, false, false);
+  const char *err = addProperty(dpx, includeImpl, false, false, true);
   ezxml_free(dpx);
   return err;
 }
@@ -945,7 +946,7 @@ initAccess() {
   writables = nonRawWritables = rawWritables = false;
   readables = nonRawReadables = rawReadables = false;
   sub32Bits = nonRawSub32Bits = volatiles = nonRawVolatiles = false;
-  readbacks = nonRawReadbacks = rawReadbacks = rawProperties = false;
+  readbacks = nonRawReadbacks = rawReadbacks = rawProperties = builtinReadbacks = false;
   nRunProperties = nNonRawRunProperties = nParameters = 0;
 }
 

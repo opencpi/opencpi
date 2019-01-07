@@ -338,7 +338,7 @@ emitVhdlShell(FILE *f, ::Port *wci) {
 	    firstIn ? firstIn : "bfalse", firstIn ? "_first_take" : "",
 	    firstIn ? firstIn : "bfalse", firstIn ? "_eof" : "",
 	    worker().version() > 1 ? cname() : "bfalse", worker().version() > 1 ? "_eof" : "",
-	    ::Port::m_worker->m_noControl ? "open" : "props_from_worker.ocpi_latency_",
+	    ::Port::m_worker->m_noControl ? "open" : "props_builtin_ocpi_latency_",
 	    ::Port::m_worker->m_noControl ? "" : cname(),
 #if 0
 	    m_isUnbounded && !::Port::m_worker->m_noControl ?

@@ -54,7 +54,7 @@ namespace OCPI {
       : m_readSync(false), m_writeSync(false), m_isWritable(false),
 	m_isReadable(false), m_readError(false), m_writeError(false),
 	m_isVolatile(false), m_isInitial(false), m_isIndirect(false),
-	m_indirectAddr(0)
+	m_isBuiltin(false), m_indirectAddr(0)
     {}
   }
   namespace Util {

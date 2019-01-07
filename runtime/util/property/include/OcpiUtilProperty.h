@@ -48,7 +48,7 @@ namespace OCPI {
     public:
       PropertyInfo();
       bool m_readSync, m_writeSync, m_isWritable, m_isReadable, m_readError, m_writeError,
-	m_isVolatile, m_isInitial, m_isIndirect;
+	m_isVolatile, m_isInitial, m_isIndirect, m_isBuiltin;
       size_t m_indirectAddr; // when isIndirect. zero means impl sets address
     };
   }

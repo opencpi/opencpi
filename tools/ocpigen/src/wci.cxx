@@ -195,18 +195,23 @@ void WciPort::
 emitImplSignals(FILE *f) {
   Control &ctl = m_worker->m_ctl;
   // Record for property-related inputs to the worker - writable values and strobes, readable strobes
-#if 0
-  if (ctl.nonRawWritables || ctl.nonRawReadables || ctl.rawProperties)
-#endif
-    fprintf(f, "  signal props_to_worker   : worker_props_in_t;\n");
+  fprintf(f, "  signal props_to_worker   : worker_props_in_t;\n");
   if (ctl.nonRawReadbacks || ctl.rawReadables)
     fprintf(f, "  signal props_from_worker : worker_props_out_t;\n");
+  if (ctl.nonRawReadbacks || ctl.rawReadables || ctl.builtinReadbacks)
+    fprintf(f,
+	    "  signal internal_props_out : internal_props_out_t; -- this includes builtin volatiles\n");
+  if (ctl.builtinReadbacks) {
+    for (PropertiesIter pi = ctl.properties.begin(); pi != ctl.properties.end(); pi++) {
+      std::string type;
+      m_worker->prType(**pi, type);
+      fprintf(f, "  signal props_builtin_%s : %s;\n", (**pi).cname(), type.c_str());
+    }
+  }
   fprintf(f,
-	  "  -- wci information into worker\n");
-  fprintf(f,
+	  "  -- wci information into worker\n"
 	  "  signal wci_is_big_endian    : Bool_t;\n"
 	  "  signal wci_control_op       : wci.control_op_t;\n"
-	  //	  "  signal raw_offset           : unsigned(work.%s_worker_defs.worker.decode_width-1 downto 0);\n"
 	  "  signal wci_state            : wci.state_t;\n"
 	  "  -- wci information from worker\n"
 	  "  signal wci_attention        : Bool_t;\n"
@@ -214,9 +219,6 @@ emitImplSignals(FILE *f) {
 	  "  signal wci_done             : Bool_t;\n"
 	  "  signal wci_error            : Bool_t;\n"
 	  "  signal wci_finished         : Bool_t;\n"
-	  //	  "  signal wci_is_read          : Bool_t;\n"
-	  //"  signal wci_is_write         : Bool_t;\n"
-	  //, m_worker->m_implName
 	  );
   if (m_worker->m_scalable)
     fprintf(f,
@@ -276,7 +278,7 @@ emitWorkerEntitySignals(FILE *f, std::string &last, unsigned maxPropName) {
 	    "    %-*s : in  worker_props_in_t",
 	    last.c_str(), (int)maxPropName, "props_in");
   }
-  if (w.m_ctl.readbacks || w.m_ctl.rawReadables) {
+  if (w.m_ctl.nonRawReadbacks || w.m_ctl.rawReadables) {
     fprintf(f, 
 	    "%s"
 	    "    -- Outputs for this worker's volatile, readable properties\n"
@@ -397,7 +399,7 @@ emitRecordSignal(FILE *f, std::string &last, const char *aprefix, bool inRecord,
 		   "    %-*s : in  worker_props_in_t%%s",
 		   (int)w.m_maxPortTypeName, "props_in");
       }      
-      if (w.m_ctl.readbacks || w.m_ctl.rawReadables) {
+      if (w.m_ctl.nonRawReadbacks || w.m_ctl.rawReadables) {
 	emitLastSignal(f, last, VHDL, false);
 	OU::format(last,
 		   "    -- Outputs for this worker's volatile, readable properties\n"

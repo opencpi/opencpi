@@ -1001,25 +1001,31 @@ emitVhdlWorkerPackage(FILE *f, unsigned maxPropName) {
     fprintf(f,
 	    "  end record worker_props_in_t;\n");
   }
-  if (m_ctl.readbacks || m_ctl.rawReadables) {
+  if (m_ctl.nonRawReadbacks || m_ctl.rawReadables) {
     fprintf(f,"\n"
 	    "  -- The following record is for the readable properties of worker \"%s\"\n"
 	    "  type worker_props_out_t is record\n",
 	    m_implName);
     for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
+      if (!(*pi)->m_isParameter && !(*pi)->m_isRaw && !(*pi)->m_isBuiltin &&
+	  ((*pi)->m_isVolatile || ((*pi)->m_isReadable && !(*pi)->m_isWritable)))
+	emitVhdlPropMember(f, **pi, maxPropName, false);
+    if (m_ctl.rawProperties)
+      fprintf(f, "    %-*s : wci.raw_out_t;\n", maxPropName, "raw");
+    fprintf(f,
+	    "  end record worker_props_out_t;\n");
+  }
+  if (m_ctl.nonRawReadbacks || m_ctl.rawReadables || m_ctl.builtinReadbacks) {
+    fprintf(f,"-- internal props_out combining internal and from-worker\n"
+	    "  type internal_props_out_t is record\n");
+    for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++)
       if (!(*pi)->m_isParameter && !(*pi)->m_isRaw &&
 	  ((*pi)->m_isVolatile || ((*pi)->m_isReadable && !(*pi)->m_isWritable)))
 	emitVhdlPropMember(f, **pi, maxPropName, false);
     if (m_ctl.rawProperties)
-#if 1
       fprintf(f, "    %-*s : wci.raw_out_t;\n", maxPropName, "raw");
-#else
-      fprintf(f,
-	      "    %-*s : std_logic_vector(31 downto 0);\n",
-	      maxPropName, "raw_data");
-#endif
     fprintf(f,
-	    "  end record worker_props_out_t;\n");
+	    "  end record internal_props_out_t;\n");
   }
   // Generate record types to easily and compactly plumb interface signals internally
   for (unsigned n = 0; n < m_ports.size(); n++)
@@ -1334,7 +1340,25 @@ emitVhdlShell(FILE *f) {
 	    "  wci_is_operating <= not wci_reset;\n");
   } else {
     fprintf(f,
-	    "begin\n"
+	    "begin\n");
+    if (m_ctl.nonRawReadbacks || m_ctl.builtinReadbacks || m_ctl.rawReadables) {
+      fprintf(f, "  internal_props_out <=\n    (");
+      // Assign all members
+      const char *last = "";
+      for (PropertiesIter pi = m_ctl.properties.begin(); pi != m_ctl.properties.end(); pi++) {
+	OU::Property &p = **pi;
+	if (!p.m_isParameter && !p.m_isRaw && (p.m_isVolatile || (p.m_isReadable && !p.m_isWritable))) {
+	  fprintf(f, "%s%s => props_%s%s", last, p.cname(), p.m_isBuiltin ? "builtin_" : "from_worker.",
+		  p.cname());
+	  last = ",\n     ";
+	}
+      }
+      if (m_ctl.rawProperties)
+	fprintf(f, "%s   raw => props_from_worker.raw", last);
+      fprintf(f, ");\n");
+    }
+
+    fprintf(f,
 	    "  -- This instantiates the WCI/Control module/entity generated in the *_impl.vhd file\n"
 	    "  -- With no user logic at all, this implements writable properties.\n"
 	    "  wci : entity work.%s_wci\n"
@@ -1362,10 +1386,10 @@ emitVhdlShell(FILE *f) {
 	      ",\n"
 	      "             waiting           => wci_waiting,\n"
 	      "             barrier           => wci_barrier");
-    if (m_ctl.nonRawReadbacks || m_ctl.rawProperties)
+    if (m_ctl.nonRawReadbacks || m_ctl.rawProperties || m_ctl.builtinReadbacks)
       fprintf(f,
 	      ",\n"
-	      "             props_from_worker => props_from_worker");
+	      "             props_from_worker => internal_props_out");
     // if (m_ctl.nonRawWritables || m_ctl.nonRawReadables || m_ctl.rawProperties)
       fprintf(f,
 	      ",\n"
@@ -1811,8 +1835,8 @@ emitImplHDL(bool wrap) {
 	      );
       // Record for property-related inputs to the worker - writable values and strobes,
       // readable strobes
-      if (m_ctl.nonRawReadbacks || m_ctl.rawReadables)
-	fprintf(f, "    props_from_worker  : in  worker_props_out_t;\n");
+      if (m_ctl.nonRawReadbacks || m_ctl.builtinReadbacks || m_ctl.rawReadables)
+	fprintf(f, "    props_from_worker  : in  internal_props_out_t;\n");
 #if 1
       fprintf(f, "    props_to_worker    : out worker_props_in_t");
 #else

@@ -146,8 +146,7 @@ parseConnection(OU::Assembly::Connection &aConn) {
       return OU::esprintf("External connection %s for port %s of instance %s error: %s",
 			  c.m_name.c_str(), intPort.m_port->pname(), intPort.m_instance->cname(),
 			  err);
-    InstancePort *ip = new InstancePort;
-    ip->init(NULL, &p, &ext);
+    InstancePort *ip = new InstancePort(NULL, &p, &ext);
     if ((err = c.attachPort(*ip, 0)))
       return err;
   }
@@ -449,13 +448,6 @@ externalizePort(InstancePort &ip, const char *name, size_t *ordinal) {
   Port &extPort = p.clone(m_assyWorker, extName, p.m_count, NULL, err);
   if (err)
     return err;
-#if 0 // defer this clock stuff now that it is done more generically
-  // If the port has its own clock, use it.
-  if (!ip.m_instance->m_clocks[ip.m_port->clock->ordinal] && ip.m_port->myClock) 
-    ip.m_instance->m_clocks[ip.m_port->clock->ordinal] = ip.m_port->clock;
-  c.m_clock = extPort.clock = ip.m_instance->m_clocks[ip.m_port->clock->ordinal];
-  assert(extPort.clock);
-#endif
   OU::Assembly::External *ext = new OU::Assembly::External;
   ext->m_name = extPort.m_name;
   ext->m_role.m_provider = !p.m_master; // provisional

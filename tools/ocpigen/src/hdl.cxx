@@ -85,7 +85,7 @@ finalizeHDL() {
 	if (p.m_isVolatile)
 	  m_ctl.nonRawVolatiles = true;
 	if (p.m_isVolatile || (p.m_isReadable && !p.m_isWritable && !p.m_isParameter))
-	  m_ctl.nonRawReadbacks = true;
+	  (p.m_isBuiltin ? m_ctl.builtinReadbacks : m_ctl.nonRawReadbacks) = true;
 	m_ctl.nNonRawRunProperties++;
 	if (p.m_isSub32)
 	  m_ctl.nonRawSub32Bits = true;

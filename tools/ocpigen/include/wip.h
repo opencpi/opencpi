@@ -337,7 +337,7 @@ class Control {
   bool readables, nonRawReadables, rawReadables; // readables does NOT include parameters
   bool sub32Bits, nonRawSub32Bits;
   bool volatiles, nonRawVolatiles;
-  bool readbacks, nonRawReadbacks, rawReadbacks;
+  bool readbacks, nonRawReadbacks, rawReadbacks, builtinReadbacks;
   bool rawProperties;
   unsigned nRunProperties, nNonRawRunProperties, nParameters;
   Control();
@@ -469,7 +469,7 @@ class Worker : public OU::Worker {
     *parseHdlAssy(),
     *initImplPorts(ezxml_t xml, const char *element, PortCreate &pc),
     *checkDataPort(ezxml_t impl, DataPort *&sp),
-    *addProperty(ezxml_t prop, bool includeImpl, bool anyIsBad, bool isRaw),
+    *addProperty(ezxml_t prop, bool includeImpl, bool anyIsBad, bool isRaw, bool isBuiltin),
     // Add a property from an xml string description
     *addProperty(const char *xml, bool includeImpl),
     //    *doAssyClock(Instance *i, Port *p),
