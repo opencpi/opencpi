@@ -101,6 +101,7 @@ namespace OCPI {
       PVString("worker"),
       PVString("server"),
       PVString("container"),
+      PVString("selection"),
       PVEnd
     };
 

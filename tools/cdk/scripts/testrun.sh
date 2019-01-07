@@ -77,7 +77,7 @@ function docase {
       [ ${#ports[@]} != 1 ] && output="$output""_from_$o"
       outputs="$outputs$output=fileName=$3.$4.$2.$1.$o.out"
     done
-    echo '  'Executing case "$3.$4" using worker $2.$1... 1>&2
+    echo '  'Executing case "$3.$4" using worker $2.$1 on platform $platform... 1>&2
     if [ $5 != 0 ]; then
       timearg=--timeout=$5
     elif [ $6 != 0 ]; then
@@ -89,7 +89,8 @@ function docase {
     # If we are testing in a remote environment keep infrastructure workers local
     [ "$OCPI_ENABLE_REMOTE_DISCOVERY" = 1 -o -n "$OCPI_SERVER_ADDRESS" -o \
       -n "$OCPI_SERVER_ADDRESSES" -o -n "$OCPI_SERVER_ADDRESSES_FILE" ] &&
-        lockrcc="-c=rcc0 -c$component="
+        lockrcc="-s 'ocpi.core.file_read=model!=\"rcc\"||platform==host_platform' \
+                 -s 'ocpi.core.file_write=model!=\"rcc\"||platform==host_platform'"
     cmd=('OCPI_LIBRARY_PATH=../../../lib/rcc:../../../lib/ocl:../../gen/assemblies:$OCPI_CDK_DIR/$OCPI_TOOL_DIR/artifacts' \
              '$OCPI_CDK_DIR/$OCPI_TOOL_DIR/bin/'ocpirun -d -v -h -m$component=$1 -w$component=$2 \
                  $lockrcc -P$component=$platform \

@@ -76,7 +76,7 @@
                                        "first; exit status is zero in either case")\
   CMD_OPTION(timeout,    O, ULong,  0, "<seconds>\n"			\
 	                               "time limit (seconds) to run the application; if not\n" \
-                                       "done/finished before that time; an error occurs\n")\
+                                       "done/finished before that time; an error occurs")\
   CMD_OPTION(list,       C, Bool,   0, "show available containers\n" \
 	                               "can be used with no xml file argument - no execution") \
   CMD_OPTION_S(server,   S, String, 0, "a server to explicitly contact, without UDP discovery") \
@@ -109,7 +109,7 @@
   CMD_OPTION(dump_file,   , String, 0, "dump properties in raw parsable format to this file") \
   CMD_OPTION(component,   , Bool,   0, "first non-option argument is a component name,\n" \
 	                               "not an application XML file") \
-  CMD_OPTION(seconds,     , Long,   0, "<seconds> -- legacy, use \"duration\" now\n") \
+  CMD_OPTION(seconds,     , Long,   0, "<seconds> -- legacy, use \"duration\" now") \
   CMD_OPTION(version,     , Bool,   0, "print the OpenCPI release version") \
   /**/
 

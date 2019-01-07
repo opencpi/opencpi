@@ -21,6 +21,8 @@
 #include <stdint.h>
 #include <string.h>
 #include <strings.h>
+#include "ocpi-config.h"
+#include "OcpiUtilCppMacros.h"
 #include "OcpiOsAssert.h"
 #include "OcpiUtilMisc.h"
 #include "OcpiUtilEzxml.h"
@@ -205,6 +207,12 @@ namespace OCPI {
 	return NULL;
       } else if (!strcasecmp(sym, "os") && m_attributes) {
 	val.setString(m_attributes->os());
+	return NULL;
+      } else if (!strcasecmp(sym, "host_platform")) {
+	val.setString(OCPI_CPP_STRINGIFY(OCPI_PLATFORM));
+	return NULL;
+      } else if (!strcasecmp(sym, "spec")) {
+	val.setString(m_specName);
 	return NULL;
       }
       Property *p = m_properties;

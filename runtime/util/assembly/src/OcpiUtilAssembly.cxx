@@ -226,8 +226,10 @@ namespace OCPI {
 	if (assign[0] == '?' && len > 1)
 	  assign++, len--, optional = true;
         for (unsigned nn = 0; assign && nn < m_instances.size(); nn++)
-          if (m_instances[nn]->m_name.length() == len &&
-              !strncasecmp(assign, m_instances[nn]->m_name.c_str(), len)) {
+          if ((m_instances[nn]->m_name.length() == len &&
+	       !strncasecmp(assign, m_instances[nn]->m_name.c_str(), len)) ||
+	      (m_instances[nn]->m_specName.length() == len &&
+	       !strncasecmp(assign, m_instances[nn]->m_specName.c_str(), len))) {
             if (singleAssignment && !instancesSeen.insert(nn).second)
               return esprintf("%s assignment '%s' is a reassignment of that instance.",
                               pName, assign);
@@ -602,8 +604,7 @@ namespace OCPI {
     }
     // There is no non-default constructor so initialize here...
     const char *Assembly::Instance::
-    parse(ezxml_t ix, Assembly &a, unsigned ordinal, const char **extraInstAttrs,
-          const PValue *params) {
+    parse(ezxml_t ix, Assembly &a, unsigned ordinal, const char **extraInstAttrs, const PValue *params) {
       m_ordinal = ordinal;
       //      m_hasSlave = false;
       m_hasMaster = false;
@@ -667,12 +668,14 @@ namespace OCPI {
           m_name = myBase;
       }
       if (!a.isImpl()) {
-        if (!findAssign(params, "worker", m_name.c_str(), m_implName))
+        if (!findAssign(params, "worker", m_name.c_str(), m_implName) &&
+	    !findAssign(params, "worker", m_specName.c_str(), m_implName))
           OE::getOptionalString(ix, m_implName, "worker");
       }
-      if (!findAssign(params, "selection", m_name.c_str(), m_selection))
+      if (!findAssign(params, "selection", m_name.c_str(), m_selection) &&
+	  !findAssign(params, "selection", m_specName.c_str(), m_selection))
         OE::getOptionalString(ix, m_selection, "selection");
-      ocpiDebug("Component: %s name: %s impl: %s spec: %s selection: %s",
+      ocpiInfo("Component: %s name: %s impl: %s spec: %s selection: %s",
                 component.c_str(), m_name.c_str(), m_implName.c_str(), m_specName.c_str(),
                 m_selection.c_str());
 #if 0

@@ -791,7 +791,8 @@ namespace OCPI {
         i->m_nCandidates = cs.size();
         i->m_feasibleContainers = new CMap[cs.size()];
         std::string container;
-        if (!OU::findAssign(params, "container", ai.m_name.c_str(), container))
+        if (!OU::findAssign(params, "container", ai.m_name.c_str(), container) &&
+	    !OU::findAssign(params, "container", ai.m_specName.c_str(), container))
           OE::getOptionalString(ai.xml(), container, "container");
         CMap sum = 0;
         ocpiInfo("For instance %s there were %zu candidates.  These had potential containers:",
