@@ -153,7 +153,7 @@ OcpiXilinxVivadoLicenseFile=$(strip\
 
 OcpiXilinxVivadoInit=\
   set -e; \
-  . $(OcpiXilinxVivadoDir)/.settings64-Vivado.sh $(and $1,> $1); \
+  . $(OcpiXilinxVivadoDir)/settings64.sh $(and $1,> $1); \
   export LM_LICENSE_FILE=$(OcpiXilinxVivadoLicenseFile)
 
 

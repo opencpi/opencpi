@@ -606,8 +606,18 @@ DoXilinx=\
 # The contents below this point are for final implementation steps
 # of the assembly bitstream.
 ###############################################################################
-BitName=$1/$2$(and $(filter-out 0,$3),_$3).bit
-BitFile_vivado=$1.bit
+BitBase=$1/$2$(and $(filter-out 0,$3),_$3)
+BitName=$(call BitBase,$1,$2,$3).bit
+BifName=$(call BitBase,$1,$2,$3).bif
+BinName=$(call BitBase,$1,$2,$3).bin
+
+# Some devices require that a *.bin be generated after the bitstream
+BinOrBitBitstreamExt=$(if $(filter $(HdlTarget),zynq_ultra),bin,bit)
+# This file will be used to create the compressed bitstream with metadata that is findable by ocpirun's searching
+BitFile_vivado=$1.$(BinOrBitBitstreamExt)
+
+# Bootgen requires that the FPGA/PS Architecture be specified. This is either zynq, zynqmp (zynq_ultra) or fpga.
+BootgenArch=$(if $(filter zynq,$(HdlTarget)),zynq,$(if $(filter zynq_ultra,$(HdlTarget)),zynqmp,fpga))
 
 SynthName=$1/$2.edf
 OptName=$1/$2-opt.dcp
@@ -649,7 +659,8 @@ HdlConstraintsSuffix_vivado=.xdc
 VivadoConstraints_default=$(HdlPlatformDir_$1)/$1$(HdlConstraintsSuffix_vivado)
 VivadoConstraints=$(or $(HdlConstraints),$(VivadoConstraints_default))
 
-# For synth rule: load dcp files of platform and app workers.
+# Bin file is generated for certain devices (e.g. zynq_ultra) after the bitstream due to bitstream-loading requirements
+
 define HdlToolDoPlatform_vivado
 
 $(call OptName,$1,$3): $(call SynthName,$1,$3) $(call VivadoConstraints,$5)
@@ -710,5 +721,13 @@ $(call BitName,$1,$3,$6): $(call RouteName,$1,$3) $(call TimingName,$1,$3) $(wil
 		constraints='$(wildcard $(HdlPlatformDir_$5)/*_bit.xdc)' \
                 impl_opts='$(call VivadoOptions,bit)' \
 		,bit)
+
+$(call BinName,$1,$3,$6): $(call BitName,$1,$3)
+	$(AT)echo -n For $2 on $5 using config $4: Generating Xilinx Vivado bitstream file $$@ with BIN extension using "bootgen".
+	$(AT)echo all: > $$(call BifName,$1,$3,$6); \
+	     echo "{" >> $$(call BifName,$1,$3,$6); \
+	     echo "       [destination_device = pl] $(notdir $(call BitName,$1,$3,$6))" >> $$(call BifName,$1,$3,$6); \
+	     echo "}" >> $$(call BifName,$1,$3,$6);
+	$(AT)$(call DoXilinx,bootgen,$1,-image $(notdir $(call BifName,$1,$3,$6)) -arch $(BootgenArch) -o $(notdir $(call BinName,$1,$3,$6)) -w,bin)
 
 endef
