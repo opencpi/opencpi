@@ -145,18 +145,54 @@
 	     const char *p = ezxml_cattr(config, "platform");
 	     m_platform = p ? p : "zed"; // FIXME: is there any other automatic way for this?
 #if defined(OCPI_ARCH_arm64)
-             volatile FPD_SLCR *zynqmp_slcr =
-	       (volatile FPD_SLCR *)m_driver.map(sizeof(FPD_SLCR), FPD_SLCR_ADDR, err);
-             zynqmp_slcr->fpd_slcr = 0;  // set gp0/1 to 32bit mode
-             m_driver.unmap((uint8_t *)zynqmp_slcr, sizeof(FPD_SLCR), err);
+             volatile uint32_t *zynqmp_slcr =
+	       (volatile uint32_t *)m_driver.map(sizeof(uint32_t), FPD_SLCR_ADDR, err);
+             volatile uint8_t *zynqmp_hp0_rd =
+  	       (volatile uint8_t *)m_driver.map(sizeof(uint8_t), HP0_RD_WIDTH_ADDR, err);
+             volatile uint8_t *zynqmp_hp0_wr =
+  	       (volatile uint8_t *)m_driver.map(sizeof(uint8_t), HP0_WR_WIDTH_ADDR, err);
+             volatile uint8_t *zynqmp_hp1_rd =
+    	       (volatile uint8_t *)m_driver.map(sizeof(uint8_t), HP1_RD_WIDTH_ADDR, err);
+             volatile uint8_t *zynqmp_hp1_wr =
+    	       (volatile uint8_t *)m_driver.map(sizeof(uint8_t), HP1_WR_WIDTH_ADDR, err);
+             volatile uint8_t *zynqmp_hp2_rd =
+    	       (volatile uint8_t *)m_driver.map(sizeof(uint8_t), HP2_RD_WIDTH_ADDR, err);
+             volatile uint8_t *zynqmp_hp2_wr =
+    	       (volatile uint8_t *)m_driver.map(sizeof(uint8_t), HP2_WR_WIDTH_ADDR, err);
+             volatile uint8_t *zynqmp_hp3_rd =
+    	       (volatile uint8_t *)m_driver.map(sizeof(uint8_t), HP3_RD_WIDTH_ADDR, err);
+             volatile uint8_t *zynqmp_hp3_wr =
+    	       (volatile uint8_t *)m_driver.map(sizeof(uint8_t), HP3_WR_WIDTH_ADDR, err);
+             *zynqmp_slcr = 0;  // set gp0/1 to 32bit mode
+             *zynqmp_hp0_rd = 0x1B;
+             *zynqmp_hp0_wr = 0x1B;
+             *zynqmp_hp1_rd = 0x1B;
+             *zynqmp_hp1_wr = 0x1B;
+             *zynqmp_hp2_rd = 0x1B;
+             *zynqmp_hp2_wr = 0x1B;
+             *zynqmp_hp3_rd = 0x1B;
+             *zynqmp_hp3_wr = 0x1B;
+
+             m_driver.unmap((uint8_t *)zynqmp_slcr, sizeof(uint32_t), err);
+             m_driver.unmap((uint8_t *)zynqmp_hp0_rd, sizeof(uint8_t), err);
+             m_driver.unmap((uint8_t *)zynqmp_hp0_wr, sizeof(uint8_t), err);
+             m_driver.unmap((uint8_t *)zynqmp_hp1_rd, sizeof(uint8_t), err);
+             m_driver.unmap((uint8_t *)zynqmp_hp1_wr, sizeof(uint8_t), err);
+             m_driver.unmap((uint8_t *)zynqmp_hp2_rd, sizeof(uint8_t), err);
+             m_driver.unmap((uint8_t *)zynqmp_hp2_wr, sizeof(uint8_t), err);
+             m_driver.unmap((uint8_t *)zynqmp_hp3_rd, sizeof(uint8_t), err);
+             m_driver.unmap((uint8_t *)zynqmp_hp3_wr, sizeof(uint8_t), err);
+             // what is the automatic way to determine this?
+             // 0xFFCA0040 returns a bus error I would have thought this was it
              if (m_platform == "zcu102") {
                m_part = "xczu9eg";
+             }
+             else if (m_platform == "zcu111") {
+               m_part = "xczu28dr";
              }
              else {
                m_part = "xczu9eg";  //TODO whats the part# for zcu111
              }
-             // what is the automatic way to determine this?
-             // 0xFFCA0040 returns a bus error I would have thought this was it
 #else
 	     switch ((slcr->pss_idcode >> 12) & 0x1f) {
 	     case 0x02: m_part = "xc7z010"; break;
@@ -182,7 +218,11 @@
 	  ocpiDebug("Debug register 3 from Zynq FTM is 0x%x", ftm->f2pdbg3);
 	  // Find out whether the OpenCPI control plane is available at GP0 or GP1, GP0 first
 	  bool useGP1 = (ftm->f2pdbg3 & 0x80) != 0;
+#if defined(OCPI_ARCH_arm) || defined(OCPI_ARCH_arm_cs)
 	  uint32_t gpAddr = useGP1 ? GP1_PADDR : GP0_PADDR;
+#else
+          uint32_t gpAddr = MP_GP0_PADDR;
+#endif
 	  if (m_driver.unmap((uint8_t *)ftm, sizeof(FTM), err) ||
 	      (m_vaddr && m_driver.unmap((uint8_t *)m_vaddr, sizeof(OccpSpace), err)) ||
 	      !(m_vaddr = m_driver.map(sizeof(OccpSpace), gpAddr, err)))
@@ -211,7 +251,7 @@
 #else
           //TODO this always seems to return operating even if it isnt loaded
           //     the new way to determine if it was successfully loaded seems to
-          //     be to capture the outpur of the loading command which wont help
+          //     be to capture the output of the loading command which wont help
           //     us here
           const char *e = OU::file2String(val, "/sys/class/fpga_manager/fpga0/state", '|');
           bool ret_val = val == "operating";
@@ -277,11 +317,8 @@
 
         bool
         load_fpga_manager(const char *fileName, std::string &error) {
-        //load_fpga_manager(const char *fileName, Xld* xld, std::string &error) {
-
-          printf("0");
           if (!file_exists("/lib/firmware")){
-            mkdir("/lib/firmware",0); // TODO 0 cant be right ????
+            mkdir("/lib/firmware",0666);
           }
           int out_file = creat("/lib/firmware/opencpi_temp.bin", 0666);
           gzFile bin_file;
@@ -304,21 +341,16 @@
 				 fileName);
             if (n == 0)
               break;
-	    //uint32_t *p32 = (uint32_t*)buf;
-	    //for (unsigned nn = n; nn; nn -= 4, p32++)
-	    //  *p32 = OU::swap32(*p32);
 	    if (write(out_file, buf, n) <= 0)
 	      return OU::eformat(error,
 				 "Error writing to /lib/firmware/opencpi_temp.bin for bin loading: %s(%u/%d)",
 				 strerror(errno), errno, n);
 	  } while (1);
           close(out_file);
-          printf("5");
           std::ofstream fpga_flags("/sys/class/fpga_manager/fpga0/flags");
           std::ofstream fpga_firmware("/sys/class/fpga_manager/fpga0/firmware");
-          fpga_flags << 0;
-          fpga_firmware << "opencpi_temp.bin";
-          //printf("6");
+          fpga_flags << 0 << std::endl;
+          fpga_firmware << "opencpi_temp.bin" << std::endl;
 
           remove("/lib/firmware/opencpi_temp.bin");
           return isProgrammed(error) ? init(error) : true;
@@ -326,71 +358,125 @@
 
 	// Load a bitstream
 	bool
-	load_xdevconfig(const char *fileName, Xld* xld, std::string &error) {
-	  ocpiDebug("Loading file \"%s\" on zynq FPGA", fileName);
-
-	  if (!error.empty())
-	    return true;
-	  do {
-	    uint8_t *buf;
-	    int n = xld->gzread(buf, error);
-	    if (n < 0)
-	      return true;
-	    if (n & 3)
-	      return OU::eformat(error, "Bitstream data in is '%s' not a multiple of 4 bytes",
-				 fileName);
-	    if (n == 0)
-	      break;
-	    uint32_t *p32 = (uint32_t*)buf;
-	    for (unsigned nn = n; nn; nn -= 4, p32++)
-	      *p32 = OU::swap32(*p32);
-	    if (write(xld->xfd, buf, n) <= 0)
-	      return OU::eformat(error,
-				 "Error writing to /dev/xdevcfg for bitstream loading: %s(%u/%d)",
-				 strerror(errno), errno, n);
-	  } while (1);
-	  if (::close(xld->xfd))
-	    return OU::eformat(error, "Error closing /dev/xdevcfg: %s(%u)",
-			       strerror(errno), errno);
-	  xld->xfd = -1;
-	  ocpiDebug("Loading complete, testing for programming done and initialization");
-	  return isProgrammed(error) ? init(error) : true;
-#if 0
-	  // We have written all the data from the file to the device.
-	  // Now we can retrieve status registers
-	  const uint32_t
-	    c_opencpi = 0xdd9fda7a,
-	    c_statmask = 0x12345678,
-	    c_statvalue = 0x12345678;
-	  uint32_t
-	    stat = xld.readConfigReg(7),
-	    axss = xld.readConfigReg(9);
-	  // Check stat for good value
-	  if ((stat & c_statmask) != c_statvalue)
-	    throw OU::Error("After loading, the configuration status register was 0x%x,"
-			    " but should be 0x%x (masked with 0x%x)",
-			    stat, c_statvalue, c_statmask);
-	  // Check axss for our special value 0xdd9fda7a
-	  if (axss != c_opencpi)
-	    throw OU::Error("After loading, the USR_ACCESS code was not correct: 0x%x - should be 0x%x",
-			    axss, c_opencpi);
-#endif
+	load_xdevconfig(const char *fileName, std::string &error) {
+          ocpiDebug("Loading file \"%s\" on zynq FPGA", fileName);
+      	  struct Xld { // struct allocated on the stack for easy cleanup
+      	    int xfd, bfd;
+      	    gzFile gz;
+      	    uint8_t buf[8*1024];
+      	    int zerror;
+      	    size_t len;
+      	    int n;
+      	    void cleanup() { // used for constructor catch cleanup and in destructor
+      	      if (xfd >= 0) ::close(xfd);
+      	      if (bfd >= 0) ::close(bfd);
+      	      if (gz) gzclose(gz);
+      	    }
+      	    Xld(const char *file, std::string &a_error) : xfd(-1), bfd(-1), gz(NULL) {
+      	      // Open the device LAST since just opening it will do bad things
+      	      uint8_t *p8;
+      	      if ((bfd = ::open(file, O_RDONLY)) < 0)
+      		OU::format(a_error, "Can't open bitstream file '%s' for reading: %s(%d)",
+      			   file, strerror(errno), errno);
+      	      else if ((gz = ::gzdopen(bfd, "rb")) == NULL)
+      		OU::format(a_error, "Can't open compressed bitstream file '%s' for : %s(%u)",
+      			   file, strerror(errno), errno);
+      	      // Read up to the sync pattern before byte swapping
+      	      else if ((n = ::gzread(gz, buf, sizeof(buf))) <= 0)
+      		OU::format(a_error, "Error reading initial bitstream buffer: %s(%u/%d)",
+      			   gzerror(gz, &zerror), errno, n);
+      	      else if (!(p8 = findsync(buf, sizeof(buf))))
+      		OU::format(a_error, "Can't find sync pattern in compressed bit file");
+      	      else {
+      		len = buf + sizeof(buf) - p8;
+      		if (p8 != buf)
+      		  memcpy(buf, p8, len);
+      		// We've done as much as we can before opening the device, which
+      		// does bad things to the Zynq PL
+      		if ((xfd = ::open("/dev/xdevcfg", O_RDWR)) < 0)
+      		  OU::format(a_error, "Can't open /dev/xdevcfg for bitstream loading: %s(%d)",
+      			     strerror(errno), errno);
+      	      }
+      	    }
+      	    ~Xld() {
+      	      cleanup();
+      	    }
+      	    int gzread(uint8_t *&argBuf, std::string &a_error) {
+      	      if ((n = ::gzread(gz, buf + len, (unsigned)(sizeof(buf) - len))) < 0)
+      		OU::format(a_error, "Error reading compressed bitstream: %s(%u/%d)",
+      			   gzerror(gz, &zerror), errno, n);
+      	      else {
+      		n += OCPI_UTRUNCATE(int, len);
+      		len = 0;
+      		argBuf = buf;
+      	      }
+      	      return n;
+      	    }
+      	    uint32_t readConfigReg(unsigned /*reg*/) {
+      	      // write the "read config register" frame.
+      	      // read back the value
+      	      return 0;
+      	    }
+      	  };
+      	  Xld xld(fileName, error);
+      	  if (!error.empty())
+      	    return true;
+      	  do {
+      	    uint8_t *buf;
+      	    int n = xld.gzread(buf, error);
+      	    if (n < 0)
+      	      return true;
+      	    if (n & 3)
+      	      return OU::eformat(error, "Bitstream data in is '%s' not a multiple of 4 bytes",
+      				 fileName);
+      	    if (n == 0)
+      	      break;
+      	    uint32_t *p32 = (uint32_t*)buf;
+      	    for (unsigned nn = n; nn; nn -= 4, p32++)
+      	      *p32 = OU::swap32(*p32);
+      	    if (write(xld.xfd, buf, n) <= 0)
+      	      return OU::eformat(error,
+      				 "Error writing to /dev/xdevcfg for bitstream loading: %s(%u/%d)",
+      				 strerror(errno), errno, n);
+      	  } while (1);
+      	  if (::close(xld.xfd))
+      	    return OU::eformat(error, "Error closing /dev/xdevcfg: %s(%u)",
+      			       strerror(errno), errno);
+      	  xld.xfd = -1;
+      	  ocpiDebug("Loading complete, testing for programming done and initialization");
+      	  return isProgrammed(error) ? init(error) : true;
+      #if 0
+      	  // We have written all the data from the file to the device.
+      	  // Now we can retrieve status registers
+      	  const uint32_t
+      	    c_opencpi = 0xdd9fda7a,
+      	    c_statmask = 0x12345678,
+      	    c_statvalue = 0x12345678;
+      	  uint32_t
+      	    stat = xld.readConfigReg(7),
+      	    axss = xld.readConfigReg(9);
+      	  // Check stat for good value
+      	  if ((stat & c_statmask) != c_statvalue)
+      	    throw OU::Error("After loading, the configuration status register was 0x%x,"
+      			    " but should be 0x%x (masked with 0x%x)",
+      			    stat, c_statvalue, c_statmask);
+      	  // Check axss for our special value 0xdd9fda7a
+      	  if (axss != c_opencpi)
+      	    throw OU::Error("After loading, the USR_ACCESS code was not correct: 0x%x - should be 0x%x",
+      			    axss, c_opencpi);
+      #endif
 	}
 
         bool
         load(const char *fileName, std::string &error){
-          //Xld xld(fileName, error);
           bool ret_val = false;
 
-
-          //if (file_exists("/dev/xdevcfg")){
-          //  ret_val= load_xdevconfig(fileName, error);
-          //}
-          //else if (file_exists("/sys/class/fpga_manager/fpga0/")){
-            //ret_val= load_fpga_manager(fileName, &xld, error);
+          if (file_exists("/dev/xdevcfg")){
+            ret_val= load_xdevconfig(fileName, error);
+          }
+          else if (file_exists("/sys/class/fpga_manager/fpga0/")){
             ret_val= load_fpga_manager(fileName, error);
-          //}
-          //delete xld;
+          }
           return ret_val;
         }
 

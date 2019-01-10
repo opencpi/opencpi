@@ -25,9 +25,17 @@ namespace OCPI {
   namespace HDL {
     namespace Zynq {
 #endif
-      const uint32_t GP0_PADDR = 0xA0000000; //0x4000000
-      const uint32_t GP1_PADDR = 0x80000000;
-      const uint32_t FPD_SLCR_ADDR = 0xFD615000;
+      const uint32_t GP0_PADDR = 0x40000000;
+      const uint32_t MP_GP0_PADDR = 0xA0000000;
+      const uint32_t FPD_SLCR_ADDR = 0xFD615000;   //zynqmp controlplane width
+      const uint32_t HP0_RD_WIDTH_ADDR = 0xFD380000; //zynqmp controlplane widths
+      const uint32_t HP1_RD_WIDTH_ADDR = 0xFD390000;
+      const uint32_t HP2_RD_WIDTH_ADDR = 0xFD3A0000;
+      const uint32_t HP3_RD_WIDTH_ADDR = 0xFD3B0000;
+      const uint32_t HP0_WR_WIDTH_ADDR = 0xFD380014;
+      const uint32_t HP1_WR_WIDTH_ADDR = 0xFD390014;
+      const uint32_t HP2_WR_WIDTH_ADDR = 0xFD3A0014;
+      const uint32_t HP3_WR_WIDTH_ADDR = 0xFD3B0014;
       const uint32_t IDCODE_ADDR = 0xFFCA0000;
       struct FPD_SLCR {
         uint32_t fpd_slcr;
