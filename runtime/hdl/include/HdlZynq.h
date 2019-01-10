@@ -27,7 +27,11 @@ namespace OCPI {
 #endif
       const uint32_t GP0_PADDR = 0xA0000000; //0x4000000
       const uint32_t GP1_PADDR = 0x80000000;
+      const uint32_t FPD_SLCR_ADDR = 0xFD615000;
       const uint32_t IDCODE_ADDR = 0xFFCA0000;
+      struct FPD_SLCR {
+        uint32_t fpd_slcr;
+      };
       struct IDCODE {
         uint32_t pad0[(0x40-0x0-4)/4];
         uint32_t pss_idcode;

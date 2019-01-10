@@ -29,10 +29,13 @@
 #include <errno.h>
 #include <unistd.h>
 #include <sys/mman.h>
-#include "zlib.h"
+#include <sys/stat.h>
+#include <iostream>
+#include <fstream>
 #include "ocpi-config.h"
 #include "HdlZynq.h"
 #include "HdlBusDriver.h"
+#include "zlib.h"
 #ifdef OCPI_OS_macos
 #define mmap64 mmap
 #define off64_t off_t
@@ -48,6 +51,64 @@
 	 Driver    &m_driver;
 	 uint8_t  *m_vaddr;
 	 friend class Driver;
+         struct Xld { // struct allocated on the stack for easy cleanup
+           int xfd, bfd;
+           gzFile gz;
+           uint8_t buf[8*1024];
+           int zerror;
+           size_t len;
+           int n;
+           void cleanup() { // used for constructor catch cleanup and in destructor
+             if (xfd >= 0) ::close(xfd);
+             if (bfd >= 0) ::close(bfd);
+             if (gz) gzclose(gz);
+           }
+           Xld(const char *file, std::string &a_error) : xfd(-1), bfd(-1), gz(NULL) {
+             // Open the device LAST since just opening it will do bad things
+             uint8_t *p8;
+             if ((bfd = ::open(file, O_RDONLY)) < 0)
+               OU::format(a_error, "Can't open bitstream file '%s' for reading: %s(%d)",
+                          file, strerror(errno), errno);
+             else if ((gz = ::gzdopen(bfd, "rb")) == NULL)
+               OU::format(a_error, "Can't open compressed bitstream file '%s' for : %s(%u)",
+                          file, strerror(errno), errno);
+             // Read up to the sync pattern before byte swapping
+             else if ((n = ::gzread(gz, buf, sizeof(buf))) <= 0)
+               OU::format(a_error, "Error reading initial bitstream buffer: %s(%u/%d)",
+                          gzerror(gz, &zerror), errno, n);
+             else if (!(p8 = findsync(buf, sizeof(buf))))
+               OU::format(a_error, "Can't find sync pattern in compressed bit file");
+             else {
+               len = buf + sizeof(buf) - p8;
+               if (p8 != buf)
+                 memcpy(buf, p8, len);
+               // We've done as much as we can before opening the device, which
+               // does bad things to the Zynq PL
+               //if ((xfd = ::open("/dev/xdevcfg", O_RDWR)) < 0)
+                // OU::format(a_error, "Can't open /dev/xdevcfg for bitstream loading: %s(%d)",
+                //            strerror(errno), errno);
+             }
+           }
+           ~Xld() {
+             cleanup();
+           }
+           int gzread(uint8_t *&argBuf, std::string &a_error) {
+             if ((n = ::gzread(gz, buf + len, (unsigned)(sizeof(buf) - len))) < 0)
+               OU::format(a_error, "Error reading compressed bitstream: %s(%u/%d)",
+                          gzerror(gz, &zerror), errno, n);
+             else {
+               n += OCPI_UTRUNCATE(int, len);
+               len = 0;
+               argBuf = buf;
+             }
+             return n;
+           }
+           uint32_t readConfigReg(unsigned /*reg*/) {
+             // write the "read config register" frame.
+             // read back the value
+             return 0;
+           }
+         }; // struct Xld
 	 Device(Driver &driver, std::string &a_name, bool forLoad, const OU::PValue *params,
 		std::string &err)
 	   : OCPI::HDL::Device(a_name, "ocpi-dma-pio", params),
@@ -84,11 +145,18 @@
 	     const char *p = ezxml_cattr(config, "platform");
 	     m_platform = p ? p : "zed"; // FIXME: is there any other automatic way for this?
 #if defined(OCPI_ARCH_arm64)
-             //TODO CMH add logic to grab this from the system.xml
-             //TODO add write of the register to for HPM0 to 32 bits AFI_FS_(FDP_SLCR)
-             m_part = "xczu9eg";
+             volatile FPD_SLCR *zynqmp_slcr =
+	       (volatile FPD_SLCR *)m_driver.map(sizeof(FPD_SLCR), FPD_SLCR_ADDR, err);
+             zynqmp_slcr->fpd_slcr = 0;  // set gp0/1 to 32bit mode
+             m_driver.unmap((uint8_t *)zynqmp_slcr, sizeof(FPD_SLCR), err);
+             if (m_platform == "zcu102") {
+               m_part = "xczu9eg";
+             }
+             else {
+               m_part = "xczu9eg";  //TODO whats the part# for zcu111
+             }
              // what is the automatic way to determine this?
-             // 0xFFCA0040 returns a buss error i would have thought this was it
+             // 0xFFCA0040 returns a bus error I would have thought this was it
 #else
 	     switch ((slcr->pss_idcode >> 12) & 0x1f) {
 	     case 0x02: m_part = "xc7z010"; break;
@@ -141,6 +209,10 @@
           ocpiDebug("OCPI::HDL::Zynq::Device::isProgrammed: got %s%s (%s)", e ? "error: " : "",
             e ? e : (ret_val ? "done" : "not done"), val.c_str());
 #else
+          //TODO this always seems to return operating even if it isnt loaded
+          //     the new way to determine if it was successfully loaded seems to
+          //     be to capture the outpur of the loading command which wont help
+          //     us here
           const char *e = OU::file2String(val, "/sys/class/fpga_manager/fpga0/state", '|');
           bool ret_val = val == "operating";
           ocpiDebug("OCPI::HDL::Zynq::Device::isProgrammed: got %s%s (%s)", e ? "error: " : "",
@@ -198,74 +270,70 @@
 	  return 0;
 	}
 
+        inline bool file_exists (const std::string& fileName) {
+          struct stat my_struct;
+          return (stat (fileName.c_str(), &my_struct) == 0);
+        }
+
+        bool
+        load_fpga_manager(const char *fileName, std::string &error) {
+        //load_fpga_manager(const char *fileName, Xld* xld, std::string &error) {
+
+          printf("0");
+          if (!file_exists("/lib/firmware")){
+            mkdir("/lib/firmware",0); // TODO 0 cant be right ????
+          }
+          int out_file = creat("/lib/firmware/opencpi_temp.bin", 0666);
+          gzFile bin_file;
+          int bfd, zerror;
+          uint8_t buf[8*1024];
+
+          if ((bfd = ::open(fileName, O_RDONLY)) < 0)
+            OU::format(error, "Can't open bitstream file '%s' for reading: %s(%d)",
+                       fileName, strerror(errno), errno);
+          if ((bin_file = ::gzdopen(bfd, "rb")) == NULL)
+            OU::format(error, "Can't open compressed bin file '%s' for : %s(%u)",
+                       fileName, strerror(errno), errno);
+          do {
+	    uint8_t *bit_buf = buf;
+            int n = ::gzread(bin_file, bit_buf, sizeof(buf));
+	    if (n < 0)
+	      return true;
+	    if (n & 3)
+	      return OU::eformat(error, "Bitstream data in is '%s' not a multiple of 3 bytes",
+				 fileName);
+            if (n == 0)
+              break;
+	    //uint32_t *p32 = (uint32_t*)buf;
+	    //for (unsigned nn = n; nn; nn -= 4, p32++)
+	    //  *p32 = OU::swap32(*p32);
+	    if (write(out_file, buf, n) <= 0)
+	      return OU::eformat(error,
+				 "Error writing to /lib/firmware/opencpi_temp.bin for bin loading: %s(%u/%d)",
+				 strerror(errno), errno, n);
+	  } while (1);
+          close(out_file);
+          printf("5");
+          std::ofstream fpga_flags("/sys/class/fpga_manager/fpga0/flags");
+          std::ofstream fpga_firmware("/sys/class/fpga_manager/fpga0/firmware");
+          fpga_flags << 0;
+          fpga_firmware << "opencpi_temp.bin";
+          //printf("6");
+
+          remove("/lib/firmware/opencpi_temp.bin");
+          return isProgrammed(error) ? init(error) : true;
+        }
+
 	// Load a bitstream
 	bool
-	load(const char *fileName, std::string &error) {
+	load_xdevconfig(const char *fileName, Xld* xld, std::string &error) {
 	  ocpiDebug("Loading file \"%s\" on zynq FPGA", fileName);
-	  struct Xld { // struct allocated on the stack for easy cleanup
-	    int xfd, bfd;
-	    gzFile gz;
-	    uint8_t buf[8*1024];
-	    int zerror;
-	    size_t len;
-	    int n;
-	    void cleanup() { // used for constructor catch cleanup and in destructor
-	      if (xfd >= 0) ::close(xfd);
-	      if (bfd >= 0) ::close(bfd);
-	      if (gz) gzclose(gz);
-	    }
-	    Xld(const char *file, std::string &a_error) : xfd(-1), bfd(-1), gz(NULL) {
-	      // Open the device LAST since just opening it will do bad things
-	      uint8_t *p8;
-	      if ((bfd = ::open(file, O_RDONLY)) < 0)
-		OU::format(a_error, "Can't open bitstream file '%s' for reading: %s(%d)",
-			   file, strerror(errno), errno);
-	      else if ((gz = ::gzdopen(bfd, "rb")) == NULL)
-		OU::format(a_error, "Can't open compressed bitstream file '%s' for : %s(%u)",
-			   file, strerror(errno), errno);
-	      // Read up to the sync pattern before byte swapping
-	      else if ((n = ::gzread(gz, buf, sizeof(buf))) <= 0)
-		OU::format(a_error, "Error reading initial bitstream buffer: %s(%u/%d)",
-			   gzerror(gz, &zerror), errno, n);
-	      else if (!(p8 = findsync(buf, sizeof(buf))))
-		OU::format(a_error, "Can't find sync pattern in compressed bit file");
-	      else {
-		len = buf + sizeof(buf) - p8;
-		if (p8 != buf)
-		  memcpy(buf, p8, len);
-		// We've done as much as we can before opening the device, which
-		// does bad things to the Zynq PL
-		if ((xfd = ::open("/dev/xdevcfg", O_RDWR)) < 0)
-		  OU::format(a_error, "Can't open /dev/xdevcfg for bitstream loading: %s(%d)",
-			     strerror(errno), errno);
-	      }
-	    }
-	    ~Xld() {
-	      cleanup();
-	    }
-	    int gzread(uint8_t *&argBuf, std::string &a_error) {
-	      if ((n = ::gzread(gz, buf + len, (unsigned)(sizeof(buf) - len))) < 0)
-		OU::format(a_error, "Error reading compressed bitstream: %s(%u/%d)",
-			   gzerror(gz, &zerror), errno, n);
-	      else {
-		n += OCPI_UTRUNCATE(int, len);
-		len = 0;
-		argBuf = buf;
-	      }
-	      return n;
-	    }
-	    uint32_t readConfigReg(unsigned /*reg*/) {
-	      // write the "read config register" frame.
-	      // read back the value
-	      return 0;
-	    }
-	  };
-	  Xld xld(fileName, error);
+
 	  if (!error.empty())
 	    return true;
 	  do {
 	    uint8_t *buf;
-	    int n = xld.gzread(buf, error);
+	    int n = xld->gzread(buf, error);
 	    if (n < 0)
 	      return true;
 	    if (n & 3)
@@ -276,15 +344,15 @@
 	    uint32_t *p32 = (uint32_t*)buf;
 	    for (unsigned nn = n; nn; nn -= 4, p32++)
 	      *p32 = OU::swap32(*p32);
-	    if (write(xld.xfd, buf, n) <= 0)
+	    if (write(xld->xfd, buf, n) <= 0)
 	      return OU::eformat(error,
 				 "Error writing to /dev/xdevcfg for bitstream loading: %s(%u/%d)",
 				 strerror(errno), errno, n);
 	  } while (1);
-	  if (::close(xld.xfd))
+	  if (::close(xld->xfd))
 	    return OU::eformat(error, "Error closing /dev/xdevcfg: %s(%u)",
 			       strerror(errno), errno);
-	  xld.xfd = -1;
+	  xld->xfd = -1;
 	  ocpiDebug("Loading complete, testing for programming done and initialization");
 	  return isProgrammed(error) ? init(error) : true;
 #if 0
@@ -308,6 +376,24 @@
 			    axss, c_opencpi);
 #endif
 	}
+
+        bool
+        load(const char *fileName, std::string &error){
+          //Xld xld(fileName, error);
+          bool ret_val = false;
+
+
+          //if (file_exists("/dev/xdevcfg")){
+          //  ret_val= load_xdevconfig(fileName, error);
+          //}
+          //else if (file_exists("/sys/class/fpga_manager/fpga0/")){
+            //ret_val= load_fpga_manager(fileName, &xld, error);
+            ret_val= load_fpga_manager(fileName, error);
+          //}
+          //delete xld;
+          return ret_val;
+        }
+
 	bool
 	unload(std::string &error) {
 	  int xfd;
