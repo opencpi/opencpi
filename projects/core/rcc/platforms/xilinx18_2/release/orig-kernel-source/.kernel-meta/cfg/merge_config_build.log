@@ -1,0 +1,14 @@
+Using .kernel-meta/configs//./defconfig as base
+make[1]: Entering directory `/home/dbanks/yocto/zcu102/build/tmp/work/zcu102_zynqmp-poky-linux/linux-xlnx/4.14-xilinx-v2018.2+gitAUTOINC+ad4cd988ba-r0/linux-zcu102_zynqmp-standard-build'
+  HOSTCC  scripts/basic/fixdep
+  GEN     ./Makefile
+  HOSTCC  scripts/kconfig/conf.o
+  SHIPPED scripts/kconfig/zconf.tab.c
+  SHIPPED scripts/kconfig/zconf.lex.c
+  HOSTCC  scripts/kconfig/zconf.tab.o
+  HOSTLD  scripts/kconfig/conf
+scripts/kconfig/conf  --alldefconfig Kconfig
+#
+# configuration written to .config
+#
+make[1]: Leaving directory `/home/dbanks/yocto/zcu102/build/tmp/work/zcu102_zynqmp-poky-linux/linux-xlnx/4.14-xilinx-v2018.2+gitAUTOINC+ad4cd988ba-r0/linux-zcu102_zynqmp-standard-build'

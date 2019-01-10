@@ -1,0 +1,9 @@
+#
+# scc v0.8
+# processed: Thu Nov 29 20:08:00 UTC 2018
+#
+# This is a scc output file, do not edit
+#
+# _reloc_dir /home/dbanks/yocto/zcu102/build/tmp/work/zcu102_zynqmp-poky-linux/linux-xlnx/4.14-xilinx-v2018.2+gitAUTOINC+ad4cd988ba-r0
+# _reloc_dir /home/dbanks/yocto/zcu102/build/tmp/work/zcu102_zynqmp-poky-linux/linux-xlnx
+kconf /home/dbanks/yocto/zcu102/build/tmp/work/zcu102_zynqmp-poky-linux/linux-xlnx/4.14-xilinx-v2018.2+gitAUTOINC+ad4cd988ba-r0/defconfig # non-hardware

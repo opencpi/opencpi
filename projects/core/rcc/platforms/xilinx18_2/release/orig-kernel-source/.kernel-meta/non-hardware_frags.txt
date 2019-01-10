@@ -1,0 +1,1 @@
+/home/dbanks/yocto/zcu102/build/tmp/work-shared/zcu102-zynqmp/kernel-source/.kernel-meta/configs//./defconfig
