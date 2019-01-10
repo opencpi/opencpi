@@ -28,15 +28,8 @@ namespace OCPI {
       const uint32_t GP0_PADDR = 0x40000000;
       const uint32_t MP_GP0_PADDR = 0xA0000000;
       const uint32_t FPD_SLCR_ADDR = 0xFD615000;   //zynqmp controlplane width
-      const uint32_t HP0_RD_WIDTH_ADDR = 0xFD380000; //zynqmp controlplane widths
-      const uint32_t HP1_RD_WIDTH_ADDR = 0xFD390000;
-      const uint32_t HP2_RD_WIDTH_ADDR = 0xFD3A0000;
-      const uint32_t HP3_RD_WIDTH_ADDR = 0xFD3B0000;
-      const uint32_t HP0_WR_WIDTH_ADDR = 0xFD380014;
-      const uint32_t HP1_WR_WIDTH_ADDR = 0xFD390014;
-      const uint32_t HP2_WR_WIDTH_ADDR = 0xFD3A0014;
-      const uint32_t HP3_WR_WIDTH_ADDR = 0xFD3B0014;
       const uint32_t IDCODE_ADDR = 0xFFCA0000;
+
       struct FPD_SLCR {
         uint32_t fpd_slcr;
       };
@@ -180,6 +173,41 @@ namespace OCPI {
 	  tz_dma_periph_ns,
 	  pad8[(0x530-0x448-4)/4],
 	  pss_idcode;
+      };
+      // See "Table 10-8: PS System Register Map" in:
+      // https://www.xilinx.com/support/documentation/user_guides/ug1085-zynq-ultrascale-trm.pdf
+      const uint64_t USP_AXI_HP_ADDR  = 0xFD380000;
+      // UltraScale+ "AFIFM Module" from:
+      // https://www.xilinx.com/html_docs/registers/ug1087/ug1087-zynq-ultrascale-registers.html
+      struct USP_AFIFM {
+        uint8_t
+          rdctrl,                   // 0x00000000
+          pad0[3];
+	uint32_t                    // Relative Address
+	  rdissue,                  // 0x00000004
+	  rdqos,                    // 0x00000008
+	  pad1[(0x010-0x008-4)/4],
+	  rddebug;                 // 0x00000010
+        uint8_t
+	  wrctrl,                   // 0x00000014
+          pad2[3];
+        uint32_t
+	  wrissue,                  // 0x00000018
+	  wrqos,                    // 0x0000001C
+	  pad3[(0xe00-0x01c-4)/4],
+	  i_sts,                    // 0x00000E00
+	  i_en,                     // 0x00000E04
+	  i_dis,                    // 0x00000E08
+	  i_mask,                   // 0x00000E0C
+	  pad4[(0xf04-0xe0c-4)/4],
+	  control,                  // 0x00000F04
+	  pad5[(0xf0c-0xf04-4)/4],
+	  safety_chk,               // 0x00000F0C
+	  pad6[(0x10000-0x00f0c-4)/4];
+      };
+      const unsigned USP_NAXI_HPS = 4;
+      struct USP_AXI_HP {
+	  USP_AFIFM afifm[USP_NAXI_HPS];
       };
 #ifdef __cplusplus
     }

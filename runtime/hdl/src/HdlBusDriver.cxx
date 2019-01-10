@@ -147,41 +147,21 @@
 #if defined(OCPI_ARCH_arm64)
              volatile uint32_t *zynqmp_slcr =
 	       (volatile uint32_t *)m_driver.map(sizeof(uint32_t), FPD_SLCR_ADDR, err);
-             volatile uint8_t *zynqmp_hp0_rd =
-  	       (volatile uint8_t *)m_driver.map(sizeof(uint8_t), HP0_RD_WIDTH_ADDR, err);
-             volatile uint8_t *zynqmp_hp0_wr =
-  	       (volatile uint8_t *)m_driver.map(sizeof(uint8_t), HP0_WR_WIDTH_ADDR, err);
-             volatile uint8_t *zynqmp_hp1_rd =
-    	       (volatile uint8_t *)m_driver.map(sizeof(uint8_t), HP1_RD_WIDTH_ADDR, err);
-             volatile uint8_t *zynqmp_hp1_wr =
-    	       (volatile uint8_t *)m_driver.map(sizeof(uint8_t), HP1_WR_WIDTH_ADDR, err);
-             volatile uint8_t *zynqmp_hp2_rd =
-    	       (volatile uint8_t *)m_driver.map(sizeof(uint8_t), HP2_RD_WIDTH_ADDR, err);
-             volatile uint8_t *zynqmp_hp2_wr =
-    	       (volatile uint8_t *)m_driver.map(sizeof(uint8_t), HP2_WR_WIDTH_ADDR, err);
-             volatile uint8_t *zynqmp_hp3_rd =
-    	       (volatile uint8_t *)m_driver.map(sizeof(uint8_t), HP3_RD_WIDTH_ADDR, err);
-             volatile uint8_t *zynqmp_hp3_wr =
-    	       (volatile uint8_t *)m_driver.map(sizeof(uint8_t), HP3_WR_WIDTH_ADDR, err);
              *zynqmp_slcr = 0;  // set gp0/1 to 32bit mode
-             *zynqmp_hp0_rd = 0x1B;
-             *zynqmp_hp0_wr = 0x1B;
-             *zynqmp_hp1_rd = 0x1B;
-             *zynqmp_hp1_wr = 0x1B;
-             *zynqmp_hp2_rd = 0x1B;
-             *zynqmp_hp2_wr = 0x1B;
-             *zynqmp_hp3_rd = 0x1B;
-             *zynqmp_hp3_wr = 0x1B;
-
              m_driver.unmap((uint8_t *)zynqmp_slcr, sizeof(uint32_t), err);
-             m_driver.unmap((uint8_t *)zynqmp_hp0_rd, sizeof(uint8_t), err);
-             m_driver.unmap((uint8_t *)zynqmp_hp0_wr, sizeof(uint8_t), err);
-             m_driver.unmap((uint8_t *)zynqmp_hp1_rd, sizeof(uint8_t), err);
-             m_driver.unmap((uint8_t *)zynqmp_hp1_wr, sizeof(uint8_t), err);
-             m_driver.unmap((uint8_t *)zynqmp_hp2_rd, sizeof(uint8_t), err);
-             m_driver.unmap((uint8_t *)zynqmp_hp2_wr, sizeof(uint8_t), err);
-             m_driver.unmap((uint8_t *)zynqmp_hp3_rd, sizeof(uint8_t), err);
-             m_driver.unmap((uint8_t *)zynqmp_hp3_wr, sizeof(uint8_t), err);
+
+             volatile USP_AXI_HP *axi_hp =
+               (volatile USP_AXI_HP *)m_driver.map(sizeof(USP_AXI_HP), USP_AXI_HP_ADDR, err);
+             axi_hp->afifm[0].rdctrl = 0xB1;
+             axi_hp->afifm[0].wrctrl = 0xB1;
+             axi_hp->afifm[1].rdctrl = 0xB1;
+             axi_hp->afifm[1].wrctrl = 0xB1;
+             axi_hp->afifm[2].rdctrl = 0xB1;
+             axi_hp->afifm[2].wrctrl = 0xB1;
+             axi_hp->afifm[3].rdctrl = 0xB1;
+             axi_hp->afifm[3].wrctrl = 0xB1;
+             m_driver.unmap((uint8_t *)axi_hp, sizeof(USP_AXI_HP), err);
+
              // what is the automatic way to determine this?
              // 0xFFCA0040 returns a bus error I would have thought this was it
              if (m_platform == "zcu102") {
@@ -191,7 +171,7 @@
                m_part = "xczu28dr";
              }
              else {
-               m_part = "xczu9eg";  //TODO whats the part# for zcu111
+               m_part = "xczu9eg";
              }
 #else
 	     switch ((slcr->pss_idcode >> 12) & 0x1f) {
@@ -212,13 +192,13 @@
 	bool
 	init(std::string &err) {
 	  ocpiDebug("Setting up the Zynq PL");
-	  volatile FTM *ftm = (volatile FTM *)m_driver.map(sizeof(FTM), FTM_ADDR, err);
-	  if (!ftm)
-	    return true;
-	  ocpiDebug("Debug register 3 from Zynq FTM is 0x%x", ftm->f2pdbg3);
-	  // Find out whether the OpenCPI control plane is available at GP0 or GP1, GP0 first
-	  bool useGP1 = (ftm->f2pdbg3 & 0x80) != 0;
+          volatile FTM *ftm = (volatile FTM *)m_driver.map(sizeof(FTM), FTM_ADDR, err);
 #if defined(OCPI_ARCH_arm) || defined(OCPI_ARCH_arm_cs)
+          if (!ftm)
+            return true;
+          ocpiDebug("Debug register 3 from Zynq FTM is 0x%x", ftm->f2pdbg3);
+          // Find out whether the OpenCPI control plane is available at GP0 or GP1, GP0 first
+          bool useGP1 = (ftm->f2pdbg3 & 0x80) != 0;
 	  uint32_t gpAddr = useGP1 ? GP1_PADDR : GP0_PADDR;
 #else
           uint32_t gpAddr = MP_GP0_PADDR;
@@ -227,7 +207,7 @@
 	      (m_vaddr && m_driver.unmap((uint8_t *)m_vaddr, sizeof(OccpSpace), err)) ||
 	      !(m_vaddr = m_driver.map(sizeof(OccpSpace), gpAddr, err)))
 	    return true;
-	  ocpiDebug("Mapping for GP%c at %p", useGP1 ? '1' : '0', m_vaddr);
+	  ocpiDebug("Mapping for GP at %p", m_vaddr);
 	  cAccess().setAccess(m_vaddr, NULL, OCPI_UTRUNCATE(RegisterOffset, 0));
 	  if (OCPI::HDL::Device::init(err))
 	    return true;
